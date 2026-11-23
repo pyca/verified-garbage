@@ -51,7 +51,11 @@ run it): an affected instruction may be outside any region where every path
 to it from its function's entry passes `call {vg_mcdt_enter}`, `test eax,
 eax` and the fall-through of a `je` (taken when it returned 0), neither of
 the last two labelled (`guarded`); and so may a function every call of which
-is on such a path, or from a function that is `entered`. `vg_mcdt_enter`
+is on such a path, or from a function that is `entered`. A function whose
+address another takes (`lea r11, {vg_dsa_probable_prime_ifma}`,
+`Impl.Dsa.X86_64.ParameterSearch.fnAddrs`) is called through it only by code
+that function calls, during its run, so the `lea` counts as a call of it
+there. `vg_mcdt_enter`
 returns 1 only with MXCSR `0x1FBF` (`VG.Proof.Mcdt.X86_64.enter_mxcsr`),
 which it keeps until the function returns, as above.
 
@@ -380,6 +384,9 @@ def check_function(name, instrs, lines, labels, entered=False, guard=None):
 
 
 CALL = re.compile(r"call \{(vg_\w+)\}")
+# Taking a function's address (`leaSym`), which the code it calls then calls
+# through, during the run of the function that took it.
+ADDR = re.compile(r"lea \w+, \{(vg_\w+)\}")
 # A dispatcher (`Rust.dispatcher`): its signature's line, and the lines of its
 # body up to the `}` closing it.
 DISPATCHER = re.compile(r"^pub unsafe fn (vg_\w+_auto)\(.*\n((?:(?!\}\n).*\n)*?)\}$", re.M)
@@ -419,7 +426,8 @@ def entered(fns, crate):
     for name, instrs, labels in fns:
         guard = None
         for k, x in enumerate(instrs):
-            if x.startswith("call") and (m := CALL.fullmatch(x)):
+            if (x.startswith("call") and (m := CALL.fullmatch(x))) or \
+                    (x.startswith("lea") and (m := ADDR.fullmatch(x))):
                 if guard is None:
                     guard = guarded(instrs, labels)
                 callers.setdefault(m.group(1), set()).add((name, guard[k]))

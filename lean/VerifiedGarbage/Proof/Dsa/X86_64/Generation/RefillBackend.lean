@@ -35,7 +35,8 @@ import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeometryTape
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Context
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.RefillCorrect
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.RefillAttempt
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.RefillWidths
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.RefillWidths
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.RefillABI
 import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Hashes.Sha1
 import VerifiedGarbage.Proof.Variants.MdHash.X86_64.Sha256
 public import VerifiedGarbage.Proof.MillerRabin.X86_64.Backend
@@ -707,6 +708,16 @@ structure HashDepth (H : Stream) : Prop where
   update : H.updC.x86_64Depth ≤ 120
   finish : H.finC.x86_64Depth ≤ 120
 
+theorem viaSlot_depth (d : Nat) (n : String) (c : Prog isa) :
+    (viaSlot d n c).x86_64Depth = c.x86_64Depth + 8 := by
+  simp only [viaSlot, Code.icalls, Code.x86_64Depth, Nat.zero_max, Nat.max_zero]
+
+theorem hashLabelI_depth {H : Stream} (h : HashDepth H) (o : Nat) :
+    generationDepth (hashLabelI H o) := by
+  simp only [generationDepth, hashLabelI, Impl.Mgf1.X86_64.seqs, Code.x86_64Depth, viaSlot_depth, Nat.max_le]
+  exact ⟨by decide, Nat.add_le_add_right h.init 8, by decide,
+    Nat.add_le_add_right h.update 8, by decide, Nat.add_le_add_right h.finish 8⟩
+
 theorem hashLabel_depth {H : Stream} (h : HashDepth H) (o : Nat) :
     generationDepth (Impl.RsaOaep.X86_64.hashLabel H o) := by
   simp only [generationDepth, Impl.RsaOaep.X86_64.hashLabel, Impl.Mgf1.X86_64.seqs,
@@ -729,11 +740,11 @@ theorem seedAdd_depth (n : Nat) : generationDepth (seedAdd n) := by
 theorem seedHashAt_depth {H1 H256 : Stream} (h1 : HashDepth H1) (h256 : HashDepth H256) (len : Nat) :
     generationDepth (seedHashAt H1 H256 len) := by
   unfold seedHashAt
-  split <;> first | exact hashLabel_depth h1 _ | exact hashLabel_depth h256 _
+  split <;> first | exact hashLabelI_depth h1 _ | exact hashLabelI_depth h256 _
 
 theorem pHashOne_depth {H : Stream} (h : HashDepth H) (len count j : Nat) :
     generationDepth (pHashOne H len count j) :=
-  ((generationDepth.block _).seq ((seedAdd_depth len).seq (hashLabel_depth h _))).seq
+  ((generationDepth.block _).seq ((seedAdd_depth len).seq (hashLabelI_depth h _))).seq
     ((generationDepth.block _).seq (by unfold generationDepth; decide +kernel))
 
 theorem pHashPrefix_depth {H : Stream} (h : HashDepth H) (len count k : Nat) :
@@ -920,6 +931,22 @@ theorem hashLabel_safe {H : Stream} (h : HashSafety H) (o : Nat) :
   repeat' apply generationSafe.seq
   all_goals first | exact h.init.call _ | exact h.update.call _ | exact h.finish.call _ | rfl
 
+/-- The call by a frame word's address, of a function that restores MXCSR
+and writes `rsp` only in its frames. -/
+theorem viaSlot_safe {d : Nat} {n : String} {c : Prog isa} (hc : generationSafe c) :
+    generationSafe (viaSlot d n c) := by
+  unfold viaSlot
+  refine (show generationSafe (.block [.mov .rax (.mem (Impl.Mgf1.X86_64.sp d))]) from rfl).seq ?_
+  change ((!loadsMxcsr (.callr .rax) && !isa.writesSp (.callr .rax)) &&
+    (ctlOk c && c.all (fun i => !isa.writesSp i)) && generationOk (.block [])) = true
+  rw [hc.mx, hc.sp]; rfl
+
+theorem hashLabelI_safe {H : Stream} (h : HashSafety H) (o : Nat) :
+    generationSafe (hashLabelI H o) := by
+  unfold hashLabelI Impl.Mgf1.X86_64.seqs
+  repeat' (first | exact viaSlot_safe h.update | exact viaSlot_safe h.finish | apply generationSafe.seq)
+  all_goals first | exact h.init.call _ | rfl
+
 private theorem seedAddUnrolled_safe (n : Nat) : generationSafe (seedAddUnrolled n) := by
   induction n with
   | zero => rfl
@@ -935,12 +962,12 @@ theorem seedAdd_safe (n : Nat) : generationSafe (seedAdd n) := by
 theorem seedHashAt_safe {H1 H256 : Stream} (h1 : HashSafety H1) (h256 : HashSafety H256) (len : Nat) :
     generationSafe (seedHashAt H1 H256 len) := by
   unfold seedHashAt
-  split <;> first | exact hashLabel_safe h1 _ | exact hashLabel_safe h256 _
+  split <;> first | exact hashLabelI_safe h1 _ | exact hashLabelI_safe h256 _
 
 theorem pHashOne_safe {H : Stream} (h : HashSafety H) (len count j : Nat) :
     generationSafe (pHashOne H len count j) := by
   exact ((show generationSafe (.block (seedInputArgs j)) from rfl).seq
-    ((seedAdd_safe len).seq (hashLabel_safe h _))).seq
+    ((seedAdd_safe len).seq (hashLabelI_safe h _))).seq
     ((show generationSafe (.block (hashCopyArgs len count j)) from rfl).seq (by unfold generationSafe; decide +kernel))
 
 theorem pHashPrefix_safe {H : Stream} (h : HashSafety H) (len count k : Nat) :
@@ -1312,7 +1339,8 @@ theorem backend_safe (v1 v256 : MdHash) (v : RoundImpl) (pBytes : Nat) :
     generationSafe (backendCode (checkName := checkName) v1.H.stream v256.H.stream v pBytes) :=
   code_safe (checkName := checkName) (hashCode_safe v1) (hashCode_safe v256) _ _ _
     (generationSafe_of_allInstrs (arith.inlineSafe _ _ _))
-    (fun o a b => generationSafe_of_allInstrs (arith.inlineSafe o a b)) ((ProbablePrime.testCode_safe v).call _) _ _
+    (fun o a b => generationSafe_of_allInstrs (arith.inlineSafe o a b)) (viaSlot_safe (ProbablePrime.testCode_safe v))
+    _ _
 
 theorem backend_depth (v1 v256 : MdHash) (v : RoundImpl) (pBytes : Nat) :
     (backendCode (checkName := checkName) v1.H.stream v256.H.stream v pBytes).x86_64Depth ≤ 568 :=
@@ -1320,7 +1348,8 @@ theorem backend_depth (v1 v256 : MdHash) (v : RoundImpl) (pBytes : Nat) :
     (inlineMul_depth arith _ _ _) (inlineMul_depth arith) (by
       have := (ProbablePrime.primeTest v).depth
       have : ProbablePrime.stack = 184 := rfl
-      change (ProbablePrime.primeTest v).code.x86_64Depth + 8 ≤ 192
+      show (viaSlot primeSlot _ (ProbablePrime.primeTest v).code).x86_64Depth ≤ 192
+      rw [viaSlot_depth]
       omega_arith) (by
       have h := checkParameters_depth_bound arith.inlineMont.toS.mm arith.inlineMont.mm
         (n := 0) (by rw [VG.Proof.Bignum.X86_64.Mont.toS, arith.inlineDepth])
@@ -1336,7 +1365,8 @@ def RefillCTObligation : Prop :=
   ∀ (checkName : String) (H : GenerationHashes) (M : VG.Proof.Bignum.X86_64.Mont)
     (Sq : VG.Proof.Bignum.X86_64.MontS) (T : PrimeTest) (pBytes : Nat),
     (pBytes = 128 ∨ pBytes = 256 ∨ pBytes = 384) →
-    ConstantTime isa (Refill.contract pBytes abi 568).pre (Refill.contract pBytes abi 568).pub
+    ConstantTime isa (Refill.contractF (fnNames H.sha1 H.sha256 T (Spec.Dsa.generationQLen pBytes)) pBytes abi 568).pre
+      (Refill.contractF (fnNames H.sha1 H.sha256 T (Spec.Dsa.generationQLen pBytes)) pBytes abi 568).pub
       (Refill.code (checkName := checkName) H.sha1 H.sha256 Sq.mm M.mm T.run pBytes
         (Spec.Dsa.generationQLen pBytes))
 
@@ -1348,20 +1378,26 @@ theorem refill_verified (ct : RefillCTObligation) (H : GenerationHashes) (M : VG
     (depth : (Refill.code (checkName := checkName) H.sha1 H.sha256 Sq.mm M.mm T.run pBytes
       (Spec.Dsa.generationQLen pBytes)).x86_64Depth ≤ 568) :
     Verified target (Refill.code (checkName := checkName) H.sha1 H.sha256 Sq.mm M.mm T.run pBytes
-      (Spec.Dsa.generationQLen pBytes)) (Refill.contract pBytes abi 568) :=
+      (Spec.Dsa.generationQLen pBytes))
+      (Refill.contractF (fnNames H.sha1 H.sha256 T (Spec.Dsa.generationQLen pBytes)) pBytes abi 568) :=
   ⟨Refill.refill_correct (checkName := checkName) H M Sq T
       (by
-        intro _ _ _ hm hin seed hlen hseed h1 _ h16 hu
-        exact refillAttempt_ok H M Sq T hm hin seed hlen hseed h1 h16 hu)
+        intro _ _ _ hm hy hin seed hlen hseed h1 _ h16 hu
+        exact refillAttempt_ok H M Sq T hm hin seed hlen hseed h1 h16 hu hy)
       pBytes _ rfl safe.sp depth safe.mx,
     ct checkName H M Sq T pBytes hp,
-    RefillWidths.refill_sat (S := 504) hp (by decide)⟩
+    let ⟨s, h, a, b, c⟩ := RefillWidths.refill_satFns (S := 504) hp (by decide)
+      (fnNames H.sha1 H.sha256 T (Spec.Dsa.generationQLen pBytes)).upd
+      (fnNames H.sha1 H.sha256 T (Spec.Dsa.generationQLen pBytes)).fin
+      (fnNames H.sha1 H.sha256 T (Spec.Dsa.generationQLen pBytes)).prime
+    ⟨s, h, a, b, c⟩⟩
 
 theorem backend_verified (ct : RefillCTObligation) (v1 v256 : MdHash) (v : RoundImpl)
     (h1 : v1.mgf.G.rust = "sha1") (h256 : v256.mgf.G.rust = "sha256") (pBytes : Nat)
     (hp : pBytes = 128 ∨ pBytes = 256 ∨ pBytes = 384) :
     Verified target (backendCode (checkName := checkName) v1.H.stream v256.H.stream v pBytes)
-      (Refill.contract pBytes abi 568) :=
+      (Refill.contractF (fnNames v1.H.stream v256.H.stream (VG.Proof.Dsa.X86_64.ProbablePrime.primeTest v)
+        (Spec.Dsa.generationQLen pBytes)) pBytes abi 568) :=
   refill_verified (checkName := checkName) ct (generationHashes v1 v256 h1 h256) arith.inlineMont
     arith.inlineMont.toS (VG.Proof.Dsa.X86_64.ProbablePrime.primeTest v) pBytes hp
     (backend_safe v1 v256 v pBytes) (backend_depth v1 v256 v pBytes)
@@ -1375,13 +1411,15 @@ private def sha256Witness : MdHash := VG.Proof.Variants.MdHash.X86_64.Sha256.var
 
 theorem sha1_verified (ct : RefillCTObligation) (h : MdHash) (v : RoundImpl) (hh : h.mgf.G.rust = "sha1") :
     Verified target (backendCode (checkName := checkName) h.H.stream h.H.stream v 128)
-      (Refill.contract 128 abi 568) :=
+      (Refill.contractF ⟨h.H.stream.updN, h.H.stream.finN, (VG.Proof.Dsa.X86_64.ProbablePrime.primeTest v).name⟩
+        128 abi 568) :=
   backend_verified (checkName := checkName) ct h sha256Witness v hh rfl 128 (.inl rfl)
 
 theorem sha256_verified (ct : RefillCTObligation) (h : MdHash) (v : RoundImpl) (hh : h.mgf.G.rust = "sha256")
     (pBytes : Nat) (hp : pBytes = 256 ∨ pBytes = 384) :
     Verified target (backendCode (checkName := checkName) h.H.stream h.H.stream v pBytes)
-      (Refill.contract pBytes abi 568) := by
+      (Refill.contractF ⟨h.H.stream.updN, h.H.stream.finN, (VG.Proof.Dsa.X86_64.ProbablePrime.primeTest v).name⟩
+        pBytes abi 568) := by
   rcases hp with rfl | rfl
   · exact backend_verified (checkName := checkName) ct sha1Witness h v rfl hh 256 (.inr (.inl rfl))
   · exact backend_verified (checkName := checkName) ct sha1Witness h v rfl hh 384 (.inr (.inr rfl))
@@ -1400,22 +1438,44 @@ theorem single_depth (h : MdHash) (v : RoundImpl) (pBytes : Nat) :
 def body (h : MdHash) (v : RoundImpl) (p : Nat) : Prog isa :=
   backendCode (checkName := SharedChecker.name) h.H.stream h.H.stream v p
 
-/-- The name the function for width `p` is emitted as, its hash tagged `tag`. -/
-def name (tag : String) (h : MdHash) (v : RoundImpl) (p : Nat) : String :=
-  s!"vg_dsa_parameter_search_{8 * p}" ++ qualifiedName "" [(tag, h.suffix), ("mr", v.suffix)]
+/-- The name the function for width `p` is emitted as: every implementation
+of its hash and of its prime test shares it, since it calls them by the
+addresses its caller passes (`Impl.Dsa.X86_64.ParameterSearch.fnAddrs`). -/
+def name (p : Nat) : String := s!"vg_dsa_parameter_search_{8 * p}"
+
+/-- The functions whose addresses the search with the hashes `v1` (width
+128) and `v256` (256 and 384) and Miller–Rabin `v` passes to its width's
+function, which its contract makes public. -/
+def fns (v1 v256 : MdHash) (v : RoundImpl) : List String :=
+  [v1.H.stream.updN, v1.H.stream.finN, (VG.Proof.Dsa.X86_64.ProbablePrime.primeTest v).name,
+    v256.H.stream.updN, v256.H.stream.finN]
+
+/-- The addresses of the hash `h`'s `update` and `finalize` and of
+Miller–Rabin `v`'s test, in `rax`, `r10` and `r11`. -/
+def addrs (h : MdHash) (v : RoundImpl) : List Instr :=
+  Impl.Dsa.X86_64.ParameterSearch.fnAddrs h.H.stream.updN h.H.stream.finN
+    (VG.Proof.Dsa.X86_64.ProbablePrime.primeTest v).name
+
+theorem contractF_fn (N : FnNames) (p S : Nat) :
+    RefillWidths.FnContract N.upd N.fin N.prime p S (Refill.contractF N p abi S) :=
+  ⟨fun _ h a b c => ⟨h, a, b, c⟩, fun _ _ h => h, fun _ _ h a b c => ⟨h, a, b, c⟩⟩
 
 /-- `vg_dsa_parameter_search` with the hashes `v1` (width 128) and `v256`
 (256 and 384) and Miller–Rabin `v`. -/
 def searchCode (v1 v256 : MdHash) (v : RoundImpl) : Prog isa :=
-  Impl.Dsa.X86_64.ParameterSearch.widths (name "sha1" v1 v 128) (name "sha256" v256 v 256)
-    (name "sha256" v256 v 384) (body v1 v 128) (body v256 v 256) (body v256 v 384)
+  Impl.Dsa.X86_64.ParameterSearch.widths (addrs v1 v) (addrs v256 v) (addrs v256 v) (name 128) (name 256)
+    (name 384) (body v1 v 128) (body v256 v 256) (body v256 v 384)
 
 theorem searchCode_verified (ct : RefillCTObligation) (v1 v256 : MdHash) (v : RoundImpl)
     (h1 : v1.mgf.G.rust = "sha1") (h256 : v256.mgf.G.rust = "sha256") :
-    Verified target (searchCode v1 v256 v) (Spec.Dsa.parameterSearchContract abi 632) :=
+    Verified target (searchCode v1 v256 v) (Spec.Dsa.parameterSearchContract (abi.withFns (fns v1 v256 v)) 632) :=
   RefillWidths.refillWidths_verified 568 (by decide)
     (sha1_verified ct v1 v h1) (sha256_verified ct v256 v h256 256 (.inl rfl))
     (sha256_verified ct v256 v h256 384 (.inr rfl))
+    (contractF_fn ⟨v1.H.stream.updN, v1.H.stream.finN, _⟩ 128 568)
+    (contractF_fn ⟨v256.H.stream.updN, v256.H.stream.finN, _⟩ 256 568)
+    (contractF_fn ⟨v256.H.stream.updN, v256.H.stream.finN, _⟩ 384 568)
+    (by simp) (by simp) (by simp)
     (single_safe v1 v 128) (single_safe v256 v 256) (single_safe v256 v 384)
     (single_depth v1 v 128) (single_depth v256 v 256) (single_depth v256 v 384)
 

@@ -53,7 +53,7 @@ theorem md5_anyFrameSat : ∃ s, (Spec.Hmac.md5I.initAnyKeyContract Arm.abi (24 
 /-- `init` for a key of any length, verified. -/
 theorem md5_anyFramed :
     Verified Arm.target
-      (Impl.StackScratch.Arm.withStackScratchWiped (anyFrame Spec.Hmac.md5I) 0 (2 * Spec.Hmac.md5I.initAnyKeyScratch)
+      (Impl.StackScratch.Arm.withStackScratch (anyFrame Spec.Hmac.md5I) 0
         Whole.Arm.md5F.hmacInitAny)
       (Spec.Hmac.md5I.initAnyKeyContract Arm.abi (24 + anyFrame Spec.Hmac.md5I)) :=
   anyFramed (verified Whole.Arm.md5OKF md5_anyChecks rfl rfl md5_anySat) Proof.Hmac.md5_local (by decide)
@@ -89,7 +89,7 @@ theorem sha1_anyFrameSat : ∃ s, (Spec.Hmac.sha1I.initAnyKeyContract Arm.abi (2
 /-- `init` for a key of any length, verified. -/
 theorem sha1_anyFramed :
     Verified Arm.target
-      (Impl.StackScratch.Arm.withStackScratchWiped (anyFrame Spec.Hmac.sha1I) 0 (2 * Spec.Hmac.sha1I.initAnyKeyScratch)
+      (Impl.StackScratch.Arm.withStackScratch (anyFrame Spec.Hmac.sha1I) 0
         Whole.Arm.sha1F.hmacInitAny)
       (Spec.Hmac.sha1I.initAnyKeyContract Arm.abi (24 + anyFrame Spec.Hmac.sha1I)) :=
   anyFramed (verified Whole.Arm.sha1OKF sha1_anyChecks rfl rfl sha1_anySat) Proof.Hmac.sha1_local (by decide)
@@ -125,7 +125,7 @@ theorem sha384_anyFrameSat : ∃ s, (Spec.Hmac.sha384I.initAnyKeyContract Arm.ab
 /-- `init` for a key of any length, verified. -/
 theorem sha384_anyFramed :
     Verified Arm.target
-      (Impl.StackScratch.Arm.withStackScratchWiped (anyFrame Spec.Hmac.sha384I) 0 (2 * Spec.Hmac.sha384I.initAnyKeyScratch)
+      (Impl.StackScratch.Arm.withStackScratch (anyFrame Spec.Hmac.sha384I) 0
         Whole.Arm.sha384F.hmacInitAny)
       (Spec.Hmac.sha384I.initAnyKeyContract Arm.abi (24 + anyFrame Spec.Hmac.sha384I)) :=
   anyFramed (verified Whole.Arm.sha384OKF sha384_anyChecks rfl rfl sha384_anySat) Proof.Hmac.sha384_local (by decide)
@@ -161,7 +161,7 @@ theorem sha512_anyFrameSat : ∃ s, (Spec.Hmac.sha512I.initAnyKeyContract Arm.ab
 /-- `init` for a key of any length, verified. -/
 theorem sha512_anyFramed :
     Verified Arm.target
-      (Impl.StackScratch.Arm.withStackScratchWiped (anyFrame Spec.Hmac.sha512I) 0 (2 * Spec.Hmac.sha512I.initAnyKeyScratch)
+      (Impl.StackScratch.Arm.withStackScratch (anyFrame Spec.Hmac.sha512I) 0
         Whole.Arm.sha512F.hmacInitAny)
       (Spec.Hmac.sha512I.initAnyKeyContract Arm.abi (24 + anyFrame Spec.Hmac.sha512I)) :=
   anyFramed (verified Whole.Arm.sha512OKF sha512_anyChecks rfl rfl sha512_anySat) Proof.Hmac.sha512_local (by decide)
@@ -197,7 +197,7 @@ theorem sha512_224_anyFrameSat : ∃ s, (Spec.Hmac.sha512_224I.initAnyKeyContrac
 /-- `init` for a key of any length, verified. -/
 theorem sha512_224_anyFramed :
     Verified Arm.target
-      (Impl.StackScratch.Arm.withStackScratchWiped (anyFrame Spec.Hmac.sha512_224I) 0 (2 * Spec.Hmac.sha512_224I.initAnyKeyScratch)
+      (Impl.StackScratch.Arm.withStackScratch (anyFrame Spec.Hmac.sha512_224I) 0
         Whole.Arm.sha512_224F.hmacInitAny)
       (Spec.Hmac.sha512_224I.initAnyKeyContract Arm.abi (24 + anyFrame Spec.Hmac.sha512_224I)) :=
   anyFramed (verified Whole.Arm.sha512_224OKF sha512_224_anyChecks rfl rfl sha512_224_anySat) Proof.Hmac.sha512_224_local (by decide)
@@ -233,7 +233,7 @@ theorem sha512_256_anyFrameSat : ∃ s, (Spec.Hmac.sha512_256I.initAnyKeyContrac
 /-- `init` for a key of any length, verified. -/
 theorem sha512_256_anyFramed :
     Verified Arm.target
-      (Impl.StackScratch.Arm.withStackScratchWiped (anyFrame Spec.Hmac.sha512_256I) 0 (2 * Spec.Hmac.sha512_256I.initAnyKeyScratch)
+      (Impl.StackScratch.Arm.withStackScratch (anyFrame Spec.Hmac.sha512_256I) 0
         Whole.Arm.sha512_256F.hmacInitAny)
       (Spec.Hmac.sha512_256I.initAnyKeyContract Arm.abi (24 + anyFrame Spec.Hmac.sha512_256I)) :=
   anyFramed (verified Whole.Arm.sha512_256OKF sha512_256_anyChecks rfl rfl sha512_256_anySat) Proof.Hmac.sha512_256_local (by decide)

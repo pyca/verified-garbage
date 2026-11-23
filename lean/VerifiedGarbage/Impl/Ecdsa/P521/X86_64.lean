@@ -11,8 +11,10 @@ namespace VG.Impl.Ecdsa.X86_64
 
 open VG.X86_64
 
-/-- P-521 as the code has it. `Z^(p-2)` and `k^(n-2)` are calls of
-`vg_p521_inv_mod_p` and `_n` (`Cfg.inverse`). -/
+/-- P-521 as the code has it. `[k]G` for the signature and the public key is
+a call of `vg_p521_mul_base` (`Cfg.mulBase`), which calls the products, and
+`Z^(p-2)` and `k^(n-2)` are calls of `vg_p521_inv_mod_p` and `_n`
+(`Cfg.inverse`). -/
 def p521 : Cfg where
   n := 9
   C := Spec.P521.curve
@@ -20,6 +22,7 @@ def p521 : Cfg where
   fastN := true
   pubVerify := true
   nbits := 521
+  mulBase := some Impl.Weierstrass.MulBase.p521
   inverse := some Impl.Weierstrass.Inverse.p521
   checkPoint := some Impl.Weierstrass.CheckPoint.p521
 

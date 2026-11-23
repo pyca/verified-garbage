@@ -106,491 +106,44 @@ vg_ecdsa_brainpoolp320r1_sign_k_umaal:
 	ldr r4, [r2, #0]
 	rev r4, r4
 	str r4, [r12, #1420]
-	movw r4, #11815
-	movt r4, #61875
-	str r4, [r12, #64]
-	movw r4, #4785
-	movt r4, #64724
-	str r4, [r12, #68]
-	movw r4, #60456
-	movt r4, #30867
-	str r4, [r12, #72]
-	movw r4, #47596
-	movt r4, #20370
-	str r4, [r12, #76]
-	movw r4, #3567
-	movt r4, #63220
-	str r4, [r12, #80]
-	movw r4, #53158
-	movt r4, #63887
-	str r4, [r12, #84]
-	movw r4, #57445
-	movt r4, #53761
-	str r4, [r12, #88]
-	movw r4, #30814
-	movt r4, #57660
-	str r4, [r12, #92]
-	movw r4, #20407
-	movt r4, #14012
-	str r4, [r12, #96]
-	movw r4, #18208
-	movt r4, #54110
-	str r4, [r12, #100]
-	movw r4, #37649
-	movt r4, #17605
-	str r4, [r12, #104]
-	movw r4, #21851
-	movt r4, #34449
-	str r4, [r12, #108]
-	movw r4, #22761
-	movt r4, #61062
-	str r4, [r12, #112]
-	movw r4, #11975
-	movt r4, #11592
-	str r4, [r12, #116]
-	movw r4, #4771
-	movt r4, #46735
-	str r4, [r12, #120]
-	movw r4, #53157
-	movt r4, #63887
-	str r4, [r12, #124]
-	movw r4, #57445
-	movt r4, #53761
-	str r4, [r12, #128]
-	movw r4, #30814
-	movt r4, #57660
-	str r4, [r12, #132]
-	movw r4, #20407
-	movt r4, #14012
-	str r4, [r12, #136]
-	movw r4, #18208
-	movt r4, #54110
-	str r4, [r12, #140]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #184]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #188]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #192]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #196]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #200]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #204]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #208]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #212]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #216]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #220]
-	movw r4, #1
-	movt r4, #0
-	str r4, [r12, #224]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #228]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #232]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #236]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #240]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #244]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #248]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #252]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #256]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #260]
-	movw r4, #53721
-	movt r4, #3660
-	str r4, [r12, #264]
-	movw r4, #60750
-	movt r4, #811
-	str r4, [r12, #268]
-	movw r4, #5079
-	movt r4, #34668
-	str r4, [r12, #272]
-	movw r4, #17939
-	movt r4, #45165
-	str r4, [r12, #276]
-	movw r4, #61968
-	movt r4, #2315
-	str r4, [r12, #280]
-	movw r4, #12377
-	movt r4, #1648
-	str r4, [r12, #284]
-	movw r4, #8090
-	movt r4, #11774
-	str r4, [r12, #288]
-	movw r4, #34721
-	movt r4, #7875
-	str r4, [r12, #292]
-	movw r4, #45128
-	movt r4, #51523
-	str r4, [r12, #296]
-	movw r4, #47327
-	movt r4, #11425
-	str r4, [r12, #300]
-	movw r4, #13730
-	movt r4, #3953
-	str r4, [r12, #304]
-	movw r4, #62075
-	movt r4, #8371
-	str r4, [r12, #308]
-	movw r4, #57222
-	movt r4, #41922
-	str r4, [r12, #312]
-	movw r4, #27245
-	movt r4, #1012
-	str r4, [r12, #316]
-	movw r4, #45075
-	movt r4, #48024
-	str r4, [r12, #320]
-	movw r4, #41953
-	movt r4, #41273
-	str r4, [r12, #324]
-	movw r4, #14047
-	movt r4, #52715
-	str r4, [r12, #328]
-	movw r4, #39144
-	movt r4, #14901
-	str r4, [r12, #332]
-	movw r4, #40294
-	movt r4, #52930
-	str r4, [r12, #336]
-	movw r4, #47289
-	movt r4, #18043
-	str r4, [r12, #340]
-	movw r4, #13568
-	movt r4, #23663
-	str r4, [r12, #344]
-	movw r4, #58758
-	movt r4, #25058
-	str r4, [r12, #348]
-	movw r4, #39103
-	movt r4, #28773
-	str r4, [r12, #352]
-	movw r4, #49089
-	movt r4, #40714
-	str r4, [r12, #356]
-	movw r4, #37132
-	movt r4, #54576
-	str r4, [r12, #360]
-	movw r4, #1601
-	movt r4, #21989
-	str r4, [r12, #364]
-	movw r4, #16987
-	movt r4, #50131
-	str r4, [r12, #368]
-	movw r4, #58520
-	movt r4, #61942
-	str r4, [r12, #372]
-	movw r4, #23241
-	movt r4, #3872
-	str r4, [r12, #376]
-	movw r4, #33054
-	movt r4, #4839
-	str r4, [r12, #380]
-	movw r4, #2745
-	movt r4, #23932
-	str r4, [r12, #384]
-	movw r4, #24176
-	movt r4, #48530
-	str r4, [r12, #388]
-	movw r4, #61691
-	movt r4, #57036
-	str r4, [r12, #392]
-	movw r4, #65188
-	movt r4, #61040
-	str r4, [r12, #396]
-	movw r4, #37790
-	movt r4, #7421
-	str r4, [r12, #400]
-	movw r4, #64560
-	movt r4, #28714
-	str r4, [r12, #404]
-	movw r4, #8691
-	movt r4, #48978
-	str r4, [r12, #408]
-	movw r4, #60931
-	movt r4, #22095
-	str r4, [r12, #412]
-	movw r4, #62692
-	movt r4, #16819
-	str r4, [r12, #416]
-	movw r4, #63667
-	movt r4, #17518
-	str r4, [r12, #420]
-	movw r4, #24908
-	movt r4, #18380
-	str r4, [r12, #424]
-	movw r4, #14215
-	movt r4, #21505
-	str r4, [r12, #428]
-	movw r4, #57977
-	movt r4, #32798
-	str r4, [r12, #432]
-	movw r4, #34311
-	movt r4, #50815
-	str r4, [r12, #436]
-	movw r4, #3063
-	movt r4, #44863
-	str r4, [r12, #440]
-	movw r4, #17238
-	movt r4, #21523
-	str r4, [r12, #444]
-	movw r4, #48761
-	movt r4, #33253
-	str r4, [r12, #448]
-	movw r4, #6689
-	movt r4, #64362
-	str r4, [r12, #452]
-	movw r4, #43914
-	movt r4, #48500
-	str r4, [r12, #456]
-	movw r4, #37762
-	movt r4, #30362
-	str r4, [r12, #460]
-	movw r4, #58573
-	movt r4, #9491
-	str r4, [r12, #464]
-	movw r4, #10719
-	movt r4, #26525
-	str r4, [r12, #468]
-	movw r4, #26629
-	movt r4, #57569
-	str r4, [r12, #472]
-	movw r4, #27
-	movt r4, #37315
-	str r4, [r12, #476]
-	movw r4, #50185
-	movt r4, #44934
-	str r4, [r12, #480]
-	movw r4, #12476
-	movt r4, #34483
-	str r4, [r12, #484]
-	movw r4, #37118
-	movt r4, #20067
-	str r4, [r12, #488]
-	movw r4, #13604
-	movt r4, #58125
-	str r4, [r12, #492]
-	movw r4, #45391
-	movt r4, #12800
-	str r4, [r12, #496]
-	movw r4, #34759
-	movt r4, #12780
-	str r4, [r12, #500]
-	movw r4, #27887
-	movt r4, #47930
-	str r4, [r12, #504]
-	movw r4, #43684
-	movt r4, #31086
-	str r4, [r12, #508]
-	movw r4, #42774
-	movt r4, #4473
-	str r4, [r12, #512]
-	movw r4, #53560
-	movt r4, #53943
-	str r4, [r12, #516]
-	movw r4, #60764
-	movt r4, #18800
-	str r4, [r12, #520]
-	movw r4, #12378
-	movt r4, #1648
-	str r4, [r12, #524]
-	movw r4, #8090
-	movt r4, #11774
-	str r4, [r12, #528]
-	movw r4, #34721
-	movt r4, #7875
-	str r4, [r12, #532]
-	movw r4, #45128
-	movt r4, #51523
-	str r4, [r12, #536]
-	movw r4, #47327
-	movt r4, #11425
-	str r4, [r12, #540]
-	movw r4, #11813
-	movt r4, #61875
-	str r4, [r12, #544]
-	movw r4, #4785
-	movt r4, #64724
-	str r4, [r12, #548]
-	movw r4, #60456
-	movt r4, #30867
-	str r4, [r12, #552]
-	movw r4, #47596
-	movt r4, #20370
-	str r4, [r12, #556]
-	movw r4, #3567
-	movt r4, #63220
-	str r4, [r12, #560]
-	movw r4, #53158
-	movt r4, #63887
-	str r4, [r12, #564]
-	movw r4, #57445
-	movt r4, #53761
-	str r4, [r12, #568]
-	movw r4, #30814
-	movt r4, #57660
-	str r4, [r12, #572]
-	movw r4, #20407
-	movt r4, #14012
-	str r4, [r12, #576]
-	movw r4, #18208
-	movt r4, #54110
-	str r4, [r12, #580]
-	movw r4, #37647
-	movt r4, #17605
-	str r4, [r12, #584]
-	movw r4, #21851
-	movt r4, #34449
-	str r4, [r12, #588]
-	movw r4, #22761
-	movt r4, #61062
-	str r4, [r12, #592]
-	movw r4, #11975
-	movt r4, #11592
-	str r4, [r12, #596]
-	movw r4, #4771
-	movt r4, #46735
-	str r4, [r12, #600]
-	movw r4, #53157
-	movt r4, #63887
-	str r4, [r12, #604]
-	movw r4, #57445
-	movt r4, #53761
-	str r4, [r12, #608]
-	movw r4, #30814
-	movt r4, #57660
-	str r4, [r12, #612]
-	movw r4, #20407
-	movt r4, #14012
-	str r4, [r12, #616]
-	movw r4, #18208
-	movt r4, #54110
-	str r4, [r12, #620]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #624]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #628]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #632]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #636]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #640]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #644]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #648]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #652]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #656]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #660]
-	movw r4, #53721
-	movt r4, #3660
-	str r4, [r12, #664]
-	movw r4, #60750
-	movt r4, #811
-	str r4, [r12, #668]
-	movw r4, #5079
-	movt r4, #34668
-	str r4, [r12, #672]
-	movw r4, #17939
-	movt r4, #45165
-	str r4, [r12, #676]
-	movw r4, #61968
-	movt r4, #2315
-	str r4, [r12, #680]
-	movw r4, #12377
-	movt r4, #1648
-	str r4, [r12, #684]
-	movw r4, #8090
-	movt r4, #11774
-	str r4, [r12, #688]
-	movw r4, #34721
-	movt r4, #7875
-	str r4, [r12, #692]
-	movw r4, #45128
-	movt r4, #51523
-	str r4, [r12, #696]
-	movw r4, #47327
-	movt r4, #11425
-	str r4, [r12, #700]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #704]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #708]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #712]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #716]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #720]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #724]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #728]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #732]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #736]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #740]
+	movw r10, #:lower16:({VG_BRAINPOOLP320R1_FRAME_CONSTS}
+	movt r10, #:upper16:({VG_BRAINPOOLP320R1_FRAME_CONSTS}
+2:
+	add r10, pc
+3:
+	mov r9, r12
+	mov r11, #17
+20:
+	sub r11, r11, #1
+	ldr r4, [r10, #0]
+	ldr r5, [r10, #4]
+	str r4, [r9, #64]
+	str r5, [r9, #68]
+	ldr r4, [r10, #8]
+	ldr r5, [r10, #12]
+	str r4, [r9, #72]
+	str r5, [r9, #76]
+	ldr r4, [r10, #16]
+	ldr r5, [r10, #20]
+	str r4, [r9, #80]
+	str r5, [r9, #84]
+	ldr r4, [r10, #24]
+	ldr r5, [r10, #28]
+	str r4, [r9, #88]
+	str r5, [r9, #92]
+	ldr r4, [r10, #32]
+	ldr r5, [r10, #36]
+	str r4, [r9, #96]
+	str r5, [r9, #100]
+	add r10, r10, #40
+	add r9, r9, #40
+	cmp r11, #0
+	bne 20b
 	mov r4, #0
 	sub r4, r4, #1
 	str r4, [r12, #1824]
 	mov r11, #40
-20:
+21:
 	sub r11, r11, #1
 	add r4, r12, r11
 	ldrb r4, [r4, #1304]
@@ -620,9 +173,9 @@ vg_ecdsa_brainpoolp320r1_sign_k_umaal:
 	and r7, r7, #1
 	strb r7, [r5, #7]
 	cmp r11, #0
-	bne 20b
+	bne 21b
 	mov r11, #40
-21:
+22:
 	sub r11, r11, #1
 	add r4, r12, r11
 	ldrb r4, [r4, #544]
@@ -652,9 +205,9 @@ vg_ecdsa_brainpoolp320r1_sign_k_umaal:
 	and r7, r7, #1
 	strb r7, [r5, #327]
 	cmp r11, #0
-	bne 21b
+	bne 22b
 	mov r11, #40
-22:
+23:
 	sub r11, r11, #1
 	add r4, r12, r11
 	ldrb r4, [r4, #584]
@@ -684,7 +237,7 @@ vg_ecdsa_brainpoolp320r1_sign_k_umaal:
 	and r7, r7, #1
 	strb r7, [r5, #647]
 	cmp r11, #0
-	bne 22b
+	bne 23b
 	ldr r4, [r12, #384]
 	str r4, [r12, #3272]
 	ldr r4, [r12, #388]
@@ -876,14 +429,14 @@ vg_ecdsa_brainpoolp320r1_sign_k_umaal:
 	movt r4, #11425
 	str r4, [r12, #740]
 	mov r11, #46
-23:
+24:
 	sub r11, r11, #1
 	mov r4, #7
 	mul r4, r4, r11
 	add r4, r12, r4
 	add r4, r4, #4096
 	cmp r11, #45
-	beq 24f
+	beq 25f
 	mov r9, #0
 	add r9, r9, r9
 	ldrb r5, [r4, #6]
@@ -906,8 +459,8 @@ vg_ecdsa_brainpoolp320r1_sign_k_umaal:
 	add r9, r9, r9
 	ldrb r5, [r4, #0]
 	add r9, r9, r5
-	b 25f
-24:
+	b 26f
+25:
 	mov r9, #0
 	add r9, r9, r9
 	ldrb r5, [r4, #4]
@@ -924,7 +477,7 @@ vg_ecdsa_brainpoolp320r1_sign_k_umaal:
 	add r9, r9, r9
 	ldrb r5, [r4, #0]
 	add r9, r9, r5
-25:
+26:
 	sub r9, r9, #64
 	lsr r4, r9, #31
 	mov r5, #0
@@ -1000,7 +553,7 @@ vg_ecdsa_brainpoolp320r1_sign_k_umaal:
 	movt r4, #0
 	str r4, [r12, #3348]
 	mov r7, #1
-26:
+27:
 	eor r10, r9, r7
 	sub r10, r10, #1
 	lsr r10, r10, #31
@@ -1129,7 +682,7 @@ vg_ecdsa_brainpoolp320r1_sign_k_umaal:
 	add r8, r8, #80
 	add r7, r7, #1
 	cmp r7, #65
-	bne 26b
+	bne 27b
 	movw r4, #53721
 	movt r4, #3660
 	str r4, [r12, #3352]
@@ -1293,18 +846,18 @@ vg_ecdsa_brainpoolp320r1_sign_k_umaal:
 	bl {vg_brainpoolp320r1_sub_mod_p_umaal}
 	mov lr, r10
 	cmp r11, #45
-	beq 27f
+	beq 28f
 	mov r4, #7
 	mul r4, r4, r11
 	add r4, r12, r4
 	add r4, r4, #4096
 	ldrb r4, [r4, #6]
 	sub r10, r4, #1
-	b 28f
-27:
+	b 29f
+28:
 	movw r10, #65535
 	movt r10, #65535
-28:
+29:
 	ldr r4, [r12, #3312]
 	ldr r5, [r12, #864]
 	eor r5, r5, r4
@@ -1490,7 +1043,7 @@ vg_ecdsa_brainpoolp320r1_sign_k_umaal:
 	ldr r4, [r12, #3148]
 	str r4, [r12, #740]
 	cmp r11, #0
-	bne 23b
+	bne 24b
 	ldr r4, [r12, #264]
 	str r4, [r12, #1224]
 	ldr r4, [r12, #268]
@@ -1512,7 +1065,7 @@ vg_ecdsa_brainpoolp320r1_sign_k_umaal:
 	ldr r4, [r12, #300]
 	str r4, [r12, #1260]
 	mov r11, #320
-29:
+210:
 	sub r11, r11, #1
 	mov r10, lr
 	mov r0, r12
@@ -1594,7 +1147,7 @@ vg_ecdsa_brainpoolp320r1_sign_k_umaal:
 	eor r4, r4, r5
 	str r4, [r12, #1260]
 	cmp r11, #0
-	bne 29b
+	bne 210b
 	mov r10, lr
 	mov r0, r12
 	movw r1, #1424
@@ -2018,7 +1571,7 @@ vg_ecdsa_brainpoolp320r1_sign_k_umaal:
 	ldr r4, [r12, #540]
 	str r4, [r12, #1260]
 	mov r11, #320
-210:
+211:
 	sub r11, r11, #1
 	mov r10, lr
 	mov r0, r12
@@ -2100,7 +1653,7 @@ vg_ecdsa_brainpoolp320r1_sign_k_umaal:
 	eor r4, r4, r5
 	str r4, [r12, #1260]
 	cmp r11, #0
-	bne 210b
+	bne 211b
 	mov r10, lr
 	mov r0, r12
 	movw r1, #1584

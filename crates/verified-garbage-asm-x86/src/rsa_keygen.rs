@@ -138,6 +138,10 @@ je 22b
 pub(crate) mod vg_rsa_keygen_candidate;
 
 #[rustfmt::skip]
+#[path = "internal/vg_rsa_keygen_div.rs"]
+pub(crate) mod vg_rsa_keygen_div;
+
+#[rustfmt::skip]
 #[path = "internal/vg_rsa_keygen_inverse.rs"]
 pub(crate) mod vg_rsa_keygen_inverse;
 

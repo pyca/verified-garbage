@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.Modes.Arm.Cbc
 public import VerifiedGarbage.Proof.Modes.Arm.WideModes
 public import VerifiedGarbage.Spec.Seed.Cfb
 import VerifiedGarbage.Proof.Modes.Arm.OfbCfb
-import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
+import VerifiedGarbage.Proof.Framework.Arm.StackScratch
 import VerifiedGarbage.Proof.Framework.NativeTaintCore
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Offset
@@ -17,7 +17,7 @@ meta import VerifiedGarbage.Proof.Modes.Arm.Cbc
 meta import VerifiedGarbage.Proof.Modes.Arm.WideModes
 meta import VerifiedGarbage.Spec.Seed.Cfb
 meta import VerifiedGarbage.Proof.Modes.Arm.OfbCfb
-meta import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
+meta import VerifiedGarbage.Proof.Framework.Arm.StackScratch
 meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
 meta import VerifiedGarbage.Proof.Framework.Arm.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
@@ -33,7 +33,7 @@ The generic OFB and CFB one block at a time over SEED's ECB encryption
 (`Proof.Modes.Arm.seq_verified` with `ecbSpec .encrypt`) meet the contracts
 with a scratch buffer of 9 words (`Proof.Seed.fbScratchContract`), with the
 752 bytes of stack the ECB function uses; the `_framed` theorems keep the
-buffer on the stack, zeroed on return: 80 bytes more. CFB decryption is a
+buffer on the stack, 80 bytes more, which the functions' cleanup zeroes. CFB decryption is a
 group of blocks at a time (`Proof.Modes.Arm.seqW_verified`), with the 128
 bytes of the groups' buffer more stack.
 -/
@@ -90,14 +90,14 @@ theorem ofbFrameSat : ∃ s, (Spec.Seed.ofbContract Arm.abi 832).pre s := by
   implies_sat [Spec.Seed.ofbContract, Spec.Seed.ofbSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val,
     Arm.State.addr] [fbFrameSat, fbSat] using fbFrameSat 16
 
-/-- `ofb`, with its scratch buffer on the stack (zeroed on return). -/
+/-- `ofb`, with its scratch buffer on the stack (which its function's cleanup zeroes). -/
 theorem ofb_framed :
-    Verified Arm.target (Impl.StackScratch.Arm.withStackScratchWiped 80 0 18 ofb) (Spec.Seed.ofbContract Arm.abi 832) :=
-  Arm.Verified.stackScratchWiped (sig := Spec.Seed.ofbSig) (nm := "scratch") (e := .u64) (n := 9)
+    Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 80 0 ofb) (Spec.Seed.ofbContract Arm.abi 832) :=
+  Arm.Verified.stackScratch (sig := Spec.Seed.ofbSig) (nm := "scratch") (e := .u64) (n := 9)
     (post := Proof.Seed.ofbPost Arm.abi.ptrBits) (wa := true) (stack := 752) (m := 0) (bytes := 80)
-    ofb_verified (by decide) (by decide) (by decide) (by decide) (by decide)
+    ofb_verified (by decide) (by decide) (by decide) (by decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Seed.ofbPost_local _)
-    (Proof.Seed.ofbPostOut_local _) ofbFrameSat
+    (fun vs mm m₁ m₂ r hl _ => Proof.Seed.ofbPostOut_local _ vs mm m₁ m₂ r hl) ofbFrameSat
 
 theorem cfbEncryptTaint : SeqTaint (ecbCore .encrypt) cfbEnc :=
   ⟨⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩⟩
@@ -128,14 +128,14 @@ theorem cfbEncryptFrameSat : ∃ s, (Spec.Seed.cfbEncryptContract Arm.abi 832).p
   implies_sat [Spec.Seed.cfbEncryptContract, Spec.Seed.cfbSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val,
     Arm.State.addr] [fbFrameSat, fbSat] using fbFrameSat 16
 
-/-- `cfbEncrypt`, with its scratch buffer on the stack (zeroed on return). -/
+/-- `cfbEncrypt`, with its scratch buffer on the stack (which its function's cleanup zeroes). -/
 theorem cfbEncrypt_framed :
-    Verified Arm.target (Impl.StackScratch.Arm.withStackScratchWiped 80 0 18 cfbEncrypt) (Spec.Seed.cfbEncryptContract Arm.abi 832) :=
-  Arm.Verified.stackScratchWiped (sig := Spec.Seed.cfbSig) (nm := "scratch") (e := .u64) (n := 9)
+    Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 80 0 cfbEncrypt) (Spec.Seed.cfbEncryptContract Arm.abi 832) :=
+  Arm.Verified.stackScratch (sig := Spec.Seed.cfbSig) (nm := "scratch") (e := .u64) (n := 9)
     (post := Proof.Seed.cfbEncPost Arm.abi.ptrBits) (wa := true) (stack := 752) (m := 0) (bytes := 80)
-    cfbEncrypt_verified (by decide) (by decide) (by decide) (by decide) (by decide)
+    cfbEncrypt_verified (by decide) (by decide) (by decide) (by decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Seed.cfbEncPost_local _)
-    (Proof.Seed.cfbEncPostOut_local _) cfbEncryptFrameSat
+    (fun vs mm m₁ m₂ r hl _ => Proof.Seed.cfbEncPostOut_local _ vs mm m₁ m₂ r hl) cfbEncryptFrameSat
 
 theorem cfbDecryptTaint : SeqTaint (ecbCore .encrypt) cfbDec :=
   ⟨⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩⟩
@@ -176,13 +176,13 @@ theorem cfbDecryptFrameSat : ∃ s, (Spec.Seed.cfbDecryptContract Arm.abi 960).p
   implies_sat [Spec.Seed.cfbDecryptContract, Spec.Seed.cfbSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val,
     Arm.State.addr] [fbFrameSat, fbSat] using fbFrameSat 16
 
-/-- `cfbDecrypt`, with its scratch buffer on the stack (zeroed on return). -/
+/-- `cfbDecrypt`, with its scratch buffer on the stack (which its function's cleanup zeroes). -/
 theorem cfbDecrypt_framed :
-    Verified Arm.target (Impl.StackScratch.Arm.withStackScratchWiped 80 0 18 cfbDecrypt) (Spec.Seed.cfbDecryptContract Arm.abi 960) :=
-  Arm.Verified.stackScratchWiped (sig := Spec.Seed.cfbSig) (nm := "scratch") (e := .u64) (n := 9)
+    Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 80 0 cfbDecrypt) (Spec.Seed.cfbDecryptContract Arm.abi 960) :=
+  Arm.Verified.stackScratch (sig := Spec.Seed.cfbSig) (nm := "scratch") (e := .u64) (n := 9)
     (post := Proof.Seed.cfbDecPost Arm.abi.ptrBits) (wa := true) (stack := 880) (m := 0) (bytes := 80)
-    cfbDecrypt_verified (by decide) (by decide) (by decide) (by decide) (by decide)
+    cfbDecrypt_verified (by decide) (by decide) (by decide) (by decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Seed.cfbDecPost_local _)
-    (Proof.Seed.cfbDecPostOut_local _) cfbDecryptFrameSat
+    (fun vs mm m₁ m₂ r hl _ => Proof.Seed.cfbDecPostOut_local _ vs mm m₁ m₂ r hl) cfbDecryptFrameSat
 
 end VG.Proof.Seed.Arm

@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.MlKem.AArch64.OptimizedUsing
 public import VerifiedGarbage.Proof.MlKem.AArch64.KemOps
+public import VerifiedGarbage.Proof.Sha3.AArch64.CallD8
 import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Cbd16Call
 import VerifiedGarbage.Proof.Framework.WriteBytes
 
@@ -13,26 +14,28 @@ open VG.Spec.MlKem VG.Proof.MlKem
 open VG.Spec.Sha3 (bytesAt absorb pad)
 variable {P : KemLay} {L : Layout}
 
-def PrfHashValid (hash : Prog isa) : Prop :=
- ∀{s : State}, HSetup .x28 ST WK 136 s→
+def PrfHashValid (hash : Prog isa) (n : String) : Prop :=
+ ∀{s : State}, HSetup .x28 ST WK 136 s→ Proof.Sha3.AArch64.D8 n s →
  (∀p∈[Piece.mk .x28 RB 33],PieceOk .x28 ST WK s false p)→
  (∀p∈[Piece.mk .x28 PB 128],PieceOk .x28 ST WK s true p)→
  WP isa hash s fun t=>
   Kept (STr .x28 ST s :: WKr .x28 WK s :: below s.sp 16 :: [preg s ⟨.x28,PB,128⟩]) s t ∧
   Outs s t.mem 136 (absorb 136 (pad 136 (BitVec.ofNat 8 31) (bytesAt s.mem (s.gpr .x28+BitVec.ofNat 64 RB) 33))) 0 [⟨.x28,PB,128⟩]
 
-theorem prfCbd_using_ok (hash : Prog isa) (valid : PrfHashValid hash) {s₀ : State} (hp : Pre P L s₀) {N off : Nat} (hN : N < 256) (ho : PO P off) {s : State}
-    (hk : KB P L s₀ s) {rv : List Byte} (hr : bytesAt s.mem (sA L s₀ RB) 32 = rv) :
+theorem prfCbd_using_ok (hash : Prog isa) {n : String} (valid : PrfHashValid hash n) {s₀ : State} (hp : Pre P L s₀) {N off : Nat} (hN : N < 256) (ho : PO P off) {s : State}
+    (hk : KB P L s₀ s) {rv : List Byte} (hr : bytesAt s.mem (sA L s₀ RB) 32 = rv)
+    (hd : Proof.Sha3.AArch64.D8 n s) :
     WP isa (Impl.MlKem.AArch64.Optimized.prfCbdUsing hash N off) s fun s' => KB P L s₀ s' ∧
       Frame (pcW L s₀ off) s.mem s'.mem ∧ PolyIsW (cw true) s'.mem (sA L s₀ off) (cbd rv N) ∧
       s'.gpr .x24 = s.gpr .x24 := by
   have fo := ho.le
   have hsl : ∀ {o l : Nat}, o + l ≤ SV P + 48 → o + l ≤ L.len L.sc := hp.fs
   -- `N` after `r`
-  refine WP.seq (wp_movz fun s₁ h₁ e₁ => wp_strb (a := sA L s₀ (RB + 32)) (by decide)
+  refine WP.seq (WP.of_syms (wp_movz fun s₁ h₁ e₁ => wp_strb (a := sA L s₀ (RB + 32)) (by decide)
     (by rw [h₁.get .x28, e28 hk]) (by
       rw [h₁.wr]; exact in_R (cov_s hp hk (o := RB + 32) (l := 1) (by kom)) (k := 0) (by decide)
-        (by decide)) fun s₂ h₂ => wp_nil ?_)
+        (by decide)) fun s₂ h₂ => wp_nil ?_))
+  intro y₂
   have m₂ : s₂.mem = s.mem.writeW (sA L s₀ (RB + 32)) ((s₁.gpr .x9).setWidth 8) := by
     rw [h₂.mem, h₁.mem]
   have f₂ : Frame [R (kA s₀) L.sc (RB + 32) 1] s.mem s₂.mem := by
@@ -52,6 +55,7 @@ theorem prfCbd_using_ok (hash : Prog isa) (valid : PrfHashValid hash) {s₀ : St
     exact sfx8 hN
   -- `PRF₂(r, N)`
   refine WP.seq (WP.mono (valid (hsetup hp kb₂ (by decide : 136 ∈ Spec.Sha3.rates))
+    (hd.of (fun r hr => (kb₂.vcs r hr).trans (hk.vcs r hr).symm) y₂)
     (fun p hp' => by
       rw [List.mem_singleton.mp hp']
       exact pieceOk (k := 3) hp kb₂ (by decide) (hsl (by kom)) (.inr (by decide)) (by decide)
@@ -95,14 +99,14 @@ theorem prfCbd_using_ok (hash : Prog isa) (valid : PrfHashValid hash) {s₀ : St
     h₁.get .x24]
 
 /-- `PrfValid` with the polynomial stored with 16 bits. -/
-def PrfValidW (P : KemLay) (L : Layout) (prf : Nat→Nat→Prog isa) : Prop :=
+def PrfValidW (P : KemLay) (L : Layout) (prf : Nat→Nat→Prog isa) (n : String) : Prop :=
  ∀{s₀ : State}, Pre P L s₀→∀{N off : Nat}, N<256→PO P off→∀{s : State},
- KB P L s₀ s→∀{rv : List Byte},bytesAt s.mem (sA L s₀ RB) 32=rv→
+ KB P L s₀ s→∀{rv : List Byte},bytesAt s.mem (sA L s₀ RB) 32=rv→ Proof.Sha3.AArch64.D8 n s →
  WP isa (prf N off) s fun t=>KB P L s₀ t ∧ Frame (pcW L s₀ off) s.mem t.mem ∧
    PolyIsW 16 t.mem (sA L s₀ off) (cbd rv N) ∧ t.gpr .x24=s.gpr .x24
 
-theorem prf_using_validW {hash : Prog isa} (valid : PrfHashValid hash) :
-    PrfValidW P L (fun N off => Impl.MlKem.AArch64.Optimized.prfCbdUsing hash N off) :=
-  fun {_} hp {_ _} hn ho {_} hk {_} hr=>prfCbd_using_ok hash valid hp hn ho hk hr
+theorem prf_using_validW {hash : Prog isa} {n : String} (valid : PrfHashValid hash n) :
+    PrfValidW P L (fun N off => Impl.MlKem.AArch64.Optimized.prfCbdUsing hash N off) n :=
+  fun {_} hp {_ _} hn ho {_} hk {_} hr hd=>prfCbd_using_ok hash valid hp hn ho hk hr hd
 
 end VG.Proof.MlKem.AArch64.Kem

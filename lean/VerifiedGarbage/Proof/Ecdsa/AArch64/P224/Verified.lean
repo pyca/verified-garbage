@@ -1,6 +1,7 @@
 module
 
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Main
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.Main
+import VerifiedGarbage.Proof.Ecdsa.AArch64.CombCall
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.P224.Contract
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.Layout
 public import VerifiedGarbage.Proof.Weierstrass.CombW
@@ -11,6 +12,7 @@ import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
 import VerifiedGarbage.Proof.P224.Prime
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Main
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.CombCall
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.P224.Contract
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Layout
 meta import VerifiedGarbage.Proof.Weierstrass.CombW
@@ -96,6 +98,11 @@ theorem pre_of {s : State} (h : signAArch64.pre s) : Pre p224 s := by
   exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11,
     ⟨by rw [h1]; simp, held, fit, hdw _ (by simp)⟩⟩
 
+/-- A call of `vg_p224_comb` does what the comb does (`combCorrect_call`). -/
+theorem gMulP224_correct (hL : Weierstrass.Law Spec.P224.curve) (hI : Weierstrass.AArch64.InvSounds)
+    (hT : CombOkW p224.C Cfg.combW (Cfg.combJ p224.n) p224.tbl p224.start) : CombCorrect p224 gMulP224 :=
+  combCorrect_call (comb := combP224) (combCorrect (p224_ok hI) hL hT) (by lit_decide)
+
 theorem sign_a64 (hL : Weierstrass.Law Spec.P224.curve) (hI : Weierstrass.AArch64.InvSounds)
     (hT : CombOkW Spec.P224.curve 7 37 Impl.P224.p224Comb7 Impl.P224.p224Comb7Start) (s : State)
     (hs : signAArch64.pre s) :
@@ -105,7 +112,7 @@ theorem sign_a64 (hL : Weierstrass.Law Spec.P224.curve) (hI : Weierstrass.AArch6
   have hn : CallsKeep signP224 := by lit_decide
   have hu : KeepsUntouched signP224 := by lit_decide
   have hv : signP224.allInstrs keepsV = true := by lit_decide
-  obtain ⟨t, s', he, hsv, hpost⟩ := sign_ok (p224_ok hI) hL hT (pre_of hs)
+  obtain ⟨t, s', he, hsv, hpost⟩ := signWith_ok (p224_ok hI).toBaseCfgOk hL _ (gMulP224_correct hL hI hT) (pre_of hs)
   exact ⟨t, s', he, abiPreserved_of he hn hu hv hsv, hpost⟩
 
 theorem sign_ct : ConstantTime isa signAArch64.pre signAArch64.pub signP224 :=

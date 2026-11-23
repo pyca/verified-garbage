@@ -1,5 +1,6 @@
 module
 public import VerifiedGarbage.Proof.Bignum.Arm.CallOp
+public import VerifiedGarbage.Proof.Bignum.Arm.DoubleBackend
 
 public import VerifiedGarbage.Proof.MillerRabin.Arm.Backend
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Fin2
@@ -117,10 +118,10 @@ theorem mrResult_vp (hE : ∀ σ, E σ → In P σ ∧ EM P σ) :
       simp (config := {decide := true}) only [upd, ↓reduceIte]
 
 /-- Once the candidate passed trial division and `gcd(c − 1, e) = 1`. -/
-theorem mrPart_vp (v : RoundImpl) (M : CallOp) (hE : ∀ σ, E σ → In P σ ∧ EM P σ) :
-    VP (S3 P E) (mrPart v.name v.code M.op) (RF P E (statQ P) (outM P) (usedM P)) :=
+theorem mrPart_vp (v : RoundImpl) (M : CallOp) (D : CallDbl) (hE : ∀ σ, E σ → In P σ ∧ EM P σ) :
+    VP (S3 P E) (mrPart v.name v.code M.op D.dbl) (RF P E (statQ P) (outM P) (usedM P)) :=
   VP.seqs_app (List.cons_ne_nil _ _) (List.cons_ne_nil _ _) (expSetup_vp fun σ e => (hE σ e).1)
-    ((montA_vp M).seq ((montB_vp M).seq ((millerRabin_vp v M hE).seq (mrResult_vp hE))))
+    ((montA_vp M D).seq ((montB_vp M).seq ((millerRabin_vp v M hE).seq (mrResult_vp hE))))
 
 end
 

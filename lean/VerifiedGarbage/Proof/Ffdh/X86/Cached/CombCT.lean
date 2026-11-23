@@ -253,7 +253,8 @@ def CS (Ex : List Region → List Region → Prop) (base : Addr) (bytes len : Na
     ArgsOk u ∧ u.gpr .esp = sp
 
 theorem combHead_trace :
-    RelCT isa (Both (Run Ex base bytes len args sp)) Generate.combHead fun _ _ => True := by
+    RelCT isa (Both fun s => Run Ex base bytes len args sp s ∧ RoomF sp base bytes) Generate.combHead
+      fun _ _ => True := by
   have hc := winChecks .wide
   unfold Generate.combHead
   refine VG.RelCT.seq VG.Proof.Ffdh.X86.ctxP_relCT ?_
@@ -269,8 +270,8 @@ theorem comb_trace (hR0 : 0 < Spec.Rsa.FixedBaseComb.rows bits) (hR : Spec.Rsa.F
   refine VG.RelCT.seq (relCT_both (F := CI Ex base bytes len args sp P bits (Spec.Rsa.FixedBaseComb.rows bits))
     ((combHead_trace (Ex := Ex) (base := base) (bytes := bytes) (len := len) (args := args) (sp := sp)).mono
       (fun _ _ h => ?_) fun _ _ h => h) fun u C => ?_) ?_
-  · obtain ⟨⟨_, _, _, h₁, _, _, _, A₁, e₁⟩, ⟨_, _, _, h₂, _, _, _, A₂, e₂⟩⟩ := h
-    exact ⟨⟨h₁, A₁, e₁⟩, ⟨h₂, A₂, e₂⟩⟩
+  · obtain ⟨⟨_, _, _, h₁, E₁, _, _, A₁, e₁⟩, ⟨_, _, _, h₂, E₂, _, _, A₂, e₂⟩⟩ := h
+    exact ⟨⟨⟨h₁, A₁, e₁⟩, e₁ ▸ E₁.room⟩, ⟨⟨h₂, A₂, e₂⟩, e₂ ▸ E₂.room⟩⟩
   · obtain ⟨G, x, _, h, E, hP, hrows, A, e⟩ := C
     exact WP.mono (combHead_ok h E hP hR0 hrows) fun t S => ⟨u, G, x, _, h, E, S, A, e⟩
   refine VG.RelCT.seq (loop_trace hR0 hR) ?_

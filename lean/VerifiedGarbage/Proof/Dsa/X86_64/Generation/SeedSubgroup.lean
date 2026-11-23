@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Context
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.QBuild
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeCall
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.X86_64.Syms
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ContextFrame
 import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Subgroup
 import VerifiedGarbage.Proof.Dsa.Arithmetic
@@ -33,7 +34,8 @@ theorem subgroup_ok {G1 G256 : Impl.Pbkdf2.Md.X86_64.Stream}
     (hs1 : ∀ x, (Spec.Mgf1.sha1.hash x).length = G1.D)
     (hs256 : ∀ x, (Spec.Mgf1.sha256.hash x).length = G256.D)
     (hd1 : G1.D = 20) (hd256 : G256.D = 32) (T : PrimeTest)
-    {p : SubgroupPlan} {used : Nat} {s : State} (h : SubgroupState p used s) :
+    {p : SubgroupPlan} {used : Nat} {s : State} (h : SubgroupState p used s)
+    (hfn : FnSlots (fnNames G1 G256 T p.prime.len) p.W s) :
     WP isa (Impl.Dsa.X86_64.Generation.subgroup G1 G256 T.run p.prime.len) s fun t =>
       let res := Spec.Dsa.probablePrime p.prime.N (p.prime.rand.drop used)
       ∃ used' status V', used' ≤ p.prime.rand.length ∧
@@ -47,9 +49,9 @@ theorem subgroup_ok {G1 G256 : Impl.Pbkdf2.Md.X86_64.Stream}
   obtain ⟨V, R⟩ := h.rep
   have plen : p.prime.len ≤ 32 := by rcases p.width with hh | hh <;> omega
   unfold Impl.Dsa.X86_64.Generation.subgroup
-  refine WP.seq (WP.mono (qCandidate_ok h1 h256 he1 he256 hs1 hs256 hd1 hd256 p.width
-    h.layout R h.label p.outputSlot h.outputWrite (fun i hi j hj => ?_) p.outputHash)
-    fun u ⟨uq, urd, uwr, _, fu, Lu, Vu, Ru⟩ => ?_)
+  refine WP.seq (WP.mono_syms (qCandidate_ok h1 h256 he1 he256 hs1 hs256 hd1 hd256 p.width
+    h.layout R h.label p.outputSlot hfn.upd hfn.fin h.outputWrite (fun i hi j hj => ?_) p.outputHash)
+    fun u ⟨uq, urd, uwr, _, fu, Lu, Vu, Ru⟩ uy => ?_)
   · have he := p.outputHash.scratch j hj (oDig + i) (by unfold oDig oRsa; omega)
     simpa only [off_off] using Ne.symm he
   have ubytes : Spec.Rsa.bytesAt u.mem p.output p.prime.len = Spec.Dsa.encodeBE p.prime.len p.prime.N := by
@@ -58,7 +60,7 @@ theorem subgroup_ok {G1 G256 : Impl.Pbkdf2.Md.X86_64.Stream}
   have hc : Impl.Dsa.X86_64.ProbablePrime.candidate (8 * p.prime.len) = Impl.Dsa.Generation.Layout.q := by
     unfold Impl.Dsa.X86_64.ProbablePrime.candidate
     rcases p.width with hh | hh <;> rw [hh] <;> decide
-  have hin : PrimeCallInputs (8 * p.prime.len) p.prime.sp p.hash (p.W 5) p.prime.rp p.prime.rand
+  have hin : PrimeCallInputs (8 * p.prime.len) T.name p.prime.sp p.hash (p.W 5) p.prime.rp p.prime.rand
       p.prime.N used p.W Vu u := {
     layout := Lu
     rep := Ru
@@ -81,7 +83,8 @@ theorem subgroup_ok {G1 G256 : Impl.Pbkdf2.Md.X86_64.Stream}
       rw [p.modulus]
       exact (VG.Proof.Dsa.Generation.qCandidate_shape
         (show 2 ≤ 8 * p.prime.len by rcases p.width with hh | hh <;> omega) p.seed).1
-    bitLen := p.bits }
+    bitLen := p.bits
+    fnSlot := by rw [uy]; exact hfn.prime }
   have hch : primeCallChanged (8 * p.prime.len) p.prime.sp (p.W 5) =
       p.primeWrites ++ [⟨p.prime.sp, frameBytes⟩] := by
     rw [SubgroupPlan.primeWrites, ← p.base, ← p.witnessPtr, primeCallChanged,
@@ -114,7 +117,8 @@ theorem seedSubgroup_ok (H : GenerationHashes) (T : PrimeTest)
     {p : GenerationContext} {W : Nat → BitVec 64} {s : State}
     (h : GenerationMemory p W s) (seed : GenerationTape p.geo) (hlen : seed.bytes.length = p.geo.qLen)
     (hseed : GenerationTapeMemory seed s) (h1 : W 1 = seed.ptr) {used : Nat}
-    (h16 : W 16 = BitVec.ofNat 64 used) (hu : used ≤ p.rand.bytes.length) :
+    (h16 : W 16 = BitVec.ofNat 64 used) (hu : used ≤ p.rand.bytes.length)
+    (hy : FnSyms (fnNames H.sha1 H.sha256 T p.geo.qLen) p s) :
     WP isa (.seq (.block (Impl.Dsa.X86_64.Generation.seedArguments p.geo.qLen))
       (Impl.Dsa.X86_64.Generation.subgroup H.sha1 H.sha256 T.run p.geo.qLen)) s fun t =>
       let res := Spec.Dsa.probablePrime (Spec.Dsa.qCandidate (8 * p.geo.qLen) seed.bytes) (p.rand.bytes.drop used)
@@ -126,21 +130,22 @@ theorem seedSubgroup_ok (H : GenerationHashes) (T : PrimeTest)
         (∀ b rest, res = some (b, rest) → status = BitVec.ofNat 64 (if b then 1 else 3) ∧
           used' = p.rand.bytes.length - rest.length) ∧
         Frame p.changed s.mem t.mem ∧ t.rd = s.rd ∧ t.wr = s.wr := by
-  refine WP.seq (WP.mono (prepareSeed_ok h) fun u ⟨huMem, fu, ku⟩ => ?_)
+  refine WP.seq (WP.mono_syms (prepareSeed_ok h) fun u ⟨huMem, fu, ku⟩ uy => ?_)
   have hseedU := hseed.frame fu ku.2.1 ku.2.2
   have hb : W 5 = p.geo.B := (h.slots 5 (by simp [generationSlots])).trans p.baseSlot
   have h0 : seedWords W p.geo.qLen 0 = off p.geo.B q := by simp [seedWords, upd, hb]
   have h27 : seedWords W p.geo.qLen 27 = seed.ptr := by simp [seedWords, upd, h1]
   have h16u : seedWords W p.geo.qLen 16 = BitVec.ofNat 64 used := by simpa [seedWords, upd] using h16
   have state := huMem.subgroupState seed hlen hseedU h0 h27 h16u hu
-  refine WP.mono (subgroup_ok H.h1 H.h256 H.hash1 H.hash256 H.size1 H.size256 H.width1 H.width256 T state)
+  refine WP.mono (subgroup_ok H.h1 H.h256 H.hash1 H.hash256 H.size1 H.size256 H.width1 H.width256 T state
+    (huMem.fnSlots (hy.congr uy)))
     fun t ⟨used', status, Vt, bound, Lt, Rt, bytes, fail, result, ft, rd, wr⟩ => ?_
   have ff := huMem.subgroup_frame seed hlen h0 ft
   refine ⟨used', status, bound, huMem.frame Lt ⟨Vt, Rt⟩ ?_ ff rd wr,
     bytes, fail, result, fu.trans ff, rd.trans ku.2.1, wr.trans ku.2.2⟩
   intro k hk
   simp only [generationSlots, List.mem_cons, List.not_mem_nil, or_false] at hk
-  rcases hk with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
+  rcases hk with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
     exact (ite_eq_right (by decide)).trans (ite_eq_right (by decide))
 
 end VG.Proof.Dsa.X86_64.Generation

@@ -2,6 +2,14 @@ module
 
 import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
 meta import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
+import VerifiedGarbage.Proof.Framework.Arm.TaintSym
+meta import VerifiedGarbage.Proof.Framework.Arm.TaintSym
+import VerifiedGarbage.Proof.Ecdsa.Arm.Setup
+meta import VerifiedGarbage.Proof.Ecdsa.Arm.Setup
+public import VerifiedGarbage.Proof.Framework.Arm.StackScratchConsts
+meta import VerifiedGarbage.Proof.Framework.Arm.StackScratchConsts
+public import VerifiedGarbage.Proof.Framework.ConstMem
+meta import VerifiedGarbage.Proof.Framework.ConstMem
 import VerifiedGarbage.Proof.EcKey.Compressed.Arm.Main
 public import VerifiedGarbage.Spec.EcKey.BrainpoolP512r1
 import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP512r1.Config
@@ -39,9 +47,8 @@ materialize_shared umaal := codeU
 
 def τ₀ : VG.Arm.Taint.T := { regs := .ofList [.r0, .r1, .r2], flags := false }
 
-theorem ct : ConstantTime isa (compressContract Spec.BrainpoolP512r1.curve).pre (compressContract Spec.BrainpoolP512r1.curve).pub code := by
-  refine VG.Taint.constantTime (A := taint) τ₀ ?_ (by taint_decide)
-  intro s t _ _ ⟨_, h0, h1, h2⟩
+theorem agree_τ₀ {s t : State} (h : (compressContract Spec.BrainpoolP512r1.curve).pub s t) : VG.Arm.Taint.Agree τ₀ s t := by
+  obtain ⟨_, h0, h1, h2⟩ := h
   refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun h => absurd rfl h,
     ⟨fun h => absurd rfl h, fun _ h => (List.not_mem_nil h).elim, fun h => absurd h (by decide),
       fun _ h => (List.not_mem_nil h).elim⟩,
@@ -55,21 +62,16 @@ theorem ct : ConstantTime isa (compressContract Spec.BrainpoolP512r1.curve).pre 
   · exact h1
   · exact h2
 
-theorem ctU : ConstantTime isa (compressContract Spec.BrainpoolP512r1.curve).pre (compressContract Spec.BrainpoolP512r1.curve).pub codeU := by
-  refine VG.Taint.constantTime (A := taintU) τ₀ ?_ (by taint_decide)
-  intro s t _ _ ⟨_, h0, h1, h2⟩
-  refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun h => absurd rfl h,
-    ⟨fun h => absurd rfl h, fun _ h => (List.not_mem_nil h).elim, fun h => absurd h (by decide),
-      fun _ h => (List.not_mem_nil h).elim⟩,
-    ⟨fun h => absurd rfl h, fun _ h => (List.not_mem_nil h).elim, fun h => absurd h (by decide),
-      fun _ h => (List.not_mem_nil h).elim⟩,
-    fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim,
-    fun h => absurd h (Nat.lt_irrefl 0), fun _ h => absurd h (Nat.not_lt_zero _)⟩
-  simp only [τ₀, RegSet.mem_ofList, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl
-  · exact h0
-  · exact h1
-  · exact h2
+/-- The contract with the table of constants (`Cfg.constsK`), as the proof states it. -/
+abbrev AC (u : Bool) : Contract isa := (compressContract Spec.BrainpoolP512r1.curve).withTablesArm (brainpoolp512r1With u).constsK
+
+theorem ct : ConstantTime isa (AC false).pre (AC false).pub code :=
+  VG.Taint.constantTime (A := taintSym [(brainpoolp512r1With false).constSym]) τ₀
+    (fun _ _ _ _ h => ⟨agree_τ₀ h.1, withTablesArm_syms h⟩) (by taint_decide)
+
+theorem ctU : ConstantTime isa (AC true).pre (AC true).pub codeU :=
+  VG.Taint.constantTime (A := taintSymU [(brainpoolp512r1With true).constSym]) τ₀
+    (fun _ _ _ _ h => ⟨agree_τ₀ h.1, withTablesArm_syms h⟩) (by taint_decide)
 
 theorem sat : ∃ s, (Spec.EcKey.BrainpoolP512r1.inst.compressPublicKeyContract abi 0).pre s := by
   have hlen : Spec.BrainpoolP512r1.curve.len = 64 := rfl
@@ -77,11 +79,36 @@ theorem sat : ∃ s, (Spec.EcKey.BrainpoolP512r1.inst.compressPublicKeyContract 
     Spec.EcKey.Instance.compressPublicKeySig, hlen, Spec.EcKey.scratchWords,
     abi, argRegs, reduceClassify, Loc.val, State.addr, satState] [satState] using (satState 64)
 
-theorem verified : Verified target code (Spec.EcKey.BrainpoolP512r1.inst.compressPublicKeyContract abi 0) :=
-  Verified.of_correct (compress_correct brainpoolp512r1 brainpoolp512r1_ok) ct (compress_implies _ sat)
+/-- `satState`, holding the table at `0x100000`. -/
+def satStateC (u : Bool) : State := { satState 64 with
+  mem := constMem ((0x100000 : BitVec 32).setWidth 64) (brainpoolp512r1With u).constTbl
+  syms := fun _ => 0x100000 }
 
+theorem satC (u : Bool) :
+    ∃ s, (Spec.EcKey.BrainpoolP512r1.inst.compressPublicKeyContract (abi.withConsts (brainpoolp512r1With u).constsK) 0).pre s :=
+  sat_consts (s := satStateC u)
+    (by
+      have hlen : Spec.BrainpoolP512r1.curve.len = 64 := rfl
+      cases u <;>
+      (sig_pre [Spec.EcKey.BrainpoolP512r1.inst, Spec.EcKey.Instance.compressPublicKeyContract,
+        Spec.EcKey.Instance.compressPublicKeySig, hlen, Spec.EcKey.scratchWords,
+        abi, argRegs, reduceClassify, Loc.val, State.addr, satState, satStateC]
+       sig_and_intros
+       all_goals first
+         | rfl
+         | decide
+         | exact Region.disjoint_of_sep (by decide)))
+    (constsOk_tbl _ (T := 0x100000) rfl rfl (by cases u <;> decide) (by decide) (by cases u <;> decide)
+      (by cases u <;> decide))
 
-theorem verifiedU : Verified target codeU (Spec.EcKey.BrainpoolP512r1.inst.compressPublicKeyContract abi 0) :=
-  Verified.of_correct (compress_correct (brainpoolp512r1With true) brainpoolp512r1u_ok) ctU (compress_implies _ sat)
+theorem verified :
+    Verified target code (Spec.EcKey.BrainpoolP512r1.inst.compressPublicKeyContract (abi.withConsts (brainpoolp512r1With false).constsK) 0) :=
+  Verified.of_correct (compress_correctT brainpoolp512r1 brainpoolp512r1_ok (List.mem_singleton_self _)) ct
+    (withTables_implies (compress_implies _ sat) (satC false))
+
+theorem verifiedU :
+    Verified target codeU (Spec.EcKey.BrainpoolP512r1.inst.compressPublicKeyContract (abi.withConsts (brainpoolp512r1With true).constsK) 0) :=
+  Verified.of_correct (compress_correctT (brainpoolp512r1With true) brainpoolp512r1u_ok (List.mem_singleton_self _)) ctU
+    (withTables_implies (compress_implies _ sat) (satC true))
 
 end VG.Proof.EcKey.Compressed.Arm.BrainpoolP512r1

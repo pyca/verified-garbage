@@ -37,6 +37,8 @@ meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
 public import VerifiedGarbage.Proof.Framework.Arm.TaintMono
 public meta import VerifiedGarbage.Proof.Framework.Arm.TaintMono
+public import VerifiedGarbage.Proof.Framework.Arm.TaintSym
+public meta import VerifiedGarbage.Proof.Framework.Arm.TaintSym
 public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Spec.Ecdsa.Generic
 public import VerifiedGarbage.Spec.P521
@@ -156,30 +158,6 @@ theorem p521_ok : CfgOk p521 where
   mulNf := fun _ _ => Impl.Ecdsa.Arm.mulP521_noFrames
   pubNf := fun _ _ => Impl.Ecdsa.Arm.mulPubP521_noFrames
 
-theorem pre_of {s : State} (h : signArm.pre s) : Pre p521 s := by
-  obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14⟩ := h
-  exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14⟩
-
-theorem sign_arm (hL : Weierstrass.Law Spec.P521.curve) (s : State) (hs : signArm.pre s) :
-    ∃ t s', Exec isa signP521 s t s' ∧ abiPreserved s s' ∧ signArm.post s s' := by
-  have hp := pre_of hs
-  obtain ⟨t, s', he, K, hpost⟩ := sign_ok p521_ok hL hp
-  refine ⟨t, s', he, ⟨fun r hr => ?_, K.sp⟩, ?_⟩
-  swap
-  · simp only [signArm, BitVec.setWidth_append_eq_right]
-    exact hpost
-  simp only [preserved, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
-  · exact K.saved (.r4, 0) (by decide)
-  · exact K.saved (.r5, 4) (by decide)
-  · exact K.saved (.r6, 8) (by decide)
-  · exact K.saved (.r7, 12) (by decide)
-  · exact K.saved (.r8, 16) (by decide)
-  · exact K.saved (.r9, 20) (by decide)
-  · exact K.saved (.r10, 24) (by decide)
-  · exact K.saved (.r11, 28) (by decide)
-  · exact K.saved (.lr, 32) (by decide)
-
 /-- The taint analysis starts with the register arguments public, the stack
 argument too, and that word known to be the base address of `scratch`. -/
 def τ₀ : VG.Arm.Taint.T :=
@@ -219,24 +197,27 @@ materialize_code addModP := Mont.addFnWith false p521.SP.k p521.SP.m
 materialize_code subModP := Mont.subFnWith false p521.SP.k p521.SP.m
 
 /-! The constant-time analyses of the calls of the functions modulo `p`, from their arguments,
-each done once for every check of code that calls them (`taint_decide_sum`: signing, ECDH, the
-public key and its compression). They keep what is public of `r10` (which the callers keep `lr`
-in) and of the loops' counter `r11`: the functions write neither. The analysis is `taintS`'s,
+each done once for every check of code that calls them (`taint_decide_sum`: ECDH, and the
+public key's compression and decompression). They keep what is public of `r10` (which the callers
+keep `lr` in) and of the loops' counter `r11`: the functions write neither. The analysis is
+`taintC`'s, `taintS` with the address of the setup's table of constants public (`taintSym`),
 which has summaries (`Proof/Framework/Arm/TaintMono.lean`). -/
-taint_summary mulPSum : taintS (Taint.ofRegs [.r0, .r1, .r2, .r3])
+abbrev taintC : VG.Taint isa := taintSym [p521.constSym]
+
+taint_summary mulPSum : taintC (Taint.ofRegs [.r0, .r1, .r2, .r3])
   (.call (Mont.mulName false p521.SP) (Mont.mulFnWith false p521.SP.k p521.SP.m))
   keeping (Taint.ofRegs [.r10, .r11])
-taint_summary addPSum : taintS (Taint.ofRegs [.r0, .r1, .r2, .r3])
+taint_summary addPSum : taintC (Taint.ofRegs [.r0, .r1, .r2, .r3])
   (.call (Mont.addName false p521.SP) (Mont.addFnWith false p521.SP.k p521.SP.m))
   keeping (Taint.ofRegs [.r10, .r11])
-taint_summary subPSum : taintS (Taint.ofRegs [.r0, .r1, .r2, .r3])
+taint_summary subPSum : taintC (Taint.ofRegs [.r0, .r1, .r2, .r3])
   (.call (Mont.subName false p521.SP) (Mont.subFnWith false p521.SP.k p521.SP.m))
   keeping (Taint.ofRegs [.r10, .r11])
 
 /-! The constant-time analysis of the call of `vg_p521_mul` from its argument and `r10`, done
-once for every check of code that calls it (signing, ECDH and the public key). It writes every
+once for every check of code that calls it (ECDH). It writes every
 register: its frame is empty. -/
-taint_summary mulSum : taintS (Taint.ofRegs [.r0, .r10])
+taint_summary mulSum : taintC (Taint.ofRegs [.r0, .r10])
   (.call (s!"vg_{Impl.Weierstrass.Mul.p521.curve}_mul" ++ if p521.umaal then "_umaal" else "")
     mulP521)
   keeping (Taint.ofRegs []) using mulPSum addPSum subPSum
@@ -268,9 +249,5 @@ theorem agree₀ {u : Bool} {s t : State} {extraS extraT : List Region}
   · rw [hs.wr, ht.wr]; simp only [outR, scR, ptr, scPtr, h0, ha]
   · rw [argByte_eq, argByte_eq, Mem.readW_byte s.mem _ hk, Mem.readW_byte t.mem _ hk]
     exact congrArg (fun v : BitVec 32 => v.extractLsb' (8 * k) 8) ha
-
-theorem sign_ct : ConstantTime isa signArm.pre signArm.pub signP521 :=
-  VG.Taint.constantTime_of_exists (A := taintS) τ₁
-    (fun _ _ hs ht pub => agree₁ (agree₀ (pre_of hs) (pre_of ht) pub)) (by taint_decide_sum [mulPSum, mulSum])
 
 end VG.Proof.Ecdsa.Arm.P521

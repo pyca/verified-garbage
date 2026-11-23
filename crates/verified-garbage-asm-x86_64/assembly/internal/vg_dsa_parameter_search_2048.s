@@ -14,6 +14,9 @@ vg_dsa_parameter_search_2048:
 	mov QWORD PTR [rsp+40], r15
 	lea rsp, [rsp-32]
 	lea rsp, [rsp-296]
+	mov QWORD PTR [rsp+232], rax
+	mov QWORD PTR [rsp+240], r10
+	mov QWORD PTR [rsp+248], r11
 	mov QWORD PTR [rsp+48], rdi
 	mov QWORD PTR [rsp+56], rsi
 	mov QWORD PTR [rsp+296], rdx
@@ -78,7 +81,8 @@ vg_dsa_parameter_search_2048:
 	mov rcx, QWORD PTR [rsp+224]
 	mov r8, QWORD PTR [rsp+112]
 	add r8, 4096
-	call {vg_sha256_update_scratch}
+	mov rax, QWORD PTR [rsp+232]
+	call rax
 	mov rdi, QWORD PTR [rsp+112]
 	add rdi, 3072
 	mov rsi, QWORD PTR [rsp+224]
@@ -86,7 +90,8 @@ vg_dsa_parameter_search_2048:
 	add rdx, 3328
 	mov rcx, QWORD PTR [rsp+112]
 	add rcx, 4096
-	call {vg_sha256_finalize_scratch}
+	mov rax, QWORD PTR [rsp+240]
+	call rax
 	mov rdi, QWORD PTR [rsp]
 	mov rsi, QWORD PTR [rsp+112]
 	add rsi, 3328
@@ -160,7 +165,8 @@ vg_dsa_parameter_search_2048:
 	mov r8, rsp
 	add r8, 152
 	mov r9d, 256
-	call {vg_dsa_probable_prime}
+	mov rax, QWORD PTR [rsp+248]
+	call rax
 	mov eax, eax
 	test rax, rax
 	je 26f
@@ -215,7 +221,8 @@ vg_dsa_parameter_search_2048:
 	mov rcx, QWORD PTR [rsp+224]
 	mov r8, QWORD PTR [rsp+112]
 	add r8, 4096
-	call {vg_sha256_update_scratch}
+	mov rax, QWORD PTR [rsp+232]
+	call rax
 	mov rdi, QWORD PTR [rsp+112]
 	add rdi, 3072
 	mov rsi, QWORD PTR [rsp+224]
@@ -223,7 +230,8 @@ vg_dsa_parameter_search_2048:
 	add rdx, 3328
 	mov rcx, QWORD PTR [rsp+112]
 	add rcx, 4096
-	call {vg_sha256_finalize_scratch}
+	mov rax, QWORD PTR [rsp+240]
+	call rax
 	mov rsi, QWORD PTR [rsp+112]
 	add rsi, 3328
 	mov rdi, QWORD PTR [rsp+32]
@@ -309,7 +317,8 @@ vg_dsa_parameter_search_2048:
 	mov rcx, QWORD PTR [rsp+224]
 	mov r8, QWORD PTR [rsp+112]
 	add r8, 4096
-	call {vg_sha256_update_scratch}
+	mov rax, QWORD PTR [rsp+232]
+	call rax
 	mov rdi, QWORD PTR [rsp+112]
 	add rdi, 3072
 	mov rsi, QWORD PTR [rsp+224]
@@ -317,7 +326,8 @@ vg_dsa_parameter_search_2048:
 	add rdx, 3328
 	mov rcx, QWORD PTR [rsp+112]
 	add rcx, 4096
-	call {vg_sha256_finalize_scratch}
+	mov rax, QWORD PTR [rsp+240]
+	call rax
 	mov rsi, QWORD PTR [rsp+112]
 	add rsi, 3328
 	mov rdi, QWORD PTR [rsp+32]
@@ -403,7 +413,8 @@ vg_dsa_parameter_search_2048:
 	mov rcx, QWORD PTR [rsp+224]
 	mov r8, QWORD PTR [rsp+112]
 	add r8, 4096
-	call {vg_sha256_update_scratch}
+	mov rax, QWORD PTR [rsp+232]
+	call rax
 	mov rdi, QWORD PTR [rsp+112]
 	add rdi, 3072
 	mov rsi, QWORD PTR [rsp+224]
@@ -411,7 +422,8 @@ vg_dsa_parameter_search_2048:
 	add rdx, 3328
 	mov rcx, QWORD PTR [rsp+112]
 	add rcx, 4096
-	call {vg_sha256_finalize_scratch}
+	mov rax, QWORD PTR [rsp+240]
+	call rax
 	mov rsi, QWORD PTR [rsp+112]
 	add rsi, 3328
 	mov rdi, QWORD PTR [rsp+32]
@@ -497,7 +509,8 @@ vg_dsa_parameter_search_2048:
 	mov rcx, QWORD PTR [rsp+224]
 	mov r8, QWORD PTR [rsp+112]
 	add r8, 4096
-	call {vg_sha256_update_scratch}
+	mov rax, QWORD PTR [rsp+232]
+	call rax
 	mov rdi, QWORD PTR [rsp+112]
 	add rdi, 3072
 	mov rsi, QWORD PTR [rsp+224]
@@ -505,7 +518,8 @@ vg_dsa_parameter_search_2048:
 	add rdx, 3328
 	mov rcx, QWORD PTR [rsp+112]
 	add rcx, 4096
-	call {vg_sha256_finalize_scratch}
+	mov rax, QWORD PTR [rsp+240]
+	call rax
 	mov rsi, QWORD PTR [rsp+112]
 	add rsi, 3328
 	mov rdi, QWORD PTR [rsp+32]
@@ -591,7 +605,8 @@ vg_dsa_parameter_search_2048:
 	mov rcx, QWORD PTR [rsp+224]
 	mov r8, QWORD PTR [rsp+112]
 	add r8, 4096
-	call {vg_sha256_update_scratch}
+	mov rax, QWORD PTR [rsp+232]
+	call rax
 	mov rdi, QWORD PTR [rsp+112]
 	add rdi, 3072
 	mov rsi, QWORD PTR [rsp+224]
@@ -599,7 +614,8 @@ vg_dsa_parameter_search_2048:
 	add rdx, 3328
 	mov rcx, QWORD PTR [rsp+112]
 	add rcx, 4096
-	call {vg_sha256_finalize_scratch}
+	mov rax, QWORD PTR [rsp+240]
+	call rax
 	mov rsi, QWORD PTR [rsp+112]
 	add rsi, 3328
 	mov rdi, QWORD PTR [rsp+32]
@@ -685,7 +701,8 @@ vg_dsa_parameter_search_2048:
 	mov rcx, QWORD PTR [rsp+224]
 	mov r8, QWORD PTR [rsp+112]
 	add r8, 4096
-	call {vg_sha256_update_scratch}
+	mov rax, QWORD PTR [rsp+232]
+	call rax
 	mov rdi, QWORD PTR [rsp+112]
 	add rdi, 3072
 	mov rsi, QWORD PTR [rsp+224]
@@ -693,7 +710,8 @@ vg_dsa_parameter_search_2048:
 	add rdx, 3328
 	mov rcx, QWORD PTR [rsp+112]
 	add rcx, 4096
-	call {vg_sha256_finalize_scratch}
+	mov rax, QWORD PTR [rsp+240]
+	call rax
 	mov rsi, QWORD PTR [rsp+112]
 	add rsi, 3328
 	mov rdi, QWORD PTR [rsp+32]
@@ -779,7 +797,8 @@ vg_dsa_parameter_search_2048:
 	mov rcx, QWORD PTR [rsp+224]
 	mov r8, QWORD PTR [rsp+112]
 	add r8, 4096
-	call {vg_sha256_update_scratch}
+	mov rax, QWORD PTR [rsp+232]
+	call rax
 	mov rdi, QWORD PTR [rsp+112]
 	add rdi, 3072
 	mov rsi, QWORD PTR [rsp+224]
@@ -787,7 +806,8 @@ vg_dsa_parameter_search_2048:
 	add rdx, 3328
 	mov rcx, QWORD PTR [rsp+112]
 	add rcx, 4096
-	call {vg_sha256_finalize_scratch}
+	mov rax, QWORD PTR [rsp+240]
+	call rax
 	mov rsi, QWORD PTR [rsp+112]
 	add rsi, 3328
 	mov rdi, QWORD PTR [rsp+32]
@@ -873,7 +893,8 @@ vg_dsa_parameter_search_2048:
 	mov rcx, QWORD PTR [rsp+224]
 	mov r8, QWORD PTR [rsp+112]
 	add r8, 4096
-	call {vg_sha256_update_scratch}
+	mov rax, QWORD PTR [rsp+232]
+	call rax
 	mov rdi, QWORD PTR [rsp+112]
 	add rdi, 3072
 	mov rsi, QWORD PTR [rsp+224]
@@ -881,7 +902,8 @@ vg_dsa_parameter_search_2048:
 	add rdx, 3328
 	mov rcx, QWORD PTR [rsp+112]
 	add rcx, 4096
-	call {vg_sha256_finalize_scratch}
+	mov rax, QWORD PTR [rsp+240]
+	call rax
 	mov rsi, QWORD PTR [rsp+112]
 	add rsi, 3328
 	mov rdi, QWORD PTR [rsp+32]
@@ -1400,7 +1422,8 @@ vg_dsa_parameter_search_2048:
 	mov r8, rsp
 	add r8, 152
 	mov r9d, 2048
-	call {vg_dsa_probable_prime}
+	mov rax, QWORD PTR [rsp+248]
+	call rax
 	mov eax, eax
 	test rax, rax
 	je 254f

@@ -4,11 +4,14 @@ public import VerifiedGarbage.Proof.Camellia.X86.Scrub
 public import VerifiedGarbage.Impl.Camellia.X86.Fn
 public import VerifiedGarbage.Proof.Camellia.X86.AesNiScrub
 public import VerifiedGarbage.Impl.Camellia.X86.AesNiFn
+public import VerifiedGarbage.Proof.Camellia.X86.AesNiWideScrub
+public import VerifiedGarbage.Impl.Camellia.X86.AesNiWideFn
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86.Print
 import VerifiedGarbage.Proof.Camellia.X86.FbLit
 import VerifiedGarbage.Proof.Camellia.X86.FbFinalLit
 import VerifiedGarbage.Proof.Camellia.X86.AesNiLit
+import VerifiedGarbage.Proof.Camellia.X86.AesNiWideLit
 
 /-! # Camellia-CFB128 on x86 -/
 
@@ -24,6 +27,10 @@ def artifacts : List Artifact := [
   Spec.Camellia.cfbEncryptApi.artifact X86.target {
     code := Impl.Camellia.X86.Fn.cfbEncrypt
     verified := Proof.Camellia.X86.Scrub.cfbEncrypt_scrubbed },
+  Spec.Camellia.cfbDecryptApi.artifact X86.target {
+    suffix := "_aesni"
+    code := Impl.Camellia.X86.AesNiWide.Fn.cfbDecrypt
+    verified := Proof.Camellia.X86.AesNiWide.Scrub.cfbDecrypt_scrubbed },
   Spec.Camellia.cfbDecryptApi.artifact X86.target {
     code := Impl.Camellia.X86.Fn.cfbDecrypt
     verified := Proof.Camellia.X86.Scrub.cfbDecrypt_scrubbed },

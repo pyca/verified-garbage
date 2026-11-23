@@ -13,7 +13,8 @@ ones for any `a` (`TCombCfg.generalComb`), for a curve whose `a` is not `-3`
 * `combCfgG d`: `Cfg.combCfg d`, but with `a R mod p` (`AP`, a constant of the
   setup) in its addition's `a`; `b R mod p` stays in `EM`.
 * `gMulG d`: `b R mod p` to `EM`, as `Cfg.gMul` does before its comb, then the
-  comb, with `3 b R mod p` for each addition.
+  comb, with `3 b R mod p` for each addition, calls of
+  `vg_<curve>_add_complete` (`Cfg.addCompleteFn`).
 * `signG d`: `Cfg.sign` with the table of `k`'s bits made inline and `[k]G`
   by `gMulG d`.
 
@@ -37,7 +38,7 @@ def combCfgG (d : CombData) : TCombCfg :=
 /-- `R = [k]G`, from the table of `k`'s bits, by the comb of `combCfgG d`. -/
 def gMulG (d : CombData) : Prog isa :=
   .seq (.block (setConst c.n (c.sl EM) (c.mont c.C.b)))
-    ((c.combCfgG d).generalComb (c.mont (3 * c.C.b)))
+    ((c.combCfgG d).generalComb (c.mont (3 * c.C.b)) c.addCompleteFn)
 
 /-- `vg_ecdsa_<curve>_sign` with `[k]G` by `gMulG d`. -/
 def signG (d : CombData) : Prog isa :=

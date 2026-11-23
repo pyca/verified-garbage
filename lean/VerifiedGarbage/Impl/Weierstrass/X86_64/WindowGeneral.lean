@@ -10,8 +10,10 @@ not `-3`: the same recoding, table, selection of entries and loop, but
 
 * the table's additions and the addition of each entry are the complete
   ones for any `a` (`rcb`, Algorithm 1 of Renes, Costello and Batina), with
-  `a R mod p` in `S.a` and `3 b R mod p` in `S.b3` (where `window` has
-  `b R mod p` for `rcb3`);
+  `a R mod p` in `S.a` and `3 b R mod p` put in the slot of `-y` (`neg`)
+  before each (where `window` has `b R mod p` in `S.b3` for `rcb3`): `D = R + E`
+  by a call `fn` of the code the curve's comb calls
+  (`TCombCfg.generalStep`), the table's with `P` copied to `R`;
 * the four doublings of each iteration are the Jacobian doubling for any `a`
   (`dblJGen`, dbl-2007-bl: `M = 3 X² + a Z⁴`, with `a` read from `S.a`).
 
@@ -42,15 +44,20 @@ def dblJGen (S : RcbSlots) (p o : Pt) : List FOp :=
    .mul o.y S.t4 o.y, .add S.t2 S.t2 S.t2, .add S.t2 S.t2 S.t2, .add S.t2 S.t2 S.t2,
    .sub o.y o.y S.t2]
 
-/-- An entry of the table, as `buildStep`, by the complete addition for any `a`. -/
-def buildStepA : Prog isa :=
-  .seq (.block [.alu .sub .rbx (.imm 1)]) <| .seq (fprogB K.M (rcb K.S K.E K.P K.D)) <|
+/-- An entry of the table, as `buildStep`, by the complete addition for any `a`:
+`D = P + E` by the call `fn` of `stepA`'s addition `D = R + E`, with `P`
+copied to `R` (which the table does not use) and `3 b R mod p` (`b3`) put in
+`neg` first. -/
+def buildStepA (b3 : Nat) (fn : String) : Prog isa :=
+  .seq (.block [.alu .sub .rbx (.imm 1)]) <|
+  .seq (.block (setConst K.M.n K.neg b3 ++ copyPt K.M.n K.R K.P)) <|
+  .seq (.call fn (fprogB K.M (rcb { K.S with b3 := K.neg } K.R K.E K.D))) <|
   .seq (.block (copyPt K.M.n K.E K.D)) <| .seq (storeEntry K 6) (.block [.alu .test .rbx (.reg .rbx)])
 
 /-- The table, as `build`, by `buildStepA`. -/
-def buildA : Prog isa :=
+def buildA (b3 : Nat) (fn : String) : Prog isa :=
   .seq (.block (copyPt K.M.n (K.tblPt 1) K.P ++ copyPt K.M.n K.E K.P ++ [.mov32 .rbx (.imm 7)]))
-    (.loop (buildStepA K) .ne)
+    (.loop (buildStepA K b3 fn) .ne)
 
 /-- A pair of Jacobian doublings for any `a`, as `jacPair`. -/
 def jacPairA : Prog isa :=
@@ -69,17 +76,21 @@ def jacA : Prog isa :=
 def quadA : Prog isa := .seq (jacA K) (.block (ySel K))
 
 /-- Iteration `j = rbx - 1`, as `step`: `R = 16 R + [d_j]P`, the addition the
-complete one for any `a`. -/
-def stepA : Prog isa :=
+complete one for any `a`, a call `fn`, with `3 b R mod p` (`b3`) put in
+`neg` first. -/
+def stepA (b3 : Nat) (fn : String) : Prog isa :=
   .seq (.block [.alu .sub .rbx (.imm 1)]) <|
   .seq (quadA K) <|
   .seq (.block ((tc K).digit ++ select K)) <|
   .seq (.block (tc K).negY) <|
-  .seq (.seq (fprogB K.M (rcb K.S K.R K.E K.D)) (.block (copyPt K.M.n K.R K.D))) <|
+  .seq (.block (setConst K.M.n K.neg b3)) <|
+  .seq (.seq (.call fn (fprogB K.M (rcb { K.S with b3 := K.neg } K.R K.E K.D)))
+    (.block (copyPt K.M.n K.R K.D))) <|
   .block [.alu .test .rbx (.reg .rbx)]
 
 /-- `[k]P` into `R`, for the table of the bits of `k + offset J` at `K.bits`. -/
-def windowA : Prog isa := .seq (buildA K) (.seq (.block (init K)) (.loop (stepA K) .ne))
+def windowA (b3 : Nat) (fn : String) : Prog isa :=
+  .seq (buildA K b3 fn) (.seq (.block (init K)) (.loop (stepA K b3 fn) .ne))
 
 end WinCfg
 

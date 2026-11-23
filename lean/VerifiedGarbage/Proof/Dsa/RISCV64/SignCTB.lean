@@ -103,7 +103,7 @@ theorem szero_rel {Φ : VD → State → Prop} (hrun : ∀ v s, Φ v s → WP is
 def vdS (s : State) : VD :=
   ⟨slayOf s, s.gpr .a2, s.gpr .a5, s.gpr .a7, (stackArg s 0).toNat,
     Spec.Rsa.bytesAt s.mem (s.gpr .a2) (3 * (s.gpr .a4).toNat + (s.gpr .a6).toNat),
-    3 * (s.gpr .a4).toNat + (s.gpr .a6).toNat, (s.gpr .a6).toNat, true, some (s.gpr .a0)⟩
+    3 * (s.gpr .a4).toNat + (s.gpr .a6).toNat, (s.gpr .a6).toNat, true, some (s.gpr .a0), false⟩
 
 /-- The contract's buffers are apart from `scratch`. -/
 theorem ssrc {s : State} {A : Addr} {n k : Nat} (hm : (⟨A, n⟩ : Region) ∈ s.rd)
@@ -128,7 +128,8 @@ theorem frontS : ∀ v s, C0s v s → WP isa (.block Sign.entry) s (P0 v) := by
   exact ⟨⟨hL, F.regs, F.scr, hK, ssrc (by rw [hrd]; simp) dNS (s.gpr .a6).isLt (Nat.le_refl _) k.2.1 k.2.2,
     ssrc (by rw [hrd]; simp) dDS (stackArg s 0).isLt (Nat.min_le_left _ _) k.2.1 k.2.2,
     hK.bytes F.out (by simp only [slayOf] at hZ ⊢; omega_using [hZ]),
-    (by simp only [vdS, slayOf]; omega_using []), (fun _ => F.dig), fun o ho => by cases ho; exact F.outw⟩, F.lens⟩
+    (by simp only [vdS, slayOf]; omega_using []), (fun _ => F.dig), (fun o ho => by cases ho; exact F.outw),
+    fun h => nomatch h⟩, F.lens⟩
 
 theorem outS : ∀ v s, C0s v s → v.out = some (oOf v) := by
   rintro _ s ⟨-, rfl⟩
@@ -519,7 +520,7 @@ theorem PK.frame {v : VD} {s t : State} {rs : List Reg} (h : PK v s) (k : Keep r
     (hp24 : arrP t.mem v.L 24 = arrP s.mem v.L 24) (hq0 : arrQ t.mem v.L 0 = arrQ s.mem v.L 0)
     (hr : ∀ r ∈ regsRegs, r ∉ rs := by decide) : PK v t :=
   ⟨⟨h.cb.1.step (h.cb.1.regs.ofBKept k K hr) k.2.1 k.2.2 K.out (K.word (by decide) (by decide))
-      (K.word (by decide) (by decide)), ip, I, hp0.trans h.cb.2.2.2.1, hp24.trans h.cb.2.2.2.2⟩,
+      (K.word (by decide) (by decide)) (K.word (by decide) (by decide)), ip, I, hp0.trans h.cb.2.2.2.1, hp24.trans h.cb.2.2.2.2⟩,
     by rw [Lens, K.word (by decide) (by decide)]; exact h.lens, hq0.trans h.q0, h.os.keep k.2.1 k.2.2⟩
 
 theorem PK.keepM {v : VD} {s t : State} {rs : List Reg} (h : PK v s) (k : Keep rs s t) (hm : t.mem = s.mem)
@@ -740,7 +741,7 @@ theorem stGK {v : VD} {s : State} {c : Prog isa} {Q : State → Prop} (h : TS v 
   obtain hb : Body v.L s.mem u.mem := (PLow.body hL o).trans (Body.ofBuf hL b' (by omega_using []))
   obtain K := BKept.ofBody hL hb
   exact hc u (B.step (B.regs.ofBKept k K) k.2.1 k.2.2 K.out (K.word (by decide) (by decide))
-      (K.word (by decide) (by decide))) (by rw [Lens, K.word (by decide) (by decide)]; exact l)
+      (K.word (by decide) (by decide)) (K.word (by decide) (by decide))) (by rw [Lens, K.word (by decide) (by decide)]; exact l)
     (by rw [keepQ_arr0 hL (bufKeepQ b' (by rcases hL.pl with e | e | e <;> rw [e] <;> decide)),
       keepQ_arr0 hL (PLow.keepQ hL o)]; exact q0) (os.keep k.2.1 k.2.2) ⟨b, by rw [hb.word (by decide)]; exact mw⟩
 
@@ -764,7 +765,8 @@ structure QK (v : VD) (t : State) : Prop where
 
 theorem QK.frame {v : VD} {s t : State} {rs : List Reg} (h : QK v s) (Q : QS t v.L v.key v.sig) (k : Keep rs s t)
     (K : BKept v.L s.mem t.mem) (hq0 : arrQ t.mem v.L 0 = arrQ s.mem v.L 0) (mw : MWs v t) : QK v t :=
-  ⟨h.base.step Q.regs k.2.1 k.2.2 K.out (K.word (by decide) (by decide)) (K.word (by decide) (by decide)),
+  ⟨h.base.step Q.regs k.2.1 k.2.2 K.out (K.word (by decide) (by decide)) (K.word (by decide) (by decide))
+    (K.word (by decide) (by decide)),
     by rw [Lens, K.word (by decide) (by decide)]; exact h.lens, Q, hq0.trans h.q0, h.os.keep k.2.1 k.2.2, mw⟩
 
 theorem QK.withQ {v : VD} {s t : State} {rs : List Reg} (h : QK v s) (Q : QS t v.L v.key v.sig) (k : Keep rs s t)
@@ -855,10 +857,11 @@ theorem stRR {v : VD} {s : State} {c : Prog isa} {Q : State → Prop} (h : TS v 
   refine stGK h fun t B l q0 os ⟨b, mw⟩ => ?_
   have hL := B.ok
   refine WP.seq (WP.mono (rRanges_ok hL B.scr B.regs os.key (B.ns h.2.1) (by rw [q0]; omega_using [hq]) mw)
-    fun u ⟨⟨Q, r25, m, ⟨m₁, fa, fb⟩⟩, k⟩ => hc u ⟨B.step Q.regs k.2.1 k.2.2 ?_ ?_ ?_, ?_, Q, ?_, os.keep k.2.1 k.2.2,
+    fun u ⟨⟨Q, r25, m, ⟨m₁, fa, fb⟩⟩, k⟩ => hc u ⟨B.step Q.regs k.2.1 k.2.2 ?_ ?_ ?_ ?_, ?_, Q, ?_, os.keep k.2.1 k.2.2,
       ⟨_, m⟩⟩ (by rw [r25, q0]; exact Nat.mod_lt _ (by omega_using [hq])))
   all_goals have K : BKept v.L t.mem u.mem := (BKept.ofBody hL (fa.body hL)).trans (BKept.ofMask hL fb)
   · exact K.out
+  · exact K.word (by decide) (by decide)
   · exact K.word (by decide) (by decide)
   · exact K.word (by decide) (by decide)
   · rw [Lens, K.word (by decide) (by decide)]; exact l

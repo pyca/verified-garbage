@@ -163,7 +163,7 @@ theorem brainpoolp384r1_tbls : CombTbls brainpoolp384r1 := fun _ h => by cases h
 /-- ECDH's, verification's and the public key's `[k]G` is a call of
 `vg_brainpoolp384r1_mul`, which calls no other function. -/
 theorem brainpoolp384r1_mulBase : MulBaseOk brainpoolp384r1 :=
-  ⟨fun h => absurd h (by decide), fun _ => ⟨.inr (.inl rfl), by lit_decide⟩⟩
+  ⟨fun h => absurd h (by decide), fun _ => ⟨.inr (.inl rfl), fun h => absurd h (by decide), fun _ => rfl⟩⟩
 
 theorem brainpoolp384r1S_sh : brainpoolp384r1S.sh = 0 := brainpoolp384r1_sh
 
@@ -225,7 +225,7 @@ theorem sign_x86 (hL : Law Spec.BrainpoolP384r1.curve)
     (hs : signX86_64.pre s) :
     ∃ t s', Exec isa signBrainpoolP384r1.inline s t s' ∧ abiPreserved s s' ∧ signX86_64.post s s' := by
   obtain ⟨t, s', he, hsv, hpost⟩ := signG_ok (brainpoolp384r1S_ok hI) hL brainpoolp384r1S_comb
-    (Proof.BrainpoolP384r1.combOk7 hL) rfl (pre_of hs)
+    (Proof.BrainpoolP384r1.combOk7 hL) rfl (pre_of hs) (by decide)
   obtain ⟨hsp, hmx⟩ := rsp_mxcsr (c := signBrainpoolP384r1) (Code.allInstrs_mono
     (fun i h => by rw [noRsp_of_hasBits rfl h, noMx_of_hasBits rfl h]; rfl)
     (Code.allInstrs_of_inlineOkB sign_inlineOkB))

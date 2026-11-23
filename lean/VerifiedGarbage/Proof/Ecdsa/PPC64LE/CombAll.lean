@@ -49,30 +49,6 @@ variable {sig : Sig} {c₀ : String × List (BitVec 64)} {cs : List (String × L
   {pre : Curry (sig.words abi.ptrBits) (Mem → Prop)} {post : sig.Post abi.ptrBits} {wa : Bool}
   {st : Nat} {leak : Option (Curry (sig.words abi.ptrBits) (Mem → List Nat))}
 
-/-- A postcondition under `abi` does not depend on the readable regions. -/
-theorem post_strip {K : List (String × List (BitVec 64))} {s s' : State} :
-    (sig.contract abi pre post wa st leak).post (stripConsts K s) s' ↔
-      (sig.contract abi pre post wa st leak).post s s' := by
-  dsimp only [Sig.contract]
-  cases h : abi.args ((sig.words abi.ptrBits).map (·.bits abi.ptrBits)) with
-  | none => exact Iff.rfl
-  | some vals =>
-    dsimp only
-    rw [args_stripConsts h]
-    exact Iff.rfl
-
-/-- The public data under `abi` do not depend on the readable regions. -/
-theorem pub_strip {K : List (String × List (BitVec 64))} {s₁ s₂ : State} :
-    (sig.contract abi pre post wa st leak).pub (stripConsts K s₁) (stripConsts K s₂) ↔
-      (sig.contract abi pre post wa st leak).pub s₁ s₂ := by
-  dsimp only [Sig.contract]
-  cases h : abi.args ((sig.words abi.ptrBits).map (·.bits abi.ptrBits)) with
-  | none => exact Iff.rfl
-  | some vals =>
-    dsimp only
-    rw [args_stripConsts h, args_stripConsts h]
-    exact Iff.rfl
-
 /-- A contract with a table implies the one under `abi.withConsts`, if the
 contract without it implies the one under `abi`. -/
 theorem implies {K : Contract isa} (h : K.Implies (sig.contract abi pre post wa 0 leak))
@@ -91,13 +67,42 @@ end
 variable {c : Cfg}
 
 /-- The table of a state that meets `ConstsOk`: readable, and its words. -/
+theorem tableMemK {tsym : String} {words : List (BitVec 64)} {K : List (String × List (BitVec 64))}
+    {s : State} (hk : ConstsOk K 0 s) (hm : (tsym, words) ∈ K) : TableMem s (s.syms tsym) words :=
+  ⟨hk.fit hm, ⟨_, List.mem_append_left _ (hk.mem_rd hm), Region.contains_self _ _⟩, fun _ hi => hk.readW hm hi⟩
+
 theorem tableMem {tsym : String} {words : List (BitVec 64)} {s : State}
     (hk : ConstsOk [(tsym, words)] 0 s) : TableMem s (s.syms tsym) words :=
-  ⟨hk.fit (List.mem_singleton_self _),
-    ⟨_, List.mem_append_left _ (hk.mem_rd (List.mem_singleton_self _)), Region.contains_self _ _⟩,
-    fun _ hi => hk.readW (List.mem_singleton_self _) hi⟩
+  tableMemK hk (List.mem_singleton_self _)
 
-/-- The signature with a generator that reads a table. -/
+/-- The table's facts of a state without some tables' regions hold of the state. -/
+theorem _root_.VG.Proof.Ecdsa.PPC64LE.TblOk.of_strip {c : Cfg} {K : List (String × List (BitVec 64))} {s : State} {sc : Addr}
+    (h : TblOk c sc (stripConsts K s)) : TblOk c sc s :=
+  ⟨fun i hi => by
+    obtain ⟨r, hr, hc⟩ := h.rd i hi
+    exact ⟨r, (List.mem_append.mp hr).elim (fun h => List.mem_append_left _ (List.mem_of_mem_take h))
+      (fun h => List.mem_append_right _ h), hc⟩, h.val⟩
+
+/-- The signature with a generator that reads a table, one of the tables `K`
+the contract lists (with, for a curve whose setup copies its constants from
+their table, that table: `Pre.tbl`). -/
+theorem sign_okK (hc : CfgOk c) (h3 : 3 ≤ c.n) (hL : VG.Proof.Weierstrass.Law c.C) {tsym : String}
+    {words : List (BitVec 64)} {generator : Prog isa}
+    (hgen : ∀ {A : Args} {s₀ : State} {base : Addr} {F : BitVec 64} {s : State}, St₁ c A s₀ base F s →
+      ∀ {T : Addr}, TableMem s T words → s.syms tsym = T →
+      Region.Disjoint ⟨T, 8 * words.length⟩ ⟨base, 8192⟩ →
+      WP isa generator s (GeneratorPost c base (kv c A s₀) (G c.C) s))
+    {K : List (String × List (BitVec 64))} {s : State} (hpre : Pre c s (constRegs K s)) (hk : ConstsOk K 0 s)
+    (hm : (tsym, words) ∈ K) :
+    ∃ t s', Exec isa (c.signWith generator) s t s' ∧ abiPreserved s s' ∧ SignPost c s s' := by
+  have ht := tableMemK hk hm
+  have hd : Region.Disjoint ⟨s.syms tsym, 8 * words.length⟩ ⟨s.gpr .r7, 8192⟩ :=
+    hk.disjoint_wr hm (by rw [hpre.wr]; simp)
+  obtain ⟨t, s', he, K, hpost⟩ := signWith_ok hc h3 hL hpre fun s₁ S₁ sy =>
+    hgen S₁ (ht.unch (by rw [S₁.rk.rd, S₁.rk.wr]) S₁.whole (fun w hw => by
+      rw [List.mem_singleton] at hw; subst hw; decide) hd) (by rw [sy]) hd
+  exact ⟨t, s', he, ⟨K.saved, K.sp, K.lr⟩, hpost⟩
+
 theorem sign_ok (hc : CfgOk c) (h3 : 3 ≤ c.n) (hL : VG.Proof.Weierstrass.Law c.C) {tsym : String}
     {words : List (BitVec 64)} {generator : Prog isa}
     (hgen : ∀ {A : Args} {s₀ : State} {base : Addr} {F : BitVec 64} {s : State}, St₁ c A s₀ base F s →
@@ -106,18 +111,9 @@ theorem sign_ok (hc : CfgOk c) (h3 : 3 ≤ c.n) (hL : VG.Proof.Weierstrass.Law c
       WP isa generator s (GeneratorPost c base (kv c A s₀) (G c.C) s))
     {s : State} (hp : Pre c (stripConsts [(tsym, words)] s)) (hk : ConstsOk [(tsym, words)] 0 s) :
     ∃ t s', Exec isa (c.signWith generator) s t s' ∧ abiPreserved s s' ∧
-      SignPost c (stripConsts [(tsym, words)] s) s' := by
-  have hpre : Pre c s (constRegs [(tsym, words)] s) := by
-    refine ⟨?_, hp.wr, hp.out_sc, hp.d_sc, hp.digest_sc, hp.k_sc, hp.out_fit, hp.d_fit, hp.digest_fit, hp.k_fit,
-      hp.sc_fit⟩
-    rw [← List.take_append_drop (s.rd.length - [(tsym, words)].length) s.rd, hk.1]
-    exact congrArg (fun rs => rs ++ constRegs [(tsym, words)] s) hp.rd
-  have ht := tableMem hk
-  have hd : Region.Disjoint ⟨s.syms tsym, 8 * words.length⟩ ⟨s.gpr .r7, 8192⟩ :=
-    hk.disjoint_wr (List.mem_singleton_self _) (by rw [hpre.wr]; simp)
-  obtain ⟨t, s', he, K, hpost⟩ := signWith_ok hc h3 hL hpre fun s₁ S₁ sy =>
-    hgen S₁ (ht.unch (by rw [S₁.rk.rd, S₁.rk.wr]) S₁.whole (fun w hw => by
-      rw [List.mem_singleton] at hw; subst hw; decide) hd) (by rw [sy]) hd
-  exact ⟨t, s', he, ⟨K.saved, K.sp, K.lr⟩, hpost⟩
+      SignPost c (stripConsts [(tsym, words)] s) s' :=
+  sign_okK hc h3 hL hgen (hpre := ⟨hk.rd_strip (by rw [hp.rd, List.append_nil]; rfl), hp.wr, hp.out_sc, hp.d_sc,
+    hp.digest_sc, hp.k_sc, hp.out_fit, hp.d_fit, hp.digest_fit, hp.k_fit, hp.sc_fit,
+    hp.tbl.of_strip⟩) hk (List.mem_singleton_self _)
 
 end VG.Proof.Ecdsa.PPC64LE.Tab

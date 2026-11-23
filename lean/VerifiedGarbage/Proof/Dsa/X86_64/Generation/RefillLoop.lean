@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.RefillEntry
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.RefillOutcome
 public import VerifiedGarbage.Proof.Dsa.Generation.RefillSearch
+import VerifiedGarbage.Proof.Framework.X86_64.Syms
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
@@ -174,7 +175,7 @@ theorem statusMem_ok {p : GenerationContext} {W : Nat → BitVec 64} {s : State}
   refine ⟨hm.frame Lt ⟨V, Rt⟩ ?_ ft kt.2.1 kt.2.2, ft, kt⟩
   intro k hk
   simp only [generationSlots, List.mem_cons, List.not_mem_nil, or_false] at hk
-  rcases hk with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> rfl
+  rcases hk with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> rfl
 
 /-- The whole search's result. -/
 def total : Spec.Dsa.ParameterSearchResult :=
@@ -187,7 +188,8 @@ def LoopInv (v : State) (n : Nat) (t : State) : Prop :=
     ctlWord t.mem (refillBase s₀) 0 = s₀.gpr .rdx ∧ ctlWord t.mem (refillBase s₀) 1 = stackArg s₀ 1 ∧
     ctlWord t.mem (refillBase s₀) 2 = BitVec.ofNat 64 n ∧ n ≤ Spec.Dsa.parameterSeeds ∧
     total h = (Spec.Dsa.parameterSearch pBytes n ((randTape h).bytes.drop c)).consume c [] ∧
-    Frame (ctlRegion (refillBase s₀) :: (refillContext h).changed) v.mem t.mem ∧ t.rd = v.rd ∧ t.wr = v.wr
+    Frame (ctlRegion (refillBase s₀) :: (refillContext h).changed) v.mem t.mem ∧ t.rd = v.rd ∧ t.wr = v.wr ∧
+    t.syms = v.syms
 
 /-- How the controller's loop ends. -/
 def LoopDone (v t : State) : Prop :=
@@ -205,10 +207,11 @@ def LoopDone (v t : State) : Prop :=
         Spec.Rsa.bytesAt t.mem (off (s₀.gpr .r9) VG.Impl.Dsa.Generation.Layout.packed)
           (2 * pBytes + Spec.Dsa.generationQLen pBytes) = Spec.Dsa.encodeParams pBytes (Spec.Dsa.generationQLen pBytes) a))
 
-/-- What the controller needs of a seed's attempt (`refillAttempt_ok` for this search's context). -/
-def AttemptOk (attempt : Prog isa) : Prop :=
+/-- What the controller needs of a seed's attempt (`refillAttempt_ok` for this search's context),
+which calls the functions `N` by their addresses. -/
+def AttemptOk (N : FnNames) (attempt : Prog isa) : Prop :=
   ∀ (hs : GenerationTape (refillGeometry h)) (W : Nat → BitVec 64) (t : State) (seed : GenerationTape (refillGeometry h)),
-    HsIn h hs → GenerationMemory ((refillContext h).withHs hs) W t →
+    HsIn h hs → GenerationMemory ((refillContext h).withHs hs) W t → FnSyms N ((refillContext h).withHs hs) t →
     seed.bytes.length = Spec.Dsa.generationQLen pBytes → GenerationTapeMemory seed t → W 1 = seed.ptr →
     ∀ used, W 16 = BitVec.ofNat 64 used → used ≤ (randTape h).bytes.length →
     WP isa attempt t (RefillFinished ((refillContext h).withHs hs) W
@@ -225,12 +228,19 @@ theorem statusTest_ok {p : GenerationContext} {W : Nat → BitVec 64} {s : State
 theorem ctlWord_eq_of_mem {m m' : Mem} (he : m' = m) (F : Addr) (k : Nat) : ctlWord m' F k = ctlWord m F k := by
   rw [he]
 
-theorem step_ok {qBytes : Nat} (hq : qBytes = Spec.Dsa.generationQLen pBytes) {attempt : Prog isa}
-    (hA : AttemptOk h attempt) {v : State} (hv : ctlRegion (refillBase s₀) ∈ v.wr) (n : Nat) (t : State)
+/-- The saved words of the functions' addresses are the context's, with any `h` tape. -/
+theorem _root_.VG.Proof.Dsa.X86_64.Generation.FnSyms.withHs {N : FnNames} {p : GenerationContext} {s : State} (hy : FnSyms N p s)
+    (hs : GenerationTape p.geo) : FnSyms N (p.withHs hs) s :=
+  ⟨by simpa [GenerationContext.withHs] using hy.upd, by simpa [GenerationContext.withHs] using hy.fin,
+    by simpa [GenerationContext.withHs] using hy.prime⟩
+
+theorem step_ok {qBytes : Nat} (hq : qBytes = Spec.Dsa.generationQLen pBytes) {N : FnNames} {attempt : Prog isa}
+    (hA : AttemptOk h N attempt) {v : State} (hv : ctlRegion (refillBase s₀) ∈ v.wr)
+    (hy : FnSyms N (refillContext h) v) (n : Nat) (t : State)
     (hi : LoopInv h v n t) :
     WP isa (Impl.Dsa.X86_64.Generation.Refill.iteration attempt qBytes) t fun t' =>
       (isa.eval .e t' = some false ∧ LoopDone h v t') ∨ (isa.eval .e t' = some true ∧ ∃ m < n, LoopInv h v m t') := by
-  obtain ⟨hs, W, c, hin, hm, h16, hc, c0, c1, c2, hn, htot, hf, hrd, hwr⟩ := hi
+  obtain ⟨hs, W, c, hin, hm, h16, hc, c0, c1, c2, hn, htot, hf, hrd, hwr, hsy⟩ := hi
   obtain hb := refillBase_bound h
   obtain hlen := (randTape h).size
   obtain hq31 : qBytes < 2 ^ 31 := by have := h.lengths; unfold Spec.Dsa.generationLengthsValid at this; omega_using [hq, this]
@@ -246,8 +256,8 @@ theorem step_ok {qBytes : Nat} (hq : qBytes = Spec.Dsa.generationQLen pBytes) {a
   obtain h2 : (t.mem.writeW (off (refillBase s₀) 320) (BitVec.ofNat 64 c)).readW (off (refillBase s₀) 312) 64 =
       BitVec.ofNat 64 n := by
     rw [← c2]; exact ctlWord_write_other t.mem _ (j := 2) (k := 3) (by decide) (by decide) (by decide) _
-  refine WP.mono (iterStart_ok hm.layout R (hctl t hwr) hb h16 (by unfold Spec.Dsa.parameterSeeds at hn; omega_using [hn]) h2)
-    fun t₁ ⟨rax₁, zf₁, mem₁, k₁⟩ => ?_
+  refine WP.mono_syms (iterStart_ok hm.layout R (hctl t hwr) hb h16 (by unfold Spec.Dsa.parameterSeeds at hn; omega_using [hn]) h2)
+    fun t₁ ⟨rax₁, zf₁, mem₁, k₁⟩ y₁ => ?_
   obtain fr₁ : Frame [ctlRegion (refillBase s₀)] t.mem t₁.mem := by
     rw [mem₁]; exact ctl_write t.mem _ (k := 3) (by decide) _
   obtain hm₁ := GenerationMemory.ctlFrame h hin hm fr₁ (k₁.gpr (by decide)) k₁.2.1 k₁.2.2
@@ -277,7 +287,7 @@ theorem step_ok {qBytes : Nat} (hq : qBytes = Spec.Dsa.generationQLen pBytes) {a
     (fun _ => ?_)
   obtain ⟨V₁, R₁⟩ := hm₁.rep
   apply WP.seq
-  refine WP.mono (roomCheck_ok hm₁.layout R₁ rax₁ h15 hc hlen (hq ▸ hq31)) fun t₂ ⟨cf₂, mem₂, k₂⟩ => ?_
+  refine WP.mono_syms (roomCheck_ok hm₁.layout R₁ rax₁ h15 hc hlen (hq ▸ hq31)) fun t₂ ⟨cf₂, mem₂, k₂⟩ y₂ => ?_
   obtain hm₂ := hm₁.congr2 mem₂ (k₂.mono (by decide))
   obtain rd₂ : t₂.rd = v.rd := k₂.2.1.trans rd₁
   obtain wr₂ : t₂.wr = v.wr := k₂.2.2.trans wr₁
@@ -297,14 +307,14 @@ theorem step_ok {qBytes : Nat} (hq : qBytes = Spec.Dsa.generationQLen pBytes) {a
   obtain room : c + qBytes ≤ (randTape h).bytes.length := by omega_using [hc, hr]
   obtain ⟨V₂, R₂⟩ := hm₂.rep
   apply WP.seq
-  refine WP.mono (seedStart_ok hm₂.layout R₂ ((k₂.gpr (by decide)).trans rax₁) h13 hq31)
-    fun t₃ ⟨L₃, R₃, f₃, k₃⟩ => ?_
+  refine WP.mono_syms (seedStart_ok hm₂.layout R₂ ((k₂.gpr (by decide)).trans rax₁) h13 hq31)
+    fun t₃ ⟨L₃, R₃, f₃, k₃⟩ y₃ => ?_
   obtain hm₃ : GenerationMemory ((refillContext h).withHs hs)
       (upd (upd W 1 (off (randTape h).ptr c)) 16 (BitVec.ofNat 64 (c + qBytes))) t₃ := by
     refine hm₂.frame L₃ ⟨V₂, R₃⟩ ?_ (GenerationContext.frame_single f₃) k₃.2.1 k₃.2.2
     intro k hk
     simp only [generationSlots, List.mem_cons, List.not_mem_nil, or_false] at hk
-    rcases hk with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> rfl
+    rcases hk with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> rfl
   obtain cw₃ : ∀ j < 4, ctlWord t₃.mem (refillBase s₀) j = ctlWord t₁.mem (refillBase s₀) j := fun j hj => by
     rw [ctlWord_changed h (GenerationContext.frame_single f₃) hj, ctlWord_eq_of_mem mem₂]
   obtain fv₃ : Frame (ctlRegion (refillBase s₀) :: (refillContext h).changed) v.mem t₃.mem :=
@@ -314,8 +324,9 @@ theorem step_ok {qBytes : Nat} (hq : qBytes = Spec.Dsa.generationQLen pBytes) {a
     change ((((randTape h).bytes.drop c).take qBytes)).length = _
     simp only [List.length_take, List.length_drop]; omega_using [hq, hr]
   apply WP.seq
-  refine WP.mono (hA hs _ t₃ seed hin hm₃ seedLen (hm₃.rand.slice room) (by simp [upd, seed, GenerationTape.slice])
-    (c + qBytes) (by simp [upd]) room) fun t₅ hfin => ?_
+  obtain sy₃ : t₃.syms = v.syms := y₃.trans (y₂.trans (y₁.trans hsy))
+  refine WP.mono_syms (hA hs _ t₃ seed hin hm₃ ((hy.congr sy₃).withHs hs) seedLen (hm₃.rand.slice room)
+    (by simp [upd, seed, GenerationTape.slice]) (c + qBytes) (by simp [upd]) room) fun t₅ hfin y₅ => ?_
   obtain ⟨hs', W', u, sub', hm₅', hu, h16', -, outcome, f₅, rd₅, wr₅⟩ := hfin
   obtain hm₅ : GenerationMemory ((refillContext h).withHs hs') W' t₅ := withHs_withHs (refillContext h) hs hs' ▸ hm₅'
   have hin' : HsIn h hs' := sub'
@@ -332,7 +343,7 @@ theorem step_ok {qBytes : Nat} (hq : qBytes = Spec.Dsa.generationQLen pBytes) {a
   rw [hseed, hq] at outcome
   rw [hq] at room
   apply WP.seq
-  refine WP.mono (statusTest_ok hm₅) fun t₆ ⟨z₆, hm₆, mem₆, k₆⟩ => ?_
+  refine WP.mono_syms (statusTest_ok hm₅) fun t₆ ⟨z₆, hm₆, mem₆, k₆⟩ y₆ => ?_
   obtain cw₆ : ∀ j < 4, ctlWord t₆.mem (refillBase s₀) j = ctlWord t₁.mem (refillBase s₀) j := fun j hj => by
     rw [ctlWord_eq_of_mem mem₆, cw₅ j hj]
   rcases outcome with ⟨h19, hres⟩ | ⟨h19, hres⟩ | ⟨h19, a, hres, bytes⟩
@@ -347,19 +358,21 @@ theorem step_ok {qBytes : Nat} (hq : qBytes = Spec.Dsa.generationQLen pBytes) {a
   · refine WP.ite true (z₆.trans (by rw [h19]; rfl)) (fun _ => ?_) (fun hh => Bool.noConfusion hh)
     obtain c2₆ : t₆.mem.readW (off (refillBase s₀) 312) 64 = BitVec.ofNat 64 (n' + 1) := by
       rw [← c2, ← ctl₁ 2 (by decide), ← cw₆ 2 (by decide)]; rfl
-    refine WP.mono (rejected_ok ((k₆.gpr (by decide)).trans hm₅.layout.rsp) (hctl _ (k₆.2.2.trans wr₅')) hb
-      (by unfold Spec.Dsa.parameterSeeds at hn; omega_using [hn]) c2₆) fun t₇ ⟨mem₇, k₇⟩ => ?_
+    refine WP.mono_syms (rejected_ok ((k₆.gpr (by decide)).trans hm₅.layout.rsp) (hctl _ (k₆.2.2.trans wr₅')) hb
+      (by unfold Spec.Dsa.parameterSeeds at hn; omega_using [hn]) c2₆) fun t₇ ⟨mem₇, k₇⟩ y₇ => ?_
     obtain fr₇ : Frame [ctlRegion (refillBase s₀)] t₆.mem t₇.mem := by
       rw [mem₇]; exact ctl_write t₆.mem _ (k := 2) (by decide) _
     obtain hm₇ := GenerationMemory.ctlFrame h hin' hm₆ fr₇ (k₇.gpr (by decide)) k₇.2.1 k₇.2.2
     obtain cw₇ : ∀ j < 2, ctlWord t₇.mem (refillBase s₀) j = ctlWord t₆.mem (refillBase s₀) j := fun j hj => by
       rw [mem₇]; exact ctlWord_write_other t₆.mem _ (k := 2) (by omega_using [hj]) (by decide) (by omega_using [hj]) _
-    refine WP.mono (statusTest_ok hm₇) fun t₈ ⟨z₈, hm₈, mem₈, k₈⟩ => Or.inr ⟨z₈.trans (by rw [h19]; rfl), n', by omega_using [], ?_⟩
+    refine WP.mono_syms (statusTest_ok hm₇) fun t₈ ⟨z₈, hm₈, mem₈, k₈⟩ y₈ =>
+      Or.inr ⟨z₈.trans (by rw [h19]; rfl), n', by omega_using [], ?_⟩
     refine ⟨hs', W', u, hin', hm₈, h16', hu,
       by rw [ctlWord_eq_of_mem mem₈, cw₇ 0 (by decide), cw₆ 0 (by decide), ctl₁ 0 (by decide), c0],
       by rw [ctlWord_eq_of_mem mem₈, cw₇ 1 (by decide), cw₆ 1 (by decide), ctl₁ 1 (by decide), c1],
       by rw [ctlWord_eq_of_mem mem₈, mem₇]; exact ctlWord_write_self t₆.mem _ 2 _, by omega_using [hn], ?_, ?_,
-      k₈.2.1.trans (k₇.2.1.trans (k₆.2.1.trans rd₅')), k₈.2.2.trans (k₇.2.2.trans (k₆.2.2.trans wr₅'))⟩
+      k₈.2.1.trans (k₇.2.1.trans (k₆.2.1.trans rd₅')), k₈.2.2.trans (k₇.2.2.trans (k₆.2.2.trans wr₅')),
+      y₈.trans (y₇.trans (y₆.trans (y₅.trans sy₃)))⟩
     · rw [htot]; exact VG.Proof.Dsa.Generation.search_rejected hpos room hu hres
     · rw [mem₈]; exact (mem₆ ▸ fv₅).trans (fr₇.mono fun r hr => by
         rcases List.mem_singleton.mp hr with rfl; exact List.mem_cons_self ..)
@@ -371,11 +384,12 @@ theorem step_ok {qBytes : Nat} (hq : qBytes = Spec.Dsa.generationQLen pBytes) {a
       Or.inr (Or.inr ⟨h19, a, u, hu, h16', ?_, by rw [mem₇, mem₆]; exact bytes⟩)⟩
     rw [htot]; exact VG.Proof.Dsa.Generation.search_accepted hpos room hu hres
 
-theorem controller_ok {qBytes : Nat} (hq : qBytes = Spec.Dsa.generationQLen pBytes) {attempt : Prog isa}
-    (hA : AttemptOk h attempt) {v : State} (hv : ctlRegion (refillBase s₀) ∈ v.wr) (n : Nat) (t : State)
+theorem controller_ok {qBytes : Nat} (hq : qBytes = Spec.Dsa.generationQLen pBytes) {N : FnNames}
+    {attempt : Prog isa} (hA : AttemptOk h N attempt) {v : State} (hv : ctlRegion (refillBase s₀) ∈ v.wr)
+    (hy : FnSyms N (refillContext h) v) (n : Nat) (t : State)
     (hi : LoopInv h v n t) :
     WP isa (.loop (Impl.Dsa.X86_64.Generation.Refill.iteration attempt qBytes) .e) t (LoopDone h v) :=
-  WP.loop (M := isa) (Q := LoopDone h v) (LoopInv h v) (fun n t hi => step_ok h hq hA hv n t hi) n t hi
+  WP.loop (M := isa) (Q := LoopDone h v) (LoopInv h v) (fun n t hi => step_ok h hq hA hv hy n t hi) n t hi
 
 theorem withHs_self (p : GenerationContext) : p.withHs p.hs = p := by
   cases p
@@ -394,7 +408,7 @@ theorem loop_initial {W : Nat → BitVec 64} {v : State} (hm : GenerationMemory 
     (c2 : ctlWord v.mem (refillBase s₀) 2 = s₀.mem.readW (stackArg s₀ 1) 64) :
     LoopInv h v (s₀.mem.readW (stackArg s₀ 1) 64).toNat v := by
   refine ⟨(refillContext h).hs, W, 0, ?_, (withHs_self _).symm ▸ hm, h16, Nat.zero_le _, c0, c1,
-    by rw [c2, BitVec.ofNat_toNat, BitVec.setWidth_eq], h.seeds, ?_, Frame.refl _ _, rfl, rfl⟩
+    by rw [c2, BitVec.ofNat_toNat, BitVec.setWidth_eq], h.seeds, ?_, Frame.refl _ _, rfl, rfl, rfl⟩
   · intro a ha
     simp [Region.Contains, refillContext, GenerationTape.slice] at ha
   · simp [total, Spec.Entropy.Result.consume]

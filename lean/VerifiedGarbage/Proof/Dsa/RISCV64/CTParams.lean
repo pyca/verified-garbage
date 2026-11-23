@@ -250,6 +250,8 @@ structure VD where
   full : Bool
   /-- `out`, which the header's word `hOut` keeps, when signing or deriving. -/
   out : Option Addr
+  /-- Whether the header's word `hSig` keeps `sig` (verification). -/
+  kSig : Bool
 
 namespace VD
 
@@ -289,14 +291,16 @@ structure Base (v : VD) (s : State) : Prop where
   kn : 2 * v.L.pl + v.L.ql ≤ v.kn
   dig8 : v.full = true → word s.mem v.L.S hDigest = v.dig
   hout : ∀ o ∈ v.out, word s.mem v.L.S Sign.hOut = o
+  hsig : v.kSig = true → word s.mem v.L.S hSig = v.sig
 
 theorem Base.step {v : VD} {s t : State} (h : Base v s) (hr : Regs t v.L v.key v.sig) (hrd : t.rd = s.rd)
     (hwr : t.wr = s.wr) (ho : Outside v.L.S 0 v.L.Z s.mem t.mem)
     (h8 : word t.mem v.L.S hDigest = word s.mem v.L.S hDigest)
-    (h24 : word t.mem v.L.S Sign.hOut = word s.mem v.L.S Sign.hOut) : Base v t :=
+    (h24 : word t.mem v.L.S Sign.hOut = word s.mem v.L.S Sign.hOut)
+    (h32 : word t.mem v.L.S hSig = word s.mem v.L.S hSig) : Base v t :=
   ⟨h.ok, hr, h.scr.congr hwr, h.hk.keep hrd hwr, h.hsg.keep hrd hwr, h.hdg.keep hrd hwr,
     (h.hk.bytes ho (by omega_using [])).trans h.kb, h.kn, fun hf => h8.trans (h.dig8 hf),
-    fun o ho => h24.trans (h.hout o ho)⟩
+    fun o ho => h24.trans (h.hout o ho), fun hk => h32.trans (h.hsig hk)⟩
 
 /-- `Base` through code that keeps its registers and changes memory only in
 `Kept`'s places. -/
@@ -304,6 +308,7 @@ theorem Base.kept {v : VD} {s t : State} {rs : List Reg} (h : Base v s) (k : Kee
     (hk : Kept v.L s.mem t.mem) (hr : Regs t v.L v.key v.sig) : Base v t :=
   h.step hr k.2.1 k.2.2 hk.out (hk.word (Or.inl (by decide)))
     (hk.word (Or.inr ⟨by simp only [hLens, Sign.hOut]; omega_using [], by simp only [Sign.hOut]; omega_using []⟩))
+    (hk.word (Or.inr ⟨by simp only [hLens, hSig]; omega_using [], by simp only [hSig]; omega_using []⟩))
 
 /-- `Base` through code that keeps its registers and changes memory only in
 the body. -/
@@ -372,7 +377,7 @@ theorem fix_envQ {v : VD} {s : State} (h : InQ s v.L) : Fix (envQ v) s := ⟨h.e
 def vdOf (s : State) : VD :=
   ⟨layOf s, s.gpr .a0, s.gpr .a4, s.gpr .a6, (s.gpr .a7).toNat,
     Spec.Rsa.bytesAt s.mem (s.gpr .a0) (3 * (s.gpr .a2).toNat + (s.gpr .a3).toNat),
-    3 * (s.gpr .a2).toNat + (s.gpr .a3).toNat, 2 * (s.gpr .a3).toNat, true, none⟩
+    3 * (s.gpr .a2).toNat + (s.gpr .a3).toNat, 2 * (s.gpr .a3).toNat, true, none, true⟩
 
 /-- On entry. -/
 def C0 (v : VD) (s : State) : Prop := vContract.pre s ∧ vdOf s = v
@@ -405,7 +410,7 @@ theorem front_P0 {v : VD} {s : State} (h : C0 v s) : WP isa (.block Verify.entry
       k.2.1 k.2.2,
     pre_src (A := s.gpr .a6) (by rw [hrd]; simp) dDS nwD (s.gpr .a7).isLt (Nat.min_le_left _ _) k.2.1 k.2.2,
     ((hK rfl rfl).bytes F.out (by simp only [layOf] at hZ ⊢; omega_using [hZ])), by simp only [vdOf, layOf]; omega_using [],
-    fun _ => F.dig, fun _ h => nomatch h⟩, F.lens⟩
+    fun _ => F.dig, fun _ h => (nomatch h), fun _ => F.sigw⟩, F.lens⟩
 
 /-- After loading `scratch`'s address. -/
 def L1 (v : VD) (s : State) : Prop := s.gpr .t2 = v.L.S
@@ -1175,8 +1180,9 @@ theorem zeroK : ∀ v s₁ s₂, At Φ FK 29 v s₁ → At Φ FK 29 v s₂ → (
 
 end K
 
-/-- The public data name a signature and a digest, as verification's do. -/
-abbrev VB (v : VD) : Prop := v.full = true ∧ v.sgl = 2 * v.L.ql
+/-- The public data name a signature and a digest, and the header keeps the
+signature's address, as verification's do. -/
+abbrev VB (v : VD) : Prop := v.full = true ∧ v.sgl = 2 * v.L.ql ∧ v.kSig = true
 
 /-- `body`'s phase: the key passed the checks. -/
 abbrev SB (v : VD) (u : State) : Prop := SK v u ∧ EOk v (2 * v.L.pl + v.L.ql) ∧ VB v

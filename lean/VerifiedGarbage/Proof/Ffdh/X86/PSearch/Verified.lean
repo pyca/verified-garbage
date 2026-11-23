@@ -98,9 +98,9 @@ theorem word64 {m : Mem} {a : Addr} {k : Nat} (hk : k < 2 ^ 64) (lo : m.readW a 
 
 /-- The return address, apart from every region the run writes. -/
 theorem ret_apart {o : State} (A : PSearchABI o) : ∀ r ∈ frameR o, (retR o).Disjoint r := by
-  have h1 : 212 ≤ (o.gpr .esp).toNat := A.stackLow
+  have h1 : 292 ≤ (o.gpr .esp).toNat := A.stackLow
   have hl : (retR o).Disjoint (lowR o) := by
-    show Region.Disjoint ⟨(o.gpr .esp).setWidth 64, 4⟩ ⟨(o.gpr .esp).setWidth 64 - BitVec.ofNat 64 212, 212⟩
+    show Region.Disjoint ⟨(o.gpr .esp).setWidth 64, 4⟩ ⟨(o.gpr .esp).setWidth 64 - BitVec.ofNat 64 292, 292⟩
     exact Offset.base_disjoint_below _ (by omega_using [])
   exact apart A A.retO A.retU A.retB A.retS A.retA hl
 
@@ -474,7 +474,7 @@ abbrev callRdK (p : PPub) (used : Nat) : List Region :=
     ⟨p.T.setWidth 64, 8192⟩]
 abbrev callWrK (p : PPub) : List Region :=
   [⟨p.op.setWidth 64, p.len⟩, ⟨(p.S + BitVec.ofNat 32 candOff).setWidth 64, 8⟩, ⟨p.B.setWidth 64, p.slen * 8⟩,
-    ⟨p.sp.setWidth 64 - 212#64 + BitVec.ofNat 64 176, 36⟩]
+    ⟨p.sp.setWidth 64 - 292#64 + BitVec.ofNat 64 256, 36⟩]
 
 theorem call_ct (q : Lp) :
     RelCT isa (fun t₁ t₂ => CallAt q t₁ ∧ CallAt q t₂)

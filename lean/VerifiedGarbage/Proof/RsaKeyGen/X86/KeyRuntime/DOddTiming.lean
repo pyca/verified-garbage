@@ -63,7 +63,8 @@ theorem dOdd_trace (B : Addr) (Z n e : Nat) (large : 3 ≤ e) (odd : e % 2 = 1) 
       (by decide) (by decide) (by decide) (by decide) (by decide) (by rw [L]; omega_using [large]))
       fun w ⟨hw, Ow, _, _, _⟩ => ?_) (RelCT.seq (inverseFrom_trace (N := 32) (by decide) (by decide)
         layout dOdd_setup_public) (public_trace dOdd_rest_public))) (public_trace dOdd_finish_public)
-  have same := VG.Proof.RsaKeyGen.X86.Key.exponent_preserves_e (exponent_division_frame Ow)
+  have same := h.read_val32 (d := kEv) (k := 2) (by decide) Ow fun O =>
+    VG.Proof.RsaKeyGen.X86.Key.exponent_preserves_e (exponent_division_frame O)
   refine ⟨hw, ?_, ?_⟩
   · change val32 w.mem B kEv 2 % 2 = 1
     rw [same, E]

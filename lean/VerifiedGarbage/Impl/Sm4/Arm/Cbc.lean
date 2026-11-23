@@ -21,7 +21,7 @@ open VG.Arm VG.Impl.Modes.Arm
 
 /-- The code of `vg_sm4_ecb`, as its artifact has it: `ecbAny` with its
 scratch buffer in a frame on the stack. -/
-def ecbAnyCode : Prog isa := Impl.StackScratch.Arm.withStackScratchWiped 1472 0 364 ecbAny
+def ecbAnyCode : Prog isa := Impl.StackScratch.Arm.withStackScratch 1472 0 ecbAny
 
 /-- `vg_sm4_ecb_encrypt` or `vg_sm4_ecb_decrypt`: `decrypt := 0` or `1` in
 `r3` and a call of `vg_sm4_ecb`, in a frame saving `r4` and `lr` (8 bytes,

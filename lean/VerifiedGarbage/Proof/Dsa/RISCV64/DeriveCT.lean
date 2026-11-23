@@ -96,7 +96,7 @@ theorem run_else {α : Type} {Φ : α → State → Prop} {F : List (Prog isa)} 
 /-- A call's public data. -/
 def vdD (s : State) : VD :=
   ⟨dlayOf s, s.gpr .a2, s.gpr .a5, 0, 0, Spec.Rsa.bytesAt s.mem (s.gpr .a2) (s.gpr .a3).toNat, (s.gpr .a3).toNat,
-    (s.gpr .a6).toNat, false, some (s.gpr .a0)⟩
+    (s.gpr .a6).toNat, false, some (s.gpr .a0), false⟩
 
 /-- The contract's buffers are apart from `scratch`. -/
 theorem dsrc {s : State} {A : Addr} {n k : Nat} (hm : (⟨A, n⟩ : Region) ∈ s.rd)
@@ -120,7 +120,7 @@ theorem frontD : ∀ v s, C0d v s → WP isa (.block Derive.entry) s (P0 v) := b
     dsrc (by rw [hrd]; simp) dPS (s.gpr .a3).isLt (Nat.le_refl _) k.2.1 k.2.2
   exact ⟨⟨hL, F.regs, F.scr, hK, dsrc (by rw [hrd]; simp) dXS (s.gpr .a6).isLt (Nat.le_refl _) k.2.1 k.2.2,
     src_nil (Nat.zero_min _), hK.bytes F.out (by simp only [dlayOf] at hZ ⊢; omega_using [hZ]),
-    (by simp only [vdD, dlayOf]; omega_using [hkl]), (fun h => nomatch h), fun o ho => by cases ho; exact F.outw⟩,
+    (by simp only [vdD, dlayOf]; omega_using [hkl]), (fun h => nomatch h), (fun o ho => by cases ho; exact F.outw), fun h => nomatch h⟩,
     F.lens.trans (congrArg _ (Nat.zero_min _).symm)⟩
 
 theorem outD : ∀ v s, C0d v s → v.out = some (oOf v) := by

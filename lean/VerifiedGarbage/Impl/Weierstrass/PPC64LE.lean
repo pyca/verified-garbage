@@ -99,6 +99,26 @@ def bitJ (dst j : Nat) : List Instr :=
   (if j = 0 then [.logic .and .r6 .r4 .r7] else [.lsr .d .r6 .r4 j, .logic .and .r6 .r6 .r7]) ++
     [.stb .r6 .r5 (dst + j)]
 
+/-- `k` words straight-line, word `i` of the table at `[r4 + o]` to
+`[r9 + dst + o]` (both `+ 8 i`), through `r11`. -/
+def copyRun (dst : Nat) : Nat → Nat → List Instr
+  | 0, _ => []
+  | k + 1, o => [.load .d .r11 .r4 o, .store .d .r11 .r9 (dst + o)] ++ copyRun dst k (o + 8)
+
+/-- One iteration of `copyTbl`'s loop: `c` words (one slot) from `[r4]` to
+`[r9 + dst]`, straight-line, then both pointers advanced past them. -/
+def copyTblBody (c dst : Nat) : List Instr :=
+  decCounter :: (copyRun dst c 0 ++ [.addi .r4 .r4 (8 * c), .addi .r9 .r9 (8 * c)])
+
+/-- `[r3 + dst]`, `m c` 64-bit words (`m > 0`), from the table of constants
+`sym`: its address to `r4` (`adrSym`, which also writes the link register,
+kept in `r11` around it), `r9 = r3`, and `m` iterations (`r31`) of `c`
+words each, straight-line (`copyTblBody`). In place of a run of immediates
+per word, as `setConst` writes them. -/
+def copyTbl (sym : String) (m c dst : Nat) : Prog isa :=
+  .seq (.block [.mflr .r11, .adrSym .r4 sym, .mtlr .r11, .li .r31 m, .addi .r9 wb 0])
+    (.loop (.block (copyTblBody c dst)) more)
+
 /-- The table at `dst` of the bits of the `nbytes`-byte little-endian number at
 `src`: byte `8i + j` is bit `j` of byte `i` (so byte `t` is bit `t`), from
 the top byte down. -/

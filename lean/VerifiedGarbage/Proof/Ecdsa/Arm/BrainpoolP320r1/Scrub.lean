@@ -109,12 +109,12 @@ open VG VG.Arm VG.Arm.Scrub
 theorem verifyBrainpoolP320r1 (hC : Weierstrass.Law Spec.BrainpoolP320r1.curve) :
     VerifiedScrubbed target Impl.Ecdsa.Arm.Fn.verifyBrainpoolP320r1
       (Spec.Ecdsa.BrainpoolP320r1.inst.verifyHashContract
-        (abi.withConsts Impl.Weierstrass.Arm.brainpoolp320r1CombConsts) 96) 32 :=
+        (abi.withConsts (Proof.Ecdsa.Verify.Arm.BrainpoolP320r1.combVerifyK false)) 96) 32 :=
   verifiedScrubbedAll (api := Spec.Ecdsa.BrainpoolP320r1.verifyHashApi)
     { code := BrainpoolP320r1.Scrub.verifyCode false
       verified := Proof.Ecdsa.Verify.Arm.BrainpoolP320r1.verifyHash_verified hC }
     (Proof.Ecdsa.Verify.Arm.Scrub.verifyHashOut Spec.Ecdsa.BrainpoolP320r1.inst
-      Impl.Weierstrass.Arm.brainpoolp320r1CombConsts 96)
+      (Proof.Ecdsa.Verify.Arm.BrainpoolP320r1.combVerifyK false) 96)
     (scrubSideF_of ⟨BrainpoolP320r1.Scrub.verify_armStack, BrainpoolP320r1.Scrub.verify_noIcall⟩
       BrainpoolP320r1.Scrub.frameOk_96 _)
 
@@ -122,12 +122,12 @@ theorem verifyBrainpoolP320r1 (hC : Weierstrass.Law Spec.BrainpoolP320r1.curve) 
 theorem verifyBrainpoolP320r1U (hC : Weierstrass.Law Spec.BrainpoolP320r1.curve) :
     VerifiedScrubbed target Impl.Ecdsa.Arm.Fn.verifyBrainpoolP320r1U
       (Spec.Ecdsa.BrainpoolP320r1.inst.verifyHashContract
-        (abi.withConsts Impl.Weierstrass.Arm.brainpoolp320r1CombConsts) 96) 32 :=
+        (abi.withConsts (Proof.Ecdsa.Verify.Arm.BrainpoolP320r1.combVerifyK true)) 96) 32 :=
   verifiedScrubbedAll (api := Spec.Ecdsa.BrainpoolP320r1.verifyHashApi)
     { code := BrainpoolP320r1.Scrub.verifyCode true
       verified := Proof.Ecdsa.Verify.Arm.BrainpoolP320r1.verifyHashU_verified hC }
     (Proof.Ecdsa.Verify.Arm.Scrub.verifyHashOut Spec.Ecdsa.BrainpoolP320r1.inst
-      Impl.Weierstrass.Arm.brainpoolp320r1CombConsts 96)
+      (Proof.Ecdsa.Verify.Arm.BrainpoolP320r1.combVerifyK true) 96)
     (scrubSideF_of ⟨BrainpoolP320r1.Scrub.verifyU_armStack, BrainpoolP320r1.Scrub.verifyU_noIcall⟩
       BrainpoolP320r1.Scrub.frameOk_96 _)
 

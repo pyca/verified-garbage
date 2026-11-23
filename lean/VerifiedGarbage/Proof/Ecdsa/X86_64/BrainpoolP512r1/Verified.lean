@@ -160,7 +160,7 @@ theorem brainpoolp512r1_tbls : CombTbls brainpoolp512r1 := fun _ h => by cases h
 /-- ECDH's, verification's and the public key's `[k]G` is a call of
 `vg_brainpoolp512r1_mul`, which calls no other function. -/
 theorem brainpoolp512r1_mulBase : MulBaseOk brainpoolp512r1 :=
-  ⟨fun h => absurd h (by decide), fun _ => ⟨.inr (.inr (.inl rfl)), by lit_decide⟩⟩
+  ⟨fun h => absurd h (by decide), fun _ => ⟨.inr (.inr (.inl rfl)), fun h => absurd h (by decide), fun _ => rfl⟩⟩
 
 theorem brainpoolp512r1S_C : brainpoolp512r1S.C = brainpoolp512r1.C := rfl
 
@@ -220,7 +220,7 @@ theorem sign_x86 (hL : Law Spec.BrainpoolP512r1.curve)
     (hs : signX86_64.pre s) :
     ∃ t s', Exec isa signBrainpoolP512r1.inline s t s' ∧ abiPreserved s s' ∧ signX86_64.post s s' := by
   obtain ⟨t, s', he, hsv, hpost⟩ := signG_ok (brainpoolp512r1S_ok hI) hL brainpoolp512r1S_comb
-    (Proof.BrainpoolP512r1.combOk7 hL) rfl (pre_of hs)
+    (Proof.BrainpoolP512r1.combOk7 hL) rfl (pre_of hs) (by decide)
   have hok : signBrainpoolP512r1.InlineOk = true := by lit_decide
   have hsp := Code.clobbers_rsp_of_inlineOk hok
   have hmx : signBrainpoolP512r1.inline.allInstrs (fun i => !loadsMxcsr i) = true := by

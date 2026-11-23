@@ -3,6 +3,10 @@ module
 public import VerifiedGarbage.Proof.Ecdh.Arm.Main
 import VerifiedGarbage.Proof.Ecdsa.Arm.P192.Verified
 import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
+public import VerifiedGarbage.Proof.Framework.Arm.StackScratchConsts
+import VerifiedGarbage.Proof.Framework.Arm.TaintSym
+import VerifiedGarbage.Proof.Ecdsa.Arm.Setup
+public import VerifiedGarbage.Proof.Framework.ConstMem
 public import VerifiedGarbage.Impl.Ecdh.P192.Arm
 public import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
@@ -17,6 +21,10 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Ecdh.Arm.Main
 meta import VerifiedGarbage.Proof.Ecdsa.Arm.P192.Verified
 meta import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
+meta import VerifiedGarbage.Proof.Framework.Arm.StackScratchConsts
+meta import VerifiedGarbage.Proof.Framework.Arm.TaintSym
+meta import VerifiedGarbage.Proof.Ecdsa.Arm.Setup
+meta import VerifiedGarbage.Proof.Framework.ConstMem
 meta import VerifiedGarbage.Impl.Ecdh.P192.Arm
 meta import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
@@ -110,9 +118,15 @@ namespace VG.Proof.Ecdh.Arm.P192
 
 open VG VG.Arm VG.Impl.Ecdsa.Arm VG.Impl.Ecdh.Arm VG.Proof.Ecdsa.Arm VG.Proof.Ecdsa.Arm.P192 Spec.Weierstrass
 
-theorem pre_of {u : Bool} {s : State} (h : ecdhArm.pre s) : EPre (p192With u) s := by
+/-- The contract with the table of constants (`Cfg.constsK`), as the proof states it. -/
+abbrev ecdhAC (u : Bool) : Contract isa := ecdhArm.withTablesArm (p192With u).constsK
+
+theorem pre_of {u : Bool} {s : State} (h : ecdhArm.pre (stripConsts (p192With u).constsK s))
+    (hk : ConstsOk (p192With u).constsK 0 s) : EPre (p192With u) s (constRegs (p192With u).constsK s) := by
   obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9⟩ := h
-  exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9⟩
+  exact ⟨hk.rd_strip h1, h2, h3, h4, h5, h6, h7, h8, h9, fun _ => tbl_of_consts hk (List.mem_singleton_self _)
+    (show (⟨ptr s .r3, 8192⟩ : Region) ∈ (stripConsts (p192With u).constsK s).wr by
+      rw [h2]; exact List.mem_cons_of_mem _ (List.mem_singleton_self _))⟩
 
 theorem post_of {u : Bool} {s s' : State} (h : EPost (p192With u) s s') : ecdhArm.post s s' := by
   unfold EPost at h
@@ -124,10 +138,10 @@ theorem post_of {u : Bool} {s s' : State} (h : EPost (p192With u) s s') : ecdhAr
         ex s.mem (State.addr (s.gpr .r1)) (State.addr (s.gpr .r2)) from rfl, hq]
   rcases q with _ | z <;> exact id
 
-theorem ecdh_arm (hL : Weierstrass.Law Spec.P192.curve) (u : Bool) (s : State) (hs : ecdhArm.pre s) :
-    ∃ t s', Exec isa (exchangeP192With u) s t s' ∧ abiPreserved s s' ∧ ecdhArm.post s s' := by
-  have hp := pre_of (u := u) hs
-  obtain ⟨t, s', he, K, hpost⟩ := exchange_ok (p192With_ok u) hL hp
+theorem ecdh_arm (hL : Weierstrass.Law Spec.P192.curve) (u : Bool) (s : State) (hs : (ecdhAC u).pre s) :
+    ∃ t s', Exec isa (exchangeP192With u) s t s' ∧ abiPreserved s s' ∧ (ecdhAC u).post s s' := by
+  obtain ⟨hp, hk⟩ := hs
+  obtain ⟨t, s', he, K, hpost⟩ := exchange_ok (p192With_ok u) hL (pre_of hp hk)
   exact ⟨t, s', he, abi_of_saved K.saved K.sp, post_of hpost⟩
 
 /-- The taint analysis starts with the arguments' registers public. -/
@@ -150,11 +164,19 @@ theorem agree_τ₀ {s t : State} (h : ecdhArm.pub s t) : VG.Arm.Taint.Agree τ�
   · exact h2
   · exact h3
 
-theorem ecdh_ct : ConstantTime isa ecdhArm.pre ecdhArm.pub exchangeP192 :=
-  VG.Taint.constantTime (A := taint) τ₀ (fun _ _ _ _ h => agree_τ₀ h) (by native_taint_decide)
+/-- The taint analysis's start, and the table's address, agree in the two states. -/
+theorem agreeC {u : Bool} {s t : State} (h : (ecdhAC u).pub s t) :
+    VG.Arm.Taint.Agree τ₀ s t ∧ ∀ n ∈ [(p192With u).constSym], s.syms n = t.syms n :=
+  ⟨agree_τ₀ h.1, fun n hn => by
+    obtain rfl := List.mem_singleton.mp hn; exact h.2 _ (List.mem_singleton_self _)⟩
 
-theorem ecdhU_ct : ConstantTime isa ecdhArm.pre ecdhArm.pub exchangeP192U :=
-  VG.Taint.constantTime (A := taintU) τ₀ (fun _ _ _ _ h => agree_τ₀ h) (by taint_decide)
+theorem ecdh_ct : ConstantTime isa (ecdhAC false).pre (ecdhAC false).pub exchangeP192 :=
+  VG.Taint.constantTime (A := taintSym [(p192With false).constSym]) τ₀ (fun _ _ _ _ h => agreeC h)
+    (by native_taint_decide)
+
+theorem ecdhU_ct : ConstantTime isa (ecdhAC true).pre (ecdhAC true).pub exchangeP192U :=
+  VG.Taint.constantTime (A := taintSymU [(p192With true).constSym]) τ₀ (fun _ _ _ _ h => agreeC h)
+    (by taint_decide)
 
 /-- A state satisfying the precondition. -/
 def satState : State where
@@ -169,10 +191,9 @@ def satState : State where
   rd := [⟨0x2000, 24⟩, ⟨0x3000, 49⟩]
   wr := [⟨0x1000, 24⟩, ⟨0x8000, 8192⟩]
 
-theorem ecdhWith_verified (hL : Weierstrass.Law Spec.P192.curve) (u : Bool)
-    (hct : ConstantTime isa ecdhArm.pre ecdhArm.pub (exchangeP192With u)) :
-    Verified Arm.target (exchangeP192With u) (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P192.inst Arm.abi) :=
-  Verified.of_correct (ecdh_arm hL u) hct
+/-- The contract as the proof states it implies the exchange's (without the table). -/
+theorem ecdhArm_implies :
+    ecdhArm.Implies (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P192.inst Arm.abi) :=
     { pre := by
         sig_implies_pre [Spec.EcKey.P192.inst, Spec.Ecdh.Instance.exchangeContract,
           Spec.Ecdh.Instance.exchangeSig, Spec.P192.curve, Spec.EcKey.scratchWords, ecdhArm, ex, Arm.abi,
@@ -196,12 +217,56 @@ theorem ecdhWith_verified (hL : Weierstrass.Law Spec.P192.curve) (u : Bool)
           Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
           [satState, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read] using satState }
 
+/-- A state satisfying the precondition with the table, at `0x100000`. -/
+def satStateC (u : Bool) : State := { satState with
+  mem := constMem 0x100000 (p192With u).constTbl
+  rd := satState.rd ++ [⟨0x100000, 8 * (17 * 3)⟩]
+  syms := fun _ => 0x100000 }
+
+theorem satC_pre (u : Bool) :
+    (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P192.inst (Arm.abi.withConsts (p192With u).constsK)).pre
+      (satStateC u) := by
+  have hl := constTbl_length (p192With u)
+  have held := constMem_held 0x100000 (p192With u).constTbl (by rw [hl]; cases u <;> decide)
+  obtain ⟨W, eW⟩ : ∃ W, (p192With u).constTbl = W := ⟨_, rfl⟩
+  have hk : (p192With u).constsK = [((p192With u).constSym, W)] := by rw [← eW]; rfl
+  rw [hk]
+  rw [eW] at hl held
+  generalize e : satStateC u = s
+  sig_pre [Spec.EcKey.P192.inst, Spec.Ecdh.Instance.exchangeContract, Spec.Ecdh.Instance.exchangeSig,
+    Spec.P192.curve, Spec.EcKey.scratchWords, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val,
+    Arm.State.addr, Abi.withConsts, Abi.constRegions_cons, Abi.constRegions_nil, Abi.constsHeld, stackBelow]
+  subst e
+  rw [hl]
+  refine ⟨by cases u <;> decide, by cases u <;> decide, fun i hi => ?_, by cases u <;> decide, ?_, by cases u <;> decide, by cases u <;> decide, ?_⟩
+  · show (constMem 0x100000 (p192With u).constTbl).readW _ 64 = _
+    rw [eW]; exact held i (by rw [hl]; exact hi)
+  · intro r hr
+    change r ∈ [⟨0x1000, 24⟩, ⟨0x8000, 8192⟩] at hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl <;> exact Region.disjoint_of_sep (by cases u <;> decide)
+  · repeat' apply And.intro
+    all_goals first | exact Region.disjoint_of_sep (by cases u <;> decide) | (cases u <;> decide)
+
+theorem ecdhAC_implies (u : Bool) :
+    (ecdhAC u).Implies
+      (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P192.inst (Arm.abi.withConsts (p192With u).constsK)) :=
+  withTables_implies ecdhArm_implies ⟨satStateC u, satC_pre u⟩
+
+theorem ecdhWith_verified (hL : Weierstrass.Law Spec.P192.curve) (u : Bool)
+    (hct : ConstantTime isa (ecdhAC u).pre (ecdhAC u).pub (exchangeP192With u)) :
+    Verified Arm.target (exchangeP192With u)
+      (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P192.inst (Arm.abi.withConsts (p192With u).constsK)) :=
+  Verified.of_correct (ecdh_arm hL u) hct (ecdhAC_implies u)
+
 theorem ecdh_verified (hL : Weierstrass.Law Spec.P192.curve) :
-    Verified Arm.target exchangeP192 (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P192.inst Arm.abi) :=
+    Verified Arm.target exchangeP192
+      (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P192.inst (Arm.abi.withConsts (p192With false).constsK)) :=
   ecdhWith_verified hL false ecdh_ct
 
 theorem ecdhU_verified (hL : Weierstrass.Law Spec.P192.curve) :
-    Verified Arm.target exchangeP192U (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P192.inst Arm.abi) :=
+    Verified Arm.target exchangeP192U
+      (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P192.inst (Arm.abi.withConsts (p192With true).constsK)) :=
   ecdhWith_verified hL true ecdhU_ct
 
 end VG.Proof.Ecdh.Arm.P192

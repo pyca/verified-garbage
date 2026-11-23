@@ -92,7 +92,8 @@ theorem _root_.VG.Impl.P256.CombArithmetic.program.lit_eq :
       · exact absurd ⟨rfl, rfl⟩ h1
       · exact absurd ⟨rfl, rfl⟩ h2
 
--- The comb, which signing and public keys both contain, is evaluated once.
+-- The comb, which signing and public keys both call, is evaluated once.
+materialize_code combBody
 materialize_code comb
 materialize_code sign
 materialize_code publicKey

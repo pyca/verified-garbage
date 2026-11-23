@@ -40,11 +40,6 @@ namespace VG.Impl.Sm4.PPC64LE
 open VG.PPC64LE
 open VG.Impl.Modes.PPC64LE (mov)
 
-/-- The bit `vg_sm4_prepare_keys` takes for the direction. -/
-def dirBit : Dir → Nat
-  | .encrypt => 0
-  | .decrypt => 1
-
 /-- `vg_sm4_prepare_keys(r3, d, sb, slots)`, keeping `r3` in `r7`. -/
 def prepareCall (d : Dir) : Prog isa :=
   .seq (.block [mov .r7 .r3, .li .r4 (dirBit d), .li .r6 slots])

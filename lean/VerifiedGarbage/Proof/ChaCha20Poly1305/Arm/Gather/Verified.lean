@@ -8,10 +8,8 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Poly1305.Arm.Lit
 import VerifiedGarbage.Proof.ChaCha20Poly1305.Arm.Lit
 public import VerifiedGarbage.Proof.Framework.Arm.ScrubProved
-public import VerifiedGarbage.Proof.Framework.Arm.ScrubSel
 public import VerifiedGarbage.Proof.Framework.Registration
 meta import VerifiedGarbage.Proof.Framework.Arm.ScrubProved
-meta import VerifiedGarbage.Proof.Framework.Arm.ScrubSel
 meta import VerifiedGarbage.Proof.Framework.Arm.Lit
 meta import VerifiedGarbage.Proof.ChaCha20Poly1305.Arm.Verified
 meta import VerifiedGarbage.Proof.Framework.Registration
@@ -877,21 +875,18 @@ section
 # ChaCha20-Poly1305 on ARMv7, without secret residue
 
 `seal`, `open` and `open_to`, with either arithmetic of Poly1305 (`umaal`),
-keep their working space in a frame, which they wipe. Their postconditions
-read the memory on return only within the data, the tag and the destination
+keep their working space in a frame. Their postconditions read the memory on
+return only within the data, the tag and the destination
 (`Arm.Scrub.PostOut`; `open_to`'s where its precondition holds). Each is
-emitted with its cleanup (`Impl.ChaCha20Poly1305.Arm.Fn`): a wipe of only
-the words of the stack its contract reserves that the residue analysis
-(`Arm.rtaint`) finds may differ between two runs (`Impl.Scrub.Arm.scrubSel`;
-the stack arguments and buffer addresses its frame copies, and its innermost
-frame), then instructions that set the registers a callee may change, but
-the result, and the flags to constants. `Fn` has the theorem of each
-(`Arm.Scrub.verifiedScrubbedSel`), which its registration binds: the kernel
-evaluates the analysis of the code with either arithmetic
-(`cases umaal`, `taint_decide_ct`), a check of each of the two codes the
-function can be, not of the list of Poly1305's variants. `seal_gather`'s
-record of `seal` needs the stack `seal`'s code uses, which follows from
-`CodeOk`, proven once for both arithmetics, whose code has the same shape.
+emitted with its cleanup (`Impl.ChaCha20Poly1305.Arm.Fn`): the whole stack
+its contract reserves zeroed in a loop (`Impl.Scrub.Arm.scrubAll`), then
+instructions that set the registers a callee may change, but the result, and
+the flags to constants. `Fn` has the theorem of each
+(`Arm.Scrub.verifiedScrubbedAll`), which its registration binds, given that
+its frames are within that stack (`CodeOk`, proven once for both
+arithmetics, whose code has the same shape). `seal_gather` calls `seal`'s
+code without its cleanup, as the internal `vg_chacha20_poly1305_seal_core`
+(`sealCode`), and its own cleanup zeroes the stack of both.
 -/
 
 @[expose] public section
@@ -977,17 +972,31 @@ theorem sealBody_codeOk (umaal : Bool) : CodeOk (sealBody umaal) 8 ∧ CodeOk (o
     List.length_nil]
   decide
 
-theorem seal_codeOk (umaal : Bool) :
-    CodeOk (Impl.StackScratch.Arm.withStackScratchWiped 656 3 158 («seal» umaal)) 664 :=
-  CodeOk.mono (CodeOk.alloc (n := 8) (CodeOk.seq ((CodeOk.block _).mono (Nat.zero_le _))
-    (CodeOk.seq (CodeOk.seq ((CodeOk.block _).mono (Nat.zero_le _)) (sealBody_codeOk umaal).1)
-      ((CodeOk.block _).mono (Nat.zero_le _))))) (by decide)
+private theorem blk (is : List Instr) (n : Nat) : CodeOk (.block is) n := (CodeOk.block is).mono (Nat.zero_le n)
 
-/-- The wipe of `scrubSel`, of `seal`'s words of 664 bytes, in a frame of as
-many. -/
-theorem wipeSel_codeOk :
-    CodeOk (Impl.Scrub.Arm.wipeSel 664 Impl.ChaCha20Poly1305.Arm.Fn.sealWords : Prog isa) 664 := by
-  decide
+theorem seal_codeOk (umaal : Bool) : CodeOk (Impl.ChaCha20Poly1305.Arm.Fn.sealCode umaal) 664 :=
+  CodeOk.mono (CodeOk.alloc (n := 8) (CodeOk.seq (blk _ _) (CodeOk.seq (blk _ _) (sealBody_codeOk umaal).1)))
+    (by decide)
+
+theorem open_codeOk (umaal : Bool) :
+    CodeOk (Impl.StackScratch.Arm.withStackScratch 656 3 («open» umaal)) 664 :=
+  CodeOk.mono (CodeOk.alloc (n := 8) (CodeOk.seq (blk _ _) (CodeOk.seq (blk _ _) (sealBody_codeOk umaal).2)))
+    (by decide)
+
+theorem openTo_codeOk (umaal : Bool) :
+    CodeOk (Impl.StackScratch.Arm.withStackScratch 664 5 (openTo umaal)) 672 :=
+  CodeOk.mono (CodeOk.alloc (n := 8) (CodeOk.seq (blk _ _) (CodeOk.seq (blk _ _) (sealBody_codeOk umaal).2)))
+    (by decide)
+
+theorem gather_codeOk : CodeOk (Impl.AesGcm.Arm.SealGather.gather : Prog isa) 0 := by decide
+
+/-- `seal_gather`: its frame of 32 bytes, above `seal`'s code's 664. -/
+theorem sealGather_codeOk (umaal : Bool) :
+    CodeOk (SealGather.sealGather (Impl.ChaCha20Poly1305.Arm.Fn.sealCoreName umaal)
+      (Impl.ChaCha20Poly1305.Arm.Fn.sealCode umaal)) 696 :=
+  CodeOk.alloc (n := 664) (CodeOk.seq (CodeOk.seq (blk _ _) (blk _ _)) (CodeOk.seq (gather_codeOk.mono (Nat.zero_le _))
+    (CodeOk.seq (CodeOk.seq (blk _ _) (blk _ _)) (CodeOk.seq (CodeOk.call (seal_codeOk umaal))
+      (CodeOk.seq (blk _ _) (blk _ _))))))
 
 end VG.Proof.ChaCha20Poly1305.Arm.Scrub
 
@@ -999,31 +1008,28 @@ open VG VG.Arm VG.Arm.Scrub
 theorem «seal» (umaal : Bool) :
     VerifiedScrubbed target (Impl.ChaCha20Poly1305.Arm.Fn.seal umaal)
       (Spec.ChaCha20Poly1305.sealContract abi 664) 0 :=
-  verifiedScrubbedSel (api := Spec.ChaCha20Poly1305.sealApi) (W := 664)
-    { code := Impl.StackScratch.Arm.withStackScratchWiped 656 3 158 (Impl.ChaCha20Poly1305.Arm.seal umaal)
+  verifiedScrubbedAll (api := Spec.ChaCha20Poly1305.sealApi)
+    { code := Impl.ChaCha20Poly1305.Arm.Fn.sealCode umaal
       verified := seal_framed }
-    Impl.ChaCha20Poly1305.Arm.Fn.sealWords [] (Scrub.sealOut _) (by decide) hbp_nil
-    (by cases umaal <;> exact ⟨_, by taint_decide_ct⟩)
+    (Scrub.sealOut _) (scrubSideF_of (Scrub.seal_codeOk umaal) (by decide) _)
 
 /-- `vg_chacha20_poly1305_open`, with either arithmetic of Poly1305. -/
 theorem «open» (umaal : Bool) :
     VerifiedScrubbed target (Impl.ChaCha20Poly1305.Arm.Fn.open umaal)
       (Spec.ChaCha20Poly1305.openZeroContract abi 664) 32 :=
-  verifiedScrubbedSel (api := Spec.ChaCha20Poly1305.openZeroApi) (W := 664)
-    { code := Impl.StackScratch.Arm.withStackScratchWiped 656 3 158 (Impl.ChaCha20Poly1305.Arm.open umaal)
+  verifiedScrubbedAll (api := Spec.ChaCha20Poly1305.openZeroApi)
+    { code := Impl.StackScratch.Arm.withStackScratch 656 3 (Impl.ChaCha20Poly1305.Arm.open umaal)
       verified := open_framed }
-    Impl.ChaCha20Poly1305.Arm.Fn.sealWords [] (Scrub.openOut _) (by decide) hbp_nil
-    (by cases umaal <;> exact ⟨_, by taint_decide_ct⟩)
+    (Scrub.openOut _) (scrubSideF_of (Scrub.open_codeOk umaal) (by decide) _)
 
 /-- `vg_chacha20_poly1305_open_to`, with either arithmetic of Poly1305. -/
 theorem openTo (umaal : Bool) :
     VerifiedScrubbed target (Impl.ChaCha20Poly1305.Arm.Fn.openTo umaal)
       (Spec.ChaCha20Poly1305.openToContract abi 672) 32 :=
-  verifiedScrubbedSel (api := Spec.ChaCha20Poly1305.openToApi) (W := 672)
-    { code := Impl.StackScratch.Arm.withStackScratchWiped 664 5 158 (Impl.ChaCha20Poly1305.Arm.openTo umaal)
+  verifiedScrubbedAll (api := Spec.ChaCha20Poly1305.openToApi)
+    { code := Impl.StackScratch.Arm.withStackScratch 664 5 (Impl.ChaCha20Poly1305.Arm.openTo umaal)
       verified := openTo_framed }
-    Impl.ChaCha20Poly1305.Arm.Fn.openToWords [] (Scrub.openToOut _) (by decide) hbp_nil
-    (by cases umaal <;> exact ⟨_, by taint_decide_ct⟩)
+    (Scrub.openToOut _) (scrubSideF_of (Scrub.openTo_codeOk umaal) (by decide) _)
 
 end VG.Proof.ChaCha20Poly1305.Arm.Fn
 
@@ -1034,15 +1040,12 @@ open VG VG.Arm VG.Arm.Scrub VG.Arm.FrameStack
 /-! ## `seal`, as `seal_gather` calls it -/
 
 theorem sealCode_verified (umaal : Bool) :
-    Verified Arm.target (Impl.ChaCha20Poly1305.Arm.Fn.seal umaal)
+    Verified Arm.target (Impl.ChaCha20Poly1305.Arm.Fn.sealCode umaal)
       (Spec.ChaCha20Poly1305.sealContract Arm.abi 664) :=
-  (Fn.seal umaal).verified
+  seal_framed
 
-theorem sealCode_codeOk (umaal : Bool) : CodeOk (Impl.ChaCha20Poly1305.Arm.Fn.seal umaal) 664 :=
-  CodeOk.seq (seal_codeOk umaal) (CodeOk.seq wipeSel_codeOk ((CodeOk.block _).mono (Nat.zero_le _)))
-
-theorem sealCode_armStack (umaal : Bool) : armStack (Impl.ChaCha20Poly1305.Arm.Fn.seal umaal) ≤ 664 :=
-  (sealCode_codeOk umaal).1
+theorem sealCode_armStack (umaal : Bool) : armStack (Impl.ChaCha20Poly1305.Arm.Fn.sealCode umaal) ≤ 664 :=
+  (seal_codeOk umaal).1
 
 end VG.Proof.ChaCha20Poly1305.Arm.Scrub
 
@@ -1152,7 +1155,8 @@ theorem sealGather_verified (F : SealFn) :
 shared contract: the code its registration emits (`Impl.ChaCha20Poly1305.Arm.Fn.seal`), whose
 frames use at most the 664 bytes of stack its contract gives it. -/
 def sealFn (umaal : Bool) : SealFn :=
-  ⟨sealName umaal, Impl.ChaCha20Poly1305.Arm.Fn.seal umaal, Scrub.sealCode_verified umaal,
+  ⟨Impl.ChaCha20Poly1305.Arm.Fn.sealCoreName umaal, Impl.ChaCha20Poly1305.Arm.Fn.sealCode umaal,
+    Scrub.sealCode_verified umaal,
     Scrub.sealCode_armStack umaal⟩
 
 /-! ## Without secret residue -/
@@ -1206,11 +1210,10 @@ arithmetic of Poly1305. -/
 theorem sealGather (umaal : Bool) :
     VerifiedScrubbed target (Impl.ChaCha20Poly1305.Arm.Fn.sealGather umaal)
       (Spec.ChaCha20Poly1305.sealGatherContract abi 696) 0 :=
-  verifiedScrubbedSel (api := Spec.ChaCha20Poly1305.sealGatherApi) (W := 696)
+  verifiedScrubbedAll (api := Spec.ChaCha20Poly1305.sealGatherApi)
     { code := Impl.ChaCha20Poly1305.Arm.SealGather.sealGather
-        (Impl.ChaCha20Poly1305.Arm.SealGather.sealName umaal) (Impl.ChaCha20Poly1305.Arm.Fn.seal umaal)
+        (Impl.ChaCha20Poly1305.Arm.Fn.sealCoreName umaal) (Impl.ChaCha20Poly1305.Arm.Fn.sealCode umaal)
       verified := Gather.sealGather_verified (Gather.sealFn umaal) }
-    Impl.ChaCha20Poly1305.Arm.Fn.sealGatherWords [] (Gather.gatherOut _) (by decide) hbp_nil
-    (by cases umaal <;> exact ⟨_, by taint_decide_ct⟩)
+    (Gather.gatherOut _) (scrubSideF_of (Scrub.sealGather_codeOk umaal) (by decide) _)
 
 end VG.Proof.ChaCha20Poly1305.Arm.Fn

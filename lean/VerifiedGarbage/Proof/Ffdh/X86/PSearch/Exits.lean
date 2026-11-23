@@ -36,8 +36,8 @@ section
 
 `vg_ffdh_generate_parameters(out, out_len, used, bits, generator, rand, rand_len, scratch,
 scratch_len, state)`: ten arguments on the stack, and RSA's table of primes as a constant. The
-controller uses 212 bytes of stack: its attempt's frame of 36, the call's return address and the
-candidate's own 172.
+controller uses 292 bytes of stack: its attempt's frame of 36, the call's return address and the
+candidate's own 252.
 -/
 
 @[expose] public section
@@ -46,7 +46,7 @@ open VG VG.X86
 open VG.Proof.Dsa.X86 (argumentPointer)
 
 /-- The bytes of stack the controller uses. -/
-abbrev stack : Nat := 212
+abbrev stack : Nat := 292
 
 /-- The contract, with RSA's table of primes as the constants. -/
 abbrev contract : Contract isa :=
@@ -62,7 +62,7 @@ abbrev sR (s : State) : Region := ⟨argumentPointer s 9, 128⟩
 abbrev aR (s : State) : Region := ⟨argAddr s 0, 40⟩
 /-- The return address and the stack below it. -/
 abbrev retR (s : State) : Region := ⟨(s.gpr .esp).setWidth 64, 4⟩
-abbrev lowR (s : State) : Region := ⟨(s.gpr .esp).setWidth 64 - 212#64, 212⟩
+abbrev lowR (s : State) : Region := ⟨(s.gpr .esp).setWidth 64 - 292#64, 292⟩
 /-- RSA's table. -/
 abbrev tR (s : State) : Region := ⟨(s.syms VG.Impl.RsaKeyGen.TrialTable32.symbol).setWidth 64, 8192⟩
 

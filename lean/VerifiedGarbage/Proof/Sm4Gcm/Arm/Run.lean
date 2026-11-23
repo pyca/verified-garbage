@@ -527,7 +527,7 @@ theorem gh_rel [VG.Proof.Gcm.Arm.GhashLaw] {P : State → State → Prop}
 /-! ## `vg_sm4_expand_key` -/
 
 theorem key_stack : FrameStack.armStack
-    (Impl.StackScratch.Arm.withRegScratchWiped 1456 .r2 364 Impl.Sm4.Arm.expandKey) ≤ 1456 := by decide +kernel
+    (Impl.StackScratch.Arm.withRegScratch 1456 .r2 Impl.Sm4.Arm.expandKey) ≤ 1456 := by decide +kernel
 
 /-- What a call of `vg_sm4_expand_key` needs: the 16-byte key at `K` and the
 key schedule at `C`, and the 1456 bytes below the stack pointer. -/
@@ -573,7 +573,7 @@ theorem cov : Covers ([⟨State.addr K, 16⟩] ++ [⟨State.addr C, 128⟩]) (s.
 end KeyCall
 
 theorem key_call {s : State} {K C : BitVec 32} (h : KeyCall s K C) : WP isa keyCall s (KeyPost s K C) := by
-  refine FrameStack.WP.callF (k := Spec.Sm4.expandKeyContract Arm.abi 1456) Proof.Sm4.Arm.expandKey_framed.1
+  refine FrameStack.WP.callF (k := Spec.Sm4.expandKeyContract Arm.abi 1456) Proof.Sm4.Arm.expandKey_framedU.1
     (rd := [⟨State.addr K, 16⟩]) (wr := [⟨State.addr C, 128⟩]) h.pre h.cov h.writes
     (Nat.le_trans key_stack (by have := h.hsp; omega_using [this])) ?_
   intro s' hrd hwr hsp hf hcs hpost
@@ -591,8 +591,8 @@ theorem key_rel {P : State → State → Prop}
     RelCT isa P keyCall fun _ _ => True := by
   intro s₁ s₂ t₁ t₂ s₁' s₂' hp e₁ e₂
   obtain ⟨K, C, h₁, h₂, hsp⟩ := h _ _ hp
-  refine RelCT.call (k := Spec.Sm4.expandKeyContract Arm.abi 1456) Proof.Sm4.Arm.expandKey_framed.1
-    Proof.Sm4.Arm.expandKey_framed.2.1 [⟨State.addr K, 16⟩] [⟨State.addr C, 128⟩]
+  refine RelCT.call (k := Spec.Sm4.expandKeyContract Arm.abi 1456) Proof.Sm4.Arm.expandKey_framedU.1
+    Proof.Sm4.Arm.expandKey_framedU.2.1 [⟨State.addr K, 16⟩] [⟨State.addr C, 128⟩]
     (P := fun x y => x = s₁ ∧ y = s₂) (fun x y ⟨ex, ey⟩ => ?_) _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂
   subst ex ey
   refine ⟨h₁.pre, h₂.pre, ?_, h₁.cov, h₁.writes, h₂.cov, h₂.writes⟩

@@ -22,7 +22,8 @@ so that the inverse's `⌈n / 2⌉ + 1` words fit in an array of `w + 2` digits)
   `p q ≡ n (mod 2^(32 w))` (`MontKey.mulLo`) and `n ≡ 0 (mod p)`, as
   Montgomery's `n 2^(-32 w) mod (p | 1)` (`MontKey.montMul`) is 0
   (`Proof/Rsa/MontCheckMath.lean`'s `pq_eq_iff`).
-* `qInv` is the inverse of `q` modulo `p | 1` (`InvBatch.lean`), which exists
+* `qInv` is the inverse of `q` modulo `p | 1` (`InvBatch.lean`: inline for a
+  balanced key, else a call of `vg_rsa_inv_batch`), which exists
   if the gcd it computes is 1, at the primes' width: `⌈max(p_len, q_len) / 4⌉`
   digits.
 * `dP` and `dQ` are the remainders of `d` divided by `p` and by `q` with
@@ -207,6 +208,14 @@ def divW (a r : Nat) : List (Prog isa) :=
 def divB (len : Reg) (a r : Nat) : List (Prog isa) :=
   [copy aDQ aD, copy aDD a, .block (clrLow aDD ++ [.addi .r12 len 0]), divP aDQ r aDD aDT]
 
+/-- A call of `vg_rsa_inv_batch` (`InvBatch.inverseFn`), `n` from `r11` in
+`r10`: the call writes the link register, which it keeps in the first
+doubleword of array `aNM`, which the inverse does not write. -/
+def invCall : Prog isa :=
+  seqs [.block (.mflr .r0 :: ptr .r5 aNM ++ [.store .d .r0 .r5 0, .addi .r10 .r11 0]),
+    .call "vg_rsa_inv_batch" VG.Impl.Rsa.PPC64LE.InvBatch.inverseFn,
+    .block (ptr .r5 aNM ++ [.load .d .r0 .r5 0, .mtlr .r0])]
+
 /-- `p` odd, `p q mod 2^(32 w)` compared with `n`, Montgomery's `n` modulo
 `p | 1` (with 1 in `aDR3`) compared with 0, the check of the inverse, `qInv`
 computed, and `d` divided by `p - 1` and by `q - 1`. For a balanced key
@@ -221,7 +230,7 @@ def arith : Prog isa := seqs ([
   .ite (.zero .d .r0) (copy aDT aZero) (seqs [copy aDD aP, .block (orOne aDD ++ setOne aDR3),
     MontKey.montMul aDT aDQ aDR3 aDD aDR2 .r20 MontKey.cntW]),
   eqS sE2 aDT aZero] ++ invSetup ++ [
-  .block shape, .ite (.zero .d .r0) InvBatch.inverseS InvBatch.inverse, eqS sE3 1 aOne,
+  .block shape, .ite (.zero .d .r0) InvBatch.inverseS invCall, eqS sE3 1 aOne,
   .block (andS sMask sPodd sE1 ++ andS sMask sMask sE2 ++ andS sMask sMask sE3),
   .block shape, .ite (.zero .d .r0) (seqs (tail :: (divW aP aDR2 ++ divW aQ aDR3)))
     (seqs (divB .r20 aP aDR2 ++ divB .r22 aQ aDR3))])

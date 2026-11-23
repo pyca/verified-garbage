@@ -27,7 +27,7 @@ public import VerifiedGarbage.Proof.HmacTable.PPC64LE.Vars
 namespace VG.Artifacts.EcdsaP192.PPC64LE
 
 open VG.Proof.Ecdsa.Rfc6979.PPC64LE (OK)
-open VG.Proof.HmacTable.PPC64LE (vars tables fnsOf)
+open VG.Proof.HmacTable.PPC64LE (vars tables fnsOf names)
 
 open VG.Proof.P192.PPC64LE (hasLaw)
 
@@ -35,7 +35,7 @@ def artifacts : List Artifact := [
   Spec.Ecdsa.P192.verifyHashApi.artifact PPC64LE.target {
     code := Impl.Ecdsa.Verify.PPC64LE.Fn.p192Verify
     verified := Proof.Ecdsa.Verify.PPC64LE.Scrub.p192Verify_scrubbed hasLaw.law }] ++
-  (if hv : OK vars then [
+  (if hv : OK vars ∧ "VG_P192_FRAME_CONSTS" ∉ names vars then [
     Spec.Ecdsa.Rfc6979.Curves.p192SignApi.artifact PPC64LE.target {
       tables := [("hmac", tables vars)]
       code := Impl.Ecdsa.Rfc6979.PPC64LE.Fn.p192 (fnsOf vars)

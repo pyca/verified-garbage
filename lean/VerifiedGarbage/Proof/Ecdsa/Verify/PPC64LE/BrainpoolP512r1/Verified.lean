@@ -33,6 +33,7 @@ meta import VerifiedGarbage.Proof.Framework.PPC64LE.VectorTaintSym
 public import VerifiedGarbage.Proof.Framework.ConstMem
 meta import VerifiedGarbage.Proof.Framework.ConstMem
 import VerifiedGarbage.Proof.BrainpoolP512r1.PPC64LE.Comb
+public import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Setup
 import VerifiedGarbage.Proof.Ecdsa.PPC64LE.BrainpoolP512r1.Window
 import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Pow
 public import VerifiedGarbage.Proof.Framework.PowLit
@@ -119,7 +120,7 @@ theorem pointsBrainpoolP512r1_eq : pointsBrainpoolP512r1 =
     .seq (bits (brainpoolp512r1.sl U) (bitsAt brainpoolp512r1.n 0) (8 * brainpoolp512r1.n)) (.seq
       (.block (VG.Impl.Mont.PPC64LE.setConst brainpoolp512r1.n (brainpoolp512r1.sl EM) (brainpoolp512r1.mont brainpoolp512r1.C.b)))
       (.seq mulGeneratorBrainpoolP512r1 (.seq (.block (Cfg.save brainpoolp512r1)) (.seq (bits (brainpoolp512r1.sl V) (bitsAt brainpoolp512r1.n 0) (8 * brainpoolp512r1.n))
-        (.seq (WindowA.Cfg.mul3top brainpoolp512r1 PX PY B3P) (Cfg.sum brainpoolp512r1)))))) := rfl
+        (.seq (brainpoolp512r1.winCall (WindowA.Cfg.mul3top brainpoolp512r1 PX PY B3P)) (Cfg.sum brainpoolp512r1)))))) := rfl
 
 set_option exponentiation.threshold 1024 in
 /-- `[u]G + [v]Q` by the comb and windows, with the comb's table at `T`. -/
@@ -130,9 +131,21 @@ theorem combPts_ok (hC : Law Spec.BrainpoolP512r1.curve) {s₀ : State} {T : Add
   rw [pointsBrainpoolP512r1_eq]
   refine CombWin.pts_ok brainpoolp512r1_ok (by decide) hC (E := Window.BrainpoolP512r1.kit.E) (by decide)
     (fun {s k} K sy hk bits => ?_)
-    fun {s k P} K _ g hP bits hk => WP.mono (Window.BrainpoolP512r1.mul_ok hC ⟨K.ws,
-      ⟨K.fixed.ap, K.fixed.b3p, K.fixed.zero, K.fixed.onep⟩, ⟨g.rep, g.x, g.y, g.z⟩, hP, bits,
-      Nat.lt_trans hk (by decide)⟩) fun s₆ ⟨k₆, U₆, R₆⟩ => ⟨k₆, U₆, ⟨R₆.rep, R₆.x, R₆.y, R₆.z⟩⟩
+    fun {s k P} K _ g hP bits hk => WP.mono (Proof.Ecdh.PPC64LE.Win.winCall_of (by decide) K.ws
+      (W := Window.BrainpoolP512r1.mulW)
+      (fun w hw => by
+        simp only [Window.BrainpoolP512r1.mulW, List.mem_cons, List.not_mem_nil, or_false] at hw
+        rcases hw with rfl | rfl | rfl <;> rw [sl_eq, show brainpoolp512r1.n = 8 from rfl] <;> omega)
+      (P := fun t => Window.BrainpoolP512r1.PtOk (s₀.gpr .r6) t (Impl.Ecdsa.PPC64LE.Window.Cfg.rPt brainpoolp512r1) (mul k P))
+      (fun t t' hm R => R.of_eq (by rw [hm]) (by rw [hm]) (by rw [hm]))
+      fun t ht hU => by
+        obtain k' := Proof.Ecdh.PPC64LE.Win.KC.saved (by decide) (bs := B3P) (bK := 3 * brainpoolp512r1.C.b)
+          (by decide) K.ws.nowrap hU ⟨K.fixed.ap, K.fixed.b3p, K.fixed.zero, K.fixed.onep⟩
+        obtain g' := Proof.Ecdh.PPC64LE.Win.PtOk.saved (by decide) K.ws.nowrap hU ⟨g.rep, g.x, g.y, g.z⟩
+        exact Window.BrainpoolP512r1.mul_ok hC ⟨ht, ⟨k'.ap, k'.bp, k'.zero, k'.onep⟩,
+          ⟨g'.rep, g'.x, g'.y, g'.z⟩, hP, Proof.Ecdh.PPC64LE.Win.Bits.saved (by decide) hU bits,
+          Nat.lt_trans hk (by decide)⟩)
+      fun s₆ ⟨k₆, U₆, R₆⟩ => ⟨k₆, U₆, ⟨R₆.rep, R₆.x, R₆.y, R₆.z⟩⟩
   obtain ht₂ : TableMem s T brainpoolp512r1CombWords :=
     ht.unch (by rw [K.rk.rd, K.rk.wr]) K.whole (by decide) hd
   obtain ht' : TableMem s T (TComb.tableWords brainpoolp512r1Comb Spec.BrainpoolP512r1.curve VG.Impl.BrainpoolP512r1.comb7) := by
@@ -146,9 +159,20 @@ theorem combPts_ok (hC : Law Spec.BrainpoolP512r1.curve) {s₀ : State} {T : Add
     fun s₃ ⟨k₃, U₃, L₃, R₃⟩ => ⟨k₃, U₃.cover Proof.BrainpoolP512r1.PPC64LE.comb_writes_cover, L₃, R₃⟩
 
 
-theorem pre_of {s : State} (h : verifyPPC.pre s) : VPre brainpoolp512r1 s := by
+/-- The tables of constants the verification reads: the comb's, and the
+setup's (`Cfg.constsK`). -/
+abbrev vK : List (String × List (BitVec 64)) := brainpoolp512r1CombConsts ++ brainpoolp512r1.constsK
+
+theorem vK_eq : vK = [(brainpoolp512r1Comb.tsym, brainpoolp512r1CombWords), (brainpoolp512r1.constSym, brainpoolp512r1.constTbl)] := rfl
+
+theorem pre_of {s : State} (h : verifyPPC.pre (stripConsts vK s)) (hk : ConstsOk vK 0 s) :
+    VPre brainpoolp512r1 s (constRegs vK s) := by
   obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9⟩ := h
-  exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9⟩
+  exact ⟨hk.rd_strip h1, h2, h3, h4, h5, h6, h7, h8, h9, 
+    tbl_of_consts hk (List.mem_append_right _ (List.mem_singleton_self _)) (hk.disjoint_wr
+      (List.mem_append_right _ (List.mem_singleton_self _)) (by
+        show (⟨s.gpr .r6, size⟩ : Region) ∈ (stripConsts vK s).wr
+        rw [h2]; exact List.mem_singleton_self _))⟩
 
 /-- A state satisfying the precondition. -/
 def satState : State where
@@ -185,105 +209,146 @@ theorem verifyPPC_implies : verifyPPC.Implies (Proof.Ecdsa.verifyContract Spec.E
         PPC64LE.abi, PPC64LE.argRegs]
         [satState] using satState }
 
-/-- The verification's contract with the comb's table, as the proof states it. -/
-def vPC : Contract isa := Tab.withTable verifyPPC brainpoolp512r1CombConsts brainpoolp512r1Comb.tsym
+
+/-- The verification's contract with its tables, as the proof states it. -/
+abbrev vPC : Contract isa := verifyPPC.withTables vK
 
 theorem verify_ppc (hL : Weierstrass.Law Spec.BrainpoolP512r1.curve) (s : State) (hs : vPC.pre s) :
     ∃ t s', Exec isa verifyBrainpoolP512r1 s t s' ∧ abiPreserved s s' ∧ vPC.post s s' := by
   obtain ⟨hp, hk⟩ := hs
   obtain ⟨t, s', he, K, hpost⟩ :=
-    CombWin.verify_ok brainpoolp512r1_ok hL (fun ht sym hd => combPts_ok hL ht sym hd) (pre_of hp) hk
-  exact ⟨t, s', he, K, Tab.post_intro hpost⟩
+    CombWin.verify_okK brainpoolp512r1_ok hL (fun ht sym hd => combPts_ok hL ht sym hd) (pre_of hp hk) hk
+      (List.mem_append_left _ (List.mem_singleton_self _))
+  exact ⟨t, s', he, K, hpost⟩
 
 theorem verify_ct : ConstantTime isa vPC.pre vPC.pub verifyBrainpoolP512r1 :=
-  VG.Taint.constantTime (A := vectorTaintSym [brainpoolp512r1Comb.tsym]) (Taint.ofRegs [.r3, .r4, .r5, .r6])
+  VG.Taint.constantTime (A := vectorTaintSym [brainpoolp512r1Comb.tsym, brainpoolp512r1.constSym]) (Taint.ofRegs [.r3, .r4, .r5, .r6])
     (fun _ _ _ _ ⟨⟨hsp, h3, h4, h5, h6⟩, sy⟩ => ⟨⟨hsp, fun r hr => by
       simp only [Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl
       · exact h3
       · exact h4
       · exact h5
-      · exact h6⟩, fun n hn => by simp only [List.mem_singleton] at hn; subst hn; exact sy⟩)
+      · exact h6⟩, fun n hn => by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hn
+        rcases hn with rfl | rfl
+        · exact sy _ (List.mem_append_left _ (List.mem_singleton_self _))
+        · exact sy _ (List.mem_append_right _ (List.mem_singleton_self _))⟩)
     (by taint_decide)
 
-/-- The memory of the witness with the table: the table at `0x100000`
-(irreducible: unfolding it in a definitional check would evaluate the
-table). -/
-@[irreducible] def vSatMem : Mem := constMem 0x100000 brainpoolp512r1CombWords
+/-- The memory of the witnesses with the tables: the comb's at `0x100000`,
+the setup's at `0x200000` (irreducible: unfolding it in a definitional check
+would evaluate the tables). -/
+@[irreducible] def vSatMem2 : Mem := constMem2 0x100000 brainpoolp512r1CombWords 0x200000 brainpoolp512r1.constTbl
 
-theorem vSatMem_held : ∀ i < brainpoolp512r1CombWords.length,
-    vSatMem.readW (0x100000 + BitVec.ofNat 64 (8 * i)) 64 = brainpoolp512r1CombWords.getD i 0 := by
-  unfold vSatMem
-  exact constMem_held _ _ (by rw [Proof.BrainpoolP512r1.PPC64LE.comb_words_length]; omega_using [])
+theorem vSatMem2_held₁ : ∀ i < brainpoolp512r1CombWords.length,
+    vSatMem2.readW (0x100000 + BitVec.ofNat 64 (8 * i)) 64 = brainpoolp512r1CombWords.getD i 0 := by
+  unfold vSatMem2
+  exact constMem2_held₁ _ _ _ _ (by rw [Proof.BrainpoolP512r1.PPC64LE.comb_words_length]; decide) (by rw [constTbl_length]; decide)
 
-/-- A state satisfying the precondition with the table. -/
-def vSatC : State :=
-  { satState with mem := vSatMem, rd := satState.rd ++ [⟨0x100000, 606208⟩], syms := fun _ => 0x100000 }
+theorem vSatMem2_held₂ : ∀ i < brainpoolp512r1.constTbl.length,
+    vSatMem2.readW (0x200000 + BitVec.ofNat 64 (8 * i)) 64 = brainpoolp512r1.constTbl.getD i 0 := by
+  unfold vSatMem2
+  exact constMem2_held₂ _ _ _ _ (by rw [constTbl_length]; decide)
 
-theorem combConsts_eq : brainpoolp512r1CombConsts = [(brainpoolp512r1Comb.tsym, brainpoolp512r1CombWords)] := rfl
+/-- The addresses of the witnesses' tables. -/
+def vSyms (n : String) : Addr := if n = brainpoolp512r1.constSym then 0x200000 else 0x100000
 
-theorem vSat : (Proof.Ecdsa.verifyContract Spec.Ecdsa.BrainpoolP512r1.inst (abi.withConsts brainpoolp512r1CombConsts)).pre vSatC := by
-  have hl := Proof.BrainpoolP512r1.PPC64LE.comb_words_length
-  have held := vSatMem_held
-  rw [combConsts_eq]
-  obtain ⟨W, eW⟩ : ∃ W, brainpoolp512r1CombWords = W := ⟨_, rfl⟩
-  rw [eW] at hl held ⊢
+/-- A state satisfying the precondition with the tables. -/
+def vSatC : State where
+  gpr := satState.gpr
+  lr := satState.lr
+  sp := satState.sp
+  mem := vSatMem2
+  rd := satState.rd ++ [⟨0x100000, 8 * 75776⟩, ⟨0x200000, 8 * (17 * 8)⟩]
+  wr := satState.wr
+  syms := vSyms
+
+theorem vSat : (Proof.Ecdsa.verifyContract Spec.Ecdsa.BrainpoolP512r1.inst (abi.withConsts vK)).pre vSatC := by
+  have hl₁ := Proof.BrainpoolP512r1.PPC64LE.comb_words_length
+  have hl₂ := constTbl_length brainpoolp512r1
+  have held₁ := vSatMem2_held₁
+  have held₂ := vSatMem2_held₂
+  have hs₁ : vSyms brainpoolp512r1Comb.tsym = 0x100000 := by simp only [vSyms]; decide
+  have hs₂ : vSyms brainpoolp512r1.constSym = 0x200000 := by simp only [vSyms, ite_true]
+  rw [vK_eq]
+  obtain ⟨W₁, eW₁⟩ : ∃ W, brainpoolp512r1CombWords = W := ⟨_, rfl⟩
+  obtain ⟨W₂, eW₂⟩ : ∃ W, brainpoolp512r1.constTbl = W := ⟨_, rfl⟩
+  rw [eW₁] at hl₁ held₁ ⊢
+  rw [eW₂] at hl₂ held₂ ⊢
   generalize e : vSatC = s
   sig_pre [Spec.Ecdsa.BrainpoolP512r1.inst, Proof.Ecdsa.verifyContract, Proof.Ecdsa.verifySig, Spec.BrainpoolP512r1.curve,
     Spec.Ecdsa.scratchWords, abi, argRegs, Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow]
   subst e
-  rw [hl]
-  refine ⟨rfl, fun i hi => held i (by rw [hl]; exact hi), by decide, fun r hr => ?_, by decide, ?_⟩
+  rw [hl₁, hl₂]
+  refine ⟨rfl, fun i hi => ?_, fun i hi => ?_, by decide, fun r hr => ?_, by decide, fun r hr => ?_, by decide,
+    by decide, ?_⟩
+  · show vSatMem2.readW (0x100000 + BitVec.ofNat 64 (8 * i)) 64 = _
+    exact held₁ i (by rw [hl₁]; exact hi)
+  · show vSatMem2.readW (0x200000 + BitVec.ofNat 64 (8 * i)) 64 = _
+    exact held₂ i (by rw [hl₂]; exact hi)
+  · change r ∈ satState.wr at hr
+    simp only [satState, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl <;> exact Region.disjoint_of_sep (by decide)
+  · change r ∈ satState.wr at hr
+    simp only [satState, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl <;> exact Region.disjoint_of_sep (by decide)
+  · repeat' apply And.intro
+    all_goals first | exact Region.disjoint_of_sep (by decide) | decide | rfl
+
+theorem vPC_implies :
+    vPC.Implies (Proof.Ecdsa.verifyContract Spec.Ecdsa.BrainpoolP512r1.inst (abi.withConsts vK)) :=
+  withTables_implies verifyPPC_implies ⟨vSatC, vSat⟩
+
+theorem verify_verified (hL : Weierstrass.Law Spec.BrainpoolP512r1.curve) :
+    Verified PPC64LE.target verifyBrainpoolP512r1 (Proof.Ecdsa.verifyContract Spec.Ecdsa.BrainpoolP512r1.inst (PPC64LE.abi.withConsts vK)) :=
+  Verified.of_correct (verify_ppc hL) verify_ct vPC_implies
+
+/-- A state satisfying `verifyHashContract`'s precondition with the tables, with an empty hash. -/
+def hSatC : State :=
+  let h := Hash.hashSatState 64
+  { h with mem := vSatMem2, rd := h.rd ++ [⟨0x100000, 8 * 75776⟩, ⟨0x200000, 8 * (17 * 8)⟩], syms := vSyms }
+
+theorem verifyHash_sat :
+    ∃ s, (Spec.Ecdsa.BrainpoolP512r1.inst.verifyHashContract (PPC64LE.abi.withConsts vK) 112).pre s := by
+  refine ⟨hSatC, ?_⟩
+  have hl₁ := Proof.BrainpoolP512r1.PPC64LE.comb_words_length
+  have hl₂ := constTbl_length brainpoolp512r1
+  have held₁ := vSatMem2_held₁
+  have held₂ := vSatMem2_held₂
+  rw [vK_eq]
+  obtain ⟨W₁, eW₁⟩ : ∃ W, brainpoolp512r1CombWords = W := ⟨_, rfl⟩
+  obtain ⟨W₂, eW₂⟩ : ∃ W, brainpoolp512r1.constTbl = W := ⟨_, rfl⟩
+  rw [eW₁] at hl₁ held₁ ⊢
+  rw [eW₂] at hl₂ held₂ ⊢
+  generalize e : hSatC = s
+  sig_pre [Spec.Ecdsa.Instance.verifyHashContract, Spec.Ecdsa.Instance.verifyHashSig, Spec.Ecdsa.BrainpoolP512r1.inst,
+    Spec.BrainpoolP512r1.curve, Spec.Ecdsa.scratchWords, PPC64LE.abi, PPC64LE.argRegs, Abi.withConsts, Abi.constRegions,
+    Abi.constsHeld, stackBelow]
+  subst e
+  rw [hl₁, hl₂]
+  refine ⟨by decide, rfl, fun i hi => ?_, fun i hi => ?_, by decide, fun r hr => ?_, Region.disjoint_of_sep (by decide),
+    by decide, fun r hr => ?_, Region.disjoint_of_sep (by decide), by decide, by decide, ?_⟩
+  · show vSatMem2.readW (0x100000 + BitVec.ofNat 64 (8 * i)) 64 = _
+    exact held₁ i (by rw [hl₁]; exact hi)
+  · show vSatMem2.readW (0x200000 + BitVec.ofNat 64 (8 * i)) 64 = _
+    exact held₂ i (by rw [hl₂]; exact hi)
+  · change r ∈ [⟨0x8000, 8192⟩] at hr
+    obtain rfl := List.mem_singleton.mp hr
+    exact Region.disjoint_of_sep (by decide)
   · change r ∈ [⟨0x8000, 8192⟩] at hr
     obtain rfl := List.mem_singleton.mp hr
     exact Region.disjoint_of_sep (by decide)
   · repeat' apply And.intro
     all_goals first | exact Region.disjoint_of_sep (by decide) | decide | rfl
 
-theorem vPC_implies :
-    vPC.Implies (Proof.Ecdsa.verifyContract Spec.Ecdsa.BrainpoolP512r1.inst (abi.withConsts brainpoolp512r1CombConsts)) :=
-  Tab.implies verifyPPC_implies ⟨vSatC, vSat⟩
-
-theorem verify_verified (hL : Weierstrass.Law Spec.BrainpoolP512r1.curve) :
-    Verified PPC64LE.target verifyBrainpoolP512r1
-      (Proof.Ecdsa.verifyContract Spec.Ecdsa.BrainpoolP512r1.inst (PPC64LE.abi.withConsts brainpoolp512r1CombConsts)) :=
-  Verified.of_correct (verify_ppc hL) verify_ct vPC_implies
-
-/-- A state satisfying `verifyHashContract`'s precondition with the table, with an empty hash. -/
-def hSatC : State :=
-  let h := Hash.hashSatState 64
-  { h with mem := vSatMem, rd := h.rd ++ [⟨0x100000, 606208⟩], syms := fun _ => 0x100000 }
-
-theorem verifyHash_sat :
-    ∃ s, (Spec.Ecdsa.BrainpoolP512r1.inst.verifyHashContract (PPC64LE.abi.withConsts brainpoolp512r1CombConsts) 112).pre s := by
-  refine ⟨hSatC, ?_⟩
-  have hl := Proof.BrainpoolP512r1.PPC64LE.comb_words_length
-  have held := vSatMem_held
-  rw [combConsts_eq]
-  obtain ⟨W, eW⟩ : ∃ W, brainpoolp512r1CombWords = W := ⟨_, rfl⟩
-  rw [eW] at hl held ⊢
-  generalize e : hSatC = s
-  sig_pre [Spec.Ecdsa.Instance.verifyHashContract, Spec.Ecdsa.Instance.verifyHashSig, Spec.Ecdsa.BrainpoolP512r1.inst,
-    Spec.BrainpoolP512r1.curve, Spec.Ecdsa.scratchWords, PPC64LE.abi, PPC64LE.argRegs, Abi.withConsts, Abi.constRegions,
-    Abi.constsHeld, stackBelow]
-  subst e
-  rw [hl]
-  refine ⟨by decide, rfl, fun i hi => held i (by rw [hl]; exact hi), by decide, fun r hr => ?_,
-    Region.disjoint_of_sep (by decide), by decide, rfl, rfl, Region.disjoint_of_sep (by decide),
-    Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide),
-    Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide),
-    by decide, by decide, by decide, by decide⟩
-  change r ∈ [⟨0x8000, 8192⟩] at hr
-  obtain rfl := List.mem_singleton.mp hr
-  exact Region.disjoint_of_sep (by decide)
-
-/-- `vg_ecdsa_p256_verify`, taking the hash function's output: the
+/-- `vg_ecdsa_brainpoolp512r1_verify`, taking the hash function's output: the
 verification above, run on the `len` bytes of the hash
 (`Hash.verifyHash_verified_cons`). -/
 theorem verifyHash_verified (hL : Weierstrass.Law Spec.BrainpoolP512r1.curve) :
     Verified PPC64LE.target
       (Impl.Ecdsa.PPC64LE.VerifyHash.verifyHash Spec.Ecdsa.BrainpoolP512r1.inst.curve.len false verifyBrainpoolP512r1)
-      (Spec.Ecdsa.BrainpoolP512r1.inst.verifyHashContract (PPC64LE.abi.withConsts brainpoolp512r1CombConsts) 112) :=
+      (Spec.Ecdsa.BrainpoolP512r1.inst.verifyHashContract (PPC64LE.abi.withConsts vK) 112) :=
   Hash.verifyHash_verified_cons Proof.Ecdsa.Verify.brainpoolP512r1_len (by decide)
     (verify_verified hL) (by taint_decide) verifyHash_sat
 

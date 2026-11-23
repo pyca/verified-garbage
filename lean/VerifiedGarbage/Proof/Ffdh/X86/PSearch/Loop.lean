@@ -223,8 +223,8 @@ section
 
 The attempt allocates 36 bytes below the entry's stack pointer and stores
 `vg_ffdh_parameter_candidate_sieved`'s nine arguments there
-(`arguments_ok`). With the call's return address and the callee's 172 bytes
-below them, they are the 212 bytes below the entry's stack pointer, at
+(`arguments_ok`). With the call's return address and the callee's 252 bytes
+below them, they are the 292 bytes below the entry's stack pointer, at
 offsets of `low o` (`low_sub`).
 -/
 
@@ -238,18 +238,18 @@ open VG.Proof.Ffdh.X86.KeySearch (Ctl Aligned upd Scratch saved_ne)
 open VG.Proof.Dsa.X86 (argumentPointer)
 
 /-- The base of the stack the controller uses. -/
-abbrev low (o : State) : Addr := (o.gpr .esp).setWidth 64 - 212#64
+abbrev low (o : State) : Addr := (o.gpr .esp).setWidth 64 - 292#64
 
-theorem low_toNat {o : State} (A : PSearchABI o) : (low o).toNat = (o.gpr .esp).toNat - 212 := by
-  have : 212 ≤ (o.gpr .esp).toNat := A.stackLow
+theorem low_toNat {o : State} (A : PSearchABI o) : (low o).toNat = (o.gpr .esp).toNat - 292 := by
+  have : 292 ≤ (o.gpr .esp).toNat := A.stackLow
   have := (o.gpr .esp).isLt
   simp only [low, BitVec.toNat_sub, BitVec.toNat_setWidth, BitVec.toNat_ofNat]
   omega_arith
 
-/-- A stack pointer `k ≤ 212` bytes below the entry's, at its offset from `low o`. -/
-theorem sw_sub {o : State} (A : PSearchABI o) {k : Nat} (hk : k ≤ 212) :
-    (o.gpr .esp - BitVec.ofNat 32 k).setWidth 64 = low o + BitVec.ofNat 64 (212 - k) := by
-  have h1 : 212 ≤ (o.gpr .esp).toNat := A.stackLow
+/-- A stack pointer `k ≤ 292` bytes below the entry's, at its offset from `low o`. -/
+theorem sw_sub {o : State} (A : PSearchABI o) {k : Nat} (hk : k ≤ 292) :
+    (o.gpr .esp - BitVec.ofNat 32 k).setWidth 64 = low o + BitVec.ofNat 64 (292 - k) := by
+  have h1 : 292 ≤ (o.gpr .esp).toNat := A.stackLow
   obtain h2 := (o.gpr .esp).isLt
   obtain hl := low_toNat A
   apply BitVec.eq_of_toNat_eq
@@ -257,9 +257,9 @@ theorem sw_sub {o : State} (A : PSearchABI o) {k : Nat} (hk : k ≤ 212) :
   omega_arith
 
 /-- A word at `d` above a stack pointer `k` bytes below the entry's. -/
-theorem addr_sub {o : State} (A : PSearchABI o) {k d : Nat} (hk : k ≤ 212) (hd : d ≤ k) :
-    addr (o.gpr .esp - BitVec.ofNat 32 k) d = low o + BitVec.ofNat 64 (212 - k + d) := by
-  have h1 : 212 ≤ (o.gpr .esp).toNat := A.stackLow
+theorem addr_sub {o : State} (A : PSearchABI o) {k d : Nat} (hk : k ≤ 292) (hd : d ≤ k) :
+    addr (o.gpr .esp - BitVec.ofNat 32 k) d = low o + BitVec.ofNat 64 (292 - k + d) := by
+  have h1 : 292 ≤ (o.gpr .esp).toNat := A.stackLow
   obtain h2 := (o.gpr .esp).isLt
   obtain hl := low_toNat A
   apply BitVec.eq_of_toNat_eq
@@ -267,16 +267,16 @@ theorem addr_sub {o : State} (A : PSearchABI o) {k d : Nat} (hk : k ≤ 212) (hd
   omega_arith
 
 /-- A range at offsets of `low o` lies in the stack the controller uses. -/
-theorem low_sub {o : State} {d n : Nat} (h : d + n ≤ 212) : Region.Sub ⟨low o + BitVec.ofNat 64 d, n⟩ (lowR o) :=
+theorem low_sub {o : State} {d n : Nat} (h : d + n ≤ 292) : Region.Sub ⟨low o + BitVec.ofNat 64 d, n⟩ (lowR o) :=
   Offset.sub_base _ h
 
-theorem low_contains {o : State} (A : PSearchABI o) {d n : Nat} (h : d + n ≤ 212) :
+theorem low_contains {o : State} (A : PSearchABI o) {d n : Nat} (h : d + n ≤ 292) :
     (lowR o).Contains (low o + BitVec.ofNat 64 d) n := by
-  have : 212 ≤ (o.gpr .esp).toNat := A.stackLow
+  have : 292 ≤ (o.gpr .esp).toNat := A.stackLow
   exact Offset.contains_base _ h (by omega_arith)
 
 /-- The frame's region. -/
-abbrev frR (o : State) : Region := ⟨low o + BitVec.ofNat 64 176, 36⟩
+abbrev frR (o : State) : Region := ⟨low o + BitVec.ofNat 64 256, 36⟩
 
 /-- A state in the attempt's frame: `St` but for the stack pointer and the frame's region. -/
 structure Fr (o : State) (ds : List Nat) (f : Nat → BitVec 32) (s : State) : Prop where
@@ -317,7 +317,7 @@ def callArg (o : State) (used : Nat) (j : Nat) : BitVec 32 :=
 
 /-- The first `k` arguments are in the frame. -/
 def ArgsAt (o : State) (used k : Nat) (m : Mem) : Prop :=
-  ∀ j < k, m.readW (low o + BitVec.ofNat 64 (176 + 4 * j)) 32 = callArg o used j
+  ∀ j < k, m.readW (low o + BitVec.ofNat 64 (256 + 4 * j)) 32 = callArg o used j
 
 /-- `mov [esp + 4 j], eax`, argument `j` in `eax`. -/
 theorem storeArg_ok {o s : State} {ds : List Nat} {f : Nat → BitVec 32} {used : Nat} (h : Fr o ds f s)
@@ -327,14 +327,14 @@ theorem storeArg_ok {o s : State} {ds : List Nat} {f : Nat → BitVec 32} {used 
     WP isa (.block (.store (at_ .esp (4 * j)) .eax :: rest)) s Q := by
   have A := h.abi
   have hS := A.sBound
-  obtain ea : addr (s.gpr .esp) (4 * j) = low o + BitVec.ofNat 64 (176 + 4 * j) := by
+  obtain ea : addr (s.gpr .esp) (4 * j) = low o + BitVec.ofNat 64 (256 + 4 * j) := by
     rw [h.esp, addr_sub A (by decide) (by unfold argsBytes; omega_arith)]; rfl
-  obtain win : (frR o).Contains (low o + BitVec.ofNat 64 (176 + 4 * j)) 4 := by
-    have : 212 ≤ (o.gpr .esp).toNat := A.stackLow
+  obtain win : (frR o).Contains (low o + BitVec.ofNat 64 (256 + 4 * j)) 4 := by
+    have : 292 ≤ (o.gpr .esp).toNat := A.stackLow
     exact Offset.contains _ (by omega_arith) (by omega_arith) (by omega_arith)
   refine wp_storeS (show s.ea ⟨.esp, 4 * j⟩ = _ by rw [ea_mk, ea])
     (by rw [h.wr]; exact ⟨_, List.mem_cons_self .., win⟩) fun t' M => k t' ?_ ?_
-  · have lc := low_contains A (d := 176 + 4 * j) (n := 4) (by omega_arith)
+  · have lc := low_contains A (d := 256 + 4 * j) (n := 4) (by omega_arith)
     obtain fr : Frame [lowR o] s.mem t'.mem := by
       rw [M.mem]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ lc
     refine ⟨A, M.rd.trans h.rd, M.wr.trans h.wr, M.syms.trans h.syms, ?_, ?_, fun r hr hne hsp => ?_,
@@ -443,7 +443,7 @@ theorem ce_arg {o t : State} {used : Nat} (A : PSearchABI o)
     (he : t.gpr .esp = o.gpr .esp - BitVec.ofNat 32 argsBytes) (ha : ArgsAt o used 9 t.mem)
     (rd wr : List Region) {j : Nat} (hj : j < 9) :
     arg (t.callEntry.withRegions rd wr) j = callArg o used j := by
-  have h1 : 212 ≤ (o.gpr .esp).toNat := A.stackLow
+  have h1 : 292 ≤ (o.gpr .esp).toNat := A.stackLow
   have hb := A.stackBound
   obtain hn : (t.gpr .esp).toNat = (o.gpr .esp).toNat - 36 := by
     rw [he]; exact VG.X86.sub_toNat (by unfold argsBytes; omega_using [h1])
@@ -490,7 +490,7 @@ theorem cu_sub {o : State} (A : PSearchABI o) : Region.Sub (cuR o) (sR o) := by
 /-- The callee's stack pointer on its entry. -/
 theorem esp_sub4 {o t : State} (A : PSearchABI o) (he : t.gpr .esp = o.gpr .esp - BitVec.ofNat 32 argsBytes) :
     t.gpr .esp - 4 = o.gpr .esp - BitVec.ofNat 32 40 := by
-  have h1 : 212 ≤ (o.gpr .esp).toNat := A.stackLow
+  have h1 : 292 ≤ (o.gpr .esp).toNat := A.stackLow
   rw [he]; apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_sub, BitVec.toNat_ofNat, argsBytes]
   have := (o.gpr .esp).isLt
@@ -512,14 +512,14 @@ theorem call_pre {o t : State} {used : Nat} (A : PSearchABI o) (hu : used < (arg
     (he : t.gpr .esp = o.gpr .esp - BitVec.ofNat 32 argsBytes) (ha : ArgsAt o used 9 t.mem)
     (hsy : t.syms = o.syms) (hm : Frame (frameR o) o.mem t.mem) :
     Cand.contract.pre (t.callEntry.withRegions (callRd o used) (callWr o)) := by
-  have h1 : 212 ≤ (o.gpr .esp).toNat := A.stackLow
+  have h1 : 292 ≤ (o.gpr .esp).toNat := A.stackLow
   have hb := A.stackBound
   obtain hs4 := esp_sub4 A he
   obtain hs4n : (o.gpr .esp - BitVec.ofNat 32 40).toNat = (o.gpr .esp).toNat - 40 := VG.X86.sub_toNat (by omega_using [h1])
-  obtain ha0 : argAddr (t.callEntry.withRegions (callRd o used) (callWr o)) 0 = low o + BitVec.ofNat 64 176 := by
+  obtain ha0 : argAddr (t.callEntry.withRegions (callRd o used) (callWr o)) 0 = low o + BitVec.ofNat 64 256 := by
     rw [argAddr_withRegions, argAddr_callEntry, show 4 * 0 = 0 from rfl, BitVec.add_zero, he,
       sw_sub A (by decide)]; rfl
-  obtain hret : (o.gpr .esp - BitVec.ofNat 32 40).setWidth 64 = low o + BitVec.ofNat 64 172 := sw_sub A (by decide)
+  obtain hret : (o.gpr .esp - BitVec.ofNat 32 40).setWidth 64 = low o + BitVec.ofNat 64 252 := sw_sub A (by decide)
   obtain hlen : (BitVec.ofNat 32 ((arg o 6).toNat - used)).toNat = (arg o 6).toNat - used := by
     have := (arg o 6).isLt; rw [BitVec.toNat_ofNat]; omega_using []
   obtain hT : Abi.constRegions (fun name => BitVec.setWidth 64 (t.syms name))
@@ -529,8 +529,8 @@ theorem call_pre {o t : State} {used : Nat} (A : PSearchABI o) (hu : used < (arg
   obtain W := win_sub A hu
   obtain Cu := cu_sub A
   obtain Fs : Region.Sub (frR o) (lowR o) := low_sub (by decide)
-  obtain Rs : Region.Sub ⟨low o + BitVec.ofNat 64 172, 4⟩ (lowR o) := low_sub (by decide)
-  obtain Bs : Region.Sub ⟨low o, 172⟩ (lowR o) := Region.sub_prefix (by decide)
+  obtain Rs : Region.Sub ⟨low o + BitVec.ofNat 64 252, 4⟩ (lowR o) := low_sub (by decide)
+  obtain Bs : Region.Sub ⟨low o, 252⟩ (lowR o) := Region.sub_prefix (by decide)
   obtain oIn := oR_mem A
   obtain bIn := bR_mem A
   obtain sIn := sR_mem A
@@ -545,17 +545,17 @@ theorem call_pre {o t : State} {used : Nat} (A : PSearchABI o) (hu : used < (arg
   obtain dWB : (winR o used).Disjoint (bR o) := A.rb.sub_left W
   obtain dWF : (winR o used).Disjoint (frR o) := (A.lowRand.symm.sub_left W).sub_right Fs
   obtain dBF : (bR o).Disjoint (frR o) := A.lowB.symm.sub_right Fs
-  obtain rO : Region.Disjoint ⟨low o + BitVec.ofNat 64 172, 4⟩ (oR o) := A.lowO.sub_left Rs
-  obtain rC : Region.Disjoint ⟨low o + BitVec.ofNat 64 172, 4⟩ (cuR o) := (A.lowS.sub_left Rs).sub_right Cu
-  obtain rW : Region.Disjoint ⟨low o + BitVec.ofNat 64 172, 4⟩ (winR o used) := (A.lowRand.sub_left Rs).sub_right W
-  obtain rB : Region.Disjoint ⟨low o + BitVec.ofNat 64 172, 4⟩ (bR o) := A.lowB.sub_left Rs
-  obtain rF : Region.Disjoint ⟨low o + BitVec.ofNat 64 172, 4⟩ (frR o) :=
+  obtain rO : Region.Disjoint ⟨low o + BitVec.ofNat 64 252, 4⟩ (oR o) := A.lowO.sub_left Rs
+  obtain rC : Region.Disjoint ⟨low o + BitVec.ofNat 64 252, 4⟩ (cuR o) := (A.lowS.sub_left Rs).sub_right Cu
+  obtain rW : Region.Disjoint ⟨low o + BitVec.ofNat 64 252, 4⟩ (winR o used) := (A.lowRand.sub_left Rs).sub_right W
+  obtain rB : Region.Disjoint ⟨low o + BitVec.ofNat 64 252, 4⟩ (bR o) := A.lowB.sub_left Rs
+  obtain rF : Region.Disjoint ⟨low o + BitVec.ofNat 64 252, 4⟩ (frR o) :=
     Offset.disjoint _ (by omega_using []) (by omega_using []) (by omega_using [])
-  obtain bO : Region.Disjoint ⟨low o, 172⟩ (oR o) := A.lowO.sub_left Bs
-  obtain bC : Region.Disjoint ⟨low o, 172⟩ (cuR o) := (A.lowS.sub_left Bs).sub_right Cu
-  obtain bW : Region.Disjoint ⟨low o, 172⟩ (winR o used) := (A.lowRand.sub_left Bs).sub_right W
-  obtain bB : Region.Disjoint ⟨low o, 172⟩ (bR o) := A.lowB.sub_left Bs
-  obtain bF : Region.Disjoint ⟨low o, 172⟩ (frR o) := Offset.base_disjoint _ (by omega_using []) (by omega_using [])
+  obtain bO : Region.Disjoint ⟨low o, 252⟩ (oR o) := A.lowO.sub_left Bs
+  obtain bC : Region.Disjoint ⟨low o, 252⟩ (cuR o) := (A.lowS.sub_left Bs).sub_right Cu
+  obtain bW : Region.Disjoint ⟨low o, 252⟩ (winR o used) := (A.lowRand.sub_left Bs).sub_right W
+  obtain bB : Region.Disjoint ⟨low o, 252⟩ (bR o) := A.lowB.sub_left Bs
+  obtain bF : Region.Disjoint ⟨low o, 252⟩ (frR o) := Offset.base_disjoint _ (by omega_using []) (by omega_using [])
   have oB := A.oBound
   obtain cB : (arg o 9 + BitVec.ofNat 32 candOff).toNat + 8 ≤ 2 ^ 32 := by
     have := A.sBound
@@ -570,9 +570,9 @@ theorem call_pre {o t : State} {used : Nat} (A : PSearchABI o) (hu : used < (arg
   have gG := A.gen
   have sL := A.scratchLength
   obtain st : Proof.Ffdh.X86.stack ≤ (o.gpr .esp - BitVec.ofNat 32 40).toNat := by
-    rw [hs4n]; show 172 ≤ _; omega_using [h1]
+    rw [hs4n]; show 252 ≤ _; omega_using [h1]
   obtain st' : (o.gpr .esp - BitVec.ofNat 32 40).toNat + 4 + 36 ≤ 2 ^ 32 := by rw [hs4n]; omega_using []
-  obtain held : Abi.constsHeld (t.mem.writeW (low o + BitVec.ofNat 64 172) (t.unknowns 0))
+  obtain held : Abi.constsHeld (t.mem.writeW (low o + BitVec.ofNat 64 252) (t.unknowns 0))
       (fun name => BitVec.setWidth 64 (t.syms name))
       [(VG.Impl.RsaKeyGen.TrialTable32.symbol, VG.Impl.RsaKeyGen.TrialTable32.packed)] := by
     have H := A.held
@@ -605,8 +605,8 @@ theorem call_pre {o t : State} {used : Nat} (A : PSearchABI o) (hu : used < (arg
   obtain tC : (tR o).Disjoint (cuR o) := (tW _ sIn).sub_right Cu
   obtain tB : (tR o).Disjoint (bR o) := tW _ bIn
   obtain tF : (tR o).Disjoint (frR o) := tL.sub_right Fs
-  obtain tRet : (tR o).Disjoint ⟨low o + BitVec.ofNat 64 172, 4⟩ := tL.sub_right Rs
-  obtain tBel : (tR o).Disjoint ⟨low o, 172⟩ := tL.sub_right Bs
+  obtain tRet : (tR o).Disjoint ⟨low o + BitVec.ofNat 64 252, 4⟩ := tL.sub_right Rs
+  obtain tBel : (tR o).Disjoint ⟨low o, 252⟩ := tL.sub_right Bs
   have tBd := TF.1
   obtain tAl : (tR o).base.toNat % 64 = 0 := A.tableAligned (tR o) (by
     rw [Abi.constRegions_cons, Abi.constRegions_nil, VG.Proof.RsaKeyGen.X86.Candidate.packed_length]
@@ -647,7 +647,7 @@ open VG.Impl.Ffdh.X86.ParamSearch
 open VG.Proof.Ffdh.X86.KeySearch (Ctl Aligned upd bytes_frame)
 open VG.Proof.Dsa.X86 (argumentPointer)
 
-theorem callee_stack : stackUse Impl.Ffdh.X86.Candidate.code = 172 := by rsa_stack_use
+theorem callee_stack : stackUse Impl.Ffdh.X86.Candidate.code = 252 := by rsa_stack_use
 
 /-- No instruction of the callee writes `esp`: walked once, for `callee_noSp` and `body_noSp`. -/
 private theorem callee_all :
@@ -725,18 +725,19 @@ theorem rand_apart {o : State} (A : PSearchABI o) : ∀ r ∈ frameR o, (rR o).D
 
 /-- The call's return address. -/
 theorem ret_eq {o t : State} (A : PSearchABI o) (he : t.gpr .esp = o.gpr .esp - BitVec.ofNat 32 argsBytes) :
-    (t.gpr .esp - 4).setWidth 64 = low o + BitVec.ofNat 64 172 := by
+    (t.gpr .esp - 4).setWidth 64 = low o + BitVec.ofNat 64 252 := by
   rw [esp_sub4 A he, sw_sub A (by decide)]
 
 /-- The stack below the call. -/
 theorem below_eq {o t : State} (A : PSearchABI o) (he : t.gpr .esp = o.gpr .esp - BitVec.ofNat 32 argsBytes) :
-    below (t.gpr .esp) (stackUse Impl.Ffdh.X86.Candidate.code + 4) = ⟨low o, 176⟩ := by
-  have h1 : 212 ≤ (o.gpr .esp).toNat := A.stackLow
+    below (t.gpr .esp) (stackUse Impl.Ffdh.X86.Candidate.code + 4) = ⟨low o + BitVec.ofNat 64 0, 256⟩ := by
+  have h1 : 292 ≤ (o.gpr .esp).toNat := A.stackLow
   obtain hl := low_toNat A
   have := (o.gpr .esp).isLt
-  obtain e : (o.gpr .esp - BitVec.ofNat 32 argsBytes - BitVec.ofNat 32 (172 + 4)).setWidth 64 = low o := by
+  obtain e : (o.gpr .esp - BitVec.ofNat 32 argsBytes - BitVec.ofNat 32 (252 + 4)).setWidth 64 =
+      low o + BitVec.ofNat 64 0 := by
     apply BitVec.eq_of_toNat_eq
-    simp only [BitVec.toNat_setWidth, BitVec.toNat_sub, BitVec.toNat_ofNat, hl, argsBytes]
+    simp only [BitVec.toNat_setWidth, BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_ofNat, hl, argsBytes]
     omega_arith
   rw [callee_stack, below, he, e]
 
@@ -746,13 +747,13 @@ theorem rand_length {o : State} : (ofState o).rand.length = (arg o 6).toNat := b
 /-- The callee's tape, on its entry. -/
 theorem entry_bytes {o t : State} {ds : List Nat} {f : Nat → BitVec 32} {used : Nat} (h : Fr o ds f t)
     (hu : used < (arg o 6).toNat) (v : BitVec 32) :
-    Spec.Rsa.bytesAt (t.mem.writeW (low o + BitVec.ofNat 64 172) v) ((arg o 5 + BitVec.ofNat 32 used).setWidth 64)
+    Spec.Rsa.bytesAt (t.mem.writeW (low o + BitVec.ofNat 64 252) v) ((arg o 5 + BitVec.ofNat 32 used).setWidth 64)
       ((arg o 6).toNat - used) = (ofState o).rand.drop used := by
   have A := h.abi
   have hrb := A.rBound
-  obtain Rs : Region.Sub ⟨low o + BitVec.ofNat 64 172, 4⟩ (lowR o) := low_sub (by decide)
+  obtain Rs : Region.Sub ⟨low o + BitVec.ofNat 64 252, 4⟩ (lowR o) := low_sub (by decide)
   obtain W := win_sub A hu
-  obtain fe : Frame [⟨low o + BitVec.ofNat 64 172, 4⟩] t.mem (t.mem.writeW (low o + BitVec.ofNat 64 172) v) :=
+  obtain fe : Frame [⟨low o + BitVec.ofNat 64 252, 4⟩] t.mem (t.mem.writeW (low o + BitVec.ofNat 64 252) v) :=
     (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
   rw [bytes_frame fe (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact ((A.lowRand.sub_left Rs).sub_right W).symm)
@@ -783,7 +784,7 @@ theorem call_ok {o t : State} {e : BitVec 32} {used n : Nat}
       u.mem.readW (addr (arg o 9) candOff) 32 =
         BitVec.ofNat 32 (candUsed (ofState o).bits (ofState o).gen (ofState o).rand used) := by
   have A := h.abi
-  have h1 : 212 ≤ (o.gpr .esp).toNat := A.stackLow
+  have h1 : 292 ≤ (o.gpr .esp).toNat := A.stackLow
   have hb := A.stackBound
   obtain hn : (t.gpr .esp).toNat = (o.gpr .esp).toNat - 36 := by
     rw [h.esp]; exact VG.X86.sub_toNat (by unfold argsBytes; omega_arith)
@@ -799,13 +800,13 @@ theorem call_ok {o t : State} {e : BitVec 32} {used n : Nat}
     ce_arg A h.esp ha _ _ (show 6 < 9 by decide), callArg, Nat.reduceEqDiff, ↓reduceIte, ret_eq A h.esp] at hp
   obtain hlen : (BitVec.ofNat 32 ((arg o 6).toNat - used)).toNat = (arg o 6).toNat - used := by
     have := (arg o 6).isLt; rw [BitVec.toNat_ofNat]; omega_arith
-  rw [hlen, show low o + 172#64 = low o + BitVec.ofNat 64 172 from rfl, entry_bytes h hu] at hp
+  rw [hlen, show low o + 252#64 = low o + BitVec.ofNat 64 252 from rfl, entry_bytes h hu] at hp
   obtain ⟨hr, hout, hw⟩ := hp
   rw [BitVec.setWidth_append_eq_right, hg₂ .eax (by decide)] at hr
   have hS := A.sBound
   obtain hA : Aligned liveDs := by decide
   obtain Fs : Region.Sub (frR o) (lowR o) := low_sub (by decide)
-  obtain Bs : Region.Sub ⟨low o, 176⟩ (lowR o) := Region.sub_prefix (by decide)
+  obtain Bs : Region.Sub ⟨low o + BitVec.ofNat 64 0, 256⟩ (lowR o) := low_sub (by decide)
   obtain fr : Frame (frameR o) t.mem u.mem := hf.sub fun r hr => by
     rw [below_eq A h.esp] at hr
     simp only [callWr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -866,7 +867,7 @@ theorem attempt_ok {p : PPub} {o s : State} {used n : Nat} (h : Live p o used n 
       u.mem.readW (addr (arg o 9) candOff) 32 = BitVec.ofNat 32 (candUsed p.bits p.gen p.rand used) := by
   have S := h.st
   obtain ⟨A, rfl⟩ := h.input
-  have h1 : 212 ≤ (o.gpr .esp).toNat := A.stackLow
+  have h1 : 292 ≤ (o.gpr .esp).toNat := A.stackLow
   refine WP.frameAllocLocal (by decide) (by decide) (by decide) (by rw [S.esp]; unfold argsBytes; omega_arith) body_noSp
     (fun t m u ⟨St', e, out, cu⟩ fl => ?_) ?_
   · -- What the attempt leaves lies apart from its frame.

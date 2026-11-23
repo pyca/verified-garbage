@@ -134,6 +134,9 @@ structure Cfg where
   `[k]Q` (`mulFn`), which the signature, the public key, ECDH and
   verification call (`gen`, `qMul`), if any; else they run the ladder inline. -/
   mul : Option Impl.Weierstrass.Mul.Curve
+  /-- The name of the table of constants the setup copies (`constTbl`,
+  `copyTbl`), which the functions' contracts then list (`constsK`). -/
+  constSym : String
 
 namespace Cfg
 
@@ -172,19 +175,24 @@ def ladderCfg : LadderCfg where
 def powP : PowCfg := ⟨c.MP', c.sl ACC, c.sl PT, c.sl RZ, c.sl ONEP, bitsAt c.n 1, 64 * c.n⟩
 def powN : PowCfg := ⟨c.MN', c.sl ACC, c.sl PT, c.sl KM, c.sl ONEN, bitsAt c.n 2, 64 * c.n⟩
 
+/-- Where `vg_<curve>_mul` keeps `r31` and `lr`: past the numbered slots
+(`vg_<curve>_inv_mod_p` and `_n` keep `lr` there too, `invP`). -/
+def mulAt31 : Nat := c.sl nslots
+def mulAtLr : Nat := c.sl nslots + 8
+
 /-- `Z^(p-2)` by the sliding windows of `p - 2` (`Impl/Weierstrass/Chain.lean`),
 into `ACC`, its table of odd powers in the nine slots from `DX` (the ladder's,
 free after it). -/
 def chainP : Impl.Weierstrass.ChainCfg := .ofExp c.MP' (c.sl ACC) (c.sl RZ) (c.sl DX) (c.C.p - 2)
 
-/-- `[ACC] = [RZ]^(p-2)`. -/
-def invP : Prog isa := Impl.Weierstrass.PPC64LE.ChainCfg.pow c.chainP c.SP
+/-- `[ACC] = [RZ]^(p-2)`, by a call of `vg_<curve>_inv_mod_p`. -/
+def invP : Prog isa := Impl.Weierstrass.PPC64LE.ChainCfg.call c.chainP c.SP c.mulAtLr
 
 /-- `k^(n-2)`, likewise: into `ACC`, its table from `DX`. -/
 def chainN : Impl.Weierstrass.ChainCfg := .ofExp c.MN' (c.sl ACC) (c.sl KM) (c.sl DX) (c.C.n - 2)
 
-/-- `[ACC] = [KM]^(n-2)`. -/
-def invN : Prog isa := Impl.Weierstrass.PPC64LE.ChainCfg.pow c.chainN c.SN
+/-- `[ACC] = [KM]^(n-2)`, by a call of `vg_<curve>_inv_mod_n`. -/
+def invN : Prog isa := Impl.Weierstrass.PPC64LE.ChainCfg.call c.chainN c.SN c.mulAtLr
 
 /-- The callee-saved registers the function writes, and where they are saved
 (`lr` is saved after them, at byte 16). -/
@@ -198,6 +206,21 @@ def consts : List (Nat × Nat) :=
   [(MP, c.C.p), (MN, c.C.n), (ZERO, 0), (ONE, 1), (ONEP, c.mont 1), (AP, c.mont c.C.a),
     (B3P, c.mont (3 * c.C.b)), (GX, c.mont c.C.gx), (GY, c.mont c.C.gy), (R2N, c.R * c.R % c.C.n),
     (ONEN, c.R % c.C.n), (EXPP, c.C.p - 2), (EXPN, c.C.n - 2), (RX, 0), (RY, c.mont 1), (RZ, 0)]
+
+/-- The value `consts` gives slot `i`, or zero (`TMP`'s, which none gives). -/
+def slotVal (i : Nat) : Nat := ((c.consts.find? fun ix => ix.1 == i).map Prod.snd).getD 0
+
+/-- The words of slots `0` to `16`, `consts`' values (and `TMP`, zero), word
+`k` the `k % n`th of slot `k / n`: the table the setup copies into the
+working space (`copyTbl`). -/
+def constTbl : List (BitVec 64) :=
+  (List.range (17 * c.n)).map fun k => BitVec.ofNat 64 (c.slotVal (k / c.n) >>> (64 * (k % c.n)))
+
+/-- The table of constants every function that runs the setup reads. -/
+def constsK : List (String × List (BitVec 64)) := [(c.constSym, c.constTbl)]
+
+/-- The constants into their slots, copied from their table. -/
+def constsCode : Prog isa := copyTbl c.constSym 17 c.n (c.sl 0)
 
 /-- The saves, at `[sc]`, and `out` (`r3`) to `r14`, the working space to `r3`. -/
 def saveCode (sc : Reg) : List Instr :=
@@ -213,15 +236,14 @@ def shiftCode : Option Nat → List Instr
 registers `A` names, and the slot `A.hs` holding a hash shifted; the
 constants stored; and `R = (0 : 1 : 0)` and the flag (a word) set to all
 ones. -/
-def setupWith (A : Args) : List Instr :=
-  saveCode A.sc ++
-  loadBytes c.C.len c.n (c.sl K) A.k ++ loadBytes c.C.len c.n (c.sl D) A.d ++
-  loadBytes c.C.len c.n (c.sl E) A.e ++ c.shiftCode A.hs ++
-  c.consts.flatMap (fun (i, x) => VG.Impl.Mont.PPC64LE.setConst c.n (c.sl i) x) ++
-  ([.li .r4 0, .subi .r4 .r4 1, .store .d .r4 wb (c.sl FLAG)] : List Instr)
+def setupWith (A : Args) : Prog isa :=
+  .seq (.block (saveCode A.sc ++
+    loadBytes c.C.len c.n (c.sl K) A.k ++ loadBytes c.C.len c.n (c.sl D) A.d ++
+    loadBytes c.C.len c.n (c.sl E) A.e ++ c.shiftCode A.hs)) <|
+  .seq c.constsCode (.block [.li .r4 0, .subi .r4 .r4 1, .store .d .r4 wb (c.sl FLAG)])
 
 /-- The setup of `sign`. -/
-def setup : List Instr := c.setupWith .sign
+def setup : Prog isa := c.setupWith .sign
 
 /-- The mask `r5` of `[a] ≠ 0` (all ones if it is not zero), through `r4`:
 the words or'ed, then the top bit of `x | -x`, negated. -/
@@ -288,7 +310,7 @@ def scalar : Prog isa :=
 
 /-- `vg_ecdsa_<curve>_sign`. -/
 def signWith (generator : Prog isa) : Prog isa :=
-  .seq (.block c.setup) <|
+  .seq c.setup <|
   .seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) <|
   .seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n)) <|
   .seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n)) <|
@@ -313,10 +335,6 @@ returns with `r3` the working space. -/
 `PT`, `ONEP`. -/
 def mulLadder : LadderCfg := { c.ladderCfg with G := c.pt ACC PT ONEP }
 
-/-- Where `vg_<curve>_mul` keeps `r31` and `lr`: past the numbered slots. -/
-def mulAt31 : Nat := c.sl nslots
-def mulAtLr : Nat := c.sl nslots + 8
-
 /-- `vg_<curve>_mul`'s body: the table of `k`'s bits, `Q` (in `R`'s first
 two slots) copied to `ACC` and `PT`, `R = O = (0 : 1 : 0)` (from zero and
 one), then `R = [k]Q` by the ladder. -/
@@ -337,6 +355,16 @@ copied to `R`'s first two slots, then the call, on the working space in
 def mulAt (C : Impl.Weierstrass.Mul.Curve) (px py : Nat) : Prog isa :=
   .seq (.block (copy c.n (c.sl RX) (c.sl px) ++ copy c.n (c.sl RY) (c.sl py)))
     (.call s!"vg_{C.curve}_mul" c.mulFn)
+
+/-- Code `m` as a function: `r31` and `lr` kept around it, through
+`r0`, where `vg_<curve>_mul` keeps them (`mulFn`). -/
+def winFn (m : Prog isa) : Prog isa :=
+  .seq (.block [.store .d .r31 wb c.mulAt31, .mflr .r0, .store .d .r0 wb c.mulAtLr]) <|
+  .seq m (.block [.load .d .r0 wb c.mulAtLr, .mtlr .r0, .load .d .r31 wb c.mulAt31])
+
+/-- A call of the windows `m` of `[k]P`, the function `vg_<curve>_windows`
+(`winFn m`): one copy for ECDH and verification, which both run them. -/
+def winCall (m : Prog isa) : Prog isa := .call s!"vg_{c.SP.curve}_windows" (c.winFn m)
 
 /-- Whether `qMul`'s inline ladder doubles and adds by the point functions
 for `a = 0` (`vg_<curve>_point_a0_double`, `vg_<curve>_point_a0_add_affine`):

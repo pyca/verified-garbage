@@ -132,13 +132,13 @@ theorem expandKeyFrameSat_pre : ∃ s, (Spec.Camellia.expandKeyContract Arm.abi 
 
 /-- Key expansion, with its working space on the stack. -/
 theorem expandKey_framed :
-    Verified Arm.target (Impl.StackScratch.Arm.withRegScratchWiped 2720 .r3 680 expandKey)
+    Verified Arm.target (Impl.StackScratch.Arm.withRegScratch 2720 .r3 expandKey)
       (Spec.Camellia.expandKeyContract Arm.abi 2720) :=
-  Arm.Verified.regScratchWiped (sig := Spec.Camellia.expandKeySig) (nm := "scratch") (e := .u64)
+  Arm.Verified.regScratch (sig := Spec.Camellia.expandKeySig) (nm := "scratch") (e := .u64)
     (n := 340) (pre := Spec.Camellia.expandKeyPre Arm.abi.ptrBits)
     (post := Spec.Camellia.expandKeyPost Arm.abi.ptrBits) (wa := false) (stack := 0)
     (by rw [← Proof.Camellia.expandKeyScratchContract_eq]; exact expandKey_verified)
-    (by decide) (by decide) (by decide) (by decide)
-    (Proof.Camellia.expandKeyPostOut_local _) expandKeyFrameSat_pre
+    (by decide) (by decide) (by decide)
+    (fun vs mm m₁ m₂ r hl _ => Proof.Camellia.expandKeyPostOut_local _ vs mm m₁ m₂ r hl) expandKeyFrameSat_pre
 
 end VG.Proof.Camellia.Arm

@@ -678,12 +678,12 @@ theorem frameSat : ∃ s, (Spec.Sm4.ofbContract Arm.abi 1520).pre s := by
     Arm.Loc.val, State.addr] [frameState, satState] using frameState
 
 theorem framed : Verified Arm.target
-    (Impl.StackScratch.Arm.withStackScratchWiped 1520 0 378 SerialOfb.crypt)
+    (Impl.StackScratch.Arm.withStackScratch 1520 0 SerialOfb.crypt)
     (Spec.Sm4.ofbContract Arm.abi 1520) :=
-  Arm.Verified.stackScratchWiped (sig := Spec.Sm4.ofbSig) (nm := "scratch") (e := .u64) (n := 189)
+  Arm.Verified.stackScratch (sig := Spec.Sm4.ofbSig) (nm := "scratch") (e := .u64) (n := 189)
     (post := Proof.Sm4.ofbPost Arm.abi.ptrBits) (wa := true) (stack := 0) (m := 0) (bytes := 1520)
-    verified (by decide) (by decide) (by decide) (by decide) (by decide)
+    verified (by decide) (by decide) (by decide) (by decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Sm4.ofbPost_local _)
-    (Proof.Sm4.ofbPostOut_local _) frameSat
+    (fun vs mm m₁ m₂ r hl _ => Proof.Sm4.ofbPostOut_local _ vs mm m₁ m₂ r hl) frameSat
 
 end VG.Proof.Sm4.Arm.SerialOfbVerified

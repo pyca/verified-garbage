@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Camellia.Arm.Keyed
 public import VerifiedGarbage.Proof.Camellia.CtrScratch
 public import VerifiedGarbage.Proof.Modes.Arm.WideModes
-import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
+import VerifiedGarbage.Proof.Framework.Arm.StackScratch
 public import VerifiedGarbage.Impl.Camellia.Arm.Ctr
 public import VerifiedGarbage.Proof.Modes.Arm.Cbc
 import VerifiedGarbage.Proof.Camellia.Arm.FbVerified
@@ -15,7 +15,7 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Camellia.Arm.Keyed
 meta import VerifiedGarbage.Proof.Camellia.CtrScratch
 meta import VerifiedGarbage.Proof.Modes.Arm.WideModes
-meta import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
+meta import VerifiedGarbage.Proof.Framework.Arm.StackScratch
 meta import VerifiedGarbage.Impl.Camellia.Arm.Ctr
 meta import VerifiedGarbage.Proof.Modes.Arm.Cbc
 meta import VerifiedGarbage.Proof.Camellia.Arm.FbVerified
@@ -79,15 +79,15 @@ theorem ctrFrameSat : ∃ s, (Proof.Camellia.ctrContractSk Arm.abi 3032).pre s :
     Arm.reduceClassify, Arm.Loc.val, Arm.State.addr] [fbFrameSat, fbSat, stackArg, stackArgAddr, Mem.readW,
     Mem.read] using fbFrameSat 0
 
-/-- `ctr`, with its scratch buffer on the stack (zeroed on return). -/
+/-- `ctr`, with its scratch buffer on the stack (which its function's cleanup zeroes). -/
 theorem ctr_framed :
-    Verified Arm.target (Impl.StackScratch.Arm.withStackScratchWiped 88 1 18 ctr)
+    Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 88 1 ctr)
       (Spec.Camellia.ctrContract Arm.abi 3032) :=
   Proof.Camellia.ctr_of_sk <|
-  Arm.Verified.stackScratchWiped (sig := Spec.Camellia.ctrSig) (nm := "scratch") (e := .u64) (n := 9)
+  Arm.Verified.stackScratch (sig := Spec.Camellia.ctrSig) (nm := "scratch") (e := .u64) (n := 9)
     (pre := Spec.Camellia.ctrPre Arm.abi.ptrBits) (post := Proof.Camellia.ctrPostSk Arm.abi.ptrBits)
     (wa := true) (stack := 2944) (m := 1) (bytes := 88)
-    ctr_verified (by decide) (by decide) (by decide) (by decide) (by decide)
-    (Proof.Camellia.ctrPre_local _) (Proof.Camellia.ctrPost_local _) (Proof.Camellia.ctrPostOut_local _) ctrFrameSat
+    ctr_verified (by decide) (by decide) (by decide) (by decide)
+    (Proof.Camellia.ctrPre_local _) (Proof.Camellia.ctrPost_local _) (fun vs mm m₁ m₂ r hl _ => Proof.Camellia.ctrPostOut_local _ vs mm m₁ m₂ r hl) ctrFrameSat
 
 end VG.Proof.Camellia.Arm

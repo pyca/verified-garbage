@@ -10,6 +10,7 @@ public import VerifiedGarbage.Spec.EcKey.P256
 public import VerifiedGarbage.Spec.Ecdsa.P256
 
 import VerifiedGarbage.Proof.Ecdsa.AArch64.BoothContract
+import VerifiedGarbage.Proof.Ecdsa.AArch64.CombCall
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombJP
 public import VerifiedGarbage.Proof.Ecdsa.Contract
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.CombProduction
@@ -31,9 +32,9 @@ theorem booth_checks : JPChecks Impl.P256.CombArithmetic.K 8192 Impl.P256.Booth.
   · rw [Impl.P256.Booth.mixed_lit]; decide +kernel
 
 /-- The measured secret comb satisfies the existing scalar-multiplication interface. -/
-theorem booth_comb_correct (hL : Law Spec.P256.curve) (hI : InvSounds)
+theorem booth_body_correct (hL : Law Spec.P256.curve) (hI : InvSounds)
     (hT : CombOkW Spec.P256.curve 7 37 Impl.P256.p256Comb7 Impl.P256.p256Comb7Start) :
-    CombCorrect p256 Impl.P256.Booth.comb := by
+    CombCorrect p256 Impl.P256.Booth.combBody := by
   intro base k T s hs hm hf
   have hc := p256_ok hI
   exact WP.mono (tcombJP_ok (tcombLay hc.toBaseCfgOk) (combA hc.toBaseCfgOk)
@@ -42,6 +43,12 @@ theorem booth_comb_correct (hL : Law Spec.P256.curve) (hI : InvSounds)
     (tcombVals hc.toBaseCfgOk hL hT) hc.p_lt (by decide) (Proof.P256.booth hL) hf.k_lt
     Impl.P256.Booth.program_mixed booth_checks hs hm hf)
     fun _ ⟨K, U, M, L, R⟩ => ⟨K, U.mono fun w hw => List.mem_append_left _ hw, M, L, R⟩
+
+/-- So does a call of `vg_p256_comb` (`combCorrect_call`). -/
+theorem booth_comb_correct (hL : Law Spec.P256.curve) (hI : InvSounds)
+    (hT : CombOkW Spec.P256.curve 7 37 Impl.P256.p256Comb7 Impl.P256.p256Comb7Start) :
+    CombCorrect p256 Impl.P256.Booth.comb :=
+  combCorrect_call (booth_body_correct hL hI hT) (by lit_decide)
 
 end VG.Proof.Ecdsa.AArch64
 

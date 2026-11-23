@@ -932,7 +932,7 @@ theorem stDG_ok {pc : Bool} {s₀ s t : State} {o l xj oD oLen Pv : Nat} {D : Ad
       wordsVal u.mem (Mont.off (cS s₀) o) (slot (wordsOf l) 0) (wordsOf l) = Pv ∧
       Mont.Outside (cS s₀) (o + slot (wordsOf l) 0) (24 * (8 * (wordsOf l + 2))) t.mem u.mem ∧
       u.gpr .a7 = Mont.off (Mont.off (cS s₀) o) (slot (wordsOf l) 0) ∧
-      u.gpr .s5 = BitVec.ofNat 64 (8 * (wordsOf l + 2)) ∧ Keep Win.powerRegs t u ∧
+      u.gpr .s5 = BitVec.ofNat 64 (8 * (wordsOf l + 2)) ∧ Keep (Win.powerRegs ++ ([.ra] : List Reg)) t u ∧
       wordsVal u.mem (Mont.off (cS s₀) o) (slot (wordsOf l) 1) (wordsOf l) = 2 ^ (128 * wordsOf l) % Pv := by
   have hn := hP.nw
   have room := hP.room
@@ -1011,7 +1011,7 @@ theorem stD_ok {s₀ s t : State} {o l xj oD oLen Pv : Nat} {D : Addr} (hP : PF 
       wordsVal u.mem (Mont.off (cS s₀) o) (slot (wordsOf l) 0) (wordsOf l) = Pv ∧
       Mont.Outside (cS s₀) (o + slot (wordsOf l) 0) (24 * (8 * (wordsOf l + 2))) t.mem u.mem ∧
       u.gpr .a7 = Mont.off (Mont.off (cS s₀) o) (slot (wordsOf l) 0) ∧
-      u.gpr .s5 = BitVec.ofNat 64 (8 * (wordsOf l + 2)) ∧ Keep Win.powerRegs t u ∧
+      u.gpr .s5 = BitVec.ofNat 64 (8 * (wordsOf l + 2)) ∧ Keep (Win.powerRegs ++ ([.ra] : List Reg)) t u ∧
       wordsVal u.mem (Mont.off (cS s₀) o) (slot (wordsOf l) 1) (wordsOf l) = 2 ^ (128 * wordsOf l) % Pv :=
   stDG_ok (pc := false) hP hF X v6 R hoX hol ho8 hxj hPv hPb hP2 hodd hl1 hlk hoD hoL hD hL rD sD nofun
 

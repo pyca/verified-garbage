@@ -29,7 +29,8 @@ theorem joint_lookup_layout : JointLookupLayout publicJoint 8192 :=
     by decide,by decide,by decide,by decide⟩
 
 theorem joint_add_layout : JointAddLayout publicJoint 8192 := by
-  refine ⟨joint_lookup_layout,?_,by decide,by decide,by decide,by decide,⟨fun _ h => by cases h⟩⟩
+  refine ⟨joint_lookup_layout,?_,by decide,by decide,by decide,by decide,
+    ⟨fun _ _ => ⟨by decide +kernel,by decide +kernel,by decide⟩⟩⟩
   constructor <;> decide +kernel
 
 private theorem naf_lay : Lay publicJoint.K.M 8192 (·∈nafSlots publicJoint.K) := by
@@ -42,10 +43,6 @@ private theorem naf_lay : Lay publicJoint.K.M 8192 (·∈nafSlots publicJoint.K)
 theorem joint_naf_layout : NafLay publicJoint.K 8192 :=
   ⟨Or.inl rfl,naf_lay,by decide +kernel,by decide +kernel,by decide +kernel,by decide,
     by decide +kernel,by decide,rfl,rfl,rfl,rfl⟩
-
-theorem joint_init_layout : JointInitLayout publicJoint 8192 :=
-  ⟨joint_layout,joint_naf_layout,by decide,by decide,by decide,by decide,by decide,by decide +kernel,
-    by decide,by decide,fun _ _ h => by cases h⟩
 
 theorem joint_prep_layout : JointPrepLayout publicJoint 8192
     (p224v.sl Impl.Ecdsa.Verify.X86_64.U)

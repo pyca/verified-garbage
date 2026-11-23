@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PPrimalityPlan
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.PAttempt
+import VerifiedGarbage.Proof.Framework.X86_64.Syms
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SourceFrame
 import VerifiedGarbage.Proof.Dsa.Generation.Memory
@@ -46,7 +47,7 @@ public import VerifiedGarbage.Proof.RsaOaep.X86_64.Label
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CopyDigest
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PHashArgs
 import VerifiedGarbage.Proof.RsaOaep.X86_64.Mgf
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Hash
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Hash
 
 /-! ### `Dsa.X86_64.Generation.PBuild`, which this module and modules that import it used -/
 
@@ -79,7 +80,7 @@ theorem pSeedHash_ok {G : Impl.Pbkdf2.Md.X86_64.Stream} (hG : Calls.StreamOK G)
     (hrd : ∀ i < len, InRegions (s.rd ++ s.wr) (off rp i) 1)
     (hwr : ∀ i < len, InRegions s.wr (off op i) 1)
     (hsep : ∀ i < len, ∀ k < len, off rp i ≠ off op k)
-    (hbuf : HashBufferSeparate F S op len) :
+    (hbuf : HashBufferSeparate F S op len) (hh : HashSlots G W s) :
     WP isa (Impl.Dsa.X86_64.Generation.pSeedHash G len j) s fun t =>
       Lay t F S ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
       (∀ r ∈ calleeSaved, t.gpr r = s.gpr r) ∧
@@ -88,7 +89,7 @@ theorem pSeedHash_ok {G : Impl.Pbkdf2.Md.X86_64.Stream} (hG : Calls.StreamOK G)
       Spec.Rsa.bytesAt t.mem (off S oDig) G.D =
         Hs.hash (Spec.Dsa.encodeBE len (Spec.Dsa.decodeBE (Spec.Rsa.bytesAt s.mem rp len) + (offset + j))) := by
   unfold Impl.Dsa.X86_64.Generation.pSeedHash
-  refine WP.seq (WP.mono (seedInputArgs_ok hj L R hrp hop hoff) fun u ⟨hsi, hdi, hax, hm, ku⟩ => ?_)
+  refine WP.seq (WP.mono_syms (seedInputArgs_ok hj L R hrp hop hoff) fun u ⟨hsi, hdi, hax, hm, ku⟩ uy => ?_)
   let bs := Spec.Rsa.bytesAt s.mem rp len
   have hbl : bs.length = len := bytesAt_length _ _ _
   have hread : ∀ i < bs.length, InRegions (u.rd ++ u.wr) (off rp i) 1 := by
@@ -107,13 +108,14 @@ theorem pSeedHash_ok {G : Impl.Pbkdf2.Md.X86_64.Stream} (hG : Calls.StreamOK G)
   have hseed := seedAdd_ok bs (hbl ▸ hlen) hc hsi hdi hax hread hwrite hbytes
     (fun i hi k hk => hsep i (hbl ▸ hi) k (hbl ▸ hk))
   rw [hbl] at hseed
-  refine WP.seq (WP.mono hseed fun v ⟨hv, hf, kv⟩ => ?_)
+  refine WP.seq (WP.mono_syms hseed fun v ⟨hv, hf, kv⟩ vy => ?_)
   have Ru : Rep u.mem F S V W := hm ▸ R
   have Rv := rep_of_external_write Ru hbuf hf
   have Lu := L.congr (ku.gpr (by decide)) ku.2.2 (by rw [hm])
   have Lv := lay_of_rep Lu Ru Rv rfl (kv.gpr (by decide)) kv.2.2
   have Av := A.congr (kv.2.1.trans ku.2.1) (kv.2.2.trans ku.2.2) rfl rfl
-  refine WP.mono (hash_bytes_frame hG hHh hsize Lv Rv Av)
+  have hhv := hh.congr (vy.trans uy)
+  refine WP.mono (hash_bytes_frame hG hHh hsize Lv Rv Av hhv.1 hhv.2)
     fun t ⟨Lt, rd, wr, cs, hft, V', Rt, _, hb⟩ => ?_
   refine ⟨Lt, rd.trans (kv.2.1.trans ku.2.1), wr.trans (kv.2.2.trans ku.2.2), ?_, ?_, ⟨V', Rt⟩, ?_⟩
   · intro r hr
@@ -157,7 +159,7 @@ theorem pHashOne_ok {G : Impl.Pbkdf2.Md.X86_64.Stream} (hG : Calls.StreamOK G)
     (hwr : ∀ i < len, InRegions s.wr (off op i) 1)
     (hwd : ∀ i < len, InRegions s.wr (off dp i) 1)
     (hsep : ∀ i < len, ∀ k < len, off rp i ≠ off op k)
-    (hbuf : HashBufferSeparate F S op len) (hdbuf : HashBufferSeparate F S dp len) :
+    (hbuf : HashBufferSeparate F S op len) (hdbuf : HashBufferSeparate F S dp len) (hh : HashSlots G W s) :
     WP isa (Impl.Dsa.X86_64.Generation.pHashOne G len count j) s fun t =>
       Lay t F S ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
       (∀ r ∈ calleeSaved, t.gpr r = s.gpr r) ∧
@@ -166,7 +168,7 @@ theorem pHashOne_ok {G : Impl.Pbkdf2.Md.X86_64.Stream} (hG : Calls.StreamOK G)
       Spec.Rsa.bytesAt t.mem dp len =
         Hs.hash (Spec.Dsa.encodeBE len (Spec.Dsa.decodeBE (Spec.Rsa.bytesAt s.mem rp len) + (offset + j))) := by
   unfold Impl.Dsa.X86_64.Generation.pHashOne
-  refine WP.seq (WP.mono (pSeedHash_ok hG hHh hsize (by omega_using [hlen]) (by omega_using [hcount, hj]) hc L R A hrp hop hoff hrd hwr hsep hbuf)
+  refine WP.seq (WP.mono (pSeedHash_ok hG hHh hsize (by omega_using [hlen]) (by omega_using [hcount, hj]) hc L R A hrp hop hoff hrd hwr hsep hbuf hh)
     fun u ⟨Lu, rdu, wru, csu, hfu, ⟨V', Ru⟩, hb⟩ => ?_)
   refine WP.seq (WP.mono (hashCopyArgs_ok hlen hcount Lu Ru hhp) fun v ⟨hsi, hdi, hcx, hdx, hm, kv⟩ => ?_)
   rw [hdp] at hdi
@@ -227,7 +229,7 @@ theorem hashStep_ok {G : Impl.Pbkdf2.Md.X86_64.Stream} (hG : Calls.StreamOK G)
     {Hs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hG.SH.H.hash x)
     (hsize : ∀ bytes, (Hs.hash bytes).length = G.D)
     {p : HashPlan} (hd : G.D = p.len) {s : State} {k : Nat} (hk : k ≤ p.count)
-    (hs : HashState p Hs k s) :
+    (hs : HashState p Hs k s) (hh : HashSlots G p.W s) :
     WP isa (Impl.Dsa.X86_64.Generation.pHashOne G p.len p.count k) s fun t =>
       HashState p Hs (k + 1) t ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
       (∀ r ∈ calleeSaved, t.gpr r = s.gpr r) ∧ Frame p.changed s.mem t.mem := by
@@ -248,7 +250,7 @@ theorem hashStep_ok {G : Impl.Pbkdf2.Md.X86_64.Stream} (hG : Calls.StreamOK G)
   refine WP.mono (pHashOne_ok hG hHh hsize p.width hd p.count_le hk
     (by omega_using [p.carry, hk]) rfl hs.layout R hs.hashArgs
     p.seed_slot p.wrapped_slot p.output_slot p.offset_slot hs.seedRead hs.wrappedWrite hw hsep
-    p.wrapped_sep (p.dest_sep k)) fun t ⟨Lt, rd, wr, cs, hf, Rt, hout⟩ => ?_
+    p.wrapped_sep (p.dest_sep k) hh) fun t ⟨Lt, rd, wr, cs, hf, Rt, hout⟩ => ?_
   have hframe : Frame p.changed s.mem t.mem := hf.sub (by
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -304,7 +306,7 @@ theorem hashPrefix_ok {G : Impl.Pbkdf2.Md.X86_64.Stream} (hG : Calls.StreamOK G)
     {Hs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hG.SH.H.hash x)
     (hsize : ∀ bytes, (Hs.hash bytes).length = G.D)
     {p : HashPlan} (hd : G.D = p.len) (k : Nat) (hk : k ≤ p.count + 1)
-    {s : State} (hs : HashState p Hs 0 s) :
+    {s : State} (hs : HashState p Hs 0 s) (hh : HashSlots G p.W s) :
     WP isa (Impl.Dsa.X86_64.Generation.pHashPrefix G p.len p.count k) s fun t =>
       HashState p Hs k t ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
       (∀ r ∈ calleeSaved, t.gpr r = s.gpr r) ∧ Frame p.changed s.mem t.mem := by
@@ -317,18 +319,18 @@ theorem hashPrefix_ok {G : Impl.Pbkdf2.Md.X86_64.Stream} (hG : Calls.StreamOK G)
       exact ⟨hs, rfl, rfl, fun _ _ => rfl, Frame.refl _ _⟩
   | succ k ih =>
     unfold Impl.Dsa.X86_64.Generation.pHashPrefix
-    refine WP.seq (WP.mono (ih (by omega_using [hk]) hs) fun u ⟨hu, rdu, wru, csu, hfu⟩ => ?_)
-    refine WP.mono (hashStep_ok hG hHh hsize hd (by omega_using [hk]) hu) fun t ⟨ht, rdt, wrt, cst, hft⟩ => ?_
+    refine WP.seq (WP.mono_syms (ih (by omega_using [hk]) hs hh) fun u ⟨hu, rdu, wru, csu, hfu⟩ uy => ?_)
+    refine WP.mono (hashStep_ok hG hHh hsize hd (by omega_using [hk]) hu (hh.congr uy)) fun t ⟨ht, rdt, wrt, cst, hft⟩ => ?_
     exact ⟨ht, rdt.trans rdu, wrt.trans wru, fun r hr => (cst r hr).trans (csu r hr), hfu.trans hft⟩
 
 theorem pHashes_ok {G : Impl.Pbkdf2.Md.X86_64.Stream} (hG : Calls.StreamOK G)
     {Hs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hG.SH.H.hash x)
     (hsize : ∀ bytes, (Hs.hash bytes).length = G.D)
-    {p : HashPlan} (hd : G.D = p.len) {s : State} (hs : HashState p Hs 0 s) :
+    {p : HashPlan} (hd : G.D = p.len) {s : State} (hs : HashState p Hs 0 s) (hh : HashSlots G p.W s) :
     WP isa (Impl.Dsa.X86_64.Generation.pHashes G p.len p.count) s fun t =>
       HashState p Hs (p.count + 1) t ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
       (∀ r ∈ calleeSaved, t.gpr r = s.gpr r) ∧ Frame p.changed s.mem t.mem :=
-  hashPrefix_ok hG hHh hsize hd _ (Nat.le_refl _) hs
+  hashPrefix_ok hG hHh hsize hd _ (Nat.le_refl _) hs hh
 
 end VG.Proof.Dsa.X86_64.Generation
 
@@ -429,7 +431,7 @@ theorem pBuild_ok {G : Impl.Pbkdf2.Md.X86_64.Stream} (hG : Calls.StreamOK G)
     (hop : p.W 0 = op) (hout : ∀ i < plen, InRegions s.wr (off op i) 1)
     (hsep : ∀ i < plen, ∀ j < plen,
       off (off p.output ((p.count + 1) * p.len - plen)) i ≠ off op j)
-    (hbuf : HashBufferSeparate p.F p.S op plen) (q : Nat) :
+    (hbuf : HashBufferSeparate p.F p.S op plen) (q : Nat) (hh : HashSlots G p.W s) :
     WP isa (.seq (Impl.Dsa.X86_64.Generation.pHashes G p.len p.count)
       (Impl.Dsa.X86_64.Generation.pShape p.len p.count plen)) s fun t =>
       let x := Spec.Dsa.decodeBE (Spec.Rsa.bytesAt t.mem op plen)
@@ -439,7 +441,7 @@ theorem pBuild_ok {G : Impl.Pbkdf2.Md.X86_64.Stream} (hG : Calls.StreamOK G)
       t.rd = s.rd ∧ t.wr = s.wr ∧
       (∀ r ∈ calleeSaved, t.gpr r = s.gpr r) ∧
       Frame (⟨op, plen⟩ :: p.changed) s.mem t.mem := by
-  refine WP.seq (WP.mono (pHashes_ok hG hHh hsize hd hs)
+  refine WP.seq (WP.mono (pHashes_ok hG hHh hsize hd hs hh)
     fun u ⟨hu, rdu, wru, csu, hfu⟩ => ?_)
   refine WP.mono (pShape_ok hu hl hlmax hroom hcount hhash hseedsize hop
     (fun i hi => wru ▸ hout i hi) hsep q) fun t ⟨hx, hb, hf, hk⟩ => ?_
@@ -657,7 +659,8 @@ theorem pConstruct_ok {G : Impl.Pbkdf2.Md.X86_64.Stream} (hG : Calls.StreamOK G)
     (hsize : ∀ bytes, (H.hash bytes).length = G.D)
     {p : PConstructPlan} (hd : G.D = p.hash.len) {s : State} (hs : PConstructState p H s)
     (hhash : ∀ bs, H.hash bs = Spec.Dsa.seedHash (8 * p.hash.len) bs)
-    (hseedsize : ∀ bs, 8 * (Spec.Dsa.seedHash (8 * p.hash.len) bs).length = 8 * p.hash.len) :
+    (hseedsize : ∀ bs, 8 * (Spec.Dsa.seedHash (8 * p.hash.len) bs).length = 8 * p.hash.len)
+    (hh : HashSlots G p.hash.W s) :
     WP isa (Impl.Dsa.X86_64.Generation.pConstruct G p.len p.hash.len) s fun t =>
       Spec.Rsa.bytesAt t.mem (off (p.hash.W 5) Impl.Dsa.Generation.Layout.p) p.len =
         Spec.Dsa.encodeBE p.len p.value ∧
@@ -676,7 +679,7 @@ theorem pConstruct_ok {G : Impl.Pbkdf2.Md.X86_64.Stream} (hG : Calls.StreamOK G)
   rw [← p.hashCount]
   refine WP.seq (WP.mono (pBuild_ok hG hHh hsize hd hs.hash hl.1 hl.2.1 p.hashRoom
     p.hashCount hhash hseedsize p.shapedSlot hs.shapedWrite p.shapedInput p.shapedHash
-    (Spec.Rsa.os2ip p.qb)) fun u ⟨he, hx, Lu, ⟨Vu, Ru⟩, rdu, wru, _, fu⟩ => ?_)
+    (Spec.Rsa.os2ip p.qb) hh) fun u ⟨he, hx, Lu, ⟨Vu, Ru⟩, rdu, wru, _, fu⟩ => ?_)
   let xb := Spec.Rsa.bytesAt u.mem (off (p.hash.W 5) shaped) p.len
   have hxb : xb.length = p.len := bytesAt_length _ _ _
   have sx : Src u p.B p.Z (off (p.hash.W 5) shaped) xb := by
@@ -741,7 +744,7 @@ theorem pTest_full_ok (T : PrimeTest) {p : PrimeCallPlan} {used : Nat} {s : Stat
     (htc : Covers [⟨p.prime.rp, p.prime.rand.length⟩] (s.rd ++ s.wr))
     (htape : Src s p.prime.B p.prime.Z p.prime.rp p.prime.rand)
     (hcand : Spec.Dsa.decodeBE (Spec.Rsa.bytesAt s.mem (off (p.W 5) Impl.Dsa.Generation.Layout.p)
-      p.prime.len) = p.prime.N) :
+      p.prime.len) = p.prime.N) (hT : p.W 31 = s.syms T.name) :
     WP isa (Impl.Dsa.X86_64.Generation.pTest T.run p.prime.len) s fun t =>
       let res := Spec.Dsa.probablePrime p.prime.N (p.prime.rand.drop used)
       ∃ used' status, used' ≤ p.prime.rand.length ∧ Lay t p.prime.sp p.hash ∧
@@ -751,13 +754,13 @@ theorem pTest_full_ok (T : PrimeTest) {p : PrimeCallPlan} {used : Nat} {s : Stat
           used' = p.prime.rand.length - rest.length) ∧
         Frame p.changed s.mem t.mem ∧ t.rd = s.rd ∧ t.wr = s.wr := by
   unfold Impl.Dsa.X86_64.Generation.pTest
-  refine WP.seq (WP.mono (candidateWidth_ok h hptr (by have := p.prime.len2; omega)
-    hbound hbytes hrd) fun u ⟨hcf, hm, ku⟩ => ?_)
+  refine WP.seq (WP.mono_syms (candidateWidth_ok h hptr (by have := p.prime.len2; omega)
+    hbound hbytes hrd) fun u ⟨hcf, hm, ku⟩ uy => ?_)
   have Ru : Rep u.mem p.prime.sp p.hash V p.W := hm ▸ R
   have Lu := lay_of_rep L R Ru rfl (ku.gpr (by decide)) ku.2.2
   refine WP.ite false (by simp [eval, hcf, hfull]) (fun he => Bool.noConfusion he) (fun _ => ?_)
   rw [p.bits_eq]
-  have hin : PrimeCallInputs p.bits p.prime.sp p.hash (p.W 5) p.prime.rp p.prime.rand p.prime.N used p.W V u := {
+  have hin : PrimeCallInputs p.bits T.name p.prime.sp p.hash (p.W 5) p.prime.rp p.prime.rand p.prime.N used p.W V u := {
     layout := Lu
     rep := Ru
     arena := rfl
@@ -771,7 +774,8 @@ theorem pTest_full_ok (T : PrimeTest) {p : PrimeCallPlan} {used : Nat} {s : Stat
     tapeBytes := by rw [hm]; exact bytes_of_src htape
     candidate := by rw [hcandidate, hm, ← p.bits_eq, Nat.mul_div_cancel_left _ (by decide)]; exact hcand
     odd := p.prime.odd
-    bitLen := by rw [p.prime.bitLength_eq, p.bits_eq] }
+    bitLen := by rw [p.prime.bitLength_eq, p.bits_eq]
+    fnSlot := by rw [uy]; exact hT }
   refine WP.mono (primeCall_ok T p.supported hin p.geometry)
     fun t ⟨used', status, hb, Lt, Rt, he, hr, ft, rdt, wrt⟩ => ?_
   refine ⟨used', status, hb, Lt, Rt, he, hr, ?_, rdt.trans ku.2.1, wrt.trans ku.2.2⟩
@@ -848,11 +852,12 @@ theorem pConstructTest_ok {G : Impl.Pbkdf2.Md.X86_64.Stream} (hG : Calls.StreamO
     {used : Nat} (hused : p.construct.hash.W 16 = BitVec.ofNat 64 used) (hu : used ≤ p.rand.length)
     (htape : Src s p.construct.B p.construct.Z p.rp p.rand)
     (hA : Scr s (p.construct.hash.W 5) domainCheck)
-    (htc : Covers [⟨p.rp, p.rand.length⟩] (s.rd ++ s.wr)) :
+    (htc : Covers [⟨p.rp, p.rand.length⟩] (s.rd ++ s.wr)) (hh : HashSlots G p.construct.hash.W s)
+    (hT : p.construct.hash.W 31 = s.syms T.name) :
     WP isa (.seq (Impl.Dsa.X86_64.Generation.pConstruct G p.construct.len p.construct.hash.len)
       (Impl.Dsa.X86_64.Generation.pTest T.run p.construct.len)) s (PConstructTestEnd p used s) := by
-  refine WP.seq (WP.mono (pConstruct_ok hG hHh hsize hd hs hhash hseedsize)
-    fun u ⟨up, ue, ho, hb, Lu, ⟨Vu, Ru⟩, wu, hp, fu, rdu, wru⟩ => ?_)
+  refine WP.seq (WP.mono_syms (pConstruct_ok hG hHh hsize hd hs hhash hseedsize hh)
+    fun u ⟨up, ue, ho, hb, Lu, ⟨Vu, Ru⟩, wu, hp, fu, rdu, wru⟩ uy => ?_)
   have hlen : 0 < p.construct.len ∧ p.construct.len < 2 ^ 64 := by
     rcases p.construct.width with hh | hh | hh <;> omega_using [hh]
   have hbound : p.construct.value < 256 ^ p.construct.len := by
@@ -897,7 +902,7 @@ theorem pConstructTest_ok {G : Impl.Pbkdf2.Md.X86_64.Stream} (hG : Calls.StreamO
       change (if 8 * p.construct.len ≤ 256 then _ else _) = _
       exact ite_eq_right (by rcases p.construct.width with hh | hh | hh <;> omega_using [hh])
     refine WP.mono (pTest_full_ok T (p := call) Lu Ru wu hp hbound up hread hsmall hcandidate hused hu
-      (hA.congr wru) (by rw [rdu, wru]; exact htc) tape hcand)
+      (hA.congr wru) (by rw [rdu, wru]; exact htc) tape hcand (by rw [uy]; exact hT))
       fun t ⟨used', status, hbound', Lt, Rt, he, hr, ft, rdt, wrt⟩ => ?_
     dsimp only [call, PPrimalityPlan.call, PPrimalityPlan.prime] at he hr
     refine ⟨used', status, Vu, hbound', Lt, Rt, ?_, ?_, ?_, ?_, ?_, rdt.trans rdu, wrt.trans wru⟩

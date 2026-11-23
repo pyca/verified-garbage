@@ -4,6 +4,7 @@ public import VerifiedGarbage.Impl.Rsa.Arm.MulMod
 public import VerifiedGarbage.Impl.Rsa.Arm.CrtValues
 public import VerifiedGarbage.Impl.Bignum.Arm.ExponentCheck
 public import VerifiedGarbage.Impl.Rsa.Arm.KeyDiv
+public import VerifiedGarbage.Impl.Rsa.Arm.KeyDivCall
 
 /-! # The checks of an RSA private key on ARMv7
 
@@ -171,11 +172,17 @@ def keyBody : Prog isa := seqs [crtBody, dChecks1, Rsa.Arm.Div.code, .block ctxD
 
 /-! ## Balanced keys, by words -/
 
-/-- `[aVR] := [a] mod [d]` by words (`KeyDiv.divW`): `[d]`, of `w / 2` words, copied
+/-- The steps of `divK`'s divisions, the same for every `divK`: a function of their own. -/
+def divTail : Prog isa := KeyDiv.tailFn aVR aVD aVT aY aX
+
+/-- The name of `divTail`. -/
+def divName : String := "vg_rsa_check_key_div"
+
+/-- `[aVR] := [a] mod [d]` by words (`KeyDiv.divWC`, its steps a call of `divTail`): `[d]`, of `w / 2` words, copied
 to `aVD` with its top word made not zero (as it is for `p`, `p - 1`, `q` and `q - 1`
 when `p q = n`), through `aVT`, `aY` and `aX`. -/
 def divK (a d : Nat) (top : Option Nat := none) : List (Prog isa) :=
-  [copy aVD d, .block (KeyDiv.fixTop aVD), KeyDiv.divW a aVR aVD aVT aY aX top]
+  [copy aVD d, .block (KeyDiv.fixTop aVD), KeyDiv.divWC divName a aVR aVD aVT aY aX top]
 
 /-- `w` again, `1` and the mask `p` odd. -/
 def startW : Prog isa := .block (ctxK ++ setOne aOne ++ bitOf sMask aP)

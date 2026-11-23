@@ -1,5 +1,7 @@
 module
 
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Seal
 meta import VerifiedGarbage.Proof.AesGcm.AArch64.Seal
 import VerifiedGarbage.Proof.AesGcm.AArch64.BodyCT
@@ -345,14 +347,11 @@ section
 variable {Wn : Nat} {Ctx St W SP : Addr} (L : Lay Wn Ctx St W)
 include L
 
-/-- `j0`, `oneAad` and `encPrep` in two runs. -/
-theorem front_rel (v : GcmImpl) {k₁ k₂ : Reg → BitVec 64} {Np A D : Addr} {nl al n : Nat} {σ₁ σ₂ : State}
+/-- The nonce and AAD prefix shared by contiguous and gathered records. -/
+theorem nonceAad_rel (v : GcmImpl) {k₁ k₂ : Reg → BitVec 64} {Np A D : Addr} {nl al n : Nat} {σ₁ σ₂ : State}
     (h₁ : FrontIn Wn Ctx St W SP k₁ Np A D nl al n σ₁) (h₂ : FrontIn Wn Ctx St W SP k₂ Np A D nl al n σ₂)
-    {rest : Prog isa}
-    (hr : ∀ τ₁ τ₂, FrontOut Wn Ctx St W SP k₁ D al n σ₁ τ₁ → FrontOut Wn Ctx St W SP k₂ D al n σ₂ τ₂ →
-      RelCT isa (Eq2 τ₁ τ₂) rest TT) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) :
-    RelCT isa (Eq2 σ₁ σ₂) (.seq (j0 v.callees) (.seq (oneAad v.callees) (.seq (.block encPrep) rest))) TT := by
-  have hlt := h₁.aad.lt
+    : RelCT isa (Eq2 σ₁ σ₂) (.seq (j0 v.callees) (oneAad v.callees)) TT := by
+  have hWn := h₁.env.perm.hWn
   have j₁ : J0In Wn Ctx St W SP k₁ (blockAt σ₁.mem (Ctx + BitVec.ofNat 64 240)) Np nl σ₁ :=
     ⟨h₁.env, h₁.kept, h₁.x23, h₁.x24, h₁.x26, h₁.x27, h₁.non, rfl⟩
   have j₂ : J0In Wn Ctx St W SP k₂ (blockAt σ₂.mem (Ctx + BitVec.ofNat 64 240)) Np nl σ₂ :=
@@ -361,7 +360,6 @@ theorem front_rel (v : GcmImpl) {k₁ k₂ : Reg → BitVec 64} {Np A D : Addr} 
     fun s₁ s₂ ⟨o₁, rd₁, wr₁⟩ ⟨o₂, rd₂, wr₂⟩ => ?_
   have sl₁ := fun d (a : 216 ≤ d) (b : d + 8 ≤ 256) => slot_kept o₁.frame (slots_j0Frame L) a b
   have sl₂ := fun d (a : 216 ≤ d) (b : d + 8 ≤ 256) => slot_kept o₂.frame (slots_j0Frame L) a b
-  refine RelCT.assoc' ?_
   refine rel_seq (rel_taint [.x19] (by rw [o₁.env.sp, o₂.env.sp]) (by agree_tac [o₁.env.x19, o₂.env.x19])
       ⟨_, by taint_decide⟩)
     (aadBlk_ok (A := A) (al := al) o₁.env.x19 (covers_left o₁.env.perm.w) (by rw [sl₁ 216 (by decide) (by decide), h₁.sA])
@@ -375,14 +373,24 @@ theorem front_rel (v : GcmImpl) {k₁ k₂ : Reg → BitVec 64} {Np A D : Addr} 
   have a₂ : AbsIn Wn Ctx St W SP k₂ (blockAt s₂'.mem (Ctx + BitVec.ofNat 64 240)) [] A al 0 s₂' :=
     ⟨o₂.env.of_regs r₂, o₂.kept.of_others r₂.others, x23₂, x24₂, x25₂, rfl,
       h₂.aad.of_eq (by rw [r₂.rd, rd₂]) (by rw [r₂.wr, wr₂]), rfl⟩
-  refine rel_seq (absorbAl_rel L v (.inr rfl) a₁ a₂) (WP.with_rdwr (absorbAl_ok L (.inr rfl) v a₁))
-    (WP.with_rdwr (absorbAl_ok L (.inr rfl) v a₂)) fun t₁ t₂ ⟨b₁, brd₁, bwr₁⟩ ⟨b₂, brd₂, bwr₂⟩ => ?_
-  have f₁ : Frame (frontFrame St W) σ₁.mem t₁.mem :=
-    (o₁.frame.sub fun r hr => ⟨r, List.mem_append_left _ hr, fun _ h => h⟩).trans
-      (by rw [← r₁.mem]; exact b₁.frame.sub fun r hr => ⟨r, List.mem_append_right _ hr, fun _ h => h⟩)
-  have f₂ : Frame (frontFrame St W) σ₂.mem t₂.mem :=
-    (o₂.frame.sub fun r hr => ⟨r, List.mem_append_left _ hr, fun _ h => h⟩).trans
-      (by rw [← r₂.mem]; exact b₂.frame.sub fun r hr => ⟨r, List.mem_append_right _ hr, fun _ h => h⟩)
+  exact absorbAl_rel L v (.inr rfl) a₁ a₂
+
+/-- `j0`, `oneAad` and `encPrep` in two runs. -/
+theorem front_rel (v : GcmImpl) {k₁ k₂ : Reg → BitVec 64} {Np A D : Addr} {nl al n : Nat} {σ₁ σ₂ : State}
+    (h₁ : FrontIn Wn Ctx St W SP k₁ Np A D nl al n σ₁) (h₂ : FrontIn Wn Ctx St W SP k₂ Np A D nl al n σ₂)
+    {rest : Prog isa}
+    (hr : ∀ τ₁ τ₂, FrontOut Wn Ctx St W SP k₁ D al n σ₁ τ₁ → FrontOut Wn Ctx St W SP k₂ D al n σ₂ τ₂ →
+      RelCT isa (Eq2 τ₁ τ₂) rest TT) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) :
+    RelCT isa (Eq2 σ₁ σ₂) (.seq (j0 v.callees) (.seq (oneAad v.callees) (.seq (.block encPrep) rest))) TT := by
+  have front {s : State} {k} (h : FrontIn Wn Ctx St W SP k Np A D nl al n s) :=
+    WP.seq_iff.mp (WP.assoc' (aadFront_ok L v h.env h.kept h.x23 h.x24 h.x26 h.x27 h.non h.aad
+      (H := blockAt s.mem (Ctx+240)) rfl h.sA h.sL (rest := .block []) fun _ u => WP.block_nil u))
+  have hlt := h₁.aad.lt
+  refine RelCT.assoc (rel_seq (nonceAad_rel L v h₁ h₂) (front h₁) (front h₂) fun t₁ t₂ u₁ u₂ => ?_)
+  have b₁ := WP.block_nil_iff.mp u₁
+  have b₂ := WP.block_nil_iff.mp u₂
+  have f₁ := b₁.frame
+  have f₂ := b₂.frame
   have tl₁ := fun d (a : 216 ≤ d) (b : d + 8 ≤ 256) => slot_kept f₁ (slots_frontFrame L) a b
   have tl₂ := fun d (a : 216 ≤ d) (b : d + 8 ≤ 256) => slot_kept f₂ (slots_frontFrame L) a b
   refine rel_seq (rel_taint [.x19] (by rw [b₁.env.sp, b₂.env.sp]) (by agree_tac [b₁.env.x19, b₂.env.x19])
@@ -393,11 +401,11 @@ theorem front_rel (v : GcmImpl) {k₁ k₂ : Reg → BitVec 64} {Np A D : Addr} 
       (by rw [tl₂ 232 (by decide) (by decide), h₂.sD]) (by rw [tl₂ 240 (by decide) (by decide), h₂.sN]))
     fun u₁ u₂ ⟨e25₁, e26₁, e27₁, e28₁, er₁⟩ ⟨e25₂, e26₂, e27₂, e28₂, er₂⟩ => ?_
   refine hr u₁ u₂ ⟨b₁.env.of_regs er₁, ?_, e25₁, e26₁, e27₁, e28₁, by rw [er₁.mem]; exact f₁,
-      by rw [er₁.rd, brd₁, r₁.rd, rd₁], by rw [er₁.wr, bwr₁, r₁.wr, wr₁]⟩
+      er₁.rd.trans b₁.rd, er₁.wr.trans b₁.wr⟩
     ⟨b₂.env.of_regs er₂, ?_, e25₂, e26₂, e27₂, e28₂, by rw [er₂.mem]; exact f₂,
-      by rw [er₂.rd, brd₂, r₂.rd, rd₂], by rw [er₂.wr, bwr₂, r₂.wr, wr₂]⟩
-  · rw [er₁.others _ (by decide), b₁.kept .x22 (by decide)]
-  · rw [er₂.others _ (by decide), b₂.kept .x22 (by decide)]
+      er₂.rd.trans b₂.rd, er₂.wr.trans b₂.wr⟩
+  · rw [er₁.others _ (by decide), b₁.x22,h₁.kept .x22 (by decide)]
+  · rw [er₂.others _ (by decide), b₂.x22,h₂.kept .x22 (by decide)]
 
 end
 

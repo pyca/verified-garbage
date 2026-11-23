@@ -2,15 +2,15 @@ module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.St
 public import VerifiedGarbage.Proof.Rsa.Arm.InvLaw
-import VerifiedGarbage.Proof.Rsa.Arm.InverseCT
+public import VerifiedGarbage.Proof.Rsa.Arm.InverseCall
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Rsa.Arm.Stage.Loads
 import VerifiedGarbage.Proof.Rsa.Sub32
 
 /-! # An RSA key on ARMv7: inverses
 
-`invOf a m`: from `(a, m, 1, 0)`, `inverse` modulo the odd `m > 1` leaves
-`ivr W a m` in arrays 0–3 (`inverse_ok'`): `gcd(a, m)` in array 1 and
+`invOf a m`: from `(a, m, 1, 0)`, a call of `inverse` modulo the odd `m > 1` leaves
+`ivr W a m` in arrays 0–3 (`inverseCall_ok'`): `gcd(a, m)` in array 1 and
 `x < m` with `x a ≡ gcd(a, m) (mod m)` in array 3 (`ivr_spec`).
 -/
 
@@ -37,10 +37,10 @@ namespace VG.Proof.Rsa.Arm.Keys
 open VG VG.Arm VG.Proof.Mont VG.Impl.Rsa.Arm VG.Impl.Rsa.Arm.Keys VG.Impl.Bignum.Arm VG.Proof.Bignum.Arm
 open VG.Proof.X25519.Arm
 
-/-- `inverse`, with the values it leaves. -/
-theorem inverse_ok' [InvLaw] {s : State} {B : BitVec 32} {Z w N : Nat} (h : Ws s B Z w N) (hN15 : 15 ≤ N) (hN : N ≤ 256)
+/-- A call of `inverse`, with the values it leaves. -/
+theorem inverseCall_ok' [InvLaw] {s : State} {B : BitVec 32} {Z w N : Nat} (h : Ws s B Z w N) (hN15 : 15 ≤ N) (hN : N ≤ 256)
     (hW8 : 8 ≤ w) :
-    WP isa VG.Impl.Rsa.Arm.Keys.inverse s fun t => Ws t B Z w N ∧ Keep B w invArrs invSlots s.mem t.mem ∧
+    WP isa (inverseCall false) s fun t => Ws t B Z w N ∧ Keep B w invArrs invCallSlots s.mem t.mem ∧
       Rest (.r6 :: opRegs) s t ∧
       (num s.mem B w aNM + num s.mem B w aM = 2 ^ (32 * w) → num s.mem B w aZero = 0 →
         num s.mem B w aM % 2 = 1 → 1 < num s.mem B w aM →
@@ -49,7 +49,7 @@ theorem inverse_ok' [InvLaw] {s : State} {B : BitVec 32} {Z w N : Nat} (h : Ws s
         num t.mem B w 3 = (VG.Proof.RsaKeyGen.Arm.Key.ivr w (num s.mem B w 0) (num s.mem B w aM)).2.2.2) := by
   have g : VG.Proof.Rsa.Arm.Inv.Gk s B Z w w N :=
     ⟨h.nowrap, h.writable, h.fits, h.wpos, le_refl _, h.wle, h.r7, h.r8, h.r9⟩
-  exact WP.mono (InvLaw.inverseK_ok g hN15 hN hW8) fun t ⟨gt, kt, rt, v⟩ =>
+  exact WP.mono (inverseCall_ok g hN15 hN hW8) fun t ⟨gt, kt, rt, v⟩ =>
     ⟨⟨gt.nowrap, gt.writable, gt.fits, gt.kpos, gt.wle, gt.r7, gt.r8, gt.r9⟩, kt, rt,
       fun _ _ hmo hm1 _ => by simp only [VG.Proof.RsaKeyGen.Arm.Key.ivr]; exact v hmo hm1⟩
 
@@ -77,28 +77,26 @@ theorem St.psub3 {o a b : Nat} (cert : Cert (sub3 o a b)) (ho : o < nArr) (ha : 
       exact ⟨e, h.write1 k ho (by simp) r.sp r.rd r.wr e1 (by simp), ht⟩
 
 theorem inverse_cert : ∀ σ₁ σ₂ : State, RelCT isa
-    (fun s₁ s₂ => St P E A L V LS σ₁ s₁ ∧ St P E A L V LS σ₂ s₂) VG.Impl.Rsa.Arm.Keys.inverse (fun _ _ => True) :=
-  fun _ _ s t tr1 tr2 u v h e1 e2 =>
-    ⟨inverse_ct s t tr1 tr2 u v trivial trivial
-      ⟨by rw [h.1.2.2.r7, h.2.2.2.r7], by rw [h.1.2.2.r8, h.2.2.2.r8], by rw [h.1.2.2.r9, h.2.2.2.r9]⟩ e1 e2,
-      trivial⟩
+    (fun s₁ s₂ => St P E A L V LS σ₁ s₁ ∧ St P E A L V LS σ₂ s₂) (inverseCall false) (fun _ _ => True) :=
+  fun _ _ => inverseCall_ct fun _ _ h =>
+    ⟨by rw [h.1.2.2.r7, h.2.2.2.r7], by rw [h.1.2.2.r8, h.2.2.2.r8], by rw [h.1.2.2.r9, h.2.2.2.r9]⟩
 
 /-- `inverse` from `(a, m, 1, 0)` in arrays 0–3. -/
-theorem St.pinverse [VG.Proof.Rsa.Arm.Keys.InvLaw] {L0 : List Nat} (hZ : aZero ∈ L0) (hL0 : ∀ j ∈ L0, j ∉ invArrs) (hLS : ∀ d ∈ LS, d ∉ invSlots)
+theorem St.pinverse [VG.Proof.Rsa.Arm.Keys.InvLaw] {L0 : List Nat} (hZ : aZero ∈ L0) (hL0 : ∀ j ∈ L0, j ∉ invArrs) (hLS : ∀ d ∈ LS, d ∉ invCallSlots)
     (hv : ∀ σ s, St P E A (aNM :: 3 :: 2 :: 1 :: 0 :: aM :: L0) V LS σ s → A σ aZero = 0 ∧
       A σ aNM + A σ aM = 2 ^ (32 * P.W) ∧ A σ aM % 2 = 1 ∧ 1 < A σ aM ∧ A σ 1 = A σ aM ∧ A σ 2 = 1 ∧ A σ 3 = 0) :
-    VP (St P E A (aNM :: 3 :: 2 :: 1 :: 0 :: aM :: L0) V LS) VG.Impl.Rsa.Arm.Keys.inverse
+    VP (St P E A (aNM :: 3 :: 2 :: 1 :: 0 :: aM :: L0) V LS) (inverseCall false)
       (St P E (fun σ => upd (upd (A σ) 1 (ivr P.W (A σ 0) (A σ aM)).2.1) 3 (ivr P.W (A σ 0) (A σ aM)).2.2.2)
         (1 :: 3 :: aNM :: aM :: L0) V LS) := by
   refine VP.of_ct (fun σ₁ σ₂ => inverse_cert σ₁ σ₂) fun σ s ⟨e, h, hw⟩ => ?_
   obtain ⟨vZ, vNM, vodd, v1, e1, e2, e3⟩ := hv σ s ⟨e, h, hw⟩
-  refine WP.mono (inverse_ok' hw (by decide) (by decide) (by have := h.pre.wge; omega_using [this])) fun t ⟨ht, k, r, v⟩ => ⟨e, ?_, ht⟩
+  refine WP.mono (inverseCall_ok' hw (by decide) (by decide) (by have := h.pre.wge; omega_using [this])) fun t ⟨ht, k, r, v⟩ => ⟨e, ?_, ht⟩
   have g : ∀ j ∈ aNM :: 3 :: 2 :: 1 :: 0 :: aM :: L0, num s.mem P.B P.W j = A σ j := fun j hj => h.arrs j hj
   have bk := v (by rw [g aNM (by simp), g aM (by simp)]; exact vNM) (by rw [g aZero (by simp [hZ])]; exact vZ)
     (by rw [g aM (by simp)]; exact vodd) (by rw [g aM (by simp)]; exact v1)
     (by simp only [bank]; rw [g 0 (by simp), g 1 (by simp), g 2 (by simp), g 3 (by simp), g aM (by simp), e1, e2, e3])
   rw [g 0 (by simp), g aM (by simp)] at bk
-  have hds : ∀ d ∈ invSlots, SlotOk d := by decide
+  have hds : ∀ d ∈ invCallSlots, SlotOk d := by decide
   refine h.core k (by decide) hds r.sp r.rd r.wr (fun j hj => ?_) (h.sl_keep k hds hLS) (fun j hj => ?_) h.ls_ok
   · dsimp only
     simp only [List.mem_cons] at hj
@@ -126,7 +124,7 @@ theorem St.pinverse [VG.Proof.Rsa.Arm.Keys.InvLaw] {L0 : List Nat} (hZ : aZero �
 
 /-- `invOf a m`: `inverse` of `[a]` modulo `[m]`, which is odd and above 1. -/
 theorem St.pinv [VG.Proof.Rsa.Arm.Keys.InvLaw] {a m : Nat} (cm : Cert (copy aM m)) (ca : Cert (copy 0 a)) (ha : a ∈ L) (hm : m ∈ L)
-    (hZ : aZero ∈ L) (hO : aOne ∈ L) (hL : ∀ j ∈ L, j = aZero ∨ 15 ≤ j) (hLS : ∀ d ∈ LS, d ∉ invSlots)
+    (hZ : aZero ∈ L) (hO : aOne ∈ L) (hL : ∀ j ∈ L, j = aZero ∨ 15 ≤ j) (hLS : ∀ d ∈ LS, d ∉ invCallSlots)
     (hv : ∀ σ, E σ → A σ aZero = 0 ∧ A σ aOne = 1 ∧ A σ m % 2 = 1 ∧ 1 < A σ m) :
     VP (St P E A L V LS) (invOf a m)
       (St P E (fun σ => upd (upd (A σ) 1 (ivr P.W (A σ a) (A σ m)).2.1) 3 (ivr P.W (A σ a) (A σ m)).2.2.2)

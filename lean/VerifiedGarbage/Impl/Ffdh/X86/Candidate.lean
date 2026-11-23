@@ -62,6 +62,7 @@ def stOff : Nat := 68
 def hitOff : Nat := 72
 def jOff : Nat := 76
 def okOff : Nat := 80
+def iterOff : Nat := 84
 
 /-- `(out, out_len, used, bits, generator, rand, rand_len, scratch, scratch_len)`. -/
 def args : Args := { out := some 0, dom := 5, dlen := 6, plen := 1, ws := 7 }
@@ -210,7 +211,7 @@ def half : Prog isa := .seq (copy (sl 9) (sl 10) n1) (halve (sl 10))
 /-- The context of the modulus in slot `j`, one in slot 14, `w − 1` in 15, and `d` and `s`
 (slot 11, header) with `w − 1 = 2^s d`, `d` odd. -/
 def prepHead (j : Nat) : Prog isa :=
-  .seq (copy (sl j) (sl 0) n1) <| .seq (prepare .wide) <|
+  .seq (copy (sl j) (sl 0) n1) <| .seq prepCall <|
   .seq (setSmall (sl 14) n1 1) <| .seq (chain .sbb (sl 15) (sl j) (sl 14) n1) <|
   .seq (copy (sl 15) (sl 11) n1) (.block [.mov .eax (.imm 0), .store (sc twoOff) .eax])
 
@@ -282,11 +283,32 @@ def phaseWords (δ ε : Nat) : List Instr :=
 def onPass (rest : Prog isa) : Prog isa :=
   .seq (.block [.alu .cmp .eax (.imm 1)]) (.ite .e rest (.seq (.block [.alu .cmp .eax (.imm 2)]) (.ite .e reject short)))
 
-/-- The screened tests: one witness for p, all of q's, the rest of p's. -/
+/-- Slots 9 and 10 exchanged, through slot 16. -/
+def swap : Prog isa :=
+  .seq (copy (sl 9) (sl 16) n1) <| .seq (copy (sl 10) (sl 9) n1) (copy (sl 16) (sl 10) n1)
+
+/-- The words of the stage after `iter` passed phases, with its modulus in slot 9: p's first
+witness; then, slots 9 and 10 exchanged, all of q's; then, exchanged back, the rest of p's. -/
+def stageWords : Prog isa :=
+  .seq (.block [.mov .eax (.mem (sc iterOff)), .alu .cmp .eax (.imm 0)]) <|
+  .ite .e (.block (phaseWords 0 0 ++ [.mov .eax (.imm 1), .store (sc cntOff) .eax])) <|
+  .seq swap <| .seq (.block [.mov .eax (.mem (sc iterOff)), .alu .cmp .eax (.imm 1)]) <|
+  .ite .e (.block (phaseWords 1 0)) (.block (phaseWords 0 1))
+
+/-- After a phase: ZF clear to go on, after a pass that is not the third; `eax` the status. -/
+def stageNext : Prog isa :=
+  .seq (.block [.alu .cmp .eax (.imm 1)]) <|
+  .ite .e (.block [.mov .ecx (.mem (sc iterOff)), .alu .add .ecx (.imm 1), .store (sc iterOff) .ecx,
+      .alu .cmp .ecx (.imm 3)])
+    (.block [.mov .ecx (.imm 0), .alu .cmp .ecx (.imm 0)])
+
+/-- A stage: its words, its phase of the modulus in slot 9, and whether to go on. -/
+def stage : Prog isa := .seq stageWords (.seq (phase 9) stageNext)
+
+/-- The screened tests: one witness for p, all of q's, the rest of p's, a stage each. -/
 def tests : Prog isa :=
-  .seq (.block (phaseWords 0 0 ++ [.mov .eax (.imm 1), .store (sc cntOff) .eax])) <| .seq (phase 9) <| onPass <|
-  .seq (.block (phaseWords 1 0)) <| .seq (phase 10) <| onPass <|
-  .seq (.block (phaseWords 0 1)) <| .seq (phase 9) (onPass accept)
+  .seq (.block [.mov .eax (.imm 0), .store (sc iterOff) .eax]) <|
+  .seq (.loop stage .ne) (onPass accept)
 
 /-- p's checks and tests. -/
 def main : Prog isa :=

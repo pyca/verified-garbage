@@ -276,7 +276,7 @@ theorem factorStep_ok (h : RIn base bytes len args s) {A B dA dB x r LA LB k : N
     (fits : LA ≤ bc len .half → A < 2 ^ (32 * cwc len .half) ∧ dA < 2 ^ (32 * cwc len .half))
     {pc : Option Nat} (P : PreG s base bytes len args pc (safeM A))
     (pfit : FitG len args pc .wide ∧ (LA ≤ bc len .half → FitG len args pc .half)) :
-    WP isa (factorStep pc) s fun u => RIn base bytes len args u ∧
+    WP isa (factorStep pc.isSome) s fun u => RIn base bytes len args u ∧
       Frame (rtBody base (byteAddr (args 0)) bytes len (s.gpr .esp)) s.mem u.mem ∧
       (∀ j v, (j = 9 ∨ j = 14 ∨ j = 15) → v ≤ 2 * cwc len .wide →
         val32 u.mem base (lo len (.slot .wide j)) v = val32 s.mem base (lo len (.slot .wide j)) v) ∧
@@ -556,7 +556,7 @@ theorem facStep_ok {m₀ : Mem} (c : Comps base len args m₀ s.mem) (dpl : args
     {j : Nat} {t : State} (hj : j < 2) (I : FacInv base bytes len args m₀ s j t) {pc : Option Nat}
     (P : PreG t base bytes len args pc (safeM (componentValue m₀ args (if j = 1 then 8 else 6))))
     (pfit : FitG len args pc .wide ∧ ((args (if j = 1 then 9 else 7)).toNat ≤ bc len .half → FitG len args pc .half)) :
-    WP isa (factorStep pc) t fun u => FacInv base bytes len args m₀ s (j + 1) u ∧ u.zf = some (decide (j + 1 = 2)) := by
+    WP isa (factorStep pc.isSome) t fun u => FacInv base bytes len args m₀ s (j + 1) u ∧ u.zf = some (decide (j + 1 = 2)) := by
   obtain sp : t.gpr .esp = s.gpr .esp := I.keeps.1 _ (by decide)
   obtain hx : val32 t.mem base (lo len (.slot .wide 15)) (2 * cwc len .wide) = componentValue m₀ args 4 :=
     (I.comps 15 _ (.inr (.inr rfl)) (Nat.le_refl _)).trans c.x
@@ -629,7 +629,7 @@ theorem back_ok (h : RIn base bytes len args s) {m₀ : Mem} (c : Comps base len
     let p := componentValue m₀ args 6
     let r := mq + componentValue m₀ args 8 *
       ((mp + safeM p - mq % safeM p) % safeM p * componentValue m₀ args 14 % safeM p)
-    WP isa (.seq (coefficient pc) (.seq recombine exportResult)) s fun t =>
+    WP isa (.seq (coefficient pc.isSome) (.seq recombine exportResult)) s fun t =>
       ((cb = true → r < 2 ^ (8 * len)) → Spec.Rsa.bytesAt t.mem (byteAddr (args 0)) len =
         Spec.Rsa.i2osp (if cb then r else 0) len) ∧
       t.gpr .eax = BitVec.ofNat 32 cb.toNat ∧
@@ -851,6 +851,24 @@ theorem frontPre_ok (h : RIn base bytes len args s) {P : Prog isa} {Q : State �
   · apply BitVec.eq_of_toNat_eq
     rw [show (u₂.mem.readW (off base accOff) 32).toNat = w32 u₂.mem base accOff from rfl, A₂]
 
+/-- With `pre`, a step of the factors' loop: the current factor `j`'s cached value, the header words
+naming it, and its fit. -/
+theorem preStep_of {s₀ t : State} {m₀ : Mem} {j : Nat} (hj : j < 2) (h₀ : RIn base bytes len args s₀)
+    (I : FacInv base bytes len args m₀ s₀ j t)
+    (P0 : PreR2 s₀ base bytes len args 0 (safeM (componentValue m₀ args 6))) (O0 : PreOut s₀ args len 0)
+    (P1 : PreR2 s₀ base bytes len args 1 (safeM (componentValue m₀ args 8))) (O1 : PreOut s₀ args len 1) :
+    PreG t base bytes len args (some j) (safeM (componentValue m₀ args (if j = 1 then 8 else 6))) ∧
+      (FitG len args (some j) .wide ∧
+        ((args (if j = 1 then 9 else 7)).toNat ≤ bc len .half → FitG len args (some j) .half)) := by
+  obtain lb := len_le_bc len
+  have p7 := h₀.crt.pShort
+  have q9 := h₀.crt.qShort
+  obtain rfl | rfl : j = 0 ∨ j = 1 := by omega_arith
+  · exact ⟨⟨P0.keepBody h₀ O0 I.keeps (by decide) I.frame, ⟨I.l₁, by rw [I.left]⟩⟩,
+      fitG_of h₀.lower (by show (args 7).toNat ≤ _; omega_using [lb, p7]), fun hl => fitG_of h₀.lower hl⟩
+  · exact ⟨⟨P1.keepBody h₀ O1 I.keeps (by decide) I.frame, ⟨I.l₁, by rw [I.left]⟩⟩,
+      fitG_of h₀.lower (by show (args 9).toNat ≤ _; omega_using [lb, q9]), fun hl => fitG_of h₀.lower hl⟩
+
 /-- With `pre`: both factors' powers, each from its cached value. -/
 theorem powersPre_ok (h : RIn base bytes len args s) {m₀ : Mem} (c : Comps base len args m₀ s.mem)
     (dpl : args 11 = args 7) (dql : args 13 = args 9)
@@ -864,23 +882,17 @@ theorem powersPre_ok (h : RIn base bytes len args s) {m₀ : Mem} (c : Comps bas
         componentValue m₀ args 4 ^ componentValue m₀ args 10 % safeM (componentValue m₀ args 6) →
       val32 u.mem base (lo len (.slot .wide 17)) (2 * cwc len .wide) =
         componentValue m₀ args 4 ^ componentValue m₀ args 12 % safeM (componentValue m₀ args 8) →
-      w32 u.mem base lenOff = (args 7).toNat →
+      w32 u.mem base lenOff = (args 7).toNat → w32 u.mem base leftOff = 0 →
       Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s u → WP isa P u Q) :
     WP isa (.seq (.block factorsInit) (.seq (powers true) P)) s Q := by
-  obtain lb := len_le_bc len
-  have p7 := h.crt.pShort
-  have q9 := h.crt.qShort
   refine WP.seq (WP.mono (factorsInit_ok h c) fun u₀ I₀ => ?_)
-  refine WP.seq (WP.seq (WP.mono (facStep_ok c dpl dql (j := 0) (by decide) I₀ (pc := some 0)
-    (P0.keepBody h O0 I₀.keeps (by decide) I₀.frame)
-    ⟨fitG_of h.lower (by show (args 7).toNat ≤ _; omega_using [lb, p7]), fun hl => fitG_of h.lower hl⟩) fun u₁ ⟨I₁, _⟩ => ?_))
-  refine WP.mono (facStep_ok c dpl dql (j := 1) (by decide) I₁ (pc := some 1)
-    (P1.keepBody h O1 I₁.keeps (by decide) I₁.frame)
-    ⟨fitG_of h.lower (by show (args 9).toNat ≤ _; omega_using [lb, q9]), fun hl => fitG_of h.lower hl⟩) fun u I => ?_
-  exact k u I.1.inp I.1.frame ⟨(I.1.comps 9 _ (.inl rfl) (Nat.le_refl _)).trans c.n,
-    (I.1.comps 15 _ (.inr (.inr rfl)) (Nat.le_refl _)).trans c.x, I.1.f₁, I.1.f₂, I.1.e₁, I.1.e₂,
-    (I.1.comps 14 _ (.inr (.inl rfl)) (Nat.le_refl _)).trans c.qi⟩ I.1.acc (I.1.two rfl).1 (I.1.two rfl).2 I.1.l₁
-    I.1.keeps
+  refine WP.seq (WP.mono (PublicRt.countLoop (N := 2) (by decide) (fun j t => FacInv base bytes len args m₀ s j t)
+    (fun j t hj I => facStep_ok c dpl dql hj I (pc := some j) (preStep_of hj h I P0 O0 P1 O1).1
+      (preStep_of hj h I P0 O0 P1 O1).2) I₀) fun u I => ?_)
+  exact k u I.inp I.frame ⟨(I.comps 9 _ (.inl rfl) (Nat.le_refl _)).trans c.n,
+    (I.comps 15 _ (.inr (.inr rfl)) (Nat.le_refl _)).trans c.x, I.f₁, I.f₂, I.e₁, I.e₂,
+    (I.comps 14 _ (.inr (.inl rfl)) (Nat.le_refl _)).trans c.qi⟩ I.acc (I.two rfl).1 (I.two rfl).2 I.l₁ I.left
+    I.keeps
 
 /-- Private CRT at a run-time width with `pre`, which holds for `p q = n`: what `sized_ok` states. -/
 theorem sizedPre_ok (h : RIn base bytes len args s)
@@ -904,10 +916,10 @@ theorem sizedPre_ok (h : RIn base bytes len args s)
     decide_eq_decide.mpr ⟨fun a => ⟨pq, a⟩, fun a => a.2⟩
   have p7 := h.crt.pShort
   show WP isa (.seq importComponents (.seq validatePre (.seq (.block factorsInit) (.seq (powers true)
-    (.seq (coefficient (some 0)) (.seq recombine exportResult)))))) s _
+    (.seq (coefficient true) (.seq recombine exportResult)))))) s _
   refine frontPre_ok h fun u₁ h₁ F₁ c₁ A₁ K₁ => ?_
   refine powersPre_ok h₁ c₁ h.crt.dpLen h.crt.dqLen (P0.keepBody h O0 K₁ (by decide) F₁) (O0.keep K₁ (by decide))
-    (P1.keepBody h O1 K₁ (by decide) F₁) (O1.keep K₁ (by decide)) fun u₂ h₂ F₂ c₂ A₂ MP MQ L₂ K₂ => ?_
+    (P1.keepBody h O1 K₁ (by decide) F₁) (O1.keep K₁ (by decide)) fun u₂ h₂ F₂ c₂ A₂ MP MQ L₂ Lf₂ K₂ => ?_
   obtain sp₁ : u₁.gpr .esp = s.gpr .esp := K₁.1 _ (by decide)
   rw [sp₁] at F₂
   obtain pl : (componentValue s.mem args 6) < 2 ^ (32 * cwc len .wide) :=
@@ -919,7 +931,7 @@ theorem sizedPre_ok (h : RIn base bytes len args s)
   obtain mpl : (componentValue s.mem args 4) ^ componentValue s.mem args 10 % safeM (componentValue s.mem args 6) < safeM (componentValue s.mem args 6) := Nat.mod_lt _ (by have := safeM_gt (componentValue s.mem args 6); omega_using [this])
   obtain mql : (componentValue s.mem args 4) ^ componentValue s.mem args 12 % safeM (componentValue s.mem args 8) < safeM (componentValue s.mem args 8) := Nat.mod_lt _ (by have := safeM_gt (componentValue s.mem args 8); omega_using [this])
   refine WP.mono (back_ok h₂ c₂ MP mpl MQ (by omega_using [sq, mql]) L₂ (cb := decide (acceptedPre s.mem args))
-    (by rw [A₂, A₁]) (pc := some 0) (P0.keepBody h O0 (K₁.trans K₂) (by decide) (F₁.trans F₂))
+    (by rw [A₂, A₁]) (pc := some 0) ⟨P0.keepBody h O0 (K₁.trans K₂) (by decide) (F₁.trans F₂), ⟨L₂, by rw [Lf₂]⟩⟩
     ⟨fitG_of h.lower (by show (args 7).toNat ≤ _; omega_using [lb, p7]), fun hl => fitG_of h.lower hl⟩)
     fun t ⟨B, E, F, K⟩ => ⟨?_, by rw [E, accE], ?_, ?_⟩
   · rw [accE] at B

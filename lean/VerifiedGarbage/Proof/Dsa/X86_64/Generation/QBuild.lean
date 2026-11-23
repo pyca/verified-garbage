@@ -153,7 +153,7 @@ theorem prepareSeed_ok {p : GenerationContext} {W : Nat → BitVec 64} {s : Stat
   refine ⟨h.frame Lt ⟨V, Rt⟩ ?_ ff kt.2.1 kt.2.2, ff, kt⟩
   intro k hk
   simp only [generationSlots, List.mem_cons, List.not_mem_nil, or_false] at hk
-  rcases hk with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+  rcases hk with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
   all_goals first
     | rfl
     | simpa [seedWords, upd] using ((h.slots 28 (by simp [generationSlots])).trans p.hashLenSlot).symm
@@ -235,6 +235,8 @@ theorem qCandidate_ok {G1 G256 : Impl.Pbkdf2.Md.X86_64.Stream}
     {s : State} {F S rp op : Addr} {len : Nat} (hlen : len = 20 ∨ len = 32)
     (L : Lay s F S) {V : Nat → Byte} {W : Nat → BitVec 64}
     (R : Rep s.mem F S V W) (A : LabAt s F S W rp len) (hop : W 0 = op)
+    (hU : W 29 = s.syms (if len = 20 then G1 else G256).updN)
+    (hF : W 30 = s.syms (if len = 20 then G1 else G256).finN)
     (hout : ∀ i < len, InRegions s.wr (off op i) 1)
     (hsep : ∀ i < len, ∀ j < len, off (off S oDig) i ≠ off op j)
     (hbuf : HashBufferSeparate F S op len) :
@@ -245,7 +247,7 @@ theorem qCandidate_ok {G1 G256 : Impl.Pbkdf2.Md.X86_64.Stream}
       Frame [⟨op, len⟩, ⟨S, oRsa⟩, retR F] s.mem t.mem ∧
       Lay t F S ∧ ∃ V', Rep t.mem F S V' W := by
   unfold Impl.Dsa.X86_64.Generation.qCandidate
-  refine WP.seq (WP.mono (seedHashAt_frame_ok h1 h256 he1 he256 hs1 hs256 hd1 hd256 hlen L R A)
+  refine WP.seq (WP.mono (seedHashAt_frame_ok h1 h256 he1 he256 hs1 hs256 hd1 hd256 hlen L R A hU hF)
     fun u ⟨Lu, rdu, wru, csu, hfu, V', Ru, _, hb⟩ => ?_)
   refine WP.seq (WP.mono (qArgs_ok Lu Ru hop A.hll) fun v ⟨hdi, hsi, hcx, hdx, hm, hk⟩ => ?_)
   let seed := Spec.Rsa.bytesAt s.mem rp len

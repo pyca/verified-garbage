@@ -47,7 +47,7 @@ As on 32-bit ARM (`Proof/Ecdsa/Verify/Arm/Main.lean`). `front_ok`: the
 signature's setup with verification's arguments (`r` into `K`, the hash
 into `D` shifted, `public` kept in `r14` and `sig` in `r12`), its tables,
 `s` into `PT`, and ECDH's checks of the key (`peer_ok` on `r14`,
-`validate_ok`), which leave the key's point, or `G`, in `PX`, `PY` and the
+`valCall_ok`), which leave the key's point, or `G`, in `PX`, `PY` and the
 mask of the key's validity in the flag.
 -/
 
@@ -77,6 +77,8 @@ structure VPre (c : Cfg) (s : State) (extra : List Region := []) : Prop where
   dg_fit : (s.gpr .r4).toNat + c.C.len ≤ 2 ^ 64
   sig_fit : (s.gpr .r5).toNat + 2 * c.C.len ≤ 2 ^ 64
   sc_fit : (s.gpr .r6).toNat + size ≤ 2 ^ 64
+  /-- The table of constants the setup copies (`tbl_of_consts`). -/
+  tbl : TblOk c (s.gpr .r6) s
 
 /-- The key's `x` and `y`, the hash, and the signature's `r` and `s`. -/
 abbrev keyX (c : Cfg) (s₀ : State) : Nat :=
@@ -130,6 +132,7 @@ theorem VPre.setup {s : State} {extra : List Region} (hp : VPre c s extra) : Set
   k_fit := show (s.gpr .r5).toNat + c.C.len ≤ 2 ^ 64 by have := hp.sig_fit; omega_arith
   d_fit := hp.dg_fit
   e_fit := hp.dg_fit
+  tbl := hp.tbl
 
 theorem slW_le (h7 : c.n < 10) {l : List Nat} (hl : ∀ i ∈ l, i < 45) : ∀ w ∈ slW c l, w.1 + w.2 ≤ size := by
   intro w hw
@@ -142,7 +145,7 @@ theorem flag_le (h7 : c.n < 10) : ∀ w ∈ [(c.sl FLAG, 8)], w.1 + w.2 ≤ size
   rw [List.mem_singleton.mp hw]; have := sl_le c h7 (i := FLAG) (by decide); dsimp only; omega_arith
 
 theorem prefix_eq (c : Cfg) : Impl.Ecdsa.Verify.PPC64LE.Cfg.prefix' c =
-    .seq (.block (c.setupWith Args.verify ++ [mov .r12 .r5]))
+    .seq (.seq (c.setupWith Args.verify) (.block [mov .r12 .r5]))
       (.seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) (.seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n))
       (.seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n)) (.block [])))) := rfl
 
@@ -155,7 +158,7 @@ theorem prefix_ok (hc : CfgOk c) {s₀ : State} {extra : List Region} (hp : VPre
       St₁ c Args.verify s₀ (s₀.gpr .r6) (BitVec.allOnes 64) s ∧ s.gpr .r12 = s₀.gpr .r5 := by
   have h7 := hc.n10
   rw [prefix_eq]
-  refine WP.seq (wp_append (WP.mono (stage₀' hc hp.setup) fun s₁ ⟨S₁, kp₁⟩ =>
+  refine WP.seq (WP.seq (WP.mono (stage₀' hc hp.setup) fun s₁ ⟨S₁, kp₁⟩ =>
     wp_step exec_mov (WP.block_nil ?_)))
   replace S₁ : St₀ c Args.verify s₀ (s₀.gpr .r6) (BitVec.allOnes 64) s₁ := S₁
   obtain kw : Kp [.r12] s₁ (s₁.write .r12 (s₁.gpr .r5)) := Kp.write _ _ (by decide)
@@ -171,7 +174,7 @@ theorem prefix_ok (hc : CfgOk c) {s₀ : State} {extra : List Region} (hp : VPre
 theorem front_ok (hc : CfgOk c) {s₀ : State} {extra : List Region} (hp : VPre c s₀ extra) {rest : Prog isa}
     {Q : State → Prop} (h : ∀ s, Front c s₀ (s₀.gpr .r6) s → WP isa rest s Q) :
     WP isa (.seq (Impl.Ecdsa.Verify.PPC64LE.Cfg.prefix' c) (.seq (.block (Impl.Ecdsa.Verify.PPC64LE.Cfg.loadS c))
-      (.seq (.block (Impl.Ecdh.PPC64LE.Cfg.peerAt c .r14)) (.seq (Impl.Ecdh.PPC64LE.Cfg.validate c) rest)))) s₀ Q := by
+      (.seq (.block (Impl.Ecdh.PPC64LE.Cfg.peerAt c .r14)) (.seq (Impl.Ecdh.PPC64LE.Cfg.valCall c) rest)))) s₀ Q := by
   have h0 := hc.n0
   have h7 := hc.n10
   have hl8 := hc.len8
@@ -231,20 +234,20 @@ theorem front_ok (hc : CfgOk c) {s₀ : State} {extra : List Region} (hp : VPre 
   obtain hf₄ : flagW c base s₄ = mask64 (((s₀.mem (s₀.gpr .r3) = 4 ∧
       sv c base s₄ E < c.C.p) ∧ sv c base s₄ QY < c.C.p)) := by
     rw [f₄, hq0, fl₃, BitVec.allOnes_and, mask64_and, mask64_and]
-  refine WP.seq (WP.mono (validate_ok hc K₄.ws K₄.fixed r2₄ bp₄ hf₄)
+  refine WP.seq (WP.mono (valCall_ok hc K₄.ws K₄.fixed r2₄ bp₄ hf₄)
     fun s₅ ⟨hw₅, g₅, U₅, f₅, px_lt, py_lt, px, py⟩ => h s₅ ?_)
-  obtain K₅ := K₄.step h7 g₅ (hU := U₅) (hW := fixedOk_valW h7) (hWs := valW_le h7)
+  obtain K₅ := K₄.step h7 g₅ (hU := U₅) (hW := fixedOk_valWS h7) (hWs := valWS_le h7)
   obtain e₅ : ∀ {i}, i < 45 → i ∉ [QXM, QYM, W0, W1, W2, W3, PY] → i ≠ FLAG → sv c base s₅ i = sv c base s₄ i :=
-    fun hi hl hf => sv_unch U₅ h7 hn hi (apart_append (apart_slW hl)
+    fun hi hl hf => sv_unch U₅ h7 hn hi (apart_valWS hi (apart_append (apart_slW hl)
       (show ∀ w ∈ [(own c.n, 64 * c.n)] ++ [(c.sl FLAG, 8)], _ from
-        apart_append (apart_own h7 hi) (apart_flag h0 hf)))
+        apart_append (apart_own h7 hi) (apart_flag h0 hf))))
   obtain a₅ : ∀ {i}, i < 45 → i ∉ [QXM, QYM, W0, W1, W2, W3, PY] → i ∉ [R2P, BP, E, QY] → i ≠ FLAG →
       i ≠ PT → sv c base s₅ i = sv c base s₂ i := fun hi h₁ h₂ hf hp =>
     ((e₅ hi h₁ hf).trans (e₄ hi h₂ hf)).trans (v₃ hi hp)
   obtain t₅ : ∀ {j}, j < 3 → ∀ t < 64 * c.n,
       s₅.mem (off base (bitsAt c.n j + t)) = s₂.mem (off base (bitsAt c.n j + t)) :=
     fun hj t ht => by
-      rw [tbl_unch U₅ h7 hj ht (tbl_apart_valW h7 h0 _ t),
+      rw [tbl_unch U₅ h7 hj ht (tbl_apart_valWS h7 h0 _ t),
         tbl_unch U₄ h7 hj ht (apart_append (tbl_apart_slW h7 (by decide) _ t) (tbl_apart_flag h7 h0 _ t)),
         tbl_unch U₃ h7 hj ht (tbl_apart_slW h7 (by decide) _ t)]
   obtain hok : PeerOk c base s₄ ((s₀.mem (s₀.gpr .r3) = 4 ∧ sv c base s₄ E < c.C.p) ∧
@@ -393,30 +396,20 @@ theorem mid_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State}
   obtain sm₃ : toM c.C.n (2 ^ (64 * c.n)) (sv c base s₃ SM') = Fin.ofNat c.C.n (sigS c s₀) := by
     rw [toM_r2 hnR (by rw [e₃, show sv c base s₂ R2N = _ from K₂.fixed.r2n]), v₂ (by decide) (by decide), hF.pt]
   -- `w = s^(n-2)`.
-  refine WP.seq (WP.mono (chainPow_ok (P := c.chainN) (S := c.SN) (e := c.C.n - 2) hc.fnk hc.fnm (modN hc)
+  refine WP.seq (WP.mono (chainCallC_ok h7 chainWN_eq (i := KM) rfl (by decide) (P := c.chainN) (S := c.SN) (e := c.C.n - 2) hc.fnk hc.fnm (modN hc)
     (chainLayN hc) hnR K₃.ws (show sv c base s₃ KM < c.C.n from lt₃) hc.chainN) fun s₄ ⟨k₄, U₄, lt₄, w₄⟩ => ?_)
-  rw [chainWN_eq] at U₄
-  obtain K₄ := K₃.step h7 k₄ (hU := U₄) (hW := fixedOk_chainW h7) (hWs := chainW_le h7)
+  obtain K₄ := K₃.step h7 k₄ (hU := U₄) (hW := fixedOk_chainWS h7) (hWs := chainWS_le h7)
   obtain e₄ : ∀ {i}, i < 45 → i ≠ ACC → (i < DX ∨ T2 < i) → sv c base s₄ i = sv c base s₃ i := fun hi hr ht =>
-    sv_unch U₄ h7 hn hi (apart_chainW h7 hi hr ht)
+    sv_unch U₄ h7 hn hi (apart_chainWS h7 hi hr ht)
   obtain f₄ : flagW c base s₄ = flagW c base s₃ := by
     simp only [flagW]
     exact U₄.word (fun w hw => by
-      rcases apart_chainW h7 (i := FLAG) (by decide) (by decide) (by decide) w hw with h | h
+      rcases apart_chainWS h7 (i := FLAG) (by decide) (by decide) (by decide) w hw with h | h
       · exact Or.inl (by omega_arith)
       · exact Or.inr h) (by have := sl_le c h7 (i := FLAG) (by decide); omega_arith)
   obtain t₄ : ∀ {j}, j < 3 → ∀ t < 64 * c.n,
       s₄.mem (off base (bitsAt c.n j + t)) = s₃.mem (off base (bitsAt c.n j + t)) := fun {j} hj t ht =>
-    tbl_unch U₄ h7 hj ht (fun w hw => by
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
-      rcases hw with rfl | rfl | rfl
-      · exact Or.inr (sl_below_bits c h7 (i := ACC) (by decide) j t)
-      · have h26 := sl_below_bits c h7 (i := 26) (by decide) j t
-        rw [sl_eq] at h26
-        refine Or.inr ?_
-        show c.sl 17 + 9 * (8 * c.n) ≤ _
-        rw [sl_eq]; omega_using [h26]
-      · exact tbl_apart_own h7 j t _ (List.mem_singleton_self _))
+    tbl_unch U₄ h7 hj ht (tbl_apart_chainWS h7 j t)
   obtain w₄' : toM c.C.n (2 ^ (64 * c.n)) (sv c base s₄ ACC) = Fin.ofNat c.C.n (sigS c s₀) ^ (c.C.n - 2) := by
     rw [← sm₃]; exact w₄
   -- `u` and `v`.
@@ -1228,17 +1221,16 @@ theorem vtail_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {u v : Nat} {P : Po
   have hn3 := hc.n_ge
   obtain hfl : c.sl FLAG + 8 ≤ size := by have := sl_le c h7 (i := FLAG) (by decide); omega_arith
   -- `Z^(p-2)`.
-  refine WP.seq (WP.mono (chainPow_ok (P := c.chainP) (S := c.SP) (e := c.C.p - 2) hc.fpk hc.fpm (modP hc)
+  refine WP.seq (WP.mono (chainCallC_ok h7 chainWP_eq (i := RZ) rfl (by decide) (P := c.chainP) (S := c.SP) (e := c.C.p - 2) hc.fpk hc.fpm (modP hc)
     (chainLayP hc) hpR hP.ws hP.rz_lt hc.chainP) fun s₁ ⟨k₁, U₁, lt₁, v₁⟩ => ?_)
-  rw [chainWP_eq] at U₁
-  obtain K₁ : Keep c s₀ base s₁ := hP.toKeep.step h7 k₁ (hU := U₁) (hW := fixedOk_chainW h7) (hWs := chainW_le h7)
+  obtain K₁ : Keep c s₀ base s₁ := hP.toKeep.step h7 k₁ (hU := U₁) (hW := fixedOk_chainWS h7) (hWs := chainWS_le h7)
   obtain e₁ : ∀ {i}, i < 45 → i ≠ ACC → (i < DX ∨ T2 < i) → sv c base s₁ i = sv c base s i := fun hi hr ht =>
-    sv_unch U₁ h7 hn hi (apart_chainW h7 hi hr ht)
+    sv_unch U₁ h7 hn hi (apart_chainWS h7 hi hr ht)
   obtain fl₁ : flagW c base s₁ = flagW c base s := by
-    obtain apF : ∀ w ∈ [(c.sl ACC, 8 * c.n), (c.sl DX, 9 * (8 * c.n)), (own c.n, 64 * c.n)],
+    obtain apF : ∀ w ∈ chainWS c,
         c.sl FLAG + 8 ≤ w.1 ∨ w.1 + w.2 ≤ c.sl FLAG := fun w hw => by
       have := sl_le c h7 (i := FLAG) (by decide)
-      rcases apart_chainW h7 (i := FLAG) (by decide) (by decide) (by decide) w hw with h | h
+      rcases apart_chainWS h7 (i := FLAG) (by decide) (by decide) (by decide) w hw with h | h
       · exact Or.inl (by omega_arith)
       · exact Or.inr h
     rw [flagW, U₁.word apF (by omega_arith), ← flagW]
@@ -1359,7 +1351,7 @@ structure VKeep (s₀ s' : State) : Prop where
 
 theorem verifyWith_eq (c : Cfg) (pts : Prog isa) : Impl.Ecdsa.Verify.PPC64LE.Cfg.verifyWith c pts =
     .seq (Impl.Ecdsa.Verify.PPC64LE.Cfg.prefix' c) (.seq (.block (Impl.Ecdsa.Verify.PPC64LE.Cfg.loadS c))
-      (.seq (.block (Impl.Ecdh.PPC64LE.Cfg.peerAt c .r14)) (.seq (Impl.Ecdh.PPC64LE.Cfg.validate c)
+      (.seq (.block (Impl.Ecdh.PPC64LE.Cfg.peerAt c .r14)) (.seq (Impl.Ecdh.PPC64LE.Cfg.valCall c)
       (.seq (Impl.Ecdsa.Verify.PPC64LE.Cfg.scalars c) (.seq c.invN
       (.seq (Impl.Ecdsa.Verify.PPC64LE.Cfg.uv c) (.seq pts
       (.seq c.invP (Impl.Ecdsa.Verify.PPC64LE.Cfg.final c))))))))) := rfl

@@ -64,15 +64,15 @@ def generateKey (umaal : Bool) : Prog isa :=
 `round` of the variant `suffix` and the Montgomery product `op`, and
 exponentiating with `vg_dsa_pow_{pLen/8}_{e}`. -/
 @[reducible] def geo (umaal : Bool) (pLen qLen : Nat) (G : Generation.Hash) (suffix : String)
-    (round : Prog isa) (op : Nat → Nat → Nat → Prog isa) : Generation.Geo where
+    (round : Prog isa) (op : Nat → Nat → Nat → Prog isa) (dbl : Prog isa) : Generation.Geo where
   pLen := pLen
   qLen := qLen
   e := (8 * pLen - 8 * qLen) / 32 + 1
   G := G
   qName := "vg_dsa_probable_prime" ++ suffix
-  qCode := ProbablePrime.code ("vg_miller_rabin_round" ++ suffix) round op
+  qCode := ProbablePrime.code ("vg_miller_rabin_round" ++ suffix) round op dbl
   pName := "vg_dsa_probable_prime" ++ suffix
-  pCode := ProbablePrime.code ("vg_miller_rabin_round" ++ suffix) round op
+  pCode := ProbablePrime.code ("vg_miller_rabin_round" ++ suffix) round op dbl
   powName := Pow.name umaal (pLen / 8) ((8 * pLen - 8 * qLen) / 32 + 1)
   powCode := Pow.body umaal (pLen / 8) ((8 * pLen - 8 * qLen) / 32 + 1)
   powMod := Mont.Arm.Dynamic.modS (pLen / 8)
@@ -83,14 +83,17 @@ exponentiating with `vg_dsa_pow_{pLen/8}_{e}`. -/
   checkCode := Generate.checkParameters umaal
 
 /-- The parameter search's code, for the three modulus widths, over the
-Miller–Rabin round `round` of the variant `suffix` and the product `op`. -/
-def search (umaal : Bool) (suffix : String) (round : Prog isa) (op : Nat → Nat → Nat → Prog isa) : Prog isa :=
-  Generation.code (geo umaal 128 20 Generation.sha1 suffix round op)
-    (geo umaal 256 32 Generation.sha256 suffix round op) (geo umaal 384 32 Generation.sha256 suffix round op)
+Miller–Rabin round `round` of the variant `suffix`, the product `op` and the
+doubling `dbl`. -/
+def search (umaal : Bool) (suffix : String) (round : Prog isa) (op : Nat → Nat → Nat → Prog isa) (dbl : Prog isa) :
+    Prog isa :=
+  Generation.code (geo umaal 128 20 Generation.sha1 suffix round op dbl)
+    (geo umaal 256 32 Generation.sha256 suffix round op dbl) (geo umaal 384 32 Generation.sha256 suffix round op dbl)
 
 /-- `vg_dsa_parameter_search`, its working space in a frame that is then
 zeroed. -/
-def parameterSearch (umaal : Bool) (suffix : String) (round : Prog isa) (op : Nat → Nat → Nat → Prog isa) : Prog isa :=
-  scrubAll 32 352 (search umaal suffix round op)
+def parameterSearch (umaal : Bool) (suffix : String) (round : Prog isa) (op : Nat → Nat → Nat → Prog isa)
+    (dbl : Prog isa) : Prog isa :=
+  scrubAll 32 352 (search umaal suffix round op dbl)
 
 end VG.Impl.Dsa.Arm.Fn

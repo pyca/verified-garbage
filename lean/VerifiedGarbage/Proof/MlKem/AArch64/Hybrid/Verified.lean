@@ -43,6 +43,7 @@ meta import VerifiedGarbage.TCB.Axioms
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.VectorSymbols
 public import VerifiedGarbage.Impl.MlKem.AArch64.Lay
 public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.TopTiming
+public import VerifiedGarbage.Proof.Framework.AArch64.TaintICall
 import VerifiedGarbage.Proof.Framework.AArch64.DepthFill
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.TopTiming
 public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.VectorSymbols
@@ -347,15 +348,27 @@ theorem kgA1024_depth (v : Proof.Sha3.AArch64.Permutation) :
   Code.aarch64Depth_le_of_fillHoles (n := v.callee.name) (e := FixedHashCallers.kgAUsing (fixedHash hole) Impl.MlKem1024.AArch64.lay1024)
     (by kernel_rfl) (Proof.Sha3.AArch64.fdepth_of_noFrames v.noFrames) (by decide +kernel)
 
+theorem kgA768_icalls (c : Impl.Sha3.AArch64.Callee) :
+    Code.IcallsP (· = c.name) (FixedHashCallers.kgAUsing (fixedHash c) lay768) := by
+  rw [show FixedHashCallers.kgAUsing (fixedHash c) lay768 =
+    Code.fillHoles c.name c.code (FixedHashCallers.kgAUsing (fixedHash hole) lay768) by kernel_rfl]
+  exact Code.icallsP_fillHoles (by decide +kernel)
+theorem kgA1024_icalls (c : Impl.Sha3.AArch64.Callee) :
+    Code.IcallsP (· = c.name) (FixedHashCallers.kgAUsing (fixedHash c) Impl.MlKem1024.AArch64.lay1024) := by
+  rw [show FixedHashCallers.kgAUsing (fixedHash c) Impl.MlKem1024.AArch64.lay1024 =
+    Code.fillHoles c.name c.code (FixedHashCallers.kgAUsing (fixedHash hole) Impl.MlKem1024.AArch64.lay1024)
+    by kernel_rfl]
+  exact Code.icallsP_fillHoles (by decide +kernel)
+
 theorem kgA768_taint (c : Impl.Sha3.AArch64.Callee)
     (hS : Taint.AllOk VectorTaint.taint (Proof.Sha3.AArch64.Callers.sums c)) :
     ∃h,(VectorTaint.taint.check (VectorTaint.ofRegs [.x0,.x1,.x2,.x3])
-      (FixedHashCallers.kgAUsing (fixedHash c) lay768) h).isSome=true := by
+      (Code.eraseI (FixedHashCallers.kgAUsing (fixedHash c) lay768)) h).isSome=true := by
   taint_decide_generic c := hole using hS
 theorem kgA1024_taint (c : Impl.Sha3.AArch64.Callee)
     (hS : Taint.AllOk VectorTaint.taint (Proof.Sha3.AArch64.Callers.sums c)) :
     ∃h,(VectorTaint.taint.check (VectorTaint.ofRegs [.x0,.x1,.x2,.x3])
-      (FixedHashCallers.kgAUsing (fixedHash c) Impl.MlKem1024.AArch64.lay1024) h).isSome=true := by
+      (Code.eraseI (FixedHashCallers.kgAUsing (fixedHash c) Impl.MlKem1024.AArch64.lay1024)) h).isSome=true := by
   taint_decide_generic c := hole using hS
 
 end VG.Proof.MlKem.AArch64.FixedHash

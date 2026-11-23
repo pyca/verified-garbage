@@ -354,6 +354,7 @@ def Instr.asm : Instr → List String
   | .lfence => ["lfence"]
   | .mul r => [s!"mul {r.name}"]
   | .callr r => [s!"call {r.name}"]
+  | .callm m => [s!"call {m.str}"]
   | .imul d r => [s!"imul {d.name}, {r.name}"]
   | .imul3 d r v => [s!"imul {d.name}, {r.name}, {v.toInt}"]
   | .shld d r n => [s!"shld {d.name}, {r.name}, {n}"]
@@ -395,7 +396,7 @@ def Instr.memOps : Instr → List MemOp
   | .vpbroadcastdZ _ m | .zbcstd _ _ _ m
   | .evLoad _ m | .evStore m _ | .evMadd52Load _ _ _ m | .kLoad _ _ m | .kStore m _ _
   | .kLoad8 _ _ m | .kStore8 m _ _ | .evBroadcastLoad _ m | .e5InsertLoad _ _ m _ | .e5ExtractStore m _ _
-  | .stmxcsr m | .ldmxcsr m => [m]
+  | .stmxcsr m | .ldmxcsr m | .callm m => [m]
   | .shift32 .. | .bswap32 _ | .rorx32 .. | .andn32 .. | .rorx .. | .andn .. | .bswap _
   | .shift .. | .shiftCl .. | .shiftx .. | .movImm64 .. | .leaSym .. | .movqR .. | .xop _ | .vop _
   | .vpmovmskb .. | .zop _ | .eop _ | .e5op _ | .vpcmpltuw ..

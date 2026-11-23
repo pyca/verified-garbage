@@ -6,6 +6,8 @@ public import VerifiedGarbage.Proof.Weierstrass.Law
 public import VerifiedGarbage.Impl.Ecdsa.P192.PPC64LE
 public import VerifiedGarbage.Spec.Ecdsa.P192
 public import VerifiedGarbage.Proof.Ecdsa.PPC64LE.P192.Verified
+import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Setup
+meta import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Setup
 meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Table
 meta import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
 meta import VerifiedGarbage.Proof.Weierstrass.Law
@@ -29,7 +31,7 @@ open VG VG.PPC64LE
 /-- `vg_ecdsa_p192_sign`, with P-192's group law `hL`. -/
 def p192Core (hL : Weierstrass.Law Spec.P192.curve) : Core where
   E := Spec.Ecdsa.P192.inst
-  cs := []
+  cs := Impl.Ecdsa.PPC64LE.Cfg.constsK Impl.Ecdsa.PPC64LE.p192
   C := Impl.Ecdsa.PPC64LE.signP192
   N := "vg_ecdsa_p192_sign_k"
   V := (Proof.Ecdsa.PPC64LE.P192.sign_verified hL).1
@@ -63,9 +65,11 @@ def p192R (hL : Weierstrass.Law Spec.P192.curve) : RfcCurve where
 
 /-- `vg_ecdsa_p192_sign`, with the tables of `vs`, meets `TableInstance.signContract`. -/
 theorem p192T_verified (hL : Weierstrass.Law Spec.P192.curve) (vs : List Proof.HmacTable.PPC64LE.HVar)
-    (hv : OK vs) :
+    (hv : OK vs ∧ "VG_P192_FRAME_CONSTS" ∉ Proof.HmacTable.PPC64LE.names vs) :
     Verified PPC64LE.target (signCodeT (p192R hL) Spec.Ecdsa.Rfc6979.Curves.p192.tries vs)
-      (specK Spec.Ecdsa.Rfc6979.Curves.p192 [] vs) :=
-  signT_verified ⟨rfl, by decide, by decide⟩ p192_blk rfl hv (sat_nil hv (by decide) rfl)
+      (specK Spec.Ecdsa.Rfc6979.Curves.p192 (Impl.Ecdsa.PPC64LE.Cfg.constsK Impl.Ecdsa.PPC64LE.p192) vs) :=
+  signT_verified ⟨rfl, by decide, by decide⟩ p192_blk rfl hv.1
+    (sat_one hv.1 Proof.Ecdsa.PPC64LE.P192.tSatMem hv.2
+      (by rw [Proof.Ecdsa.PPC64LE.constTbl_length]; decide) Proof.Ecdsa.PPC64LE.P192.tSatMem_held (by decide) rfl)
 
 end VG.Proof.Ecdsa.Rfc6979.PPC64LE

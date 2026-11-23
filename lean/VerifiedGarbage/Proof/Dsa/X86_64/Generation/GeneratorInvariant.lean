@@ -96,6 +96,6 @@ theorem generator_done {p : GeneratorSearchPlan} {expected : Option Nat} {final 
     kt.2.1.trans ri, kt.2.2.trans wi⟩
   intro k hk
   simp only [generatorSlots, List.mem_cons, List.not_mem_nil, or_false] at hk
-  rcases hk with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp only [upd] <;> exact words _ (by decide)
+  rcases hk with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp only [upd] <;> exact words _ (by decide)
 
 end VG.Proof.Dsa.X86_64.Generation

@@ -194,7 +194,8 @@ structure BGeo (base : Addr) (bytes len : Nat) (bp sp : BitVec 32) (rd wr : List
   fit : bp.toNat + len ≤ 2 ^ 32
   rd : InRegions (rd ++ wr) (byteAddr bp) len
   apart : Region.Disjoint ⟨byteAddr bp, len⟩ ⟨base, bytes⟩
-  below : Region.Disjoint ⟨byteAddr bp, len⟩ (below sp 96)
+  room : RoomF sp base bytes
+  below : Region.Disjoint ⟨byteAddr bp, len⟩ (below sp 176)
 
 /-- Before octet `j`. -/
 structure ScanInv (Ex : List Region → List Region → Prop) (base : Addr) (bytes len : Nat)
@@ -225,13 +226,15 @@ theorem found_tb_sep (base : Addr) (m : Mem) (v : BitVec 32) :
 /-- Bytes apart from the working space and the stack below `sp`, through a stage. -/
 theorem bytes_keep (h : In Ex base bytes len args s) {p : Addr} {n : Nat}
     (apart : Region.Disjoint ⟨p, n⟩ ⟨base, bytes⟩) (hn : n ≤ 2 ^ 64) {sp : BitVec 32}
-    (hb40 : Region.Disjoint ⟨p, n⟩ (below sp 96)) {m m' : Mem} (F : Frame (frameR base sp (fR len)) m m') :
+    (RF : RoomF sp base bytes) (hb40 : Region.Disjoint ⟨p, n⟩ (below sp 176)) {m m' : Mem}
+    (F : Frame (frameF base sp (fR len)) m m') :
     Spec.Rsa.bytesAt m' p n = Spec.Rsa.bytesAt m p n := by
   obtain fit := fR_fit h
   refine frame_bytes F (fun r hr => ?_) hn
-  rw [frameR, List.mem_cons, List.mem_map] at hr
-  rcases hr with rfl | ⟨q, hq, rfl⟩
+  rw [frameF, frameR, List.mem_cons, List.mem_cons, List.mem_map] at hr
+  rcases hr with rfl | rfl | ⟨q, hq, rfl⟩
   · exact hb40
+  · exact hb40.sub_right (VG.X86.below_sub (by decide) RF.low)
   · have := fit q hq
     exact apart.sub_right (Offset.sub_base _ (by omega_arith))
 
@@ -254,7 +257,7 @@ theorem scanStep_ok {s₀ t : State} {bp : BitVec 32} {bs : List Byte} {j : Nat}
     rw [I.step.keeps.2.1, I.step.keeps.2.2]
     exact VG.CallLay.inRegions_sub B.rd (by omega_arith) (by omega_arith)
   obtain byte : t.mem (byteAddr bp + BitVec.ofNat 64 j) = bs.getD j 0 := by
-    rw [← hbs, ← bytes_keep h B.apart (by omega_arith) B.below I.step.frame, bytesAt_getD _ _ hj]
+    rw [← hbs, ← bytes_keep h B.apart (by omega_arith) B.room B.below I.step.frame, bytesAt_getD _ _ hj]
   generalize hb : bs.getD j 0 = b at byte
   generalize hf : (scanAt bs j).1 = f
   obtain F1 : (scanAt bs (j + 1)).1 = (b != 0 || f) := by

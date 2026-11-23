@@ -15,7 +15,7 @@ namespace VG.Artifacts.AesGcm.AArch64
 
 open VG.Proof.AesGcm.AArch64
 
-/-- `vg_aes_gcm_init`, the stream functions and `vg_aes_gcm_seal_gather` of the variant `g`. -/
+/-- The initialization and stream functions of the variant `g`. -/
 def artifactsOf (g : GcmVariant) : List Artifact := [
   Spec.Gcm.initApi.artifact AArch64.target {
     suffix := g.impl.suffix
@@ -44,11 +44,14 @@ def artifactsOf (g : GcmVariant) : List Artifact := [
   Spec.Gcm.streamVerifyApi.artifact AArch64.target {
     suffix := g.impl.suffix
     code := Impl.AesGcm.AArch64.Fn.streamVerify g.calls
-    verified := Proof.AesGcm.AArch64.streamVerify_scrubbed g },
+    verified := Proof.AesGcm.AArch64.streamVerify_scrubbed g }]
+
+/-- The gather implementation consumes the original input slices on each backend. -/
+def gatherArtifact (g : GcmVariant) : Artifact :=
   Spec.Gcm.sealGatherApi.artifact AArch64.target {
     suffix := g.impl.suffix
-    code := Impl.AesGcm.AArch64.Fn.sealGather g.calls
-    verified := Proof.AesGcm.AArch64.sealGather_scrubbed g }]
+    code := Impl.AesGcm.AArch64.DirectGather.sealGather g.calls
+    verified := Proof.AesGcm.AArch64.DirectGather.sealGather_scrubbed g.impl }
 
 /-- `vg_aes_gcm_seal_with_powers`, `vg_aes_gcm_open_with_powers` and
 `vg_aes_gcm_open_to_with_powers` of the variant `g`, calling `w` on the path
@@ -87,8 +90,8 @@ def basePwArtifacts (g : GcmVariant) : List Artifact := [
 /-- The artifacts of a variant: the functions it has (`GcmVariant.whole`,
 `withPowers`, `basePowers`). -/
 def artifactsFor (g : GcmVariant) : List Artifact :=
-  g.whole.flatMap artifactsOf ++ g.withPowers.flatMap (withPowersArtifacts g) ++
-    g.basePowers.flatMap basePwArtifacts
+  g.whole.flatMap artifactsOf ++ [gatherArtifact g] ++
+    g.withPowers.flatMap (withPowersArtifacts g) ++ g.basePowers.flatMap basePwArtifacts
 
 def artifacts : List Artifact :=
   VG.Proof.Variants.AesGcm.AArch64.variants.flatMap artifactsFor ++ [

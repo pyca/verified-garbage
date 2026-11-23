@@ -13,12 +13,18 @@ import VerifiedGarbage.Proof.Mont.PPC64LE.Const
 import VerifiedGarbage.Proof.Mont.Words32
 public import VerifiedGarbage.Impl.EcKey.Compressed.P224.PPC64LE
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
+public import VerifiedGarbage.Proof.Framework.PPC64LE.TaintSym
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Consts
+public import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Setup
 public import VerifiedGarbage.Spec.EcKey.P224
 import VerifiedGarbage.Proof.EcKey.Compressed.PPC64LE.P224.Lit
 import VerifiedGarbage.Proof.Ecdsa.PPC64LE.P224
 meta import VerifiedGarbage.Proof.EcKey.Compressed.PPC64LE.DecompressMain
 meta import VerifiedGarbage.Impl.EcKey.Compressed.P224.PPC64LE
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.TaintSym
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.Consts
+meta import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Setup
 meta import VerifiedGarbage.Spec.EcKey.P224
 meta import VerifiedGarbage.Proof.EcKey.Compressed.PPC64LE.P224.Lit
 meta import VerifiedGarbage.Proof.Ecdsa.PPC64LE.P224
@@ -764,15 +770,19 @@ namespace VG.Proof.EcKey.Compressed.PPC64LE.P224
 
 open VG VG.PPC64LE VG.Impl.Ecdsa.PPC64LE VG.Proof.Ecdsa.PPC64LE
 
-theorem compress_ct : ConstantTime isa (compressContract Spec.P224.curve).pre
-    (compressContract Spec.P224.curve).pub Impl.EcKey.Compressed.PPC64LE.compressP224 :=
-  VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r3, .r4, .r5])
-    (fun _ _ _ _ ⟨hsp, h3, h4, h5⟩ => ⟨hsp, fun r hr => by
+/-- The compression's contract with the table of constants (`Cfg.constsK`), as the proof states it. -/
+abbrev compressPC : Contract isa := (compressContract Spec.P224.curve).withTables p224.constsK
+
+theorem compress_ct : ConstantTime isa compressPC.pre compressPC.pub Impl.EcKey.Compressed.PPC64LE.compressP224 :=
+  VG.Taint.constantTime (A := taintSym [p224.constSym]) (Taint.ofRegs [.r3, .r4, .r5])
+    (fun _ _ _ _ ⟨⟨hsp, h3, h4, h5⟩, sy⟩ => ⟨⟨hsp, fun r hr => by
       simp only [Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
       · exact h3
       · exact h4
-      · exact h5⟩) (by taint_decide)
+      · exact h5⟩, fun n hn => by
+        simp only [List.mem_singleton] at hn; subst hn; exact sy _ (List.mem_singleton_self _)⟩)
+    (by taint_decide)
 
 theorem compress_sat : ∃ s, (Spec.EcKey.P224.inst.compressPublicKeyContract abi 0).pre s := by
   have hlen : Spec.P224.curve.len = 28 := rfl
@@ -780,24 +790,65 @@ theorem compress_sat : ∃ s, (Spec.EcKey.P224.inst.compressPublicKeyContract ab
     Spec.EcKey.Instance.compressPublicKeySig, hlen, Spec.EcKey.scratchWords,
     abi, argRegs, satState] [satState] using (satState 28)
 
+theorem constsK_eq : p224.constsK = [(p224.constSym, p224.constTbl)] := rfl
+
+/-- A state satisfying the compression's precondition with the table. -/
+def compressSatC : State where
+  gpr := (satState 28).gpr
+  lr := (satState 28).lr
+  sp := (satState 28).sp
+  mem := tblSatMem p224
+  rd := (satState 28).rd ++ [⟨0x100000, 8 * (17 * 4)⟩]
+  wr := (satState 28).wr
+  syms := fun _ => 0x100000
+
+theorem compressSatC_pre :
+    (Spec.EcKey.P224.inst.compressPublicKeyContract (abi.withConsts p224.constsK) 0).pre compressSatC := by
+  have hlen : Spec.P224.curve.len = 28 := rfl
+  have hl := constTbl_length p224
+  have held := tblSatMem_held p224 (by decide)
+  rw [constsK_eq]
+  obtain ⟨W, eW⟩ : ∃ W, p224.constTbl = W := ⟨_, rfl⟩
+  rw [eW] at hl held ⊢
+  generalize e : compressSatC = s
+  sig_pre [Spec.EcKey.P224.inst, Spec.EcKey.Instance.compressPublicKeyContract,
+    Spec.EcKey.Instance.compressPublicKeySig, hlen, Spec.EcKey.scratchWords, abi, argRegs, Abi.withConsts,
+    Abi.constRegions, Abi.constsHeld, stackBelow]
+  subst e
+  rw [hl]
+  refine ⟨rfl, fun i hi => held i (by rw [hl]; exact hi), by decide, fun r hr => ?_, by decide, ?_⟩
+  · change r ∈ [⟨0x1000, 28 + 1⟩, ⟨0x8000, 8192⟩] at hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl <;> exact Region.disjoint_of_sep (by decide)
+  · repeat' apply And.intro
+    all_goals first | exact Region.disjoint_of_sep (by decide) | decide | rfl
+
 theorem compress_verified :
-    Verified target Impl.EcKey.Compressed.PPC64LE.compressP224 (Spec.EcKey.P224.inst.compressPublicKeyContract abi 0) :=
-  Verified.of_correct (compress_correct p224 p224_ok) compress_ct (compress_implies _ compress_sat)
+    Verified target Impl.EcKey.Compressed.PPC64LE.compressP224
+      (Spec.EcKey.P224.inst.compressPublicKeyContract (abi.withConsts p224.constsK) 0) :=
+  Verified.of_correct (compress_correctT p224 p224_ok (List.mem_singleton_self _)) compress_ct
+    (withTables_implies (compress_implies _ compress_sat) ⟨compressSatC, compressSatC_pre⟩)
 
 /-- P-224's square root: Tonelli and Shanks's, for `p - 1 = q 2⁹⁶` and the
 nonresidue 11. -/
 abbrev root (a : Spec.Weierstrass.Fe Spec.P224.curve) : Spec.Weierstrass.Fe Spec.P224.curve :=
   Impl.EcKey.Compressed.rootTonelli a ((Spec.P224.curve.p - 1) / 2 ^ 96) 96 (Fin.ofNat Spec.P224.curve.p 11)
 
-theorem decompress_ct : ConstantTime isa (decompressContract Spec.P224.curve root).pre
-    (decompressContract Spec.P224.curve root).pub Impl.EcKey.Compressed.PPC64LE.decompressP224 :=
-  VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r3, .r4, .r5])
-    (fun _ _ _ _ ⟨hsp, h3, h4, h5⟩ => ⟨hsp, fun r hr => by
+/-- The decompression's contract with the table of constants (`Cfg.constsK`), as the proof states it. -/
+abbrev decompressPC : Contract isa :=
+  (decompressContract Spec.P224.curve root).withTables p224.constsK
+
+theorem decompress_ct : ConstantTime isa decompressPC.pre decompressPC.pub
+    Impl.EcKey.Compressed.PPC64LE.decompressP224 :=
+  VG.Taint.constantTime (A := taintSym [p224.constSym]) (Taint.ofRegs [.r3, .r4, .r5])
+    (fun _ _ _ _ ⟨⟨hsp, h3, h4, h5⟩, sy⟩ => ⟨⟨hsp, fun r hr => by
       simp only [Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
       · exact h3
       · exact h4
-      · exact h5⟩) (by taint_decide)
+      · exact h5⟩, fun n hn => by
+        simp only [List.mem_singleton] at hn; subst hn; exact sy _ (List.mem_singleton_self _)⟩)
+    (by taint_decide)
 
 theorem decompress_sat : ∃ s, (Spec.EcKey.P224.inst.decompressPublicKeyContract abi 0).pre s := by
   have hlen : Spec.P224.curve.len = 28 := rfl
@@ -805,11 +856,43 @@ theorem decompress_sat : ∃ s, (Spec.EcKey.P224.inst.decompressPublicKeyContrac
     Spec.EcKey.Instance.decompressPublicKeySig, hlen, Spec.EcKey.scratchWords,
     abi, argRegs, decompressSatState] [decompressSatState] using (decompressSatState 28)
 
+/-- A state satisfying the decompression's precondition with the table. -/
+def decompressSatC : State where
+  gpr := (decompressSatState 28).gpr
+  lr := (decompressSatState 28).lr
+  sp := (decompressSatState 28).sp
+  mem := tblSatMem p224
+  rd := (decompressSatState 28).rd ++ [⟨0x100000, 8 * (17 * 4)⟩]
+  wr := (decompressSatState 28).wr
+  syms := fun _ => 0x100000
+
+theorem decompressSatC_pre :
+    (Spec.EcKey.P224.inst.decompressPublicKeyContract (abi.withConsts p224.constsK) 0).pre decompressSatC := by
+  have hlen : Spec.P224.curve.len = 28 := rfl
+  have hl := constTbl_length p224
+  have held := tblSatMem_held p224 (by decide)
+  rw [constsK_eq]
+  obtain ⟨W, eW⟩ : ∃ W, p224.constTbl = W := ⟨_, rfl⟩
+  rw [eW] at hl held ⊢
+  generalize e : decompressSatC = s
+  sig_pre [Spec.EcKey.P224.inst, Spec.EcKey.Instance.decompressPublicKeyContract,
+    Spec.EcKey.Instance.decompressPublicKeySig, hlen, Spec.EcKey.scratchWords, abi, argRegs, Abi.withConsts,
+    Abi.constRegions, Abi.constsHeld, stackBelow]
+  subst e
+  rw [hl]
+  refine ⟨rfl, fun i hi => held i (by rw [hl]; exact hi), by decide, fun r hr => ?_, by decide, ?_⟩
+  · change r ∈ [⟨0x1000, 2 * 28 + 1⟩, ⟨0x8000, 8192⟩] at hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl <;> exact Region.disjoint_of_sep (by decide)
+  · repeat' apply And.intro
+    all_goals first | exact Region.disjoint_of_sep (by decide) | decide | rfl
+
 theorem decompress_verified (hL : Proof.Weierstrass.Law Spec.P224.curve) :
     Verified target Impl.EcKey.Compressed.PPC64LE.decompressP224
-      (Spec.EcKey.P224.inst.decompressPublicKeyContract abi 0) :=
-  Verified.of_correct (decompress_correct p224 p224_ok root
-      (candidateTonelli_correct p224_ok (by decide +kernel) (by decide +kernel)))
-    decompress_ct (decompress_implies _ _ (Proof.P224.rootFacts hL) decompress_sat)
+      (Spec.EcKey.P224.inst.decompressPublicKeyContract (abi.withConsts p224.constsK) 0) :=
+  Verified.of_correct (decompress_correctT p224 p224_ok root
+      (candidateTonelli_correct p224_ok (by decide +kernel) (by decide +kernel)) (List.mem_singleton_self _))
+    decompress_ct (withTables_implies (decompress_implies _ _ (Proof.P224.rootFacts hL) decompress_sat)
+      ⟨decompressSatC, decompressSatC_pre⟩)
 
 end VG.Proof.EcKey.Compressed.PPC64LE.P224

@@ -31,6 +31,9 @@ import VerifiedGarbage.Proof.Framework.Bswap
 import VerifiedGarbage.Proof.Sm4.Common
 import VerifiedGarbage.Proof.Sm4.Layout
 import VerifiedGarbage.Proof.Framework.PPC64LE.Step
+import VerifiedGarbage.Proof.Framework.PPC64LE.Call
+import VerifiedGarbage.Proof.Framework.PPC64LE.SlotTaintMono
+public import VerifiedGarbage.Proof.Framework.PPC64LE.SlotTaint
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Sm4.PPC64LE.LayersLit
@@ -42,6 +45,9 @@ meta import VerifiedGarbage.Proof.Framework.Bswap
 meta import VerifiedGarbage.Proof.Sm4.Common
 meta import VerifiedGarbage.Proof.Sm4.Layout
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Step
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.Call
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.SlotTaintMono
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.SlotTaint
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Sm4.PPC64LE.LayersLit
@@ -722,8 +728,12 @@ end
 /-!
 # SM4 key expansion on PPC64LE meets its contracts
 
-`expandKey_verified`: `expandKey` is correct (`expandKey_wp`) and constant
-time, by the taint analysis with the pointers and the stack pointer public.
+`expandKey_correct` and `expandKey_ct`: `expandKey`, the code of
+`vg_sm4_expand_key_core`, is correct (`expandKey_wp`) and constant time, by
+the taint analysis with the pointers and the stack pointer public.
+`expandKeyCall_verified`: `vg_sm4_expand_key`'s body, a call of it with the
+return address kept in the working space past its 402 slots, from its
+contract (`WP.call`), and constant time by the analysis with public slots.
 `expandKey_framed` runs it with its working space on the stack, zeroed on
 return, as `ecb_framed` does.
 -/
@@ -778,22 +788,183 @@ theorem expandKey_correct (s : State) (hs : expandKeyPPC64LE.pre s) :
   · exact h₁ 16 (by omega_using [])
   · exact h₁ 17 (by omega_using [])
 
-/-- A state satisfying the precondition. -/
-def expandKeySat : State where
+/-! ## `vg_sm4_expand_key`: a call of `vg_sm4_expand_key_core` -/
+
+end VG.Proof.Sm4.PPC64LE
+
+namespace VG.Proof.Sm4
+
+open VG VG.PPC64LE VG.Impl.Sm4.PPC64LE
+
+/-- `expandKeyCall` on PPC64LE: `expandKeyPPC64LE` with the working space's
+slot `keyLr` and one more. -/
+def expandKeyCallPPC64LE : Contract PPC64LE.isa where
+  pre s :=
+    let key : Region := ⟨s.gpr .r3, 16⟩
+    let sched : Region := ⟨s.gpr .r4, 128⟩
+    let scratch : Region := ⟨s.gpr .r5, 8 * (slots + 2)⟩
+    s.rd = [key] ∧ s.wr = [sched, scratch] ∧ key.Disjoint sched ∧ key.Disjoint scratch ∧
+      sched.Disjoint scratch ∧
+      (s.gpr .r3).toNat + 16 ≤ 2 ^ 64 ∧ (s.gpr .r4).toNat + 128 ≤ 2 ^ 64 ∧
+      (s.gpr .r5).toNat + 8 * (slots + 2) ≤ 2 ^ 64
+  post := expandKeyPPC64LE.post
+  pub := expandKeyPPC64LE.pub
+
+end VG.Proof.Sm4
+
+namespace VG.Proof.Sm4.PPC64LE
+
+open VG VG.PPC64LE VG.Impl.Sm4.PPC64LE
+open VG.Proof.Sm4 (expandKeyPPC64LE expandKeyCallPPC64LE)
+
+/-- `vg_sm4_expand_key_core` writes no `r5`. -/
+theorem key_keeps : ∀ i ∈ instrs expandKey, dstOf i ≠ some .r5 := by
+  have h : (instrs expandKey).all (fun i => dstOf i != some .r5) = true := by
+    rw [← Code.allInstrs_eq]; lit_decide
+  intro i hi
+  have := List.all_eq_true.mp h i hi
+  simpa using this
+
+theorem expandKeyCall_wp {s₀ : State} (hp : expandKeyCallPPC64LE.pre s₀) :
+    WP isa expandKeyCall s₀ fun s' => (∀ r ∈ preserved, s'.gpr r = s₀.gpr r) ∧ s'.lr = s₀.lr ∧
+      expandKeyCallPPC64LE.post s₀ s' := by
+  obtain ⟨hrd, hwr, dKS, dKB, dSB, fK, fS, fB⟩ := hp
+  let K := s₀.gpr .r3
+  let S := s₀.gpr .r4
+  let b := s₀.gpr .r5
+  obtain hwB : (⟨b, 8 * (slots + 2)⟩ : Region) ∈ s₀.wr := by rw [hwr]; simp [b]
+  obtain hwS : (⟨S, 128⟩ : Region) ∈ s₀.wr := by rw [hwr]; simp [S]
+  obtain hrK : (⟨K, 16⟩ : Region) ∈ s₀.rd := by rw [hrd]; simp [K]
+  -- The return address's slot: apart from the code's slots and the schedule.
+  let L : Region := ⟨b + BitVec.ofNat 64 (8 * keyLr), 8⟩
+  obtain lB : Region.Sub L ⟨b, 8 * (slots + 2)⟩ := VG.Offset.sub_base b (by simp only [keyLr]; omega_arith)
+  obtain lF : Region.Disjoint L ⟨b, 8 * slots⟩ :=
+    VG.Offset.disjoint_base b (by simp only [keyLr]; omega_arith) (by simp only [keyLr]; rw [slots_eq]; omega_arith)
+  obtain lS : Region.Disjoint L ⟨S, 128⟩ := (dSB.sub_right lB).symm
+  obtain lK : Region.Disjoint ⟨K, 16⟩ L := dKB.sub_right lB
+  obtain aL : InRegions s₀.wr (b + BitVec.ofNat 64 (8 * keyLr)) 8 :=
+    ⟨_, hwB, VG.Offset.contains_base b (by simp only [keyLr]; omega_arith)
+      (by simp only [keyLr]; rw [slots_eq]; omega_arith)⟩
+  obtain u₁ := Upd.write s₀ .r0 s₀.lr
+  unfold expandKeyCall
+  refine WP.seq (WP.cons exec_mflr (wp_std (a := b + BitVec.ofNat 64 (8 * keyLr)) (by decide) (by decide)
+    (by rw [u₁.other _ (by decide)]) (by rw [u₁.wr]; exact aL) fun s₂ u₂ => wp_nil ?_))
+  obtain g₂ : ∀ r, r ≠ .r0 → s₂.gpr r = s₀.gpr r := fun r h => by rw [u₂.gpr, u₁.other r h]
+  obtain m₂ : s₂.mem = s₀.mem.writeW (b + BitVec.ofNat 64 (8 * keyLr)) s₀.lr := by rw [u₂.mem, u₁.gpr, u₁.mem]
+  obtain rd₂ : s₂.rd = s₀.rd := by rw [u₂.rd, u₁.rd]
+  obtain wr₂ : s₂.wr = s₀.wr := by rw [u₂.wr, u₁.wr]
+  obtain f₂ : Frame [L] s₀.mem s₂.mem := by
+    rw [m₂]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
+  obtain e3 : (s₂.callEntry.withRegions [⟨K, 16⟩] [⟨S, 128⟩, ⟨b, 8 * slots⟩]).gpr .r3 = K := by
+    rw [State.withRegions_gpr, State.callEntry_gpr _ (by decide), g₂ _ (by decide)]
+  obtain e4 : (s₂.callEntry.withRegions [⟨K, 16⟩] [⟨S, 128⟩, ⟨b, 8 * slots⟩]).gpr .r4 = S := by
+    rw [State.withRegions_gpr, State.callEntry_gpr _ (by decide), g₂ _ (by decide)]
+  obtain e5 : (s₂.callEntry.withRegions [⟨K, 16⟩] [⟨S, 128⟩, ⟨b, 8 * slots⟩]).gpr .r5 = b := by
+    rw [State.withRegions_gpr, State.callEntry_gpr _ (by decide), g₂ _ (by decide)]
+  obtain sub0 : ∀ {R R' : Region}, R.base = R'.base → R.len ≤ R'.len →
+      ∃ off, R.base = R'.base + BitVec.ofNat 64 off ∧ off + R.len ≤ R'.len := fun hb hl =>
+    ⟨0, by rw [BitVec.add_zero, hb], by omega_arith⟩
+  refine WP.seq (WP.call (k := expandKeyPPC64LE) expandKey_correct (rd := [⟨K, 16⟩])
+    (wr := [⟨S, 128⟩, ⟨b, 8 * slots⟩]) ?_ (Covers.of_sub fun r hr => ?_) (Covers.of_sub fun r hr => ?_)
+    (fun s' hrd' hwr' _ hf hpres hnw hpost => ?_) (by lit_decide))
+  · refine ⟨by rw [State.withRegions_rd, e3], by rw [State.withRegions_wr, e4, e5], ?_, ?_, ?_, ?_, ?_, ?_⟩
+    · rw [e3, e4]; exact dKS
+    · rw [e3, e5]; exact dKB.sub_right (Region.sub_prefix (by omega_arith))
+    · rw [e4, e5]; exact dSB.sub_right (Region.sub_prefix (by omega_arith))
+    · rw [e3]; exact fK
+    · rw [e4]; exact fS
+    · rw [e5]; show (s₀.gpr .r5).toNat + 8 * slots ≤ 2 ^ 64; omega_arith
+  · simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl
+    · exact ⟨_, by rw [rd₂]; exact List.mem_append_left _ hrK, sub0 rfl (Nat.le_refl _)⟩
+    · exact ⟨_, by rw [rd₂, wr₂]; exact List.mem_append_right _ hwS, sub0 rfl (Nat.le_refl _)⟩
+    · exact ⟨⟨b, 8 * (slots + 2)⟩, by rw [rd₂, wr₂]; exact List.mem_append_right _ hwB, ⟨0, by rw [BitVec.add_zero], show 0 + 8 * slots ≤ 8 * (slots + 2) by omega_arith⟩⟩
+  · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact ⟨_, by rw [wr₂]; exact hwS, sub0 rfl (Nat.le_refl _)⟩
+    · exact ⟨⟨b, 8 * (slots + 2)⟩, by rw [wr₂]; exact hwB, ⟨0, by rw [BitVec.add_zero], show 0 + 8 * slots ≤ 8 * (slots + 2) by omega_arith⟩⟩
+  obtain r5' : s'.gpr .r5 = b := by
+    rw [hnw .r5 (by decide) key_keeps, g₂ _ (by decide)]
+  obtain lr' : s'.mem.readW (b + BitVec.ofNat 64 (8 * keyLr)) 64 = s₀.lr := by
+    rw [hf.readW (r := L) (Region.contains_self _ _) (fun r hr => by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl
+        · exact lS
+        · exact lF) (by decide), m₂, Mem.readW_writeW_self64]
+  obtain hin : InRegions (s'.rd ++ s'.wr) (s'.gpr .r5 + BitVec.ofNat 64 (8 * keyLr)) 8 := by
+    rw [hrd', hwr', rd₂, wr₂, r5']
+    obtain ⟨R, hR, hc⟩ := aL
+    exact ⟨R, List.mem_append_right _ hR, hc⟩
+  refine wp_ld (a := b + BitVec.ofNat 64 (8 * keyLr)) (by decide) (by decide) (by rw [r5'])
+    (by rw [← r5']; exact hin) fun s₃ u₃ => WP.cons exec_mtlr (wp_nil ⟨fun r hr => ?_, ?_, ?_⟩)
+  · have h0 : r ≠ .r0 := (by decide : ∀ r ∈ preserved, r ≠ .r0) r hr
+    show s₃.gpr r = _
+    rw [u₃.other r h0, hpres r hr, g₂ r h0]
+  · show s₃.gpr .r0 = s₀.lr
+    rw [u₃.gpr, lr']
+  · obtain hb : Spec.Sm4.blockAt s₂.mem K = Spec.Sm4.blockAt s₀.mem K := by
+      apply Vector.ext; intro i hi
+      simp only [Spec.Sm4.blockAt, Vector.getElem_ofFn]
+      exact f₂.bytes (R := ⟨K, 16⟩) (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact lK)
+        (show 16 ≤ 2 ^ 64 by decide) hi
+    have hp' := hpost
+    simp only [expandKeyPPC64LE, State.withRegions_mem, State.callEntry_mem, e3, e4] at hp'
+    show Spec.Sm4.scheduleAt s₃.mem S = _
+    rw [u₃.mem, hp', hb]
+
+/-- The taint on entry: the arguments public, the schedule and the working
+space the writable regions at `r4` and `r5`, their whole lengths known. -/
+def expandKeyCallTaint : SlotTaint.T := SlotTaint.mk' [.r3, .r4, .r5] [128, 8 * (slots + 2)] [(.r4, 0), (.r5, 1)]
+
+theorem expandKeyCallTaint_agree (s₁ s₂ : State) (h₁ : expandKeyCallPPC64LE.pre s₁) (h₂ : expandKeyCallPPC64LE.pre s₂)
+    (hp : expandKeyCallPPC64LE.pub s₁ s₂) : SlotTaint.Agree expandKeyCallTaint s₁ s₂ := by
+  obtain ⟨-, hw₁, -, -, dSB, -, fS, fB⟩ := h₁
+  obtain ⟨-, hw₂, -⟩ := h₂
+  obtain ⟨r3, r4, r5, hsp⟩ := hp
+  refine SlotTaint.agree_mk' hsp (fun r h => ?_) (by rw [hw₁, hw₂, r4, r5]) ?_ ?_ ?_ ?_ ?_
+  · simp only [List.mem_cons, List.not_mem_nil, or_false] at h
+    rcases h with rfl | rfl | rfl <;> with_reducible assumption
+  · rw [hw₁]
+    exact .cons (Nat.le_refl _) (.cons (Nat.le_refl _) .nil)
+  · rw [hw₁]
+    exact .cons (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact dSB)
+      (.cons (fun r hr => absurd hr List.not_mem_nil) .nil)
+  · rw [hw₁]
+    intro r hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl <;> dsimp only <;> omega_arith
+  · intro p hp
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hp
+    rcases hp with rfl | rfl <;> simp [SlotTaint.region, hw₁]
+  · intro p hp
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hp
+    rcases hp with rfl | rfl <;> simp [SlotTaint.region, hw₂]
+
+theorem expandKeyCall_ct : ConstantTime isa expandKeyCallPPC64LE.pre expandKeyCallPPC64LE.pub expandKeyCall :=
+  VG.Taint.constantTime_of_exists (A := slotTaint) expandKeyCallTaint expandKeyCallTaint_agree
+    (by taint_decide_sum [])
+
+theorem expandKeyCall_correct (s : State) (hs : expandKeyCallPPC64LE.pre s) :
+    ∃ t s', Exec isa expandKeyCall s t s' ∧ abiPreserved s s' ∧ expandKeyCallPPC64LE.post s s' := by
+  obtain ⟨t, s', he, hpres, hlr, hpost⟩ := expandKeyCall_wp hs
+  exact ⟨t, s', he, ⟨hpres, Exec.sp he, hlr⟩, hpost⟩
+
+/-- A state satisfying `expandKeyCall`'s precondition. -/
+def expandKeyCallSat : State where
   gpr r := match r with
     | .r3 => 0x1000 | .r4 => 0x2000 | .r5 => 0x3000 | _ => 0
   lr := 0
   sp := 0x8000
   mem _ := 0
   rd := [⟨0x1000, 16⟩]
-  wr := [⟨0x2000, 128⟩, ⟨0x3000, 8 * 402⟩]
+  wr := [⟨0x2000, 128⟩, ⟨0x3000, 8 * 404⟩]
 
-theorem expandKey_verified :
-    Verified target expandKey (Proof.Sm4.expandKeyScratchContract abi slots) :=
-  Verified.of_correct expandKey_correct expandKey_ct (by
+theorem expandKeyCall_verified :
+    Verified target expandKeyCall (Proof.Sm4.expandKeyScratchContract abi (slots + 2)) :=
+  Verified.of_correct expandKeyCall_correct expandKeyCall_ct (by
     sig_implies [Proof.Sm4.expandKeyScratchContract, Proof.Sm4.expandKeyScratchSig, Proof.Sm4.expandKeyPost,
-      expandKeyPPC64LE, abi, argRegs, slots, savedSlot, tableEnd, tableSlot]
-      [expandKeySat] using expandKeySat)
+      expandKeyCallPPC64LE, expandKeyPPC64LE, abi, argRegs, slots, savedSlot, tableEnd, tableSlot]
+      [expandKeyCallSat] using expandKeyCallSat)
 
 /-- A state satisfying the key schedule's precondition: the key at
 `0x1000`, the schedule at `0x2000`. -/
@@ -806,17 +977,17 @@ def expandKeyFrameSat : State where
   rd := [⟨0x1000, 16⟩]
   wr := [⟨0x2000, 128⟩]
 
-theorem expandKeyFrameSat_pre : ∃ s, (Spec.Sm4.expandKeyContract abi 3248).pre s := by
+theorem expandKeyFrameSat_pre : ∃ s, (Spec.Sm4.expandKeyContract abi 3264).pre s := by
   implies_sat [Spec.Sm4.expandKeyContract, Spec.Sm4.expandKeySig, abi, argRegs]
     [expandKeyFrameSat] using expandKeyFrameSat
 
-/-- Key expansion, with its working space on the stack. -/
+/-- `vg_sm4_expand_key`, with its working space on the stack. -/
 theorem expandKey_framed :
-    Verified target (Impl.StackScratch.PPC64LE.withStackScratchWiped 3248 .r5 402 expandKey)
-      (Spec.Sm4.expandKeyContract abi 3248) :=
+    Verified target (Impl.StackScratch.PPC64LE.withStackScratchWiped 3264 .r5 404 expandKeyCall)
+      (Spec.Sm4.expandKeyContract abi 3264) :=
   Verified.stackScratchWiped (sig := Spec.Sm4.expandKeySig) (nm := "scratch") (e := .u64)
-    (n := 402) (post := Proof.Sm4.expandKeyPost abi.ptrBits) (wa := false) (stack := 0)
-    (bytes := 3248) (words := 402) expandKey_verified (by decide) (by decide) (by decide)
+    (n := 404) (post := Proof.Sm4.expandKeyPost abi.ptrBits) (wa := false) (stack := 0)
+    (bytes := 3264) (words := 404) expandKeyCall_verified (by decide) (by decide) (by decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Sm4.expandKeyPost_local _)
     (Proof.Sm4.expandKeyPostOut_local _) expandKeyFrameSat_pre
 

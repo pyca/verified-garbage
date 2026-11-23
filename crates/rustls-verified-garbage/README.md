@@ -40,3 +40,23 @@ cargo test -p rustls-verified-garbage
 ```
 
 CI runs all of them (`rustls-provider` in `.github/workflows/ci.yml`).
+
+## Benchmarks
+
+`bench/run.sh [rounds]` (Linux) runs rustls-bench's whole suite with this
+provider and with aws-lc-rs's, `rounds` times each (default 5), from the
+rustls checkout `rustls/setup.sh` makes in `target/rustls`, whose
+`bench.patch` adds the `verified-garbage` provider to rustls-bench. It
+writes the results to `target/bench-results/rustls-bench.json`, a results
+file that `ci/bench_report.py` charts against aws-lc-rs:
+
+```sh
+python3 ci/bench_report.py html target/bench-results -o rustls-bench.html
+```
+
+To compare the providers on one thing, e.g. a cipher suite's bulk throughput:
+
+```sh
+target/rustls/target/release/rustls-bench --provider verified-garbage bulk TLS13_AES_128_GCM_SHA256
+target/rustls/target/release/rustls-bench --provider aws-lc-rs bulk TLS13_AES_128_GCM_SHA256
+```

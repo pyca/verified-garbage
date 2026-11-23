@@ -12,8 +12,8 @@ and PBKDF2's code calls them, `VG.Impl.Pbkdf2.Stream.Arm`), as HMAC's `init`
 hashes a long key (`Fns.hashKey`, `Impl/Pbkdf2/Whole/Arm.lean`).
 
 Its working space, `scratch`, is a frame of its own (`dbytes` bytes), whose
-address `withRegScratchWiped` passes in `r3` and which it zeroes after the
-code. `scratch` holds the working space of the functions we call (`8 W`
+address `withRegScratch` passes in `r3`, and which the caller's cleanup
+zeroes (`scrubAll`). `scratch` holds the working space of the functions we call (`8 W`
 bytes), then our caller's registers and our return address (`Hash.save`),
 then the streaming state (at `stO`) and what `finalize` writes (at `dgO`),
 whose first `D` bytes, the digest, are copied to `out` last. Across the calls
@@ -64,8 +64,8 @@ def digestMain : Prog isa :=
     (.block H.restore))))))
 
 /-- `vg_<hash>_digest`: `digestMain` with `scratch` in a frame of its own,
-zeroed after it. -/
+which the cleanup of the function that runs it zeroes (`scrubAll`). -/
 def digest : Prog isa :=
-  Impl.StackScratch.Arm.withRegScratchWiped (dbytes H) .r3 (dbytes H / 4) (digestMain H)
+  Impl.StackScratch.Arm.withRegScratch (dbytes H) .r3 (digestMain H)
 
 end VG.Impl.MdStream.Arm.Digest

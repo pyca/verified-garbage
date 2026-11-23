@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.Arm.Stages
 import VerifiedGarbage.Proof.Framework.ContractPost
 import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
-import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
+import VerifiedGarbage.Proof.Framework.Arm.StackScratch
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.Scratch
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.OpenToScratch
 public import VerifiedGarbage.Proof.Zeroize.Common
@@ -22,7 +22,7 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.ChaCha20Poly1305.Arm.Stages
 meta import VerifiedGarbage.Proof.Framework.ContractPost
 meta import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
-meta import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
+meta import VerifiedGarbage.Proof.Framework.Arm.StackScratch
 meta import VerifiedGarbage.Proof.ChaCha20Poly1305.Scratch
 meta import VerifiedGarbage.Proof.ChaCha20Poly1305.OpenToScratch
 meta import VerifiedGarbage.Impl.StackScratch.Arm
@@ -758,8 +758,8 @@ end
 Correctness (above), constant time, and a state satisfying the precondition,
 of the code with its working space as its last argument
 (`sealScratchContract`, `openZeroScratchContract`, `openToScratchContract`),
-and then of the functions, which allocate it in a frame on the stack and wipe
-it after the code (`Verified.stackScratchWiped`).
+and then of the functions, which allocate it in a frame on the stack
+(`Verified.stackScratch`), which their cleanup zeroes (`scrubAll`).
 
 Constant time relates two runs from states that agree on the public data
 (`RelCT`), part by part. The prologue reads only the arguments, which are
@@ -1315,12 +1315,13 @@ theorem sealFrameSat_pre : ∃ s, (Spec.ChaCha20Poly1305.sealContract Arm.abi 66
 
 theorem seal_framed :
     Verified Arm.target
-      (Impl.StackScratch.Arm.withStackScratchWiped 656 3 158 (Impl.ChaCha20Poly1305.Arm.«seal» umaal))
+      (Impl.StackScratch.Arm.withStackScratch 656 3 (Impl.ChaCha20Poly1305.Arm.«seal» umaal))
       (Spec.ChaCha20Poly1305.sealContract Arm.abi 664) :=
-  Arm.Verified.stackScratchWiped (sig := Spec.ChaCha20Poly1305.sealSig) (nm := "work") (e := .u64)
+  Arm.Verified.stackScratch (sig := Spec.ChaCha20Poly1305.sealSig) (nm := "work") (e := .u64)
     (n := 79) (post := Spec.ChaCha20Poly1305.sealPost Arm.abi.ptrBits) (wa := true) (stack := 8)
-    (bytes := 656) (m := 3) (words := 158) seal_verified (by decide) (by decide) (by decide)
-    (by decide) (by decide) (pre_local _ _) (sealPost_local _) (sealPost_out _) sealFrameSat_pre
+    (bytes := 656) (m := 3) seal_verified (by decide) (by decide) (by decide)
+    (by decide) (pre_local _ _) (sealPost_local _)
+    (fun vs mm m₁ m₂ r hl _ => sealPost_out _ vs mm m₁ m₂ r hl) sealFrameSat_pre
 
 /-- A state satisfying `open`'s precondition, without the working space. -/
 def openFrameSat : State :=
@@ -1335,14 +1336,15 @@ theorem openFrameSat_pre : ∃ s, (Spec.ChaCha20Poly1305.openZeroContract Arm.ab
 
 theorem open_framed :
     Verified Arm.target
-      (Impl.StackScratch.Arm.withStackScratchWiped 656 3 158 (Impl.ChaCha20Poly1305.Arm.«open» umaal))
+      (Impl.StackScratch.Arm.withStackScratch 656 3 (Impl.ChaCha20Poly1305.Arm.«open» umaal))
       (Spec.ChaCha20Poly1305.openZeroContract Arm.abi 664) :=
-  Arm.Verified.stackScratchWiped (sig := Spec.ChaCha20Poly1305.openSig) (nm := "work") (e := .u64)
+  Arm.Verified.stackScratch (sig := Spec.ChaCha20Poly1305.openSig) (nm := "work") (e := .u64)
     (n := 79) (post := Spec.ChaCha20Poly1305.openZeroPost Arm.abi.ptrBits) (wa := true) (stack := 8)
     (leak := some (Spec.ChaCha20Poly1305.openLeak Arm.abi.ptrBits))
-    (bytes := 656) (m := 3) (words := 158) open_verified (by decide) (by decide) (by decide)
-    (by decide) (by decide) (pre_local _ _) (openZeroPost_local _) (openZeroPost_out _) openFrameSat_pre
-    (hleak := Sig.LeakLocal.toL (openLeak_local _))
+    (bytes := 656) (m := 3) open_verified (by decide) (by decide) (by decide)
+    (by decide) (pre_local _ _) (openZeroPost_local _)
+    (fun vs mm m₁ m₂ r hl _ => openZeroPost_out _ vs mm m₁ m₂ r hl) openFrameSat_pre
+    (hleak := openLeak_local _)
 
 /-! ## Out of place -/
 
@@ -1414,14 +1416,14 @@ theorem openToFrameSat_pre : ∃ s, (Spec.ChaCha20Poly1305.openToContract Arm.ab
 
 theorem openTo_framed :
     Verified Arm.target
-      (Impl.StackScratch.Arm.withStackScratchWiped 664 5 158 (Impl.ChaCha20Poly1305.Arm.openTo umaal))
+      (Impl.StackScratch.Arm.withStackScratch 664 5 (Impl.ChaCha20Poly1305.Arm.openTo umaal))
       (Spec.ChaCha20Poly1305.openToContract Arm.abi 672) :=
-  Arm.Verified.stackScratchWipedPre (sig := Spec.ChaCha20Poly1305.openToSig) (nm := "work") (e := .u64)
+  Arm.Verified.stackScratch (sig := Spec.ChaCha20Poly1305.openToSig) (nm := "work") (e := .u64)
     (n := 79) (pre := Spec.ChaCha20Poly1305.openToPre Arm.abi.ptrBits)
     (post := Spec.ChaCha20Poly1305.openToPost Arm.abi.ptrBits) (wa := true) (stack := 8)
     (leak := some (Spec.ChaCha20Poly1305.openToLeak Arm.abi.ptrBits))
-    (bytes := 664) (m := 5) (words := 158) openTo_verified (by decide) (by decide) (by decide)
-    (by decide) (by decide) (openToPre_local _) (openToPost_local _) (openToPost_out _) openToFrameSat_pre
-    (hleak := Sig.LeakLocal.toL (openToLeak_local _))
+    (bytes := 664) (m := 5) openTo_verified (by decide) (by decide) (by decide)
+    (by decide) (openToPre_local _) (openToPost_local _) (openToPost_out _) openToFrameSat_pre
+    (hleak := openToLeak_local _)
 
 end VG.Proof.ChaCha20Poly1305.Arm

@@ -53,12 +53,7 @@ other address faults (`next` of the last is never run: any code but an
 indirect call). The printer prints only `i`; the emitter checks, as for
 `call`, that the function emitted as each `name` is `body`. So on a machine
 where distinct functions are at distinct addresses, the model runs the code
-of the function the processor calls. Which addresses an argument may hold
-is the precondition's: a table of functions (`Abi.withTables`).
-
-The CPU features the functions of the chain need are not the caller's
-(`Code.requires`): the caller runs only the one it is given, whose
-features its table states (`TCB/Rust.lean`).
+of the function the processor calls.
 
 ## Stack frames
 
@@ -206,19 +201,6 @@ def Code.all {I C : Type} (p : I → Bool) : Code I C → Bool
   | .call _ b => b.all p
   | .frame i b j => p i && b.all p && p j
   | .icall i _ b n => p i && b.all p && n.all p
-
-/-- The features that the instructions of `c`, and of the functions it
-calls, require (`ISA.requires`), with repetitions: but not those of the
-functions an indirect call may reach, which need only the features of the
-one called (see the module docs). -/
-def Code.requires {I C : Type} (req : I → List String) : Code I C → List String
-  | .block is => is.flatMap req
-  | .seq a b => a.requires req ++ b.requires req
-  | .ite _ t e => t.requires req ++ e.requires req
-  | .loop b _ => b.requires req
-  | .call _ b => b.requires req
-  | .frame i b j => req i ++ b.requires req ++ req j
-  | .icall i _ _ n => req i ++ n.requires req
 
 /-- The calls in `c`, and in the functions it calls: each function's name
 and code, those an indirect call may reach included. -/

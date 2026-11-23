@@ -326,6 +326,17 @@ theorem ctx_frameR (C : CtxRd base bytes len args s) {sp : BitVec 32}
   · exact hstk
   · exact C.apart.sub_right (Offset.sub_base _ (hws p hp))
 
+/-- The context is apart from a stage's changes. -/
+theorem ctx_frameF (C : CtxRd base bytes len args s) {sp : BitVec 32}
+    (hstk : Region.Disjoint ⟨ctxAddr args, ctxBytes len⟩ (below sp 96))
+    (hwide : Region.Disjoint ⟨ctxAddr args, ctxBytes len⟩ (below sp 176)) {ws : List (Nat × Nat)}
+    (hws : ∀ p ∈ ws, p.1 + p.2 ≤ bytes) :
+    ∀ r ∈ frameF base sp ws, Region.Disjoint ⟨ctxAddr args, ctxBytes len⟩ r := by
+  intro r hr
+  rcases List.mem_cons.mp hr with rfl | hr
+  · exact hwide
+  · exact ctx_frameR C hstk hws r hr
+
 /-- The comb as a stage computing y into slot 6. -/
 theorem combStage_ok (h : In Ex base bytes len args s) {P G x bits : Nat}
     (E : CombEnv Ex base bytes len args P G x bits s)
@@ -345,9 +356,9 @@ theorem combStage_ok (h : In Ex base bytes len args s) {P G x bits : Nat}
     · exact .inr ⟨by simp only [rowsOff]; omega_using [], by simp only [rowsOff]; omega_using [nb, en]⟩
     · exact .inr ⟨by simp only [iOff]; omega_using [], by simp only [iOff]; omega_using [nb, en]⟩
     · exact hs p (by simpa only [stR, List.mem_cons, List.not_mem_nil, or_false] using hp)
-  refine ⟨⟨C.inp, fR_widen F inF, K⟩, ⟨fun j a b _ => combR_sv h F h.room a b, fun d a b c hd => ?_⟩, Y⟩
+  refine ⟨⟨C.inp, fF_widen F inF, K⟩, ⟨fun j a b _ => combR_sv h F E.room a b, fun d a b c hd => ?_⟩, Y⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hd
-  exact combR_w32 h F h.room a b c hd.1 hd.2
+  exact combR_w32 h F E.room a b c hd.1 hd.2
 
 end
 
@@ -378,21 +389,22 @@ theorem cut_vetted {m : Mem} {bits : Nat} (hb : bits ≤ 8 * len) (hl : 0 < len)
   exact this
 
 theorem body_ok (h : In Ex base bytes len args s) {dlen : Nat} (G : DomGeo args base bytes len dlen s.rd s.wr)
-    (hb40 : Region.Disjoint ⟨byteAddr (args 2), dlen⟩ (below (s.gpr .esp) 96))
+    (RF : RoomF (s.gpr .esp) base bytes) (hb40 : Region.Disjoint ⟨byteAddr (args 2), dlen⟩ (below (s.gpr .esp) 176))
     (C : KeyCut.CutGeo base bytes len (args 10) (args 0) (s.gpr .esp) s.rd s.wr)
     (rWs : Region.Disjoint ⟨byteAddr (args 10), len⟩ ⟨base, bytes⟩)
-    (r40 : Region.Disjoint ⟨byteAddr (args 10), len⟩ (below (s.gpr .esp) 96))
+    (r40 : Region.Disjoint ⟨byteAddr (args 10), len⟩ (below (s.gpr .esp) 176))
     (domX : Region.Disjoint ⟨byteAddr (args 2), dlen⟩ ⟨byteAddr (args 0), len⟩)
     (Ox : OutAt args base bytes len 0 (s.gpr .esp) s.wr) (Oy : OutAt args base bytes len 8 (s.gpr .esp) s.wr)
     (h9a : args 9 = BitVec.ofNat 32 len) (xy : Region.Disjoint ⟨byteAddr (args 0), len⟩ ⟨byteAddr (args 8), len⟩)
     (CR : CtxRd base bytes len args s)
     (cstk : Region.Disjoint ⟨ctxAddr args, ctxBytes len⟩ (below (s.gpr .esp) 96))
+    (cwide : Region.Disjoint ⟨ctxAddr args, ctxBytes len⟩ (below (s.gpr .esp) 176))
     (cx : Region.Disjoint ⟨ctxAddr args, ctxBytes len⟩ ⟨byteAddr (args 0), len⟩)
     (dv : Spec.Ffdh.domainValid len (domOf s.mem args dlen) = true)
     (CV : CtxVals len args (comp s.mem args len 0) (comp s.mem args len 1)
       (Spec.Ffdh.generationScalarBits (CheckPrivate.params s.mem args len dlen)) s.mem) :
     WP isa Generate.body s fun t => ∃ r, t.gpr .eax = BitVec.ofNat 32 r ∧
-      Frame (⟨byteAddr (args 0), len⟩ :: ⟨byteAddr (args 8), len⟩ :: frameR base (s.gpr .esp) (fR len))
+      Frame (⟨byteAddr (args 0), len⟩ :: ⟨byteAddr (args 8), len⟩ :: frameF base (s.gpr .esp) (fR len))
         s.mem t.mem ∧
       Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t ∧ CachedKeyPost len dlen s.mem args r t.mem := by
   have fit := G.fit
@@ -439,9 +451,9 @@ theorem body_ok (h : In Ex base bytes len args s) {dlen : Nat} (G : DomGeo args 
   obtain wlt : len - VG.Proof.Ffdh.ScalarWidth.width bits < len := by
     have := VG.Proof.Ffdh.ScalarWidth.width_pos bits; omega_arith
   -- The front, with the cut at the context's width.
-  obtain front := frontWith_ok G' (prefixWith_ok S.inp G' (by rw [sp]; exact hb40) Cv rWs (by rw [sp]; exact r40) domX
+  obtain front := frontWith_ok G' (prefixWith_ok S.inp G' (by rw [sp]; exact RF) (by rw [sp]; exact hb40) Cv rWs (by rw [sp]; exact r40) domX
     wlt fun w Sw => by
-      obtain CVw := CVv.keep Sw.frame (ctx_frameR CR (by rw [sp]; exact cstk) (fR_fit S.inp)) hn
+      obtain CVw := CVv.keep Sw.frame (ctx_frameF CR (by rw [sp]; exact cstk) (by rw [sp]; exact cwide) (fR_fit S.inp)) hn
       refine WP.mono (metaCut_ok Sw.inp (CR.keep (S.keeps.trans Sw.keeps)) G.e3 hb1 hb CVw.w0 CVw.w8)
         fun t ⟨St, k, ld, tt⟩ => ⟨St, k.mono, ld, tt⟩)
   rw [show Generate.main = Prog.chain (mainFrontWith Generate.metaCut)
@@ -452,8 +464,8 @@ theorem body_ok (h : In Ex base bytes len args s) {dlen : Nat} (G : DomGeo args 
   obtain Ox' : OutAt args base bytes len 0 (u.gpr .esp) u.wr := by rw [spu]; exact Ox.keep rfl Ku
   obtain Oy' : OutAt args base bytes len 8 (u.gpr .esp) u.wr := by rw [spu]; exact Oy.keep rfl Ku
   obtain FF : ∀ {t : State}, Frame (⟨byteAddr (args 0), len⟩ :: ⟨byteAddr (args 8), len⟩ ::
-      frameR base (u.gpr .esp) (fR len)) u.mem t.mem →
-      Frame (⟨byteAddr (args 0), len⟩ :: ⟨byteAddr (args 8), len⟩ :: frameR base (s.gpr .esp) (fR len))
+      frameF base (u.gpr .esp) (fR len)) u.mem t.mem →
+      Frame (⟨byteAddr (args 0), len⟩ :: ⟨byteAddr (args 8), len⟩ :: frameF base (s.gpr .esp) (fR len))
         s.mem t.mem := fun {t} Ft => by
     have Fv := F.frame
     have Fs := S.frame
@@ -509,9 +521,9 @@ theorem body_ok (h : In Ex base bytes len args s) {dlen : Nat} (G : DomGeo args 
       refine CV.keep Fu (fun r hr => ?_) hn
       rcases List.mem_cons.mp hr with rfl | hr
       · exact cx
-      · exact ctx_frameR CR cstk (fR_fit h) r hr
+      · exact ctx_frameF CR cstk cwide (fR_fit h) r hr
     obtain E : CombEnv Ex base bytes len args (comp s.mem args len 0) (comp s.mem args len 1) x bits u :=
-      ⟨CR.keep Ku, by rw [spu]; exact cstk, CVu.ents, v13, sm⟩
+      ⟨CR.keep Ku, by rw [spu]; exact cstk, by rw [spu]; exact cwide, by rw [spu]; exact RF, CVu.ents, v13, sm⟩
     refine WP.mono (tailWith_ok Ox' Oy' h9a xy v13 F.v14 v15 xlt ylt
       (combStage_ok F.inp E (by rw [v9, sP]) xb hR CVu.w16)) fun t ⟨E', Bx, By, Ft, Kt⟩ =>
       ⟨_, E', FF Ft, Ku.trans Kt, ?_⟩
@@ -628,15 +640,15 @@ structure CachedABI (s : State) : Prop where
   retScratch : (⟨(s.gpr .esp).setWidth 64, 4⟩ : Region).Disjoint ⟨argumentPointer s 9, (arg s 10).toNat * 8⟩
   retCtx : (⟨(s.gpr .esp).setWidth 64, 4⟩ : Region).Disjoint ⟨argumentPointer s 11, (arg s 12).toNat * 8⟩
   retArgs : (⟨(s.gpr .esp).setWidth 64, 4⟩ : Region).Disjoint ⟨argAddr s 0, 52⟩
-  belowX : (⟨(s.gpr .esp).setWidth 64 - 172#64, 172⟩ : Region).Disjoint ⟨argumentPointer s 0, (arg s 1).toNat⟩
-  belowY : (⟨(s.gpr .esp).setWidth 64 - 172#64, 172⟩ : Region).Disjoint ⟨argumentPointer s 2, (arg s 3).toNat⟩
-  belowDom : (⟨(s.gpr .esp).setWidth 64 - 172#64, 172⟩ : Region).Disjoint ⟨argumentPointer s 4, (arg s 5).toNat⟩
-  belowRand : (⟨(s.gpr .esp).setWidth 64 - 172#64, 172⟩ : Region).Disjoint ⟨argumentPointer s 7, (arg s 8).toNat⟩
-  belowScratch : (⟨(s.gpr .esp).setWidth 64 - 172#64, 172⟩ : Region).Disjoint
+  belowX : (⟨(s.gpr .esp).setWidth 64 - 252#64, 252⟩ : Region).Disjoint ⟨argumentPointer s 0, (arg s 1).toNat⟩
+  belowY : (⟨(s.gpr .esp).setWidth 64 - 252#64, 252⟩ : Region).Disjoint ⟨argumentPointer s 2, (arg s 3).toNat⟩
+  belowDom : (⟨(s.gpr .esp).setWidth 64 - 252#64, 252⟩ : Region).Disjoint ⟨argumentPointer s 4, (arg s 5).toNat⟩
+  belowRand : (⟨(s.gpr .esp).setWidth 64 - 252#64, 252⟩ : Region).Disjoint ⟨argumentPointer s 7, (arg s 8).toNat⟩
+  belowScratch : (⟨(s.gpr .esp).setWidth 64 - 252#64, 252⟩ : Region).Disjoint
     ⟨argumentPointer s 9, (arg s 10).toNat * 8⟩
-  belowCtx : (⟨(s.gpr .esp).setWidth 64 - 172#64, 172⟩ : Region).Disjoint
+  belowCtx : (⟨(s.gpr .esp).setWidth 64 - 252#64, 252⟩ : Region).Disjoint
     ⟨argumentPointer s 11, (arg s 12).toNat * 8⟩
-  belowArgs : (⟨(s.gpr .esp).setWidth 64 - 172#64, 172⟩ : Region).Disjoint ⟨argAddr s 0, 52⟩
+  belowArgs : (⟨(s.gpr .esp).setWidth 64 - 252#64, 252⟩ : Region).Disjoint ⟨argAddr s 0, 52⟩
   xBound : (arg s 0).toNat + (arg s 1).toNat ≤ 2 ^ 32
   yBound : (arg s 2).toNat + (arg s 3).toNat ≤ 2 ^ 32
   domBound : (arg s 4).toNat + (arg s 5).toNat ≤ 2 ^ 32
@@ -698,28 +710,30 @@ abbrev Rd (s : State) : List Region → List Region → Prop :=
 /-- The 96 bytes below the frame, and the frame, below the caller's stack pointer. -/
 theorem frame_subs {s : State} (A : CachedABI s) {sp : BitVec 32}
     (espf : sp = s.gpr .esp - BitVec.ofNat 32 argsFrame) :
-    Region.Sub (below sp 96) ⟨(s.gpr .esp).setWidth 64 - 172#64, 172⟩ ∧
-      Region.Sub ⟨sp.setWidth 64, 76⟩ ⟨(s.gpr .esp).setWidth 64 - 172#64, 172⟩ := by
+    Region.Sub (below sp 96) ⟨(s.gpr .esp).setWidth 64 - 252#64, 252⟩ ∧
+      Region.Sub ⟨sp.setWidth 64, 76⟩ ⟨(s.gpr .esp).setWidth 64 - 252#64, 252⟩ ∧
+      Region.Sub (below sp 176) ⟨(s.gpr .esp).setWidth 64 - 252#64, 252⟩ := by
   have fb : argsFrame = 76 := rfl
   obtain hE := (s.gpr .esp).isLt
   have low := A.stackLow
-  have st' : stack = 172 := rfl
+  have st' : stack = 252 := rfl
   obtain FA : frameAt s = (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 argsFrame :=
     VG.X86.Taint.sub_setWidth (by omega_using [fb, low, st'])
   obtain espN : sp.toNat = (s.gpr .esp).toNat - 76 := by rw [espf]; exact VG.X86.sub_toNat (by omega_using [fb, low, st'])
-  refine ⟨?_, ?_⟩
-  · simp only [below]
+  obtain s176 : Region.Sub (below sp 176) ⟨(s.gpr .esp).setWidth 64 - 252#64, 252⟩ := by
+    simp only [below]
     rw [VG.X86.Taint.sub_setWidth (by rw [espN]; omega_using [low, st']), espf,
       show (s.gpr .esp - BitVec.ofNat 32 argsFrame).setWidth 64 = frameAt s from rfl, FA,
-      ← VG.Offset.sub_add_eq, show BitVec.ofNat 64 argsFrame + 96#64 = BitVec.ofNat 64 172 from rfl]
+      ← VG.Offset.sub_add_eq, show BitVec.ofNat 64 argsFrame + 176#64 = BitVec.ofNat 64 252 from rfl]
     exact Region.sub_prefix (by decide)
-  · rw [espf, show (s.gpr .esp - BitVec.ofNat 32 argsFrame).setWidth 64 = frameAt s from rfl, FA]
-    exact Offset.sub_below _ (by decide) (by decide)
+  refine ⟨fun x hx => s176 x (VG.X86.below_sub (by decide) (by rw [espN]; omega_using [low, st']) x hx), ?_, s176⟩
+  rw [espf, show (s.gpr .esp - BitVec.ofNat 32 argsFrame).setWidth 64 = frameAt s from rfl, FA]
+  exact Offset.sub_below _ (by decide) (by decide)
 
 theorem frame_geo {s : State} (A : CachedABI s) {sp : BitVec 32}
     (espf : sp = s.gpr .esp - BitVec.ofNat 32 argsFrame) {rd wr : List Region} (hrd : Rd s rd wr) :
     Geo (synth gArgs (arg s)) (wsBase gArgs s) (wsSize gArgs s) (pLenOf gArgs s) (arg s 5).toNat sp rd wr := by
-  obtain ⟨sub40, subF⟩ := frame_subs A espf
+  obtain ⟨_, subF, sub176⟩ := frame_subs A espf
   have xL : (arg s 1).toNat = pLenOf gArgs s := A.xLen
   have yL : (arg s 3).toNat = pLenOf gArgs s := A.yLen
   have rL : (arg s 8).toNat = pLenOf gArgs s := A.randLen
@@ -728,8 +742,9 @@ theorem frame_geo {s : State} (A : CachedABI s) {sp : BitVec 32}
   obtain dx : Region.Disjoint ⟨argumentPointer s 0, pLenOf gArgs s⟩ ⟨argumentPointer s 2, pLenOf gArgs s⟩ := by
     have := A.xy; rw [xL, yL] at this; exact this
   refine ⟨⟨(ofn _).symm, (ofn _).symm, (ofn _).symm, rfl, rfl, (ofn _).symm, A.dLen, A.domBound, hrd.1,
-    A.domScratch, A.pLen.1, A.pLen.2⟩, (A.belowDom.sub_left sub40).symm, ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_, ?_, ?_,
-    ⟨?_, ?_, ?_, ?_, ?_⟩, ⟨?_, ?_, ?_, ?_, ?_⟩, (ofn _).symm, dx⟩
+    A.domScratch, A.pLen.1, A.pLen.2⟩, (A.belowDom.sub_left sub176).symm, ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_, ?_, ?_,
+    ⟨?_, ?_, ?_, ?_, by rw [espf]; exact (wrapABI A).room, ?_⟩,
+    ⟨?_, ?_, ?_, ?_, by rw [espf]; exact (wrapABI A).room, ?_⟩, (ofn _).symm, dx⟩
   · show (arg s 7).toNat + _ ≤ _
     rw [← rL]; exact A.randBound
   · show (arg s 0).toNat + _ ≤ _
@@ -747,7 +762,7 @@ theorem frame_geo {s : State} (A : CachedABI s) {sp : BitVec 32}
   · show Region.Disjoint ⟨argumentPointer s 7, _⟩ _
     rw [← rL]; exact A.randScratch
   · show Region.Disjoint ⟨argumentPointer s 7, _⟩ _
-    rw [← rL]; exact (A.belowRand.sub_left sub40).symm
+    rw [← rL]; exact (A.belowRand.sub_left sub176).symm
   · show Region.Disjoint _ ⟨argumentPointer s 0, _⟩
     rw [← xL]; exact A.xDom.symm
   · show (arg s 0).toNat + _ ≤ _
@@ -759,7 +774,7 @@ theorem frame_geo {s : State} (A : CachedABI s) {sp : BitVec 32}
   · show Region.Disjoint _ ⟨argumentPointer s 0, _⟩
     rw [← xL]; exact A.belowX.sub_left subF
   · show Region.Disjoint ⟨argumentPointer s 0, _⟩ _
-    rw [← xL]; exact (A.belowX.sub_left sub40).symm
+    rw [← xL]; exact (A.belowX.sub_left sub176).symm
   · show (arg s 2).toNat + _ ≤ _
     rw [← yL]; exact A.yBound
   · show InRegions _ (argumentPointer s 2) _
@@ -769,7 +784,7 @@ theorem frame_geo {s : State} (A : CachedABI s) {sp : BitVec 32}
   · show Region.Disjoint _ ⟨argumentPointer s 2, _⟩
     rw [← yL]; exact A.belowY.sub_left subF
   · show Region.Disjoint ⟨argumentPointer s 2, _⟩ _
-    rw [← yL]; exact (A.belowY.sub_left sub40).symm
+    rw [← yL]; exact (A.belowY.sub_left sub176).symm
 
 theorem genWords_eq (k : Nat) : Spec.Ffdh.generationPrecomputedWords k = 3 + 34 * ((k + 7) / 8) := by
   simp only [Spec.Ffdh.generationPrecomputedWords, Spec.Rsa.FixedBaseComb.precomputedWords,
@@ -779,11 +794,11 @@ theorem genWords_eq (k : Nat) : Spec.Ffdh.generationPrecomputedWords k = 3 + 34 
 /-- The bytes apart from the frame and the working space, kept by the entry and the frame's filling. -/
 theorem frame_far {s : State} (A : CachedABI s) {p : Addr} {n : Nat}
     (hws : Region.Disjoint ⟨p, n⟩ ⟨wsBase gArgs s, wsSize gArgs s⟩)
-    (hb : Region.Disjoint ⟨(s.gpr .esp).setWidth 64 - 172#64, 172⟩ ⟨p, n⟩) :
+    (hb : Region.Disjoint ⟨(s.gpr .esp).setWidth 64 - 252#64, 252⟩ ⟨p, n⟩) :
     ∀ r ∈ [(⟨wsBase gArgs s, wsSize gArgs s⟩ : Region), ⟨frameAt s, argsFrame⟩], Region.Disjoint ⟨p, n⟩ r := by
   obtain hE := (s.gpr .esp).isLt
   have low := A.stackLow
-  have st' : stack = 172 := rfl
+  have st' : stack = 252 := rfl
   obtain FA : frameAt s = (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 argsFrame :=
     VG.X86.Taint.sub_setWidth (by simp only [argsFrame]; omega_using [low, st'])
   intro r hr
@@ -795,7 +810,7 @@ theorem frame_far {s : State} (A : CachedABI s) {p : Addr} {n : Nat}
 theorem frame_keep {s : State} (A : CachedABI s) {m : Mem}
     (Ft : Frame [⟨wsBase gArgs s, wsSize gArgs s⟩, ⟨frameAt s, argsFrame⟩] s.mem m) {p : Addr} {n : Nat}
     (hws : Region.Disjoint ⟨p, n⟩ ⟨wsBase gArgs s, wsSize gArgs s⟩)
-    (hb : Region.Disjoint ⟨(s.gpr .esp).setWidth 64 - 172#64, 172⟩ ⟨p, n⟩) (hn : n ≤ 2 ^ 64) :
+    (hb : Region.Disjoint ⟨(s.gpr .esp).setWidth 64 - 252#64, 252⟩ ⟨p, n⟩) (hn : n ≤ 2 ^ 64) :
     Spec.Rsa.bytesAt m p n = Spec.Rsa.bytesAt s.mem p n :=
   frame_bytes Ft (frame_far A hws hb) hn
 
@@ -812,13 +827,14 @@ theorem frame_ctx {s : State} (A : CachedABI s) {f : State} (espf : f.gpr .esp =
     (hrd : Rd s f.rd f.wr) :
     CtxRd (wsBase gArgs s) (wsSize gArgs s) (pLenOf gArgs s) (synth gArgs (arg s)) f ∧
       Region.Disjoint ⟨ctxAddr (synth gArgs (arg s)), ctxBytes (pLenOf gArgs s)⟩ (below (f.gpr .esp) 96) ∧
+      Region.Disjoint ⟨ctxAddr (synth gArgs (arg s)), ctxBytes (pLenOf gArgs s)⟩ (below (f.gpr .esp) 176) ∧
       Region.Disjoint ⟨ctxAddr (synth gArgs (arg s)), ctxBytes (pLenOf gArgs s)⟩
         ⟨byteAddr (synth gArgs (arg s) 0), pLenOf gArgs s⟩ := by
-  obtain ⟨sub40, _⟩ := frame_subs A espf
+  obtain ⟨sub40, _, sub176⟩ := frame_subs A espf
   obtain cb := ctxBytes_eq A
   have xL : (arg s 1).toNat = pLenOf gArgs s := A.xLen
 
-  refine ⟨⟨⟨?_, ?_⟩, ?_⟩, ?_, ?_⟩
+  refine ⟨⟨⟨?_, ?_⟩, ?_⟩, ?_, ?_, ?_⟩
   · show InRegions _ (off (argumentPointer s 11) 0) _
     rw [← cb, show off (argumentPointer s 11) 0 = argumentPointer s 11 from BitVec.add_zero _]; exact hrd.2.2.2.2
   · show (argumentPointer s 11).toNat + 0 + ctxBytes (pLenOf gArgs s) ≤ 2 ^ 32
@@ -832,6 +848,8 @@ theorem frame_ctx {s : State} (A : CachedABI s) {f : State} (espf : f.gpr .esp =
     rw [← cb]; exact A.scratchCtx.symm
   · show Region.Disjoint ⟨argumentPointer s 11, ctxBytes (pLenOf gArgs s)⟩ _
     rw [← cb]; exact (A.belowCtx.sub_left sub40).symm
+  · show Region.Disjoint ⟨argumentPointer s 11, ctxBytes (pLenOf gArgs s)⟩ _
+    rw [← cb]; exact (A.belowCtx.sub_left sub176).symm
   · show Region.Disjoint ⟨argumentPointer s 11, ctxBytes (pLenOf gArgs s)⟩ ⟨argumentPointer s 0, _⟩
     rw [← cb, ← xL]; exact A.xCtx.symm
 
@@ -893,16 +911,16 @@ theorem frame_ok {s : State} (A : CachedABI s) (f : State)
     (espf : f.gpr .esp = s.gpr .esp - BitVec.ofNat 32 argsFrame)
     (Ft : Frame [⟨wsBase gArgs s, wsSize gArgs s⟩, ⟨frameAt s, argsFrame⟩] s.mem f.mem) :
     WP isa Impl.Ffdh.X86.Cached.Generate.body f fun t => spec s t.mem (t.gpr .eax) ∧
-      Frame ([xR s, yR s] ++ CrtRt.frameR (wsBase gArgs s) (f.gpr .esp) (fR (pLenOf gArgs s))) f.mem t.mem ∧
+      Frame ([xR s, yR s] ++ frameF (wsBase gArgs s) (f.gpr .esp) (fR (pLenOf gArgs s))) f.mem t.mem ∧
       Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] f t := by
   obtain Gm := frame_geo A espf I.extra
-  obtain ⟨CR, cstk, cx⟩ := frame_ctx A espf I.extra
+  obtain ⟨CR, cstk, cwide, cx⟩ := frame_ctx A espf I.extra
   have xL : (arg s 1).toNat = pLenOf gArgs s := A.xLen
   have yL : (arg s 3).toNat = pLenOf gArgs s := A.yLen
   have rL : (arg s 8).toNat = pLenOf gArgs s := A.randLen
   obtain hE := (s.gpr .esp).isLt
   have low := A.stackLow
-  have st' : stack = 172 := rfl
+  have st' : stack = 252 := rfl
   obtain FA : frameAt s = (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 argsFrame :=
     VG.X86.Taint.sub_setWidth (by simp only [argsFrame]; omega_using [low, st'])
   obtain D : Spec.Rsa.bytesAt f.mem (byteAddr (synth gArgs (arg s) 2)) (arg s 5).toNat = entryDom s :=
@@ -926,7 +944,8 @@ theorem frame_ok {s : State} (A : CachedABI s) (f : State)
     rw [comp_p f.mem _ h2, comp_g f.mem _ h2]
     simp only [CheckPrivate.params, CheckDomain.domBytes]
     rw [D]; exact CVf
-  refine WP.mono (body_ok I Gm.dom Gm.dom40 Gm.cut Gm.rWs Gm.r40 Gm.domX Gm.ox Gm.oy Gm.e9 Gm.xy CR cstk cx dv CV)
+  obtain RF := (wrapABI A).roomF espf
+  refine WP.mono (body_ok I Gm.dom RF Gm.dom40 Gm.cut Gm.rWs Gm.r40 Gm.domX Gm.ox Gm.oy Gm.e9 Gm.xy CR cstk cwide cx dv CV)
     fun t ⟨r, E, F, K, P⟩ => ⟨?_, ?_, K⟩
   · simp only [CachedKeyPost, CheckPrivate.params, CheckDomain.domBytes] at P
     rw [D, R] at P
@@ -966,7 +985,7 @@ theorem operation_ok {s : State} (A : CachedABI s) :
         (by have := (arg s 6).isLt; omega_arith) (fun r hr => by
           obtain rfl := List.mem_singleton.mp hr; rw [← A.yLen]; exact A.belowY.symm)
       simpa only [spec, hx, hy] using h)
-    fun f I espf Ft => frame_ok A f I espf Ft
+    fun f I espf _ Ft => frame_ok A f I espf Ft
 
 theorem correct (s : State) (h : (Proof.Ffdh.cachedGenerateKeyContract abi stack).pre s) :
     ∃ trace t, Exec isa Impl.Ffdh.X86.Cached.Generate.code s trace t ∧ abiPreserved s t ∧
@@ -1083,13 +1102,14 @@ structure KAtC (Ex : List Region → List Region → Prop) (base : Addr) (bytes 
     (Spec.Ffdh.vettedScalarOfOctets (Spec.Ffdh.domainOf len D) (Spec.Rsa.bytesAt u.mem (byteAddr (args 10)) len)) = St
   rd : CtxRd base bytes len args u
   stk : Region.Disjoint ⟨ctxAddr args, ctxBytes len⟩ (below sp 96)
+  wide : Region.Disjoint ⟨ctxAddr args, ctxBytes len⟩ (below sp 176)
   cx : Region.Disjoint ⟨ctxAddr args, ctxBytes len⟩ ⟨byteAddr (args 0), len⟩
   dv : Spec.Ffdh.domainValid len D = true
   vals : CtxVals len args (Spec.Ffdh.domainOf len D).p (Spec.Ffdh.domainOf len D).g (cBits len D) u.mem
 
 theorem KAtC.keep {x u : State} (A : KAtC Ex base bytes len dlen args sp D St x)
     (S : Step Ex base bytes len args x u) (m : u.mem = x.mem) : KAtC Ex base bytes len dlen args sp D St u := by
-  refine ⟨run_step A.run S, ?_, by rw [m]; exact A.dom, by rw [m]; exact A.st, A.rd.keep S.keeps, A.stk, A.cx, A.dv,
+  refine ⟨run_step A.run S, ?_, by rw [m]; exact A.dom, by rw [m]; exact A.st, A.rd.keep S.keeps, A.stk, A.wide, A.cx, A.dv,
     by rw [m]; exact A.vals⟩
   rw [S.keeps.2.1, S.keeps.2.2]; exact A.geo
 
@@ -1102,7 +1122,7 @@ theorem KAtC.vals_step {x u : State} (A : KAtC Ex base bytes len dlen args sp D 
     omega_arith
   have F := S.frame
   rw [A.run.2.2] at F
-  exact A.vals.keep F (ctx_frameR A.rd A.stk (fR_fit A.run.1)) hn
+  exact A.vals.keep F (ctx_frameF A.rd A.stk A.wide (fR_fit A.run.1)) hn
 
 /-- A run the front's stages after the first reach. -/
 abbrev FW (Ex : List Region → List Region → Prop) (base : Addr) (bytes len dlen : Nat) (args : Nat → BitVec 32)
@@ -1162,7 +1182,7 @@ theorem prefixC_ok (hD : Spec.Ffdh.domainValid len D = true) {x : State}
   have wlt : len - VG.Proof.Ffdh.ScalarWidth.width (cBits len D) < len := by
     have := VG.Proof.Ffdh.ScalarWidth.width_pos (cBits len D); omega_using [bf, this]
   rw [← cut_vetted bf.2 (by omega_using [bf])]
-  exact KeyGen.prefixWith_ok A.run.1 A.geo.dom (by rw [sp']; exact A.geo.dom40) (by rw [sp']; exact A.geo.cut)
+  exact KeyGen.prefixWith_ok A.run.1 A.geo.dom (by rw [sp']; exact A.geo.ox.room) (by rw [sp']; exact A.geo.dom40) (by rw [sp']; exact A.geo.cut)
     A.geo.rWs (by rw [sp']; exact A.geo.r40) A.geo.domX wlt fun w Sw =>
       WP.mono (metaCut_ok Sw.inp (A.rd.keep Sw.keeps) A.geo.dom.e3 bf.1 bf.2 (A.vals_step Sw).w0
         (A.vals_step Sw).w8) fun t ⟨St', k, ld, tt⟩ => ⟨St', k.mono, ld, tt⟩
@@ -1205,7 +1225,7 @@ theorem frontC_ok (hD : Spec.Ffdh.domainValid len D = true) (hm : KeyGen.modOk l
   have Vu := A.vals.keep Fu (fun r hr => by
     rcases List.mem_cons.mp hr with rfl | hr
     · exact A.cx
-    · exact ctx_frameR A.rd A.stk (fR_fit A.run.1) r hr) hn
+    · exact ctx_frameF A.rd A.stk A.wide (fR_fit A.run.1) r hr) hn
   have spu : u.gpr .esp = sp := (F.keeps.1 _ (by decide)).trans sp'
   have pa : comp x.mem args len 0 = (Spec.Ffdh.domainOf len D).p := by rw [comp_p x.mem args h2]; rw [← A.dom]
   have mv : Spec.Rsa.modulusValid (Spec.Ffdh.domainOf len D).p len = true := hm
@@ -1213,7 +1233,8 @@ theorem frontC_ok (hD : Spec.Ffdh.domainValid len D = true) (hm : KeyGen.modOk l
   simp only [Bool.and_eq_true, decide_eq_true_eq, beq_iff_eq] at mv
   have p1 : 1 < (Spec.Ffdh.domainOf len D).p := by have := Nat.two_pow_pos 511; have := mv.1.1.2; omega_arith
   refine ⟨⟨⟨⟨F.inp, A.run.2.1.keep F.keeps, spu⟩, G.keep ⟨rfl, rfl⟩ F.keeps⟩, _, _,
-    Nat.mod_lt _ (Nat.two_pow_pos _), F.inp, ⟨A.rd.keep F.keeps, by rw [spu]; exact A.stk, Vu.ents, F.v13, sm⟩,
+    Nat.mod_lt _ (Nat.two_pow_pos _), F.inp, ⟨A.rd.keep F.keeps, by rw [spu]; exact A.stk, by rw [spu]; exact A.wide,
+      by rw [spu]; exact A.geo.ox.room, Vu.ents, F.v13, sm⟩,
     by rw [F.v9, pa]; exact safeM_of p1 mv.1.1.1, Vu.w16, A.run.2.1.keep F.keeps, spu⟩, F.gate.congr ?_⟩
   have hp : CheckPrivate.params x.mem args len dlen = Spec.Ffdh.domainOf len D := congrArg (Spec.Ffdh.domainOf len) A.dom
   rw [← A.st, KeyGen.keyStatus_two, hp]
@@ -1329,10 +1350,10 @@ theorem kAt_of {s f : State} (A : CachedABI s) (Bf : BodyAt (Rd s) gArgs s f) :
       (narrowed (wsBase gArgs s) (wsSize gArgs s) f [KeyGen.xR s, KeyGen.yR s]) := by
   have hx := narrowRd Bf.1.extra ⟨wsBase gArgs s, wsSize gArgs s⟩
   have low := A.stackLow
-  have st' : stack = 172 := rfl
+  have st' : stack = 252 := rfl
   have FA : frameAt s = (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 argsFrame :=
     VG.X86.Taint.sub_setWidth (by simp only [argsFrame]; omega_using [low, st'])
-  have sub : Region.Sub ⟨frameAt s, argsFrame⟩ ⟨(s.gpr .esp).setWidth 64 - 172#64, 172⟩ := by
+  have sub : Region.Sub ⟨frameAt s, argsFrame⟩ ⟨(s.gpr .esp).setWidth 64 - 252#64, 252⟩ := by
     rw [FA]; exact Offset.sub_below _ (by decide) (by decide)
   have rL : (arg s 8).toNat = pLenOf gArgs s := A.randLen
   have D : KeyGen.domOf f.mem (synth gArgs (arg s)) (arg s 5).toNat = entryDom s :=
@@ -1341,10 +1362,10 @@ theorem kAt_of {s f : State} (A : CachedABI s) (Bf : BodyAt (Rd s) gArgs s f) :
     show Spec.Rsa.bytesAt f.mem (argumentPointer s 7) _ = _
     rw [← rL]
     exact frame_keep A Bf.2.2.2.2 A.randScratch A.belowRand (by have := A.randBound; omega_using [])
-  obtain ⟨CR, cstk, cx⟩ := frame_ctx (f := narrowed (wsBase gArgs s) (wsSize gArgs s) f [KeyGen.xR s, KeyGen.yR s])
+  obtain ⟨CR, cstk, cwide, cx⟩ := frame_ctx (f := narrowed (wsBase gArgs s) (wsSize gArgs s) f [KeyGen.xR s, KeyGen.yR s])
     A Bf.2.1 hx
   refine ⟨⟨VG.Proof.Ffdh.X86.In.narrow Bf.1 hx, Bf.argsOk (wrapABI A) (Out := [KeyGen.xR s, KeyGen.yR s])
-    fun r hr => ?_, Bf.2.1⟩, frame_geo A rfl hx, D, ?_, CR, by rw [← Bf.2.1]; exact cstk, cx, A.valid,
+    fun r hr => ?_, Bf.2.1⟩, frame_geo A rfl hx, D, ?_, CR, by rw [← Bf.2.1]; exact cstk, by rw [← Bf.2.1]; exact cwide, cx, A.valid,
     frame_vals A Bf.2.2.2.2⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
@@ -1404,9 +1425,9 @@ theorem constantTime : ConstantTime isa (Proof.Ffdh.cachedGenerateKeyContract ab
         (narrowed (wsBase gArgs x) (wsSize gArgs x) f [KeyGen.xR x, KeyGen.yR x]) F := fun X Bf => by
     have K := kAt_of X Bf
     have sp' := K.run.2.2
-    exact ⟨_, body_ok K.run.1 K.geo.dom (by rw [sp']; exact K.geo.dom40) (by rw [sp']; exact K.geo.cut) K.geo.rWs
+    exact ⟨_, body_ok K.run.1 K.geo.dom (by rw [sp']; exact K.geo.ox.room) (by rw [sp']; exact K.geo.dom40) (by rw [sp']; exact K.geo.cut) K.geo.rWs
       (by rw [sp']; exact K.geo.r40) K.geo.domX (by rw [sp']; exact K.geo.ox) (by rw [sp']; exact K.geo.oy)
-      K.geo.e9 K.geo.xy K.rd (by rw [sp']; exact K.stk) K.cx (by rw [K.dom]; exact K.dv) K.cv⟩
+      K.geo.e9 K.geo.xy K.rd (by rw [sp']; exact K.stk) (by rw [sp']; exact K.wide) K.cx (by rw [K.dom]; exact K.dv) K.cv⟩
   have ho : ∀ {x f : State}, CachedABI x → BodyAt (Rd x) gArgs x f →
       ∀ r ∈ [KeyGen.xR x, KeyGen.yR x], r ∈ f.wr := fun X Bf r hr => by
     rw [Bf.2.2.2.1, X.wr]

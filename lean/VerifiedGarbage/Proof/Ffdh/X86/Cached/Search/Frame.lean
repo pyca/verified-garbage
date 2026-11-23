@@ -126,8 +126,8 @@ section
 
 `vg_ffdh_generate_key_search_cached(x, x_len, y, y_len, used, domain, domain_len, p_len, rand,
 rand_len, scratch, scratch_len, state, ctx, ctx_len)`: fifteen arguments on the stack. The
-controller uses 228 bytes of stack: its attempt's frame of 52, the call's return address and the
-callee's own 172.
+controller uses 308 bytes of stack: its attempt's frame of 52, the call's return address and the
+callee's own 252.
 -/
 
 @[expose] public section
@@ -136,7 +136,7 @@ open VG VG.X86
 open VG.Proof.Dsa.X86 (argumentPointer)
 
 /-- The bytes of stack the controller uses. -/
-abbrev stack : Nat := 228
+abbrev stack : Nat := 308
 
 /-- The arguments' regions: `x`, `y`, `used`, `domain`, `rand`, `scratch` and `state`. -/
 abbrev xR (s : State) : Region := ⟨argumentPointer s 0, (arg s 1).toNat⟩
@@ -151,7 +151,7 @@ abbrev cR (s : State) : Region := ⟨argumentPointer s 13, (arg s 14).toNat * 8�
 abbrev aR (s : State) : Region := ⟨argAddr s 0, 60⟩
 /-- The return address and the stack below it. -/
 abbrev retR (s : State) : Region := ⟨(s.gpr .esp).setWidth 64, 4⟩
-abbrev lowR (s : State) : Region := ⟨(s.gpr .esp).setWidth 64 - 228#64, 228⟩
+abbrev lowR (s : State) : Region := ⟨(s.gpr .esp).setWidth 64 - 308#64, 308⟩
 
 structure KeySearchABI (s : State) : Prop where
   stackLow : stack ≤ (s.gpr .esp).toNat
@@ -885,8 +885,8 @@ end
 
 The attempt allocates 44 bytes below the entry's stack pointer and stores
 `vg_ffdh_generate_key`'s eleven arguments there (`arguments_ok`). With the
-call's return address and the callee's 172 bytes below them, they are the
-228 bytes below the entry's stack pointer, at offsets of `low o`
+call's return address and the callee's 252 bytes below them, they are the
+308 bytes below the entry's stack pointer, at offsets of `low o`
 (`low_sub`).
 -/
 
@@ -900,18 +900,18 @@ open VG.Impl.Ffdh.X86.Cached.Search
 open VG.Proof.Dsa.X86 (argumentPointer)
 
 /-- The base of the stack the controller uses. -/
-abbrev low (o : State) : Addr := (o.gpr .esp).setWidth 64 - 228#64
+abbrev low (o : State) : Addr := (o.gpr .esp).setWidth 64 - 308#64
 
-theorem low_toNat {o : State} (A : KeySearchABI o) : (low o).toNat = (o.gpr .esp).toNat - 228 := by
-  have : 228 ≤ (o.gpr .esp).toNat := A.stackLow
+theorem low_toNat {o : State} (A : KeySearchABI o) : (low o).toNat = (o.gpr .esp).toNat - 308 := by
+  have : 308 ≤ (o.gpr .esp).toNat := A.stackLow
   have := (o.gpr .esp).isLt
   simp only [low, BitVec.toNat_sub, BitVec.toNat_setWidth, BitVec.toNat_ofNat]
   omega_arith
 
-/-- A stack pointer `k ≤ 228` bytes below the entry's, at its offset from `low o`. -/
-theorem sw_sub {o : State} (A : KeySearchABI o) {k : Nat} (hk : k ≤ 228) :
-    (o.gpr .esp - BitVec.ofNat 32 k).setWidth 64 = low o + BitVec.ofNat 64 (228 - k) := by
-  have h1 : 228 ≤ (o.gpr .esp).toNat := A.stackLow
+/-- A stack pointer `k ≤ 308` bytes below the entry's, at its offset from `low o`. -/
+theorem sw_sub {o : State} (A : KeySearchABI o) {k : Nat} (hk : k ≤ 308) :
+    (o.gpr .esp - BitVec.ofNat 32 k).setWidth 64 = low o + BitVec.ofNat 64 (308 - k) := by
+  have h1 : 308 ≤ (o.gpr .esp).toNat := A.stackLow
   have h2 := (o.gpr .esp).isLt
   have hl := low_toNat A
   apply BitVec.eq_of_toNat_eq
@@ -919,9 +919,9 @@ theorem sw_sub {o : State} (A : KeySearchABI o) {k : Nat} (hk : k ≤ 228) :
   omega_arith
 
 /-- A word at `d` above a stack pointer `k` bytes below the entry's. -/
-theorem addr_sub {o : State} (A : KeySearchABI o) {k d : Nat} (hk : k ≤ 228) (hd : d ≤ k) :
-    addr (o.gpr .esp - BitVec.ofNat 32 k) d = low o + BitVec.ofNat 64 (228 - k + d) := by
-  have h1 : 228 ≤ (o.gpr .esp).toNat := A.stackLow
+theorem addr_sub {o : State} (A : KeySearchABI o) {k d : Nat} (hk : k ≤ 308) (hd : d ≤ k) :
+    addr (o.gpr .esp - BitVec.ofNat 32 k) d = low o + BitVec.ofNat 64 (308 - k + d) := by
+  have h1 : 308 ≤ (o.gpr .esp).toNat := A.stackLow
   have h2 := (o.gpr .esp).isLt
   have hl := low_toNat A
   apply BitVec.eq_of_toNat_eq
@@ -929,16 +929,16 @@ theorem addr_sub {o : State} (A : KeySearchABI o) {k d : Nat} (hk : k ≤ 228) (
   omega_arith
 
 /-- A range at offsets of `low o` lies in the stack the controller uses. -/
-theorem low_sub {o : State} {d n : Nat} (h : d + n ≤ 228) : Region.Sub ⟨low o + BitVec.ofNat 64 d, n⟩ (lowR o) :=
+theorem low_sub {o : State} {d n : Nat} (h : d + n ≤ 308) : Region.Sub ⟨low o + BitVec.ofNat 64 d, n⟩ (lowR o) :=
   Offset.sub_base _ h
 
-theorem low_contains {o : State} (A : KeySearchABI o) {d n : Nat} (h : d + n ≤ 228) :
+theorem low_contains {o : State} (A : KeySearchABI o) {d n : Nat} (h : d + n ≤ 308) :
     (lowR o).Contains (low o + BitVec.ofNat 64 d) n := by
-  have : 228 ≤ (o.gpr .esp).toNat := A.stackLow
+  have : 308 ≤ (o.gpr .esp).toNat := A.stackLow
   exact Offset.contains_base _ h (by omega_arith)
 
 /-- The frame's region. -/
-abbrev frR (o : State) : Region := ⟨low o + BitVec.ofNat 64 176, 52⟩
+abbrev frR (o : State) : Region := ⟨low o + BitVec.ofNat 64 256, 52⟩
 
 /-- A state in the attempt's frame: `St` but for the stack pointer and the frame's region. -/
 structure Fr (o : State) (ds : List Nat) (f : Nat → BitVec 32) (s : State) : Prop where
@@ -971,7 +971,7 @@ def callArg (o : State) (used : Nat) (j : Nat) : BitVec 32 :=
 
 /-- The first `k` arguments are in the frame. -/
 def ArgsAt (o : State) (used k : Nat) (m : Mem) : Prop :=
-  ∀ j < k, m.readW (low o + BitVec.ofNat 64 (176 + 4 * j)) 32 = callArg o used j
+  ∀ j < k, m.readW (low o + BitVec.ofNat 64 (256 + 4 * j)) 32 = callArg o used j
 
 /-- `pass d j`: the state's word at `d`, argument `j`, to the frame. -/
 theorem pass_ok {o s : State} {ds : List Nat} {f : Nat → BitVec 32} {used : Nat} (h : Fr o ds f s)
@@ -985,14 +985,14 @@ theorem pass_ok {o s : State} {ds : List Nat} {f : Nat → BitVec 32} {used : Na
   have rin : InRegions (s.rd ++ s.wr) (addr (arg o 12) d) 4 := by
     rw [h.rd, h.wr]; exact ⟨_, List.mem_append_right _ (List.mem_cons_of_mem _ (sR_mem A)), st_in A hd4⟩
   refine wp_movS (readSrc_mem h.esi rin) fun t U _ => ?_
-  have ea : addr (t.gpr .esp) (4 * j) = low o + BitVec.ofNat 64 (176 + 4 * j) := by
+  have ea : addr (t.gpr .esp) (4 * j) = low o + BitVec.ofNat 64 (256 + 4 * j) := by
     rw [U.other _ (by decide), h.esp, addr_sub A (by decide) (by unfold argsBytes; omega_arith)]; rfl
-  have win : (frR o).Contains (low o + BitVec.ofNat 64 (176 + 4 * j)) 4 := by
-    have : 228 ≤ (o.gpr .esp).toNat := A.stackLow
+  have win : (frR o).Contains (low o + BitVec.ofNat 64 (256 + 4 * j)) 4 := by
+    have : 308 ≤ (o.gpr .esp).toNat := A.stackLow
     exact Offset.contains _ (by omega_arith) (by omega_arith) (by omega_arith)
   refine wp_storeS (show t.ea ⟨.esp, 4 * j⟩ = _ by rw [ea_mk, ea])
     (by rw [U.wr, h.wr]; exact ⟨_, List.mem_cons_self .., win⟩) fun t' M => k t' ?_ ?_
-  · have lc := low_contains A (d := 176 + 4 * j) (n := 4) (by omega_arith)
+  · have lc := low_contains A (d := 256 + 4 * j) (n := 4) (by omega_arith)
     have fr : Frame [lowR o] s.mem t'.mem := by
       rw [M.mem, U.mem]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ lc
     refine ⟨A, M.rd.trans (U.rd.trans h.rd), M.wr.trans (U.wr.trans h.wr), ?_, ?_, fun r hr hne hsp => ?_,

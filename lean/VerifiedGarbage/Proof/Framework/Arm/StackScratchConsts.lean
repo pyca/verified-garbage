@@ -6,7 +6,7 @@ import VerifiedGarbage.Proof.Framework.Arm.Syms
 import VerifiedGarbage.Proof.Framework.Arm.CallF
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # A scratch buffer on the stack, for code that reads tables of constants (ARMv7)
@@ -14,7 +14,8 @@ import VerifiedGarbage.Proof.Framework.Contract
 As on IA-32 (`Proof/Framework/X86/StackScratchConsts.lean`), whose `sym` also
 widens a 32-bit address. `Verified.stackScratchWipedC`:
 `Verified.stackScratchWiped` for contracts under `abi.withConsts K`, whose
-readable regions end with the tables `K`. The frame is that of
+readable regions end with the tables `K`; `Verified.stackScratchC` is the
+same without the wipe (`Verified.stackScratch`). The frame is that of
 `Verified.stackScratchWiped`; the code runs from `narrowC`, which is `narrow`
 of the state without the tables' regions (`stripConsts`), with the tables'
 regions after its own. Without its tables, a state satisfying the contract
@@ -130,6 +131,84 @@ theorem pub_consts {s₁ s₂ : State} :
       · rintro ⟨⟨⟨hp, hs⟩, hl⟩, ha, hd⟩; exact ⟨⟨⟨hp, hl⟩, ha, hd⟩, hs⟩
       · rintro ⟨⟨⟨hp, hl⟩, ha, hd⟩, hs⟩; exact ⟨⟨⟨hp, hs⟩, hl⟩, ha, hd⟩
 
+/-- A postcondition under `abi` does not depend on the readable regions. -/
+theorem post_strip {K : List (String × List (BitVec 64))} {s s' : State} :
+    (sig.contract abi pre post wa st leak).post (stripConsts K s) s' ↔
+      (sig.contract abi pre post wa st leak).post s s' := by
+  dsimp only [Sig.contract]
+  cases h : abi.args ((sig.words abi.ptrBits).map (·.bits abi.ptrBits)) with
+  | none => exact Iff.rfl
+  | some vals =>
+    dsimp only
+    rw [args_stripConsts h]
+    exact Iff.rfl
+
+/-- The public data under `abi` do not depend on the readable regions. -/
+theorem pub_strip {K : List (String × List (BitVec 64))} {s₁ s₂ : State} :
+    (sig.contract abi pre post wa st leak).pub (stripConsts K s₁) (stripConsts K s₂) ↔
+      (sig.contract abi pre post wa st leak).pub s₁ s₂ := by
+  dsimp only [Sig.contract]
+  cases h : abi.args ((sig.words abi.ptrBits).map (·.bits abi.ptrBits)) with
+  | none => exact Iff.rfl
+  | some vals =>
+    dsimp only
+    rw [args_stripConsts h, args_stripConsts h]
+    exact Iff.rfl
+
+/-- A contract with the tables `consts` at the end of the readable regions,
+from the contract `K` without them: `K` of the state without their regions
+(`stripConsts`), what they add (`ConstsOk`), and their addresses public. As
+`abi.withConsts` has them, for a function that reads tables of constants,
+such as a curve's constants that the elliptic-curve functions copy into
+their working space. -/
+def _root_.VG.Contract.withTablesArm (K : Contract isa) (consts : List (String × List (BitVec 64))) :
+    Contract isa where
+  pre s := K.pre (stripConsts consts s) ∧ ConstsOk consts 0 s
+  post s s' := K.post (stripConsts consts s) s'
+  pub s₁ s₂ := K.pub (stripConsts consts s₁) (stripConsts consts s₂) ∧ ∀ c ∈ consts, s₁.syms c.1 = s₂.syms c.1
+
+/-- A contract with tables implies the one under `abi.withConsts`, if the
+contract without them implies the one under `abi`. -/
+theorem withTables_implies {K : Contract isa} (h : K.Implies (sig.contract abi pre post wa 0 leak))
+    (sat : ∃ s, (sig.contract (abi.withConsts (c₀ :: cs)) pre post wa 0 leak).pre s) :
+    (K.withTablesArm (c₀ :: cs)).Implies (sig.contract (abi.withConsts (c₀ :: cs)) pre post wa 0 leak) :=
+  { pre := fun _ hs => ⟨h.pre _ (pre_consts.mp hs).1, (pre_consts.mp hs).2⟩
+    post := fun s s' hs hp => post_consts.mpr (post_strip.mp (h.post (stripConsts (c₀ :: cs) s) s'
+      (pre_consts.mp hs).1 hp))
+    pub := fun s₁ s₂ h₁ h₂ hp => ⟨h.pub (stripConsts (c₀ :: cs) s₁) (stripConsts (c₀ :: cs) s₂)
+        (pre_consts.mp h₁).1 (pre_consts.mp h₂).1 (pub_strip.mpr (pub_consts.mp hp).1),
+      fun c hc => by simpa using congrArg (BitVec.setWidth 32) ((pub_consts.mp hp).2 c hc)⟩
+    sat := sat }
+
+/-- The tables' addresses agree in two states of a contract with tables. -/
+theorem withTablesArm_syms {K : Contract isa} {consts : List (String × List (BitVec 64))} {s₁ s₂ : State}
+    (h : (K.withTablesArm consts).pub s₁ s₂) : ∀ n ∈ consts.map Prod.fst, s₁.syms n = s₂.syms n := fun _ hn => by
+  obtain ⟨c, hc, rfl⟩ := List.mem_map.mp hn
+  exact h.2 c hc
+
+/-- Stripping the tables from a state with their regions after its readable
+ones gives it back. -/
+theorem stripConsts_append (K : List (String × List (BitVec 64))) (s : State) :
+    stripConsts K { s with rd := s.rd ++ constRegs K s } = s := by
+  unfold stripConsts
+  simp only [List.length_append, Abi.constRegions, List.length_map, Nat.add_sub_cancel, List.take_left']
+  rfl
+
+/-- A state satisfying the contract without tables, with the tables' regions
+after its readable ones, satisfies the contract with them if `ConstsOk`. -/
+theorem pre_consts_append {s : State} (h : (sig.contract abi pre post wa st leak).pre s)
+    (hk : ConstsOk (c₀ :: cs) st { s with rd := s.rd ++ constRegs (c₀ :: cs) s }) :
+    (sig.contract (abi.withConsts (c₀ :: cs)) pre post wa st leak).pre
+      { s with rd := s.rd ++ constRegs (c₀ :: cs) s } :=
+  pre_consts.mpr ⟨by rw [stripConsts_append]; exact h, hk⟩
+
+/-- A witness of a contract with tables: one of the contract without them,
+with the tables' regions after its readable ones, where `ConstsOk` holds. -/
+theorem sat_consts {s : State} (h : (sig.contract abi pre post wa st leak).pre s)
+    (hk : ConstsOk (c₀ :: cs) st { s with rd := s.rd ++ constRegs (c₀ :: cs) s }) :
+    ∃ s', (sig.contract (abi.withConsts (c₀ :: cs)) pre post wa st leak).pre s' :=
+  ⟨_, pre_consts_append h hk⟩
+
 end
 
 /-! ## Reading a table
@@ -146,6 +225,23 @@ says (`pub_consts`), exactly when their 32-bit addresses do, as
 `Taint.AgreeS` states it. -/
 theorem symAddr_eq_iff {s₁ s₂ : State} : symAddr s₁ name = symAddr s₂ name ↔ s₁.syms name = s₂.syms name :=
   ⟨fun h => by simpa using congrArg (BitVec.setWidth 32) h, fun h => by rw [symAddr, symAddr, h]⟩
+
+/-- The readable regions are those without the tables, then the tables'. -/
+theorem ConstsOk.rd_strip (h : ConstsOk K st s) {L : List Region} (hL : (stripConsts K s).rd = L) :
+    s.rd = L ++ constRegs K s := by
+  rw [← List.take_append_drop (s.rd.length - K.length) s.rd, h.1]
+  exact congrArg (· ++ constRegs K s) hL
+
+/-- `ConstsOk` of a state whose readable regions end with the tables', as
+`sat_consts` asks. -/
+theorem constsOk_append {s : State} (hheld : Abi.constsHeld s.mem (symAddr s) K)
+    (hR : ∀ t ∈ constRegs K s, t.base.toNat + t.len ≤ 2 ^ 32 ∧ (∀ r ∈ s.wr, t.Disjoint r) ∧
+      ∀ r ∈ abi.reserved st s, t.Disjoint r)
+    (hal : ∀ t ∈ constRegs K s, t.base.toNat % 64 = 0) :
+    ConstsOk K st { s with rd := s.rd ++ constRegs K s } := by
+  refine ⟨?_, hheld, hR, hal⟩
+  show (s.rd ++ constRegs K s).drop ((s.rd ++ constRegs K s).length - K.length) = constRegs K s
+  simp only [List.length_append, Abi.constRegions, List.length_map, Nat.add_sub_cancel, List.drop_left']
 
 /-- The table does not wrap around the 32-bit address space. -/
 theorem ConstsOk.fit (h : ConstsOk K st s) (hc : (name, ws) ∈ K) :
@@ -203,6 +299,12 @@ end
     (stripConsts K s).syms = s.syms := rfl
 theorem armArgs_stripConsts (sig : Sig) (K : List (String × List (BitVec 64))) (s : State) :
     armArgs sig (stripConsts K s) = armArgs sig s := rfl
+
+/-- Without tables, nothing is stripped. -/
+theorem stripConsts_nil (s : State) : stripConsts [] s = s := by
+  unfold stripConsts
+  rw [List.length_nil, Nat.sub_zero, List.take_length]
+  rfl
 
 theorem stripConsts_rd_mem {K : List (String × List (BitVec 64))} {s : State} {r : Region}
     (h : r ∈ (stripConsts K s).rd) : r ∈ s.rd := List.mem_of_mem_take h
@@ -637,6 +739,119 @@ theorem Verified.stackScratchWipedC {c : Prog isa}
   · obtain ⟨u₁, _, _, f₁, _, _, p₁, x₁, _⟩ := hrun s₁ h₁
     obtain ⟨u₂, _, _, f₂, _, _, p₂, x₂, _⟩ := hrun s₂ h₂
     rw [(Exec.det e₁ x₁).1, (Exec.det e₂ x₂).1, p₁, p₂, ((pubL_arm hl).mp (pub_consts.mp hp).1).1.1,
+      hct _ _ _ _ _ _ (narrowC_pre hcl hN hloc ⟨hb1, hb2, hb3, hb4, hb5, hb6⟩ hpreL h₁)
+        (narrowC_pre hcl hN hloc ⟨hb1, hb2, hb3, hb4, hb5, hb6⟩ hpreL h₂) (hpub s₁ s₂ h₁ h₂ hp) f₁ f₂]
+
+
+/-- `Verified.stackScratchWipedC`, without the wipe: code verified for a
+function whose last argument, on the stack after `m` words of other stack
+arguments, is a scratch buffer, and which reads the tables `c₀ :: cs`, is
+verified for the function without it, which leaves the buffer as the code
+left it (`withStackScratch`; `Verified.stackScratch`, under
+`abi.withConsts (c₀ :: cs)`), for a function whose cleanup zeroes the stack
+(`scrubAll`). -/
+theorem Verified.stackScratchC {c : Prog isa}
+    (h : Verified target c (Sig.scratchContract (abi.withConsts (c₀ :: cs)) sig nm e n pre post wa stack leak))
+    (hcl : ScratchOnStack sig) (hN : nsaa sig = 4 * m)
+    (hloc : (locs sig).all (Loc.ok (4 * m)) = true) (hb : Fits m bytes e n)
+    (hpre : ∀ vs m₁ m₂, vs.length = (sig.words abi.ptrBits).length →
+      (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+      Curry.apply (sig.words abi.ptrBits) pre vs m₁ → Curry.apply (sig.words abi.ptrBits) pre vs m₂)
+    (hpost : ∀ vs m₁ m₂ m' r, vs.length = (sig.words abi.ptrBits).length →
+      (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+      Curry.apply (sig.words abi.ptrBits) post vs m₁ m' r →
+        Curry.apply (sig.words abi.ptrBits) post vs m₂ m' r)
+    (hpostOut : ∀ vs mm m₁ m₂ r, vs.length = (sig.words abi.ptrBits).length →
+      (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+      Curry.apply (sig.words abi.ptrBits) post vs mm m₁ r →
+        Curry.apply (sig.words abi.ptrBits) post vs mm m₂ r)
+    (hsat : ∃ s, (sig.contract (abi.withConsts (c₀ :: cs)) pre post wa (stack + bytes)).pre s)
+    (hl : Sig.noLists sig.params = true := by decide)
+    (hleak : Sig.LeakLocal abi.ptrBits sig leak := by trivial) :
+    Verified target (withStackScratch bytes m c)
+      (sig.contract (abi.withConsts (c₀ :: cs)) pre post wa (stack + bytes) leak) := by
+  obtain ⟨hcor, hct, -⟩ := h
+  have hpreL : ∀ vs m₁ m₂, vs.length = (sig.words abi.ptrBits).length →
+      (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+      (∀ r ∈ Sig.lists abi.ptrBits m₁ sig.params vs, ∀ a, r.Contains a 1 → m₁ a = m₂ a) →
+      Curry.apply (sig.words abi.ptrBits) pre vs m₁ → Curry.apply (sig.words abi.ptrBits) pre vs m₂ :=
+    fun vs m₁ m₂ hl hb _ => hpre vs m₁ m₂ hl hb
+  have hlen := armArgs_length sig
+  obtain ⟨hb1, hb2, hb3, hb4, hb5, hb6⟩ := hb
+  have hsb : ∀ s, (sig.contract (abi.withConsts (c₀ :: cs)) pre post wa (stack + bytes) leak).pre s →
+      stack + bytes ≤ s.sp.toNat := fun s hs => by
+    have hs' := (pre_consts.mp hs).1
+    rw [pre_armL] at hs'
+    obtain ⟨⟨hst, -⟩, -⟩ := hs'
+    simp only [stripConsts_sp] at hst
+    omega_using [hst]
+  -- The frame is below the stack the contract without it reserves, so apart
+  -- from its buffers: the `free` loses only its bytes.
+  have hdisjF : ∀ s, (sig.contract (abi.withConsts (c₀ :: cs)) pre post wa (stack + bytes) leak).pre s →
+      ∀ b ∈ Sig.bufs sig.params (armArgs sig s),
+        b.1.Disjoint ⟨State.addr (s.sp - BitVec.ofNat 32 bytes), bytes⟩ := by
+    intro s hs b hb'
+    have h0 := hsb s hs
+    have hs' := (pre_consts.mp hs).1
+    rw [pre_arm hl] at hs'
+    obtain ⟨-, -, -, -, hres, -, -⟩ := hs'
+    simp only [stripConsts_sp] at hres
+    rw [addr_sub' (by omega_using [h0])]
+    exact (Region.Disjoint.symm (hres _ (reserved_below (by omega_using [hb1]) s) b (List.mem_append_left _ hb'))).sub_right
+      (Offset.sub_below _ (by omega_using []) (by omega_using []))
+  -- Every run is `setArgs`, then the code's run from `narrowC`.
+  have hrun : ∀ s, (sig.contract (abi.withConsts (c₀ :: cs)) pre post wa (stack + bytes) leak).pre s →
+      ∃ t s₃,
+      Exec isa c (narrowC sig e n bytes m (c₀ :: cs) s) t s₃ ∧
+      (Sig.scratchContract (abi.withConsts (c₀ :: cs)) sig nm e n pre post wa stack leak).post
+        (narrowC sig e n bytes m (c₀ :: cs) s) s₃ ∧
+      Exec isa (withStackScratch bytes m c) s
+        (setArgsTrace bytes (s.sp - BitVec.ofNat 32 bytes) m ++ t) (popState bytes s s₃) ∧
+      abiPreserved s (popState bytes s s₃) ∧
+      Frame [⟨State.addr (s.sp - BitVec.ofNat 32 bytes), bytes⟩] s₃.mem (popState bytes s s₃).mem ∧
+      (popState bytes s s₃).gpr = s₃.gpr := by
+    intro s hs
+    obtain ⟨t, s₃, he, ha, hq⟩ := hcor _ (narrowC_pre hcl hN hloc ⟨hb1, hb2, hb3, hb4, hb5, hb6⟩ hpreL hs)
+    exact ⟨t, s₃, he, hq, withStackScratchC_run hcl hN hloc ⟨hb1, hb2, hb3, hb4, hb5, hb6⟩ hs he ha⟩
+  -- The public data in `narrowC`.
+  have hpub : ∀ s₁ s₂,
+      (sig.contract (abi.withConsts (c₀ :: cs)) pre post wa (stack + bytes) leak).pre s₁ →
+      (sig.contract (abi.withConsts (c₀ :: cs)) pre post wa (stack + bytes) leak).pre s₂ →
+      (sig.contract (abi.withConsts (c₀ :: cs)) pre post wa (stack + bytes) leak).pub s₁ s₂ →
+      (Sig.scratchContract (abi.withConsts (c₀ :: cs)) sig nm e n pre post wa stack leak).pub
+        (narrowC sig e n bytes m (c₀ :: cs) s₁) (narrowC sig e n bytes m (c₀ :: cs) s₂) := by
+    intro s₁ s₂ h₁ h₂ hp
+    obtain ⟨hp', hsy⟩ := pub_consts.mp hp
+    refine pub_consts.mpr ⟨(pubL_withRegions _ _ _ _).mpr
+      (narrow_pub hcl hN hloc ⟨hb1, hb2, hb3, hb4, hb5, hb6⟩ (pre_consts.mp h₁).1 (pre_consts.mp h₂).1
+        ((pubL_withRegions _ _ _ _).mpr hp') hleak.toL), ?_⟩
+    rw [symAddr_congr (narrowC_syms ..), symAddr_congr (narrowC_syms ..)]
+    exact hsy
+  refine ⟨fun s hs => ?_, fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hp e₁ e₂ => ?_, hsat⟩
+  · obtain ⟨t, s₃, -, hq, hex, ha, hm, hg⟩ := hrun s hs
+    refine ⟨_, _, hex, ha, ?_⟩
+    rw [post_consts, post_arm]
+    have hq' := (post_arm (sig := sig.withScratch nm e n)
+      (pre := Curry.withScratch abi.ptrBits nm e n sig.params pre)
+      (post := Curry.withScratch abi.ptrBits nm e n sig.params post)).mp (post_consts.mp hq)
+    obtain ⟨-, -, hargs, -⟩ := narrow_facts (nm := nm) (e := e) (n := n) hcl hN hloc
+      ⟨hb1, hb2, hb3, hb4, hb5, hb6⟩ (pre_consts.mp hs).1
+    simp only [armArgs_stripConsts, stripConsts_sp] at hargs
+    rw [armArgs_narrowC, hargs, narrowC_mem] at hq'
+    rw [hg]
+    have h₃ := Eq.mp (congrFun (congrFun (congrFun (Curry.apply_withScratch abi.ptrBits nm e n
+      sig.params post _ _ (hlen s)) _) s₃.mem) _) hq'
+    have hag := narrow_agree hcl hN hloc ⟨hb1, hb2, hb3, hb4, hb5, hb6⟩ (pre_consts.mp hs).1
+    simp only [armArgs_stripConsts, stripConsts_mem] at hag
+    have h₄ := hpost _ _ _ _ _ (hlen s) hag h₃
+    -- The memory on return: after the `free`, which loses only the frame.
+    refine hpostOut _ _ _ _ _ (hlen s) (fun b hb' a ha' => ?_) h₄
+    exact (hm a fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact hdisjF s hs b hb' a ha').symm
+  · obtain ⟨u₁, _, f₁, -, x₁, -⟩ := hrun s₁ h₁
+    obtain ⟨u₂, _, f₂, -, x₂, -⟩ := hrun s₂ h₂
+    rw [(Exec.det e₁ x₁).1, (Exec.det e₂ x₂).1, ((pubL_arm hl).mp (pub_consts.mp hp).1).1.1,
       hct _ _ _ _ _ _ (narrowC_pre hcl hN hloc ⟨hb1, hb2, hb3, hb4, hb5, hb6⟩ hpreL h₁)
         (narrowC_pre hcl hN hloc ⟨hb1, hb2, hb3, hb4, hb5, hb6⟩ hpreL h₂) (hpub s₁ s₂ h₁ h₂ hp) f₁ f₂]
 

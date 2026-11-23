@@ -446,7 +446,7 @@ theorem crt_narrowPrepared_ready (s : State) {g : CrtGeometry} {bs : Fin 7 → L
   have m : narrowM t (bs j.succ) = narrowM s (bs j.succ) := by unfold narrowM; rw [flag]
   unfold NarrowPrepared
   rw [m]
-  exact ⟨shared.after_narrow (frame.mono (by simp)) rest, ready, modulus, odd, r2⟩
+  exact ⟨shared.after_narrowB (frame.mono (by simp)) rest, ready, modulus, odd, r2⟩
 
 /-- After the safe factor is copied back: ready to reduce the input. -/
 theorem crt_narrowCopiedBack_ready (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte} {child : BitVec 32}

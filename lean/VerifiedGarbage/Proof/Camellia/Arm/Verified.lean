@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Camellia.Scratch
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
-import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
+import VerifiedGarbage.Proof.Framework.Arm.StackScratch
 public import VerifiedGarbage.Impl.StackScratch.Arm
 public import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
 import VerifiedGarbage.Proof.Framework.Arm.Exec
@@ -13,7 +13,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Camellia.Scratch
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
-meta import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
+meta import VerifiedGarbage.Proof.Framework.Arm.StackScratch
 meta import VerifiedGarbage.Impl.StackScratch.Arm
 meta import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
 meta import VerifiedGarbage.Proof.Framework.Arm.Exec
@@ -1460,22 +1460,23 @@ theorem ecbFrameSat_pre (d : Spec.Camellia.Direction) :
     Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
     [ecbFrameSat, ecbSat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read] using ecbFrameSat
 
-/-- ECB in the direction `dir`, with its working space on the stack. -/
+/-- ECB in the direction `dir`, with its working space on the stack, which
+its callers' cleanup zeroes. -/
 theorem ecb_framedSk (dir : Dir) :
-    Verified Arm.target (Impl.StackScratch.Arm.withStackScratchWiped 2816 0 680 (ecb dir))
+    Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 2816 0 (ecb dir))
       (Proof.Camellia.ecbContractSk Arm.abi (specDir dir) 2816) :=
-  Arm.Verified.stackScratchWiped (sig := Spec.Camellia.ecbSig) (nm := "scratch") (e := .u64)
+  Arm.Verified.stackScratch (sig := Spec.Camellia.ecbSig) (nm := "scratch") (e := .u64)
     (n := 340) (pre := Spec.Camellia.ecbPre Arm.abi.ptrBits)
     (post := Proof.Camellia.ecbPostSk (specDir dir) Arm.abi.ptrBits) (wa := false) (stack := 0)
-    (bytes := 2816) (m := 0) (words := 680)
+    (bytes := 2816) (m := 0)
     (by rw [← Proof.Camellia.ecbScratchContract_eq]; exact ecb_verified dir)
-    (by decide) (by decide) (by decide) (by decide) (by decide)
+    (by decide) (by decide) (by decide) (by decide)
     (Proof.Camellia.ecbPre_local _) (Proof.Camellia.ecbPost_local _ _)
-    (Proof.Camellia.ecbPostOut_local _ _) (ecbFrameSat_pre _)
+    (fun vs mm m₁ m₂ r hl _ => Proof.Camellia.ecbPostOut_local _ _ vs mm m₁ m₂ r hl) (ecbFrameSat_pre _)
 
 /-- `ecb_framedSk`, for a schedule `vg_camellia_expand_key` wrote. -/
 theorem ecb_framed (dir : Dir) :
-    Verified Arm.target (Impl.StackScratch.Arm.withStackScratchWiped 2816 0 680 (ecb dir))
+    Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 2816 0 (ecb dir))
       (Spec.Camellia.ecbContract Arm.abi (specDir dir) 2816) :=
   Proof.Camellia.ecb_of_sk (ecb_framedSk dir)
 

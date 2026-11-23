@@ -167,7 +167,7 @@ def recoverCoordinate (c : Cfg) : Prog isa :=
 
 /-- `vg_ec_<curve>_decompress_public_key`. -/
 def decompress (c : Cfg) : Prog isa :=
-  progs [.block (setup c), .block (decompressPeer c), fprog c.SP (rhsOps c),
+  progs [setup c, .block (decompressPeer c), fprog c.SP (rhsOps c),
     recoverCoordinate c, .block (decompressFinish c)]
 
 end VG.Impl.EcKey.Compressed.PPC64LE

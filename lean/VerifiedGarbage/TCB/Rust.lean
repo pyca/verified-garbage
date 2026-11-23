@@ -208,9 +208,7 @@ whose address the instruction reads (`Code.icall`), so its proof covers the
 code the processor runs. A table's constant of CPU features is those of its
 functions (`fnTableFeatures`), and the documentation of a function taking
 tables says the CPU must support those of the table it is given
-(`fnTablesDoc`): a caller's own features (`Code.requires`) leave out those
-of the functions an indirect call may reach, of which it runs only the one
-its table names.
+(`fnTablesDoc`), which the caller's own (`Code.requiresDedup`) leave out.
 
 An artifact whose code needs CPU features beyond the target's baseline
 (`Artifact.features`) also gets a last `# Safety` item saying the CPU must
@@ -845,8 +843,8 @@ where
 (`featureCheck`). -/
 def checkFeatures (p : Prepared) : Except String Unit :=
   let a := p.art
-  featureCheck s!"{a.target.name}: {a.name}" a.doc (Code.requiresDedup a.target.isa a.code)
-    a.features
+  featureCheck s!"{a.target.name}: {a.name}" a.doc
+    (Code.requiresDedup a.target.isa a.code (FnTable.tablesFns a.tables).contains) a.features
 
 /-- The target's printer can encode every instruction of the code of `p`'s
 artifact as the model describes it (`Printer.unencodable`): of the code that
@@ -981,12 +979,14 @@ structure Internal where
   name : String
   /-- The module whose file declares the internal function's (`internalOwner`). -/
   owner : String
+  /-- The functions of its target's tables of functions. -/
+  tabled : List String
   lines : List Line
   features : List String
   tables : List (String × List (BitVec 64))
   syms : List String
   lines_eq : lines = fn.1.printer.function fn.2
-  features_eq : features = Code.requiresDedup fn.1.isa fn.2
+  features_eq : features = Code.requiresDedup fn.1.isa fn.2 tabled.contains
   tables_eq : tables = fn.1.printer.codeTables fn.2
   syms_eq : syms = dedup (lines.filterMap fun | .sym _ _ n => some n | _ => none)
 
@@ -1016,8 +1016,8 @@ abbrev Internal.code (h : Internal) : Prog h.target.isa := h.fn.2
 
 /-- The internal function `name` whose target and code are `f`'s, declared by
 the module `owner`. -/
-def Internal.of (name owner : String) (f : Fn) : Internal :=
-  ⟨f, name, owner, _, _, _, _, rfl, rfl, rfl, rfl⟩
+def Internal.of (name owner : String) (tabled : List String) (f : Fn) : Internal :=
+  ⟨f, name, owner, tabled, _, _, _, _, rfl, rfl, rfl, rfl⟩
 
 /-- The target's printer can encode every instruction of the code of the
 internal function `h` as the model describes it (`checkEncodable`). -/
@@ -1055,12 +1055,15 @@ def internalsOf (ps : List Prepared) : List Internal := Id.run do
             if k == (t, n) && !ms.contains a.module then (k, a.module :: ms) else (k, ms)
         | none => ((t, n), [a.module]) :: callers
   let named := found.reverse.map fun (t, n, f) =>
-    let modules := Rust.dedup ((ps.filter (·.art.target.name == t)).map (·.art.module))
-    (n, internalOwner n modules (((callers.find? (·.1 == (t, n))).map (·.2)).getD []), f)
+    let arts := ps.filter (·.art.target.name == t)
+    let modules := Rust.dedup (arts.map (·.art.module))
+    let tabled := Rust.dedup (arts.flatMap fun q => FnTable.tablesFns q.art.tables)
+    (n, internalOwner n modules (((callers.find? (·.1 == (t, n))).map (·.2)).getD []), tabled, f)
   -- Each internal function's printed code on one of `tasks` tasks, as `prepareAll`.
   let size := (named.length + tasks - 1) / tasks
   let parts := (List.range tasks).map fun j =>
-    Task.spawn fun _ => ((named.drop (j * size)).take size).map fun (n, owner, f) => Internal.of n owner f
+    Task.spawn fun _ => ((named.drop (j * size)).take size).map fun (n, owner, tabled, f) =>
+      Internal.of n owner tabled f
   return (parts.map Task.get).flatten
 
 /-- The internal function of `hs` that a call of `name` in an artifact of the
@@ -1116,8 +1119,10 @@ one the internal function's instructions carry: the artifact's contract
 says where the memory holds the tables it gives (`Abi.withConsts`), which is
 what its proof, which runs the internal function's code, assumes of them,
 and every artifact with a table of a name gives the same words
-(`checkConsts`). No artifact's module is `internal`, the directory of the
-internal functions' files. -/
+(`checkConsts`). Any other name is of a function whose address the
+artifact's contract makes public (`Artifact.fns`): its address, not memory,
+is all the code takes of it. No artifact's module is `internal`, the
+directory of the internal functions' files. -/
 def checkInternalTables (hs : List Internal) (p : Prepared) : Except String Unit := do
   let a := p.art
   let t := a.target.name
@@ -1127,9 +1132,10 @@ def checkInternalTables (hs : List Internal) (p : Prepared) : Except String Unit
   for (n, _) in p.calls do
     let some h := internal? hs t n | continue
     for s in h.syms do
-      unless own.contains s || (h.tables.map (·.1)).contains s do
+      unless own.contains s || (h.tables.map (·.1)).contains s || a.fns.contains s do
         throw s!"{t}: {a.name} calls the internal function {n}, which names the table {s}, \
-          which {a.name} does not have (`Artifact.consts`) or carry"
+          which {a.name} does not have (`Artifact.consts`) or carry, nor a function of public \
+          address (`Artifact.fns`)"
 
 /-- Every call in the code of `p`'s artifact, and in the code of the functions
 it calls, is of an artifact of `ps` of the same target, or of an internal
@@ -1246,6 +1252,19 @@ def checkFnTables (ps : List Prepared) (hs : List Internal) (p : Prepared) :
         throw s!"{t}: two tables of functions named {T.name} differ"
       if U.iface == T.iface && (U.fns.length != T.fns.length || U.data.length != T.data.length) then
         throw s!"{t}: the tables of functions {T.name} and {U.name} of {T.iface} differ in shape"
+
+/-- Each function of `p`'s artifact's `fns`, listed once, is an artifact or an
+internal function of its target. -/
+def checkFns (ps : List Prepared) (hs : List Internal) (p : Prepared) : Except String Unit := do
+  let a := p.art
+  let t := a.target.name
+  unless (dedup a.fns).length == a.fns.length do
+    throw s!"{t}: {a.name} lists a function of public address twice (`Artifact.fns`)"
+  for f in a.fns do
+    unless ps.any (fun q => q.art.target.name == t && q.art.name == f) ||
+        (internal? hs t f).isSome do
+      throw s!"{t}: {a.name} makes public the address of {f} (`Artifact.fns`), which is \
+        neither an artifact nor an internal function"
 
 /-- The module of a table of functions, its name in lowercase. -/
 def fnTableModule (n : String) : String := n.toLower
@@ -2242,7 +2261,9 @@ an error if an artifact is not made from an `Api` with a
 contract (`checkApi`), two artifacts of a target have the same name
 (`checkUnique`), a call is not of the code it runs (`checkCalls`), its
 tables of constants, or an internal function's name or tables, are not as
-`checkConsts`, `checkInternal` and `checkInternalTables` require, an
+`checkConsts`, `checkInternal` and `checkInternalTables` require, its tables
+of functions or functions of public address are not as `checkFnTables` and
+`checkFns` require, an
 artifact's features are not those its code requires (`checkFeatures`), its
 code has an instruction its target's printer cannot encode
 (`checkEncodable`), its doc has no `# Safety` section at its end for what
@@ -2276,6 +2297,7 @@ def files (as : List Artifact) :
   forMPar hs (checkInternal ps hs)
   forMPar ps (checkInternalTables hs)
   forMPar ps (checkFnTables ps hs)
+  forMPar ps (checkFns ps hs)
   forMPar ps checkFeatures
   forMPar ps checkEncodable
   forMPar hs checkEncodableInternal

@@ -1,0 +1,52 @@
+diff --git a/rustls-bench/Cargo.toml b/rustls-bench/Cargo.toml
+index f21627e3..7cccce0f 100644
+--- a/rustls-bench/Cargo.toml
++++ b/rustls-bench/Cargo.toml
+@@ -9,6 +9,7 @@ clap = { workspace = true }
+ rustls = { path = "../rustls" }
+ rustls-aws-lc-rs = { path = "../rustls-aws-lc-rs", optional = true }
+ rustls-ring = { path = "../rustls-ring", optional = true }
++rustls-verified-garbage = { path = "@VG_PROVIDER@", optional = true, features = ["cpu-features-env"] }
+ rustls-graviola = { workspace = true, optional = true }
+ rustls-test = { workspace = true, default-features = false }
+ 
+@@ -18,6 +19,7 @@ aws-lc-rs = ["rustls-aws-lc-rs"]
+ fips = ["rustls-aws-lc-rs/fips", "aws-lc-rs"]
+ graviola = ["dep:rustls-graviola"]
+ ring = ["dep:rustls-ring"]
++verified-garbage = ["dep:rustls-verified-garbage"]
+ 
+ [target.'cfg(not(target_env = "msvc"))'.dependencies]
+ tikv-jemallocator = { workspace = true }
+diff --git a/rustls-bench/src/main.rs b/rustls-bench/src/main.rs
+index 6d8d64f4..61f6733c 100644
+--- a/rustls-bench/src/main.rs
++++ b/rustls-bench/src/main.rs
+@@ -881,6 +881,8 @@ enum Provider {
+     Graviola,
+     #[cfg(feature = "ring")]
+     Ring,
++    #[cfg(feature = "verified-garbage")]
++    VerifiedGarbage,
+     #[value(skip)]
+     _None, // prevents this enum being uninhabited when built with no features
+ }
+@@ -896,6 +898,8 @@ impl Provider {
+             Self::Graviola => rustls_graviola::default_provider(),
+             #[cfg(feature = "ring")]
+             Self::Ring => rustls_ring::DEFAULT_PROVIDER,
++            #[cfg(feature = "verified-garbage")]
++            Self::VerifiedGarbage => rustls_verified_garbage::DEFAULT_PROVIDER,
+             Self::_None => unreachable!(),
+         }
+     }
+@@ -944,6 +948,9 @@ impl Provider {
+         #[cfg(feature = "ring")]
+         available.push(Self::Ring);
+ 
++        #[cfg(feature = "verified-garbage")]
++        available.push(Self::VerifiedGarbage);
++
+         match available[..] {
+             [] => panic!("no providers available in this build"),
+             [one] => one,

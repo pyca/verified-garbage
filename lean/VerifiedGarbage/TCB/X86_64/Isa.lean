@@ -457,6 +457,11 @@ inductive Instr
   only occurs as the instruction of an indirect call (`Code.icall`): as a
   straight-line instruction it faults. -/
   | callr (r : Reg)
+  /-- `call m64` (`FF /2` with a memory operand): the near, absolute
+  indirect call of the function at the address in the 8 bytes at `m` (see
+  `icall`). As `callr`, it only occurs as the instruction of an indirect
+  call (`Code.icall`): as a straight-line instruction it faults. -/
+  | callm (m : MemOp)
   /-- `push r64` (50+rd) for each `r` of `rs`, in order: the push of a frame
   (see `push`); `rs` must not be empty or contain `rsp` -/
   | push (rs : List Reg)
@@ -894,7 +899,7 @@ def exec : Instr → State → Option State
   | .cmov cc d src, s => execCmov cc d src s
   -- Only the push and pop of a frame (`push`, `pop`), and the instruction
   -- of an indirect call (`icall`).
-  | .push _, _ | .pop .., _ | .alloc _, _ | .free _, _ | .callr _, _ => none
+  | .push _, _ | .pop .., _ | .alloc _, _ | .free _, _ | .callr _, _ | .callm _, _ => none
 
 def addrs : Instr → State → List Addr
   | .mov _ src, s => srcAddrs s src
@@ -971,6 +976,9 @@ def addrs : Instr → State → List Addr
   | .alloc _, _ | .free _, _ => []
   -- The address it calls is observed as the indirect call's (`Code.icall`).
   | .callr _, _ => []
+  -- The 8 bytes it reads the address from; the address it calls is observed
+  -- as the indirect call's.
+  | .callm m, s => [s.ea m]
 
 /-- SDM Vol. 2, "CALL", near call: `RSP := RSP − 8; Memory[RSP] := RIP`
 (`Push(RIP)`, where `RIP` is the address of the next instruction), then the
@@ -1108,16 +1116,19 @@ def Instr.dst : Instr → Option Reg
   | .vmovdqu32Load .. | .vmovdqu32Store .. | .vbroadcasti32x4 .. | .vbroadcasti32x4H .. | .zbcst .. | .vpmadd52Load ..
   | .vpbroadcastdZ .. | .zbcstd .. | .eop _ | .evLoad .. | .evStore .. | .evMadd52Load .. | .kLoad .. | .kStore .. | .kLoad8 .. | .kStore8 ..
   | .e5op _ | .evBroadcastLoad .. | .e5InsertLoad .. | .e5ExtractStore ..
-  | .stmxcsr _ | .ldmxcsr _ | .lfence | .mul _ | .mulx .. | .push _ | .alloc _ | .free _ | .callr _ => none
+  | .stmxcsr _ | .ldmxcsr _ | .lfence | .mul _ | .mulx .. | .push _ | .alloc _ | .free _ | .callr _ | .callm _ => none
 
 /-- The address an indirect call instruction calls: SDM Vol. 2, "CALL—Call
 Procedure", `FF /2`, "CALL r/m64": "Call near, absolute indirect, address
 given in r/m64"; for a near absolute call, `tempRIP := DEST; Push(RIP);
 RIP := tempRIP` (in 64-bit mode the operand is 64 bits). `Push(RIP)` and
 the rest of the call are the direct call's (`call`), the return `ret`. No
-flags are affected. -/
+flags are affected. For a memory operand, `DEST` is the 8 bytes at its
+effective address, which the call reads (`load64`, so it faults unless they
+are readable). -/
 def icall : Instr → State → Option Addr
   | .callr r, s => some (s.gpr r)
+  | .callm m, s => s.load64 (s.ea m)
   | _, _ => none
 
 abbrev isa : ISA where

@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.SeedSearch
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Output
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Entry
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Hash
 
 /-! # DSA parameter generation over refillable random tapes on x86-64
 
@@ -149,9 +150,12 @@ def controller (G1 G256 : Stream) (sq : Prog isa) (mul : Nat → Nat → Nat →
 scratch_len, state)` for one width, all frames allocated: the attempts'
 words as the finite search's entry sets them, with `rand` as every tape
 (the seeds', the witnesses' and, empty, the generator's), and the
-controller's words. `state` is the second stack argument. -/
+controller's words, and the addresses of the functions it calls indirectly,
+which its caller leaves in `rax`, `r10` and `r11` (`viaSlot`). `state` is the
+second stack argument. -/
 def entryHeader (pLen qLen : Nat) : List Instr :=
-  [.store (sp 48) .rdi, .store (sp 56) .rsi, .store (ctl 0) .rdx,
+  [.store (sp updSlot) .rax, .store (sp finSlot) .r10, .store (sp primeSlot) .r11,
+   .store (sp 48) .rdi, .store (sp 56) .rsi, .store (ctl 0) .rdx,
    .store (sp 64) .rcx, .store (sp 72) .r8, .store (sp 104) .rcx, .store (sp 120) .r8,
    .store (sp 88) .rcx, .mov32 .rax (.imm 0), .store (sp 96) .rax, .store (sp 80) .rax,
    .store (sp 40) .r9,

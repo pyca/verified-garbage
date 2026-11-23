@@ -160,7 +160,7 @@ theorem brainpoolp256r1_tbls : CombTbls brainpoolp256r1 := fun _ h => by cases h
 /-- ECDH's, verification's and the public key's `[k]G` is a call of
 `vg_brainpoolp256r1_mul`, which calls no other function. -/
 theorem brainpoolp256r1_mulBase : MulBaseOk brainpoolp256r1 :=
-  ⟨fun h => absurd h (by decide), fun _ => ⟨.inl rfl, by lit_decide⟩⟩
+  ⟨fun h => absurd h (by decide), fun _ => ⟨.inl rfl, fun h => absurd h (by decide), fun _ => rfl⟩⟩
 
 theorem brainpoolp256r1S_sh : brainpoolp256r1S.sh = 0 := brainpoolp256r1_sh
 
@@ -217,7 +217,7 @@ theorem sign_x86 (hL : Law Spec.BrainpoolP256r1.curve)
     (hs : signX86_64.pre s) :
     ∃ t s', Exec isa signBrainpoolP256r1.inline s t s' ∧ abiPreserved s s' ∧ signX86_64.post s s' := by
   obtain ⟨t, s', he, hsv, hpost⟩ := signG_ok (brainpoolp256r1S_ok hI) hL brainpoolp256r1S_comb
-    (Proof.BrainpoolP256r1.combOk7 hL) rfl (pre_of hs)
+    (Proof.BrainpoolP256r1.combOk7 hL) rfl (pre_of hs) (by decide)
   have hok : signBrainpoolP256r1.InlineOk = true := by lit_decide
   have hsp := Code.clobbers_rsp_of_inlineOk hok
   have hmx : signBrainpoolP256r1.inline.allInstrs (fun i => !loadsMxcsr i) = true := by

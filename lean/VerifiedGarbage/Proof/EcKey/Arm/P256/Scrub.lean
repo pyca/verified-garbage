@@ -56,7 +56,7 @@ open VG VG.Arm VG.Arm.Scrub
 /-- `vg_ec_p256_public_key`, given the group law. -/
 theorem publicKeyP256 (hL : Proof.Weierstrass.Law Spec.P256.curve) :
     VerifiedScrubbed target Impl.EcKey.Arm.Fn.publicKeyP256
-      Proof.EcKey.Arm.P256.combPkSpec 32 :=
+      (Proof.EcKey.Arm.P256.combPkSpec false) 32 :=
   verifiedScrubbed (api := Spec.EcKey.P256.publicKeyApi)
     { code := Impl.Ecdsa.Arm.publicKeyP256Comb
       verified := Proof.EcKey.Arm.P256.combPk_verified hL }
@@ -65,7 +65,7 @@ theorem publicKeyP256 (hL : Proof.Weierstrass.Law Spec.P256.curve) :
 /-- `vg_ec_p256_public_key_umaal`, given the group law. -/
 theorem publicKeyP256U (hL : Proof.Weierstrass.Law Spec.P256.curve) :
     VerifiedScrubbed target Impl.EcKey.Arm.Fn.publicKeyP256U
-      Proof.EcKey.Arm.P256.combPkSpec 32 :=
+      (Proof.EcKey.Arm.P256.combPkSpec true) 32 :=
   verifiedScrubbed (api := Spec.EcKey.P256.publicKeyApi)
     { code := Impl.Ecdsa.Arm.publicKeyP256CombU
       verified := Proof.EcKey.Arm.P256.combPkU_verified hL }
@@ -74,7 +74,8 @@ theorem publicKeyP256U (hL : Proof.Weierstrass.Law Spec.P256.curve) :
 /-- `vg_ec_p256_compress_public_key`. -/
 theorem compressP256 :
     VerifiedScrubbed target Impl.EcKey.Arm.Fn.compressP256
-      (Spec.EcKey.P256.inst.compressPublicKeyContract abi 0) 32 :=
+      (Spec.EcKey.P256.inst.compressPublicKeyContract
+        (abi.withConsts (Impl.Ecdsa.Arm.p256With false).constsK) 0) 32 :=
   verifiedScrubbed (api := Spec.EcKey.P256.inst.compressPublicKeyApi)
     { code := Proof.EcKey.Compressed.Arm.P256.code
       verified := Proof.EcKey.Compressed.Arm.P256.verified }
@@ -83,7 +84,8 @@ theorem compressP256 :
 /-- `vg_ec_p256_compress_public_key_umaal`. -/
 theorem compressP256U :
     VerifiedScrubbed target Impl.EcKey.Arm.Fn.compressP256U
-      (Spec.EcKey.P256.inst.compressPublicKeyContract abi 0) 32 :=
+      (Spec.EcKey.P256.inst.compressPublicKeyContract
+        (abi.withConsts (Impl.Ecdsa.Arm.p256With true).constsK) 0) 32 :=
   verifiedScrubbed (api := Spec.EcKey.P256.inst.compressPublicKeyApi)
     { code := Proof.EcKey.Compressed.Arm.P256.codeU
       verified := Proof.EcKey.Compressed.Arm.P256.verifiedU }
@@ -92,7 +94,8 @@ theorem compressP256U :
 /-- `vg_ec_p256_decompress_public_key`, given the group law. -/
 theorem decompressP256 (hL : Proof.Weierstrass.Law Spec.P256.curve) :
     VerifiedScrubbed target Impl.EcKey.Arm.Fn.decompressP256
-      (Spec.EcKey.P256.inst.decompressPublicKeyContract abi 0) 32 :=
+      (Spec.EcKey.P256.inst.decompressPublicKeyContract
+        (abi.withConsts (Impl.Ecdsa.Arm.p256With false).constsK) 0) 32 :=
   verifiedScrubbed (api := Spec.EcKey.P256.inst.decompressPublicKeyApi)
     { code := Proof.EcKey.Compressed.Arm.P256Decompress.code
       verified := Proof.EcKey.Compressed.Arm.P256Decompress.verified hL }
@@ -101,7 +104,8 @@ theorem decompressP256 (hL : Proof.Weierstrass.Law Spec.P256.curve) :
 /-- `vg_ec_p256_decompress_public_key_umaal`, given the group law. -/
 theorem decompressP256U (hL : Proof.Weierstrass.Law Spec.P256.curve) :
     VerifiedScrubbed target Impl.EcKey.Arm.Fn.decompressP256U
-      (Spec.EcKey.P256.inst.decompressPublicKeyContract abi 0) 32 :=
+      (Spec.EcKey.P256.inst.decompressPublicKeyContract
+        (abi.withConsts (Impl.Ecdsa.Arm.p256With true).constsK) 0) 32 :=
   verifiedScrubbed (api := Spec.EcKey.P256.inst.decompressPublicKeyApi)
     { code := Proof.EcKey.Compressed.Arm.P256Decompress.codeU
       verified := Proof.EcKey.Compressed.Arm.P256Decompress.verifiedU hL }

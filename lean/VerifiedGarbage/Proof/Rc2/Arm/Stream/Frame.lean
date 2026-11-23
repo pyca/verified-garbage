@@ -13,8 +13,8 @@ import VerifiedGarbage.Proof.Rc2.Arm.Lit
 
 `init` runs its code, proved with the working space as an argument
 (`Verified.lean`), in a frame of 592 bytes that allocates it and copies its
-two other stack arguments (`Verified.stackScratchWipedC`, as it reads
-PITABLE's table), and zeroes it before returning.
+two other stack arguments (`Verified.stackScratchC`, as it reads PITABLE's
+table), which its function's cleanup (`scrubAll`) zeroes.
 -/
 
 @[expose] public section
@@ -68,12 +68,12 @@ theorem initFrameSatC_pre : ∃ s, (Spec.Rc2.cbcInitContract (Arm.abi.withConsts
 
 theorem init_framed :
     Verified Arm.target
-      (Impl.StackScratch.Arm.withStackScratchWiped 592 2 144 Impl.Rc2.Arm.Stream.init)
+      (Impl.StackScratch.Arm.withStackScratch 592 2 Impl.Rc2.Arm.Stream.init)
       (Spec.Rc2.cbcInitContract (Arm.abi.withConsts piConsts) 600) :=
-  Arm.Verified.stackScratchWipedC (c₀ := (piSym, piQuads)) (cs := []) (sig := Spec.Rc2.cbcInitSig)
+  Arm.Verified.stackScratchC (c₀ := (piSym, piQuads)) (cs := []) (sig := Spec.Rc2.cbcInitSig)
     (nm := "scratch") (e := .u64) (n := 72) (post := Spec.Rc2.cbcInitPost Arm.abi.ptrBits) (wa := true)
-    (stack := 8) (bytes := 592) (m := 2) (words := 144) init_verified (by decide) (by decide) (by decide)
-    (by decide) (by decide)
+    (stack := 8) (bytes := 592) (m := 2) init_verified (by decide) (by decide) (by decide)
+    (by decide)
     (fun vs _ m₂ _ _ _ => (congrFun (Curry.apply_const (fun _ : Mem => True) (Spec.Rc2.cbcInitSig.words abi.ptrBits)
       vs) m₂).mpr trivial)
     (cbcInitPost_local _) (cbcInitPostOut_local _) initFrameSatC_pre

@@ -45,7 +45,8 @@ open VG VG.Arm VG.Arm.Scrub
 /-- `vg_ecdh_brainpoolp320r1`, given the group law. -/
 theorem exchangeBrainpoolP320r1 (hC : Weierstrass.Law Spec.BrainpoolP320r1.curve) :
     VerifiedScrubbed target Impl.Ecdh.Arm.Fn.exchangeBrainpoolP320r1
-      (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.BrainpoolP320r1.inst abi) 32 :=
+      (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.BrainpoolP320r1.inst
+        (abi.withConsts (Impl.Ecdsa.Arm.brainpoolp320r1With false).constsK)) 32 :=
   verifiedScrubbed (api := Spec.Ecdh.BrainpoolP320r1.exchangeApi)
     { code := Impl.Ecdh.Arm.exchangeBrainpoolP320r1
       verified := Proof.Ecdh.Arm.BrainpoolP320r1.ecdh_verified hC }
@@ -54,7 +55,8 @@ theorem exchangeBrainpoolP320r1 (hC : Weierstrass.Law Spec.BrainpoolP320r1.curve
 /-- `vg_ecdh_brainpoolp320r1_umaal`, given the group law. -/
 theorem exchangeBrainpoolP320r1U (hC : Weierstrass.Law Spec.BrainpoolP320r1.curve) :
     VerifiedScrubbed target Impl.Ecdh.Arm.Fn.exchangeBrainpoolP320r1U
-      (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.BrainpoolP320r1.inst abi) 32 :=
+      (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.BrainpoolP320r1.inst
+        (abi.withConsts (Impl.Ecdsa.Arm.brainpoolp320r1With true).constsK)) 32 :=
   verifiedScrubbed (api := Spec.Ecdh.BrainpoolP320r1.exchangeApi)
     { code := Impl.Ecdh.Arm.exchangeBrainpoolP320r1U
       verified := Proof.Ecdh.Arm.BrainpoolP320r1.ecdhU_verified hC }

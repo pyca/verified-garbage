@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SearchControl
+import VerifiedGarbage.Proof.Framework.X86_64.Syms
 import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 
@@ -128,9 +129,10 @@ namespace VG.Proof.Dsa.X86_64.Generation
 open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MlKem.X86_64
 
 /-- Payload facts survive changes confined to the controller and its two
-volatile registers. The payload must not include the controller words. -/
+volatile registers, which name the same statics. The payload must not
+include the controller words. -/
 def SearchPayload (B : Addr) (P : State → Prop) : Prop :=
-  ∀ {s t}, P s → Outside B 0 24 s.mem t.mem → Keep [.rax, .rcx] s t → P t
+  ∀ {s t}, P s → Outside B 0 24 s.mem t.mem → Keep [.rax, .rcx] s t → t.syms = s.syms → P t
 
 theorem SearchControl.congr {s t : State} {B : Addr} {counter stride : Nat}
     (h : SearchControl B counter stride s) (hm : t.mem = s.mem) (hk : Keep [.rax] s t) :
@@ -157,19 +159,19 @@ theorem searchIteration_ok {body : Prog isa} {B : Addr} {limit stride counter : 
   unfold Impl.Dsa.X86_64.Generation.pSearchIteration
   simp only [Impl.Bignum.X86_64.seqs]
   refine WP.seq (WP.mono (body_ok counter s hc hi h) fun u ⟨hu, status, hv, hstat, hp⟩ => ?_)
-  refine WP.seq (WP.mono (searchStatusCmp_ok hu hv hstat) fun v ⟨hz, hm, hk⟩ => ?_)
+  refine WP.seq (WP.mono_syms (searchStatusCmp_ok hu hv hstat) fun v ⟨hz, hm, hk⟩ yv => ?_)
   have hvctrl := hu.congr hm hk
   have hframe : Outside B 0 24 u.mem v.mem := by rw [hm]; exact Outside.refl _ _ _ _
   by_cases hretry : status = 3
   · have hiu : I (counter + 1) u := by simpa only [hretry, ite_true] using hp
-    have hiv := stable (counter + 1) hiu hframe (hk.mono (by decide))
+    have hiv := stable (counter + 1) hiu hframe (hk.mono (by decide)) yv
     refine WP.seq (WP.ite true (by simp [eval, hz, hretry]) (fun _ => ?_) (fun he => Bool.noConfusion he))
-    refine WP.mono (searchAdvance_ok hvctrl hc hl hs) fun w ⟨hw, hstatus, hf, kw⟩ => ?_
-    have hiw := stable (counter + 1) hiv hf kw
+    refine WP.mono_syms (searchAdvance_ok hvctrl hc hl hs) fun w ⟨hw, hstatus, hf, kw⟩ yw => ?_
+    have hiw := stable (counter + 1) hiv hf kw yw
     let next := if counter + 1 < limit then 3 else 2
     have hn : next ≤ 3 := by dsimp [next]; split <;> decide
-    refine WP.mono (searchStatusCmp_ok hw hn hstatus) fun t ⟨hzt, hmt, kt⟩ => ?_
-    have hit := stable (counter + 1) hiw (by rw [hmt]; exact Outside.refl _ _ _ _) (kt.mono (by decide))
+    refine WP.mono_syms (searchStatusCmp_ok hw hn hstatus) fun t ⟨hzt, hmt, kt⟩ yt => ?_
+    have hit := stable (counter + 1) hiw (by rw [hmt]; exact Outside.refl _ _ _ _) (kt.mono (by decide)) yt
     have ht := hw.congr hmt kt
     by_cases hlt : counter + 1 < limit
     · exact Or.inr ⟨by simp [eval, hzt, next, hlt], hit, ht, hlt⟩
@@ -179,12 +181,12 @@ theorem searchIteration_ok {body : Prog isa} {B : Addr} {limit stride counter : 
       rw [hmt, hstatus, ite_eq_right hlt]
       rfl
   · have hqu : Q u := by simpa only [hretry, ite_false] using hp
-    have hqv := finish hqu hframe (hk.mono (by decide))
+    have hqv := finish hqu hframe (hk.mono (by decide)) yv
     refine WP.seq (WP.ite false (by simp [eval, hz, hretry]) (fun he => Bool.noConfusion he)
       (fun _ => WP.block_nil ?_))
-    refine WP.mono (searchStatusCmp_ok hvctrl hv (hm ▸ hstat)) fun t ⟨hzt, hmt, kt⟩ => ?_
+    refine WP.mono_syms (searchStatusCmp_ok hvctrl hv (hm ▸ hstat)) fun t ⟨hzt, hmt, kt⟩ yt => ?_
     exact Or.inl ⟨by simp [eval, hzt, hretry],
-      finish hqv (by rw [hmt]; exact Outside.refl _ _ _ _) (kt.mono (by decide))⟩
+      finish hqv (by rw [hmt]; exact Outside.refl _ _ _ _) (kt.mono (by decide)) yt⟩
 
 /-- The native loop always terminates within its public attempt budget. -/
 theorem searchLoop_ok {body : Prog isa} {B : Addr} {limit stride : Nat}
@@ -222,8 +224,8 @@ theorem pSearch_ok {body : Prog isa} {B : Addr} {limit stride : Nat}
     {s : State} (hi : I 0 s) (h : Scr s B 24) (hdi : s.gpr .rdi = B) :
     WP isa (Impl.Dsa.X86_64.Generation.pSearch body limit stride) s Q := by
   unfold Impl.Dsa.X86_64.Generation.pSearch
-  refine WP.seq (WP.mono (searchInit_ok h hdi stride) fun t ⟨ht, hf, hk⟩ => ?_)
+  refine WP.seq (WP.mono_syms (searchInit_ok h hdi stride) fun t ⟨ht, hf, hk⟩ yt => ?_)
   exact searchLoop_ok hl hs stable finish done body_ok hpos
-    (stable 0 hi (hf.mono (by decide) (by decide)) (hk.mono (by decide))) ht
+    (stable 0 hi (hf.mono (by decide) (by decide)) (hk.mono (by decide)) yt) ht
 
 end VG.Proof.Dsa.X86_64.Generation

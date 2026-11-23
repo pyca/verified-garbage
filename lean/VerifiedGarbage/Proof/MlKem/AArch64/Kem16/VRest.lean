@@ -1291,12 +1291,13 @@ theorem decoded_readyW {s₀ s : State} (hp : Pre P L s₀)
   · intro fg hh; obtain ⟨j,hj,rfl⟩ := term fg hh
     exact .inr (by lom)
 
-theorem v_tailW {prf : Nat→Nat→Prog isa} (valid : PrfValidW P L prf) {s₀ s : State} (hp : Pre P L s₀)
+theorem v_tailW {prf : Nat→Nat→Prog isa} {n : String} (valid : PrfValidW P L prf n) {s₀ s : State} (hp : Pre P L s₀)
     (hc : Calls P) {kE eo kC co : Nat} (A : EncArgs P L kE eo kC co)
     {mE mB : Mem} {v : BitVec 64} {rv mv : List Byte} {T : Nat → Poly}
     (e₀ : VInvW P L s₀ kC co mE mB v rv mv P.k P.k s)
     (ht : Optimized.TransformTables s)
-    (t₀ : PolyIsW 16 s.mem (sA L s₀ (TP P)) (KPke.dotK T (encY rv) P.k)) :
+    (t₀ : PolyIsW 16 s.mem (sA L s₀ (TP P)) (KPke.dotK T (encY rv) P.k))
+    (hd : Proof.Sha3.AArch64.D8 n s) :
     WPs [Ntt16.Readonly.nttInvAtWithW (TP P) NS,prf (2*P.k) (EP P),Kem16.addWAt (TP P) (EP P),
       Kem16.widenAt (TP P) (PP P),ddAt .x28 MB 1 (EP P),addAt (PP P) (EP P),
       P.ceLAt (PP P) P.dv (slotReg kC) (co+32*P.du*P.k)] s
@@ -1304,10 +1305,11 @@ theorem v_tailW {prf : Nat→Nat→Prog isa} (valid : PrfValidW P L prf) {s₀ s
         bytesAt t.mem (kA s₀ (L.slot kC)+BitVec.ofNat 64 (co+32*P.du*P.k)) (32*P.dv)=
           compressEncode P.dv (vPoly P T rv mv)) := by
   have hw := hp.wf
-  refine WPs.cons (WP.mono (invW_ok hp (po_TP hw) e₀.kb t₀.1 ht) fun s₁ ⟨kb₁, f₁, t₁, x₁⟩ => ?_)
+  refine WPs.cons (WP.mono_syms (invW_ok hp (po_TP hw) e₀.kb t₀.1 ht) fun s₁ ⟨kb₁, f₁, t₁, x₁⟩ y₁ => ?_)
   have e₁ := e₀.frame_far hp kb₁ x₁ f₁ (far_mul hp A (Nat.le_refl _) (Nat.le_refl _) (by lom) (by lom))
   rw [t₀.2] at t₁
-  refine WPs.cons (WP.mono (valid hp (N := 2 * P.k) (by lom) (po_EP hw) e₁.kb e₁.r)
+  refine WPs.cons (WP.mono (valid hp (N := 2 * P.k) (by lom) (po_EP hw) e₁.kb e₁.r
+      (hd.of (fun r hr => (kb₁.vcs r hr).trans (e₀.kb.vcs r hr).symm) y₁))
     fun s₂ ⟨kb₂, f₂, p₂, x₂⟩ => ?_)
   have e₂ := e₁.frame_far hp kb₂ x₂ f₂ (far_pcW hp A (Nat.le_refl _) (Nat.le_refl _) (by lom) (by lom))
   have fTP : ∀ r ∈ pcW L s₀ (EP P), (polyRegion (sA L s₀ (TP P))).Disjoint r := fun r hr => by
@@ -1350,7 +1352,7 @@ theorem v_tailW {prf : Nat→Nat→Prog isa} (valid : PrfValidW P L prf) {s₀ s
     rw [List.mem_singleton.mp hr]; exact far_ct hp A (Nat.le_refl _) (by lom), ?_⟩
   rw [b₇, t₆.2]
 
-theorem v_restW {prf : Nat→Nat→Prog isa} (valid : PrfValidW P L prf) {s₀ s : State} (hp : Pre P L s₀)
+theorem v_restW {prf : Nat→Nat→Prog isa} {n : String} (valid : PrfValidW P L prf n) {s₀ s : State} (hp : Pre P L s₀)
     (hc : Calls P) {kE eo kC co : Nat} (A : EncArgs P L kE eo kC co)
     {mE mB : Mem} {v : BitVec 64} {rv mv : List Byte} {T : Nat → Poly}
     (hT : ∀j<P.k, decode12 (bytesAt s₀.mem (kA s₀ (L.slot kE)+BitVec.ofNat 64 (eo+384*j)) 384)=T j)
@@ -1358,7 +1360,8 @@ theorem v_restW {prf : Nat→Nat→Prog isa} (valid : PrfValidW P L prf) {s₀ s
     (h : VInvW P L s₀ kC co mE mB v rv mv P.k P.k s)
     (ht : Dot.GammaArtifact s.mem (s.syms "VG_MLKEM_GAMMA"))
     (hcT : Covers [⟨s.syms "VG_MLKEM_GAMMA",512⟩] (s.rd++s.wr))
-    (ha : ∀r∈encW P L s₀ kC co, (⟨s.syms "VG_MLKEM_GAMMA",512⟩ : Region).Disjoint r) :
+    (ha : ∀r∈encW P L s₀ kC co, (⟨s.syms "VG_MLKEM_GAMMA",512⟩ : Region).Disjoint r)
+    (hd : Proof.Sha3.AArch64.D8 n s) :
     WP isa (Kem16.vRest prf P (slotReg kE) eo .x28 MB (slotReg kC) co) s
       (fun t => VInvW P L s₀ kC co mE mB v rv mv P.k P.k t ∧
         bytesAt t.mem (kA s₀ (L.slot kC)+BitVec.ofNat 64 (co+32*P.du*P.k)) (32*P.dv)=
@@ -1390,5 +1393,6 @@ theorem v_restW {prf : Nat→Nat→Prog isa} (valid : PrfValidW P L prf) {s₀ s
   have tru := trt.frame hsu (ku.rd.trans dt.kb.rd.symm) (ku.wr.trans dt.kb.wr.symm)
     (ku.sp.trans dt.kb.sp.symm) fu (cov_w hp dt.kb ⟨hp.scw,hp.scb⟩ (hp.fs (by lom)))
   exact v_tailW valid hp hc A vu tru pu
+    (hd.of (fun r hr => (ku.vcs r hr).trans (h.kb.vcs r hr).symm) (hsu.trans hs))
 
 end VG.Proof.MlKem.AArch64.Kem

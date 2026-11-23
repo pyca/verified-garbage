@@ -181,13 +181,12 @@ theorem stage₃ (hc : CfgOk c) {A : Args} {s₀ : State} {base : Addr} {F : Bit
     rw [tbl_unch O₇.unch h7 hj ht (tbl_apart_flag h7 h0 _ t), tbl_unch O₆.unch h7 hj ht (tbl_apart_flag h7 h0 _ t),
       tbl_unch O₅.unch h7 hj ht (tbl_apart_flag h7 h0 _ t)]
   -- `k^(n-2)`.
-  refine WP.seq (WP.mono (chainPow_ok (P := c.chainN) (S := c.SN) (e := c.C.n - 2) hc.fnk hc.fnm (modN hc)
+  refine WP.seq (WP.mono (chainCallC_ok h7 chainWN_eq (i := KM) rfl (by decide) (P := c.chainN) (S := c.SN) (e := c.C.n - 2) hc.fnk hc.fnm (modN hc)
     (chainLayN hc) hnR K₇.ws (show sv c base s₇ KM < c.C.n by rw [e₇ (i := KM) (by decide) (by decide)]; exact Mp.km_lt)
     hc.chainN) fun s₈ ⟨k₈, U₈, lt₈, v₈⟩ => h s₈ ?_)
-  rw [chainWN_eq] at U₈
-  obtain K₈ := K₇.step h7 k₈ (hU := U₈) (hW := fixedOk_chainW h7) (hWs := chainW_le h7)
+  obtain K₈ := K₇.step h7 k₈ (hU := U₈) (hW := fixedOk_chainWS h7) (hWs := chainWS_le h7)
   obtain e₈ : ∀ {i}, i < 45 → i ≠ ACC → (i < DX ∨ T2 < i) → sv c base s₈ i = sv c base s₇ i := fun hi hr ht =>
-    sv_unch U₈ h7 hn hi (apart_chainW h7 hi hr ht)
+    sv_unch U₈ h7 hn hi (apart_chainWS h7 hi hr ht)
   -- What reaches `s₈` from before the middle.
   obtain b₈ : ∀ {i}, i < 45 → i ∉ [ACC, PT, XM, X, RR, KM, FLAG] → (i < DX ∨ T2 < i) →
       sv c base s₈ i = sv c base s i := fun hi hl ht => by
@@ -218,9 +217,9 @@ theorem stage₃ (hc : CfgOk c) {A : Args} {s₀ : State} {base : Addr} {F : Bit
     by rw [m₈ (by simp), Mp.x, tR RZ (by simp), tR RX (by simp), S.acc],
     by rw [m₈ (by simp), m₈ (by simp)]; exact Mp.rr, ?_, ?_⟩
   · have fl₈ : flagW c base s₈ = flagW c base s₇ := by
-      obtain apF : ∀ w ∈ [(c.sl ACC, 8 * c.n), (c.sl DX, 9 * (8 * c.n)), (own c.n, 64 * c.n)],
+      obtain apF : ∀ w ∈ chainWS c,
           c.sl FLAG + 8 ≤ w.1 ∨ w.1 + w.2 ≤ c.sl FLAG := fun w hw => by
-        rcases apart_chainW h7 (i := FLAG) (by decide) (by decide) (by decide) w hw with h | h
+        rcases apart_chainWS h7 (i := FLAG) (by decide) (by decide) (by decide) w hw with h | h
         · exact Or.inl (by omega_arith)
         · exact Or.inr h
       simp only [flagW]; exact U₈.word apF (by have := sl_le c h7 (i := FLAG) (by decide); omega_arith)
@@ -501,6 +500,8 @@ structure Pre (c : Cfg) (s : State) (extra : List Region := []) : Prop where
   digest_fit : (s.gpr .r5).toNat + c.C.len ≤ 2 ^ 64
   k_fit : (s.gpr .r6).toNat + c.C.len ≤ 2 ^ 64
   sc_fit : (s.gpr .r7).toNat + size ≤ 2 ^ 64
+  /-- The table of constants the setup copies (`tbl_of_consts`). -/
+  tbl : TblOk c (s.gpr .r7) s
 
 theorem Pre.setup {s : State} {extra : List Region} (hp : Pre c s extra) : SetupPre c Args.sign s where
   shift := .inr (.inr rfl)
@@ -519,6 +520,7 @@ theorem Pre.setup {s : State} {extra : List Region} (hp : Pre c s extra) : Setup
   k_fit := hp.k_fit
   d_fit := hp.d_fit
   e_fit := hp.digest_fit
+  tbl := hp.tbl
 
 /-- The hash's integer is the bytes shifted as the setup shifts them. -/
 theorem hashToInt_eq (c : Cfg) (m : Mem) (q : Addr) :
@@ -611,13 +613,13 @@ theorem stage₄ (hc : CfgOk c) (hC : Law c.C) {s₀ : State} {extra : List Regi
     refine ⟨by rw [r3, hdc]; rfl, ?_⟩
     rw [bytes, hdc]; rfl
 
-theorem sign_eq (c : Cfg) : c.sign = .seq (.block (c.setupWith Args.sign))
+theorem sign_eq (c : Cfg) : c.sign = .seq (c.setupWith Args.sign)
     (.seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n))
     (.seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n)) (.seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n))
     (.seq (c.qMul GX GY) (.seq c.invP (.seq c.middle
       (.seq c.invN c.scalar))))))) := rfl
 
-theorem signWith_eq (c : Cfg) (generator : Prog isa) : c.signWith generator = .seq (.block (c.setupWith Args.sign))
+theorem signWith_eq (c : Cfg) (generator : Prog isa) : c.signWith generator = .seq (c.setupWith Args.sign)
     (.seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n))
     (.seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n)) (.seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n))
     (.seq generator (.seq c.invP (.seq c.middle

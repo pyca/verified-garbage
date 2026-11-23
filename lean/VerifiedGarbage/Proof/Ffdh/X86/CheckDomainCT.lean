@@ -73,16 +73,16 @@ abbrev Rd (s : State) : List Region → List Region → Prop :=
   fun rd wr => InRegions (rd ++ wr) (argumentPointer s 0) (arg s 1).toNat
 
 /-- The domain and its components, as the synthetic arguments give them, for permissions that read it,
-apart from the 96 bytes below the frame. -/
+apart from the 176 bytes below the frame. -/
 theorem frame_geo {s : State} (A : CheckDomainABI s) {sp : BitVec 32}
     (espf : sp = s.gpr .esp - BitVec.ofNat 32 argsFrame) {rd wr : List Region} (hrd : Rd s rd wr) :
     DomGeo (synth Impl.Ffdh.X86.CheckDomain.args (arg s)) (wsBase Impl.Ffdh.X86.CheckDomain.args s)
       (wsSize Impl.Ffdh.X86.CheckDomain.args s) (pLenOf Impl.Ffdh.X86.CheckDomain.args s) (arg s 1).toNat rd wr ∧
-    Region.Disjoint ⟨byteAddr (synth Impl.Ffdh.X86.CheckDomain.args (arg s) 2), (arg s 1).toNat⟩ (below sp 96) := by
+    Region.Disjoint ⟨byteAddr (synth Impl.Ffdh.X86.CheckDomain.args (arg s) 2), (arg s 1).toNat⟩ (below sp 176) := by
   have fb : argsFrame = 76 := rfl
   have hE := (s.gpr .esp).isLt
   have low := A.stackLow
-  have st' : stack = 172 := rfl
+  have st' : stack = 252 := rfl
   have FA : frameAt s = (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 argsFrame :=
     VG.X86.Taint.sub_setWidth (by omega_using [fb, low, st'])
   have espN : sp.toNat = (s.gpr .esp).toNat - 76 := by rw [espf]; exact VG.X86.sub_toNat (by omega_using [fb, low, st'])
@@ -94,7 +94,7 @@ theorem frame_geo {s : State} (A : CheckDomainABI s) {sp : BitVec 32}
   simp only [below]
   rw [VG.X86.Taint.sub_setWidth (by rw [espN]; omega_using [low, st']), espf,
     show (s.gpr .esp - BitVec.ofNat 32 argsFrame).setWidth 64 = frameAt s from rfl, FA,
-    ← VG.Offset.sub_add_eq, show BitVec.ofNat 64 argsFrame + 96#64 = BitVec.ofNat 64 172 from rfl]
+    ← VG.Offset.sub_add_eq, show BitVec.ofNat 64 argsFrame + 176#64 = BitVec.ofNat 64 252 from rfl]
   exact Region.sub_prefix (by decide)
 
 /-- The domain's bytes, kept by the entry and the frame's filling. -/
@@ -104,7 +104,7 @@ theorem frame_dom {s : State} (A : CheckDomainABI s) {m : Mem}
     domBytes m (synth Impl.Ffdh.X86.CheckDomain.args (arg s)) (arg s 1).toNat = entryDom s := by
   have hE := (s.gpr .esp).isLt
   have low := A.stackLow
-  have st' : stack = 172 := rfl
+  have st' : stack = 252 := rfl
   have FA : frameAt s = (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 argsFrame :=
     VG.X86.Taint.sub_setWidth (by simp only [argsFrame]; omega_using [low, st'])
   have frameDom : Region.Disjoint ⟨argumentPointer s 0, (arg s 1).toNat⟩ ⟨frameAt s, argsFrame⟩ := by
@@ -125,11 +125,12 @@ theorem frame_ok {s : State} (A : CheckDomainABI s) (f : State)
       ⟨frameAt s, argsFrame⟩] s.mem f.mem) :
     WP isa Impl.Ffdh.X86.CheckDomain.body f fun t =>
       (t.gpr .eax).toNat = (if Spec.Ffdh.domainValid (arg s 2).toNat (entryDom s) then 1 else 0) ∧
-      Frame ([] ++ CrtRt.frameR (wsBase Impl.Ffdh.X86.CheckDomain.args s) (f.gpr .esp)
+      Frame ([] ++ frameF (wsBase Impl.Ffdh.X86.CheckDomain.args s) (f.gpr .esp)
         (fR (pLenOf Impl.Ffdh.X86.CheckDomain.args s))) f.mem t.mem ∧
       Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] f t := by
   obtain ⟨G, hb40⟩ := frame_geo A espf I.extra
-  refine WP.mono (body_ok I G hb40) fun t ⟨E, F, K⟩ => ⟨?_, by rw [List.nil_append]; exact F, K⟩
+  obtain RF := (wrapABI A).roomF espf
+  refine WP.mono (body_ok I G RF hb40) fun t ⟨E, F, K⟩ => ⟨?_, by rw [List.nil_append]; exact F, K⟩
   rw [E, frame_dom A Ft, show pLenOf Impl.Ffdh.X86.CheckDomain.args s = (arg s 2).toNat from rfl]
   cases Spec.Ffdh.domainValid (arg s 2).toNat (entryDom s) <;> rfl
 
@@ -143,7 +144,7 @@ theorem operation_ok {s : State} (A : CheckDomainABI s) :
   exact wrap_ok (wrapABI A) (NoSp.of_all frameBody_all) hx (Out := []) (fun _ h => by cases h)
     (fun _ h => by cases h) (P := fun _ e => e.toNat = if Spec.Ffdh.domainValid (arg s 2).toNat (entryDom s) then 1 else 0)
     (hP := fun _ _ _ _ h => h)
-    fun f I espf Ft => frame_ok A f I espf Ft
+    fun f I espf _ Ft => frame_ok A f I espf Ft
 
 end VG.Proof.Ffdh.X86.CheckDomain
 
@@ -170,7 +171,7 @@ namespace VG.Proof.Ffdh.X86.CheckDomain
 
 open VG VG.X86 VG.X86.Wp VG.Impl.Mont.X86 VG.Impl.Bignum.X86 VG.Impl.Bignum.X86.CrtRt VG.Proof.Mont
 open VG.Proof.Mont.X86 VG.Proof.Bignum.X86 VG.Proof.Bignum.X86.CrtRt VG.Proof.Ffdh.X86
-open VG.Proof.Bignum.X86.PublicRt (Both)
+open VG.Proof.Bignum.X86.PublicRt (Both relCT_both)
 open VG.Proof.Dsa.X86 (argumentPointer)
 open VG.Impl.Ffdh.X86 (argsFrame ret testMask)
 open VG.Impl.Ffdh.X86.CheckDomain (subgroup divides withQ checked)
@@ -212,14 +213,15 @@ structure DomAt (Ex : List Region → List Region → Prop) (base : Addr) (bytes
     (args : Nat → BitVec 32) (sp : BitVec 32) (D : List Byte) (u : State) : Prop where
   run : Run Ex base bytes len args sp u
   geo : DomGeo args base bytes len dlen u.rd u.wr
-  hb40 : Region.Disjoint ⟨byteAddr (args 2), dlen⟩ (below sp 96)
+  room : RoomF sp base bytes
+  hb40 : Region.Disjoint ⟨byteAddr (args 2), dlen⟩ (below sp 176)
   dom : domBytes u.mem args dlen = D
 
 theorem DomAt.step {u v : State} (A : DomAt Ex base bytes len dlen args sp D u)
     (S : Step Ex base bytes len args u v) : DomAt Ex base bytes len dlen args sp D v := by
-  refine ⟨⟨S.inp, A.run.2.1.keep S.keeps, S.esp.trans A.run.2.2⟩, A.geo.keep ⟨rfl, rfl⟩ S.keeps, A.hb40, ?_⟩
+  refine ⟨⟨S.inp, A.run.2.1.keep S.keeps, S.esp.trans A.run.2.2⟩, A.geo.keep ⟨rfl, rfl⟩ S.keeps, A.room, A.hb40, ?_⟩
   show Spec.Rsa.bytesAt v.mem (byteAddr (args 2)) dlen = D
-  rw [dom_keep A.run.1 A.geo (by rw [A.run.2.2]; exact A.hb40) S.frame]
+  rw [dom_keep A.run.1 A.geo (by rw [A.run.2.2]; exact A.room) (by rw [A.run.2.2]; exact A.hb40) S.frame]
   exact A.dom
 
 /-- p, g and q, of the domain `D`. -/
@@ -272,19 +274,22 @@ def W1 (Ex : List Region → List Region → Prop) (base : Addr) (bytes len dlen
     sv u.mem base len .wide 11 = qD len D ∧ sv u.mem base len .wide 15 = pD len D - 1
 
 theorem subgroup_trace :
-    RelCT isa (Both (Run Ex base bytes len args sp)) subgroup fun _ _ => True :=
+    RelCT isa (Both fun s => Run Ex base bytes len args sp s ∧ RoomF sp base bytes) subgroup fun _ _ => True :=
   VG.RelCT.seq (powP_trace (b := 10) (e := 11) (by decide) (by decide) (by decide) (by decide) copy10_check
     copy11_check) (RelCT.taint (A := taint) τA (fun _ _ h => h.1.agree h.2) eqStatus_check)
 
 theorem dividesFront_trace :
-    RelCT isa (Both (Run Ex base bytes len args sp)) (Prog.chain dividesFront (.block [])) fun _ _ => True := by
-  show RelCT isa _ (.seq (copy (.slot .wide 11) (.slot .wide 0) (one .wide)) (.seq (prepare .wide)
+    RelCT isa (Both fun s => Run Ex base bytes len args sp s ∧ RoomF sp base bytes)
+      (Prog.chain dividesFront (.block [])) fun _ _ => True := by
+  show RelCT isa _ (.seq (copy (.slot .wide 11) (.slot .wide 0) (one .wide)) (.seq Impl.Ffdh.X86.prepCall
     (.seq (copy (.slot .wide 15) (.slot .wide 5) (one .wide)) (.seq (CrtRt.mul .wide 6 5 3)
       (Prog.chain [zero (.slot .wide 17) (one .wide), equal (.slot .wide 6) (.slot .wide 17) (one .wide), testMask]
         (.block [])))))) _
-  refine VG.RelCT.seq (taint_both (fun _ _ R₁ R₂ => R₁.agree R₂) _ dividesHead_check fun _ R =>
-    copyDown_run (j := 11) (d := 0) (by decide) (by decide) (by decide) R) ?_
-  refine VG.RelCT.seq (prepare_relCT .wide) ?_
+  refine VG.RelCT.seq (taint_both (P := fun s => Run Ex base bytes len args sp s ∧ RoomF sp base bytes)
+    (F := fun s => Run Ex base bytes len args sp s ∧ RoomF sp base bytes)
+    (fun _ _ R₁ R₂ => R₁.1.agree R₂.1) _ dividesHead_check fun _ R =>
+      WP.mono (copyDown_run (j := 11) (d := 0) (by decide) (by decide) (by decide) R.1) fun _ h => ⟨h, R.2⟩) ?_
+  refine VG.RelCT.seq prepCall_relCT ?_
   refine VG.RelCT.seq (taint_both (fun _ _ W₁ W₂ => W₁.agree W₂) _ dividesCopy_check fun _ W =>
     copyDown_wst (j := 15) (d := 5) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) W) ?_
   refine VG.RelCT.seq (mul_wst_relCT0 (o := 6) (a := 5) (b := 3) (by decide) (by decide) (by decide) (by decide)
@@ -296,12 +301,14 @@ theorem divides_relCT :
       ¬ ¬ (qD len D % 2 = 1 ∧ 2 < qD len D ∧ qD len D < pD len D - 1)) divides fun _ _ => True := by
   rw [divides_eq]
   apply VG.RelCT.chain
-  refine VG.RelCT.seq (runRel (F := fun u => Run Ex base bytes len args sp u ∧
-      Gate u (¬ (pD len D - 1) % qD len D = 0)) (fun _ h => h.1.1.run) dividesFront_trace fun x h => ?_) ?_
+  refine VG.RelCT.seq (relCT_both (F := fun u => (Run Ex base bytes len args sp u ∧ RoomF sp base bytes) ∧
+      Gate u (¬ (pD len D - 1) % qD len D = 0)) (dividesFront_trace.mono
+        (fun _ _ h => ⟨⟨h.1.1.1.run, h.1.1.1.room⟩, ⟨h.2.1.1.run, h.2.1.1.room⟩⟩) fun _ _ h => h) fun x h => ?_) ?_
   · obtain ⟨⟨A, _, h11, h15⟩, c⟩ := h
     have c := Classical.not_not.mp c
-    exact WP.mono (dividesFront_ok A.run.1 h11 h15 c.1 c.2.1) fun u ⟨S, G, _⟩ => ⟨(A.step S).run, G⟩
-  · exact gate_relCT (fun _ h => h.2) (aEnd (fun _ h => h.1.1) ret0_check)
+    exact WP.mono (dividesFront_ok A.run.1 (by rw [A.run.2.2]; exact A.room) h11 h15 c.1 c.2.1)
+      fun u ⟨S, G, _⟩ => ⟨⟨(A.step S).run, A.room⟩, G⟩
+  · exact gate_relCT (fun _ h => h.2) (aEnd (fun _ h => h.1.1.1) ret0_check)
       (subgroup_trace.mono (fun _ _ h => ⟨h.1.1.1, h.2.1.1⟩) fun _ _ h => h)
 
 theorem withQ_relCT :
@@ -327,7 +334,7 @@ theorem checked_relCT :
   refine VG.RelCT.seq (aRel (F := C1 Ex base bytes len dlen args sp D) (fun _ h => h.1.1.run) checkedFront_check
     fun x h => ?_) ?_
   · obtain ⟨⟨A, _⟩, valid⟩ := h
-    refine WP.mono (checkedFront_ok A.run.1 A.geo (by rw [A.run.2.2]; exact A.hb40) (by rw [A.comp0]; exact valid))
+    refine WP.mono (checkedFront_ok A.run.1 A.geo (by rw [A.run.2.2]; exact A.room) (by rw [A.run.2.2]; exact A.hb40) (by rw [A.comp0]; exact valid))
       fun u ⟨S, Gt, V9, V10, V15⟩ => ⟨A.step S, ?_, ?_, ?_, ?_⟩
     · rw [A.comp0, A.comp1] at Gt; exact Gt
     · rw [V9, A.comp0]
@@ -378,7 +385,7 @@ theorem domAt_of {s f : State} (A : CheckDomainABI s) (Bf : BodyAt (Rd s) Impl.F
       (narrowed (wsBase Impl.Ffdh.X86.CheckDomain.args s) (wsSize Impl.Ffdh.X86.CheckDomain.args s) f) := by
   have hx := narrowRd Bf.1.extra ⟨wsBase Impl.Ffdh.X86.CheckDomain.args s, wsSize Impl.Ffdh.X86.CheckDomain.args s⟩
   obtain ⟨G, hb⟩ := frame_geo A (sp := s.gpr .esp - BitVec.ofNat 32 argsFrame) rfl hx
-  exact ⟨⟨VG.Proof.Ffdh.X86.In.narrow Bf.1 hx, Bf.argsOk (wrapABI A), Bf.2.1⟩, G, hb, frame_dom A Bf.2.2.2.2⟩
+  exact ⟨⟨VG.Proof.Ffdh.X86.In.narrow Bf.1 hx, Bf.argsOk (wrapABI A), Bf.2.1⟩, G, (wrapABI A).room, hb, frame_dom A Bf.2.2.2.2⟩
 
 theorem constantTime : ConstantTime isa (Spec.Ffdh.checkDomainContract abi stack).pre
     (Spec.Ffdh.checkDomainContract abi stack).pub Impl.Ffdh.X86.CheckDomain.code := by
@@ -409,8 +416,10 @@ theorem constantTime : ConstantTime isa (Spec.Ffdh.checkDomainContract abi stack
     (fun f Bf => WP.mono (frame_ok A f Bf.1 Bf.2.1 Bf.2.2.2.2) fun _ h => h.2.2)
     (fun f Bf => WP.mono (frame_ok B f Bf.1 Bf.2.1 Bf.2.2.2.2) fun _ h => h.2.2)
     (narrow_body hws hwz (fun f Bf => ⟨_, body_ok (domAt_of A Bf).run.1 (domAt_of A Bf).geo
+        (by rw [(domAt_of A Bf).run.2.2]; exact (domAt_of A Bf).room)
         (by rw [(domAt_of A Bf).run.2.2]; exact (domAt_of A Bf).hb40)⟩)
       (fun g Bg => ⟨_, body_ok (domAt_of B Bg).run.1 (domAt_of B Bg).geo
+        (by rw [(domAt_of B Bg).run.2.2]; exact (domAt_of B Bg).room)
         (by rw [(domAt_of B Bg).run.2.2]; exact (domAt_of B Bg).hb40)⟩)
       (fun f g Bf Bg => ⟨domAt_of A Bf, ?_⟩) body_relCT) E F
   have D₂ := domAt_of B Bg

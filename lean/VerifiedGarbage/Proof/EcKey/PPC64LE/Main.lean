@@ -190,6 +190,8 @@ structure PkPre (c : Cfg) (s : State) (extra : List Region := []) : Prop where
   out_fit : (s.gpr .r3).toNat + (1 + 2 * c.C.len) ≤ 2 ^ 64
   d_fit : (s.gpr .r4).toNat + c.C.len ≤ 2 ^ 64
   sc_fit : (s.gpr .r5).toNat + size ≤ 2 ^ 64
+  /-- The table of constants the setup copies (`tbl_of_consts`). -/
+  tbl : TblOk c (s.gpr .r5) s
 
 theorem PkPre.setup {s : State} {extra : List Region} (hp : PkPre c s extra) : SetupPre c Args.publicKey s where
   shift := .inl rfl
@@ -208,6 +210,7 @@ theorem PkPre.setup {s : State} {extra : List Region} (hp : PkPre c s extra) : S
   k_fit := hp.d_fit
   d_fit := hp.d_fit
   e_fit := hp.d_fit
+  tbl := hp.tbl
 
 /-- The private key. -/
 abbrev dk (c : Cfg) (s₀ : State) : Nat := ofBytes (Spec.Ecdsa.bytesAt s₀.mem (s₀.gpr .r4) c.C.len)

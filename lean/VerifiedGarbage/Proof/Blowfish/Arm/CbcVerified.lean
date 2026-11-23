@@ -12,8 +12,8 @@ meta import VerifiedGarbage.Proof.Modes.Arm.Cbc
 meta import VerifiedGarbage.Proof.Modes.Arm.CbcChained
 meta import VerifiedGarbage.Proof.Modes.Arm.OfbCfb
 meta import VerifiedGarbage.Proof.Blowfish.Arm.Ecb
-import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
-meta import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
+import VerifiedGarbage.Proof.Framework.Arm.StackScratch
+meta import VerifiedGarbage.Proof.Framework.Arm.StackScratch
 
 /-!
 # Blowfish-CBC on ARMv7 meets its contracts
@@ -24,7 +24,7 @@ value in the IV (`Impl/Modes/Arm/CbcChained.lean`), over Blowfish's ECB
 functions (`Proof.Modes.Arm.seq_verified` with `ecbSpec`) meet the chained
 contracts with a scratch buffer, as OFB and CFB do (`FbVerified.lean`), whose
 IV is also read and written; the `_framed` theorems keep the buffer on the
-stack, zeroed on return.
+stack, which the functions' cleanup (`scrubAll`) zeroes.
 -/
 
 @[expose] public section
@@ -79,14 +79,15 @@ theorem cbcEncryptChainedFrameSat : ∃ s, (Spec.Blowfish.cbcEncryptChainedContr
   implies_sat [Spec.Blowfish.cbcEncryptChainedContract, Spec.Blowfish.cbcChainedSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val,
     Arm.State.addr] [cbcFrameSat, cbcSat] using cbcFrameSat 8
 
-/-- `cbcEncryptChained`, with its scratch buffer on the stack (zeroed on return). -/
+/-- `cbcEncryptChained`, with its scratch buffer on the stack, which its function's
+cleanup (`scrubAll`) zeroes. -/
 theorem cbcEncryptChained_framed :
-    Verified Arm.target (Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 cbcEncryptChained) (Spec.Blowfish.cbcEncryptChainedContract Arm.abi 320) :=
-  Arm.Verified.stackScratchWiped (sig := Spec.Blowfish.cbcChainedSig) (nm := "scratch") (e := .u64) (n := 7)
+    Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 64 0 cbcEncryptChained) (Spec.Blowfish.cbcEncryptChainedContract Arm.abi 320) :=
+  Arm.Verified.stackScratch (sig := Spec.Blowfish.cbcChainedSig) (nm := "scratch") (e := .u64) (n := 7)
     (post := Proof.Blowfish.cbcEncChainedPost Arm.abi.ptrBits) (wa := true) (stack := 256) (m := 0) (bytes := 64)
-    cbcEncryptChained_verified (by decide) (by decide) (by decide) (by decide) (by decide)
+    cbcEncryptChained_verified (by decide) (by decide) (by decide) (by decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Blowfish.cbcEncChainedPost_local _)
-    (Proof.Blowfish.cbcEncChainedPostOut_local _) cbcEncryptChainedFrameSat
+    (fun vs mm m₁ m₂ r hl _ => Proof.Blowfish.cbcEncChainedPostOut_local _ vs mm m₁ m₂ r hl) cbcEncryptChainedFrameSat
 
 theorem cbcDecryptChainedTaint : SeqTaint (ecbCore false) cbcDecChained :=
   ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
@@ -117,13 +118,14 @@ theorem cbcDecryptChainedFrameSat : ∃ s, (Spec.Blowfish.cbcDecryptChainedContr
   implies_sat [Spec.Blowfish.cbcDecryptChainedContract, Spec.Blowfish.cbcChainedSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val,
     Arm.State.addr] [cbcFrameSat, cbcSat] using cbcFrameSat 8
 
-/-- `cbcDecryptChained`, with its scratch buffer on the stack (zeroed on return). -/
+/-- `cbcDecryptChained`, with its scratch buffer on the stack, which its function's
+cleanup (`scrubAll`) zeroes. -/
 theorem cbcDecryptChained_framed :
-    Verified Arm.target (Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 cbcDecryptChained) (Spec.Blowfish.cbcDecryptChainedContract Arm.abi 320) :=
-  Arm.Verified.stackScratchWiped (sig := Spec.Blowfish.cbcChainedSig) (nm := "scratch") (e := .u64) (n := 7)
+    Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 64 0 cbcDecryptChained) (Spec.Blowfish.cbcDecryptChainedContract Arm.abi 320) :=
+  Arm.Verified.stackScratch (sig := Spec.Blowfish.cbcChainedSig) (nm := "scratch") (e := .u64) (n := 7)
     (post := Proof.Blowfish.cbcDecChainedPost Arm.abi.ptrBits) (wa := true) (stack := 256) (m := 0) (bytes := 64)
-    cbcDecryptChained_verified (by decide) (by decide) (by decide) (by decide) (by decide)
+    cbcDecryptChained_verified (by decide) (by decide) (by decide) (by decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Blowfish.cbcDecChainedPost_local _)
-    (Proof.Blowfish.cbcDecChainedPostOut_local _) cbcDecryptChainedFrameSat
+    (fun vs mm m₁ m₂ r hl _ => Proof.Blowfish.cbcDecChainedPostOut_local _ vs mm m₁ m₂ r hl) cbcDecryptChainedFrameSat
 
 end VG.Proof.Blowfish.Arm

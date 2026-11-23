@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Camellia.Arm.Keyed
 public import VerifiedGarbage.Proof.Camellia.FbScratch
 import VerifiedGarbage.Proof.Modes.Arm.OfbCfb
-import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
+import VerifiedGarbage.Proof.Framework.Arm.StackScratch
 public import VerifiedGarbage.Impl.Camellia.Arm.Fb
 public import VerifiedGarbage.Proof.Modes.Arm.Cbc
 public import VerifiedGarbage.Proof.Modes.Arm.WideModes
@@ -14,7 +14,7 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Camellia.Arm.Keyed
 meta import VerifiedGarbage.Proof.Camellia.FbScratch
 meta import VerifiedGarbage.Proof.Modes.Arm.OfbCfb
-meta import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
+meta import VerifiedGarbage.Proof.Framework.Arm.StackScratch
 meta import VerifiedGarbage.Impl.Camellia.Arm.Fb
 meta import VerifiedGarbage.Proof.Modes.Arm.Cbc
 meta import VerifiedGarbage.Proof.Modes.Arm.WideModes
@@ -35,8 +35,8 @@ once in the scratch buffer (`Proof.Modes.Arm.seqK_verified` with
 `keyedSpec .encrypt`, `Keyed.lean`), meet the contracts with a scratch
 buffer of 349 words (`Proof.Camellia.ofbScratchContract`, …), which holds
 their working space, with the 8 bytes of stack of the call's push; the
-`_framed` theorems keep the buffer on the stack, zeroed on return: 2816
-bytes more. CFB decryption is a group of blocks at a time over the ECB
+`_framed` theorems keep the buffer on the stack, 2816 bytes more, which the
+functions' cleanup zeroes. CFB decryption is a group of blocks at a time over the ECB
 function itself (`Proof.Modes.Arm.seqW_verified` with `ecbSpec .encrypt`, a
 core taking the number of rounds), with a scratch buffer of 9 words, the
 2816 bytes of stack the ECB function uses and the 128 bytes of the groups'
@@ -109,16 +109,16 @@ theorem ofbFrameSat : ∃ s, (Proof.Camellia.ofbContractSk Arm.abi 2824).pre s :
     Arm.reduceClassify, Arm.Loc.val, Arm.State.addr] [fbFrameSat, fbSat, stackArg, stackArgAddr, Mem.readW,
     Mem.read] using fbFrameSat 0
 
-/-- `ofb`, with its scratch buffer on the stack (zeroed on return). -/
+/-- `ofb`, with its scratch buffer on the stack (which its function's cleanup zeroes). -/
 theorem ofb_framed :
-    Verified Arm.target (Impl.StackScratch.Arm.withStackScratchWiped 2816 1 698 ofb)
+    Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 2816 1 ofb)
       (Spec.Camellia.ofbContract Arm.abi 2824) :=
   Proof.Camellia.ofb_of_sk <|
-  Arm.Verified.stackScratchWiped (sig := Spec.Camellia.ofbSig) (nm := "scratch") (e := .u64) (n := 349)
+  Arm.Verified.stackScratch (sig := Spec.Camellia.ofbSig) (nm := "scratch") (e := .u64) (n := 349)
     (pre := Spec.Camellia.ofbPre Arm.abi.ptrBits) (post := Proof.Camellia.ofbPostSk Arm.abi.ptrBits)
     (wa := true) (stack := 8) (m := 1) (bytes := 2816)
-    ofb_verified (by decide) (by decide) (by decide) (by decide) (by decide)
-    (Proof.Camellia.ofbPre_local _) (Proof.Camellia.ofbPost_local _) (Proof.Camellia.ofbPostOut_local _) ofbFrameSat
+    ofb_verified (by decide) (by decide) (by decide) (by decide)
+    (Proof.Camellia.ofbPre_local _) (Proof.Camellia.ofbPost_local _) (fun vs mm m₁ m₂ r hl _ => Proof.Camellia.ofbPostOut_local _ vs mm m₁ m₂ r hl) ofbFrameSat
 
 theorem cfbEncryptTaint : SeqTaintK (scrCore .encrypt) cfbEnc :=
   ⟨⟨⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩,
@@ -156,16 +156,16 @@ theorem cfbEncryptFrameSat : ∃ s, (Proof.Camellia.cfbEncryptContractSk Arm.abi
     Arm.reduceClassify, Arm.Loc.val, Arm.State.addr] [fbFrameSat, fbSat, stackArg, stackArgAddr, Mem.readW,
     Mem.read] using fbFrameSat 0
 
-/-- `cfbEncrypt`, with its scratch buffer on the stack (zeroed on return). -/
+/-- `cfbEncrypt`, with its scratch buffer on the stack (which its function's cleanup zeroes). -/
 theorem cfbEncrypt_framed :
-    Verified Arm.target (Impl.StackScratch.Arm.withStackScratchWiped 2816 1 698 cfbEncrypt)
+    Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 2816 1 cfbEncrypt)
       (Spec.Camellia.cfbEncryptContract Arm.abi 2824) :=
   Proof.Camellia.cfbEncrypt_of_sk <|
-  Arm.Verified.stackScratchWiped (sig := Spec.Camellia.cfbSig) (nm := "scratch") (e := .u64) (n := 349)
+  Arm.Verified.stackScratch (sig := Spec.Camellia.cfbSig) (nm := "scratch") (e := .u64) (n := 349)
     (pre := Spec.Camellia.cfbPre Arm.abi.ptrBits) (post := Proof.Camellia.cfbEncryptPostSk Arm.abi.ptrBits)
     (wa := true) (stack := 8) (m := 1) (bytes := 2816)
-    cfbEncrypt_verified (by decide) (by decide) (by decide) (by decide) (by decide)
-    (Proof.Camellia.cfbPre_local _) (Proof.Camellia.cfbEncryptPost_local _) (Proof.Camellia.cfbEncryptPostOut_local _) cfbEncryptFrameSat
+    cfbEncrypt_verified (by decide) (by decide) (by decide) (by decide)
+    (Proof.Camellia.cfbPre_local _) (Proof.Camellia.cfbEncryptPost_local _) (fun vs mm m₁ m₂ r hl _ => Proof.Camellia.cfbEncryptPostOut_local _ vs mm m₁ m₂ r hl) cfbEncryptFrameSat
 
 theorem cfbDecryptTaint : SeqTaint (ecbCore .encrypt) cfbDec :=
   ⟨⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩⟩
@@ -212,15 +212,15 @@ theorem cfbDecryptFrameSat : ∃ s, (Proof.Camellia.cfbDecryptContractSk Arm.abi
     Arm.reduceClassify, Arm.Loc.val, Arm.State.addr] [fbFrameSat, fbSat, stackArg, stackArgAddr, Mem.readW,
     Mem.read] using fbFrameSat 0
 
-/-- `cfbDecrypt`, with its scratch buffer on the stack (zeroed on return). -/
+/-- `cfbDecrypt`, with its scratch buffer on the stack (which its function's cleanup zeroes). -/
 theorem cfbDecrypt_framed :
-    Verified Arm.target (Impl.StackScratch.Arm.withStackScratchWiped 88 1 18 cfbDecrypt)
+    Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 88 1 cfbDecrypt)
       (Spec.Camellia.cfbDecryptContract Arm.abi 3032) :=
   Proof.Camellia.cfbDecrypt_of_sk <|
-  Arm.Verified.stackScratchWiped (sig := Spec.Camellia.cfbSig) (nm := "scratch") (e := .u64) (n := 9)
+  Arm.Verified.stackScratch (sig := Spec.Camellia.cfbSig) (nm := "scratch") (e := .u64) (n := 9)
     (pre := Spec.Camellia.cfbPre Arm.abi.ptrBits) (post := Proof.Camellia.cfbDecryptPostSk Arm.abi.ptrBits)
     (wa := true) (stack := 2944) (m := 1) (bytes := 88)
-    cfbDecrypt_verified (by decide) (by decide) (by decide) (by decide) (by decide)
-    (Proof.Camellia.cfbPre_local _) (Proof.Camellia.cfbDecryptPost_local _) (Proof.Camellia.cfbDecryptPostOut_local _) cfbDecryptFrameSat
+    cfbDecrypt_verified (by decide) (by decide) (by decide) (by decide)
+    (Proof.Camellia.cfbPre_local _) (Proof.Camellia.cfbDecryptPost_local _) (fun vs mm m₁ m₂ r hl _ => Proof.Camellia.cfbDecryptPostOut_local _ vs mm m₁ m₂ r hl) cfbDecryptFrameSat
 
 end VG.Proof.Camellia.Arm

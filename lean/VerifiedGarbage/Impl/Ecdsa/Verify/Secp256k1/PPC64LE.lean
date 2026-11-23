@@ -20,7 +20,7 @@ open VG.PPC64LE
 /-- `[u]G + [v]Q` for secp256k1. -/
 def pointsSecp256k1 : Prog isa :=
   Cfg.pointsWith Impl.Ecdsa.PPC64LE.secp256k1 Impl.Weierstrass.PPC64LE.mulGeneratorSecp256k1
-    (Impl.Ecdsa.PPC64LE.WindowA.Cfg.mul Impl.Ecdsa.PPC64LE.secp256k1 Impl.Ecdh.PPC64LE.PX
+    (Impl.Ecdsa.PPC64LE.Cfg.winCall Impl.Ecdsa.PPC64LE.secp256k1 <| Impl.Ecdsa.PPC64LE.WindowA.Cfg.mul Impl.Ecdsa.PPC64LE.secp256k1 Impl.Ecdh.PPC64LE.PX
       Impl.Ecdh.PPC64LE.PY Impl.Ecdsa.PPC64LE.B3P)
 
 /-- `vg_ecdsa_secp256k1_verify`. -/

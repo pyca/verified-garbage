@@ -663,6 +663,7 @@ def Instr.encode : Instr → Option (List (List Nat))
   -- "CALL—Call Procedure": `FF /2`, "CALL r/m64", whose operand size is 64
   -- bits in 64-bit mode without `REX.W`.
   | .callr r => (legacy [] false [0xFF] 2 (.reg (reg r))).map ([·])
+  | .callm m => (legacy [] false [0xFF] 2 (.mem m)).map ([·])
   | .imul d r => (legacy [] true [0x0F, 0xAF] (reg d) (.reg (reg r))).map ([·])
   | .imul3 d r v =>
     if fitsI8 v.toInt then (legacy [] true [0x6B] (reg d) (.reg (reg r)) [i8 v.toInt]).map ([·])

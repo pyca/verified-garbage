@@ -197,7 +197,7 @@ def halving : Prog isa :=
 /-- `[a]` modulo `[m]` by the batched inverse (`Impl/Rsa/PPC64LE/InvBatch.lean`):
 `a` into array 0 and `m` into `aM`, and `k` sets its width, `r11` digits. -/
 def invOf (a m : Nat) (k : List Instr) : Prog isa :=
-  seqs [copy aM m, copy 0 a, .block k, VG.Impl.Rsa.PPC64LE.InvBatch.inverse]
+  seqs [copy aM m, copy 0 a, .block k, VG.Impl.Rsa.PPC64LE.CrtValues.invCall]
 
 /-- The width of the primes, `p_len / 4` digits. -/
 def nP : List Instr := [.lsr .d .r11 .r22 2]

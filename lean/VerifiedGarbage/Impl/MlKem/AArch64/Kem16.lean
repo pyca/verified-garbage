@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.MlKem.AArch64.Hybrid
+public import VerifiedGarbage.Impl.Sha3.AArch64.ViaD8
 public import VerifiedGarbage.Impl.MlKem.AArch64.FixedHashDecaps
 public import VerifiedGarbage.Impl.MlKem.AArch64.Ops16
 public import VerifiedGarbage.Impl.MlKem.AArch64.Decaps
@@ -92,7 +93,7 @@ def kgRows (L : KemLay) (a b : Nat) : List (Prog isa) := (List.range' a (b - a))
 
 /-- The single-state permutation of the third state, at `ST`, with its working space at `WK`. -/
 def kgPerm (c : Impl.Sha3.AArch64.Callee) : Prog isa :=
-  .seq (.block (ptrTo .x0 .x28 KG.ST ++ ptrTo .x1 .x28 KG.WK)) (.call c.name c.code)
+  .seq (.block (ptrTo .x0 .x28 KG.ST ++ ptrTo .x1 .x28 KG.WK)) c.viaD8
 
 /-- `ρ` into both keys, the blocks of `pad(ek)` the matrix did not absorb, each
 followed by the permutation `c`, `H(ek)` and `z` into `dk`, and the epilogue. -/

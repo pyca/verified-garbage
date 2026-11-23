@@ -72,7 +72,7 @@ theorem ok_rel {α : Type} {Ψ : α → State → Prop} : RelCT isa (Two Ψ) ok1
 of them) and `scratch` at `a4`. -/
 def vdP (s : State) : VD :=
   ⟨playOf s, s.gpr .a0, 0, 0, 0, Spec.Rsa.bytesAt s.mem (s.gpr .a0) (s.gpr .a1).toNat, (s.gpr .a1).toNat, 0,
-    false, none⟩
+    false, none, false⟩
 
 theorem src_nil {s : State} {L : Lay} {D : Addr} {n : Nat} (hn : n = 0) : Src s L D n :=
   ⟨fun _ h => absurd (hn ▸ h) (Nat.not_lt_zero _), fun _ h => absurd (hn ▸ h) (Nat.not_lt_zero _)⟩
@@ -89,7 +89,7 @@ theorem pfront_P0 {s : State} (hL : (playOf s).Ok) (hrd : s.rd = [⟨s.gpr .a0, 
   have hK : Src t (playOf s) (s.gpr .a0) (s.gpr .a1).toNat := psrc_of hrd dPS (Nat.le_refl _) k.2.1 k.2.2
   exact ⟨⟨hL, F.regs, F.scr, hK, src_nil rfl, src_nil (Nat.zero_min _),
     hK.bytes F.out (by simp only [playOf] at hZ ⊢; omega_using [hZ]), (by simp only [vdP, playOf]; omega_using [hkn]),
-    (fun h => nomatch h), fun _ h => nomatch h⟩, F.lens.trans (congrArg _ (Nat.zero_min _).symm)⟩
+    (fun h => nomatch h), fun _ h => (nomatch h), fun h => nomatch h⟩, F.lens.trans (congrArg _ (Nat.zero_min _).symm)⟩
 
 /-- Runs that agree on `a0` to `a5` and on the octets at `a0` have the same public data `vdP`. -/
 theorem vdP_eq {s t : State} (e0 : s.gpr .a0 = t.gpr .a0) (e1 : s.gpr .a1 = t.gpr .a1)

@@ -44,28 +44,34 @@ open VG VG.Arm VG.Impl.Ecdsa.Arm VG.Impl.Weierstrass.Arm
 open VG.Proof.Weierstrass VG.Proof.Weierstrass.Arm.TComb
 open VG.Proof.Ecdsa.Arm
 
+/-- The tables signing reads: the comb's, and the setup's constants. -/
+abbrev combSignK (u : Bool) : List (String × List (BitVec 64)) := p521CombConsts ++ (p521With u).constsK
+
 def combSignPre (u : Bool) (s : State) : Prop :=
-  Pre (p521With u) s (constRegs p521CombConsts s) ∧ ConstsOk p521CombConsts 0 s
+  Pre (p521With u) s (constRegs (combSignK u) s) ∧ ConstsOk (combSignK u) 0 s
 
-def combSignPub (s t : State) : Prop := signArm.pub s t ∧ s.syms p521Comb.tsym=t.syms p521Comb.tsym
+def combSignPub (u : Bool) (s t : State) : Prop :=
+  signArm.pub s t ∧ s.syms p521Comb.tsym=t.syms p521Comb.tsym ∧ s.syms (p521With u).constSym=t.syms (p521With u).constSym
 
-theorem combSign_ct : ConstantTime isa (combSignPre false) combSignPub signP521Comb := by
-  refine VG.Taint.constantTime (A := taintSym [p521Comb.tsym]) τ₁ ?_ (by native_taint_decide)
-  intro s t hs ht pub
-  exact ⟨agree₁ (agree₀ hs.1 ht.1 pub.1),fun n hn => by
-    obtain rfl := List.mem_singleton.mp hn
-    exact pub.2⟩
+theorem combSign_agree {u : Bool} {s t : State} (hs : combSignPre u s) (ht : combSignPre u t)
+    (pub : combSignPub u s t) :
+    VG.Arm.Taint.Agree τ₁ s t ∧ ∀ n ∈ [p521Comb.tsym,(p521With u).constSym], s.syms n = t.syms n :=
+  ⟨agree₁ (agree₀ hs.1 ht.1 pub.1),fun n hn => by
+    simp only [List.mem_cons,List.not_mem_nil,or_false] at hn
+    rcases hn with rfl|rfl
+    exacts [pub.2.1,pub.2.2]⟩
 
-theorem combSignU_ct : ConstantTime isa (combSignPre true) combSignPub signP521CombU := by
-  refine VG.Taint.constantTime (A := taintSymU [p521Comb.tsym]) τ₁ ?_ (by taint_decide)
-  intro s t hs ht pub
-  exact ⟨agree₁ (agree₀ hs.1 ht.1 pub.1),fun n hn => by
-    obtain rfl := List.mem_singleton.mp hn
-    exact pub.2⟩
+theorem combSign_ct : ConstantTime isa (combSignPre false) (combSignPub false) signP521Comb :=
+  VG.Taint.constantTime (A := taintSym [p521Comb.tsym,(p521With false).constSym]) τ₁
+    (fun _ _ hs ht pub => combSign_agree hs ht pub) (by native_taint_decide)
+
+theorem combSignU_ct : ConstantTime isa (combSignPre true) (combSignPub true) signP521CombU :=
+  VG.Taint.constantTime (A := taintSymU [p521Comb.tsym,(p521With true).constSym]) τ₁
+    (fun _ _ hs ht pub => combSign_agree hs ht pub) (by taint_decide)
 
 theorem combSign_ok (hC : Law Spec.P521.curve) {u : Bool} {s₀ : State} (hp : combSignPre u s₀) :
     WP isa (signP521CombWith u) s₀ fun t => SignKeep (p521With u) s₀ t ∧ SignPost (p521With u) s₀ t := by
-  have member : (p521Comb.tsym,p521CombWords)∈p521CombConsts := List.mem_singleton_self _
+  have member : (p521Comb.tsym,p521CombWords)∈combSignK u := List.mem_cons_self
   have ht := tableMem_of_consts hp.2 member
   have hd := table_disjoint_of_consts hp.2 member
     (show scR s₀∈s₀.wr by rw [hp.1.wr]; simp)

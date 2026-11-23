@@ -40,7 +40,7 @@ theorem Base.q_lt {v : VD} {s : State} (h : Base v s) : v.q < 2 ^ (8 * v.L.ql) :
   rwa [VG.Proof.Bignum.bytesAt_length] at this
 
 theorem Base.sg {v : VD} {s : State} (h : Base v s) (hv : VB v) : Src s v.L v.sig (2 * v.L.ql) :=
-  hv.2 ▸ h.hsg
+  hv.2.1 ▸ h.hsg
 
 /-- The values `body` needs of the key. -/
 theorem SB.vals {v : VD} {s : State} (h : SB v s) :
@@ -68,7 +68,8 @@ theorem QB.stepQ {v : VD} {s t : State} (h : QB v s) (Q : QS t v.L v.key v.sig) 
     (hwr : t.wr = s.wr) (qb : QBuf v.L s.mem t.mem) : QB v t := by
   have hL := h.base.ok
   have hb := qb.body hL
-  exact ⟨h.base.step Q.regs hrd hwr (Kept.ofBody hL hb).out (hb.word (by decide)) (hb.word (by decide)),
+  exact ⟨h.base.step Q.regs hrd hwr (Kept.ofBody hL hb).out (hb.word (by decide)) (hb.word (by decide))
+    (hb.word (by decide)),
     by rw [Lens, hb.word (by decide)]; exact h.lens, Q,
     (qb.arr0 hL).trans h.q0, (qb.arrP hL 0 (by decide)).trans h.p0, (qb.arrP hL 24 (by decide)).trans h.p24,
     h.vb, h.ky⟩
@@ -120,7 +121,9 @@ theorem keepMask_QB {v : VD} {s : State} {b : Bool} (h : QB v s) (h4 : s.gpr .a4
     o.word (Or.inr (by decide)) (by simp only [hLens]; omega_using [])
   have w24 : word t.mem v.L.S Sign.hOut = word s.mem v.L.S Sign.hOut :=
     o.word (Or.inr (by simp only [hMask, Sign.hOut]; omega_using [])) (by simp only [Sign.hOut]; omega_using [])
-  exact ⟨⟨h.base.step Q.regs k.2.1 k.2.2 o' w8 w24, by rw [Lens, w16]; exact h.lens, Q,
+  have w32 : word t.mem v.L.S hSig = word s.mem v.L.S hSig :=
+    o.word (Or.inr (by simp only [hMask, hSig]; omega_using [])) (by simp only [hSig]; omega_using [])
+  exact ⟨⟨h.base.step Q.regs k.2.1 k.2.2 o' w8 w24 w32, by rw [Lens, w16]; exact h.lens, Q,
     (keepQ_arr0 hL (mask_keepQ hL o)).trans h.q0, (mask_arrP hL o 0 (by decide)).trans h.p0,
     (mask_arrP hL o 24 (by decide)).trans h.p24, h.vb, h.ky⟩, ⟨b, w.trans h4⟩⟩
 
@@ -144,7 +147,7 @@ theorem inverse_QI {v : VD} {s : State} (h : QI v s) (hq : 2 ≤ v.q) (hqo : v.q
     WP isa inverse s fun t => (QI v t ∧ arrQ t.mem v.L 4 < v.q ∧ QBuf v.L s.mem t.mem) ∧ Keep invRegs s t := by
   obtain ⟨B, I, h24⟩ := h
   have hL := B.base.ok
-  refine WP.mono (inverse_ok hL B.qs I (B.base.sg B.vb) (by rw [B.q0]; exact hq) (by rw [B.q0]; exact hqo)
+  refine WP.mono (inverse_ok hL B.qs I (B.base.sg B.vb) (B.base.hsig B.vb.2.2) (by rw [B.q0]; exact hq) (by rw [B.q0]; exact hqo)
     (by rw [B.q0]; exact h24)) fun t ⟨⟨Q', I', a4, kj, qa⟩, k⟩ =>
       ⟨⟨⟨B.stepQ Q' k.2.1 k.2.2 (qa.qbuf hL), I', by rw [kj 24 (by decide) (by decide)]; exact h24⟩,
         by rw [a4, B.q0]; exact Nat.mod_lt _ (by omega_using [hq]), qa.qbuf hL⟩, k⟩
@@ -261,8 +264,8 @@ theorem stQ5 {v : VD} {s : State} {c : Prog isa} {Q : State → Prop} (h : SB v 
 /-- `scalarLen`'s block. -/
 abbrev SLB : List Instr := getQb .s8 ++ getD .t3 ++ [.sub .a0 .s8 .t3, .shift .srl .d .a0 .a0 63]
 
-theorem pinsB104 {Φ : VD → State → Prop} (hsem : ∀ v u, Φ v u → SB v u) :
-    Pins (At Φ FB 104) [.s6, .s11, .ra, .a7, .s5, .t0, .s8, .t3, .a0] :=
+theorem pinsB66 {Φ : VD → State → Prop} (hsem : ∀ v u, Φ v u → SB v u) :
+    Pins (At Φ FB 66) [.s6, .s11, .ra, .a7, .s5, .t0, .s8, .t3, .a0] :=
   pins_at_fix (fun v => fixB v ++ envQ v ++ [(.s8, BitVec.ofNat 64 v.qb), (.t3, BitVec.ofNat 64 v.d),
       (.a0, BitVec.ofNat 64 (if v.qb < v.d then 1 else 0))]) (fun _ => rfl) fun v _ h => by
     have hqb := (hsem _ _ h).vals.2.2.2.1
@@ -290,8 +293,8 @@ theorem pinsB104 {Φ : VD → State → Prop} (hsem : ∀ v u, Φ v u → SB v u
     exact (fix_QB B').app ⟨(kt.gpr (r := .s8) (by decide)).trans a8', (kt.gpr (r := .t3) (by decide)).trans b3, c0,
       trivial⟩
 
-theorem pinsB106 {Φ : VD → State → Prop} (hsem : ∀ v u, Φ v u → SB v u) :
-    Pins (At Φ FB 106) [.s6, .s11, .ra, .a7, .s5, .t0, .s7, .s8] :=
+theorem pinsB68 {Φ : VD → State → Prop} (hsem : ∀ v u, Φ v u → SB v u) :
+    Pins (At Φ FB 68) [.s6, .s11, .ra, .a7, .s5, .t0, .s7, .s8] :=
   pins_at_fix (fun v => fixB v ++ envQ v ++ [(.s7, v.dig), (.s8, BitVec.ofNat 64 (min v.d v.qb))])
     (fun _ => rfl) fun v _ h => by
     refine WP.of_flat (c := .seq ranges (.seq (.block keepMask) (.seq rrQ (.seq qMinus2 (.seq inverse
@@ -326,8 +329,8 @@ theorem scalar_QI {v : VD} {s : State} (h : QI v s) (h4 : arrQ s.mem v.L 4 < v.q
   · rw [arrQ, o.wordsVal (by omega_using [e6, e24]) (by omega_arith)]; exact h24
   · rw [arrQ, o.wordsVal (by omega_using [e4, e6]) (by omega_arith)]; exact h4
 
-theorem pinsB108 {Φ : VD → State → Prop} (hsem : ∀ v u, Φ v u → SB v u) :
-    Pins (At Φ FB 108) [.s6, .s11, .ra, .a7, .s5, .t0, .s7, .s8] :=
+theorem pinsB70 {Φ : VD → State → Prop} (hsem : ∀ v u, Φ v u → SB v u) :
+    Pins (At Φ FB 70) [.s6, .s11, .ra, .a7, .s5, .t0, .s7, .s8] :=
   pins_at_fix (fun v => fixB v ++ envQ v ++ [(.s7, v.sig), (.s8, BitVec.ofNat 64 v.L.ql)])
     (fun _ => rfl) fun _ _ h =>
     WP.of_flat (c := .seq ranges (.seq (.block keepMask) (.seq rrQ (.seq qMinus2 (.seq inverse
@@ -439,8 +442,8 @@ theorem prod_pre {v : VD} {s : State} {c : Prog isa} {Q : State → Prop} (h : Q
       hc t (B7.stepQ Q8 k8.2.1 k8.2.2 (qa8.qbuf hL)))
 
 /-- The products' stores' first block. -/
-theorem pinsB154 {Φ : VD → State → Prop} (hsem : ∀ v u, Φ v u → SB v u) :
-    Pins (At Φ FB 154) [.s6, .s11, .ra, .a7, .s5, .t0, .s7, .s8] :=
+theorem pinsB116 {Φ : VD → State → Prop} (hsem : ∀ v u, Φ v u → SB v u) :
+    Pins (At Φ FB 116) [.s6, .s11, .ra, .a7, .s5, .t0, .s7, .s8] :=
   pins_at_fix (fun v => fixB v ++ envQ v ++ [(.s7, v.L.Buf), (.s8, BitVec.ofNat 64 v.L.ql)])
     (fun _ => rfl) fun _ _ h =>
     WP.of_flat (c := .seq ranges (.seq (.block keepMask) (.seq rrQ (.seq qMinus2 (.seq inverse
@@ -450,8 +453,8 @@ theorem pinsB154 {Φ : VD → State → Prop} (hsem : ∀ v u, Φ v u → SB v u
         WP.mono (ptrBuf_ok B.base.scr B.base.ok B.base.regs) fun _ ⟨⟨b7, b8, m⟩, k'⟩ =>
           (fix_QB (B.stepM k' m)).app ⟨b7, b8, trivial⟩)
 
-theorem pinsB157 {Φ : VD → State → Prop} (hsem : ∀ v u, Φ v u → SB v u) :
-    Pins (At Φ FB 157) [.s6, .s11, .ra, .a7, .s5, .t0, .s7, .s8] :=
+theorem pinsB119 {Φ : VD → State → Prop} (hsem : ∀ v u, Φ v u → SB v u) :
+    Pins (At Φ FB 119) [.s6, .s11, .ra, .a7, .s5, .t0, .s7, .s8] :=
   pins_at_fix (fun v => fixB v ++ envQ v ++ [(.s7, off v.L.Buf 32), (.s8, BitVec.ofNat 64 v.L.ql)])
     (fun _ => rfl) fun v _ h =>
     WP.of_flat (c := .seq ranges (.seq (.block keepMask) (.seq rrQ (.seq qMinus2 (.seq inverse
@@ -540,8 +543,8 @@ theorem powP_pre {v : VD} {s : State} {N X : Addr} (h : CB v s) (hN : Src s v.L 
       ⟨(k4.gpr (r := .s9) (by decide)).trans ((k3.gpr (r := .s9) (by decide)).trans ((k2.gpr (r := .s9) (by decide)).trans
         ((k1.gpr (r := .s9) (by decide)).trans h9))), a10, trivial⟩
 
-theorem pinsB161 {Φ : VD → State → Prop} (hsem : ∀ v u, Φ v u → SB v u) :
-    Pins (At Φ FB 161) [.s6, .s11, .ra, .a7, .s5, .t0, .s7, .s8, .s9] :=
+theorem pinsB123 {Φ : VD → State → Prop} (hsem : ∀ v u, Φ v u → SB v u) :
+    Pins (At Φ FB 123) [.s6, .s11, .ra, .a7, .s5, .t0, .s7, .s8, .s9] :=
   pins_at_fix (fun v => fixB v ++ envP v ++ [(.s7, off v.key (v.L.pl + v.L.ql)), (.s8, BitVec.ofNat 64 v.L.pl),
       (.s9, off v.L.Buf 0)]) (fun _ => rfl) fun _ _ h =>
     WP.of_flat (c := .seq ranges (.seq (.block keepMask) (.seq rrQ (.seq qMinus2 (.seq inverse (.seq products
@@ -580,8 +583,8 @@ theorem w_CB {v : VD} {s t : State} {rs : List Reg} (h : CB v s) (ip : InP t v.L
   show ((word t.mem v.L.S (slot v.L.wp 0)).toNat * (t.gpr .t1).toNat + 1) % 2 ^ 64 = 0
   rw [o.word (by omega_using [e0, e1]) (by omega_arith), k.gpr ht1]; exact I
 
-theorem pinsB169 {Φ : VD → State → Prop} (hsem : ∀ v u, Φ v u → SB v u) :
-    Pins (At Φ FB 169) [.s6, .s11, .ra, .a7, .s5, .t0, .s7, .s8, .s9] :=
+theorem pinsB131 {Φ : VD → State → Prop} (hsem : ∀ v u, Φ v u → SB v u) :
+    Pins (At Φ FB 131) [.s6, .s11, .ra, .a7, .s5, .t0, .s7, .s8, .s9] :=
   pins_at_fix (fun v => fixB v ++ envP v ++ [(.s7, off v.key (2 * v.L.pl + v.L.ql)), (.s8, BitVec.ofNat 64 v.L.pl),
       (.s9, off v.L.Buf 0)]) (fun _ => rfl) fun _ _ h =>
     WP.of_flat (c := .seq ranges (.seq (.block keepMask) (.seq rrQ (.seq qMinus2 (.seq inverse (.seq products
@@ -601,8 +604,8 @@ theorem stC1 {v : VD} {s : State} {c : Prog isa} {Q : State → Prop} (h : SB v 
     wp_seq3 (combG_ok c1.1.ok c1.1.scr c1.1.regs (c1.1.hk.take B.ky) c1.2.1 a7) fun t ⟨⟨_, ip, o, b7, b8⟩, k⟩ =>
       hc t (g_CB c1 ip o k) ((c1.1.hk.take B.ky).keep k.2.1 k.2.2) b7 b8 ((k.gpr (r := .s9) (by decide)).trans a9))
 
-theorem pinsB330 {Φ : VD → State → Prop} (hsem : ∀ v u, Φ v u → SB v u) :
-    Pins (At Φ FB 330) [.s6, .s11, .ra, .a7, .s5, .t0, .s9, .s10] :=
+theorem pinsB292 {Φ : VD → State → Prop} (hsem : ∀ v u, Φ v u → SB v u) :
+    Pins (At Φ FB 292) [.s6, .s11, .ra, .a7, .s5, .t0, .s9, .s10] :=
   pins_at_fix (fun v => fixB v ++ envP v ++ [(.s9, off v.L.Buf 0), (.s10, BitVec.ofNat 64 v.L.ql)])
     (fun _ => rfl) fun _ _ h =>
     WP.of_flat (c := .seq ranges (.seq (.block keepMask) (.seq rrQ (.seq qMinus2 (.seq inverse (.seq products
@@ -627,8 +630,8 @@ theorem stC2 {v : VD} {s : State} {c : Prog isa} {Q : State → Prop} (h : SB v 
     wp_seq4 (combT_ok c.1.ok c.1.scr c.1.regs hk c.2.1 c.2.2.1 c.2.2.2.1 hp hpo c.2.2.2.2 a7 a8)
       fun t ⟨⟨J, r, ip, o, a10⟩, k⟩ => hc t _ _ (w_CB c ip o k) J r ((k.gpr (r := .s9) (by decide)).trans a9) a10
 
-theorem pinsB341 {Φ : VD → State → Prop} (hsem : ∀ v u, Φ v u → SB v u) :
-    Pins (At Φ FB 341) [.s6, .s11, .ra, .a7, .s5, .t0, .s7, .s8] :=
+theorem pinsB303 {Φ : VD → State → Prop} (hsem : ∀ v u, Φ v u → SB v u) :
+    Pins (At Φ FB 303) [.s6, .s11, .ra, .a7, .s5, .t0, .s7, .s8] :=
   pins_at_fix (fun v => fixB v ++ envP v ++ [(.s7, v.L.Buf), (.s8, BitVec.ofNat 64 v.L.pl)]) (fun _ => rfl)
     fun _ _ h => WP.of_flat (c := .seq ranges (.seq (.block keepMask) (.seq rrQ (.seq qMinus2 (.seq inverse
       (.seq products (.seq (.block HEAD) (.seq (.block (getP .s8)) (.seq (loadArr 4) (.seq (.block ptrY)
@@ -664,16 +667,16 @@ theorem cmp_pre {v : VD} {s : State} (B : Base v s) :
     ⟨⟨B2.keepM k3 m3, (q1.keep k2).keep k3, (k3.gpr (by decide)).trans a9, a10, by rw [m3, m2, m1]⟩,
       (k1.trans k2).trans k3⟩
 
-theorem pinsB344 {Φ : VD → State → Prop} (hsem : ∀ v u, Φ v u → SB v u) :
-    Pins (At Φ FB 344) [.s6, .s11, .ra, .a7, .s5, .t0, .s9, .s10] :=
+theorem pinsB306 {Φ : VD → State → Prop} (hsem : ∀ v u, Φ v u → SB v u) :
+    Pins (At Φ FB 306) [.s6, .s11, .ra, .a7, .s5, .t0, .s9, .s10] :=
   pins_at_fix (fun v => fixB v ++ envQ v ++ [(.s9, v.L.Buf), (.s10, BitVec.ofNat 64 v.L.pl)]) (fun _ => rfl)
     fun _ _ h => WP.of_flat (c := .seq ranges (.seq (.block keepMask) (.seq rrQ (.seq qMinus2 (.seq inverse
       (.seq products (.seq combine (.block CMP)))))))) (by kernel_rfl)
       (stC4 (hsem _ _ h) fun _ B _ => (cmp_pre B).mono fun _ ⟨⟨B', iq, a9, a10, _⟩, _⟩ =>
         (B'.fixB.app (fix_envQ iq)).app ⟨a9, a10, trivial⟩)
 
-theorem pinsB350 {Φ : VD → State → Prop} (hsem : ∀ v u, Φ v u → SB v u) :
-    Pins (At Φ FB 350) [.s6, .s11, .ra, .a7, .s5, .t0, .s7, .s8] :=
+theorem pinsB312 {Φ : VD → State → Prop} (hsem : ∀ v u, Φ v u → SB v u) :
+    Pins (At Φ FB 312) [.s6, .s11, .ra, .a7, .s5, .t0, .s7, .s8] :=
   pins_at_fix (fun v => fixB v ++ envQ v ++ [(.s7, v.sig), (.s8, BitVec.ofNat 64 v.L.ql)]) (fun _ => rfl)
     fun v _ h => WP.of_flat (c := .seq ranges (.seq (.block keepMask) (.seq rrQ (.seq qMinus2 (.seq inverse
       (.seq products (.seq combine (.seq (.block CMP) (.seq ModArith.reduce64 (.block ptrR)))))))))) (by kernel_rfl)

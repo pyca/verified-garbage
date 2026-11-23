@@ -1,8 +1,10 @@
 module
 
-import VerifiedGarbage.Proof.Ecdsa.X86_64.Main
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.Main
+public import VerifiedGarbage.Proof.Framework.X86_64.CallInlineN
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.Layout
 public import VerifiedGarbage.Proof.Ecdsa.Contract
+import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.Lit
 import VerifiedGarbage.Proof.P521.Point
 import VerifiedGarbage.Proof.P521.X86_64.TaintSums
@@ -257,19 +259,29 @@ theorem pre_of {s : State} (h : signX86_64.pre s) : Pre p521 s := by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
     rcases hr with h | h <;> simp [h]
 
-/-- `InlineOk`, checked once for every theorem that needs it. -/
-theorem sign_inlineOk : signP521.InlineOk = true := by lit_decide
+/-- `[k]G` is a call of `vg_p521_mul_base`, which calls the products. -/
+theorem p521_mulBase : MulBaseOkI p521 :=
+  ⟨fun _ => ⟨_, rfl, by decide⟩, fun h => absurd h (by decide)⟩
+
+/-- `InlineOkN`, calls nested two deep (`vg_p521_mul_base` calls the
+products), checked once for every theorem that needs it. -/
+theorem sign_inlineOk : signP521.InlineOkN 2 = true := by lit_decide
+
+/-- The signature inlined at every depth is the code the proofs run. -/
+theorem sign_inlineAll : signP521.inlineAll = signI p521 := by kernel_rfl
 
 theorem sign_x86 (hL : Law Spec.P521.curve)
     (hT : CombOkW Spec.P521.curve 7 83 Impl.P521.p521Comb7 Impl.P521.p521Comb7Start)
     (hI : InvSounds) (s : State)
     (hs : signX86_64.pre s) :
-    ∃ t s', Exec isa signP521.inline s t s' ∧ abiPreserved s s' ∧ signX86_64.post s s' := by
-  obtain ⟨t, s', he, hsv, hpost⟩ := sign_ok (c := p521) (p521_ok hI).toBaseCfgOk hL (p521_tbls hT) (pre_of hs)
-  have hsp := Code.clobbers_rsp_of_inlineOk sign_inlineOk
-  have hmx : signP521.inline.allInstrs (fun i => !loadsMxcsr i) = true := by
-    rw [Code.allInstrs_inline]; lit_decide
-  have F := (Exec.regions he (Code.noCalls_inline sign_inlineOk)).2.2
+    ∃ t s', Exec isa signP521.inlineAll s t s' ∧ abiPreserved s s' ∧ signX86_64.post s s' := by
+  obtain ⟨t, s', he, hsv, hpost⟩ := sign_okI (c := p521) (p521_ok hI).toBaseCfgOk hL (p521_tbls hT) (pre_of hs)
+    p521_mulBase
+  rw [← sign_inlineAll] at he
+  have hsp := Code.clobbers_rsp_of_inlineOkN sign_inlineOk
+  have hmx : signP521.inlineAll.allInstrs (fun i => !loadsMxcsr i) = true := by
+    exact Code.allInstrs_inlineAll (by lit_decide)
+  have F := (Exec.regions he (Code.noCalls_inlineAll sign_inlineOk)).2.2
   obtain ⟨-, hwr, -, -, -, -, -, -, -, hro, hrs, -, -, -⟩ := hs
   refine ⟨t, s', he, abiPreserved_of_exec hmx he
     ⟨fun r hr => ?_, ?_⟩, hpost⟩
@@ -307,20 +319,20 @@ theorem sign_ct : ConstantTime isa signX86_64.pre signX86_64.pub signP521 := by
       · exact h5
       · exact h0, fun n hn => by simp only [List.mem_singleton] at hn; subst hn; exact hsy⟩
 
-/-- The output is apart from the calls' return address. -/
+/-- The output is apart from the calls' return addresses. -/
 theorem post_patch (s b : State) (hv : Mem) (u : Nat → BitVec 64) (hs : signX86_64.pre s)
-    (hc : Clear (hole (s.gpr .rsp)) s) (hp : signX86_64.post s b) :
-    signX86_64.post s (b.patch (hole (s.gpr .rsp)) hv u) := by
+    (hc : Clear (holeN (s.gpr .rsp) 2) s) (hp : signX86_64.post s b) :
+    signX86_64.post s (b.patch (holeN (s.gpr .rsp) 2) hv u) := by
   have hb := Clear.wr_bytes hc (p := s.gpr .rdi) (n := 132) (by rw [hs.2.1]; simp) (by decide)
   simpa only [signX86_64, State.patch_gpr, bytesAt_patch hb] using hp
 
 /-- The function with its calls, for a caller (RFC 6979's) that keeps its
-buffers off the 8 bytes below `rsp`. -/
+buffers off the 16 bytes below `rsp`. -/
 theorem sign_call_x86 (hL : Law Spec.P521.curve)
     (hT : CombOkW Spec.P521.curve 7 83 Impl.P521.p521Comb7 Impl.P521.p521Comb7Start)
-    (hI : InvSounds) (s : State) (hs : signX86_64.pre s) (hc : Clear (hole (s.gpr .rsp)) s) :
+    (hI : InvSounds) (s : State) (hs : signX86_64.pre s) (hc : Clear (holeN (s.gpr .rsp) 2) s) :
     ∃ t s', Exec isa signP521 s t s' ∧ abiPreserved s s' ∧ signX86_64.post s s' :=
-  ok_of_inline (k := signX86_64) sign_inlineOk (sign_x86 hL hT hI)
+  ok_of_inlineAll (k := signX86_64) sign_inlineOk (by decide) (sign_x86 hL hT hI)
     (fun s b hv u hs hc hp => post_patch s b hv u hs hc hp) s ⟨hs, hc⟩
 
 end VG.Proof.Ecdsa.X86_64.P521

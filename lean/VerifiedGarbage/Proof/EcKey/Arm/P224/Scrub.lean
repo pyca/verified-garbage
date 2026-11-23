@@ -56,7 +56,7 @@ open VG VG.Arm VG.Arm.Scrub
 /-- `vg_ec_p224_public_key`, given the group law. -/
 theorem publicKeyP224 (hL : Proof.Weierstrass.Law Spec.P224.curve) :
     VerifiedScrubbed target Impl.EcKey.Arm.Fn.publicKeyP224
-      Proof.EcKey.Arm.P224.combPkSpec 32 :=
+      (Proof.EcKey.Arm.P224.combPkSpec false) 32 :=
   verifiedScrubbed (api := Spec.EcKey.P224.publicKeyApi)
     { code := Impl.Ecdsa.Arm.publicKeyP224Comb
       verified := Proof.EcKey.Arm.P224.combPk_verified hL }
@@ -65,7 +65,7 @@ theorem publicKeyP224 (hL : Proof.Weierstrass.Law Spec.P224.curve) :
 /-- `vg_ec_p224_public_key_umaal`, given the group law. -/
 theorem publicKeyP224U (hL : Proof.Weierstrass.Law Spec.P224.curve) :
     VerifiedScrubbed target Impl.EcKey.Arm.Fn.publicKeyP224U
-      Proof.EcKey.Arm.P224.combPkSpec 32 :=
+      (Proof.EcKey.Arm.P224.combPkSpec true) 32 :=
   verifiedScrubbed (api := Spec.EcKey.P224.publicKeyApi)
     { code := Impl.Ecdsa.Arm.publicKeyP224CombU
       verified := Proof.EcKey.Arm.P224.combPkU_verified hL }
@@ -74,7 +74,8 @@ theorem publicKeyP224U (hL : Proof.Weierstrass.Law Spec.P224.curve) :
 /-- `vg_ec_p224_compress_public_key`. -/
 theorem compressP224 :
     VerifiedScrubbed target Impl.EcKey.Arm.Fn.compressP224
-      (Spec.EcKey.P224.inst.compressPublicKeyContract abi 0) 32 :=
+      (Spec.EcKey.P224.inst.compressPublicKeyContract
+        (abi.withConsts (Impl.Ecdsa.Arm.p224With false).constsK) 0) 32 :=
   verifiedScrubbed (api := Spec.EcKey.P224.inst.compressPublicKeyApi)
     { code := Proof.EcKey.Compressed.Arm.P224.code
       verified := Proof.EcKey.Compressed.Arm.P224.verified }
@@ -83,7 +84,8 @@ theorem compressP224 :
 /-- `vg_ec_p224_compress_public_key_umaal`. -/
 theorem compressP224U :
     VerifiedScrubbed target Impl.EcKey.Arm.Fn.compressP224U
-      (Spec.EcKey.P224.inst.compressPublicKeyContract abi 0) 32 :=
+      (Spec.EcKey.P224.inst.compressPublicKeyContract
+        (abi.withConsts (Impl.Ecdsa.Arm.p224With true).constsK) 0) 32 :=
   verifiedScrubbed (api := Spec.EcKey.P224.inst.compressPublicKeyApi)
     { code := Proof.EcKey.Compressed.Arm.P224.codeU
       verified := Proof.EcKey.Compressed.Arm.P224.verifiedU }
@@ -92,7 +94,8 @@ theorem compressP224U :
 /-- `vg_ec_p224_decompress_public_key`, given the group law. -/
 theorem decompressP224 (hL : Proof.Weierstrass.Law Spec.P224.curve) :
     VerifiedScrubbed target Impl.EcKey.Arm.Fn.decompressP224
-      (Spec.EcKey.P224.inst.decompressPublicKeyContract abi 0) 32 :=
+      (Spec.EcKey.P224.inst.decompressPublicKeyContract
+        (abi.withConsts (Impl.Ecdsa.Arm.p224With false).constsK) 0) 32 :=
   verifiedScrubbed (api := Spec.EcKey.P224.inst.decompressPublicKeyApi)
     { code := Proof.EcKey.Compressed.Arm.P224Decompress.code
       verified := Proof.EcKey.Compressed.Arm.P224Decompress.verified hL }
@@ -101,7 +104,8 @@ theorem decompressP224 (hL : Proof.Weierstrass.Law Spec.P224.curve) :
 /-- `vg_ec_p224_decompress_public_key_umaal`, given the group law. -/
 theorem decompressP224U (hL : Proof.Weierstrass.Law Spec.P224.curve) :
     VerifiedScrubbed target Impl.EcKey.Arm.Fn.decompressP224U
-      (Spec.EcKey.P224.inst.decompressPublicKeyContract abi 0) 32 :=
+      (Spec.EcKey.P224.inst.decompressPublicKeyContract
+        (abi.withConsts (Impl.Ecdsa.Arm.p224With true).constsK) 0) 32 :=
   verifiedScrubbed (api := Spec.EcKey.P224.inst.decompressPublicKeyApi)
     { code := Proof.EcKey.Compressed.Arm.P224Decompress.codeU
       verified := Proof.EcKey.Compressed.Arm.P224Decompress.verifiedU hL }

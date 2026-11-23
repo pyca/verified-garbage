@@ -276,6 +276,7 @@ structure Table (T : BitVec 32) (sp : BitVec 32) (s : State) : Prop where
     BitVec.ofNat 64 (VG.Impl.RsaKeyGen.TrialTable32.entry i)
   fit : T.toNat + 8192 ≤ 2 ^ 32
   far : Region.Disjoint ⟨T.setWidth 64, 8192⟩ (below sp 96)
+  wide : Region.Disjoint ⟨T.setWidth 64, 8192⟩ (below sp 176)
 
 /-- The count computed from `bits` in `edx`. -/
 theorem countBlock_ok {is : List Instr} {Q : State → Prop} (h : In Ex base bytes len args s) {bits : Nat}

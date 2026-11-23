@@ -936,7 +936,7 @@ theorem generatorSearch_take {len : Nat} {p : GeneratorSearchPublic} {s : State}
   have ht := hm.frame Lt ⟨V, Rt⟩ (by
     intro k hk
     simp only [generatorSlots, List.mem_cons, List.not_mem_nil, or_false] at hk
-    rcases hk with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> rfl)
+    rcases hk with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> rfl)
     ff kt.2.1 kt.2.2
   refine ⟨⟨_, ht, ?_, ?_⟩, he, room⟩
   · simp only [generatorTape, upd, ↓reduceIte, he]
@@ -1030,7 +1030,7 @@ theorem generatorSearch_body_ready (M : Mont) (Sq : MontS) {len : Nat}
   have memory := hm.frame ht.layout ht.rep (by
     intro k hk
     simp only [generatorSlots, List.mem_cons, List.not_mem_nil, or_false] at hk
-    rcases hk with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> rfl)
+    rcases hk with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> rfl)
     ff hk.2.1 hk.2.2
   refine ⟨⟨_, memory, ?_, ?_⟩, he, room⟩
   · simpa [upd] using hu
@@ -1241,7 +1241,7 @@ theorem generatorSearch_reset {len : Nat} {p : GeneratorSearchPlan} {s : State}
   refine ⟨⟨upd W 20 0, hm.frame Lt ⟨V, Rt⟩ ?_ ff kt.2.1 kt.2.2, by simp [upd, GeneratorSearchPlan.start]⟩, he⟩
   intro k hk
   simp only [generatorSlots, List.mem_cons, List.not_mem_nil, or_false] at hk
-  rcases hk with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> rfl
+  rcases hk with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> rfl
 
 theorem nativeGenerator_ct (M : Mont) (Sq : MontS) (len : Nat)
     (hl : len = 128 ∨ len = 256 ∨ len = 384) :
@@ -1289,16 +1289,16 @@ def SeedGeneratorPublic.plan (p : SeedGeneratorPublic) : GeneratorSearchPlan := 
     (by rw [decode]; exact p.domain.odd) p.qValue
     (by rw [decode, VG.Proof.Dsa.decodeBE_encodeBE expFit])
 
-def SeedGeneratorBefore (n pLen qLen : Nat) (p : SeedGeneratorPublic) (s : State) : Prop :=
-  SeedPrimeBefore n pLen qLen p.seed s ∧
+def SeedGeneratorBefore (N : FnNames) (n pLen qLen : Nat) (p : SeedGeneratorPublic) (s : State) : Prop :=
+  SeedPrimeBefore N n pLen qLen p.seed s ∧
   Spec.Rsa.bytesAt s.mem (off p.seed.context.geo.B VG.Impl.Dsa.Generation.Layout.p) p.seed.context.geo.pLen =
     Spec.Dsa.encodeBE p.seed.context.geo.pLen p.value ∧
   Spec.Rsa.bytesAt s.mem (off p.seed.context.geo.B exponent) p.seed.context.geo.pLen =
     Spec.Dsa.encodeBE p.seed.context.geo.pLen ((p.value - 1) / p.qValue)
 
-theorem seedGenerator_start {n pLen qLen : Nat} {p : SeedGeneratorPublic} {s : State}
-    (h : SeedGeneratorBefore n pLen qLen p s) : GeneratorSearchStart pLen p.plan s := by
-  obtain ⟨⟨⟨⟨W, hm, h1, h16, h10⟩, _, _, _, _⟩, hp, _⟩, bp, be⟩ := h
+theorem seedGenerator_start {N : FnNames} {n pLen qLen : Nat} {p : SeedGeneratorPublic} {s : State}
+    (h : SeedGeneratorBefore N n pLen qLen p s) : GeneratorSearchStart pLen p.plan s := by
+  obtain ⟨⟨⟨⟨W, hm, h1, h16, h10⟩, _, _, _, _, _⟩, hp, _⟩, bp, be⟩ := h
   have state := hm.generatorState p.plan.core.pb p.plan.core.eb p.plan.core.pLength p.plan.core.eLength
     p.plan.core.pPositive p.plan.core.pOdd p.qValue p.plan.exponentValue bp be
   refine ⟨⟨W, { state with slots := ?_ }⟩, hp⟩

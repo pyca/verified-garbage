@@ -90,24 +90,24 @@ open VG VG.Arm VG.Arm.Scrub
 theorem verifyP384 (hC : Weierstrass.Law Spec.P384.curve) :
     VerifiedScrubbed target Impl.Ecdsa.Arm.Fn.verifyP384
       (Spec.Ecdsa.P384.inst.verifyHashContract
-        (abi.withConsts Impl.Weierstrass.Arm.p384CombConsts) 96) 32 :=
+        (abi.withConsts (Proof.Ecdsa.Verify.Arm.P384.combVerifyK false)) 96) 32 :=
   verifiedScrubbedAll (api := Spec.Ecdsa.P384.verifyHashApi)
     { code := P384.Scrub.verifyCode false
       verified := Proof.Ecdsa.Verify.Arm.P384.verifyHash_verified hC }
     (Proof.Ecdsa.Verify.Arm.Scrub.verifyHashOut Spec.Ecdsa.P384.inst
-      Impl.Weierstrass.Arm.p384CombConsts 96)
+      (Proof.Ecdsa.Verify.Arm.P384.combVerifyK false) 96)
     (scrubSideF_of P384.Scrub.verify_code P384.Scrub.frameOk_96 _)
 
 /-- `vg_ecdsa_p384_verify_umaal`, given the group law. -/
 theorem verifyP384U (hC : Weierstrass.Law Spec.P384.curve) :
     VerifiedScrubbed target Impl.Ecdsa.Arm.Fn.verifyP384U
       (Spec.Ecdsa.P384.inst.verifyHashContract
-        (abi.withConsts Impl.Weierstrass.Arm.p384CombConsts) 96) 32 :=
+        (abi.withConsts (Proof.Ecdsa.Verify.Arm.P384.combVerifyK true)) 96) 32 :=
   verifiedScrubbedAll (api := Spec.Ecdsa.P384.verifyHashApi)
     { code := P384.Scrub.verifyCode true
       verified := Proof.Ecdsa.Verify.Arm.P384.verifyHashU_verified hC }
     (Proof.Ecdsa.Verify.Arm.Scrub.verifyHashOut Spec.Ecdsa.P384.inst
-      Impl.Weierstrass.Arm.p384CombConsts 96)
+      (Proof.Ecdsa.Verify.Arm.P384.combVerifyK true) 96)
     (scrubSideF_of P384.Scrub.verifyU_code P384.Scrub.frameOk_96 _)
 
 

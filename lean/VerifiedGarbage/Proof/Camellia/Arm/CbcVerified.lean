@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Camellia.CbcScratch
 public import VerifiedGarbage.Proof.Modes.Arm.Cbc
 public import VerifiedGarbage.Proof.Modes.Arm.WideModes
 import VerifiedGarbage.Proof.Modes.Arm.CbcChained
-import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
+import VerifiedGarbage.Proof.Framework.Arm.StackScratch
 import VerifiedGarbage.Proof.Modes.Arm.OfbCfb
 import VerifiedGarbage.Proof.Framework.NativeTaintCore
 import VerifiedGarbage.Proof.Framework.Arm.Contract
@@ -16,7 +16,7 @@ meta import VerifiedGarbage.Proof.Camellia.CbcScratch
 meta import VerifiedGarbage.Proof.Modes.Arm.Cbc
 meta import VerifiedGarbage.Proof.Modes.Arm.WideModes
 meta import VerifiedGarbage.Proof.Modes.Arm.CbcChained
-meta import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
+meta import VerifiedGarbage.Proof.Framework.Arm.StackScratch
 meta import VerifiedGarbage.Proof.Modes.Arm.OfbCfb
 meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
 meta import VerifiedGarbage.Proof.Framework.Arm.Contract
@@ -40,7 +40,7 @@ is over the two functions that split it, the table of subkeys built once in
 the scratch buffer (`Proof.Modes.Arm.seqK_verified` with `keyedSpec`,
 `Keyed.lean`): its scratch buffer holds their working space, and it uses
 the 8 bytes of stack of the call's push. The `_framed` theorems keep the
-scratch buffer on the stack, zeroed on return.
+scratch buffer on the stack, which the functions' cleanup zeroes.
 -/
 
 @[expose] public section
@@ -110,16 +110,16 @@ theorem cbcEncryptChainedFrameSat : ∃ s, (Proof.Camellia.cbcEncryptChainedCont
     Arm.reduceClassify, Arm.Loc.val, Arm.State.addr] [cbcFrameSat, cbcSat, stackArg, stackArgAddr, Mem.readW,
     Mem.read] using cbcFrameSat 0
 
-/-- `cbcEncryptChained`, with its scratch buffer on the stack (zeroed on return). -/
+/-- `cbcEncryptChained`, with its scratch buffer on the stack (which its function's cleanup zeroes). -/
 theorem cbcEncryptChained_framed :
-    Verified Arm.target (Impl.StackScratch.Arm.withStackScratchWiped 2816 1 698 cbcEncryptChained)
+    Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 2816 1 cbcEncryptChained)
       (Spec.Camellia.cbcEncryptChainedContract Arm.abi 2824) :=
   Proof.Camellia.cbcEncryptChained_of_sk <|
-  Arm.Verified.stackScratchWiped (sig := Spec.Camellia.cbcChainedSig) (nm := "scratch") (e := .u64) (n := 349)
+  Arm.Verified.stackScratch (sig := Spec.Camellia.cbcChainedSig) (nm := "scratch") (e := .u64) (n := 349)
     (pre := Proof.Camellia.cbcChainedPre Arm.abi.ptrBits) (post := Proof.Camellia.cbcEncChainedPost Arm.abi.ptrBits)
     (wa := true) (stack := 8) (m := 1) (bytes := 2816)
-    cbcEncryptChained_verified (by decide) (by decide) (by decide) (by decide) (by decide)
-    (Proof.Camellia.cbcChainedPre_local _) (Proof.Camellia.cbcEncChainedPost_local _) (Proof.Camellia.cbcEncChainedPostOut_local _) cbcEncryptChainedFrameSat
+    cbcEncryptChained_verified (by decide) (by decide) (by decide) (by decide)
+    (Proof.Camellia.cbcChainedPre_local _) (Proof.Camellia.cbcEncChainedPost_local _) (fun vs mm m₁ m₂ r hl _ => Proof.Camellia.cbcEncChainedPostOut_local _ vs mm m₁ m₂ r hl) cbcEncryptChainedFrameSat
 
 theorem cbcDecryptChainedTaint : SeqTaint (ecbCore .decrypt) cbcDecChained :=
   ⟨⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩⟩
@@ -166,15 +166,15 @@ theorem cbcDecryptChainedFrameSat : ∃ s, (Proof.Camellia.cbcDecryptChainedCont
     Arm.reduceClassify, Arm.Loc.val, Arm.State.addr] [cbcFrameSat, cbcSat, stackArg, stackArgAddr, Mem.readW,
     Mem.read] using cbcFrameSat 0
 
-/-- `cbcDecryptChained`, with its scratch buffer on the stack (zeroed on return). -/
+/-- `cbcDecryptChained`, with its scratch buffer on the stack (which its function's cleanup zeroes). -/
 theorem cbcDecryptChained_framed :
-    Verified Arm.target (Impl.StackScratch.Arm.withStackScratchWiped 88 1 18 cbcDecryptChained)
+    Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 88 1 cbcDecryptChained)
       (Spec.Camellia.cbcDecryptChainedContract Arm.abi 3032) :=
   Proof.Camellia.cbcDecryptChained_of_sk <|
-  Arm.Verified.stackScratchWiped (sig := Spec.Camellia.cbcChainedSig) (nm := "scratch") (e := .u64) (n := 9)
+  Arm.Verified.stackScratch (sig := Spec.Camellia.cbcChainedSig) (nm := "scratch") (e := .u64) (n := 9)
     (pre := Proof.Camellia.cbcChainedPre Arm.abi.ptrBits) (post := Proof.Camellia.cbcDecChainedPost Arm.abi.ptrBits)
     (wa := true) (stack := 2944) (m := 1) (bytes := 88)
-    cbcDecryptChained_verified (by decide) (by decide) (by decide) (by decide) (by decide)
-    (Proof.Camellia.cbcChainedPre_local _) (Proof.Camellia.cbcDecChainedPost_local _) (Proof.Camellia.cbcDecChainedPostOut_local _) cbcDecryptChainedFrameSat
+    cbcDecryptChained_verified (by decide) (by decide) (by decide) (by decide)
+    (Proof.Camellia.cbcChainedPre_local _) (Proof.Camellia.cbcDecChainedPost_local _) (fun vs mm m₁ m₂ r hl _ => Proof.Camellia.cbcDecChainedPostOut_local _ vs mm m₁ m₂ r hl) cbcDecryptChainedFrameSat
 
 end VG.Proof.Camellia.Arm

@@ -88,7 +88,7 @@ def p384 (hL : Weierstrass.Law Spec.P384.curve)
   sh_eq := Proof.Ecdsa.X86_64.P384.p384_sh
   coreN := "vg_ecdsa_p384_sign_k"
   coreC := Impl.Ecdsa.X86_64.signP384
-  coreX := by rw [coreK_p384]; exact Proof.Ecdsa.X86_64.P384.sign_call_x86 hL hT hI
+  coreX := by rw [coreK_p384]; exact fun s h hc => Proof.Ecdsa.X86_64.P384.sign_call_x86 hL hT hI s h hc.hole_of_holeN2
   coreCT := by rw [coreK_p384]; exact Proof.Ecdsa.X86_64.P384.sign_ct
   coreNs := by lit_decide
   coreSp := by lit_decide
@@ -139,7 +139,7 @@ def p384x (hL : Weierstrass.Law Spec.P384.curve)
   sh_eq := Proof.Ecdsa.X86_64.P384.p384x_sh
   coreN := "vg_ecdsa_p384_sign_k" ++ "_adx"
   coreC := Impl.Ecdsa.X86_64.signP384Adx
-  coreX := by rw [coreK_p384x]; exact Proof.Ecdsa.X86_64.P384.sign_call_x86_adx hL hT hI
+  coreX := by rw [coreK_p384x]; exact fun s h hc => Proof.Ecdsa.X86_64.P384.sign_call_x86_adx hL hT hI s h hc.hole_of_holeN2
   coreCT := by rw [coreK_p384x]; exact Proof.Ecdsa.X86_64.P384.sign_ct_adx
   coreNs := by lit_decide
   coreSp := by lit_decide

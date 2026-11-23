@@ -68,22 +68,6 @@ vg_blowfish_cfb64_encrypt:
 	ldr r11, [r8, #28]
 	ldr lr, [r8, #32]
 	ldr r8, [r8, #16]
-	add r12, sp, #8
-	mov r2, #0
-	str r2, [r12, #0]
-	str r2, [r12, #4]
-	str r2, [r12, #8]
-	str r2, [r12, #12]
-	str r2, [r12, #16]
-	str r2, [r12, #20]
-	str r2, [r12, #24]
-	str r2, [r12, #28]
-	str r2, [r12, #32]
-	str r2, [r12, #36]
-	str r2, [r12, #40]
-	str r2, [r12, #44]
-	str r2, [r12, #48]
-	str r2, [r12, #52]
 	add sp, sp, #64
 	sub sp, sp, #320
 	add r12, sp, #0
@@ -178,22 +162,6 @@ vg_blowfish_cfb64_decrypt:
 	ldr r11, [r8, #28]
 	ldr lr, [r8, #32]
 	ldr r8, [r8, #16]
-	add r12, sp, #8
-	mov r2, #0
-	str r2, [r12, #0]
-	str r2, [r12, #4]
-	str r2, [r12, #8]
-	str r2, [r12, #12]
-	str r2, [r12, #16]
-	str r2, [r12, #20]
-	str r2, [r12, #24]
-	str r2, [r12, #28]
-	str r2, [r12, #32]
-	str r2, [r12, #36]
-	str r2, [r12, #40]
-	str r2, [r12, #44]
-	str r2, [r12, #48]
-	str r2, [r12, #52]
 	add sp, sp, #64
 	sub sp, sp, #320
 	add r12, sp, #0
@@ -300,22 +268,6 @@ vg_blowfish_cfb64_encrypt_final:
 	ldr r11, [r8, #28]
 	ldr lr, [r8, #32]
 	ldr r8, [r8, #16]
-	add r12, sp, #8
-	mov r2, #0
-	str r2, [r12, #0]
-	str r2, [r12, #4]
-	str r2, [r12, #8]
-	str r2, [r12, #12]
-	str r2, [r12, #16]
-	str r2, [r12, #20]
-	str r2, [r12, #24]
-	str r2, [r12, #28]
-	str r2, [r12, #32]
-	str r2, [r12, #36]
-	str r2, [r12, #40]
-	str r2, [r12, #44]
-	str r2, [r12, #48]
-	str r2, [r12, #52]
 	add sp, sp, #64
 	sub sp, sp, #320
 	add r12, sp, #0
@@ -426,22 +378,6 @@ vg_blowfish_cfb64_decrypt_final:
 	ldr r11, [r8, #28]
 	ldr lr, [r8, #32]
 	ldr r8, [r8, #16]
-	add r12, sp, #8
-	mov r2, #0
-	str r2, [r12, #0]
-	str r2, [r12, #4]
-	str r2, [r12, #8]
-	str r2, [r12, #12]
-	str r2, [r12, #16]
-	str r2, [r12, #20]
-	str r2, [r12, #24]
-	str r2, [r12, #28]
-	str r2, [r12, #32]
-	str r2, [r12, #36]
-	str r2, [r12, #40]
-	str r2, [r12, #44]
-	str r2, [r12, #48]
-	str r2, [r12, #52]
 	add sp, sp, #64
 	sub sp, sp, #320
 	add r12, sp, #0

@@ -1,5 +1,6 @@
 module
 public import VerifiedGarbage.Proof.Bignum.Arm.CallOp
+public import VerifiedGarbage.Proof.Bignum.Arm.DoubleBackend
 
 public import VerifiedGarbage.Proof.Rsa.Arm.InvLaw
 import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Top5
@@ -27,13 +28,13 @@ namespace VG.Proof.RsaKeyGen.Arm.Cand
 open VG VG.Arm
 open VG.Impl.RsaKeyGen.Arm.Candidate (code)
 open VG.Proof.MillerRabin.Arm (RoundImpl)
-open VG.Proof.Bignum.Arm (CallOp)
+open VG.Proof.Bignum.Arm (CallOp CallDbl)
 
-theorem cand_contract_correct [VG.Proof.Rsa.Arm.Keys.InvLaw] (v : RoundImpl) (M : CallOp) (s : State) (h : (Proof.RsaKeyGen.candidateContract abi 160).pre s) :
-    ∃ tr t, Exec isa (code v.name v.code M.op) s tr t ∧ abiPreserved s t ∧
+theorem cand_contract_correct [VG.Proof.Rsa.Arm.Keys.InvLaw] (v : RoundImpl) (M : CallOp) (D : CallDbl) (s : State) (h : (Proof.RsaKeyGen.candidateContract abi 160).pre s) :
+    ∃ tr t, Exec isa (code v.name v.code M.op D.dbl) s tr t ∧ abiPreserved s t ∧
       (Proof.RsaKeyGen.candidateContract abi 160).post s t := by
   have hc := cin_of_pre s h
-  obtain ⟨tr, t, run, preserved, r0, outs, used⟩ := cand_ok v M hc
+  obtain ⟨tr, t, run, preserved, r0, outs, used⟩ := cand_ok v M D hc
   refine ⟨tr, t, run, preserved, ?_⟩
   sig_post [Proof.RsaKeyGen.candidateContract, Proof.RsaKeyGen.candidateSig, abi, argRegs, reduceClassify, Loc.val,
     State.addr]
@@ -70,8 +71,8 @@ theorem mkP_eq {s t : State} (hs : CIn s) (sp : s.sp = t.sp) (p0 : s.gpr .r0 = t
       (by rw [VG.Proof.Rsa.Arm.CrtValues.bytesAt_length]; exact hk) hl]
   · rw [VG.Proof.RsaKeyGen.ite_f hk, VG.Proof.RsaKeyGen.ite_f hk]
 
-theorem cand_contract_ct [VG.Proof.Rsa.Arm.Keys.InvLaw] (v : RoundImpl) (M : CallOp) : ConstantTime isa (Proof.RsaKeyGen.candidateContract abi 160).pre
-    (Proof.RsaKeyGen.candidateContract abi 160).pub (code v.name v.code M.op) := by
+theorem cand_contract_ct [VG.Proof.Rsa.Arm.Keys.InvLaw] (v : RoundImpl) (M : CallOp) (D : CallDbl) : ConstantTime isa (Proof.RsaKeyGen.candidateContract abi 160).pre
+    (Proof.RsaKeyGen.candidateContract abi 160).pub (code v.name v.code M.op D.dbl) := by
   intro s t tr1 tr2 u w hs ht hp e1 e2
   have is := cin_of_pre s hs
   have it := cin_of_pre t ht
@@ -81,7 +82,7 @@ theorem cand_contract_ct [VG.Proof.Rsa.Arm.Keys.InvLaw] (v : RoundImpl) (M : Cal
   obtain ⟨b1, b2⟩ := List.append_inj bytes (by
     simp only [List.length_map, VG.Proof.Rsa.Arm.CrtValues.bytesAt_length]; rw [a0])
   have he := (List.map_inj_right (fun _ _ h => BitVec.toNat_inj.1 h)).1 b1
-  exact (cand_ct v M s t tr1 tr2 u w ⟨is, it, sp,
+  exact (cand_ct v M D s t tr1 tr2 u w ⟨is, it, sp,
     mkP_eq is sp p0 p1 p2 p3 a0 a1 a2 a3 a4 a5 a6 he b2⟩ e1 e2).1
 
 /-- 32-octet primes, a one-octet exponent, no `p` and no `rand`: `out` at
@@ -107,8 +108,8 @@ theorem cand_contract_sat : ∃ s, (Proof.RsaKeyGen.candidateContract abi 160).p
     using candSatState
 
 /-- `vg_rsa_keygen_candidate`, calling the round `v`. -/
-theorem cand_verified [VG.Proof.Rsa.Arm.Keys.InvLaw] (v : RoundImpl) (M : CallOp) :
-    Verified target (code v.name v.code M.op) (Proof.RsaKeyGen.candidateContract abi 160) :=
-  ⟨cand_contract_correct v M, cand_contract_ct v M, cand_contract_sat⟩
+theorem cand_verified [VG.Proof.Rsa.Arm.Keys.InvLaw] (v : RoundImpl) (M : CallOp) (D : CallDbl) :
+    Verified target (code v.name v.code M.op D.dbl) (Proof.RsaKeyGen.candidateContract abi 160) :=
+  ⟨cand_contract_correct v M D, cand_contract_ct v M D, cand_contract_sat⟩
 
 end VG.Proof.RsaKeyGen.Arm.Cand

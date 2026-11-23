@@ -59,17 +59,18 @@ open VG.Spec.Sha3 (bytesAt)
 variable {P : KemLay}
 variable {keccak : VG.Proof.Sha3.AArch64.Permutation}
 
-theorem a_tail_using (hash : FixedHash.HashFn)
-    (hash_ok : FixedHash.HashCorrect hash .x28 ST WK 72 6
+theorem a_tail_using (hash : FixedHash.HashFn) {n : String}
+    (hash_ok : FixedHash.HashCorrect hash n .x28 ST WK 72 6
       [⟨.x28,MB,32⟩,⟨.x25,768*P.k+32,32⟩] [⟨.x28,KP,32⟩,⟨.x28,RB,32⟩])
     {s₀ s₂ : State} (hp : Pre P (deL P) s₀)
-    (kb₂ : KB P (deL P) s₀ s₂) (x₂ : s₂.gpr .x24=1) (m₂ : bytesAt s₂.mem (sA (deL P) s₀ MB) 32=mD P s₀) :
+    (kb₂ : KB P (deL P) s₀ s₂) (x₂ : s₂.gpr .x24=1) (m₂ : bytesAt s₂.mem (sA (deL P) s₀ MB) 32=mD P s₀)
+    (hd : Proof.Sha3.AArch64.D8 n s₂) :
     WP isa (seqs [hash .x28 ST WK 72 6
       [⟨.x28,MB,32⟩,⟨.x25,768*P.k+32,32⟩] [⟨.x28,KP,32⟩,⟨.x28,RB,32⟩],
       .block (copy32 .x25 (768*P.k) .x28 SB)]) s₂ (AfterA P s₀) := by
   have hw := hp.wf
   -- `G(m' ‖ h)`
-  refine WP.seq (WP.mono (hash_ok (hsetup hp kb₂ (by decide : 72 ∈ Spec.Sha3.rates)) (by decide) (by simp)
+  refine WP.seq (WP.mono (hash_ok (hsetup hp kb₂ (by decide : 72 ∈ Spec.Sha3.rates)) hd (by decide) (by simp)
     (fun p hp' => by
       rcases mem2' hp' with rfl | rfl
       · exact pieceOk (k := 3) hp kb₂ (by decide) (by dek) (.inr (by decide)) (by decide) (by dek)
@@ -352,13 +353,14 @@ open VG.Proof.MlKem.AArch64.Kem
 variable {P : KemLay}
 variable {keccak : VG.Proof.Sha3.AArch64.Permutation}
 
-theorem start_using_ok (hash : FixedHash.HashFn)
-    (hash_ok : FixedHash.HashCorrect hash .x28 ST WK 72 6
+theorem start_using_ok (hash : FixedHash.HashFn) {n : String}
+    (hash_ok : FixedHash.HashCorrect hash n .x28 ST WK 72 6
       [⟨.x28,MB,32⟩,⟨.x25,768*P.k+32,32⟩] [⟨.x28,KP,32⟩,⟨.x28,RB,32⟩])
     {s₀ : State} (hp : Pre P (deL P) s₀) (hc : Calls P) (htr : Optimized.TransformTables s₀)
     (ht : Dot.GammaArtifact s₀.mem (s₀.syms "VG_MLKEM_GAMMA"))
     (hcT : Covers [⟨s₀.syms "VG_MLKEM_GAMMA",512⟩] (s₀.rd++s₀.wr))
-    (ha : (⟨s₀.syms "VG_MLKEM_GAMMA",512⟩ : Region).Disjoint ⟨kA s₀ (deL P).sc,P.scl⟩) :
+    (ha : (⟨s₀.syms "VG_MLKEM_GAMMA",512⟩ : Region).Disjoint ⟨kA s₀ (deL P).sc,P.scl⟩)
+    (hd : Proof.Sha3.AArch64.D8 n s₀) :
     WP isa (Impl.MlKem.AArch64.FixedHashDecaps.deStartUsing hash P) s₀ (AfterA P s₀) := by
   have hw := hp.wf
   refine WP.seq (WP.mono_syms (prologue_ok hp) fun s₁ h₁ hs => ?_)
@@ -378,9 +380,9 @@ theorem start_using_ok (hash : FixedHash.HashFn)
       · simpa only [hm] using Frame.refl [R (kA s₀) (deL P).sc (SV P) 48] s₀.mem
       · exact hf
     · exact cov_w₀ hp ⟨hp.scw,hp.scb⟩ (hp.fs (by omega_using []))
-  refine WP.seq (WP.mono (fused_m_ok hp hc tr₁ ⟨h₁.kb,h₁.x24,fun _ hj => by omega⟩ gt ct
-    (by simpa only [hs] using ha)) fun s₂ ⟨kb₂,x₂,m₂⟩ => ?_)
-  exact a_tail_using hash hash_ok hp kb₂ x₂ m₂
+  refine WP.seq (WP.mono_syms (fused_m_ok hp hc tr₁ ⟨h₁.kb,h₁.x24,fun _ hj => by omega⟩ gt ct
+    (by simpa only [hs] using ha)) fun s₂ ⟨kb₂,x₂,m₂⟩ y₂ => ?_)
+  exact a_tail_using hash hash_ok hp kb₂ x₂ m₂ (hd.of kb₂.vcs (y₂.trans hs))
 
 end VG.Proof.MlKem.AArch64.Decaps
 

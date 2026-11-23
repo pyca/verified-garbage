@@ -45,7 +45,8 @@ open VG VG.Arm VG.Arm.Scrub
 /-- `vg_ecdh_secp256k1`, given the group law. -/
 theorem exchangeSecp256k1 (hC : Weierstrass.Law Spec.Secp256k1.curve) :
     VerifiedScrubbed target Impl.Ecdh.Arm.Fn.exchangeSecp256k1
-      (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.Secp256k1.inst abi) 32 :=
+      (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.Secp256k1.inst
+        (abi.withConsts (Impl.Ecdsa.Arm.secp256k1With false).constsK)) 32 :=
   verifiedScrubbed (api := Spec.Ecdh.Secp256k1.exchangeApi)
     { code := Impl.Ecdh.Arm.exchangeSecp256k1
       verified := VG.Proof.Ecdh.Arm.Secp256k1.ecdh_verified hC }
@@ -54,7 +55,8 @@ theorem exchangeSecp256k1 (hC : Weierstrass.Law Spec.Secp256k1.curve) :
 /-- `vg_ecdh_secp256k1_umaal`, given the group law. -/
 theorem exchangeSecp256k1U (hC : Weierstrass.Law Spec.Secp256k1.curve) :
     VerifiedScrubbed target Impl.Ecdh.Arm.Fn.exchangeSecp256k1U
-      (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.Secp256k1.inst abi) 32 :=
+      (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.Secp256k1.inst
+        (abi.withConsts (Impl.Ecdsa.Arm.secp256k1With true).constsK)) 32 :=
   verifiedScrubbed (api := Spec.Ecdh.Secp256k1.exchangeApi)
     { code := Impl.Ecdh.Arm.exchangeSecp256k1U
       verified := VG.Proof.Ecdh.Arm.Secp256k1.ecdhU_verified hC }

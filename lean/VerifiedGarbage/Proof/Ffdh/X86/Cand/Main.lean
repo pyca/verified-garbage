@@ -118,7 +118,7 @@ structure Fin (base : Addr) (len : Nat) (args : Nat → BitVec 32) (up : BitVec 
   eax : t.gpr .eax = BitVec.ofNat 32 r
   bytes : Spec.Rsa.bytesAt t.mem (byteAddr (args 0)) len = out
   used : t.mem.readW (byteAddr up) 64 = BitVec.ofNat 64 used
-  frame : Frame (⟨byteAddr (args 0), len⟩ :: ⟨byteAddr up, 8⟩ :: frameR base (s.gpr .esp) (fR len)) s.mem t.mem
+  frame : Frame (⟨byteAddr (args 0), len⟩ :: ⟨byteAddr up, 8⟩ :: frameF base (s.gpr .esp) (fR len)) s.mem t.mem
   keeps : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t
 
 /-- A result after a stage. -/
@@ -152,7 +152,7 @@ theorem finish_ok (h : In Ex base bytes len args s) {up : BitVec 32}
 theorem zeroOut_ok (h : In Ex base bytes len args s) (Ox : OutAt args base bytes len 0 (s.gpr .esp) s.wr) :
     WP isa zeroOut s fun t =>
       Spec.Rsa.bytesAt t.mem (byteAddr (args 0)) len = List.replicate len 0 ∧
-      Frame (⟨byteAddr (args 0), len⟩ :: frameR base (s.gpr .esp) (fR len)) s.mem t.mem ∧
+      Frame (⟨byteAddr (args 0), len⟩ :: frameF base (s.gpr .esp) (fR len)) s.mem t.mem ∧
       Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t ∧ In Ex base bytes len args t ∧
       Kept base len [19] [accOff] s.mem t.mem := by
   have ao : accOff = 8 := rfl
@@ -233,7 +233,7 @@ theorem reject_ok (h : In Ex base bytes len args s) (Ox : OutAt args base bytes 
 theorem acceptOut_ok (h : In Ex base bytes len args s) (Ox : OutAt args base bytes len 0 (s.gpr .esp) s.wr)
     {p : Nat} (hp : sv s.mem base len .wide 9 = p) (hpl : p < 2 ^ (8 * len)) :
     WP isa acceptOut s fun u => Spec.Rsa.bytesAt u.mem (byteAddr (args 0)) len = Spec.Rsa.i2osp p len ∧
-      Frame (⟨byteAddr (args 0), len⟩ :: frameR base (s.gpr .esp) (fR len)) s.mem u.mem ∧
+      Frame (⟨byteAddr (args 0), len⟩ :: frameF base (s.gpr .esp) (fR len)) s.mem u.mem ∧
       Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s u ∧ In Ex base bytes len args u ∧
       Kept base len [19] [accOff] s.mem u.mem := by
   have ao : accOff = 8 := rfl
@@ -431,29 +431,306 @@ theorem onPass_ok (h : In Ex base bytes len args s) (Ox : OutAt args base bytes 
     · simp [drawStatus] at e₂
     · simp [drawStatus] at e
 
-/-- A phase and what follows it: `rest` from where a pass leaves the tape. -/
-theorem phasePass_ok (h : In Ex base bytes len args s) {T : List Byte}
+/-! ## The stages
+
+`tests` runs one stage per phase, in a loop: the stage after `i` passed ones tests
+`stW p q i` with `stN bits i` witnesses (its words by `stageWords_ok`, slots 9 and 10
+exchanged for q's), and goes on after a pass that is not the third (`stage_ok`). What
+is left of the result after `i` passed stages is `tailChecks p q bits i`. -/
+
+/-- The screened tests' rest after p's first witness and all of q's. -/
+def tail2 (p bits : Nat) (r : Spec.RsaKeyGen.Rand) : Option (Bool × Spec.RsaKeyGen.Rand) :=
+  ParameterCandidate.checkWitnesses p (Spec.Ffdh.primeChecks bits - 1) r
+
+/-- The screened tests' rest after p's first witness. -/
+def tail1 (p q bits : Nat) (r : Spec.RsaKeyGen.Rand) : Option (Bool × Spec.RsaKeyGen.Rand) := do
+  let (pass, r) ← ParameterCandidate.checkWitnesses q (Spec.Ffdh.primeChecks (bits - 1)) r
+  if !pass then return (false, r)
+  tail2 p bits r
+
+/-- What is left of the screened tests after `i` passed stages. -/
+def tailChecks (p q bits : Nat) : Nat → Spec.RsaKeyGen.Rand → Option (Bool × Spec.RsaKeyGen.Rand)
+  | 0, r => do
+    let (pass, r) ← ParameterCandidate.checkWitnesses p 1 r
+    if !pass then return (false, r)
+    tail1 p q bits r
+  | 1, r => tail1 p q bits r
+  | _, r => tail2 p bits r
+
+/-- The modulus of the stage after `i` passed ones. -/
+def stW (p q i : Nat) : Nat := if i = 1 then q else p
+
+/-- The count of witnesses of the stage after `i` passed ones. -/
+def stN (bits i : Nat) : Nat :=
+  if i = 0 then 1 else if i = 1 then Spec.Ffdh.primeChecks (bits - 1) else Spec.Ffdh.primeChecks bits - 1
+
+theorem screened_tail {p q bits : Nat} (hbp : Spec.RsaKeyGen.bitLength p = bits)
+    (hbq : Spec.RsaKeyGen.bitLength q = bits - 1) (r : Spec.RsaKeyGen.Rand) :
+    ParameterCandidate.screenedChecks p q r = tailChecks p q bits 0 r := by
+  simp only [ParameterCandidate.screenedChecks, tailChecks, tail1, tail2, hbp, hbq]
+
+/-- The rest after a stage, from its phase's result `D`. -/
+theorem tail_step {p q bits i : Nat} {r : Spec.RsaKeyGen.Rand} (hi : i < 3)
+    {D : Option (Bool × Spec.RsaKeyGen.Rand)} (hD : ParameterCandidate.checkWitnesses (stW p q i) (stN bits i) r = D) :
+    (D = none → tailChecks p q bits i r = none) ∧
+    (∀ r', D = some (false, r') → tailChecks p q bits i r = some (false, r')) ∧
+    (∀ r', D = some (true, r') → i < 2 → tailChecks p q bits i r = tailChecks p q bits (i + 1) r') ∧
+    (∀ r', D = some (true, r') → i = 2 → tailChecks p q bits i r = some (true, r')) := by
+  subst hD
+  rcases (by omega_arith : i = 0 ∨ i = 1 ∨ i = 2) with rfl | rfl | rfl <;>
+    refine ⟨fun e => ?_, fun r' e => ?_, fun r' e hi' => ?_, fun r' e hi' => ?_⟩ <;>
+    simp_all [tailChecks, tail1, tail2, stW, stN]
+
+theorem stN_pos (bits i : Nat) : 1 ≤ stN bits i := by
+  unfold stN Spec.Ffdh.primeChecks
+  split
+  · decide
+  · split <;> split <;> decide
+
+theorem hdr_iter : Hdr iterOff := ⟨.inr ⟨by decide, by decide⟩, by decide⟩
+
+/-- Slots 9 and 10 exchanged. -/
+theorem swap_ok (h : In Ex base bytes len args s) {a b : Nat} (ha : sv s.mem base len .wide 9 = a)
+    (hb : sv s.mem base len .wide 10 = b) :
+    WP isa Impl.Ffdh.X86.Candidate.swap s fun t => Step Ex base bytes len args s t ∧ sv t.mem base len .wide 9 = b ∧
+      sv t.mem base len .wide 10 = a ∧ Kept base len [9, 10, 16] [] s.mem t.mem := by
+  unfold Impl.Ffdh.X86.Candidate.swap
+  refine WP.seq (WP.mono (copyO_ok h (a := 9) (b := 16) (by decide) (by decide) (by decide))
+    fun u₁ ⟨S₁, V₁, k₁, _, _⟩ => ?_)
+  refine WP.seq (WP.mono (copyO_ok S₁.inp (a := 10) (b := 9) (by decide) (by decide) (by decide))
+    fun u₂ ⟨S₂, V₂, k₂, _, _⟩ => ?_)
+  refine WP.mono (copyO_ok S₂.inp (a := 16) (b := 10) (by decide) (by decide) (by decide))
+    fun t ⟨S₃, V₃, k₃, _, _⟩ => ⟨S₁.trans (S₂.trans S₃), ?_, ?_, k₁.mono.trans (k₂.mono.trans k₃.mono)⟩
+  · rw [k₃.slot_eq, V₂, k₁.slot_eq, hb]
+  · rw [V₃, k₂.slot_eq, V₁, ha]
+
+/-- The words of the stage after `i` passed ones, its modulus in slot 9. -/
+theorem stageWords_ok (h : In Ex base bytes len args s) {bits p q i : Nat} (hi : i < 3)
+    (hb : w32 s.mem base bitsOff = bits) (hb1 : 512 ≤ bits) (hb2 : bits ≤ 8192)
+    (hI : w32 s.mem base iterOff = i) (h9 : sv s.mem base len .wide 9 = if i = 2 then q else p)
+    (h10 : sv s.mem base len .wide 10 = if i = 2 then p else q)
+    (hbp : Spec.RsaKeyGen.bitLength (p - 1) = bits) (hbq : Spec.RsaKeyGen.bitLength (q - 1) = bits - 1) :
+    WP isa stageWords s fun t => Step Ex base bytes len args s t ∧ sv t.mem base len .wide 9 = stW p q i ∧
+      sv t.mem base len .wide 10 = (if i = 1 then p else q) ∧
+      w32 t.mem base octOff = Spec.Ffdh.witnessOctets (stW p q i) ∧
+      w32 t.mem base kOff = Spec.RsaKeyGen.bitLength (stW p q i - 1) ∧ w32 t.mem base cntOff = stN bits i ∧
+      Kept base len [9, 10, 16] [kOff, octOff, cntOff] s.mem t.mem := by
+  unfold stageWords
+  refine WP.seq (wp_movS (hdr_read h hdr_iter) fun t₁ U₁ _ => wp_cmpi fun t₂ F₂ _ z₂ => WP.block_nil ?_)
+  have m₂ : t₂.mem = s.mem := by rw [F₂.mem, U₁.mem]
+  have K₂ : Keeps [.eax] s t₂ := U₁.keeps.trans (F₂.keeps _)
+  have S₂ : Step Ex base bytes len args s t₂ := Step.regs h m₂ K₂
+  refine WP.ite (decide (i = 0)) (by
+      show t₂.zf = _
+      rw [z₂, U₁.gpr, hI]
+      exact congrArg some (sub_beq (by omega_arith) (by omega_arith))) (fun e => ?_) fun e => ?_
+  · obtain rfl : i = 0 := by simpa using e
+    refine phaseWords_ok S₂.inp (by rw [m₂, hb]) (δ := 0) (ε := 0) (by decide) (by decide) hb1 hb2
+      fun t₃ S₃ K₃ O₃ _ k₃ => wp_movi fun t₄ U₄ => hdr_store (S₃.inp.regs U₄.keeps U₄.mem) hdr_cnt
+        fun t S W k _ _ _ _ => WP.block_nil ?_
+    have kk : Kept base len [] [kOff, octOff, cntOff] t₂.mem t.mem :=
+      k₃.trans ((by rw [U₄.mem]; exact (Kept.refl _).mono : Kept base len [] [kOff, octOff, cntOff] t₃.mem t₄.mem).trans
+        k.mono)
+    refine ⟨S₂.trans (S₃.trans ((Step.regs S₃.inp U₄.mem U₄.keeps).trans S)), ?_, ?_, ?_, ?_, ?_, ?_⟩
+    · rw [kk.slot_eq, m₂, h9]; simp [stW]
+    · rw [kk.slot_eq, m₂, h10]; simp
+    · rw [k.word_eq, U₄.mem, O₃, Spec.Ffdh.witnessOctets]; simp [stW, hbp]
+    · rw [k.word_eq, U₄.mem, K₃]; simp [stW, hbp]
+    · rw [W, U₄.gpr]; rfl
+    · rw [← m₂]; exact kk.mono
+  · have i0 : i ≠ 0 := by simpa using e
+    refine WP.seq (WP.mono (swap_ok S₂.inp (a := if i = 2 then q else p) (b := if i = 2 then p else q)
+      (by rw [m₂, h9]) (by rw [m₂, h10])) fun u ⟨Su, V9, V10, ku⟩ => ?_)
+    refine WP.seq (wp_movS (hdr_read Su.inp hdr_iter) fun u₁ W₁ _ => wp_cmpi fun u₂ G₂ _ y₂ => WP.block_nil ?_)
+    have mu : u₂.mem = u.mem := by rw [G₂.mem, W₁.mem]
+    have Ku : Keeps [.eax] u u₂ := W₁.keeps.trans (G₂.keeps _)
+    have Su₂ : Step Ex base bytes len args u u₂ := Step.regs Su.inp mu Ku
+    have iu : w32 u.mem base iterOff = i := by rw [ku.word_eq, m₂, hI]
+    have bu : w32 u₂.mem base bitsOff = bits := by rw [mu, ku.word_eq, m₂, hb]
+    have ks : Kept base len [9, 10, 16] [kOff, octOff, cntOff] s.mem u₂.mem := by
+      rw [mu, ← m₂]; exact ku.mono
+    refine WP.ite (decide (i = 1)) (by
+        show u₂.zf = _
+        rw [y₂, W₁.gpr, iu]
+        exact congrArg some (sub_beq (by omega_arith) (by omega_arith))) (fun e₁ => ?_) fun e₁ => ?_
+    · obtain rfl : i = 1 := by simpa using e₁
+      rw [← List.append_nil (phaseWords 1 0)]
+      refine phaseWords_ok Su₂.inp bu (δ := 1) (ε := 0) (by decide) (by decide) hb1 hb2
+        fun t S K O C k => WP.block_nil ?_
+      refine ⟨S₂.trans (Su.trans (Su₂.trans S)), ?_, ?_, ?_, ?_, ?_, ks.trans k.mono⟩
+      · rw [k.slot_eq, mu, V9]; simp [stW]
+      · rw [k.slot_eq, mu, V10]; simp
+      · rw [O, Spec.Ffdh.witnessOctets]; simp [stW, hbq]
+      · rw [K]; simp [stW, hbq]
+      · rw [C]; simp [stN]
+    · have i2 : i = 2 := by simp at e₁; omega_arith
+      subst i2
+      rw [← List.append_nil (phaseWords 0 1)]
+      refine phaseWords_ok Su₂.inp bu (δ := 0) (ε := 1) (by decide) (by decide) hb1 hb2
+        fun t S K O C k => WP.block_nil ?_
+      refine ⟨S₂.trans (Su.trans (Su₂.trans S)), ?_, ?_, ?_, ?_, ?_, ks.trans k.mono⟩
+      · rw [k.slot_eq, mu, V9]; simp [stW]
+      · rw [k.slot_eq, mu, V10]; simp
+      · rw [O, Spec.Ffdh.witnessOctets]; simp [stW, hbp]
+      · rw [K]; simp [stW, hbp]
+      · rw [C]; simp [stN]
+
+/-- The phase's result in the stage after `i` passed ones, from the cursor `c`. -/
+abbrev stD (p q bits : Nat) (T : List Byte) (i c : Nat) : Option (Bool × Spec.RsaKeyGen.Rand) :=
+  ParameterCandidate.checkWitnesses (stW p q i) (stN bits i) (T.drop c)
+
+/-- Whether the stages go on after the stage after `i` passed ones, whose phase's result is `D`. -/
+def stGo (D : Option (Bool × Spec.RsaKeyGen.Rand)) (i : Nat) : Bool := decide (drawStatus D = 1) && decide (i < 2)
+
+/-- The cursor after a phase from `c` whose result is `D`. -/
+def stNext (T : List Byte) (c : Nat) : Option (Bool × Spec.RsaKeyGen.Rand) → Nat
+  | some (_, r) => T.length - r.length
+  | none => c
+
+/-- The words of the stage after `i` passed ones: `bits`, `i`, p and q in slots 9 and 10
+(exchanged before the last stage), and the cursor `c`. -/
+abbrev StageW (base : Addr) (len bits p q i c : Nat) (x : State) : Prop :=
+  w32 x.mem base bitsOff = bits ∧ w32 x.mem base iterOff = i ∧
+    sv x.mem base len .wide 9 = (if i = 2 then q else p) ∧ sv x.mem base len .wide 10 = (if i = 2 then p else q) ∧
+    w32 x.mem base curOff = c
+
+theorem StageW.mem {bits p q i c : Nat} {x v : State} (m : v.mem = x.mem) (h : StageW base len bits p q i c x) :
+    StageW base len bits p q i c v := by
+  unfold StageW at *
+  rw [m]
+  exact h
+
+/-- A stage: its phase's result `stD`, and on to the next stage after a pass that is not the
+third (`stGo`), with the cursor where the pass left the tape. -/
+theorem stage_ok (h : In Ex base bytes len args s) {T : List Byte}
     (G : TapeGeo Ex args base bytes (s.gpr .esp) T.length)
     (hT : Spec.Rsa.bytesAt s.mem (byteAddr (args 2)) T.length = T)
-    (Ox : OutAt args base bytes len 0 (s.gpr .esp) s.wr) {up : BitVec 32}
-    (U : UsedAt base bytes up (s.gpr .esp) ⟨byteAddr (args 0), len⟩ s.wr) (hu : w32 s.mem base usedOff = up.toNat)
-    {j w n c p : Nat} (hj9 : 9 ≤ j) (hj : j ≤ 10) (hw : sv s.mem base len .wide j = w) (hw3 : 3 ≤ w)
-    (hodd : w % 2 = 1) (ho : w32 s.mem base octOff = Spec.Ffdh.witnessOctets w)
-    (hk : w32 s.mem base kOff = Spec.RsaKeyGen.bitLength (w - 1)) (hn : w32 s.mem base cntOff = n) (hn1 : 1 ≤ n)
-    (hc : w32 s.mem base curOff = c) (hcT : c ≤ T.length) {A : Option (Bool × Spec.RsaKeyGen.Rand)}
-    (hF : ∀ r, ParameterCandidate.checkWitnesses w n (T.drop c) = some (false, r) → A = some (false, r))
-    (hN : ParameterCandidate.checkWitnesses w n (T.drop c) = none → A = none) {rest : Prog isa}
-    (hrest : ∀ r, ParameterCandidate.checkWitnesses w n (T.drop c) = some (true, r) → ∀ u c',
-      Step Ex base bytes len args s u → Kept base len [11, 13, 14, 15] (twoOff :: drawDs) s.mem u.mem →
-      w32 u.mem base curOff = c' → c' ≤ T.length → T.drop c' = r →
-      WP isa rest u (Fin base len args up u (resStatus A) (resUsed T A) (resOut p len A))) :
-    WP isa (.seq (phase j) (onPass rest)) s (Fin base len args up s (resStatus A) (resUsed T A) (resOut p len A)) := by
-  refine WP.seq (WP.mono (phase_ok h G hT hj9 hj hw hw3 hodd ho hk hn hn1 hc hcT) fun u ⟨Su, Eu, Cu, ku⟩ => ?_)
-  refine WP.mono (onPass_ok Su.inp (by rw [Su.esp]; exact Ox.keep rfl Su.keeps)
-    (by rw [Su.esp]; exact U.keep rfl Su.keeps) (by rw [ku.word_eq, hu]) Eu Cu hF hN
-    fun r hD u' hu' m K => ?_) fun t R => R.after Su
-  obtain ⟨c', hc', hcl, hr⟩ := Cu true r hD
-  exact hrest r hD u' c' (Su.trans (Step.regs Su.inp m K)) (by rw [m]; exact ku) (by rw [m, hc']) hcl hr
+    {bits p q : Nat} (hb1 : 512 ≤ bits) (hb2 : bits ≤ 8192) (hp3 : 3 ≤ p) (hpo : p % 2 = 1)
+    (hq3 : 3 ≤ q) (hqo : q % 2 = 1) (hbp : Spec.RsaKeyGen.bitLength (p - 1) = bits)
+    (hbq : Spec.RsaKeyGen.bitLength (q - 1) = bits - 1) {i c : Nat} (hi : i < 3)
+    (hW : StageW base len bits p q i c s) (hcT : c ≤ T.length) :
+    WP isa stage s fun y => Step Ex base bytes len args s y ∧ w32 y.mem base usedOff = w32 s.mem base usedOff ∧
+      isa.eval .ne y = some (stGo (stD p q bits T i c) i) ∧
+      (stGo (stD p q bits T i c) i = false →
+        y.gpr .eax = BitVec.ofNat 32 (drawStatus (stD p q bits T i c)) ∧
+        (∀ b r, stD p q bits T i c = some (b, r) → ∃ c', w32 y.mem base curOff = c' ∧ c' ≤ T.length ∧ T.drop c' = r) ∧
+        (drawStatus (stD p q bits T i c) = 1 → i = 2 ∧ sv y.mem base len .wide 9 = p)) ∧
+      (stGo (stD p q bits T i c) i = true →
+        StageW base len bits p q (i + 1) (stNext T c (stD p q bits T i c)) y ∧
+        stNext T c (stD p q bits T i c) ≤ T.length ∧
+        ∀ r, stD p q bits T i c = some (true, r) → T.drop (stNext T c (stD p q bits T i c)) = r) := by
+  obtain ⟨hb, hI, h9, h10, hc⟩ := hW
+  unfold stage
+  refine WP.seq (WP.mono (stageWords_ok h hi hb hb1 hb2 hI h9 h10 hbp hbq)
+    fun y₁ ⟨S₁, W9, W10, O₁, K₁, N₁, k₁⟩ => ?_)
+  have w3 : 3 ≤ stW p q i := by unfold stW; split <;> with_reducible assumption
+  have wo : stW p q i % 2 = 1 := by unfold stW; split <;> with_reducible assumption
+  refine WP.seq (WP.mono (phase_ok S₁.inp (by rw [S₁.esp]; exact G) (by rw [tape_keep G S₁, hT]) (j := 9)
+    (by decide) (by decide) W9 w3 wo O₁ K₁ N₁ (stN_pos bits i) (by rw [k₁.word_eq, hc]) hcT)
+    fun y₂ ⟨S₂, E₂, C₂, k₂⟩ => ?_)
+  have Sy₂ : Step Ex base bytes len args s y₂ := S₁.trans S₂
+  have k₁₂ : Kept base len [9, 10, 11, 13, 14, 15, 16] (kOff :: octOff :: cntOff :: twoOff :: drawDs) s.mem y₂.mem :=
+    k₁.mono.trans k₂.mono
+  have st : drawStatus (ParameterCandidate.checkWitnesses (stW p q i) (stN bits i) (T.drop c)) < 4 := by
+    unfold drawStatus; split <;> decide
+  unfold stageNext
+  refine WP.seq (wp_cmpi fun y₃ F₃ _ z₃ => WP.block_nil ?_)
+  have m₃ : y₃.mem = y₂.mem := F₃.mem
+  have e₃ : y₃.gpr .eax = y₂.gpr .eax := congrFun F₃.gpr _
+  have S₃ : Step Ex base bytes len args s y₃ := Sy₂.trans (Step.regs S₂.inp m₃ (F₃.keeps []))
+  refine WP.ite (decide (drawStatus (stD p q bits T i c) = 1))
+    (by
+      show y₃.zf = _
+      rw [z₃, E₂]
+      exact congrArg some (sub_beq (by omega_arith) (by omega_arith))) (fun e => ?_) fun e => ?_
+  · -- A pass: one more stage passed.
+    have e1 : drawStatus (stD p q bits T i c) = 1 := by simpa using e
+    obtain ⟨r, hD⟩ : ∃ r, stD p q bits T i c = some (true, r) := by
+      revert e1
+      generalize stD p q bits T i c = D
+      intro e1
+      rcases D with _ | ⟨⟨⟩ | ⟨⟩, r⟩
+      · simp [drawStatus] at e1
+      · simp [drawStatus] at e1
+      · exact ⟨r, rfl⟩
+    have h₃ : In Ex base bytes len args y₃ := S₃.inp
+    have iy : w32 y₃.mem base iterOff = i := by rw [m₃, k₁₂.word_eq, hI]
+    refine wp_movS (hdr_read h₃ hdr_iter) fun y₄ U₄ _ => wp_addi fun y₅ U₅ => ?_
+    have m₅ : y₅.mem = y₃.mem := by rw [U₅.mem, U₄.mem]
+    have K₅ : Keeps [.ecx] y₃ y₅ := U₄.keeps.trans U₅.keeps
+    refine hdr_store (h₃.regs K₅ m₅) hdr_iter fun y₆ S₆ W₆ k₆ _ g₆ _ _ => wp_cmpi fun y₇ F₇ _ z₇ => WP.block_nil ?_
+    have c₅ : y₅.gpr .ecx = BitVec.ofNat 32 (i + 1) := by
+      rw [U₅.gpr, U₄.gpr, iy, BitVec.ofNat_add]
+      rfl
+    have c₆ : y₆.gpr .ecx = BitVec.ofNat 32 (i + 1) := by rw [g₆, c₅]
+    have S₇ : Step Ex base bytes len args s y₇ :=
+      S₃.trans ((Step.regs h₃ m₅ K₅).trans (S₆.trans (Step.regs S₆.inp F₇.mem (F₇.keeps []))))
+    have k₇ : Kept base len [] [iterOff] y₃.mem y₇.mem := by rw [F₇.mem, ← m₅]; exact k₆
+    have eax₇ : y₇.gpr .eax = y₂.gpr .eax := by
+      rw [congrFun F₇.gpr, g₆, U₅.other _ (by decide), U₄.other _ (by decide), e₃]
+    have ne₇ : isa.eval .ne y₇ = some (!decide (i + 1 = 3)) := by
+      show y₇.zf.map (!·) = _
+      rw [z₇, c₆, show (3 : BitVec 32) = BitVec.ofNat 32 3 from rfl, sub_beq (by omega_arith) (by decide)]
+      rfl
+    obtain ⟨c', hc', hcl, hr⟩ := C₂ true r hD
+    have cur₇ : w32 y₇.mem base curOff = c' := by rw [k₇.word_eq, m₃, hc']
+    have used : stNext T c (stD p q bits T i c) = c' := by
+      rw [hD, stNext, ← hr, List.length_drop]; omega_arith
+    refine ⟨S₇, by rw [k₇.word_eq, m₃, k₁₂.word_eq], ?_⟩
+    by_cases last : i = 2
+    · subst last
+      have g : stGo (stD p q bits T 2 c) 2 = false := by simp [stGo]
+      refine ⟨by rw [ne₇, g]; rfl, fun _ => ⟨by rw [eax₇, E₂], ?_, fun _ => ⟨rfl, ?_⟩⟩, fun e' => by
+        rw [g] at e'; cases e'⟩
+      · intro b r' e'
+        obtain ⟨c'', h'', l'', r''⟩ := C₂ b r' e'
+        exact ⟨c'', by rw [k₇.word_eq, m₃, h''], l'', r''⟩
+      · rw [k₇.slot_eq, m₃, k₂.slot_eq, W9]; rfl
+    · have hi' : i < 2 := by omega_arith
+      have g : stGo (stD p q bits T i c) i = true := by simp only [stGo, e1, hi', decide_true, Bool.and_self]
+      have n3 : i + 1 ≠ 3 := by omega_arith
+      refine ⟨by rw [ne₇, g]; simp only [n3, decide_false, Bool.not_false], fun e' => (by rw [g] at e'; cases e'),
+        fun _ => ⟨⟨?_, ?_, ?_, ?_, by rw [used, cur₇]⟩, by rw [used]; exact hcl, fun r' e' => by
+          rw [used, hr]; rw [hD] at e'; cases e'; rfl⟩⟩
+      · rw [k₇.word_eq, m₃, k₁₂.word_eq, hb]
+      · rw [F₇.mem, W₆, c₅, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]
+      · rw [k₇.slot_eq, m₃, k₂.slot_eq, W9]
+        rcases (by omega_arith : i = 0 ∨ i = 1) with rfl | rfl <;> simp [stW]
+      · rw [k₇.slot_eq, m₃, k₂.slot_eq, W10]
+        rcases (by omega_arith : i = 0 ∨ i = 1) with rfl | rfl <;> simp
+  · -- A failure or a shortage: the stages end.
+    have e1 : drawStatus (stD p q bits T i c) ≠ 1 := by simpa using e
+    have g : stGo (stD p q bits T i c) i = false := by simp [stGo, e1]
+    refine wp_movi fun y₄ U₄ => wp_cmpi fun y₅ F₅ _ z₅ => WP.block_nil ⟨?_, ?_, ?_, fun _ => ⟨?_, ?_, ?_⟩,
+      fun e' => by rw [g] at e'; cases e'⟩
+    · exact S₃.trans (Step.regs S₃.inp (by rw [F₅.mem, U₄.mem]) (U₄.keeps.trans (F₅.keeps _)))
+    · rw [F₅.mem, U₄.mem, m₃, k₁₂.word_eq]
+    · show y₅.zf.map (!·) = _
+      rw [z₅, U₄.gpr, g]
+      rfl
+    · rw [congrFun F₅.gpr, U₄.other _ (by decide), e₃, E₂]
+    · intro b r' e'
+      obtain ⟨c'', h'', l'', r''⟩ := C₂ b r' e'
+      exact ⟨c'', by rw [F₅.mem, U₄.mem, m₃, h''], l'', r''⟩
+    · intro e'
+      exact absurd e' e1
+
+/-- The tests' state from `s` before the stage after `i` passed ones: the stage's words and what
+is left of the overall result `A`. -/
+abbrev StageIn (Ex : List Region → List Region → Prop) (base : Addr) (bytes len : Nat) (args : Nat → BitVec 32)
+    (s : State) (T : List Byte) (bits p q : Nat) (A : Option (Bool × Spec.RsaKeyGen.Rand)) (i c : Nat)
+    (x : State) : Prop :=
+  Step Ex base bytes len args s x ∧ w32 x.mem base usedOff = w32 s.mem base usedOff ∧
+    StageW base len bits p q i c x ∧ c ≤ T.length ∧ A = tailChecks p q bits i (T.drop c)
+
+/-- Where the stages end, after the stage after `i` passed ones from the cursor `c`. -/
+abbrev StageEnd (Ex : List Region → List Region → Prop) (base : Addr) (bytes len : Nat) (args : Nat → BitVec 32)
+    (s : State) (T : List Byte) (bits p q : Nat) (A : Option (Bool × Spec.RsaKeyGen.Rand)) (x : State) : Prop :=
+  ∃ i c, i < 3 ∧ Step Ex base bytes len args s x ∧ w32 x.mem base usedOff = w32 s.mem base usedOff ∧
+    A = tailChecks p q bits i (T.drop c) ∧ stGo (stD p q bits T i c) i = false ∧
+    x.gpr .eax = BitVec.ofNat 32 (drawStatus (stD p q bits T i c)) ∧
+    (∀ b r, stD p q bits T i c = some (b, r) → ∃ c', w32 x.mem base curOff = c' ∧ c' ≤ T.length ∧ T.drop c' = r) ∧
+    (drawStatus (stD p q bits T i c) = 1 → i = 2 ∧ sv x.mem base len .wide 9 = p)
 
 /-- The screened tests of p (slot 9) and q (slot 10), with the tape read from `c₀`: the result of
 `screenedChecks`. -/
@@ -473,83 +750,53 @@ theorem tests_ok (h : In Ex base bytes len args s) {T : List Byte}
       (resUsed T (ParameterCandidate.screenedChecks p q (T.drop c₀)))
       (resOut p len (ParameterCandidate.screenedChecks p q (T.drop c₀)))) := by
   unfold tests
-  -- One witness for p.
-  refine WP.seq (phaseWords_ok h hb (δ := 0) (ε := 0) (by decide) (by decide) hb1 hb2 fun t₁ S₁ K₁ O₁ _ k₁ =>
-    wp_movi fun t₂ U₂ => hdr_store (S₁.inp.regs U₂.keeps U₂.mem) hdr_cnt fun t₃ S₃ W₃ k₃ _ _ _ _ => WP.block_nil ?_)
-  have S₀ : Step Ex base bytes len args s t₃ := S₁.trans ((Step.regs S₁.inp U₂.mem U₂.keeps).trans S₃)
-  have k₀ : Kept base len [] [kOff, octOff, cntOff] s.mem t₃.mem :=
-    k₁.trans ((by rw [U₂.mem]; exact (Kept.refl _).mono : Kept base len [] [kOff, octOff, cntOff] t₁.mem t₂.mem).trans
-      k₃.mono)
-  refine WP.mono (phasePass_ok S₀.inp (by rw [S₀.esp]; exact G) (by rw [tape_keep G S₀, hT])
-    (by rw [S₀.esp]; exact Ox.keep rfl S₀.keeps) (by rw [S₀.esp]; exact U.keep rfl S₀.keeps)
-    (by rw [k₀.word_eq, hu]) (j := 9) (w := p) (n := 1) (c := c₀) (p := p) (by decide) (by decide)
-    (by rw [k₀.slot_eq, hp]) hp3 hpo (by rw [k₃.word_eq, U₂.mem, O₁, Spec.Ffdh.witnessOctets, hbp, Nat.sub_zero])
-    (by rw [k₃.word_eq, U₂.mem, K₁, hbp, Nat.sub_zero])
-    (by rw [W₃, U₂.gpr]; rfl) (by decide) (by rw [k₀.word_eq, hc]) hcT
-    (fun r hD => by unfold ParameterCandidate.screenedChecks; rw [hD]; rfl)
-    (fun hD => by unfold ParameterCandidate.screenedChecks; rw [hD]; rfl) ?_) fun t R => R.after S₀
-  intro r₁ hD₁ u₁ c₁ Su₁ ku₁ hc₁ hcl₁ hr₁
-  have S₁' : Step Ex base bytes len args s u₁ := S₀.trans Su₁
-  have kk₁ : Kept base len [11, 13, 14, 15] (kOff :: octOff :: twoOff :: drawDs) s.mem u₁.mem :=
-    k₀.mono.trans ku₁.mono
-  -- All of q's witnesses.
-  refine WP.seq ?_
-  rw [← List.append_nil (phaseWords 1 0)]
-  refine phaseWords_ok Su₁.inp (by rw [kk₁.word_eq, hb]) (δ := 1) (ε := 0) (by decide) (by decide) hb1 hb2
-    fun t₄ S₄ K₄ O₄ C₄ k₄ => WP.block_nil ?_
-  have S₂ : Step Ex base bytes len args s t₄ := S₁'.trans S₄
-  have kk₂ : Kept base len [11, 13, 14, 15] (kOff :: octOff :: twoOff :: drawDs) s.mem t₄.mem :=
-    kk₁.trans k₄.mono
-  refine WP.mono (phasePass_ok S₂.inp (by rw [S₂.esp]; exact G) (by rw [tape_keep G S₂, hT])
-    (by rw [S₂.esp]; exact Ox.keep rfl S₂.keeps) (by rw [S₂.esp]; exact U.keep rfl S₂.keeps)
-    (by rw [kk₂.word_eq, hu]) (j := 10) (w := q) (n := Spec.Ffdh.primeChecks (bits - 1)) (c := c₁) (p := p)
-    (by decide) (by decide) (by rw [kk₂.slot_eq, hq]) hq3 hqo (by rw [O₄, Spec.Ffdh.witnessOctets, hbq])
-    (by rw [K₄, hbq]) (by rw [C₄, Nat.sub_zero]) (by unfold Spec.Ffdh.primeChecks; split <;> decide)
-    (by rw [k₄.word_eq, hc₁]) hcl₁
-    (fun r hD => by
-      rw [hr₁] at hD
-      simp only [ParameterCandidate.screenedChecks, hD₁, hD, hbq', bind, Option.bind, Bool.not_true,
-        Bool.false_eq_true, ↓reduceIte, Bool.not_false, pure])
-    (fun hD => by
-      rw [hr₁] at hD
-      simp only [ParameterCandidate.screenedChecks, hD₁, hD, hbq', bind, Option.bind, Bool.not_true,
-        Bool.false_eq_true, ↓reduceIte])
-    ?_) fun t R => R.after S₄
-  intro r₂ hD₂ u₂ c₂ Su₂ ku₂ hc₂ hcl₂ hr₂
-  rw [hr₁] at hD₂
-  have S₃ : Step Ex base bytes len args s u₂ := S₂.trans Su₂
-  have kk₃ : Kept base len [11, 13, 14, 15] (kOff :: octOff :: twoOff :: drawDs) s.mem u₂.mem :=
-    kk₂.trans ku₂.mono
-  have eA : ParameterCandidate.screenedChecks p q (T.drop c₀) =
-      ParameterCandidate.checkWitnesses p (Spec.Ffdh.primeChecks bits - 1) (T.drop c₂) := by
-    rw [hr₂]
-    simp only [ParameterCandidate.screenedChecks, hD₁, hD₂, hbq', hbp', bind, Option.bind, Bool.not_true,
-      Bool.false_eq_true, ↓reduceIte]
-  rw [eA]
-  -- The rest of p's.
-  refine WP.seq ?_
-  rw [← List.append_nil (phaseWords 0 1)]
-  refine phaseWords_ok Su₂.inp (by rw [kk₃.word_eq, hb]) (δ := 0) (ε := 1) (by decide) (by decide) hb1 hb2
-    fun t₅ S₅ K₅ O₅ C₅ k₅ => WP.block_nil ?_
-  have S₆ : Step Ex base bytes len args s t₅ := S₃.trans S₅
-  have kk₄ : Kept base len [11, 13, 14, 15] (kOff :: octOff :: twoOff :: drawDs) s.mem t₅.mem :=
-    kk₃.trans k₅.mono
-  refine WP.mono (phasePass_ok S₆.inp (by rw [S₆.esp]; exact G) (by rw [tape_keep G S₆, hT])
-    (by rw [S₆.esp]; exact Ox.keep rfl S₆.keeps) (by rw [S₆.esp]; exact U.keep rfl S₆.keeps)
-    (by rw [kk₄.word_eq, hu]) (j := 9) (w := p) (n := Spec.Ffdh.primeChecks bits - 1) (c := c₂) (p := p)
-    (by decide) (by decide) (by rw [kk₄.slot_eq, hp]) hp3 hpo
-    (by rw [O₅, Spec.Ffdh.witnessOctets, hbp, Nat.sub_zero]) (by rw [K₅, hbp, Nat.sub_zero])
-    (by rw [C₅, Nat.sub_zero]) (by unfold Spec.Ffdh.primeChecks; split <;> decide)
-    (by rw [k₅.word_eq, hc₂]) hcl₂ (fun r hD => hD) (fun hD => hD) ?_) fun t R => R.after S₅
-  intro r₃ hD₃ u₃ c₃ Su₃ ku₃ hc₃ hcl₃ hr₃
-  have kk₅ : Kept base len [11, 13, 14, 15] (kOff :: octOff :: twoOff :: drawDs) s.mem u₃.mem :=
-    kk₄.trans ku₃.mono
-  have S₇ : Step Ex base bytes len args s u₃ := S₆.trans Su₃
-  rw [hD₃]
-  have used : T.length - r₃.length = c₃ := by rw [← hr₃, List.length_drop]; omega_arith
+  refine WP.seq (wp_movi fun t₁ U₁ => hdr_store (h.regs U₁.keeps U₁.mem) hdr_iter fun t₂ S₂ W₂ k₂ _ _ _ _ =>
+    WP.block_nil ?_)
+  have S₀ : Step Ex base bytes len args s t₂ := (Step.regs h U₁.mem U₁.keeps).trans S₂
+  have k₀ : Kept base len [] [iterOff] s.mem t₂.mem := by rw [← U₁.mem]; exact k₂
+  have I₀ : StageIn Ex base bytes len args s T bits p q (ParameterCandidate.screenedChecks p q (T.drop c₀)) 0 c₀ t₂ :=
+    ⟨S₀, by rw [k₀.word_eq], ⟨by rw [k₀.word_eq, hb], by rw [W₂, U₁.gpr]; rfl, by rw [k₀.slot_eq, hp]; rfl,
+      by rw [k₀.slot_eq, hq]; rfl, by rw [k₀.word_eq, hc]⟩, hcT, screened_tail hbp' hbq' _⟩
+  refine WP.seq (WP.mono (WP.loop (M := isa) (c := .ne) (body := stage)
+    (Q := StageEnd Ex base bytes len args s T bits p q (ParameterCandidate.screenedChecks p q (T.drop c₀)))
+    (fun m x => ∃ i c, i < 3 ∧ m = 2 - i ∧
+      StageIn Ex base bytes len args s T bits p q (ParameterCandidate.screenedChecks p q (T.drop c₀)) i c x)
+    (fun m x ⟨i, c, hi, hm, Sx, ux, W, hcl, hA⟩ => by
+      subst hm
+      refine WP.mono (stage_ok Sx.inp (by rw [Sx.esp]; exact G) (by rw [tape_keep G Sx, hT]) hb1 hb2 hp3 hpo hq3
+        hqo hbp hbq hi W hcl) fun y ⟨Sy, uy, ne, fin, go⟩ => ?_
+      obtain ⟨tN, tF, tC, tL⟩ := tail_step (p := p) (q := q) (bits := bits) (r := T.drop c) hi rfl
+      cases g : stGo (stD p q bits T i c) i
+      · exact Or.inl ⟨by rw [ne, g], i, c, hi, Sx.trans Sy, by rw [uy, ux], hA, g, fin g⟩
+      · obtain ⟨Wy, ly, dy⟩ := go g
+        have hi' : i < 2 := by simp [stGo] at g; exact g.2
+        obtain ⟨r, hD⟩ : ∃ r, stD p q bits T i c = some (true, r) := by
+          have e1 : drawStatus (stD p q bits T i c) = 1 := by simp [stGo] at g; exact g.1
+          revert e1
+          generalize stD p q bits T i c = D
+          intro e1
+          rcases D with _ | ⟨⟨⟩ | ⟨⟩, r⟩
+          · simp [drawStatus] at e1
+          · simp [drawStatus] at e1
+          · exact ⟨r, rfl⟩
+        refine Or.inr ⟨by rw [ne, g], 2 - (i + 1), by omega_arith, i + 1, _, by omega_arith, rfl, Sx.trans Sy,
+          by rw [uy, ux], Wy, ly, ?_⟩
+        rw [hA, tC r hD hi', dy r hD])
+    2 t₂ ⟨0, c₀, by decide, rfl, I₀⟩) fun x E => ?_)
+  obtain ⟨i, c, hi, Sx, hux, hA, g, he, hcur, h1⟩ := E
+  obtain ⟨tN, tF, tC, tL⟩ := tail_step (p := p) (q := q) (bits := bits) (r := T.drop c) hi rfl
+  rw [← hA] at tN tF tC tL
+  refine WP.mono (onPass_ok Sx.inp (by rw [Sx.esp]; exact Ox.keep rfl Sx.keeps)
+    (by rw [Sx.esp]; exact U.keep rfl Sx.keeps) (by rw [hux, hu]) he hcur tF tN
+    fun r hD u hu' m K => ?_) fun t R => R.after Sx
+  obtain ⟨i2, h9⟩ := h1 (by rw [hD]; rfl)
+  obtain ⟨c', hc', hcl, hr⟩ := hcur true r hD
+  have Su : Step Ex base bytes len args s u := Sx.trans (Step.regs Sx.inp m K)
+  rw [tL r hD i2]
+  have used : T.length - r.length = c' := by rw [← hr, List.length_drop]; omega_arith
   simp only [resStatus, resUsed, resOut, used]
-  exact accept_ok Su₃.inp (by rw [S₇.esp]; exact Ox.keep rfl S₇.keeps) (by rw [S₇.esp]; exact U.keep rfl S₇.keeps)
-    (by rw [kk₅.word_eq, hu]) hc₃ (by rw [kk₅.slot_eq, hp]) hpl
+  exact accept_ok hu' (by rw [Su.esp]; exact Ox.keep rfl Su.keeps) (by rw [Su.esp]; exact U.keep rfl Su.keeps)
+    (by rw [m, hux, hu]) (by rw [m, hc']) (by rw [m, h9]) hpl
 
 end VG.Proof.Ffdh.X86.Cand
 
@@ -786,7 +1033,7 @@ theorem dividesS_ok (h : In Ex base bytes len args s) {j : Nat} (hj : j ≤ 27) 
       t.gpr .eax = BitVec.ofNat 32 (decide (sv s.mem base len .wide j % prime = 0)).toNat ∧
       Kept base len [] [] s.mem t.mem :=
   WP.mono (divides_ok h hj p3 p65 podd pinv invl) fun _ ⟨I, F, E, K⟩ =>
-    ⟨⟨I, frameR_mono F (fun _ hp => nomatch hp), K⟩, E, kept_out h (r := below (s.gpr .esp) 96) F h.room.apart.symm⟩
+    ⟨⟨I, frameF_mono (frameF_of F) (fun _ hp => nomatch hp), K⟩, E, kept_out h (r := below (s.gpr .esp) 96) F h.room.apart.symm⟩
 
 /-- p's congruences for its generator `g` (2 or 5): `eax` its `generationShape`. -/
 theorem congruences_ok (h : In Ex base bytes len args s) {p g bits : Nat} (hp : sv s.mem base len .wide 9 = p)
@@ -904,12 +1151,13 @@ theorem Table.step {Tb : BitVec 32} (TT : Table Tb (s.gpr .esp) s) {t : State}
   have bl := h.bytes_lt
   have tf := TT.fit
   refine ⟨by rw [sy]; exact TT.sym, fun i hi d hd => by rw [S.keeps.2.1, S.keeps.2.2]; exact TT.read i hi d hd,
-    fun i hi => ?_, TT.fit, by rw [S.esp]; exact TT.far⟩
+    fun i hi => ?_, TT.fit, by rw [S.esp]; exact TT.far, by rw [S.esp]; exact TT.wide⟩
   rw [← TT.words i hi]
   refine S.frame.readW (r := ⟨Tb.setWidth 64, 8192⟩) (w := 64)
     (Offset.contains_base _ (by omega_arith : 8 * i + 8 ≤ 8192) (by omega_arith)) (fun r hr => ?_) (by decide)
-  rw [frameR, List.mem_cons, List.mem_map] at hr
-  rcases hr with rfl | ⟨q, hq, rfl⟩
+  rw [frameF, frameR, List.mem_cons, List.mem_cons, List.mem_map] at hr
+  rcases hr with rfl | rfl | ⟨q, hq, rfl⟩
+  · exact TT.wide
   · exact TT.far
   · have := fit q hq
     exact TA.sub_right (Offset.sub_base _ (by omega_arith))
@@ -946,7 +1194,7 @@ theorem sieveS_ok (h : In Ex base bytes len args s) {j : Nat} (hj : j ≤ 27) {T
       t.gpr .eax = BitVec.ofNat 32 (VG.Proof.RsaKeyGen.trialPrefix (sv s.mem base len .wide j) (sieveCount bits)).toNat ∧
       Kept base len [] [] s.mem t.mem :=
   WP.mono (sieve_ok h hj TT hb) fun _ ⟨I, F, E, K⟩ =>
-    ⟨⟨I, frameR_mono F (fun _ hp => nomatch hp), K⟩, E, kept_out h (r := below (s.gpr .esp) 96) F h.room.apart.symm⟩
+    ⟨⟨I, frameF_mono (frameF_of F) (fun _ hp => nomatch hp), K⟩, E, kept_out h (r := below (s.gpr .esp) 96) F h.room.apart.symm⟩
 
 /-- p's checks and tests: the result of `sievedParameterCandidate` for a tape of at least `L`
 octets. -/

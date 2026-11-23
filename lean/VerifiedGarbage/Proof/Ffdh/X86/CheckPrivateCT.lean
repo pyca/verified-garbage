@@ -81,7 +81,7 @@ abbrev Rd (s : State) : List Region → List Region → Prop :=
     InRegions (rd ++ wr) (argumentPointer s 5) (arg s 6).toNat
 
 /-- The domain, y and x, as the synthetic arguments give them, for permissions that read them, apart from
-the 96 bytes below the frame. -/
+the 176 bytes below the frame. -/
 theorem frame_geo {s : State} (A : CheckPrivateABI s) {sp : BitVec 32}
     (espf : sp = s.gpr .esp - BitVec.ofNat 32 argsFrame) {rd wr : List Region} (hrd : Rd s rd wr) :
     DomGeo (synth Impl.Ffdh.X86.CheckPrivate.args (arg s)) (wsBase Impl.Ffdh.X86.CheckPrivate.args s)
@@ -90,26 +90,26 @@ theorem frame_geo {s : State} (A : CheckPrivateABI s) {sp : BitVec 32}
       (wsSize Impl.Ffdh.X86.CheckPrivate.args s) (pLenOf Impl.Ffdh.X86.CheckPrivate.args s) rd wr ∧
     XGeo (synth Impl.Ffdh.X86.CheckPrivate.args (arg s)) (wsBase Impl.Ffdh.X86.CheckPrivate.args s)
       (wsSize Impl.Ffdh.X86.CheckPrivate.args s) (pLenOf Impl.Ffdh.X86.CheckPrivate.args s) (arg s 6).toNat rd wr ∧
-    Region.Disjoint ⟨byteAddr (synth Impl.Ffdh.X86.CheckPrivate.args (arg s) 2), (arg s 1).toNat⟩ (below sp 96) ∧
+    Region.Disjoint ⟨byteAddr (synth Impl.Ffdh.X86.CheckPrivate.args (arg s) 2), (arg s 1).toNat⟩ (below sp 176) ∧
     Region.Disjoint ⟨byteAddr (synth Impl.Ffdh.X86.CheckPrivate.args (arg s) 8),
-      pLenOf Impl.Ffdh.X86.CheckPrivate.args s⟩ (below sp 96) ∧
+      pLenOf Impl.Ffdh.X86.CheckPrivate.args s⟩ (below sp 176) ∧
     Region.Disjoint ⟨byteAddr (synth Impl.Ffdh.X86.CheckPrivate.args (arg s) 10), (arg s 6).toNat⟩
-      (below sp 96) := by
+      (below sp 176) := by
   have fb : argsFrame = 76 := rfl
   have hE := (s.gpr .esp).isLt
   have low := A.stackLow
-  have st' : stack = 172 := rfl
+  have st' : stack = 252 := rfl
   have yl := A.yLen
   have FA : frameAt s = (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 argsFrame :=
     VG.X86.Taint.sub_setWidth (by omega_using [fb, low, st'])
   have espN : sp.toNat = (s.gpr .esp).toNat - 76 := by rw [espf]; exact VG.X86.sub_toNat (by omega_using [fb, low, st'])
   have ofn : ∀ x : BitVec 32, BitVec.ofNat 32 x.toNat = x := fun x => by
     rw [BitVec.ofNat_toNat, BitVec.setWidth_eq]
-  have sub40 : Region.Sub (below sp 96) ⟨(s.gpr .esp).setWidth 64 - 172#64, 172⟩ := by
+  have sub40 : Region.Sub (below sp 176) ⟨(s.gpr .esp).setWidth 64 - 252#64, 252⟩ := by
     simp only [below]
     rw [VG.X86.Taint.sub_setWidth (by rw [espN]; omega_using [low, st']), espf,
       show (s.gpr .esp - BitVec.ofNat 32 argsFrame).setWidth 64 = frameAt s from rfl, FA,
-      ← VG.Offset.sub_add_eq, show BitVec.ofNat 64 argsFrame + 96#64 = BitVec.ofNat 64 172 from rfl]
+      ← VG.Offset.sub_add_eq, show BitVec.ofNat 64 argsFrame + 176#64 = BitVec.ofNat 64 252 from rfl]
     exact Region.sub_prefix (by decide)
   have yR : (arg s 4).toNat = pLenOf Impl.Ffdh.X86.CheckPrivate.args s := yl
   refine ⟨⟨(ofn _).symm, (ofn _).symm, (ofn _).symm, rfl, rfl, (ofn _).symm, A.dLen, A.domBound, hrd.1,
@@ -130,11 +130,11 @@ theorem frame_keep {s : State} (A : CheckPrivateABI s) {m : Mem}
     (Ft : Frame [⟨wsBase Impl.Ffdh.X86.CheckPrivate.args s, wsSize Impl.Ffdh.X86.CheckPrivate.args s⟩,
       ⟨frameAt s, argsFrame⟩] s.mem m) {p : Addr} {n : Nat}
     (hws : Region.Disjoint ⟨p, n⟩ ⟨wsBase Impl.Ffdh.X86.CheckPrivate.args s, wsSize Impl.Ffdh.X86.CheckPrivate.args s⟩)
-    (hb : Region.Disjoint ⟨(s.gpr .esp).setWidth 64 - 172#64, 172⟩ ⟨p, n⟩) (hn : n ≤ 2 ^ 64) :
+    (hb : Region.Disjoint ⟨(s.gpr .esp).setWidth 64 - 252#64, 252⟩ ⟨p, n⟩) (hn : n ≤ 2 ^ 64) :
     Spec.Rsa.bytesAt m p n = Spec.Rsa.bytesAt s.mem p n := by
   have hE := (s.gpr .esp).isLt
   have low := A.stackLow
-  have st' : stack = 172 := rfl
+  have st' : stack = 252 := rfl
   have FA : frameAt s = (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 argsFrame :=
     VG.X86.Taint.sub_setWidth (by simp only [argsFrame]; omega_using [low, st'])
   exact frame_bytes Ft (fun r hr => by
@@ -157,10 +157,11 @@ theorem frame_ok {s : State} (A : CheckPrivateABI s) (f : State)
       ⟨frameAt s, argsFrame⟩] s.mem f.mem) :
     WP isa Impl.Ffdh.X86.CheckPrivate.body f fun t =>
       (Spec.Ffdh.domainValid (arg s 2).toNat (entryDom s) = true → (t.gpr .eax).toNat = spec s) ∧
-      Frame ([] ++ CrtRt.frameR (wsBase Impl.Ffdh.X86.CheckPrivate.args s) (f.gpr .esp)
+      Frame ([] ++ frameF (wsBase Impl.Ffdh.X86.CheckPrivate.args s) (f.gpr .esp)
         (fR (pLenOf Impl.Ffdh.X86.CheckPrivate.args s))) f.mem t.mem ∧
       Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] f t := by
   obtain ⟨G, Y, X, hb40, hy40, hx40⟩ := frame_geo A espf I.extra
+  obtain RF := (wrapABI A).roomF espf
   have D : domBytes f.mem (synth Impl.Ffdh.X86.CheckPrivate.args (arg s)) (arg s 1).toNat = entryDom s :=
     frame_keep A Ft A.domScratch A.belowDom (by have := A.domBound; omega_using [])
   have Yv : yv f.mem (synth Impl.Ffdh.X86.CheckPrivate.args (arg s)) (pLenOf Impl.Ffdh.X86.CheckPrivate.args s) =
@@ -171,7 +172,7 @@ theorem frame_ok {s : State} (A : CheckPrivateABI s) (f : State)
     exact congrArg _ (frame_keep A Ft A.yScratch A.belowY (by have := A.yBound; omega_using []))
   have Xv : xv f.mem (synth Impl.Ffdh.X86.CheckPrivate.args (arg s)) (arg s 6).toNat = Spec.Rsa.os2ip (entryX s) :=
     congrArg _ (frame_keep A Ft A.xScratch A.belowX (by have := A.xBound; omega_using []))
-  refine WP.mono (body_ok I G Y X hb40 hy40 hx40)
+  refine WP.mono (body_ok I G Y X RF hb40 hy40 hx40)
     fun t ⟨r, ⟨E, F, K⟩, V⟩ => ⟨fun v => ?_, by rw [List.nil_append]; exact F, K⟩
   rw [show pLenOf Impl.Ffdh.X86.CheckPrivate.args s = (arg s 2).toNat from rfl] at V Yv
   rw [D] at V
@@ -195,7 +196,7 @@ theorem operation_ok {s : State} (A : CheckPrivateABI s) :
     (fun _ h => by cases h)
     (P := fun _ e => Spec.Ffdh.domainValid (arg s 2).toNat (entryDom s) = true → e.toNat = spec s)
     (hP := fun _ _ _ _ h => h)
-    fun f I espf Ft => frame_ok A f I espf Ft
+    fun f I espf _ Ft => frame_ok A f I espf Ft
 
 end VG.Proof.Ffdh.X86.CheckPrivate
 
@@ -263,7 +264,7 @@ structure PrivAt (Ex : List Region → List Region → Prop) (base : Addr) (byte
     (args : Nat → BitVec 32) (sp : BitVec 32) (D Yb : List Byte) (St : Nat) (u : State) : Prop where
   pub : PubAt Ex base bytes len dlen args sp D Yb u
   geo : XGeo args base bytes len xl u.rd u.wr
-  hx40 : Region.Disjoint ⟨byteAddr (args 10), xl⟩ (below sp 96)
+  hx40 : Region.Disjoint ⟨byteAddr (args 10), xl⟩ (below sp 176)
   st : Spec.Ffdh.privateStatus (Spec.Ffdh.domainOf len D) (Spec.Rsa.os2ip Yb) (xv u.mem args xl) = St
 
 theorem status_two {a : Spec.Ffdh.Parameters} {y x : Nat} :
@@ -282,15 +283,15 @@ abbrev RX (Ex : List Region → List Region → Prop) (base : Addr) (bytes len x
 /-- x's power: p's context by `ctxP_relCT`, the copy and x's load by the taint analysis, and the power
 over x's `xl` bytes by private CRT's windowed power. -/
 theorem powTop_trace (hx : args 11 = BitVec.ofNat 32 xl ∧ 0 < xl ∧ xl ≤ 1024)
-    (hx40 : Region.Disjoint ⟨byteAddr (args 10), xl⟩ (below sp 96)) :
+    (RF : RoomF sp base bytes) (hx40 : Region.Disjoint ⟨byteAddr (args 10), xl⟩ (below sp 176)) :
     RelCT isa (Both (RX Ex base bytes len xl args sp)) (Impl.Ffdh.X86.powTop 10)
       (Both (Run Ex base bytes len args sp)) := by
   rw [powTop_eq]
   apply VG.RelCT.chain
   refine VG.RelCT.seq (VG.Proof.Bignum.X86.PublicRt.relCT_both (F := WSt Ex base bytes len args sp .wide [3, 4] 0)
-    ((VG.RelCT.seq (ctxP_relCT.mono (fun _ _ h => ⟨h.1.1, h.2.1⟩) fun _ _ h => h)
+    ((VG.RelCT.seq (ctxP_relCT.mono (fun _ _ h => ⟨⟨h.1.1, RF⟩, ⟨h.2.1, RF⟩⟩) fun _ _ h => h)
       (RelCT.taint (A := taint) τA (fun _ _ h => h.1.agree h.2) topLoads_check))) fun x ⟨R, X⟩ => ?_) ?_
-  · refine WP.mono (topFront_ok R.1 X (by rw [R.2.2]; exact hx40) (b := 10) (by decide) (by decide) rfl)
+  · refine WP.mono (topFront_ok R.1 X (by rw [R.2.2]; exact RF) (by rw [R.2.2]; exact hx40) (b := 10) (by decide) (by decide) rfl)
       fun u ⟨C, one, R4, _, _, _, _, K⟩ =>
       ⟨_, C, fun j hj => ?_, fun j hj => absurd hj (Nat.not_lt_zero _), R.2.1.keep K, (K.1 _ (by decide)).trans R.2.2⟩
     have hM := safeM_gt (sv x.mem base len .wide 9)
@@ -302,10 +303,10 @@ theorem powTop_trace (hx : args 11 = BitVec.ofNat 32 xl ∧ 0 < xl ∧ xl ≤ 10
       fun _ W => lenCount_wst (by decide) hx.1 W).mono (fun _ _ h => h) fun _ _ h => ⟨WSt.run h.1, WSt.run h.2⟩
 
 theorem pair_trace {P : State → Prop}
-    (hP : ∀ x, P x → RX Ex base bytes len xl args sp x ∧ Region.Disjoint ⟨byteAddr (args 10), xl⟩ (below sp 96)) :
+    (hP : ∀ x, P x → RX Ex base bytes len xl args sp x ∧ (RoomF sp base bytes ∧ Region.Disjoint ⟨byteAddr (args 10), xl⟩ (below sp 176))) :
     RelCT isa (Both P) Impl.Ffdh.X86.CheckPrivate.pair fun _ _ => True := by
   by_cases hx : (args 11 = BitVec.ofNat 32 xl ∧ 0 < xl ∧ xl ≤ 1024) ∧
-    Region.Disjoint ⟨byteAddr (args 10), xl⟩ (below sp 96)
+    (RoomF sp base bytes ∧ Region.Disjoint ⟨byteAddr (args 10), xl⟩ (below sp 176))
   swap
   · refine VG.RelCT.of_false fun s₁ _ h => hx ?_
     obtain ⟨⟨R, X⟩, d⟩ := hP _ h.1
@@ -321,7 +322,7 @@ theorem pair_trace {P : State → Prop}
   refine VG.RelCT.seq (aRel (F := RX Ex base bytes len xl args sp) (fun _ h => h.1.1) store_check
     fun x ⟨⟨R, X⟩, c, e⟩ => WP.mono (storeMask_ok R.1 (d := accOff) (by omega_using [ao, nb]) e) fun v ⟨_, O, _, _, K⟩ =>
       ⟨run_step R (Step.word R.1 (by omega_using [ao]) O K), X.keep ⟨rfl, rfl⟩ K⟩) ?_
-  exact VG.RelCT.seq (powTop_trace hx.1 hx.2) (RelCT.taint (A := taint) τA (fun _ _ h => h.1.agree h.2) tail_check)
+  exact VG.RelCT.seq (powTop_trace hx.1 hx.2.1 hx.2.2) (RelCT.taint (A := taint) τA (fun _ _ h => h.1.agree h.2) tail_check)
 
 /-- A run, with the domain's geometry. -/
 def RG (Ex : List Region → List Region → Prop) (base : Addr) (bytes len dlen : Nat) (args : Nat → BitVec 32)
@@ -381,12 +382,13 @@ theorem body_relCT :
   rw [body_eq]
   apply VG.RelCT.chain
   refine VG.RelCT.seq (VG.Proof.Bignum.X86.PublicRt.relCT_both
-    (F := fun u => (RX Ex base bytes len xl args sp u ∧ Region.Disjoint ⟨byteAddr (args 10), xl⟩ (below sp 96)) ∧
+    (F := fun u => (RX Ex base bytes len xl args sp u ∧ (RoomF sp base bytes ∧ Region.Disjoint ⟨byteAddr (args 10), xl⟩ (below sp 176))) ∧
       Gate u (St = 2)) front_trace fun x A => ?_) ?_
   · refine WP.mono (front_ok A.pub.dom.run.1 A.pub.dom.geo A.pub.geo A.geo
+      (by rw [A.pub.dom.run.2.2]; exact A.pub.dom.room)
       (by rw [A.pub.dom.run.2.2]; exact A.pub.dom.hb40) (by rw [A.pub.dom.run.2.2]; exact A.pub.hy40)
       (by rw [A.pub.dom.run.2.2]; exact A.hx40)) fun u ⟨S, G, _⟩ =>
-      ⟨⟨⟨run_step A.pub.dom.run S, A.geo.keep ⟨rfl, rfl⟩ S.keeps⟩, A.hx40⟩, G.congr ?_⟩
+      ⟨⟨⟨run_step A.pub.dom.run S, A.geo.keep ⟨rfl, rfl⟩ S.keeps⟩, A.pub.dom.room, A.hx40⟩, G.congr ?_⟩
     rw [← A.st, status_two, params, A.pub.dom.dom]
   · exact gate_relCT (fun _ h => h.2) (aEnd (fun _ h => h.1.1.1.1) ret2_check) (pair_trace fun _ h => h.1.1)
 
@@ -431,7 +433,7 @@ theorem privAt_of {s f : State} (A : CheckPrivateABI s)
   have hx := narrowRd Bf.1.extra ⟨wsBase Impl.Ffdh.X86.CheckPrivate.args s, wsSize Impl.Ffdh.X86.CheckPrivate.args s⟩
   obtain ⟨G, Y, X, hb, hy, hxx⟩ := frame_geo A (sp := s.gpr .esp - BitVec.ofNat 32 argsFrame) rfl hx
   have yR : (arg s 4).toNat = pLenOf Impl.Ffdh.X86.CheckPrivate.args s := A.yLen
-  refine ⟨⟨⟨⟨VG.Proof.Ffdh.X86.In.narrow Bf.1 hx, Bf.argsOk (wrapABI A), Bf.2.1⟩, G, hb,
+  refine ⟨⟨⟨⟨VG.Proof.Ffdh.X86.In.narrow Bf.1 hx, Bf.argsOk (wrapABI A), Bf.2.1⟩, G, (wrapABI A).room, hb,
     frame_keep A Bf.2.2.2.2 A.domScratch A.belowDom (by have := A.domBound; omega_using [])⟩, Y, hy, ?_⟩, X, hxx, ?_⟩
   · show Spec.Rsa.bytesAt f.mem (argumentPointer s 3) _ = Spec.Rsa.bytesAt s.mem (argumentPointer s 3) (arg s 4).toNat
     rw [← yR]
@@ -479,6 +481,7 @@ theorem constantTime : ConstantTime isa (Spec.Ffdh.checkPrivateContract abi stac
         (narrowed (wsBase Impl.Ffdh.X86.CheckPrivate.args x) (wsSize Impl.Ffdh.X86.CheckPrivate.args x) f) F :=
     fun X Bf => ⟨_, body_ok (privAt_of X Bf).pub.dom.run.1 (privAt_of X Bf).pub.dom.geo (privAt_of X Bf).pub.geo
       (privAt_of X Bf).geo
+      (by rw [(privAt_of X Bf).pub.dom.run.2.2]; exact (privAt_of X Bf).pub.dom.room)
       (by rw [(privAt_of X Bf).pub.dom.run.2.2]; exact (privAt_of X Bf).pub.dom.hb40)
       (by rw [(privAt_of X Bf).pub.dom.run.2.2]; exact (privAt_of X Bf).pub.hy40)
       (by rw [(privAt_of X Bf).pub.dom.run.2.2]; exact (privAt_of X Bf).hx40)⟩

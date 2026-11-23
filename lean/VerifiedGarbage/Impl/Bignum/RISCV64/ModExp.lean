@@ -22,6 +22,9 @@ Each byte of the exponent is two windows: four Montgomery squares of `a`,
 then `a := a T_d` for the window's digit `d`, `T_d` selected by a masked scan
 of the whole table, so that no address and no branch depends on `d`.
 
+`powWinFn` is `powWin` as the function `vg_bignum_pow_win`, which its
+callers share (`powWinCall`).
+
 Registers: `s7` the exponent's bits (or, building the table, the entry), `s9`
 the exponent's pointer, `s10` its bytes left, `s8` the entry being scanned and
 `a1` the digit (`select`); `s4` the selection's mask.
@@ -108,5 +111,18 @@ def byteWin : Prog isa :=
 windows of every byte, then out of Montgomery form. -/
 def powWin : Prog isa :=
   .seq table (.seq (.loop (.seq byteWin (.block [.addi .s10 .s10 (-1)])) (.nonzero .s10)) (montOp 4 6 7))
+
+/-- `t0 := w`, from the arrays' size `s5 = 8 (w + 2)`. -/
+def wOfSize : List Instr := [.shift .srl .d .t0 .s5 3, .addi .t0 .t0 (-2)]
+
+/-- `powWin` as the function `name`, which a call enters with `ra` and
+`t0`–`t6` changed: it computes `w` (`wOfSize`) and `-m⁻¹ mod 2⁶⁴` (`minv`)
+again. The caller's `ra` is lost, as with any call. -/
+def powWinCall (name : String) : Prog isa :=
+  .call name (.seq (.block (wOfSize ++ minv)) powWin)
+
+/-- `powWin` as the function `vg_bignum_pow_win`, which DSA and RSA's CRT
+call. -/
+def powWinFn : Prog isa := powWinCall "vg_bignum_pow_win"
 
 end VG.Impl.Bignum.RISCV64.ModExp

@@ -161,6 +161,14 @@ GROUPS = {
         "lib": [],
         "tests": ["cavp::camellia_cfb"],
     },
+    "camellia_ctr": {
+        "lib": [],
+        "tests": ["rfc5528"],
+    },
+    "camellia_ecb": {
+        "lib": [],
+        "tests": ["cavp::camellia_ecb"],
+    },
     "camellia_ofb": {
         "lib": [],
         "tests": ["cavp::camellia_ofb"],
@@ -428,6 +436,10 @@ GROUPS = {
     "seed_cfb": {
         "lib": [],
         "tests": ["cavp::seed_cfb"],
+    },
+    "seed_ecb": {
+        "lib": [],
+        "tests": ["cavp::seed_ecb"],
     },
     "seed_ofb": {
         "lib": [],

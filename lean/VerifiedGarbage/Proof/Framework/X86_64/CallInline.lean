@@ -377,7 +377,7 @@ theorem exec_patch (hc : Clear H s) (i : Instr) :
     rw [show (s.patch H hv u).ea m = s.ea m from rfl, show (s.patch H hv u).syms = s.syms from rfl,
       show (s.patch H hv u).gpr = s.gpr from rfl]
     split <;> rfl
-  | push | pop | alloc | free | callr => rfl
+  | push | pop | alloc | free | callr | callm => rfl
   | _ => rfl
 
 theorem addrs_patch (i : Instr) : addrs i (s.patch H hv u) = addrs i s := by

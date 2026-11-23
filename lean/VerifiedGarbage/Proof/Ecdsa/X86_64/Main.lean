@@ -43,17 +43,17 @@ structure St₂ (c : Cfg) (hs : Option Nat) (s₀ : State) (base : Addr) (s : St
   rz_lt : sv c base s RZ < c.C.p
 
 /-- `[k]G`, then `Z^(p-2)`. -/
-theorem stage₂ (hc : BaseCfgOk c) (hmb : MulBaseOk c) (hC : Law c.C) (hT : CombTbls c) {hs : Option Nat} {s₀ : State} (hp : Pre c s₀) {base : Addr}
+theorem stage₂ (hc : BaseCfgOk c) (hmb : MulBaseOkI c) (hC : Law c.C) (hT : CombTbls c) {hs : Option Nat} {s₀ : State} (hp : Pre c s₀) {base : Addr}
     (hb : base = s₀.gpr .r8) {s : State} (hS : St₁ c hs s₀ base s c.callsMul)
     {rest : Prog isa} {Q : State → Prop} (h : ∀ s', St₂ c hs s₀ base s' → WP isa rest s' Q) :
-    WP isa (.seq c.gMulKC.inline (.seq c.pPow.inline rest)) s Q := by
+    WP isa (.seq (gMulKCI c) (.seq c.pPow.inline rest)) s Q := by
   subst hb
   have h0 := hc.n0
   have h7 := hc.n10
   have hn := hS.scr.nowrap
   obtain hpR := unitMod_pow_two hc.p_odd (64 * c.n)
   have F := hS.fixed
-  refine WP.seq (WP.mono (gMulKC_ok hc hmb hC hT hp hS) fun s₅ ⟨K₅, U₅, M₅, L₅, R₅⟩ => ?_)
+  refine WP.seq (WP.mono (gMulKCI_ok hc hmb hC hT hp hS) fun s₅ ⟨K₅, U₅, M₅, L₅, R₅⟩ => ?_)
   obtain hs₅ := hS.scr.of_keepRegs K₅ (rdi_not_powClob _)
   obtain F₅ := F.unch h7 hn fixedOk_gWA U₅
   refine WP.seq (WP.mono (pPow_ok hc hs₅ M₅
@@ -260,11 +260,25 @@ theorem sign_inline (c : Cfg) : c.sign.inline = .seq (.block c.setup) (.seq c.kB
   rw [Cfg.kBits, kBitsIf_inline]
   rfl
 
+/-- The signature as the proofs run it: inlined, with `[k]G` as `gMulKCI`. -/
+def signI (c : Cfg) : Prog isa := .seq (.block c.setup) (.seq c.kBits
+    (.seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n)) (.seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n))
+    (.seq (gMulKCI c) (.seq c.pPow.inline (.seq c.middle.inline (.seq c.nPow.inline c.scalar.inline)))))))
+
+/-- Where `vg_<curve>_mul_base` calls nothing, the signature inlined is `signI`. -/
+theorem sign_inline_signI {c : Cfg} (hmb : MulBaseOk c) : c.sign.inline = signI c := by
+  rw [sign_inline, gMulKC_inline hmb]; rfl
+
+theorem sign_okI (hc : BaseCfgOk c) (hC : Law c.C) (hT : CombTbls c) {s₀ : State} (hp : Pre c s₀)
+    (hmb : MulBaseOkI c) :
+    WP isa (signI c) s₀ fun s' => (∀ r ∈ Cfg.saved.map Prod.fst, s'.gpr r = s₀.gpr r) ∧ SignPost c s₀ s' :=
+  stage₁ hc (Or.inr (Or.inr rfl)) hp.setup fun _ S₁ => stage₂ hc hmb hC hT hp rfl S₁ fun _ S₂ => stage₃ hc S₂ fun _ S₃ =>
+    stage₄ hc hC hp rfl S₃
+
 theorem sign_ok (hc : BaseCfgOk c) (hC : Law c.C) (hT : CombTbls c) {s₀ : State} (hp : Pre c s₀)
     (hmb : MulBaseOk c := by exact ⟨fun h => absurd h (by decide), fun h => absurd h (by decide)⟩) :
     WP isa c.sign.inline s₀ fun s' => (∀ r ∈ Cfg.saved.map Prod.fst, s'.gpr r = s₀.gpr r) ∧ SignPost c s₀ s' := by
-  rw [sign_inline]
-  exact stage₁ hc (Or.inr (Or.inr rfl)) hp.setup fun _ S₁ => stage₂ hc hmb hC hT hp rfl S₁ fun _ S₂ => stage₃ hc S₂ fun _ S₃ =>
-    stage₄ hc hC hp rfl S₃
+  rw [sign_inline_signI hmb]
+  exact sign_okI hc hC hT hp hmb.toI
 
 end VG.Proof.Ecdsa.X86_64

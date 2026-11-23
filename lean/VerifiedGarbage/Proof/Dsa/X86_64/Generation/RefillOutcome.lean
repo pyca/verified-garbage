@@ -106,7 +106,7 @@ def GenerationContext.withHs (p : GenerationContext) (hs : GenerationTape p.geo)
 
 /-- The slots a refill attempt keeps: the finite search's, but the `h`
 tape's. -/
-def refillSlots : List Nat := [1, 3, 4, 5, 6, 7, 8, 9, 10, 13, 15, 17, 18, 28]
+def refillSlots : List Nat := [1, 3, 4, 5, 6, 7, 8, 9, 10, 13, 15, 17, 18, 28, 29, 30, 31]
 
 /-- A refill attempt's end, from the context `p` and the words `initial`:
 for some `h` tape, the result `res` (as `SeedOutcome` states it), with

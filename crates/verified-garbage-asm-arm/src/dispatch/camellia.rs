@@ -39,7 +39,7 @@ pub unsafe fn vg_camellia_expand_key_auto(_dit: verified_garbage_cpu::Dit<'_>, k
 /// * `data` must be valid for reads and writes of `16 * n` bytes.
 /// * `rounds` must be 18 (for a key of 16 bytes) or 24 (for one of 24 or 32).
 /// * `data` must not overlap `schedule` (distinct Rust objects never do).
-/// * Neither `schedule` nor `data` may overlap the 2816 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * Neither `schedule` nor `data` may overlap the 2832 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_camellia_ecb_encrypt_auto(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 272], rounds: usize, data: *mut [u8; 16], n: usize) {
@@ -61,7 +61,7 @@ pub unsafe fn vg_camellia_ecb_encrypt_auto(_dit: verified_garbage_cpu::Dit<'_>, 
 /// * `data` must be valid for reads and writes of `16 * n` bytes.
 /// * `rounds` must be 18 (for a key of 16 bytes) or 24 (for one of 24 or 32).
 /// * `data` must not overlap `schedule` (distinct Rust objects never do).
-/// * Neither `schedule` nor `data` may overlap the 2816 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * Neither `schedule` nor `data` may overlap the 2832 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_camellia_ecb_decrypt_auto(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 272], rounds: usize, data: *mut [u8; 16], n: usize) {

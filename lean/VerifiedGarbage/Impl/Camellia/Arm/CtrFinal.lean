@@ -43,8 +43,9 @@ open VG.Impl.CmacAes.Arm (mov)
 open VG.Impl.AesCfb.Arm (finalSave finalRestore)
 open VG.Impl.Modes.Arm (xorByte)
 
-/-- `vg_camellia_ctr`, with its working space on the stack. -/
-def ctrFramed : Prog isa := Impl.StackScratch.Arm.withStackScratchWiped 88 1 18 ctr
+/-- `vg_camellia_ctr`, with its working space on the stack, which the
+cleanup of the functions that run it zeroes. -/
+def ctrFramed : Prog isa := Impl.StackScratch.Arm.withStackScratch 88 1 ctr
 
 /-- `save`, the second stack argument, to `r12`. -/
 def ctrSave : List Instr := [.ldrSp .r12 4]

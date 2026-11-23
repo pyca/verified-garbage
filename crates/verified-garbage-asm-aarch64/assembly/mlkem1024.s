@@ -67,7 +67,7 @@ vg_mlkem1024_keygen_x2_sha3_keccak_sha3:
 	mov v14.d[1], x1
 	mov v15.d[1], x1
 	add w0, w0, #0
-	sub sp, sp, #160
+	sub sp, sp, #176
 	movi v31.2d, #0
 	add x9, sp, #0
 	str q31, [x9, #0]
@@ -80,7 +80,8 @@ vg_mlkem1024_keygen_x2_sha3_keccak_sha3:
 	str q31, [x9, #112]
 	str q31, [x9, #128]
 	str q31, [x9, #144]
-	add sp, sp, #160
+	str q31, [x9, #160]
+	add sp, sp, #176
 	ret
 	.p2align 6
 
@@ -147,7 +148,7 @@ vg_mlkem1024_encaps_x2_sha3_keccak_sha3:
 	mov v14.d[1], x1
 	mov v15.d[1], x1
 	add w0, w0, #0
-	sub sp, sp, #160
+	sub sp, sp, #176
 	movi v31.2d, #0
 	add x9, sp, #0
 	str q31, [x9, #0]
@@ -160,7 +161,8 @@ vg_mlkem1024_encaps_x2_sha3_keccak_sha3:
 	str q31, [x9, #112]
 	str q31, [x9, #128]
 	str q31, [x9, #144]
-	add sp, sp, #160
+	str q31, [x9, #160]
+	add sp, sp, #176
 	ret
 	.p2align 6
 
@@ -227,7 +229,7 @@ vg_mlkem1024_encaps_h_x2_sha3_keccak_sha3:
 	mov v14.d[1], x1
 	mov v15.d[1], x1
 	add w0, w0, #0
-	sub sp, sp, #160
+	sub sp, sp, #176
 	movi v31.2d, #0
 	add x9, sp, #0
 	str q31, [x9, #0]
@@ -240,7 +242,8 @@ vg_mlkem1024_encaps_h_x2_sha3_keccak_sha3:
 	str q31, [x9, #112]
 	str q31, [x9, #128]
 	str q31, [x9, #144]
-	add sp, sp, #160
+	str q31, [x9, #160]
+	add sp, sp, #176
 	ret
 	.p2align 6
 
@@ -307,7 +310,7 @@ vg_mlkem1024_decaps_x2_sha3_keccak_sha3:
 	mov v14.d[1], x1
 	mov v15.d[1], x1
 	add w0, w0, #0
-	sub sp, sp, #160
+	sub sp, sp, #176
 	movi v31.2d, #0
 	add x9, sp, #0
 	str q31, [x9, #0]
@@ -320,7 +323,8 @@ vg_mlkem1024_decaps_x2_sha3_keccak_sha3:
 	str q31, [x9, #112]
 	str q31, [x9, #128]
 	str q31, [x9, #144]
-	add sp, sp, #160
+	str q31, [x9, #160]
+	add sp, sp, #176
 	ret
 	.p2align 6
 
@@ -387,7 +391,7 @@ vg_mlkem1024_keygen_x2_sha3:
 	mov v14.d[1], x1
 	mov v15.d[1], x1
 	add w0, w0, #0
-	sub sp, sp, #160
+	sub sp, sp, #176
 	movi v31.2d, #0
 	add x9, sp, #0
 	str q31, [x9, #0]
@@ -400,7 +404,8 @@ vg_mlkem1024_keygen_x2_sha3:
 	str q31, [x9, #112]
 	str q31, [x9, #128]
 	str q31, [x9, #144]
-	add sp, sp, #160
+	str q31, [x9, #160]
+	add sp, sp, #176
 	ret
 	.p2align 6
 
@@ -467,7 +472,7 @@ vg_mlkem1024_encaps_x2_sha3:
 	mov v14.d[1], x1
 	mov v15.d[1], x1
 	add w0, w0, #0
-	sub sp, sp, #160
+	sub sp, sp, #176
 	movi v31.2d, #0
 	add x9, sp, #0
 	str q31, [x9, #0]
@@ -480,7 +485,8 @@ vg_mlkem1024_encaps_x2_sha3:
 	str q31, [x9, #112]
 	str q31, [x9, #128]
 	str q31, [x9, #144]
-	add sp, sp, #160
+	str q31, [x9, #160]
+	add sp, sp, #176
 	ret
 	.p2align 6
 
@@ -547,7 +553,7 @@ vg_mlkem1024_encaps_h_x2_sha3:
 	mov v14.d[1], x1
 	mov v15.d[1], x1
 	add w0, w0, #0
-	sub sp, sp, #160
+	sub sp, sp, #176
 	movi v31.2d, #0
 	add x9, sp, #0
 	str q31, [x9, #0]
@@ -560,7 +566,8 @@ vg_mlkem1024_encaps_h_x2_sha3:
 	str q31, [x9, #112]
 	str q31, [x9, #128]
 	str q31, [x9, #144]
-	add sp, sp, #160
+	str q31, [x9, #160]
+	add sp, sp, #176
 	ret
 	.p2align 6
 
@@ -627,7 +634,7 @@ vg_mlkem1024_decaps_x2_sha3:
 	mov v14.d[1], x1
 	mov v15.d[1], x1
 	add w0, w0, #0
-	sub sp, sp, #160
+	sub sp, sp, #176
 	movi v31.2d, #0
 	add x9, sp, #0
 	str q31, [x9, #0]
@@ -640,7 +647,8 @@ vg_mlkem1024_decaps_x2_sha3:
 	str q31, [x9, #112]
 	str q31, [x9, #128]
 	str q31, [x9, #144]
-	add sp, sp, #160
+	str q31, [x9, #160]
+	add sp, sp, #176
 	ret
 	.p2align 6
 
@@ -707,7 +715,7 @@ vg_mlkem1024_keygen:
 	mov v14.d[1], x1
 	mov v15.d[1], x1
 	add w0, w0, #0
-	sub sp, sp, #160
+	sub sp, sp, #176
 	movi v31.2d, #0
 	add x9, sp, #0
 	str q31, [x9, #0]
@@ -720,7 +728,8 @@ vg_mlkem1024_keygen:
 	str q31, [x9, #112]
 	str q31, [x9, #128]
 	str q31, [x9, #144]
-	add sp, sp, #160
+	str q31, [x9, #160]
+	add sp, sp, #176
 	ret
 	.p2align 6
 
@@ -787,7 +796,7 @@ vg_mlkem1024_encaps:
 	mov v14.d[1], x1
 	mov v15.d[1], x1
 	add w0, w0, #0
-	sub sp, sp, #160
+	sub sp, sp, #176
 	movi v31.2d, #0
 	add x9, sp, #0
 	str q31, [x9, #0]
@@ -800,7 +809,8 @@ vg_mlkem1024_encaps:
 	str q31, [x9, #112]
 	str q31, [x9, #128]
 	str q31, [x9, #144]
-	add sp, sp, #160
+	str q31, [x9, #160]
+	add sp, sp, #176
 	ret
 	.p2align 6
 
@@ -867,7 +877,7 @@ vg_mlkem1024_encaps_h:
 	mov v14.d[1], x1
 	mov v15.d[1], x1
 	add w0, w0, #0
-	sub sp, sp, #160
+	sub sp, sp, #176
 	movi v31.2d, #0
 	add x9, sp, #0
 	str q31, [x9, #0]
@@ -880,7 +890,8 @@ vg_mlkem1024_encaps_h:
 	str q31, [x9, #112]
 	str q31, [x9, #128]
 	str q31, [x9, #144]
-	add sp, sp, #160
+	str q31, [x9, #160]
+	add sp, sp, #176
 	ret
 	.p2align 6
 
@@ -947,7 +958,7 @@ vg_mlkem1024_decaps:
 	mov v14.d[1], x1
 	mov v15.d[1], x1
 	add w0, w0, #0
-	sub sp, sp, #160
+	sub sp, sp, #176
 	movi v31.2d, #0
 	add x9, sp, #0
 	str q31, [x9, #0]
@@ -960,7 +971,8 @@ vg_mlkem1024_decaps:
 	str q31, [x9, #112]
 	str q31, [x9, #128]
 	str q31, [x9, #144]
-	add sp, sp, #160
+	str q31, [x9, #160]
+	add sp, sp, #176
 	ret
 	.p2align 6
 

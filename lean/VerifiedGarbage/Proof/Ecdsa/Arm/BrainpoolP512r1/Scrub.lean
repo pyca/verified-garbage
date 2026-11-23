@@ -90,24 +90,24 @@ open VG VG.Arm VG.Arm.Scrub
 theorem verifyBrainpoolP512r1 (hC : Weierstrass.Law Spec.BrainpoolP512r1.curve) :
     VerifiedScrubbed target Impl.Ecdsa.Arm.Fn.verifyBrainpoolP512r1
       (Spec.Ecdsa.BrainpoolP512r1.inst.verifyHashContract
-        (abi.withConsts Impl.Weierstrass.Arm.brainpoolp512r1CombConsts) 96) 32 :=
+        (abi.withConsts (Proof.Ecdsa.Verify.Arm.BrainpoolP512r1.combVerifyK false)) 96) 32 :=
   verifiedScrubbedAll (api := Spec.Ecdsa.BrainpoolP512r1.verifyHashApi)
     { code := BrainpoolP512r1.Scrub.verifyCode false
       verified := Proof.Ecdsa.Verify.Arm.BrainpoolP512r1.verifyHash_verified hC }
     (Proof.Ecdsa.Verify.Arm.Scrub.verifyHashOut Spec.Ecdsa.BrainpoolP512r1.inst
-      Impl.Weierstrass.Arm.brainpoolp512r1CombConsts 96)
+      (Proof.Ecdsa.Verify.Arm.BrainpoolP512r1.combVerifyK false) 96)
     (scrubSideF_of BrainpoolP512r1.Scrub.verify_code BrainpoolP512r1.Scrub.frameOk_96 _)
 
 /-- `vg_ecdsa_brainpoolp512r1_verify_umaal`, given the group law. -/
 theorem verifyBrainpoolP512r1U (hC : Weierstrass.Law Spec.BrainpoolP512r1.curve) :
     VerifiedScrubbed target Impl.Ecdsa.Arm.Fn.verifyBrainpoolP512r1U
       (Spec.Ecdsa.BrainpoolP512r1.inst.verifyHashContract
-        (abi.withConsts Impl.Weierstrass.Arm.brainpoolp512r1CombConsts) 96) 32 :=
+        (abi.withConsts (Proof.Ecdsa.Verify.Arm.BrainpoolP512r1.combVerifyK true)) 96) 32 :=
   verifiedScrubbedAll (api := Spec.Ecdsa.BrainpoolP512r1.verifyHashApi)
     { code := BrainpoolP512r1.Scrub.verifyCode true
       verified := Proof.Ecdsa.Verify.Arm.BrainpoolP512r1.verifyHashU_verified hC }
     (Proof.Ecdsa.Verify.Arm.Scrub.verifyHashOut Spec.Ecdsa.BrainpoolP512r1.inst
-      Impl.Weierstrass.Arm.brainpoolp512r1CombConsts 96)
+      (Proof.Ecdsa.Verify.Arm.BrainpoolP512r1.combVerifyK true) 96)
     (scrubSideF_of BrainpoolP512r1.Scrub.verifyU_code BrainpoolP512r1.Scrub.frameOk_96 _)
 
 

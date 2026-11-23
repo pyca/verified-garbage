@@ -15,8 +15,9 @@ namespace VG.Impl.EcKey.AArch64
 
 open VG.AArch64
 
-/-- `vg_ec_p521_public_key`. -/
-def publicKeyP521 : Prog isa := Cfg.publicKey Impl.Ecdsa.AArch64.p521
+/-- `vg_ec_p521_public_key`: `[d]G` by a call of `vg_p521_comb` (`gMulP521`). -/
+def publicKeyP521 : Prog isa :=
+  Cfg.publicKeyWith Impl.Ecdsa.AArch64.p521 Impl.Ecdsa.AArch64.gMulP521
 
 /-! ## The functions, as emitted
 
@@ -36,7 +37,7 @@ def publicKeyP521 : Prog VG.AArch64.isa :=
     ⟨[.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x14, .x15, .x16,
       .x17],
      [.v0, .v1, .v2, .v4, .v5, .v6, .v16, .v17, .v18, .v19, .v20, .v21, .v22, .v24, .v25, .v26,
-      .v28, .v29, .v30, .v31],
+      .v27, .v28, .v29, .v30, .v31],
      []⟩
     EcKey.AArch64.publicKeyP521
 

@@ -8,7 +8,7 @@ public import VerifiedGarbage.Impl.Camellia.Arm.Cbc
 `ofb`, `cfbEncrypt` and `cfbDecrypt` are the generic modes of
 `Impl/Modes/Arm/Seq.lean` over Camellia's ECB encryption. `cfbDecrypt`,
 whose blocks can be deciphered independently, calls
-`vg_camellia_ecb_encrypt` with the number of rounds (`ecbCore .encrypt`),
+`vg_camellia_ecb_encrypt_core` with the number of rounds (`ecbCore .encrypt`),
 once for a group of 8, 4 or 2 blocks, then once per block for those left
 (`Impl/Modes/Arm/Wide.lean`). `ofb` and `cfbEncrypt`, whose every block
 needs the one before, have the table of subkeys built once, in their own
