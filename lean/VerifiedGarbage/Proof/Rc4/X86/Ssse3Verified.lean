@@ -2087,7 +2087,7 @@ theorem apply_step {s₀ t : State} {P D L Sc : BitVec 32} (hp : ApplyPre s₀ P
     · exact (hp.dataScratch.symm.sub_left (Offset.sub_base _ (by decide))).symm
   obtain hnx : nx = if jj = ii + 1#8 then a else t.mem (P.setWidth 64 + BitVec.ofNat 64 (ii + 1#8).toNat) :=
     swapped_next _ _ _ _ _ _
-  simp only [applyStep, List.append_assoc, List.cons_append, List.nil_append]
+  simp only [applyStep, List.append_assoc]
   refine nextSi_wp (si := a) hsi hbp hdi fit (inr_wr hT) (by rw [hsp]; exact argin 3 (by decide))
     (by rw [hsp]; exact (hp.arg_eq hf (i := 3) (by decide)).trans hp.aS) hp.scratchFit hS v24
     fun s₁ dx₁ g₁ m₁ rd₁ wr₁ sy₁ => ?_
@@ -2188,7 +2188,7 @@ theorem apply_step {s₀ t : State} {P D L Sc : BitVec 32} (hp : ApplyPre s₀ P
         simp only [List.mem_singleton] at hr
         subst hr
         exact (hp.ctxScratch.sub_left (Region.sub_prefix (by decide))).symm.sub_left
-          (Offset.sub_base _ (by decide)) |>.symm) (by decide) hy
+          (Offset.sub_base _ (by decide)) |>.symm) (show (256 : Nat) ≤ 2 ^ 64 by decide) hy
     rw [e]; exact T₅ y hy
   have inT (y : Nat) (hy : y < 256) : (P.setWidth 64 + BitVec.ofNat 64 y - P.setWidth 64).toNat < 256 := by
     rw [Mem.sub_ofNat_toNat _ (by omega)]; exact hy
