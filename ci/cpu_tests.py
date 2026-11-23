@@ -366,6 +366,10 @@ GROUPS = {
             "wycheproof::chacha20poly1305",
         ],
     },
+    "rc4": {
+        "lib": [],
+        "tests": ["rfc6229"],
+    },
     "rfc9106": {
         "lib": [],
         "tests": ["rfc9106::rfc9106_vectors", "rfc9106::rfc9106_verify_keyed"],

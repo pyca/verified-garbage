@@ -3,6 +3,51 @@
 //! `assembly/rc4.s`.
 #![allow(dead_code)]
 
+/// The CPU features `vg_rc4_init_ssse3` requires (`Artifact.features`).
+pub const VG_RC4_INIT_SSSE3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3);
+
+/// Starts raw RC4 (ARCFOUR draft §§3.1–3.2): for `key_len` in 1..=256, schedules the bytes at `key`, writes the permutation and two zero PRGA indices to `*ctx` (`VG.Spec.Rc4.contextAt`), and returns 0. Otherwise returns 1. No initial stream bytes are discarded.
+///
+/// Contract: `VG.Spec.Rc4.initContract`. Constant time: only pointers and `key_len` may affect timing, not the key or key-dependent table indices.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// The function may overwrite the arguments on the stack, as the calling convention lets it.
+///
+/// # Safety
+///
+/// * `key` must be valid for reads of `key_len` bytes.
+/// * `ctx` must be valid for reads and writes of 258 bytes.
+/// * On failure, the contents of `ctx` on return are unspecified.
+/// * `ctx` must not overlap `key` (distinct Rust objects never do).
+/// * Neither `key` nor `ctx` may overlap the arguments on the stack, overlap the return address on the stack or the 92 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `ssse3` target feature.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_rc4_init_ssse3(key: *const u8, key_len: usize, ctx: *mut [u8; 258]) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "jWQkqItEJFyJRCQEi0QkYIlEJAiLRCRkiUQkDIngg8AUiUQkEItEJAiD6AE9AAEAAA=="
+jae 20f
+.base64 "i0wkEIkZiXEEiXkIiWkMi3wkDA=="
+call 2f
+2:
+mov eax, DWORD PTR [esp]
+.byte 0x81, 192
+.long {VG_RC4_SSSE3} - 2b
+.base64 "WYtMJBCJQRyJwvMPb4IAAQAA8w9/B/MPb4IQAQAA8w9/RxDzD2+CIAEAAPMPf0cg8w9vgjABAADzD39HMPMPb4JAAQAA8w9/R0DzD2+CUAEAAPMPf0dQ8w9vgmABAADzD39HYPMPb4JwAQAA8w9/R3DzD2+CgAEAAPMPf4eAAAAA8w9vgpABAADzD3+HkAAAAPMPb4KgAQAA8w9/h6AAAADzD2+CsAEAAPMPf4ewAAAA8w9vgsABAADzD3+HwAAAAPMPb4LQAQAA8w9/h9AAAADzD2+C4AEAAPMPf4fgAAAA8w9vgvABAADzD3+H8AAAAL4AAAAAuwAAAAC9AAAAAA=="
+22:
+.base64 "ifgB8A+2CItEJBCJSBiLUBwBzYtEJAQB2A+2AAHFgeX/AAAAieiD4A9mD27AZg/vyWYPOADB8w9vigABAABmD+/IZg9u6WYPOADp8w9vogACAACJ6MHoBGYPbsBmD+vgZg84AOHzD28CZg84AMTzD28PZg/vzWYP28jzD28HZg/vwfMPfwfzD29SEGYPOADU8w9vdxBmD+/1Zg/b8vMPb1cQZg/v1vMPf1cQZg/r8WYPb97zD29CIGYPOADE8w9vTyBmD+/NZg/byPMPb0cgZg/vwfMPf0cg8w9vUjBmDzgA1PMPb3cwZg/v9WYP2/LzD29XMGYP79bzD39XMGYP6/FmD+ve8w9vQkBmDzgAxPMPb09AZg/vzWYP28jzD29HQGYP78HzD39HQPMPb1JQZg84ANTzD293UGYP7/VmD9vy8w9vV1BmD+/W8w9/V1BmD+vxZg/r3vMPb0JgZg84AMTzD29PYGYP781mD9vI8w9vR2BmD+/B8w9/R2DzD29ScGYPOADU8w9vd3BmD+/1Zg/b8vMPb1dwZg/v1vMPf1dwZg/r8WYP697zD2+CgAAAAGYPOADE8w9vj4AAAABmD+/NZg/byPMPb4eAAAAAZg/vwfMPf4eAAAAA8w9vkpAAAABmDzgA1PMPb7eQAAAAZg/v9WYP2/LzD2+XkAAAAGYP79bzD3+XkAAAAGYP6/FmD+ve8w9vgqAAAABmDzgAxPMPb4+gAAAAZg/vzWYP28jzD2+HoAAAAGYP78HzD3+HoAAAAPMPb5KwAAAAZg84ANTzD2+3sAAAAGYP7/VmD9vy8w9vl7AAAABmD+/W8w9/l7AAAABmD+vxZg/r3vMPb4LAAAAAZg84AMTzD2+PwAAAAGYP781mD9vI8w9vh8AAAABmD+/B8w9/h8AAAADzD2+S0AAAAGYPOADU8w9vt9AAAABmD+/1Zg/b8vMPb5fQAAAAZg/v1vMPf5fQAAAAZg/r8WYP697zD2+C4AAAAGYPOADE8w9vj+AAAABmD+/NZg/byPMPb4fgAAAAZg/vwfMPf4fgAAAA8w9vkvAAAABmDzgA1PMPb7fwAAAAZg/v9WYP2/LzD2+X8AAAAGYP79bzD3+X8AAAAGYP6/FmD+veieiD4A9mD274Zg84AN+LVCQQZg/WWhAPtkIQM0IYg8MBi1QkCDnTugAAAAAZ0iHTifoB8ogCg8YBgf4AAQAA"
+jne 22b
+.base64 "uAAAAACIhwABAACIhwEBAACLTCQQixmLcQSLeQiLaQw="
+jmp 21f
+20:
+.base64 "uAEAAAA="
+21:
+.base64 "jWQkWGYP78C5AAAAAI1kJKTzD38EJPMPf0QkEPMPf0QkIPMPf0QkMPMPf0QkQIlMJFCJTCRUiUwkWI1kJFy6AAAAADHJZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7//D"
+.p2align 6"#,
+        VG_RC4_SSSE3 = sym super::consts::VG_RC4_SSSE3,
+    )
+}
+
 /// Starts raw RC4 (ARCFOUR draft §§3.1–3.2): for `key_len` in 1..=256, schedules the bytes at `key`, writes the permutation and two zero PRGA indices to `*ctx` (`VG.Spec.Rc4.contextAt`), and returns 0. Otherwise returns 1. No initial stream bytes are discarded.
 ///
 /// Contract: `VG.Spec.Rc4.initContract`. Constant time: only pointers and `key_len` may affect timing, not the key or key-dependent table indices.
@@ -38,6 +83,49 @@ jmp 21f
 21:
 .base64 "jWQkVGYP78C5AAAAAI1kJKzzD38EJPMPf0QkEPMPf0QkIPMPf0QkMPMPf0QkQIlMJFCNZCRUugAAAAAxyWYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ww=="
 .p2align 6"#,
+    )
+}
+
+/// The CPU features `vg_rc4_apply_ssse3` requires (`Artifact.features`).
+pub const VG_RC4_APPLY_SSSE3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3);
+
+/// Continues raw RC4 encryption or decryption: XORs the next `len` stream bytes into `data` in place and preserves the next stream position in `*ctx` (`VG.Spec.Rc4.contextAt`). Empty input leaves the context unchanged. There is no nonce, padding, authentication, automatic discard or final output.
+///
+/// Contract: `VG.Spec.Rc4.applyContract`. Constant time: only pointers, `len` and the initial PRGA index `i` (the public byte count modulo 256 for an initialized context) may affect timing. Key bytes, the permutation, `j`, keystream lookup indices and data remain secret. The function may leak `i`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// The function may overwrite the arguments on the stack, as the calling convention lets it.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads and writes of 258 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `ctx` and `data` must not overlap each other (distinct Rust objects never do).
+/// * Neither `ctx` nor `data` may overlap the arguments on the stack, overlap the return address on the stack or the 92 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `ssse3` target feature.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_rc4_apply_ssse3(ctx: *mut [u8; 258], data: *mut u8, len: usize) {
+    core::arch::naked_asm!(
+        r#".base64 "jWQkqItEJFyJRCQEi0QkYIlEJAiLRCRkiUQkDIngg8AUiUQkEItUJAQPtoIAAQAAi0wkDIXJ"
+je 20f
+.base64 "i0wkEIkZiXEEiXkIiWkMicaLfCQED7avAQEAALsAAAAA"
+call 2f
+2:
+mov eax, DWORD PTR [esp]
+.byte 0x81, 192
+.long {VG_RC4_SSSE3} - 2b
+.base64 "WYtMJBCJQRyJwg=="
+22:
+.base64 "g8YBgeb/AAAAifgB8A+2CItEJBCJSBiLUBwBzYHl/wAAAInog+APZg9uwGYP78lmDzgAwfMPb4oAAQAAZg/vyGYPbulmDzgA6fMPb6IAAgAAiejB6ARmD27AZg/r4GYPOADh8w9vAmYPOADE8w9vD2YP781mD9vI8w9vB2YP78HzD38H8w9vUhBmDzgA1PMPb3cQZg/v9WYP2/LzD29XEGYP79bzD39XEGYP6/FmD2/e8w9vQiBmDzgAxPMPb08gZg/vzWYP28jzD29HIGYP78HzD39HIPMPb1IwZg84ANTzD293MGYP7/VmD9vy8w9vVzBmD+/W8w9/VzBmD+vxZg/r3vMPb0JAZg84AMTzD29PQGYP781mD9vI8w9vR0BmD+/B8w9/R0DzD29SUGYPOADU8w9vd1BmD+/1Zg/b8vMPb1dQZg/v1vMPf1dQZg/r8WYP697zD29CYGYPOADE8w9vT2BmD+/NZg/byPMPb0dgZg/vwfMPf0dg8w9vUnBmDzgA1PMPb3dwZg/v9WYP2/LzD29XcGYP79bzD39XcGYP6/FmD+ve8w9vgoAAAABmDzgAxPMPb4+AAAAAZg/vzWYP28jzD2+HgAAAAGYP78HzD3+HgAAAAPMPb5KQAAAAZg84ANTzD2+3kAAAAGYP7/VmD9vy8w9vl5AAAABmD+/W8w9/l5AAAABmD+vxZg/r3vMPb4KgAAAAZg84AMTzD2+PoAAAAGYP781mD9vI8w9vh6AAAABmD+/B8w9/h6AAAADzD2+SsAAAAGYPOADU8w9vt7AAAABmD+/1Zg/b8vMPb5ewAAAAZg/v1vMPf5ewAAAAZg/r8WYP697zD2+CwAAAAGYPOADE8w9vj8AAAABmD+/NZg/byPMPb4fAAAAAZg/vwfMPf4fAAAAA8w9vktAAAABmDzgA1PMPb7fQAAAAZg/v9WYP2/LzD2+X0AAAAGYP79bzD3+X0AAAAGYP6/FmD+ve8w9vguAAAABmDzgAxPMPb4/gAAAAZg/vzWYP28jzD2+H4AAAAGYP78HzD3+H4AAAAPMPb5LwAAAAZg84ANTzD2+38AAAAGYP7/VmD9vy8w9vl/AAAABmD+/W8w9/l/AAAABmD+vxZg/r3onog+APZg9u+GYPOADfi1QkEGYP1loQD7ZCEDNCGIn5AfGIAQNCGCX/AAAAicGD4Q9mD27RwegE8w9vP2YPOAD6Zg86D/sB8w9vXxBmDzgA2mYPOg/fAfMPb38gZg84APpmDzoP+wHzD29fMGYPOADaZg86D98B8w9vf0BmDzgA+mYPOg/7AfMPb19QZg84ANpmDzoP3wHzD29/YGYPOAD6Zg86D/sB8w9vX3BmDzgA2mYPOg/fAfMPb7+AAAAAZg84APpmDzoP+wHzD2+fkAAAAGYPOADaZg86D98B8w9vv6AAAABmDzgA+mYPOg/7AfMPb5+wAAAAZg84ANpmDzoP3wHzD2+/wAAAAGYPOAD6Zg86D/sB8w9vn9AAAABmDzgA2mYPOg/fAfMPb7/gAAAAZg84APpmDzoP+wHzD2+f8AAAAGYPOADaZg86D98BZg9u+GYPOADfZg/WWhAPtkIQi0wkCAHZD7YRMcKIEYPDAYtUJAw50w=="
+jne 22b
+.base64 "ifCIhwABAACJ6IiHAQEAAItMJBCLGYtxBIt5CItpDA=="
+jmp 21f
+20:
+21:
+.base64 "jWQkWGYP78C5AAAAAI1kJKTzD38EJPMPf0QkEPMPf0QkIPMPf0QkMPMPf0QkQIlMJFCJTCRUiUwkWI1kJFy4AAAAALoAAAAAMclmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/8M="
+.p2align 6"#,
+        VG_RC4_SSSE3 = sym super::consts::VG_RC4_SSSE3,
     )
 }
 
