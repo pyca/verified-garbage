@@ -56,13 +56,15 @@ def blocksToPub (s₁ s₂ : State) : Prop :=
 
 /-- What `vg_aes_gcm_encrypt_blocks_to` leaves: the encryption of the plaintext
 in the output, the counter advanced, and `Y` continued over the ciphertext. -/
-def blocksToPost (s s' : State) : Prop :=
+def blocksPostAt (dst : Addr) (s s' : State) : Prop :=
   let n := (s.gpr .r9).toNat
   let c := ctr32 (ctxCiph s.mem (s.gpr .rdi) (s.gpr .rsi).toNat) (blockAt s.mem (s.gpr .rdx))
     (blocksAt s.mem (s.gpr .r8) n)
-  blocksAt s'.mem (arg s 0) n = c ∧
+  blocksAt s'.mem dst n = c ∧
     blockAt s'.mem (s.gpr .rdx) = Nat.repeat inc32 n (blockAt s.mem (s.gpr .rdx)) ∧
     blockAt s'.mem (s.gpr .rcx) = ghashFrom (ctxH s.mem (s.gpr .rdi)) (blockAt s.mem (s.gpr .rcx)) c
+
+abbrev blocksToPost (s s' : State) : Prop := blocksPostAt (arg s 0) s s'
 
 /-- `vg_aes_gcm_encrypt_blocks_to`, for a key context of kind `M`. -/
 def encryptBlocksToX86_64M (M : CtxMode) : Contract isa where
