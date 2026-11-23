@@ -520,21 +520,19 @@ jmp 2126f
 jmp 21f
 20:
 21:
-.base64 "TItcJBhNi0MoTInASYPgD0wpwEgBwEgBwEgBwEgBwEiJwUkDQyBJiUMgSQNLMEmJSzBNiUMoTItcJBhJi0soSIXJ"
+.base64 "TItcJBhJi0soSIXJ"
 je 2173f
-.base64 "SYtzIEmLezBBugAAAAA="
-2175:
-.base64 "80IPbwQW80IPfwQXSYPCEEiD6QE="
-jne 2175b
-.base64 "TItcJBhJiztJi3MISYtTEEmLSxhNi0MwTYtLKEyJ2FA="
-call {vg_aes_gcm_encrypt_blocks_prepared_vaes_vpclmul_avx512}
-.base64 "WA=="
+.base64 "TItcJBhJiztJi3MISYtTEEmLSyBNi0MoTYnZSYPBQE2LWzA="
+call {vg_aes_ctr32_to_vaes}
+.base64 "TItcJBhJiztIgcfwAAAASYtzGEmLUzBJi0soTYnYSYPAQA=="
+call {vg_ghash_vpclmul}
 jmp 2174f
 2173:
 2174:
 .base64 "ww=="
 .p2align 6"#,
-        vg_aes_gcm_encrypt_blocks_prepared_vaes_vpclmul_avx512 = sym crate::aes::vg_aes_gcm_encrypt_blocks_prepared_vaes_vpclmul_avx512::vg_aes_gcm_encrypt_blocks_prepared_vaes_vpclmul_avx512,
+        vg_aes_ctr32_to_vaes = sym crate::aes::vg_aes_ctr32_to_vaes::vg_aes_ctr32_to_vaes,
+        vg_ghash_vpclmul = sym crate::gcm::vg_ghash_vpclmul::vg_ghash_vpclmul,
         VG_GCM_CONSTS = sym crate::consts::VG_GCM_CONSTS,
     )
 }

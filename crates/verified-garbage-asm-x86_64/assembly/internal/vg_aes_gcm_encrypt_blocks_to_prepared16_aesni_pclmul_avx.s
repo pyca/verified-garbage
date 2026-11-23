@@ -3210,44 +3210,28 @@ vg_aes_gcm_encrypt_blocks_to_prepared16_aesni_pclmul_avx:
 20:
 21:
 	mov r11, QWORD PTR [rsp+24]
-	mov r8, QWORD PTR [r11+40]
-	mov rax, r8
-	and r8, 15
-	sub rax, r8
-	add rax, rax
-	add rax, rax
-	add rax, rax
-	add rax, rax
-	mov rcx, rax
-	add rax, QWORD PTR [r11+32]
-	mov QWORD PTR [r11+32], rax
-	add rcx, QWORD PTR [r11+48]
-	mov QWORD PTR [r11+48], rcx
-	mov QWORD PTR [r11+40], r8
-	mov r11, QWORD PTR [rsp+24]
 	mov rcx, QWORD PTR [r11+40]
 	test rcx, rcx
 	je 224f
-	mov rsi, QWORD PTR [r11+32]
-	mov rdi, QWORD PTR [r11+48]
-	mov r10d, 0
-226:
-	movdqu xmm0, XMMWORD PTR [rsi+r10*1]
-	movdqu XMMWORD PTR [rdi+r10*1], xmm0
-	add r10, 16
-	sub rcx, 1
-	jne 226b
 	mov r11, QWORD PTR [rsp+24]
 	mov rdi, QWORD PTR [r11]
 	mov rsi, QWORD PTR [r11+8]
 	mov rdx, QWORD PTR [r11+16]
-	mov rcx, QWORD PTR [r11+24]
-	mov r8, QWORD PTR [r11+48]
-	mov r9, QWORD PTR [r11+40]
-	mov rax, r11
-	push rax
-	call {vg_aes_gcm_encrypt_blocks_prepared16_aesni_pclmul_avx}
-	pop rax
+	mov rcx, QWORD PTR [r11+32]
+	mov r8, QWORD PTR [r11+40]
+	mov r9, r11
+	add r9, 64
+	mov r11, QWORD PTR [r11+48]
+	call {vg_aes_ctr32_to_aesni}
+	mov r11, QWORD PTR [rsp+24]
+	mov rdi, QWORD PTR [r11]
+	add rdi, 240
+	mov rsi, QWORD PTR [r11+24]
+	mov rdx, QWORD PTR [r11+48]
+	mov rcx, QWORD PTR [r11+40]
+	mov r8, r11
+	add r8, 64
+	call {vg_ghash_pclmul}
 	jmp 225f
 224:
 225:
