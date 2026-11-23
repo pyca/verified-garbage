@@ -145,7 +145,6 @@ theorem batchTableSeal_ok {Wn R n : Nat} {Ctx St W SP D O : Addr} {s : State}
     blockAt_frame F fun r hr => (tbl_ctx L r hr).sub_left (Lay.ctxSub (by decide))
   have hp := hu.sealPre L hn (by rw [H]; simpa only [h.env.x19, h.env.x21] using q.tbl)
   refine WP.mono (sealCall_ok hp gh.hash) fun t z => ?_
-  change SealToPost u.callEntry t at z
   have en : nb u = n / 128 := by simp only [nb, hu.x26, toNat_ofNat_of_lt h.src.lt]
   have eR : rounds u = R := by simp only [rounds, hu.x22, toNat_rounds hu.rounds]
   have ekey : ciph u = ciphOf s.mem Ctx R := by
@@ -163,21 +162,14 @@ theorem batchTableSeal_ok {Wn R n : Nat} {Ctx St W SP D O : Addr} {s : State}
       simp only [List.mem_singleton] at hr; subst hr
       exact (h.src.w.sub_left (Region.sub_prefix pfx)).sub_right (Lay.wSub (by omega)))
       (by have := h.src.lt; omega)
-  have atEntry (r : Reg) (hl : r ∉ linkRegs) := u.callEntry_gpr hl
-  obtain ⟨data, ctr, y, dst, src, frame, regs, sp, rd, wr⟩ := z
-  change blocksAt t.mem (dp u) (8 * nb u) = Spec.Gcm.ctr32 (ciph u) (icb u) (blocksAt u.mem (u.gpr .x15) (8 * nb u)) at data
-  change blockAt t.mem (stp u + BitVec.ofNat 64 48) = Nat.repeat Spec.Gcm.inc32 (8 * nb u) (icb u) at ctr
-  change blockAt t.mem (stp u + BitVec.ofNat 64 16) = Spec.Gcm.ghashFrom (hk u) (y₀ u) (blocksAt t.mem (dp u) (8 * nb u)) at y
-  change t.gpr .x9 = dp u + BitVec.ofNat 64 (128 * nb u) at dst
-  change t.gpr .x15 = u.gpr .x15 + BitVec.ofNat 64 (128 * nb u) at src
-  change Frame [yR u, cR u, dR u] u.mem t.mem at frame
-  refine ⟨by simpa only [en, dp, hu.x23, hu.x15, ekey, ectr, esrc] using data,
-    by simpa only [en, stp, hu.env.x20, ectr] using ctr,
-    by simpa only [en, stp, hu.env.x20, dp, hu.x23, eh, ey] using y,
-    by simpa only [pre, en, hu.x15] using src, by simpa only [pre, en, dp, hu.x23] using dst,
-    ?_, fun r h0 h5 hr hl => (regs r hr).trans ((atEntry r hl).trans (q.gpr r h0 h5)), sp.trans q.sp, rd.trans q.rd,
-    wr.trans q.wr⟩
-  have f := frame
+  refine ⟨by simpa only [en, dp, hu.x23, hu.x15, ekey, ectr, esrc] using z.data,
+    by simpa only [en, stp, hu.env.x20, ectr] using z.ctr,
+    by simpa only [en, stp, hu.env.x20, dp, hu.x23, eh, ey] using z.y,
+    by simpa only [pre, en, hu.x15] using z.src, by simpa only [pre, en, dp, hu.x23] using z.dst,
+    ?_, fun r h0 h5 hr hl => (z.gpr r (by simpa only [List.mem_append, not_or] using And.intro hr hl)).trans (q.gpr r h0 h5),
+    z.sp.trans q.sp, z.rd.trans q.rd,
+    z.wr.trans q.wr⟩
+  have f := z.frame
   simp only [yR, cR, dR, dp, stp, hu.env.x20, hu.x23, en] at f
   exact (F.mono (fun r hr => by simp only [List.mem_singleton] at hr; subst r; simp)).trans
     (f.mono fun r hr => by

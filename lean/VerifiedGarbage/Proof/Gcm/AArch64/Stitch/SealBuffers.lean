@@ -474,7 +474,7 @@ theorem sealInv_start {s₀ s : State} (h : LInv s₀ false (cipherBlock s₀) 0
 
 /-- The output needed by the next fragment: the ciphertext, running hash
 over it, counter and both next byte pointers. -/
-structure SealToPost (s₀ s : State) : Prop where
+structure SealToPost (s₀ s : State) (clobbers : List Reg := kRegsT true) : Prop where
   data : blocksAt s.mem (dp s₀) (8 * nb s₀) =
     ctr32 (ciph s₀) (icb s₀) (blocksAt s₀.mem (s₀.gpr .x15) (8 * nb s₀))
   ctr : blockAt s.mem (stp s₀ + BitVec.ofNat 64 48) = Nat.repeat inc32 (8 * nb s₀) (icb s₀)
@@ -482,7 +482,7 @@ structure SealToPost (s₀ s : State) : Prop where
   dst : s.gpr .x9 = dp s₀ + BitVec.ofNat 64 (128 * nb s₀)
   src : s.gpr .x15 = s₀.gpr .x15 + BitVec.ofNat 64 (128 * nb s₀)
   frame : Frame [yR s₀, cR s₀, dR s₀] s₀.mem s.mem
-  gpr : ∀ r, r ∉ kRegsT true → s.gpr r = s₀.gpr r
+  gpr : ∀ r, r ∉ clobbers → s.gpr r = s₀.gpr r
   sp : s.sp = s₀.sp
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
@@ -604,11 +604,16 @@ theorem encTo_ok {s₀ : State} (hp : SealToPre s₀) (gh : Gh8Ok) :
 
 /-- Calling the shared kernel preserves the link register for the architectural return. -/
 theorem sealCall_ok {s : State} (hp : SealToPre s) (gh : Gh8Ok) :
-    WP isa sealCall s (SealToPost s.callEntry) := by
-  have hp' : SealToPre s.callEntry := ⟨⟨hp.rounds, hp.nb1, hp.k_in, hp.y_in, hp.c_in, hp.d_in, hp.t_in, hp.d_k, hp.d_y, hp.d_c, hp.d_t, hp.y_c, hp.wrap_d, hp.wrap_k, hp.wrap_t, hp.wrap_s, hp.tbl⟩, hp.src_in, hp.src_dst, hp.wrap_src⟩
+    WP isa sealCall s (fun u => SealToPost s u (kRegsT true ++ linkRegs)) := by
+  have hp' : SealToPre s.callEntry := ⟨⟨hp.rounds, hp.nb1, hp.k_in, hp.y_in, hp.c_in, hp.d_in,
+    hp.t_in, hp.d_k, hp.d_y, hp.d_c, hp.d_t, hp.y_c, hp.wrap_d, hp.wrap_k, hp.wrap_t, hp.wrap_s, hp.tbl⟩,
+    hp.src_in, hp.src_dst, hp.wrap_src⟩
   obtain ⟨tr, u, run, h⟩ := encTo_ok hp' gh
-  refine ⟨_, _, Exec.call (call_callEntry s) run ?_, h⟩
-  simp only [isa, ret, h.gpr .x30 (by decide), ite_true]
+  refine ⟨_, _, Exec.call (call_callEntry s) run ?_, h.data, h.ctr, h.y, h.dst, h.src, h.frame, ?_, h.sp, h.rd, h.wr⟩
+  · simp only [isa, ret, h.gpr .x30 (by decide), ite_true]
+  · intro r hr
+    simp only [List.mem_append, not_or] at hr
+    exact (h.gpr r hr.1).trans (s.callEntry_gpr hr.2)
 
 /-- The existing in-place seal initializes the source cursor and then uses the same callee. -/
 theorem sealInPlace_ok {s : State} (hp : KPre s) (gh : Gh8Ok) :
@@ -617,13 +622,14 @@ theorem sealInPlace_ok {s : State} (hp : KPre s) (gh : Gh8Ok) :
   have ru : runBlock isa [.addImm .x .x15 .x23 0] s = some u := by
     rw [runBlock_cons, exec_addImm_x (by decide), runStep_some, runBlock_nil]
     simp [u, dp, State.read, Size.bits]
-  have pk : KPre u := ⟨hp.rounds, hp.nb1, hp.k_in, hp.y_in, hp.c_in, hp.d_in, hp.t_in, hp.d_k, hp.d_y, hp.d_c, hp.d_t, hp.y_c, hp.wrap_d, hp.wrap_k, hp.wrap_t, hp.wrap_s, hp.tbl⟩
+  have pk : KPre u := ⟨hp.rounds, hp.nb1, hp.k_in, hp.y_in, hp.c_in, hp.d_in, hp.t_in, hp.d_k, hp.d_y,
+    hp.d_c, hp.d_t, hp.y_c, hp.wrap_d, hp.wrap_k, hp.wrap_t, hp.wrap_s, hp.tbl⟩
   have pu : SealToPre u := ⟨pk, Proof.Aes.AArch64.Aese.inRegions_wr (s := s) hp.d_in, Or.inl rfl, hp.wrap_d⟩
   refine WP.seq (WP.of_runBlock ⟨u, ru, WP.mono (sealCall_ok pu gh) fun t z => ?_⟩)
   refine ⟨z.data, z.ctr, z.y, z.frame, ?_, z.sp, z.rd, z.wr⟩
   intro r h
   have h' : r ∉ kRegsT true ∧ r ∉ linkRegs := by simpa only [List.mem_append, not_or] using h
   have h15 : r ≠ .x15 := fun e => h'.1 (e ▸ List.mem_cons_self)
-  exact (z.gpr r h'.1).trans ((u.callEntry_gpr h'.2).trans (gpr_write_of_ne _ _ _ h15))
+  exact (z.gpr r h).trans (gpr_write_of_ne _ _ _ h15)
 
 end VG.Proof.Gcm.AArch64.Stitch
