@@ -20,12 +20,12 @@ pub const VG_BLOWFISH_CBC_ENCRYPT_CHAINED_SSSE3_FEATURES: verified_garbage_cpu::
 /// * `iv` must be valid for reads and writes of 8 bytes.
 /// * `data` must be valid for reads and writes of `8 * n` bytes.
 /// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
-/// * None of `schedule`, `iv` and `data` may overlap the arguments on the stack, overlap the return address on the stack or the 456 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `schedule`, `iv` and `data` may overlap the arguments on the stack, overlap the return address on the stack or the 460 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `ssse3` target feature.
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_blowfish_cbc_encrypt_chained_ssse3(schedule: *const [u8; 4168], iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
     core::arch::naked_asm!(
-        r#".base64 "jaQkQP7//4uEJMQBAACJRCQEi4QkyAEAAIlEJAiLhCTMAQAAiUQkDIuEJNABAACJRCQQieCDwBiJRCQUi0QkFImYgAEAAImwhAEAAIm4iAEAAImojAEAAInHi3QkCIsGiYeYAQAAi0YEiYecAQAAi0QkDImHkAEAAItEJBCJh5QBAACFwA=="
+        r#".base64 "jaQkPP7//4uEJMgBAACJRCQEi4QkzAEAAIlEJAiLhCTQAQAAiUQkDIuEJNQBAACJRCQQieCDwBiJRCQUi0QkFImYgAEAAImwhAEAAIm4iAEAAImojAEAAInHi3QkCIsGiYeYAQAAi0YEiYecAQAAi0QkDImHkAEAAItEJBCJh5QBAACFwA=="
 je 20f
 22:
 .base64 "i7eQAQAAi6+UAQAAiwYzh5gBAACJRwiLRgQzh5wBAACJRwyLdCQEi1cID8qLbwwPzQ=="
@@ -35,7 +35,7 @@ jne 22b
 jmp 21f
 20:
 21:
-.base64 "i3QkCIuHmAEAAIkGi4ecAQAAiUYEi5+AAQAAi7eEAQAAi6+MAQAAi7+IAQAAZg/vwLkAAAAA8w9/RCQY8w9/RCQo8w9/RCQ48w9/RCRI8w9/RCRY8w9/RCRo8w9/RCR48w9/hCSIAAAA8w9/hCSYAAAA8w9/hCSoAAAA8w9/hCS4AAAA8w9/hCTIAAAA8w9/hCTYAAAA8w9/hCToAAAA8w9/hCT4AAAA8w9/hCQIAQAA8w9/hCQYAQAA8w9/hCQoAQAA8w9/hCQ4AQAA8w9/hCRIAQAA8w9/hCRYAQAA8w9/hCRoAQAA8w9/hCR4AQAA8w9/hCSIAQAA8w9/hCSYAQAA8w9/hCSoAQAAiYwkuAEAAImMJLwBAACNpCTAAQAAjaQkOP7//7kAAAAAiUwkBIlMJAiJTCQMiUwkEIlMJBSJTCQYiUwkHI2kJMgBAAC4AAAAALoAAAAAMclmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/8M="
+.base64 "i3QkCIuHmAEAAIkGi4ecAQAAiUYEi5+AAQAAi7eEAQAAi6+MAQAAi7+IAQAAZg/vwLkAAAAA8w9/RCQY8w9/RCQo8w9/RCQ48w9/RCRI8w9/RCRY8w9/RCRo8w9/RCR48w9/hCSIAAAA8w9/hCSYAAAA8w9/hCSoAAAA8w9/hCS4AAAA8w9/hCTIAAAA8w9/hCTYAAAA8w9/hCToAAAA8w9/hCT4AAAA8w9/hCQIAQAA8w9/hCQYAQAA8w9/hCQoAQAA8w9/hCQ4AQAA8w9/hCRIAQAA8w9/hCRYAQAA8w9/hCRoAQAA8w9/hCR4AQAA8w9/hCSIAQAA8w9/hCSYAQAA8w9/hCSoAQAAiYwkuAEAAImMJLwBAACNpCTEAQAAjaQkNP7//7kAAAAAiUwkBIlMJAiJTCQMiUwkEIlMJBSJTCQYiUwkHImMJMgBAACNpCTMAQAAuAAAAAC6AAAAADHJZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7//D"
 .p2align 6"#,
         vg_blowfish_encrypt_block_ssse3 = sym super::blowfish::vg_blowfish_encrypt_block_ssse3::vg_blowfish_encrypt_block_ssse3,
     )
