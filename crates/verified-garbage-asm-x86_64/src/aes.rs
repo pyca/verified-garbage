@@ -184,6 +184,10 @@ pub(crate) mod vg_aes_expand_key_scratch;
 pub(crate) mod vg_aes_expand_key_scratch_aesni;
 
 #[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_bounded_seal_avx512.rs"]
+pub(crate) mod vg_aes_gcm_bounded_seal_avx512;
+
+#[rustfmt::skip]
 #[path = "internal/vg_aes_gcm_decrypt_blocks.rs"]
 pub(crate) mod vg_aes_gcm_decrypt_blocks;
 
