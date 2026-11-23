@@ -3598,8 +3598,7 @@ vg_sm4_gcm_open:
 	addi sp, sp, 2032
 	addi sp, sp, 16
 	addi sp, sp, 2032
-	slli a0, a0, 32
-	srli a0, a0, 32
+	addiw a0, a0, 0
 	addi a1, zero, 0
 	addi a2, zero, 0
 	addi a3, zero, 0
@@ -4405,7 +4404,6 @@ vg_sm4_gcm_stream_init:
 	addi sp, sp, 2032
 	addi sp, sp, 16
 	addi sp, sp, 2032
-	addi a0, zero, 0
 	addi a1, zero, 0
 	addi a2, zero, 0
 	addi a3, zero, 0
@@ -4420,6 +4418,7 @@ vg_sm4_gcm_stream_init:
 	addi t4, zero, 0
 	addi t5, zero, 0
 	addi t6, zero, 0
+	addi a0, zero, 0
 	ret
 	.option pop
 
@@ -5078,7 +5077,6 @@ vg_sm4_gcm_stream_aad:
 	addi sp, sp, 2032
 	addi sp, sp, 16
 	addi sp, sp, 2032
-	addi a0, zero, 0
 	addi a1, zero, 0
 	addi a2, zero, 0
 	addi a3, zero, 0
@@ -5093,6 +5091,7 @@ vg_sm4_gcm_stream_aad:
 	addi t4, zero, 0
 	addi t5, zero, 0
 	addi t6, zero, 0
+	addi a0, zero, 0
 	ret
 	.option pop
 
@@ -8909,8 +8908,7 @@ vg_sm4_gcm_stream_verify:
 	addi sp, sp, 2032
 	addi sp, sp, 16
 	addi sp, sp, 2032
-	slli a0, a0, 32
-	srli a0, a0, 32
+	addiw a0, a0, 0
 	addi a1, zero, 0
 	addi a2, zero, 0
 	addi a3, zero, 0

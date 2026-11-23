@@ -164,7 +164,6 @@ vg_hmac_sha1_init:
 	sd t0, 288(t1)
 	sd t0, 296(t1)
 	addi sp, sp, 304
-	addi a0, zero, 0
 	addi a1, zero, 0
 	addi a2, zero, 0
 	addi a3, zero, 0
@@ -179,6 +178,7 @@ vg_hmac_sha1_init:
 	addi t4, zero, 0
 	addi t5, zero, 0
 	addi t6, zero, 0
+	addi a0, zero, 0
 	ret
 	.option pop
 

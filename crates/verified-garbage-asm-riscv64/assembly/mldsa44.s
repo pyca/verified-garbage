@@ -1541,8 +1541,7 @@ vg_mldsa44_keygen:
 	sd t0, 1152(t1)
 	sd t0, 1160(t1)
 	addi sp, sp, 1168
-	slli a0, a0, 32
-	srli a0, a0, 32
+	addiw a0, a0, 0
 	addi a1, zero, 0
 	addi a2, zero, 0
 	addi a3, zero, 0
@@ -3157,8 +3156,7 @@ vg_mldsa44_sign:
 	sd t0, 1168(t1)
 	sd t0, 1176(t1)
 	addi sp, sp, 1184
-	slli a0, a0, 32
-	srli a0, a0, 32
+	addiw a0, a0, 0
 	addi a1, zero, 0
 	addi a2, zero, 0
 	addi a3, zero, 0
@@ -3341,8 +3339,7 @@ vg_mldsa44_sign_prepared:
 	sd t0, 1168(t1)
 	sd t0, 1176(t1)
 	addi sp, sp, 1184
-	slli a0, a0, 32
-	srli a0, a0, 32
+	addiw a0, a0, 0
 	addi a1, zero, 0
 	addi a2, zero, 0
 	addi a3, zero, 0
@@ -3623,8 +3620,7 @@ vg_mldsa44_sign_message:
 	sd t0, 1168(t1)
 	sd t0, 1176(t1)
 	addi sp, sp, 1184
-	slli a0, a0, 32
-	srli a0, a0, 32
+	addiw a0, a0, 0
 	addi a1, zero, 0
 	addi a2, zero, 0
 	addi a3, zero, 0
@@ -3905,8 +3901,7 @@ vg_mldsa44_sign_message_prepared:
 	sd t0, 1168(t1)
 	sd t0, 1176(t1)
 	addi sp, sp, 1184
-	slli a0, a0, 32
-	srli a0, a0, 32
+	addiw a0, a0, 0
 	addi a1, zero, 0
 	addi a2, zero, 0
 	addi a3, zero, 0
@@ -4086,8 +4081,7 @@ vg_mldsa44_verify:
 	sd t0, 1168(t1)
 	sd t0, 1176(t1)
 	addi sp, sp, 1184
-	slli a0, a0, 32
-	srli a0, a0, 32
+	addiw a0, a0, 0
 	addi a1, zero, 0
 	addi a2, zero, 0
 	addi a3, zero, 0
@@ -4270,8 +4264,7 @@ vg_mldsa44_verify_prepared:
 	sd t0, 1168(t1)
 	sd t0, 1176(t1)
 	addi sp, sp, 1184
-	slli a0, a0, 32
-	srli a0, a0, 32
+	addiw a0, a0, 0
 	addi a1, zero, 0
 	addi a2, zero, 0
 	addi a3, zero, 0
@@ -4551,8 +4544,7 @@ vg_mldsa44_verify_message_cached:
 	sd t0, 1168(t1)
 	sd t0, 1176(t1)
 	addi sp, sp, 1184
-	slli a0, a0, 32
-	srli a0, a0, 32
+	addiw a0, a0, 0
 	addi a1, zero, 0
 	addi a2, zero, 0
 	addi a3, zero, 0
@@ -4832,8 +4824,7 @@ vg_mldsa44_verify_message_prepared:
 	sd t0, 1168(t1)
 	sd t0, 1176(t1)
 	addi sp, sp, 1184
-	slli a0, a0, 32
-	srli a0, a0, 32
+	addiw a0, a0, 0
 	addi a1, zero, 0
 	addi a2, zero, 0
 	addi a3, zero, 0

@@ -1211,8 +1211,7 @@ vg_rsa_pkcs1_verify_precomputed:
 	addi sp, sp, 80
 	addi sp, sp, 16
 	addi sp, sp, 2032
-	slli a0, a0, 32
-	srli a0, a0, 32
+	addiw a0, a0, 0
 	addi a1, zero, 0
 	addi a2, zero, 0
 	addi a3, zero, 0
@@ -2485,8 +2484,7 @@ vg_rsa_pkcs1_recover_precomputed:
 	addi sp, sp, 80
 	addi sp, sp, 16
 	addi sp, sp, 2032
-	slli a0, a0, 32
-	srli a0, a0, 32
+	addiw a0, a0, 0
 	addi a1, zero, 0
 	addi a2, zero, 0
 	addi a3, zero, 0
@@ -4017,8 +4015,7 @@ vg_rsa_pkcs1_sign_precomputed:
 	addi sp, sp, 2032
 	addi sp, sp, 16
 	addi sp, sp, 2032
-	slli a0, a0, 32
-	srli a0, a0, 32
+	addiw a0, a0, 0
 	addi a1, zero, 0
 	addi a2, zero, 0
 	addi a3, zero, 0
