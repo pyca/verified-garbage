@@ -402,6 +402,187 @@ vg_rsa_pkcs1_decrypt_precomputed_umaal:
 	cmp r2, r2
 	bx lr
 
+vg_rsa_pkcs1_decrypt_precomputed_front_umaal:
+	push {r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, lr}
+	sub sp, sp, #128
+	add r12, sp, #0
+	ldr r0, [sp, #184]
+	str r0, [r12, #0]
+	ldr r0, [sp, #188]
+	str r0, [r12, #4]
+	ldr r0, [sp, #192]
+	str r0, [r12, #8]
+	ldr r0, [sp, #196]
+	str r0, [r12, #12]
+	ldr r0, [sp, #200]
+	str r0, [r12, #16]
+	ldr r0, [sp, #204]
+	str r0, [r12, #20]
+	ldr r0, [sp, #208]
+	str r0, [r12, #24]
+	ldr r0, [sp, #212]
+	str r0, [r12, #28]
+	ldr r0, [sp, #216]
+	str r0, [r12, #32]
+	ldr r0, [sp, #220]
+	str r0, [r12, #36]
+	ldr r0, [sp, #224]
+	str r0, [r12, #40]
+	ldr r0, [sp, #228]
+	str r0, [r12, #44]
+	ldr r0, [sp, #232]
+	str r0, [r12, #48]
+	ldr r0, [sp, #236]
+	str r0, [r12, #52]
+	ldr r0, [sp, #240]
+	str r0, [r12, #56]
+	ldr r0, [sp, #244]
+	str r0, [r12, #60]
+	ldr r0, [sp, #248]
+	str r0, [r12, #64]
+	ldr r0, [sp, #252]
+	str r0, [r12, #68]
+	ldr r0, [sp, #256]
+	str r0, [r12, #72]
+	ldr r0, [sp, #260]
+	str r0, [r12, #76]
+	ldr r0, [sp, #264]
+	str r0, [r12, #80]
+	ldr r0, [sp, #128]
+	ldr r1, [sp, #132]
+	ldr r2, [sp, #136]
+	ldr r3, [sp, #140]
+	bl {vg_rsa_pkcs1_decrypt_precomputed_body_umaal}
+	add r12, sp, #0
+	str r0, [r12, #84]
+	ldr r0, [sp, #252]
+	str r0, [r12, #64]
+	add r12, sp, #0
+	ldr r0, [sp, #64]
+	movw lr, #1024
+	add r0, r0, lr
+	movw r2, #0
+	movw lr, #2048
+20:
+	ldrb r1, [r0, #0]
+	and r1, r1, r2
+	strb r1, [r0, #0]
+	add r0, r0, #1
+	subs lr, lr, #1
+	bne 20b
+	add r12, sp, #0
+	ldr r0, [sp, #64]
+	movw lr, #1024
+	add r0, r0, lr
+	ldr r1, [sp, #128]
+	ldr lr, [sp, #184]
+21:
+	ldrb r2, [r1, #0]
+	strb r2, [r0, #0]
+	add r0, r0, #1
+	add r1, r1, #1
+	subs lr, lr, #1
+	bne 21b
+	add r12, sp, #0
+	ldr r1, [sp, #136]
+	ldr r1, [r1, #0]
+	add r12, sp, #0
+	ldr r0, [sp, #184]
+	sub r0, r0, r1
+	str r0, [r12, #108]
+	movw r0, #1
+	str r0, [r12, #112]
+	movw r0, #11
+	str r0, [r12, #116]
+22:
+	add r12, sp, #0
+	ldr r0, [sp, #64]
+	movw lr, #1024
+	add r0, r0, lr
+	ldr r1, [sp, #112]
+	add r1, r0, r1
+	ldr r2, [sp, #108]
+	and r2, r2, #1
+	movw r3, #0
+	sub r2, r3, r2
+	movw lr, #1024
+23:
+	ldrb r3, [r0, #0]
+	ldrb r4, [r1, #0]
+	eor r4, r4, r3
+	and r4, r4, r2
+	eor r3, r3, r4
+	strb r3, [r0, #0]
+	add r0, r0, #1
+	add r1, r1, #1
+	subs lr, lr, #1
+	bne 23b
+	add r12, sp, #0
+	ldr r0, [sp, #108]
+	lsr r0, r0, #1
+	str r0, [r12, #108]
+	ldr r0, [sp, #112]
+	add r0, r0, r0
+	str r0, [r12, #112]
+	ldr r0, [sp, #116]
+	sub r0, r0, #1
+	str r0, [r12, #116]
+	cmp r0, #0
+	bne 22b
+	add r12, sp, #0
+	ldr r1, [sp, #64]
+	movw lr, #1024
+	add r1, r1, lr
+	ldr r0, [sp, #128]
+	ldr lr, [sp, #184]
+24:
+	ldrb r2, [r1, #0]
+	strb r2, [r0, #0]
+	add r0, r0, #1
+	add r1, r1, #1
+	subs lr, lr, #1
+	bne 24b
+	add r12, sp, #0
+	ldr r0, [sp, #84]
+	add sp, sp, #128
+	ldr r4, [sp, #16]
+	ldr r5, [sp, #20]
+	ldr r6, [sp, #24]
+	ldr r7, [sp, #28]
+	ldr r8, [sp, #32]
+	ldr r9, [sp, #36]
+	ldr r10, [sp, #40]
+	ldr r11, [sp, #44]
+	ldr lr, [sp, #52]
+	ldr r12, [sp], #56
+	sub sp, sp, #3824
+	add r12, sp, #0
+	mov r2, #0
+	mov r3, #119
+25:
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	add r12, r12, #32
+	subs r3, r3, #1
+	bne 25b
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	add sp, sp, #3824
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
+	bx lr
+
 vg_rsa_pkcs1_encrypt_random_umaal:
 	push {r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, lr}
 	sub sp, sp, #1088
@@ -972,6 +1153,187 @@ vg_rsa_pkcs1_decrypt_precomputed:
 	subs r3, r3, #1
 	bne 28b
 	add sp, sp, #3648
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
+	bx lr
+
+vg_rsa_pkcs1_decrypt_precomputed_front:
+	push {r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, lr}
+	sub sp, sp, #128
+	add r12, sp, #0
+	ldr r0, [sp, #184]
+	str r0, [r12, #0]
+	ldr r0, [sp, #188]
+	str r0, [r12, #4]
+	ldr r0, [sp, #192]
+	str r0, [r12, #8]
+	ldr r0, [sp, #196]
+	str r0, [r12, #12]
+	ldr r0, [sp, #200]
+	str r0, [r12, #16]
+	ldr r0, [sp, #204]
+	str r0, [r12, #20]
+	ldr r0, [sp, #208]
+	str r0, [r12, #24]
+	ldr r0, [sp, #212]
+	str r0, [r12, #28]
+	ldr r0, [sp, #216]
+	str r0, [r12, #32]
+	ldr r0, [sp, #220]
+	str r0, [r12, #36]
+	ldr r0, [sp, #224]
+	str r0, [r12, #40]
+	ldr r0, [sp, #228]
+	str r0, [r12, #44]
+	ldr r0, [sp, #232]
+	str r0, [r12, #48]
+	ldr r0, [sp, #236]
+	str r0, [r12, #52]
+	ldr r0, [sp, #240]
+	str r0, [r12, #56]
+	ldr r0, [sp, #244]
+	str r0, [r12, #60]
+	ldr r0, [sp, #248]
+	str r0, [r12, #64]
+	ldr r0, [sp, #252]
+	str r0, [r12, #68]
+	ldr r0, [sp, #256]
+	str r0, [r12, #72]
+	ldr r0, [sp, #260]
+	str r0, [r12, #76]
+	ldr r0, [sp, #264]
+	str r0, [r12, #80]
+	ldr r0, [sp, #128]
+	ldr r1, [sp, #132]
+	ldr r2, [sp, #136]
+	ldr r3, [sp, #140]
+	bl {vg_rsa_pkcs1_decrypt_precomputed_body}
+	add r12, sp, #0
+	str r0, [r12, #84]
+	ldr r0, [sp, #252]
+	str r0, [r12, #64]
+	add r12, sp, #0
+	ldr r0, [sp, #64]
+	movw lr, #1024
+	add r0, r0, lr
+	movw r2, #0
+	movw lr, #2048
+20:
+	ldrb r1, [r0, #0]
+	and r1, r1, r2
+	strb r1, [r0, #0]
+	add r0, r0, #1
+	subs lr, lr, #1
+	bne 20b
+	add r12, sp, #0
+	ldr r0, [sp, #64]
+	movw lr, #1024
+	add r0, r0, lr
+	ldr r1, [sp, #128]
+	ldr lr, [sp, #184]
+21:
+	ldrb r2, [r1, #0]
+	strb r2, [r0, #0]
+	add r0, r0, #1
+	add r1, r1, #1
+	subs lr, lr, #1
+	bne 21b
+	add r12, sp, #0
+	ldr r1, [sp, #136]
+	ldr r1, [r1, #0]
+	add r12, sp, #0
+	ldr r0, [sp, #184]
+	sub r0, r0, r1
+	str r0, [r12, #108]
+	movw r0, #1
+	str r0, [r12, #112]
+	movw r0, #11
+	str r0, [r12, #116]
+22:
+	add r12, sp, #0
+	ldr r0, [sp, #64]
+	movw lr, #1024
+	add r0, r0, lr
+	ldr r1, [sp, #112]
+	add r1, r0, r1
+	ldr r2, [sp, #108]
+	and r2, r2, #1
+	movw r3, #0
+	sub r2, r3, r2
+	movw lr, #1024
+23:
+	ldrb r3, [r0, #0]
+	ldrb r4, [r1, #0]
+	eor r4, r4, r3
+	and r4, r4, r2
+	eor r3, r3, r4
+	strb r3, [r0, #0]
+	add r0, r0, #1
+	add r1, r1, #1
+	subs lr, lr, #1
+	bne 23b
+	add r12, sp, #0
+	ldr r0, [sp, #108]
+	lsr r0, r0, #1
+	str r0, [r12, #108]
+	ldr r0, [sp, #112]
+	add r0, r0, r0
+	str r0, [r12, #112]
+	ldr r0, [sp, #116]
+	sub r0, r0, #1
+	str r0, [r12, #116]
+	cmp r0, #0
+	bne 22b
+	add r12, sp, #0
+	ldr r1, [sp, #64]
+	movw lr, #1024
+	add r1, r1, lr
+	ldr r0, [sp, #128]
+	ldr lr, [sp, #184]
+24:
+	ldrb r2, [r1, #0]
+	strb r2, [r0, #0]
+	add r0, r0, #1
+	add r1, r1, #1
+	subs lr, lr, #1
+	bne 24b
+	add r12, sp, #0
+	ldr r0, [sp, #84]
+	add sp, sp, #128
+	ldr r4, [sp, #16]
+	ldr r5, [sp, #20]
+	ldr r6, [sp, #24]
+	ldr r7, [sp, #28]
+	ldr r8, [sp, #32]
+	ldr r9, [sp, #36]
+	ldr r10, [sp, #40]
+	ldr r11, [sp, #44]
+	ldr lr, [sp, #52]
+	ldr r12, [sp], #56
+	sub sp, sp, #3824
+	add r12, sp, #0
+	mov r2, #0
+	mov r3, #119
+25:
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	add r12, r12, #32
+	subs r3, r3, #1
+	bne 25b
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	add sp, sp, #3824
 	mov r1, #0
 	mov r2, #0
 	mov r3, #0
