@@ -19,8 +19,12 @@ their checks read rather than build each field operation again. -/
 
 namespace VG.Impl.P224.X86_64.PointOps
 
-materialize_code doubleLit := doubleFn
-materialize_code addCachedLit := addCachedFn
-materialize_code addAffineLit := addAffineFn
+open VG.X86_64 VG.Impl.Weierstrass VG.Impl.Weierstrass.X86_64 VG.Impl.Weierstrass.X86_64.PointOps
+
+/-- `vg_p224_jac_add_cached` with its call of `vg_p224_jac_add_tail` inlined
+(`Code.inlineAll`): the code the table's proofs run. -/
+def addCachedFlat : Prog isa := wrap (addCachedBody publicJoint.K publicJoint.selected dblJMul)
+
+materialize_code addCachedLit := addCachedFlat
 
 end VG.Impl.P224.X86_64.PointOps

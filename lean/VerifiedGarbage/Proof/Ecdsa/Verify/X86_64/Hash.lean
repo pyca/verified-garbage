@@ -964,31 +964,34 @@ theorem constsOk_nil (st : Nat) (s : State) : ConstsOk [] st s := by
 theorem below8_mem (sp : Addr) : (⟨sp - 8#64, 8⟩ : Region) ∈ (⟨sp, 8⟩ :: stackBelow sp 8 : List Region) := by
   simp [stackBelow]
 
-/-- The verification's precondition under `abi`, from `KPre`. -/
-theorem core_pre {s : State} (h : KPre I 8 s) : (Proof.Ecdsa.verifyContract I abi 8).pre s := by
-  sig_pre [Proof.Ecdsa.verifyContract, Proof.Ecdsa.verifySig, Spec.Ecdsa.scratchWords,
-    X86_64.abi, X86_64.argRegs]
-  have hwr := h.wr
-  rw [scratch_bytes] at hwr
-  obtain ⟨r0, r1, r2, r3⟩ := h.below _ (List.mem_cons_self ..)
-  obtain ⟨b0, b1, b2, b3⟩ := h.below _ (below8_mem _)
-  exact ⟨h.stk.resolve_left (by decide), h.rd, hwr, h.d03, h.d13, h.d23, r0, r1, r2, r3, b0, b1, b2, b3,
-    h.f0, h.f1, h.f2, h.f3⟩
+/-- The verification's precondition under `abi`, from `KPre`, for the 8 or 16
+bytes of stack its calls use. -/
+theorem core_pre {st : Nat} (hst : st = 8 ∨ st = 16) {s : State} (h : KPre I st s) :
+    (Proof.Ecdsa.verifyContract I abi st).pre s := by
+  rcases hst with rfl | rfl <;>
+  · sig_pre [Proof.Ecdsa.verifyContract, Proof.Ecdsa.verifySig, Spec.Ecdsa.scratchWords,
+      X86_64.abi, X86_64.argRegs]
+    have hwr := h.wr
+    rw [scratch_bytes] at hwr
+    obtain ⟨r0, r1, r2, r3⟩ := h.below _ (List.mem_cons_self ..)
+    obtain ⟨b0, b1, b2, b3⟩ := h.below _ (List.mem_cons_of_mem _ (List.mem_singleton_self _))
+    exact ⟨h.stk.resolve_left (by decide), h.rd, hwr, h.d03, h.d13, h.d23, r0, r1, r2, r3, b0, b1, b2, b3,
+      h.f0, h.f1, h.f2, h.f3⟩
 
-theorem core_post {s s' : State} (h : (Proof.Ecdsa.verifyContract I abi 8).post s s') :
+theorem core_post {st : Nat} {s s' : State} (h : (Proof.Ecdsa.verifyContract I abi st).post s s') :
     (s'.gpr .rax).setWidth 32 = vres I s.mem (s.gpr .rdi)
       (Spec.Ecdsa.hashToInt I.curve (Spec.Ecdsa.bytesAt s.mem (s.gpr .rsi) I.curve.len)) (s.gpr .rdx) := by
   sig_post [Proof.Ecdsa.verifyContract, Proof.Ecdsa.verifySig, Spec.Ecdsa.scratchWords,
     X86_64.abi, X86_64.argRegs] at h
   exact h
 
-theorem core_pub {s₁ s₂ : State} (h : s₁.gpr .rsp = s₂.gpr .rsp ∧ s₁.mxcsr = s₂.mxcsr ∧ s₁.gpr .rdi = s₂.gpr .rdi ∧
+theorem core_pub {st : Nat} {s₁ s₂ : State} (h : s₁.gpr .rsp = s₂.gpr .rsp ∧ s₁.mxcsr = s₂.mxcsr ∧ s₁.gpr .rdi = s₂.gpr .rdi ∧
     s₁.gpr .rsi = s₂.gpr .rsi ∧ s₁.gpr .rdx = s₂.gpr .rdx ∧ s₁.gpr .rcx = s₂.gpr .rcx ∧
     (pkB I s₁ ++ Spec.Ecdsa.bytesAt s₁.mem (s₁.gpr .rsi) I.curve.len ++
         Spec.Ecdsa.bytesAt s₁.mem (s₁.gpr .rdx) (2 * I.curve.len)).map (·.toNat) =
       (pkB I s₂ ++ Spec.Ecdsa.bytesAt s₂.mem (s₂.gpr .rsi) I.curve.len ++
         Spec.Ecdsa.bytesAt s₂.mem (s₂.gpr .rdx) (2 * I.curve.len)).map (·.toNat)) :
-    (Proof.Ecdsa.verifyContract I abi 8).pub s₁ s₂ := by
+    (Proof.Ecdsa.verifyContract I abi st).pub s₁ s₂ := by
   sig_pub [Proof.Ecdsa.verifyContract, Proof.Ecdsa.verifySig, Spec.Ecdsa.scratchWords,
     X86_64.abi, X86_64.argRegs]
   obtain ⟨psp, pm, p0, p1, p2, p3, pl⟩ := h
@@ -1000,7 +1003,7 @@ theorem coreR_nil {core : Prog isa} (h : Verified target core (Proof.Ecdsa.verif
       ConstantTime isa (coreR I [] 8).pre (coreR I [] 8).pub core := by
   obtain ⟨hc, hct, -⟩ := h
   obtain hp : ∀ s, (coreR I [] 8).pre s → (Proof.Ecdsa.verifyContract I abi 8).pre s := fun s hs => by
-    have := hs.1; rw [stripConsts_nil] at this; exact core_pre this
+    have := hs.1; rw [stripConsts_nil] at this; exact core_pre (Or.inl rfl) this
   refine ⟨fun s hs => ?_, fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hpub e₁ e₂ => ?_⟩
   · obtain ⟨t, s', he, ha, hq⟩ := hc s (hp s hs)
     exact ⟨t, s', he, ha, core_post hq⟩
@@ -1008,14 +1011,15 @@ theorem coreR_nil {core : Prog isa} (h : Verified target core (Proof.Ecdsa.verif
     exact hct _ _ _ _ _ _ (hp _ h₁) (hp _ h₂) (core_pub ⟨psp, pm, p0, p1, p2, p3, pl⟩) e₁ e₂
 
 /-- The same, from its proof under `abi.withConsts` of its tables. -/
-theorem coreR_cons {c₀ : String × List (BitVec 64)} {cs : List (String × List (BitVec 64))}
-    {core : Prog isa} (h : Verified target core (Proof.Ecdsa.verifyContract I (abi.withConsts (c₀ :: cs)) 8)) :
-    (∀ s, (coreR I (c₀ :: cs) 8).pre s →
-      ∃ t s', Exec isa core s t s' ∧ abiPreserved s s' ∧ (coreR I (c₀ :: cs) 8).post s s') ∧
-      ConstantTime isa (coreR I (c₀ :: cs) 8).pre (coreR I (c₀ :: cs) 8).pub core := by
+theorem coreR_cons {c₀ : String × List (BitVec 64)} {cs : List (String × List (BitVec 64))} {st : Nat}
+    (hst : st = 8 ∨ st = 16)
+    {core : Prog isa} (h : Verified target core (Proof.Ecdsa.verifyContract I (abi.withConsts (c₀ :: cs)) st)) :
+    (∀ s, (coreR I (c₀ :: cs) st).pre s →
+      ∃ t s', Exec isa core s t s' ∧ abiPreserved s s' ∧ (coreR I (c₀ :: cs) st).post s s') ∧
+      ConstantTime isa (coreR I (c₀ :: cs) st).pre (coreR I (c₀ :: cs) st).pub core := by
   obtain ⟨hc, hct, -⟩ := h
-  obtain hp : ∀ s, (coreR I (c₀ :: cs) 8).pre s → (Proof.Ecdsa.verifyContract I (abi.withConsts (c₀ :: cs)) 8).pre s :=
-    fun s hs => pre_consts.mpr ⟨core_pre hs.1, hs.2⟩
+  obtain hp : ∀ s, (coreR I (c₀ :: cs) st).pre s → (Proof.Ecdsa.verifyContract I (abi.withConsts (c₀ :: cs)) st).pre s :=
+    fun s hs => pre_consts.mpr ⟨core_pre hst hs.1, hs.2⟩
   refine ⟨fun s hs => ?_, fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hpub e₁ e₂ => ?_⟩
   · obtain ⟨t, s', he, ha, hq⟩ := hc s (hp s hs)
     exact ⟨t, s', he, ha, core_post (post_consts.mp hq)⟩
@@ -1030,21 +1034,22 @@ end
 section
 variable {I}
 
-/-- `hashed`'s contract under `abi`, with the buffer as a last argument. -/
-abbrev innerA : Contract isa :=
-  Sig.scratchContract abi I.verifyHashSig "buf" .u8 80 (Curry.const (fun _ => True) _) (hPost I) true 8
+/-- `hashed`'s contract under `abi`, with the buffer as a last argument, for
+the verification's `st` bytes of stack. -/
+abbrev innerA (st : Nat := 8) : Contract isa :=
+  Sig.scratchContract abi I.verifyHashSig "buf" .u8 80 (Curry.const (fun _ => True) _) (hPost I) true st
     (some (hLeak I))
 
 /-- The same under `abi.withConsts`. -/
-abbrev innerK (c₀ : String × List (BitVec 64)) (cs : List (String × List (BitVec 64))) : Contract isa :=
+abbrev innerK (c₀ : String × List (BitVec 64)) (cs : List (String × List (BitVec 64))) (st : Nat := 8) : Contract isa :=
   Sig.scratchContract (abi.withConsts (c₀ :: cs)) I.verifyHashSig "buf" .u8 80 (Curry.const (fun _ => True) _)
-    (hPost I) true 8 (some (hLeak I))
+    (hPost I) true st (some (hLeak I))
 
 theorem pre_leak {sig : Sig} {pre : Curry (sig.words abi.ptrBits) (Mem → Prop)} {post : sig.Post abi.ptrBits}
     {wa : Bool} {st : Nat} {leak : Option (Curry (sig.words abi.ptrBits) (Mem → List Nat))} {s : State} :
     (sig.contract abi pre post wa st leak).pre s ↔ (sig.contract abi pre post wa st none).pre s := Iff.rfl
 
-theorem inner_ipre {s : State} (h : (innerA (I := I)).pre s) : IPre I 8 s := by
+theorem inner_ipre {st : Nat} {s : State} (h : (innerA (I := I) st).pre s) : IPre I st s := by
   obtain h' := (pre_regs (hashSig_words I) rfl).mp h
   simp only [Spec.Ecdsa.Instance.verifyHashSig, Sig.withScratch, Sig.bufs, regArgs, argRegs, Sig.words,
     Param.words, Elem.size, List.pairwise_cons, List.flatMap_cons,
@@ -1052,18 +1057,18 @@ theorem inner_ipre {s : State} (h : (innerA (I := I)).pre s) : IPre I 8 s := by
     List.length_nil, List.take, List.map_cons, List.map_nil, List.filter_cons, List.filter_nil] at h'
   simp at h'
   obtain ⟨hstk, hrd, hwr, ⟨⟨d04, d05⟩, ⟨d14, d15⟩, ⟨d34, d35⟩, d45⟩, ⟨hr, hb⟩, ⟨f0, f1, f3, f4, f5⟩, -⟩ := h'
-  refine ⟨.inr hstk, hrd, hwr, d04, d05, d14, d15, d34, d35, d45, fun r hr' => ?_, f0, f1, f3, f4, by omega_using [f5]⟩
+  refine ⟨hstk, hrd, hwr, d04, d05, d14, d15, d34, d35, d45, fun r hr' => ?_, f0, f1, f3, f4, by omega_using [f5]⟩
   rcases List.mem_cons.mp hr' with rfl | hr'
   · exact hr
   · exact hb r hr'
 
-theorem inner_post {s s' : State} (h : (hashR I [] 8).post s s') : (innerA (I := I)).post s s' := by
+theorem inner_post {st : Nat} {s s' : State} (h : (hashR I [] st).post s s') : (innerA (I := I) st).post s s' := by
   sig_post [Sig.scratchContract, Sig.withScratch, Curry.withScratch, Curry.app, hPost,
     Spec.Ecdsa.Instance.verifyHashSig, Spec.Ecdsa.scratchWords, X86_64.abi, X86_64.argRegs]
   exact h
 
-theorem inner_pub {K : List (String × List (BitVec 64))} {s₁ s₂ : State} (h : (innerA (I := I)).pub s₁ s₂)
-    (hsy : ∀ c ∈ K, s₁.syms c.1 = s₂.syms c.1) : (hashR I K 8).pub s₁ s₂ := by
+theorem inner_pub {st : Nat} {K : List (String × List (BitVec 64))} {s₁ s₂ : State} (h : (innerA (I := I) st).pub s₁ s₂)
+    (hsy : ∀ c ∈ K, s₁.syms c.1 = s₂.syms c.1) : (hashR I K st).pub s₁ s₂ := by
   sig_pub_keep [Sig.scratchContract, Sig.withScratch, Curry.withScratch, Curry.app, hPost, hLeak, Option.map,
     Spec.Ecdsa.Instance.verifyHashSig, Spec.Ecdsa.scratchWords, X86_64.abi, X86_64.argRegs] at h
   obtain ⟨psp, pm, pl, p0, p1, p2, p3, p4, p5⟩ := h
@@ -1084,14 +1089,14 @@ theorem hashed_verified_nil {wide : Bool} {core : Prog isa}
 
 /-- `hashed` under `abi.withConsts` of the verification's tables. -/
 theorem hashed_verified_cons {wide : Bool} {core : Prog isa} {c₀ : String × List (BitVec 64)}
-    {cs : List (String × List (BitVec 64))}
+    {cs : List (String × List (BitVec 64))} {st : Nat} (hst : st = 8 ∨ st = 16)
     (hL : 8 * I.curve.len = Spec.Ecdsa.nBits I.curve + if wide then 7 else 0) (h66 : I.curve.len ≤ 66)
-    (hcore : Verified target core (Proof.Ecdsa.verifyContract I (abi.withConsts (c₀ :: cs)) 8)) {hc : Taint.Hint taint.T}
+    (hcore : Verified target core (Proof.Ecdsa.verifyContract I (abi.withConsts (c₀ :: cs)) st)) {hc : Taint.Hint taint.T}
     (htc : (taint.check (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx, .r8, .r9]) (convert I.curve.len wide) hc).isSome = true)
-    (hsat : ∃ s, (innerK (I := I) c₀ cs).pre s) :
-    Verified target (hashed I.curve.len wide core) (innerK (I := I) c₀ cs) := by
-  obtain ⟨hcv, hct⟩ := coreR_cons hcore
-  refine Verified.of_correct (T := target) (k := hashR I (c₀ :: cs) 8) (k' := innerK (I := I) c₀ cs)
+    (hsat : ∃ s, (innerK (I := I) c₀ cs st).pre s) :
+    Verified target (hashed I.curve.len wide core) (innerK (I := I) c₀ cs st) := by
+  obtain ⟨hcv, hct⟩ := coreR_cons hst hcore
+  refine Verified.of_correct (T := target) (k := hashR I (c₀ :: cs) st) (k' := innerK (I := I) c₀ cs st)
     (hashed_correct I hL h66 hcv) (hashed_ct hL h66 hcv hct htc) ⟨fun s hs => ?_,
       fun s s' _ h => post_consts.mpr (inner_post h), fun s₁ s₂ _ _ h => ?_, hsat⟩
   · obtain ⟨h₁, h₂⟩ := pre_consts.mp hs
@@ -1335,20 +1340,22 @@ theorem verifyHash_verified_nil {wide : Bool} {core : Prog isa}
 
 /-- `vg_ecdsa_<curve>_verify` under `abi.withConsts`, from the verification of the `len` bytes. -/
 theorem verifyHash_verified_cons {wide : Bool} {core : Prog isa} {c₀ : String × List (BitVec 64)}
-    {cs : List (String × List (BitVec 64))}
+    {cs : List (String × List (BitVec 64))} {st : Nat}
     (hL : 8 * I.curve.len = Spec.Ecdsa.nBits I.curve + if wide then 7 else 0) (h66 : I.curve.len ≤ 66)
-    (hcore : Verified target core (Proof.Ecdsa.verifyContract I (abi.withConsts (c₀ :: cs)) 8))
-    (hsp : core.all (fun i => !isa.writesSp i) = true) (hd : core.x86_64Depth ≤ 8) {hc : Taint.Hint taint.T}
+    (hcore : Verified target core (Proof.Ecdsa.verifyContract I (abi.withConsts (c₀ :: cs)) st))
+    (hsp : core.all (fun i => !isa.writesSp i) = true) (hd : core.x86_64Depth ≤ st) {hc : Taint.Hint taint.T}
     (htc : (taint.check (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx, .r8, .r9]) (convert I.curve.len wide) hc).isSome = true)
-    (hsat : ∃ s, (I.verifyHashContract (abi.withConsts (c₀ :: cs)) 96).pre s) :
-    Verified target (verifyHash I.curve.len wide core) (I.verifyHashContract (abi.withConsts (c₀ :: cs)) 96) := by
+    (hsat : ∃ s, (I.verifyHashContract (abi.withConsts (c₀ :: cs)) (st + bufBytes)).pre s)
+    (hst : st = 8 ∨ st = 16 := by decide) :
+    Verified target (verifyHash I.curve.len wide core) (I.verifyHashContract (abi.withConsts (c₀ :: cs)) (st + bufBytes)) := by
   obtain ⟨s₀, h₀⟩ := hsat
+  obtain hfit : st + bufBytes + 8 ≤ 2 ^ 64 := by rcases hst with h | h <;> simp only [h, bufBytes] <;> decide
   exact stackScratchLC (sig := I.verifyHashSig) (nm := "buf") (e := .u8) (n := 80)
-    (pre := Curry.const (fun _ => True) _) (post := hPost I) (wa := true) (stack := 8) (bytes := bufBytes)
-    (hashed_verified_cons hL h66 hcore htc
-      ⟨_, narrowK_pre (nm := "buf") (post := hPost I) hashSig_lt frame_bytes (by decide) h₀ rfl⟩)
-    hashSig_lt frame_bytes (by decide) (hashed_spSafe hsp) (by rw [hashed_depth]; exact hd) hPost_out
-    ⟨s₀, h₀⟩ rfl
+    (pre := Curry.const (fun _ => True) _) (post := hPost I) (wa := true) (stack := st) (bytes := bufBytes)
+    (hashed_verified_cons hst hL h66 hcore htc
+      ⟨_, narrowK_pre (nm := "buf") (post := hPost I) hashSig_lt frame_bytes hfit h₀ rfl⟩)
+    hashSig_lt frame_bytes hfit (hashed_spSafe hsp)
+    (by rw [hashed_depth]; exact hd) hPost_out ⟨s₀, h₀⟩ rfl
 
 end
 
@@ -1363,21 +1370,23 @@ def hashSatState (L : Nat) (s₀ : State) : State :=
   { s₀ with gpr := fun r => match r with
       | .rdx => BitVec.ofNat 64 L | .rcx => s₀.gpr .rdx | .r8 => s₀.gpr .rcx | r => s₀.gpr r }
 
-theorem hashSat_abi (h66 : I.curve.len ≤ 66) {s₀ : State} (h₀ : (Proof.Ecdsa.verifyContract I abi 8).pre s₀)
-    (hsp : 96 ≤ (s₀.gpr .rsp).toNat)
-    (hd : ∀ r ∈ s₀.rd ++ s₀.wr, (⟨s₀.gpr .rsp - 96#64, 96⟩ : Region).Disjoint r) :
-    (I.verifyHashContract abi 96).pre (hashSatState I.curve.len s₀) := by
-  sig_pre [Proof.Ecdsa.verifyContract, Proof.Ecdsa.verifySig, Spec.Ecdsa.scratchWords,
-    X86_64.abi, X86_64.argRegs] at h₀
-  obtain ⟨-, hrd, hwr, d0, d1, d2, r0, r1, r2, r3, -, -, -, -, f0, f1, f2, f3⟩ := h₀
-  sig_pre [Spec.Ecdsa.Instance.verifyHashContract, Spec.Ecdsa.Instance.verifyHashSig, Spec.Ecdsa.scratchWords,
-    X86_64.abi, X86_64.argRegs, stackBelow]
-  obtain hL : (BitVec.ofNat 64 I.curve.len).toNat = I.curve.len := by
-    rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by omega_using [h66])
-  simp only [hL]
-  rw [hrd, hwr] at hd
-  exact ⟨hsp, hrd, hwr, d0, d1, d2, r0, r1, r2, r3, hd _ (by simp), hd _ (by simp), hd _ (by simp),
-    hd _ (by simp), f0, f1, f2, f3⟩
+theorem hashSat_abi {st : Nat} (hst : st = 8 ∨ st = 16) (h66 : I.curve.len ≤ 66) {s₀ : State}
+    (h₀ : (Proof.Ecdsa.verifyContract I abi st).pre s₀)
+    (hsp : st + bufBytes ≤ (s₀.gpr .rsp).toNat)
+    (hd : ∀ r ∈ s₀.rd ++ s₀.wr, (⟨s₀.gpr .rsp - BitVec.ofNat 64 (st + bufBytes), st + bufBytes⟩ : Region).Disjoint r) :
+    (I.verifyHashContract abi (st + bufBytes)).pre (hashSatState I.curve.len s₀) := by
+  rcases hst with rfl | rfl <;>
+  · sig_pre [Proof.Ecdsa.verifyContract, Proof.Ecdsa.verifySig, Spec.Ecdsa.scratchWords,
+      X86_64.abi, X86_64.argRegs] at h₀
+    obtain ⟨-, hrd, hwr, d0, d1, d2, r0, r1, r2, r3, -, -, -, -, f0, f1, f2, f3⟩ := h₀
+    sig_pre [Spec.Ecdsa.Instance.verifyHashContract, Spec.Ecdsa.Instance.verifyHashSig, Spec.Ecdsa.scratchWords,
+      X86_64.abi, X86_64.argRegs, stackBelow]
+    obtain hL : (BitVec.ofNat 64 I.curve.len).toNat = I.curve.len := by
+      rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by omega_using [h66])
+    simp only [hL]
+    rw [hrd, hwr] at hd
+    exact ⟨hsp, hrd, hwr, d0, d1, d2, r0, r1, r2, r3, hd _ (by simp), hd _ (by simp), hd _ (by simp),
+      hd _ (by simp), f0, f1, f2, f3⟩
 
 /-- A state satisfying `verifyHashContract`'s precondition under `abi`, from
 one of the verification's whose 96 bytes below `rsp` are free. -/
@@ -1385,23 +1394,24 @@ theorem hashSat_nil (h66 : I.curve.len ≤ 66) {s₀ : State} (h₀ : (Proof.Ecd
     (hsp : 96 ≤ (s₀.gpr .rsp).toNat)
     (hd : ∀ r ∈ s₀.rd ++ s₀.wr, (⟨s₀.gpr .rsp - 96#64, 96⟩ : Region).Disjoint r) :
     ∃ s, (I.verifyHashContract abi 96).pre s :=
-  ⟨_, hashSat_abi h66 h₀ hsp hd⟩
+  ⟨_, hashSat_abi (st := 8) (Or.inl rfl) h66 h₀ hsp hd⟩
 
 /-- The same under `abi.withConsts`. -/
-theorem hashSat_cons {c₀ : String × List (BitVec 64)} {cs : List (String × List (BitVec 64))}
-    (h66 : I.curve.len ≤ 66) {s₀ : State} (h₀ : (Proof.Ecdsa.verifyContract I (abi.withConsts (c₀ :: cs)) 8).pre s₀)
-    (hsp : 96 ≤ (s₀.gpr .rsp).toNat)
-    (hd : ∀ r ∈ s₀.rd ++ s₀.wr, (⟨s₀.gpr .rsp - 96#64, 96⟩ : Region).Disjoint r) :
-    ∃ s, (I.verifyHashContract (abi.withConsts (c₀ :: cs)) 96).pre s := by
+theorem hashSat_cons {c₀ : String × List (BitVec 64)} {cs : List (String × List (BitVec 64))} {st : Nat}
+    (h66 : I.curve.len ≤ 66) {s₀ : State} (h₀ : (Proof.Ecdsa.verifyContract I (abi.withConsts (c₀ :: cs)) st).pre s₀)
+    (hsp : st + bufBytes ≤ (s₀.gpr .rsp).toNat)
+    (hd : ∀ r ∈ s₀.rd ++ s₀.wr, (⟨s₀.gpr .rsp - BitVec.ofNat 64 (st + bufBytes), st + bufBytes⟩ : Region).Disjoint r)
+    (hst : st = 8 ∨ st = 16 := by decide) :
+    ∃ s, (I.verifyHashContract (abi.withConsts (c₀ :: cs)) (st + bufBytes)).pre s := by
   obtain ⟨h₁, hk⟩ := pre_consts.mp h₀
   refine ⟨hashSatState I.curve.len s₀, pre_consts.mpr ⟨?_, ?_⟩⟩
-  · exact hashSat_abi h66 h₁ hsp fun r hr => hd r (by
+  · exact hashSat_abi hst h66 h₁ hsp fun r hr => hd r (by
       simp only [stripConsts, State.withRegions_rd, State.withRegions_wr, List.mem_append] at hr ⊢
       exact hr.imp (fun h => List.mem_of_mem_take h) id)
   · obtain ⟨k1, k2, k3, k4⟩ := hk
     refine ⟨k1, k2, fun t ht => ⟨(k3 t ht).1, (k3 t ht).2.1, fun r hr => ?_⟩, k4⟩
-    obtain hr' : r = ⟨s₀.gpr .rsp, 8⟩ ∨ r = ⟨s₀.gpr .rsp - 96#64, 96⟩ := by
-      simpa [abi, stackBelow, below, hashSatState] using hr
+    obtain hr' : r = ⟨s₀.gpr .rsp, 8⟩ ∨ r = ⟨s₀.gpr .rsp - BitVec.ofNat 64 (st + bufBytes), st + bufBytes⟩ := by
+      rcases hst with rfl | rfl <;> simpa [abi, stackBelow, below, hashSatState, bufBytes] using hr
     rcases hr' with rfl | rfl
     · exact (k3 t ht).2.2 _ (List.mem_cons_self ..)
     · have htd : t ∈ s₀.rd := by

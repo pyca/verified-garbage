@@ -92,32 +92,32 @@ open VG.Proof.MlDsa.X86_64 (ArithImpl)
 def artifactsFor (v : ArithImpl) : List Artifact := [
   Spec.MlDsa.sign44Api.artifact X86_64.target {
     suffix := v.code.sfx
-    code := Impl.MlDsa.X86_64.Fn.signEntry v.level (Proof.MlDsa.signWithCacheName "mldsa44" ++ v.code.sfx) (Proof.MlDsa.X86_64.Sign.primsWith v.code) Spec.MlDsa.mlDsa44 0
+    code := Impl.MlDsa.X86_64.Fn.signEntry v.level (Proof.MlDsa.signWithCacheName "mldsa44" ++ v.code.sfx) (Proof.MlDsa.signWithCacheName "mldsa44" ++ "_body") (Proof.MlDsa.X86_64.Sign.primsWith v.code true) Spec.MlDsa.mlDsa44 0
     verified := Proof.MlDsa.X86_64.SignScrub.sign44_scrubbed v
     spSafe := Proof.MlDsa.X86_64.SignScrub.sign44_spSafe v },
   Spec.MlDsa.sign65Api.artifact X86_64.target {
     suffix := v.code.sfx
-    code := Impl.MlDsa.X86_64.Fn.signEntry v.level (Proof.MlDsa.signWithCacheName "mldsa65" ++ v.code.sfx) (Proof.MlDsa.X86_64.Sign.primsWith v.code) Spec.MlDsa.mlDsa65 0
+    code := Impl.MlDsa.X86_64.Fn.signEntry v.level (Proof.MlDsa.signWithCacheName "mldsa65" ++ v.code.sfx) (Proof.MlDsa.signWithCacheName "mldsa65" ++ "_body") (Proof.MlDsa.X86_64.Sign.primsWith v.code true) Spec.MlDsa.mlDsa65 0
     verified := Proof.MlDsa.X86_64.SignScrub.sign65_scrubbed v
     spSafe := Proof.MlDsa.X86_64.SignScrub.sign65_spSafe v },
   Spec.MlDsa.sign87Api.artifact X86_64.target {
     suffix := v.code.sfx
-    code := Impl.MlDsa.X86_64.Fn.signEntry v.level (Proof.MlDsa.signWithCacheName "mldsa87" ++ v.code.sfx) (Proof.MlDsa.X86_64.Sign.primsWith v.code) Spec.MlDsa.mlDsa87 0
+    code := Impl.MlDsa.X86_64.Fn.signEntry v.level (Proof.MlDsa.signWithCacheName "mldsa87" ++ v.code.sfx) (Proof.MlDsa.signWithCacheName "mldsa87" ++ "_body") (Proof.MlDsa.X86_64.Sign.primsWith v.code true) Spec.MlDsa.mlDsa87 0
     verified := Proof.MlDsa.X86_64.SignScrub.sign87_scrubbed v
     spSafe := Proof.MlDsa.X86_64.SignScrub.sign87_spSafe v },
   (Spec.MlDsa.preparedSignApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44").artifact X86_64.target {
     suffix := v.code.sfx
-    code := Impl.MlDsa.X86_64.Fn.signEntry v.level (Proof.MlDsa.signWithCacheName "mldsa44" ++ v.code.sfx) (Proof.MlDsa.X86_64.Sign.primsWith v.code) Spec.MlDsa.mlDsa44 1
+    code := Impl.MlDsa.X86_64.Fn.signEntry v.level (Proof.MlDsa.signWithCacheName "mldsa44" ++ v.code.sfx) (Proof.MlDsa.signWithCacheName "mldsa44" ++ "_body") (Proof.MlDsa.X86_64.Sign.primsWith v.code true) Spec.MlDsa.mlDsa44 1
     verified := Proof.MlDsa.X86_64.SignScrub.preparedSign44_scrubbed v
     spSafe := Proof.MlDsa.X86_64.SignScrub.preparedSign44_spSafe v },
   (Spec.MlDsa.preparedSignApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65").artifact X86_64.target {
     suffix := v.code.sfx
-    code := Impl.MlDsa.X86_64.Fn.signEntry v.level (Proof.MlDsa.signWithCacheName "mldsa65" ++ v.code.sfx) (Proof.MlDsa.X86_64.Sign.primsWith v.code) Spec.MlDsa.mlDsa65 1
+    code := Impl.MlDsa.X86_64.Fn.signEntry v.level (Proof.MlDsa.signWithCacheName "mldsa65" ++ v.code.sfx) (Proof.MlDsa.signWithCacheName "mldsa65" ++ "_body") (Proof.MlDsa.X86_64.Sign.primsWith v.code true) Spec.MlDsa.mlDsa65 1
     verified := Proof.MlDsa.X86_64.SignScrub.preparedSign65_scrubbed v
     spSafe := Proof.MlDsa.X86_64.SignScrub.preparedSign65_spSafe v },
   (Spec.MlDsa.preparedSignApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87").artifact X86_64.target {
     suffix := v.code.sfx
-    code := Impl.MlDsa.X86_64.Fn.signEntry v.level (Proof.MlDsa.signWithCacheName "mldsa87" ++ v.code.sfx) (Proof.MlDsa.X86_64.Sign.primsWith v.code) Spec.MlDsa.mlDsa87 1
+    code := Impl.MlDsa.X86_64.Fn.signEntry v.level (Proof.MlDsa.signWithCacheName "mldsa87" ++ v.code.sfx) (Proof.MlDsa.signWithCacheName "mldsa87" ++ "_body") (Proof.MlDsa.X86_64.Sign.primsWith v.code true) Spec.MlDsa.mlDsa87 1
     verified := Proof.MlDsa.X86_64.SignScrub.preparedSign87_scrubbed v
     spSafe := Proof.MlDsa.X86_64.SignScrub.preparedSign87_spSafe v }]
 
@@ -135,32 +135,32 @@ open VG.Proof.MlDsa.X86_64 (ArithImpl)
 def artifactsFor (v : ArithImpl) : List Artifact := [
   Spec.MlDsa.signMessage44Api.artifact X86_64.target {
     suffix := v.code.sfx
-    code := Impl.MlDsa.X86_64.Fn.signMessage v.level (Proof.MlDsa.signWithCacheName "mldsa44" ++ v.code.sfx) (Proof.MlDsa.X86_64.Sign.primsWith v.code) Spec.MlDsa.mlDsa44 0
+    code := Impl.MlDsa.X86_64.Fn.signMessage v.level (Proof.MlDsa.signWithCacheName "mldsa44" ++ v.code.sfx) (Proof.MlDsa.signWithCacheName "mldsa44" ++ "_body") (Proof.MlDsa.X86_64.Sign.primsWith v.code true) Spec.MlDsa.mlDsa44 0
     verified := Proof.MlDsa.X86_64.SignScrub.signMessage44_scrubbed v
     spSafe := Proof.MlDsa.X86_64.SignScrub.signMessage44_spSafe v },
   Spec.MlDsa.signMessage65Api.artifact X86_64.target {
     suffix := v.code.sfx
-    code := Impl.MlDsa.X86_64.Fn.signMessage v.level (Proof.MlDsa.signWithCacheName "mldsa65" ++ v.code.sfx) (Proof.MlDsa.X86_64.Sign.primsWith v.code) Spec.MlDsa.mlDsa65 0
+    code := Impl.MlDsa.X86_64.Fn.signMessage v.level (Proof.MlDsa.signWithCacheName "mldsa65" ++ v.code.sfx) (Proof.MlDsa.signWithCacheName "mldsa65" ++ "_body") (Proof.MlDsa.X86_64.Sign.primsWith v.code true) Spec.MlDsa.mlDsa65 0
     verified := Proof.MlDsa.X86_64.SignScrub.signMessage65_scrubbed v
     spSafe := Proof.MlDsa.X86_64.SignScrub.signMessage65_spSafe v },
   Spec.MlDsa.signMessage87Api.artifact X86_64.target {
     suffix := v.code.sfx
-    code := Impl.MlDsa.X86_64.Fn.signMessage v.level (Proof.MlDsa.signWithCacheName "mldsa87" ++ v.code.sfx) (Proof.MlDsa.X86_64.Sign.primsWith v.code) Spec.MlDsa.mlDsa87 0
+    code := Impl.MlDsa.X86_64.Fn.signMessage v.level (Proof.MlDsa.signWithCacheName "mldsa87" ++ v.code.sfx) (Proof.MlDsa.signWithCacheName "mldsa87" ++ "_body") (Proof.MlDsa.X86_64.Sign.primsWith v.code true) Spec.MlDsa.mlDsa87 0
     verified := Proof.MlDsa.X86_64.SignScrub.signMessage87_scrubbed v
     spSafe := Proof.MlDsa.X86_64.SignScrub.signMessage87_spSafe v },
   (Spec.MlDsa.preparedSignMessageApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44").artifact X86_64.target {
     suffix := v.code.sfx
-    code := Impl.MlDsa.X86_64.Fn.signMessage v.level (Proof.MlDsa.signWithCacheName "mldsa44" ++ v.code.sfx) (Proof.MlDsa.X86_64.Sign.primsWith v.code) Spec.MlDsa.mlDsa44 1
+    code := Impl.MlDsa.X86_64.Fn.signMessage v.level (Proof.MlDsa.signWithCacheName "mldsa44" ++ v.code.sfx) (Proof.MlDsa.signWithCacheName "mldsa44" ++ "_body") (Proof.MlDsa.X86_64.Sign.primsWith v.code true) Spec.MlDsa.mlDsa44 1
     verified := Proof.MlDsa.X86_64.SignScrub.preparedSignMessage44_scrubbed v
     spSafe := Proof.MlDsa.X86_64.SignScrub.preparedSignMessage44_spSafe v },
   (Spec.MlDsa.preparedSignMessageApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65").artifact X86_64.target {
     suffix := v.code.sfx
-    code := Impl.MlDsa.X86_64.Fn.signMessage v.level (Proof.MlDsa.signWithCacheName "mldsa65" ++ v.code.sfx) (Proof.MlDsa.X86_64.Sign.primsWith v.code) Spec.MlDsa.mlDsa65 1
+    code := Impl.MlDsa.X86_64.Fn.signMessage v.level (Proof.MlDsa.signWithCacheName "mldsa65" ++ v.code.sfx) (Proof.MlDsa.signWithCacheName "mldsa65" ++ "_body") (Proof.MlDsa.X86_64.Sign.primsWith v.code true) Spec.MlDsa.mlDsa65 1
     verified := Proof.MlDsa.X86_64.SignScrub.preparedSignMessage65_scrubbed v
     spSafe := Proof.MlDsa.X86_64.SignScrub.preparedSignMessage65_spSafe v },
   (Spec.MlDsa.preparedSignMessageApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87").artifact X86_64.target {
     suffix := v.code.sfx
-    code := Impl.MlDsa.X86_64.Fn.signMessage v.level (Proof.MlDsa.signWithCacheName "mldsa87" ++ v.code.sfx) (Proof.MlDsa.X86_64.Sign.primsWith v.code) Spec.MlDsa.mlDsa87 1
+    code := Impl.MlDsa.X86_64.Fn.signMessage v.level (Proof.MlDsa.signWithCacheName "mldsa87" ++ v.code.sfx) (Proof.MlDsa.signWithCacheName "mldsa87" ++ "_body") (Proof.MlDsa.X86_64.Sign.primsWith v.code true) Spec.MlDsa.mlDsa87 1
     verified := Proof.MlDsa.X86_64.SignScrub.preparedSignMessage87_scrubbed v
     spSafe := Proof.MlDsa.X86_64.SignScrub.preparedSignMessage87_spSafe v }]
 

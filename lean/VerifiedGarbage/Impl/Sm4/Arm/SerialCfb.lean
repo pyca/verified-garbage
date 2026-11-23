@@ -15,8 +15,7 @@ def saveCipher : List Instr :=
   [.dp .sub .r0 .r6 (.imm 16)] ++
     (List.range 4).flatMap (copyWord sb .r0 (4 * BatchCtr.counterSlot) 0)
 
-/-- Keep the Thumb cipher round loop word-aligned. -/
-def count : Prog isa := .seq (.block [.mov .r11 (.imm 1)]) (.block BatchCfb.pad)
+def count : Prog isa := .block [.mov .r11 (.imm 1)]
 
 def group : Prog isa := .seq count
   (.seq BatchCfb.batch (.seq (.block saveCipher) (.block [.subs .r7 .r7 (.reg .r11)])))

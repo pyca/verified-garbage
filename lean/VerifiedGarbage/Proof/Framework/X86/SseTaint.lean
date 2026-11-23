@@ -48,7 +48,7 @@ def step (τ : T) : Instr → Option T
   | .movqLoad _ m => if memPub τ m then some τ else none
   | .movqStore m _ => storeStepK τ m 8 false []
   -- A table an instruction carries is observed as its offset, a constant.
-  | .xop _ | .pmuludq .. | .pmullw .. | .pmulhw .. | .movdquTbl .. | .movqTbl .. => some τ
+  | .xop _ | .pmuludq .. | .movdquTbl .. | .movqTbl .. => some τ
   | .mop op => if mopOk τ op then some τ else none
   | .mmxStore m _ => storeStepK τ m 8 false []
   | i => Taint.stepK τ i
@@ -125,9 +125,9 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State}
     cases e₁; cases e₂
     exact ha.store (n := 8) hm (by decide) (fun hp => by cases hp) h₁ h₂
       (fun _ h => (List.not_mem_nil h).elim) (fun _ h => (List.not_mem_nil h).elim)
-  | mmxEnter | emms | mcdtEnter | mcdtLeave =>
+  | mmxEnter | emms | mcdtEnter | mcdtLeave | pmullw | pmulhw =>
     simp only [step, Taint.stepK_eq, Taint.step, reduceCtorEq] at hs
-  | pmuludq d r | pmullw d r | pmulhw d r =>
+  | pmuludq d r =>
     simp only [step, Option.some.injEq] at hs
     subst hs
     simp only [exec] at e₁ e₂
@@ -166,7 +166,7 @@ def stepKeepFn : Instr → Taint.Step
   | .movdquLoad _ m | .movqLoad _ m => ⟨fun τ => bif pub τ m.base then some τ else none⟩
   | .movdquStore m _ => ⟨fun τ => storeKeep τ m 16 false []⟩
   | .movqStore m _ | .mmxStore m _ => ⟨fun τ => storeKeep τ m 8 false []⟩
-  | .xop _ | .pmuludq .. | .pmullw .. | .pmulhw .. | .movdquTbl .. | .movqTbl .. => ⟨some⟩
+  | .xop _ | .pmuludq .. | .movdquTbl .. | .movqTbl .. => ⟨some⟩
   | .mop op => ⟨fun τ => bif mopOk τ op then some τ else none⟩
   | i => Taint.stepKeepFn i
 
@@ -215,8 +215,7 @@ theorem stepKeep_spec (τ : T) (i : Instr) :
     · simp only [memPub, h, ↓reduceIte, Bool.cond_true]
   | movdquStore m _ => exact st m 16
   | movqStore m _ | mmxStore m _ => exact st m 8
-  | xop _ | pmuludq _ _ | pmullw _ _ | pmulhw _ _ | movdquTbl _ _ _ _ | movqTbl _ _ _ _ =>
-    exact same (o := some τ) rfl rfl
+  | xop _ | pmuludq _ _ | movdquTbl _ _ _ _ | movqTbl _ _ _ _ => exact same (o := some τ) rfl rfl
   | mop op =>
     refine same (o := bif mopOk τ op then some τ else none) rfl ?_
     simp only [step, Bool.cond_eq_ite]

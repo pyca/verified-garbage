@@ -34,7 +34,7 @@ namespace VG.Proof.Weierstrass.X86_64.PointOps
 
 open VG VG.X86_64 VG.Impl.Mont VG.Impl.Weierstrass VG.Impl.Weierstrass.X86_64
 open VG.Proof.Mont VG.Proof.Mont.X86_64 VG.Proof.Weierstrass VG.Proof.Weierstrass.X86_64
-open VG.Proof.Weierstrass.X86_64.CachedJac (headN rename rename_inj head_eq tail_eq slots out)
+open VG.Proof.Weierstrass.X86_64.CachedJac (headN rename rename_inj headZ_eq tail_eq slots out)
 
 /-- What the cached addition's body needs of the slots: those of
 `CachedJac.add`'s proofs, and that its programs read only `V` (`R`, `E`
@@ -45,10 +45,10 @@ structure CachedLay (K : WinCfg) (sel size : Nat) (Sl : Nat → Prop) (dbl : Rcb
   c2 : sel ∉ rcbW K.S K.D
   c3 : sel + 8 * K.M.n ∉ rcbW K.S K.D
   sl : ∀ x ∈ (rcbW K.S K.D ++ rcbR K.S K.R K.E) ++ [sel, sel + 8 * K.M.n], Sl x
-  head : readsOk (Impl.Weierstrass.X86_64.CachedJac.head K.M.n K.S K.R K.E sel)
+  head : readsOk (Impl.Weierstrass.X86_64.CachedJac.headZ K.M.n K.S K.R K.E K.D sel)
     (jacCoords K.R ++ jacCoords K.E ++ [sel, sel + 8 * K.M.n]) = true
-  tail : readsOk (jacTail K.S K.R K.E K.D) (validAfter
-    (Impl.Weierstrass.X86_64.CachedJac.head K.M.n K.S K.R K.E sel)
+  tail : readsOk (jacEndTail K.S K.R K.E K.D) (validAfter
+    (Impl.Weierstrass.X86_64.CachedJac.headZ K.M.n K.S K.R K.E K.D sel)
     (jacCoords K.R ++ jacCoords K.E ++ [sel, sel + 8 * K.M.n])) = true
   dbl : readsOk (dbl K.S K.R K.D) (jacCoords K.R) = true
   accum : (jacCoords K.R).Nodup
@@ -129,7 +129,7 @@ theorem cachedAdd_relCT {dbl : RcbSlots → Pt → Pt → List FOp} (hL : Cached
     (List.mem_append_left _ (dW x hx)))
   obtain rV : ∀ x ∈ jacCoords K.R, x ∈ V := fun x hx => hV x (by simp [cV, hx])
   obtain eV : ∀ x ∈ jacCoords K.E, x ∈ V := fun x hx => hV x (by simp [cV, hx])
-  rw [Impl.Weierstrass.X86_64.CachedJac.add]
+  rw [Impl.Weierstrass.X86_64.CachedJac.add, Impl.Weierstrass.X86_64.CachedJac.addEnd]
   apply fieldBranch_relCT hL.lay hm (rV _ (by simp [jacCoords])) hc.zeroP
   · intro _
     exact (copyPoint_relCT hL.lay dSl eV hc.copyQ).mono (fun _ _ h => h) (fun _ _ h => ⟨_, h⟩)
@@ -138,23 +138,23 @@ theorem cachedAdd_relCT {dbl : RcbSlots → Pt → Pt → List FOp} (hL : Cached
   · intro _
     exact (copyPoint_relCT hL.lay dSl rV hc.copyP).mono (fun _ _ h => h) (fun _ _ h => ⟨_, h⟩)
   intro _
-  obtain hsH : ∀ op ∈ Impl.Weierstrass.X86_64.CachedJac.head K.M.n K.S K.R K.E sel, ∀ x ∈ op.out :: op.ins, Sl x := by
-    rw [CachedJac.head_eq K.M.n K.S K.R K.E K.D sel]
+  obtain hsH : ∀ op ∈ Impl.Weierstrass.X86_64.CachedJac.headZ K.M.n K.S K.R K.E K.D sel, ∀ x ∈ op.out :: op.ins, Sl x := by
+    rw [CachedJac.headZ_eq K.M.n K.S K.R K.E K.D sel]
     exact fun op hop x hx => hL.sl x (CachedJac.slots op hop x hx)
   apply RelCT.seq (programB_relCT hL.lay hm hsH (readsOk_mono hL.head hV) hc.head)
-  obtain oldV : ∀ x ∈ V, x ∈ validAfter (Impl.Weierstrass.X86_64.CachedJac.head K.M.n K.S K.R K.E sel) V :=
+  obtain oldV : ∀ x ∈ V, x ∈ validAfter (Impl.Weierstrass.X86_64.CachedJac.headZ K.M.n K.S K.R K.E K.D sel) V :=
     fun x hx => (mem_validAfter _ _).mpr (Or.inl hx)
   obtain subV : ∀ x ∈ jacCoords K.D ++ V, x ∈ jacCoords K.D ++
-      validAfter (Impl.Weierstrass.X86_64.CachedJac.head K.M.n K.S K.R K.E sel) V := by
+      validAfter (Impl.Weierstrass.X86_64.CachedJac.headZ K.M.n K.S K.R K.E K.D sel) V := by
     intro x hx
     rcases List.mem_append.mp hx with hx | hx
     · exact List.mem_append_left _ hx
     · exact List.mem_append_right _ (oldV x hx)
   apply fieldBranch_relCT hL.lay hm (a := K.S.t3) (by
-    rw [mem_validAfter]; right; simp [Impl.Weierstrass.X86_64.CachedJac.head, FOp.out]) hc.zeroH
+    rw [mem_validAfter]; right; simp [Impl.Weierstrass.X86_64.CachedJac.headZ, Impl.Weierstrass.X86_64.CachedJac.head, FOp.out]) hc.zeroH
   · intro _
     apply fieldBranch_relCT hL.lay hm (a := K.S.t5) (by
-      rw [mem_validAfter]; right; simp [Impl.Weierstrass.X86_64.CachedJac.head, FOp.out]) hc.zeroR
+      rw [mem_validAfter]; right; simp [Impl.Weierstrass.X86_64.CachedJac.headZ, Impl.Weierstrass.X86_64.CachedJac.head, FOp.out]) hc.zeroR
     · intro _
       obtain ⟨N, hN, hE⟩ := hds
       obtain he : dbl K.S K.R K.D = ofN N K.S K.R K.R K.D := hE _ _ _
@@ -177,7 +177,7 @@ theorem cachedAdd_relCT {dbl : RcbSlots → Pt → Pt → List FOp} (hL : Cached
           exact hx.imp_left (hV x)) hc.tail).mono (fun _ _ h => h)
       (fun _ _ h => ⟨_, (h.sub (validAfter_sub fun x hx => by
         simp only [jacCoords, List.mem_cons, List.not_mem_nil, or_false] at hx
-        rcases hx with rfl | rfl | rfl <;> simp [jacTail, FOp.out])).sub subV⟩)
+        rcases hx with rfl | rfl | rfl <;> simp [jacEndTail, jacTail, FOp.out])).sub subV⟩)
 
 /-- The cached addition's body, its sum copied to `R`, from any slots `V`
 holding `R`, `E` and the selected pair. -/

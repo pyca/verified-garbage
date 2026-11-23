@@ -8,9 +8,7 @@ public import VerifiedGarbage.Proof.Sha256.X86.Lit
 public import VerifiedGarbage.Proof.Sha3.X86.Lit
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
-import VerifiedGarbage.Proof.MlKem.X86.Unpack
-import VerifiedGarbage.Impl.MlKem.X86.Ntt
-import VerifiedGarbage.Proof.MlKem.X86.Leaf
+import VerifiedGarbage.Proof.MlKem.X86.Table
 import VerifiedGarbage.Proof.Framework.Sig
 
 /-!

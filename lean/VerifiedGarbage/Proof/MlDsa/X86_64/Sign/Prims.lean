@@ -25,6 +25,8 @@ two runs in the same layout leak the same (`…At_tr`).
 
 namespace VG.Proof.MlDsa.X86_64.Sign
 
+variable {SL : List String}
+
 open VG.Proof.MlDsa.Arith.Representation
 
 open VG VG.X86_64 VG.Impl.MlDsa.X86_64.Sign
@@ -33,9 +35,58 @@ open VG.Proof.MlDsa.Sign
 open VG.Spec.MlDsa
 open VG.Spec.Sha3 (bytesAt)
 
+/-- The callees of the words above the return address are the variant's
+(`slotNames`), but for the dot product (slot 2), whose name depends on the
+parameter set. -/
+def SlotsOk (P : Prims) (SL : List String) : Prop :=
+  ∀ i, i ≠ 2 → P.viaSlots = true → SL[i]? = (slotNames P 0)[i]?
+
+section
+variable {P : Prims} {SL : List String} (h : SlotsOk P SL)
+include h
+
+theorem SlotsOk.ntt : P.viaSlots = true → SL[0]? = some ("vg_mldsa_ntt" ++ P.asfx) :=
+  fun hv => (h 0 (by decide) hv).trans rfl
+
+theorem SlotsOk.invNtt : P.viaSlots = true → SL[1]? = some ((if P.montgomery then "vg_mldsa_montgomery_inv_ntt" else "vg_mldsa_inv_ntt") ++ P.asfx) :=
+  fun hv => (h 1 (by decide) hv).trans rfl
+
+theorem SlotsOk.mul : P.viaSlots = true → SL[3]? = some ((if P.montgomery then "vg_mldsa_montgomery_multiply_ntt" else "vg_mldsa_multiply_ntt") ++ P.asfx) :=
+  fun hv => (h 3 (by decide) hv).trans rfl
+
+theorem SlotsOk.add : P.viaSlots = true → SL[4]? = some ("vg_mldsa_add" ++ P.asfx) :=
+  fun hv => (h 4 (by decide) hv).trans rfl
+
+theorem SlotsOk.sub : P.viaSlots = true → SL[5]? = some ("vg_mldsa_sub" ++ P.asfx) :=
+  fun hv => (h 5 (by decide) hv).trans rfl
+
+theorem SlotsOk.rej4 : P.viaSlots = true → SL[6]? = some ("vg_mldsa_rej_ntt_poly4" ++ P.sfx) :=
+  fun hv => (h 6 (by decide) hv).trans rfl
+
+theorem SlotsOk.mask4 : P.viaSlots = true → SL[7]? = some ("vg_mldsa_expand_mask_poly4" ++ P.sfx) :=
+  fun hv => (h 7 (by decide) hv).trans rfl
+
+theorem SlotsOk.highBits : P.viaSlots = true → SL[8]? = some ("vg_mldsa_high_bits" ++ P.asfx) :=
+  fun hv => (h 8 (by decide) hv).trans rfl
+
+theorem SlotsOk.lowBits : P.viaSlots = true → SL[9]? = some ("vg_mldsa_low_bits" ++ P.asfx) :=
+  fun hv => (h 9 (by decide) hv).trans rfl
+
+theorem SlotsOk.normLt : P.viaSlots = true → SL[10]? = some ("vg_mldsa_norm_lt" ++ P.asfx) :=
+  fun hv => (h 10 (by decide) hv).trans rfl
+
+theorem SlotsOk.makeHint : P.viaSlots = true → SL[11]? = some ("vg_mldsa_make_hint" ++ P.asfx) :=
+  fun hv => (h 11 (by decide) hv).trans rfl
+
+end
+
+/-- The callee of slot 2 is the dot product of the parameter set's `ℓ`. -/
+abbrev DotSl (P : Prims) (p : Spec.MlDsa.Params) (SL : List String) : Prop :=
+  P.viaSlots = true → SL[2]? = some (dotInvName p.ℓ ++ P.asfx)
+
 /-- What the proofs need of the implementations `P` of the primitives, with
 `D` bytes of stack for each call. -/
-structure PrimsOk (P : Prims) (D : Nat) where
+structure PrimsOk (P : Prims) (D : Nat) (SL : List String) where
   ntt : Callee (fun S => nttContract X86_64.abi S) D P.ntt
   invNtt : Callee (fun S => inverseContract P.montgomery X86_64.abi S) D P.invNtt
   mul : Callee (fun S => productContract P.montgomery X86_64.abi S) D P.mul
@@ -74,6 +125,8 @@ structure PrimsOk (P : Prims) (D : Nat) where
   /-- `D` leaves room for the calls of the sponge functions. -/
   hD : 24 ≤ D
   hD' : D < 2 ^ 32
+  /-- `SL` names the variant's callees. -/
+  sl : SlotsOk P SL
 
 /-! ## The arguments of a call -/
 
@@ -85,16 +138,16 @@ theorem toNat64 {v : Nat} (h : v < 2 ^ 32) : (BitVec.ofNat 64 v).toNat = v := by
 
 /-- The setting of a call from a state in a layout: the stack pointer and
 memory as they were, and the layout. -/
-structure At (D : Nat) (rbs wbs : List (Reg × Nat)) (s s1 : State) : Prop where
-  L : Lay D rbs wbs s
+structure At (D : Nat) (SL : List String) (rbs wbs : List (Reg × Nat)) (s s1 : State) : Prop where
+  L : Lay D SL rbs wbs s
   mem : s1.mem = s.mem
   rsp : s1.gpr .rsp = s.gpr .rsp
 
-theorem At.of {D : Nat} {rbs wbs : List (Reg × Nat)} {s s1 : State} (L : Lay D rbs wbs s) (hm : s1.mem = s.mem)
-    (k : Keep argRegs s s1) : At D rbs wbs s s1 := ⟨L, hm, k.gpr (by decide)⟩
+theorem At.of {D : Nat} {SL : List String} {rbs wbs : List (Reg × Nat)} {s s1 : State} (L : Lay D SL rbs wbs s) (hm : s1.mem = s.mem)
+    (k : Keep argRegs s s1) : At D SL rbs wbs s s1 := ⟨L, hm, k.gpr (by decide)⟩
 
 section
-variable {D : Nat} {rbs wbs : List (Reg × Nat)} {s s1 : State} (A : At D rbs wbs s s1)
+variable {D : Nat} {SL : List String} {rbs wbs : List (Reg × Nat)} {s s1 : State} (A : At D SL rbs wbs s s1)
 include A
 
 theorem At.ret {p : Ptr} {l : Nat} (h : inB (rbs ++ wbs) p l = true) (hD : 8 ≤ D) :
@@ -169,7 +222,7 @@ end
 /-! ## `NTT` and `NTT⁻¹` in place -/
 
 section
-variable {P : Prims} {D : Nat} {rbs wbs : List (Reg × Nat)}
+variable {P : Prims} {D : Nat} {SL : List String} {rbs wbs : List (Reg × Nat)}
 
 /-- What a call of an in-place transformation of `f` needs of the layout. -/
 def ipChk (bs wbs : List (Reg × Nat)) (f : Ptr) : Bool :=
@@ -182,7 +235,7 @@ theorem ipChk_spec {bs wbs : List (Reg × Nat)} {f : Ptr} (h : ipChk bs wbs f = 
   simp only [ipChk, Bool.and_eq_true, decide_eq_true_eq] at h
   exact ⟨h.1.1.1.1.1.1, h.1.1.1.1.1.2, h.1.1.1.1.2, h.1.1.1.2, h.1.1.2, h.1.2, h.2⟩
 
-theorem ipPre {t : Poly → Poly} {S : Nat} (hS : S + 8 ≤ D) {s s1 : State} (A : At D rbs wbs s s1) {f : Ptr}
+theorem ipPre {t : Poly → Poly} {S : Nat} (hS : S + 8 ≤ D) {s s1 : State} (A : At D SL rbs wbs s s1) {f : Ptr}
     (hc : ipChk (rbs ++ wbs) wbs f = true) (hA : ArgsIn [.ptr f, .ptr (sc oPS)] s s1)
     (hr : Reduced s.mem (pa s f)) :
     (inPlaceContract X86_64.abi t S).pre (s1.callEntry.withRegions [] [pR (pa s f), pR (pa s (sc oPS))]) := by
@@ -199,14 +252,15 @@ theorem ipPre {t : Poly → Poly} {S : Nat} (hS : S + 8 ≤ D) {s s1 : State} (A
       exact ⟨A.stk hS i1, A.stk hS i2⟩)
   · exact (A.red i1 hD).mpr hr
 
-theorem ipAt_ok {t : Poly → Poly} {n : String} {c : Prog isa} (C : Callee (fun S => inPlaceContract X86_64.abi t S) D c)
-    {s : State} (L : Lay D rbs wbs s) {f : Ptr} (hc : ipChk (rbs ++ wbs) wbs f = true)
+theorem ipAt_ok {t : Poly → Poly} {v : Bool} {i : Nat} {n : String} {c : Prog isa}
+    (C : Callee (fun S => inPlaceContract X86_64.abi t S) D c) (hsl : v = true → SL[i]? = some n)
+    {s : State} (L : Lay D SL rbs wbs s) {f : Ptr} (hc : ipChk (rbs ++ wbs) wbs f = true)
     (hr : Reduced s.mem (pa s f)) :
-    WP isa (callP n c [.ptr f, .ptr (sc oPS)]) s fun s' => PPostB D s s' [(f, 1024), (sc oPS, 1024)] ∧
+    WP isa (callV v i n c [.ptr f, .ptr (sc oPS)]) s fun s' => PPostB D s s' [(f, 1024), (sc oPS, 1024)] ∧
       (∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) ∧ PolyIs s'.mem (pa s f) (t (polyAt s.mem (pa s f))) := by
   obtain ⟨w1, w2, i1, _, _, b1, o1⟩ := ipChk_spec hc
   have hD : 8 ≤ D := by have := C.hS; omega_using [this]
-  refine WP.mono (callP_ok C.ver.1 C.nosp C.depth L.dsm (by simp [Arg.ok, b1, o1]; decide)
+  refine WP.mono (callV_ok C.ver.1 C.nosp C.depth L.dsm (by simp [Arg.ok, b1, o1]; decide) L hsl
     (fun s1 hA hm k => ipPre C.hS (At.of L hm k) hc hA hr) (Covers.right (Covers.cons (L.cW w1) (L.cW w2)))
     (Covers.cons (L.cW w1) (L.cW w2)))
     fun s' ⟨hpost, hcs, s1, hA, hm, k, s₂, hm₂, _, hq⟩ => ⟨hpost, hcs, ?_⟩
@@ -216,12 +270,13 @@ theorem ipAt_ok {t : Poly → Poly} {n : String} {c : Prog isa} (C : Callee (fun
   simp only [h1, Arg.val, hm₂, ← State.callEntry_mem, A.poly i1 hD] at hq
   exact hq
 
-theorem ipAt_tr {t : Poly → Poly} {n : String} {c : Prog isa} (C : Callee (fun S => inPlaceContract X86_64.abi t S) D c)
+theorem ipAt_tr {t : Poly → Poly} {v : Bool} {i : Nat} {n : String} {c : Prog isa}
+    (C : Callee (fun S => inPlaceContract X86_64.abi t S) D c) (hsl : v = true → SL[i]? = some n)
     {f : Ptr} (hc : ipChk (rbs ++ wbs) wbs f = true) :
-    RelCT isa (fun x y => LRel D rbs wbs x y ∧ Reduced x.mem (pa x f) ∧ Reduced y.mem (pa y f))
-      (callP n c [.ptr f, .ptr (sc oPS)]) fun _ _ => True := by
+    RelCT isa (fun x y => LRel D SL rbs wbs x y ∧ Reduced x.mem (pa x f) ∧ Reduced y.mem (pa y f))
+      (callV v i n c [.ptr f, .ptr (sc oPS)]) fun _ _ => True := by
   obtain ⟨w1, w2, i1, i2, _, b1, o1⟩ := ipChk_spec hc
-  refine callP_tr C.okMx (C.ctMx fun _ _ h => h) (by simp [Arg.ok, b1, o1]; decide)
+  refine callV_tr C.okMx (C.ctMx fun _ _ h => h) (by simp [Arg.ok, b1, o1]; decide) (fun _ _ h => h.1) hsl
     fun x y x1 y1 ⟨R, rx, ry⟩ ⟨⟨hAx, hmx⟩, kx⟩ ⟨⟨hAy, hmy⟩, ky⟩ =>
       ⟨_, _, _, _, ipPre (t := t) C.hS (At.of R.lx hmx kx) hc hAx rx, ipPre (t := t) C.hS (At.of R.ly hmy ky) hc hAy ry, ?_,
         by rw [kx.2.1, kx.2.2]; exact Covers.right (Covers.cons (R.lx.cW w1) (R.lx.cW w2)),
@@ -252,7 +307,7 @@ theorem mulChk_spec {bs wbs : List (Reg × Nat)} {h f g : Ptr} (hc : mulChk bs w
   obtain ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨h1, h2⟩, h3⟩, h4⟩, h5⟩, h6⟩, h7⟩, h8⟩, h9⟩, h10⟩, h11⟩, h12⟩ := hc
   exact ⟨h1, h2, h3, h4, h5, h6, by simp [Arg.ok, h7, h8, h9, h10, h11, h12]⟩
 
-theorem mulPre {S : Nat} (hS : S + 8 ≤ D) {s s1 : State} (A : At D rbs wbs s s1) {h f g : Ptr}
+theorem mulPre {S : Nat} (hS : S + 8 ≤ D) {s s1 : State} (A : At D SL rbs wbs s s1) {h f g : Ptr}
     (hc : mulChk (rbs ++ wbs) wbs h f g = true) (hA : ArgsIn [.ptr h, .ptr f, .ptr g] s s1)
     (rf : Reduced s.mem (pa s f)) (rg : Reduced s.mem (pa s g)) :
     (productContract P.montgomery X86_64.abi S).pre (s1.callEntry.withRegions [pR (pa s f), pR (pa s g)] [pR (pa s h)]) := by
@@ -269,14 +324,16 @@ theorem mulPre {S : Nat} (hS : S + 8 ≤ D) {s s1 : State} (A : At D rbs wbs s s
   exact ⟨A.stk hS i1, A.stk hS i2, A.stk hS i3⟩
 
 theorem mulAt_ok {P : Prims} (C : Callee (fun S => productContract P.montgomery X86_64.abi S) D P.mul)
-    {s : State} (L : Lay D rbs wbs s) {h f g : Ptr} (hc : mulChk (rbs ++ wbs) wbs h f g = true)
+    (hS : SlotsOk P SL)
+    {s : State} (L : Lay D SL rbs wbs s) {h f g : Ptr} (hc : mulChk (rbs ++ wbs) wbs h f g = true)
     (rf : Reduced s.mem (pa s f)) (rg : Reduced s.mem (pa s g)) :
     WP isa (mulAt P h f g) s fun s' => PPostB D s s' [(h, 1024)] ∧
       (∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) ∧
       PolyIs s'.mem (pa s h) (product P.montgomery (polyAt s.mem (pa s f)) (polyAt s.mem (pa s g))) := by
   obtain ⟨w1, i1, i2, i3, _, _, ok⟩ := mulChk_spec hc
+  have hsl := hS.mul
   have hD : 8 ≤ D := by have := C.hS; omega_using [this]
-  refine WP.mono (callP_ok C.ver.1 C.nosp C.depth L.dsm ok
+  refine WP.mono (callV_ok C.ver.1 C.nosp C.depth L.dsm ok L hsl
     (fun s1 hA hm k => mulPre C.hS (At.of L hm k) hc hA rf rg)
     (Covers.append_left (Covers.cons (L.cR i2) (L.cR i3)) (Covers.right (L.cW w1))) (L.cW w1))
     fun s' ⟨hpost, hcs, s1, hA, hm, k, s₂, hm₂, _, hq⟩ => ⟨hpost, hcs, ?_⟩
@@ -287,11 +344,13 @@ theorem mulAt_ok {P : Prims} (C : Callee (fun S => productContract P.montgomery 
   exact hq
 
 theorem mulAt_tr {P : Prims} (C : Callee (fun S => productContract P.montgomery X86_64.abi S) D P.mul)
+    (hS : SlotsOk P SL)
     {h f g : Ptr} (hc : mulChk (rbs ++ wbs) wbs h f g = true) :
-    RelCT isa (fun x y => LRel D rbs wbs x y ∧ (Reduced x.mem (pa x f) ∧ Reduced x.mem (pa x g)) ∧
+    RelCT isa (fun x y => LRel D SL rbs wbs x y ∧ (Reduced x.mem (pa x f) ∧ Reduced x.mem (pa x g)) ∧
       (Reduced y.mem (pa y f) ∧ Reduced y.mem (pa y g))) (mulAt P h f g) fun _ _ => True := by
   obtain ⟨w1, i1, i2, i3, _, _, ok⟩ := mulChk_spec hc
-  refine callP_tr C.okMx (C.ctMx fun _ _ h => h) ok
+  have hsl := hS.mul
+  refine callV_tr C.okMx (C.ctMx fun _ _ h => h) ok (fun _ _ h => h.1) hsl
     fun x y x1 y1 ⟨R, ⟨rfx, rgx⟩, ⟨rfy, rgy⟩⟩ ⟨⟨hAx, hmx⟩, kx⟩ ⟨⟨hAy, hmy⟩, ky⟩ =>
       ⟨_, _, _, _, mulPre (P := P) C.hS (At.of R.lx hmx kx) hc hAx rfx rgx, mulPre (P := P) C.hS (At.of R.ly hmy ky) hc hAy rfy rgy, ?_,
         by rw [kx.2.1, kx.2.2]; exact Covers.append_left (Covers.cons (R.lx.cR i2) (R.lx.cR i3)) (Covers.right (R.lx.cW w1)),
@@ -336,7 +395,7 @@ theorem dotChk_spec {bs wbs : List (Reg × Nat)} {h f g : Ptr} {c : Nat} (hc : d
   have := List.all_eq_true.mp h12 j (List.mem_range.mpr hj)
   simpa only [Bool.and_eq_true] using this
 
-theorem dotPre {c S : Nat} (hS : S + 8 ≤ D) {s s1 : State} (A : At D rbs wbs s s1) {h f g : Ptr}
+theorem dotPre {c S : Nat} (hS : S + 8 ≤ D) {s s1 : State} (A : At D SL rbs wbs s s1) {h f g : Ptr}
     (hc : dotChk (rbs ++ wbs) wbs h f g c = true) (hA : ArgsIn [.ptr h, .ptr f, .ptr g, .ptr (sc oPS)] s s1)
     (rf : ∀ j < c, Reduced s.mem (pa s (famP f j))) (rg : ∀ j < c, Reduced s.mem (pa s (famP g j))) :
     (dotInverseContract c X86_64.abi S).pre (s1.callEntry.withRegions [⟨pa s f, c * 256 * 4⟩, ⟨pa s g, c * 256 * 4⟩]
@@ -363,7 +422,8 @@ theorem dotPre {c S : Nat} (hS : S + 8 ≤ D) {s s1 : State} (A : At D rbs wbs s
 
 
 theorem dotAt_ok {P : Prims} {c : Nat} (C : Callee (fun S => dotInverseContract c X86_64.abi S) D (P.dotInv c))
-    {s : State} (L : Lay D rbs wbs s) {h f g : Ptr} (hc : dotChk (rbs ++ wbs) wbs h f g c = true)
+    (hsl : P.viaSlots = true → SL[2]? = some (dotInvName c ++ P.asfx))
+    {s : State} (L : Lay D SL rbs wbs s) {h f g : Ptr} (hc : dotChk (rbs ++ wbs) wbs h f g c = true)
     (rf : ∀ j < c, Reduced s.mem (pa s (famP f j))) (rg : ∀ j < c, Reduced s.mem (pa s (famP g j))) :
     WP isa (dotInvAt P c h f g) s fun s' => PPostB D s s' [(h, 1024), (sc oPS, 1024)] ∧
       (∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) ∧
@@ -371,7 +431,7 @@ theorem dotAt_ok {P : Prims} {c : Nat} (C : Callee (fun S => dotInverseContract 
         (fun j => polyAt s.mem (pa s (famP g j))) c)) := by
   obtain ⟨w1, w2, i1, i2, i3, i4, _, _, _, _, _, hfam, ok⟩ := dotChk_spec hc
   have hD : 8 ≤ D := by have := C.hS; omega_using [this]
-  refine WP.mono (callP_ok C.ver.1 C.nosp C.depth L.dsm ok
+  refine WP.mono (callV_ok C.ver.1 C.nosp C.depth L.dsm ok L hsl
     (fun s1 hA hm k => dotPre C.hS (At.of L hm k) hc hA rf rg)
     (Covers.append_left (Covers.cons (L.cR i3) (L.cR i4)) (Covers.right (Covers.cons (L.cW w1) (L.cW w2))))
     (Covers.cons (L.cW w1) (L.cW w2)))
@@ -385,13 +445,14 @@ theorem dotAt_ok {P : Prims} {c : Nat} (C : Callee (fun S => dotInverseContract 
   exact hq
 
 theorem dotAt_tr {P : Prims} {c : Nat} (C : Callee (fun S => dotInverseContract c X86_64.abi S) D (P.dotInv c))
+    (hsl : P.viaSlots = true → SL[2]? = some (dotInvName c ++ P.asfx))
     {h f g : Ptr} (hc : dotChk (rbs ++ wbs) wbs h f g c = true) :
-    RelCT isa (fun x y => LRel D rbs wbs x y ∧
+    RelCT isa (fun x y => LRel D SL rbs wbs x y ∧
       ((∀ j < c, Reduced x.mem (pa x (famP f j))) ∧ ∀ j < c, Reduced x.mem (pa x (famP g j))) ∧
       ((∀ j < c, Reduced y.mem (pa y (famP f j))) ∧ ∀ j < c, Reduced y.mem (pa y (famP g j))))
       (dotInvAt P c h f g) fun _ _ => True := by
   obtain ⟨w1, w2, i1, i2, i3, i4, _, _, _, _, _, _, ok⟩ := dotChk_spec hc
-  refine callP_tr C.okMx (C.ctMx fun _ _ h => h) ok
+  refine callV_tr C.okMx (C.ctMx fun _ _ h => h) ok (fun _ _ h => h.1) hsl
     fun x y x1 y1 ⟨R, ⟨rfx, rgx⟩, ⟨rfy, rgy⟩⟩ ⟨⟨hAx, hmx⟩, kx⟩ ⟨⟨hAy, hmy⟩, ky⟩ =>
       ⟨_, _, _, _, dotPre C.hS (At.of R.lx hmx kx) hc hAx rfx rgx, dotPre C.hS (At.of R.ly hmy ky) hc hAy rfy rgy, ?_,
         by rw [kx.2.1, kx.2.2]; exact (Covers.append_left (Covers.cons (R.lx.cR i3) (R.lx.cR i4))

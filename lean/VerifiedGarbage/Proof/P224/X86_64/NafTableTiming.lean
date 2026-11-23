@@ -87,7 +87,7 @@ open VG VG.X86_64 VG.Impl.Weierstrass.X86_64 VG.Impl.P224.X86_64
 open VG.Proof.Weierstrass.X86_64
 
 /-- The window of the joint verifier. -/
-def nafJacWin := publicJoint.K
+def nafJacWin := publicJointF.K
 
 theorem nafCachedJac_checks : CachedJacChecks nafJacWin nafJacWin.R nafJacWin.E nafJacWin.D 5408 := by
   have hT : p224T.Ok nafJacWin.M := p224T_ok

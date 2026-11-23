@@ -152,7 +152,7 @@ theorem joint_ifma_lookup_layout : JointLookupLayout publicJointIfma 8192 :=
     by decide, by decide, by decide, by decide⟩
 
 theorem joint_ifma_add_layout : JointAddLayout publicJointIfma 8192 := by
-  refine ⟨joint_ifma_lookup_layout, ?_, by decide, by decide, by decide, by decide, ⟨fun _ h => by cases h⟩⟩
+  refine ⟨joint_ifma_lookup_layout, ?_, by decide, by decide, by decide, by decide, ⟨fun _ h => (by cases h), fun _ h => (by cases h)⟩⟩
   constructor <;> decide +kernel
 
 theorem joint_ifma_init_layout : JointInitLayout publicJointIfma 8192 :=

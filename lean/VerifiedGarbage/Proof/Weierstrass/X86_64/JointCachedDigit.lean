@@ -41,6 +41,7 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.CachedJacOps
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JacDoubleForward
 import VerifiedGarbage.Proof.Weierstrass.PointContract
 import VerifiedGarbage.Proof.Weierstrass.X86_64.CachedJacField
+import VerifiedGarbage.Proof.Weierstrass.X86_64.JacMixedForward
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.PointOps
 public import VerifiedGarbage.Proof.Framework.X86_64.KeepReg
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.FieldTiming
@@ -237,53 +238,38 @@ theorem cachedJacAdd_ok {K : WinCfg} {base : Addr} {size : Nat} {C : Curve}
     · intro b ib kb hqz
       apply WP.seq
       refine WP.mono (CachedJac.head_ok hL hm hA h2a h3a hSlC ib hVC h2 h3) fun c ⟨kc,ic,eh,er⟩ => ?_
-      let EH := runOps (Impl.Weierstrass.X86_64.CachedJac.head K.M.n K.S p q dst) E
+      let EH := runOps (Impl.Weierstrass.X86_64.CachedJac.headZ K.M.n K.S p q o dst) E
       have hkeep := (ka.mono (W' := rcbW K.S o) (by simp)).trans
         ((kb.mono (by regions_sub)).trans kc)
       have hpkeep : ∀ x ∈ rcbR K.S p q, EH x = E x := fun x hx => CachedJac.head_readonly hA E hx
       have jp : InvJ C (EH p.x) (EH p.y) (EH p.z) P := by
         rw [hpkeep _ (by simp [rcbR]),hpkeep _ (by simp [rcbR]),hpkeep _ (by simp [rcbR])]
         exact hJP
-      have oldV : ∀ x ∈ V, x ∈ validAfter (Impl.Weierstrass.X86_64.CachedJac.head K.M.n K.S p q dst) V :=
+      have oldV : ∀ x ∈ V, x ∈ validAfter (Impl.Weierstrass.X86_64.CachedJac.headZ K.M.n K.S p q o dst) V :=
         fun x hx => (mem_validAfter _ _).mpr (Or.inl hx)
-      have hv : ∀ x ∈ rcbR K.S p p, x ∈ validAfter (Impl.Weierstrass.X86_64.CachedJac.head K.M.n K.S p q dst) V :=
+      have hv : ∀ x ∈ rcbR K.S p p, x ∈ validAfter (Impl.Weierstrass.X86_64.CachedJac.headZ K.M.n K.S p q o dst) V :=
         fun x hx => oldV x (hV x (rcbR_self_mem _ _ _ hx))
-      apply fieldBranch_ok hL hm ic (a := K.S.t3) (by
-        rw [mem_validAfter]; right; simp [Impl.Weierstrass.X86_64.CachedJac.head,FOp.out])
-      · intro d id kd hz
-        have hx : E q.x*(E p.z*E p.z)-E p.x*(E q.z*E q.z)=0 := eh.symm.trans hz
-        apply fieldBranch_ok hL hm id (a := K.S.t5) (by
-          rw [mem_validAfter]; right; simp [Impl.Weierstrass.X86_64.CachedJac.head,FOp.out])
-        · intro e ie ke hrz
-          have hy : E q.y*E p.z*(E p.z*E p.z)-E p.y*E q.z*(E q.z*E q.z)=0 := er.symm.trans hrz
-          have hpq := hJP.same hC hJQ hpz hqz hx hy
-          have hdA : RcbApart K.S p p o := ⟨hA.nodup,fun x hx => hA.apart x (rcbR_self_mem _ _ _ hx)⟩
-          have hdSl : ∀ x ∈ rcbW K.S o ++ rcbR K.S p p, Sl x := by
-            intro x hx
-            rcases List.mem_append.mp hx with hx | hx
-            · exact hSl x (List.mem_append_left _ hx)
-            · exact hSl x (List.mem_append_right _ (rcbR_self_mem _ _ _ hx))
-          rw [←hpq]
-          refine WP.mono (jacDoubleForward_ok hL hm hd hdA hdSl ie hv hP jp) fun t ⟨kt,it,jt⟩ => ?_
-          exact (JacPost.sub ⟨_,kt,it,jt⟩ oldV).prefix
-            (hkeep.trans ((kd.mono (by regions_sub)).trans (ke.mono (by regions_sub))))
-        · intro e ie ke hrz
-          have hy : E q.y*E p.z*(E p.z*E p.z)-E p.y*E q.z*(E q.z*E q.z)≠0 := fun he => hrz (er.trans he)
-          have hadd := hJP.opposite hC hP hQ hJQ hpz hqz hx hy
-          rw [hadd]
-          refine WP.mono (infinityPoint_ok hL
-            (fun x hx => hSl x (by
-              simp only [List.mem_cons,List.not_mem_nil,or_false] at hx
-              rcases hx with rfl | rfl | rfl <;> simp [rcbW])) ie hOne) fun t ht => ?_
-          exact (JacPost.sub ht oldV).prefix
-            (hkeep.trans ((kd.mono (by regions_sub)).trans (ke.mono (by regions_sub))))
-      · intro d id kd hz
+      have hW : ∀ x ∈ endIns K.S o, x ∈ validAfter (Impl.Weierstrass.X86_64.CachedJac.headZ K.M.n K.S p q o dst) V := by
+        intro x hx
+        rw [mem_validAfter]
+        simp only [endIns,List.mem_cons,List.not_mem_nil,or_false] at hx
+        rcases hx with rfl | rfl | rfl | rfl | rfl <;>
+          simp [Impl.Weierstrass.X86_64.CachedJac.headZ,Impl.Weierstrass.X86_64.CachedJac.head,FOp.out]
+      refine WP.mono (addEnd_ok hL hm hd hA hSl ic hW hv hOne hP jp ?_ ?_ ?_)
+        fun t ht => (JacPost.sub ht oldV).prefix hkeep
+      · intro hz hrz
+        rw [hJP.same hC hJQ hpz hqz (eh.symm.trans hz) (er.symm.trans hrz)]
+      · intro hz hrz
+        exact hJP.opposite hC hP hQ hJQ hpz hqz (eh.symm.trans hz) fun he => hrz (er.trans he)
+      · intro hz
         have hh : E q.x*(E p.z*E p.z)-E p.x*(E q.z*E q.z)≠0 := fun he => hz (eh.trans he)
-        refine WP.mono (CachedJac.tail_ok hL hm hA h2a h3a hSlC id hVC h2 h3) fun t ⟨kt,it,ht⟩ => ?_
         have jt := hJP.add_ne' hC hP hQ hJQ hpz hqz hh
         dsimp only at jt
-        rw [←ht] at jt
-        exact JacPost.prefix ⟨_,kt,it,jt⟩ (hkeep.trans (kd.mono (by regions_sub)))
+        have hr := CachedJac.full_run hA h2a h3a E h2 h3
+        dsimp only at hr
+        rw [runOps_append] at hr
+        rw [←hr] at jt
+        exact jt
 
 end VG.Proof.Weierstrass.X86_64
 
@@ -310,6 +296,8 @@ structure JointCalls (c : Joint.Cfg) : Prop where
   ok : ∀ C', c.pts = some C' → (PointOps.addCachedBody c.K c.selected c.dbl).noCalls = true ∧
     (PointOps.addAffineBody c.K c.dbl).noCalls = true ∧
     ∀ r ∈ Proof.Weierstrass.X86_64.PointOps.keptRegs, r ∈ clob c.K.M.n
+  /-- The proofs' code runs the end of the additions inline (`Joint.Cfg.flat`). -/
+  flat : ∀ C', c.pts = some C' → c.flat = true
 
 structure JointAddLayout (c : Joint.Cfg) (size : Nat) : Prop where
   lookup : JointLookupLayout c size
@@ -339,7 +327,7 @@ theorem jointAdd_dispatch {c : Joint.Cfg} {C : Curve} {base : Addr} {size u v : 
     {Q A B : Point C} {External : State → Prop} {V : List Nat} {E : Nat → Fe C} {s : State}
     {body : Prog isa} {call : Impl.Weierstrass.PointOps.Curve → Prog isa} {prog : Prog isa}
     (hprog : prog = match c.pts with | some C' => call C' | none => body)
-    (hcall : ∀ C', (call C').inline = PointOps.wrap body)
+    (hcall : ∀ C', c.pts = some C' → (call C').inline = PointOps.wrap body)
     (hnc : ∀ C', c.pts = some C' → body.noCalls = true)
     (hclob : ∀ C', c.pts = some C' → ∀ r ∈ Proof.Weierstrass.X86_64.PointOps.keptRegs, r ∈ clob c.K.M.n)
     (hExternal : ∀ s t,ProgKeep c.K.M base (jointWork c) s t → t.syms=s.syms → External s → External t)
@@ -353,7 +341,7 @@ theorem jointAdd_dispatch {c : Joint.Cfg} {C : Curve} {base : Addr} {size u v : 
   subst hprog
   split
   · next C' hp =>
-    rw [hcall C']
+    rw [hcall C' hp]
     refine Proof.Weierstrass.X86_64.PointOps.wrap_keep_ok (hclob C' hp)
       (fun x y pk k sy hx => jointCore_inv_keeps (by simp) hExternal pk k sy hx)
       (fun x y pk k sy hx => hx.of_keeps k (by decide) (hExternal x y pk sy hx.external)) h
@@ -368,7 +356,7 @@ theorem jointAdd_relCT_dispatch {c : Joint.Cfg} {C : Curve} {base : Addr} {size 
     {V W : List Nat} {E : Nat → Fe C}
     {body : Prog isa} {call : Impl.Weierstrass.PointOps.Curve → Prog isa} {prog : Prog isa}
     (hprog : prog = match c.pts with | some C' => call C' | none => body)
-    (hcall : ∀ C', (call C').inline = PointOps.wrap body)
+    (hcall : ∀ C', c.pts = some C' → (call C').inline = PointOps.wrap body)
     (hnc : ∀ C', c.pts = some C' → body.noCalls = true)
     (hb : RelCT isa (FieldPair c.K.M base size C.p (·∈jointSlots c) V E) body.inline
       (fun s t => ∃ E',FieldPair c.K.M base size C.p (·∈jointSlots c) W E' s t)) :
@@ -377,7 +365,7 @@ theorem jointAdd_relCT_dispatch {c : Joint.Cfg} {C : Curve} {base : Addr} {size 
   subst hprog
   split
   · next C' hp =>
-    rw [hcall C']
+    rw [hcall C' hp]
     rw [Code.inline_of_noCalls (hnc C' hp)] at hb
     exact Proof.Weierstrass.X86_64.PointOps.wrap_relCT hb
   · exact hb
@@ -394,7 +382,8 @@ theorem jointCachedAdd_ok {c : Joint.Cfg} {C : Curve} {base : Addr} {size u v : 
     (hc : CachedPoint c.K.M.n C E c.K.E c.selected P) :
     WP isa (Joint.cachedAdd c).inline s fun t =>
       ProgKeep c.K.M base (jointWork c) s t ∧ JointCore c C base size Q u v External (add A P) t := by
-  refine jointAdd_dispatch (body := PointOps.addCachedBody c.K c.selected c.dbl) rfl (fun _ => rfl)
+  refine jointAdd_dispatch (body := PointOps.addCachedBody c.K c.selected c.dbl) rfl
+    (fun C' hp => by simp only [hL.calls.flat C' hp]; rfl)
     (fun C' hp => (hL.calls.ok C' hp).1) (fun C' hp => (hL.calls.ok C' hp).2.2) hExternal ⟨h, hI⟩
     fun b ⟨cb, ib⟩ => ?_
   rw [PointOps.addCachedBody]

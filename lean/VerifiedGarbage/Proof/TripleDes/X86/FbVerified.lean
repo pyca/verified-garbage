@@ -637,6 +637,29 @@ def wideCoreSpec (d : Direction) : CoreSpec (wideCore d) where
   prepare_wp := prepareW_wp d
   crypt_wp := cryptW_wp d
 
+/-! ## What the modes' lemmas need of a core -/
+
+/-- A core of Triple DES's modes on x86 with its `CoreSpec`, as the lemmas
+about the functions take it (`Cbc.scr_eq`, `Fb.seqPre_of`, `Fb.keyArgs_of`
+and the functions' `_of` theorems): its key is a schedule, read through
+the first stack argument (`KeyArgs`); its blocks are two words; the key is
+one argument; it has 16 bytes of stack; and its scratch buffer is `w` 64-bit
+words. -/
+structure Fits {c : VG.Impl.Modes.X86.Core} (cs : CoreSpec c) (w : Nat) where
+  toKey : Spec.TripleDes.Schedule → cs.Key
+  keyArgs : ∀ {s : State} {rs : List Region} {k : Spec.TripleDes.Schedule},
+    KeyArgs s rs k → cs.KeyArgs s rs (toKey k)
+  bw : c.bw = 2
+  ka : c.ka = 1
+  stack : c.stack = 16
+  total : c.total = 2 * w
+
+/-- The core a block at a time fits, with 118 words. -/
+def dirFits : Fits dirCoreSpec 118 := ⟨id, id, rfl, rfl, rfl, rfl⟩
+
+/-- The bitsliced core fits, with 151 words. -/
+def wideFits (d : Direction) : Fits (wideCoreSpec d) 151 := ⟨id, id, rfl, rfl, rfl, rfl⟩
+
 end VG.Proof.TripleDes.X86.Mode
 
 end
@@ -668,13 +691,11 @@ open VG VG.X86 VG.Impl.TripleDes.X86 VG.Impl.Modes
 open VG.Proof.Modes.X86 (stkRegion)
 open VG.Proof.TripleDes (bytesAt_eq)
 
-theorem scr_eq (s : State) :
-    Modes.X86.scrR s dirCore = ⟨(arg s 4).setWidth 64, 8 * 118⟩ := by
-  simp [Modes.X86.scrR, dirCore, schedSlot]
-
-theorem scrW_eq (s : State) (d : Spec.TripleDes.Direction) :
-    Modes.X86.scrR s (wideCore d) = ⟨(arg s 4).setWidth 64, 8 * 151⟩ := by
-  simp [Modes.X86.scrR, wideCore, wideSchedSlot, Bitslice.wsWords]
+/-- The scratch buffer of a core that fits is the fifth argument's `w` words. -/
+theorem scr_eq {c : Modes.X86.Core} {cs : Proof.Modes.X86.CoreSpec c} {w : Nat} (f : Mode.Fits cs w) (s : State) :
+    Modes.X86.scrR s c = ⟨(arg s 4).setWidth 64, 8 * w⟩ := by
+  show (⟨(arg s (c.ka + 3)).setWidth 64, 4 * c.total⟩ : Region) = _
+  rw [f.ka, f.total, show 4 * (2 * w) = 8 * w by omega_arith]
 
 /-- The data in blocks, as the modes' steps. -/
 theorem cbcBlocksAt_eq (m : Mem) (p : Addr) (n : Nat) :
@@ -703,8 +724,8 @@ namespace VG.Proof.TripleDes.X86.Fb
 
 open VG VG.X86 VG.Impl.TripleDes.X86 VG.Impl.Modes
 open VG.Proof.Modes.X86 (SeqPre stkRegion ofb_wp cfbEnc_wp cfbDecLevels_wp cfb8Enc_wp cfb8Dec_wp)
-open VG.Proof.TripleDes.X86.Mode (dirCoreSpec wideCoreSpec KeyArgs)
-open VG.Proof.TripleDes.X86.Cbc (scr_eq scrW_eq stk_apart cbcBlocksAt_eq)
+open VG.Proof.TripleDes.X86.Mode (dirCoreSpec wideCoreSpec KeyArgs Fits dirFits wideFits)
+open VG.Proof.TripleDes.X86.Cbc (scr_eq stk_apart cbcBlocksAt_eq)
 
 /-- Triple DES under the schedule at the first argument. -/
 abbrev ciph (s : State) : Spec.Cbc.Cipher :=
@@ -756,75 +777,81 @@ def fbX86 (w st : Nat) (post : State → State → Prop) : Contract X86.isa wher
   post := post
   pub s₁ s₂ := s₁.gpr .esp = s₂.gpr .esp ∧ ∀ i < 5, arg s₁ i = arg s₂ i
 
-/-- `fbX86`'s precondition gives the modes'. -/
-theorem seqPre_of {st : Nat} {post : State → State → Prop} {M : Mode}
-    (hstep : M.step = st) (hst : 0 < st) (hst8 : st ≤ 8) {s : State} (h : (fbX86 118 st post).pre s) :
-    SeqPre dirCore M s := by
+/-- `fbX86`'s precondition gives the modes', for a core that fits. -/
+theorem seqPre_of {c : Modes.X86.Core} {cs : Proof.Modes.X86.CoreSpec c} {w : Nat} (f : Fits cs w)
+    {st : Nat} {post : State → State → Prop} {M : Mode}
+    (hstep : M.step = st) (hst : 0 < st) (hst8 : st ≤ 8) {s : State} (h : (fbX86 w st post).pre s) :
+    SeqPre c M s := by
   obtain ⟨hrd, hwr, dKS, dVD, dVS, dDS, dAD, dAV, dAS, dRD, dRV, dRS, dSD, dSV, dSS, fK, fV, fD, fS, fE, fLo⟩ := h
-  have hL := dirCoreSpec.layout
+  have hL := cs.layout
   obtain ⟨sA, sR⟩ := stk_apart fE fLo
-  refine ⟨(by rw [hrd]; simp [dirCore]), fE, ⟨(by rw [hwr]; simp [dirCore, schedSlot]),
-      (by simp only [dirCore, schedSlot]; omega_arith)⟩, (by rw [hwr]; simp [dirCore]),
-    (fun _ => by rw [hwr]; simp [dirCore]), (by simp only [dirCore]; omega_arith), (by rw [hwr, hstep]; simp [dirCore]),
-    (by rw [hstep]; exact fD), ?_, ?_, (fun _ => ?_), ?_, ?_, ?_, ?_,
-    (fun _ => dRV), (by rw [hstep]; exact dSD), ?_, sA, sR, (by simp [dirCore]; omega_arith),
-    (by rw [hstep]; simp only [dirCore]; omega_arith), hL⟩
-  · rw [hstep, scr_eq]; exact dDS
-  · rw [scr_eq]; exact dVS
-  · rw [hstep]; exact dVD
-  · rw [scr_eq]; exact dAS
-  · rw [hstep]; exact dAD
-  · rw [scr_eq]; exact dRS
-  · rw [hstep]; exact dRD
-  · exact dSS.sub_right (VG.Offset.sub_base _ (by simp only [dirCore, schedSlot]; omega_arith))
+  obtain hka := f.ka
+  obtain hbw := f.bw
+  obtain hsk := f.stack
+  obtain htot := f.total
+  obtain hroom := hL.room
+  refine ⟨?_, ?_, ⟨?_, ?_⟩, ?_, (fun _ => ?_), ?_, ?_, ?_, ?_, ?_, (fun _ => ?_), ?_, ?_, ?_, ?_,
+    (fun _ => ?_), ?_, ?_, ?_, ?_, ?_, ?_, hL⟩
+  · show (⟨argAddr s 0, 4 * (c.ka + 4)⟩ : Region) ∈ _
+    rw [hrd, hka]; simp
+  · rw [hka]; exact fE
+  · show (⟨(arg s (c.ka + 3)).setWidth 64, 4 * c.total⟩ : Region) ∈ _
+    rw [hwr, hka, htot, show 4 * (2 * w) = 8 * w by omega_arith]; simp
+  · show (arg s (c.ka + 3)).toNat + 4 * c.total ≤ 2 ^ 32
+    rw [hka, htot]; omega_arith
+  · show (⟨(arg s c.ka).setWidth 64, 4 * c.bw⟩ : Region) ∈ _
+    rw [hwr, hka, hbw]; simp
+  · show (⟨(arg s c.ka).setWidth 64, 4 * c.bw⟩ : Region) ∈ _
+    rw [hwr, hka, hbw]; simp
+  · show (arg s c.ka).toNat + 4 * c.bw ≤ 2 ^ 32
+    rw [hka, hbw]; omega_arith
+  · show Proof.Modes.X86.dataRegion (arg s (c.ka + 1)) M.step (arg s (c.ka + 2)).toNat ∈ _
+    rw [hwr, hstep, hka]; simp [Proof.Modes.X86.dataRegion]
+  · show (arg s (c.ka + 1)).toNat + M.step * (arg s (c.ka + 2)).toNat ≤ 2 ^ 32
+    rw [hstep, hka]; exact fD
+  · show Region.Disjoint (Proof.Modes.X86.dataRegion (arg s (c.ka + 1)) M.step (arg s (c.ka + 2)).toNat) _
+    rw [hstep, scr_eq f, hka]; exact dDS
+  · show Region.Disjoint ⟨(arg s c.ka).setWidth 64, 4 * c.bw⟩ _
+    rw [scr_eq f, hka, hbw]; exact dVS
+  · show Region.Disjoint ⟨(arg s c.ka).setWidth 64, 4 * c.bw⟩
+      (Proof.Modes.X86.dataRegion (arg s (c.ka + 1)) M.step (arg s (c.ka + 2)).toNat)
+    rw [hstep, hka, hbw]; exact dVD
+  · show Region.Disjoint ⟨argAddr s 0, 4 * (c.ka + 4)⟩ _
+    rw [scr_eq f, hka]; exact dAS
+  · show Region.Disjoint ⟨argAddr s 0, 4 * (c.ka + 4)⟩
+      (Proof.Modes.X86.dataRegion (arg s (c.ka + 1)) M.step (arg s (c.ka + 2)).toNat)
+    rw [hstep, hka]; exact dAD
+  · rw [scr_eq f]; exact dRS
+  · show Region.Disjoint _ (Proof.Modes.X86.dataRegion (arg s (c.ka + 1)) M.step (arg s (c.ka + 2)).toNat)
+    rw [hstep, hka]; exact dRD
+  · show Region.Disjoint _ ⟨(arg s c.ka).setWidth 64, 4 * c.bw⟩
+    rw [hka, hbw]; exact dRV
+  · show Region.Disjoint (stkRegion (s.gpr .esp) c.stack)
+      (Proof.Modes.X86.dataRegion (arg s (c.ka + 1)) M.step (arg s (c.ka + 2)).toNat)
+    rw [hstep, hka, hsk]; exact dSD
+  · show Region.Disjoint (stkRegion (s.gpr .esp) c.stack) ⟨Proof.Modes.X86.slotA (arg s (c.ka + 3)) c.slots, 40⟩
+    rw [hka, hsk]
+    exact dSS.sub_right (VG.Offset.sub_base _ (by omega_arith))
+  · show Region.Disjoint (stkRegion (s.gpr .esp) c.stack) ⟨argAddr s 0, 4 * (c.ka + 4)⟩
+    rw [hka, hsk]; exact sA
+  · rw [hsk]; exact sR
+  · rw [hsk]; exact fLo
+  · rw [hstep, hbw]; exact ⟨hst, hst8⟩
 
-theorem keyArgs_of {st : Nat} {post : State → State → Prop} {s : State}
-    (h : (fbX86 118 st post).pre s) : KeyArgs s [Modes.X86.scrR s dirCore]
-      (Spec.TripleDes.scheduleAt s.mem ((arg s 0).setWidth 64)) := by
+/-- `fbX86`'s precondition gives the key's, for a core that fits. -/
+theorem keyArgs_of {c : Modes.X86.Core} {cs : Proof.Modes.X86.CoreSpec c} {w : Nat} (f : Fits cs w)
+    {st : Nat} {post : State → State → Prop} {s : State}
+    (h : (fbX86 w st post).pre s) : cs.KeyArgs s [Modes.X86.scrR s c]
+      (f.toKey (Spec.TripleDes.scheduleAt s.mem ((arg s 0).setWidth 64))) := by
   obtain ⟨hrd, -, dKS, -, -, -, -, -, dAS, -, -, -, -, -, dSS, fK, -, -, -, -, -⟩ := h
-  refine ⟨arg s 0, ⟨⟨argAddr s 0, 20⟩, by rw [hrd]; simp, ?_⟩, rfl, rfl, by rw [hrd]; simp, fK,
+  refine f.keyArgs ⟨arg s 0, ⟨⟨argAddr s 0, 20⟩, by rw [hrd]; simp, ?_⟩, rfl, rfl, by rw [hrd]; simp, fK,
     fun r hr => ?_, fun r hr => ?_, fun r hr => ?_⟩
   · show (⟨argAddr s 0, 20⟩ : Region).Contains (argAddr s 0) 4
     simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega_arith
-  · simp only [List.mem_singleton] at hr; subst hr; rw [scr_eq]; exact dKS
-  · simp only [List.mem_singleton] at hr; subst hr; rw [scr_eq]
+  · simp only [List.mem_singleton] at hr; subst hr; rw [scr_eq f]; exact dKS
+  · simp only [List.mem_singleton] at hr; subst hr; rw [scr_eq f]
     exact dAS.sub_left (Region.sub_prefix (by decide))
-  · simp only [List.mem_singleton] at hr; subst hr; rw [scr_eq]; exact dSS
-
-/-- `fbX86`'s precondition gives the modes', for the bitsliced core. -/
-theorem seqPreW_of {st : Nat} {post : State → State → Prop} {M : Mode} (d : Spec.TripleDes.Direction)
-    (hstep : M.step = st) (hst : 0 < st) (hst8 : st ≤ 8) {s : State} (h : (fbX86 151 st post).pre s) :
-    SeqPre (wideCore d) M s := by
-  obtain ⟨hrd, hwr, dKS, dVD, dVS, dDS, dAD, dAV, dAS, dRD, dRV, dRS, dSD, dSV, dSS, fK, fV, fD, fS, fE, fLo⟩ := h
-  have hL := (wideCoreSpec d).layout
-  obtain ⟨sA, sR⟩ := stk_apart fE fLo
-  refine ⟨(by rw [hrd]; simp [wideCore]), fE, ⟨(by rw [hwr]; simp [wideCore, wideSchedSlot, Bitslice.wsWords]),
-      (by simp only [wideCore, wideSchedSlot, Bitslice.wsWords]; omega_arith)⟩, (by rw [hwr]; simp [wideCore]),
-    (fun _ => by rw [hwr]; simp [wideCore]), (by simp only [wideCore]; omega_arith), (by rw [hwr, hstep]; simp [wideCore]),
-    (by rw [hstep]; exact fD), ?_, ?_, (fun _ => ?_), ?_, ?_, ?_, ?_,
-    (fun _ => dRV), (by rw [hstep]; exact dSD), ?_, sA, sR, (by simp [wideCore]; omega_arith),
-    (by rw [hstep]; simp only [wideCore]; omega_arith), hL⟩
-  · rw [hstep, scrW_eq]; exact dDS
-  · rw [scrW_eq]; exact dVS
-  · rw [hstep]; exact dVD
-  · rw [scrW_eq]; exact dAS
-  · rw [hstep]; exact dAD
-  · rw [scrW_eq]; exact dRS
-  · rw [hstep]; exact dRD
-  · exact dSS.sub_right (VG.Offset.sub_base _ (by simp only [wideCore, wideSchedSlot, Bitslice.wsWords]; omega_arith))
-
-theorem keyArgsW_of {st : Nat} {post : State → State → Prop} (d : Spec.TripleDes.Direction) {s : State}
-    (h : (fbX86 151 st post).pre s) : KeyArgs s [Modes.X86.scrR s (wideCore d)]
-      (Spec.TripleDes.scheduleAt s.mem ((arg s 0).setWidth 64)) := by
-  obtain ⟨hrd, -, dKS, -, -, -, -, -, dAS, -, -, -, -, -, dSS, fK, -, -, -, -, -⟩ := h
-  refine ⟨arg s 0, ⟨⟨argAddr s 0, 20⟩, by rw [hrd]; simp, ?_⟩, rfl, rfl, by rw [hrd]; simp, fK,
-    fun r hr => ?_, fun r hr => ?_, fun r hr => ?_⟩
-  · show (⟨argAddr s 0, 20⟩ : Region).Contains (argAddr s 0) 4
-    simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega_arith
-  · simp only [List.mem_singleton] at hr; subst hr; rw [scrW_eq]; exact dKS
-  · simp only [List.mem_singleton] at hr; subst hr; rw [scrW_eq]
-    exact dAS.sub_left (Region.sub_prefix (by decide))
-  · simp only [List.mem_singleton] at hr; subst hr; rw [scrW_eq]; exact dSS
+  · simp only [List.mem_singleton] at hr; subst hr; rw [scr_eq f]; exact dSS
 
 /-- The modes' levels fit the bitsliced core's 32 blocks. -/
 theorem levels_fit (d : Spec.TripleDes.Direction) : ∀ g ∈ levels, 0 < g ∧ g ≤ (wideCore d).G := by

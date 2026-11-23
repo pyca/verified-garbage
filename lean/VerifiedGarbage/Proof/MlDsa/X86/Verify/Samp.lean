@@ -6,9 +6,7 @@ import VerifiedGarbage.Proof.MlKem.X86.TopLocal
 import VerifiedGarbage.Proof.MlDsa.DecideAt
 import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Proof.MlKem.X86.Pack
-import VerifiedGarbage.Proof.MlKem.X86.Unpack
-import VerifiedGarbage.Impl.MlKem.X86.Ntt
-import VerifiedGarbage.Proof.MlKem.X86.Leaf
+import VerifiedGarbage.Proof.MlKem.X86.Table
 public import VerifiedGarbage.Proof.MlDsa.X86.Verify.Base
 import VerifiedGarbage.Proof.MlDsa.X86.Verify.Local
 import VerifiedGarbage.Proof.MlKem.X86.CheckEkBody

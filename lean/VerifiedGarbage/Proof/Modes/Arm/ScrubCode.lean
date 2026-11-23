@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Framework.Arm.Scrub
 public import VerifiedGarbage.Impl.Modes.Arm.SeqFinal
-public import VerifiedGarbage.Impl.StackScratch.Arm
 
 -- separate module: the ARMv7 scrub proofs of every block cipher's modes share it (Blowfish, CAST5, IDEA, SEED, Camellia, SM4, AES)
 
@@ -13,9 +12,7 @@ What the cleanup of a mode's code needs of it (`armStack c ≤ stack`,
 `noIcall c`: `Arm.Scrub.CodeOk`, which `Arm.Scrub.scrubSideF_of` takes), from
 its core's: the one-block-at-a-time modes
 (`Core.seq`, `Core.seqFinal`) use the stack only in the call of their core,
-in a frame of 8 bytes if the core takes a working space, and the stack
-scratch wrappers (`withStackScratchWiped`, `withRegScratchWiped`) add their
-buffer. Each block cipher's ARMv7 scrub proof composes these with what its
+in a frame of 8 bytes if the core takes a working space. Each block cipher's ARMv7 scrub proof composes these with what its
 ECB function's code is evaluated to (`lit_decide`), rather than evaluating
 the modes with it.
 -/
@@ -54,24 +51,5 @@ theorem seqFinal_scrubArm {c : Core} {n : Nat}
   simp only [Core.seqFinal, Core.seg, Core.segRest, tailCode, armStack, noIcall, h₂, Bool.and_true,
     Nat.zero_max, Nat.max_zero, and_true]
   exact h₁
-
-/-- A stack scratch buffer of `bytes` bytes, wiped after the code. -/
-theorem withStackScratchWiped_scrubArm {bytes m words n : Nat} {c : Prog isa}
-    (hc : armStack c ≤ n ∧ noIcall c = true) :
-    armStack (Impl.StackScratch.Arm.withStackScratchWiped bytes m words c) ≤ n + bytes ∧
-      noIcall (Impl.StackScratch.Arm.withStackScratchWiped bytes m words c) = true := by
-  simp only [Impl.StackScratch.Arm.withStackScratchWiped, Impl.StackScratch.Arm.withStackScratch, armStack,
-    noIcall, hc.2, Bool.and_true, Nat.zero_max, Nat.max_zero, and_true]
-  omega
-
-/-- A scratch buffer of `bytes` bytes, passed in a register, wiped after the
-code. -/
-theorem withRegScratchWiped_scrubArm {bytes words n : Nat} {r : Reg} {c : Prog isa}
-    (hc : armStack c ≤ n ∧ noIcall c = true) :
-    armStack (Impl.StackScratch.Arm.withRegScratchWiped bytes r words c) ≤ n + bytes ∧
-      noIcall (Impl.StackScratch.Arm.withRegScratchWiped bytes r words c) = true := by
-  simp only [Impl.StackScratch.Arm.withRegScratchWiped, Impl.StackScratch.Arm.withRegScratch, armStack,
-    noIcall, hc.2, Bool.and_true, Nat.zero_max, Nat.max_zero, and_true]
-  omega
 
 end VG.Proof.Modes.Arm

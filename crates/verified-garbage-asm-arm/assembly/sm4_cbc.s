@@ -43,8 +43,6 @@ vg_sm4_cbc_encrypt_chained:
 	beq 20f
 22:
 	mov r11, #1
-	mov r9, r9
-	mov r9, r9
 	ldr r9, [r8, #1492]
 	str r9, [r8, #256]
 	ldr r9, [r8, #1496]
@@ -208,7 +206,6 @@ vg_sm4_cbc_decrypt_chained:
 23:
 	mov r11, #8
 24:
-	mov r9, r9
 	ldr r9, [r6, #0]
 	str r9, [r8, #256]
 	ldr r9, [r6, #4]

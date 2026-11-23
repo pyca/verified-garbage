@@ -959,7 +959,8 @@ theorem vwindowO_ok {K : JacWinCfg} {size : Nat} (hV : EVLay K size) (hp : UnitM
     (h12a : ∀ i ∈ instrs (Code.block (C := Cond) (K.digitO ++ K.select)), Taint.clobbers i .r12 = false)
     (h12b : ∀ i ∈ instrs (Code.block (C := Cond) K.tc.negY), Taint.clobbers i .r12 = false)
     {P : Point Cv} (hP : onCurve Cv P = true) {k : Nat} (hkJ : k ≤ 2 * 32 ^ (K.J - 1)) {base : Addr} {s : State}
-    (hs : Scr s base size) (hM : ModOkW K.M size Cv.p s.mem base) (hF : JacWinFixedO K Cv base s P k) :
+    (hs : Scr s base size) (hM : ModOkW K.M size Cv.p s.mem base) (hF : JacWinFixedO K Cv base s P k)
+    (hbo : K.buildOC.inline = K.buildO.inline) :
     WP isa (vwindowO K).inline s fun s' => KeepRegs (powClob K.M.n) s s' ∧
       Unch base (jwW K ++ eV) s.mem s'.mem ∧ ModOkW K.M size Cv.p s'.mem base ∧
       (∀ x ∈ [K.R.x, K.R.y, K.R.z], wordsVal s'.mem base x K.M.n < Cv.p) ∧
@@ -973,7 +974,7 @@ theorem vwindowO_ok {K : JacWinCfg} {size : Nat} (hV : EVLay K size) (hp : UnitM
   obtain hP0 := hF.ne_infinity hC
   rw [vwindowO]
   simp only [Code.inline]
-  rw [vloopO_inline]
+  rw [vloopO_inline, hbo]
   refine WP.seq (WP.mono (jbuildO_ok hL hp hC hM3 hO hP hP0 (by omega_arith) hs hM hF.toJacWinPt)
     fun s₁ ⟨F₁, T₁⟩ => ?_)
   have hs₁ := F₁.scr

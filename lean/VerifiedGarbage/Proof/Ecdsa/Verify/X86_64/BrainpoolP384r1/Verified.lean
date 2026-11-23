@@ -276,7 +276,7 @@ theorem verify_inlineOk : verifyBrainpoolP384r1.InlineOk = true :=
 theorem verify_x86 (hL : Weierstrass.Law Spec.BrainpoolP384r1.curve) (hI : Weierstrass.X86_64.InvSounds) (s : State) (hs : verifyX86_64.pre s) :
     ∃ t s', Exec isa verifyBrainpoolP384r1.inline s t s' ∧ abiPreserved s s' ∧ verifyX86_64.post s s' := by
   obtain ⟨t, s', he, hsv, hpost⟩ := verifyG_ok (brainpoolp384r1S_ok hI) hL (by decide) brainpoolp384r1S_comb
-    (Proof.BrainpoolP384r1.combOk7 hL) rfl (pre_of hs) (by decide)
+    (Proof.BrainpoolP384r1.combOk7 hL) rfl (pre_of hs) (by decide) (by decide)
   have hok := verify_inlineOk
   have hsp := Code.clobbers_rsp_of_inlineOk hok
   have hmx : verifyBrainpoolP384r1.inline.allInstrs (fun i => !loadsMxcsr i) = true := by

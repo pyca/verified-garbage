@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Glue
 public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
+import VerifiedGarbage.Proof.Framework.X86_64.Syms
 import VerifiedGarbage.Proof.MlKem.X86_64.FragBase
 import VerifiedGarbage.Proof.Framework.X86_64.Avx
 import VerifiedGarbage.Proof.MlKem.X86_64.SampleLoop
@@ -27,6 +28,8 @@ of the hint (`onesAdd_ok`) and its check (`onesOk_ok`).
 
 namespace VG.Proof.MlDsa.X86_64.Sign
 
+variable {SL : List String}
+
 open VG VG.X86_64 VG.Impl.MlDsa.X86_64.Sign
 open VG.Proof.MlKem.X86_64 (Keep Keep.gpr WP.keep)
 open VG.Spec.MlDsa (integerToBytes)
@@ -35,10 +38,13 @@ open VG.Spec.Sha3 (bytesAt)
 /-- What a block that writes only registers other than the callee-saved
 ones, and memory within `W`, leaves. -/
 theorem postB_of_keep {D : Nat} {rs : List Reg} {s s' : State} (k : Keep rs s s')
-    (hcs : ∀ r ∈ calleeSaved, r ∉ rs) {W : List Region} (hf : Frame W s.mem s'.mem) :
+    (hcs : ∀ r ∈ calleeSaved, r ∉ rs) {W : List Region} (hf : Frame W s.mem s'.mem) (hy : s'.syms = s.syms)
+    (hw : Covers W s.wr) :
     PostB D s s' W ∧ ∀ r ∈ calleeSaved, s'.gpr r = s.gpr r :=
   ⟨⟨k.2.1, k.2.2, fun r hr => k.gpr (hcs r (bases_cs r hr)), k.gpr (hcs .rsp (by decide)),
-    hf.mono fun r hr => List.mem_append_left _ hr⟩, fun r hr => k.gpr (hcs r hr)⟩
+    hf.mono fun r hr => List.mem_append_left _ hr, hy,
+    Frame.covers (X := [below (s.gpr .rsp) D]) (hf.mono fun r hr => List.mem_append_left _ hr) hw⟩,
+    fun r hr => k.gpr (hcs r hr)⟩
 
 /-! ## Copies, 8 bytes at a time -/
 
@@ -117,7 +123,7 @@ theorem copy_ok (dst src : Ptr) (n : Nat) (hn0 : 0 < n ∧ n % 8 = 0) (hn : n < 
     exact List.map_congr_left fun i hi => hc i (by have := List.mem_range.mp hi; omega_using [hn0, this])
 
 section
-variable {D : Nat} {rbs wbs : List (Reg × Nat)} {s : State} (L : Lay D rbs wbs s)
+variable {D : Nat} {SL : List String} {rbs wbs : List (Reg × Nat)} {s : State} (L : Lay D SL rbs wbs s)
 include L
 
 /-! ## Copies -/
@@ -139,18 +145,18 @@ theorem copy_okB {dst src : Ptr} {n : Nat} (hc : copyChk (rbs ++ wbs) wbs dst sr
     WP isa (copy dst src n) s fun s' => PPostB D s s' [(dst, n)] ∧ (∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) ∧
       bytesAt s'.mem (pa s dst) n = bytesAt s.mem (pa s src) n := by
   obtain ⟨w, i, d, h0, hn, od, os, sr⟩ := copyChk_spec hc
-  exact WP.mono (copy_ok dst src n h0 hn od os sr s (L.iR i) (L.iW w) (L.disj d))
-    fun s' ⟨hb, hf, k⟩ => ⟨(postB_of_keep (D := D) k (by decide) hf).1, (postB_of_keep (D := D) k (by decide) hf).2, hb⟩
+  exact WP.mono_syms (copy_ok dst src n h0 hn od os sr s (L.iR i) (L.iW w) (L.disj d))
+    fun s' ⟨hb, hf, k⟩ hy => ⟨(postB_of_keep (D := D) k (by decide) hf hy (L.cW w)).1, (postB_of_keep (D := D) k (by decide) hf hy (L.cW w)).2, hb⟩
 
 /-! ## Stores -/
 
 theorem setB_okB {p : Ptr} {v : Nat} (hr : p.1 ≠ .rax) (hv : v < 256) (hc : inB wbs p 1 = true) :
     WP isa (.block (setB p v)) s fun s' => PPostB D s s' [(p, 1)] ∧ (∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) ∧
       s'.mem = s.mem.writeW (pa s p) (BitVec.ofNat 8 v) := by
-  refine WP.mono (VG.Proof.MlKem.X86_64.setB_ok p v hr hv s (L.iW hc)) fun s' ⟨hm, k⟩ => ?_
+  refine WP.mono_syms (VG.Proof.MlKem.X86_64.setB_ok p v hr hv s (L.iW hc)) fun s' ⟨hm, k⟩ hy => ?_
   have hf : Frame [⟨pa s p, 1⟩] s.mem s'.mem := by
     rw [hm]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
-  exact ⟨(postB_of_keep (D := D) k (by decide) hf).1, (postB_of_keep (D := D) k (by decide) hf).2, hm⟩
+  exact ⟨(postB_of_keep (D := D) k (by decide) hf hy (L.cW hc)).1, (postB_of_keep (D := D) k (by decide) hf hy (L.cW hc)).2, hm⟩
 
 omit L in
 theorem setQ_ok (p : Ptr) (v : Nat) (hr : p.1 ≠ .rax) (hv : v < 2 ^ 31) (s : State)
@@ -163,10 +169,10 @@ theorem setQ_ok (p : Ptr) (v : Nat) (hr : p.1 ≠ .rax) (hv : v < 2 ^ 31) (s : S
 theorem setQ_okB {p : Ptr} {v : Nat} (hr : p.1 ≠ .rax) (hv : v < 2 ^ 31) (hc : inB wbs p 8 = true) :
     WP isa (.block (setQ p v)) s fun s' => PPostB D s s' [(p, 8)] ∧ (∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) ∧
       s'.mem = s.mem.writeW (pa s p) (BitVec.ofNat 64 v) := by
-  refine WP.mono (setQ_ok p v hr hv s (L.iW hc)) fun s' ⟨hm, k⟩ => ?_
+  refine WP.mono_syms (setQ_ok p v hr hv s (L.iW hc)) fun s' ⟨hm, k⟩ hy => ?_
   have hf : Frame [⟨pa s p, 8⟩] s.mem s'.mem := by
     rw [hm]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
-  exact ⟨(postB_of_keep (D := D) k (by decide) hf).1, (postB_of_keep (D := D) k (by decide) hf).2, hm⟩
+  exact ⟨(postB_of_keep (D := D) k (by decide) hf hy (L.cW hc)).1, (postB_of_keep (D := D) k (by decide) hf hy (L.cW hc)).2, hm⟩
 
 end
 
@@ -191,12 +197,13 @@ theorem bit_and {a b : Prop} [Decidable a] [Decidable b] {x y : BitVec 64} (hx :
   by_cases ha : a <;> by_cases hb : b <;> simp [bit, ha, hb]
 
 /-- A block that writes `r15` alone, and flags, leaves `PostB` but for `r15`. -/
-theorem postB15 {D : Nat} {s s' : State} (k : Keep [.r15] s s') (hm : s'.mem = s.mem) (W : List Region) :
+theorem postB15 {D : Nat} {s s' : State} (k : Keep [.r15] s s') (hm : s'.mem = s.mem) (W : List Region)
+    (hy : s'.syms = s.syms) :
     PostB D s s' W ∧ ∀ r ∈ calleeSaved, r ≠ .r15 → s'.gpr r = s.gpr r :=
   ⟨⟨k.2.1, k.2.2, fun r hr => k.gpr (by
       simp only [bases, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl | rfl <;> decide), k.gpr (by decide),
-      by rw [hm]; exact Frame.refl _ _⟩,
+      by rw [hm]; exact Frame.refl _ _, hy, by rw [hm]; exact Frame.refl _ _⟩,
     fun r _ hne => k.gpr (by simpa using hne)⟩
 
 /-! ## Counters -/

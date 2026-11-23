@@ -116,12 +116,12 @@ open VG.Proof.P384.X86_64 (hasLaw)
 
 def artifacts : List Artifact := [
   Spec.Ecdsa.P384.verifyHashApi.artifact X86_64.target
-    { code := Impl.Ecdsa.X86_64.VerifyHash.Fn.verifyHash Spec.Ecdsa.P384.inst.curve.len false Impl.Ecdsa.Verify.X86_64.jointVerifyP384
+    { code := Impl.Ecdsa.X86_64.VerifyHash.Fn.verifyHash Spec.Ecdsa.P384.inst.curve.len false Impl.Ecdsa.Verify.X86_64.jointVerifyP384 104
       verified := Proof.Ecdsa.Verify.X86_64.P384.verifyHash_scrubbed hasLaw.law (Proof.P384.gtabOk9 hasLaw.law) hasLaw.inv hasLaw.prime
       spSafe := Proof.Ecdsa.Verify.X86_64.P384.verifyHash_spSafe },
   Spec.Ecdsa.P384.verifyHashApi.artifact X86_64.target
     { suffix := "_adx"
-      code := Impl.Ecdsa.X86_64.VerifyHash.Fn.verifyHash Spec.Ecdsa.P384.inst.curve.len false Impl.Ecdsa.Verify.X86_64.jointVerifyP384Adx
+      code := Impl.Ecdsa.X86_64.VerifyHash.Fn.verifyHash Spec.Ecdsa.P384.inst.curve.len false Impl.Ecdsa.Verify.X86_64.jointVerifyP384Adx 104
       verified := Proof.Ecdsa.Verify.X86_64.P384.verifyHashAdx_scrubbed hasLaw.law (Proof.P384.gtabOk9 hasLaw.law) hasLaw.inv hasLaw.prime
       spSafe := Proof.Ecdsa.Verify.X86_64.P384.verifyHashAdx_spSafe }] ++
   Rfc6979.artifacts

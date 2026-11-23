@@ -5837,14 +5837,14 @@ vg_ecdsa_secp256k1_verify:
 	xor r11d, r11d
 	lea rsp, [rsp-8]
 	mov QWORD PTR [rsp], r11
-	lea rsp, [rsp-88]
-	movdqu XMMWORD PTR [rsp+72], xmm0
-	movdqu XMMWORD PTR [rsp+56], xmm0
-	movdqu XMMWORD PTR [rsp+40], xmm0
-	movdqu XMMWORD PTR [rsp+24], xmm0
-	movdqu XMMWORD PTR [rsp+8], xmm0
-	mov QWORD PTR [rsp], r11
-	lea rsp, [rsp+88]
+	lea rsp, [rsp-96]
+	movdqu XMMWORD PTR [rsp+80], xmm0
+	movdqu XMMWORD PTR [rsp+64], xmm0
+	movdqu XMMWORD PTR [rsp+48], xmm0
+	movdqu XMMWORD PTR [rsp+32], xmm0
+	movdqu XMMWORD PTR [rsp+16], xmm0
+	movdqu XMMWORD PTR [rsp], xmm0
+	lea rsp, [rsp+96]
 	lea rsp, [rsp+8]
 	mov eax, eax
 	xor ecx, ecx

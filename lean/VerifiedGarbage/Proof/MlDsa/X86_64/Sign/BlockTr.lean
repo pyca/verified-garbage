@@ -46,6 +46,7 @@ def memBase : Instr → Option (List Reg)
   | .shift32 .. => some []
   | .movzx8 _ m => mBase m
   | .store8 m _ => mBase m
+  | .leaSym .. => some []
   | _ => none
 
 /-- Every instruction's addresses use only `rs`, which none writes. -/

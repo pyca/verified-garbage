@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Message.SignPre
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Message.Rel
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Top
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Via
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
@@ -10,6 +11,8 @@ import VerifiedGarbage.Proof.Sha3.X86_64.Round
 import VerifiedGarbage.Proof.MlDsa.PreparedKeyContract
 import VerifiedGarbage.Proof.MlDsa.PreparedKey.Values
 import VerifiedGarbage.Proof.MlKem.Mem
+import VerifiedGarbage.Proof.Framework.X86_64.CallFrame
+public import VerifiedGarbage.Proof.Framework.X86_64.Depth
 
 /-!
 # ML-DSA on x86-64, `sign_message`: the call of the signing function on `μ`
@@ -28,36 +31,20 @@ namespace VG.Proof.MlDsa.X86_64.Message
 open VG VG.X86_64 VG.Impl.MlDsa.X86_64.Message
 open VG.Proof.MlDsa.Message
 open VG.Proof.MlKem.X86_64 (Keep)
-open VG.Proof.MlDsa.X86_64.Sign (signK scrLen skL)
+open VG.Proof.MlDsa.X86_64.Sign (signK scrLen skL prepared_congr)
 open VG.Spec.MlDsa
 open VG.Spec.Sha3 (bytesAt)
 
 /-- A signing function on `μ` that `sign_message` can call. -/
-structure SignFn (p : Params) (c : Prog isa) : Prop where
-  ok : ∀ s, (signK p 32).pre s → ∃ t s', Exec isa c s t s' ∧ abiPreserved s s' ∧ (signK p 32).post s s'
-  ct : ConstantTime isa (signK p 32).pre (signK p 32).pub c
-  nosp : NoSp c
-  depth : c.depth ≤ 4
+structure SignFn (p : Params) (N : List String) (c : Prog isa) : Prop where
+  ok : ∀ s, (signK p 144).pre s → ∃ t s', Exec isa c s t s' ∧ abiPreserved s s' ∧ (signK p 144).post s s'
+  ct : ConstantTime isa (signK p 144).pre (Sign.signKN p 144 N).pub c
+  sp : SpSafe c
+  depth : c.x86_64Depth ≤ 144
 
 /-- The arguments of the call of the signing function on `μ`. -/
 abbrev signArgs (p : Params) (prep : Bool) : List Arg :=
   [.slot fKey, aMu p, .slot fRnd, .slot fSig, .slot fScr, .imm (flagOf prep)]
-
-/-- A prepared key is in the bytes of its region. -/
-theorem prepared_congr {p : Params} {m m' : Mem} {a : Addr}
-    (hb : bytesAt m' a (preparedSecretKeyBytes p) = bytesAt m a (preparedSecretKeyBytes p))
-    (h : PreparedSecretKey p m a) : PreparedSecretKey p m' a := by
-  have hl : p.skLen + 1024 * (p.ℓ + 2 * p.k) = preparedSecretKeyBytes p := by
-    simp only [preparedSecretKeyBytes, n]
-  have hsk : bytesAt m' a p.skLen = bytesAt m a p.skLen := by
-    rw [← Proof.MlKem.bytesAt_take m' a (show p.skLen ≤ preparedSecretKeyBytes p by omega_using [hl]), hb,
-      Proof.MlKem.bytesAt_take m a (show p.skLen ≤ preparedSecretKeyBytes p by omega_using [hl])]
-  intro i hi
-  rw [hsk]
-  have e4 : 4 * n * i = 1024 * i := by simp only [n]
-  have hk : p.skLen + 4 * n * i + 1024 ≤ preparedSecretKeyBytes p := by rw [e4]; omega_using [hl, hi]
-  refine polyStored_iff.mpr (PreparedKey.polyIs_of_copy ?_ (polyStored_iff.mp (h i hi)))
-  rw [← Proof.MlKem.bytesAt_slice _ _ hk, hb, Proof.MlKem.bytesAt_slice _ _ hk]
 
 section
 variable {p : Params} {prep : Bool} {s : State}
@@ -68,17 +55,19 @@ abbrev rScrMu (p : Params) (s : State) : Region := ⟨stackArg s 1, scrLen p⟩
 theorem scrMu_sub (p : Params) (s : State) : Region.Sub (rScrMu p s) (rScr p s) :=
   Region.sub_prefix (by rw [mScr_eq]; simp [scrLen, oE])
 
-theorem mu_within (p : Params) (prep : Bool) (s : State) : Within ⟨(slay p prep s).MU, 64⟩ (rScr p s) :=
-  (within_off (slay p prep s).X (d := 840) (n := 64) (k := 1024) (by omega_using [])).trans (slay_X p prep s)
+theorem mu_within (p : Params) (prep : Bool) (s : State) (ys : List Addr := []) :
+    Within ⟨(slay p prep s ys).MU, 64⟩ (rScr p s) :=
+  (within_off (slay p prep s ys).X (d := 840) (n := 64) (k := 1024) (by omega_using [])).trans (slay_X p prep s ys)
 
-theorem mu_scrMu {p : Params} (hp : p ∈ params) (prep : Bool) (s : State) : Region.Disjoint ⟨(slay p prep s).MU, 64⟩ (rScrMu p s) := by
+theorem mu_scrMu {p : Params} (hp : p ∈ params) (prep : Bool) (s : State) (ys : List Addr := []) :
+    Region.Disjoint ⟨(slay p prep s ys).MU, 64⟩ (rScrMu p s) := by
   show Region.Disjoint ⟨stackArg s 1 + BitVec.ofNat 64 (oE p) + BitVec.ofNat 64 840, 64⟩ ⟨stackArg s 1, scrLen p⟩
   rw [add_add]
   exact Offset.disjoint_base _ (by simp [scrLen, oE]) (by have := oE_lt hp; omega_using [this])
 
 /-- The regions the signing function on `μ` reads and writes. -/
-abbrev signRd (p : Params) (prep : Bool) (s : State) : List Region :=
-  [⟨s.gpr .rdi, keyLen p prep⟩, ⟨(slay p prep s).MU, 64⟩, ⟨s.gpr .r9, 32⟩]
+abbrev signRd (p : Params) (prep : Bool) (s : State) (ys : List Addr := []) : List Region :=
+  [⟨s.gpr .rdi, keyLen p prep⟩, ⟨(slay p prep s ys).MU, 64⟩, ⟨s.gpr .r9, 32⟩]
 abbrev signWr (p : Params) (s : State) : List Region := [⟨stackArg s 0, p.sigLen⟩, rScrMu p s]
 
 theorem signArgs_ok (hp : p ∈ params) : (signArgs p prep).all Arg.ok = true := by
@@ -89,9 +78,9 @@ theorem signArgs_ok (hp : p ∈ params) : (signArgs p prep).all Arg.ok = true :=
   omega_arith
 
 /-- The registers after the moves of the arguments. -/
-theorem signRegs_of {g : Reg → BitVec 64} {mx : BitVec 32} {m₀ : Mem} {t t1 : State}
-    (hc : Ctx (slay p prep s) g mx m₀ t) (hm : Moved (signArgs p prep) t t1) :
-    t1.gpr .rdi = s.gpr .rdi ∧ t1.gpr .rsi = (slay p prep s).MU ∧ t1.gpr .rdx = s.gpr .r9 ∧
+theorem signRegs_of {ys : List Addr} {g : Reg → BitVec 64} {mx : BitVec 32} {m₀ : Mem} {t t1 : State}
+    (hc : Ctx (slay p prep s ys) g mx m₀ t) (hm : Moved (signArgs p prep) t t1) :
+    t1.gpr .rdi = s.gpr .rdi ∧ t1.gpr .rsi = (slay p prep s ys).MU ∧ t1.gpr .rdx = s.gpr .r9 ∧
       t1.gpr .rcx = stackArg s 0 ∧ t1.gpr .r8 = stackArg s 1 ∧ t1.gpr .r9 = BitVec.ofNat 64 (flagOf prep) := by
   obtain ⟨e1, e2, e3, e4, e5, e6⟩ := argsIn6 hm.1.1
   rw [hc.slot, fKey, hc.pKey] at e1
@@ -102,41 +91,41 @@ theorem signRegs_of {g : Reg → BitVec 64} {mx : BitVec 32} {m₀ : Mem} {t t1 
   exact ⟨e1, e2, e3, e4, e5, e6⟩
 
 /-- The precondition of the signing function on `μ`, on entry to it. -/
-theorem signK_pre (hp : p ∈ params) (h : SPre p prep s) (h8 : (s.gpr .r8).toNat < 256) {g : Reg → BitVec 64}
-    {mx : BitVec 32} {m₀ : Mem} {t t1 : State} (hc : Ctx (slay p prep s) g mx m₀ t) (hm₀ : s.mem = m₀)
+theorem signK_pre (hp : p ∈ params) (h : SPre p prep s) (h8 : (s.gpr .r8).toNat < 256) {ys : List Addr}
+    {g : Reg → BitVec 64} {mx : BitVec 32} {m₀ : Mem} {t t1 : State} (hc : Ctx (slay p prep s ys) g mx m₀ t) (hm₀ : s.mem = m₀)
     (hm : Moved (signArgs p prep) t t1) :
-    (signK p 32).pre (t1.callEntry.withRegions (signRd p prep s) (signWr p s)) := by
-  have hL := slay_ok hp h h8
-  have hc1 : Ctx (slay p prep s) g mx m₀ t1 :=
+    (signK p 144).pre (t1.callEntry.withRegions (signRd p prep s ys) (signWr p s)) := by
+  have hL := slay_ok hp h h8 ys
+  have hc1 : Ctx (slay p prep s ys) g mx m₀ t1 :=
     hc.regs hm.2.2.1 hm.2.2.2 hm.1.2.1 hm.1.2.2 fun r hr => hm.2.gpr (argRegs_cs r hr)
   obtain ⟨e1, e2, e3, e4, e5, e6⟩ := signRegs_of hc hm
   have hK := keyLen_ge hp prep
   -- The prepared key, unchanged until the call.
-  have hkey : prep = true → PreparedSecretKey p (t1.callEntry.withRegions (signRd p prep s) (signWr p s)).mem
+  have hkey : prep = true → PreparedSecretKey p (t1.callEntry.withRegions (signRd p prep s ys) (signWr p s)).mem
       (s.gpr .rdi) := fun hpr => by
     refine prepared_congr ?_ (h.prepK hpr)
     have hk : keyLen p prep = preparedSecretKeyBytes p := by simp [keyLen, hpr]
     rw [State.withRegions_mem, ← hk, hc1.ce_bytesAt (p := s.gpr .rdi) (hL.stk_r h.stkSk (by omega_using []))
       (by have := h.nSk; omega_using [hK]), hm.1.2.1, hc.bytesAt_eq (p := s.gpr .rdi) (n := keyLen p prep) hL.xKey hL.kKey
       (by have := h.nSk; omega_using [hK]), hm₀]
-  have hL9 : skL p (t1.callEntry.withRegions (signRd p prep s) (signWr p s)) = keyLen p prep := by
+  have hL9 : skL p (t1.callEntry.withRegions (signRd p prep s ys) (signWr p s)) = keyLen p prep := by
     rw [skL, gpr_ce t1 _ _ (by decide : Reg.r9 ≠ .rsp), e6]
     cases prep <;> simp [flagOf, keyLen]
-  have h9 : (t1.callEntry.withRegions (signRd p prep s) (signWr p s)).gpr .r9 ≠ 0 → prep = true := by
+  have h9 : (t1.callEntry.withRegions (signRd p prep s ys) (signWr p s)).gpr .r9 ≠ 0 → prep = true := by
     rw [gpr_ce t1 _ _ (by decide : Reg.r9 ≠ .rsp), e6]
     cases prep <;> simp [flagOf]
   simp only [signK, hL9, State.withRegions_rd, State.withRegions_wr, gpr_ce t1 _ _ (by decide : Reg.rdi ≠ .rsp),
     gpr_ce t1 _ _ (by decide : Reg.rsi ≠ .rsp), gpr_ce t1 _ _ (by decide : Reg.rdx ≠ .rsp),
     gpr_ce t1 _ _ (by decide : Reg.rcx ≠ .rsp), gpr_ce t1 _ _ (by decide : Reg.r8 ≠ .rsp), rsp_ce,
-    e1, e2, e3, e4, e5, Sign.retR, hc1.rsp, sp_sub8, below32]
+    e1, e2, e3, e4, e5, Sign.retR, hc1.rsp, sp_sub8, below144]
   have hsub := scrMu_sub p s
-  have hmu := (mu_within p prep s).sub
+  have hmu := (mu_within p prep s ys).sub
   have hB := hL.nB
   have hn := h.nScr
   have hE := oE_lt hp
-  refine ⟨trivial, trivial, h.skSig, h.skScr.sub_right hsub, h.sigScr.symm.sub_left hmu, mu_scrMu hp prep s, h.rndSig,
+  refine ⟨trivial, trivial, h.skSig, h.skScr.sub_right hsub, h.sigScr.symm.sub_left hmu, mu_scrMu hp prep s ys, h.rndSig,
     h.rndScr.sub_right hsub, h.sigScr.sub_right hsub, hL.stk_r h.stkSk (by omega_using []),
-    hL.stk_x (d := 32) (n := 8) (e := 840) (k := 64) (by omega_using []) (by omega_using []), hL.stk_r h.stkRnd (by omega_using []),
+    hL.stk_x (d := 144) (n := 8) (e := 840) (k := 64) (by omega_using []) (by omega_using []), hL.stk_r h.stkRnd (by omega_using []),
     hL.stk_r h.stkSig (by omega_using []), hL.stk_r (h.stkScr.sub_right hsub) (by omega_using []), ?_, ?_, ?_, ?_, ?_, h.nSk, ?_,
     h.nRnd, h.nSig, by simp only [mScrLen, scrLen, messageScratchWords] at hn ⊢; omega_using [hn], ?_,
     fun h9' => hkey (h9 h9')⟩
@@ -145,18 +134,18 @@ theorem signK_pre (hp : p ∈ params) (h : SPre p prep s) (h8 : (s.gpr .r8).toNa
   · exact h.stkRnd.sub_left (Region.sub_prefix (by omega_using []))
   · exact h.stkSig.sub_left (Region.sub_prefix (by omega_using []))
   · exact (h.stkScr.sub_right hsub).sub_left (Region.sub_prefix (by omega_using []))
-  · exact mu_nowrap h
+  · exact mu_nowrap h ys
   · rw [toNat_add_ofNat (by omega_using [hB])]; omega_using []
 
 
 /-- The call of the signing function on `μ`. -/
-theorem signCall_ok {n : String} {c : Prog isa} (hS : SignFn p c) (hp : p ∈ params) (h : SPre p prep s)
+theorem signCall_ok {N : List String} {n : String} {c : Prog isa} (hS : SignFn p N c) (hp : p ∈ params) (h : SPre p prep s)
     (h8 : (s.gpr .r8).toNat < 256) {g : Reg → BitVec 64} {mx : BitVec 32} {m₀ : Mem} {t : State}
     (hc : Ctx (slay p prep s) g mx m₀ t) (hm₀ : s.mem = m₀) :
     WP isa (callA n c (signArgs p prep)) t fun s' =>
       s'.rd = t.rd ∧ s'.wr = t.wr ∧ s'.gpr .rsp = t.gpr .rsp ∧ (∀ r ∈ calleeSaved, s'.gpr r = t.gpr r) ∧
       s'.mxcsr.extractLsb' 6 10 = t.mxcsr.extractLsb' 6 10 ∧
-      Frame [rSig p s, rScrMu p s, ⟨(slay p prep s).B, 40⟩] t.mem s'.mem ∧
+      Frame [rSig p s, rScrMu p s, ⟨(slay p prep s).B, 152⟩] t.mem s'.mem ∧
       Outcome (fun b => signMu p b (bytesAt t.mem (s.gpr .rdi) p.skLen) (bytesAt t.mem (slay p prep s).MU 64)
           (bytesAt t.mem (s.gpr .r9) 32)) ((s'.gpr .rax).setWidth 32)
         (bytesAt s'.mem (stackArg s 0) p.sigLen) := by
@@ -170,7 +159,7 @@ theorem signCall_ok {n : String} {c : Prog isa} (hS : SignFn p c) (hp : p ∈ pa
   have hdep := hS.depth
   have hsub := scrMu_sub p s
   have hrsp1 : t1.gpr .rsp = (slay p prep s).SP := hc1.rsp
-  refine WP.call_mx hS.ok hS.nosp (by omega_using [hdep]) hpre ?_ ?_ fun s' hrd hwr hcs hf _ hpost hmx => ?_
+  refine WP.callF hS.ok hS.sp (by omega_using [hdep]) hpre ?_ ?_ fun s' hrd hwr hcs hf hpost hmx => ?_
   · rw [hc1.rd, hc1.wr]
     refine covers_of_within fun r hr => ?_
     simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -197,7 +186,7 @@ theorem signCall_ok {n : String} {c : Prog isa} (hS : SignFn p c) (hp : p ∈ pa
       · exact ⟨rSig p s, List.mem_cons_self .., fun _ h => h⟩
       · exact ⟨rScrMu p s, List.mem_cons_of_mem _ (List.mem_cons_self ..), fun _ h => h⟩
     · simp only [List.mem_singleton] at hr; subst hr
-      refine ⟨⟨(slay p prep s).B, 40⟩, List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_singleton_self _)), ?_⟩
+      refine ⟨⟨(slay p prep s).B, 152⟩, List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_singleton_self _)), ?_⟩
       rw [hrsp1]
       exact below_call_sub _ (by omega)
   · simp only [signK, State.withRegions_mem, gpr_ce t1 _ _ (by decide : Reg.rdi ≠ .rsp),
@@ -207,7 +196,7 @@ theorem signCall_ok {n : String} {c : Prog isa} (hS : SignFn p c) (hp : p ∈ pa
     have hK := keyLen_ge hp prep
     rw [hc1.ce_bytesAt (p := s.gpr .rdi) (n := p.skLen)
         ((hL.stk_r h.stkSk (by omega_using [])).sub_right (Region.sub_prefix hK.2.2)) (by have := h.nSk; omega_using [hK]),
-      hc1.ce_bytesAt (p := (slay p prep s).MU) (hL.stk_x (d := 32) (n := 8) (e := 840) (k := 64) (by omega_using [])
+      hc1.ce_bytesAt (p := (slay p prep s).MU) (hL.stk_x (d := 144) (n := 8) (e := 840) (k := 64) (by omega_using [])
         (by omega_using [])) (by omega_using []),
       hc1.ce_bytesAt (p := s.gpr .r9) (hL.stk_r h.stkRnd (by omega_using [])) (by omega_using []), hm,
       hg₂ _ (by decide)] at hq

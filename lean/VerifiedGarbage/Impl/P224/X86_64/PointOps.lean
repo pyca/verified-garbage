@@ -23,9 +23,14 @@ open VG.X86_64 VG.Impl.Weierstrass VG.Impl.Weierstrass.X86_64 VG.Impl.Weierstras
 def doubleFn : Prog isa := wrap (doubleBody publicJoint.K dblJMul)
 
 /-- `vg_p224_jac_add_cached`. -/
-def addCachedFn : Prog isa := wrap (addCachedBody publicJoint.K publicJoint.selected dblJMul)
+def addCachedFn : Prog isa :=
+  wrap (addCachedBody publicJoint.K publicJoint.selected dblJMul (tailCall Impl.Weierstrass.PointOps.p224 publicJoint.K dblJMul))
 
 /-- `vg_p224_jac_add_affine`. -/
-def addAffineFn : Prog isa := wrap (addAffineBody publicJoint.K dblJMul)
+def addAffineFn : Prog isa :=
+  wrap (addAffineBody publicJoint.K dblJMul (tailCall Impl.Weierstrass.PointOps.p224 publicJoint.K dblJMul))
+
+/-- `vg_p224_jac_add_tail`, which both additions call. -/
+def tailFn : Prog isa := tailBody publicJoint.K dblJMul
 
 end VG.Impl.P224.X86_64.PointOps

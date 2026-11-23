@@ -21,6 +21,8 @@ consecutive slots (`Fam`), kept by pieces that write apart from them
 
 namespace VG.Proof.MlDsa.X86_64.Sign
 
+variable {SL : List String}
+
 open VG VG.X86_64 VG.Impl.MlDsa.X86_64.Sign
 open VG.Proof.MlDsa.Sign
 open VG.Spec.MlDsa
@@ -71,14 +73,15 @@ def Ok3 (p : Params) : Prop := p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87
 /-! ## Every state -/
 
 /-- What holds of every state of the function entered in `σ`. -/
-structure St (p : Params) (D : Nat) (σ s : State) : Prop where
+structure St (p : Params) (D : Nat) (SL : List String) (σ s : State) : Prop where
   top : Top σ s
-  lay : Lay D (sgR p) (sgW p) s
+  lay : Lay D SL (sgR p) (sgW p) s
   sk : bytesAt s.mem (pa s (.rbp, 0)) p.skLen = skOf p σ
   mu : bytesAt s.mem (pa s (.r12, 0)) 64 = muOf σ
   rnd : bytesAt s.mem (pa s (.r13, 0)) 32 = rndOf σ
   /-- Memory changed only where the function may write: its writable buffers and its stack. -/
   fr : Frame (σ.wr ++ [below (σ.gpr .rsp) D]) σ.mem s.mem
+  syms : s.syms = σ.syms
 
 /-- A piece that writes `ws` keeps `St`. -/
 def stChk (p : Params) (ws : List (Ptr × Nat)) : Bool :=
@@ -95,7 +98,7 @@ theorem sub_of_contains {r : Region} {a : Addr} {n : Nat} (h : r.Contains a n) (
 
 /-- A frame of the regions `ws` of the writable buffers, within the frame of
 the writable regions and the stack. -/
-theorem frame_ws {D : Nat} {rbs wbs : List (Reg × Nat)} {σ s s' : State} (L : Lay D rbs wbs s)
+theorem frame_ws {D : Nat} {SL : List String} {rbs wbs : List (Reg × Nat)} {σ s s' : State} (L : Lay D SL rbs wbs s)
     (hwr : s.wr = σ.wr) (hsp : s.gpr .rsp = σ.gpr .rsp) {ws : List (Ptr × Nat)}
     (hw : ws.all (fun w => inB wbs w.1 w.2) = true)
     (hf : Frame (ws.map (toR s) ++ [below (s.gpr .rsp) D]) s.mem s'.mem) :
@@ -111,13 +114,13 @@ theorem frame_ws {D : Nat} {rbs wbs : List (Reg × Nat)} {σ s s' : State} (L : 
   · rw [List.mem_singleton] at hr; subst hr
     exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _), by rw [hsp]; exact fun _ h => h⟩
 
-theorem St.step {p : Params} {D : Nat} {σ s s' : State} (h : St p D σ s) {ws : List (Ptr × Nat)}
-    (hP : PPostB D s s' ws) (hc : stChk p ws = true) : St p D σ s' := by
+theorem St.step {p : Params} {D : Nat} {SL : List String} {σ s s' : State} (h : St p D SL σ s) {ws : List (Ptr × Nat)}
+    (hP : PPostB D s s' ws) (hc : stChk p ws = true) : St p D SL σ s' := by
   simp only [stChk, Bool.and_eq_true] at hc
   obtain ⟨⟨⟨⟨h1, h2⟩, h3⟩, h4⟩, h5⟩ := hc
-  exact ⟨h.top.step h.lay hP h1, h.lay.post hP (sgB_bases p), (h.lay.keepBytes hP h2).trans h.sk,
-    (h.lay.keepBytes hP h3).trans h.mu, (h.lay.keepBytes hP h4).trans h.rnd,
-    h.fr.trans (frame_ws h.lay h.top.wr h.top.rsp h5 hP.frame)⟩
+  exact ⟨h.top.step h.lay hP h1, h.lay.post hP (sgB_bases p),
+    (h.lay.keepBytes hP h2).trans h.sk, (h.lay.keepBytes hP h3).trans h.mu, (h.lay.keepBytes hP h4).trans h.rnd,
+    h.fr.trans (frame_ws h.lay h.top.wr h.top.rsp h5 hP.frame), hP.syms.trans h.syms⟩
 
 /-! ## Polynomials in slots -/
 
@@ -137,7 +140,7 @@ theorem famChk_one {bs : List (Reg × Nat)} {ws : List (Ptr × Nat)} {b m j : Na
   · exact absurd hj (Nat.not_lt_zero _)
   · refine keepB_sub h ?_ ?_ <;> simp only [oP] <;> omega_arith
 
-theorem Fam.keep {D : Nat} {rbs wbs : List (Reg × Nat)} {s s' : State} (L : Lay D rbs wbs s)
+theorem Fam.keep {D : Nat} {SL : List String} {rbs wbs : List (Reg × Nat)} {s s' : State} (L : Lay D SL rbs wbs s)
     {ws : List (Ptr × Nat)} (hP : PPostB D s s' ws) {b m : Nat} {f : Nat → Poly}
     (hc : famChk (rbs ++ wbs) ws b m = true) (h : Fam s b m f) : Fam s' b m f :=
   fun j hj => L.keepPoly hP (famChk_one hc hj) (h j hj)

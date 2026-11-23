@@ -1,5 +1,6 @@
 module
 
+import VerifiedGarbage.Proof.Framework.X86_64.Syms
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.BlockTr
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseA
@@ -38,6 +39,8 @@ As `Prims.lean`, for `vg_mldsa_high_bits`, `vg_mldsa_low_bits`,
 
 namespace VG.Proof.MlDsa.X86_64.Sign
 
+variable {SL : List String}
+
 open VG VG.X86_64 VG.Impl.MlDsa.X86_64.Sign
 open VG.Proof.MlKem.X86_64 (Keep)
 open VG.Proof.MlDsa.Sign
@@ -45,7 +48,7 @@ open VG.Spec.MlDsa
 open VG.Spec.Sha3 (bytesAt)
 
 section
-variable {D : Nat} {rbs wbs : List (Reg × Nat)}
+variable {D : Nat} {SL : List String} {rbs wbs : List (Reg × Nat)}
 
 /-- What a call with a polynomial `f` read and a buffer `out` of `l` bytes
 written needs of the layout. -/
@@ -82,7 +85,7 @@ abbrev bitsC (Q : Nat → Poly → Mem → Addr → Prop) (S : Nat) : Contract i
     (stack := S)
 
 theorem bitsPre {Q : Nat → Poly → Mem → Addr → Prop} {S : Nat} (hS : S + 8 ≤ D) {s s1 : State}
-    (A : At D rbs wbs s s1) {r out : Ptr} {γ : Nat} (hγ : γ ∈ gamma2s)
+    (A : At D SL rbs wbs s s1) {r out : Ptr} {γ : Nat} (hγ : γ ∈ gamma2s)
     (hc : rwChk (rbs ++ wbs) wbs r 1024 out 1024 = true) (hA : ArgsIn [.ptr r, .imm γ, .ptr out] s s1)
     (hr : Reduced s.mem (pa s r)) :
     (bitsC Q S).pre (s1.callEntry.withRegions [pR (pa s r)] [pR (pa s out)]) := by
@@ -97,14 +100,14 @@ theorem bitsPre {Q : Nat → Poly → Mem → Addr → Prop} {S : Nat} (hS : S +
   simp only [List.mem_cons, List.mem_nil_iff, or_false, forall_eq_or_imp, forall_eq]
   exact ⟨A.stk hS i1, A.stk hS i2⟩
 
-theorem bitsAt_ok {Q : Nat → Poly → Mem → Addr → Prop} {n : String} {c : Prog isa}
-    (C : Callee (fun S => bitsC Q S) D c) {s : State} (L : Lay D rbs wbs s) {r out : Ptr} {γ : Nat}
+theorem bitsAt_ok {Q : Nat → Poly → Mem → Addr → Prop} {v : Bool} {i : Nat} {n : String} {c : Prog isa} (hsl : v = true → SL[i]? = some n)
+    (C : Callee (fun S => bitsC Q S) D c) {s : State} (L : Lay D SL rbs wbs s) {r out : Ptr} {γ : Nat}
     (hγ : γ ∈ gamma2s) (hc : rwChk (rbs ++ wbs) wbs r 1024 out 1024 = true) (hr : Reduced s.mem (pa s r)) :
-    WP isa (callP n c [.ptr r, .imm γ, .ptr out]) s fun s' => PPostB D s s' [(out, 1024)] ∧
+    WP isa (callV v i n c [.ptr r, .imm γ, .ptr out]) s fun s' => PPostB D s s' [(out, 1024)] ∧
       (∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) ∧ Q γ (polyAt s.mem (pa s r)) s'.mem (pa s out) := by
   obtain ⟨w1, i1, i2, _, _⟩ := rwChk_spec hc
   have hD : 8 ≤ D := by have := C.hS; omega_using [this]
-  refine WP.mono (callP_ok C.ver.1 C.nosp C.depth L.dsm (bitsArgs_ok hγ hc)
+  refine WP.mono (callV_ok C.ver.1 C.nosp C.depth L.dsm (bitsArgs_ok hγ hc) L hsl
     (fun s1 hA hm k => bitsPre C.hS (At.of L hm k) hγ hc hA hr)
     (Covers.append_left (L.cR i1) (Covers.right (L.cW w1))) (L.cW w1))
     fun s' ⟨hpost, hcs, s1, hA, hm, k, s₂, hm₂, _, hq⟩ => ⟨hpost, hcs, ?_⟩
@@ -114,13 +117,13 @@ theorem bitsAt_ok {Q : Nat → Poly → Mem → Addr → Prop} {n : String} {c :
   simp only [e1, e2, e3, Arg.val, hm₂, A.poly' i1 hD, sw32_ofNat (gamma2_lt hγ)] at hq
   exact hq
 
-theorem bitsAt_tr {Q : Nat → Poly → Mem → Addr → Prop} {n : String} {c : Prog isa}
+theorem bitsAt_tr {Q : Nat → Poly → Mem → Addr → Prop} {v : Bool} {i : Nat} {n : String} {c : Prog isa} (hsl : v = true → SL[i]? = some n)
     (C : Callee (fun S => bitsC Q S) D c) {r out : Ptr} {γ : Nat} (hγ : γ ∈ gamma2s)
     (hc : rwChk (rbs ++ wbs) wbs r 1024 out 1024 = true) :
-    RelCT isa (fun x y => LRel D rbs wbs x y ∧ Reduced x.mem (pa x r) ∧ Reduced y.mem (pa y r))
-      (callP n c [.ptr r, .imm γ, .ptr out]) fun _ _ => True := by
+    RelCT isa (fun x y => LRel D SL rbs wbs x y ∧ Reduced x.mem (pa x r) ∧ Reduced y.mem (pa y r))
+      (callV v i n c [.ptr r, .imm γ, .ptr out]) fun _ _ => True := by
   obtain ⟨w1, i1, i2, _, _⟩ := rwChk_spec hc
-  refine callP_tr C.okMx (C.ctMx fun _ _ h => h) (bitsArgs_ok hγ hc)
+  refine callV_tr C.okMx (C.ctMx fun _ _ h => h) (bitsArgs_ok hγ hc) (fun _ _ h => h.1) hsl
     fun x y x1 y1 ⟨R, rx, ry⟩ ⟨⟨hAx, hmx⟩, kx⟩ ⟨⟨hAy, hmy⟩, ky⟩ =>
       ⟨_, _, _, _, bitsPre (Q := Q) C.hS (At.of R.lx hmx kx) hγ hc hAx rx, bitsPre (Q := Q) C.hS (At.of R.ly hmy ky) hγ hc hAy ry, ?_,
         by rw [kx.2.1, kx.2.2]; exact Covers.append_left (R.lx.cR i1) (Covers.right (R.lx.cW w1)),
@@ -134,31 +137,31 @@ theorem bitsAt_tr {Q : Nat → Poly → Mem → Addr → Prop} {n : String} {c :
   simp only [hx1, hx2, hx3, hy1, hy2, hy3, Arg.val, R.pa i1, R.pa i2,
     (At.of R.lx hmx kx).rsp, (At.of R.ly hmy ky).rsp, R.rsp, and_self]
 
-theorem highBitsAt_ok {P : Prims} (hP : PrimsOk P D) {s : State} (L : Lay D rbs wbs s) {r out : Ptr} {γ : Nat}
+theorem highBitsAt_ok {P : Prims} (hP : PrimsOk P D SL) {s : State} (L : Lay D SL rbs wbs s) {r out : Ptr} {γ : Nat}
     (hγ : γ ∈ gamma2s) (hc : rwChk (rbs ++ wbs) wbs r 1024 out 1024 = true) (hr : Reduced s.mem (pa s r)) :
     WP isa (highBitsAt P r γ out) s fun s' => PPostB D s s' [(out, 1024)] ∧
       (∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) ∧
       NatPolyIs s'.mem (pa s out) ((polyAt s.mem (pa s r)).map fun c => (highBits γ c).toNat) :=
-  bitsAt_ok (Q := fun γ f m out => NatPolyIs m out (f.map fun c => (highBits γ c).toNat)) hP.highBits L hγ hc hr
+  bitsAt_ok (Q := fun γ f m out => NatPolyIs m out (f.map fun c => (highBits γ c).toNat)) hP.sl.highBits hP.highBits L hγ hc hr
 
-theorem highBitsAt_tr {P : Prims} (hP : PrimsOk P D) {r out : Ptr} {γ : Nat} (hγ : γ ∈ gamma2s)
+theorem highBitsAt_tr {P : Prims} (hP : PrimsOk P D SL) {r out : Ptr} {γ : Nat} (hγ : γ ∈ gamma2s)
     (hc : rwChk (rbs ++ wbs) wbs r 1024 out 1024 = true) :
-    RelCT isa (fun x y => LRel D rbs wbs x y ∧ Reduced x.mem (pa x r) ∧ Reduced y.mem (pa y r))
+    RelCT isa (fun x y => LRel D SL rbs wbs x y ∧ Reduced x.mem (pa x r) ∧ Reduced y.mem (pa y r))
       (highBitsAt P r γ out) fun _ _ => True :=
-  bitsAt_tr (Q := fun γ f m out => NatPolyIs m out (f.map fun c => (highBits γ c).toNat)) hP.highBits hγ hc
+  bitsAt_tr (Q := fun γ f m out => NatPolyIs m out (f.map fun c => (highBits γ c).toNat)) hP.sl.highBits hP.highBits hγ hc
 
-theorem lowBitsAt_ok {P : Prims} (hP : PrimsOk P D) {s : State} (L : Lay D rbs wbs s) {r out : Ptr} {γ : Nat}
+theorem lowBitsAt_ok {P : Prims} (hP : PrimsOk P D SL) {s : State} (L : Lay D SL rbs wbs s) {r out : Ptr} {γ : Nat}
     (hγ : γ ∈ gamma2s) (hc : rwChk (rbs ++ wbs) wbs r 1024 out 1024 = true) (hr : Reduced s.mem (pa s r)) :
     WP isa (lowBitsAt P r γ out) s fun s' => PPostB D s s' [(out, 1024)] ∧
       (∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) ∧
       PolyIs s'.mem (pa s out) ((polyAt s.mem (pa s r)).map fun c => ofInt (lowBits γ c)) :=
-  bitsAt_ok (Q := fun γ f m out => PolyIs m out (f.map fun c => ofInt (lowBits γ c))) hP.lowBits L hγ hc hr
+  bitsAt_ok (Q := fun γ f m out => PolyIs m out (f.map fun c => ofInt (lowBits γ c))) hP.sl.lowBits hP.lowBits L hγ hc hr
 
-theorem lowBitsAt_tr {P : Prims} (hP : PrimsOk P D) {r out : Ptr} {γ : Nat} (hγ : γ ∈ gamma2s)
+theorem lowBitsAt_tr {P : Prims} (hP : PrimsOk P D SL) {r out : Ptr} {γ : Nat} (hγ : γ ∈ gamma2s)
     (hc : rwChk (rbs ++ wbs) wbs r 1024 out 1024 = true) :
-    RelCT isa (fun x y => LRel D rbs wbs x y ∧ Reduced x.mem (pa x r) ∧ Reduced y.mem (pa y r))
+    RelCT isa (fun x y => LRel D SL rbs wbs x y ∧ Reduced x.mem (pa x r) ∧ Reduced y.mem (pa y r))
       (lowBitsAt P r γ out) fun _ _ => True :=
-  bitsAt_tr (Q := fun γ f m out => PolyIs m out (f.map fun c => ofInt (lowBits γ c))) hP.lowBits hγ hc
+  bitsAt_tr (Q := fun γ f m out => PolyIs m out (f.map fun c => ofInt (lowBits γ c))) hP.sl.lowBits hP.lowBits hγ hc
 
 /-! ## Norms -/
 
@@ -166,7 +169,7 @@ theorem lowBitsAt_tr {P : Prims} (hP : PrimsOk P D) {r out : Ptr} {γ : Nat} (h�
 def normChk (bs : List (Reg × Nat)) (f : Ptr) : Bool :=
   inB bs f 1024 && decide (f.1 ∈ bases) && decide (f.2 < 2 ^ 31)
 
-theorem normPre {S : Nat} (hS : S + 8 ≤ D) {s s1 : State} (A : At D rbs wbs s s1) {f : Ptr} {B : Nat}
+theorem normPre {S : Nat} (hS : S + 8 ≤ D) {s s1 : State} (A : At D SL rbs wbs s s1) {f : Ptr} {B : Nat}
     (hc : normChk (rbs ++ wbs) f = true) (hA : ArgsIn [.ptr f, .imm B] s s1)
     (hr : Reduced s.mem (pa s f)) :
     (normLtContract X86_64.abi S).pre (s1.callEntry.withRegions [pR (pa s f)] []) := by
@@ -187,15 +190,15 @@ theorem normArgs_ok {bs : List (Reg × Nat)} {f : Ptr} {B : Nat} (hB : B < 2 ^ 3
   simp only [normChk, Bool.and_eq_true, decide_eq_true_eq] at hc
   simp only [List.all_cons, List.all_nil, Arg.ok, hc.1.2, hc.2, decide_true, Bool.and_true, decide_eq_true hB]
 
-theorem normCall_ok {nm : String} {P : Prims} (hP : PrimsOk P D) {s : State} (L : Lay D rbs wbs s) {f : Ptr} {B : Nat}
+theorem normCall_ok {v : Bool} {i : Nat} {nm : String} {P : Prims} (hP : PrimsOk P D SL) (hsl : v = true → SL[i]? = some nm) {s : State} (L : Lay D SL rbs wbs s) {f : Ptr} {B : Nat}
     (hB : B < 2 ^ 32) (hc : normChk (rbs ++ wbs) f = true) (hr : Reduced s.mem (pa s f)) :
-    WP isa (callP nm P.normLt [.ptr f, .imm B]) s fun s' => PPostB D s s' [] ∧
+    WP isa (callV v i nm P.normLt [.ptr f, .imm B]) s fun s' => PPostB D s s' [] ∧
       (∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) ∧
       (s'.gpr .rax).setWidth 32 = if normRq [polyAt s.mem (pa s f)] < B then 1 else 0 := by
   have i1 : inB (rbs ++ wbs) f 1024 = true := by
     simp only [normChk, Bool.and_eq_true] at hc; exact hc.1.1
   have hD : 8 ≤ D := by have := hP.normLt.hS; omega_using [this]
-  refine WP.mono (callP_ok hP.normLt.ver.1 hP.normLt.nosp hP.normLt.depth L.dsm (normArgs_ok hB hc)
+  refine WP.mono (callV_ok hP.normLt.ver.1 hP.normLt.nosp hP.normLt.depth L.dsm (normArgs_ok hB hc) L hsl
     (fun s1 hA hm k => normPre hP.normLt.hS (At.of L hm k) hc hA hr)
     (Covers.append_left (L.cR i1) Covers.nil) Covers.nil)
     fun s' ⟨hpost, hcs, s1, hA, hm, k, s₂, hm₂, hg₂, hq⟩ => ⟨hpost, hcs, ?_⟩
@@ -206,13 +209,13 @@ theorem normCall_ok {nm : String} {P : Prims} (hP : PrimsOk P D) {s : State} (L 
   simp only [e1, e2, Arg.val, er, A.poly' i1 hD, sw32_ofNat hB] at hq
   exact hq
 
-theorem normCall_tr {nm : String} {P : Prims} (hP : PrimsOk P D) {f : Ptr} {B : Nat} (hB : B < 2 ^ 32)
+theorem normCall_tr {v : Bool} {i : Nat} {nm : String} {P : Prims} (hP : PrimsOk P D SL) (hsl : v = true → SL[i]? = some nm) {f : Ptr} {B : Nat} (hB : B < 2 ^ 32)
     (hc : normChk (rbs ++ wbs) f = true) :
-    RelCT isa (fun x y => LRel D rbs wbs x y ∧ Reduced x.mem (pa x f) ∧ Reduced y.mem (pa y f))
-      (callP nm P.normLt [.ptr f, .imm B]) fun _ _ => True := by
+    RelCT isa (fun x y => LRel D SL rbs wbs x y ∧ Reduced x.mem (pa x f) ∧ Reduced y.mem (pa y f))
+      (callV v i nm P.normLt [.ptr f, .imm B]) fun _ _ => True := by
   have i1 : inB (rbs ++ wbs) f 1024 = true := by
     simp only [normChk, Bool.and_eq_true] at hc; exact hc.1.1
-  refine callP_tr hP.normLt.okMx (hP.normLt.ctMx fun _ _ h => h) (normArgs_ok hB hc)
+  refine callV_tr hP.normLt.okMx (hP.normLt.ctMx fun _ _ h => h) (normArgs_ok hB hc) (fun _ _ h => h.1) hsl
     fun x y x1 y1 ⟨R, rx, ry⟩ ⟨⟨hAx, hmx⟩, kx⟩ ⟨⟨hAy, hmy⟩, ky⟩ =>
       ⟨_, _, _, _, normPre hP.normLt.hS (At.of R.lx hmx kx) hc hAx rx,
         normPre hP.normLt.hS (At.of R.ly hmy ky) hc hAy ry, ?_,
@@ -247,7 +250,7 @@ theorem hintArgs_ok {bs : List (Reg × Nat)} {z r h : Ptr} {γ : Nat} (hγ : γ 
   simp only [List.all_cons, List.all_nil, Arg.ok, b1, o1, b2, o2, b3, o3, decide_true, Bool.and_true,
     decide_eq_true (gamma2_lt hγ)]
 
-theorem hintPre {S : Nat} (hS : S + 8 ≤ D) {s s1 : State} (A : At D rbs wbs s s1) {z r h : Ptr} {γ : Nat}
+theorem hintPre {S : Nat} (hS : S + 8 ≤ D) {s s1 : State} (A : At D SL rbs wbs s s1) {z r h : Ptr} {γ : Nat}
     (hγ : γ ∈ gamma2s) (hc : hintChk (rbs ++ wbs) wbs z r h = true)
     (hA : ArgsIn [.ptr z, .ptr r, .imm γ, .ptr h] s s1) (rz : Reduced s.mem (pa s z))
     (rr : Reduced s.mem (pa s r)) :
@@ -265,17 +268,17 @@ theorem hintPre {S : Nat} (hS : S + 8 ≤ D) {s s1 : State} (A : At D rbs wbs s 
   simp only [List.mem_cons, List.mem_nil_iff, or_false, forall_eq_or_imp, forall_eq]
   exact ⟨A.stk hS i1, A.stk hS i2, A.stk hS i3⟩
 
-theorem hintCall_ok {nm : String} {P : Prims} (hP : PrimsOk P D) {s : State} (L : Lay D rbs wbs s) {z r h : Ptr} {γ : Nat}
+theorem hintCall_ok {v : Bool} {i : Nat} {nm : String} {P : Prims} (hP : PrimsOk P D SL) (hsl : v = true → SL[i]? = some nm) {s : State} (L : Lay D SL rbs wbs s) {z r h : Ptr} {γ : Nat}
     (hγ : γ ∈ gamma2s) (hc : hintChk (rbs ++ wbs) wbs z r h = true) (rz : Reduced s.mem (pa s z))
     (rr : Reduced s.mem (pa s r)) :
-    WP isa (callP nm P.makeHint [.ptr z, .ptr r, .imm γ, .ptr h]) s fun s' =>
+    WP isa (callV v i nm P.makeHint [.ptr z, .ptr r, .imm γ, .ptr h]) s fun s' =>
       PPostB D s s' [(h, 1024)] ∧ (∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) ∧
       HintIs s'.mem (pa s h) 1 [Vector.zipWith (makeHint γ) (polyAt s.mem (pa s z)) (polyAt s.mem (pa s r))] ∧
       ((s'.gpr .rax).setWidth 32).toNat =
         hintOnes [Vector.zipWith (makeHint γ) (polyAt s.mem (pa s z)) (polyAt s.mem (pa s r))] := by
   obtain ⟨w1, i1, i2, i3, _⟩ := hintChk_spec hc
   have hD : 8 ≤ D := by have := hP.makeHint.hS; omega_using [this]
-  refine WP.mono (callP_ok hP.makeHint.ver.1 hP.makeHint.nosp hP.makeHint.depth L.dsm (hintArgs_ok hγ hc)
+  refine WP.mono (callV_ok hP.makeHint.ver.1 hP.makeHint.nosp hP.makeHint.depth L.dsm (hintArgs_ok hγ hc) L hsl
     (fun s1 hA hm k => hintPre hP.makeHint.hS (At.of L hm k) hγ hc hA rz rr)
     (Covers.append_left (Covers.cons (L.cR i1) (L.cR i2)) (Covers.right (L.cW w1))) (L.cW w1))
     fun s' ⟨hpost, hcs, s1, hA, hm, k, s₂, hm₂, hg₂, hq⟩ => ⟨hpost, hcs, ?_⟩
@@ -286,13 +289,13 @@ theorem hintCall_ok {nm : String} {P : Prims} (hP : PrimsOk P D) {s : State} (L 
   simp only [e1, e2, e3, e4, Arg.val, hm₂, er, A.poly' i1 hD, A.poly' i2 hD, sw32_ofNat (gamma2_lt hγ)] at hq
   exact hq
 
-theorem hintCall_tr {nm : String} {P : Prims} (hP : PrimsOk P D) {z r h : Ptr} {γ : Nat} (hγ : γ ∈ gamma2s)
+theorem hintCall_tr {v : Bool} {i : Nat} {nm : String} {P : Prims} (hP : PrimsOk P D SL) (hsl : v = true → SL[i]? = some nm) {z r h : Ptr} {γ : Nat} (hγ : γ ∈ gamma2s)
     (hc : hintChk (rbs ++ wbs) wbs z r h = true) :
-    RelCT isa (fun x y => LRel D rbs wbs x y ∧ (Reduced x.mem (pa x z) ∧ Reduced x.mem (pa x r)) ∧
+    RelCT isa (fun x y => LRel D SL rbs wbs x y ∧ (Reduced x.mem (pa x z) ∧ Reduced x.mem (pa x r)) ∧
       (Reduced y.mem (pa y z) ∧ Reduced y.mem (pa y r)))
-      (callP nm P.makeHint [.ptr z, .ptr r, .imm γ, .ptr h]) fun _ _ => True := by
+      (callV v i nm P.makeHint [.ptr z, .ptr r, .imm γ, .ptr h]) fun _ _ => True := by
   obtain ⟨w1, i1, i2, i3, _⟩ := hintChk_spec hc
-  refine callP_tr hP.makeHint.okMx (hP.makeHint.ctMx fun _ _ h => h) (hintArgs_ok hγ hc)
+  refine callV_tr hP.makeHint.okMx (hP.makeHint.ctMx fun _ _ h => h) (hintArgs_ok hγ hc) (fun _ _ h => h.1) hsl
     fun x y x1 y1 ⟨R, ⟨rzx, rrx⟩, ⟨rzy, rry⟩⟩ ⟨⟨hAx, hmx⟩, kx⟩ ⟨⟨hAy, hmy⟩, ky⟩ =>
       ⟨_, _, _, _, hintPre hP.makeHint.hS (At.of R.lx hmx kx) hγ hc hAx rzx rrx,
         hintPre hP.makeHint.hS (At.of R.ly hmy ky) hγ hc hAy rzy rry, ?_,
@@ -327,6 +330,8 @@ two runs leak the same when their hints agree, `hbpAt_tr`).
 
 namespace VG.Proof.MlDsa.X86_64.Sign
 
+variable {SL : List String}
+
 open VG VG.X86_64 VG.Impl.MlDsa.X86_64.Sign
 open VG.Proof.MlKem.X86_64 (Keep)
 open VG.Proof.MlDsa.Sign
@@ -334,7 +339,7 @@ open VG.Spec.MlDsa
 open VG.Spec.Sha3 (bytesAt)
 
 section
-variable {D : Nat} {rbs wbs : List (Reg × Nat)}
+variable {D : Nat} {SL : List String} {rbs wbs : List (Reg × Nat)}
 
 /-! ## `SimpleBitPack` -/
 
@@ -344,7 +349,7 @@ theorem sbpArgs_ok {bs : List (Reg × Nat)} {f out : Ptr} {b len : Nat} (hb : b 
   simp only [List.all_cons, List.all_nil, Arg.ok, b1, o1, b2, o2, decide_true, Bool.and_true,
     decide_eq_true hb, decide_eq_true hl]
 
-theorem sbpPre {S : Nat} (hS : S + 8 ≤ D) {s s1 : State} (A : At D rbs wbs s s1) {f out : Ptr} {b len : Nat}
+theorem sbpPre {S : Nat} (hS : S + 8 ≤ D) {s s1 : State} (A : At D SL rbs wbs s s1) {f out : Ptr} {b len : Nat}
     (hb : b ∈ simpleBitPackBounds) (hl : len = 32 * bitlen b) (hc : rwChk (rbs ++ wbs) wbs f 1024 out len = true)
     (hA : ArgsIn [.ptr f, .imm b, .ptr out, .imm len] s s1)
     (hle : ∀ i < 256, (coeffAt s.mem (pa s f) i).toNat ≤ b) :
@@ -364,7 +369,7 @@ theorem sbpPre {S : Nat} (hS : S + 8 ≤ D) {s s1 : State} (A : At D rbs wbs s s
   simp only [List.mem_cons, List.mem_nil_iff, or_false, forall_eq_or_imp, forall_eq]
   exact ⟨A.stk hS i1, A.stk hS i2⟩
 
-theorem sbpAt_ok {P : Prims} (hP : PrimsOk P D) {s : State} (L : Lay D rbs wbs s) {f out : Ptr} {b len : Nat}
+theorem sbpAt_ok {P : Prims} (hP : PrimsOk P D SL) {s : State} (L : Lay D SL rbs wbs s) {f out : Ptr} {b len : Nat}
     (hb : b ∈ simpleBitPackBounds) (hl : len = 32 * bitlen b) (hc : rwChk (rbs ++ wbs) wbs f 1024 out len = true)
     (hle : ∀ i < 256, (coeffAt s.mem (pa s f) i).toNat ≤ b) :
     WP isa (simpleBitPackAt P f b out len) s fun s' => PPostB D s s' [(out, len)] ∧
@@ -385,9 +390,9 @@ theorem sbpAt_ok {P : Prims} (hP : PrimsOk P D) {s : State} (L : Lay D rbs wbs s
   simp only [e1, e2, e3, e4, Arg.val, hm₂, A.natPoly' i1 hD, sw32_ofNat hb'.1, toNat64 hb'.2] at hq
   exact hq
 
-theorem sbpAt_tr {P : Prims} (hP : PrimsOk P D) {f out : Ptr} {b len : Nat}
+theorem sbpAt_tr {P : Prims} (hP : PrimsOk P D SL) {f out : Ptr} {b len : Nat}
     (hb : b ∈ simpleBitPackBounds) (hl : len = 32 * bitlen b) (hc : rwChk (rbs ++ wbs) wbs f 1024 out len = true) :
-    RelCT isa (fun x y => LRel D rbs wbs x y ∧ (∀ i < 256, (coeffAt x.mem (pa x f) i).toNat ≤ b) ∧
+    RelCT isa (fun x y => LRel D SL rbs wbs x y ∧ (∀ i < 256, (coeffAt x.mem (pa x f) i).toNat ≤ b) ∧
       (∀ i < 256, (coeffAt y.mem (pa y f) i).toNat ≤ b)) (simpleBitPackAt P f b out len) fun _ _ => True := by
   obtain ⟨w1, i1, i2, _, _⟩ := rwChk_spec hc
   have hb' : b < 2 ^ 32 ∧ len < 2 ^ 32 := by
@@ -425,7 +430,7 @@ theorem bpArgs_ok {bs : List (Reg × Nat)} {f out : Ptr} {a b len : Nat} (ha : a
 def InRange (m : Mem) (p : Addr) (a b : Nat) : Prop :=
   ∀ i < 256, -(a : Int) ≤ modPm (coeffAt m p i).toNat q ∧ modPm (coeffAt m p i).toNat q ≤ b
 
-theorem bpPre {S : Nat} (hS : S + 8 ≤ D) {s s1 : State} (A : At D rbs wbs s s1) {f out : Ptr} {a b len : Nat}
+theorem bpPre {S : Nat} (hS : S + 8 ≤ D) {s s1 : State} (A : At D SL rbs wbs s s1) {f out : Ptr} {a b len : Nat}
     (hp : (a, b) ∈ bitPackParams) (hl : len = 32 * bitlen (a + b)) (hc : rwChk (rbs ++ wbs) wbs f 1024 out len = true)
     (hA : ArgsIn [.ptr f, .imm a, .imm b, .ptr out, .imm len] s s1) (hr : Reduced s.mem (pa s f))
     (hrg : InRange s.mem (pa s f) a b) :
@@ -444,7 +449,7 @@ theorem bpPre {S : Nat} (hS : S + 8 ≤ D) {s s1 : State} (A : At D rbs wbs s s1
   simp only [List.mem_cons, List.mem_nil_iff, or_false, forall_eq_or_imp, forall_eq]
   exact ⟨A.stk hS i1, A.stk hS i2⟩
 
-theorem bpAt_ok {P : Prims} (hP : PrimsOk P D) {s : State} (L : Lay D rbs wbs s) {f out : Ptr} {a b len : Nat}
+theorem bpAt_ok {P : Prims} (hP : PrimsOk P D SL) {s : State} (L : Lay D SL rbs wbs s) {f out : Ptr} {a b len : Nat}
     (hp : (a, b) ∈ bitPackParams) (hl : len = 32 * bitlen (a + b)) (hc : rwChk (rbs ++ wbs) wbs f 1024 out len = true)
     (hr : Reduced s.mem (pa s f)) (hrg : InRange s.mem (pa s f) a b) :
     WP isa (bitPackAt P f a b out len) s fun s' => PPostB D s s' [(out, len)] ∧
@@ -464,9 +469,9 @@ theorem bpAt_ok {P : Prims} (hP : PrimsOk P D) {s : State} (L : Lay D rbs wbs s)
   simp only [e1, e2, e3, e4, e5, Arg.val, hm₂, A.poly' i1 hD, sw32_ofNat ha', sw32_ofNat hb', toNat64 hl'] at hq
   exact hq
 
-theorem bpAt_tr {P : Prims} (hP : PrimsOk P D) {f out : Ptr} {a b len : Nat}
+theorem bpAt_tr {P : Prims} (hP : PrimsOk P D SL) {f out : Ptr} {a b len : Nat}
     (hp : (a, b) ∈ bitPackParams) (hl : len = 32 * bitlen (a + b)) (hc : rwChk (rbs ++ wbs) wbs f 1024 out len = true) :
-    RelCT isa (fun x y => LRel D rbs wbs x y ∧ (Reduced x.mem (pa x f) ∧ InRange x.mem (pa x f) a b) ∧
+    RelCT isa (fun x y => LRel D SL rbs wbs x y ∧ (Reduced x.mem (pa x f) ∧ InRange x.mem (pa x f) a b) ∧
       (Reduced y.mem (pa y f) ∧ InRange y.mem (pa y f) a b)) (bitPackAt P f a b out len) fun _ _ => True := by
   obtain ⟨w1, i1, i2, _, _⟩ := rwChk_spec hc
   obtain ⟨ha', hb', hl'⟩ := bitPackParams_lt hp
@@ -494,7 +499,7 @@ theorem bupArgs_ok {bs : List (Reg × Nat)} {v f : Ptr} {a b len : Nat} (ha : a 
   simp only [List.all_cons, List.all_nil, Arg.ok, b1, o1, b2, o2, decide_true, Bool.and_true,
     decide_eq_true ha, decide_eq_true hb, decide_eq_true hl]
 
-theorem bupPre {S : Nat} (hS : S + 8 ≤ D) {s s1 : State} (A : At D rbs wbs s s1) {v f : Ptr} {a b len : Nat}
+theorem bupPre {S : Nat} (hS : S + 8 ≤ D) {s s1 : State} (A : At D SL rbs wbs s s1) {v f : Ptr} {a b len : Nat}
     (hp : (a, b) ∈ bitPackParams) (hl : len = 32 * bitlen (a + b)) (hc : rwChk (rbs ++ wbs) wbs v len f 1024 = true)
     (hA : ArgsIn [.ptr v, .imm len, .imm a, .imm b, .ptr f] s s1) :
     (bitUnpackContract X86_64.abi S).pre (s1.callEntry.withRegions [⟨pa s v, len⟩] [pR (pa s f)]) := by
@@ -511,7 +516,7 @@ theorem bupPre {S : Nat} (hS : S + 8 ≤ D) {s s1 : State} (A : At D rbs wbs s s
   simp only [List.mem_cons, List.mem_nil_iff, or_false, forall_eq_or_imp, forall_eq]
   exact ⟨A.stk hS i1, A.stk hS i2⟩
 
-theorem bupAt_ok {P : Prims} (hP : PrimsOk P D) {s : State} (L : Lay D rbs wbs s) {v f : Ptr} {a b len : Nat}
+theorem bupAt_ok {P : Prims} (hP : PrimsOk P D SL) {s : State} (L : Lay D SL rbs wbs s) {v f : Ptr} {a b len : Nat}
     (hp : (a, b) ∈ bitPackParams) (hl : len = 32 * bitlen (a + b)) (hc : rwChk (rbs ++ wbs) wbs v len f 1024 = true) :
     WP isa (bitUnpackAt P v len a b f) s fun s' => PPostB D s s' [(f, 1024)] ∧
       (∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) ∧
@@ -530,9 +535,9 @@ theorem bupAt_ok {P : Prims} (hP : PrimsOk P D) {s : State} (L : Lay D rbs wbs s
   simp only [e1, e2, e3, e4, e5, Arg.val, hm₂, A.bytes' i1 hD, sw32_ofNat ha', sw32_ofNat hb', toNat64 hl'] at hq
   exact hq
 
-theorem bupAt_tr {P : Prims} (hP : PrimsOk P D) {v f : Ptr} {a b len : Nat}
+theorem bupAt_tr {P : Prims} (hP : PrimsOk P D SL) {v f : Ptr} {a b len : Nat}
     (hp : (a, b) ∈ bitPackParams) (hl : len = 32 * bitlen (a + b)) (hc : rwChk (rbs ++ wbs) wbs v len f 1024 = true) :
-    RelCT isa (LRel D rbs wbs) (bitUnpackAt P v len a b f) fun _ _ => True := by
+    RelCT isa (LRel D SL rbs wbs) (bitUnpackAt P v len a b f) fun _ _ => True := by
   obtain ⟨w1, i1, i2, _, _⟩ := rwChk_spec hc
   obtain ⟨ha', hb', hl'⟩ := bitPackParams_lt hp
   rw [← hl] at hl'
@@ -564,7 +569,7 @@ theorem hintParams_lt {ω k : Nat} (h : (ω, k) ∈ hintParams) : ω < 2 ^ 32 �
   simp only [hintParams, List.mem_cons, Prod.mk.injEq, List.not_mem_nil, or_false] at h
   rcases h with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> decide
 
-theorem hbpPre {S : Nat} (hS : S + 8 ≤ D) {s s1 : State} (A : At D rbs wbs s s1) {h y : Ptr} {ω k : Nat}
+theorem hbpPre {S : Nat} (hS : S + 8 ≤ D) {s s1 : State} (A : At D SL rbs wbs s s1) {h y : Ptr} {ω k : Nat}
     (hp : (ω, k) ∈ hintParams) (hc : rwChk (rbs ++ wbs) wbs h (256 * k * 4) y (ω + k) = true)
     (hA : ArgsIn [.ptr h, .imm (256 * k), .imm ω, .ptr y, .imm (ω + k)] s s1)
     (hones : hintOnes (hintAt s.mem (pa s h) k) ≤ ω) :
@@ -586,7 +591,7 @@ theorem hbpPre {S : Nat} (hS : S + 8 ≤ D) {s s1 : State} (A : At D rbs wbs s s
   simp only [List.mem_cons, List.mem_nil_iff, or_false, forall_eq_or_imp, forall_eq]
   exact ⟨A.stk hS i1, A.stk hS i2⟩
 
-theorem hbpAt_ok {P : Prims} (hP : PrimsOk P D) {s : State} (L : Lay D rbs wbs s) {h y : Ptr} {ω k : Nat}
+theorem hbpAt_ok {P : Prims} (hP : PrimsOk P D SL) {s : State} (L : Lay D SL rbs wbs s) {h y : Ptr} {ω k : Nat}
     (hp : (ω, k) ∈ hintParams) (hc : rwChk (rbs ++ wbs) wbs h (256 * k * 4) y (ω + k) = true)
     (hones : hintOnes (hintAt s.mem (pa s h) k) ≤ ω) :
     WP isa (hintBitPackAt P h (256 * k) ω y (ω + k)) s fun s' => PPostB D s s' [(y, ω + k)] ∧
@@ -608,9 +613,9 @@ theorem hbpAt_ok {P : Prims} (hP : PrimsOk P D) {s : State} (L : Lay D rbs wbs s
   exact hq
 
 /-- Two runs leak the same when their hints (as the `u32`s at `h`) agree. -/
-theorem hbpAt_tr {P : Prims} (hP : PrimsOk P D) {h y : Ptr} {ω k : Nat} (hp : (ω, k) ∈ hintParams)
+theorem hbpAt_tr {P : Prims} (hP : PrimsOk P D SL) {h y : Ptr} {ω k : Nat} (hp : (ω, k) ∈ hintParams)
     (hc : rwChk (rbs ++ wbs) wbs h (256 * k * 4) y (ω + k) = true) :
-    RelCT isa (fun x z => LRel D rbs wbs x z ∧ hintOnes (hintAt x.mem (pa x h) k) ≤ ω ∧
+    RelCT isa (fun x z => LRel D SL rbs wbs x z ∧ hintOnes (hintAt x.mem (pa x h) k) ≤ ω ∧
       hintOnes (hintAt z.mem (pa z h) k) ≤ ω ∧
       (List.range (256 * k)).map (fun i => (coeffAt x.mem (pa x h) i).toNat) =
         (List.range (256 * k)).map (fun i => (coeffAt z.mem (pa z h) i).toNat))
@@ -656,6 +661,8 @@ the `BitUnpack` of its piece of `sk` (`dec_ok`), in their slots (`ID`), and
 
 namespace VG.Proof.MlDsa.X86_64.Sign
 
+variable {SL : List String}
+
 open VG VG.X86_64 VG.Impl.MlDsa.X86_64.Sign
 open VG.Proof.MlDsa.Sign
 open VG.Spec.MlDsa
@@ -682,23 +689,23 @@ end
 /-! ## `Â` -/
 
 /-- `Â` sampled within `maxBounds`, in its slots. -/
-structure IM (p : Params) (D : Nat) (σ s : State) : Prop where
-  st : St p D σ s
+structure IM (p : Params) (D : Nat) (SL : List String) (σ s : State) : Prop where
+  st : St p D SL σ s
   ok : ∀ e < p.k * p.ℓ, (rejNTTPoly maxBounds.rejNTT (seedE p σ e)).isSome
   A : Fam s (aBase p) (p.k * p.ℓ) (aVal p σ)
 
 def imChk (p : Params) (ws : List (Ptr × Nat)) : Bool := stChk p ws && famChk (sgB p) ws (aBase p) (p.k * p.ℓ)
 
-theorem IM.step {p : Params} {D : Nat} {σ s s' : State} (h : IM p D σ s) {ws : List (Ptr × Nat)}
-    (hP : PPostB D s s' ws) (hc : imChk p ws = true) : IM p D σ s' := by
+theorem IM.step {p : Params} {D : Nat} {σ s s' : State} (h : IM p D SL σ s) {ws : List (Ptr × Nat)}
+    (hP : PPostB D s s' ws) (hc : imChk p ws = true) : IM p D SL σ s' := by
   simp only [imChk, Bool.and_eq_true] at hc
   exact ⟨h.st.step hP hc.1, h.ok, Fam.keep h.st.lay hP hc.2 h.A⟩
 
 /-! ## The private key -/
 
 /-- `Â`, the first `a` polynomials of `ŝ₁`, `b` of `ŝ₂` and `c` of `t̂₀`. -/
-structure ID (p : Params) (D : Nat) (σ : State) (a b c : Nat) (s : State) : Prop where
-  im : IM p D σ s
+structure ID (p : Params) (D : Nat) (SL : List String) (σ : State) (a b c : Nat) (s : State) : Prop where
+  im : IM p D SL σ s
   s1 : Fam s (s1Base p) a (S1v p σ)
   s2 : Fam s (s2Base p) b (S2v p σ)
   t0 : Fam s (t0Base p) c (T0v p σ)
@@ -706,8 +713,8 @@ structure ID (p : Params) (D : Nat) (σ : State) (a b c : Nat) (s : State) : Pro
 def idChk (p : Params) (ws : List (Ptr × Nat)) (a b c : Nat) : Bool :=
   imChk p ws && famChk (sgB p) ws (s1Base p) a && famChk (sgB p) ws (s2Base p) b && famChk (sgB p) ws (t0Base p) c
 
-theorem ID.step {p : Params} {D : Nat} {σ s s' : State} {a b c : Nat} (h : ID p D σ a b c s)
-    {ws : List (Ptr × Nat)} (hP : PPostB D s s' ws) (hc : idChk p ws a b c = true) : ID p D σ a b c s' := by
+theorem ID.step {p : Params} {D : Nat} {σ s s' : State} {a b c : Nat} (h : ID p D SL σ a b c s)
+    {ws : List (Ptr × Nat)} (hP : PPostB D s s' ws) (hc : idChk p ws a b c = true) : ID p D SL σ a b c s' := by
   simp only [idChk, Bool.and_eq_true] at hc
   obtain ⟨⟨⟨h1, h2⟩, h3⟩, h4⟩ := hc
   have L := h.im.st.lay
@@ -720,7 +727,7 @@ theorem sc_bases (o : Nat) : (sc o).1 ∈ bases := List.mem_cons_self ..
 theorem pa_add (s : State) (r : Reg) (a b : Nat) : pa s (r, a) + BitVec.ofNat 64 b = pa s (r, a + b) :=
   VG.Proof.MlKem.X86_64.off_add _ _ _
 
-theorem sk_slice {p : Params} {D : Nat} {σ s : State} (h : St p D σ s) {o len : Nat} (hk : o + len ≤ p.skLen) :
+theorem sk_slice {p : Params} {D : Nat} {σ s : State} (h : St p D SL σ s) {o len : Nat} (hk : o + len ≤ p.skLen) :
     bytesAt s.mem (pa s (.rbp, o)) len = ((skOf p σ).drop o).take len := by
   rw [← h.sk, VG.Proof.MlKem.bytesAt_slice _ _ hk, pa_add, Nat.zero_add]
 
@@ -729,16 +736,16 @@ def decChk (p : Params) (a b c : Nat) (src : Ptr) (len j : Nat) : Bool :=
   rwChk (sgB p) (sgW p) src len (pS j) 1024 && ipChk (sgB p) (sgW p) (pS j) &&
     idChk p [(pS j, 1024)] a b c && idChk p [(pS j, 1024), (sc oPS, 1024)] a b c
 
-theorem dec_ok {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} {σ : State} {a b c : Nat} {src : Ptr}
+theorem dec_ok {P : Prims} {D : Nat} (hP : PrimsOk P D SL) {p : Params} {σ : State} {a b c : Nat} {src : Ptr}
     {len x y j : Nat} (hp : (x, y) ∈ bitPackParams) (hl : len = 32 * bitlen (x + y))
-    (hc : decChk p a b c src len j = true) {s : State} (h : ID p D σ a b c s) :
+    (hc : decChk p a b c src len j = true) {s : State} (h : ID p D SL σ a b c s) :
     WP isa (.seq (bitUnpackAt P src len x y (pS j)) (nttAt P (pS j))) s fun s' =>
-      ID p D σ a b c s' ∧ Pl s' j (ntt (toRq (bitUnpack (bytesAt s.mem (pa s src) len) x y))) := by
+      ID p D SL σ a b c s' ∧ Pl s' j (ntt (toRq (bitUnpack (bytesAt s.mem (pa s src) len) x y))) := by
   simp only [decChk, Bool.and_eq_true] at hc
   obtain ⟨⟨⟨h1, h2⟩, h3⟩, h4⟩ := hc
   refine WP.seq (WP.mono (bupAt_ok hP h.im.st.lay hp hl h1) fun s1 ⟨hP1, _, hq1⟩ => ?_)
   have I1 := h.step hP1 h3
-  refine WP.mono (ipAt_ok (t := ntt) hP.ntt I1.im.st.lay h2 (by rw [hP1.pa (pS_bases j)]; exact hq1.1))
+  refine WP.mono (ipAt_ok (t := ntt) hP.ntt hP.sl.ntt I1.im.st.lay h2 (by rw [hP1.pa (pS_bases j)]; exact hq1.1))
     fun s2 ⟨hP2, _, hq2⟩ => ⟨I1.step hP2 h4, ?_⟩
   show PolyIs s2.mem (pa s2 (pS j)) _
   rw [hP2.pa (pS_bases j), hP1.pa (pS_bases j), ← hq1.2]
@@ -761,8 +768,8 @@ theorem dChk_ok {p : Params} (h : Ok3 p) : dChk p = true := by
   rcases h with rfl | rfl | rfl <;> decide +kernel
 
 /-- Decoded: `Â`, `ŝ₁`, `ŝ₂`, `t̂₀`, and `ρ″` at `MS`. -/
-structure IK (p : Params) (D : Nat) (σ s : State) : Prop where
-  d : ID p D σ p.ℓ p.k p.k s
+structure IK (p : Params) (D : Nat) (SL : List String) (σ s : State) : Prop where
+  d : ID p D SL σ p.ℓ p.k p.k s
   rpp : bytesAt s.mem (pa s (sc oMS)) 64 = rppOf p σ
 
 theorem dChk_spec {p : Params} (hc : dChk p = true) :
@@ -779,27 +786,27 @@ theorem dChk_spec {p : Params} (hc : dChk p = true) :
 theorem sLen_eq (p : Params) : sLen p = 32 * bitlen (p.η + p.η) := by rw [← Nat.two_mul]
 
 section
-variable {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} (hc : dChk p = true) {σ : State}
+variable {P : Prims} {D : Nat} {SL : List String} (hP : PrimsOk P D SL) {p : Params} (hc : dChk p = true) {σ : State}
 include hP hc
 
-theorem decS1_ok {r : Nat} (hr : r < p.ℓ) {s : State} (hs : ID p D σ r 0 0 s) :
-    WP isa (decS1 P p r) s (ID p D σ (r + 1) 0 0) := by
+theorem decS1_ok {r : Nat} (hr : r < p.ℓ) {s : State} (hs : ID p D SL σ r 0 0 s) :
+    WP isa (decS1 P p r) s (ID p D SL σ (r + 1) 0 0) := by
   obtain ⟨c, ck⟩ := (dChk_spec hc).1 r hr
   refine WP.mono (dec_ok hP (dChk_spec hc).2.2.2.2.2.2.1 (sLen_eq p) c hs) fun s' ⟨I', hq⟩ =>
     ⟨I'.im, Fam.snoc I'.s1 ?_, I'.s2, I'.t0⟩
   rw [sk_slice hs.im.st ck] at hq
   exact hq
 
-theorem decS2_ok {i : Nat} (hi : i < p.k) {s : State} (hs : ID p D σ p.ℓ i 0 s) :
-    WP isa (decS2 P p i) s (ID p D σ p.ℓ (i + 1) 0) := by
+theorem decS2_ok {i : Nat} (hi : i < p.k) {s : State} (hs : ID p D SL σ p.ℓ i 0 s) :
+    WP isa (decS2 P p i) s (ID p D SL σ p.ℓ (i + 1) 0) := by
   obtain ⟨c, ck⟩ := (dChk_spec hc).2.1 i hi
   refine WP.mono (dec_ok hP (dChk_spec hc).2.2.2.2.2.2.1 (sLen_eq p) c hs) fun s' ⟨I', hq⟩ =>
     ⟨I'.im, I'.s1, Fam.snoc I'.s2 ?_, I'.t0⟩
   rw [sk_slice hs.im.st ck] at hq
   exact hq
 
-theorem decT0_ok {i : Nat} (hi : i < p.k) {s : State} (hs : ID p D σ p.ℓ p.k i s) :
-    WP isa (decT0 P p i) s (ID p D σ p.ℓ p.k (i + 1)) := by
+theorem decT0_ok {i : Nat} (hi : i < p.k) {s : State} (hs : ID p D SL σ p.ℓ p.k i s) :
+    WP isa (decT0 P p i) s (ID p D SL σ p.ℓ p.k (i + 1)) := by
   obtain ⟨c, ck⟩ := (dChk_spec hc).2.2.1 i hi
   refine WP.mono (dec_ok hP (by decide) (by decide) c hs) fun s' ⟨I', hq⟩ => ⟨I'.im, I'.s1, I'.s2,
     Fam.snoc I'.t0 ?_⟩
@@ -808,7 +815,7 @@ theorem decT0_ok {i : Nat} (hi : i < p.k) {s : State} (hs : ID p D σ p.ℓ p.k 
   rw [sk_slice hs.im.st ck, e] at hq
   exact hq
 
-theorem rpp_ok {s : State} (hs : ID p D σ p.ℓ p.k p.k s) : WP isa rpp s (IK p D σ) := by
+theorem rpp_ok {s : State} (hs : ID p D SL σ p.ℓ p.k p.k s) : WP isa rpp s (IK p D SL σ) := by
   unfold rpp
   obtain ⟨_, _, _, h4, h5, _, _, hsk⟩ := dChk_spec hc
   refine WP.mono (shake_ok (sgB_bases p) hP.hD h4 hs.im.st.lay) fun s4 ⟨hP4, _, hb⟩ =>
@@ -817,19 +824,19 @@ theorem rpp_ok {s : State} (hs : ID p D σ p.ℓ p.k p.k s) : WP isa rpp s (IK p
   simp only [pieces, List.flatMap_cons, List.flatMap_nil, List.append_nil]
   rw [sk_slice hs.im.st (o := 32) (len := 32) (by omega_using [hsk]), hs.im.st.rnd, hs.im.st.mu, ← List.append_assoc]
 
-theorem decode_ok {s : State} (h : IM p D σ s) : WP isa (decode P p) s (IK p D σ) := by
+theorem decode_ok {s : State} (h : IM p D SL σ s) : WP isa (decode P p) s (IK p D SL σ) := by
   unfold decode
-  refine WP.seq (WP.mono (seqR_ok (I := fun r => ID p D σ r 0 0) p.ℓ 0
+  refine WP.seq (WP.mono (seqR_ok (I := fun r => ID p D SL σ r 0 0) p.ℓ 0
     (fun r _ hr s hs => decS1_ok hP hc (by omega_using [hr]) hs) s
     ⟨h, fun _ h => absurd h (Nat.not_lt_zero _), fun _ h => absurd h (Nat.not_lt_zero _),
       fun _ h => absurd h (Nat.not_lt_zero _)⟩) fun s1 hs1 => ?_)
   rw [Nat.zero_add] at hs1
-  refine WP.seq (WP.mono (seqR_ok (I := fun i => ID p D σ p.ℓ i 0) p.k 0
+  refine WP.seq (WP.mono (seqR_ok (I := fun i => ID p D SL σ p.ℓ i 0) p.k 0
     (fun i _ hi s hs => decS2_ok hP hc (by omega_using [hi]) hs) s1
     ⟨hs1.im, hs1.s1, fun _ h => absurd h (Nat.not_lt_zero _), fun _ h => absurd h (Nat.not_lt_zero _)⟩)
     fun s2 hs2 => ?_)
   rw [Nat.zero_add] at hs2
-  refine WP.seq (WP.mono (seqR_ok (I := fun i => ID p D σ p.ℓ p.k i) p.k 0
+  refine WP.seq (WP.mono (seqR_ok (I := fun i => ID p D SL σ p.ℓ p.k i) p.k 0
     (fun i _ hi s hs => decT0_ok hP hc (by omega_using [hi]) hs) s2
     ⟨hs2.im, hs2.s1, hs2.s2, fun _ h => absurd h (Nat.not_lt_zero _)⟩) fun s3 hs3 => ?_)
   rw [Nat.zero_add] at hs3
@@ -857,14 +864,14 @@ theorem pkChk_ok {p : Params} (h : Ok3 p) : pkChk p = true := by
 /-- Polynomial `i` of the prepared key of the function entered in `σ`. -/
 abbrev prepV (p : Params) (σ : State) (i : Nat) : Poly := (preparedSecretPolys p (skOf p σ))[i]!
 
-theorem prep_fam {p : Params} {D : Nat} {σ s s' : State} (hpre : (signK p D).pre σ) (hf : σ.gpr .r9 ≠ 0)
-    (hc : pkChk p = true) (h : IM p D σ s) (hP : PPostB D s s' [(s1P p 0, polysLen p)])
+theorem prep_fam {p : Params} {D : Nat} {σ s s' : State} (hpre : (signKS p D SL).pre σ) (hf : σ.gpr .r9 ≠ 0)
+    (hc : pkChk p = true) (h : IM p D SL σ s) (hP : PPostB D s s' [(s1P p 0, polysLen p)])
     (hb : bytesAt s'.mem (pa s (s1P p 0)) (polysLen p) = bytesAt s.mem (pa s (.rbp, p.skLen)) (polysLen p))
     {i : Nat} (hi : i < p.ℓ + 2 * p.k) : Pl s' (s1Base p + i) (prepV p σ i) := by
   simp only [pkChk, Bool.and_eq_true, decide_eq_true_eq] at hc
   obtain ⟨⟨⟨⟨⟨⟨-, -⟩, -⟩, -⟩, -⟩, -⟩, hlen⟩ := hc
   have hpre' := hpre
-  obtain ⟨-, hwr, d1, d2, -, -, -, -, -, -, -, -, -, -, k1, -, -, -, -, n1, -, -, -, -, -, hprep⟩ := hpre'
+  obtain ⟨-, hwr, d1, d2, -, -, -, -, -, -, -, -, -, -, k1, -, -, -, -, n1, -, -, -, -, -, hprep⟩ := hpre'.1
   have hL : skL p σ = preparedSecretKeyBytes p := by simp only [skL, hf, ite_false]
   rw [hL] at d1 d2 k1 n1
   have e2 : s.gpr .rbp = σ.gpr .rdi := h.st.top.regs (.rbp, .rdi) (by decide)
@@ -902,14 +909,14 @@ theorem prepV_s2 (p : Params) (σ : State) {i : Nat} (hi : i < p.k) : prepV p σ
 theorem prepV_t0 (p : Params) (σ : State) {i : Nat} (hi : i < p.k) : prepV p σ (p.ℓ + p.k + i) = T0v p σ i :=
   PreparedKey.secret_t0 p _ hi
 
-theorem copyKey_ok {p : Params} {D : Nat} {σ s : State} (hpre : (signK p D).pre σ) (hf : σ.gpr .r9 ≠ 0)
-    (hD : D < 2 ^ 32) (hc : pkChk p = true) (h : IM p D σ s) :
-    WP isa (copyKey p) s (ID p D σ p.ℓ p.k p.k) := by
+theorem copyKey_ok {p : Params} {D : Nat} {σ s : State} (hpre : (signKS p D SL).pre σ) (hf : σ.gpr .r9 ≠ 0)
+    (hD : D < 2 ^ 32) (hc : pkChk p = true) (h : IM p D SL σ s) :
+    WP isa (copyKey p) s (ID p D SL σ p.ℓ p.k p.k) := by
   have hc' := hc
   simp only [pkChk, Bool.and_eq_true, decide_eq_true_eq] at hc'
   obtain ⟨⟨⟨⟨⟨⟨hcp, him⟩, -⟩, -⟩, hpl⟩, hsz⟩, -⟩ := hc'
   have hL : preparedSecretKeyBytes p ≤ skL p σ := by simp only [skL, hf, ite_false]; exact Nat.le_refl _
-  have L' : Lay D (sgRP p) (sgW p) s := sgLayL hpre hL hD ⟨hsz.1, hpl, hsz.2⟩ h.st.top
+  have L' : Lay D SL (sgRP p) (sgW p) s := sgLayL hpre hL hD ⟨hsz.1, hpl, hsz.2⟩ h.st.top h.st.lay.slots
   unfold copyKey
   refine WP.mono (copy_okB L' hcp) fun s' ⟨hP, _, hb⟩ => ?_
   have I := h.step hP him
@@ -927,20 +934,20 @@ theorem testFlag_ok {D : Nat} {σ s : State} (ht : Top σ s) (hin : InRegions (s
   have e := ht.flag
   simp only [pa] at hin e
   unfold testFlag
-  refine WP.mono (VG.Proof.MlKem.X86_64.WP.keep [.rax] (Q := fun s' => s'.mem = s.mem ∧
+  refine WP.mono_syms (VG.Proof.MlKem.X86_64.WP.keep [.rax] (Q := fun s' => s'.mem = s.mem ∧
       s'.zf = some (s.mem.readW (s.gpr .rbx + BitVec.ofNat 64 oFL) 64 &&&
         s.mem.readW (s.gpr .rbx + BitVec.ofNat 64 oFL) 64 == 0)) (by xrun [hin]) (by decide))
-    fun s' ⟨⟨hm, hz⟩, k⟩ => ⟨⟨k.2.1, k.2.2, fun r hr => k.gpr (by
+    fun s' ⟨⟨hm, hz⟩, k⟩ hy => ⟨⟨k.2.1, k.2.2, fun r hr => k.gpr (by
         simp only [bases, List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl | rfl | rfl <;> decide), k.gpr (by decide),
-        by rw [hm]; exact Frame.refl _ _⟩,
+        by rw [hm]; exact Frame.refl _ _, hy, by rw [hm]; exact Frame.refl _ _⟩,
       fun r hr => k.gpr (by
         simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide), hm, by rw [hz, e, BitVec.and_self]⟩
 
-theorem decodeOrCopy_ok {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} (hc : dChk p = true)
-    (hk : pkChk p = true) {σ s : State} (hpre : (signK p D).pre σ) (h : IM p D σ s) :
-    WP isa (decodeOrCopy P p) s (IK p D σ) := by
+theorem decodeOrCopy_ok {P : Prims} {D : Nat} (hP : PrimsOk P D SL) {p : Params} (hc : dChk p = true)
+    (hk : pkChk p = true) {σ s : State} (hpre : (signKS p D SL).pre σ) (h : IM p D SL σ s) :
+    WP isa (decodeOrCopy P p) s (IK p D SL σ) := by
   have hk' := hk
   simp only [pkChk, Bool.and_eq_true] at hk'
   obtain ⟨⟨⟨⟨⟨⟨-, -⟩, him⟩, hin⟩, -⟩, -⟩, -⟩ := hk'
@@ -978,6 +985,8 @@ leakage begins with.
 
 namespace VG.Proof.MlDsa.X86_64.Sign
 
+variable {SL : List String}
+
 open VG VG.X86_64 VG.Impl.MlDsa.X86_64.Sign
 open VG.Proof.MlKem.X86_64 (Rel2)
 open VG.Proof.MlDsa.Sign
@@ -985,15 +994,15 @@ open VG.Spec.MlDsa
 open VG.Spec.Sha3 (bytesAt)
 
 /-- Two runs, each satisfying `I` from its entry state, related by `E`. -/
-def RR (p : Params) (D : Nat) (I E : State → State → Prop) (x y : State) : Prop :=
-  Rel2 (signK p D).pre (signK p D).pub I x y ∧ E x y
+def RR (p : Params) (D : Nat) (SL : List String) (I E : State → State → Prop) (x y : State) : Prop :=
+  Rel2 (signKS p D SL).pre (signKS p D SL).pub I x y ∧ E x y
 
 section
-variable {p : Params} {D : Nat}
+variable {p : Params} {D : Nat} {SL : List String}
 
 theorem relInvE {I J E E' : State → State → Prop} {c : Prog isa}
-    (hw : ∀ σ s, (signK p D).pre σ → I σ s → WP isa c s (J σ))
-    (ht : RelCT isa (RR p D I E) c E') : RelCT isa (RR p D I E) c (RR p D J E') := by
+    (hw : ∀ σ s, (signKS p D SL).pre σ → I σ s → WP isa c s (J σ))
+    (ht : RelCT isa (RR p D SL I E) c E') : RelCT isa (RR p D SL I E) c (RR p D SL J E') := by
   intro s₁ s₂ t₁ t₂ s₁' s₂' hr e₁ e₂
   obtain ⟨ht', he⟩ := ht _ _ _ _ _ _ hr e₁ e₂
   obtain ⟨⟨σ₁, σ₂, p₁, p₂, hpub, i₁, i₂⟩, _⟩ := hr
@@ -1003,18 +1012,19 @@ theorem relInvE {I J E E' : State → State → Prop} {c : Prog isa}
   obtain ⟨-, rfl⟩ := Exec.det e₂ f₂
   exact ⟨ht', ⟨σ₁, σ₂, p₁, p₂, hpub, g₁, g₂⟩, he⟩
 
-theorem RR.mono {I I' E E' : State → State → Prop} {x y : State} (h : RR p D I E x y)
-    (hI : ∀ σ s, I σ s → I' σ s) (hE : E x y → E' x y) : RR p D I' E' x y := by
+theorem RR.mono {I I' E E' : State → State → Prop} {x y : State} (h : RR p D SL I E x y)
+    (hI : ∀ σ s, I σ s → I' σ s) (hE : E x y → E' x y) : RR p D SL I' E' x y := by
   obtain ⟨⟨σ₁, σ₂, p₁, p₂, hpub, i₁, i₂⟩, e⟩ := h
   exact ⟨⟨σ₁, σ₂, p₁, p₂, hpub, hI _ _ i₁, hI _ _ i₂⟩, hE e⟩
 
-theorem RR.lrel {I E : State → State → Prop} (hI : ∀ σ s, I σ s → St p D σ s) {x y : State}
-    (h : RR p D I E x y) : LRel D (sgR p) (sgW p) x y := by
+theorem RR.lrel {I E : State → State → Prop} (hI : ∀ σ s, I σ s → St p D SL σ s) {x y : State}
+    (h : RR p D SL I E x y) : LRel D SL (sgR p) (sgW p) x y := by
   obtain ⟨⟨σ₁, σ₂, _, _, hpub, i₁, i₂⟩, _⟩ := h
   have S₁ := hI _ _ i₁
   have S₂ := hI _ _ i₂
-  obtain ⟨h1, h2, h3, h4, h5, h6, _⟩ := hpub
-  refine ⟨S₁.lay, S₂.lay, fun b hb => ?_, by rw [S₁.top.rsp, S₂.top.rsp, h6]⟩
+  obtain ⟨h1, h2, h3, h4, h5, h6, _⟩ := hpub.1
+  refine ⟨S₁.lay, S₂.lay, fun b hb => ?_, by rw [S₁.top.rsp, S₂.top.rsp, h6],
+    fun n hn => by rw [S₁.syms, S₂.syms]; exact hpub.2 n hn⟩
   have r₁ := S₁.top.regs
   have r₂ := S₂.top.regs
   simp only [sgR, sgW, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hb
@@ -1033,13 +1043,13 @@ theorem WP.conj {c : Prog isa} {s : State} {Q₁ Q₂ : State → Prop} (h₁ : 
   exact ⟨t, _, e, q₁, q₂⟩
 
 /-- A piece that takes each run from `I` to `J` and from `s` to `s'` with
-`F s s'`, and leaks the same from runs related by `RR p D I E`, with `Q₀` of
+`F s s'`, and leaks the same from runs related by `RR p D SL I E`, with `Q₀` of
 the final states. -/
 theorem stepRR {I J E E' Q₀ F : State → State → Prop} {c : Prog isa}
-    (hw : ∀ σ s, (signK p D).pre σ → I σ s → WP isa c s fun s' => J σ s' ∧ F s s')
-    (ht : RelCT isa (RR p D I E) c Q₀)
-    (hE : ∀ x y x' y', RR p D I E x y → F x x' → F y y' → Q₀ x' y' → E' x' y') :
-    RelCT isa (RR p D I E) c (RR p D J E') := by
+    (hw : ∀ σ s, (signKS p D SL).pre σ → I σ s → WP isa c s fun s' => J σ s' ∧ F s s')
+    (ht : RelCT isa (RR p D SL I E) c Q₀)
+    (hE : ∀ x y x' y', RR p D SL I E x y → F x x' → F y y' → Q₀ x' y' → E' x' y') :
+    RelCT isa (RR p D SL I E) c (RR p D SL J E') := by
   intro s₁ s₂ t₁ t₂ s₁' s₂' hr e₁ e₂
   obtain ⟨ht', hq⟩ := ht _ _ _ _ _ _ hr e₁ e₂
   obtain ⟨⟨σ₁, σ₂, p₁, p₂, hpub, i₁, i₂⟩, he⟩ := hr
@@ -1054,16 +1064,17 @@ end
 /-! ## Runs related through their entry states -/
 
 /-- Two runs, each satisfying `I` from its entry state, the entry states related by `E`. -/
-def RS (p : Params) (D : Nat) (E I : State → State → Prop) (x y : State) : Prop :=
-  ∃ σ₁ σ₂, (signK p D).pre σ₁ ∧ (signK p D).pre σ₂ ∧ (signK p D).pub σ₁ σ₂ ∧ E σ₁ σ₂ ∧ I σ₁ x ∧ I σ₂ y
+def RS (p : Params) (D : Nat) (SL : List String) (E I : State → State → Prop) (x y : State) : Prop :=
+  ∃ σ₁ σ₂, (signKS p D SL).pre σ₁ ∧ (signKS p D SL).pre σ₂ ∧ (signKS p D SL).pub σ₁ σ₂ ∧ E σ₁ σ₂ ∧ I σ₁ x ∧ I σ₂ y
 
 section
-variable {p : Params} {D : Nat}
+variable {p : Params} {D : Nat} {SL : List String}
 
-theorem lrel_of {σ₁ σ₂ x y : State} (hpub : (signK p D).pub σ₁ σ₂) (S₁ : St p D σ₁ x) (S₂ : St p D σ₂ y) :
-    LRel D (sgR p) (sgW p) x y := by
-  obtain ⟨h1, h2, h3, h4, h5, h6, _⟩ := hpub
-  refine ⟨S₁.lay, S₂.lay, fun b hb => ?_, by rw [S₁.top.rsp, S₂.top.rsp, h6]⟩
+theorem lrel_of {σ₁ σ₂ x y : State} (hpub : (signKS p D SL).pub σ₁ σ₂) (S₁ : St p D SL σ₁ x) (S₂ : St p D SL σ₂ y) :
+    LRel D SL (sgR p) (sgW p) x y := by
+  obtain ⟨h1, h2, h3, h4, h5, h6, _⟩ := hpub.1
+  refine ⟨S₁.lay, S₂.lay, fun b hb => ?_, by rw [S₁.top.rsp, S₂.top.rsp, h6],
+    fun n hn => by rw [S₁.syms, S₂.syms]; exact hpub.2 n hn⟩
   have r₁ := S₁.top.regs
   have r₂ := S₂.top.regs
   simp only [sgR, sgW, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hb
@@ -1074,22 +1085,22 @@ theorem lrel_of {σ₁ σ₂ x y : State} (hpub : (signK p D).pub σ₁ σ₂) (
   · rw [r₁ (.rbx, .r8) (by decide), r₂ (.rbx, .r8) (by decide), h5]
   · rw [r₁ (.r14, .rcx) (by decide), r₂ (.r14, .rcx) (by decide), h4]
 
-theorem RS.lrel {E I : State → State → Prop} (hI : ∀ σ s, I σ s → St p D σ s) {x y : State}
-    (h : RS p D E I x y) : LRel D (sgR p) (sgW p) x y := by
+theorem RS.lrel {E I : State → State → Prop} (hI : ∀ σ s, I σ s → St p D SL σ s) {x y : State}
+    (h : RS p D SL E I x y) : LRel D SL (sgR p) (sgW p) x y := by
   obtain ⟨σ₁, σ₂, _, _, hpub, _, i₁, i₂⟩ := h
   exact lrel_of hpub (hI _ _ i₁) (hI _ _ i₂)
 
-theorem RS.mono {E I E' I' : State → State → Prop} {x y : State} (h : RS p D E I x y)
-    (hE : ∀ σ₁ σ₂, E σ₁ σ₂ → E' σ₁ σ₂) (hI : ∀ σ s, I σ s → I' σ s) : RS p D E' I' x y := by
+theorem RS.mono {E I E' I' : State → State → Prop} {x y : State} (h : RS p D SL E I x y)
+    (hE : ∀ σ₁ σ₂, E σ₁ σ₂ → E' σ₁ σ₂) (hI : ∀ σ s, I σ s → I' σ s) : RS p D SL E' I' x y := by
   obtain ⟨σ₁, σ₂, p₁, p₂, hpub, e, i₁, i₂⟩ := h
   exact ⟨σ₁, σ₂, p₁, p₂, hpub, hE _ _ e, hI _ _ i₁, hI _ _ i₂⟩
 
 /-- A piece that leaks the same from two runs in the layout that satisfy `T`, and takes each run from
 `I` to `J`. -/
 theorem liftL {E I J : State → State → Prop} {T : State → Prop} {c : Prog isa}
-    (hI : ∀ σ s, I σ s → St p D σ s ∧ T s) (hw : ∀ σ s, (signK p D).pre σ → I σ s → WP isa c s (J σ))
-    (ht : RelCT isa (fun x y => LRel D (sgR p) (sgW p) x y ∧ T x ∧ T y) c fun _ _ => True) :
-    RelCT isa (RS p D E I) c (RS p D E J) := by
+    (hI : ∀ σ s, I σ s → St p D SL σ s ∧ T s) (hw : ∀ σ s, (signKS p D SL).pre σ → I σ s → WP isa c s (J σ))
+    (ht : RelCT isa (fun x y => LRel D SL (sgR p) (sgW p) x y ∧ T x ∧ T y) c fun _ _ => True) :
+    RelCT isa (RS p D SL E I) c (RS p D SL E J) := by
   intro s₁ s₂ t₁ t₂ s₁' s₂' hr e₁ e₂
   obtain ⟨σ₁, σ₂, p₁, p₂, hpub, he, i₁, i₂⟩ := hr
   obtain ⟨ht', -⟩ := ht _ _ _ _ _ _ ⟨lrel_of hpub (hI _ _ i₁).1 (hI _ _ i₂).1, (hI _ _ i₁).2, (hI _ _ i₂).2⟩ e₁ e₂
@@ -1101,8 +1112,8 @@ theorem liftL {E I J : State → State → Prop} {T : State → Prop} {c : Prog 
 
 /-- `liftL`, with a leakage proof from any relation the runs satisfy. -/
 theorem liftR {E I J : State → State → Prop} {c : Prog isa}
-    (hw : ∀ σ s, (signK p D).pre σ → I σ s → WP isa c s (J σ))
-    (ht : RelCT isa (RS p D E I) c fun _ _ => True) : RelCT isa (RS p D E I) c (RS p D E J) := by
+    (hw : ∀ σ s, (signKS p D SL).pre σ → I σ s → WP isa c s (J σ))
+    (ht : RelCT isa (RS p D SL E I) c fun _ _ => True) : RelCT isa (RS p D SL E I) c (RS p D SL E J) := by
   intro s₁ s₂ t₁ t₂ s₁' s₂' hr e₁ e₂
   obtain ⟨ht', -⟩ := ht _ _ _ _ _ _ hr e₁ e₂
   obtain ⟨σ₁, σ₂, p₁, p₂, hpub, he, i₁, i₂⟩ := hr
@@ -1115,10 +1126,10 @@ theorem liftR {E I J : State → State → Prop} {c : Prog isa}
 /-- Two pieces in sequence, from two runs in the layout that satisfy `I` (what the first piece needs),
 each piece leaving the layout. -/
 theorem seqL {c₁ c₂ : Prog isa} {I J : State → Prop} {Q : State → State → Prop}
-    (h₁ : RelCT isa (fun x y => LRel D (sgR p) (sgW p) x y ∧ I x ∧ I y) c₁ fun _ _ => True)
-    (w₁ : ∀ x, Lay D (sgR p) (sgW p) x → I x → WP isa c₁ x fun x' => (∃ W, PostB D x x' W) ∧ J x')
-    (h₂ : RelCT isa (fun x y => LRel D (sgR p) (sgW p) x y ∧ J x ∧ J y) c₂ Q) :
-    RelCT isa (fun x y => LRel D (sgR p) (sgW p) x y ∧ I x ∧ I y) (.seq c₁ c₂) Q :=
+    (h₁ : RelCT isa (fun x y => LRel D SL (sgR p) (sgW p) x y ∧ I x ∧ I y) c₁ fun _ _ => True)
+    (w₁ : ∀ x, Lay D SL (sgR p) (sgW p) x → I x → WP isa c₁ x fun x' => (∃ W, PostB D x x' W) ∧ J x')
+    (h₂ : RelCT isa (fun x y => LRel D SL (sgR p) (sgW p) x y ∧ J x ∧ J y) c₂ Q) :
+    RelCT isa (fun x y => LRel D SL (sgR p) (sgW p) x y ∧ I x ∧ I y) (.seq c₁ c₂) Q :=
   RelCT.seq (VG.Proof.MlKem.X86_64.RelCT.postDep h₁ (F := fun x x' => (∃ W, PostB D x x' W) ∧ J x')
     (fun x y h => ⟨w₁ x h.1.lx h.2.1, w₁ y h.1.ly h.2.2⟩)
     fun _ _ _ _ h ⟨⟨_, hx⟩, jx⟩ ⟨⟨_, hy⟩, jy⟩ => ⟨h.1.post (sgB_bases p) hx hy, jx, jy⟩) h₂
@@ -1144,9 +1155,9 @@ theorem leak_rho {p : Params} {sk₁ sk₂ μ₁ μ₂ r₁ r₂ : List Byte} (h
   refine leakBytes_inj (List.append_inj h ?_).1
   rw [leakBytes_length, leakBytes_length, List.length_take, List.length_take, h1, h2]
 
-theorem pub_rho {p : Params} {D : Nat} {σ₁ σ₂ : State} (h : (signK p D).pub σ₁ σ₂) :
+theorem pub_rho {p : Params} {D : Nat} {σ₁ σ₂ : State} (h : (signKS p D SL).pub σ₁ σ₂) :
     rhoOf p σ₁ = rhoOf p σ₂ :=
-  leak_rho (VG.Proof.MlKem.bytesAt_length _ _ _) (VG.Proof.MlKem.bytesAt_length _ _ _) h.2.2.2.2.2.2.1
+  leak_rho (VG.Proof.MlKem.bytesAt_length _ _ _) (VG.Proof.MlKem.bytesAt_length _ _ _) h.1.2.2.2.2.2.2.1
 
 end VG.Proof.MlDsa.X86_64.Sign
 
@@ -1166,45 +1177,47 @@ polynomial is reduced (`dec_tr`); so two runs agree on what decoding leaks
 
 namespace VG.Proof.MlDsa.X86_64.Sign
 
+variable {SL : List String}
+
 open VG VG.X86_64 VG.Impl.MlDsa.X86_64.Sign
 open VG.Proof.MlDsa.Sign
 open VG.Spec.MlDsa
 open VG.Spec.Sha3 (bytesAt)
 
 /-- A piece that leaks only its pointers, from runs in the layout. -/
-theorem liftT {p : Params} {D : Nat} {E I J : State → State → Prop} {c : Prog isa}
-    (hI : ∀ σ s, I σ s → St p D σ s) (hw : ∀ σ s, (signK p D).pre σ → I σ s → WP isa c s (J σ))
-    (ht : RelCT isa (LRel D (sgR p) (sgW p)) c fun _ _ => True) : RelCT isa (RS p D E I) c (RS p D E J) :=
+theorem liftT {p : Params} {D : Nat} {SL : List String} {E I J : State → State → Prop} {c : Prog isa}
+    (hI : ∀ σ s, I σ s → St p D SL σ s) (hw : ∀ σ s, (signKS p D SL).pre σ → I σ s → WP isa c s (J σ))
+    (ht : RelCT isa (LRel D SL (sgR p) (sgW p)) c fun _ _ => True) : RelCT isa (RS p D SL E I) c (RS p D SL E J) :=
   liftL (T := fun _ => True) (fun σ s h => ⟨hI σ s h, trivial⟩) hw (RelCT.mono ht (fun _ _ h => h.1) fun _ _ h => h)
 
-theorem dec_tr {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} {a b c : Nat} {src : Ptr} {len x y j : Nat}
+theorem dec_tr {P : Prims} {D : Nat} {SL : List String} (hP : PrimsOk P D SL) {p : Params} {a b c : Nat} {src : Ptr} {len x y j : Nat}
     (hp : (x, y) ∈ bitPackParams) (hl : len = 32 * bitlen (x + y)) (hc : decChk p a b c src len j = true) :
-    RelCT isa (LRel D (sgR p) (sgW p)) (.seq (bitUnpackAt P src len x y (pS j)) (nttAt P (pS j))) fun _ _ => True := by
+    RelCT isa (LRel D SL (sgR p) (sgW p)) (.seq (bitUnpackAt P src len x y (pS j)) (nttAt P (pS j))) fun _ _ => True := by
   simp only [decChk, Bool.and_eq_true] at hc
   obtain ⟨⟨⟨h1, h2⟩, _⟩, _⟩ := hc
   refine RelCT.mono (seqL (p := p) (I := fun _ => True) (J := fun s => Reduced s.mem (pa s (pS j)))
     (RelCT.mono (bupAt_tr hP hp hl h1) (fun _ _ h => h.1) fun _ _ h => h)
     (fun s L _ => WP.mono (bupAt_ok hP L hp hl h1) fun s' ⟨hP', _, hq⟩ =>
       ⟨⟨_, hP'⟩, by rw [hP'.pa (pS_bases _)]; exact hq.1⟩)
-    (ipAt_tr (t := ntt) hP.ntt h2)) (fun _ _ h => ⟨h, trivial, trivial⟩) fun _ _ h => h
+    (ipAt_tr (t := ntt) hP.ntt hP.sl.ntt h2)) (fun _ _ h => ⟨h, trivial, trivial⟩) fun _ _ h => h
 
-theorem decode_tr {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} (hc : dChk p = true) {E : State → State → Prop} :
-    RelCT isa (RS p D E (IM p D)) (decode P p) (RS p D E (IK p D)) := by
+theorem decode_tr {P : Prims} {D : Nat} (hP : PrimsOk P D SL) {p : Params} (hc : dChk p = true) {E : State → State → Prop} :
+    RelCT isa (RS p D SL E (IM p D SL)) (decode P p) (RS p D SL E (IK p D SL)) := by
   have hs := dChk_spec hc
   unfold decode
-  refine RelCT.seq (R := RS p D E fun σ s => ID p D σ p.ℓ 0 0 s) ?_ (RelCT.seq (R := RS p D E fun σ s => ID p D σ p.ℓ p.k 0 s)
-    ?_ (RelCT.seq (R := RS p D E fun σ s => ID p D σ p.ℓ p.k p.k s) ?_ ?_))
-  · refine RelCT.mono (seqR_tr (R := fun r => RS p D E fun σ s => ID p D σ r 0 0 s) p.ℓ 0 fun r _ hr =>
+  refine RelCT.seq (R := RS p D SL E fun σ s => ID p D SL σ p.ℓ 0 0 s) ?_ (RelCT.seq (R := RS p D SL E fun σ s => ID p D SL σ p.ℓ p.k 0 s)
+    ?_ (RelCT.seq (R := RS p D SL E fun σ s => ID p D SL σ p.ℓ p.k p.k s) ?_ ?_))
+  · refine RelCT.mono (seqR_tr (R := fun r => RS p D SL E fun σ s => ID p D SL σ r 0 0 s) p.ℓ 0 fun r _ hr =>
       liftT (fun _ _ h => h.im.st) (fun _ _ _ h => decS1_ok hP hc (by omega_using [hr]) h)
         (dec_tr hP hs.2.2.2.2.2.2.1 (sLen_eq p) (hs.1 r (by omega_using [hr])).1)) (fun x y h => h.mono (fun _ _ h => h) fun _ _ h =>
           ⟨h, fun _ h => absurd h (Nat.not_lt_zero _), fun _ h => absurd h (Nat.not_lt_zero _),
             fun _ h => absurd h (Nat.not_lt_zero _)⟩) fun x y h => by rwa [Nat.zero_add] at h
-  · refine RelCT.mono (seqR_tr (R := fun i => RS p D E fun σ s => ID p D σ p.ℓ i 0 s) p.k 0 fun i _ hi =>
+  · refine RelCT.mono (seqR_tr (R := fun i => RS p D SL E fun σ s => ID p D SL σ p.ℓ i 0 s) p.k 0 fun i _ hi =>
       liftT (fun _ _ h => h.im.st) (fun _ _ _ h => decS2_ok hP hc (by omega_using [hi]) h)
         (dec_tr hP hs.2.2.2.2.2.2.1 (sLen_eq p) (hs.2.1 i (by omega_using [hi])).1)) (fun x y h => h.mono (fun _ _ h => h) fun _ _ h =>
           ⟨h.im, h.s1, fun _ h => absurd h (Nat.not_lt_zero _), fun _ h => absurd h (Nat.not_lt_zero _)⟩)
       fun x y h => by rwa [Nat.zero_add] at h
-  · refine RelCT.mono (seqR_tr (R := fun i => RS p D E fun σ s => ID p D σ p.ℓ p.k i s) p.k 0 fun i _ hi =>
+  · refine RelCT.mono (seqR_tr (R := fun i => RS p D SL E fun σ s => ID p D SL σ p.ℓ p.k i s) p.k 0 fun i _ hi =>
       liftT (fun _ _ h => h.im.st) (fun _ _ _ h => decT0_ok hP hc (by omega_using [hi]) h)
         (dec_tr hP (by decide) (by decide) (hs.2.2.1 i (by omega_using [hi])).1)) (fun x y h => h.mono (fun _ _ h => h) fun _ _ h =>
           ⟨h.im, h.s1, h.s2, fun _ h => absurd h (Nat.not_lt_zero _)⟩) fun x y h => by rwa [Nat.zero_add] at h
@@ -1212,17 +1225,17 @@ theorem decode_tr {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} (hc : dC
       (RelCT.mono (shake_tr (sgB_bases p) hP.hD hs.2.2.2.1) (fun _ _ h => h) fun _ _ _ => trivial)
 
 /-- Two runs agree on the flag: whether they copy a prepared key or decode. -/
-theorem decodeOrCopy_tr {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} (hc : dChk p = true)
+theorem decodeOrCopy_tr {P : Prims} {D : Nat} (hP : PrimsOk P D SL) {p : Params} (hc : dChk p = true)
     (hk : pkChk p = true) {E : State → State → Prop} :
-    RelCT isa (RS p D E (IM p D)) (decodeOrCopy P p) (RS p D E (IK p D)) := by
+    RelCT isa (RS p D SL E (IM p D SL)) (decodeOrCopy P p) (RS p D SL E (IK p D SL)) := by
   have hk' := hk
   simp only [pkChk, Bool.and_eq_true] at hk'
   obtain ⟨⟨⟨⟨⟨⟨hcp, -⟩, him⟩, hin⟩, -⟩, -⟩, -⟩ := hk'
   obtain ⟨-, -, -, h0, hn, hd, hs, hsr⟩ := copyChk_spec hcp
   have hs' := dChk_spec hc
   unfold decodeOrCopy
-  let J : State → State → Prop := fun σ s => IM p D σ s ∧ s.zf = some (σ.gpr .r9 == 0)
-  refine RelCT.seq (R := RS p D E J) (liftR (fun σ s _ h => WP.mono
+  let J : State → State → Prop := fun σ s => IM p D SL σ s ∧ s.zf = some (σ.gpr .r9 == 0)
+  refine RelCT.seq (R := RS p D SL E J) (liftR (fun σ s _ h => WP.mono
       (testFlag_ok (D := D) h.st.top (h.st.lay.iR hin)) fun s1 ⟨hP1, _, _, hz⟩ => ⟨h.step hP1 him, hz⟩)
     (block_tr (rs := [.rbx]) rfl fun x y h r hr => by
       simp only [List.mem_singleton] at hr; subst hr
@@ -1230,18 +1243,18 @@ theorem decodeOrCopy_tr {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} (h
   refine RelCT.ite (fun x y h => ?_) ?_ ?_
   · obtain ⟨σ₁, σ₂, _, _, hpub, _, ⟨_, z₁⟩, ⟨_, z₂⟩⟩ := h
     show x.zf.map (!·) = y.zf.map (!·)
-    rw [z₁, z₂, hpub.2.2.2.2.2.2.2]
-  · refine RelCT.seq (R := RS p D E fun σ s => ID p D σ p.ℓ p.k p.k s)
-      (RelCT.mono (liftR (I := fun σ s => IM p D σ s ∧ σ.gpr .r9 ≠ 0)
+    rw [z₁, z₂, hpub.1.2.2.2.2.2.2.2]
+  · refine RelCT.seq (R := RS p D SL E fun σ s => ID p D SL σ p.ℓ p.k p.k s)
+      (RelCT.mono (liftR (I := fun σ s => IM p D SL σ s ∧ σ.gpr .r9 ≠ 0)
         (fun σ s hpre h => copyKey_ok hpre h.2 hP.hD' hk h.1)
-        (RelCT.mono (copy_tr h0 hn hd hs hsr (P := fun x y => LRel D (sgR p) (sgW p) x y) fun x y h =>
+        (RelCT.mono (copy_tr h0 hn hd hs hsr (P := fun x y => LRel D SL (sgR p) (sgW p) x y) fun x y h =>
             ⟨h.regs (.rbx, scrLen p) (by simp [sgR, sgW]), h.regs (.rbp, p.skLen) (by simp [sgR, sgW])⟩)
           (fun x y h => h.lrel fun _ _ h => h.1.st) fun _ _ _ => trivial))
         (fun x y ⟨⟨σ₁, σ₂, p₁, p₂, hpub, he, ⟨i₁, z₁⟩, ⟨i₂, z₂⟩⟩, hb⟩ => ?_) fun _ _ h => h) ?_
     · have hb' : x.zf.map (!·) = some true := hb
       rw [z₁] at hb'
       have f₁ : σ₁.gpr .r9 ≠ 0 := by simpa using hb'
-      exact ⟨σ₁, σ₂, p₁, p₂, hpub, he, ⟨i₁, f₁⟩, ⟨i₂, hpub.2.2.2.2.2.2.2 ▸ f₁⟩⟩
+      exact ⟨σ₁, σ₂, p₁, p₂, hpub, he, ⟨i₁, f₁⟩, ⟨i₂, hpub.1.2.2.2.2.2.2.2 ▸ f₁⟩⟩
     · exact liftT (fun _ _ h => h.im.st) (fun _ _ _ h => rpp_ok hP hc h)
         (RelCT.mono (shake_tr (sgB_bases p) hP.hD hs'.2.2.2.1) (fun _ _ h => h) fun _ _ _ => trivial)
   · exact RelCT.mono (decode_tr hP hc) (fun x y ⟨h, _⟩ => h.mono (fun _ _ h => h) fun _ _ h => h.1)

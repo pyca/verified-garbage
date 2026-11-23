@@ -35,12 +35,16 @@ structure Comp (m mc : Prog isa → Bool) : Prop where
   loop : ∀ b c, m (.loop b c) = m b
   call : ∀ n b, m (.call n b) = mc b
   nil : mc (.block []) = true
+  /-- An indirect call of a function whose `mc` holds is as one of empty code. -/
+  icall : ∀ i n n' b nx, mc b = true → m (.icall i n b nx) = m (.icall i n' (.block []) nx)
 
 theorem Comp.ctlC : Comp ctlC ctlOk :=
-  ⟨fun _ _ => rfl, fun _ _ _ => rfl, fun _ _ => rfl, fun _ _ => rfl, rfl⟩
+  ⟨fun _ _ => rfl, fun _ _ _ => rfl, fun _ _ => rfl, fun _ _ => rfl, rfl,
+    fun _ _ _ _ _ h => by rw [X86_64.ctlC, X86_64.ctlC, h]; rfl⟩
 
 theorem Comp.all (q : Instr → Bool) : Comp (Code.allInstrs q) (Code.allInstrs q) :=
-  ⟨fun _ _ => rfl, fun _ _ _ => rfl, fun _ _ => rfl, fun _ _ => rfl, rfl⟩
+  ⟨fun _ _ => rfl, fun _ _ _ => rfl, fun _ _ => rfl, fun _ _ => rfl, rfl,
+    fun _ _ _ _ _ h => by simp only [Code.allInstrs, h]⟩
 
 theorem Code.allInstrs_of_all {I C : Type} {q : I → Bool} {c : Code I C} (h : c.all q = true) :
     c.allInstrs q = true := by
@@ -67,6 +71,22 @@ theorem Same.loop {b b' : Prog isa} {c : isa.Cond} (hb : Same m b b') : Same m (
 
 theorem Same.call {c : Prog isa} (hc : mc c = true) (n n' : String) : Same m (.call n c) (.call n' (.block [])) := by
   unfold Same; rw [hm.call, hm.call, hc, hm.nil]
+
+theorem Same.icall {c : Prog isa} (hc : mc c = true) (i : Instr) (n n' : String) (nx : Prog isa) :
+    Same m (.icall i n c nx) (.icall i n' (.block []) nx) :=
+  hm.icall i n n' c nx hc
+
+/-- A call of a variant callee (`callV`), by its address or directly. -/
+theorem Same.callV {c : Prog isa} (hc : mc c = true) (v : Bool) (i : Nat) (n n' : String) (as : List Impl.MlDsa.X86_64.Sign.Arg) :
+    Same m (Impl.MlDsa.X86_64.Sign.callV v i n c as) (Impl.MlDsa.X86_64.Sign.callV v i n' (.block []) as) := by
+  cases v
+  · exact Same.seq hm rfl (Same.call hm hc n n')
+  · exact Same.seq hm rfl (Same.icall hm hc _ n n' _)
+
+theorem Same.callV' {c c' : Prog isa} (hc : mc c = true) (he : c' = .block []) (v : Bool) (i : Nat)
+    (n n' : String) (as : List Impl.MlDsa.X86_64.Sign.Arg) :
+    Same m (Impl.MlDsa.X86_64.Sign.callV v i n c as) (Impl.MlDsa.X86_64.Sign.callV v i n' c' as) :=
+  he ▸ Same.callV hm hc v i n n' as
 
 omit hm in
 theorem Same.cond {c : Bool} {a a' b b' : Prog isa} (ha : Same m a a') (hb : Same m b b') :
@@ -105,6 +125,7 @@ hypotheses state, and the same code `c'` but for empty functions in their
 place: from the structure of the code. -/
 tactic_template "same_tac " hm:term : tactic =>
   `(tactic| repeat' (first
+    | (apply Same.callV $hm; assumption)
     | (apply Same.call $hm; assumption)
     | apply Same.seq $hm
     | apply Same.ite $hm

@@ -244,3 +244,31 @@ pub(crate) mod vg_aes_expand_key_scratch;
 #[rustfmt::skip]
 #[path = "internal/vg_aes_expand_key_scratch_aes.rs"]
 pub(crate) mod vg_aes_expand_key_scratch_aes;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_init_core.rs"]
+pub(crate) mod vg_aes_gcm_init_core;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_stream_aad_core.rs"]
+pub(crate) mod vg_aes_gcm_stream_aad_core;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_stream_decrypt_core.rs"]
+pub(crate) mod vg_aes_gcm_stream_decrypt_core;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_stream_encrypt_core.rs"]
+pub(crate) mod vg_aes_gcm_stream_encrypt_core;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_stream_finish_core.rs"]
+pub(crate) mod vg_aes_gcm_stream_finish_core;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_stream_init_core.rs"]
+pub(crate) mod vg_aes_gcm_stream_init_core;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_stream_verify_core.rs"]
+pub(crate) mod vg_aes_gcm_stream_verify_core;

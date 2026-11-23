@@ -9,9 +9,7 @@ public import VerifiedGarbage.Proof.MlKem.X86.DecodeDecompress
 import VerifiedGarbage.Proof.MlKem.X86.TopCall
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.MlKem.X86.Unpack
-import VerifiedGarbage.Impl.MlKem.X86.Ntt
-import VerifiedGarbage.Proof.MlKem.X86.Leaf
+import VerifiedGarbage.Proof.MlKem.X86.Table
 public import VerifiedGarbage.Proof.MlKem.X86.TopKeep
 public import VerifiedGarbage.Impl.MlKem.X86.Kem
 public import VerifiedGarbage.Proof.MlKem.KPke
@@ -38,6 +36,7 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.X86.Lit
 import VerifiedGarbage.Proof.Framework.X86.Mmx
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.MlKem.X86.NttSetup
 import VerifiedGarbage.Proof.MlKem.X86.Red
 import VerifiedGarbage.Proof.MlKem.X86.TopLocal
 import VerifiedGarbage.Proof.Sha512.Spec

@@ -288,4 +288,42 @@ theorem jacMixedHeadN_run {F : Type _} [Lean.Grind.CommRing F] (e : Nat → F) :
     let r := runOps jacMixedHeadN (jacMixedEnv e)
     r 3 = e 14*(e 13*e 13)-e 11 ∧ r 5 = e 15*e 13*(e 13*e 13)-e 12 := ⟨rfl,rfl⟩
 
+/-! ### The additions' shared end
+
+`jacEndTail`, the end both x86-64 additions call, reads `Z` from `o.z`: the
+mixed addition copies `Z1` there with `X1` and `Y1` (`jacMixedInitZ`). -/
+
+def jacEndTailN : List FOp := jacEndTail ⟨9,10,0,1,2,3,4,5⟩ ⟨11,12,13⟩ ⟨14,15,16⟩ ⟨6,7,8⟩
+
+theorem jacEndTail_eq (S : RcbSlots) (p q o : Pt) :
+    jacEndTail S p q o = ofN jacEndTailN S p q o := rfl
+
+/-- The mixed header's three initial copies, `Z1` to `o.z` too. -/
+def jacMixedEnvZ {F : Type _} (e : Nat → F) : Nat → F :=
+  Function.update (jacMixedEnv e) 8 (jacMixedEnv e 13)
+
+theorem jacMixedZN_run {F : Type _} [Lean.Grind.CommRing F] (e : Nat → F) :
+    let r := runOps (jacMixedHeadN ++ jacEndTailN) (jacMixedEnvZ e)
+    (r 6,r 7,r 8) = jacAddF (e 11) (e 12) (e 13) (e 14) (e 15) 1 := by
+  simp only [jacAddF, Lean.Grind.Semiring.mul_one]
+  rfl
+
+theorem jacMixedHeadZN_run {F : Type _} [Lean.Grind.CommRing F] (e : Nat → F) :
+    let r := runOps jacMixedHeadN (jacMixedEnvZ e)
+    r 3 = e 14*(e 13*e 13)-e 11 ∧ r 5 = e 15*e 13*(e 13*e 13)-e 12 := ⟨rfl,rfl⟩
+
+/-- `jacMixedInit`, and `p.z` copied to `o.z`. -/
+def jacMixedInitZ {F : Type _} (S : RcbSlots) (p o : Pt) (E : Nat → F) : Nat → F :=
+  Function.update (jacMixedInit S p E) o.z (jacMixedInit S p E p.z)
+
+theorem jacMixedInitZ_rename {F : Type _} {S : RcbSlots} {p q o : Pt}
+    (hA : RcbApart S p q o) (E : Nat → F) :
+    (fun i => jacMixedInitZ S p o E (rcbσ S p q o i)) = jacMixedEnvZ (fun i => E (rcbσ S p q o i)) := by
+  unfold jacMixedInitZ jacMixedEnvZ
+  change (fun i => Function.update (jacMixedInit S p E) (rcbσ S p q o 8)
+    (jacMixedInit S p E (rcbσ S p q o 13)) (rcbσ S p q o i)) = _
+  have h13 : jacMixedInit S p E (rcbσ S p q o 13) = jacMixedEnv (fun i => E (rcbσ S p q o i)) 13 :=
+    congrFun (jacMixedInit_rename hA E) 13
+  rw [update_rcbσ hA _ _ (by decide), jacMixedInit_rename hA, h13]
+
 end VG.Proof.Weierstrass

@@ -43,6 +43,16 @@ def publicJoint : Joint.Cfg :=
 def publicJointAdx : Joint.Cfg :=
   {publicJoint with K := p384vx.winCfg Impl.Ecdh.X86_64.PX Impl.Ecdh.X86_64.PY Impl.Ecdh.X86_64.BP}
 
+/-- `publicJoint` for the proofs: the additions' calls run the end of the
+addition inline (`Joint.Cfg.flat`), the code of `publicJoint` with its calls
+inlined at every depth. -/
+def publicJointF : Joint.Cfg := { publicJoint with flat := true }
+
+/-- `publicJointAdx` for the proofs: the additions' calls run the end of the
+addition inline (`Joint.Cfg.flat`), the code of `publicJointAdx` with its calls
+inlined at every depth. -/
+def publicJointAdxF : Joint.Cfg := { publicJointAdx with flat := true }
+
 /-- The joint loop's doubler: in place (`doubleIn`), with no copy from a
 temporary point. -/
 def jointDouble (K : WinCfg) : Prog isa := doubleIn K.M K.S K.R

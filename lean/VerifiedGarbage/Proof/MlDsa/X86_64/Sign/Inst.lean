@@ -63,9 +63,11 @@ def prims : Prims where
   rej4 := Impl.MlDsa.X86_64.Sample.Rej4.rejNTT4
   expandMask4 := Impl.MlDsa.X86_64.Sample.Mask4.expandMask4
 
-/-- The primitives, with the polynomial arithmetic of `B`. -/
-def primsWith (B : Impl.MlDsa.X86_64.Arith.Backend) : Prims :=
+/-- The primitives, with the polynomial arithmetic of `B`, called by their
+addresses if `vs` (`Prims.viaSlots`). -/
+def primsWith (B : Impl.MlDsa.X86_64.Arith.Backend) (vs : Bool := false) : Prims :=
   { prims with
+    viaSlots := vs
     ntt := B.ntt
     invNtt := B.invNtt
     mul := B.mul
@@ -143,8 +145,10 @@ def calleeOf {k : Nat → Contract isa} {c : Prog isa} (h : FnOk k c) : Callee k
   ⟨0, by decide, h.ver, h.nosp, h.mx, by have := h.depth; unfold signStack; omega_using [this]⟩
 
 /-- The primitives, with the polynomial arithmetic of `v`, satisfy what the
-proofs of signing need of them. -/
-def prims_okWith (v : ArithImpl) : PrimsOk (primsWith v.code) signStack where
+proofs of signing need of them, with the variant's callees named `SL`. -/
+def prims_okWithS (v : ArithImpl) (vs : Bool) (SL : List String) (hsl : SlotsOk (primsWith v.code vs) SL) :
+    PrimsOk (primsWith v.code vs) signStack SL where
+  sl := hsl
   ntt := calleeOf v.ok.ntt
   invNtt := calleeOf v.ok.invNtt
   mul := calleeOf v.ok.mul
@@ -204,5 +208,23 @@ def prims_okWith (v : ArithImpl) : PrimsOk (primsWith v.code) signStack where
     · rw [ifn hf] at h1; exact absurd h1.symm one_ne_zero32
   hD := by decide
   hD' := by decide
+
+/-- The primitives, with the polynomial arithmetic of `v`, called directly. -/
+def prims_okWith (v : ArithImpl) : PrimsOk (primsWith v.code) signStack [] :=
+  prims_okWithS v false [] fun _ _ h => Bool.noConfusion h
+
+/-- The callees named for the parameter set's `ℓ` are those the slots hold. -/
+theorem slotNames_ok (P : Prims) (ℓ : Nat) : SlotsOk P (slotNames P ℓ) := fun i hi _ =>
+  match i, hi with
+  | 0, _ => rfl
+  | 1, _ => rfl
+  | 2, h => absurd rfl h
+  | _ + 3, _ => rfl
+
+/-- The primitives, with the polynomial arithmetic of `v`, called by their
+addresses, which the slots hold for the parameter set's `ℓ`. -/
+def prims_okWithV (v : ArithImpl) (ℓ : Nat) :
+    PrimsOk (primsWith v.code true) signStack (slotNames (primsWith v.code true) ℓ) :=
+  prims_okWithS v true _ (slotNames_ok _ ℓ)
 
 end VG.Proof.MlDsa.X86_64.Sign

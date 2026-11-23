@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
 public import VerifiedGarbage.Proof.Framework.X86_64.Abi
+public import VerifiedGarbage.Proof.Framework.X86_64.CallInlineN
 
 /-!
 # ECDSA verification on x86-64: checks of every instruction, on the code without its displacements
@@ -87,5 +88,31 @@ theorem Code.rspMxcsr_of_erase {c : Prog isa}
 /-- `InlineOk c`, from that of `Code.erase c`. -/
 theorem Code.inlineOk_of_erase {c : Prog isa} (h : (Code.erase c).InlineOk = true) : c.InlineOk = true := by
   rwa [Code.InlineOk_erase] at h
+
+theorem Code.OkN_erase (c : Prog isa) : ∀ (d : Nat) (inner : Bool),
+    (Code.erase c).OkN [] d inner = c.OkN [] d inner := by
+  induction c with
+  | icall => intro d inner; rfl
+  | block is =>
+    intro d inner
+    show KList.all (KList.map Instr.erase is) _ = KList.all is _
+    rw [KList.map_eq, KList.all_eq, KList.all_eq, List.all_map]
+    cases inner
+    · exact congrArg is.all (funext fun i => congrArg (!·) (Instr.clobbers_erase i .rsp))
+    · exact congrArg is.all (funext fun i => Instr.rspFree_erase i)
+  | seq a b iha ihb => intro d inner; exact erase_band_congr (iha d inner) (ihb d inner)
+  | ite _ t e iht ihe => intro d inner; exact erase_band_congr (iht d inner) (ihe d inner)
+  | loop b _ ih => intro d inner; exact ih d inner
+  | call _ b ih =>
+    intro d inner
+    cases d with
+    | zero => rfl
+    | succ d => exact ih d true
+  | frame => intro d inner; cases d <;> rfl
+
+/-- `InlineOkN d c`, from that of `Code.erase c`. -/
+theorem Code.inlineOkN_of_erase {c : Prog isa} {d : Nat} (h : (Code.erase c).InlineOkN d = true) :
+    c.InlineOkN d = true := by
+  rwa [Code.InlineOkN, Code.OkN_erase] at h
 
 end VG.X86_64

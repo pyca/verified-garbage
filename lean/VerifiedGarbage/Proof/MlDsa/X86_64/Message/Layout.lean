@@ -15,9 +15,9 @@ import VerifiedGarbage.Proof.Framework.X86_64.Spill
 # ML-DSA on x86-64, `sign_message` and `verify_message`: where everything is
 
 Untrusted: everything here is checked by Lean. The function's buffers and
-the 112 bytes of stack below its return address, from `B` up (`Lay`): the
-frame (72 bytes, from `SP = B + 32`, `rsp` between its push and pop) and the
-32 bytes below it that the calls use. `X` is the 1 KiB of `scratch` after
+the 224 bytes of stack below its return address, from `B` up (`Lay`): the
+frame (72 bytes, from `SP = B + 152`, `rsp` between its push and pop) and the
+152 bytes below it that the calls use. `X` is the 1 KiB of `scratch` after
 the working space of the function on `μ`. `Ctx` is what holds between the
 frame's setting of the formatted message's two bytes and its pop: the
 permissions, `rsp`, the callee-saved registers, the arguments in the frame,
@@ -70,7 +70,7 @@ theorem ne_cs {r d : Reg} (hr : r ∈ calleeSaved) (hd : d ∉ calleeSaved) : r 
 
 /-! ## The layout -/
 
-/-- The buffers, the lowest byte of the stack used (`rsp - 112` on entry),
+/-- The buffers, the lowest byte of the stack used (`rsp - 224` on entry),
 the offset `E` of the 1 KiB `X` in `scratch`, and the permissions on entry. -/
 structure Lay where
   B : Addr
@@ -86,17 +86,19 @@ structure Lay where
   E : Nat
   rd : List Region
   wr : List Region
+  /-- The addresses of the functions the callee calls, which both runs agree on. -/
+  nsy : List Addr := []
 
 namespace Lay
 
 variable (L : Lay)
 
 /-- `rsp` between the frame's push and pop. -/
-abbrev SP : Addr := L.B + BitVec.ofNat 64 40
+abbrev SP : Addr := L.B + BitVec.ofNat 64 152
 /-- The frame. -/
 abbrev FR : Region := ⟨L.SP, 72⟩
-/-- The stack used: the frame and the 40 bytes below it. -/
-abbrev STK : Region := ⟨L.B, 112⟩
+/-- The stack used: the frame and the 152 bytes below it. -/
+abbrev STK : Region := ⟨L.B, 224⟩
 /-- The 1 KiB of the external function in `scratch`. -/
 abbrev X : Addr := L.scr + BitVec.ofNat 64 L.E
 abbrev XS : Region := ⟨L.X, 1024⟩
@@ -113,7 +115,7 @@ structure Ok : Prop where
   ctxLt : L.ctxLen.toNat < 256
   hE : L.E + 1024 < 2 ^ 31
   hKey : 128 ≤ L.keyLen ∧ L.keyLen < 2 ^ 31
-  nB : L.B.toNat + 112 < 2 ^ 64
+  nB : L.B.toNat + 224 < 2 ^ 64
   inX : ∃ R ∈ L.wr, Within L.XS R
   inKey : L.KEY ∈ L.rd
   inMsg : L.MSG ∈ L.rd
@@ -136,11 +138,11 @@ namespace Lay.Ok
 
 variable {L : Lay}
 
-theorem stk_x (h : L.Ok) {d n e k : Nat} (h₁ : d + n ≤ 112) (h₂ : e + k ≤ 1024) :
+theorem stk_x (h : L.Ok) {d n e k : Nat} (h₁ : d + n ≤ 224) (h₂ : e + k ≤ 1024) :
     Region.Disjoint ⟨L.B + BitVec.ofNat 64 d, n⟩ ⟨L.X + BitVec.ofNat 64 e, k⟩ :=
   (h.kX.sub_left (Offset.sub_base _ h₁)).sub_right (Offset.sub_base _ h₂)
 
-theorem stk_r (_h : L.Ok) {r : Region} (hr : L.STK.Disjoint r) {d n : Nat} (h₁ : d + n ≤ 112) :
+theorem stk_r (_h : L.Ok) {r : Region} (hr : L.STK.Disjoint r) {d n : Nat} (h₁ : d + n ≤ 224) :
     Region.Disjoint ⟨L.B + BitVec.ofNat 64 d, n⟩ r :=
   hr.sub_left (Offset.sub_base _ h₁)
 
@@ -150,22 +152,28 @@ theorem x_r (_h : L.Ok) {r : Region} (hr : L.XS.Disjoint r) {e k : Nat} (h₂ : 
 
 end Lay.Ok
 
-/-- `B + 40 - 8 = B + 32`. -/
-theorem sp_sub8 (B : Addr) : B + BitVec.ofNat 64 40 - 8 = B + BitVec.ofNat 64 32 := by
+/-- `B + 152 - 8 = B + 144`. -/
+theorem sp_sub8 (B : Addr) : B + BitVec.ofNat 64 152 - 8 = B + BitVec.ofNat 64 144 := by
   bv_omega
 
-/-- The stack a call from `rsp = B + 40` uses. -/
-theorem below_call_sub (B : Addr) {m : Nat} (hm : m ≤ 40) :
-    Region.Sub (below (B + BitVec.ofNat 64 40) m) ⟨B, 40⟩ := by
-  have : B + BitVec.ofNat 64 40 - BitVec.ofNat 64 m = B + BitVec.ofNat 64 (40 - m) := by
-    rw [Offset.sub_ofNat_eq (B + BitVec.ofNat 64 40) (a := m) (b := 40) hm, BitVec.add_sub_cancel]
-  show Region.Sub ⟨B + BitVec.ofNat 64 40 - BitVec.ofNat 64 m, m⟩ _
+/-- The stack a call from `rsp = B + 152` uses. -/
+theorem below_call_sub (B : Addr) {m : Nat} (hm : m ≤ 152) :
+    Region.Sub (below (B + BitVec.ofNat 64 152) m) ⟨B, 152⟩ := by
+  have : B + BitVec.ofNat 64 152 - BitVec.ofNat 64 m = B + BitVec.ofNat 64 (152 - m) := by
+    rw [Offset.sub_ofNat_eq (B + BitVec.ofNat 64 152) (a := m) (b := 152) hm, BitVec.add_sub_cancel]
+  show Region.Sub ⟨B + BitVec.ofNat 64 152 - BitVec.ofNat 64 m, m⟩ _
   rw [this]
   exact Offset.sub_base _ (by omega_using [hm])
 
-theorem below32 (B : Addr) : below (B + BitVec.ofNat 64 32) 32 = ⟨B, 32⟩ := by
-  show (⟨B + BitVec.ofNat 64 32 - BitVec.ofNat 64 32, 32⟩ : Region) = _
+theorem below144 (B : Addr) : below (B + BitVec.ofNat 64 144) 144 = ⟨B, 144⟩ := by
+  show (⟨B + BitVec.ofNat 64 144 - BitVec.ofNat 64 144, 144⟩ : Region) = _
   rw [BitVec.add_sub_cancel]
+
+/-- The 32 bytes of stack of a callee that needs only those. -/
+theorem below144_32 (B : Addr) : below (B + BitVec.ofNat 64 144) 32 = ⟨B + BitVec.ofNat 64 112, 32⟩ := by
+  show (⟨B + BitVec.ofNat 64 144 - BitVec.ofNat 64 32, 32⟩ : Region) = _
+  rw [show BitVec.ofNat 64 144 = BitVec.ofNat 64 112 + BitVec.ofNat 64 32 from rfl, ← BitVec.add_assoc,
+    BitVec.add_sub_cancel]
 
 /-! ## Between the frame's push and pop -/
 
@@ -216,9 +224,9 @@ theorem inFr (hc : Ctx L g mx m₀ t) {d : Nat} (h₂ : d + 8 ≤ 72) :
   ⟨L.FR, by rw [hc.rd, hc.wr]; simp, Offset.contains_base _ h₂ (by omega_using [h₂])⟩
 
 /-- The return address of a call from the frame. -/
-theorem ret (hc : Ctx L g mx m₀ t) : below (t.gpr .rsp) 8 = ⟨L.B + BitVec.ofNat 64 32, 8⟩ := by
+theorem ret (hc : Ctx L g mx m₀ t) : below (t.gpr .rsp) 8 = ⟨L.B + BitVec.ofNat 64 144, 8⟩ := by
   rw [hc.rsp]
-  show (⟨L.B + BitVec.ofNat 64 40 - BitVec.ofNat 64 8, 8⟩ : Region) = _
+  show (⟨L.B + BitVec.ofNat 64 152 - BitVec.ofNat 64 8, 8⟩ : Region) = _
   rw [show (BitVec.ofNat 64 8 : BitVec 64) = 8 from rfl, sp_sub8]
 
 /-- A byte of a region apart from `X` and the stack, as on entry. -/
@@ -245,25 +253,26 @@ theorem ce_byte (t : State) {R : Region} (hd : (below (t.gpr .rsp) 8).Disjoint R
     (by simpa using hd.symm) hR hi
 
 theorem ce_bytesAt (hc : Ctx L g mx m₀ t) {p : Addr} {n : Nat}
-    (hd : Region.Disjoint ⟨L.B + BitVec.ofNat 64 32, 8⟩ ⟨p, n⟩) (hn : n ≤ 2 ^ 64) :
+    (hd : Region.Disjoint ⟨L.B + BitVec.ofNat 64 144, 8⟩ ⟨p, n⟩) (hn : n ≤ 2 ^ 64) :
     bytesAt t.callEntry.mem p n = bytesAt t.mem p n :=
   Proof.MlKem.bytesAt_congr fun _ hi => ce_byte t (R := ⟨p, n⟩) (by rw [hc.ret]; exact hd) hn hi
 
 end Ctx
 
 /-- A state whose memory differs from that of a `Ctx` state only within `X`
-and the 32 bytes below the frame. -/
+and the 152 bytes below the frame. -/
 theorem Ctx.of_frame {L : Lay} (hL : L.Ok) {g : Reg → BitVec 64} {mx : BitVec 32} {m₀ : Mem} {t t' : State}
     (hc : Ctx L g mx m₀ t) (hrd : t'.rd = t.rd) (hwr : t'.wr = t.wr)
     (hcs : ∀ r ∈ calleeSaved, t'.gpr r = t.gpr r)
     (hmx : t'.mxcsr.extractLsb' 6 10 = t.mxcsr.extractLsb' 6 10) {rs : List Region}
-    (hf : Frame (rs ++ [⟨L.B, 40⟩]) t.mem t'.mem) (hrs : ∀ r ∈ rs, Within r L.XS) : Ctx L g mx m₀ t' := by
-  have hdisj : ∀ d n, d + n ≤ 72 → ∀ r ∈ rs ++ [⟨L.B, 40⟩],
+    (hf : Frame (rs ++ [⟨L.B, 152⟩]) t.mem t'.mem) (hrs : ∀ r ∈ rs, Within r L.XS) :
+    Ctx L g mx m₀ t' := by
+  have hdisj : ∀ d n, d + n ≤ 72 → ∀ r ∈ rs ++ [⟨L.B, 152⟩],
       Region.Disjoint ⟨L.SP + BitVec.ofNat 64 d, n⟩ r := by
     intro d n h₁ r hr
     rw [Lay.SP, add_add]
     rcases List.mem_append.mp hr with hr | hr
-    · exact (hL.stk_r hL.kX (d := 40 + d) (n := n) (by omega_using [h₁])).sub_right (hrs r hr).sub
+    · exact (hL.stk_r hL.kX (d := 152 + d) (n := n) (by omega_using [h₁])).sub_right (hrs r hr).sub
     · simp only [List.mem_singleton] at hr; subst hr
       exact Offset.disjoint_base _ (by omega_using []) (by omega_using [h₁])
   have keep : ∀ d, d + 8 ≤ 72 →
@@ -285,7 +294,7 @@ theorem Ctx.of_frame {L : Lay} (hL : L.Ok) {g : Reg → BitVec 64} {mx : BitVec 
   · exact ⟨L.XS, by simp, (hrs r hr).sub⟩
   · simp only [List.mem_singleton] at hr; subst hr
     refine ⟨L.STK, by simp, ?_⟩
-    have := Offset.sub_base L.B (d := 0) (n := 40) (k := 112) (by omega_using [])
+    have := Offset.sub_base L.B (d := 0) (n := 152) (k := 224) (by omega_using [])
     simpa using this
 
 /-! ## Calls that write only within `X` -/
@@ -299,7 +308,7 @@ theorem call_ok {L : Lay} (hL : L.Ok) {g : Reg → BitVec 64} {mx : BitVec 32} {
     {rd wr : List Region} (hpre : k.pre (t.callEntry.withRegions rd wr))
     (hsub : ∀ r ∈ rd, ∃ R ∈ L.rd ++ L.FR :: L.wr, Within r R)
     (hwsub : ∀ r ∈ wr, Within r L.XS) {Q : State → Prop}
-    (hQ : ∀ s', Ctx L g mx m₀ s' → Frame (wr ++ [⟨L.B, 40⟩]) t.mem s'.mem →
+    (hQ : ∀ s', Ctx L g mx m₀ s' → Frame (wr ++ [⟨L.B, 152⟩]) t.mem s'.mem →
       (∀ r, (∀ i ∈ instrs c, Taint.clobbers i r = false) → s'.gpr r = t.gpr r) →
       (∃ s₂ : State, s₂.mem = s'.mem ∧ (∀ r, r ≠ .rsp → s₂.gpr r = s'.gpr r) ∧
         k.post (t.callEntry.withRegions rd wr) s₂) → Q s') :
@@ -319,7 +328,7 @@ theorem call_ok {L : Lay} (hL : L.Ok) {g : Reg → BitVec 64} {mx : BitVec 32} {
     obtain ⟨R, hR, hw⟩ := hwX r hr
     exact ⟨R, List.mem_cons_of_mem _ hR, hw⟩
   refine WP.call_mx hv hsp (by omega_using [hd]) hpre hcov hcovw fun s' hrd hwr hcs hf hg hpost hmx => ?_
-  have hf' : Frame (wr ++ [⟨L.B, 40⟩]) t.mem s'.mem := by
+  have hf' : Frame (wr ++ [⟨L.B, 152⟩]) t.mem s'.mem := by
     refine Frame.sub hf fun r hr => ?_
     rcases List.mem_append.mp hr with hr | hr
     · exact ⟨r, List.mem_append_left _ hr, fun _ h => h⟩
@@ -328,12 +337,12 @@ theorem call_ok {L : Lay} (hL : L.Ok) {g : Reg → BitVec 64} {mx : BitVec 32} {
       rw [hc.rsp]
       exact below_call_sub _ (by omega)
   -- The frame is apart from what the call writes.
-  have hdisj : ∀ d n, d + n ≤ 72 → ∀ r ∈ wr ++ [⟨L.B, 40⟩],
+  have hdisj : ∀ d n, d + n ≤ 72 → ∀ r ∈ wr ++ [⟨L.B, 152⟩],
       Region.Disjoint ⟨L.SP + BitVec.ofNat 64 d, n⟩ r := by
     intro d n h₁ r hr
     rw [Lay.SP, add_add]
     rcases List.mem_append.mp hr with hr | hr
-    · exact (hL.stk_r hL.kX (d := 40 + d) (n := n) (by omega_using [h₁])).sub_right (hwsub r hr).sub
+    · exact (hL.stk_r hL.kX (d := 152 + d) (n := n) (by omega_using [h₁])).sub_right (hwsub r hr).sub
     · simp only [List.mem_singleton] at hr; subst hr
       exact Offset.disjoint_base _ (by omega_using []) (by omega_using [h₁])
   have keep : ∀ d, d + 8 ≤ 72 →
@@ -355,7 +364,7 @@ theorem call_ok {L : Lay} (hL : L.Ok) {g : Reg → BitVec 64} {mx : BitVec 32} {
     · exact ⟨L.XS, by simp, (hwsub r hr).sub⟩
     · simp only [List.mem_singleton] at hr; subst hr
       refine ⟨L.STK, by simp, ?_⟩
-      have := Offset.sub_base L.B (d := 0) (n := 40) (k := 112) (by omega_using [])
+      have := Offset.sub_base L.B (d := 0) (n := 152) (k := 224) (by omega_using [])
       simpa using this
 
 end VG.Proof.MlDsa.X86_64.Message
