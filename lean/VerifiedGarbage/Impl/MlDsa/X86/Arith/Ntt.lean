@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Impl.MlDsa.X86.Arith.Mul
-public import VerifiedGarbage.Impl.MlKem.X86.Ntt
 
 /-!
 # ML-DSA on x86 (32-bit): `vg_mldsa_ntt` and `vg_mldsa_inv_ntt`
@@ -46,17 +45,17 @@ less than `(1 + 2l) · q`. The model has no `psubd`: `a + 2q - t` is
 
 ## `nttInv(f, scratch)` (Algorithm 42)
 
-The layers are those of ML-KEM on x86 (`Impl.MlKem.X86.layerCode`), with
-the butterflies of ML-DSA, a coefficient at a time in the general
-registers, in a frame that saves `ebx`, `esi`, `edi` and `ebp`
-(`Impl.MlKem.X86.leaf`): the table of the negated zetas (the `z` of
-Algorithm 42) in Montgomery form is stored in `scratch` and read through
-`ebp`; in a block, `esi` points at coefficient `j`, `edi` at `j + len`, and
-`ecx` counts the butterflies left; the layers have `len` = 1, 2, …, 128,
-and their zetas are consecutive from `m = 255` down. A butterfly stores
-`f[j] + f[j + len]` (reduced) to `f[j]` and
-`z · (f[j] + q - f[j + len]) mod q` to `f[j + len]`. Then every
-coefficient is multiplied by `8347681 = 256⁻¹ mod q`, in Montgomery form.
+The same pieces, in the other order: the layers with `len = 1` and
+`len = 2` (`layerFlat`), then those with `len` = 4, …, 128 (`layer4`). The
+table (`montNegZetaRev`) holds the negated zetas (the `z` of Algorithm 42)
+in the order of use, so that `edx` moves up it from entry 1 as in `ntt`. A
+butterfly leaves `a + b` and the Montgomery product of `a + 128q - b` and
+the zeta (`iBody`, `iBody2`, `iBody1`: `bfTail` on the `a`s and the `b`s,
+with `128q + 1` in the doublewords of `xmm3`, then `vmont` or `vmont2`), so
+the coefficients are less than `2^l · q` after `l` layers, and the sums and
+`a + 128q` stay below `2³²`. A last pass (`pass scaleInit scaleCore`)
+multiplies every coefficient by `8347681 = 256⁻¹ mod q`, in Montgomery
+form, and reduces it (`vmont`, `vcsub`).
 
 Every address and branch depends only on the pointers.
 -/
@@ -66,7 +65,7 @@ Every address and branch depends only on the pointers.
 namespace VG.Impl.MlDsa.X86.Arith
 
 open VG.X86
-open VG.Impl.MlKem.X86 (at_ leaf layerCode layers zDown ldScratch)
+open VG.Impl.MlKem.X86 (at_)
 
 /-- `++`, grouping to the right. -/
 local infixr:65 " +++ " => HAppend.hAppend
@@ -130,23 +129,13 @@ def montNegZetaTable : List Nat := [
 /-- `8347681 · 2³² mod q`: `256⁻¹` in Montgomery form. -/
 def scaleImm : BitVec 32 := 16382
 
+/-- The table of `NTT⁻¹`: entry `k` is `-ζ^BitRev8(256 - k) · 2³² mod q`,
+the negated zetas in the order of use. -/
+def montNegZetaRev : List Nat := (List.range 256).map fun k => montNegZetaTable.getD ((256 - k) % 256) 0
+
 /-- The 256 entries of `T` as `u32`s at `[eax]`, through `edx`. -/
 def table (T : List Nat) : List Instr :=
   (List.range 256).flatMap fun k => [.mov .edx (.imm (BitVec.ofNat 32 (T.getD k 0))), .store (at_ .eax (4 * k)) .edx]
-
-/-- The butterfly of `NTT⁻¹` on `[esi]` and `[edi]` with the zeta at `[ebp]`. -/
-def ibflyBody : List Instr :=
-  ([.mov .ebx (.mem (at_ .esi 0)), .alu .add .ebx (.imm qImm), .alu .sub .ebx (.mem (at_ .edi 0)),
-    .mov .eax (.mem (at_ .esi 0)), .alu .add .eax (.mem (at_ .edi 0))] : List Instr) +++ csubQ .eax .edx +++
-  ([.store (at_ .esi 0) .eax, .mov .eax (.reg .ebx), .mov .edx (.mem (at_ .ebp 0)), .mul .edx] : List Instr) +++
-  mred .ebx +++
-  ([.store (at_ .edi 0) .ebx, .alu .add .esi (.imm 4), .alu .add .edi (.imm 4), .alu .sub .ecx (.imm 1)] : List Instr)
-
-/-- The table `T`, `ebp` at entry `z`, and `f + 1024` in the slot of `scratch`. -/
-def nttSetup (T : List Nat) (z : Nat) : List Instr :=
-  table T +++
-  ([.mov .ebp (.reg .eax), .alu .add .ebp (.imm (BitVec.ofNat 32 (4 * z))), .mov .edx (.mem (at_ .esp 20)),
-    .alu .add .edx (.imm 1024), .store (at_ .esp 24) .edx] : List Instr)
 
 /-! ## `ntt` -/
 
@@ -285,15 +274,38 @@ def ntt : Prog isa :=
 
 /-! ## `nttInv` -/
 
-/-- `[esi] ← [esi] · 8347681 mod q`, and on to the next coefficient. -/
-def scaleBody : List Instr :=
-  ([.mov .eax (.mem (at_ .esi 0)), .mov .edx (.imm scaleImm), .mul .edx] : List Instr) +++ mred .ebx +++
-  ([.store (at_ .esi 0) .ebx, .alu .add .esi (.imm 4), .alu .sub .ecx (.imm 1)] : List Instr)
+/-- `128q + 1`. -/
+def invC : BitVec 32 := 1072693377
+
+/-- Four butterflies of a layer with `len ≥ 4` (`d = 4 · len`). -/
+def iBody (d : Nat) : List Instr :=
+  ([.movdquLoad .xmm0 (at_ .eax d), .movdquLoad .xmm1 (at_ .eax 0)] : List Instr) +++ bfTail +++
+  ([.movdquStore (at_ .eax 0) .xmm1, xmov .xmm0 .xmm2] : List Instr) +++ vmont .xmm0 .xmm5 .xmm2 .xmm1 +++
+  ([.movdquStore (at_ .eax d) .xmm0] : List Instr)
+
+/-- Eight coefficients of the layer with `len = 2`. -/
+def iBody2 : List Instr :=
+  gath2 +++ bfTail +++ ([xmov .xmm0 .xmm2] : List Instr) +++ vmont .xmm0 .xmm5 .xmm2 .xmm5 +++
+  ([xmov .xmm2 .xmm0] : List Instr) +++ scat2
+
+/-- Eight coefficients of the layer with `len = 1`. -/
+def iBody1 : List Instr :=
+  gath1 +++ bfTail +++ ([xmov .xmm0 .xmm2] : List Instr) +++ vmont2 .xmm0 .xmm5 .xmm2 +++
+  ([xmov .xmm2 .xmm0] : List Instr) +++ scat1
+
+/-- The constants of the last pass of `nttInv`: `256⁻¹` in Montgomery form
+in the doublewords of `xmm5` and `2³² - q` in those of `xmm3`. -/
+def scaleInit : List Instr := vconst .xmm5 scaleImm +++ vconst .xmm3 4286586879
+
+/-- `xmm0 ← xmm0 · 256⁻¹ mod q` for doublewords less than `256q`. -/
+def scaleCore : List Instr := vmont .xmm0 .xmm5 .xmm2 .xmm1 +++ vcsub .xmm0 .xmm1
 
 def nttInv : Prog isa :=
-  leaf (.seq (.block ldScratch) (.seq (.block (nttSetup montNegZetaTable 255))
-    (.seq (layers (layerCode ibflyBody zDown) [1, 2, 4, 8, 16, 32, 64, 128])
-      (.seq (.block [.mov .esi (.mem (at_ .esp 20))])
-        (.seq (.block [.mov .ecx (.imm 256)]) (.loop (.block scaleBody) .ne))))))
+  .frame (.mcdtEnter .eax)
+    (.seq (nttInit montNegZetaRev invC)
+      (.seq (layerFlat zl1 iBody1 16) (.seq (layerFlat zl2 iBody2 8) (.seq (layer4 iBody 4) (.seq (layer4 iBody 8)
+        (.seq (layer4 iBody 16) (.seq (layer4 iBody 32) (.seq (layer4 iBody 64) (.seq (layer4 iBody 128)
+          (pass scaleInit scaleCore))))))))))
+    .mcdtLeave
 
 end VG.Impl.MlDsa.X86.Arith
