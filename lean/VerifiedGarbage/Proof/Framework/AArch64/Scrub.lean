@@ -170,6 +170,291 @@ theorem tailG_run {W : Nat} (hW : 0 < W ∧ W < 4096 ∧ W % 16 = 0) {ks : List 
       omega
     all_goals simp [u₄, u₃, u₂, u₁, b, State.write, State.setV]
 
+/-! ## The loop
+
+`scrubLoopBody W` zeroes the `W` bytes at `x9` (the frame's base) by passes of
+four granules (`scrubPass`), then a store for each granule left. -/
+
+/-- `inG` of the first `K` granules: the first `16 K` bytes. -/
+theorem inG_range (b x : Addr) (K : Nat) : inG b (List.range K) x = decide ((x - b).toNat < 16 * K) := by
+  simp only [inG]
+  apply Bool.eq_iff_iff.mpr
+  simp only [List.any_eq_true, List.mem_range, decide_eq_true_eq]
+  constructor
+  · rintro ⟨k, hk, h1, h2⟩; omega
+  · intro h; exact ⟨(x - b).toNat / 16, by omega, by omega, by omega⟩
+
+/-- Zeroing the `c` granules from `b + 16 a` after the `a` from `b` zeroes the
+`a + c` from `b`. -/
+theorem zeroG_range_append {b : Addr} {a c : Nat} (h : 16 * (a + c) < 2 ^ 64) (m : Mem) :
+    zeroG (b + BitVec.ofNat 64 (16 * a)) (List.range c) (zeroG b (List.range a) m) =
+      zeroG b (List.range (a + c)) m := by
+  funext x
+  have hlt : 16 * a < 2 ^ 64 := by omega
+  have hx : (x - (b + BitVec.ofNat 64 (16 * a))).toNat = ((x - b).toNat + (2 ^ 64 - 16 * a)) % 2 ^ 64 := by
+    rw [show x - (b + BitVec.ofNat 64 (16 * a)) = (x - b) - BitVec.ofNat 64 (16 * a) by
+      apply BitVec.eq_of_toNat_eq
+      simp only [BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hlt]
+      omega]
+    rw [BitVec.toNat_sub, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hlt]
+    omega
+  have ht := (x - b).isLt
+  simp only [zeroG, inG_range, hx]
+  by_cases h1 : (x - b).toNat < 16 * a
+  · have h2 : (x - b).toNat < 16 * (a + c) := by omega
+    simp only [h1, h2, decide_true, ↓reduceIte, ite_self]
+  · by_cases h2 : (x - b).toNat < 16 * (a + c)
+    · have : ((x - b).toNat + (2 ^ 64 - 16 * a)) % 2 ^ 64 < 16 * c := by omega
+      simp only [h2, this, decide_true, ↓reduceIte]
+    · have : ¬ ((x - b).toNat + (2 ^ 64 - 16 * a)) % 2 ^ 64 < 16 * c := by omega
+      simp only [h1, h2, this, decide_false, ↓reduceIte, Bool.false_eq_true]
+
+/-- Each granule of the `W` bytes from `b` is in a writable region. -/
+def AllIn (wr : List Region) (b : Addr) (W : Nat) : Prop :=
+  ∀ k, 16 * k + 16 ≤ W → InRegions wr (b + BitVec.ofNat 64 (16 * k)) 16
+
+/-- The granules `ks` from `b + 16 a` are writable. -/
+theorem granulesIn_off {wr : List Region} {b : Addr} {W a : Nat} (hR : AllIn wr b W)
+    {ks : List Nat} (hks : ∀ k ∈ ks, 16 * (a + k) + 16 ≤ W) :
+    GranulesIn wr (b + BitVec.ofNat 64 (16 * a)) ks := fun k hk' => by
+  rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat, ← Nat.mul_add]
+  exact hR _ (hks k hk')
+
+/-- The granules of the region of the `W` bytes from `b` are in it. -/
+theorem allIn_of {wr : List Region} {b : Addr} {W : Nat} (hW : W < 2 ^ 16) (hR : (⟨b, W⟩ : Region) ∈ wr) :
+    AllIn wr b W := fun k hk =>
+  granulesIn_of (ks := [k]) hW hR (fun k' h => by rw [List.mem_singleton.mp h]; exact hk) k (List.mem_singleton_self _)
+
+/-- The trace of `n` passes of the loop from `x9 = p`. -/
+def passesTr (p : Addr) : Nat → List Leak
+  | 0 => []
+  | 1 => storesTraceL p (List.range 4) ++ [.branch false]
+  | n + 2 => storesTraceL p (List.range 4) ++ .branch true :: passesTr (p + BitVec.ofNat 64 64) (n + 1)
+
+/-- `u` with `x9` at `p` and `x10` at `z`, and the memory `m`. -/
+abbrev passSt (u : State) (p z : BitVec 64) (m : Mem) : State :=
+  { u with gpr := fun q => if q = .x9 then p else if q = .x10 then z else u.gpr q, mem := m }
+
+theorem passSt_passSt (u : State) (p z p' z' : BitVec 64) (m m' : Mem) :
+    passSt (passSt u p z m) p' z' m' = passSt u p' z' m' := by
+  simp only [passSt]
+  congr 1
+  funext q
+  by_cases h9 : q = .x9
+  · simp [h9]
+  · by_cases h10 : q = .x10 <;> simp [h9, h10]
+
+/-- One pass of the loop, from a state whose `x9` is `16 (4 i)` bytes into the
+region of `W` bytes from `b`, whose first `4 i` granules of the memory `m₀`
+are zero, with `j + 1` in `x10`: the first `4 (i + 1)` granules zeroed, `x9`
+past them and `j` in `x10`. -/
+theorem pass_run {b : Addr} {W : Nat} (hW : W < 2 ^ 16) (m₀ : Mem) (j i : Nat) (u : State)
+    (hn : 64 * (i + 1) ≤ W) (hR : AllIn u.wr b W)
+    (h9 : u.gpr .x9 = b + BitVec.ofNat 64 (16 * (4 * i))) (h10 : u.gpr .x10 = BitVec.ofNat 64 (j + 1))
+    (hv : u.v .v31 = 0) (hm : u.mem = zeroG b (List.range (4 * i)) m₀) :
+    execBlock isa scrubPass u = some (passSt u (b + BitVec.ofNat 64 (16 * (4 * (i + 1)))) (BitVec.ofNat 64 j)
+      (zeroG b (List.range (4 * (i + 1))) m₀), storesTraceL (u.gpr .x9) (List.range 4)) := by
+  have hks : ∀ k ∈ List.range 4, 16 * (4 * i + k) + 16 ≤ W := fun k hk => by
+    have := List.mem_range.mp hk; omega
+  have hks' : ∀ k ∈ List.range 4, 16 * k + 16 ≤ 64 := fun k hk => by
+    have := List.mem_range.mp hk; omega
+  have hgi : GranulesIn u.wr (u.gpr .x9) (List.range 4) := by
+    rw [h9]; exact granulesIn_off hR hks
+  have hs := storesL_run (W := 64) (by decide) (u.gpr .x9) (List.range 4) u rfl hv hgi hks'
+  have hm₁ : zeroG (u.gpr .x9) (List.range 4) u.mem = zeroG b (List.range (4 * (i + 1))) m₀ := by
+    rw [h9, hm, zeroG_range_append (by omega), show 4 * i + 4 = 4 * (i + 1) by omega]
+  have hx9 : u.gpr .x9 + BitVec.ofNat 64 64 = b + BitVec.ofNat 64 (16 * (4 * (i + 1))) := by
+    rw [h9, BitVec.add_assoc, BitVec.ofNat_add_ofNat, show 16 * (4 * i) + 64 = 16 * (4 * (i + 1)) by omega]
+  have hx10 : u.gpr .x10 - BitVec.ofNat 64 1 = BitVec.ofNat 64 j := by
+    rw [h10]; apply BitVec.eq_of_toNat_eq; simp only [BitVec.toNat_sub, BitVec.toNat_ofNat]; omega
+  rw [show scrubPass = scrubStoresL (List.range 4) ++ [.addImm .x .x9 .x9 64, .subImm .x .x10 .x10 1]
+    from rfl, execBlock_append, hs, Option.bind_some]
+  simp only [execBlock, isa, exec, show (64 : Nat) < 4096 by decide, show (1 : Nat) < 4096 by decide,
+    ↓reduceIte, Option.map_some, addrs, List.map_nil, List.append_nil, State.read, State.write,
+    Size.bits, BitVec.setWidth_eq, hm₁, Option.some.injEq, Prod.mk.injEq, and_true]
+  simp only [passSt]
+  congr 1
+  funext q
+  by_cases hq10 : q = .x10
+  · subst hq10; simp only [reduceCtorEq, ↓reduceIte, hx10]
+  · by_cases hq9 : q = .x9
+    · subst hq9; simp only [reduceCtorEq, ↓reduceIte, hx9]
+    · simp [hq9, hq10]
+
+/-- `n` passes of the loop, as `pass_run`, from `n` in `x10`: the first
+`4 (i + n)` granules zeroed, `x9` past them and `x10` zero. -/
+theorem passes_run {b : Addr} {W : Nat} (hW : W < 2 ^ 16) (m₀ : Mem) :
+    ∀ (n i : Nat) (u : State), 0 < n → 64 * (i + n) ≤ W → AllIn u.wr b W →
+      u.gpr .x9 = b + BitVec.ofNat 64 (16 * (4 * i)) → u.gpr .x10 = BitVec.ofNat 64 n → u.v .v31 = 0 →
+      u.mem = zeroG b (List.range (4 * i)) m₀ →
+      Exec isa (.loop (.block scrubPass) (.nonzero .x .x10)) u (passesTr (u.gpr .x9) n)
+        (passSt u (b + BitVec.ofNat 64 (16 * (4 * (i + n)))) 0 (zeroG b (List.range (4 * (i + n))) m₀))
+  | 0, _, _, h, _, _, _, _, _, _ => absurd h (Nat.lt_irrefl 0)
+  | 1, i, u, _, hn, hR, h9, h10, hv, hm => by
+    have hp := pass_run hW m₀ 0 i u hn hR h9 h10 hv hm
+    have hz : isa.eval (.nonzero .x .x10) (passSt u (b + BitVec.ofNat 64 (16 * (4 * (i + 1)))) (BitVec.ofNat 64 0)
+        (zeroG b (List.range (4 * (i + 1))) m₀)) = some false := by
+      simp [eval, State.read]
+    exact Exec.loopExit (Exec.block hp) hz
+  | n + 2, i, u, _, hn, hR, h9, h10, hv, hm => by
+    have hp := pass_run hW m₀ (n + 1) i u (by omega) hR h9 h10 hv hm
+    let u₁ := passSt u (b + BitVec.ofNat 64 (16 * (4 * (i + 1)))) (BitVec.ofNat 64 (n + 1))
+      (zeroG b (List.range (4 * (i + 1))) m₀)
+    have hnz : isa.eval (.nonzero .x .x10) u₁ = some true := by
+      simp only [eval, u₁, State.read, reduceCtorEq, ↓reduceIte, Size.bits, BitVec.setWidth_eq,
+        Option.some.injEq, bne_iff_ne, ne_eq]
+      intro h; have := congrArg BitVec.toNat h; simp at this; omega
+    have ih := passes_run hW m₀ (n + 1) (i + 1) u₁ (by omega) (by omega) hR
+      (by simp [u₁]) (by simp [u₁]) (by simp [u₁, hv]) (by simp [u₁])
+    have e := Exec.loopNext (Exec.block hp) hnz ih
+    have hx : u₁.gpr .x9 = u.gpr .x9 + BitVec.ofNat 64 64 := by
+      simp only [u₁, ↓reduceIte, h9, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
+      rw [show 16 * (4 * i) + 64 = 16 * (4 * (i + 1)) by omega]
+    rw [hx, passSt_passSt, show i + 1 + (n + 1) = i + (n + 2) by omega] at e
+    exact e
+
+theorem zeroG_nil (b : Addr) (m : Mem) : zeroG b [] m = m := by
+  funext x; simp [zeroG, inG]
+
+/-- The trace of `scrubLoopBody W` from `x9 = b`. -/
+def loopBodyTr (b : Addr) (W : Nat) : List Leak :=
+  passesTr b (W / 64) ++ storesTraceL (b + BitVec.ofNat 64 (16 * (4 * (W / 64)))) (List.range (W % 64 / 16))
+
+/-- `scrubLoopBody W`, `64 ≤ W`, from a state that may write the `W` bytes at
+its stack pointer `b`, zeroes them, with the trace of their addresses and the
+loop's branches alone, and leaves `q31` zero, `x9` past the passes' granules
+and `x10` zero. -/
+theorem loopBody_run {b : Addr} {W : Nat} (hW : W < 2 ^ 16) (h64 : 64 ≤ W) (h16 : W % 16 = 0) (u : State)
+    (hR : AllIn u.wr b W) (hb : u.sp = b) :
+    Exec isa (scrubLoopBody W) u (loopBodyTr b W)
+      (passSt (u.setV .v31 0) (b + BitVec.ofNat 64 (16 * (4 * (W / 64)))) 0 (zeroG b (List.range (W / 16)) u.mem)) := by
+  let n := W / 64
+  let u₀ := passSt (u.setV .v31 0) b (BitVec.ofNat 64 n) u.mem
+  have h₀ : execBlock isa [.vop (.movi0 .v31), .addSp .x9 0, .movz .x .x10 (BitVec.ofNat 16 n) 0] u =
+      some (u₀, []) := by
+    simp only [execBlock, isa, exec, VOp.eval, show (0 : Nat) < 4096 by decide, Size.bits,
+      show 16 * 0 < 64 by decide, ↓reduceIte, Option.map_some, addrs, List.map_nil, List.append_nil,
+      Option.some.injEq, Prod.mk.injEq, and_true]
+    simp only [u₀, passSt, State.write, State.setV, hb]
+    congr 1
+    funext q
+    by_cases hq10 : q = .x10
+    · subst hq10
+      have hmz : BitVec.setWidth 64 (BitVec.ofNat 16 n) <<< (16 * 0) = BitVec.ofNat 64 n := by
+        rw [Nat.mul_zero, BitVec.shiftLeft_zero]
+        apply BitVec.eq_of_toNat_eq
+        simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
+        omega
+      simp only [reduceCtorEq, ↓reduceIte, hmz, BitVec.setWidth_eq]
+    · by_cases hq9 : q = .x9
+      · subst hq9; simp
+      · simp [hq9, hq10]
+  have hp := passes_run (b := b) hW u.mem n 0 u₀ (by omega) (by omega) hR
+    (by simp [u₀]) (by simp [u₀]) (by simp [u₀, State.setV]) (by simp [u₀, zeroG_nil])
+  simp only [Nat.zero_add] at hp
+  rw [show u₀.gpr .x9 = b by simp [u₀]] at hp
+  let u₁ := passSt u₀ (b + BitVec.ofNat 64 (16 * (4 * n))) 0 (zeroG b (List.range (4 * n)) u.mem)
+  have hks : ∀ k ∈ List.range (W % 64 / 16), 16 * (4 * n + k) + 16 ≤ W := fun k hk => by
+    have := List.mem_range.mp hk; omega
+  have hks' : ∀ k ∈ List.range (W % 64 / 16), 16 * k + 16 ≤ 64 := fun k hk => by
+    have := List.mem_range.mp hk; omega
+  have hs := storesL_run (W := 64) (by decide) (b + BitVec.ofNat 64 (16 * (4 * n))) (List.range (W % 64 / 16)) u₁
+    (by simp [u₁]) (by simp [u₁, u₀, State.setV]) (granulesIn_off hR hks) hks'
+  have hm : zeroG (b + BitVec.ofNat 64 (16 * (4 * n))) (List.range (W % 64 / 16)) u₁.mem =
+      zeroG b (List.range (W / 16)) u.mem := by
+    simp only [u₁]
+    rw [zeroG_range_append (by omega), show 4 * n + W % 64 / 16 = W / 16 by omega]
+  rw [hm] at hs
+  have e := Exec.seq (Exec.block h₀) (Exec.seq hp (Exec.block hs))
+  rw [List.nil_append] at e
+  have hfin : ({ u₁ with mem := zeroG b (List.range (W / 16)) u.mem } : State) =
+      passSt (u.setV .v31 0) (b + BitVec.ofNat 64 (16 * (4 * (W / 64)))) 0 (zeroG b (List.range (W / 16)) u.mem) := by
+    show passSt u₀ _ 0 _ = _
+    exact passSt_passSt _ _ _ _ _ _ _
+  rw [hfin] at e
+  exact e
+
+/-- What `scrubTailLoop W` and `scrubTailG W` leave: `TailRunG`, with `x9`
+`g9` of the stack pointer and `x10` `f10` of its value. -/
+structure TailRunF (g9 : Addr → BitVec 64) (f10 : BitVec 64 → BitVec 64) (W : Nat) (u u' : State) : Prop where
+  gpr : u'.gpr = fun q => if q = .x9 then g9 u.sp else if q = .x10 then f10 (u.gpr .x10) else u.gpr q
+  v : u'.v = fun w => if w = .v31 then 0 else u.v w
+  sp : u'.sp = u.sp
+  rd : u'.rd = u.rd
+  wr : u'.wr = u.wr
+  c : u'.c = u.c
+  nf : u'.nf = u.nf
+  zf : u'.zf = u.zf
+  vf : u'.vf = u.vf
+  dit : u'.dit = u.dit
+  unknowns : u'.unknowns = fun n => u.unknowns (n + W / 4)
+  mem : u'.mem = lose (zeroG (u.sp - BitVec.ofNat 64 W) (List.range (W / 16)) u.mem) (u.sp - BitVec.ofNat 64 W) W u.unknowns
+
+theorem TailRunG.toF {W : Nat} {u u' : State} (h : TailRunG W (List.range (W / 16)) u u') :
+    TailRunF (fun sp => sp - BitVec.ofNat 64 W) id W u u' where
+  gpr := by
+    rw [h.gpr]; funext q
+    by_cases h9 : q = .x9
+    · simp [h9]
+    · by_cases h10 : q = .x10
+      · subst h10; simp
+      · simp [h9, h10]
+  v := h.v
+  sp := h.sp
+  rd := h.rd
+  wr := h.wr
+  c := h.c
+  nf := h.nf
+  zf := h.zf
+  vf := h.vf
+  dit := h.dit
+  unknowns := h.unknowns
+  mem := h.mem
+
+/-- The trace of `scrubTailLoop W` from the stack pointer `sp`. -/
+def tailLoopTr (sp : Addr) (W : Nat) : List Leak := loopBodyTr (sp - BitVec.ofNat 64 W) W
+
+/-- `scrubTailLoop W` zeroes the `W` bytes below the stack pointer and
+releases them, as `scrubTailG W` does but for `x9` and `x10`. -/
+theorem tailLoop_run {W : Nat} (hW : 64 ≤ W ∧ W < 4096 ∧ W % 16 = 0) (u : State) (hsp : W ≤ u.sp.toNat) :
+    ∃ u', Exec isa (scrubTailLoop W) u (tailLoopTr u.sp W) u' ∧
+      TailRunF (fun sp => sp - BitVec.ofNat 64 W + BitVec.ofNat 64 (16 * (4 * (W / 64)))) (fun _ => 0) W u u' := by
+  let b := u.sp - BitVec.ofNat 64 W
+  let u₁ : State := { u with sp := b, wr := ⟨b, W⟩ :: u.wr }
+  have hpush : isa.push (.alloc W) u = some u₁ := by
+    simp only [isa, push, show 0 < W by omega, hW.2.1, hW.2.2, hsp, and_self, ↓reduceIte]; rfl
+  have hb := loopBody_run (by omega) hW.1 hW.2.2 u₁ (allIn_of (by omega) (by simp [u₁])) rfl
+  let u₃ := passSt (u₁.setV .v31 0) (b + BitVec.ofNat 64 (16 * (4 * (W / 64)))) 0 (zeroG b (List.range (W / 16)) u₁.mem)
+  have hpop : isa.pop (.free W) u₁ u₃ = some { u₃ with
+      sp := u₃.sp + BitVec.ofNat 64 W, wr := u₃.wr.tail,
+      mem := lose u₃.mem u₃.sp W u₃.unknowns, unknowns := fun n => u₃.unknowns (n + W / 4) } := by
+    have hc : 0 < W ∧ W < 4096 ∧ W % 16 = 0 ∧ u₃.sp = u₁.sp ∧ u₃.wr = u₁.wr ∧
+        u₁.wr.head? = some ⟨u₁.sp, W⟩ := ⟨by omega, hW.2.1, hW.2.2, rfl, rfl, rfl⟩
+    simp only [isa, pop, hc, and_self, ↓reduceIte]
+  refine ⟨{ u₃ with
+      sp := u₃.sp + BitVec.ofNat 64 W, wr := u₃.wr.tail,
+      mem := lose u₃.mem u₃.sp W u₃.unknowns, unknowns := fun n => u₃.unknowns (n + W / 4) }, ?_, ?_⟩
+  · have := Exec.frame (M := isa) hpush hb hpop
+    simp only [isa, addrs, List.map_nil, List.nil_append, List.append_nil] at this
+    exact this
+  · constructor
+    · funext q
+      by_cases h9 : q = .x9
+      · subst h9; simp [u₃, b]
+      · by_cases h10 : q = .x10
+        · subst h10; simp [u₃]
+        · simp [u₃, u₁, State.setV, h9, h10]
+    · funext w
+      by_cases hw : w = .v31
+      · subst hw; simp [u₃, u₁, State.setV]
+      · simp [u₃, u₁, State.setV, hw]
+    · simp only [u₃, u₁, b, State.setV]
+      apply BitVec.eq_of_toNat_eq
+      simp only [BitVec.toNat_add, BitVec.toNat_sub, BitVec.toNat_ofNat]
+      have := u.sp.isLt
+      omega
+    all_goals simp [u₃, u₁, b, State.setV]
+
 /-! ## Two frames
 
 An `alloc` takes less than 4096 bytes. `scrubTailL W` zeroes `W` bytes in
@@ -212,9 +497,11 @@ theorem lose_lose {m : Mem} {a : Addr} {A B : Nat} {u : Nat → BitVec 64} (hB :
     · have h₄ : ¬ (x - a).toNat < B + A := by omega
       simp only [h₃, h₄, ↓reduceIte]
 
+/-- `scrubTailL W` zeroes the `W` bytes below the stack pointer and releases
+them, as `scrubTailLoop W` does. -/
 theorem tailL_run {W : Nat} (hW : 4080 < W ∧ W < 8176 ∧ W % 16 = 0) (u : State) (hsp : W ≤ u.sp.toNat) :
-    ∃ u', Exec isa (scrubTailL W) u (tailTraceG u.sp W (List.range (W / 16))) u' ∧
-      TailRunG W (List.range (W / 16)) u u' := by
+    ∃ u', Exec isa (scrubTailL W) u (tailLoopTr u.sp W) u' ∧
+      TailRunF (fun sp => sp - BitVec.ofNat 64 W + BitVec.ofNat 64 (16 * (4 * (W / 64)))) (fun _ => 0) W u u' := by
   have hspl := u.sp.isLt
   let ks := List.range (W / 16)
   let b := u.sp - BitVec.ofNat 64 W
@@ -237,34 +524,22 @@ theorem tailL_run {W : Nat} (hW : 4080 < W ∧ W < 8176 ∧ W % 16 = 0) (u : Sta
     have : 4080 ≤ u₁.sp.toNat := by show 4080 ≤ o.toNat; omega
     simp only [isa, push, this, and_self]
     simp only [u₁', u₁, hob]; rfl
-  let u₂ : State := (u₁'.setV .v31 0).write .x .x9 u₁'.sp
-  have h₂ : execBlock isa [.vop (.movi0 .v31), .addSp .x9 0] u₁' = some (u₂, []) := by
-    simp [execBlock, isa, exec, VOp.eval, addrs, u₂, State.setV]
-  have hb₂ : u₂.gpr .x9 = b := by simp [u₂, u₁', State.write]
-  have hv₂ : u₂.v .v31 = 0 := by simp [u₂, State.write, State.setV]
-  have hR : GranulesIn u₂.wr b ks := by
-    intro k hk
-    have hk' := List.mem_range.mp hk
+  have hR : AllIn u₁'.wr b W := by
+    intro k hk'
     by_cases hlo : 16 * k + 16 ≤ 4080
-    · refine ⟨⟨b, 4080⟩, by simp [u₂, u₁', State.write, State.setV], ?_⟩
+    · refine ⟨⟨b, 4080⟩, by simp [u₁'], ?_⟩
       unfold Region.Contains
       simp only [BitVec.add_sub_comm, BitVec.sub_self, BitVec.zero_add, BitVec.toNat_ofNat]
       rw [Nat.mod_eq_of_lt (by omega)]
       omega
-    · refine ⟨⟨o, W - 4080⟩, by simp [u₂, u₁', u₁, State.write, State.setV], ?_⟩
+    · refine ⟨⟨o, W - 4080⟩, by simp [u₁', u₁], ?_⟩
       unfold Region.Contains
       dsimp only
       rw [← hbo, ← BitVec.sub_sub, BitVec.add_sub_comm, BitVec.sub_self, BitVec.zero_add,
         BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega : 16 * k < 2 ^ 64)]
       omega
-  have hs := storesL_run (W := W) (by omega) b ks u₂ hb₂ hv₂ hR (fun k hk => by have := List.mem_range.mp hk; omega)
-  have hblk : execBlock isa (.vop (.movi0 .v31) :: .addSp .x9 0 :: scrubStoresL ks) u₁' =
-      some ({ u₂ with mem := zeroG b ks u₂.mem }, storesTraceL b ks) := by
-    rw [show (.vop (.movi0 .v31) :: .addSp .x9 0 :: scrubStoresL ks : List Instr) =
-        [.vop (.movi0 .v31), .addSp .x9 0] ++ scrubStoresL ks from rfl,
-      execBlock_append, h₂, Option.bind_some, hs]
-    rfl
-  let u₃ : State := { u₂ with mem := zeroG b ks u₂.mem }
+  have hblk := loopBody_run (by omega) (by omega) hW.2.2 u₁' hR rfl
+  let u₃ : State := passSt (u₁'.setV .v31 0) (b + BitVec.ofNat 64 (16 * (4 * (W / 64)))) 0 (zeroG b ks u₁'.mem)
   let u₄ : State := { u₃ with
     sp := u₃.sp + BitVec.ofNat 64 4080, wr := u₃.wr.tail,
     mem := lose u₃.mem u₃.sp 4080 u₃.unknowns, unknowns := fun n => u₃.unknowns (n + 4080 / 4) }
@@ -285,18 +560,20 @@ theorem tailL_run {W : Nat} (hW : 4080 < W ∧ W < 8176 ∧ W % 16 = 0) (u : Sta
     simp only [isa, pop, hc, and_self, ↓reduceIte]
     rfl
   refine ⟨u₅, ?_, ?_⟩
-  · have := Exec.frame (M := isa) hpush (Exec.frame (M := isa) hpush' (Exec.block hblk) hpop') hpop
+  · have := Exec.frame (M := isa) hpush (Exec.frame (M := isa) hpush' hblk hpop') hpop
     simp only [isa, addrs, List.map_nil, List.nil_append, List.append_nil] at this
     exact this
   · constructor
     · funext q
-      by_cases hq : q = .x9
-      · subst hq; simp [u₅, u₄, u₃, u₂, u₁', b, State.write]
-      · simp [u₅, u₄, u₃, u₂, u₁', u₁, State.write, State.setV, hq]
+      by_cases h9 : q = .x9
+      · subst h9; simp [u₅, u₄, u₃, b]
+      · by_cases h10 : q = .x10
+        · subst h10; simp [u₅, u₄, u₃]
+        · simp [u₅, u₄, u₃, u₁', u₁, State.setV, h9, h10]
     · funext w
       by_cases hw : w = .v31
-      · subst hw; simp [u₅, u₄, u₃, u₂, u₁', State.write, State.setV]
-      · simp [u₅, u₄, u₃, u₂, u₁', u₁, State.write, State.setV, hw]
+      · subst hw; simp [u₅, u₄, u₃, u₁', State.setV]
+      · simp [u₅, u₄, u₃, u₁', u₁, State.setV, hw]
     · show o + BitVec.ofNat 64 (W - 4080) = u.sp
       exact BitVec.sub_add_cancel _ _
     · rfl
@@ -306,13 +583,13 @@ theorem tailL_run {W : Nat} (hW : 4080 < W ∧ W < 8176 ∧ W % 16 = 0) (u : Sta
     · rfl
     · rfl
     · rfl
-    · simp only [u₅, u₄, u₃, u₂, u₁', u₁, State.write, State.setV]
+    · simp only [u₅, u₄, u₃, u₁', u₁, State.setV]
       funext n
       exact congrArg u.unknowns (by omega)
     · have key := lose_lose (m := zeroG b ks u.mem) (a := b) (A := W - 4080) (B := 4080) (u := u.unknowns)
         (by decide) (by omega)
       rw [show 4080 + (W - 4080) = W by omega, hbo] at key
-      simp only [u₅, u₄, u₃, u₂, u₁', u₁, State.write, State.setV]
+      simp only [u₅, u₄, u₃, u₁', u₁, State.setV]
       exact key
 
 end VG.AArch64.Scrub
