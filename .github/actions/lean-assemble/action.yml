@@ -151,6 +151,11 @@ runs:
       shell: bash
       working-directory: lean
       run: lake env lean --run Emit.lean --check
+    # EmitOne.lean, which loads only the registration files it is given,
+    # refuses one whose internal functions another module's file declares.
+    - name: Check that EmitOne refuses internal functions another file declares
+      shell: bash
+      run: python3 ci/emit_one_negative.py
     # `lake check` imports every module together, which no module does.
     - name: Check that every module can be imported with every other
       shell: bash

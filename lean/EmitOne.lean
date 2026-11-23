@@ -25,9 +25,13 @@ registration file emits into it): `Emit.lean` handles those. Each table of
 constants has a file of its own (`consts/<name>.rs` of the crate, which
 depends only on the table), so it writes those of its artifacts' tables and
 leaves the others; a new table is a new file. So does each internal function
-(`internal/<name>.rs`, `VG.Rust.Internal`), which depends only on its code;
-the module whose file declares it depends on all the modules calling it,
-which only `Emit.lean` sees. It is a
+(`internal/<name>.rs`, `VG.Rust.Internal`), but the module whose file declares
+it (`VG.Rust.internalOwner`), which the files calling it name, depends on
+every module of the target and every module calling it, which only
+`Emit.lean` sees: before it writes or compares anything, it refuses, writing
+nothing, if a file it generated declares an internal function that a
+different file on disk declares, or that none does, or lacks one that the
+same file on disk declares (`ownershipProblems`). It is a
 convenience while iterating, not a replacement: `Emit.lean --check`, which CI
 runs, checks every artifact and every file.
 -/
@@ -70,6 +74,73 @@ emit into the file, and must not overwrite it. -/
 def unreadFns (text : String) : Bool :=
   (fnNames text).length != ((topLines text).filter fun l =>
     l.contains "fn vg_" || l.contains "use self::vg_" || l.contains "pub use crate::").length
+
+/-- The internal functions a generated file declares the modules of
+(`VG.Rust.internalDecls`): each `<name>` of a line `#[path = "internal/<name>.rs"]`,
+not indented (`topLines`). -/
+def internalDecls (text : String) : List String :=
+  (topLines text).filterMap fun line =>
+    match line.splitOn "#[path = \"internal/" with
+    | [_, rest] => match rest.splitOn ".rs\"]" with
+      | [name, _] => some name
+      | _ => none
+    | _ => none
+
+/-- The module of each file of `<crate>/src/` under `root` that is a module's
+file (`<module>.rs`, not `lib.rs`), with its text, of each crate `crates`. -/
+def moduleFiles (root : FilePath) (crates : List String) :
+    IO (List (String × String × String)) := do
+  let mut out := []
+  for crate in crates do
+    let dir := root / crate / "src"
+    unless ← dir.isDir do continue
+    for e in ← dir.readDir do
+      let some m := e.fileName.dropSuffix? ".rs" | continue
+      if m.toString == "lib" || (← e.path.isDir) then continue
+      out := (crate, m.toString, ← IO.FS.readFile e.path) :: out
+  return out
+
+/-- Which module's file declares each internal function (`VG.Rust.Internal.owner`)
+depends on every module of the target, and on every module calling it
+(`VG.Rust.internalOwner`), so on registration files this run does not load: an
+`aes_gcm` registration alone declares in `gcm.rs` the internal functions of
+`aes.rs`, which `Emit.lean` declares there. The problems that would make what
+this run writes differ from what `Emit.lean` writes, taking the crates `dest`
+on disk for what `Emit.lean` wrote for the other registration files: an
+internal function that a file of this run declares and that a different file
+on disk declares, or that no file on disk declares (a new one), and an
+internal function that a file on disk declares and that the same file of this
+run does not (another registration file calls it). -/
+def ownershipProblems (out dest : FilePath) : IO (List String) := do
+  let crates := (← out.readDir).toList.map (·.fileName)
+  let generated ← moduleFiles out crates
+  let current ← moduleFiles dest crates
+  let owners := current.flatMap fun (c, m, text) => (internalDecls text).map fun n => ((c, n), m)
+  let mut problems := []
+  for (crate, m, text) in generated do
+    let file := dest / crate / "src" / s!"{m}.rs"
+    let decls := internalDecls text
+    -- Each internal function `file` would declare, with the modules whose
+    -- files on disk declare it (none for a new one).
+    let elsewhere := decls.filterMap fun n =>
+      let os := (owners.filter fun (k, _) => k == (crate, n)).map (·.2)
+      if os.contains m then none else some (n, os)
+    let new := (elsewhere.filter (·.2.isEmpty)).map (·.1)
+    unless new.isEmpty do
+      problems := s!"{file} would declare the internal functions {new}, which no file \
+        declares as internal functions (new ones, or artifacts of registration files not \
+        given): run Emit.lean" :: problems
+    for o in VG.Rust.dedup ((elsewhere.flatMap (·.2)).mergeSort (· ≤ ·)) do
+      let ns := (elsewhere.filter (·.2.contains o)).map (·.1)
+      problems := s!"{file} would declare the internal functions {ns}, which {o}.rs \
+        declares (Emit.lean chooses the module that declares each from every registration \
+        file of the target): run Emit.lean" :: problems
+    if let some (_, _, now) := current.find? fun (c, m', _) => c == crate && m' == m then
+      let others := (internalDecls now).filter (!decls.contains ·)
+      unless others.isEmpty do
+        problems := s!"{file} also declares the internal functions {others}, which other \
+          registration files call: run Emit.lean" :: problems
+  return problems.reverse
 
 /-- Lake's log `log` without its `info:` and `trace:` entries (each a line
 that starts with its level, and the lines after it that start with none)
@@ -133,8 +204,14 @@ def main (args : List String) : IO UInt32 := do
   let code ← runProc (← IO.appPath).toString
     #["--setup", setup.toString, "--run", driver.toString, out.toString]
   unless code == 0 do return code
-  -- Copy or compare each generated file but the crates' `lib.rs` and `consts/mod.rs`.
   let dest : FilePath := ".." / "crates"
+  -- Nothing is written unless every internal function is declared where
+  -- `Emit.lean` declares it: the modules of the files that call one name it.
+  let problems ← ownershipProblems out dest
+  unless problems.isEmpty do
+    for p in problems do IO.eprintln p
+    return 1
+  -- Copy or compare each generated file but the crates' `lib.rs` and `consts/mod.rs`.
   let mut ok := true
   for path in ← out.walkDir do
     unless path.extension == some "rs" && path.fileName != some "mod.rs" &&

@@ -25,6 +25,7 @@ CI runs each of these, and fails if it does:
 | `check_skills.py` | The skills' frontmatter and links, and CLAUDE.md's list of them |
 | `check_vectors.py` | `vectors/sources/` describes the files under `vectors/` |
 | `cpu_tests.py lint` | `rust_matrix.toml`'s CPU-feature lines |
+| `emit_one_negative.py` | `EmitOne.lean` refuses a registration file whose internal functions another module's file declares |
 | `merge_rust_coverage.py` | 100% line coverage, per architecture and merged (from `export_rust_coverage.py`'s files) |
 | `rust_lint.py` | rustfmt, Clippy and a release build for every target |
 

@@ -509,7 +509,7 @@ builds only it and what it imports, and after that only what changed
 see the `lean-profiling` skill):
 
 ```sh
-lake build --log-level=warning +VerifiedGarbage.Proof.Md5.X86_64.Compress
+lake build --log-level=warning +VerifiedGarbage.Proof.Rc2.AArch64.Cipher
 ```
 
 To check the artifact and regenerate its code, run `EmitOne.lean` on its
@@ -518,14 +518,17 @@ emitter's audits on its artifacts, and writes (or, with `--check`, compares)
 only its files under `crates/`, in seconds once the proofs are built:
 
 ```sh
-lake env lean --run EmitOne.lean Md5.X86_64
-lake env lean --run EmitOne.lean --check Md5.X86_64
+lake env lean --run EmitOne.lean Rc2.AArch64
+lake env lean --run EmitOne.lean --check Rc2.AArch64
 ```
 
 It refuses a file that is new or that other registration files also emit into
 (each table of constants has a file of its own, `consts/<name>.rs`, which it
-writes like any other); the full emitter handles those, and the checks below
-still run everything before pushing.
+writes like any other), and, writing nothing, a registration whose files
+would declare other internal functions than the same files on disk do (which
+module's file declares each depends on every registration file of the
+target); the full emitter handles those, and the checks below still run
+everything before pushing.
 
 ## Checks to run before pushing
 
