@@ -2864,12 +2864,13 @@ vg_aes_gcm_stream_encrypt_bitsliced:
 	sub a6, s5, a5
 	add s4, s4, a6
 	addi s5, a5, 0
+	addi a6, a3, 0
 	beqz a4, 29f
 	addi a0, s7, 0
 	addi a1, s3, 0
 	addi a2, s1, 48
 	addi a5, s0, 512
-	call {vg_aes_ctr32_bs}
+	call {vg_aes_ctr32_bs_to}
 	j 210f
 29:
 210:
@@ -3771,12 +3772,13 @@ vg_aes_gcm_stream_decrypt_bitsliced:
 	sub a6, s5, a5
 	add s4, s4, a6
 	addi s5, a5, 0
+	addi a6, a3, 0
 	beqz a4, 232f
 	addi a0, s7, 0
 	addi a1, s3, 0
 	addi a2, s1, 48
 	addi a5, s0, 512
-	call {vg_aes_ctr32_bs}
+	call {vg_aes_ctr32_bs_to}
 	j 233f
 232:
 233:
@@ -6250,12 +6252,13 @@ vg_aes_gcm_seal_bitsliced:
 	sub a6, s5, a5
 	add s4, s4, a6
 	addi s5, a5, 0
+	addi a6, a3, 0
 	beqz a4, 249f
 	addi a0, s7, 0
 	addi a1, s3, 0
 	addi a2, s1, 48
 	addi a5, s0, 512
-	call {vg_aes_ctr32_bs}
+	call {vg_aes_ctr32_bs_to}
 	j 250f
 249:
 250:
@@ -7665,12 +7668,13 @@ vg_aes_gcm_open_bitsliced:
 	sub a6, s5, a5
 	add s4, s4, a6
 	addi s5, a5, 0
+	addi a6, a3, 0
 	beqz a4, 280f
 	addi a0, s7, 0
 	addi a1, s3, 0
 	addi a2, s1, 48
 	addi a5, s0, 512
-	call {vg_aes_ctr32_bs}
+	call {vg_aes_ctr32_bs_to}
 	j 281f
 280:
 281:
