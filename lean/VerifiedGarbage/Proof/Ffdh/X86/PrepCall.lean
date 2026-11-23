@@ -327,6 +327,121 @@ theorem callee_at {s : State} (h : In Ex base bytes len args s) (RF : RoomF (s.g
     (by rw [K.2.1, t0rd]) (by rw [K.2.2, t0wr, uesp]) (by rw [uesp]; exact S), ue, callee_frame_apart RF ue⟩
 
 
+/-- What a call by `argCall` leaves: the caller's inputs and registers, the changes within a stage's, and
+`R` of the memory. -/
+abbrev ArgPost (Ex : List Region → List Region → Prop) (base : Addr) (bytes len : Nat) (args : Nat → BitVec 32)
+    (ws : List (Nat × Nat)) (R : Mem → Prop) (s u : State) : Prop :=
+  In Ex base bytes len args u ∧ Frame (frameF base (s.gpr .esp) ws) s.mem u.mem ∧
+    Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s u ∧ R u.mem
+
+/-- `ArgPost` holds through changes in the 176 bytes below `esp`, if `R` does. -/
+theorem ArgPost.below {ws : List (Nat × Nat)} {R : Mem → Prop} {s u : State}
+    (P : ArgPost Ex base bytes len args ws R s u) (RF : RoomF (s.gpr .esp) base bytes)
+    (hR : ∀ {m m' : Mem} {rs : List Region}, R m → Frame rs m m' →
+      (∀ r ∈ rs, Region.Sub r (below (s.gpr .esp) 176)) → R m')
+    {rs : List Region} {m : Mem} (F : Frame rs u.mem m) (hr : ∀ r ∈ rs, Region.Sub r (below (s.gpr .esp) 176))
+    (un : Nat → BitVec 32) : ArgPost Ex base bytes len args ws R s { u with mem := m, unknowns := un } := by
+  obtain ⟨I, Fu, K, Rm⟩ := P
+  have sp : u.gpr .esp = s.gpr .esp := K.1 _ (by decide)
+  obtain K' : Keeps [] u { u with mem := m, unknowns := un } := ⟨fun _ _ => rfl, rfl, rfl⟩
+  exact ⟨in_keepFF I K' (by decide) (by decide) (by rw [sp]; exact RF) (ws := [])
+      (by rw [sp]; exact frameF_of_sub F hr) (fun _ h => nomatch h), Fu.trans (frameF_of_sub F hr), K, hR Rm F hr⟩
+
+/-- A wide slot through changes in the 176 bytes below `sp` alone. -/
+theorem frameF_sv {t : State} (h : In Ex base bytes len args t) {sp : BitVec 32} (RF : RoomF sp base bytes)
+    {m m' : Mem} (F : Frame (frameF base sp []) m m') {j : Nat} (hj : j ≤ 27) :
+    sv m' base len .wide j = sv m base len .wide j := by
+  have := h.slot_fit .wide hj
+  have bw := bc_eq_cwc len .wide
+  have est : st len .wide = 2 * bc len .wide + 32 := rfl
+  exact frameF_val32 F RF h.scratch.nowrap (by omega_arith) (fun _ h => nomatch h) (fun _ h => nomatch h)
+
+/-- The inverse's word through changes in the 176 bytes below `sp` alone. -/
+theorem frameF_inv {t : State} (h : In Ex base bytes len args t) {sp : BitVec 32} (RF : RoomF sp base bytes)
+    {m m' : Mem} (F : Frame (frameF base sp []) m m') : w32 m' base invOff = w32 m base invOff := by
+  have := frameF_val32 (d := invOff) (k := 1) F RF h.scratch.nowrap (by
+    have := h.need; simp only [invOff, CrtRt.need, Impl.Bignum.X86.CrtRt.numBase] at this ⊢; omega_arith)
+    (fun _ h => nomatch h) (fun _ h => nomatch h)
+  simpa only [val32, w32, Nat.mul_zero, Nat.add_zero] using this
+
+/-- A call by `argCall` of `b`, which, from the callee's inputs (the caller's, the arguments copied, and
+memory the caller's but for the 176 bytes below its `esp`), keeps the registers, changes only the ranges `ws`
+and the 96 bytes below its `esp`, and reaches `R`. -/
+theorem argCall_ok {name : String} {b : Prog isa}
+    (hns : NoSp (.seq (.block ((List.range 18).flatMap copyArg)) b : Prog isa)) {s : State}
+    (h : In Ex base bytes len args s) (RF : RoomF (s.gpr .esp) base bytes) {ws : List (Nat × Nat)}
+    (hws : ∀ p ∈ ws, p.1 + p.2 ≤ bytes) {R : Mem → Prop}
+    (hR : ∀ {m m' : Mem} {rs : List Region}, R m → Frame rs m m' →
+      (∀ r ∈ rs, Region.Sub r (below (s.gpr .esp) 176)) → R m')
+    (hb : ∀ u, In (fun _ _ => True) base bytes len args u → Frame (frameF base (s.gpr .esp) []) s.mem u.mem →
+      WP isa b u fun v => Frame (frameR base (u.gpr .esp) ws) u.mem v.mem ∧
+        Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] u v ∧ R v.mem) :
+    WP isa (argCall name b) s (ArgPost Ex base bytes len args ws R s) := by
+  have low := RF.low
+  have top := h.top
+  have hE := (s.gpr .esp).isLt
+  obtain ⟨r4, r76, r96, d76, d96⟩ := callee_regions low
+  obtain sN : (s.gpr .esp - 4).toNat = (s.gpr .esp).toNat - 4 := by
+    rw [show (4 : BitVec 32) = BitVec.ofNat 32 4 from rfl]; exact VG.X86.sub_toNat (by omega_using [low])
+  obtain retWs : Region.Disjoint ⟨(s.gpr .esp - 4).setWidth 64, 4⟩ ⟨base, bytes⟩ := RF.apart.sub_left r4
+  unfold argCall
+  refine WP.callBody ?_
+  refine WP.frameAllocLocal (bytes := argsFrame) (by decide) (by decide) (by decide)
+    (by rw [State.callEntry_esp, sN]; show 76 ≤ _; omega_using [low]) hns ?_ ?_
+  · intro t m un ⟨e, rt, P⟩ F
+    rw [State.callEntry_esp] at F
+    refine ⟨e, ?_, ?_⟩
+    · show m.readW _ 32 = _
+      rw [F.readW (r := ⟨(s.gpr .esp - 4).setWidth 64, 4⟩) (Region.contains_self _ _)
+        (fun r hr => by rw [List.mem_singleton.mp hr]; exact d76) (by decide)]
+      exact rt
+    · exact P.below RF hR F (fun r hr => by rw [List.mem_singleton.mp hr]; exact r76) un
+  -- The frame's state.
+  generalize ht0 : allocFrame argsFrame s.callEntry = t0
+  obtain ⟨t0esp, t0esp80, -, t0wr, t0rd, t0mem, t0gpr⟩ := callee_entry ht0 low
+  obtain frameEq : below (s.gpr .esp - 4) 76 = ⟨(t0.gpr .esp).setWidth 64, 76⟩ := by simp only [below]; rw [t0esp]
+  rw [frameEq] at r76 d76
+  obtain Fret : Frame [⟨(s.gpr .esp - 4).setWidth 64, 4⟩] s.mem t0.mem := by
+    rw [t0mem]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
+  refine WP.seq (callee_copy h RF ht0 fun u K Fc S => ?_)
+  obtain uesp : u.gpr .esp = t0.gpr .esp := K.1 _ (by decide)
+  obtain h' := in_callee h RF (f := u) (by rw [uesp, t0esp80]) (by rw [K.1 _ (by decide), t0gpr _ (by decide)])
+    (by rw [K.2.1, t0rd]) (by rw [K.2.2, t0wr, uesp]) (by rw [uesp]; exact S)
+  obtain Fs : Frame (frameF base (s.gpr .esp) []) s.mem u.mem :=
+    (frameF_of_sub Fret fun r hr => by rw [List.mem_singleton.mp hr]; exact r4).trans
+      (frameF_of_sub Fc fun r hr => by rw [List.mem_singleton.mp hr]; exact r76)
+  refine WP.mono (hb u h' Fs) fun v ⟨Fp, Kv, Rv⟩ => ?_
+  obtain vesp : v.gpr .esp = t0.gpr .esp := (Kv.1 _ (by decide)).trans uesp
+  rw [uesp, t0esp] at Fp
+  obtain Fw : Frame (frameF base (s.gpr .esp) ws) s.mem v.mem :=
+    (frameF_mono Fs (fun _ h => nomatch h)).trans (frameF_of_frameR Fp r96)
+  refine ⟨?_, ?_, ?_⟩
+  · rw [freed_esp, vesp, t0esp80]
+    apply BitVec.eq_of_toNat_eq
+    have fb : argsFrame = 76 := rfl
+    rw [BitVec.toNat_add, VG.X86.sub_toNat (by omega_using [low]), sN, BitVec.toNat_ofNat]
+    omega_using [low, hE, fb]
+  · rw [freed_mem]
+    rw [Fp.readW (r := ⟨(s.gpr .esp - 4).setWidth 64, 4⟩) (Region.contains_self _ _) (fun r hr => by
+        rw [frameR, List.mem_cons, List.mem_map] at hr
+        rcases hr with rfl | ⟨p, hp, rfl⟩
+        · exact d96
+        · exact retWs.sub_right (Offset.sub_base _ (hws p hp)))
+      (by decide),
+      Fc.readW (r := ⟨(s.gpr .esp - 4).setWidth 64, 4⟩) (Region.contains_self _ _)
+        (fun r hr => by rw [List.mem_singleton.mp hr]; exact d76) (by decide),
+      t0mem, Mem.readW_writeW_self32]
+  · -- Back in the caller.
+    obtain Kw : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s ((freed argsFrame v).setReg .esp (s.gpr .esp)) := by
+      refine ⟨fun r hr => ?_, by simp only [State.setReg, freed_rd]; rw [Kv.2.1, K.2.1, t0rd], ?_⟩
+      · by_cases e : r = .esp
+        · subst e; simp [State.setReg]
+        · simp only [State.setReg, e, ↓reduceIte]
+          rw [freed_gpr _ _ e, Kv.1 r hr, K.1 r (by simp_all), t0gpr r e]
+      · simp only [State.setReg, freed_wr]; rw [Kv.2.2, K.2.2, t0wr]; rfl
+    exact ⟨in_keepFF h Kw (by decide) (by decide) RF Fw hws, Fw, Kw, by
+      show R (freed argsFrame v).mem; rw [freed_mem]; exact Rv⟩
+
 theorem prepCall_ok {s : State} (h : In Ex base bytes len args s) (RF : RoomF (s.gpr .esp) base bytes) :
     WP isa prepCall s (PrepPost Ex base bytes len args s) := by
   have low := RF.low
@@ -337,7 +452,7 @@ theorem prepCall_ok {s : State} (h : In Ex base bytes len args s) (RF : RoomF (s
   obtain sN : (s.gpr .esp - 4).toNat = (s.gpr .esp).toNat - 4 := by
     rw [show (4 : BitVec 32) = BitVec.ofNat 32 4 from rfl]; exact VG.X86.sub_toNat (by omega_using [low])
   obtain retWs : Region.Disjoint ⟨(s.gpr .esp - 4).setWidth 64, 4⟩ ⟨base, bytes⟩ := RF.apart.sub_left r4
-  unfold prepCall
+  unfold prepCall argCall
   refine WP.callBody ?_
   refine WP.frameAllocLocal (bytes := argsFrame) (by decide) (by decide) (by decide)
     (by rw [State.callEntry_esp, sN]; show 76 ≤ _; omega_using [low]) prepBody_noSp ?_ ?_
@@ -401,6 +516,81 @@ theorem prepCall_ok {s : State} (h : In Ex base bytes len args s) (RF : RoomF (s
       · simp only [State.setReg, freed_wr]; rw [Kv.2.2, K.2.2, t0wr]; rfl
     refine ⟨⟨in_keepFF h Kw (by decide) (by decide) RF Fw (prepR_fit2 h .wide).1, C.mod, C.gt, C.odd, C.inv⟩,
       one, R2, Fw, Kw⟩
+
+
+/-! ## The windowed powers, called -/
+
+theorem winBody_noSp :
+    NoSp (.seq (.block ((List.range 18).flatMap copyArg)) (windowPower .wide) : Prog isa) :=
+  NoSp.of_all (by rsa_stack_shape)
+
+theorem winTopBody_noSp :
+    NoSp (.seq (.block ((List.range 18).flatMap copyArg)) (windowPowerWith .wide (lenCount 11)) : Prog isa) :=
+  NoSp.of_all (by rsa_stack_shape)
+
+/-- A context's memory modulo `M`, with `V` in slot 6. -/
+abbrev WinMem (base : Addr) (len M V : Nat) (m : Mem) : Prop :=
+  sv m base len .wide 0 = M ∧ (M * w32 m base invOff + 1) % 2 ^ 32 = 0 ∧ sv m base len .wide 6 = V
+
+theorem winMem_below {t : State} (h : In Ex base bytes len args t) {sp : BitVec 32} (RF : RoomF sp base bytes)
+    {M V : Nat} {m m' : Mem} {rs : List Region} (W : WinMem base len M V m) (F : Frame rs m m')
+    (hr : ∀ r ∈ rs, Region.Sub r (below sp 176)) : WinMem base len M V m' := by
+  obtain ⟨a, b, c⟩ := W
+  obtain Fs : Frame (frameF base sp []) m m' := frameF_of_sub F hr
+  exact ⟨(frameF_sv h RF Fs (by decide)).trans a, by rw [frameF_inv h RF Fs]; exact b,
+    (frameF_sv h RF Fs (by decide)).trans c⟩
+
+/-- The callee's context: the caller's, through changes in the 176 bytes below the caller's `esp`. -/
+theorem ctx_callee {M : Nat} {s u : State} (C : CtxOk Ex base bytes len args .wide M s)
+    (RF : RoomF (s.gpr .esp) base bytes) (hu : In (fun _ _ => True) base bytes len args u)
+    (Fs : Frame (frameF base (s.gpr .esp) []) s.mem u.mem) :
+    CtxOk (fun _ _ => True) base bytes len args .wide M u :=
+  ⟨hu, by rw [frameF_sv C.inp RF Fs (by decide)]; exact C.mod, C.gt, C.odd,
+    by rw [frameF_inv C.inp RF Fs]; exact C.inv⟩
+
+/-- `windowPower .wide`, called: `windowPower_ok`, with the changes within a stage's. -/
+theorem winCall_ok {M : Nat} {s : State} (C : CtxOk Ex base bytes len args .wide M s)
+    (RF : RoomF (s.gpr .esp) base bytes) (h3 : sv s.mem base len .wide 3 = 1)
+    (h4 : sv s.mem base len .wide 4 = 2 ^ (16 * bc len .wide) % M) :
+    WP isa winCall s fun u => CtxOk Ex base bytes len args .wide M u ∧
+      Frame (frameF base (s.gpr .esp) (pwR len .wide)) s.mem u.mem ∧
+      Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s u ∧
+      sv u.mem base len .wide 6 = sv s.mem base len .wide 5 ^ sv s.mem base len .wide 8 % M := by
+  unfold winCall
+  refine WP.mono (argCall_ok winBody_noSp C.inp RF (pwR_fit C.inp .wide)
+    (R := WinMem base len M (sv s.mem base len .wide 5 ^ sv s.mem base len .wide 8 % M))
+    (fun W F hr => winMem_below C.inp RF W F hr) fun u hu Fs => ?_)
+    fun w ⟨I, F, K, a, b, c⟩ => ⟨⟨I, a, C.gt, C.odd, b⟩, F, K, c⟩
+  have e := fun j (hj : j ≤ 27) => frameF_sv C.inp RF Fs hj
+  refine WP.mono (windowPower_ok (ctx_callee C RF hu Fs) (by rw [e 3 (by decide)]; exact h3)
+    (by rw [e 4 (by decide)]; exact h4)) fun v ⟨Cv, F, K, Y⟩ => ⟨F, K, Cv.mod, Cv.inv, ?_⟩
+  rw [Y, e 5 (by decide), e 8 (by decide)]
+
+/-- `windowPowerWith .wide (lenCount 11)`, called, for synthetic argument 11 the public length `L`:
+`windowPowerWith_ok` over `2 L` windows, with the changes within a stage's. -/
+theorem winTopCall_ok {M L : Nat} {s : State} (C : CtxOk Ex base bytes len args .wide M s)
+    (RF : RoomF (s.gpr .esp) base bytes) (h3 : sv s.mem base len .wide 3 = 1)
+    (h4 : sv s.mem base len .wide 4 = 2 ^ (16 * bc len .wide) % M) (hx : args 11 = BitVec.ofNat 32 L)
+    (hL0 : 0 < L) (hL : 2 * L ≤ 2 * bc len .wide) (hL32 : 2 * L < 2 ^ 32) :
+    WP isa winTopCall s fun u => CtxOk Ex base bytes len args .wide M u ∧
+      Frame (frameF base (s.gpr .esp) (pwR len .wide)) s.mem u.mem ∧
+      Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s u ∧
+      sv u.mem base len .wide 6 = sv s.mem base len .wide 5 ^
+        (sv s.mem base len .wide 8 * 16 ^ (2 * L) / 2 ^ (32 * cwc len .wide)) % M := by
+  unfold winTopCall
+  refine WP.mono (argCall_ok winTopBody_noSp C.inp RF (pwR_fit C.inp .wide)
+    (R := WinMem base len M (sv s.mem base len .wide 5 ^
+      (sv s.mem base len .wide 8 * 16 ^ (2 * L) / 2 ^ (32 * cwc len .wide)) % M))
+    (fun W F hr => winMem_below C.inp RF W F hr) fun u hu Fs => ?_)
+    fun w ⟨I, F, K, a, b, c⟩ => ⟨⟨I, a, C.gt, C.odd, b⟩, F, K, c⟩
+  have e := fun j (hj : j ≤ 27) => frameF_sv C.inp RF Fs hj
+  refine WP.mono (windowPowerWith_ok (ctx_callee C RF hu Fs) (by rw [e 3 (by decide)]; exact h3)
+    (by rw [e 4 (by decide)]; exact h4) (N := 2 * L) (by omega_arith) hL fun t Ct =>
+    wp_movS (Ct.inp.arg (i := 11) (by decide)) fun t₁ a₁ _ => wp_addS rfl fun t₂ a₂ _ => WP.block_nil
+      ⟨a₁.keeps.trans (a₂.keeps.mono (by decide)), by rw [a₂.mem, a₁.mem], by
+        rw [a₂.gpr, a₁.gpr, hx, BitVec.ofNat_add_ofNat]; congr 1; omega_arith⟩)
+    fun v ⟨Cv, F, K, Y⟩ => ⟨F, K, Cv.mod, Cv.inv, ?_⟩
+  rw [Y, e 5 (by decide), e 8 (by decide)]
 
 end
 

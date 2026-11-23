@@ -124,22 +124,30 @@ def pSetup : Prog isa :=
 address. -/
 def copyArg (i : Nat) : List Instr := [.mov .eax (.mem (at_ .esp (84 + 4 * i))), .store (slotOp i) .eax]
 
-/-- `prepare .wide`, called: a frame of the synthetic arguments, copied from the caller's, for it to read. -/
-def prepCall : Prog isa :=
-  .call "vg_ffdh_prepare_wide"
-    (.frame (.alloc argsFrame) (.seq (.block ((List.range 18).flatMap copyArg)) (prepare .wide)) (.free argsFrame))
+/-- `b`, called as `name`: in a frame of the synthetic arguments, copied from the caller's, for it to read. -/
+def argCall (name : String) (b : Prog isa) : Prog isa :=
+  .call name (.frame (.alloc argsFrame) (.seq (.block ((List.range 18).flatMap copyArg)) b) (.free argsFrame))
+
+/-- `prepare .wide`, called. -/
+def prepCall : Prog isa := argCall "vg_ffdh_prepare_wide" (prepare .wide)
+
+/-- `windowPower .wide`, called. -/
+def winCall : Prog isa := argCall "vg_ffdh_window_wide" (windowPower .wide)
+
+/-- `windowPowerWith .wide (lenCount 11)`, called: over x's public length, synthetic argument 11. -/
+def winTopCall : Prog isa := argCall "vg_ffdh_window_top_wide" (windowPowerWith .wide (lenCount 11))
 
 /-- The context of p: p in slot 0, one in slot 3, `R² mod p` in slot 4 and the inverse. -/
 def ctxP : Prog isa := .seq (copy (sl 9) (sl 0) n1) prepCall
 
 /-- Slot 6 the number in slot `b` to the power of the number in slot `e`, modulo p. -/
 def powP (b e : Nat) : Prog isa :=
-  .seq ctxP (.seq (copy (sl b) (sl 5) n1) (.seq (copy (sl e) (sl 8) n1) (windowPower .wide)))
+  .seq ctxP (.seq (copy (sl b) (sl 5) n1) (.seq (copy (sl e) (sl 8) n1) winCall))
 
 /-- Slot 6 the number in slot `b` to the power of x (synthetic arguments 10 and 11), modulo p: x is
 loaded at the top of slot 8 and raised over its `x_len` public bytes only. -/
 def powTop (b : Nat) : Prog isa :=
-  .seq ctxP (.seq (copy (sl b) (sl 5) n1) (.seq (loadTop (sl 8) n1 10 11) (windowPowerWith .wide (lenCount 11))))
+  .seq ctxP (.seq (copy (sl b) (sl 5) n1) (.seq (loadTop (sl 8) n1 10 11) winTopCall))
 
 /-- `ecx` all ones if `1 < [a] < p − 1`, else zero, through the mask word. -/
 def rangeMask (a : Nat) : Prog isa :=
@@ -263,7 +271,7 @@ def args : Args := { out := some 0, dom := 2, dlen := 3, plen := 4, y := some 7,
 x is loaded at the top of slot 8 and raised over its `x_len` public bytes only. -/
 def body : Prog isa :=
   .seq pSetup <| .seq ctxP <| .seq (load (sl 5) n1 8 9) <| .seq (loadTop (sl 8) n1 10 11) <|
-  .seq (windowPowerWith .wide (lenCount 11)) <| .seq (rangeMask 6) <| .seq (.block [.store (sc accOff) .ecx]) <|
+  .seq winTopCall <| .seq (rangeMask 6) <| .seq (.block [.store (sc accOff) .ecx]) <|
   .seq (copy (sl 6) (sl 19) n1) exportResult
 
 def code : Prog isa := wrap args body
