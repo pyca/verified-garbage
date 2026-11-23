@@ -11,9 +11,9 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_encrypt_blocks_to_prepared16_vaes_vpclmul() {
     core::arch::naked_asm!(
-        r#".base64 "TItcJBhMi1QkCEmJO0mJcwhJiVMQSYlLGE2JQyBNiUsoTYlTMEmD+QI="
+        r#".base64 "SYP5Ag=="
 jb 20f
-.base64 "TInISAHASAHASAHASAHATAHASYlDIEyJyEgBwEgBwEgBwEgBwEwB0EmJQzC4AAAAAEmJQyhJg8N/SYPjwEmD+RA="
+.base64 "TItcJBhMi1QkCEmDw39Jg+PASYP5EA=="
 jb 22f
 lea rax, [rip + {VG_GCM_CONSTS}]
 .base64 "8w9vAA=="
@@ -206,10 +206,9 @@ jmp 266f
 266:
 .base64 "xOJpANDF+n8Rxfh3"
 23:
-jmp 21f
+ret
 20:
-21:
-.base64 "TItcJBhJi0soSIXJ"
+.base64 "TItcJBhMi1QkCEmJO0mJcwhJiVMQSYlLGE2JQyBNiUsoTYlTME2FyQ=="
 je 267f
 .base64 "TItcJBhJiztJi3MISYtTEEmLSyBNi0MoTYnZSYPBQE2LWzA="
 call {vg_aes_ctr32_to_vaes}
