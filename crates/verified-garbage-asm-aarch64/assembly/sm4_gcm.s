@@ -137,8 +137,8 @@ vg_sm4_gcm_open_ctr32_sm4_ghash_aes:
 	add x16, sp, #0
 	ldr x17, [sp, #32]
 	str x17, [x16, #0]
-	umov x16, v8.d[0]
 	str x30, [sp, #16]
+	umov x16, v8.d[0]
 	str x16, [sp, #24]
 	adrp x16, {vg_ghash_aes}
 	add x16, x16, {vg_ghash_aes}
@@ -1056,8 +1056,8 @@ vg_sm4_gcm_open_ctr32_sm4:
 	add x16, sp, #0
 	ldr x17, [sp, #32]
 	str x17, [x16, #0]
-	umov x16, v8.d[0]
 	str x30, [sp, #16]
+	umov x16, v8.d[0]
 	str x16, [sp, #24]
 	adrp x16, {vg_ghash}
 	add x16, x16, {vg_ghash}
@@ -2014,8 +2014,8 @@ vg_sm4_gcm_open_ghash_aes:
 	add x16, sp, #0
 	ldr x17, [sp, #32]
 	str x17, [x16, #0]
-	umov x16, v8.d[0]
 	str x30, [sp, #16]
+	umov x16, v8.d[0]
 	str x16, [sp, #24]
 	adrp x16, {vg_ghash_aes}
 	add x16, x16, {vg_ghash_aes}
@@ -4635,8 +4635,8 @@ vg_sm4_gcm_open_ghash_neon:
 	add x16, sp, #0
 	ldr x17, [sp, #32]
 	str x17, [x16, #0]
-	umov x16, v8.d[0]
 	str x30, [sp, #16]
+	umov x16, v8.d[0]
 	str x16, [sp, #24]
 	adrp x16, {vg_ghash_neon}
 	add x16, x16, {vg_ghash_neon}
@@ -7597,8 +7597,8 @@ vg_sm4_gcm_open:
 	add x16, sp, #0
 	ldr x17, [sp, #32]
 	str x17, [x16, #0]
-	umov x16, v8.d[0]
 	str x30, [sp, #16]
+	umov x16, v8.d[0]
 	str x16, [sp, #24]
 	adrp x16, {vg_ghash}
 	add x16, x16, {vg_ghash}

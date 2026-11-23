@@ -77,7 +77,7 @@ pub const VG_SM4_GCM_OPEN_CTR32_SM4_GHASH_AES_FEATURES: verified_garbage_cpu::Fe
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sm4_gcm_open_ctr32_sm4_ghash_aes(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
-        r".inst 0xd10083ff,0x910003f0,0xf94013f1,0xf9000211,0x4e083d10,0xf9000bfe,0xf9000ff0",
+        r".inst 0xd10083ff,0x910003f0,0xf94013f1,0xf9000211,0xf9000bfe,0x4e083d10,0xf9000ff0",
         concat!("adrp x16, ", vg_sym_page!("{vg_ghash_aes}")),
         concat!("add x16, x16, ", vg_sym_pageoff!("{vg_ghash_aes}")),
         r".inst 0x4e081e08
@@ -414,7 +414,7 @@ pub const VG_SM4_GCM_OPEN_CTR32_SM4_FEATURES: verified_garbage_cpu::Features = v
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sm4_gcm_open_ctr32_sm4(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
-        r".inst 0xd10083ff,0x910003f0,0xf94013f1,0xf9000211,0x4e083d10,0xf9000bfe,0xf9000ff0",
+        r".inst 0xd10083ff,0x910003f0,0xf94013f1,0xf9000211,0xf9000bfe,0x4e083d10,0xf9000ff0",
         concat!("adrp x16, ", vg_sym_page!("{vg_ghash}")),
         concat!("add x16, x16, ", vg_sym_pageoff!("{vg_ghash}")),
         r".inst 0x4e081e08
@@ -728,7 +728,7 @@ pub const VG_SM4_GCM_OPEN_GHASH_AES_FEATURES: verified_garbage_cpu::Features = v
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sm4_gcm_open_ghash_aes(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
-        r".inst 0xd10083ff,0x910003f0,0xf94013f1,0xf9000211,0x4e083d10,0xf9000bfe,0xf9000ff0",
+        r".inst 0xd10083ff,0x910003f0,0xf94013f1,0xf9000211,0xf9000bfe,0x4e083d10,0xf9000ff0",
         concat!("adrp x16, ", vg_sym_page!("{vg_ghash_aes}")),
         concat!("add x16, x16, ", vg_sym_pageoff!("{vg_ghash_aes}")),
         r".inst 0x4e081e08
@@ -1388,7 +1388,7 @@ bl {vg_sm4_gcm_seal_core}
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sm4_gcm_open_ghash_neon(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
-        r".inst 0xd10083ff,0x910003f0,0xf94013f1,0xf9000211,0x4e083d10,0xf9000bfe,0xf9000ff0",
+        r".inst 0xd10083ff,0x910003f0,0xf94013f1,0xf9000211,0xf9000bfe,0x4e083d10,0xf9000ff0",
         concat!("adrp x16, ", vg_sym_page!("{vg_ghash_neon}")),
         concat!("add x16, x16, ", vg_sym_pageoff!("{vg_ghash_neon}")),
         r".inst 0x4e081e08
@@ -2090,7 +2090,7 @@ bl {vg_sm4_gcm_seal_core}
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sm4_gcm_open(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
-        r".inst 0xd10083ff,0x910003f0,0xf94013f1,0xf9000211,0x4e083d10,0xf9000bfe,0xf9000ff0",
+        r".inst 0xd10083ff,0x910003f0,0xf94013f1,0xf9000211,0xf9000bfe,0x4e083d10,0xf9000ff0",
         concat!("adrp x16, ", vg_sym_page!("{vg_ghash}")),
         concat!("add x16, x16, ", vg_sym_pageoff!("{vg_ghash}")),
         r".inst 0x4e081e08

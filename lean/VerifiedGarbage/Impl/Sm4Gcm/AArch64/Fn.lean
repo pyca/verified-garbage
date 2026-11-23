@@ -40,7 +40,7 @@ open VG.AArch64
 open VG.Impl.Scrub.AArch64 (scrubAll)
 open VG.Impl.StackScratch.AArch64 (withStackScratch withStackArgScratch)
 open VG.Impl.AesGcm.AArch64.Fn (own)
-open VG.Impl.Sha3.AArch64 (entryD8 entryD8S clearD8)
+open VG.Impl.Sha3.AArch64 (entryD8 entryDS clearD8 clearDL)
 
 /-- What the functions of a variant of SM4-GCM call. -/
 structure Calls where
@@ -61,10 +61,10 @@ def viaD8 (v : Calls) (W : Nat) (core : String) (rb : Nat) (F : Prog isa) : Prog
   scrubAll (v.stack + W) rb clearD8
     (entryD8 v.callees.gh.name core (Impl.Sha3.AArch64.Code.viaD8At v.callees.gh.name F))
 
-/-- `viaD8` for a function with `k` stack words (`entryD8S`). -/
+/-- `viaD8` for a function with `k` stack words (`entryDS`). -/
 def viaD8S (v : Calls) (W : Nat) (core : String) (rb k : Nat) (F : Prog isa) : Prog isa :=
-  scrubAll (v.stack + W) rb clearD8
-    (entryD8S v.callees.gh.name core k (Impl.Sha3.AArch64.Code.viaD8At v.callees.gh.name F))
+  scrubAll (v.stack + W) rb (clearDL [(v.callees.gh.name, .v8)])
+    (entryDS [(v.callees.gh.name, .v8)] core k (Impl.Sha3.AArch64.Code.viaDAt [(v.callees.gh.name, .v8)] F))
 
 /-- `vg_sm4_gcm_init`. -/
 def init (v : Calls) : Prog isa :=
@@ -75,7 +75,7 @@ def «seal» (v : Calls) (csfx : String) : Prog isa :=
   viaD8 v 800 ("vg_sm4_gcm_seal_core" ++ csfx) 0 (withStackArgScratch 784 0 (Sm4Gcm.AArch64.«seal» v.callees))
 
 /-- `vg_sm4_gcm_open`, which returns 32 bits: its one stack argument copied
-by `entryD8S`, then by `withStackArgScratch`. -/
+by `entryDS`, then by `withStackArgScratch`. -/
 def «open» (v : Calls) (csfx : String) : Prog isa :=
   viaD8S v 816 ("vg_sm4_gcm_open_core" ++ csfx) 32 1 (withStackArgScratch 784 1 (Sm4Gcm.AArch64.«open» v.callees))
 

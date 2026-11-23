@@ -1,6 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Sha3.AArch64.EntryS
+public import VerifiedGarbage.Proof.Sha3.AArch64.Entry
+public import VerifiedGarbage.Impl.Sha3.AArch64.ViaD8
+public import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
+public import VerifiedGarbage.Proof.Sha3.AArch64.ViaD8At
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
@@ -10,7 +13,8 @@ import VerifiedGarbage.Proof.Framework.AArch64.RelCT
 /-!
 # Calling a function with the addresses of several functions in registers (AArch64)
 
-`Verified.entryDS`: `Verified.entryD8S` for a list `L` of functions and the
+`Verified.entryDS`: `Verified.entryD8` for a function whose arguments need
+not all fit the eight argument registers, and a list `L` of functions and the
 registers that hold their addresses. `entryDS L name k body` copies the
 caller's `k` stack words into the bottom of its frame, saves the return
 address above them, then, for each function `n` and register `v` of `L`,
@@ -19,8 +23,8 @@ saves `v`'s low 64 bits and puts `n`'s address there (`saveRegs`), calls
 `body` writes none of them (`Contract.dL`).
 -/
 
--- separate module: the entry for several functions' addresses, which only some callers need,
--- apart from `EntryS.lean`'s one.
+-- separate module: the entry for functions with stack arguments or several functions' addresses,
+-- which only some callers of `d8` functions need, apart from `Entry.lean`, which every one imports.
 
 @[expose] public section
 
@@ -29,6 +33,14 @@ namespace VG.Proof.Sha3.AArch64
 open VG VG.AArch64 VG.Impl.Sha3.AArch64 VG.Impl.StackScratch.AArch64
 
 /-! ## Saving and restoring the registers -/
+
+theorem copiedState_syms (b : Nat) (w : State) : ∀ m, (copiedState b w m).syms = w.syms
+  | 0 => rfl
+  | m + 1 => copiedState_syms b w m
+
+theorem saveOff_ge (k : Nat) : 8 * k ≤ saveOff k := by unfold saveOff; omega
+
+theorem saveOff_mod (k : Nat) : saveOff k % 8 = 0 := by unfold saveOff; omega
 
 /-- The state after `saveRegs o i [(n, v)]` from `w`. -/
 def regStep (o i : Nat) (n : String) (v : VReg) (w : State) : State :=
@@ -471,7 +483,7 @@ def dRestore (L : List (String × VReg)) (k : Nat) (g : State) : State :=
 theorem leaveDS_run {L : List (String × VReg)} {k : Nat} {g : State} (hE : frameDS k L.length < 4096)
     (hin : ∀ off, off + 8 ≤ frameDS k L.length → InRegions (g.rd ++ g.wr) (g.sp + BitVec.ofNat 64 off) 8) :
     execBlock isa (leaveDS L k) g =
-      some (dRestore L k g, rTrace (saveOff k) g.sp 0 L ++ [.addr (g.sp + BitVec.ofNat 64 (saveOff k))]) := by
+      some (dRestore L k g, rTrace (saveOff k) g.sp 0 L ++ ([.addr (g.sp + BitVec.ofNat 64 (saveOff k))] : List Leak)) := by
   have hle := saveOff_le_frameDS k L.length
   have hm := saveOff_mod k
   have hr := restoreRegs_run (saveOff k) hm L 0 g (by omega) (fun idx h => hin _ (by omega))
@@ -821,7 +833,7 @@ theorem d_body_wpOf {L : List (String × VReg)} {name : String} {body : Prog isa
       allArgs_eEntryDS L s hE, eEntryDS_mem, State.withRegions_mem, State.withRegions_gpr] at hq'
     exact hpost _ _ _ _ _ (allArgs_length sig s) (fun b hb x hx => hag b hb x hx) hq'
 
-/-- A run of `entryD8S n`, from the caller's state `s`, from the run of the
+/-- A run of `entryDS L`, from the caller's state `s`, from the run of the
 call of the function (`hb`): it keeps what the calling convention requires,
 and its postcondition is the function's if that reads the memory on return
 only within the buffers (`hout`). -/
@@ -907,8 +919,8 @@ theorem d_ct {L : List (String × VReg)} {name : String} {body : Prog isa} {σ�
 
 /-- **Code verified against `Contract.dL L` of a contract under `abi` with
 `stack` bytes of stack, for a function with arguments on the stack, is
-verified against the contract under `abi.withFns (L.map (·.1))` with `frameS` more
-bytes when called by `entryD8S n`**: `Verified.entryD8` for any number of
+verified against the contract under `abi.withFns (L.map (·.1))` with `frameDS` more
+bytes when called by `entryDS L`**: `Verified.entryD8` for any number of
 arguments. -/
 theorem Verified.entryDS {p₀ : String × VReg} {L' : List (String × VReg)} {name : String} {body : Prog isa}
     (h : Verified target body (Contract.dL (p₀ :: L') (sig.contract abi pre post wa stack leak)))
@@ -990,6 +1002,128 @@ theorem Verified.entryDS {p₀ : String × VReg} {L' : List (String × VReg)} {n
         (hcov σ₁ h₁').1, (hcov σ₁ h₁').2, (hcov σ₂ h₂').1, (hcov σ₂ h₂').2⟩
     · obtain ⟨rfl, rfl⟩ := hab
       exact ⟨hbody σ₁ h₁', hbody σ₂ h₂'⟩
+
+open VG.AArch64.Scrub VG.Impl.Scrub.AArch64 in
+theorem keptG_clearDL (L : List (String × VReg)) : keptG (clearDL L) = [] :=
+  (by decide : allGprs.filter (fun q => !allGprs.contains q) = [])
+
+open VG.AArch64.Scrub VG.Impl.Scrub.AArch64 in
+/-- `sideI` of the cleanup `clearDL L` holds of an instruction that writes no
+vector register or PSTATE.DIT: `clearDL` clears every general-purpose
+register. -/
+theorem sideI_clearDL_of (L : List (String × VReg)) {i : Instr} (hd : vdstOf i = none)
+    (hw : i.writesDit = false) :
+    sideI (RegSet.ofList (keptG (clearDL L))) (RegSet.ofList (keptV (clearDL L))) i = true := by
+  have hg := keptG_clearDL L
+  simp only [sideI, hw, hg, keeps_ofList, List.all_nil, vkeeps, hd, Bool.not_false, Bool.and_self]
+
+open VG.AArch64.Scrub VG.Impl.Scrub.AArch64 in
+/-- `sideI` of the cleanup `clearDL L` holds of the write of the low half of a
+register `L` gives: `clearDL` clears its high half. -/
+theorem sideI_clearDL_ins {L : List (String × VReg)} {v : VReg} (hv : v ∈ L.map (·.2)) :
+    sideI (RegSet.ofList (keptG (clearDL L))) (RegSet.ofList (keptV (clearDL L)))
+      (.vop (.ins .d2 v 0 .x16)) = true := by
+  have hg := keptG_clearDL L
+  have hm : (RegSet.ofList (keptV (clearDL L))).mem v = false := by
+    cases h : (RegSet.ofList (keptV (clearDL L))).mem v with
+    | false => rfl
+    | true =>
+      have h' := RegSet.mem_ofList.mp h
+      simp only [keptV, clearDL, List.mem_append, List.mem_filter, Bool.not_eq_true',
+        List.contains_eq_any_beq, List.any_eq_false, beq_iff_eq] at h'
+      rcases h' with ⟨h1, h2⟩ | ⟨-, h2⟩
+      · exact (h2 v h1 rfl).elim
+      · exact (h2 v hv rfl).elim
+  simp only [sideI, hg, keeps_ofList, List.all_nil, vkeeps, vdstOf, VOp.dst, hm, Bool.not_false,
+    Bool.and_true]
+  rfl
+
+open VG.AArch64.Scrub VG.Impl.Scrub.AArch64 in
+/-- `sideI` of the cleanup `clearDL L` holds of each instruction of
+`saveRegs o i L'` for `L'` a part of `L`. -/
+theorem sideI_saveRegs {L : List (String × VReg)} (o : Nat) :
+    ∀ (i : Nat) (L' : List (String × VReg)), (∀ p ∈ L', p.2 ∈ L.map (·.2)) →
+      ∀ x ∈ saveRegs o i L',
+        sideI (RegSet.ofList (keptG (clearDL L))) (RegSet.ofList (keptV (clearDL L))) x = true
+  | _, [], _, x, hx => by cases hx
+  | i, (n, v) :: L', hL, x, hx => by
+    simp only [saveRegs, List.cons_append, List.nil_append, List.mem_cons] at hx
+    rcases hx with rfl | rfl | rfl | rfl | hx
+    · exact sideI_clearDL_of L rfl rfl
+    · exact sideI_clearDL_of L rfl rfl
+    · exact sideI_clearDL_of L rfl rfl
+    · exact sideI_clearDL_ins (hL _ List.mem_cons_self)
+    · exact sideI_saveRegs o (i + 1) L' (fun p hp => hL p (List.mem_cons_of_mem _ hp)) x hx
+
+open VG.AArch64.Scrub VG.Impl.Scrub.AArch64 in
+/-- `sideI` of the cleanup `clearDL L` holds of each instruction of
+`restoreRegs o i L'` for `L'` a part of `L`. -/
+theorem sideI_restoreRegs {L : List (String × VReg)} (o : Nat) :
+    ∀ (i : Nat) (L' : List (String × VReg)), (∀ p ∈ L', p.2 ∈ L.map (·.2)) →
+      ∀ x ∈ restoreRegs o i L',
+        sideI (RegSet.ofList (keptG (clearDL L))) (RegSet.ofList (keptV (clearDL L))) x = true
+  | _, [], _, x, hx => by cases hx
+  | i, (n, v) :: L', hL, x, hx => by
+    simp only [restoreRegs, List.cons_append, List.nil_append, List.mem_cons] at hx
+    rcases hx with rfl | rfl | hx
+    · exact sideI_clearDL_of L rfl rfl
+    · exact sideI_clearDL_ins (hL _ List.mem_cons_self)
+    · exact sideI_restoreRegs o (i + 1) L' (fun p hp => hL p (List.mem_cons_of_mem _ hp)) x hx
+
+open VG.AArch64.Scrub VG.Impl.Scrub.AArch64 in
+/-- `scrubSide` of a function with `k` stack words that calls `F`, made to
+call each function `L` names by the register it pairs it with, by
+`entryDS L`, with the cleanup `clearDL L` over `frameDS k L.length` more
+bytes, from `F`'s with the cleanup that leaves the callee-saved halves: with
+`L`'s functions those of a table. -/
+theorem scrubSide_entryDS {L : List (String × VReg)} {core : String} {k : Nat} {F : Prog isa} {W rb : Nat}
+    (hs : scrubSide F W rb ⟨allGprs, allVecs, []⟩ [] = true) (hW : 0 < W)
+    (hW' : W + frameDS k L.length < 4096) (hwf : wfB (clearDL L) = true) :
+    scrubSide (entryDS L core k (Code.viaDAt L F)) (W + frameDS k L.length) rb (clearDL L)
+      [("", [⟨"", "", L.map (·.1), []⟩])] = true := by
+  obtain ⟨hc, -⟩ := of_side hs hW
+  have hWF : W + frameDS k L.length ≠ 0 := Nat.pos_iff_ne_zero.mp (Nat.add_pos_left hW _)
+  have h16 := frameDS_mod16 k L.length
+  have hLL : ∀ p ∈ L, p.2 ∈ L.map (·.2) := fun p hp => List.mem_map_of_mem hp
+  simp only [scrubSide, Nat.pos_iff_ne_zero.mp hW, hWF, ↓reduceIte, Bool.and_eq_true, decide_eq_true_eq,
+    beq_iff_eq] at hs ⊢
+  obtain ⟨⟨⟨⟨⟨⟨⟨-, h2⟩, h3⟩, -⟩, h5⟩, -⟩, h7⟩, -⟩ := hs
+  refine ⟨⟨⟨⟨⟨⟨⟨hW', by rw [Nat.add_mod, h2, h16]⟩, ?_⟩, ?_⟩, h5⟩, hwf⟩, ?_⟩, ?_⟩
+  · simp only [entryDS, Code.aarch64Depth, depth_viaDAt, Instr.frameUnits, Nat.zero_max, Nat.max_zero]
+    rw [Nat.mul_add, Nat.mul_div_cancel' (Nat.dvd_of_mod_eq_zero h16)]
+    exact Nat.add_le_add_right h3 _
+  · unfold tablesCall
+    rw [List.all_eq_true]
+    intro f hf
+    simp only [entryDS, inames, List.nil_append, List.append_nil] at hf
+    have := inames_viaDAt (L := L) hc f hf
+    simp [tableFns, this]
+  · rw [Code.allInstrs_eq, List.all_eq_true] at h7 ⊢
+    intro i hi
+    simp only [entryDS, enterDS, leaveDS, instrs, List.mem_cons, List.mem_append, List.not_mem_nil,
+      or_false, List.cons_append, or_assoc] at hi
+    rcases hi with rfl | rfl | hi | rfl | hi | hi | hi | rfl | rfl
+    · rfl
+    · exact sideI_clearDL_of L rfl rfl
+    · obtain ⟨j, -, hj⟩ := List.mem_flatMap.mp hi
+      simp only [copyArg, List.mem_cons, List.not_mem_nil, or_false] at hj
+      rcases hj with rfl | rfl
+      · exact sideI_clearDL_of L rfl rfl
+      · exact sideI_clearDL_of L rfl rfl
+    · exact sideI_clearDL_of L rfl rfl
+    · exact sideI_saveRegs _ 0 L hLL i hi
+    · rcases instrs_viaDAt L F hi with h | ⟨p, -, rfl⟩ | rfl
+      · exact sideI_mono (fun q hq => hq) (fun w hw => by
+          simp only [keptV, clearDL, List.mem_append, List.mem_filter] at hw ⊢
+          rcases hw with ⟨h1, h2⟩ | ⟨h1, -⟩
+          · exact .inl ⟨h1, h2⟩
+          · exact .inr ⟨h1, rfl⟩) (h7 i h)
+      · exact sideI_clearDL_of L rfl rfl
+      · exact sideI_clearDL_of L rfl rfl
+    · exact sideI_restoreRegs _ 0 L hLL i hi
+    · exact sideI_clearDL_of L rfl rfl
+    · rfl
+  · rw [keptG_clearDL]; exact Bool.or_eq_true_iff.mpr (.inr (by decide))
 
 end
 

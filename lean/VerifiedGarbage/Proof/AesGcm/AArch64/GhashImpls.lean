@@ -17,7 +17,7 @@ public import VerifiedGarbage.Proof.Sm4Gcm.AArch64.Frame
 public import VerifiedGarbage.Proof.Sm4Gcm.AArch64.Instances
 public import VerifiedGarbage.Impl.Sm4Gcm.AArch64.Fn
 public import VerifiedGarbage.Proof.Sha3.AArch64.ViaD8At
-public import VerifiedGarbage.Proof.Sha3.AArch64.EntryS
+public import VerifiedGarbage.Proof.Sha3.AArch64.EntryDS
 public import VerifiedGarbage.Spec.Sm4.Gcm.Contract
 import VerifiedGarbage.Proof.Sm4Gcm.Scratch
 import VerifiedGarbage.Proof.Sm4.AArch64.Lit
@@ -2237,7 +2237,7 @@ theorem streamVerify_scrubbed (v : GcmVariant) :
 
 open VG.Proof.Sha3.AArch64 in
 /-- `vg_sm4_gcm_open` as emitted, cleanup included: its framed code made to
-call the implementation of `vg_ghash` by `d8`, called by `entryD8S`, which
+call the implementation of `vg_ghash` by `d8`, called by `entryDS`, which
 copies its one stack argument. -/
 theorem open_scrubbed (v : GcmVariant) :
     VerifiedScrubbed AArch64.target (Impl.Sm4Gcm.AArch64.Fn.«open» v.calls v.impl.ctrSuffix)
@@ -2256,30 +2256,43 @@ theorem open_scrubbed (v : GcmVariant) :
     openFrameSat_pre openFrameSat_pre1008
   have hsat' := stack_sat (K := fun st => Spec.Sm4.Gcm.openContract AArch64.abi st) (d := 816) hc
     openFrameSat_pre4080 openFrameSat_pre1040
-  have hD := Verified.viaD8At (n := v.calls.callees.gh.name) hF hic hv8 (Contract.d8_sat_of hsat)
+  have hD := Verified.viaDAt (L := [(v.calls.callees.gh.name, .v8)]) hF hic
+    (fun i hi p hp => by rw [List.mem_singleton.mp hp]; exact hv8 i hi)
+    (let ⟨s, hp, hd⟩ := Contract.d8_sat_of (n := v.calls.callees.gh.name) hsat
+     ⟨s, hp, (D8_iff _ s).mp hd⟩)
   have hk : nStack Spec.Sm4.Gcm.openSig = 1 := by decide
-  have hE := Verified.entryD8S (name := "vg_sm4_gcm_open_core" ++ v.impl.ctrSuffix) hD (by decide)
-    (by rw [hk]; decide) (by rw [depth_viaD8At]; exact hd) (Proof.Sm4Gcm.pre_local _ _)
+  have h32 : Impl.Sha3.AArch64.frameDS 1 [(v.calls.callees.gh.name, VReg.v8)].length = 32 := by
+    rw [List.length_singleton]; rfl
+  have hE := Verified.entryDS (name := "vg_sm4_gcm_open_core" ++ v.impl.ctrSuffix) hD
+    (by simp only [List.map_cons, List.map_nil]; exact List.nodup_singleton _) (by decide)
+    (by rw [hk, h32]; decide) (by rw [depth_viaDAt]; exact hd) (Proof.Sm4Gcm.pre_local _ _)
     (Proof.Sm4Gcm.openPost_local (pb := AArch64.abi.ptrBits))
     (fun vs m m₁ m₂ x hlen _ hbf h => Proof.Sm4Gcm.openPostOut_local _ vs m m₁ m₂ x hlen hbf h)
-    (sat_withFns (by rw [hk]; exact hsat')) (hleak := Proof.Sm4Gcm.openLeak_local (pb := AArch64.abi.ptrBits))
-  have hb : v.calls.stack + 784 + Impl.Sha3.AArch64.frameS 1 < 4096 := by
-    rcases hc.stack with h | h <;> rw [h] <;> decide
-  have hS := scrubSide_entryD8S (n := v.calls.callees.gh.name) (core := "vg_sm4_gcm_open_core" ++ v.impl.ctrSuffix)
-    (k := 1) hs hW hb
-  rw [hk] at hE
+    (by rw [hk, h32]; simp only [Nat.add_assoc, Nat.reduceAdd]; exact sat_withFns hsat') (hleak := Proof.Sm4Gcm.openLeak_local (pb := AArch64.abi.ptrBits))
+  have hb : v.calls.stack + 784 + Impl.Sha3.AArch64.frameDS 1 [(v.calls.callees.gh.name, VReg.v8)].length < 4096 := by
+    rw [h32]; rcases hc.stack with h | h <;> rw [h] <;> decide
+  have hS := scrubSide_entryDS (L := [(v.calls.callees.gh.name, .v8)])
+    (core := "vg_sm4_gcm_open_core" ++ v.impl.ctrSuffix) (k := 1) hs hW hb
+    (by simp only [AArch64.Scrub.wfB, Impl.Sha3.AArch64.clearDL, List.map_cons, List.map_nil]; decide)
+  rw [hk, h32] at hE
+  rw [h32] at hS
+  simp only [List.map_cons, List.map_nil, Nat.add_assoc, Nat.reduceAdd] at hE hS
   have hE' : Verified AArch64.target
-      (Impl.Sha3.AArch64.entryD8S v.calls.callees.gh.name ("vg_sm4_gcm_open_core" ++ v.impl.ctrSuffix) 1
-        (Impl.Sha3.AArch64.Code.viaD8At v.calls.callees.gh.name
+      (Impl.Sha3.AArch64.entryDS [(v.calls.callees.gh.name, .v8)] ("vg_sm4_gcm_open_core" ++ v.impl.ctrSuffix) 1
+        (Impl.Sha3.AArch64.Code.viaDAt [(v.calls.callees.gh.name, .v8)]
           (withStackArgScratch 784 1 (Impl.Sm4Gcm.AArch64.«open» v.calls.callees))))
       (Spec.Sm4.Gcm.openContract (AArch64.abi.withFns [v.calls.callees.gh.name]) (v.calls.stack + 816)) := hE
-  have hS' : scrubSide (Impl.Sha3.AArch64.entryD8S v.calls.callees.gh.name ("vg_sm4_gcm_open_core" ++ v.impl.ctrSuffix) 1
-        (Impl.Sha3.AArch64.Code.viaD8At v.calls.callees.gh.name
+  have hS' : scrubSide (Impl.Sha3.AArch64.entryDS [(v.calls.callees.gh.name, .v8)]
+        ("vg_sm4_gcm_open_core" ++ v.impl.ctrSuffix) 1
+        (Impl.Sha3.AArch64.Code.viaDAt [(v.calls.callees.gh.name, .v8)]
           (withStackArgScratch 784 1 (Impl.Sm4Gcm.AArch64.«open» v.calls.callees))))
-      (v.calls.stack + 816) 32 Impl.Sha3.AArch64.clearD8 [("", [⟨"", "", [v.calls.callees.gh.name], []⟩])] = true := hS
+      (v.calls.stack + 816) 32 (Impl.Sha3.AArch64.clearDL [(v.calls.callees.gh.name, .v8)])
+      [("", [⟨"", "", [v.calls.callees.gh.name], []⟩])] = true := hS
   exact verifiedScrubbed_ofSide hE' (scrubAllOk_withFns (Scrub.openOk _)) hS' (by omega) fun s₁ s₂ hp m hm => by
-    simp only [Impl.Sha3.AArch64.entryD8S, AArch64.Scrub.inames, List.nil_append, List.append_nil] at hm
-    rw [inames_viaD8At hic m hm]
+    simp only [Impl.Sha3.AArch64.entryDS, AArch64.Scrub.inames, List.nil_append, List.append_nil] at hm
+    have := inames_viaDAt hic m hm
+    simp only [List.map_cons, List.map_nil, List.mem_singleton] at this
+    rw [this]
     exact (pub_fns hp).2
 
 end VG.Proof.Sm4Gcm.AArch64
