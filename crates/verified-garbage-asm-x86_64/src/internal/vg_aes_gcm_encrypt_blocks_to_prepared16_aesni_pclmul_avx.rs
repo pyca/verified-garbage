@@ -108,5 +108,7 @@ jmp 225f
 .base64 "ww=="
 .p2align 6"#,
         vg_aes_gcm_encrypt_blocks_prepared16_aesni_pclmul_avx = sym crate::aes::vg_aes_gcm_encrypt_blocks_prepared16_aesni_pclmul_avx::vg_aes_gcm_encrypt_blocks_prepared16_aesni_pclmul_avx,
+        vg_ghash_pclmul = sym crate::gcm::vg_ghash_pclmul::vg_ghash_pclmul,
+        vg_aes_ctr32_to_aesni = sym crate::aes::vg_aes_ctr32_to_aesni::vg_aes_ctr32_to_aesni,
     )
 }
