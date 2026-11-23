@@ -6,6 +6,14 @@ public import VerifiedGarbage.Proof.CmacTripleDes.Stream.X86.Frame
 public import VerifiedGarbage.Proof.Framework.X86.Taint
 public import VerifiedGarbage.Proof.Framework.X86.SseTaint
 public import VerifiedGarbage.Proof.Framework.Taint
+public import VerifiedGarbage.Proof.CmacTripleDes.Stream.X86.Scrub
+public import VerifiedGarbage.Proof.CmacTripleDes.StreamScratch
+public import VerifiedGarbage.Proof.Framework.X86.ScrubProved
+public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Spec.Cmac.TripleDesContract
+import VerifiedGarbage.Proof.Framework.X86.StackScratch
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.CmacTripleDes.X86.Ssse3Lit
 import VerifiedGarbage.Proof.CmacTripleDes.Words
 import VerifiedGarbage.Proof.CmacTripleDes.Bytes
@@ -34,6 +42,14 @@ meta import VerifiedGarbage.Proof.CmacTripleDes.Stream.X86.Frame
 meta import VerifiedGarbage.Proof.Framework.X86.Taint
 meta import VerifiedGarbage.Proof.Framework.X86.SseTaint
 meta import VerifiedGarbage.Proof.Framework.Taint
+meta import VerifiedGarbage.Proof.CmacTripleDes.Stream.X86.Scrub
+meta import VerifiedGarbage.Proof.CmacTripleDes.StreamScratch
+meta import VerifiedGarbage.Proof.Framework.X86.ScrubProved
+meta import VerifiedGarbage.Proof.Framework.Registration
+meta import VerifiedGarbage.Spec.Cmac.TripleDesContract
+meta import VerifiedGarbage.Proof.Framework.X86.StackScratch
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.PlainSimp
 meta import VerifiedGarbage.Proof.CmacTripleDes.X86.Ssse3Lit
 meta import VerifiedGarbage.Proof.CmacTripleDes.Words
 meta import VerifiedGarbage.Proof.CmacTripleDes.Bytes
@@ -59,6 +75,45 @@ meta import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # Streaming TDEA-CMAC with Triple DES's S-boxes by `pshufb` on x86 (32-bit) meets its contracts
+
+`vg_cmac_triple_des_absorb_ssse3` and `vg_cmac_triple_des_finish_ssse3`
+(`Impl/CmacTripleDes/X86/Ssse3.lean`): the streaming functions' code around
+the runs, proven for any code that does a run's work (`absorbWith_wp`,
+`finishWith_wp` of `Proof/CmacTripleDes/Stream/X86/Frame.lean`), over runs
+that chain blocks with the block function of Triple DES's one-block core
+(`crypt_blk` of `Proof/TripleDes/X86/Ssse3Core.lean`, for a buffer of 640
+bytes).
+
+* The rounds' keys at fixed offsets (`keys3_wp`, `keysFrom_wp`): each round's
+  three keys by the core's lemma for a key (`keyAt_wp`), sixteen times.
+* A block (`body_wp`, with the invariant `LI`): exclusive-ored with the
+  chaining value into the buffer's block, enciphered there, and stored as
+  the chaining value; the slots of the run's three values are loaded before
+  that store and stored back after it.
+* A run's work (`chainRun_wp`), in a state whose regions are the four the
+  run uses (`Rg`, `Lay`): the keys, the blocks (`count_loop`) and the
+  registers back; and the function's call (`chain_wp`, `CArgs`, `CPost`):
+  the registers and the arguments to their slots, the table's address
+  (`symFrame_ok`), and the run's work on the regions narrowed
+  (`WP.narrow`). The function changes the chaining value, the first 464
+  bytes of the working space and eight bytes of stack, and its blocks may
+  be in the working space after those bytes. `run_wp`: it does what a run
+  of `update` in its frame does.
+* A run of `finalize` (`fin_wp`): the last block `Mₙ` (§6.2 step 4) into
+  `eax:edx`, `Mₙ* ⊕ K1` (`full_wp`) or the bytes copied onto zeros, each by
+  code of its own (`copyByte_wp`), `0x80` and `K2` (`partial_wp`); then `Mₙ`
+  to the working space and chained by the function's call.
+* `absorb_wp`, `finish_wp`, and constant time (`absorb_ct`, `finish_ct`) by
+  the taint analysis of each whole function with the SSE instructions
+  (`X86.sseTaint`), which analyses the function that chains blocks at each
+  of its calls: it follows the run's three values through their slots in
+  the working space.
+* `absorb_framed`, `finish_framed`: with the working space in a frame on the
+  stack (`Verified.stackScratch`), of 728 and 724 bytes, which put it at a
+  multiple of sixteen when `esp` was one at the call; and as emitted
+  (`absorb_scrubbed`, `finish_scrubbed`), followed by the zeroing of the
+  stack below `esp` that the contract reserves and of the registers a
+  callee may change (`X86.Scrub.verifiedScrubbedAll`).
 -/
 
 @[expose] public section
@@ -1239,6 +1294,381 @@ theorem partial_wp (h : FArgs s K St P S L) (hL : L < 8) {m : Mem} (fm : Frame [
   simp only [Spec.Cmac.lastBlock, hlen, show L ≠ 8 by omega_arith, ite_false]
   exact Proof.Cmac.xor_comm _ _
 
+theorem blocksAt_one (m : Mem) (p : Addr) : Spec.Cmac.blocksAt m p 8 1 = [bytesAt m p 8] := by
+  show [bytesAt m (p + BitVec.ofNat 64 (8 * 0)) 8] = _
+  rw [show p + BitVec.ofNat 64 (8 * 0) = p from BitVec.add_zero p]
+
+/-- **A run of `finalize`**: the last block formed in the working space and
+chained by the function's call. -/
+theorem fin_wp (h : FArgs s K St P S L) : WP isa fin s (FPost s K St P S L) := by
+  have hL := h.len
+  have fK := h.fK
+  have fS := h.fS
+  have fSt := h.fSt
+  have hsp := h.esp
+  obtain b8 : Region.Sub (below (s.gpr .esp) 8) (below (s.gpr .esp) 24) := below_sub (by decide) hsp
+  show WP isa (.seq (.block finSave) (.seq (.ite .e (.block full) partialBlock) (.seq (.block finArgs) (.seq run
+    (.block [.mov .ebx (.mem (at_ sb oFin)), .mov .esi (.mem (at_ sb (oFin + 4)))]))))) s _
+  -- the registers and the two addresses to their slots
+  refine WP.seq ?_
+  refine st (a := sa S 472) h.edi (a0 rfl (by omega_arith)) (fin_inS h rfl (by decide)) fun t₁ z₁ => ?_
+  refine st (a := sa S 476) (by rw [z₁.gpr]; exact h.edi) (a0 rfl (by omega_arith)) (fin_inS h z₁.wr (by decide))
+    fun t₂ z₂ => ?_
+  refine st (a := sa S 480) (by rw [z₂.gpr, z₁.gpr]; exact h.edi) (a0 rfl (by omega_arith))
+    (fin_inS h (z₂.wr.trans z₁.wr) (by decide)) fun t₃ z₃ => ?_
+  refine st (a := sa S 484) (by rw [z₃.gpr, z₂.gpr, z₁.gpr]; exact h.edi) (a0 rfl (by omega_arith))
+    (fin_inS h (z₃.wr.trans (z₂.wr.trans z₁.wr)) (by decide)) fun t₄ z₄ => wp_cmpi fun t₅ f₅ _ zf₅ => WP.block_nil ?_
+  obtain g₄ : t₄.gpr = s.gpr := by rw [z₄.gpr, z₃.gpr, z₂.gpr, z₁.gpr]
+  obtain m₅ : t₅.mem = (((s.mem.writeW (sa S 472) P).writeW (sa S 476) (BitVec.ofNat 32 L)).writeW (sa S 480)
+      K).writeW (sa S 484) St := by
+    rw [f₅.mem, z₄.mem, z₃.mem, z₂.mem, z₁.mem, z₃.gpr, z₂.gpr, z₁.gpr, h.ebx, h.esi, h.eax, h.edx]
+  obtain cF : ∀ o, 472 ≤ o → o + 4 ≤ 488 → (⟨sa S 472, 16⟩ : Region).Contains (sa S o) (32 / 8) := fun o h₁ h₂ =>
+    VG.Offset.contains _ h₁ (by omega_arith) (by decide)
+  obtain fm : Frame [⟨sa S 472, 16⟩] s.mem t₅.mem := by
+    rw [m₅]
+    exact ((((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (cF 472 (by decide) (by decide))).writeW
+      (List.mem_singleton_self _) _ (cF 476 (by decide) (by decide))).writeW (List.mem_singleton_self _) _
+      (cF 480 (by decide) (by decide))).writeW (List.mem_singleton_self _) _ (cF 484 (by decide) (by decide))
+  obtain sP : t₅.mem.readW (sa S 472) 32 = P := by
+    rw [m₅, rds _ _ (by decide) (by decide) (by decide), rds _ _ (by decide) (by decide) (by decide),
+      rds _ _ (by decide) (by decide) (by decide), Mem.readW_writeW_self32]
+  obtain sL : t₅.mem.readW (sa S 476) 32 = BitVec.ofNat 32 L := by
+    rw [m₅, rds _ _ (by decide) (by decide) (by decide), rds _ _ (by decide) (by decide) (by decide),
+      Mem.readW_writeW_self32]
+  obtain sK : t₅.mem.readW (sa S 480) 32 = K := by
+    rw [m₅, rds _ _ (by decide) (by decide) (by decide), Mem.readW_writeW_self32]
+  obtain sSt : t₅.mem.readW (sa S 484) 32 = St := by rw [m₅, Mem.readW_writeW_self32]
+  obtain c₅ : FCtx s P S L t₅.mem t₅ :=
+    ⟨by rw [f₅.gpr, g₄]; exact h.ebx, by rw [f₅.gpr, g₄]; exact h.esi, by rw [f₅.gpr, g₄]; exact h.edi,
+      by rw [f₅.gpr, g₄], by rw [f₅.gpr, g₄], by rw [f₅.rd, z₄.rd, z₃.rd, z₂.rd, z₁.rd],
+      by rw [f₅.wr, z₄.wr, z₃.wr, z₂.wr, z₁.wr], rfl⟩
+  obtain ev : isa.eval .e t₅ = some (decide (L = 8)) := by
+    show t₅.zf = _
+    rw [zf₅, g₄, h.esi, show (8 : BitVec 32) = BitVec.ofNat 32 8 from rfl, sub_beq (by omega_arith) (by decide)]
+  generalize t₅.mem = M₅ at fm sP sL sK sSt c₅
+  -- `Mₙ` in `eax:edx`
+  refine WP.seq (WP.mono (Q := BP s K P S L M₅) ?_ fun t₆ b₆ => ?_)
+  · by_cases h8 : L = 8
+    · exact WP.ite true (by rw [ev]; simp [h8]) (fun _ => full_wp h h8 fm sK c₅) (fun h => by cases h)
+    · exact WP.ite false (by rw [ev]; simp [h8]) (fun h => by cases h) fun _ =>
+        partial_wp h (by omega_arith) fm sK c₅
+  -- `Mₙ` to its slot, and the arguments of the run
+  refine WP.seq ?_
+  obtain c₆ := b₆.ctx
+  refine st (a := sa S 464) c₆.edi (a0 rfl (by omega_arith)) (fin_inS h c₆.wr (by decide)) fun t₇ z₇ => ?_
+  obtain c₇ := c₆.mupd z₇
+  refine st (a := sa S 468) c₇.edi (a0 rfl (by omega_arith)) (fin_inS h c₇.wr (by decide)) fun t₈ z₈ => ?_
+  obtain c₈ := c₇.mupd z₈
+  obtain e468 : sa S 468 = sa S 464 + BitVec.ofNat 64 4 := (VG.Offset.add_add_eq (a := 464) (b := 4) (c := 468) _ rfl).symm
+  obtain m₈ : t₈.mem = (t₆.mem.writeW (sa S 464) (t₆.gpr .eax)).writeW (sa S 468) (t₆.gpr .edx) := by
+    rw [z₈.mem, z₇.mem, z₇.gpr]
+  obtain f8 : Frame [⟨sa S 464, 8⟩] M₅ t₈.mem := by
+    rw [m₈]
+    exact (b₆.frame.writeW (List.mem_singleton_self _) _
+      (VG.Offset.contains _ (by decide) (by decide) (by decide))).writeW (List.mem_singleton_self _) _
+      (VG.Offset.contains _ (by decide) (by decide) (by decide))
+  obtain blk₈ : bytesAt t₈.mem (sa S 464) 8 = Spec.Cmac.lastBlock 8
+      (bytesAt s.mem (K.setWidth 64 + BitVec.ofNat 64 384) 8) (bytesAt s.mem (K.setWidth 64 + BitVec.ofNat 64 392) 8)
+      (bytesAt s.mem (P.setWidth 64) L) := by
+    rw [m₈, pair_le8 _ rfl e468]; exact b₆.blk
+  obtain sl8 : ∀ o, 472 ≤ o → o + 4 ≤ 640 → t₈.mem.readW (sa S o) 32 = M₅.readW (sa S o) 32 := fun o h₁ h₂ =>
+    slot_keep f8 (.inr (by omega_arith)) (by decide) (by omega_arith)
+  refine ld (a := sa S 480) c₈.edi (a0 rfl (by omega_arith)) (Rg.ofWr (fin_inS h c₈.wr (by decide))) fun t₉ v₉ => ?_
+  obtain c₉ := c₈.upd v₉ (by decide)
+  refine ld (a := sa S 484) c₉.edi (a0 rfl (by omega_arith)) (Rg.ofWr (fin_inS h c₉.wr (by decide)))
+    fun t₁₀ v₁₀ => ?_
+  obtain c₁₀ := c₉.upd v₁₀ (by decide)
+  refine wp_mov fun t₁₁ v₁₁ => wp_addi fun t₁₂ v₁₂ => wp_movi fun t₁₃ v₁₃ => WP.block_nil ?_
+  obtain mem₁₃ : t₁₃.mem = t₈.mem := by rw [v₁₃.mem, v₁₂.mem, v₁₁.mem, v₁₀.mem, v₉.mem]
+  obtain G : ∀ r, r ≠ .ebx → r ≠ .esi → t₁₃.gpr r = t₁₀.gpr r := fun r a b => by
+    rw [v₁₃.other r b, v₁₂.other r a, v₁₁.other r a]
+  obtain eax₁₃ : t₁₃.gpr .eax = K := by
+    rw [G _ (by decide) (by decide), v₁₀.other _ (by decide), v₉.gpr, c₈.mem, ← z₈.mem,
+      sl8 480 (by decide) (by decide)]
+    exact sK
+  obtain edx₁₃ : t₁₃.gpr .edx = St := by
+    rw [G _ (by decide) (by decide), v₁₀.gpr, v₉.mem, sl8 484 (by decide) (by decide)]; exact sSt
+  obtain ebx₁₃ : t₁₃.gpr .ebx = S + BitVec.ofNat 32 464 := by
+    rw [v₁₃.other _ (by decide), v₁₂.gpr, v₁₁.gpr]; exact congrArg (· + BitVec.ofNat 32 464) c₁₀.edi
+  obtain edi₁₃ : t₁₃.gpr sb = S := (G _ (by decide) (by decide)).trans c₁₀.edi
+  obtain esp₁₃ : t₁₃.gpr .esp = s.gpr .esp := (G _ (by decide) (by decide)).trans c₁₀.esp
+  obtain ebp₁₃ : t₁₃.gpr .ebp = s.gpr .ebp := (G _ (by decide) (by decide)).trans c₁₀.ebp
+  obtain rd₁₃ : t₁₃.rd = s.rd := by rw [v₁₃.rd, v₁₂.rd, v₁₁.rd]; exact c₁₀.rd
+  obtain wr₁₃ : t₁₃.wr = s.wr := by rw [v₁₃.wr, v₁₂.wr, v₁₁.wr]; exact c₁₀.wr
+  obtain eD : (S + BitVec.ofNat 32 464).setWidth 64 = sa S 464 := addr_eq (by omega_arith)
+  obtain fS13 : Frame [⟨S.setWidth 64, 640⟩] s.mem t₁₃.mem := by
+    rw [mem₁₃]
+    exact (fm.sub fun r hr => ⟨_, List.mem_singleton_self _, by
+      obtain rfl := List.mem_singleton.mp hr
+      exact VG.Offset.sub_base _ (by decide)⟩).trans (f8.sub fun r hr => ⟨_, List.mem_singleton_self _, by
+      obtain rfl := List.mem_singleton.mp hr
+      exact VG.Offset.sub_base _ (by decide)⟩)
+  -- the run that chains `Mₙ`
+  refine WP.seq (WP.mono (chain_wp (W := K) (C := St) (D := S + BitVec.ofNat 32 464) (S := S) (n := 1)
+    ⟨eax₁₃, edx₁₃, ebx₁₃, v₁₃.gpr, edi₁₃, by rw [esp₁₃]; omega_arith,
+      ⟨by decide, h.kst.sub_left (Region.sub_prefix (by decide)), h.ks.sub_left (Region.sub_prefix (by decide)),
+        by rw [eD]; exact h.sts.symm.sub_left (VG.Offset.sub_base _ (by decide)),
+        by rw [eD]; exact VG.Offset.disjoint_base _ (by decide) (by decide), h.sts, by omega_arith, fSt,
+        by rw [VG.Proof.CmacTripleDes.Stream.X86.add_toNat (by omega_arith)]; omega_arith, fS⟩,
+      by rw [esp₁₃]; exact (h.bK.sub_left b8).sub_right (Region.sub_prefix (by decide)),
+      by rw [esp₁₃, eD]; exact (h.bS.sub_left b8).sub_right (VG.Offset.sub_base _ (by decide)),
+      by rw [esp₁₃]; exact h.bSt.sub_left b8, by rw [esp₁₃]; exact h.bS.sub_left b8,
+      by
+        rw [rd₁₃, wr₁₃]
+        refine Covers.pair (Covers.one (h.reads _ _ ⟨⟨K.setWidth 64, 400⟩, List.mem_cons_self, by
+          simp [Region.Contains]⟩)) (Covers.one ?_)
+        rw [eD]; exact Rg.ofWr (fin_inS h rfl (by decide)),
+      by rw [wr₁₃]; exact h.writes⟩) fun t₁₄ p => ?_)
+  obtain pf : Frame [⟨St.setWidth 64, 8⟩, ⟨S.setWidth 64, 464⟩, below (s.gpr .esp) 8] t₁₃.mem t₁₄.mem := by
+    rw [← esp₁₃]; exact p.frame
+  obtain edi₁₄ : t₁₄.gpr sb = S := (p.saved .edi (by decide)).trans edi₁₃
+  obtain sl14 : ∀ o, 472 ≤ o → o + 4 ≤ 640 → t₁₄.mem.readW (sa S o) 32 = M₅.readW (sa S o) 32 := fun o h₁ h₂ => by
+    rw [pf.readW (r := ⟨sa S o, 4⟩) (Region.contains_self _ _) (fun r hr => ?_) (by decide), mem₁₃, sl8 o h₁ h₂]
+    rcases List.mem_cons.mp hr with rfl | hr
+    · exact h.sts.symm.sub_left (VG.Offset.sub_base _ h₂)
+    rcases List.mem_cons.mp hr with rfl | hr
+    · exact VG.Offset.disjoint_base _ (by omega_arith) (by omega_arith)
+    · rw [List.mem_singleton.mp hr]; exact ((h.bS.sub_left b8).symm).sub_left (VG.Offset.sub_base _ h₂)
+  -- the registers back
+  refine ld (a := sa S 472) edi₁₄ (a0 rfl (by omega_arith))
+    (Rg.ofWr (fin_inS h (p.wr.trans wr₁₃) (by decide))) fun t₁₅ v₁₅ => ?_
+  refine ld (a := sa S 476) ((v₁₅.other _ (by decide)).trans edi₁₄) (a0 rfl (by omega_arith))
+    (Rg.ofWr (fin_inS h (v₁₅.wr.trans (p.wr.trans wr₁₃)) (by decide))) fun t₁₆ v₁₆ => WP.block_nil ?_
+  obtain mem₁₆ : t₁₆.mem = t₁₄.mem := by rw [v₁₆.mem, v₁₅.mem]
+  refine ⟨by rw [v₁₆.rd, v₁₅.rd, p.rd, rd₁₃], by rw [v₁₆.wr, v₁₅.wr, p.wr, wr₁₃], fun r hr => ?_, ?_, ?_⟩
+  · simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl | rfl
+    · rw [v₁₆.other _ (by decide), v₁₅.gpr, sl14 472 (by decide) (by decide), sP, h.ebx]
+    · rw [v₁₆.gpr, v₁₅.mem, sl14 476 (by decide) (by decide), sL, h.esi]
+    · rw [v₁₆.other _ (by decide), v₁₅.other _ (by decide)]; exact edi₁₄.trans h.edi.symm
+    · rw [v₁₆.other _ (by decide), v₁₅.other _ (by decide), p.saved .ebp (by decide), ebp₁₃]
+    · rw [v₁₆.other _ (by decide), v₁₅.other _ (by decide), p.saved .esp (by decide), esp₁₃]
+  · rw [mem₁₆]
+    refine (fS13.mono fun r hr => by
+      rw [List.mem_singleton.mp hr]; exact List.mem_cons_of_mem _ List.mem_cons_self).trans (pf.sub fun r hr => ?_)
+    rcases List.mem_cons.mp hr with rfl | hr
+    · exact ⟨_, List.mem_cons_self, fun _ h => h⟩
+    rcases List.mem_cons.mp hr with rfl | hr
+    · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, Region.sub_prefix (by decide)⟩
+    · rw [List.mem_singleton.mp hr]
+      exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self), b8⟩
+  · -- the MAC
+    show bytesAt s.mem (K.setWidth 64 + 384) 16 = (Spec.Cmac.subkeys (ciphAt s.mem (K.setWidth 64)) 8).1 ++
+        (Spec.Cmac.subkeys (ciphAt s.mem (K.setWidth 64)) 8).2 →
+      ∀ msg : List Byte, msg.length % 8 = 0 → (msg = [] ∨ 0 < L) →
+        bytesAt s.mem (St.setWidth 64) 8 =
+          Spec.Cmac.chain (ciphAt s.mem (K.setWidth 64)) (Spec.Cmac.zeros 8) (Spec.Cmac.blocks 8 msg) →
+        bytesAt t₁₆.mem (St.setWidth 64) 8 =
+          Spec.Cmac.macFull (ciphAt s.mem (K.setWidth 64)) 8 (msg ++ bytesAt s.mem (P.setWidth 64) L)
+    intro hk msg hm hne hst
+    obtain hks := subkeys_tdes (Spec.TripleDes.scheduleAt s.mem (K.setWidth 64))
+    obtain hk' : bytesAt s.mem (K.setWidth 64 + BitVec.ofNat 64 384) 8 ++
+        bytesAt s.mem (K.setWidth 64 + BitVec.ofNat 64 392) 8 =
+        (Spec.Cmac.subkeys (ciphAt s.mem (K.setWidth 64)) 8).1 ++
+          (Spec.Cmac.subkeys (ciphAt s.mem (K.setWidth 64)) 8).2 := by
+      rw [show K.setWidth 64 + BitVec.ofNat 64 392 = K.setWidth 64 + BitVec.ofNat 64 384 + BitVec.ofNat 64 8 from
+        (VG.Offset.add_add _ 384 8).symm, ← Proof.Cmac.bytesAt_split]
+      exact hk
+    obtain ⟨k1, k2⟩ := List.append_inj hk' (by rw [Proof.Cmac.bytesAt_length, ciphAt, hks, Proof.Cmac.length_le8])
+    obtain eK : ciphAt t₁₃.mem (K.setWidth 64) = ciphAt s.mem (K.setWidth 64) :=
+      congrArg Spec.Cmac.tdesWith (scheduleAt_frame fS13 fun r hr => by
+        rw [List.mem_singleton.mp hr]; exact h.ks.sub_left (Region.sub_prefix (by decide)))
+    obtain eSt : bytesAt t₁₃.mem (St.setWidth 64) 8 = bytesAt s.mem (St.setWidth 64) 8 :=
+      bytesAt_frame fS13 (fun r hr => by rw [List.mem_singleton.mp hr]; exact h.sts) (by decide)
+    rw [mem₁₆, p.out, eK, eSt, blocksAt_one, eD, chain_single, mem₁₃, blk₈,
+      macFull_split8 _ hm (by rw [Proof.Cmac.bytesAt_length]; exact hL)
+        (by rw [Proof.Cmac.bytesAt_length]; exact hne), ← hst, ← k1, ← k2]
+
 end
+
+/-! ## The streaming functions -/
+
+open VG.Proof.CmacTripleDes.Stream.X86 (absorbX86 finishX86 absorbWith_wp finishWith_wp)
+
+/-- **`absorb`**, with its working space as an argument. -/
+theorem absorb_wp {s₀ : State} (h0 : absorbX86.pre s₀) :
+    WP isa absorb s₀ fun s' => abiPreserved s₀ s' ∧ absorbX86.post s₀ s' :=
+  absorbWith_wp (fun h => run_wp h) h0
+
+/-- **`finish`**, with its working space as an argument. -/
+theorem finish_wp {s₀ : State} (h0 : finishX86.pre s₀) :
+    WP isa finish s₀ fun s' => abiPreserved s₀ s' ∧ finishX86.post s₀ s' :=
+  finishWith_wp (fun h => fin_wp h) h0
+
+/-! ## Constant time -/
+
+open VG.Proof.CmacTripleDes.Stream.X86 (APre HPre astR ascR aSt aSc hstR hoR hscR hSt hO hSc)
+open VG.Proof.CmacTripleDes.X86 (argMem_eq)
+
+/-- `absorb`'s initial taint: `esp`, the 28 bytes of the return address and
+the arguments (the first and the sixth, the bases of the writable regions:
+the state and the working space) and the 24 bytes of stack below `esp`,
+outside every writable region. -/
+def τA : VG.X86.Taint.T :=
+  { regs := .ofList [.esp], flags := false, lens := [416, 688], argLen := 28, argBases := [(4, 0), (24, 1)],
+    room := 24 }
+
+/-- `finish`'s: the first, the fourth and the fifth argument are the bases of
+the writable regions (the state, the tag and the working space). -/
+def τF : VG.X86.Taint.T :=
+  { regs := .ofList [.esp], flags := false, lens := [416, 8, 688], argLen := 24,
+    argBases := [(4, 0), (16, 1), (20, 2)], room := 24 }
+
+theorem τA_wf {s : State} (h : absorbX86.pre s) : VG.X86.Taint.Wf τA s := by
+  have hp := APre.of h
+  have := hp.fSt
+  have := hp.fS
+  have := hp.espfit
+  refine VG.X86.Taint.Wf.entryRoom rfl ⟨fun _ => ⟨by simp [hp.wr, τA], ?_, ?_⟩,
+    fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim,
+    fun _ => ⟨by simp only [τA]; omega_using [this], ?_⟩, ?_⟩ fun _ => ⟨hp.esp24, fun r hr => ?_⟩
+  · simp only [hp.wr, List.pairwise_cons, List.mem_cons, List.not_mem_nil, or_false, forall_eq,
+      List.Pairwise.nil, false_implies, implies_true, and_true]
+    exact hp.st_s
+  · simp only [hp.wr, List.mem_cons, List.not_mem_nil, or_false]
+    rintro r (rfl | rfl) <;> simp only [BitVec.toNat_setWidth] <;> omega_arith
+  · simp only [hp.wr, List.mem_cons, List.not_mem_nil, or_false]
+    rintro r (rfl | rfl)
+    · exact VG.X86.Taint.frame_disjoint (n := 24) (by omega_using [this]) hp.ret_st hp.a_st
+    · exact VG.X86.Taint.frame_disjoint (n := 24) (by omega_using [this]) hp.ret_s hp.a_s
+  · intro p hp'
+    simp only [τA, List.mem_cons, List.not_mem_nil, or_false] at hp'
+    rcases hp' with rfl | rfl <;> refine ⟨by simp [τA], ?_⟩ <;>
+      simp [VG.X86.Taint.region, hp.wr, addr, arg, argAddr]
+  · simp only [hp.wr, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact hp.b_st'
+    · exact hp.b_s'
+
+theorem τA_agree {s₁ s₂ : State} (h₁ : absorbX86.pre s₁) (h₂ : absorbX86.pre s₂) (hp : absorbX86.pub s₁ s₂) :
+    VG.X86.Taint.Agree τA s₁ s₂ := by
+  obtain ⟨hesp, ha⟩ := hp
+  have p₁ := APre.of h₁
+  have p₂ := APre.of h₂
+  refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun _ => ?_, τA_wf h₁, τA_wf h₂, VG.X86.Taint.slotsOk_empty,
+    VG.X86.Taint.slotsAgree_empty, fun _ => hesp,
+    fun k h4 hk => argMem_eq (n := 28) p₁.espfit p₂.espfit (fun i hi => ha i (by omega_using [hi])) h4 hk⟩
+  · simp only [τA, RegSet.mem_ofList, List.mem_singleton] at hr
+    subst hr; exact hesp
+  · rw [p₁.wr, p₂.wr]; simp only [astR, ascR, aSt, aSc, ha 0 (by omega_using []), ha 5 (by omega_using [])]
+
+theorem τF_wf {s : State} (h : finishX86.pre s) : VG.X86.Taint.Wf τF s := by
+  have hp := HPre.of h
+  have := hp.fSt
+  have := hp.fO
+  have := hp.fS
+  have := hp.espfit
+  refine VG.X86.Taint.Wf.entryRoom rfl ⟨fun _ => ⟨by simp [hp.wr, τF], ?_, ?_⟩,
+    fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim,
+    fun _ => ⟨by simp only [τF]; omega_using [this], ?_⟩, ?_⟩ fun _ => ⟨hp.esp24, fun r hr => ?_⟩
+  · simp only [hp.wr, List.pairwise_cons, List.mem_cons, List.not_mem_nil, or_false, forall_eq, forall_eq_or_imp,
+      List.Pairwise.nil, false_implies, implies_true, and_true]
+    exact ⟨⟨hp.st_o, hp.st_s⟩, hp.o_s⟩
+  · simp only [hp.wr, List.mem_cons, List.not_mem_nil, or_false]
+    rintro r (rfl | rfl | rfl) <;> simp only [BitVec.toNat_setWidth] <;> omega_arith
+  · simp only [hp.wr, List.mem_cons, List.not_mem_nil, or_false]
+    rintro r (rfl | rfl | rfl)
+    · exact VG.X86.Taint.frame_disjoint (n := 20) (by omega_using [this]) hp.ret_st hp.a_st
+    · exact VG.X86.Taint.frame_disjoint (n := 20) (by omega_using [this]) hp.ret_o hp.a_o
+    · exact VG.X86.Taint.frame_disjoint (n := 20) (by omega_using [this]) hp.ret_s hp.a_s
+  · intro p hp'
+    simp only [τF, List.mem_cons, List.not_mem_nil, or_false] at hp'
+    rcases hp' with rfl | rfl | rfl <;> refine ⟨by simp [τF], ?_⟩ <;>
+      simp [VG.X86.Taint.region, hp.wr, addr, arg, argAddr]
+  · simp only [hp.wr, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl
+    · exact hp.b_st'
+    · exact hp.b_o'
+    · exact hp.b_s'
+
+theorem τF_agree {s₁ s₂ : State} (h₁ : finishX86.pre s₁) (h₂ : finishX86.pre s₂) (hp : finishX86.pub s₁ s₂) :
+    VG.X86.Taint.Agree τF s₁ s₂ := by
+  obtain ⟨hesp, ha⟩ := hp
+  have p₁ := HPre.of h₁
+  have p₂ := HPre.of h₂
+  refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun _ => ?_, τF_wf h₁, τF_wf h₂, VG.X86.Taint.slotsOk_empty,
+    VG.X86.Taint.slotsAgree_empty, fun _ => hesp,
+    fun k h4 hk => argMem_eq (n := 24) p₁.espfit p₂.espfit (fun i hi => ha i (by omega_using [hi])) h4 hk⟩
+  · simp only [τF, RegSet.mem_ofList, List.mem_singleton] at hr
+    subst hr; exact hesp
+  · rw [p₁.wr, p₂.wr]
+    simp only [hstR, hoR, hscR, hSt, hO, hSc, ha 0 (by omega_using []), ha 3 (by omega_using []),
+      ha 4 (by omega_using [])]
+
+/-- Constant time, by the taint analysis of the whole function, with the
+function that chains blocks at each of its calls: only `esp` and the
+arguments decide an address or a branch. -/
+theorem absorb_ct : ConstantTime isa absorbX86.pre absorbX86.pub absorb :=
+  VG.Taint.constantTime (A := VG.X86.sseTaint) τA (fun _ _ h₁ h₂ hp => τA_agree h₁ h₂ hp) (by taint_decide)
+
+theorem finish_ct : ConstantTime isa finishX86.pre finishX86.pub finish :=
+  VG.Taint.constantTime (A := VG.X86.sseTaint) τF (fun _ _ h₁ h₂ hp => τF_agree h₁ h₂ hp) (by taint_decide)
+
+/-! ## `Verified`, and the working space on the stack -/
+
+open VG.Proof.CmacTripleDes.Stream (absorbScratchContract finishScratchContract86 absorbPost_local
+  absorbPostOut_local finishPost_local finishPostOut_local)
+open VG.Proof.CmacTripleDes.Stream.X86 (absorb_implies finish_implies absorbFrameSat finishFrameSat absorbSat
+  finishSat)
+
+theorem absorb_verified : Verified X86.target absorb (absorbScratchContract X86.abi 24) :=
+  Verified.of_correct (fun _ hs => absorb_wp hs) absorb_ct absorb_implies
+
+theorem finish_verified : Verified X86.target finish (finishScratchContract86 X86.abi 24) :=
+  Verified.of_correct (fun _ hs => finish_wp hs) finish_ct finish_implies
+
+theorem absorbFrameSat_pre : ∃ s, (Spec.Cmac.tdesAbsorbContract X86.abi 752).pre s := by
+  implies_sat [Spec.Cmac.tdesAbsorbContract, Spec.Cmac.tdesAbsorbSig, Spec.Cmac.tdesAbsorbPost,
+    X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
+    [absorbFrameSat, absorbSat, X86.arg, X86.argAddr, Mem.readW, Mem.read] using absorbFrameSat
+
+theorem finishFrameSat_pre : ∃ s, (Spec.Cmac.tdesFinishContract X86.abi 748).pre s := by
+  implies_sat [Spec.Cmac.tdesFinishContract, Spec.Cmac.tdesFinishSig, Spec.Cmac.tdesFinishPost,
+    X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
+    [finishFrameSat, finishSat, X86.arg, X86.argAddr, Mem.readW, Mem.read] using finishFrameSat
+
+/-- `absorb` with its working space in a frame of 728 bytes, which puts it at
+a multiple of sixteen when `esp` was one at the call. -/
+theorem absorb_framed : Verified X86.target (Impl.StackScratch.X86.withStackScratch 728 5 absorb)
+    (Spec.Cmac.tdesAbsorbContract X86.abi 752) :=
+  X86.Verified.stackScratch (sig := Spec.Cmac.tdesAbsorbSig) (nm := "scratch") (e := .u64) (n := 86)
+    (post := Spec.Cmac.tdesAbsorbPost X86.abi.ptrBits)
+    (wa := false) (stack := 24) (bytes := 728) absorb_verified (by decide) (by lit_decide) (by lit_decide)
+    (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (absorbPost_local _)
+    (fun vs m m₁ m₂ r hl _ => absorbPostOut_local _ vs m m₁ m₂ r hl) absorbFrameSat_pre
+
+/-- `finish` with its working space in a frame of 724 bytes. -/
+theorem finish_framed : Verified X86.target (Impl.StackScratch.X86.withStackScratch 724 4 finish)
+    (Spec.Cmac.tdesFinishContract X86.abi 748) :=
+  X86.Verified.stackScratch (sig := Spec.Cmac.tdesFinishSig) (nm := "scratch") (e := .u64) (n := 86)
+    (post := Spec.Cmac.tdesFinishPost X86.abi.ptrBits)
+    (wa := false) (stack := 24) (bytes := 724) finish_verified (by decide) (by lit_decide) (by lit_decide)
+    (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (finishPost_local _)
+    (fun vs m m₁ m₂ r hl _ => finishPostOut_local _ vs m m₁ m₂ r hl) finishFrameSat_pre
+
+/-! ## The functions as emitted -/
+
+open VG.X86.Scrub (verifiedScrubbedAll)
+open VG.Proof.CmacTripleDes.Stream.X86.Scrub (absorbOut finishOut)
+
+/-- `Spec.Cmac.tdesAbsorbApi` as emitted (`Impl.CmacTripleDes.X86.Ssse3.Fn.absorb`) meets its contract in
+constant time and returns without secret residue. -/
+theorem absorb_scrubbed :
+    VerifiedScrubbed X86.target Impl.CmacTripleDes.X86.Ssse3.Fn.absorb (Spec.Cmac.tdesAbsorbContract X86.abi 752) 0 :=
+  verifiedScrubbedAll (api := Spec.Cmac.tdesAbsorbApi)
+    { suffix := "_ssse3"
+      code := Impl.StackScratch.X86.withStackScratch 728 5 absorb
+      verified := absorb_framed }
+    (absorbOut _)
+
+/-- `Spec.Cmac.tdesFinishApi` as emitted (`Impl.CmacTripleDes.X86.Ssse3.Fn.finish`) meets its contract in
+constant time and returns without secret residue. -/
+theorem finish_scrubbed :
+    VerifiedScrubbed X86.target Impl.CmacTripleDes.X86.Ssse3.Fn.finish (Spec.Cmac.tdesFinishContract X86.abi 748) 0 :=
+  verifiedScrubbedAll (api := Spec.Cmac.tdesFinishApi)
+    { suffix := "_ssse3"
+      code := Impl.StackScratch.X86.withStackScratch 724 4 finish
+      verified := finish_framed }
+    (finishOut _)
 
 end VG.Proof.CmacTripleDes.X86.Ssse3
