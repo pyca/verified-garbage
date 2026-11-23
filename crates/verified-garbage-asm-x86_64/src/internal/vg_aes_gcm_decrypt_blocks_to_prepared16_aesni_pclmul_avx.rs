@@ -83,6 +83,6 @@ jmp 219f
 219:
 .base64 "ww=="
 .p2align 6"#,
-        vg_aes_gcm_decrypt_blocks_prepared16_aesni_pclmul_avx = sym crate::aes::vg_aes_gcm_decrypt_blocks_prepared16_aesni_pclmul_avx::vg_aes_gcm_decrypt_blocks_prepared16_aesni_pclmul_avx,
+        vg_aes_gcm_decrypt_blocks_prepared16_aesni_pclmul_avx = sym crate::gcm::vg_aes_gcm_decrypt_blocks_prepared16_aesni_pclmul_avx::vg_aes_gcm_decrypt_blocks_prepared16_aesni_pclmul_avx,
     )
 }

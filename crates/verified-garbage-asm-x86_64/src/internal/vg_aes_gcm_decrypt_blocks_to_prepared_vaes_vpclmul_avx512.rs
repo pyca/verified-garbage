@@ -108,7 +108,7 @@ jmp 229f
 229:
 .base64 "ww=="
 .p2align 6"#,
-        vg_aes_gcm_decrypt_blocks_prepared_vaes_vpclmul_avx512 = sym crate::aes::vg_aes_gcm_decrypt_blocks_prepared_vaes_vpclmul_avx512::vg_aes_gcm_decrypt_blocks_prepared_vaes_vpclmul_avx512,
+        vg_aes_gcm_decrypt_blocks_prepared_vaes_vpclmul_avx512 = sym crate::gcm::vg_aes_gcm_decrypt_blocks_prepared_vaes_vpclmul_avx512::vg_aes_gcm_decrypt_blocks_prepared_vaes_vpclmul_avx512,
         VG_GCM_CONSTS = sym crate::consts::VG_GCM_CONSTS,
     )
 }

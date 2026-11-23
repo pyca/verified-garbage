@@ -436,9 +436,9 @@ jmp 247f
 jmp 21b
 .p2align 6"#,
         vg_ghash_vpclmul = sym crate::gcm::vg_ghash_vpclmul::vg_ghash_vpclmul,
-        vg_aes_gcm_decrypt_blocks_vaes_vpclmul = sym crate::aes::vg_aes_gcm_decrypt_blocks_vaes_vpclmul::vg_aes_gcm_decrypt_blocks_vaes_vpclmul,
-        vg_aes_ctr32_vaes = sym crate::aes::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
-        vg_aes_gcm_decrypt_blocks_prepared16_vaes_vpclmul = sym crate::aes::vg_aes_gcm_decrypt_blocks_prepared16_vaes_vpclmul::vg_aes_gcm_decrypt_blocks_prepared16_vaes_vpclmul,
+        vg_aes_gcm_decrypt_blocks_vaes_vpclmul = sym crate::gcm::vg_aes_gcm_decrypt_blocks_vaes_vpclmul::vg_aes_gcm_decrypt_blocks_vaes_vpclmul,
+        vg_aes_ctr32_vaes = sym crate::gcm::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
+        vg_aes_gcm_decrypt_blocks_prepared16_vaes_vpclmul = sym crate::gcm::vg_aes_gcm_decrypt_blocks_prepared16_vaes_vpclmul::vg_aes_gcm_decrypt_blocks_prepared16_vaes_vpclmul,
         VG_GCM_CONSTS = sym crate::consts::VG_GCM_CONSTS,
     )
 }

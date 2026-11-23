@@ -13,8 +13,8 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_encrypt_blocks_pclmul() {
     core::arch::naked_asm!(
         r#".base64 "TItcJAhJiTtJiXMISYlTEEmJSxhNiUMgTYlLKEyLXCQITYtDKE2FwA=="
 je 20f
-.base64 "TItcJAhJiztJi3MISYtTEEmLSyBNi0MoTYnZSYPBQA=="
-call {vg_aes_ctr32}
+.base64 "TItcJAhJiztJi3MISYtTEEmLSyBNi0MoTYnZSYPBQEmJyw=="
+call {vg_aes_ctr32_to}
 .base64 "TItcJAhJiztIgcfwAAAASYtzGEmLUyBJi0soTYnYSYPAQA=="
 call {vg_ghash_pclmul}
 jmp 21f
@@ -22,7 +22,7 @@ jmp 21f
 21:
 .base64 "ww=="
 .p2align 6"#,
-        vg_aes_ctr32 = sym crate::aes::vg_aes_ctr32::vg_aes_ctr32,
-        vg_ghash_pclmul = sym crate::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
+        vg_aes_ctr32_to = sym crate::gcm::vg_aes_ctr32_to::vg_aes_ctr32_to,
+        vg_ghash_pclmul = sym crate::gcm::vg_ghash_pclmul::vg_ghash_pclmul,
     )
 }

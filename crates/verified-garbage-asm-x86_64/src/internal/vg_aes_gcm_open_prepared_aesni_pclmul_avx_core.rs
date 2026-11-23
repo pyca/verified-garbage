@@ -435,10 +435,10 @@ jmp 247f
 .base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJDAKAAA="
 jmp 21b
 .p2align 6"#,
-        vg_ghash_pclmul = sym crate::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
-        vg_aes_gcm_decrypt_blocks_aesni_pclmul_avx = sym crate::aes::vg_aes_gcm_decrypt_blocks_aesni_pclmul_avx::vg_aes_gcm_decrypt_blocks_aesni_pclmul_avx,
-        vg_aes_ctr32_aesni = sym crate::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
-        vg_aes_gcm_decrypt_blocks_prepared16_aesni_pclmul_avx = sym crate::aes::vg_aes_gcm_decrypt_blocks_prepared16_aesni_pclmul_avx::vg_aes_gcm_decrypt_blocks_prepared16_aesni_pclmul_avx,
+        vg_ghash_pclmul = sym crate::gcm::vg_ghash_pclmul::vg_ghash_pclmul,
+        vg_aes_gcm_decrypt_blocks_aesni_pclmul_avx = sym crate::gcm::vg_aes_gcm_decrypt_blocks_aesni_pclmul_avx::vg_aes_gcm_decrypt_blocks_aesni_pclmul_avx,
+        vg_aes_ctr32_aesni = sym crate::gcm::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
+        vg_aes_gcm_decrypt_blocks_prepared16_aesni_pclmul_avx = sym crate::gcm::vg_aes_gcm_decrypt_blocks_prepared16_aesni_pclmul_avx::vg_aes_gcm_decrypt_blocks_prepared16_aesni_pclmul_avx,
         VG_GCM_CONSTS = sym crate::consts::VG_GCM_CONSTS,
     )
 }
