@@ -1158,596 +1158,7 @@ vg_ffdh_check_domain:
 	sub edi, 4
 	jne 275b
 	mov edi, DWORD PTR [esp+68]
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov ebp, edi
-	add ebp, 3336
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	mov ecx, DWORD PTR [esp+8]
-	add ecx, 7
-	shr ecx, 3
-	add ecx, ecx
-	add ecx, ecx
-	add ecx, ecx
-	mov eax, 0
-276:
-	mov DWORD PTR [ebp], eax
-	add ebp, 4
-	sub ecx, 4
-	jne 276b
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov eax, edi
-	add eax, 3336
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	mov ecx, 1
-	mov DWORD PTR [eax], ecx
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov ebp, edi
-	add ebp, 3336
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	mov ecx, DWORD PTR [esp+8]
-	add ecx, 7
-	shr ecx, 3
-	add ecx, ecx
-	add ecx, ecx
-	add ecx, ecx
-	mov eax, 0
-277:
-	mov DWORD PTR [ebp], eax
-	add ebp, 4
-	sub ecx, 4
-	jne 277b
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov eax, edi
-	add eax, 3336
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	mov ecx, 3
-	mov DWORD PTR [eax], ecx
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov esi, edi
-	add esi, 3336
-	add esi, edx
-	add esi, edx
-	add esi, edx
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov ebp, edi
-	add ebp, 3336
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	mov ecx, 0
-278:
-	mov eax, DWORD PTR [esi]
-	add ecx, ecx
-	sbb eax, DWORD PTR [ebp]
-	sbb ecx, ecx
-	add esi, 4
-	add ebp, 4
-	sub edx, 4
-	jne 278b
-	mov edx, DWORD PTR [edi+3336]
-	and edx, 1
-	mov eax, 0
-	sub eax, edx
-	and ecx, eax
-	xor ecx, -1
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov ebp, edi
-	add ebp, 3336
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov ebx, edi
-	add ebx, 3336
-	mov edi, DWORD PTR [esp+8]
-	add edi, 7
-	shr edi, 3
-	add edi, edi
-	add edi, edi
-	add edi, edi
-279:
-	mov eax, DWORD PTR [ebx]
-	mov edx, DWORD PTR [ebp]
-	xor edx, eax
-	and edx, ecx
-	xor eax, edx
-	mov DWORD PTR [ebx], eax
-	add ebp, 4
-	add ebx, 4
-	sub edi, 4
-	jne 279b
-	mov edi, DWORD PTR [esp+68]
-	mov ebx, DWORD PTR [edi+3336]
-	mov ecx, ebx
-	mov eax, ebx
-	mul ecx
-	mov ebp, 2
-	sub ebp, eax
-	mov eax, ecx
-	mul ebp
-	mov ecx, eax
-	mov eax, ebx
-	mul ecx
-	mov ebp, 2
-	sub ebp, eax
-	mov eax, ecx
-	mul ebp
-	mov ecx, eax
-	mov eax, ebx
-	mul ecx
-	mov ebp, 2
-	sub ebp, eax
-	mov eax, ecx
-	mul ebp
-	mov ecx, eax
-	mov eax, ebx
-	mul ecx
-	mov ebp, 2
-	sub ebp, eax
-	mov eax, ecx
-	mul ebp
-	mov ecx, eax
-	mov eax, 0
-	sub eax, ecx
-	mov DWORD PTR [edi], eax
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov ebp, edi
-	add ebp, 3336
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	mov ecx, DWORD PTR [esp+8]
-	add ecx, 7
-	shr ecx, 3
-	add ecx, ecx
-	add ecx, ecx
-	add ecx, ecx
-	mov eax, 0
-280:
-	mov DWORD PTR [ebp], eax
-	add ebp, 4
-	sub ecx, 4
-	jne 280b
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov eax, edi
-	add eax, 3336
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	mov ecx, 1
-	mov DWORD PTR [eax], ecx
-	mov esi, DWORD PTR [esp+8]
-	add esi, 7
-	shr esi, 3
-	add esi, esi
-	add esi, esi
-	add esi, esi
-	mov eax, esi
-	shr eax, 3
-	add esi, esi
-	add esi, esi
-	add esi, esi
-	add esi, eax
-281:
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov ebp, edi
-	add ebp, 3336
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov ebx, edi
-	add ebx, 3336
-	add ebx, edx
-	add ebx, edx
-	add ebx, edx
-	add ebx, edx
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov eax, edi
-	add eax, 3336
-	add eax, edx
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	mov edi, eax
-	mov ecx, 0
-282:
-	cmp edx, 32
-	jae 283f
-	add ecx, ecx
-	mov eax, DWORD PTR [ebp]
-	adc eax, DWORD PTR [ebx]
-	mov DWORD PTR [edi], eax
-	sbb ecx, ecx
-	add ebp, 4
-	add ebx, 4
-	add edi, 4
-	sub edx, 4
-	jmp 284f
-283:
-	add ecx, ecx
-	mov eax, DWORD PTR [ebp]
-	adc eax, DWORD PTR [ebx]
-	mov DWORD PTR [edi], eax
-	mov eax, DWORD PTR [ebp+4]
-	adc eax, DWORD PTR [ebx+4]
-	mov DWORD PTR [edi+4], eax
-	mov eax, DWORD PTR [ebp+8]
-	adc eax, DWORD PTR [ebx+8]
-	mov DWORD PTR [edi+8], eax
-	mov eax, DWORD PTR [ebp+12]
-	adc eax, DWORD PTR [ebx+12]
-	mov DWORD PTR [edi+12], eax
-	mov eax, DWORD PTR [ebp+16]
-	adc eax, DWORD PTR [ebx+16]
-	mov DWORD PTR [edi+16], eax
-	mov eax, DWORD PTR [ebp+20]
-	adc eax, DWORD PTR [ebx+20]
-	mov DWORD PTR [edi+20], eax
-	mov eax, DWORD PTR [ebp+24]
-	adc eax, DWORD PTR [ebx+24]
-	mov DWORD PTR [edi+24], eax
-	mov eax, DWORD PTR [ebp+28]
-	adc eax, DWORD PTR [ebx+28]
-	mov DWORD PTR [edi+28], eax
-	sbb ecx, ecx
-	add ebp, 32
-	add ebx, 32
-	add edi, 32
-	sub edx, 32
-284:
-	cmp edx, 0
-	jne 282b
-	mov edi, DWORD PTR [esp+68]
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov eax, edi
-	add eax, 3336
-	add eax, edx
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add eax, edx
-	mov edx, 0
-	sub edx, ecx
-	mov DWORD PTR [eax], edx
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov ebp, edi
-	add ebp, 3336
-	add ebp, edx
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov ebx, edi
-	add ebx, 3336
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov eax, edi
-	add eax, 3336
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	mov edi, eax
-	mov ecx, 0
-285:
-	cmp edx, 32
-	jae 286f
-	add ecx, ecx
-	mov eax, DWORD PTR [ebp]
-	sbb eax, DWORD PTR [ebx]
-	mov DWORD PTR [edi], eax
-	sbb ecx, ecx
-	add ebp, 4
-	add ebx, 4
-	add edi, 4
-	sub edx, 4
-	jmp 287f
-286:
-	add ecx, ecx
-	mov eax, DWORD PTR [ebp]
-	sbb eax, DWORD PTR [ebx]
-	mov DWORD PTR [edi], eax
-	mov eax, DWORD PTR [ebp+4]
-	sbb eax, DWORD PTR [ebx+4]
-	mov DWORD PTR [edi+4], eax
-	mov eax, DWORD PTR [ebp+8]
-	sbb eax, DWORD PTR [ebx+8]
-	mov DWORD PTR [edi+8], eax
-	mov eax, DWORD PTR [ebp+12]
-	sbb eax, DWORD PTR [ebx+12]
-	mov DWORD PTR [edi+12], eax
-	mov eax, DWORD PTR [ebp+16]
-	sbb eax, DWORD PTR [ebx+16]
-	mov DWORD PTR [edi+16], eax
-	mov eax, DWORD PTR [ebp+20]
-	sbb eax, DWORD PTR [ebx+20]
-	mov DWORD PTR [edi+20], eax
-	mov eax, DWORD PTR [ebp+24]
-	sbb eax, DWORD PTR [ebx+24]
-	mov DWORD PTR [edi+24], eax
-	mov eax, DWORD PTR [ebp+28]
-	sbb eax, DWORD PTR [ebx+28]
-	mov DWORD PTR [edi+28], eax
-	sbb ecx, ecx
-	add ebp, 32
-	add ebx, 32
-	add edi, 32
-	sub edx, 32
-287:
-	cmp edx, 0
-	jne 285b
-	mov edi, DWORD PTR [esp+68]
-	mov eax, DWORD PTR [ebp]
-	add ecx, ecx
-	sbb eax, 0
-	sbb eax, eax
-	mov ecx, eax
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov ebp, edi
-	add ebp, 3336
-	add ebp, edx
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov ebx, edi
-	add ebx, 3336
-	add ebx, edx
-	add ebx, edx
-	add ebx, edx
-	add ebx, edx
-	mov edi, DWORD PTR [esp+8]
-	add edi, 7
-	shr edi, 3
-	add edi, edi
-	add edi, edi
-	add edi, edi
-	mov eax, edi
-	shr eax, 4
-	movd xmm7, ecx
-	pshufd xmm7, xmm7, 0
-288:
-	movdqu xmm0, XMMWORD PTR [ebx]
-	movdqu xmm1, XMMWORD PTR [ebp]
-	pxor xmm1, xmm0
-	pand xmm1, xmm7
-	pxor xmm0, xmm1
-	movdqu XMMWORD PTR [ebx], xmm0
-	add ebp, 16
-	add ebx, 16
-	sub eax, 1
-	jne 288b
-	and edi, 15
-	jne 289f
-	jmp 290f
-289:
-291:
-	mov eax, DWORD PTR [ebx]
-	mov edx, DWORD PTR [ebp]
-	xor edx, eax
-	and edx, ecx
-	xor eax, edx
-	mov DWORD PTR [ebx], eax
-	add ebp, 4
-	add ebx, 4
-	sub edi, 4
-	jne 291b
-290:
-	mov edi, DWORD PTR [esp+68]
-	sub esi, 1
-	jne 281b
-	mov esi, 6
-292:
-	lea esp, [esp-36]
-	mov edx, DWORD PTR [esp+44]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	mov eax, DWORD PTR [esp+108]
-	mov DWORD PTR [esp+4], eax
-	mov DWORD PTR [esp], edi
-	mov eax, edx
-	shr eax, 3
-	mov DWORD PTR [esp+8], eax
-	add edx, edx
-	add edx, 32
-	mov eax, 3336
-	mov DWORD PTR [esp+12], eax
-	mov eax, 0
-	mov DWORD PTR [esp+16], eax
-	mov eax, 3336
-	add eax, edx
-	mov DWORD PTR [esp+20], eax
-	mov eax, 3336
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	mov DWORD PTR [esp+24], eax
-	mov eax, 3336
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	mov DWORD PTR [esp+28], eax
-	mov eax, 3336
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	mov DWORD PTR [esp+32], eax
-	call {vg_rsa_mont_mul_at}
-	lea esp, [esp+36]
-	sub esi, 1
-	cmp esi, 0
-	jne 292b
+	call {vg_ffdh_prepare_wide}
 	mov ecx, -1
 	mov edx, DWORD PTR [esp+8]
 	add edx, 7
@@ -1795,7 +1206,7 @@ vg_ffdh_check_domain:
 	add edi, edi
 	add edi, edi
 	add edi, edi
-293:
+276:
 	mov eax, DWORD PTR [ebx]
 	mov edx, DWORD PTR [ebp]
 	xor edx, eax
@@ -1805,7 +1216,7 @@ vg_ffdh_check_domain:
 	add ebp, 4
 	add ebx, 4
 	sub edi, 4
-	jne 293b
+	jne 276b
 	mov edi, DWORD PTR [esp+68]
 	lea esp, [esp-36]
 	mov edx, DWORD PTR [esp+44]
@@ -1885,11 +1296,11 @@ vg_ffdh_check_domain:
 	add ecx, ecx
 	add ecx, ecx
 	mov eax, 0
-294:
+277:
 	mov DWORD PTR [ebp], eax
 	add ebp, 4
 	sub ecx, 4
-	jne 294b
+	jne 277b
 	mov edx, DWORD PTR [esp+8]
 	add edx, 7
 	shr edx, 3
@@ -1940,7 +1351,7 @@ vg_ffdh_check_domain:
 	add edx, edx
 	add edx, edx
 	mov ecx, 0
-295:
+278:
 	mov eax, DWORD PTR [esi]
 	add ecx, ecx
 	sbb eax, DWORD PTR [ebp]
@@ -1948,7 +1359,7 @@ vg_ffdh_check_domain:
 	add esi, 4
 	add ebp, 4
 	sub edx, 4
-	jne 295b
+	jne 278b
 	mov ebx, ecx
 	mov edx, DWORD PTR [esp+8]
 	add edx, 7
@@ -2000,7 +1411,7 @@ vg_ffdh_check_domain:
 	add edx, edx
 	add edx, edx
 	mov ecx, 0
-296:
+279:
 	mov eax, DWORD PTR [esi]
 	add ecx, ecx
 	sbb eax, DWORD PTR [ebp]
@@ -2008,11 +1419,11 @@ vg_ffdh_check_domain:
 	add esi, 4
 	add ebp, 4
 	sub edx, 4
-	jne 296b
+	jne 279b
 	or ecx, ebx
 	xor ecx, -1
 	test ecx, ecx
-	je 297f
+	je 280f
 	mov ecx, -1
 	mov edx, DWORD PTR [esp+8]
 	add edx, 7
@@ -2049,7 +1460,7 @@ vg_ffdh_check_domain:
 	add edi, edi
 	add edi, edi
 	add edi, edi
-299:
+282:
 	mov eax, DWORD PTR [ebx]
 	mov edx, DWORD PTR [ebp]
 	xor edx, eax
@@ -2059,598 +1470,9 @@ vg_ffdh_check_domain:
 	add ebp, 4
 	add ebx, 4
 	sub edi, 4
-	jne 299b
+	jne 282b
 	mov edi, DWORD PTR [esp+68]
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov ebp, edi
-	add ebp, 3336
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	mov ecx, DWORD PTR [esp+8]
-	add ecx, 7
-	shr ecx, 3
-	add ecx, ecx
-	add ecx, ecx
-	add ecx, ecx
-	mov eax, 0
-2100:
-	mov DWORD PTR [ebp], eax
-	add ebp, 4
-	sub ecx, 4
-	jne 2100b
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov eax, edi
-	add eax, 3336
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	mov ecx, 1
-	mov DWORD PTR [eax], ecx
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov ebp, edi
-	add ebp, 3336
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	mov ecx, DWORD PTR [esp+8]
-	add ecx, 7
-	shr ecx, 3
-	add ecx, ecx
-	add ecx, ecx
-	add ecx, ecx
-	mov eax, 0
-2101:
-	mov DWORD PTR [ebp], eax
-	add ebp, 4
-	sub ecx, 4
-	jne 2101b
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov eax, edi
-	add eax, 3336
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	mov ecx, 3
-	mov DWORD PTR [eax], ecx
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov esi, edi
-	add esi, 3336
-	add esi, edx
-	add esi, edx
-	add esi, edx
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov ebp, edi
-	add ebp, 3336
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	mov ecx, 0
-2102:
-	mov eax, DWORD PTR [esi]
-	add ecx, ecx
-	sbb eax, DWORD PTR [ebp]
-	sbb ecx, ecx
-	add esi, 4
-	add ebp, 4
-	sub edx, 4
-	jne 2102b
-	mov edx, DWORD PTR [edi+3336]
-	and edx, 1
-	mov eax, 0
-	sub eax, edx
-	and ecx, eax
-	xor ecx, -1
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov ebp, edi
-	add ebp, 3336
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov ebx, edi
-	add ebx, 3336
-	mov edi, DWORD PTR [esp+8]
-	add edi, 7
-	shr edi, 3
-	add edi, edi
-	add edi, edi
-	add edi, edi
-2103:
-	mov eax, DWORD PTR [ebx]
-	mov edx, DWORD PTR [ebp]
-	xor edx, eax
-	and edx, ecx
-	xor eax, edx
-	mov DWORD PTR [ebx], eax
-	add ebp, 4
-	add ebx, 4
-	sub edi, 4
-	jne 2103b
-	mov edi, DWORD PTR [esp+68]
-	mov ebx, DWORD PTR [edi+3336]
-	mov ecx, ebx
-	mov eax, ebx
-	mul ecx
-	mov ebp, 2
-	sub ebp, eax
-	mov eax, ecx
-	mul ebp
-	mov ecx, eax
-	mov eax, ebx
-	mul ecx
-	mov ebp, 2
-	sub ebp, eax
-	mov eax, ecx
-	mul ebp
-	mov ecx, eax
-	mov eax, ebx
-	mul ecx
-	mov ebp, 2
-	sub ebp, eax
-	mov eax, ecx
-	mul ebp
-	mov ecx, eax
-	mov eax, ebx
-	mul ecx
-	mov ebp, 2
-	sub ebp, eax
-	mov eax, ecx
-	mul ebp
-	mov ecx, eax
-	mov eax, 0
-	sub eax, ecx
-	mov DWORD PTR [edi], eax
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov ebp, edi
-	add ebp, 3336
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	mov ecx, DWORD PTR [esp+8]
-	add ecx, 7
-	shr ecx, 3
-	add ecx, ecx
-	add ecx, ecx
-	add ecx, ecx
-	mov eax, 0
-2104:
-	mov DWORD PTR [ebp], eax
-	add ebp, 4
-	sub ecx, 4
-	jne 2104b
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov eax, edi
-	add eax, 3336
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	mov ecx, 1
-	mov DWORD PTR [eax], ecx
-	mov esi, DWORD PTR [esp+8]
-	add esi, 7
-	shr esi, 3
-	add esi, esi
-	add esi, esi
-	add esi, esi
-	mov eax, esi
-	shr eax, 3
-	add esi, esi
-	add esi, esi
-	add esi, esi
-	add esi, eax
-2105:
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov ebp, edi
-	add ebp, 3336
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov ebx, edi
-	add ebx, 3336
-	add ebx, edx
-	add ebx, edx
-	add ebx, edx
-	add ebx, edx
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov eax, edi
-	add eax, 3336
-	add eax, edx
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	mov edi, eax
-	mov ecx, 0
-2106:
-	cmp edx, 32
-	jae 2107f
-	add ecx, ecx
-	mov eax, DWORD PTR [ebp]
-	adc eax, DWORD PTR [ebx]
-	mov DWORD PTR [edi], eax
-	sbb ecx, ecx
-	add ebp, 4
-	add ebx, 4
-	add edi, 4
-	sub edx, 4
-	jmp 2108f
-2107:
-	add ecx, ecx
-	mov eax, DWORD PTR [ebp]
-	adc eax, DWORD PTR [ebx]
-	mov DWORD PTR [edi], eax
-	mov eax, DWORD PTR [ebp+4]
-	adc eax, DWORD PTR [ebx+4]
-	mov DWORD PTR [edi+4], eax
-	mov eax, DWORD PTR [ebp+8]
-	adc eax, DWORD PTR [ebx+8]
-	mov DWORD PTR [edi+8], eax
-	mov eax, DWORD PTR [ebp+12]
-	adc eax, DWORD PTR [ebx+12]
-	mov DWORD PTR [edi+12], eax
-	mov eax, DWORD PTR [ebp+16]
-	adc eax, DWORD PTR [ebx+16]
-	mov DWORD PTR [edi+16], eax
-	mov eax, DWORD PTR [ebp+20]
-	adc eax, DWORD PTR [ebx+20]
-	mov DWORD PTR [edi+20], eax
-	mov eax, DWORD PTR [ebp+24]
-	adc eax, DWORD PTR [ebx+24]
-	mov DWORD PTR [edi+24], eax
-	mov eax, DWORD PTR [ebp+28]
-	adc eax, DWORD PTR [ebx+28]
-	mov DWORD PTR [edi+28], eax
-	sbb ecx, ecx
-	add ebp, 32
-	add ebx, 32
-	add edi, 32
-	sub edx, 32
-2108:
-	cmp edx, 0
-	jne 2106b
-	mov edi, DWORD PTR [esp+68]
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov eax, edi
-	add eax, 3336
-	add eax, edx
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add eax, edx
-	mov edx, 0
-	sub edx, ecx
-	mov DWORD PTR [eax], edx
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov ebp, edi
-	add ebp, 3336
-	add ebp, edx
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov ebx, edi
-	add ebx, 3336
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov eax, edi
-	add eax, 3336
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	mov edi, eax
-	mov ecx, 0
-2109:
-	cmp edx, 32
-	jae 2110f
-	add ecx, ecx
-	mov eax, DWORD PTR [ebp]
-	sbb eax, DWORD PTR [ebx]
-	mov DWORD PTR [edi], eax
-	sbb ecx, ecx
-	add ebp, 4
-	add ebx, 4
-	add edi, 4
-	sub edx, 4
-	jmp 2111f
-2110:
-	add ecx, ecx
-	mov eax, DWORD PTR [ebp]
-	sbb eax, DWORD PTR [ebx]
-	mov DWORD PTR [edi], eax
-	mov eax, DWORD PTR [ebp+4]
-	sbb eax, DWORD PTR [ebx+4]
-	mov DWORD PTR [edi+4], eax
-	mov eax, DWORD PTR [ebp+8]
-	sbb eax, DWORD PTR [ebx+8]
-	mov DWORD PTR [edi+8], eax
-	mov eax, DWORD PTR [ebp+12]
-	sbb eax, DWORD PTR [ebx+12]
-	mov DWORD PTR [edi+12], eax
-	mov eax, DWORD PTR [ebp+16]
-	sbb eax, DWORD PTR [ebx+16]
-	mov DWORD PTR [edi+16], eax
-	mov eax, DWORD PTR [ebp+20]
-	sbb eax, DWORD PTR [ebx+20]
-	mov DWORD PTR [edi+20], eax
-	mov eax, DWORD PTR [ebp+24]
-	sbb eax, DWORD PTR [ebx+24]
-	mov DWORD PTR [edi+24], eax
-	mov eax, DWORD PTR [ebp+28]
-	sbb eax, DWORD PTR [ebx+28]
-	mov DWORD PTR [edi+28], eax
-	sbb ecx, ecx
-	add ebp, 32
-	add ebx, 32
-	add edi, 32
-	sub edx, 32
-2111:
-	cmp edx, 0
-	jne 2109b
-	mov edi, DWORD PTR [esp+68]
-	mov eax, DWORD PTR [ebp]
-	add ecx, ecx
-	sbb eax, 0
-	sbb eax, eax
-	mov ecx, eax
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov ebp, edi
-	add ebp, 3336
-	add ebp, edx
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov ebx, edi
-	add ebx, 3336
-	add ebx, edx
-	add ebx, edx
-	add ebx, edx
-	add ebx, edx
-	mov edi, DWORD PTR [esp+8]
-	add edi, 7
-	shr edi, 3
-	add edi, edi
-	add edi, edi
-	add edi, edi
-	mov eax, edi
-	shr eax, 4
-	movd xmm7, ecx
-	pshufd xmm7, xmm7, 0
-2112:
-	movdqu xmm0, XMMWORD PTR [ebx]
-	movdqu xmm1, XMMWORD PTR [ebp]
-	pxor xmm1, xmm0
-	pand xmm1, xmm7
-	pxor xmm0, xmm1
-	movdqu XMMWORD PTR [ebx], xmm0
-	add ebp, 16
-	add ebx, 16
-	sub eax, 1
-	jne 2112b
-	and edi, 15
-	jne 2113f
-	jmp 2114f
-2113:
-2115:
-	mov eax, DWORD PTR [ebx]
-	mov edx, DWORD PTR [ebp]
-	xor edx, eax
-	and edx, ecx
-	xor eax, edx
-	mov DWORD PTR [ebx], eax
-	add ebp, 4
-	add ebx, 4
-	sub edi, 4
-	jne 2115b
-2114:
-	mov edi, DWORD PTR [esp+68]
-	sub esi, 1
-	jne 2105b
-	mov esi, 6
-2116:
-	lea esp, [esp-36]
-	mov edx, DWORD PTR [esp+44]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	mov eax, DWORD PTR [esp+108]
-	mov DWORD PTR [esp+4], eax
-	mov DWORD PTR [esp], edi
-	mov eax, edx
-	shr eax, 3
-	mov DWORD PTR [esp+8], eax
-	add edx, edx
-	add edx, 32
-	mov eax, 3336
-	mov DWORD PTR [esp+12], eax
-	mov eax, 0
-	mov DWORD PTR [esp+16], eax
-	mov eax, 3336
-	add eax, edx
-	mov DWORD PTR [esp+20], eax
-	mov eax, 3336
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	mov DWORD PTR [esp+24], eax
-	mov eax, 3336
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	mov DWORD PTR [esp+28], eax
-	mov eax, 3336
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	mov DWORD PTR [esp+32], eax
-	call {vg_rsa_mont_mul_at}
-	lea esp, [esp+36]
-	sub esi, 1
-	cmp esi, 0
-	jne 2116b
+	call {vg_ffdh_prepare_wide}
 	mov ecx, -1
 	mov edx, DWORD PTR [esp+8]
 	add edx, 7
@@ -2693,7 +1515,7 @@ vg_ffdh_check_domain:
 	add edi, edi
 	add edi, edi
 	add edi, edi
-2117:
+283:
 	mov eax, DWORD PTR [ebx]
 	mov edx, DWORD PTR [ebp]
 	xor edx, eax
@@ -2703,7 +1525,7 @@ vg_ffdh_check_domain:
 	add ebp, 4
 	add ebx, 4
 	sub edi, 4
-	jne 2117b
+	jne 283b
 	mov edi, DWORD PTR [esp+68]
 	mov ecx, -1
 	mov edx, DWORD PTR [esp+8]
@@ -2751,7 +1573,7 @@ vg_ffdh_check_domain:
 	add edi, edi
 	add edi, edi
 	add edi, edi
-2118:
+284:
 	mov eax, DWORD PTR [ebx]
 	mov edx, DWORD PTR [ebp]
 	xor edx, eax
@@ -2761,7 +1583,7 @@ vg_ffdh_check_domain:
 	add ebp, 4
 	add ebx, 4
 	sub edi, 4
-	jne 2118b
+	jne 284b
 	mov edi, DWORD PTR [esp+68]
 	lea esp, [esp-36]
 	mov edx, DWORD PTR [esp+44]
@@ -2909,7 +1731,7 @@ vg_ffdh_check_domain:
 	add edi, edi
 	add edi, edi
 	add edi, edi
-2119:
+285:
 	mov eax, DWORD PTR [ebx]
 	mov edx, DWORD PTR [ebp]
 	xor edx, eax
@@ -2919,7 +1741,7 @@ vg_ffdh_check_domain:
 	add ebp, 4
 	add ebx, 4
 	sub edi, 4
-	jne 2119b
+	jne 285b
 	mov edi, DWORD PTR [esp+68]
 	mov ecx, -1
 	mov edx, DWORD PTR [esp+8]
@@ -2980,7 +1802,7 @@ vg_ffdh_check_domain:
 	add edi, edi
 	add edi, edi
 	add edi, edi
-2120:
+286:
 	mov eax, DWORD PTR [ebx]
 	mov edx, DWORD PTR [ebp]
 	xor edx, eax
@@ -2990,7 +1812,7 @@ vg_ffdh_check_domain:
 	add ebp, 4
 	add ebx, 4
 	sub edi, 4
-	jne 2120b
+	jne 286b
 	mov edi, DWORD PTR [esp+68]
 	mov ecx, -1
 	mov edx, DWORD PTR [esp+8]
@@ -3031,7 +1853,7 @@ vg_ffdh_check_domain:
 	add edi, edi
 	add edi, edi
 	add edi, edi
-2121:
+287:
 	mov eax, DWORD PTR [ebx]
 	mov edx, DWORD PTR [ebp]
 	xor edx, eax
@@ -3041,7 +1863,7 @@ vg_ffdh_check_domain:
 	add ebp, 4
 	add ebx, 4
 	sub edi, 4
-	jne 2121b
+	jne 287b
 	mov edi, DWORD PTR [esp+68]
 	mov edx, DWORD PTR [esp+8]
 	add edx, 7
@@ -3081,7 +1903,7 @@ vg_ffdh_check_domain:
 	add edx, edx
 	add esi, edx
 	add esi, edx
-2122:
+288:
 	lea esp, [esp-36]
 	mov edx, DWORD PTR [esp+44]
 	add edx, 7
@@ -3156,7 +1978,7 @@ vg_ffdh_check_domain:
 	add edi, edi
 	add edi, edi
 	add edi, edi
-2123:
+289:
 	mov eax, DWORD PTR [ebx]
 	mov edx, DWORD PTR [ebp]
 	xor edx, eax
@@ -3166,7 +1988,7 @@ vg_ffdh_check_domain:
 	add ebp, 4
 	add ebx, 4
 	sub edi, 4
-	jne 2123b
+	jne 289b
 	mov edi, DWORD PTR [esp+68]
 	mov esi, ebx
 	mov eax, DWORD PTR [esp+8]
@@ -3222,7 +2044,7 @@ vg_ffdh_check_domain:
 	add edx, eax
 	add edx, eax
 	cmp esi, edx
-	jne 2122b
+	jne 288b
 	mov esi, DWORD PTR [esp+8]
 	add esi, 7
 	shr esi, 3
@@ -3230,7 +2052,7 @@ vg_ffdh_check_domain:
 	add esi, esi
 	add esi, esi
 	add esi, esi
-2124:
+290:
 	lea esp, [esp-36]
 	mov edx, DWORD PTR [esp+44]
 	add edx, 7
@@ -3477,7 +2299,7 @@ vg_ffdh_check_domain:
 	add edx, edx
 	add edx, edx
 	mov ecx, 0
-2125:
+291:
 	mov eax, DWORD PTR [ebp]
 	mov ebx, eax
 	shr ebx, 28
@@ -3490,7 +2312,7 @@ vg_ffdh_check_domain:
 	mov ecx, ebx
 	add ebp, 4
 	sub edx, 4
-	jne 2125b
+	jne 291b
 	mov eax, DWORD PTR [edi+4]
 	add eax, 16
 	mov DWORD PTR [edi+4], eax
@@ -3530,7 +2352,7 @@ vg_ffdh_check_domain:
 	add edx, edx
 	add edx, edx
 	add edx, edx
-2126:
+292:
 	mov eax, DWORD PTR [edi+4]
 	xor eax, 16
 	sub eax, 1
@@ -3567,7 +2389,7 @@ vg_ffdh_check_domain:
 	shr eax, 4
 	movd xmm7, ecx
 	pshufd xmm7, xmm7, 0
-2127:
+293:
 	movdqu xmm0, XMMWORD PTR [ebx]
 	movdqu xmm1, XMMWORD PTR [ebp]
 	pxor xmm1, xmm0
@@ -3577,12 +2399,12 @@ vg_ffdh_check_domain:
 	add ebp, 16
 	add ebx, 16
 	sub eax, 1
-	jne 2127b
+	jne 293b
 	and edi, 15
-	jne 2128f
-	jmp 2129f
-2128:
-2130:
+	jne 294f
+	jmp 295f
+294:
+296:
 	mov eax, DWORD PTR [ebx]
 	mov edx, DWORD PTR [ebp]
 	xor edx, eax
@@ -3592,8 +2414,8 @@ vg_ffdh_check_domain:
 	add ebp, 4
 	add ebx, 4
 	sub edi, 4
-	jne 2130b
-2129:
+	jne 296b
+295:
 	mov edi, DWORD PTR [esp+68]
 	mov eax, DWORD PTR [esp+8]
 	add eax, 7
@@ -3648,7 +2470,7 @@ vg_ffdh_check_domain:
 	add edx, eax
 	add edx, eax
 	cmp ebp, edx
-	jne 2126b
+	jne 292b
 	lea esp, [esp-36]
 	mov edx, DWORD PTR [esp+44]
 	add edx, 7
@@ -3699,7 +2521,7 @@ vg_ffdh_check_domain:
 	call {vg_rsa_mont_mul_at}
 	lea esp, [esp+36]
 	sub esi, 1
-	jne 2124b
+	jne 290b
 	lea esp, [esp-36]
 	mov edx, DWORD PTR [esp+44]
 	add edx, 7
@@ -3781,7 +2603,7 @@ vg_ffdh_check_domain:
 	add edx, edx
 	add edx, edx
 	mov ecx, 0
-2131:
+297:
 	mov eax, DWORD PTR [esi]
 	add ecx, ecx
 	sbb eax, DWORD PTR [ebp]
@@ -3789,7 +2611,7 @@ vg_ffdh_check_domain:
 	add esi, 4
 	add ebp, 4
 	sub edx, 4
-	jne 2131b
+	jne 297b
 	mov ebx, ecx
 	mov edx, DWORD PTR [esp+8]
 	add edx, 7
@@ -3827,7 +2649,7 @@ vg_ffdh_check_domain:
 	add edx, edx
 	add edx, edx
 	mov ecx, 0
-2132:
+298:
 	mov eax, DWORD PTR [esi]
 	add ecx, ecx
 	sbb eax, DWORD PTR [ebp]
@@ -3835,15 +2657,15 @@ vg_ffdh_check_domain:
 	add esi, 4
 	add ebp, 4
 	sub edx, 4
-	jne 2132b
+	jne 298b
 	or ecx, ebx
 	xor ecx, -1
 	mov eax, ecx
 	and eax, 1
-	jmp 298f
-297:
+	jmp 281f
+280:
 	mov eax, 0
-298:
+281:
 	jmp 274f
 273:
 	mov eax, 0
@@ -4514,46 +3336,8 @@ vg_ffdh_check_public:
 	sub edi, 4
 	jne 216b
 	mov edi, DWORD PTR [esp+68]
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov ebp, edi
-	add ebp, 3336
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	mov ecx, DWORD PTR [esp+8]
-	add ecx, 7
-	shr ecx, 3
-	add ecx, ecx
-	add ecx, ecx
-	add ecx, ecx
-	mov eax, 0
-217:
-	mov DWORD PTR [ebp], eax
-	add ebp, 4
-	sub ecx, 4
-	jne 217b
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov eax, edi
-	add eax, 3336
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	mov ecx, 1
-	mov DWORD PTR [eax], ecx
+	call {vg_ffdh_prepare_wide}
+	mov ecx, -1
 	mov edx, DWORD PTR [esp+8]
 	add edx, 7
 	shr edx, 3
@@ -4569,94 +3353,6 @@ vg_ffdh_check_public:
 	add ebp, edx
 	add ebp, edx
 	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	mov ecx, DWORD PTR [esp+8]
-	add ecx, 7
-	shr ecx, 3
-	add ecx, ecx
-	add ecx, ecx
-	add ecx, ecx
-	mov eax, 0
-218:
-	mov DWORD PTR [ebp], eax
-	add ebp, 4
-	sub ecx, 4
-	jne 218b
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov eax, edi
-	add eax, 3336
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	mov ecx, 3
-	mov DWORD PTR [eax], ecx
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov esi, edi
-	add esi, 3336
-	add esi, edx
-	add esi, edx
-	add esi, edx
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov ebp, edi
-	add ebp, 3336
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	mov ecx, 0
-219:
-	mov eax, DWORD PTR [esi]
-	add ecx, ecx
-	sbb eax, DWORD PTR [ebp]
-	sbb ecx, ecx
-	add esi, 4
-	add ebp, 4
-	sub edx, 4
-	jne 219b
-	mov edx, DWORD PTR [edi+3336]
-	and edx, 1
-	mov eax, 0
-	sub eax, edx
-	and ecx, eax
-	xor ecx, -1
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov ebp, edi
-	add ebp, 3336
 	add ebp, edx
 	add ebp, edx
 	add ebp, edx
@@ -4674,6 +3370,298 @@ vg_ffdh_check_public:
 	add edx, 32
 	mov ebx, edi
 	add ebx, 3336
+	add ebx, edx
+	add ebx, edx
+	add ebx, edx
+	add ebx, edx
+	add ebx, edx
+	mov edi, DWORD PTR [esp+8]
+	add edi, 7
+	shr edi, 3
+	add edi, edi
+	add edi, edi
+	add edi, edi
+217:
+	mov eax, DWORD PTR [ebx]
+	mov edx, DWORD PTR [ebp]
+	xor edx, eax
+	and edx, ecx
+	xor eax, edx
+	mov DWORD PTR [ebx], eax
+	add ebp, 4
+	add ebx, 4
+	sub edi, 4
+	jne 217b
+	mov edi, DWORD PTR [esp+68]
+	mov ecx, -1
+	mov edx, DWORD PTR [esp+8]
+	add edx, 7
+	shr edx, 3
+	add edx, edx
+	add edx, edx
+	add edx, edx
+	add edx, edx
+	add edx, 32
+	mov ebp, edi
+	add ebp, 3336
+	add ebp, edx
+	add ebp, edx
+	add ebp, edx
+	add ebp, edx
+	add ebp, edx
+	add ebp, edx
+	add ebp, edx
+	add ebp, edx
+	add ebp, edx
+	add ebp, edx
+	add ebp, edx
+	mov edx, DWORD PTR [esp+8]
+	add edx, 7
+	shr edx, 3
+	add edx, edx
+	add edx, edx
+	add edx, edx
+	add edx, edx
+	add edx, 32
+	mov ebx, edi
+	add ebx, 3336
+	add ebx, edx
+	add ebx, edx
+	add ebx, edx
+	add ebx, edx
+	add ebx, edx
+	add ebx, edx
+	add ebx, edx
+	add ebx, edx
+	mov edi, DWORD PTR [esp+8]
+	add edi, 7
+	shr edi, 3
+	add edi, edi
+	add edi, edi
+	add edi, edi
+218:
+	mov eax, DWORD PTR [ebx]
+	mov edx, DWORD PTR [ebp]
+	xor edx, eax
+	and edx, ecx
+	xor eax, edx
+	mov DWORD PTR [ebx], eax
+	add ebp, 4
+	add ebx, 4
+	sub edi, 4
+	jne 218b
+	mov edi, DWORD PTR [esp+68]
+	lea esp, [esp-36]
+	mov edx, DWORD PTR [esp+44]
+	add edx, 7
+	shr edx, 3
+	add edx, edx
+	add edx, edx
+	add edx, edx
+	mov eax, DWORD PTR [esp+108]
+	mov DWORD PTR [esp+4], eax
+	mov DWORD PTR [esp], edi
+	mov eax, edx
+	shr eax, 3
+	mov DWORD PTR [esp+8], eax
+	add edx, edx
+	add edx, 32
+	mov eax, 3336
+	mov DWORD PTR [esp+12], eax
+	mov eax, 0
+	mov DWORD PTR [esp+16], eax
+	mov eax, 3336
+	add eax, edx
+	mov DWORD PTR [esp+20], eax
+	mov eax, 3336
+	add eax, edx
+	add eax, edx
+	add eax, edx
+	add eax, edx
+	add eax, edx
+	add eax, edx
+	mov DWORD PTR [esp+24], eax
+	mov eax, 3336
+	add eax, edx
+	add eax, edx
+	add eax, edx
+	add eax, edx
+	mov DWORD PTR [esp+28], eax
+	mov eax, 3336
+	add eax, edx
+	add eax, edx
+	add eax, edx
+	mov DWORD PTR [esp+32], eax
+	call {vg_rsa_mont_mul_at}
+	lea esp, [esp+36]
+	lea esp, [esp-36]
+	mov edx, DWORD PTR [esp+44]
+	add edx, 7
+	shr edx, 3
+	add edx, edx
+	add edx, edx
+	add edx, edx
+	mov eax, DWORD PTR [esp+108]
+	mov DWORD PTR [esp+4], eax
+	mov DWORD PTR [esp], edi
+	mov eax, edx
+	shr eax, 3
+	mov DWORD PTR [esp+8], eax
+	add edx, edx
+	add edx, 32
+	mov eax, 3336
+	mov DWORD PTR [esp+12], eax
+	mov eax, 0
+	mov DWORD PTR [esp+16], eax
+	mov eax, 3336
+	add eax, edx
+	mov DWORD PTR [esp+20], eax
+	mov eax, 3336
+	add eax, edx
+	add eax, edx
+	add eax, edx
+	add eax, edx
+	add eax, edx
+	mov DWORD PTR [esp+24], eax
+	mov eax, 3336
+	add eax, edx
+	add eax, edx
+	add eax, edx
+	add eax, edx
+	add eax, edx
+	mov DWORD PTR [esp+28], eax
+	mov eax, 3336
+	add eax, edx
+	add eax, edx
+	add eax, edx
+	add eax, edx
+	mov DWORD PTR [esp+32], eax
+	call {vg_rsa_mont_mul_at}
+	lea esp, [esp+36]
+	mov ecx, -1
+	mov edx, DWORD PTR [esp+8]
+	add edx, 7
+	shr edx, 3
+	add edx, edx
+	add edx, edx
+	add edx, edx
+	add edx, edx
+	add edx, 32
+	mov ebp, edi
+	add ebp, 3336
+	add ebp, edx
+	add ebp, edx
+	add ebp, edx
+	add ebp, edx
+	add ebp, edx
+	add ebp, edx
+	mov edx, DWORD PTR [esp+8]
+	add edx, 7
+	shr edx, 3
+	add edx, edx
+	add edx, edx
+	add edx, edx
+	add edx, edx
+	add edx, 32
+	mov ebx, edi
+	add ebx, 3336
+	add ebx, edx
+	add ebx, edx
+	add ebx, edx
+	add ebx, edx
+	add ebx, edx
+	add ebx, edx
+	add ebx, edx
+	add ebx, edx
+	add ebx, edx
+	add ebx, edx
+	add ebx, edx
+	add ebx, edx
+	add ebx, edx
+	add ebx, edx
+	add ebx, edx
+	add ebx, edx
+	add ebx, edx
+	add ebx, edx
+	add ebx, edx
+	add ebx, edx
+	mov edx, DWORD PTR [esp+8]
+	add edx, 7
+	shr edx, 3
+	add edx, edx
+	add edx, edx
+	add edx, edx
+	mov edi, DWORD PTR [esp+8]
+	add edi, 7
+	shr edi, 3
+	add edi, edi
+	add edi, edi
+	add edi, edi
+219:
+	mov eax, DWORD PTR [ebx]
+	mov edx, DWORD PTR [ebp]
+	xor edx, eax
+	and edx, ecx
+	xor eax, edx
+	mov DWORD PTR [ebx], eax
+	add ebp, 4
+	add ebx, 4
+	sub edi, 4
+	jne 219b
+	mov edi, DWORD PTR [esp+68]
+	mov ecx, -1
+	mov edx, DWORD PTR [esp+8]
+	add edx, 7
+	shr edx, 3
+	add edx, edx
+	add edx, edx
+	add edx, edx
+	add edx, edx
+	add edx, 32
+	mov ebp, edi
+	add ebp, 3336
+	add ebp, edx
+	add ebp, edx
+	add ebp, edx
+	add ebp, edx
+	add ebp, edx
+	mov edx, DWORD PTR [esp+8]
+	add edx, 7
+	shr edx, 3
+	add edx, edx
+	add edx, edx
+	add edx, edx
+	add edx, edx
+	add edx, 32
+	mov ebx, edi
+	add ebx, 3336
+	add ebx, edx
+	add ebx, edx
+	add ebx, edx
+	add ebx, edx
+	add ebx, edx
+	add ebx, edx
+	add ebx, edx
+	add ebx, edx
+	add ebx, edx
+	add ebx, edx
+	add ebx, edx
+	add ebx, edx
+	add ebx, edx
+	add ebx, edx
+	add ebx, edx
+	add ebx, edx
+	add ebx, edx
+	add ebx, edx
+	add ebx, edx
+	add ebx, edx
+	mov edx, DWORD PTR [esp+8]
+	add edx, 7
+	shr edx, 3
+	add edx, edx
+	add edx, edx
+	add edx, edx
+	add ebx, edx
 	mov edi, DWORD PTR [esp+8]
 	add edi, 7
 	shr edi, 3
@@ -4692,39 +3680,7 @@ vg_ffdh_check_public:
 	sub edi, 4
 	jne 220b
 	mov edi, DWORD PTR [esp+68]
-	mov ebx, DWORD PTR [edi+3336]
-	mov ecx, ebx
-	mov eax, ebx
-	mul ecx
-	mov ebp, 2
-	sub ebp, eax
-	mov eax, ecx
-	mul ebp
-	mov ecx, eax
-	mov eax, ebx
-	mul ecx
-	mov ebp, 2
-	sub ebp, eax
-	mov eax, ecx
-	mul ebp
-	mov ecx, eax
-	mov eax, ebx
-	mul ecx
-	mov ebp, 2
-	sub ebp, eax
-	mov eax, ecx
-	mul ebp
-	mov ecx, eax
-	mov eax, ebx
-	mul ecx
-	mov ebp, 2
-	sub ebp, eax
-	mov eax, ecx
-	mul ebp
-	mov ecx, eax
-	mov eax, 0
-	sub eax, ecx
-	mov DWORD PTR [edi], eax
+	mov ecx, -1
 	mov edx, DWORD PTR [esp+8]
 	add edx, 7
 	shr edx, 3
@@ -4739,764 +3695,41 @@ vg_ffdh_check_public:
 	add ebp, edx
 	add ebp, edx
 	add ebp, edx
-	mov ecx, DWORD PTR [esp+8]
-	add ecx, 7
-	shr ecx, 3
-	add ecx, ecx
-	add ecx, ecx
-	add ecx, ecx
-	mov eax, 0
+	add ebp, edx
+	mov edx, DWORD PTR [esp+8]
+	add edx, 7
+	shr edx, 3
+	add edx, edx
+	add edx, edx
+	add edx, edx
+	add edx, edx
+	add edx, 32
+	mov ebx, edi
+	add ebx, 3336
+	add ebx, edx
+	add ebx, edx
+	add ebx, edx
+	add ebx, edx
+	add ebx, edx
+	add ebx, edx
+	add ebx, edx
+	mov edi, DWORD PTR [esp+8]
+	add edi, 7
+	shr edi, 3
+	add edi, edi
+	add edi, edi
+	add edi, edi
 221:
-	mov DWORD PTR [ebp], eax
+	mov eax, DWORD PTR [ebx]
+	mov edx, DWORD PTR [ebp]
+	xor edx, eax
+	and edx, ecx
+	xor eax, edx
+	mov DWORD PTR [ebx], eax
 	add ebp, 4
-	sub ecx, 4
+	add ebx, 4
+	sub edi, 4
 	jne 221b
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov eax, edi
-	add eax, 3336
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	mov ecx, 1
-	mov DWORD PTR [eax], ecx
-	mov esi, DWORD PTR [esp+8]
-	add esi, 7
-	shr esi, 3
-	add esi, esi
-	add esi, esi
-	add esi, esi
-	mov eax, esi
-	shr eax, 3
-	add esi, esi
-	add esi, esi
-	add esi, esi
-	add esi, eax
-222:
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov ebp, edi
-	add ebp, 3336
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov ebx, edi
-	add ebx, 3336
-	add ebx, edx
-	add ebx, edx
-	add ebx, edx
-	add ebx, edx
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov eax, edi
-	add eax, 3336
-	add eax, edx
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	mov edi, eax
-	mov ecx, 0
-223:
-	cmp edx, 32
-	jae 224f
-	add ecx, ecx
-	mov eax, DWORD PTR [ebp]
-	adc eax, DWORD PTR [ebx]
-	mov DWORD PTR [edi], eax
-	sbb ecx, ecx
-	add ebp, 4
-	add ebx, 4
-	add edi, 4
-	sub edx, 4
-	jmp 225f
-224:
-	add ecx, ecx
-	mov eax, DWORD PTR [ebp]
-	adc eax, DWORD PTR [ebx]
-	mov DWORD PTR [edi], eax
-	mov eax, DWORD PTR [ebp+4]
-	adc eax, DWORD PTR [ebx+4]
-	mov DWORD PTR [edi+4], eax
-	mov eax, DWORD PTR [ebp+8]
-	adc eax, DWORD PTR [ebx+8]
-	mov DWORD PTR [edi+8], eax
-	mov eax, DWORD PTR [ebp+12]
-	adc eax, DWORD PTR [ebx+12]
-	mov DWORD PTR [edi+12], eax
-	mov eax, DWORD PTR [ebp+16]
-	adc eax, DWORD PTR [ebx+16]
-	mov DWORD PTR [edi+16], eax
-	mov eax, DWORD PTR [ebp+20]
-	adc eax, DWORD PTR [ebx+20]
-	mov DWORD PTR [edi+20], eax
-	mov eax, DWORD PTR [ebp+24]
-	adc eax, DWORD PTR [ebx+24]
-	mov DWORD PTR [edi+24], eax
-	mov eax, DWORD PTR [ebp+28]
-	adc eax, DWORD PTR [ebx+28]
-	mov DWORD PTR [edi+28], eax
-	sbb ecx, ecx
-	add ebp, 32
-	add ebx, 32
-	add edi, 32
-	sub edx, 32
-225:
-	cmp edx, 0
-	jne 223b
-	mov edi, DWORD PTR [esp+68]
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov eax, edi
-	add eax, 3336
-	add eax, edx
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add eax, edx
-	mov edx, 0
-	sub edx, ecx
-	mov DWORD PTR [eax], edx
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov ebp, edi
-	add ebp, 3336
-	add ebp, edx
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov ebx, edi
-	add ebx, 3336
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov eax, edi
-	add eax, 3336
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	mov edi, eax
-	mov ecx, 0
-226:
-	cmp edx, 32
-	jae 227f
-	add ecx, ecx
-	mov eax, DWORD PTR [ebp]
-	sbb eax, DWORD PTR [ebx]
-	mov DWORD PTR [edi], eax
-	sbb ecx, ecx
-	add ebp, 4
-	add ebx, 4
-	add edi, 4
-	sub edx, 4
-	jmp 228f
-227:
-	add ecx, ecx
-	mov eax, DWORD PTR [ebp]
-	sbb eax, DWORD PTR [ebx]
-	mov DWORD PTR [edi], eax
-	mov eax, DWORD PTR [ebp+4]
-	sbb eax, DWORD PTR [ebx+4]
-	mov DWORD PTR [edi+4], eax
-	mov eax, DWORD PTR [ebp+8]
-	sbb eax, DWORD PTR [ebx+8]
-	mov DWORD PTR [edi+8], eax
-	mov eax, DWORD PTR [ebp+12]
-	sbb eax, DWORD PTR [ebx+12]
-	mov DWORD PTR [edi+12], eax
-	mov eax, DWORD PTR [ebp+16]
-	sbb eax, DWORD PTR [ebx+16]
-	mov DWORD PTR [edi+16], eax
-	mov eax, DWORD PTR [ebp+20]
-	sbb eax, DWORD PTR [ebx+20]
-	mov DWORD PTR [edi+20], eax
-	mov eax, DWORD PTR [ebp+24]
-	sbb eax, DWORD PTR [ebx+24]
-	mov DWORD PTR [edi+24], eax
-	mov eax, DWORD PTR [ebp+28]
-	sbb eax, DWORD PTR [ebx+28]
-	mov DWORD PTR [edi+28], eax
-	sbb ecx, ecx
-	add ebp, 32
-	add ebx, 32
-	add edi, 32
-	sub edx, 32
-228:
-	cmp edx, 0
-	jne 226b
-	mov edi, DWORD PTR [esp+68]
-	mov eax, DWORD PTR [ebp]
-	add ecx, ecx
-	sbb eax, 0
-	sbb eax, eax
-	mov ecx, eax
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov ebp, edi
-	add ebp, 3336
-	add ebp, edx
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov ebx, edi
-	add ebx, 3336
-	add ebx, edx
-	add ebx, edx
-	add ebx, edx
-	add ebx, edx
-	mov edi, DWORD PTR [esp+8]
-	add edi, 7
-	shr edi, 3
-	add edi, edi
-	add edi, edi
-	add edi, edi
-	mov eax, edi
-	shr eax, 4
-	movd xmm7, ecx
-	pshufd xmm7, xmm7, 0
-229:
-	movdqu xmm0, XMMWORD PTR [ebx]
-	movdqu xmm1, XMMWORD PTR [ebp]
-	pxor xmm1, xmm0
-	pand xmm1, xmm7
-	pxor xmm0, xmm1
-	movdqu XMMWORD PTR [ebx], xmm0
-	add ebp, 16
-	add ebx, 16
-	sub eax, 1
-	jne 229b
-	and edi, 15
-	jne 230f
-	jmp 231f
-230:
-232:
-	mov eax, DWORD PTR [ebx]
-	mov edx, DWORD PTR [ebp]
-	xor edx, eax
-	and edx, ecx
-	xor eax, edx
-	mov DWORD PTR [ebx], eax
-	add ebp, 4
-	add ebx, 4
-	sub edi, 4
-	jne 232b
-231:
-	mov edi, DWORD PTR [esp+68]
-	sub esi, 1
-	jne 222b
-	mov esi, 6
-233:
-	lea esp, [esp-36]
-	mov edx, DWORD PTR [esp+44]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	mov eax, DWORD PTR [esp+108]
-	mov DWORD PTR [esp+4], eax
-	mov DWORD PTR [esp], edi
-	mov eax, edx
-	shr eax, 3
-	mov DWORD PTR [esp+8], eax
-	add edx, edx
-	add edx, 32
-	mov eax, 3336
-	mov DWORD PTR [esp+12], eax
-	mov eax, 0
-	mov DWORD PTR [esp+16], eax
-	mov eax, 3336
-	add eax, edx
-	mov DWORD PTR [esp+20], eax
-	mov eax, 3336
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	mov DWORD PTR [esp+24], eax
-	mov eax, 3336
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	mov DWORD PTR [esp+28], eax
-	mov eax, 3336
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	mov DWORD PTR [esp+32], eax
-	call {vg_rsa_mont_mul_at}
-	lea esp, [esp+36]
-	sub esi, 1
-	cmp esi, 0
-	jne 233b
-	mov ecx, -1
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov ebp, edi
-	add ebp, 3336
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov ebx, edi
-	add ebx, 3336
-	add ebx, edx
-	add ebx, edx
-	add ebx, edx
-	add ebx, edx
-	add ebx, edx
-	mov edi, DWORD PTR [esp+8]
-	add edi, 7
-	shr edi, 3
-	add edi, edi
-	add edi, edi
-	add edi, edi
-234:
-	mov eax, DWORD PTR [ebx]
-	mov edx, DWORD PTR [ebp]
-	xor edx, eax
-	and edx, ecx
-	xor eax, edx
-	mov DWORD PTR [ebx], eax
-	add ebp, 4
-	add ebx, 4
-	sub edi, 4
-	jne 234b
-	mov edi, DWORD PTR [esp+68]
-	mov ecx, -1
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov ebp, edi
-	add ebp, 3336
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov ebx, edi
-	add ebx, 3336
-	add ebx, edx
-	add ebx, edx
-	add ebx, edx
-	add ebx, edx
-	add ebx, edx
-	add ebx, edx
-	add ebx, edx
-	add ebx, edx
-	mov edi, DWORD PTR [esp+8]
-	add edi, 7
-	shr edi, 3
-	add edi, edi
-	add edi, edi
-	add edi, edi
-235:
-	mov eax, DWORD PTR [ebx]
-	mov edx, DWORD PTR [ebp]
-	xor edx, eax
-	and edx, ecx
-	xor eax, edx
-	mov DWORD PTR [ebx], eax
-	add ebp, 4
-	add ebx, 4
-	sub edi, 4
-	jne 235b
-	mov edi, DWORD PTR [esp+68]
-	lea esp, [esp-36]
-	mov edx, DWORD PTR [esp+44]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	mov eax, DWORD PTR [esp+108]
-	mov DWORD PTR [esp+4], eax
-	mov DWORD PTR [esp], edi
-	mov eax, edx
-	shr eax, 3
-	mov DWORD PTR [esp+8], eax
-	add edx, edx
-	add edx, 32
-	mov eax, 3336
-	mov DWORD PTR [esp+12], eax
-	mov eax, 0
-	mov DWORD PTR [esp+16], eax
-	mov eax, 3336
-	add eax, edx
-	mov DWORD PTR [esp+20], eax
-	mov eax, 3336
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	mov DWORD PTR [esp+24], eax
-	mov eax, 3336
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	mov DWORD PTR [esp+28], eax
-	mov eax, 3336
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	mov DWORD PTR [esp+32], eax
-	call {vg_rsa_mont_mul_at}
-	lea esp, [esp+36]
-	lea esp, [esp-36]
-	mov edx, DWORD PTR [esp+44]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	mov eax, DWORD PTR [esp+108]
-	mov DWORD PTR [esp+4], eax
-	mov DWORD PTR [esp], edi
-	mov eax, edx
-	shr eax, 3
-	mov DWORD PTR [esp+8], eax
-	add edx, edx
-	add edx, 32
-	mov eax, 3336
-	mov DWORD PTR [esp+12], eax
-	mov eax, 0
-	mov DWORD PTR [esp+16], eax
-	mov eax, 3336
-	add eax, edx
-	mov DWORD PTR [esp+20], eax
-	mov eax, 3336
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	mov DWORD PTR [esp+24], eax
-	mov eax, 3336
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	mov DWORD PTR [esp+28], eax
-	mov eax, 3336
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	mov DWORD PTR [esp+32], eax
-	call {vg_rsa_mont_mul_at}
-	lea esp, [esp+36]
-	mov ecx, -1
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov ebp, edi
-	add ebp, 3336
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov ebx, edi
-	add ebx, 3336
-	add ebx, edx
-	add ebx, edx
-	add ebx, edx
-	add ebx, edx
-	add ebx, edx
-	add ebx, edx
-	add ebx, edx
-	add ebx, edx
-	add ebx, edx
-	add ebx, edx
-	add ebx, edx
-	add ebx, edx
-	add ebx, edx
-	add ebx, edx
-	add ebx, edx
-	add ebx, edx
-	add ebx, edx
-	add ebx, edx
-	add ebx, edx
-	add ebx, edx
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	mov edi, DWORD PTR [esp+8]
-	add edi, 7
-	shr edi, 3
-	add edi, edi
-	add edi, edi
-	add edi, edi
-236:
-	mov eax, DWORD PTR [ebx]
-	mov edx, DWORD PTR [ebp]
-	xor edx, eax
-	and edx, ecx
-	xor eax, edx
-	mov DWORD PTR [ebx], eax
-	add ebp, 4
-	add ebx, 4
-	sub edi, 4
-	jne 236b
-	mov edi, DWORD PTR [esp+68]
-	mov ecx, -1
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov ebp, edi
-	add ebp, 3336
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov ebx, edi
-	add ebx, 3336
-	add ebx, edx
-	add ebx, edx
-	add ebx, edx
-	add ebx, edx
-	add ebx, edx
-	add ebx, edx
-	add ebx, edx
-	add ebx, edx
-	add ebx, edx
-	add ebx, edx
-	add ebx, edx
-	add ebx, edx
-	add ebx, edx
-	add ebx, edx
-	add ebx, edx
-	add ebx, edx
-	add ebx, edx
-	add ebx, edx
-	add ebx, edx
-	add ebx, edx
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add ebx, edx
-	mov edi, DWORD PTR [esp+8]
-	add edi, 7
-	shr edi, 3
-	add edi, edi
-	add edi, edi
-	add edi, edi
-237:
-	mov eax, DWORD PTR [ebx]
-	mov edx, DWORD PTR [ebp]
-	xor edx, eax
-	and edx, ecx
-	xor eax, edx
-	mov DWORD PTR [ebx], eax
-	add ebp, 4
-	add ebx, 4
-	sub edi, 4
-	jne 237b
-	mov edi, DWORD PTR [esp+68]
-	mov ecx, -1
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov ebp, edi
-	add ebp, 3336
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov ebx, edi
-	add ebx, 3336
-	add ebx, edx
-	add ebx, edx
-	add ebx, edx
-	add ebx, edx
-	add ebx, edx
-	add ebx, edx
-	add ebx, edx
-	mov edi, DWORD PTR [esp+8]
-	add edi, 7
-	shr edi, 3
-	add edi, edi
-	add edi, edi
-	add edi, edi
-238:
-	mov eax, DWORD PTR [ebx]
-	mov edx, DWORD PTR [ebp]
-	xor edx, eax
-	and edx, ecx
-	xor eax, edx
-	mov DWORD PTR [ebx], eax
-	add ebp, 4
-	add ebx, 4
-	sub edi, 4
-	jne 238b
 	mov edi, DWORD PTR [esp+68]
 	mov edx, DWORD PTR [esp+8]
 	add edx, 7
@@ -5536,7 +3769,7 @@ vg_ffdh_check_public:
 	add edx, edx
 	add esi, edx
 	add esi, edx
-239:
+222:
 	lea esp, [esp-36]
 	mov edx, DWORD PTR [esp+44]
 	add edx, 7
@@ -5611,7 +3844,7 @@ vg_ffdh_check_public:
 	add edi, edi
 	add edi, edi
 	add edi, edi
-240:
+223:
 	mov eax, DWORD PTR [ebx]
 	mov edx, DWORD PTR [ebp]
 	xor edx, eax
@@ -5621,7 +3854,7 @@ vg_ffdh_check_public:
 	add ebp, 4
 	add ebx, 4
 	sub edi, 4
-	jne 240b
+	jne 223b
 	mov edi, DWORD PTR [esp+68]
 	mov esi, ebx
 	mov eax, DWORD PTR [esp+8]
@@ -5677,7 +3910,7 @@ vg_ffdh_check_public:
 	add edx, eax
 	add edx, eax
 	cmp esi, edx
-	jne 239b
+	jne 222b
 	mov esi, DWORD PTR [esp+8]
 	add esi, 7
 	shr esi, 3
@@ -5685,7 +3918,7 @@ vg_ffdh_check_public:
 	add esi, esi
 	add esi, esi
 	add esi, esi
-241:
+224:
 	lea esp, [esp-36]
 	mov edx, DWORD PTR [esp+44]
 	add edx, 7
@@ -5932,7 +4165,7 @@ vg_ffdh_check_public:
 	add edx, edx
 	add edx, edx
 	mov ecx, 0
-242:
+225:
 	mov eax, DWORD PTR [ebp]
 	mov ebx, eax
 	shr ebx, 28
@@ -5945,7 +4178,7 @@ vg_ffdh_check_public:
 	mov ecx, ebx
 	add ebp, 4
 	sub edx, 4
-	jne 242b
+	jne 225b
 	mov eax, DWORD PTR [edi+4]
 	add eax, 16
 	mov DWORD PTR [edi+4], eax
@@ -5985,7 +4218,7 @@ vg_ffdh_check_public:
 	add edx, edx
 	add edx, edx
 	add edx, edx
-243:
+226:
 	mov eax, DWORD PTR [edi+4]
 	xor eax, 16
 	sub eax, 1
@@ -6022,7 +4255,7 @@ vg_ffdh_check_public:
 	shr eax, 4
 	movd xmm7, ecx
 	pshufd xmm7, xmm7, 0
-244:
+227:
 	movdqu xmm0, XMMWORD PTR [ebx]
 	movdqu xmm1, XMMWORD PTR [ebp]
 	pxor xmm1, xmm0
@@ -6032,12 +4265,12 @@ vg_ffdh_check_public:
 	add ebp, 16
 	add ebx, 16
 	sub eax, 1
-	jne 244b
+	jne 227b
 	and edi, 15
-	jne 245f
-	jmp 246f
-245:
-247:
+	jne 228f
+	jmp 229f
+228:
+230:
 	mov eax, DWORD PTR [ebx]
 	mov edx, DWORD PTR [ebp]
 	xor edx, eax
@@ -6047,8 +4280,8 @@ vg_ffdh_check_public:
 	add ebp, 4
 	add ebx, 4
 	sub edi, 4
-	jne 247b
-246:
+	jne 230b
+229:
 	mov edi, DWORD PTR [esp+68]
 	mov eax, DWORD PTR [esp+8]
 	add eax, 7
@@ -6103,7 +4336,7 @@ vg_ffdh_check_public:
 	add edx, eax
 	add edx, eax
 	cmp ebp, edx
-	jne 243b
+	jne 226b
 	lea esp, [esp-36]
 	mov edx, DWORD PTR [esp+44]
 	add edx, 7
@@ -6154,7 +4387,7 @@ vg_ffdh_check_public:
 	call {vg_rsa_mont_mul_at}
 	lea esp, [esp+36]
 	sub esi, 1
-	jne 241b
+	jne 224b
 	lea esp, [esp-36]
 	mov edx, DWORD PTR [esp+44]
 	add edx, 7
@@ -6236,7 +4469,7 @@ vg_ffdh_check_public:
 	add edx, edx
 	add edx, edx
 	mov ecx, 0
-248:
+231:
 	mov eax, DWORD PTR [esi]
 	add ecx, ecx
 	sbb eax, DWORD PTR [ebp]
@@ -6244,7 +4477,7 @@ vg_ffdh_check_public:
 	add esi, 4
 	add ebp, 4
 	sub edx, 4
-	jne 248b
+	jne 231b
 	mov ebx, ecx
 	mov edx, DWORD PTR [esp+8]
 	add edx, 7
@@ -6282,7 +4515,7 @@ vg_ffdh_check_public:
 	add edx, edx
 	add edx, edx
 	mov ecx, 0
-249:
+232:
 	mov eax, DWORD PTR [esi]
 	add ecx, ecx
 	sbb eax, DWORD PTR [ebp]
@@ -6290,7 +4523,7 @@ vg_ffdh_check_public:
 	add esi, 4
 	add ebp, 4
 	sub edx, 4
-	jne 249b
+	jne 232b
 	or ecx, ebx
 	xor ecx, -1
 	mov eax, ecx
@@ -7408,596 +5641,7 @@ vg_ffdh_check_private:
 	sub edi, 4
 	jne 225b
 	mov edi, DWORD PTR [esp+68]
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov ebp, edi
-	add ebp, 3336
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	mov ecx, DWORD PTR [esp+8]
-	add ecx, 7
-	shr ecx, 3
-	add ecx, ecx
-	add ecx, ecx
-	add ecx, ecx
-	mov eax, 0
-226:
-	mov DWORD PTR [ebp], eax
-	add ebp, 4
-	sub ecx, 4
-	jne 226b
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov eax, edi
-	add eax, 3336
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	mov ecx, 1
-	mov DWORD PTR [eax], ecx
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov ebp, edi
-	add ebp, 3336
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	mov ecx, DWORD PTR [esp+8]
-	add ecx, 7
-	shr ecx, 3
-	add ecx, ecx
-	add ecx, ecx
-	add ecx, ecx
-	mov eax, 0
-227:
-	mov DWORD PTR [ebp], eax
-	add ebp, 4
-	sub ecx, 4
-	jne 227b
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov eax, edi
-	add eax, 3336
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	mov ecx, 3
-	mov DWORD PTR [eax], ecx
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov esi, edi
-	add esi, 3336
-	add esi, edx
-	add esi, edx
-	add esi, edx
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov ebp, edi
-	add ebp, 3336
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	mov ecx, 0
-228:
-	mov eax, DWORD PTR [esi]
-	add ecx, ecx
-	sbb eax, DWORD PTR [ebp]
-	sbb ecx, ecx
-	add esi, 4
-	add ebp, 4
-	sub edx, 4
-	jne 228b
-	mov edx, DWORD PTR [edi+3336]
-	and edx, 1
-	mov eax, 0
-	sub eax, edx
-	and ecx, eax
-	xor ecx, -1
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov ebp, edi
-	add ebp, 3336
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov ebx, edi
-	add ebx, 3336
-	mov edi, DWORD PTR [esp+8]
-	add edi, 7
-	shr edi, 3
-	add edi, edi
-	add edi, edi
-	add edi, edi
-229:
-	mov eax, DWORD PTR [ebx]
-	mov edx, DWORD PTR [ebp]
-	xor edx, eax
-	and edx, ecx
-	xor eax, edx
-	mov DWORD PTR [ebx], eax
-	add ebp, 4
-	add ebx, 4
-	sub edi, 4
-	jne 229b
-	mov edi, DWORD PTR [esp+68]
-	mov ebx, DWORD PTR [edi+3336]
-	mov ecx, ebx
-	mov eax, ebx
-	mul ecx
-	mov ebp, 2
-	sub ebp, eax
-	mov eax, ecx
-	mul ebp
-	mov ecx, eax
-	mov eax, ebx
-	mul ecx
-	mov ebp, 2
-	sub ebp, eax
-	mov eax, ecx
-	mul ebp
-	mov ecx, eax
-	mov eax, ebx
-	mul ecx
-	mov ebp, 2
-	sub ebp, eax
-	mov eax, ecx
-	mul ebp
-	mov ecx, eax
-	mov eax, ebx
-	mul ecx
-	mov ebp, 2
-	sub ebp, eax
-	mov eax, ecx
-	mul ebp
-	mov ecx, eax
-	mov eax, 0
-	sub eax, ecx
-	mov DWORD PTR [edi], eax
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov ebp, edi
-	add ebp, 3336
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	mov ecx, DWORD PTR [esp+8]
-	add ecx, 7
-	shr ecx, 3
-	add ecx, ecx
-	add ecx, ecx
-	add ecx, ecx
-	mov eax, 0
-230:
-	mov DWORD PTR [ebp], eax
-	add ebp, 4
-	sub ecx, 4
-	jne 230b
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov eax, edi
-	add eax, 3336
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	mov ecx, 1
-	mov DWORD PTR [eax], ecx
-	mov esi, DWORD PTR [esp+8]
-	add esi, 7
-	shr esi, 3
-	add esi, esi
-	add esi, esi
-	add esi, esi
-	mov eax, esi
-	shr eax, 3
-	add esi, esi
-	add esi, esi
-	add esi, esi
-	add esi, eax
-231:
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov ebp, edi
-	add ebp, 3336
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov ebx, edi
-	add ebx, 3336
-	add ebx, edx
-	add ebx, edx
-	add ebx, edx
-	add ebx, edx
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov eax, edi
-	add eax, 3336
-	add eax, edx
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	mov edi, eax
-	mov ecx, 0
-232:
-	cmp edx, 32
-	jae 233f
-	add ecx, ecx
-	mov eax, DWORD PTR [ebp]
-	adc eax, DWORD PTR [ebx]
-	mov DWORD PTR [edi], eax
-	sbb ecx, ecx
-	add ebp, 4
-	add ebx, 4
-	add edi, 4
-	sub edx, 4
-	jmp 234f
-233:
-	add ecx, ecx
-	mov eax, DWORD PTR [ebp]
-	adc eax, DWORD PTR [ebx]
-	mov DWORD PTR [edi], eax
-	mov eax, DWORD PTR [ebp+4]
-	adc eax, DWORD PTR [ebx+4]
-	mov DWORD PTR [edi+4], eax
-	mov eax, DWORD PTR [ebp+8]
-	adc eax, DWORD PTR [ebx+8]
-	mov DWORD PTR [edi+8], eax
-	mov eax, DWORD PTR [ebp+12]
-	adc eax, DWORD PTR [ebx+12]
-	mov DWORD PTR [edi+12], eax
-	mov eax, DWORD PTR [ebp+16]
-	adc eax, DWORD PTR [ebx+16]
-	mov DWORD PTR [edi+16], eax
-	mov eax, DWORD PTR [ebp+20]
-	adc eax, DWORD PTR [ebx+20]
-	mov DWORD PTR [edi+20], eax
-	mov eax, DWORD PTR [ebp+24]
-	adc eax, DWORD PTR [ebx+24]
-	mov DWORD PTR [edi+24], eax
-	mov eax, DWORD PTR [ebp+28]
-	adc eax, DWORD PTR [ebx+28]
-	mov DWORD PTR [edi+28], eax
-	sbb ecx, ecx
-	add ebp, 32
-	add ebx, 32
-	add edi, 32
-	sub edx, 32
-234:
-	cmp edx, 0
-	jne 232b
-	mov edi, DWORD PTR [esp+68]
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov eax, edi
-	add eax, 3336
-	add eax, edx
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add eax, edx
-	mov edx, 0
-	sub edx, ecx
-	mov DWORD PTR [eax], edx
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov ebp, edi
-	add ebp, 3336
-	add ebp, edx
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov ebx, edi
-	add ebx, 3336
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov eax, edi
-	add eax, 3336
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	mov edi, eax
-	mov ecx, 0
-235:
-	cmp edx, 32
-	jae 236f
-	add ecx, ecx
-	mov eax, DWORD PTR [ebp]
-	sbb eax, DWORD PTR [ebx]
-	mov DWORD PTR [edi], eax
-	sbb ecx, ecx
-	add ebp, 4
-	add ebx, 4
-	add edi, 4
-	sub edx, 4
-	jmp 237f
-236:
-	add ecx, ecx
-	mov eax, DWORD PTR [ebp]
-	sbb eax, DWORD PTR [ebx]
-	mov DWORD PTR [edi], eax
-	mov eax, DWORD PTR [ebp+4]
-	sbb eax, DWORD PTR [ebx+4]
-	mov DWORD PTR [edi+4], eax
-	mov eax, DWORD PTR [ebp+8]
-	sbb eax, DWORD PTR [ebx+8]
-	mov DWORD PTR [edi+8], eax
-	mov eax, DWORD PTR [ebp+12]
-	sbb eax, DWORD PTR [ebx+12]
-	mov DWORD PTR [edi+12], eax
-	mov eax, DWORD PTR [ebp+16]
-	sbb eax, DWORD PTR [ebx+16]
-	mov DWORD PTR [edi+16], eax
-	mov eax, DWORD PTR [ebp+20]
-	sbb eax, DWORD PTR [ebx+20]
-	mov DWORD PTR [edi+20], eax
-	mov eax, DWORD PTR [ebp+24]
-	sbb eax, DWORD PTR [ebx+24]
-	mov DWORD PTR [edi+24], eax
-	mov eax, DWORD PTR [ebp+28]
-	sbb eax, DWORD PTR [ebx+28]
-	mov DWORD PTR [edi+28], eax
-	sbb ecx, ecx
-	add ebp, 32
-	add ebx, 32
-	add edi, 32
-	sub edx, 32
-237:
-	cmp edx, 0
-	jne 235b
-	mov edi, DWORD PTR [esp+68]
-	mov eax, DWORD PTR [ebp]
-	add ecx, ecx
-	sbb eax, 0
-	sbb eax, eax
-	mov ecx, eax
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov ebp, edi
-	add ebp, 3336
-	add ebp, edx
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov ebx, edi
-	add ebx, 3336
-	add ebx, edx
-	add ebx, edx
-	add ebx, edx
-	add ebx, edx
-	mov edi, DWORD PTR [esp+8]
-	add edi, 7
-	shr edi, 3
-	add edi, edi
-	add edi, edi
-	add edi, edi
-	mov eax, edi
-	shr eax, 4
-	movd xmm7, ecx
-	pshufd xmm7, xmm7, 0
-238:
-	movdqu xmm0, XMMWORD PTR [ebx]
-	movdqu xmm1, XMMWORD PTR [ebp]
-	pxor xmm1, xmm0
-	pand xmm1, xmm7
-	pxor xmm0, xmm1
-	movdqu XMMWORD PTR [ebx], xmm0
-	add ebp, 16
-	add ebx, 16
-	sub eax, 1
-	jne 238b
-	and edi, 15
-	jne 239f
-	jmp 240f
-239:
-241:
-	mov eax, DWORD PTR [ebx]
-	mov edx, DWORD PTR [ebp]
-	xor edx, eax
-	and edx, ecx
-	xor eax, edx
-	mov DWORD PTR [ebx], eax
-	add ebp, 4
-	add ebx, 4
-	sub edi, 4
-	jne 241b
-240:
-	mov edi, DWORD PTR [esp+68]
-	sub esi, 1
-	jne 231b
-	mov esi, 6
-242:
-	lea esp, [esp-36]
-	mov edx, DWORD PTR [esp+44]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	mov eax, DWORD PTR [esp+108]
-	mov DWORD PTR [esp+4], eax
-	mov DWORD PTR [esp], edi
-	mov eax, edx
-	shr eax, 3
-	mov DWORD PTR [esp+8], eax
-	add edx, edx
-	add edx, 32
-	mov eax, 3336
-	mov DWORD PTR [esp+12], eax
-	mov eax, 0
-	mov DWORD PTR [esp+16], eax
-	mov eax, 3336
-	add eax, edx
-	mov DWORD PTR [esp+20], eax
-	mov eax, 3336
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	mov DWORD PTR [esp+24], eax
-	mov eax, 3336
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	mov DWORD PTR [esp+28], eax
-	mov eax, 3336
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	mov DWORD PTR [esp+32], eax
-	call {vg_rsa_mont_mul_at}
-	lea esp, [esp+36]
-	sub esi, 1
-	cmp esi, 0
-	jne 242b
+	call {vg_ffdh_prepare_wide}
 	mov ecx, -1
 	mov edx, DWORD PTR [esp+8]
 	add edx, 7
@@ -8040,7 +5684,7 @@ vg_ffdh_check_private:
 	add edi, edi
 	add edi, edi
 	add edi, edi
-243:
+226:
 	mov eax, DWORD PTR [ebx]
 	mov edx, DWORD PTR [ebp]
 	xor edx, eax
@@ -8050,7 +5694,7 @@ vg_ffdh_check_private:
 	add ebp, 4
 	add ebx, 4
 	sub edi, 4
-	jne 243b
+	jne 226b
 	mov edi, DWORD PTR [esp+68]
 	mov edx, DWORD PTR [esp+8]
 	add edx, 7
@@ -8077,11 +5721,11 @@ vg_ffdh_check_private:
 	add ecx, ecx
 	add ecx, ecx
 	mov eax, 0
-244:
+227:
 	mov DWORD PTR [ebp], eax
 	add ebp, 4
 	sub ecx, 4
-	jne 244b
+	jne 227b
 	mov edx, DWORD PTR [esp+8]
 	add edx, 7
 	shr edx, 3
@@ -8112,14 +5756,14 @@ vg_ffdh_check_private:
 	mov esi, DWORD PTR [esp+44]
 	add esi, ecx
 	sub esi, 1
-245:
+228:
 	movzx eax, BYTE PTR [esi]
 	mov BYTE PTR [ebx], al
 	add ebx, 1
 	sub esi, 1
 	sub ecx, 1
 	cmp ecx, 0
-	jne 245b
+	jne 228b
 	lea esp, [esp-36]
 	mov edx, DWORD PTR [esp+44]
 	add edx, 7
@@ -8266,7 +5910,7 @@ vg_ffdh_check_private:
 	add edi, edi
 	add edi, edi
 	add edi, edi
-246:
+229:
 	mov eax, DWORD PTR [ebx]
 	mov edx, DWORD PTR [ebp]
 	xor edx, eax
@@ -8276,7 +5920,7 @@ vg_ffdh_check_private:
 	add ebp, 4
 	add ebx, 4
 	sub edi, 4
-	jne 246b
+	jne 229b
 	mov edi, DWORD PTR [esp+68]
 	mov ecx, -1
 	mov edx, DWORD PTR [esp+8]
@@ -8337,7 +5981,7 @@ vg_ffdh_check_private:
 	add edi, edi
 	add edi, edi
 	add edi, edi
-247:
+230:
 	mov eax, DWORD PTR [ebx]
 	mov edx, DWORD PTR [ebp]
 	xor edx, eax
@@ -8347,7 +5991,7 @@ vg_ffdh_check_private:
 	add ebp, 4
 	add ebx, 4
 	sub edi, 4
-	jne 247b
+	jne 230b
 	mov edi, DWORD PTR [esp+68]
 	mov ecx, -1
 	mov edx, DWORD PTR [esp+8]
@@ -8388,7 +6032,7 @@ vg_ffdh_check_private:
 	add edi, edi
 	add edi, edi
 	add edi, edi
-248:
+231:
 	mov eax, DWORD PTR [ebx]
 	mov edx, DWORD PTR [ebp]
 	xor edx, eax
@@ -8398,7 +6042,7 @@ vg_ffdh_check_private:
 	add ebp, 4
 	add ebx, 4
 	sub edi, 4
-	jne 248b
+	jne 231b
 	mov edi, DWORD PTR [esp+68]
 	mov edx, DWORD PTR [esp+8]
 	add edx, 7
@@ -8438,7 +6082,7 @@ vg_ffdh_check_private:
 	add edx, edx
 	add esi, edx
 	add esi, edx
-249:
+232:
 	lea esp, [esp-36]
 	mov edx, DWORD PTR [esp+44]
 	add edx, 7
@@ -8513,7 +6157,7 @@ vg_ffdh_check_private:
 	add edi, edi
 	add edi, edi
 	add edi, edi
-250:
+233:
 	mov eax, DWORD PTR [ebx]
 	mov edx, DWORD PTR [ebp]
 	xor edx, eax
@@ -8523,7 +6167,7 @@ vg_ffdh_check_private:
 	add ebp, 4
 	add ebx, 4
 	sub edi, 4
-	jne 250b
+	jne 233b
 	mov edi, DWORD PTR [esp+68]
 	mov esi, ebx
 	mov eax, DWORD PTR [esp+8]
@@ -8579,10 +6223,10 @@ vg_ffdh_check_private:
 	add edx, eax
 	add edx, eax
 	cmp esi, edx
-	jne 249b
+	jne 232b
 	mov esi, DWORD PTR [esp+48]
 	add esi, esi
-251:
+234:
 	lea esp, [esp-36]
 	mov edx, DWORD PTR [esp+44]
 	add edx, 7
@@ -8829,7 +6473,7 @@ vg_ffdh_check_private:
 	add edx, edx
 	add edx, edx
 	mov ecx, 0
-252:
+235:
 	mov eax, DWORD PTR [ebp]
 	mov ebx, eax
 	shr ebx, 28
@@ -8842,7 +6486,7 @@ vg_ffdh_check_private:
 	mov ecx, ebx
 	add ebp, 4
 	sub edx, 4
-	jne 252b
+	jne 235b
 	mov eax, DWORD PTR [edi+4]
 	add eax, 16
 	mov DWORD PTR [edi+4], eax
@@ -8882,7 +6526,7 @@ vg_ffdh_check_private:
 	add edx, edx
 	add edx, edx
 	add edx, edx
-253:
+236:
 	mov eax, DWORD PTR [edi+4]
 	xor eax, 16
 	sub eax, 1
@@ -8919,7 +6563,7 @@ vg_ffdh_check_private:
 	shr eax, 4
 	movd xmm7, ecx
 	pshufd xmm7, xmm7, 0
-254:
+237:
 	movdqu xmm0, XMMWORD PTR [ebx]
 	movdqu xmm1, XMMWORD PTR [ebp]
 	pxor xmm1, xmm0
@@ -8929,12 +6573,12 @@ vg_ffdh_check_private:
 	add ebp, 16
 	add ebx, 16
 	sub eax, 1
-	jne 254b
+	jne 237b
 	and edi, 15
-	jne 255f
-	jmp 256f
-255:
-257:
+	jne 238f
+	jmp 239f
+238:
+240:
 	mov eax, DWORD PTR [ebx]
 	mov edx, DWORD PTR [ebp]
 	xor edx, eax
@@ -8944,8 +6588,8 @@ vg_ffdh_check_private:
 	add ebp, 4
 	add ebx, 4
 	sub edi, 4
-	jne 257b
-256:
+	jne 240b
+239:
 	mov edi, DWORD PTR [esp+68]
 	mov eax, DWORD PTR [esp+8]
 	add eax, 7
@@ -9000,7 +6644,7 @@ vg_ffdh_check_private:
 	add edx, eax
 	add edx, eax
 	cmp ebp, edx
-	jne 253b
+	jne 236b
 	lea esp, [esp-36]
 	mov edx, DWORD PTR [esp+44]
 	add edx, 7
@@ -9051,7 +6695,7 @@ vg_ffdh_check_private:
 	call {vg_rsa_mont_mul_at}
 	lea esp, [esp+36]
 	sub esi, 1
-	jne 251b
+	jne 234b
 	lea esp, [esp-36]
 	mov edx, DWORD PTR [esp+44]
 	add edx, 7
@@ -9142,7 +6786,7 @@ vg_ffdh_check_private:
 	add edx, edx
 	add edx, edx
 	mov ecx, 0
-258:
+241:
 	mov eax, DWORD PTR [esi]
 	add ecx, ecx
 	sbb eax, DWORD PTR [ebp]
@@ -9150,7 +6794,7 @@ vg_ffdh_check_private:
 	add esi, 4
 	add ebp, 4
 	sub edx, 4
-	jne 258b
+	jne 241b
 	mov ebx, ecx
 	mov edx, DWORD PTR [esp+8]
 	add edx, 7
@@ -9197,7 +6841,7 @@ vg_ffdh_check_private:
 	add edx, edx
 	add edx, edx
 	mov ecx, 0
-259:
+242:
 	mov eax, DWORD PTR [esi]
 	add ecx, ecx
 	sbb eax, DWORD PTR [ebp]
@@ -9205,7 +6849,7 @@ vg_ffdh_check_private:
 	add esi, 4
 	add ebp, 4
 	sub edx, 4
-	jne 259b
+	jne 242b
 	or ecx, ebx
 	xor ecx, -1
 	and ecx, DWORD PTR [edi+8]
@@ -9601,6 +7245,7 @@ vg_ffdh_exchange:
 	sub edi, 4
 	jne 26b
 	mov edi, DWORD PTR [esp+68]
+	call {vg_ffdh_prepare_wide}
 	mov edx, DWORD PTR [esp+8]
 	add edx, 7
 	shr edx, 3
@@ -9611,6 +7256,8 @@ vg_ffdh_exchange:
 	add edx, 32
 	mov ebp, edi
 	add ebp, 3336
+	add ebp, edx
+	add ebp, edx
 	add ebp, edx
 	add ebp, edx
 	add ebp, edx
@@ -9634,598 +7281,6 @@ vg_ffdh_exchange:
 	add edx, edx
 	add edx, edx
 	add edx, 32
-	mov eax, edi
-	add eax, 3336
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	mov ecx, 1
-	mov DWORD PTR [eax], ecx
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov ebp, edi
-	add ebp, 3336
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	mov ecx, DWORD PTR [esp+8]
-	add ecx, 7
-	shr ecx, 3
-	add ecx, ecx
-	add ecx, ecx
-	add ecx, ecx
-	mov eax, 0
-28:
-	mov DWORD PTR [ebp], eax
-	add ebp, 4
-	sub ecx, 4
-	jne 28b
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov eax, edi
-	add eax, 3336
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	mov ecx, 3
-	mov DWORD PTR [eax], ecx
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov esi, edi
-	add esi, 3336
-	add esi, edx
-	add esi, edx
-	add esi, edx
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov ebp, edi
-	add ebp, 3336
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	mov ecx, 0
-29:
-	mov eax, DWORD PTR [esi]
-	add ecx, ecx
-	sbb eax, DWORD PTR [ebp]
-	sbb ecx, ecx
-	add esi, 4
-	add ebp, 4
-	sub edx, 4
-	jne 29b
-	mov edx, DWORD PTR [edi+3336]
-	and edx, 1
-	mov eax, 0
-	sub eax, edx
-	and ecx, eax
-	xor ecx, -1
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov ebp, edi
-	add ebp, 3336
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov ebx, edi
-	add ebx, 3336
-	mov edi, DWORD PTR [esp+8]
-	add edi, 7
-	shr edi, 3
-	add edi, edi
-	add edi, edi
-	add edi, edi
-210:
-	mov eax, DWORD PTR [ebx]
-	mov edx, DWORD PTR [ebp]
-	xor edx, eax
-	and edx, ecx
-	xor eax, edx
-	mov DWORD PTR [ebx], eax
-	add ebp, 4
-	add ebx, 4
-	sub edi, 4
-	jne 210b
-	mov edi, DWORD PTR [esp+68]
-	mov ebx, DWORD PTR [edi+3336]
-	mov ecx, ebx
-	mov eax, ebx
-	mul ecx
-	mov ebp, 2
-	sub ebp, eax
-	mov eax, ecx
-	mul ebp
-	mov ecx, eax
-	mov eax, ebx
-	mul ecx
-	mov ebp, 2
-	sub ebp, eax
-	mov eax, ecx
-	mul ebp
-	mov ecx, eax
-	mov eax, ebx
-	mul ecx
-	mov ebp, 2
-	sub ebp, eax
-	mov eax, ecx
-	mul ebp
-	mov ecx, eax
-	mov eax, ebx
-	mul ecx
-	mov ebp, 2
-	sub ebp, eax
-	mov eax, ecx
-	mul ebp
-	mov ecx, eax
-	mov eax, 0
-	sub eax, ecx
-	mov DWORD PTR [edi], eax
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov ebp, edi
-	add ebp, 3336
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	mov ecx, DWORD PTR [esp+8]
-	add ecx, 7
-	shr ecx, 3
-	add ecx, ecx
-	add ecx, ecx
-	add ecx, ecx
-	mov eax, 0
-211:
-	mov DWORD PTR [ebp], eax
-	add ebp, 4
-	sub ecx, 4
-	jne 211b
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov eax, edi
-	add eax, 3336
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	mov ecx, 1
-	mov DWORD PTR [eax], ecx
-	mov esi, DWORD PTR [esp+8]
-	add esi, 7
-	shr esi, 3
-	add esi, esi
-	add esi, esi
-	add esi, esi
-	mov eax, esi
-	shr eax, 3
-	add esi, esi
-	add esi, esi
-	add esi, esi
-	add esi, eax
-212:
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov ebp, edi
-	add ebp, 3336
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov ebx, edi
-	add ebx, 3336
-	add ebx, edx
-	add ebx, edx
-	add ebx, edx
-	add ebx, edx
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov eax, edi
-	add eax, 3336
-	add eax, edx
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	mov edi, eax
-	mov ecx, 0
-213:
-	cmp edx, 32
-	jae 214f
-	add ecx, ecx
-	mov eax, DWORD PTR [ebp]
-	adc eax, DWORD PTR [ebx]
-	mov DWORD PTR [edi], eax
-	sbb ecx, ecx
-	add ebp, 4
-	add ebx, 4
-	add edi, 4
-	sub edx, 4
-	jmp 215f
-214:
-	add ecx, ecx
-	mov eax, DWORD PTR [ebp]
-	adc eax, DWORD PTR [ebx]
-	mov DWORD PTR [edi], eax
-	mov eax, DWORD PTR [ebp+4]
-	adc eax, DWORD PTR [ebx+4]
-	mov DWORD PTR [edi+4], eax
-	mov eax, DWORD PTR [ebp+8]
-	adc eax, DWORD PTR [ebx+8]
-	mov DWORD PTR [edi+8], eax
-	mov eax, DWORD PTR [ebp+12]
-	adc eax, DWORD PTR [ebx+12]
-	mov DWORD PTR [edi+12], eax
-	mov eax, DWORD PTR [ebp+16]
-	adc eax, DWORD PTR [ebx+16]
-	mov DWORD PTR [edi+16], eax
-	mov eax, DWORD PTR [ebp+20]
-	adc eax, DWORD PTR [ebx+20]
-	mov DWORD PTR [edi+20], eax
-	mov eax, DWORD PTR [ebp+24]
-	adc eax, DWORD PTR [ebx+24]
-	mov DWORD PTR [edi+24], eax
-	mov eax, DWORD PTR [ebp+28]
-	adc eax, DWORD PTR [ebx+28]
-	mov DWORD PTR [edi+28], eax
-	sbb ecx, ecx
-	add ebp, 32
-	add ebx, 32
-	add edi, 32
-	sub edx, 32
-215:
-	cmp edx, 0
-	jne 213b
-	mov edi, DWORD PTR [esp+68]
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov eax, edi
-	add eax, 3336
-	add eax, edx
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add eax, edx
-	mov edx, 0
-	sub edx, ecx
-	mov DWORD PTR [eax], edx
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov ebp, edi
-	add ebp, 3336
-	add ebp, edx
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov ebx, edi
-	add ebx, 3336
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov eax, edi
-	add eax, 3336
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	mov edi, eax
-	mov ecx, 0
-216:
-	cmp edx, 32
-	jae 217f
-	add ecx, ecx
-	mov eax, DWORD PTR [ebp]
-	sbb eax, DWORD PTR [ebx]
-	mov DWORD PTR [edi], eax
-	sbb ecx, ecx
-	add ebp, 4
-	add ebx, 4
-	add edi, 4
-	sub edx, 4
-	jmp 218f
-217:
-	add ecx, ecx
-	mov eax, DWORD PTR [ebp]
-	sbb eax, DWORD PTR [ebx]
-	mov DWORD PTR [edi], eax
-	mov eax, DWORD PTR [ebp+4]
-	sbb eax, DWORD PTR [ebx+4]
-	mov DWORD PTR [edi+4], eax
-	mov eax, DWORD PTR [ebp+8]
-	sbb eax, DWORD PTR [ebx+8]
-	mov DWORD PTR [edi+8], eax
-	mov eax, DWORD PTR [ebp+12]
-	sbb eax, DWORD PTR [ebx+12]
-	mov DWORD PTR [edi+12], eax
-	mov eax, DWORD PTR [ebp+16]
-	sbb eax, DWORD PTR [ebx+16]
-	mov DWORD PTR [edi+16], eax
-	mov eax, DWORD PTR [ebp+20]
-	sbb eax, DWORD PTR [ebx+20]
-	mov DWORD PTR [edi+20], eax
-	mov eax, DWORD PTR [ebp+24]
-	sbb eax, DWORD PTR [ebx+24]
-	mov DWORD PTR [edi+24], eax
-	mov eax, DWORD PTR [ebp+28]
-	sbb eax, DWORD PTR [ebx+28]
-	mov DWORD PTR [edi+28], eax
-	sbb ecx, ecx
-	add ebp, 32
-	add ebx, 32
-	add edi, 32
-	sub edx, 32
-218:
-	cmp edx, 0
-	jne 216b
-	mov edi, DWORD PTR [esp+68]
-	mov eax, DWORD PTR [ebp]
-	add ecx, ecx
-	sbb eax, 0
-	sbb eax, eax
-	mov ecx, eax
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov ebp, edi
-	add ebp, 3336
-	add ebp, edx
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov ebx, edi
-	add ebx, 3336
-	add ebx, edx
-	add ebx, edx
-	add ebx, edx
-	add ebx, edx
-	mov edi, DWORD PTR [esp+8]
-	add edi, 7
-	shr edi, 3
-	add edi, edi
-	add edi, edi
-	add edi, edi
-	mov eax, edi
-	shr eax, 4
-	movd xmm7, ecx
-	pshufd xmm7, xmm7, 0
-219:
-	movdqu xmm0, XMMWORD PTR [ebx]
-	movdqu xmm1, XMMWORD PTR [ebp]
-	pxor xmm1, xmm0
-	pand xmm1, xmm7
-	pxor xmm0, xmm1
-	movdqu XMMWORD PTR [ebx], xmm0
-	add ebp, 16
-	add ebx, 16
-	sub eax, 1
-	jne 219b
-	and edi, 15
-	jne 220f
-	jmp 221f
-220:
-222:
-	mov eax, DWORD PTR [ebx]
-	mov edx, DWORD PTR [ebp]
-	xor edx, eax
-	and edx, ecx
-	xor eax, edx
-	mov DWORD PTR [ebx], eax
-	add ebp, 4
-	add ebx, 4
-	sub edi, 4
-	jne 222b
-221:
-	mov edi, DWORD PTR [esp+68]
-	sub esi, 1
-	jne 212b
-	mov esi, 6
-223:
-	lea esp, [esp-36]
-	mov edx, DWORD PTR [esp+44]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	mov eax, DWORD PTR [esp+108]
-	mov DWORD PTR [esp+4], eax
-	mov DWORD PTR [esp], edi
-	mov eax, edx
-	shr eax, 3
-	mov DWORD PTR [esp+8], eax
-	add edx, edx
-	add edx, 32
-	mov eax, 3336
-	mov DWORD PTR [esp+12], eax
-	mov eax, 0
-	mov DWORD PTR [esp+16], eax
-	mov eax, 3336
-	add eax, edx
-	mov DWORD PTR [esp+20], eax
-	mov eax, 3336
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	mov DWORD PTR [esp+24], eax
-	mov eax, 3336
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	mov DWORD PTR [esp+28], eax
-	mov eax, 3336
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	mov DWORD PTR [esp+32], eax
-	call {vg_rsa_mont_mul_at}
-	lea esp, [esp+36]
-	sub esi, 1
-	cmp esi, 0
-	jne 223b
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov ebp, edi
-	add ebp, 3336
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	mov ecx, DWORD PTR [esp+8]
-	add ecx, 7
-	shr ecx, 3
-	add ecx, ecx
-	add ecx, ecx
-	add ecx, ecx
-	mov eax, 0
-224:
-	mov DWORD PTR [ebp], eax
-	add ebp, 4
-	sub ecx, 4
-	jne 224b
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
 	mov ebx, edi
 	add ebx, 3336
 	add ebx, edx
@@ -10237,14 +7292,14 @@ vg_ffdh_exchange:
 	mov ecx, DWORD PTR [esp+40]
 	add esi, ecx
 	sub esi, 1
-225:
+28:
 	movzx eax, BYTE PTR [esi]
 	mov BYTE PTR [ebx], al
 	add ebx, 1
 	sub esi, 1
 	sub ecx, 1
 	cmp ecx, 0
-	jne 225b
+	jne 28b
 	mov edx, DWORD PTR [esp+8]
 	add edx, 7
 	shr edx, 3
@@ -10270,11 +7325,11 @@ vg_ffdh_exchange:
 	add ecx, ecx
 	add ecx, ecx
 	mov eax, 0
-226:
+29:
 	mov DWORD PTR [ebp], eax
 	add ebp, 4
 	sub ecx, 4
-	jne 226b
+	jne 29b
 	mov edx, DWORD PTR [esp+8]
 	add edx, 7
 	shr edx, 3
@@ -10305,14 +7360,14 @@ vg_ffdh_exchange:
 	mov esi, DWORD PTR [esp+44]
 	add esi, ecx
 	sub esi, 1
-227:
+210:
 	movzx eax, BYTE PTR [esi]
 	mov BYTE PTR [ebx], al
 	add ebx, 1
 	sub esi, 1
 	sub ecx, 1
 	cmp ecx, 0
-	jne 227b
+	jne 210b
 	lea esp, [esp-36]
 	mov edx, DWORD PTR [esp+44]
 	add edx, 7
@@ -10459,7 +7514,7 @@ vg_ffdh_exchange:
 	add edi, edi
 	add edi, edi
 	add edi, edi
-228:
+211:
 	mov eax, DWORD PTR [ebx]
 	mov edx, DWORD PTR [ebp]
 	xor edx, eax
@@ -10469,7 +7524,7 @@ vg_ffdh_exchange:
 	add ebp, 4
 	add ebx, 4
 	sub edi, 4
-	jne 228b
+	jne 211b
 	mov edi, DWORD PTR [esp+68]
 	mov ecx, -1
 	mov edx, DWORD PTR [esp+8]
@@ -10530,7 +7585,7 @@ vg_ffdh_exchange:
 	add edi, edi
 	add edi, edi
 	add edi, edi
-229:
+212:
 	mov eax, DWORD PTR [ebx]
 	mov edx, DWORD PTR [ebp]
 	xor edx, eax
@@ -10540,7 +7595,7 @@ vg_ffdh_exchange:
 	add ebp, 4
 	add ebx, 4
 	sub edi, 4
-	jne 229b
+	jne 212b
 	mov edi, DWORD PTR [esp+68]
 	mov ecx, -1
 	mov edx, DWORD PTR [esp+8]
@@ -10581,7 +7636,7 @@ vg_ffdh_exchange:
 	add edi, edi
 	add edi, edi
 	add edi, edi
-230:
+213:
 	mov eax, DWORD PTR [ebx]
 	mov edx, DWORD PTR [ebp]
 	xor edx, eax
@@ -10591,7 +7646,7 @@ vg_ffdh_exchange:
 	add ebp, 4
 	add ebx, 4
 	sub edi, 4
-	jne 230b
+	jne 213b
 	mov edi, DWORD PTR [esp+68]
 	mov edx, DWORD PTR [esp+8]
 	add edx, 7
@@ -10631,7 +7686,7 @@ vg_ffdh_exchange:
 	add edx, edx
 	add esi, edx
 	add esi, edx
-231:
+214:
 	lea esp, [esp-36]
 	mov edx, DWORD PTR [esp+44]
 	add edx, 7
@@ -10706,7 +7761,7 @@ vg_ffdh_exchange:
 	add edi, edi
 	add edi, edi
 	add edi, edi
-232:
+215:
 	mov eax, DWORD PTR [ebx]
 	mov edx, DWORD PTR [ebp]
 	xor edx, eax
@@ -10716,7 +7771,7 @@ vg_ffdh_exchange:
 	add ebp, 4
 	add ebx, 4
 	sub edi, 4
-	jne 232b
+	jne 215b
 	mov edi, DWORD PTR [esp+68]
 	mov esi, ebx
 	mov eax, DWORD PTR [esp+8]
@@ -10772,10 +7827,10 @@ vg_ffdh_exchange:
 	add edx, eax
 	add edx, eax
 	cmp esi, edx
-	jne 231b
+	jne 214b
 	mov esi, DWORD PTR [esp+48]
 	add esi, esi
-233:
+216:
 	lea esp, [esp-36]
 	mov edx, DWORD PTR [esp+44]
 	add edx, 7
@@ -11022,7 +8077,7 @@ vg_ffdh_exchange:
 	add edx, edx
 	add edx, edx
 	mov ecx, 0
-234:
+217:
 	mov eax, DWORD PTR [ebp]
 	mov ebx, eax
 	shr ebx, 28
@@ -11035,7 +8090,7 @@ vg_ffdh_exchange:
 	mov ecx, ebx
 	add ebp, 4
 	sub edx, 4
-	jne 234b
+	jne 217b
 	mov eax, DWORD PTR [edi+4]
 	add eax, 16
 	mov DWORD PTR [edi+4], eax
@@ -11075,7 +8130,7 @@ vg_ffdh_exchange:
 	add edx, edx
 	add edx, edx
 	add edx, edx
-235:
+218:
 	mov eax, DWORD PTR [edi+4]
 	xor eax, 16
 	sub eax, 1
@@ -11112,7 +8167,7 @@ vg_ffdh_exchange:
 	shr eax, 4
 	movd xmm7, ecx
 	pshufd xmm7, xmm7, 0
-236:
+219:
 	movdqu xmm0, XMMWORD PTR [ebx]
 	movdqu xmm1, XMMWORD PTR [ebp]
 	pxor xmm1, xmm0
@@ -11122,12 +8177,12 @@ vg_ffdh_exchange:
 	add ebp, 16
 	add ebx, 16
 	sub eax, 1
-	jne 236b
+	jne 219b
 	and edi, 15
-	jne 237f
-	jmp 238f
-237:
-239:
+	jne 220f
+	jmp 221f
+220:
+222:
 	mov eax, DWORD PTR [ebx]
 	mov edx, DWORD PTR [ebp]
 	xor edx, eax
@@ -11137,8 +8192,8 @@ vg_ffdh_exchange:
 	add ebp, 4
 	add ebx, 4
 	sub edi, 4
-	jne 239b
-238:
+	jne 222b
+221:
 	mov edi, DWORD PTR [esp+68]
 	mov eax, DWORD PTR [esp+8]
 	add eax, 7
@@ -11193,7 +8248,7 @@ vg_ffdh_exchange:
 	add edx, eax
 	add edx, eax
 	cmp ebp, edx
-	jne 235b
+	jne 218b
 	lea esp, [esp-36]
 	mov edx, DWORD PTR [esp+44]
 	add edx, 7
@@ -11244,7 +8299,7 @@ vg_ffdh_exchange:
 	call {vg_rsa_mont_mul_at}
 	lea esp, [esp+36]
 	sub esi, 1
-	jne 233b
+	jne 216b
 	lea esp, [esp-36]
 	mov edx, DWORD PTR [esp+44]
 	add edx, 7
@@ -11337,7 +8392,7 @@ vg_ffdh_exchange:
 	add edx, edx
 	add edx, edx
 	mov ecx, 0
-240:
+223:
 	mov eax, DWORD PTR [esi]
 	add ecx, ecx
 	sbb eax, DWORD PTR [ebp]
@@ -11345,7 +8400,7 @@ vg_ffdh_exchange:
 	add esi, 4
 	add ebp, 4
 	sub edx, 4
-	jne 240b
+	jne 223b
 	mov DWORD PTR [edi+12], ecx
 	mov edx, DWORD PTR [esp+8]
 	add edx, 7
@@ -11395,7 +8450,7 @@ vg_ffdh_exchange:
 	add edx, edx
 	add edx, edx
 	mov ecx, 0
-241:
+224:
 	mov eax, DWORD PTR [esi]
 	add ecx, ecx
 	sbb eax, DWORD PTR [ebp]
@@ -11403,7 +8458,7 @@ vg_ffdh_exchange:
 	add esi, 4
 	add ebp, 4
 	sub edx, 4
-	jne 241b
+	jne 224b
 	and ecx, DWORD PTR [edi+12]
 	mov DWORD PTR [edi+8], ecx
 	mov ecx, -1
@@ -11458,7 +8513,7 @@ vg_ffdh_exchange:
 	add edi, edi
 	add edi, edi
 	add edi, edi
-242:
+225:
 	mov eax, DWORD PTR [ebx]
 	mov edx, DWORD PTR [ebp]
 	xor edx, eax
@@ -11468,7 +8523,7 @@ vg_ffdh_exchange:
 	add ebp, 4
 	add ebx, 4
 	sub edi, 4
-	jne 242b
+	jne 225b
 	mov edi, DWORD PTR [esp+68]
 	mov edx, DWORD PTR [esp+8]
 	add edx, 7
@@ -11506,13 +8561,13 @@ vg_ffdh_exchange:
 	add edx, edx
 	add edx, edx
 	mov ecx, DWORD PTR [edi+8]
-243:
+226:
 	mov eax, DWORD PTR [ebp]
 	and eax, ecx
 	mov DWORD PTR [ebp], eax
 	add ebp, 4
 	sub edx, 4
-	jne 243b
+	jne 226b
 	mov ebx, DWORD PTR [esp+4]
 	mov ecx, DWORD PTR [esp+8]
 	mov edx, DWORD PTR [esp+8]
@@ -11546,14 +8601,14 @@ vg_ffdh_exchange:
 	add esi, edx
 	add esi, ecx
 	sub esi, 1
-244:
+227:
 	movzx eax, BYTE PTR [esi]
 	mov BYTE PTR [ebx], al
 	add ebx, 1
 	sub esi, 1
 	sub ecx, 1
 	cmp ecx, 0
-	jne 244b
+	jne 227b
 	mov eax, DWORD PTR [edi+8]
 	and eax, 1
 	lea esp, [esp+76]
@@ -12465,596 +9520,7 @@ vg_ffdh_derive_public:
 	sub edi, 4
 	jne 221b
 	mov edi, DWORD PTR [esp+68]
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov ebp, edi
-	add ebp, 3336
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	mov ecx, DWORD PTR [esp+8]
-	add ecx, 7
-	shr ecx, 3
-	add ecx, ecx
-	add ecx, ecx
-	add ecx, ecx
-	mov eax, 0
-222:
-	mov DWORD PTR [ebp], eax
-	add ebp, 4
-	sub ecx, 4
-	jne 222b
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov eax, edi
-	add eax, 3336
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	mov ecx, 1
-	mov DWORD PTR [eax], ecx
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov ebp, edi
-	add ebp, 3336
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	mov ecx, DWORD PTR [esp+8]
-	add ecx, 7
-	shr ecx, 3
-	add ecx, ecx
-	add ecx, ecx
-	add ecx, ecx
-	mov eax, 0
-223:
-	mov DWORD PTR [ebp], eax
-	add ebp, 4
-	sub ecx, 4
-	jne 223b
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov eax, edi
-	add eax, 3336
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	mov ecx, 3
-	mov DWORD PTR [eax], ecx
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov esi, edi
-	add esi, 3336
-	add esi, edx
-	add esi, edx
-	add esi, edx
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov ebp, edi
-	add ebp, 3336
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	mov ecx, 0
-224:
-	mov eax, DWORD PTR [esi]
-	add ecx, ecx
-	sbb eax, DWORD PTR [ebp]
-	sbb ecx, ecx
-	add esi, 4
-	add ebp, 4
-	sub edx, 4
-	jne 224b
-	mov edx, DWORD PTR [edi+3336]
-	and edx, 1
-	mov eax, 0
-	sub eax, edx
-	and ecx, eax
-	xor ecx, -1
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov ebp, edi
-	add ebp, 3336
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov ebx, edi
-	add ebx, 3336
-	mov edi, DWORD PTR [esp+8]
-	add edi, 7
-	shr edi, 3
-	add edi, edi
-	add edi, edi
-	add edi, edi
-225:
-	mov eax, DWORD PTR [ebx]
-	mov edx, DWORD PTR [ebp]
-	xor edx, eax
-	and edx, ecx
-	xor eax, edx
-	mov DWORD PTR [ebx], eax
-	add ebp, 4
-	add ebx, 4
-	sub edi, 4
-	jne 225b
-	mov edi, DWORD PTR [esp+68]
-	mov ebx, DWORD PTR [edi+3336]
-	mov ecx, ebx
-	mov eax, ebx
-	mul ecx
-	mov ebp, 2
-	sub ebp, eax
-	mov eax, ecx
-	mul ebp
-	mov ecx, eax
-	mov eax, ebx
-	mul ecx
-	mov ebp, 2
-	sub ebp, eax
-	mov eax, ecx
-	mul ebp
-	mov ecx, eax
-	mov eax, ebx
-	mul ecx
-	mov ebp, 2
-	sub ebp, eax
-	mov eax, ecx
-	mul ebp
-	mov ecx, eax
-	mov eax, ebx
-	mul ecx
-	mov ebp, 2
-	sub ebp, eax
-	mov eax, ecx
-	mul ebp
-	mov ecx, eax
-	mov eax, 0
-	sub eax, ecx
-	mov DWORD PTR [edi], eax
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov ebp, edi
-	add ebp, 3336
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	mov ecx, DWORD PTR [esp+8]
-	add ecx, 7
-	shr ecx, 3
-	add ecx, ecx
-	add ecx, ecx
-	add ecx, ecx
-	mov eax, 0
-226:
-	mov DWORD PTR [ebp], eax
-	add ebp, 4
-	sub ecx, 4
-	jne 226b
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov eax, edi
-	add eax, 3336
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	mov ecx, 1
-	mov DWORD PTR [eax], ecx
-	mov esi, DWORD PTR [esp+8]
-	add esi, 7
-	shr esi, 3
-	add esi, esi
-	add esi, esi
-	add esi, esi
-	mov eax, esi
-	shr eax, 3
-	add esi, esi
-	add esi, esi
-	add esi, esi
-	add esi, eax
-227:
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov ebp, edi
-	add ebp, 3336
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov ebx, edi
-	add ebx, 3336
-	add ebx, edx
-	add ebx, edx
-	add ebx, edx
-	add ebx, edx
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov eax, edi
-	add eax, 3336
-	add eax, edx
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	mov edi, eax
-	mov ecx, 0
-228:
-	cmp edx, 32
-	jae 229f
-	add ecx, ecx
-	mov eax, DWORD PTR [ebp]
-	adc eax, DWORD PTR [ebx]
-	mov DWORD PTR [edi], eax
-	sbb ecx, ecx
-	add ebp, 4
-	add ebx, 4
-	add edi, 4
-	sub edx, 4
-	jmp 230f
-229:
-	add ecx, ecx
-	mov eax, DWORD PTR [ebp]
-	adc eax, DWORD PTR [ebx]
-	mov DWORD PTR [edi], eax
-	mov eax, DWORD PTR [ebp+4]
-	adc eax, DWORD PTR [ebx+4]
-	mov DWORD PTR [edi+4], eax
-	mov eax, DWORD PTR [ebp+8]
-	adc eax, DWORD PTR [ebx+8]
-	mov DWORD PTR [edi+8], eax
-	mov eax, DWORD PTR [ebp+12]
-	adc eax, DWORD PTR [ebx+12]
-	mov DWORD PTR [edi+12], eax
-	mov eax, DWORD PTR [ebp+16]
-	adc eax, DWORD PTR [ebx+16]
-	mov DWORD PTR [edi+16], eax
-	mov eax, DWORD PTR [ebp+20]
-	adc eax, DWORD PTR [ebx+20]
-	mov DWORD PTR [edi+20], eax
-	mov eax, DWORD PTR [ebp+24]
-	adc eax, DWORD PTR [ebx+24]
-	mov DWORD PTR [edi+24], eax
-	mov eax, DWORD PTR [ebp+28]
-	adc eax, DWORD PTR [ebx+28]
-	mov DWORD PTR [edi+28], eax
-	sbb ecx, ecx
-	add ebp, 32
-	add ebx, 32
-	add edi, 32
-	sub edx, 32
-230:
-	cmp edx, 0
-	jne 228b
-	mov edi, DWORD PTR [esp+68]
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov eax, edi
-	add eax, 3336
-	add eax, edx
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add eax, edx
-	mov edx, 0
-	sub edx, ecx
-	mov DWORD PTR [eax], edx
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov ebp, edi
-	add ebp, 3336
-	add ebp, edx
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov ebx, edi
-	add ebx, 3336
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov eax, edi
-	add eax, 3336
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	mov edi, eax
-	mov ecx, 0
-231:
-	cmp edx, 32
-	jae 232f
-	add ecx, ecx
-	mov eax, DWORD PTR [ebp]
-	sbb eax, DWORD PTR [ebx]
-	mov DWORD PTR [edi], eax
-	sbb ecx, ecx
-	add ebp, 4
-	add ebx, 4
-	add edi, 4
-	sub edx, 4
-	jmp 233f
-232:
-	add ecx, ecx
-	mov eax, DWORD PTR [ebp]
-	sbb eax, DWORD PTR [ebx]
-	mov DWORD PTR [edi], eax
-	mov eax, DWORD PTR [ebp+4]
-	sbb eax, DWORD PTR [ebx+4]
-	mov DWORD PTR [edi+4], eax
-	mov eax, DWORD PTR [ebp+8]
-	sbb eax, DWORD PTR [ebx+8]
-	mov DWORD PTR [edi+8], eax
-	mov eax, DWORD PTR [ebp+12]
-	sbb eax, DWORD PTR [ebx+12]
-	mov DWORD PTR [edi+12], eax
-	mov eax, DWORD PTR [ebp+16]
-	sbb eax, DWORD PTR [ebx+16]
-	mov DWORD PTR [edi+16], eax
-	mov eax, DWORD PTR [ebp+20]
-	sbb eax, DWORD PTR [ebx+20]
-	mov DWORD PTR [edi+20], eax
-	mov eax, DWORD PTR [ebp+24]
-	sbb eax, DWORD PTR [ebx+24]
-	mov DWORD PTR [edi+24], eax
-	mov eax, DWORD PTR [ebp+28]
-	sbb eax, DWORD PTR [ebx+28]
-	mov DWORD PTR [edi+28], eax
-	sbb ecx, ecx
-	add ebp, 32
-	add ebx, 32
-	add edi, 32
-	sub edx, 32
-233:
-	cmp edx, 0
-	jne 231b
-	mov edi, DWORD PTR [esp+68]
-	mov eax, DWORD PTR [ebp]
-	add ecx, ecx
-	sbb eax, 0
-	sbb eax, eax
-	mov ecx, eax
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov ebp, edi
-	add ebp, 3336
-	add ebp, edx
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov ebx, edi
-	add ebx, 3336
-	add ebx, edx
-	add ebx, edx
-	add ebx, edx
-	add ebx, edx
-	mov edi, DWORD PTR [esp+8]
-	add edi, 7
-	shr edi, 3
-	add edi, edi
-	add edi, edi
-	add edi, edi
-	mov eax, edi
-	shr eax, 4
-	movd xmm7, ecx
-	pshufd xmm7, xmm7, 0
-234:
-	movdqu xmm0, XMMWORD PTR [ebx]
-	movdqu xmm1, XMMWORD PTR [ebp]
-	pxor xmm1, xmm0
-	pand xmm1, xmm7
-	pxor xmm0, xmm1
-	movdqu XMMWORD PTR [ebx], xmm0
-	add ebp, 16
-	add ebx, 16
-	sub eax, 1
-	jne 234b
-	and edi, 15
-	jne 235f
-	jmp 236f
-235:
-237:
-	mov eax, DWORD PTR [ebx]
-	mov edx, DWORD PTR [ebp]
-	xor edx, eax
-	and edx, ecx
-	xor eax, edx
-	mov DWORD PTR [ebx], eax
-	add ebp, 4
-	add ebx, 4
-	sub edi, 4
-	jne 237b
-236:
-	mov edi, DWORD PTR [esp+68]
-	sub esi, 1
-	jne 227b
-	mov esi, 6
-238:
-	lea esp, [esp-36]
-	mov edx, DWORD PTR [esp+44]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	mov eax, DWORD PTR [esp+108]
-	mov DWORD PTR [esp+4], eax
-	mov DWORD PTR [esp], edi
-	mov eax, edx
-	shr eax, 3
-	mov DWORD PTR [esp+8], eax
-	add edx, edx
-	add edx, 32
-	mov eax, 3336
-	mov DWORD PTR [esp+12], eax
-	mov eax, 0
-	mov DWORD PTR [esp+16], eax
-	mov eax, 3336
-	add eax, edx
-	mov DWORD PTR [esp+20], eax
-	mov eax, 3336
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	mov DWORD PTR [esp+24], eax
-	mov eax, 3336
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	mov DWORD PTR [esp+28], eax
-	mov eax, 3336
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	mov DWORD PTR [esp+32], eax
-	call {vg_rsa_mont_mul_at}
-	lea esp, [esp+36]
-	sub esi, 1
-	cmp esi, 0
-	jne 238b
+	call {vg_ffdh_prepare_wide}
 	mov ecx, -1
 	mov edx, DWORD PTR [esp+8]
 	add edx, 7
@@ -13097,7 +9563,7 @@ vg_ffdh_derive_public:
 	add edi, edi
 	add edi, edi
 	add edi, edi
-239:
+222:
 	mov eax, DWORD PTR [ebx]
 	mov edx, DWORD PTR [ebp]
 	xor edx, eax
@@ -13107,7 +9573,7 @@ vg_ffdh_derive_public:
 	add ebp, 4
 	add ebx, 4
 	sub edi, 4
-	jne 239b
+	jne 222b
 	mov edi, DWORD PTR [esp+68]
 	mov edx, DWORD PTR [esp+8]
 	add edx, 7
@@ -13134,11 +9600,11 @@ vg_ffdh_derive_public:
 	add ecx, ecx
 	add ecx, ecx
 	mov eax, 0
-240:
+223:
 	mov DWORD PTR [ebp], eax
 	add ebp, 4
 	sub ecx, 4
-	jne 240b
+	jne 223b
 	mov edx, DWORD PTR [esp+8]
 	add edx, 7
 	shr edx, 3
@@ -13169,14 +9635,14 @@ vg_ffdh_derive_public:
 	mov esi, DWORD PTR [esp+44]
 	add esi, ecx
 	sub esi, 1
-241:
+224:
 	movzx eax, BYTE PTR [esi]
 	mov BYTE PTR [ebx], al
 	add ebx, 1
 	sub esi, 1
 	sub ecx, 1
 	cmp ecx, 0
-	jne 241b
+	jne 224b
 	lea esp, [esp-36]
 	mov edx, DWORD PTR [esp+44]
 	add edx, 7
@@ -13323,7 +9789,7 @@ vg_ffdh_derive_public:
 	add edi, edi
 	add edi, edi
 	add edi, edi
-242:
+225:
 	mov eax, DWORD PTR [ebx]
 	mov edx, DWORD PTR [ebp]
 	xor edx, eax
@@ -13333,7 +9799,7 @@ vg_ffdh_derive_public:
 	add ebp, 4
 	add ebx, 4
 	sub edi, 4
-	jne 242b
+	jne 225b
 	mov edi, DWORD PTR [esp+68]
 	mov ecx, -1
 	mov edx, DWORD PTR [esp+8]
@@ -13394,7 +9860,7 @@ vg_ffdh_derive_public:
 	add edi, edi
 	add edi, edi
 	add edi, edi
-243:
+226:
 	mov eax, DWORD PTR [ebx]
 	mov edx, DWORD PTR [ebp]
 	xor edx, eax
@@ -13404,7 +9870,7 @@ vg_ffdh_derive_public:
 	add ebp, 4
 	add ebx, 4
 	sub edi, 4
-	jne 243b
+	jne 226b
 	mov edi, DWORD PTR [esp+68]
 	mov ecx, -1
 	mov edx, DWORD PTR [esp+8]
@@ -13445,7 +9911,7 @@ vg_ffdh_derive_public:
 	add edi, edi
 	add edi, edi
 	add edi, edi
-244:
+227:
 	mov eax, DWORD PTR [ebx]
 	mov edx, DWORD PTR [ebp]
 	xor edx, eax
@@ -13455,7 +9921,7 @@ vg_ffdh_derive_public:
 	add ebp, 4
 	add ebx, 4
 	sub edi, 4
-	jne 244b
+	jne 227b
 	mov edi, DWORD PTR [esp+68]
 	mov edx, DWORD PTR [esp+8]
 	add edx, 7
@@ -13495,7 +9961,7 @@ vg_ffdh_derive_public:
 	add edx, edx
 	add esi, edx
 	add esi, edx
-245:
+228:
 	lea esp, [esp-36]
 	mov edx, DWORD PTR [esp+44]
 	add edx, 7
@@ -13570,7 +10036,7 @@ vg_ffdh_derive_public:
 	add edi, edi
 	add edi, edi
 	add edi, edi
-246:
+229:
 	mov eax, DWORD PTR [ebx]
 	mov edx, DWORD PTR [ebp]
 	xor edx, eax
@@ -13580,7 +10046,7 @@ vg_ffdh_derive_public:
 	add ebp, 4
 	add ebx, 4
 	sub edi, 4
-	jne 246b
+	jne 229b
 	mov edi, DWORD PTR [esp+68]
 	mov esi, ebx
 	mov eax, DWORD PTR [esp+8]
@@ -13636,10 +10102,10 @@ vg_ffdh_derive_public:
 	add edx, eax
 	add edx, eax
 	cmp esi, edx
-	jne 245b
+	jne 228b
 	mov esi, DWORD PTR [esp+48]
 	add esi, esi
-247:
+230:
 	lea esp, [esp-36]
 	mov edx, DWORD PTR [esp+44]
 	add edx, 7
@@ -13886,7 +10352,7 @@ vg_ffdh_derive_public:
 	add edx, edx
 	add edx, edx
 	mov ecx, 0
-248:
+231:
 	mov eax, DWORD PTR [ebp]
 	mov ebx, eax
 	shr ebx, 28
@@ -13899,7 +10365,7 @@ vg_ffdh_derive_public:
 	mov ecx, ebx
 	add ebp, 4
 	sub edx, 4
-	jne 248b
+	jne 231b
 	mov eax, DWORD PTR [edi+4]
 	add eax, 16
 	mov DWORD PTR [edi+4], eax
@@ -13939,7 +10405,7 @@ vg_ffdh_derive_public:
 	add edx, edx
 	add edx, edx
 	add edx, edx
-249:
+232:
 	mov eax, DWORD PTR [edi+4]
 	xor eax, 16
 	sub eax, 1
@@ -13976,7 +10442,7 @@ vg_ffdh_derive_public:
 	shr eax, 4
 	movd xmm7, ecx
 	pshufd xmm7, xmm7, 0
-250:
+233:
 	movdqu xmm0, XMMWORD PTR [ebx]
 	movdqu xmm1, XMMWORD PTR [ebp]
 	pxor xmm1, xmm0
@@ -13986,12 +10452,12 @@ vg_ffdh_derive_public:
 	add ebp, 16
 	add ebx, 16
 	sub eax, 1
-	jne 250b
+	jne 233b
 	and edi, 15
-	jne 251f
-	jmp 252f
-251:
-253:
+	jne 234f
+	jmp 235f
+234:
+236:
 	mov eax, DWORD PTR [ebx]
 	mov edx, DWORD PTR [ebp]
 	xor edx, eax
@@ -14001,8 +10467,8 @@ vg_ffdh_derive_public:
 	add ebp, 4
 	add ebx, 4
 	sub edi, 4
-	jne 253b
-252:
+	jne 236b
+235:
 	mov edi, DWORD PTR [esp+68]
 	mov eax, DWORD PTR [esp+8]
 	add eax, 7
@@ -14057,7 +10523,7 @@ vg_ffdh_derive_public:
 	add edx, eax
 	add edx, eax
 	cmp ebp, edx
-	jne 249b
+	jne 232b
 	lea esp, [esp-36]
 	mov edx, DWORD PTR [esp+44]
 	add edx, 7
@@ -14108,7 +10574,7 @@ vg_ffdh_derive_public:
 	call {vg_rsa_mont_mul_at}
 	lea esp, [esp+36]
 	sub esi, 1
-	jne 247b
+	jne 230b
 	lea esp, [esp-36]
 	mov edx, DWORD PTR [esp+44]
 	add edx, 7
@@ -14201,7 +10667,7 @@ vg_ffdh_derive_public:
 	add edx, edx
 	add edx, edx
 	mov ecx, 0
-254:
+237:
 	mov eax, DWORD PTR [esi]
 	add ecx, ecx
 	sbb eax, DWORD PTR [ebp]
@@ -14209,7 +10675,7 @@ vg_ffdh_derive_public:
 	add esi, 4
 	add ebp, 4
 	sub edx, 4
-	jne 254b
+	jne 237b
 	mov DWORD PTR [edi+12], ecx
 	mov edx, DWORD PTR [esp+8]
 	add edx, 7
@@ -14259,7 +10725,7 @@ vg_ffdh_derive_public:
 	add edx, edx
 	add edx, edx
 	mov ecx, 0
-255:
+238:
 	mov eax, DWORD PTR [esi]
 	add ecx, ecx
 	sbb eax, DWORD PTR [ebp]
@@ -14267,7 +10733,7 @@ vg_ffdh_derive_public:
 	add esi, 4
 	add ebp, 4
 	sub edx, 4
-	jne 255b
+	jne 238b
 	and ecx, DWORD PTR [edi+12]
 	mov DWORD PTR [edi+8], ecx
 	mov ecx, -1
@@ -14322,7 +10788,7 @@ vg_ffdh_derive_public:
 	add edi, edi
 	add edi, edi
 	add edi, edi
-256:
+239:
 	mov eax, DWORD PTR [ebx]
 	mov edx, DWORD PTR [ebp]
 	xor edx, eax
@@ -14332,7 +10798,7 @@ vg_ffdh_derive_public:
 	add ebp, 4
 	add ebx, 4
 	sub edi, 4
-	jne 256b
+	jne 239b
 	mov edi, DWORD PTR [esp+68]
 	mov edx, DWORD PTR [esp+8]
 	add edx, 7
@@ -14370,13 +10836,13 @@ vg_ffdh_derive_public:
 	add edx, edx
 	add edx, edx
 	mov ecx, DWORD PTR [edi+8]
-257:
+240:
 	mov eax, DWORD PTR [ebp]
 	and eax, ecx
 	mov DWORD PTR [ebp], eax
 	add ebp, 4
 	sub edx, 4
-	jne 257b
+	jne 240b
 	mov ebx, DWORD PTR [esp+4]
 	mov ecx, DWORD PTR [esp+8]
 	mov edx, DWORD PTR [esp+8]
@@ -14410,14 +10876,14 @@ vg_ffdh_derive_public:
 	add esi, edx
 	add esi, ecx
 	sub esi, 1
-258:
+241:
 	movzx eax, BYTE PTR [esi]
 	mov BYTE PTR [ebx], al
 	add ebx, 1
 	sub esi, 1
 	sub ecx, 1
 	cmp ecx, 0
-	jne 258b
+	jne 241b
 	mov eax, DWORD PTR [edi+8]
 	and eax, 1
 	add eax, eax
@@ -14464,13 +10930,13 @@ vg_ffdh_derive_public:
 	add edx, edx
 	add edx, edx
 	mov ecx, DWORD PTR [edi+8]
-259:
+242:
 	mov eax, DWORD PTR [ebp]
 	and eax, ecx
 	mov DWORD PTR [ebp], eax
 	add ebp, 4
 	sub edx, 4
-	jne 259b
+	jne 242b
 	mov ebx, DWORD PTR [esp+4]
 	mov ecx, DWORD PTR [esp+8]
 	mov edx, DWORD PTR [esp+8]
@@ -14504,14 +10970,14 @@ vg_ffdh_derive_public:
 	add esi, edx
 	add esi, ecx
 	sub esi, 1
-260:
+243:
 	movzx eax, BYTE PTR [esi]
 	mov BYTE PTR [ebx], al
 	add ebx, 1
 	sub esi, 1
 	sub ecx, 1
 	cmp ecx, 0
-	jne 260b
+	jne 243b
 	mov eax, DWORD PTR [edi+8]
 	and eax, 1
 	mov eax, 2
@@ -15416,596 +11882,7 @@ vg_ffdh_generate_key_precompute:
 	sub edi, 4
 	jne 264b
 	mov edi, DWORD PTR [esp+68]
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov ebp, edi
-	add ebp, 3336
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	mov ecx, DWORD PTR [esp+8]
-	add ecx, 7
-	shr ecx, 3
-	add ecx, ecx
-	add ecx, ecx
-	add ecx, ecx
-	mov eax, 0
-265:
-	mov DWORD PTR [ebp], eax
-	add ebp, 4
-	sub ecx, 4
-	jne 265b
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov eax, edi
-	add eax, 3336
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	mov ecx, 1
-	mov DWORD PTR [eax], ecx
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov ebp, edi
-	add ebp, 3336
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	mov ecx, DWORD PTR [esp+8]
-	add ecx, 7
-	shr ecx, 3
-	add ecx, ecx
-	add ecx, ecx
-	add ecx, ecx
-	mov eax, 0
-266:
-	mov DWORD PTR [ebp], eax
-	add ebp, 4
-	sub ecx, 4
-	jne 266b
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov eax, edi
-	add eax, 3336
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	mov ecx, 3
-	mov DWORD PTR [eax], ecx
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov esi, edi
-	add esi, 3336
-	add esi, edx
-	add esi, edx
-	add esi, edx
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov ebp, edi
-	add ebp, 3336
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	mov ecx, 0
-267:
-	mov eax, DWORD PTR [esi]
-	add ecx, ecx
-	sbb eax, DWORD PTR [ebp]
-	sbb ecx, ecx
-	add esi, 4
-	add ebp, 4
-	sub edx, 4
-	jne 267b
-	mov edx, DWORD PTR [edi+3336]
-	and edx, 1
-	mov eax, 0
-	sub eax, edx
-	and ecx, eax
-	xor ecx, -1
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov ebp, edi
-	add ebp, 3336
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov ebx, edi
-	add ebx, 3336
-	mov edi, DWORD PTR [esp+8]
-	add edi, 7
-	shr edi, 3
-	add edi, edi
-	add edi, edi
-	add edi, edi
-268:
-	mov eax, DWORD PTR [ebx]
-	mov edx, DWORD PTR [ebp]
-	xor edx, eax
-	and edx, ecx
-	xor eax, edx
-	mov DWORD PTR [ebx], eax
-	add ebp, 4
-	add ebx, 4
-	sub edi, 4
-	jne 268b
-	mov edi, DWORD PTR [esp+68]
-	mov ebx, DWORD PTR [edi+3336]
-	mov ecx, ebx
-	mov eax, ebx
-	mul ecx
-	mov ebp, 2
-	sub ebp, eax
-	mov eax, ecx
-	mul ebp
-	mov ecx, eax
-	mov eax, ebx
-	mul ecx
-	mov ebp, 2
-	sub ebp, eax
-	mov eax, ecx
-	mul ebp
-	mov ecx, eax
-	mov eax, ebx
-	mul ecx
-	mov ebp, 2
-	sub ebp, eax
-	mov eax, ecx
-	mul ebp
-	mov ecx, eax
-	mov eax, ebx
-	mul ecx
-	mov ebp, 2
-	sub ebp, eax
-	mov eax, ecx
-	mul ebp
-	mov ecx, eax
-	mov eax, 0
-	sub eax, ecx
-	mov DWORD PTR [edi], eax
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov ebp, edi
-	add ebp, 3336
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	mov ecx, DWORD PTR [esp+8]
-	add ecx, 7
-	shr ecx, 3
-	add ecx, ecx
-	add ecx, ecx
-	add ecx, ecx
-	mov eax, 0
-269:
-	mov DWORD PTR [ebp], eax
-	add ebp, 4
-	sub ecx, 4
-	jne 269b
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov eax, edi
-	add eax, 3336
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	mov ecx, 1
-	mov DWORD PTR [eax], ecx
-	mov esi, DWORD PTR [esp+8]
-	add esi, 7
-	shr esi, 3
-	add esi, esi
-	add esi, esi
-	add esi, esi
-	mov eax, esi
-	shr eax, 3
-	add esi, esi
-	add esi, esi
-	add esi, esi
-	add esi, eax
-270:
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov ebp, edi
-	add ebp, 3336
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	add ebp, edx
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov ebx, edi
-	add ebx, 3336
-	add ebx, edx
-	add ebx, edx
-	add ebx, edx
-	add ebx, edx
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov eax, edi
-	add eax, 3336
-	add eax, edx
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	mov edi, eax
-	mov ecx, 0
-271:
-	cmp edx, 32
-	jae 272f
-	add ecx, ecx
-	mov eax, DWORD PTR [ebp]
-	adc eax, DWORD PTR [ebx]
-	mov DWORD PTR [edi], eax
-	sbb ecx, ecx
-	add ebp, 4
-	add ebx, 4
-	add edi, 4
-	sub edx, 4
-	jmp 273f
-272:
-	add ecx, ecx
-	mov eax, DWORD PTR [ebp]
-	adc eax, DWORD PTR [ebx]
-	mov DWORD PTR [edi], eax
-	mov eax, DWORD PTR [ebp+4]
-	adc eax, DWORD PTR [ebx+4]
-	mov DWORD PTR [edi+4], eax
-	mov eax, DWORD PTR [ebp+8]
-	adc eax, DWORD PTR [ebx+8]
-	mov DWORD PTR [edi+8], eax
-	mov eax, DWORD PTR [ebp+12]
-	adc eax, DWORD PTR [ebx+12]
-	mov DWORD PTR [edi+12], eax
-	mov eax, DWORD PTR [ebp+16]
-	adc eax, DWORD PTR [ebx+16]
-	mov DWORD PTR [edi+16], eax
-	mov eax, DWORD PTR [ebp+20]
-	adc eax, DWORD PTR [ebx+20]
-	mov DWORD PTR [edi+20], eax
-	mov eax, DWORD PTR [ebp+24]
-	adc eax, DWORD PTR [ebx+24]
-	mov DWORD PTR [edi+24], eax
-	mov eax, DWORD PTR [ebp+28]
-	adc eax, DWORD PTR [ebx+28]
-	mov DWORD PTR [edi+28], eax
-	sbb ecx, ecx
-	add ebp, 32
-	add ebx, 32
-	add edi, 32
-	sub edx, 32
-273:
-	cmp edx, 0
-	jne 271b
-	mov edi, DWORD PTR [esp+68]
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov eax, edi
-	add eax, 3336
-	add eax, edx
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add eax, edx
-	mov edx, 0
-	sub edx, ecx
-	mov DWORD PTR [eax], edx
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov ebp, edi
-	add ebp, 3336
-	add ebp, edx
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov ebx, edi
-	add ebx, 3336
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov eax, edi
-	add eax, 3336
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	mov edi, eax
-	mov ecx, 0
-274:
-	cmp edx, 32
-	jae 275f
-	add ecx, ecx
-	mov eax, DWORD PTR [ebp]
-	sbb eax, DWORD PTR [ebx]
-	mov DWORD PTR [edi], eax
-	sbb ecx, ecx
-	add ebp, 4
-	add ebx, 4
-	add edi, 4
-	sub edx, 4
-	jmp 276f
-275:
-	add ecx, ecx
-	mov eax, DWORD PTR [ebp]
-	sbb eax, DWORD PTR [ebx]
-	mov DWORD PTR [edi], eax
-	mov eax, DWORD PTR [ebp+4]
-	sbb eax, DWORD PTR [ebx+4]
-	mov DWORD PTR [edi+4], eax
-	mov eax, DWORD PTR [ebp+8]
-	sbb eax, DWORD PTR [ebx+8]
-	mov DWORD PTR [edi+8], eax
-	mov eax, DWORD PTR [ebp+12]
-	sbb eax, DWORD PTR [ebx+12]
-	mov DWORD PTR [edi+12], eax
-	mov eax, DWORD PTR [ebp+16]
-	sbb eax, DWORD PTR [ebx+16]
-	mov DWORD PTR [edi+16], eax
-	mov eax, DWORD PTR [ebp+20]
-	sbb eax, DWORD PTR [ebx+20]
-	mov DWORD PTR [edi+20], eax
-	mov eax, DWORD PTR [ebp+24]
-	sbb eax, DWORD PTR [ebx+24]
-	mov DWORD PTR [edi+24], eax
-	mov eax, DWORD PTR [ebp+28]
-	sbb eax, DWORD PTR [ebx+28]
-	mov DWORD PTR [edi+28], eax
-	sbb ecx, ecx
-	add ebp, 32
-	add ebx, 32
-	add edi, 32
-	sub edx, 32
-276:
-	cmp edx, 0
-	jne 274b
-	mov edi, DWORD PTR [esp+68]
-	mov eax, DWORD PTR [ebp]
-	add ecx, ecx
-	sbb eax, 0
-	sbb eax, eax
-	mov ecx, eax
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov ebp, edi
-	add ebp, 3336
-	add ebp, edx
-	mov edx, DWORD PTR [esp+8]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	add edx, 32
-	mov ebx, edi
-	add ebx, 3336
-	add ebx, edx
-	add ebx, edx
-	add ebx, edx
-	add ebx, edx
-	mov edi, DWORD PTR [esp+8]
-	add edi, 7
-	shr edi, 3
-	add edi, edi
-	add edi, edi
-	add edi, edi
-	mov eax, edi
-	shr eax, 4
-	movd xmm7, ecx
-	pshufd xmm7, xmm7, 0
-277:
-	movdqu xmm0, XMMWORD PTR [ebx]
-	movdqu xmm1, XMMWORD PTR [ebp]
-	pxor xmm1, xmm0
-	pand xmm1, xmm7
-	pxor xmm0, xmm1
-	movdqu XMMWORD PTR [ebx], xmm0
-	add ebp, 16
-	add ebx, 16
-	sub eax, 1
-	jne 277b
-	and edi, 15
-	jne 278f
-	jmp 279f
-278:
-280:
-	mov eax, DWORD PTR [ebx]
-	mov edx, DWORD PTR [ebp]
-	xor edx, eax
-	and edx, ecx
-	xor eax, edx
-	mov DWORD PTR [ebx], eax
-	add ebp, 4
-	add ebx, 4
-	sub edi, 4
-	jne 280b
-279:
-	mov edi, DWORD PTR [esp+68]
-	sub esi, 1
-	jne 270b
-	mov esi, 6
-281:
-	lea esp, [esp-36]
-	mov edx, DWORD PTR [esp+44]
-	add edx, 7
-	shr edx, 3
-	add edx, edx
-	add edx, edx
-	add edx, edx
-	mov eax, DWORD PTR [esp+108]
-	mov DWORD PTR [esp+4], eax
-	mov DWORD PTR [esp], edi
-	mov eax, edx
-	shr eax, 3
-	mov DWORD PTR [esp+8], eax
-	add edx, edx
-	add edx, 32
-	mov eax, 3336
-	mov DWORD PTR [esp+12], eax
-	mov eax, 0
-	mov DWORD PTR [esp+16], eax
-	mov eax, 3336
-	add eax, edx
-	mov DWORD PTR [esp+20], eax
-	mov eax, 3336
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	mov DWORD PTR [esp+24], eax
-	mov eax, 3336
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	mov DWORD PTR [esp+28], eax
-	mov eax, 3336
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	add eax, edx
-	mov DWORD PTR [esp+32], eax
-	call {vg_rsa_mont_mul_at}
-	lea esp, [esp+36]
-	sub esi, 1
-	cmp esi, 0
-	jne 281b
+	call {vg_ffdh_prepare_wide}
 	mov eax, 0
 	mov edx, DWORD PTR [esp+8]
 	add edx, 7
@@ -16044,7 +11921,7 @@ vg_ffdh_generate_key_precompute:
 	add edi, edi
 	add edi, edi
 	add edi, edi
-282:
+265:
 	mov eax, DWORD PTR [ebx]
 	mov edx, DWORD PTR [ebp]
 	xor edx, eax
@@ -16054,7 +11931,7 @@ vg_ffdh_generate_key_precompute:
 	add ebp, 4
 	add ebx, 4
 	sub edi, 4
-	jne 282b
+	jne 265b
 	mov edi, DWORD PTR [esp+68]
 	mov eax, 1
 	mov edx, DWORD PTR [esp+8]
@@ -16089,7 +11966,7 @@ vg_ffdh_generate_key_precompute:
 	add edi, edi
 	add edi, edi
 	add edi, edi
-283:
+266:
 	mov eax, DWORD PTR [ebx]
 	mov edx, DWORD PTR [ebp]
 	xor edx, eax
@@ -16099,7 +11976,7 @@ vg_ffdh_generate_key_precompute:
 	add ebp, 4
 	add ebx, 4
 	sub edi, 4
-	jne 283b
+	jne 266b
 	mov edi, DWORD PTR [esp+68]
 	lea esp, [esp-36]
 	mov edx, DWORD PTR [esp+44]
@@ -16179,7 +12056,7 @@ vg_ffdh_generate_key_precompute:
 	add edi, edi
 	add edi, edi
 	add edi, edi
-284:
+267:
 	mov eax, DWORD PTR [ebx]
 	mov edx, DWORD PTR [ebp]
 	xor edx, eax
@@ -16189,7 +12066,7 @@ vg_ffdh_generate_key_precompute:
 	add ebp, 4
 	add ebx, 4
 	sub edi, 4
-	jne 284b
+	jne 267b
 	mov edi, DWORD PTR [esp+68]
 	mov ecx, -1
 	mov edx, DWORD PTR [esp+8]
@@ -16233,7 +12110,7 @@ vg_ffdh_generate_key_precompute:
 	add edi, edi
 	add edi, edi
 	add edi, edi
-285:
+268:
 	mov eax, DWORD PTR [ebx]
 	mov edx, DWORD PTR [ebp]
 	xor edx, eax
@@ -16243,7 +12120,7 @@ vg_ffdh_generate_key_precompute:
 	add ebp, 4
 	add ebx, 4
 	sub edi, 4
-	jne 285b
+	jne 268b
 	mov edi, DWORD PTR [esp+68]
 	lea esp, [esp-36]
 	mov edx, DWORD PTR [esp+44]
@@ -16327,7 +12204,7 @@ vg_ffdh_generate_key_precompute:
 	add edi, edi
 	add edi, edi
 	add edi, edi
-286:
+269:
 	mov eax, DWORD PTR [ebx]
 	mov edx, DWORD PTR [ebp]
 	xor edx, eax
@@ -16337,11 +12214,11 @@ vg_ffdh_generate_key_precompute:
 	add ebp, 4
 	add ebx, 4
 	sub edi, 4
-	jne 286b
+	jne 269b
 	mov edi, DWORD PTR [esp+68]
 	mov eax, DWORD PTR [edi+56]
 	mov DWORD PTR [edi+68], eax
-287:
+270:
 	lea esp, [esp-36]
 	mov edx, DWORD PTR [esp+44]
 	add edx, 7
@@ -16396,7 +12273,7 @@ vg_ffdh_generate_key_precompute:
 	mov eax, DWORD PTR [edi+68]
 	sub eax, 1
 	mov DWORD PTR [edi+68], eax
-	jne 287b
+	jne 270b
 	mov eax, 4
 	mov edx, DWORD PTR [esp+8]
 	add edx, 7
@@ -16433,7 +12310,7 @@ vg_ffdh_generate_key_precompute:
 	add edi, edi
 	add edi, edi
 	add edi, edi
-288:
+271:
 	mov eax, DWORD PTR [ebx]
 	mov edx, DWORD PTR [ebp]
 	xor edx, eax
@@ -16443,7 +12320,7 @@ vg_ffdh_generate_key_precompute:
 	add ebp, 4
 	add ebx, 4
 	sub edi, 4
-	jne 288b
+	jne 271b
 	mov edi, DWORD PTR [esp+68]
 	mov eax, 3
 	mov edx, DWORD PTR [esp+8]
@@ -16479,7 +12356,7 @@ vg_ffdh_generate_key_precompute:
 	add edi, edi
 	add edi, edi
 	add edi, edi
-289:
+272:
 	mov eax, DWORD PTR [ebx]
 	mov edx, DWORD PTR [ebp]
 	xor edx, eax
@@ -16489,7 +12366,7 @@ vg_ffdh_generate_key_precompute:
 	add ebp, 4
 	add ebx, 4
 	sub edi, 4
-	jne 289b
+	jne 272b
 	mov edi, DWORD PTR [esp+68]
 	lea esp, [esp-36]
 	mov edx, DWORD PTR [esp+44]
@@ -16578,7 +12455,7 @@ vg_ffdh_generate_key_precompute:
 	add edi, edi
 	add edi, edi
 	add edi, edi
-290:
+273:
 	mov eax, DWORD PTR [ebx]
 	mov edx, DWORD PTR [ebp]
 	xor edx, eax
@@ -16588,11 +12465,11 @@ vg_ffdh_generate_key_precompute:
 	add ebp, 4
 	add ebx, 4
 	sub edi, 4
-	jne 290b
+	jne 273b
 	mov edi, DWORD PTR [esp+68]
 	mov eax, DWORD PTR [edi+56]
 	mov DWORD PTR [edi+68], eax
-291:
+274:
 	lea esp, [esp-36]
 	mov edx, DWORD PTR [esp+44]
 	add edx, 7
@@ -16647,7 +12524,7 @@ vg_ffdh_generate_key_precompute:
 	mov eax, DWORD PTR [edi+68]
 	sub eax, 1
 	mov DWORD PTR [edi+68], eax
-	jne 291b
+	jne 274b
 	mov eax, 6
 	mov edx, DWORD PTR [esp+8]
 	add edx, 7
@@ -16684,7 +12561,7 @@ vg_ffdh_generate_key_precompute:
 	add edi, edi
 	add edi, edi
 	add edi, edi
-292:
+275:
 	mov eax, DWORD PTR [ebx]
 	mov edx, DWORD PTR [ebp]
 	xor edx, eax
@@ -16694,7 +12571,7 @@ vg_ffdh_generate_key_precompute:
 	add ebp, 4
 	add ebx, 4
 	sub edi, 4
-	jne 292b
+	jne 275b
 	mov edi, DWORD PTR [esp+68]
 	mov eax, 3
 	mov edx, DWORD PTR [esp+8]
@@ -16730,7 +12607,7 @@ vg_ffdh_generate_key_precompute:
 	add edi, edi
 	add edi, edi
 	add edi, edi
-293:
+276:
 	mov eax, DWORD PTR [ebx]
 	mov edx, DWORD PTR [ebp]
 	xor edx, eax
@@ -16740,7 +12617,7 @@ vg_ffdh_generate_key_precompute:
 	add ebp, 4
 	add ebx, 4
 	sub edi, 4
-	jne 293b
+	jne 276b
 	mov edi, DWORD PTR [esp+68]
 	lea esp, [esp-36]
 	mov edx, DWORD PTR [esp+44]
@@ -16829,7 +12706,7 @@ vg_ffdh_generate_key_precompute:
 	add edi, edi
 	add edi, edi
 	add edi, edi
-294:
+277:
 	mov eax, DWORD PTR [ebx]
 	mov edx, DWORD PTR [ebp]
 	xor edx, eax
@@ -16839,7 +12716,7 @@ vg_ffdh_generate_key_precompute:
 	add ebp, 4
 	add ebx, 4
 	sub edi, 4
-	jne 294b
+	jne 277b
 	mov edi, DWORD PTR [esp+68]
 	mov eax, 4
 	mov edx, DWORD PTR [esp+8]
@@ -16875,7 +12752,7 @@ vg_ffdh_generate_key_precompute:
 	add edi, edi
 	add edi, edi
 	add edi, edi
-295:
+278:
 	mov eax, DWORD PTR [ebx]
 	mov edx, DWORD PTR [ebp]
 	xor edx, eax
@@ -16885,7 +12762,7 @@ vg_ffdh_generate_key_precompute:
 	add ebp, 4
 	add ebx, 4
 	sub edi, 4
-	jne 295b
+	jne 278b
 	mov edi, DWORD PTR [esp+68]
 	lea esp, [esp-36]
 	mov edx, DWORD PTR [esp+44]
@@ -16974,7 +12851,7 @@ vg_ffdh_generate_key_precompute:
 	add edi, edi
 	add edi, edi
 	add edi, edi
-296:
+279:
 	mov eax, DWORD PTR [ebx]
 	mov edx, DWORD PTR [ebp]
 	xor edx, eax
@@ -16984,7 +12861,7 @@ vg_ffdh_generate_key_precompute:
 	add ebp, 4
 	add ebx, 4
 	sub edi, 4
-	jne 296b
+	jne 279b
 	mov edi, DWORD PTR [esp+68]
 	mov eax, 5
 	mov edx, DWORD PTR [esp+8]
@@ -17020,7 +12897,7 @@ vg_ffdh_generate_key_precompute:
 	add edi, edi
 	add edi, edi
 	add edi, edi
-297:
+280:
 	mov eax, DWORD PTR [ebx]
 	mov edx, DWORD PTR [ebp]
 	xor edx, eax
@@ -17030,7 +12907,7 @@ vg_ffdh_generate_key_precompute:
 	add ebp, 4
 	add ebx, 4
 	sub edi, 4
-	jne 297b
+	jne 280b
 	mov edi, DWORD PTR [esp+68]
 	lea esp, [esp-36]
 	mov edx, DWORD PTR [esp+44]
@@ -17119,7 +12996,7 @@ vg_ffdh_generate_key_precompute:
 	add edi, edi
 	add edi, edi
 	add edi, edi
-298:
+281:
 	mov eax, DWORD PTR [ebx]
 	mov edx, DWORD PTR [ebp]
 	xor edx, eax
@@ -17129,11 +13006,11 @@ vg_ffdh_generate_key_precompute:
 	add ebp, 4
 	add ebx, 4
 	sub edi, 4
-	jne 298b
+	jne 281b
 	mov edi, DWORD PTR [esp+68]
 	mov eax, DWORD PTR [edi+56]
 	mov DWORD PTR [edi+68], eax
-299:
+282:
 	lea esp, [esp-36]
 	mov edx, DWORD PTR [esp+44]
 	add edx, 7
@@ -17188,7 +13065,7 @@ vg_ffdh_generate_key_precompute:
 	mov eax, DWORD PTR [edi+68]
 	sub eax, 1
 	mov DWORD PTR [edi+68], eax
-	jne 299b
+	jne 282b
 	mov eax, 10
 	mov edx, DWORD PTR [esp+8]
 	add edx, 7
@@ -17225,7 +13102,7 @@ vg_ffdh_generate_key_precompute:
 	add edi, edi
 	add edi, edi
 	add edi, edi
-2100:
+283:
 	mov eax, DWORD PTR [ebx]
 	mov edx, DWORD PTR [ebp]
 	xor edx, eax
@@ -17235,7 +13112,7 @@ vg_ffdh_generate_key_precompute:
 	add ebp, 4
 	add ebx, 4
 	sub edi, 4
-	jne 2100b
+	jne 283b
 	mov edi, DWORD PTR [esp+68]
 	mov eax, 3
 	mov edx, DWORD PTR [esp+8]
@@ -17271,7 +13148,7 @@ vg_ffdh_generate_key_precompute:
 	add edi, edi
 	add edi, edi
 	add edi, edi
-2101:
+284:
 	mov eax, DWORD PTR [ebx]
 	mov edx, DWORD PTR [ebp]
 	xor edx, eax
@@ -17281,7 +13158,7 @@ vg_ffdh_generate_key_precompute:
 	add ebp, 4
 	add ebx, 4
 	sub edi, 4
-	jne 2101b
+	jne 284b
 	mov edi, DWORD PTR [esp+68]
 	lea esp, [esp-36]
 	mov edx, DWORD PTR [esp+44]
@@ -17370,7 +13247,7 @@ vg_ffdh_generate_key_precompute:
 	add edi, edi
 	add edi, edi
 	add edi, edi
-2102:
+285:
 	mov eax, DWORD PTR [ebx]
 	mov edx, DWORD PTR [ebp]
 	xor edx, eax
@@ -17380,7 +13257,7 @@ vg_ffdh_generate_key_precompute:
 	add ebp, 4
 	add ebx, 4
 	sub edi, 4
-	jne 2102b
+	jne 285b
 	mov edi, DWORD PTR [esp+68]
 	mov eax, 4
 	mov edx, DWORD PTR [esp+8]
@@ -17416,7 +13293,7 @@ vg_ffdh_generate_key_precompute:
 	add edi, edi
 	add edi, edi
 	add edi, edi
-2103:
+286:
 	mov eax, DWORD PTR [ebx]
 	mov edx, DWORD PTR [ebp]
 	xor edx, eax
@@ -17426,7 +13303,7 @@ vg_ffdh_generate_key_precompute:
 	add ebp, 4
 	add ebx, 4
 	sub edi, 4
-	jne 2103b
+	jne 286b
 	mov edi, DWORD PTR [esp+68]
 	lea esp, [esp-36]
 	mov edx, DWORD PTR [esp+44]
@@ -17515,7 +13392,7 @@ vg_ffdh_generate_key_precompute:
 	add edi, edi
 	add edi, edi
 	add edi, edi
-2104:
+287:
 	mov eax, DWORD PTR [ebx]
 	mov edx, DWORD PTR [ebp]
 	xor edx, eax
@@ -17525,7 +13402,7 @@ vg_ffdh_generate_key_precompute:
 	add ebp, 4
 	add ebx, 4
 	sub edi, 4
-	jne 2104b
+	jne 287b
 	mov edi, DWORD PTR [esp+68]
 	mov eax, 5
 	mov edx, DWORD PTR [esp+8]
@@ -17561,7 +13438,7 @@ vg_ffdh_generate_key_precompute:
 	add edi, edi
 	add edi, edi
 	add edi, edi
-2105:
+288:
 	mov eax, DWORD PTR [ebx]
 	mov edx, DWORD PTR [ebp]
 	xor edx, eax
@@ -17571,7 +13448,7 @@ vg_ffdh_generate_key_precompute:
 	add ebp, 4
 	add ebx, 4
 	sub edi, 4
-	jne 2105b
+	jne 288b
 	mov edi, DWORD PTR [esp+68]
 	lea esp, [esp-36]
 	mov edx, DWORD PTR [esp+44]
@@ -17660,7 +13537,7 @@ vg_ffdh_generate_key_precompute:
 	add edi, edi
 	add edi, edi
 	add edi, edi
-2106:
+289:
 	mov eax, DWORD PTR [ebx]
 	mov edx, DWORD PTR [ebp]
 	xor edx, eax
@@ -17670,7 +13547,7 @@ vg_ffdh_generate_key_precompute:
 	add ebp, 4
 	add ebx, 4
 	sub edi, 4
-	jne 2106b
+	jne 289b
 	mov edi, DWORD PTR [esp+68]
 	mov eax, 6
 	mov edx, DWORD PTR [esp+8]
@@ -17706,7 +13583,7 @@ vg_ffdh_generate_key_precompute:
 	add edi, edi
 	add edi, edi
 	add edi, edi
-2107:
+290:
 	mov eax, DWORD PTR [ebx]
 	mov edx, DWORD PTR [ebp]
 	xor edx, eax
@@ -17716,7 +13593,7 @@ vg_ffdh_generate_key_precompute:
 	add ebp, 4
 	add ebx, 4
 	sub edi, 4
-	jne 2107b
+	jne 290b
 	mov edi, DWORD PTR [esp+68]
 	lea esp, [esp-36]
 	mov edx, DWORD PTR [esp+44]
@@ -17805,7 +13682,7 @@ vg_ffdh_generate_key_precompute:
 	add edi, edi
 	add edi, edi
 	add edi, edi
-2108:
+291:
 	mov eax, DWORD PTR [ebx]
 	mov edx, DWORD PTR [ebp]
 	xor edx, eax
@@ -17815,7 +13692,7 @@ vg_ffdh_generate_key_precompute:
 	add ebp, 4
 	add ebx, 4
 	sub edi, 4
-	jne 2108b
+	jne 291b
 	mov edi, DWORD PTR [esp+68]
 	mov eax, 7
 	mov edx, DWORD PTR [esp+8]
@@ -17851,7 +13728,7 @@ vg_ffdh_generate_key_precompute:
 	add edi, edi
 	add edi, edi
 	add edi, edi
-2109:
+292:
 	mov eax, DWORD PTR [ebx]
 	mov edx, DWORD PTR [ebp]
 	xor edx, eax
@@ -17861,7 +13738,7 @@ vg_ffdh_generate_key_precompute:
 	add ebp, 4
 	add ebx, 4
 	sub edi, 4
-	jne 2109b
+	jne 292b
 	mov edi, DWORD PTR [esp+68]
 	lea esp, [esp-36]
 	mov edx, DWORD PTR [esp+44]
@@ -17950,7 +13827,7 @@ vg_ffdh_generate_key_precompute:
 	add edi, edi
 	add edi, edi
 	add edi, edi
-2110:
+293:
 	mov eax, DWORD PTR [ebx]
 	mov edx, DWORD PTR [ebp]
 	xor edx, eax
@@ -17960,7 +13837,7 @@ vg_ffdh_generate_key_precompute:
 	add ebp, 4
 	add ebx, 4
 	sub edi, 4
-	jne 2110b
+	jne 293b
 	mov edi, DWORD PTR [esp+68]
 	mov eax, 8
 	mov edx, DWORD PTR [esp+8]
@@ -17996,7 +13873,7 @@ vg_ffdh_generate_key_precompute:
 	add edi, edi
 	add edi, edi
 	add edi, edi
-2111:
+294:
 	mov eax, DWORD PTR [ebx]
 	mov edx, DWORD PTR [ebp]
 	xor edx, eax
@@ -18006,7 +13883,7 @@ vg_ffdh_generate_key_precompute:
 	add ebp, 4
 	add ebx, 4
 	sub edi, 4
-	jne 2111b
+	jne 294b
 	mov edi, DWORD PTR [esp+68]
 	lea esp, [esp-36]
 	mov edx, DWORD PTR [esp+44]
@@ -18095,7 +13972,7 @@ vg_ffdh_generate_key_precompute:
 	add edi, edi
 	add edi, edi
 	add edi, edi
-2112:
+295:
 	mov eax, DWORD PTR [ebx]
 	mov edx, DWORD PTR [ebp]
 	xor edx, eax
@@ -18105,7 +13982,7 @@ vg_ffdh_generate_key_precompute:
 	add ebp, 4
 	add ebx, 4
 	sub edi, 4
-	jne 2112b
+	jne 295b
 	mov edi, DWORD PTR [esp+68]
 	mov eax, 9
 	mov edx, DWORD PTR [esp+8]
@@ -18141,7 +14018,7 @@ vg_ffdh_generate_key_precompute:
 	add edi, edi
 	add edi, edi
 	add edi, edi
-2113:
+296:
 	mov eax, DWORD PTR [ebx]
 	mov edx, DWORD PTR [ebp]
 	xor edx, eax
@@ -18151,7 +14028,7 @@ vg_ffdh_generate_key_precompute:
 	add ebp, 4
 	add ebx, 4
 	sub edi, 4
-	jne 2113b
+	jne 296b
 	mov edi, DWORD PTR [esp+68]
 	lea esp, [esp-36]
 	mov edx, DWORD PTR [esp+44]
@@ -18240,7 +14117,7 @@ vg_ffdh_generate_key_precompute:
 	add edi, edi
 	add edi, edi
 	add edi, edi
-2114:
+297:
 	mov eax, DWORD PTR [ebx]
 	mov edx, DWORD PTR [ebp]
 	xor edx, eax
@@ -18250,11 +14127,11 @@ vg_ffdh_generate_key_precompute:
 	add ebp, 4
 	add ebx, 4
 	sub edi, 4
-	jne 2114b
+	jne 297b
 	mov edi, DWORD PTR [esp+68]
 	mov eax, DWORD PTR [edi+56]
 	mov DWORD PTR [edi+68], eax
-2115:
+298:
 	lea esp, [esp-36]
 	mov edx, DWORD PTR [esp+44]
 	add edx, 7
@@ -18309,7 +14186,7 @@ vg_ffdh_generate_key_precompute:
 	mov eax, DWORD PTR [edi+68]
 	sub eax, 1
 	mov DWORD PTR [edi+68], eax
-	jne 2115b
+	jne 298b
 	mov eax, 18
 	mov edx, DWORD PTR [esp+8]
 	add edx, 7
@@ -18346,7 +14223,7 @@ vg_ffdh_generate_key_precompute:
 	add edi, edi
 	add edi, edi
 	add edi, edi
-2116:
+299:
 	mov eax, DWORD PTR [ebx]
 	mov edx, DWORD PTR [ebp]
 	xor edx, eax
@@ -18356,7 +14233,7 @@ vg_ffdh_generate_key_precompute:
 	add ebp, 4
 	add ebx, 4
 	sub edi, 4
-	jne 2116b
+	jne 299b
 	mov edi, DWORD PTR [esp+68]
 	mov eax, 3
 	mov edx, DWORD PTR [esp+8]
@@ -18392,7 +14269,7 @@ vg_ffdh_generate_key_precompute:
 	add edi, edi
 	add edi, edi
 	add edi, edi
-2117:
+2100:
 	mov eax, DWORD PTR [ebx]
 	mov edx, DWORD PTR [ebp]
 	xor edx, eax
@@ -18402,7 +14279,7 @@ vg_ffdh_generate_key_precompute:
 	add ebp, 4
 	add ebx, 4
 	sub edi, 4
-	jne 2117b
+	jne 2100b
 	mov edi, DWORD PTR [esp+68]
 	lea esp, [esp-36]
 	mov edx, DWORD PTR [esp+44]
@@ -18491,7 +14368,7 @@ vg_ffdh_generate_key_precompute:
 	add edi, edi
 	add edi, edi
 	add edi, edi
-2118:
+2101:
 	mov eax, DWORD PTR [ebx]
 	mov edx, DWORD PTR [ebp]
 	xor edx, eax
@@ -18501,7 +14378,7 @@ vg_ffdh_generate_key_precompute:
 	add ebp, 4
 	add ebx, 4
 	sub edi, 4
-	jne 2118b
+	jne 2101b
 	mov edi, DWORD PTR [esp+68]
 	mov eax, 4
 	mov edx, DWORD PTR [esp+8]
@@ -18537,7 +14414,7 @@ vg_ffdh_generate_key_precompute:
 	add edi, edi
 	add edi, edi
 	add edi, edi
-2119:
+2102:
 	mov eax, DWORD PTR [ebx]
 	mov edx, DWORD PTR [ebp]
 	xor edx, eax
@@ -18547,7 +14424,7 @@ vg_ffdh_generate_key_precompute:
 	add ebp, 4
 	add ebx, 4
 	sub edi, 4
-	jne 2119b
+	jne 2102b
 	mov edi, DWORD PTR [esp+68]
 	lea esp, [esp-36]
 	mov edx, DWORD PTR [esp+44]
@@ -18636,7 +14513,7 @@ vg_ffdh_generate_key_precompute:
 	add edi, edi
 	add edi, edi
 	add edi, edi
-2120:
+2103:
 	mov eax, DWORD PTR [ebx]
 	mov edx, DWORD PTR [ebp]
 	xor edx, eax
@@ -18646,7 +14523,7 @@ vg_ffdh_generate_key_precompute:
 	add ebp, 4
 	add ebx, 4
 	sub edi, 4
-	jne 2120b
+	jne 2103b
 	mov edi, DWORD PTR [esp+68]
 	mov eax, 5
 	mov edx, DWORD PTR [esp+8]
@@ -18682,7 +14559,7 @@ vg_ffdh_generate_key_precompute:
 	add edi, edi
 	add edi, edi
 	add edi, edi
-2121:
+2104:
 	mov eax, DWORD PTR [ebx]
 	mov edx, DWORD PTR [ebp]
 	xor edx, eax
@@ -18692,7 +14569,7 @@ vg_ffdh_generate_key_precompute:
 	add ebp, 4
 	add ebx, 4
 	sub edi, 4
-	jne 2121b
+	jne 2104b
 	mov edi, DWORD PTR [esp+68]
 	lea esp, [esp-36]
 	mov edx, DWORD PTR [esp+44]
@@ -18781,7 +14658,7 @@ vg_ffdh_generate_key_precompute:
 	add edi, edi
 	add edi, edi
 	add edi, edi
-2122:
+2105:
 	mov eax, DWORD PTR [ebx]
 	mov edx, DWORD PTR [ebp]
 	xor edx, eax
@@ -18791,7 +14668,7 @@ vg_ffdh_generate_key_precompute:
 	add ebp, 4
 	add ebx, 4
 	sub edi, 4
-	jne 2122b
+	jne 2105b
 	mov edi, DWORD PTR [esp+68]
 	mov eax, 6
 	mov edx, DWORD PTR [esp+8]
@@ -18827,7 +14704,7 @@ vg_ffdh_generate_key_precompute:
 	add edi, edi
 	add edi, edi
 	add edi, edi
-2123:
+2106:
 	mov eax, DWORD PTR [ebx]
 	mov edx, DWORD PTR [ebp]
 	xor edx, eax
@@ -18837,7 +14714,7 @@ vg_ffdh_generate_key_precompute:
 	add ebp, 4
 	add ebx, 4
 	sub edi, 4
-	jne 2123b
+	jne 2106b
 	mov edi, DWORD PTR [esp+68]
 	lea esp, [esp-36]
 	mov edx, DWORD PTR [esp+44]
@@ -18926,7 +14803,7 @@ vg_ffdh_generate_key_precompute:
 	add edi, edi
 	add edi, edi
 	add edi, edi
-2124:
+2107:
 	mov eax, DWORD PTR [ebx]
 	mov edx, DWORD PTR [ebp]
 	xor edx, eax
@@ -18936,7 +14813,7 @@ vg_ffdh_generate_key_precompute:
 	add ebp, 4
 	add ebx, 4
 	sub edi, 4
-	jne 2124b
+	jne 2107b
 	mov edi, DWORD PTR [esp+68]
 	mov eax, 7
 	mov edx, DWORD PTR [esp+8]
@@ -18972,7 +14849,7 @@ vg_ffdh_generate_key_precompute:
 	add edi, edi
 	add edi, edi
 	add edi, edi
-2125:
+2108:
 	mov eax, DWORD PTR [ebx]
 	mov edx, DWORD PTR [ebp]
 	xor edx, eax
@@ -18982,7 +14859,7 @@ vg_ffdh_generate_key_precompute:
 	add ebp, 4
 	add ebx, 4
 	sub edi, 4
-	jne 2125b
+	jne 2108b
 	mov edi, DWORD PTR [esp+68]
 	lea esp, [esp-36]
 	mov edx, DWORD PTR [esp+44]
@@ -19071,7 +14948,7 @@ vg_ffdh_generate_key_precompute:
 	add edi, edi
 	add edi, edi
 	add edi, edi
-2126:
+2109:
 	mov eax, DWORD PTR [ebx]
 	mov edx, DWORD PTR [ebp]
 	xor edx, eax
@@ -19081,7 +14958,7 @@ vg_ffdh_generate_key_precompute:
 	add ebp, 4
 	add ebx, 4
 	sub edi, 4
-	jne 2126b
+	jne 2109b
 	mov edi, DWORD PTR [esp+68]
 	mov eax, 8
 	mov edx, DWORD PTR [esp+8]
@@ -19117,7 +14994,7 @@ vg_ffdh_generate_key_precompute:
 	add edi, edi
 	add edi, edi
 	add edi, edi
-2127:
+2110:
 	mov eax, DWORD PTR [ebx]
 	mov edx, DWORD PTR [ebp]
 	xor edx, eax
@@ -19127,7 +15004,7 @@ vg_ffdh_generate_key_precompute:
 	add ebp, 4
 	add ebx, 4
 	sub edi, 4
-	jne 2127b
+	jne 2110b
 	mov edi, DWORD PTR [esp+68]
 	lea esp, [esp-36]
 	mov edx, DWORD PTR [esp+44]
@@ -19216,7 +15093,7 @@ vg_ffdh_generate_key_precompute:
 	add edi, edi
 	add edi, edi
 	add edi, edi
-2128:
+2111:
 	mov eax, DWORD PTR [ebx]
 	mov edx, DWORD PTR [ebp]
 	xor edx, eax
@@ -19226,7 +15103,7 @@ vg_ffdh_generate_key_precompute:
 	add ebp, 4
 	add ebx, 4
 	sub edi, 4
-	jne 2128b
+	jne 2111b
 	mov edi, DWORD PTR [esp+68]
 	mov eax, 9
 	mov edx, DWORD PTR [esp+8]
@@ -19262,7 +15139,7 @@ vg_ffdh_generate_key_precompute:
 	add edi, edi
 	add edi, edi
 	add edi, edi
-2129:
+2112:
 	mov eax, DWORD PTR [ebx]
 	mov edx, DWORD PTR [ebp]
 	xor edx, eax
@@ -19272,7 +15149,7 @@ vg_ffdh_generate_key_precompute:
 	add ebp, 4
 	add ebx, 4
 	sub edi, 4
-	jne 2129b
+	jne 2112b
 	mov edi, DWORD PTR [esp+68]
 	lea esp, [esp-36]
 	mov edx, DWORD PTR [esp+44]
@@ -19361,7 +15238,7 @@ vg_ffdh_generate_key_precompute:
 	add edi, edi
 	add edi, edi
 	add edi, edi
-2130:
+2113:
 	mov eax, DWORD PTR [ebx]
 	mov edx, DWORD PTR [ebp]
 	xor edx, eax
@@ -19371,7 +15248,7 @@ vg_ffdh_generate_key_precompute:
 	add ebp, 4
 	add ebx, 4
 	sub edi, 4
-	jne 2130b
+	jne 2113b
 	mov edi, DWORD PTR [esp+68]
 	mov eax, 10
 	mov edx, DWORD PTR [esp+8]
@@ -19407,7 +15284,7 @@ vg_ffdh_generate_key_precompute:
 	add edi, edi
 	add edi, edi
 	add edi, edi
-2131:
+2114:
 	mov eax, DWORD PTR [ebx]
 	mov edx, DWORD PTR [ebp]
 	xor edx, eax
@@ -19417,7 +15294,7 @@ vg_ffdh_generate_key_precompute:
 	add ebp, 4
 	add ebx, 4
 	sub edi, 4
-	jne 2131b
+	jne 2114b
 	mov edi, DWORD PTR [esp+68]
 	lea esp, [esp-36]
 	mov edx, DWORD PTR [esp+44]
@@ -19506,7 +15383,7 @@ vg_ffdh_generate_key_precompute:
 	add edi, edi
 	add edi, edi
 	add edi, edi
-2132:
+2115:
 	mov eax, DWORD PTR [ebx]
 	mov edx, DWORD PTR [ebp]
 	xor edx, eax
@@ -19516,7 +15393,7 @@ vg_ffdh_generate_key_precompute:
 	add ebp, 4
 	add ebx, 4
 	sub edi, 4
-	jne 2132b
+	jne 2115b
 	mov edi, DWORD PTR [esp+68]
 	mov eax, 11
 	mov edx, DWORD PTR [esp+8]
@@ -19552,7 +15429,7 @@ vg_ffdh_generate_key_precompute:
 	add edi, edi
 	add edi, edi
 	add edi, edi
-2133:
+2116:
 	mov eax, DWORD PTR [ebx]
 	mov edx, DWORD PTR [ebp]
 	xor edx, eax
@@ -19562,7 +15439,7 @@ vg_ffdh_generate_key_precompute:
 	add ebp, 4
 	add ebx, 4
 	sub edi, 4
-	jne 2133b
+	jne 2116b
 	mov edi, DWORD PTR [esp+68]
 	lea esp, [esp-36]
 	mov edx, DWORD PTR [esp+44]
@@ -19651,7 +15528,7 @@ vg_ffdh_generate_key_precompute:
 	add edi, edi
 	add edi, edi
 	add edi, edi
-2134:
+2117:
 	mov eax, DWORD PTR [ebx]
 	mov edx, DWORD PTR [ebp]
 	xor edx, eax
@@ -19661,7 +15538,7 @@ vg_ffdh_generate_key_precompute:
 	add ebp, 4
 	add ebx, 4
 	sub edi, 4
-	jne 2134b
+	jne 2117b
 	mov edi, DWORD PTR [esp+68]
 	mov eax, 12
 	mov edx, DWORD PTR [esp+8]
@@ -19697,7 +15574,7 @@ vg_ffdh_generate_key_precompute:
 	add edi, edi
 	add edi, edi
 	add edi, edi
-2135:
+2118:
 	mov eax, DWORD PTR [ebx]
 	mov edx, DWORD PTR [ebp]
 	xor edx, eax
@@ -19707,7 +15584,7 @@ vg_ffdh_generate_key_precompute:
 	add ebp, 4
 	add ebx, 4
 	sub edi, 4
-	jne 2135b
+	jne 2118b
 	mov edi, DWORD PTR [esp+68]
 	lea esp, [esp-36]
 	mov edx, DWORD PTR [esp+44]
@@ -19796,7 +15673,7 @@ vg_ffdh_generate_key_precompute:
 	add edi, edi
 	add edi, edi
 	add edi, edi
-2136:
+2119:
 	mov eax, DWORD PTR [ebx]
 	mov edx, DWORD PTR [ebp]
 	xor edx, eax
@@ -19806,7 +15683,7 @@ vg_ffdh_generate_key_precompute:
 	add ebp, 4
 	add ebx, 4
 	sub edi, 4
-	jne 2136b
+	jne 2119b
 	mov edi, DWORD PTR [esp+68]
 	mov eax, 13
 	mov edx, DWORD PTR [esp+8]
@@ -19842,7 +15719,7 @@ vg_ffdh_generate_key_precompute:
 	add edi, edi
 	add edi, edi
 	add edi, edi
-2137:
+2120:
 	mov eax, DWORD PTR [ebx]
 	mov edx, DWORD PTR [ebp]
 	xor edx, eax
@@ -19852,7 +15729,7 @@ vg_ffdh_generate_key_precompute:
 	add ebp, 4
 	add ebx, 4
 	sub edi, 4
-	jne 2137b
+	jne 2120b
 	mov edi, DWORD PTR [esp+68]
 	lea esp, [esp-36]
 	mov edx, DWORD PTR [esp+44]
@@ -19941,7 +15818,7 @@ vg_ffdh_generate_key_precompute:
 	add edi, edi
 	add edi, edi
 	add edi, edi
-2138:
+2121:
 	mov eax, DWORD PTR [ebx]
 	mov edx, DWORD PTR [ebp]
 	xor edx, eax
@@ -19951,7 +15828,7 @@ vg_ffdh_generate_key_precompute:
 	add ebp, 4
 	add ebx, 4
 	sub edi, 4
-	jne 2138b
+	jne 2121b
 	mov edi, DWORD PTR [esp+68]
 	mov eax, 14
 	mov edx, DWORD PTR [esp+8]
@@ -19987,7 +15864,7 @@ vg_ffdh_generate_key_precompute:
 	add edi, edi
 	add edi, edi
 	add edi, edi
-2139:
+2122:
 	mov eax, DWORD PTR [ebx]
 	mov edx, DWORD PTR [ebp]
 	xor edx, eax
@@ -19997,7 +15874,7 @@ vg_ffdh_generate_key_precompute:
 	add ebp, 4
 	add ebx, 4
 	sub edi, 4
-	jne 2139b
+	jne 2122b
 	mov edi, DWORD PTR [esp+68]
 	lea esp, [esp-36]
 	mov edx, DWORD PTR [esp+44]
@@ -20086,7 +15963,7 @@ vg_ffdh_generate_key_precompute:
 	add edi, edi
 	add edi, edi
 	add edi, edi
-2140:
+2123:
 	mov eax, DWORD PTR [ebx]
 	mov edx, DWORD PTR [ebp]
 	xor edx, eax
@@ -20096,7 +15973,7 @@ vg_ffdh_generate_key_precompute:
 	add ebp, 4
 	add ebx, 4
 	sub edi, 4
-	jne 2140b
+	jne 2123b
 	mov edi, DWORD PTR [esp+68]
 	mov eax, 15
 	mov edx, DWORD PTR [esp+8]
@@ -20132,7 +16009,7 @@ vg_ffdh_generate_key_precompute:
 	add edi, edi
 	add edi, edi
 	add edi, edi
-2141:
+2124:
 	mov eax, DWORD PTR [ebx]
 	mov edx, DWORD PTR [ebp]
 	xor edx, eax
@@ -20142,7 +16019,7 @@ vg_ffdh_generate_key_precompute:
 	add ebp, 4
 	add ebx, 4
 	sub edi, 4
-	jne 2141b
+	jne 2124b
 	mov edi, DWORD PTR [esp+68]
 	lea esp, [esp-36]
 	mov edx, DWORD PTR [esp+44]
@@ -20231,7 +16108,7 @@ vg_ffdh_generate_key_precompute:
 	add edi, edi
 	add edi, edi
 	add edi, edi
-2142:
+2125:
 	mov eax, DWORD PTR [ebx]
 	mov edx, DWORD PTR [ebp]
 	xor edx, eax
@@ -20241,7 +16118,7 @@ vg_ffdh_generate_key_precompute:
 	add ebp, 4
 	add ebx, 4
 	sub edi, 4
-	jne 2142b
+	jne 2125b
 	mov edi, DWORD PTR [esp+68]
 	mov eax, 16
 	mov edx, DWORD PTR [esp+8]
@@ -20277,7 +16154,7 @@ vg_ffdh_generate_key_precompute:
 	add edi, edi
 	add edi, edi
 	add edi, edi
-2143:
+2126:
 	mov eax, DWORD PTR [ebx]
 	mov edx, DWORD PTR [ebp]
 	xor edx, eax
@@ -20287,7 +16164,7 @@ vg_ffdh_generate_key_precompute:
 	add ebp, 4
 	add ebx, 4
 	sub edi, 4
-	jne 2143b
+	jne 2126b
 	mov edi, DWORD PTR [esp+68]
 	lea esp, [esp-36]
 	mov edx, DWORD PTR [esp+44]
@@ -20376,7 +16253,7 @@ vg_ffdh_generate_key_precompute:
 	add edi, edi
 	add edi, edi
 	add edi, edi
-2144:
+2127:
 	mov eax, DWORD PTR [ebx]
 	mov edx, DWORD PTR [ebp]
 	xor edx, eax
@@ -20386,7 +16263,7 @@ vg_ffdh_generate_key_precompute:
 	add ebp, 4
 	add ebx, 4
 	sub edi, 4
-	jne 2144b
+	jne 2127b
 	mov edi, DWORD PTR [esp+68]
 	mov eax, 17
 	mov edx, DWORD PTR [esp+8]
@@ -20422,7 +16299,7 @@ vg_ffdh_generate_key_precompute:
 	add edi, edi
 	add edi, edi
 	add edi, edi
-2145:
+2128:
 	mov eax, DWORD PTR [ebx]
 	mov edx, DWORD PTR [ebp]
 	xor edx, eax
@@ -20432,7 +16309,7 @@ vg_ffdh_generate_key_precompute:
 	add ebp, 4
 	add ebx, 4
 	sub edi, 4
-	jne 2145b
+	jne 2128b
 	mov edi, DWORD PTR [esp+68]
 	lea esp, [esp-36]
 	mov edx, DWORD PTR [esp+44]
@@ -20521,7 +16398,7 @@ vg_ffdh_generate_key_precompute:
 	add edi, edi
 	add edi, edi
 	add edi, edi
-2146:
+2129:
 	mov eax, DWORD PTR [ebx]
 	mov edx, DWORD PTR [ebp]
 	xor edx, eax
@@ -20531,7 +16408,7 @@ vg_ffdh_generate_key_precompute:
 	add ebp, 4
 	add ebx, 4
 	sub edi, 4
-	jne 2146b
+	jne 2129b
 	mov edi, DWORD PTR [esp+68]
 	mov eax, 1
 	lea esp, [esp+76]
