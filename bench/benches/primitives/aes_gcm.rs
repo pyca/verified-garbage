@@ -35,6 +35,28 @@ pub fn bench(c: &mut Criterion) {
     for keylen in [16, 24, 32] {
         let key = verified_garbage::aead::aes_gcm::AesGcm::new(&vec![11;keylen]).unwrap();
         let data: Vec<u8> = (0..4099).map(|i| (i*13) as u8).collect();
+        for aad_len in [0,5,13,16,17] {
+            let aad=vec![0x39;aad_len];
+            let nonce=[0x93;12];
+            for base_len in [0,16,64,256,4096] {
+                for suffix_len in 0..=16.min(data.len()-base_len) {
+                    let whole=&data[..base_len+suffix_len];
+                    let mut expected=whole.to_vec();
+                    let tag=key.encrypt_in_place(&nonce,&aad,&mut expected).unwrap();
+                    for off in 0..=suffix_len {
+                        let split=base_len+off;
+                        let second=whole[split..].to_vec();
+                        let mut out=vec![0xcc;whole.len()];
+                        assert_eq!(key.encrypt(&nonce,&aad,&[&whole[..split],&second],&mut out).unwrap(),tag,
+                            "key={keylen} aad={aad_len} base={base_len} suffix={suffix_len} at={off}");
+                        assert_eq!(out,expected);
+                    }
+                    let mut out=vec![0x55;whole.len()];
+                    assert_eq!(key.encrypt(&nonce,&aad,&[whole],&mut out).unwrap(),tag);
+                    assert_eq!(out,expected);
+                }
+            }
+        }
         for nlen in [8,12,19] {
             let nonce = vec![7;nlen];
             for len in [0,1,15,16,17,31,32,97,4099] {
