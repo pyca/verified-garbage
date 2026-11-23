@@ -36,7 +36,6 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.X86.Lit
 import VerifiedGarbage.Proof.Framework.X86.Mmx
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
-import VerifiedGarbage.Proof.MlKem.X86.NttSetup
 import VerifiedGarbage.Proof.MlKem.X86.Red
 import VerifiedGarbage.Proof.MlKem.X86.TopLocal
 import VerifiedGarbage.Proof.Sha512.Spec
