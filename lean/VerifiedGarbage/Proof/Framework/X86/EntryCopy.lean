@@ -541,6 +541,172 @@ theorem c_run {name : String} {core : Prog isa} {kc : Contract isa}
     show s₂.gpr r = (freed (cBytes sig) s').gpr r
     rw [freed_gpr _ _ hr, hg₂ r hr]
 
+/-- **What a run of `callCopy` leaks**: the copies' addresses, the call's and
+the return's, which are functions of `esp`, and what the function's run from
+its entry, with its contract's permissions, leaks. -/
+theorem c_trace {name : String} {core : Prog isa} {kc : Contract isa}
+    (hv : ∀ s, kc.pre s → ∃ t s', Exec isa core s t s' ∧ abiPreserved s s' ∧ kc.post s s')
+    (h0 : 0 < slots sig) {s s' : State} {t : List Leak}
+    (hs : (sig.contract abi pre post wa (stack + cBytes sig + 4) leak).pre s)
+    (hentry : kc.pre (cEntry sig wa s)) (e : Exec isa (callCopy (slots sig) name core) s t s') :
+    ∃ tc sν, Exec isa core (cEntry sig wa s) tc sν ∧
+      t = copyToTrace (cBytes sig) (s.gpr .esp - BitVec.ofNat 32 (cBytes sig)) (slots sig) ++
+        ([.addr (((cCopied sig s).gpr .esp - 4).setWidth 64)] ++ tc ++
+          [.addr (((cCopied sig s).gpr .esp - 4).setWidth 64)]) := by
+  obtain ⟨hrun, -, -, -, -, -⟩ := copies_facts hs
+  obtain ⟨hcov, hcovw⟩ := c_covers h0 hs
+  obtain ⟨tν, sν, eν, habi, -⟩ := hv _ hentry
+  -- The function's run from the call, widened to the caller's permissions.
+  have ew := Exec.widen eν (rd := (cCopied sig s).rd) (wr := (cCopied sig s).wr)
+    (by simpa [cEntry] using hcov) (by simpa [cEntry] using hcovw)
+  rw [cEntry, State.withRegions_withRegions,
+    show (cCopied sig s).callEntry.withRegions (cCopied sig s).rd (cCopied sig s).wr = (cCopied sig s).callEntry
+      from rfl] at ew
+  unfold callCopy at e
+  cases e with
+  | frame hp eb hq =>
+    rw [alloc_some hp] at eb
+    cases eb with
+    | seq eblk ecall =>
+      cases eblk with
+      | block hb =>
+        rw [show allocFrame (cBytes sig) s = allocState (cBytes sig) s from rfl, hrun, Option.some.injEq,
+          Prod.mk.injEq] at hb
+        obtain ⟨rfl, rfl⟩ := hb
+        cases ecall with
+        | call hc ec hr =>
+          rw [call_callEntry, Option.some.injEq] at hc
+          subst hc
+          obtain ⟨rfl, rfl⟩ := Exec.det ec ew
+          have hsp : (sν.withRegions (cCopied sig s).rd (cCopied sig s).wr).gpr .esp =
+              (cCopied sig s).gpr .esp - 4 := by
+            rw [State.withRegions_gpr, habi.1 .esp (by simp [calleeSaved])]
+            show (cCopied sig s).callEntry.gpr .esp = _
+            rw [State.callEntry_esp]
+          refine ⟨_, _, eν, ?_⟩
+          simp only [addrs, List.map_nil, List.nil_append, List.append_nil, List.map_cons, hsp]
+
+/-- The caller's public data is the function's at its entry. -/
+theorem c_pub {s₁ s₂ : State}
+    (h₁ : (sig.contract abi pre post wa (stack + cBytes sig + 4) leak).pre s₁)
+    (h₂ : (sig.contract abi pre post wa (stack + cBytes sig + 4) leak).pre s₂)
+    (hp : (sig.contract abi pre post wa (stack + cBytes sig + 4) leak).pub s₁ s₂)
+    (hleak : Sig.LeakLocalL abi.ptrBits sig leak) :
+    (sig.contract abi pre post wa stack leak).pub (cEntry sig wa s₁) (cEntry sig wa s₂) := by
+  rw [pubL_stackL] at hp
+  obtain ⟨⟨hsp, hlk⟩, hpa, hdesc⟩ := hp
+  have hag₁ := c_agree h₁
+  have hag₂ := c_agree h₂
+  have ha₁ : stackArgs sig (cEntry sig wa s₁) = stackArgs sig s₁ := c_args h₁
+  have ha₂ : stackArgs sig (cEntry sig wa s₂) = stackArgs sig s₂ := c_args h₂
+  have hm₁ : (cEntry sig wa s₁).mem = (cCopied sig s₁).callEntry.mem := rfl
+  have hm₂ : (cEntry sig wa s₂).mem = (cCopied sig s₂).callEntry.mem := rfl
+  refine pubL_stackL.mpr ⟨⟨by rw [cEntry_esp, cEntry_esp, hsp], ?_⟩, ?_, ?_⟩
+  · rw [ha₁, ha₂, hm₁, hm₂]
+    cases leak with
+    | none => trivial
+    | some f =>
+      show Curry.apply _ f (stackArgs sig s₁) (cCopied sig s₁).callEntry.mem =
+        Curry.apply _ f (stackArgs sig s₂) (cCopied sig s₂).callEntry.mem
+      have hl := stackArgs_length sig s₁
+      have hl₂ := stackArgs_length sig s₂
+      rw [← hleak _ _ _ hl (fun b hb x hx => (hag₁ b (List.mem_append_left _ hb) x hx).symm)
+          (fun r hr x hx => (hag₁ (r, false) (List.mem_append_right _ (List.mem_map.mpr ⟨r, hr, rfl⟩)) x hx).symm),
+        ← hleak _ _ _ hl₂ (fun b hb x hx => (hag₂ b (List.mem_append_left _ hb) x hx).symm)
+          (fun r hr x hx => (hag₂ (r, false) (List.mem_append_right _ (List.mem_map.mpr ⟨r, hr, rfl⟩)) x hx).symm)]
+      exact hlk
+  · rw [ha₁, ha₂]; exact hpa
+  · rw [ha₁, hm₁, hm₂]
+    intro r hr i hi
+    have hx : r.Contains (r.base + BitVec.ofNat 64 i) 1 := Region.contains_ofNat r.base hi
+    have hr₁ : r ∈ Sig.lists abi.ptrBits s₁.mem sig.params (stackArgs sig s₁) := Sig.descs_sub_lists _ _ _ _ r hr
+    rw [hag₁ (r, false) (List.mem_append_right _ (List.mem_map.mpr ⟨r, hr₁, rfl⟩)) _ hx, hdesc r hr i hi]
+    obtain ⟨-, f₂, -, -, -, -⟩ := copies_facts h₂
+    obtain ⟨-, -, -, hst₁, -, -⟩ := copies_facts h₁
+    refine (f₂ _ fun q hq hc => ?_).symm
+    simp only [List.mem_singleton] at hq; subst hq
+    rw [← hsp] at hc
+    have e : below (s₁.gpr .esp) (cBytes sig + 4) =
+        ⟨(s₁.gpr .esp).setWidth 64 - BitVec.ofNat 64 (cBytes sig + 4), cBytes sig + 4⟩ := by
+      simp only [below]; rw [Taint.sub_setWidth (by omega_using [hst₁])]
+    rw [e] at hc
+    exact c_out h₁ (r, false) (List.mem_append_right _ (List.mem_map.mpr ⟨r, hr₁, rfl⟩))
+      (by omega_using []) (by omega_using []) _ hx hc
+
+/-- **What the run of `callCopy` leaves meets the caller's contract**, from
+the function's postcondition, if the postcondition reads memory only within
+the buffers (`hpost`), and the memory on return only within them where the
+precondition holds (`hpostOut`). -/
+theorem c_post {kc : Contract isa}
+    (hkc : ∀ x y, kc.post x y → (sig.contract abi pre post wa stack leak).post x y)
+    (hpost : ∀ vs m₁ m₂ m' r, vs.length = (sig.words abi.ptrBits).length →
+      (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+      Curry.apply (sig.words abi.ptrBits) post vs m₁ m' r →
+        Curry.apply (sig.words abi.ptrBits) post vs m₂ m' r)
+    (hpostOut : ∀ vs m m₁ m₂ r, vs.length = (sig.words abi.ptrBits).length →
+      Curry.apply (sig.words abi.ptrBits) pre vs m →
+      (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+      Curry.apply (sig.words abi.ptrBits) post vs m m₁ r →
+        Curry.apply (sig.words abi.ptrBits) post vs m m₂ r)
+    {s s' : State} (hs : (sig.contract abi pre post wa (stack + cBytes sig + 4) leak).pre s)
+    (hA : AfterC sig wa stack kc s s') :
+    abiPreserved s s' ∧ (sig.contract abi pre post wa (stack + cBytes sig + 4) leak).post s s' := by
+  obtain ⟨-, -, hcs, hfr, s₂, hm₂, hg₂, hpost₂⟩ := hA
+  have hag := c_agree hs
+  have hout := c_out hs
+  have hargs : stackArgs sig (cEntry sig wa s) = stackArgs sig s := c_args hs
+  obtain ⟨-, -, -, hst, -, -⟩ := copies_facts hs
+  have hs' := hs
+  rw [pre_stackL] at hs'
+  obtain ⟨-, -, hwr, -, hres, -, hpr⟩ := hs'
+  have hp := post_stack.mp (hkc _ _ hpost₂)
+  rw [hargs] at hp
+  have hl := stackArgs_length sig s
+  refine ⟨⟨hcs, ?_⟩, post_stack.mpr ?_⟩
+  · refine hfr.readW (r := ⟨(s.gpr .esp).setWidth 64, 4⟩) (Region.contains_self _ _) (fun r hr => ?_) (by decide)
+    rcases List.mem_append.mp hr with hr | hr
+    · rw [hwr] at hr
+      obtain ⟨a, ha, rfl⟩ := List.mem_map.mp hr
+      exact hres _ (List.mem_cons_self ..) a (List.mem_filter.mp ha).1
+    · simp only [List.mem_singleton] at hr; subst hr
+      simp only [below]; rw [Taint.sub_setWidth (by omega_using [hst])]
+      exact Offset.base_disjoint_below _ (by omega_using [hst])
+  · rw [show s'.gpr .edx = s₂.gpr .edx from (hg₂ .edx (by decide)).symm,
+      show s'.gpr .eax = s₂.gpr .eax from (hg₂ .eax (by decide)).symm]
+    have h1 := hpost _ _ _ _ _ hl (fun b hb x hx => hag b (List.mem_append_left _ hb) x hx) hp
+    refine hpostOut _ _ _ _ _ hl hpr (fun b hb x hx => ?_) h1
+    refine hm₂ x fun hc => ?_
+    have e : below (s.gpr .esp) (cBytes sig) =
+        ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 (cBytes sig), cBytes sig⟩ := by
+      simp only [below]; rw [Taint.sub_setWidth (by omega_using [hst])]
+    rw [e] at hc
+    exact hout b (List.mem_append_left _ hb) (by omega_using []) (by omega_using []) x hx hc
+
+/-- **A function called with its stack arguments copied**: code verified
+against `kc` is verified against `k` called by `callCopy`, if `k`'s
+precondition is a contract's with `cBytes sig + 4` more bytes of stack
+(`hk`), and gives `kc`'s at the function's entry (`hentry`), its public data
+`kc`'s there (`hpub`), and its postcondition follows from what the run
+leaves (`hpostK`). -/
+theorem Verified.callCopyG {name : String} {core : Prog isa} {kc k : Contract isa}
+    (h : Verified target core kc) (h0 : 0 < slots sig) (hB : cBytes sig < 4096) (hsp : NoSp core)
+    (hd : stackUse core ≤ stack)
+    (hk : ∀ s, k.pre s → (sig.contract abi pre post wa (stack + cBytes sig + 4) leak).pre s)
+    (hentry : ∀ s, k.pre s → kc.pre (cEntry sig wa s))
+    (hpub : ∀ s₁ s₂, k.pre s₁ → k.pre s₂ → k.pub s₁ s₂ →
+      kc.pub (cEntry sig wa s₁) (cEntry sig wa s₂) ∧ s₁.gpr .esp = s₂.gpr .esp)
+    (hpostK : ∀ s s', k.pre s → AfterC sig wa stack kc s s' → abiPreserved s s' ∧ k.post s s')
+    (hsat : ∃ s, k.pre s) :
+    Verified target (callCopy (slots sig) name core) k := by
+  obtain ⟨hok, hct, -⟩ := h
+  refine ⟨fun s hs => ?_, fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hp e₁ e₂ => ?_, hsat⟩
+  · obtain ⟨t, s', e, hA⟩ := c_run hok hsp hd h0 hB (hk s hs) (hentry s hs)
+    exact ⟨t, s', e, hpostK s s' hs hA⟩
+  · obtain ⟨tc₁, _, eν₁, rfl⟩ := c_trace hok h0 (hk _ h₁) (hentry _ h₁) e₁
+    obtain ⟨tc₂, _, eν₂, rfl⟩ := c_trace hok h0 (hk _ h₂) (hentry _ h₂) e₂
+    obtain ⟨hpc, hsp⟩ := hpub _ _ h₁ h₂ hp
+    rw [hct _ _ _ _ _ _ (hentry _ h₁) (hentry _ h₂) hpc eν₁ eν₂, cCopied_esp, cCopied_esp, hsp]
+
 end
 
 end VG.X86
