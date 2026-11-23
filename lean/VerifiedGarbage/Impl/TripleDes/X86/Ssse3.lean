@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Impl.Modes.X86.Seq
+public import VerifiedGarbage.Impl.Modes.X86.SeqFinal
 public import VerifiedGarbage.Impl.Modes.CbcChained
 public import VerifiedGarbage.Impl.StackScratch.X86
 public import VerifiedGarbage.Impl.Scrub.X86
@@ -273,6 +273,27 @@ def core : Core :=
 /-- CBC encryption that updates the chaining value. -/
 def cbcEncryptChained : Prog isa := core.seq (Mode.cbcEncChained 2)
 
+/-- OFB. -/
+def ofb : Prog isa := core.seq (Mode.ofb 2)
+
+/-- CFB64 encryption. -/
+def cfbEncrypt : Prog isa := core.seq (Mode.cfbEnc 2)
+
+/-- CFB8 encryption. -/
+def cfb8Encrypt : Prog isa := core.seq (Mode.cfb8Enc 2)
+
+/-- CFB8 decryption. -/
+def cfb8Decrypt : Prog isa := core.seq (Mode.cfb8Dec 2)
+
+/-- CFB64 encryption of a message's last piece. -/
+def cfbEncryptFinal : Prog isa := core.seqFinal (Mode.cfbEnc 2)
+
+/-- CFB64 decryption of a message's last piece. -/
+def cfbDecryptFinal : Prog isa := core.seqFinal (Mode.cfbDec 2)
+
+/-- OFB of a message's last piece. -/
+def ofbFinal : Prog isa := core.seqFinal (Mode.ofb 2)
+
 /-! ## The functions as emitted
 
 Each function with its working space in a frame on the stack, which it
@@ -293,6 +314,34 @@ def words : List Nat := [4, 5, 6, 7, 8, 9]
 def cbcEncryptChained : Prog isa :=
   Impl.Scrub.X86.scrubSel 0 984 words
     (Impl.StackScratch.X86.withStackScratchWiped 968 4 236 Ssse3.cbcEncryptChained)
+
+/-- `Spec.TripleDes.ofbApi`'s function as emitted. -/
+def ofb : Prog isa :=
+  Impl.Scrub.X86.scrubSel 0 984 words (Impl.StackScratch.X86.withStackScratchWiped 968 4 236 Ssse3.ofb)
+
+/-- `Spec.TripleDes.cfbEncryptApi`'s function as emitted. -/
+def cfbEncrypt : Prog isa :=
+  Impl.Scrub.X86.scrubSel 0 984 words (Impl.StackScratch.X86.withStackScratchWiped 968 4 236 Ssse3.cfbEncrypt)
+
+/-- `Spec.TripleDes.cfb8EncryptApi`'s function as emitted. -/
+def cfb8Encrypt : Prog isa :=
+  Impl.Scrub.X86.scrubSel 0 984 words (Impl.StackScratch.X86.withStackScratchWiped 968 4 236 Ssse3.cfb8Encrypt)
+
+/-- `Spec.TripleDes.cfb8DecryptApi`'s function as emitted. -/
+def cfb8Decrypt : Prog isa :=
+  Impl.Scrub.X86.scrubSel 0 984 words (Impl.StackScratch.X86.withStackScratchWiped 968 4 236 Ssse3.cfb8Decrypt)
+
+/-- `Spec.TripleDes.cfbEncryptFinalApi`'s function as emitted. -/
+def cfbEncryptFinal : Prog isa :=
+  Impl.Scrub.X86.scrubSel 0 984 words (Impl.StackScratch.X86.withStackScratchWiped 968 4 236 Ssse3.cfbEncryptFinal)
+
+/-- `Spec.TripleDes.cfbDecryptFinalApi`'s function as emitted. -/
+def cfbDecryptFinal : Prog isa :=
+  Impl.Scrub.X86.scrubSel 0 984 words (Impl.StackScratch.X86.withStackScratchWiped 968 4 236 Ssse3.cfbDecryptFinal)
+
+/-- `Spec.TripleDes.ofbFinalApi`'s function as emitted. -/
+def ofbFinal : Prog isa :=
+  Impl.Scrub.X86.scrubSel 0 984 words (Impl.StackScratch.X86.withStackScratchWiped 968 4 236 Ssse3.ofbFinal)
 
 end Fn
 

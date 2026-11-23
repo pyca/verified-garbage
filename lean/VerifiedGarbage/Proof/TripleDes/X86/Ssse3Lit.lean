@@ -26,5 +26,12 @@ than build the code again.
 namespace VG
 
 materialize_code Impl.TripleDes.X86.Ssse3.cbcEncryptChained
+materialize_code Impl.TripleDes.X86.Ssse3.ofb
+materialize_code Impl.TripleDes.X86.Ssse3.cfbEncrypt
+materialize_code Impl.TripleDes.X86.Ssse3.cfb8Encrypt
+materialize_code Impl.TripleDes.X86.Ssse3.cfb8Decrypt
+materialize_code Impl.TripleDes.X86.Ssse3.cfbEncryptFinal
+materialize_code Impl.TripleDes.X86.Ssse3.cfbDecryptFinal
+materialize_code Impl.TripleDes.X86.Ssse3.ofbFinal
 
 end VG
