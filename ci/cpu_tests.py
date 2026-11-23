@@ -189,6 +189,18 @@ GROUPS = {
         "lib": [],
         "tests": ["cavp::camellia_ofb"],
     },
+    "cast5_cbc": {
+        "lib": [],
+        "tests": ["cryptography_cast5::cast5_cbc"],
+    },
+    "cast5_cfb": {
+        "lib": [],
+        "tests": ["cryptography_cast5::cast5_cfb"],
+    },
+    "cast5_ofb": {
+        "lib": [],
+        "tests": ["cryptography_cast5::cast5_ofb"],
+    },
     "chacha20": {
         "lib": ["cipher::chacha20", "aead::chacha20poly1305"],
         "tests": [
@@ -353,6 +365,10 @@ GROUPS = {
             "wycheproof::chacha20::chacha20_poly1305_ciphertexts",
             "wycheproof::chacha20poly1305",
         ],
+    },
+    "rc4": {
+        "lib": [],
+        "tests": ["rfc6229"],
     },
     "rfc9106": {
         "lib": [],

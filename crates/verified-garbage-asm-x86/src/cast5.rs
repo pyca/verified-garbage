@@ -597,3 +597,7 @@ jmp 21f
         VG_CAST5_S1234 = sym super::consts::VG_CAST5_S1234,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_cast5_lookup_ssse3.rs"]
+pub(crate) mod vg_cast5_lookup_ssse3;

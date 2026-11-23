@@ -3847,6 +3847,14 @@ pub(crate) mod vg_rsa_mont_mul;
 pub(crate) mod vg_rsa_mont_mul_at;
 
 #[rustfmt::skip]
+#[path = "internal/vg_rsa_pkcs1_decrypt_precomputed_body.rs"]
+pub(crate) mod vg_rsa_pkcs1_decrypt_precomputed_body;
+
+#[rustfmt::skip]
+#[path = "internal/vg_rsa_pkcs1_decrypt_precomputed_body_sha256_shani.rs"]
+pub(crate) mod vg_rsa_pkcs1_decrypt_precomputed_body_sha256_shani;
+
+#[rustfmt::skip]
 #[path = "internal/vg_rsa_pkcs1_encrypt_precomputed.rs"]
 pub(crate) mod vg_rsa_pkcs1_encrypt_precomputed;
 

@@ -106,6 +106,68 @@ bne %cr0, 27b
     )
 }
 
+/// `vg_rsa_pkcs1_decrypt_precomputed`, with the message first: computes and returns what `vg_rsa_pkcs1_decrypt_precomputed` does with the same arguments, but on success writes the message at the start of `out` and zeros after it, so that the caller can shorten `out` to the message's length without moving it. `pre` (`pre_len` words) must hold what `vg_rsa_private_precompute` wrote for `n`, `p` and `q` (returning 1), as `n`, `p` and `q` must be valid.
+///
+/// Contract: `VG.Spec.RsaPkcs1Enc.decryptPrecomputedFrontContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, the contents of `n` and `e` and the first `2 * ⌈n_len / 8⌉` words of `pre` (the modulus' values), not on the ciphertext, the private key, the rest of `pre`, the validity of the padding, the length of the message or which message is returned.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of `out_len` bytes.
+/// * `msg_len` must be valid for reads and writes of 8 bytes.
+/// * `n` must be valid for reads of `n_len` bytes.
+/// * `e` must be valid for reads of `e_len` bytes.
+/// * `d` must be valid for reads of `d_len` bytes.
+/// * `input` must be valid for reads of `input_len` bytes.
+/// * `p` must be valid for reads of `p_len` bytes.
+/// * `q` must be valid for reads of `q_len` bytes.
+/// * `dp` must be valid for reads of `dp_len` bytes.
+/// * `dq` must be valid for reads of `dq_len` bytes.
+/// * `qinv` must be valid for reads of `qinv_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `pre` must be valid for reads of `8 * pre_len` bytes.
+/// * `n_len` must be in 64..=1024.
+/// * `out_len` and `input_len` must be `n_len`.
+/// * `e_len` and `d_len` must be in 1..=`n_len`.
+/// * `p_len` and `q_len` must be in 1..`n_len`.
+/// * `dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`.
+/// * `scratch_len` must be at least `16 * n_len + 32`.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `pre_len` must be `2 * ⌈n_len / 8⌉ + max(2, ⌈p_len / 8⌉) + max(2, ⌈q_len / 8⌉)`.
+/// * `pre` must hold what `vg_rsa_private_precompute` wrote for `n`, `p` and `q` (returning 1), and not have changed since.
+/// * `out`, `msg_len` and `scratch` must not overlap each other, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv`, `pre` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `msg_len`, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv`, `scratch` and `pre` may overlap the 3920 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_rsa_pkcs1_decrypt_precomputed_front(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, d: *const u8, d_len: usize, input: *const u8, input_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "8f4h+AAAgTlwAQzoYAAM+HgBDOhoAAz4gAEM6HAADPiIAQzoeAAM+JABDOiAAAz4mAEM6IgADPigAQzokAAM+KgBDOiYAAz4sAEM6KAADPi4AQzoqAAM+MABDOiwAAz4yAEM6LgADPjQAQzowAAM+NgBDOjIAAz44AEM6NAADPjoAQzo2AAM+PABDOjgAAz46ADM+fAA7Pn4AAz6AAEs+qYCCHwIAQz4eBtufHgjj3x4K7B82AEs6g=="
+bl {vg_rsa_pkcs1_decrypt_precomputed_body}
+.base64 "AACBOQgBDOimAwh8eIskfgAIoDgAAMA4"
+20:
+.base64 "AADEmAEAhDj//6U4AAAlKA=="
+bne %cr0, 20b
+.base64 "eHPEfXiLJX54e+Z9"
+21:
+.base64 "AADkiAAA5ZgBAIQ4AQClOP//xjgAACYo"
+bne %cr0, 21b
+.base64 "AAAQ6VB4CH0BACA5CwBAOQ=="
+22:
+.base64 "eIskfhRKpHwBAMA4ODAGfQAA4DhQOMZ8AATgOA=="
+23:
+.base64 "AABkiQAAhYl4Wox9ODCMfXhia30AAGSZAQCEOAEApTj//+c4AAAnKA=="
+bne %cr0, 23b
+.base64 "QvgIeRRKKX3//0o5AAAqKA=="
+bne %cr0, 22b
+.base64 "eIskfnhzxX14e+Z9"
+24:
+.base64 "AADkiAAA5ZgBAIQ4AQClOP//xjgAACYo"
+bne %cr0, 24b
+.base64 "AACBOegAzOnwAOzp+AAM6gABLOoQASE4AAAAOLHwIfggAIE5AAAM+AgADPgQAAz4GAAM+CAADPgoAAz4MAAM+DgADPhAAAz4SAAM+FAADPhYAAz4YAAM+GgADPhwAAz4eAAM+IAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHwAAAz4CAAM+BAADPgYAAz4IAAM+CgADPgwAAz4OAAM+EAADPhIAAz4UAAM+FgADPhgAAz4aAAM+HAADPh4AAz4gAAM+IgADPiQAAz4mAAM+KAADPioAAz4UA8hOMYHY3giAGN4AACAOAAAoDgAAMA4AADgOAAAADkAACA5AABAOQAAYDkAAIA5FAAAfMQEABDEDCEQxBRCEMQcYxDEJIQQxCylEMQ0xhDEPOcQxEQIEcRMKRHEVEoRxFxrEcRkjBHEbK0RxHTOEcR87xHEhBASxIwxEsSUUhLEnHMSIACATg==""#,
+        vg_rsa_pkcs1_decrypt_precomputed_body = sym super::rsa::vg_rsa_pkcs1_decrypt_precomputed_body::vg_rsa_pkcs1_decrypt_precomputed_body,
+    )
+}
+
 /// RSAES-PKCS1-v1_5 encryption: RSAES-PKCS1-V1_5-ENCRYPT (RFC 8017 §7.2.1), with the padding string drawn from the random tape `rand` (`rand_len` bytes). With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero), the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), and `pre`, the `pre_len` words `vg_rsa_public_precompute` wrote for `n`, takes as the padding string `PS` the first `n_len - msg_len - 3` nonzero bytes of `rand`, encrypts the encoded message `0x00 ‖ 0x02 ‖ PS ‖ 0x00 ‖ M`, for the message `M` (`msg_len` bytes), with RSAEP, writes the ciphertext (`n_len` bytes, most significant first) to `out` and returns 1; or writes zeros and returns 2 if `n` or `e` is not such a number. Writes to `tape[0]` the bytes of `rand` it consumed, up to the last byte of `PS`. If `rand` has fewer nonzero bytes, writes zeros to `out` and: if `rand_len` is the entropy budget, `n_len - msg_len + 125` bytes, returns 3 (which only a broken random number generator makes likely); otherwise consumes none of `rand`, writes to `tape[1]` the length of the next tape, more than `rand_len` and at most the budget, and returns 0: keep `rand`, append fresh random bytes up to that length, and call again. `tape[1]` is 0 but for 0. If `pre` does not hold the values for `n`, what it writes to `out` and returns once it has drawn `PS` is unspecified; memory safety, `tape` and the timing guarantee still apply.
 ///
 /// Contract: `VG.Spec.RsaPkcs1Enc.encryptRandomContract`. Constant time but for the public key and the tape's zero bytes: timing may depend on the pointers, the lengths, the contents of `n`, `e` and `pre`, and which bytes of `rand` are zero, not on the message or the other bytes of `rand`.

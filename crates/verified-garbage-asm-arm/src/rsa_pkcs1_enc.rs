@@ -449,6 +449,230 @@ bx lr",
     )
 }
 
+/// The CPU features `vg_rsa_pkcs1_decrypt_precomputed_front_umaal` requires (`Artifact.features`).
+#[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
+pub const VG_RSA_PKCS1_DECRYPT_PRECOMPUTED_FRONT_UMAAL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::UMAAL);
+
+/// `vg_rsa_pkcs1_decrypt_precomputed`, with the message first: computes and returns what `vg_rsa_pkcs1_decrypt_precomputed` does with the same arguments, but on success writes the message at the start of `out` and zeros after it, so that the caller can shorten `out` to the message's length without moving it. `pre` (`pre_len` words) must hold what `vg_rsa_private_precompute` wrote for `n`, `p` and `q` (returning 1), as `n`, `p` and `q` must be valid.
+///
+/// Contract: `VG.Spec.RsaPkcs1Enc.decryptPrecomputedFrontContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, the contents of `n` and `e` and the first `2 * ⌈n_len / 8⌉` words of `pre` (the modulus' values), not on the ciphertext, the private key, the rest of `pre`, the validity of the padding, the length of the message or which message is returned.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of `out_len` bytes.
+/// * `msg_len` must be valid for reads and writes of 8 bytes.
+/// * `n` must be valid for reads of `n_len` bytes.
+/// * `e` must be valid for reads of `e_len` bytes.
+/// * `d` must be valid for reads of `d_len` bytes.
+/// * `input` must be valid for reads of `input_len` bytes.
+/// * `p` must be valid for reads of `p_len` bytes.
+/// * `q` must be valid for reads of `q_len` bytes.
+/// * `dp` must be valid for reads of `dp_len` bytes.
+/// * `dq` must be valid for reads of `dq_len` bytes.
+/// * `qinv` must be valid for reads of `qinv_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `pre` must be valid for reads of `8 * pre_len` bytes.
+/// * `n_len` must be in 64..=1024.
+/// * `out_len` and `input_len` must be `n_len`.
+/// * `e_len` and `d_len` must be in 1..=`n_len`.
+/// * `p_len` and `q_len` must be in 1..`n_len`.
+/// * `dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`.
+/// * `scratch_len` must be at least `16 * n_len + 32`.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `pre_len` must be `2 * ⌈n_len / 8⌉ + max(2, ⌈p_len / 8⌉) + max(2, ⌈q_len / 8⌉)`.
+/// * `pre` must hold what `vg_rsa_private_precompute` wrote for `n`, `p` and `q` (returning 1), and not have changed since.
+/// * `out`, `msg_len` and `scratch` must not overlap each other, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv`, `pre` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `msg_len`, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv`, `scratch` and `pre` may overlap the 3824 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `umaal` target feature.
+#[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_rsa_pkcs1_decrypt_precomputed_front_umaal(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, d: *const u8, d_len: usize, input: *const u8, input_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
+    core::arch::naked_asm!(
+        r"push {{r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, lr}}
+sub sp, sp, #128
+add r12, sp, #0
+ldr r0, [sp, #184]
+str r0, [r12, #0]
+ldr r0, [sp, #188]
+str r0, [r12, #4]
+ldr r0, [sp, #192]
+str r0, [r12, #8]
+ldr r0, [sp, #196]
+str r0, [r12, #12]
+ldr r0, [sp, #200]
+str r0, [r12, #16]
+ldr r0, [sp, #204]
+str r0, [r12, #20]
+ldr r0, [sp, #208]
+str r0, [r12, #24]
+ldr r0, [sp, #212]
+str r0, [r12, #28]
+ldr r0, [sp, #216]
+str r0, [r12, #32]
+ldr r0, [sp, #220]
+str r0, [r12, #36]
+ldr r0, [sp, #224]
+str r0, [r12, #40]
+ldr r0, [sp, #228]
+str r0, [r12, #44]
+ldr r0, [sp, #232]
+str r0, [r12, #48]
+ldr r0, [sp, #236]
+str r0, [r12, #52]
+ldr r0, [sp, #240]
+str r0, [r12, #56]
+ldr r0, [sp, #244]
+str r0, [r12, #60]
+ldr r0, [sp, #248]
+str r0, [r12, #64]
+ldr r0, [sp, #252]
+str r0, [r12, #68]
+ldr r0, [sp, #256]
+str r0, [r12, #72]
+ldr r0, [sp, #260]
+str r0, [r12, #76]
+ldr r0, [sp, #264]
+str r0, [r12, #80]
+ldr r0, [sp, #128]
+ldr r1, [sp, #132]
+ldr r2, [sp, #136]
+ldr r3, [sp, #140]
+bl {vg_rsa_pkcs1_decrypt_precomputed_body_umaal}
+add r12, sp, #0
+str r0, [r12, #84]
+ldr r0, [sp, #252]
+str r0, [r12, #64]
+add r12, sp, #0
+ldr r0, [sp, #64]
+movw lr, #1024
+add r0, r0, lr
+movw r2, #0
+movw lr, #2048
+20:
+ldrb r1, [r0, #0]
+and r1, r1, r2
+strb r1, [r0, #0]
+add r0, r0, #1
+subs lr, lr, #1
+bne 20b
+add r12, sp, #0
+ldr r0, [sp, #64]
+movw lr, #1024
+add r0, r0, lr
+ldr r1, [sp, #128]
+ldr lr, [sp, #184]
+21:
+ldrb r2, [r1, #0]
+strb r2, [r0, #0]
+add r0, r0, #1
+add r1, r1, #1
+subs lr, lr, #1
+bne 21b
+add r12, sp, #0
+ldr r1, [sp, #136]
+ldr r1, [r1, #0]
+add r12, sp, #0
+ldr r0, [sp, #184]
+sub r0, r0, r1
+str r0, [r12, #108]
+movw r0, #1
+str r0, [r12, #112]
+movw r0, #11
+str r0, [r12, #116]
+22:
+add r12, sp, #0
+ldr r0, [sp, #64]
+movw lr, #1024
+add r0, r0, lr
+ldr r1, [sp, #112]
+add r1, r0, r1
+ldr r2, [sp, #108]
+and r2, r2, #1
+movw r3, #0
+sub r2, r3, r2
+movw lr, #1024
+23:
+ldrb r3, [r0, #0]
+ldrb r4, [r1, #0]
+eor r4, r4, r3
+and r4, r4, r2
+eor r3, r3, r4
+strb r3, [r0, #0]
+add r0, r0, #1
+add r1, r1, #1
+subs lr, lr, #1
+bne 23b
+add r12, sp, #0
+ldr r0, [sp, #108]
+lsr r0, r0, #1
+str r0, [r12, #108]
+ldr r0, [sp, #112]
+add r0, r0, r0
+str r0, [r12, #112]
+ldr r0, [sp, #116]
+sub r0, r0, #1
+str r0, [r12, #116]
+cmp r0, #0
+bne 22b
+add r12, sp, #0
+ldr r1, [sp, #64]
+movw lr, #1024
+add r1, r1, lr
+ldr r0, [sp, #128]
+ldr lr, [sp, #184]
+24:
+ldrb r2, [r1, #0]
+strb r2, [r0, #0]
+add r0, r0, #1
+add r1, r1, #1
+subs lr, lr, #1
+bne 24b
+add r12, sp, #0
+ldr r0, [sp, #84]
+add sp, sp, #128
+ldr r4, [sp, #16]
+ldr r5, [sp, #20]
+ldr r6, [sp, #24]
+ldr r7, [sp, #28]
+ldr r8, [sp, #32]
+ldr r9, [sp, #36]
+ldr r10, [sp, #40]
+ldr r11, [sp, #44]
+ldr lr, [sp, #52]
+ldr r12, [sp], #56
+sub sp, sp, #3824
+add r12, sp, #0
+mov r2, #0
+mov r3, #119
+25:
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+add r12, r12, #32
+subs r3, r3, #1
+bne 25b
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+add sp, sp, #3824
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
+bx lr",
+        vg_rsa_pkcs1_decrypt_precomputed_body_umaal = sym super::rsa::vg_rsa_pkcs1_decrypt_precomputed_body_umaal::vg_rsa_pkcs1_decrypt_precomputed_body_umaal,
+    )
+}
+
 /// The CPU features `vg_rsa_pkcs1_encrypt_random_umaal` requires (`Artifact.features`).
 #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
 pub const VG_RSA_PKCS1_ENCRYPT_RANDOM_UMAAL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::UMAAL);
@@ -1104,6 +1328,224 @@ bx lr",
         vg_sha256_finalize_core = sym super::sha256::vg_sha256_finalize_core::vg_sha256_finalize_core,
         vg_hmac_sha256_init_core = sym super::hmac_sha256::vg_hmac_sha256_init_core::vg_hmac_sha256_init_core,
         vg_hmac_sha256_finalize_core = sym super::hmac_sha256::vg_hmac_sha256_finalize_core::vg_hmac_sha256_finalize_core,
+    )
+}
+
+/// `vg_rsa_pkcs1_decrypt_precomputed`, with the message first: computes and returns what `vg_rsa_pkcs1_decrypt_precomputed` does with the same arguments, but on success writes the message at the start of `out` and zeros after it, so that the caller can shorten `out` to the message's length without moving it. `pre` (`pre_len` words) must hold what `vg_rsa_private_precompute` wrote for `n`, `p` and `q` (returning 1), as `n`, `p` and `q` must be valid.
+///
+/// Contract: `VG.Spec.RsaPkcs1Enc.decryptPrecomputedFrontContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, the contents of `n` and `e` and the first `2 * ⌈n_len / 8⌉` words of `pre` (the modulus' values), not on the ciphertext, the private key, the rest of `pre`, the validity of the padding, the length of the message or which message is returned.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of `out_len` bytes.
+/// * `msg_len` must be valid for reads and writes of 8 bytes.
+/// * `n` must be valid for reads of `n_len` bytes.
+/// * `e` must be valid for reads of `e_len` bytes.
+/// * `d` must be valid for reads of `d_len` bytes.
+/// * `input` must be valid for reads of `input_len` bytes.
+/// * `p` must be valid for reads of `p_len` bytes.
+/// * `q` must be valid for reads of `q_len` bytes.
+/// * `dp` must be valid for reads of `dp_len` bytes.
+/// * `dq` must be valid for reads of `dq_len` bytes.
+/// * `qinv` must be valid for reads of `qinv_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `pre` must be valid for reads of `8 * pre_len` bytes.
+/// * `n_len` must be in 64..=1024.
+/// * `out_len` and `input_len` must be `n_len`.
+/// * `e_len` and `d_len` must be in 1..=`n_len`.
+/// * `p_len` and `q_len` must be in 1..`n_len`.
+/// * `dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`.
+/// * `scratch_len` must be at least `16 * n_len + 32`.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `pre_len` must be `2 * ⌈n_len / 8⌉ + max(2, ⌈p_len / 8⌉) + max(2, ⌈q_len / 8⌉)`.
+/// * `pre` must hold what `vg_rsa_private_precompute` wrote for `n`, `p` and `q` (returning 1), and not have changed since.
+/// * `out`, `msg_len` and `scratch` must not overlap each other, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv`, `pre` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `msg_len`, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv`, `scratch` and `pre` may overlap the 3824 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_rsa_pkcs1_decrypt_precomputed_front(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, d: *const u8, d_len: usize, input: *const u8, input_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
+    core::arch::naked_asm!(
+        r"push {{r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, lr}}
+sub sp, sp, #128
+add r12, sp, #0
+ldr r0, [sp, #184]
+str r0, [r12, #0]
+ldr r0, [sp, #188]
+str r0, [r12, #4]
+ldr r0, [sp, #192]
+str r0, [r12, #8]
+ldr r0, [sp, #196]
+str r0, [r12, #12]
+ldr r0, [sp, #200]
+str r0, [r12, #16]
+ldr r0, [sp, #204]
+str r0, [r12, #20]
+ldr r0, [sp, #208]
+str r0, [r12, #24]
+ldr r0, [sp, #212]
+str r0, [r12, #28]
+ldr r0, [sp, #216]
+str r0, [r12, #32]
+ldr r0, [sp, #220]
+str r0, [r12, #36]
+ldr r0, [sp, #224]
+str r0, [r12, #40]
+ldr r0, [sp, #228]
+str r0, [r12, #44]
+ldr r0, [sp, #232]
+str r0, [r12, #48]
+ldr r0, [sp, #236]
+str r0, [r12, #52]
+ldr r0, [sp, #240]
+str r0, [r12, #56]
+ldr r0, [sp, #244]
+str r0, [r12, #60]
+ldr r0, [sp, #248]
+str r0, [r12, #64]
+ldr r0, [sp, #252]
+str r0, [r12, #68]
+ldr r0, [sp, #256]
+str r0, [r12, #72]
+ldr r0, [sp, #260]
+str r0, [r12, #76]
+ldr r0, [sp, #264]
+str r0, [r12, #80]
+ldr r0, [sp, #128]
+ldr r1, [sp, #132]
+ldr r2, [sp, #136]
+ldr r3, [sp, #140]
+bl {vg_rsa_pkcs1_decrypt_precomputed_body}
+add r12, sp, #0
+str r0, [r12, #84]
+ldr r0, [sp, #252]
+str r0, [r12, #64]
+add r12, sp, #0
+ldr r0, [sp, #64]
+movw lr, #1024
+add r0, r0, lr
+movw r2, #0
+movw lr, #2048
+20:
+ldrb r1, [r0, #0]
+and r1, r1, r2
+strb r1, [r0, #0]
+add r0, r0, #1
+subs lr, lr, #1
+bne 20b
+add r12, sp, #0
+ldr r0, [sp, #64]
+movw lr, #1024
+add r0, r0, lr
+ldr r1, [sp, #128]
+ldr lr, [sp, #184]
+21:
+ldrb r2, [r1, #0]
+strb r2, [r0, #0]
+add r0, r0, #1
+add r1, r1, #1
+subs lr, lr, #1
+bne 21b
+add r12, sp, #0
+ldr r1, [sp, #136]
+ldr r1, [r1, #0]
+add r12, sp, #0
+ldr r0, [sp, #184]
+sub r0, r0, r1
+str r0, [r12, #108]
+movw r0, #1
+str r0, [r12, #112]
+movw r0, #11
+str r0, [r12, #116]
+22:
+add r12, sp, #0
+ldr r0, [sp, #64]
+movw lr, #1024
+add r0, r0, lr
+ldr r1, [sp, #112]
+add r1, r0, r1
+ldr r2, [sp, #108]
+and r2, r2, #1
+movw r3, #0
+sub r2, r3, r2
+movw lr, #1024
+23:
+ldrb r3, [r0, #0]
+ldrb r4, [r1, #0]
+eor r4, r4, r3
+and r4, r4, r2
+eor r3, r3, r4
+strb r3, [r0, #0]
+add r0, r0, #1
+add r1, r1, #1
+subs lr, lr, #1
+bne 23b
+add r12, sp, #0
+ldr r0, [sp, #108]
+lsr r0, r0, #1
+str r0, [r12, #108]
+ldr r0, [sp, #112]
+add r0, r0, r0
+str r0, [r12, #112]
+ldr r0, [sp, #116]
+sub r0, r0, #1
+str r0, [r12, #116]
+cmp r0, #0
+bne 22b
+add r12, sp, #0
+ldr r1, [sp, #64]
+movw lr, #1024
+add r1, r1, lr
+ldr r0, [sp, #128]
+ldr lr, [sp, #184]
+24:
+ldrb r2, [r1, #0]
+strb r2, [r0, #0]
+add r0, r0, #1
+add r1, r1, #1
+subs lr, lr, #1
+bne 24b
+add r12, sp, #0
+ldr r0, [sp, #84]
+add sp, sp, #128
+ldr r4, [sp, #16]
+ldr r5, [sp, #20]
+ldr r6, [sp, #24]
+ldr r7, [sp, #28]
+ldr r8, [sp, #32]
+ldr r9, [sp, #36]
+ldr r10, [sp, #40]
+ldr r11, [sp, #44]
+ldr lr, [sp, #52]
+ldr r12, [sp], #56
+sub sp, sp, #3824
+add r12, sp, #0
+mov r2, #0
+mov r3, #119
+25:
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+add r12, r12, #32
+subs r3, r3, #1
+bne 25b
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+add sp, sp, #3824
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
+bx lr",
+        vg_rsa_pkcs1_decrypt_precomputed_body = sym super::rsa::vg_rsa_pkcs1_decrypt_precomputed_body::vg_rsa_pkcs1_decrypt_precomputed_body,
     )
 }
 
