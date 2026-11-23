@@ -286,21 +286,25 @@ theorem powTop_trace (hx : args 11 = BitVec.ofNat 32 xl ∧ 0 < xl ∧ xl ≤ 10
     (RF : RoomF sp base bytes) (hx40 : Region.Disjoint ⟨byteAddr (args 10), xl⟩ (below sp 176)) :
     RelCT isa (Both (RX Ex base bytes len xl args sp)) (Impl.Ffdh.X86.powTop 10)
       (Both (Run Ex base bytes len args sp)) := by
+  suffices key : xl ≤ len → RelCT isa (Both (RX Ex base bytes len xl args sp)) (Impl.Ffdh.X86.powTop 10)
+      (Both (Run Ex base bytes len args sp)) from
+    fun _ _ _ _ _ _ hp e₁ e₂ => key hp.1.2.le _ _ _ _ _ _ hp e₁ e₂
+  intro hl
   rw [powTop_eq]
   apply VG.RelCT.chain
-  refine VG.RelCT.seq (VG.Proof.Bignum.X86.PublicRt.relCT_both (F := WSt Ex base bytes len args sp .wide [3, 4] 0)
+  refine VG.RelCT.seq (VG.Proof.Bignum.X86.PublicRt.relCT_both (F := WinPre Ex base bytes len args sp)
     ((VG.RelCT.seq (ctxP_relCT.mono (fun _ _ h => ⟨⟨h.1.1, RF⟩, ⟨h.2.1, RF⟩⟩) fun _ _ h => h)
       (RelCT.taint (A := taint) τA (fun _ _ h => h.1.agree h.2) topLoads_check))) fun x ⟨R, X⟩ => ?_) ?_
   · refine WP.mono (topFront_ok R.1 X (by rw [R.2.2]; exact RF) (by rw [R.2.2]; exact hx40) (b := 10) (by decide) (by decide) rfl)
       fun u ⟨C, one, R4, _, _, _, _, K⟩ =>
-      ⟨_, C, fun j hj => ?_, fun j hj => absurd hj (Nat.not_lt_zero _), R.2.1.keep K, (K.1 _ (by decide)).trans R.2.2⟩
+      ⟨⟨⟨_, C, fun j hj => ?_, fun j hj => absurd hj (Nat.not_lt_zero _), R.2.1.keep K,
+        (K.1 _ (by decide)).trans R.2.2⟩, RF⟩, one, by rw [R4, C.mod]⟩
     have hM := safeM_gt (sv x.mem base len .wide 9)
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
     rcases hj with rfl | rfl
     · rw [one]; exact hM
     · rw [R4]; exact Nat.mod_lt _ (by omega_using [hM])
-  · exact (windowPowerWith_relCT (winChecks .wide) (N := 2 * xl) (by omega_using [hx]) (by omega_using [hx]) count_check
-      fun _ W => lenCount_wst (by decide) hx.1 W).mono (fun _ _ h => h) fun _ _ h => ⟨WSt.run h.1, WSt.run h.2⟩
+  · exact (winTopCall_relCT hx.1 hx.2.1 hl hx.2.2).mono (fun _ _ h => h) fun _ _ h => ⟨WSt.run h.1, WSt.run h.2⟩
 
 theorem pair_trace {P : State → Prop}
     (hP : ∀ x, P x → RX Ex base bytes len xl args sp x ∧ (RoomF sp base bytes ∧ Region.Disjoint ⟨byteAddr (args 10), xl⟩ (below sp 176))) :
