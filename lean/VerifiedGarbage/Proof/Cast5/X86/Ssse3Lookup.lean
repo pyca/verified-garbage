@@ -88,11 +88,11 @@ theorem wp_bin {f : XReg → BitVec 128} {is : List Instr} {Q : State → Prop} 
     (k : WP isa (.block is) (S s m (upd f a (op.eval (f a) (f b)))) Q) :
     WP isa (.block (x op a b :: is)) (S s m f) Q := Wp.cons rfl k
 
-theorem table_length : table.length = 550 := by lit_decide
+theorem table_length : table.length = 560 := by lit_decide
 
 /-- Sixteen bytes of the table. -/
 theorem wp_tb {f : XReg → BitVec 128} {is : List Instr} {Q : State → Prop} {d : XReg} {off : Nat}
-    (hb : s.gpr tbr = s.syms tableName) (ho : off % 8 = 0 ∧ off / 8 + 2 ≤ 550)
+    (hb : s.gpr tbr = s.syms tableName) (ho : off % 8 = 0 ∧ off / 8 + 2 ≤ 560)
     (k : WP isa (.block is) (S s m (upd f d (cst off))) Q) : WP isa (.block (tb d off :: is)) (S s m f) Q :=
   Wp.cons (show (if s.gpr tbr = s.syms tableName ∧ off % 8 = 0 ∧ off / 8 + 2 ≤ table.length then some _ else none) = _ by
     rw [ite_eq_left (show _ ∧ _ ∧ _ from ⟨hb, ho.1, by rw [table_length]; exact ho.2⟩)]; rfl) k
@@ -160,7 +160,7 @@ theorem plane_wp {f : XReg → BitVec 128} {is : List Instr} {Q : State → Prop
     WP isa (.block (plane j r p ++ is)) (S s m f) Q := by
   have hv : xr (5 * r) ≠ xr (5 * r + 1 + p) := xr_ne (by omega)
   have hA : xr (5 * r + 4 + p) ≠ xr (5 * r + 1 + p) := xr_ne (by omega)
-  have ho : (planeOff j p + 16 * r) % 8 = 0 ∧ (planeOff j p + 16 * r) / 8 + 2 ≤ 550 := by
+  have ho : (planeOff j p + 16 * r) % 8 = 0 ∧ (planeOff j p + 16 * r) / 8 + 2 ≤ 560 := by
     simp only [planeOff]; omega
   by_cases h0 : r = 0
   · rw [show plane j r p = [tb (xr (5 * r + 1 + p)) (planeOff j p + 16 * r),
@@ -249,6 +249,11 @@ theorem scan_wp {W : BitVec 32} (E : Env W s) {f : XReg → BitVec 128} {is : Li
 /-- The working space's bytes that the look-ups write. -/
 abbrev wR (W : BitVec 32) : Region := ⟨slot W 272, 320⟩
 
+/-- The index vectors' bytes. -/
+abbrev vR (W : BitVec 32) : Region := ⟨slot W 272, 256⟩
+
+theorem vR_sub (W : BitVec 32) : Region.Sub (vR W) (wR W) := Region.sub_prefix (by decide)
+
 theorem readW_self128 (m : Mem) (a : Addr) (v : BitVec 128) : (m.writeW a v).readW a 128 = v :=
   Mem.readW_writeW_self m a 16 v (by decide)
 
@@ -276,8 +281,8 @@ rows before `r`: all of them in the working space, the memory outside it
 kept. -/
 theorem indexes_wp {W : BitVec 32} (E : Env W s) {is : List Instr} {Q : State → Prop} {H L : BitVec 128}
     {m₀ : Mem} (n : Nat) : ∀ (r : Nat) (m : Mem) (f : XReg → BitVec 128), r + n ≤ 16 → f .xmm0 = L → f .xmm1 = H →
-      (∀ r' < r, vAt m W r' = ByteLookup.idx (cst (oC r')) H L) → Frame [wR W] m₀ m →
-      (∀ m' g, (∀ r' < r + n, vAt m' W r' = ByteLookup.idx (cst (oC r')) H L) → Frame [wR W] m₀ m' →
+      (∀ r' < r, vAt m W r' = ByteLookup.idx (cst (oC r')) H L) → Frame [vR W] m₀ m →
+      (∀ m' g, (∀ r' < r + n, vAt m' W r' = ByteLookup.idx (cst (oC r')) H L) → Frame [vR W] m₀ m' →
         WP isa (.block is) (S s m' g) Q) →
       WP isa (.block ((List.range' r n).flatMap index ++ is)) (S s m f) Q := by
   induction n with
@@ -316,7 +321,7 @@ S-box `j`, in the table, is byte `p` of the S-box's entry `16 r + c`. -/
 theorem cst_plane : ∀ j < 4, ∀ p < 4, ∀ r < 16, ∀ c < 16,
     byte (cst (planeOff j p + 16 * r)) c = planeByte j p (16 * r + c) := by lit_decide
 
-private theorem word_ext {x y : BitVec 32} (h : ∀ b < 4, x.extractLsb' (8 * b) 8 = y.extractLsb' (8 * b) 8) :
+theorem word_ext {x y : BitVec 32} (h : ∀ b < 4, x.extractLsb' (8 * b) 8 = y.extractLsb' (8 * b) 8) :
     x = y := by
   apply BitVec.eq_of_getLsbD_eq; intro i hi
   have := congrArg (fun z : BitVec 8 => z.getLsbD (i % 8)) (h (i / 8) (by omega_arith))
@@ -340,6 +345,23 @@ theorem byte_yOf (idx : Nat → BitVec 32) {i : Nat} (hi : i < 16) :
   rw [yOf, byte_pshufb _ _ hi, cst_S i hi, e.1, e.2, ite_eq_right Bool.false_ne_true, L,
     byte_at _ _ _ _ (Nat.mod_lt _ (by decide)) (by decide)]
   rcases cases4 (Nat.mod_lt i (show 0 < 4 by decide)) with h | h | h | h <;> rw [h] <;> rfl
+
+/-- **A plane's byte.** With the index vectors of the bytes whose nibbles
+are `H` and `L` in the working space, byte `i` of the sixteen rows of plane
+`p` of S-box `j`, ORed, is byte `p` of the S-box's entry at the byte `x`
+that `H` and `L` hold at `i`. -/
+theorem acc_entry {m : Mem} {W : BitVec 32} {H L : BitVec 128} {x : BitVec 8} {j p i : Nat} (hj : j < 4)
+    (hp : p < 4) (hi : i < 16) (hV : ∀ r < 16, vAt m W r = ByteLookup.idx (cst (oC r)) H L)
+    (hH : byte H i = x >>> 4) (hL : byte L i = x &&& 0x0f#8) :
+    byte (ByteLookup.acc (rowC j p) (vAt m W) 15) i = (sboxOf j x).extractLsb' (8 * p) 8 := by
+  obtain ⟨-, -, -, -, -, h1, h2, h3⟩ := nibbles x
+  rw [acc_congr (V' := fun r => ByteLookup.idx (cst (oC r)) H L) 15 (fun r hr => hV r (by omega)),
+    byte_acc (x := x) hi cst_C hH hL]
+  show byte (cst (planeOff j p + 16 * (x >>> 4).toNat)) (x &&& 0x0f#8).toNat = _
+  rw [cst_plane j hj p hp _ h1 _ h2, h3, planeByte, BitVec.ofNat_toNat, BitVec.setWidth_eq]
+  apply BitVec.eq_of_getLsbD_eq; intro i hi
+  simp only [BitVec.getLsbD_setWidth, BitVec.getLsbD_ushiftRight, BitVec.getLsbD_extractLsb', hi, decide_true,
+    Bool.true_and]
 
 /-- **An S-box's entries.** With the index vectors of the indices `idx` in
 the working space, the four planes' rows ORed and gathered hold, in
@@ -489,7 +511,9 @@ theorem lookup_wp {s : State} {W : BitVec 32} {idx : Nat → BitVec 32} (hW : s.
   refine headX_wp E (by rw [x₁, x₀]; exact h0) fun g0 l0 hh0 =>
     indexes_wp E (m₀ := s₁.mem) 16 0 s₁.mem g0 (by decide) l0 hh0 (fun r' hr' => absurd hr' (Nat.not_lt_zero _))
       (Frame.refl _ _) fun m1 g1 hV1 hf1 =>
-    sbox_wp E (by decide) hV1 hf1 (fun j' hj' => absurd hj' (Nat.not_lt_zero _)) fun m2 g2 hV2 hf2 hF2 =>
+    sbox_wp E (by decide) hV1 (hf1.sub fun r hr => ⟨_, List.mem_cons_self, by
+        rw [List.mem_singleton.mp hr]; exact vR_sub W⟩)
+      (fun j' hj' => absurd hj' (Nat.not_lt_zero _)) fun m2 g2 hV2 hf2 hF2 =>
     sbox_wp E (by decide) hV2 hf2 hF2 fun m3 g3 hV3 hf3 hF3 =>
     sbox_wp E (by decide) hV3 hf3 hF3 fun m4 g4 hV4 hf4 hF4 =>
     sbox_wp E (by decide) hV4 hf4 hF4 fun m5 g5 _ hf5 hF5 =>

@@ -197,6 +197,10 @@ GROUPS = {
         "lib": [],
         "tests": ["cryptography_cast5::cast5_cfb"],
     },
+    "cast5_ecb": {
+        "lib": [],
+        "tests": ["rfc2144"],
+    },
     "cast5_ofb": {
         "lib": [],
         "tests": ["cryptography_cast5::cast5_ofb"],
