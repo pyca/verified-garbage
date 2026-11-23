@@ -566,7 +566,7 @@ fn tls_records(c: &mut Criterion) {
     /// (alerts, handshake messages, small requests); records of 112 to 240
     /// bytes with their content type, fewer than 16 blocks; a 2048-byte
     /// record; and records of 288, 416, 432 and 448 bytes of text.
-    const TLS_SIZES: [usize; 6] = [16, 64, 240, 512, 4096, 16384];
+    const TLS_SIZES: [usize; 12] = [15, 64, 112, 239, 240, 255, 256, 447, 479, 480, 512, 4096];
 
     tls_record_rows(c, &TLS_SIZES, Offsets::DEFAULT, "");
     tls_connection_rows(c);
