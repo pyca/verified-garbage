@@ -64,7 +64,10 @@ Every piece of `verifyEquation` but the joint loop's branches on its digits
 is constant time from the registers it addresses through and its counters
 (`taint_decide`). The branches are on digits of `S` and `k`, which two runs
 with the same inputs share, and each branch is constant time from the digit
-(`VTiming.lean`).
+(`VTiming.lean`). The key table's loop counts in `t1` and `t2`, which the
+point addition's call site saves and reloads: the analysis takes what it
+loads as secret, so its steps are checked from counters that two runs agree
+on by correctness (`keyTable_rel`), as the joint loop's are.
 -/
 
 @[expose] public section
@@ -83,8 +86,24 @@ theorem ctp {P : State → State → Prop} {c : Prog isa} (rs : List Reg)
 
 variable {P : State → State → Prop}
 
-theorem prefix_ct (hP : ∀ a b, P a b → a.sp = b.sp ∧ ∀ r ∈ [Reg.a0, .a1, .a2, .a3], a.gpr r = b.gpr r) :
-    RelCT isa P vPrefix fun _ _ => True := ctp _ hP (by taint_decide)
+theorem head_ct (hP : ∀ a b, P a b → a.sp = b.sp ∧ ∀ r ∈ [Reg.a0, .a1, .a2, .a3], a.gpr r = b.gpr r) :
+    RelCT isa P vHead fun _ _ => True := ctp _ hP (by taint_decide)
+
+theorem keyHead_ct (hP : ∀ a b, P a b → a.sp = b.sp ∧ ∀ r ∈ [Reg.a0, .a3], a.gpr r = b.gpr r) :
+    RelCT isa P keyHead fun _ _ => True := ctp _ hP (by taint_decide)
+
+theorem additionCall_ct (hP : ∀ a b, P a b → a.sp = b.sp ∧ ∀ r ∈ [Reg.a3], a.gpr r = b.gpr r) :
+    RelCT isa P additionCall fun _ _ => True := ctp _ hP (by taint_decide)
+
+/-- `keyStep` after its addition, from its counters, which the call site
+reloads from memory: two runs agree on them by correctness. -/
+theorem keyTail_ct (hP : ∀ a b, P a b → a.sp = b.sp ∧ ∀ r ∈ [Reg.a3, .t1, .t2], a.gpr r = b.gpr r) :
+    RelCT isa P (.block (([.addi .t2 .t2 168] : List Instr) ++ stSlots .t2 0 [TX, TY, TZ] ++
+      copySlot RX TX ++ copySlot RY TY ++ copySlot RZ TZ ++ ([.addi .t1 .t1 (-1)] : List Instr))) fun _ _ => True :=
+  ctp _ hP (by taint_decide)
+
+theorem baseTable_ct (hP : ∀ a b, P a b → a.sp = b.sp ∧ ∀ r ∈ [Reg.a3], a.gpr r = b.gpr r) :
+    RelCT isa P (.block baseTable) fun _ _ => True := ctp _ hP (by taint_decide)
 
 theorem init_ct (hP : ∀ a b, P a b → a.sp = b.sp ∧ ∀ r ∈ [Reg.a3], a.gpr r = b.gpr r) :
     RelCT isa P (.block (constField RX 0 ++ constField RY 1 ++ constField RZ 1 ++ ([.li .t1 464] : List Instr)))
@@ -94,7 +113,7 @@ theorem dec_ct (hP : ∀ a b, P a b → a.sp = b.sp ∧ ∀ r ∈ [Reg.t1], a.gp
     RelCT isa P (.block [.addi .t1 .t1 (-1)]) fun _ _ => True := ctp _ hP (by taint_decide)
 
 theorem dbl_ct (hP : ∀ a b, P a b → a.sp = b.sp ∧ ∀ r ∈ [Reg.a3], a.gpr r = b.gpr r) :
-    RelCT isa P (opsProg dblOps) fun _ _ => True := ctp _ hP (by taint_decide)
+    RelCT isa P dblCall fun _ _ => True := ctp _ hP (by taint_decide)
 
 theorem load2_ct (hP : ∀ a b, P a b → a.sp = b.sp ∧ ∀ r ∈ [Reg.a0, .t1], a.gpr r = b.gpr r) :
     RelCT isa P (.block (loadDigit 2)) fun _ _ => True := ctp _ hP (by taint_decide)
@@ -1985,8 +2004,12 @@ def PreOk (s u : State) : Prop :=
     (∀ r, Spec.Ed448.decodePoint ((Spec.Ed448.bytesAt s.mem (s.gpr .a1) 114).take 57) = some r →
       FS u.mem (base (s.gpr .a3)) NRX = 0 - r.X ∧ FS u.mem (base (s.gpr .a3)) NRY = r.Y ∧ r.Z = 1)
 
-theorem pre_run (hR : Proof.Ed448.RecoverOk) {s : State} (hp : VPre s) : WP isa vPrefix s fun u => PreOk s u ∧
-    Rest [.a0, .a1, .a2, .a3, .a4, .a5, .a6, .a7, .t0, .t1, .t2, .t3, .t4, .t5, .t6] s u := by
+/-- `vHead`, with what the tables' constant-time proof needs of the state it
+leaves, and the rest of `vPrefix` from there. -/
+theorem head_run (hR : Proof.Ed448.RecoverOk) {s : State} (hp : VPre s) : WP isa vHead s fun s9 =>
+    VCtx (base (s.gpr .a3)) s9 ∧ FS s9.mem (base (s.gpr .a3)) DK = Spec.Ed448.d ∧ s9.sp = s.sp ∧
+    WP isa (.seq keyTable (.block baseTable)) s9 fun u => PreOk s u ∧
+      Rest [.a0, .a1, .a2, .a3, .a4, .a5, .a6, .a7, .t0, .t1, .t2, .t3, .t4, .t5, .t6] s u := by
   obtain ⟨o1, o2, o3, o4⟩ := offs
   have hTB : TB = 2104 := rfl
   have hKT : KT = 3976 := rfl
@@ -2003,7 +2026,7 @@ theorem pre_run (hR : Proof.Ed448.RecoverOk) {s : State} (hp : VPre s) : WP isa 
   have hDK : DK = 336 := rfl
   unfold PreOk
   generalize hb : base (s.gpr .a3) = b
-  unfold vPrefix
+  unfold vHead
   refine WP.seq (WP.mono (vSetup_ok hp) fun s1 ⟨hc1, hr1, hf1, ePK, eSG, eSS, eCH, hb1, hd1, hone⟩ => ?_)
   rw [hb] at hc1 ePK eSG eSS eCH hb1 hd1 hone
   refine WP.seq (WP.mono (decode_ok hR hc1 (p := SG) (by decide) (by decide) (by decide) (xo := NRX) (yo := NRY)
@@ -2056,10 +2079,10 @@ theorem pre_run (hR : Proof.Ed448.RecoverOk) {s : State} (hp : VPre s) : WP isa 
   refine WP.seq (WP.mono (recode_ok hc7 (e := 0) (k := S) (by decide) (fun i _ => by
       rw [tbSet_bit hSl hKl, ite_eq_left (by omega_using []), show (4 * i + 0) / 4 = i by omega_using []]) ht7)
     fun s8 ⟨hc8, hr8, hf8, ht8⟩ => ?_)
-  refine WP.seq (WP.mono (recode_ok hc8 (e := 1) (k := K) (by decide) (fun i _ => by
+  refine WP.mono (recode_ok hc8 (e := 1) (k := K) (by decide) (fun i _ => by
       rw [recCur, ite_eq_right (by omega_using []), tbSet_bit hSl hKl, ite_eq_right (by omega_using []), ite_eq_left (by omega_using []),
         show (4 * i + 1) / 4 = i by omega_using []]) ht8)
-    fun s9 ⟨hc9, hr9, hf9, ht9⟩ => ?_)
+    fun s9 ⟨hc9, hr9, hf9, ht9⟩ => ?_
   obtain hdig : TbIs b s9.mem (digV S K) := fun h hh => by rw [ht9 h hh, dig_eq hSl hKl]
   -- The slots above the field area, from the checks to the digits.
   obtain k49 : ∀ {q : Nat}, 1064 ≤ q → q + 56 ≤ 1696 → FS s9.mem b q = FS s4.mem b q := fun h1 h2 => by
@@ -2082,6 +2105,7 @@ theorem pre_run (hR : Proof.Ed448.RecoverOk) {s : State} (hp : VPre s) : WP isa 
   obtain hd9 : FS s9.mem b DK = Spec.Ed448.d := by
     rw [fs_disj hf9 (dTB (by omega_using [hDK])), fs_disj hf8 (dTB (by omega_using [hDK])), fs_disj hf7 (dTB (by omega_using [hDK])),
       fs_disj hf6 (dTB (by omega_using [hDK])), fs_disj hf5 (dTB (by omega_using [hDK])), hk4, hd3]
+  refine ⟨hc9, hd9, by rw [hr9.sp, hr8.sp, hr7.sp, hr6.sp, hr5.sp, hr4.sp, hr3.sp, hr2.sp, hr1.sp], ?_⟩
   refine WP.seq (WP.mono (keyTable_ok hc9 hpA hd9) fun s10 hK10 => ?_)
   have hc10 : VCtx b s10 := hK10.1
   refine WP.mono (baseTable_ok hc10) fun s11 ⟨hc11, hr11, hf11, hB11⟩ => ?_
@@ -2126,6 +2150,10 @@ theorem pre_run (hR : Proof.Ed448.RecoverOk) {s : State} (hp : VPre s) : WP isa 
       k49 (by decide) (by decide), k34 (by decide) (by decide), k34 (by decide) (by decide),
       kR3 (.inl rfl), kR3 (.inr rfl), rx, ry, rz]
     exact ⟨rfl, rfl, rfl⟩
+
+theorem pre_run (hR : Proof.Ed448.RecoverOk) {s : State} (hp : VPre s) : WP isa vPrefix s fun u => PreOk s u ∧
+    Rest [.a0, .a1, .a2, .a3, .a4, .a5, .a6, .a7, .t0, .t1, .t2, .t3, .t4, .t5, .t6] s u :=
+  WP.seq (WP.mono (head_run hR hp) fun _ h => h.2.2.2)
 
 theorem pre_ok (hR : Proof.Ed448.RecoverOk) {s : State} (hp : VPre s) : WP isa vPrefix s (PreOk s) :=
   WP.mono (pre_run hR hp) fun _ h => h.1
@@ -2402,6 +2430,69 @@ theorem jointLoop_rel {S K : Nat} (hS : S < Impl.Ed448.WnafWide.scalarLimit)
   exact loop_rel vw₁ vw₂ (jfix_FA (fa fw₁) hf₁) (jfix_FA (fa fw₂) hf₂) (by rw [rw₁.sp, rw₂.sp, hu])
     (start vw₁ pw₁ tw₁ (by rw [dk fw₁, hd₁])) (start vw₂ pw₂ tw₂ (by rw [dk fw₂, hd₂]))
 
+/-! ## The key table -/
+
+theorem keyStep_rel {sK₁ sK₂ : State} {p₁ p₂ d₁ d₂ : VG.Spec.Ed448.Point} {j : Nat} {x₁ x₂ : State}
+    (h₁ : KInv b sK₁ p₁ d₁ j x₁) (h₂ : KInv b sK₂ p₂ d₂ j x₂) (hs : sK₁.sp = sK₂.sp) :
+    RelCT isa (Eq2 x₁ x₂) keyStep TT := by
+  obtain ⟨hv₁, hr₁, -, ht₁, hc₁, -⟩ := h₁
+  obtain ⟨hv₂, hr₂, -, ht₂, hc₂, -⟩ := h₂
+  obtain C₁ : R64.Cur b x₁ (x₁.gpr .t2) (x₁.gpr .t1) SQ (FS x₁.mem b) x₁ :=
+    ⟨hv₁.ctx, R64.Stp.refl _ _, rfl, rfl, fun _ _ => rfl⟩
+  obtain C₂ : R64.Cur b x₂ (x₂.gpr .t2) (x₂.gpr .t1) SQ (FS x₂.mem b) x₂ :=
+    ⟨hv₂.ctx, R64.Stp.refl _ _, rfl, rfl, fun _ _ => rfl⟩
+  obtain hx : x₁.sp = x₂.sp := by rw [hr₁.sp, hr₂.sp, hs]
+  unfold keyStep
+  refine rel_seq (additionCall_ct (eq2_regs hx fun r hr => by
+      rw [List.mem_singleton.mp hr, hv₁.ctx.a3, hv₂.ctx.a3]))
+    (additionCall_ok C₁) (additionCall_ok C₂) fun z₁ z₂ c₁ c₂ =>
+      keyTail_ct (eq2_regs (by rw [c₁.stp.rest.sp, c₂.stp.rest.sp, hx]) fun r hr => ?_)
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl
+  · rw [c₁.ctx.a3, c₂.ctx.a3]
+  · rw [c₁.t1, c₂.t1, hc₁, hc₂]
+  · rw [c₁.t2, c₂.t2, ht₁, ht₂]
+
+theorem keyTable_rel {u₁ u₂ : State} (hv₁ : VCtx b u₁) (hv₂ : VCtx b u₂)
+    (hd₁ : FS u₁.mem b DK = Spec.Ed448.d) (hd₂ : FS u₂.mem b DK = Spec.Ed448.d) (hu : u₁.sp = u₂.sp) :
+    RelCT isa (Eq2 u₁ u₂) keyTable TT := by
+  let p₁ : VG.Spec.Ed448.Point := ⟨FS u₁.mem b NAX, FS u₁.mem b NAY, FS u₁.mem b ONE⟩
+  let p₂ : VG.Spec.Ed448.Point := ⟨FS u₂.mem b NAX, FS u₂.mem b NAY, FS u₂.mem b ONE⟩
+  unfold keyTable
+  refine rel_seq (keyHead_ct (eq2_regs hu fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · rw [hv₁.a0, hv₂.a0]
+      · rw [hv₁.ctx.a3, hv₂.ctx.a3]))
+    (keyHead_ok hv₁ (p := p₁) ⟨rfl, rfl, rfl⟩ hd₁) (keyHead_ok hv₂ (p := p₂) ⟨rfl, rfl, rfl⟩ hd₂)
+    fun w₁ w₂ k₁ k₂ => ?_
+  refine (RelCT.loop (Q := TT) (fun n a b' => ∃ j, n = 7 - j ∧ j < 7 ∧
+      KInv b u₁ p₁ (Proof.Ed448.double p₁) j a ∧ KInv b u₂ p₂ (Proof.Ed448.double p₂) j b') ?_ 7).mono
+    (fun a b' ⟨ha, hb⟩ => by subst ha hb; exact ⟨0, rfl, by decide, k₁, k₂⟩) fun _ _ h => h
+  intro n s₁ s₂ t₁ t₂ s₁' s₂' ⟨j, hn, hj, hs₁, hs₂⟩ e₁ e₂
+  obtain r := ((keyStep_rel hs₁ hs₂ hu).wp
+    (F₁ := fun (t : State) => KInv b u₁ p₁ (Proof.Ed448.double p₁) (j + 1) t ∧ (t.gpr .t1 != 0) = decide (7 - (j + 1) ≠ 0))
+    (F₂ := fun (t : State) => KInv b u₂ p₂ (Proof.Ed448.double p₂) (j + 1) t ∧ (t.gpr .t1 != 0) = decide (7 - (j + 1) ≠ 0))
+    fun a b' ⟨ha, hb⟩ => by subst ha hb; exact ⟨keyStep_ok hj hs₁, keyStep_ok hj hs₂⟩)
+    s₁ s₂ t₁ t₂ s₁' s₂' ⟨rfl, rfl⟩ e₁ e₂
+  obtain ⟨ht, -, ⟨g₁, z₁⟩, ⟨g₂, z₂⟩⟩ := r
+  refine ⟨ht, ⟨by rw [eval_nonzero, eval_nonzero, z₁, z₂], fun _ => trivial, fun hc => ⟨7 - (j + 1), ?_, ?_⟩⟩⟩
+  · rw [eval_nonzero, z₁] at hc
+    have : 7 - (j + 1) ≠ 0 := by simpa using hc
+    omega_using [hn, this]
+  · rw [eval_nonzero, z₁] at hc
+    have : 7 - (j + 1) ≠ 0 := by simpa using hc
+    exact ⟨j + 1, rfl, by omega_using [this], g₁, g₂⟩
+
+/-- `vPrefix` after `vHead`: the key table, then the base table. -/
+theorem tables_rel {u₁ u₂ : State} (hv₁ : VCtx b u₁) (hv₂ : VCtx b u₂)
+    (hd₁ : FS u₁.mem b DK = Spec.Ed448.d) (hd₂ : FS u₂.mem b DK = Spec.Ed448.d) (hu : u₁.sp = u₂.sp) :
+    RelCT isa (Eq2 u₁ u₂) (.seq keyTable (.block baseTable)) TT :=
+  rel_seq (keyTable_rel hv₁ hv₂ hd₁ hd₂ hu) (keyTable_ok hv₁ (p := ⟨_, _, _⟩) ⟨rfl, rfl, rfl⟩ hd₁)
+    (keyTable_ok hv₂ (p := ⟨_, _, _⟩) ⟨rfl, rfl, rfl⟩ hd₂) fun t₁ t₂ k₁ k₂ =>
+    baseTable_ct (eq2_regs (by rw [k₁.2.1.sp, k₂.2.1.sp, hu]) fun r hr => by
+      rw [List.mem_singleton.mp hr, k₁.1.ctx.a3, k₂.1.ctx.a3])
+
 end
 
 /-! ## The whole function -/
@@ -2437,10 +2528,14 @@ theorem verifyEquation_rel (hR : Proof.Ed448.RecoverOk) {σ₁ σ₂ : State} (h
   obtain ⟨p0, p1, p2, p3, psp, pb⟩ := hpub
   obtain ⟨-, eS, eK⟩ := bytes_parts (by simp [Spec.Ed448.bytesAt]) (by simp [Spec.Ed448.bytesAt]) pb
   unfold verifyEquation
-  refine rel_seq (prefix_ct (eq2_regs psp fun r hr => by
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl <;> with_reducible assumption))
-    (pre_ok hR h₁) (pre_ok hR h₂) fun u₁ u₂ ⟨c₁, sp₁, f₁, d₁, _⟩ ⟨c₂, sp₂, f₂, d₂, _⟩ => ?_
+  refine rel_seq ?_ (pre_ok hR h₁) (pre_ok hR h₂) fun u₁ u₂ ⟨c₁, sp₁, f₁, d₁, _⟩ ⟨c₂, sp₂, f₂, d₂, _⟩ => ?_
+  · unfold vPrefix
+    refine rel_seq (head_ct (eq2_regs psp fun r hr => by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl | rfl | rfl <;> with_reducible assumption))
+      (head_run hR h₁) (head_run hR h₂) fun w₁ w₂ ⟨c₁, d₁, sp₁, _⟩ ⟨c₂, d₂, sp₂, _⟩ => ?_
+    rw [← p3] at c₂ d₂
+    exact tables_rel c₁ c₂ d₁ d₂ (by rw [sp₁, sp₂, psp])
   rw [← p3] at c₂ f₂ d₂
   rw [← eS, ← eK] at f₂
   obtain hl4 : (Spec.Ed448.bytesAt σ₁.mem (σ₁.gpr .a1) 114).length = 114 := by simp [Spec.Ed448.bytesAt]

@@ -120,6 +120,16 @@ theorem opCp {s0 s : State} {a c : BitVec 64} {qs : List Nat} {v : Nat → Fe} (
     · rw [upd_of_ne _ _ e]
       exact slots_after (R64.sep8_sep1 hq) ho (frame_o hf) h.slots hq' e
 
+/-- The addition's call site, as the addition inlined. -/
+theorem additionCall_ok {s0 : State} {a c : BitVec 64} {v : Nat → Fe} {s : State} (h : R64.Cur b s0 a c SQ v s) :
+    WP isa additionCall s (R64.Cur b s0 a c FQ (upd (runOps Proof.Ed448.RISCV64.addOps v) TZ
+      (runOps Proof.Ed448.RISCV64.addOps v TF * runOps Proof.Ed448.RISCV64.addOps v TG))) := by
+  obtain ⟨o1, o2, o3, o4⟩ := last_ok
+  refine Comb.viaCall_ok (fun sE hE => ?_) (by decide) (by decide) h
+  rw [addition_eq]
+  exact Comb.opsLowK_ok _ SQ v sE addOps_ok (by decide) hE fun _ h' =>
+    Comb.opLow (.mul TZ TF TG) o1 o2 (by decide) o3 o4 h'
+
 /-! ## The digit's entry -/
 
 /-- `loadDigit e` reads the byte of lane `e` at `n = t1`. -/
@@ -352,9 +362,10 @@ theorem addBase_ok {S K : Nat} {sL s : State} (hvL : VCtx b sL)
         rcases hq with rfl | rfl | rfl | rfl | rfl | rfl <;>
           simp (disch := decide) only [w, upd_self, upd_of_ne, ite_eq_right hneg]
     refine WP.seq (WP.mono neg fun s7 C7 => ?_)
-    rw [opsProg_eq]
+    rw [addAffCall, opsProg_eq]
     obtain hwd : w DK = Spec.Ed448.d := by simp (disch := decide) only [w, upd_of_ne]; exact hd
-    refine R64.ops_ok _ AQ w s7 add_ok C7 fun s8 C8 => WP.block_nil ⟨⟨_, cur_fs C8 add_sub⟩, ?_, ?_⟩
+    refine WP.mono (Comb.viaCallOps_ok add_ok (by decide) (by decide) (by decide) C7) fun s8 C8 =>
+      ⟨⟨_, cur_fs C8 add_sub⟩, ?_, ?_⟩
     · rw [C8.slots DK (add_sub DK (by decide)), (add_vals w hwd).2, hwd]
     · have p8 : ptOf (FS s8.mem b) = ptOf (runOps (Impl.Ed448.RISCV64.addOps.map toF) w) := by
         simp only [ptOf]
@@ -472,10 +483,7 @@ theorem addKey_ok {S K : Nat} {sL s : State} (hvL : VCtx b sL)
           simp (disch := decide) only [ptV, p, pe, ite_eq_right hneg, upd_self, upd_of_ne, r, ptOf, RX, RY, RZ, PX,
             PY, Impl.Ed448.RISCV64.PZ, DK, Impl.X448.RISCV64.X2, Impl.X448.RISCV64.Z2, Nat.reduceEqDiff, ↓reduceIte, hd']
     refine WP.seq (WP.mono neg fun s7 C7 => ?_)
-    obtain ⟨o1, o2, o3, o4⟩ := last_ok
-    rw [addition_eq]
-    refine WP.seq (R64.ops_ok Proof.Ed448.RISCV64.addOps SQ _ s7 addOps_ok C7 fun s8 C8 =>
-      WP.mono (R64.op_ok (.mul TZ TF TG) o1 o2 o3 o4 C8) fun s9 C9 => ?_)
+    refine WP.seq (WP.mono (additionCall_ok C7) fun s9 C9 => ?_)
     -- `T` into `R`.
     obtain ⟨v1, v2, v3, v4, v5, v6, v7⟩ := addV_vals r p
     have C9' : R64.Cur b sL (s3.gpr .t2) (BitVec.ofNat 64 n) FQ (addV r p) s9 := C9
@@ -544,9 +552,10 @@ theorem dblStep_ok {sL : State} {n : Nat} {s : State} {t2' : BitVec 64}
     (hc : R64.Cur b sL t2' (BitVec.ofNat 64 n) DQ (FS s.mem b) s) (hd : FS s.mem b DK = Spec.Ed448.d)
     {X : VG.Proof.EdwardsLaw.EPoint dZ → VG.Proof.EdwardsLaw.EPoint dZ}
     (hrep : ∀ a, KeyOk b a sL.mem → Rep (ptOf (FS s.mem b)) (X a)) :
-    WP isa (opsProg dblOps) s (APost b sL n fun a => X a + X a) := by
-  rw [opsProg_eq]
-  refine R64.ops_ok _ DQ _ s dbl_ok hc fun s2 C2 => WP.block_nil ⟨⟨_, cur_fs C2 dbl_sub⟩, ?_, fun a hk => ?_⟩
+    WP isa dblCall s (APost b sL n fun a => X a + X a) := by
+  rw [dblCall, opsProg_eq]
+  refine WP.mono (Comb.viaCallOps_ok dbl_ok (by decide) (by decide) (by decide) hc) fun s2 C2 =>
+    ⟨⟨_, cur_fs C2 dbl_sub⟩, ?_, fun a hk => ?_⟩
   · rw [C2.slots DK (dbl_sub DK (by decide)), (dbl_vals _).2, hd]
   · have e : ptOf (FS s2.mem b) = Proof.Ed448.double (ptOf (FS s.mem b)) := by
       obtain e' : ptOf (FS s2.mem b) = ptOf (runOps (dblOps.map toF) (FS s.mem b)) := by
@@ -736,11 +745,8 @@ theorem keyStep_ok {sK : State} {p d : Point} {j : Nat} (hj : j < 7) {s : State}
         simp only [ptV, RX, RY, RZ, PX, PY, Impl.Ed448.RISCV64.PZ, DK, Impl.X448.RISCV64.X2, Impl.X448.RISCV64.Z2,
           Nat.reduceEqDiff, ↓reduceIte]
       exacts [pz, py, px, rx, ry, rz, hdk]⟩
-  obtain ⟨o1, o2, o3, o4⟩ := last_ok
   unfold keyStep
-  rw [addition_eq]
-  refine WP.seq (R64.ops_ok Proof.Ed448.RISCV64.addOps SQ _ s addOps_ok C0 fun s1 C1 =>
-    WP.mono (R64.op_ok (.mul TZ TF TG) o1 o2 o3 o4 C1) fun s2 C2 => ?_)
+  refine WP.seq (WP.mono (additionCall_ok C0) fun s2 C2 => ?_)
   have C2' : R64.Cur b s (s.gpr .t2) (BitVec.ofNat 64 (7 - j)) FQ (addV r d) s2 := C2
   obtain ⟨v1, v2, v3, v4, v5, v6, v7⟩ := addV_vals r d
   obtain ⟨w1, w2, w3⟩ := addV_P r d
@@ -909,8 +915,8 @@ theorem keyHead_ok {s : State} (hv : VCtx b s) {p : Point} (hp : Pt s.mem b NAX 
       u2.mem, fsD f1 (dj3 (fun w hw => by simp only [List.mem_cons, List.not_mem_nil, or_false] at hw; rcases hw with rfl | rfl | rfl <;> omega_arith) (by omega_using [hDK]) (by omega_using [hRX]) (by omega_using [hRY]) (by omega_using [hRZ])), hd]
   obtain C3 : R64.Cur b s3 (s3.gpr .t2) (s3.gpr .t1) DQ (FS s3.mem b) s3 :=
     ⟨hv3.ctx, R64.Stp.refl _ _, rfl, rfl, fun _ _ => rfl⟩
-  rw [opsProg_eq]
-  refine WP.seq (R64.ops_ok _ DQ _ s3 dbl_ok C3 fun s4 C4 => WP.block_nil ?_)
+  rw [dblCall, opsProg_eq]
+  refine WP.seq (WP.mono (Comb.viaCallOps_ok dbl_ok (by decide) (by decide) (by decide) C3) fun s4 C4 => ?_)
   obtain hv4 : VCtx b s4 := vctx_cur hv3 C4
   obtain p4 : Pt s4.mem b RX RY RZ (Proof.Ed448.double p) := by
     obtain e := (dbl_vals (FS s3.mem b)).1
@@ -927,10 +933,10 @@ theorem keyHead_ok {s : State} (hv : VCtx b s) {p : Point} (hp : Pt s.mem b NAX 
     · rw [fs_hi C4.stp.frame (by omega_using [hA, hK]) (by omega_using [hK])]; exact k3.1
     · rw [fs_hi C4.stp.frame (by omega_using [hA, hK]) (by omega_using [hK])]; exact k3.2.1
     · rw [fs_hi C4.stp.frame (by omega_using [hA, hK]) (by omega_using [hK])]; exact k3.2.2
-  rw [show copySlot PX RX ++ copySlot PY RY ++ copySlot Impl.Ed448.RISCV64.PZ RZ ++ ldSlots .t2 0 [RX, RY, RZ] ++
-      [Instr.li .t1 7] =
+  rw [show copySlot PX RX ++ copySlot PY RY ++ copySlot Impl.Ed448.RISCV64.PZ RZ ++ [Instr.addi .t2 .a0 (KT - OUT)] ++
+      ldSlots .t2 0 [RX, RY, RZ] ++ [Instr.li .t1 7] =
     (cp7 .a3 RX .a3 PX ++ (cp7 .a3 RY .a3 PY ++ cp7 .a3 RZ .a3 Impl.Ed448.RISCV64.PZ)) ++
-      ((cp7 .t2 0 .a3 RX ++ (cp7 .t2 56 .a3 RY ++ cp7 .t2 112 .a3 RZ)) ++ [.li .t1 7]) from rfl]
+      (.addi .t2 .a0 (KT - OUT) :: ((cp7 .t2 0 .a3 RX ++ (cp7 .t2 56 .a3 RY ++ cp7 .t2 112 .a3 RZ)) ++ [.li .t1 7])) from rfl]
   refine WP.append (copy3_ok hv4 (rs := .a3) (rd := .a3) (X := PX) (Y := PY) (Z := Impl.Ed448.RISCV64.PZ)
     (by decide) (by decide) (by decide) (by decide)
     (fun o q hm => by simp only [List.mem_cons, Prod.mk.injEq, List.not_mem_nil, or_false] at hm; rcases hm with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> rw [hv4.ctx.a3])
@@ -938,28 +944,34 @@ theorem keyHead_ok {s : State} (hv : VCtx b s) {p : Point} (hp : Pt s.mem b NAX 
     (fun o ho => by simp only [List.mem_cons, List.not_mem_nil, or_false] at ho; rcases ho with rfl | rfl | rfl | rfl | rfl | rfl <;> omega_arith)
     (fun o ho w hw => by simp only [List.mem_cons, List.not_mem_nil, or_false] at ho hw; rcases ho with rfl | rfl | rfl <;> rcases hw with rfl | rfl | rfl <;> omega_arith)
     (by omega_using [hPX, hPY]) (by omega_using [hPX, hPZ]) (by omega_using [hPY, hPZ]) p4) fun s5 ⟨hv5, r5, f5, k5⟩ => ?_
-  obtain k5' : Pt s5.mem b KT (KT + 56) (KT + 112) p := pt_keep f5 k4 (by omega_using [hK, hPX, hPY, hPZ]) (fun o ho w hw => by
+  obtain k5'' : Pt s5.mem b KT (KT + 56) (KT + 112) p := pt_keep f5 k4 (by omega_using [hK, hPX, hPY, hPZ]) (fun o ho w hw => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at ho hw; rcases ho with rfl | rfl | rfl <;> rcases hw with rfl | rfl | rfl <;> omega_arith)
-  refine WP.append (copy3_ok hv5 (rs := .t2) (rd := .a3) (X := RX) (Y := RY) (Z := RZ)
+  refine wp_addi (imm := KT - OUT) (by decide) fun s5' u5 => ?_
+  obtain hv5' : VCtx b s5' := hv5.of_rest (u5.rest (ws := [.t2]) (by decide)) (by decide) (by decide)
+  obtain e5 : s5'.gpr .t2 = b + BitVec.ofNat 64 KT := by
+    rw [u5.gpr, r5.gpr _ (by decide), hv4.a0, Offset.add_add, hK, hO]
+  obtain k5' : Pt s5'.mem b KT (KT + 56) (KT + 112) p := by rw [u5.mem]; exact k5''
+  refine WP.append (copy3_ok hv5' (rs := .t2) (rd := .a3) (X := RX) (Y := RY) (Z := RZ)
     (by decide) (by decide) (by decide) (by decide)
-    (fun o q hm => by simp only [List.mem_cons, Prod.mk.injEq, List.not_mem_nil, or_false] at hm; rcases hm with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> rw [r5.gpr _ (by decide), e4, Offset.add_add] <;> rfl)
-    (fun o q hm => by simp only [List.mem_cons, Prod.mk.injEq, List.not_mem_nil, or_false] at hm; rcases hm with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> rw [hv5.ctx.a3])
+    (fun o q hm => by simp only [List.mem_cons, Prod.mk.injEq, List.not_mem_nil, or_false] at hm; rcases hm with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> rw [e5, Offset.add_add] <;> rfl)
+    (fun o q hm => by simp only [List.mem_cons, Prod.mk.injEq, List.not_mem_nil, or_false] at hm; rcases hm with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> rw [hv5'.ctx.a3])
     (fun o ho => by simp only [List.mem_cons, List.not_mem_nil, or_false] at ho; rcases ho with rfl | rfl | rfl | rfl | rfl | rfl <;> omega_arith)
     (fun o ho w hw => by simp only [List.mem_cons, List.not_mem_nil, or_false] at ho hw; rcases ho with rfl | rfl | rfl <;> rcases hw with rfl | rfl | rfl <;> omega_arith)
     (by omega_using [hRX, hRY]) (by omega_using [hRX, hRZ]) (by omega_using [hRY, hRZ]) k5') fun s6 ⟨hv6, r6, f6, k6⟩ => ?_
+  rw [u5.mem] at f6
   refine wp_li (by decide) fun s7 u7 => WP.block_nil ?_
   obtain dkeep : ∀ {m m' : Mem} {x y z : Nat}, Frame (R3 b x y z) m m' → (∀ w ∈ [x, y, z], DK + 56 ≤ w ∨ w + 56 ≤ DK) →
       x + 56 ≤ 8192 → y + 56 ≤ 8192 → z + 56 ≤ 8192 → FS m' b DK = FS m b DK := fun hf h hx hy hz =>
     fsD hf (dj3 h (by omega_using [hDK]) hx hy hz)
   refine ⟨hv6.of_rest (u7.rest (ws := [.t1]) (by decide)) (by decide) (by decide), ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · exact (r1.mono (by decide)).trans ((u2.rest (by decide)).trans ((r3.mono (by decide)).trans
-      (C4.stp.rest.trans ((r5.mono (by decide)).trans ((r6.mono (by decide)).trans (u7.rest (by decide)))))))
+      (C4.stp.rest.trans ((r5.mono (by decide)).trans ((u5.rest (by decide)).trans ((r6.mono (by decide)).trans (u7.rest (by decide))))))))
   · rw [u7.mem]
     refine (frame_R3_FA f1 (by omega_using [hRX]) (by omega_using [hRY]) (by omega_using [hRZ])).trans ?_
     rw [← u2.mem]
     refine (frame_R3_KR (e := 0) (by decide) (by simpa using f3)).trans ((frame_FA_K C4.stp.frame).trans
       ((frame_R3_FA f5 (by omega_using [hPX]) (by omega_using [hPY]) (by omega_using [hPZ])).trans (frame_R3_FA f6 (by omega_using [hRX]) (by omega_using [hRY]) (by omega_using [hRZ]))))
-  · rw [u7.other _ (by decide), r6.gpr _ (by decide), r5.gpr _ (by decide), e4]; rfl
+  · rw [u7.other _ (by decide), r6.gpr _ (by decide), e5]; rfl
   · rw [u7.gpr]
   · rw [u7.mem]; exact k6
   · rw [u7.mem]
@@ -969,7 +981,7 @@ theorem keyHead_ok {s : State} (hv : VCtx b s) {p : Point} (hp : Pt s.mem b NAX 
       dkeep f5 (fun w hw => by simp only [List.mem_cons, List.not_mem_nil, or_false] at hw; rcases hw with rfl | rfl | rfl <;> omega_arith) (by omega_using [hPX]) (by omega_using [hPY]) (by omega_using [hPZ]), d4]
   · intro e he
     obtain rfl : e = 0 := by omega_using [he]
-    obtain ⟨n1, n2, n3⟩ := pt_keep f6 k5' (by omega_using [hK, hRX, hRY, hRZ]) (fun o ho w hw => by
+    obtain ⟨n1, n2, n3⟩ := pt_keep f6 k5'' (by omega_using [hK, hRX, hRY, hRZ]) (fun o ho w hw => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at ho hw; rcases ho with rfl | rfl | rfl <;> rcases hw with rfl | rfl | rfl <;> omega_arith)
     simp only [kpt, kE, Nat.mul_zero, Nat.add_zero]
     rw [u7.mem, n1, n2, n3]
@@ -1093,8 +1105,8 @@ theorem addNegR_ok {sL s : State} (hvL : VCtx b sL) {t2v c : BitVec 64}
     simp only [AQ, List.mem_cons, List.not_mem_nil, or_false] at hq
     rcases hq with rfl | rfl | rfl | rfl | rfl | rfl <;> simp (disch := decide) only [w, upd_self, upd_of_ne, ky]
   obtain hwd : w DK = Spec.Ed448.d := by simp (disch := decide) only [w, upd_of_ne]; exact hd
-  rw [opsProg_eq]
-  refine WP.seq (R64.ops_ok _ AQ w s2 add_ok C2w fun s3 C3 => WP.block_nil ?_)
+  simp only [addAffCall, dblCall, opsProg_eq]
+  refine WP.seq (WP.mono (Comb.viaCallOps_ok add_ok (by decide) (by decide) (by decide) C2w) fun s3 C3 => ?_)
   obtain C3' := cur_fs C3 add_sub
   obtain d3 : FS s3.mem b DK = Spec.Ed448.d := by rw [C3.slots DK (add_sub DK (by decide)), (add_vals w hwd).2, hwd]
   obtain p3 : ptOf (FS s3.mem b) = Spec.Ed448.pointAdd (ptOf (FS s.mem b)) ⟨FS s.mem b NRX, FS s.mem b NRY, 1⟩ := by
@@ -1105,7 +1117,7 @@ theorem addNegR_ok {sL s : State} (hvL : VCtx b sL) {t2v c : BitVec 64}
     obtain pw : ptOf w = ptOf (FS s.mem b) := by simp (disch := decide) only [ptOf, w, upd_of_ne]
     rw [e, (add_vals w hwd).1, pw, addAffine_eq]
     simp (disch := decide) only [w, upd_self, upd_of_ne]
-  refine WP.seq (R64.ops_ok _ DQ _ s3 dbl_ok C3' fun s4 C4 => WP.block_nil ?_)
+  refine WP.seq (WP.mono (Comb.viaCallOps_ok dbl_ok (by decide) (by decide) (by decide) C3') fun s4 C4 => ?_)
   obtain C4' := cur_fs C4 dbl_sub
   obtain d4 : FS s4.mem b DK = Spec.Ed448.d := by rw [C4.slots DK (dbl_sub DK (by decide)), (dbl_vals _).2, d3]
   obtain p4 : ptOf (FS s4.mem b) = Proof.Ed448.double (ptOf (FS s3.mem b)) := by
@@ -1114,7 +1126,8 @@ theorem addNegR_ok {sL s : State} (hvL : VCtx b sL) {t2v c : BitVec 64}
       rw [C4.slots RX (dbl_sub RX (by decide)), C4.slots RY (dbl_sub RY (by decide)),
         C4.slots RZ (dbl_sub RZ (by decide))]
     rw [e, (dbl_vals _).1]
-  refine R64.ops_ok _ DQ _ s4 dbl_ok C4' fun s5 C5 => WP.block_nil ⟨vctx_cur hvL C5, C5.stp, fun q hq => ?_⟩
+  refine WP.mono (Comb.viaCallOps_ok dbl_ok (by decide) (by decide) (by decide) C4') fun s5 C5 =>
+    ⟨vctx_cur hvL C5, C5.stp, fun q hq => ?_⟩
   obtain p5 : ptOf (FS s5.mem b) = Proof.Ed448.double (ptOf (FS s4.mem b)) := by
     obtain e : ptOf (FS s5.mem b) = ptOf (runOps (dblOps.map toF) (FS s4.mem b)) := by
       simp only [ptOf]

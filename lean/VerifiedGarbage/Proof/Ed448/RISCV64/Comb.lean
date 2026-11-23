@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Ed448.Ref
 public import VerifiedGarbage.Proof.X448.RISCV64.Field
 public import VerifiedGarbage.Proof.X25519.RISCV64.Field
 public import VerifiedGarbage.Proof.Framework.RISCV64.Steps
+public import VerifiedGarbage.Proof.Framework.RISCV64.Call
 public import VerifiedGarbage.Proof.Ed448.RISCV64.BaseBits
 public import VerifiedGarbage.Proof.Ed448.Comb
 public import VerifiedGarbage.Proof.Ed448.Group.Projective
@@ -635,5 +636,189 @@ theorem loop_ok {k : Nat} {s0 : State} (hfx : Fixed b k s0) :
   · exact .inr ⟨by rw [eval_nonzero, hz]; simp [show t ≠ 0 by omega_using [h0]], t, by omega_using [], by omega_using [h0], by omega_using [hm2], hl'⟩
 
 end
+
+/-! ## The point operations as functions
+
+A call site (`viaCall`) keeps `t1`, `t2` and `ra` in the first three
+doublewords of X448's slot `Y` (`SAVT1`), calls the field program, and loads
+them back. The program's outputs are all below `Y` (`outsLow`), so it writes
+only below `Y` and the accumulator (`Low`), and the doublewords stay: around
+the call site, `Cur` holds as around the field program inlined (`viaCall_ok`). -/
+
+section Via
+
+open VG VG.RISCV64 VG.RISCV64.Steps VG.Impl.Ed448.RISCV64 VG.Proof.X448.RISCV64
+open VG.Proof.X25519.RISCV64 hiding V FS V_lt pass_ok limb_frame
+open VG.Proof.X25519
+open VG.Impl.X448.RISCV64 (ACC)
+open VG.Proof.X448.RISCV64.R64 (Cur Stp opsCode opsOk fcode work mulSF addSF subSF al8 Sep8)
+open VG.Spec.X448 (Fe)
+
+variable {b : Addr}
+
+/-- What field operations with outputs below `Y` write: below `Y`, and the accumulator. -/
+abbrev Low (b : Addr) : List Region := [⟨b, SAVT1⟩, ⟨b + BitVec.ofNat 64 ACC, 112⟩]
+
+/-- Every operation's output is below `Y`. -/
+def outsLow : List FOp → Bool
+  | [] => true
+  | op :: ops => decide (op.out + 56 ≤ SAVT1) && outsLow ops
+
+theorem low_of {o : Nat} (ho : o + 56 ≤ SAVT1) {m m' : Mem}
+    (hf : Frame [⟨b + BitVec.ofNat 64 o, 56⟩, ⟨b + BitVec.ofNat 64 ACC, 112⟩] m m') : Frame (Low b) m m' :=
+  hf.sub fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact ⟨_, List.mem_cons_self .., Offset.sub_base _ ho⟩
+    · exact ⟨_, List.mem_cons_of_mem _ (List.mem_singleton_self _), fun _ h => h⟩
+
+/-- A field operation with its output below `Y`. -/
+theorem opLow {s0 : State} {a c : BitVec 64} {qs : List Nat} {v : Nat → Fe} (op : FOp)
+    (hq : Sep8 op.out qs = true) (ho : op.out + 56 ≤ ACC) (hlo : op.out + 56 ≤ SAVT1) (hx : op.x ∈ qs)
+    (hy : op.y ∈ qs) {s : State} (h : Cur b s0 a c qs v s) :
+    WP isa (fcode op) s fun t =>
+      Cur b s0 a c (op.out :: qs) (upd v op.out (op.val v)) t ∧ Frame (Low b) s.mem t.mem := by
+  cases op with
+  | mul o x y =>
+    exact WP.mono (mulSF hq ho hx hy h.ctx h.slots) fun _ ⟨hr, hf, hS⟩ => ⟨h.next hr (frame_FA ho hf) hS, low_of hlo hf⟩
+  | add o x y =>
+    exact WP.mono (addSF hq ho hx hy h.ctx h.slots) fun _ ⟨hr, hf, hS⟩ => ⟨h.next hr (frame_FA ho hf) hS, low_of hlo hf⟩
+  | sub o x y =>
+    exact WP.mono (subSF hq ho hx hy h.ctx h.slots) fun _ ⟨hr, hf, hS⟩ => ⟨h.next hr (frame_FA ho hf) hS, low_of hlo hf⟩
+
+/-- Field operations with their outputs below `Y`, then `k`. -/
+theorem opsLowK_ok {s0 : State} {a c : BitVec 64} {k : Prog isa} {Q : State → Prop} :
+    ∀ (ops : List FOp) (qs : List Nat) (v : Nat → Fe) (s : State), opsOk ops qs = true → outsLow ops = true →
+      Cur b s0 a c qs v s →
+      (∀ s', Cur b s0 a c (outsQ ops qs) (runOps ops v) s' → WP isa k s' fun t => Q t ∧ Frame (Low b) s'.mem t.mem) →
+      WP isa (opsCode ops k) s fun t => Q t ∧ Frame (Low b) s.mem t.mem
+  | [], _, _, s, _, _, h, hk => hk s h
+  | op :: ops, qs, v, s, hok, hlo, h, hk => by
+    simp only [opsOk, Bool.and_eq_true, decide_eq_true_eq, List.contains_iff_mem] at hok
+    simp only [outsLow, Bool.and_eq_true, decide_eq_true_eq] at hlo
+    obtain ⟨⟨⟨⟨h1, h3⟩, h4⟩, h5⟩, h6⟩ := hok
+    exact WP.seq (WP.mono (opLow op h1 h3 hlo.1 h4 h5 h) fun s' ⟨h', f'⟩ =>
+      WP.mono (opsLowK_ok ops _ _ s' h6 hlo.2 h' hk) fun _ ⟨ht, ft⟩ => ⟨ht, f'.trans ft⟩)
+
+/-- Field operations with their outputs below `Y`. -/
+theorem opsLow_ok {s0 : State} {a c : BitVec 64} (ops : List FOp) (qs : List Nat) (v : Nat → Fe) (s : State)
+    (hok : opsOk ops qs = true) (hlo : outsLow ops = true) (h : Cur b s0 a c qs v s) :
+    WP isa (opsCode ops (.block [])) s fun t =>
+      Cur b s0 a c (outsQ ops qs) (runOps ops v) t ∧ Frame (Low b) s.mem t.mem :=
+  opsLowK_ok ops qs v s hok hlo h fun _ h' => WP.block_nil ⟨h', Frame.refl _ _⟩
+
+/-- A call's code run from the call's entry state, which leaves `ra` as it
+found it, returns. -/
+theorem callBody_wp {name : String} {body : Prog isa} {s : State} {Q : State → Prop}
+    (h : WP isa body s.callEntry fun u => u.gpr .ra = s.callEntry.gpr .ra ∧ Q u) :
+    WP isa (.call name body) s Q := by
+  obtain ⟨t, u, he, hra, hq⟩ := h
+  have hret : isa.ret s.callEntry u = some u := by
+    simp only [isa, ret]; exact ite_eq_left_of_eq_true _ _ (eq_true hra)
+  exact ⟨_, u, Exec.call (call_callEntry s) he hret, hq⟩
+
+/-- A call site of code that keeps `Cur` and writes only `Low` (field
+operations with their outputs below `Y`), for slots `qs` apart from `Y`: as
+the code inlined. -/
+theorem viaCall_ok {name : String} {body : Prog isa} {s0 : State} {a c : BitVec 64} {qs qs' : List Nat}
+    {v v' : Nat → Fe}
+    (hb : ∀ sE, Cur b sE (sE.gpr .t2) (sE.gpr .t1) qs v sE →
+      WP isa body sE fun u => Cur b sE (sE.gpr .t2) (sE.gpr .t1) qs' v' u ∧ Frame (Low b) sE.mem u.mem)
+    (hsep : Sep1 SAVT1 qs = true) (hne : SAVT1 ∉ qs) {s : State} (h : Cur b s0 a c qs v s) :
+    WP isa (viaCall name body) s (Cur b s0 a c qs' v') := by
+  have hc := h.ctx
+  obtain w1 := hc.wr SAVT1 8 (by decide); obtain w2 := hc.wr SAVT2 8 (by decide); obtain w3 := hc.wr SAVRA 8 (by decide)
+  obtain a1 := al8 hc.al (d := SAVT1) (by decide); obtain a2 := al8 hc.al (d := SAVT2) (by decide)
+  obtain a3 := al8 hc.al (d := SAVRA) (by decide)
+  obtain cY : ∀ d, d + 8 ≤ 56 →
+      (⟨b + BitVec.ofNat 64 SAVT1, 56⟩ : Region).Contains (b + BitVec.ofNat 64 (SAVT1 + d)) (64 / 8) :=
+    fun d hd => Offset.contains _ (by omega_using []) (by omega_using [hd]) (by decide)
+  unfold viaCall
+  -- `t1`, `t2` and `ra` into `Y`.
+  refine WP.seq (wp_sd (by decide) (by rw [hc.a3]) a1 w1 fun v1 u1 => wp_sd (by decide) (by rw [u1.gpr, hc.a3]) a2
+    (by rw [u1.wr]; exact w2) fun v2 u2 => wp_sd (by decide) (by rw [u2.gpr, u1.gpr, hc.a3]) a3
+    (by rw [u2.wr, u1.wr]; exact w3) fun s₁ u3 => WP.block_nil ?_)
+  have hf1 : Frame [⟨b + BitVec.ofNat 64 SAVT1, 56⟩, ⟨b + BitVec.ofNat 64 ACC, 112⟩] s.mem s₁.mem := by
+    rw [u3.mem, u2.mem, u1.mem]
+    exact (((Frame.refl _ _).writeW (List.mem_cons_self ..) _ (by simpa using cY 0 (by decide))).writeW
+      (List.mem_cons_self ..) _ (cY 8 (by decide))).writeW (List.mem_cons_self ..) _ (cY 16 (by decide))
+  have g1 : s₁.gpr = s.gpr := by rw [u3.gpr, u2.gpr, u1.gpr]
+  have hS1 : SlotsOk s₁.mem b qs v := fun q hq =>
+    slots_after hsep (by decide) hf1 h.slots hq fun e => hne (e ▸ hq)
+  have wr1 : s₁.wr = s.wr := by rw [u3.wr, u2.wr, u1.wr]
+  -- The call, from its entry state.
+  have hE : Cur b s₁.callEntry (s₁.callEntry.gpr .t2) (s₁.callEntry.gpr .t1) qs v s₁.callEntry :=
+    ⟨⟨by rw [State.callEntry_gpr _ (by decide), g1, hc.a3], hc.al, by rw [State.callEntry_wr, wr1]; exact hc.wr⟩,
+      Stp.refl _ _, rfl, rfl, by rw [State.callEntry_mem]; exact hS1⟩
+  refine WP.seq (callBody_wp (WP.mono (hb _ hE) fun u ⟨cu, fu⟩ =>
+    ⟨cu.stp.rest.gpr _ (by decide), ?_⟩))
+  -- `t1`, `t2` and `ra` back.
+  have hu3 := cu.ctx.a3
+  have r1 := cu.ctx.inR (d := SAVT1) (n := 8) (by decide); have r2 := cu.ctx.inR (d := SAVT2) (n := 8) (by decide)
+  have r3 := cu.ctx.inR (d := SAVRA) (n := 8) (by decide)
+  refine wp_ld (by decide) (by rw [hu3]) a3 r3 fun x1 y1 => wp_ld (by decide) (by rw [y1.other _ (by decide), hu3]) a1
+    (by rw [y1.rd, y1.wr]; exact r1) fun x2 y2 => wp_ld (by decide)
+    (by rw [y2.other _ (by decide), y1.other _ (by decide), hu3]) a2 (by rw [y2.rd, y2.wr, y1.rd, y1.wr]; exact r2)
+    fun t y3 => WP.block_nil ?_
+  -- The doublewords of `Y` read back.
+  have hlow : ∀ d, d + 8 ≤ 24 → u.mem.readW (b + BitVec.ofNat 64 (SAVT1 + d)) 64 =
+      s₁.mem.readW (b + BitVec.ofNat 64 (SAVT1 + d)) 64 := fun d hd => by
+    rw [← State.callEntry_mem s₁]
+    refine fu.readW (Region.contains_self _ (64 / 8)) (fun r hr => ?_) (by decide)
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact Offset.disjoint_base _ (by simp only [SAVT1]; omega_using []) (by simp only [SAVT1]; omega_using [hd])
+    · exact Offset.disjoint _ (Or.inl (by simp only [SAVT1, ACC]; omega_using [hd])) (by simp only [SAVT1]; omega_using [hd])
+        (by decide)
+  have rd1 : s₁.mem.readW (b + BitVec.ofNat 64 SAVRA) 64 = s.gpr .ra := by
+    rw [u3.mem, Mem.readW_writeW_self64, u2.gpr, u1.gpr]
+  have rd2 : s₁.mem.readW (b + BitVec.ofNat 64 SAVT1) 64 = s.gpr .t1 := by
+    rw [u3.mem, Mem.readW_writeW_sep (w := 64) (w' := 64) (Offset.sep _ (by decide) (by decide) (by decide)) (by decide),
+      u2.mem, Mem.readW_writeW_sep (w := 64) (w' := 64) (Offset.sep _ (by decide) (by decide) (by decide)) (by decide),
+      u1.mem, Mem.readW_writeW_self64]
+  have rd3 : s₁.mem.readW (b + BitVec.ofNat 64 SAVT2) 64 = s.gpr .t2 := by
+    rw [u3.mem, Mem.readW_writeW_sep (w := 64) (w' := 64) (Offset.sep _ (by decide) (by decide) (by decide)) (by decide),
+      u2.mem, Mem.readW_writeW_self64, u1.gpr]
+  have mt : t.mem = u.mem := by rw [y3.mem, y2.mem, y1.mem]
+  have rt : Rest [.ra, .t1, .t2] u t := (y1.rest (by decide)).trans ((y2.rest (by decide)).trans (y3.rest (by decide)))
+  have tra : t.gpr .ra = s.gpr .ra := by
+    rw [y3.other _ (by decide), y2.other _ (by decide), y1.gpr, ← rd1]; exact hlow 16 (by decide)
+  have tt1 : t.gpr .t1 = s.gpr .t1 := by
+    rw [y3.other _ (by decide), y2.gpr, y1.mem, ← rd2]; simpa using hlow 0 (by decide)
+  have tt2 : t.gpr .t2 = s.gpr .t2 := by rw [y3.gpr, y2.mem, y1.mem, ← rd3]; exact hlow 8 (by decide)
+  have rest : Rest work s0 t := by
+    refine ⟨fun r hr => ?_, by rw [rt.rd, cu.stp.rest.rd, State.callEntry_rd, u3.rd, u2.rd, u1.rd, h.stp.rest.rd],
+      by rw [rt.wr, cu.stp.rest.wr, State.callEntry_wr, wr1, h.stp.rest.wr],
+      by rw [rt.sp, cu.stp.rest.sp, State.callEntry_sp, u3.sp, u2.sp, u1.sp, h.stp.rest.sp]⟩
+    by_cases e : r = .ra
+    · subst e; rw [tra, h.stp.rest.gpr _ hr]
+    · have hl : r ∉ linkRegs := fun hm => by
+        simp only [linkRegs, List.mem_cons, List.not_mem_nil, or_false] at hm
+        rcases hm with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> first | exact e rfl | exact hr (by decide)
+      rw [rt.gpr _ (by simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]; exact ⟨e, fun h' => hr (h' ▸ by decide),
+          fun h' => hr (h' ▸ by decide)⟩), cu.stp.rest.gpr _ hr, State.callEntry_gpr _ hl, g1, h.stp.rest.gpr _ hr]
+  have toFA : ∀ {m m' : Mem} {rs : List Region}, (∀ r ∈ rs, Region.Sub r (FA b)) → Frame rs m m' → Frame [FA b] m m' :=
+    fun hs hf => hf.sub fun r hr => ⟨_, List.mem_singleton_self _, hs r hr⟩
+  have frame : Frame [FA b] s0.mem t.mem := by
+    refine (h.stp.frame.trans (toFA ?_ hf1)).trans ?_
+    · intro r hr
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl <;> exact Offset.sub_base _ (by decide)
+    · rw [mt, ← State.callEntry_mem s₁]
+      refine toFA (fun r hr => ?_) fu
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact fun x hx => Offset.sub_base _ (d := 0) (n := SAVT1) (by decide) x (by rw [BitVec.add_zero]; exact hx)
+      · exact Offset.sub_base _ (by decide)
+  exact ⟨cu.ctx.of_rest rt (by decide), ⟨rest, frame⟩, by rw [tt2, h.t2], by rw [tt1, h.t1], by rw [mt]; exact cu.slots⟩
+
+/-- A call site of field operations with their outputs below `Y`. -/
+theorem viaCallOps_ok {name : String} {s0 : State} {a c : BitVec 64} {ops : List FOp} {qs : List Nat}
+    {v : Nat → Fe} (hok : opsOk ops qs = true) (hlo : outsLow ops = true) (hsep : Sep1 SAVT1 qs = true)
+    (hne : SAVT1 ∉ qs) {s : State} (h : Cur b s0 a c qs v s) :
+    WP isa (viaCall name (opsCode ops (.block []))) s (Cur b s0 a c (outsQ ops qs) (runOps ops v)) :=
+  viaCall_ok (fun _ hE => opsLow_ok ops qs v _ hok hlo hE) hsep hne h
+
+end Via
 
 end VG.Proof.Ed448.RISCV64.Comb
