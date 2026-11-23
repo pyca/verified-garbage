@@ -84,7 +84,10 @@ def planes : List (BitVec 64) := planesOf 0 ++ planesOf 1 ++ planesOf 2 ++ plane
 /-- The constants, 16 bytes each (two words): the sixteen rows `C_r` (zero
 at byte `r`, `0x80` elsewhere), the shuffle that gathers the bytes 0, 4, 8
 and 12, then 1, 5, 9 and 13, and so on, `0x0f` in every byte, and the
-shuffle that puts the bytes 0, 4, 8 and 12 in every doubleword. -/
+shuffle that puts the bytes 0, 4, 8 and 12 in every doubleword; then, for
+sixteen blocks (`Ssse3Wide.lean`), the shuffles that take two blocks' left
+and right halves as big-endian doublewords, the one that reverses the bytes
+of every doubleword, `0xff` in every byte and 1 in every doubleword. -/
 def consts : List (BitVec 64) := [
   0x8080808080808000, 0x8080808080808080, 0x8080808080800080, 0x8080808080808080,
   0x8080808080008080, 0x8080808080808080, 0x8080808000808080, 0x8080808080808080,
@@ -95,7 +98,10 @@ def consts : List (BitVec 64) := [
   0x8080808080808080, 0x8080800080808080, 0x8080808080808080, 0x8080008080808080,
   0x8080808080808080, 0x8000808080808080, 0x8080808080808080, 0x0080808080808080,
   0x0d0905010c080400, 0x0f0b07030e0a0602, 0x0f0f0f0f0f0f0f0f, 0x0f0f0f0f0f0f0f0f,
-  0x0c0804000c080400, 0x0c0804000c080400
+  0x0c0804000c080400, 0x0c0804000c080400,
+  0x08090a0b00010203, 0x8080808080808080, 0x0c0d0e0f04050607, 0x8080808080808080,
+  0x0405060700010203, 0x0c0d0e0f08090a0b, 0xffffffffffffffff, 0xffffffffffffffff,
+  0x0000000100000001, 0x0000000100000001
 ]
 
 /-- `VG_CAST5_SSSE3`: the planes, then the constants. -/
@@ -113,6 +119,16 @@ def oT : Nat := 4352
 def oM : Nat := 4368
 /-- The shuffle that spreads `I` to every doubleword. -/
 def oS : Nat := 4384
+/-- Two blocks' left halves, as big-endian doublewords, to the low quadword. -/
+def oKL : Nat := 4400
+/-- Two blocks' right halves. -/
+def oKR : Nat := 4416
+/-- The bytes of every doubleword reversed. -/
+def oBS : Nat := 4432
+/-- `0xff` in every byte. -/
+def oOnes : Nat := 4448
+/-- 1 in every doubleword. -/
+def oOne : Nat := 4464
 
 /-- The index vector of row `r`, in the working space. -/
 def vOff (r : Nat) : Nat := 272 + 16 * r
