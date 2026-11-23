@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Impl.Blowfish.X86.Ssse3
 public import VerifiedGarbage.Impl.Modes.X86.Wide
 public import VerifiedGarbage.Impl.Modes.X86.Ecb
+public import VerifiedGarbage.Impl.StackScratch.X86
+public import VerifiedGarbage.Impl.Scrub.X86.Sel
 
 /-!
 # Blowfish on x86 (32-bit) with its S-box look-ups by `pshufb`: sixteen blocks
@@ -191,5 +193,43 @@ def cbcDecryptChained : Prog isa :=
 
 /-- CFB64 decryption. -/
 def cfbDecrypt : Prog isa := (core16 true).seqLevels (Mode.cfbDecWide 2) levels (Mode.cfbDecEarly 2)
+
+/-! ## The functions as emitted
+
+Each function with its working space in a frame on the stack, which it
+wipes (`withStackScratchWiped`), then its cleanup
+(`Impl.Scrub.X86.scrubSel rb W ws`), as the functions over the one-block
+function (`Ssse3.Fn`). A frame is larger than its working space and header
+need (912 bytes for 908, 916 for 912), so that the working space is at a
+multiple of 16 when `esp` is one at the call. -/
+
+namespace Fn
+
+/-- The doublewords of the 920 bytes of stack below `esp` that the residue
+analysis finds an ECB function may leave different in two runs: the
+sixteen-block function's return address, the header of the working space's
+frame, and the frame's last doubleword, which nothing writes. -/
+def ecbWords : List Nat := [1, 2, 3, 4, 5, 6, 229]
+
+/-- Those of the 924 bytes of CBC and CFB64 decryption. -/
+def words : List Nat := [1, 2, 3, 4, 5, 6, 7, 230]
+
+/-- `Spec.Blowfish.ecbEncryptApi`'s function as emitted. -/
+def ecbEncrypt : Prog isa :=
+  Impl.Scrub.X86.scrubSel 0 920 ecbWords (Impl.StackScratch.X86.withStackScratchWiped 912 3 222 (ecb true))
+
+/-- `Spec.Blowfish.ecbDecryptApi`'s function as emitted. -/
+def ecbDecrypt : Prog isa :=
+  Impl.Scrub.X86.scrubSel 0 920 ecbWords (Impl.StackScratch.X86.withStackScratchWiped 912 3 222 (ecb false))
+
+/-- `Spec.Blowfish.cbcDecryptChainedApi`'s function as emitted. -/
+def cbcDecryptChained : Prog isa :=
+  Impl.Scrub.X86.scrubSel 0 924 words (Impl.StackScratch.X86.withStackScratchWiped 916 4 222 Wide.cbcDecryptChained)
+
+/-- `Spec.Blowfish.cfbDecryptApi`'s function as emitted. -/
+def cfbDecrypt : Prog isa :=
+  Impl.Scrub.X86.scrubSel 0 924 words (Impl.StackScratch.X86.withStackScratchWiped 916 4 222 Wide.cfbDecrypt)
+
+end Fn
 
 end VG.Impl.Blowfish.X86.Ssse3.Wide
