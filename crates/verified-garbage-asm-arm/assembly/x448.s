@@ -126,12 +126,14 @@ vg_x448_exchange_umaal:
 	lsr r0, r3, #31
 	eor r0, r0, #1
 	ldr lr, [sp], #4
-	sub sp, sp, #8
+	sub sp, sp, #16
 	add r12, sp, #0
 	mov r2, #0
 	str r2, [r12, #0]
 	str r2, [r12, #4]
-	add sp, sp, #8
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	add sp, sp, #16
 	mov r1, #0
 	mov r2, #0
 	mov r3, #0
@@ -7093,12 +7095,14 @@ vg_x448_exchange:
 	lsr r0, r3, #31
 	eor r0, r0, #1
 	ldr lr, [sp], #4
-	sub sp, sp, #8
+	sub sp, sp, #16
 	add r12, sp, #0
 	mov r2, #0
 	str r2, [r12, #0]
 	str r2, [r12, #4]
-	add sp, sp, #8
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	add sp, sp, #16
 	mov r1, #0
 	mov r2, #0
 	mov r3, #0
