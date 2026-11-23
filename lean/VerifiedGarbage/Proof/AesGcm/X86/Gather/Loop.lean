@@ -39,6 +39,10 @@ len, tag)` at `[esp + 4]` on, which the function may overwrite.
 
 namespace VG.Proof.AesGcm.X86.Gather
 
+theorem sw32 (x : BitVec 32) : (x.setWidth 64).setWidth 32 = x := by
+  apply BitVec.eq_of_toNat_eq; simp
+
+
 open VG VG.X86
 open VG.Spec.Aes (bytesAt)
 open VG.Spec.Gcm (ctxCiph ctxH encryptWith gathered gatheredLen)

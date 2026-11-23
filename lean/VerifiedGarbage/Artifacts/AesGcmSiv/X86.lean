@@ -17,7 +17,6 @@ public import VerifiedGarbage.Proof.AesGcm.X86.CryptHead
 public import VerifiedGarbage.Proof.AesGcm.X86.CryptTail
 public import VerifiedGarbage.Proof.AesGcm.X86.CryptWhole
 public import VerifiedGarbage.Proof.AesGcm.X86.Flush
-public import VerifiedGarbage.Proof.AesGcm.X86.Gather.CT
 public import VerifiedGarbage.Proof.AesGcm.X86.Gather.Fn
 public import VerifiedGarbage.Proof.AesGcm.X86.Init
 public import VerifiedGarbage.Proof.AesGcmSiv.X86.Cmp
