@@ -10,6 +10,8 @@ public import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.MulFn
 import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
+public import VerifiedGarbage.Proof.Framework.X86_64.CallInlineN
+import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Proof.Ecdsa.X86_64.BrainpoolP256r1.Lit
 public import VerifiedGarbage.Impl.Ecdsa.BrainpoolP256r1.X86_64
 public import VerifiedGarbage.Proof.Ecdsa.Contract
@@ -22,6 +24,8 @@ meta import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.MulFn
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 meta import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
+meta import VerifiedGarbage.Proof.Framework.X86_64.CallInlineN
+meta import VerifiedGarbage.Proof.Framework.KernelRfl
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.BrainpoolP256r1.Lit
 meta import VerifiedGarbage.Impl.Ecdsa.BrainpoolP256r1.X86_64
 meta import VerifiedGarbage.Proof.Framework.LitShare
@@ -212,17 +216,26 @@ theorem pre_of {s : State} (h : signX86_64.pre s) : Pre brainpoolp256r1S s := by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hw ⊢
     rcases hw with h | h <;> simp [h])
 
+/-- `InlineOkN`, calls nested two deep (`vg_brainpoolp256r1_comb_g` calls
+`vg_brainpoolp256r1_add_complete`), checked once for every theorem that needs it. -/
+theorem sign_inlineOk : signBrainpoolP256r1.InlineOkN 2 = true := by lit_decide
+
+/-- The signature inlined at every depth is `signGW` with the comb inline,
+the code the proofs run. -/
+theorem sign_inlineAll : signBrainpoolP256r1.inlineAll =
+    (brainpoolp256r1S.signGW (brainpoolp256r1S.gMulG brainpoolp256r1Comb)).inline := by kernel_rfl
+
 theorem sign_x86 (hL : Law Spec.BrainpoolP256r1.curve)
     (hI : InvSounds) (s : State)
     (hs : signX86_64.pre s) :
-    ∃ t s', Exec isa signBrainpoolP256r1.inline s t s' ∧ abiPreserved s s' ∧ signX86_64.post s s' := by
+    ∃ t s', Exec isa signBrainpoolP256r1.inlineAll s t s' ∧ abiPreserved s s' ∧ signX86_64.post s s' := by
   obtain ⟨t, s', he, hsv, hpost⟩ := signG_ok (brainpoolp256r1S_ok hI) hL brainpoolp256r1S_comb
     (Proof.BrainpoolP256r1.combOk7 hL) rfl (pre_of hs) (by decide)
-  have hok : signBrainpoolP256r1.InlineOk = true := by lit_decide
-  have hsp := Code.clobbers_rsp_of_inlineOk hok
-  have hmx : signBrainpoolP256r1.inline.allInstrs (fun i => !loadsMxcsr i) = true := by
-    rw [Code.allInstrs_inline]; lit_decide
-  have F := (Exec.regions he (Code.noCalls_inline hok)).2.2
+  rw [← sign_inlineAll] at he
+  have hsp := Code.clobbers_rsp_of_inlineOkN sign_inlineOk
+  have hmx : signBrainpoolP256r1.inlineAll.allInstrs (fun i => !loadsMxcsr i) = true :=
+    Code.allInstrs_inlineAll (by lit_decide)
+  have F := (Exec.regions he (Code.noCalls_inlineAll sign_inlineOk)).2.2
   obtain ⟨-, hwr, -, -, -, -, -, -, -, hro, hrs, -, -, -⟩ := hs
   refine ⟨t, s', he, abiPreserved_of_exec hmx he
     ⟨fun r hr => ?_, ?_⟩, hpost⟩
@@ -268,17 +281,17 @@ theorem sign_ct : ConstantTime isa signX86_64.pre signX86_64.pub signBrainpoolP2
 
 /-- The output is apart from the calls' return address. -/
 theorem post_patch (s b : State) (hv : Mem) (u : Nat → BitVec 64) (hs : signX86_64.pre s)
-    (hc : Clear (hole (s.gpr .rsp)) s) (hp : signX86_64.post s b) :
-    signX86_64.post s (b.patch (hole (s.gpr .rsp)) hv u) := by
+    (hc : Clear (holeN (s.gpr .rsp) 2) s) (hp : signX86_64.post s b) :
+    signX86_64.post s (b.patch (holeN (s.gpr .rsp) 2) hv u) := by
   have hb := Clear.wr_bytes hc (p := s.gpr .rdi) (n := 64) (by rw [hs.2.1]; simp) (by decide)
   simpa only [signX86_64, State.patch_gpr, bytesAt_patch hb] using hp
 
 /-- The function with its calls, for a caller (RFC 6979's) that keeps its
-buffers off the 8 bytes below `rsp`. -/
+buffers off the 16 bytes below `rsp`. -/
 theorem sign_call_x86 (hL : Law Spec.BrainpoolP256r1.curve) (hI : InvSounds) (s : State) (hs : signX86_64.pre s)
-    (hc : Clear (hole (s.gpr .rsp)) s) :
+    (hc : Clear (holeN (s.gpr .rsp) 2) s) :
     ∃ t s', Exec isa signBrainpoolP256r1 s t s' ∧ abiPreserved s s' ∧ signX86_64.post s s' :=
-  ok_of_inline (k := signX86_64) (by lit_decide) (sign_x86 hL hI)
+  ok_of_inlineAll (k := signX86_64) sign_inlineOk (by decide) (sign_x86 hL hI)
     (fun s b hv u hs hc hp => post_patch s b hv u hs hc hp) s ⟨hs, hc⟩
 
 end VG.Proof.Ecdsa.X86_64.BrainpoolP256r1
