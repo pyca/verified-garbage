@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.Contract
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.AddrArith
@@ -44,6 +45,7 @@ meta import VerifiedGarbage.Proof.Sha256.RISCV64.Stream.Finalize
 meta import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Sha256
 meta import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Finalize
 meta import VerifiedGarbage.Proof.Framework.Covers
+meta import VerifiedGarbage.Proof.RsaPkcs1Enc.Contract
 
 /-! ### `RsaPkcs1Enc.RISCV64.Dec.CT3`, which this module and modules that import it used -/
 
@@ -96,11 +98,11 @@ structure Same (pc : Bool) (s₁ s₂ : State) : Prop where
   leak : pc = true → Spec.Rsa.privatePrecomputedLeak s₁.mem (stackArg s₁ 15) (s₁.gpr .a4).toNat =
     Spec.Rsa.privatePrecomputedLeak s₂.mem (stackArg s₂ 15) (s₂.gpr .a4).toNat
 
-theorem same_of {s₁ s₂ : State} (h : (Spec.RsaPkcs1Enc.decryptContract RISCV64.abi stackBytes).pub s₁ s₂) :
+theorem same_of {s₁ s₂ : State} (h : (Proof.RsaPkcs1Enc.decryptContract RISCV64.abi stackBytes).pub s₁ s₂) :
     Same false s₁ s₂ := by
   have e : stackBytes = 3455 + 1 := rfl
   rw [e] at h
-  sig_pub [Spec.RsaPkcs1Enc.decryptContract, Spec.RsaPkcs1Enc.decryptSig, RISCV64.abi, RISCV64.argRegs,
+  sig_pub [Proof.RsaPkcs1Enc.decryptContract, Proof.RsaPkcs1Enc.decryptSig, RISCV64.abi, RISCV64.argRegs,
     stackArgs_fifteen, List.append_eq] at h
   simp only [List.getD_cons_succ, List.getD_cons_zero] at h
   obtain ⟨hsp, hl, h3, h4, h5, h6, h7, h8, h9, h10, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13,
@@ -1789,7 +1791,7 @@ variable {pc : Bool}
 
 /-- The outcome, on the registers and the stack. -/
 def fnPost (s s' : State) : Prop :=
-  Spec.RsaPkcs1Enc.writtenMsg s'.mem (s.gpr .a0) (s.gpr .a2) (s.gpr .a4).toNat ((s'.gpr .a0).setWidth 32)
+  Proof.RsaPkcs1Enc.writtenMsg s'.mem (s.gpr .a0) (s.gpr .a2) (s.gpr .a4).toNat ((s'.gpr .a0).setWidth 32)
     (Spec.RsaPkcs1Enc.decrypt (Spec.Rsa.bytesAt s.mem (s.gpr .a3) (s.gpr .a4).toNat)
       (Spec.Rsa.bytesAt s.mem (s.gpr .a5) (s.gpr .a6).toNat) (dBytes s)
       (Spec.Rsa.bytesAt s.mem (stackArg s 3) (stackArg s 4).toNat)
@@ -1850,7 +1852,7 @@ theorem result_ok {s : State} (h : DPre pc s) {x : BitVec 64} {mc : Mem} {t : St
   have hw : Spec.Rsa.wordsAt t.mem (s.gpr .a2) 1 = [t.mem.readW (s.gpr .a2) 64] := by
     simp only [Spec.Rsa.wordsAt, List.range_one, List.map_cons, List.map_nil, Nat.mul_zero, BitVec.add_zero]
   simp only [Spec.RsaPkcs1Enc.decrypt]
-  show Spec.RsaPkcs1Enc.writtenMsg _ _ _ _ _ (Spec.RsaPkcs1Enc.decryptWith (rsadpOf s)
+  show Proof.RsaPkcs1Enc.writtenMsg _ _ _ _ _ (Spec.RsaPkcs1Enc.decryptWith (rsadpOf s)
     (Spec.Rsa.bytesAt s.mem (s.gpr .a3) (s.gpr .a4).toNat).length (dBytes s) (cOf s))
   cases hO : rsadpOf s (cOf s) with
   | ok EM' =>
@@ -1923,7 +1925,7 @@ theorem codeG_correct (s : State) (h : DPre pc s) (X : pc = true → PreX s) :
       (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact (h.km.sub_left (frR_sub s)).symm)
       (by decide)).trans hu.ml
 
-theorem code_correct (s : State) (hpre : (Spec.RsaPkcs1Enc.decryptContract RISCV64.abi stackBytes).pre s) :
+theorem code_correct (s : State) (hpre : (Proof.RsaPkcs1Enc.decryptContract RISCV64.abi stackBytes).pre s) :
     ∃ tr t, Exec isa code s tr t ∧ abiPreserved s t ∧ fnPost s t :=
   codeG_correct s (dPre_of hpre) nofun
 
@@ -2036,8 +2038,8 @@ theorem codeG_rel : RelCT isa (fun s₁ s₂ => ∃ e : Env pc, e.s₁ = s₁ �
   rel_alloc ((RelCT.exists_ fun e : Env pc => body_ct (e := e)).mono
     (fun _ _ ⟨s₁, s₂, ⟨e, h₁, h₂⟩, ea, eb⟩ => ⟨e, by subst h₁ h₂; exact ⟨ea, eb⟩⟩) fun _ _ h => h)
 
-theorem code_ct : ConstantTime isa (Spec.RsaPkcs1Enc.decryptContract RISCV64.abi stackBytes).pre
-    (Spec.RsaPkcs1Enc.decryptContract RISCV64.abi stackBytes).pub code :=
+theorem code_ct : ConstantTime isa (Proof.RsaPkcs1Enc.decryptContract RISCV64.abi stackBytes).pre
+    (Proof.RsaPkcs1Enc.decryptContract RISCV64.abi stackBytes).pub code :=
   RelCT.constantTime ((codeG_rel (pc := false)).mono
     (fun s₁ s₂ ⟨h₁, h₂, hp⟩ => ⟨⟨s₁, s₂, dPre_of h₁, dPre_of h₂, same_of hp, nofun, nofun⟩, rfl, rfl⟩)
     fun _ _ h => h)
@@ -2067,9 +2069,9 @@ open VG.RISCV64 VG.Impl.RsaPkcs1Enc.RISCV64.Decrypt
 
 /-- The shared contract, its postcondition on the registers and the stack. -/
 def fnContract : Contract isa where
-  pre := (Spec.RsaPkcs1Enc.decryptContract RISCV64.abi stackBytes).pre
+  pre := (Proof.RsaPkcs1Enc.decryptContract RISCV64.abi stackBytes).pre
   post := fnPost
-  pub := (Spec.RsaPkcs1Enc.decryptContract RISCV64.abi stackBytes).pub
+  pub := (Proof.RsaPkcs1Enc.decryptContract RISCV64.abi stackBytes).pub
 
 /-- A state meeting the precondition: a 64-byte modulus, input and `out`,
 one-byte exponents, primes, CRT exponents and `qInv`, and the stack
@@ -2092,19 +2094,19 @@ def satState : State where
     ⟨0x4400, 1⟩, ⟨0x4500, 1⟩, ⟨0x10000, 120⟩]
   wr := [⟨0x1000, 64⟩, ⟨0x1100, 8⟩, ⟨0x20000, 8448⟩]
 
-theorem dec_implies : fnContract.Implies (Spec.RsaPkcs1Enc.decryptContract RISCV64.abi stackBytes) where
+theorem dec_implies : fnContract.Implies (Proof.RsaPkcs1Enc.decryptContract RISCV64.abi stackBytes) where
   pre := fun _ h => h
   post := by
-    sig_implies_post [Spec.RsaPkcs1Enc.decryptContract, Spec.RsaPkcs1Enc.decryptSig, RISCV64.abi,
+    sig_implies_post [Proof.RsaPkcs1Enc.decryptContract, Proof.RsaPkcs1Enc.decryptSig, RISCV64.abi,
       RISCV64.argRegs, fnContract, fnPost, stackArgs_fifteen, List.append_eq, dBytes, cOf]
   pub := fun _ _ _ _ h => h
   sat := by
-    sig_implies_sat [Spec.RsaPkcs1Enc.decryptContract, Spec.RsaPkcs1Enc.decryptSig, RISCV64.abi,
+    sig_implies_sat [Proof.RsaPkcs1Enc.decryptContract, Proof.RsaPkcs1Enc.decryptSig, RISCV64.abi,
       RISCV64.argRegs, fnContract, stackArgs_fifteen, List.append_eq]
       [satState, stackArg, stackArgAddr, Mem.readW, Mem.read] using satState
 
 /-- `vg_rsa_pkcs1_decrypt`. -/
-theorem dec_verified : Verified RISCV64.target code (Spec.RsaPkcs1Enc.decryptContract RISCV64.abi stackBytes) :=
+theorem dec_verified : Verified RISCV64.target code (Proof.RsaPkcs1Enc.decryptContract RISCV64.abi stackBytes) :=
   Verified.of_correct code_correct code_ct dec_implies
 
 end VG.Proof.RsaPkcs1Enc.RISCV64.Dec

@@ -33,11 +33,6 @@ open VG.Proof.Rsa.Arm (CrtImpl)
 
 def artifacts : List Artifact :=
   VG.Proof.Variants.RsaPrivateCrt.Arm.variants.flatMap fun (v : CrtImpl) => [
-    Spec.RsaPkcs1Enc.decryptPrecomputedApi.artifact Arm.target {
-      suffix := v.suffix
-      code := Impl.RsaPkcs1Enc.Arm.Fn.decryptPrecomputed Proof.RsaPkcs1Enc.Arm.decFns (Proof.Rsa.Arm.privNameP v)
-        (Proof.Rsa.Arm.privCodeP v)
-      verified := Proof.RsaPkcs1Enc.Arm.Fn.decryptPrecomputed v },
     Spec.RsaPkcs1Enc.decryptPrecomputedFrontApi.artifact Arm.target {
       suffix := v.suffix
       code := Impl.RsaPkcs1Enc.Arm.Fn.decryptPrecomputedFront (Proof.RsaPkcs1Enc.Arm.Front.bodyName v)

@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.Contract
 public import VerifiedGarbage.Impl.RsaPkcs1Enc.Arm.Decrypt
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Entry
 public import VerifiedGarbage.Spec.RsaPkcs1Enc.Contract
@@ -138,7 +139,7 @@ end In
 abbrev stackBytes : Nat := 56 + frameBytes + 3488
 
 /-- The shared contract, with that stack. -/
-abbrev spec : Contract isa := Spec.RsaPkcs1Enc.decryptContract abi stackBytes
+abbrev spec : Contract isa := Proof.RsaPkcs1Enc.decryptContract abi stackBytes
 
 /-- The public parameters of an entry state (with `pc`, of
 `vg_rsa_pkcs1_decrypt_precomputed`). -/
@@ -175,7 +176,7 @@ theorem ep_lay (s : State) :
   simp [ep, EP.lay, EP.argv, EP.ro, layOf]
 
 theorem in_of_pre {s : State} (h : spec.pre s) : In (ep s) (entered frameBytes s) := by
-  sig_pre [Spec.RsaPkcs1Enc.decryptContract, Spec.RsaPkcs1Enc.decryptSig, abi,
+  sig_pre [Proof.RsaPkcs1Enc.decryptContract, Proof.RsaPkcs1Enc.decryptSig, abi,
     argRegs, reduceClassify, Loc.val] at h
   sig_split h
   rename_i hsp hsa hrd hwr oM oN oE oD oI oP oQ oDP oDQ oQI oS oA mN mE mD mI mP mQ mDP mDQ mQI mS mA nS eS

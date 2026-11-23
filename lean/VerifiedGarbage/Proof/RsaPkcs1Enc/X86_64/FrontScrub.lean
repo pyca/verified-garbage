@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.Contract
 public import VerifiedGarbage.Impl.RsaPkcs1Enc.X86_64.Front
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.Front
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.Scrub
@@ -92,13 +93,13 @@ theorem front_spSafe {name : String} {callee : Prog isa} (h : callee.all (fun i 
 `msg_len`. -/
 theorem front_postOut (stack : Nat) :
     VG.X86_64.Scrub.PostOut (Spec.RsaPkcs1Enc.decryptPrecomputedFrontContract abi stack)
-      (Spec.RsaPkcs1Enc.decryptPrecomputedSig.retBits 64) := by
+      (Proof.RsaPkcs1Enc.decryptPrecomputedSig.retBits 64) := by
   rw [fK_eq]
   refine VG.X86_64.Scrub.postOut_of_local_pre (leak := some _) VG.X86_64.Scrub.ScrubAbi.plain
     fun vs m m₁ m₂ r hlen hpre hb h => ?_
   obtain ⟨o, oL, ml, n, nL, e, eL, d, dL, i, iL, p, pL, q, qL, dp, dpL, dq, dqL, qi, qiL, sc, scL, pre, preL, rfl⟩ :=
     vs25 hlen
-  simp only [sig, Spec.RsaPkcs1Enc.decryptPrecomputedSig, Spec.RsaPkcs1Enc.decryptSig, Sig.bufs, List.cons_append,
+  simp only [sig, Proof.RsaPkcs1Enc.decryptPrecomputedSig, Proof.RsaPkcs1Enc.decryptSig, Sig.bufs, List.cons_append,
     List.nil_append, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq, Elem.size,
     Nat.mul_one] at hb
   obtain ⟨bo, bm, -⟩ := hb

@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.Contract
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecResult
 import VerifiedGarbage.Proof.Rsa.BytesFrame
 import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.EncCorrect
@@ -60,7 +61,7 @@ theorem result_ok {s : State} (hp : DPre s) {R : BitVec 64} {EM : List Byte} {m 
     (hres : Spec.Rsa.writtenOutcome m (s.gpr .rdi) (kOf s) (R.setWidth 32) (privOut s))
     (hEM : Spec.Rsa.bytesAt m (s.gpr .rdi) (kOf s) = EM)
     (hF : Fin s R EM (amOf s) (vEM EM (kOf s)) (okOf R) (lEM s EM) t) (hAM : (amOf s).length = kOf s) :
-    Spec.RsaPkcs1Enc.writtenMsg t.mem (s.gpr .rdi) (s.gpr .rdx) (kOf s) ((t.gpr .rax).setWidth 32)
+    Proof.RsaPkcs1Enc.writtenMsg t.mem (s.gpr .rdi) (s.gpr .rdx) (kOf s) ((t.gpr .rax).setWidth 32)
       (Spec.RsaPkcs1Enc.decrypt (nB s) (eB s) (dB s) (pB s) (qB s) (dpB s) (dqB s) (qiB s) (cB s)) := by
   have hk1 := hp.k1
   have hk2 := hp.k2
@@ -139,16 +140,16 @@ theorem ret_frame {s : State} (hp : DPre s) {m : Mem} (h : Frame (wrs s) s.mem m
   · exact hp.dRm
   · exact hp.dRs
 
-/-- `Spec.RsaPkcs1Enc.writtenMsg` of buffers apart from a frame, whatever the
+/-- `Proof.RsaPkcs1Enc.writtenMsg` of buffers apart from a frame, whatever the
 frame's bytes hold. -/
 theorem writtenMsg_frame {regions : List Region} {m m' : Mem} {out ml : Addr} {n : Nat} {r : BitVec 32}
     {o : Spec.Rsa.Outcome} (f : Frame regions m m') (fit : n < 2 ^ 64)
     (sepO : ∀ q ∈ regions, (⟨out, n⟩ : Region).Disjoint q)
     (sepM : ∀ q ∈ regions, (⟨ml, 8 * 1⟩ : Region).Disjoint q)
-    (h : Spec.RsaPkcs1Enc.writtenMsg m out ml n r o) : Spec.RsaPkcs1Enc.writtenMsg m' out ml n r o := by
+    (h : Proof.RsaPkcs1Enc.writtenMsg m out ml n r o) : Proof.RsaPkcs1Enc.writtenMsg m' out ml n r o := by
   have hb := Proof.Rsa.rsa_bytes_frame f fit sepO
   have hw := Proof.Rsa.wordsAt_frame f (n := 1) (by decide) sepM
-  cases o <;> simp only [Spec.RsaPkcs1Enc.writtenMsg] at h ⊢ <;> rw [hb, hw] <;> exact h
+  cases o <;> simp only [Proof.RsaPkcs1Enc.writtenMsg] at h ⊢ <;> rw [hb, hw] <;> exact h
 
 /-- The function, with the code `A`, `B` before `rest`, which leave what
 the call of the private-key operation leaves (`hfront`). -/
