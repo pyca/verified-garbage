@@ -400,7 +400,7 @@ def Src.noRsp : Src → Bool
 /-- A vector operation that does not touch `rsp`: those of vector registers
 alone, and `vmovq` from a register but `rsp`. -/
 def VOp.rspFree : VOp → Bool
-  | .vbin .. | .vmovdqa .. | .vpbroadcastd .. | .vzeroupper => true
+  | .vbin .. | .vmovdqa .. | .vpbroadcastd .. | .vzeroupper | .vpshufd .. | .vinserti128 .. | .vextracti128 .. => true
   | .vmovq _ r => r != .rsp
   | _ => false
 
@@ -416,8 +416,8 @@ functions `Code.InlineOk` lets code call (a short list; the others are
 def Instr.rspFree : Instr → Bool
   | .mov d src | .mov32 d src | .alu _ d src | .alu32 _ d src | .adcx d src | .adox d src
   | .cmov _ d src => d != .rsp && src.noRsp
-  | .store m r => m.noRsp && r != .rsp
-  | .shift _ d _ => d != .rsp
+  | .store m r | .store32 m r => m.noRsp && r != .rsp
+  | .shift _ d _ | .shiftCl _ d => d != .rsp
   | .mul r => r != .rsp
   | .imul d r | .imul3 d r _ => d != .rsp && r != .rsp
   | .shld d r _ => d != .rsp && r != .rsp
@@ -435,6 +435,10 @@ def Instr.rspFree : Instr → Bool
   | .leaSym d _ => d != .rsp
   | .vop op => op.rspFree
   | .vbinLoad _ _ _ _ m | .vmovdquStore _ m _ => m.noRsp
+  | .zop _ => true
+  | .movdquTbl _ m .. | .vmovdquLoad _ _ m | .vmovdqu32Load _ m | .vmovdqu32Store m _
+    | .vbroadcasti32x4 _ m => m.noRsp
+  | .kLoad8 r _ m | .kStore8 m r _ => m.noRsp && r != .rsp
   | .eop op => op.rspFree
   | .evLoad _ m | .evStore m _ | .evMadd52Load _ _ _ m => m.noRsp
   | _ => false
@@ -498,6 +502,21 @@ theorem store16_setRsp (a : Addr) (v : BitVec 16) :
   simp only [State.store16, show (s.setReg .rsp x).wr = s.wr from rfl]
   by_cases h : InRegions s.wr a 2 <;> simp only [h, ite_true, ite_false, Option.map_some, Option.map_none] <;> rfl
 
+theorem store32_setRsp (a : Addr) (v : BitVec 32) :
+    (s.setReg .rsp x).store32 a v = (s.store32 a v).map (·.setReg .rsp x) := by
+  simp only [State.store32, show (s.setReg .rsp x).wr = s.wr from rfl]
+  by_cases h : InRegions s.wr a 4 <;> simp only [h, ite_true, ite_false, Option.map_some, Option.map_none] <;> rfl
+
+theorem store512_setRsp (a : Addr) (v : BitVec 512) :
+    (s.setReg .rsp x).store512 a v = (s.store512 a v).map (·.setReg .rsp x) := by
+  simp only [State.store512, show (s.setReg .rsp x).wr = s.wr from rfl]
+  by_cases h : InRegions s.wr a 64 <;> simp only [h, ite_true, ite_false, Option.map_some, Option.map_none] <;> rfl
+
+theorem storeMasked512B_setRsp (a : Addr) (k : BitVec 64) (v : BitVec 512) :
+    (s.setReg .rsp x).storeMasked512B a k v = (s.storeMasked512B a k v).map (·.setReg .rsp x) := by
+  simp only [State.storeMasked512B, show (s.setReg .rsp x).wr = s.wr from rfl]
+  split <;> rfl
+
 theorem store256_setRsp (a : Addr) (v : BitVec 256) :
     (s.setReg .rsp x).store256 a v = (s.store256 a v).map (·.setReg .rsp x) := by
   simp only [State.store256, show (s.setReg .rsp x).wr = s.wr from rfl]
@@ -541,6 +560,14 @@ theorem exec_setRsp {i : Instr} (hi : i.rspFree = true) :
   | store m r =>
     simp only [Instr.rspFree, Bool.and_eq_true, bne_iff_ne, ne_eq] at hi
     simp only [exec, ea_setRsp hi.1, setRsp_gpr hi.2, store64_setRsp]
+  | store32 m r =>
+    simp only [Instr.rspFree,Bool.and_eq_true,bne_iff_ne,ne_eq] at hi
+    simp only [exec,ea_setRsp hi.1,setRsp_gpr hi.2,store32_setRsp]
+  | shiftCl op d =>
+    simp only [Instr.rspFree,bne_iff_ne,ne_eq] at hi
+    simp only [exec,execShiftCl,setRsp_gpr hi,setRsp_gpr (show Reg.rcx ≠ .rsp by decide),Option.map_some,
+      setFlags_setRsp,setReg_setRsp hi]
+    rfl
   | shift op d n =>
     simp only [Instr.rspFree, bne_iff_ne, ne_eq] at hi
     simp only [exec, execShift, setRsp_gpr hi]
@@ -643,6 +670,7 @@ theorem exec_setRsp {i : Instr} (hi : i.rspFree = true) :
     simp only [exec, Option.map_some]; congr 1
     cases op <;> simp only [Instr.rspFree, VOp.rspFree, Bool.false_eq_true, bne_iff_ne, ne_eq] at hi
     case vmovq d r => simp only [VOp.exec, setRsp_gpr hi]; rfl
+    case vinserti128 d a b n => simp only [VOp.exec]; split <;> rfl
     all_goals rfl
   | vbinLoad op len d a m =>
     simp only [Instr.rspFree] at hi
@@ -668,6 +696,26 @@ theorem exec_setRsp {i : Instr} (hi : i.rspFree = true) :
     simp only [Instr.rspFree] at hi
     simp only [exec, Option.map_map]; rw [ea_setRsp hi]
     simp only [Function.comp_def, vy_setRsp, setVy_setRsp]; rfl
+  | zop op =>
+    simp only [exec,Option.map_some]; congr 1; cases op <;> rfl
+  | movdquTbl d m name ws =>
+    have hb : m.base ≠ .rsp := by
+      simp only [Instr.rspFree,MemOp.noRsp,Bool.and_eq_true,bne_iff_ne,ne_eq] at hi
+      exact hi.1
+    simp only [exec, ea_setRsp hi, setRsp_gpr hb, show (s.setReg .rsp x).syms = s.syms from rfl]
+    split <;> rfl
+  | vmovdquLoad len d m =>
+    cases len <;> simp only [exec,ea_setRsp hi,Option.map_map] <;> rfl
+  | vmovdqu32Load d m | vbroadcasti32x4 d m =>
+    simp only [exec,ea_setRsp hi,Option.map_map]; rfl
+  | vmovdqu32Store m r =>
+    simp only [exec, ea_setRsp hi, store512_setRsp]; rfl
+  | kLoad8 r d m =>
+    simp only [Instr.rspFree,Bool.and_eq_true,bne_iff_ne,ne_eq] at hi
+    simp only [exec,ea_setRsp hi.1,setRsp_gpr hi.2,Option.map_map]; rfl
+  | kStore8 m r d =>
+    simp only [Instr.rspFree,Bool.and_eq_true,bne_iff_ne,ne_eq] at hi
+    simp only [exec,ea_setRsp hi.1,setRsp_gpr hi.2,storeMasked512B_setRsp]; rfl
   | _ => cases hi
 
 theorem srcAddrs_setRsp {src : Src} (h : src.noRsp = true) : srcAddrs (s.setReg .rsp x) src = srcAddrs s src := by
@@ -679,12 +727,20 @@ theorem addrs_setRsp {i : Instr} (hi : i.rspFree = true) : addrs i (s.setReg .rs
   cases i
   case mov | mov32 | alu | alu32 | adcx | adox | cmov | mulx =>
     simp only [Instr.rspFree, Bool.and_eq_true] at hi; simp only [addrs]; rw [srcAddrs_setRsp hi.2]
-  case store | store8 | store16 =>
+  case store | store32 | store8 | store16 =>
     simp only [Instr.rspFree, Bool.and_eq_true] at hi; simp only [addrs]; rw [ea_setRsp hi.1]
-  case movdquLoad | movdquStore | vbinLoad | vmovdquStore | evLoad | evStore | evMadd52Load =>
+  case movdquLoad | movdquStore | vbinLoad | vmovdquStore | evLoad | evStore | evMadd52Load | vmovdquLoad | vmovdqu32Load | vmovdqu32Store | vbroadcasti32x4 =>
     simp only [Instr.rspFree] at hi; simp only [addrs]; rw [ea_setRsp hi]
   case movzx8 | movzx16 =>
     simp only [Instr.rspFree, Bool.and_eq_true] at hi; simp only [addrs]; rw [ea_setRsp hi.2]
+  case kLoad8 | kStore8 =>
+    simp only [Instr.rspFree,Bool.and_eq_true,bne_iff_ne,ne_eq] at hi
+    simp only [addrs,ea_setRsp hi.1,setRsp_gpr hi.2]
+  case movdquTbl d m name ws =>
+    have hb : m.base ≠ .rsp := by
+      simp only [Instr.rspFree,MemOp.noRsp,Bool.and_eq_true,bne_iff_ne,ne_eq] at hi
+      exact hi.1
+    simp only [addrs, ea_setRsp hi, setRsp_gpr hb]
   all_goals first | rfl | cases hi
 
 end
