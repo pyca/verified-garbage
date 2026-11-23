@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.Scrub
+public import VerifiedGarbage.Impl.RsaPkcs1Enc.AArch64.Front
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.FrontScrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.AArch64.Print
 public import VerifiedGarbage.Proof.Variants.Sha256Compress.AArch64
@@ -22,7 +24,12 @@ def artifacts : List Artifact :=
       Spec.RsaPkcs1Enc.decryptPrecomputedApi.artifact AArch64.target {
         suffix := qualifiedName "" [("sha256", h.suffix), ("crt", c.suffix)]
         code := Impl.RsaPkcs1Enc.AArch64.Fn.decryptPrecomputed h.name h.suffix h.code c.toCrt
-        verified := Proof.RsaPkcs1Enc.AArch64.Scrub.decryptPrecomputed_scrubbed h c }]) ++
+        verified := Proof.RsaPkcs1Enc.AArch64.Scrub.decryptPrecomputed_scrubbed h c },
+      Spec.RsaPkcs1Enc.decryptPrecomputedFrontApi.artifact AArch64.target {
+        suffix := qualifiedName "" [("sha256", h.suffix), ("crt", c.suffix)]
+        code := Impl.RsaPkcs1Enc.AArch64.Fn.decryptPrecomputedFront (Proof.RsaPkcs1Enc.AArch64.Front.bodyName h c)
+          (Proof.RsaPkcs1Enc.AArch64.Front.decCode h c)
+        verified := Proof.RsaPkcs1Enc.AArch64.Front.front_scrubbed h c }]) ++
   (VG.Proof.Variants.RsaPublicPrecomputed.AArch64.variants.flatMap fun (v : Proof.Rsa.AArch64.PublicImpl) => [
     Spec.RsaPkcs1Enc.encryptRandomApi.artifact AArch64.target {
       suffix := v.suffix

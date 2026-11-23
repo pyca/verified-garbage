@@ -427,6 +427,176 @@ vg_rsa_pkcs1_decrypt_precomputed_sha256_sha2:
 	ret
 	.p2align 6
 
+vg_rsa_pkcs1_decrypt_precomputed_front_sha256_sha2:
+	str x30, [sp, #-16]!
+	sub sp, sp, #272
+	add x9, sp, #0
+	str x0, [x9, #152]
+	str x4, [x9, #168]
+	str x2, [x9, #216]
+	ldr x10, [sp, #288]
+	str x10, [x9, #0]
+	ldr x10, [sp, #296]
+	str x10, [x9, #8]
+	ldr x10, [sp, #304]
+	str x10, [x9, #16]
+	ldr x10, [sp, #312]
+	str x10, [x9, #24]
+	ldr x10, [sp, #320]
+	str x10, [x9, #32]
+	ldr x10, [sp, #328]
+	str x10, [x9, #40]
+	ldr x10, [sp, #336]
+	str x10, [x9, #48]
+	ldr x10, [sp, #344]
+	str x10, [x9, #56]
+	ldr x10, [sp, #352]
+	str x10, [x9, #64]
+	ldr x10, [sp, #360]
+	str x10, [x9, #72]
+	ldr x10, [sp, #368]
+	str x10, [x9, #80]
+	ldr x10, [sp, #376]
+	str x10, [x9, #88]
+	ldr x10, [sp, #384]
+	str x10, [x9, #96]
+	ldr x10, [sp, #392]
+	str x10, [x9, #104]
+	ldr x10, [sp, #400]
+	str x10, [x9, #112]
+	ldr x10, [sp, #408]
+	str x10, [x9, #120]
+	ldr x10, [sp, #416]
+	str x10, [x9, #128]
+	bl {vg_rsa_pkcs1_decrypt_precomputed_body_sha256_sha2}
+	add x9, sp, #0
+	str x0, [x9, #224]
+	ldr x10, [sp, #392]
+	str x10, [x9, #96]
+	ldr x11, [sp, #96]
+	add x11, x11, #1024
+	movz x12, #256, lsl #0
+	movz x13, #0, lsl #0
+20:
+	str x13, [x11, #0]
+	add x11, x11, #8
+	sub x12, x12, #1
+	cbnz x12, 20b
+	ldr x11, [sp, #152]
+	ldr x12, [sp, #96]
+	add x12, x12, #1024
+	ldr x13, [sp, #168]
+21:
+	ldrb w10, [x11, #0]
+	strb w10, [x12, #0]
+	add x11, x11, #1
+	add x12, x12, #1
+	sub x13, x13, #1
+	cbnz x13, 21b
+	ldr x17, [sp, #96]
+	add x17, x17, #1024
+	ldr x9, [sp, #168]
+	ldr x10, [sp, #216]
+	ldr x10, [x10, #0]
+	sub x9, x9, x10
+	movz x14, #1, lsl #0
+	movz x8, #11, lsl #0
+22:
+	orr x11, x17, x17
+	add x12, x17, x14
+	movz x15, #1, lsl #0
+	and x15, x9, x15
+	movz x16, #0, lsl #0
+	sub x15, x16, x15
+	movz x13, #128, lsl #0
+23:
+	ldr x10, [x11, #0]
+	ldr x16, [x12, #0]
+	eor x16, x16, x10
+	and x16, x16, x15
+	eor x10, x10, x16
+	str x10, [x11, #0]
+	add x11, x11, #8
+	add x12, x12, #8
+	sub x13, x13, #1
+	cbnz x13, 23b
+	lsr x9, x9, #1
+	add x14, x14, x14
+	sub x8, x8, #1
+	cbnz x8, 22b
+	ldr x11, [sp, #96]
+	add x11, x11, #1024
+	ldr x12, [sp, #152]
+	ldr x13, [sp, #168]
+24:
+	ldrb w10, [x11, #0]
+	strb w10, [x12, #0]
+	add x11, x11, #1
+	add x12, x12, #1
+	sub x13, x13, #1
+	cbnz x13, 24b
+	ldr x0, [sp, #224]
+	add sp, sp, #272
+	ldr x30, [sp], #16
+	movz x1, #0, lsl #0
+	movz x2, #0, lsl #0
+	movz x3, #0, lsl #0
+	movz x4, #0, lsl #0
+	movz x5, #0, lsl #0
+	movz x6, #0, lsl #0
+	movz x7, #0, lsl #0
+	movz x8, #0, lsl #0
+	movz x9, #0, lsl #0
+	movz x10, #0, lsl #0
+	movz x11, #0, lsl #0
+	movz x12, #0, lsl #0
+	movz x13, #0, lsl #0
+	movz x14, #0, lsl #0
+	movz x15, #0, lsl #0
+	movz x16, #0, lsl #0
+	movz x17, #0, lsl #0
+	movi v0.2d, #0
+	movi v1.2d, #0
+	movi v2.2d, #0
+	movi v3.2d, #0
+	movi v4.2d, #0
+	movi v5.2d, #0
+	movi v6.2d, #0
+	movi v7.2d, #0
+	movi v16.2d, #0
+	movi v17.2d, #0
+	movi v18.2d, #0
+	movi v19.2d, #0
+	movi v20.2d, #0
+	movi v21.2d, #0
+	movi v22.2d, #0
+	movi v23.2d, #0
+	movi v24.2d, #0
+	movi v25.2d, #0
+	movi v26.2d, #0
+	movi v27.2d, #0
+	movi v28.2d, #0
+	movi v29.2d, #0
+	movi v30.2d, #0
+	movi v31.2d, #0
+	tst x1, x1
+	add w0, w0, #0
+	sub sp, sp, #3776
+	movi v31.2d, #0
+	add x9, sp, #0
+	movz x10, #59, lsl #0
+25:
+	str q31, [x9, #0]
+	str q31, [x9, #16]
+	str q31, [x9, #32]
+	str q31, [x9, #48]
+	add x9, x9, #64
+	sub x10, x10, #1
+	cbnz x10, 25b
+	add sp, sp, #3776
+	ret
+	.p2align 6
+
 vg_rsa_pkcs1_decrypt_precomputed:
 	str x30, [sp, #-16]!
 	sub sp, sp, #224
@@ -847,6 +1017,176 @@ vg_rsa_pkcs1_decrypt_precomputed:
 	str q31, [x9, #0]
 	str q31, [x9, #16]
 	add sp, sp, #3488
+	ret
+	.p2align 6
+
+vg_rsa_pkcs1_decrypt_precomputed_front:
+	str x30, [sp, #-16]!
+	sub sp, sp, #272
+	add x9, sp, #0
+	str x0, [x9, #152]
+	str x4, [x9, #168]
+	str x2, [x9, #216]
+	ldr x10, [sp, #288]
+	str x10, [x9, #0]
+	ldr x10, [sp, #296]
+	str x10, [x9, #8]
+	ldr x10, [sp, #304]
+	str x10, [x9, #16]
+	ldr x10, [sp, #312]
+	str x10, [x9, #24]
+	ldr x10, [sp, #320]
+	str x10, [x9, #32]
+	ldr x10, [sp, #328]
+	str x10, [x9, #40]
+	ldr x10, [sp, #336]
+	str x10, [x9, #48]
+	ldr x10, [sp, #344]
+	str x10, [x9, #56]
+	ldr x10, [sp, #352]
+	str x10, [x9, #64]
+	ldr x10, [sp, #360]
+	str x10, [x9, #72]
+	ldr x10, [sp, #368]
+	str x10, [x9, #80]
+	ldr x10, [sp, #376]
+	str x10, [x9, #88]
+	ldr x10, [sp, #384]
+	str x10, [x9, #96]
+	ldr x10, [sp, #392]
+	str x10, [x9, #104]
+	ldr x10, [sp, #400]
+	str x10, [x9, #112]
+	ldr x10, [sp, #408]
+	str x10, [x9, #120]
+	ldr x10, [sp, #416]
+	str x10, [x9, #128]
+	bl {vg_rsa_pkcs1_decrypt_precomputed_body}
+	add x9, sp, #0
+	str x0, [x9, #224]
+	ldr x10, [sp, #392]
+	str x10, [x9, #96]
+	ldr x11, [sp, #96]
+	add x11, x11, #1024
+	movz x12, #256, lsl #0
+	movz x13, #0, lsl #0
+20:
+	str x13, [x11, #0]
+	add x11, x11, #8
+	sub x12, x12, #1
+	cbnz x12, 20b
+	ldr x11, [sp, #152]
+	ldr x12, [sp, #96]
+	add x12, x12, #1024
+	ldr x13, [sp, #168]
+21:
+	ldrb w10, [x11, #0]
+	strb w10, [x12, #0]
+	add x11, x11, #1
+	add x12, x12, #1
+	sub x13, x13, #1
+	cbnz x13, 21b
+	ldr x17, [sp, #96]
+	add x17, x17, #1024
+	ldr x9, [sp, #168]
+	ldr x10, [sp, #216]
+	ldr x10, [x10, #0]
+	sub x9, x9, x10
+	movz x14, #1, lsl #0
+	movz x8, #11, lsl #0
+22:
+	orr x11, x17, x17
+	add x12, x17, x14
+	movz x15, #1, lsl #0
+	and x15, x9, x15
+	movz x16, #0, lsl #0
+	sub x15, x16, x15
+	movz x13, #128, lsl #0
+23:
+	ldr x10, [x11, #0]
+	ldr x16, [x12, #0]
+	eor x16, x16, x10
+	and x16, x16, x15
+	eor x10, x10, x16
+	str x10, [x11, #0]
+	add x11, x11, #8
+	add x12, x12, #8
+	sub x13, x13, #1
+	cbnz x13, 23b
+	lsr x9, x9, #1
+	add x14, x14, x14
+	sub x8, x8, #1
+	cbnz x8, 22b
+	ldr x11, [sp, #96]
+	add x11, x11, #1024
+	ldr x12, [sp, #152]
+	ldr x13, [sp, #168]
+24:
+	ldrb w10, [x11, #0]
+	strb w10, [x12, #0]
+	add x11, x11, #1
+	add x12, x12, #1
+	sub x13, x13, #1
+	cbnz x13, 24b
+	ldr x0, [sp, #224]
+	add sp, sp, #272
+	ldr x30, [sp], #16
+	movz x1, #0, lsl #0
+	movz x2, #0, lsl #0
+	movz x3, #0, lsl #0
+	movz x4, #0, lsl #0
+	movz x5, #0, lsl #0
+	movz x6, #0, lsl #0
+	movz x7, #0, lsl #0
+	movz x8, #0, lsl #0
+	movz x9, #0, lsl #0
+	movz x10, #0, lsl #0
+	movz x11, #0, lsl #0
+	movz x12, #0, lsl #0
+	movz x13, #0, lsl #0
+	movz x14, #0, lsl #0
+	movz x15, #0, lsl #0
+	movz x16, #0, lsl #0
+	movz x17, #0, lsl #0
+	movi v0.2d, #0
+	movi v1.2d, #0
+	movi v2.2d, #0
+	movi v3.2d, #0
+	movi v4.2d, #0
+	movi v5.2d, #0
+	movi v6.2d, #0
+	movi v7.2d, #0
+	movi v16.2d, #0
+	movi v17.2d, #0
+	movi v18.2d, #0
+	movi v19.2d, #0
+	movi v20.2d, #0
+	movi v21.2d, #0
+	movi v22.2d, #0
+	movi v23.2d, #0
+	movi v24.2d, #0
+	movi v25.2d, #0
+	movi v26.2d, #0
+	movi v27.2d, #0
+	movi v28.2d, #0
+	movi v29.2d, #0
+	movi v30.2d, #0
+	movi v31.2d, #0
+	tst x1, x1
+	add w0, w0, #0
+	sub sp, sp, #3776
+	movi v31.2d, #0
+	add x9, sp, #0
+	movz x10, #59, lsl #0
+25:
+	str q31, [x9, #0]
+	str q31, [x9, #16]
+	str q31, [x9, #32]
+	str q31, [x9, #48]
+	add x9, x9, #64
+	sub x10, x10, #1
+	cbnz x10, 25b
+	add sp, sp, #3776
 	ret
 	.p2align 6
 
