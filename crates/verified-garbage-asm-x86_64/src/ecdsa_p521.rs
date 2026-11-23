@@ -896,6 +896,18 @@ pub(crate) mod vg_ecdsa_p521_sign_k;
 pub(crate) mod vg_ecdsa_p521_sign_k_adx;
 
 #[rustfmt::skip]
+#[path = "internal/vg_ecdsa_p521_sign_r.rs"]
+pub(crate) mod vg_ecdsa_p521_sign_r;
+
+#[rustfmt::skip]
+#[path = "internal/vg_ecdsa_p521_sign_scalar.rs"]
+pub(crate) mod vg_ecdsa_p521_sign_scalar;
+
+#[rustfmt::skip]
+#[path = "internal/vg_ecdsa_p521_sign_setup.rs"]
+pub(crate) mod vg_ecdsa_p521_sign_setup;
+
+#[rustfmt::skip]
 #[path = "internal/vg_p521_inv_mod_n.rs"]
 pub(crate) mod vg_p521_inv_mod_n;
 
