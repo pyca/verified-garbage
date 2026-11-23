@@ -66,11 +66,21 @@ structure InvOk (P : InvCfg) (m : Nat) : Prop where
   Cn : P.Cn = m - P.C
   bound : (P.M.n ≤ 4 ∧ 590 ≤ 59 * P.B) ∨ (P.M.n ≤ 6 ∧ 885 ≤ 59 * P.B) ∨ (P.M.n ≤ 9 ∧ 1328 ≤ 59 * P.B)
 
+/-- A shared inversion's constants, which its caller stores (`InvCfg.seed`):
+the seed `2^(5 B) R² mod m` at `sd` and `-m⁻¹ mod 2^64` at `md`, in the
+working space and the seed apart from the working area. -/
+def SeedOk (P : InvCfg) (size m : Nat) (mem : Mem) (base : Addr) : Prop :=
+  match P.seed with
+  | none => True
+  | some (sd, md) => sd + 8 * P.M.n ≤ size ∧ md + 8 ≤ size ∧
+      (sd + 8 * P.M.n ≤ P.tbl ∨ P.tbl + invTbl P.M.n ≤ sd) ∧
+      wordsVal mem base sd P.M.n = P.seedOf m ∧ word mem base md = P.M.minv
+
 /-- The inversion modulo `m` leaves `[acc] = [base]^(m - 2)` (in Montgomery form). -/
 def InvSound (m : Nat) [NeZero m] : Prop :=
   ∀ {P : InvCfg} {base : Addr} {size : Nat}, InvLay P size → 2 < m → UnitMod m (2 ^ (64 * P.M.n)) →
     ∀ {s : State}, Scr s base size → ModOkW P.M size m s.mem base → wordsVal s.mem base P.base P.M.n < m →
-      InvOk P m → WP isa (InvCfg.inv P) s fun s' =>
+      InvOk P m → SeedOk P size m s.mem base → WP isa (InvCfg.inv P) s fun s' =>
         KeepRegs (invClob P.M.n) s s' ∧ Unch base (invW P) s.mem s'.mem ∧
         wordsVal s'.mem base P.acc P.M.n < m ∧
         toM m (2 ^ (64 * P.M.n)) (wordsVal s'.mem base P.acc P.M.n) =
@@ -99,5 +109,16 @@ theorem InvOk.ofMod {M : Mod} {acc base tbl m : Nat} (hC : 0 < (InvCfg.ofMod M a
     (hn : M.n ≤ 9) : InvOk (InvCfg.ofMod M acc base tbl m) m := by
   refine ⟨?_, ?_, ofMod_C _ _ _ _ _, hC, ofMod_Cn _ _ _ _ _, ?_⟩ <;>
     simp only [InvCfg.ofMod] <;> split <;> (try split) <;> omega_arith
+
+/-- The layout does not depend on the seed. -/
+theorem InvLay.withSeed {P : InvCfg} {size : Nat} (h : InvLay P size) (x : Option (Nat × Nat)) :
+    InvLay { P with seed := x } size :=
+  ⟨h.n4, h.n10, h.acc, h.base, h.tbl, h.mo, h.tmp, h.acc_base, h.acc_tbl, h.base_tbl, h.acc_tmp, h.tbl_tmp,
+    h.mo_acc, h.mo_tbl, h.mo_tmp⟩
+
+/-- Nor do the batches and constants. -/
+theorem InvOk.withSeed {P : InvCfg} {m : Nat} (h : InvOk P m) (x : Option (Nat × Nat)) :
+    InvOk { P with seed := x } m :=
+  ⟨h.B1, h.B16, h.C, h.Cpos, h.Cn, h.bound⟩
 
 end VG.Proof.Weierstrass.X86_64

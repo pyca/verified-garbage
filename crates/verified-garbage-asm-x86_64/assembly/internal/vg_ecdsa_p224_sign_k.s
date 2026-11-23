@@ -258,7 +258,17 @@ vg_ecdsa_p224_sign_k:
 	cmp rbx, 32
 	jne 21b
 	call {vg_p224_mul_base}
-	call {vg_p224_inv_mod_p}
+	movabs rax, -1
+	mov QWORD PTR [rdi+128], rax
+	movabs rax, 1
+	mov QWORD PTR [rdi+1024], rax
+	movabs rax, 1125895611613184
+	mov QWORD PTR [rdi+1032], rax
+	movabs rax, 1125899906842624
+	mov QWORD PTR [rdi+1040], rax
+	movabs rax, 4294443008
+	mov QWORD PTR [rdi+1048], rax
+	call {vg_inv4_mod_p}
 	call {vg_p224_affine_x}
 	mov r8, QWORD PTR [rdi+1184]
 	mov r9, QWORD PTR [rdi+1192]
@@ -630,7 +640,17 @@ vg_ecdsa_p224_sign_k:
 	mov rax, QWORD PTR [rdi+1472]
 	and rax, rdx
 	mov QWORD PTR [rdi+1472], rax
-	call {vg_p224_inv_mod_n}
+	movabs rax, -2962732554272128277
+	mov QWORD PTR [rdi+128], rax
+	movabs rax, -2177356687298470257
+	mov QWORD PTR [rdi+1024], rax
+	movabs rax, -6252878485968986053
+	mov QWORD PTR [rdi+1032], rax
+	movabs rax, 2403425931149288310
+	mov QWORD PTR [rdi+1040], rax
+	movabs rax, 2113103301
+	mov QWORD PTR [rdi+1048], rax
+	call {vg_inv4_mod_n}
 	mov r8d, 0
 	mov r9d, 0
 	mov r10d, 0

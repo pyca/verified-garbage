@@ -20,6 +20,7 @@ def p224 : Cfg where
   fastN := true
   mulBase := some Impl.Weierstrass.MulBase.p224
   inverse := some Impl.Weierstrass.Inverse.p224
+  inv4 := true
   affine := true
   checkPoint := some Impl.Weierstrass.CheckPoint.p224
 
