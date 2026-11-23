@@ -89,6 +89,13 @@ def tail (first second : Prog isa) : Prog isa :=
     (.ite .e (.block []) (.seq first second))
 
 def ctrCall : Prog isa := .seq (.block ctrArgs) (.call ctr.name ctr.code)
+/-- The same two-pointer leaf as the disjoint payload loop, with both
+pointers set to the caller's data. -/
+def aliasLeaf (leaf : Fn) : Prog isa :=
+  .seq (.block [.mov .r11 (.reg .rcx)]) (.call leaf.name leaf.code)
+
+def ctrAlias (leaf : Fn) : Prog isa := .seq (.block ctrArgs) (aliasLeaf leaf)
+
 def ghCall : Prog isa := .seq (.block ghArgs) (.call gh.name gh.code)
 
 /-- The first blocks by `piece`, if any, then the rest. -/
@@ -149,6 +156,10 @@ all the blocks if `full`, from 1 on if also `small`; see `body`). -/
 def encrypt (piece : Option (Prog isa)) (aligned : Bool := false) (full : Bool := false) (small : Bool := false)
     (small4 : Bool := false) (pieceS : Option (Prog isa) := none) : Prog isa :=
   blocks piece (ctrCall ctr) (ghCall gh) aligned full small small4 pieceS
+
+/-- Without an interleaved loop, encrypt directly with the shared CTR
+leaf, then authenticate all ciphertext in a single GHASH call. -/
+def encryptSeparate (leaf gh : Fn) : Prog isa := blocks none (ctrAlias leaf) (ghCall gh)
 
 /-- `vg_aes_gcm_decrypt_blocks`, with the decrypting `piece`, if any (taking
 all the blocks if `full`, from 1 on if also `small`; see `body`). -/

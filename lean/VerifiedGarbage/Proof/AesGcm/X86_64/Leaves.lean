@@ -364,6 +364,13 @@ theorem encrypt_fill {k : Nat} {n : String → Nat} (ctr gh : Fn) (hc : calleeSi
   unfold Impl.AesGcm.X86_64.Blocks.encrypt Impl.AesGcm.X86_64.Blocks.blocks Impl.AesGcm.X86_64.Blocks.body
   cases P <;> cases F <;> fill_calls_refl
 
+theorem encryptSeparate_fill {k : Nat} {n : String → Nat} (ctr gh : Fn) (hc : calleeSide ctr.code k (n "c") = true)
+    (hg : calleeSide gh.code k (n "g") = true) :
+    Fill k n (Impl.AesGcm.X86_64.Blocks.encryptSeparate ctrStub ghStub)
+      (Impl.AesGcm.X86_64.Blocks.encryptSeparate ctr gh) := by
+  unfold Impl.AesGcm.X86_64.Blocks.encryptSeparate Impl.AesGcm.X86_64.Blocks.blocks Impl.AesGcm.X86_64.Blocks.body
+  fill_calls_refl
+
 theorem decrypt_fill {k : Nat} {n : String → Nat} (ctr gh : Fn) (hc : calleeSide ctr.code k (n "c") = true)
     (hg : calleeSide gh.code k (n "g") = true) (P PS : Option (Prog isa)) (al F S S4 : Bool) :
     Fill k n (Impl.AesGcm.X86_64.Blocks.decrypt ctrStub ghStub P al F S S4 PS)
@@ -378,8 +385,9 @@ theorem blkB_sides (v : GcmVariant) :
     calleeSide v.impl.callees.enc.code v.lv.level 8 = true ∧ calleeSide v.impl.callees.dec.code v.lv.level 8 = true := by
   obtain ⟨h1, -, h3⟩ := v.impl.sides v.own
   have hl := (v.impl.lv_le v.own).2.2.2
+  have hc := calleeSide_mono (Nat.le_trans v.ctr.ctrToLevel (v.impl.lv_le v.own).1) (Nat.le_refl 0) v.ctr.ctrTo.side
   rcases v with ⟨ctr, key, gh, _ | ⟨name, sfx, fs, eP, dP, pP, pR, tP⟩⟩
-  · exact ⟨calleeSide_of_fill (ks := 0) (encrypt_fill (n := fun _ => 0) _ _ h1 h3 none none false false false false) hl
+  · exact ⟨calleeSide_of_fill (ks := 0) (encryptSeparate_fill (n := fun _ => 0) _ _ hc h3) hl
       (by lit_decide),
       calleeSide_of_fill (ks := 0) (decrypt_fill (n := fun _ => 0) _ _ h1 h3 none none false false false false) hl
       (by lit_decide)⟩

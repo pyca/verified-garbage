@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.Gcm.X86_64.Contract
 public import VerifiedGarbage.Proof.Framework.TaintBatch
 public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Gcm.Stream
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
 import VerifiedGarbage.Proof.Aes.X86_64.Lit
@@ -593,6 +594,59 @@ theorem ctrTo_rel (v : Proof.Aes.X86_64.Ctr32ToImpl) {P : State → State → Pr
     h₁.rdi, h₁.rsi, h₁.rdx, h₁.rcx, h₁.r8, h₁.r9, h₁.r11, h₂.rdi, h₂.rsi, h₂.rdx, h₂.rcx, h₂.r8, h₂.r9, h₂.r11]
   exact ⟨trivial, trivial, trivial, trivial, trivial, trivial, trivial⟩
 
+/-- Both payload pointers identify the same data on the in-place call. -/
+private theorem CtrCall.alias {s : State} {K C D S : Addr} {R n : Nat} (h : CtrCall s K C D S R n) :
+    CtrToCall (s.setReg .r11 (s.gpr .rcx)) K C D D S R n := by
+  have g : ∀ r, r ≠ .r11 → (s.setReg .r11 (s.gpr .rcx)).gpr r = s.gpr r := fun _ ne =>
+    RegUpd.gpr_setReg_of_ne _ _ ne
+  refine ⟨(g _ (by decide)).trans h.rdi, (g _ (by decide)).trans h.rsi, (g _ (by decide)).trans h.rdx,
+    (g _ (by decide)).trans h.rcx, (g _ (by decide)).trans h.r8, (g _ (by decide)).trans h.r9,
+    (RegUpd.gpr_setReg_self ..).trans h.rcx, h.rounds, h.wrap, h.wrap, h.kc, h.kd, h.ks, h.cd, h.cd,
+    h.cs, Or.inl rfl, h.ds, h.ds, ?_, ?_, ?_, ?_, ?_, ?_, h.writes⟩
+  · exact h.stkK
+  · exact h.stkC
+  · exact h.stkD
+  · exact h.stkD
+  · exact h.stkS
+  intro x k ⟨r, hr, hc⟩
+  refine h.reads x k ⟨r, ?_, hc⟩
+  simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
+  grind
+
+/-- Set the second pointer and call the layout-independent leaf. The GCM
+frame and return contract are those of an in-place CTR call. -/
+theorem ctrAlias_call (v : Ctr32Impl) {s : State} {K C D S : Addr} {R n : Nat}
+    (h : CtrCall s K C D S R n) :
+    WP isa (Impl.AesGcm.X86_64.Blocks.aliasLeaf ⟨v.ctrTo.callee.name, v.ctrTo.callee.code⟩) s
+      (CtrPost s K C D S R n) := by
+  refine WP.seq (WP.of_runBlock ⟨_, rfl, WP.mono (ctrTo_call v.ctrTo h.alias) fun u g => ?_⟩)
+  refine ⟨g.rd, g.wr, fun r hr => (g.saved r hr).trans ?_, g.frame, g.out, g.ctr⟩
+  exact RegUpd.gpr_setReg_of_ne _ _ (by intro e; subst e; exact (by decide : Reg.r11 ∉ calleeSaved) hr)
+
+theorem ctrAlias_rel (v : Ctr32Impl) {P : State → State → Prop}
+    (h : ∀ a b, P a b → ∃ K C D S : Addr, ∃ R n : Nat,
+      CtrCall a K C D S R n ∧ CtrCall b K C D S R n ∧ a.gpr .rsp = b.gpr .rsp) :
+    RelCT isa P (Impl.AesGcm.X86_64.Blocks.aliasLeaf ⟨v.ctrTo.callee.name, v.ctrTo.callee.code⟩)
+      fun _ _ => True := by
+  intro a b ta tb ua ub hp ea eb
+  cases ea with | seq ma ca =>
+  cases eb with | seq mb cb =>
+  obtain ⟨K,C,D,S,R,n,ha,hb,hsp⟩ := h _ _ hp
+  have step (x : State) : WP isa (.block [.mov .r11 (.reg .rcx)]) x (· = x.setReg .r11 (x.gpr .rcx)) :=
+    WP.of_runBlock ⟨_, rfl, rfl⟩
+  obtain ⟨_, _, sa, rfl⟩ := step a; obtain ⟨_, _, sb, rfl⟩ := step b
+  obtain ⟨_, rfl⟩ := Exec.det ma sa; obtain ⟨_, rfl⟩ := Exec.det mb sb
+  have move := RelCT.taint (M := isa) (A := taint) (Taint.ofRegs []) (P := fun _ _ => True)
+    (c := .block [.mov .r11 (.reg .rcx)]) (fun _ _ _ => Taint.agree_ofRegs (fun r hr => by simp at hr))
+    (hc := .block []) (by decide)
+  obtain ⟨hm, _⟩ := move _ _ _ _ _ _ trivial ma mb
+  obtain ⟨hc, _⟩ := ctrTo_rel v.ctrTo (P := fun x y =>
+    x = a.setReg .r11 (a.gpr .rcx) ∧ y = b.setReg .r11 (b.gpr .rcx)) (fun x y ⟨ex,ey⟩ => by
+      subst x y
+      exact ⟨K,C,D,D,S,R,n,ha.alias,hb.alias,hsp⟩)
+    _ _ _ _ _ _ ⟨rfl,rfl⟩ ca cb
+  exact ⟨by rw [hm, hc], trivial⟩
+
 /-! ## `vg_aes_expand_key_scratch` -/
 
 /-- What a call of `vg_aes_expand_key_scratch` needs: the `L`-byte key at `K`, the key
@@ -889,11 +943,15 @@ variable (v : GcmImpl)
 /-- What the names of the functions calling `vg_ghash` end with. -/
 def suffix : String := v.ctr.suffix ++ v.gh.suffix ++ (v.stitch.map (·.suffix)).getD ""
 
+def encryptBase (v : GcmImpl) (st : Option StitchImpl) : Prog isa :=
+  match st with
+  | none => Blocks.encryptSeparate ⟨v.ctr.ctrTo.callee.name, v.ctr.ctrTo.callee.code⟩ v.gh.fn
+  | some p => Blocks.encrypt ⟨v.ctr.callee.name, v.ctr.callee.code⟩ v.gh.fn (some p.enc) false p.full
+
 def callees : Callees :=
   ⟨⟨v.ctr.callee.name, v.ctr.callee.code⟩, v.key.fn, v.gh.fn,
     ⟨"vg_aes_gcm_encrypt_blocks" ++ v.suffix,
-      Impl.AesGcm.X86_64.Blocks.encrypt ⟨v.ctr.callee.name, v.ctr.callee.code⟩ v.gh.fn (v.stitch.map (·.enc)) false
-        (v.stitch.any (·.full))⟩,
+      v.encryptBase v.stitch⟩,
     ⟨"vg_aes_gcm_decrypt_blocks" ++ v.suffix,
       Impl.AesGcm.X86_64.Blocks.decrypt ⟨v.ctr.callee.name, v.ctr.callee.code⟩ v.gh.fn (v.stitch.map (·.dec))⟩⟩
 

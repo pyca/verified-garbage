@@ -144,6 +144,8 @@ structure Ctr32Impl where
   /-- Its form out of place (`vg_aes_ctr32_to`), with the same CPU features:
   AES-GCM's `open_to` decrypts with it in one pass. -/
   ctrTo : Ctr32ToImpl
+  /-- Both forms fit the same vector cleanup. -/
+  ctrToLevel : ctrTo.level.level ≤ level.level := by decide
   /-- Its contract without a scratch buffer, if it never touches one. -/
   free : Option (Ctr32Free callee) := none
   /-- Its contract with a scratch buffer of 1480 bytes, if it uses no more. -/
