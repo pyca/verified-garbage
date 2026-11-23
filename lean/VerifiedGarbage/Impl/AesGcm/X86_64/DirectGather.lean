@@ -30,10 +30,15 @@ def bulkRegs : List Instr :=
    .mov .r10 (.reg .r9),.mov .rdi (.reg .r13),load .rsi roundsO] ++
    ptr .rdx .r14 48 ++ ptr .rcx .r14 16 ++ ptr .rax .r15 bScrO
 def bulkArgs : List Instr := bulkWrites ++ bulkRegs
+/-- Call the shared seal kernel with the destination in r10 and scratch on the stack. -/
+def callSeal (fn : Fn) : Prog isa :=
+  .seq (.block [.mov .r10 (.reg .r11)])
+    (.frame (.push [.rax]) (.call fn.name fn.code) (.pop .rax 1))
+
 /-- The largest multiple of 256 bytes in the first slice, encrypted and authenticated in one pass. -/
 def bulk (toFn : Fn) : Prog isa :=
   .seq (.block bulkTest) (.ite .e (.block []) (.seq (.block bulkArgs)
-    (.frame (.push [.rax,.r10,.r11]) (.call toFn.name toFn.code) (.pop .rax 3))))
+    (callSeal toFn)))
 /-- Advance to the next descriptor, skipping any prefix already consumed by the fused loop. -/
 def loadPiece : List Instr :=
   [load .r10 rO,.mov .rbx (.mem (at_ .r10 0)),.mov .rbp (.mem (at_ .r10 8)),.alu .add .r10 (imm 16),store .r10 rO,
@@ -66,7 +71,7 @@ def firstArgs : List Instr :=
 def firstBlocks (toFn : Fn) : Prog isa :=
   .seq (.block firstArgs)
     (.ite .e (.block []) (.seq (.block SealSplit.preArgs)
-      (.frame (.push [.rax,.r10,.r11]) (.call toFn.name toFn.code) (.pop .rax 3))))
+      (callSeal toFn)))
 /-- Finish the remaining bytes from the independent input, writing ciphertext to both destinations. -/
 def tailByte : List Instr :=
   [.movzx8 .rax {base:=.rbx,index:=some .r10},.movzx8 .r9 Short.kB,

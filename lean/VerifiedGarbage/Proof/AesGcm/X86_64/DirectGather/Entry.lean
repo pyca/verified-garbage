@@ -1,4 +1,5 @@
 module
+public import VerifiedGarbage.Proof.AesGcm.X86_64.DirectGather.Call
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.FrontFast
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.CT
@@ -130,7 +131,6 @@ end Layout
 namespace Layout
 open VG.Spec.Aes (bytesAt)
 open VG.Spec.Gcm (ctxH)
-open VG.Proof.AesGcm.X86_64.StreamTo (BlkToFn)
 
 variable {th : Nat} {s : State} (h : Layout (CtxMode.flaggedT th) s)
 include h
@@ -158,7 +158,7 @@ abbrev WholeDone (s u m : State) (v : State) :=
   AadDone s u m ∧ Split.Mid2 (K s) (W s) (SP s) (Dst s) (sb s 0) (s.gpr .rsi).toNat (sl s 0)
     (callState m (W s) (sb s 0) (Dst s) (L s)) v
 
-theorem aad_blocks_wp (hf : Short.ShortFacts) (T : BlkToFn (CtxMode.flaggedT th)) (ht : 16 ≤ th)
+theorem aad_blocks_wp (hf : Short.ShortFacts) (T : BlocksTo.SealFn (CtxMode.flaggedT th)) (ht : 16 ≤ th)
     {u : State} (e : Initial s u) (g : frontGo false s = true) :
     WP isa (.seq VG.Impl.AesGcm.X86_64.Fast.aad (VG.Impl.AesGcm.X86_64.DirectGather.firstBlocks T.fn)) u
       fun v => ∃ m, WholeDone s u m v := by

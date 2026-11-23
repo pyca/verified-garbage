@@ -1,4 +1,5 @@
 module
+public import VerifiedGarbage.Proof.AesGcm.X86_64.DirectGather.Call
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.DirectFinish
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.CopyCT
@@ -213,7 +214,6 @@ end VG.Proof.AesGcm.X86_64.Gather.DirectTail
 namespace VG.Proof.AesGcm.X86_64.DirectGather
 open VG VG.X86_64 Gather Gather.DirectTail Short
 open VG.Proof.Gcm.X86_64.Stitch (CtxMode)
-open VG.Proof.AesGcm.X86_64.StreamTo (BlkToFn)
 open VG.Impl.AesGcm.X86_64.DirectGather (quick firstBlocks)
 open VG.Impl.AesGcm.X86_64.Short (finKsA finPowP)
 
@@ -258,7 +258,7 @@ theorem constants_rel {u m v u' m' v' : State} (pb : Pub s t) (nz : 0<Cnt s)
   refine finKsA_rel_inputs.mono (fun _ _ h => ⟨h.2.1,?_⟩) (fun _ _ _ => trivial)
   simpa only [K,SP,pb.rdi,pb.rsp,pb.rsi,pb.w] using h.2.2
 
-theorem quick_rel (hf : ShortFacts) (T : BlkToFn (CtxMode.flaggedT th)) (ht : 16≤th) (pb : Pub s t)
+theorem quick_rel (hf : ShortFacts) (T : BlocksTo.SealFn (CtxMode.flaggedT th)) (ht : 16≤th) (pb : Pub s t)
     {u v : State} (e : Initial s u) (f : Initial t v) (g : frontGo false s=true) :
     RelCT isa (fun x y => x=u ∧ y=v) (quick T.fn) fun _ _ => True := by
   have gt : frontGo false t=true := (pb.eFront false).trans g
@@ -316,7 +316,6 @@ open VG.Impl.AesGcm.X86_64 (at_ oneEntry saved)
 open VG.Impl.AesGcm.X86_64.DirectGather (dispatch enter quick)
 open VG.Impl.AesGcm.X86_64.SealGather (frontCore frontTest)
 open VG.Proof.Gcm.X86_64.Stitch (CtxMode)
-open VG.Proof.AesGcm.X86_64.StreamTo (BlkToFn)
 
 namespace Layout
 variable {M : CtxMode} {s t : State} (p : Layout M s) (q : Layout M t)
@@ -584,10 +583,9 @@ open VG.Impl.AesGcm.X86_64.DirectGather (quick)
 open VG.Spec.Gcm (Block blockAt inc32 gctr)
 open VG.Spec.Aes (bytesAt)
 open VG.Proof.Gcm.X86_64.Stitch (CtxMode)
-open VG.Proof.AesGcm.X86_64.StreamTo (BlkToFn)
 
 theorem quick_wp {th : Nat} {s u : State} (h : Layout (CtxMode.flaggedT th) s) (hf : ShortFacts)
-    (T : BlkToFn (CtxMode.flaggedT th)) (ht : 16≤th) (e : Initial s u) (g : frontGo false s=true) :
+    (T : BlocksTo.SealFn (CtxMode.flaggedT th)) (ht : 16≤th) (e : Initial s u) (g : frontGo false s=true) :
     WP isa (quick T.fn) u (BodyDone (CtxMode.flaggedT th) s) := by
   obtain ⟨nonce,count,_,_⟩ := front_limits (h.front (CtxMode.flaggedT th).ge) g
   have nz : 0<Cnt s := by omega
@@ -685,7 +683,6 @@ open VG VG.X86_64 Gather
 open VG.Impl.AesGcm.X86_64 (Fn Callees)
 open VG.Impl.AesGcm.X86_64.DirectGather (plain prepared general enter quick dispatch)
 open VG.Proof.Gcm.X86_64.Stitch (CtxMode)
-open VG.Proof.AesGcm.X86_64.StreamTo (BlkToFn)
 open VG.Proof.AesGcm.X86_64.Short (ShortFacts)
 
 structure InitializedProof (M : CtxMode) (body : Prog isa) : Prop where
@@ -700,7 +697,7 @@ theorem plain_rounds {c : Callees} {ctr : Fn} (h : InitializedProof CtxMode.base
     (fun p q pb => p.enter_rel q pb (Gather.Same.refl _) (Gather.Same.refl _) (fun _ _ e f => h.rel p q pb e f)) safe
 
 theorem prepared_rounds {t : Nat} (ht : 16 ≤ t) (hn : t ≤ 48) (hf : ShortFacts)
-    {c : Callees} {ctr : Fn} (T : BlkToFn (CtxMode.flaggedT t))
+    {c : Callees} {ctr : Fn} (T : BlocksTo.SealFn (CtxMode.flaggedT t))
     (h : InitializedProof (CtxMode.flaggedT t) (general c ctr (some T.fn)))
     (safe : CoreSafe (dispatch (quick T.fn) (general c ctr (some T.fn)))) :
     Verified X86_64.target (prepared c ctr T.fn) (Proof.AesGcm.Flag.sealGatherFlaggedRoundsContract t X86_64.abi 5128) :=

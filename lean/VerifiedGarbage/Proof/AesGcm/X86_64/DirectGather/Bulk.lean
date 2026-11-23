@@ -1,4 +1,5 @@
 module
+public import VerifiedGarbage.Proof.AesGcm.X86_64.DirectGather.Call
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.DirectGather.General
 
@@ -23,7 +24,6 @@ namespace VG.Proof.AesGcm.X86_64.DirectGather
 open VG VG.X86_64 VG.X86_64.RegUpd Gather
 open VG.Impl.AesGcm.X86_64 VG.Impl.AesGcm.X86_64.DirectGather
 open VG.Proof.Gcm.X86_64.Stitch (CtxMode)
-open VG.Proof.AesGcm.X86_64.StreamTo (BlkToFn)
 
 abbrev preBytes (s : State) := 256 * (sl s 0 / 256)
 
@@ -297,14 +297,14 @@ theorem bulk_done {M : CtxMode} {s u t : State} (h : Layout M s) (e : LoopAt M s
 
 
 
-theorem bulk_wp {M : CtxMode} (T : BlkToFn M) {s u : State} (h : Layout M s) (e : LoopAt M s 0 0 u) (hc : 0<Cnt s) :
+theorem bulk_wp {M : CtxMode} (T : BlocksTo.SealFn M) {s u : State} (h : Layout M s) (e : LoopAt M s 0 0 u) (hc : 0<Cnt s) :
     WP isa (bulk T.fn) u (LoopAt M s (preBytes s) 0) := by
   refine WP.seq (WP.mono (bulkTest_wp h e hc) fun z p => ?_)
   refine WP.ite (decide (sl s 0/256=0)) (by simp only [eval,p.zero]) (fun yes => ?_) (fun _ => ?_)
   · have zero := of_decide_eq_true yes
     exact WP.block_nil (by simpa only [preBytes,zero,Nat.mul_zero] using p.toLoopAt)
   · refine WP.seq (WP.mono (bulkArgs_wp h p hc) fun v g => ?_)
-    exact WP.mono (Split.mid2_call_wp (bulk_regs h p.toLoopAt hc) T g) fun t m => bulk_done h p.toLoopAt hc m
+    exact WP.mono (Split.Compact.mid2_call_wp (bulk_regs h p.toLoopAt hc) T g) fun t m => bulk_done h p.toLoopAt hc m
 
 end VG.Proof.AesGcm.X86_64.DirectGather
 end
@@ -315,7 +315,6 @@ namespace VG.Proof.AesGcm.X86_64.DirectGather
 open VG VG.X86_64 VG.X86_64.RegUpd Gather VG.Impl.AesGcm.X86_64
 open VG.Impl.AesGcm.X86_64.DirectGather
 open VG.Proof.Gcm.X86_64.Stitch (CtxMode)
-open VG.Proof.AesGcm.X86_64.StreamTo (BlkToFn)
 
 private theorem ld_ptr {u : State} (hr : InRegions (u.rd++u.wr) (u.gpr .r15+256#64) 8) :
     WP isa (.block [load .r10 rO]) u (LdF .r10 .r15 256 u) := by
@@ -335,7 +334,7 @@ private theorem test_rel {M : CtxMode} {s t : State} (pub : Pub s t) :
   · refine rel_taint [.r10,.r15] (Gather.ld_agree eq₁ ?_) ⟨_,by taint_decide⟩
     rintro u z ⟨a,b⟩; rw [a.env.r15,b.env.r15,a.desc,b.desc,pub.src]
 
-theorem bulk_rel {M : CtxMode} (T : BlkToFn M) {s t : State} (h : Layout M s) (j : Layout M t) (pub : Pub s t)
+theorem bulk_rel {M : CtxMode} (T : BlocksTo.SealFn M) {s t : State} (h : Layout M s) (j : Layout M t) (pub : Pub s t)
     (n : 0<Cnt s) : RelCT isa (fun u z => LoopAt M s 0 0 u ∧ LoopAt M t 0 0 z) (bulk T.fn) fun _ _ => True := by
   have nt : 0<Cnt t := pub.cnt ▸ n
   have len := pub.sl n
@@ -358,7 +357,7 @@ theorem bulk_rel {M : CtxMode} (T : BlkToFn M) {s t : State} (h : Layout M s) (j
     have reg := bulk_regs j pz.toLoopAt nt
     change Split.CallRegions M (K t) (W t) (SP t) (Dst t) (sb t 0) (R t) (L t) (preBytes t) d at reg
     simp only [K,SP,R,preBytes,pub.rdi,pub.rsp,pub.rsi,pub.w,pub.dst,pub.sb n,pub.eL,len] at reg
-    have call := Split.call_rel (bulk_regs h pu.toLoopAt n) reg T
+    have call := Split.Compact.call_rel (bulk_regs h pu.toLoopAt n) reg T
     apply RelCT.seq (args.wp (F₁:=Split.G₂ (K s) (W s) (SP s) (Dst s) (sb s 0) (R s) (preBytes s) c)
       (F₂:=Split.G₂ (K s) (W s) (SP s) (Dst s) (sb s 0) (R s) (preBytes s) d) (by
         rintro x y ⟨rfl,rfl⟩; refine ⟨bulkArgs_wp h pu n,?_⟩
@@ -367,11 +366,11 @@ theorem bulk_rel {M : CtxMode} (T : BlkToFn M) {s t : State} (h : Layout M s) (j
       (call.mono (fun _ _ g => g.2) (fun _ _ _ => trivial)) u z tr tz u' z' ⟨rfl,rfl⟩ ex ez
 
 /-- The fused call implements the optional prefix of the general gather loop. -/
-theorem bulkPrefix_wp {M : CtxMode} (b : BlkToFn M) : PrefixWP M (some b.fn) := by
+theorem bulkPrefix_wp {M : CtxMode} (b : BlocksTo.SealFn M) : PrefixWP M (some b.fn) := by
   intro s u h e hn
   simpa [prefixBytes,prefixProgram,Nat.ne_of_gt hn] using bulk_wp b h e hn
 
-theorem bulkPrefix_rel {M : CtxMode} (b : BlkToFn M) : PrefixCT M (some b.fn) := by
+theorem bulkPrefix_rel {M : CtxMode} (b : BlocksTo.SealFn M) : PrefixCT M (some b.fn) := by
   intro s t x y h k pub a z hc
   exact (bulk_rel b h k pub hc).mono (by rintro _ _ ⟨rfl,rfl⟩; exact ⟨a,z⟩) (fun _ _ w => w)
 
