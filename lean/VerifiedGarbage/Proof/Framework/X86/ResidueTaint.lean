@@ -229,7 +229,7 @@ def stepB (τ : T) : Instr → Option T
   | .movqStore m x => some (storeT τ (wpOf τ m.base) m.disp 8 (pubX τ x))
   | .xop op => some (setX τ (xdst op) (xzero op))
   | .symPush .. | .push _ | .pop .. | .alloc _ | .free _ | .callr _ | .mop _ | .mmxStore .. | .mmxEnter
-  | .emms | .mcdtEnter _ | .mcdtLeave => none
+  | .emms | .mcdtEnter _ | .mcdtLeave | .pmullw .. | .pmulhw .. => none
 
 /-- The base register of an access to memory. -/
 def base : Instr → Option Reg

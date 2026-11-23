@@ -125,7 +125,7 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State}
     cases e₁; cases e₂
     exact ha.store (n := 8) hm (by decide) (fun hp => by cases hp) h₁ h₂
       (fun _ h => (List.not_mem_nil h).elim) (fun _ h => (List.not_mem_nil h).elim)
-  | mmxEnter | emms | mcdtEnter | mcdtLeave =>
+  | mmxEnter | emms | mcdtEnter | mcdtLeave | pmullw | pmulhw =>
     simp only [step, Taint.stepK_eq, Taint.step, reduceCtorEq] at hs
   | pmuludq d r =>
     simp only [step, Option.some.injEq] at hs

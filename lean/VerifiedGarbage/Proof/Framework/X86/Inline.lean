@@ -125,7 +125,7 @@ theorem exec_widen (hc : Covers (s.rd ++ s.wr) (rd ++ wr)) (hw : Covers s.wr wr)
     simp only [State.withRegions_wr, State.withRegions_gpr, State.withRegions_ea, hw _ _ hi, ite_true]
     rfl
   | mul r => simp only [exec, Option.some.injEq] at h ⊢; subst h; rfl
-  | pmuludq d r =>
+  | pmuludq d r | pmullw d r | pmulhw d r =>
     simp only [exec] at h ⊢
     split at h <;> [rename_i hm; cases h]
     cases h
@@ -211,7 +211,7 @@ theorem exec_regions {i : Instr} (h : exec i s = some s') :
     simp only [exec, Option.map_eq_some_iff] at h
     obtain ⟨_, _, rfl⟩ := h; exact ⟨rfl, rfl, Frame.refl _ _⟩
   | mul r => simp only [exec, Option.some.injEq] at h; subst h; exact ⟨rfl, rfl, Frame.refl _ _⟩
-  | pmuludq d r =>
+  | pmuludq d r | pmullw d r | pmulhw d r =>
     simp only [exec] at h
     split at h <;> [skip; cases h]
     cases h; exact ⟨rfl, rfl, Frame.refl _ _⟩
@@ -301,7 +301,7 @@ theorem exec_gpr {i : Instr} {r : Reg} (hi : Taint.clobbers i r = false) (h : ex
       subst h; rfl
     | symPush _ _ | push _ | pop _ _ | alloc _ | free _ | callr _ | mmxEnter | emms | mcdtEnter _ | mcdtLeave =>
       simp only [exec, reduceCtorEq] at h
-    | pmuludq d r | movdquTbl d m name ws | movqTbl d m name ws =>
+    | pmuludq d r | pmullw d r | pmulhw d r | movdquTbl d m name ws | movqTbl d m name ws =>
       simp only [exec] at h
       split at h <;> [skip; cases h]
       cases h; rfl

@@ -265,6 +265,8 @@ theorem step_upd (hr : τ.regs.subset r = true) (hf : τ.flags = true → f = tr
   | mmxEnter => simp only [step, reduceCtorEq] at hs
   | emms => simp only [step, reduceCtorEq] at hs
   | pmuludq _ _ => simp only [step, reduceCtorEq] at hs
+  | pmullw _ _ => simp only [step, reduceCtorEq] at hs
+  | pmulhw _ _ => simp only [step, reduceCtorEq] at hs
   | mcdtEnter _ => simp only [step, reduceCtorEq] at hs
   | mcdtLeave => simp only [step, reduceCtorEq] at hs
   | xop _ => simp only [step, reduceCtorEq] at hs
@@ -508,7 +510,7 @@ theorem step_bits {σ σ' : T} {i : Instr} (hs : step σ i = some σ') {j : Nat}
     (hr : σ.regs.bits.testBit j = true) : σ'.regs.bits.testBit j = true := by
   cases i
   case store | store8 => rw [storeStep_regs hs]; exact hr
-  case symPush | push | pop | alloc | free | callr | movdquLoad | movdquStore | movqLoad | movqStore | movdquTbl | movqTbl | xop | mop | mmxStore | mmxEnter | emms | pmuludq | mcdtEnter | mcdtLeave =>
+  case symPush | push | pop | alloc | free | callr | movdquLoad | movdquStore | movqLoad | movqStore | movdquTbl | movqTbl | xop | mop | mmxStore | mmxEnter | emms | pmuludq | pmullw | pmulhw | mcdtEnter | mcdtLeave =>
     simp only [step, reduceCtorEq] at hs
   case mul q =>
     simp only [step, Option.some.injEq, mulStep] at hs
