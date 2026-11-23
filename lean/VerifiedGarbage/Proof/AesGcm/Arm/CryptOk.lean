@@ -429,7 +429,7 @@ theorem cryptWholeTo_ok {R : Nat} {icb : Block} {P : Nat} {S T : BitVec 32} {n :
         by rw [hg₂ _ (by decide) (by decide) (by decide), he₁.r10],
         by rw [hg₂ _ (by decide) (by decide) (by decide), h3], h0', h1', h2', h.rounds, by rw [hk]; exact sp12,
         by have := L.cw; omega_arith, by rw [L.stN (by decide)]; have := L.sw; omega_arith, hsj.fit, hdj.ok.fit,
-        by rw [L.wN (by decide)]; have := L.ww; omega_arith, ?_, ?_, ?_, ?_, ?_, ?_, ?_, dtj, ?_, ?_, ?_, ?_, ?_, ?_,
+        by rw [L.wN (by decide)]; have := L.ww; omega_arith, ?_, ?_, ?_, ?_, ?_, ?_, ?_, Or.inr dtj, ?_, ?_, ?_, ?_, ?_, ?_,
         ?_, ?_⟩
       all_goals try simp only [eC, eW]
       · exact (L.cs.sub_left (Region.sub_prefix (by decide))).sub_right (Lay.stSub (by decide))

@@ -477,8 +477,8 @@ keystream XORed in, to `dst`.
 The code may read `schedule` (240 bytes), `src` (`16 n` bytes) and the
 arguments on the stack (12 bytes at `sp`), and read and write `counter` (16
 bytes), `dst` (`16 n` bytes) and `scratch` (2048 bytes, whose contents on
-exit are unspecified). These may not overlap each other (but for the two
-that are only read), and none may wrap around the end of the (32-bit)
+exit are unspecified). The source and destination may be identical. Otherwise
+each writable range is disjoint from the other ranges. None may wrap around the end of the (32-bit)
 address space. `rounds` is 10, 12 or 14. The pointers, `rounds` and `n` are
 public; the key schedule, the counter block and the data are secret. -/
 def ctr32ToArm : Contract Arm.isa where
@@ -493,7 +493,7 @@ def ctr32ToArm : Contract Arm.isa where
     sched.Disjoint counter ∧ sched.Disjoint dst ∧ sched.Disjoint scratch ∧
     counter.Disjoint dst ∧ counter.Disjoint scratch ∧ dst.Disjoint scratch ∧
     counter.Disjoint args ∧ dst.Disjoint args ∧ scratch.Disjoint args ∧
-    src.Disjoint counter ∧ src.Disjoint dst ∧ src.Disjoint scratch ∧
+    src.Disjoint counter ∧ (s.gpr .r3 = stackArg s 2 ∨ src.Disjoint dst) ∧ src.Disjoint scratch ∧
     (s.gpr .r0).toNat + 240 ≤ 2 ^ 32 ∧ (s.gpr .r2).toNat + 16 ≤ 2 ^ 32 ∧
     (s.gpr .r3).toNat + 16 * (stackArg s 0).toNat ≤ 2 ^ 32 ∧
     (stackArg s 2).toNat + 16 * (stackArg s 0).toNat ≤ 2 ^ 32 ∧

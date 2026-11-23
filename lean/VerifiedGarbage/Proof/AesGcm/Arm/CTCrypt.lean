@@ -2018,7 +2018,8 @@ theorem cryptWhole_ct {to : Bool} {k8 : BitVec 32} {R : Nat} {S T : BitVec 32} {
         · exact L.st_w (by decide) (.inr ⟨by decide, by decide⟩)
         · exact hdj.ok.w.sub_right (Lay.wSub (by decide))
         · exact hsj.st.sub_right (Lay.stSub (by decide))
-        · rw [eS, eD]
+        · right
+          rw [eS, eD]
           exact (dST.sub_left (Offset.sub_base _ (by omega_using [h0]))).sub_right (Offset.sub_base _ (by omega_using [h0]))
         · exact hsj.w.sub_right (Lay.wSub (by decide))
         · rw [hk]; exact bc.sub_right (Region.sub_prefix (by decide))

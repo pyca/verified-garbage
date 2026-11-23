@@ -476,7 +476,7 @@ structure CtrToCall (s : State) (K C D T S : BitVec 32) (R n : Nat) : Prop where
   cs : (⟨State.addr C, 16⟩ : Region).Disjoint ⟨State.addr S, 2048⟩
   ts : (⟨State.addr T, 16 * n⟩ : Region).Disjoint ⟨State.addr S, 2048⟩
   dc : (⟨State.addr D, 16 * n⟩ : Region).Disjoint ⟨State.addr C, 16⟩
-  dt : (⟨State.addr D, 16 * n⟩ : Region).Disjoint ⟨State.addr T, 16 * n⟩
+  dt : D = T ∨ (⟨State.addr D, 16 * n⟩ : Region).Disjoint ⟨State.addr T, 16 * n⟩
   ds : (⟨State.addr D, 16 * n⟩ : Region).Disjoint ⟨State.addr S, 2048⟩
   bk : (below12 s.sp).Disjoint ⟨State.addr K, 240⟩
   bc : (below12 s.sp).Disjoint ⟨State.addr C, 16⟩
