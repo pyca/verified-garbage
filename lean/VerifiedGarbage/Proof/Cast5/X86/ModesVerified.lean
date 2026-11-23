@@ -65,9 +65,14 @@ subkeys and the number of rounds, read through the first two stack
 arguments, and its cipher `Spec.Cast5.cipher` or `invCipher`. The key is
 ready (`Ready`) while the arguments, the subkeys and the table of S-boxes
 are where they were, apart from every writable region and the word below
-`esp` (`Base`). `crypt` is ECB's block (`load_ok`, `encryptBlock_ok`,
-`decryptBlock_ok`) between its own setup and store (`setup_ok`,
-`store_ok`).
+`esp` (`Base`). `crypt` is ECB's block (`load_okG`, `encryptBlockWith_ok`,
+`decryptBlockWith_ok`) between its own setup and store (`store_ok`).
+
+The core is proven over any look-up of the rounds that fits it
+(`coreSpecWith hc up` for `hc : LkCore lk tab cs`: the look-up `lk`, which
+reads the static table of S-boxes only if `tab`, and a core of `cs` slots,
+`Impl.Cast5.X86.Modes.coreWith lk.code cs lk.n up`); `dirCoreSpec` is the
+instance for the scan (`scanCore`).
 -/
 
 @[expose] public section
@@ -85,29 +90,30 @@ abbrev keyR (K : BitVec 32) : Region := ⟨K.setWidth 64, 128⟩
 abbrev tabR (s : State) : Region := ⟨(s.syms s1234Sym).setWidth 64, 4096⟩
 /-- The key's two arguments. -/
 abbrev argR (s : State) : Region := ⟨addr (s.gpr .esp) 4, 8⟩
-/-- The word below `esp`, which the scans use. -/
-abbrev stk (s : State) : Region := below (s.gpr .esp) 4
+/-- The `n` bytes below `esp`, which the look-ups use. -/
+abbrev stk (n : Nat) (s : State) : Region := below (s.gpr .esp) n
 
-/-- The key's arguments: the subkeys' address `K` and the number of rounds
-`n`; the subkeys `k` at `K` and the table, readable, apart from every
-writable region and the word below `esp`. -/
-structure Base (s : State) (K : BitVec 32) (k : Spec.Cast5.Schedule) (n : Nat) : Prop where
+/-- The key's arguments, for look-ups that use `n` bytes of stack and, if
+`tab`, read the static table of S-boxes: the subkeys' address `K` and the
+number of rounds `r`; the subkeys `k` at `K` (and the table, if `tab`),
+readable, apart from every writable region and the `n` bytes below `esp`. -/
+structure Base (tab : Bool) (n : Nat) (s : State) (K : BitVec 32) (k : Spec.Cast5.Schedule) (r : Nat) : Prop where
   fitE : (s.gpr .esp).toNat + 12 ≤ 2 ^ 32
-  sp : 4 ≤ (s.gpr .esp).toNat
+  sp : n ≤ (s.gpr .esp).toNat
   inA : InRegions (s.rd ++ s.wr) (addr (s.gpr .esp) 4) 8
   argK : s.mem.readW (addr (s.gpr .esp) 4) 32 = K
-  argN : s.mem.readW (addr (s.gpr .esp) 8) 32 = BitVec.ofNat 32 n
-  nv : n = 12 ∨ n = 16
+  argN : s.mem.readW (addr (s.gpr .esp) 8) 32 = BitVec.ofNat 32 r
+  nv : r = 12 ∨ r = 16
   fitK : K.toNat + 128 ≤ 2 ^ 32
   inK : InRegions (s.rd ++ s.wr) (K.setWidth 64) 128
   sk : Spec.Cast5.scheduleAt s.mem (K.setWidth 64) = k
-  fitT : (s.syms s1234Sym).toNat + 4096 ≤ 2 ^ 32
-  inT : InRegions (s.rd ++ s.wr) ((s.syms s1234Sym).setWidth 64) 4096
-  held : Held s.mem ((s.syms s1234Sym).setWidth 64) s1234
-  dW : ∀ r ∈ s.wr, (keyR K).Disjoint r ∧ (tabR s).Disjoint r ∧ (argR s).Disjoint r
-  dKs : (keyR K).Disjoint (stk s)
-  dTs : (tabR s).Disjoint (stk s)
-  dAs : (argR s).Disjoint (stk s)
+  tabOk : tab = true → (s.syms s1234Sym).toNat + 4096 ≤ 2 ^ 32 ∧
+    InRegions (s.rd ++ s.wr) ((s.syms s1234Sym).setWidth 64) 4096 ∧
+    Held s.mem ((s.syms s1234Sym).setWidth 64) s1234 ∧ (∀ x ∈ s.wr, (tabR s).Disjoint x) ∧
+    (tabR s).Disjoint (stk n s)
+  dW : ∀ x ∈ s.wr, (keyR K).Disjoint x ∧ (argR s).Disjoint x
+  dKs : (keyR K).Disjoint (stk n s)
+  dAs : (argR s).Disjoint (stk n s)
 
 /-- The second argument's address. -/
 theorem addr8 {E : BitVec 32} (h : E.toNat + 12 ≤ 2 ^ 32) : addr E 8 = addr E 4 + BitVec.ofNat 64 4 := by
@@ -121,65 +127,67 @@ theorem argR_contains8 {s : State} (h : (s.gpr .esp).toNat + 12 ≤ 2 ^ 32) :
   rw [addr8 h]; exact Offset.contains_base _ (by decide) (by decide)
 
 /-- `Base` survives what keeps `esp`, the regions and the statics, and writes
-memory apart from the arguments, the subkeys and the table. -/
-theorem Base.frame {s s' : State} {K : BitVec 32} {k : Spec.Cast5.Schedule} {n : Nat} {rs : List Region}
-    (h : Base s K k n) (hesp : s'.gpr .esp = s.gpr .esp) (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr)
-    (hsy : s'.syms = s.syms) (hf : Frame rs s.mem s'.mem)
-    (hd : ∀ r ∈ rs, (keyR K).Disjoint r ∧ (tabR s).Disjoint r ∧ (argR s).Disjoint r) : Base s' K k n := by
-  obtain hA : ∀ r ∈ rs, (argR s).Disjoint r := fun r hr => (hd r hr).2.2
+memory apart from the arguments, the subkeys and, if it is read, the table. -/
+theorem Base.frame {tab : Bool} {n : Nat} {s s' : State} {K : BitVec 32} {k : Spec.Cast5.Schedule} {r : Nat}
+    {rs : List Region} (h : Base tab n s K k r) (hesp : s'.gpr .esp = s.gpr .esp) (hrd : s'.rd = s.rd)
+    (hwr : s'.wr = s.wr) (hsy : s'.syms = s.syms) (hf : Frame rs s.mem s'.mem)
+    (hd : ∀ x ∈ rs, (keyR K).Disjoint x ∧ (tab = true → (tabR s).Disjoint x) ∧ (argR s).Disjoint x) :
+    Base tab n s' K k r := by
+  obtain hA : ∀ x ∈ rs, (argR s).Disjoint x := fun x hx => (hd x hx).2.2
   refine ⟨by rw [hesp]; exact h.fitE, by rw [hesp]; exact h.sp, by rw [hesp, hrd, hwr]; exact h.inA, ?_, ?_, h.nv,
-    h.fitK, by rw [hrd, hwr]; exact h.inK, ?_, by rw [hsy]; exact h.fitT, by rw [hsy, hrd, hwr]; exact h.inT, ?_,
-    fun r hr => ?_, ?_, ?_, ?_⟩
+    h.fitK, by rw [hrd, hwr]; exact h.inK, ?_, fun ht => ?_, fun x hx => ?_, ?_, ?_⟩
   · rw [hesp, hf.readW (argR_contains4 s) hA (by decide)]; exact h.argK
   · rw [hesp, hf.readW (argR_contains8 h.fitE) hA (by decide)]; exact h.argN
-  · rw [scheduleAt_frame hf fun r hr => (hd r hr).1]; exact h.sk
-  · rw [hsy]; exact held_frame h.held hf fun r hr => (hd r hr).2.1
-  · rw [hwr] at hr; simp only [tabR, argR, hsy, hesp]; exact h.dW r hr
+  · rw [scheduleAt_frame hf fun x hx => (hd x hx).1]; exact h.sk
+  · obtain ⟨fT, inT, held, dTw, dTs⟩ := h.tabOk ht
+    refine ⟨by rw [hsy]; exact fT, by rw [hsy, hrd, hwr]; exact inT, ?_, fun x hx => ?_, ?_⟩
+    · rw [hsy]; exact held_frame held hf fun x hx => (hd x hx).2.1 ht
+    · rw [hwr] at hx; simp only [tabR, hsy]; exact dTw x hx
+    · simp only [tabR, stk, hsy, hesp]; exact dTs
+  · rw [hwr] at hx; simp only [argR, hesp]; exact h.dW x hx
   · simp only [stk, hesp]; exact h.dKs
-  · simp only [tabR, stk, hsy, hesp]; exact h.dTs
   · simp only [argR, stk, hesp]; exact h.dAs
 
 /-- The key's arguments give the key `kn`, apart from the regions `rs`. -/
-def KeyArgs (s : State) (rs : List Region) (kn : Spec.Cast5.Schedule × Nat) : Prop :=
-  ∃ K, Base s K kn.1 kn.2 ∧
-    ∀ r ∈ rs, (keyR K).Disjoint r ∧ (tabR s).Disjoint r ∧ (argR s).Disjoint r ∧ (stk s).Disjoint r
+def KeyArgs (tab : Bool) (n : Nat) (s : State) (rs : List Region) (kn : Spec.Cast5.Schedule × Nat) : Prop :=
+  ∃ K, Base tab n s K kn.1 kn.2 ∧
+    ∀ x ∈ rs, (keyR K).Disjoint x ∧ (tab = true → (tabR s).Disjoint x) ∧ (argR s).Disjoint x ∧
+      (stk n s).Disjoint x
 
-/-- The key `kn` is ready, with the scratch buffer at `B` apart from the
-word below `esp`. -/
-def Ready (s : State) (B : BitVec 32) (kn : Spec.Cast5.Schedule × Nat) : Prop :=
-  ∃ K, Base s K kn.1 kn.2 ∧ (stk s).Disjoint ⟨B.setWidth 64, 4 * 76⟩
+/-- The key `kn` is ready, with the scratch buffer of `b` bytes at `B` apart
+from the `n` bytes below `esp`. -/
+def Ready (tab : Bool) (n b : Nat) (s : State) (B : BitVec 32) (kn : Spec.Cast5.Schedule × Nat) : Prop :=
+  ∃ K, Base tab n s K kn.1 kn.2 ∧ (stk n s).Disjoint ⟨B.setWidth 64, b⟩
 
-theorem keyArgs_congr {s s' : State} {rs : List Region} {kn : Spec.Cast5.Schedule × Nat} (h : KeyArgs s rs kn)
-    (hesp : s'.gpr .esp = s.gpr .esp) (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) (hsy : s'.syms = s.syms)
-    (hf : Frame rs s.mem s'.mem) : KeyArgs s' rs kn := by
+theorem keyArgs_congr {tab : Bool} {n : Nat} {s s' : State} {rs : List Region} {kn : Spec.Cast5.Schedule × Nat}
+    (h : KeyArgs tab n s rs kn) (hesp : s'.gpr .esp = s.gpr .esp) (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr)
+    (hsy : s'.syms = s.syms) (hf : Frame rs s.mem s'.mem) : KeyArgs tab n s' rs kn := by
   obtain ⟨K, hb, hd⟩ := h
-  refine ⟨K, hb.frame hesp hrd hwr hsy hf fun r hr => ⟨(hd r hr).1, (hd r hr).2.1, (hd r hr).2.2.1⟩,
-    fun r hr => ?_⟩
+  refine ⟨K, hb.frame hesp hrd hwr hsy hf fun x hx => ⟨(hd x hx).1, (hd x hx).2.1, (hd x hx).2.2.1⟩,
+    fun x hx => ?_⟩
   simp only [tabR, argR, stk, hsy, hesp]
-  exact hd r hr
+  exact hd x hx
 
-theorem ready_frame {s s' : State} {B : BitVec 32} {kn : Spec.Cast5.Schedule × Nat}
-    {rs : List Region} (h : Ready s B kn) (hesp : s'.gpr .esp = s.gpr .esp) (hrd : s'.rd = s.rd)
+theorem ready_frame {tab : Bool} {n b : Nat} {s s' : State} {B : BitVec 32} {kn : Spec.Cast5.Schedule × Nat}
+    {rs : List Region} (h : Ready tab n b s B kn) (hesp : s'.gpr .esp = s.gpr .esp) (hrd : s'.rd = s.rd)
     (hwr : s'.wr = s.wr) (hsy : s'.syms = s.syms) (hf : Frame rs s.mem s'.mem)
-    (hsub : ∀ r ∈ rs, ∃ r' ∈ s.wr, Region.Sub r r') : Ready s' B kn := by
+    (hsub : ∀ x ∈ rs, ∃ r' ∈ s.wr, Region.Sub x r') : Ready tab n b s' B kn := by
   obtain ⟨K, hb, hd⟩ := h
-  refine ⟨K, hb.frame hesp hrd hwr hsy hf fun r hr => ?_, by simp only [stk, hesp]; exact hd⟩
-  obtain ⟨r', hr', hs⟩ := hsub r hr
-  obtain ⟨d1, d2, d3⟩ := hb.dW r' hr'
-  exact ⟨d1.sub_right hs, d2.sub_right hs, d3.sub_right hs⟩
+  refine ⟨K, hb.frame hesp hrd hwr hsy hf fun x hx => ?_, by simp only [stk, hesp]; exact hd⟩
+  obtain ⟨r', hr', hs⟩ := hsub x hx
+  obtain ⟨d1, d3⟩ := hb.dW r' hr'
+  exact ⟨d1.sub_right hs, fun ht => ((hb.tabOk ht).2.2.2.1 r' hr').sub_right hs, d3.sub_right hs⟩
 
-theorem dirCore_total (up : Bool) : (dirCore up).total = 76 := rfl
-
-theorem prepare_wp (up : Bool) {s : State} {B : BitVec 32} {rs : List Region} {kn : Spec.Cast5.Schedule × Nat}
-    (hB : s.gpr Impl.Modes.X86.sb = B) (_ : ScrIn s B (dirCore up).total)
-    (hR : (⟨B.setWidth 64, 4 * (dirCore up).total⟩ : Region) ∈ rs) (hk : KeyArgs s rs kn)
-    (_ : (dirCore up).stack ≤ (s.gpr .esp).toNat) :
-    WP isa (dirCore up).prepare s fun s' => Ready s' B kn ∧ s'.gpr Impl.Modes.X86.sb = B ∧
-      s'.gpr .esp = s.gpr .esp ∧
-      Frame [coreRegion (dirCore up) B, stkRegion (s.gpr .esp) (dirCore up).stack] s.mem s'.mem ∧
-      s'.rd = s.rd ∧ s'.wr = s.wr := by
-  obtain ⟨K, hb, hd⟩ := hk
-  exact WP.block_nil ⟨⟨K, hb, (hd _ hR).2.2.2⟩, hB, rfl, Frame.refl _ _, rfl, rfl⟩
+/-- A look-up as the modes' core takes it, with `cs` slots: what it writes
+is in the core's slots after the rounds' working space and the block, and
+the key's facts and the scratch buffer give what it needs. -/
+structure LkCore (lk : Lk) (tab : Bool) (cs : Nat) : Prop where
+  ok : LkOk lk
+  cs66 : 66 ≤ cs
+  xin : ∀ (B : BitVec 32), ∀ x ∈ lk.X B, ∃ d m, x = slotR B d m ∧ 264 ≤ d ∧ d + m ≤ 4 * cs
+  pre : ∀ {s : State} {B K : BitVec 32} {k : Spec.Cast5.Schedule} {r : Nat}, Base tab lk.n s K k r →
+    (⟨B.setWidth 64, 4 * (cs + 10)⟩ : Region) ∈ s.wr → B.toNat + 4 * (cs + 10) ≤ 2 ^ 32 →
+    (stk lk.n s).Disjoint ⟨B.setWidth 64, 4 * (cs + 10)⟩ → lk.Pre s B
 
 /-! ## `crypt` -/
 
@@ -190,26 +198,27 @@ theorem inRegions_prefix {X : List Region} {a : Addr} {n l : Nat} (h : InRegions
 
 /-- What `store` does: the block `out` at `D`, and nothing else but the
 rounds' memory; `edi` the working space's address. -/
-structure MPost (s : State) (S D : BitVec 32) (out : Spec.Cast5.Block) (v : State) : Prop where
+structure MPost (lk : Lk) (s : State) (S D : BitVec 32) (out : Spec.Cast5.Block) (v : State) : Prop where
   blk : Spec.Cast5.blockAt v.mem (D.setWidth 64) = out
-  frame : Frame (blockR D :: blockMem S (s.gpr .esp)) s.mem v.mem
+  frame : Frame (blockR D :: blockMemG lk S (s.gpr .esp)) s.mem v.mem
   edi : v.gpr .edi = S
   same : ∀ q, q ∉ roundRegs → v.gpr q = s.gpr q
   rd : v.rd = s.rd
   wr : v.wr = s.wr
   syms : v.syms = s.syms
 
-theorem store_ok {s u : State} {S K D : BitVec 32} {k : Spec.Cast5.Schedule} {n : Nat}
-    {lr : Spec.Cast5.Word × Spec.Cast5.Word} (h : BPre s S K D k n) (hu : RInv s S K k n lr u)
-    (hW : InRegions s.wr (S.setWidth 64) 304) (hfit : S.toNat + 304 ≤ 2 ^ 32)
-    (hDm : Region.Disjoint (blockR D) ⟨S.setWidth 64 + BitVec.ofNat 64 280, 8⟩) :
-    WP isa (.block Modes.store) u (MPost s S D (Spec.Cast5.encodeBlock (lr.2, lr.1))) := by
+theorem store_ok {lk : Lk} {cs : Nat} (hcs : 66 ≤ cs) {s u : State} {S K D : BitVec 32}
+    {k : Spec.Cast5.Schedule} {n : Nat} {lr : Spec.Cast5.Word × Spec.Cast5.Word} (h : BPreG lk s S K D k n)
+    (hu : RInvG lk s S K k n lr u) (hW : InRegions s.wr (S.setWidth 64) (4 * (cs + 10)))
+    (hfit : S.toNat + 4 * (cs + 10) ≤ 2 ^ 32)
+    (hDm : Region.Disjoint (blockR D) ⟨S.setWidth 64 + BitVec.ofNat 64 (4 * (cs + 4)), 8⟩) :
+    WP isa (.block (Modes.storeAt cs)) u (MPost lk s S D (Spec.Cast5.encodeBlock (lr.2, lr.1))) := by
   have c := hu.ctx
   obtain uD : u.mem.readW (addr S dataOff) 32 = D := by
-    rw [slot_frame c.fitS hu.frame (fun r hr => (blockMem_disjoint h.ctx r hr).2.2) (by decide) (by decide)]
+    rw [slot_frame c.fitS hu.frame (fun r hr => (blockMemG_disjoint h.ctx r hr).2) (by decide) (by decide)]
     exact h.dataSlot
-  obtain ⟨X, hX⟩ : ∃ X, u.mem.readW (addr S 280) 32 = X := ⟨_, rfl⟩
-  obtain ⟨Y, hY⟩ : ∃ Y, u.mem.readW (addr S 284) 32 = Y := ⟨_, rfl⟩
+  obtain ⟨X, hX⟩ : ∃ X, u.mem.readW (addr S (4 * (cs + 4))) 32 = X := ⟨_, rfl⟩
+  obtain ⟨Y, hY⟩ : ∃ Y, u.mem.readW (addr S (4 * (cs + 5))) 32 = Y := ⟨_, rfl⟩
   obtain w0 : InRegions u.wr (addr D 0) 4 := by
     rw [addr_D0 h.fitD, hu.wr]
     obtain ⟨g, hg, hc⟩ := h.wD
@@ -217,35 +226,35 @@ theorem store_ok {s u : State} {S K D : BitVec 32} {k : Spec.Cast5.Schedule} {n 
   obtain w4 : InRegions u.wr (addr D 4) 4 := by
     rw [addr_off h.fitD 4 (by decide), hu.wr]
     exact CallLay.inRegions_sub h.wD (by omega_arith) (by decide)
-  obtain mW : ∀ e, e + 4 ≤ 304 → InRegions u.wr (addr S e) 4 := fun e he => by
-    rw [addr_eq (by omega_arith), hu.wr]; exact CallLay.inRegions_sub hW he (by decide)
-  obtain mR : ∀ e, e + 4 ≤ 304 → InRegions (u.rd ++ u.wr) (addr S e) 4 := fun e he => by
+  obtain mW : ∀ e, e + 4 ≤ 4 * (cs + 10) → InRegions u.wr (addr S e) 4 := fun e he => by
+    rw [addr_eq (by omega), hu.wr]; exact CallLay.inRegions_sub hW he (by omega)
+  obtain mR : ∀ e, e + 4 ≤ 4 * (cs + 10) → InRegions (u.rd ++ u.wr) (addr S e) 4 := fun e he => by
     obtain ⟨g, hg, hc⟩ := mW e he; exact ⟨g, List.mem_append_right _ hg, hc⟩
-  obtain rdD := mR dataOff (by decide)
-  obtain rdX := mR 280 (by decide)
-  obtain rdY := mR 284 (by decide)
-  obtain wX := mW 280 (by decide)
-  obtain wY := mW 284 (by decide)
+  obtain rdD := mR dataOff (by simp only [dataOff]; omega)
+  obtain rdX := mR (4 * (cs + 4)) (by omega)
+  obtain rdY := mR (4 * (cs + 5)) (by omega)
+  obtain wX := mW (4 * (cs + 4)) (by omega)
+  obtain wY := mW (4 * (cs + 5)) (by omega)
   have hbx := hu.bx
   have hbp := hu.bp
   obtain ⟨m', hm'⟩ : ∃ m', (u.mem.writeW (addr D 0) (byteRev32 lr.2)).writeW (addr D 4) (byteRev32 lr.1) = m' :=
     ⟨_, rfl⟩
-  have sm (e : Nat) (h1 : 280 ≤ e) (h2 : e + 4 ≤ 288) : m'.readW (addr S e) 32 = u.mem.readW (addr S e) 32 := by
+  have sm (e : Nat) (h1 : 4 * (cs + 4) ≤ e) (h2 : e + 4 ≤ 4 * (cs + 4) + 8) : m'.readW (addr S e) 32 = u.mem.readW (addr S e) 32 := by
     have hs (o : Nat) (ho : o + 4 ≤ 8) : Mem.Sep (addr S e) 4 (addr D o) 4 := by
       refine Region.Disjoint.sep hDm.symm ?_ ?_
-      · rw [addr_eq (by omega_arith)]; exact Offset.contains _ h1 (by omega_arith) (by omega_arith)
+      · rw [addr_eq (by omega)]; exact Offset.contains _ h1 (by omega) (by omega)
       · rw [addr_off h.fitD o (by omega_arith)]; exact Offset.contains_base _ (by omega_arith) (by omega_arith)
     rw [← hm', Mem.readW_writeW_sep (w' := 32) (hs 4 (by decide)) (by decide),
       Mem.readW_writeW_sep (w' := 32) (hs 0 (by decide)) (by decide)]
-  obtain e : (m'.writeW (addr S 280) X).writeW (addr S 284) Y = m' := by
-    rw [← hX, ← sm 280 (by decide) (by decide), writeW_readW, ← hY, ← sm 284 (by decide) (by decide),
+  obtain e : (m'.writeW (addr S (4 * (cs + 4))) X).writeW (addr S (4 * (cs + 5))) Y = m' := by
+    rw [← hX, ← sm (4 * (cs + 4)) (by omega) (by omega), writeW_readW, ← hY, ← sm (4 * (cs + 5)) (by omega) (by omega),
       writeW_readW]
-  unfold Modes.store
+  unfold Modes.storeAt
   refine wp_ldm (b := .esi) (B := S) (o := dataOff) c.si rdD fun u₁ v₁ => ?_
   obtain si₁ : u₁.gpr .esi = S := (v₁.other _ (by decide)).trans c.si
-  refine wp_ldm (b := .esi) (B := S) (o := 4 * dSlot) si₁ (by rw [v₁.rd, v₁.wr]; exact rdX) fun u₂ v₂ => ?_
+  refine wp_ldm (b := .esi) (B := S) (o := 4 * (cs + 4)) si₁ (by rw [v₁.rd, v₁.wr]; exact rdX) fun u₂ v₂ => ?_
   obtain si₂ : u₂.gpr .esi = S := (v₂.other _ (by decide)).trans si₁
-  refine wp_ldm (b := .esi) (B := S) (o := 4 * nSlot) si₂ (by rw [v₂.rd, v₂.wr, v₁.rd, v₁.wr]; exact rdY)
+  refine wp_ldm (b := .esi) (B := S) (o := 4 * (cs + 5)) si₂ (by rw [v₂.rd, v₂.wr, v₁.rd, v₁.wr]; exact rdY)
     fun u₃ v₃ => ?_
   refine wp_bswap fun u₄ v₄ => ?_
   obtain dx₄ : u₄.gpr .edx = D := by
@@ -256,9 +265,9 @@ theorem store_ok {s u : State} {S K D : BitVec 32} {k : Spec.Cast5.Schedule} {n 
     (by rw [v₆.wr, v₅.wr, v₄.wr, v₃.wr, v₂.wr, v₁.wr]; exact w4) fun u₇ v₇ => ?_
   obtain si₆ : u₆.gpr .esi = S := by
     rw [v₆.other _ (by decide), v₅.gpr, v₄.other _ (by decide), v₃.other _ (by decide)]; exact si₂
-  refine wp_stm (b := .esi) (B := S) (o := 4 * dSlot) (by rw [v₇.gpr]; exact si₆)
+  refine wp_stm (b := .esi) (B := S) (o := 4 * (cs + 4)) (by rw [v₇.gpr]; exact si₆)
     (by rw [v₇.wr, v₆.wr, v₅.wr, v₄.wr, v₃.wr, v₂.wr, v₁.wr]; exact wX) fun u₈ v₈ => ?_
-  refine wp_stm (b := .esi) (B := S) (o := 4 * nSlot) (by rw [v₈.gpr, v₇.gpr]; exact si₆)
+  refine wp_stm (b := .esi) (B := S) (o := 4 * (cs + 5)) (by rw [v₈.gpr, v₇.gpr]; exact si₆)
     (by rw [v₈.wr, v₇.wr, v₆.wr, v₅.wr, v₄.wr, v₃.wr, v₂.wr, v₁.wr]; exact wY) fun u₉ v₉ => ?_
   refine wp_mov fun u₁₀ v₁₀ => WP.block_nil ?_
   obtain g₉ : ∀ r, u₉.gpr r = u₆.gpr r := fun r => by rw [v₉.gpr, v₈.gpr, v₇.gpr]
@@ -274,7 +283,7 @@ theorem store_ok {s u : State} {S K D : BitVec 32} {k : Spec.Cast5.Schedule} {n 
   obtain m₁₀ : u₁₀.mem = m' := by
     rw [v₁₀.mem, v₉.mem, v₈.mem, v₇.mem, v₆.mem, v₅.mem, v₄.mem, v₃.mem, v₂.mem, v₁.mem]
     simp only [v₈.gpr, v₇.gpr, ax₆, cx₆, bx₆, bp₄]
-    rw [show 4 * dSlot = 280 from rfl, show 4 * nSlot = 284 from rfl, hm', e]
+    rw [hm', e]
   refine ⟨?_, ?_, ?_, fun q hq => ?_, by rw [v₁₀.rd, v₉.rd, v₈.rd, v₇.rd, v₆.rd, v₅.rd, v₄.rd, v₃.rd, v₂.rd, v₁.rd, hu.rd],
     by rw [v₁₀.wr, v₉.wr, v₈.wr, v₇.wr, v₆.wr, v₅.wr, v₄.wr, v₃.wr, v₂.wr, v₁.wr, hu.wr],
     by rw [v₁₀.syms, v₉.syms, v₈.syms, v₇.syms, v₆.syms, v₅.syms, v₄.syms, v₃.syms, v₂.syms, v₁.syms, hu.syms]⟩
@@ -284,7 +293,7 @@ theorem store_ok {s u : State} {S K D : BitVec 32} {k : Spec.Cast5.Schedule} {n 
       rw [addr_D0 h.fitD]; simp [Region.Contains]
     obtain c4 : (blockR D).Contains (addr D 4) (32 / 8) := by
       rw [addr_off h.fitD 4 (by decide)]; exact Offset.contains_base _ (d := 4) (n := 4) (k := 8) (by decide) (by decide)
-    obtain f1 := (hu.frame.mono (rs' := blockR D :: blockMem S (s.gpr .esp))
+    obtain f1 := (hu.frame.mono (rs' := blockR D :: blockMemG lk S (s.gpr .esp))
       (fun r hr => List.mem_cons_of_mem _ hr)).writeW List.mem_cons_self (byteRev32 lr.2) c0
     exact f1.writeW List.mem_cons_self (byteRev32 lr.1) c4
   · rw [v₁₀.gpr, g₉]; exact si₆
@@ -308,50 +317,52 @@ theorem toNat_add32 {B : BitVec 32} {d : Nat} (h : B.toNat + d < 2 ^ 32) :
     (B + BitVec.ofNat 32 d).toNat = B.toNat + d := by
   rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith : d < 2 ^ 32), Nat.mod_eq_of_lt h]
 
-theorem crypt_wp (up : Bool) {s : State} {B : BitVec 32} {kn : Spec.Cast5.Schedule × Nat}
-    (hB : s.gpr Impl.Modes.X86.sb = B) (hs : ScrIn s B (dirCore up).total) (hr : Ready s B kn)
-    (hst : (dirCore up).stack ≤ (s.gpr .esp).toNat) :
-    WP isa (dirCore up).crypt s fun s' => s'.gpr Impl.Modes.X86.sb = B ∧ s'.gpr .esp = s.gpr .esp ∧
-      Ready s' B kn ∧
-      Frame [coreRegion (dirCore up) B, stkRegion (s.gpr .esp) (dirCore up).stack] s.mem s'.mem ∧
-      (∀ j < (dirCore up).G, Spec.Aes.bytesAt s'.mem (blkAddr (dirCore up) B j) (4 * (dirCore up).bw) =
-        dirCipher up kn.1 kn.2 (Spec.Aes.bytesAt s.mem (blkAddr (dirCore up) B j) (4 * (dirCore up).bw))) ∧
+/-- **The block of the buffer, encrypted (`up`) or decrypted in place**, for
+the rounds over any look-up that fits the core. -/
+theorem crypt_wp {lk : Lk} {tab : Bool} {cs : Nat} (hc : LkCore lk tab cs) (up : Bool) {s : State}
+    {B : BitVec 32} {kn : Spec.Cast5.Schedule × Nat} (hB : s.gpr Impl.Modes.X86.sb = B)
+    (hs : ScrIn s B (cs + 10)) (hr : Ready tab lk.n (4 * (cs + 10)) s B kn) :
+    WP isa (cryptWith lk.code cs up) s fun s' => s'.gpr Impl.Modes.X86.sb = B ∧ s'.gpr .esp = s.gpr .esp ∧
+      Ready tab lk.n (4 * (cs + 10)) s' B kn ∧
+      Frame [⟨B.setWidth 64, 4 * cs⟩, stkRegion (s.gpr .esp) lk.n] s.mem s'.mem ∧
+      Spec.Aes.bytesAt s'.mem (B.setWidth 64 + BitVec.ofNat 64 256) 8 =
+        dirCipher up kn.1 kn.2 (Spec.Aes.bytesAt s.mem (B.setWidth 64 + BitVec.ofNat 64 256) 8) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr := by
   obtain ⟨k, n⟩ := kn
   obtain ⟨K, hb, hsd⟩ := hr
   have hw := hs.wr
   have hfB := hs.fit
-  rw [dirCore_total] at hw hfB
+  have hcs := hc.cs66
   have hB' : s.gpr .edi = B := hB
-  obtain ⟨dKB, dTB, dAB⟩ := hb.dW _ hw
+  obtain ⟨dKB, dAB⟩ := hb.dW _ hw
   obtain aE4 : InRegions (s.rd ++ s.wr) (addr (s.gpr .esp) 4) 4 := inRegions_prefix hb.inA (by decide)
   obtain aE8 : InRegions (s.rd ++ s.wr) (addr (s.gpr .esp) 8) 4 := by
     rw [addr8 hb.fitE]; exact CallLay.inRegions_sub hb.inA (by decide) (by decide)
-  obtain aB : ∀ e, e < 4 * 76 → addr B e = B.setWidth 64 + BitVec.ofNat 64 e := fun e he => addr_eq (by omega_arith)
-  obtain sW : ∀ e, e + 4 ≤ 4 * 76 → InRegions s.wr (addr B e) 4 := fun e he => by
-    rw [aB e (by omega_arith)]; exact ⟨_, hw, Offset.contains_base _ he (by omega_arith)⟩
+  obtain aB : ∀ e, e < 4 * (cs + 10) → addr B e = B.setWidth 64 + BitVec.ofNat 64 e := fun e he => addr_eq (by omega)
+  obtain sW : ∀ e, e + 4 ≤ 4 * (cs + 10) → InRegions s.wr (addr B e) 4 := fun e he => by
+    rw [aB e (by omega)]; exact ⟨_, hw, Offset.contains_base _ he (by omega)⟩
   -- The slots `48 … 59` of the working space.
-  obtain inSl : ∀ e, 48 ≤ e → e + 4 ≤ 60 → (⟨B.setWidth 64, 4 * 66⟩ : Region).Contains (addr B e) (32 / 8) :=
-    fun e h1 h2 => by rw [aB e (by omega_arith)]; exact Offset.contains_base _ (by omega_arith) (by omega_arith)
+  obtain inSl : ∀ e, 48 ≤ e → e + 4 ≤ 60 → (⟨B.setWidth 64, 4 * cs⟩ : Region).Contains (addr B e) (32 / 8) :=
+    fun e h1 h2 => by rw [aB e (by omega)]; exact Offset.contains_base _ (by omega) (by omega)
   show WP isa (.seq (.block Modes.setup) (.seq (.block load)
-    (.seq (if up then encryptBlock else decryptBlock) (.block Modes.store)))) s _
+    (.seq (if up then encryptBlockWith lk.code else decryptBlockWith lk.code) (.block (Modes.storeAt cs))))) s _
   refine WP.seq ?_
   refine wp_mov fun s₁ u₁ => ?_
   refine wp_ldm (b := .esp) (B := s.gpr .esp) (o := 4) (u₁.other _ (by decide)) (by rw [u₁.rd, u₁.wr]; exact aE4)
     fun s₂ u₂ => ?_
   obtain si₂ : s₂.gpr .esi = B := by rw [u₂.other _ (by decide), u₁.gpr]; exact hB'
-  refine wp_stm (b := .esi) (B := B) (o := schedOff) si₂ (by rw [u₂.wr, u₁.wr]; exact sW _ (by decide))
+  refine wp_stm (b := .esi) (B := B) (o := schedOff) si₂ (by rw [u₂.wr, u₁.wr]; exact sW _ (by first | (simp only [schedOff]; omega) | (simp only [roundsOff]; omega) | (simp only [dataOff]; omega)))
     fun s₃ u₃ => ?_
   refine wp_ldm (b := .esp) (B := s.gpr .esp) (o := 8)
     (by rw [u₃.gpr, u₂.other _ (by decide), u₁.other _ (by decide)])
     (by rw [u₃.rd, u₃.wr, u₂.rd, u₂.wr, u₁.rd, u₁.wr]; exact aE8) fun s₄ u₄ => ?_
   obtain si₄ : s₄.gpr .esi = B := by rw [u₄.other _ (by decide), u₃.gpr]; exact si₂
-  refine wp_stm (b := .esi) (B := B) (o := roundsOff) si₄ (by rw [u₄.wr, u₃.wr, u₂.wr, u₁.wr]; exact sW _ (by decide))
+  refine wp_stm (b := .esi) (B := B) (o := roundsOff) si₄ (by rw [u₄.wr, u₃.wr, u₂.wr, u₁.wr]; exact sW _ (by first | (simp only [schedOff]; omega) | (simp only [roundsOff]; omega) | (simp only [dataOff]; omega)))
     fun s₅ u₅ => ?_
   refine wp_mov fun s₆ u₆ => wp_addi fun s₇ u₇ => ?_
   obtain si₇ : s₇.gpr .esi = B := by rw [u₇.other _ (by decide), u₆.other _ (by decide), u₅.gpr]; exact si₄
   refine wp_stm (b := .esi) (B := B) (o := dataOff) si₇
-    (by rw [u₇.wr, u₆.wr, u₅.wr, u₄.wr, u₃.wr, u₂.wr, u₁.wr]; exact sW _ (by decide)) fun s₈ u₈ => WP.block_nil ?_
+    (by rw [u₇.wr, u₆.wr, u₅.wr, u₄.wr, u₃.wr, u₂.wr, u₁.wr]; exact sW _ (by first | (simp only [schedOff]; omega) | (simp only [roundsOff]; omega) | (simp only [dataOff]; omega))) fun s₈ u₈ => WP.block_nil ?_
   -- The state after the setup.
   obtain esp₈ : s₈.gpr .esp = s.gpr .esp := by
     rw [u₈.gpr, u₇.other _ (by decide), u₆.other _ (by decide), u₅.gpr, u₄.other _ (by decide), u₃.gpr,
@@ -366,7 +377,7 @@ theorem crypt_wp (up : Bool) {s : State} {B : BitVec 32} {kn : Spec.Cast5.Schedu
       u₂.other _ (by decide), u₁.other _ (by decide)]; exact hB'
   obtain ax₂ : s₂.gpr .eax = K := by rw [u₂.gpr, u₁.mem]; exact hb.argK
   obtain sepA : ∀ e, 48 ≤ e → e + 4 ≤ 60 → Mem.Sep (addr (s.gpr .esp) 8) 4 (addr B e) 4 := fun e h1 h2 =>
-    Region.Disjoint.sep dAB (argR_contains8 hb.fitE) (by rw [aB e (by omega_arith)]; exact Offset.contains_base _ (by omega_arith) (by omega_arith))
+    Region.Disjoint.sep dAB (argR_contains8 hb.fitE) (by rw [aB e (by omega)]; exact Offset.contains_base _ (by omega) (by omega))
   obtain ax₄ : s₄.gpr .eax = BitVec.ofNat 32 n := by
     rw [u₄.gpr, u₃.mem, u₂.mem, u₁.mem, ax₂, Mem.readW_writeW_sep (w' := 32) (sepA schedOff (by decide) (by decide)) (by decide)]
     exact hb.argN
@@ -375,127 +386,156 @@ theorem crypt_wp (up : Bool) {s : State} {B : BitVec 32} {kn : Spec.Cast5.Schedu
       (addr B dataOff) (B + BitVec.ofNat 32 256) := by
     rw [u₈.mem, ax₇, u₇.mem, u₆.mem, u₅.mem, ax₄, u₄.mem, u₃.mem, ax₂, u₂.mem, u₁.mem]
   -- The setup writes the slots `48 … 59` only.
-  obtain slR : Region.Sub ⟨B.setWidth 64 + BitVec.ofNat 64 48, 12⟩ ⟨B.setWidth 64, 4 * 66⟩ :=
-    Offset.sub_base _ (by decide)
+  obtain slR : Region.Sub ⟨B.setWidth 64 + BitVec.ofNat 64 48, 12⟩ ⟨B.setWidth 64, 4 * cs⟩ :=
+    Offset.sub_base _ (by omega)
   obtain inSl' : ∀ e, 48 ≤ e → e + 4 ≤ 60 →
       (⟨B.setWidth 64 + BitVec.ofNat 64 48, 12⟩ : Region).Contains (addr B e) (32 / 8) :=
-    fun e h1 h2 => by rw [aB e (by omega_arith)]; exact Offset.contains _ h1 (by omega_arith) (by omega_arith)
+    fun e h1 h2 => by rw [aB e (by omega)]; exact Offset.contains _ h1 (by omega) (by omega)
   obtain f₈ : Frame [⟨B.setWidth 64 + BitVec.ofNat 64 48, 12⟩] s.mem s₈.mem := by
     rw [m₈]
     exact (((Frame.refl _ _).writeW List.mem_cons_self _ (inSl' 48 (by decide) (by decide))).writeW
       List.mem_cons_self _ (inSl' 52 (by decide) (by decide))).writeW List.mem_cons_self _
       (inSl' 56 (by decide) (by decide))
-  obtain coreScr : Region.Sub ⟨B.setWidth 64, 4 * 66⟩ ⟨B.setWidth 64, 4 * 76⟩ := Region.sub_prefix (by decide)
-  obtain slScr : Region.Sub ⟨B.setWidth 64 + BitVec.ofNat 64 48, 12⟩ ⟨B.setWidth 64, 4 * 76⟩ :=
-    Offset.sub_base _ (by decide)
+  obtain coreScr : Region.Sub ⟨B.setWidth 64, 4 * cs⟩ ⟨B.setWidth 64, 4 * (cs + 10)⟩ := Region.sub_prefix (by omega)
+  obtain slScr : Region.Sub ⟨B.setWidth 64 + BitVec.ofNat 64 48, 12⟩ ⟨B.setWidth 64, 4 * (cs + 10)⟩ :=
+    Offset.sub_base _ (by omega)
+  obtain dTB : tab = true → (tabR s).Disjoint ⟨B.setWidth 64, 4 * (cs + 10)⟩ := fun ht =>
+    (hb.tabOk ht).2.2.2.1 _ hw
   obtain dSl : ∀ r ∈ [(⟨B.setWidth 64 + BitVec.ofNat 64 48, 12⟩ : Region)], (keyR K).Disjoint r ∧
-      (tabR s).Disjoint r ∧ (argR s).Disjoint r := fun r hr => by
+      (tab = true → (tabR s).Disjoint r) ∧ (argR s).Disjoint r := fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
-    exact ⟨dKB.sub_right slScr, dTB.sub_right slScr, dAB.sub_right slScr⟩
-  obtain hb₈ : Base s₈ K k n := hb.frame esp₈ rd₈ wr₈ sy₈ f₈ dSl
+    exact ⟨dKB.sub_right slScr, fun ht => (dTB ht).sub_right slScr, dAB.sub_right slScr⟩
+  obtain hb₈ : Base tab lk.n s₈ K k n := hb.frame esp₈ rd₈ wr₈ sy₈ f₈ dSl
   obtain sep48 : ∀ d e, d + 4 ≤ e ∨ e + 4 ≤ d → d < 256 → e < 256 → Mem.Sep (addr B d) 4 (addr B e) 4 :=
-    fun d e h hd he => slot_sep (by omega_arith) hd he h (by decide) (by decide)
-  obtain rB : Region.Sub ⟨B.setWidth 64, 256⟩ ⟨B.setWidth 64, 4 * 76⟩ := Region.sub_prefix (by decide)
-  obtain eD : (B + BitVec.ofNat 32 256).setWidth 64 = B.setWidth 64 + BitVec.ofNat 64 256 := aB 256 (by decide)
-  obtain blkSub : Region.Sub (blockR (B + BitVec.ofNat 32 256)) ⟨B.setWidth 64, 4 * 66⟩ := by
+    fun d e h hd he => slot_sep (by omega) hd he h (by decide) (by decide)
+  obtain rB : Region.Sub ⟨B.setWidth 64, 256⟩ ⟨B.setWidth 64, 4 * (cs + 10)⟩ := Region.sub_prefix (by omega)
+  obtain eD : (B + BitVec.ofNat 32 256).setWidth 64 = B.setWidth 64 + BitVec.ofNat 64 256 := aB 256 (by omega)
+  obtain blkSub : Region.Sub (blockR (B + BitVec.ofNat 32 256)) ⟨B.setWidth 64, 4 * cs⟩ := by
     show Region.Sub ⟨(B + BitVec.ofNat 32 256).setWidth 64, 8⟩ _
-    rw [eD]; exact Offset.sub_base _ (by decide)
-  obtain hpre : BPre s₈ B K (B + BitVec.ofNat 32 256) k n := by
-    refine ⟨⟨si₈, by omega_arith, ?_, ?_, ?_, hb.nv, hb.fitK, hb₈.inK, fun j hj => ?_, by rw [esp₈]; exact hb.sp,
-      by rw [esp₈]; exact (hsd.sub_right rB).symm, hb₈.dKs, dKB.sub_right rB, hb₈.fitT, hb₈.inT, hb₈.dTs,
-      by rw [sy₈]; exact dTB.sub_right rB, tabAt_of_held hb₈.held⟩, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-    · rw [wr₈]; exact ⟨_, hw, by simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega_arith⟩
+    rw [eD]; exact Offset.sub_base _ (by omega)
+  obtain xin := hc.xin B
+  obtain hpre : BPreG lk s₈ B K (B + BitVec.ofNat 32 256) k n := by
+    refine ⟨⟨hc.ok, si₈, by omega, ?_, ?_, ?_, hb.nv, hb.fitK, hb₈.inK, fun j hj => ?_,
+      by rw [esp₈]; exact (hsd.sub_right rB).symm, hb₈.dKs, dKB.sub_right rB, fun x hx => ?_, fun x hx => ?_,
+      hc.pre hb₈ (by rw [wr₈]; exact hw) hfB (by simp only [stk, esp₈]; exact hsd)⟩, ?_, ?_, ?_, ?_, ?_, fun x hx => ?_, ?_⟩
+    · rw [wr₈]; exact ⟨_, hw, by simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega⟩
     · rw [m₈, Mem.readW_writeW_sep (w' := 32) (sep48 48 56 (by decide) (by decide) (by decide)) (by decide),
         Mem.readW_writeW_sep (w' := 32) (sep48 48 52 (by decide) (by decide) (by decide)) (by decide),
         Mem.readW_writeW_self32]
     · rw [m₈, Mem.readW_writeW_sep (w' := 32) (sep48 52 56 (by decide) (by decide) (by decide)) (by decide),
         Mem.readW_writeW_self32]
     · rw [← Proof.Cast5.scheduleAt_getD _ _ hj, hb₈.sk]
+    · obtain ⟨d, m, rfl, hd, hm⟩ := xin x hx
+      exact Offset.base_disjoint _ (by omega) (by omega)
+    · obtain ⟨d, m, rfl, hd, hm⟩ := xin x hx
+      exact dKB.sub_right (Offset.sub_base _ (by omega))
     · rw [m₈, Mem.readW_writeW_self32]
-    · rw [toNat_add32 (by omega_arith)]; omega_arith
-    · rw [wr₈, eD]; exact ⟨_, hw, Offset.contains_base _ (by decide) (by omega_arith)⟩
+    · rw [toNat_add32 (by omega)]; omega
+    · rw [wr₈, eD]; exact ⟨_, hw, Offset.contains_base _ (by omega) (by omega)⟩
     · show Region.Disjoint ⟨(B + BitVec.ofNat 32 256).setWidth 64, 8⟩ _
-      rw [eD]; exact Offset.disjoint_base _ (by decide) (by omega_arith)
+      rw [eD]; exact Offset.disjoint_base _ (by decide) (by omega)
     · exact ((dKB.sub_right coreScr).sub_right blkSub).symm
-    · rw [sy₈]; exact ((dTB.sub_right coreScr).sub_right blkSub).symm
+    · obtain ⟨d, m, rfl, hd, hm⟩ := xin x hx
+      show Region.Disjoint ⟨(B + BitVec.ofNat 32 256).setWidth 64, 8⟩ _
+      rw [eD]; exact Offset.disjoint _ (.inl (by omega)) (by omega) (by omega)
     · rw [esp₈]; exact ((hsd.sub_right coreScr).sub_right blkSub).symm
-  refine WP.seq (WP.mono (load_ok hpre) fun u₉ ⟨c₉, hlr, m₉, g₉, rd₉, wr₉, sy₉⟩ => ?_)
+  refine WP.seq (WP.mono (load_okG hpre) fun u₉ ⟨c₉, hlr, m₉, g₉, rd₉, wr₉, sy₉⟩ => ?_)
   obtain esp₉ : u₉.gpr .esp = s.gpr .esp := (g₉ .esp (by decide)).trans esp₈
-  obtain hb₉ : BPre u₉ B K (B + BitVec.ofNat 32 256) k n := ⟨c₉, by rw [m₉]; exact hpre.dataSlot, hpre.fitD,
-    by rw [wr₉]; exact hpre.wD, hpre.dDS, hpre.dDK, by rw [sy₉]; exact hpre.dDT,
-    by rw [esp₉, ← esp₈]; exact hpre.dDsp⟩
+  obtain hb₉ : BPreG lk u₉ B K (B + BitVec.ofNat 32 256) k n := ⟨c₉, by rw [m₉]; exact hpre.dataSlot, hpre.fitD,
+    by rw [wr₉]; exact hpre.wD, hpre.dDS, hpre.dDK, hpre.dDX, by rw [esp₉, ← esp₈]; exact hpre.dDsp⟩
   obtain ⟨lr, hlr'⟩ : ∃ lr, Spec.Cast5.decodeBlock
       (Spec.Cast5.blockAt s₈.mem ((B + BitVec.ofNat 32 256).setWidth 64)) = lr := ⟨_, rfl⟩
   rw [hlr'] at hlr
   obtain hbx : u₉.gpr .ebx = lr.1 := by rw [← hlr]
   obtain hbp : u₉.gpr .ebp = lr.2 := by rw [← hlr]
-  obtain hW₉ : InRegions u₉.wr (B.setWidth 64) 304 := by
-    rw [wr₉, wr₈]; exact ⟨_, hw, by simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega_arith⟩
-  obtain hDm : (blockR (B + BitVec.ofNat 32 256)).Disjoint ⟨B.setWidth 64 + BitVec.ofNat 64 280, 8⟩ := by
+  obtain hW₉ : InRegions u₉.wr (B.setWidth 64) (4 * (cs + 10)) := by
+    rw [wr₉, wr₈]; exact ⟨_, hw, by simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega⟩
+  obtain hDm : (blockR (B + BitVec.ofNat 32 256)).Disjoint ⟨B.setWidth 64 + BitVec.ofNat 64 (4 * (cs + 4)), 8⟩ := by
     show Region.Disjoint ⟨(B + BitVec.ofNat 32 256).setWidth 64, 8⟩ _
-    rw [eD]; exact Offset.disjoint _ (.inl (by decide)) (by decide) (by decide)
-  obtain hsm : (below (u₉.gpr .esp) 4).Disjoint ⟨B.setWidth 64 + BitVec.ofNat 64 280, 8⟩ := by
-    rw [esp₉]; exact hsd.sub_right (Offset.sub_base _ (by decide))
-  have stkEq : stkRegion (s.gpr .esp) (dirCore up).stack = below (s.gpr .esp) 4 := rfl
-  have post (v : State) (hv : RInv u₉ B K k n (fold up k n lr) v) :
-      WP isa (.block Modes.store) v fun s' => s'.gpr Impl.Modes.X86.sb = B ∧ s'.gpr .esp = s.gpr .esp ∧
-        Ready s' B (k, n) ∧
-        Frame [coreRegion (dirCore up) B, stkRegion (s.gpr .esp) (dirCore up).stack] s.mem s'.mem ∧
-        (∀ j < (dirCore up).G, Spec.Aes.bytesAt s'.mem (blkAddr (dirCore up) B j) (4 * (dirCore up).bw) =
-          dirCipher up (k, n).1 (k, n).2 (Spec.Aes.bytesAt s.mem (blkAddr (dirCore up) B j) (4 * (dirCore up).bw))) ∧
+    rw [eD]; exact Offset.disjoint _ (.inl (by omega)) (by omega) (by omega)
+  have post (v : State) (hv : RInvG lk u₉ B K k n (fold up k n lr) v) :
+      WP isa (.block (Modes.storeAt cs)) v fun s' => s'.gpr Impl.Modes.X86.sb = B ∧ s'.gpr .esp = s.gpr .esp ∧
+        Ready tab lk.n (4 * (cs + 10)) s' B (k, n) ∧
+        Frame [⟨B.setWidth 64, 4 * cs⟩, stkRegion (s.gpr .esp) lk.n] s.mem s'.mem ∧
+        Spec.Aes.bytesAt s'.mem (B.setWidth 64 + BitVec.ofNat 64 256) 8 =
+          dirCipher up (k, n).1 (k, n).2 (Spec.Aes.bytesAt s.mem (B.setWidth 64 + BitVec.ofNat 64 256) 8) ∧
         s'.rd = s.rd ∧ s'.wr = s.wr := by
-    refine WP.mono (store_ok hb₉ hv hW₉ (by omega_arith) hDm) fun w hw' => ?_
+    refine WP.mono (store_ok hcs hb₉ hv hW₉ hfB hDm) fun w hw' => ?_
     obtain espw : w.gpr .esp = s.gpr .esp := (hw'.same .esp (by decide)).trans esp₉
-    obtain fall : Frame [coreRegion (dirCore up) B, stkRegion (s.gpr .esp) (dirCore up).stack] s.mem w.mem := by
+    obtain fall : Frame [⟨B.setWidth 64, 4 * cs⟩, stkRegion (s.gpr .esp) lk.n] s.mem w.mem := by
       refine (f₈.sub fun r hr => ?_).trans ?_
       · simp only [List.mem_singleton] at hr; subst hr
         exact ⟨_, List.mem_cons_self, slR⟩
       · rw [← m₉]
         refine hw'.frame.sub fun r hr => ?_
-        simp only [blockMem, List.mem_cons, List.not_mem_nil, or_false] at hr
-        rcases hr with rfl | rfl | rfl | rfl
+        simp only [blockMemG, List.mem_cons] at hr
+        rcases hr with rfl | rfl | rfl | rfl | hr
         · exact ⟨_, List.mem_cons_self, blkSub⟩
         · rw [esp₉]; exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, fun _ h => h⟩
-        · exact ⟨_, List.mem_cons_self, Offset.sub_base _ (by simp [dirCore, coreSlots])⟩
-        · exact ⟨_, List.mem_cons_self, Offset.sub_base _ (by simp [dirCore, coreSlots, kpOff])⟩
-    obtain dAll : ∀ r ∈ [coreRegion (dirCore up) B, stkRegion (s.gpr .esp) (dirCore up).stack],
-        (keyR K).Disjoint r ∧ (tabR s).Disjoint r ∧ (argR s).Disjoint r := fun r hr => by
+        · exact ⟨_, List.mem_cons_self, Offset.sub_base _ (by omega)⟩
+        · exact ⟨_, List.mem_cons_self, Offset.sub_base _ (by simp only [kpOff]; omega)⟩
+        · obtain ⟨d, m, rfl, hd, hm⟩ := xin r hr
+          exact ⟨_, List.mem_cons_self, Offset.sub_base _ hm⟩
+    obtain dAll : ∀ r ∈ [(⟨B.setWidth 64, 4 * cs⟩ : Region), stkRegion (s.gpr .esp) lk.n],
+        (keyR K).Disjoint r ∧ (tab = true → (tabR s).Disjoint r) ∧ (argR s).Disjoint r := fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      · exact ⟨dKB.sub_right coreScr, dTB.sub_right coreScr, dAB.sub_right coreScr⟩
-      · exact ⟨hb.dKs, hb.dTs, hb.dAs⟩
+      · exact ⟨dKB.sub_right coreScr, fun ht => (dTB ht).sub_right coreScr, dAB.sub_right coreScr⟩
+      · exact ⟨hb.dKs, fun ht => (hb.tabOk ht).2.2.2.2, hb.dAs⟩
     refine ⟨hw'.edi, espw, ⟨K, hb.frame espw (hw'.rd.trans (rd₉.trans rd₈)) (hw'.wr.trans (wr₉.trans wr₈))
-      (hw'.syms.trans (sy₉.trans sy₈)) fall dAll, by simp only [stk, espw]; exact hsd⟩, fall, fun j hj => ?_,
+      (hw'.syms.trans (sy₉.trans sy₈)) fall dAll, by simp only [stk, espw]; exact hsd⟩, fall, ?_,
       hw'.rd.trans (rd₉.trans rd₈), hw'.wr.trans (wr₉.trans wr₈)⟩
-    obtain hj0 : j = 0 := by simp only [dirCore] at hj; omega_arith
-    subst hj0
-    obtain eB : blkAddr (dirCore up) B 0 = B.setWidth 64 + BitVec.ofNat 64 256 := by
-      simp [blkAddr, slotA, dirCore, bufSlot]
     obtain dBlk : ∀ r ∈ [(⟨B.setWidth 64 + BitVec.ofNat 64 48, 12⟩ : Region)],
         Region.Disjoint ⟨B.setWidth 64 + BitVec.ofNat 64 256, 8⟩ r := fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact Offset.disjoint _ (.inr (by decide)) (by decide) (by decide)
-    rw [show 4 * (dirCore up).bw = 8 from rfl, eB, bytesAt_eq, ← eD, hw'.blk, dirCipher_bytes, cipher_eq,
-      eD, ← blockAt_frame f₈ dBlk, ← eD, hlr']
+    rw [bytesAt_eq, ← eD, hw'.blk, dirCipher_bytes, cipher_eq, eD, ← blockAt_frame f₈ dBlk, ← eD, hlr']
   cases up
-  · exact WP.seq (WP.mono (decryptBlock_ok c₉ hbx hbp) fun v hv => post v hv)
-  · exact WP.seq (WP.mono (encryptBlock_ok c₉ hbx hbp) fun v hv => post v hv)
+  · exact WP.seq (WP.mono (decryptBlockWith_ok c₉ hbx hbp) fun v hv => post v hv)
+  · exact WP.seq (WP.mono (encryptBlockWith_ok c₉ hbx hbp) fun v hv => post v hv)
+
+/-- **CAST5's core over any look-up that fits it, encrypting (`up`) or
+decrypting, meets what the modes need**: its key the subkeys and the number
+of rounds, through the first two stack arguments (`KeyArgs`). -/
+def coreSpecWith {lk : Lk} {tab : Bool} {cs : Nat} (hc : LkCore lk tab cs) (up : Bool) :
+    CoreSpec (coreWith lk.code cs lk.n up) where
+  Key := Spec.Cast5.Schedule × Nat
+  cipher kn := dirCipher up kn.1 kn.2
+  KeyArgs := KeyArgs tab lk.n
+  Ready := Ready tab lk.n (4 * (cs + 10))
+  cipher_len kn b := dirCipher_length up kn.1 kn.2 b
+  layout := ⟨show 0 < 1 by decide, .inl rfl, by have := hc.cs66; show bufSlot + 2 * 1 ≤ cs; simp only [bufSlot]; omega,
+    Nat.le_refl _⟩
+  keyArgs_congr := keyArgs_congr
+  ready_frame h hesp hrd hwr hsy hf hsub _ := ready_frame h hesp hrd hwr hsy hf hsub
+  prepare_wp hB _ hR hk _ := by
+    obtain ⟨K, hb, hd⟩ := hk
+    exact WP.block_nil ⟨⟨K, hb, (hd _ hR).2.2.2⟩, hB, rfl, Frame.refl _ _, rfl, rfl⟩
+  crypt_wp := fun {s B kn} hB hs hr _ => by
+    refine WP.mono (crypt_wp hc up hB hs hr) fun s' ⟨h1, h2, h3, h4, h5, h6, h7⟩ => ⟨h1, h2, h3, h4, fun j hj => ?_,
+      h6, h7⟩
+    obtain rfl : j = 0 := by
+      have : j < 1 := hj
+      omega
+    have e : blkAddr (coreWith lk.code cs lk.n up) B 0 = B.setWidth 64 + BitVec.ofNat 64 256 := by
+      simp [blkAddr, slotA, coreWith, bufSlot]
+    rw [show 4 * (coreWith lk.code cs lk.n up).bw = 8 from rfl, e]
+    exact h5
+
+/-- The scan fits the core of 66 slots, with the table. -/
+theorem scanCore : LkCore scanLk true 66 where
+  ok := scanLk_ok
+  cs66 := Nat.le_refl _
+  xin _ _ hx := absurd hx List.not_mem_nil
+  pre hb hw _ hsd := by
+    obtain ⟨fT, inT, held, dTw, dTs⟩ := hb.tabOk rfl
+    exact ⟨hb.sp, fT, inT, dTs, (dTw _ hw).sub_right (Region.sub_prefix (by decide)), tabAt_of_held held⟩
 
 /-- The core's blocks are two words. -/
 @[simp] theorem dirCore_bw (up : Bool) : (dirCore up).bw = 2 := rfl
 
 /-- CAST5's core, encrypting (`up`) or decrypting, meets what the modes need. -/
-def dirCoreSpec (up : Bool) : CoreSpec (dirCore up) where
-  Key := Spec.Cast5.Schedule × Nat
-  cipher kn := dirCipher up kn.1 kn.2
-  KeyArgs := KeyArgs
-  Ready := Ready
-  cipher_len kn b := dirCipher_length up kn.1 kn.2 b
-  layout := ⟨by simp [dirCore], .inl rfl, by simp [dirCore, coreSlots, bufSlot], by simp [dirCore]⟩
-  keyArgs_congr := keyArgs_congr
-  ready_frame h hesp hrd hwr hsy hf hsub _ := ready_frame h hesp hrd hwr hsy hf hsub
-  prepare_wp := prepare_wp up
-  crypt_wp := crypt_wp up
+def dirCoreSpec (up : Bool) : CoreSpec (dirCore up) := coreSpecWith scanCore up
 
 end VG.Proof.Cast5.X86.Mode
 
@@ -684,43 +724,14 @@ theorem stkG_apart (hlo : n ≤ (s.gpr .esp).toNat) (hfit : (s.gpr .esp).toNat +
 
 end
 
-/-- What a mode's precondition gives of the key's two arguments: the
-subkeys' address `K` and the number of rounds `r`; the subkeys `k` at `K`
-(and the table, if `tab`) readable, apart from every writable region and
-from the `n` bytes below `esp`. -/
-structure KeyBase (tab : Bool) (n : Nat) (s : State) (K : BitVec 32) (k : Spec.Cast5.Schedule) (r : Nat) :
-    Prop where
-  fitE : (s.gpr .esp).toNat + 12 ≤ 2 ^ 32
-  sp : n ≤ (s.gpr .esp).toNat
-  inA : InRegions (s.rd ++ s.wr) (addr (s.gpr .esp) 4) 8
-  argK : s.mem.readW (addr (s.gpr .esp) 4) 32 = K
-  argN : s.mem.readW (addr (s.gpr .esp) 8) 32 = BitVec.ofNat 32 r
-  nv : r = 12 ∨ r = 16
-  fitK : K.toNat + 128 ≤ 2 ^ 32
-  inK : InRegions (s.rd ++ s.wr) (K.setWidth 64) 128
-  sk : Spec.Cast5.scheduleAt s.mem (K.setWidth 64) = k
-  tabOk : tab = true → (s.syms s1234Sym).toNat + 4096 ≤ 2 ^ 32 ∧
-    InRegions (s.rd ++ s.wr) ((s.syms s1234Sym).setWidth 64) 4096 ∧
-    Held s.mem ((s.syms s1234Sym).setWidth 64) s1234 ∧ (∀ x ∈ s.wr, (Mode.tabR s).Disjoint x) ∧
-    (Mode.tabR s).Disjoint (stkG n s)
-  dW : ∀ x ∈ s.wr, (Mode.keyR K).Disjoint x ∧ (Mode.argR s).Disjoint x
-  dKs : (Mode.keyR K).Disjoint (stkG n s)
-  dAs : (Mode.argR s).Disjoint (stkG n s)
-
-/-- The key `kn` through its two arguments, apart from the regions `rs`. -/
-def KeyFacts (tab : Bool) (n : Nat) (s : State) (rs : List Region) (kn : Spec.Cast5.Schedule × Nat) : Prop :=
-  ∃ K, KeyBase tab n s K kn.1 kn.2 ∧
-    ∀ r ∈ rs, (Mode.keyR K).Disjoint r ∧ (tab = true → (Mode.tabR s).Disjoint r) ∧ (Mode.argR s).Disjoint r ∧
-      (stkG n s).Disjoint r
-
 /-- A core of CAST5's modes on x86 with its `CoreSpec`, as the lemmas about
 the functions take it: its key is the subkeys and the number of rounds,
-which `KeyFacts tab n` gives it; its blocks are two words; the key is two
+which `Mode.KeyArgs tab n` gives it; its blocks are two words; the key is two
 arguments; it has `n` bytes of stack; and its scratch buffer is `b` bytes. -/
 structure Fits {c : VG.Impl.Modes.X86.Core} (cs : Proof.Modes.X86.CoreSpec c) (tab : Bool) (b n : Nat) where
   toKey : Spec.Cast5.Schedule × Nat → cs.Key
   keyArgs : ∀ {s : State} {rs : List Region} {kn : Spec.Cast5.Schedule × Nat},
-    KeyFacts tab n s rs kn → cs.KeyArgs s rs (toKey kn)
+    Mode.KeyArgs tab n s rs kn → cs.KeyArgs s rs (toKey kn)
   bw : c.bw = 2
   ka : c.ka = 2
   stack : c.stack = n
@@ -729,12 +740,7 @@ structure Fits {c : VG.Impl.Modes.X86.Core} (cs : Proof.Modes.X86.CoreSpec c) (t
 /-- The core a block at a time fits, with the table, 304 bytes and four of stack. -/
 def dirFits (up : Bool) : Fits (dirCoreSpec up) true 304 4 where
   toKey := id
-  keyArgs h := by
-    obtain ⟨K, hb, hd⟩ := h
-    obtain ⟨fT, inT, held, dTw, dTs⟩ := hb.tabOk rfl
-    exact ⟨K, ⟨hb.fitE, hb.sp, hb.inA, hb.argK, hb.argN, hb.nv, hb.fitK, hb.inK, hb.sk, fT, inT, held,
-      fun r hr => ⟨(hb.dW r hr).1, dTw r hr, (hb.dW r hr).2⟩, hb.dKs, dTs, hb.dAs⟩,
-      fun r hr => ⟨(hd r hr).1, (hd r hr).2.1 rfl, (hd r hr).2.2.1, (hd r hr).2.2.2⟩⟩
+  keyArgs h := h
   bw := rfl
   ka := rfl
   stack := rfl
@@ -819,7 +825,7 @@ theorem keyFacts_of {s : State} {rs : List Region} (hlo : n ≤ (s.gpr .esp).toN
     (dKw : ∀ r ∈ s.wr, (keyA s).Disjoint r) (dAw : ∀ r ∈ s.wr, (argsA s).Disjoint r)
     (dKs : (keyA s).Disjoint (stkG n s))
     (hrs : ∀ r ∈ rs, (keyA s).Disjoint r ∧ (argsA s).Disjoint r ∧ (stkG n s).Disjoint r) :
-    KeyFacts tab n s rs (Spec.Cast5.scheduleAt s.mem ((arg s 0).setWidth 64), (arg s 1).toNat) := by
+    Mode.KeyArgs tab n s rs (Spec.Cast5.scheduleAt s.mem ((arg s 0).setWidth 64), (arg s 1).toNat) := by
   obtain ⟨sA, -⟩ := stkG_apart hlo hfit
   have argSub : (Mode.argR s).Sub (argsA s) := by
     have e0 : argAddr s 0 = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 4 := addr_eq (by omega_using [hfit])
