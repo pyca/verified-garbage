@@ -2352,7 +2352,8 @@ private theorem fillBounded {k : Nat} {c : Callees} {ctr f : Fn} (hs : CalleesSi
     | exact Fill.hole _ _ (by assumption)
     | refine Fill.ite _ ?_ ?_
     | refine Fill.loop _ ?_
-    | refine Fill.call _ _ ?_))
+    | refine Fill.call _ _ ?_
+    | refine Fill.frame _ _ ?_))
 
 private theorem boundedStub_ok : stubCallee boundedStub 2 (fun _=>24) 56 = true := by lit_decide
 private theorem boundedFlag_ok :
