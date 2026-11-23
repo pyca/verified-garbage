@@ -260,7 +260,7 @@ theorem index_wp {K W : BitVec 32} (E : Env K W s) {f : XReg → BitVec 128} {is
   have fW := E.fW
   show WP isa (.block (tb (xr (2 + r % 6)) (oC r) :: x .pshufb (xr (2 + r % 6)) .xmm1 ::
     x .por (xr (2 + r % 6)) .xmm0 :: stx .edi (vOff r) (xr (2 + r % 6)) :: is)) _ _
-  refine wp_tb E.ebx ⟨by simp only [oC]; omega, by rw [show table.length = 36 from rfl]; simp only [oC]; omega⟩
+  refine wp_tb E.ebx ⟨by simp only [oC]; omega, by rw [show table.length = 42 from rfl]; simp only [oC]; omega⟩
     (wp_bin (wp_bin (wp_st (ea_at E.edi (by simp only [vOff]; omega))
       (E.wrW _ _ (by simp only [vOff]; omega) (by simp only [vOff]; omega)) ?_)))
   simp only [upd_self, upd_ne _ _ h0, upd_ne _ _ h1]
