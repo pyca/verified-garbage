@@ -121,14 +121,10 @@ theorem prepCall_trace :
       exact callee_at R.1 F
     exact ⟨w R₁ F₁, w R₂ F₂⟩
 
-/-- The context of p: the copy of p checked by the taint analysis, and its setup by `prepCall`. -/
-theorem ctxP_relCT :
-    RelCT isa (Both fun s => Run Ex base bytes len args sp s ∧ RoomF sp base bytes) Impl.Ffdh.X86.ctxP
+/-- The call of `prepare .wide`, with what each run reaches. -/
+theorem prepCall_relCT :
+    RelCT isa (Both fun s => Run Ex base bytes len args sp s ∧ RoomF sp base bytes) Impl.Ffdh.X86.prepCall
       (Both (WSt Ex base bytes len args sp .wide [3, 4] 0)) := by
-  refine VG.RelCT.seq (taint_both (P := fun s => Run Ex base bytes len args sp s ∧ RoomF sp base bytes)
-    (F := fun s => Run Ex base bytes len args sp s ∧ RoomF sp base bytes)
-    (fun _ _ R₁ R₂ => R₁.1.agree R₂.1) _ ctxP_check fun _ R =>
-      WP.mono (copyDown_run (j := 9) (d := 0) (by decide) (by decide) (by decide) R.1) fun _ h => ⟨h, R.2⟩) ?_
   refine relCT_both prepCall_trace fun x ⟨R, F⟩ => ?_
   have e := R.2.2
   rw [← e] at F
@@ -138,6 +134,23 @@ theorem ctxP_relCT :
   rcases List.mem_cons.mp hj with rfl | hj
   · rw [one]; exact hM
   · rw [List.mem_singleton.mp hj, R2]; exact Nat.mod_lt _ (by omega_arith)
+
+/-- A copy into slot 0 checked by the taint analysis, then `prepCall`. -/
+theorem copyPrep_relCT {j : Nat} (hj9 : 9 ≤ j) (hj : j ≤ 17)
+    (hc : ACheck (copy (.slot .wide j) (.slot .wide 0) (one .wide))) :
+    RelCT isa (Both fun s => Run Ex base bytes len args sp s ∧ RoomF sp base bytes)
+      (.seq (copy (.slot .wide j) (.slot .wide 0) (one .wide)) Impl.Ffdh.X86.prepCall)
+      (Both (WSt Ex base bytes len args sp .wide [3, 4] 0)) :=
+  VG.RelCT.seq (taint_both (P := fun s => Run Ex base bytes len args sp s ∧ RoomF sp base bytes)
+    (F := fun s => Run Ex base bytes len args sp s ∧ RoomF sp base bytes)
+    (fun _ _ R₁ R₂ => R₁.1.agree R₂.1) _ hc fun _ R =>
+      WP.mono (copyDown_run (j := j) (d := 0) hj9 hj (by decide) R.1) fun _ h => ⟨h, R.2⟩) prepCall_relCT
+
+/-- The context of p: the copy of p checked by the taint analysis, and its setup by `prepCall`. -/
+theorem ctxP_relCT :
+    RelCT isa (Both fun s => Run Ex base bytes len args sp s ∧ RoomF sp base bytes) Impl.Ffdh.X86.ctxP
+      (Both (WSt Ex base bytes len args sp .wide [3, 4] 0)) :=
+  copyPrep_relCT (by decide) (by decide) ctxP_check
 
 /-- A power modulo p: the base in slot `b`, the exponent in slot `e`. -/
 theorem powP_trace {b e : Nat} (hb9 : 9 ≤ b) (hb : b ≤ 17) (he9 : 9 ≤ e) (he : e ≤ 17)

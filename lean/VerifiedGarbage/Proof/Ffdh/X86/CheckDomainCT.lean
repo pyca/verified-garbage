@@ -171,7 +171,7 @@ namespace VG.Proof.Ffdh.X86.CheckDomain
 
 open VG VG.X86 VG.X86.Wp VG.Impl.Mont.X86 VG.Impl.Bignum.X86 VG.Impl.Bignum.X86.CrtRt VG.Proof.Mont
 open VG.Proof.Mont.X86 VG.Proof.Bignum.X86 VG.Proof.Bignum.X86.CrtRt VG.Proof.Ffdh.X86
-open VG.Proof.Bignum.X86.PublicRt (Both)
+open VG.Proof.Bignum.X86.PublicRt (Both relCT_both)
 open VG.Proof.Dsa.X86 (argumentPointer)
 open VG.Impl.Ffdh.X86 (argsFrame ret testMask)
 open VG.Impl.Ffdh.X86.CheckDomain (subgroup divides withQ checked)
@@ -274,19 +274,22 @@ def W1 (Ex : List Region → List Region → Prop) (base : Addr) (bytes len dlen
     sv u.mem base len .wide 11 = qD len D ∧ sv u.mem base len .wide 15 = pD len D - 1
 
 theorem subgroup_trace :
-    RelCT isa (Both (Run Ex base bytes len args sp)) subgroup fun _ _ => True :=
+    RelCT isa (Both fun s => Run Ex base bytes len args sp s ∧ RoomF sp base bytes) subgroup fun _ _ => True :=
   VG.RelCT.seq (powP_trace (b := 10) (e := 11) (by decide) (by decide) (by decide) (by decide) copy10_check
     copy11_check) (RelCT.taint (A := taint) τA (fun _ _ h => h.1.agree h.2) eqStatus_check)
 
 theorem dividesFront_trace :
-    RelCT isa (Both (Run Ex base bytes len args sp)) (Prog.chain dividesFront (.block [])) fun _ _ => True := by
-  show RelCT isa _ (.seq (copy (.slot .wide 11) (.slot .wide 0) (one .wide)) (.seq (prepare .wide)
+    RelCT isa (Both fun s => Run Ex base bytes len args sp s ∧ RoomF sp base bytes)
+      (Prog.chain dividesFront (.block [])) fun _ _ => True := by
+  show RelCT isa _ (.seq (copy (.slot .wide 11) (.slot .wide 0) (one .wide)) (.seq Impl.Ffdh.X86.prepCall
     (.seq (copy (.slot .wide 15) (.slot .wide 5) (one .wide)) (.seq (CrtRt.mul .wide 6 5 3)
       (Prog.chain [zero (.slot .wide 17) (one .wide), equal (.slot .wide 6) (.slot .wide 17) (one .wide), testMask]
         (.block [])))))) _
-  refine VG.RelCT.seq (taint_both (fun _ _ R₁ R₂ => R₁.agree R₂) _ dividesHead_check fun _ R =>
-    copyDown_run (j := 11) (d := 0) (by decide) (by decide) (by decide) R) ?_
-  refine VG.RelCT.seq (prepare_relCT .wide) ?_
+  refine VG.RelCT.seq (taint_both (P := fun s => Run Ex base bytes len args sp s ∧ RoomF sp base bytes)
+    (F := fun s => Run Ex base bytes len args sp s ∧ RoomF sp base bytes)
+    (fun _ _ R₁ R₂ => R₁.1.agree R₂.1) _ dividesHead_check fun _ R =>
+      WP.mono (copyDown_run (j := 11) (d := 0) (by decide) (by decide) (by decide) R.1) fun _ h => ⟨h, R.2⟩) ?_
+  refine VG.RelCT.seq prepCall_relCT ?_
   refine VG.RelCT.seq (taint_both (fun _ _ W₁ W₂ => W₁.agree W₂) _ dividesCopy_check fun _ W =>
     copyDown_wst (j := 15) (d := 5) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) W) ?_
   refine VG.RelCT.seq (mul_wst_relCT0 (o := 6) (a := 5) (b := 3) (by decide) (by decide) (by decide) (by decide)
@@ -298,12 +301,14 @@ theorem divides_relCT :
       ¬ ¬ (qD len D % 2 = 1 ∧ 2 < qD len D ∧ qD len D < pD len D - 1)) divides fun _ _ => True := by
   rw [divides_eq]
   apply VG.RelCT.chain
-  refine VG.RelCT.seq (runRel (F := fun u => Run Ex base bytes len args sp u ∧
-      Gate u (¬ (pD len D - 1) % qD len D = 0)) (fun _ h => h.1.1.run) dividesFront_trace fun x h => ?_) ?_
+  refine VG.RelCT.seq (relCT_both (F := fun u => (Run Ex base bytes len args sp u ∧ RoomF sp base bytes) ∧
+      Gate u (¬ (pD len D - 1) % qD len D = 0)) (dividesFront_trace.mono
+        (fun _ _ h => ⟨⟨h.1.1.1.run, h.1.1.1.room⟩, ⟨h.2.1.1.run, h.2.1.1.room⟩⟩) fun _ _ h => h) fun x h => ?_) ?_
   · obtain ⟨⟨A, _, h11, h15⟩, c⟩ := h
     have c := Classical.not_not.mp c
-    exact WP.mono (dividesFront_ok A.run.1 h11 h15 c.1 c.2.1) fun u ⟨S, G, _⟩ => ⟨(A.step S).run, G⟩
-  · exact gate_relCT (fun _ h => h.2) (aEnd (fun _ h => h.1.1) ret0_check)
+    exact WP.mono (dividesFront_ok A.run.1 (by rw [A.run.2.2]; exact A.room) h11 h15 c.1 c.2.1)
+      fun u ⟨S, G, _⟩ => ⟨⟨(A.step S).run, A.room⟩, G⟩
+  · exact gate_relCT (fun _ h => h.2) (aEnd (fun _ h => h.1.1.1) ret0_check)
       (subgroup_trace.mono (fun _ _ h => ⟨h.1.1.1, h.2.1.1⟩) fun _ _ h => h)
 
 theorem withQ_relCT :

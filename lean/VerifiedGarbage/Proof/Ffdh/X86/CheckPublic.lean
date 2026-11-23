@@ -196,10 +196,11 @@ theorem body_ok (h : In Ex base bytes len args s) (G : DomGeo args base bytes le
   have k₆ := kept_slot S₅.inp (a := 11) O₆
   have nine₆ : sv u₆.mem base len .wide 9 = p := by rw [k₆.slot_eq, m₅, V9]
   have y₆ : sv u₆.mem base len .wide 12 = y := by rw [k₆.slot_eq, m₅, V12]
-  refine WP.seq (WP.mono (powP_ok S₆.inp (P := safeM p) (b := 12) (e := 11) (by decide) (by decide) (by decide)
+  have RF₆ := (S'.trans S₆).room RF
+  refine WP.seq (WP.mono (powP_ok S₆.inp RF₆ (P := safeM p) (b := 12) (e := 11) (by decide) (by decide) (by decide)
     (by decide) (by rw [nine₆])) fun u₇ ⟨C₇, Y₇, one₇, F₇, _, K₇⟩ => ?_)
   rw [y₆, V₆] at Y₇
-  have S₇ : Step Ex base bytes len args u₆ u₇ := Step.ops S₆.inp F₇ K₇
+  have S₇ : Step Ex base bytes len args u₆ u₇ := Step.opsF S₆.inp RF₆ F₇ K₇
   refine WP.mono (eqStatus_res C₇.inp (a := 6) (b := 3) (by decide) (by decide)) fun t R => ?_
   rw [Y₇, one₇] at R
   refine ⟨_, ((S'.trans S₆).trans S₇).res R, fun v => ?_⟩
