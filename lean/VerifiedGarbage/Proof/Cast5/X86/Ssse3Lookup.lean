@@ -88,11 +88,11 @@ theorem wp_bin {f : XReg → BitVec 128} {is : List Instr} {Q : State → Prop} 
     (k : WP isa (.block is) (S s m (upd f a (op.eval (f a) (f b)))) Q) :
     WP isa (.block (x op a b :: is)) (S s m f) Q := Wp.cons rfl k
 
-theorem table_length : table.length = 560 := by lit_decide
+theorem table_length : table.length = 1072 := by lit_decide
 
 /-- Sixteen bytes of the table. -/
 theorem wp_tb {f : XReg → BitVec 128} {is : List Instr} {Q : State → Prop} {d : XReg} {off : Nat}
-    (hb : s.gpr tbr = s.syms tableName) (ho : off % 8 = 0 ∧ off / 8 + 2 ≤ 560)
+    (hb : s.gpr tbr = s.syms tableName) (ho : off % 8 = 0 ∧ off / 8 + 2 ≤ 1072)
     (k : WP isa (.block is) (S s m (upd f d (cst off))) Q) : WP isa (.block (tb d off :: is)) (S s m f) Q :=
   Wp.cons (show (if s.gpr tbr = s.syms tableName ∧ off % 8 = 0 ∧ off / 8 + 2 ≤ table.length then some _ else none) = _ by
     rw [ite_eq_left (show _ ∧ _ ∧ _ from ⟨hb, ho.1, by rw [table_length]; exact ho.2⟩)]; rfl) k
@@ -152,7 +152,7 @@ theorem Env.rdW {W : BitVec 32} (E : Env W s) {o n : Nat} (h : 272 ≤ o) (h' : 
 /-- A row of a plane: the row through the row's index vector, ORed with the
 rows before it but for row 0. -/
 theorem plane_wp {f : XReg → BitVec 128} {is : List Instr} {Q : State → Prop} {j r p : Nat}
-    (hb : s.gpr tbr = s.syms tableName) (hj : j < 4) (hr : r < 16) (hp : p < 4)
+    (hb : s.gpr tbr = s.syms tableName) (hj : j < 8) (hr : r < 16) (hp : p < 4)
     (k : ∀ g, g (xr (5 * r + 1 + p)) =
         (if r = 0 then XBinOp.eval .pshufb (rowC j p r) (f (xr (5 * r)))
          else XBinOp.eval .por (XBinOp.eval .pshufb (rowC j p r) (f (xr (5 * r)))) (f (xr (5 * r + 4 + p)))) →
@@ -160,7 +160,7 @@ theorem plane_wp {f : XReg → BitVec 128} {is : List Instr} {Q : State → Prop
     WP isa (.block (plane j r p ++ is)) (S s m f) Q := by
   have hv : xr (5 * r) ≠ xr (5 * r + 1 + p) := xr_ne (by omega)
   have hA : xr (5 * r + 4 + p) ≠ xr (5 * r + 1 + p) := xr_ne (by omega)
-  have ho : (planeOff j p + 16 * r) % 8 = 0 ∧ (planeOff j p + 16 * r) / 8 + 2 ≤ 560 := by
+  have ho : (planeOff j p + 16 * r) % 8 = 0 ∧ (planeOff j p + 16 * r) / 8 + 2 ≤ 1072 := by
     simp only [planeOff]; omega
   by_cases h0 : r = 0
   · rw [show plane j r p = [tb (xr (5 * r + 1 + p)) (planeOff j p + 16 * r),
@@ -177,7 +177,7 @@ theorem plane_wp {f : XReg → BitVec 128} {is : List Instr} {Q : State → Prop
 
 /-- A row of the four planes of S-box `j`. -/
 theorem row_wp {W : BitVec 32} (E : Env W s) {f : XReg → BitVec 128} {is : List Instr} {Q : State → Prop}
-    {j r : Nat} (hj : j < 4) (hr : r < 16)
+    {j r : Nat} (hj : j < 8) (hr : r < 16)
     (k : ∀ g, (∀ p < 4, g (xr (5 * r + 1 + p)) =
         (if r = 0 then XBinOp.eval .pshufb (rowC j p r) (vAt m W r)
          else XBinOp.eval .por (XBinOp.eval .pshufb (rowC j p r) (vAt m W r)) (f (xr (5 * r + 4 + p)))) ) →
@@ -207,7 +207,7 @@ theorem row_wp {W : BitVec 32} (E : Env W s) {f : XReg → BitVec 128} {is : Lis
       o2 _ (ne _ _ (by omega)), o1 _ (ne _ _ (by omega)), o0 _ (ne _ _ (by omega)), a0 3 (by decide)]
 
 /-- The rows `r` to `r + n - 1` of S-box `j`, after the rows before `r`. -/
-theorem rows_wp {W : BitVec 32} (E : Env W s) {is : List Instr} {Q : State → Prop} {j : Nat} (hj : j < 4)
+theorem rows_wp {W : BitVec 32} (E : Env W s) {is : List Instr} {Q : State → Prop} {j : Nat} (hj : j < 8)
     (n : Nat) : ∀ (r : Nat) (f : XReg → BitVec 128), 0 < r → r + n ≤ 16 →
       (∀ p < 4, f (xr (5 * r + 4 + p)) = ByteLookup.acc (rowC j p) (vAt m W) (r - 1)) →
       (∀ g, (∀ p < 4, g (xr (5 * (r + n) + 4 + p)) = ByteLookup.acc (rowC j p) (vAt m W) (r + n - 1)) →
@@ -231,7 +231,7 @@ theorem rows_wp {W : BitVec 32} (E : Env W s) {is : List Instr} {Q : State → P
 /-- **The sixteen rows of S-box `j`**: its four planes' rows through their
 index vectors, ORed, in `xmm4` to `xmm7`. -/
 theorem scan_wp {W : BitVec 32} (E : Env W s) {f : XReg → BitVec 128} {is : List Instr} {Q : State → Prop}
-    {j : Nat} (hj : j < 4)
+    {j : Nat} (hj : j < 8)
     (k : ∀ g, (∀ p < 4, g (xr (4 + p)) = ByteLookup.acc (rowC j p) (vAt m W) 15) → WP isa (.block is) (S s m g) Q) :
     WP isa (.block (scan j ++ is)) (S s m f) Q := by
   rw [show scan j ++ is = row j 0 ++ ((List.range' 1 15).flatMap (row j) ++ is) by
@@ -317,7 +317,7 @@ theorem cst_M : ∀ i < 16, byte (cst oM) i = 0x0f#8 := by lit_decide
 theorem cst_S : ∀ i < 16, byte (cst oS) i = BitVec.ofNat 8 (4 * (i % 4)) := by lit_decide
 
 /-- The planes of one S-box, which the kernel evaluates in a declaration of
-their own (the four S-boxes' in one take four times the memory). -/
+their own (the eight S-boxes' in one take eight times the memory). -/
 theorem cst_plane0 : ∀ p < 4, ∀ r < 16, ∀ c < 16,
     byte (cst (planeOff 0 p + 16 * r)) c = planeByte 0 p (16 * r + c) := by lit_decide
 
@@ -330,13 +330,26 @@ theorem cst_plane2 : ∀ p < 4, ∀ r < 16, ∀ c < 16,
 theorem cst_plane3 : ∀ p < 4, ∀ r < 16, ∀ c < 16,
     byte (cst (planeOff 3 p + 16 * r)) c = planeByte 3 p (16 * r + c) := by lit_decide
 
+theorem cst_plane4 : ∀ p < 4, ∀ r < 16, ∀ c < 16,
+    byte (cst (planeOff 4 p + 16 * r)) c = planeByte 4 p (16 * r + c) := by lit_decide
+
+theorem cst_plane5 : ∀ p < 4, ∀ r < 16, ∀ c < 16,
+    byte (cst (planeOff 5 p + 16 * r)) c = planeByte 5 p (16 * r + c) := by lit_decide
+
+theorem cst_plane6 : ∀ p < 4, ∀ r < 16, ∀ c < 16,
+    byte (cst (planeOff 6 p + 16 * r)) c = planeByte 6 p (16 * r + c) := by lit_decide
+
+theorem cst_plane7 : ∀ p < 4, ∀ r < 16, ∀ c < 16,
+    byte (cst (planeOff 7 p + 16 * r)) c = planeByte 7 p (16 * r + c) := by lit_decide
+
 /-- **The planes are the S-boxes'**: byte `c` of row `r` of plane `p` of
 S-box `j`, in the table, is byte `p` of the S-box's entry `16 r + c`. -/
-theorem cst_plane : ∀ j < 4, ∀ p < 4, ∀ r < 16, ∀ c < 16,
+theorem cst_plane : ∀ j < 8, ∀ p < 4, ∀ r < 16, ∀ c < 16,
     byte (cst (planeOff j p + 16 * r)) c = planeByte j p (16 * r + c) := by
   intro j hj
-  rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3) with rfl | rfl | rfl | rfl
-  exacts [cst_plane0, cst_plane1, cst_plane2, cst_plane3]
+  rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7) with
+    rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+  exacts [cst_plane0, cst_plane1, cst_plane2, cst_plane3, cst_plane4, cst_plane5, cst_plane6, cst_plane7]
 
 theorem word_ext {x y : BitVec 32} (h : ∀ b < 4, x.extractLsb' (8 * b) 8 = y.extractLsb' (8 * b) 8) :
     x = y := by
@@ -367,7 +380,7 @@ theorem byte_yOf (idx : Nat → BitVec 32) {i : Nat} (hi : i < 16) :
 are `H` and `L` in the working space, byte `i` of the sixteen rows of plane
 `p` of S-box `j`, ORed, is byte `p` of the S-box's entry at the byte `x`
 that `H` and `L` hold at `i`. -/
-theorem acc_entry {m : Mem} {W : BitVec 32} {H L : BitVec 128} {x : BitVec 8} {j p i : Nat} (hj : j < 4)
+theorem acc_entry {m : Mem} {W : BitVec 32} {H L : BitVec 128} {x : BitVec 8} {j p i : Nat} (hj : j < 8)
     (hp : p < 4) (hi : i < 16) (hV : ∀ r < 16, vAt m W r = ByteLookup.idx (cst (oC r)) H L)
     (hH : byte H i = x >>> 4) (hL : byte L i = x &&& 0x0f#8) :
     byte (ByteLookup.acc (rowC j p) (vAt m W) 15) i = (sboxOf j x).extractLsb' (8 * p) 8 := by
@@ -400,7 +413,7 @@ theorem entry_eq {m : Mem} {W : BitVec 32} {idx : Nat → BitVec 32} {j k : Nat}
       ((byte_lo (cst_M k (by omega))).trans (by rw [byte_yOf idx (by omega), Nat.mod_eq_of_lt hk]))]
   show byte (cst (planeOff j p + 16 * ((idx k).extractLsb' 0 8 >>> 4).toNat))
     ((idx k).extractLsb' 0 8 &&& 0x0f#8).toNat = _
-  rw [cst_plane j hj p hp _ h1 _ h2, h3, planeByte, BitVec.ofNat_toNat, BitVec.setWidth_eq]
+  rw [cst_plane j (by omega) p hp _ h1 _ h2, h3, planeByte, BitVec.ofNat_toNat, BitVec.setWidth_eq]
   apply BitVec.eq_of_getLsbD_eq; intro i hi
   simp only [BitVec.getLsbD_setWidth, BitVec.getLsbD_ushiftRight, BitVec.getLsbD_extractLsb', hi, decide_true,
     Bool.true_and]
@@ -434,7 +447,7 @@ theorem sbox_wp {W : BitVec 32} (E : Env W s) {idx : Nat → BitVec 32} {m₀ : 
     WP isa (.block (sbox j ++ is)) (S s m f) Q := by
   have fW := E.fW
   rw [sbox, List.append_assoc]
-  refine scan_wp E hj fun g hg => ?_
+  refine scan_wp E (by omega) fun g hg => ?_
   have e4 : g .xmm4 = ByteLookup.acc (rowC j 0) (vAt m W) 15 := hg 0 (by decide)
   have e5 : g .xmm5 = ByteLookup.acc (rowC j 1) (vAt m W) 15 := hg 1 (by decide)
   have e6 : g .xmm6 = ByteLookup.acc (rowC j 2) (vAt m W) 15 := hg 2 (by decide)

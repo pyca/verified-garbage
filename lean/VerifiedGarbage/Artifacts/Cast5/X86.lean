@@ -6,8 +6,11 @@ public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86.Print
 public import VerifiedGarbage.Proof.Cast5.X86.Ssse3WideVerified
 public import VerifiedGarbage.Impl.Cast5.X86.Ssse3Wide
+public import VerifiedGarbage.Proof.Cast5.X86.Ssse3KeyVerified
+public import VerifiedGarbage.Impl.Cast5.X86.Ssse3Key
 import VerifiedGarbage.Proof.Cast5.X86.Ssse3Lit
 import VerifiedGarbage.Proof.Cast5.X86.Ssse3WideLit
+import VerifiedGarbage.Proof.Cast5.X86.Ssse3KeyLit
 
 /-! # CAST5 (RFC 2144) on x86 -/
 
@@ -16,6 +19,10 @@ import VerifiedGarbage.Proof.Cast5.X86.Ssse3WideLit
 namespace VG.Artifacts.Cast5.X86
 
 def artifacts : List Artifact := [
+  Spec.Cast5.expandKeyApi.artifact X86.target {
+    suffix := "_ssse3"
+    code := Impl.Cast5.X86.Ssse3.Key.Fn.expandKey
+    verified := Proof.Cast5.X86.Ssse3.Key.expandKey_scrubbed },
   Spec.Cast5.expandKeyApi.artifact X86.target {
     code := Impl.Cast5.X86.Fn.expandKey
     verified := Proof.Cast5.X86.Scrub.expandKey_scrubbed },

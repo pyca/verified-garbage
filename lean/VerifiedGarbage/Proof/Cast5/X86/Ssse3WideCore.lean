@@ -144,7 +144,7 @@ theorem wp_stW {K W : BitVec 32} (E : Env16 K W s) {f : XReg → BitVec 128} {is
 
 /-- A constant. -/
 theorem wp_tbE {K W : BitVec 32} (E : Env16 K W s) {f : XReg → BitVec 128} {is : List Instr} {Q : State → Prop}
-    {d : XReg} {off : Nat} (ho : off % 8 = 0 ∧ off / 8 + 2 ≤ 560)
+    {d : XReg} {off : Nat} (ho : off % 8 = 0 ∧ off / 8 + 2 ≤ 1072)
     (k : WP isa (.block is) (S s m (upd f d (cst off))) Q) : WP isa (.block (tb d off :: is)) (S s m f) Q :=
   wp_tb E.edx ho k
 
@@ -661,7 +661,7 @@ abbrev enR (W : BitVec 32) (j : Nat) : Region := ⟨slot W (592 + 64 * j), 64⟩
 /-- The entries of S-box `j` for a group of four blocks, from the planes'
 bytes: doubleword `c` is the S-box's entry at byte `4 gI + c` of the
 register `IO` of the bytes that index it. -/
-theorem en_dword {m1 : Mem} {W : BitVec 32} {t : Nat → BitVec 8} {IO : BitVec 128} {j gI c : Nat} (hj : j < 4)
+theorem en_dword {m1 : Mem} {W : BitVec 32} {t : Nat → BitVec 8} {IO : BitVec 128} {j gI c : Nat} (hj : j < 8)
     (hgI : gI < 4) (hc : c < 4) (hIO : ∀ i < 16, byte IO i = t i)
     (hV : ∀ r < 16, vAt m1 W r = ByteLookup.idx (cst (oC r))
       (XBinOp.eval .pand (XShiftOp.eval .psrld IO 4) (cst oM)) (XBinOp.eval .pand IO (cst oM))) :
@@ -699,7 +699,7 @@ theorem sbox16_wp {K W : BitVec 32} (E : Env16 K W s) {t : Nat → BitVec 8} {f 
       (H := XBinOp.eval .pand (XShiftOp.eval .psrld (m.readW (slot W (ioOff (3 - j))) 128) 4) (cst oM))
       (L := XBinOp.eval .pand (m.readW (slot W (ioOff (3 - j))) 128) (cst oM)) 16 0 m _ (by decide) rfl rfl
       (fun r' h => absurd h (Nat.not_lt_zero _)) (Frame.refl _ _) fun m1 f1 hV hf1 =>
-    scan_wp E.env hj fun f2 hA => transpose4_wp fun f3 r0 r1 r2 r3 => wp_tbE E (by decide) (wp_bin (wp_bin
+    scan_wp E.env (by omega) fun f2 hA => transpose4_wp fun f3 r0 r1 r2 r3 => wp_tbE E (by decide) (wp_bin (wp_bin
       (wp_bin (wp_bin (wp_stW E (by simp only [enOff]; omega) (wp_stW E (by simp only [enOff]; omega)
       (wp_stW E (by simp only [enOff]; omega) (wp_stW E (by simp only [enOff]; omega) ?_))))))))))))))
   have a4 : f2 .xmm4 = _ := hA 0 (by decide)
@@ -721,16 +721,16 @@ theorem sbox16_wp {K W : BitVec 32} (E : Env16 K W s) {t : Nat → BitVec 8} {f 
       rd_wr _ W _ (by simp only [enOff]; omega) (by simp only [enOff]; omega) (by simp only [enOff]; omega),
       rd_wr _ W _ (by simp only [enOff]; omega) (by simp only [enOff]; omega) (by simp only [enOff]; omega),
       readW_self128]
-    exact en_dword hj (by decide) hc' hIO fun r hr => hV r (by omega)
+    exact en_dword (by omega) (by decide) hc' hIO fun r hr => hV r (by omega)
   · rw [rd_wr _ W _ (by simp only [enOff]; omega) (by simp only [enOff]; omega) (by simp only [enOff]; omega),
       rd_wr _ W _ (by simp only [enOff]; omega) (by simp only [enOff]; omega) (by simp only [enOff]; omega),
       readW_self128]
-    exact en_dword hj (by decide) hc' hIO fun r hr => hV r (by omega)
+    exact en_dword (by omega) (by decide) hc' hIO fun r hr => hV r (by omega)
   · rw [rd_wr _ W _ (by simp only [enOff]; omega) (by simp only [enOff]; omega) (by simp only [enOff]; omega),
       readW_self128]
-    exact en_dword hj (by decide) hc' hIO fun r hr => hV r (by omega)
+    exact en_dword (by omega) (by decide) hc' hIO fun r hr => hV r (by omega)
   · rw [readW_self128]
-    exact en_dword hj (by decide) hc' hIO fun r hr => hV r (by omega)
+    exact en_dword (by omega) (by decide) hc' hIO fun r hr => hV r (by omega)
 
 /-! ## `f` from the four S-boxes' entries -/
 

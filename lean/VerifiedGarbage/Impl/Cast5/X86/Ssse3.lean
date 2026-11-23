@@ -17,7 +17,8 @@ and the modes' core are the baseline's over its call (`roundWith`,
 `Modes.coreWith`): `core`.
 
 The S-boxes S1 to S4 are a static table in byte planes, `VG_CAST5_SSSE3`:
-byte `p` of `S_{j+1}[x]` at `1024 j + 256 p + x`, then the constants. A
+byte `p` of `S_{j+1}[x]` at `1024 j + 256 p + x`, then the constants (and
+then the planes of S5 to S8, for key expansion, `Ssse3Key.lean`). A
 look-up of a byte `x` in a plane of 256 bytes reads the plane's sixteen rows
 of sixteen bytes, each through `pshufb` with the row's index vector, and ORs
 them: the index vector of row `r` holds `x`'s low nibble where `x`'s high
@@ -60,12 +61,17 @@ def tableName : String := "VG_CAST5_SSSE3"
 
 /-! ## The table -/
 
-/-- The S-box `S_{j+1}`. -/
+/-- The S-box `S_{j+1}`: S1 to S4, which the rounds use, and S5 to S8, which
+key expansion does. -/
 def sboxOf : Nat → Byte → Spec.Cast5.Word
   | 0 => Spec.Cast5.S1
   | 1 => Spec.Cast5.S2
   | 2 => Spec.Cast5.S3
-  | _ => Spec.Cast5.S4
+  | 3 => Spec.Cast5.S4
+  | 4 => Spec.Cast5.S5
+  | 5 => Spec.Cast5.S6
+  | 6 => Spec.Cast5.S7
+  | _ => Spec.Cast5.S8
 
 /-- Byte `p` of `S_{j+1}[x]`. -/
 def planeByte (j p x : Nat) : Byte := (sboxOf j (BitVec.ofNat 8 x) >>> (8 * p)).setWidth 8
@@ -80,6 +86,9 @@ def planesOf (j : Nat) : List (BitVec 64) :=
 
 /-- The planes of S1 to S4. -/
 def planes : List (BitVec 64) := planesOf 0 ++ planesOf 1 ++ planesOf 2 ++ planesOf 3
+
+/-- The planes of S5 to S8. -/
+def keyPlanes : List (BitVec 64) := planesOf 4 ++ planesOf 5 ++ planesOf 6 ++ planesOf 7
 
 /-- The constants, 16 bytes each (two words): the sixteen rows `C_r` (zero
 at byte `r`, `0x80` elsewhere), the shuffle that gathers the bytes 0, 4, 8
@@ -104,13 +113,15 @@ def consts : List (BitVec 64) := [
   0x0000000100000001, 0x0000000100000001
 ]
 
-/-- `VG_CAST5_SSSE3`: the planes, then the constants. -/
-def table : List (BitVec 64) := planes ++ consts
+/-- `VG_CAST5_SSSE3`: the planes of S1 to S4, the constants, then the planes
+of S5 to S8 (`Ssse3Key.lean`). -/
+def table : List (BitVec 64) := planes ++ consts ++ keyPlanes
 
 /-! ## The table's and the working space's offsets -/
 
-/-- Plane `p` of S-box `j`. -/
-def planeOff (j p : Nat) : Nat := 1024 * j + 256 * p
+/-- Plane `p` of S-box `j`: those of S5 to S8 (`j` from 4 on) are after the
+constants, 384 bytes further. -/
+def planeOff (j p : Nat) : Nat := 1024 * j + 256 * p + 384 * (j / 4)
 /-- The row `C_r`. -/
 def oC (r : Nat) : Nat := 4096 + 16 * r
 /-- The shuffle that gathers. -/
