@@ -143,11 +143,11 @@ def prepared (c : Callees) (ctr toFn : Fn) : Prog isa :=
 
 /-- Seal directly from the descriptors and wipe the gather frame. -/
 def directBase (lv : Impl.Scrub.X86_64.VecLevel) (c : Callees) (ctr : Fn) : Prog isa :=
-  Impl.Scrub.X86_64.scrubAll lv 0 5128 (plain c ctr)
+  Impl.Scrub.X86_64.scrubAll lv 0 2672 (plain c ctr)
 
 /-- Select the direct path for the publicly advertised number of prepared powers. -/
 def directPrepared (lv : Impl.Scrub.X86_64.VecLevel) (n : Nat) (c : Callees) (ctr blockTo : Fn) : Prog isa :=
-  Impl.Scrub.X86_64.scrubAll lv 0 5128 (Impl.Gcm.X86_64.Flag.onFlag n (prepared c ctr blockTo) (plain c ctr))
+  Impl.Scrub.X86_64.scrubAll lv 0 2672 (Impl.Gcm.X86_64.Flag.onFlag n (prepared c ctr blockTo) (plain c ctr))
 
 /-- Use the register-destination kernel when the CPU variant provides one. -/
 def directSeal (baseLv preparedLv : Impl.Scrub.X86_64.VecLevel) (n : Nat) (c : Callees) (ctr : Fn)

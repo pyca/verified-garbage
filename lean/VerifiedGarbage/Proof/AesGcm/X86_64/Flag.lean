@@ -1,5 +1,7 @@
 module
 
+import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
+
 public import VerifiedGarbage.Proof.Gcm.PreparedPowers
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Frame
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Verified
@@ -580,11 +582,11 @@ theorem sealGather_satbase : ∃ s, (Spec.Gcm.sealGatherPreparedSig.contract abi
 
 
 /-- From the key context. -/
-theorem sealGather_of_base {c : Prog isa}
-    (h : Verified target c (Proof.AesGcm.sealGatherRoundsContract abi 5128)) :
-    Verified target c (AesGcm.Flag.sealGatherRoundsContract abi 5128) :=
+theorem sealGather_of_base {c : Prog isa} {stack : Nat}
+    (h : Verified target c (Proof.AesGcm.sealGatherRoundsContract abi stack)) (bound : stack ≤ 5128 := by decide) :
+    Verified target c (AesGcm.Flag.sealGatherRoundsContract abi stack) :=
   Verified.leak_flag (VG.X86_64.Verified.widenFirstArray (n := 32) (n' := 129) (by decide) h
-    (fun _ _ _ _ _ _ _ _ _ _ _ _ h => ⟨h.1, h.2.1⟩) sealGather_satF) (fun _ _ _ _ _ _ _ _ _ _ _ _ => rfl)
+    (fun _ _ _ _ _ _ _ _ _ _ _ _ h => ⟨h.1, h.2.1⟩) (frameSat_of_le (sig := Spec.Gcm.sealGatherPreparedSig) (by decide) bound (by decide) sealGather_satF)) (fun _ _ _ _ _ _ _ _ _ _ _ _ => rfl)
 
 /-- By the flag: `c₁` on the prepared powers, `c₂` on the key context. -/
 theorem sealGather_onFlag {c₁ c₂ : Prog isa}

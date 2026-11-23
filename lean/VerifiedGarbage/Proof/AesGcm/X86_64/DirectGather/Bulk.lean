@@ -72,7 +72,7 @@ theorem pre_le {M : CtxMode} {s : State} (h : Layout M s) (hc : 0<Cnt s) :
 theorem bulk_regs {M : CtxMode} {s u : State} (h : Layout M s) (e : LoopAt M s 0 0 u) (hc : 0<Cnt s) :
     Split.CallRegions M (K s) (W s) (SP s) (Dst s) (sb s 0) (R s) (L s) (preBytes s) (bulkState s u) := by
   have c := h.oneCtx M.ge
-  have k : Region.Sub (below (SP s) 56) (below (SP s) 2512) := below_sub (by decide) (by decide)
+  have k : Region.Sub (below (SP s) 56) (below (SP s) 56) := below_sub (by decide) (by decide)
   have region := slice_mem s (i:=0) hc
   obtain ⟨sd,_,sw⟩ := h.ls _ region
   obtain ⟨pr,ln⟩ := pre_le h hc

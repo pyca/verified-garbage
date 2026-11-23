@@ -2275,11 +2275,11 @@ private theorem sp_general (v : GcmImpl) (ctr : Fn) (f : Option Fn)
     simp only [general,pieces,Option.map_some,Option.getD_some,bulk,callSeal,whole,Code.all,bf,ht,aa,tg,tail,Bool.true_and,Bool.and_true]
     decide +kernel
 
-private theorem baseStub_ok : stubCallee baseStub 0 (fun _=>24) 2512 = true := by lit_decide
-private theorem readyStub_ok : stubCallee readyStub 1 (fun _=>24) 2512 = true := by lit_decide
+private theorem baseStub_ok : stubCallee baseStub 0 (fun _=>24) 56 = true := by lit_decide
+private theorem readyStub_ok : stubCallee readyStub 1 (fun _=>24) 56 = true := by lit_decide
 
 private theorem of_side {p : Prog isa} {k : Nat} (sp : (Finished p).all (fun i => !isa.writesSp i)=true)
-    (hc : calleeSide (Finished p) k 2512=true) : CoreSafe p := by
+    (hc : calleeSide (Finished p) k 56=true) : CoreSafe p := by
   simp only [calleeSide,Bool.and_eq_true,decide_eq_true_eq] at hc
   refine ⟨sp,hc.1.1,?_⟩
   have both := (Code.allInstrs_eq _ _).symm.trans hc.1.2
@@ -2309,29 +2309,29 @@ private theorem frameFill {k : Nat} {a b : Prog isa} (f : Fill k (fun _=>24) a b
     Fill k (fun _=>24) (withStackArgScratch 2616 5 a) (withStackArgScratch 2616 5 b) :=
   .frame _ _ (.seq (.block _) f)
 
-private theorem raw_ok : stubSide rawStub 0 (fun _=>24) 5128 []=true := by lit_decide
-private theorem flag_ok {n : Nat} (hn : n=16 ∨ n=48) : stubSide (flagStub n) 1 (fun _=>24) 5128 []=true := by
+private theorem raw_ok : stubSide rawStub 0 (fun _=>24) 2672 []=true := by lit_decide
+private theorem flag_ok {n : Nat} (hn : n=16 ∨ n=48) : stubSide (flagStub n) 1 (fun _=>24) 2672 []=true := by
   rcases hn with rfl|rfl <;> lit_decide
 
-abbrev publicContract := Spec.Gcm.sealGatherPreparedApi.contract X86_64.abi 5128
+abbrev publicContract := Spec.Gcm.sealGatherPreparedApi.contract X86_64.abi 2672
 
 theorem base_scrub {c : Callees} {ctr : Fn} (lv : VecLevel) (hs : CalleesSide lv.level c)
     (ct : calleeSide ctr.code lv.level 24=true)
     (verified : Verified target (plain c ctr) publicContract) (safe : CoreSafe (baseCore c ctr)) :
-    VerifiedScrubbed target (scrubAll lv 0 5128 (plain c ctr)) publicContract 0 :=
+    VerifiedScrubbed target (scrubAll lv 0 2672 (plain c ctr)) publicContract 0 :=
   verifiedScrubbedAllFill (api:=Spec.Gcm.sealGatherPreparedApi)
-    { suffix := "", code := plain c ctr, stack := 5128, verified := verified, spSafe := withStackArgScratch_spSafe safe.sp }
+    { suffix := "", code := plain c ctr, stack := 2672, verified := verified, spSafe := withStackArgScratch_spSafe safe.sp }
     lv (sealGatherPreparedOut _) (frameFill (fillBase hs ct)) (Nat.zero_le _) (Nat.le_refl _) (ha:=raw_ok)
 
 theorem prepared_scrub {c : Callees} {ctr b : Fn} (lv : VecLevel) (hk : 1≤lv.level) {n : Nat} (hn : n=16 ∨ n=48)
     (hs : CalleesSide lv.level c) (ct : calleeSide ctr.code lv.level 24=true) (bt : calleeSide b.code lv.level 24=true)
     (verified : Verified target (onFlag n (prepared c ctr b) (plain c ctr)) publicContract)
     (rs : CoreSafe (readyCore c ctr b)) (ws : CoreSafe (baseCore c ctr)) :
-    VerifiedScrubbed target (scrubAll lv 0 5128 (onFlag n (prepared c ctr b) (plain c ctr))) publicContract 0 := by
+    VerifiedScrubbed target (scrubAll lv 0 2672 (onFlag n (prepared c ctr b) (plain c ctr))) publicContract 0 := by
   have f := Fill.seq (Fill.block (Impl.Gcm.X86_64.Flag.testFlag n))
     (Fill.ite .ae (Fill.seq (Fill.seq (Fill.block []) (Fill.block [])) (frameFill (fillReady hs ct bt))) (frameFill (fillBase hs ct)))
   exact verifiedScrubbedAllFill (api:=Spec.Gcm.sealGatherPreparedApi)
-    { suffix := "", code := onFlag n (prepared c ctr b) (plain c ctr), stack := 5128, verified := verified,
+    { suffix := "", code := onFlag n (prepared c ctr b) (plain c ctr), stack := 2672, verified := verified,
       spSafe := onFlag_spSafe (withStackArgScratch_spSafe rs.sp) (withStackArgScratch_spSafe ws.sp) }
     lv (sealGatherPreparedOut _) f hk (Nat.le_refl _) (ha:=flag_ok hn)
 

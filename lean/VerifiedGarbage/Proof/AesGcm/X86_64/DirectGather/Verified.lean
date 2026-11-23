@@ -427,7 +427,7 @@ def workContract (words : Nat) (P : Condition) : Contract isa :=
     (pre := fun ctx rounds _ _ _ _ src cnt _ len _ _ => P ctx rounds src cnt len)
     (post := fun ctx rounds nonce nl aad al src cnt dst len tag _ =>
       Proof.AesGcm.sealGatherRoundsPost 64 ctx rounds nonce nl aad al src cnt dst len tag)
-    (writeArgs := true) (stack := 2512)
+    (writeArgs := true) (stack := 56)
 
 abbrev plainCondition : Condition := fun ctx rounds src cnt len =>
   Spec.Gcm.sealGatherPre 64 ctx rounds 0 0 0 0 src cnt 0 len 0
@@ -543,17 +543,18 @@ abbrev Timing (M : CtxMode) (p : Prog isa) :=
 
 structure CoreSafe (p : Prog isa) : Prop where
   sp : (Finished p).all (fun i => !isa.writesSp i) = true
-  depth : (Finished p).x86_64Depth ≤ 2512
+  depth : (Finished p).x86_64Depth ≤ 56
   mx : (Finished p).allInstrs (fun i => !loadsMxcsr i) = true
 
 theorem plain_framed {p : Prog isa} (body : Functional CtxMode.base p) (ct : Timing CtxMode.base p)
     (guard : CoreSafe p) : Verified X86_64.target (Impl.AesGcm.X86_64.DirectGather.framed p)
-      (Proof.AesGcm.sealGatherRoundsContract X86_64.abi 5128) := by
+      (Proof.AesGcm.sealGatherRoundsContract X86_64.abi 2672) := by
   apply X86_64.Verified.stackArgScratchL (sig := Spec.Gcm.sealGatherSig) (nm := "scratch")
     (e := .u64) (n := 320) (pre := Spec.Gcm.sealGatherPre 64) (post := Proof.AesGcm.sealGatherRoundsPost 64)
-    (wa := true) (stack := 2512) (bytes := 2616) (hpostOut := fun vs m a b r hl _ hb _ =>
+    (wa := true) (stack := 56) (bytes := 2616) (hpostOut := fun vs m a b r hl _ hb _ =>
       (Proof.AesGcm.sealGatherPostOut_local _) vs m a b r hl hb) _ (by decide) (by decide) (by decide)
-    guard.sp guard.depth (Proof.AesGcm.sealGatherPre_local _) (Proof.AesGcm.sealGatherPost_local _) gatherFrameSat_pre
+    guard.sp guard.depth (Proof.AesGcm.sealGatherPre_local _) (Proof.AesGcm.sealGatherPost_local _)
+    (frameSat_of_le (sig := Spec.Gcm.sealGatherSig) (by decide) (by decide) (by decide) gatherFrameSat_pre)
   apply work_verified (words := 32) (P := plainCondition) _ plain_work_sat body ct guard.mx
   intro s h
   apply layout_of_work (words := 32) (nwords := rfl) _ h
@@ -563,13 +564,14 @@ theorem plain_framed {p : Prog isa} (body : Functional CtxMode.base p) (ct : Tim
 theorem ready_framed {t : Nat} (ht : t ≤ 48) {p : Prog isa}
     (body : Functional (CtxMode.flaggedT t) p) (ct : Timing (CtxMode.flaggedT t) p) (guard : CoreSafe p) :
     Verified X86_64.target (Impl.AesGcm.X86_64.DirectGather.framed p)
-      (Proof.AesGcm.Flag.sealGatherFlaggedRoundsContract t X86_64.abi 5128) := by
+      (Proof.AesGcm.Flag.sealGatherFlaggedRoundsContract t X86_64.abi 2672) := by
   apply X86_64.Verified.stackArgScratchL (sig := Spec.Gcm.sealGatherPreparedSig) (nm := "scratch")
     (e := .u64) (n := 320) (pre := Proof.AesGcm.Flag.sealGatherFlaggedPre t 64)
-    (post := Proof.AesGcm.sealGatherRoundsPost 64) (wa := true) (stack := 2512) (bytes := 2616)
+    (post := Proof.AesGcm.sealGatherRoundsPost 64) (wa := true) (stack := 56) (bytes := 2616)
     (hpostOut := fun vs m a b r hl _ hb _ => (Proof.AesGcm.Flag.sealGatherFlaggedPostOut_local _) vs m a b r hl hb)
     _ (by decide) (by decide) (by decide) guard.sp guard.depth (Proof.AesGcm.Flag.sealGatherFlaggedPre_local _ _)
-    (Proof.AesGcm.Flag.sealGatherFlaggedPost_local _) (gatherFrameSatFlagged_pre ht)
+    (Proof.AesGcm.Flag.sealGatherFlaggedPost_local _)
+    (frameSat_of_le (sig := Spec.Gcm.sealGatherPreparedSig) (by decide) (by decide) (by decide) (gatherFrameSatFlagged_pre ht))
   apply work_verified (words := 129) (P := readyCondition t) _ (ready_work_sat ht) body ct guard.mx
   intro s h
   exact layout_of_work rfl (fun v => v) h
@@ -692,7 +694,7 @@ structure InitializedProof (M : CtxMode) (body : Prog isa) : Prop where
 
 theorem plain_rounds {c : Callees} {ctr : Fn} (h : InitializedProof CtxMode.base (general c ctr none))
     (safe : CoreSafe (enter (general c ctr none))) :
-    Verified X86_64.target (plain c ctr) (Proof.AesGcm.sealGatherRoundsContract X86_64.abi 5128) :=
+    Verified X86_64.target (plain c ctr) (Proof.AesGcm.sealGatherRoundsContract X86_64.abi 2672) :=
   plain_framed (fun p => p.enter_wp (Gather.Same.refl _) (fun _ e => h.run p e))
     (fun p q pb => p.enter_rel q pb (Gather.Same.refl _) (Gather.Same.refl _) (fun _ _ e f => h.rel p q pb e f)) safe
 
@@ -700,19 +702,19 @@ theorem prepared_rounds {t : Nat} (ht : 16 ≤ t) (hn : t ≤ 48) (hf : ShortFac
     {c : Callees} {ctr : Fn} (T : BlocksTo.SealFn (CtxMode.flaggedT t))
     (h : InitializedProof (CtxMode.flaggedT t) (general c ctr (some T.fn)))
     (safe : CoreSafe (dispatch (quick T.fn) (general c ctr (some T.fn)))) :
-    Verified X86_64.target (prepared c ctr T.fn) (Proof.AesGcm.Flag.sealGatherFlaggedRoundsContract t X86_64.abi 5128) :=
+    Verified X86_64.target (prepared c ctr T.fn) (Proof.AesGcm.Flag.sealGatherFlaggedRoundsContract t X86_64.abi 2672) :=
   ready_framed hn (fun p => p.dispatch_wp (fun _ e g => p.quick_wp hf T ht e g) (fun _ e => h.run p e))
     (fun p q pb => p.dispatch_rel q pb (fun _ _ e f g => p.quick_rel q hf T ht pb e f g)
       (fun _ _ e f => h.rel p q pb e f)) safe
 
-theorem plain_public {p : Prog isa} (h : Verified X86_64.target p (Proof.AesGcm.sealGatherRoundsContract X86_64.abi 5128)) :
-    Verified X86_64.target p (Spec.Gcm.sealGatherPreparedApi.contract X86_64.abi 5128) :=
+theorem plain_public {p : Prog isa} (h : Verified X86_64.target p (Proof.AesGcm.sealGatherRoundsContract X86_64.abi 2672)) :
+    Verified X86_64.target p (Spec.Gcm.sealGatherPreparedApi.contract X86_64.abi 2672) :=
   Proof.AesGcm.Flag.sealGather_keyed (Flag.sealGather_of_base h)
 
 theorem prepared_public {a b : Prog isa} {t : Nat} (ht : t = 16 ∨ t = 48)
-    (ha : Verified X86_64.target a (Proof.AesGcm.Flag.sealGatherFlaggedRoundsContract t X86_64.abi 5128))
-    (hb : Verified X86_64.target b (Proof.AesGcm.sealGatherRoundsContract X86_64.abi 5128)) :
-    Verified X86_64.target (Impl.Gcm.X86_64.Flag.onFlag t a b) (Spec.Gcm.sealGatherPreparedApi.contract X86_64.abi 5128) :=
+    (ha : Verified X86_64.target a (Proof.AesGcm.Flag.sealGatherFlaggedRoundsContract t X86_64.abi 2672))
+    (hb : Verified X86_64.target b (Proof.AesGcm.sealGatherRoundsContract X86_64.abi 2672)) :
+    Verified X86_64.target (Impl.Gcm.X86_64.Flag.onFlag t a b) (Spec.Gcm.sealGatherPreparedApi.contract X86_64.abi 2672) :=
   Proof.AesGcm.Flag.sealGather_keyed (Flag.sealGather_onFlagF ht ha hb)
 
 end VG.Proof.AesGcm.X86_64.DirectGather

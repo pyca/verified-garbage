@@ -808,16 +808,16 @@ open VG VG.X86_64
 
 /-- By the flag: `c₁` on a context whose powers are present, `c₂` on the key
 context. -/
-theorem sealGather_onFlagF {t : Nat} (ht : t = 16 ∨ t = 48) {c₁ c₂ : Prog isa}
-    (h₁ : Verified target c₁ (AesGcm.Flag.sealGatherFlaggedRoundsContract t abi 5128))
-    (h₂ : Verified target c₂ (Proof.AesGcm.sealGatherRoundsContract abi 5128)) :
-    Verified target (Impl.Gcm.X86_64.Flag.onFlag t c₁ c₂) (AesGcm.Flag.sealGatherRoundsContract abi 5128) :=
+theorem sealGather_onFlagF {t : Nat} (ht : t = 16 ∨ t = 48) {c₁ c₂ : Prog isa} {stack : Nat}
+    (h₁ : Verified target c₁ (AesGcm.Flag.sealGatherFlaggedRoundsContract t abi stack))
+    (h₂ : Verified target c₂ (Proof.AesGcm.sealGatherRoundsContract abi stack)) (bound : stack ≤ 5128 := by decide) :
+    Verified target (Impl.Gcm.X86_64.Flag.onFlag t c₁ c₂) (AesGcm.Flag.sealGatherRoundsContract abi stack) :=
   Verified.of_onFlagCtx ht (by decide) h₁
     (VG.X86_64.Verified.widenFirstArray (n := 32) (n' := 129) (by decide) h₂
-      (fun _ _ _ _ _ _ _ _ _ _ _ _ h => h) sealGather_satbase)
+      (fun _ _ _ _ _ _ _ _ _ _ _ _ h => h) (frameSat_of_le (sig := Spec.Gcm.sealGatherPreparedSig) (by decide) bound (by decide) sealGather_satbase))
     (fun _ _ _ _ _ _ _ _ _ _ _ _ h hf => ⟨h.1, h.2.1, hf, h.2.2⟩)
     (fun _ _ _ _ _ _ _ _ _ _ _ _ h _ => ⟨h.1, h.2.1⟩)
     (fun _ _ _ _ _ _ _ _ _ _ _ _ => rfl)
-    sealGather_satF
+    (frameSat_of_le (sig := Spec.Gcm.sealGatherPreparedSig) (by decide) bound (by decide) sealGather_satF)
 
 end VG.Proof.AesGcm.X86_64.Flag
