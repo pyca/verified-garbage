@@ -40,7 +40,7 @@ openssl-mlkem = ["dep:openssl-sys", "dep:foreign-types"]
 
 [dev-dependencies]
 rustls-verified-garbage = { path = "../crates/rustls-verified-garbage" }
-rustls = { version = "=0.24.0-dev.3", default-features = false }
+rustls = { version = "=0.24.0-dev.3", default-features = false, features = ["std"] }
 # AWS-LC, built from source by aws-lc-sys (with only a C compiler, on every
 # architecture benchmarked).
 aws-lc-rs = { version = "1.18", default-features = false, features = ["aws-lc-sys"] }

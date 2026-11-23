@@ -65,3 +65,120 @@ pub fn bench(c: &mut Criterion) {
     target_arch = "riscv64"
 )))]
 pub fn bench(_: &mut Criterion) {}
+
+#[cfg(any(
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    target_arch = "arm",
+    target_arch = "x86",
+    all(target_arch = "powerpc64", target_endian = "little"),
+    target_arch = "riscv64"
+))]
+pub(crate) struct Offsets {
+    pub(crate) input: usize,
+    pub(crate) output: usize,
+    pub(crate) aad: usize,
+}
+
+#[cfg(any(
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    target_arch = "arm",
+    target_arch = "x86",
+    all(target_arch = "powerpc64", target_endian = "little"),
+    target_arch = "riscv64"
+))]
+impl Offsets {
+    /// The rows' offsets: where rustls puts a record's payload, 5 bytes (the
+    /// TLS record header) past the start of an allocation (`PrefixedPayload`,
+    /// sealed in place; and the first record in the receive buffer,
+    /// `DeframerIter`, opened in place), and the output half a page from the
+    /// input, so that sealing out of place never loads and stores at the same
+    /// address modulo 4 KiB.
+    pub(crate) const DEFAULT: Offsets = Offsets {
+        input: 5,
+        output: 2048 + 5,
+        aad: 0,
+    };
+}
+
+/// A copy of some bytes at a given offset past a 4 KiB boundary.
+#[cfg(any(
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    target_arch = "arm",
+    target_arch = "x86",
+    all(target_arch = "powerpc64", target_endian = "little"),
+    target_arch = "riscv64"
+))]
+pub(crate) struct Aligned {
+    raw: Vec<u8>,
+    start: usize,
+    len: usize,
+}
+
+#[cfg(any(
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    target_arch = "arm",
+    target_arch = "x86",
+    all(target_arch = "powerpc64", target_endian = "little"),
+    target_arch = "riscv64"
+))]
+impl Aligned {
+    pub(crate) fn new(bytes: &[u8], offset: usize) -> Self {
+        let raw = vec![0u8; bytes.len() + offset + 4096];
+        let start = raw.as_ptr().align_offset(4096) + offset;
+        let mut a = Aligned {
+            raw,
+            start,
+            len: bytes.len(),
+        };
+        a.copy_from_slice(bytes);
+        a
+    }
+}
+
+#[cfg(any(
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    target_arch = "arm",
+    target_arch = "x86",
+    all(target_arch = "powerpc64", target_endian = "little"),
+    target_arch = "riscv64"
+))]
+impl std::ops::Deref for Aligned {
+    type Target = [u8];
+    fn deref(&self) -> &[u8] {
+        &self.raw[self.start..self.start + self.len]
+    }
+}
+
+#[cfg(any(
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    target_arch = "arm",
+    target_arch = "x86",
+    all(target_arch = "powerpc64", target_endian = "little"),
+    target_arch = "riscv64"
+))]
+impl std::ops::DerefMut for Aligned {
+    fn deref_mut(&mut self) -> &mut [u8] {
+        &mut self.raw[self.start..self.start + self.len]
+    }
+}
+
+#[cfg(any(
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    target_arch = "arm",
+    target_arch = "x86",
+    all(target_arch = "powerpc64", target_endian = "little"),
+    target_arch = "riscv64"
+))]
+impl AsRef<[u8]> for Aligned {
+    fn as_ref(&self) -> &[u8] {
+        self
+    }
+}
+
