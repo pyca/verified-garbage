@@ -1,7 +1,6 @@
 module
 
 import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.Alias
-import VerifiedGarbage.Proof.AesGcm.X86_64.Short.BoundedGather
 public import VerifiedGarbage.Impl.AesGcm.X86_64.BoundedGather
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Instances
