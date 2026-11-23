@@ -189,7 +189,7 @@ def ksSelG (pre : List Instr) (src : Reg) : Prog isa :=
 def remG (pre : List Instr) (src : Reg) : Prog isa :=
   .seq (.block remSetup) (.seq (ksSelG pre src) (.block storeY))
 
-/-- The blocks after the last group, in place. -/
+/-- The blocks after the last group, read at the output pointer or at the source displacement (`ld`). -/
 def rem (ld : Bool := false) : Prog isa :=
   remG (if ld then [.alu .add .r8 (.reg .rdx)] else []) (if ld then .r8 else .rdx)
 
