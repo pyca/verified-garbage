@@ -59,9 +59,8 @@ impl Key {
     ) -> Result<(), ()> {
         let start = out.len();
         out.reserve(plain.len() + extra.len() + TAG_LEN);
-        // For bulk records the AArch64 gather loop encrypts straight from
+        // For bulk records the gather routine encrypts straight from
         // the caller into spare record capacity, including TLS 1.3's type byte.
-        #[cfg(target_arch = "aarch64")]
         if let Self::AesGcm(key) = self
             && plain.len() >= 4096
             && let Some(piece) = plain.single_chunk()
