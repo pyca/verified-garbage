@@ -3760,7 +3760,7 @@ vg_ec_p521_public_key_adx:
 	cmp rbx, 72
 	jne 21b
 	call {vg_p521_mul_base_adx}
-	call {vg_p521_inv_mod_p_adx}
+	call {vg_p521_inv_mod_p}
 	add rdi, 2152
 	mov rdx, QWORD PTR [rdi-1080]
 	xor eax, eax

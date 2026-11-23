@@ -241,6 +241,10 @@ impl PrivateKey {
             1 => {
                 // The function returns at most `n_len - 11` bytes.
                 let l = len[0] as usize;
+                // NO-SECRET-RESIDUE: not yet: this leaves a copy of the message
+                // after the vector's end (#6301), until decryption writes the
+                // message first (`vg_rsa_pkcs1_decrypt_precomputed_front`) and
+                // this only truncates.
                 out.drain(..k - l);
                 Ok(out)
             }

@@ -70,7 +70,7 @@ theorem winMulJF_ok (hc : CfgOk c) (hFC : P521F.FastCfg (winQ c) c.C size) (h9 :
     (hk8 : sv c base s ks < 2 ^ c.nbits) {rest : Prog isa} {R : State → Prop}
     (h : ∀ s', WinMulPostJ c base P (sv c base s ks) s s' → WP isa rest s' R) (hkT : ks ≠ TMP := by decide) :
     WP isa (.seq (.seq (c.winPrep (c.sl ks))
-      (P521F.Win.windowF (winQ c) (InvCfg.inv (Impl.Ecdh.X86_64.Cfg.invWin c))).inline) rest) s R := by
+      (P521F.Win.windowF (winQ c) (Impl.Ecdh.X86_64.Cfg.invWinProg c)).inline) rest) s R := by
   have h0 := hc.n0
   have h7 := hc.n10
   have hn := hs.nowrap
@@ -150,7 +150,7 @@ theorem winMulJF_ok (hc : CfgOk c) (hFC : P521F.FastCfg (winQ c) c.C size) (h9 :
       rw [F.onep]; exact toM_one hpR
     exact hC.one_ne_zero (h1 ▸ hz)
   refine WP.mono (P521F.windowF_ok (winLayQ hc h9) hFC (winXQ hc h9) hpR hC hc.am3 hO hP hP0 hc.p_lt (hmont 1)
-    (show toM c.C.p (2 ^ (64 * c.n)) (c.mont 1) = 1 by rw [toM_cmont hc]; rfl) (invSpecQ hc h9) hs₂ (hM₂.inl c.hot) hF
+    (show toM c.C.p (2 ^ (64 * c.n)) (c.mont 1) = 1 by rw [toM_cmont hc]; rfl) (invSpecQP hc h9) hs₂ (hM₂.inl c.hot) hF
     (by rw [hJ]; exact hrec) (Nat.le_add_left _ _) (by rw [hJ]; exact hJ2)
     (by rw [hJ]; exact winE_two_bound hJ2 hk8 hbd)) fun s₃ ⟨K₃, U₃, M₃, L₃, R₃⟩ => h s₃ ?_
   rw [winW_eq] at U₃
@@ -166,15 +166,13 @@ theorem winMulJF_ok (hc : CfgOk c) (hFC : P521F.FastCfg (winQ c) c.C size) (h9 :
   obtain pc : ∀ r ∈ powClob c.n, r ∈ invClob c.n := fun r h => List.mem_cons_of_mem _ h
   exact ⟨hs₂.of_keepRegs K₃ (rdi_not_invClob _),
     (((k₁.mono c₁).trans (k₂.mono c₂)).mono pc).trans K₃,
-    (U₂.trans U₃).mono fun w hw => by
-      simp only [invW, Impl.Ecdh.X86_64.Cfg.invWin, InvCfg.ofMod, List.mem_append, List.mem_cons,
-        List.not_mem_nil, or_false] at hw
-      rcases hw with hw | (hw | rfl | rfl | rfl)
-      · exact List.mem_append_left _ (List.mem_append_left _ hw)
-      · exact List.mem_append_right _ hw
-      · exact List.mem_append_right _ (List.mem_map.mpr ⟨TX, by decide, rfl⟩)
-      · exact List.mem_append_left _ (List.mem_append_right _ (List.mem_singleton_self _))
-      · exact List.mem_append_right _ (List.mem_map.mpr ⟨TMP, by decide, rfl⟩), M₃.of_inl, L₃, R₃⟩
+    (U₂.trans U₃).cover fun w hw => by
+      rcases List.mem_append.mp hw with hw | hw
+      · exact ⟨w, List.mem_append_left _ (List.mem_append_left _ (List.mem_append_left _ hw)),
+          Nat.le_refl _, Nat.le_refl _⟩
+      · rcases List.mem_append.mp hw with hw | hw
+        · exact ⟨w, List.mem_append_left _ (List.mem_append_right _ hw), Nat.le_refl _, Nat.le_refl _⟩
+        · exact invWinW_cover w hw, M₃.of_inl, L₃, R₃⟩
 
 
 /-- `mulPow_ok` for `mulQJ4`. -/
@@ -203,11 +201,11 @@ theorem mulPowJ4F_ok (hc : CfgOk c) (hFC : P521F.FastCfg (winQ c) c.C size) (h9 
       (by rw [v₁ (by decide) (by decide)]; exact hpx) (by rw [v₁ (by decide) (by decide)]; exact hpy)
       (by rw [tv₁ (by decide) (by decide), tv₁ (by decide) (by decide), tv₁ (by decide) (by decide)]; exact hrep)
       (ks := K) (by decide) (by rw [e₁]; exact Nat.mod_lt _ (Nat.pow_pos (by decide))) fun s₃ W => ?_)
-    obtain F₃ := F₁.unch h7 hn (fixedOk_winXJ.append (fixedOk_slW (by decide))) W.unch
+    obtain F₃ := F₁.unch h7 hn ((fixedOk_winXJ.append (fixedOk_slW (by decide))).append fixedOk_pwW) W.unch
     obtain rz₃ : wordsVal s₃.mem base (c.sl RZ) c.n < c.C.p := W.lt _ (by simp)
     refine WP.seq (WP.mono (pPow_ok hc W.scr W.mod rz₃ F₃.onep (fun h9 t ht => by
-        rw [tbl_unch W.unch h7 hn (j := 1) (by decide) ht (apart_append (tbl_apart_winXJ (by decide) ht)
-          (tbl_apart_slW' (by decide) (by decide) ht)),
+        rw [tbl_unch W.unch h7 hn (j := 1) (by decide) ht (apart_append (apart_append (tbl_apart_winXJ (by decide) ht)
+          (tbl_apart_slW' (by decide) (by decide) ht)) (tbl_apart_pwW (by decide) ht (.inr (by omega_arith)))),
           tbl_unch U₁ h7 hn (j := 1) (by decide) ht (tbl_apart_slW' (by decide) (by decide) ht)]
         exact ht₁ h9 t ht)) fun s₄ ⟨K₄, U₄, lt₄, v₄⟩ => h s₄ ?_)
     obtain r₄ : ∀ {i}, i < 45 → i ∉ [ACC, PT, TMP] → sv c base s₄ i = sv c base s₃ i := fun hi h₁ =>
@@ -221,8 +219,10 @@ theorem mulPowJ4F_ok (hc : CfgOk c) (hFC : P521F.FastCfg (winQ c) c.C size) (h9 
       · rcases List.mem_append.mp hw with hw | hw
         · exact List.mem_append_left _ (List.mem_append_right _ (slW_mono (by decide) hw))
         · rcases List.mem_append.mp hw with hw | hw
-          · exact List.mem_append_left _ (List.mem_append_left _ hw)
-          · exact List.mem_append_left _ (List.mem_append_right _ (slW_mono (by decide) hw))
+          · rcases List.mem_append.mp hw with hw | hw
+            · exact List.mem_append_left _ (List.mem_append_left _ hw)
+            · exact List.mem_append_left _ (List.mem_append_right _ (slW_mono (by decide) hw))
+          · exact List.mem_append_right _ hw
       · exact List.mem_append_right _ hw
     · show Rep _ (toM _ _ (sv c base s₄ RX)) (toM _ _ (sv c base s₄ RY)) (toM _ _ (sv c base s₄ RZ)) _
       rw [r₄ (i := RX) (by decide) (by decide), r₄ (i := RY) (by decide) (by decide),

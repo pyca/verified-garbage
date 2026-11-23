@@ -27,7 +27,7 @@ abbrev winKX : WinCfg := p521x.winCfg Impl.Ecdh.X86_64.PX Impl.Ecdh.X86_64.PY Im
 
 /-- ECDH's window method in Jacobian coordinates. -/
 def winBuildJX : Prog isa := WinCfg.build winKX
-def winNormJX : Prog isa := WinCfg.normTbl winKX (InvCfg.inv (Impl.Ecdh.X86_64.Cfg.invWin p521x))
+def winNormJX : Prog isa := WinCfg.normTbl winKX (Impl.Ecdh.X86_64.Cfg.invWinProg p521x)
 def winLoopFX : Prog isa := .loop (P521F.Win.stepF winKX) .ne
 def winLastJX : Prog isa := WinCfg.stepLast winKX
 
