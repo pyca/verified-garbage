@@ -16,7 +16,7 @@
 /// * `schedule` must be valid for reads and writes of 4168 bytes.
 /// * `key_len` must be in 4..=56.
 /// * `schedule` must not overlap `key` or the arguments on the stack (distinct Rust objects never do).
-/// * Neither `key` nor `schedule` may overlap the return address on the stack or the 412 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * Neither `key` nor `schedule` may overlap the return address on the stack or the 424 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_blowfish_expand_key_auto(_dit: verified_garbage_cpu::Dit<'_>, key: *const u8, key_len: usize, schedule: *mut [u8; 4168]) {

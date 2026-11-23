@@ -48,10 +48,10 @@ analyses the block function at its call; the `_framed` theorems run them
 with their working space on the stack, zeroed on return.
 
 As emitted (`Impl.Blowfish.X86.Ssse3.Fn`), each function then zeroes, of the
-456 bytes of stack its contract reserves below `esp`, the seven doublewords
+460 bytes of stack its contract reserves below `esp`, the eight doublewords
 that the residue analysis (`X86.rtaint`) finds it may leave different in two
-runs (the block function's return address and the header of the working
-space's frame), clears the registers a callee may change, and returns
+runs (the block function's return address, the header of the working
+space's frame and the frame's last doubleword), clears the registers a callee may change, and returns
 without secret residue (`X86.Scrub.verifiedScrubbedSel`, the kernel
 evaluating the analysis of the code with its cleanup: `taint_decide_ct`).
 -/
@@ -89,22 +89,22 @@ def satF53 : State where
   wr := [⟨0x2000, 8⟩, ⟨0x3000, 1⟩, ⟨0x4000, 424⟩, ⟨0x8004, 20⟩]
 
 theorem frameSat_ofb (post : Spec.Blowfish.ofbSig.Post X86.abi.ptrBits) :
-    ∃ s, (Spec.Blowfish.ofbSig.contract X86.abi (post := post) (writeArgs := true) (stack := 456)).pre s := by
+    ∃ s, (Spec.Blowfish.ofbSig.contract X86.abi (post := post) (writeArgs := true) (stack := 460)).pre s := by
   implies_sat [Spec.Blowfish.ofbSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     [Fb.frameSat, X86.arg, X86.argAddr, Mem.readW, Mem.read] using Fb.frameSat
 
 theorem frameSat_cbc (post : Spec.Blowfish.cbcChainedSig.Post X86.abi.ptrBits) :
-    ∃ s, (Spec.Blowfish.cbcChainedSig.contract X86.abi (post := post) (writeArgs := true) (stack := 456)).pre s := by
+    ∃ s, (Spec.Blowfish.cbcChainedSig.contract X86.abi (post := post) (writeArgs := true) (stack := 460)).pre s := by
   implies_sat [Spec.Blowfish.cbcChainedSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     [Fb.frameSat, X86.arg, X86.argAddr, Mem.readW, Mem.read] using Fb.frameSat
 
 theorem frameSat_cfbFinal (post : Spec.Blowfish.cfbFinalSig.Post X86.abi.ptrBits) :
-    ∃ s, (Spec.Blowfish.cfbFinalSig.contract X86.abi (post := post) (writeArgs := true) (stack := 456)).pre s := by
+    ∃ s, (Spec.Blowfish.cfbFinalSig.contract X86.abi (post := post) (writeArgs := true) (stack := 460)).pre s := by
   implies_sat [Spec.Blowfish.cfbFinalSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     [Fb.frameSat, X86.arg, X86.argAddr, Mem.readW, Mem.read] using Fb.frameSat
 
 theorem frameSat_ofbFinal (post : Spec.Blowfish.ofbFinalSig.Post X86.abi.ptrBits) :
-    ∃ s, (Spec.Blowfish.ofbFinalSig.contract X86.abi (post := post) (writeArgs := true) (stack := 456)).pre s := by
+    ∃ s, (Spec.Blowfish.ofbFinalSig.contract X86.abi (post := post) (writeArgs := true) (stack := 460)).pre s := by
   implies_sat [Spec.Blowfish.ofbFinalSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     [Fb.frameSat, X86.arg, X86.argAddr, Mem.readW, Mem.read] using Fb.frameSat
 
@@ -161,20 +161,20 @@ theorem cbcEncryptChained_verified : Verified X86.target cbcEncryptChained (Proo
 
 /-- `cbcEncryptChained` with its working space on the stack. -/
 theorem cbcEncryptChained_framed :
-    Verified X86.target (Impl.StackScratch.X86.withStackScratchWiped 448 4 106 cbcEncryptChained)
-      (Spec.Blowfish.cbcEncryptChainedContract X86.abi 456) :=
+    Verified X86.target (Impl.StackScratch.X86.withStackScratchWiped 452 4 106 cbcEncryptChained)
+      (Spec.Blowfish.cbcEncryptChainedContract X86.abi 460) :=
   X86.Verified.stackScratchWiped (sig := Spec.Blowfish.cbcChainedSig) (nm := "scratch") (e := .u64)
     (n := 53) (post := Proof.Blowfish.cbcEncChainedPost X86.abi.ptrBits) (wa := true) (stack := 8)
-    (bytes := 448) cbcEncryptChained_verified (by decide) (by lit_decide) (by lit_decide) (by decide)
+    (bytes := 452) cbcEncryptChained_verified (by decide) (by lit_decide) (by lit_decide) (by decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial)
     (Proof.Blowfish.cbcEncChainedPost_local _) (Proof.Blowfish.cbcEncChainedPostOut_local _) (frameSat_cbc _)
 
 /-- `Spec.Blowfish.cbcEncryptChainedApi` as emitted (`Impl.Blowfish.X86.Ssse3.Fn.cbcEncryptChained`) meets its contract in constant
 time and returns without secret residue. -/
 theorem cbcEncryptChained_scrubbed :
-    VerifiedScrubbed X86.target Fn.cbcEncryptChained (Spec.Blowfish.cbcEncryptChainedContract X86.abi 456) 0 :=
-  verifiedScrubbedSel (api := Spec.Blowfish.cbcEncryptChainedApi) (W := 456)
-    { code := Impl.StackScratch.X86.withStackScratchWiped 448 4 106 cbcEncryptChained
+    VerifiedScrubbed X86.target Fn.cbcEncryptChained (Spec.Blowfish.cbcEncryptChainedContract X86.abi 460) 0 :=
+  verifiedScrubbedSel (api := Spec.Blowfish.cbcEncryptChainedApi) (W := 460)
+    { code := Impl.StackScratch.X86.withStackScratchWiped 452 4 106 cbcEncryptChained
       verified := cbcEncryptChained_framed }
     Fn.words (Scrub.cbcEncryptOut _) (by decide) ⟨_, by taint_decide_ct⟩
 
@@ -214,20 +214,20 @@ theorem ofb_verified : Verified X86.target ofb (Proof.Blowfish.fbScratchContract
 
 /-- `ofb` with its working space on the stack. -/
 theorem ofb_framed :
-    Verified X86.target (Impl.StackScratch.X86.withStackScratchWiped 448 4 106 ofb)
-      (Spec.Blowfish.ofbContract X86.abi 456) :=
+    Verified X86.target (Impl.StackScratch.X86.withStackScratchWiped 452 4 106 ofb)
+      (Spec.Blowfish.ofbContract X86.abi 460) :=
   X86.Verified.stackScratchWiped (sig := Spec.Blowfish.ofbSig) (nm := "scratch") (e := .u64)
     (n := 53) (post := Proof.Blowfish.ofbPost X86.abi.ptrBits) (wa := true) (stack := 8)
-    (bytes := 448) ofb_verified (by decide) (by lit_decide) (by lit_decide) (by decide)
+    (bytes := 452) ofb_verified (by decide) (by lit_decide) (by lit_decide) (by decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial)
     (Proof.Blowfish.ofbPost_local _) (Proof.Blowfish.ofbPostOut_local _) (frameSat_ofb _)
 
 /-- `Spec.Blowfish.ofbApi` as emitted (`Impl.Blowfish.X86.Ssse3.Fn.ofb`) meets its contract in constant
 time and returns without secret residue. -/
 theorem ofb_scrubbed :
-    VerifiedScrubbed X86.target Fn.ofb (Spec.Blowfish.ofbContract X86.abi 456) 0 :=
-  verifiedScrubbedSel (api := Spec.Blowfish.ofbApi) (W := 456)
-    { code := Impl.StackScratch.X86.withStackScratchWiped 448 4 106 ofb
+    VerifiedScrubbed X86.target Fn.ofb (Spec.Blowfish.ofbContract X86.abi 460) 0 :=
+  verifiedScrubbedSel (api := Spec.Blowfish.ofbApi) (W := 460)
+    { code := Impl.StackScratch.X86.withStackScratchWiped 452 4 106 ofb
       verified := ofb_framed }
     Fn.words (Scrub.ofbOut _) (by decide) ⟨_, by taint_decide_ct⟩
 
@@ -267,20 +267,20 @@ theorem cfbEncrypt_verified : Verified X86.target cfbEncrypt (Proof.Blowfish.fbS
 
 /-- `cfbEncrypt` with its working space on the stack. -/
 theorem cfbEncrypt_framed :
-    Verified X86.target (Impl.StackScratch.X86.withStackScratchWiped 448 4 106 cfbEncrypt)
-      (Spec.Blowfish.cfbEncryptContract X86.abi 456) :=
+    Verified X86.target (Impl.StackScratch.X86.withStackScratchWiped 452 4 106 cfbEncrypt)
+      (Spec.Blowfish.cfbEncryptContract X86.abi 460) :=
   X86.Verified.stackScratchWiped (sig := Spec.Blowfish.cfbSig) (nm := "scratch") (e := .u64)
     (n := 53) (post := Proof.Blowfish.cfbEncPost X86.abi.ptrBits) (wa := true) (stack := 8)
-    (bytes := 448) cfbEncrypt_verified (by decide) (by lit_decide) (by lit_decide) (by decide)
+    (bytes := 452) cfbEncrypt_verified (by decide) (by lit_decide) (by lit_decide) (by decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial)
     (Proof.Blowfish.cfbEncPost_local _) (Proof.Blowfish.cfbEncPostOut_local _) (frameSat_ofb _)
 
 /-- `Spec.Blowfish.cfbEncryptApi` as emitted (`Impl.Blowfish.X86.Ssse3.Fn.cfbEncrypt`) meets its contract in constant
 time and returns without secret residue. -/
 theorem cfbEncrypt_scrubbed :
-    VerifiedScrubbed X86.target Fn.cfbEncrypt (Spec.Blowfish.cfbEncryptContract X86.abi 456) 0 :=
-  verifiedScrubbedSel (api := Spec.Blowfish.cfbEncryptApi) (W := 456)
-    { code := Impl.StackScratch.X86.withStackScratchWiped 448 4 106 cfbEncrypt
+    VerifiedScrubbed X86.target Fn.cfbEncrypt (Spec.Blowfish.cfbEncryptContract X86.abi 460) 0 :=
+  verifiedScrubbedSel (api := Spec.Blowfish.cfbEncryptApi) (W := 460)
+    { code := Impl.StackScratch.X86.withStackScratchWiped 452 4 106 cfbEncrypt
       verified := cfbEncrypt_framed }
     Fn.words (Scrub.cfbEncryptOut _) (by decide) ⟨_, by taint_decide_ct⟩
 
@@ -320,20 +320,20 @@ theorem cfbDecrypt_verified : Verified X86.target cfbDecrypt (Proof.Blowfish.fbS
 
 /-- `cfbDecrypt` with its working space on the stack. -/
 theorem cfbDecrypt_framed :
-    Verified X86.target (Impl.StackScratch.X86.withStackScratchWiped 448 4 106 cfbDecrypt)
-      (Spec.Blowfish.cfbDecryptContract X86.abi 456) :=
+    Verified X86.target (Impl.StackScratch.X86.withStackScratchWiped 452 4 106 cfbDecrypt)
+      (Spec.Blowfish.cfbDecryptContract X86.abi 460) :=
   X86.Verified.stackScratchWiped (sig := Spec.Blowfish.cfbSig) (nm := "scratch") (e := .u64)
     (n := 53) (post := Proof.Blowfish.cfbDecPost X86.abi.ptrBits) (wa := true) (stack := 8)
-    (bytes := 448) cfbDecrypt_verified (by decide) (by lit_decide) (by lit_decide) (by decide)
+    (bytes := 452) cfbDecrypt_verified (by decide) (by lit_decide) (by lit_decide) (by decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial)
     (Proof.Blowfish.cfbDecPost_local _) (Proof.Blowfish.cfbDecPostOut_local _) (frameSat_ofb _)
 
 /-- `Spec.Blowfish.cfbDecryptApi` as emitted (`Impl.Blowfish.X86.Ssse3.Fn.cfbDecrypt`) meets its contract in constant
 time and returns without secret residue. -/
 theorem cfbDecrypt_scrubbed :
-    VerifiedScrubbed X86.target Fn.cfbDecrypt (Spec.Blowfish.cfbDecryptContract X86.abi 456) 0 :=
-  verifiedScrubbedSel (api := Spec.Blowfish.cfbDecryptApi) (W := 456)
-    { code := Impl.StackScratch.X86.withStackScratchWiped 448 4 106 cfbDecrypt
+    VerifiedScrubbed X86.target Fn.cfbDecrypt (Spec.Blowfish.cfbDecryptContract X86.abi 460) 0 :=
+  verifiedScrubbedSel (api := Spec.Blowfish.cfbDecryptApi) (W := 460)
+    { code := Impl.StackScratch.X86.withStackScratchWiped 452 4 106 cfbDecrypt
       verified := cfbDecrypt_framed }
     Fn.words (Scrub.cfbDecryptOut _) (by decide) ⟨_, by taint_decide_ct⟩
 
@@ -379,20 +379,20 @@ theorem cfbEncryptFinal_verified : Verified X86.target cfbEncryptFinal encScratc
 
 /-- `cfbEncryptFinal` with its working space on the stack. -/
 theorem cfbEncryptFinal_framed :
-    Verified X86.target (Impl.StackScratch.X86.withStackScratchWiped 448 4 106 cfbEncryptFinal)
-      (Spec.Blowfish.cfbEncryptFinalContract X86.abi 456) :=
+    Verified X86.target (Impl.StackScratch.X86.withStackScratchWiped 452 4 106 cfbEncryptFinal)
+      (Spec.Blowfish.cfbEncryptFinalContract X86.abi 460) :=
   X86.Verified.stackScratchWiped (sig := Spec.Blowfish.cfbFinalSig) (nm := "scratch") (e := .u64)
     (n := 53) (post := Proof.Modes.encFinalPost FbFinal.ciphAt 8 X86.abi.ptrBits) (wa := true) (stack := 8)
-    (bytes := 448) cfbEncryptFinal_verified (by decide) (by lit_decide) (by lit_decide) (by decide)
+    (bytes := 452) cfbEncryptFinal_verified (by decide) (by lit_decide) (by lit_decide) (by decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial)
     (Proof.Modes.encFinalPost_inLocal _ FbFinal.ciphAt_congr) (Proof.Modes.encFinalPost_local _) (frameSat_cfbFinal _)
 
 /-- `Spec.Blowfish.cfbEncryptFinalApi` as emitted (`Impl.Blowfish.X86.Ssse3.Fn.cfbEncryptFinal`) meets its contract in constant
 time and returns without secret residue. -/
 theorem cfbEncryptFinal_scrubbed :
-    VerifiedScrubbed X86.target Fn.cfbEncryptFinal (Spec.Blowfish.cfbEncryptFinalContract X86.abi 456) 0 :=
-  verifiedScrubbedSel (api := Spec.Blowfish.cfbEncryptFinalApi) (W := 456)
-    { code := Impl.StackScratch.X86.withStackScratchWiped 448 4 106 cfbEncryptFinal
+    VerifiedScrubbed X86.target Fn.cfbEncryptFinal (Spec.Blowfish.cfbEncryptFinalContract X86.abi 460) 0 :=
+  verifiedScrubbedSel (api := Spec.Blowfish.cfbEncryptFinalApi) (W := 460)
+    { code := Impl.StackScratch.X86.withStackScratchWiped 452 4 106 cfbEncryptFinal
       verified := cfbEncryptFinal_framed }
     Fn.words (Scrub.cfbEncryptFinalOut _) (by decide) ⟨_, by taint_decide_ct⟩
 
@@ -438,20 +438,20 @@ theorem cfbDecryptFinal_verified : Verified X86.target cfbDecryptFinal decScratc
 
 /-- `cfbDecryptFinal` with its working space on the stack. -/
 theorem cfbDecryptFinal_framed :
-    Verified X86.target (Impl.StackScratch.X86.withStackScratchWiped 448 4 106 cfbDecryptFinal)
-      (Spec.Blowfish.cfbDecryptFinalContract X86.abi 456) :=
+    Verified X86.target (Impl.StackScratch.X86.withStackScratchWiped 452 4 106 cfbDecryptFinal)
+      (Spec.Blowfish.cfbDecryptFinalContract X86.abi 460) :=
   X86.Verified.stackScratchWiped (sig := Spec.Blowfish.cfbFinalSig) (nm := "scratch") (e := .u64)
     (n := 53) (post := Proof.Modes.decFinalPost FbFinal.ciphAt 8 X86.abi.ptrBits) (wa := true) (stack := 8)
-    (bytes := 448) cfbDecryptFinal_verified (by decide) (by lit_decide) (by lit_decide) (by decide)
+    (bytes := 452) cfbDecryptFinal_verified (by decide) (by lit_decide) (by lit_decide) (by decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial)
     (Proof.Modes.decFinalPost_inLocal _ FbFinal.ciphAt_congr) (Proof.Modes.decFinalPost_local _) (frameSat_cfbFinal _)
 
 /-- `Spec.Blowfish.cfbDecryptFinalApi` as emitted (`Impl.Blowfish.X86.Ssse3.Fn.cfbDecryptFinal`) meets its contract in constant
 time and returns without secret residue. -/
 theorem cfbDecryptFinal_scrubbed :
-    VerifiedScrubbed X86.target Fn.cfbDecryptFinal (Spec.Blowfish.cfbDecryptFinalContract X86.abi 456) 0 :=
-  verifiedScrubbedSel (api := Spec.Blowfish.cfbDecryptFinalApi) (W := 456)
-    { code := Impl.StackScratch.X86.withStackScratchWiped 448 4 106 cfbDecryptFinal
+    VerifiedScrubbed X86.target Fn.cfbDecryptFinal (Spec.Blowfish.cfbDecryptFinalContract X86.abi 460) 0 :=
+  verifiedScrubbedSel (api := Spec.Blowfish.cfbDecryptFinalApi) (W := 460)
+    { code := Impl.StackScratch.X86.withStackScratchWiped 452 4 106 cfbDecryptFinal
       verified := cfbDecryptFinal_framed }
     Fn.words (Scrub.cfbDecryptFinalOut _) (by decide) ⟨_, by taint_decide_ct⟩
 
@@ -497,20 +497,20 @@ theorem ofbFinal_verified : Verified X86.target ofbFinal ofbScratch :=
 
 /-- `ofbFinal` with its working space on the stack. -/
 theorem ofbFinal_framed :
-    Verified X86.target (Impl.StackScratch.X86.withStackScratchWiped 448 4 106 ofbFinal)
-      (Spec.Blowfish.ofbFinalContract X86.abi 456) :=
+    Verified X86.target (Impl.StackScratch.X86.withStackScratchWiped 452 4 106 ofbFinal)
+      (Spec.Blowfish.ofbFinalContract X86.abi 460) :=
   X86.Verified.stackScratchWiped (sig := Spec.Blowfish.ofbFinalSig) (nm := "scratch") (e := .u64)
     (n := 53) (post := Proof.Modes.ofbFinalPost FbFinal.ciphAt 8 X86.abi.ptrBits) (wa := true) (stack := 8)
-    (bytes := 448) ofbFinal_verified (by decide) (by lit_decide) (by lit_decide) (by decide)
+    (bytes := 452) ofbFinal_verified (by decide) (by lit_decide) (by lit_decide) (by decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial)
     (Proof.Modes.ofbFinalPost_inLocal _ FbFinal.ciphAt_congr) (Proof.Modes.ofbFinalPost_local _) (frameSat_ofbFinal _)
 
 /-- `Spec.Blowfish.ofbFinalApi` as emitted (`Impl.Blowfish.X86.Ssse3.Fn.ofbFinal`) meets its contract in constant
 time and returns without secret residue. -/
 theorem ofbFinal_scrubbed :
-    VerifiedScrubbed X86.target Fn.ofbFinal (Spec.Blowfish.ofbFinalContract X86.abi 456) 0 :=
-  verifiedScrubbedSel (api := Spec.Blowfish.ofbFinalApi) (W := 456)
-    { code := Impl.StackScratch.X86.withStackScratchWiped 448 4 106 ofbFinal
+    VerifiedScrubbed X86.target Fn.ofbFinal (Spec.Blowfish.ofbFinalContract X86.abi 460) 0 :=
+  verifiedScrubbedSel (api := Spec.Blowfish.ofbFinalApi) (W := 460)
+    { code := Impl.StackScratch.X86.withStackScratchWiped 452 4 106 ofbFinal
       verified := ofbFinal_framed }
     Fn.words (Scrub.ofbFinalOut _) (by decide) ⟨_, by taint_decide_ct⟩
 
@@ -682,18 +682,18 @@ theorem expandKey_ct : ConstantTime isa keyC8.pre keyC8.pub expandKey :=
 theorem expandKey_verified : Verified X86.target expandKey keyScratch :=
   Verified.of_correct expandKey_ok expandKey_ct key_implies
 
-theorem keyFrameSat_pre : ∃ s, (Spec.Blowfish.expandKeyContract X86.abi 412).pre s := by
+theorem keyFrameSat_pre : ∃ s, (Spec.Blowfish.expandKeyContract X86.abi 424).pre s := by
   implies_sat [Spec.Blowfish.expandKeyContract, Spec.Blowfish.expandKeySig, Spec.Blowfish.expandKeyPre,
     Spec.Blowfish.expandKeyPost, Spec.Blowfish.validKey, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     [expandKeyFrameSat, X86.arg, X86.argAddr, Mem.readW, Mem.read] using expandKeyFrameSat
 
 /-- Key expansion with its working space on the stack. -/
 theorem expandKey_framed :
-    Verified X86.target (Impl.StackScratch.X86.withStackScratchWiped 404 3 96 expandKey)
-      (Spec.Blowfish.expandKeyContract X86.abi 412) :=
+    Verified X86.target (Impl.StackScratch.X86.withStackScratchWiped 416 3 96 expandKey)
+      (Spec.Blowfish.expandKeyContract X86.abi 424) :=
   X86.Verified.stackScratchWiped (sig := Spec.Blowfish.expandKeySig) (nm := "scratch") (e := .u64) (n := 48)
     (pre := Spec.Blowfish.expandKeyPre X86.abi.ptrBits) (post := Spec.Blowfish.expandKeyPost X86.abi.ptrBits)
-    (wa := false) (stack := 8) (bytes := 404)
+    (wa := false) (stack := 8) (bytes := 416)
     expandKey_verified (by decide) (by lit_decide) (by lit_decide) (by decide)
     (Proof.Blowfish.expandKeyPre_local _) (Proof.Blowfish.expandKeyPost_local _)
     (Proof.Blowfish.expandKeyPostOut_local _) keyFrameSat_pre
@@ -701,9 +701,9 @@ theorem expandKey_framed :
 /-- `Spec.Blowfish.expandKeyApi` as emitted (`Impl.Blowfish.X86.Ssse3.Fn.expandKey`) meets its contract in
 constant time and returns without secret residue. -/
 theorem expandKey_scrubbed :
-    VerifiedScrubbed X86.target Fn.expandKey (Spec.Blowfish.expandKeyContract X86.abi 412) 0 :=
-  verifiedScrubbedSel (api := Spec.Blowfish.expandKeyApi) (W := 412)
-    { code := Impl.StackScratch.X86.withStackScratchWiped 404 3 96 expandKey
+    VerifiedScrubbed X86.target Fn.expandKey (Spec.Blowfish.expandKeyContract X86.abi 424) 0 :=
+  verifiedScrubbedSel (api := Spec.Blowfish.expandKeyApi) (W := 424)
+    { code := Impl.StackScratch.X86.withStackScratchWiped 416 3 96 expandKey
       verified := expandKey_framed }
     Fn.keyWords (Scrub.expandKeyOut _) (by decide) ⟨_, by taint_decide_ct⟩
 
