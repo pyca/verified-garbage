@@ -86,7 +86,44 @@ jmp 21f
 jb 224f
 .base64 "SffBAwAAAA=="
 je 226f
-.base64 "SYPDf0mD48BNicJJiZswAwAATInDTYnQSLgPDg0MCwoJCMTh+W7ASLgHBgUEAwIBAMRh+W7gxMF5bMRIuAAAAAAAAAAAxOH5bshIuAAAAAAAAADCxGH5buDEwXFszMX6b58QAQAAxfpvpwABAADF+m+vMAEAAMX6b7cgAQAAxXpvp1ABAADFem+vQAEAAMV6b7dwAQAAxXpvv2ABAADEwXp/m/AAAADEwXp/o+AAAADEwXp/q9AAAADEwXp/s8AAAADEQXp/o7AAAADEQXp/q6AAAADEQXp/s5AAAADEQXp/u4AAAADF+m8RxOJpANBJifJJweIESQH6SInQTInCxMF6f4MAAwAAxMF6f4sQAwAASYmTKAMAAEmJsyADAABIicbF+m84RItADEEPyMTBen+7gAIAAMTBen+7kAIAAMTBen+7oAIAAMTBen+7sAIAAMTBen+7wAIAAMTBen+70AIAAMTBen+74AIAAMTBen+78AIAAESJwIPAAA/IQYmDjAIAAESJwIPAAQ/IQYmDnAIAAESJwIPAAg/IQYmDrAIAAESJwIPAAw/IQYmDvAIAAESJwIPABA/IQYmDzAIAAESJwIPABQ/IQYmD3AIAAESJwIPABg/IQYmD7AIAAESJwIPABw/IQYmD/AIAAEGDwAhIifhIBaAAAABJOcI="
+.base64 "SYPDf0mD48BNicI="
+call {short}
+jmp 227f
+226:
+.base64 "TItcJAhNi0MoTInASYPgD0wpwEgBwEgBwEgBwEgBwEkDQyBJiUMgTYlDKEyLXCQITYtDKE2FwA=="
+je 241f
+.base64 "TItcJAhJiztJi3MISYtTEEmLSyBNi0MoTYnZSYPBQA=="
+call {vg_aes_ctr32_aesni}
+.base64 "TItcJAhJiztIgcfwAAAASYtzGEmLUyBJi0soTYnYSYPAQA=="
+call {vg_ghash_pclmul}
+jmp 242f
+241:
+242:
+227:
+jmp 225f
+224:
+.base64 "TItcJAhNi0MoTInASYPgD0wpwEgBwEgBwEgBwEgBwEkDQyBJiUMgTYlDKEyLXCQITYtDKE2FwA=="
+je 243f
+.base64 "TItcJAhJiztJi3MISYtTEEmLSyBNi0MoTYnZSYPBQA=="
+call {vg_aes_ctr32_aesni}
+.base64 "TItcJAhJiztIgcfwAAAASYtzGEmLUyBJi0soTYnYSYPAQA=="
+call {vg_ghash_pclmul}
+jmp 244f
+243:
+244:
+225:
+21:
+.base64 "ww=="
+.p2align 6"#,
+        short = sym super::vg_aes_gcm_encrypt_blocks_prepared16_aesni_pclmul_avx::bench_short,
+        vg_aes_ctr32_aesni = sym crate::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
+        vg_ghash_pclmul = sym crate::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
+    )
+}
+
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn bench_short() {
+    core::arch::naked_asm!(r#".base64 "SYmbMAMAAEyJw02J0Ei4Dw4NDAsKCQjE4fluwEi4BwYFBAMCAQDEYflu4MTBeWzESLgAAAAAAAAAAMTh+W7ISLgAAAAAAAAAwsRh+W7gxMFxbMzF+m+fEAEAAMX6b6cAAQAAxfpvrzABAADF+m+3IAEAAMV6b6dQAQAAxXpvr0ABAADFem+3cAEAAMV6b79gAQAAxMF6f5vwAAAAxMF6f6PgAAAAxMF6f6vQAAAAxMF6f7PAAAAAxEF6f6OwAAAAxEF6f6ugAAAAxEF6f7OQAAAAxEF6f7uAAAAAxfpvEcTiaQDQSYnyScHiBEkB+kiJ0EyJwsTBen+DAAMAAMTBen+LEAMAAEmJkygDAABJibMgAwAASInGxfpvOESLQAxBD8jEwXp/u4ACAADEwXp/u5ACAADEwXp/u6ACAADEwXp/u7ACAADEwXp/u8ACAADEwXp/u9ACAADEwXp/u+ACAADEwXp/u/ACAABEicCDwAAPyEGJg4wCAABEicCDwAEPyEGJg5wCAABEicCDwAIPyEGJg6wCAABEicCDwAMPyEGJg7wCAABEicCDwAQPyEGJg8wCAABEicCDwAUPyEGJg9wCAABEicCDwAYPyEGJg+wCAABEicCDwAcPyEGJg/wCAABBg8AISIn4SAWgAAAASTnC"
 je 228f
 .base64 "SIPAIEk5wg=="
 je 230f
@@ -130,34 +167,6 @@ jne 240b
 .base64 "SYHDgAEAAMRjOUTZEMRBeXDATsRBMe/IxEEx78vEYzFE2RDEQXlwyU7EwSnv0cWh79JJifpJgcKgAAAASInwQYPoCEEPyESJQAzEwXpvgwADAADE4mkA0MX6fxHF+HdNi4MoAwAASYuzIAMAAA=="
 229:
 .base64 "SYubMAMAAA=="
-jmp 227f
-226:
-.base64 "TItcJAhNi0MoTInASYPgD0wpwEgBwEgBwEgBwEgBwEkDQyBJiUMgTYlDKEyLXCQITYtDKE2FwA=="
-je 241f
-.base64 "TItcJAhJiztJi3MISYtTEEmLSyBNi0MoTYnZSYPBQA=="
-call {vg_aes_ctr32_aesni}
-.base64 "TItcJAhJiztIgcfwAAAASYtzGEmLUyBJi0soTYnYSYPAQA=="
-call {vg_ghash_pclmul}
-jmp 242f
-241:
-242:
-227:
-jmp 225f
-224:
-.base64 "TItcJAhNi0MoTInASYPgD0wpwEgBwEgBwEgBwEgBwEkDQyBJiUMgTYlDKEyLXCQITYtDKE2FwA=="
-je 243f
-.base64 "TItcJAhJiztJi3MISYtTEEmLSyBNi0MoTYnZSYPBQA=="
-call {vg_aes_ctr32_aesni}
-.base64 "TItcJAhJiztIgcfwAAAASYtzGEmLUyBJi0soTYnYSYPAQA=="
-call {vg_ghash_pclmul}
-jmp 244f
-243:
-244:
-225:
-21:
-.base64 "ww=="
-.p2align 6"#,
-        vg_aes_ctr32_aesni = sym crate::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
-        vg_ghash_pclmul = sym crate::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
-    )
+ret
+.p2align 6"#)
 }
