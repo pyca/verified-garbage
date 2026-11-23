@@ -12,7 +12,16 @@
 pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_encrypt_blocks_to_prepared16_vaes_vpclmul() {
     core::arch::naked_asm!(
         r#".base64 "TItcJBhMi1QkCEmJO0mJcwhJiVMQSYlLGE2JQyBNiUsoTYlTMEmD+RA="
-jb 20f
+jae 901f
+test r9, r9
+je 902f
+.base64 "TItcJBhJiztJi3MISYtTEEmLSyBNi0MoTYnZSYPBQE2LWzA="
+call {vg_aes_ctr32_to_vaes}
+.base64 "TItcJBhJiztIgcfwAAAASYtzGEmLUzBJi0soTYnYSYPAQA=="
+call {vg_ghash_vpclmul}
+902:
+ret
+901:
 .base64 "TInISAHASAHASAHASAHATAHASYlDIEyJyEgBwEgBwEgBwEgBwEwB0EmJQzC4AAAAAEmJQyhJg8N/SYPjwA=="
 lea rax, [rip + {VG_GCM_CONSTS}]
 .base64 "8w9vAA=="
@@ -155,6 +164,8 @@ jmp 245f
 .base64 "ww=="
 .p2align 6"#,
         vg_aes_gcm_encrypt_blocks_prepared16_vaes_vpclmul = sym crate::aes::vg_aes_gcm_encrypt_blocks_prepared16_vaes_vpclmul::vg_aes_gcm_encrypt_blocks_prepared16_vaes_vpclmul,
+        vg_ghash_vpclmul = sym crate::gcm::vg_ghash_vpclmul::vg_ghash_vpclmul,
+        vg_aes_ctr32_to_vaes = sym crate::aes::vg_aes_ctr32_to_vaes::vg_aes_ctr32_to_vaes,
         VG_GCM_CONSTS = sym crate::consts::VG_GCM_CONSTS,
     )
 }
