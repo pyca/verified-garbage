@@ -37,6 +37,9 @@ open VG.Proof.MlKem
 open VG.Proof.MlKem.X86
 open VG.Spec.MlKem
 
+theorem inRd {s : State} {a : Addr} (h : InRegions s.wr a 4) : InRegions (s.rd ++ s.wr) a 4 :=
+  let ⟨r, hr, c⟩ := h; ⟨r, List.mem_append_right _ hr, c⟩
+
 section
 variable (s₀ : State)
 abbrev hP : BitVec 32 := arg s₀ 0

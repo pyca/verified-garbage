@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.X86.Arith.NttInv
 public import VerifiedGarbage.Proof.MlDsa.X86.Arith.VLanes
-public import VerifiedGarbage.Proof.MlDsa.X86.Arith.Mcdt
+public import VerifiedGarbage.Proof.MlKem.X86.Mcdt
 public import VerifiedGarbage.Impl.MlDsa.X86.Arith.Mul
 import VerifiedGarbage.Proof.Framework.X86.Sse
 import VerifiedGarbage.Proof.Framework.X86.SseDword
@@ -13,7 +13,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.MlDsa.X86.Arith.NttInv
 meta import VerifiedGarbage.Proof.MlDsa.X86.Arith.VLanes
-meta import VerifiedGarbage.Proof.MlDsa.X86.Arith.Mcdt
+meta import VerifiedGarbage.Proof.MlKem.X86.Mcdt
 meta import VerifiedGarbage.Impl.MlDsa.X86.Arith.Mul
 meta import VerifiedGarbage.Proof.Framework.X86.Sse
 meta import VerifiedGarbage.Proof.Framework.X86.SseDword
@@ -42,7 +42,7 @@ the value `V a b c` of a coefficient from those of `f`, `g` and `h`
 (`LaneOk`): after `k` groups, `eax`, `ecx` and `edx` point at coefficient
 `4k` of `h`, `f` and `g`, the slot of `h` holds `h + 1024`, and the first
 `4k` coefficients of `h` are the new ones. The function is the loop inside
-its MCDT frame (`Piece.mcdt`, `Mcdt.lean`), constant time by the analysis
+its MCDT frame (`Piece.mcdt`, `Proof/MlKem/X86/Mcdt.lean`), constant time by the analysis
 of general and XMM registers (`Piece.sse`) from `esp` and the three
 pointers.
 -/
@@ -56,6 +56,7 @@ open VG.Impl.MlKem.X86 (at_)
 open VG.Proof.MlDsa.Arith
 open VG.Spec.MlDsa VG.Proof.MlDsa
 open VG.Proof.MlKem.X86 (toNat_ofNat32 eq_ofNat_of_toNat E0 retR Piece ea_add ptr_next satState)
+open VG.Proof.MlKem.X86 (M0 mcdtR McdtEnd McdtPost M0_esp M0_wr M0_rd M0_frame ret_mcdt)
 
 /-! ## Straight-line XMM code -/
 
