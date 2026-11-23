@@ -797,8 +797,7 @@ theorem stepB_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha
     (hb : ∀ n, base i = some n → s₁.gpr n = s₂.gpr n) (hs : stepB τ i = some τ')
     (e₁ : exec i s₁ = some s₁') (e₂ : exec i s₂ = some s₂') : AgreeOk τ' s₁' s₂' := by
   cases i with
-  | symPush | push | pop | alloc | free | callr | mop | mmxStore | mmxEnter | emms | mcdtEnter | mcdtLeave | pmullw
-  | pmulhw =>
+  | symPush | push | pop | alloc | free | callr | mop | mmxStore | mmxEnter | emms | mcdtEnter | mcdtLeave =>
     simp only [stepB, reduceCtorEq] at hs
   | mov d src =>
     simp only [stepB] at hs
@@ -914,7 +913,7 @@ theorem stepB_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha
     simp only [reduceExec, Option.map_eq_some_iff] at e₁ e₂
     obtain ⟨y₁, -, rfl⟩ := e₁; obtain ⟨y₂, -, rfl⟩ := e₂
     exact ha.setX d fun h => nomatch h
-  | pmuludq d r =>
+  | pmuludq d r | pmullw d r | pmulhw d r =>
     simp only [stepB, Option.some.injEq] at hs; subst hs
     simp only [reduceExec] at e₁ e₂
     split at e₁ <;> [skip; cases e₁]

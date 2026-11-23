@@ -1393,18 +1393,18 @@ theorem bigR_rel :
       ⟨argsOk hp h.1.1 h.2, argsOk hp' h.1.2 (by
         rw [← h.2]; obtain ⟨⟨_, z₁⟩, ⟨_, z₂⟩⟩ := h.1; simp only [eval, z₁, z₂, eL])⟩).mono
     (fun _ _ h => h) fun _ _ h => h.2
-  have wholeOk : ∀ {σ₀ s}, APre true σ₀ → v.callee.fold < L σ₀ → AtArgs v.callee.fold 512 σ₀ s →
+  have wholeOk : ∀ {σ₀ s}, AtArgs v.callee.fold 512 σ₀ s →
       isa.eval .b s = some true →
       WP isa (.block whole) s fun s' => MidS v.callee.fold σ₀ s' ∨ DoneS v.callee.fold σ₀ s' :=
-    fun hp hf ⟨σ, ⟨hi, hst, key, msg, hrep⟩, ha, cf, hnp⟩ hb => by
+    fun ⟨_, _, _, cf, hnp⟩ hb => by
       simp only [eval, cf, Option.some.injEq, decide_eq_true_eq] at hb
-      exact WP.mono (whole_mid hp ha hnp hb hst hrep) fun _ hm => .inl ⟨σ, key, msg, 0, 0, hi.inv, hm⟩
+      exact (hnp (preLen_of_lt_chunk hb)).elim
   have wh := ((RelCT.taint (A := taintS) (P := fun s₁ s₂ => (AtArgs v.callee.fold 512 s₀ s₁ ∧
       AtArgs v.callee.fold 512 s₀' s₂) ∧ isa.eval .b s₁ = some true) (τR [])
       (fun _ _ _ => agree_regs [] fun _ h => by simp at h) hW).wp
     (F₁ := fun s => MidS v.callee.fold s₀ s ∨ DoneS v.callee.fold s₀ s)
-    (F₂ := fun s => MidS v.callee.fold s₀' s ∨ DoneS v.callee.fold s₀' s) fun _ _ h => ⟨wholeOk hp hfL h.1.1 h.2,
-      wholeOk hp' hfL' h.1.2 (by
+    (F₂ := fun s => MidS v.callee.fold s₀' s ∨ DoneS v.callee.fold s₀' s) fun _ _ h => ⟨wholeOk h.1.1 h.2,
+      wholeOk h.1.2 (by
         rw [← h.2]; obtain ⟨⟨_, -, -, c₁, -⟩, ⟨_, -, -, c₂, -⟩⟩ := h.1; simp only [eval, c₁, c₂, eL])⟩).mono
     (fun _ _ h => h) fun _ _ h => h.2
   have bulkOk : ∀ {σ₀ s}, APre true σ₀ → v.callee.fold < L σ₀ → AtArgs v.callee.fold 512 σ₀ s →

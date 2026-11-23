@@ -112,7 +112,7 @@ theorem invSpecQ (hc : CfgOk c) (h9 : c.n ≤ 9) {base : Addr} :
   have h7 := hc.n10
   refine ⟨fun t ht hM hz => ?_, fun w hw => ?_, fun w hw => ?_⟩
   · exact WP.mono (sp (invLayW hc h9 h4) (by have := hc.p_ge; omega_arith) (unitMod_pow_two hc.p_odd (64 * c.n))
-      ht hM.of_inl hz ⟨ip.B1, ip.B16, ip.C, ip.Cpos, ip.Cn, ip.bound⟩) fun t' ⟨a, b, d, e⟩ => ⟨a, b, d, e⟩
+      ht hM.of_inl hz ⟨ip.B1, ip.B16, ip.C, ip.Cpos, ip.Cn, ip.bound⟩ trivial) fun t' ⟨a, b, d, e⟩ => ⟨a, b, d, e⟩
   · simp only [invW, List.mem_cons, List.not_mem_nil, or_false] at hw
     rcases hw with rfl | rfl | rfl
     · exact Or.inl rfl

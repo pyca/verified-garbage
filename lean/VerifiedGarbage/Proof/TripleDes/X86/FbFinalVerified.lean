@@ -47,7 +47,7 @@ namespace VG.Proof.TripleDes.X86.FbFinal
 
 open VG VG.X86 VG.Impl.TripleDes.X86 VG.Impl.Modes
 open VG.Proof.Modes.X86 (byteMode)
-open VG.Proof.TripleDes.X86.Mode (dirCoreSpec)
+open VG.Proof.TripleDes.X86.Mode (dirCoreSpec Fits dirFits)
 open VG.Proof.TripleDes.X86.Fb (ciph fbX86 fbTaint fbTaint_agree seqPre_of keyArgs_of wideContract fb_verified
   frameSat)
 
@@ -57,17 +57,42 @@ def encPost (s s' : State) : Prop :=
 def decPost (s s' : State) : Prop :=
   Spec.Cfb.DecryptFinal (ciph s) 8 s.mem s'.mem ((arg s 1).setWidth 64) ((arg s 2).setWidth 64) (arg s 3).toNat
 
+/-- The modes' result (`h`) for the core that fits by `f`, whose cipher
+`hc` gives, as the final functions' postconditions state it. -/
+tactic_template "tdes_final_eq " f:term:max hc:term:max h:ident : tactic =>
+  `(tactic| simp only [Proof.Modes.X86.Dp, Proof.Modes.X86.P, Proof.Modes.X86.N,
+                     VG.Proof.TripleDes.X86.Mode.Fits.ka $f, VG.Proof.TripleDes.X86.Mode.Fits.bw $f, Nat.reduceAdd,
+                     Nat.reduceMul, $hc:term] at $h:ident)
+
+section
+variable {c : VG.Impl.Modes.X86.Core} {cs : Proof.Modes.X86.CoreSpec c} {w : Nat}
+
+/-- CFB64 encryption of a message's last piece over any core that fits,
+whose cipher is Triple DES's. -/
+theorem cfbEncryptFinal_wp_of (f : Fits cs w) (hc : ∀ k, cs.cipher (f.toKey k) = Spec.TripleDes.cipher k)
+    {s₀ : State} (hp : (fbX86 w 1 encPost).pre s₀) :
+    WP isa (c.seqFinal (Mode.cfbEnc c.bw)) s₀ fun s' => abiPreserved s₀ s' ∧ (fbX86 w 1 encPost).post s₀ s' :=
+  WP.mono (Proof.Modes.X86.cfbEncFinal_wp cs
+      (seqPre_of f (M := byteMode) (st := 1) rfl (by decide) (by decide) hp) rfl rfl (keyArgs_of f hp))
+    fun _ ⟨h1, h2⟩ => by tdes_final_eq f hc h2; exact ⟨h1, h2⟩
+
+/-- CFB64 decryption of a message's last piece over any core that fits. -/
+theorem cfbDecryptFinal_wp_of (f : Fits cs w) (hc : ∀ k, cs.cipher (f.toKey k) = Spec.TripleDes.cipher k)
+    {s₀ : State} (hp : (fbX86 w 1 decPost).pre s₀) :
+    WP isa (c.seqFinal (Mode.cfbDec c.bw)) s₀ fun s' => abiPreserved s₀ s' ∧ (fbX86 w 1 decPost).post s₀ s' :=
+  WP.mono (Proof.Modes.X86.cfbDecFinal_wp cs
+      (seqPre_of f (M := byteMode) (st := 1) rfl (by decide) (by decide) hp) rfl rfl (keyArgs_of f hp))
+    fun _ ⟨h1, h2⟩ => by tdes_final_eq f hc h2; exact ⟨h1, h2⟩
+
+end
+
 theorem cfbEncryptFinal_wp {s₀ : State} (hp : (fbX86 118 1 encPost).pre s₀) :
     WP isa cfbEncryptFinal s₀ fun s' => abiPreserved s₀ s' ∧ (fbX86 118 1 encPost).post s₀ s' :=
-  WP.mono (Proof.Modes.X86.cfbEncFinal_wp dirCoreSpec
-      (seqPre_of (M := byteMode) rfl (by decide) (by decide) hp) rfl rfl (keyArgs_of hp))
-    fun _ ⟨h1, h2⟩ => ⟨h1, h2⟩
+  cfbEncryptFinal_wp_of dirFits (fun _ => rfl) hp
 
 theorem cfbDecryptFinal_wp {s₀ : State} (hp : (fbX86 118 1 decPost).pre s₀) :
     WP isa cfbDecryptFinal s₀ fun s' => abiPreserved s₀ s' ∧ (fbX86 118 1 decPost).post s₀ s' :=
-  WP.mono (Proof.Modes.X86.cfbDecFinal_wp dirCoreSpec
-      (seqPre_of (M := byteMode) rfl (by decide) (by decide) hp) rfl rfl (keyArgs_of hp))
-    fun _ ⟨h1, h2⟩ => ⟨h1, h2⟩
+  cfbDecryptFinal_wp_of dirFits (fun _ => rfl) hp
 
 /-! ## Constant time -/
 
@@ -206,11 +231,18 @@ theorem cfbDecryptFinal_framed :
 def ofbPost (s s' : State) : Prop :=
   Spec.Ofb.CryptFinal (ciph s) 8 s.mem s'.mem ((arg s 1).setWidth 64) ((arg s 2).setWidth 64) (arg s 3).toNat
 
+/-- OFB of a message's last piece over any core that fits, whose cipher is
+Triple DES's. -/
+theorem ofbFinal_wp_of {c : VG.Impl.Modes.X86.Core} {cs : Proof.Modes.X86.CoreSpec c} {w : Nat} (f : Fits cs w)
+    (hc : ∀ k, cs.cipher (f.toKey k) = Spec.TripleDes.cipher k) {s₀ : State} (hp : (fbX86 w 1 ofbPost).pre s₀) :
+    WP isa (c.seqFinal (Mode.ofb c.bw)) s₀ fun s' => abiPreserved s₀ s' ∧ (fbX86 w 1 ofbPost).post s₀ s' :=
+  WP.mono (Proof.Modes.X86.ofbFinal_wp cs
+      (seqPre_of f (M := byteMode) (st := 1) rfl (by decide) (by decide) hp) rfl rfl (keyArgs_of f hp))
+    fun _ ⟨h1, h2⟩ => by tdes_final_eq f hc h2; exact ⟨h1, h2⟩
+
 theorem ofbFinal_wp {s₀ : State} (hp : (fbX86 118 1 ofbPost).pre s₀) :
     WP isa ofbFinal s₀ fun s' => abiPreserved s₀ s' ∧ (fbX86 118 1 ofbPost).post s₀ s' :=
-  WP.mono (Proof.Modes.X86.ofbFinal_wp dirCoreSpec
-      (seqPre_of (M := byteMode) rfl (by decide) (by decide) hp) rfl rfl (keyArgs_of hp))
-    fun _ ⟨h1, h2⟩ => ⟨h1, h2⟩
+  ofbFinal_wp_of dirFits (fun _ => rfl) hp
 
 theorem ofbFinal_ct : ConstantTime isa (fbX86 118 1 ofbPost).pre (fbX86 118 1 ofbPost).pub ofbFinal := by
   obtain ⟨_, h⟩ : ∃ h, (VG.X86.taint.check (fbTaint 118) ofbFinal h).isSome = true :=

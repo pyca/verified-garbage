@@ -14,10 +14,12 @@ meta import VerifiedGarbage.Proof.Blowfish.X86.ModesLit
 /-!
 # Blowfish-CBC on x86 (32-bit) meets its contracts
 
-`cbcEncryptChained_wp`, `cbcDecryptChained_wp`: the modes' CBC that updates
-the chaining value (`Proof.Modes.X86.cbcEncChained_wp`, `cbcDecChained_wp`)
-over Blowfish's core for each direction (`dirCoreSpec`), with the working space
-as the argument after `n`. The chaining value is written back, so it is
+`cbcEncryptChained_wp_of`, `cbcDecryptChained_wp_of`: the modes' CBC that
+updates the chaining value (`Proof.Modes.X86.cbcEncChained_wp`,
+`cbcDecChained_wp`) over any core that fits (`Fits`) whose cipher is
+Blowfish's or its inverse; `cbcEncryptChained_wp`, `cbcDecryptChained_wp`
+are those of Blowfish's core for each direction (`dirCoreSpec`), with the
+working space as the argument after `n`. The chaining value is written back, so it is
 writable, as for OFB and CFB (`Fb.fbX86`), whose contract, taint and
 narrowing (`Fb.fb_verified`) these share. The `_framed` theorems run them
 with their working space on the stack, zeroed on return.
@@ -29,7 +31,7 @@ namespace VG.Proof.Blowfish.X86.Cbc
 
 open VG VG.X86 VG.Impl.Blowfish.X86 VG.Impl.Modes
 open VG.Proof.Modes.X86 (cbcEncChained_wp cbcDecChained_wp)
-open VG.Proof.Blowfish.X86 (scr_eq disjoint_empty KeyArgs dirCoreSpec cbcBlocksAt_chunks dirCore_ka)
+open VG.Proof.Blowfish.X86 (scr_eq disjoint_empty KeyArgs Fits dirFits below0 dirCoreSpec cbcBlocksAt_chunks)
 open VG.Proof.Blowfish.X86.Fb
 
 /-- Blowfish's inverse under the schedule at the first argument. -/
@@ -43,39 +45,49 @@ def decPost (s s' : State) : Prop :=
   dataAt s'.mem s = Spec.Cbc.decrypt (invCiph s) (ivAt s.mem s) (dataAt s.mem s) ∧
     ivAt s'.mem s = Spec.Cbc.next (ivAt s.mem s) (dataAt s.mem s)
 
-theorem invCipher_eq (s : State) :
-    (dirCoreSpec false).cipher (Spec.Blowfish.scheduleAt s.mem ((arg s 0).setWidth 64)) = invCiph s := rfl
+section
+variable {c : VG.Impl.Modes.X86.Core} {cs : Proof.Modes.X86.CoreSpec c} {w n : Nat}
 
-theorem cbcEncryptChained_wp {s₀ : State} (hp : (fbX86 encPost).pre s₀) :
-    WP isa cbcEncryptChained s₀ fun s' => abiPreserved s₀ s' ∧ (fbX86 encPost).post s₀ s' :=
-  WP.mono (cbcEncChained_wp (dirCoreSpec true) (seqPre_of true rfl hp) (keyArgs_of true hp))
-    fun _ ⟨h1, h2, h3⟩ => by
-      simp only [Proof.Modes.X86.blocks0, Proof.Modes.X86.iv0, Proof.Modes.X86.Dp, Proof.Modes.X86.P,
-        Proof.Modes.X86.N, dirCore_ka, Nat.reduceAdd, data_eq, iv_eq, cipher_eq] at h2 h3
-      exact ⟨h1, h2, h3⟩
+/-- CBC encryption that updates the chaining value, over any core that
+fits, whose cipher is Blowfish's. -/
+theorem cbcEncryptChained_wp_of (f : Fits cs w n) (hc : ∀ k, cs.cipher (f.toKey k) = Spec.Blowfish.cipher k)
+    {s₀ : State} (hp : (fbX86 w n encPost).pre s₀) :
+    WP isa (c.seq (Mode.cbcEncChained c.bw)) s₀ fun s' => abiPreserved s₀ s' ∧ (fbX86 w n encPost).post s₀ s' :=
+  WP.mono (cbcEncChained_wp cs (seqPre_of f (step_block f) hp) (keyArgs_of f hp))
+    fun _ ⟨h1, h2, h3⟩ => by bf_post_eq f hc h2 h3; exact ⟨h1, h2, h3⟩
 
-theorem cbcDecryptChained_wp {s₀ : State} (hp : (fbX86 decPost).pre s₀) :
-    WP isa cbcDecryptChained s₀ fun s' => abiPreserved s₀ s' ∧ (fbX86 decPost).post s₀ s' :=
-  WP.mono (cbcDecChained_wp (dirCoreSpec false) (seqPre_of false rfl hp) (keyArgs_of false hp))
-    fun _ ⟨h1, h2, h3⟩ => by
-      simp only [Proof.Modes.X86.blocks0, Proof.Modes.X86.iv0, Proof.Modes.X86.Dp, Proof.Modes.X86.P,
-        Proof.Modes.X86.N, dirCore_ka, Nat.reduceAdd, data_eq, iv_eq, invCipher_eq] at h2 h3
-      exact ⟨h1, h2, h3⟩
+/-- CBC decryption that updates the chaining value, over any core that
+fits, whose cipher is Blowfish's inverse. -/
+theorem cbcDecryptChained_wp_of (f : Fits cs w n) (hc : ∀ k, cs.cipher (f.toKey k) = Spec.Blowfish.invCipher k)
+    {s₀ : State} (hp : (fbX86 w n decPost).pre s₀) :
+    WP isa (c.seq (Mode.cbcDecChained c.bw)) s₀ fun s' => abiPreserved s₀ s' ∧ (fbX86 w n decPost).post s₀ s' :=
+  WP.mono (cbcDecChained_wp cs (seqPre_of f (step_block f) hp) (keyArgs_of f hp))
+    fun _ ⟨h1, h2, h3⟩ => by bf_post_eq f hc h2 h3; exact ⟨h1, h2, h3⟩
+
+end
+
+theorem cbcEncryptChained_wp {s₀ : State} (hp : (fbX86 11 0 encPost).pre s₀) :
+    WP isa cbcEncryptChained s₀ fun s' => abiPreserved s₀ s' ∧ (fbX86 11 0 encPost).post s₀ s' :=
+  cbcEncryptChained_wp_of (dirFits true) (fun _ => rfl) hp
+
+theorem cbcDecryptChained_wp {s₀ : State} (hp : (fbX86 11 0 decPost).pre s₀) :
+    WP isa cbcDecryptChained s₀ fun s' => abiPreserved s₀ s' ∧ (fbX86 11 0 decPost).post s₀ s' :=
+  cbcDecryptChained_wp_of (dirFits false) (fun _ => rfl) hp
 
 /-! ## Constant time -/
 
-theorem cbcEncryptChained_ct : ConstantTime isa (fbX86 encPost).pre (fbX86 encPost).pub cbcEncryptChained :=
-  VG.Taint.constantTime (A := VG.X86.taint) fbTaint (fun _ _ h₁ h₂ hp => fbTaint_agree h₁ h₂ hp)
+theorem cbcEncryptChained_ct : ConstantTime isa (fbX86 11 0 encPost).pre (fbX86 11 0 encPost).pub cbcEncryptChained :=
+  VG.Taint.constantTime (A := VG.X86.taint) (fbTaint 11 0) (fun _ _ h₁ h₂ hp => fbTaint_agree h₁ h₂ hp)
     (by taint_decide)
 
-theorem cbcDecryptChained_ct : ConstantTime isa (fbX86 decPost).pre (fbX86 decPost).pub cbcDecryptChained :=
-  VG.Taint.constantTime (A := VG.X86.taint) fbTaint (fun _ _ h₁ h₂ hp => fbTaint_agree h₁ h₂ hp)
+theorem cbcDecryptChained_ct : ConstantTime isa (fbX86 11 0 decPost).pre (fbX86 11 0 decPost).pub cbcDecryptChained :=
+  VG.Taint.constantTime (A := VG.X86.taint) (fbTaint 11 0) (fun _ _ h₁ h₂ hp => fbTaint_agree h₁ h₂ hp)
     (by taint_decide)
 
 /-! ## The contracts -/
 
 theorem wide_implies_enc :
-    (wideContract encPost).Implies (Proof.Blowfish.cbcEncChainedScratchContract X86.abi 11) := by
+    (wideContract 11 0 encPost).Implies (Proof.Blowfish.cbcEncChainedScratchContract X86.abi 11) := by
   refine { pre := ?_, post := ?_, pub := ?_, sat := ?_ }
   · intro s h
     sig_pre [Proof.Blowfish.cbcEncChainedScratchContract, Proof.Blowfish.cbcChainedScratchSig, Spec.Blowfish.cbcChainedSig, Proof.Blowfish.cbcEncChainedPost, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, wideContract, fbX86, encPost] at h
@@ -87,6 +99,7 @@ theorem wide_implies_enc :
       | with_reducible assumption
       | with_reducible exact Region.Disjoint.symm ‹_›
       | omega_arith
+      | with_reducible exact below0 _ _
       | (simp only [Nat.mul_comm] at *; first | with_reducible assumption | with_reducible exact Region.Disjoint.symm ‹_›)
   · sig_implies_post [Proof.Blowfish.cbcEncChainedScratchContract, Proof.Blowfish.cbcChainedScratchSig, Spec.Blowfish.cbcChainedSig, Proof.Blowfish.cbcEncChainedPost, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, wideContract, fbX86, encPost, ciph, ivAt, dataAt]
   · sig_implies_pub [Proof.Blowfish.cbcEncChainedScratchContract, Proof.Blowfish.cbcChainedScratchSig, Spec.Blowfish.cbcChainedSig, Proof.Blowfish.cbcEncChainedPost, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, wideContract, fbX86, encPost]
@@ -94,7 +107,7 @@ theorem wide_implies_enc :
       [satState, arg, argAddr, Mem.readW, Mem.read] using satState
 
 theorem wide_implies_dec :
-    (wideContract decPost).Implies (Proof.Blowfish.cbcDecChainedScratchContract X86.abi 11) := by
+    (wideContract 11 0 decPost).Implies (Proof.Blowfish.cbcDecChainedScratchContract X86.abi 11) := by
   refine { pre := ?_, post := ?_, pub := ?_, sat := ?_ }
   · intro s h
     sig_pre [Proof.Blowfish.cbcDecChainedScratchContract, Proof.Blowfish.cbcChainedScratchSig, Spec.Blowfish.cbcChainedSig, Proof.Blowfish.cbcDecChainedPost, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, wideContract, fbX86, decPost] at h
@@ -106,6 +119,7 @@ theorem wide_implies_dec :
       | with_reducible assumption
       | with_reducible exact Region.Disjoint.symm ‹_›
       | omega_arith
+      | with_reducible exact below0 _ _
       | (simp only [Nat.mul_comm] at *; first | with_reducible assumption | with_reducible exact Region.Disjoint.symm ‹_›)
   · sig_implies_post [Proof.Blowfish.cbcDecChainedScratchContract, Proof.Blowfish.cbcChainedScratchSig, Spec.Blowfish.cbcChainedSig, Proof.Blowfish.cbcDecChainedPost, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, wideContract, fbX86, decPost, invCiph, ivAt, dataAt]
   · sig_implies_pub [Proof.Blowfish.cbcDecChainedScratchContract, Proof.Blowfish.cbcChainedScratchSig, Spec.Blowfish.cbcChainedSig, Proof.Blowfish.cbcDecChainedPost, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, wideContract, fbX86, decPost]

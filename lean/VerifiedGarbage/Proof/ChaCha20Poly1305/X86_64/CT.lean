@@ -1152,6 +1152,9 @@ bytes' keystream the prologue computes (`splitM`): the rest is whole chunks of
 abbrev PreLen (fold len : Nat) : Prop :=
   fold ≤ (len - 1) % 512 ∨ len < 1409
 
+theorem preLen_of_lt_chunk {fold len : Nat} (h : len < 512) : PreLen fold len :=
+  Or.inr (Nat.lt_trans h (by decide : 512 < 1409))
+
 /-- The bytes of more than `fold` whose keystream the prologue computes
 with the one-time key, for a pass of `pass` bytes (`splitM`): for 512, the
 first `fold` for `PreLen`; for another pass, those past the last multiple of

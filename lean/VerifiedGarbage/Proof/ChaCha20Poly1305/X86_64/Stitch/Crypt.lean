@@ -257,31 +257,6 @@ theorem args_repr {s₀ : State} {m : Mem} {key msg : List Byte} (h : Repr m (of
     simp only [List.mem_singleton] at hr; subst hr
     exact sub_disj s₀ (by lit_omega) (by lit_omega) (by lit_omega)) h
 
-/-- No whole chunks: nothing encrypted yet, nothing absorbed. -/
-theorem whole_mid {fold : Nat} {s₀ : State} (hp : APre e s₀) {s s₂ : State} (ha : Args s₀ s s₂)
-    (hnp : ¬ PreLen fold (L s₀)) (hlt : L s₀ < 512)
-    (hst : stateAt s.mem (off (cx s₀) 64) = initState (K s₀) 0 (N s₀))
-    {key msg : List Byte} (hrep : Repr s.mem (off (cx s₀) 448) key msg) :
-    WP isa (.block whole) s₂ (Mid fold s₀ s key msg 0 0) := by
-  refine WP.mono (whole_ok s₂) fun s₃ ⟨rbx₃, rbp₃, g₃, rd₃, wr₃, m₃⟩ => ?_
-  obtain z : dp s₀ + BitVec.ofNat 64 0 = dp s₀ := by simp
-  refine ⟨by rw [g₃ _ (by decide) (by decide), ha.rdi], by rw [g₃ _ (by decide) (by decide), ha.rcx],
-    by rw [g₃ _ (by decide) (by decide), ha.rsi, z], by rw [g₃ _ (by decide) (by decide), ha.rdx, Nat.sub_zero],
-    by rw [rbx₃, ha.r14, z], by rw [rbp₃, ha.r13, Nat.sub_zero], fun r hr => ?_, by rw [rd₃, ha.rd],
-    by rw [wr₃, ha.wr], rfl, by omega_arith, rfl, Nat.zero_le _, Nat.le_refl _, rfl,
-    by simp only [aOf, PreLen] at hnp ⊢; rw [ite_eq_right (by omega_arith), ite_eq_right (by omega_arith), ite_eq_right (by omega_arith)]; omega_arith,
-    ?_, fun k hk => ?_, ?_, ?_⟩
-  · rw [g₃ r (by rcases hr with rfl | rfl | rfl | rfl <;> decide) (by rcases hr with rfl | rfl | rfl | rfl <;> decide),
-      ha.keep r hr]
-  · rw [m₃, ha.mem, stateAt_ctr, hst, set12_initState, Nat.zero_div, VG.Proof.ChaCha20.ctr_zero]
-  · rw [m₃, ha.mem, args_data hp _ hk, ite_eq_right (Nat.not_lt_zero _)]
-  · rw [m₃, ha.mem]
-    exact (args_frame s₀ _).sub fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr
-      exact ⟨sub s₀ 64 512, by simp, sub_sub s₀ (by lit_omega) (by lit_omega) (by lit_omega)⟩
-  · rw [show bytesAt s₃.mem (dp s₀) 0 = [] from rfl, List.append_nil, m₃, ha.mem]
-    exact args_repr hrep
-
 /-- After `bulk` ended by `tailS`: the data encrypted, its whole chunks
 absorbed, and nothing left to encrypt. -/
 structure DoneT (fold : Nat) (s₀ s : State) (key msg : List Byte) (s' : State) : Prop where
@@ -732,7 +707,7 @@ theorem cryptIte_ok (v : Proof.ChaCha20.X86_64.XorImpl) (hv : v.poly = .avx2) {s
         · rw [g₃, cs₂ r (by rcases hr with rfl | rfl | rfl | rfl <;> simp [calleeSaved])]
       refine WP.ite (decide (L s₀ < 512)) (by simp [eval, cf₄]) (fun hc' => ?_) (fun hc' => ?_)
       · simp only [decide_eq_true_eq] at hc'
-        exact WP.mono (whole_mid hp ha hnp hc' hst₃ hrep₃) fun s₄ hm₄ => .inl ⟨0, 0, hm₄⟩
+        exact (hnp (preLen_of_lt_chunk hc')).elim
       · simp only [decide_eq_false_iff_not] at hc'
         exact bulk_mid _ hp (by rw [wr₃, wr₂, h₁.wr]) ha (by omega_arith) hnp (by omega_arith) hst₃ hrep₃
     · -- 448: those by `cryptPre`, the rest by `bulkP` or `tailS`.

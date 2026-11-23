@@ -236,11 +236,15 @@ def storeP : List Instr :=
    .alu .add .ebx (imm 8), .store (at_ .ebp ptrOff) .ebx, .alu .sub .edx (imm 1),
    .store (at_ .ebp cntOff) .edx]
 
-/-- The first nine encryptions replace the P-array, a pair of entries each. -/
-def encryptP : Prog isa :=
+/-- The first nine encryptions, by the block function `blk` (the halves at
+`ebp + 16` and `ebp + 20` encrypted under the schedule whose address is at
+`esp + 12`), replace the P-array, a pair of entries each. -/
+def encryptPWith (blk : Prog isa) : Prog isa :=
   .seq (.block [.mov .ebx (.mem (at_ .esp 12)), .alu .add .ebx (imm pOff), .store (at_ .ebp ptrOff) .ebx,
       .mov .ecx (imm 9), .store (at_ .ebp cntOff) .ecx])
-    (.loop (.seq (cipher 12 true) (.block storeP)) .ne)
+    (.loop (.seq blk (.block storeP)) .ne)
+
+def encryptP : Prog isa := encryptPWith (cipher 12 true)
 
 /-- The bytes of the word in `eax` into the planes of the S-box entry at
 `ebx + e`. -/
@@ -259,15 +263,20 @@ def storeS : Prog isa :=
       (.block [.store (at_ .ebp ptrOff) .ebx, .alu .sub .edx (imm 1), .store (at_ .ebp cntOff) .edx]))
 
 /-- The other 512 replace the S-boxes. -/
-def encryptS : Prog isa :=
+def encryptSWith (blk : Prog isa) : Prog isa :=
   .seq (.block [.mov .ebx (.mem (at_ .esp 12)), .store (at_ .ebp ptrOff) .ebx, .mov .ecx (imm 512),
       .store (at_ .ebp cntOff) .ecx])
-    (.loop (.seq (cipher 12 true) storeS) .ne)
+    (.loop (.seq blk storeS) .ne)
 
-def expandKey : Prog isa :=
+def encryptS : Prog isa := encryptSWith (cipher 12 true)
+
+/-- Key expansion with the block function `blk` for its 521 encryptions. -/
+def expandKeyWith (blk : Prog isa) : Prog isa :=
   .seq (.block (save ++ initSchedule))
     (.seq keyP
       (.seq (.block [.mov .eax (imm 0), .store (at_ .ebp xlOff) .eax, .store (at_ .ebp xrOff) .eax])
-        (.seq encryptP (.seq encryptS (.block restore)))))
+        (.seq (encryptPWith blk) (.seq (encryptSWith blk) (.block restore)))))
+
+def expandKey : Prog isa := expandKeyWith (cipher 12 true)
 
 end VG.Impl.Blowfish.X86

@@ -182,6 +182,11 @@ structure Cfg where
   and `k^(n-2)` (`invFn`), which every function calls (`pPow`, `nPow`);
   else they run them inline. -/
   inverse : Option Impl.Weierstrass.Inverse.Curve := none
+  /-- With `inverse`, for four words: whether the inversions are calls of the
+  functions that every such curve shares, `vg_inv4_mod_p` and `vg_inv4_mod_n`
+  (`InvCfg.seed`), which read their modulus's constants where the call stores
+  them (`invConsts`), rather than of the curve's own. -/
+  inv4 : Bool := false
   /-- The curve whose function `vg_<curve>_check_point`
   (`Proof/Weierstrass/CheckPointContract.lean`) checks the public point and selects
   the point ECDH and verification multiply (`Ecdh.X86_64.Cfg.check`); else
@@ -202,6 +207,11 @@ structure Cfg where
   call of `vg_<curve>_ecdh_table` (with `fnSuffix`, `Ecdh.X86_64.Cfg.tableFn`),
   which the curve's ECDH functions with the same layout share. -/
   ecdhTable : Bool := false
+  /-- Whether the parts of joint verification (`Verify.X86_64.Cfg.jointVerifyWith`) that
+  call nothing and are the same for every way of computing the points are calls of
+  functions, `vg_ecdsa_<curve>_verify_<part>` (with `fnSuffix`, `Verify.X86_64.Cfg.shareV`),
+  which the curve's verification functions with the same configuration share. -/
+  verifyShared : Bool := false
   /-- Whether `x = X Z⁻¹` out of Montgomery form, the first two products of
   the public key's, ECDH's and the signature's tails, is a call of one
   function, `vg_<curve>_affine_x` (`affineX`, named after `inverse`'s curve),
@@ -340,6 +350,19 @@ def powN : PowCfg := ⟨c.MN', c.sl ACC, c.sl PT, c.sl KM, c.sl ONEN, bitsAt c.n
 def invP : InvCfg := .ofMod c.MP' (c.sl ACC) (c.sl RZ) (bitsAt c.n 3) c.C.p
 def invN : InvCfg := .ofMod c.MN' (c.sl ACC) (c.sl KM) (bitsAt c.n 3) c.C.n
 
+/-- The inversions that four-word curves share (`inv4`): their constants, the
+seed and `-m⁻¹ mod 2⁶⁴`, in `PT`'s and `TMP`'s slots, which they do not
+otherwise use. -/
+def invPS : InvCfg := .ofModS c.MP' (c.sl ACC) (c.sl RZ) (bitsAt c.n 3) c.C.p (c.sl PT) (c.sl TMP)
+def invNS : InvCfg := .ofModS c.MN' (c.sl ACC) (c.sl KM) (bitsAt c.n 3) c.C.n (c.sl PT) (c.sl TMP)
+
+/-- The stores of a shared inversion's constants: `-m⁻¹ mod 2⁶⁴` of `M` in
+`TMP`'s slot and the `n` words of `seed` in `PT`'s, through `rax`. -/
+def invConsts (M : Mod) (seed : Nat) : List Instr :=
+  [.movImm64 .rax M.minv, .store (sc (c.sl TMP)) .rax] ++
+  (List.range c.n).flatMap fun i =>
+    [.movImm64 .rax (BitVec.ofNat 64 (seed >>> (64 * i))), .store (sc (c.sl PT + 8 * i)) .rax]
+
 /-- The window method's digits, for scalars below `2^nbits` (ECDH's `d`
 reduced by `maskK`, or verification's `v < n`): `⌈(nbits + 2) / 4⌉`, enough
 for the recoding's carry; `2 len + 1` when `nbits = 8 len`. -/
@@ -420,11 +443,17 @@ def nSuffix : String := if c.n = 9 then "" else c.fnSuffix
 `_n` (`invFn`), else inline (`pPowI`, `nPowI`). -/
 def pPow : Prog isa :=
   match c.inverse with
-  | some C => .call (s!"vg_{C.curve}_inv_mod_p" ++ c.fnSuffix) (c.invFn c.pPowI)
+  | some C =>
+    if c.inv4 then
+      .seq (.block (c.invConsts c.MP' (c.invPS.seedOf c.C.p))) (.call "vg_inv4_mod_p" (c.invFn (InvCfg.inv c.invPS)))
+    else .call (s!"vg_{C.curve}_inv_mod_p" ++ c.fnSuffix) (c.invFn c.pPowI)
   | none => c.pPowI
 def nPow : Prog isa :=
   match c.inverse with
-  | some C => .call (s!"vg_{C.curve}_inv_mod_n" ++ c.nSuffix) (c.invFn c.nPowI)
+  | some C =>
+    if c.inv4 then
+      .seq (.block (c.invConsts c.MN' (c.invNS.seedOf c.C.n))) (.call "vg_inv4_mod_n" (c.invFn (InvCfg.inv c.invNS)))
+    else .call (s!"vg_{C.curve}_inv_mod_n" ++ c.nSuffix) (c.invFn c.nPowI)
   | none => c.nPowI
 
 /-- The constants, and `R = (0 : 1 : 0)`: slots and values. -/

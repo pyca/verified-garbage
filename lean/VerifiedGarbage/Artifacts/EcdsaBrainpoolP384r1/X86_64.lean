@@ -106,7 +106,7 @@ open VG.Proof.BrainpoolP384r1.X86_64 (hasLaw)
 
 def artifacts : List Artifact := [
   Spec.Ecdsa.BrainpoolP384r1.verifyHashApi.artifact X86_64.target
-    { code := Impl.Ecdsa.X86_64.VerifyHash.Fn.verifyHash Spec.Ecdsa.BrainpoolP384r1.inst.curve.len false Impl.Ecdsa.Verify.X86_64.verifyBrainpoolP384r1
+    { code := Impl.Ecdsa.X86_64.VerifyHash.Fn.verifyHash Spec.Ecdsa.BrainpoolP384r1.inst.curve.len false Impl.Ecdsa.Verify.X86_64.verifyBrainpoolP384r1 104
       verified := Proof.Ecdsa.Verify.X86_64.BrainpoolP384r1.verifyHash_scrubbed hasLaw.law hasLaw.inv
       spSafe := Proof.Ecdsa.Verify.X86_64.BrainpoolP384r1.verifyHash_spSafe }] ++
   Rfc6979.artifacts

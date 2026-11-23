@@ -335,7 +335,7 @@ theorem expandKey_ok (s : State) (hs : keyC.pre s) :
     ∃ t s', Exec isa Impl.Blowfish.X86.expandKey s t s' ∧ abiPreserved s s' ∧ keyC.post s s' := by
   obtain ⟨hrd, hwr, ks, kb, sb, as, ab, rs, rb, fKey, fSch, fBuf, fsp, valid⟩ := hs
   obtain ⟨t, s', he, ha, hp⟩ :=
-    expandKey_correct ⟨hrd, hwr, ks, kb, sb, as, ab, rs, rb, fKey, fSch, fBuf, fsp, valid⟩
+    expandKey_correct ⟨hrd, hwr, ks, kb, sb, as, ab, rs, rb, fKey, fSch, fBuf, fsp, valid, Nat.le_refl 64⟩
   exact ⟨t, s', he, ha, hp⟩
 
 /-- The initial taint of key expansion: the stack pointer, and the schedule
