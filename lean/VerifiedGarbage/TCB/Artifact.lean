@@ -48,6 +48,11 @@ structure Contract (M : ISA) where
   /-- When two entry states agree on everything public (e.g. lengths and
   pointers, but not keys or plaintexts). -/
   pub : M.State → M.State → Prop
+  /-- What the calling convention requires of the whole result register on
+  return, beyond the result's bits (`Abi.retExt` of the result's type, which
+  `Sig.contract` gives): `some f` if it must be `f` of itself, `none` if
+  the convention requires nothing more, or the function has no result. -/
+  retExt : Option (BitVec 64 → BitVec 64) := none
 
 /-- A code-generation target: an ISA model and its calling convention. What
 only the emitter reads of it (its printer, its Rust `cfg` and ABI string, and
@@ -101,7 +106,11 @@ entry (e.g. the sequence of table indices an algorithm reads, when the
 algorithm itself makes them depend on secrets). It is added to the public
 data, so two runs need identical leakage traces only if they agree on it:
 the function may reveal it through its timing, and nothing else secret.
-Every contract without `leak` is constant time in the usual sense. -/
+Every contract without `leak` is constant time in the usual sense.
+
+`post` sees only the result's own bits (`setWidth`); what the calling
+convention requires of the rest of the result register is `retExt`, the
+convention's `Abi.retExt` for the result's type. -/
 def Sig.contract {M : ISA} (A : Abi M) (sig : Sig)
     (pre : Curry (sig.words A.ptrBits) (Mem → Prop) := Curry.const (fun _ => True) _)
     (post : sig.Post A.ptrBits) (writeArgs : Bool := false) (stack : Nat := 0)
@@ -139,7 +148,8 @@ def Sig.contract {M : ISA} (A : Abi M) (sig : Sig)
           ((vals s₁).getD i 0).setWidth (widths.getD i 64) =
             ((vals s₂).getD i 0).setWidth (widths.getD i 64)) ∧
         ∀ r ∈ Sig.descs A.ptrBits sig.params (vals s₁), ∀ i < r.len,
-          A.mem s₁ (r.base + BitVec.ofNat 64 i) = A.mem s₂ (r.base + BitVec.ofNat 64 i) }
+          A.mem s₁ (r.base + BitVec.ofNat 64 i) = A.mem s₂ (r.base + BitVec.ofNat 64 i)
+    retExt := sig.ret.bind A.retExt }
 
 /-- The proof obligation for emitting `c` on target `T` with contract `k`. -/
 def Verified (T : Target) (c : Prog T.isa) (k : Contract T.isa) : Prop :=

@@ -114,6 +114,14 @@ def abi : Abi isa where
   rd s := s.rd
   wr s := s.wr
   ret s := s.gpr .rax
+  -- System V AMD64 psABI §3.2.3 ("Returning of Values"): an INTEGER-class
+  -- result is returned in `rax`, and the only extension the classification
+  -- states is `_Bool`'s ("Other bits are left unspecified"): a `u32`
+  -- leaves the upper half of `rax` unspecified.
+  retExt
+    | .u32 => none
+    | .u64 => none
+    | .usize => none
   sym := some fun s name => s.syms name
 
 /-- Reducible, as an `abbrev` would be, but not inlined: an `abbrev` is compiled into

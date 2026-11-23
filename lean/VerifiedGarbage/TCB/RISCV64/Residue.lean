@@ -17,7 +17,7 @@ no condition flags.
 two runs of `c` from states that satisfy `k.pre`, agree on what `k.pub` says
 is public, and agree on everything outside the buffers (`Outside 0`), end in
 states that agree on everything outside the buffers but the result
-(`Outside retBits`). What the function leaves there is therefore a function
+(`Outside retBits`, or `RetOutside`, below). What the function leaves there is therefore a function
 of what its caller left there and of public data, and of nothing else: not
 of the contents of its buffers that are not public. It is the same whether
 the function clears a location or leaves in it what was there on entry, so
@@ -32,7 +32,11 @@ registers (`s0`–`s11` and `sp`), and `ra`, which holds the return address,
 are what they were on entry (`abiPreserved`), so the two runs agree on them
 anyway. The integer result is in `a0` ("Values are returned in the same
 manner as a first named argument of the same type would be passed"), whose
-low `retBits` bits only may differ.
+low `retBits` bits only may differ, or, where the calling convention fixes
+the rest of `a0` as a function of the result (`k.retExt`, from
+`Abi.retExt`: a `u32` is sign-extended from bit 31), all of it if both runs
+leave it as that function gives it (`RetOutside`): the bits above the result
+are then a function of the result, which the caller receives anyway.
 
 What was there on entry (all of the registers, and the memory outside the
 buffers) is taken as given: a secret the caller passed in a register, or
@@ -66,11 +70,20 @@ def Outside (retBits : Nat) (s₁ s₂ : State) : Prop :=
   s₁.sp = s₂.sp ∧
   ∀ x, (∀ r ∈ s₁.rd ++ s₁.wr, ¬ r.Contains x 1) → s₁.mem x = s₂.mem x
 
+/-- Two states on return agree on everything outside the buffers but a
+result of `retBits` bits (`Outside retBits`), or on everything but `a0`
+(`Outside 64`) and both leave `a0` as the calling convention requires it of
+a result (`k.retExt`), a function of the result's bits. -/
+def RetOutside (k : Contract isa) (retBits : Nat) (s₁ s₂ : State) : Prop :=
+  Outside retBits s₁ s₂ ∨
+    Outside 64 s₁ s₂ ∧ ∃ f, k.retExt = some f ∧ s₁.gpr .a0 = f (s₁.gpr .a0) ∧
+      s₂.gpr .a0 = f (s₂.gpr .a0)
+
 /-- `c`, with contract `k` and a result of `retBits` bits, returns without
 secret residue (see the module docs). -/
 def NoResidue (c : Prog isa) (k : Contract isa) (retBits : Nat) : Prop :=
   ∀ s₁ s₂ t₁ t₂ s₁' s₂', k.pre s₁ → k.pre s₂ → k.pub s₁ s₂ → Outside 0 s₁ s₂ →
     s₁.unknowns = s₂.unknowns →
-    Exec isa c s₁ t₁ s₁' → Exec isa c s₂ t₂ s₂' → Outside retBits s₁' s₂'
+    Exec isa c s₁ t₁ s₁' → Exec isa c s₂ t₂ s₂' → RetOutside k retBits s₁' s₂'
 
 end VG.RISCV64

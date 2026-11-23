@@ -168,7 +168,7 @@ theorem noResidue_of_blind {c : Prog isa} (hc : c.plainAll blind = true) (k : Co
         obtain ⟨he, -⟩ := h
         rw [he]
         exact (eval_withMS c s₁ _ _).symm) hc
-  exact outside_of_off (hrel _ _ _ _ _ _ (off_of_outside ho hu) e₁ e₂).2 r
+  exact .inl (outside_of_off (hrel _ _ _ _ _ _ (off_of_outside ho hu) e₁ e₂).2 r)
 
 end Residue
 

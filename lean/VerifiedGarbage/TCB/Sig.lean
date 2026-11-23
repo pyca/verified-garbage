@@ -204,6 +204,15 @@ structure Abi (M : ISA) where
   /-- The register(s) an integer result is returned in, as 64 bits: a
   narrower result is in the low bits. -/
   ret : M.State → BitVec 64
+  /-- What the convention requires of the register(s) `ret` reads for a
+  result of each type, beyond the result's own bits: `some f` if it fixes
+  every bit, as `f` of the register's value, `f` depending only on the
+  result's bits (`IntTy.bits`; e.g. its sign- or zero-extension); `none` if
+  it leaves the other bits unspecified, or there are none. A compiled
+  caller may rely on what it fixes, so a function must return the register
+  as `f` gives it (`Sig.contract`, `Contract.retExt`). Each target states it
+  for every type, citing its convention. -/
+  retExt : IntTy → Option (BitVec 64 → BitVec 64)
   /-- The address of each `static` the code can name, by name
   (`Artifact.consts`), on a target whose code can name one; `none` on the
   others. -/
