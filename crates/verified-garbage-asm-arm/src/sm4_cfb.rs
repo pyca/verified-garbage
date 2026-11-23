@@ -57,8 +57,6 @@ cmp r7, #0
 beq 20f
 22:
 mov r11, #1
-mov r9, r9
-mov r9, r9
 ldr r9, [r8, #1492]
 str r9, [r8, #256]
 ldr r9, [r8, #1496]
@@ -408,7 +406,6 @@ b 24f
 23:
 mov r11, #8
 24:
-mov r9, r9
 ldr r9, [r8, #1492]
 str r9, [r8, #256]
 ldr r9, [r8, #1496]

@@ -43,8 +43,6 @@ vg_sm4_cfb128_encrypt:
 	beq 20f
 22:
 	mov r11, #1
-	mov r9, r9
-	mov r9, r9
 	ldr r9, [r8, #1492]
 	str r9, [r8, #256]
 	ldr r9, [r8, #1496]
@@ -375,7 +373,6 @@ vg_sm4_cfb128_decrypt:
 23:
 	mov r11, #8
 24:
-	mov r9, r9
 	ldr r9, [r8, #1492]
 	str r9, [r8, #256]
 	ldr r9, [r8, #1496]
