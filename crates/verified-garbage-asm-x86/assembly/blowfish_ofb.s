@@ -4,6 +4,137 @@
 // `src/` as its machine code, which `lean/VerifiedGarbage/TCB/<ISA>/Encode.lean`
 // gives.
 
+vg_blowfish_ofb_ssse3:
+	lea esp, [esp-448]
+	mov eax, DWORD PTR [esp+452]
+	mov DWORD PTR [esp+4], eax
+	mov eax, DWORD PTR [esp+456]
+	mov DWORD PTR [esp+8], eax
+	mov eax, DWORD PTR [esp+460]
+	mov DWORD PTR [esp+12], eax
+	mov eax, DWORD PTR [esp+464]
+	mov DWORD PTR [esp+16], eax
+	mov eax, esp
+	add eax, 24
+	mov DWORD PTR [esp+20], eax
+	mov eax, DWORD PTR [esp+20]
+	mov DWORD PTR [eax+384], ebx
+	mov DWORD PTR [eax+388], esi
+	mov DWORD PTR [eax+392], edi
+	mov DWORD PTR [eax+396], ebp
+	mov edi, eax
+	mov esi, DWORD PTR [esp+8]
+	mov eax, DWORD PTR [esi]
+	mov DWORD PTR [edi+408], eax
+	mov eax, DWORD PTR [esi+4]
+	mov DWORD PTR [edi+412], eax
+	mov eax, DWORD PTR [esp+12]
+	mov DWORD PTR [edi+400], eax
+	mov eax, DWORD PTR [esp+16]
+	mov DWORD PTR [edi+404], eax
+	test eax, eax
+	je 20f
+22:
+	mov esi, DWORD PTR [edi+400]
+	mov ebp, DWORD PTR [edi+404]
+	mov eax, DWORD PTR [edi+408]
+	mov DWORD PTR [edi+8], eax
+	mov eax, DWORD PTR [edi+412]
+	mov DWORD PTR [edi+12], eax
+	mov esi, DWORD PTR [esp+4]
+	mov edx, DWORD PTR [edi+8]
+	bswap edx
+	mov ebp, DWORD PTR [edi+12]
+	bswap ebp
+	call {vg_blowfish_encrypt_block_ssse3}
+	bswap ecx
+	bswap edx
+	mov DWORD PTR [edi+8], ecx
+	mov DWORD PTR [edi+12], edx
+	mov esi, DWORD PTR [edi+400]
+	mov ebp, DWORD PTR [edi+404]
+	mov eax, DWORD PTR [edi+8]
+	mov DWORD PTR [edi+408], eax
+	mov eax, DWORD PTR [edi+12]
+	mov DWORD PTR [edi+412], eax
+	mov eax, DWORD PTR [esi]
+	xor eax, DWORD PTR [edi+8]
+	mov DWORD PTR [esi], eax
+	mov eax, DWORD PTR [esi+4]
+	xor eax, DWORD PTR [edi+12]
+	mov DWORD PTR [esi+4], eax
+	add esi, 8
+	sub ebp, 1
+	mov DWORD PTR [edi+400], esi
+	mov DWORD PTR [edi+404], ebp
+	jne 22b
+	jmp 21f
+20:
+21:
+	mov esi, DWORD PTR [esp+8]
+	mov eax, DWORD PTR [edi+408]
+	mov DWORD PTR [esi], eax
+	mov eax, DWORD PTR [edi+412]
+	mov DWORD PTR [esi+4], eax
+	mov ebx, DWORD PTR [edi+384]
+	mov esi, DWORD PTR [edi+388]
+	mov ebp, DWORD PTR [edi+396]
+	mov edi, DWORD PTR [edi+392]
+	pxor xmm0, xmm0
+	mov ecx, 0
+	movdqu XMMWORD PTR [esp+24], xmm0
+	movdqu XMMWORD PTR [esp+40], xmm0
+	movdqu XMMWORD PTR [esp+56], xmm0
+	movdqu XMMWORD PTR [esp+72], xmm0
+	movdqu XMMWORD PTR [esp+88], xmm0
+	movdqu XMMWORD PTR [esp+104], xmm0
+	movdqu XMMWORD PTR [esp+120], xmm0
+	movdqu XMMWORD PTR [esp+136], xmm0
+	movdqu XMMWORD PTR [esp+152], xmm0
+	movdqu XMMWORD PTR [esp+168], xmm0
+	movdqu XMMWORD PTR [esp+184], xmm0
+	movdqu XMMWORD PTR [esp+200], xmm0
+	movdqu XMMWORD PTR [esp+216], xmm0
+	movdqu XMMWORD PTR [esp+232], xmm0
+	movdqu XMMWORD PTR [esp+248], xmm0
+	movdqu XMMWORD PTR [esp+264], xmm0
+	movdqu XMMWORD PTR [esp+280], xmm0
+	movdqu XMMWORD PTR [esp+296], xmm0
+	movdqu XMMWORD PTR [esp+312], xmm0
+	movdqu XMMWORD PTR [esp+328], xmm0
+	movdqu XMMWORD PTR [esp+344], xmm0
+	movdqu XMMWORD PTR [esp+360], xmm0
+	movdqu XMMWORD PTR [esp+376], xmm0
+	movdqu XMMWORD PTR [esp+392], xmm0
+	movdqu XMMWORD PTR [esp+408], xmm0
+	movdqu XMMWORD PTR [esp+424], xmm0
+	mov DWORD PTR [esp+440], ecx
+	mov DWORD PTR [esp+444], ecx
+	lea esp, [esp+448]
+	lea esp, [esp-456]
+	mov ecx, 0
+	mov DWORD PTR [esp+4], ecx
+	mov DWORD PTR [esp+8], ecx
+	mov DWORD PTR [esp+12], ecx
+	mov DWORD PTR [esp+16], ecx
+	mov DWORD PTR [esp+20], ecx
+	mov DWORD PTR [esp+24], ecx
+	mov DWORD PTR [esp+28], ecx
+	lea esp, [esp+456]
+	mov eax, 0
+	mov edx, 0
+	xor ecx, ecx
+	pxor xmm0, xmm0
+	pxor xmm1, xmm1
+	pxor xmm2, xmm2
+	pxor xmm3, xmm3
+	pxor xmm4, xmm4
+	pxor xmm5, xmm5
+	pxor xmm6, xmm6
+	pxor xmm7, xmm7
+	ret
+	.p2align 6
+
 vg_blowfish_ofb:
 	lea esp, [esp-112]
 	mov eax, DWORD PTR [esp+116]
@@ -412,6 +543,159 @@ vg_blowfish_ofb:
 	mov DWORD PTR [esp+16], ecx
 	mov DWORD PTR [esp+20], ecx
 	lea esp, [esp+112]
+	mov eax, 0
+	mov edx, 0
+	xor ecx, ecx
+	pxor xmm0, xmm0
+	pxor xmm1, xmm1
+	pxor xmm2, xmm2
+	pxor xmm3, xmm3
+	pxor xmm4, xmm4
+	pxor xmm5, xmm5
+	pxor xmm6, xmm6
+	pxor xmm7, xmm7
+	ret
+	.p2align 6
+
+vg_blowfish_ofb_final_ssse3:
+	lea esp, [esp-448]
+	mov eax, DWORD PTR [esp+452]
+	mov DWORD PTR [esp+4], eax
+	mov eax, DWORD PTR [esp+456]
+	mov DWORD PTR [esp+8], eax
+	mov eax, DWORD PTR [esp+460]
+	mov DWORD PTR [esp+12], eax
+	mov eax, DWORD PTR [esp+464]
+	mov DWORD PTR [esp+16], eax
+	mov eax, esp
+	add eax, 24
+	mov DWORD PTR [esp+20], eax
+	mov eax, DWORD PTR [esp+20]
+	mov DWORD PTR [eax+384], ebx
+	mov DWORD PTR [eax+388], esi
+	mov DWORD PTR [eax+392], edi
+	mov DWORD PTR [eax+396], ebp
+	mov edi, eax
+	mov esi, DWORD PTR [esp+8]
+	mov eax, DWORD PTR [esi]
+	mov DWORD PTR [edi+408], eax
+	mov eax, DWORD PTR [esi+4]
+	mov DWORD PTR [edi+412], eax
+	mov eax, DWORD PTR [esp+12]
+	mov DWORD PTR [edi+400], eax
+	mov eax, DWORD PTR [esp+16]
+	mov DWORD PTR [edi+404], eax
+	test eax, eax
+	je 20f
+22:
+	mov esi, DWORD PTR [edi+400]
+	mov ebp, DWORD PTR [edi+404]
+	mov eax, DWORD PTR [edi+408]
+	mov DWORD PTR [edi+8], eax
+	mov eax, DWORD PTR [edi+412]
+	mov DWORD PTR [edi+12], eax
+	mov esi, DWORD PTR [esp+4]
+	mov edx, DWORD PTR [edi+8]
+	bswap edx
+	mov ebp, DWORD PTR [edi+12]
+	bswap ebp
+	call {vg_blowfish_encrypt_block_ssse3}
+	bswap ecx
+	bswap edx
+	mov DWORD PTR [edi+8], ecx
+	mov DWORD PTR [edi+12], edx
+	mov esi, DWORD PTR [edi+400]
+	mov ebp, DWORD PTR [edi+404]
+	cmp ebp, 8
+	jb 23f
+	mov eax, DWORD PTR [edi+8]
+	mov DWORD PTR [edi+408], eax
+	mov eax, DWORD PTR [edi+12]
+	mov DWORD PTR [edi+412], eax
+	mov eax, DWORD PTR [esi]
+	xor eax, DWORD PTR [edi+8]
+	mov DWORD PTR [esi], eax
+	mov eax, DWORD PTR [esi+4]
+	xor eax, DWORD PTR [edi+12]
+	mov DWORD PTR [esi+4], eax
+	add esi, 8
+	sub ebp, 8
+	mov DWORD PTR [edi+400], esi
+	mov DWORD PTR [edi+404], ebp
+	jmp 24f
+23:
+	mov eax, DWORD PTR [edi+8]
+	mov DWORD PTR [edi+408], eax
+	mov eax, DWORD PTR [edi+12]
+	mov DWORD PTR [edi+412], eax
+	mov ebx, edi
+	add ebx, 8
+25:
+	movzx eax, BYTE PTR [ebx]
+	movzx ecx, BYTE PTR [esi]
+	xor ecx, eax
+	mov BYTE PTR [esi], cl
+	add ebx, 1
+	add esi, 1
+	sub ebp, 1
+	jne 25b
+	mov DWORD PTR [edi+400], esi
+	mov DWORD PTR [edi+404], ebp
+24:
+	jne 22b
+	jmp 21f
+20:
+21:
+	mov esi, DWORD PTR [esp+8]
+	mov eax, DWORD PTR [edi+408]
+	mov DWORD PTR [esi], eax
+	mov eax, DWORD PTR [edi+412]
+	mov DWORD PTR [esi+4], eax
+	mov ebx, DWORD PTR [edi+384]
+	mov esi, DWORD PTR [edi+388]
+	mov ebp, DWORD PTR [edi+396]
+	mov edi, DWORD PTR [edi+392]
+	pxor xmm0, xmm0
+	mov ecx, 0
+	movdqu XMMWORD PTR [esp+24], xmm0
+	movdqu XMMWORD PTR [esp+40], xmm0
+	movdqu XMMWORD PTR [esp+56], xmm0
+	movdqu XMMWORD PTR [esp+72], xmm0
+	movdqu XMMWORD PTR [esp+88], xmm0
+	movdqu XMMWORD PTR [esp+104], xmm0
+	movdqu XMMWORD PTR [esp+120], xmm0
+	movdqu XMMWORD PTR [esp+136], xmm0
+	movdqu XMMWORD PTR [esp+152], xmm0
+	movdqu XMMWORD PTR [esp+168], xmm0
+	movdqu XMMWORD PTR [esp+184], xmm0
+	movdqu XMMWORD PTR [esp+200], xmm0
+	movdqu XMMWORD PTR [esp+216], xmm0
+	movdqu XMMWORD PTR [esp+232], xmm0
+	movdqu XMMWORD PTR [esp+248], xmm0
+	movdqu XMMWORD PTR [esp+264], xmm0
+	movdqu XMMWORD PTR [esp+280], xmm0
+	movdqu XMMWORD PTR [esp+296], xmm0
+	movdqu XMMWORD PTR [esp+312], xmm0
+	movdqu XMMWORD PTR [esp+328], xmm0
+	movdqu XMMWORD PTR [esp+344], xmm0
+	movdqu XMMWORD PTR [esp+360], xmm0
+	movdqu XMMWORD PTR [esp+376], xmm0
+	movdqu XMMWORD PTR [esp+392], xmm0
+	movdqu XMMWORD PTR [esp+408], xmm0
+	movdqu XMMWORD PTR [esp+424], xmm0
+	mov DWORD PTR [esp+440], ecx
+	mov DWORD PTR [esp+444], ecx
+	lea esp, [esp+448]
+	lea esp, [esp-456]
+	mov ecx, 0
+	mov DWORD PTR [esp+4], ecx
+	mov DWORD PTR [esp+8], ecx
+	mov DWORD PTR [esp+12], ecx
+	mov DWORD PTR [esp+16], ecx
+	mov DWORD PTR [esp+20], ecx
+	mov DWORD PTR [esp+24], ecx
+	mov DWORD PTR [esp+28], ecx
+	lea esp, [esp+456]
 	mov eax, 0
 	mov edx, 0
 	xor ecx, ecx
