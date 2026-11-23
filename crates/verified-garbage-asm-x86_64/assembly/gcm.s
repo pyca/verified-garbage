@@ -4729,7 +4729,8 @@ vg_aes_gcm_seal_prepared_vaes_vpclmul_avx512:
 	mov rax, r15
 	add rax, 448
 	push rax
-	call {vg_aes_gcm_encrypt_blocks_prepared_vaes_vpclmul_avx512}
+	mov r10, r8
+	call {vg_aes_gcm_seal_blocks_prepared_vaes_vpclmul_avx512}
 	pop rax
 	mov rax, QWORD PTR [r15+208]
 	mov rcx, rax
@@ -5167,7 +5168,8 @@ vg_aes_gcm_seal_prepared_vaes_vpclmul_avx512:
 	mov rax, r15
 	add rax, 448
 	push rax
-	call {vg_aes_gcm_encrypt_blocks_prepared_vaes_vpclmul_avx512}
+	mov r10, r8
+	call {vg_aes_gcm_seal_blocks_prepared_vaes_vpclmul_avx512}
 	pop rax
 	mov rax, QWORD PTR [r15+208]
 	mov rcx, rax
@@ -11428,12 +11430,9 @@ vg_aes_gcm_seal_gather_prepared_vaes_vpclmul_avx512:
 	add rcx, 16
 	mov rax, r15
 	add rax, 448
+	mov r10, r11
 	push rax
-	push r10
-	push r11
-	call {vg_aes_gcm_encrypt_blocks_to_prepared_vaes_vpclmul_avx512}
-	pop rax
-	pop rax
+	call {vg_aes_gcm_seal_blocks_prepared_vaes_vpclmul_avx512}
 	pop rax
 	jmp 251f
 250:
@@ -11851,12 +11850,9 @@ vg_aes_gcm_seal_gather_prepared_vaes_vpclmul_avx512:
 	mov r11, QWORD PTR [r15+200]
 	mov rax, r15
 	add rax, 448
+	mov r10, r11
 	push rax
-	push r10
-	push r11
-	call {vg_aes_gcm_encrypt_blocks_to_prepared_vaes_vpclmul_avx512}
-	pop rax
-	pop rax
+	call {vg_aes_gcm_seal_blocks_prepared_vaes_vpclmul_avx512}
 	pop rax
 	jmp 276f
 275:
@@ -12887,7 +12883,8 @@ vg_aes_gcm_seal_prepared_vaes_vpclmul:
 	mov rax, r15
 	add rax, 448
 	push rax
-	call {vg_aes_gcm_encrypt_blocks_prepared16_vaes_vpclmul}
+	mov r10, r8
+	call {vg_aes_gcm_seal_blocks_prepared16_vaes_vpclmul}
 	pop rax
 	mov rax, QWORD PTR [r15+208]
 	mov rcx, rax
@@ -17709,12 +17706,9 @@ vg_aes_gcm_seal_gather_prepared_vaes_vpclmul:
 	add rcx, 16
 	mov rax, r15
 	add rax, 448
+	mov r10, r11
 	push rax
-	push r10
-	push r11
-	call {vg_aes_gcm_encrypt_blocks_to_prepared16_vaes_vpclmul}
-	pop rax
-	pop rax
+	call {vg_aes_gcm_seal_blocks_prepared16_vaes_vpclmul}
 	pop rax
 	jmp 251f
 250:
@@ -18132,12 +18126,9 @@ vg_aes_gcm_seal_gather_prepared_vaes_vpclmul:
 	mov r11, QWORD PTR [r15+200]
 	mov rax, r15
 	add rax, 448
+	mov r10, r11
 	push rax
-	push r10
-	push r11
-	call {vg_aes_gcm_encrypt_blocks_to_prepared16_vaes_vpclmul}
-	pop rax
-	pop rax
+	call {vg_aes_gcm_seal_blocks_prepared16_vaes_vpclmul}
 	pop rax
 	jmp 276f
 275:
@@ -19374,7 +19365,8 @@ vg_aes_gcm_seal_prepared_aesni_pclmul_avx:
 	mov rax, r15
 	add rax, 448
 	push rax
-	call {vg_aes_gcm_encrypt_blocks_prepared16_aesni_pclmul_avx}
+	mov r10, r8
+	call {vg_aes_gcm_seal_blocks_prepared16_aesni_pclmul_avx}
 	pop rax
 	mov rax, QWORD PTR [r15+208]
 	mov rcx, rax
@@ -19826,7 +19818,8 @@ vg_aes_gcm_seal_prepared_aesni_pclmul_avx:
 	mov rax, r15
 	add rax, 448
 	push rax
-	call {vg_aes_gcm_encrypt_blocks_prepared16_aesni_pclmul_avx}
+	mov r10, r8
+	call {vg_aes_gcm_seal_blocks_prepared16_aesni_pclmul_avx}
 	pop rax
 	mov rax, QWORD PTR [r15+208]
 	mov rcx, rax
@@ -24821,12 +24814,9 @@ vg_aes_gcm_seal_gather_prepared_aesni_pclmul_avx:
 	add rcx, 16
 	mov rax, r15
 	add rax, 448
+	mov r10, r11
 	push rax
-	push r10
-	push r11
-	call {vg_aes_gcm_encrypt_blocks_to_prepared16_aesni_pclmul_avx}
-	pop rax
-	pop rax
+	call {vg_aes_gcm_seal_blocks_prepared16_aesni_pclmul_avx}
 	pop rax
 	jmp 251f
 250:
@@ -25244,12 +25234,9 @@ vg_aes_gcm_seal_gather_prepared_aesni_pclmul_avx:
 	mov r11, QWORD PTR [r15+200]
 	mov rax, r15
 	add rax, 448
+	mov r10, r11
 	push rax
-	push r10
-	push r11
-	call {vg_aes_gcm_encrypt_blocks_to_prepared16_aesni_pclmul_avx}
-	pop rax
-	pop rax
+	call {vg_aes_gcm_seal_blocks_prepared16_aesni_pclmul_avx}
 	pop rax
 	jmp 276f
 275:
