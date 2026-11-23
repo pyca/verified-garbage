@@ -46,6 +46,10 @@ METHODS = (
 CALL = re.compile(r"\.(" + "|".join(METHODS) + r")\s*(?:::\s*<[^>]*>\s*)?\(")
 MARKER = re.compile(r"//\s*NO-SECRET-RESIDUE:\s*\S")
 CFG_TEST = re.compile(r"#\s*\[\s*cfg\s*\(\s*test\s*\)\s*\]")
+RAW_STRING = re.compile(r'b?r(#*)"')
+CHAR = re.compile(r"b?'(\\.[^']*|[^\\'])'")
+# What can start a comment or a literal: everything else is skipped at once.
+START = re.compile(r"""/[/*]|b?r#*"|b?"|b?'""")
 
 
 def code_only(text: str) -> str:
@@ -61,6 +65,10 @@ def code_only(text: str) -> str:
                 out[j] = " "
 
     while i < n:
+        s = START.search(text, i)
+        if s is None:
+            break
+        i = s.start()
         c = text[i]
         if text.startswith("//", i):
             j = text.find("\n", i)
@@ -78,10 +86,10 @@ def code_only(text: str) -> str:
                     j += 1
             blank(i, j)
             i = j
-        elif m := re.match(r'b?r(#*)"', text[i:]):
-            end = text.find('"' + m.group(1), i + m.end())
+        elif m := RAW_STRING.match(text, i):
+            end = text.find('"' + m.group(1), m.end())
             j = n if end < 0 else end + 1 + len(m.group(1))
-            blank(i + m.end(), j - 1 - len(m.group(1)))
+            blank(m.end(), j - 1 - len(m.group(1)))
             i = j
         elif c == '"' or text.startswith('b"', i):
             j = i + (2 if c == "b" else 1)
@@ -89,9 +97,9 @@ def code_only(text: str) -> str:
                 j += 2 if text[j] == "\\" else 1
             blank(i + 1, j)
             i = j + 1
-        elif m := re.match(r"b?'(\\.[^']*|[^\\'])'", text[i:]):
-            blank(i + 1, i + m.end() - 1)
-            i += m.end()
+        elif m := CHAR.match(text, i):
+            blank(m.start() + 1, m.end() - 1)
+            i = m.end()
         else:
             i += 1
     return "".join(out)
