@@ -4,7 +4,10 @@ public import VerifiedGarbage.Proof.Cast5.X86.Scrub
 public import VerifiedGarbage.Impl.Cast5.X86.Fn
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86.Print
+public import VerifiedGarbage.Proof.Cast5.X86.Ssse3Verified
+public import VerifiedGarbage.Impl.Cast5.X86.Ssse3
 import VerifiedGarbage.Proof.Cast5.X86.ModesLit
+import VerifiedGarbage.Proof.Cast5.X86.Ssse3Lit
 
 /-! # CAST5-CBC on x86 -/
 
@@ -13,6 +16,10 @@ import VerifiedGarbage.Proof.Cast5.X86.ModesLit
 namespace VG.Artifacts.Cast5Cbc.X86
 
 def artifacts : List Artifact := [
+  Spec.Cast5.cbcEncryptChainedApi.artifact X86.target {
+    suffix := "_ssse3"
+    code := Impl.Cast5.X86.Ssse3.Fn.cbcEncryptChained
+    verified := Proof.Cast5.X86.Ssse3.cbcEncryptChained_scrubbed },
   Spec.Cast5.cbcEncryptChainedApi.artifact X86.target {
     code := Impl.Cast5.X86.Fn.cbcEncryptChained
     verified := Proof.Cast5.X86.Scrub.cbcEncryptChained_scrubbed },
