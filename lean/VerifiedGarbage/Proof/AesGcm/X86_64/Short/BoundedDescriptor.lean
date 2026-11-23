@@ -37,7 +37,7 @@ theorem boundedGeo (h : Layout M s) (cnt : Cnt s = 1 ∨ Cnt s = 2) :
     · exact Nat.le_of_eq (one_len h c)
     · have eq := two_len h c
       omega
-  have depth : (below (SP s) 24).Sub (below (SP s) 2512) := below_sub (by decide) (by decide)
+  have depth : (below (SP s) 24).Sub (below (SP s) 56) := below_sub (by decide) (by decide)
   have tail (lt : sl s 0 < L s) : Cnt s = 2 := cnt.resolve_left (fun c => Nat.ne_of_lt lt (one_len h c))
   refine ⟨first,?_,.inr (h.ls _ m).1,(h.ls _ m).2.2,((h.b_ls _ m).sub_left depth).symm,?_,?_,?_,?_⟩
   · rw [h.rd]; exact covers_of_mem (by simp [m])
