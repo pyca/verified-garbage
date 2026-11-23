@@ -362,7 +362,7 @@ theorem via_w0 (hB : viaBytes ns < 4096) : ∀ i < ns.length, InRegions (allocSt
 the body, run by the words of the frame, does what `signK` says. -/
 theorem signVia_ok (hns : ns ≠ []) (hB : viaBytes ns < 4096) {n : String} {c : Prog isa}
     (hv : ∀ s, (signKS p D ns).pre s → ∃ t s', Exec isa c s t s' ∧ abiPreserved s s' ∧ (signKS p D ns).post s s')
-    (hsp : NoSp c) (hd : 8 * (c.depth + 1) ≤ D) (hD : D < 2 ^ 32)
+    (hsp : NoSp c) (hd : 8 * c.depth ≤ D) (hD : D < 2 ^ 32)
     (hp : (signK p (D + viaBytes ns + 8)).pre σ) :
     WP isa (signVia ns n c) σ fun s' => abiPreserved σ s' ∧ (signK p (D + viaBytes ns + 8)).post σ s' := by
   have hp' := hp
@@ -383,7 +383,7 @@ theorem signVia_ok (hns : ns ≠ []) (hB : viaBytes ns < 4096) {n : String} {c :
     rw [k1.gpr (by simpa using h2), allocState_gpr' _ _ h1]
   have fg : ∀ r, r ≠ .rsp → (freeState (viaBytes ns) s').gpr r = s'.gpr r := fun r h => freeState_gpr h
   have fsp : (freeState (viaBytes ns) s').gpr .rsp = σ.gpr .rsp := freeState_rsp hsp'
-  have hsub : 8 * (c.depth + 1) ≤ D := hd
+  have hsub : 8 * (c.depth + 1) ≤ D + 8 := by omega_using [hd]
   -- the return address
   have hr1 : s1.mem.readW (σ.gpr .rsp) 64 = σ.mem.readW (σ.gpr .rsp) 64 := by
     have f1 := fillMem_frame (σ.gpr .rsp - BitVec.ofNat 64 (viaBytes ns)) (ns.map σ.syms) σ.mem 0
