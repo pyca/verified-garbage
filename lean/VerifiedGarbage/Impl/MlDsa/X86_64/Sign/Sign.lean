@@ -305,4 +305,19 @@ call of `c` with the arguments as they are. -/
 def entry (n : String) (c : Prog isa) (flag : Nat) : Prog isa :=
   .seq (.block [.mov32 .r9 (.imm (BitVec.ofNat 32 flag))]) (.call n c)
 
+/-- The addresses of the functions `ns`, each to the next word from `rsp + o`. -/
+def fillSlots : Nat → List String → List Instr
+  | _, [] => []
+  | o, n :: ns => .leaSym .rax n :: .store (at_ .rsp o) .rax :: fillSlots (o + 8) ns
+
+/-- The bytes of `signVia`'s frame for the callees `ns`: their words, and 8
+more, so that the body is called with `rsp` aligned as the function was. -/
+abbrev viaBytes (ns : List String) : Nat := 8 * ns.length + 8
+
+/-- A signing function whose callees are `ns`: their addresses in the words
+of a frame, then the call of the body `c`, named `n`, that calls them by
+those words (`Prims.viaSlots`), and that the variants share. -/
+def signVia (ns : List String) (n : String) (c : Prog isa) : Prog isa :=
+  .frame (.alloc (viaBytes ns)) (.seq (.block (fillSlots 0 ns)) (.call n c)) (.free (viaBytes ns))
+
 end VG.Impl.MlDsa.X86_64.Sign

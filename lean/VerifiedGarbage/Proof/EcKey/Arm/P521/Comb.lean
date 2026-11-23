@@ -165,7 +165,7 @@ theorem combPk_pre {u : Bool} {s : State} (h : (combPkSpec u).pre s) : combPkPre
   sig_pre [Spec.EcKey.P521.inst,Spec.EcKey.Instance.publicKeyContract,Spec.EcKey.Instance.publicKeySig,
     Spec.P521.curve,Spec.EcKey.scratchWords,abi,argRegs,reduceClassify,Loc.val,State.addr] at h₁
   obtain ⟨_sp,rd,wr,_od,os,ds,fo,fd,fs⟩ := h₁
-  refine ⟨⟨hk.rd_strip rd,wr,os,ds,fo,fd,fs,fun _ => tbl_of_consts hk
+  refine ⟨⟨hk.rd_strip rd,wr,os,ds,fo,fd,fs,tbl_of_consts hk
     (List.mem_append_right _ (List.mem_singleton_self _)) ?_⟩,hk⟩
   rw [wr]; exact List.mem_cons_of_mem _ (List.mem_singleton_self _)
 

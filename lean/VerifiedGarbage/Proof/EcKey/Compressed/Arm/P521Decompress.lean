@@ -107,7 +107,7 @@ theorem satC (u : Bool) :
 theorem verified (hL : Proof.Weierstrass.Law Spec.P521.curve) :
     Verified target code
       (Spec.EcKey.P521.inst.decompressPublicKeyContract (abi.withConsts (p521With false).constsK) 0) :=
-  Verified.of_correct (decompress_correctT p521 p521_ok _ (candidateThree_correct p521_ok (by decide +kernel))
+  Verified.of_correct (decompress_correct p521 p521_ok _ (candidateThree_correct p521_ok (by decide +kernel))
       (List.mem_singleton_self _)) ct
     (withTables_implies (decompress_implies Spec.EcKey.P521.inst _
       (Proof.Weierstrass.rootFacts_three_mod_four hL (by decide +kernel)) sat) (satC false))
@@ -115,7 +115,7 @@ theorem verified (hL : Proof.Weierstrass.Law Spec.P521.curve) :
 theorem verifiedU (hL : Proof.Weierstrass.Law Spec.P521.curve) :
     Verified target codeU
       (Spec.EcKey.P521.inst.decompressPublicKeyContract (abi.withConsts (p521With true).constsK) 0) :=
-  Verified.of_correct (decompress_correctT (p521With true) p521u_ok _
+  Verified.of_correct (decompress_correct (p521With true) p521u_ok _
       (candidateThree_correct p521u_ok (by decide +kernel)) (List.mem_singleton_self _)) ctU
     (withTables_implies (decompress_implies Spec.EcKey.P521.inst _
       (Proof.Weierstrass.rootFacts_three_mod_four hL (by decide +kernel)) sat) (satC true))

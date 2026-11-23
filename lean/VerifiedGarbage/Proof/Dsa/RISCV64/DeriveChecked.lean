@@ -75,7 +75,7 @@ theorem deriveChecked_correct (s : State) (h : dcContract.pre s) :
     ∃ tr t, Exec isa Generate.deriveChecked s tr t ∧ abiPreserved s t ∧ dcContract.post s t := by
   have hP := dcParams h
   have hL := dlayOf_ok h.1
-  exact deriveWith_ok (X := Prevalidated.setup) s h.1 fun Out hs hr hl hk hrest _ => by
+  exact deriveWith_ok (X := Prevalidated.setup) s h.1 fun Out hs hr _ hl hk hrest _ => by
     refine setupParams_ok (d := 0) hL hs hr hl (by decide) hk ?_ hrest
     simp only [ParamsOk, pOf, qOf, gOf] at hP ⊢
     rw [(hk.take (k := (dlayOf s).pl) (by omega_using [])).bytes Out (by omega_using []),

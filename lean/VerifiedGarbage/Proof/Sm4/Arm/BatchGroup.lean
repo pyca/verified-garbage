@@ -616,6 +616,19 @@ theorem table_kept {m m' : Mem} {B : BitVec 32} {K : Spec.Sm4.Schedule} {d : Spe
     · left; change 384 + i < 1408; omega_using [hi])]
   exact h (384, 1024) (by rw [layout_table]; simp) i hi
 
+/-- `WP.inline` for code without frames that calls functions (`cryptPrepared`
+calls `vg_sm4_crypt8`): calls keep the memory outside the regions the code may
+write (`callsKeepMem`). -/
+theorem wp_inlineCalls {c : Prog isa} {k : Contract isa}
+    (hv : ∀ s, k.pre s → ∃ t s', Exec isa c s t s' ∧ abiPreserved s s' ∧ k.post s s')
+    {s : State} {rd wr : List Region} (hpre : k.pre (s.withRegions rd wr))
+    (hc : Covers (rd ++ wr) (s.rd ++ s.wr)) (hw : Covers wr s.wr) {Q : State → Prop}
+    (hQ : ∀ s', s'.rd = s.rd → s'.wr = s.wr → abiPreserved s s' → Frame wr s.mem s'.mem →
+      k.post (s.withRegions rd wr) (s'.withRegions rd wr) → Q s')
+    (hn : c.noFrames = true) : WP isa c s Q :=
+  regionModel.wp_narrow (hv _ hpre) hc hw hn (.inr callsKeepMem)
+    fun _ _ _ hr hw hf hp => hQ _ hr hw hp.1 hf hp.2
+
 /-- Inline the eight-block cipher on its already prepared workspace. -/
 theorem crypt_inline_wp {s : State} {B : BitVec 32} {K : Spec.Sm4.Schedule} {d : Spec.Sm4.Direction}
     (h0 : s.gpr .r0 = B) (h1 : s.gpr .r1 = 182)
@@ -631,8 +644,9 @@ theorem crypt_inline_wp {s : State} {B : BitVec 32} {K : Spec.Sm4.Schedule} {d :
     exact ⟨True.intro, by rw [slots_eq]; rfl,
       by change B.toNat + 4 * slots ≤ 2 ^ 32; exact fitB,
       by rw [prepared_size_eq, slots_eq]; decide, K, d, hH⟩
-  refine WP.inline prepared_crypt_correct hp (by simpa only [List.nil_append] using Covers.right wB) wB ?_
-  intro s' rd wr abi frame _ post
+  refine wp_inlineCalls prepared_crypt_correct hp (by simpa only [List.nil_append] using Covers.right wB) wB ?_
+    (by rfl)
+  intro s' rd wr abi frame post
   have post' :
       (∀ k d, Holds layout s.mem (State.addr B) k d →
         Spec.Sm4.blocksAt s'.mem (State.addr B + BitVec.ofNat 64 layout.buf) layout.blocks =

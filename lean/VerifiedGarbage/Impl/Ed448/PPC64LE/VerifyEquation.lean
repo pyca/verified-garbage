@@ -258,6 +258,23 @@ def ldSlots (r : Reg) (off : Nat) (os : List Nat) : List Instr :=
 def stSlots (r : Reg) (off : Nat) (os : List Nat) : List Instr :=
   (List.range os.length).flatMap fun j => cp7 .r6 (os.getD j 0) r (off + 56 * j)
 
+/-- Where `vg_ed448_decode` reads its point's 57 bytes and writes its two
+elements, in the digits' area (`TB`), which nothing uses until after both
+points are decoded. -/
+def DIN : Nat := 1064
+def DOX : Nat := 1128
+def DOY : Nat := 1184
+
+/-- `vg_ed448_decode`: `decode` of the bytes at `DIN` into `DOX` and `DOY`. -/
+def decodeFn : Prog isa := decode DIN DOX DOY
+
+/-- The negation of the point at `p` into `xo` and `yo`, by a call of
+`vg_ed448_decode`: the bytes copied to `DIN` (through `r4` and `r7`), and the
+elements from `DOX` and `DOY`. -/
+def decodeCall (p xo yo : Nat) : Prog isa :=
+  .seq (.block (.addi .r4 .r6 p :: copyBytes .r4 DIN 57)) <|
+  .seq (.call "vg_ed448_decode" decodeFn) (.block (copySlot xo DOX ++ copySlot yo DOY))
+
 /-- RFC 8032's addition `T = R + P` (`addition`'s operations), a function. -/
 def projOps : List COp :=
   [.mul TA RZ PZ, .mul TY TA TA, .mul TC RX PX, .mul TD RY PY, .mul TZ DK TC, .mul TZ TZ TD,
@@ -357,7 +374,7 @@ def vFinish : List Instr :=
 
 /-- Everything before the joint loop, whose branches are only on loop counters. -/
 def vPrefix : Prog isa :=
-  .seq (.block vSetup) <| .seq (decode SG NRX NRY) <| .seq (decode PK NAX NAY) <|
+  .seq (.block vSetup) <| .seq (decodeCall SG NRX NRY) <| .seq (decodeCall PK NAX NAY) <|
   .seq (.block checkS) <| .seq bitsZero <| .seq (bitsOf (SG + 57) 0) <| .seq (bitsOf CH 1) <|
   .seq (recode 0) <| .seq (recode 1) <| .seq keyTable (.block baseTable)
 

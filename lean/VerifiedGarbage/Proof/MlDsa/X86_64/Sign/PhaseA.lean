@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Inv
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Prims
+import VerifiedGarbage.Proof.Framework.X86_64.Syms
 import VerifiedGarbage.Proof.MlKem.Mem
 import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.MlDsa.Sign.Setup
@@ -29,6 +30,8 @@ results are public in two runs whose seeds agree (`rejCall_tr`,
 
 namespace VG.Proof.MlDsa.X86_64.Sign
 
+variable {SL : List String}
+
 open VG VG.X86_64 VG.Impl.MlDsa.X86_64.Sign
 open VG.Proof.MlKem.X86_64 (Keep)
 open VG.Proof.MlDsa.Sign
@@ -46,7 +49,7 @@ theorem hv_with {c : Prog isa} {k : Contract isa} {X : State → State → Prop}
   fun s hs => let ⟨t, s', e, a, p⟩ := hv s hs; ⟨t, s', e, a, p, hx s t s' hs e⟩
 
 section
-variable {D : Nat} {rbs wbs : List (Reg × Nat)}
+variable {D : Nat} {SL : List String} {rbs wbs : List (Reg × Nat)}
 
 /-! ## Addition and subtraction -/
 
@@ -70,7 +73,7 @@ theorem accChk_spec {bs wbs : List (Reg × Nat)} {f g : Ptr} (hc : accChk bs wbs
   obtain ⟨⟨⟨⟨⟨⟨⟨h1, h2⟩, h3⟩, h4⟩, h5⟩, h6⟩, h7⟩, h8⟩ := hc
   exact ⟨h1, h2, h3, h4, by simp [Arg.ok, h5, h6, h7, h8]⟩
 
-theorem accPre {t : Poly → Poly → Poly} {S : Nat} (hS : S + 8 ≤ D) {s s1 : State} (A : At D rbs wbs s s1)
+theorem accPre {t : Poly → Poly → Poly} {S : Nat} (hS : S + 8 ≤ D) {s s1 : State} (A : At D SL rbs wbs s s1)
     {f g : Ptr} (hc : accChk (rbs ++ wbs) wbs f g = true) (hA : ArgsIn [.ptr f, .ptr g] s s1)
     (rf : Reduced s.mem (pa s f)) (rg : Reduced s.mem (pa s g)) :
     (accC t S).pre (s1.callEntry.withRegions [pR (pa s g)] [pR (pa s f)]) := by
@@ -86,15 +89,16 @@ theorem accPre {t : Poly → Poly → Poly} {S : Nat} (hS : S + 8 ≤ D) {s s1 :
   simp only [List.mem_cons, List.mem_nil_iff, or_false, forall_eq_or_imp, forall_eq]
   exact ⟨A.stk hS i1, A.stk hS i2⟩
 
-theorem accAt_ok {t : Poly → Poly → Poly} {n : String} {c : Prog isa} (C : Callee (fun S => accC t S) D c)
-    {s : State} (L : Lay D rbs wbs s) {f g : Ptr} (hc : accChk (rbs ++ wbs) wbs f g = true)
+theorem accAt_ok {t : Poly → Poly → Poly} {v : Bool} {i : Nat} {n : String} {c : Prog isa} (C : Callee (fun S => accC t S) D c)
+    (hsl : v = true → SL[i]? = some n)
+    {s : State} (L : Lay D SL rbs wbs s) {f g : Ptr} (hc : accChk (rbs ++ wbs) wbs f g = true)
     (rf : Reduced s.mem (pa s f)) (rg : Reduced s.mem (pa s g)) :
-    WP isa (callP n c [.ptr f, .ptr g]) s fun s' => PPostB D s s' [(f, 1024)] ∧
+    WP isa (callV v i n c [.ptr f, .ptr g]) s fun s' => PPostB D s s' [(f, 1024)] ∧
       (∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) ∧
       PolyIs s'.mem (pa s f) (t (polyAt s.mem (pa s f)) (polyAt s.mem (pa s g))) := by
   obtain ⟨w1, i1, i2, _, ok⟩ := accChk_spec hc
   have hD : 8 ≤ D := by have := C.hS; omega_arith
-  refine WP.mono (callP_ok C.ver.1 C.nosp C.depth L.dsm ok
+  refine WP.mono (callV_ok C.ver.1 C.nosp C.depth L.dsm ok L hsl
     (fun s1 hA hm k => accPre C.hS (At.of L hm k) hc hA rf rg)
     (Covers.append_left (L.cR i2) (Covers.right (L.cW w1))) (L.cW w1))
     fun s' ⟨hpost, hcs, s1, hA, hm, k, s₂, hm₂, _, hq⟩ => ⟨hpost, hcs, ?_⟩
@@ -104,12 +108,13 @@ theorem accAt_ok {t : Poly → Poly → Poly} {n : String} {c : Prog isa} (C : C
   simp only [e1, e2, Arg.val, hm₂, A.poly' i1 hD, A.poly' i2 hD] at hq
   exact hq
 
-theorem accAt_tr {t : Poly → Poly → Poly} {n : String} {c : Prog isa} (C : Callee (fun S => accC t S) D c)
+theorem accAt_tr {t : Poly → Poly → Poly} {v : Bool} {i : Nat} {n : String} {c : Prog isa} (C : Callee (fun S => accC t S) D c)
+    (hsl : v = true → SL[i]? = some n)
     {f g : Ptr} (hc : accChk (rbs ++ wbs) wbs f g = true) :
-    RelCT isa (fun x y => LRel D rbs wbs x y ∧ (Reduced x.mem (pa x f) ∧ Reduced x.mem (pa x g)) ∧
-      (Reduced y.mem (pa y f) ∧ Reduced y.mem (pa y g))) (callP n c [.ptr f, .ptr g]) fun _ _ => True := by
+    RelCT isa (fun x y => LRel D SL rbs wbs x y ∧ (Reduced x.mem (pa x f) ∧ Reduced x.mem (pa x g)) ∧
+      (Reduced y.mem (pa y f) ∧ Reduced y.mem (pa y g))) (callV v i n c [.ptr f, .ptr g]) fun _ _ => True := by
   obtain ⟨w1, i1, i2, _, ok⟩ := accChk_spec hc
-  refine callP_tr C.okMx (C.ctMx fun _ _ h => h) ok
+  refine callV_tr C.okMx (C.ctMx fun _ _ h => h) ok (fun _ _ h => h.1) hsl
     fun x y x1 y1 ⟨R, ⟨rfx, rgx⟩, ⟨rfy, rgy⟩⟩ ⟨⟨hAx, hmx⟩, kx⟩ ⟨⟨hAy, hmy⟩, ky⟩ =>
       ⟨_, _, _, _, accPre (t := t) C.hS (At.of R.lx hmx kx) hc hAx rfx rgx, accPre (t := t) C.hS (At.of R.ly hmy ky) hc hAy rfy rgy, ?_,
         by rw [kx.2.1, kx.2.2]; exact Covers.append_left (R.lx.cR i2) (Covers.right (R.lx.cW w1)),
@@ -123,27 +128,27 @@ theorem accAt_tr {t : Poly → Poly → Poly} {n : String} {c : Prog isa} (C : C
   simp only [hx1, hx2, hy1, hy2, Arg.val, R.pa i1, R.pa i2,
     (At.of R.lx hmx kx).rsp, (At.of R.ly hmy ky).rsp, R.rsp, and_self]
 
-theorem addAt_ok {P : Prims} (hP : PrimsOk P D) {s : State} (L : Lay D rbs wbs s) {f g : Ptr}
+theorem addAt_ok {P : Prims} (hP : PrimsOk P D SL) {s : State} (L : Lay D SL rbs wbs s) {f g : Ptr}
     (hc : accChk (rbs ++ wbs) wbs f g = true) (rf : Reduced s.mem (pa s f)) (rg : Reduced s.mem (pa s g)) :
     WP isa (addAt P f g) s fun s' => PPostB D s s' [(f, 1024)] ∧ (∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) ∧
       PolyIs s'.mem (pa s f) (add (polyAt s.mem (pa s f)) (polyAt s.mem (pa s g))) :=
-  accAt_ok (t := add) hP.add L hc rf rg
+  accAt_ok (t := add) hP.add hP.sl.add L hc rf rg
 
-theorem subAt_ok {P : Prims} (hP : PrimsOk P D) {s : State} (L : Lay D rbs wbs s) {f g : Ptr}
+theorem subAt_ok {P : Prims} (hP : PrimsOk P D SL) {s : State} (L : Lay D SL rbs wbs s) {f g : Ptr}
     (hc : accChk (rbs ++ wbs) wbs f g = true) (rf : Reduced s.mem (pa s f)) (rg : Reduced s.mem (pa s g)) :
     WP isa (subAt P f g) s fun s' => PPostB D s s' [(f, 1024)] ∧ (∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) ∧
       PolyIs s'.mem (pa s f) (sub (polyAt s.mem (pa s f)) (polyAt s.mem (pa s g))) :=
-  accAt_ok (t := sub) hP.sub L hc rf rg
+  accAt_ok (t := sub) hP.sub hP.sl.sub L hc rf rg
 
-theorem addAt_tr {P : Prims} (hP : PrimsOk P D) {f g : Ptr} (hc : accChk (rbs ++ wbs) wbs f g = true) :
-    RelCT isa (fun x y => LRel D rbs wbs x y ∧ (Reduced x.mem (pa x f) ∧ Reduced x.mem (pa x g)) ∧
+theorem addAt_tr {P : Prims} (hP : PrimsOk P D SL) {f g : Ptr} (hc : accChk (rbs ++ wbs) wbs f g = true) :
+    RelCT isa (fun x y => LRel D SL rbs wbs x y ∧ (Reduced x.mem (pa x f) ∧ Reduced x.mem (pa x g)) ∧
       (Reduced y.mem (pa y f) ∧ Reduced y.mem (pa y g))) (addAt P f g) fun _ _ => True :=
-  accAt_tr (t := add) hP.add hc
+  accAt_tr (t := add) hP.add hP.sl.add hc
 
-theorem subAt_tr {P : Prims} (hP : PrimsOk P D) {f g : Ptr} (hc : accChk (rbs ++ wbs) wbs f g = true) :
-    RelCT isa (fun x y => LRel D rbs wbs x y ∧ (Reduced x.mem (pa x f) ∧ Reduced x.mem (pa x g)) ∧
+theorem subAt_tr {P : Prims} (hP : PrimsOk P D SL) {f g : Ptr} (hc : accChk (rbs ++ wbs) wbs f g = true) :
+    RelCT isa (fun x y => LRel D SL rbs wbs x y ∧ (Reduced x.mem (pa x f) ∧ Reduced x.mem (pa x g)) ∧
       (Reduced y.mem (pa y f) ∧ Reduced y.mem (pa y g))) (subAt P f g) fun _ _ => True :=
-  accAt_tr (t := sub) hP.sub hc
+  accAt_tr (t := sub) hP.sub hP.sl.sub hc
 
 /-! ## `RejNTTPoly` -/
 
@@ -163,7 +168,7 @@ theorem rejChk_spec {bs wbs : List (Reg × Nat)} {a : Ptr} (hc : rejChk bs wbs a
   simp only [List.all_cons, List.all_nil, Arg.ok, h9, h10, decide_true, Bool.and_true]
   decide
 
-theorem rejPre {S : Nat} (hS : S + 8 ≤ D) {s s1 : State} (A : At D rbs wbs s s1) {a : Ptr}
+theorem rejPre {S : Nat} (hS : S + 8 ≤ D) {s s1 : State} (A : At D SL rbs wbs s s1) {a : Ptr}
     (hc : rejChk (rbs ++ wbs) wbs a = true) (hA : ArgsIn [.ptr (sc oRS), .ptr a, .ptr (sc oPS)] s s1) :
     (rejNTTContract X86_64.abi S).pre
       (s1.callEntry.withRegions [⟨pa s (sc oRS), 34⟩] [pR (pa s a), ⟨pa s (sc oPS), 2048⟩]) := by
@@ -182,7 +187,7 @@ theorem rejPre {S : Nat} (hS : S + 8 ≤ D) {s s1 : State} (A : At D rbs wbs s s
 
 /-- The call of `vg_mldsa_rej_ntt_poly`: its outcome, and that it succeeds
 only if `RejNTTPoly` finishes within `maxBounds`. -/
-theorem rejCall_ok {P : Prims} (hP : PrimsOk P D) {s : State} (L : Lay D rbs wbs s) {a : Ptr}
+theorem rejCall_ok {P : Prims} (hP : PrimsOk P D SL) {s : State} (L : Lay D SL rbs wbs s) {a : Ptr}
     (hc : rejChk (rbs ++ wbs) wbs a = true) :
     WP isa (callP "vg_mldsa_rej_ntt_poly" P.rejNTT [.ptr (sc oRS), .ptr a, .ptr (sc oPS)]) s fun s' =>
       PPostB D s s' [(a, 1024), (sc oPS, 2048)] ∧ (∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) ∧
@@ -205,8 +210,8 @@ theorem rejCall_ok {P : Prims} (hP : PrimsOk P D) {s : State} (L : Lay D rbs wbs
     e1, Arg.val, er, A.bytes i1 hD] at hx
   exact ⟨hq.1, hq.2, hx⟩
 
-theorem rejCall_tr {P : Prims} (hP : PrimsOk P D) {a : Ptr} (hc : rejChk (rbs ++ wbs) wbs a = true) :
-    RelCT isa (fun x y => LRel D rbs wbs x y ∧ bytesAt x.mem (pa x (sc oRS)) 34 = bytesAt y.mem (pa y (sc oRS)) 34)
+theorem rejCall_tr {P : Prims} (hP : PrimsOk P D SL) {a : Ptr} (hc : rejChk (rbs ++ wbs) wbs a = true) :
+    RelCT isa (fun x y => LRel D SL rbs wbs x y ∧ bytesAt x.mem (pa x (sc oRS)) 34 = bytesAt y.mem (pa y (sc oRS)) 34)
       (callP "vg_mldsa_rej_ntt_poly" P.rejNTT [.ptr (sc oRS), .ptr a, .ptr (sc oPS)])
       fun x y => (x.gpr .rax).setWidth 32 = (y.gpr .rax).setWidth 32 := by
   obtain ⟨w1, w2, i1, i2, i3, _, _, _, ok⟩ := rejChk_spec hc
@@ -246,7 +251,7 @@ theorem rej4Chk_spec {bs wbs : List (Reg × Nat)} {a w : Ptr} (hc : rej4Chk bs w
   simp only [List.all_cons, List.all_nil, Arg.ok, h9, h10, h11, h12, decide_true, Bool.and_true]
   decide
 
-theorem rej4Pre {S : Nat} (hS : S + 8 ≤ D) {s s1 : State} (A : At D rbs wbs s s1) {a w : Ptr}
+theorem rej4Pre {S : Nat} (hS : S + 8 ≤ D) {s s1 : State} (A : At D SL rbs wbs s s1) {a w : Ptr}
     (hc : rej4Chk (rbs ++ wbs) wbs a w = true) (hA : ArgsIn [.ptr (sc oRS4), .ptr a, .ptr w] s s1) :
     (rejNTT4Contract X86_64.abi S).pre
       (s1.callEntry.withRegions [⟨pa s (sc oRS4), 136⟩] [⟨pa s a, 4096⟩, ⟨pa s w, 8192⟩]) := by
@@ -264,7 +269,7 @@ theorem rej4Pre {S : Nat} (hS : S + 8 ≤ D) {s s1 : State} (A : At D rbs wbs s 
   exact ⟨A.stk hS i1, A.stk hS i2, A.stk hS i3⟩
 
 /-- The seeds on entry to the call are those before it. -/
-theorem At.seeds4 {s s1 : State} (A : At D rbs wbs s s1) (hi : inB (rbs ++ wbs) (sc oRS4) 136 = true) (hD : 8 ≤ D)
+theorem At.seeds4 {s s1 : State} (A : At D SL rbs wbs s s1) (hi : inB (rbs ++ wbs) (sc oRS4) 136 = true) (hD : 8 ≤ D)
     {k : Nat} (hk : k < 4) :
     seed4 (s1.mem.writeW (s1.gpr .rsp - 8) (s1.unknowns 0)) (pa s (sc oRS4)) k = seed4 s.mem (pa s (sc oRS4)) k := by
   unfold seed4
@@ -273,9 +278,9 @@ theorem At.seeds4 {s s1 : State} (A : At D rbs wbs s s1) (hi : inB (rbs ++ wbs) 
 
 /-- The call of `vg_mldsa_rej_ntt_poly4`: its outcome, and that it succeeds
 only if `RejNTTPoly` finishes within `maxBounds` on each seed. -/
-theorem rej4Call_ok {P : Prims} (hP : PrimsOk P D) {s : State} (L : Lay D rbs wbs s) {a w : Ptr}
+theorem rej4Call_ok {P : Prims} (hP : PrimsOk P D SL) {s : State} (L : Lay D SL rbs wbs s) {a w : Ptr}
     (hc : rej4Chk (rbs ++ wbs) wbs a w = true) :
-    WP isa (callP ("vg_mldsa_rej_ntt_poly4" ++ P.sfx) P.rej4 [.ptr (sc oRS4), .ptr a, .ptr w]) s fun s' =>
+    WP isa (callV P.viaSlots 6 ("vg_mldsa_rej_ntt_poly4" ++ P.sfx) P.rej4 [.ptr (sc oRS4), .ptr a, .ptr w]) s fun s' =>
       PPostB D s s' [(a, 4096), (w, 8192)] ∧ (∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) ∧
       ((s'.gpr .rax).setWidth 32 = 1 → ∀ k < 4, Reduced s'.mem (poly4 (pa s a) k)) ∧
       (((s'.gpr .rax).setWidth 32 = 1 ∧ ∀ k < 4, ∃ b : Bounds,
@@ -286,7 +291,7 @@ theorem rej4Call_ok {P : Prims} (hP : PrimsOk P D) {s : State} (L : Lay D rbs wb
         (rejNTTPoly maxBounds.rejNTT (seed4 s.mem (pa s (sc oRS4)) k)).isSome) := by
   obtain ⟨w1, w2, i1, i2, i3, _, _, _, ok⟩ := rej4Chk_spec hc
   have hD : 8 ≤ D := by have := hP.rej4.hS; omega_arith
-  refine WP.mono (callP_ok (hv_with hP.rej4.ver.1 hP.rej4Max) hP.rej4.nosp hP.rej4.depth L.dsm ok
+  refine WP.mono (callV_ok (hv_with hP.rej4.ver.1 hP.rej4Max) hP.rej4.nosp hP.rej4.depth L.dsm ok L hP.sl.rej4
     (fun s1 hA hm k => rej4Pre hP.rej4.hS (At.of L hm k) hc hA)
     (Covers.append_left (L.cR i1) (Covers.right (Covers.cons (L.cW w1) (L.cW w2)))) (Covers.cons (L.cW w1) (L.cW w2)))
     fun s' ⟨hpost, hcs, s1, hA, hm, k, s₂, hm₂, hg₂, hq, hx⟩ => ⟨hpost, hcs, ?_⟩
@@ -303,14 +308,14 @@ theorem rej4Call_ok {P : Prims} (hP : PrimsOk P D) {s : State} (L : Lay D rbs wb
   · exact .inl ⟨h1, fun k hk => by rw [← A.seeds4 i1 hD hk]; exact hb k hk⟩
   · exact .inr ⟨h0, k, hk, by rw [← A.seeds4 i1 hD hk]; exact hn⟩
 
-theorem rej4Call_tr {P : Prims} (hP : PrimsOk P D) {a w : Ptr} (hc : rej4Chk (rbs ++ wbs) wbs a w = true) :
-    RelCT isa (fun x y => LRel D rbs wbs x y ∧
+theorem rej4Call_tr {P : Prims} (hP : PrimsOk P D SL) {a w : Ptr} (hc : rej4Chk (rbs ++ wbs) wbs a w = true) :
+    RelCT isa (fun x y => LRel D SL rbs wbs x y ∧
         bytesAt x.mem (pa x (sc oRS4)) 136 = bytesAt y.mem (pa y (sc oRS4)) 136)
-      (callP ("vg_mldsa_rej_ntt_poly4" ++ P.sfx) P.rej4 [.ptr (sc oRS4), .ptr a, .ptr w])
+      (callV P.viaSlots 6 ("vg_mldsa_rej_ntt_poly4" ++ P.sfx) P.rej4 [.ptr (sc oRS4), .ptr a, .ptr w])
       fun x y => (x.gpr .rax).setWidth 32 = (y.gpr .rax).setWidth 32 := by
   obtain ⟨w1, w2, i1, i2, i3, _, _, _, ok⟩ := rej4Chk_spec hc
   have hD : 8 ≤ D := by have := hP.rej4.hS; omega_arith
-  refine callPRet_tr hP.rej4.okMx (RetPub.mxFree hP.rej4Ret hP.rej4.mx fun _ _ h => h) ok
+  refine callVRet_tr hP.rej4.okMx (RetPub.mxFree hP.rej4Ret hP.rej4.mx fun _ _ h => h) ok (fun _ _ h => h.1) hP.sl.rej4
     fun x y x1 y1 ⟨R, hb⟩ ⟨⟨hAx, hmx⟩, kx⟩ ⟨⟨hAy, hmy⟩, ky⟩ =>
       ⟨_, _, _, _, rej4Pre hP.rej4.hS (At.of R.lx hmx kx) hc hAx, rej4Pre hP.rej4.hS (At.of R.ly hmy ky) hc hAy, ?_,
         by rw [kx.2.1, kx.2.2]; exact Covers.append_left (R.lx.cR i1) (Covers.right (Covers.cons (R.lx.cW w1) (R.lx.cW w2))),
@@ -342,7 +347,7 @@ theorem maskChk_spec {bs wbs : List (Reg × Nat)} {a : Ptr} (hc : maskChk bs wbs
   obtain ⟨⟨⟨⟨⟨⟨⟨⟨⟨h1, h2⟩, h3⟩, h4⟩, h5⟩, h6⟩, h7⟩, h8⟩, h9⟩, h10⟩ := hc
   exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10⟩
 
-theorem maskPre {S : Nat} (hS : S + 8 ≤ D) {s s1 : State} (A : At D rbs wbs s s1) {γ : Nat} {a : Ptr}
+theorem maskPre {S : Nat} (hS : S + 8 ≤ D) {s s1 : State} (A : At D SL rbs wbs s s1) {γ : Nat} {a : Ptr}
     (hγ : γ = 2 ^ 17 ∨ γ = 2 ^ 19) (hc : maskChk (rbs ++ wbs) wbs a = true)
     (hA : ArgsIn [.ptr (sc oMS), .imm γ, .ptr a, .ptr (sc oPS)] s s1) :
     (expandMaskContract X86_64.abi S).pre
@@ -361,7 +366,7 @@ theorem maskPre {S : Nat} (hS : S + 8 ≤ D) {s s1 : State} (A : At D rbs wbs s 
   simp only [List.mem_cons, List.mem_nil_iff, or_false, forall_eq_or_imp, forall_eq]
   exact ⟨A.stk hS i1, A.stk hS i2, A.stk hS i3⟩
 
-theorem maskAt_ok {P : Prims} (hP : PrimsOk P D) {s : State} (L : Lay D rbs wbs s) {γ : Nat} {a : Ptr}
+theorem maskAt_ok {P : Prims} (hP : PrimsOk P D SL) {s : State} (L : Lay D SL rbs wbs s) {γ : Nat} {a : Ptr}
     (hγ : γ = 2 ^ 17 ∨ γ = 2 ^ 19) (hc : maskChk (rbs ++ wbs) wbs a = true) :
     WP isa (maskAt P γ a) s fun s' => PPostB D s s' [(a, 1024), (sc oPS, 2048)] ∧
       (∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) ∧
@@ -381,9 +386,9 @@ theorem maskAt_ok {P : Prims} (hP : PrimsOk P D) {s : State} (L : Lay D rbs wbs 
   simp only [e1, e2, e3, Arg.val, hm₂, A.bytes' i1 hD, sw32_ofNat hγ'] at hq
   exact hq
 
-theorem maskAt_tr {P : Prims} (hP : PrimsOk P D) {γ : Nat} {a : Ptr} (hγ : γ = 2 ^ 17 ∨ γ = 2 ^ 19)
+theorem maskAt_tr {P : Prims} (hP : PrimsOk P D SL) {γ : Nat} {a : Ptr} (hγ : γ = 2 ^ 17 ∨ γ = 2 ^ 19)
     (hc : maskChk (rbs ++ wbs) wbs a = true) :
-    RelCT isa (LRel D rbs wbs) (maskAt P γ a) fun _ _ => True := by
+    RelCT isa (LRel D SL rbs wbs) (maskAt P γ a) fun _ _ => True := by
   obtain ⟨w1, w2, i1, i2, i3, _, _, _, b1, o1⟩ := maskChk_spec hc
   have hγ' : γ < 2 ^ 32 := by omega_arith
   refine callP_tr hP.expandMask.okMx (hP.expandMask.ctMx fun _ _ h => h)
@@ -419,7 +424,7 @@ theorem mask4Chk_spec {bs wbs : List (Reg × Nat)} {a w : Ptr} (hc : mask4Chk bs
   obtain ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨h1, h2⟩, h3⟩, h4⟩, h5⟩, h6⟩, h7⟩, h8⟩, h9⟩, h10⟩, h11⟩, h12⟩ := hc
   exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12⟩
 
-theorem mask4Pre {S : Nat} (hS : S + 8 ≤ D) {s s1 : State} (A : At D rbs wbs s s1) {γ : Nat} {a w : Ptr}
+theorem mask4Pre {S : Nat} (hS : S + 8 ≤ D) {s s1 : State} (A : At D SL rbs wbs s s1) {γ : Nat} {a w : Ptr}
     (hγ : γ = 2 ^ 17 ∨ γ = 2 ^ 19) (hc : mask4Chk (rbs ++ wbs) wbs a w = true)
     (hA : ArgsIn [.ptr (sc oMS4), .imm γ, .ptr a, .ptr w] s s1) :
     (expandMask4Contract X86_64.abi S).pre
@@ -439,7 +444,7 @@ theorem mask4Pre {S : Nat} (hS : S + 8 ≤ D) {s s1 : State} (A : At D rbs wbs s
   exact ⟨A.stk hS i1, A.stk hS i2, A.stk hS i3⟩
 
 /-- The seeds on entry to the call are those before it. -/
-theorem At.seeds66 {s s1 : State} (A : At D rbs wbs s s1) (hi : inB (rbs ++ wbs) (sc oMS4) 264 = true) (hD : 8 ≤ D)
+theorem At.seeds66 {s s1 : State} (A : At D SL rbs wbs s s1) (hi : inB (rbs ++ wbs) (sc oMS4) 264 = true) (hD : 8 ≤ D)
     {k : Nat} (hk : k < 4) :
     seed66 (s1.mem.writeW (s1.gpr .rsp - 8) (s1.unknowns 0)) (pa s (sc oMS4)) k = seed66 s.mem (pa s (sc oMS4)) k := by
   unfold seed66
@@ -447,7 +452,7 @@ theorem At.seeds66 {s s1 : State} (A : At D rbs wbs s s1) (hi : inB (rbs ++ wbs)
     ← VG.Proof.MlKem.bytesAt_slice s.mem _ (show 66 * k + 66 ≤ 264 by omega_arith), A.bytes' hi hD]
 
 /-- The call of `vg_mldsa_expand_mask_poly4`. -/
-theorem mask4Call_ok {P : Prims} (hP : PrimsOk P D) {s : State} (L : Lay D rbs wbs s) {γ : Nat} {a w : Ptr}
+theorem mask4Call_ok {P : Prims} (hP : PrimsOk P D SL) {s : State} (L : Lay D SL rbs wbs s) {γ : Nat} {a w : Ptr}
     (hγ : γ = 2 ^ 17 ∨ γ = 2 ^ 19) (hc : mask4Chk (rbs ++ wbs) wbs a w = true) :
     WP isa (mask4At P γ a w) s fun s' => PPostB D s s' [(a, 4096), (w, 8192)] ∧
       (∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) ∧ ∀ k < 4,
@@ -456,9 +461,9 @@ theorem mask4Call_ok {P : Prims} (hP : PrimsOk P D) {s : State} (L : Lay D rbs w
   obtain ⟨w1, w2, i1, i2, i3, _, _, _, b1, o1, b2, o2⟩ := mask4Chk_spec hc
   have hD : 8 ≤ D := by have := hP.expandMask4.hS; omega_arith
   have hγ' : γ < 2 ^ 32 := by omega_arith
-  refine WP.mono (callP_ok hP.expandMask4.ver.1 hP.expandMask4.nosp hP.expandMask4.depth L.dsm
+  refine WP.mono (callV_ok hP.expandMask4.ver.1 hP.expandMask4.nosp hP.expandMask4.depth L.dsm
     (by simp only [List.all_cons, List.all_nil, Arg.ok, b1, o1, b2, o2, decide_true, Bool.and_true,
-      decide_eq_true hγ']; decide)
+      decide_eq_true hγ']; decide) L hP.sl.mask4
     (fun s1 hA hm k => mask4Pre hP.expandMask4.hS (At.of L hm k) hγ hc hA)
     (Covers.append_left (L.cR i1) (Covers.right (Covers.cons (L.cW w1) (L.cW w2)))) (Covers.cons (L.cW w1) (L.cW w2)))
     fun s' ⟨hpost, hcs, s1, hA, hm, k, s₂, hm₂, _, hq⟩ => ⟨hpost, hcs, ?_⟩
@@ -468,14 +473,14 @@ theorem mask4Call_ok {P : Prims} (hP : PrimsOk P D) {s : State} (L : Lay D rbs w
   simp only [e1, e2, e3, Arg.val, hm₂, sw32_ofNat hγ'] at hq
   exact fun k hk => by rw [← A.seeds66 i1 hD hk]; exact hq k hk
 
-theorem mask4Call_tr {P : Prims} (hP : PrimsOk P D) {γ : Nat} {a w : Ptr} (hγ : γ = 2 ^ 17 ∨ γ = 2 ^ 19)
+theorem mask4Call_tr {P : Prims} (hP : PrimsOk P D SL) {γ : Nat} {a w : Ptr} (hγ : γ = 2 ^ 17 ∨ γ = 2 ^ 19)
     (hc : mask4Chk (rbs ++ wbs) wbs a w = true) :
-    RelCT isa (LRel D rbs wbs) (mask4At P γ a w) fun _ _ => True := by
+    RelCT isa (LRel D SL rbs wbs) (mask4At P γ a w) fun _ _ => True := by
   obtain ⟨w1, w2, i1, i2, i3, _, _, _, b1, o1, b2, o2⟩ := mask4Chk_spec hc
   have hγ' : γ < 2 ^ 32 := by omega_arith
-  refine callP_tr hP.expandMask4.okMx (hP.expandMask4.ctMx fun _ _ h => h)
+  refine callV_tr hP.expandMask4.okMx (hP.expandMask4.ctMx fun _ _ h => h)
     (by simp only [List.all_cons, List.all_nil, Arg.ok, b1, o1, b2, o2, decide_true, Bool.and_true,
-      decide_eq_true hγ']; decide)
+      decide_eq_true hγ']; decide) (fun _ _ h => h) hP.sl.mask4
     fun x y x1 y1 R ⟨⟨hAx, hmx⟩, kx⟩ ⟨⟨hAy, hmy⟩, ky⟩ =>
       ⟨_, _, _, _, mask4Pre hP.expandMask4.hS (At.of R.lx hmx kx) hγ hc hAx,
         mask4Pre hP.expandMask4.hS (At.of R.ly hmy ky) hγ hc hAy, ?_,
@@ -514,7 +519,7 @@ theorem ballArgs_ok {len tau : Nat} {c : Ptr} (hp : (len, tau) ∈ ballParams) (
     decide_eq_true this.2]
   decide
 
-theorem ballPre {S : Nat} (hS : S + 8 ≤ D) {s s1 : State} (A : At D rbs wbs s s1) {len tau : Nat} {c : Ptr}
+theorem ballPre {S : Nat} (hS : S + 8 ≤ D) {s s1 : State} (A : At D SL rbs wbs s s1) {len tau : Nat} {c : Ptr}
     (hp : (len, tau) ∈ ballParams) (hc : ballChk (rbs ++ wbs) wbs len c = true)
     (hA : ArgsIn [.ptr (sc oCT), .imm len, .imm tau, .ptr c, .ptr (sc oPS)] s s1) :
     (sampleInBallContract X86_64.abi S).pre
@@ -536,7 +541,7 @@ theorem ballPre {S : Nat} (hS : S + 8 ≤ D) {s s1 : State} (A : At D rbs wbs s 
 
 /-- The call of `vg_mldsa_sample_in_ball`: its outcome, and that it succeeds
 only if `SampleInBall` finishes within `maxBounds`. -/
-theorem ballCall_ok {P : Prims} (hP : PrimsOk P D) {s : State} (L : Lay D rbs wbs s) {len tau : Nat} {c : Ptr}
+theorem ballCall_ok {P : Prims} (hP : PrimsOk P D SL) {s : State} (L : Lay D SL rbs wbs s) {len tau : Nat} {c : Ptr}
     (hp : (len, tau) ∈ ballParams) (hc : ballChk (rbs ++ wbs) wbs len c = true) :
     WP isa (ballAt P len tau c) s fun s' =>
       PPostB D s s' [(c, 1024), (sc oPS, 2048)] ∧ (∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) ∧
@@ -562,9 +567,9 @@ theorem ballCall_ok {P : Prims} (hP : PrimsOk P D) {s : State} (L : Lay D rbs wb
     e1, e2, e3, Arg.val, er, sw32_ofNat hl.2, toNat64 hl.1, A.bytes i1 hD] at hx
   exact ⟨hq.1, hq.2, hx⟩
 
-theorem ballCall_tr {P : Prims} (hP : PrimsOk P D) {len tau : Nat} {c : Ptr} (hp : (len, tau) ∈ ballParams)
+theorem ballCall_tr {P : Prims} (hP : PrimsOk P D SL) {len tau : Nat} {c : Ptr} (hp : (len, tau) ∈ ballParams)
     (hc : ballChk (rbs ++ wbs) wbs len c = true) :
-    RelCT isa (fun x y => LRel D rbs wbs x y ∧ bytesAt x.mem (pa x (sc oCT)) len = bytesAt y.mem (pa y (sc oCT)) len)
+    RelCT isa (fun x y => LRel D SL rbs wbs x y ∧ bytesAt x.mem (pa x (sc oCT)) len = bytesAt y.mem (pa y (sc oCT)) len)
       (ballAt P len tau c) fun x y => (x.gpr .rax).setWidth 32 = (y.gpr .rax).setWidth 32 := by
   obtain ⟨w1, w2, i1, i2, i3, _, _, _, b1, o1⟩ := ballChk_spec hc
   have hD : 8 ≤ D := by have := hP.ball.hS; omega_arith
@@ -610,6 +615,8 @@ entry's `RejNTTPoly` does not finish within `minBounds` (`sampleE_ok`).
 
 namespace VG.Proof.MlDsa.X86_64.Sign
 
+variable {SL : List String}
+
 open VG VG.X86_64 VG.Impl.MlDsa.X86_64.Sign
 open VG.Proof.MlKem.X86_64 (Keep Keep.gpr WP.keep)
 open VG.Proof.MlDsa.Sign
@@ -643,8 +650,8 @@ theorem Fam.snoc {s : State} {b m : Nat} {f : Nat → Poly} (h : Fam s b m f) (h
   exacts [h j hj, h']
 
 /-- `ExpandA` after `e` entries. -/
-structure IA (p : Params) (D : Nat) (σ : State) (e : Nat) (s : State) : Prop where
-  st : St p D σ s
+structure IA (p : Params) (D : Nat) (SL : List String) (σ : State) (e : Nat) (s : State) : Prop where
+  st : St p D SL σ s
   rs : bytesAt s.mem (pa s (sc oRS)) 32 = rhoOf p σ
   r01 : s.gpr .r15 = 0 ∨ s.gpr .r15 = 1
   ok : s.gpr .r15 = 1 → (∀ e' < e, (rejNTTPoly maxBounds.rejNTT (seedE p σ e')).isSome) ∧
@@ -723,8 +730,8 @@ theorem Fam.of_eq {s s' : State} (hm : s'.mem = s.mem) (hb : s'.gpr .rbx = s.gpr
 abbrev blkE (p : Params) (e : Nat) : List Instr := setB (sc (oRS + 32)) (e % p.ℓ) ++ setB (sc (oRS + 33)) (e / p.ℓ)
 
 theorem blkE_ok {D : Nat} {p : Params} {σ : State} {e : Nat} (he : eChk p e = true) {s : State}
-    (h : IA p D σ e s) : WP isa (.block (blkE p e)) s fun s' =>
-      (IA p D σ e s' ∧ bytesAt s'.mem (pa s' (sc oRS)) 34 = seedE p σ e) ∧ s'.gpr .r15 = s.gpr .r15 := by
+    (h : IA p D SL σ e s) : WP isa (.block (blkE p e)) s fun s' =>
+      (IA p D SL σ e s' ∧ bytesAt s'.mem (pa s' (sc oRS)) 34 = seedE p σ e) ∧ s'.gpr .r15 = s.gpr .r15 := by
   obtain ⟨c1, c2, _, _, w1, w2, k1, k2, _, k12, f1, f2, _, _, hj, hi⟩ := eChk_spec he
   have L := h.st.lay
   rw [WP.block_append_iff]
@@ -749,25 +756,25 @@ def CallE (D : Nat) (a : Ptr) (x : List Byte) (s s' : State) : Prop :=
     ((s'.gpr .rax).setWidth 32 = 1 → (rejNTTPoly maxBounds.rejNTT x).isSome)
 
 /-- Entry `e`'s call is done. -/
-def JE (p : Params) (D : Nat) (e : Nat) (σ s : State) : Prop :=
-  ∃ s₀, IA p D σ e s₀ ∧ CallE D (pS (aBase p + e)) (seedE p σ e) s₀ s
+def JE (p : Params) (D : Nat) (SL : List String) (e : Nat) (σ s : State) : Prop :=
+  ∃ s₀, IA p D SL σ e s₀ ∧ CallE D (pS (aBase p + e)) (seedE p σ e) s₀ s
 
-theorem callE_ok {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} {σ : State} {e : Nat}
-    (he : eChk p e = true) {s : State} (h : IA p D σ e s) (hs : bytesAt s.mem (pa s (sc oRS)) 34 = seedE p σ e) :
+theorem callE_ok {P : Prims} {D : Nat} (hP : PrimsOk P D SL) {p : Params} {σ : State} {e : Nat}
+    (he : eChk p e = true) {s : State} (h : IA p D SL σ e s) (hs : bytesAt s.mem (pa s (sc oRS)) 34 = seedE p σ e) :
     WP isa (callP "vg_mldsa_rej_ntt_poly" P.rejNTT [.ptr (sc oRS), .ptr (pS (aBase p + e)), .ptr (sc oPS)]) s
-      (JE p D e σ) := by
+      (JE p D SL e σ) := by
   obtain ⟨_, _, _, _, _, _, _, _, _, _, _, _, _, hc, _, _⟩ := eChk_spec he
   refine WP.mono (rejCall_ok hP h.st.lay hc) fun s' ⟨hP3, hcs3, hred, hout, hmax⟩ => ⟨s, h, hP3, hcs3, hred, ?_, ?_⟩
   · rw [← hs]; exact hout
   · rw [← hs]; exact hmax
 
 theorem andE_ok {D : Nat} {p : Params} {σ : State} {e : Nat} (he : eChk p e = true) {s : State}
-    (h : JE p D e σ s) : WP isa (.block [.alu32 .and .r15 (.reg .rax)]) s (IA p D σ (e + 1)) := by
+    (h : JE p D SL e σ s) : WP isa (.block [.alu32 .and .r15 (.reg .rax)]) s (IA p D SL σ (e + 1)) := by
   obtain ⟨_, _, c3, c0, _, _, _, _, k3, _, _, _, f3, _, _, _⟩ := eChk_spec he
   obtain ⟨s₀, h, hP3, hcs3, hred, hout, hmax⟩ := h
   have S3 := h.st.step hP3 c3
-  refine WP.mono (and15_ok s) fun s4 ⟨h15, hm4, k4⟩ => ?_
-  have hP4 : PPostB D s s4 [] := (postB15 k4 hm4 _).1
+  refine WP.mono_syms (and15_ok s) fun s4 ⟨h15, hm4, k4⟩ hy4 => ?_
+  have hP4 : PPostB D s s4 [] := (postB15 k4 hm4 _ hy4).1
   rw [hcs3 _ (by decide)] at h15
   have hr := outcome01 hout
   have hb4 : s4.gpr .rbx = s₀.gpr .rbx := by rw [hP4.bs _ (by decide), hP3.bs _ (by decide)]
@@ -803,8 +810,8 @@ theorem sampleE_eq (P : Prims) (p : Params) (e : Nat) : sampleE P p e = .seq (.b
       (.block [.alu32 .and .r15 (.reg .rax)])) := by
   unfold sampleE rejAt; rw [aP_eq]
 
-theorem sampleE_ok {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} {σ : State} {e : Nat}
-    (he : eChk p e = true) {s : State} (h : IA p D σ e s) : WP isa (sampleE P p e) s (IA p D σ (e + 1)) := by
+theorem sampleE_ok {P : Prims} {D : Nat} (hP : PrimsOk P D SL) {p : Params} {σ : State} {e : Nat}
+    (he : eChk p e = true) {s : State} (h : IA p D SL σ e s) : WP isa (sampleE P p e) s (IA p D SL σ (e + 1)) := by
   rw [sampleE_eq]
   exact WP.seq (WP.mono (blkE_ok he h) fun s1 ⟨⟨h1, hs1⟩, _⟩ =>
     WP.seq (WP.mono (callE_ok hP he h1 hs1) fun s2 h2 => andE_ok he h2))

@@ -7,6 +7,8 @@ import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Impl.MlDsa.X86.KeyGen.Inst
 import VerifiedGarbage.Proof.MlDsa.X86.Arith.NttInv
+import VerifiedGarbage.Proof.MlDsa.X86.Arith.Mul
+import VerifiedGarbage.Proof.MlDsa.X86.Arith.Ntt
 public import VerifiedGarbage.Proof.MlDsa.X86.Sample.RejNtt
 import VerifiedGarbage.Proof.MlDsa.X86.Pack.BitPack
 import VerifiedGarbage.Proof.Sha3.X86.Lit

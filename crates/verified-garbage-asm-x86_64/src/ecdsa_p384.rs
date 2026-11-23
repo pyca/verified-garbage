@@ -17,7 +17,7 @@
 /// * `scratch` must be valid for reads and writes of 8192 bytes.
 /// * The contents of `scratch` on return are unspecified; the caller may reuse or destroy them.
 /// * `scratch` must not overlap `public`, `digest` or `sig` (distinct Rust objects never do).
-/// * None of `public`, `digest`, `sig` and `scratch` may overlap the return address on the stack or the 96 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `public`, `digest`, `sig` and `scratch` may overlap the return address on the stack or the 104 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ecdsa_p384_verify(public: *const [u8; 97], digest: *const u8, digest_len: usize, sig: *const [u8; 96], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
@@ -153,7 +153,7 @@ call {vg_p384_mul_mod_p}
 call {vg_p384_mul_mod_p}
 .base64 "TInmTIuH4AIAAEyLj+gCAABMi5fwAgAATIuf+AIAAEyLpwADAABMi68IAwAATCuH0AYAAEwbj9gGAABMG5fgBgAATBuf6AYAAEwbp/AGAABMG6/4BgAASBnAicFIicJIweIgSInFSNHlSQHISRHRSRHqSRHDSRHESRHFTImHwAcAAEyJj8gHAABMiZfQBwAATImf2AcAAEyJp+AHAABMia/oBwAATIuHoAYAAEyLj6gGAABMi5ewBgAATIufuAYAAEyLp8AGAABMi6/IBgAAQb4AAAAATAOHsAUAAEwTj7gFAABME5fABQAATBOfyAUAAEwTp9AFAABME6/YBQAASYPWAEwrR0BMG09ITBtXUEwbX1hMG2dgTBtvaEmD3gBIGcCJwUiJwkjB4iBIicVI0eVJAchJEdFJEepJEcNJEcRJEcVMiYegBgAATImPqAYAAEyJl7AGAABMiZ+4BgAATImnwAYAAEyJr8gGAABJifS+0AYAALqgBgAAuUADAAA="
 call {vg_p384_mul_mod_p}
-.base64 "TInmTIuH4AIAAEyLj+gCAABMi5fwAgAATIuf+AIAAEyLpwADAABMi68IAwAATCuH0AYAAEwbj9gGAABMG5fgBgAATBuf6AYAAEwbp/AGAABMG6/4BgAASBnAicFIicJIweIgSInFSNHlSQHISRHRSRHqSRHDSRHESRHFTImHYAcAAEyJj2gHAABMiZdwBwAATImfeAcAAEyJp4AHAABMia+IBwAASIuXwAcAAEgLl8gHAABIC5fQBwAASAuX2AcAAEgLl+AHAABIC5foBwAASIP6AUgZ0kiJ1UiLlxAGAABIK1dwSIuXGAYAAEgbV3hIi5cgBgAASBuXgAAAAEiLlygGAABIG5eIAAAASIuXMAYAAEgbl5AAAABIi5c4BgAASBuXmAAAAEgZwEmJxEiLl2AHAABIC5doBwAASAuXcAcAAEgLl3gHAABIC5eABwAASAuXiAcAAEiD+gFIGdJMIeJICepIi4eACAAASCHQSImHgAgAAEiLl0ADAABIC5dIAwAASAuXUAMAAEgLl1gDAABIC5dgAwAASAuXaAMAALkAAAAASCnRSBnSSIuHgAgAAEgh0EiJh4AIAABIi4eACAAASIPgAUiLH0iLbwhMi2cQTItvGEyLdyBMi38oSI1kJFhmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjWQk+EyJHCRIjWQkqPMPf0QkSPMPf0QkOPMPf0QkKPMPf0QkGPMPf0QkCEyJHCRIjWQkWEiNZCQIicAxyTHSMfYx/0UxwEUxyUUx0sM="
+.base64 "TInmTIuH4AIAAEyLj+gCAABMi5fwAgAATIuf+AIAAEyLpwADAABMi68IAwAATCuH0AYAAEwbj9gGAABMG5fgBgAATBuf6AYAAEwbp/AGAABMG6/4BgAASBnAicFIicJIweIgSInFSNHlSQHISRHRSRHqSRHDSRHESRHFTImHYAcAAEyJj2gHAABMiZdwBwAATImfeAcAAEyJp4AHAABMia+IBwAASIuXwAcAAEgLl8gHAABIC5fQBwAASAuX2AcAAEgLl+AHAABIC5foBwAASIP6AUgZ0kiJ1UiLlxAGAABIK1dwSIuXGAYAAEgbV3hIi5cgBgAASBuXgAAAAEiLlygGAABIG5eIAAAASIuXMAYAAEgbl5AAAABIi5c4BgAASBuXmAAAAEgZwEmJxEiLl2AHAABIC5doBwAASAuXcAcAAEgLl3gHAABIC5eABwAASAuXiAcAAEiD+gFIGdJMIeJICepIi4eACAAASCHQSImHgAgAAEiLl0ADAABIC5dIAwAASAuXUAMAAEgLl1gDAABIC5dgAwAASAuXaAMAALkAAAAASCnRSBnSSIuHgAgAAEgh0EiJh4AIAABIi4eACAAASIPgAUiLH0iLbwhMi2cQTItvGEyLdyBMi38oSI1kJFhmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjWQk+EyJHCRIjWQkoPMPf0QkUPMPf0QkQPMPf0QkMPMPf0QkIPMPf0QkEPMPfwQkSI1kJGBIjWQkCInAMckx0jH2Mf9FMcBFMclFMdLD"
 .p2align 6"#,
         vg_p384_check_point = sym super::ec_p384_compressed::vg_p384_check_point::vg_p384_check_point,
         vg_p384_mul_mod_n = sym super::ecdsa_p384::vg_p384_mul_mod_n::vg_p384_mul_mod_n,
@@ -182,7 +182,7 @@ pub const VG_ECDSA_P384_VERIFY_ADX_FEATURES: verified_garbage_cpu::Features = ve
 /// * `scratch` must be valid for reads and writes of 8192 bytes.
 /// * The contents of `scratch` on return are unspecified; the caller may reuse or destroy them.
 /// * `scratch` must not overlap `public`, `digest` or `sig` (distinct Rust objects never do).
-/// * None of `public`, `digest`, `sig` and `scratch` may overlap the return address on the stack or the 96 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `public`, `digest`, `sig` and `scratch` may overlap the return address on the stack or the 104 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `bmi2` and `adx` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ecdsa_p384_verify_adx(public: *const [u8; 97], digest: *const u8, digest_len: usize, sig: *const [u8; 96], scratch: *mut [u64; 1024]) -> u32 {
@@ -319,7 +319,7 @@ call {vg_p384_mul_mod_p_adx}
 call {vg_p384_mul_mod_p_adx}
 .base64 "TInmTIuH4AIAAEyLj+gCAABMi5fwAgAATIuf+AIAAEyLpwADAABMi68IAwAATCuH0AYAAEwbj9gGAABMG5fgBgAATBuf6AYAAEwbp/AGAABMG6/4BgAASBnAicFIicJIweIgSInFSNHlSQHISRHRSRHqSRHDSRHESRHFTImHwAcAAEyJj8gHAABMiZfQBwAATImf2AcAAEyJp+AHAABMia/oBwAATIuHoAYAAEyLj6gGAABMi5ewBgAATIufuAYAAEyLp8AGAABMi6/IBgAAQb4AAAAATAOHsAUAAEwTj7gFAABME5fABQAATBOfyAUAAEwTp9AFAABME6/YBQAASYPWAEwrR0BMG09ITBtXUEwbX1hMG2dgTBtvaEmD3gBIGcCJwUiJwkjB4iBIicVI0eVJAchJEdFJEepJEcNJEcRJEcVMiYegBgAATImPqAYAAEyJl7AGAABMiZ+4BgAATImnwAYAAEyJr8gGAABJifS+0AYAALqgBgAAuUADAAA="
 call {vg_p384_mul_mod_p_adx}
-.base64 "TInmTIuH4AIAAEyLj+gCAABMi5fwAgAATIuf+AIAAEyLpwADAABMi68IAwAATCuH0AYAAEwbj9gGAABMG5fgBgAATBuf6AYAAEwbp/AGAABMG6/4BgAASBnAicFIicJIweIgSInFSNHlSQHISRHRSRHqSRHDSRHESRHFTImHYAcAAEyJj2gHAABMiZdwBwAATImfeAcAAEyJp4AHAABMia+IBwAASIuXwAcAAEgLl8gHAABIC5fQBwAASAuX2AcAAEgLl+AHAABIC5foBwAASIP6AUgZ0kiJ1UiLlxAGAABIK1dwSIuXGAYAAEgbV3hIi5cgBgAASBuXgAAAAEiLlygGAABIG5eIAAAASIuXMAYAAEgbl5AAAABIi5c4BgAASBuXmAAAAEgZwEmJxEiLl2AHAABIC5doBwAASAuXcAcAAEgLl3gHAABIC5eABwAASAuXiAcAAEiD+gFIGdJMIeJICepIi4eACAAASCHQSImHgAgAAEiLl0ADAABIC5dIAwAASAuXUAMAAEgLl1gDAABIC5dgAwAASAuXaAMAALkAAAAASCnRSBnSSIuHgAgAAEgh0EiJh4AIAABIi4eACAAASIPgAUiLH0iLbwhMi2cQTItvGEyLdyBMi38oSI1kJFhmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjWQk+EyJHCRIjWQkqPMPf0QkSPMPf0QkOPMPf0QkKPMPf0QkGPMPf0QkCEyJHCRIjWQkWEiNZCQIicAxyTHSMfYx/0UxwEUxyUUx0sM="
+.base64 "TInmTIuH4AIAAEyLj+gCAABMi5fwAgAATIuf+AIAAEyLpwADAABMi68IAwAATCuH0AYAAEwbj9gGAABMG5fgBgAATBuf6AYAAEwbp/AGAABMG6/4BgAASBnAicFIicJIweIgSInFSNHlSQHISRHRSRHqSRHDSRHESRHFTImHYAcAAEyJj2gHAABMiZdwBwAATImfeAcAAEyJp4AHAABMia+IBwAASIuXwAcAAEgLl8gHAABIC5fQBwAASAuX2AcAAEgLl+AHAABIC5foBwAASIP6AUgZ0kiJ1UiLlxAGAABIK1dwSIuXGAYAAEgbV3hIi5cgBgAASBuXgAAAAEiLlygGAABIG5eIAAAASIuXMAYAAEgbl5AAAABIi5c4BgAASBuXmAAAAEgZwEmJxEiLl2AHAABIC5doBwAASAuXcAcAAEgLl3gHAABIC5eABwAASAuXiAcAAEiD+gFIGdJMIeJICepIi4eACAAASCHQSImHgAgAAEiLl0ADAABIC5dIAwAASAuXUAMAAEgLl1gDAABIC5dgAwAASAuXaAMAALkAAAAASCnRSBnSSIuHgAgAAEgh0EiJh4AIAABIi4eACAAASIPgAUiLH0iLbwhMi2cQTItvGEyLdyBMi38oSI1kJFhmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjWQk+EyJHCRIjWQkoPMPf0QkUPMPf0QkQPMPf0QkMPMPf0QkIPMPf0QkEPMPfwQkSI1kJGBIjWQkCInAMckx0jH2Mf9FMcBFMclFMdLD"
 .p2align 6"#,
         vg_p384_check_point_adx = sym super::ec_p384_compressed::vg_p384_check_point_adx::vg_p384_check_point_adx,
         vg_p384_mul_mod_n_adx = sym super::ecdsa_p384::vg_p384_mul_mod_n_adx::vg_p384_mul_mod_n_adx,
@@ -470,6 +470,14 @@ pub(crate) mod vg_p384_jac_add_cached;
 #[rustfmt::skip]
 #[path = "internal/vg_p384_jac_add_cached_adx.rs"]
 pub(crate) mod vg_p384_jac_add_cached_adx;
+
+#[rustfmt::skip]
+#[path = "internal/vg_p384_jac_add_tail.rs"]
+pub(crate) mod vg_p384_jac_add_tail;
+
+#[rustfmt::skip]
+#[path = "internal/vg_p384_jac_add_tail_adx.rs"]
+pub(crate) mod vg_p384_jac_add_tail_adx;
 
 #[rustfmt::skip]
 #[path = "internal/vg_p384_mul_mod_n.rs"]

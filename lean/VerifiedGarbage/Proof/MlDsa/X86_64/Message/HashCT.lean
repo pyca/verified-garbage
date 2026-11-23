@@ -69,7 +69,7 @@ theorem kabsArgs {L : Lay} (hL : L.Ok) (hE : EOk p L) {g mx m₀} {t t1 : State}
     {src len pos : Arg} (hm : Moved (absArgs p src len pos) t t1) {dp : Addr} {n q : Nat}
     (hdp : src.val t = dp) (hn : len.val t = BitVec.ofNat 64 n) (hq : pos.val t = BitVec.ofNat 64 q)
     (hql : q < 136) (hnl : n < 2 ^ 64) (dS : Region.Disjoint ⟨dp, n⟩ ⟨L.ST, 200⟩)
-    (dK : Region.Disjoint ⟨dp, n⟩ ⟨L.KS, 640⟩) (kD : Region.Disjoint ⟨L.B, 40⟩ ⟨dp, n⟩) :
+    (dK : Region.Disjoint ⟨dp, n⟩ ⟨L.KS, 640⟩) (kD : Region.Disjoint ⟨L.B, 152⟩ ⟨dp, n⟩) :
     AbsorbArgs t1 L.ST dp L.KS 136 q n := by
   have hc1 : Ctx L g mx m₀ t1 := hc.regs hm.2.2.1 hm.2.2.2 hm.1.2.1 hm.1.2.2 fun r hr => hm.2.gpr (argRegs_cs r hr)
   obtain ⟨e1, e2, e3, e4, e5, e6⟩ := argsIn6 hm.1.1
@@ -90,7 +90,7 @@ theorem kabs_tr_of {Φ : Lay → Mem → State → Prop} (hΦ : ∀ L m t, Φ L 
     (hs : ∀ (L : Lay) m (t : State), L.Ok → Φ L m t →
       q L < 136 ∧ n L < 2 ^ 64 ∧ (∃ R ∈ L.rd ++ L.FR :: L.wr, Within ⟨dp L, n L⟩ R) ∧
       Region.Disjoint ⟨dp L, n L⟩ ⟨L.ST, 200⟩ ∧ Region.Disjoint ⟨dp L, n L⟩ ⟨L.KS, 640⟩ ∧
-      Region.Disjoint ⟨L.B, 40⟩ ⟨dp L, n L⟩) :
+      Region.Disjoint ⟨L.B, 152⟩ ⟨dp L, n L⟩) :
     RelCT isa (Two I Φ) (kabs p src len pos) fun _ _ => True := by
   have args : ∀ (L : Lay) g mx m₀ (t t1 : State), L.Ok → Ctx L g mx m₀ t → Φ L m₀ t →
       Moved (absArgs p src len pos) t t1 → AbsorbArgs t1 L.ST (dp L) L.KS 136 (q L) (n L) :=
@@ -101,7 +101,7 @@ theorem kabs_tr_of {Φ : Lay → Mem → State → Prop} (hΦ : ∀ L m t, Φ L 
   refine call_tr hok Proof.Sha3.X86_64.Stream.Absorb.absorb_correct
     Proof.Sha3.X86_64.Stream.Absorb.absorb_ct (fun L => [⟨dp L, n L⟩]) (fun L => [⟨L.ST, 200⟩, ⟨L.KS, 640⟩])
     (fun L g mx m₀ t t1 hL hc hφ hm => absorb_pre (args L g mx m₀ t t1 hL hc hφ hm))
-    (fun L g₁ g₂ mx₁ mx₂ m₁ m₂ a b a1 b1 hL _ c₁ c₂ φ₁ φ₂ f₁ f₂ => ?_) fun L _ _ m₀ t hL _ hφ => ?_
+    (fun L g₁ g₂ mx₁ mx₂ m₁ m₂ a b a1 b1 hL _ c₁ c₂ φ₁ φ₂ f₁ f₂ _ _ => ?_) fun L _ _ m₀ t hL _ hφ => ?_
   · have x := args L g₁ mx₁ m₁ a a1 hL c₁ φ₁ f₁
     have y := args L g₂ mx₂ m₂ b b1 hL c₂ φ₂ f₂
     simp only [Proof.Sha3.absorbX86_64, gpr_ce _ _ _ (by decide : Reg.rdi ≠ .rsp),
@@ -124,7 +124,7 @@ theorem kabs_tr {Φ : Lay → Mem → State → Prop} (hΦ : ∀ L m t, Φ L m t
       src.val t = dp L ∧ len.val t = BitVec.ofNat 64 (n L) ∧ pos.val t = BitVec.ofNat 64 (q L))
     (hs : ∀ L : Lay, L.Ok → q L < 136 ∧ n L < 2 ^ 64 ∧ (∃ R ∈ L.rd ++ L.FR :: L.wr, Within ⟨dp L, n L⟩ R) ∧
       Region.Disjoint ⟨dp L, n L⟩ ⟨L.ST, 200⟩ ∧ Region.Disjoint ⟨dp L, n L⟩ ⟨L.KS, 640⟩ ∧
-      Region.Disjoint ⟨L.B, 40⟩ ⟨dp L, n L⟩) :
+      Region.Disjoint ⟨L.B, 152⟩ ⟨dp L, n L⟩) :
     RelCT isa (Two I Φ) (kabs p src len pos) fun _ _ => True :=
   kabs_tr_of hΦ hok dp n q hv fun L _ _ hL _ => hs L hL
 
@@ -146,7 +146,7 @@ theorem kpad_tr {Φ : Lay → Mem → State → Prop} (hΦ : ∀ L m t, Φ L m t
   refine call_tr hok Proof.Sha3.X86_64.Stream.Pad.pad_correct Proof.Sha3.X86_64.Stream.Pad.pad_ct
     (fun _ => []) (fun L => [⟨L.ST, 200⟩, ⟨L.KS, 640⟩])
     (fun L g mx m₀ t t1 hL hc hφ hm => pad_pre (args L g mx m₀ t t1 hL hc hφ hm))
-    (fun L g₁ g₂ mx₁ mx₂ m₁ m₂ a b a1 b1 hL _ c₁ c₂ φ₁ φ₂ f₁ f₂ => ?_) fun L _ _ m₀ t hL _ hφ => ?_
+    (fun L g₁ g₂ mx₁ mx₂ m₁ m₂ a b a1 b1 hL _ c₁ c₂ φ₁ φ₂ f₁ f₂ _ _ => ?_) fun L _ _ m₀ t hL _ hφ => ?_
   · have x := args L g₁ mx₁ m₁ a a1 hL c₁ φ₁ f₁
     have y := args L g₂ mx₂ m₂ b b1 hL c₂ φ₂ f₂
     simp only [Proof.Sha3.padX86_64, gpr_ce _ _ _ (by decide : Reg.rdi ≠ .rsp),
@@ -177,7 +177,7 @@ theorem ksqz_tr {Φ : Lay → Mem → State → Prop} (hΦ : ∀ L m t, Φ L m t
   refine call_tr hok Proof.Sha3.X86_64.Stream.Squeeze.squeeze_correct
     Proof.Sha3.X86_64.Stream.Squeeze.squeeze_ct (fun _ => []) (fun L => [⟨L.ST, 200⟩, ⟨L.MU, 64⟩, ⟨L.KS, 640⟩])
     (fun L g mx m₀ t t1 hL hc hφ hm => squeeze_pre (args L g mx m₀ t t1 hL hc hφ hm))
-    (fun L g₁ g₂ mx₁ mx₂ m₁ m₂ a b a1 b1 hL _ c₁ c₂ φ₁ φ₂ f₁ f₂ => ?_) fun L _ _ m₀ t hL _ hφ => ?_
+    (fun L g₁ g₂ mx₁ mx₂ m₁ m₂ a b a1 b1 hL _ c₁ c₂ φ₁ φ₂ f₁ f₂ _ _ => ?_) fun L _ _ m₀ t hL _ hφ => ?_
   · have x := args L g₁ mx₁ m₁ a a1 hL c₁ φ₁ f₁
     have y := args L g₂ mx₂ m₂ b b1 hL c₂ φ₂ f₂
     simp only [Proof.Sha3.squeezeX86_64, gpr_ce _ _ _ (by decide : Reg.rdi ≠ .rsp),
@@ -197,16 +197,16 @@ theorem ksqz_tr {Φ : Lay → Mem → State → Prop} (hΦ : ∀ L m t, Φ L m t
 /-- Where the two bytes of the formatted message are. -/
 theorem hdrSide {L : Lay} (hL : L.Ok) : 64 < 136 ∧ 2 < 2 ^ 64 ∧ (∃ R ∈ L.rd ++ L.FR :: L.wr, Within ⟨L.SP, 2⟩ R) ∧
     Region.Disjoint ⟨L.SP, 2⟩ ⟨L.ST, 200⟩ ∧ Region.Disjoint ⟨L.SP, 2⟩ ⟨L.KS, 640⟩ ∧
-    Region.Disjoint ⟨L.B, 40⟩ ⟨L.SP, 2⟩ :=
+    Region.Disjoint ⟨L.B, 152⟩ ⟨L.SP, 2⟩ :=
   ⟨by decide, by decide, ⟨L.FR, by simp, within_base _ (by decide)⟩,
-    by have := hL.stk_x (d := 40) (n := 2) (e := 0) (k := 200) (by decide) (by decide); simpa only [x0] using this,
-    hL.stk_x (d := 40) (n := 2) (by decide) (by decide), Offset.base_disjoint _ (by decide) (by decide)⟩
+    by have := hL.stk_x (d := 152) (n := 2) (e := 0) (k := 200) (by decide) (by decide); simpa only [x0] using this,
+    hL.stk_x (d := 152) (n := 2) (by decide) (by decide), Offset.base_disjoint _ (by decide) (by decide)⟩
 
 /-- Where the context string is. -/
 theorem ctxSide {L : Lay} (hL : L.Ok) : 66 < 136 ∧ L.ctxLen.toNat < 2 ^ 64 ∧
     (∃ R ∈ L.rd ++ L.FR :: L.wr, Within ⟨L.ctx, L.ctxLen.toNat⟩ R) ∧
     Region.Disjoint ⟨L.ctx, L.ctxLen.toNat⟩ ⟨L.ST, 200⟩ ∧ Region.Disjoint ⟨L.ctx, L.ctxLen.toNat⟩ ⟨L.KS, 640⟩ ∧
-    Region.Disjoint ⟨L.B, 40⟩ ⟨L.ctx, L.ctxLen.toNat⟩ :=
+    Region.Disjoint ⟨L.B, 152⟩ ⟨L.ctx, L.ctxLen.toNat⟩ :=
   ⟨by decide, L.ctxLen.isLt, ⟨L.CTX, List.mem_append_left _ hL.inCtx, within_self _⟩,
     by have := hL.x_r hL.xCtx (e := 0) (k := 200) (by decide); simpa only [x0] using this.symm,
     (hL.x_r hL.xCtx (e := 200) (k := 640) (by decide)).symm,
@@ -216,7 +216,7 @@ theorem ctxSide {L : Lay} (hL : L.Ok) : 66 < 136 ∧ L.ctxLen.toNat < 2 ^ 64 ∧
 theorem msgSide {L : Lay} (hL : L.Ok) {q : Nat} (hq : q < 136) : q < 136 ∧ L.len.toNat < 2 ^ 64 ∧
     (∃ R ∈ L.rd ++ L.FR :: L.wr, Within ⟨L.msg, L.len.toNat⟩ R) ∧
     Region.Disjoint ⟨L.msg, L.len.toNat⟩ ⟨L.ST, 200⟩ ∧ Region.Disjoint ⟨L.msg, L.len.toNat⟩ ⟨L.KS, 640⟩ ∧
-    Region.Disjoint ⟨L.B, 40⟩ ⟨L.msg, L.len.toNat⟩ :=
+    Region.Disjoint ⟨L.B, 152⟩ ⟨L.msg, L.len.toNat⟩ :=
   ⟨hq, L.len.isLt, ⟨L.MSG, List.mem_append_left _ hL.inMsg, within_self _⟩,
     by have := hL.x_r hL.xMsg (e := 0) (k := 200) (by decide); simpa only [x0] using this.symm,
     (hL.x_r hL.xMsg (e := 200) (k := 640) (by decide)).symm,
@@ -241,7 +241,7 @@ theorem muHash_tr_of (hE : oE p + 1024 < 2 ^ 31) {Φ : Lay → Mem → State →
     (htr : ∀ (L : Lay) g mx m (t : State), Ctx L g mx m t → EOk p L → tr.val t = trp L)
     (hs : ∀ L : Lay, L.Ok → G L → (∃ R ∈ L.rd ++ L.FR :: L.wr, Within ⟨trp L, 64⟩ R) ∧
       Region.Disjoint ⟨trp L, 64⟩ ⟨L.ST, 200⟩ ∧ Region.Disjoint ⟨trp L, 64⟩ ⟨L.KS, 640⟩ ∧
-      Region.Disjoint ⟨L.B, 40⟩ ⟨trp L, 64⟩) :
+      Region.Disjoint ⟨L.B, 152⟩ ⟨trp L, 64⟩) :
     RelCT isa (Two I Φ) (muHash p tr) fun _ _ => True := by
   -- The relation keeps only `EOk` and the position in `rax`.
   let Ψ : (Lay → Nat) → Lay → Mem → State → Prop := fun q L _ t => EOk p L ∧ (t.gpr .rax).toNat = q L
@@ -313,7 +313,7 @@ theorem muHash_tr (hE : oE p + 1024 < 2 ^ 31) {Φ : Lay → Mem → State → Pr
     (htr : ∀ (L : Lay) g mx m (t : State), Ctx L g mx m t → EOk p L → tr.val t = trp L)
     (hs : ∀ L : Lay, L.Ok → (∃ R ∈ L.rd ++ L.FR :: L.wr, Within ⟨trp L, 64⟩ R) ∧
       Region.Disjoint ⟨trp L, 64⟩ ⟨L.ST, 200⟩ ∧ Region.Disjoint ⟨trp L, 64⟩ ⟨L.KS, 640⟩ ∧
-      Region.Disjoint ⟨L.B, 40⟩ ⟨trp L, 64⟩) :
+      Region.Disjoint ⟨L.B, 152⟩ ⟨trp L, 64⟩) :
     RelCT isa (Two I Φ) (muHash p tr) fun _ _ => True :=
   muHash_tr_of hE (G := fun _ => True) (fun L m t h => ⟨hΦ L m t h, trivial⟩) hok trp htr fun L hL _ => hs L hL
 

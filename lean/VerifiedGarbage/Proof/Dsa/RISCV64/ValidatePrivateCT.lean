@@ -183,7 +183,8 @@ def vrestRegs : List Reg := keyPairRegs ++ xRangePRegs
 `g^x mod p = y` and `0 < x < q`. Memory changes only in `hMask` and past the
 header. -/
 theorem vrest_ok {s₀ s : State} {L : Lay} {key sig : Addr} {d : Nat} (hL : L.Ok) (hK : ParamsOk s₀.mem L key)
-    (hc : Checked s₀ s L key sig d) (hkp : Kept L s₀.mem s.mem) (hk : Src s L key (3 * L.pl + 2 * L.ql)) :
+    (hc : Checked s₀ s L key sig d) (hkp : Kept L s₀.mem s.mem) (hsw : word s.mem L.S hSig = sig)
+    (hk : Src s L key (3 * L.pl + 2 * L.ql)) :
     WP isa (.seq Sign.keyPair PrevalidatedSign.xRange) s fun t =>
       (t.gpr .a0 = BitVec.ofNat 64 (if gOf s₀.mem L key ^ xOf s.mem L key % pOf s₀.mem L key = yOf s₀.mem L key ∧
           (0 < xOf s.mem L key ∧ xOf s.mem L key < qOf s₀.mem L key) then 1 else 0) ∧
@@ -195,7 +196,7 @@ theorem vrest_ok {s₀ s : State} {L : Lay} {key sig : Addr} {d : Nat} (hL : L.O
   have ep := (params_kept hk2 hkp).1
   have B := VG.Proof.Dsa.supported_bounds hK.1.1
   have hpo : pOf s₀.mem L key % 2 = 1 := hK.1.2.2
-  refine WP.seq (WP.mono (keyPair_ok hL hc.scr hc.regs hc.inp hc.inv hk hc.p0 (by omega_using [B]) hpo hc.p24)
+  refine WP.seq (WP.mono (keyPair_ok hL hc.scr hc.regs hsw hc.inp hc.inv hk hc.p0 (by omega_using [B]) hpo hc.p24)
     fun s₁ ⟨⟨mx₁, _, _, m, o₁, w₁⟩, k₁⟩ => ?_)
   have K₁ : BKept L s.mem s₁.mem := (BKept.ofBody hL (PLow.body hL o₁)).trans (BKept.ofMask hL w₁)
   have q0₁ : arrQ s₁.mem L 0 = qOf s₀.mem L key := by
@@ -244,10 +245,10 @@ theorem validatePriv_correct (s : State) (h : vpkContract.pre s) :
     (by omega_using [])) Out₁
   have hKs : SignKeyOk s₁.mem (playOf s) (s.gpr .a0) ↔ SignKeyOk s.mem (playOf s) (s.gpr .a0) := by
     simp only [SignKeyOk, ParamsOk, ep₁, eq₁, eg₁, ey₁]
-  refine WP.seq (checkSignKey_ok hL F.scr F.regs F.lens (by decide) ((src k₁.2.1 k₁.2.2).take (by omega_using []))
+  refine WP.seq (checkSignKey_ok hL F.scr F.regs F.sigw F.lens (by decide) ((src k₁.2.1 k₁.2.2).take (by omega_using []))
     (fun t hK hc Kd kc => ?_) (fun t hn Kd hrt scrt kc => ?_))
   · have kt := k₁.trans kc
-    refine WP.mono (vrest_ok hL hK.1 hc Kd (src kt.2.1 kt.2.2)) fun u ⟨⟨u0, u6, scru, Ku⟩, _⟩ => ?_
+    refine WP.mono (vrest_ok hL hK.1 hc Kd ((kept_sig Kd).trans F.sigw) (src kt.2.1 kt.2.2)) fun u ⟨⟨u0, u6, scru, Ku⟩, _⟩ => ?_
     refine WP.mono (sfinish_ok u6
       (fun i hi => by
         rw [← saveOff_eq]; exact scru.st (d := saveOff i) (by simp only [saveOff, playOf] at hZ ⊢; omega_arith))
@@ -316,7 +317,7 @@ open VG.Proof.Bignum (slot)
 /-- A call's public data: the key's public octets. -/
 def vdV (s : State) : VD :=
   ⟨playOf s, s.gpr .a0, 0, 0, 0, Spec.Rsa.bytesAt s.mem (s.gpr .a0) (3 * (s.gpr .a2).toNat + (s.gpr .a3).toNat),
-    3 * (s.gpr .a2).toNat + (s.gpr .a3).toNat, 0, false, none, false⟩
+    3 * (s.gpr .a2).toNat + (s.gpr .a3).toNat, 0, false, none⟩
 
 /-- On entry. -/
 def C0v (v : VD) (s : State) : Prop := vpkContract.pre s ∧ vdV s = v
@@ -331,7 +332,7 @@ theorem frontV : ∀ v s, C0v v s → WP isa (.block Params.entry) s (P0 v) := b
     psrc_of hrd dKS (by omega_using [hkl]) k.2.1 k.2.2
   exact ⟨⟨hL, F.regs, F.scr, hK, src_nil rfl, src_nil (Nat.zero_min _),
     hK.bytes F.out (by simp only [playOf] at hZ ⊢; omega_using [hZ]), (by simp only [vdV, playOf]; omega_using []),
-    (fun h => nomatch h), fun _ h => (nomatch h), fun h => nomatch h⟩, F.lens.trans (congrArg _ (Nat.zero_min _).symm)⟩
+    (fun h => nomatch h), fun _ h => (nomatch h), F.sigw⟩, F.lens.trans (congrArg _ (Nat.zero_min _).symm)⟩
 
 theorem kyC0v : ∀ v s, C0v v s → KY v := by
   rintro _ s ⟨-, rfl⟩
@@ -503,13 +504,13 @@ theorem powV {v : VD} {s : State} {N E : Addr} (h : VK v s) (hN : Src s v.L N v.
   have hL := B.ok
   have e := Lay.slot_eq v.L.wp
   have e0 := e 0; have e1 := e 1; have e24 := e 24; have hw := hL.wp_ge
-  refine WP.mono (powSrc_ok hL B.scr B.regs ip I hN h7 hE h9 p0 hp hpo p24) fun t ⟨⟨_, ip', I', o⟩, k⟩ => ?_
+  refine WP.mono (powSrc_ok hL B.scr B.regs B.hsig ip I hN h7 hE h9 p0 hp hpo p24) fun t ⟨⟨_, ip', I', o⟩, k⟩ => ?_
   have hb := p_arrays_body hL o
   exact ⟨⟨B.body k hb, ip', I', (o.wordsVal (by omega_using [e0, e1]) (by omega_arith)).trans p0,
     (o.wordsVal (by omega_using [e1, e24]) (by omega_arith)).trans p24⟩, (keepQ_arr0 hL (PLow.keepQ hL o)).trans h.q0,
     h.xs.keep k.2.1 k.2.2⟩
 
-theorem pinsV53 : Pins (At ΦVR FVR 53) [.s6, .s11, .ra, .a7, .s5, .t0, .s7, .s8] :=
+theorem pinsV15 : Pins (At ΦVR FVR 15) [.s6, .s11, .ra, .a7, .s5, .t0, .s7, .s8] :=
   pins_at_fix (fun v => fixB v ++ envP v ++ [(.s7, off v.key (2 * v.L.pl + v.L.ql)), (.s8, BitVec.ofNat 64 v.L.pl)])
     (fun _ => rfl) fun _ _ h => by
     obtain ⟨V, hsz, hpo, -⟩ := onVR h
@@ -526,23 +527,23 @@ theorem kpV {v : VD} {s : State} (h : ΦVR v s) : WP isa Sign.keyPair s (Base v)
   have bd := VG.Proof.Dsa.supported_bounds hsz
   have B := V.cb.1
   have hL := B.ok
-  refine WP.mono (keyPair_ok hL B.scr B.regs V.cb.2.1 V.cb.2.2.1 V.xs V.cb.2.2.2.1 (by omega_using [bd]) hpo V.cb.2.2.2.2)
+  refine WP.mono (keyPair_ok hL B.scr B.regs B.hsig V.cb.2.1 V.cb.2.2.1 V.xs V.cb.2.2.2.1 (by omega_using [bd]) hpo V.cb.2.2.2.2)
     fun t ⟨⟨_, _, _, m, o, w⟩, k⟩ => ?_
   have K : BKept v.L s.mem t.mem := (BKept.ofBody hL (PLow.body hL o)).trans (BKept.ofMask hL w)
   exact B.step (B.regs.ofBKept k K) k.2.1 k.2.2 K.out (K.word (by decide) (by decide)) (K.word (by decide) (by decide))
     (K.word (by decide) (by decide))
 
-theorem pinsV64 : Pins (At ΦVR FVR 64) [.s6, .s11, .ra] :=
+theorem pinsV26 : Pins (At ΦVR FVR 26) [.s6, .s11, .ra] :=
   pins_at_fix fixB (fun _ => rfl) fun _ _ h =>
     WP.of_flat (c := Sign.keyPair) (by kernel_rfl) ((kpV h).mono fun _ B => B.fixB)
 
-theorem pinsV65 : Pins (At ΦVR FVR 65) [.s6, .s11, .ra, .a7, .s5, .t0] :=
+theorem pinsV27 : Pins (At ΦVR FVR 27) [.s6, .s11, .ra, .a7, .s5, .t0] :=
   pins_at_fix (fun v => fixB v ++ envQ v) (fun _ => rfl) fun _ _ h =>
     WP.of_flat (c := .seq Sign.keyPair (.block enterQ)) (by kernel_rfl)
       (WP.seq ((kpV h).mono fun _ B => WP.mono (enterQ_ok B.ok B.scr B.regs) fun _ ⟨⟨iq, m⟩, k⟩ =>
         (B.keepM k m).fixB.app (fix_envQ iq)))
 
-theorem pinsV69 : Pins (At ΦVR FVR 69) [.s6, .s11, .ra, .a7, .s5, .t0, .s7, .s8] :=
+theorem pinsV31 : Pins (At ΦVR FVR 31) [.s6, .s11, .ra, .a7, .s5, .t0, .s7, .s8] :=
   pins_at_fix (fun v => fixB v ++ envQ v ++ [(.s7, off v.key (3 * v.L.pl + v.L.ql)), (.s8, BitVec.ofNat 64 v.L.ql)])
     (fun _ => rfl) fun v _ h =>
     WP.of_flat (c := .seq Sign.keyPair (.seq (.block enterQ) (.seq (zeroArr 7) (.block Sign.ptrX))))
@@ -563,11 +564,11 @@ theorem pinsV69 : Pins (At ΦVR FVR 69) [.s6, .s11, .ra, .a7, .s5, .t0, .s7, .s8
 theorem VR_rel : RelCT isa (Two ΦVR) VR fun _ _ => True := by
   refine chain_start (chain_cons runVR (m := 2) (by decide) (two_taint _ pinsV0 (by taint_decide)) ?_)
   refine chain_cons runVR (m := 12) (by decide) (two_taint _ pinsV2 (by taint_decide)) ?_
-  refine chain_cons runVR (m := 53) (by decide) (two_taint _ pinsV12 (by taint_decide)) ?_
-  refine chain_cons runVR (m := 64) (by decide) (two_taint _ pinsV53 (by taint_decide)) ?_
-  refine chain_cons runVR (m := 65) (by decide) (two_taint _ pinsV64 (by taint_decide)) ?_
-  refine chain_cons runVR (m := 69) (by decide) (two_taint _ pinsV65 (by taint_decide)) ?_
-  exact two_taint _ pinsV69 (by taint_decide)
+  refine chain_cons runVR (m := 15) (by decide) (two_taint _ pinsV12 (by taint_decide)) ?_
+  refine chain_cons runVR (m := 26) (by decide) (two_taint _ pinsV15 (by taint_decide)) ?_
+  refine chain_cons runVR (m := 27) (by decide) (two_taint _ pinsV26 (by taint_decide)) ?_
+  refine chain_cons runVR (m := 31) (by decide) (two_taint _ pinsV27 (by taint_decide)) ?_
+  exact two_taint _ pinsV31 (by taint_decide)
 
 /-! ## The levels' relations -/
 
@@ -631,7 +632,7 @@ theorem pinsTv6 : Pins (At C0v FTv 6) [.s6] :=
     obtain ⟨_, _, u₁, -, e₁, e₂⟩ := exec_seqL_append.mp e
     have h₁ : u₁.gpr .s6 = v.L.S := (at_sem (Φ := C0v) (F := FTv) (n := 1) (M := P0)
       (fun _ _ h => WP.of_flat (c := .block Params.entry) rfl (frontV _ _ h)) ⟨s₀, _, h₀, e₁⟩).1.regs.s6
-    exact ⟨(Exec.gpr_callFree s6_keptv e₂ rfl).trans h₁, trivial⟩
+    exact ⟨(Exec.gpr s6_keptv e₂).trans h₁, trivial⟩
 
 theorem pins_a4v {Φ : VD → State → Prop} (h : ∀ v s, Φ v s → vdV s = v) : Pins Φ [.a4] := by
   intro v s₁ s₂ h₁ h₂ r hr

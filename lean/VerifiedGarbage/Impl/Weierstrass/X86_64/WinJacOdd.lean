@@ -83,10 +83,16 @@ def stepO (dbl : Pt → Prog isa) : Prog isa :=
 /-- `rbx = J - 1` and `R = P`, the top digit's point. -/
 def firstO : List Instr := [.mov32 .rbx (.imm (BitVec.ofNat 32 (K.J - 1)))] ++ copyPt K.M.n K.R K.P
 
+/-- `buildO`, as a call of `buildFn` if the configuration names one. -/
+def buildOC : Prog isa :=
+  match K.buildFn with
+  | some n => .call n K.buildO
+  | none => K.buildO
+
 /-- `[k]P` into `R`, in projective coordinates, for the table of the bits of
 `k + 32^J - 1` at `K.bits - 1`. -/
 def windowO (dbl : Pt → Prog isa) : Prog isa :=
-  .seq K.buildO <| .seq (.block K.firstO) <| .seq (.loop (K.stepO dbl) .ne) <|
+  .seq K.buildOC <| .seq (.block K.firstO) <| .seq (.loop (K.stepO dbl) .ne) <|
   .seq (.block K.tc.outFix) (ForwardField.programB K.M K.tc.outOps)
 
 end JacWinCfg

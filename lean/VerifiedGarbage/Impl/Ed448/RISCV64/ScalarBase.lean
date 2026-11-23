@@ -178,6 +178,33 @@ def addOps : List COp :=
     .add U6 U1 U4, .add U7 RX RY, .add U8 SX SY, .mul U7 U7 U8, .mul U8 RZ U5, .sub U7 U7 U2,
     .sub U7 U7 U3, .mul RX U8 U7, .mul U8 RZ U6, .sub U7 U3 U2, .mul RY U8 U7, .mul RZ U5 U6]
 
+/-! ## The point operations as functions
+
+A call writes `ra` and `t0`–`t6`, and the point operations' callers keep a
+counter in `t1` and a pointer in `t2`. So a call site (`viaCall`) keeps
+`t1`, `t2` and `ra` in X448's slot `Y` (whose element no point operation
+uses), and loads them back after the call: around it, only the registers a
+field operation writes change, and only the field area. -/
+
+/-- Where a call site keeps `t1`, `t2` and `ra`: X448's slot `Y`. -/
+def SAVT1 : Nat := 896
+def SAVT2 : Nat := 904
+def SAVRA : Nat := 912
+
+/-- A call of `name`, the function `body`, with `t1`, `t2` and `ra` kept. -/
+def viaCall (name : String) (body : Prog isa) : Prog isa :=
+  .seq (.block [.store .d .t1 .a3 SAVT1, .store .d .t2 .a3 SAVT2, .store .d .ra .a3 SAVRA])
+    (.seq (.call name body) (.block [.load .d .ra .a3 SAVRA, .load .d .t1 .a3 SAVT1, .load .d .t2 .a3 SAVT2]))
+
+/-- The doubling, `vg_ed448_point_double`. -/
+def dblCall : Prog isa := viaCall "vg_ed448_point_double" (opsProg dblOps)
+
+/-- The affine addition, `vg_ed448_point_add_affine`. -/
+def addAffCall : Prog isa := viaCall "vg_ed448_point_add_affine" (opsProg addOps)
+
+/-- RFC 8032's addition, `vg_ed448_point_add`. -/
+def additionCall : Prog isa := viaCall "vg_ed448_point_add" addition
+
 /-- The table at `a3 + CTAB`, `a3` moved there and back. -/
 def tabBuild : List Instr :=
   [.addi .a3 .a3 2047, .addi .a3 .a3 1] ++

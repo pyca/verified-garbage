@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Impl.Dsa.X86_64.Fn
 public import VerifiedGarbage.Proof.Dsa.X86_64.ParameterSearchInitScrub
 public import VerifiedGarbage.Proof.Dsa.X86_64.BackendScrub
+public import VerifiedGarbage.Proof.Dsa.X86_64.Slots
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SearchScrub
 public import VerifiedGarbage.Proof.Variants.DsaArithmetic.X86_64
 public import VerifiedGarbage.Proof.Variants.MillerRabin.X86_64
@@ -26,37 +27,39 @@ open VG.Proof.Dsa.X86_64
 
 def artifacts : List Artifact :=
   direct ++
-  (VG.Proof.Variants.DsaArithmetic.X86_64.variants.flatMap fun (v : Backend) => [
+  (VG.Proof.Variants.DsaArithmetic.X86_64.variants.flatMap fun (a : Proof.Dsa.X86_64.Slots.SlotBackend) => [
     Spec.Dsa.randomSignPrevalidatedApi.artifact X86_64.target {
-      suffix := v.suffix
-      code := Impl.Dsa.X86_64.Fn.randomSignPrevalidated v.level (prevalidatedSignerName v) v.sq v.mul
-      verified := Proof.Dsa.X86_64.BackendScrub.randomSign_scrubbed v
-      spSafe := Proof.Dsa.X86_64.BackendScrub.randomSign_spSafe v },
+      suffix := a.backend.suffix
+      code := Impl.Dsa.X86_64.Fn.randomSignPrevalidatedS a.backend.level (prevalidatedSignerName a.backend) a.nm a.ns
+        a.bm a.bs
+      verified := Proof.Dsa.X86_64.BackendScrub.randomSign_scrubbed a
+      spSafe := Proof.Dsa.X86_64.BackendScrub.randomSign_spSafe a },
     Spec.Dsa.validatePrivateKeyApi.artifact X86_64.target {
-      suffix := v.suffix
-      code := Impl.Dsa.X86_64.Fn.validatePrivateKey v.level v.sq v.mul
-      verified := Proof.Dsa.X86_64.BackendScrub.validatePrivate_scrubbed v
-      spSafe := Proof.Dsa.X86_64.BackendScrub.validatePrivate_spSafe v },
+      suffix := a.backend.suffix
+      code := Impl.Dsa.X86_64.Fn.validatePrivateKeyS a.backend.level a.nm a.ns a.bm a.bs
+      verified := Proof.Dsa.X86_64.Slots.validatePrivate_scrubbed a
+      spSafe := Proof.Dsa.X86_64.Slots.validatePrivate_spSafe a },
     Spec.Dsa.validatePublicKeyApi.artifact X86_64.target {
-      suffix := v.suffix
-      code := Impl.Dsa.X86_64.Fn.validatePublicKey v.level v.sq v.mul
-      verified := Proof.Dsa.X86_64.BackendScrub.validatePublic_scrubbed v
-      spSafe := Proof.Dsa.X86_64.BackendScrub.validatePublic_spSafe v },
+      suffix := a.backend.suffix
+      code := Impl.Dsa.X86_64.Fn.validatePublicKeyS a.backend.level a.nm a.ns a.bm a.bs
+      verified := Proof.Dsa.X86_64.Slots.validatePublic_scrubbed a
+      spSafe := Proof.Dsa.X86_64.Slots.validatePublic_spSafe a },
     Spec.Dsa.verifyPrevalidatedApi.artifact X86_64.target {
-      suffix := v.suffix
-      code := Impl.Dsa.X86_64.Fn.verifyPrevalidated v.level v.sq v.mul
-      verified := Proof.Dsa.X86_64.BackendScrub.verify_scrubbed v
-      spSafe := Proof.Dsa.X86_64.BackendScrub.verify_spSafe v },
+      suffix := a.backend.suffix
+      code := Impl.Dsa.X86_64.Fn.verifyPrevalidatedS a.backend.level a.nm a.ns a.bm a.bs
+      verified := Proof.Dsa.X86_64.Slots.verify_scrubbed a
+      spSafe := Proof.Dsa.X86_64.Slots.verify_spSafe a },
     Spec.Dsa.generateKeyApi.artifact X86_64.target {
-      suffix := v.suffix
-      code := Impl.Dsa.X86_64.Fn.generateKey v.level (keygenCheckName v) (keygenDeriveName v) v.sq v.mul
-      verified := Proof.Dsa.X86_64.BackendScrub.generateKey_scrubbed v
-      spSafe := Proof.Dsa.X86_64.BackendScrub.generateKey_spSafe v },
+      suffix := a.backend.suffix
+      code := Impl.Dsa.X86_64.Fn.generateKeyS a.backend.level (keygenCheckName a.backend) (keygenDeriveName a.backend)
+        a.nm a.ns a.bm a.bs
+      verified := Proof.Dsa.X86_64.BackendScrub.generateKey_scrubbed a
+      spSafe := Proof.Dsa.X86_64.BackendScrub.generateKey_spSafe a },
     Spec.Dsa.deriveKeyApi.artifact X86_64.target {
-      suffix := v.suffix
-      code := Impl.Dsa.X86_64.Fn.deriveKey v.level v.sq v.mul
-      verified := Proof.Dsa.X86_64.BackendScrub.deriveKey_scrubbed v
-      spSafe := Proof.Dsa.X86_64.BackendScrub.deriveKey_spSafe v }]) ++
+      suffix := a.backend.suffix
+      code := Impl.Dsa.X86_64.Fn.deriveKeyS a.backend.level a.nm a.ns a.bm a.bs
+      verified := Proof.Dsa.X86_64.Slots.deriveKey_scrubbed a
+      spSafe := Proof.Dsa.X86_64.Slots.deriveKey_spSafe a }]) ++
   (Generation.RefillBackend.hashPairs.flatMap fun (p : Generation.RefillBackend.Hashes) =>
     VG.Proof.Variants.MillerRabin.X86_64.variants.map fun (v : Proof.MillerRabin.X86_64.RoundImpl) =>
     Spec.Dsa.parameterSearchApi.artifact X86_64.target {

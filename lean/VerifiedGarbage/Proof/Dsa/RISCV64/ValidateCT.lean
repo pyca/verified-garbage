@@ -191,7 +191,7 @@ theorem pinsTk6 : Pins (At C0k FTk 6) [.s6] :=
     obtain ⟨_, _, u₁, -, e₁, e₂⟩ := exec_seqL_append.mp e
     have h₁ : u₁.gpr .s6 = v.L.S := (at_sem (Φ := C0k) (F := FTk) (n := 1) (M := P0)
       (fun _ _ h => WP.of_flat (c := .block Params.entry) rfl (frontK _ _ h)) ⟨s₀, _, h₀, e₁⟩).1.regs.s6
-    exact ⟨(Exec.gpr_callFree s6_keptk e₂ rfl).trans h₁, trivial⟩
+    exact ⟨(Exec.gpr s6_keptk e₂).trans h₁, trivial⟩
 
 theorem validate_rel : RelCT isa (Two C0k) Prevalidated.validate fun _ _ => True := by
   refine chain_start (chain_cons runTk (m := 1) (by decide)

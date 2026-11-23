@@ -32,8 +32,8 @@ open VG.Proof.Mont VG.Proof.Mont.Arm VG.Proof.Weierstrass VG.Proof.Weierstrass.A
   disjoint : Region.Disjoint ⟨ptr s .r1, len⟩ ⟨ptr s .r2, 8192⟩
   pk_fit : (s.gpr .r1).toNat + len ≤ 2 ^ 32
   ws_fit : (s.gpr .r2).toNat + 8192 ≤ 2 ^ 32
-  /-- The table of constants the setup copies, if it copies one (`Cfg.tbl`). -/
-  tbl : c.tbl = true → ConstTblOk c (ptr s .r2) s
+  /-- The table of constants the setup copies. -/
+  tbl : ConstTblOk c (ptr s .r2) s
 
  theorem input_setup {c : Cfg} {len : Nat} {s : State}
     (hp : InputPre c len s) (hlen : c.C.len ≤ len) :

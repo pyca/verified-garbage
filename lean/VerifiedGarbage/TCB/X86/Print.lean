@@ -92,10 +92,12 @@ def XBinOp.name : XBinOp → String
   | .paddq => "paddq" | .sha1msg1 => "sha1msg1" | .sha1msg2 => "sha1msg2"
   | .sha1nexte => "sha1nexte" | .aesdec => "aesdec" | .aesdeclast => "aesdeclast"
   | .aesimc => "aesimc"
+  | .paddw => "paddw" | .psubw => "psubw" | .packssdw => "packssdw"
+  | .punpcklwd => "punpcklwd" | .punpckhwd => "punpckhwd"
 
 def XShiftOp.name : XShiftOp → String
   | .pslld => "pslld" | .psrld => "psrld" | .psllq => "psllq" | .psrlq => "psrlq"
-  | .pslldq => "pslldq" | .psrldq => "psrldq"
+  | .pslldq => "pslldq" | .psrldq => "psrldq" | .psraw => "psraw"
 
 def XOp.asm : XOp → String
   | .bin op d r => s!"{op.name} {d.name}, {r.name}"
@@ -139,6 +141,8 @@ def Instr.asm : Instr → List String
   | .mmxEnter => []
   | .emms => ["emms"]
   | .pmuludq d r => [s!"pmuludq {d.name}, {r.name}"]
+  | .pmullw d r => [s!"pmullw {d.name}, {r.name}"]
+  | .pmulhw d r => [s!"pmulhw {d.name}, {r.name}"]
   -- Intel's MCDT prologue and epilogue, as `ci/check_mcdt.py` checks them.
   | .mcdtEnter r => ["lea esp, [esp-12]", "stmxcsr DWORD PTR [esp+4]", s!"mov {r.name}, 8127",
       s!"mov DWORD PTR [esp], {r.name}", "ldmxcsr DWORD PTR [esp]", "lfence"]

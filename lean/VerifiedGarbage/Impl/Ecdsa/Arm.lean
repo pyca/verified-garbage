@@ -25,9 +25,8 @@ words; `n = 4` for the 256-bit curves), from the code of
    the computation's stores of secrets); `k`, `d`
    and the hash are read big-endian into slots, and the constants (the
    moduli, `a`, `3b`, `G` and Montgomery's ones in Montgomery form,
-   `R² mod n`, and the exponents `p - 2` and `n - 2`) are stored as
-   immediates, or, for a curve with a table of them (`Cfg.tblSym`), copied
-   from it by a loop (`constsCode`, `copyTbl`);
+   `R² mod n`, and the exponents `p - 2` and `n - 2`) are copied from the
+   curve's table of them (`Cfg.constSym`) by a loop (`constsCode`, `copyTbl`);
 2. the bits of `k`, `p - 2` and `n - 2` are expanded into tables;
 3. `R = [k]G` (`gen`: by `vg_<curve>_mul`'s windows for a curve that has the
    function, else by the ladder from `R = O = (0 : 1 : 0)`, `ladderP`: by calls
@@ -156,9 +155,8 @@ structure Cfg where
   and so the point functions and `vg_<curve>_mul` called too. -/
   umaal : Bool := false
   /-- The name of the table of constants the setup copies (`constTbl`,
-  `copyTbl`), which the functions' contracts then list, if any; else the setup
-  stores each word as an immediate (`setConst`). -/
-  tblSym : Option String := none
+  `copyTbl`), which the functions' contracts list. -/
+  constSym : String
 
 namespace Cfg
 
@@ -218,19 +216,11 @@ working space (`copyTbl`). -/
 def constTbl : List (BitVec 64) :=
   (List.range (17 * c.n)).map fun k => BitVec.ofNat 64 (c.slotVal (k / c.n) >>> (64 * (k % c.n)))
 
-/-- The name of the table `constTbl`. -/
-def constSym : String := c.tblSym.getD ""
-
 /-- The table of constants every function that runs the setup reads. -/
 def constsK : List (String × List (BitVec 64)) := [(c.constSym, c.constTbl)]
 
-/-- Whether the setup copies its constants from their table (`tblSym`). -/
-def tbl : Bool := c.tblSym.isSome
-
-/-- The constants into their slots: from their table, or as immediates (`tbl`). -/
-def constsCode : Prog isa :=
-  if c.tbl then copyTbl c.constSym c.n 17 (c.sl 0)
-  else .block (c.consts.flatMap fun (i, x) => setConst c.n (c.sl i) x)
+/-- The constants into their slots, from their table. -/
+def constsCode : Prog isa := copyTbl c.constSym c.n 17 (c.sl 0)
 
 /-- Saves them at `[r12]`. -/
 def saveCode : List Instr := saved.map fun (r, d) => .str r wb d

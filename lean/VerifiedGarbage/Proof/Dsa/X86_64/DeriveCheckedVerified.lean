@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
 public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.X86_64.ForwardSlots
 public import VerifiedGarbage.Proof.Framework.X86_64.CallInline
 public import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
 public import VerifiedGarbage.Proof.Dsa.Validation
@@ -1396,19 +1397,20 @@ theorem derive_patch (s b : State) (hv : Mem) (u : Nat → BitVec 64)
   sig_post [Spec.Dsa.deriveKeyContract, Spec.Dsa.deriveKeySig, abi, argRegs, stackArgs_three, List.range, List.range.loop] at hp ⊢
   simpa only [State.patch_gpr, patch_mem, bytesAt_overlay hm] using hp
 
-theorem parameters_call_verified (M : Mont) (Sq : MontS) {c : Prog isa}
-    (hc : c.InlineOk = true) (hin : c.inline = Generate.checkParameters Sq.mm M.mm)
+theorem parameters_slot_verified (M : Mont) (Sq : MontS) {c : Prog isa} {fns : List String}
+    (hc : c.InlineOkNS (slotsOf 0 fns) 1 = true) (hm : 8 + 8 * (0 + 1) + 8 * fns.length ≤ 2 ^ 64)
+    (hin : c.inlineAll = Generate.checkParameters Sq.mm M.mm)
     (hmx : (Generate.checkParameters Sq.mm M.mm).allInstrs (fun i => !loadsMxcsr i) = true) :
-    Verified target c (Proof.Dsa.checkParametersContract abi 8) :=
-  Verified.of_inline_sig hc (hin ▸ parametersCorrect M Sq hmx) (hin ▸ parametersConstantTime M Sq)
+    SlotVerified c (Proof.Dsa.checkParametersContract abi 8) 0 fns :=
+  SlotVerified.of_inline hc hm (hin ▸ parametersCorrect M Sq hmx) (hin ▸ parametersConstantTime M Sq)
     parameters_implies8 (fun _ h => Sig.clear_of_pre h) (fun _ _ _ _ h => Sig.rsp_of_pub h)
     (fun s b hv u _ _ hp => parameters_patch s b hv u hp)
 
-theorem derive_call_verified (M : Mont) (Sq : MontS) {c : Prog isa}
-    (hc : c.InlineOk = true) (hin : c.inline = Generate.deriveKey Sq.mm M.mm)
+theorem derive_slot_verified (M : Mont) (Sq : MontS) {c : Prog isa} {fns : List String}
+    (hc : c.InlineOkNS (slotsOf 3 fns) 1 = true) (hm : 8 + 8 * (3 + 1) + 8 * fns.length ≤ 2 ^ 64) (hin : c.inlineAll = Generate.deriveKey Sq.mm M.mm)
     (hmx : (Generate.deriveKey Sq.mm M.mm).allInstrs (fun i => !loadsMxcsr i) = true) :
-    Verified target c (Spec.Dsa.deriveKeyContract abi 8) :=
-  Verified.of_inline_sig hc (hin ▸ deriveCorrect M Sq hmx) (hin ▸ deriveConstantTime M Sq)
+    SlotVerified c (Spec.Dsa.deriveKeyContract abi 8) 3 fns :=
+  SlotVerified.of_inline hc hm (hin ▸ deriveCorrect M Sq hmx) (hin ▸ deriveConstantTime M Sq)
     derive_implies8 (fun _ h => Sig.clear_of_pre h) (fun _ _ _ _ h => Sig.rsp_of_pub h)
     derive_patch
 
@@ -1561,11 +1563,12 @@ theorem deriveChecked_patch (s b : State) (hv : Mem) (u : Nat → BitVec 64)
     (Spec.Dsa.deriveKeyDomainCheckedContract abi).post s (b.patch (hole (s.gpr .rsp)) hv u) :=
   derive_patch s b hv u (deriveChecked_pre hs).1 hc hp
 
-theorem derive_checked_call_verified (M : Mont) (Sq : MontS) {c : Prog isa}
-    (hc : c.InlineOk = true) (hin : c.inline = Generate.deriveChecked Sq.mm M.mm)
+theorem derive_checked_slot_verified (M : Mont) (Sq : MontS) {c : Prog isa} {fns : List String}
+    (hc : c.InlineOkNS (slotsOf 3 fns) 1 = true) (hm : 8 + 8 * (3 + 1) + 8 * fns.length ≤ 2 ^ 64)
+    (hin : c.inlineAll = Generate.deriveChecked Sq.mm M.mm)
     (hmx : (Generate.deriveChecked Sq.mm M.mm).allInstrs (fun i => !loadsMxcsr i) = true) :
-    Verified target c (Spec.Dsa.deriveKeyDomainCheckedContract abi 8) :=
-  Verified.of_inline_sig hc (hin ▸ deriveCheckedCorrect M Sq hmx) (hin ▸ deriveCheckedConstantTime M Sq)
+    SlotVerified c (Spec.Dsa.deriveKeyDomainCheckedContract abi 8) 3 fns :=
+  SlotVerified.of_inline hc hm (hin ▸ deriveCheckedCorrect M Sq hmx) (hin ▸ deriveCheckedConstantTime M Sq)
     deriveChecked_implies8 (fun _ h => Sig.clear_of_pre h) (fun _ _ _ _ h => Sig.rsp_of_pub h)
     deriveChecked_patch
 

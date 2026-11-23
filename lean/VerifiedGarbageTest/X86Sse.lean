@@ -1,7 +1,9 @@
 module
 
 import VerifiedGarbage.TCB.X86.Print
+import VerifiedGarbage.TCB.X86.Encode
 meta import VerifiedGarbage.TCB.X86.Print
+meta import VerifiedGarbage.TCB.X86.Encode
 
 /-!
 # IA-32 legacy SIMD transcription tests
@@ -14,7 +16,12 @@ here separately. The results of `pshuflw` and `pshufhw`, which the
 x86-64 model does not have, were computed with the native intrinsics
 `_mm_shufflelo_epi16` and `_mm_shufflehi_epi16`, and those of the SHA-1
 instructions, `paddq` and `movq` re-checked with theirs (`_mm_sha1rnds4_epu32`,
-`_mm_add_epi64`, `_mm_loadl_epi64`, …). These are ISA transcription tests, not new primitive
+`_mm_add_epi64`, `_mm_loadl_epi64`, …), and those of the word instructions
+(`paddw`, `psubw`, `packssdw`, `punpcklwd`, `punpckhwd`, `psraw`) computed
+with theirs (`_mm_add_epi16`, `_mm_sub_epi16`, `_mm_packs_epi32`,
+`_mm_unpacklo_epi16`, `_mm_unpackhi_epi16`, `_mm_srai_epi16`, compiled with
+`gcc -m32 -msse2`); their bytes are those GNU `as --32` gives the same
+text. These are ISA transcription tests, not new primitive
 known-answer vectors. Tests cover aliasing, byte/lane order, oversized
 immediates, memory permissions, instruction printing and CPU requirements.
 -/
@@ -60,6 +67,17 @@ def bin (op : XBinOp) : BitVec 128 := ((XOp.bin op .xmm0 .xmm1).exec s).xmm .xmm
 #guard bin .aesenclast == 0x8379dc203b20bd85479d91b9b512a2b2#128
 #guard bin .paddq == 0x89abcdee812345677edcba9788888888#128
 #guard bin .sha1msg1 == 0x777777777777777701234567f6543210#128
+-- The word instructions: each word wraps on its own; `packssdw` saturates
+-- (`a`'s doublewords are 0x76543210, 0xfedcba98, 0x01234567 and 0x89abcdef;
+-- `b`'s 0x12345678, 0x7fffffff, 0x80000000 and -1), the destination's words
+-- first; `punpcklwd` and `punpckhwd` take the destination's word first.
+#guard bin .paddw == 0x89aacdee812345677edbba9788888888#128
+#guard bin .psubw == 0x89accdf0812345677eddba996420db98#128
+#guard bin .packssdw == 0xffff80007fff7fff80007fff80007fff#128
+#guard ((XOp.bin .packssdw .xmm1 .xmm0).exec s).xmm .xmm1 == 0x80007fff80007fffffff80007fff7fff#128
+#guard bin .punpcklwd == 0x7ffffedcffffba981234765456783210#128
+#guard bin .punpckhwd == 0xffff89abffffcdef8000012300004567#128
+#guard ((XOp.bin .punpcklwd .xmm0 .xmm0).exec s).xmm .xmm0 == 0xfedcfedcba98ba987654765432103210#128
 #guard bin .sha1msg2 == 0x13579bdefdb97530d9d1d9c1ca07539c#128
 #guard bin .sha1nexte == 0xe26af37a800000007fffffff12345678#128
 #guard bin .aesdec == 0xfafbac38e6a5c5c37f30df5470d1274c#128
@@ -157,6 +175,12 @@ def shift (op : XShiftOp) (n : BitVec 8) : BitVec 128 := ((XOp.shift op .xmm0 n)
 #guard shift .pslldq 16 == 0
 #guard shift .psrldq 16 == 0
 #guard shift .pslldq 255 == 0
+-- `psraw` shifts each word arithmetically; a count above 15 is 16.
+#guard shift .psraw 0 == a
+#guard shift .psraw 3 == 0xf135f9bd002408acffdbf7530eca0642#128
+#guard shift .psraw 15 == 0xffffffff00000000ffffffff00000000#128
+#guard shift .psraw 16 == 0xffffffff00000000ffffffff00000000#128
+#guard shift .psraw 255 == 0xffffffff00000000ffffffff00000000#128
 
 /-- `xmm1` after `pshufd xmm1, xmm0, order`. -/
 def shuf (order : BitVec 8) : BitVec 128 := ((XOp.pshufd .xmm1 .xmm0 order).exec s).xmm .xmm1
@@ -261,6 +285,20 @@ def shufHi (order : BitVec 8) : BitVec 128 := ((XOp.pshufhw .xmm1 .xmm0 order).e
 #guard Instr.asm (.xop (.sha1rnds4 .xmm7 .xmm0 3)) == ["sha1rnds4 xmm7, xmm0, 3"]
 #guard Instr.asm (.xop (.pshuflw .xmm1 .xmm2 0xb1)) == ["pshuflw xmm1, xmm2, 177"]
 #guard Instr.asm (.xop (.pshufhw .xmm3 .xmm4 0x1b)) == ["pshufhw xmm3, xmm4, 27"]
+#guard Instr.asm (.xop (.bin .paddw .xmm3 .xmm4)) == ["paddw xmm3, xmm4"]
+#guard Instr.asm (.xop (.bin .psubw .xmm5 .xmm6)) == ["psubw xmm5, xmm6"]
+#guard Instr.asm (.xop (.bin .packssdw .xmm0 .xmm1)) == ["packssdw xmm0, xmm1"]
+#guard Instr.asm (.xop (.bin .punpcklwd .xmm7 .xmm7)) == ["punpcklwd xmm7, xmm7"]
+#guard Instr.asm (.xop (.bin .punpckhwd .xmm1 .xmm4)) == ["punpckhwd xmm1, xmm4"]
+#guard Instr.asm (.xop (.shift .psraw .xmm2 15)) == ["psraw xmm2, 15"]
+-- Their bytes (66 0F FD /r, 66 0F F9 /r, 66 0F 6B /r, 66 0F 61 /r, 66 0F 69
+-- /r, 66 0F 71 /4 ib), as GNU `as --32` encodes the text above.
+#guard (Instr.xop (.bin .paddw .xmm3 .xmm4)).encode == some [[0x66, 0x0F, 0xFD, 0xDC]]
+#guard (Instr.xop (.bin .psubw .xmm5 .xmm6)).encode == some [[0x66, 0x0F, 0xF9, 0xEE]]
+#guard (Instr.xop (.bin .packssdw .xmm0 .xmm1)).encode == some [[0x66, 0x0F, 0x6B, 0xC1]]
+#guard (Instr.xop (.bin .punpcklwd .xmm7 .xmm7)).encode == some [[0x66, 0x0F, 0x61, 0xFF]]
+#guard (Instr.xop (.bin .punpckhwd .xmm1 .xmm4)).encode == some [[0x66, 0x0F, 0x69, 0xCC]]
+#guard (Instr.xop (.shift .psraw .xmm2 15)).encode == some [[0x66, 0x0F, 0x71, 0xE2, 0x0F]]
 #guard Instr.asm (.movqLoad .xmm6 { base := .esi, disp := 8 }) ==
   ["movq xmm6, QWORD PTR [esi+8]"]
 #guard Instr.asm (.movqStore { base := .edi } .xmm6) == ["movq QWORD PTR [edi], xmm6"]
@@ -288,6 +326,9 @@ def shufHi (order : BitVec 8) : BitVec 128 := ((XOp.pshufhw .xmm1 .xmm0 order).e
 #guard isa.requires (.xop (.pshufhw .xmm1 .xmm2 0)) == []
 #guard isa.requires (.movqLoad .xmm1 { base := .esi }) == []
 #guard isa.requires (.movqStore { base := .esi } .xmm1) == []
+#guard [XBinOp.paddw, .psubw, .packssdw, .punpcklwd, .punpckhwd].all fun op =>
+  isa.requires (.xop (.bin op .xmm1 .xmm2)) == []
+#guard isa.requires (.xop (.shift .psraw .xmm1 15)) == []
 #guard isa.requires (.xop (.movd .xmm1 .eax)) == []
 #guard isa.requires (.xop (.pshufd .xmm1 .xmm2 0xff)) == []
 #guard isa.requires (.movdquLoad .xmm1 { base := .esp }) == []

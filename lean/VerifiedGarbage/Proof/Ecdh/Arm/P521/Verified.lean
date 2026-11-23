@@ -125,7 +125,7 @@ abbrev ecdhAC (u : Bool) : Contract isa := ecdhArm.withTablesArm (p521With u).co
 theorem pre_of {u : Bool} {s : State} (h : ecdhArm.pre (stripConsts (p521With u).constsK s))
     (hk : ConstsOk (p521With u).constsK 0 s) : EPre (p521With u) s (constRegs (p521With u).constsK s) := by
   obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9⟩ := h
-  exact ⟨hk.rd_strip h1, h2, h3, h4, h5, h6, h7, h8, h9, fun _ => tbl_of_consts hk (List.mem_singleton_self _)
+  exact ⟨hk.rd_strip h1, h2, h3, h4, h5, h6, h7, h8, h9, tbl_of_consts hk (List.mem_singleton_self _)
     (show (⟨ptr s .r3, 8192⟩ : Region) ∈ (stripConsts (p521With u).constsK s).wr by
       rw [h2]; exact List.mem_cons_of_mem _ (List.mem_singleton_self _))⟩
 

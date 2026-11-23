@@ -585,11 +585,6 @@ theorem qMinus2_ok {s : State} {L : Lay} {key sig : Addr} (hL : L.Ok) (h : QS s 
 /-- The registers `inverse` writes. -/
 def invRegs : List Reg := [.s7, .s8] ++ loadRegs ++ copyRegs ++ [.s7, .t2, .s8, .s9, .s10] ++ Win.powWRegs
 
-/-- A register written and then restored is kept. -/
-theorem keep_restored {rs rs' : List Reg} {s t : State} (h : Keep rs s t) {r : Reg} (hr : t.gpr r = s.gpr r)
-    (hs : ∀ x ∈ rs, x ≠ r → x ∈ rs') : Keep rs' s t :=
-  ⟨fun x hx => if e : x = r then e ▸ hr else h.1 x fun hm => hx (hs x hm e), h.2⟩
-
 /-- `inverse`: s into array 4, then `s^e mod q` into array 4, for the `q_len`
 octets `e` of the buffer, by a call (`powWinCall_ok`), after which the
 signature's address is loaded into `ra` again from the header's `hSig`.

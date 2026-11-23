@@ -15,6 +15,7 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 import VerifiedGarbage.Proof.P256.X86_64.WinJac
 import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
 import VerifiedGarbage.Proof.Ecdh.X86_64.LitIfma
+import VerifiedGarbage.Proof.Framework.KernelRfl
 public import VerifiedGarbage.Proof.Ecdh.X86_64.Verified
 public import VerifiedGarbage.Proof.Ecdh.X86_64.WinJac
 public import VerifiedGarbage.Impl.Ecdh.P256.X86_64.Ifma
@@ -28,6 +29,7 @@ meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 meta import VerifiedGarbage.Proof.P256.X86_64.WinJac
 meta import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
 meta import VerifiedGarbage.Proof.Ecdh.X86_64.LitIfma
+meta import VerifiedGarbage.Proof.Framework.KernelRfl
 meta import VerifiedGarbage.Proof.Ecdh.X86_64.Verified
 meta import VerifiedGarbage.Proof.Ecdh.X86_64.WinJac
 meta import VerifiedGarbage.Impl.Ecdh.P256.X86_64.Ifma
@@ -106,7 +108,8 @@ theorem mulQP256Ifma_ok (hI : Weierstrass.X86_64.InvSounds) (hL : Weierstrass.La
       (show p256x.mont 1 < p256x.C.p from Nat.mod_lt _ (by decide))
       (show Weierstrass.toM p256x.C.p (2 ^ (64 * p256x.n)) (p256x.mont 1) = 1 by
         rw [toM_cmont (p256x_ok hI)]; rfl)
-      (by decide) (by decide) (by decide) (noR12_of_all digitSel_r12) (noR12_of_all negY_r12) hP hkJ hs hM hF)
+      (by decide) (by decide) (by decide) (noR12_of_all digitSel_r12) (noR12_of_all negY_r12) hP hkJ hs hM hF
+      (by kernel_rfl))
 
 /-- What the multiplication writes keeps the constants, `d` and the flag (`MulW`). -/
 theorem mulQP256Ifma_w (hI : Weierstrass.X86_64.InvSounds) :

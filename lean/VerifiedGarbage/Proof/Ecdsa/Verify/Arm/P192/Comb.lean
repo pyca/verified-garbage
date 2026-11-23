@@ -149,7 +149,7 @@ theorem combVerify_pre {um : Bool} {s : State} (h : (combVerifySpec um).pre s) :
   sig_pre [Spec.Ecdsa.P192.inst,Proof.Ecdsa.verifyContract,Proof.Ecdsa.verifySig,
     Spec.P192.curve,Spec.Ecdsa.scratchWords,abi,argRegs,reduceClassify,Loc.val,State.addr] at h₁
   obtain ⟨_sp,rd,wr,ps,ds,ss,fp,fd,fs,fc⟩ := h₁
-  refine ⟨⟨hk.rd_strip rd,wr,ps,ds,ss,fp,fd,fs,fc,fun _ => tbl_of_consts hk
+  refine ⟨⟨hk.rd_strip rd,wr,ps,ds,ss,fp,fd,fs,fc,tbl_of_consts hk
     (List.mem_append_right _ (List.mem_singleton_self _)) ?_⟩,hk⟩
   rw [wr]; exact List.mem_singleton_self _
 
@@ -291,7 +291,7 @@ theorem combVerify_sat (um : Bool) : (combVerifySpec um).pre (combVerifySat um) 
   obtain ⟨W, eW⟩ : ∃ W, (p192With um).constTbl = W := ⟨_, rfl⟩
   have hk : combVerifyK um = [(p192Comb.tsym,p192CombWords),((p192With um).constSym, W)] := by rw [← eW]; rfl
   have hs₁ : (combVerifySat um).syms "VG_P192_COMB" = 0x100000 := by cases um <;> decide
-  have hs₂ : (combVerifySat um).syms (p192With um).constSym = 0x115000 := by cases um <;> decide
+  have hs₂ : (combVerifySat um).syms "VG_P192_FRAME_CONSTS" = 0x115000 := by cases um <;> decide
   rw [comb_words_length, show (0x100000 : Addr) + BitVec.ofNat 64 (8 * 10752) = 0x115000 by decide] at held₂
   have hmem : (combVerifySat um).mem = constMem 0x100000 (p192CombWords ++ (p192With um).constTbl) := by
     show combVerifyMem um = _; unfold combVerifyMem; rfl

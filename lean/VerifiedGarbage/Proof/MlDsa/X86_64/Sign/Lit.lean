@@ -15,7 +15,8 @@ public import VerifiedGarbage.Impl.MlDsa.X86_64.Sign.Sign
 # ML-DSA signing on x86-64: its code without the arithmetic, as literals
 
 The signing function of each parameter set with every function of the
-polynomial arithmetic empty (`primsWith .empty`), which the checks that it
+polynomial arithmetic empty (`primsWith .empty`), calling it directly or by
+its addresses, which the checks that it
 never writes `rsp`, uses no stack, calls at most so deep and loads MXCSR only
 to restore it evaluate (`sign0_sp`, `sign0_ctlC`, `sign0_noSp`,
 `sign0_depth`), as literals (`materialize_code`, `Proof/Framework/Lit.lean`).
@@ -37,5 +38,16 @@ def sign87 : Prog isa := Impl.MlDsa.X86_64.Sign.sign (primsWith .empty) Spec.MlD
 materialize_code sign44
 materialize_code sign65
 materialize_code sign87
+
+/-- Signing with ML-DSA-44, without the arithmetic, calling it by its addresses. -/
+def sign44V : Prog isa := Impl.MlDsa.X86_64.Sign.sign (primsWith .empty true) Spec.MlDsa.mlDsa44
+/-- Signing with ML-DSA-65, without the arithmetic, calling it by its addresses. -/
+def sign65V : Prog isa := Impl.MlDsa.X86_64.Sign.sign (primsWith .empty true) Spec.MlDsa.mlDsa65
+/-- Signing with ML-DSA-87, without the arithmetic, calling it by its addresses. -/
+def sign87V : Prog isa := Impl.MlDsa.X86_64.Sign.sign (primsWith .empty true) Spec.MlDsa.mlDsa87
+
+materialize_code sign44V
+materialize_code sign65V
+materialize_code sign87V
 
 end VG.Proof.MlDsa.X86_64.Sign

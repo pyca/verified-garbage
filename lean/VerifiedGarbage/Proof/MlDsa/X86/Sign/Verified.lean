@@ -39,6 +39,8 @@ meta import VerifiedGarbage.Proof.MlDsa.X86.Sign.Local
 meta import VerifiedGarbage.Proof.MlKem.X86.AddSub
 public import VerifiedGarbage.Proof.MlDsa.X86.Sign.Prims
 public import VerifiedGarbage.Proof.MlDsa.X86.Arith.NttInv
+public import VerifiedGarbage.Proof.MlDsa.X86.Arith.Mul
+public import VerifiedGarbage.Proof.MlDsa.X86.Arith.Ntt
 public import VerifiedGarbage.Proof.MlDsa.X86.Pack.Unpack
 public import VerifiedGarbage.Proof.MlDsa.X86.Sample.ExpandMask
 public import VerifiedGarbage.Impl.MlDsa.X86.Sample.Ball

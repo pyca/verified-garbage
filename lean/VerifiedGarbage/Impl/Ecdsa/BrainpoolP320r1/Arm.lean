@@ -14,7 +14,7 @@ open VG.Arm
 `vg_brainpoolp320r1_mul_mod_<p|n>_umaal` if `u`. -/
 def brainpoolp320r1With (u : Bool) : Cfg :=
   ⟨5, Spec.BrainpoolP320r1.curve, Impl.Weierstrass.Mont.brainpoolp320r1p, Impl.Weierstrass.Mont.brainpoolp320r1n,
-    some Impl.Weierstrass.Mul.brainpoolp320r1, u, some "VG_BRAINPOOLP320R1_FRAME_CONSTS"⟩
+    some Impl.Weierstrass.Mul.brainpoolp320r1, u, "VG_BRAINPOOLP320R1_FRAME_CONSTS"⟩
 
 /-- brainpoolP320r1 as the code has it. -/
 def brainpoolp320r1 : Cfg := brainpoolp320r1With false

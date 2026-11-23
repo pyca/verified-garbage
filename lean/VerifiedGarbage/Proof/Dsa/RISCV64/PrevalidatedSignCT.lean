@@ -248,7 +248,7 @@ theorem pinsTsp6 : Pins (At C0sp FTsp 6) [.s6] :=
     obtain ⟨_, _, u₁, -, e₁, e₂⟩ := exec_seqL_append.mp e
     have h₁ : u₁.gpr .s6 = v.L.S := (at_sem (Φ := C0sp) (F := FTsp) (n := 1) (M := P0)
       (fun _ _ h => WP.of_flat (c := .block Sign.entry) rfl (frontSp _ _ h)) ⟨s₀, _, h₀, e₁⟩).1.regs.s6
-    exact ⟨(Exec.gpr_callFree s6_keptsp e₂ rfl).trans h₁, trivial⟩
+    exact ⟨(Exec.gpr s6_keptsp e₂).trans h₁, trivial⟩
 
 theorem signPre_rel : RelCT isa (Two C0sp) PrevalidatedSign.sign fun _ _ => True := by
   refine chain_start (chain_cons runTsp (m := 1) (by decide) ?_ ?_)

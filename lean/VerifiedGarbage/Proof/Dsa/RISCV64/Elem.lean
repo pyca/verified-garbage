@@ -298,11 +298,20 @@ theorem p_win {L : Lay} {m m₁ m₂ m₃ : Mem} (o1 : Outside L.S (slot L.wp 1)
   ((o1.mono (Nat.le_refl _) (by omega_using [])).trans o2).trans
     (o3.mono (by simp only [Lay.slot_eq]; omega_using []) (by simp only [Lay.slot_eq]; omega_using []))
 
+theorem p_arrays_body {L : Lay} (hL : L.Ok) {m m' : Mem}
+    (o : Outside L.S (slot L.wp 1) (23 * (8 * (L.wp + 2))) m m') : Body L m m' :=
+  Body.ofP hL o (by simp only [Lay.slot_eq]; omega_using []) (by simp only [Lay.qOff, Lay.slot_eq]; omega_using [])
+
+/-- A register written and then restored is kept. -/
+theorem keep_restored {rs rs' : List Reg} {s t : State} (h : Keep rs s t) {r : Reg} (hr : t.gpr r = s.gpr r)
+    (hs : ∀ x ∈ rs, x ≠ r → x ∈ rs') : Keep rs' s t :=
+  ⟨fun x hx => if e : x = r then e ▸ hr else h.1 x fun hm => hx (hs x hm e), h.2⟩
+
 /-- `elemOrder`, in the P space with p (odd, at least 2) in array 0,
 `-p⁻¹ mod 2⁶⁴` in `t1` and `R² mod p` in array 24: `a0 = 0` exactly when
 `[4]^q mod p = 1`; arrays 1–23 change. -/
 theorem elemOrder_ok {s : State} {L : Lay} {key sig : Addr} {p : Nat} (hL : L.Ok) (hs : ScrL s L)
-    (hr : Regs s L key sig) (hin : InP s L) (hk : Src s L key (2 * L.pl + L.ql))
+    (hr : Regs s L key sig) (hsw : word s.mem L.S hSig = sig) (hin : InP s L) (hk : Src s L key (2 * L.pl + L.ql))
     (hp0 : arrP s.mem L 0 = p) (hp : 2 ≤ p) (hpo : p % 2 = 1)
     (hinv : ((word s.mem L.S (slot L.wp 0)).toNat * (s.gpr .t1).toNat + 1) % 2 ^ 64 = 0)
     (hrr : arrP s.mem L 24 = 2 ^ (128 * L.wp) % p) :
@@ -339,7 +348,7 @@ theorem elemOrder_ok {s : State} {L : Lay} {key sig : Addr} {p : Nat} (hL : L.Ok
   obtain k13 := (k1.trans k2).trans k3
   obtain m31 : s₃.mem = s₁.mem := by rw [m3, m2]
   obtain e3 := en.keep k13
-  refine WP.seq (WP.mono (Win.powWin_ok (D := off key L.pl) (L := L.ql) e3.hs (by omega_using [hw]) (by omega_using [hw])
+  refine WP.seq (WP.mono (Win.powWinCall_ok (name := "vg_bignum_pow_win") (D := off key L.pl) (L := L.ql) e3.hs (by omega_using [hw]) (by omega_using [hw])
     (by omega_using [e24, e28, hq28]) e3.a7 e3.s5 e3.t0 (by rw [m31, W0, k13.gpr (by decide)]; exact hinv)
     (by rw [m31, A0]; exact hp) (by rw [m31, A0]; exact hpo) (by rw [m31, A0, A1]; exact Nat.mod_lt _ (by omega_using [hp]))
     b9 b10 (by omega_using [hql]) (by omega_arith)
@@ -347,7 +356,18 @@ theorem elemOrder_ok {s : State} {L : Lay} {key sig : Addr} {p : Nat} (hL : L.Ok
       have := hk.rd (L.pl + i) (by omega_using [hi]); rw [← off_off] at this; rw [k13.2.1, k13.2.2]; exact this)
     (fun i hi x hx => by
       have := hk.sep (L.pl + i) (by omega_using [hi]) x (Nat.lt_of_lt_of_le hx hqZ); rw [← off_off] at this; exact this))
-    fun s₄ ⟨⟨r4, o4⟩, k4⟩ => ?_)
+    fun s₄' ⟨⟨r4, o4, _⟩, k4'⟩ => ?_)
+  -- `ra` again from the header.
+  obtain k34 := k13.trans k4'
+  obtain ⟨hin32, hal32⟩ := ScrL.hdr (hs.congr k34.2.2) hL (d := 32) (by decide) (by decide)
+  obtain sw4 : word s₄'.mem L.S hSig = sig :=
+    ((hb1.trans (by rw [← m31]; exact p_arrays_body hL o4)).word (by decide)).trans hsw
+  refine WP.seq (WP.mono (WP.keep [.ra] (Q := fun u => u.gpr .ra = sig ∧ u.mem = s₄'.mem)
+    (by brun [hSig, (k34.gpr (r := .s6) (by decide)).trans hin.s6, hin32, hal32]; exact sw4) (by rfl) (by rfl))
+    fun s₄ ⟨⟨r4ra, m4⟩, k4r⟩ => ?_)
+  obtain k4 : Keep Win.powWRegs s₃ s₄ :=
+    keep_restored (k4'.trans k4r) (r := .ra) (by rw [r4ra, k13.gpr (by decide), hr.ra]) (by decide)
+  rw [← m4] at r4 o4
   rw [m31, A1, A0, A4, ← pow_two_mul] at r4
   obtain r4 := r4 rfl
   obtain hkq' : Spec.Rsa.bytesAt s₁.mem (off key L.pl) L.ql = Spec.Rsa.bytesAt s.mem (off key L.pl) L.ql :=
@@ -386,16 +406,12 @@ theorem p_elem2 {L : Lay} {m m₁ m₂ : Mem} (o1 : Outside L.S (slot L.wp 4) (8
   (o1.mono (by simp only [Lay.slot_eq]; omega_using []) (by simp only [Lay.slot_eq]; omega_using [])).trans
     (o2.mono (by simp only [Lay.slot_eq]; omega_using []) (by simp only [Lay.slot_eq]; omega_using []))
 
-theorem p_arrays_body {L : Lay} (hL : L.Ok) {m m' : Mem}
-    (o : Outside L.S (slot L.wp 1) (23 * (8 * (L.wp + 2))) m m') : Body L m m' :=
-  Body.ofP hL o (by simp only [Lay.slot_eq]; omega_using []) (by simp only [Lay.qOff, Lay.slot_eq]; omega_using [])
-
 /-- `checkElem`, in the P space with p (odd, at least 2) in array 0,
 `-p⁻¹ mod 2⁶⁴` in `t1` and `R² mod p` in array 24: the `p_len` octets at `E`
 (`s7`, `p_len` in `s8`) into array 4, and `a0 = 0` exactly when their number
 `e` has `1 < e < p` and `e^q mod p = 1`; arrays 1–23 change. -/
 theorem checkElem_ok {s : State} {L : Lay} {key sig E : Addr} {p : Nat} (hL : L.Ok) (hs : ScrL s L)
-    (hr : Regs s L key sig) (hin : InP s L) (hk : Src s L key (2 * L.pl + L.ql))
+    (hr : Regs s L key sig) (hsw : word s.mem L.S hSig = sig) (hin : InP s L) (hk : Src s L key (2 * L.pl + L.ql))
     (he : Src s L E L.pl) (h7 : s.gpr .s7 = E) (h8 : s.gpr .s8 = BitVec.ofNat 64 L.pl)
     (hp0 : arrP s.mem L 0 = p) (hp : 2 ≤ p) (hpo : p % 2 = 1)
     (hinv : ((word s.mem L.S (slot L.wp 0)).toNat * (s.gpr .t1).toNat + 1) % 2 ^ 64 = 0)
@@ -431,7 +447,7 @@ theorem checkElem_ok {s : State} {L : Lay} {key sig E : Addr} {p : Nat} (hL : L.
   refine WP.ite _ (Steps.eval_zero _ _) (fun hz => ?_) (fun hz => ?_)
   · have hz := r0.mp (beq_iff_eq.mp hz)
     obtain hb2 : Body L s.mem s₂.mem := p_arrays_body hL o12
-    refine WP.mono (elemOrder_ok (p := p) hL (hs.congr k12.2.2) (hr.keep k12 hb2)
+    refine WP.mono (elemOrder_ok (p := p) hL (hs.congr k12.2.2) (hr.keep k12 hb2) (by rw [hb2.word (by decide)]; exact hsw)
       ⟨e2, (k12.gpr (by decide)).trans hin.s6⟩ ((hk.keep k12.2.1 k12.2.2))
       (by rw [arrP, o12.wordsVal (by omega_using [e0, e1]) (by omega_arith)]; exact hp0) hp hpo
       (by rw [o12.word (by omega_using [e0, e1]) (by omega_arith), k12.gpr (by decide)]; exact hinv)

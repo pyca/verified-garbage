@@ -103,15 +103,6 @@ theorem keyGen44_scrubbed (v : ArithImpl) :
 theorem keyGen44_spSafe (v : ArithImpl) : (Impl.MlDsa.X86_64.Fn.keyGen v.level v.code Spec.MlDsa.mlDsa44).all (fun i => !isa.writesSp i) = true :=
   scrubKs_spSafe (Proof.MlDsa.X86_64.KeyGen.keyGen_spSafe v (.inl rfl))
 
-theorem signBody44_eq (v : ArithImpl) :
-    Impl.MlDsa.X86_64.Sign.sign (Proof.MlDsa.X86_64.Sign.primsWith v.code) Spec.MlDsa.mlDsa44 = fillCallsG (sigma v.code) (Impl.MlDsa.X86_64.Sign.sign (Proof.MlDsa.X86_64.Sign.primsWith stub) Spec.MlDsa.mlDsa44) := by
-  kernel_rfl
-
-/-- The signing over `v` is its code over the stub with `v`'s functions. -/
-theorem signBody44_fill (v : ArithImpl) :
-    FillG v.level.level stubStack (Impl.MlDsa.X86_64.Sign.sign (Proof.MlDsa.X86_64.Sign.primsWith stub) Spec.MlDsa.mlDsa44) (Impl.MlDsa.X86_64.Sign.sign (Proof.MlDsa.X86_64.Sign.primsWith v.code) Spec.MlDsa.mlDsa44) :=
-  (signBody44_eq v) ▸ fillG_of (sigma_side v) _
-
 theorem verifyBody44_eq (v : ArithImpl) :
     Impl.MlDsa.X86_64.Verify.verify (Proof.MlDsa.X86_64.Verify.primsWith v.code) Spec.MlDsa.mlDsa44 = fillCallsG (sigma v.code) (Impl.MlDsa.X86_64.Verify.verify (Proof.MlDsa.X86_64.Verify.primsWith stub) Spec.MlDsa.mlDsa44) := by
   kernel_rfl
@@ -202,15 +193,6 @@ theorem keyGen65_scrubbed (v : ArithImpl) :
 theorem keyGen65_spSafe (v : ArithImpl) : (Impl.MlDsa.X86_64.Fn.keyGen v.level v.code Spec.MlDsa.mlDsa65).all (fun i => !isa.writesSp i) = true :=
   scrubKs_spSafe (Proof.MlDsa.X86_64.KeyGen.keyGen_spSafe v (.inr (.inl rfl)))
 
-theorem signBody65_eq (v : ArithImpl) :
-    Impl.MlDsa.X86_64.Sign.sign (Proof.MlDsa.X86_64.Sign.primsWith v.code) Spec.MlDsa.mlDsa65 = fillCallsG (sigma v.code) (Impl.MlDsa.X86_64.Sign.sign (Proof.MlDsa.X86_64.Sign.primsWith stub) Spec.MlDsa.mlDsa65) := by
-  kernel_rfl
-
-/-- The signing over `v` is its code over the stub with `v`'s functions. -/
-theorem signBody65_fill (v : ArithImpl) :
-    FillG v.level.level stubStack (Impl.MlDsa.X86_64.Sign.sign (Proof.MlDsa.X86_64.Sign.primsWith stub) Spec.MlDsa.mlDsa65) (Impl.MlDsa.X86_64.Sign.sign (Proof.MlDsa.X86_64.Sign.primsWith v.code) Spec.MlDsa.mlDsa65) :=
-  (signBody65_eq v) ▸ fillG_of (sigma_side v) _
-
 theorem verifyBody65_eq (v : ArithImpl) :
     Impl.MlDsa.X86_64.Verify.verify (Proof.MlDsa.X86_64.Verify.primsWith v.code) Spec.MlDsa.mlDsa65 = fillCallsG (sigma v.code) (Impl.MlDsa.X86_64.Verify.verify (Proof.MlDsa.X86_64.Verify.primsWith stub) Spec.MlDsa.mlDsa65) := by
   kernel_rfl
@@ -300,15 +282,6 @@ theorem keyGen87_scrubbed (v : ArithImpl) :
 
 theorem keyGen87_spSafe (v : ArithImpl) : (Impl.MlDsa.X86_64.Fn.keyGen v.level v.code Spec.MlDsa.mlDsa87).all (fun i => !isa.writesSp i) = true :=
   scrubKs_spSafe (Proof.MlDsa.X86_64.KeyGen.keyGen_spSafe v (.inr (.inr rfl)))
-
-theorem signBody87_eq (v : ArithImpl) :
-    Impl.MlDsa.X86_64.Sign.sign (Proof.MlDsa.X86_64.Sign.primsWith v.code) Spec.MlDsa.mlDsa87 = fillCallsG (sigma v.code) (Impl.MlDsa.X86_64.Sign.sign (Proof.MlDsa.X86_64.Sign.primsWith stub) Spec.MlDsa.mlDsa87) := by
-  kernel_rfl
-
-/-- The signing over `v` is its code over the stub with `v`'s functions. -/
-theorem signBody87_fill (v : ArithImpl) :
-    FillG v.level.level stubStack (Impl.MlDsa.X86_64.Sign.sign (Proof.MlDsa.X86_64.Sign.primsWith stub) Spec.MlDsa.mlDsa87) (Impl.MlDsa.X86_64.Sign.sign (Proof.MlDsa.X86_64.Sign.primsWith v.code) Spec.MlDsa.mlDsa87) :=
-  (signBody87_eq v) ▸ fillG_of (sigma_side v) _
 
 theorem verifyBody87_eq (v : ArithImpl) :
     Impl.MlDsa.X86_64.Verify.verify (Proof.MlDsa.X86_64.Verify.primsWith v.code) Spec.MlDsa.mlDsa87 = fillCallsG (sigma v.code) (Impl.MlDsa.X86_64.Verify.verify (Proof.MlDsa.X86_64.Verify.primsWith stub) Spec.MlDsa.mlDsa87) := by

@@ -735,10 +735,10 @@ namespace VG.Proof.X25519.Arm.Exchange
 open VG VG.Arm VG.Proof.Xdh.Arm
 
 theorem callee {c : Prog isa} (hv : Verified Arm.target c (Proof.X25519.x25519Contract Arm.abi))
-    (hn : c.noFrames = true) : Callee 32 4096 Spec.X25519.x25519 c (Proof.X25519.x25519Contract Arm.abi) where
+    (hn : c.noFrames = true) : Callee 32 4096 0 [] Spec.X25519.x25519 c (Proof.X25519.x25519Contract Arm.abi) where
   hv := hv.1
   hct := hv.2.1
-  pre s h := by
+  pre s h _ _ := by
     obtain ⟨rd, wr, d1, d2, d3, d4, d5, b0, b1, b2, b3⟩ := h
     sig_pre [Proof.X25519.x25519Contract, Proof.X25519.x25519Sig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val,
       Arm.State.addr]
@@ -755,24 +755,24 @@ theorem callee {c : Prog isa} (hv : Verified Arm.target c (Proof.X25519.x25519Co
       Arm.State.addr] at h
     exact h
   pub s₁ s₂ h := by
-    obtain ⟨q0, q1, q2, q3, qsp⟩ := h
+    obtain ⟨q0, q1, q2, q3, qsp, -⟩ := h
     sig_pub [Proof.X25519.x25519Contract, Proof.X25519.x25519Sig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val,
       Arm.State.addr]
     sig_reduce [Proof.X25519.x25519Contract, Proof.X25519.x25519Sig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val,
       Arm.State.addr]
     sig_and_intros
     all_goals first | with_reducible assumption | trivial
-  nf := hn
+  st := Nat.le_of_eq (armStack_of_noFrames hn)
 
 /-- `vg_x25519_exchange` calling `c`, an implementation of `vg_x25519`, as `name`. -/
 theorem exchange_verified {c : Prog isa} (name : String)
     (hv : Verified Arm.target c (Proof.X25519.x25519Contract Arm.abi)) (hn : c.noFrames = true)
     (ht : ∃ hc, (taint.check (Taint.ofRegs [.r1]) (.block (Impl.Xdh.Arm.check 32)) hc).isSome = true) :
     Verified Arm.target (Impl.Xdh.Arm.exchange name c 32) (Spec.X25519.exchangeContract Arm.abi 8) :=
-  Verified.of_correct (k := exContract 32 4096 Spec.X25519.x25519) (exchange_correct (callee hv hn) (by decide))
+  Verified.of_correct (k := exContract 32 4096 0 [] Spec.X25519.x25519) (exchange_correct (callee hv hn) (by decide))
     (exchange_ct (callee hv hn) ht) (by
       contract_implies [Spec.X25519.exchangeContract, Spec.X25519.exchangeSig, Proof.X25519.x25519Sig,
-        exContract, ExPre, CallPre, ExPost, Pub, Proof.Xdh.Arm.outR, Proof.Xdh.Arm.scR, Proof.Xdh.Arm.ptR, Proof.Xdh.Arm.wsR,
+        exContract, ExPre, CallPre, ExPost, Pub, Proof.Xdh.Arm.frD, Proof.Xdh.Arm.outR, Proof.Xdh.Arm.scR, Proof.Xdh.Arm.ptR, Proof.Xdh.Arm.wsR,
         Proof.Xdh.Arm.frR, ret32, Arm.abi, Arm.argRegs,
         Arm.reduceClassify, Arm.Loc.val,
         Arm.State.addr] [Proof.X25519.Arm.x25519Sat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read] using Proof.X25519.Arm.x25519Sat)

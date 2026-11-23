@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.Arm.ScrubProved
+public import VerifiedGarbage.Proof.Framework.Arm.ScrubFns
 public import VerifiedGarbage.Proof.Ed448.CombFacts
 public import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.X448.Arm.Lit
@@ -391,10 +392,10 @@ namespace VG.Proof.X448.Arm.Exchange
 open VG VG.Arm VG.Proof.Xdh.Arm
 
 theorem callee {c : Prog isa} (hv : Verified Arm.target c (Proof.X448.x448Contract Arm.abi))
-    (hn : c.noFrames = true) : Callee 56 8192 Spec.X448.x448 c (Proof.X448.x448Contract Arm.abi) where
+    (hn : c.noFrames = true) : Callee 56 8192 0 [] Spec.X448.x448 c (Proof.X448.x448Contract Arm.abi) where
   hv := hv.1
   hct := hv.2.1
-  pre s h := by
+  pre s h _ _ := by
     obtain ⟨rd, wr, d1, d2, d3, d4, d5, b0, b1, b2, b3⟩ := h
     sig_pre [Proof.X448.x448Contract, Proof.X448.x448Sig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val,
       Arm.State.addr]
@@ -411,38 +412,47 @@ theorem callee {c : Prog isa} (hv : Verified Arm.target c (Proof.X448.x448Contra
       Arm.State.addr] at h
     exact h
   pub s₁ s₂ h := by
-    obtain ⟨q0, q1, q2, q3, qsp⟩ := h
+    obtain ⟨q0, q1, q2, q3, qsp, -⟩ := h
     sig_pub [Proof.X448.x448Contract, Proof.X448.x448Sig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val,
       Arm.State.addr]
     sig_reduce [Proof.X448.x448Contract, Proof.X448.x448Sig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val,
       Arm.State.addr]
     sig_and_intros
     all_goals first | with_reducible assumption | trivial
-  nf := hn
-
-/-- `vg_x448_exchange` calling `c`, an implementation of `vg_x448`, as `name`. -/
-theorem exchange_verified {c : Prog isa} (name : String)
-    (hv : Verified Arm.target c (Proof.X448.x448Contract Arm.abi)) (hn : c.noFrames = true)
-    (ht : ∃ hc, (taint.check (Taint.ofRegs [.r1]) (.block (Impl.Xdh.Arm.check 56)) hc).isSome = true) :
-    Verified Arm.target (Impl.Xdh.Arm.exchange name c 56) (Spec.X448.exchangeContract Arm.abi 8) :=
-  Verified.of_correct (k := exContract 56 8192 Spec.X448.x448) (exchange_correct (callee hv hn) (by decide))
-    (exchange_ct (callee hv hn) ht) (by
-      contract_implies [Spec.X448.exchangeContract, Spec.X448.exchangeSig, Proof.X448.x448Sig,
-        exContract, ExPre, CallPre, ExPost, Pub, Proof.Xdh.Arm.outR, Proof.Xdh.Arm.scR, Proof.Xdh.Arm.ptR, Proof.Xdh.Arm.wsR,
-        Proof.Xdh.Arm.frR, ret32, Arm.abi, Arm.argRegs,
-        Arm.reduceClassify, Arm.Loc.val,
-        Arm.State.addr] [Proof.X448.Arm.satState, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read] using Proof.X448.Arm.satState)
+  st := Nat.le_of_eq (armStack_of_noFrames hn)
 
 /-- The taint analysis of the check. -/
 theorem check_taint : ∃ hc, (taint.check (Taint.ofRegs [.r1]) (.block (Impl.Xdh.Arm.check 56)) hc).isSome = true :=
   ⟨_, by taint_decide⟩
 
-/-- `vg_x448_exchange` with the field's multiplication `fv` (`Proof/Variants/Curve448Field/Arm.lean`). -/
+/-- `vg_x448` makes no indirect call, with either multiplication. -/
+theorem x448_icallFree (fv : Bool) : VG.Proof.Arm.Code.icallFree (Impl.X448.Arm.x448 fv) = true := by
+  cases fv <;> lit_decide
+
+/-- `vg_x448` writes no `r10`, with either multiplication. -/
+theorem x448_keepsR10 (fv : Bool) : VG.Proof.Arm.KeepsReg .r10 (Impl.X448.Arm.x448 fv) := by
+  refine ⟨by decide, ?_⟩
+  have h : (instrs (Impl.X448.Arm.x448 fv)).all (fun i => !clobbers i .r10) = true := by
+    cases fv <;> lit_decide
+  simpa only [List.all_eq_true, Bool.not_eq_eq_eq_not, Bool.not_true] using h
+
+/-- `vg_x448_exchange` with the field's multiplication `fv` (`Proof/Variants/Curve448Field/Arm.lean`):
+it calls `vg_x448`, which calls `vg_x448_core`, the same code for both, with the multiplication's
+address in `r10`. -/
 theorem exchange_variant (fv : Bool) :
     Verified Arm.target
-      (Impl.Xdh.Arm.exchange ("vg_x448" ++ Impl.X448.Arm.suffix fv) (Impl.X448.Arm.x448 fv) 56)
-      (Spec.X448.exchangeContract Arm.abi 8) :=
-  exchange_verified _ Proof.X448.Arm.x448_verified (by cases fv <;> lit_decide) check_taint
+      (Impl.Xdh.Arm.exchange ("vg_x448" ++ Impl.X448.Arm.suffix fv) (Impl.X448.Arm.Fn.x448Entry fv) 56)
+      (Spec.X448.exchangeContract (Arm.abi.withFns [Impl.X448.Arm.mulName fv]) 16) := by
+  have hn : (Impl.X448.Arm.x448 fv).noFrames = true := by cases fv <;> lit_decide
+  have hk := (callee Proof.X448.Arm.x448_verified hn).entryReg (fn := Impl.X448.Arm.mulName fv)
+    (name := "vg_x448_core") hn (x448_icallFree fv) (x448_keepsR10 fv)
+  exact Verified.of_correct (k := exContract 56 8192 8 [Impl.X448.Arm.mulName fv] Spec.X448.x448)
+    (exchange_correct hk (by decide)) (exchange_ct hk check_taint) (by
+      contract_implies [Spec.X448.exchangeContract, Spec.X448.exchangeSig, Proof.X448.x448Sig,
+        exContract, ExPre, CallPre, ExPost, Pub, Proof.Xdh.Arm.frD, Proof.Xdh.Arm.outR, Proof.Xdh.Arm.scR, Proof.Xdh.Arm.ptR,
+        Proof.Xdh.Arm.wsR, Proof.Xdh.Arm.frR, ret32, Arm.abi, Arm.argRegs, Abi.withFns,
+        Arm.reduceClassify, Arm.Loc.val,
+        Arm.State.addr] [Proof.X448.Arm.satState, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read] using Proof.X448.Arm.satState)
 
 end VG.Proof.X448.Arm.Exchange
 
@@ -516,26 +526,34 @@ theorem x448Base_noFrames (u : Bool) : (Impl.X448.Arm.x448Base u).noFrames = tru
   simp only [
     Impl.Ed448.Arm.combStep, Impl.Ed448.Arm.combLoop, Impl.X448.Arm.callFn, Impl.X448.Arm.Op.code,
     Impl.X448.Arm.ops, Impl.X448.Arm.sqn, Impl.X448.Arm.invert, Impl.X448.Arm.bits,
-    Impl.X448.Arm.finish, Impl.X448.Arm.x448Base, Code.noFrames,
+    Impl.X448.Arm.finish, Impl.X448.Arm.finishT, Impl.X448.Arm.x448Base, Code.noFrames,
     (Proof.X448.Arm.Scrub.ops_shape _ _).1, (Proof.X448.Arm.Scrub.mulFn_shape _).1, Bool.and_self]
 
-theorem exchange_codeOk (u : Bool) :
-    CodeOk (Impl.Xdh.Arm.exchange ("vg_x448" ++ Impl.X448.Arm.suffix u) (Impl.X448.Arm.x448 u) 56) 8 := by
-  simp only [CodeOk,
-    Impl.X448.Arm.callFn, Impl.X448.Arm.Op.code, Impl.X448.Arm.ops, Impl.X448.Arm.stepBody,
-    Impl.X448.Arm.step, Impl.X448.Arm.ladder, Impl.X448.Arm.sqn, Impl.X448.Arm.invert,
-    Impl.X448.Arm.bits, Impl.X448.Arm.finish, Impl.X448.Arm.afterSetup, Impl.X448.Arm.x448,
-    Impl.Xdh.Arm.exchange, armStack, noIcall, (Proof.X448.Arm.Scrub.ops_shape _ _).2.1,
-    (Proof.X448.Arm.Scrub.ops_shape _ _).2.2, (Proof.X448.Arm.Scrub.mulFn_shape _).2.1,
-    (Proof.X448.Arm.Scrub.mulFn_shape _).2.2, Bool.and_self, Nat.max_self, List.length_cons,
-    List.length_nil]
+theorem x448Entry_stack (u : Bool) : armStack (Impl.X448.Arm.Fn.x448Entry u) = 8 := by
+  have hn : (Impl.Arm.Code.viaRegAt (Impl.X448.Arm.mulName u) .r10 (Impl.X448.Arm.x448 u)).noFrames = true := by
+    rw [VG.Proof.Arm.noFrames_viaRegAt]; cases u <;> lit_decide
+  simp only [Impl.X448.Arm.Fn.x448Entry, Impl.Arm.entryReg, armStack, VG.Proof.Xdh.Arm.armStack_of_noFrames hn,
+    List.length_cons, List.length_nil]
   decide
 
-theorem frameOk_8 : FrameOk 8 := by decide
+theorem exchange_stack (u : Bool) :
+    armStack (Impl.Xdh.Arm.exchange ("vg_x448" ++ Impl.X448.Arm.suffix u) (Impl.X448.Arm.Fn.x448Entry u) 56) ≤ 16 := by
+  simp only [Impl.Xdh.Arm.exchange, armStack, x448Entry_stack, List.length_cons, List.length_nil]
+  decide
 
-theorem exchangeOut (stack : Nat) :
-    PostOut (Spec.X448.exchangeContract abi stack) (Spec.X448.exchangeSig.retBits 32) :=
-  postOut_of_local (leak := none) ScrubAbi.plain fun
+theorem exchange_fns (u : Bool) :
+    fnsCall (Impl.Xdh.Arm.exchange ("vg_x448" ++ Impl.X448.Arm.suffix u) (Impl.X448.Arm.Fn.x448Entry u) 56)
+      [Impl.X448.Arm.mulName u] [] = true := by
+  simp only [fnsCall, Impl.Xdh.Arm.exchange, Impl.X448.Arm.Fn.x448Entry, Impl.Arm.entryReg, inames, List.nil_append,
+    List.append_nil, List.all_eq_true, decide_eq_true_eq]
+  intro m hm
+  exact .inl (by rw [inames_viaRegAt (Exchange.x448_icallFree u) m hm]; exact List.mem_singleton_self _)
+
+theorem frameOk_16 : FrameOk 16 := by decide
+
+theorem exchangeOut (fns : List String) (stack : Nat) :
+    PostOut (Spec.X448.exchangeContract (abi.withFns fns) stack) (Spec.X448.exchangeSig.retBits 32) :=
+  postOut_of_local (leak := none) (ScrubAbi.plain.withFns fns) fun
     | [out, _, _, _], m, m₁, m₂, r, _, hb, h => by
       simp only [Spec.X448.exchangeSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
         forall_eq_or_imp, forall_eq, Elem.size] at hb
@@ -551,13 +569,12 @@ namespace VG.Proof.X448.Arm.Fn
 
 open VG VG.Arm VG.Arm.Scrub
 
-/-- `vg_x448_exchange`, with either multiplication of the field. -/
+/-- `vg_x448_exchange`, with either multiplication of the field, whose address is public. -/
 theorem exchange (u : Bool) :
-    VerifiedScrubbed target (Impl.X448.Arm.Fn.exchange u) (Spec.X448.exchangeContract abi 8) 32 :=
-  verifiedScrubbedAll (api := Spec.X448.exchangeApi)
-    { code := Impl.Xdh.Arm.exchange ("vg_x448" ++ Impl.X448.Arm.suffix u) (Impl.X448.Arm.x448 u) 56
-      verified := Exchange.exchange_variant u }
-    (Scrub.exchangeOut _) (scrubSideF_of (Scrub.exchange_codeOk u) Scrub.frameOk_8 _)
+    VerifiedScrubbed target (Impl.X448.Arm.Fn.exchange u)
+      (Spec.X448.exchangeContract (abi.withFns [Impl.X448.Arm.mulName u]) 16) 32 :=
+  verifiedScrubbedAllFns (ts := []) ScrubAbi.plain (Exchange.exchange_variant u) (Scrub.exchangeOut _ _)
+    (Scrub.exchange_stack u) Scrub.frameOk_16 (Scrub.exchange_fns u) rfl
 
 /-- `vg_x448_base`, with either multiplication of the field. -/
 theorem x448Base (u : Bool) :

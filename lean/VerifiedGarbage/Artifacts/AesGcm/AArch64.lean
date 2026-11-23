@@ -46,6 +46,38 @@ def artifactsOf (g : GcmVariant) : List Artifact := [
     code := Impl.AesGcm.AArch64.Fn.streamVerify g.calls
     verified := Proof.AesGcm.AArch64.streamVerify_scrubbed g }]
 
+/-- The initialization and stream functions of the variant `g`, which call
+its implementations by the addresses in `d8` and `d9`. -/
+def artifactsDS (g : GcmVariant) : List Artifact := [
+  Spec.Gcm.initApi.artifact AArch64.target {
+    suffix := g.impl.suffix
+    code := Impl.AesGcm.AArch64.Fn.initDS g.calls
+    verified := Proof.AesGcm.AArch64.initDS_scrubbed g },
+  Spec.Gcm.streamInitApi.artifact AArch64.target {
+    suffix := g.impl.suffix
+    code := Impl.AesGcm.AArch64.Fn.streamInitDS g.calls
+    verified := Proof.AesGcm.AArch64.streamInitDS_scrubbed g },
+  Spec.Gcm.streamAadApi.artifact AArch64.target {
+    suffix := g.impl.suffix
+    code := Impl.AesGcm.AArch64.Fn.streamAadDS g.calls
+    verified := Proof.AesGcm.AArch64.streamAadDS_scrubbed g },
+  Spec.Gcm.streamEncryptApi.artifact AArch64.target {
+    suffix := g.impl.suffix
+    code := Impl.AesGcm.AArch64.Fn.streamEncryptDS g.calls
+    verified := Proof.AesGcm.AArch64.streamEncryptDS_scrubbed g },
+  Spec.Gcm.streamDecryptApi.artifact AArch64.target {
+    suffix := g.impl.suffix
+    code := Impl.AesGcm.AArch64.Fn.streamDecryptDS g.calls
+    verified := Proof.AesGcm.AArch64.streamDecryptDS_scrubbed g },
+  Spec.Gcm.streamFinishApi.artifact AArch64.target {
+    suffix := g.impl.suffix
+    code := Impl.AesGcm.AArch64.Fn.streamFinishDS g.calls
+    verified := Proof.AesGcm.AArch64.streamFinishDS_scrubbed g },
+  Spec.Gcm.streamVerifyApi.artifact AArch64.target {
+    suffix := g.impl.suffix
+    code := Impl.AesGcm.AArch64.Fn.streamVerifyDS g.calls
+    verified := Proof.AesGcm.AArch64.streamVerifyDS_scrubbed g }]
+
 /-- The gather implementation consumes the original input slices on each backend. -/
 def gatherArtifact (g : GcmVariant) : Artifact :=
   Spec.Gcm.sealGatherApi.artifact AArch64.target {
@@ -88,9 +120,11 @@ def basePwArtifacts (g : GcmVariant) : List Artifact := [
     verified := Proof.AesGcm.AArch64.openToWithPowersBase_scrubbed g }]
 
 /-- The artifacts of a variant: the functions it has (`GcmVariant.whole`,
-`withPowers`, `basePowers`). -/
+`withPowers`, `basePowers`), calling its implementations directly or by
+their addresses (`GcmVariant.direct`, `viaRegs`). -/
 def artifactsFor (g : GcmVariant) : List Artifact :=
-  g.whole.flatMap artifactsOf ++ [gatherArtifact g] ++
+  (g.whole.flatMap GcmVariant.direct).flatMap artifactsOf ++ (g.whole.flatMap GcmVariant.viaRegs).flatMap artifactsDS ++
+    [gatherArtifact g] ++
     g.withPowers.flatMap (withPowersArtifacts g) ++ g.basePowers.flatMap basePwArtifacts
 
 def artifacts : List Artifact :=

@@ -130,7 +130,7 @@ abbrev exTail : Prog isa :=
     copy (.slot .wide 6) (.slot .wide 19) (one .wide)] exportResult
 
 theorem body_eq : Impl.Ffdh.X86.Exchange.body =
-    Prog.chain exFront (.seq (windowPowerWith .wide (lenCount 11)) exTail) := rfl
+    Prog.chain exFront (.seq Impl.Ffdh.X86.winTopCall exTail) := rfl
 
 /-- p's context, with y in slot 5 and x in 8. -/
 theorem front_ok (h : In Ex base bytes len args s) (G : DomGeo args base bytes len dlen s.rd s.wr)
@@ -243,15 +243,13 @@ theorem body_ok (h : In Ex base bytes len args s) (G : DomGeo args base bytes le
   have xle := X.le
   obtain lb := len_le_bc len
   obtain bw := bc_eq_cwc len .wide
-  refine WP.seq (WP.mono (windowPowerWith_ok C one R2 (N := 2 * xl) (by omega_arith) (by omega_arith) fun t Ct =>
-    wp_movS (Ct.inp.arg (i := 11) (by decide)) fun t₁ a₁ _ => wp_addS rfl fun t₂ a₂ _ => WP.block_nil
-      ⟨a₁.keeps.trans (a₂.keeps.mono (by decide)), by rw [a₂.mem, a₁.mem], by
-        rw [a₂.gpr, a₁.gpr, X.e11, BitVec.ofNat_add_ofNat]; congr 1; omega_arith⟩) fun u₅ ⟨C₅, F₅, K₅, Y₅⟩ => ?_)
+  obtain RFu := S.room RF
+  refine WP.seq (WP.mono (winTopCall_ok C RFu one R2 X.e11 xp (by omega_arith)) fun u₅ ⟨C₅, F₅, K₅, Y₅⟩ => ?_)
   rw [V8, show 32 * cwc len .wide = 8 * bc len .wide by omega_arith, top_windows (by omega_arith)] at Y₅
   rw [V5, show yv s.mem args len ^ xv s.mem args xl % safeM (comp s.mem args len 0) = z from hz] at Y₅
-  obtain G₅ := stR_widen F₅ (pwR_in C.inp .wide 0)
-  obtain S₅ : Step Ex base bytes len args u u₅ := Step.ops C.inp G₅ K₅
-  obtain k₅ := kept_ops C.inp G₅ C.inp.room
+  obtain G₅ := frameF_widen F₅ (pwR_in C.inp .wide 0)
+  obtain S₅ : Step Ex base bytes len args u u₅ := Step.opsF C.inp RFu G₅ K₅
+  obtain k₅ := keptF_ops C.inp G₅ RFu
   -- Its range as the acceptance mask.
   refine WP.seq (WP.mono (rangeMask_ok C₅.inp (a := 6) (by decide)) fun u₆ ⟨I₆, e₆, O₆, K₆⟩ => ?_)
   rw [Y₅, k₅.slot_eq, V15, k₅.slot_eq, V14] at e₆
@@ -617,21 +615,23 @@ theorem body_relCT :
   swap
   · refine VG.RelCT.of_false fun s₁ _ h => hx ⟨h.1.x.e11, h.1.x.pos, ?_⟩
     have := h.1.x.le; have := h.1.run.1.upper'; omega_arith
+  suffices key : xl ≤ len → RelCT isa (Both (ExAt Ex base bytes len dlen xl args sp)) Impl.Ffdh.X86.Exchange.body
+      fun _ _ => True from fun _ _ _ _ _ _ hp e₁ e₂ => key hp.1.x.le _ _ _ _ _ _ hp e₁ e₂
+  intro hl
   rw [body_eq]
   apply VG.RelCT.chain
-  refine VG.RelCT.seq (VG.Proof.Bignum.X86.PublicRt.relCT_both (F := WSt Ex base bytes len args sp .wide [3, 4] 0)
+  refine VG.RelCT.seq (VG.Proof.Bignum.X86.PublicRt.relCT_both (F := WinPre Ex base bytes len args sp)
     front_trace fun x A => ?_) ?_
   · refine WP.mono (front_ok A.run.1 A.dom A.y A.x (by rw [A.run.2.2]; exact A.room) (by rw [A.run.2.2]; exact A.hy40)
       (by rw [A.run.2.2]; exact A.hx40)) fun u ⟨S, C, one, R2, _⟩ =>
-      ⟨_, C, fun j hj => ?_, fun j hj => absurd hj (Nat.not_lt_zero _), A.run.2.1.keep S.keeps,
-        S.esp.trans A.run.2.2⟩
+      ⟨⟨⟨_, C, fun j hj => ?_, fun j hj => absurd hj (Nat.not_lt_zero _), A.run.2.1.keep S.keeps,
+        S.esp.trans A.run.2.2⟩, A.room⟩, one, by rw [R2, C.mod]⟩
     have hM := safeM_gt (comp x.mem args len 0)
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
     rcases hj with rfl | rfl
     · rw [one]; exact hM
     · rw [R2]; exact Nat.mod_lt _ (by omega_using [hM])
-  · exact VG.RelCT.seq (windowPowerWith_relCT (winChecks .wide) (N := 2 * xl) (by omega_using [hx]) (by omega_using [hx]) CheckPrivate.count_check
-      fun _ W => lenCount_wst (by decide) hx.1 W)
+  · exact VG.RelCT.seq (winTopCall_relCT hx.1 hx.2.1 hl hx.2.2)
       (RelCT.taint (A := taint) τA (fun _ _ h => h.1.agree h.2) tail_check)
 
 end

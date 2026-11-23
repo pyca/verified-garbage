@@ -595,7 +595,6 @@ theorem steps_wp {s₀ s : State} {B I D : BitVec 32} {g j m : Nat}
 
 theorem fill_wp {s : State} {B I D : BitVec 32} {g : Nat}
     (h : Pre B I D g s) (hg : 1 ≤ g) (hg8 : g ≤ 8) : WP isa BatchCbc.fill s (Post s B I D g) := by
-  refine WP.seq (WP.of_runBlock ⟨s, CfbFill.pad_run s, ?_⟩)
   exact steps_wp h hg8 (by omega_using [hg]) hg8
     ⟨⟨fun _ _ _ => rfl, rfl, rfl, rfl, Frame.refl _ _⟩, fun _ hk => by omega⟩
 

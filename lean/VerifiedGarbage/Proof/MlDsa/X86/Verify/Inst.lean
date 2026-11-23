@@ -5,6 +5,8 @@ import VerifiedGarbage.Proof.MlDsa.X86.PreparedKey
 public import VerifiedGarbage.Impl.MlDsa.X86.Verify.Inst
 public import VerifiedGarbage.Proof.MlDsa.X86.Verify.Base
 import VerifiedGarbage.Proof.MlDsa.X86.Arith.NttInv
+import VerifiedGarbage.Proof.MlDsa.X86.Arith.Mul
+import VerifiedGarbage.Proof.MlDsa.X86.Arith.Ntt
 import VerifiedGarbage.Proof.MlDsa.X86.Sample.RejNtt
 import VerifiedGarbage.Proof.MlDsa.X86.Pack.Unpack
 import VerifiedGarbage.Proof.MlDsa.X86.Pack.BitPack

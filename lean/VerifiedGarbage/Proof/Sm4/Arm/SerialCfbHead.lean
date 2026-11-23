@@ -102,7 +102,7 @@ theorem group_wp {s : State} {B D : BitVec 32} {K : Spec.Sm4.Schedule} {n : Nat}
     (hH : Holds layout s.mem (State.addr B) K .encrypt) :
     WP isa SerialCfb.group s (GroupPost s B D K n) := by
   obtain ⟨s₁, e₁, g₁, o₁, m₁, rd₁, wr₁, sp₁⟩ := movImm_ok s .r11 1 (by decide)
-  refine WP.seq (WP.seq (WP.of_runBlock ⟨s₁, e₁, WP.of_runBlock ⟨s₁, CfbFill.pad_run s₁, ?_⟩⟩))
+  refine WP.seq (WP.of_runBlock ⟨s₁, e₁, ?_⟩)
   have b₁ : s₁.gpr sb = B := (o₁ _ (by decide)).trans hB
   have d₁ : s₁.gpr .r6 = D := (o₁ _ (by decide)).trans hD
   have wd₁ : Covers [⟨State.addr D, 16⟩] s₁.wr := by
@@ -379,8 +379,7 @@ theorem count_wp (s : State) : WP isa SerialCfb.count s fun s' =>
       (∀ r, r ≠ .r11 → r ≠ .r10 → s'.gpr r = s.gpr r) ∧ s'.mem = s.mem ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp := by
   obtain ⟨s', e, g, o, m, rd, wr, sp⟩ := movImm_ok s .r11 1 (by decide)
-  exact WP.seq (WP.of_runBlock ⟨s', e, WP.of_runBlock
-    ⟨s', CfbFill.pad_run s', g, fun r hr _ => o r hr, m, rd, wr, sp⟩⟩)
+  exact WP.of_runBlock ⟨s', e, g, fun r hr _ => o r hr, m, rd, wr, sp⟩
 
 theorem head_wp {s : State} {B D : BitVec 32} {n : Nat} (hn : 1 ≤ n) (_hn32 : n < 2 ^ 32)
     (h : HeadPre B D n s) : WP isa groupHead s (HeadPost s n) := by

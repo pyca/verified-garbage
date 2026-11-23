@@ -122,7 +122,7 @@ def firstOP : List Instr :=
 
 /-- `windowO`, its selections woven into the additions. -/
 def windowOP (dbl : Pt → Prog isa) : Prog isa :=
-  .seq K.buildO <| .seq (.block K.firstOP) <| .seq (.loop (K.stepOP dbl) .ne) <| .seq (K.lastO dbl) <|
+  .seq K.buildOC <| .seq (.block K.firstOP) <| .seq (.loop (K.stepOP dbl) .ne) <| .seq (K.lastO dbl) <|
   .seq (.block K.tc.outFix) (ForwardField.programB K.M K.tc.outOps)
 
 /-- Whether the woven selection applies: four words, at least three digits,

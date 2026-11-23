@@ -11,6 +11,7 @@ import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Keccak
 import VerifiedGarbage.Proof.Sha3.Stream
 import VerifiedGarbage.Proof.MlKem.Mem
+import VerifiedGarbage.Proof.Framework.X86_64.Syms
 
 /-! ### `MlDsa.X86_64.Sign.Hash`, which this module and modules that import it used -/
 
@@ -27,6 +28,8 @@ leaking only the addresses (`shake_tr`).
 @[expose] public section
 
 namespace VG.Proof.MlDsa.X86_64.Sign
+
+variable {SL : List String}
 
 open VG VG.X86_64 VG.Impl.MlDsa.X86_64.Sign
 open VG.Proof.MlKem.X86_64 (Keep)
@@ -65,7 +68,7 @@ theorem pieces_length (s : State) (ps : List (Ptr × Nat)) : (pieces s ps).lengt
     rw [ih]; simp [totLen]
 
 section
-variable {D : Nat} {rbs wbs : List (Reg × Nat)}
+variable {D : Nat} {SL : List String} {rbs wbs : List (Reg × Nat)}
 
 theorem pieceChk_keep {p : Ptr × Nat} (h : pieceChk (rbs ++ wbs) p = true) :
     keepB (rbs ++ wbs) [(sc 0, 200), (sc 200, 640)] p.1 p.2 = true := by
@@ -73,7 +76,7 @@ theorem pieceChk_keep {p : Ptr × Nat} (h : pieceChk (rbs ++ wbs) p = true) :
   obtain ⟨⟨⟨⟨⟨⟨hin, _⟩, _⟩, _⟩, s1⟩, s2⟩, hcs⟩ := h
   simp only [keepB, List.all_cons, List.all_nil, s1, s2, hin, decide_eq_true hcs, Bool.and_self]
 
-theorem pieces_keep {s s' : State} (L : Lay D rbs wbs s) {ws : List (Ptr × Nat)} (hP : PPostB D s s' ws) :
+theorem pieces_keep {s s' : State} (L : Lay D SL rbs wbs s) {ws : List (Ptr × Nat)} (hP : PPostB D s s' ws) :
     ∀ {ps : List (Ptr × Nat)}, (∀ p ∈ ps, keepB (rbs ++ wbs) ws p.1 p.2 = true) → pieces s' ps = pieces s ps
   | [], _ => rfl
   | p :: ps, h => by
@@ -89,15 +92,15 @@ theorem bases_all : ∀ w ∈ [((sc 0 : Ptr), 200), ((sc 200 : Ptr), 640)], w.1.
   decide
 
 /-- What absorbing the pieces `ps` from position `pos` does. -/
-def AbsOk (D : Nat) (rbs wbs : List (Reg × Nat)) (rate : Nat) (ps : List (Ptr × Nat)) : Prop :=
-  ∀ (s : State) (_ : Lay D rbs wbs s) (pos : Nat) (msg : List Byte),
+def AbsOk (D : Nat) (SL : List String) (rbs wbs : List (Reg × Nat)) (rate : Nat) (ps : List (Ptr × Nat)) : Prop :=
+  ∀ (s : State) (_ : Lay D SL rbs wbs s) (pos : Nat) (msg : List Byte),
     ps.all (pieceChk (rbs ++ wbs)) = true → pos < rate → pos = msg.length % rate →
     Repr s.mem (pa s (sc 0)) rate msg →
     WP isa (absAll rate ps pos) s fun s' => PPostB D s s' [(sc 0, 200), (sc 200, 640)] ∧
       (∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) ∧ Repr s'.mem (pa s (sc 0)) rate (msg ++ pieces s ps)
 
 theorem absAll_ok (hcs : ∀ b ∈ rbs ++ wbs, b.1 ∈ bases) (hD : 24 ≤ D) (hk : kChk (rbs ++ wbs) wbs = true)
-    {rate : Nat} (hrate : rate ∈ rates) : ∀ (ps : List (Ptr × Nat)), AbsOk D rbs wbs rate ps
+    {rate : Nat} (hrate : rate ∈ rates) : ∀ (ps : List (Ptr × Nat)), AbsOk D SL rbs wbs rate ps
   | [] => fun _ _ _ _ _ _ _ hR => WP.block_nil ⟨PostB.refl _ _ _, fun _ _ => rfl, by simpa using hR⟩
   | (p, l) :: ps => by
     intro s L pos msg hps hpos hm hR
@@ -130,7 +133,7 @@ theorem shakeChk_spec {bs wbs : List (Reg × Nat)} {ps : List (Ptr × Nat)} {out
   exact ⟨h.1.1, h.1.2, h.2⟩
 
 theorem shake_ok (hcs : ∀ b ∈ rbs ++ wbs, b.1 ∈ bases) (hD : 24 ≤ D) {ps : List (Ptr × Nat)} {out : Ptr}
-    {len : Nat} (hc : shakeChk (rbs ++ wbs) wbs ps out len = true) {s : State} (L : Lay D rbs wbs s) :
+    {len : Nat} (hc : shakeChk (rbs ++ wbs) wbs ps out len = true) {s : State} (L : Lay D SL rbs wbs s) :
     WP isa (shakeAt ps out len) s fun s' => PPostB D s s' [(sc 0, 200), (sc 200, 640), (out, len)] ∧
       (∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) ∧ bytesAt s'.mem (pa s out) len = H (pieces s ps) len := by
   obtain ⟨hk, hps, hsq⟩ := shakeChk_spec hc
@@ -177,9 +180,9 @@ theorem shake_ok (hcs : ∀ b ∈ rbs ++ wbs, b.1 ∈ bases) (hD : 24 ≤ D) {ps
 /-! ## Constant time -/
 
 theorem LRel.step (hcs : ∀ b ∈ rbs ++ wbs, b.1 ∈ bases) {c : Prog isa}
-    (htr : RelCT isa (LRel D rbs wbs) c fun _ _ => True)
-    (hok : ∀ x, Lay D rbs wbs x → WP isa c x fun x' => ∃ W, PostB D x x' W) :
-    RelCT isa (LRel D rbs wbs) c (LRel D rbs wbs) :=
+    (htr : RelCT isa (LRel D SL rbs wbs) c fun _ _ => True)
+    (hok : ∀ x, Lay D SL rbs wbs x → WP isa c x fun x' => ∃ W, PostB D x x' W) :
+    RelCT isa (LRel D SL rbs wbs) c (LRel D SL rbs wbs) :=
   VG.Proof.MlKem.X86_64.RelCT.postDep htr (F := fun x x' => ∃ W, PostB D x x' W) (fun x y h => ⟨hok x h.lx, hok y h.ly⟩)
     fun _ _ _ _ h ⟨_, hx⟩ ⟨_, hy⟩ => h.post hcs hx hy
 
@@ -190,7 +193,7 @@ theorem nil_tr {P : State → State → Prop} : RelCT isa P (.block []) P :=
 theorem absAll_tr (hcs : ∀ b ∈ rbs ++ wbs, b.1 ∈ bases) (hD : 24 ≤ D) (hk : kChk (rbs ++ wbs) wbs = true)
     {rate : Nat} (hrate : rate ∈ rates) :
     ∀ (ps : List (Ptr × Nat)) (pos : Nat), ps.all (pieceChk (rbs ++ wbs)) = true → pos < rate →
-      RelCT isa (LRel D rbs wbs) (absAll rate ps pos) (LRel D rbs wbs)
+      RelCT isa (LRel D SL rbs wbs) (absAll rate ps pos) (LRel D SL rbs wbs)
   | [], _, _, _ => nil_tr
   | (p, l) :: ps, pos, hps, hpos => by
     simp only [List.all_cons, Bool.and_eq_true] at hps
@@ -204,7 +207,7 @@ theorem absAll_tr (hcs : ∀ b ∈ rbs ++ wbs, b.1 ∈ bases) (hD : 24 ≤ D) (h
 
 theorem shake_tr (hcs : ∀ b ∈ rbs ++ wbs, b.1 ∈ bases) (hD : 24 ≤ D) {ps : List (Ptr × Nat)} {out : Ptr}
     {len : Nat} (hc : shakeChk (rbs ++ wbs) wbs ps out len = true) :
-    RelCT isa (LRel D rbs wbs) (shakeAt ps out len) (LRel D rbs wbs) := by
+    RelCT isa (LRel D SL rbs wbs) (shakeAt ps out len) (LRel D SL rbs wbs) := by
   obtain ⟨hk, hps, hsq⟩ := shakeChk_spec hc
   have hrate : (136 : Nat) ∈ rates := by decide
   have i0 : inB (rbs ++ wbs) (sc 0) 200 = true := (kChk_spec hk).2.2.1
@@ -241,6 +244,8 @@ at the first that leaves `r15 = 0` (`seqOk_ok`).
 @[expose] public section
 
 namespace VG.Proof.MlDsa.X86_64.Sign
+
+variable {SL : List String}
 
 open VG VG.X86_64 VG.Impl.MlDsa.X86_64.Sign
 open VG.Proof.MlKem.X86_64 (Keep Keep.gpr WP.keep)
@@ -293,6 +298,55 @@ def signK (p : Params) (D : Nat) : Contract isa where
         (bytesAt s₂.mem (s₂.gpr .rdx) 32) ∧
     s₁.gpr .r9 = s₂.gpr .r9
 
+/-- The words above the return address that hold the addresses of the
+callees `SL`, if any. -/
+def slotRs (SL : List String) (s : State) : List Region := if SL = [] then [] else [slotR SL s]
+
+/-- The words above the return address hold the addresses of the callees
+`SL` (`Impl.MlDsa.X86_64.Sign.slotM`), apart from the writable regions and
+not wrapping around. -/
+def SlotsPre (SL : List String) (s : State) : Prop :=
+  (∀ r ∈ s.wr, (slotR SL s).Disjoint r) ∧ (SL = [] ∨ (s.gpr .rsp).toNat + 8 + 8 * SL.length ≤ 2 ^ 64) ∧
+    ∀ i (h : i < SL.length), s.load64 (s.gpr .rsp + BitVec.ofNat 64 (8 + 8 * i)) = some (s.syms SL[i])
+
+/-- `signK` of a body that calls the callees `SL` by the addresses in the
+words above its return address (`SlotsPre`), which it may read, and on
+which two runs agree. -/
+def signKS (p : Params) (D : Nat) (SL : List String) : Contract isa where
+  pre s :=
+    (s.rd = [⟨s.gpr .rdi, skL p s⟩, ⟨s.gpr .rsi, 64⟩, ⟨s.gpr .rdx, 32⟩] ++ slotRs SL s ∧
+    s.wr = [⟨s.gpr .rcx, p.sigLen⟩, ⟨s.gpr .r8, scrLen p⟩] ∧
+    Region.Disjoint ⟨s.gpr .rdi, skL p s⟩ ⟨s.gpr .rcx, p.sigLen⟩ ∧
+    Region.Disjoint ⟨s.gpr .rdi, skL p s⟩ ⟨s.gpr .r8, scrLen p⟩ ∧
+    Region.Disjoint ⟨s.gpr .rsi, 64⟩ ⟨s.gpr .rcx, p.sigLen⟩ ∧ Region.Disjoint ⟨s.gpr .rsi, 64⟩ ⟨s.gpr .r8, scrLen p⟩ ∧
+    Region.Disjoint ⟨s.gpr .rdx, 32⟩ ⟨s.gpr .rcx, p.sigLen⟩ ∧ Region.Disjoint ⟨s.gpr .rdx, 32⟩ ⟨s.gpr .r8, scrLen p⟩ ∧
+    Region.Disjoint ⟨s.gpr .rcx, p.sigLen⟩ ⟨s.gpr .r8, scrLen p⟩ ∧
+    (retR s).Disjoint ⟨s.gpr .rdi, skL p s⟩ ∧ (retR s).Disjoint ⟨s.gpr .rsi, 64⟩ ∧
+    (retR s).Disjoint ⟨s.gpr .rdx, 32⟩ ∧ (retR s).Disjoint ⟨s.gpr .rcx, p.sigLen⟩ ∧
+    (retR s).Disjoint ⟨s.gpr .r8, scrLen p⟩ ∧
+    (below (s.gpr .rsp) D).Disjoint ⟨s.gpr .rdi, skL p s⟩ ∧ (below (s.gpr .rsp) D).Disjoint ⟨s.gpr .rsi, 64⟩ ∧
+    (below (s.gpr .rsp) D).Disjoint ⟨s.gpr .rdx, 32⟩ ∧ (below (s.gpr .rsp) D).Disjoint ⟨s.gpr .rcx, p.sigLen⟩ ∧
+    (below (s.gpr .rsp) D).Disjoint ⟨s.gpr .r8, scrLen p⟩ ∧
+    (s.gpr .rdi).toNat + skL p s ≤ 2 ^ 64 ∧ (s.gpr .rsi).toNat + 64 ≤ 2 ^ 64 ∧ (s.gpr .rdx).toNat + 32 ≤ 2 ^ 64 ∧
+    (s.gpr .rcx).toNat + p.sigLen ≤ 2 ^ 64 ∧ (s.gpr .r8).toNat + scrLen p ≤ 2 ^ 64 ∧
+    D ≤ (s.gpr .rsp).toNat ∧
+    (s.gpr .r9 ≠ 0 → PreparedSecretKey p s.mem (s.gpr .rdi))) ∧ SlotsPre SL s
+  post := (signK p D).post
+  pub s₁ s₂ := (signK p D).pub s₁ s₂ ∧ ∀ n ∈ SL, s₁.syms n = s₂.syms n
+
+/-- `signK`, with the addresses of the functions `N` public too. -/
+def signKN (p : Params) (D : Nat) (N : List String) : Contract isa :=
+  { signK p D with pub := fun s₁ s₂ => (signK p D).pub s₁ s₂ ∧ ∀ f ∈ N, s₁.syms f = s₂.syms f }
+
+/-- `signK` with more stack implies it with less. -/
+theorem signK_mono {p : Params} {D D' : Nat} (hD : D ≤ D') (hD' : D' < 2 ^ 64) {s : State}
+    (h : (signK p D').pre s) : (signK p D).pre s := by
+  obtain ⟨hrd, hwr, d1, d2, d3, d4, d5, d6, d7, r1, r2, r3, r4, r5, k1, k2, k3, k4, k5, n1, n2, n3, n4, n5, hsp,
+    hprep⟩ := h
+  have hb : Region.Sub (below (s.gpr .rsp) D) (below (s.gpr .rsp) D') := below_sub hD hD'
+  exact ⟨hrd, hwr, d1, d2, d3, d4, d5, d6, d7, r1, r2, r3, r4, r5, k1.sub_left hb, k2.sub_left hb, k3.sub_left hb,
+    k4.sub_left hb, k5.sub_left hb, n1, n2, n3, n4, n5, by omega_using [hD, hsp], hprep⟩
+
 /-! ## The layout -/
 
 theorem contains_prefix {a : Addr} {n k : Nat} (h : n ≤ k) : (⟨a, k⟩ : Region).Contains a n := by
@@ -327,15 +381,19 @@ structure Top (σ s : State) : Prop where
   flag : s.mem.readW (pa s (sc oFL)) 64 = σ.gpr .r9
 
 section
-variable {p : Params} {D : Nat} {σ : State} (hp : (signK p D).pre σ)
+variable {p : Params} {D : Nat} {SL : List String} {σ : State} (hp : (signKS p D SL).pre σ)
 include hp
 
 /-- The layout with the first `L` bytes of the key at `rbp`. -/
 theorem sgLayL {L : Nat} (hL : L ≤ skL p σ) (hD : D < 2 ^ 32)
     (hsz : scrLen p < 2 ^ 32 ∧ L < 2 ^ 32 ∧ p.sigLen < 2 ^ 32) {s : State}
-    (h : Top σ s) : Lay D [(.rbp, L), (.r12, 64), (.r13, 32)] (sgW p) s := by
-  obtain ⟨hrd, hwr, d1, d2, d3, d4, d5, d6, d7, r1, r2, r3, r4, r5, k1, k2, k3, k4, k5, n1, n2, n3, n4, n5, hsp, -⟩ := hp
+    (h : Top σ s)
+    (hsl : ∀ i (h : i < SL.length), s.load64 (s.gpr .rsp + BitVec.ofNat 64 (8 + 8 * i)) = some (s.syms SL[i])) :
+    Lay D SL [(.rbp, L), (.r12, 64), (.r13, 32)] (sgW p) s := by
+  obtain ⟨hrd, hwr, d1, d2, d3, d4, d5, d6, d7, r1, r2, r3, r4, r5, k1, k2, k3, k4, k5, n1, n2, n3, n4, n5, hsp, -⟩ := hp.1
+  obtain ⟨hs1, hs2, -⟩ := hp.2
   have hsub : Region.Sub ⟨σ.gpr .rdi, L⟩ ⟨σ.gpr .rdi, skL p σ⟩ := Region.sub_prefix hL
+  have hsR : slotR SL s = slotR SL σ := by simp only [slotR, h.rsp]
   replace d1 := d1.sub_left hsub
   replace d2 := d2.sub_left hsub
   replace r1 := r1.sub_right hsub
@@ -351,7 +409,7 @@ theorem sgLayL {L : Nat} (hL : L ≤ skL p σ) (hD : D < 2 ^ 32)
   have memw : ∀ r ∈ σ.wr, InRegions s.wr r.base r.len := fun r hr =>
     ⟨r, by rw [h.wr]; exact hr, Region.contains_self _ _⟩
   refine ⟨?_, fun b hb b' hb' hne hw => ?_, fun b hb => ?_, fun b hb => ?_, fun b hb => ?_, fun b hb => ?_,
-    fun b hb => ?_, by rw [h.rsp]; exact hsp, hD⟩
+    fun b hb => ?_, by rw [h.rsp]; exact hsp, hD, fun r hr => ?_, by rw [h.rsp]; exact hs2, hsl⟩
   · intro b hb
     simp only [sgW, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hb
     rcases hb with rfl | rfl | rfl | rfl | rfl <;> simp only <;> omega_arith
@@ -379,10 +437,13 @@ theorem sgLayL {L : Nat} (hL : L ≤ skL p σ) (hD : D < 2 ^ 32)
   · simp only [sgW, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hb
     rcases hb with rfl | rfl | rfl | rfl | rfl <;> simp only [retR, e1, e2, e3, e4, e5, h.rsp]
     exacts [r1, r2, r3, r5, r4]
+  · rw [hsR]; rw [h.wr] at hr; exact hs1 r hr
 
 theorem sgLay (hD : D < 2 ^ 32) (hsz : scrLen p < 2 ^ 32 ∧ p.skLen < 2 ^ 32 ∧ p.sigLen < 2 ^ 32) {s : State}
-    (h : Top σ s) : Lay D (sgR p) (sgW p) s :=
-  sgLayL hp (skLen_le_skL p σ) hD hsz h
+    (h : Top σ s)
+    (hsl : ∀ i (h : i < SL.length), s.load64 (s.gpr .rsp + BitVec.ofNat 64 (8 + 8 * i)) = some (s.syms SL[i])) :
+    Lay D SL (sgR p) (sgW p) s :=
+  sgLayL hp (skLen_le_skL p σ) hD hsz h hsl
 
 end
 
@@ -391,8 +452,8 @@ def topChk (bs : List (Reg × Nat)) (ws : List (Ptr × Nat)) : Bool :=
   (List.range 6).all (fun k => keepB bs ws (sc (oSV + 8 * k)) 8) && ws.all (fun w => inB bs w.1 w.2) &&
     keepB bs ws (sc oFL) 8
 
-theorem Top.step {D : Nat} {σ s s' : State} {rbs wbs : List (Reg × Nat)} (h : Top σ s)
-    (L : Lay D rbs wbs s) {ws : List (Ptr × Nat)} (hP : PPostB D s s' ws)
+theorem Top.step {D : Nat} {SL : List String} {σ s s' : State} {rbs wbs : List (Reg × Nat)} (h : Top σ s)
+    (L : Lay D SL rbs wbs s) {ws : List (Ptr × Nat)} (hP : PPostB D s s' ws)
     (hc : topChk (rbs ++ wbs) ws = true) : Top σ s' := by
   simp only [topChk, Bool.and_eq_true, List.all_eq_true, List.mem_range] at hc
   refine ⟨hP.rd.trans h.rd, hP.wr.trans h.wr, hP.rsp.trans h.rsp,
@@ -429,10 +490,10 @@ theorem pro_eq : pro = [.store (VG.Impl.MlKem.X86_64.at_ .r8 840) .rbx, .store (
     .mov .rbp (.reg .rdi), .mov .r12 (.reg .rsi), .mov .r13 (.reg .rdx), .mov .r14 (.reg .rcx),
     .mov32 .r15 (.imm 1), .store (VG.Impl.MlKem.X86_64.at_ .r8 952) .r9] := rfl
 
-theorem pro_ok {p : Params} {D : Nat} {σ : State} (hp : (signK p D).pre σ) (hsz : scrLen p < 2 ^ 32) :
+theorem pro_ok {p : Params} {D : Nat} {σ : State} (hp : (signKS p D SL).pre σ) (hsz : scrLen p < 2 ^ 32) :
     WP isa (.block pro) σ fun s => Top σ s ∧ s.mem.readW (σ.gpr .rsp) 64 = σ.mem.readW (σ.gpr .rsp) 64 ∧
       Frame [⟨σ.gpr .r8, scrLen p⟩] σ.mem s.mem ∧ s.gpr .r15 = 1 := by
-  have hp' := hp
+  have hp' := hp.1
   obtain ⟨_, hwr, _, _, _, _, _, _, _, _, _, _, _, r5, _, _, _, _, _, _, _, _, _, _, _, _⟩ := hp'
   have hS : ⟨σ.gpr .r8, scrLen p⟩ ∈ σ.wr := by rw [hwr]; simp
   have c : ∀ o, o + 8 ≤ 960 → (⟨σ.gpr .r8, scrLen p⟩ : Region).Contains (σ.gpr .r8 + BitVec.ofNat 64 o) 8 :=
@@ -512,12 +573,12 @@ theorem test15_ok (s : State) (D : Nat) :
     WP isa (.block [.alu32 .test .r15 (.reg .r15)]) s fun s₁ => PPostB D s s₁ [] ∧
       (∀ r ∈ calleeSaved, s₁.gpr r = s.gpr r) ∧ s₁.mem = s.mem ∧
       s₁.zf = some ((s.gpr .r15).setWidth 32 == 0) := by
-  refine WP.mono (WP.keep [.r15] (Q := fun s₁ => s₁.mem = s.mem ∧ s₁.gpr .r15 = s.gpr .r15 ∧
+  refine WP.mono_syms (WP.keep [.r15] (Q := fun s₁ => s₁.mem = s.mem ∧ s₁.gpr .r15 = s.gpr .r15 ∧
       s₁.zf = some (((s.gpr .r15).setWidth 32 &&& (s.gpr .r15).setWidth 32) == 0)) (by xrun) (by decide))
-    fun s₁ ⟨⟨hm, h15, hz⟩, k⟩ => ⟨⟨k.2.1, k.2.2, fun r hr => k.gpr (by
+    fun s₁ ⟨⟨hm, h15, hz⟩, k⟩ hsy => ⟨⟨k.2.1, k.2.2, fun r hr => k.gpr (by
         simp only [bases, List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl | rfl | rfl <;> decide), k.gpr (by decide),
-        by rw [hm]; exact Frame.refl _ _⟩,
+        by rw [hm]; exact Frame.refl _ _, hsy, by rw [hm]; exact Frame.refl _ _⟩,
       fun r hr => by
         simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl

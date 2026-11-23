@@ -71,6 +71,10 @@ structure JacWinCfg where
   J : Nat
   one : Nat
   avx2 : Bool
+  /-- The name of a function that builds the table of odd multiples
+  (`JacWinCfg.buildO`, in `WinJacOdd.lean`) for the windows that share it,
+  which they call (`buildOC`); `none` to build it inline. -/
+  buildFn : Option String := none
 
 namespace JacWinCfg
 

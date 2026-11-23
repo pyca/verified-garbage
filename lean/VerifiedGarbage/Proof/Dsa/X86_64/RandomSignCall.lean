@@ -13,6 +13,8 @@ public import VerifiedGarbage.Spec.Dsa.Derive
 public import VerifiedGarbage.Spec.Dsa.Prevalidated
 public import VerifiedGarbage.Impl.Dsa.X86_64.Prevalidated
 public import VerifiedGarbage.Impl.Dsa.X86_64.PrevalidatedSign
+public import VerifiedGarbage.Impl.Dsa.X86_64.Fn
+public import VerifiedGarbage.Proof.Framework.X86_64.Syms
 public import VerifiedGarbage.Spec.Dsa.PrevalidatedSign
 public import VerifiedGarbage.Spec.Dsa.DomainChecked
 public import VerifiedGarbage.Proof.Dsa.Contract
@@ -36,50 +38,48 @@ shared kernel. The generic registration emits both callers for every backend.
 namespace VG.Proof.Dsa.X86_64
 open VG VG.X86_64 VG.Impl.Dsa.X86_64 VG.Proof.Bignum.X86_64
 
+/-- An implementation of the arithmetic, its multiplication `nm` (code `bm`)
+and squaring `ns` (code `bs`), with the proofs of the functions over it that
+the complete entry points call: each an internal function that stores the
+addresses of `nm` and `ns` and calls one body over every implementation, which
+calls them through those (`Fn.signerS`, `Fn.checkS`, `Fn.deriveCheckedS`), its
+contract making them public (`Abi.withFns`). -/
 structure Backend where
-  sq : Prog isa
-  mul : Nat → Nat → Nat → Prog isa
   stack : Nat := 0
   suffix : String
   features : List String
-  signVerified : Verified target (SignVerify.sign sq mul) (Spec.Dsa.signContract abi stack)
-  signSp : (SignVerify.sign sq mul).all (fun i => !isa.writesSp i) = true
-  signMx : (SignVerify.sign sq mul).allInstrs (fun i => !touchesMxcsr i) = true
-  validateVerified : Verified target (Prevalidated.validate sq mul) (Spec.Dsa.validatePublicKeyContract abi stack)
-  prevalidatedVerified : Verified target (Prevalidated.verify sq mul) (Spec.Dsa.verifyPrevalidatedContract abi stack)
-  validateSp : (Prevalidated.validate sq mul).all (fun i => !isa.writesSp i) = true
-  prevalidatedSp : (Prevalidated.verify sq mul).all (fun i => !isa.writesSp i) = true
-  signDepth : (SignVerify.sign sq mul).x86_64Depth ≤ stack
-  parametersVerified : Verified target (Generate.checkParameters sq mul) (Proof.Dsa.checkParametersContract abi stack)
-  deriveVerified : Verified target (Generate.deriveKey sq mul) (Spec.Dsa.deriveKeyContract abi stack)
-  parametersSp : (Generate.checkParameters sq mul).all (fun i => !isa.writesSp i) = true
-  parametersMx : (Generate.checkParameters sq mul).allInstrs (fun i => !touchesMxcsr i) = true
-  deriveSp : (Generate.deriveKey sq mul).all (fun i => !isa.writesSp i) = true
-  parametersDepth : (Generate.checkParameters sq mul).x86_64Depth ≤ stack
-  deriveDepth : (Generate.deriveKey sq mul).x86_64Depth ≤ stack
-  prevalidatedSignVerified : Verified target (PrevalidatedSign.sign sq mul)
-    (signContractWith Spec.Dsa.validatePrivateKeyBytes abi stack)
-  prevalidatedSignSp : (PrevalidatedSign.sign sq mul).all (fun i => !isa.writesSp i) = true
-  prevalidatedSignMx : (PrevalidatedSign.sign sq mul).allInstrs (fun i => !touchesMxcsr i) = true
-  prevalidatedSignDepth : (PrevalidatedSign.sign sq mul).x86_64Depth ≤ stack
-  validatePrivateVerified : Verified target (PrevalidatedSign.validate sq mul)
-    (Spec.Dsa.validatePrivateKeyContract abi stack)
-  validatePrivateSp : (PrevalidatedSign.validate sq mul).all (fun i => !isa.writesSp i) = true
-  deriveCheckedVerified : Verified target (Generate.deriveChecked sq mul)
-    (Spec.Dsa.deriveKeyDomainCheckedContract abi stack)
-  deriveCheckedSp : (Generate.deriveChecked sq mul).all (fun i => !isa.writesSp i) = true
-  deriveCheckedMx : (Generate.deriveChecked sq mul).allInstrs (fun i => !touchesMxcsr i) = true
-  deriveCheckedDepth : (Generate.deriveChecked sq mul).x86_64Depth ≤ stack
+  nm : String
+  ns : String
+  bm : Prog isa
+  bs : Prog isa
+  parametersVerified : Verified target (Fn.checkS nm ns bm bs)
+    (Proof.Dsa.checkParametersContract (abi.withFns [nm, ns]) stack)
+  parametersSp : (Fn.checkS nm ns bm bs).all (fun i => !isa.writesSp i) = true
+  parametersMx : (Fn.checkS nm ns bm bs).allInstrs (fun i => !touchesMxcsr i) = true
+  parametersDepth : (Fn.checkS nm ns bm bs).x86_64Depth ≤ stack
+  prevalidatedSignVerified : Verified target (Fn.signerS nm ns bm bs)
+    (signContractWith Spec.Dsa.validatePrivateKeyBytes (abi.withFns [nm, ns]) stack)
+  prevalidatedSignSp : (Fn.signerS nm ns bm bs).all (fun i => !isa.writesSp i) = true
+  prevalidatedSignMx : (Fn.signerS nm ns bm bs).allInstrs (fun i => !touchesMxcsr i) = true
+  prevalidatedSignDepth : (Fn.signerS nm ns bm bs).x86_64Depth ≤ stack
+  deriveCheckedVerified : Verified target (Fn.deriveCheckedS nm ns bm bs)
+    (Spec.Dsa.deriveKeyDomainCheckedContract (abi.withFns [nm, ns]) stack)
+  deriveCheckedSp : (Fn.deriveCheckedS nm ns bm bs).all (fun i => !isa.writesSp i) = true
+  deriveCheckedMx : (Fn.deriveCheckedS nm ns bm bs).allInstrs (fun i => !touchesMxcsr i) = true
+  deriveCheckedDepth : (Fn.deriveCheckedS nm ns bm bs).x86_64Depth ≤ stack
   stackBound : stack < 2 ^ 32
   /-- The level of the vector instructions of its arithmetic. -/
   level : Impl.Scrub.X86_64.VecLevel
-  /-- What the cleanup of a function that runs its squaring needs of it
-  (`X86_64.Scrub.calleeSide`), evaluated here, once. -/
-  sqSide : X86_64.Scrub.calleeSide sq level.level 8 = true
-  /-- The same of its multiplication, wherever it runs it. -/
-  mulSide : ∀ o a b, X86_64.Scrub.calleeSide (mul o a b) level.level 8 = true
   /-- Its callers' stack, a literal of their cleanup. -/
-  stack_eq : stack = 8
+  stack_eq : stack = 72
+
+/-- Two states agree on where the functions `fs` are. -/
+def SymsAgree (fs : List String) (a b : State) : Prop := ∀ g ∈ fs, a.syms g = b.syms g
+
+/-- Runs keep where every function is. -/
+theorem SymsAgree.exec {fs : List String} {a b a' b' : State} {c c' : Prog isa} {ta tb : List Leak}
+    (h : SymsAgree fs a b) (ea : Exec isa c a ta a') (eb : Exec isa c' b tb b') : SymsAgree fs a' b' :=
+  fun g hg => by rw [Exec.syms ea, Exec.syms eb]; exact h g hg
 
 end VG.Proof.Dsa.X86_64
 
@@ -163,18 +163,19 @@ end
 namespace VG.Proof.Dsa.X86_64
 open VG VG.X86_64 VG.Impl.Dsa.X86_64
 
-def randomSignerName (v : Backend) : String := "vg_dsa_sign" ++ v.suffix
-
-/-- A supplied-nonce signer the randomized wrapper calls: the fully checked
-signer of a backend (`valid` always true), or its signer for a validated
-private key (`valid` is `validatePrivateKeyBytes`). It is verified against
-`signContract` under `valid` of the exact key bytes it is called with. -/
+/-- A supplied-nonce signer the randomized wrapper calls: a backend's signer
+for a validated private key (`valid` is `validatePrivateKeyBytes`). It is
+verified against `signContract` under `valid` of the exact key bytes it is
+called with, with the addresses of the functions `nm` and `ns` it calls
+indirectly public (`Abi.withFns`). -/
 structure Signer where
   name : String
   code : Prog isa
   stack : Nat
   valid : Nat → Nat → List Byte → Bool
-  verified : Verified target code (signContractWith valid abi stack)
+  nm : String
+  ns : String
+  verified : Verified target code (signContractWith valid (abi.withFns [nm, ns]) stack)
   sp : code.all (fun i => !isa.writesSp i) = true
   depth : code.x86_64Depth ≤ stack
   stackBound : stack < 2 ^ 32

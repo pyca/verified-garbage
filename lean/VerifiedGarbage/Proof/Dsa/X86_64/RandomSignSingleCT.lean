@@ -41,7 +41,7 @@ theorem random_sign_single_agreement (S : Signer) {s t a b : State}
     (hna : Spec.Rsa.bytesAt a.mem (off (randomBase s) Random.oNonce) (stackArg s 0).toNat = Spec.Dsa.encodeBE (stackArg s 0).toNat k)
     (hnb : Spec.Rsa.bytesAt b.mem (off (randomBase t) Random.oNonce) (stackArg t 0).toNat = Spec.Dsa.encodeBE (stackArg t 0).toNat l)
     (hsuccess : (randomSingleResult s k).isSome = (randomSingleResult t l).isSome)
-    (hvs : RandomValid S s) (hvt : RandomValid S t)
+    (hvs : RandomValid S s) (hvt : RandomValid S t) (hsy : SymsAgree [S.nm, S.ns] a b)
     {tsa tsb : List Leak} {u w : State}
     (ea : Exec isa (.seq (.block RandomSign.callArgs)
       (.seq (.call S.name S.code) RandomSign.callFinish)) a tsa u)
@@ -64,7 +64,7 @@ theorem random_sign_single_agreement (S : Signer) {s t a b : State}
               simp only [hsa, hsb, Option.isSome_none, Option.isSome_some] at hsuccess <;>
               first | contradiction | rfl
           have hcall := (random_signer_ct S _ _ _ _ _ _
-            ⟨s, t, hs, ht, hvs, hvt, hca, hcb, hpub, hkeya.trans (hpub.keyLeak.trans hkeyb.symm), by rw [hresa, hresb]; exact hstatus⟩ eac ebc).1
+            ⟨s, t, hs, ht, hvs, hvt, hca, hcb, hpub, hkeya.trans (hpub.keyLeak.trans hkeyb.symm), by rw [hresa, hresb]; exact hstatus, hsy.exec eaa eba⟩ eac ebc).1
           have hpa := random_post_of_exec (random_signer_retry_pre S hca hfua hf hbound hvs) eac
           have hpb := random_post_of_exec (random_signer_retry_pre S hcb hfub hf hbound hvt) ebc
           rw [hresa] at hpa

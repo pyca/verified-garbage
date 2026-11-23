@@ -303,7 +303,8 @@ theorem keyVals_kept {s : State} {L : Lay} {key : Addr} (hk : Src s L key (3 * L
 assumes it. -/
 theorem verifyLike_ok {X : Prog isa → Prog isa → Prog isa} {V : Prop}
     (hX : ∀ {u : State} {L : Lay} {key sig : Addr} {d : Nat} {Q : State → Prop} {rest fail : Prog isa},
-      L.Ok → ScrL u L → Regs u L key sig → word u.mem L.S hLens = pack L.pl L.ql 0 d → d < 2 ^ 16 →
+      L.Ok → ScrL u L → Regs u L key sig → word u.mem L.S hSig = sig →
+      word u.mem L.S hLens = pack L.pl L.ql 0 d → d < 2 ^ 16 →
       Src u L key (3 * L.pl + L.ql) → (V → KeyOk u.mem L key) →
       (∀ t, KeyOk u.mem L key → Checked u t L key sig d → Kept L u.mem t.mem → Keep ckRegs u t →
         WP isa rest t Q) →
@@ -366,7 +367,7 @@ theorem verifyLike_ok {X : Prog isa → Prog isa → Prog isa} {V : Prop}
     (by rw [VG.Proof.Bignum.bytesAt_length]; exact hplq.symm)
     (by rw [VG.Proof.Bignum.bytesAt_length]; exact hsl) hkey
   rw [hsg0, hsg1] at hspec
-  refine WP.seq (hX hL F.scr F.regs F.lens (by omega_arith) (srcK s₁ k₁.2.1 k₁.2.2) (fun hv => hKs.mpr (hV hv))
+  refine WP.seq (hX hL F.scr F.regs F.sigw F.lens (by omega_arith) (srcK s₁ k₁.2.1 k₁.2.2) (fun hv => hKs.mpr (hV hv))
     (fun t hK hc hkp kc => ?_)
     (fun t hn hkp hrt scrt kc => ?_))
   · have kt := k₁.trans kc

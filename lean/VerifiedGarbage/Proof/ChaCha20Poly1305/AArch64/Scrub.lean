@@ -173,12 +173,12 @@ private theorem sealWhole_eq (c : Impl.ChaCha20.AArch64.XorCallee) (st : Bool) :
     Impl.ChaCha20Poly1305.AArch64.Fn.sealWhole c st =
       .seq (.seq (.seq (Impl.ChaCha20Poly1305.AArch64.Fn.sealBody c st)
         (.block (clearsOf (Impl.ChaCha20Poly1305.AArch64.Fn.sealOwn.union c.clear))))
-        (.block (retFix 0))) (scrubTailG 1280 (List.range (1280 / 16))) := rfl
+        (.block (retFix 0))) (scrubTailLoop 1280) := rfl
 
 /-- `seal`'s cleanup but its clears: the result's bits, then the stack
 zeroed, which write only registers `seal` clears. -/
 private theorem tail_own :
-    calleeSide (.seq (.block (retFix 0)) (scrubTailG 1280 (List.range (1280 / 16))))
+    calleeSide (.seq (.block (retFix 0)) (scrubTailLoop 1280))
       Impl.ChaCha20Poly1305.AArch64.Fn.sealOwn = true := by
   kernel_rfl
 
@@ -201,7 +201,7 @@ theorem sealWhole_depth (v : Proof.ChaCha20.AArch64.XorImpl) :
   have h := v.sealSide
   rw [Bool.and_eq_true, decide_eq_true_eq] at h
   rw [sealWhole_eq]
-  simp only [scrubTailG, Code.aarch64Depth, Instr.frameUnits, ← Nat.mul_max_mul_left, Nat.max_le, h.2,
+  simp only [scrubTailLoop, scrubLoopBody, Code.aarch64Depth, Instr.frameUnits, ← Nat.mul_max_mul_left, Nat.max_le, h.2,
     true_and]
   decide
 

@@ -486,7 +486,7 @@ theorem keygen_check_call (v : Backend) {s t : State} (h : GenerateKeyABI v.stac
     (hdi : t.gpr .rdi = s.gpr .rcx) (hsi : t.gpr .rsi = s.gpr .r8) (hdx : t.gpr .rdx = s.gpr .r9)
     (hcx : t.gpr .rcx = stackArg s 0) (h8 : t.gpr .r8 = stackArg s 3) (h9 : t.gpr .r9 = stackArg s 4)
     (hrd : t.rd = s.rd) (hwr : t.wr = ⟨randomBase s, Random.frameBytes⟩ :: s.wr) :
-    WP isa (.call (keygenCheckName v) (Generate.checkParameters v.sq v.mul)) t fun u =>
+    WP isa (.call (keygenCheckName v) (Fn.checkS v.nm v.ns v.bm v.bs)) t fun u =>
       u.rd = t.rd ∧ u.wr = t.wr ∧ (∀ r ∈ calleeSaved, u.gpr r = t.gpr r) ∧
       Frame (keygenCheckWr s ++ [below (randomBase s) (v.stack + 8)]) t.mem u.mem ∧
       ((u.gpr .rax).setWidth 32).toNat =
@@ -677,7 +677,7 @@ theorem keygen_check_step (v : Backend) {s t : State} {h : GenerateKeyABI v.stac
     (ht : KeygenState h 0 t)
     (hdi : t.gpr .rdi = s.gpr .rcx) (hsi : t.gpr .rsi = s.gpr .r8) (hdx : t.gpr .rdx = s.gpr .r9)
     (hcx : t.gpr .rcx = stackArg s 0) (h8 : t.gpr .r8 = stackArg s 3) (h9 : t.gpr .r9 = stackArg s 4) :
-    WP isa (.call (keygenCheckName v) (Generate.checkParameters v.sq v.mul)) t fun u =>
+    WP isa (.call (keygenCheckName v) (Fn.checkS v.nm v.ns v.bm v.bs)) t fun u =>
       KeygenState h 0 u ∧
       (∀ d, d + 8 ≤ Random.frameBytes → word u.mem (randomBase s) d = word t.mem (randomBase s) d) ∧
       ((u.gpr .rax).setWidth 32).toNat = if keygenChecked s then 1 else 0 := by
@@ -1058,7 +1058,7 @@ theorem keygen_derive_call (v : Backend) {s t : State} (h : GenerateKeyABI v.sta
     (hrd : t.rd = s.rd) (hwr : t.wr = ⟨randomBase s, Random.frameBytes⟩ :: s.wr)
     (hparams : Spec.Rsa.bytesAt t.mem (s.gpr .rcx) (s.gpr .r8).toNat = (keygenInput s).params)
     (hc : Spec.Dsa.checkParametersBytes (keygenInput s).pLen (keygenInput s).qLen (keygenInput s).params = true) :
-    WP isa (.call (keygenDeriveName v) (Generate.deriveChecked v.sq v.mul)) t fun u =>
+    WP isa (.call (keygenDeriveName v) (Fn.deriveCheckedS v.nm v.ns v.bm v.bs)) t fun u =>
       let res := Spec.Dsa.deriveKeyBytes (keygenInput s).pLen (keygenInput s).qLen
         (Spec.Rsa.bytesAt t.mem (s.gpr .rcx) (s.gpr .r8).toNat)
         (Spec.Rsa.bytesAt t.mem (off (randomBase s) Random.oNonce) (stackArg s 0).toNat)
@@ -1152,7 +1152,7 @@ theorem keygen_derive_step (v : Backend) {s t : State} {h : GenerateKeyABI v.sta
       Spec.Dsa.encodeBE (stackArg s 0).toNat k)
     (hc : Spec.Dsa.checkParametersBytes (keygenInput s).pLen (keygenInput s).qLen (keygenInput s).params = true) :
     WP isa (.seq (.block GenerateKey.deriveArgs)
-      (.seq (.call (keygenDeriveName v) (Generate.deriveChecked v.sq v.mul)) (.block GenerateKey.keepStatus))) t fun u =>
+      (.seq (.call (keygenDeriveName v) (Fn.deriveCheckedS v.nm v.ns v.bm v.bs)) (.block GenerateKey.keepStatus))) t fun u =>
       let res := Spec.Dsa.deriveKeyBytes (keygenInput s).pLen (keygenInput s).qLen (keygenInput s).params
         (Spec.Dsa.encodeBE (keygenInput s).qLen k)
       KeygenState h used u ∧
@@ -1278,7 +1278,7 @@ theorem keygen_sampled {extra : Nat} {s t b : State} {h : GenerateKeyABI extra s
 theorem keygen_generate (v : Backend) {s t : State} {h : GenerateKeyABI v.stack s}
     (ht : KeygenState h 0 t) (hQ : word t.mem (randomBase s) Random.oQ = s.gpr .rcx + s.gpr .r9)
     (hc : keygenChecked s = true) :
-    WP isa (GenerateKey.generate (keygenDeriveName v) (Generate.deriveChecked v.sq v.mul)) t
+    WP isa (GenerateKey.generate (keygenDeriveName v) (Fn.deriveCheckedS v.nm v.ns v.bm v.bs)) t
       (KeygenGenerated h) := by
   have hq := keygen_q_valid h hc
   have hres := keygen_result_checked h hc
@@ -1490,7 +1490,7 @@ theorem keygen_test_check {t : State} :
 
 theorem keygen_body (v : Backend) {s : State} (h : GenerateKeyABI v.stack s) :
     WP isa (GenerateKey.body (keygenCheckName v) (keygenDeriveName v)
-      (Generate.checkParameters v.sq v.mul) (Generate.deriveChecked v.sq v.mul))
+      (Fn.checkS v.nm v.ns v.bm v.bs) (Fn.deriveCheckedS v.nm v.ns v.bm v.bs))
       (allocState Random.frameBytes s) (KeygenBodyPost s (keygenResult s)) := by
   have hb := keygen_result_bounds h
   unfold GenerateKey.body
@@ -1532,15 +1532,15 @@ open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MlKem.X86_64
 open VG.Impl.Dsa.X86_64
 
 theorem keygen_sp (v : Backend) :
-    (GenerateKey.code (keygenCheckName v) (keygenDeriveName v) (Generate.checkParameters v.sq v.mul)
-      (Generate.deriveChecked v.sq v.mul)).all (fun i => !isa.writesSp i) = true := by
+    (GenerateKey.code (keygenCheckName v) (keygenDeriveName v) (Fn.checkS v.nm v.ns v.bm v.bs)
+      (Fn.deriveCheckedS v.nm v.ns v.bm v.bs)).all (fun i => !isa.writesSp i) = true := by
   simp only [GenerateKey.code, GenerateKey.body, GenerateKey.generate, Code.all, Bool.and_eq_true]
   repeat' constructor
   all_goals first | with_reducible exact v.parametersSp | with_reducible exact v.deriveCheckedSp | decide
 
 theorem keygen_depth (v : Backend) :
-    (GenerateKey.code (keygenCheckName v) (keygenDeriveName v) (Generate.checkParameters v.sq v.mul)
-      (Generate.deriveChecked v.sq v.mul)).x86_64Depth ≤ v.stack + 256 := by
+    (GenerateKey.code (keygenCheckName v) (keygenDeriveName v) (Fn.checkS v.nm v.ns v.bm v.bs)
+      (Fn.deriveCheckedS v.nm v.ns v.bm v.bs)).x86_64Depth ≤ v.stack + 256 := by
   simp only [GenerateKey.code, GenerateKey.body, GenerateKey.generate, Code.x86_64Depth,
     show Random.prepare.x86_64Depth = 0 from rfl,
     show Random.sample.x86_64Depth = 0 from rfl,
@@ -1560,8 +1560,8 @@ structure KeygenCodePost (s : State) (result : Spec.Dsa.GenerateKeyResult) (t : 
   mxcsr : t.mxcsr.extractLsb' 6 10 = s.mxcsr.extractLsb' 6 10
 
 theorem keygen_code (v : Backend) {s : State} (h : GenerateKeyABI v.stack s) :
-    WP isa (GenerateKey.code (keygenCheckName v) (keygenDeriveName v) (Generate.checkParameters v.sq v.mul)
-      (Generate.deriveChecked v.sq v.mul)) s (KeygenCodePost s (keygenResult s)) := by
+    WP isa (GenerateKey.code (keygenCheckName v) (keygenDeriveName v) (Fn.checkS v.nm v.ns v.bm v.bs)
+      (Fn.deriveCheckedS v.nm v.ns v.bm v.bs)) s (KeygenCodePost s (keygenResult s)) := by
   apply keygen_frame_ok h
   refine WP.mono (keygen_body v h) fun t ht => ⟨ht.sp, ht.wr, fun m _ fm => ?_⟩
   -- The frame's bytes, once released, hold anything: the key and `used` lie apart from them.
@@ -1612,7 +1612,7 @@ theorem keygen_shared_post {extra : Nat} {s t : State} (h : GenerateKeyABI extra
 theorem keygen_correct (v : Backend) (s : State)
     (hpre : (Spec.Dsa.generateKeyContract abi (v.stack + 256)).pre s) :
     ∃ trace t, Exec isa (GenerateKey.code (keygenCheckName v) (keygenDeriveName v)
-        (Generate.checkParameters v.sq v.mul) (Generate.deriveChecked v.sq v.mul)) s trace t ∧
+        (Fn.checkS v.nm v.ns v.bm v.bs) (Fn.deriveCheckedS v.nm v.ns v.bm v.bs)) s trace t ∧
       abiPreserved s t ∧ (Spec.Dsa.generateKeyContract abi (v.stack + 256)).post s t := by
   have h := generateKeyABI_of hpre
   obtain ⟨trace, t, he, hp⟩ := keygen_code v h

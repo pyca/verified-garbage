@@ -366,8 +366,8 @@ theorem yv_b7 (L : Lay) : 256 ≤ slot L.wp 7 ∧ slot L.wp 7 + 8 * L.wp ≤ L.q
 `a4 :=` the mask of `y ≠ 0` and `y ≠ 1`. Memory changes only in the P
 space's arrays and the buffer's first `p_len` octets. -/
 theorem yValue_ok {s : State} {L : Lay} {key x : Addr} {p : Nat} (hL : L.Ok) (hs : ScrL s L)
-    (hr : Regs s L key x) (hin : InP s L) (hi : PInv s L) (hk : Src s L key (2 * L.pl + L.ql))
-    (hx : Src s L x L.ql) (hp0 : arrP s.mem L 0 = p) (hp : 2 ≤ p) (hpo : p % 2 = 1)
+    (hr : Regs s L key x) (hsw : word s.mem L.S hSig = x) (hin : InP s L) (hi : PInv s L)
+    (hk : Src s L key (2 * L.pl + L.ql)) (hx : Src s L x L.ql) (hp0 : arrP s.mem L 0 = p) (hp : 2 ≤ p) (hpo : p % 2 = 1)
     (hrr : arrP s.mem L 24 = 2 ^ (128 * L.wp) % p) :
     WP isa yValue s fun t =>
       (Spec.Rsa.os2ip (Spec.Rsa.bytesAt t.mem L.Buf L.pl) = gOf s.mem L key ^ kOf s.mem L x % p ∧
@@ -394,7 +394,7 @@ theorem yValue_ok {s : State} {L : Lay} {key x : Addr} {p : Nat} (hL : L.Ok) (hs
   obtain hm2 : s₂.mem = s.mem := by rw [m2, m1]
   -- `g^x mod p` into array 4.
   refine WP.seq (WP.mono (powSrc_ok (N := off key (L.pl + L.ql)) (E := x) (p := p) hL (hs.congr k12.2.2)
-      (hr.keepM k12 hm2) (hin.keep k12) (by
+      (hr.keepM k12 hm2) (by rw [hm2]; exact hsw) (hin.keep k12) (by
         show ((word s₂.mem L.S (slot L.wp 0)).toNat * (s₂.gpr .t1).toNat + 1) % 2 ^ 64 = 0
         rw [hm2, k12.gpr (by decide)]; exact hi)
       ((hk.keep k12.2.1 k12.2.2).sub (o := L.pl + L.ql) (k := L.pl) (by omega_using [])) b7 (hx.keep k12.2.1 k12.2.2)
@@ -500,7 +500,7 @@ theorem dmask_eq (y k q : Nat) :
 
 theorem dbody_ok {s₀ s : State} {L : Lay} {key x out : Addr} (hL : L.Ok) (hP : ParamsOk s₀.mem L key)
     (hc : Checked s₀ s L key x 0) (hkp : Kept L s₀.mem s.mem) (hw : word s.mem L.S Sign.hOut = out)
-    (hk : Src s L key (2 * L.pl + L.ql)) (hx : Src s L x L.ql)
+    (hsw : word s.mem L.S hSig = x) (hk : Src s L key (2 * L.pl + L.ql)) (hx : Src s L x L.ql)
     (hout : ∀ i < 3 * L.pl + 2 * L.ql, InRegions s.wr (off out i) 1)
     (hno : out.toNat + (3 * L.pl + 2 * L.ql) ≤ 2 ^ 64) (hos : Src s L out (3 * L.pl + 2 * L.ql))
     (hko : ∀ i < 2 * L.pl + L.ql, ∀ y, ofs out y < 3 * L.pl + 2 * L.ql → off key i ≠ y)
@@ -537,7 +537,7 @@ theorem dbody_ok {s₀ s : State} {L : Lay} {key x out : Addr} (hL : L.Ok) (hP :
   generalize gOf s₀.mem L key = g at eg
   unfold body
   -- y.
-  refine WP.seq (WP.mono (yValue_ok hL scr regs ip inv hk hx p0 (by omega_using [B]) hpo p24)
+  refine WP.seq (WP.mono (yValue_ok hL scr regs hsw ip inv hk hx p0 (by omega_using [B]) hpo p24)
     fun s₁ ⟨⟨vy, my, ip1, b1, oq1⟩, k1⟩ => ?_)
   rw [eg, ex] at vy my
   generalize hy : g ^ kOf s₀.mem L x % p = y at vy my
@@ -655,12 +655,13 @@ structure DFront (s t : State) : Prop where
   scr : ScrL t (dlayOf s)
   lens : word t.mem (s.gpr .a7) hLens = pack (dlayOf s).pl (dlayOf s).ql 0 0
   outw : word t.mem (s.gpr .a7) Sign.hOut = s.gpr .a0
+  sigw : word t.mem (s.gpr .a7) hSig = s.gpr .a5
   sav : ∀ i < 13, word t.mem (s.gpr .a7) (saveOff i) = s.gpr (saved i)
   out : Outside (s.gpr .a7) 0 256 s.mem t.mem
 
 /-- `entry`: `scratch` into `s6`, the callee-saved registers and `ra` saved in
-its header, the domain and x into `s11` and `ra`, and `out` and the lengths
-into the header. Memory changes only in the header. -/
+its header, the domain and x into `s11` and `ra`, and `out`, the lengths and
+x's address into the header. Memory changes only in the header. -/
 theorem dfront_ok {s : State} (h : dContract.pre s) :
     WP isa (.block Derive.entry) s fun t => DFront s t ∧ Keep dentryRegs s t := by
   obtain hL := dlayOf_ok h
@@ -696,14 +697,17 @@ theorem dfront_ok {s : State} (h : dContract.pre s) :
   have hal16' : (off (s.gpr .a7) 16).toNat % 8 = 0 := hal16
   obtain hst24 : InRegions s₂.wr (off (s.gpr .a7) 24) 8 := hs₂.st (d := 24) (by simp only [dlayOf] at hZ ⊢; omega_using [hZ])
   obtain hst16 : InRegions s₂.wr (off (s.gpr .a7) 16) 8 := hs₂.st (d := 16) (by simp only [dlayOf] at hZ ⊢; omega_using [hZ])
+  obtain ⟨_, hal32⟩ := ScrL.hdr hs₂ hL (d := 32) (by decide) (by decide)
+  have hal32' : (off (s.gpr .a7) 32).toNat % 8 = 0 := hal32
+  obtain hst32 : InRegions s₂.wr (off (s.gpr .a7) 32) 8 := hs₂.st (d := 32) (by simp only [dlayOf] at hZ ⊢; omega_using [hZ])
   obtain hpk := pack_entry0 (s.gpr .a4) (s.gpr .a6) hpl hql
   refine WP.mono (WP.keep [.s11, .ra, .t3] (Q := fun t =>
-      t.mem = (s₂.mem.writeW (off (s.gpr .a7) 24) (s.gpr .a0)).writeW (off (s.gpr .a7) 16)
-        (pack (s.gpr .a4).toNat (s.gpr .a6).toNat 0 0) ∧
+      t.mem = ((s₂.mem.writeW (off (s.gpr .a7) 24) (s.gpr .a0)).writeW (off (s.gpr .a7) 16)
+        (pack (s.gpr .a4).toNat (s.gpr .a6).toNat 0 0)).writeW (off (s.gpr .a7) 32) (s.gpr .a5) ∧
       t.gpr .s11 = s.gpr .a2 ∧ t.gpr .ra = s.gpr .a5) (by
         brun [hS₂.s6, e .a2 (by decide) (by decide), e .a0 (by decide) (by decide), e .a5 (by decide) (by decide),
-          e .a4 (by decide) (by decide), e .a6 (by decide) (by decide), Sign.hOut, hLens, hst24, hal24', hst16,
-          hal16', hpk, exec_shift_d (show 16 < 64 by decide), BitVec.add_zero]) (by decide) (by rfl))
+          e .a4 (by decide) (by decide), e .a6 (by decide) (by decide), Sign.hOut, hLens, hSig, hst24, hal24', hst16,
+          hal16', hst32, hal32', hpk, exec_shift_d (show 16 < 64 by decide), BitVec.add_zero]) (by decide) (by rfl))
     fun t ⟨⟨mt, t11, tra⟩, kt⟩ => ?_
   obtain k := k12.trans kt
   have hp16 : (dlayOf s).pl < 2 ^ 16 := hpl
@@ -712,24 +716,30 @@ theorem dfront_ok {s : State} (h : dContract.pre s) :
   obtain w16 := writeW_outside (s₂.mem.writeW (off (s.gpr .a7) 24) (s.gpr .a0)) (s.gpr .a7) (d := 16)
     (pack (s.gpr .a4).toNat (s.gpr .a6).toNat 0 0) (by omega_using [])
   obtain w24 := writeW_outside s₂.mem (s.gpr .a7) (d := 24) (s.gpr .a0) (by omega_using [])
+  obtain w32 := writeW_outside ((s₂.mem.writeW (off (s.gpr .a7) 24) (s.gpr .a0)).writeW (off (s.gpr .a7) 16)
+    (pack (s.gpr .a4).toNat (s.gpr .a6).toNat 0 0)) (s.gpr .a7) (d := 32) (s.gpr .a5) (by omega_using [])
   obtain hlen : word t.mem (s.gpr .a7) hLens = pack (dlayOf s).pl (dlayOf s).ql 0 0 := by
-    rw [mt]; exact word_writeW_self _ _ _ _
+    rw [mt, w32.word (by simp only [hLens]; omega_using []) (by simp only [hLens]; omega_using [])]
+    exact word_writeW_self _ _ _ _
   have hlen' : word t.mem (dlayOf s).S hLens = pack (dlayOf s).pl (dlayOf s).ql 0 0 := hlen
   obtain f1 : Outside (s.gpr .a7) 128 104 s₁.mem s₂.mem :=
     VG.Proof.Bignum.frame_outside (base := s.gpr .a7) (d := 128) (len := 104) hS₂.frame (by omega_using [])
   refine ⟨⟨⟨(kt.gpr (by decide)).trans hS₂.s6, t11, tra, by rw [hlen']; exact pack_pl hp16 hq16 (by decide) (by decide),
-    by rw [hlen']; exact pack_ql hp16 hq16 (by decide) (by decide)⟩, hscr t k.2.2, hlen, ?_, fun i hi => ?_, ?_⟩,
+    by rw [hlen']; exact pack_ql hp16 hq16 (by decide) (by decide)⟩, hscr t k.2.2, hlen, ?_, ?_, fun i hi => ?_, ?_⟩,
     k.mono (by decide)⟩
-  · rw [mt, w16.word (by simp only [Sign.hOut]; omega_using []) (by simp only [Sign.hOut]; omega_using [])]
+  · rw [mt, w32.word (by simp only [Sign.hOut]; omega_using []) (by simp only [Sign.hOut]; omega_using []),
+      w16.word (by simp only [Sign.hOut]; omega_using []) (by simp only [Sign.hOut]; omega_using [])]
     exact word_writeW_self _ _ _ _
-  · rw [mt, w16.word (by simp only [saveOff]; omega_using []) (by simp only [saveOff]; omega_using [hi]),
+  · rw [mt]; exact word_writeW_self _ _ _ _
+  · rw [mt, w32.word (by simp only [saveOff]; omega_using []) (by simp only [saveOff]; omega_using [hi]),
+      w16.word (by simp only [saveOff]; omega_using []) (by simp only [saveOff]; omega_using [hi]),
       w24.word (by simp only [saveOff]; omega_using []) (by simp only [saveOff]; omega_using [hi])]
     show s₂.mem.readW (s.gpr .a7 + BitVec.ofNat 64 (saveOff i)) 64 = _
     rw [saveOff_eq, hS₂.saved i hi]
     exact k1.gpr fun h => saved_ne_t2 i hi (List.mem_singleton.mp h)
   · rw [mt, ← m1]
-    exact ((f1.mono (Nat.zero_le _) (by omega_using [])).trans (w24.mono (Nat.zero_le _) (by omega_using []))).trans
-      (w16.mono (Nat.zero_le _) (by omega_using []))
+    exact (((f1.mono (Nat.zero_le _) (by omega_using [])).trans (w24.mono (Nat.zero_le _) (by omega_using []))).trans
+      (w16.mono (Nat.zero_le _) (by omega_using []))).trans (w32.mono (Nat.zero_le _) (by omega_using []))
 
 end VG.Proof.Dsa.RISCV64
 
@@ -835,7 +845,7 @@ theorem deriveKey_spec {m : Mem} {L : Lay} {key x : Addr} (hv : Spec.Dsa.lengths
 theorem deriveWith_ok {X : Prog isa → Prog isa → Prog isa} (s : State) (h : dContract.pre s)
     (hX : ∀ {u : State} {Q : State → Prop} {rest fail : Prog isa},
       Outside (dlayOf s).S 0 (dlayOf s).Z s.mem u.mem → ScrL u (dlayOf s) →
-      Regs u (dlayOf s) (s.gpr .a2) (s.gpr .a5) →
+      Regs u (dlayOf s) (s.gpr .a2) (s.gpr .a5) → word u.mem (dlayOf s).S hSig = s.gpr .a5 →
       word u.mem (dlayOf s).S hLens = pack (dlayOf s).pl (dlayOf s).ql 0 0 →
       Src u (dlayOf s) (s.gpr .a2) (2 * (dlayOf s).pl + (dlayOf s).ql) →
       (∀ t, ParamsOk u.mem (dlayOf s) (s.gpr .a2) → Checked u t (dlayOf s) (s.gpr .a2) (s.gpr .a5) 0 →
@@ -922,10 +932,10 @@ theorem deriveWith_ok {X : Prog isa → Prog isa → Prog isa} (s : State) (h : 
     (srcX s rfl rfl).bytes Out₁ (by omega_using [])
   obtain hPs : ParamsOk s₁.mem (dlayOf s) (s.gpr .a2) ↔ ParamsOk s.mem (dlayOf s) (s.gpr .a2) := by
     simp only [ParamsOk, ep₁, eq₁, eg₁]
-  refine WP.seq (hX Out₁ F.scr F.regs F.lens (srcK s₁ k₁.2.1 k₁.2.2)
+  refine WP.seq (hX Out₁ F.scr F.regs F.sigw F.lens (srcK s₁ k₁.2.1 k₁.2.2)
     (fun t hP hc Kd kc => ?_) (fun t hn Kd hrt scrt kc => ?_))
   · have kt := k₁.trans kc
-    refine WP.mono (dbody_ok hL hP hc Kd (hwo t Kd) (srcK t kt.2.1 kt.2.2) (srcX t kt.2.1 kt.2.2)
+    refine WP.mono (dbody_ok hL hP hc Kd (hwo t Kd) ((kept_sig Kd).trans F.sigw) (srcK t kt.2.1 kt.2.2) (srcX t kt.2.1 kt.2.2)
       (hout t kt.2.2) hno (srcO t kt.2.1 kt.2.2) hko hxo) fun u ⟨⟨ob, r0u, ⟨m, Km, Om⟩, h6u, scru⟩, ku⟩ => ?_
     refine WP.mono (sfinish_ok h6u (hwr' u scru) hal'
       (fun i hi => (outSep Om (by simp only [saveOff]; omega_using [hi])).trans
@@ -952,7 +962,7 @@ theorem deriveWith_ok {X : Prog isa → Prog isa → Prog isa} (s : State) (h : 
 
 theorem deriveKey_correct (s : State) (h : dContract.pre s) :
     ∃ tr t, Exec isa Derive.derive s tr t ∧ abiPreserved s t ∧ dContract.post s t :=
-  deriveWith_ok (X := checkParams) s h fun _ hs hr hl hk hrest hfail =>
-    checkParams_ok (dlayOf_ok h) hs hr hl (by decide) hk hrest hfail
+  deriveWith_ok (X := checkParams) s h fun _ hs hr hw hl hk hrest hfail =>
+    checkParams_ok (dlayOf_ok h) hs hr hw hl (by decide) hk hrest hfail
 
 end VG.Proof.Dsa.RISCV64

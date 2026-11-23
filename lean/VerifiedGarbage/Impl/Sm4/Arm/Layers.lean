@@ -23,9 +23,10 @@ The scratch buffer at `r8` holds, in 4-byte slots: all ones and the
 S-box's spills (0–31), the planes of the state's four words (32–63), the
 tail buffer (64–95, eight blocks), the table of the 32 bitsliced round
 keys, eight planes each, in the order the rounds use them (96–351), the
-callee-saved registers `r4`–`r11` and `lr` (352–360), and the data
-pointer and the blocks left (or the schedule's pointer) (361, 362). The
-round key's entry is at `kp` (`r9`).
+callee-saved registers `r4`–`r11` and `lr` (352–360), the data
+pointer and the blocks left (or the schedule's pointer) (361, 362), and the
+return address of `vg_sm4_crypt8`, the eight blocks as a function (363).
+The round key's entry is at `kp` (`r9`).
 -/
 
 @[expose] public section
@@ -52,9 +53,12 @@ def savedSlot : Nat := tableEnd
 def dSlot : Nat := savedSlot + 9
 def nSlot : Nat := dSlot + 1
 
+/-- The slot keeping the return address of `vg_sm4_crypt8` (`Ecb.lean`). -/
+def lrSlot : Nat := nSlot + 1
+
 /-- The number of slots, rounded up to a whole number of 64-bit words (the
 artifacts allocate the buffer as `[u64; 182]`). -/
-def slots : Nat := nSlot + 2
+def slots : Nat := lrSlot + 1
 
 /-- The callee-saved registers, and their slots. -/
 def savedRegs : List (Reg × Nat) :=

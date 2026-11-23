@@ -341,7 +341,7 @@ include hL hT hI hO
 
 theorem jointVerify_p384_public_ct :
     ConstantTime isa (VPre p384v) (JointPublic p384v p384GTab)
-      (Impl.Ecdsa.Verify.X86_64.Cfg.jointVerify p384v publicJoint (jointDouble publicJoint.K)).inline := by
+      (Impl.Ecdsa.Verify.X86_64.Cfg.jointVerify p384v publicJointF (jointDouble publicJointF.K)).inline := by
   have hc := p384v_ok hI
   refine jointVerify_ct_of_points hc joint_before_ct ?_ joint_after_ct
   intro s₀ t₀ ps pt pub
@@ -351,8 +351,8 @@ theorem jointVerify_p384_public_ct :
 
 theorem jointVerify_p384_adx_public_ct :
     ConstantTime isa (VPre p384vx) (JointPublic p384vx p384GTab)
-      (Impl.Ecdsa.Verify.X86_64.Cfg.jointVerify p384vx publicJointAdx
-        (jointDoubleAdx publicJointAdx.K)).inline := by
+      (Impl.Ecdsa.Verify.X86_64.Cfg.jointVerify p384vx publicJointAdxF
+        (jointDoubleAdx publicJointAdxF.K)).inline := by
   have hc := p384vx_ok hI
   refine jointVerify_ct_of_points hc joint_adx_before_ct ?_ joint_adx_after_ct
   intro s₀ t₀ ps pt pub
@@ -364,7 +364,7 @@ theorem jointVerify_ct :
     ConstantTime isa
       (Proof.Ecdsa.verifyContract Spec.Ecdsa.P384.inst (X86_64.abi.withConsts p384v.combConsts)).pre
       (Proof.Ecdsa.verifyContract Spec.Ecdsa.P384.inst (X86_64.abi.withConsts p384v.combConsts)).pub
-      Impl.Ecdsa.Verify.X86_64.jointVerifyP384.inline := by
+      (Impl.Ecdsa.Verify.X86_64.Cfg.jointVerify p384v publicJointF (jointDouble publicJointF.K)).inline := by
   intro s₁ s₂ t₁ t₂ s₁' s₂' pre₁ pre₂ pub e₁ e₂
   exact jointVerify_p384_public_ct hL hT hI hO _ _ _ _ _ _ (pre_of (implies.pre _ pre₁))
     (pre_of (implies.pre _ pre₂)) (jointPublic_of_spec pub) e₁ e₂
@@ -373,7 +373,7 @@ theorem jointVerify_adx_ct :
     ConstantTime isa
       (Proof.Ecdsa.verifyContract Spec.Ecdsa.P384.inst (X86_64.abi.withConsts p384v.combConsts)).pre
       (Proof.Ecdsa.verifyContract Spec.Ecdsa.P384.inst (X86_64.abi.withConsts p384v.combConsts)).pub
-      Impl.Ecdsa.Verify.X86_64.jointVerifyP384Adx.inline := by
+      (Impl.Ecdsa.Verify.X86_64.Cfg.jointVerify p384vx publicJointAdxF (jointDoubleAdx publicJointAdxF.K)).inline := by
   intro s₁ s₂ t₁ t₂ s₁' s₂' pre₁ pre₂ pub e₁ e₂
   exact jointVerify_p384_adx_public_ct hL hT hI hO _ _ _ _ _ _
     (pre_of_x (implies.pre _ pre₁)) (pre_of_x (implies.pre _ pre₂))

@@ -298,11 +298,12 @@ def powA (pLen : Nat) : Prog isa := seqs [
   .block (enterP pLen ++ [scr .s7 sPBE, .li .s8 pLen]), VG.Impl.Dsa.RISCV64.loadArr 0,
   .block VG.Impl.Bignum.RISCV64.Precompute.minv, VG.Impl.Dsa.RISCV64.rr]
 
-/-- `h` (at `s7`, `s8` octets) into array 4, its power over `sE`, array 4's
-word `w` zeroed, and the range check. -/
+/-- `h` (at `s7`, `s8` octets) into array 4, its power over `sE` (a call of
+`vg_bignum_pow_win`; `ra` waits in the frame), array 4's word `w` zeroed, and
+the range check. -/
 def powC (pLen qLen : Nat) : Prog isa := seqs [
   VG.Impl.Dsa.RISCV64.loadArr 4, VG.Impl.Dsa.RISCV64.copy 1 24,
-  .block [scr .s9 sE, .li .s10 (eBytes pLen qLen)], VG.Impl.Bignum.RISCV64.ModExp.powWin,
+  .block [scr .s9 sE, .li .s10 (eBytes pLen qLen)], VG.Impl.Bignum.RISCV64.ModExp.powWinFn,
   .block zeroTop4, VG.Impl.Dsa.RISCV64.elemRange]
 
 /-- `[4] := h^((p−1)/q) mod p` for `h` at `fH`: p into array 0, `−p⁻¹ mod 2⁶⁴`

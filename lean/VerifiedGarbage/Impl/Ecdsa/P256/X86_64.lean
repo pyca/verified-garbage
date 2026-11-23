@@ -24,8 +24,9 @@ def p256 : Cfg where
 
 /-- P-256, multiplying with BMI2 and ADX: `[k]G` for the signature and the
 public key is a call of `vg_p256_mul_base_adx` (`Cfg.mulBase`), as without
-them it is of `vg_p256_mul_base`. -/
-def p256x : Cfg := { p256 with adx := true, avx2 := true }
+them it is of `vg_p256_mul_base`; ECDH's table of odd multiples is a call of
+`vg_p256_ecdh_table_adx` (`ecdhTable`), which its AVX512_IFMA variant calls too. -/
+def p256x : Cfg := { p256 with adx := true, avx2 := true, ecdhTable := true }
 
 /-- `vg_ecdsa_p256_sign`. -/
 def signP256 : Prog isa := p256.sign

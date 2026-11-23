@@ -98,7 +98,7 @@ theorem p192_comb_core_pre {u : Bool} {s : State}
     · intro r hr
       obtain ⟨c,hc,rfl⟩ := List.mem_map.mp hr
       exact (tables c hc).2.2.2
-  exact ⟨⟨rd,wr,os,ds,hs,ks,oa,sa,fo,fd,fh,fk,fs,sp,fun _ => tbl_of_consts hk
+  exact ⟨⟨rd,wr,os,ds,hs,ks,oa,sa,fo,fd,fh,fk,fs,sp,tbl_of_consts hk
     (List.mem_append_right _ (List.mem_singleton_self _)) (by rw [wr]; simp)⟩,hk⟩
 
 theorem p192_comb_core_ctWith (u : Bool)

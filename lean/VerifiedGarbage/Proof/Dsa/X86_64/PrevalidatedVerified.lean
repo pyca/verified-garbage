@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
 public import VerifiedGarbage.Impl.Dsa.X86_64.Prevalidated
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.X86_64.ForwardSlots
 public import VerifiedGarbage.Proof.Framework.X86_64.CallInline
 public import VerifiedGarbage.Spec.Dsa.Prevalidated
 import Mathlib.Tactic.Set
@@ -1401,9 +1402,9 @@ end
 /-! # x86-64 DSA public-key validation and prevalidated verification against the shared contracts
 
 `validating_verified` and `prevalidated_verified` are the programs' proofs;
-`validating_call_verified` and `prevalidated_call_verified` are those of
-the code that calls the Montgomery kernels, whose return addresses take
-eight bytes of stack. -/
+`validating_slot_verified` and `prevalidated_slot_verified` are those of
+the code that calls the Montgomery kernels through slots
+(`Contract.withSlots`), whose return addresses take eight bytes of stack. -/
 
 @[expose] public section
 
@@ -1676,11 +1677,11 @@ theorem validating_patch (s b : State) (hv : Mem) (u : Nat → BitVec 64)
     List.range, List.range.loop] at hp ⊢
   simpa only [State.patch_gpr] using hp
 
-theorem validating_call_verified (M : Mont) (Sq : MontS) {c : Prog isa}
-    (hc : c.InlineOk = true) (hin : c.inline = Prevalidated.validate Sq.mm M.mm)
+theorem validating_slot_verified (M : Mont) (Sq : MontS) {c : Prog isa} {fns : List String}
+    (hc : c.InlineOkNS (slotsOf 0 fns) 1 = true) (hm : 8 + 8 * (0 + 1) + 8 * fns.length ≤ 2 ^ 64) (hin : c.inlineAll = Prevalidated.validate Sq.mm M.mm)
     (hmx : (Prevalidated.validate Sq.mm M.mm).allInstrs (fun i => !loadsMxcsr i) = true) :
-    Verified target c (Spec.Dsa.validatePublicKeyContract abi 8) :=
-  Verified.of_inline_sig hc (hin ▸ validatingCorrect M Sq hmx) (hin ▸ validatingConstantTime M Sq)
+    SlotVerified c (Spec.Dsa.validatePublicKeyContract abi 8) 0 fns :=
+  SlotVerified.of_inline hc hm (hin ▸ validatingCorrect M Sq hmx) (hin ▸ validatingConstantTime M Sq)
     validating_implies8 (fun _ h => Sig.clear_of_pre h) (fun _ _ _ _ h => Sig.rsp_of_pub h)
     (fun s b hv u _ _ hp => validating_patch s b hv u hp)
 
@@ -1713,11 +1714,11 @@ theorem prevalidated_patch (s b : State) (hv : Mem) (u : Nat → BitVec 64)
     List.range.loop] at hp ⊢
   simpa only [State.patch_gpr] using hp
 
-theorem prevalidated_call_verified (M : Mont) (Sq : MontS) {c : Prog isa}
-    (hc : c.InlineOk = true) (hin : c.inline = Prevalidated.verify Sq.mm M.mm)
+theorem prevalidated_slot_verified (M : Mont) (Sq : MontS) {c : Prog isa} {fns : List String}
+    (hc : c.InlineOkNS (slotsOf 4 fns) 1 = true) (hm : 8 + 8 * (4 + 1) + 8 * fns.length ≤ 2 ^ 64) (hin : c.inlineAll = Prevalidated.verify Sq.mm M.mm)
     (hmx : (Prevalidated.verify Sq.mm M.mm).allInstrs (fun i => !loadsMxcsr i) = true) :
-    Verified target c (Spec.Dsa.verifyPrevalidatedContract abi 8) :=
-  Verified.of_inline_sig hc (hin ▸ prevalidatedCorrect M Sq hmx) (hin ▸ prevalidatedConstantTime M Sq)
+    SlotVerified c (Spec.Dsa.verifyPrevalidatedContract abi 8) 4 fns :=
+  SlotVerified.of_inline hc hm (hin ▸ prevalidatedCorrect M Sq hmx) (hin ▸ prevalidatedConstantTime M Sq)
     prevalidated_implies8 (fun _ h => Sig.clear_of_pre h) (fun _ _ _ _ h => Sig.rsp_of_pub h)
     (fun s b hv u _ _ hp => prevalidated_patch s b hv u hp)
 

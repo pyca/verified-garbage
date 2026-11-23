@@ -27,7 +27,7 @@ checked once here, and both read them.
 namespace VG.Proof.P384.X86_64
 open VG VG.X86_64 VG.Impl.P384.X86_64 VG.Impl.Weierstrass VG.Impl.Weierstrass.X86_64
 
-materialize_code jointDoubleCode := jointDouble publicJoint.K
-materialize_code jointCacheCode := Joint.cacheCode publicJoint
+materialize_code jointDoubleCode := jointDouble publicJointF.K
+materialize_code jointCacheCode := Joint.cacheCode publicJointF
 
 end VG.Proof.P384.X86_64

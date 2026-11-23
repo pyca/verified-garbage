@@ -77,7 +77,7 @@ theorem p384_comb_core_pre {u : Bool} {s : State}
     (h : (coreK Impl.Ecdsa.Arm.p384 (combSignK u)).pre s) : combSignPre u s := by
   have hk := constsOk_of_core h
   obtain ⟨rd,wr,os,ds,hs,ks,oa,sa,fo,fd,fh,fk,fs,sp,-⟩ := h
-  exact ⟨⟨rd,wr,os,ds,hs,ks,oa,sa,fo,fd,fh,fk,fs,sp,fun _ => tbl_of_consts hk
+  exact ⟨⟨rd,wr,os,ds,hs,ks,oa,sa,fo,fd,fh,fk,fs,sp,tbl_of_consts hk
     (List.mem_append_right _ (List.mem_singleton_self _)) (by rw [wr]; simp)⟩,hk⟩
 
 theorem p384_comb_core_ctWith (u : Bool)

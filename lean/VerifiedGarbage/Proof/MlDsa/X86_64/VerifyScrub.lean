@@ -199,13 +199,13 @@ theorem preparedVerify87_scrubbed (v : ArithImpl) :
 theorem preparedVerify87_spSafe (v : ArithImpl) : (Impl.MlDsa.X86_64.Fn.verifyEntry v.level (Proof.MlDsa.verifyWithCacheName "mldsa87" ++ v.code.sfx) (Proof.MlDsa.X86_64.Verify.primsWith v.code) Spec.MlDsa.mlDsa87 1).all (fun i => !isa.writesSp i) = true :=
   scrubKs_spSafe (Proof.MlDsa.X86_64.Message.verifyEntry_spSafe (verify_spSafe (prims_okWith v) (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self ..)))) 1)
 
-theorem verifyMessage44_stub : stubSideG (Impl.MlDsa.X86_64.Message.verifyMessageCached "s" (Impl.MlDsa.X86_64.Verify.verify (Proof.MlDsa.X86_64.Verify.primsWith stub) Spec.MlDsa.mlDsa44) Spec.MlDsa.mlDsa44 0) VecLevel.sse.level stubStack 112 [] = true := by decide +kernel
+theorem verifyMessage44_stub : stubSideG (Impl.MlDsa.X86_64.Message.verifyMessageCached "s" (Impl.MlDsa.X86_64.Verify.verify (Proof.MlDsa.X86_64.Verify.primsWith stub) Spec.MlDsa.mlDsa44) Spec.MlDsa.mlDsa44 0) VecLevel.sse.level stubStack 224 [] = true := by decide +kernel
 
 /-- `(Spec.MlDsa.verifyMessageCachedApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44")`'s function as emitted over `v` meets its contract in constant time
 and returns without secret residue. -/
 theorem verifyMessage44_scrubbed (v : ArithImpl) :
     VerifiedScrubbed target (Impl.MlDsa.X86_64.Fn.verifyMessage v.level (Proof.MlDsa.verifyWithCacheName "mldsa44" ++ v.code.sfx) (Proof.MlDsa.X86_64.Verify.primsWith v.code) Spec.MlDsa.mlDsa44 0)
-      (((Spec.MlDsa.verifyMessageCachedApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44")).contract X86_64.abi 112) 32 :=
+      (((Spec.MlDsa.verifyMessageCachedApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44")).contract X86_64.abi 224) 32 :=
   verifiedScrubbedAllFillG (api := (Spec.MlDsa.verifyMessageCachedApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44"))
     { code := Impl.MlDsa.X86_64.Message.verifyMessageCached (Proof.MlDsa.verifyWithCacheName "mldsa44" ++ v.code.sfx) (Impl.MlDsa.X86_64.Verify.verify (primsWith v.code) Spec.MlDsa.mlDsa44) Spec.MlDsa.mlDsa44 0
       verified := verifyMessage_verified (verifyFn v (List.mem_cons_self ..)) (List.mem_cons_self ..)
@@ -217,13 +217,13 @@ theorem verifyMessage44_scrubbed (v : ArithImpl) :
 theorem verifyMessage44_spSafe (v : ArithImpl) : (Impl.MlDsa.X86_64.Fn.verifyMessage v.level (Proof.MlDsa.verifyWithCacheName "mldsa44" ++ v.code.sfx) (Proof.MlDsa.X86_64.Verify.primsWith v.code) Spec.MlDsa.mlDsa44 0).all (fun i => !isa.writesSp i) = true :=
   scrubKs_spSafe (verifyMessage_spSafe (verify_spSafe (prims_okWith v) (List.mem_cons_self ..)) 0)
 
-theorem verifyMessage65_stub : stubSideG (Impl.MlDsa.X86_64.Message.verifyMessageCached "s" (Impl.MlDsa.X86_64.Verify.verify (Proof.MlDsa.X86_64.Verify.primsWith stub) Spec.MlDsa.mlDsa65) Spec.MlDsa.mlDsa65 0) VecLevel.sse.level stubStack 112 [] = true := by decide +kernel
+theorem verifyMessage65_stub : stubSideG (Impl.MlDsa.X86_64.Message.verifyMessageCached "s" (Impl.MlDsa.X86_64.Verify.verify (Proof.MlDsa.X86_64.Verify.primsWith stub) Spec.MlDsa.mlDsa65) Spec.MlDsa.mlDsa65 0) VecLevel.sse.level stubStack 224 [] = true := by decide +kernel
 
 /-- `(Spec.MlDsa.verifyMessageCachedApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65")`'s function as emitted over `v` meets its contract in constant time
 and returns without secret residue. -/
 theorem verifyMessage65_scrubbed (v : ArithImpl) :
     VerifiedScrubbed target (Impl.MlDsa.X86_64.Fn.verifyMessage v.level (Proof.MlDsa.verifyWithCacheName "mldsa65" ++ v.code.sfx) (Proof.MlDsa.X86_64.Verify.primsWith v.code) Spec.MlDsa.mlDsa65 0)
-      (((Spec.MlDsa.verifyMessageCachedApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65")).contract X86_64.abi 112) 32 :=
+      (((Spec.MlDsa.verifyMessageCachedApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65")).contract X86_64.abi 224) 32 :=
   verifiedScrubbedAllFillG (api := (Spec.MlDsa.verifyMessageCachedApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65"))
     { code := Impl.MlDsa.X86_64.Message.verifyMessageCached (Proof.MlDsa.verifyWithCacheName "mldsa65" ++ v.code.sfx) (Impl.MlDsa.X86_64.Verify.verify (primsWith v.code) Spec.MlDsa.mlDsa65) Spec.MlDsa.mlDsa65 0
       verified := verifyMessage_verified (verifyFn v (List.mem_cons_of_mem _ (List.mem_cons_self ..))) (List.mem_cons_of_mem _ (List.mem_cons_self ..))
@@ -235,13 +235,13 @@ theorem verifyMessage65_scrubbed (v : ArithImpl) :
 theorem verifyMessage65_spSafe (v : ArithImpl) : (Impl.MlDsa.X86_64.Fn.verifyMessage v.level (Proof.MlDsa.verifyWithCacheName "mldsa65" ++ v.code.sfx) (Proof.MlDsa.X86_64.Verify.primsWith v.code) Spec.MlDsa.mlDsa65 0).all (fun i => !isa.writesSp i) = true :=
   scrubKs_spSafe (verifyMessage_spSafe (verify_spSafe (prims_okWith v) (List.mem_cons_of_mem _ (List.mem_cons_self ..))) 0)
 
-theorem verifyMessage87_stub : stubSideG (Impl.MlDsa.X86_64.Message.verifyMessageCached "s" (Impl.MlDsa.X86_64.Verify.verify (Proof.MlDsa.X86_64.Verify.primsWith stub) Spec.MlDsa.mlDsa87) Spec.MlDsa.mlDsa87 0) VecLevel.sse.level stubStack 112 [] = true := by decide +kernel
+theorem verifyMessage87_stub : stubSideG (Impl.MlDsa.X86_64.Message.verifyMessageCached "s" (Impl.MlDsa.X86_64.Verify.verify (Proof.MlDsa.X86_64.Verify.primsWith stub) Spec.MlDsa.mlDsa87) Spec.MlDsa.mlDsa87 0) VecLevel.sse.level stubStack 224 [] = true := by decide +kernel
 
 /-- `(Spec.MlDsa.verifyMessageCachedApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87")`'s function as emitted over `v` meets its contract in constant time
 and returns without secret residue. -/
 theorem verifyMessage87_scrubbed (v : ArithImpl) :
     VerifiedScrubbed target (Impl.MlDsa.X86_64.Fn.verifyMessage v.level (Proof.MlDsa.verifyWithCacheName "mldsa87" ++ v.code.sfx) (Proof.MlDsa.X86_64.Verify.primsWith v.code) Spec.MlDsa.mlDsa87 0)
-      (((Spec.MlDsa.verifyMessageCachedApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87")).contract X86_64.abi 112) 32 :=
+      (((Spec.MlDsa.verifyMessageCachedApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87")).contract X86_64.abi 224) 32 :=
   verifiedScrubbedAllFillG (api := (Spec.MlDsa.verifyMessageCachedApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87"))
     { code := Impl.MlDsa.X86_64.Message.verifyMessageCached (Proof.MlDsa.verifyWithCacheName "mldsa87" ++ v.code.sfx) (Impl.MlDsa.X86_64.Verify.verify (primsWith v.code) Spec.MlDsa.mlDsa87) Spec.MlDsa.mlDsa87 0
       verified := verifyMessage_verified (verifyFn v (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self ..)))) (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self ..)))
@@ -253,13 +253,13 @@ theorem verifyMessage87_scrubbed (v : ArithImpl) :
 theorem verifyMessage87_spSafe (v : ArithImpl) : (Impl.MlDsa.X86_64.Fn.verifyMessage v.level (Proof.MlDsa.verifyWithCacheName "mldsa87" ++ v.code.sfx) (Proof.MlDsa.X86_64.Verify.primsWith v.code) Spec.MlDsa.mlDsa87 0).all (fun i => !isa.writesSp i) = true :=
   scrubKs_spSafe (verifyMessage_spSafe (verify_spSafe (prims_okWith v) (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self ..)))) 0)
 
-theorem preparedVerifyMessage44_stub : stubSideG (Impl.MlDsa.X86_64.Message.verifyMessageCached "s" (Impl.MlDsa.X86_64.Verify.verify (Proof.MlDsa.X86_64.Verify.primsWith stub) Spec.MlDsa.mlDsa44) Spec.MlDsa.mlDsa44 1) VecLevel.sse.level stubStack 112 [] = true := by decide +kernel
+theorem preparedVerifyMessage44_stub : stubSideG (Impl.MlDsa.X86_64.Message.verifyMessageCached "s" (Impl.MlDsa.X86_64.Verify.verify (Proof.MlDsa.X86_64.Verify.primsWith stub) Spec.MlDsa.mlDsa44) Spec.MlDsa.mlDsa44 1) VecLevel.sse.level stubStack 224 [] = true := by decide +kernel
 
 /-- `(Spec.MlDsa.preparedVerifyMessageApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44")`'s function as emitted over `v` meets its contract in constant time
 and returns without secret residue. -/
 theorem preparedVerifyMessage44_scrubbed (v : ArithImpl) :
     VerifiedScrubbed target (Impl.MlDsa.X86_64.Fn.verifyMessage v.level (Proof.MlDsa.verifyWithCacheName "mldsa44" ++ v.code.sfx) (Proof.MlDsa.X86_64.Verify.primsWith v.code) Spec.MlDsa.mlDsa44 1)
-      (((Spec.MlDsa.preparedVerifyMessageApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44")).contract X86_64.abi 112) 32 :=
+      (((Spec.MlDsa.preparedVerifyMessageApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44")).contract X86_64.abi 224) 32 :=
   verifiedScrubbedAllFillG (api := (Spec.MlDsa.preparedVerifyMessageApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44"))
     { code := Impl.MlDsa.X86_64.Message.verifyMessageCached (Proof.MlDsa.verifyWithCacheName "mldsa44" ++ v.code.sfx) (Impl.MlDsa.X86_64.Verify.verify (primsWith v.code) Spec.MlDsa.mlDsa44) Spec.MlDsa.mlDsa44 1
       verified := verifyMessagePrepared_verified (verifyFn v (List.mem_cons_self ..)) (List.mem_cons_self ..) (verifyPrepared_sat (prims_okWith v) (List.mem_cons_self ..))
@@ -271,13 +271,13 @@ theorem preparedVerifyMessage44_scrubbed (v : ArithImpl) :
 theorem preparedVerifyMessage44_spSafe (v : ArithImpl) : (Impl.MlDsa.X86_64.Fn.verifyMessage v.level (Proof.MlDsa.verifyWithCacheName "mldsa44" ++ v.code.sfx) (Proof.MlDsa.X86_64.Verify.primsWith v.code) Spec.MlDsa.mlDsa44 1).all (fun i => !isa.writesSp i) = true :=
   scrubKs_spSafe (verifyMessage_spSafe (verify_spSafe (prims_okWith v) (List.mem_cons_self ..)) 1)
 
-theorem preparedVerifyMessage65_stub : stubSideG (Impl.MlDsa.X86_64.Message.verifyMessageCached "s" (Impl.MlDsa.X86_64.Verify.verify (Proof.MlDsa.X86_64.Verify.primsWith stub) Spec.MlDsa.mlDsa65) Spec.MlDsa.mlDsa65 1) VecLevel.sse.level stubStack 112 [] = true := by decide +kernel
+theorem preparedVerifyMessage65_stub : stubSideG (Impl.MlDsa.X86_64.Message.verifyMessageCached "s" (Impl.MlDsa.X86_64.Verify.verify (Proof.MlDsa.X86_64.Verify.primsWith stub) Spec.MlDsa.mlDsa65) Spec.MlDsa.mlDsa65 1) VecLevel.sse.level stubStack 224 [] = true := by decide +kernel
 
 /-- `(Spec.MlDsa.preparedVerifyMessageApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65")`'s function as emitted over `v` meets its contract in constant time
 and returns without secret residue. -/
 theorem preparedVerifyMessage65_scrubbed (v : ArithImpl) :
     VerifiedScrubbed target (Impl.MlDsa.X86_64.Fn.verifyMessage v.level (Proof.MlDsa.verifyWithCacheName "mldsa65" ++ v.code.sfx) (Proof.MlDsa.X86_64.Verify.primsWith v.code) Spec.MlDsa.mlDsa65 1)
-      (((Spec.MlDsa.preparedVerifyMessageApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65")).contract X86_64.abi 112) 32 :=
+      (((Spec.MlDsa.preparedVerifyMessageApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65")).contract X86_64.abi 224) 32 :=
   verifiedScrubbedAllFillG (api := (Spec.MlDsa.preparedVerifyMessageApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65"))
     { code := Impl.MlDsa.X86_64.Message.verifyMessageCached (Proof.MlDsa.verifyWithCacheName "mldsa65" ++ v.code.sfx) (Impl.MlDsa.X86_64.Verify.verify (primsWith v.code) Spec.MlDsa.mlDsa65) Spec.MlDsa.mlDsa65 1
       verified := verifyMessagePrepared_verified (verifyFn v (List.mem_cons_of_mem _ (List.mem_cons_self ..))) (List.mem_cons_of_mem _ (List.mem_cons_self ..)) (verifyPrepared_sat (prims_okWith v) (List.mem_cons_of_mem _ (List.mem_cons_self ..)))
@@ -289,13 +289,13 @@ theorem preparedVerifyMessage65_scrubbed (v : ArithImpl) :
 theorem preparedVerifyMessage65_spSafe (v : ArithImpl) : (Impl.MlDsa.X86_64.Fn.verifyMessage v.level (Proof.MlDsa.verifyWithCacheName "mldsa65" ++ v.code.sfx) (Proof.MlDsa.X86_64.Verify.primsWith v.code) Spec.MlDsa.mlDsa65 1).all (fun i => !isa.writesSp i) = true :=
   scrubKs_spSafe (verifyMessage_spSafe (verify_spSafe (prims_okWith v) (List.mem_cons_of_mem _ (List.mem_cons_self ..))) 1)
 
-theorem preparedVerifyMessage87_stub : stubSideG (Impl.MlDsa.X86_64.Message.verifyMessageCached "s" (Impl.MlDsa.X86_64.Verify.verify (Proof.MlDsa.X86_64.Verify.primsWith stub) Spec.MlDsa.mlDsa87) Spec.MlDsa.mlDsa87 1) VecLevel.sse.level stubStack 112 [] = true := by decide +kernel
+theorem preparedVerifyMessage87_stub : stubSideG (Impl.MlDsa.X86_64.Message.verifyMessageCached "s" (Impl.MlDsa.X86_64.Verify.verify (Proof.MlDsa.X86_64.Verify.primsWith stub) Spec.MlDsa.mlDsa87) Spec.MlDsa.mlDsa87 1) VecLevel.sse.level stubStack 224 [] = true := by decide +kernel
 
 /-- `(Spec.MlDsa.preparedVerifyMessageApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87")`'s function as emitted over `v` meets its contract in constant time
 and returns without secret residue. -/
 theorem preparedVerifyMessage87_scrubbed (v : ArithImpl) :
     VerifiedScrubbed target (Impl.MlDsa.X86_64.Fn.verifyMessage v.level (Proof.MlDsa.verifyWithCacheName "mldsa87" ++ v.code.sfx) (Proof.MlDsa.X86_64.Verify.primsWith v.code) Spec.MlDsa.mlDsa87 1)
-      (((Spec.MlDsa.preparedVerifyMessageApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87")).contract X86_64.abi 112) 32 :=
+      (((Spec.MlDsa.preparedVerifyMessageApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87")).contract X86_64.abi 224) 32 :=
   verifiedScrubbedAllFillG (api := (Spec.MlDsa.preparedVerifyMessageApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87"))
     { code := Impl.MlDsa.X86_64.Message.verifyMessageCached (Proof.MlDsa.verifyWithCacheName "mldsa87" ++ v.code.sfx) (Impl.MlDsa.X86_64.Verify.verify (primsWith v.code) Spec.MlDsa.mlDsa87) Spec.MlDsa.mlDsa87 1
       verified := verifyMessagePrepared_verified (verifyFn v (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self ..)))) (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self ..))) (verifyPrepared_sat (prims_okWith v) (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self ..))))

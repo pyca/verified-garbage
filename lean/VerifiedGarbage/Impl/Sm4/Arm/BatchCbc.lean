@@ -33,9 +33,7 @@ def fillSteps (j : Nat) : Nat → Prog isa
   | n + 1 => .seq (.block (copyLane j ++ [.cmp .r11 (.imm (BitVec.ofNat 32 (j + 1)))]))
       (.ite .eq (.block (saveLast j)) (fillSteps (j + 1) n))
 
-/-- Pads the Thumb cipher-loop placement to a word boundary. -/
-def pad : List Instr := [movR .r9 .r9]
-def fill : Prog isa := .seq (.block pad) (fillSteps 0 8)
+def fill : Prog isa := fillSteps 0 8
 
 def xorBlock (j : Nat) : List Instr :=
   (List.range 4).flatMap (copyWord .r6 sb (16 * j) (4 * tailSlot + 16 * j)) ++

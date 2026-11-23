@@ -437,6 +437,77 @@ theorem pub_fns {A : Abi isa} {pre : Curry (sig.words A.ptrBits) (Mem → Prop)}
     | none => exact ⟨⟨h.1.1, h.2⟩, h.1.2 n (List.mem_singleton_self _)⟩
     | some f => exact ⟨⟨⟨h.1.1.1, h.1.2⟩, h.2⟩, h.1.1.2 n (List.mem_singleton_self _)⟩
 
+/-- Code verified against `Contract.d8 n` of a contract under `abi` with
+`stack` bytes of stack, for a function whose arguments are all in registers,
+is verified against the contract under `abi.withFns [n]` with `stack + 16`
+bytes when called by `entryD8 n`: `Verified.entryD8C` without tables of
+constants. -/
+theorem Verified.entryD8 {n name : String} {body : Prog isa}
+    (h : Verified target body (Contract.d8 n (sig.contract abi pre post wa stack leak)))
+    (hk : (sig.words abi.ptrBits).length ≤ 8) (hl : Sig.noLists sig.params = true)
+    (hd : 16 * body.aarch64Depth ≤ stack)
+    (hpre : ∀ vs m₁ m₂, vs.length = (sig.words abi.ptrBits).length →
+      (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+      Curry.apply (sig.words abi.ptrBits) pre vs m₁ → Curry.apply (sig.words abi.ptrBits) pre vs m₂)
+    (hpost : ∀ vs m₁ m₂ m' x, vs.length = (sig.words abi.ptrBits).length →
+      (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+      Curry.apply (sig.words abi.ptrBits) post vs m₁ m' x →
+        Curry.apply (sig.words abi.ptrBits) post vs m₂ m' x)
+    (hpostR : ∀ vs m m₁ m₂ x, vs.length = (sig.words abi.ptrBits).length →
+      (Sig.bufs sig.params vs).Pairwise (fun a b => (a.2 || b.2) → a.1.Disjoint b.1) →
+      (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+      Curry.apply (sig.words abi.ptrBits) post vs m m₁ x →
+        Curry.apply (sig.words abi.ptrBits) post vs m m₂ x)
+    (hsat : ∃ s, (sig.contract (abi.withFns [n]) pre post wa (stack + 16) leak).pre s)
+    (hleak : Sig.LeakLocal abi.ptrBits sig leak := by trivial) :
+    Verified target (Impl.Sha3.AArch64.entryD8 n name body)
+      (sig.contract (abi.withFns [n]) pre post wa (stack + 16) leak) := by
+  have hout : ∀ s, (sig.contract abi pre post wa (stack + 16) leak).pre s →
+      ∀ m₁ m₂ x, (∀ b ∈ Sig.bufs sig.params (regArgs sig s), ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+      Curry.apply (sig.words abi.ptrBits) post (regArgs sig s) s.mem m₁ x →
+        Curry.apply (sig.words abi.ptrBits) post (regArgs sig s) s.mem m₂ x := by
+    intro s hs m₁ m₂ x hag hq
+    have hpw : (Sig.bufs sig.params (regArgs sig s)).Pairwise (fun a b => (a.2 || b.2) → a.1.Disjoint b.1) :=
+      ((pre_regs' hk hl).mp hs).2.2.2.1
+    exact hpostR _ _ _ _ _ (regArgs_length sig s hk) hpw hag hq
+  have hbody : ∀ s, (sig.contract abi pre post wa (stack + 16) leak).pre s →
+      WP isa (.call name body) (eSave n s) (AfterE sig post stack s) := fun s hs =>
+    e_body_wpOf (rd := s.rd) h.1 (fun _ _ h => h) hk hl hd hpost hs
+      ⟨e_bodyPre hk hl hpre hs, eEntry_d8 n s⟩
+  refine ⟨fun s hs => ?_, ?_, hsat⟩
+  · have hs' : (sig.contract abi pre post wa (stack + 16) leak).pre s := hs
+    obtain ⟨t, g, he, habi, hq⟩ :=
+      e_wp (n := n) (post := post) (leak := leak) (rd := s.rd) hk hl hs' (hbody s hs') (hout s hs')
+    exact ⟨t, g, he, habi, hq⟩
+  · refine RelCT.constantTime (Q := fun _ _ => True) (RelCT.alloc (R := fun _ _ => True) ?_)
+    refine RelCT.exists_ fun σ₁ => RelCT.exists_ fun σ₂ => ?_
+    by_cases hP0 :
+        (sig.contract (abi.withFns [n]) pre post wa (stack + 16) leak).pre σ₁ ∧
+        (sig.contract (abi.withFns [n]) pre post wa (stack + 16) leak).pre σ₂ ∧
+        (sig.contract (abi.withFns [n]) pre post wa (stack + 16) leak).pub σ₁ σ₂
+    swap
+    · exact RelCT.of_false fun a b hab => hP0 hab.1
+    obtain ⟨h₁, h₂, hp⟩ := hP0
+    have h₁' : (sig.contract abi pre post wa (stack + 16) leak).pre σ₁ := h₁
+    have h₂' : (sig.contract abi pre post wa (stack + 16) leak).pre σ₂ := h₂
+    have hp₀ := (pub_fns hp).1
+    have hsp12 : σ₁.sp = σ₂.sp := ((pub_regs hk).mp hp₀).1.1.1
+    refine RelCT.mono (P := fun a b => a = allocated 16 σ₁ ∧ b = allocated 16 σ₂)
+      (e_ct (post := post) (stack := stack) hsp12 ?_) (fun a b hab => hab.2) (fun _ _ h => h)
+    have hcov : ∀ σ : State, Covers (σ.rd ++ σ.wr) ((eSave n σ).rd ++ (eSave n σ).wr) ∧
+        Covers σ.wr (eSave n σ).wr := fun σ =>
+      ⟨Covers.append (Covers.refl _) (Covers.of_mem fun x hx => List.mem_cons_of_mem _ hx),
+        Covers.of_mem fun x hx => List.mem_cons_of_mem _ hx⟩
+    refine RelCT.mono (RelCT.wp (F₁ := AfterE sig post stack σ₁) (F₂ := AfterE sig post stack σ₂)
+      (RelCT.callEx h.1 h.2.1 fun a b hab => ?_) fun a b hab => ?_) (fun _ _ h => h) (fun _ _ h => h.2)
+    · obtain ⟨rfl, rfl⟩ := hab
+      exact ⟨σ₁.rd, σ₁.wr, σ₂.rd, σ₂.wr, ⟨e_bodyPre hk hl hpre h₁', eEntry_d8 n σ₁⟩,
+        ⟨e_bodyPre hk hl hpre h₂', eEntry_d8 n σ₂⟩,
+        ⟨e_bodyPub (rd₁ := σ₁.rd) (rd₂ := σ₂.rd) hk hl n h₁' h₂' hp₀ hleak, (pub_fns hp).2⟩,
+        (hcov σ₁).1, (hcov σ₁).2, (hcov σ₂).1, (hcov σ₂).2⟩
+    · obtain ⟨rfl, rfl⟩ := hab
+      exact ⟨hbody σ₁ h₁', hbody σ₂ h₂'⟩
+
 /-- What `abi.withConsts` says of the tables holds at the function's entry. -/
 theorem constsOk_eEntry (n : String) {s : State} (hsb : stack + 16 ≤ s.sp.toNat)
     (hc : ConstsOk (c₀ :: cs) (stack + 16) s) : ConstsOk (c₀ :: cs) stack (eEntry n s) := by
@@ -514,7 +585,7 @@ theorem Verified.entryD8C {n name : String} {body : Prog isa}
         Curry.apply (sig.words abi.ptrBits) post vs m m₂ x)
     (hsat : ∃ s, (sig.contract ((abi.withConsts (c₀ :: cs)).withFns [n]) pre post wa (stack + 16) leak).pre s)
     (hleak : Sig.LeakLocal abi.ptrBits sig leak := by trivial) :
-    Verified target (entryD8 n name body)
+    Verified target (Impl.Sha3.AArch64.entryD8 n name body)
       (sig.contract ((abi.withConsts (c₀ :: cs)).withFns [n]) pre post wa (stack + 16) leak) := by
   -- The postcondition reads the memory on return only within the buffers.
   have hout : ∀ s, (sig.contract abi pre post wa (stack + 16) leak).pre (stripConsts (c₀ :: cs) s) →

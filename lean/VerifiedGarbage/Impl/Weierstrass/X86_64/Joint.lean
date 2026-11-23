@@ -48,6 +48,10 @@ structure Cfg where
   (`prepB`), which the processor mispredicts: with BMI2, for the
   generator's digits of width nine. -/
   recodeB : Bool := false
+  /-- Whether the additions' calls (`pts`) run the end of the addition
+  (`PointOps.tailCall`) inline rather than as a call: only for the proofs,
+  whose code is the emitted code's with its calls inlined at every depth. -/
+  flat : Bool := false
 
 /-- The scalars' digits for width nine, by the recoding without branches on the scalars' bits. -/
 def prepB (c : Cfg) (u v : Nat) : Prog isa :=
@@ -62,13 +66,13 @@ def prep (c : Cfg) (u v : Nat) : Prog isa :=
 /-- `R = R + E`, `E`'s `Z²` and `Z³` at `selected`. -/
 def cachedAdd (c : Cfg) : Prog isa :=
   match c.pts with
-  | some C => PointOps.addCachedCall C c.K c.selected c.dbl
+  | some C => PointOps.addCachedCall C c.K c.selected c.dbl c.flat
   | none => PointOps.addCachedBody c.K c.selected c.dbl
 
 /-- `R = R + E`, `E` affine. -/
 def fixedAdd (c : Cfg) : Prog isa :=
   match c.pts with
-  | some C => PointOps.addAffineCall C c.K c.dbl
+  | some C => PointOps.addAffineCall C c.K c.dbl c.flat
   | none => PointOps.addAffineBody c.K c.dbl
 
 def cachedDigit (c : Cfg) : Prog isa :=
@@ -117,7 +121,7 @@ def cacheE (c : Cfg) : List FOp :=
 /-- A step of `tableCall`: `R = R + E` (a call of `C`'s `jac_add_cached`),
 stored in entry `rbx`. -/
 def tableCallStep (c : Cfg) (C : Impl.Weierstrass.PointOps.Curve) : Prog isa :=
-  .seq (PointOps.addCachedCall C c.K c.selected c.dbl)
+  .seq (PointOps.addCachedCall C c.K c.selected c.dbl c.flat)
     (.block (Naf.tableStore c.K ++ [.alu .add .rbx (.imm 1),.alu .cmp .rbx (.imm 8)]))
 
 /-- The table of `Q`'s odd multiples `Naf.table` builds, by calls of `C`'s

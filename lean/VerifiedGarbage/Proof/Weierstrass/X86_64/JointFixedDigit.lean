@@ -46,7 +46,8 @@ theorem jointFixedAdd_ok {c : Joint.Cfg} {C : Curve} {base : Addr} {size u v : N
     (hJE : InvJ C (E c.K.E.x) (E c.K.E.y) (E c.K.E.z) P) (hz : E c.K.E.z=1) :
     WP isa (Joint.fixedAdd c).inline s fun t =>
       ProgKeep c.K.M base (jointWork c) s t ∧ JointCore c C base size Q u v External (add A P) t := by
-  refine jointAdd_dispatch (body := PointOps.addAffineBody c.K c.dbl) rfl (fun _ => rfl)
+  refine jointAdd_dispatch (body := PointOps.addAffineBody c.K c.dbl) rfl
+    (fun C' hp => by simp only [hL.calls.flat C' hp]; rfl)
     (fun C' hp => (hL.calls.ok C' hp).2.1) (fun C' hp => (hL.calls.ok C' hp).2.2) hExternal ⟨h, hI⟩
     fun b ⟨cb, ib⟩ => ?_
   rw [PointOps.addAffineBody]

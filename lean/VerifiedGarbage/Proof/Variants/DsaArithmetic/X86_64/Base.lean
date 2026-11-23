@@ -3,6 +3,7 @@ module
 import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignCall
 public import VerifiedGarbage.Proof.Variants.DsaArithmetic.X86_64.Checks
+public import VerifiedGarbage.Proof.Dsa.X86_64.Slots
 public import VerifiedGarbage.Proof.Dsa.X86_64.PrevalidatedSignVerified
 public import VerifiedGarbage.Proof.Dsa.X86_64.DeriveCheckedVerified
 public import VerifiedGarbage.Proof.Bignum.X86_64.MontSqFn
@@ -59,44 +60,57 @@ open VG VG.X86_64 VG.Proof.Dsa.X86_64 VG.Proof.Bignum.X86_64 VG.Proof.Rsa.X86_64
 
 /-- The tests of the entry points, which the kernel evaluates in one
 declaration (`Checks`). -/
-theorem checks : Checks CallMont.lazyBase CallMont.base.mm MontS.fnLazy.mm Mont.fnBase.mm 8 :=
+theorem checks : Checks MontS.fnLazy.mm Mont.fnBase.mm :=
   .of_eval (by decide +kernel)
 
+/-- What the kernel evaluates of the functions that call the variant through
+slots, and of the complete entry points that call three of them, in one
+declaration. -/
+theorem slotChecks : Slots.entriesOk Impl.Scrub.X86_64.VecLevel.sse.level "" CallMont.base.name "vg_rsa_lazy_mont_mul" CallMont.base.body
+    Impl.Bignum.X86_64.MontFn.mulBase = true := by
+  decide +kernel
+
+theorem slotOk : Slots.EntriesOk Impl.Scrub.X86_64.VecLevel.sse.level "" CallMont.base.name "vg_rsa_lazy_mont_mul" CallMont.base.body
+    Impl.Bignum.X86_64.MontFn.mulBase :=
+  .of_eval slotChecks
+
 def variant : Backend where
-  sq := CallMont.lazyBase
-  mul := CallMont.base.mm
-  stack := 8
+  stack := 72
   suffix := ""
   features := []
-  signVerified := signing_call_verified Mont.fnBase MontS.fnLazy checks.sign.inl rfl checks.sign.mx
-  signSp := checks.sign.sp
-  signMx := checks.sign.mxFree
-  validateVerified := validating_call_verified Mont.fnBase MontS.fnLazy checks.validate.inl rfl checks.validate.mx
-  prevalidatedVerified := prevalidated_call_verified Mont.fnBase MontS.fnLazy checks.verify.inl rfl checks.verify.mx
-  validateSp := checks.validate.sp
-  prevalidatedSp := checks.verify.sp
-  signDepth := checks.sign.depth
-  parametersVerified := parameters_call_verified Mont.fnBase MontS.fnLazy checks.parameters.inl rfl checks.parameters.mx
-  deriveVerified := derive_call_verified Mont.fnBase MontS.fnLazy checks.derive.inl rfl checks.derive.mx
-  parametersSp := checks.parameters.sp
-  parametersMx := checks.parameters.mxFree
-  deriveSp := checks.derive.sp
-  parametersDepth := checks.parameters.depth
-  deriveDepth := checks.derive.depth
-  prevalidatedSignVerified := prevalidated_sign_call_verified Mont.fnBase MontS.fnLazy checks.prevalidatedSign.inl rfl checks.prevalidatedSign.mx
-  prevalidatedSignSp := checks.prevalidatedSign.sp
-  prevalidatedSignMx := checks.prevalidatedSign.mxFree
-  prevalidatedSignDepth := checks.prevalidatedSign.depth
-  validatePrivateVerified := validating_private_call_verified Mont.fnBase MontS.fnLazy checks.validatePrivate.inl rfl checks.validatePrivate.mx
-  validatePrivateSp := checks.validatePrivate.sp
-  deriveCheckedVerified := derive_checked_call_verified Mont.fnBase MontS.fnLazy checks.deriveChecked.inl rfl checks.deriveChecked.mx
-  deriveCheckedSp := checks.deriveChecked.sp
-  deriveCheckedMx := checks.deriveChecked.mxFree
-  deriveCheckedDepth := checks.deriveChecked.depth
+  nm := CallMont.base.name
+  ns := "vg_rsa_lazy_mont_mul"
+  bm := CallMont.base.body
+  bs := Impl.Bignum.X86_64.MontFn.mulBase
+  parametersVerified := Slots.parameters_verified Mont.fnBase MontS.fnLazy slotOk.parameters rfl checks.parameters
+  parametersSp := forwardS_spSafe slotOk.parameters.sp
+  parametersMx := slotOk.parameters.mx
+  parametersDepth := slotOk.parameters.wdepth
+  prevalidatedSignVerified := Slots.signer_verified Mont.fnBase MontS.fnLazy slotOk.sign rfl checks.prevalidatedSign
+  prevalidatedSignSp := forwardS_spSafe slotOk.sign.sp
+  prevalidatedSignMx := slotOk.sign.mx
+  prevalidatedSignDepth := slotOk.sign.wdepth
+  deriveCheckedVerified := Slots.deriveChecked_verified Mont.fnBase MontS.fnLazy slotOk.deriveChecked rfl checks.deriveChecked
+  deriveCheckedSp := forwardS_spSafe slotOk.deriveChecked.sp
+  deriveCheckedMx := slotOk.deriveChecked.mx
+  deriveCheckedDepth := slotOk.deriveChecked.wdepth
   stackBound := by decide
   level := .sse
-  sqSide := by lit_decide
-  mulSide := by intro o a b; rfl
   stack_eq := rfl
+
+/-- The variant, called through slots. -/
+def slotVariant : Slots.SlotBackend where
+  backend := variant
+  M := Mont.fnBase
+  Sq := MontS.fnLazy
+  checks := slotChecks
+  validateIn := rfl
+  verifyIn := rfl
+  validatePrivateIn := rfl
+  deriveIn := rfl
+  validateMx := checks.validate
+  verifyMx := checks.verify
+  validatePrivateMx := checks.validatePrivate
+  deriveMx := checks.derive
 
 end VG.Proof.Variants.DsaArithmetic.X86_64.Base

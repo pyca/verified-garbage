@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Impl.Ed448.Arm.ScalarBase
 public import VerifiedGarbage.Impl.Xdh.Arm
 public import VerifiedGarbage.Impl.Scrub.Arm
+public import VerifiedGarbage.Impl.ICall.Arm
 
 /-!
 # X448 of the base point on ARMv7: a fixed-base multiplication on edwards448
@@ -55,10 +56,16 @@ open VG.Arm VG.Impl.Scrub.Arm
 then the registers a callee may change and the flags set to constants. -/
 def x448Base (u : Bool) : Prog isa := scrub 0 (Arm.x448Base u)
 
+/-- `vg_x448`, with either multiplication of the field: `vg_x448_core`, the
+same code for both, which calls the multiplication by the address in `r10`
+(`Code.viaRegAt`), called with that address in `r10` (`entryReg`). -/
+def x448Entry (u : Bool) : Prog isa :=
+  Impl.Arm.entryReg (mulName u) .r10 "vg_x448_core" (Impl.Arm.Code.viaRegAt (mulName u) .r10 (Arm.x448 u))
+
 /-- `vg_x448_exchange`, with either multiplication of the field: `vg_x448`
-called from frames of 8 bytes, then those bytes zeroed and the registers a
+called from frames of 16 bytes, then those bytes zeroed and the registers a
 callee may change, but the result, and the flags set to constants. -/
 def exchange (u : Bool) : Prog isa :=
-  scrubAll 32 8 (Impl.Xdh.Arm.exchange ("vg_x448" ++ suffix u) (Arm.x448 u) 56)
+  scrubAll 32 16 (Impl.Xdh.Arm.exchange ("vg_x448" ++ suffix u) (x448Entry u) 56)
 
 end VG.Impl.X448.Arm.Fn

@@ -585,7 +585,7 @@ theorem Prepped.keep {w : Nat} (P : Prepped Ex base bytes len args w s) {t : Sta
 
 /-- An exponentiation keeps slot 4. -/
 theorem pwR_sv4 (h : In Ex base bytes len args s) {sp : BitVec 32} {m m' : Mem}
-    (F : Frame (frameR base sp (pwR len .wide)) m m') (R : CallRoom sp base bytes) :
+    (F : Frame (frameF base sp (pwR len .wide)) m m') (R : RoomF sp base bytes) :
     sv m' base len .wide 4 = sv m base len .wide 4 := by
   have nw := h.scratch.nowrap
   obtain f8 := h.slot_fit .wide (j := 8) (by decide)
@@ -601,18 +601,19 @@ theorem pwR_sv4 (h : In Ex base bytes len args s) {sp : BitVec 32} {m m' : Mem}
   obtain e7 := lo_wide len 7
   obtain e8 := lo_wide len 8
   have nb : numBase = 3336 := rfl
-  refine frameR_val32 F R nw (by omega_arith) ?_ (pwR_fit h .wide)
+  refine frameF_val32 F R nw (by omega_arith) ?_ (pwR_fit h .wide)
   intro p hp
   simp only [pwR, List.mem_cons, List.not_mem_nil, or_false] at hp
   rcases hp with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp only [winOff] <;> omega_arith
 
 /-- `a^d mod w` into slot 6, for the witness in slot 13 and the exponent in slot 11. -/
-theorem pw_ok {w : Nat} (P : Prepped Ex base bytes len args w s) {rest : Prog isa} {Q : State → Prop}
+theorem pw_ok {w : Nat} (P : Prepped Ex base bytes len args w s) (RF : RoomF (s.gpr .esp) base bytes)
+    {rest : Prog isa} {Q : State → Prop}
     (k : ∀ u, Step Ex base bytes len args s u → Prepped Ex base bytes len args w u →
       sv u.mem base len .wide 6 = sv s.mem base len .wide 13 ^ sv s.mem base len .wide 11 % w →
       Kept base len [] [] s.mem u.mem → WP isa rest u Q) :
     WP isa (.seq (copy (.slot .wide 13) (.slot .wide 5) (one .wide))
-      (.seq (copy (.slot .wide 11) (.slot .wide 8) (one .wide)) (.seq (windowPower .wide) rest))) s Q := by
+      (.seq (copy (.slot .wide 11) (.slot .wide 8) (one .wide)) (.seq Impl.Ffdh.X86.winCall rest))) s Q := by
   have C₀ := P.ctx
   have h := C₀.inp
   have bl := h.bytes_lt
@@ -646,16 +647,15 @@ theorem pw_ok {w : Nat} (P : Prepped Ex base bytes len args w s) {rest : Prog is
     rw [slotKeep h₂ (by decide) (by decide) O₃, slotKeep h (by decide) (by decide) O₂, P.one]
   obtain R₃ : sv u₃.mem base len .wide 4 = 2 ^ (16 * bc len .wide) % w := by
     rw [slotKeep h₂ (by decide) (by decide) O₃, slotKeep h (by decide) (by decide) O₂, P.r2]
-  refine WP.seq (WP.mono (windowPower_ok C₃ one₃ R₃) fun u ⟨C, F, K, Y⟩ => ?_)
+  refine WP.seq (WP.mono (winCall_ok C₃ (by rw [sp₃]; exact RF) one₃ R₃) fun u ⟨C, F, K, Y⟩ => ?_)
   rw [B₃, E₃] at Y
-  have room : CallRoom (u₃.gpr .esp) base bytes := C₃.inp.room
-  rw [sp₃] at F room
-  obtain G := stR_widen F (pwR_in C₃.inp .wide 0)
+  rw [sp₃] at F
+  obtain G := frameF_widen F (pwR_in C₃.inp .wide 0)
   obtain kt : Kept base len [] [] s.mem u.mem :=
-    ((kept_ops h G₂ h.room).trans (kept_ops h G₃ h.room)).trans (kept_ops h G h.room)
+    ((kept_ops h G₂ h.room).trans (kept_ops h G₃ h.room)).trans (keptF_ops h G RF)
   obtain R : Ready Ex base bytes len args w u :=
-    ⟨C, by rw [pwR_sv3 C₃.inp F room, one₃], by rw [pwR_sv4 C₃.inp F room, R₃]⟩
-  refine k u (Step.ops h ((G₂.trans G₃).trans G)
+    ⟨C, by rw [pwR_sv3 C₃.inp F RF, one₃], by rw [pwR_sv4 C₃.inp F RF, R₃]⟩
+  refine k u (Step.opsF h RF ((frameF_of (G₂.trans G₃)).trans G)
     (((K₂.mono (by decide) : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s u₂).trans (K₃.mono (by decide))).trans K))
     (P.keep R kt (by decide)) Y kt
 
@@ -783,7 +783,8 @@ theorem squareStep_ok {w z i n : Nat} {t : State} (A : RoundAt Ex base bytes len
 
 /-- A Miller–Rabin round of the witness `a` in slot 13 for the prepared modulus `w`: its hit mask
 in the header. -/
-theorem round_ok {w a : Nat} (P : Prepped Ex base bytes len args w s) (ha : sv s.mem base len .wide 13 = a)
+theorem round_ok {w a : Nat} (P : Prepped Ex base bytes len args w s) (RF : RoomF (s.gpr .esp) base bytes)
+    (ha : sv s.mem base len .wide 13 = a)
     (hw3 : 3 ≤ w) (hodd : w % 2 = 1) :
     WP isa round s fun u => Step Ex base bytes len args s u ∧ Prepped Ex base bytes len args w u ∧
       w32 u.mem base hitOff = (cmask (Spec.Ffdh.mrRound w a)).toNat ∧
@@ -793,7 +794,7 @@ theorem round_ok {w a : Nat} (P : Prepped Ex base bytes len args w s) (ha : sv s
   generalize hz : a ^ (Spec.Rsa.splitTwos (w - 1)).2 % w = z
   obtain zw : z < w := by rw [← hz]; exact Nat.mod_lt _ (by omega_arith)
   unfold round
-  refine pw_ok P fun u₁ S₁ P₁ Z₁ k₁ => ?_
+  refine pw_ok P RF fun u₁ S₁ P₁ Z₁ k₁ => ?_
   rw [ha, P.exp, hz] at Z₁
   refine WP.seq (WP.mono (eqW_ok S₁.inp (a := 6) (b := 3) (by decide) (by decide)) fun u₂ ⟨m₂, e₂, K₂⟩ => ?_)
   rw [Z₁, P₁.one] at e₂
@@ -1342,7 +1343,7 @@ theorem drawRound_ok {s₀ u : State} {w n c : Nat} {T : List Byte}
     WP isa (.seq round (.block [.mov .ecx (.mem (sc hitOff)), .alu .test .ecx (.reg .ecx)])) u fun v =>
       Picked Ex base bytes len args s₀ w T n c v ∧
         isa.eval .e v = some (!Spec.Ffdh.mrRound w (drawA w T c)) := by
-  refine WP.seq (WP.mono (round_ok Pk.prep Pk.wit hw3 hodd) fun u₅ ⟨S₅, P₅, H₅, k₅⟩ => ?_)
+  refine WP.seq (WP.mono (round_ok Pk.prep (Pk.step.room G.room) Pk.wit hw3 hodd) fun u₅ ⟨S₅, P₅, H₅, k₅⟩ => ?_)
   obtain M₅ := Pk.toMid.next G S₅ P₅ k₅
   refine wp_movS (hdr_read S₅.inp hdr_hit) fun u₆ U₆ _ => wp_testS rfl fun u₇ F₇ z₇ => WP.block_nil ?_
   obtain e₆ : u₆.gpr .ecx = cmask (Spec.Ffdh.mrRound w (drawA w T c)) := by

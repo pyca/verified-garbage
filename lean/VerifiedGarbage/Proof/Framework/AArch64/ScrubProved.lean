@@ -278,18 +278,31 @@ theorem sideAll_scrubAll {W rb : Nat} {cl : Clear} {c : Prog isa}
   have hbody : sideAll (fun i => !i.writesDit) (withRet rb (.seq c (.block (clearsOf cl)))) = true := by
     simp only [withRet, sideAll, Code.allInstrs_eq, instrs, List.all_eq_true, Bool.and_eq_true]
     exact ⟨⟨hc, hcl⟩, hr⟩
-  unfold scrubAll scrubSel
-  split
-  · exact hbody
-  · simp only [sideAll, scrubTailG, Code.allInstrs_eq, instrs, List.all_eq_true, Bool.and_eq_true, hbody,
-      true_and]
-    refine ⟨⟨rfl, fun i hi => ?_⟩, rfl⟩
-    rcases List.mem_cons.mp hi with rfl | hi
-    · rfl
-    rcases List.mem_cons.mp hi with rfl | hi
-    · rfl
+  have hst : ∀ ks, ∀ i ∈ scrubStoresL ks, (!i.writesDit) = true := by
+    intro ks i hi
     simp only [scrubStoresL, List.mem_map] at hi
     obtain ⟨k, -, rfl⟩ := hi
     rfl
+  unfold scrubAll
+  split
+  · exact hbody
+  · simp only [sideAll, Bool.and_eq_true]
+    refine ⟨hbody, ?_⟩
+    unfold scrubTail
+    split
+    · simp only [scrubTailLoop, scrubLoopBody, sideAll, Code.allInstrs_eq, instrs, List.all_eq_true,
+        Bool.and_eq_true]
+      refine ⟨⟨rfl, ⟨fun i hi => ?_, fun i hi => ?_, fun i hi => hst _ i hi⟩⟩, rfl⟩
+      · simp only [List.mem_cons, List.not_mem_nil, or_false] at hi
+        rcases hi with rfl | rfl | rfl <;> rfl
+      · simp only [scrubPass, List.mem_cons, List.not_mem_nil, or_false] at hi
+        rcases hi with rfl | rfl | rfl | rfl | rfl | rfl <;> rfl
+    · simp only [sideAll, scrubTailG, Code.allInstrs_eq, instrs, List.all_eq_true, Bool.and_eq_true]
+      refine ⟨⟨rfl, fun i hi => ?_⟩, rfl⟩
+      rcases List.mem_cons.mp hi with rfl | hi
+      · rfl
+      rcases List.mem_cons.mp hi with rfl | hi
+      · rfl
+      exact hst _ i hi
 
 end VG.AArch64.Scrub

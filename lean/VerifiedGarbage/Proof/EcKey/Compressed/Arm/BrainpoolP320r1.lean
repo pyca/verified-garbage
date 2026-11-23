@@ -102,12 +102,12 @@ theorem satC (u : Bool) :
 
 theorem verified :
     Verified target code (Spec.EcKey.BrainpoolP320r1.inst.compressPublicKeyContract (abi.withConsts (brainpoolp320r1With false).constsK) 0) :=
-  Verified.of_correct (compress_correctT brainpoolp320r1 brainpoolp320r1_ok (List.mem_singleton_self _)) ct
+  Verified.of_correct (compress_correct brainpoolp320r1 brainpoolp320r1_ok (List.mem_singleton_self _)) ct
     (withTables_implies (compress_implies _ sat) (satC false))
 
 theorem verifiedU :
     Verified target codeU (Spec.EcKey.BrainpoolP320r1.inst.compressPublicKeyContract (abi.withConsts (brainpoolp320r1With true).constsK) 0) :=
-  Verified.of_correct (compress_correctT (brainpoolp320r1With true) brainpoolp320r1u_ok (List.mem_singleton_self _)) ctU
+  Verified.of_correct (compress_correct (brainpoolp320r1With true) brainpoolp320r1u_ok (List.mem_singleton_self _)) ctU
     (withTables_implies (compress_implies _ sat) (satC true))
 
 end VG.Proof.EcKey.Compressed.Arm.BrainpoolP320r1

@@ -20,14 +20,17 @@ Each function is its code with its working space in a frame on the stack
 its frames and those of the code it calls were, zeroed in a loop, and the
 registers a callee may change set to constants. That stack is a frame size
 of the model, a multiple of 8 that an ARM immediate encodes: ECB's 1480
-bytes and the final CFB and OFB functions' 1560 are not, so their cleanup
-zeroes 1488 and 1568. `Proof/Sm4/Arm/Scrub.lean` states that each returns
+bytes, the key expansion's 1464 and the final CFB and OFB functions' 1560
+are not, so their cleanup zeroes 1488, 1472 and 1568. `Proof/Sm4/Arm/Scrub.lean` states that each returns
 without secret residue.
 
 The modes over a message's last piece call ECB's and CTR's code as it is
 verified, without the cleanup, under names of their own
 (`vg_sm4_ecb_encrypt_core`, `Impl.Sm4.Arm.ecbCore`; `vg_sm4_ctr_core`,
-`Impl.Sm4.Arm.ctrCall`).
+`Impl.Sm4.Arm.ctrCall`), and the key expansion its own code, as SM4-GCM
+does (`vg_sm4_expand_key_core`, `Impl.Sm4.Arm.keyCall`). ECB and the modes
+over whole blocks call the eight blocks' code, `vg_sm4_crypt8`
+(`Impl.Sm4.Arm.crypt8Call`).
 -/
 
 @[expose] public section
@@ -37,7 +40,7 @@ namespace VG.Impl.Sm4.Arm.Fn
 open VG.Arm VG.Impl.Scrub.Arm VG.Impl.StackScratch.Arm
 
 /-- `vg_sm4_expand_key`. -/
-def expandKey : Prog isa := scrubAll 0 1456 (withRegScratch 1456 .r2 Impl.Sm4.Arm.expandKey)
+def expandKey : Prog isa := scrubAll 0 1472 Impl.Sm4.Arm.expandKeyCall
 
 /-- `vg_sm4_ecb_encrypt`. -/
 def ecbEncrypt : Prog isa := scrubAll 0 1488 (ecbCall .encrypt)

@@ -45,10 +45,11 @@ theorem off_ofs (O x : Addr) : off O (ofs O x) = x := by
   rw [BitVec.add_comm, BitVec.sub_add_cancel]
 
 /-- `powP`: the `p_len` octets at `N` (`s7`) to the power of the `q_len`
-octets at `E` (`s9`), a buffer apart from `scratch`, modulo p, into array 4.
-Arrays 1–23 change. -/
+octets at `E` (`s9`), a buffer apart from `scratch`, modulo p, into array 4,
+by a call; `ra` is loaded again from `hSig`. Arrays 1–23 change. -/
 theorem powSrc_ok {s : State} {L : Lay} {key sig N E : Addr} {p : Nat} (hL : L.Ok) (hs : ScrL s L)
-    (hr : Regs s L key sig) (hin : InP s L) (hi : PInv s L) (hN : Src s L N L.pl) (h7 : s.gpr .s7 = N)
+    (hr : Regs s L key sig) (hsw : word s.mem L.S hSig = sig) (hin : InP s L) (hi : PInv s L)
+    (hN : Src s L N L.pl) (h7 : s.gpr .s7 = N)
     (hE : Src s L E L.ql) (h9 : s.gpr .s9 = E)
     (hp0 : arrP s.mem L 0 = p) (hp : 2 ≤ p) (hpo : p % 2 = 1) (hrr : arrP s.mem L 24 = 2 ^ (128 * L.wp) % p) :
     WP isa powP s fun t =>
@@ -99,14 +100,25 @@ theorem powSrc_ok {s : State} {L : Lay} {key sig N E : Addr} {p : Nat} (hL : L.O
     rw [arrP, m4, o3.wordsVal (by omega_using [e1, e4]) (by omega_arith)]; exact v4
   obtain hbuf : Spec.Rsa.bytesAt s₄.mem E L.ql = Spec.Rsa.bytesAt s.mem E L.ql := by
     rw [m4]; exact hE.bytes hb3 (by omega_using [hZ])
-  refine WP.mono (Win.powWin_ok (D := E) (L := L.ql) en4.hs (by omega_using [hw]) (by omega_using [hw])
+  refine WP.seq (WP.mono (Win.powWinCall_ok (name := "vg_bignum_pow_win") (D := E) (L := L.ql) en4.hs (by omega_using [hw]) (by omega_using [hw])
     (by omega_using [hq28, e24, e28]) en4.a7 en4.s5 en4.t0 (by rw [W0, k14.gpr (by decide)]; exact hi)
     (by show 2 ≤ arrP s₄.mem L 0; rw [A0]; exact hp) (by show arrP s₄.mem L 0 % 2 = 1; rw [A0]; exact hpo)
     (by show arrP s₄.mem L 1 < arrP s₄.mem L 0; rw [A1, A0]; exact Nat.mod_lt _ (by omega_using [hp]))
     (by rw [k4.gpr (by decide), k13.gpr (by decide), h9]; exact (BitVec.add_zero _).symm) a10 (by omega_using [hql])
     (by omega_arith) (by rw [k14.2.1, k14.2.2]; exact hE.rd)
-    (fun i hi x hx => hE.sep i hi x (Nat.lt_of_lt_of_le hx (by omega_using [hqZ])))) fun t ⟨⟨r4, o5'⟩, k5⟩ => ?_
-  have o5 : Outside L.S (slot L.wp 1) (23 * (8 * (L.wp + 2))) s₄.mem t.mem := o5'
+    (fun i hi x hx => hE.sep i hi x (Nat.lt_of_lt_of_le hx (by omega_using [hqZ])))) fun s₅ ⟨⟨r4, o5'', _⟩, k5'⟩ => ?_)
+  -- `ra` again from the header.
+  obtain k45 := k14.trans k5'
+  obtain ⟨hin32, hal32⟩ := ScrL.hdr (hs.congr k45.2.2) hL (d := 32) (by decide) (by decide)
+  obtain hb45 : Body L s₃.mem s₅.mem := by rw [← m4]; exact p_arrays_body hL o5''
+  obtain sw5 : word s₅.mem L.S hSig = sig := ((hb3.trans hb45).word (by decide)).trans hsw
+  refine WP.mono (WP.keep [.ra] (Q := fun u => u.gpr .ra = sig ∧ u.mem = s₅.mem)
+    (by brun [hSig, (k45.gpr (r := .s6) (by decide)).trans hin.s6, hin32, hal32]; exact sw5) (by rfl) (by rfl))
+    fun t ⟨⟨tra, mt⟩, k6⟩ => ?_
+  obtain k5 : Keep Win.powWRegs s₄ t :=
+    keep_restored (k5'.trans k6) (r := .ra) (by rw [tra, k14.gpr (by decide), hr.ra]) (by decide)
+  have o5 : Outside L.S (slot L.wp 1) (23 * (8 * (L.wp + 2))) s₄.mem t.mem := by rw [mt]; exact o5''
+  rw [← mt] at r4
   obtain r4 := r4 (by
     show arrP s₄.mem L 1 = 2 ^ (64 * L.wp) * 2 ^ (64 * L.wp) % arrP s₄.mem L 0
     rw [A1, A0, pow_two_mul])

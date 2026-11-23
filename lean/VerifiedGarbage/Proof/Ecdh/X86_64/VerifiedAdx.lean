@@ -16,6 +16,7 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 import VerifiedGarbage.Proof.P256.X86_64.WinJac
 import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
 import VerifiedGarbage.Proof.Ecdh.X86_64.LitAdx
+import VerifiedGarbage.Proof.Framework.KernelRfl
 public import VerifiedGarbage.Proof.Ecdh.X86_64.Verified
 public import VerifiedGarbage.Proof.Ecdh.X86_64.WinJac
 public import VerifiedGarbage.Impl.Ecdh.P256.X86_64
@@ -29,6 +30,7 @@ meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 meta import VerifiedGarbage.Proof.P256.X86_64.WinJac
 meta import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
 meta import VerifiedGarbage.Proof.Ecdh.X86_64.LitAdx
+meta import VerifiedGarbage.Proof.Framework.KernelRfl
 meta import VerifiedGarbage.Proof.Ecdh.X86_64.Verified
 meta import VerifiedGarbage.Proof.Ecdh.X86_64.WinJac
 meta import VerifiedGarbage.Impl.Ecdh.P256.X86_64
@@ -62,7 +64,7 @@ theorem mulQJP256x_ok (hI : Weierstrass.X86_64.InvSounds) (hL : Weierstrass.Law 
       (mulQJW p256x) :=
   mulQJO_ok (p256x_ok hI) (Or.inl rfl) hL hO hK (Proof.P256.X86_64.doubleHalfPublic_dblOk rfl
     (Weierstrass.unitMod_pow_two (p256x_ok hI).p_odd _) hL (p256x_ok hI).am3) (by decide) (by decide) (by decide)
-    (by decide)
+    (by decide) (by kernel_rfl)
 
 theorem ecdh_x86_adx (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.X86_64.InvSounds)
     (hO : Weierstrass.PrimeOrder Spec.P256.curve) (hK : Weierstrass.KilledByN Spec.P256.curve) (s : State) (hs : ecdhX86_64.pre s) :
