@@ -694,7 +694,7 @@ theorem tailXor_ok {to : Bool} {R : Nat} {icb : Block} {P : Nat} {S T : BitVec 3
     · subst ht
       rw [eS, eD]
       exact (hm.mode.1.sub_left (Offset.sub_base _ (by omega_arith))).sub_right (Offset.sub_base _ (by omega_arith))
-  refine WP.mono (xorLoopG_ok s₄ lp xs) fun s₅ ⟨hm₅, _, _, _, other, rd₅, wr₅, sp₅⟩ => ?_
+  refine WP.mono (xorLoopG_ok s₄ lp xs) fun s₅ ⟨hm₅, _, _, _, _, other, rd₅, wr₅, sp₅⟩ => ?_
   rw [hk₄.mem, eK, eD, eS] at hm₅
   obtain hxl := length_xorBytes s.mem (State.addr S + BitVec.ofNat 64 j) (State.addr st + BitVec.ofNat 64 64) (n - j)
   obtain fw : Frame [⟨State.addr T + BitVec.ofNat 64 j, n - j⟩] s.mem s₅.mem := by
@@ -838,24 +838,32 @@ theorem crypt_ok {R : Nat} {icb : Block} {P : Nat} {D : BitVec 32} {n : Nat} {s 
 
 /-- `cryptTo`: out of place, from a whole number of blocks of text so far
 (`r6` holds the destination). -/
-theorem cryptTo_ok {R : Nat} {icb : Block} {P : Nat} {S T : BitVec 32} {n : Nat} {s : State}
-    (h : CrMidG true c st w sp k7 k8 R icb P S T n s.mem 0 s) :
-    WP isa cryptTo s (CrOutG true c st w sp k7 k8 R icb P S T n s.mem) := by
+theorem cryptTo_from_ok {R : Nat} {icb : Block} {P : Nat} {S T : BitVec 32} {n j : Nat} {m : Mem} {s : State}
+    (h : CrMidG true c st w sp k7 k8 R icb P S T n m j s) :
+    WP isa cryptTo s (CrOutG true c st w sp k7 k8 R icb P S T n m) := by
   have hn' := h.data.ok.lt32
-  obtain ⟨s₁, run₁, hz, hg₁, hm₁, hrd₁, hwr₁, hsp₁⟩ := cmp0_ok s .r5 (by rw [h.r5, Nat.sub_zero]) hn'
+  obtain ⟨s₁, run₁, hz, hg₁, hm₁, hrd₁, hwr₁, hsp₁⟩ := cmp0_ok s .r5 h.r5 (by omega)
   refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
-  obtain h₁ : CrMidG true c st w sp k7 k8 R icb P S T n s.mem 0 s₁ :=
+  obtain h₁ : CrMidG true c st w sp k7 k8 R icb P S T n m j s₁ :=
     ⟨h.env.keep (fun r _ => by rw [hg₁]) hsp₁ hrd₁ hwr₁, h.le, (by rw [hg₁]; exact h.r4),
       (by rw [hg₁]; exact h.r5), (by rw [hg₁]; exact h.r8), h.rounds,
       h.data.of_eq hrd₁ hwr₁, (fun hc₀ => by rw [hm₁]; exact h.ctr hc₀), (fun hc₀ => by rw [hm₁]; exact h.done hc₀),
-      (by rw [hm₁]), h.whole, (by rw [hm₁]; exact h.frame), fun ht => by rw [hg₁]; exact h.r6 ht,
+      (by rw [hm₁]; exact h.rest), h.whole, (by rw [hm₁]; exact h.frame), fun ht => by rw [hg₁]; exact h.r6 ht,
       h.src.of_eq hrd₁ hwr₁, h.mode⟩
-  refine WP.ite (decide (n = 0)) (eval_eq' hz) (fun ht => ?_) (fun hf => ?_)
-  · have h0 : n = 0 := by simpa using ht
-    subst h0
-    exact WP.block_nil ⟨h₁.env, h₁.r8, fun hc₀ => h₁.ctr hc₀, fun _ => by simp [bytesAt]; rfl, h₁.frame⟩
+  refine WP.ite (decide (n-j = 0)) (eval_eq' hz) (fun ht => ?_) (fun _ => ?_)
+  · have hd : n-j=0 := by simpa using ht
+    have eq : j=n := by have := h.le; omega
+    subst j
+    exact WP.block_nil ⟨h₁.env,h₁.r8,h₁.ctr,h₁.done,h₁.frame⟩
   · refine WP.seq (WP.mono (cryptWholeG_ok L h₁ (CrMidG.ciph L h₁)) fun s'' ⟨j', _, hj', hlt⟩ => ?_)
     exact cryptTail_ok L hj' hlt (CrMidG.ciph L hj')
+
+/-- `cryptTo`: out of place, from a whole number of blocks of text so far
+(`r6` holds the destination). -/
+theorem cryptTo_ok {R : Nat} {icb : Block} {P : Nat} {S T : BitVec 32} {n : Nat} {s : State}
+    (h : CrMidG true c st w sp k7 k8 R icb P S T n s.mem 0 s) :
+    WP isa cryptTo s (CrOutG true c st w sp k7 k8 R icb P S T n s.mem) :=
+  cryptTo_from_ok L h
 
 end
 
