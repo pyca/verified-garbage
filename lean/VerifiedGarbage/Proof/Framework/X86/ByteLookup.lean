@@ -70,16 +70,19 @@ theorem nibbles (x : BitVec 8) :
       (x &&& 0x0f#8).msb = false ∧ ((x &&& 0x0f#8).extractLsb' 0 4).toNat = (x &&& 0x0f#8).toNat ∧
       (0x80#8 ||| (x &&& 0x0f#8)).msb = true ∧ (x >>> 4).toNat < 16 ∧ (x &&& 0x0f#8).toNat < 16 ∧
       16 * (x >>> 4).toNat + (x &&& 0x0f#8).toNat = x.toNat := by
-  have h : ∀ n < 256, ((BitVec.ofNat 8 n) >>> 4).msb = false ∧
-      (((BitVec.ofNat 8 n) >>> 4).extractLsb' 0 4).toNat = ((BitVec.ofNat 8 n) >>> 4).toNat ∧
-      ((BitVec.ofNat 8 n) &&& 0x0f#8).msb = false ∧
-      (((BitVec.ofNat 8 n) &&& 0x0f#8).extractLsb' 0 4).toNat = ((BitVec.ofNat 8 n) &&& 0x0f#8).toNat ∧
-      (0x80#8 ||| ((BitVec.ofNat 8 n) &&& 0x0f#8)).msb = true ∧ ((BitVec.ofNat 8 n) >>> 4).toNat < 16 ∧
-      ((BitVec.ofNat 8 n) &&& 0x0f#8).toNat < 16 ∧
-      16 * ((BitVec.ofNat 8 n) >>> 4).toNat + ((BitVec.ofNat 8 n) &&& 0x0f#8).toNat = (BitVec.ofNat 8 n).toNat := by
-    decide +kernel
-  have e := h x.toNat x.isLt
-  rw [BitVec.ofNat_toNat, BitVec.setWidth_eq] at e
+  have h : ∀ a < 16, ∀ b < 16, ((BitVec.ofNat 8 (16 * a + b)) >>> 4).msb = false ∧
+      (((BitVec.ofNat 8 (16 * a + b)) >>> 4).extractLsb' 0 4).toNat = ((BitVec.ofNat 8 (16 * a + b)) >>> 4).toNat ∧
+      ((BitVec.ofNat 8 (16 * a + b)) &&& 0x0f#8).msb = false ∧
+      (((BitVec.ofNat 8 (16 * a + b)) &&& 0x0f#8).extractLsb' 0 4).toNat =
+        ((BitVec.ofNat 8 (16 * a + b)) &&& 0x0f#8).toNat ∧
+      (0x80#8 ||| ((BitVec.ofNat 8 (16 * a + b)) &&& 0x0f#8)).msb = true ∧
+      ((BitVec.ofNat 8 (16 * a + b)) >>> 4).toNat < 16 ∧ ((BitVec.ofNat 8 (16 * a + b)) &&& 0x0f#8).toNat < 16 ∧
+      16 * ((BitVec.ofNat 8 (16 * a + b)) >>> 4).toNat + ((BitVec.ofNat 8 (16 * a + b)) &&& 0x0f#8).toNat =
+        (BitVec.ofNat 8 (16 * a + b)).toNat := by
+    decide
+  have hx := x.isLt
+  have e := h (x.toNat / 16) (by omega_using [hx]) (x.toNat % 16) (Nat.mod_lt _ (by decide))
+  rw [show 16 * (x.toNat / 16) + x.toNat % 16 = x.toNat by omega_using [], BitVec.ofNat_toNat, BitVec.setWidth_eq] at e
   exact e
 
 /-- A byte of the index vector of row `r`. -/

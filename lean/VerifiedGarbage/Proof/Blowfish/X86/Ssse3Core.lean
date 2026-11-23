@@ -7,6 +7,8 @@ public import VerifiedGarbage.Proof.Blowfish.X86.Ecb
 public import VerifiedGarbage.Proof.Blowfish.X86.FbVerified
 public import VerifiedGarbage.Proof.Modes.X86.Core
 public import VerifiedGarbage.Proof.Blowfish.X86.KeyMain
+import VerifiedGarbage.Proof.Framework.Lit
+meta import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Mem
@@ -296,11 +298,11 @@ open VG.Spec.Blowfish (Schedule scheduleAt sEntry pEntry)
 open VG.Proof.Blowfish (sEntry_byte word_ext pEntry_read scheduleAt_eq_of_frame)
 open VG.X86.ByteMap (byte_eq_dword)
 
-theorem cst_C : ∀ r < 16, ∀ b < 16, byte (cst (oC r)) b = if b = r then 0#8 else 0x80#8 := by decide +kernel
+theorem cst_C : ∀ r < 16, ∀ b < 16, byte (cst (oC r)) b = if b = r then 0#8 else 0x80#8 := by lit_decide
 
-theorem cst_T : ∀ i < 16, byte (cst oT) i = BitVec.ofNat 8 (4 * (i % 4) + i / 4) := by decide +kernel
+theorem cst_T : ∀ i < 16, byte (cst oT) i = BitVec.ofNat 8 (4 * (i % 4) + i / 4) := by lit_decide
 
-theorem cst_M : ∀ i < 16, byte (cst oM) i = 0x0f#8 := by decide +kernel
+theorem cst_M : ∀ i < 16, byte (cst oM) i = 0x0f#8 := by lit_decide
 
 /-- `x` in every doubleword. -/
 abbrev bc (x : BitVec 32) : BitVec 128 := shufDwords ((0 : BitVec 96) ++ x) 0
