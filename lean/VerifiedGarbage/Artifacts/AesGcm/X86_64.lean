@@ -140,11 +140,9 @@ def artifactsR (v : GcmVariant) : List Artifact := [
     spSafe := Proof.AesGcm.X86_64.streamDecryptR_spSafeFn v },
   Spec.Gcm.sealGatherPreparedApi.artifact X86_64.target {
     suffix := v.impl.suffix
-    code := Impl.AesGcm.X86_64.Fn.sealGatherP v.lvGA 48 (tlsLong v) (copyBelow v) (splitFrom v) (sealFnF v).fn
-            (splitFnF v).fn (toFnF v).fn (sealFn v.impl).fn (splitFn v).fn (toFn v).fn (initFn v.impl).fn
-            (aadFn v.impl).fn (finFn v.impl).fn false
-    verified := Proof.AesGcm.X86_64.sealGatherR_scrubbed v
-    spSafe := Proof.AesGcm.X86_64.sealGatherR_spSafeFn v }]
+    code := Impl.AesGcm.X86_64.DirectGather.directPrepared v.lvT 48 v.impl.callees (DirectGather.ctrFn v) (blkToF v).fn
+    verified := Proof.AesGcm.X86_64.DirectGather.prepared_verified v 48 (Or.inr rfl) (blkToF v) (blkToF_side v)
+    spSafe := Proof.AesGcm.X86_64.DirectGather.prepared_spSafe v 48 (blkToF v) (blkToF_side v) }]
 
 /-- The prepared artifacts of the implementations `v`, which read only the
 key context. -/
@@ -176,10 +174,9 @@ def artifactsW (v : GcmVariant) : List Artifact := [
     spSafe := Proof.AesGcm.X86_64.streamDecryptW_spSafeFn v },
   Spec.Gcm.sealGatherPreparedApi.artifact X86_64.target {
     suffix := v.impl.suffix
-    code := Impl.AesGcm.X86_64.Fn.sealGatherW v.lvG (copyBelow v) (splitFrom v) (sealFn v.impl).fn (splitFn v).fn
-            (initFn v.impl).fn (aadFn v.impl).fn (toFn v).fn (finFn v.impl).fn
-    verified := Proof.AesGcm.X86_64.sealGatherW_scrubbed v
-    spSafe := Proof.AesGcm.X86_64.sealGatherW_spSafeFn v }]
+    code := Impl.AesGcm.X86_64.DirectGather.directBase v.lvTW v.impl.callees (DirectGather.ctrFn v)
+    verified := Proof.AesGcm.X86_64.DirectGather.base_verified v
+    spSafe := Proof.AesGcm.X86_64.DirectGather.base_spSafe v }]
 
 /-- The prepared artifacts of the implementations `v` whose loops read 16
 prepared powers: by the count, those or the ones on the key context. -/
@@ -212,11 +209,9 @@ def artifactsR16W (v : GcmVariant) (r : R16 v) : List Artifact := [
     spSafe := Proof.AesGcm.X86_64.streamDecryptR16_spSafeFn v },
   Spec.Gcm.sealGatherPreparedApi.artifact X86_64.target {
     suffix := v.impl.suffix
-    code := Impl.AesGcm.X86_64.Fn.sealGatherP v.lvGA 16 (tlsLong v) (copyBelow v) (splitFrom v) (sealFnF16 v r).fn
-            (splitFnF16 v r).fn (toFnF16 v).fn (sealFn v.impl).fn (splitFn v).fn (toFn v).fn (initFn v.impl).fn
-            (aadFn v.impl).fn (finFn v.impl).fn true
-    verified := Proof.AesGcm.X86_64.sealGatherR16_scrubbed v r
-    spSafe := Proof.AesGcm.X86_64.sealGatherR16_spSafeFn v r }]
+    code := Impl.AesGcm.X86_64.DirectGather.directPrepared v.lvT 16 v.impl.callees (DirectGather.ctrFn v) (blkToF16 v).fn
+    verified := Proof.AesGcm.X86_64.DirectGather.prepared_verified v 16 (Or.inl rfl) (blkToF16 v) (blkToF16_side v)
+    spSafe := Proof.AesGcm.X86_64.DirectGather.prepared_spSafe v 16 (blkToF16 v) (blkToF16_side v) }]
 
 /-- The artifacts of a variant: its prepared ones, for what its loops read:
 16 prepared powers (`r16`), 48 (`stitchR`), or the key context alone. -/

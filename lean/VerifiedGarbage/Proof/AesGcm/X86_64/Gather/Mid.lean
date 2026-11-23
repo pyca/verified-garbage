@@ -88,39 +88,39 @@ end
 abbrev kR (M : CtxMode) (s : State) : Region := ⟨K s, M.len⟩
 
 /-- `sealGatherPreM`, by name. -/
-structure SG (M : CtxMode) (s : State) : Prop where
+structure GatherLayout (M : CtxMode) (s : State) (size depth : Nat) : Prop where
   rd : s.rd = [kR M s, nR s, aR s, dsR s] ++ lsR s ++ [argR s]
-  wr : s.wr = wR s
+  wr : s.wr = [dR s, tgR s, ⟨W s, size⟩]
   k_d : (kR M s).Disjoint (dR s)
   k_t : (kR M s).Disjoint (tgR s)
-  k_w : (kR M s).Disjoint (wkR s)
+  k_w : (kR M s).Disjoint ⟨W s, size⟩
   n_d : (nR s).Disjoint (dR s)
   n_t : (nR s).Disjoint (tgR s)
-  n_w : (nR s).Disjoint (wkR s)
+  n_w : (nR s).Disjoint ⟨W s, size⟩
   a_d : (aR s).Disjoint (dR s)
   a_t : (aR s).Disjoint (tgR s)
-  a_w : (aR s).Disjoint (wkR s)
+  a_w : (aR s).Disjoint ⟨W s, size⟩
   ds_d : (dsR s).Disjoint (dR s)
   ds_t : (dsR s).Disjoint (tgR s)
-  ds_w : (dsR s).Disjoint (wkR s)
-  ls : ∀ r ∈ lsR s, r.Disjoint (dR s) ∧ r.Disjoint (tgR s) ∧ r.Disjoint (wkR s)
+  ds_w : (dsR s).Disjoint ⟨W s, size⟩
+  ls : ∀ r ∈ lsR s, r.Disjoint (dR s) ∧ r.Disjoint (tgR s) ∧ r.Disjoint ⟨W s, size⟩
   d_t : (dR s).Disjoint (tgR s)
-  d_w : (dR s).Disjoint (wkR s)
-  t_w : (tgR s).Disjoint (wkR s)
+  d_w : (dR s).Disjoint ⟨W s, size⟩
+  t_w : (tgR s).Disjoint ⟨W s, size⟩
   d_a : (dR s).Disjoint (argR s)
   t_a : (tgR s).Disjoint (argR s)
-  w_a : (wkR s).Disjoint (argR s)
+  w_a : (⟨W s, size⟩ : Region).Disjoint (argR s)
   r_d : (⟨SP s, 8⟩ : Region).Disjoint (dR s)
   r_t : (⟨SP s, 8⟩ : Region).Disjoint (tgR s)
-  r_w : (⟨SP s, 8⟩ : Region).Disjoint (wkR s)
-  b_k : (tR s).Disjoint (kR M s)
-  b_n : (tR s).Disjoint (nR s)
-  b_a : (tR s).Disjoint (aR s)
-  b_ds : (tR s).Disjoint (dsR s)
-  b_ls : ∀ r ∈ lsR s, (tR s).Disjoint r
-  b_d : (tR s).Disjoint (dR s)
-  b_t : (tR s).Disjoint (tgR s)
-  b_w : (tR s).Disjoint (wkR s)
+  r_w : (⟨SP s, 8⟩ : Region).Disjoint ⟨W s, size⟩
+  b_k : (below (SP s) depth).Disjoint (kR M s)
+  b_n : (below (SP s) depth).Disjoint (nR s)
+  b_a : (below (SP s) depth).Disjoint (aR s)
+  b_ds : (below (SP s) depth).Disjoint (dsR s)
+  b_ls : ∀ r ∈ lsR s, (below (SP s) depth).Disjoint r
+  b_d : (below (SP s) depth).Disjoint (dR s)
+  b_t : (below (SP s) depth).Disjoint (tgR s)
+  b_w : (below (SP s) depth).Disjoint ⟨W s, size⟩
   w_k : (K s).toNat + M.len ≤ 2 ^ 64
   w_n : (Nn s).toNat + NL s ≤ 2 ^ 64
   w_ad : (Ad s).toNat + (AL s).toNat ≤ 2 ^ 64
@@ -128,12 +128,14 @@ structure SG (M : CtxMode) (s : State) : Prop where
   w_ls : ∀ r ∈ lsR s, r.base.toNat + r.len ≤ 2 ^ 64
   w_d : (Dst s).toNat + L s ≤ 2 ^ 64
   w_t : (Tg s).toNat + 16 ≤ 2 ^ 64
-  w_w : (W s).toNat + 184 ≤ 2 ^ 64
-  w_sp : 4888 ≤ (SP s).toNat
+  w_w : (W s).toNat + size ≤ 2 ^ 64
+  w_sp : depth ≤ (SP s).toNat
   w_sp' : (SP s).toNat + 56 ≤ 2 ^ 64
   rounds : (s.gpr .rsi).toNat = 10 ∨ (s.gpr .rsi).toNat = 12 ∨ (s.gpr .rsi).toNat = 14
   glen : gl s (Cnt s) = L s
   ok : M.ok s.mem (K s)
+
+abbrev SG (M : CtxMode) (s : State) := GatherLayout M s 184 4888
 
 theorem SG.ofM {M : CtxMode} {s : State} (h : Proof.AesGcm.sealGatherPreM M s) : SG M s := by
   simp only [Proof.AesGcm.sealGatherPreM, Proof.AesGcm.args, Proof.AesGcm.arg, Proof.AesGcm.ret,

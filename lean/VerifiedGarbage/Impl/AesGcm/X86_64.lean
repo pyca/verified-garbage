@@ -582,15 +582,15 @@ def streamVerify : Prog isa :=
         (cmp 0)))))
     (.block restore)))
 
-/-- The entry of `seal` and `open`: `(ctx = rdi, rounds = rsi, nonce = rdx,
-nonce_len = rcx, aad = r8, aad_len = r9, data = [rsp + 8], len = [rsp + 16],
-tag = [rsp + 24])`, and `work` at `[rsp + wo]`. The state is at `W + 16`. -/
-def oneEntry (wo : Nat) : List Instr :=
+/-- Initialize one-shot GCM from the six register arguments. The output pointer,
+length and work pointer are at stack byte offsets `dataOff`, `lenOff` and `wo`.
+The state starts at `W + 16`. -/
+def oneEntry (wo : Nat) (dataOff : Nat := 8) (lenOff : Nat := 16) : List Instr :=
   ([.mov .rax (.mem (at_ .rsp wo))] : List Instr) ++ save .rax ++
     ([.mov .r15 (.reg .rax)] : List Instr) ++ ptr .r14 .r15 stO ++
     ([.mov .r13 (.reg .rdi), .store (at_ .r15 roundsO) .rsi, .store (at_ .r15 aadO) .r8,
-      .store (at_ .r15 alenO) .r9, .mov .rax (.mem (at_ .rsp 8)), .store (at_ .r15 dataO) .rax,
-      .mov .rax (.mem (at_ .rsp 16)), .store (at_ .r15 lenO) .rax, .mov .r12 (.reg .rdx),
+      .store (at_ .r15 alenO) .r9, .mov .rax (.mem (at_ .rsp dataOff)), .store (at_ .r15 dataO) .rax,
+      .mov .rax (.mem (at_ .rsp lenOff)), .store (at_ .r15 lenO) .rax, .mov .r12 (.reg .rdx),
       .mov .rbp (.reg .rcx)] : List Instr)
 
 /-- `J₀`, then the additional data absorbed and padded. -/

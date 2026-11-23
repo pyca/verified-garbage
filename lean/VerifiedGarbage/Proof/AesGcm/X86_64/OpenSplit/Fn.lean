@@ -137,9 +137,9 @@ theorem callD_rel (T : BlkToDecFn M) :
   obtain ⟨he₁, di₁, si₁, dx₁, cx₁, r8₁, r9₁, r10₁, r11₁, ax₁, m₁, rd₁, wr₁⟩ := g₁
   obtain ⟨he₂, di₂, si₂, dx₂, cx₂, r8₂, r9₂, r10₂, r11₂, ax₂, m₂, rd₂, wr₂⟩ := g₂
   obtain ⟨p₁, cr₁, cw₁, gU₁, hU₁, a0₁, a1₁, a2₁⟩ :=
-    callIn h hq he₁.rsp rd₁ wr₁ m₁ di₁ si₁ dx₁ cx₁ r8₁ r9₁ r10₁ r11₁ ax₁
+    callIn h.toCallInputs.regions hq he₁.rsp rd₁ wr₁ m₁ di₁ si₁ dx₁ cx₁ r8₁ r9₁ r10₁ r11₁ ax₁
   obtain ⟨p₂, cr₂, cw₂, gU₂, hU₂, a0₂, a1₂, a2₂⟩ :=
-    callIn h' hq he₂.rsp rd₂ wr₂ m₂ di₂ si₂ dx₂ cx₂ r8₂ r9₂ r10₂ r11₂ ax₂
+    callIn h'.toCallInputs.regions hq he₂.rsp rd₂ wr₂ m₂ di₂ si₂ dx₂ cx₂ r8₂ r9₂ r10₂ r11₂ ax₂
   refine ⟨_, _, _, _, p₁, p₂, ?_, cr₁, cw₁, cr₂, cw₂, by rw [pushed_rsp, pushed_rsp, he₁.rsp, he₂.rsp]⟩
   simp only [Proof.AesGcm.decryptBlocksToX86_64M, Proof.AesGcm.blocksToPub, Proof.AesGcm.arg, callU] at *
   simp only [gU₁ _ (by decide : Reg.rdi ≠ .rsp), gU₁ _ (by decide : Reg.rsi ≠ .rsp),
@@ -162,7 +162,7 @@ theorem callPartD_rel (T : BlkToDecFn M) :
       · rw [e₁.r13, e₂.r13]
       · rw [e₁.r14, e₂.r14]
       · rw [e₁.r15, e₂.r15])
-    (fun _ _ g => g) (fun _ g => g₂_wp h g) (fun _ g => g₂_wp h' g)) ?_
+    (fun _ _ g => g) (fun _ g => g₂_wp h.toCallInputs g) (fun _ g => g₂_wp h'.toCallInputs g)) ?_
   exact (rel_wp (callD_rel h h' T) (fun _ _ g => g) (fun _ g => mid2D_call_wp h T g)
     (fun _ g => mid2D_call_wp h' T g)).mono (fun _ _ g => g) fun _ _ g => g.2
 
@@ -513,10 +513,10 @@ theorem frontS_ok (v : GcmImpl) {M : CtxMode} (B : BlkFn M) (T : BlkToDecFn M) {
     f₃.readW (r := ⟨W + BitVec.ofNat 64 d, 8⟩) (Region.contains_self _ _)
       (kept_oneFrame L C.dE (by rcases hd with rfl | rfl <;> decide)) (by decide)
   obtain P : PP M Ctx W SP D S R n n s₃ :=
-    ⟨M₃.env, L, hR ▸ M₃.rounds, M₃.dat, M₃.len, by rw [k₃ 224 (.inr rfl)]; exact hS₁,
-      by rw [k₃ 192 (.inl rfl)]; exact hN₁, C.data.of_eq M₃.rd M₃.wr, by rw [M₃.rd, M₃.wr]; exact C.src,
+    ⟨⟨M₃.env, L, hR ▸ M₃.rounds, M₃.dat, by rw [k₃ 224 (.inr rfl)]; exact hS₁,
+      C.data.of_eq M₃.rd M₃.wr, by rw [M₃.rd, M₃.wr]; exact C.src,
       C.sW, C.sD, C.sWrap, Nat.le_refl _, C.kw, C.kd, C.ks, C.kM, C.sp56,
-      X.keep M₃.rd M₃.wr M₃.frame (dM X.cw (X.ct.sub_left (below_sub (by decide) (by decide))))⟩
+      X.keep M₃.rd M₃.wr M₃.frame (dM X.cw (X.ct.sub_left (below_sub (by decide) (by decide))))⟩, M₃.len, by rw [k₃ 192 (.inl rfl)]; exact hN₁⟩
   -- The whole blocks at `src`, decrypted to `dst`.
   refine WP.seq (WP.seq (WP.mono (prefixD_ok P T) fun s₄ Q => ?_))
   obtain F₄ : Frame (Split.ppListG W D SP n) s₃.mem s₄.mem := Q.frame.sub fun r hr => by
@@ -1072,10 +1072,10 @@ theorem aadS_ok {s₀ s : State} {Np A D S Tp : Addr} {nl al n t R : Nat}
       ((argD C.toOneCtx h₁ h₂ (.inr (.inr b8))).symm)) (by decide)
   refine ⟨⟨(h.1.aadPre C.toOneCtx X hNp hnl hal hR).1.frame L M₃.env (M₃.rd.trans h.1.rd.symm)
       (M₃.wr.trans h.1.wr.symm) C.dE f₃,
-    ⟨M₃.env, L, hR ▸ M₃.rounds, M₃.dat, M₃.len, by rw [k₃ 224 (.inr rfl)]; exact h.2.2.1,
-      by rw [k₃ 192 (.inl rfl)]; exact h.2.2.2, C.data.of_eq M₃.rd M₃.wr, by rw [M₃.rd, M₃.wr]; exact C.src,
+    ⟨⟨M₃.env, L, hR ▸ M₃.rounds, M₃.dat, by rw [k₃ 224 (.inr rfl)]; exact h.2.2.1,
+      C.data.of_eq M₃.rd M₃.wr, by rw [M₃.rd, M₃.wr]; exact C.src,
       C.sW, C.sD, C.sWrap, Nat.le_refl _, C.kw, C.kd, C.ks, C.kM, C.sp56,
-      X.keep M₃.rd M₃.wr M₃.frame (dM X.cw (X.ct.sub_left (below_sub (by decide) (by decide))))⟩⟩,
+      X.keep M₃.rd M₃.wr M₃.frame (dM X.cw (X.ct.sub_left (below_sub (by decide) (by decide))))⟩, M₃.len, by rw [k₃ 192 (.inl rfl)]; exact h.2.2.2⟩⟩,
     ⟨by rw [ArgT, kA (e := 24) (by decide) (by decide)]; exact hT, by rw [M₃.rd, M₃.wr]; exact C.args 2 (by decide)⟩,
     ⟨by rw [kA (e := 32) (by decide) (by decide)]; exact htl, by rw [M₃.rd, M₃.wr]; exact C.args 3 (by decide)⟩⟩
 

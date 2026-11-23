@@ -123,7 +123,7 @@ theorem fastArgs2_check : ∃ hc, (taint.check (Taint.ofRegs [.r10, .rsp]) (.blo
     true := ⟨_, by simp only [fastArgs]; taint_decide⟩
 
 section
-variable {M : CtxMode} {s : State} (hp : SG M s)
+variable {s : State} (hp : FrontRead s)
 include hp
 
 /-- The first descriptor's address into `r10`, from a state `Same` as the entry. -/
@@ -134,6 +134,12 @@ theorem ldSrc_ok {st : State} (hs : Same s st) :
   refine ⟨_, by xrun [a₀, e₀], ?_, by simp [gpr_setReg]⟩
   exact hs.step (fun r _ b _ => by simp [gpr_setReg, b]) (by simp [mem_setReg]) (by simp [rd_setReg])
     (by simp [wr_setReg])
+
+end
+
+section
+variable {M : CtxMode} {s : State} (hp : SG M s)
+include hp
 
 /-- The first descriptor's address into `r10` and `rcx` set, in a state of the fast path. -/
 theorem fastArgs1_ok {st : State} (h : FBase s st) :
@@ -146,7 +152,7 @@ theorem fastArgs1_ok {st : State} (h : FBase s st) :
 end
 
 section
-variable {M : CtxMode} {s₀ s₀' : State} (hp : SG M s₀) (hp' : SG M s₀') (pb : Pub s₀ s₀')
+variable {s₀ s₀' : State} (hp : FrontRead s₀) (hp' : FrontRead s₀') (pb : Pub s₀ s₀')
 include hp hp' pb
 
 /-- The tests of `frontCore`, from two states `Same` as the entry states. -/
@@ -191,12 +197,18 @@ theorem frontTest_rel (long : Bool) :
     (fun _ h => by rw [h]; exact frontTest_wp hp long) (fun _ h => by rw [h]; exact frontTest_wp hp' long)
 
 
+end
+
+section
+variable {M : CtxMode} {s₀ s₀' : State} (hp : SG M s₀) (hp' : SG M s₀') (pb : Pub s₀ s₀')
+include hp hp' pb
+
 /-- The path of a TLS record's text, from two states `Same` as the entry states. -/
 theorem frontFast_eq2 (S : SplitFn M) {long : Bool} (hg : frontGo long s₀ = true) {σ₁ σ₂ : State}
     (S₁ : Same s₀ σ₁) (S₂ : Same s₀' σ₂) : RelCT isa (Eq2 σ₁ σ₂) (frontFast S.fn) TT := by
   have hg' : frontGo long s₀' = true := by rw [pb.eFront]; exact hg
-  obtain ⟨hn, hcnt, hsub⟩ := front_facts hp hg
-  obtain ⟨hn', hcnt', hsub'⟩ := front_facts hp' hg'
+  obtain ⟨hn, hcnt, hsub⟩ := front_facts hp.frontRead hg
+  obtain ⟨hn', hcnt', hsub'⟩ := front_facts hp'.frontRead hg'
   have ec := pb.cnt
   unfold frontFast
   refine rel_seq ?_ (fastEntry_ok hp S₁) (fastEntry_ok hp' S₂) fun τ₁ τ₂ ⟨F₁, r10₁, zf₁⟩ ⟨F₂, r10₂, zf₂⟩ => ?_
@@ -205,8 +217,8 @@ theorem frontFast_eq2 (S : SplitFn M) {long : Bool} (hg : frontGo long s₀ = tr
     · obtain ⟨rfl, rfl⟩ := h; simp only [List.mem_singleton] at hr; subst hr
       rw [same_rsp S₁, same_rsp S₂]; exact pb.rsp.symm
     · obtain ⟨rfl, rfl⟩ := h
-      obtain ⟨a₁, e₁⟩ := same_a hp S₁ (i := 5) (by decide)
-      obtain ⟨a₂, e₂⟩ := same_a hp' S₂ (i := 5) (by decide)
+      obtain ⟨a₁, e₁⟩ := same_a hp.frontRead S₁ (i := 5) (by decide)
+      obtain ⟨a₂, e₂⟩ := same_a hp'.frontRead S₂ (i := 5) (by decide)
       exact ⟨by rw [e₁, e₂]; exact pb.w.symm, a₁, a₂⟩
   refine rel_seq ?_ (fastTail_wp hp hcnt hsub F₁ r10₁ zf₁) (fastTail_wp hp' hcnt' hsub' F₂ r10₂ zf₂)
     fun υ₁ υ₂ ⟨G₁, O₁⟩ ⟨G₂, O₂⟩ => ?_
@@ -493,7 +505,7 @@ theorem withFront_correct (inl : Bool) (s : State) (hs : (Proof.AesGcm.sealGathe
   have w : WP isa (withFront long Sp.fn (sealGather Sh.quick Sh.fast Sh.test Sh.code I.fn A.fn T.fn F.fn inl)) s
       (Done s) := by
     unfold withFront
-    exact WP.seq (WP.mono (frontTest_wp hp long) fun st ⟨S, zf⟩ =>
+    exact WP.seq (WP.mono (frontTest_wp hp.frontRead long) fun st ⟨S, zf⟩ =>
       WP.ite (frontGo long s) (by simp only [eval, zf]) (fun e => frontFast_wp hp Sp e S)
         (fun _ => sealGatherG_wp hp (go := Sh.go s) (fun _ h => Sh.quickWp hp _ h)
           (fun e st E r11 => Sh.fastWp hp e st E r11) (fun st h => Sh.testWp hp st h)
@@ -509,7 +521,7 @@ theorem withFront_ct (inl : Bool := false) :
   have hp' := SG.ofM h'
   have pb := Pub.of hq
   unfold withFront
-  refine RelCT.seq (frontTest_rel hp hp' pb long)
+  refine RelCT.seq (frontTest_rel hp.frontRead hp'.frontRead pb long)
     (RelCT.ite (fun _ _ h => by simp only [eval, h.1.2, h.2.2, pb.eFront]) ?_ ?_)
   · refine rel_of_eq2 fun σ₁ σ₂ ⟨⟨⟨S₁, z₁⟩, ⟨S₂, _⟩⟩, ev⟩ => ?_
     have e : frontGo long s₀ = true := by simp only [eval, z₁] at ev; simpa using ev

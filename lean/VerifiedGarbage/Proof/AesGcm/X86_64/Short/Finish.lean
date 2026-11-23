@@ -316,6 +316,22 @@ theorem writeW_zero128 (m : Mem) (a : Addr) : m.writeW a (0 : BitVec 128) = writ
   apply BitVec.eq_of_getLsbD_eq; intro i hi
   simp only [BitVec.getLsbD_extractLsb', BitVec.getLsbD_setWidth, getLsbD_zero', Bool.and_false]
 
+theorem zeroCipherBlock_ok {Ctx St W SP : Addr} (s : State) (he : Env Ctx St W SP s) : ∃ s₁, runBlock isa [.xop (.bin .pxor .xmm7 .xmm7),
+      .movdquStore (at_ .r15 gO) .xmm7] s = some s₁ ∧
+      s₁.mem = s.mem.writeW (W + BitVec.ofNat 64 512) (0 : BitVec 128) ∧
+      (∀ q, q ≠ .xmm7 → s₁.xmm q = s.xmm q) ∧ s₁.gpr = s.gpr ∧ s₁.rd = s.rd ∧ s₁.wr = s.wr := by
+  obtain w512 : InRegions s.wr (W + BitVec.ofNat 64 512) 16 := he.perm.wW (by decide)
+  obtain e512 : s.gpr .r15 + BitVec.ofInt 64 ((512 : Nat) : Int) = W + BitVec.ofNat 64 512 := by
+    rw [he.r15, BitVec.ofInt_natCast]
+  refine ⟨_, by
+    simp only [gO, at_, runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec, isa, State.setXmm,
+      State.store128, State.ea, VG.Proof.Gcm.X86_64.Pclmul.eval_pxor, BitVec.xor_self, e512, w512, ite_true,
+      Option.bind_some]
+    rfl, ?_, ?_, ?_, ?_, ?_⟩
+  · simp [State.setMem, State.setXmm]
+  · intro q hq; simp [State.setMem, State.setXmm, hq]
+  all_goals rfl
+
 /-- `finTextArgs`: `G[0]` zeroed, and the arguments of `xorText true`. -/
 theorem finTextArgs_ok {Ctx St W SP D : Addr} {r : Nat} (s : State) (he : Env Ctx St W SP s)
     (hd : s.mem.readW (W + BitVec.ofNat 64 200) 64 = D)
@@ -326,21 +342,7 @@ theorem finTextArgs_ok {Ctx St W SP D : Addr} {r : Nat} (s : State) (he : Env Ct
       t.gpr .rcx = BitVec.ofNat 64 r ∧
       (∀ g, g ≠ .rdi → g ≠ .rsi → g ≠ .rdx → g ≠ .rcx → t.gpr g = s.gpr g) ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
       (∀ q, q ≠ .xmm7 → t.xmm q = s.xmm q) := by
-  obtain w512 : InRegions s.wr (W + BitVec.ofNat 64 512) 16 := he.perm.wW (by decide)
-  obtain e512 : s.gpr .r15 + BitVec.ofInt 64 ((512 : Nat) : Int) = W + BitVec.ofNat 64 512 := by
-    rw [he.r15, BitVec.ofInt_natCast]
-  obtain ⟨s₁, run₁, m₁, x₁, g₁, rd₁, wr₁⟩ : ∃ s₁, runBlock isa [.xop (.bin .pxor .xmm7 .xmm7),
-      .movdquStore (at_ .r15 gO) .xmm7] s = some s₁ ∧
-      s₁.mem = s.mem.writeW (W + BitVec.ofNat 64 512) (0 : BitVec 128) ∧
-      (∀ q, q ≠ .xmm7 → s₁.xmm q = s.xmm q) ∧ s₁.gpr = s.gpr ∧ s₁.rd = s.rd ∧ s₁.wr = s.wr := by
-    refine ⟨_, by
-      simp only [gO, at_, runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec, isa, State.setXmm,
-        State.store128, State.ea, VG.Proof.Gcm.X86_64.Pclmul.eval_pxor, BitVec.xor_self, e512, w512, ite_true,
-        Option.bind_some]
-      rfl, ?_, ?_, ?_, ?_, ?_⟩
-    · simp [State.setMem, State.setXmm]
-    · intro q hq; simp [State.setMem, State.setXmm, hq]
-    all_goals rfl
+  obtain ⟨s₁, run₁, m₁, x₁, g₁, rd₁, wr₁⟩ := zeroCipherBlock_ok s he
   obtain sep : ∀ d, d + 8 ≤ 512 → (s.mem.writeW (W + BitVec.ofNat 64 512) (0 : BitVec 128)).readW
       (W + BitVec.ofNat 64 d) 64 = s.mem.readW (W + BitVec.ofNat 64 d) 64 := fun d h =>
     Mem.readW_writeW_sep (Offset.sep W (.inl (by omega_arith)) (by omega_arith) (by have := he.perm.w; omega_arith)) (by decide)
@@ -582,26 +584,38 @@ theorem finTail_ok {Ctx W SP D : Addr} {H : Block} {al n r : Nat} {s : State} (P
       m₄, bD, hc']
   · rw [t₅, y₄, m₄, hY, bW (.inr ⟨Nat.le_refl _, by decide⟩), hb₀, hb₁, hc']
 
-/-- Without bytes left: the tag of `GHASH` continued over the lengths block is
-at `W`. -/
-theorem finNoTail_ok {Ctx W SP D : Addr} {H : Block} {al n r : Nat} {s : State} (P : FinPre Ctx W SP H al n r D s) :
-    WP isa (.block (finLens ++ finGh1 ++ tagK 0)) s fun t =>
+/-- Authenticate the lengths and optionally the already staged ciphertext block;
+both the separate-output and in-place paths use this suffix. -/
+theorem finStaged_ok (hasTail : Bool) {Ctx W SP D : Addr} {H : Block} {al n r : Nat} {s : State}
+    (he : Env Ctx (W + BitVec.ofNat 64 16) W SP s)
+    (x0 : s.xmm .xmm0 = revMask) (x1 : s.xmm .xmm1 = poly)
+    (h1 : IsH1 H (s.xmm .xmm3)) (h2 : IsH2 H (s.xmm .xmm3) (s.xmm .xmm6))
+    (alS : s.mem.readW (W + BitVec.ofNat 64 184) 64 = BitVec.ofNat 64 al)
+    (nS : s.mem.readW (W + BitVec.ofNat 64 192) 64 = BitVec.ofNat 64 n) :
+    WP isa (.block (finLens ++ (if hasTail then finGh2 else finGh1) ++ tagK 0)) s fun t =>
       Env Ctx (W + BitVec.ofNat 64 16) W SP t ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
       Frame [⟨W, 16⟩, ⟨W + BitVec.ofNat 64 512, 32⟩, ⟨D, r⟩] s.mem t.mem ∧
-      blockAt t.mem W = Spec.Gcm.ghashFrom H (blockAt s.mem (yA W)) [Spec.Gcm.ofBytes (Proof.Gcm.lensBlock al n)] ^^^
-        blockAt s.mem (W + BitVec.ofNat 64 1024) := by
-  have he := P.env
+      blockAt t.mem W = Spec.Gcm.ghashFrom H (blockAt s.mem (yA W))
+        ((if hasTail then [blockAt s.mem (W + BitVec.ofNat 64 512)] else []) ++
+          [Spec.Gcm.ofBytes (Proof.Gcm.lensBlock al n)]) ^^^ blockAt s.mem (W + BitVec.ofNat 64 1024) := by
   rw [List.append_assoc, WP.block_append_iff]
-  obtain ⟨s₃, run₃, f₃, hL₃, g₃, rd₃, wr₃, x₃⟩ := finLens_ok s he P.alen P.tlen
+  obtain ⟨s₃, run₃, f₃, hL₃, g₃, rd₃, wr₃, x₃⟩ := finLens_ok s he alS nS
   refine WP.of_runBlock ⟨s₃, run₃, ?_⟩
   obtain he₃ : Env Ctx (W + BitVec.ofNat 64 16) W SP s₃ := he.keep (fun g hg => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hg
     rcases hg with rfl | rfl | rfl | rfl <;> exact g₃ _ (by decide)) rd₃ wr₃
   rw [WP.block_append_iff]
-  refine WP.mono (finGh1_ok s₃ he₃ (H := H) (by rw [x₃]; exact P.x0) (by rw [x₃]; exact P.x1)
-    (by rw [x₃]; exact P.h1)) fun s₄ ⟨y₄, o₄⟩ => ?_
+  have gh : WP isa (.block (if hasTail then finGh2 else finGh1)) s₃ fun t =>
+      t.xmm .xmm2 = Spec.Gcm.ghashFrom H (blockAt s₃.mem (yA W))
+        ((if hasTail then [blockAt s₃.mem (W + BitVec.ofNat 64 512)] else []) ++
+          [blockAt s₃.mem (W + BitVec.ofNat 64 528)]) ∧
+      Only [.xmm2, .xmm7, .xmm8, .xmm9, .xmm10, .xmm11, .xmm12] s₃ t := by
+    cases hasTail
+    · exact finGh1_ok s₃ he₃ (by rw [x₃]; exact x0) (by rw [x₃]; exact x1) (by rw [x₃]; exact h1)
+    · exact finGh2_ok s₃ he₃ (by rw [x₃]; exact x0) (by rw [x₃]; exact x1) (by rw [x₃]; exact h2)
+  refine WP.mono gh fun s₄ ⟨y₄, o₄⟩ => ?_
   obtain ⟨s₅, run₅, tag₅, fW, g₅, rd₅, wr₅⟩ := tagK_ok (W := W) (o := 0) s₄ ((o₄.gpr _ (by decide)).trans he₃.r15)
-    (by rw [o₄.wr]; exact he₃.perm.w) (by decide) (by rw [o₄.xmm _ (by decide), x₃]; exact P.x0)
+    (by rw [o₄.wr]; exact he₃.perm.w) (by decide) (by rw [o₄.xmm _ (by decide), x₃]; exact x0)
   refine WP.of_runBlock ⟨s₅, run₅, ?_⟩
   have m₄ := o₄.mem
   obtain bW : ∀ {d : Nat}, d + 16 ≤ 528 ∨ 544 ≤ d → d + 16 ≤ 2560 →
@@ -624,7 +638,17 @@ theorem finNoTail_ok {Ctx W SP D : Addr} {H : Block} {al n r : Nat} {s : State} 
     exact fW.sub fun q hq => by
       simp only [List.mem_singleton] at hq; subst hq
       exact ⟨⟨W, 16⟩, List.mem_cons_self .., by simpa using Region.sub_prefix (base := W) (Nat.le_refl 16)⟩
-  · rw [t₅, y₄, m₄, hY, hb₁, bW (d := 1024) (.inr (by decide)) (by decide)]
+  · rw [t₅, y₄, m₄, hY, hb₁, bW (d := 512) (.inl (by decide)) (by decide), bW (d := 1024) (.inr (by decide)) (by decide)]
+
+/-- Without bytes left: the tag of `GHASH` continued over the lengths block is
+at `W`. -/
+theorem finNoTail_ok {Ctx W SP D : Addr} {H : Block} {al n r : Nat} {s : State} (P : FinPre Ctx W SP H al n r D s) :
+    WP isa (.block (finLens ++ finGh1 ++ tagK 0)) s fun t =>
+      Env Ctx (W + BitVec.ofNat 64 16) W SP t ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
+      Frame [⟨W, 16⟩, ⟨W + BitVec.ofNat 64 512, 32⟩, ⟨D, r⟩] s.mem t.mem ∧
+      blockAt t.mem W = Spec.Gcm.ghashFrom H (blockAt s.mem (yA W)) [Spec.Gcm.ofBytes (Proof.Gcm.lensBlock al n)] ^^^
+        blockAt s.mem (W + BitVec.ofNat 64 1024) := by
+  exact finStaged_ok false P.env P.x0 P.x1 P.h1 P.h2 P.alen P.tlen
 
 /-! ## `oneBlocks` and `finish` -/
 

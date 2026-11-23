@@ -1856,8 +1856,22 @@ theorem Same.step {s st st' : State} (hs : Same s st)
   ⟨fun r a b c => (g r a b c).trans (hs.gpr r a b c), hm.trans hs.mem, hrd.trans hs.rd, hwr.trans hs.wr,
     hmx.trans hs.mx⟩
 
+/-- The guard reads the stack arguments and the length of the first descriptor. -/
+structure FrontRead (s : State) : Prop where
+  arg : ∀ i < 6, InRegions (s.rd ++ s.wr) (SP s + BitVec.ofNat 64 (8 * (i + 1))) 8
+  sizeR : Cnt s ≠ 0 → InRegions (s.rd ++ s.wr) (Src s + BitVec.ofNat 64 8) 8
+  size : Cnt s ≠ 0 → s.mem.readW (Src s + BitVec.ofNat 64 8) 64 = BitVec.ofNat 64 (fl s)
+  le : fl s ≤ L s
+
+theorem SG.frontRead {M : CtxMode} {s : State} (hp : SG M s) : FrontRead s := by
+  refine ⟨fun _ h => a_in hp h, fun hc => ?_, fun hc => ?_, fl_le hp⟩
+  · rw [hp.rd]
+    exact ⟨dsR s, by simp, Offset.contains_base _ (by omega_arith) (by have := hp.w_ds; omega_arith)⟩
+  · simp only [fl_eq, hc, ↓reduceIte]
+    simp [sl, ofNat_toNat]
+
 section
-variable {M : CtxMode} {s : State} (hp : SG M s)
+variable {s : State} (hp : FrontRead s)
 include hp
 
 omit hp in
@@ -1867,7 +1881,7 @@ theorem same_rsp {st : State} (hs : Same s st) : st.gpr .rsp = s.gpr .rsp := hs.
 theorem same_a {st : State} (hs : Same s st) {i : Nat} (hi : i < 6) :
     InRegions (st.rd ++ st.wr) (st.gpr .rsp + BitVec.ofNat 64 (8 * (i + 1))) 8 ∧
       st.mem.readW (st.gpr .rsp + BitVec.ofNat 64 (8 * (i + 1))) 64 = stackArg s i := by
-  rw [hs.rd, hs.wr, hs.mem, same_rsp hs]; exact ⟨a_in hp hi, rfl⟩
+  rw [hs.rd, hs.wr, hs.mem, same_rsp hs]; exact ⟨hp.arg _ hi, rfl⟩
 
 /-- The text's length: `CF` if it is shorter than 256 bytes. -/
 theorem fLen_ok {st : State} (hs : Same s st) :
@@ -1904,12 +1918,9 @@ theorem fSlice_ok (long : Bool) (hc : Cnt s ≠ 0) {st : State} (hs : Same s st)
   obtain ⟨a₀, e₀⟩ := same_a hp hs (i := 0) (by decide)
   obtain ⟨a₃, e₃⟩ := same_a hp hs (i := 3) (by decide)
   have d₈ : InRegions (st.rd ++ st.wr) (Src s + BitVec.ofNat 64 8) 8 := by
-    rw [hs.rd, hs.wr, hp.rd]
-    exact ⟨dsR s, by simp, Offset.contains_base _ (by omega_arith) (by have := hp.w_ds; omega_arith)⟩
+    rw [hs.rd, hs.wr]; exact hp.sizeR hc
   have v₈ : st.mem.readW (Src s + BitVec.ofNat 64 8) 64 = BitVec.ofNat 64 (fl s) := by
-    have := sl_eq hp (m := st.mem) (by rw [hs.mem]; exact Frame.refl _ _) (i := 0) (by omega_arith)
-    rw [show Src s + BitVec.ofNat 64 (16 * 0) = Src s by simp] at this
-    rw [this, fl_eq]; simp [hc]
+    rw [hs.mem]; exact hp.size hc
   cases long <;>
   · apply WP.of_runBlock
     refine ⟨_, by
@@ -1982,9 +1993,9 @@ theorem frontTest_wp (long : Bool) :
 
 /-- What the path of a TLS record's text needs: a 12-byte nonce, one or two
 slices, and at most 16 bytes of text after the first. -/
-theorem front_facts {long : Bool} (h : frontGo long s = true) :
-    s.gpr .rcx = 12#64 ∧ (Cnt s = 1 ∨ Cnt s = 2) ∧ L s - fl s ≤ 16 := by
-  have hfl := fl_le hp
+theorem front_limits {long : Bool} (h : frontGo long s = true) :
+    s.gpr .rcx = 12#64 ∧ (Cnt s = 1 ∨ Cnt s = 2) ∧ (AL s).toNat ≤ 16 ∧ L s - 16 * (fl s / 16) ≤ 16 := by
+  have hfl := hp.le
   have hL : L s < 2 ^ 64 := (stackArg s 3).isLt
   have z : ∀ x : BitVec 64, ((x &&& x) == 0) = true → x = 0#64 := fun x hx => by simpa using hx
   unfold frontGo at h
@@ -2003,6 +2014,8 @@ theorem front_facts {long : Bool} (h : frontGo long s = true) :
     split at hA
     · next ha => simp only [Bool.not_eq_eq_eq_not, Bool.not_true, decide_eq_false_iff_not, Nat.not_lt] at ha
                  rw [hA] at ha; simp at ha
+    rename_i ha
+    have hAL : (AL s).toNat ≤ 16 := by simp at ha; omega_arith
     have hn : s.gpr .rcx = 12#64 := by bv_omega
     have hcnt : Cnt s = 1 ∨ Cnt s = 2 := by
       have : (stackArg s 1).toNat ≠ 0 := hc0
@@ -2010,7 +2023,7 @@ theorem front_facts {long : Bool} (h : frontGo long s = true) :
       simp at hc
       show (stackArg s 1).toNat = 1 ∨ (stackArg s 1).toNat = 2
       omega_arith
-    refine ⟨hn, hcnt, ?_⟩
+    refine ⟨hn, hcnt, hAL, ?_⟩
     rw [round16 (by omega_arith)] at hx
     have hx16 : (BitVec.ofNat 64 (16 * (fl s / 16)) + 16#64).toNat = (16 * (fl s / 16) + 16) % 2 ^ 64 := by
       rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 16 * (fl s / 16)) (by omega_arith)]; rfl
@@ -2029,6 +2042,12 @@ theorem front_facts {long : Bool} (h : frontGo long s = true) :
     unfold fA at h0
     simp only [hc, decide_false, Bool.not_false, ↓reduceIte] at h0
     rw [h0] at hc; simp at hc
+
+/-- At most one more block remains after the first fragment. -/
+theorem front_facts {long : Bool} (h : frontGo long s = true) :
+    s.gpr .rcx = 12#64 ∧ (Cnt s = 1 ∨ Cnt s = 2) ∧ L s - fl s ≤ 16 := by
+  obtain ⟨hn, hc, _, ht⟩ := front_limits hp h
+  exact ⟨hn, hc, by omega_arith⟩
 
 end
 
@@ -2102,9 +2121,9 @@ theorem fastEntry_ok {st : State} (hs : Same s st) :
     WP isa (.block fastEntry) st fun s₁ => FBase s s₁ ∧ s₁.gpr .r10 = Src s ∧
       s₁.zf = some (decide (Cnt s = 1)) := by
   have sp := same_rsp hs
-  obtain ⟨a₀, e₀⟩ := same_a hp hs (i := 0) (by decide)
-  obtain ⟨a₁, e₁⟩ := same_a hp hs (i := 1) (by decide)
-  obtain ⟨a₅, e₅⟩ := same_a hp hs (i := 5) (by decide)
+  obtain ⟨a₀, e₀⟩ := same_a hp.frontRead hs (i := 0) (by decide)
+  obtain ⟨a₁, e₁⟩ := same_a hp.frontRead hs (i := 1) (by decide)
+  obtain ⟨a₅, e₅⟩ := same_a hp.frontRead hs (i := 5) (by decide)
   have w : ∀ d, d + 8 ≤ 104 → InRegions st.wr (W s + BitVec.ofNat 64 d) (64 / 8) := fun d h => by
     rw [hs.wr]; exact w_in hp (by omega_arith)
   have gdi : st.gpr .rdi = K s := hs.gpr _ (by decide) (by decide) (by decide)
@@ -2361,7 +2380,7 @@ theorem fastArgs_ok (hn : s.gpr .rcx = 12#64) (hc : Cnt s ≠ 0) {st : State} (h
 /-- The path of a TLS record's text, from a state `Same` as the entry. -/
 theorem frontFast_wp (S : SplitFn M) {long : Bool} (hg : frontGo long s = true) {st : State}
     (hs : Same s st) : WP isa (frontFast S.fn) st (Done s) := by
-  obtain ⟨hn, hcnt, hsub⟩ := front_facts hp hg
+  obtain ⟨hn, hcnt, hsub⟩ := front_facts hp.frontRead hg
   have hc0 : Cnt s ≠ 0 := by omega_arith
   unfold frontFast
   refine WP.seq (WP.mono (fastEntry_ok hp hs) fun s₁ ⟨F₁, r10₁, zf₁⟩ => ?_)
