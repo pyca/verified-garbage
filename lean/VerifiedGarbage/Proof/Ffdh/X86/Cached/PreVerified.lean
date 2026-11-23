@@ -779,6 +779,11 @@ theorem MQ.run {X : State → Prop} {u : State} (h : MQ Ex base bytes len args s
   let ⟨_, P, I, _, _, K, _⟩ := h
   ⟨I, P.ok.keep K, (K.1 _ (by decide)).trans P.rp.esp⟩
 
+theorem MQ.room {X : State → Prop} {u : State} (h : MQ Ex base bytes len args sp dlen D T X u) :
+    RoomF sp base bytes :=
+  let ⟨_, P, _⟩ := h
+  P.rp.room
+
 /-- p's context and the rows, with the start's public values. -/
 def CQ (Ex : List Region → List Region → Prop) (base : Addr) (bytes len : Nat) (args : Nat → BitVec 32)
     (sp : BitVec 32) (D : List Byte) (u : State) : Prop :=
@@ -856,10 +861,11 @@ theorem middle_trace (dv : Spec.Ffdh.domainValid len D = true) (hl : len ≤ 102
   -- p's context.
   refine VG.RelCT.seq (relCT_both (F := CQ Ex base bytes len args sp D)
     ((VG.Proof.Ffdh.X86.ctxP_relCT (Ex := Ex) (base := base) (bytes := bytes) (len := len) (args := args)
-      (sp := sp)).mono (fun _ _ h => ⟨h.1.run, h.2.run⟩) fun _ _ _ => trivial)
+      (sp := sp)).mono (fun _ _ h => ⟨⟨h.1.run, h.1.room⟩, ⟨h.2.run, h.2.room⟩⟩) fun _ _ _ => trivial)
     fun u ⟨x₀, P, I, C, F, K, wr, v9, v10⟩ => ?_) ?_
   · obtain ⟨hodd, h1p, -⟩ := VG.Proof.Bignum.valid_facts (VG.Proof.Ffdh.domainValid_mod P.dv) P.rp.geo.lower
-    refine WP.mono (ctxP_ok I (P := (Spec.Ffdh.domainOf len D).p) (by rw [v9]; exact safeM_of h1p hodd))
+    refine WP.mono (ctxP_ok I (by rw [(K.1 _ (by decide)).trans P.rp.esp]; exact P.rp.room)
+        (P := (Spec.Ffdh.domainOf len D).p) (by rw [v9]; exact safeM_of h1p hodd))
       fun t ⟨Cx, s3, s4, _, k₉, K₉⟩ => ⟨Cx, C.keep K₉, P.ok.keep (K.trans K₉),
         ((K.trans K₉).1 _ (by decide)).trans P.rp.esp,
         by rw [k₉.word_eq (by simp only [rowsOff, numBase]; decide)]; exact wr, s3, s4,

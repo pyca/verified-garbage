@@ -214,7 +214,7 @@ theorem tail_ok (h : In Ex base bytes len args s) (X : XGeo args base bytes len 
   refine WP.seq (WP.mono (powTop_ok h X RF hx40 (b := 10) (by decide) (by decide) (P := P) (by rw [h9, hP]))
     fun u₁ ⟨C₁, Y₁, _, F₁, k₁, K₁⟩ => ?_)
   rw [h10, hx] at Y₁
-  have S₁ : Step Ex base bytes len args s u₁ := Step.ops h F₁ K₁
+  have S₁ : Step Ex base bytes len args s u₁ := Step.opsF h RF F₁ K₁
   -- Its range as the acceptance mask.
   refine WP.seq (WP.mono (rangeMask_ok S₁.inp (a := 6) (by decide)) fun u₂ ⟨I₂, e₂, O₂, K₂⟩ => ?_)
   rw [Y₁, k₁.slot_eq, h15, k₁.slot_eq, h14] at e₂

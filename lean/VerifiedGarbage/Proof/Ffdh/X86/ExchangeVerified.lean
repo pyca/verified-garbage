@@ -159,8 +159,9 @@ theorem front_ok (h : In Ex base bytes len args s) (G : DomGeo args base bytes l
   rw [argNum_comp, hP] at V9 V15
   obtain S₁ : Step Ex base bytes len args s u₁ := ⟨I₁, F₁, K₁⟩
   -- p's context.
-  refine WP.seq (WP.mono (ctxP_ok I₁ (P := safeM p) (by rw [V9])) fun u₂ ⟨C₂, one₂, R₂, F₂, k₂, K₂⟩ => ?_)
-  obtain S₂ : Step Ex base bytes len args u₁ u₂ := Step.ops I₁ F₂ K₂
+  obtain RF₁ := S₁.room RF
+  refine WP.seq (WP.mono (ctxP_ok I₁ RF₁ (P := safeM p) (by rw [V9])) fun u₂ ⟨C₂, one₂, R₂, F₂, k₂, K₂⟩ => ?_)
+  obtain S₂ : Step Ex base bytes len args u₁ u₂ := Step.opsF I₁ RF₁ F₂ K₂
   obtain S₁₂ := S₁.trans S₂
   -- y and x.
   obtain Y₂ := Y.keep ⟨rfl, rfl⟩ S₁₂.keeps
@@ -597,7 +598,8 @@ theorem front_trace :
     RelCT isa (Both (ExAt Ex base bytes len dlen xl args sp)) (Prog.chain exFront (.block [])) fun _ _ => True := by
   show RelCT isa _ (.seq Impl.Ffdh.X86.pSetup (.seq Impl.Ffdh.X86.ctxP
     (Prog.chain [load (.slot .wide 5) (one .wide) 8 9, loadTop (.slot .wide 8) (one .wide) 10 11] (.block [])))) _
-  refine VG.RelCT.seq (aRel (F := Run Ex base bytes len args sp) (fun _ A => A.run) pSetup_check fun x A => ?_) ?_
+  refine VG.RelCT.seq (aRel (F := fun u => Run Ex base bytes len args sp u ∧ RoomF sp base bytes) (fun _ A => A.run)
+    pSetup_check fun x A => ?_) ?_
   · have G := A.dom
     have dl := G.dl
     have fit := G.fit
@@ -605,7 +607,7 @@ theorem front_trace :
       (by have := VG.CallLay.inRegions_sub G.rd (off := 0) (l := len) (by omega_using [dl]) (by omega_using [fit])
           rwa [BitVec.add_zero] at this)
       (G.apart.sub_left (Region.sub_prefix (by omega_using [dl]))))
-      fun u ⟨I, F, _, _, _, _, K⟩ => run_step A.run ⟨I, F, K⟩
+      fun u ⟨I, F, _, _, _, _, K⟩ => ⟨run_step A.run ⟨I, F, K⟩, A.room⟩
   · refine VG.RelCT.seq ctxP_relCT ?_
     exact RelCT.taint (A := taint) τA (fun _ _ h => h.1.agree h.2) loads_check
 
