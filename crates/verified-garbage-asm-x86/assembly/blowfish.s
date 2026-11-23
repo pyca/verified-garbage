@@ -5,12 +5,12 @@
 // gives.
 
 vg_blowfish_expand_key_ssse3:
-	lea esp, [esp-404]
-	mov eax, DWORD PTR [esp+408]
+	lea esp, [esp-416]
+	mov eax, DWORD PTR [esp+420]
 	mov DWORD PTR [esp+4], eax
-	mov eax, DWORD PTR [esp+412]
+	mov eax, DWORD PTR [esp+424]
 	mov DWORD PTR [esp+8], eax
-	mov eax, DWORD PTR [esp+416]
+	mov eax, DWORD PTR [esp+428]
 	mov DWORD PTR [esp+12], eax
 	mov eax, esp
 	add eax, 20
@@ -2273,8 +2273,8 @@ vg_blowfish_expand_key_ssse3:
 	movdqu XMMWORD PTR [esp+356], xmm0
 	movdqu XMMWORD PTR [esp+372], xmm0
 	movdqu XMMWORD PTR [esp+388], xmm0
-	lea esp, [esp+404]
-	lea esp, [esp-412]
+	lea esp, [esp+416]
+	lea esp, [esp-424]
 	mov ecx, 0
 	mov DWORD PTR [esp+4], ecx
 	mov DWORD PTR [esp+8], ecx
@@ -2282,7 +2282,10 @@ vg_blowfish_expand_key_ssse3:
 	mov DWORD PTR [esp+16], ecx
 	mov DWORD PTR [esp+20], ecx
 	mov DWORD PTR [esp+24], ecx
-	lea esp, [esp+412]
+	mov DWORD PTR [esp+412], ecx
+	mov DWORD PTR [esp+416], ecx
+	mov DWORD PTR [esp+420], ecx
+	lea esp, [esp+424]
 	mov eax, 0
 	mov edx, 0
 	xor ecx, ecx

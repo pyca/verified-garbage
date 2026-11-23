@@ -5,14 +5,14 @@
 // gives.
 
 vg_blowfish_cfb64_encrypt_ssse3:
-	lea esp, [esp-448]
-	mov eax, DWORD PTR [esp+452]
-	mov DWORD PTR [esp+4], eax
+	lea esp, [esp-452]
 	mov eax, DWORD PTR [esp+456]
-	mov DWORD PTR [esp+8], eax
+	mov DWORD PTR [esp+4], eax
 	mov eax, DWORD PTR [esp+460]
-	mov DWORD PTR [esp+12], eax
+	mov DWORD PTR [esp+8], eax
 	mov eax, DWORD PTR [esp+464]
+	mov DWORD PTR [esp+12], eax
+	mov eax, DWORD PTR [esp+468]
 	mov DWORD PTR [esp+16], eax
 	mov eax, esp
 	add eax, 24
@@ -110,8 +110,8 @@ vg_blowfish_cfb64_encrypt_ssse3:
 	movdqu XMMWORD PTR [esp+424], xmm0
 	mov DWORD PTR [esp+440], ecx
 	mov DWORD PTR [esp+444], ecx
-	lea esp, [esp+448]
-	lea esp, [esp-456]
+	lea esp, [esp+452]
+	lea esp, [esp-460]
 	mov ecx, 0
 	mov DWORD PTR [esp+4], ecx
 	mov DWORD PTR [esp+8], ecx
@@ -120,7 +120,8 @@ vg_blowfish_cfb64_encrypt_ssse3:
 	mov DWORD PTR [esp+20], ecx
 	mov DWORD PTR [esp+24], ecx
 	mov DWORD PTR [esp+28], ecx
-	lea esp, [esp+456]
+	mov DWORD PTR [esp+456], ecx
+	lea esp, [esp+460]
 	mov eax, 0
 	mov edx, 0
 	xor ecx, ecx
@@ -558,14 +559,14 @@ vg_blowfish_cfb64_encrypt:
 	.p2align 6
 
 vg_blowfish_cfb64_decrypt_ssse3:
-	lea esp, [esp-448]
-	mov eax, DWORD PTR [esp+452]
-	mov DWORD PTR [esp+4], eax
+	lea esp, [esp-452]
 	mov eax, DWORD PTR [esp+456]
-	mov DWORD PTR [esp+8], eax
+	mov DWORD PTR [esp+4], eax
 	mov eax, DWORD PTR [esp+460]
-	mov DWORD PTR [esp+12], eax
+	mov DWORD PTR [esp+8], eax
 	mov eax, DWORD PTR [esp+464]
+	mov DWORD PTR [esp+12], eax
+	mov eax, DWORD PTR [esp+468]
 	mov DWORD PTR [esp+16], eax
 	mov eax, esp
 	add eax, 24
@@ -663,8 +664,8 @@ vg_blowfish_cfb64_decrypt_ssse3:
 	movdqu XMMWORD PTR [esp+424], xmm0
 	mov DWORD PTR [esp+440], ecx
 	mov DWORD PTR [esp+444], ecx
-	lea esp, [esp+448]
-	lea esp, [esp-456]
+	lea esp, [esp+452]
+	lea esp, [esp-460]
 	mov ecx, 0
 	mov DWORD PTR [esp+4], ecx
 	mov DWORD PTR [esp+8], ecx
@@ -673,7 +674,8 @@ vg_blowfish_cfb64_decrypt_ssse3:
 	mov DWORD PTR [esp+20], ecx
 	mov DWORD PTR [esp+24], ecx
 	mov DWORD PTR [esp+28], ecx
-	lea esp, [esp+456]
+	mov DWORD PTR [esp+456], ecx
+	lea esp, [esp+460]
 	mov eax, 0
 	mov edx, 0
 	xor ecx, ecx
@@ -1111,14 +1113,14 @@ vg_blowfish_cfb64_decrypt:
 	.p2align 6
 
 vg_blowfish_cfb64_encrypt_final_ssse3:
-	lea esp, [esp-448]
-	mov eax, DWORD PTR [esp+452]
-	mov DWORD PTR [esp+4], eax
+	lea esp, [esp-452]
 	mov eax, DWORD PTR [esp+456]
-	mov DWORD PTR [esp+8], eax
+	mov DWORD PTR [esp+4], eax
 	mov eax, DWORD PTR [esp+460]
-	mov DWORD PTR [esp+12], eax
+	mov DWORD PTR [esp+8], eax
 	mov eax, DWORD PTR [esp+464]
+	mov DWORD PTR [esp+12], eax
+	mov eax, DWORD PTR [esp+468]
 	mov DWORD PTR [esp+16], eax
 	mov eax, esp
 	add eax, 24
@@ -1238,8 +1240,8 @@ vg_blowfish_cfb64_encrypt_final_ssse3:
 	movdqu XMMWORD PTR [esp+424], xmm0
 	mov DWORD PTR [esp+440], ecx
 	mov DWORD PTR [esp+444], ecx
-	lea esp, [esp+448]
-	lea esp, [esp-456]
+	lea esp, [esp+452]
+	lea esp, [esp-460]
 	mov ecx, 0
 	mov DWORD PTR [esp+4], ecx
 	mov DWORD PTR [esp+8], ecx
@@ -1248,7 +1250,8 @@ vg_blowfish_cfb64_encrypt_final_ssse3:
 	mov DWORD PTR [esp+20], ecx
 	mov DWORD PTR [esp+24], ecx
 	mov DWORD PTR [esp+28], ecx
-	lea esp, [esp+456]
+	mov DWORD PTR [esp+456], ecx
+	lea esp, [esp+460]
 	mov eax, 0
 	mov edx, 0
 	xor ecx, ecx
@@ -1708,14 +1711,14 @@ vg_blowfish_cfb64_encrypt_final:
 	.p2align 6
 
 vg_blowfish_cfb64_decrypt_final_ssse3:
-	lea esp, [esp-448]
-	mov eax, DWORD PTR [esp+452]
-	mov DWORD PTR [esp+4], eax
+	lea esp, [esp-452]
 	mov eax, DWORD PTR [esp+456]
-	mov DWORD PTR [esp+8], eax
+	mov DWORD PTR [esp+4], eax
 	mov eax, DWORD PTR [esp+460]
-	mov DWORD PTR [esp+12], eax
+	mov DWORD PTR [esp+8], eax
 	mov eax, DWORD PTR [esp+464]
+	mov DWORD PTR [esp+12], eax
+	mov eax, DWORD PTR [esp+468]
 	mov DWORD PTR [esp+16], eax
 	mov eax, esp
 	add eax, 24
@@ -1835,8 +1838,8 @@ vg_blowfish_cfb64_decrypt_final_ssse3:
 	movdqu XMMWORD PTR [esp+424], xmm0
 	mov DWORD PTR [esp+440], ecx
 	mov DWORD PTR [esp+444], ecx
-	lea esp, [esp+448]
-	lea esp, [esp-456]
+	lea esp, [esp+452]
+	lea esp, [esp-460]
 	mov ecx, 0
 	mov DWORD PTR [esp+4], ecx
 	mov DWORD PTR [esp+8], ecx
@@ -1845,7 +1848,8 @@ vg_blowfish_cfb64_decrypt_final_ssse3:
 	mov DWORD PTR [esp+20], ecx
 	mov DWORD PTR [esp+24], ecx
 	mov DWORD PTR [esp+28], ecx
-	lea esp, [esp+456]
+	mov DWORD PTR [esp+456], ecx
+	lea esp, [esp+460]
 	mov eax, 0
 	mov edx, 0
 	xor ecx, ecx
