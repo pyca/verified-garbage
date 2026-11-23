@@ -2199,7 +2199,7 @@ private theorem sp_general (v : GcmImpl) (ctr : Fn) (f : Option Fn)
     decide +kernel
   | some b =>
     have bf := hf b rfl
-    simp only [general,pieces,Option.map_some,Option.getD_some,bulk,whole,Code.all,bf,ht,aa,tg,tail,Bool.true_and,Bool.and_true]
+    simp only [general,pieces,Option.map_some,Option.getD_some,bulk,callSeal,whole,Code.all,bf,ht,aa,tg,tail,Bool.true_and,Bool.and_true]
     decide +kernel
 
 private theorem baseStub_ok : stubCallee baseStub 0 (fun _=>24) 2512 = true := by lit_decide
@@ -2227,7 +2227,7 @@ theorem preparedSafe (v : GcmImpl) (ctr f : Fn) {k : Nat} (hk : 1≤k) (hc : Cal
   apply of_side _ (calleeSide_of_fill (fillReady hc ht hf) hk readyStub_ok)
   have g := sp_general v ctr (some f) sp (fun b hb => (Option.mem_some_iff.mp hb) ▸ fp)
   have q : (quick f).all (fun i => !isa.writesSp i)=true := by
-    simp only [quick,firstBlocks,Code.all,fp,Bool.and_true]
+    simp only [quick,firstBlocks,callSeal,Code.all,fp,Bool.and_true]
     decide +kernel
   simp only [readyCore,dispatch,enter,Code.all,g,q,Bool.and_true]
   decide +kernel
@@ -2271,12 +2271,11 @@ open VG.Impl.AesGcm.X86_64 (Callees Fn)
 open VG.Impl.AesGcm.X86_64.DirectGather (general directBase directPrepared)
 open VG.Impl.Scrub.X86_64 (VecLevel)
 open VG.Proof.Gcm.X86_64.Stitch (CtxMode)
-open VG.Proof.AesGcm.X86_64.StreamTo (BlkToFn)
 
 abbrev ctrFn (v : GcmVariant) : Fn := ⟨v.ctrTo.callee.name,v.ctrTo.callee.code⟩
 abbrev PlainOk (v : GcmVariant) :=
   InitializedProof CtxMode.base (general v.impl.callees (ctrFn v) none)
-abbrev ReadyOk (v : GcmVariant) {n : Nat} (b : BlkToFn (CtxMode.flaggedT n)) :=
+abbrev ReadyOk (v : GcmVariant) {n : Nat} (b : BlocksTo.SealFn (CtxMode.flaggedT n)) :=
   InitializedProof (CtxMode.flaggedT n) (general v.impl.callees (ctrFn v) (some b.fn))
 
 private theorem generalProof (v : GcmVariant) {M : CtxMode} {f : Option Fn}
@@ -2288,7 +2287,7 @@ private theorem generalProof (v : GcmVariant) {M : CtxMode} {f : Option Fn}
 theorem plainProof (v : GcmVariant) : PlainOk v :=
   generalProof v plainPrefix_wp plainPrefix_rel
 
-theorem readyProof (v : GcmVariant) {n : Nat} (b : BlkToFn (CtxMode.flaggedT n)) : ReadyOk v b :=
+theorem readyProof (v : GcmVariant) {n : Nat} (b : BlocksTo.SealFn (CtxMode.flaggedT n)) : ReadyOk v b :=
   generalProof v (bulkPrefix_wp b) (bulkPrefix_rel b)
 
 theorem ctr_side (v : GcmVariant) :
@@ -2311,14 +2310,14 @@ theorem base_spSafe (v : GcmVariant) :
 theorem lvG_le_T (v : GcmVariant) : v.lvG.level ≤ v.lvT.level := by
   exact join_mono_left _ (join_mono_left _ v.lv_le_lvA)
 
-private theorem ready_safe (v : GcmVariant) {n : Nat} (b : BlkToFn (CtxMode.flaggedT n))
+private theorem ready_safe (v : GcmVariant) {n : Nat} (b : BlocksTo.SealFn (CtxMode.flaggedT n))
     (bt : calleeSide b.fn.code v.lvG.level 24=true) : CoreSafe (readyCore v.impl.callees (ctrFn v) b.fn) :=
   preparedSafe v.impl (ctrFn v) b.fn v.one_le_lvT (callees_sideT v)
     (calleeSide_mono v.lvTW_le_lvT (Nat.le_refl _) (ctr_side v))
     (calleeSide_mono (lvG_le_T v) (Nat.le_refl _) bt) v.ctrTo.spSafe b.spAll
 
 /-- A prepared context can use the fixed-shape and general direct entries; both preserve its public contract. -/
-theorem prepared_verified (v : GcmVariant) (n : Nat) (hn : n=16 ∨ n=48) (b : BlkToFn (CtxMode.flaggedT n))
+theorem prepared_verified (v : GcmVariant) (n : Nat) (hn : n=16 ∨ n=48) (b : BlocksTo.SealFn (CtxMode.flaggedT n))
     (bt : calleeSide b.fn.code v.lvG.level 24=true) :
     VerifiedScrubbed target (directPrepared v.lvT n v.impl.callees (ctrFn v) b.fn) publicContract 0 := by
   have ht : 16≤n ∧ n≤48 := by rcases hn with rfl|rfl <;> decide
@@ -2329,7 +2328,7 @@ theorem prepared_verified (v : GcmVariant) (n : Nat) (hn : n=16 ∨ n=48) (b : B
   exact prepared_scrub v.lvT v.one_le_lvT hn (callees_sideT v) cs bs (prepared_public hn
     (prepared_rounds ht.1 ht.2 Short.shortFacts b (readyProof v b) rs) (plain_rounds (plainProof v) ws)) rs ws
 
-theorem prepared_spSafe (v : GcmVariant) (n : Nat) (b : BlkToFn (CtxMode.flaggedT n))
+theorem prepared_spSafe (v : GcmVariant) (n : Nat) (b : BlocksTo.SealFn (CtxMode.flaggedT n))
     (bt : calleeSide b.fn.code v.lvG.level 24=true) :
     (directPrepared v.lvT n v.impl.callees (ctrFn v) b.fn).all (fun i => !isa.writesSp i)=true :=
   scrubKs_spSafe (onFlag_spSafe (withStackArgScratch_spSafe (ready_safe v b bt).sp)
