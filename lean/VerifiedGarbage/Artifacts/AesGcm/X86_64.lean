@@ -1,5 +1,7 @@
 module
 
+import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.Alias
+
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Instances
 public import VerifiedGarbage.Proof.Aes.X86_64.Variant
 public import VerifiedGarbage.Proof.AesGcm.X86_64.GhashImpls
@@ -131,9 +133,12 @@ private def directGatherArtifact (v : GcmVariant) (n : Nat) (hn : n = 16 ∨ n =
 def artifactsR (v : GcmVariant) : List Artifact := [
   Spec.Gcm.sealPreparedApi.artifact X86_64.target {
     suffix := v.impl.suffix
-    code := Impl.AesGcm.X86_64.Fn.sealP v.lv 48 v.impl.short v.impl.fin (v.impl.withBlk (blkR v)) v.impl.callees
-    verified := Proof.AesGcm.X86_64.sealR_scrubbed v
-    spSafe := Proof.AesGcm.X86_64.sealR_spSafeFn v },
+    code := Impl.AesGcm.X86_64.placeSealArgs ("vg_aes_gcm_seal_blocks_prepared" ++ v.impl.suffix)
+      (Impl.AesGcm.X86_64.Fn.sealP v.lv 48 v.impl.short v.impl.fin (v.impl.withBlk (sealBlkR v)) v.impl.callees)
+    verified := Proof.AesGcm.X86_64.OneBlocks.place_verified _ (Proof.AesGcm.X86_64.sealR_scrubbed v)
+    spSafe := by
+      rw [Proof.AesGcm.X86_64.OneBlocks.place_all]
+      exact Proof.AesGcm.X86_64.sealR_spSafeFn v },
   Spec.Gcm.openPreparedApi.artifact X86_64.target {
     suffix := v.impl.suffix
     code := Impl.AesGcm.X86_64.Fn.openP v.lvA 48 v.impl.short (v.impl.withBlk (blkR v)) v.impl.callees
@@ -196,9 +201,12 @@ prepared powers: by the count, those or the ones on the key context. -/
 def artifactsR16W (v : GcmVariant) (r : R16 v) : List Artifact := [
   Spec.Gcm.sealPreparedApi.artifact X86_64.target {
     suffix := v.impl.suffix
-    code := Impl.AesGcm.X86_64.Fn.sealP v.lv 16 v.impl.short v.impl.fin (v.impl.withBlk (blkR16 v)) v.impl.callees
-    verified := Proof.AesGcm.X86_64.sealR16_scrubbed v r
-    spSafe := Proof.AesGcm.X86_64.sealR16_spSafeFn v r },
+    code := Impl.AesGcm.X86_64.placeSealArgs ("vg_aes_gcm_seal_blocks_prepared16" ++ v.impl.suffix)
+      (Impl.AesGcm.X86_64.Fn.sealP v.lv 16 v.impl.short v.impl.fin (v.impl.withBlk (sealBlkR16 v)) v.impl.callees)
+    verified := Proof.AesGcm.X86_64.OneBlocks.place_verified _ (Proof.AesGcm.X86_64.sealR16_scrubbed v r)
+    spSafe := by
+      rw [Proof.AesGcm.X86_64.OneBlocks.place_all]
+      exact Proof.AesGcm.X86_64.sealR16_spSafeFn v r },
   Spec.Gcm.openPreparedApi.artifact X86_64.target {
     suffix := v.impl.suffix
     code := Impl.AesGcm.X86_64.Fn.openP v.lvA 16 v.impl.short (v.impl.withBlk (blkR16 v)) v.impl.callees

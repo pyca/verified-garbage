@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.Side
+
 public import VerifiedGarbage.Proof.AesGcm.X86_64.DirectGather.Verified
 import VerifiedGarbage.Proof.AesGcm.X86_64.DirectGather.General
 import VerifiedGarbage.Proof.AesGcm.X86_64.DirectGather.Bulk
@@ -88,10 +90,10 @@ the count, its code on them or its code on the key context
 (`sealCodeF16`). -/
 def sealF16Plain (v : GcmVariant) (r : R16 v) : Unscrubbed Spec.Gcm.sealPreparedApi X86_64.target where
   suffix := v.impl.suffix
-  code := sealCodeF16 v
+  code := sealCodeF16 v (sealBlkR16 v)
   stack := 2624
-  verified := VG.Proof.AesGcm.Flag.seal_keyed (Flag.seal_ofB (Or.inl rfl) (sealCodeF16_verified v r))
-  spSafe := sealCodeF16_spAll v
+  verified := VG.Proof.AesGcm.Flag.seal_keyed (Flag.seal_ofB (Or.inl rfl) (sealCodeF16_verified v r (sealBlkR16 v)))
+  spSafe := sealCodeF16_spAll v (sealBlkR16 v)
 
 /-! ## `vg_aes_gcm_seal_prepared_aesni_pclmul` -/
 
@@ -261,9 +263,9 @@ them. -/
 powers: by the flag, its code on those or on the key context. -/
 def sealRPlain (v : GcmVariant) : Unscrubbed Spec.Gcm.sealPreparedApi X86_64.target where
   suffix := v.impl.suffix
-  code := sealCodeF v
-  verified := VG.Proof.AesGcm.Flag.seal_keyed (Flag.seal_ofB (Or.inr rfl) (sealCodeF_verified v))
-  spSafe := sealCodeF_spAll v
+  code := sealCodeF v (sealBlkR v)
+  verified := VG.Proof.AesGcm.Flag.seal_keyed (Flag.seal_ofB (Or.inr rfl) (sealCodeF_verified v (sealBlkR v)))
+  spSafe := sealCodeF_spAll v (sealBlkR v)
 
 /-- `vg_aes_gcm_open_prepared` of a variant whose loops read the 48 prepared
 powers: by the flag, its code on those or on the key context. -/
@@ -466,6 +468,32 @@ theorem blkR16_sides (v : GcmVariant) :
     · exact blkM_prep_sides _ .aesniAvx _ _ _ ⟨rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩ (by lit_decide)
         (by lit_decide)
 
+
+theorem sealBlkR_sides (v : GcmVariant) :
+    calleeSide (sealBlkR v).enc.code v.lv.level 8 = true ∧ calleeSide (sealBlkR v).dec.code v.lv.level 8 = true := by
+  have base := blkR_sides v
+  cases hf : sealLeafR v with
+  | none => simpa only [sealBlkR,hf] using base
+  | some f =>
+    by_cases lv : v.lvG.level ≤ v.lv.level
+    · simp only [sealBlkR,hf,ite_eq_left lv]
+      have mem : f ∈ sealLeafR v := by simp [hf]
+      exact ⟨withSameDst_side _ (calleeSide_mono lv (Nat.le_refl _) (selectSealLeaf_side v _ _ _ _ f mem)),base.2⟩
+    · simpa only [sealBlkR,hf,ite_eq_right lv] using base
+
+
+theorem sealBlkR16_sides (v : GcmVariant) :
+    calleeSide (sealBlkR16 v).enc.code v.lv.level 8 = true ∧ calleeSide (sealBlkR16 v).dec.code v.lv.level 8 = true := by
+  have base := blkR16_sides v
+  cases hf : sealLeafR16 v with
+  | none => simpa only [sealBlkR16,hf] using base
+  | some f =>
+    by_cases lv : v.lvG.level ≤ v.lv.level
+    · simp only [sealBlkR16,hf,ite_eq_left lv]
+      have mem : f ∈ sealLeafR16 v := by simp [hf]
+      exact ⟨withSameDst_side _ (calleeSide_mono lv (Nat.le_refl _) (selectSealLeaf_side v _ _ _ _ f mem)),base.2⟩
+    · simpa only [sealBlkR16,hf,ite_eq_right lv] using base
+
 /-! ## The functions -/
 
 open VG.Impl.StackScratch.X86_64 (withStackArgScratch)
@@ -581,10 +609,10 @@ theorem streamDecryptW_of (v : GcmVariant) (ks : Nat) (hks : ks ≤ v.lv.level)
 
 theorem sealR_of (v : GcmVariant) (s : Bool) (f : Bool) (ks : Nat) (hs : v.impl.short = s) (hf : v.impl.fin = f) (hks : ks ≤ v.lv.level)
     (ha : stubSide (Impl.Gcm.X86_64.Flag.onFlag 48 (withStackArgScratch 2600 3 (Impl.AesGcm.X86_64.Fn.sealCodeP s f stub5)) (withStackArgScratch 2600 3 (Impl.AesGcm.X86_64.Fn.sealCode s f stub5))) ks blkN 2624 [] = true) :
-    VerifiedScrubbed target (Impl.AesGcm.X86_64.Fn.sealP v.lv 48 v.impl.short v.impl.fin (v.impl.withBlk (blkR v)) v.impl.callees)
+    VerifiedScrubbed target (Impl.AesGcm.X86_64.Fn.sealP v.lv 48 v.impl.short v.impl.fin (v.impl.withBlk (sealBlkR v)) v.impl.callees)
       (Spec.Gcm.sealPreparedApi.contract X86_64.abi 2624) 0 := by
   rw [← hs, ← hf] at ha
-  have hp := sealCodeP_fill _ (withBlk_side v (blkR v) (blkR_sides v)) v.impl.short v.impl.fin
+  have hp := sealCodeP_fill _ (withBlk_side v (sealBlkR v) (sealBlkR_sides v)) v.impl.short v.impl.fin
   have hb := sealCode_fill _ (callees_side v) v.impl.short v.impl.fin
   have hf := Fill.seq (Fill.block (Impl.Gcm.X86_64.Flag.testFlag 48))
     (Fill.ite .ae (Fill.seq (Fill.seq (Fill.block []) (Fill.block [])) hp) hb)
@@ -641,10 +669,10 @@ theorem streamDecryptR_of (v : GcmVariant) (ks : Nat) (hks : ks ≤ v.lv.level)
 
 theorem sealR16_of (v : GcmVariant) (r : R16 v) (s : Bool) (f : Bool) (ks : Nat) (hs : v.impl.short = s) (hf : v.impl.fin = f) (hks : ks ≤ v.lv.level)
     (ha : stubSide (Impl.Gcm.X86_64.Flag.onFlag 16 (withStackArgScratch 2600 3 (Impl.AesGcm.X86_64.Fn.sealCodeP s f stub5)) (withStackArgScratch 2600 3 (Impl.AesGcm.X86_64.Fn.sealCode s f stub5))) ks blkN 2624 [] = true) :
-    VerifiedScrubbed target (Impl.AesGcm.X86_64.Fn.sealP v.lv 16 v.impl.short v.impl.fin (v.impl.withBlk (blkR16 v)) v.impl.callees)
+    VerifiedScrubbed target (Impl.AesGcm.X86_64.Fn.sealP v.lv 16 v.impl.short v.impl.fin (v.impl.withBlk (sealBlkR16 v)) v.impl.callees)
       (Spec.Gcm.sealPreparedApi.contract X86_64.abi 2624) 0 := by
   rw [← hs, ← hf] at ha
-  have hp := sealCodeP_fill _ (withBlk_side v (blkR16 v) (blkR16_sides v)) v.impl.short v.impl.fin
+  have hp := sealCodeP_fill _ (withBlk_side v (sealBlkR16 v) (sealBlkR16_sides v)) v.impl.short v.impl.fin
   have hb := sealCode_fill _ (callees_side v) v.impl.short v.impl.fin
   have hf := Fill.seq (Fill.block (Impl.Gcm.X86_64.Flag.testFlag 16))
     (Fill.ite .ae (Fill.seq (Fill.seq (Fill.block []) (Fill.block [])) hp) hb)
@@ -757,7 +785,7 @@ theorem streamDecryptW_scrubbed (v : GcmVariant) :
 constant time and returns without secret residue: `sealR_of`, its code over
 stubs evaluated for each kind of interleaved loops. -/
 theorem sealR_scrubbed (v : GcmVariant) :
-    VerifiedScrubbed target (Impl.AesGcm.X86_64.Fn.sealP v.lv 48 v.impl.short v.impl.fin (v.impl.withBlk (blkR v)) v.impl.callees)
+    VerifiedScrubbed target (Impl.AesGcm.X86_64.Fn.sealP v.lv 48 v.impl.short v.impl.fin (v.impl.withBlk (sealBlkR v)) v.impl.callees)
       (Spec.Gcm.sealPreparedApi.contract X86_64.abi 2624) 0 := by
   rcases v with ⟨ctr, key, gh, _ | ⟨name, sfx, fs, eP, dP, pP, pR, tP⟩⟩
   · exact sealR_of _ false false 0 rfl rfl (Nat.zero_le _) (by lit_decide)
@@ -809,7 +837,7 @@ theorem streamDecryptR_scrubbed (v : GcmVariant) :
 constant time and returns without secret residue: `sealR16_of`, its code over
 stubs evaluated for each kind of interleaved loops. -/
 theorem sealR16_scrubbed (v : GcmVariant) (r : R16 v) :
-    VerifiedScrubbed target (Impl.AesGcm.X86_64.Fn.sealP v.lv 16 v.impl.short v.impl.fin (v.impl.withBlk (blkR16 v)) v.impl.callees)
+    VerifiedScrubbed target (Impl.AesGcm.X86_64.Fn.sealP v.lv 16 v.impl.short v.impl.fin (v.impl.withBlk (sealBlkR16 v)) v.impl.callees)
       (Spec.Gcm.sealPreparedApi.contract X86_64.abi 2624) 0 := by
   rcases v with ⟨ctr, key, gh, _ | ⟨name, sfx, fs, eP, dP, pP, pR, tP⟩⟩
   · exact sealR16_of _ r false false 0 rfl rfl (Nat.zero_le _) (by lit_decide)
@@ -2047,7 +2075,7 @@ theorem sealGatherW_spSafeFn (v : GcmVariant) :
 /-- `sealPreparedApi`'s function over `v`: its code writes the stack pointer only in its frames and
 calls (the registration's `spSafe`). -/
 theorem sealR_spSafeFn (v : GcmVariant) :
-    (Impl.AesGcm.X86_64.Fn.sealP v.lv 48 v.impl.short v.impl.fin (v.impl.withBlk (blkR v)) v.impl.callees).all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+    (Impl.AesGcm.X86_64.Fn.sealP v.lv 48 v.impl.short v.impl.fin (v.impl.withBlk (sealBlkR v)) v.impl.callees).all (fun i => !VG.X86_64.isa.writesSp i) = true :=
   scrubKs_spSafe ((sealRPlain v).spSafe)
 
 /-- `openPreparedApi`'s function over `v`: its code writes the stack pointer only in its frames and
@@ -2088,7 +2116,7 @@ theorem sealGatherR_spSafeFn (v : GcmVariant) :
 /-- `sealPreparedApi`'s function over `v`, on 16 prepared powers: its code writes the stack pointer
 only in its frames and calls (the registration's `spSafe`). -/
 theorem sealR16_spSafeFn (v : GcmVariant) (r : R16 v) :
-    (Impl.AesGcm.X86_64.Fn.sealP v.lv 16 v.impl.short v.impl.fin (v.impl.withBlk (blkR16 v)) v.impl.callees).all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+    (Impl.AesGcm.X86_64.Fn.sealP v.lv 16 v.impl.short v.impl.fin (v.impl.withBlk (sealBlkR16 v)) v.impl.callees).all (fun i => !VG.X86_64.isa.writesSp i) = true :=
   scrubKs_spSafe ((sealF16Plain v r).spSafe)
 
 /-- `openPreparedApi`'s function over `v`, on 16 prepared powers: its code writes the stack pointer
