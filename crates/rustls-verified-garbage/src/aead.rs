@@ -62,7 +62,6 @@ impl Key {
         // For bulk records the gather routine encrypts straight from
         // the caller into spare record capacity, including TLS 1.3's type byte.
         if let Self::AesGcm(key) = self
-            && false
             && let Some(piece) = plain.single_chunk()
         {
             let len = piece.len() + extra.len();
