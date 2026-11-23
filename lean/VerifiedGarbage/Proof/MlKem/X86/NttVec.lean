@@ -279,4 +279,241 @@ theorem body2_ok {core : List Instr} {rd : XReg} (hrd : rd = .xmm0 ∨ rd = .xmm
         (gr _ (by decide) (by decide) (by decide) (by decide))
     · intro e; exact absurd e (by decide)
 
+
+/-! ## The function's memory -/
+
+/-- Word `i` at `p`. -/
+abbrev wAt (m : Mem) (p : Addr) (i : Nat) : BitVec 16 := m.readW (p + BitVec.ofNat 64 (2 * i)) 16
+
+theorem word_rd16 (m : Mem) (p : Addr) (u : Nat) {j : Nat} (hj : j < 8) :
+    word (m.readW (p + BitVec.ofNat 64 (16 * u)) 128) j = wAt m p (8 * u + j) := by
+  rw [word_readW _ _ hj, BitVec.add_assoc, ← BitVec.ofNat_add]
+  exact congrArg (fun k => m.readW (p + BitVec.ofNat 64 k) 16) (by omega_using [])
+
+/-- The words at `p` after a 16-byte store at `p + 16u`. -/
+theorem wAt_write16 (m : Mem) (p : Addr) (v : BitVec 128) {u i : Nat} (hu : u < 64) (hi : i < 512) :
+    wAt (m.writeW (p + BitVec.ofNat 64 (16 * u)) v) p i =
+      if 8 * u ≤ i ∧ i < 8 * u + 8 then word v (i - 8 * u) else wAt m p i := by
+  by_cases h : 8 * u ≤ i ∧ i < 8 * u + 8
+  · rw [ite_eq_left h]
+    have := readW_writeW128_16 m (p + BitVec.ofNat 64 (16 * u)) v (j := i - 8 * u) (by omega_using [h])
+    rw [BitVec.add_assoc, ← BitVec.ofNat_add, show 16 * u + 2 * (i - 8 * u) = 2 * i by omega_using [h]] at this
+    exact this
+  · rw [ite_eq_right h]
+    exact Mem.readW_writeW_sep (Offset.sep p (by omega_using [h]) (by omega_using [hi]) (by omega_using [hu]))
+      (by decide)
+
+section
+variable (s₀ : State)
+/-- The state the body starts in: after the MCDT frame's push and the allocation. -/
+abbrev N0 : State := allocFrame 4 (M0 s₀)
+end
+
+theorem sp12 {s₀ : State} (hp : Pre s₀) : 12 ≤ (E0 s₀).toNat := by have := hp.sp; omega_using [this]
+
+theorem N0_esp {s₀ : State} (hp : Pre s₀) : (N0 s₀).gpr .esp = E0 s₀ - 16 := by
+  rw [allocFrame_esp, M0_esp]
+  have := hp.sp
+  bv_omega
+
+theorem N0_wr (s₀ : State) :
+    (N0 s₀).wr = ⟨((M0 s₀).gpr .esp - BitVec.ofNat 32 4).setWidth 64, 4⟩ :: ⟨(E0 s₀ - 12).setWidth 64, 9⟩ :: s₀.wr :=
+  rfl
+
+/-- A region apart from the contract's stack is apart from the MCDT frame. -/
+theorem mcdt_disj {s₀ : State} (hp : Pre s₀) {R : Region} (h : (stkR s₀).Disjoint R) :
+    (mcdtR s₀).Disjoint R := by
+  intro a h₁ h₂
+  refine h a ?_ h₂
+  have := hp.sp
+  have := (E0 s₀).isLt
+  simp only [Region.Contains] at h₁ ⊢
+  bv_omega
+
+/-- The arguments, at `[esp + 20 + 4i]` in the body. -/
+theorem arg_N0 {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i < 2) :
+    ((N0 s₀).gpr .esp + BitVec.ofNat 32 (20 + 4 * i)).setWidth 64 = argAddr s₀ i ∧
+      (N0 s₀).mem.readW (argAddr s₀ i) 32 = arg s₀ i := by
+  refine ⟨?_, ?_⟩
+  · rw [N0_esp hp]; simp only [argAddr, E0]; congr 1; have := hp.sp; bv_omega
+  · exact (M0_frame s₀ (sp12 hp)).readW (hp.arg_in hi) (fun r hr => by
+      rw [List.mem_singleton.mp hr]; exact (mcdt_disj hp hp.stk_a).symm) (by decide)
+
+theorem in_s {s₀ : State} (hp : Pre s₀) {s : State} (hw : s.wr = (N0 s₀).wr) {o n : Nat} (h : o + n ≤ 1024) :
+    InRegions s.wr (sA s₀ + BitVec.ofNat 64 o) n := by
+  rw [hw, N0_wr, hp.wr]
+  exact ⟨polyRegion (sA s₀), by simp, Offset.contains_base _ h (by omega_using [h])⟩
+
+theorem in_f {s₀ : State} (hp : Pre s₀) {s : State} (hw : s.wr = (N0 s₀).wr) {o n : Nat} (h : o + n ≤ 1024) :
+    InRegions s.wr (fA s₀ + BitVec.ofNat 64 o) n := by
+  rw [hw, N0_wr, hp.wr]
+  exact ⟨polyRegion (fA s₀), by simp, Offset.contains_base _ h (by omega_using [h])⟩
+
+theorem in_arg {s₀ : State} (hp : Pre s₀) {s : State} (hw : s.wr = (N0 s₀).wr) {i : Nat} (hi : i < 2) :
+    InRegions s.wr (argAddr s₀ i) 4 := by
+  rw [hw, N0_wr, hp.wr]
+  exact ⟨aR s₀, by simp, hp.arg_in hi⟩
+
+/-- What every piece keeps: the stack pointer, the permissions, the MCDT
+depth, the callee-saved registers, the table `T` in the first words of
+`scratch`, `f` and `scratch + 1024` in the argument slots, and the
+constants `VP`. -/
+structure Base (s₀ : State) (T : List Nat) (VP : (XReg → BitVec 128) → Prop) (s : State) : Prop where
+  esp : s.gpr .esp = (N0 s₀).gpr .esp
+  rd : s.rd = (N0 s₀).rd
+  wr : s.wr = (N0 s₀).wr
+  mcdt : s.mcdt = s₀.mcdt + 1
+  saved : ∀ r ∈ [Reg.ebx, .esi, .edi, .ebp], s.gpr r = s₀.gpr r
+  frame : Frame [polyRegion (fA s₀), polyRegion (sA s₀), aR s₀] (M0 s₀).mem s.mem
+  tbl : ∀ k < 128, wAt s.mem (sA s₀) k = BitVec.ofNat 16 (T.getD k 0)
+  arg0 : s.mem.readW (argAddr s₀ 0) 32 = fP s₀
+  slot : s.mem.readW (argAddr s₀ 1) 32 = sP s₀ + 1024
+  vp : VP s.xmm
+
+/-- Writes to `scratch` that keep the table, and to XMM registers, keep the rest. -/
+theorem Base.stepS {s₀ : State} (hp : Pre s₀) {T : List Nat} {VP VP' : (XReg → BitVec 128) → Prop}
+    {s : State} (h : Base s₀ T VP s) {m' : Mem} (hf : Frame [polyRegion (sA s₀)] s.mem m')
+    (ht : ∀ k < 128, wAt m' (sA s₀) k = wAt s.mem (sA s₀) k)
+    {g : XReg → BitVec 128} (hg : VP' g) : Base s₀ T VP' { ({ s with mem := m' } : State) with xmm := g } where
+  esp := h.esp
+  rd := h.rd
+  wr := h.wr
+  mcdt := h.mcdt
+  saved := h.saved
+  frame := h.frame.trans (hf.mono fun r hr => by simp at hr ⊢; exact .inr (.inl hr))
+  tbl k hk := (ht k hk).trans (h.tbl k hk)
+  arg0 := by
+    show m'.readW _ 32 = _
+    rw [hf.readW (hp.arg_in (by decide)) (by simpa using hp.s_a.symm) (by decide)]; exact h.arg0
+  slot := by
+    show m'.readW _ 32 = _
+    rw [hf.readW (hp.arg_in (by decide)) (by simpa using hp.s_a.symm) (by decide)]; exact h.slot
+  vp := hg
+
+/-- Writes to `f` and to XMM registers keep the rest. -/
+theorem Base.stepF {s₀ : State} (hp : Pre s₀) {T : List Nat} {VP VP' : (XReg → BitVec 128) → Prop}
+    {s : State} (h : Base s₀ T VP s) {m' : Mem} (hf : Frame [polyRegion (fA s₀)] s.mem m')
+    {g : XReg → BitVec 128} (hg : VP' g) : Base s₀ T VP' { ({ s with mem := m' } : State) with xmm := g } where
+  esp := h.esp
+  rd := h.rd
+  wr := h.wr
+  mcdt := h.mcdt
+  saved := h.saved
+  frame := h.frame.trans (hf.mono fun r hr => by simp at hr ⊢; exact .inl hr)
+  tbl k hk := by
+    show m'.readW _ 16 = _
+    rw [hf.readW (r := polyRegion (sA s₀)) (Offset.contains_base _ (by omega_using [hk]) (by omega_using [hk]))
+      (by simpa using hp.f_s.symm) (by decide)]
+    exact h.tbl k hk
+  arg0 := by
+    show m'.readW _ 32 = _
+    rw [hf.readW (hp.arg_in (by decide)) (by simpa using hp.f_a.symm) (by decide)]; exact h.arg0
+  slot := by
+    show m'.readW _ 32 = _
+    rw [hf.readW (hp.arg_in (by decide)) (by simpa using hp.f_a.symm) (by decide)]; exact h.slot
+  vp := hg
+
+/-- `eax`, `ecx`, `edx` and the flags are free, and so are the XMM registers that hold no constant. -/
+theorem Base.of_gpr {s₀ : State} {T : List Nat} {VP VP' : (XReg → BitVec 128) → Prop} {s s' : State}
+    (h : Base s₀ T VP s) (hg : ∀ r, r ≠ .eax → r ≠ .ecx → r ≠ .edx → s'.gpr r = s.gpr r) (hrd : s'.rd = s.rd)
+    (hwr : s'.wr = s.wr) (hmc : s'.mcdt = s.mcdt) (hmem : s'.mem = s.mem) (hx : VP' s'.xmm) :
+    Base s₀ T VP' s' where
+  esp := (hg _ (by decide) (by decide) (by decide)).trans h.esp
+  rd := hrd.trans h.rd
+  wr := hwr.trans h.wr
+  mcdt := hmc.trans h.mcdt
+  saved r hr := by
+    have := h.saved r hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl <;> exact (hg _ (by decide) (by decide) (by decide)).trans this
+  frame := hmem ▸ h.frame
+  tbl := hmem ▸ h.tbl
+  arg0 := hmem ▸ h.arg0
+  slot := hmem ▸ h.slot
+  vp := hx
+
+/-- The words in memory, from word 256 of `scratch`: those of `D` are the
+coefficients of `G`, and the others those of `f`. -/
+def Co (s₀ : State) (m : Mem) (f G : Poly) (D : Nat → Prop) : Prop :=
+  ∀ i < 256, (D i → (wAt m (sA s₀) (256 + i)).toNat = (G[i]!).val) ∧
+    (¬ D i → (wAt m (sA s₀) (256 + i)).toNat = (f[i]!).val)
+
+theorem Co.congr {s₀ : State} {m : Mem} {f G : Poly} {D D' : Nat → Prop}
+    (h : Co s₀ m f G D) (e : ∀ i < 256, (D' i ↔ D i)) : Co s₀ m f G D' :=
+  fun i hi => ⟨fun hd => (h i hi).1 ((e i hi).mp hd), fun hn => (h i hi).2 fun hd => hn ((e i hi).mpr hd)⟩
+
+/-- The coefficient at position `p` of the vectors of coefficients `8u` and `8u'`. -/
+def idx (u u' p : Nat) : Nat := if p < 8 then 8 * u + p else 8 * u' + (p - 8)
+
+/-- The coefficients of those two vectors. -/
+def In16 (u u' i : Nat) : Prop := (8 * u ≤ i ∧ i < 8 * u + 8) ∨ (8 * u' ≤ i ∧ i < 8 * u' + 8)
+
+/-- Eight butterflies on the vectors of coefficients `8u` and `8u'`, none of
+which is done: they are, afterwards. -/
+theorem body_step {body : List Instr} {d : Nat} {keep : Bool}
+    {FX FY : BitVec 128 → BitVec 128 → BitVec 128 → BitVec 128} (hb : BodyOk body d keep FX FY)
+    {s₀ : State} (hp : Pre s₀) {T : List Nat} {s : State} (h : Base s₀ T VK s) {u u' : Nat}
+    (hu : u < 32) (hu' : u' < 32) (hd : 16 * u + d = 16 * u')
+    (heax : s.gpr .eax = sP s₀ + BitVec.ofNat 32 (16 * (32 + u))) {f G : Poly} {D : Nat → Prop}
+    (hco : Co s₀ s.mem f G D) (hD : ∀ i, In16 u u' i → ¬ D i)
+    (hnew : ∀ X Y, (∀ p < 16, (pos X Y p).toNat = (f[idx u u' p]!).val) →
+      ∀ p < 16, (pos (FX X Y (s.xmm .xmm5)) (FY X Y (s.xmm .xmm5)) p).toNat = (G[idx u u' p]!).val)
+    {is : List Instr} {Q : State → Prop}
+    (k : ∀ (m : Mem) (g : XReg → BitVec 128),
+      Base s₀ T VK { ({ s with mem := m } : State) with xmm := g } →
+      Co s₀ m f G (fun i => D i ∨ In16 u u' i) → (keep = true → g .xmm5 = s.xmm .xmm5) →
+      WP isa (.block is) { ({ s with mem := m } : State) with xmm := g } Q) :
+    WP isa (.block (body ++ is)) s Q := by
+  have fs := hp.s_fit
+  have eP : s.ea (at_ .eax 0) = sA s₀ + BitVec.ofNat 64 (16 * (32 + u)) := by
+    rw [State.ea, at_, heax, ea_add (by omega_using [fs, hu]), Nat.add_zero]
+  have eP' : s.ea (at_ .eax d) = sA s₀ + BitVec.ofNat 64 (16 * (32 + u')) := by
+    rw [State.ea, at_, heax, ea_add (by omega_using [fs, hu', hd])]
+    exact congrArg (fun k => sA s₀ + BitVec.ofNat 64 k) (by omega_using [hd])
+  have hm : 0 < s.mcdt := by rw [h.mcdt]; exact Nat.succ_pos _
+  have hcon : (polyRegion (sA s₀)).Contains (sA s₀ + BitVec.ofNat 64 (16 * (32 + u))) (128 / 8) :=
+    Offset.contains_base _ (by omega_using [hu]) (by omega_using [hu])
+  have hcon' : (polyRegion (sA s₀)).Contains (sA s₀ + BitVec.ofNat 64 (16 * (32 + u'))) (128 / 8) :=
+    Offset.contains_base _ (by omega_using [hu']) (by omega_using [hu'])
+  show WP isa (.block (body ++ is)) { s with xmm := s.xmm } Q
+  refine hb s s.xmm is Q _ _ hm h.vp eP eP' (in_s hp h.wr (by omega_using [hu])) (in_s hp h.wr (by omega_using [hu']))
+    fun g vx vy ex ey hg hk5 => ?_
+  have hV : ∀ p < 16, (pos (s.mem.readW (sA s₀ + BitVec.ofNat 64 (16 * (32 + u))) 128)
+      (s.mem.readW (sA s₀ + BitVec.ofNat 64 (16 * (32 + u'))) 128) p).toNat = (f[idx u u' p]!).val := fun p hp16 => by
+    by_cases h8 : p < 8
+    · rw [pos, ite_eq_left h8, idx, ite_eq_left h8, word_rd16 _ _ _ h8,
+        show 8 * (32 + u) + p = 256 + (8 * u + p) by omega_using []]
+      exact (hco _ (by omega_using [hu, h8])).2 (hD _ (.inl ⟨by omega_using [], by omega_using [h8]⟩))
+    · rw [pos, ite_eq_right h8, idx, ite_eq_right h8, word_rd16 _ _ _ (by omega_using [h8, hp16]),
+        show 8 * (32 + u') + (p - 8) = 256 + (8 * u' + (p - 8)) by omega_using []]
+      exact (hco _ (by omega_using [hu', hp16])).2 (hD _ (.inr ⟨by omega_using [], by omega_using [h8, hp16]⟩))
+  have hN := hnew _ _ hV
+  refine k _ g (h.stepS hp (((Frame.refl _ _).writeW (List.mem_singleton_self _) vx hcon).writeW
+    (List.mem_singleton_self _) vy hcon') (fun j hj => ?_) hg) (fun i hi => ?_) hk5
+  · rw [wAt_write16 _ _ _ (by omega_using [hu']) (by omega_using [hj]), ite_eq_right (by omega_using [hj]),
+      wAt_write16 _ _ _ (by omega_using [hu]) (by omega_using [hj]), ite_eq_right (by omega_using [hj])]
+  rw [wAt_write16 _ _ _ (by omega_using [hu']) (by omega_using [hi]),
+    wAt_write16 _ _ _ (by omega_using [hu]) (by omega_using [hi])]
+  by_cases h2 : 8 * u' ≤ i ∧ i < 8 * u' + 8
+  · rw [ite_eq_left (by omega_using [h2])]
+    have := hN (8 + (i - 8 * u')) (by omega_using [h2])
+    rw [pos, ite_eq_right (by omega_using []), ← ey, idx, ite_eq_right (by omega_using []),
+      show 8 + (i - 8 * u') - 8 = i - 8 * u' by omega_using [],
+      show 8 * u' + (i - 8 * u') = i by omega_using [h2]] at this
+    rw [show 256 + i - 8 * (32 + u') = i - 8 * u' by omega_using [h2]]
+    exact ⟨fun _ => this, fun hn => absurd (.inr (.inr h2)) hn⟩
+  · rw [ite_eq_right (by omega_using [h2])]
+    by_cases h1 : 8 * u ≤ i ∧ i < 8 * u + 8
+    · rw [ite_eq_left (by omega_using [h1])]
+      have := hN (i - 8 * u) (by omega_using [h1])
+      rw [pos, ite_eq_left (by omega_using [h1]), ← ex, idx, ite_eq_left (by omega_using [h1]),
+        show 8 * u + (i - 8 * u) = i by omega_using [h1]] at this
+      rw [show 256 + i - 8 * (32 + u) = i - 8 * u by omega_using [h1]]
+      exact ⟨fun _ => this, fun hn => absurd (.inr (.inl h1)) hn⟩
+    · rw [ite_eq_right (by omega_using [h1])]
+      refine ⟨fun hd' => (hco i hi).1 (hd'.resolve_right fun h8 => ?_), fun hn => (hco i hi).2 fun hdi => hn (.inl hdi)⟩
+      rcases h8 with h8 | h8
+      · exact h1 h8
+      · exact h2 h8
+
 end VG.Proof.MlKem.X86.Vec

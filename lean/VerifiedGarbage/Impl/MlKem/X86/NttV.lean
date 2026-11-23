@@ -138,32 +138,32 @@ def passStart (init : List Instr) : List Instr :=
   init +++ ([.mov .ecx (.mem (at_ .esp 20)), .mov .eax (.mem (at_ .esp 24)), .alu .sub .eax (.imm 512)] : List Instr)
 
 /-- Eight coefficients, `u32`s at `[ecx]`, to words at `[eax]`. -/
-def packStep : List Instr :=
+def wpackStep : List Instr :=
   [.movdquLoad .xmm0 (at_ .ecx 0), .movdquLoad .xmm1 (at_ .ecx 16), wb .packssdw .xmm0 .xmm1,
     .movdquStore (at_ .eax 0) .xmm0, .alu .add .ecx (.imm 32), .alu .add .eax (.imm 16),
     .alu .cmp .eax (.mem (at_ .esp 24))]
 
 /-- The coefficients of `f` to the words. -/
-def packPass : Prog isa := .seq (.block (passStart [])) (.loop (.block packStep) .ne)
+def wpackPass : Prog isa := .seq (.block (passStart [])) (.loop (.block wpackStep) .ne)
 
 /-- Eight coefficients, words at `[eax]`, through `core` on `xmm0`, to
 `u32`s at `[ecx]` (`xmm4` is zero). -/
-def unpackStep (core : List Instr) : List Instr :=
+def wunpackStep (core : List Instr) : List Instr :=
   ([.movdquLoad .xmm0 (at_ .eax 0)] : List Instr) +++ core +++
   ([wmov .xmm1 .xmm0, wb .punpcklwd .xmm0 .xmm4, wb .punpckhwd .xmm1 .xmm4, .movdquStore (at_ .ecx 0) .xmm0,
     .movdquStore (at_ .ecx 16) .xmm1, .alu .add .ecx (.imm 32), .alu .add .eax (.imm 16),
     .alu .cmp .eax (.mem (at_ .esp 24))] : List Instr)
 
 /-- The words, through `core`, to the coefficients of `f`, after `init`. -/
-def unpackPass (init core : List Instr) : Prog isa :=
-  .seq (.block (passStart (wb .pxor .xmm4 .xmm4 :: init))) (.loop (.block (unpackStep core)) .ne)
+def wunpackPass (init core : List Instr) : Prog isa :=
+  .seq (.block (passStart (wb .pxor .xmm4 .xmm4 :: init))) (.loop (.block (wunpackStep core)) .ne)
 
 def vntt : Prog isa :=
-  wframe (.seq (nttInit montZetas) (.seq packPass
+  wframe (.seq (nttInit montZetas) (.seq wpackPass
     (.seq (layer8 (lBody fCore .xmm1) 128) (.seq (layer8 (lBody fCore .xmm1) 64)
       (.seq (layer8 (lBody fCore .xmm1) 32) (.seq (layer8 (lBody fCore .xmm1) 16)
         (.seq (layer8 (lBody fCore .xmm1) 8) (.seq (layerFlat zl4 (body4 fCore .xmm1) 4)
-          (.seq (layerFlat zl2 (body2 fCore .xmm1) 8) (unpackPass [] []))))))))))
+          (.seq (layerFlat zl2 (body2 fCore .xmm1) 8) (wunpackPass [] []))))))))))
 
 /-- `3303 · 2¹⁶ mod q = 512` in the words of `xmm5`. -/
 def scaleInit : List Instr := wconst .xmm5 0x02000200
@@ -172,10 +172,10 @@ def scaleInit : List Instr := wconst .xmm5 0x02000200
 def scaleCore : List Instr := wmont .xmm0 .xmm5 .xmm2 +++ wcadd .xmm0 .xmm2
 
 def vnttInv : Prog isa :=
-  wframe (.seq (nttInit montZetasRev) (.seq packPass
+  wframe (.seq (nttInit montZetasRev) (.seq wpackPass
     (.seq (layerFlat zl2 (body2 iCore .xmm0) 8) (.seq (layerFlat zl4 (body4 iCore .xmm0) 4)
       (.seq (layer8 (lBody iCore .xmm0) 8) (.seq (layer8 (lBody iCore .xmm0) 16)
         (.seq (layer8 (lBody iCore .xmm0) 32) (.seq (layer8 (lBody iCore .xmm0) 64)
-          (.seq (layer8 (lBody iCore .xmm0) 128) (unpackPass scaleInit scaleCore))))))))))
+          (.seq (layer8 (lBody iCore .xmm0) 128) (wunpackPass scaleInit scaleCore))))))))))
 
 end VG.Impl.MlKem.X86
