@@ -37,14 +37,13 @@ jne 22b
 call {vg_secp256k1_check_point}
 .base64 "SIuHAAUAAEiJhwACAABIi4cIBQAASImHCAIAAEiLhxAFAABIiYcQAgAASIuHGAUAAEiJhxgCAABIi4egBQAASImHIAIAAEiLh6gFAABIiYcoAgAASIuHsAUAAEiJhzACAABIi4e4BQAASImHOAIAAA=="
 call {vg_secp256k1_mul}
-.base64 "SLgxNSXSHQk42EiJh4AAAABIuAAAAAAAAIRCSImHAAQAAEi4OgCIHgAABABIiYcIBAAASLgAAAAAAAAAAEiJhxAEAABIuAAAAAAAAAAASImHGAQAAA=="
-call {vg_inv4_mod_p}
+call {vg_secp256k1_inv_mod_p}
 call {vg_secp256k1_affine_x}
 .base64 "SIuXQAQAAEgrV2BIi5dIBAAASBtXaEiLl1AEAABIG1dwSIuXWAQAAEgbV3hIGcBIicVIi5dABAAASAuXSAQAAEgLl1AEAABIC5dYBAAAuQAAAABIKdFIGdJIIepIi4fABQAASCHQSImHwAUAAEiLl0ACAABIC5dIAgAASAuXUAIAAEgLl1gCAAC5AAAAAEgp0UgZ0kiLh8AFAABIIdBIiYfABQAASIuPwAUAAEiLh6AEAABIIchID8hIiUYYSIuHqAQAAEghyEgPyEiJRhBIi4ewBAAASCHISA/ISIlGCEiLh7gEAABIIchID8hIiQZIichIg+ABSIsfSItvCEyLZxBMi28YTIt3IEyLfyhmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjWQk+EyJHCRIjWQkCInAMckx0jH2Mf9FMcBFMclFMdLD"
 .p2align 6"#,
         vg_secp256k1_check_point = sym super::ec_secp256k1_compressed::vg_secp256k1_check_point::vg_secp256k1_check_point,
         vg_secp256k1_mul = sym super::ec_secp256k1::vg_secp256k1_mul::vg_secp256k1_mul,
-        vg_inv4_mod_p = sym super::ec_brainpoolp256r1::vg_inv4_mod_p::vg_inv4_mod_p,
+        vg_secp256k1_inv_mod_p = sym super::ec_secp256k1::vg_secp256k1_inv_mod_p::vg_secp256k1_inv_mod_p,
         vg_secp256k1_affine_x = sym super::ec_secp256k1::vg_secp256k1_affine_x::vg_secp256k1_affine_x,
     )
 }

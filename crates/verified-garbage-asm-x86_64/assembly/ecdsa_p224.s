@@ -841,17 +841,7 @@ vg_ecdsa_p224_verify:
 	mov QWORD PTR [rdi+1256], r13
 	mov QWORD PTR [rdi+1264], r8
 	mov QWORD PTR [rdi+1272], r9
-	movabs rax, -2962732554272128277
-	mov QWORD PTR [rdi+128], rax
-	movabs rax, -2177356687298470257
-	mov QWORD PTR [rdi+1024], rax
-	movabs rax, -6252878485968986053
-	mov QWORD PTR [rdi+1032], rax
-	movabs rax, 2403425931149288310
-	mov QWORD PTR [rdi+1040], rax
-	movabs rax, 2113103301
-	mov QWORD PTR [rdi+1048], rax
-	call {vg_inv4_mod_n}
+	call {vg_p224_inv_mod_n}
 	mov r8d, 0
 	mov r9d, 0
 	mov r10d, 0

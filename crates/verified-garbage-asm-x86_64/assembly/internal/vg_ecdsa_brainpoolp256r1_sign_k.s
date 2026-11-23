@@ -1740,17 +1740,7 @@ vg_ecdsa_brainpoolp256r1_sign_k:
 	mov QWORD PTR [rdi+600], rax
 	test rbx, rbx
 	jne 23b
-	movabs rax, -4132240052652766791
-	mov QWORD PTR [rdi+128], rax
-	movabs rax, -4161823605906349129
-	mov QWORD PTR [rdi+1024], rax
-	movabs rax, -6381386978957365564
-	mov QWORD PTR [rdi+1032], rax
-	movabs rax, 1888426209243862047
-	mov QWORD PTR [rdi+1040], rax
-	movabs rax, 6907815856143100873
-	mov QWORD PTR [rdi+1048], rax
-	call {vg_inv4_mod_p}
+	call {vg_brainpoolp256r1_inv_mod_p}
 	call {vg_brainpoolp256r1_affine_x}
 	mov r8, QWORD PTR [rdi+1184]
 	mov r9, QWORD PTR [rdi+1192]
@@ -2122,17 +2112,7 @@ vg_ecdsa_brainpoolp256r1_sign_k:
 	mov rax, QWORD PTR [rdi+1472]
 	and rax, rdx
 	mov QWORD PTR [rdi+1472], rax
-	movabs rax, -288302128752750871
-	mov QWORD PTR [rdi+128], rax
-	movabs rax, -3696441421637789492
-	mov QWORD PTR [rdi+1024], rax
-	movabs rax, -3879777635803225214
-	mov QWORD PTR [rdi+1032], rax
-	movabs rax, 137698852385229165
-	mov QWORD PTR [rdi+1040], rax
-	movabs rax, 1064853867851369304
-	mov QWORD PTR [rdi+1048], rax
-	call {vg_inv4_mod_n}
+	call {vg_brainpoolp256r1_inv_mod_n}
 	mov r8d, 0
 	mov r9d, 0
 	mov r10d, 0

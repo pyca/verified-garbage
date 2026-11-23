@@ -346,17 +346,7 @@ vg_ecdh_p192:
 	mov rax, QWORD PTR [rdi+1464]
 	mov QWORD PTR [rdi+568], rax
 	call {vg_p192_mul}
-	movabs rax, 1
-	mov QWORD PTR [rdi+128], rax
-	movabs rax, 2251799813685248
-	mov QWORD PTR [rdi+1024], rax
-	movabs rax, 3377699720527872
-	mov QWORD PTR [rdi+1032], rax
-	movabs rax, 2251799813685248
-	mov QWORD PTR [rdi+1040], rax
-	movabs rax, 0
-	mov QWORD PTR [rdi+1048], rax
-	call {vg_inv4_mod_p}
+	call {vg_p192_inv_mod_p}
 	call {vg_p192_affine_x}
 	mov rdx, QWORD PTR [rdi+1088]
 	sub rdx, QWORD PTR [rdi+96]

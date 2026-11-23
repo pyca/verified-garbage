@@ -47,14 +47,14 @@ call {vg_brainpoolp256r1_add_complete}
 call {vg_brainpoolp256r1_add_complete}
 .base64 "D7aEH+AFAAC5AAAAAEgpwUiLhwACAABIi5dgAgAASDHCSCHKSDHQSImHAAIAAEiLhwgCAABIi5doAgAASDHCSCHKSDHQSImHCAIAAEiLhxACAABIi5dwAgAASDHCSCHKSDHQSImHEAIAAEiLhxgCAABIi5d4AgAASDHCSCHKSDHQSImHGAIAAEiLhyACAABIi5eAAgAASDHCSCHKSDHQSImHIAIAAEiLhygCAABIi5eIAgAASDHCSCHKSDHQSImHKAIAAEiLhzACAABIi5eQAgAASDHCSCHKSDHQSImHMAIAAEiLhzgCAABIi5eYAgAASDHCSCHKSDHQSImHOAIAAEiLh0ACAABIi5egAgAASDHCSCHKSDHQSImHQAIAAEiLh0gCAABIi5eoAgAASDHCSCHKSDHQSImHSAIAAEiLh1ACAABIi5ewAgAASDHCSCHKSDHQSImHUAIAAEiLh1gCAABIi5e4AgAASDHCSCHKSDHQSImHWAIAAEiF2w=="
 jne 24b
-.base64 "ZkgPfsNmSA9+zWZJD37UZkkPft1mSQ9+5mZJD37vSLi5if3OkFWnxkiJh4AAAABIuLfjHRB7Oz7GSImHAAQAAEi4xG7xSFrCcKdIiYcIBAAASLgflITKoQk1GkiJhxAEAABIuMlrOAfsfd1fSImHGAQAAA=="
-call {vg_inv4_mod_p}
+.base64 "ZkgPfsNmSA9+zWZJD37UZkkPft1mSQ9+5mZJD37v"
+call {vg_brainpoolp256r1_inv_mod_p}
 call {vg_brainpoolp256r1_affine_x}
 .base64 "SIuXQAQAAEgrV2BIi5dIBAAASBtXaEiLl1AEAABIG1dwSIuXWAQAAEgbV3hIGcBIicVIi5dABAAASAuXSAQAAEgLl1AEAABIC5dYBAAAuQAAAABIKdFIGdJIIepIi4fABQAASCHQSImHwAUAAEiLl0ACAABIC5dIAgAASAuXUAIAAEgLl1gCAAC5AAAAAEgp0UgZ0kiLh8AFAABIIdBIiYfABQAASIuPwAUAAEiLh6AEAABIIchID8hIiUYYSIuHqAQAAEghyEgPyEiJRhBIi4ewBAAASCHISA/ISIlGCEiLh7gEAABIIchID8hIiQZIichIg+ABSIsfSItvCEyLZxBMi28YTIt3IEyLfyhmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjWQk+EyJHCRIjWQkCInAMckx0jH2Mf9FMcBFMclFMdLD"
 .p2align 6"#,
         vg_brainpoolp256r1_check_point = sym super::ec_brainpoolp256r1_compressed::vg_brainpoolp256r1_check_point::vg_brainpoolp256r1_check_point,
         vg_brainpoolp256r1_add_complete = sym super::ec_brainpoolp256r1::vg_brainpoolp256r1_add_complete::vg_brainpoolp256r1_add_complete,
-        vg_inv4_mod_p = sym super::ec_brainpoolp256r1::vg_inv4_mod_p::vg_inv4_mod_p,
+        vg_brainpoolp256r1_inv_mod_p = sym super::ec_brainpoolp256r1::vg_brainpoolp256r1_inv_mod_p::vg_brainpoolp256r1_inv_mod_p,
         vg_brainpoolp256r1_affine_x = sym super::ec_brainpoolp256r1::vg_brainpoolp256r1_affine_x::vg_brainpoolp256r1_affine_x,
     )
 }

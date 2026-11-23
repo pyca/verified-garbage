@@ -844,17 +844,7 @@ vg_ecdsa_secp256k1_verify:
 	mov QWORD PTR [rdi+1256], r13
 	mov QWORD PTR [rdi+1264], r8
 	mov QWORD PTR [rdi+1272], r9
-	movabs rax, 5408259542528602431
-	mov QWORD PTR [rdi+128], rax
-	movabs rax, -3111492720122750874
-	mov QWORD PTR [rdi+1024], rax
-	movabs rax, 856935592407084165
-	mov QWORD PTR [rdi+1032], rax
-	movabs rax, 2241931050538735040
-	mov QWORD PTR [rdi+1040], rax
-	movabs rax, 8005036599103549236
-	mov QWORD PTR [rdi+1048], rax
-	call {vg_inv4_mod_n}
+	call {vg_secp256k1_inv_mod_n}
 	mov r8d, 0
 	mov r9d, 0
 	mov r10d, 0
