@@ -82,7 +82,7 @@ theorem invSpecJA (hc : CfgOk c) (h46 : c.n = 4 ∨ c.n = 6) {base : Addr} :
   obtain hJle := jwinJ_le hc
   refine ⟨fun t ht hM hz => ?_, fun w hw => ?_, fun w hw => ?_⟩
   · exact WP.mono (sp (invLayJA hc h46) (by have := hc.p_ge; omega_arith) (unitMod_pow_two hc.p_odd (64 * c.n))
-      ht hM hz ⟨ip.B1, ip.B16, ip.C, ip.Cpos, ip.Cn, ip.bound⟩) fun t' ⟨a, b, d, e⟩ => ⟨a, b, d, e⟩
+      ht hM hz ⟨ip.B1, ip.B16, ip.C, ip.Cpos, ip.Cn, ip.bound⟩ trivial) fun t' ⟨a, b, d, e⟩ => ⟨a, b, d, e⟩
   · simp only [invW, List.mem_cons, List.not_mem_nil, or_false] at hw
     rcases hw with rfl | rfl | rfl
     · exact Or.inl rfl
@@ -247,6 +247,8 @@ theorem invSpecJACall (hc : CfgOk c) (h6 : c.n = 6) (hi : c.inverse ≠ none) {b
       | none => exact absurd hi' hi
       | some C =>
         obtain ⟨h9, -⟩ := hc.inverse (by rw [hi']; rfl)
+        dsimp only
+        rw [ite_eq_right_of_eq_false _ _ (eq_false fun hv => by have := hc.inv4_n hv; omega_arith)]
         exact WP.mono (invPFn_ok hc (by omega_arith) h9 ht₂ hM₂ (by rw [z₂]; exact hz)) fun _ h => h.2)
       fun t₃ ⟨K₃, U₃, lt₃, v₃⟩ => ?_)
     obtain ht₃ := ht₂.of_keepRegs K₃ (rdi_not_invClob _)

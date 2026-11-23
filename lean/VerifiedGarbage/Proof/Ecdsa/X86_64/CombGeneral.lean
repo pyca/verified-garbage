@@ -610,7 +610,7 @@ theorem stage₂G (hc : BaseCfgOk c) (hC : Law c.C) {d : CombData} (hd : CombOk 
     exact L₅ (c.sl RZ) (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_singleton_self _)))
 
 
-theorem signG_inline (c : Cfg) (d : CombData) : (c.signG d).inline = .seq (.block c.setup) (.seq (c.kBitsIf false)
+theorem signG_inline (c : Cfg) (d : CombData) : (c.signGW (c.gMulG d)).inline = .seq (.block c.setup) (.seq (c.kBitsIf false)
     (.seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n)) (.seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n))
     (.seq (c.gMulG d).inline (.seq c.pPow.inline (.seq c.middle.inline (.seq c.nPow.inline c.scalar.inline))))))) := by
   show Code.seq _ (Code.seq (c.kBitsIf false).inline (Code.seq _ (Code.seq _ (Code.seq _
@@ -622,7 +622,7 @@ theorem signG_inline (c : Cfg) (d : CombData) : (c.signG d).inline = .seq (.bloc
 theorem signG_ok (hc : BaseCfgOk c) (hC : Law c.C) {d : CombData} (hd : CombOk c d)
     (hW : CombOkW c.C d.w (c.combJ d.w) d.tbl d.start) (hcd : c.gtab = some d) {s₀ : State} (hp : Pre c s₀)
     (hnc : Mont.callOf c.MH = none) :
-    WP isa (c.signG d).inline s₀ fun s' => (∀ r ∈ Cfg.saved.map Prod.fst, s'.gpr r = s₀.gpr r) ∧ SignPost c s₀ s' := by
+    WP isa (c.signGW (c.gMulG d)).inline s₀ fun s' => (∀ r ∈ Cfg.saved.map Prod.fst, s'.gpr r = s₀.gpr r) ∧ SignPost c s₀ s' := by
   rw [signG_inline]
   exact stage₁ hc (Or.inr (Or.inr rfl)) hp.setup fun _ S₁ => stage₂G hc hC hd hW hcd hp rfl S₁ (fun _ S₂ =>
     stage₃ hc S₂ fun _ S₃ => stage₄ hc hC hp rfl S₃) hnc

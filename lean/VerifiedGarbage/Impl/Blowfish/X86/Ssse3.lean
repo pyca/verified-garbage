@@ -12,9 +12,7 @@ public import VerifiedGarbage.Impl.Scrub.X86.Sel
 
 `encryptBlock`, the internal function `vg_blowfish_encrypt_block_ssse3`: a
 block's encryption for the functions that encrypt one block at a time (key
-expansion, CBC encryption, CFB64 encryption, OFB, and a message's last
-piece; `Ssse3Wide.lean` has the function for sixteen blocks, for the
-others). It is `ssse3` code: the dispatchers
+expansion, CBC encryption, CFB, OFB). It is `ssse3` code: the dispatchers
 of the functions that call it run them only where the CPU has SSSE3.
 
 Its convention is its own (only the code below calls it): the halves in
@@ -73,10 +71,7 @@ def tableName : String := "VG_BLOWFISH_SSSE3"
 
 /-- The constants, 16 bytes each (two words): the sixteen rows `C_r` (zero
 at byte `r`, `0x80` elsewhere), the shuffle that gathers the bytes 0, 4, 8
-and 12, then 1, 5, 9 and 13, and so on, and `0x0f` in every byte; then,
-for sixteen blocks (`Ssse3Wide.lean`), the shuffles that take two blocks'
-left and right halves as big-endian doublewords, and the one that reverses
-the bytes of every doubleword. -/
+and 12, then 1, 5, 9 and 13, and so on, and `0x0f` in every byte. -/
 def table : List (BitVec 64) := [
   0x8080808080808000, 0x8080808080808080, 0x8080808080800080, 0x8080808080808080,
   0x8080808080008080, 0x8080808080808080, 0x8080808000808080, 0x8080808080808080,
@@ -86,9 +81,7 @@ def table : List (BitVec 64) := [
   0x8080808080808080, 0x8080808080008080, 0x8080808080808080, 0x8080808000808080,
   0x8080808080808080, 0x8080800080808080, 0x8080808080808080, 0x8080008080808080,
   0x8080808080808080, 0x8000808080808080, 0x8080808080808080, 0x0080808080808080,
-  0x0d0905010c080400, 0x0f0b07030e0a0602, 0x0f0f0f0f0f0f0f0f, 0x0f0f0f0f0f0f0f0f,
-  0x08090a0b00010203, 0x8080808080808080, 0x0c0d0e0f04050607, 0x8080808080808080,
-  0x0405060700010203, 0x0c0d0e0f08090a0b
+  0x0d0905010c080400, 0x0f0b07030e0a0602, 0x0f0f0f0f0f0f0f0f, 0x0f0f0f0f0f0f0f0f
 ]
 
 /-! ## The constants' and the working space's offsets -/
@@ -99,12 +92,6 @@ def oC (r : Nat) : Nat := 16 * r
 def oT : Nat := 256
 /-- `0x0f` in every byte. -/
 def oM : Nat := 272
-/-- Two blocks' left halves, as big-endian doublewords, to the low quadword. -/
-def oKL : Nat := 288
-/-- Two blocks' right halves. -/
-def oKR : Nat := 304
-/-- The bytes of every doubleword reversed. -/
-def oBS : Nat := 320
 
 /-- The index vector of row `r`, in the working space. -/
 def vOff (r : Nat) : Nat := 64 + 16 * r
@@ -230,6 +217,9 @@ def ofb : Prog isa := core.seq (Mode.ofb 2)
 /-- CFB64 encryption. -/
 def cfbEncrypt : Prog isa := core.seq (Mode.cfbEnc 2)
 
+/-- CFB64 decryption. -/
+def cfbDecrypt : Prog isa := core.seq (Mode.cfbDec 2)
+
 /-- CFB64 encryption of a message's last piece. -/
 def cfbEncryptFinal : Prog isa := core.seqFinal (Mode.cfbEnc 2)
 
@@ -261,52 +251,49 @@ wipes (`withStackScratchWiped`), then its cleanup
 (`Impl.Scrub.X86.scrubSel rb W ws`): of the `W` bytes of stack below `esp`
 that its contract reserves, the doublewords `ws` its code may leave
 different in two runs zeroed, and the registers a callee may change
-cleared, so that it returns without secret residue.
-
-A frame is larger than its working space and header need (452 bytes for
-448, 416 for 404), so that the working space, which `withStackScratchWiped`
-puts 24 bytes above the frame's base for four arguments and 20 for three,
-is at a multiple of 16 when `esp` is one at the call: the block function's
-16-byte loads and stores then cross no page, or line of the cache. -/
+cleared, so that it returns without secret residue. -/
 
 namespace Fn
 
-/-- The doublewords of the 460 bytes of stack below `esp` that the residue
+/-- The doublewords of the 456 bytes of stack below `esp` that the residue
 analysis finds a mode's function may leave different in two runs: the block
-function's return address, the header of the working space's frame, and
-the frame's last doubleword, which nothing writes. -/
-def words : List Nat := [1, 2, 3, 4, 5, 6, 7, 114]
+function's return address and the header of the working space's frame. -/
+def words : List Nat := [1, 2, 3, 4, 5, 6, 7]
 
-/-- Those of the 424 bytes of key expansion. -/
-def keyWords : List Nat := [1, 2, 3, 4, 5, 6, 103, 104, 105]
+/-- Those of the 412 bytes of key expansion. -/
+def keyWords : List Nat := [1, 2, 3, 4, 5, 6]
 
 /-- `Spec.Blowfish.cbcEncryptChainedApi`'s function as emitted. -/
 def cbcEncryptChained : Prog isa :=
-  Impl.Scrub.X86.scrubSel 0 460 words (Impl.StackScratch.X86.withStackScratchWiped 452 4 106 Ssse3.cbcEncryptChained)
+  Impl.Scrub.X86.scrubSel 0 456 words (Impl.StackScratch.X86.withStackScratchWiped 448 4 106 Ssse3.cbcEncryptChained)
 
 /-- `Spec.Blowfish.ofbApi`'s function as emitted. -/
 def ofb : Prog isa :=
-  Impl.Scrub.X86.scrubSel 0 460 words (Impl.StackScratch.X86.withStackScratchWiped 452 4 106 Ssse3.ofb)
+  Impl.Scrub.X86.scrubSel 0 456 words (Impl.StackScratch.X86.withStackScratchWiped 448 4 106 Ssse3.ofb)
 
 /-- `Spec.Blowfish.cfbEncryptApi`'s function as emitted. -/
 def cfbEncrypt : Prog isa :=
-  Impl.Scrub.X86.scrubSel 0 460 words (Impl.StackScratch.X86.withStackScratchWiped 452 4 106 Ssse3.cfbEncrypt)
+  Impl.Scrub.X86.scrubSel 0 456 words (Impl.StackScratch.X86.withStackScratchWiped 448 4 106 Ssse3.cfbEncrypt)
+
+/-- `Spec.Blowfish.cfbDecryptApi`'s function as emitted. -/
+def cfbDecrypt : Prog isa :=
+  Impl.Scrub.X86.scrubSel 0 456 words (Impl.StackScratch.X86.withStackScratchWiped 448 4 106 Ssse3.cfbDecrypt)
 
 /-- `Spec.Blowfish.cfbEncryptFinalApi`'s function as emitted. -/
 def cfbEncryptFinal : Prog isa :=
-  Impl.Scrub.X86.scrubSel 0 460 words (Impl.StackScratch.X86.withStackScratchWiped 452 4 106 Ssse3.cfbEncryptFinal)
+  Impl.Scrub.X86.scrubSel 0 456 words (Impl.StackScratch.X86.withStackScratchWiped 448 4 106 Ssse3.cfbEncryptFinal)
 
 /-- `Spec.Blowfish.cfbDecryptFinalApi`'s function as emitted. -/
 def cfbDecryptFinal : Prog isa :=
-  Impl.Scrub.X86.scrubSel 0 460 words (Impl.StackScratch.X86.withStackScratchWiped 452 4 106 Ssse3.cfbDecryptFinal)
+  Impl.Scrub.X86.scrubSel 0 456 words (Impl.StackScratch.X86.withStackScratchWiped 448 4 106 Ssse3.cfbDecryptFinal)
 
 /-- `Spec.Blowfish.ofbFinalApi`'s function as emitted. -/
 def ofbFinal : Prog isa :=
-  Impl.Scrub.X86.scrubSel 0 460 words (Impl.StackScratch.X86.withStackScratchWiped 452 4 106 Ssse3.ofbFinal)
+  Impl.Scrub.X86.scrubSel 0 456 words (Impl.StackScratch.X86.withStackScratchWiped 448 4 106 Ssse3.ofbFinal)
 
 /-- `Spec.Blowfish.expandKeyApi`'s function as emitted. -/
 def expandKey : Prog isa :=
-  Impl.Scrub.X86.scrubSel 0 424 keyWords (Impl.StackScratch.X86.withStackScratchWiped 416 3 96 Ssse3.expandKey)
+  Impl.Scrub.X86.scrubSel 0 412 keyWords (Impl.StackScratch.X86.withStackScratchWiped 404 3 96 Ssse3.expandKey)
 
 end Fn
 

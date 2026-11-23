@@ -11,6 +11,8 @@ public import VerifiedGarbage.Proof.Ecdsa.X86_64.MulFn
 import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 import VerifiedGarbage.Proof.Ecdsa.X86_64.RspMxcsr
 import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
+public import VerifiedGarbage.Proof.Framework.X86_64.CallInlineN
+import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Proof.Ecdsa.X86_64.BrainpoolP320r1.Lit
 public import VerifiedGarbage.Impl.Ecdsa.BrainpoolP320r1.X86_64
 public import VerifiedGarbage.Proof.Ecdsa.Contract
@@ -24,6 +26,8 @@ meta import VerifiedGarbage.Proof.Ecdsa.X86_64.MulFn
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.RspMxcsr
 meta import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
+meta import VerifiedGarbage.Proof.Framework.X86_64.CallInlineN
+meta import VerifiedGarbage.Proof.Framework.KernelRfl
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.BrainpoolP320r1.Lit
 meta import VerifiedGarbage.Impl.Ecdsa.BrainpoolP320r1.X86_64
 meta import VerifiedGarbage.Proof.Framework.LitShare
@@ -215,21 +219,26 @@ theorem pre_of {s : State} (h : signX86_64.pre s) : Pre brainpoolp320r1S s := by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hw ⊢
     rcases hw with h | h <;> simp [h])
 
-/-- The code's calls can be inlined, and no instruction of it or of what it
-calls writes `rsp` or touches MXCSR: one walk of the code, with one match for
-the tests of each instruction (`Code.InlineOkB`). -/
-theorem sign_inlineOkB : signBrainpoolP320r1.InlineOkB (bMx + bNs) = true := by lit_decide
+/-- `InlineOkN`, calls nested two deep (`vg_brainpoolp320r1_comb_g` calls
+`vg_brainpoolp320r1_add_complete`), checked once for every theorem that needs it. -/
+theorem sign_inlineOk : signBrainpoolP320r1.InlineOkN 2 = true := by lit_decide
+
+/-- The signature inlined at every depth is `signGW` with the comb inline,
+the code the proofs run. -/
+theorem sign_inlineAll : signBrainpoolP320r1.inlineAll =
+    (brainpoolp320r1S.signGW (brainpoolp320r1S.gMulG brainpoolp320r1Comb)).inline := by kernel_rfl
 
 theorem sign_x86 (hL : Law Spec.BrainpoolP320r1.curve)
     (hI : InvSounds) (s : State)
     (hs : signX86_64.pre s) :
-    ∃ t s', Exec isa signBrainpoolP320r1.inline s t s' ∧ abiPreserved s s' ∧ signX86_64.post s s' := by
+    ∃ t s', Exec isa signBrainpoolP320r1.inlineAll s t s' ∧ abiPreserved s s' ∧ signX86_64.post s s' := by
   obtain ⟨t, s', he, hsv, hpost⟩ := signG_ok (brainpoolp320r1S_ok hI) hL brainpoolp320r1S_comb
     (Proof.BrainpoolP320r1.combOk7 hL) rfl (pre_of hs) (by decide)
-  obtain ⟨hsp, hmx⟩ := rsp_mxcsr (c := signBrainpoolP320r1) (Code.allInstrs_mono
-    (fun i h => by rw [noRsp_of_hasBits rfl h, noMx_of_hasBits rfl h]; rfl)
-    (Code.allInstrs_of_inlineOkB sign_inlineOkB))
-  have F := (Exec.regions he (Code.noCalls_inline (Code.inlineOk_of_B sign_inlineOkB))).2.2
+  rw [← sign_inlineAll] at he
+  have hsp := Code.clobbers_rsp_of_inlineOkN sign_inlineOk
+  have hmx : signBrainpoolP320r1.inlineAll.allInstrs (fun i => !loadsMxcsr i) = true :=
+    Code.allInstrs_inlineAll (by lit_decide)
+  have F := (Exec.regions he (Code.noCalls_inlineAll sign_inlineOk)).2.2
   obtain ⟨-, hwr, -, -, -, -, -, -, -, hro, hrs, -, -, -⟩ := hs
   refine ⟨t, s', he, abiPreserved_of_exec hmx he
     ⟨fun r hr => ?_, ?_⟩, hpost⟩
@@ -275,17 +284,17 @@ theorem sign_ct : ConstantTime isa signX86_64.pre signX86_64.pub signBrainpoolP3
 
 /-- The output is apart from the calls' return address. -/
 theorem post_patch (s b : State) (hv : Mem) (u : Nat → BitVec 64) (hs : signX86_64.pre s)
-    (hc : Clear (hole (s.gpr .rsp)) s) (hp : signX86_64.post s b) :
-    signX86_64.post s (b.patch (hole (s.gpr .rsp)) hv u) := by
+    (hc : Clear (holeN (s.gpr .rsp) 2) s) (hp : signX86_64.post s b) :
+    signX86_64.post s (b.patch (holeN (s.gpr .rsp) 2) hv u) := by
   have hb := Clear.wr_bytes hc (p := s.gpr .rdi) (n := 80) (by rw [hs.2.1]; simp) (by decide)
   simpa only [signX86_64, State.patch_gpr, bytesAt_patch hb] using hp
 
 /-- The function with its calls, for a caller (RFC 6979's) that keeps its
-buffers off the 8 bytes below `rsp`. -/
+buffers off the 16 bytes below `rsp`. -/
 theorem sign_call_x86 (hL : Law Spec.BrainpoolP320r1.curve) (hI : InvSounds) (s : State) (hs : signX86_64.pre s)
-    (hc : Clear (hole (s.gpr .rsp)) s) :
+    (hc : Clear (holeN (s.gpr .rsp) 2) s) :
     ∃ t s', Exec isa signBrainpoolP320r1 s t s' ∧ abiPreserved s s' ∧ signX86_64.post s s' :=
-  ok_of_inline (k := signX86_64) (Code.inlineOk_of_B sign_inlineOkB) (sign_x86 hL hI)
+  ok_of_inlineAll (k := signX86_64) sign_inlineOk (by decide) (sign_x86 hL hI)
     (fun s b hv u hs hc hp => post_patch s b hv u hs hc hp) s ⟨hs, hc⟩
 
 end VG.Proof.Ecdsa.X86_64.BrainpoolP320r1

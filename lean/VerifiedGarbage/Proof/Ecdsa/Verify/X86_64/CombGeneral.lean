@@ -417,7 +417,7 @@ theorem pointsG_ok (hc : BaseCfgOk c) (hC : Law c.C) (h9n : c.n ≤ 9) {d : Comb
       (tmv c.C c.n base s (c.sl ONEP)) P) {rest : Prog isa} {Q : State → Prop} (hnc : Mont.callOf c.MH = none)
     (hncP : Mont.callOf c.MP' = none)
     (h : ∀ s', Pts c s₀ base g (sv c base s U) (sv c base s V) P s' → WP isa rest s' Q) :
-    WP isa (.seq (Impl.Ecdsa.Verify.X86_64.Cfg.pointsG c d).inline rest) s Q := by
+    WP isa (.seq (Impl.Ecdsa.Verify.X86_64.Cfg.pointsGW c (c.gMulG d)).inline rest) s Q := by
   have h0 := hc.n0
   have h7 := hc.n10
   have hn := hM.scr.nowrap
@@ -428,7 +428,7 @@ theorem pointsG_ok (hc : BaseCfgOk c) (hC : Law c.C) (h9n : c.n ≤ 9) {d : Comb
   obtain tb : ∀ {i}, i < 45 → ∀ w ∈ [(bitsAt c.n 0, 64 * c.n)], c.sl i + 8 * c.n ≤ w.1 ∨ w.1 + w.2 ≤ c.sl i :=
     fun hi w hw => by
       rw [List.mem_singleton.mp hw]; exact sl_apart_bits c hi (.inr (.inl (by decide))) _ (by omega_arith)
-  unfold Impl.Ecdsa.Verify.X86_64.Cfg.pointsG
+  unfold Impl.Ecdsa.Verify.X86_64.Cfg.pointsGW
   refine WP.seq ?_
   -- The table of `u`.
   refine WP.seq (WP.mono_syms (bits_ok hM.scr h0 (by omega_arith) (sl_le c h7 (i := U) (by decide))
@@ -551,14 +551,14 @@ theorem pointsG_ok (hc : BaseCfgOk c) (hC : Law c.C) (h9n : c.n ≤ 9) {d : Comb
     · exact vWA_le h9n w hw
 
 /-- `verifyG d` inlined, as `verify_inline`. -/
-theorem verifyG_inline (c : Cfg) (d : CombData) : (Impl.Ecdsa.Verify.X86_64.Cfg.verifyG c d).inline =
+theorem verifyG_inline (c : Cfg) (d : CombData) : (Impl.Ecdsa.Verify.X86_64.Cfg.verifyGW c (c.gMulG d)).inline =
     .seq (.block (Impl.Ecdsa.Verify.X86_64.Cfg.args c)) (.seq (.seq (.block (c.setupWith (some D)))
       (.seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) (.seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n))
       (.seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n)) (.block [])))))
       (.seq (.block (Impl.Ecdsa.Verify.X86_64.Cfg.loadS c)) (.seq (.block (Impl.Ecdh.X86_64.Cfg.peer c))
       (.seq (Impl.Ecdh.X86_64.Cfg.check c).inline (.seq (Impl.Ecdsa.Verify.X86_64.Cfg.scalars c).inline
       (.seq c.nPow.inline (.seq (Impl.Ecdsa.Verify.X86_64.Cfg.uv c).inline
-      (.seq (Impl.Ecdsa.Verify.X86_64.Cfg.pointsG c d).inline
+      (.seq (Impl.Ecdsa.Verify.X86_64.Cfg.pointsGW c (c.gMulG d)).inline
         (Impl.Ecdsa.Verify.X86_64.Cfg.tail c).inline)))))))) := by
   show Code.seq _ (Code.seq _ (Code.seq _ (Code.seq _ (Code.seq (Impl.Ecdh.X86_64.Cfg.check c).inline
     (Code.seq (Impl.Ecdsa.Verify.X86_64.Cfg.scalars c).inline (Code.seq c.nPow.inline
@@ -570,7 +570,7 @@ restores the callee-saved registers: `verify_ok`'s proof, with `pointsG_ok`. -/
 theorem verifyG_ok (hc : BaseCfgOk c) (hC : Law c.C) (h9n : c.n ≤ 9) {d : CombData} (hd : CombOk c d)
     (hW : CombOkW c.C d.w (c.combJ d.w) d.tbl d.start) (hcd : c.gtab = some d) {s₀ : State}
     (hp : VPre c s₀) (hnc : Mont.callOf c.MH = none) (hncP : Mont.callOf c.MP' = none) :
-    WP isa (Impl.Ecdsa.Verify.X86_64.Cfg.verifyG c d).inline s₀ fun s' =>
+    WP isa (Impl.Ecdsa.Verify.X86_64.Cfg.verifyGW c (c.gMulG d)).inline s₀ fun s' =>
       (∀ r ∈ Cfg.saved.map Prod.fst, s'.gpr r = s₀.gpr r) ∧ VPost c s₀ s' := by
   obtain hpR := unitMod_pow_two hc.p_odd (64 * c.n)
   rw [verifyG_inline]

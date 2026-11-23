@@ -119,6 +119,8 @@ structure BaseCfgOk (c : Cfg) : Prop where
   /-- With functions for the inversions (`Cfg.inverse`), up to nine words:
   divsteps modulo `p` and `n`. -/
   inverse : c.inverse.isSome = true → c.n ≤ 9 ∧ c.fastN = true
+  /-- The inversions that four-word curves share (`Cfg.inv4`) only for four words. -/
+  inv4_n : c.inv4 = true → c.n = 4 := by decide
 
 /-- Additional hypothesis for the optimized variable-base formulas. The
 general ladder and signing without a comb do not require `a = -3`. -/

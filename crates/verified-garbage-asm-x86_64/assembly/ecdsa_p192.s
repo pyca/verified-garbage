@@ -823,7 +823,17 @@ vg_ecdsa_p192_verify:
 	mov QWORD PTR [rdi+1256], r13
 	mov QWORD PTR [rdi+1264], r8
 	mov QWORD PTR [rdi+1272], r9
-	call {vg_p192_inv_mod_n}
+	movabs rax, -8636089860813500625
+	mov QWORD PTR [rdi+128], rax
+	movabs rax, -6681966944811617319
+	mov QWORD PTR [rdi+1024], rax
+	movabs rax, 3713995993262972888
+	mov QWORD PTR [rdi+1032], rax
+	movabs rax, 7140275178374121500
+	mov QWORD PTR [rdi+1040], rax
+	movabs rax, 0
+	mov QWORD PTR [rdi+1048], rax
+	call {vg_inv4_mod_n}
 	mov r8d, 0
 	mov r9d, 0
 	mov r10d, 0
@@ -6860,7 +6870,17 @@ vg_ecdsa_p192_verify:
 	mov QWORD PTR [rdi+1072], rax
 	mov rax, QWORD PTR [rdi+1112]
 	mov QWORD PTR [rdi+1080], rax
-	call {vg_p192_inv_mod_p}
+	movabs rax, 1
+	mov QWORD PTR [rdi+128], rax
+	movabs rax, 2251799813685248
+	mov QWORD PTR [rdi+1024], rax
+	movabs rax, 3377699720527872
+	mov QWORD PTR [rdi+1032], rax
+	movabs rax, 2251799813685248
+	mov QWORD PTR [rdi+1040], rax
+	movabs rax, 0
+	mov QWORD PTR [rdi+1048], rax
+	call {vg_inv4_mod_p}
 	mov r8d, 0
 	mov r9d, 0
 	mov r10d, 0

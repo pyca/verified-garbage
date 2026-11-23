@@ -57,20 +57,24 @@ def sumC : Prog isa :=
   .seq (.call c.addCompleteFn c.addComplete)
     (.block (copy c.n (c.sl RX) (c.sl DX) ++ copy c.n (c.sl RY) (c.sl DY) ++ copy c.n (c.sl RZ) (c.sl DZ)))
 
-/-- `[u]G + [v]Q`, into `R`, from `u` and `v`, `[u]G` by the comb of `d`,
-`[v]Q` by `mulVA` and their sum by `sumC`. -/
-def pointsG (d : CombData) : Prog isa :=
-  .seq (bits (c.sl U) (bitsAt c.n 0) (8 * c.n)) <| .seq (c.gMulG d) <| .seq (.block (save c)) <|
+/-- `[u]G + [v]Q`, into `R`, from `u` and `v`, `[u]G` by `gm`, `[v]Q` by
+`mulVA` and their sum by `sumC`. -/
+def pointsGW (gm : Prog isa) : Prog isa :=
+  .seq (bits (c.sl U) (bitsAt c.n 0) (8 * c.n)) <| .seq gm <| .seq (.block (save c)) <|
   .seq (mulVA c) (sumC c)
 
-/-- Everything after the checks of the key, the points by `pointsG d`. -/
-def backG (d : CombData) : Prog isa :=
-  .seq (scalars c) <| .seq c.nPow <| .seq (uv c) <| .seq (pointsG c d) (tail c)
+/-- Everything after the checks of the key, the points by `pointsGW gm`. -/
+def backGW (gm : Prog isa) : Prog isa :=
+  .seq (scalars c) <| .seq c.nPow <| .seq (uv c) <| .seq (pointsGW c gm) (tail c)
 
-/-- `vg_ecdsa_<curve>_verify`, `[u]G` by the comb of `d`. -/
-def verifyG (d : CombData) : Prog isa :=
+/-- `vg_ecdsa_<curve>_verify`, `[u]G` by `gm`. -/
+def verifyGW (gm : Prog isa) : Prog isa :=
   .seq (.block (args c)) <| .seq (Impl.Ecdh.X86_64.Cfg.prefix' c (some D)) <| .seq (.block (loadS c)) <|
-  .seq (.block (Impl.Ecdh.X86_64.Cfg.peer c)) <| .seq (Impl.Ecdh.X86_64.Cfg.check c) (backG c d)
+  .seq (.block (Impl.Ecdh.X86_64.Cfg.peer c)) <| .seq (Impl.Ecdh.X86_64.Cfg.check c) (backGW c gm)
+
+/-- `vg_ecdsa_<curve>_verify`, `[u]G` by a call of the signature's comb of
+`d`, `vg_<curve>_comb_g` (`Cfg.gMulGC`). -/
+def verifyG (d : CombData) : Prog isa := verifyGW c (c.gMulGC d)
 
 end Cfg
 
