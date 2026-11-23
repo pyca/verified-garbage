@@ -247,6 +247,9 @@ abbrev wR (W : BitVec 32) : Region := ⟨slot W 64, 320⟩
 theorem readW_self128 (m : Mem) (a : Addr) (v : BitVec 128) : (m.writeW a v).readW a 128 = v :=
   Mem.readW_writeW_self m a 16 v (by decide)
 
+/-- The sixteen index vectors' places. -/
+abbrev vR (W : BitVec 32) : Region := ⟨slot W 64, 256⟩
+
 /-- The index vector of row `r`, to the working space. -/
 theorem index_wp {K W : BitVec 32} (E : Env K W s) {f : XReg → BitVec 128} {is : List Instr} {Q : State → Prop}
     {r : Nat} (hr : r < 16)
@@ -260,19 +263,19 @@ theorem index_wp {K W : BitVec 32} (E : Env K W s) {f : XReg → BitVec 128} {is
   have fW := E.fW
   show WP isa (.block (tb (xr (2 + r % 6)) (oC r) :: x .pshufb (xr (2 + r % 6)) .xmm1 ::
     x .por (xr (2 + r % 6)) .xmm0 :: stx .edi (vOff r) (xr (2 + r % 6)) :: is)) _ _
-  refine wp_tb E.ebx ⟨by simp only [oC]; omega, by rw [show table.length = 36 from rfl]; simp only [oC]; omega⟩
+  refine wp_tb E.ebx ⟨by simp only [oC]; omega, by rw [show table.length = 42 from rfl]; simp only [oC]; omega⟩
     (wp_bin (wp_bin (wp_st (ea_at E.edi (by simp only [vOff]; omega))
       (E.wrW _ _ (by simp only [vOff]; omega) (by simp only [vOff]; omega)) ?_)))
   simp only [upd_self, upd_ne _ _ h0, upd_ne _ _ h1]
   exact k _ (by rw [upd_ne _ _ h0, upd_ne _ _ h0, upd_ne _ _ h0]) (by rw [upd_ne _ _ h1, upd_ne _ _ h1, upd_ne _ _ h1])
 
 /-- The index vectors of the rows `r` to `r + n - 1`, after those of the
-rows before `r`: all of them in the working space, the memory outside it
-kept. -/
+rows before `r`: all of them in the working space, the memory outside
+their sixteen places kept. -/
 theorem indexes_wp {K W : BitVec 32} (E : Env K W s) {is : List Instr} {Q : State → Prop} {H L : BitVec 128}
     {m₀ : Mem} (n : Nat) : ∀ (r : Nat) (m : Mem) (f : XReg → BitVec 128), r + n ≤ 16 → f .xmm0 = L → f .xmm1 = H →
-      (∀ r' < r, vAt m W r' = idx (cst (oC r')) H L) → Frame [wR W] m₀ m →
-      (∀ m' g, (∀ r' < r + n, vAt m' W r' = idx (cst (oC r')) H L) → Frame [wR W] m₀ m' →
+      (∀ r' < r, vAt m W r' = idx (cst (oC r')) H L) → Frame [vR W] m₀ m →
+      (∀ m' g, (∀ r' < r + n, vAt m' W r' = idx (cst (oC r')) H L) → Frame [vR W] m₀ m' →
         WP isa (.block is) (S s m' g) Q) →
       WP isa (.block ((List.range' r n).flatMap index ++ is)) (S s m f) Q := by
   induction n with
@@ -316,6 +319,23 @@ abbrev loOf (x : BitVec 32) : BitVec 128 := XBinOp.eval .pand (bc x) (cst oM)
 theorem byte_bc (x : BitVec 32) {k : Nat} (hk : k < 4) : byte (bc x) k = x.extractLsb' (8 * k) 8 := by
   rw [bc, Lanes.bcast_L, byte_eq_dword, Lanes.dword_L _ (by omega), show k % 4 = k by omega]
 
+/-- A byte of an S-box's plane, looked up: with the sixteen index vectors
+in the working space made of the nibbles `H` and `L`, whose byte `i` is of
+the index `x`, the plane's rows ORed hold in byte `i` byte `p` of S-box
+`j`'s entry at `x`. -/
+theorem acc_entry {m : Mem} {K W : BitVec 32} {H L : BitVec 128} {x : BitVec 8} {j p i : Nat} (hj : j < 4)
+    (hp : p < 4) (hi : i < 16) (hV : ∀ r < 16, vAt m W r = idx (cst (oC r)) H L) (hH : byte H i = x >>> 4)
+    (hL : byte L i = x &&& 0x0f#8) :
+    byte (acc (rowAt m K j p) (vAt m W) 15) i =
+      (sEntry (scheduleAt m (K.setWidth 64)) j x).extractLsb' (8 * p) 8 := by
+  obtain ⟨-, -, -, -, -, h1, h2, h3⟩ := nibbles x
+  rw [acc_congr (V' := fun r => idx (cst (oC r)) H L) 15 (fun r hr => hV r (by omega)),
+    byte_acc (x := x) hi cst_C hH hL, sEntry_byte m _ hj hp]
+  show (m.readW (slot K (planeOff j p + 16 * (x >>> 4).toNat)) 128).extractLsb' (8 * (x &&& 0x0f#8).toNat) 8 = _
+  rw [byte_readW _ _ (by omega), Offset.add_add,
+    show planeOff j p + 16 * (x >>> 4).toNat + (x &&& 0x0f#8).toNat = 1024 * j + 256 * p + x.toNat by
+      simp only [planeOff]; omega]
+
 /-- **An S-box's entries.** With the index vectors of `x` in the working
 space, the four planes' rows ORed and gathered hold, in doubleword `k`,
 S-box `j`'s entry at byte `k` of `x`. -/
@@ -325,20 +345,10 @@ theorem entry_eq {m : Mem} {K W : BitVec 32} {x : BitVec 32} {j k : Nat} (hj : j
       (acc (rowAt m K j 2) (vAt m W) 15) (acc (rowAt m K j 3) (vAt m W) 15) (cst oT)) k =
       sEntry (scheduleAt m (K.setWidth 64)) j (x.extractLsb' (8 * k) 8) := by
   refine word_ext fun p hp => ?_
-  obtain ⟨-, -, -, -, -, h1, h2, h3⟩ := nibbles (x.extractLsb' (8 * k) 8)
   rw [byte_of_dword _ _ hp]
   refine (byte_gather (a := fun p => acc (rowAt m K j p) (vAt m W) 15) cst_T hk hp).trans ?_
-  show byte (acc (rowAt m K j p) (vAt m W) 15) k = _
-  rw [acc_congr (V' := fun r => idx (cst (oC r)) (hiOf x) (loOf x)) 15 (fun r hr => hV r (by omega)),
-    byte_acc (x := x.extractLsb' (8 * k) 8) (by omega) cst_C
-      ((byte_hi (by omega) (cst_M k (by omega))).trans (by rw [byte_bc x hk]))
-      ((byte_lo (cst_M k (by omega))).trans (by rw [byte_bc x hk])),
-    sEntry_byte m _ hj hp]
-  show (m.readW (slot K (planeOff j p + 16 * (x.extractLsb' (8 * k) 8 >>> 4).toNat)) 128).extractLsb'
-    (8 * (x.extractLsb' (8 * k) 8 &&& 0x0f#8).toNat) 8 = _
-  rw [byte_readW _ _ (by omega), Offset.add_add,
-    show planeOff j p + 16 * (x.extractLsb' (8 * k) 8 >>> 4).toNat + (x.extractLsb' (8 * k) 8 &&& 0x0f#8).toNat =
-      1024 * j + 256 * p + (x.extractLsb' (8 * k) 8).toNat by simp only [planeOff]; omega]
+  exact acc_entry hj hp (by omega) hV ((byte_hi (by omega) (cst_M k (by omega))).trans (by rw [byte_bc x hk]))
+    ((byte_lo (cst_M k (by omega))).trans (by rw [byte_bc x hk]))
 
 /-! ## A round's pieces -/
 
@@ -455,7 +465,9 @@ theorem round_wp {s₀ : State} {K W : BitVec 32} (F : Fix K W s₀) {i : Nat} (
   refine headX_wp E₁ fun g0 l0 h0 =>
     indexes_wp E₁ (m₀ := u₁.mem) 16 0 u₁.mem g0 (by decide) l0 h0 (fun r' hr' => absurd hr' (Nat.not_lt_zero _))
       (Frame.refl _ _) fun m1 g1 hV1 hf1 =>
-    sbox_wp E₁ F.dKW (by decide) hV1 hf1 (fun j' hj' => absurd hj' (Nat.not_lt_zero _)) fun m2 g2 hV2 hf2 hF2 =>
+    sbox_wp E₁ F.dKW (by decide) hV1 (hf1.sub fun r hr => ⟨_, List.mem_singleton_self _, by
+        rw [List.mem_singleton.mp hr]; exact Region.sub_prefix (by decide)⟩)
+      (fun j' hj' => absurd hj' (Nat.not_lt_zero _)) fun m2 g2 hV2 hf2 hF2 =>
     sbox_wp E₁ F.dKW (by decide) hV2 hf2 hF2 fun m3 g3 hV3 hf3 hF3 =>
     sbox_wp E₁ F.dKW (by decide) hV3 hf3 hF3 fun m4 g4 hV4 hf4 hF4 =>
     sbox_wp E₁ F.dKW (by decide) hV4 hf4 hF4 fun m5 g5 _ hf5 hF5 => ?_
@@ -702,23 +714,24 @@ open VG.Proof.Blowfish (dirCipher dirCipher_len dirCipher_bytes bytesAt_eq dirBl
 open VG.Spec.Aes (bytesAt)
 open VG.Spec.Blowfish (blockAt decodeWord encodeBlock)
 
-/-- The key ready for the core at `B`: the schedule through the first stack
-argument, apart from every writable region, and the core's eight bytes of
-stack apart from the schedule, from that argument and from the scratch
-buffer. -/
-def Rdy (s : State) (B : BitVec 32) (k : Schedule) : Prop :=
+/-- The key ready for a core with `total` slots at `B`: the schedule through
+the first stack argument, apart from every writable region, and the core's
+eight bytes of stack apart from the schedule, from that argument and from
+the scratch buffer. -/
+def Rdy (total : Nat) (s : State) (B : BitVec 32) (k : Schedule) : Prop :=
   ∃ S, SchedAt s k S ∧ Apart S (s.ea (at_ .esp 4)) s.wr ∧
     Region.Disjoint (stkRegion (s.gpr .esp) 8) ⟨S.setWidth 64, 4168⟩ ∧
     Region.Disjoint (stkRegion (s.gpr .esp) 8) ⟨s.ea (at_ .esp 4), 4⟩ ∧
-    Region.Disjoint (stkRegion (s.gpr .esp) 8) ⟨B.setWidth 64, 4 * core.total⟩ ∧ B.toNat + 4 * core.total ≤ 2 ^ 32
+    Region.Disjoint (stkRegion (s.gpr .esp) 8) ⟨B.setWidth 64, 4 * total⟩ ∧ B.toNat + 4 * total ≤ 2 ^ 32
 
 theorem ea_congr {s s' : State} (h : s'.gpr .esp = s.gpr .esp) : s'.ea (at_ .esp 4) = s.ea (at_ .esp 4) := by
   show (s'.gpr .esp + _).setWidth 64 = (s.gpr .esp + _).setWidth 64; rw [h]
 
 /-- The block of the core's buffer, encrypted in place. -/
 theorem crypt_wp {s : State} {B : BitVec 32} {k : Schedule} (hB : s.gpr VG.Impl.Modes.X86.sb = B)
-    (hs : ScrIn s B core.total) (hr : Rdy s B k) (hsp : core.stack ≤ (s.gpr .esp).toNat) :
-    WP isa core.crypt s fun s' => s'.gpr VG.Impl.Modes.X86.sb = B ∧ s'.gpr .esp = s.gpr .esp ∧ Rdy s' B k ∧
+    (hs : ScrIn s B core.total) (hr : Rdy core.total s B k) (hsp : core.stack ≤ (s.gpr .esp).toNat) :
+    WP isa core.crypt s fun s' => s'.gpr VG.Impl.Modes.X86.sb = B ∧ s'.gpr .esp = s.gpr .esp ∧
+      Rdy core.total s' B k ∧
       Frame [coreRegion core B, stkRegion (s.gpr .esp) core.stack] s.mem s'.mem ∧
       (∀ j < core.G, bytesAt s'.mem (blkAddr core B j) (4 * core.bw) =
         dirCipher true k (bytesAt s.mem (blkAddr core B j) (4 * core.bw))) ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
@@ -825,9 +838,9 @@ theorem keyArgsN_congr {s s' : State} {rs : List Region} {k : Schedule} (h : Key
   exact ⟨keyArgs_congr ⟨S, hS, ha, hw⟩ hesp hrd hwr hf, by rw [hesp]; exact d1, by rw [hesp, e]; exact d2,
     by rw [hesp, ea_congr hesp]; exact d3⟩
 
-theorem rdy_frame {s s' : State} {B : BitVec 32} {k : Schedule} {rs : List Region} (h : Rdy s B k)
+theorem rdy_frame {n : Nat} {s s' : State} {B : BitVec 32} {k : Schedule} {rs : List Region} (h : Rdy n s B k)
     (hesp : s'.gpr .esp = s.gpr .esp) (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) (hf : Frame rs s.mem s'.mem)
-    (hs : ∀ r ∈ rs, ∃ r' ∈ s.wr, Region.Sub r r') : Rdy s' B k := by
+    (hs : ∀ r ∈ rs, ∃ r' ∈ s.wr, Region.Sub r r') : Rdy n s' B k := by
   obtain ⟨S, hS, ha, d1, d2, d3, hfit⟩ := h
   exact ⟨S, hS.frame (ha.sub hs) hesp hrd hwr hf, by rw [hwr, ea_congr hesp]; exact ha, by rw [hesp]; exact d1,
     by rw [hesp, ea_congr hesp]; exact d2, by rw [hesp]; exact d3, hfit⟩
@@ -838,7 +851,7 @@ def ssse3CoreSpec : CoreSpec core where
   Key := Schedule
   cipher := dirCipher true
   KeyArgs := KeyArgsN 8
-  Ready := Rdy
+  Ready := Rdy core.total
   cipher_len _ _ := dirCipher_len _ _ _
   layout := ⟨by decide, .inl rfl, by decide, by decide⟩
   keyArgs_congr h e r w _ f := keyArgsN_congr h e r w f

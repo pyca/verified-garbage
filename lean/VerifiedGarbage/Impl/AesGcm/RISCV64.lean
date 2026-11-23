@@ -108,19 +108,15 @@ def restore : List Instr :=
 
 def ctrCall : Prog isa := Impl.AesCtr.RISCV64.ctrCall
 
-/-- `vg_aes_ctr32` in place, or `vg_aes_ctr32_to` out of place. -/
-def ctrCallWith (o : Bool) : Prog isa :=
-  if o then .call "vg_aes_ctr32_to" Impl.Aes.RISCV64.ctr32To else ctrCall
-
 /-- With the round keys bitsliced (`bs`, `_bitsliced`), `vg_aes_ctr32_bs`. -/
 def ctrCallB (bs : Bool) : Prog isa :=
   if bs then .call "vg_aes_ctr32_bs" Impl.Aes.RISCV64.ctr32Bs else ctrCall
 
-/-- With the round keys bitsliced (`bs`), `vg_aes_ctr32_bs` in place, or
-`vg_aes_ctr32_bs_to` out of place. -/
-def ctrCallWithB (bs o : Bool) : Prog isa :=
-  if bs then (if o then .call "vg_aes_ctr32_bs_to" Impl.Aes.RISCV64.ctr32BsTo else ctrCallB true)
-  else ctrCallWith o
+/-- The whole-block payload kernel, with source in a6 and destination in a3.
+Both layouts use the same symbol for a given key representation. -/
+def ctrCallWithB (bs : Bool) : Prog isa :=
+  if bs then .call "vg_aes_ctr32_bs_to" Impl.Aes.RISCV64.ctr32BsTo
+  else .call "vg_aes_ctr32_to" Impl.Aes.RISCV64.ctr32To
 
 def ghCall : Prog isa := .call "vg_ghash" Impl.Gcm.RISCV64.ghash
 
@@ -246,13 +242,13 @@ def splitCtr : List Instr :=
   [mov .a3 .s4, .shift .srl .d .a4 .s5 4, .logicImm .and .a5 .s5 15, .sub .a6 .s5 .a5,
    .add .s4 .s4 .a6, mov .s5 .a5]
 
-/-- `splitCtr`, or out of place the destination's address in `a3` and the
-source's in `a6`. -/
+/-- Split off the whole blocks, placing the destination in `a3` and the source
+in `a6` for either layout. -/
 def splitCtrWith (o : Bool) : List Instr :=
   if o then
     toDst o .a3 ++ [mov .a6 .s4, .shift .srl .d .a4 .s5 4, .logicImm .and .a5 .s5 15, .sub .a7 .s5 .a5,
       .add .s4 .s4 .a7, mov .s5 .a5]
-  else splitCtr
+  else splitCtr ++ [mov .a6 .a3]
 
 /-- Where the round keys of the counter-mode calls are: the key schedule in
 the context (`s2`), or with the round keys bitsliced (`bs`) the buffer of
@@ -265,11 +261,10 @@ and the working space. -/
 def ctrArgsB (bs : Bool) (c : Nat) : List Instr :=
   [mov .a0 (keyReg bs), mov .a1 .s3, .addi .a2 .s1 c, .addi .a5 .s0 scrO]
 
-/-- Whole blocks at `s4`, by `vg_aes_ctr32` (or out of place, by
-`vg_aes_ctr32_to`; with the round keys bitsliced, their `_bs` forms). -/
+/-- Encrypt whole payload blocks using the two-pointer CTR kernel. -/
 def cryptWholeB (bs o : Bool) : Prog isa :=
   .seq (.block (splitCtrWith o))
-    (.ite (.zero .a4) (.block []) (.seq (.block (ctrArgsB bs 48)) (ctrCallWithB bs o)))
+    (.ite (.zero .a4) (.block []) (.seq (.block (ctrArgsB bs 48)) (ctrCallWithB bs)))
 
 /-- The keystream block zeroed, and the arguments of `vg_aes_ctr32` on it. -/
 def tailArgsB (bs : Bool) : List Instr :=

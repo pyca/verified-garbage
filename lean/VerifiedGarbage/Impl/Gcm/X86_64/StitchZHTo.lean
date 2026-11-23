@@ -30,21 +30,11 @@ abbrev bigPTo : Prog isa := StitchZH.bigP true
 
 /-- The blocks after the last group, as `StitchZH.rem`'s, read at
 `rdx + r8` (`r8` is `src - dst`). -/
-def remTo : Prog isa := StitchZH.remG [.alu .add .r8 (.reg .rdx)] .r8
+abbrev remTo : Prog isa := StitchZH.rem true
 
-/-- `StitchZH.rest`, the data read at `rdx + r8`. -/
-def restTo : Prog isa :=
-  .seq firstTo
-    (.seq (.block [.alu .cmp .r9 (.imm bigMinPE)])
-      (.seq (.ite .b (.block []) bigPTo)
-        (.seq (.block [.alu .cmp .r9 (.imm 32)])
-          (.seq (.ite .b (.block []) (.loop bodyTo .ae)) (StitchZH.tailR remTo)))))
+abbrev restTo : Prog isa := StitchZH.rest true
 
-/-- `StitchZH.encR`, the data read at `rdx + r8`. -/
-def encR : Prog isa :=
-  .seq (.seq (.block setupP) Aes.X86_64.VaesZH.loadKeys)
-    (.seq (.block StitchZH.midTest)
-      (.ite .b (.seq (.block StitchZH.midUndo) (StitchZH.midC true)) (.seq (.block StitchZH.midUndo) restTo)))
+def encR : Prog isa := StitchZH.encWith true
 
 /-! ## In one pass over a source and then in place
 

@@ -185,7 +185,8 @@ theorem shared_pre (s : State) (hs : (Proof.Gcm.encryptBlocksSplitContract PPC64
   · change InRegions (s.rd++s.wr) (s.gpr .r7) (16*(s.gpr .r8).toNat)
     rw [hrd]
     exact ⟨_,List.mem_append_left _ (by simp),Region.contains_self _ _⟩
-  · intro r hr
+  · right
+    intro r hr
     change r ∈ [⟨scratch s,704⟩,⟨s.gpr .r9,16*(s.gpr .r10).toNat⟩,⟨s.gpr .r5,16⟩,⟨s.gpr .r6,16⟩] at hr
     change (⟨s.gpr .r7,16*(s.gpr .r8).toNat⟩ : Region).Disjoint r
     simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
@@ -258,7 +259,7 @@ theorem prep_plain {t : State} {n count i : Nat} (lay : Wrapper.Layout (prep t) 
   by_cases hic : i<count
   · rw [ite_eq_left hic,ite_eq_left hic]
     exact prep_block (r := sourceRegion (prep t) count)
-      (lay.disjoint ⟨(prep t).gpr .r9,704⟩ (by simp [Blocks.wrapperFullWrites]))
+      lay.scratchApart
       (Offset.sub_base _ (d := 16*i) (n := 16) (k := 16*count) (by omega_using [hic]))
   · rw [ite_eq_right hic,ite_eq_right hic]
     exact prep_block (r := Blocks.coreData (Blocks.wrapperView (prep t)) n)
@@ -380,7 +381,8 @@ theorem to_pre (s : State) (hs : (Proof.Gcm.decryptBlocksToContract PPC64LE.abi)
   · change InRegions (s.rd++s.wr) (s.gpr .r6) (16*(s.gpr .r7).toNat)
     rw [hrd]
     exact ⟨_,List.mem_append_left _ (by simp),Region.contains_self _ _⟩
-  · intro r hr
+  · right
+    intro r hr
     change r ∈ [⟨s.gpr .r10,704⟩,⟨s.gpr .r8,16*(s.gpr .r7).toNat⟩,⟨s.gpr .r5+32,16⟩,⟨s.gpr .r5,16⟩] at hr
     change (⟨s.gpr .r6,16*(s.gpr .r7).toNat⟩ : Region).Disjoint r
     simp only [List.mem_cons,List.not_mem_nil,or_false] at hr

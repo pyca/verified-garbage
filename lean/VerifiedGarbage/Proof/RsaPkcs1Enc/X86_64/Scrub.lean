@@ -12,11 +12,12 @@ import VerifiedGarbage.Proof.Framework.Lit
 /-!
 # RSAES-PKCS1-v1_5 on x86-64, without secret residue
 
-Each function as emitted (`Impl.RsaPkcs1Enc.X86_64.Fn`), over any
-implementation of SHA-256's compression function (`Compress`) and of the
-private CRT operation (`CrtImpl`), or of the public operation
-(`PublicImpl`), its whole stack wiped by its cleanup at the higher of its own
-level and theirs. Its code is its code over a stub, with the
+Each function as emitted (`Impl.RsaPkcs1Enc.X86_64.Fn`, and
+`vg_rsa_pkcs1_decrypt_precomputed_front` in `FrontScrub.lean`, which calls
+decryption's code here), over any implementation of SHA-256's compression
+function (`Compress`) and of the private CRT operation (`CrtImpl`), or of
+the public operation (`PublicImpl`), its whole stack wiped by its cleanup at
+the higher of its own level and theirs. Its code is its code over a stub, with the
 implementations' code where it calls them (`fill_calls`): the kernel
 evaluates what the cleanup needs of the stub once (for decryption, once for
 each size of the compression function's scratch space, which moves offsets
@@ -77,40 +78,6 @@ theorem dec_fill (h : Proof.Sha256.X86_64.Compress) (c : CrtImpl) {k so : Nat} (
 theorem dec_stub0 : stubSide (decStub 0) VecLevel.sse.level decStack 3480 [] = true := by lit_decide
 theorem dec_stub112 : stubSide (decStub 112) VecLevel.sse.level decStack 3480 [] = true := by lit_decide
 theorem dec_stub560 : stubSide (decStub 560) VecLevel.sse.level decStack 3480 [] = true := by lit_decide
-
-/-- Decryption over `h` and `c`, before its cleanup. -/
-def decPlain (h : Proof.Sha256.X86_64.Compress) (c : CrtImpl) :
-    Unscrubbed Spec.RsaPkcs1Enc.decryptPrecomputedApi target where
-  code := Impl.RsaPkcs1Enc.X86_64.Decrypt.codeP (Dec.HH h) (Dec.privNameP c) (Dec.privCodeP c)
-  verified := Dec.decryptPrecomputed_verified h c
-  spSafe := Dec.decP_spSafe h c
-
-/-- `Spec.RsaPkcs1Enc.decryptPrecomputedApi`'s function as emitted over `h`
-and `c` meets its contract in constant time and returns without secret
-residue. -/
-theorem dec_scrubbed (h : Proof.Sha256.X86_64.Compress) (c : CrtImpl) :
-    VerifiedScrubbed target
-      (Impl.RsaPkcs1Enc.X86_64.Fn.decryptPrecomputed (decLevel h c) (Dec.HH h) (Dec.privNameP c) (Dec.privCodeP c))
-      (Spec.RsaPkcs1Enc.decryptPrecomputedApi.contract X86_64.abi 3480) 32 := by
-  have hk₁ := level_join_left h.level (c.level.join c.pubOp.level)
-  have hk₂ := level_join_right h.level (c.level.join c.pubOp.level)
-  have hh := calleeSide_mono hk₁ (Nat.le_refl _) h.side
-  have hc := calleeSide_mono (Nat.le_trans (level_join_left _ _) hk₂) (Nat.le_refl _) c.sideP
-  have hp := calleeSide_mono (Nat.le_trans (level_join_right _ _) hk₂) (Nat.le_refl _) c.pubOp.side
-  have hi : calleeSide Impl.Sha256.X86_64.Stream.init (decLevel h c).level 0 = true :=
-    calleeSide_mono (Nat.zero_le _) (Nat.le_refl _) init_side
-  rcases h.hso with e | e | e
-  · exact verifiedScrubbedAllFill (decPlain h c) _ (Dec.decryptPrecomputed_postOut _)
-      (dec_fill h c e hh hi hc hp) (Nat.zero_le _) (Nat.le_refl _) (ha := dec_stub0)
-  · exact verifiedScrubbedAllFill (decPlain h c) _ (Dec.decryptPrecomputed_postOut _)
-      (dec_fill h c e hh hi hc hp) (Nat.zero_le _) (Nat.le_refl _) (ha := dec_stub112)
-  · exact verifiedScrubbedAllFill (decPlain h c) _ (Dec.decryptPrecomputed_postOut _)
-      (dec_fill h c e hh hi hc hp) (Nat.zero_le _) (Nat.le_refl _) (ha := dec_stub560)
-
-theorem dec_spSafe (h : Proof.Sha256.X86_64.Compress) (c : CrtImpl) :
-    (Impl.RsaPkcs1Enc.X86_64.Fn.decryptPrecomputed (decLevel h c) (Dec.HH h) (Dec.privNameP c)
-      (Dec.privCodeP c)).all (fun i => !isa.writesSp i) = true :=
-  scrubKs_spSafe (Dec.decP_spSafe h c)
 
 /-- The stack the public operation needs: none. -/
 def pubStack : String → Nat := fun _ => 0

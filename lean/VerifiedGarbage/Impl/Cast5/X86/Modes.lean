@@ -48,29 +48,42 @@ def setup : List Instr :=
    .mov .eax (.mem (at_ .esp 8)), .store (at_ .esi roundsOff) .eax,
    .mov .eax (.reg .esi), .alu .add .eax (imm (4 * bufSlot)), .store (at_ .esi dataOff) .eax]
 
-/-- `(Rₙ, Lₙ)` to the block, the modes' data pointer and steps left read
-before and written again after, and `edi` the working space's address. -/
-def store : List Instr :=
-  [.mov .edx (.mem (at_ .esi dataOff)), .mov .eax (.mem (at_ .esi (4 * dSlot))),
-   .mov .ecx (.mem (at_ .esi (4 * nSlot))),
+/-- `(Rₙ, Lₙ)` to the block, the modes' data pointer and steps left (the
+slots 4 and 5 after a core's `cs`) read before and written again after, and
+`edi` the working space's address. -/
+def storeAt (cs : Nat) : List Instr :=
+  [.mov .edx (.mem (at_ .esi dataOff)), .mov .eax (.mem (at_ .esi (4 * (cs + 4)))),
+   .mov .ecx (.mem (at_ .esi (4 * (cs + 5)))),
    .bswap .ebp, .store (at_ .edx 0) .ebp, .bswap .ebx, .store (at_ .edx 4) .ebx,
-   .store (at_ .esi (4 * dSlot)) .eax, .store (at_ .esi (4 * nSlot)) .ecx, .mov .edi (.reg .esi)]
+   .store (at_ .esi (4 * (cs + 4))) .eax, .store (at_ .esi (4 * (cs + 5))) .ecx, .mov .edi (.reg .esi)]
+
+def store : List Instr := storeAt coreSlots
+
+/-- The block, encrypted (`up`) or decrypted, over the look-up `lk`
+(`roundWith`), for a core of `cs` slots. -/
+def cryptWith (lk : Prog isa) (cs : Nat) (up : Bool) : Prog isa :=
+  .seq (.block setup) (.seq (.block load)
+    (.seq (if up then encryptBlockWith lk else decryptBlockWith lk) (.block (storeAt cs))))
 
 /-- The block, encrypted (`up`) or decrypted. -/
-def crypt (up : Bool) : Prog isa :=
-  .seq (.block setup) (.seq (.block load) (.seq (if up then encryptBlock else decryptBlock) (.block store)))
+def crypt (up : Bool) : Prog isa := cryptWith (scan s1234Sym) coreSlots up
 
-/-- CAST5's core for the modes, encrypting (`up`) or decrypting. -/
-def dirCore (up : Bool) : Impl.Modes.X86.Core where
+/-- CAST5's core for the modes over the look-up `lk`, which uses `stack`
+bytes of stack: `cs` slots, of which the first 66 are the working space of
+the rounds and the buffer's block. -/
+def coreWith (lk : Prog isa) (cs stack : Nat) (up : Bool) : Impl.Modes.X86.Core where
   prepare := .block []
-  crypt := crypt up
-  slots := coreSlots
-  total := coreSlots + 10
+  crypt := cryptWith lk cs up
+  slots := cs
+  total := cs + 10
   buf := bufSlot
   G := 1
   bw := 2
-  stack := 4
+  stack := stack
   ka := 2
+
+/-- CAST5's core for the modes, encrypting (`up`) or decrypting. -/
+def dirCore (up : Bool) : Impl.Modes.X86.Core := coreWith (scan s1234Sym) coreSlots 4 up
 
 /-- `vg_cast5_cbc_encrypt_chained`, with its scratch buffer as the sixth argument. -/
 def cbcEncryptChained : Prog isa := (dirCore true).seq (Impl.Modes.Mode.cbcEncChained 2)

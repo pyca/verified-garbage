@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.Contract
 public import VerifiedGarbage.Impl.RsaPkcs1Enc.X86_64.Decrypt
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.RsaPkcs1Enc.Contract
@@ -10,7 +11,7 @@ import VerifiedGarbage.Proof.Bignum.Words
 /-!
 # RSAES-PKCS1-v1_5 decryption on x86-64: the contracts on the registers
 
-`decK` states the shared contract `Spec.RsaPkcs1Enc.decryptContract` (with
+`decK` states the shared contract `Proof.RsaPkcs1Enc.decryptContract` (with
 the stack the frame and the calls use, `decStack`) on the registers and the
 stack (`decrypt_implies`).
 
@@ -162,7 +163,7 @@ def decK : Contract isa where
       (stackArg s 12).toNat = (stackArg s 8).toNat ∧
       Spec.Rsa.scratchWords (s.gpr .r8).toNat ≤ (stackArg s 16).toNat
   post s s' :=
-    Spec.RsaPkcs1Enc.writtenMsg s'.mem (s.gpr .rdi) (s.gpr .rdx) (s.gpr .r8).toNat ((s'.gpr .rax).setWidth 32)
+    Proof.RsaPkcs1Enc.writtenMsg s'.mem (s.gpr .rdi) (s.gpr .rdx) (s.gpr .r8).toNat ((s'.gpr .rax).setWidth 32)
       (Spec.RsaPkcs1Enc.decrypt (Spec.Rsa.bytesAt s.mem (s.gpr .rcx) (s.gpr .r8).toNat)
         (Spec.Rsa.bytesAt s.mem (s.gpr .r9) (stackArg s 0).toNat)
         (Spec.Rsa.bytesAt s.mem (stackArg s 1) (stackArg s 2).toNat)

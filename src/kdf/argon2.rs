@@ -324,8 +324,11 @@ fn valid(iterations: u32, memory_kib: u32, lanes: u32, lengths: [usize; 5]) -> b
 /// A vector of `len` copies of `zero`, or `AllocationFailed`.
 fn allocate<T: Clone>(len: usize, zero: T) -> Result<Vec<T>, PasswordHashError> {
     let mut v = Vec::new();
+    // NO-SECRET-RESIDUE: the vector is empty when its capacity is reserved,
+    // exactly, and is then filled with zeros within it.
     v.try_reserve_exact(len)
         .map_err(|_| PasswordHashError::AllocationFailed)?;
+    // NO-SECRET-RESIDUE: within the capacity reserved above.
     v.resize(len, zero);
     Ok(v)
 }

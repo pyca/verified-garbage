@@ -739,10 +739,10 @@ theorem dataInv_mono {m₀ m : Mem} {D : Addr} {n k k' : Nat} {ks : Nat → Byte
 
 /-! ## Out of place -/
 
-/-- How the source `S` and the destination `T` lie: the same in place,
-disjoint out of place (`to`). -/
+/-- A separate destination pointer may designate the source itself or a disjoint
+range. The single-pointer entry always designates the source. -/
 def ModeOk (to : Bool) (Sp Tp : BitVec 32) (n : Nat) : Prop :=
-  if to then Region.Disjoint ⟨State.addr Sp, 16 * n⟩ ⟨State.addr Tp, 16 * n⟩ else Sp = Tp
+  if to then Sp = Tp ∨ Region.Disjoint ⟨State.addr Sp, 16 * n⟩ ⟨State.addr Tp, 16 * n⟩ else Sp = Tp
 
 /-- The data after `k` words, read at `S` and written to `T`: the first `4 k`
 bytes at `T` are those at `S` on entry with the keystream `ks` XORed in, and
@@ -891,7 +891,7 @@ theorem XPre.apart {s : State} (hp : XPre to m₀ b Sp Tp n g ks s) :
   unfold ModeOk at h
   cases to
   · exact .inl (congrArg _ h)
-  · exact .inr h
+  · exact h.imp (congrArg State.addr) id
 
 theorem xs_step {s₃ : State} (hp : XPre to m₀ b Sp Tp n g ks s₃) {k : Nat} (hk : k < 8)
     (hkn : 8 * g + k < 4 * n) {sB : State} (hd : sB.gpr (dstReg to) = Tp + BitVec.ofNat 32 (32 * g))

@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.Contract
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
@@ -205,7 +206,7 @@ open VG VG.AArch64 VG.Impl.RsaPkcs1Enc.AArch64.Decrypt
 open VG.Proof.RsaPkcs1Enc.AArch64.Enc (add_add read8 write8 toNat_sub_k)
 
 /-- The shared contract, with `P + 240` bytes of stack. -/
-abbrev decSpec (P : Nat) : Contract isa := Spec.RsaPkcs1Enc.decryptContract AArch64.abi (P + 240)
+abbrev decSpec (P : Nat) : Contract isa := Proof.RsaPkcs1Enc.decryptContract AArch64.abi (P + 240)
 
 /-- The layout of a call from `s`, with `P` bytes of stack for the calls. -/
 def lay (P : Nat) (s : State) : Lay :=
@@ -239,7 +240,7 @@ theorem forall_ro {L : Lay} {F : Region → Prop}
   rcases hR with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
 
 theorem lay_ok {P : Nat} {s : State} (h : (decSpec P).pre s) : (lay P s).Ok := by
-  sig_pre [Spec.RsaPkcs1Enc.decryptContract, Spec.RsaPkcs1Enc.decryptSig, AArch64.abi, AArch64.argRegs,
+  sig_pre [Proof.RsaPkcs1Enc.decryptContract, Proof.RsaPkcs1Enc.decryptSig, AArch64.abi, AArch64.argRegs,
     _root_.List.range, _root_.List.range.loop, List.append_eq] at h
   sig_split h
   rename_i hsp hsp2 _ _ oM oN oE oD oI oP oQ oDP oDQ oQI oS oA mN mE mD mI mP mQ mDP mDQ mQI mS mA nS eS dS iS
@@ -457,7 +458,7 @@ theorem spec_rdwr {P : Nat} {s : State} (h : (decSpec P).pre s) :
     s.rd = [(lay P s).N, (lay P s).E, (lay P s).D, (lay P s).INP, (lay P s).PP, (lay P s).QQ, (lay P s).DP,
       (lay P s).DQ, (lay P s).QI, (lay P s).ARGS] ∧ s.wr = [(lay P s).OUT, (lay P s).ML, (lay P s).SCR] := by
   obtain hL := lay_ok h
-  sig_pre [Spec.RsaPkcs1Enc.decryptContract, Spec.RsaPkcs1Enc.decryptSig, AArch64.abi, AArch64.argRegs,
+  sig_pre [Proof.RsaPkcs1Enc.decryptContract, Proof.RsaPkcs1Enc.decryptSig, AArch64.abi, AArch64.argRegs,
     _root_.List.range, _root_.List.range.loop, List.append_eq] at h
   obtain ⟨-, -, hrd, hwr, -⟩ := h
   have hk1 : (s.gpr .x1).toNat = (s.gpr .x4).toNat := hL.olk

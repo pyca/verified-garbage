@@ -1,5 +1,10 @@
 module
 
+public import VerifiedGarbage.Proof.AesGcm.X86_64.DirectGather.Verified
+import VerifiedGarbage.Proof.AesGcm.X86_64.DirectGather.General
+import VerifiedGarbage.Proof.AesGcm.X86_64.DirectGather.Bulk
+import VerifiedGarbage.Proof.Framework.X86_64.ScrubFill
+
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Instances
 public import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
 public import VerifiedGarbage.Proof.Framework.X86_64.WidenArray
@@ -2077,3 +2082,190 @@ theorem sealGatherR16_spSafeFn (v : GcmVariant) (r : R16 v) :
   scrubKs_spSafe ((sealGatherR16Plain v r).spSafe)
 
 end VG.Proof.AesGcm.X86_64
+
+/-! Stack, vector cleanup and control-register obligations of the direct gather entries. -/
+namespace VG.Proof.AesGcm.X86_64.DirectGather
+open VG VG.X86_64 VG.X86_64.Scrub
+open VG.Impl.AesGcm.X86_64 (Fn Callees)
+open VG.Impl.AesGcm.X86_64.DirectGather
+open VG.Impl.Scrub.X86_64 (VecLevel scrubAll)
+open VG.Impl.Gcm.X86_64.Flag (onFlag)
+open VG.Impl.StackScratch.X86_64 (withStackArgScratch)
+
+abbrev baseCore (c : Callees) (ctr : Fn) := enter (general c ctr none)
+abbrev readyCore (c : Callees) (ctr f : Fn) := dispatch (quick f) (general c ctr (some f))
+abbrev baseStub := Finished (baseCore stub5 ctrToStub)
+abbrev readyStub := Finished (readyCore stub5 ctrToStub (fnStub "B"))
+abbrev rawStub := withStackArgScratch 2616 5 baseStub
+abbrev flagStub (n : Nat) := onFlag n (withStackArgScratch 2616 5 readyStub) rawStub
+
+private theorem fillBase {k : Nat} {c : Callees} {ctr : Fn} (hs : CalleesSide k c)
+    (ht : calleeSide ctr.code k 24=true) :
+    Fill k (fun _ => 24) baseStub (Finished (baseCore c ctr)) := by
+  obtain ⟨a,b,g,e,d⟩ := hs
+  have ac := calleeSide_mono (Nat.le_refl k) (show 8≤24 by decide) a
+  have gh := calleeSide_mono (Nat.le_refl k) (show 8≤24 by decide) g
+  fill_calls_wide
+
+private theorem fillReady {k : Nat} {c : Callees} {ctr f : Fn} (hs : CalleesSide k c)
+    (ht : calleeSide ctr.code k 24=true) (hf : calleeSide f.code k 24=true) :
+    Fill k (fun _ => 24) readyStub (Finished (readyCore c ctr f)) := by
+  obtain ⟨a,b,g,e,d⟩ := hs
+  have ac := calleeSide_mono (Nat.le_refl k) (show 8≤24 by decide) a
+  have gh := calleeSide_mono (Nat.le_refl k) (show 8≤24 by decide) g
+  fill_calls_wide
+
+private theorem sp_general (v : GcmImpl) (ctr : Fn) (f : Option Fn)
+    (ht : ctr.code.all (fun i => !isa.writesSp i)=true)
+    (hf : ∀ b∈f,b.code.all (fun i => !isa.writesSp i)=true) :
+    (general v.callees ctr f).all (fun i => !isa.writesSp i)=true := by
+  have a := seal_spSafe v
+  simp only [Impl.AesGcm.X86_64.«seal»,Code.all,Bool.and_eq_true] at a
+  obtain ⟨_,aa,_,_,⟨tg,_⟩,_⟩ := a
+  have tail : (Impl.AesGcm.X86_64.cryptTailG v.callees true).all (fun i => !isa.writesSp i)=true := by
+    simp only [Impl.AesGcm.X86_64.cryptTailG,Code.all,GcmImpl.callees,v.ctr.spSafe]
+    decide +kernel
+  cases f with
+  | none =>
+    simp only [general,pieces,Option.map_none,Option.getD_none,whole,Code.all,ht,aa,tg,tail,Bool.true_and,Bool.and_true]
+    decide +kernel
+  | some b =>
+    have bf := hf b rfl
+    simp only [general,pieces,Option.map_some,Option.getD_some,bulk,whole,Code.all,bf,ht,aa,tg,tail,Bool.true_and,Bool.and_true]
+    decide +kernel
+
+private theorem baseStub_ok : stubCallee baseStub 0 (fun _=>24) 2512 = true := by lit_decide
+private theorem readyStub_ok : stubCallee readyStub 1 (fun _=>24) 2512 = true := by lit_decide
+
+private theorem of_side {p : Prog isa} {k : Nat} (sp : (Finished p).all (fun i => !isa.writesSp i)=true)
+    (hc : calleeSide (Finished p) k 2512=true) : CoreSafe p := by
+  simp only [calleeSide,Bool.and_eq_true,decide_eq_true_eq] at hc
+  refine ⟨sp,hc.1.1,?_⟩
+  have both := (Code.allInstrs_eq _ _).symm.trans hc.1.2
+  exact (Code.allInstrs_eq _ _).trans (List.all_eq_true.mpr (fun i hi => (Bool.and_eq_true_iff.mp (List.all_eq_true.mp both i hi)).2))
+
+theorem baseSafe (v : GcmImpl) (ctr : Fn) {k : Nat} (hs : CalleesSide k v.callees)
+    (ht : calleeSide ctr.code k 24=true) (sp : ctr.code.all (fun i => !isa.writesSp i)=true) :
+    CoreSafe (baseCore v.callees ctr) := by
+  apply of_side _ (calleeSide_of_fill (fillBase hs ht) (Nat.zero_le _) baseStub_ok)
+  have g := sp_general v ctr none sp (by simp)
+  simp only [baseCore,enter,Code.all,g,Bool.and_true]
+  decide +kernel
+
+theorem preparedSafe (v : GcmImpl) (ctr f : Fn) {k : Nat} (hk : 1≤k) (hc : CalleesSide k v.callees)
+    (ht : calleeSide ctr.code k 24=true) (hf : calleeSide f.code k 24=true)
+    (sp : ctr.code.all (fun i => !isa.writesSp i)=true) (fp : f.code.all (fun i => !isa.writesSp i)=true) :
+    CoreSafe (readyCore v.callees ctr f) := by
+  apply of_side _ (calleeSide_of_fill (fillReady hc ht hf) hk readyStub_ok)
+  have g := sp_general v ctr (some f) sp (fun b hb => (Option.mem_some_iff.mp hb) ▸ fp)
+  have q : (quick f).all (fun i => !isa.writesSp i)=true := by
+    simp only [quick,firstBlocks,Code.all,fp,Bool.and_true]
+    decide +kernel
+  simp only [readyCore,dispatch,enter,Code.all,g,q,Bool.and_true]
+  decide +kernel
+
+private theorem frameFill {k : Nat} {a b : Prog isa} (f : Fill k (fun _=>24) a b) :
+    Fill k (fun _=>24) (withStackArgScratch 2616 5 a) (withStackArgScratch 2616 5 b) :=
+  .frame _ _ (.seq (.block _) f)
+
+private theorem raw_ok : stubSide rawStub 0 (fun _=>24) 5128 []=true := by lit_decide
+private theorem flag_ok {n : Nat} (hn : n=16 ∨ n=48) : stubSide (flagStub n) 1 (fun _=>24) 5128 []=true := by
+  rcases hn with rfl|rfl <;> lit_decide
+
+abbrev publicContract := Spec.Gcm.sealGatherPreparedApi.contract X86_64.abi 5128
+
+theorem base_scrub {c : Callees} {ctr : Fn} (lv : VecLevel) (hs : CalleesSide lv.level c)
+    (ct : calleeSide ctr.code lv.level 24=true)
+    (verified : Verified target (plain c ctr) publicContract) (safe : CoreSafe (baseCore c ctr)) :
+    VerifiedScrubbed target (scrubAll lv 0 5128 (plain c ctr)) publicContract 0 :=
+  verifiedScrubbedAllFill (api:=Spec.Gcm.sealGatherPreparedApi)
+    { suffix := "", code := plain c ctr, stack := 5128, verified := verified, spSafe := withStackArgScratch_spSafe safe.sp }
+    lv (sealGatherPreparedOut _) (frameFill (fillBase hs ct)) (Nat.zero_le _) (Nat.le_refl _) (ha:=raw_ok)
+
+theorem prepared_scrub {c : Callees} {ctr b : Fn} (lv : VecLevel) (hk : 1≤lv.level) {n : Nat} (hn : n=16 ∨ n=48)
+    (hs : CalleesSide lv.level c) (ct : calleeSide ctr.code lv.level 24=true) (bt : calleeSide b.code lv.level 24=true)
+    (verified : Verified target (onFlag n (prepared c ctr b) (plain c ctr)) publicContract)
+    (rs : CoreSafe (readyCore c ctr b)) (ws : CoreSafe (baseCore c ctr)) :
+    VerifiedScrubbed target (scrubAll lv 0 5128 (onFlag n (prepared c ctr b) (plain c ctr))) publicContract 0 := by
+  have f := Fill.seq (Fill.block (Impl.Gcm.X86_64.Flag.testFlag n))
+    (Fill.ite .ae (Fill.seq (Fill.seq (Fill.block []) (Fill.block [])) (frameFill (fillReady hs ct bt))) (frameFill (fillBase hs ct)))
+  exact verifiedScrubbedAllFill (api:=Spec.Gcm.sealGatherPreparedApi)
+    { suffix := "", code := onFlag n (prepared c ctr b) (plain c ctr), stack := 5128, verified := verified,
+      spSafe := onFlag_spSafe (withStackArgScratch_spSafe rs.sp) (withStackArgScratch_spSafe ws.sp) }
+    lv (sealGatherPreparedOut _) f hk (Nat.le_refl _) (ha:=flag_ok hn)
+
+end VG.Proof.AesGcm.X86_64.DirectGather
+
+/-! Instantiate direct gather sealing for the key-only, 16-power and 48-power callers. -/
+namespace VG.Proof.AesGcm.X86_64.DirectGather
+open VG VG.X86_64 VG.X86_64.Scrub
+open VG.Impl.AesGcm.X86_64 (Callees Fn)
+open VG.Impl.AesGcm.X86_64.DirectGather (general directBase directPrepared)
+open VG.Impl.Scrub.X86_64 (VecLevel)
+open VG.Proof.Gcm.X86_64.Stitch (CtxMode)
+open VG.Proof.AesGcm.X86_64.StreamTo (BlkToFn)
+
+abbrev ctrFn (v : GcmVariant) : Fn := ⟨v.ctrTo.callee.name,v.ctrTo.callee.code⟩
+abbrev PlainOk (v : GcmVariant) :=
+  InitializedProof CtxMode.base (general v.impl.callees (ctrFn v) none)
+abbrev ReadyOk (v : GcmVariant) {n : Nat} (b : BlkToFn (CtxMode.flaggedT n)) :=
+  InitializedProof (CtxMode.flaggedT n) (general v.impl.callees (ctrFn v) (some b.fn))
+
+private theorem generalProof (v : GcmVariant) {M : CtxMode} {f : Option Fn}
+    (wp : PrefixWP M f) (ct : PrefixCT M f) :
+    InitializedProof M (general v.impl.callees (ctrFn v) f) where
+  run := general_wp v.impl v.ctrTo wp
+  rel := general_rel v.impl v.ctrTo wp ct
+
+theorem plainProof (v : GcmVariant) : PlainOk v :=
+  generalProof v plainPrefix_wp plainPrefix_rel
+
+theorem readyProof (v : GcmVariant) {n : Nat} (b : BlkToFn (CtxMode.flaggedT n)) : ReadyOk v b :=
+  generalProof v (bulkPrefix_wp b) (bulkPrefix_rel b)
+
+theorem ctr_side (v : GcmVariant) :
+    calleeSide (ctrFn v).code v.lvTW.level 24 = true :=
+  calleeSide_mono (level_join_right _ _) (Nat.zero_le _) v.ctrTo.side
+
+theorem plain_safe (v : GcmVariant) : CoreSafe (baseCore v.impl.callees (ctrFn v)) :=
+  baseSafe v.impl (ctrFn v) (callees_sideTW v) (ctr_side v) v.ctrTo.spSafe
+
+/-- The key-context-only gather clears the stack and registers used by its counter backend. -/
+theorem base_verified (v : GcmVariant) :
+    VerifiedScrubbed target (directBase v.lvTW v.impl.callees (ctrFn v)) publicContract 0 :=
+  base_scrub v.lvTW (callees_sideTW v) (ctr_side v)
+    (plain_public (plain_rounds (plainProof v) (plain_safe v))) (plain_safe v)
+
+theorem base_spSafe (v : GcmVariant) :
+    (directBase v.lvTW v.impl.callees (ctrFn v)).all (fun i => !isa.writesSp i)=true :=
+  scrubKs_spSafe (withStackArgScratch_spSafe (plain_safe v).sp)
+
+theorem lvG_le_T (v : GcmVariant) : v.lvG.level ≤ v.lvT.level := by
+  have h := Nat.le_trans v.lv_le_lvA (level_join_left v.lvA v.ctrTo.level)
+  exact join_mono_left v.toLv h
+
+private theorem ready_safe (v : GcmVariant) {n : Nat} (b : BlkToFn (CtxMode.flaggedT n))
+    (bt : calleeSide b.fn.code v.lvG.level 24=true) : CoreSafe (readyCore v.impl.callees (ctrFn v) b.fn) :=
+  preparedSafe v.impl (ctrFn v) b.fn v.one_le_lvT (callees_sideT v)
+    (calleeSide_mono v.lvTW_le_lvT (Nat.le_refl _) (ctr_side v))
+    (calleeSide_mono (lvG_le_T v) (Nat.le_refl _) bt) v.ctrTo.spSafe b.spAll
+
+/-- A prepared context can use the fixed-shape and general direct entries; both preserve its public contract. -/
+theorem prepared_verified (v : GcmVariant) (n : Nat) (hn : n=16 ∨ n=48) (b : BlkToFn (CtxMode.flaggedT n))
+    (bt : calleeSide b.fn.code v.lvG.level 24=true) :
+    VerifiedScrubbed target (directPrepared v.lvT n v.impl.callees (ctrFn v) b.fn) publicContract 0 := by
+  have ht : 16≤n ∧ n≤48 := by rcases hn with rfl|rfl <;> decide
+  have cs := calleeSide_mono v.lvTW_le_lvT (Nat.le_refl _) (ctr_side v)
+  have bs := calleeSide_mono (lvG_le_T v) (Nat.le_refl _) bt
+  have ws := plain_safe v
+  have rs := ready_safe v b bt
+  exact prepared_scrub v.lvT v.one_le_lvT hn (callees_sideT v) cs bs (prepared_public hn
+    (prepared_rounds ht.1 ht.2 Short.shortFacts b (readyProof v b) rs) (plain_rounds (plainProof v) ws)) rs ws
+
+theorem prepared_spSafe (v : GcmVariant) (n : Nat) (b : BlkToFn (CtxMode.flaggedT n))
+    (bt : calleeSide b.fn.code v.lvG.level 24=true) :
+    (directPrepared v.lvT n v.impl.callees (ctrFn v) b.fn).all (fun i => !isa.writesSp i)=true :=
+  scrubKs_spSafe (onFlag_spSafe (withStackArgScratch_spSafe (ready_safe v b bt).sp)
+    (withStackArgScratch_spSafe (plain_safe v).sp))
+
+end VG.Proof.AesGcm.X86_64.DirectGather

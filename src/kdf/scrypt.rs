@@ -31,8 +31,11 @@ const PBKDF2_CHUNKS: usize = 14;
 /// A zeroed vector of `len` 128-byte chunks, or `AllocationFailed`.
 fn chunks(len: usize) -> Result<Vec<CacheAligned<[u8; 128]>>, PasswordHashError> {
     let mut v = Vec::new();
+    // NO-SECRET-RESIDUE: the vector is empty when its capacity is reserved,
+    // exactly, and is then filled with zeros within it.
     v.try_reserve_exact(len)
         .map_err(|_| PasswordHashError::AllocationFailed)?;
+    // NO-SECRET-RESIDUE: within the capacity reserved above.
     v.resize(len, CacheAligned([0; 128]));
     Ok(v)
 }

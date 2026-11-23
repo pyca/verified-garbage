@@ -41,17 +41,12 @@ open VG.Proof.AesGcm.X86_64.StreamTo (BlkToFn covers_cons' covers_nil' sub_add_o
 open VG.Spec.Aes (bytesAt)
 open VG.Spec.Gcm (Block blockAt blocksAt ctxCiph ctxH ctr32 ghashFrom inc32)
 
-/-- What `prefix` needs, after `J₀` and the additional data: the
-environment, the slots it reads, the data `D` of `n` bytes, the `sl` bytes
-at `S`, and the 56 bytes below `SP` apart from all of them. -/
-structure PP (M : CtxMode) (Ctx W SP D S : Addr) (R n sl : Nat) (s : State) : Prop where
+/-- Environment and input/output regions for the fused
+out-of-place block call shared by split and gather sealing. -/
+structure CallRegions (M : CtxMode) (Ctx W SP D S : Addr) (R n sl : Nat) (s : State) : Prop where
   env : Env Ctx (W + BitVec.ofNat 64 16) W SP s
   lay : Lay Ctx (W + BitVec.ofNat 64 16) W SP
   rounds : RoundsAt s.mem W R
-  dat : s.mem.readW (W + BitVec.ofNat 64 200) 64 = D
-  len : s.mem.readW (W + BitVec.ofNat 64 208) 64 = BitVec.ofNat 64 n
-  src : s.mem.readW (W + BitVec.ofNat 64 224) 64 = S
-  slen : s.mem.readW (W + BitVec.ofNat 64 192) 64 = BitVec.ofNat 64 sl
   data : DataW Ctx (W + BitVec.ofNat 64 16) W SP s D n
   srcCov : Covers [⟨S, sl⟩] (s.rd ++ s.wr)
   sW : (⟨S, sl⟩ : Region).Disjoint ⟨W, 2560⟩
@@ -64,6 +59,39 @@ structure PP (M : CtxMode) (Ctx W SP D S : Addr) (R n sl : Nat) (s : State) : Pr
   kM : (below SP 56).Disjoint ⟨Ctx, M.len⟩
   sp56 : 56 ≤ SP.toNat
   ext : CtxExt M Ctx (W + BitVec.ofNat 64 16) W SP D n s
+
+/-- Environment, input and output regions, and argument slots for the fused
+out-of-place block call shared by split and gather sealing. -/
+structure CallInputs (M : CtxMode) (Ctx W SP D S : Addr) (R n sl : Nat) (s : State) : Prop where
+  env : Env Ctx (W + BitVec.ofNat 64 16) W SP s
+  lay : Lay Ctx (W + BitVec.ofNat 64 16) W SP
+  rounds : RoundsAt s.mem W R
+  dat : s.mem.readW (W + BitVec.ofNat 64 200) 64 = D
+  src : s.mem.readW (W + BitVec.ofNat 64 224) 64 = S
+  data : DataW Ctx (W + BitVec.ofNat 64 16) W SP s D n
+  srcCov : Covers [⟨S, sl⟩] (s.rd ++ s.wr)
+  sW : (⟨S, sl⟩ : Region).Disjoint ⟨W, 2560⟩
+  sD : (⟨S, sl⟩ : Region).Disjoint ⟨D, n⟩
+  sWrap : S.toNat + sl ≤ 2 ^ 64
+  sl_le : sl ≤ n
+  kw : (below SP 56).Disjoint ⟨W, 2560⟩
+  kd : (below SP 56).Disjoint ⟨D, n⟩
+  ks : (below SP 56).Disjoint ⟨S, sl⟩
+  kM : (below SP 56).Disjoint ⟨Ctx, M.len⟩
+  sp56 : 56 ≤ SP.toNat
+  ext : CtxExt M Ctx (W + BitVec.ofNat 64 16) W SP D n s
+
+/-- The fused callee uses only its registers and regions. Split's argument loader
+also reads the two saved pointers. -/
+theorem CallInputs.regions {M : CtxMode} {Ctx W SP D S : Addr} {R n sl : Nat} {s : State}
+    (h : CallInputs M Ctx W SP D S R n sl s) : CallRegions M Ctx W SP D S R n sl s :=
+  ⟨h.env, h.lay, h.rounds, h.data, h.srcCov, h.sW, h.sD, h.sWrap, h.sl_le,
+   h.kw, h.kd, h.ks, h.kM, h.sp56, h.ext⟩
+
+/-- Split sealing additionally saves the two lengths used by its tail. -/
+structure PP (M : CtxMode) (Ctx W SP D S : Addr) (R n sl : Nat) (s : State) : Prop extends CallInputs M Ctx W SP D S R n sl s where
+  len : s.mem.readW (W + BitVec.ofNat 64 208) 64 = BitVec.ofNat 64 n
+  slen : s.mem.readW (W + BitVec.ofNat 64 192) 64 = BitVec.ofNat 64 sl
 
 /-- A part of a region covered is covered. -/
 theorem covers_off' {p : Addr} {k d m : Nat} {ts : List Region} (h : Covers [⟨p, k⟩] ts) (hd : d + m ≤ k)
@@ -95,7 +123,7 @@ theorem covers_right {rs ts us : List Region} (h : Covers rs us) : Covers rs (ts
     exact ⟨y, List.mem_append_right _ hy, hc'⟩
 
 section
-variable {M : CtxMode} {Ctx W SP D S : Addr} {R n sl : Nat} {s : State} (h : PP M Ctx W SP D S R n sl s)
+variable {M : CtxMode} {Ctx W SP D S : Addr} {R n sl : Nat} {s : State} (h : CallRegions M Ctx W SP D S R n sl s)
 include h
 
 omit h in
@@ -610,8 +638,9 @@ section
 variable {M : CtxMode} {Ctx W SP D S : Addr} {R n sl : Nat} {s : State} (h : PP M Ctx W SP D S R n sl s)
 include h
 
+omit h in
 /-- A slot of `W` from `W + 128` on is apart from what the call writes. -/
-theorem slot_disj {q d : Nat} (hq : q * 16 ≤ n) (h₁ : 128 ≤ d) (h₂ : d + 8 ≤ 448) :
+theorem block_slot_disj (h : CallRegions M Ctx W SP D S R n sl s) {q d : Nat} (hq : q * 16 ≤ n) (h₁ : 128 ≤ d) (h₂ : d + 8 ≤ 448) :
     ∀ r ∈ callWr W D q ++ [below SP 56], (⟨W + BitVec.ofNat 64 d, 8⟩ : Region).Disjoint r := by
   have L := h.lay
   intro r hr
@@ -622,6 +651,10 @@ theorem slot_disj {q d : Nat} (hq : q * 16 ≤ n) (h₁ : 128 ≤ d) (h₂ : d +
   · exact ((h.data.ok.w.sub_left (Region.sub_prefix hq)).sub_right (Lay.wSub (by omega_arith))).symm
   · exact L.w_w (.inl (by omega_arith)) (by omega_arith) (by decide)
   · exact (h.kw.sub_right (Lay.wSub (by omega_arith))).symm
+
+theorem slot_disj {q d : Nat} (hq : q * 16 ≤ n) (h₁ : 128 ≤ d) (h₂ : d + 8 ≤ 448) :
+    ∀ r ∈ callWr W D q ++ [below SP 56], (⟨W + BitVec.ofNat 64 d, 8⟩ : Region).Disjoint r :=
+  block_slot_disj h.toCallInputs.regions hq h₁ h₂
 
 /-- `src` is apart from what the call writes. -/
 theorem src_disj {q : Nat} (hq : q * 16 ≤ n) {p : Addr} {k : Nat} (hs : Region.Sub ⟨p, k⟩ ⟨S, sl⟩) :
@@ -766,9 +799,10 @@ theorem tail_ok {s₂ : State} (H : Mid2 Ctx W SP D S R sl s s₂) :
     rw [length_bytesAt] at this
     rw [this, m₃, hs₂]
 
+omit h in
 /-- The call of `prefix` for the `sl / 16` whole blocks at `src`, from a
 state `s₁` with their number in `rax` and `s`'s memory: what `Mid2` says. -/
-theorem call_ok (T : BlkToFn M) {s₁ : State} (he₁ : Env Ctx (W + BitVec.ofNat 64 16) W SP s₁)
+theorem call_ok (h : CallInputs M Ctx W SP D S R n sl s) (T : BlkToFn M) {s₁ : State} (he₁ : Env Ctx (W + BitVec.ofNat 64 16) W SP s₁)
     (ax₁ : s₁.gpr .rax = BitVec.ofNat 64 (sl / 16)) (m₁ : s₁.mem = s.mem) (rd₁ : s₁.rd = s.rd)
     (wr₁ : s₁.wr = s.wr) :
     WP isa (.seq (.block SealSplit.preArgs)
@@ -779,7 +813,7 @@ theorem call_ok (T : BlkToFn M) {s₁ : State} (he₁ : Env Ctx (W + BitVec.ofNa
   refine WP.seq (WP.mono (pre2_ok (R := R) (D := D) (S := S) he₁ (by rw [m₁]; exact h.rounds) (by rw [m₁]; exact h.dat)
     (by rw [m₁]; exact h.src)) fun s₂ ⟨di₂, si₂, dx₂, cx₂, r8₂, r9₂, r10₂, r11₂, ax₂, g₂, m₂, rd₂, wr₂⟩ => ?_)
   obtain he₂ : Env Ctx (W + BitVec.ofNat 64 16) W SP s₂ := he₁.keep g₂ rd₂ wr₂
-  exact WP.mono (preCall_ok h T (q := sl / 16) (by omega_arith) he₂.rsp (rd₂.trans rd₁) (wr₂.trans wr₁)
+  exact WP.mono (preCall_ok h.regions T (q := sl / 16) (by omega_arith) he₂.rsp (rd₂.trans rd₁) (wr₂.trans wr₁)
     (m₂.trans m₁) di₂ si₂ dx₂ cx₂ r8₂ (by rw [r9₂, ax₁]) (by rw [r10₂, ax₁]) r11₂ ax₂)
     fun s₃ ⟨cs₃, rd₃, wr₃, fr₃, bl₃, ct₃, y₃⟩ => ⟨he₂.keep (fun r hr => cs₃ r (by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -807,7 +841,7 @@ theorem prefix_ok (T : BlkToFn M) :
     · rw [h0']; rfl
     · rw [h0', m₁]; rfl
     · rw [h0', m₁]; rfl
-  · exact WP.mono (call_ok h T he₁ ax₁ m₁ rd₁ wr₁) fun _ H => tail_ok h H
+  · exact WP.mono (call_ok h.toCallInputs T he₁ ax₁ m₁ rd₁ wr₁) fun _ H => tail_ok h H
 
 end
 

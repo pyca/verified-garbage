@@ -2052,6 +2052,29 @@ def vendorOk (v : String) : Bool :=
 def featureOk (f : String) : Bool :=
   !f.isEmpty && f.all fun c => c.isAlphanum || c == '.' || c == '_'
 
+/-- A module's name is a Rust module's and a file's: a lowercase ASCII
+letter, then lowercase ASCII letters, digits and underscores. -/
+def moduleName (n : String) : Bool :=
+  match n.toList with
+  | c :: cs => 'a' ≤ c && c ≤ 'z' && cs.all fun c => ('a' ≤ c && c ≤ 'z') || c.isDigit || c == '_'
+  | [] => false
+
+/-- The artifact `a`'s name, and its base's, are named as an internal
+function's (`internalName`), its name extends its base's, and its module is
+named as `moduleName` requires. The emitter writes each into Rust code, in
+front of the code that `a`'s proof is of: so a registration's suffix
+(`Registration.suffix`), which `Api.artifact` appends to its `Api`'s name, can
+only add letters, digits and underscores to the name of the one function. -/
+def checkName (a : Artifact) : Except String Unit := do
+  let t := a.target.name
+  unless internalName a.name && internalName a.base && a.name.startsWith a.base do
+    throw s!"{t}: the function {repr a.name} (of {repr a.base}) is not named as a Rust \
+      function starting with its base's name and `vg_` (lowercase letters, digits and \
+      underscores)"
+  unless moduleName a.module do
+    throw s!"{t}: {a.name}'s module {repr a.module} is not named as a Rust module (lowercase \
+      letters, digits and underscores)"
+
 /-- The artifact `a`'s vendor, if it names one, and each of its `extra` and
 `notWith` features are as `vendorOk` and `featureOk` require. -/
 def checkChoice (a : Artifact) : Except String Unit := do
@@ -2258,7 +2281,8 @@ def render (ps : List Prepared) (hs : List Internal) (moduleOf : String → Stri
 for each target, its crate's `lib.rs`, one `<module>.rs` per module and one
 `internal/<name>.rs` per internal function (`internalsOf`), in its `codeDir`;
 an error if an artifact is not made from an `Api` with a
-contract (`checkApi`), two artifacts of a target have the same name
+contract (`checkApi`), an artifact's name or module is not a Rust
+identifier, or its name does not extend its base's (`checkName`), two artifacts of a target have the same name
 (`checkUnique`), a call is not of the code it runs (`checkCalls`), its
 tables of constants, or an internal function's name or tables, are not as
 `checkConsts`, `checkInternal` and `checkInternalTables` require, its tables
@@ -2289,6 +2313,7 @@ def files (as : List Artifact) :
   let ss := ShareCommon.shareCommon' (as.map Shared.of)
   let as := ss.map (·.art)
   forMPar as checkApi
+  forMPar as checkName
   checkUnique as
   let ps := prepareAll ss
   let hs := internalsOf ps

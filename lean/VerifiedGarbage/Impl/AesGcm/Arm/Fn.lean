@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.AesGcm.Arm
-public import VerifiedGarbage.Impl.AesGcm.Arm.SealGather
+public import VerifiedGarbage.Impl.AesGcm.Arm.DirectGather
 public import VerifiedGarbage.Impl.StackScratch.Arm
 public import VerifiedGarbage.Impl.Scrub.Arm
 
@@ -47,11 +47,8 @@ def «seal» : Prog isa := scrubAll 0 2608 (Impl.StackScratch.Arm.withStackScrat
 /-- `vg_aes_gcm_open`. -/
 def «open» : Prog isa := scrubAll 32 2608 (Impl.StackScratch.Arm.withStackScratch 2592 6 Impl.AesGcm.Arm.«open»)
 
-/-- `vg_aes_gcm_seal_gather`: the gather, then a call of `vg_aes_gcm_seal`'s
-code without its cleanup, as the internal `vg_aes_gcm_seal_entry`. -/
-def sealGather : Prog isa :=
-  scrubAll 0 2640 (Impl.AesGcm.Arm.SealGather.sealGather "vg_aes_gcm_seal_entry"
-    (Impl.StackScratch.Arm.withStackScratch 2592 5 Impl.AesGcm.Arm.«seal»))
+/-- Direct encryption from the gather descriptors, with its caller-visible cleanup. -/
+def sealGather : Prog isa := scrubAll 0 2640 DirectGather.sealGather
 
 /-- `vg_aes_gcm_open_to`. -/
 def openTo : Prog isa := scrubAll 32 2624 (Impl.StackScratch.Arm.withStackScratch 2608 8 Impl.AesGcm.Arm.openTo)

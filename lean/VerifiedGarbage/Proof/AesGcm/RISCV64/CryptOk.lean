@@ -68,6 +68,13 @@ theorem Alias.drop {o : Bool} {S D : Addr} {n j k : Nat} (h : Alias o S D n) (hj
       |>.sub_right (Offset.sub_base _ hjk)
 
 omit L in
+theorem Alias.buffers {o : Bool} {S D : Addr} {n : Nat} (h : Alias o S D n) :
+    S = D ∨ (⟨S, n⟩ : Region).Disjoint ⟨D, n⟩ := by
+  cases o
+  · exact Or.inl h
+  · exact Or.inr h
+
+omit L in
 /-- In place, `S = D`. -/
 theorem Alias.eq {S D : Addr} {n : Nat} (h : Alias false S D n) : S = D := h
 
@@ -181,8 +188,8 @@ omit L in
 /-- The split of the rest into whole blocks for `vg_aes_ctr32` and the last bytes. -/
 theorem splitCtr_ok {s : State} {D : Addr} {n j : Nat} (hj : j ≤ n) (hn : n < 2 ^ 64)
     (h24 : s.gpr .s4 = D + BitVec.ofNat 64 j) (h25 : s.gpr .s5 = BitVec.ofNat 64 (n - j)) :
-    WP isa (.block splitCtr) s fun s' =>
-      s'.gpr .a3 = D + BitVec.ofNat 64 j ∧ s'.gpr .a4 = BitVec.ofNat 64 ((n - j) / 16) ∧
+    WP isa (.block (splitCtr ++ [mov .a6 .a3])) s fun s' =>
+      s'.gpr .a3 = D + BitVec.ofNat 64 j ∧ s'.gpr .a6 = D + BitVec.ofNat 64 j ∧ s'.gpr .a4 = BitVec.ofNat 64 ((n - j) / 16) ∧
       s'.gpr .s4 = D + BitVec.ofNat 64 (j + 16 * ((n - j) / 16)) ∧
       s'.gpr .s5 = BitVec.ofNat 64 (n - (j + 16 * ((n - j) / 16))) ∧
       (∀ r, r ≠ .t0 → r ≠ .a3 → r ≠ .a4 → r ≠ .a5 → r ≠ .a6 → r ≠ .s4 → r ≠ .s5 →
@@ -192,7 +199,7 @@ theorem splitCtr_ok {s : State} {D : Addr} {n j : Nat} (hj : j ≤ n) (hn : n < 
   obtain hsub : BitVec.ofNat 64 (n - j) - BitVec.ofNat 64 ((n - j) % 16) =
       BitVec.ofNat 64 (16 * ((n - j) / 16)) := by
     rw [ofNat_sub64 (Nat.mod_le _ _) (by omega_arith)]; congr 1; omega_arith
-  simp only [splitCtr]
+  simp only [splitCtr, List.cons_append, List.nil_append]
   crun [Int.reduceNatCast', h24, h25, mov, hand, hsub, shr4 (show n - j < 2 ^ 64 by omega_arith), add_ofNat_assoc]
   refine ⟨by congr 1; omega_arith, fun r _ b c d e f g => by simp [b, c, d, e, f, g],
     ⟨rfl, rfl, rfl, rfl⟩⟩
@@ -204,7 +211,7 @@ theorem splitCtrWith_ok {o : Bool} {s : State} {S D : Addr} {n j : Nat} (he : En
     (hn : n < 2 ^ 64) (ha : o = false → S = D) (hδ : o = true → V .s9 = D - S)
     (h24 : s.gpr .s4 = S + BitVec.ofNat 64 j) (h25 : s.gpr .s5 = BitVec.ofNat 64 (n - j)) :
     WP isa (.block (splitCtrWith o)) s fun s' =>
-      s'.gpr .a3 = D + BitVec.ofNat 64 j ∧ (o = true → s'.gpr .a6 = S + BitVec.ofNat 64 j) ∧
+      s'.gpr .a3 = D + BitVec.ofNat 64 j ∧ s'.gpr .a6 = S + BitVec.ofNat 64 j ∧
       s'.gpr .a4 = BitVec.ofNat 64 ((n - j) / 16) ∧
       s'.gpr .s4 = S + BitVec.ofNat 64 (j + 16 * ((n - j) / 16)) ∧
       s'.gpr .s5 = BitVec.ofNat 64 (n - (j + 16 * ((n - j) / 16))) ∧
@@ -214,8 +221,8 @@ theorem splitCtrWith_ok {o : Bool} {s : State} {S D : Addr} {n j : Nat} (he : En
   · have e : S = D := ha rfl
     subst e
     simp only [splitCtrWith, Bool.false_eq_true, ↓reduceIte]
-    exact WP.mono (splitCtr_ok hj hn h24 h25) fun s' ⟨a, b, c, d, g, k⟩ =>
-      ⟨a, fun h => h.elim, b, c, d, fun r h0 h3 h4 h5 h6 _ h8 h9 => g r h0 h3 h4 h5 h6 h8 h9, k⟩
+    exact WP.mono (splitCtr_ok hj hn h24 h25) fun s' ⟨a, x, b, c, d, g, k⟩ =>
+      ⟨a, x, b, c, d, fun r h0 h3 h4 h5 h6 _ h8 h9 => g r h0 h3 h4 h5 h6 h8 h9, k⟩
   · simp only [splitCtrWith, ↓reduceIte]
     refine WP.block_append (WP.mono (toDst_ok (o := true) (d := .a3) he) fun s₁ ⟨d₁, g₁, k₁⟩ => ?_)
     obtain hand := and15 (BitVec.ofNat 64 (n - j))
@@ -259,7 +266,7 @@ theorem ctrWholeTo_mk {R : Nat} {D X : Addr} {j nb : Nat} {s : State} (he : Env 
     (h8 : s.gpr .a5 = V .s0 + BitVec.ofNat 64 512) (h9 : s.gpr .a6 = X) (hR : R = 10 ∨ R = 12 ∨ R = 14)
     (hnb : nb < 2 ^ 64)
     (hdj : DataW (V .s2) (V .s1) (V .s0) s (D + BitVec.ofNat 64 j) (16 * nb))
-    (hx : DataOk (V .s1) (V .s0) s X (16 * nb)) (hxd : (⟨X, 16 * nb⟩ : Region).Disjoint ⟨D + BitVec.ofNat 64 j, 16 * nb⟩) :
+    (hx : DataOk (V .s1) (V .s0) s X (16 * nb)) (hxd : X = D + BitVec.ofNat 64 j ∨ (⟨X, 16 * nb⟩ : Region).Disjoint ⟨D + BitVec.ofNat 64 j, 16 * nb⟩) :
     CtrToCall s (V .s2) (V .s1 + BitVec.ofNat 64 48) (D + BitVec.ofNat 64 j) (V .s0 + BitVec.ofNat 64 512) X R nb := by
   obtain hc := ctrWhole_mk L he h3 h4 h5 h6 h7 h8 hR hnb hdj
   refine ⟨h3, h4, h5, h6, h7, h8, h9, hR, hnb, hc.kc, hc.kd, hc.ks, hc.cd, hc.cs, hc.ds,
@@ -268,26 +275,6 @@ theorem ctrWholeTo_mk {R : Nat} {D X : Addr} {j nb : Nat} {s : State} (he : Env 
   exact Covers.cons (covers_prefix he.perm.ctx (by decide)) (Covers.cons hx.rd
     (Covers.cons (covers_left (he.perm.stC (by decide))) (Covers.cons (covers_left hdj.wr)
       (Covers.cons (covers_left (he.perm.wC (by decide))) Covers.nil))))
-
-/-- A call of `vg_aes_ctr32`, or out of place of `vg_aes_ctr32_to`, on `nb`
-whole blocks from `X` (in place, `D + j`) to `D + j`. -/
-theorem ctrCallWith_ok {o : Bool} {R : Nat} {D X : Addr} {j nb : Nat} {s : State} (he : Env V sp s)
-    (h3 : s.gpr .a0 = V .s2) (h4 : s.gpr .a1 = BitVec.ofNat 64 R) (h5 : s.gpr .a2 = V .s1 + BitVec.ofNat 64 48)
-    (h6 : s.gpr .a3 = D + BitVec.ofNat 64 j) (h7 : s.gpr .a4 = BitVec.ofNat 64 nb)
-    (h8 : s.gpr .a5 = V .s0 + BitVec.ofNat 64 512) (h9 : o = true → s.gpr .a6 = X)
-    (hR : R = 10 ∨ R = 12 ∨ R = 14) (hnb : nb < 2 ^ 64)
-    (hdj : DataW (V .s2) (V .s1) (V .s0) s (D + BitVec.ofNat 64 j) (16 * nb))
-    (hx : DataOk (V .s1) (V .s0) s X (16 * nb)) (ha : Alias o X (D + BitVec.ofNat 64 j) (16 * nb)) :
-    WP isa (ctrCallWith o) s (CtrToPost s (V .s2) (V .s1 + BitVec.ofNat 64 48) (D + BitVec.ofNat 64 j)
-      (V .s0 + BitVec.ofNat 64 512) X R nb) := by
-  cases o
-  · have e : X = D + BitVec.ofNat 64 j := ha
-    subst e
-    simp only [ctrCallWith, Bool.false_eq_true, ↓reduceIte, ctrCall, Impl.AesCtr.RISCV64.ctrCall]
-    exact WP.mono (ctr_call (ctrWhole_mk L he h3 h4 h5 h6 h7 h8 hR hnb hdj)) fun _ g =>
-      ⟨g.rd, g.wr, g.sp, g.saved, g.frame, g.out, g.ctr⟩
-  · simp only [ctrCallWith, ↓reduceIte]
-    exact ctrTo_call (ctrWholeTo_mk L he h3 h4 h5 h6 h7 h8 (h9 rfl) hR hnb hdj hx ha)
 
 omit L in
 theorem keyReg_frozen (bs : Bool) : keyReg bs ∈ frozen := by cases bs <;> decide
@@ -334,7 +321,7 @@ theorem ctrWholeToBs_mk {R : Nat} {D X : Addr} {j nb : Nat} {s : State} (he : En
     (h8 : s.gpr .a5 = V .s0 + BitVec.ofNat 64 512) (h9 : s.gpr .a6 = X) (hR : R = 10 ∨ R = 12 ∨ R = 14)
     (hnb : nb < 2 ^ 64)
     (hdj : DataW (V .s2) (V .s1) (V .s0) s (D + BitVec.ofNat 64 j) (16 * nb))
-    (hx : DataOk (V .s1) (V .s0) s X (16 * nb)) (hxd : (⟨X, 16 * nb⟩ : Region).Disjoint ⟨D + BitVec.ofNat 64 j, 16 * nb⟩)
+    (hx : DataOk (V .s1) (V .s0) s X (16 * nb)) (hxd : X = D + BitVec.ofNat 64 j ∨ (⟨X, 16 * nb⟩ : Region).Disjoint ⟨D + BitVec.ofNat 64 j, 16 * nb⟩)
     (hb : BkIn (V .s7) (V .s2) (V .s1) (V .s0) sp R s.mem X (D + BitVec.ofNat 64 j) (16 * nb) s) :
     CtrBsToCall s (V .s7) (V .s2) (V .s1 + BitVec.ofNat 64 48) (D + BitVec.ofNat 64 j)
       (V .s0 + BitVec.ofNat 64 512) X R nb := by
@@ -346,30 +333,21 @@ theorem ctrWholeToBs_mk {R : Nat} {D X : Addr} {j nb : Nat} {s : State} (he : En
     (Covers.cons (covers_left (he.perm.stC (by decide))) (Covers.cons (covers_left hdj.wr)
       (Covers.cons (covers_left (he.perm.wC (by decide))) Covers.nil))))
 
-/-- `ctrCallWith_ok`, or with the round keys bitsliced (`bs`) a call of
-`vg_aes_ctr32_bs` or `vg_aes_ctr32_bs_to`, which leaves the same. -/
+/-- Whole blocks use the same two-pointer call in both layouts. -/
 theorem ctrCallWithB_ok {bs o : Bool} {R : Nat} {D X : Addr} {j nb : Nat} {s : State} (he : Env V sp s)
     (h3 : s.gpr .a0 = V (keyReg bs)) (h4 : s.gpr .a1 = BitVec.ofNat 64 R)
     (h5 : s.gpr .a2 = V .s1 + BitVec.ofNat 64 48)
     (h6 : s.gpr .a3 = D + BitVec.ofNat 64 j) (h7 : s.gpr .a4 = BitVec.ofNat 64 nb)
-    (h8 : s.gpr .a5 = V .s0 + BitVec.ofNat 64 512) (h9 : o = true → s.gpr .a6 = X)
+    (h8 : s.gpr .a5 = V .s0 + BitVec.ofNat 64 512) (h9 : s.gpr .a6 = X)
     (hR : R = 10 ∨ R = 12 ∨ R = 14) (hnb : nb < 2 ^ 64)
     (hdj : DataW (V .s2) (V .s1) (V .s0) s (D + BitVec.ofNat 64 j) (16 * nb))
     (hx : DataOk (V .s1) (V .s0) s X (16 * nb)) (ha : Alias o X (D + BitVec.ofNat 64 j) (16 * nb))
     (hb : bs = true → BkIn (V .s7) (V .s2) (V .s1) (V .s0) sp R s.mem X (D + BitVec.ofNat 64 j) (16 * nb) s) :
-    WP isa (ctrCallWithB bs o) s (CtrToPost s (V .s2) (V .s1 + BitVec.ofNat 64 48) (D + BitVec.ofNat 64 j)
+    WP isa (ctrCallWithB bs) s (CtrToPost s (V .s2) (V .s1 + BitVec.ofNat 64 48) (D + BitVec.ofNat 64 j)
       (V .s0 + BitVec.ofNat 64 512) X R nb) := by
   cases bs
-  · exact ctrCallWith_ok L he h3 h4 h5 h6 h7 h8 h9 hR hnb hdj hx ha
-  · obtain hb := hb rfl
-    cases o
-    · have e : X = D + BitVec.ofNat 64 j := ha
-      subst e
-      simp only [ctrCallWithB, ctrCallB, Bool.false_eq_true, ↓reduceIte]
-      exact WP.mono (ctrBs_call (ctrWholeBs_mk L he h3 h4 h5 h6 h7 h8 hR hnb hdj hb)) fun _ g =>
-        ⟨g.rd, g.wr, g.sp, g.saved, g.frame, g.out, g.ctr⟩
-    · simp only [ctrCallWithB, ↓reduceIte]
-      exact ctrBsTo_call (ctrWholeToBs_mk L he h3 h4 h5 h6 h7 h8 (h9 rfl) hR hnb hdj hx ha hb)
+  · exact ctrTo_call (ctrWholeTo_mk L he h3 h4 h5 h6 h7 h8 h9 hR hnb hdj hx ha.buffers)
+  · exact ctrBsTo_call (ctrWholeToBs_mk L he h3 h4 h5 h6 h7 h8 h9 hR hnb hdj hx ha.buffers (hb rfl))
 
 omit L in
 theorem BkIn.memEq {B c st w : Addr} {R : Nat} {m m' : Mem} {S D : Addr} {n : Nat} {s : State}
@@ -419,7 +397,7 @@ theorem cryptWholeB_ok {bs o : Bool} {R : Nat} {icb : Block} {P : Nat} {S D : Ad
     refine WP.mono (ctrCallWithB_ok L (X := S + BitVec.ofNat 64 j) he₂ a3 a4 a5
       (by rw [hg₂ _ (by decide) (by decide) (by decide) (by decide), h6])
       (by rw [hg₂ _ (by decide) (by decide) (by decide) (by decide), h7]) a8
-      (fun ho => by rw [hg₂ _ (by decide) (by decide) (by decide) (by decide), h6' ho]) h.rounds (by omega_arith)
+      (by rw [hg₂ _ (by decide) (by decide) (by decide) (by decide), h6']) h.rounds (by omega_arith)
       (hdj.of_eq hk₁₂.rd hk₁₂.wr hk₁₂.sp) (hsj.of_eq hk₁₂.rd hk₁₂.wr hk₁₂.sp)
       (h.alias.drop (by omega_arith))
       (fun hbs => ((((hb hbs).mid L h).sub (j := j) (k := 16 * nb) (by omega_arith)).of_eq hk₁₂.rd hk₁₂.wr).memEq

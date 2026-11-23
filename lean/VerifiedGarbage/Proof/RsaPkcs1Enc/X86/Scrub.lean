@@ -32,18 +32,15 @@ contract reserves and the tail that clears the registers
 within `out` and `tape`, given that `out` holds `n_len` bytes
 (`X86.Scrub.PostOut`).
 
-`vg_rsa_pkcs1_decrypt_precomputed`, generic over SHA-256's implementation
-(`Backend`) and the private-key operation's (`CrtImpl`), is emitted with its
-cleanup (`Impl.RsaPkcs1Enc.X86.Fn.decryptPrecomputed`), which returns without
-secret residue whatever the implementations (`decryptPrecomputed_scrubbed`).
-What its cleanup needs of its code holds of it with every implementation
+`vg_rsa_pkcs1_decrypt_precomputed`'s code, generic over SHA-256's
+implementation (`Backend`) and the private-key operation's (`CrtImpl`),
+which `vg_rsa_pkcs1_decrypt_precomputed_front` calls (`FrontScrub.lean`):
+what a cleanup needs of it holds with every implementation
 (`decrypt_scrub`): its code with holes where each implementation's code
 goes, of the stack each states (`holeStub`: 0 bytes for the compression
 function, 20 for SHA-256's `update` and `finalize`, 96 for the public
 precomputation and check), which the kernel evaluates once
-(`decrypt_side`), and `FillB` (`decrypt_fill`). Its postcondition reads the
-memory on return only within `out` and `msg_len`, given that `out` holds
-`n_len` bytes.
+(`decrypt_side`), and `FillB` (`decrypt_fill`).
 -/
 
 @[expose] public section
@@ -102,27 +99,6 @@ theorem encryptRandom_scrubbed :
 open VG.Proof.Sha256.X86.Variants (Backend)
 open VG.Proof.Rsa.X86.PrivChecked (CrtImpl privCodeP crtPBaseline)
 
-theorem writtenMsg_of {m₁ m₂ : Mem} {o l : Addr} {n : Nat} {r : BitVec 32} {v : Spec.Rsa.Outcome}
-    (e : Spec.Rsa.bytesAt m₂ o n = Spec.Rsa.bytesAt m₁ o n) (el : Spec.Rsa.wordsAt m₂ l 1 = Spec.Rsa.wordsAt m₁ l 1)
-    (h : Spec.RsaPkcs1Enc.writtenMsg m₁ o l n r v) : Spec.RsaPkcs1Enc.writtenMsg m₂ o l n r v := by
-  cases v <;> simpa only [Spec.RsaPkcs1Enc.writtenMsg, e, el] using h
-
-theorem decryptPrecomputedOut (stack : Nat) :
-    PostOut (Spec.RsaPkcs1Enc.decryptPrecomputedContract abi stack)
-      (Spec.RsaPkcs1Enc.decryptPrecomputedSig.retBits 32) :=
-  postOut_of_local_pre (leak := some _) ScrubAbi.plain fun
-    | [out, outLen, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _], m, m₁, m₂, r, _, hp, hb, h => by
-      simp only [Spec.RsaPkcs1Enc.decryptPrecomputedSig, Spec.RsaPkcs1Enc.decryptSig, List.cons_append,
-        List.nil_append, Sig.bufs, List.mem_cons, forall_eq_or_imp, Elem.size] at hb
-      change @Curry.apply (Mem → Prop) [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _] _ _ m at hp
-      change @Curry.apply (Mem → Mem → BitVec _ → Prop)
-        [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _] _ _ _ m₁ r at h
-      change @Curry.apply (Mem → Mem → BitVec _ → Prop)
-        [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _] _ _ _ m₂ r
-      dsimp only [Curry.apply, ArgWord.ofRaw] at hp h ⊢
-      exact writtenMsg_of (bytesAt_of hb.1 (hp.2.1 ▸ toNat_sw_le abi ScrubAbi.plain outLen))
-        (wordsAt_of hb.2.1) h
-
 /-- `vg_rsa_pkcs1_decrypt_precomputed` with holes for SHA-256's compression
 function (no stack), `update` and `finalize` (20 bytes each) and the
 private-key operation's public precomputation and check (96 bytes each). -/
@@ -153,25 +129,5 @@ theorem decrypt_scrub (v : Backend) (c : CrtImpl) :
   scrubFSide_of_fillB (decrypt_fill v c (calleeSide_of_eq v.cmpStack v.cmpScrub)
     (calleeSide_of_le v.stream.updSU v.updScrub) (calleeSide_of_le v.stream.finSU v.finScrub)
     (calleeSide_of_le c.pcStack c.pcScrub) (calleeSide_of_le c.pdStack c.pdScrub)) decrypt_side
-
-/-- `vg_rsa_pkcs1_decrypt_precomputed`, with its cleanup, returns without
-secret residue, whatever the implementations `v` of SHA-256 and `c` of the
-private-key operation. -/
-theorem decryptPrecomputed_scrubbed (v : Backend) (c : CrtImpl) :
-    VerifiedScrubbed target
-      (Impl.RsaPkcs1Enc.X86.Fn.decryptPrecomputed v.F (Proof.RsaPkcs1Enc.X86.Dec.privNameP c)
-        (privCodeP c crtPBaseline))
-      Proof.RsaPkcs1Enc.X86.Dec.specP 32 :=
-  verifiedScrubbedAll (api := Spec.RsaPkcs1Enc.decryptPrecomputedApi)
-    { code := Proof.RsaPkcs1Enc.X86.Dec.decryptCodeP v c crtPBaseline
-      verified := Proof.RsaPkcs1Enc.X86.Dec.decryptPrecomputed_verified v c
-      spSafe := Proof.RsaPkcs1Enc.X86.Dec.codeP_sp v c crtPBaseline }
-    (decryptPrecomputedOut _) (hs := decrypt_scrub v c)
-
-/-- `vg_rsa_pkcs1_decrypt_precomputed`, with its cleanup, writes `esp` only by its frames. -/
-theorem decryptPrecomputed_spSafe (v : Backend) (c : CrtImpl) :
-    (Impl.RsaPkcs1Enc.X86.Fn.decryptPrecomputed v.F (Proof.RsaPkcs1Enc.X86.Dec.privNameP c)
-      (privCodeP c crtPBaseline)).all (fun i => !isa.writesSp i) = true :=
-  scrubAll_spSafe (Proof.RsaPkcs1Enc.X86.Dec.codeP_sp v c crtPBaseline)
 
 end VG.Proof.RsaPkcs1Enc.X86.Scrub

@@ -112,10 +112,14 @@ def restore : List Instr := restored.map fun (r, d) => .ldr r .r11 d
 
 /-! ## The calls -/
 
-/-- `vg_aes_ctr32`, with `n` in `r12` and the working space in `lr` pushed as
-its stack arguments. -/
-def ctrFrame : Prog isa :=
-  .frame (.push [.r12, .lr]) (.call "vg_aes_ctr32" Impl.Aes.Arm.ctr32) (.pop .r12 8)
+/-- Push the block count and scratch pointer. The shared payload entry
+accepts independent data pointers in `r3` and `r6`. -/
+def ctrFrameG (shared : Bool) : Prog isa :=
+  .frame (.push [.r12, .lr])
+    (.call (if shared then "vg_aes_ctr32_to" else "vg_aes_ctr32") (Impl.Aes.Arm.ctr32Gen shared))
+    (.pop .r12 8)
+
+abbrev ctrFrame : Prog isa := ctrFrameG false
 
 /-- `vg_aes_ctr32_to`, with `n` in `r0`, the working space in `r1` and the
 destination in `r2` pushed as its stack arguments; the arguments in
@@ -240,13 +244,13 @@ def splitCtr : List Instr :=
   [.mov .r3 (.reg .r4), .mov .r12 (.shifted .r5 .lsr 4), .dp .and .r0 .r5 (imm 15),
    .dp .sub .r1 .r5 (.reg .r0), .dp .add .r4 .r4 (.reg .r1), .mov .r5 (.reg .r0), .cmp .r12 (imm 0)]
 
-/-- The call on the whole blocks split off: in place, `vg_aes_ctr32` on
-them; out of place, `vg_aes_ctr32_to` from them to the destination `r6`,
+/-- The call on the whole blocks split off: both layouts call `vg_aes_ctr32_to`.
+In place, `r6` receives the source. Out of place, it holds the destination,
 which is then advanced past them (by the number of blocks, which the frame's
 pop loads into `r12`). -/
 def wholeCall : Bool → Prog isa
-  | false => .seq (.block [.mov .r0 (.reg .r9), .mov .r1 (.reg .r8), addI .r2 .r10 48, addI .lr .r11 scrO])
-      ctrFrame
+  | false => .seq (.block [.mov .r0 (.reg .r9), .mov .r1 (.reg .r8), addI .r2 .r10 48, addI .lr .r11 scrO, .mov .r6 (.reg .r3)])
+      (ctrFrameG true)
   | true => .seq (.block [.mov .r2 (.reg .r6), .mov .r0 (.reg .r12), addI .r1 .r11 scrO])
       (.seq ctrToFrame (.block [.dp .add .r6 .r6 (.shifted .r12 .lsl 4)]))
 

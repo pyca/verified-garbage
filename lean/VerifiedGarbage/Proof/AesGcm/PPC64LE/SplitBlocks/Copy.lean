@@ -33,7 +33,7 @@ structure Config (base : State) (total count : Nat) : Prop where
   left : base.gpr .r19=BitVec.ofNat 64 count
   reads : ∀ i<count, InRegions (base.rd++base.wr) (base.gpr .r17+BitVec.ofNat 64 (16*i)) 16
   writes : ∀ i<count, InRegions base.wr (base.gpr .r30+BitVec.ofNat 64 (16*i)) 16
-  disjoint : (⟨base.gpr .r17,16*count⟩ : Region).Disjoint ⟨base.gpr .r30,16*total⟩
+  layout : base.gpr .r17 = base.gpr .r30 ∨ (⟨base.gpr .r17,16*count⟩ : Region).Disjoint ⟨base.gpr .r30,16*total⟩
 
 structure Inv (base : State) (total count k : Nat) (s : State) : Prop where
   bound : k≤count
@@ -112,11 +112,16 @@ theorem inv_step {base : State} {total count k : Nat} (cfg : Config base total c
   have hw : InRegions s.wr (s.gpr .r11) 16 := by
     rw [hs.keep.2.2,hs.dest]; exact cfg.writes k hk
   have hread : s.mem.read (base.gpr .r17+BitVec.ofNat 64 (16*k)) 16=
-      base.mem.read (base.gpr .r17+BitVec.ofNat 64 (16*k)) 16 :=
-    hs.frame.read (r := ⟨base.gpr .r17,16*count⟩)
+      base.mem.read (base.gpr .r17+BitVec.ofNat 64 (16*k)) 16 := by
+    rcases cfg.layout with same | apart
+    · rw [same]
+      have block := Blocks.processed_original_block hs.processed (Nat.le_refl k) (by have := cfg.bound; omega_arith)
+      rw [← VG.Proof.Aes.PPC64LE.Crypto.read_blockAt, ← VG.Proof.Aes.PPC64LE.Crypto.read_blockAt] at block
+      simpa only [rev128_rev128] using congrArg rev128 block
+    exact hs.frame.read (r := ⟨base.gpr .r17,16*count⟩)
       (Offset.contains_base _ (d := 16*k) (n := 16) (k := 16*count) (by omega_using [hk])
         (by have := cfg.bound; have := cfg.size; omega_arith))
-      (by simpa only [List.mem_singleton,forall_eq] using cfg.disjoint) (by decide)
+      (by simpa only [List.mem_singleton,forall_eq] using apart) (by decide)
   have hp := hs.processed.store cfg.size (show k<total by have := cfg.bound; omega_using [hk, this])
     (v := base.mem.read (base.gpr .r17+BitVec.ofNat 64 (16*k)) 16) (by
       intro i hi

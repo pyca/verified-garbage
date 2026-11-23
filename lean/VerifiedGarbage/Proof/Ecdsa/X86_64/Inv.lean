@@ -182,8 +182,8 @@ theorem pPowI_ok (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s base s
   split
   · rename_i h6
     obtain ⟨h4, sp, ip⟩ := hc.inv h6
-    exact WP.mono (sp (invLay_of hc h6 h4 (M := c.MP') rfl (jm := MP) rfl (Or.inl rfl) rfl (base := RZ) (Or.inl rfl) c.C.p)
-      (by have := hc.p_ge; omega_arith) hpR hs hM hB ip trivial)
+    exact WP.mono (sp (invLay_of hc h6 h4 (M := c.MPI) rfl (jm := MP) rfl (Or.inl rfl) rfl (base := RZ) (Or.inl rfl) c.C.p)
+      (by have := hc.p_ge; omega_arith) hpR hs (hM.adx _) hB ip trivial)
       fun s' ⟨K, U, lt, v⟩ => ⟨K, Unch.cover U (invW_pwW rfl rfl), lt, v⟩
   · rename_i h9
     exact WP.mono (pow_ok (P := c.powP) (e := c.C.p - 2) (powLayP hc (by omega_arith)) hpR hs hM hB hO (hbits h9)
@@ -249,8 +249,8 @@ theorem invP_ok (hc : BaseCfgOk c) (h9 : c.n ≤ 9) {base : Addr} {s : State} (h
       toM c.C.p (2 ^ (64 * c.n)) (wordsVal s'.mem base (c.sl ACC) c.n) =
         toM c.C.p (2 ^ (64 * c.n)) (wordsVal s.mem base (c.sl RZ) c.n) ^ (c.C.p - 2) := by
   obtain ⟨h4, sp, ip⟩ := hc.inv h9
-  exact WP.mono (sp (invLay_of hc h9 h4 (M := c.MP') rfl (jm := MP) rfl (Or.inl rfl) rfl (base := RZ) (Or.inl rfl) c.C.p)
-    (by have := hc.p_ge; omega_arith) (unitMod_pow_two hc.p_odd (64 * c.n)) hs hM hB ip trivial)
+  exact WP.mono (sp (invLay_of hc h9 h4 (M := c.MPI) rfl (jm := MP) rfl (Or.inl rfl) rfl (base := RZ) (Or.inl rfl) c.C.p)
+    (by have := hc.p_ge; omega_arith) (unitMod_pow_two hc.p_odd (64 * c.n)) hs (hM.adx _) hB ip trivial)
     fun s' ⟨K, U, lt, v⟩ => ⟨K, Unch.cover U (invW_pwI rfl rfl), lt, v⟩
 
 /-- `[ACC] = [KM]^(n-2)` by divsteps, for up to nine words and `fastN`, writing only `pwI`. -/
@@ -623,7 +623,7 @@ theorem pPow_ok (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s base si
     · obtain ⟨h4, sp, ip⟩ := hc.inv h9
       rw [ite_eq_left_of_eq_true _ _ (eq_true hv)]
       exact invS_ok hc (by have := hc.inv4_n hv; omega_arith) h9 h4 (M := c.MP') rfl (jm := MP) rfl (Or.inl rfl) rfl
-        (bs := RZ) (Or.inl rfl) sp ip (by have := hc.p_ge; omega_arith) (unitMod_pow_two hc.p_odd (64 * c.n)) hs hM hB
+        (bs := RZ) (Or.inl rfl) sp ⟨ip.B1, ip.B16, ip.C, ip.Cpos, ip.Cn, ip.bound⟩ (by have := hc.p_ge; omega_arith) (unitMod_pow_two hc.p_odd (64 * c.n)) hs hM hB
     rw [ite_eq_right_of_eq_false _ _ (eq_false hv)]
     by_cases h6 : 6 ≤ c.n
     · exact WP.mono (invPFn_ok hc h6 h9 hs hM hB) fun _ h => h.2

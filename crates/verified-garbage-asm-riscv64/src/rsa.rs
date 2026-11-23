@@ -3270,6 +3270,10 @@ bnez t3, 2310b
 }
 
 #[rustfmt::skip]
+#[path = "internal/vg_rsa_pkcs1_decrypt_precomputed_body.rs"]
+pub(crate) mod vg_rsa_pkcs1_decrypt_precomputed_body;
+
+#[rustfmt::skip]
 #[path = "internal/vg_rsa_pkcs1_encrypt_precomputed.rs"]
 pub(crate) mod vg_rsa_pkcs1_encrypt_precomputed;
 

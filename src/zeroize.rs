@@ -22,6 +22,12 @@
 // ChaCha20-Poly1305 call's context, PBKDF2's and scrypt's blocks), which later
 // calls overwrite; and what is returned to the caller (a MAC, a derived key or
 // a shared secret).
+//
+// What is never left: a copy of a secret outside the buffer that holds it.
+// The Rust code does not move secret bytes within a buffer or grow one that
+// holds them, which would leave a copy the caller cannot reach to wipe; every
+// call that moves, shortens or grows a buffer says why it does not
+// (`// NO-SECRET-RESIDUE:`, `ci/check_secret_residue.py`).
 
 mod sealed {
     pub trait Sealed {}

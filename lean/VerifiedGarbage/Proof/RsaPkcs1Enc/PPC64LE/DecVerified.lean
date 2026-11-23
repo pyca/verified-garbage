@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.Contract
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Alloc
 import VerifiedGarbage.Proof.RsaPkcs1Enc.Decrypt
@@ -34,6 +35,7 @@ public import VerifiedGarbage.Proof.RsaPkcs1Enc.PPC64LE.DecKdk
 meta import VerifiedGarbage.Proof.RsaPkcs1Enc.PPC64LE.DecKdk
 import VerifiedGarbage.Proof.Framework.Covers
 meta import VerifiedGarbage.Proof.Framework.Covers
+meta import VerifiedGarbage.Proof.RsaPkcs1Enc.Contract
 
 /-! ### `RsaPkcs1Enc.PPC64LE.DecCT4`, which this module and modules that import it used -/
 
@@ -1930,8 +1932,8 @@ theorem body_ct : RelCT isa (Rel e PEnt) (body pc) fun _ _ => True := by
 
 end
 
-theorem code_ct : ConstantTime isa (Spec.RsaPkcs1Enc.decryptContract abi stackBytes).pre
-    (Spec.RsaPkcs1Enc.decryptContract abi stackBytes).pub code :=
+theorem code_ct : ConstantTime isa (Proof.RsaPkcs1Enc.decryptContract abi stackBytes).pre
+    (Proof.RsaPkcs1Enc.decryptContract abi stackBytes).pub code :=
   RelCT.constantTime (RelCT.alloc (fun _ _ ⟨_, _, hp⟩ => (same_of (pub_data hp)).sp)
     ((RelCT.exists_ fun e : Env false => body_ct (e := e)).mono
       (fun _ _ ⟨s, t, ⟨hs, ht, hp⟩, ea, eb⟩ =>
@@ -1968,7 +1970,7 @@ variable {pc : Bool}
 
 /-- The outcome, on the registers and the stack. -/
 def fnPost (s s' : State) : Prop :=
-  Spec.RsaPkcs1Enc.writtenMsg s'.mem (s.gpr .r3) (s.gpr .r5) (s.gpr .r7).toNat ((s'.gpr .r3).setWidth 32)
+  Proof.RsaPkcs1Enc.writtenMsg s'.mem (s.gpr .r3) (s.gpr .r5) (s.gpr .r7).toNat ((s'.gpr .r3).setWidth 32)
     (Spec.RsaPkcs1Enc.decrypt (Spec.Rsa.bytesAt s.mem (s.gpr .r6) (s.gpr .r7).toNat)
       (Spec.Rsa.bytesAt s.mem (s.gpr .r8) (s.gpr .r9).toNat) (dOf s)
       (Spec.Rsa.bytesAt s.mem (stackArg s 3) (stackArg s 4).toNat)
@@ -2024,7 +2026,7 @@ theorem result_ok {s : State} (h : DPre pc s) {x : BitVec 64} {mc : Mem} {t : St
   have hw : Spec.Rsa.wordsAt t.mem (s.gpr .r5) 1 = [t.mem.readW (s.gpr .r5) 64] := by
     simp only [Spec.Rsa.wordsAt, List.range_one, List.map_cons, List.map_nil, Nat.mul_zero, BitVec.add_zero]
   simp only [Spec.RsaPkcs1Enc.decrypt]
-  show Spec.RsaPkcs1Enc.writtenMsg _ _ _ _ _ (Spec.RsaPkcs1Enc.decryptWith (rsadpOf s)
+  show Proof.RsaPkcs1Enc.writtenMsg _ _ _ _ _ (Spec.RsaPkcs1Enc.decryptWith (rsadpOf s)
     (Spec.Rsa.bytesAt s.mem (s.gpr .r6) (s.gpr .r7).toNat).length (dOf s) (cOf s))
   cases hO : rsadpOf s (cOf s) with
   | ok EM' =>
@@ -2117,7 +2119,7 @@ theorem codeG_correct (s : State) (h : DPre pc s) (X : pc = true → PreX s) :
     rw [e]
     exact A₂.out
 
-theorem code_correct (s : State) (hpre : (Spec.RsaPkcs1Enc.decryptContract abi stackBytes).pre s) :
+theorem code_correct (s : State) (hpre : (Proof.RsaPkcs1Enc.decryptContract abi stackBytes).pre s) :
     ∃ tr t, Exec isa code s tr t ∧ abiPreserved s t ∧ fnPost s t :=
   codeG_correct s (dPre_of hpre) nofun
 
@@ -2145,9 +2147,9 @@ open VG VG.PPC64LE VG.Impl.RsaPkcs1Enc.PPC64LE.Decrypt
 
 /-- The shared contract, its postcondition on the registers and the stack. -/
 def fnContract : Contract isa where
-  pre := (Spec.RsaPkcs1Enc.decryptContract abi stackBytes).pre
+  pre := (Proof.RsaPkcs1Enc.decryptContract abi stackBytes).pre
   post := fnPost
-  pub := (Spec.RsaPkcs1Enc.decryptContract abi stackBytes).pub
+  pub := (Proof.RsaPkcs1Enc.decryptContract abi stackBytes).pub
 
 /-- A state meeting the precondition: a 64-byte modulus, input and `out`,
 one-byte exponents, primes, CRT exponents and `qInv`, and the stack
@@ -2168,18 +2170,18 @@ def satState : State where
     ⟨0x4400, 1⟩, ⟨0x4500, 1⟩, ⟨0x10060, 120⟩]
   wr := [⟨0x1000, 64⟩, ⟨0x1100, 8⟩, ⟨0x20000, 8448⟩]
 
-theorem dec_implies : fnContract.Implies (Spec.RsaPkcs1Enc.decryptContract abi stackBytes) where
+theorem dec_implies : fnContract.Implies (Proof.RsaPkcs1Enc.decryptContract abi stackBytes) where
   pre := fun _ h => h
   post := by
-    sig_implies_post [Spec.RsaPkcs1Enc.decryptContract, Spec.RsaPkcs1Enc.decryptSig, abi, argRegs, fnContract,
+    sig_implies_post [Proof.RsaPkcs1Enc.decryptContract, Proof.RsaPkcs1Enc.decryptSig, abi, argRegs, fnContract,
       fnPost, stackArgs_fifteen, List.append_eq, dOf, cOf]
   pub := fun _ _ _ _ h => h
   sat := by
-    sig_implies_sat [Spec.RsaPkcs1Enc.decryptContract, Spec.RsaPkcs1Enc.decryptSig, abi, argRegs, fnContract,
+    sig_implies_sat [Proof.RsaPkcs1Enc.decryptContract, Proof.RsaPkcs1Enc.decryptSig, abi, argRegs, fnContract,
       stackArgs_fifteen, List.append_eq] [satState, stackArg, stackArgAddr, Mem.readW, Mem.read] using satState
 
 /-- `vg_rsa_pkcs1_decrypt`. -/
-theorem dec_verified : Verified target code (Spec.RsaPkcs1Enc.decryptContract abi stackBytes) :=
+theorem dec_verified : Verified target code (Proof.RsaPkcs1Enc.decryptContract abi stackBytes) :=
   Verified.of_correct (k := fnContract) code_correct code_ct dec_implies
 
 end VG.Proof.RsaPkcs1Enc.PPC64LE.Dec

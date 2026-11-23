@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Impl.RsaPkcs1Enc.X86_64.Fn
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.Scrub
+public import VerifiedGarbage.Impl.RsaPkcs1Enc.X86_64.Front
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.FrontScrub
 public import VerifiedGarbage.Proof.Variants.Sha256Compress.X86_64
 public import VerifiedGarbage.Proof.Variants.RsaPrivateCrt.X86_64
 public import VerifiedGarbage.Proof.Variants.RsaPublicPrecomputed.X86_64
@@ -18,13 +20,14 @@ open VG.Proof.RsaPkcs1Enc.X86_64.Dec (HH)
 
 def artifacts (h : Proof.Sha256.X86_64.Compress) (c : Proof.Rsa.X86_64.CrtImpl) : List Artifact :=
   [
-    Spec.RsaPkcs1Enc.decryptPrecomputedApi.artifact X86_64.target {
+    Spec.RsaPkcs1Enc.decryptPrecomputedFrontApi.artifact X86_64.target {
       suffix := qualifiedName "" [("sha256", h.suffix), ("crt", c.suffix)]
       extra := c.extra
-      code := Impl.RsaPkcs1Enc.X86_64.Fn.decryptPrecomputed (Proof.RsaPkcs1Enc.X86_64.Scrub.decLevel h c) (HH h)
-        (VG.Proof.RsaPkcs1Enc.X86_64.Dec.privNameP c) (VG.Proof.RsaPkcs1Enc.X86_64.Dec.privCodeP c)
-      verified := Proof.RsaPkcs1Enc.X86_64.Scrub.dec_scrubbed h c
-      spSafe := Proof.RsaPkcs1Enc.X86_64.Scrub.dec_spSafe h c }]
+      code := Impl.RsaPkcs1Enc.X86_64.Fn.decryptPrecomputedFront (Proof.RsaPkcs1Enc.X86_64.Scrub.decLevel h c)
+        (Proof.RsaPkcs1Enc.X86_64.Front.bodyName h c) (Impl.RsaPkcs1Enc.X86_64.Decrypt.codeP (HH h)
+          (VG.Proof.RsaPkcs1Enc.X86_64.Dec.privNameP c) (VG.Proof.RsaPkcs1Enc.X86_64.Dec.privCodeP c))
+      verified := Proof.RsaPkcs1Enc.X86_64.Front.front_scrubbed h c
+      spSafe := Proof.RsaPkcs1Enc.X86_64.Front.front_scrubbed_spSafe h c }]
 
 end VG.Artifacts.RsaPkcs1Enc.X86_64.Sha256RsaPrivateCrt
 

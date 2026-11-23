@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.Contract
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86.DecBody
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86.DecMem
 public import VerifiedGarbage.Proof.Rsa.X86.PrivImpl
@@ -34,7 +35,7 @@ abbrev decryptCode (v : Backend) (c : CrtImpl) : Prog isa := code v.F (privName 
 
 theorem spec_sp {s : State} (h : spec.pre s) :
     stackBytes ≤ (s.gpr .esp).toNat ∧ (s.gpr .esp).toNat + 4 ≤ 2 ^ 32 := by
-  sig_pre [Spec.RsaPkcs1Enc.decryptContract, Spec.RsaPkcs1Enc.decryptSig, abi, argSlots, argVal, argBytes,
+  sig_pre [Proof.RsaPkcs1Enc.decryptContract, Proof.RsaPkcs1Enc.decryptSig, abi, argSlots, argVal, argBytes,
     stackBelow] at h
   obtain ⟨hsp, hsa, -⟩ := h
   exact ⟨hsp, by omega_using [hsa]⟩
@@ -64,14 +65,14 @@ theorem code_ok (v : Backend) (c : CrtImpl) {s : State} (h : spec.pre s) :
       (fun q hq => by rw [List.mem_singleton.mp hq]; exact (ok.stk (ep s).OUT (by simp)).symm)
     obtain hM := VG.Proof.Rsa.wordsAt_frame F' (p := ((ep s).ml.setWidth 64)) (n := 1) (by decide)
       (fun q hq => by rw [List.mem_singleton.mp hq]; exact (ok.stk (ep s).ML (by simp)).symm)
-    have key : ∀ o, Spec.RsaPkcs1Enc.writtenMsg m ((ep s).out.setWidth 64) ((ep s).ml.setWidth 64) (ep s).K r o →
-        Spec.RsaPkcs1Enc.writtenMsg m' ((ep s).out.setWidth 64) ((ep s).ml.setWidth 64) (ep s).K r o := fun o => by
-      cases o <;> simp only [Spec.RsaPkcs1Enc.writtenMsg] <;> rw [hO, hM] <;> exact id
+    have key : ∀ o, Proof.RsaPkcs1Enc.writtenMsg m ((ep s).out.setWidth 64) ((ep s).ml.setWidth 64) (ep s).K r o →
+        Proof.RsaPkcs1Enc.writtenMsg m' ((ep s).out.setWidth 64) ((ep s).ml.setWidth 64) (ep s).K r o := fun o => by
+      cases o <;> simp only [Proof.RsaPkcs1Enc.writtenMsg] <;> rw [hO, hM] <;> exact id
     exact key _ hres
   · have ok := hin.ok
     rw [ep_lay] at ok
     have ro := fun {R : Region} (hR : R ∈ (ep s).ro) => entered_ro hsp ok hR
-    sig_post [Spec.RsaPkcs1Enc.decryptContract, Spec.RsaPkcs1Enc.decryptSig, abi, argSlots, argVal, argBytes]
+    sig_post [Proof.RsaPkcs1Enc.decryptContract, Proof.RsaPkcs1Enc.decryptSig, abi, argSlots, argVal, argBytes]
     unfold Res at res
     rw [show dB (ep s) (entered frameBytes s) = _ from ro (R := (ep s).D) (by simp),
       show cB (ep s) (entered frameBytes s) = _ from ro (R := (ep s).INP) (by simp),
@@ -88,7 +89,7 @@ theorem map_toNat_inj {w : Nat} {a b : List (BitVec w)} (h : a.map (·.toNat) = 
 
 /-- Two entry states with the same public data have the same public parameters. -/
 theorem ep_eq {s₁ s₂ : State} (hp : spec.pub s₁ s₂) : ep s₁ = ep s₂ := by
-  sig_pub [Spec.RsaPkcs1Enc.decryptContract, Spec.RsaPkcs1Enc.decryptSig, abi, argSlots, argVal, argBytes] at hp
+  sig_pub [Proof.RsaPkcs1Enc.decryptContract, Proof.RsaPkcs1Enc.decryptSig, abi, argSlots, argVal, argBytes] at hp
   obtain ⟨hsp, hl, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20,
     a21, a22⟩ := hp
   obtain ⟨hn, he⟩ := List.append_inj (map_toNat_inj hl) (by simp [Proof.RsaPkcs1Sig.bytesAt_len, a4])
@@ -102,7 +103,7 @@ theorem code_ct (v : Backend) (c : CrtImpl) : ConstantTime isa spec.pre spec.pub
   intro s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hp e₁ e₂
   have hep := ep_eq hp
   have hsp : s₁.gpr .esp = s₂.gpr .esp := by
-    sig_pub [Spec.RsaPkcs1Enc.decryptContract, Spec.RsaPkcs1Enc.decryptSig, abi, argSlots, argVal, argBytes] at hp
+    sig_pub [Proof.RsaPkcs1Enc.decryptContract, Proof.RsaPkcs1Enc.decryptSig, abi, argSlots, argVal, argBytes] at hp
     exact hp.1
   refine (wrap_ct (F := frameBytes) (body_noSp v c) (P := fun a b => a = s₁ ∧ b = s₂)
     (fun a b h => by rw [h.1, h.2]; exact hsp) ?_ s₁ s₂ t₁ t₂ s₁' s₂' ⟨rfl, rfl⟩ e₁ e₂).1
@@ -156,7 +157,7 @@ theorem sat : ∃ s, spec.pre s := by
   have a22 : arg satState 22 = 1056 := by decide
   have e : argAddr satState 0 = 0x20004 := by decide
   have esp : satState.gpr .esp = 0x20000 := rfl
-  sig_implies_sat [Spec.RsaPkcs1Enc.decryptContract, Spec.RsaPkcs1Enc.decryptSig, abi, argSlots, argVal, argBytes,
+  sig_implies_sat [Proof.RsaPkcs1Enc.decryptContract, Proof.RsaPkcs1Enc.decryptSig, abi, argSlots, argVal, argBytes,
     stackBelow]
     [a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21, a22, e,
       esp, satState, stackBytes, frameBytes, Spec.Rsa.lenValid, Spec.Rsa.scratchWords] using satState

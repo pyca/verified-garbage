@@ -2,26 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.AesGcm.X86
 
-/-!
-# AES-GCM one-shot encryption out of place, from a list of slices: x86 (32-bit) implementation
-
-`vg_aes_gcm_seal_gather(ctx, rounds, nonce, nonce_len, aad, aad_len, src,
-src_count, dst, len, tag)`, cdecl (every argument on the stack, at
-`[esp + 4]` on entry), copies the slices `src` lists, one after the other,
-to `dst`, and encrypts them there in place with a call of
-`vg_aes_gcm_seal(ctx, rounds, nonce, nonce_len, aad, aad_len, dst, len, tag)`
-(`name`, `code`: an instance of it).
-
-It allocates a frame of 48 bytes: the call's nine arguments at `esp` …
-`esp + 32`, and our caller's `ebx`, `esi` and `edi`, which the copy uses, at
-`esp + 36` … `esp + 44`; our arguments are then at `esp + 52` … `esp + 92`.
-The copy has `esi` at the next descriptor, `ebx` the number of slices left
-and `edx` where the next slice goes; each slice is copied from `edi` 16
-bytes at a time through `xmm0`, with `ecx` their number (`copyChunks`), then
-the whole words of its last `len mod 16` bytes through `eax` (`copyWords`),
-then its last `len mod 4` bytes one at a time (`copyLoop`). The branches are
-on `src_count` and the slices' lengths alone.
--/
+/-! IA-32 descriptor-copy helpers shared by the ChaCha20-Poly1305 gather implementation. -/
 
 @[expose] public section
 
@@ -31,19 +12,6 @@ open VG.X86
 
 /-- `[esp + d]`. -/
 def sp (d : Nat) : MemOp := at_ .esp d
-
-/-- Our caller's `ebx`, `esi` and `edi` kept in the frame; the call's
-arguments `ctx`, `rounds`, `nonce`, `nonce_len`, `aad`, `aad_len`, `dst`,
-`len` and `tag` laid out in it; and the copy's registers: `src` in `esi`,
-`src_count` in `ebx` and `dst` in `edx`. -/
-def entry : List Instr :=
-  [.store (sp 36) .ebx, .store (sp 40) .esi, .store (sp 44) .edi,
-    .mov .eax (.mem (sp 52)), .store (sp 0) .eax, .mov .eax (.mem (sp 56)), .store (sp 4) .eax,
-    .mov .eax (.mem (sp 60)), .store (sp 8) .eax, .mov .eax (.mem (sp 64)), .store (sp 12) .eax,
-    .mov .eax (.mem (sp 68)), .store (sp 16) .eax, .mov .eax (.mem (sp 72)), .store (sp 20) .eax,
-    .mov .eax (.mem (sp 84)), .store (sp 24) .eax, .mov .eax (.mem (sp 88)), .store (sp 28) .eax,
-    .mov .eax (.mem (sp 92)), .store (sp 32) .eax,
-    .mov .esi (.mem (sp 76)), .mov .ebx (.mem (sp 80)), .mov .edx (.mem (sp 84))]
 
 /-- Copies the `ecx` (at least 1) blocks of 16 bytes at `edi` to `edx`,
 through `xmm0`. -/
@@ -89,14 +57,5 @@ def gather : Prog isa := .seq (.block [.alu .cmp .ebx (imm 0)]) (.ite .e (.block
 
 /-- Our caller's `ebx`, `esi` and `edi` back from the frame. -/
 def restore : List Instr := [.mov .ebx (.mem (sp 36)), .mov .esi (.mem (sp 40)), .mov .edi (.mem (sp 44))]
-
-/-- `vg_aes_gcm_seal_gather`, calling `vg_aes_gcm_seal` (`name`, `code`). -/
-def sealGather (name : String) (code : Prog isa) : Prog isa :=
-  .frame (.alloc 48)
-    (.seq (.block entry)
-    (.seq gather
-    (.seq (.call name code)
-      (.block restore))))
-    (.free 48)
 
 end VG.Impl.AesGcm.X86.SealGather

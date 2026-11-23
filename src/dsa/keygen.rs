@@ -43,6 +43,8 @@ impl PrivateKey {
         let (p_len, q_len) = (p.len(), q.len());
         let mut params = Vec::with_capacity(2 * p_len + q_len);
         for component in [p, q, g] {
+            // NO-SECRET-RESIDUE: the domain parameters are public, and the
+            // capacity is reserved exactly.
             params.extend_from_slice(component);
         }
         let mut output = Secret(vec![0u8; 3 * p_len + 2 * q_len]);
@@ -111,6 +113,8 @@ impl PrivateKey {
         let (p_len, q_len) = (p.len(), q.len());
         let mut params = Vec::with_capacity(2 * p_len + q_len);
         for component in [p, q, g] {
+            // NO-SECRET-RESIDUE: the domain parameters are public, and the
+            // capacity is reserved exactly.
             params.extend_from_slice(component);
         }
         // A draw never takes more than q_len bytes.

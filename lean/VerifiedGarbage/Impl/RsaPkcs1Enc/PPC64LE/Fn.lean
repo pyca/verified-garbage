@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Impl.RsaPkcs1Enc.PPC64LE.Decrypt
 public import VerifiedGarbage.Impl.RsaPkcs1Enc.PPC64LE.Random
 public import VerifiedGarbage.Impl.Scrub.PPC64LE
 
@@ -20,11 +19,6 @@ namespace VG.Impl.RsaPkcs1Enc.PPC64LE.Fn
 
 open VG.PPC64LE
 open VG.Impl.Scrub.PPC64LE (scrubAll)
-
-/-- `vg_rsa_pkcs1_decrypt_precomputed`, as emitted. -/
-def decryptPrecomputed : Prog isa :=
-  scrubAll 32 3648 Impl.Scrub.PPC64LE.Clear.all
-    (Impl.RsaPkcs1Enc.PPC64LE.Decrypt.codeP)
 
 /-- `vg_rsa_pkcs1_encrypt_random`, as emitted. -/
 def encryptRandom : Prog isa :=

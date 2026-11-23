@@ -14,7 +14,8 @@
   head) and VG_CPU_FEATURES configuration measured is a series, and every
   bar is throughput relative to the first series measured in its group
   (OpenSSL, else AWS-LC, else base, else the configuration `none`), drawn
-  gray. Each benchmark group is a chart of its own, across machines (an
+  in its series' colour, as the legend has it (OpenSSL's is gray). Each
+  benchmark group is a chart of its own, across machines (an
   architecture and CPU model); charts dropped onto each other combine,
   one plot per machine, grouped by a parameter their names share (P-256,
   P-384, …). It knows nothing of the algorithms but how to print their
@@ -693,7 +694,7 @@ function renderControls(list) {
   if (series.length > 1) {
     rows.push(el("span", { class: "label" }, "Series"), el("div", { class: "chips" },
       series.map(s => chip(s.label, !state.hidden.includes(s.key), toggle("hidden", s.key), s.color)),
-      el("span", { class: "hint" }, "Gray bars are each group's baseline (1.0×): the first of these it has.")));
+      el("span", { class: "hint" }, "Each group's baseline (1.0×) is the first of these it has.")));
   }
   if (machines.length > 1) {
     rows.push(el("span", { class: "label" }, "Machines"), el("div", { class: "chips" },
@@ -860,7 +861,7 @@ function drawCard(model, box) {
   model.plots.forEach((p, i) => {
     if (i === 0) {
       box.append(el("div", { class: "axis-title" }, model.relative
-        ? "Throughput relative to the gray bar · higher is better"
+        ? "Throughput relative to the baseline (1×) · higher is better"
         : "Time per operation · lower is better"));
     }
     if (p.title) box.append(el("div", { class: "plot-title" }, p.title));
@@ -939,7 +940,7 @@ function drawPlot(box, clusters, relative, small) {
       const r = Math.min(4, bw / 2, h);
       g.append(svg("path", {
         d: `M${bx},${top + plotH}V${by + r}A${r},${r} 0 0 1 ${bx + r},${by}H${bx + bw - r}A${r},${r} 0 0 1 ${bx + bw},${by + r}V${top + plotH}Z`,
-        style: `fill:${b.baseline ? "var(--s-base)" : b.s.color}`,
+        style: `fill:${b.s.color}`,
       }));
       if (!b.baseline && labelled) {
         g.append(svg("text", { class: "value" + (b.s.subject ? " subject" : ""), x: bx + bw / 2, y: by - 5, "text-anchor": "middle" }, valueText(b)));
@@ -973,7 +974,7 @@ function clusterName(c) {
 
 function tooltipFor(c, relative) {
   const rows = c.bars.map(b => el("div", { class: "row" },
-    el("span", { class: "k", style: `background:${b.baseline ? "var(--s-base)" : b.s.color}` }),
+    el("span", { class: "k", style: `background:${b.s.color}` }),
     el("b", {}, relative ? fmtRel(b.v) : fmtTime(b.v)),
     el("span", { class: "name" }, b.s.label + (b.baseline ? " (baseline)" : "")),
     el("span", { class: "t" }, relative ? fmtTime(b.r.t) : "")));
@@ -1038,7 +1039,7 @@ function chartSvg(model, title, box) {
   }
   y += 22;
   out.append(svg("text", { x: pad, y, "font-size": 12, fill: color("var(--muted)") },
-    model.relative ? "Throughput relative to the gray bar, each group's baseline · higher is better" : "Time per operation · lower is better"));
+    model.relative ? "Throughput relative to each group's baseline (1×) · higher is better" : "Time per operation · lower is better"));
   y += 8;
   for (const node of box.children) {
     if (node.classList.contains("plot-title")) {
