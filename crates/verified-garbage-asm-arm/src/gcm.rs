@@ -479,8 +479,9 @@ mov r0, r9
 mov r1, r8
 add r2, r10, #48
 add lr, r11, #512
+mov r6, r3
 push {{r12, lr}}
-bl {vg_aes_ctr32}
+bl {vg_aes_ctr32_to}
 ldr r12, [sp], #8
 b 244f
 243:
@@ -722,6 +723,7 @@ mov r12, #0
 cmp r2, r2
 bx lr",
         vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
+        vg_aes_ctr32_to = sym super::aes::vg_aes_ctr32_to::vg_aes_ctr32_to,
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
     )
 }
@@ -1327,8 +1329,9 @@ mov r0, r9
 mov r1, r8
 add r2, r10, #48
 add lr, r11, #512
+mov r6, r3
 push {{r12, lr}}
-bl {vg_aes_ctr32}
+bl {vg_aes_ctr32_to}
 ldr r12, [sp], #8
 b 267f
 266:
@@ -1414,6 +1417,7 @@ cmp r2, r2
 bx lr",
         vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
+        vg_aes_ctr32_to = sym super::aes::vg_aes_ctr32_to::vg_aes_ctr32_to,
     )
 }
 
@@ -1922,8 +1926,9 @@ mov r0, r9
 mov r1, r8
 add r2, r10, #48
 add lr, r11, #512
+mov r6, r3
 push {{r12, lr}}
-bl {vg_aes_ctr32}
+bl {vg_aes_ctr32_to}
 ldr r12, [sp], #8
 b 28f
 27:
@@ -2127,6 +2132,7 @@ mov r3, #0
 mov r12, #0
 cmp r2, r2
 bx lr",
+        vg_aes_ctr32_to = sym super::aes::vg_aes_ctr32_to::vg_aes_ctr32_to,
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
         vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
     )
@@ -2358,8 +2364,9 @@ mov r0, r9
 mov r1, r8
 add r2, r10, #48
 add lr, r11, #512
+mov r6, r3
 push {{r12, lr}}
-bl {vg_aes_ctr32}
+bl {vg_aes_ctr32_to}
 ldr r12, [sp], #8
 b 229f
 228:
@@ -2437,6 +2444,7 @@ mov r12, #0
 cmp r2, r2
 bx lr",
         vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
+        vg_aes_ctr32_to = sym super::aes::vg_aes_ctr32_to::vg_aes_ctr32_to,
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
     )
 }

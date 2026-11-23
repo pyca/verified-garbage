@@ -1941,22 +1941,25 @@ theorem cryptWhole_ct {to : Bool} {k8 : BitVec 32} {R : Nat} {S T : BitVec 32} {
     · let J₂ : State → Prop := fun s => ∃ k7, Env c st w sp k7 k8 s ∧ DataW c st w sp k7 k8 s T n ∧ j ≤ n ∧
         (R = 10 ∨ R = 12 ∨ R = 14) ∧ s.gpr .r0 = c ∧ s.gpr .r1 = BitVec.ofNat 32 R ∧
         s.gpr .r2 = st + BitVec.ofNat 32 48 ∧ s.gpr .r3 = S + BitVec.ofNat 32 j ∧
-        s.gpr .r12 = BitVec.ofNat 32 nb ∧ s.gpr .lr = w + BitVec.ofNat 32 512 ∧ S = T
+        s.gpr .r12 = BitVec.ofNat 32 nb ∧ s.gpr .lr = w + BitVec.ofNat 32 512 ∧ s.gpr .r6 = s.gpr .r3 ∧ S = T
       refine CT.seq (J := J₂) ?_ (fun s ⟨k7, he, hd, _, hm, hj, h8, hR, h3, h12, _⟩ => ?_) ?_
       · obtain ⟨_, hc⟩ : ∃ h, (VG.Taint.check VG.Arm.taint (Taint.ofRegs [.r8, .r9, .r10, .r11])
-            (.block [.mov .r0 (.reg .r9), .mov .r1 (.reg .r8), addI .r2 .r10 48, addI .lr .r11 scrO]) h).isSome =
+            (.block [.mov .r0 (.reg .r9), .mov .r1 (.reg .r8), addI .r2 .r10 48, addI .lr .r11 scrO, .mov .r6 (.reg .r3)]) h).isSome =
             true := ⟨_, by taint_decide⟩
         exact CT.taint _ (fun s₁ s₂ ⟨_, h₁, _, _, _, _, e₁, _⟩ ⟨_, h₂, _, _, _, _, e₂, _⟩ r hr =>
           pin8 h₁ h₂ e₁ e₂ (by simpa using hr)) hc
-      · obtain ⟨s₂, run₂, h0', h1', h2', hlr', hg₂, hk₂⟩ := wholeArgs_ok he
+      · obtain ⟨s₂, run₂, h0', h1', h2', hlr', h6', hg₂, hk₂⟩ := wholeArgs_ok he
         refine WP.of_runBlock ⟨s₂, run₂, k7, he.keep (fun r hr => by
           simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-          rcases hr with rfl | rfl | rfl | rfl | rfl <;> exact hg₂ _ (by decide) (by decide) (by decide) (by decide))
+          rcases hr with rfl | rfl | rfl | rfl | rfl <;> exact hg₂ _ (by decide) (by decide) (by decide) (by decide) (by decide))
           hk₂.sp hk₂.rd hk₂.wr, hd.of_eq hk₂.rd hk₂.wr, hj, hR, h0', by rw [h1', h8], h2',
-          by rw [hg₂ _ (by decide) (by decide) (by decide) (by decide), h3],
-          by rw [hg₂ _ (by decide) (by decide) (by decide) (by decide), h12], hlr', hm⟩
-      · refine CT.ctr fun s₁ s₂ ⟨_, he₁, hd₁, hj₁, hR, a0, a1, a2, a3, a12, alr, e⟩
-          ⟨_, he₂, hd₂, _, _, b0, b1, b2, b3, b12, blr, _⟩ => ?_
+          by rw [hg₂ _ (by decide) (by decide) (by decide) (by decide) (by decide), h3],
+          by rw [hg₂ _ (by decide) (by decide) (by decide) (by decide) (by decide), h12], hlr', h6'.trans (hg₂ _ (by decide) (by decide) (by decide) (by decide) (by decide)).symm, hm⟩
+      · refine ctrFrame_rel true (fun _ _ ⟨a, b⟩ _ =>
+          ⟨by obtain ⟨_, _, _, _, _, _, _, _, _, _, _, h, _⟩ := a; exact h,
+           by obtain ⟨_, _, _, _, _, _, _, _, _, _, _, h, _⟩ := b; exact h⟩) ?_
+        rintro s₁ s₂ ⟨⟨_, he₁, hd₁, hj₁, hR, a0, a1, a2, a3, a12, alr, _, e⟩,
+          ⟨_, he₂, hd₂, _, _, b0, b1, b2, b3, b12, blr, _, _⟩⟩
         subst e
         exact ⟨_, _, _, _, _, _, ctrWhole_mk L he₁ a0 a1 a2 a3 a12 alr hR (hd₁.sub (by omega_using [h0]) (by omega_using [h0])),
           ctrWhole_mk L he₂ b0 b1 b2 b3 b12 blr hR (hd₂.sub (by omega_using [h0]) (by omega_using [h0])), he₁.sp.trans he₂.sp.symm⟩
@@ -1998,7 +2001,7 @@ theorem cryptWhole_ct {to : Bool} {k8 : BitVec 32} {R : Nat} {S T : BitVec 32} {
           by rw [hg₂ _ (by decide) (by decide) (by decide), h6 rfl]⟩
       have mk : ∀ s, J₂ s → CtrToCall s c (st + BitVec.ofNat 32 48) (S + BitVec.ofNat 32 j) (T + BitVec.ofNat 32 j)
           (w + BitVec.ofNat 32 512) R nb := by
-        intro s ⟨k7, he, hd, hsr, hm, hj, hR, a0, a1, a2, a3, a8, _⟩
+        intro s ⟨k7, he, hd, hsr, hm, hj, hR, a0, a1, a2, a3, a8, a6⟩
         obtain ⟨dST, sp12, bc, bst, bw, bS, bT⟩ := hm
         have hdj := hd.sub (j := j) (k := 16 * nb) (by omega_using [h0]) (by omega_using [h0])
         have hsj := hsr.sub (j := j) (k := 16 * nb) (by omega_using [h0]) (by omega_using [h0])
@@ -2007,7 +2010,7 @@ theorem cryptWhole_ct {to : Bool} {k8 : BitVec 32} {R : Nat} {S T : BitVec 32} {
         have eC := L.stA (d := 48) (by decide)
         have eW := L.wA (d := 512) (by decide)
         have hk := he.sp
-        refine ⟨he.r9, a8, by rw [he.r10], a3, a0, a1, a2, hR, by rw [hk]; exact sp12,
+        refine ⟨he.r9, a8, by rw [he.r10], a3, a0, a1, a2, a6, hR, by rw [hk]; exact sp12,
           by have := L.cw; omega_using [this], by rw [L.stN (by decide)]; have := L.sw; omega_using [this], hsj.fit, hdj.ok.fit,
           by rw [L.wN (by decide)]; have := L.ww; omega_using [this], ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
         all_goals try simp only [eC, eW]

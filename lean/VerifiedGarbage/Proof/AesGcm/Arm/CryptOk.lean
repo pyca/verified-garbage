@@ -151,17 +151,18 @@ theorem splitCtr_ok {s : State} {D : BitVec 32} {n j : Nat} (hj : j ≤ n) (hn :
 omit L in
 /-- The arguments of `vg_aes_ctr32` for the whole blocks. -/
 theorem wholeArgs_ok {s : State} (he : Env c st w sp k7 k8 s) :
-    ∃ s', runBlock isa [.mov .r0 (.reg .r9), .mov .r1 (.reg .r8), addI .r2 .r10 48, addI .lr .r11 scrO] s = some s' ∧
+    ∃ s', runBlock isa [.mov .r0 (.reg .r9), .mov .r1 (.reg .r8), addI .r2 .r10 48, addI .lr .r11 scrO, .mov .r6 (.reg .r3)] s = some s' ∧
       s'.gpr .r0 = c ∧ s'.gpr .r1 = s.gpr .r8 ∧ s'.gpr .r2 = st + BitVec.ofNat 32 48 ∧
-      s'.gpr .lr = w + BitVec.ofNat 32 512 ∧
-      (∀ r, r ≠ .r0 → r ≠ .r1 → r ≠ .r2 → r ≠ .lr → s'.gpr r = s.gpr r) ∧ Keeps s s' := by
+      s'.gpr .lr = w + BitVec.ofNat 32 512 ∧ s'.gpr .r6 = s.gpr .r3 ∧
+      (∀ r, r ≠ .r0 → r ≠ .r1 → r ≠ .r2 → r ≠ .lr → r ≠ .r6 → s'.gpr r = s.gpr r) ∧ Keeps s s' := by
   obtain h9 := he.r9; have h10 := he.r10; have h11 := he.r11
-  refine ⟨_, by arun [], ?_, ?_, ?_, ?_, ?_, ?_⟩
+  refine ⟨_, by arun [], ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · simp [gpr_setReg, h9]
   · simp [gpr_setReg]
   · simp [gpr_setReg, h10]
   · simp [gpr_setReg, h11]
-  · intro r a b d e; simp [gpr_setReg, a, b, d, e]
+  · simp [gpr_setReg]
+  · intro r a b d e f; simp [gpr_setReg, a, b, d, e, f]
   · exact ⟨rfl, rfl, rfl, rfl⟩
 
 /-- The arguments of `vg_aes_ctr32` on `nb` whole blocks at `D + j`. -/
@@ -248,20 +249,20 @@ theorem cryptWhole_ok {R : Nat} {icb : Block} {P : Nat} {D : BitVec 32} {n : Nat
     obtain hw : (P + j) % 16 = 0 := h.whole.resolve_left (by omega_arith)
     obtain hdj := h.data.sub (j := j) (k := 16 * nb) (by omega_arith) (by omega_arith)
     obtain eD := h.data.ok.addr (j := j) (by omega_arith)
-    obtain ⟨s₂, run₂, h0', h1', h2', hlr', hg₂, hk₂⟩ := wholeArgs_ok he₁
+    obtain ⟨s₂, run₂, h0', h1', h2', hlr', h6', hg₂, hk₂⟩ := wholeArgs_ok he₁
     refine WP.seq (WP.of_runBlock ⟨s₂, run₂, ?_⟩)
     obtain he₂ : Env c st w sp k7 k8 s₂ := he₁.keep (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl | rfl <;> exact hg₂ _ (by decide) (by decide) (by decide) (by decide))
+      rcases hr with rfl | rfl | rfl | rfl | rfl <;> exact hg₂ _ (by decide) (by decide) (by decide) (by decide) (by decide))
       hk₂.sp hk₂.rd hk₂.wr
     obtain eC := L.stA (d := 48) (by decide)
     obtain eS := L.wA (d := 512) (by decide)
     have hk := he₂.sp
     obtain hcall : CtrCall s₂ c (st + BitVec.ofNat 32 48) (D + BitVec.ofNat 32 j) (w + BitVec.ofNat 32 512) R nb :=
-      ctrWhole_mk L he₂ h0' (by rw [h1', r8₁]) h2' (by rw [hg₂ _ (by decide) (by decide) (by decide) (by decide), h3])
-        (by rw [hg₂ _ (by decide) (by decide) (by decide) (by decide), h12]) hlr' h.rounds
+      ctrWhole_mk L he₂ h0' (by rw [h1', r8₁]) h2' (by rw [hg₂ _ (by decide) (by decide) (by decide) (by decide) (by decide), h3])
+        (by rw [hg₂ _ (by decide) (by decide) (by decide) (by decide) (by decide), h12]) hlr' h.rounds
         (hdj.of_eq (hk₂.rd.trans hk₁.rd) (hk₂.wr.trans hk₁.wr))
-    refine WP.mono (ctr_call hcall) fun s₃ g => ?_
+    refine WP.mono (ctrFrame_call true hcall (fun _ => h6'.trans (hg₂ _ (by decide) (by decide) (by decide) (by decide) (by decide)).symm)) fun s₃ g => ?_
     obtain gout := g.out; have gctr := g.ctr; have gframe := g.frame
     simp only [hk₂.mem, hk₁.mem, eC, eS, eD, hk] at gout gctr gframe
     obtain hcw := fun hc₀ => Proof.Gcm.ctr_whole (h.ctr hc₀) hw (m' := s₃.mem)
@@ -269,9 +270,9 @@ theorem cryptWhole_ok {R : Nat} {icb : Block} {P : Nat} {D : BitVec 32} {n : Nat
     refine ⟨j + 16 * nb, by omega_arith, ⟨he₂.of_saved g.saved g.sp g.rd g.wr, by omega_arith, ?_, ?_, ?_, h.rounds,
       hd₁.of_eq (g.rd.trans hk₂.rd) (g.wr.trans hk₂.wr), ?_, ?_, ?_, .inr (by omega_arith), ?_, nofun,
       (hd₁.of_eq (g.rd.trans hk₂.rd) (g.wr.trans hk₂.wr)).ok, rfl⟩, by omega_arith⟩
-    · rw [g.saved _ (by decide) (by decide), hg₂ _ (by decide) (by decide) (by decide) (by decide), h4]
-    · rw [g.saved _ (by decide) (by decide), hg₂ _ (by decide) (by decide) (by decide) (by decide), h5]
-    · rw [g.saved _ (by decide) (by decide), hg₂ _ (by decide) (by decide) (by decide) (by decide), r8₁]
+    · rw [g.saved _ (by decide) (by decide), hg₂ _ (by decide) (by decide) (by decide) (by decide) (by decide), h4]
+    · rw [g.saved _ (by decide) (by decide), hg₂ _ (by decide) (by decide) (by decide) (by decide) (by decide), h5]
+    · rw [g.saved _ (by decide) (by decide), hg₂ _ (by decide) (by decide) (by decide) (by decide) (by decide), r8₁]
     · intro hc₀; rw [← Nat.add_assoc]; exact (hcw hc₀).2
     · -- The bytes done.
       intro hc₀
@@ -427,7 +428,8 @@ theorem cryptWholeTo_ok {R : Nat} {icb : Block} {P : Nat} {S T : BitVec 32} {n :
       refine ⟨by rw [hg₂ _ (by decide) (by decide) (by decide)]; exact he₁.r9,
         by rw [hg₂ _ (by decide) (by decide) (by decide), r8₁],
         by rw [hg₂ _ (by decide) (by decide) (by decide), he₁.r10],
-        by rw [hg₂ _ (by decide) (by decide) (by decide), h3], h0', h1', h2', h.rounds, by rw [hk]; exact sp12,
+        by rw [hg₂ _ (by decide) (by decide) (by decide), h3], h0', h1', h2',
+        by rw [hg₂ _ (by decide) (by decide) (by decide), r6₁], h.rounds, by rw [hk]; exact sp12,
         by have := L.cw; omega_arith, by rw [L.stN (by decide)]; have := L.sw; omega_arith, hsj.fit, hdj.ok.fit,
         by rw [L.wN (by decide)]; have := L.ww; omega_arith, ?_, ?_, ?_, ?_, ?_, ?_, ?_, Or.inr dtj, ?_, ?_, ?_, ?_, ?_, ?_,
         ?_, ?_⟩

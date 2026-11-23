@@ -276,11 +276,14 @@ theorem covW : Covers (ctrWr C D S n) (pushed [.r12, .lr] s).wr := cover_pushed 
 
 end CtrCall
 
-theorem ctr_call {s : State} {K C D S : BitVec 32} {R n : Nat} (h : CtrCall s K C D S R n) :
-    WP isa ctrFrame s (CtrPost s K C D S R n) := by
+theorem ctrFrame_call (shared : Bool) {s : State} {K C D S : BitVec 32} {R n : Nat} (h : CtrCall s K C D S R n)
+    (h6 : shared = true → s.gpr .r6 = s.gpr .r3) :
+    WP isa (ctrFrameG shared) s (CtrPost s K C D S R n) := by
   refine WP.frame (rs := [.r12, .lr]) (r := .r12) rfl (by simpa using h.hsp) (by simp) ?_
-  refine WP.call (k := Proof.Aes.ctr32Arm) Proof.Aes.Arm.ctr32_correct
-    (rd := ctrRd s.sp K) (wr := ctrWr C D S n) h.pre h.cov h.covW ?_ ctr_noCalls
+  refine WP.call (k := Proof.Aes.Arm.ctrFrameContract shared) (Proof.Aes.Arm.ctrFrame_correct shared)
+    (rd := ctrRd s.sp K) (wr := ctrWr C D S n) ⟨h.pre, fun hs => ?_⟩ h.cov h.covW ?_
+    (by cases shared <;> decide +kernel)
+  · rw [view_gpr _ _ _ .r6 (by decide), view_gpr _ _ _ .r3 (by decide), h6 hs]
   intro s₂ hrd₂ hwr₂ hsp₂ hf hcs _ hpost ml ul hfl
   have hfl' : Frame [below s.sp] s₂.mem ml := by rw [e8, hA h.hsp] at hfl; exact hfl
   have hR := toNat_rounds h.rounds
@@ -329,31 +332,45 @@ theorem ctr_call {s : State} {K C D S : BitVec 32} {R n : Nat} (h : CtrCall s K 
       simp only [List.mem_singleton] at hr; subst hr; exact h.bc.symm]
     exact hctr
 
+theorem ctr_call {s : State} {K C D S : BitVec 32} {R n : Nat} (h : CtrCall s K C D S R n) :
+    WP isa ctrFrame s (CtrPost s K C D S R n) :=
+  ctrFrame_call false h nofun
+
 /-- Calls of `vg_aes_ctr32` with the same arguments and stack pointer in both
 runs are constant time. -/
-theorem ctr_rel {P : State → State → Prop}
+theorem ctrFrame_rel (shared : Bool) {P : State → State → Prop}
+    (h6 : ∀ a b, P a b → shared = true → a.gpr .r6 = a.gpr .r3 ∧ b.gpr .r6 = b.gpr .r3)
     (h : ∀ s₁ s₂, P s₁ s₂ → ∃ K C D S : BitVec 32, ∃ R n : Nat,
       CtrCall s₁ K C D S R n ∧ CtrCall s₂ K C D S R n ∧ s₁.sp = s₂.sp) :
-    RelCT isa P ctrFrame fun _ _ => True := by
+    RelCT isa P (ctrFrameG shared) fun _ _ => True := by
   refine RelCT.frame (fun s₁ s₂ hp => by obtain ⟨_, _, _, _, _, _, _, _, e⟩ := h _ _ hp; exact e) ?_
   intro a b t₁ t₂ a' b' ⟨s₁, s₂, hp, pa, pb⟩ e₁ e₂
   obtain ⟨K, C, D, S, R, n, h₁, h₂, hsp⟩ := h _ _ hp
   rw [push_pushed (rs := [.r12, .lr]) rfl (by simpa using h₁.hsp), Option.some.injEq] at pa
   rw [push_pushed (rs := [.r12, .lr]) rfl (by simpa using h₂.hsp), Option.some.injEq] at pb
   subst pa pb
-  refine RelCT.call (k := Proof.Aes.ctr32Arm) Proof.Aes.Arm.ctr32_correct Proof.Aes.Arm.ctr32_ct
+  refine RelCT.call (k := Proof.Aes.Arm.ctrFrameContract shared) (Proof.Aes.Arm.ctrFrame_correct shared)
+    (Proof.Aes.Arm.ctrFrame_ct shared)
     (ctrRd s₁.sp K) (ctrWr C D S n) (P := fun x y => x = pushed [.r12, .lr] s₁ ∧ y = pushed [.r12, .lr] s₂)
     (fun x y ⟨ex, ey⟩ => ?_) _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂
   subst ex ey
   have p₁ := h₁.pre
   have p₂ := h₂.pre
   rw [← hsp] at p₂
-  refine ⟨p₁, p₂, ?_, h₁.cov, h₁.covW, hsp ▸ h₂.cov, h₂.covW⟩
-  simp only [Proof.Aes.ctr32Arm, stackArg_withRegions, stackArg_callEntry, arg0 h₁.hsp, arg1 h₁.hsp, arg0 h₂.hsp, arg1 h₂.hsp,
+  refine ⟨⟨p₁, fun hs => ?_⟩, ⟨p₂, fun hs => ?_⟩, ?_, h₁.cov, h₁.covW, hsp ▸ h₂.cov, h₂.covW⟩
+  · rw [view_gpr _ _ _ .r6 (by decide), view_gpr _ _ _ .r3 (by decide), (h6 _ _ hp hs).1]
+  · rw [view_gpr _ _ _ .r6 (by decide), view_gpr _ _ _ .r3 (by decide), (h6 _ _ hp hs).2]
+  simp only [Proof.Aes.Arm.ctrFrameContract, Proof.Aes.ctr32Arm, stackArg_withRegions, stackArg_callEntry, arg0 h₁.hsp, arg1 h₁.hsp, arg0 h₂.hsp, arg1 h₂.hsp,
     view_gpr _ _ _ .r0 (by decide), view_gpr _ _ _ .r1 (by decide), view_gpr _ _ _ .r2 (by decide),
     view_gpr _ _ _ .r3 (by decide), view_sp, h₁.r0, h₁.r1, h₁.r2, h₁.r3, h₁.r12, h₁.lr, h₂.r0, h₂.r1, h₂.r2,
     h₂.r3, h₂.r12, h₂.lr, hsp]
   exact ⟨trivial, trivial, trivial, trivial, trivial, trivial, trivial⟩
+
+theorem ctr_rel {P : State → State → Prop}
+    (h : ∀ s₁ s₂, P s₁ s₂ → ∃ K C D S : BitVec 32, ∃ R n : Nat,
+      CtrCall s₁ K C D S R n ∧ CtrCall s₂ K C D S R n ∧ s₁.sp = s₂.sp) :
+    RelCT isa P ctrFrame fun _ _ => True :=
+  ctrFrame_rel false (fun _ _ _ => nofun) h
 
 /-! ## `vg_aes_ctr32_to` -/
 
@@ -462,6 +479,7 @@ structure CtrToCall (s : State) (K C D T S : BitVec 32) (R n : Nat) : Prop where
   r0 : s.gpr .r0 = BitVec.ofNat 32 n
   r1 : s.gpr .r1 = S
   r2 : s.gpr .r2 = T
+  r6 : s.gpr .r6 = T
   rounds : R = 10 ∨ R = 12 ∨ R = 14
   hsp : 12 ≤ s.sp.toNat
   fitK : K.toNat + 240 ≤ 2 ^ 32
@@ -500,7 +518,7 @@ structure CtrToPost (s : State) (K C D T S : BitVec 32) (R n : Nat) (s' : State)
   r12 : s'.gpr .r12 = s.gpr .r0
 
 abbrev ctrToRd (sp K D : BitVec 32) (n : Nat) : List Region :=
-  [⟨State.addr K, 240⟩, below12 sp, ⟨State.addr D, 16 * n⟩]
+  [⟨State.addr K, 240⟩, ⟨State.addr sp - 12, 8⟩, ⟨State.addr D, 16 * n⟩]
 abbrev ctrToWr (C T S : BitVec 32) (n : Nat) : List Region :=
   [⟨State.addr C, 16⟩, ⟨State.addr T, 16 * n⟩, ⟨State.addr S, 2048⟩]
 
@@ -538,6 +556,8 @@ theorem g1 : (toArgs s).gpr .r1 = BitVec.ofNat 32 R := by
 theorem g2 : (toArgs s).gpr .r2 = C := by rw [VG.Arm.RegUpd.gpr_setReg_self, h.r10]
 theorem g3 : (toArgs s).gpr .r3 = D := by rw [toArgs_gpr _ (by decide) (by decide) (by decide), h.r3]
 
+theorem g6 : (toArgs s).gpr .r6 = T := by rw [toArgs_gpr _ (by decide) (by decide) (by decide), h.r6]
+
 theorem args : stackArg (toArgs s) 0 = BitVec.ofNat 32 n ∧ stackArg (toArgs s) 1 = S ∧
     stackArg (toArgs s) 2 = T := by
   obtain ⟨a0, a1, a2⟩ := arg3 (s := s) h.hsp
@@ -555,22 +575,24 @@ theorem toArgs_sp : (toArgs s).sp.toNat = s.sp.toNat - 12 := by
 theorem pre : Proof.Aes.ctr32ToArm.pre ((toArgs s).callEntry.withRegions (ctrToRd s.sp K D n) (ctrToWr C T S n)) := by
   have hR := toNat_rounds h.rounds
   have hn := toNat_ofNat32 h.n_lt
-  obtain ⟨a0, a1, a2⟩ := h.args
+  obtain ⟨a0, a1, _⟩ := h.args
   simp only [Proof.Aes.ctr32ToArm, toArgs_view_gpr _ _ _ (r := .r0) (by decide),
     toArgs_view_gpr _ _ _ (r := .r1) (by decide), toArgs_view_gpr _ _ _ (r := .r2) (by decide),
     toArgs_view_gpr _ _ _ (r := .r3) (by decide), h.g0, h.g1, h.g2, h.g3, hR, State.withRegions_rd,
     State.withRegions_wr, State.withRegions_sp, State.callEntry_sp, stackArgAddr_withRegions,
-    stackArg_withRegions, stackArg_callEntry, stackArgAddr_callEntry, a0, a1, a2, hn, h.argAddr0, h.toArgs_sp]
-  refine ⟨trivial, trivial, h.kc, h.kt, h.ks, h.ct, h.cs, h.ts, h.bc.symm, h.bt.symm, h.bs.symm, h.dc, h.dt, h.ds,
+    stackArg_withRegions, stackArg_callEntry, stackArgAddr_callEntry, a0, a1, hn, toArgs_view_gpr _ _ _ (r := .r6) (by decide), h.g6, h.argAddr0, h.toArgs_sp]
+  refine ⟨by simp [ctrToRd], trivial, h.kc, h.kt, h.ks, h.ct, h.cs, h.ts, h.bc.symm.sub_right (Region.sub_prefix (by decide)),
+    h.bt.symm.sub_right (Region.sub_prefix (by decide)), h.bs.symm.sub_right (Region.sub_prefix (by decide)), h.dc, h.dt, h.ds,
     h.fitK, h.fitC, h.fitD, h.fitT, h.fitS, ?_, h.rounds⟩
   have := s.sp.isLt; have := h.hsp; omega_using []
 
 theorem cov : Covers (ctrToRd s.sp K D n ++ ctrToWr C T S n) ((toArgs s).rd ++ (toArgs s).wr) := by
   have r := h.reads
-  have hb : Covers [below12 s.sp] ((pushed [.r0, .r1, .r2] s).rd ++ (pushed [.r0, .r1, .r2] s).wr) := by
+  have hb : Covers [⟨State.addr s.sp - 12, 8⟩] ((pushed [.r0, .r1, .r2] s).rd ++ (pushed [.r0, .r1, .r2] s).wr) := by
     intro x n' ⟨r', hr', hc⟩
     simp only [List.mem_singleton] at hr'; subst hr'
-    exact ⟨_, List.mem_append_right _ (by rw [pushed_wr12 h.hsp]; exact List.mem_cons_self ..), hc⟩
+    exact ⟨below12 s.sp, List.mem_append_right _ (by rw [pushed_wr12 h.hsp]; exact List.mem_cons_self ..),
+      Nat.le_trans hc (by decide : 8 ≤ 12)⟩
   have w : Covers (ctrToWr C T S n) ((pushed [.r0, .r1, .r2] s).rd ++ (pushed [.r0, .r1, .r2] s).wr) :=
     cover_pushed3 (fun x n' hi => by
       obtain ⟨r', hr', hc'⟩ := h.writes x n' hi
@@ -612,12 +634,12 @@ theorem ctrTo_call {s : State} {K C D T S : BitVec 32} {R n : Nat} (h : CtrToCal
   have blocksD : blocksAt (pushed [.r0, .r1, .r2] s).mem (State.addr D) n = blocksAt s.mem (State.addr D) n :=
     blocksAt_frame fA' (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact h.bd.symm) (by have := h.fitD; omega_using [hn])
-  obtain ⟨a0, a1, a2⟩ := h.args
+  obtain ⟨a0, _, _⟩ := h.args
   obtain ⟨hdata, hctr⟩ := hpost
   simp only [State.withRegions_mem, State.callEntry_mem, toArgs_view_gpr _ _ _ (r := .r0) (by decide),
     toArgs_view_gpr _ _ _ (r := .r1) (by decide), toArgs_view_gpr _ _ _ (r := .r2) (by decide),
     toArgs_view_gpr _ _ _ (r := .r3) (by decide), h.g0, h.g1, h.g2, h.g3, hR, stackArg_withRegions,
-    stackArg_callEntry, a0, a2, hn, toArgs_mem] at hdata hctr
+    stackArg_callEntry, a0, toArgs_view_gpr _ _ _ (r := .r6) (by decide), h.g6, hn, toArgs_mem] at hdata hctr
   have fB : Frame (ctrToWr C T S n) (pushed [.r0, .r1, .r2] s).mem s₂.mem := hf
   refine ⟨?_, ?_, ?_, fun r hr hlr => ?_, ?_, ?_, ?_, ?_⟩ <;> dsimp only
   · rw [popped_rd, hrd₂]; rfl
@@ -682,14 +704,14 @@ theorem ctrTo_rel {P : State → State → Prop}
       have p₁ := h₁.pre
       have p₂ := h₂.pre
       rw [← hsp] at p₂
-      obtain ⟨a0, a1, a2⟩ := h₁.args
-      obtain ⟨b0, b1, b2⟩ := h₂.args
+      obtain ⟨a0, a1, _⟩ := h₁.args
+      obtain ⟨b0, b1, _⟩ := h₂.args
       refine ⟨p₁, p₂, ?_, h₁.cov, h₁.covW, hsp ▸ h₂.cov, h₂.covW⟩
       simp only [Proof.Aes.ctr32ToArm, stackArg_withRegions, stackArg_callEntry,
         toArgs_view_gpr _ _ _ (r := .r0) (by decide), toArgs_view_gpr _ _ _ (r := .r1) (by decide),
         toArgs_view_gpr _ _ _ (r := .r2) (by decide), toArgs_view_gpr _ _ _ (r := .r3) (by decide),
         State.withRegions_sp, State.callEntry_sp, h₁.g0, h₁.g1, h₁.g2, h₁.g3, h₂.g0, h₂.g1, h₂.g2, h₂.g3,
-        a0, a1, a2, b0, b1, b2]
+        toArgs_view_gpr _ _ _ (r := .r6) (by decide), h₁.g6, h₂.g6, a0, a1, b0, b1]
       refine ⟨by show s₁.sp - _ = s₂.sp - _; rw [hsp], trivial, trivial, trivial, trivial, trivial, trivial,
         trivial⟩
 

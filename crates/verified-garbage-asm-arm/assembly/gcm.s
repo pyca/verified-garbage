@@ -441,8 +441,9 @@ vg_aes_gcm_seal:
 	mov r1, r8
 	add r2, r10, #48
 	add lr, r11, #512
+	mov r6, r3
 	push {r12, lr}
-	bl {vg_aes_ctr32}
+	bl {vg_aes_ctr32_to}
 	ldr r12, [sp], #8
 	b 244f
 243:
@@ -1265,8 +1266,9 @@ vg_aes_gcm_open:
 	mov r1, r8
 	add r2, r10, #48
 	add lr, r11, #512
+	mov r6, r3
 	push {r12, lr}
-	bl {vg_aes_ctr32}
+	bl {vg_aes_ctr32_to}
 	ldr r12, [sp], #8
 	b 267f
 266:
@@ -1800,8 +1802,9 @@ vg_aes_gcm_stream_encrypt:
 	mov r1, r8
 	add r2, r10, #48
 	add lr, r11, #512
+	mov r6, r3
 	push {r12, lr}
-	bl {vg_aes_ctr32}
+	bl {vg_aes_ctr32_to}
 	ldr r12, [sp], #8
 	b 28f
 27:
@@ -2214,8 +2217,9 @@ vg_aes_gcm_stream_decrypt:
 	mov r1, r8
 	add r2, r10, #48
 	add lr, r11, #512
+	mov r6, r3
 	push {r12, lr}
-	bl {vg_aes_ctr32}
+	bl {vg_aes_ctr32_to}
 	ldr r12, [sp], #8
 	b 229f
 228:
