@@ -35,7 +35,23 @@ The arithmetic of `Impl/TripleDes/X86/Ssse3.lean`, apart from the machine:
   compared by the kernel on those;
 * `ipS`, `fpS`: the five exchanges of bits of the block's two words that the
   code makes before and after the rounds are the initial and the final
-  permutation (`ipS_eq`, `fpS_eq`).
+  permutation (`ipS_eq`, `fpS_eq`);
+* the table's constants (`cst`) and what a byte of the four look-ups of an
+  S-box is (`luB`): for each S-box and each of its 64 inputs, the bytes
+  under their masks, folded and moved by the six shifts (`pOut`), are the
+  S-box's output through the permutation P, rotated right by one (`sp_all`,
+  512 checks by the kernel), so a word of such bytes is the round function,
+  rotated (`pOut_round`, by `roundFunction_sum`: the round function is the
+  sum of its S-boxes' parts);
+* the keys' words as `prepare` writes them (`kw0`, `kw1`) and the index
+  bytes: those of the half shifted right by two and rotated left by two,
+  with the key's words, are the S-boxes' inputs after the expansion E
+  (`idx_lo`, `idx_hi`);
+* a round in the registers (`roundX`: the index, the look-ups `lkX` at the
+  index stepped by 16, their sums `accX`, the fold and P, `pX`), a
+  doubleword and a byte at a time, and `round_ok`: its low doubleword is
+  the other half with the round function of this one, both rotated right by
+  one.
 -/
 
 @[expose] public section
@@ -198,7 +214,7 @@ def pairB (p : Nat) (b : BitVec 8) : BitVec 8 :=
   lkb (cst (oT p 0)) b ^^^ lkb (cst (oT p 1)) (b + 16#8) ^^^ lkb (cst (oT p 2)) (b + 32#8) ^^^ lkb (cst (oT p 3)) (b + 48#8)
 
 /-- Byte `i` of the sum of the four pairs under their masks. -/
-def sB (i : Nat) (b : BitVec 8) : BitVec 8 :=
+def luB (i : Nat) (b : BitVec 8) : BitVec 8 :=
   (pairB 0 b &&& byte (cst (oMask 0)) i) ^^^ (pairB 1 b &&& byte (cst (oMask 1)) i) ^^^
     (pairB 2 b &&& byte (cst (oMask 2)) i) ^^^ (pairB 3 b &&& byte (cst (oMask 3)) i)
 
@@ -220,7 +236,7 @@ def spS (b : Nat) (c : BitVec 6) : BitVec 32 := permute p ((sBox b c).zeroExtend
 /-- The look-ups, the masks and P give each S-box's part of the round
 function, rotated right by one, from its six input bits with `0x40`. -/
 theorem sp_all : ((List.range 8).all fun i => (List.range 64).all fun c =>
-    pOut ((sB i (0x40#8 ||| BitVec.ofNat 8 c)).zeroExtend 32 <<< (8 * (i % 4))) ==
+    pOut ((luB i (0x40#8 ||| BitVec.ofNat 8 c)).zeroExtend 32 <<< (8 * (i % 4))) ==
       (spS (bx i) (BitVec.ofNat 6 c)).rotateRight 1) = true := by
   lit_decide
 
@@ -307,7 +323,7 @@ theorem word_bytes (d : BitVec 32) :
 def wb (r : BitVec 32) (k : BitVec 48) (i : Nat) : BitVec 8 := 0x40#8 ||| (roundChunk (bx i) r k).zeroExtend 8
 
 theorem sp_byte {i : Nat} (hi : i < 8) (r : BitVec 32) (k : BitVec 48) :
-    pOut (place (i % 4) (sB i (wb r k i))) = (spS (bx i) (roundChunk (bx i) r k)).rotateRight 1 := by
+    pOut (place (i % 4) (luB i (wb r k i))) = (spS (bx i) (roundChunk (bx i) r k)).rotateRight 1 := by
   have h := List.all_eq_true.mp (List.all_eq_true.mp sp_all i (List.mem_range.mpr hi))
     (roundChunk (bx i) r k).toNat (List.mem_range.mpr (roundChunk (bx i) r k).isLt)
   simp only [beq_iff_eq, BitVec.ofNat_toNat, BitVec.setWidth_eq] at h
@@ -317,8 +333,8 @@ theorem sp_byte {i : Nat} (hi : i < 8) (r : BitVec 32) (k : BitVec 48) :
 rotated right by one, when their bytes are the look-ups of the S-boxes'
 inputs. -/
 theorem pOut_round (d0 d1 : BitVec 32) (r : BitVec 32) (k : BitVec 48)
-    (h0 : ∀ i < 4, d0.extractLsb' (8 * i) 8 = sB i (wb r k i))
-    (h1 : ∀ i < 4, d1.extractLsb' (8 * i) 8 = sB (4 + i) (wb r k (4 + i))) :
+    (h0 : ∀ i < 4, d0.extractLsb' (8 * i) 8 = luB i (wb r k i))
+    (h1 : ∀ i < 4, d1.extractLsb' (8 * i) 8 = luB (4 + i) (wb r k (4 + i))) :
     pOut (d0 ^^^ d1) = (roundFunction r k).rotateRight 1 := by
   rw [word_bytes d0, word_bytes d1]
   have a0 := h0 0 (by decide); have a1 := h0 1 (by decide); have a2 := h0 2 (by decide); have a3 := h0 3 (by decide)
@@ -338,12 +354,12 @@ theorem pOut_round (d0 d1 : BitVec 32) (r : BitVec 32) (k : BitVec 48)
 the schedule has it (`Impl`'s `key`): the six bits of the S-boxes 6, 4, 2, 0
 and of 7, 5, 3, 1 in their bytes, each with `0x40`. -/
 def kw0 (s : BitVec 64) : BitVec 32 :=
-  ((s.setWidth 32 >>> 6) &&& 0x3f) ||| ((s.setWidth 32 >>> 10) &&& 0x3f00) ||| ((s.setWidth 32 >>> 14) &&& 0x30000) |||
-    (((s >>> 32).setWidth 32).rotateRight 14 &&& 0x3c0000) ||| (((s >>> 32).setWidth 32).rotateRight 18 &&& 0x3f000000) |||
-    0x40404040
+  ((s.setWidth 32 >>> 6) &&& 0x3f#32) ||| ((s.setWidth 32 >>> 10) &&& 0x3f00#32) |||
+    ((s.setWidth 32 >>> 14) &&& 0x30000#32) ||| (((s >>> 32).setWidth 32).rotateRight 14 &&& 0x3c0000#32) |||
+    (((s >>> 32).setWidth 32).rotateRight 18 &&& 0x3f000000#32) ||| 0x40404040#32
 def kw1 (s : BitVec 64) : BitVec 32 :=
-  ((s.setWidth 32 >>> 4) &&& 0x3f00) ||| (s.setWidth 32 &&& 0x3f) ||| ((s.setWidth 32 >>> 8) &&& 0x3f0000) |||
-    (((s >>> 32).setWidth 32).rotateRight 12 &&& 0x3f000000) ||| 0x40404040
+  ((s.setWidth 32 >>> 4) &&& 0x3f00#32) ||| (s.setWidth 32 &&& 0x3f#32) ||| ((s.setWidth 32 >>> 8) &&& 0x3f0000#32) |||
+    (((s >>> 32).setWidth 32).rotateRight 12 &&& 0x3f000000#32) ||| 0x40404040#32
 
 theorem e_positions : ∀ b < 8, ∀ j < 6, 32 - expansion.getD (6 * b + 5 - j) 1 = (59 - 4 * b + j) % 32 := by decide
 
@@ -476,7 +492,7 @@ theorem byte_lkX (q s : Nat) (W : BitVec 128) {i : Nat} (hi : i < 16) : byte (lk
 /-- The sum's low eight bytes are the look-ups of the index bytes, while
 those are below 128, and its high eight are zero. -/
 theorem byte_accX (W : BitVec 128) (h : ∀ i < 8, (byte W i).toNat < 128) :
-    (∀ i < 8, byte (accX W) i = sB i (byte W i)) ∧ ∀ i, 8 ≤ i → i < 16 → byte (accX W) i = 0#8 := by
+    (∀ i < 8, byte (accX W) i = luB i (byte W i)) ∧ ∀ i, 8 ≤ i → i < 16 → byte (accX W) i = 0#8 := by
   obtain ⟨a1, -⟩ := byte_step W fun i hi => by have := h i hi; omega_arith
   obtain ⟨a2, -⟩ := byte_step (stepC (cst oStep) W) fun i hi => by
     rw [a1 i hi]; have := h i hi; rw [BitVec.toNat_add]; simp only [BitVec.toNat_ofNat]; omega
@@ -484,7 +500,7 @@ theorem byte_accX (W : BitVec 128) (h : ∀ i < 8, (byte W i).toNat < 128) :
     rw [a2 i hi, a1 i hi]; have := h i hi; rw [BitVec.toNat_add, BitVec.toNat_add]; simp only [BitVec.toNat_ofNat]; omega
   refine ⟨fun i hi => ?_, fun i h8 hi => ?_⟩
   · have hi' : i < 16 := by omega_arith
-    simp only [accX, yA, yB, byte_xor, byte_and, byte_lkX _ _ _ hi', a3 i hi, a2 i hi, a1 i hi, sB, pairB, BitVec.add_assoc,
+    simp only [accX, yA, yB, byte_xor, byte_and, byte_lkX _ _ _ hi', a3 i hi, a2 i hi, a1 i hi, luB, pairB, BitVec.add_assoc,
       BitVec.reduceAdd]
     ac_rfl
   · have hm : ∀ q < 4, byte (cst (oMask q)) i = 0#8 := fun q hq => by

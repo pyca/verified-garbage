@@ -148,12 +148,15 @@ theorem copyCode_wp {k : Nat} : ∀ (W : Nat) {s : State} {P B : BitVec 32}, s.g
 /-! ## The key -/
 
 /-- The schedule, at the address in the first stack argument, and that
-argument, outside the regions `rs`, as is the core's stack. -/
+argument, outside the regions `rs`, as is the core's stack, which is also
+apart from the schedule and from the argument. -/
 def KeyArgs (s : State) (rs : List Region) (k : Spec.TripleDes.Schedule) : Prop :=
   ∃ p : BitVec 32, InRegions (s.rd ++ s.wr) (s.ea (argOp 0)) 4 ∧ s.mem.readW (s.ea (argOp 0)) 32 = p ∧
     k = Spec.TripleDes.scheduleAt s.mem (p.setWidth 64) ∧ (⟨p.setWidth 64, 384⟩ : Region) ∈ s.rd ++ s.wr ∧
     p.toNat + 384 ≤ 2 ^ 32 ∧ (∀ r ∈ rs, Region.Disjoint ⟨p.setWidth 64, 384⟩ r) ∧
-    (∀ r ∈ rs, Region.Disjoint ⟨s.ea (argOp 0), 4⟩ r) ∧ ∀ r ∈ rs, Region.Disjoint (stkRegion (s.gpr .esp) 16) r
+    (∀ r ∈ rs, Region.Disjoint ⟨s.ea (argOp 0), 4⟩ r) ∧ (∀ r ∈ rs, Region.Disjoint (stkRegion (s.gpr .esp) 16) r) ∧
+    Region.Disjoint (stkRegion (s.gpr .esp) 16) ⟨p.setWidth 64, 384⟩ ∧
+    Region.Disjoint (stkRegion (s.gpr .esp) 16) ⟨s.ea (argOp 0), 4⟩
 
 theorem dirCore_total : dirCore.total = 236 := rfl
 
@@ -166,11 +169,12 @@ def Ready (s : State) (B : BitVec 32) (k : Spec.TripleDes.Schedule) : Prop :=
 theorem keyArgs_congr {s s' : State} {rs : List Region} {k : Spec.TripleDes.Schedule} (h : KeyArgs s rs k)
     (hesp : s'.gpr .esp = s.gpr .esp) (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) (hf : Frame rs s.mem s'.mem) :
     KeyArgs s' rs k := by
-  obtain ⟨p, hin, hp, rfl, hsch, hfit, hdis, hadis, hsdis⟩ := h
+  obtain ⟨p, hin, hp, rfl, hsch, hfit, hdis, hadis, hsdis, hsk, hsa⟩ := h
   obtain hea : s'.ea (argOp 0) = s.ea (argOp 0) := by
     show (s'.gpr .esp + _).setWidth 64 = (s.gpr .esp + _).setWidth 64; rw [hesp]
   refine ⟨p, by rw [hrd, hwr, hea]; exact hin, ?_, (scheduleAt_eq_of_frame _ hf hdis).symm,
-    by rw [hrd, hwr]; exact hsch, hfit, hdis, by rw [hea]; exact hadis, by rw [hesp]; exact hsdis⟩
+    by rw [hrd, hwr]; exact hsch, hfit, hdis, by rw [hea]; exact hadis, by rw [hesp]; exact hsdis,
+    by rw [hesp]; exact hsk, by rw [hesp, hea]; exact hsa⟩
   rw [hea, hf.readW (Region.contains_self _ _) hadis (by decide), hp]
 
 theorem ready_frame {s s' : State} {B : BitVec 32} {k : Spec.TripleDes.Schedule}
@@ -193,7 +197,7 @@ theorem prepare_wp {s : State} {B : BitVec 32} {rs : List Region} {k : Spec.Trip
     WP isa dirCore.prepare s fun s' => Ready s' B k ∧ s'.gpr sb = B ∧ s'.gpr .esp = s.gpr .esp ∧
       Frame [coreRegion dirCore B, stkRegion (s.gpr .esp) dirCore.stack] s.mem s'.mem ∧
       s'.rd = s.rd ∧ s'.wr = s.wr := by
-  obtain ⟨p, hin, hp, rfl, hsch, hfit, hdis, -, hsdis⟩ := hk
+  obtain ⟨p, hin, hp, rfl, hsch, hfit, hdis, -, hsdis, -, -⟩ := hk
   have hfB := hs.fit
   rw [dirCore_total] at hfB
   obtain hsep : Region.Disjoint ⟨p.setWidth 64, 384⟩ ⟨B.setWidth 64, 4 * 236⟩ := hdis _ hR
@@ -509,7 +513,7 @@ theorem prepareW_wp (d : Direction) {s : State} {B : BitVec 32} {rs : List Regio
     WP isa (wideCore d).prepare s fun s' => ReadyW s' B k ∧ s'.gpr sb = B ∧ s'.gpr .esp = s.gpr .esp ∧
       Frame [coreRegion (wideCore d) B, stkRegion (s.gpr .esp) (wideCore d).stack] s.mem s'.mem ∧
       s'.rd = s.rd ∧ s'.wr = s.wr := by
-  obtain ⟨p, hin, hp, rfl, hsch, hfit, hdis, -, hsdis⟩ := hk
+  obtain ⟨p, hin, hp, rfl, hsch, hfit, hdis, -, hsdis, -, -⟩ := hk
   have hfB := hs.fit
   rw [wideCore_total] at hfB
   obtain hsep : Region.Disjoint ⟨p.setWidth 64, 384⟩ ⟨B.setWidth 64, 4 * 302⟩ := hdis _ hR
@@ -777,7 +781,7 @@ def fbX86 (w st : Nat) (post : State → State → Prop) : Contract X86.isa wher
     key.Disjoint scratch ∧ iv.Disjoint data ∧ iv.Disjoint scratch ∧ data.Disjoint scratch ∧
     args.Disjoint data ∧ args.Disjoint iv ∧ args.Disjoint scratch ∧
     ret.Disjoint data ∧ ret.Disjoint iv ∧ ret.Disjoint scratch ∧
-    stack.Disjoint data ∧ stack.Disjoint iv ∧ stack.Disjoint scratch ∧
+    stack.Disjoint data ∧ stack.Disjoint iv ∧ stack.Disjoint scratch ∧ stack.Disjoint key ∧
     (arg s 0).toNat + 384 ≤ 2 ^ 32 ∧ (arg s 1).toNat + 8 ≤ 2 ^ 32 ∧
     (arg s 2).toNat + st * (arg s 3).toNat ≤ 2 ^ 32 ∧ (arg s 4).toNat + 8 * w ≤ 2 ^ 32 ∧
     (s.gpr .esp).toNat + 24 ≤ 2 ^ 32 ∧ 16 ≤ (s.gpr .esp).toNat
@@ -789,7 +793,7 @@ theorem seqPre_of {c : VG.Impl.Modes.X86.Core} {cs : Proof.Modes.X86.CoreSpec c}
     {st : Nat} {post : State → State → Prop} {M : Mode}
     (hstep : M.step = st) (hst : 0 < st) (hst8 : st ≤ 8) {s : State} (h : (fbX86 w st post).pre s) :
     SeqPre c M s := by
-  obtain ⟨hrd, hwr, dKS, dVD, dVS, dDS, dAD, dAV, dAS, dRD, dRV, dRS, dSD, dSV, dSS, fK, fV, fD, fS, fE, fLo⟩ := h
+  obtain ⟨hrd, hwr, dKS, dVD, dVS, dDS, dAD, dAV, dAS, dRD, dRV, dRS, dSD, dSV, dSS, -, fK, fV, fD, fS, fE, fLo⟩ := h
   have hL := cs.layout
   obtain ⟨sA, sR⟩ := stk_apart fE fLo
   obtain hka := f.ka
@@ -852,9 +856,10 @@ theorem keyArgs_of {c : VG.Impl.Modes.X86.Core} {cs : Proof.Modes.X86.CoreSpec c
     {st : Nat} {post : State → State → Prop} {s : State}
     (h : (fbX86 w st post).pre s) : cs.KeyArgs s [Modes.X86.scrR s c]
       (f.toKey (Spec.TripleDes.scheduleAt s.mem ((arg s 0).setWidth 64))) := by
-  obtain ⟨hrd, -, dKS, -, -, -, -, -, dAS, -, -, -, -, -, dSS, fK, -, -, -, -, -⟩ := h
+  obtain ⟨hrd, -, dKS, -, -, -, -, -, dAS, -, -, -, -, -, dSS, dSK, fK, -, -, -, fE, fLo⟩ := h
   refine f.keyArgs ⟨arg s 0, ⟨⟨argAddr s 0, 20⟩, by rw [hrd]; simp, ?_⟩, rfl, rfl, by rw [hrd]; simp, fK,
-    fun r hr => ?_, fun r hr => ?_, fun r hr => ?_⟩
+    fun r hr => ?_, fun r hr => ?_, fun r hr => ?_, dSK,
+    (stk_apart fE fLo).1.sub_right (Region.sub_prefix (by decide))⟩
   · show (⟨argAddr s 0, 20⟩ : Region).Contains (argAddr s 0) 4
     simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega_arith
   · simp only [List.mem_singleton] at hr; subst hr; rw [scr_eq f]; exact dKS
@@ -958,7 +963,7 @@ def fbTaint (w : Nat) : VG.X86.Taint.T :=
 
 theorem fbTaint_wf {w st : Nat} {post : State → State → Prop} {s : State} (hp : (fbX86 w st post).pre s) :
     VG.X86.Taint.Wf (fbTaint w) s := by
-  obtain ⟨hrd, hwr, dKS, dVD, dVS, dDS, dAD, dAV, dAS, dRD, dRV, dRS, dSD, dSV, dSS, fK, fV, fD, fS, fE, fLo⟩ := hp
+  obtain ⟨hrd, hwr, dKS, dVD, dVS, dDS, dAD, dAV, dAS, dRD, dRV, dRS, dSD, dSV, dSS, -, fK, fV, fD, fS, fE, fLo⟩ := hp
   refine VG.X86.Taint.Wf.entryRoom rfl ⟨fun _ => ⟨?_, ?_, ?_⟩,
     fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim,
     fun _ => ⟨by simp only [fbTaint]; omega_arith, ?_⟩, ?_⟩ ?_
@@ -994,8 +999,8 @@ theorem fbTaint_wf {w st : Nat} {post : State → State → Prop} {s : State} (h
 theorem fbTaint_agree {w st : Nat} {post : State → State → Prop} {s₁ s₂ : State} (h₁ : (fbX86 w st post).pre s₁)
     (h₂ : (fbX86 w st post).pre s₂) (hpub : (fbX86 w st post).pub s₁ s₂) : VG.X86.Taint.Agree (fbTaint w) s₁ s₂ := by
   obtain ⟨hesp, ha⟩ := hpub
-  obtain ⟨-, hwr₁, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, fE₁, -⟩ := id h₁
-  obtain ⟨-, hwr₂, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, fE₂, -⟩ := id h₂
+  obtain ⟨-, hwr₁, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, fE₁, -⟩ := id h₁
+  obtain ⟨-, hwr₂, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, fE₂, -⟩ := id h₂
   refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun _ => ?_, fbTaint_wf h₁, fbTaint_wf h₂,
     VG.X86.Taint.slotsOk_empty, VG.X86.Taint.slotsAgree_empty, fun _ => hesp,
     fun k h4 hk => ?_⟩
@@ -1050,7 +1055,7 @@ def wideContract (w st : Nat) (post : State → State → Prop) : Contract isa :
       key.Disjoint scratch ∧ iv.Disjoint data ∧ iv.Disjoint scratch ∧ data.Disjoint scratch ∧
       args.Disjoint data ∧ args.Disjoint iv ∧ args.Disjoint scratch ∧
       ret.Disjoint data ∧ ret.Disjoint iv ∧ ret.Disjoint scratch ∧
-      stack.Disjoint data ∧ stack.Disjoint iv ∧ stack.Disjoint scratch ∧
+      stack.Disjoint data ∧ stack.Disjoint iv ∧ stack.Disjoint scratch ∧ stack.Disjoint key ∧
       (arg s 0).toNat + 384 ≤ 2 ^ 32 ∧ (arg s 1).toNat + 8 ≤ 2 ^ 32 ∧
       (arg s 2).toNat + st * (arg s 3).toNat ≤ 2 ^ 32 ∧ (arg s 4).toNat + 8 * w ≤ 2 ^ 32 ∧
       (s.gpr .esp).toNat + 24 ≤ 2 ^ 32 ∧ 16 ≤ (s.gpr .esp).toNat }
