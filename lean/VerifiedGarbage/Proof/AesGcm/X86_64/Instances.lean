@@ -2090,16 +2090,13 @@ theorem wideSealPiece : PieceTo Impl.Gcm.X86_64.StitchZHTo.encR true true 16 := 
   refine ⟨?_,?_,?_,?_,?_,⟨?_,?_⟩⟩
   taint_decide_all
 
-theorem vaesSealTaint : ∃ hc, (VG.X86_64.taint.check (VG.X86_64.Taint.ofRegs BlocksToDec.sealRegs)
-    Impl.Gcm.X86_64.StitchR.encToFromTwo hc).isSome = true := by
+theorem vaesSealTaint : BlocksTo.SealPieceCT Impl.Gcm.X86_64.StitchR.encToFromTwo := by
   exact ⟨_, by taint_decide⟩
 
-theorem aesniSealTaint : ∃ hc, (VG.X86_64.taint.check (VG.X86_64.Taint.ofRegs BlocksToDec.sealRegs)
-    Impl.Gcm.X86_64.StitchAvx8.encBuffers hc).isSome = true := by
+theorem aesniSealTaint : BlocksTo.SealPieceCT Impl.Gcm.X86_64.StitchAvx8.encBuffers := by
   exact ⟨_, by taint_decide⟩
 
-theorem wideSealTaint : ∃ hc, (VG.X86_64.taint.check (VG.X86_64.Taint.ofRegs BlocksToDec.sealRegs)
-    Impl.Gcm.X86_64.StitchZHTo.encR hc).isSome = true := by
+theorem wideSealTaint : BlocksTo.SealPieceCT Impl.Gcm.X86_64.StitchZHTo.encR := by
   exact ⟨_, by taint_decide⟩
 
 def selectSealLeaf {M : Proof.Gcm.X86_64.Stitch.CtxMode} (v : GcmVariant) (name : String)

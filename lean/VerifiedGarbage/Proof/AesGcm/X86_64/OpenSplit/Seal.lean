@@ -150,16 +150,20 @@ structure SealFn (M : CtxMode) where
   mx : fn.code.allInstrs (fun i => !loadsMxcsr i) = true
   spAll : fn.code.all (fun i => !isa.writesSp i) = true
 
+/-- A constant-time certificate for the fused portion of a two-pointer seal. -/
+structure SealPieceCT (piece : Prog isa) : Prop where
+  checked : ∃ hc, (taint.check (Taint.ofRegs BlocksToDec.sealRegs) piece hc).isSome = true
+
 def SealFn.ofFull {M : CtxMode} {piece : Prog isa} (name : String)
     (g : GhashImpl) (v : Proof.Aes.X86_64.Ctr32ToImpl) {minimum : Nat}
     (cut : (minimum = 2 ∨ minimum = 5) ∨ minimum = 16)
     (ok : ∀ t, SPreTo M t minimum → WP isa piece t (EPostTo t))
     (pc : PieceTo piece true true minimum)
-    (ct : ∃ hc, (taint.check (Taint.ofRegs BlocksToDec.sealRegs) piece hc).isSome = true) : SealFn M := by
+    (ct : SealPieceCT piece) : SealFn M := by
   let code := Impl.AesGcm.X86_64.BlocksToDec.sealPrepared ⟨v.callee.name,v.callee.code⟩ g.fn piece true minimum
   have nc : v.callee.code.allInstrs (fun i => !Taint.clobbers i .rsp) = true := by
     rw [Code.allInstrs_eq, List.all_eq_true]; intro i hi; simp [v.nosp i hi]
-  refine ⟨⟨name,code⟩, fun _ h => BlocksToDec.sealPrepared_wp h cut ok g v, BlocksToDec.sealPrepared_ct cut ct g v,
+  refine ⟨⟨name,code⟩, fun _ h => BlocksToDec.sealPrepared_wp h cut ok g v, BlocksToDec.sealPrepared_ct cut ct.checked g v,
     nosp_of_all ?_, ?_, ?_, ?_, ?_⟩
   all_goals
     simp only [code, Impl.AesGcm.X86_64.BlocksToDec.sealPrepared, Impl.AesGcm.X86_64.BlocksToDec.encryptShort,
