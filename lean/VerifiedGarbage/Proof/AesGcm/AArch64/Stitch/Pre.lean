@@ -1,5 +1,6 @@
 module
 
+import VerifiedGarbage.Proof.Gcm.AArch64.Stitch.SealBuffers
 import VerifiedGarbage.Proof.Gcm.AArch64.Stitch.Final
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Stitch.Tbl
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Crypt
@@ -98,7 +99,7 @@ over `c`. -/
 structure SMid (Wn : Nat) (Ctx St W SP : Addr) (H : Block) (x : List Byte) (icb : Block) (R : Nat) (D O : Addr)
     (n : Nat) (c : Mem → List Byte) (s t : State) : Prop where
   env : Env Wn Ctx St W SP t
-  gpr : ∀ r, r ∉ [Reg.x5, .x9, .x10, .x11, .x12, .x13, .x14, .x15] → t.gpr r = s.gpr r
+  gpr : ∀ r, r ∉ [Reg.x5, .x9, .x10, .x11, .x12, .x13, .x14, .x15] → (hl : r ∉ linkRegs := by decide) → t.gpr r = s.gpr r
   data : bytesAt t.mem O (pre n) = xorKs (ciphOf s.mem Ctx R) icb 0 (bytesAt s.mem D (pre n))
   ctr : Ctr t.mem (St + BitVec.ofNat 64 48) (St + BitVec.ofNat 64 64) (ciphOf s.mem Ctx R) icb (pre n)
   y : blockAt t.mem (St + BitVec.ofNat 64 16) = ghash H (blocks (x ++ c t.mem))
@@ -207,7 +208,7 @@ theorem stitch_core {H : Block} {x : List Byte} {icb : Block} {R : Nat} {D O : A
   refine WP.ite _ (Proof.Aes.AArch64.Aese.eval_zero e9 (by omega_arith)) (fun h => ?_) (fun h => ?_)
   · have hz : n / 128 = 0 := by simpa using h
     have hp : pre n = 0 := by simp only [pre, hz]
-    refine WP.block_nil ⟨he₁, fun r hr => g₁ r (by simp at hr; exact hr.2.1), ?_, ?_, ?_, ?_, sp₁, rd₁, wr₁⟩
+    refine WP.block_nil ⟨he₁, fun r hr _ => g₁ r (by simp at hr; exact hr.2.1), ?_, ?_, ?_, ?_, sp₁, rd₁, wr₁⟩
     · rw [hp]; rfl
     · rw [hp, m₁]; exact Proof.Gcm.ctr_zero _ _ _ _ hs.cb
     · rw [h0 hz, List.append_nil, m₁]; exact hs.y
@@ -248,7 +249,7 @@ theorem smid_of {H : Block} {x : List Byte} {icb : Block} {R : Nat} {D O : Addr}
     (pc : blockAt t'.mem (Gcm.AArch64.Stitch.stp t + BitVec.ofNat 64 48) =
         Nat.repeat Spec.Gcm.inc32 (8 * Gcm.AArch64.Stitch.nb t) (Gcm.AArch64.Stitch.icb t))
     (pf : Frame [Gcm.AArch64.Stitch.yR t, Gcm.AArch64.Stitch.cR t, Gcm.AArch64.Stitch.oR t to] t.mem t'.mem)
-    (pg : ∀ r, r ∉ Gcm.AArch64.Stitch.kRegsT to → t'.gpr r = t.gpr r) (psp : t'.sp = t.sp) (prd : t'.rd = t.rd)
+    (pg : ∀ r, r ∉ Gcm.AArch64.Stitch.kRegsT true → r ∉ linkRegs → t'.gpr r = t.gpr r) (psp : t'.sp = t.sp) (prd : t'.rd = t.rd)
     (pwr : t'.wr = t.wr) (hy : blockAt t'.mem (St + BitVec.ofNat 64 16) = ghash H (blocks (x ++ c t'.mem))) :
     SMid Wn Ctx St W SP H x icb R D O n c s t' := by
   obtain hWn := het.perm.hWn
@@ -284,13 +285,15 @@ theorem smid_of {H : Block} {x : List Byte} {icb : Block} {R : Nat} {D O : Addr}
     (Proof.Gcm.ctr_zero _ _ _ _ hcb) (by decide) pd pc
   rw [show 16 * (8 * (n / 128)) = pre n by simp only [pre]; omega_arith] at hd hc
   rw [Nat.zero_add] at hc
-  have g' : ∀ r, r ∉ [Reg.x5, .x9, .x10, .x11, .x12, .x13, .x14, .x15] → t'.gpr r = s.gpr r := fun r hr => by
+  have g' : ∀ r, r ∉ [Reg.x5, .x9, .x10, .x11, .x12, .x13, .x14, .x15] → (hl : r ∉ linkRegs := by decide) → t'.gpr r = s.gpr r := fun r hr hl => by
     have h59 : r ≠ .x5 ∧ r ≠ .x9 := by
       simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr; exact ⟨hr.1, hr.2.1⟩
-    rw [pg r (Gcm.AArch64.Stitch.notMem_kRegsT _ (notMem_k15 hr)), gt r h59.1 h59.2]
+    rw [pg r (notMem_k15 hr) hl, gt r h59.1 h59.2]
   refine ⟨het.keep (fun r hr => pg r (Gcm.AArch64.Stitch.notMem_kRegsT _ (by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl <;> decide))) psp prd pwr, g', ?_, hc, hy, ?_,
+      rcases hr with rfl | rfl | rfl <;> decide)) (by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl <;> decide)) psp prd pwr, (fun r hr hl => g' r hr hl), ?_, hc, hy, ?_,
     by rw [psp, spt], by rw [prd, rdt], by rw [pwr, wrt]⟩
   · rw [hd, bytesAt_frame ft hD (by omega_arith)]
   · refine (ft.mono fun r hr => ?_).trans (pf.mono fun r hr => ?_)
@@ -301,10 +304,10 @@ theorem smid_of {H : Block} {x : List Byte} {icb : Block} {R : Nat} {D O : Addr}
 /-- `seal`'s interleaved loop. -/
 theorem stitchE_ok (gh : Gh8Ok) {H : Block} {x : List Byte} {icb : Block} {R : Nat} {D : Addr} {n : Nat}
     {s : State} {tb : List Instr} (htb : TbOk Wn Ctx St W SP H tb s) (hs : SIn Wn Ctx St W SP H x icb R D n s) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) :
-    WP isa (Impl.AesGcm.AArch64.Stitch.stitched [] tb Impl.Gcm.AArch64.Stitch.enc) s
+    WP isa (Impl.AesGcm.AArch64.Stitch.stitched [] tb Impl.Gcm.AArch64.Stitch.sealInPlace) s
       (SMid Wn Ctx St W SP H x icb R D D n (fun m => bytesAt m D (pre n)) s) := by
   refine stitch_core L htb hs.toM (fun hz m => by simp only [pre, hz]; rfl)
-    fun t hp het ft gt spt rdt wrt => WP.mono (Gcm.AArch64.Stitch.enc_ok hp.toKPre gh) fun t' q => ?_
+    fun t hp het ft gt spt rdt wrt => WP.mono (Gcm.AArch64.Stitch.sealInPlace_ok hp.toKPre gh) fun t' q => ?_
   have hn := hs.data.ok.lt
   have py := q.y
   have hH : blockAt t.mem (Ctx + BitVec.ofNat 64 240) = H := by
@@ -314,7 +317,7 @@ theorem stitchE_ok (gh : Gh8Ok) {H : Block} {x : List Byte} {icb : Block} {R : N
   simp only [Gcm.AArch64.Stitch.stp, Gcm.AArch64.Stitch.dp, Gcm.AArch64.Stitch.nb, Gcm.AArch64.Stitch.kc,
     Gcm.AArch64.Stitch.hk, Gcm.AArch64.Stitch.y₀, het.x20, het.x21, gt .x23 (by decide) (by decide),
     gt .x26 (by decide) (by decide), hs.x23, hs.x26, toNat_ofNat_of_lt hn, hH, hY] at py
-  refine smid_of L hs.toM het ft gt spt rdt wrt q.data q.ctr q.frame q.gpr q.sp q.rd q.wr ?_
+  refine smid_of L hs.toM het ft gt spt rdt wrt q.data q.ctr q.frame (fun r hr hl => q.gpr r (by simpa only [List.mem_append, not_or] using And.intro hr hl)) q.sp q.rd q.wr ?_
   rw [py, Proof.Gcm.blocksAt_eq, show 16 * (8 * (n / 128)) = pre n by simp only [pre]; omega_arith, Spec.Gcm.ghash,
     Spec.Gcm.ghash, blocks_append hs.xm, Proof.Gcm.ghashFrom_append]
 
@@ -340,7 +343,7 @@ theorem stitchDM_ok (gh : Gh8Ok) {H : Block} {x : List Byte} {icb : Block} {R : 
   simp only [Gcm.AArch64.Stitch.stp, Gcm.AArch64.Stitch.dp, Gcm.AArch64.Stitch.nb, Gcm.AArch64.Stitch.kc,
     Gcm.AArch64.Stitch.hk, Gcm.AArch64.Stitch.y₀, het.x20, het.x21, gt .x23 (by decide) (by decide),
     gt .x26 (by decide) (by decide), hs.x23, hs.x26, toNat_ofNat_of_lt hn, hH, hY] at py
-  refine smid_of L hs het ft gt spt rdt wrt q.data q.ctr q.frame q.gpr q.sp q.rd q.wr ?_
+  refine smid_of L hs het ft gt spt rdt wrt q.data q.ctr q.frame (fun r hr _ => q.gpr r (Gcm.AArch64.Stitch.notMem_kRegsT _ hr)) q.sp q.rd q.wr ?_
   rw [py, Proof.Gcm.blocksAt_eq, show 16 * (8 * (n / 128)) = pre n by simp only [pre]; omega_arith, hD, Spec.Gcm.ghash,
     Spec.Gcm.ghash, blocks_append hs.xm, Proof.Gcm.ghashFrom_append]
 
