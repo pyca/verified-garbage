@@ -190,7 +190,8 @@ def remG (pre : List Instr) (src : Reg) : Prog isa :=
   .seq (.block remSetup) (.seq (ksSelG pre src) (.block storeY))
 
 /-- The blocks after the last group, in place. -/
-def rem : Prog isa := remG [] .rdx
+def rem (ld : Bool := false) : Prog isa :=
+  remG (if ld then [.alu .add .r8 (.reg .rdx)] else []) (if ld then .r8 else .rdx)
 
 /-- The end of `encR`: the last group, and the blocks after it if any. -/
 def tailR (r : Prog isa) : Prog isa :=
@@ -249,12 +250,12 @@ def midC (ld : Bool := false) : Prog isa := .seq (.block powP48) (midRest ld)
 /-- The first group, the groups after it and the end of the message, for
 fewer than 48 blocks or at least `StitchZ.bigMinPE`: from there on three
 groups at a time (`bigP`). -/
-def rest : Prog isa :=
-  .seq first
+def rest (ld : Bool := false) : Prog isa :=
+  .seq (first ld)
     (.seq (.block [.alu .cmp .r9 (.imm StitchZ.bigMinPE)])
-      (.seq (.ite .b (.block []) bigP)
+      (.seq (.ite .b (.block []) (bigP ld))
         (.seq (.block [.alu .cmp .r9 (.imm 32)])
-          (.seq (.ite .b (.block []) (.loop body .ae)) (tailR rem)))))
+          (.seq (.ite .b (.block []) (.loop (body ld) .ae)) (tailR (rem ld))))))
 
 /-- Whether there are 48 to 143 blocks (`CF`), with `r9` less 48. -/
 def midTest : List Instr :=
@@ -265,9 +266,11 @@ def midUndo : List Instr := [.alu .add .r9 (.imm StitchZC.bigMinC)]
 
 /-- Encryption, for any number of blocks from 16 on: 48 to 143 by `midC`,
 the others by `rest`. -/
-def encR : Prog isa :=
-  .seq (.seq (.block setupP) Aes.X86_64.VaesZH.loadKeys)
-    (.seq (.block midTest) (.ite .b (.seq (.block midUndo) midC) (.seq (.block midUndo) rest)))
+def encWith (ld : Bool) : Prog isa :=
+  .seq (.seq (.block (if ld then StitchZRTo.setupP else setupP)) Aes.X86_64.VaesZH.loadKeys)
+    (.seq (.block midTest) (.ite .b (.seq (.block midUndo) (midC ld)) (.seq (.block midUndo) (rest ld))))
+
+def encR : Prog isa := encWith false
 
 /-! ## Decryption: the blocks after the last group, as a masked group
 

@@ -207,8 +207,9 @@ theorem bigRest_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} (
 fewer than 32 left, the last group still to hash. -/
 theorem loopERM_ok {ix : Bool} {s₀ : State} (hp : Stitch.LPre ix s₀) {P : Nat → Nat → Block} (hf : FinOk (hk s₀) P)
     {e : Nat} {s : State} (hI : EInvM ix s₀ P e s) (hcf : s.cf = some (decide (nb s₀ - 16 * (e - 1) < 32)))
-    (hCache : VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s) :
-    WP isa (.ite .b (.block []) (.loop (body ix) .ae)) s fun s' => ∃ e, nb s₀ - 16 * (e - 1) < 32 ∧
+    (hCache : VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s)
+    (load : Bool := ix) (same : ∀ e t, EInvM ix s₀ P e t → Stitch.oA t load = Stitch.oA t ix := by intros; rfl) :
+    WP isa (.ite .b (.block []) (.loop (body load) .ae)) s fun s' => ∃ e, nb s₀ - 16 * (e - 1) < 32 ∧
       EInvM ix s₀ P e s' ∧ VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s' := by
   have h1e := hI.one
   have hle := hI.a.le
@@ -216,12 +217,12 @@ theorem loopERM_ok {ix : Bool} {s₀ : State} (hp : Stitch.LPre ix s₀) {P : Na
   · exact WP.block_nil ⟨e, by simpa using h, hI, hCache⟩
   · let I : Nat → State → Prop := fun m s => ∃ e, m = nb s₀ - 16 * e ∧ 16 * (e + 1) ≤ nb s₀ ∧ EInvM ix s₀ P e s ∧
       VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s
-    obtain hstep : ∀ m s, I m s → WP isa (body ix) s (fun s' =>
+    obtain hstep : ∀ m s, I m s → WP isa (body load) s (fun s' =>
         (eval .ae s' = some false ∧ ∃ e, nb s₀ - 16 * (e - 1) < 32 ∧ EInvM ix s₀ P e s' ∧
           VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s') ∨
         (eval .ae s' = some true ∧ ∃ m' < m, I m' s')) := by
       rintro m s ⟨e, rfl, he, hI, hCI⟩
-      refine WP.mono (bodyM_ok hp hf he hI hCI) fun s' ⟨hI', hcf', hCI'⟩ => ?_
+      refine WP.mono (bodyM_ok hp hf he hI hCI load (same _ _ hI)) fun s' ⟨hI', hcf', hCI'⟩ => ?_
       by_cases hlt : nb s₀ - 16 * e < 32
       · exact .inl ⟨by simp only [eval, hcf', hlt, decide_true, Option.map_some, Bool.not_true],
           e + 1, by simpa using hlt, hI', hCI'⟩
