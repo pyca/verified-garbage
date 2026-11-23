@@ -1076,8 +1076,8 @@ theorem dg_depth : (dgCode v).aarch64Depth ≤ 56 := by
     (VG.Impl.Scrub.AArch64.scrubTailLoop 896)) ≤ 56
   simp only [VG.Impl.Scrub.AArch64.withRet, VG.Impl.Scrub.AArch64.scrubTailLoop,
     VG.Impl.Scrub.AArch64.scrubLoopBody, Code.aarch64Depth,
-    AArch64.Instr.frameUnits, Nat.max_le, Nat.zero_le, Nat.reduceDiv, Nat.zero_add, Nat.le_refl, and_true]
-  exact hl
+    AArch64.Instr.frameUnits, Nat.max_le, Nat.zero_le, Nat.reduceDiv, and_true]
+  exact ⟨hl, by decide⟩
 
 theorem ce_gpr (t : State) (rd wr : List Region) {r : Reg} (h : r ∉ linkRegs) :
     (t.callEntry.withRegions rd wr).gpr r = t.gpr r := State.callEntry_gpr t h
