@@ -724,6 +724,115 @@ theorem Callee.entry_wp {n w : Nat} {fn name : String} {f : List Byte → List B
     rw [bytes_lost (F := eFr s) (by simpa [State.setReg] using hm) hout]
     exact hpost
 
+theorem syms_of_fnAddr {s₁ s₂ : State} {f : String} (h : isa.fnAddr s₁ f = isa.fnAddr s₂ f) :
+    s₁.syms f = s₂.syms f := by
+  apply BitVec.eq_of_toNat_eq
+  have e := congrArg BitVec.toNat h
+  simp only [BitVec.toNat_setWidth] at e
+  have := (s₁.syms f).isLt
+  have := (s₂.syms f).isLt
+  rwa [Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)] at e
+
+/-- `ldr t, [sp, #off]` leaks the same from states whose stack pointers agree. -/
+theorem ldrSp_rel {P : State → State → Prop} {t : Reg} {off : Nat} (h : ∀ a b, P a b → a.sp = b.sp) :
+    RelCT isa P (.block [.ldrSp t off]) TT := by
+  intro s₁ s₂ t₁ t₂ s₁' s₂' hp e₁ e₂
+  cases e₁ with
+  | block h₁ =>
+  cases e₂ with
+  | block h₂ =>
+  simp only [execBlock] at h₁ h₂
+  split at h₁ <;> [cases h₁; skip]
+  split at h₂ <;> [cases h₂; skip]
+  simp only [Option.map_some, Option.some.injEq, Prod.mk.injEq] at h₁ h₂
+  rw [← h₁.2, ← h₂.2]
+  exact ⟨by simp only [addrs, h _ _ hp], trivial⟩
+
+theorem Callee.entry_ct {n w : Nat} {fn name : String} {f : List Byte → List Byte → List Byte} {c : Prog isa}
+    {k : Contract isa} (hk : Callee n w 0 [] f c k) (hc : Code.icallFree c = true) (hr : KeepsReg .r10 c) :
+    ConstantTime isa (EntryPre n w) (Pub [fn]) (entryReg fn .r10 name (Code.viaRegAt fn .r10 c)) := by
+  have hv' := Exec.viaRegAt_ok (n := fn) hk.hv hr
+  have hct' := ConstantTime.viaRegAt (n := fn) hk.hct hc hr
+  refine ct_of fun σ₁ σ₂ p₁ p₂ hq => ?_
+  obtain ⟨q0, q1, q2, q3, qsp, qf⟩ := hq
+  have hy : σ₁.syms fn = σ₂.syms fn := syms_of_fnAddr (qf fn (List.mem_singleton_self _))
+  have hrd : σ₂.rd = σ₁.rd := by rw [p₁.1.1, p₂.1.1]; simp only [scR, ptR, q1, q2]
+  have hwr : σ₂.wr = σ₁.wr := by rw [p₁.1.2.1, p₂.1.2.1]; simp only [outR, wsR, q0, q3]
+  refine (RelCT.frame (P := Eq2 σ₁ σ₂) (fun a b ⟨ha, hb⟩ => by subst ha hb; exact qsp) ?_).mono
+    (fun _ _ h => h) fun _ _ _ => trivial
+  refine RelCT.seq (R := fun a b => a = eTwo fn σ₁ ∧ b = eTwo fn σ₂) ?_ ?_
+  · intro a₁ a₂ t₁ t₂ a₁' a₂' ⟨s₁, s₂, ⟨hs₁, hs₂⟩, e₁, e₂⟩ x₁ x₂
+    rw [hs₁] at e₁
+    rw [hs₂] at e₂
+    rw [push_pushed (by decide) (by simpa using p₁.2.1), Option.some.injEq] at e₁
+    rw [push_pushed (by decide) (by simpa using p₂.2.1), Option.some.injEq] at e₂
+    subst e₁ e₂
+    cases x₁ with
+    | block h₁ =>
+    cases x₂ with
+    | block h₂ =>
+    rw [show execBlock isa [.adrSym .r10 fn] (pushed [.r10, .lr] σ₁) = some (eTwo fn σ₁, []) from rfl,
+      Option.some.injEq, Prod.mk.injEq] at h₁
+    rw [show execBlock isa [.adrSym .r10 fn] (pushed [.r10, .lr] σ₂) = some (eTwo fn σ₂, []) from rfl,
+      Option.some.injEq, Prod.mk.injEq] at h₂
+    obtain ⟨rfl, rfl⟩ := h₁
+    obtain ⟨rfl, rfl⟩ := h₂
+    exact ⟨rfl, rfl, rfl⟩
+  refine RelCT.seq (R := fun (a b : State) => a.sp = b.sp) ?_ (ldrSp_rel fun _ _ h => h)
+  intro a₁ a₂ t₁ t₂ a₁' a₂' ⟨ha₁, ha₂⟩ x₁ x₂
+  subst ha₁ ha₂
+  have c₂ := eCall_callPre fn p₂.1
+  have hcall := RelCT.call (n := name) hv' hct' σ₁.rd σ₁.wr (P := Eq2 (M := isa) (eTwo fn σ₁) (eTwo fn σ₂))
+    (fun a b ⟨ha, hb⟩ => by
+      subst ha hb
+      have e₂ : (eTwo fn σ₂).callEntry.withRegions σ₁.rd σ₁.wr = eCall fn σ₂ := by
+        simp only [eCall, hrd, hwr]
+      rw [e₂]
+      refine ⟨⟨hk.pre _ (eCall_callPre fn p₁.1) (Nat.zero_le _) (fun r _ => belowA_zero_disjoint _ r),
+          eCall_regAt fn σ₁⟩,
+        ⟨hk.pre _ c₂ (Nat.zero_le _) (fun r _ => belowA_zero_disjoint _ r), eCall_regAt fn σ₂⟩,
+        ⟨hk.pub _ _ ⟨?_, ?_, ?_, ?_, ?_, fun _ h => absurd h List.not_mem_nil⟩, hy⟩, ?_, ?_, ?_, ?_⟩
+      · rw [eCall_gpr fn σ₁ (by decide) (by decide), eCall_gpr fn σ₂ (by decide) (by decide), q0]
+      · rw [eCall_gpr fn σ₁ (by decide) (by decide), eCall_gpr fn σ₂ (by decide) (by decide), q1]
+      · rw [eCall_gpr fn σ₁ (by decide) (by decide), eCall_gpr fn σ₂ (by decide) (by decide), q2]
+      · rw [eCall_gpr fn σ₁ (by decide) (by decide), eCall_gpr fn σ₂ (by decide) (by decide), q3]
+      · simp only [eCall, State.withRegions_sp, State.callEntry_sp, eTwo_sp, qsp]
+      all_goals refine covers_mem fun r hr' => ?_
+      all_goals first
+        | (rw [eTwo_rd, eTwo_wr]
+           rcases List.mem_append.mp hr' with hr' | hr'
+           · exact List.mem_append_left _ hr'
+           · exact List.mem_append_right _ (List.mem_cons_of_mem _ hr'))
+        | (rw [eTwo_wr]; exact List.mem_cons_of_mem _ hr')
+        | (rw [eTwo_rd, eTwo_wr, hrd, hwr]
+           rcases List.mem_append.mp hr' with hr' | hr'
+           · exact List.mem_append_left _ hr'
+           · exact List.mem_append_right _ (List.mem_cons_of_mem _ hr'))
+        | (rw [eTwo_wr, hwr]; exact List.mem_cons_of_mem _ hr'))
+  obtain ⟨ht, -⟩ := hcall _ _ _ _ _ _ ⟨rfl, rfl⟩ x₁ x₂
+  refine ⟨ht, ?_⟩
+  show a₁'.sp = a₂'.sp
+  rw [Exec.sp x₁, Exec.sp x₂, eTwo_sp, eTwo_sp, qsp]
+
+/-- **`entryReg` of a callee of the exchange, made to call `fn` by `r10`, is
+one**, with 8 bytes of stack, for runs that agree on `fn`'s address. -/
+theorem Callee.entryReg {n w : Nat} {fn name : String} {f : List Byte → List Byte → List Byte} {c : Prog isa}
+    {k : Contract isa} (hk : Callee n w 0 [] f c k) (hn : c.noFrames = true) (hc : Code.icallFree c = true)
+    (hr : KeepsReg .r10 c) :
+    Callee n w 8 [fn] f (entryReg fn .r10 name (Code.viaRegAt fn .r10 c)) (entryContract n w [fn] f) where
+  hv s h := by
+    obtain ⟨t, s', e, ha, hp⟩ := hk.entry_wp (fn := fn) (name := name) hn hr h
+    exact ⟨t, s', e, ha, hp⟩
+  hct := hk.entry_ct hc hr
+  pre s h hsp hroom := ⟨h, hsp, hroom⟩
+  post _ _ h := h
+  pub _ _ h := h
+  st := by
+    unfold Impl.Arm.entryReg
+    simp only [armStack, armStack_of_noFrames (show (Code.viaRegAt fn .r10 c).noFrames = true by
+      rw [noFrames_viaRegAt]; exact hn), List.length_cons, List.length_nil]
+    decide
+
 end Entry
 
 end VG.Proof.Xdh.Arm
