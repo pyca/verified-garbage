@@ -342,19 +342,22 @@ def tagK (o : Nat) : List Instr :=
 `[rdi + r10]` (`G`). -/
 def kB : MemOp := { base := .rdx, index := some .r10 }
 
+/-- The plaintext byte at the current offset of a bounded record. -/
+abbrev xorSrc (source : Reg) : MemOp := { base := source, index := some .r10 }
+
 /-- Eight (if `w`) or four bytes at `[rsi + r10]` XORed with those at
 `[rdx + r10]` through `rax`, stored back and, if `g`, at `[rdi + r10]`. -/
-def xorWord (g w : Bool) : List Instr :=
-  (if w then ([.mov .rax (.mem srcB), .alu .xor .rax (.mem kB), .store srcB .rax] : List Instr) ++
+def xorWord (g w : Bool) (source : Reg := .rsi) : List Instr :=
+  (if w then ([.mov .rax (.mem (xorSrc source)), .alu .xor .rax (.mem kB), .store srcB .rax] : List Instr) ++
       (if g then [.store dstB .rax] else [])
-    else ([.mov32 .rax (.mem srcB), .alu32 .xor .rax (.mem kB), .store32 srcB .rax] : List Instr) ++
+    else ([.mov32 .rax (.mem (xorSrc source)), .alu32 .xor .rax (.mem kB), .store32 srcB .rax] : List Instr) ++
       (if g then [.store32 dstB .rax] else [])) ++
   [.alu .add .r10 (imm (if w then 8 else 4))]
 
 /-- The bytes from `r10` to `rcx` at `rsi` XORed with those at `rdx`, one at
 a time, and if `g` also stored at `rdi`. -/
-def xorBytes (g : Bool) : Prog isa :=
-  .loop (.block (([.movzx8 .rax srcB, .movzx8 .r9 kB, .alu .xor .rax (.reg .r9), .store8 srcB .rax] : List Instr) ++
+def xorBytes (g : Bool) (source : Reg := .rsi) : Prog isa :=
+  .loop (.block (([.movzx8 .rax (xorSrc source), .movzx8 .r9 kB, .alu .xor .rax (.reg .r9), .store8 srcB .rax] : List Instr) ++
     (if g then [.store8 dstB .rax] else []) ++
     ([.alu .add .r10 (imm 1), .alu .cmp .r10 (.reg .rcx)] : List Instr))) .ne
 
@@ -362,23 +365,23 @@ def xorBytes (g : Bool) : Prog isa :=
 also stored at `rdi`: 16 at a time (through `xmm4`), then, of the fewer than
 16 left, 8 and 4 at a time (through `rax`) as the bits of `rcx` say, and the
 last one at a time; fewer than 4 left go straight to the last loop. -/
-def xorText (g : Bool) : Prog isa :=
+def xorText (g : Bool) (source : Reg := .rsi) : Prog isa :=
   .seq (.block [.mov32 .r10 (imm 0), .mov .r8 (.reg .rcx), .shift .shr .r8 4, .shift .shl .r8 4, .alu .cmp .r8 (imm 0)])
   (.seq (.ite .e (.block [])
-      (.loop (.block (([.vmovdquLoad .l128 .xmm4 srcB, .vbinLoad .vpxor .l128 .xmm4 .xmm4 kB,
+      (.loop (.block (([.vmovdquLoad .l128 .xmm4 (xorSrc source), .vbinLoad .vpxor .l128 .xmm4 .xmm4 kB,
           .vmovdquStore .l128 srcB .xmm4] : List Instr) ++
           (if g then [.vmovdquStore .l128 dstB .xmm4] else []) ++
           ([.alu .add .r10 (imm 16), .alu .cmp .r10 (.reg .r8)] : List Instr))) .ne))
   (.seq (.block [.alu .test .rcx (imm 15)])
     (.ite .e (.block [])
       (.seq (.block [.alu .test .rcx (imm 12)])
-        (.ite .e (xorBytes g)
+        (.ite .e (xorBytes g source)
           (.seq (.block [.alu .test .rcx (imm 8)])
-          (.seq (.ite .e (.block []) (.block (xorWord g true)))
+          (.seq (.ite .e (.block []) (.block (xorWord g true source)))
           (.seq (.block [.alu .test .rcx (imm 4)])
-          (.seq (.ite .e (.block []) (.block (xorWord g false)))
+          (.seq (.ite .e (.block []) (.block (xorWord g false source)))
           (.seq (.block [.alu .test .rcx (imm 3)])
-            (.ite .e (.block []) (xorBytes g))))))))))))
+            (.ite .e (.block []) (xorBytes g source))))))))))))
 
 /-- The arguments of `xorText`: the data, `K[1]`, the text's blocks in `G`
 and the length. -/
@@ -390,15 +393,31 @@ def textArgs : List Instr :=
 /-- The short `seal`, with the table of powers from `pw` and GHASH by `gh`
 (`powers` and `ghash`, or `powersP` and `ghashP` with a prepared key
 context): the ciphertext written to the data and `G`, and the tag at `W`. -/
-def sealShort (pw : Prog isa := powers) (gh : Prog isa := ghash) : Prog isa :=
-  .seq (.block (j012 ++ sizes))
+def sealShort (pw : Prog isa := powers) (gh : Prog isa := ghash)
+    (payload : Prog isa := xorText true) (saveArgs : List Instr := []) : Prog isa :=
+  .seq (.block (j012 ++ sizes ++ saveArgs))
   (.seq pw
   (.seq (.block zeroG)
   (.seq copyA
   (.seq keystream
-  (.seq (.seq (.block textArgs) (xorText true))
+  (.seq (.seq (.block textArgs) payload)
   (.seq ghash' (.block (tagK 0))))))))
 where ghash' : Prog isa := .seq (.block lens) gh
+
+/-- Seal one or two plaintext spans from registers. The second span, when
+present, begins where the first span ends in the output and keystream. -/
+def boundedText : Prog isa :=
+  .seq (.block [.mov .r11 (.reg .rcx), .mov .rcx (.reg .rbp)]) (.seq (xorText true .rbx)
+    (.seq (.block [.mov .rcx (.reg .r11), .alu .sub .rcx (.reg .rbp)])
+      (.ite .e (.block []) (.seq (.block [.mov .rbx (.reg .r12), .alu .add .rsi (.reg .rbp),
+        .alu .add .rdx (.reg .rbp), .alu .add .rdi (.reg .rbp)]) (xorText true .rbx)))))
+
+/-- Common prepared bounded seal. On entry `rbx`, `r10` and `r11` hold the
+first source, its length, and the second source, respectively. After the
+12-byte nonce has been consumed, `r12` can preserve the second pointer. -/
+def bounded : VG.Impl.AesGcm.X86_64.Fn :=
+  ⟨"vg_aes_gcm_bounded_seal_avx512", sealShort powersP ghashP boundedText
+    [.mov .rbp (.reg .r10), .mov .r12 (.reg .r11)]⟩
 
 /-- The ciphertext copied to `G`, its tag at `W + uO`, compared with the
 received one (`rbx` its length, at `tlO`): `rax`, kept at `auxO`, 1 if they
