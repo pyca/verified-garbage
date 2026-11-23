@@ -47,6 +47,11 @@ first stack argument, read in place, its cipher `Spec.Blowfish.cipher` or
 `Spec.Blowfish.invCipher` under it, and the key ready whenever that schedule
 and its address are still there, apart from every writable region (`Ready`):
 `prepare` does nothing.
+
+`Fits cs w n`: what the lemmas about the functions need of a core and its
+`CoreSpec` (its key a schedule through the first stack argument, blocks of
+two words, `n` bytes of stack, a scratch buffer of `w` 64-bit words), which
+this core has with 11 words and no stack (`dirFits`).
 -/
 
 @[expose] public section
@@ -282,6 +287,33 @@ def dirCoreSpec (up : Bool) : CoreSpec (dirCore up) where
     refine WP.block_nil ⟨⟨⟨S, hS, hw⟩, hs.fit⟩, hB, rfl, Frame.refl _ _, rfl, rfl⟩
   crypt_wp hB hs hr _ := WP.mono (crypt_wp up hB hs hr.1) fun _ ⟨b, e, r, h⟩ => ⟨b, e, ⟨r, hr.2⟩, h⟩
 
+/-! ## Cores that fit the functions -/
+
+/-- What the functions give a core with `n` bytes of stack of the key:
+`KeyArgs`, and the stack apart from the regions `rs`, from the schedule and
+from the argument that holds its address. -/
+def KeyArgsN (n : Nat) (s : State) (rs : List Region) (k : Schedule) : Prop :=
+  KeyArgs s rs k ∧ (∀ r ∈ rs, Region.Disjoint (stkRegion (s.gpr .esp) n) r) ∧
+    Region.Disjoint (stkRegion (s.gpr .esp) n) ⟨(arg s 0).setWidth 64, 4168⟩ ∧
+    Region.Disjoint (stkRegion (s.gpr .esp) n) ⟨s.ea (at_ .esp 4), 4⟩
+
+/-- A core of Blowfish's modes on x86 with its `CoreSpec`, as the lemmas
+about the functions take it (`scr_eq`, `Fb.seqPre_of`, `Fb.keyArgs_of` and
+the functions' `_of` theorems): its key is a schedule, read through the
+first stack argument (`KeyArgsN`); its blocks are two words; the key is one
+argument; it has `n` bytes of stack; and its scratch buffer is `w` 64-bit
+words. -/
+structure Fits {c : VG.Impl.Modes.X86.Core} (cs : CoreSpec c) (w n : Nat) where
+  toKey : Schedule → cs.Key
+  keyArgs : ∀ {s : State} {rs : List Region} {k : Schedule}, KeyArgsN n s rs k → cs.KeyArgs s rs (toKey k)
+  bw : c.bw = 2
+  ka : c.ka = 1
+  stack : c.stack = n
+  total : c.total = 2 * w
+
+/-- The core a block at a time fits, with 11 words and no stack. -/
+def dirFits (up : Bool) : Fits (dirCoreSpec up) 11 0 := ⟨id, fun h => h.1, rfl, rfl, rfl, rfl⟩
+
 end VG.Proof.Blowfish.X86
 
 end
@@ -291,10 +323,14 @@ end
 /-!
 # Blowfish-OFB and Blowfish-CFB64 on x86 (32-bit) meet their contracts
 
-`ofb_wp`, `cfbEncrypt_wp`, `cfbDecrypt_wp`: the modes' OFB and CFB
-(`Proof.Modes.X86.ofb_wp`, `cfbEnc_wp`, `cfbDec_wp`) over Blowfish's core
-(`dirCoreSpec true`), with the working space as a
-fifth argument (`fbX86`). The chaining value is written back, so it is
+`ofb_wp_of`, `cfbEncrypt_wp_of`, `cfbDecrypt_wp_of`: the modes' OFB and CFB
+(`Proof.Modes.X86.ofb_wp`, `cfbEnc_wp`, `cfbDec_wp`) over any core that fits
+(`Fits cs w n`) whose cipher is Blowfish's, with the working space, `w`
+64-bit words, as a fifth argument and `n` bytes of stack below `esp`
+(`fbX86 w n`); `ofb_wp_x86`, `cfbEncrypt_wp`, `cfbDecrypt_wp` are those of
+Blowfish's core (`dirCoreSpec true`, 11 words, no stack). The contract's
+narrowing (`fb_verified`) and the initial taint (`fbTaint w n`) are for any
+`w` and `n`. The chaining value is written back, so it is
 writable, and the taint analysis knows the argument words holding the
 addresses of the data, the chaining value and the scratch buffer as the base
 addresses of the writable regions. The `_framed` theorems run them with
@@ -310,8 +346,29 @@ open VG VG.X86 VG.Impl.Blowfish.X86
 theorem disjoint_empty (r : Region) (a : Addr) : Region.Disjoint ⟨a, 0⟩ r := fun _ h => by
   simp only [Region.Contains] at h; omega_arith
 
-theorem scr_eq (up : Bool) (s : State) : Modes.X86.scrR s (dirCore up) = ⟨(arg s 4).setWidth 64, 8 * 11⟩ := by
-  simp [Modes.X86.scrR, dirCore]
+/-- No byte below the stack pointer: apart from every region. -/
+theorem below0 (e : BitVec 32) (r : Region) : Region.Disjoint (below e 0) r := disjoint_empty _ _
+
+/-- The scratch buffer of a core that fits is the fifth argument's `w` words. -/
+theorem scr_eq {c : VG.Impl.Modes.X86.Core} {cs : Proof.Modes.X86.CoreSpec c} {w n : Nat} (f : Fits cs w n)
+    (s : State) : Modes.X86.scrR s c = ⟨(arg s 4).setWidth 64, 8 * w⟩ := by
+  show (⟨(arg s (c.ka + 3)).setWidth 64, 4 * c.total⟩ : Region) = _
+  rw [f.ka, f.total, show 4 * (2 * w) = 8 * w by omega_arith]
+
+/-- The `n` bytes of stack below `esp` are apart from the arguments and the return address. -/
+theorem stk_apart {s : State} {n : Nat} (hfit : (s.gpr .esp).toNat + 24 ≤ 2 ^ 32) (hlo : n ≤ (s.gpr .esp).toNat) :
+    Region.Disjoint (Proof.Modes.X86.stkRegion (s.gpr .esp) n) ⟨argAddr s 0, 20⟩ ∧
+      Region.Disjoint (Proof.Modes.X86.stkRegion (s.gpr .esp) n) ⟨(s.gpr .esp).setWidth 64, 4⟩ := by
+  have e : (s.gpr .esp - BitVec.ofNat 32 n).setWidth 64 = (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 n :=
+    VG.X86.Taint.sub_setWidth hlo
+  have ea : argAddr s 0 = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 4 := addr_eq (by omega_arith)
+  refine ⟨?_, ?_⟩
+  · show Region.Disjoint ⟨(s.gpr .esp - BitVec.ofNat 32 n).setWidth 64, n⟩ _
+    rw [e, ea]; exact VG.Offset.disjoint_below_above _ (by omega_arith)
+  · show Region.Disjoint ⟨(s.gpr .esp - BitVec.ofNat 32 n).setWidth 64, n⟩ _
+    have := VG.Offset.disjoint_below_above ((s.gpr .esp).setWidth 64) (m := n) (a := 0) (l := 4) (by omega_arith)
+    rw [BitVec.add_zero] at this
+    rw [e]; exact this
 
 /-- The data in blocks, as the modes' steps. -/
 theorem cbcBlocksAt_chunks (m : Mem) (p : Addr) (n : Nat) :
@@ -325,7 +382,9 @@ namespace VG.Proof.Blowfish.X86.Fb
 
 open VG VG.X86 VG.Impl.Blowfish.X86 VG.Impl.Modes
 open VG.Proof.Modes.X86 (SeqPre ofb_wp cfbEnc_wp cfbDec_wp)
-open VG.Proof.Blowfish.X86 (scr_eq disjoint_empty KeyArgs dirCoreSpec cbcBlocksAt_chunks dirCore_ka)
+open VG.Proof.Modes.X86 (stkRegion)
+open VG.Proof.Blowfish.X86 (scr_eq disjoint_empty KeyArgs KeyArgsN Fits dirFits stk_apart below0 dirCoreSpec
+  cbcBlocksAt_chunks)
 
 /-- Blowfish under the schedule at the first argument. -/
 abbrev ciph (s : State) : Spec.Cbc.Cipher := Spec.Blowfish.cipher (Spec.Blowfish.scheduleAt s.mem ((arg s 0).setWidth 64))
@@ -345,107 +404,181 @@ def cfbDecPost (s s' : State) : Prop :=
   dataAt s'.mem s = Spec.Cfb.decrypt (ciph s) (ivAt s.mem s) (dataAt s.mem s) ∧
     ivAt s'.mem s = Spec.Cbc.next (ivAt s.mem s) (dataAt s.mem s)
 
-/-- OFB or CFB64 on x86 with its working space as the fifth argument, and
-the postcondition `post`. -/
-def fbX86 (post : State → State → Prop) : Contract X86.isa where
+/-- OFB or CFB64 on x86 with its working space, `w` 64-bit words, as the
+fifth argument, `n` bytes of stack below `esp`, and the postcondition
+`post`. -/
+def fbX86 (w n : Nat) (post : State → State → Prop) : Contract X86.isa where
   pre s :=
     let sched : Region := ⟨(arg s 0).setWidth 64, 4168⟩
     let iv : Region := ⟨(arg s 1).setWidth 64, 8⟩
     let data : Region := ⟨(arg s 2).setWidth 64, 8 * (arg s 3).toNat⟩
-    let scratch : Region := ⟨(arg s 4).setWidth 64, 8 * 11⟩
+    let scratch : Region := ⟨(arg s 4).setWidth 64, 8 * w⟩
     let args : Region := ⟨argAddr s 0, 20⟩
     let ret : Region := ⟨(s.gpr .esp).setWidth 64, 4⟩
+    let stack := below (s.gpr .esp) n
     s.rd = [sched, args] ∧ s.wr = [data, iv, scratch] ∧
     sched.Disjoint data ∧ sched.Disjoint iv ∧ sched.Disjoint scratch ∧ iv.Disjoint data ∧ iv.Disjoint scratch ∧ data.Disjoint scratch ∧
     args.Disjoint data ∧ args.Disjoint iv ∧ args.Disjoint scratch ∧
     ret.Disjoint data ∧ ret.Disjoint iv ∧ ret.Disjoint scratch ∧
+    stack.Disjoint sched ∧ stack.Disjoint data ∧ stack.Disjoint iv ∧ stack.Disjoint scratch ∧
     (arg s 0).toNat + 4168 ≤ 2 ^ 32 ∧ (arg s 1).toNat + 8 ≤ 2 ^ 32 ∧
-    (arg s 2).toNat + 8 * (arg s 3).toNat ≤ 2 ^ 32 ∧ (arg s 4).toNat + 8 * 11 ≤ 2 ^ 32 ∧
-    (s.gpr .esp).toNat + 24 ≤ 2 ^ 32
+    (arg s 2).toNat + 8 * (arg s 3).toNat ≤ 2 ^ 32 ∧ (arg s 4).toNat + 8 * w ≤ 2 ^ 32 ∧
+    (s.gpr .esp).toNat + 24 ≤ 2 ^ 32 ∧ n ≤ (s.gpr .esp).toNat
   post := post
   pub s₁ s₂ := s₁.gpr .esp = s₂.gpr .esp ∧ ∀ i < 5, arg s₁ i = arg s₂ i
 
-/-- `fbX86`'s precondition gives the modes'. -/
-theorem seqPre_of {post : State → State → Prop} {M : Mode} (d : Bool) (hstep : M.step = 8) {s : State}
-    (h : (fbX86 post).pre s) : SeqPre (dirCore d) M s := by
-  obtain ⟨hrd, hwr, dKD, dKV, dKS, dVD, dVS, dDS, dAD, dAV, dAS, dRD, dRV, dRS, fK, fV, fD, fS, fE⟩ := h
-  have hL := (dirCoreSpec d).layout
-  refine ⟨(by rw [hrd]; simp [dirCore]), fE, ⟨(by rw [hwr]; simp [dirCore]),
-      (by simp only [dirCore]; omega_arith)⟩, (by rw [hwr]; simp [dirCore]),
-    (fun _ => by rw [hwr]; simp [dirCore]), (by simp only [dirCore]; omega_arith), (by rw [hwr, hstep]; simp [dirCore]),
-    (by rw [hstep]; exact fD), ?_, ?_, (fun _ => ?_), ?_, ?_, ?_, ?_,
-    (fun _ => ?_), disjoint_empty _ _, disjoint_empty _ _,
-    disjoint_empty _ _, disjoint_empty _ _, (by simp [dirCore]), (by rw [hstep]; simp [dirCore]), hL⟩
-  · rw [hstep, scr_eq d]; exact dDS
-  · rw [scr_eq d]; exact dVS
-  · rw [hstep]; exact dVD
-  · rw [scr_eq d]; exact dAS
-  · rw [hstep]; exact dAD
-  · rw [scr_eq d]; exact dRS
-  · rw [hstep]; exact dRD
-  · exact dRV
+/-- `fbX86`'s precondition gives the modes', for a core that fits. -/
+theorem seqPre_of {c : VG.Impl.Modes.X86.Core} {cs : Proof.Modes.X86.CoreSpec c} {w n : Nat} (f : Fits cs w n)
+    {post : State → State → Prop} {M : Mode} (hstep : M.step = 8) {s : State} (h : (fbX86 w n post).pre s) :
+    SeqPre c M s := by
+  obtain ⟨hrd, hwr, dKD, dKV, dKS, dVD, dVS, dDS, dAD, dAV, dAS, dRD, dRV, dRS, dSK, dSD, dSV, dSS, fK, fV, fD, fS,
+    fE, fLo⟩ := h
+  have hL := cs.layout
+  obtain ⟨sA, sR⟩ := stk_apart fE fLo
+  obtain hka := f.ka
+  obtain hbw := f.bw
+  obtain hsk := f.stack
+  obtain htot := f.total
+  obtain hroom := hL.room
+  refine ⟨?_, ?_, ⟨?_, ?_⟩, ?_, (fun _ => ?_), ?_, ?_, ?_, ?_, ?_, (fun _ => ?_), ?_, ?_, ?_, ?_,
+    (fun _ => ?_), ?_, ?_, ?_, ?_, ?_, ?_, hL⟩
+  · show (⟨argAddr s 0, 4 * (c.ka + 4)⟩ : Region) ∈ _
+    rw [hrd, hka]; simp
+  · rw [hka]; exact fE
+  · show (⟨(arg s (c.ka + 3)).setWidth 64, 4 * c.total⟩ : Region) ∈ _
+    rw [hwr, hka, htot, show 4 * (2 * w) = 8 * w by omega_arith]; simp
+  · show (arg s (c.ka + 3)).toNat + 4 * c.total ≤ 2 ^ 32
+    rw [hka, htot]
+    show (arg s 4).toNat + 4 * (2 * w) ≤ 2 ^ 32
+    omega_arith
+  · show (⟨(arg s c.ka).setWidth 64, 4 * c.bw⟩ : Region) ∈ _
+    rw [hwr, hka, hbw]; simp
+  · show (⟨(arg s c.ka).setWidth 64, 4 * c.bw⟩ : Region) ∈ _
+    rw [hwr, hka, hbw]; simp
+  · show (arg s c.ka).toNat + 4 * c.bw ≤ 2 ^ 32
+    rw [hka, hbw]; omega_arith
+  · show Proof.Modes.X86.dataRegion (arg s (c.ka + 1)) M.step (arg s (c.ka + 2)).toNat ∈ _
+    rw [hwr, hstep, hka]; simp [Proof.Modes.X86.dataRegion]
+  · show (arg s (c.ka + 1)).toNat + M.step * (arg s (c.ka + 2)).toNat ≤ 2 ^ 32
+    rw [hstep, hka]; exact fD
+  · show Region.Disjoint (Proof.Modes.X86.dataRegion (arg s (c.ka + 1)) M.step (arg s (c.ka + 2)).toNat) _
+    rw [hstep, scr_eq f, hka]; exact dDS
+  · show Region.Disjoint ⟨(arg s c.ka).setWidth 64, 4 * c.bw⟩ _
+    rw [scr_eq f, hka, hbw]; exact dVS
+  · show Region.Disjoint ⟨(arg s c.ka).setWidth 64, 4 * c.bw⟩
+      (Proof.Modes.X86.dataRegion (arg s (c.ka + 1)) M.step (arg s (c.ka + 2)).toNat)
+    rw [hstep, hka, hbw]; exact dVD
+  · show Region.Disjoint ⟨argAddr s 0, 4 * (c.ka + 4)⟩ _
+    rw [scr_eq f, hka]; exact dAS
+  · show Region.Disjoint ⟨argAddr s 0, 4 * (c.ka + 4)⟩
+      (Proof.Modes.X86.dataRegion (arg s (c.ka + 1)) M.step (arg s (c.ka + 2)).toNat)
+    rw [hstep, hka]; exact dAD
+  · rw [scr_eq f]; exact dRS
+  · show Region.Disjoint _ (Proof.Modes.X86.dataRegion (arg s (c.ka + 1)) M.step (arg s (c.ka + 2)).toNat)
+    rw [hstep, hka]; exact dRD
+  · show Region.Disjoint _ ⟨(arg s c.ka).setWidth 64, 4 * c.bw⟩
+    rw [hka, hbw]; exact dRV
+  · show Region.Disjoint (stkRegion (s.gpr .esp) c.stack)
+      (Proof.Modes.X86.dataRegion (arg s (c.ka + 1)) M.step (arg s (c.ka + 2)).toNat)
+    rw [hstep, hka, hsk]; exact dSD
+  · show Region.Disjoint (stkRegion (s.gpr .esp) c.stack) ⟨Proof.Modes.X86.slotA (arg s (c.ka + 3)) c.slots, 40⟩
+    rw [hka, hsk]
+    exact dSS.sub_right (VG.Offset.sub_base _ (by omega_arith))
+  · show Region.Disjoint (stkRegion (s.gpr .esp) c.stack) ⟨argAddr s 0, 4 * (c.ka + 4)⟩
+    rw [hka, hsk]; exact sA
+  · rw [hsk]; exact sR
+  · rw [hsk]; exact fLo
+  · rw [hstep, hbw]; exact ⟨by decide, by decide⟩
 
-theorem keyArgs_of {post : State → State → Prop} (d : Bool) {s : State} (h : (fbX86 post).pre s) :
-    KeyArgs s [Modes.X86.scrR s (dirCore d)] (Spec.Blowfish.scheduleAt s.mem ((arg s 0).setWidth 64)) := by
-  obtain ⟨hrd, hwr, dKD, dKV, dKS, -, -, -, dAD, dAV, dAS, -, -, -, fK, -, -, -, -⟩ := h
+/-- `fbX86`'s precondition gives the key's, for a core that fits. -/
+theorem keyArgs_of {c : VG.Impl.Modes.X86.Core} {cs : Proof.Modes.X86.CoreSpec c} {w n : Nat} (f : Fits cs w n)
+    {post : State → State → Prop} {s : State} (h : (fbX86 w n post).pre s) :
+    cs.KeyArgs s [Modes.X86.scrR s c] (f.toKey (Spec.Blowfish.scheduleAt s.mem ((arg s 0).setWidth 64))) := by
+  obtain ⟨hrd, hwr, dKD, dKV, dKS, -, -, -, dAD, dAV, dAS, -, -, -, dSK, -, -, dSS, fK, -, -, -, fE, fLo⟩ := h
   have hA : ∀ r : Region, (⟨argAddr s 0, 20⟩ : Region).Disjoint r → Region.Disjoint ⟨s.ea (at_ .esp 4), 4⟩ r :=
     fun r h => h.sub_left (Region.sub_prefix (by decide))
-  refine ⟨arg s 0, ⟨⟨⟨argAddr s 0, 20⟩, by rw [hrd]; simp, ?_⟩, rfl, rfl, by rw [hrd]; simp, fK⟩,
-    fun r hr => ?_, fun r hr => ?_⟩
+  refine f.keyArgs ⟨⟨arg s 0, ⟨⟨⟨argAddr s 0, 20⟩, by rw [hrd]; simp, ?_⟩, rfl, rfl, by rw [hrd]; simp, fK⟩,
+    fun r hr => ?_, fun r hr => ?_⟩, fun r hr => ?_, dSK,
+    (stk_apart fE fLo).1.sub_right (Region.sub_prefix (by decide))⟩
   · show (⟨argAddr s 0, 20⟩ : Region).Contains (argAddr s 0) 4
     simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega_arith
-  · simp only [List.mem_singleton] at hr; subst hr; rw [scr_eq]; exact ⟨dKS, hA _ dAS⟩
+  · simp only [List.mem_singleton] at hr; subst hr; rw [scr_eq f]; exact ⟨dKS, hA _ dAS⟩
   · rw [hwr] at hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
     exacts [⟨dKD, hA _ dAD⟩, ⟨dKV, hA _ dAV⟩, ⟨dKS, hA _ dAS⟩]
+  · simp only [List.mem_singleton] at hr; subst hr; rw [scr_eq f]; exact dSS
 
-theorem data_eq (d : Bool) (m : Mem) (s : State) :
-    Proof.Modes.chunksAt (4 * (dirCore d).bw) m ((arg s 2).setWidth 64) (arg s 3).toNat = dataAt m s :=
+/-- The data and the chaining value of the modes' results, as the postconditions have them. -/
+theorem data_eq (m : Mem) (s : State) :
+    Proof.Modes.chunksAt 8 m ((arg s 2).setWidth 64) (arg s 3).toNat = dataAt m s :=
   (cbcBlocksAt_chunks _ _ _).symm
-theorem iv_eq (d : Bool) (m : Mem) (s : State) :
-    Spec.Aes.bytesAt m ((arg s 1).setWidth 64) (4 * (dirCore d).bw) = ivAt m s := rfl
-theorem cipher_eq (s : State) :
-    (dirCoreSpec true).cipher (Spec.Blowfish.scheduleAt s.mem ((arg s 0).setWidth 64)) = ciph s := rfl
+theorem iv_eq (m : Mem) (s : State) : Spec.Aes.bytesAt m ((arg s 1).setWidth 64) 8 = ivAt m s := rfl
 
-theorem ofb_wp_x86 {s₀ : State} (hp : (fbX86 ofbPost).pre s₀) :
-    WP isa ofb s₀ fun s' => abiPreserved s₀ s' ∧ (fbX86 ofbPost).post s₀ s' :=
-  WP.mono (ofb_wp (dirCoreSpec true) (seqPre_of true rfl hp) (keyArgs_of true hp))
-    fun _ ⟨h1, h2, h3⟩ => by
-      simp only [Proof.Modes.X86.blocks0, Proof.Modes.X86.iv0, Proof.Modes.X86.Dp, Proof.Modes.X86.P,
-        Proof.Modes.X86.N, dirCore_ka, Nat.reduceAdd, data_eq, iv_eq, cipher_eq] at h2 h3
-      exact ⟨h1, h2, h3⟩
+/-- The modes' results (`h`, `h'`) for the core that fits by `f`, whose
+cipher `hc` gives, as the functions' postconditions state them. -/
+tactic_template "bf_post_eq " f:term:max hc:term:max h:ident h':ident : tactic =>
+  `(tactic| simp only [Proof.Modes.X86.blocks0, Proof.Modes.X86.iv0, Proof.Modes.X86.Dp, Proof.Modes.X86.P,
+                     Proof.Modes.X86.N, VG.Proof.Blowfish.X86.Fits.ka $f, VG.Proof.Blowfish.X86.Fits.bw $f,
+                     Nat.reduceAdd, Nat.reduceMul, VG.Proof.Blowfish.X86.Fb.data_eq, VG.Proof.Blowfish.X86.Fb.iv_eq,
+                     $hc:term] at $h:ident $h':ident)
 
-theorem cfbEncrypt_wp {s₀ : State} (hp : (fbX86 cfbEncPost).pre s₀) :
-    WP isa cfbEncrypt s₀ fun s' => abiPreserved s₀ s' ∧ (fbX86 cfbEncPost).post s₀ s' :=
-  WP.mono (cfbEnc_wp (dirCoreSpec true) (seqPre_of true rfl hp) (keyArgs_of true hp))
-    fun _ ⟨h1, h2, h3⟩ => by
-      simp only [Proof.Modes.X86.blocks0, Proof.Modes.X86.iv0, Proof.Modes.X86.Dp, Proof.Modes.X86.P,
-        Proof.Modes.X86.N, dirCore_ka, Nat.reduceAdd, data_eq, iv_eq, cipher_eq] at h2 h3
-      exact ⟨h1, h2, h3⟩
+section
+variable {c : VG.Impl.Modes.X86.Core} {cs : Proof.Modes.X86.CoreSpec c} {w n : Nat}
 
-theorem cfbDecrypt_wp {s₀ : State} (hp : (fbX86 cfbDecPost).pre s₀) :
-    WP isa cfbDecrypt s₀ fun s' => abiPreserved s₀ s' ∧ (fbX86 cfbDecPost).post s₀ s' :=
-  WP.mono (cfbDec_wp (dirCoreSpec true) (seqPre_of true rfl hp) (keyArgs_of true hp))
-    fun _ ⟨h1, h2, h3⟩ => by
-      simp only [Proof.Modes.X86.blocks0, Proof.Modes.X86.iv0, Proof.Modes.X86.Dp, Proof.Modes.X86.P,
-        Proof.Modes.X86.N, dirCore_ka, Nat.reduceAdd, data_eq, iv_eq, cipher_eq] at h2 h3
-      exact ⟨h1, h2, h3⟩
+/-- A whole block is a step of the modes over a core that fits. -/
+theorem step_block (f : Fits cs w n) : 4 * c.bw = 8 := by rw [f.bw]
+
+/-- OFB over any core that fits, whose cipher is Blowfish's. -/
+theorem ofb_wp_of (f : Fits cs w n) (hc : ∀ k, cs.cipher (f.toKey k) = Spec.Blowfish.cipher k) {s₀ : State}
+    (hp : (fbX86 w n ofbPost).pre s₀) :
+    WP isa (c.seq (Mode.ofb c.bw)) s₀ fun s' => abiPreserved s₀ s' ∧ (fbX86 w n ofbPost).post s₀ s' :=
+  WP.mono (ofb_wp cs (seqPre_of f (step_block f) hp) (keyArgs_of f hp))
+    fun _ ⟨h1, h2, h3⟩ => by bf_post_eq f hc h2 h3; exact ⟨h1, h2, h3⟩
+
+/-- CFB64 encryption over any core that fits. -/
+theorem cfbEncrypt_wp_of (f : Fits cs w n) (hc : ∀ k, cs.cipher (f.toKey k) = Spec.Blowfish.cipher k) {s₀ : State}
+    (hp : (fbX86 w n cfbEncPost).pre s₀) :
+    WP isa (c.seq (Mode.cfbEnc c.bw)) s₀ fun s' => abiPreserved s₀ s' ∧ (fbX86 w n cfbEncPost).post s₀ s' :=
+  WP.mono (cfbEnc_wp cs (seqPre_of f (step_block f) hp) (keyArgs_of f hp))
+    fun _ ⟨h1, h2, h3⟩ => by bf_post_eq f hc h2 h3; exact ⟨h1, h2, h3⟩
+
+/-- CFB64 decryption over any core that fits. -/
+theorem cfbDecrypt_wp_of (f : Fits cs w n) (hc : ∀ k, cs.cipher (f.toKey k) = Spec.Blowfish.cipher k) {s₀ : State}
+    (hp : (fbX86 w n cfbDecPost).pre s₀) :
+    WP isa (c.seq (Mode.cfbDec c.bw)) s₀ fun s' => abiPreserved s₀ s' ∧ (fbX86 w n cfbDecPost).post s₀ s' :=
+  WP.mono (cfbDec_wp cs (seqPre_of f (step_block f) hp) (keyArgs_of f hp))
+    fun _ ⟨h1, h2, h3⟩ => by bf_post_eq f hc h2 h3; exact ⟨h1, h2, h3⟩
+
+end
+
+theorem ofb_wp_x86 {s₀ : State} (hp : (fbX86 11 0 ofbPost).pre s₀) :
+    WP isa ofb s₀ fun s' => abiPreserved s₀ s' ∧ (fbX86 11 0 ofbPost).post s₀ s' :=
+  ofb_wp_of (dirFits true) (fun _ => rfl) hp
+
+theorem cfbEncrypt_wp {s₀ : State} (hp : (fbX86 11 0 cfbEncPost).pre s₀) :
+    WP isa cfbEncrypt s₀ fun s' => abiPreserved s₀ s' ∧ (fbX86 11 0 cfbEncPost).post s₀ s' :=
+  cfbEncrypt_wp_of (dirFits true) (fun _ => rfl) hp
+
+theorem cfbDecrypt_wp {s₀ : State} (hp : (fbX86 11 0 cfbDecPost).pre s₀) :
+    WP isa cfbDecrypt s₀ fun s' => abiPreserved s₀ s' ∧ (fbX86 11 0 cfbDecPost).post s₀ s' :=
+  cfbDecrypt_wp_of (dirFits true) (fun _ => rfl) hp
 
 /-! ## Constant time -/
 
 /-- The initial taint: `esp` public, and the words holding `data`, `iv` and
 `scratch` known to be the base addresses of the writable regions. -/
-def fbTaint : VG.X86.Taint.T :=
-  { regs := .ofList [.esp], flags := false, lens := [0, 8, 8 * 11], argLen := 24,
-    argBases := [(12, 0), (8, 1), (20, 2)] }
+def fbTaint (w n : Nat) : VG.X86.Taint.T :=
+  { regs := .ofList [.esp], flags := false, lens := [0, 8, 8 * w], argLen := 24,
+    argBases := [(12, 0), (8, 1), (20, 2)], room := n }
 
-theorem fbTaint_wf {post : State → State → Prop} {s : State} (hp : (fbX86 post).pre s) :
-    VG.X86.Taint.Wf fbTaint s := by
-  obtain ⟨hrd, hwr, dKD, dKV, dKS, dVD, dVS, dDS, dAD, dAV, dAS, dRD, dRV, dRS, fK, fV, fD, fS, fE⟩ := hp
-  refine VG.X86.Taint.Wf.entry rfl rfl ⟨fun _ => ⟨?_, ?_, ?_⟩,
+theorem fbTaint_wf {w n : Nat} {post : State → State → Prop} {s : State} (hp : (fbX86 w n post).pre s) :
+    VG.X86.Taint.Wf (fbTaint w n) s := by
+  obtain ⟨hrd, hwr, dKD, dKV, dKS, dVD, dVS, dDS, dAD, dAV, dAS, dRD, dRV, dRS, dSK, dSD, dSV, dSS, fK, fV, fD, fS,
+    fE, fLo⟩ := hp
+  refine VG.X86.Taint.Wf.entryRoom rfl ⟨fun _ => ⟨?_, ?_, ?_⟩,
     fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim,
-    fun _ => ⟨by simp only [fbTaint]; omega_arith, ?_⟩, ?_⟩
+    fun _ => ⟨by simp only [fbTaint]; omega_arith, ?_⟩, ?_⟩ ?_
   · rw [hwr]
     exact .cons (Nat.zero_le _) (.cons (Nat.le_refl _) (.cons (Nat.le_refl _) .nil))
   · simp only [hwr, List.pairwise_cons, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq,
@@ -460,14 +593,24 @@ theorem fbTaint_wf {post : State → State → Prop} {s : State} (hp : (fbX86 po
     · exact VG.X86.Taint.frame_disjoint (n := 20) (by omega_arith) dRS dAS
   · intro p hp'
     simp only [fbTaint, List.mem_cons, List.not_mem_nil, or_false] at hp'
-    rcases hp' with rfl | rfl | rfl <;> refine ⟨by decide, ?_⟩ <;>
+    rcases hp' with rfl | rfl | rfl <;> refine ⟨by show _ + 4 ≤ 24; decide, ?_⟩ <;>
       simp [VG.X86.Taint.region, hwr, addr, arg, argAddr]
+  · intro _
+    refine ⟨fLo, fun r hr => ?_⟩
+    have e : (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 n = (s.gpr .esp - BitVec.ofNat 32 n).setWidth 64 :=
+      (VG.X86.Taint.sub_setWidth fLo).symm
+    change (⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 n, n⟩ : Region).Disjoint r
+    rw [e]
+    simp only [hwr, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl
+    exacts [dSD, dSV, dSS]
 
-theorem fbTaint_agree {post : State → State → Prop} {s₁ s₂ : State} (h₁ : (fbX86 post).pre s₁)
-    (h₂ : (fbX86 post).pre s₂) (hpub : (fbX86 post).pub s₁ s₂) : VG.X86.Taint.Agree fbTaint s₁ s₂ := by
+theorem fbTaint_agree {w n : Nat} {post : State → State → Prop} {s₁ s₂ : State} (h₁ : (fbX86 w n post).pre s₁)
+    (h₂ : (fbX86 w n post).pre s₂) (hpub : (fbX86 w n post).pub s₁ s₂) :
+    VG.X86.Taint.Agree (fbTaint w n) s₁ s₂ := by
   obtain ⟨hesp, ha⟩ := hpub
-  obtain ⟨-, hwr₁, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, fE₁⟩ := id h₁
-  obtain ⟨-, hwr₂, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, fE₂⟩ := id h₂
+  obtain ⟨-, hwr₁, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, fE₁, -⟩ := id h₁
+  obtain ⟨-, hwr₂, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, fE₂, -⟩ := id h₂
   refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun _ => ?_, fbTaint_wf h₁, fbTaint_wf h₂,
     VG.X86.Taint.slotsOk_empty, VG.X86.Taint.slotsAgree_empty, fun _ => hesp,
     fun k h4 hk => ?_⟩
@@ -475,47 +618,49 @@ theorem fbTaint_agree {post : State → State → Prop} {s₁ s₂ : State} (h�
     subst hr; exact hesp
   · rw [hwr₁, hwr₂, ha 1 (by omega_arith), ha 2 (by omega_arith), ha 3 (by omega_arith), ha 4 (by omega_arith)]
   · simp only [fbTaint] at hk
-    rw [show VG.X86.Taint.depth fbTaint.stk = 0 from rfl, Nat.zero_add]
+    rw [show VG.X86.Taint.depth (fbTaint w n).stk = 0 from rfl, Nat.zero_add]
     rw [VG.X86.Taint.argByte_eq (n := 24) fE₁ h4 hk, VG.X86.Taint.argByte_eq (n := 24) fE₂ h4 hk,
       Mem.readW_byte s₁.mem _ (Nat.mod_lt _ (by omega_arith)), Mem.readW_byte s₂.mem _ (Nat.mod_lt _ (by omega_arith))]
     exact congrArg _ (ha _ (by omega_arith))
 
-theorem ofb_ct : ConstantTime isa (fbX86 ofbPost).pre (fbX86 ofbPost).pub ofb :=
-  VG.Taint.constantTime (A := VG.X86.taint) fbTaint (fun _ _ h₁ h₂ hp => fbTaint_agree h₁ h₂ hp)
+theorem ofb_ct : ConstantTime isa (fbX86 11 0 ofbPost).pre (fbX86 11 0 ofbPost).pub ofb :=
+  VG.Taint.constantTime (A := VG.X86.taint) (fbTaint 11 0) (fun _ _ h₁ h₂ hp => fbTaint_agree h₁ h₂ hp)
     (by taint_decide)
 
-theorem cfbEncrypt_ct : ConstantTime isa (fbX86 cfbEncPost).pre (fbX86 cfbEncPost).pub cfbEncrypt :=
-  VG.Taint.constantTime (A := VG.X86.taint) fbTaint (fun _ _ h₁ h₂ hp => fbTaint_agree h₁ h₂ hp)
+theorem cfbEncrypt_ct : ConstantTime isa (fbX86 11 0 cfbEncPost).pre (fbX86 11 0 cfbEncPost).pub cfbEncrypt :=
+  VG.Taint.constantTime (A := VG.X86.taint) (fbTaint 11 0) (fun _ _ h₁ h₂ hp => fbTaint_agree h₁ h₂ hp)
     (by taint_decide)
 
-theorem cfbDecrypt_ct : ConstantTime isa (fbX86 cfbDecPost).pre (fbX86 cfbDecPost).pub cfbDecrypt :=
-  VG.Taint.constantTime (A := VG.X86.taint) fbTaint (fun _ _ h₁ h₂ hp => fbTaint_agree h₁ h₂ hp)
+theorem cfbDecrypt_ct : ConstantTime isa (fbX86 11 0 cfbDecPost).pre (fbX86 11 0 cfbDecPost).pub cfbDecrypt :=
+  VG.Taint.constantTime (A := VG.X86.taint) (fbTaint 11 0) (fun _ _ h₁ h₂ hp => fbTaint_agree h₁ h₂ hp)
     (by taint_decide)
 
 /-! ## The contracts -/
 
 /-- `fbX86` with the argument slots writable, as the signature's contract has
 them; the code reads them only (`fb_verified` narrows to `fbX86`). -/
-def wideContract (post : State → State → Prop) : Contract isa :=
-  { fbX86 post with
+def wideContract (w n : Nat) (post : State → State → Prop) : Contract isa :=
+  { fbX86 w n post with
     pre := fun s =>
       let sched : Region := ⟨(arg s 0).setWidth 64, 4168⟩
       let iv : Region := ⟨(arg s 1).setWidth 64, 8⟩
       let data : Region := ⟨(arg s 2).setWidth 64, 8 * (arg s 3).toNat⟩
-      let scratch : Region := ⟨(arg s 4).setWidth 64, 8 * 11⟩
+      let scratch : Region := ⟨(arg s 4).setWidth 64, 8 * w⟩
       let args : Region := ⟨argAddr s 0, 20⟩
       let ret : Region := ⟨(s.gpr .esp).setWidth 64, 4⟩
+      let stack := below (s.gpr .esp) n
       s.rd = [sched] ∧ s.wr = [iv, data, scratch, args] ∧
       sched.Disjoint data ∧ sched.Disjoint iv ∧ sched.Disjoint scratch ∧ iv.Disjoint data ∧ iv.Disjoint scratch ∧ data.Disjoint scratch ∧
       args.Disjoint data ∧ args.Disjoint iv ∧ args.Disjoint scratch ∧
       ret.Disjoint data ∧ ret.Disjoint iv ∧ ret.Disjoint scratch ∧
+      stack.Disjoint sched ∧ stack.Disjoint data ∧ stack.Disjoint iv ∧ stack.Disjoint scratch ∧
       (arg s 0).toNat + 4168 ≤ 2 ^ 32 ∧ (arg s 1).toNat + 8 ≤ 2 ^ 32 ∧
-      (arg s 2).toNat + 8 * (arg s 3).toNat ≤ 2 ^ 32 ∧ (arg s 4).toNat + 8 * 11 ≤ 2 ^ 32 ∧
-      (s.gpr .esp).toNat + 24 ≤ 2 ^ 32 }
+      (arg s 2).toNat + 8 * (arg s 3).toNat ≤ 2 ^ 32 ∧ (arg s 4).toNat + 8 * w ≤ 2 ^ 32 ∧
+      (s.gpr .esp).toNat + 24 ≤ 2 ^ 32 ∧ n ≤ (s.gpr .esp).toNat }
 
 def narrowRd (s : State) : List Region := [⟨(arg s 0).setWidth 64, 4168⟩, ⟨argAddr s 0, 20⟩]
-def narrowWr (s : State) : List Region :=
-  [⟨(arg s 2).setWidth 64, 8 * (arg s 3).toNat⟩, ⟨(arg s 1).setWidth 64, 8⟩, ⟨(arg s 4).setWidth 64, 8 * 11⟩]
+def narrowWr (w : Nat) (s : State) : List Region :=
+  [⟨(arg s 2).setWidth 64, 8 * (arg s 3).toNat⟩, ⟨(arg s 1).setWidth 64, 8⟩, ⟨(arg s 4).setWidth 64, 8 * w⟩]
 
 tactic_template "narrow_blowfish_x86_fbverified" : tactic => `(tactic| simp only [VG.Proof.Blowfish.X86.Fb.fbX86, VG.Proof.Blowfish.X86.Fb.wideContract,
                      VG.Proof.Blowfish.X86.Fb.narrowRd, VG.Proof.Blowfish.X86.Fb.narrowWr, VG.X86.arg_withRegions,
@@ -526,8 +671,8 @@ tactic_template "narrow_blowfish_x86_fbverified" loc:Lean.Parser.Tactic.location
                      VG.X86.argAddr_withRegions, VG.X86.State.withRegions_gpr, VG.X86.State.withRegions_mem,
                      VG.X86.State.withRegions_rd, VG.X86.State.withRegions_wr] $loc)
 
-theorem wide_pre (post : State → State → Prop) (s : State) (h : (wideContract post).pre s) :
-    (fbX86 post).pre (s.withRegions (narrowRd s) (narrowWr s)) := by
+theorem wide_pre (w n : Nat) (post : State → State → Prop) (s : State) (h : (wideContract w n post).pre s) :
+    (fbX86 w n post).pre (s.withRegions (narrowRd s) (narrowWr w s)) := by
   obtain ⟨_, _, h⟩ := h
   narrow_blowfish_x86_fbverified
   exact ⟨trivial, trivial, h⟩
@@ -545,7 +690,7 @@ def satState : State where
   wr := [⟨0x2000, 8⟩, ⟨0x3000, 0⟩, ⟨0x4000, 88⟩, ⟨0x8004, 20⟩]
 
 theorem wide_implies_ofb :
-    (wideContract ofbPost).Implies (Proof.Blowfish.fbScratchContract X86.abi 11 Proof.Blowfish.ofbPost) := by
+    (wideContract 11 0 ofbPost).Implies (Proof.Blowfish.fbScratchContract X86.abi 11 Proof.Blowfish.ofbPost) := by
   refine { pre := ?_, post := ?_, pub := ?_, sat := ?_ }
   · intro s h
     sig_pre [Proof.Blowfish.fbScratchContract, Proof.Blowfish.fbScratchSig, Spec.Blowfish.ofbSig, Proof.Blowfish.ofbPost, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, wideContract, fbX86, ofbPost] at h
@@ -557,6 +702,7 @@ theorem wide_implies_ofb :
       | with_reducible assumption
       | with_reducible exact Region.Disjoint.symm ‹_›
       | omega_arith
+      | with_reducible exact below0 _ _
       | (simp only [Nat.mul_comm] at *; first | with_reducible assumption | with_reducible exact Region.Disjoint.symm ‹_›)
   · sig_implies_post [Proof.Blowfish.fbScratchContract, Proof.Blowfish.fbScratchSig, Spec.Blowfish.ofbSig, Proof.Blowfish.ofbPost, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, wideContract, fbX86, ofbPost, ciph, ivAt, dataAt]
   · sig_implies_pub [Proof.Blowfish.fbScratchContract, Proof.Blowfish.fbScratchSig, Spec.Blowfish.ofbSig, Proof.Blowfish.ofbPost, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, wideContract, fbX86, ofbPost]
@@ -564,7 +710,7 @@ theorem wide_implies_ofb :
       [satState, arg, argAddr, Mem.readW, Mem.read] using satState
 
 theorem wide_implies_cfbEnc :
-    (wideContract cfbEncPost).Implies (Proof.Blowfish.fbScratchContract X86.abi 11 Proof.Blowfish.cfbEncPost) := by
+    (wideContract 11 0 cfbEncPost).Implies (Proof.Blowfish.fbScratchContract X86.abi 11 Proof.Blowfish.cfbEncPost) := by
   refine { pre := ?_, post := ?_, pub := ?_, sat := ?_ }
   · intro s h
     sig_pre [Proof.Blowfish.fbScratchContract, Proof.Blowfish.fbScratchSig, Spec.Blowfish.ofbSig, Proof.Blowfish.cfbEncPost, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, wideContract, fbX86, cfbEncPost] at h
@@ -576,6 +722,7 @@ theorem wide_implies_cfbEnc :
       | with_reducible assumption
       | with_reducible exact Region.Disjoint.symm ‹_›
       | omega_arith
+      | with_reducible exact below0 _ _
       | (simp only [Nat.mul_comm] at *; first | with_reducible assumption | with_reducible exact Region.Disjoint.symm ‹_›)
   · sig_implies_post [Proof.Blowfish.fbScratchContract, Proof.Blowfish.fbScratchSig, Spec.Blowfish.ofbSig, Proof.Blowfish.cfbEncPost, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, wideContract, fbX86, cfbEncPost, ciph, ivAt, dataAt]
   · sig_implies_pub [Proof.Blowfish.fbScratchContract, Proof.Blowfish.fbScratchSig, Spec.Blowfish.ofbSig, Proof.Blowfish.cfbEncPost, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, wideContract, fbX86, cfbEncPost]
@@ -583,7 +730,7 @@ theorem wide_implies_cfbEnc :
       [satState, arg, argAddr, Mem.readW, Mem.read] using satState
 
 theorem wide_implies_cfbDec :
-    (wideContract cfbDecPost).Implies (Proof.Blowfish.fbScratchContract X86.abi 11 Proof.Blowfish.cfbDecPost) := by
+    (wideContract 11 0 cfbDecPost).Implies (Proof.Blowfish.fbScratchContract X86.abi 11 Proof.Blowfish.cfbDecPost) := by
   refine { pre := ?_, post := ?_, pub := ?_, sat := ?_ }
   · intro s h
     sig_pre [Proof.Blowfish.fbScratchContract, Proof.Blowfish.fbScratchSig, Spec.Blowfish.ofbSig, Proof.Blowfish.cfbDecPost, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, wideContract, fbX86, cfbDecPost] at h
@@ -595,6 +742,7 @@ theorem wide_implies_cfbDec :
       | with_reducible assumption
       | with_reducible exact Region.Disjoint.symm ‹_›
       | omega_arith
+      | with_reducible exact below0 _ _
       | (simp only [Nat.mul_comm] at *; first | with_reducible assumption | with_reducible exact Region.Disjoint.symm ‹_›)
   · sig_implies_post [Proof.Blowfish.fbScratchContract, Proof.Blowfish.fbScratchSig, Spec.Blowfish.ofbSig, Proof.Blowfish.cfbDecPost, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, wideContract, fbX86, cfbDecPost, ciph, ivAt, dataAt]
   · sig_implies_pub [Proof.Blowfish.fbScratchContract, Proof.Blowfish.fbScratchSig, Spec.Blowfish.ofbSig, Proof.Blowfish.cfbDecPost, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, wideContract, fbX86, cfbDecPost]
@@ -619,18 +767,18 @@ theorem frameSat_pre (post : Spec.Blowfish.ofbSig.Post X86.abi.ptrBits) :
   implies_sat [Spec.Blowfish.ofbSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     [frameSat, X86.arg, X86.argAddr, Mem.readW, Mem.read] using frameSat
 
-theorem fb_verified {post : State → State → Prop} {c : Prog isa}
-    (hwp : ∀ s, (fbX86 post).pre s → WP isa c s fun s' => abiPreserved s s' ∧ (fbX86 post).post s s')
-    (hct : ConstantTime isa (fbX86 post).pre (fbX86 post).pub c)
+theorem fb_verified {w n : Nat} {post : State → State → Prop} {c : Prog isa}
+    (hwp : ∀ s, (fbX86 w n post).pre s → WP isa c s fun s' => abiPreserved s s' ∧ (fbX86 w n post).post s s')
+    (hct : ConstantTime isa (fbX86 w n post).pre (fbX86 w n post).pub c)
     (hR : ∀ s s' rd wr rd' wr', post (s.withRegions rd wr) (s'.withRegions rd' wr') → post s s')
-    {k : Contract isa} (hi : (wideContract post).Implies k) : Verified X86.target c k := by
+    {k : Contract isa} (hi : (wideContract w n post).Implies k) : Verified X86.target c k := by
   have hsat := hi.sat_left
-  have narrowSat : ∃ s, (fbX86 post).pre s := by
+  have narrowSat : ∃ s, (fbX86 w n post).pre s := by
     obtain ⟨s, hs⟩ := hsat
-    exact ⟨_, wide_pre post s hs⟩
+    exact ⟨_, wide_pre w n post s hs⟩
   apply Verified.of_implies _ hi
   refine Verified.narrowTo (Verified.of_correct hwp hct (.refl narrowSat))
-    narrowRd narrowWr (wide_pre post) ?_ ?_ ?_ ?_ hsat
+    narrowRd (narrowWr w) (wide_pre w n post) ?_ ?_ ?_ ?_ hsat
   · intro s h
     obtain ⟨rd, wr, _⟩ := h
     rw [rd, wr]

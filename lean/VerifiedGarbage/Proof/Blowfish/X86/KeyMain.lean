@@ -354,6 +354,12 @@ far, and its output replaces the next two entries: the P-array's, as words
 (`encryptP_run`), then the S-boxes', a byte per plane (`encryptS_run`). The
 pointer to the next entries and the encryptions left are in the working
 space, at `ebp + 32` and `ebp + 36`.
+
+The block function is any code that meets `BlkOk`: where `cipher 12 true`
+may run, it leaves the halves encrypted, changing only a lookup's registers,
+the halves' slots and the regions `X`, which are apart from the schedule,
+the working space's 64 bytes and the argument (`EncEnv`). `cipher 12 true`
+is one, with no such region (`blkOk_cipher`).
 -/
 
 @[expose] public section
@@ -943,9 +949,11 @@ end
 /-!
 # Blowfish on x86 (32-bit): key expansion
 
-`expandKey_correct`: our caller's registers saved, the initial schedule
-written, the key XORed into the P-array, the 521 encryptions, and the
-registers restored.
+`expandKeyWith_correct`: our caller's registers saved, the initial schedule
+written, the key XORed into the P-array, the 521 encryptions by any block
+function that fits (`BlkOk`), and the registers restored; the working space
+is of `W` bytes, of which key expansion itself uses 64. `expandKey_correct`
+is the baseline's, with `cipher 12 true` and 64 bytes.
 -/
 
 @[expose] public section
