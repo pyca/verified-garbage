@@ -28,22 +28,25 @@ meta import VerifiedGarbage.Proof.Framework.Lit
 /-!
 # Triple DES's modes with its S-boxes by `pshufb` on x86 (32-bit) meet their contracts
 
-`cbcEncryptChained_wp`: CBC encryption that updates the chaining value
-(`Cbc.cbcEncryptChained_wp_of`) over the core of one block by `pshufb`
-(`ssse3CoreSpec`, `ssse3Fits`), with the working space, 118 64-bit words,
-as the fifth argument (`Fb.fbX86`): the contract, taint and narrowing
-(`Fb.fb_verified`) of the functions over the other cores. It is constant
-time by the taint analysis of its code with the SSE instructions
-(`X86.sseTaint`); `_framed` runs it with its working space on the stack,
-zeroed on return.
+`cbcEncryptChained_wp`, `ofb_wp`, `cfbEncrypt_wp`, `cfb8Encrypt_wp`,
+`cfb8Decrypt_wp`, and for a message's last piece `cfbEncryptFinal_wp`,
+`cfbDecryptFinal_wp`, `ofbFinal_wp`: the modes' CBC encryption that updates
+the chaining value, OFB, CFB64 encryption and CFB8 (the `_of` theorems of
+`CbcVerified.lean`, `FbVerified.lean` and `FbFinalVerified.lean`) over the
+core of one block by `pshufb` (`ssse3CoreSpec`, `ssse3Fits`), with the
+working space, 118 64-bit words, as the fifth argument (`Fb.fbX86`): the
+contract, taint and narrowing (`Fb.fb_verified`) of the functions over the
+other cores. Each is constant time by the taint analysis of its code with
+the SSE instructions (`X86.sseTaint`); the `_framed` theorems run them with
+their working space on the stack, zeroed on return.
 
-As emitted (`Impl.TripleDes.X86.Ssse3.Fn`), the function then zeroes, of the
-984 bytes of stack its contract reserves below `esp`, the six doublewords
-that the residue analysis (`X86.rtaint`) finds it may leave different in two
-runs, the header of that frame, clears the registers a callee may change,
-and returns without secret residue (`X86.Scrub.verifiedScrubbedSel`, the
-kernel evaluating the analysis of the code with its cleanup:
-`taint_decide_ct`).
+As emitted (`Impl.TripleDes.X86.Ssse3.Fn`), each function then zeroes, of
+the 984 bytes of stack its contract reserves below `esp`, the six
+doublewords that the residue analysis (`X86.rtaint`) finds it may leave
+different in two runs, the header of that frame, clears the registers a
+callee may change, and returns without secret residue
+(`X86.Scrub.verifiedScrubbedSel`, the kernel evaluating the analysis of the
+code with its cleanup: `taint_decide_ct`).
 -/
 
 @[expose] public section
