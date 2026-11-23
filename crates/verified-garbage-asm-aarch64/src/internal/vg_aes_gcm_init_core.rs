@@ -20,6 +20,6 @@ bl {vg_aes_expand_key_scratch}
 .inst 0xf9405277,0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b,0xf940667c,0xf9406a7e,0xf9404273
 .inst 0x912803ff,0xd65f03c0
 .p2align 6",
-        vg_aes_expand_key_scratch = sym crate::gcm::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
+        vg_aes_expand_key_scratch = sym crate::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
     )
 }
