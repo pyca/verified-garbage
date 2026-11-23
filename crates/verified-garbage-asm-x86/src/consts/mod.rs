@@ -7,6 +7,10 @@
 pub struct Table<const N: usize>(pub [u8; N]);
 
 #[rustfmt::skip]
+mod vg_blowfish_ssse3;
+pub use vg_blowfish_ssse3::VG_BLOWFISH_SSSE3;
+
+#[rustfmt::skip]
 mod vg_brainpoolp256r1_comb;
 pub use vg_brainpoolp256r1_comb::VG_BRAINPOOLP256R1_COMB;
 
