@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.AesGcm.PPC64LE
-public import VerifiedGarbage.Impl.AesGcm.PPC64LE.GatherSplit
+public import VerifiedGarbage.Impl.AesGcm.PPC64LE.DirectGather
 public import VerifiedGarbage.Impl.AesGcm.PPC64LE.OpenTo
 public import VerifiedGarbage.Impl.AesGcm.PPC64LE.SealFused
 public import VerifiedGarbage.Impl.Scrub.PPC64LE
@@ -72,8 +72,8 @@ def «open» : Prog isa :=
 
 /-- `vg_aes_gcm_seal_gather`, as emitted. -/
 def sealGather : Prog isa :=
-  scrubAll 0 1552 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16, .v17, .v18, .v19]⟩
-    (Impl.AesGcm.PPC64LE.GatherSplit.sealGather)
+  scrubAll 0 1280 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16, .v17, .v18, .v19]⟩
+    Impl.AesGcm.PPC64LE.DirectGather.code
 
 /-- `vg_aes_gcm_open_to`, as emitted. -/
 def openTo : Prog isa :=
