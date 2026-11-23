@@ -62,6 +62,9 @@ the schedule in the core's slots is the key. The block function's call
 `wideCoreSpec d`: the same for the bitsliced core
 (`Impl.TripleDes.X86.wideCore d`), whose `crypt` is a call of the bitsliced
 function (`Ecb.batchFrame_ok`) on the buffer's 32 blocks.
+
+`Fits cs w`: what the lemmas about the functions need of a core and its
+`CoreSpec`, which both have (`dirFits`, `wideFits`).
 -/
 
 @[expose] public section
@@ -675,7 +678,11 @@ direction (`Mode.dirCoreSpec .encrypt`), with the working space as a fifth
 argument (`fbX86`, whose data is `st` bytes a step: 8, or 1 for CFB8, and
 whose working space is `w` doublewords: 118, or 151 for the bitsliced core,
 `Mode.wideCoreSpec`, which CFB64 decryption takes by groups of blocks,
-`Proof.Modes.X86.cfbDecLevels_wp`). The
+`Proof.Modes.X86.cfbDecLevels_wp`). The lemmas from `fbX86`'s
+precondition to the modes' (`seqPre_of`, `keyArgs_of`) and the functions'
+`_of` theorems are for any core that fits (`Mode.Fits`: a schedule as its
+key, blocks of two words, 16 bytes of stack, `w` doublewords), so another
+core of Triple DES gets its functions from them as these two do. The
 chaining value is written back, so it is writable, and the taint analysis
 knows the argument words holding the addresses of the data, the chaining
 value and the scratch buffer as the base addresses of the writable regions,
@@ -692,7 +699,7 @@ open VG.Proof.Modes.X86 (stkRegion)
 open VG.Proof.TripleDes (bytesAt_eq)
 
 /-- The scratch buffer of a core that fits is the fifth argument's `w` words. -/
-theorem scr_eq {c : Modes.X86.Core} {cs : Proof.Modes.X86.CoreSpec c} {w : Nat} (f : Mode.Fits cs w) (s : State) :
+theorem scr_eq {c : VG.Impl.Modes.X86.Core} {cs : Proof.Modes.X86.CoreSpec c} {w : Nat} (f : Mode.Fits cs w) (s : State) :
     Modes.X86.scrR s c = ⟨(arg s 4).setWidth 64, 8 * w⟩ := by
   show (⟨(arg s (c.ka + 3)).setWidth 64, 4 * c.total⟩ : Region) = _
   rw [f.ka, f.total, show 4 * (2 * w) = 8 * w by omega_arith]
@@ -778,7 +785,7 @@ def fbX86 (w st : Nat) (post : State → State → Prop) : Contract X86.isa wher
   pub s₁ s₂ := s₁.gpr .esp = s₂.gpr .esp ∧ ∀ i < 5, arg s₁ i = arg s₂ i
 
 /-- `fbX86`'s precondition gives the modes', for a core that fits. -/
-theorem seqPre_of {c : Modes.X86.Core} {cs : Proof.Modes.X86.CoreSpec c} {w : Nat} (f : Fits cs w)
+theorem seqPre_of {c : VG.Impl.Modes.X86.Core} {cs : Proof.Modes.X86.CoreSpec c} {w : Nat} (f : Fits cs w)
     {st : Nat} {post : State → State → Prop} {M : Mode}
     (hstep : M.step = st) (hst : 0 < st) (hst8 : st ≤ 8) {s : State} (h : (fbX86 w st post).pre s) :
     SeqPre c M s := by
@@ -798,7 +805,9 @@ theorem seqPre_of {c : Modes.X86.Core} {cs : Proof.Modes.X86.CoreSpec c} {w : Na
   · show (⟨(arg s (c.ka + 3)).setWidth 64, 4 * c.total⟩ : Region) ∈ _
     rw [hwr, hka, htot, show 4 * (2 * w) = 8 * w by omega_arith]; simp
   · show (arg s (c.ka + 3)).toNat + 4 * c.total ≤ 2 ^ 32
-    rw [hka, htot]; omega_arith
+    rw [hka, htot]
+    show (arg s 4).toNat + 4 * (2 * w) ≤ 2 ^ 32
+    omega_arith
   · show (⟨(arg s c.ka).setWidth 64, 4 * c.bw⟩ : Region) ∈ _
     rw [hwr, hka, hbw]; simp
   · show (⟨(arg s c.ka).setWidth 64, 4 * c.bw⟩ : Region) ∈ _
@@ -839,7 +848,7 @@ theorem seqPre_of {c : Modes.X86.Core} {cs : Proof.Modes.X86.CoreSpec c} {w : Na
   · rw [hstep, hbw]; exact ⟨hst, hst8⟩
 
 /-- `fbX86`'s precondition gives the key's, for a core that fits. -/
-theorem keyArgs_of {c : Modes.X86.Core} {cs : Proof.Modes.X86.CoreSpec c} {w : Nat} (f : Fits cs w)
+theorem keyArgs_of {c : VG.Impl.Modes.X86.Core} {cs : Proof.Modes.X86.CoreSpec c} {w : Nat} (f : Fits cs w)
     {st : Nat} {post : State → State → Prop} {s : State}
     (h : (fbX86 w st post).pre s) : cs.KeyArgs s [Modes.X86.scrR s c]
       (f.toKey (Spec.TripleDes.scheduleAt s.mem ((arg s 0).setWidth 64))) := by
@@ -859,60 +868,84 @@ theorem levels_fit (d : Spec.TripleDes.Direction) : ∀ g ∈ levels, 0 < g ∧ 
   simp only [levels, List.mem_cons, List.not_mem_nil, or_false] at hg
   rcases hg with rfl | rfl | rfl | rfl | rfl <;> exact ⟨by decide, by show _ ≤ 32; decide⟩
 
-theorem wideCore_ka (d : Spec.TripleDes.Direction) : (wideCore d).ka = 1 := rfl
-theorem dataW_eq (d : Spec.TripleDes.Direction) (m : Mem) (s : State) :
-    Proof.Modes.chunksAt (4 * (wideCore d).bw) m ((arg s 2).setWidth 64) (arg s 3).toNat = dataAt m s :=
-  (cbcBlocksAt_eq _ _ _).symm
-theorem ivW_eq (d : Spec.TripleDes.Direction) (m : Mem) (s : State) :
-    Spec.Aes.bytesAt m ((arg s 1).setWidth 64) (4 * (wideCore d).bw) = ivAt m s := rfl
-theorem cipherW_eq (s : State) :
-    (wideCoreSpec .encrypt).cipher (Spec.TripleDes.scheduleAt s.mem ((arg s 0).setWidth 64)) = ciph s := rfl
-
-theorem dirCore_ka : dirCore.ka = 1 := rfl
-
+/-- The data, the chaining value and the bytes of the modes' results, as the postconditions have them. -/
 theorem data_eq (m : Mem) (s : State) :
-    Proof.Modes.chunksAt (4 * dirCore.bw) m ((arg s 2).setWidth 64) (arg s 3).toNat = dataAt m s :=
+    Proof.Modes.chunksAt 8 m ((arg s 2).setWidth 64) (arg s 3).toNat = dataAt m s :=
   (cbcBlocksAt_eq _ _ _).symm
-theorem iv_eq (m : Mem) (s : State) :
-    Spec.Aes.bytesAt m ((arg s 1).setWidth 64) (4 * dirCore.bw) = ivAt m s := rfl
+theorem iv_eq (m : Mem) (s : State) : Spec.Aes.bytesAt m ((arg s 1).setWidth 64) 8 = ivAt m s := rfl
 theorem bytes_eq (m : Mem) (s : State) :
     Spec.Aes.bytesAt m ((arg s 2).setWidth 64) (arg s 3).toNat = bytesOf m s := rfl
-theorem cipher_eq (s : State) :
-    dirCoreSpec.cipher (Spec.TripleDes.scheduleAt s.mem ((arg s 0).setWidth 64)) = ciph s := rfl
 
-tactic_template "tdes_post_eq" h:ident h':ident : tactic =>
+/-- The modes' results (`h`, `h'`) for the core that fits by `f`, whose
+cipher `hc` gives, as the functions' postconditions state them. -/
+tactic_template "tdes_post_eq " f:term:max hc:term:max h:ident h':ident : tactic =>
   `(tactic| simp only [Proof.Modes.X86.blocks0, Proof.Modes.X86.bytes0, Proof.Modes.X86.iv0, Proof.Modes.X86.Dp,
-                     Proof.Modes.X86.P, Proof.Modes.X86.N, dirCore_ka, Nat.reduceAdd, data_eq, iv_eq, bytes_eq, cipher_eq]
-                     at $h:ident $h':ident)
+                     Proof.Modes.X86.P, Proof.Modes.X86.N, VG.Proof.TripleDes.X86.Mode.Fits.ka $f,
+                     VG.Proof.TripleDes.X86.Mode.Fits.bw $f, Nat.reduceAdd, Nat.reduceMul,
+                     VG.Proof.TripleDes.X86.Fb.data_eq, VG.Proof.TripleDes.X86.Fb.iv_eq,
+                     VG.Proof.TripleDes.X86.Fb.bytes_eq, $hc:term] at $h:ident $h':ident)
+
+section
+variable {c : VG.Impl.Modes.X86.Core} {cs : Proof.Modes.X86.CoreSpec c} {w : Nat}
+
+/-- A whole block is a step of the modes over a core that fits. -/
+theorem step_block (f : Fits cs w) : 4 * c.bw = 8 := by rw [f.bw]
+
+/-- OFB over any core that fits, whose cipher is Triple DES's. -/
+theorem ofb_wp_of (f : Fits cs w) (hc : ∀ k, cs.cipher (f.toKey k) = Spec.TripleDes.cipher k) {s₀ : State}
+    (hp : (fbX86 w 8 ofbPost).pre s₀) :
+    WP isa (c.seq (Mode.ofb c.bw)) s₀ fun s' => abiPreserved s₀ s' ∧ (fbX86 w 8 ofbPost).post s₀ s' :=
+  WP.mono (ofb_wp cs (seqPre_of f (step_block f) (by decide) (by decide) hp) (keyArgs_of f hp))
+    fun _ ⟨h1, h2, h3⟩ => by tdes_post_eq f hc h2 h3; exact ⟨h1, h2, h3⟩
+
+/-- CFB64 encryption over any core that fits. -/
+theorem cfbEncrypt_wp_of (f : Fits cs w) (hc : ∀ k, cs.cipher (f.toKey k) = Spec.TripleDes.cipher k) {s₀ : State}
+    (hp : (fbX86 w 8 cfbEncPost).pre s₀) :
+    WP isa (c.seq (Mode.cfbEnc c.bw)) s₀ fun s' => abiPreserved s₀ s' ∧ (fbX86 w 8 cfbEncPost).post s₀ s' :=
+  WP.mono (cfbEnc_wp cs (seqPre_of f (step_block f) (by decide) (by decide) hp) (keyArgs_of f hp))
+    fun _ ⟨h1, h2, h3⟩ => by tdes_post_eq f hc h2 h3; exact ⟨h1, h2, h3⟩
+
+/-- CFB8 encryption over any core that fits. -/
+theorem cfb8Encrypt_wp_of (f : Fits cs w) (hc : ∀ k, cs.cipher (f.toKey k) = Spec.TripleDes.cipher k) {s₀ : State}
+    (hp : (fbX86 w 1 cfb8EncPost).pre s₀) :
+    WP isa (c.seq (Mode.cfb8Enc c.bw)) s₀ fun s' => abiPreserved s₀ s' ∧ (fbX86 w 1 cfb8EncPost).post s₀ s' :=
+  WP.mono (cfb8Enc_wp cs (seqPre_of f (st := 1) rfl (by decide) (by decide) hp) (keyArgs_of f hp))
+    fun _ ⟨h1, h2, h3⟩ => by tdes_post_eq f hc h2 h3; exact ⟨h1, h2, h3⟩
+
+/-- CFB8 decryption over any core that fits. -/
+theorem cfb8Decrypt_wp_of (f : Fits cs w) (hc : ∀ k, cs.cipher (f.toKey k) = Spec.TripleDes.cipher k) {s₀ : State}
+    (hp : (fbX86 w 1 cfb8DecPost).pre s₀) :
+    WP isa (c.seq (Mode.cfb8Dec c.bw)) s₀ fun s' => abiPreserved s₀ s' ∧ (fbX86 w 1 cfb8DecPost).post s₀ s' :=
+  WP.mono (cfb8Dec_wp cs (seqPre_of f (st := 1) rfl (by decide) (by decide) hp) (keyArgs_of f hp))
+    fun _ ⟨h1, h2, h3⟩ => by tdes_post_eq f hc h2 h3; exact ⟨h1, h2, h3⟩
+
+end
 
 theorem ofb_wp_x86 {s₀ : State} (hp : (fbX86 118 8 ofbPost).pre s₀) :
     WP isa ofb s₀ fun s' => abiPreserved s₀ s' ∧ (fbX86 118 8 ofbPost).post s₀ s' :=
-  WP.mono (ofb_wp dirCoreSpec (seqPre_of rfl (by decide) (by decide) hp) (keyArgs_of hp))
-    fun _ ⟨h1, h2, h3⟩ => by tdes_post_eq h2 h3; exact ⟨h1, h2, h3⟩
+  ofb_wp_of dirFits (fun _ => rfl) hp
 
 theorem cfbEncrypt_wp {s₀ : State} (hp : (fbX86 118 8 cfbEncPost).pre s₀) :
     WP isa cfbEncrypt s₀ fun s' => abiPreserved s₀ s' ∧ (fbX86 118 8 cfbEncPost).post s₀ s' :=
-  WP.mono (cfbEnc_wp dirCoreSpec (seqPre_of rfl (by decide) (by decide) hp) (keyArgs_of hp))
-    fun _ ⟨h1, h2, h3⟩ => by tdes_post_eq h2 h3; exact ⟨h1, h2, h3⟩
+  cfbEncrypt_wp_of dirFits (fun _ => rfl) hp
+
+/-- The bitsliced core's cipher in the encryption direction. -/
+theorem cipherW_eq (k : Spec.TripleDes.Schedule) :
+    (wideCoreSpec .encrypt).cipher ((wideFits .encrypt).toKey k) = Spec.TripleDes.cipher k := rfl
 
 theorem cfbDecrypt_wp {s₀ : State} (hp : (fbX86 151 8 cfbDecPost).pre s₀) :
     WP isa cfbDecrypt s₀ fun s' => abiPreserved s₀ s' ∧ (fbX86 151 8 cfbDecPost).post s₀ s' :=
   WP.mono (cfbDecLevels_wp (wideCoreSpec .encrypt) (levels_fit .encrypt)
-      (seqPreW_of .encrypt rfl (by decide) (by decide) hp) (keyArgsW_of .encrypt hp))
-    fun _ ⟨h1, h2, h3⟩ => by
-      simp only [Proof.Modes.X86.blocks0, Proof.Modes.X86.iv0, Proof.Modes.X86.Dp, Proof.Modes.X86.P,
-        Proof.Modes.X86.N, wideCore_ka, Nat.reduceAdd, dataW_eq, ivW_eq, cipherW_eq] at h2 h3
-      exact ⟨h1, h2, h3⟩
+      (seqPre_of (wideFits .encrypt) rfl (by decide) (by decide) hp) (keyArgs_of (wideFits .encrypt) hp))
+    fun _ ⟨h1, h2, h3⟩ => by tdes_post_eq (wideFits .encrypt) cipherW_eq h2 h3; exact ⟨h1, h2, h3⟩
 
 theorem cfb8Encrypt_wp {s₀ : State} (hp : (fbX86 118 1 cfb8EncPost).pre s₀) :
     WP isa cfb8Encrypt s₀ fun s' => abiPreserved s₀ s' ∧ (fbX86 118 1 cfb8EncPost).post s₀ s' :=
-  WP.mono (cfb8Enc_wp dirCoreSpec (seqPre_of rfl (by decide) (by decide) hp) (keyArgs_of hp))
-    fun _ ⟨h1, h2, h3⟩ => by tdes_post_eq h2 h3; exact ⟨h1, h2, h3⟩
+  cfb8Encrypt_wp_of dirFits (fun _ => rfl) hp
 
 theorem cfb8Decrypt_wp {s₀ : State} (hp : (fbX86 118 1 cfb8DecPost).pre s₀) :
     WP isa cfb8Decrypt s₀ fun s' => abiPreserved s₀ s' ∧ (fbX86 118 1 cfb8DecPost).post s₀ s' :=
-  WP.mono (cfb8Dec_wp dirCoreSpec (seqPre_of rfl (by decide) (by decide) hp) (keyArgs_of hp))
-    fun _ ⟨h1, h2, h3⟩ => by tdes_post_eq h2 h3; exact ⟨h1, h2, h3⟩
+  cfb8Decrypt_wp_of dirFits (fun _ => rfl) hp
 
 /-! ## Constant time -/
 
