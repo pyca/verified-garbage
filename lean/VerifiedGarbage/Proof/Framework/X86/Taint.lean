@@ -970,7 +970,7 @@ theorem exec_dst {i : Instr} {d : Reg} (hd : dst i = some d) {s s' : State}
   | store m r => simp [dst] at hd
   | store8 m r => simp [dst] at hd
   | mul r | movdquLoad | movdquStore | movqLoad | movqStore | movdquTbl | movqTbl | xop | mop | mmxStore | mmxEnter | emms
-  | pmuludq | mcdtLeave => simp [dst] at hd
+  | pmuludq | pmullw | pmulhw | mcdtLeave => simp [dst] at hd
 
 theorem Agree.write {τ τ' : T} {i : Instr} {d : Reg} (hd : dst i = some d) (hesp : d ≠ .esp)
     {s₁ s₂ s₁' s₂' : State}
@@ -1098,7 +1098,7 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     addrs i s₁ = addrs i s₂ ∧ Agree τ' s₁' s₂' := by
   cases i with
   | symPush | push | pop | alloc | free | callr | movdquLoad | movdquStore | movqLoad | movqStore | movdquTbl | movqTbl | xop | mop | mmxStore | mmxEnter | emms
-  | pmuludq | mcdtEnter | mcdtLeave => simp only [step, reduceCtorEq] at hs
+  | pmuludq | pmullw | pmulhw | mcdtEnter | mcdtLeave => simp only [step, reduceCtorEq] at hs
   | mov d src =>
     simp only [step] at hs
     split at hs <;> [skip; cases hs]

@@ -127,7 +127,7 @@ theorem esAddr_addrs {i : Instr} (h : esAddr i = true) {s s' : State} (h₁ : s.
   | movzx8 d m => simp only [esAddr] at h; simp only [addrs, esBase_ea h h₁ h₂]
   | shift | bswap | mul => rfl
   | symPush | push | pop | alloc | free | movdquLoad | movdquStore | movqLoad | movqStore | movdquTbl | movqTbl | xop | mop | mmxStore | mmxEnter | emms
-  | pmuludq | mcdtEnter | mcdtLeave | callr => simp [esAddr] at h
+  | pmuludq | pmullw | pmulhw | mcdtEnter | mcdtLeave | callr => simp [esAddr] at h
 
 theorem esOk_block : ∀ {is : List Instr}, is.all esOk = true →
     RelCT isa (fun s s' => s.gpr .esp = s'.gpr .esp ∧ s.gpr .esi = s'.gpr .esi) (.block is) fun _ _ => True := by
