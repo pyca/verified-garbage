@@ -178,6 +178,83 @@ jne 215b
     )
 }
 
+/// The CPU features `vg_blowfish_ecb_encrypt_ssse3` requires (`Artifact.features`).
+pub const VG_BLOWFISH_ECB_ENCRYPT_SSSE3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3);
+
+/// Blowfish ECB encryption (SP 800-38A §6.1's construction) of `n` complete 8-byte blocks at `data`, in place, under the schedule written by `vg_blowfish_expand_key`. No padding is added or removed. For `n = 0`, no data is transformed.
+///
+/// Contract: `VG.Spec.Blowfish.ecbEncryptContract`. Constant time: only pointers and `n` may affect timing, not the schedule or data, including the S-box indices.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// The function may overwrite the arguments on the stack, as the calling convention lets it.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 4168 bytes.
+/// * `data` must be valid for reads and writes of `8 * n` bytes.
+/// * `data` must not overlap `schedule` (distinct Rust objects never do).
+/// * Neither `schedule` nor `data` may overlap the arguments on the stack, overlap the return address on the stack or the 920 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `ssse3` target feature.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_blowfish_ecb_encrypt_ssse3(schedule: *const [u8; 4168], data: *mut [u8; 8], n: usize) {
+    core::arch::naked_asm!(
+        r#".base64 "jaQkcPz//4uEJJQDAACJRCQEi4QkmAMAAIlEJAiLhCScAwAAiUQkDIngg8AUiUQkEItEJBCJmFADAACJsFQDAACJuFgDAACJqFwDAACJx4tEJAiJh2ADAACLRCQMiYdkAwAAi4dkAwAAg/gQ"
+jb 20f
+22:
+.base64 "i7dgAwAAi69kAwAAiwaJh4ABAACLRgSJh4QBAACLRgiJh4gBAACLRgyJh4wBAACLRhCJh5ABAACLRhSJh5QBAACLRhiJh5gBAACLRhyJh5wBAACLRiCJh6ABAACLRiSJh6QBAACLRiiJh6gBAACLRiyJh6wBAACLRjCJh7ABAACLRjSJh7QBAACLRjiJh7gBAACLRjyJh7wBAACLRkCJh8ABAACLRkSJh8QBAACLRkiJh8gBAACLRkyJh8wBAACLRlCJh9ABAACLRlSJh9QBAACLRliJh9gBAACLRlyJh9wBAACLRmCJh+ABAACLRmSJh+QBAACLRmiJh+gBAACLRmyJh+wBAACLRnCJh/ABAACLRnSJh/QBAACLRniJh/gBAACLRnyJh/wBAACLdCQEifKBwgAQAAA="
+call {vg_blowfish_crypt_blocks16_ssse3}
+.base64 "i7dgAwAAi69kAwAAi4eAAQAAiQaLh4QBAACJRgSLh4gBAACJRgiLh4wBAACJRgyLh5ABAACJRhCLh5QBAACJRhSLh5gBAACJRhiLh5wBAACJRhyLh6ABAACJRiCLh6QBAACJRiSLh6gBAACJRiiLh6wBAACJRiyLh7ABAACJRjCLh7QBAACJRjSLh7gBAACJRjiLh7wBAACJRjyLh8ABAACJRkCLh8QBAACJRkSLh8gBAACJRkiLh8wBAACJRkyLh9ABAACJRlCLh9QBAACJRlSLh9gBAACJRliLh9wBAACJRlyLh+ABAACJRmCLh+QBAACJRmSLh+gBAACJRmiLh+wBAACJRmyLh/ABAACJRnCLh/QBAACJRnSLh/gBAACJRniLh/wBAACJRnyBxoAAAACD7RCJt2ADAACJr2QDAACD/RA="
+jae 22b
+jmp 21f
+20:
+21:
+.base64 "i4dkAwAAg/gI"
+jb 23f
+25:
+.base64 "i7dgAwAAi69kAwAAiwaJh4ABAACLRgSJh4QBAACLRgiJh4gBAACLRgyJh4wBAACLRhCJh5ABAACLRhSJh5QBAACLRhiJh5gBAACLRhyJh5wBAACLRiCJh6ABAACLRiSJh6QBAACLRiiJh6gBAACLRiyJh6wBAACLRjCJh7ABAACLRjSJh7QBAACLRjiJh7gBAACLRjyJh7wBAACLdCQEifKBwgAQAAA="
+call {vg_blowfish_crypt_blocks16_ssse3}
+.base64 "i7dgAwAAi69kAwAAi4eAAQAAiQaLh4QBAACJRgSLh4gBAACJRgiLh4wBAACJRgyLh5ABAACJRhCLh5QBAACJRhSLh5gBAACJRhiLh5wBAACJRhyLh6ABAACJRiCLh6QBAACJRiSLh6gBAACJRiiLh6wBAACJRiyLh7ABAACJRjCLh7QBAACJRjSLh7gBAACJRjiLh7wBAACJRjyDxkCD7QiJt2ADAACJr2QDAACD/Qg="
+jae 25b
+jmp 24f
+23:
+24:
+.base64 "i4dkAwAAg/gE"
+jb 26f
+28:
+.base64 "i7dgAwAAi69kAwAAiwaJh4ABAACLRgSJh4QBAACLRgiJh4gBAACLRgyJh4wBAACLRhCJh5ABAACLRhSJh5QBAACLRhiJh5gBAACLRhyJh5wBAACLdCQEifKBwgAQAAA="
+call {vg_blowfish_crypt_blocks16_ssse3}
+.base64 "i7dgAwAAi69kAwAAi4eAAQAAiQaLh4QBAACJRgSLh4gBAACJRgiLh4wBAACJRgyLh5ABAACJRhCLh5QBAACJRhSLh5gBAACJRhiLh5wBAACJRhyDxiCD7QSJt2ADAACJr2QDAACD/QQ="
+jae 28b
+jmp 27f
+26:
+27:
+.base64 "i4dkAwAAg/gC"
+jb 29f
+211:
+.base64 "i7dgAwAAi69kAwAAiwaJh4ABAACLRgSJh4QBAACLRgiJh4gBAACLRgyJh4wBAACLdCQEifKBwgAQAAA="
+call {vg_blowfish_crypt_blocks16_ssse3}
+.base64 "i7dgAwAAi69kAwAAi4eAAQAAiQaLh4QBAACJRgSLh4gBAACJRgiLh4wBAACJRgyDxhCD7QKJt2ADAACJr2QDAACD/QI="
+jae 211b
+jmp 210f
+29:
+210:
+.base64 "i4dkAwAAhcA="
+je 212f
+214:
+.base64 "i7dgAwAAi69kAwAAiwaJh4ABAACLRgSJh4QBAACLdCQEifKBwgAQAAA="
+call {vg_blowfish_crypt_blocks16_ssse3}
+.base64 "i7dgAwAAi69kAwAAi4eAAQAAiQaLh4QBAACJRgSDxgiD7QGJt2ADAACJr2QDAAA="
+jne 214b
+jmp 213f
+212:
+213:
+.base64 "i59QAwAAi7dUAwAAi69cAwAAi79YAwAAZg/vwLkAAAAA8w9/RCQU8w9/RCQk8w9/RCQ08w9/RCRE8w9/RCRU8w9/RCRk8w9/RCR08w9/hCSEAAAA8w9/hCSUAAAA8w9/hCSkAAAA8w9/hCS0AAAA8w9/hCTEAAAA8w9/hCTUAAAA8w9/hCTkAAAA8w9/hCT0AAAA8w9/hCQEAQAA8w9/hCQUAQAA8w9/hCQkAQAA8w9/hCQ0AQAA8w9/hCREAQAA8w9/hCRUAQAA8w9/hCRkAQAA8w9/hCR0AQAA8w9/hCSEAQAA8w9/hCSUAQAA8w9/hCSkAQAA8w9/hCS0AQAA8w9/hCTEAQAA8w9/hCTUAQAA8w9/hCTkAQAA8w9/hCT0AQAA8w9/hCQEAgAA8w9/hCQUAgAA8w9/hCQkAgAA8w9/hCQ0AgAA8w9/hCREAgAA8w9/hCRUAgAA8w9/hCRkAgAA8w9/hCR0AgAA8w9/hCSEAgAA8w9/hCSUAgAA8w9/hCSkAgAA8w9/hCS0AgAA8w9/hCTEAgAA8w9/hCTUAgAA8w9/hCTkAgAA8w9/hCT0AgAA8w9/hCQEAwAA8w9/hCQUAwAA8w9/hCQkAwAA8w9/hCQ0AwAA8w9/hCREAwAA8w9/hCRUAwAA8w9/hCRkAwAA8w9/hCR0AwAAiYwkhAMAAImMJIgDAACNpCSQAwAAjaQkaPz//7kAAAAAiUwkBIlMJAiJTCQMiUwkEIlMJBSJTCQYiYwklAMAAI2kJJgDAAC4AAAAALoAAAAAMclmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/8M="
+.p2align 6"#,
+        vg_blowfish_crypt_blocks16_ssse3 = sym super::blowfish::vg_blowfish_crypt_blocks16_ssse3::vg_blowfish_crypt_blocks16_ssse3,
+    )
+}
+
 /// Blowfish ECB encryption (SP 800-38A §6.1's construction) of `n` complete 8-byte blocks at `data`, in place, under the schedule written by `vg_blowfish_expand_key`. No padding is added or removed. For `n = 0`, no data is transformed.
 ///
 /// Contract: `VG.Spec.Blowfish.ecbEncryptContract`. Constant time: only pointers and `n` may affect timing, not the schedule or data, including the S-box indices.
@@ -225,6 +302,83 @@ jmp 21f
 21:
 .base64 "i10Ai3UEi30Ii20MZg/vwLkAAAAA8w9/RCQU8w9/RCQkiUwkNIlMJDiNpCQUAQAAZg/vwLkAAAAAjaQk7P7///MPfwQk8w9/RCQQ8w9/RCQg8w9/RCQw8w9/RCRA8w9/RCRQ8w9/RCRg8w9/RCRw8w9/hCSAAAAA8w9/hCSQAAAA8w9/hCSgAAAA8w9/hCSwAAAA8w9/hCTAAAAA8w9/hCTQAAAA8w9/hCTgAAAA8w9/hCTwAAAA8w9/hCQAAQAAiYwkEAEAAI2kJBQBAAC4AAAAALoAAAAAMclmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/8M="
 .p2align 6"#,
+    )
+}
+
+/// The CPU features `vg_blowfish_ecb_decrypt_ssse3` requires (`Artifact.features`).
+pub const VG_BLOWFISH_ECB_DECRYPT_SSSE3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3);
+
+/// Blowfish ECB decryption (SP 800-38A §6.1's construction) of `n` complete 8-byte blocks at `data`, in place, under the schedule written by `vg_blowfish_expand_key`. No padding is added or removed. For `n = 0`, no data is transformed.
+///
+/// Contract: `VG.Spec.Blowfish.ecbDecryptContract`. Constant time: only pointers and `n` may affect timing, not the schedule or data, including the S-box indices.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// The function may overwrite the arguments on the stack, as the calling convention lets it.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 4168 bytes.
+/// * `data` must be valid for reads and writes of `8 * n` bytes.
+/// * `data` must not overlap `schedule` (distinct Rust objects never do).
+/// * Neither `schedule` nor `data` may overlap the arguments on the stack, overlap the return address on the stack or the 920 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `ssse3` target feature.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_blowfish_ecb_decrypt_ssse3(schedule: *const [u8; 4168], data: *mut [u8; 8], n: usize) {
+    core::arch::naked_asm!(
+        r#".base64 "jaQkcPz//4uEJJQDAACJRCQEi4QkmAMAAIlEJAiLhCScAwAAiUQkDIngg8AUiUQkEItEJBCJmFADAACJsFQDAACJuFgDAACJqFwDAACJx4tEJAiJh2ADAACLRCQMiYdkAwAAi4dkAwAAg/gQ"
+jb 20f
+22:
+.base64 "i7dgAwAAi69kAwAAiwaJh4ABAACLRgSJh4QBAACLRgiJh4gBAACLRgyJh4wBAACLRhCJh5ABAACLRhSJh5QBAACLRhiJh5gBAACLRhyJh5wBAACLRiCJh6ABAACLRiSJh6QBAACLRiiJh6gBAACLRiyJh6wBAACLRjCJh7ABAACLRjSJh7QBAACLRjiJh7gBAACLRjyJh7wBAACLRkCJh8ABAACLRkSJh8QBAACLRkiJh8gBAACLRkyJh8wBAACLRlCJh9ABAACLRlSJh9QBAACLRliJh9gBAACLRlyJh9wBAACLRmCJh+ABAACLRmSJh+QBAACLRmiJh+gBAACLRmyJh+wBAACLRnCJh/ABAACLRnSJh/QBAACLRniJh/gBAACLRnyJh/wBAACLdCQEi4ZEEAAAiYcAAwAAi4ZAEAAAiYcEAwAAi4Y8EAAAiYcIAwAAi4Y4EAAAiYcMAwAAi4Y0EAAAiYcQAwAAi4YwEAAAiYcUAwAAi4YsEAAAiYcYAwAAi4YoEAAAiYccAwAAi4YkEAAAiYcgAwAAi4YgEAAAiYckAwAAi4YcEAAAiYcoAwAAi4YYEAAAiYcsAwAAi4YUEAAAiYcwAwAAi4YQEAAAiYc0AwAAi4YMEAAAiYc4AwAAi4YIEAAAiYc8AwAAi4YEEAAAiYdAAwAAi4YAEAAAiYdEAwAAifqBwgADAAA="
+call {vg_blowfish_crypt_blocks16_ssse3}
+.base64 "i7dgAwAAi69kAwAAi4eAAQAAiQaLh4QBAACJRgSLh4gBAACJRgiLh4wBAACJRgyLh5ABAACJRhCLh5QBAACJRhSLh5gBAACJRhiLh5wBAACJRhyLh6ABAACJRiCLh6QBAACJRiSLh6gBAACJRiiLh6wBAACJRiyLh7ABAACJRjCLh7QBAACJRjSLh7gBAACJRjiLh7wBAACJRjyLh8ABAACJRkCLh8QBAACJRkSLh8gBAACJRkiLh8wBAACJRkyLh9ABAACJRlCLh9QBAACJRlSLh9gBAACJRliLh9wBAACJRlyLh+ABAACJRmCLh+QBAACJRmSLh+gBAACJRmiLh+wBAACJRmyLh/ABAACJRnCLh/QBAACJRnSLh/gBAACJRniLh/wBAACJRnyBxoAAAACD7RCJt2ADAACJr2QDAACD/RA="
+jae 22b
+jmp 21f
+20:
+21:
+.base64 "i4dkAwAAg/gI"
+jb 23f
+25:
+.base64 "i7dgAwAAi69kAwAAiwaJh4ABAACLRgSJh4QBAACLRgiJh4gBAACLRgyJh4wBAACLRhCJh5ABAACLRhSJh5QBAACLRhiJh5gBAACLRhyJh5wBAACLRiCJh6ABAACLRiSJh6QBAACLRiiJh6gBAACLRiyJh6wBAACLRjCJh7ABAACLRjSJh7QBAACLRjiJh7gBAACLRjyJh7wBAACLdCQEi4ZEEAAAiYcAAwAAi4ZAEAAAiYcEAwAAi4Y8EAAAiYcIAwAAi4Y4EAAAiYcMAwAAi4Y0EAAAiYcQAwAAi4YwEAAAiYcUAwAAi4YsEAAAiYcYAwAAi4YoEAAAiYccAwAAi4YkEAAAiYcgAwAAi4YgEAAAiYckAwAAi4YcEAAAiYcoAwAAi4YYEAAAiYcsAwAAi4YUEAAAiYcwAwAAi4YQEAAAiYc0AwAAi4YMEAAAiYc4AwAAi4YIEAAAiYc8AwAAi4YEEAAAiYdAAwAAi4YAEAAAiYdEAwAAifqBwgADAAA="
+call {vg_blowfish_crypt_blocks16_ssse3}
+.base64 "i7dgAwAAi69kAwAAi4eAAQAAiQaLh4QBAACJRgSLh4gBAACJRgiLh4wBAACJRgyLh5ABAACJRhCLh5QBAACJRhSLh5gBAACJRhiLh5wBAACJRhyLh6ABAACJRiCLh6QBAACJRiSLh6gBAACJRiiLh6wBAACJRiyLh7ABAACJRjCLh7QBAACJRjSLh7gBAACJRjiLh7wBAACJRjyDxkCD7QiJt2ADAACJr2QDAACD/Qg="
+jae 25b
+jmp 24f
+23:
+24:
+.base64 "i4dkAwAAg/gE"
+jb 26f
+28:
+.base64 "i7dgAwAAi69kAwAAiwaJh4ABAACLRgSJh4QBAACLRgiJh4gBAACLRgyJh4wBAACLRhCJh5ABAACLRhSJh5QBAACLRhiJh5gBAACLRhyJh5wBAACLdCQEi4ZEEAAAiYcAAwAAi4ZAEAAAiYcEAwAAi4Y8EAAAiYcIAwAAi4Y4EAAAiYcMAwAAi4Y0EAAAiYcQAwAAi4YwEAAAiYcUAwAAi4YsEAAAiYcYAwAAi4YoEAAAiYccAwAAi4YkEAAAiYcgAwAAi4YgEAAAiYckAwAAi4YcEAAAiYcoAwAAi4YYEAAAiYcsAwAAi4YUEAAAiYcwAwAAi4YQEAAAiYc0AwAAi4YMEAAAiYc4AwAAi4YIEAAAiYc8AwAAi4YEEAAAiYdAAwAAi4YAEAAAiYdEAwAAifqBwgADAAA="
+call {vg_blowfish_crypt_blocks16_ssse3}
+.base64 "i7dgAwAAi69kAwAAi4eAAQAAiQaLh4QBAACJRgSLh4gBAACJRgiLh4wBAACJRgyLh5ABAACJRhCLh5QBAACJRhSLh5gBAACJRhiLh5wBAACJRhyDxiCD7QSJt2ADAACJr2QDAACD/QQ="
+jae 28b
+jmp 27f
+26:
+27:
+.base64 "i4dkAwAAg/gC"
+jb 29f
+211:
+.base64 "i7dgAwAAi69kAwAAiwaJh4ABAACLRgSJh4QBAACLRgiJh4gBAACLRgyJh4wBAACLdCQEi4ZEEAAAiYcAAwAAi4ZAEAAAiYcEAwAAi4Y8EAAAiYcIAwAAi4Y4EAAAiYcMAwAAi4Y0EAAAiYcQAwAAi4YwEAAAiYcUAwAAi4YsEAAAiYcYAwAAi4YoEAAAiYccAwAAi4YkEAAAiYcgAwAAi4YgEAAAiYckAwAAi4YcEAAAiYcoAwAAi4YYEAAAiYcsAwAAi4YUEAAAiYcwAwAAi4YQEAAAiYc0AwAAi4YMEAAAiYc4AwAAi4YIEAAAiYc8AwAAi4YEEAAAiYdAAwAAi4YAEAAAiYdEAwAAifqBwgADAAA="
+call {vg_blowfish_crypt_blocks16_ssse3}
+.base64 "i7dgAwAAi69kAwAAi4eAAQAAiQaLh4QBAACJRgSLh4gBAACJRgiLh4wBAACJRgyDxhCD7QKJt2ADAACJr2QDAACD/QI="
+jae 211b
+jmp 210f
+29:
+210:
+.base64 "i4dkAwAAhcA="
+je 212f
+214:
+.base64 "i7dgAwAAi69kAwAAiwaJh4ABAACLRgSJh4QBAACLdCQEi4ZEEAAAiYcAAwAAi4ZAEAAAiYcEAwAAi4Y8EAAAiYcIAwAAi4Y4EAAAiYcMAwAAi4Y0EAAAiYcQAwAAi4YwEAAAiYcUAwAAi4YsEAAAiYcYAwAAi4YoEAAAiYccAwAAi4YkEAAAiYcgAwAAi4YgEAAAiYckAwAAi4YcEAAAiYcoAwAAi4YYEAAAiYcsAwAAi4YUEAAAiYcwAwAAi4YQEAAAiYc0AwAAi4YMEAAAiYc4AwAAi4YIEAAAiYc8AwAAi4YEEAAAiYdAAwAAi4YAEAAAiYdEAwAAifqBwgADAAA="
+call {vg_blowfish_crypt_blocks16_ssse3}
+.base64 "i7dgAwAAi69kAwAAi4eAAQAAiQaLh4QBAACJRgSDxgiD7QGJt2ADAACJr2QDAAA="
+jne 214b
+jmp 213f
+212:
+213:
+.base64 "i59QAwAAi7dUAwAAi69cAwAAi79YAwAAZg/vwLkAAAAA8w9/RCQU8w9/RCQk8w9/RCQ08w9/RCRE8w9/RCRU8w9/RCRk8w9/RCR08w9/hCSEAAAA8w9/hCSUAAAA8w9/hCSkAAAA8w9/hCS0AAAA8w9/hCTEAAAA8w9/hCTUAAAA8w9/hCTkAAAA8w9/hCT0AAAA8w9/hCQEAQAA8w9/hCQUAQAA8w9/hCQkAQAA8w9/hCQ0AQAA8w9/hCREAQAA8w9/hCRUAQAA8w9/hCRkAQAA8w9/hCR0AQAA8w9/hCSEAQAA8w9/hCSUAQAA8w9/hCSkAQAA8w9/hCS0AQAA8w9/hCTEAQAA8w9/hCTUAQAA8w9/hCTkAQAA8w9/hCT0AQAA8w9/hCQEAgAA8w9/hCQUAgAA8w9/hCQkAgAA8w9/hCQ0AgAA8w9/hCREAgAA8w9/hCRUAgAA8w9/hCRkAgAA8w9/hCR0AgAA8w9/hCSEAgAA8w9/hCSUAgAA8w9/hCSkAgAA8w9/hCS0AgAA8w9/hCTEAgAA8w9/hCTUAgAA8w9/hCTkAgAA8w9/hCT0AgAA8w9/hCQEAwAA8w9/hCQUAwAA8w9/hCQkAwAA8w9/hCQ0AwAA8w9/hCREAwAA8w9/hCRUAwAA8w9/hCRkAwAA8w9/hCR0AwAAiYwkhAMAAImMJIgDAACNpCSQAwAAjaQkaPz//7kAAAAAiUwkBIlMJAiJTCQMiUwkEIlMJBSJTCQYiYwklAMAAI2kJJgDAAC4AAAAALoAAAAAMclmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/8M="
+.p2align 6"#,
+        vg_blowfish_crypt_blocks16_ssse3 = sym super::blowfish::vg_blowfish_crypt_blocks16_ssse3::vg_blowfish_crypt_blocks16_ssse3,
     )
 }
 
@@ -277,6 +431,10 @@ jmp 21f
 .p2align 6"#,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_blowfish_crypt_blocks16_ssse3.rs"]
+pub(crate) mod vg_blowfish_crypt_blocks16_ssse3;
 
 #[rustfmt::skip]
 #[path = "internal/vg_blowfish_encrypt_block_ssse3.rs"]
