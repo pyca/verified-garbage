@@ -11,6 +11,11 @@
 //! other `invalid` vectors have a ciphertext of the wrong length or not
 //! below the modulus, which is refused. A `valid` vector decrypts to its
 //! message, and so does that message encrypted again.
+//!
+//! Every message returned, either kind, must leave no copy of itself in its
+//! allocation outside the returned bytes (#6301): once the message is wiped,
+//! the whole `k`-byte buffer the library decrypted into is zero
+//! (`no_residue`).
 
 #![cfg(all(
     any(
@@ -31,6 +36,24 @@ use super::harness::{self, Count, Expectation, TestFile, TestGroup};
 use super::schema::{EncryptCase, RsaPrivateKeyGroup};
 use crate::bytes::trim_zeros;
 use crate::require_vectors;
+
+/// Wipes `m`, a message `decrypt_pkcs1v15` returned for a `k`-byte modulus,
+/// and checks that the `k` bytes of its allocation are then all zero: no copy
+/// of the message is left past its end.
+fn no_residue(mut m: Vec<u8>, k: usize, what: &str) {
+    assert!(m.capacity() >= k, "{what}");
+    m.fill(0);
+    let p = m.as_ptr();
+    // SAFETY: the library allocates the message's vector with `k` initialized
+    // bytes (`vec![0u8; k]`) and only shortens it, so its allocation holds at
+    // least `k` initialized bytes from `p`, which `m` keeps alive and nothing
+    // writes while they are read.
+    let all = unsafe { core::slice::from_raw_parts(p, k) };
+    assert!(
+        all.iter().all(|&b| b == 0),
+        "{what}: message bytes left in the allocation"
+    );
+}
 
 /// Checks every vector of the file `name`; returns the numbers of valid
 /// vectors, of invalid paddings and of refused ciphertexts.
@@ -69,11 +92,17 @@ fn check(name: &str) -> (usize, usize, usize) {
             assert_eq!(r.as_deref(), Ok(&test.case.msg.0[..]), "{name} tcId {id}");
             let again = public.encrypt_pkcs1v15(&test.case.msg.0).unwrap();
             assert_eq!(key.decrypt_pkcs1v15(&again), r, "{name} tcId {id}");
+            no_residue(r.unwrap(), n.len(), &format!("{name} tcId {id}"));
             valid.add();
         } else if test.flags.iter().any(|f| f == "InvalidPkcs1Padding") {
             let m = r.unwrap_or_else(|e| panic!("{name} tcId {id}: {e}"));
             assert!(m.len() <= n.len() - 11, "{name} tcId {id}");
-            assert_eq!(key.decrypt_pkcs1v15(ct), Ok(m), "{name} tcId {id}");
+            assert_eq!(
+                key.decrypt_pkcs1v15(ct).as_ref(),
+                Ok(&m),
+                "{name} tcId {id}"
+            );
+            no_residue(m, n.len(), &format!("{name} tcId {id}"));
             padding.add();
         } else {
             let e = if ct.len() == n.len() {
