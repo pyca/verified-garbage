@@ -225,7 +225,7 @@ theorem ctb_nState (hwN : (op s₀).toNat + 16 * N ≤ 2 ^ 64) {k : Nat} (hk : k
 /-- The in-place loop's start. -/
 theorem NPre.sPre (hn : NPre M s₀ N) : SPre (nState s₀ N) := by
   have d := hp.toD
-  have hN : N < 2 ^ 64 := by have := hn.wrap; have := hp.nb16; have := hn.le; omega_arith
+  have hN : N < 2 ^ 64 := by have := hn.wrap; have : 16 ≤ nb s₀ := hp.nb16; have := hn.le; omega_arith
   have g : ∀ r, r ≠ .r8 → r ≠ .r9 → (nState s₀ N).gpr r = (dst s₀).gpr r := fun r h8 h9 => by
     rw [nState_gpr h8 h9, StitchZTo.dst_gpr_ne s₀ h8]
   have hk : kp (nState s₀ N) = kp (dst s₀) := g .rdi (by decide) (by decide)
@@ -238,7 +238,7 @@ theorem NPre.sPre (hn : NPre M s₀ N) : SPre (nState s₀ N) := by
   have kD : (nR s₀ N).Disjoint (kR (dst s₀)) := hn.k_o.symm.sub_right (Region.sub_prefix hge)
   exact {
     rounds := by simp only [nr, hr]; exact d.rounds
-    nb16 := by rw [nb_nState hN]; have := hp.nb16; have := hn.le; omega_arith
+    nb16 := by rw [nb_nState hN]; have : 16 ≤ nb s₀ := hp.nb16; have := hn.le; omega_arith
     k_in := by rw [nState_rd, nState_wr, hk]; exact d.k_in
     c_in := by rw [nState_wr, hc]; exact d.c_in
     y_in := by rw [nState_wr, hy]; exact d.y_in
@@ -265,7 +265,7 @@ theorem NPre.eInv (hn : NPre M s₀ N) {P : Nat → Nat → Block} {e : Nat} (he
     (hI : EInvTo s₀ P e s) {t : State} (g8 : t.gpr .r8 = s.gpr .rbx) (g9 : t.gpr .r9 = s.gpr .r9 + s.gpr .rbp)
     (g : ∀ r, r ≠ .r8 → r ≠ .r9 → t.gpr r = s.gpr r) (hm : t.mem = s.mem) (hx : t.xmm = s.xmm)
     (hy : t.ymmHi = s.ymmHi) (hrd : t.rd = s.rd) (hwr : t.wr = s.wr) : EInv (nState s₀ N) P e t := by
-  have hN : N < 2 ^ 64 := by have := hn.wrap; have := hp.nb16; have := hn.le; omega_arith
+  have hN : N < 2 ^ 64 := by have := hn.wrap; have : 16 ≤ nb s₀ := hp.nb16; have := hn.le; omega_arith
   have hw := hp.wrap_o
   have hwN := hn.wrap
   have hle := hn.le
@@ -353,7 +353,7 @@ theorem switch_ok (hn : NPre M s₀ N) {P : Nat → Nat → Block} {e : Nat} (he
 /-- What the in-place loop leaves from `nState s₀ N` is the contract for
 `s₀`. -/
 theorem NPost.of_ePost (hn : NPre M s₀ N) {s : State} (h : EPost (nState s₀ N) s) : NPost s₀ N s := by
-  have hN : N < 2 ^ 64 := by have := hn.wrap; have := hp.nb16; have := hn.le; omega_arith
+  have hN : N < 2 ^ 64 := by have := hn.wrap; have : 16 ≤ nb s₀ := hp.nb16; have := hn.le; omega_arith
   have hw := hp.wrap_o
   have hwN := hn.wrap
   have hle := hn.le
@@ -406,7 +406,7 @@ end
 theorem encN_ok {np : Nat} {hnp : 8 ≤ np ∧ np ≤ 24} (hS : SetupFin np hnp) {s₀ : State}
     (hp : SPreTo (CtxMode.preparedN np hnp) s₀) (hm : nb s₀ % 16 = 0) {N : Nat}
     (hn : NPre (CtxMode.preparedN np hnp) s₀ N) : WP isa Impl.Gcm.X86_64.StitchR.encN s₀ (NPost s₀ N) := by
-  have hN : N < 2 ^ 64 := by have := hn.wrap; have := hp.nb16; have := hn.le; omega_arith
+  have hN : N < 2 ^ 64 := by have := hn.wrap; have : 16 ≤ nb s₀ := hp.nb16; have := hn.le; omega_arith
   have hp' := hn.sPre hp
   refine WP.seq (WP.mono (hS hp) fun s₁ ⟨P, hR, hf⟩ => ?_)
   refine WP.seq (WP.mono (StitchTo.firstTo_ok hp hR) fun s₂ hI₂ => ?_)

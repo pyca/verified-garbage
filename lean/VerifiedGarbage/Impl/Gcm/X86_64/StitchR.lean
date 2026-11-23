@@ -37,9 +37,11 @@ def setup : List Instr := StitchZR.setupGP ++ storesK .r11 pregs 0 ++ setupC
 
 /-- `setup` without the powers: the constants of `StitchZR.setupGP` in both
 lanes of `ymm0` and `ymm1`, and the registers for the loop. -/
-def setupS : List Instr :=
+def setupSWith (finish : List Instr) : List Instr :=
   Pclmul.const .xmm0 VG.Impl.Gcm.X86_64.Pclmul.revMask ++ Pclmul.const .xmm1 VG.Impl.Gcm.X86_64.Pclmul.poly ++
-  ([.vop (.vinserti128 .xmm0 .xmm0 .xmm0 1), .vop (.vinserti128 .xmm1 .xmm1 .xmm1 1)] : List Instr) ++ setupC
+  ([.vop (.vinserti128 .xmm0 .xmm0 .xmm0 1), .vop (.vinserti128 .xmm1 .xmm1 .xmm1 1)] : List Instr) ++ finish
+
+def setupS : List Instr := setupSWith setupC
 
 /-- `StitchTo.setup` with the powers loaded. -/
 def setupTo : List Instr := StitchZR.setupGP ++ storesK .r11 pregs 0 ++ setupCTo
@@ -216,6 +218,11 @@ def tailE (pre : List Instr) (src : Reg) : Prog isa :=
     (.ite .e (.block (storeCtr ++ lastG ++ storeY))
       (.seq (.block (lastG ++ ([.alu .add .rdx (.imm 256)] : List Instr) ++ pre)) (remE src)))
 
+/-- Encrypt fewer than sixteen prepared blocks directly from the source to the destination. -/
+def encShortTo : Prog isa :=
+  .seq (.block (setupSWith setupCTo ++ [.alu .add .r8 (.reg .rdx), .alu .add .r9 (.imm 16)]))
+    (remE .r8)
+
 /-- `Stitch.enc` with the powers loaded, for any number of blocks from 1 on:
 with fewer than 16, all of them by `remE` after the setup without the powers
 (`setupS`); otherwise the blocks after the last group, if any, and the copy
@@ -236,5 +243,9 @@ def encToR : Prog isa :=
     (.seq StitchTo.firstTo
       (.seq (.block [.alu .cmp .r9 (.imm 32)])
         (.seq (.ite .b (.block []) (.loop StitchTo.bodyTo .ae)) (tailE [.alu .add .r8 (.reg .rdx)] .r8))))
+
+/-- Prepared VAES encryption from separate buffers, starting at two blocks. -/
+def encToFromTwo : Prog isa :=
+  .seq (.block [.alu .cmp .r9 (.imm 16)]) (.ite .b encShortTo encToR)
 
 end VG.Impl.Gcm.X86_64.StitchR

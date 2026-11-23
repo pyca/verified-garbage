@@ -84,20 +84,18 @@ jmp 222f
 jmp 21f
 20:
 21:
-.base64 "TItcJBhNi0MoTInASYPgD0wpwEgBwEgBwEgBwEgBwEiJwUkDQyBJiUMgSQNLMEmJSzBNiUMoTItcJBhJi0soSIXJ"
+.base64 "TItcJBhJi0soSIXJ"
 je 224f
-.base64 "SYtzIEmLezBBugAAAAA="
-226:
-.base64 "80IPbwQW80IPfwQXSYPCEEiD6QE="
-jne 226b
-.base64 "TItcJBhJiztJi3MISYtTEEmLSxhNi0MwTYtLKEyJ2FA="
-call {vg_aes_gcm_encrypt_blocks_prepared16_aesni_pclmul_avx}
-.base64 "WA=="
+.base64 "TItcJBhJiztJi3MISYtTEEmLSyBNi0MoTYnZSYPBQE2LWzA="
+call {vg_aes_ctr32_to_aesni}
+.base64 "TItcJBhJiztIgcfwAAAASYtzGEmLUzBJi0soTYnYSYPAQA=="
+call {vg_ghash_pclmul}
 jmp 225f
 224:
 225:
 .base64 "ww=="
 .p2align 6"#,
-        vg_aes_gcm_encrypt_blocks_prepared16_aesni_pclmul_avx = sym crate::aes::vg_aes_gcm_encrypt_blocks_prepared16_aesni_pclmul_avx::vg_aes_gcm_encrypt_blocks_prepared16_aesni_pclmul_avx,
+        vg_aes_ctr32_to_aesni = sym crate::aes::vg_aes_ctr32_to_aesni::vg_aes_ctr32_to_aesni,
+        vg_ghash_pclmul = sym crate::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
     )
 }

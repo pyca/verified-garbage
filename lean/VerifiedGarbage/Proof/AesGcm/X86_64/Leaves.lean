@@ -1267,9 +1267,10 @@ open VG.Impl.StackScratch.X86_64 (withStackScratch withStackArgScratch)
 
 /-- The level of the cleanup of `v`'s `seal_gather` on the key context:
 `lv`'s and its out-of-place loops'. -/
-def GcmVariant.lvG (v : GcmVariant) : VecLevel := v.lv.join v.toLv
+def GcmVariant.lvG (v : GcmVariant) : VecLevel := (v.lv.join v.ctrTo.level).join v.toLv
 
-theorem GcmVariant.lv_le_lvG (v : GcmVariant) : v.lv.level ≤ v.lvG.level := level_join_left _ _
+theorem GcmVariant.lv_le_lvG (v : GcmVariant) : v.lv.level ≤ v.lvG.level :=
+  Nat.le_trans (level_join_left _ _) (level_join_left _ _)
 
 theorem GcmVariant.toLv_le_lvG (v : GcmVariant) : v.toLv.level ≤ v.lvG.level := level_join_right _ _
 
@@ -1645,7 +1646,7 @@ theorem blocksToP_stub : (n : Option StitchToName) →
   | some .vaesAvx512 => by lit_decide
   | some .aesniAvx => by lit_decide
 
-theorem blkToP_side_of (v : GcmVariant) {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M)
+theorem blkToP_legacy_side_of (v : GcmVariant) {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M)
     (hB : calleeSide B.enc.code v.lv.level 8 = true) (st : Option (StitchToCode M true)) (n : Option StitchToName)
     (hst : st.map (·.enc) = n.map StitchToName.encR ∧ encFullTo st = (n.map StitchToName.fullR).getD false)
     (hn : ((n.map StitchToName.lv).getD .sse).level ≤ v.lvG.level) :
@@ -1655,57 +1656,115 @@ theorem blkToP_side_of (v : GcmVariant) {M : Gcm.X86_64.Stitch.CtxMode} (B : Blk
   exact calleeSide_of_fill (blocksTo_fill (n := fun _ => 8) _
     (calleeSide_mono v.lv_le_lvG (Nat.le_refl _) hB) _ true _) hn (blocksToP_stub n)
 
+theorem encryptPrepared_fill {k : Nat} {n : String → Nat} (c g : Fn) (p : Prog isa) {minimum : Nat}
+    (hc : calleeSide c.code k (n "t") = true) (hg : calleeSide g.code k (n "g") = true) :
+    Fill k n (Impl.AesGcm.X86_64.BlocksToDec.encryptPrepared ctrToStub ghStub p true minimum)
+      (Impl.AesGcm.X86_64.BlocksToDec.encryptPrepared c g p true minimum) := by
+  fill_calls_wide
+
+theorem encryptPrepared_stub (n : StitchToName) :
+    stubCallee (Impl.AesGcm.X86_64.BlocksToDec.encryptPrepared ctrToStub ghStub n.encR true)
+      n.lv.level (fun _ => 0) 24 = true := by
+  cases n <;> lit_decide
+
+theorem encryptVaesShort_stub :
+    stubCallee (Impl.AesGcm.X86_64.BlocksToDec.encryptPrepared ctrToStub ghStub
+      Impl.Gcm.X86_64.StitchR.encToFromTwo true 2) 1 (fun _ => 0) 24 = true := by lit_decide
+
+theorem blkToP_side_of (v : GcmVariant) {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M)
+    (hB : calleeSide B.enc.code v.lv.level 8 = true) (st : Option (StitchToCode M true)) (n : Option StitchToName)
+    (hst : st.map (·.enc) = n.map StitchToName.encR ∧ encFullTo st = (n.map StitchToName.fullR).getD false)
+    (hn : ((n.map StitchToName.lv).getD .sse).level ≤ v.lvG.level)
+    (flags : ∀ nm, n = some nm → v.shortVaes = (match nm with | .vaes => true | _ => false))
+    (fused : FusedShortOk M) :
+    calleeSide (StreamTo.BlkToFn.ofPreparedBlocks "" v.gh.impl v.ctr.ctrTo B v.shortVaes fused st).fn.code v.lvG.level 24 = true := by
+  cases st with
+  | none =>
+    cases n with
+    | none => exact blkToP_legacy_side_of v B hB none none ⟨rfl,rfl⟩ hn
+    | some nm => simp at hst
+  | some q =>
+    obtain ⟨p,full,ok,pc⟩ := q
+    cases n with
+    | none => simp at hst
+    | some nm =>
+      have he : p = nm.encR := Option.some.inj hst.1
+      have hf : full = true := by
+        cases nm <;> exact hst.2
+      subst p
+      subst full
+      have hc := calleeSide_mono (Nat.le_trans (level_join_right v.lv v.ctrTo.level)
+        (level_join_left (v.lv.join v.ctrTo.level) v.toLv)) (Nat.le_refl _) v.ctrTo.side
+      have hg := calleeSide_mono (Nat.le_trans (v.impl.lv_le v.own).2.2.1 v.lv_le_lvG) (Nat.le_refl _) v.impl.gh.side
+      simp only [StreamTo.BlkToFn.ofPreparedBlocks, flags nm rfl]
+      cases nm
+      · exact calleeSide_of_fill (encryptPrepared_fill (n := fun _ => 0) _ _ _ hc hg) hn encryptVaesShort_stub
+      · exact calleeSide_of_fill (encryptPrepared_fill (n := fun _ => 0) _ _ _ hc hg) hn (encryptPrepared_stub .vaesAvx512)
+      · exact calleeSide_of_fill (encryptPrepared_fill (n := fun _ => 0) _ _ _ hc hg) hn (encryptPrepared_stub .aesniAvx)
+
 /-- `v`'s `blkToR`. -/
 theorem blkToR_side (v : GcmVariant) : calleeSide (blkToR v).fn.code v.lvG.level 24 = true := by
   have hB := (blkR_sides v).1
+  have fused : FusedShortOk Gcm.X86_64.Stitch.CtxMode.prepared := fun _ h =>
+    Gcm.X86_64.StitchR.encToFromTwo_ok 24 (by decide) h
+  have side := blkToP_side_of v (blkR v) hB v.stitchToR
   have hl := v.toLv_le_lvG
   rcases v with ⟨ctr, key, gh, _ | ⟨name, sfx, fs, eP, dP, pP, pR, _ | ⟨tname, tpiece, tpP, _ | q, tpD⟩⟩⟩
-  · exact blkToP_side_of _ _ hB _ none ⟨rfl, rfl⟩ (Nat.zero_le _)
-  · exact blkToP_side_of _ _ hB _ none ⟨rfl, rfl⟩ (Nat.zero_le _)
-  · exact blkToP_side_of _ _ hB _ none ⟨rfl, rfl⟩ (Nat.zero_le _)
+  · exact side none ⟨rfl, rfl⟩ (Nat.zero_le _) (by simp) fused
+  · exact side none ⟨rfl, rfl⟩ (Nat.zero_le _) (by simp) fused
+  · exact side none ⟨rfl, rfl⟩ (Nat.zero_le _) (by simp) fused
   · cases tname
-    · exact blkToP_side_of _ _ hB _ (some .vaes) ⟨rfl, rfl⟩ hl
-    · exact blkToP_side_of _ _ hB _ (some .vaesAvx512) ⟨rfl, rfl⟩ hl
-    · exact blkToP_side_of _ _ hB _ (some .aesniAvx) ⟨rfl, rfl⟩ hl
+    · exact side (some .vaes) ⟨rfl, rfl⟩ hl (by intro nm h; cases h; rfl) fused
+    · exact side (some .vaesAvx512) ⟨rfl, rfl⟩ hl (by intro nm h; cases h; rfl) fused
+    · exact side (some .aesniAvx) ⟨rfl, rfl⟩ hl (by intro nm h; cases h; rfl) fused
 
 /-- `v`'s `blkToF`. -/
 theorem blkToF_side (v : GcmVariant) : calleeSide (blkToF v).fn.code v.lvG.level 24 = true := by
   have hB := (blkF_sides v).1
+  have fused : FusedShortOk Gcm.X86_64.Stitch.CtxMode.flagged := fun _ h =>
+    Gcm.X86_64.StitchR.encToFromTwo_ok 24 (by decide) (sPreTo_ofFlagged h)
+  have side := blkToP_side_of v (blkF v) hB (v.stitchToR.map StitchToCode.flagged)
   have hl := v.toLv_le_lvG
   rcases v with ⟨ctr, key, gh, _ | ⟨name, sfx, fs, eP, dP, pP, pR, _ | ⟨tname, tpiece, tpP, _ | q, tpD⟩⟩⟩
-  · exact blkToP_side_of _ _ hB _ none ⟨rfl, rfl⟩ (Nat.zero_le _)
-  · exact blkToP_side_of _ _ hB _ none ⟨rfl, rfl⟩ (Nat.zero_le _)
-  · exact blkToP_side_of _ _ hB _ none ⟨rfl, rfl⟩ (Nat.zero_le _)
+  · exact side none ⟨rfl, rfl⟩ (Nat.zero_le _) (by simp) fused
+  · exact side none ⟨rfl, rfl⟩ (Nat.zero_le _) (by simp) fused
+  · exact side none ⟨rfl, rfl⟩ (Nat.zero_le _) (by simp) fused
   · cases tname
-    · exact blkToP_side_of _ _ hB _ (some .vaes) ⟨rfl, rfl⟩ hl
-    · exact blkToP_side_of _ _ hB _ (some .vaesAvx512) ⟨rfl, rfl⟩ hl
-    · exact blkToP_side_of _ _ hB _ (some .aesniAvx) ⟨rfl, rfl⟩ hl
+    · exact side (some .vaes) ⟨rfl, rfl⟩ hl (by intro nm h; cases h; rfl) fused
+    · exact side (some .vaesAvx512) ⟨rfl, rfl⟩ hl (by intro nm h; cases h; rfl) fused
+    · exact side (some .aesniAvx) ⟨rfl, rfl⟩ hl (by intro nm h; cases h; rfl) fused
 
 /-- `v`'s `blkToR16`. -/
 theorem blkToR16_side (v : GcmVariant) : calleeSide (blkToR16 v).fn.code v.lvG.level 24 = true := by
   have hB := (blkR16_sides v).1
+  have fused : FusedShortOk Gcm.X86_64.Stitch.CtxMode.prepared16 := fun _ h =>
+    Gcm.X86_64.StitchR.encToFromTwo_ok 8 (by decide) h
+  have side := blkToP_side_of v (blkR16 v) hB v.stitchToR16
   have hl := v.toLv_le_lvG
   rcases v with ⟨ctr, key, gh, _ | ⟨name, sfx, fs, eP, dP, pP, pR, _ | ⟨tname, tpiece, tpP, _ | q, tpD⟩⟩⟩
-  · exact blkToP_side_of _ _ hB _ none ⟨rfl, rfl⟩ (Nat.zero_le _)
-  · exact blkToP_side_of _ _ hB _ none ⟨rfl, rfl⟩ (Nat.zero_le _)
-  · cases tname <;> exact blkToP_side_of _ _ hB _ none ⟨rfl, rfl⟩ (Nat.zero_le _)
+  · exact side none ⟨rfl, rfl⟩ (Nat.zero_le _) (by simp) fused
+  · exact side none ⟨rfl, rfl⟩ (Nat.zero_le _) (by simp) fused
+  · cases tname <;> exact side none ⟨rfl, rfl⟩ (Nat.zero_le _) (by simp) fused
   · cases tname
-    · exact blkToP_side_of _ _ hB _ (some .vaes) ⟨rfl, rfl⟩ hl
-    · exact blkToP_side_of _ _ hB _ none ⟨rfl, rfl⟩ (Nat.zero_le _)
-    · exact blkToP_side_of _ _ hB _ (some .aesniAvx) ⟨rfl, rfl⟩ hl
+    · exact side (some .vaes) ⟨rfl, rfl⟩ hl (by intro nm h; cases h; rfl) fused
+    · exact side none ⟨rfl, rfl⟩ (Nat.zero_le _) (by simp) fused
+    · exact side (some .aesniAvx) ⟨rfl, rfl⟩ hl (by intro nm h; cases h; rfl) fused
 
 /-- `v`'s `blkToF16`. -/
 theorem blkToF16_side (v : GcmVariant) : calleeSide (blkToF16 v).fn.code v.lvG.level 24 = true := by
   have hB := (blkF16_sides v).1
+  have fused : FusedShortOk (Gcm.X86_64.Stitch.CtxMode.flaggedT 16) := fun _ h =>
+    Gcm.X86_64.StitchR.encToFromTwo_ok 8 (by decide) (sPreTo_ofFlagged16 h)
+  have side := blkToP_side_of v (blkF16 v) hB (v.stitchToR16.map StitchToCode.flagged16)
   have hl := v.toLv_le_lvG
   rcases v with ⟨ctr, key, gh, _ | ⟨name, sfx, fs, eP, dP, pP, pR, _ | ⟨tname, tpiece, tpP, _ | q, tpD⟩⟩⟩
-  · exact blkToP_side_of _ _ hB _ none ⟨rfl, rfl⟩ (Nat.zero_le _)
-  · exact blkToP_side_of _ _ hB _ none ⟨rfl, rfl⟩ (Nat.zero_le _)
-  · cases tname <;> exact blkToP_side_of _ _ hB _ none ⟨rfl, rfl⟩ (Nat.zero_le _)
+  · exact side none ⟨rfl, rfl⟩ (Nat.zero_le _) (by simp) fused
+  · exact side none ⟨rfl, rfl⟩ (Nat.zero_le _) (by simp) fused
+  · cases tname <;> exact side none ⟨rfl, rfl⟩ (Nat.zero_le _) (by simp) fused
   · cases tname
-    · exact blkToP_side_of _ _ hB _ (some .vaes) ⟨rfl, rfl⟩ hl
-    · exact blkToP_side_of _ _ hB _ none ⟨rfl, rfl⟩ (Nat.zero_le _)
-    · exact blkToP_side_of _ _ hB _ (some .aesniAvx) ⟨rfl, rfl⟩ hl
+    · exact side (some .vaes) ⟨rfl, rfl⟩ hl (by intro nm h; cases h; rfl) fused
+    · exact side none ⟨rfl, rfl⟩ (Nat.zero_le _) (by simp) fused
+    · exact side (some .aesniAvx) ⟨rfl, rfl⟩ hl (by intro nm h; cases h; rfl) fused
 
 /-! ## `vg_aes_gcm_seal_split_prepared` -/
 
@@ -1793,7 +1852,8 @@ theorem GcmVariant.lvA_le_lvGA (v : GcmVariant) : v.lvA.level ≤ v.lvGA.level :
   generalize (v.impl.ctr.level.join v.impl.key.level).join v.impl.gh.level = a
   generalize v.own = b
   generalize v.toLv = c
-  cases a <;> cases b <;> cases c <;> decide
+  generalize v.ctrTo.level = d
+  cases a <;> cases b <;> cases c <;> cases d <;> decide
 
 /-- `v`'s `vg_aes_gcm_stream_encrypt_to_prepared16`. -/
 theorem toFnF16_side (v : GcmVariant) : calleeSide (toFnF16 v).fn.code v.lvGA.level 4856 = true :=
@@ -2241,8 +2301,7 @@ theorem base_spSafe (v : GcmVariant) :
   scrubKs_spSafe (withStackArgScratch_spSafe (plain_safe v).sp)
 
 theorem lvG_le_T (v : GcmVariant) : v.lvG.level ≤ v.lvT.level := by
-  have h := Nat.le_trans v.lv_le_lvA (level_join_left v.lvA v.ctrTo.level)
-  exact join_mono_left v.toLv h
+  exact join_mono_left _ (join_mono_left _ v.lv_le_lvA)
 
 private theorem ready_safe (v : GcmVariant) {n : Nat} (b : BlkToFn (CtxMode.flaggedT n))
     (bt : calleeSide b.fn.code v.lvG.level 24=true) : CoreSafe (readyCore v.impl.callees (ctrFn v) b.fn) :=

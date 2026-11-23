@@ -1540,6 +1540,38 @@ mod tests {
         truncated_boundaries::<11>();
     }
 
+    /// A whole-block fragment on either side of the fused-loop threshold,
+    /// optionally followed by a TLS content-type byte in a separate fragment.
+    #[test]
+    fn seal_short_whole_blocks() {
+        let input: [u8; 17 * 16 + 1] = core::array::from_fn(|i| (i as u8).wrapping_mul(29));
+        for key_len in [16, 24, 32] {
+            let key = AesGcm::new(&[0x42; 32][..key_len]).unwrap();
+            for blocks in 1..=17 {
+                let bytes = blocks * 16;
+                for extra in 0..=1 {
+                    let len = bytes + extra;
+                    let nonce = [len as u8; 12];
+                    let aad = [0x17, 3, 3, 0, 0];
+                    let mut reference = input;
+                    let tag = key
+                        .encrypt_in_place(&nonce, &aad, &mut reference[..len])
+                        .unwrap();
+                    let first = &input[..bytes];
+                    let two = [first, &input[bytes..len]];
+                    let pieces = if extra == 0 { &two[..1] } else { &two[..] };
+                    let mut out = [0x55; 17 * 16 + 3];
+                    let got = key
+                        .encrypt(&nonce, &aad, pieces, &mut out[1..1 + len])
+                        .unwrap();
+                    assert_eq!(&out[1..1 + len], &reference[..len]);
+                    assert_eq!(got, tag);
+                    assert_eq!((out[0], out[1 + len]), (0x55, 0x55));
+                }
+            }
+        }
+    }
+
     /// Out-of-place encryption of a plaintext in pieces matches in-place
     /// encryption, after additional data of whole blocks, of a partial block
     /// and of none, for pieces split on and off block boundaries (empty ones
