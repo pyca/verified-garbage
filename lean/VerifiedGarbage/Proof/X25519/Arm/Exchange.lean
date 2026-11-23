@@ -772,7 +772,7 @@ theorem exchange_verified {c : Prog isa} (name : String)
   Verified.of_correct (k := exContract 32 4096 0 [] Spec.X25519.x25519) (exchange_correct (callee hv hn) (by decide))
     (exchange_ct (callee hv hn) ht) (by
       contract_implies [Spec.X25519.exchangeContract, Spec.X25519.exchangeSig, Proof.X25519.x25519Sig,
-        exContract, ExPre, CallPre, ExPost, Pub, belowA_zero_disjoint, Proof.Xdh.Arm.outR, Proof.Xdh.Arm.scR, Proof.Xdh.Arm.ptR, Proof.Xdh.Arm.wsR,
+        exContract, ExPre, CallPre, ExPost, Pub, Proof.Xdh.Arm.frD, Proof.Xdh.Arm.outR, Proof.Xdh.Arm.scR, Proof.Xdh.Arm.ptR, Proof.Xdh.Arm.wsR,
         Proof.Xdh.Arm.frR, ret32, Arm.abi, Arm.argRegs,
         Arm.reduceClassify, Arm.Loc.val,
         Arm.State.addr] [Proof.X25519.Arm.x25519Sat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read] using Proof.X25519.Arm.x25519Sat)

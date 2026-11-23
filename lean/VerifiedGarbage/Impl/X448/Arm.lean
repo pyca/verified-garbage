@@ -241,6 +241,9 @@ def fn (hasB : Bool) (op : Prog isa) : Prog isa :=
 (`u`). -/
 def suffix (u : Bool) : String := if u then "_umaal" else ""
 
+/-- The name of the field's multiplication with either multiplication. -/
+def mulName (u : Bool) : String := "vg_gf448_r16_mul" ++ suffix u
+
 /-- The multiplication: with `umaal` if `u`. -/
 def mulFn (u : Bool) : Prog isa := fn true (if u then mulU else mul)
 def addFn : Prog isa := fn true (.block add)
@@ -272,7 +275,7 @@ inductive Op
   deriving DecidableEq, Repr
 
 def Op.code (u : Bool) : Op → Prog isa
-  | .mul o a b => callFn ("vg_gf448_r16_mul" ++ suffix u) (mulFn u) o a b
+  | .mul o a b => callFn (mulName u) (mulFn u) o a b
   | .mulSmall o a => mulA24Call o a
   | .add o a b => callFn "vg_gf448_r16_add" addFn o a b
   | .sub o a b => callFn "vg_gf448_r16_sub" subFn o a b
