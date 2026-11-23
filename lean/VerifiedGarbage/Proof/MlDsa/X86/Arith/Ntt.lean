@@ -1075,6 +1075,139 @@ theorem finInit_wp {s₀ : State} (hp : NttLoop.Pre s₀) {T : List Nat} {c3 : B
     ⟨h.base.vp.q, h.base.vp.ones, bc_eq _, bc_eq _⟩, (BitVec.add_zero _).symm,
     fun i hi => absurd hi (by omega_using []), fun i hi _ => h.co i hi⟩
 
+/-! ## The butterflies of `nttInv` -/
+
+theorem iBody_ok (d : Nat) : BodyOk invC1 (iBody d) d true (invX sh4) (invY sh4) := by
+  intro s f is Q P P' hm hc ha ha' hin hin' k
+  rw [show iBody d ++ is = .movdquLoad .xmm0 (at_ .eax d) :: .movdquLoad .xmm1 (at_ .eax 0) :: (bfTail ++
+      (.movdquStore (at_ .eax 0) .xmm1 :: xmov .xmm0 .xmm2 :: (vmont .xmm0 .xmm5 .xmm2 .xmm1 ++
+        (.movdquStore (at_ .eax d) .xmm0 :: is)))) by
+    simp only [iBody, List.append_assoc, List.cons_append, List.nil_append]]
+  refine wp_ld ha' (inRd16 hin') (wp_ld ha (inRd16 hin) (bfTail_wp hc.c3 hc.ones fun g₁ s₁ d₁ r₁ =>
+    wp_st ha hin (wp_xs rfl (vmont_wp hm ((r₁ _ (by decide) (by decide)).trans hc.nqi)
+      ((r₁ _ (by decide) (by decide)).trans hc.q) fun g₂ v₂ r₂ => wp_st ha' hin' (k g₂ _ _ ?_ ?_ ?_ ?_)))))
+  · rw [s₁]; rfl
+  · rw [v₂]
+    show montV (g₁ .xmm2) (g₁ .xmm5) = _
+    rw [d₁, r₁ .xmm5 (by decide) (by decide)]; rfl
+  · exact hc.of_eq fun r h0 h1 h2 _ => (r₂ r h0 h1 h2).trans (by
+      show (if r = XReg.xmm0 then _ else g₁ r) = _
+      rw [ite_eq_right h0, r₁ r h1 h2]
+      show (if r = XReg.xmm1 then _ else if r = XReg.xmm0 then _ else f r) = _
+      rw [ite_eq_right h1, ite_eq_right h0])
+  · intro _
+    exact (r₂ _ (by decide) (by decide) (by decide)).trans (r₁ _ (by decide) (by decide))
+
+theorem iBody2_ok : BodyOk invC1 iBody2 16 false (invX sh2) (invY sh2) := by
+  intro s f is Q P P' hm hc ha ha' hin hin' k
+  rw [show iBody2 ++ is = .movdquLoad .xmm0 (at_ .eax 0) :: .movdquLoad .xmm2 (at_ .eax 16) :: xmov .xmm1 .xmm0 ::
+      xb .punpckhqdq .xmm0 .xmm2 :: xb .punpcklqdq .xmm1 .xmm2 :: (bfTail ++ (xmov .xmm0 .xmm2 ::
+        (vmont .xmm0 .xmm5 .xmm2 .xmm5 ++ (xmov .xmm2 .xmm0 :: xmov .xmm0 .xmm1 :: xb .punpcklqdq .xmm0 .xmm2 ::
+          xb .punpckhqdq .xmm1 .xmm2 :: .movdquStore (at_ .eax 0) .xmm0 :: .movdquStore (at_ .eax 16) .xmm1 ::
+          is)))) by
+    simp only [iBody2, gath2, scat2, List.append_assoc, List.cons_append, List.nil_append]]
+  refine wp_ld ha (inRd16 hin) (wp_ld ha' (inRd16 hin') (wp_xs rfl (wp_xs rfl (wp_xs rfl
+    (bfTail_wp hc.c3 hc.ones fun g₁ s₁ d₁ r₁ => wp_xs rfl
+      (vmont5_wp hm ((r₁ _ (by decide) (by decide)).trans hc.nqi) ((r₁ _ (by decide) (by decide)).trans hc.q)
+        fun g₂ v₂ r₂ => wp_xs rfl (wp_xs rfl (wp_xs rfl (wp_xs rfl
+          (wp_st ha hin (wp_st ha' hin' (k _ _ _ ?_ ?_ ?_ ?_))))))))))))
+  · show XBinOp.eval .punpcklqdq (g₂ .xmm1) (g₂ .xmm0) = _
+    rw [v₂, r₂ .xmm1 (by decide) (by decide) (by decide)]
+    show XBinOp.eval .punpcklqdq (g₁ .xmm1) (montV (g₁ .xmm2) (g₁ .xmm5)) = _
+    rw [s₁, d₁, r₁ .xmm5 (by decide) (by decide)]; rfl
+  · show XBinOp.eval .punpckhqdq (g₂ .xmm1) (g₂ .xmm0) = _
+    rw [v₂, r₂ .xmm1 (by decide) (by decide) (by decide)]
+    show XBinOp.eval .punpckhqdq (g₁ .xmm1) (montV (g₁ .xmm2) (g₁ .xmm5)) = _
+    rw [s₁, d₁, r₁ .xmm5 (by decide) (by decide)]; rfl
+  · exact hc.of_eq fun r h0 h1 h2 h5 => by
+      show (if r = XReg.xmm1 then _ else if r = XReg.xmm0 then _ else if r = XReg.xmm0 then _ else
+        if r = XReg.xmm2 then _ else g₂ r) = _
+      rw [ite_eq_right h1, ite_eq_right h0, ite_eq_right h0, ite_eq_right h2, r₂ r h0 h5 h2]
+      show (if r = XReg.xmm0 then _ else g₁ r) = _
+      rw [ite_eq_right h0, r₁ r h1 h2]
+      show (if r = XReg.xmm1 then _ else if r = XReg.xmm0 then _ else if r = XReg.xmm1 then _ else
+        if r = XReg.xmm2 then _ else if r = XReg.xmm0 then _ else f r) = _
+      rw [ite_eq_right h1, ite_eq_right h0, ite_eq_right h1, ite_eq_right h2, ite_eq_right h0]
+  · intro e; exact absurd e (by decide)
+
+theorem iBody1_ok : BodyOk invC1 iBody1 16 false (invX sh1) (invY sh1) := by
+  intro s f is Q P P' hm hc ha ha' hin hin' k
+  rw [show iBody1 ++ is = .movdquLoad .xmm0 (at_ .eax 0) :: .movdquLoad .xmm2 (at_ .eax 16) ::
+      .xop (.pshufd .xmm0 .xmm0 0xD8) :: .xop (.pshufd .xmm2 .xmm2 0xD8) :: xmov .xmm1 .xmm0 ::
+      xb .punpckhqdq .xmm0 .xmm2 :: xb .punpcklqdq .xmm1 .xmm2 :: (bfTail ++ (xmov .xmm0 .xmm2 ::
+        (vmont2 .xmm0 .xmm5 .xmm2 ++ (xmov .xmm2 .xmm0 :: xmov .xmm0 .xmm1 :: xb .punpckldq .xmm0 .xmm2 ::
+          xb .punpckhdq .xmm1 .xmm2 :: .movdquStore (at_ .eax 0) .xmm0 :: .movdquStore (at_ .eax 16) .xmm1 ::
+          is)))) by
+    simp only [iBody1, gath1, scat1, List.append_assoc, List.cons_append, List.nil_append]]
+  refine wp_ld ha (inRd16 hin) (wp_ld ha' (inRd16 hin') (wp_xs rfl (wp_xs rfl (wp_xs rfl (wp_xs rfl (wp_xs rfl
+    (bfTail_wp hc.c3 hc.ones fun g₁ s₁ d₁ r₁ => wp_xs rfl
+      (vmont25_wp hm ((r₁ _ (by decide) (by decide)).trans hc.nqi) ((r₁ _ (by decide) (by decide)).trans hc.q)
+        fun g₂ v₂ r₂ => wp_xs rfl (wp_xs rfl (wp_xs rfl (wp_xs rfl
+          (wp_st ha hin (wp_st ha' hin' (k _ _ _ ?_ ?_ ?_ ?_))))))))))))))
+  · show XBinOp.eval .punpckldq (g₂ .xmm1) (g₂ .xmm0) = _
+    rw [v₂, r₂ .xmm1 (by decide) (by decide) (by decide)]
+    show XBinOp.eval .punpckldq (g₁ .xmm1) (mont2V (g₁ .xmm2) (g₁ .xmm5)) = _
+    rw [s₁, d₁, r₁ .xmm5 (by decide) (by decide)]; rfl
+  · show XBinOp.eval .punpckhdq (g₂ .xmm1) (g₂ .xmm0) = _
+    rw [v₂, r₂ .xmm1 (by decide) (by decide) (by decide)]
+    show XBinOp.eval .punpckhdq (g₁ .xmm1) (mont2V (g₁ .xmm2) (g₁ .xmm5)) = _
+    rw [s₁, d₁, r₁ .xmm5 (by decide) (by decide)]; rfl
+  · exact hc.of_eq fun r h0 h1 h2 h5 => by
+      show (if r = XReg.xmm1 then _ else if r = XReg.xmm0 then _ else if r = XReg.xmm0 then _ else
+        if r = XReg.xmm2 then _ else g₂ r) = _
+      rw [ite_eq_right h1, ite_eq_right h0, ite_eq_right h0, ite_eq_right h2, r₂ r h0 h5 h2]
+      show (if r = XReg.xmm0 then _ else g₁ r) = _
+      rw [ite_eq_right h0, r₁ r h1 h2]
+      show (if r = XReg.xmm1 then _ else if r = XReg.xmm0 then _ else if r = XReg.xmm1 then _ else
+        if r = XReg.xmm2 then _ else if r = XReg.xmm0 then _ else if r = XReg.xmm2 then _ else
+        if r = XReg.xmm0 then _ else f r) = _
+      rw [ite_eq_right h1, ite_eq_right h0, ite_eq_right h1, ite_eq_right h2, ite_eq_right h0, ite_eq_right h2,
+        ite_eq_right h0]
+  · intro e; exact absurd e (by decide)
+
+/-! ## The last pass of `nttInv` -/
+
+/-- The constants of the last pass of `nttInv`. -/
+structure VS (f : XReg → BitVec 128) : Prop where
+  q : f .xmm7 = qV
+  nqi : f .xmm6 = nqiV
+  scale : f .xmm5 = scaleV
+  ones : f .xmm4 = onesV
+  negq : f .xmm3 = negqV
+
+theorem scaleCore_ok : PassOk scaleCore VS scaleX := by
+  intro s f x is Q hm hc k
+  rw [show scaleCore ++ is = vmont .xmm0 .xmm5 .xmm2 .xmm1 ++ (vcsub .xmm0 .xmm1 ++ is) by
+    simp only [scaleCore, List.append_assoc]]
+  refine vmont_wp hm hc.nqi hc.q fun g₁ v₁ r₁ => vcsub_wp
+    ((r₁ _ (by decide) (by decide) (by decide)).trans hc.negq)
+    ((r₁ _ (by decide) (by decide) (by decide)).trans hc.ones)
+    ((r₁ _ (by decide) (by decide) (by decide)).trans hc.q) fun g₂ v₂ r₂ => k g₂ ?_ ?_
+  · rw [v₂, v₁]
+    show csubV (montV x (f .xmm5)) = _
+    rw [hc.scale]; rfl
+  · exact ⟨(r₂ _ (by decide) (by decide)).trans ((r₁ _ (by decide) (by decide) (by decide)).trans hc.q),
+      (r₂ _ (by decide) (by decide)).trans ((r₁ _ (by decide) (by decide) (by decide)).trans hc.nqi),
+      (r₂ _ (by decide) (by decide)).trans ((r₁ _ (by decide) (by decide) (by decide)).trans hc.scale),
+      (r₂ _ (by decide) (by decide)).trans ((r₁ _ (by decide) (by decide) (by decide)).trans hc.ones),
+      (r₂ _ (by decide) (by decide)).trans ((r₁ _ (by decide) (by decide) (by decide)).trans hc.negq)⟩
+
+theorem scaleInit_wp {s₀ : State} (hp : NttLoop.Pre s₀) {T : List Nat} {c3 : BitVec 32} {G : Poly} {zp : Nat}
+    {s : State} (h : LS s₀ T (VK c3) 256 G zp s) :
+    WP isa (.block (scaleInit ++ layStart)) s (PInv s₀ T VS 256 G (· * c256) 0) := by
+  obtain ⟨a₀, -⟩ := arg_M0 hp (i := 0) (by decide)
+  simp only [Nat.mul_zero, Nat.add_zero] at a₀
+  have ea : (s.gpr .esp + BitVec.ofNat 32 16).setWidth 64 = argAddr s₀ 0 := by rw [h.base.esp]; exact a₀
+  have i₀ : InRegions (s.rd ++ s.wr) (argAddr s₀ 0) 4 := inRd (in_arg hp h.base.wr (by decide))
+  have v0 := h.base.arg0
+  apply WP.of_runBlock
+  simp only [scaleInit, layStart, vconst, at_, List.cons_append, List.nil_append, runBlock_cons, runStep_some,
+    runBlock_nil, exec, XOp.exec, State.setXmm, readSrc, State.ea, State.load32, State.setReg, ea, i₀, v0,
+    Option.map_some, reduceCtorEq, ↓reduceIte, Option.some.injEq, exists_eq_left']
+  exact ⟨h.base.of_gpr (fun r h1 _ _ => by simp only [h1, ite_false]) rfl rfl rfl rfl
+    ⟨h.base.vp.q, h.base.vp.nqi, bc_eq _, h.base.vp.ones, bc_eq _⟩, (BitVec.add_zero _).symm,
+    fun i hi => absurd hi (by omega_using []), fun i hi _ => h.co i hi⟩
+
 end VG.Proof.MlDsa.X86.Arith.Vec
 
 /-! ## `vg_mldsa_ntt` -/
@@ -1183,3 +1316,112 @@ theorem verified : Verified X86.target Impl.MlDsa.X86.Arith.ntt (nttContract X86
     all_goals exact Region.disjoint_of_sep (by decide)
 
 end VG.Proof.MlDsa.X86.Arith.NttFwd
+
+/-! ## `vg_mldsa_inv_ntt` -/
+
+namespace VG.Proof.MlDsa.X86.Arith.NttInvP
+
+open VG VG.X86 VG.Impl.MlDsa.X86.Arith
+open VG.Proof.MlDsa.Arith
+open VG.Proof.MlDsa.X86.Arith VG.Proof.MlDsa.X86.Arith.Vec
+open VG.Spec.MlDsa VG.Proof.MlDsa
+open VG.Proof.MlKem.X86 (Piece satState)
+
+theorem tab : NttLoop.TabOK montNegZetaRev zvI := fun k hk => by
+  rw [montNegZetaRev, getD_map_range hk, montNegZeta_eq (Nat.mod_lt _ (by decide))]
+  rfl
+
+section
+variable (s₀ : State)
+/-- The polynomial after the layers with `len` = 1, …, 128. -/
+abbrev I1 : Poly := nttInvLayer (F s₀) 1
+abbrev I2 : Poly := nttInvLayer (I1 s₀) 2
+abbrev I3 : Poly := nttInvLayer (I2 s₀) 4
+abbrev I4 : Poly := nttInvLayer (I3 s₀) 8
+abbrev I5 : Poly := nttInvLayer (I4 s₀) 16
+abbrev I6 : Poly := nttInvLayer (I5 s₀) 32
+abbrev I7 : Poly := nttInvLayer (I6 s₀) 64
+abbrev I8 : Poly := nttInvLayer (I7 s₀) 128
+end
+
+theorem fold_eq (s₀ : State) : nttInvLens.foldl nttInvLayer (F s₀) = I8 s₀ := by
+  simp only [nttInvLens, List.foldl_cons, List.foldl_nil]
+
+theorem body_piece : Piece NttLoop.Pre NttLoop.Pub (fun s₀ s => s = M0 s₀)
+    (fun s₀ s => PInv s₀ montNegZetaRev VS 256 (I8 s₀) (· * c256) 64 s)
+    (.seq (nttInit montNegZetaRev invC)
+      (.seq (layerFlat zl1 iBody1 16) (.seq (layerFlat zl2 iBody2 8) (.seq (layer4 iBody 4) (.seq (layer4 iBody 8)
+        (.seq (layer4 iBody 16) (.seq (layer4 iBody 32) (.seq (layer4 iBody 64) (.seq (layer4 iBody 128)
+          (pass scaleInit scaleCore)))))))))) := by
+  refine Piece.seq (B := fun s₀ s => LS s₀ montNegZetaRev (VK invC1) 1 (F s₀) 1 s)
+    (Vec.init_piece montNegZetaRev invC1 (by taint_decide) (by taint_decide)) ?_
+  refine Piece.seq (layFlat_piece flat1 (by decide) zl1_ok iBody1_ok (inv_new sh1 sh1_ok (by decide) (by decide)) tab
+    1 (by decide) F I1 (fun s₀ => inv_lay _ (by decide) (by decide) (by decide) (by decide)) (by taint_decide)
+    (by taint_decide)) ?_
+  refine Piece.seq (layFlat_piece flat2 (by decide) zl2_ok iBody2_ok (inv_new sh2 sh2_ok (by decide) (by decide)) tab
+    129 (by decide) I1 I2 (fun s₀ => inv_lay _ (by decide) (by decide) (by decide) (by decide)) (by taint_decide)
+    (by taint_decide)) ?_
+  refine Piece.seq (lay4_piece iBody_ok (inv_new sh4 sh4_ok (by decide) (by decide)) tab 1 32 193 (by decide)
+    (by decide) I2 I3 (fun s₀ => inv_lay _ (by decide) (by decide) (by decide) (by decide)) (by taint_decide)
+    (by taint_decide) (by taint_decide) (by taint_decide)) ?_
+  refine Piece.seq (lay4_piece iBody_ok (inv_new sh4 sh4_ok (by decide) (by decide)) tab 2 16 225 (by decide)
+    (by decide) I3 I4 (fun s₀ => inv_lay _ (by decide) (by decide) (by decide) (by decide)) (by taint_decide)
+    (by taint_decide) (by taint_decide) (by taint_decide)) ?_
+  refine Piece.seq (lay4_piece iBody_ok (inv_new sh4 sh4_ok (by decide) (by decide)) tab 4 8 241 (by decide)
+    (by decide) I4 I5 (fun s₀ => inv_lay _ (by decide) (by decide) (by decide) (by decide)) (by taint_decide)
+    (by taint_decide) (by taint_decide) (by taint_decide)) ?_
+  refine Piece.seq (lay4_piece iBody_ok (inv_new sh4 sh4_ok (by decide) (by decide)) tab 8 4 249 (by decide)
+    (by decide) I5 I6 (fun s₀ => inv_lay _ (by decide) (by decide) (by decide) (by decide)) (by taint_decide)
+    (by taint_decide) (by taint_decide) (by taint_decide)) ?_
+  refine Piece.seq (lay4_piece iBody_ok (inv_new sh4 sh4_ok (by decide) (by decide)) tab 16 2 253 (by decide)
+    (by decide) I6 I7 (fun s₀ => inv_lay _ (by decide) (by decide) (by decide) (by decide)) (by taint_decide)
+    (by taint_decide) (by taint_decide) (by taint_decide)) ?_
+  refine Piece.seq (lay4_piece iBody_ok (inv_new sh4 sh4_ok (by decide) (by decide)) tab 32 1 255 (by decide)
+    (by decide) I7 I8 (fun s₀ => inv_lay _ (by decide) (by decide) (by decide) (by decide)) (by taint_decide)
+    (by taint_decide) (by taint_decide) (by taint_decide)) ?_
+  exact pass_piece scaleCore_ok scale_lanes I8 256 (fun _ _ hp h => scaleInit_wp hp h) (by taint_decide)
+    (by taint_decide)
+
+theorem piece : Piece NttLoop.Pre NttLoop.Pub (fun s₀ s => s = s₀)
+    (fun s₀ s' => McdtPost (PInv s₀ montNegZetaRev VS 256 (I8 s₀) (· * c256) 64) s₀ s')
+    Impl.MlDsa.X86.Arith.nttInv :=
+  Piece.mcdt (fun s₀ => [polyRegion (fA s₀), polyRegion (sA s₀), aR2 s₀]) (NoSp.of_all (by lit_decide))
+    (fun _ hp => sp12 hp)
+    (fun _ hp r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl
+      · exact ⟨mcdt_disj hp hp.stk_f, hp.ret_f⟩
+      · exact ⟨mcdt_disj hp hp.stk_s, hp.ret_s⟩
+      · exact ⟨mcdt_disj hp hp.stk_a, hp.ret_a⟩)
+    (fun _ _ _ _ hq => hq.1)
+    (body_piece.mono (fun _ _ _ h => h) fun _ _ _ h =>
+      ⟨⟨h.base.frame, h.base.esp, h.base.rd, h.base.wr, h.base.mcdt, h.base.saved⟩, h⟩)
+
+theorem verified : Verified X86.target Impl.MlDsa.X86.Arith.nttInv (nttInvContract X86.abi 16) := by
+  refine Piece.verified ((piece.pre_mono (fun _ h => NttLoop.Pre.of (t := VG.Spec.MlDsa.nttInv) h rfl)
+    fun s s' _ _ h => by
+      sig_pub [nttInvContract, inPlaceContract, inPlaceSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes] at h
+      exact h).mono (fun _ _ _ h => h) fun s₀ s' h₀ hq => ?_) ?_
+  · obtain ⟨habi, -, -, s, hinv, hm⟩ := hq
+    refine ⟨habi, ?_⟩
+    sig_post [nttInvContract, inPlaceContract, inPlaceSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
+    have hp := NttLoop.Pre.of (t := VG.Spec.MlDsa.nttInv) h₀ rfl
+    refine Proof.MlDsa.Arith.polyIs_frame hm (fun r hr => by
+      rw [List.mem_singleton.mp hr]; exact (mcdt_disj hp hp.stk_f).symm) ?_
+    refine polyIs_of_toNat fun i hi => ?_
+    rw [nttInv_eq_layers, map_mul_get _ _ hi]
+    show _ = ((nttInvLens.foldl nttInvLayer (F s₀))[i]! * c256).val
+    rw [fold_eq]
+    exact hinv.done i hi
+  · let st := satState NttLoop.satMem [] [⟨0, 1024⟩, ⟨0x400, 1024⟩, ⟨0x5004, 8⟩]
+    have a0 : arg st 0 = 0 := by decide
+    have a1 : arg st 1 = 0x400 := by decide
+    have e : argAddr st 0 = 0x5004 := by decide
+    refine ⟨st, ?_⟩
+    sig_pre [nttInvContract, inPlaceContract, inPlaceSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
+    simp only [a0, a1, e]
+    refine ⟨by decide, by decide, rfl, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, by decide, by decide,
+      reduced_below NttFwd.satZero 0 (by decide)⟩
+    all_goals exact Region.disjoint_of_sep (by decide)
+
+end VG.Proof.MlDsa.X86.Arith.NttInvP
