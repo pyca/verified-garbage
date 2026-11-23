@@ -522,13 +522,14 @@ lake env lean --run EmitOne.lean Rc2.AArch64
 lake env lean --run EmitOne.lean --check Rc2.AArch64
 ```
 
-It refuses a file that is new or that other registration files also emit into
-(each table of constants has a file of its own, `consts/<name>.rs`, which it
-writes like any other), and, writing nothing, a registration whose files
-would declare other internal functions than the same files on disk do (which
-module's file declares each depends on every registration file of the
-target); the full emitter handles those, and the checks below still run
-everything before pushing.
+When the files it would write might differ from what the full emitter
+writes (a new file, one other registration files also emit into, or internal
+functions declared elsewhere than on disk, since which module's file declares
+each depends on every registration file of the target), it says why and
+emits every registration file of the target instead, as `Emit.lean` does
+(slower, but exact). Each table of constants has a file of its own,
+`consts/<name>.rs`, which it writes like any other. The checks below still
+run everything before pushing.
 
 ## Checks to run before pushing
 
