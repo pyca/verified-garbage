@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.TCB.X86.Isa
 public import VerifiedGarbage.TCB.Artifact
 public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Impl.ViaMm.X86
 import VerifiedGarbage.Proof.Framework.X86.Syms
 import VerifiedGarbage.Proof.Framework.X86.SseTaint
 
@@ -24,24 +25,7 @@ callee's first instruction overwrites (`Kills`).
 
 namespace VG.X86
 
-/-! ## The code -/
-
-/-- The call of `n`, whose code is `b`, by the address `l` puts in `eax`. -/
-def callVia (l : Instr) (n : String) (b : Prog isa) : Prog isa :=
-  .seq (.block [l]) (.icall (.callr .eax) n b (.block []))
-
-/-- `c` with each call of a function that `fs` maps to an MMX register made a
-call by the address in that register (`movd eax, mm`, then `call eax`). -/
-def Code.viaMm (fs : List (String × MReg)) : Prog isa → Prog isa
-  | .block is => .block is
-  | .seq a b => .seq (viaMm fs a) (viaMm fs b)
-  | .ite cd a b => .ite cd (viaMm fs a) (viaMm fs b)
-  | .loop b cd => .loop (viaMm fs b) cd
-  | .call m b => match fs.lookup m with
-    | some r => callVia (.mmxMovd .eax r) m (viaMm fs b)
-    | none => .call m (viaMm fs b)
-  | .frame i b j => .frame i (viaMm fs b) j
-  | .icall i m b nx => .icall i m b nx
+open VG.Impl.ViaMm.X86
 
 /-- Each register of `fs` holds its function's address, inside an MMX frame. -/
 def MmOk (fs : List (String × MReg)) (s : State) : Prop :=
@@ -295,10 +279,10 @@ theorem kills_viaMm (fs : List (String × MReg)) : ∀ c : Prog isa, Code.kills 
     simp only [Code.viaMm]; split <;> rfl
 
 /-- The run of `callVia (movd eax, r) m b'` from a run of the call. -/
-theorem Exec.callVia {fs : List (String × MReg)} {m : String} {r : MReg} {b : Prog isa} {s s₁ s₂ s' : State}
+theorem Exec.toCallVia {fs : List (String × MReg)} {m : String} {r : MReg} {b : Prog isa} {s s₁ s₂ s' : State}
     {t : List Leak} (hd : MmOk fs s) (hl : fs.lookup m = some r) (hk : Code.kills b = true)
     (hc : isa.call s = some s₁) (e : Exec isa b s₁ t s₂) (hr : isa.ret s₁ s₂ = some s') :
-    ∃ t', Exec isa (X86.callVia (.mmxMovd .eax r) m b) s t' s' := by
+    ∃ t', Exec isa (Impl.ViaMm.X86.callVia r m b) s t' s' := by
   have ha := hd.addr hl
   have hi : isa.icall (.callr .eax) (s.setReg .eax ((s.mm r).extractLsb' 0 32)) =
       some (isa.fnAddr (s.setReg .eax ((s.mm r).extractLsb' 0 32)) m) := by
@@ -345,7 +329,7 @@ theorem Exec.toMm {fs : List (String × MReg)} {c : Prog isa} {s s' : State} {t 
     | none => exact ⟨_, by simp only [Code.viaMm, hl]; exact Exec.call hc e' hr⟩
     | some r =>
       have hkb : Code.kills b = true := hk.1.resolve_left (by rw [hl]; simp)
-      obtain ⟨_, e''⟩ := Exec.callVia hd hl (by rw [kills_viaMm]; exact hkb) hc e' hr
+      obtain ⟨_, e''⟩ := Exec.toCallVia hd hl (by rw [kills_viaMm]; exact hkb) hc e' hr
       exact ⟨_, by simp only [Code.viaMm, hl]; exact e''⟩
   | @frame i j b _ _ _ _ _ hp _ hq ih =>
     obtain ⟨_, e'⟩ := ih (fun i hi => hv i (by simp [instrs, hi])) hk (hd.push (hv i (by simp [instrs])) hp)
@@ -482,12 +466,12 @@ theorem Exec.prefix {c : Prog isa} (hc : Code.icallFree c = true) {s₁ s₂ s�
 starts in, its callee entered with `eax` the address, `m`'s address leaked
 first. -/
 theorem Exec.callVia_inv {m : String} {r : MReg} {b : Prog isa} {s s' : State} {t : List Leak}
-    (hx : s.mmx = true) (e : Exec isa (X86.callVia (.mmxMovd .eax r) m b) s t s') :
+    (hx : s.mmx = true) (e : Exec isa (Impl.ViaMm.X86.callVia r m b) s t s') :
     ∃ s₁ s₂ tb, isa.call s = some s₁ ∧ Exec isa b (s₁.setReg .eax ((s.mm r).extractLsb' 0 32)) tb s₂ ∧
       isa.ret s₁ s₂ = some s' ∧
       t = .addr (isa.fnAddr s m) :: ((isa.callAddrs s).map .addr ++ tb ++ (isa.retAddrs s₂).map .addr) := by
   obtain ⟨s₁, hc⟩ := call_some s
-  unfold X86.callVia at e
+  change Exec isa (.seq (.block [.mmxMovd .eax r]) (.icall (.callr .eax) m b (.block []))) s t s' at e
   cases e with
   | seq e₁ e₂ =>
     cases e₁ with
@@ -551,7 +535,7 @@ theorem Exec.ofMm₁ {fs : List (String × MReg)} : ∀ (c : Prog isa), Code.ica
     cases hl : fs.lookup m with
     | some r =>
       have hkb : Code.kills b = true := hk.1.resolve_left (by rw [hl]; simp)
-      have e' : Exec isa (X86.callVia (.mmxMovd .eax r) m (Code.viaMm fs b)) s t' s' := by
+      have e' : Exec isa (Impl.ViaMm.X86.callVia r m (Code.viaMm fs b)) s t' s' := by
         simp only [Code.viaMm, hl] at e; exact e
       obtain ⟨s₁, _, _, hcall, fb, hr, -⟩ := Exec.callVia_inv hd.1 e'
       have fb' := (Exec.kills (by rw [kills_viaMm]; exact hkb) _).mp fb
@@ -734,9 +718,9 @@ theorem Exec.ofMm₂ {fs : List (String × MReg)} : ∀ (c : Prog isa), Code.ica
     | some r =>
       have hkb : Code.kills (Code.viaMm fs b) = true := by
         rw [kills_viaMm]; exact hk.1.resolve_left (by rw [hl]; simp)
-      have e₁' : Exec isa (X86.callVia (.mmxMovd .eax r) m (Code.viaMm fs b)) s₁ t₁' s₁' := by
+      have e₁' : Exec isa (Impl.ViaMm.X86.callVia r m (Code.viaMm fs b)) s₁ t₁' s₁' := by
         simp only [Code.viaMm, hl] at e₁; exact e₁
-      have e₂' : Exec isa (X86.callVia (.mmxMovd .eax r) m (Code.viaMm fs b)) s₂ t₂' s₂' := by
+      have e₂' : Exec isa (Impl.ViaMm.X86.callVia r m (Code.viaMm fs b)) s₂ t₂' s₂' := by
         simp only [Code.viaMm, hl] at e₂; exact e₂
       obtain ⟨r₁, q₁, _, hc₁, fb₁, hr₁, rfl⟩ := Exec.callVia_inv hd₁.1 e₁'
       obtain ⟨r₂, q₂, _, hc₂, fb₂, hr₂, rfl⟩ := Exec.callVia_inv hd₂.1 e₂'
