@@ -158,6 +158,10 @@ bl {vg_ed448_verify_equation}
 }
 
 #[rustfmt::skip]
+#[path = "internal/vg_ed448_decode.rs"]
+pub(crate) mod vg_ed448_decode;
+
+#[rustfmt::skip]
 #[path = "internal/vg_ed448_r32_add.rs"]
 pub(crate) mod vg_ed448_r32_add;
 
