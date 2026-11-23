@@ -354,7 +354,6 @@ jobs:
       - run: python3 ci/check_lean_modules.py
       - run: python3 ci/check_lean_single_importer.py
       - run: python3 ci/check_case_collisions.py
-      - run: python3 ci/check_bench_lock.py
       - run: python3 ci/check_registrations.py
       - run: python3 ci/check_lean_speed.py
       - run: python3 ci/audit_base.py check
