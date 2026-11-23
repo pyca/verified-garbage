@@ -512,6 +512,13 @@ over CAST5's core (`Mode.dirCoreSpec`), with the working space as a sixth
 argument (`modeX ivw post`: the chaining value is writable if `ivw`, as it
 is for all of them). The table of S-boxes is readable, where the static
 `VG_CAST5_S1234` puts it, and holds the S-boxes (`Held`).
+
+They are instances of the same theorems for any core that fits
+(`cbcEncryptChained_wp_of`, …, over `Fits cs tab b n` and the precondition
+`GPre tab b n ivw`: a working space of `b` bytes, `n` bytes of stack, and
+the table readable only if `tab`), as are the lemmas that give the modes'
+precondition and the key's (`seqPre_of`, `keyArgs_of`) and the initial
+taint's (`τG b n`, `τG_wf`, `τG_agree`).
 -/
 
 @[expose] public section
@@ -584,88 +591,267 @@ def modeX (ivw : Bool) (post : State → State → Prop) : Contract isa where
   pub s₁ s₂ := s₁.gpr .esp = s₂.gpr .esp ∧ (∀ i < 6, arg s₁ i = arg s₂ i) ∧
     s₁.syms s1234Sym = s₂.syms s1234Sym
 
+/-! ## Any core that fits
+
+The lemmas from a mode's precondition to the modes' own (`SeqPre`, the
+core's `KeyArgs`) for any core of CAST5 with its `CoreSpec` that fits
+(`Fits cs tab b n`): its key the subkeys and the number of rounds, the first
+two stack arguments; its blocks two words; a scratch buffer of `b` bytes,
+the sixth argument; `n` bytes of stack below `esp`; and, if `tab`, the
+static table of S-boxes readable. `GPre tab b n ivw` is `MPre ivw` for such
+a core (`MPre.gen`: the core a block at a time is `Fits … true 304 4`). -/
+
+/-- The working space, `b` bytes. -/
+abbrev scrG (b : Nat) (s : State) : Region := ⟨(arg s 5).setWidth 64, b⟩
+/-- The `n` bytes below `esp`. -/
+abbrev stkG (n : Nat) (s : State) : Region := below (s.gpr .esp) n
+
+/-- The readable regions: the table too if `tab`. -/
+def rdG : Bool → Bool → State → List Region
+  | true, ivw, s => rdL ivw s
+  | false, false, s => [keyA s, ivA s, argsA s]
+  | false, true, s => [keyA s, argsA s]
+
+/-- The writable regions, with a working space of `b` bytes. -/
+def wrG (b : Nat) : Bool → State → List Region
+  | false, s => [dataA s, scrG b s]
+  | true, s => [dataA s, ivA s, scrG b s]
+
+/-- A mode's precondition on x86 for a core with a working space of `b`
+bytes, the sixth argument, and `n` bytes of stack; the table of S-boxes is
+readable and holds them if `tab`. -/
+structure GPre (tab : Bool) (b n : Nat) (ivw : Bool) (s : State) : Prop where
+  rdEq : s.rd = rdG tab ivw s
+  wrEq : s.wr = wrG b ivw s
+  sp : n ≤ (s.gpr .esp).toNat
+  espFit : (s.gpr .esp).toNat + 28 ≤ 2 ^ 32
+  nv : (arg s 1).toNat = 12 ∨ (arg s 1).toNat = 16
+  fitK : (arg s 0).toNat + 128 ≤ 2 ^ 32
+  fitV : (arg s 2).toNat + 8 ≤ 2 ^ 32
+  fitD : (arg s 3).toNat + 8 * (arg s 4).toNat ≤ 2 ^ 32
+  fitS : (arg s 5).toNat + b ≤ 2 ^ 32
+  tabOk : tab = true → (s.syms s1234Sym).toNat + 4096 ≤ 2 ^ 32 ∧
+    Held s.mem ((s.syms s1234Sym).setWidth 64) s1234 ∧ (∀ r ∈ s.wr, (tabA s).Disjoint r) ∧
+    (tabA s).Disjoint (stkG n s)
+  dDS : (dataA s).Disjoint (scrG b s)
+  dVS : (ivA s).Disjoint (scrG b s)
+  dVD : ivw = true → (ivA s).Disjoint (dataA s)
+  dKw : ∀ r ∈ s.wr, (keyA s).Disjoint r
+  dAw : ∀ r ∈ s.wr, (argsA s).Disjoint r
+  dRw : ∀ r ∈ s.wr, (retA s).Disjoint r
+  dSw : ∀ r ∈ s.wr, (stkG n s).Disjoint r
+  dKs : (keyA s).Disjoint (stkG n s)
+
+/-- `MPre` is the precondition for a core with the table, 304 bytes of
+working space and four bytes of stack. -/
+theorem MPre.gen {ivw : Bool} {s : State} (h : MPre ivw s) : GPre true 304 4 ivw s := by
+  cases ivw <;> exact ⟨h.rdEq, h.wrEq, h.sp, h.espFit, h.nv, h.fitK, h.fitV, h.fitD, h.fitS,
+    fun _ => ⟨h.fitT, h.held, h.dTw, h.dTs⟩, h.dDS, h.dVS, h.dVD, h.dKw, h.dAw, h.dRw, h.dSw, h.dKs⟩
+
 section
-variable {ivw : Bool} {s : State}
+variable {tab ivw : Bool} {b n : Nat} {s : State}
 
-theorem MPre.mem_wr_data (h : MPre ivw s) : dataA s ∈ s.wr := by
-  rw [h.wrEq]; cases ivw <;> simp [wrL]
-theorem MPre.mem_wr_scr (h : MPre ivw s) : scrA s ∈ s.wr := by
-  rw [h.wrEq]; cases ivw <;> simp [wrL]
-theorem MPre.mem_wr_iv (h : MPre ivw s) (hw : ivw = true) : ivA s ∈ s.wr := by
-  rw [h.wrEq]; subst hw; simp [wrL]
-theorem MPre.mem_iv (h : MPre ivw s) : ivA s ∈ s.rd ++ s.wr := by
-  rw [h.rdEq, h.wrEq]; cases ivw <;> simp [rdL, wrL]
-theorem MPre.mem_args (h : MPre ivw s) : argsA s ∈ s.rd ++ s.wr := by
-  rw [h.rdEq]; cases ivw <;> simp [rdL]
-theorem MPre.mem_key (h : MPre ivw s) : keyA s ∈ s.rd ++ s.wr := by
-  rw [h.rdEq]; cases ivw <;> simp [rdL]
-theorem MPre.mem_tab (h : MPre ivw s) : tabA s ∈ s.rd ++ s.wr := by
-  rw [h.rdEq]; cases ivw <;> simp [rdL]
+theorem GPre.mem_wr_data (h : GPre tab b n ivw s) : dataA s ∈ s.wr := by
+  rw [h.wrEq]; cases ivw <;> simp [wrG]
+theorem GPre.mem_wr_scr (h : GPre tab b n ivw s) : scrG b s ∈ s.wr := by
+  rw [h.wrEq]; cases ivw <;> simp [wrG]
+theorem GPre.mem_wr_iv (h : GPre tab b n ivw s) (hw : ivw = true) : ivA s ∈ s.wr := by
+  rw [h.wrEq]; subst hw; simp [wrG]
+theorem GPre.mem_iv (h : GPre tab b n ivw s) : ivA s ∈ s.rd ++ s.wr := by
+  rw [h.rdEq, h.wrEq]; cases tab <;> cases ivw <;> simp [rdG, rdL, wrG]
+theorem GPre.mem_args (h : GPre tab b n ivw s) : argsA s ∈ s.rd ++ s.wr := by
+  rw [h.rdEq]; cases tab <;> cases ivw <;> simp [rdG, rdL]
+theorem GPre.mem_key (h : GPre tab b n ivw s) : keyA s ∈ s.rd ++ s.wr := by
+  rw [h.rdEq]; cases tab <;> cases ivw <;> simp [rdG, rdL]
+theorem GPre.mem_tab (h : GPre true b n ivw s) : tabA s ∈ s.rd ++ s.wr := by
+  rw [h.rdEq]; cases ivw <;> simp [rdG, rdL]
 
-/-- The word below `esp` is apart from the arguments and the return address. -/
-theorem stk_apart (h : MPre ivw s) :
-    Region.Disjoint (stkA s) (argsA s) ∧ Region.Disjoint (stkA s) (retA s) := by
-  have hlo := h.sp
-  have hfit := h.espFit
-  have e : (s.gpr .esp - BitVec.ofNat 32 4).setWidth 64 = (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 4 :=
+/-- The `n` bytes below `esp` are apart from the arguments and the return address. -/
+theorem stkG_apart (hlo : n ≤ (s.gpr .esp).toNat) (hfit : (s.gpr .esp).toNat + 28 ≤ 2 ^ 32) :
+    Region.Disjoint (stkG n s) (argsA s) ∧ Region.Disjoint (stkG n s) (retA s) := by
+  have e : (s.gpr .esp - BitVec.ofNat 32 n).setWidth 64 = (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 n :=
     VG.X86.Taint.sub_setWidth hlo
   have ea : argAddr s 0 = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 4 := addr_eq (by omega_using [hfit])
+  have hn : n + 4 + 24 ≤ 2 ^ 64 := by have := (s.gpr .esp).isLt; omega_using [hlo, this]
   refine ⟨?_, ?_⟩
-  · show Region.Disjoint ⟨(s.gpr .esp - BitVec.ofNat 32 4).setWidth 64, 4⟩ ⟨argAddr s 0, 24⟩
-    rw [e, ea]; exact VG.Offset.disjoint_below_above _ (by decide)
-  · show Region.Disjoint ⟨(s.gpr .esp - BitVec.ofNat 32 4).setWidth 64, 4⟩ _
-    have := VG.Offset.disjoint_below_above ((s.gpr .esp).setWidth 64) (m := 4) (a := 0) (l := 4) (by decide)
+  · show Region.Disjoint ⟨(s.gpr .esp - BitVec.ofNat 32 n).setWidth 64, n⟩ ⟨argAddr s 0, 24⟩
+    rw [e, ea]; exact VG.Offset.disjoint_below_above _ hn
+  · show Region.Disjoint ⟨(s.gpr .esp - BitVec.ofNat 32 n).setWidth 64, n⟩ _
+    have := VG.Offset.disjoint_below_above ((s.gpr .esp).setWidth 64) (m := n) (a := 0) (l := 4)
+      (by omega_using [hn])
     rw [BitVec.add_zero] at this
     rw [e]; exact this
 
 end
 
-theorem scr_eq (up : Bool) (s : State) : Modes.X86.scrR s (dirCore up) = scrA s := rfl
+/-- What a mode's precondition gives of the key's two arguments: the
+subkeys' address `K` and the number of rounds `r`; the subkeys `k` at `K`
+(and the table, if `tab`) readable, apart from every writable region and
+from the `n` bytes below `esp`. -/
+structure KeyBase (tab : Bool) (n : Nat) (s : State) (K : BitVec 32) (k : Spec.Cast5.Schedule) (r : Nat) :
+    Prop where
+  fitE : (s.gpr .esp).toNat + 12 ≤ 2 ^ 32
+  sp : n ≤ (s.gpr .esp).toNat
+  inA : InRegions (s.rd ++ s.wr) (addr (s.gpr .esp) 4) 8
+  argK : s.mem.readW (addr (s.gpr .esp) 4) 32 = K
+  argN : s.mem.readW (addr (s.gpr .esp) 8) 32 = BitVec.ofNat 32 r
+  nv : r = 12 ∨ r = 16
+  fitK : K.toNat + 128 ≤ 2 ^ 32
+  inK : InRegions (s.rd ++ s.wr) (K.setWidth 64) 128
+  sk : Spec.Cast5.scheduleAt s.mem (K.setWidth 64) = k
+  tabOk : tab = true → (s.syms s1234Sym).toNat + 4096 ≤ 2 ^ 32 ∧
+    InRegions (s.rd ++ s.wr) ((s.syms s1234Sym).setWidth 64) 4096 ∧
+    Held s.mem ((s.syms s1234Sym).setWidth 64) s1234 ∧ (∀ x ∈ s.wr, (Mode.tabR s).Disjoint x) ∧
+    (Mode.tabR s).Disjoint (stkG n s)
+  dW : ∀ x ∈ s.wr, (Mode.keyR K).Disjoint x ∧ (Mode.argR s).Disjoint x
+  dKs : (Mode.keyR K).Disjoint (stkG n s)
+  dAs : (Mode.argR s).Disjoint (stkG n s)
 
-/-- `MPre`'s precondition gives the modes'. -/
-theorem seqPre_of (up : Bool) {ivw : Bool} {M : Mode} (hstep : M.step = 8) (hiv : M.ivOut = ivw) {s : State}
-    (h : MPre ivw s) : SeqPre (dirCore up) M s := by
-  have hL := (dirCoreSpec up).layout
-  obtain ⟨sA, sR⟩ := stk_apart h
+/-- The key `kn` through its two arguments, apart from the regions `rs`. -/
+def KeyFacts (tab : Bool) (n : Nat) (s : State) (rs : List Region) (kn : Spec.Cast5.Schedule × Nat) : Prop :=
+  ∃ K, KeyBase tab n s K kn.1 kn.2 ∧
+    ∀ r ∈ rs, (Mode.keyR K).Disjoint r ∧ (tab = true → (Mode.tabR s).Disjoint r) ∧ (Mode.argR s).Disjoint r ∧
+      (stkG n s).Disjoint r
+
+/-- A core of CAST5's modes on x86 with its `CoreSpec`, as the lemmas about
+the functions take it: its key is the subkeys and the number of rounds,
+which `KeyFacts tab n` gives it; its blocks are two words; the key is two
+arguments; it has `n` bytes of stack; and its scratch buffer is `b` bytes. -/
+structure Fits {c : VG.Impl.Modes.X86.Core} (cs : Proof.Modes.X86.CoreSpec c) (tab : Bool) (b n : Nat) where
+  toKey : Spec.Cast5.Schedule × Nat → cs.Key
+  keyArgs : ∀ {s : State} {rs : List Region} {kn : Spec.Cast5.Schedule × Nat},
+    KeyFacts tab n s rs kn → cs.KeyArgs s rs (toKey kn)
+  bw : c.bw = 2
+  ka : c.ka = 2
+  stack : c.stack = n
+  total : 4 * c.total = b
+
+/-- The core a block at a time fits, with the table, 304 bytes and four of stack. -/
+def dirFits (up : Bool) : Fits (dirCoreSpec up) true 304 4 where
+  toKey := id
+  keyArgs h := by
+    obtain ⟨K, hb, hd⟩ := h
+    obtain ⟨fT, inT, held, dTw, dTs⟩ := hb.tabOk rfl
+    exact ⟨K, ⟨hb.fitE, hb.sp, hb.inA, hb.argK, hb.argN, hb.nv, hb.fitK, hb.inK, hb.sk, fT, inT, held,
+      fun r hr => ⟨(hb.dW r hr).1, dTw r hr, (hb.dW r hr).2⟩, hb.dKs, dTs, hb.dAs⟩,
+      fun r hr => ⟨(hd r hr).1, (hd r hr).2.1 rfl, (hd r hr).2.2.1, (hd r hr).2.2.2⟩⟩
+  bw := rfl
+  ka := rfl
+  stack := rfl
+  total := rfl
+
+section
+variable {c : VG.Impl.Modes.X86.Core} {cs : Proof.Modes.X86.CoreSpec c} {tab : Bool} {b n : Nat}
+
+/-- The scratch buffer of a core that fits is the sixth argument's `b` bytes. -/
+theorem scr_eq (f : Fits cs tab b n) (s : State) : Modes.X86.scrR s c = scrG b s := by
+  show (⟨(arg s (c.ka + 3)).setWidth 64, 4 * c.total⟩ : Region) = _
+  rw [f.ka, f.total]
+
+/-- `GPre`'s precondition gives the modes', for a core that fits. -/
+theorem seqPre_of (f : Fits cs tab b n) {ivw : Bool} {M : Mode} (hstep : M.step = 8) (hiv : M.ivOut = ivw)
+    {s : State} (h : GPre tab b n ivw s) : SeqPre c M s := by
+  have hL := cs.layout
+  obtain ⟨sA, sR⟩ := stkG_apart h.sp h.espFit
   have mS := h.mem_wr_scr
   have mD := h.mem_wr_data
-  refine ⟨h.mem_args, h.espFit, ⟨mS, h.fitS⟩, h.mem_iv, fun hv => h.mem_wr_iv (hiv ▸ hv), h.fitV,
-    by rw [hstep]; exact mD, by rw [hstep]; exact h.fitD, by rw [hstep]; exact h.dDS, h.dVS,
-    fun hv => by rw [hstep]; exact h.dVD (hiv ▸ hv), h.dAw _ mS, by rw [hstep]; exact h.dAw _ mD,
-    h.dRw _ mS, by rw [hstep]; exact h.dRw _ mD, fun hv => ?_, by rw [hstep]; exact h.dSw _ mD,
-    (h.dSw _ mS).sub_right (VG.Offset.sub_base _ (by simp [dirCore, coreSlots])), sA, sR, h.sp,
-    by rw [hstep]; simp [dirCore], hL⟩
-  exact h.dRw _ (h.mem_wr_iv (hiv ▸ hv))
+  obtain hka := f.ka
+  obtain hbw := f.bw
+  obtain hsk := f.stack
+  obtain htot := f.total
+  obtain hroom := hL.room
+  refine ⟨?_, ?_, ⟨?_, ?_⟩, ?_, (fun hv => ?_), ?_, ?_, ?_, ?_, ?_, (fun hv => ?_), ?_, ?_, ?_, ?_,
+    (fun hv => ?_), ?_, ?_, ?_, ?_, ?_, ?_, hL⟩
+  · show (⟨argAddr s 0, 4 * (c.ka + 4)⟩ : Region) ∈ _
+    rw [hka]; exact h.mem_args
+  · rw [hka]; exact h.espFit
+  · show (⟨(arg s (c.ka + 3)).setWidth 64, 4 * c.total⟩ : Region) ∈ _
+    rw [hka, htot]; exact mS
+  · show (arg s (c.ka + 3)).toNat + 4 * c.total ≤ 2 ^ 32
+    rw [hka, htot]; exact h.fitS
+  · show (⟨(arg s c.ka).setWidth 64, 4 * c.bw⟩ : Region) ∈ _
+    rw [hka, hbw]; exact h.mem_iv
+  · show (⟨(arg s c.ka).setWidth 64, 4 * c.bw⟩ : Region) ∈ _
+    rw [hka, hbw]; exact h.mem_wr_iv (hiv ▸ hv)
+  · show (arg s c.ka).toNat + 4 * c.bw ≤ 2 ^ 32
+    rw [hka, hbw]; exact h.fitV
+  · show Proof.Modes.X86.dataRegion (arg s (c.ka + 1)) M.step (arg s (c.ka + 2)).toNat ∈ _
+    rw [hstep, hka]; exact mD
+  · show (arg s (c.ka + 1)).toNat + M.step * (arg s (c.ka + 2)).toNat ≤ 2 ^ 32
+    rw [hstep, hka]; exact h.fitD
+  · show Region.Disjoint (Proof.Modes.X86.dataRegion (arg s (c.ka + 1)) M.step (arg s (c.ka + 2)).toNat) _
+    rw [hstep, scr_eq f, hka]; exact h.dDS
+  · show Region.Disjoint ⟨(arg s c.ka).setWidth 64, 4 * c.bw⟩ _
+    rw [scr_eq f, hka, hbw]; exact h.dVS
+  · show Region.Disjoint ⟨(arg s c.ka).setWidth 64, 4 * c.bw⟩
+      (Proof.Modes.X86.dataRegion (arg s (c.ka + 1)) M.step (arg s (c.ka + 2)).toNat)
+    rw [hstep, hka, hbw]; exact h.dVD (hiv ▸ hv)
+  · show Region.Disjoint ⟨argAddr s 0, 4 * (c.ka + 4)⟩ _
+    rw [scr_eq f, hka]; exact h.dAw _ mS
+  · show Region.Disjoint ⟨argAddr s 0, 4 * (c.ka + 4)⟩
+      (Proof.Modes.X86.dataRegion (arg s (c.ka + 1)) M.step (arg s (c.ka + 2)).toNat)
+    rw [hstep, hka]; exact h.dAw _ mD
+  · rw [scr_eq f]; exact h.dRw _ mS
+  · show Region.Disjoint _ (Proof.Modes.X86.dataRegion (arg s (c.ka + 1)) M.step (arg s (c.ka + 2)).toNat)
+    rw [hstep, hka]; exact h.dRw _ mD
+  · show Region.Disjoint _ ⟨(arg s c.ka).setWidth 64, 4 * c.bw⟩
+    rw [hka, hbw]; exact h.dRw _ (h.mem_wr_iv (hiv ▸ hv))
+  · show Region.Disjoint (stkRegion (s.gpr .esp) c.stack)
+      (Proof.Modes.X86.dataRegion (arg s (c.ka + 1)) M.step (arg s (c.ka + 2)).toNat)
+    rw [hstep, hka, hsk]; exact h.dSw _ mD
+  · show Region.Disjoint (stkRegion (s.gpr .esp) c.stack) ⟨Proof.Modes.X86.slotA (arg s (c.ka + 3)) c.slots, 40⟩
+    rw [hka, hsk]
+    exact (h.dSw _ mS).sub_right (VG.Offset.sub_base _ (by omega_arith))
+  · show Region.Disjoint (stkRegion (s.gpr .esp) c.stack) ⟨argAddr s 0, 4 * (c.ka + 4)⟩
+    rw [hka, hsk]; exact sA
+  · rw [hsk]; exact sR
+  · rw [hsk]; exact h.sp
+  · rw [hstep, hbw]; exact ⟨by decide, by decide⟩
 
-theorem keyArgs_of (up : Bool) {ivw : Bool} {s : State} (h : MPre ivw s) :
-    KeyArgs s [Modes.X86.scrR s (dirCore up)]
-      (Spec.Cast5.scheduleAt s.mem ((arg s 0).setWidth 64), (arg s 1).toNat) := by
-  obtain ⟨sA, -⟩ := stk_apart h
-  have hfit := h.espFit
-  have ea : ∀ k, k + 4 ≤ 24 → (⟨addr (s.gpr .esp) (4 + k), 4⟩ : Region).Sub (argsA s) := by
-    intro k hk
-    have e0 : argAddr s 0 = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 4 := addr_eq (by omega_using [hfit])
-    have ek : addr (s.gpr .esp) (4 + k) = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 4 + BitVec.ofNat 64 k := by
-      rw [addr_eq (by omega_using [hfit, hk]), VG.Offset.add_add]
-    show Region.Sub ⟨addr (s.gpr .esp) (4 + k), 4⟩ ⟨argAddr s 0, 24⟩
-    rw [e0, ek]; exact VG.Offset.sub_base _ hk
+/-- The key's facts from the arguments of a precondition: `espFit`, the
+subkeys and the arguments readable, and their distances (`hK`, `hT`). -/
+theorem keyFacts_of {s : State} {rs : List Region} (hlo : n ≤ (s.gpr .esp).toNat)
+    (hfit : (s.gpr .esp).toNat + 28 ≤ 2 ^ 32) (mA : argsA s ∈ s.rd ++ s.wr) (mK : keyA s ∈ s.rd ++ s.wr)
+    (nv : (arg s 1).toNat = 12 ∨ (arg s 1).toNat = 16) (fitK : (arg s 0).toNat + 128 ≤ 2 ^ 32)
+    (hT : tab = true → (s.syms s1234Sym).toNat + 4096 ≤ 2 ^ 32 ∧ tabA s ∈ s.rd ++ s.wr ∧
+      Held s.mem ((s.syms s1234Sym).setWidth 64) s1234 ∧ (∀ r ∈ s.wr, (tabA s).Disjoint r) ∧
+      (tabA s).Disjoint (stkG n s) ∧ ∀ r ∈ rs, (tabA s).Disjoint r)
+    (dKw : ∀ r ∈ s.wr, (keyA s).Disjoint r) (dAw : ∀ r ∈ s.wr, (argsA s).Disjoint r)
+    (dKs : (keyA s).Disjoint (stkG n s))
+    (hrs : ∀ r ∈ rs, (keyA s).Disjoint r ∧ (argsA s).Disjoint r ∧ (stkG n s).Disjoint r) :
+    KeyFacts tab n s rs (Spec.Cast5.scheduleAt s.mem ((arg s 0).setWidth 64), (arg s 1).toNat) := by
+  obtain ⟨sA, -⟩ := stkG_apart hlo hfit
   have argSub : (Mode.argR s).Sub (argsA s) := by
     have e0 : argAddr s 0 = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 4 := addr_eq (by omega_using [hfit])
     show Region.Sub ⟨addr (s.gpr .esp) 4, 8⟩ ⟨argAddr s 0, 24⟩
     rw [e0, show addr (s.gpr .esp) 4 = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 4 + BitVec.ofNat 64 0 by
       rw [BitVec.add_zero]; exact addr_eq (by omega_using [hfit])]
     exact VG.Offset.sub_base _ (by decide)
-  have mS := h.mem_wr_scr
-  refine ⟨arg s 0, ⟨by omega_using [hfit], h.sp, ⟨_, h.mem_args, by
+  refine ⟨arg s 0, ⟨by omega_using [hfit], hlo, ⟨_, mA, by
       show (⟨argAddr s 0, 24⟩ : Region).Contains (argAddr s 0) 8
-      simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega_using []⟩, rfl, ?_, h.nv, h.fitK, ⟨_, h.mem_key,
-    Region.contains_self _ _⟩, rfl, h.fitT, ⟨_, h.mem_tab, Region.contains_self _ _⟩, h.held,
-    fun r hr => ⟨h.dKw r hr, h.dTw r hr, (h.dAw r hr).sub_left argSub⟩, h.dKs, h.dTs,
-    (sA.symm.sub_left argSub)⟩, fun r hr => ?_⟩
-  · show arg s 1 = BitVec.ofNat 32 (arg s 1).toNat
-    rw [BitVec.ofNat_toNat, BitVec.setWidth_eq]
-  · simp only [List.mem_singleton] at hr; subst hr; rw [scr_eq]
-    exact ⟨h.dKw _ mS, h.dTw _ mS, (h.dAw _ mS).sub_left argSub, h.dSw _ mS⟩
+      simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega_using []⟩, rfl, ?_, nv, fitK, ⟨_, mK,
+    Region.contains_self _ _⟩, rfl, fun ht => ⟨(hT ht).1, ⟨_, (hT ht).2.1, Region.contains_self _ _⟩, (hT ht).2.2.1,
+      (hT ht).2.2.2.1, (hT ht).2.2.2.2.1⟩,
+    fun r hr => ⟨dKw r hr, (dAw r hr).sub_left argSub⟩, dKs, (sA.symm.sub_left argSub)⟩, fun r hr =>
+      ⟨(hrs r hr).1, fun ht => (hT ht).2.2.2.2.2 r hr, (hrs r hr).2.1.sub_left argSub, (hrs r hr).2.2⟩⟩
+  show arg s 1 = BitVec.ofNat 32 (arg s 1).toNat
+  rw [BitVec.ofNat_toNat, BitVec.setWidth_eq]
+
+/-- `GPre`'s precondition gives the key's, for a core that fits. -/
+theorem keyArgs_of (f : Fits cs tab b n) {ivw : Bool} {s : State} (h : GPre tab b n ivw s) :
+    cs.KeyArgs s [Modes.X86.scrR s c]
+      (f.toKey (Spec.Cast5.scheduleAt s.mem ((arg s 0).setWidth 64), (arg s 1).toNat)) := by
+  have mS := h.mem_wr_scr
+  refine f.keyArgs (keyFacts_of h.sp h.espFit h.mem_args h.mem_key h.nv h.fitK (fun ht => ?_) h.dKw h.dAw h.dKs
+    fun r hr => ?_)
+  · subst ht
+    obtain ⟨fT, held, dTw, dTs⟩ := h.tabOk rfl
+    refine ⟨fT, h.mem_tab, held, dTw, dTs, fun r hr => ?_⟩
+    simp only [List.mem_singleton] at hr; subst hr; rw [scr_eq f]; exact dTw _ mS
+  · simp only [List.mem_singleton] at hr; subst hr; rw [scr_eq f]
+    exact ⟨h.dKw _ mS, h.dAw _ mS, h.dSw _ mS⟩
+
+end
 
 /-- The data, in blocks. -/
 abbrev dataAt (m : Mem) (s : State) : List (List Byte) :=
@@ -696,68 +882,111 @@ def cfbDecPost (s s' : State) : Prop :=
   dataAt s'.mem s = Spec.Cfb.decrypt (ciph s) (ivAt s.mem s) (dataAt s.mem s) ∧
     ivAt s'.mem s = Spec.Cbc.next (ivAt s.mem s) (dataAt s.mem s)
 
-@[simp] theorem dirCore_ka (up : Bool) : (dirCore up).ka = 2 := rfl
-
 theorem data_eq (m : Mem) (s : State) :
     Proof.Modes.chunksAt 8 m ((arg s 3).setWidth 64) (arg s 4).toNat = dataAt m s :=
   (Proof.Cast5.cbcBlocksAt_eq _ _ _).symm
 theorem iv_eq (m : Mem) (s : State) :
     Spec.Aes.bytesAt m ((arg s 2).setWidth 64) 8 = ivAt m s := rfl
-theorem cipher_eq (s : State) :
-    (dirCoreSpec true).cipher (Spec.Cast5.scheduleAt s.mem ((arg s 0).setWidth 64), (arg s 1).toNat) = ciph s := rfl
-theorem invCipher_eq (s : State) :
-    (dirCoreSpec false).cipher (Spec.Cast5.scheduleAt s.mem ((arg s 0).setWidth 64), (arg s 1).toNat) =
-      invCiph s := rfl
 
-tactic_template "post_eq_cast5_x86_modesverified" h:ident : tactic =>
+/-- The modes' results (`h`, `h'`) for the core that fits by `f`, whose
+cipher `hc` gives, as the functions' postconditions state them. -/
+tactic_template "post_eq_cast5_x86_modesverified " f:term:max hc:term:max h:ident h':ident : tactic =>
   `(tactic| simp only [Proof.Modes.X86.blocks0, Proof.Modes.X86.iv0, Proof.Modes.X86.Dp,
-                     Proof.Modes.X86.P, Proof.Modes.X86.N, dirCore_ka, Mode.dirCore_bw, Nat.reduceMul, Nat.reduceAdd,
-                     data_eq, iv_eq, cipher_eq, invCipher_eq] at $h:ident)
+                     Proof.Modes.X86.P, Proof.Modes.X86.N, VG.Proof.Cast5.X86.ModeFns.Fits.ka $f,
+                     VG.Proof.Cast5.X86.ModeFns.Fits.bw $f, Nat.reduceMul, Nat.reduceAdd,
+                     VG.Proof.Cast5.X86.ModeFns.data_eq, VG.Proof.Cast5.X86.ModeFns.iv_eq, $hc:term] at $h:ident $h':ident)
+
+section
+variable {c : VG.Impl.Modes.X86.Core} {cs : Proof.Modes.X86.CoreSpec c} {tab : Bool} {b n : Nat}
+
+/-- A whole block is a step of the modes over a core that fits. -/
+theorem step_block (f : Fits cs tab b n) : 4 * c.bw = 8 := by rw [f.bw]
+
+/-- CBC encryption that updates the chaining value, over any core that
+fits, whose cipher is CAST5's. -/
+theorem cbcEncryptChained_wp_of (f : Fits cs tab b n)
+    (hc : ∀ k r, cs.cipher (f.toKey (k, r)) = Spec.Cast5.cipher k r) {s₀ : State} (hp : GPre tab b n true s₀) :
+    WP isa (c.seq (Mode.cbcEncChained c.bw)) s₀ fun s' => abiPreserved s₀ s' ∧ cbcEncPost s₀ s' :=
+  WP.mono (cbcEncChained_wp cs (seqPre_of f (step_block f) rfl hp) (keyArgs_of f hp))
+    fun _ ⟨h1, h2, h3⟩ => by post_eq_cast5_x86_modesverified f hc h2 h3; exact ⟨h1, h2, h3⟩
+
+/-- CBC decryption that updates the chaining value, over any core that
+fits, whose cipher is CAST5's inverse. -/
+theorem cbcDecryptChained_wp_of (f : Fits cs tab b n)
+    (hc : ∀ k r, cs.cipher (f.toKey (k, r)) = Spec.Cast5.invCipher k r) {s₀ : State} (hp : GPre tab b n true s₀) :
+    WP isa (c.seq (Mode.cbcDecChained c.bw)) s₀ fun s' => abiPreserved s₀ s' ∧ cbcDecPost s₀ s' :=
+  WP.mono (cbcDecChained_wp cs (seqPre_of f (step_block f) rfl hp) (keyArgs_of f hp))
+    fun _ ⟨h1, h2, h3⟩ => by post_eq_cast5_x86_modesverified f hc h2 h3; exact ⟨h1, h2, h3⟩
+
+/-- OFB over any core that fits. -/
+theorem ofb_wp_of (f : Fits cs tab b n) (hc : ∀ k r, cs.cipher (f.toKey (k, r)) = Spec.Cast5.cipher k r)
+    {s₀ : State} (hp : GPre tab b n true s₀) :
+    WP isa (c.seq (Mode.ofb c.bw)) s₀ fun s' => abiPreserved s₀ s' ∧ ofbPost s₀ s' :=
+  WP.mono (ofb_wp cs (seqPre_of f (step_block f) rfl hp) (keyArgs_of f hp))
+    fun _ ⟨h1, h2, h3⟩ => by post_eq_cast5_x86_modesverified f hc h2 h3; exact ⟨h1, h2, h3⟩
+
+/-- CFB64 encryption over any core that fits. -/
+theorem cfbEncrypt_wp_of (f : Fits cs tab b n) (hc : ∀ k r, cs.cipher (f.toKey (k, r)) = Spec.Cast5.cipher k r)
+    {s₀ : State} (hp : GPre tab b n true s₀) :
+    WP isa (c.seq (Mode.cfbEnc c.bw)) s₀ fun s' => abiPreserved s₀ s' ∧ cfbEncPost s₀ s' :=
+  WP.mono (cfbEnc_wp cs (seqPre_of f (step_block f) rfl hp) (keyArgs_of f hp))
+    fun _ ⟨h1, h2, h3⟩ => by post_eq_cast5_x86_modesverified f hc h2 h3; exact ⟨h1, h2, h3⟩
+
+/-- CFB64 decryption over any core that fits. -/
+theorem cfbDecrypt_wp_of (f : Fits cs tab b n) (hc : ∀ k r, cs.cipher (f.toKey (k, r)) = Spec.Cast5.cipher k r)
+    {s₀ : State} (hp : GPre tab b n true s₀) :
+    WP isa (c.seq (Mode.cfbDec c.bw)) s₀ fun s' => abiPreserved s₀ s' ∧ cfbDecPost s₀ s' :=
+  WP.mono (cfbDec_wp cs (seqPre_of f (step_block f) rfl hp) (keyArgs_of f hp))
+    fun _ ⟨h1, h2, h3⟩ => by post_eq_cast5_x86_modesverified f hc h2 h3; exact ⟨h1, h2, h3⟩
+
+end
 
 theorem cbcEncryptChained_wp {s₀ : State} (hp : (modeX true cbcEncPost).pre s₀) :
     WP isa cbcEncryptChained s₀ fun s' => abiPreserved s₀ s' ∧ (modeX true cbcEncPost).post s₀ s' :=
-  WP.mono (cbcEncChained_wp (dirCoreSpec true) (seqPre_of true rfl rfl hp) (keyArgs_of true hp))
-    fun _ ⟨h1, h2, h3⟩ => by post_eq_cast5_x86_modesverified h2; post_eq_cast5_x86_modesverified h3; exact ⟨h1, h2, h3⟩
+  cbcEncryptChained_wp_of (dirFits true) (fun _ _ => rfl) (MPre.gen hp)
 
 theorem cbcDecryptChained_wp {s₀ : State} (hp : (modeX true cbcDecPost).pre s₀) :
     WP isa cbcDecryptChained s₀ fun s' => abiPreserved s₀ s' ∧ (modeX true cbcDecPost).post s₀ s' :=
-  WP.mono (cbcDecChained_wp (dirCoreSpec false) (seqPre_of false rfl rfl hp) (keyArgs_of false hp))
-    fun _ ⟨h1, h2, h3⟩ => by post_eq_cast5_x86_modesverified h2; post_eq_cast5_x86_modesverified h3; exact ⟨h1, h2, h3⟩
+  cbcDecryptChained_wp_of (dirFits false) (fun _ _ => rfl) (MPre.gen hp)
 
 theorem ofb_wp_x86 {s₀ : State} (hp : (modeX true ofbPost).pre s₀) :
     WP isa ofb s₀ fun s' => abiPreserved s₀ s' ∧ (modeX true ofbPost).post s₀ s' :=
-  WP.mono (ofb_wp (dirCoreSpec true) (seqPre_of true rfl rfl hp) (keyArgs_of true hp))
-    fun _ ⟨h1, h2, h3⟩ => by post_eq_cast5_x86_modesverified h2; post_eq_cast5_x86_modesverified h3; exact ⟨h1, h2, h3⟩
+  ofb_wp_of (dirFits true) (fun _ _ => rfl) (MPre.gen hp)
 
 theorem cfbEncrypt_wp {s₀ : State} (hp : (modeX true cfbEncPost).pre s₀) :
     WP isa cfbEncrypt s₀ fun s' => abiPreserved s₀ s' ∧ (modeX true cfbEncPost).post s₀ s' :=
-  WP.mono (cfbEnc_wp (dirCoreSpec true) (seqPre_of true rfl rfl hp) (keyArgs_of true hp))
-    fun _ ⟨h1, h2, h3⟩ => by post_eq_cast5_x86_modesverified h2; post_eq_cast5_x86_modesverified h3; exact ⟨h1, h2, h3⟩
+  cfbEncrypt_wp_of (dirFits true) (fun _ _ => rfl) (MPre.gen hp)
 
 theorem cfbDecrypt_wp {s₀ : State} (hp : (modeX true cfbDecPost).pre s₀) :
     WP isa cfbDecrypt s₀ fun s' => abiPreserved s₀ s' ∧ (modeX true cfbDecPost).post s₀ s' :=
-  WP.mono (cfbDec_wp (dirCoreSpec true) (seqPre_of true rfl rfl hp) (keyArgs_of true hp))
-    fun _ ⟨h1, h2, h3⟩ => by post_eq_cast5_x86_modesverified h2; post_eq_cast5_x86_modesverified h3; exact ⟨h1, h2, h3⟩
+  cfbDecrypt_wp_of (dirFits true) (fun _ _ => rfl) (MPre.gen hp)
 
 /-! ## Constant time -/
 
-/-- The initial taint of the modes: `esp` public, the words holding `data`,
-`iv` and `scratch` known to be the base addresses of the writable regions,
-and room for the core's word below `esp`. -/
-def τFb : VG.X86.Taint.T :=
-  { regs := .ofList [.esp], flags := false, lens := [0, 8, 304], argLen := 28,
-    argBases := [(16, 0), (12, 1), (24, 2)], room := 4 }
+/-- The initial taint of the modes over a core with `b` bytes of working
+space and `n` of stack: `esp` public, the words holding `data`, `iv` and
+`scratch` known to be the base addresses of the writable regions, and room
+for the core's bytes below `esp`. -/
+def τG (b n : Nat) : VG.X86.Taint.T :=
+  { regs := .ofList [.esp], flags := false, lens := [0, 8, b], argLen := 28,
+    argBases := [(16, 0), (12, 1), (24, 2)], room := n }
 
-theorem stk_eq (s : State) (h : 4 ≤ (s.gpr .esp).toNat) :
-    (⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 4, 4⟩ : Region) = stkA s := by
-  show _ = (⟨(s.gpr .esp - BitVec.ofNat 32 4).setWidth 64, 4⟩ : Region)
+/-- The modes' over the core a block at a time. -/
+def τFb : VG.X86.Taint.T := τG 304 4
+
+theorem stkG_eq (s : State) {n : Nat} (h : n ≤ (s.gpr .esp).toNat) :
+    (⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 n, n⟩ : Region) = stkG n s := by
+  show _ = (⟨(s.gpr .esp - BitVec.ofNat 32 n).setWidth 64, n⟩ : Region)
   rw [VG.X86.Taint.sub_setWidth h]
 
-theorem τFb_wf {s : State} (h : MPre true s) : VG.X86.Taint.Wf τFb s := by
+theorem stk_eq (s : State) (h : 4 ≤ (s.gpr .esp).toNat) :
+    (⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 4, 4⟩ : Region) = stkA s := stkG_eq s h
+
+theorem τG_wf {tab : Bool} {b n : Nat} {s : State} (h : GPre tab b n true s) : VG.X86.Taint.Wf (τG b n) s := by
   have hw := h.wrEq
-  simp only [wrL] at hw
+  simp only [wrG] at hw
   refine VG.X86.Taint.Wf.entryRoom rfl ⟨fun _ => ⟨?_, ?_, ?_⟩, fun _ h => (List.not_mem_nil h).elim,
-    fun _ h => (List.not_mem_nil h).elim, fun _ => ⟨by simp only [τFb]; have := h.espFit; omega_using [this], ?_⟩, ?_⟩ ?_
+    fun _ h => (List.not_mem_nil h).elim, fun _ => ⟨by simp only [τG]; have := h.espFit; omega_using [this], ?_⟩, ?_⟩ ?_
   · rw [hw]
     exact .cons (Nat.zero_le _) (.cons (Nat.le_refl _) (.cons (Nat.le_refl _) .nil))
   · simp only [hw, List.pairwise_cons, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq,
@@ -771,14 +1000,16 @@ theorem τFb_wf {s : State} (h : MPre true s) : VG.X86.Taint.Wf τFb s := by
   · intro r hr
     exact VG.X86.Taint.frame_disjoint (n := 24) (by have := h.espFit; omega_using [this]) (h.dRw r hr) (h.dAw r hr)
   · intro p hp
-    simp only [τFb, List.mem_cons, List.not_mem_nil, or_false] at hp
-    rcases hp with rfl | rfl | rfl <;> refine ⟨by decide, ?_⟩ <;>
+    simp only [τG, List.mem_cons, List.not_mem_nil, or_false] at hp
+    rcases hp with rfl | rfl | rfl <;> refine ⟨by simp [τG], ?_⟩ <;>
       simp [VG.X86.Taint.region, hw, addr, arg, argAddr]
   · intro _
     refine ⟨h.sp, fun r hr => ?_⟩
-    simp only [τFb]
-    rw [stk_eq s h.sp]
+    simp only [τG]
+    rw [stkG_eq s h.sp]
     exact h.dSw r hr
+
+theorem τFb_wf {s : State} (h : MPre true s) : VG.X86.Taint.Wf τFb s := τG_wf h.gen
 
 theorem argBytes_agree {τ : VG.X86.Taint.T} (hl : τ.argLen = 28) (hstk : τ.stk = []) {s₁ s₂ : State}
     (f₁ : (s₁.gpr .esp).toNat + 28 ≤ 2 ^ 32) (f₂ : (s₂.gpr .esp).toNat + 28 ≤ 2 ^ 32)
@@ -791,20 +1022,27 @@ theorem argBytes_agree {τ : VG.X86.Taint.T} (hl : τ.argLen = 28) (hstk : τ.st
     Mem.readW_byte s₁.mem _ (Nat.mod_lt _ (by omega_using [])), Mem.readW_byte s₂.mem _ (Nat.mod_lt _ (by omega_using []))]
   exact congrArg _ (ha _ (by omega_using [hk]))
 
+/-- Two states that satisfy the precondition and agree on `esp` and the
+arguments agree for the analysis. -/
+theorem τG_agree {tab : Bool} {b n : Nat} {s₁ s₂ : State} (h₁ : GPre tab b n true s₁) (h₂ : GPre tab b n true s₂)
+    (sp : s₁.gpr .esp = s₂.gpr .esp) (args : ∀ i < 6, arg s₁ i = arg s₂ i) :
+    VG.X86.Taint.Agree (τG b n) s₁ s₂ := by
+  refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun _ => ?_, τG_wf h₁, τG_wf h₂,
+    VG.X86.Taint.slotsOk_empty, VG.X86.Taint.slotsAgree_empty, fun _ => sp,
+    fun k h4 hk => argBytes_agree rfl rfl h₁.espFit h₂.espFit args h4 hk⟩
+  · simp only [τG, RegSet.mem_ofList, List.mem_singleton] at hr
+    subst r; exact sp
+  · rw [h₁.wrEq, h₂.wrEq]
+    simp only [wrG, dataA, ivA, scrG, args 2 (by decide), args 3 (by decide), args 4 (by decide),
+      args 5 (by decide)]
+
 theorem τFb_agree {post : State → State → Prop} {s₁ s₂ : State} (h₁ : (modeX true post).pre s₁)
     (h₂ : (modeX true post).pre s₂) (hp : (modeX true post).pub s₁ s₂) :
     VG.X86.Taint.AgreeS [s1234Sym] τFb s₁ s₂ := by
   obtain ⟨sp, args, sy⟩ := hp
-  refine ⟨⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun _ => ?_, τFb_wf h₁, τFb_wf h₂,
-    VG.X86.Taint.slotsOk_empty, VG.X86.Taint.slotsAgree_empty, fun _ => sp,
-    fun k h4 hk => argBytes_agree rfl rfl h₁.espFit h₂.espFit args h4 hk⟩, fun n hn => ?_⟩
-  · simp only [τFb, RegSet.mem_ofList, List.mem_singleton] at hr
-    subst r; exact sp
-  · rw [h₁.wrEq, h₂.wrEq]
-    simp only [wrL, dataA, ivA, scrA, args 2 (by decide), args 3 (by decide), args 4 (by decide),
-      args 5 (by decide)]
-  · simp only [List.mem_singleton] at hn
-    subst hn; exact sy
+  refine ⟨τG_agree (MPre.gen h₁) (MPre.gen h₂) sp args, fun n hn => ?_⟩
+  simp only [List.mem_singleton] at hn
+  subst hn; exact sy
 
 theorem cbcEncryptChained_ct :
     ConstantTime isa (modeX true cbcEncPost).pre (modeX true cbcEncPost).pub cbcEncryptChained :=
