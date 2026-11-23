@@ -113,15 +113,15 @@ namespace VG.Artifacts.AesGcm.X86_64.AesGcm
 open VG.Proof.AesGcm.X86_64
 
 /-- Prepared direct sealing uses the same whole-block leaf as in-place sealing. -/
-private def directGatherArtifact (v : GcmVariant) (n : Nat) (hn : n = 16 ∨ n = 48)
+def directGatherArtifact (v : GcmVariant) (n : Nat) (hn : n = 16 ∨ n = 48)
     (leaf : Option (BlocksTo.SealFn (.flaggedT n)))
     (side : ∀ b ∈ leaf, VG.X86_64.Scrub.calleeSide b.fn.code v.lvG.level 24 = true) : Artifact :=
   match h : leaf with
   | some b => Spec.Gcm.sealGatherPreparedApi.artifact X86_64.target {
       suffix := v.impl.suffix
       code := Impl.AesGcm.X86_64.DirectGather.directPrepared v.lvT n v.impl.callees (DirectGather.ctrFn v) b.fn
-      verified := DirectGather.prepared_verified v n hn b (side b (by simp [h]))
-      spSafe := DirectGather.prepared_spSafe v n b (side b (by simp [h])) }
+      verified := DirectGather.prepared_verified v n hn b (side b (by simp))
+      spSafe := DirectGather.prepared_spSafe v n b (side b (by simp)) }
   | none => Spec.Gcm.sealGatherPreparedApi.artifact X86_64.target {
       suffix := v.impl.suffix
       code := Impl.AesGcm.X86_64.DirectGather.directBase v.lvTW v.impl.callees (DirectGather.ctrFn v)
