@@ -79,6 +79,10 @@ mod vg_p521_comb;
 pub use vg_p521_comb::VG_P521_COMB;
 
 #[rustfmt::skip]
+mod vg_rc4_ssse3;
+pub use vg_rc4_ssse3::VG_RC4_SSSE3;
+
+#[rustfmt::skip]
 mod vg_rsa_keygen_trial32;
 pub use vg_rsa_keygen_trial32::VG_RSA_KEYGEN_TRIAL32;
 
