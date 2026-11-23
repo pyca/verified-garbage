@@ -14,6 +14,7 @@ CI runs each of these, and fails if it does:
 | `algorithms_table.py --check` | README.md's algorithm tables are current (without `--check`, regenerates them) |
 | `audit_negative.py` | The axiom audit rejects an axiom hidden in a Lean module |
 | `check_arch_gates.py` | Tests and benchmarks are built on exactly the architectures of the code they run |
+| `check_bench_lock.py` | `bench/Cargo.lock` has one version of each library the benchmarks compare with |
 | `check_case_collisions.py` | No two tracked paths differ only in case |
 | `check_lean_imports.py` | The import discipline between `TCB/`, `Spec/`, `Impl/` and `Proof/` |
 | `check_lean_modules.py` | Every file under `lean/VerifiedGarbage/` is a Lean module |
