@@ -12,7 +12,9 @@ public import VerifiedGarbage.Impl.Scrub.X86.Sel
 
 `encryptBlock`, the internal function `vg_blowfish_encrypt_block_ssse3`: a
 block's encryption for the functions that encrypt one block at a time (key
-expansion, CBC encryption, CFB, OFB). It is `ssse3` code: the dispatchers
+expansion, CBC encryption, CFB64 encryption, OFB, and a message's last
+piece; `Ssse3Wide.lean` has the function for sixteen blocks, for the
+others). It is `ssse3` code: the dispatchers
 of the functions that call it run them only where the CPU has SSSE3.
 
 Its convention is its own (only the code below calls it): the halves in
@@ -228,9 +230,6 @@ def ofb : Prog isa := core.seq (Mode.ofb 2)
 /-- CFB64 encryption. -/
 def cfbEncrypt : Prog isa := core.seq (Mode.cfbEnc 2)
 
-/-- CFB64 decryption. -/
-def cfbDecrypt : Prog isa := core.seq (Mode.cfbDec 2)
-
 /-- CFB64 encryption of a message's last piece. -/
 def cfbEncryptFinal : Prog isa := core.seqFinal (Mode.cfbEnc 2)
 
@@ -285,10 +284,6 @@ def ofb : Prog isa :=
 /-- `Spec.Blowfish.cfbEncryptApi`'s function as emitted. -/
 def cfbEncrypt : Prog isa :=
   Impl.Scrub.X86.scrubSel 0 456 words (Impl.StackScratch.X86.withStackScratchWiped 448 4 106 Ssse3.cfbEncrypt)
-
-/-- `Spec.Blowfish.cfbDecryptApi`'s function as emitted. -/
-def cfbDecrypt : Prog isa :=
-  Impl.Scrub.X86.scrubSel 0 456 words (Impl.StackScratch.X86.withStackScratchWiped 448 4 106 Ssse3.cfbDecrypt)
 
 /-- `Spec.Blowfish.cfbEncryptFinalApi`'s function as emitted. -/
 def cfbEncryptFinal : Prog isa :=

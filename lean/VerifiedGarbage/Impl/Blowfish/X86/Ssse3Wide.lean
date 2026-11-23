@@ -81,8 +81,8 @@ def blockOut (g : Nat) : List Instr :=
    x .pshufb .xmm2 .xmm5, stx .edi (bufOff + 32 * g) .xmm0, stx .edi (bufOff + 32 * g + 16) .xmm2]
 
 def blocksOut : List Instr :=
-  ([.mov .eax (.mem (at_ .edx 0)), .xop (.movd .xmm6 .eax), .xop (.pshufd .xmm6 .xmm6 0),
-    .mov .eax (.mem (at_ .edx 4)), .xop (.movd .xmm7 .eax), .xop (.pshufd .xmm7 .xmm7 0), tb .xmm5 oBS] :
+  ([.mov .eax (.mem (at_ .edx 0)), .mov .ecx (.mem (at_ .edx 4)), .xop (.movd .xmm6 .eax),
+    .xop (.pshufd .xmm6 .xmm6 0), .xop (.movd .xmm7 .ecx), .xop (.pshufd .xmm7 .xmm7 0), tb .xmm5 oBS] :
     List Instr) ++ (List.range 4).flatMap blockOut
 
 /-! ## A round -/

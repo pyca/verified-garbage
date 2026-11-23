@@ -714,23 +714,24 @@ open VG.Proof.Blowfish (dirCipher dirCipher_len dirCipher_bytes bytesAt_eq dirBl
 open VG.Spec.Aes (bytesAt)
 open VG.Spec.Blowfish (blockAt decodeWord encodeBlock)
 
-/-- The key ready for the core at `B`: the schedule through the first stack
-argument, apart from every writable region, and the core's eight bytes of
-stack apart from the schedule, from that argument and from the scratch
-buffer. -/
-def Rdy (s : State) (B : BitVec 32) (k : Schedule) : Prop :=
+/-- The key ready for a core with `total` slots at `B`: the schedule through
+the first stack argument, apart from every writable region, and the core's
+eight bytes of stack apart from the schedule, from that argument and from
+the scratch buffer. -/
+def Rdy (total : Nat) (s : State) (B : BitVec 32) (k : Schedule) : Prop :=
   ∃ S, SchedAt s k S ∧ Apart S (s.ea (at_ .esp 4)) s.wr ∧
     Region.Disjoint (stkRegion (s.gpr .esp) 8) ⟨S.setWidth 64, 4168⟩ ∧
     Region.Disjoint (stkRegion (s.gpr .esp) 8) ⟨s.ea (at_ .esp 4), 4⟩ ∧
-    Region.Disjoint (stkRegion (s.gpr .esp) 8) ⟨B.setWidth 64, 4 * core.total⟩ ∧ B.toNat + 4 * core.total ≤ 2 ^ 32
+    Region.Disjoint (stkRegion (s.gpr .esp) 8) ⟨B.setWidth 64, 4 * total⟩ ∧ B.toNat + 4 * total ≤ 2 ^ 32
 
 theorem ea_congr {s s' : State} (h : s'.gpr .esp = s.gpr .esp) : s'.ea (at_ .esp 4) = s.ea (at_ .esp 4) := by
   show (s'.gpr .esp + _).setWidth 64 = (s.gpr .esp + _).setWidth 64; rw [h]
 
 /-- The block of the core's buffer, encrypted in place. -/
 theorem crypt_wp {s : State} {B : BitVec 32} {k : Schedule} (hB : s.gpr VG.Impl.Modes.X86.sb = B)
-    (hs : ScrIn s B core.total) (hr : Rdy s B k) (hsp : core.stack ≤ (s.gpr .esp).toNat) :
-    WP isa core.crypt s fun s' => s'.gpr VG.Impl.Modes.X86.sb = B ∧ s'.gpr .esp = s.gpr .esp ∧ Rdy s' B k ∧
+    (hs : ScrIn s B core.total) (hr : Rdy core.total s B k) (hsp : core.stack ≤ (s.gpr .esp).toNat) :
+    WP isa core.crypt s fun s' => s'.gpr VG.Impl.Modes.X86.sb = B ∧ s'.gpr .esp = s.gpr .esp ∧
+      Rdy core.total s' B k ∧
       Frame [coreRegion core B, stkRegion (s.gpr .esp) core.stack] s.mem s'.mem ∧
       (∀ j < core.G, bytesAt s'.mem (blkAddr core B j) (4 * core.bw) =
         dirCipher true k (bytesAt s.mem (blkAddr core B j) (4 * core.bw))) ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
@@ -837,9 +838,9 @@ theorem keyArgsN_congr {s s' : State} {rs : List Region} {k : Schedule} (h : Key
   exact ⟨keyArgs_congr ⟨S, hS, ha, hw⟩ hesp hrd hwr hf, by rw [hesp]; exact d1, by rw [hesp, e]; exact d2,
     by rw [hesp, ea_congr hesp]; exact d3⟩
 
-theorem rdy_frame {s s' : State} {B : BitVec 32} {k : Schedule} {rs : List Region} (h : Rdy s B k)
+theorem rdy_frame {n : Nat} {s s' : State} {B : BitVec 32} {k : Schedule} {rs : List Region} (h : Rdy n s B k)
     (hesp : s'.gpr .esp = s.gpr .esp) (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) (hf : Frame rs s.mem s'.mem)
-    (hs : ∀ r ∈ rs, ∃ r' ∈ s.wr, Region.Sub r r') : Rdy s' B k := by
+    (hs : ∀ r ∈ rs, ∃ r' ∈ s.wr, Region.Sub r r') : Rdy n s' B k := by
   obtain ⟨S, hS, ha, d1, d2, d3, hfit⟩ := h
   exact ⟨S, hS.frame (ha.sub hs) hesp hrd hwr hf, by rw [hwr, ea_congr hesp]; exact ha, by rw [hesp]; exact d1,
     by rw [hesp, ea_congr hesp]; exact d2, by rw [hesp]; exact d3, hfit⟩
@@ -850,7 +851,7 @@ def ssse3CoreSpec : CoreSpec core where
   Key := Schedule
   cipher := dirCipher true
   KeyArgs := KeyArgsN 8
-  Ready := Rdy
+  Ready := Rdy core.total
   cipher_len _ _ := dirCipher_len _ _ _
   layout := ⟨by decide, .inl rfl, by decide, by decide⟩
   keyArgs_congr h e r w _ f := keyArgsN_congr h e r w f
