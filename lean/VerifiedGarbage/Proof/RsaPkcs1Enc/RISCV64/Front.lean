@@ -34,14 +34,14 @@ meta import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 meta import VerifiedGarbage.Proof.RsaPkcs1Enc.Contract
 
 /-!
-# `vg_rsa_pkcs1_decrypt_precomputed_front` on RISC-V
+# `vg_rsa_pkcs1_decrypt_precomputed` on RISC-V
 
 `Front.code` (`Impl/RsaPkcs1Enc/RISCV64/Front.lean`) against
-`Spec.RsaPkcs1Enc.decryptPrecomputedFrontContract` with 3632 bytes of stack
+`Spec.RsaPkcs1Enc.decryptPrecomputedContract` with 3632 bytes of stack
 (`front_verified`), for any callee verified against
-`Proof.RsaPkcs1Enc.decryptPrecomputedContract` with 3456 whose frames use at
+`Proof.RsaPkcs1Enc.decryptPrecomputedBodyContract` with 3456 whose frames use at
 most that (`sdepth`): its proof is used only through that contract. The
-function as emitted, with its cleanup, is `decryptPrecomputedFront`.
+function as emitted, with its cleanup, is `decryptPrecomputed`.
 
 **The call.** `setup` copies the 17 stack arguments to the bottom of the
 frame (`copyArg`, `copies_run`), and stores the return address, `out`, `k`
@@ -75,9 +75,9 @@ open VG VG.RISCV64
 
 /-! ## The contract's parts -/
 
-abbrev sig : Sig := Proof.RsaPkcs1Enc.decryptPrecomputedSig
+abbrev sig : Sig := Proof.RsaPkcs1Enc.decryptPrecomputedBodySig
 
-/-- `Proof.RsaPkcs1Enc.decryptPrecomputedContract`'s precondition. -/
+/-- `Proof.RsaPkcs1Enc.decryptPrecomputedBodyContract`'s precondition. -/
 def preP : Curry (sig.words abi.ptrBits) (Mem → Prop) :=
   fun _out outLen _msgLen n nLen _e eLen _d dLen _input inputLen p pLen q qLen _dp
       dpLen _dq dqLen _qinv qinvLen _scratch scratchLen pre preLen m =>
@@ -94,17 +94,17 @@ def preP : Curry (sig.words abi.ptrBits) (Mem → Prop) :=
 def postP : sig.Post abi.ptrBits :=
   fun out _outLen msgLen n nLen e eLen d dLen input _inputLen p pLen q qLen dp _dpLen
       dq _dqLen qinv _qinvLen _scratch _scratchLen _pre _preLen m m' r =>
-    Proof.RsaPkcs1Enc.writtenMsg m' out msgLen nLen.toNat r
+    Proof.RsaPkcs1Enc.writtenMsgEnd m' out msgLen nLen.toNat r
       (Spec.RsaPkcs1Enc.decrypt (Spec.Rsa.bytesAt m n nLen.toNat) (Spec.Rsa.bytesAt m e eLen.toNat)
         (Spec.Rsa.bytesAt m d dLen.toNat) (Spec.Rsa.bytesAt m p pLen.toNat) (Spec.Rsa.bytesAt m q qLen.toNat)
         (Spec.Rsa.bytesAt m dp pLen.toNat) (Spec.Rsa.bytesAt m dq qLen.toNat)
         (Spec.Rsa.bytesAt m qinv pLen.toNat) (Spec.Rsa.bytesAt m input nLen.toNat))
 
-/-- `Spec.RsaPkcs1Enc.decryptPrecomputedFrontContract`'s postcondition. -/
+/-- `Spec.RsaPkcs1Enc.decryptPrecomputedContract`'s postcondition. -/
 def postFP : sig.Post abi.ptrBits :=
   fun out _outLen msgLen n nLen e eLen d dLen input _inputLen p pLen q qLen dp _dpLen
       dq _dqLen qinv _qinvLen _scratch _scratchLen _pre _preLen m m' r =>
-    Spec.RsaPkcs1Enc.writtenMsgFront m' out msgLen nLen.toNat r
+    Spec.RsaPkcs1Enc.writtenMsg m' out msgLen nLen.toNat r
       (Spec.RsaPkcs1Enc.decrypt (Spec.Rsa.bytesAt m n nLen.toNat) (Spec.Rsa.bytesAt m e eLen.toNat)
         (Spec.Rsa.bytesAt m d dLen.toNat) (Spec.Rsa.bytesAt m p pLen.toNat) (Spec.Rsa.bytesAt m q qLen.toNat)
         (Spec.Rsa.bytesAt m dp pLen.toNat) (Spec.Rsa.bytesAt m dq qLen.toNat)
@@ -117,10 +117,10 @@ def leakP : Curry (sig.words abi.ptrBits) (Mem → List Nat) :=
     (Spec.Rsa.bytesAt m n nLen.toNat ++ Spec.Rsa.bytesAt m e eLen.toNat).map (·.toNat) ++
       Spec.Rsa.privatePrecomputedLeak m pre nLen.toNat
 
-theorem cK_eq (n : Nat) : Proof.RsaPkcs1Enc.decryptPrecomputedContract abi n =
+theorem cK_eq (n : Nat) : Proof.RsaPkcs1Enc.decryptPrecomputedBodyContract abi n =
     sig.contract abi preP postP true n (some leakP) := rfl
 
-theorem fK_eq (n : Nat) : Spec.RsaPkcs1Enc.decryptPrecomputedFrontContract abi n =
+theorem fK_eq (n : Nat) : Spec.RsaPkcs1Enc.decryptPrecomputedContract abi n =
     sig.contract abi preP postFP true n (some leakP) := rfl
 
 theorem hk : (sig.words abi.ptrBits).length = 8 + 17 := by decide
@@ -172,7 +172,7 @@ theorem preP_local : ∀ vs m₁ m₂, vs.length = (sig.words abi.ptrBits).lengt
   intro vs m₁ m₂ hl hb _ h
   obtain ⟨o, oL, ml, n, nL, e, eL, d, dL, i, iL, p, pL, q, qL, dp, dpL, dq, dqL, qi, qiL, sc, scL, pre, preL, rfl⟩ :=
     vs25 hl
-  simp only [sig, Proof.RsaPkcs1Enc.decryptPrecomputedSig, Proof.RsaPkcs1Enc.decryptSig, Sig.bufs, List.cons_append,
+  simp only [sig, Proof.RsaPkcs1Enc.decryptPrecomputedBodySig, Proof.RsaPkcs1Enc.decryptSig, Sig.bufs, List.cons_append,
     List.nil_append, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq, Elem.size,
     Nat.mul_one] at hb
   obtain ⟨-, -, bn, -, -, -, bp, bq, -, -, -, -, bpre⟩ := hb
@@ -192,7 +192,7 @@ theorem postP_local {vs : List (BitVec 64)} {m₁ m₂ m' : Mem} {r : BitVec 32}
     Curry.apply (sig.words abi.ptrBits) postP vs m₂ m' r := by
   obtain ⟨o, oL, ml, n, nL, e, eL, d, dL, i, iL, p, pL, q, qL, dp, dpL, dq, dqL, qi, qiL, sc, scL, pre, preL, rfl⟩ :=
     vs25 hl
-  simp only [sig, Proof.RsaPkcs1Enc.decryptPrecomputedSig, Proof.RsaPkcs1Enc.decryptSig, Sig.bufs, List.cons_append,
+  simp only [sig, Proof.RsaPkcs1Enc.decryptPrecomputedBodySig, Proof.RsaPkcs1Enc.decryptSig, Sig.bufs, List.cons_append,
     List.nil_append, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq, Elem.size,
     Nat.mul_one] at hb
   obtain ⟨-, -, bn, be, bd, bi, bp, bq, bdp, bdq, bqi, -, -⟩ := hb
@@ -216,7 +216,7 @@ theorem leakP_local {vs : List (BitVec 64)} {m₁ m₂ : Mem} (hl : vs.length = 
     Curry.apply (sig.words abi.ptrBits) leakP vs m₁ = Curry.apply (sig.words abi.ptrBits) leakP vs m₂ := by
   obtain ⟨o, oL, ml, n, nL, e, eL, d, dL, i, iL, p, pL, q, qL, dp, dpL, dq, dqL, qi, qiL, sc, scL, pre, preL, rfl⟩ :=
     vs25 hl
-  simp only [sig, Proof.RsaPkcs1Enc.decryptPrecomputedSig, Proof.RsaPkcs1Enc.decryptSig, Sig.bufs, List.cons_append,
+  simp only [sig, Proof.RsaPkcs1Enc.decryptPrecomputedBodySig, Proof.RsaPkcs1Enc.decryptSig, Sig.bufs, List.cons_append,
     List.nil_append, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq, Elem.size,
     Nat.mul_one] at hb
   obtain ⟨-, -, bn, be, -, -, -, -, -, -, -, -, bpre⟩ := hb
@@ -556,7 +556,7 @@ structure Called (s c : State) : Prop where
   fr : Frame (s.wr ++ [stk s]) s.mem c.mem
   post : Curry.apply (sig.words abi.ptrBits) postP (stkArgs 17 s) s.mem c.mem ((c.gpr .a0).setWidth _)
 
-/-- The call of `vg_rsa_pkcs1_decrypt_precomputed`, from `setup`'s state. -/
+/-- The call of `vg_rsa_pkcs1_decrypt_precomputed_body`, from `setup`'s state. -/
 theorem call_ok {Q : sig.Post abi.ptrBits} {name : String} {callee : Prog isa}
     (hv : Verified target callee (C postP 3456)) (hd : sdepth callee ≤ 3456) {s t : State}
     (hs : (C Q 3632).pre s) (T : Stashed s t) : WP isa (.call name callee) t (Called s) := by
@@ -981,11 +981,11 @@ theorem bytesAt_len (m : Mem) (p : Addr) (k : Nat) : (Spec.Rsa.bytesAt m p k).le
 /-- What the callee leaves at `out` and `msg_len`: a message `M` after
 zeros, and its length; and what the function must leave instead. -/
 theorem shape {m : Mem} {out ml : Addr} {k : Nat} {r : BitVec 32} {o : Spec.Rsa.Outcome}
-    (h : Proof.RsaPkcs1Enc.writtenMsg m out ml k r o) :
+    (h : Proof.RsaPkcs1Enc.writtenMsgEnd m out ml k r o) :
     ∃ M : List Byte, M.length ≤ k ∧ Spec.Rsa.bytesAt m out k = List.replicate (k - M.length) 0 ++ M ∧
       m.readW ml 64 = BitVec.ofNat 64 M.length ∧
       ∀ m' : Mem, Spec.Rsa.bytesAt m' out k = M ++ List.replicate (k - M.length) 0 →
-        m'.readW ml 64 = m.readW ml 64 → Spec.RsaPkcs1Enc.writtenMsgFront m' out ml k r o := by
+        m'.readW ml 64 = m.readW ml 64 → Spec.RsaPkcs1Enc.writtenMsg m' out ml k r o := by
   cases o with
   | ok M =>
     obtain ⟨hr, hb, hw⟩ := h
@@ -1071,12 +1071,12 @@ def decOf (s : State) : Spec.Rsa.Outcome :=
 
 theorem cpost_of {s : State} {m : Mem} {r : BitVec 32}
     (h : Curry.apply (sig.words abi.ptrBits) postP (stkArgs 17 s) s.mem m r) :
-    Proof.RsaPkcs1Enc.writtenMsg m (s.gpr .a0) (s.gpr .a2) (s.gpr .a4).toNat r (decOf s) := by
+    Proof.RsaPkcs1Enc.writtenMsgEnd m (s.gpr .a0) (s.gpr .a2) (s.gpr .a4).toNat r (decOf s) := by
   rw [args_eq] at h
   exact h
 
 theorem fpost_to {s : State} {m : Mem} {r : BitVec 32}
-    (h : Spec.RsaPkcs1Enc.writtenMsgFront m (s.gpr .a0) (s.gpr .a2) (s.gpr .a4).toNat r (decOf s)) :
+    (h : Spec.RsaPkcs1Enc.writtenMsg m (s.gpr .a0) (s.gpr .a2) (s.gpr .a4).toNat r (decOf s)) :
     Curry.apply (sig.words abi.ptrBits) postFP (stkArgs 17 s) s.mem m r := by
   rw [args_eq]
   exact h
@@ -1099,14 +1099,14 @@ theorem tail_ok {s c v : State} (P : DPre true s) (S : Stk s) (R : Regs s) (hc :
         ∀ m' : Mem, Spec.Rsa.bytesAt m' (s.gpr .a0) (s.gpr .a1).toNat =
             M ++ List.replicate ((s.gpr .a1).toNat - M.length) 0 →
           m'.readW (s.gpr .a2) 64 = c.mem.readW (s.gpr .a2) 64 →
-          Spec.RsaPkcs1Enc.writtenMsgFront m' (s.gpr .a0) (s.gpr .a2) (s.gpr .a4).toNat ((c.gpr .a0).setWidth 32)
+          Spec.RsaPkcs1Enc.writtenMsg m' (s.gpr .a0) (s.gpr .a2) (s.gpr .a4).toNat ((c.gpr .a0).setWidth 32)
             (decOf s) := by
   have hk := kk_le P
   have h1 := P.h1
   obtain ⟨M, hML, hb, hml, hfin₀⟩ := shape (cpost_of hc.post)
   have hfin : ∀ m' : Mem, Spec.Rsa.bytesAt m' (s.gpr .a0) (s.gpr .a1).toNat =
       M ++ List.replicate ((s.gpr .a1).toNat - M.length) 0 → m'.readW (s.gpr .a2) 64 = c.mem.readW (s.gpr .a2) 64 →
-      Spec.RsaPkcs1Enc.writtenMsgFront m' (s.gpr .a0) (s.gpr .a2) (s.gpr .a4).toNat ((c.gpr .a0).setWidth 32)
+      Spec.RsaPkcs1Enc.writtenMsg m' (s.gpr .a0) (s.gpr .a2) (s.gpr .a4).toNat ((c.gpr .a0).setWidth 32)
         (decOf s) := fun m' e₁ e₂ => hfin₀ m' (by rw [← h1]; exact e₁) e₂
   rw [← h1] at hML hb
   let K := (s.gpr .a1).toNat
@@ -1162,7 +1162,7 @@ theorem tail_ok {s c v : State} (P : DPre true s) (S : Stk s) (R : Regs s) (hc :
 /-- The postcondition of the contract with the message first, from the final
 state's memory and result. -/
 theorem post_fp {s f : State}
-    (hf : Spec.RsaPkcs1Enc.writtenMsgFront f.mem (s.gpr .a0) (s.gpr .a2) (s.gpr .a4).toNat ((f.gpr .a0).setWidth 32)
+    (hf : Spec.RsaPkcs1Enc.writtenMsg f.mem (s.gpr .a0) (s.gpr .a2) (s.gpr .a4).toNat ((f.gpr .a0).setWidth 32)
       (decOf s)) : (C postFP 3632).post s f := by
   rw [post_stk hk]
   exact fpost_to hf
@@ -1189,7 +1189,7 @@ theorem front_wp {name : String} {callee : Prog isa} (hv : Verified target calle
   refine ⟨⟨fun r hr => bw.pres r hr, ?_, raw⟩, post_fp ?_⟩
   · show w.sp + BitVec.ofNat 64 176 = s.sp
     rw [bw.sp, BitVec.sub_add_cancel]
-  · show Spec.RsaPkcs1Enc.writtenMsgFront m (s.gpr .a0) (s.gpr .a2) (s.gpr .a4).toNat ((w.gpr .a0).setWidth 32) (decOf s)
+  · show Spec.RsaPkcs1Enc.writtenMsg m (s.gpr .a0) (s.gpr .a2) (s.gpr .a4).toNat ((w.gpr .a0).setWidth 32) (decOf s)
     rw [bw.a0]
     refine hfin m ?_ ?_
     · rw [bytes_ag (m₁ := w.mem) (L := (s.gpr .a1).toNat) (fun x hx => (fm x fun r hr hc' => by
@@ -1283,11 +1283,11 @@ theorem front_ct {name : String} {callee : Prog isa} (hv : Verified target calle
 
 /-! ## `Verified` -/
 
-theorem front_sat : ∃ s, (Spec.RsaPkcs1Enc.decryptPrecomputedFrontContract abi 3632).pre s := by
+theorem front_sat : ∃ s, (Spec.RsaPkcs1Enc.decryptPrecomputedContract abi 3632).pre s := by
   refine ⟨Dec.preState, ?_⟩
   have e : (3632 : Nat) = 3631 + 1 := rfl
   rw [e]
-  sig_pre [Spec.RsaPkcs1Enc.decryptPrecomputedFrontContract, Spec.RsaPkcs1Enc.decryptPrecomputedFrontSig,
+  sig_pre [Spec.RsaPkcs1Enc.decryptPrecomputedContract, Spec.RsaPkcs1Enc.decryptPrecomputedSig,
     abi, argRegs, Dec.stackArgs_seventeen, List.append_eq, List.range,
     List.range.loop]
   obtain ⟨a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16⟩ := Dec.pre_args
@@ -1301,14 +1301,14 @@ theorem front_sat : ∃ s, (Spec.RsaPkcs1Enc.decryptPrecomputedFrontContract abi
     | exact Region.disjoint_of_sep (by decide)
     | (unfold Spec.Rsa.lenValid; decide)
 
-/-- `vg_rsa_pkcs1_decrypt_precomputed_front`, calling any code verified
-against `vg_rsa_pkcs1_decrypt_precomputed`'s contract with 3456 bytes of
+/-- `vg_rsa_pkcs1_decrypt_precomputed`, calling any code verified
+against `vg_rsa_pkcs1_decrypt_precomputed_body`'s contract with 3456 bytes of
 stack. -/
 theorem front_verified {name : String} {callee : Prog isa}
-    (hv : Verified target callee (Proof.RsaPkcs1Enc.decryptPrecomputedContract abi 3456))
+    (hv : Verified target callee (Proof.RsaPkcs1Enc.decryptPrecomputedBodyContract abi 3456))
     (hd : sdepth callee ≤ 3456) :
     Verified target (Impl.RsaPkcs1Enc.RISCV64.Front.code name callee)
-      (Spec.RsaPkcs1Enc.decryptPrecomputedFrontContract abi 3632) := by
+      (Spec.RsaPkcs1Enc.decryptPrecomputedContract abi 3632) := by
   rw [cK_eq] at hv
   rw [fK_eq]
   exact ⟨front_correct hv hd, front_ct hv hd, by rw [← fK_eq]; exact front_sat⟩
@@ -1320,13 +1320,13 @@ open VG.RISCV64.Scrub
 /-- The postcondition reads the memory on return only in `out` and
 `msg_len`. -/
 theorem front_postOut (stack : Nat) :
-    PostOut (Spec.RsaPkcs1Enc.decryptPrecomputedFrontContract abi stack)
-      (Proof.RsaPkcs1Enc.decryptPrecomputedSig.retBits 64) := by
+    PostOut (Spec.RsaPkcs1Enc.decryptPrecomputedContract abi stack)
+      (Proof.RsaPkcs1Enc.decryptPrecomputedBodySig.retBits 64) := by
   rw [fK_eq]
   refine postOut_of_local_pre (leak := some _) ScrubAbi.plain fun vs m m₁ m₂ r hlen hpre hb h => ?_
   obtain ⟨o, oL, ml, n, nL, e, eL, d, dL, i, iL, p, pL, q, qL, dp, dpL, dq, dqL, qi, qiL, sc, scL, pre, preL, rfl⟩ :=
     vs25 hlen
-  simp only [sig, Proof.RsaPkcs1Enc.decryptPrecomputedSig, Proof.RsaPkcs1Enc.decryptSig, Sig.bufs, List.cons_append,
+  simp only [sig, Proof.RsaPkcs1Enc.decryptPrecomputedBodySig, Proof.RsaPkcs1Enc.decryptSig, Sig.bufs, List.cons_append,
     List.nil_append, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq, Elem.size,
     Nat.mul_one] at hb
   obtain ⟨bo, bm, -⟩ := hb
@@ -1341,18 +1341,18 @@ theorem front_postOut (stack : Nat) :
   have hw : Spec.Rsa.wordsAt m₂ ml 1 = Spec.Rsa.wordsAt m₁ ml 1 := words_ag (k := 1) bm (by omega_arith)
   revert h
   generalize Spec.RsaPkcs1Enc.decrypt _ _ _ _ _ _ _ _ _ = oc
-  cases oc <;> simp only [Spec.RsaPkcs1Enc.writtenMsgFront, hby, hw] <;> exact id
+  cases oc <;> simp only [Spec.RsaPkcs1Enc.writtenMsg, hby, hw] <;> exact id
 
 theorem codeP_depth : sdepth Impl.RsaPkcs1Enc.RISCV64.Decrypt.codeP ≤ 3456 := by lit_decide
 
-/-- `vg_rsa_pkcs1_decrypt_precomputed_front` as emitted: `Front.code`
-calling `vg_rsa_pkcs1_decrypt_precomputed`'s code before its cleanup, as an
+/-- `vg_rsa_pkcs1_decrypt_precomputed` as emitted: `Front.code`
+calling `vg_rsa_pkcs1_decrypt_precomputed_body`'s code before its cleanup, as an
 internal function of its own, then the cleanup of the 3632 bytes of stack it
 and its callee use. -/
-theorem decryptPrecomputedFront :
-    VerifiedScrubbed target Impl.RsaPkcs1Enc.RISCV64.Fn.decryptPrecomputedFront
-      (Spec.RsaPkcs1Enc.decryptPrecomputedFrontContract abi 3632) 32 :=
-  verifiedScrubbedAll (api := Spec.RsaPkcs1Enc.decryptPrecomputedFrontApi) (W := 3632)
+theorem decryptPrecomputed :
+    VerifiedScrubbed target Impl.RsaPkcs1Enc.RISCV64.Fn.decryptPrecomputed
+      (Spec.RsaPkcs1Enc.decryptPrecomputedContract abi 3632) 32 :=
+  verifiedScrubbedAll (api := Spec.RsaPkcs1Enc.decryptPrecomputedApi) (W := 3632)
     { code := Impl.RsaPkcs1Enc.RISCV64.Front.code Impl.RsaPkcs1Enc.RISCV64.Fn.bodyName
         Impl.RsaPkcs1Enc.RISCV64.Decrypt.codeP
       verified := front_verified Dec.codeP_verified codeP_depth }

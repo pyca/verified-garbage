@@ -6,8 +6,8 @@ public import VerifiedGarbage.Impl.Scrub.X86
 /-!
 # RSAES-PKCS1-v1_5 decryption with the message first, on x86 (32-bit)
 
-`vg_rsa_pkcs1_decrypt_precomputed_front` takes the arguments of
-`vg_rsa_pkcs1_decrypt_precomputed`, all 25 on the stack, and calls it
+`vg_rsa_pkcs1_decrypt_precomputed` takes the arguments of
+`vg_rsa_pkcs1_decrypt_precomputed_body`, all 25 on the stack, and calls it
 (`body`, by its name) with them, copied to the first 100 bytes of a frame of
 `frameBytes` (144) bytes, RSASSA-PSS's and RSAES-OAEP's
 (`Impl/RsaPss/X86.lean`), inside the push of the callee-saved registers
@@ -77,11 +77,11 @@ def ret : List Instr := [ld .eax sRet]
 /-- After the call: the message moved to the start of `out`. -/
 def tail : Prog isa := seqs [.block after, clearBuf, copyIn, shift, copyOut, .block ret]
 
-/-- The frame's body, calling `vg_rsa_pkcs1_decrypt_precomputed`
+/-- The frame's body, calling `vg_rsa_pkcs1_decrypt_precomputed_body`
 (`callee`) by `name`. -/
 def body (name : String) (callee : Prog isa) : Prog isa := seqs [.block setup, .call name callee, tail]
 
-/-- `vg_rsa_pkcs1_decrypt_precomputed_front`, calling `callee` by `name`. -/
+/-- `vg_rsa_pkcs1_decrypt_precomputed`, calling `callee` by `name`. -/
 def code (name : String) (callee : Prog isa) : Prog isa := wrap frameBytes (body name callee)
 
 end VG.Impl.RsaPkcs1Enc.X86.Front
@@ -90,11 +90,11 @@ namespace VG.Impl.RsaPkcs1Enc.X86.Fn
 
 open VG.X86
 
-/-- `Spec.RsaPkcs1Enc.decryptPrecomputedFrontApi`'s function as emitted,
-calling `vg_rsa_pkcs1_decrypt_precomputed`'s code `callee` by `name`, then
+/-- `Spec.RsaPkcs1Enc.decryptPrecomputedApi`'s function as emitted,
+calling `vg_rsa_pkcs1_decrypt_precomputed_body`'s code `callee` by `name`, then
 its cleanup: the 3732 bytes of stack its push (16), its frame (144), its
 call (4) and the callee (3568) use zeroed. -/
-def decryptPrecomputedFront (name : String) (callee : Prog isa) : Prog isa :=
+def decryptPrecomputed (name : String) (callee : Prog isa) : Prog isa :=
   Impl.Scrub.X86.scrubAll 32 3732 (Front.code name callee)
 
 end VG.Impl.RsaPkcs1Enc.X86.Fn

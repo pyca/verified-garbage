@@ -38,9 +38,9 @@ meta import VerifiedGarbage.Proof.RsaPkcs1Enc.Contract
 # RSAES-PKCS1-v1_5 decryption with the message first, on ARMv7
 
 `Front.code` (`Impl/RsaPkcs1Enc/Arm/Front.lean`) against
-`Spec.RsaPkcs1Enc.decryptPrecomputedFrontContract` with 3824 bytes of stack
+`Spec.RsaPkcs1Enc.decryptPrecomputedContract` with 3824 bytes of stack
 (`front_verified`), for any callee verified against
-`Proof.RsaPkcs1Enc.decryptPrecomputedContract` with 3640: its proof is used
+`Proof.RsaPkcs1Enc.decryptPrecomputedBodyContract` with 3640: its proof is used
 only through that contract (`call_vp`).
 
 **The layout.** `EP`: what two runs share (the frame's base `B`, the
@@ -48,7 +48,7 @@ pointers, the lengths, the public key's bytes and what of `pre` it may
 leak), and its layout (`EP.lay`, `Proof/RsaPkcs1Sig/Arm/Lay.lean`):
 RSAES-OAEP's frame of 128 bytes in the push of every register, the 84 bytes
 of stack arguments above them, and below the frame the 3640 bytes
-`vg_rsa_pkcs1_decrypt_precomputed` uses. `In P σ`: the state `σ` the body
+`vg_rsa_pkcs1_decrypt_precomputed_body` uses. `In P σ`: the state `σ` the body
 starts from, which the contract's precondition gives (`in_of_pre`).
 
 **The call.** `setup` copies the stack arguments to the bottom of the frame
@@ -64,11 +64,11 @@ it writes (`R2`). `after` keeps its result in the slot `sRes` and puts
 `k` bytes copied to it (`in_vp`), shifted left by `k - L` in eleven passes
 (`shift_vp`, with RSAES-OAEP's passes, as `Proof/RsaOaep/Arm/DecOut.lean`
 proves its ten), which leaves the message and zeros, and copied back
-(`out_vp`), with the result back in `r0` (`ret_vp`): what `writtenMsgFront`
+(`out_vp`), with the result back in `r0` (`ret_vp`): what `writtenMsg`
 states.
 
 **As emitted** (`front_scrubbed`): the code calling
-`vg_rsa_pkcs1_decrypt_precomputed`'s code before its cleanup, an internal
+`vg_rsa_pkcs1_decrypt_precomputed_body`'s code before its cleanup, an internal
 function of its own (`bodyName`), then the cleanup of the 3824 bytes of
 stack it and its callee use.
 -/
@@ -265,7 +265,7 @@ theorem key_at {P : EP} {σ s : State} (hi : In P σ) (hs : P.lay.St σ s) :
 /-! ## The entry -/
 
 /-- The shared contract, with the stack of the frames and of the call. -/
-abbrev spec : Contract isa := Spec.RsaPkcs1Enc.decryptPrecomputedFrontContract abi stackBytes
+abbrev spec : Contract isa := Spec.RsaPkcs1Enc.decryptPrecomputedContract abi stackBytes
 
 /-- The public parameters of an entry state. -/
 def ep (s : State) : EP where
@@ -301,7 +301,7 @@ private theorem getD_of_eq_map_range {α : Type} (f : Nat → α) (d : α) {l : 
   rw [List.getD_eq_getElem?_getD, List.getElem?_map, List.getElem?_range hi]; rfl
 
 theorem in_of_pre {s : State} (h : spec.pre s) : In (ep s) (entered frameBytes s) := by
-  sig_pre [Spec.RsaPkcs1Enc.decryptPrecomputedFrontContract, Spec.RsaPkcs1Enc.decryptPrecomputedFrontSig,
+  sig_pre [Spec.RsaPkcs1Enc.decryptPrecomputedContract, Spec.RsaPkcs1Enc.decryptPrecomputedSig,
     abi, argRegs, reduceClassify, Loc.val] at h
   sig_split h
   rename_i hsp hsa hrd hwr oM oN oE oD oI oP oQ oDP oDQ oQI oS oPre oA mN mE mD mI mP mQ mDP mDQ mQI mS mPre mA
@@ -415,7 +415,7 @@ theorem in_of_pre {s : State} (h : spec.pre s) : In (ep s) (entered frameBytes s
     simp only [List.range, List.range.loop, List.map_cons, List.map_nil, a6, a12, a14, a16]
 
 theorem spec_sp {s : State} (h : spec.pre s) : stackBytes ≤ s.sp.toNat := by
-  sig_pre [Spec.RsaPkcs1Enc.decryptPrecomputedFrontContract, Spec.RsaPkcs1Enc.decryptPrecomputedFrontSig,
+  sig_pre [Spec.RsaPkcs1Enc.decryptPrecomputedContract, Spec.RsaPkcs1Enc.decryptPrecomputedSig,
     abi, argRegs, reduceClassify, Loc.val] at h
   exact h.1
 
@@ -423,7 +423,7 @@ theorem entered_state {s : State} (h : spec.pre s) : S (ep s) (entered frameByte
   ⟨in_of_pre h, ⟨(in_of_pre h).ok, (in_of_pre h).ok.sp, rfl, rfl, Frame.refl _ _⟩⟩
 
 theorem ep_eq {s₁ s₂ : State} (hp : spec.pub s₁ s₂) : ep s₁ = ep s₂ := by
-  sig_pub [Spec.RsaPkcs1Enc.decryptPrecomputedFrontContract, Spec.RsaPkcs1Enc.decryptPrecomputedFrontSig,
+  sig_pub [Spec.RsaPkcs1Enc.decryptPrecomputedContract, Spec.RsaPkcs1Enc.decryptPrecomputedSig,
     abi, argRegs, reduceClassify, Loc.val] at hp
   obtain ⟨hsp, hl, h0, h1, h2, h3, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17,
     a18, a19, a20⟩ := hp
@@ -556,7 +556,7 @@ abbrev cRd (P : EP) : List Region := P.ro ++ [⟨State.addr P.B, 84⟩]
 abbrev cWr (P : EP) : List Region := P.rw
 
 /-- The callee's contract. -/
-abbrev cK : Contract isa := Proof.RsaPkcs1Enc.decryptPrecomputedContract abi calleeStack
+abbrev cK : Contract isa := Proof.RsaPkcs1Enc.decryptPrecomputedBodyContract abi calleeStack
 
 /-- The callee's stack arguments' region, the bottom of our frame. -/
 abbrev AR (P : EP) : Region := ⟨State.addr P.B, 84⟩
@@ -622,7 +622,7 @@ theorem call_pre {P : EP} {σ s : State} (h : R1 P σ s) : cK.pre (s.callEntry.w
   have a20 : stackArg s 20 = BitVec.ofNat 32 P.prl := a 20 (by decide)
   have sa0 : stackArgAddr s 0 = State.addr P.B := by simp [stackArgAddr, hs.sp]
   obtain ⟨oM, oS, mS⟩ := rw_pair hi
-  sig_pre [Proof.RsaPkcs1Enc.decryptPrecomputedContract, Proof.RsaPkcs1Enc.decryptPrecomputedSig,
+  sig_pre [Proof.RsaPkcs1Enc.decryptPrecomputedBodyContract, Proof.RsaPkcs1Enc.decryptPrecomputedBodySig,
     Proof.RsaPkcs1Enc.decryptSig, abi, argRegs, reduceClassify, Loc.val]
   simp only [stackArg_call, stackArgAddr_call, r0, r1, r2, r3, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11,
     a12, a13, a14, a15, a16, a17, a18, a19, a20, sa0, hs.sp, BitVec.toNat_ofNat, Nat.mod_eq_of_lt k32,
@@ -679,7 +679,7 @@ theorem call_pub {P : EP} {σ₁ σ₂ s₁ s₂ : State} (h₁ : R1 P σ₁ s�
   have qa19 : stackArg s₂ 19 = P.pre := qa 19 (by decide)
   have k32 : P.K < 2 ^ 32 := by have := hi₁.k1024; omega_using [this]
   have el32 : P.el < 2 ^ 32 := by have := hi₁.elK; omega_using [k32, this]
-  sig_pub [Proof.RsaPkcs1Enc.decryptPrecomputedContract, Proof.RsaPkcs1Enc.decryptPrecomputedSig,
+  sig_pub [Proof.RsaPkcs1Enc.decryptPrecomputedBodyContract, Proof.RsaPkcs1Enc.decryptPrecomputedBodySig,
     Proof.RsaPkcs1Enc.decryptSig, abi, argRegs, reduceClassify, Loc.val]
   simp only [stackArg_call, p0, p1, p2, p3, q0, q1, q2, q3, pa0, pa1, pa2, pa19, qa0, qa1, qa2, qa19,
     BitVec.toNat_ofNat, Nat.mod_eq_of_lt k32, Nat.mod_eq_of_lt el32]
@@ -712,11 +712,11 @@ abbrev oc (P : EP) (σ : State) : Spec.Rsa.Outcome :=
 
 /-- After the call: what it writes, and its result. -/
 abbrev R2 (P : EP) (σ s : State) : Prop :=
-  S P σ s ∧ Proof.RsaPkcs1Enc.writtenMsg s.mem (State.addr P.out) (State.addr P.ml) P.K (s.gpr .r0) (oc P σ)
+  S P σ s ∧ Proof.RsaPkcs1Enc.writtenMsgEnd s.mem (State.addr P.out) (State.addr P.ml) P.K (s.gpr .r0) (oc P σ)
 
 theorem call_post {P : EP} {σ s t : State} (h : R1 P σ s)
     (po : cK.post (s.callEntry.withRegions (cRd P) (cWr P)) (t.withRegions (cRd P) (cWr P))) :
-    Proof.RsaPkcs1Enc.writtenMsg t.mem (State.addr P.out) (State.addr P.ml) P.K (t.gpr .r0)
+    Proof.RsaPkcs1Enc.writtenMsgEnd t.mem (State.addr P.out) (State.addr P.ml) P.K (t.gpr .r0)
       (Spec.RsaPkcs1Enc.decrypt (Spec.Rsa.bytesAt s.mem (State.addr P.n) P.K)
         (Spec.Rsa.bytesAt s.mem (State.addr P.e) P.el) (Spec.Rsa.bytesAt s.mem (State.addr P.d) P.dl)
         (Spec.Rsa.bytesAt s.mem (State.addr P.p) P.pl) (Spec.Rsa.bytesAt s.mem (State.addr P.q) P.ql)
@@ -741,7 +741,7 @@ theorem call_post {P : EP} {σ s t : State} (h : R1 P σ s)
   have a11 : stackArg s 11 = P.dp := a 11 (by decide)
   have a13 : stackArg s 13 = P.dq := a 13 (by decide)
   have a15 : stackArg s 15 = P.qinv := a 15 (by decide)
-  sig_post [Proof.RsaPkcs1Enc.decryptPrecomputedContract, Proof.RsaPkcs1Enc.decryptPrecomputedSig,
+  sig_post [Proof.RsaPkcs1Enc.decryptPrecomputedBodyContract, Proof.RsaPkcs1Enc.decryptPrecomputedBodySig,
     Proof.RsaPkcs1Enc.decryptSig, abi, argRegs, reduceClassify, Loc.val] at po
   simp only [stackArg_call, r0, r2, r3, a0, a1, a2, a3, a4, a5, a7, a8, a9, a10, a11, a13, a15,
     BitVec.toNat_ofNat, Nat.mod_eq_of_lt k32, Nat.mod_eq_of_lt el32, Nat.mod_eq_of_lt dl32,
@@ -749,7 +749,7 @@ theorem call_post {P : EP} {σ s t : State} (h : R1 P σ s)
   rw [BitVec.setWidth_append_eq_right] at po
   exact po
 
-/-- The call of `vg_rsa_pkcs1_decrypt_precomputed`'s code `c`, by its
+/-- The call of `vg_rsa_pkcs1_decrypt_precomputed_body`'s code `c`, by its
 contract. -/
 theorem call_vp {c : Prog isa} (hv : Verified target c cK) (hst : FrameStack.armStack c ≤ calleeStack)
     (name : String) (P : EP) : VP (R1 P) (.call name c) (R2 P) := by
@@ -802,9 +802,9 @@ def rOf : Spec.Rsa.Outcome → BitVec 32
   | .invalid => 0
   | .fault => 2
 
-/-- What `writtenMsg` states, the same way for every outcome. -/
+/-- What `writtenMsgEnd` states, the same way for every outcome. -/
 theorem written_of {m : Mem} {o ml : Addr} {K : Nat} {r : BitVec 32} {v : Spec.Rsa.Outcome}
-    (h : Proof.RsaPkcs1Enc.writtenMsg m o ml K r v) :
+    (h : Proof.RsaPkcs1Enc.writtenMsgEnd m o ml K r v) :
     r = rOf v ∧ Spec.Rsa.bytesAt m o K = List.replicate (K - (msgOf v).length) 0 ++ msgOf v ∧
       Spec.Rsa.wordsAt m ml 1 = [BitVec.ofNat 64 (msgOf v).length] := by
   cases v with
@@ -816,11 +816,11 @@ theorem written_of {m : Mem} {o ml : Addr} {K : Nat} {r : BitVec 32} {v : Spec.R
     obtain ⟨a, b, c⟩ := h
     exact ⟨a, by simp only [b, msgOf, List.length_nil, Nat.sub_zero, List.append_nil], by rw [c]; rfl⟩
 
-/-- `writtenMsgFront`, the same way for every outcome. -/
+/-- `writtenMsg`, the same way for every outcome. -/
 theorem front_of {m : Mem} {o ml : Addr} {K : Nat} {r : BitVec 32} {v : Spec.Rsa.Outcome} (hr : r = rOf v)
     (hb : Spec.Rsa.bytesAt m o K = msgOf v ++ List.replicate (K - (msgOf v).length) 0)
     (hw : Spec.Rsa.wordsAt m ml 1 = [BitVec.ofNat 64 (msgOf v).length]) :
-    Spec.RsaPkcs1Enc.writtenMsgFront m o ml K r v := by
+    Spec.RsaPkcs1Enc.writtenMsg m o ml K r v := by
   cases v with
   | ok M => exact ⟨hr, hb, hw⟩
   | invalid =>
@@ -1360,7 +1360,7 @@ theorem out_vp (P : EP) : VP (SF P) (.seq (.block outSet) Impl.Bignum.Arm.copyBy
 
 /-- What the shared contract states of the result `r` and the memory `m`. -/
 def Res (P : EP) (σ : State) (m : Mem) (r : BitVec 32) : Prop :=
-  Spec.RsaPkcs1Enc.writtenMsgFront m (State.addr P.out) (State.addr P.ml) P.K r (oc P σ)
+  Spec.RsaPkcs1Enc.writtenMsg m (State.addr P.out) (State.addr P.ml) P.K r (oc P σ)
 
 /-- The end of the body. -/
 def Fin (P : EP) (σ s : State) : Prop := S P σ s ∧ Res P σ s.mem (s.gpr .r0)
@@ -1417,7 +1417,7 @@ theorem ret_vp (P : EP) : VP (O1 P) (.block ret) (Fin P) := by
 theorem tail_vp (P : EP) : VP (R3 P) tail (Fin P) :=
   VP.assoc ((clr_vp P).seq (VP.assoc ((in_vp P).seq ((shift_vp P).seq (VP.assoc ((out_vp P).seq (ret_vp P)))))))
 
-/-- The body, calling `vg_rsa_pkcs1_decrypt_precomputed`'s code `c` by its
+/-- The body, calling `vg_rsa_pkcs1_decrypt_precomputed_body`'s code `c` by its
 contract. -/
 theorem body_vp {c : Prog isa} (hv : Verified target c cK) (hst : FrameStack.armStack c ≤ calleeStack)
     (name : String) (P : EP) : VP (S P) (Impl.RsaPkcs1Enc.Arm.Front.body name c) (Fin P) :=
@@ -1435,7 +1435,7 @@ theorem satisfiable : ∃ s, spec.pre s := by
   have l14 : (stackArg preState 10).toNat = 32 := by decide
   have l24 : (stackArg preState 20).toNat = 24 := by decide
   refine ⟨preState, ?_⟩
-  sig_pre [Spec.RsaPkcs1Enc.decryptPrecomputedFrontContract, Spec.RsaPkcs1Enc.decryptPrecomputedFrontSig,
+  sig_pre [Spec.RsaPkcs1Enc.decryptPrecomputedContract, Spec.RsaPkcs1Enc.decryptPrecomputedSig,
     abi, argRegs, reduceClassify, Loc.val, State.addr]
   sig_and_intros
   rotate_right
@@ -1471,7 +1471,7 @@ theorem code_ok {s : State} (h : spec.pre s) :
   · rw [pushRegion_eq (F := frameBytes) (A := 84) (C := calleeStack) (argv := (ep s).argv)
       (ro := (ep s).ro) (rw := (ep s).rw) hsp]
     exact hin.ok.push_apart r hr
-  · sig_post [Spec.RsaPkcs1Enc.decryptPrecomputedFrontContract, Spec.RsaPkcs1Enc.decryptPrecomputedFrontSig,
+  · sig_post [Spec.RsaPkcs1Enc.decryptPrecomputedContract, Spec.RsaPkcs1Enc.decryptPrecomputedSig,
       abi, argRegs, reduceClassify, Loc.val]
     rw [BitVec.setWidth_append_eq_right]
     have ro := fun {R : Region} (hR : R ∈ (ep s).ro) =>
@@ -1499,7 +1499,7 @@ theorem code_ct : ConstantTime isa spec.pre spec.pub (Impl.RsaPkcs1Enc.Arm.Front
   intro s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hp e₁ e₂
   have hep := ep_eq hp
   have hsp : s₁.sp = s₂.sp := by
-    sig_pub [Spec.RsaPkcs1Enc.decryptPrecomputedFrontContract, Spec.RsaPkcs1Enc.decryptPrecomputedFrontSig,
+    sig_pub [Spec.RsaPkcs1Enc.decryptPrecomputedContract, Spec.RsaPkcs1Enc.decryptPrecomputedSig,
       abi, argRegs, reduceClassify, Loc.val] at hp
     exact hp.1
   refine (wrap_ct (F := frameBytes) (by decide) (P := fun a b => a = s₁ ∧ b = s₂)
@@ -1510,8 +1510,8 @@ theorem code_ct : ConstantTime isa spec.pre spec.pub (Impl.RsaPkcs1Enc.Arm.Front
   rintro a b ⟨_, _, ⟨rfl, rfl⟩, rfl, rfl⟩
   exact ⟨_, _, entered_state h₁, by rw [hep]; exact entered_state h₂⟩
 
-/-- `vg_rsa_pkcs1_decrypt_precomputed_front`, calling the code `c` of
-`vg_rsa_pkcs1_decrypt_precomputed` by `name`. -/
+/-- `vg_rsa_pkcs1_decrypt_precomputed`, calling the code `c` of
+`vg_rsa_pkcs1_decrypt_precomputed_body` by `name`. -/
 theorem front_verified : Verified target (Impl.RsaPkcs1Enc.Arm.Front.code name c) spec :=
   ⟨fun _ h => let ⟨t, s', he, hq⟩ := code_ok hv hst name h; ⟨t, s', he, hq.1, hq.2⟩, code_ct hv hst name,
     satisfiable⟩
@@ -1525,33 +1525,33 @@ section
 open VG.Arm.Scrub VG.Proof.Rsa.Arm.Scrub
 open VG.Proof.Rsa.Arm (CrtImpl privCodeP)
 
-/-- The name of `vg_rsa_pkcs1_decrypt_precomputed`'s code before its
+/-- The name of `vg_rsa_pkcs1_decrypt_precomputed_body`'s code before its
 cleanup, over `v`: an internal function. -/
 def bodyName (v : CrtImpl) : String := "vg_rsa_pkcs1_decrypt_precomputed_body" ++ v.suffix
 
-theorem writtenMsgFront_of {m₁ m₂ : Mem} {o l : Addr} {n : Nat} {r : BitVec 32} {v : Spec.Rsa.Outcome}
+theorem writtenMsg_of {m₁ m₂ : Mem} {o l : Addr} {n : Nat} {r : BitVec 32} {v : Spec.Rsa.Outcome}
     (e : Spec.Rsa.bytesAt m₂ o n = Spec.Rsa.bytesAt m₁ o n) (el : Spec.Rsa.wordsAt m₂ l 1 = Spec.Rsa.wordsAt m₁ l 1)
-    (h : Spec.RsaPkcs1Enc.writtenMsgFront m₁ o l n r v) : Spec.RsaPkcs1Enc.writtenMsgFront m₂ o l n r v := by
-  cases v <;> simpa only [Spec.RsaPkcs1Enc.writtenMsgFront, e, el] using h
+    (h : Spec.RsaPkcs1Enc.writtenMsg m₁ o l n r v) : Spec.RsaPkcs1Enc.writtenMsg m₂ o l n r v := by
+  cases v <;> simpa only [Spec.RsaPkcs1Enc.writtenMsg, e, el] using h
 
 /-- The postcondition reads the memory on return only within `out` and
 `msg_len`. -/
 theorem frontOut (stack : Nat) :
-    PostOut (Spec.RsaPkcs1Enc.decryptPrecomputedFrontContract abi stack)
-      (Spec.RsaPkcs1Enc.decryptPrecomputedFrontSig.retBits 32) :=
+    PostOut (Spec.RsaPkcs1Enc.decryptPrecomputedContract abi stack)
+      (Spec.RsaPkcs1Enc.decryptPrecomputedSig.retBits 32) :=
   postOut_of_local_pre (leak := some _) ScrubAbi.plain fun
     | [out, outLen, ml, _, nLen, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _], m, m₁, m₂, r, _, hp, hb, h => by
-      simp only [Spec.RsaPkcs1Enc.decryptPrecomputedFrontSig, Sig.bufs, List.mem_cons, forall_eq_or_imp, Elem.size] at hb
+      simp only [Spec.RsaPkcs1Enc.decryptPrecomputedSig, Sig.bufs, List.mem_cons, forall_eq_or_imp, Elem.size] at hb
       change @Curry.apply (Mem → Prop) [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _] _ _ m at hp
       change @Curry.apply (Mem → Mem → BitVec _ → Prop)
         [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _] _ _ _ m₁ r at h
       change @Curry.apply (Mem → Mem → BitVec _ → Prop)
         [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _] _ _ _ m₂ r
       dsimp only [Curry.apply, ArgWord.ofRaw] at hp h ⊢
-      exact writtenMsgFront_of (bytesAt_of hb.1 (hp.2.1 ▸ toNat_sw_le abi ScrubAbi.plain outLen))
+      exact writtenMsg_of (bytesAt_of hb.1 (hp.2.1 ▸ toNat_sw_le abi ScrubAbi.plain outLen))
         (wordsAt_of hb.2.1) h
 
-/-- What the cleanup needs of `vg_rsa_pkcs1_decrypt_precomputed`'s code
+/-- What the cleanup needs of `vg_rsa_pkcs1_decrypt_precomputed_body`'s code
 over `v`, with the stack its contract states. -/
 theorem dec_ok (v : CrtImpl) : CodeOk (Proof.RsaPkcs1Enc.Arm.Dec.decryptCodeP v) calleeStack :=
   (wrap_codeOk (n := 3488) (F := 96) (CodeOk.seq (CodeOk.zero (CodeOk.block _))
@@ -1568,14 +1568,14 @@ theorem front_ok {name : String} {c : Prog isa} (h : CodeOk c calleeStack) :
 
 theorem frameOk_3824 : VG.Arm.Scrub.FrameOk stackBytes := by decide
 
-/-- `Spec.RsaPkcs1Enc.decryptPrecomputedFrontApi`'s function as emitted,
-calling `vg_rsa_pkcs1_decrypt_precomputed`'s code over `v`: it meets its
+/-- `Spec.RsaPkcs1Enc.decryptPrecomputedApi`'s function as emitted,
+calling `vg_rsa_pkcs1_decrypt_precomputed_body`'s code over `v`: it meets its
 contract in constant time and returns without secret residue. -/
 theorem front_scrubbed (v : CrtImpl) :
     VerifiedScrubbed target
-      (Impl.RsaPkcs1Enc.Arm.Fn.decryptPrecomputedFront (bodyName v) (Proof.RsaPkcs1Enc.Arm.Dec.decryptCodeP v))
-      (Spec.RsaPkcs1Enc.decryptPrecomputedFrontContract abi 3824) 32 :=
-  verifiedScrubbedAll (api := Spec.RsaPkcs1Enc.decryptPrecomputedFrontApi)
+      (Impl.RsaPkcs1Enc.Arm.Fn.decryptPrecomputed (bodyName v) (Proof.RsaPkcs1Enc.Arm.Dec.decryptCodeP v))
+      (Spec.RsaPkcs1Enc.decryptPrecomputedContract abi 3824) 32 :=
+  verifiedScrubbedAll (api := Spec.RsaPkcs1Enc.decryptPrecomputedApi)
     { code := Impl.RsaPkcs1Enc.Arm.Front.code (bodyName v) (Proof.RsaPkcs1Enc.Arm.Dec.decryptCodeP v)
       verified := front_verified (Proof.RsaPkcs1Enc.Arm.Dec.decryptPrecomputed_verified v) (dec_ok v).1 (bodyName v) }
     (frontOut _) (scrubSideF_of (front_ok (dec_ok v)) frameOk_3824 _)

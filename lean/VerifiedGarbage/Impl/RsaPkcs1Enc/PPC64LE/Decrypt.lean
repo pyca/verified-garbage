@@ -19,7 +19,7 @@ functions taking their working space as an argument, it runs
 draft-irtf-cfrg-rsa-guidance-10 §7.2:
 
 1. The private-key operation (`vg_rsa_private_checked`, or for
-   `vg_rsa_pkcs1_decrypt_precomputed` `vg_rsa_private_checked_precomputed`,
+   `vg_rsa_pkcs1_decrypt_precomputed_body` `vg_rsa_private_checked_precomputed`,
    given the key's precomputed values `pre`, our stack arguments 15 and 16),
    `EM` (or zeros) to `out` and its result `r` (1, or 0 or 2 for its errors)
    into a slot (`setup`, the call).
@@ -358,13 +358,13 @@ def body (pc : Bool) : Prog isa :=
   .seq (.block (setup pc)) (.seq (privCall pc) (.seq dBuild (.seq hashD (.seq kdkMac (.seq clLoop
     (.seq amLoop (.seq maskPart (.seq alPart (.seq scanPart selPart)))))))))
 
-/-- `vg_rsa_pkcs1_decrypt`, or with `pc` `vg_rsa_pkcs1_decrypt_precomputed`. -/
+/-- `vg_rsa_pkcs1_decrypt`, or with `pc` `vg_rsa_pkcs1_decrypt_precomputed_body`. -/
 def codeG (pc : Bool) : Prog isa := .frame (.alloc frameBytes) (body pc) (.free frameBytes)
 
 /-- `vg_rsa_pkcs1_decrypt`. -/
 abbrev code : Prog isa := codeG false
 
-/-- `vg_rsa_pkcs1_decrypt_precomputed`. -/
+/-- `vg_rsa_pkcs1_decrypt_precomputed_body`. -/
 abbrev codeP : Prog isa := codeG true
 
 end VG.Impl.RsaPkcs1Enc.PPC64LE.Decrypt

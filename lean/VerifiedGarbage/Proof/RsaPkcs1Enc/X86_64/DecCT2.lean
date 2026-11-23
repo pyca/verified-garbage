@@ -264,7 +264,7 @@ open VG.Proof.Sha256.X86_64 (Compress)
 /-! ## Entry states and the anchor -/
 
 /-- An entry state meeting the precondition with the anchor's public data,
-and related to it by `X` (`vg_rsa_pkcs1_decrypt_precomputed`'s further
+and related to it by `X` (`vg_rsa_pkcs1_decrypt_precomputed_body`'s further
 public data, `DecPCT.lean`). -/
 def Sib (X : State → State → Prop) (a s : State) : Prop := (DPre s ∧ decK.pub a s) ∧ X a s
 

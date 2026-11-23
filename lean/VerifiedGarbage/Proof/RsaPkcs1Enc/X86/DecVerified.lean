@@ -65,9 +65,9 @@ theorem code_ok (v : Backend) (c : CrtImpl) {s : State} (h : spec.pre s) :
       (fun q hq => by rw [List.mem_singleton.mp hq]; exact (ok.stk (ep s).OUT (by simp)).symm)
     obtain hM := VG.Proof.Rsa.wordsAt_frame F' (p := ((ep s).ml.setWidth 64)) (n := 1) (by decide)
       (fun q hq => by rw [List.mem_singleton.mp hq]; exact (ok.stk (ep s).ML (by simp)).symm)
-    have key : ∀ o, Proof.RsaPkcs1Enc.writtenMsg m ((ep s).out.setWidth 64) ((ep s).ml.setWidth 64) (ep s).K r o →
-        Proof.RsaPkcs1Enc.writtenMsg m' ((ep s).out.setWidth 64) ((ep s).ml.setWidth 64) (ep s).K r o := fun o => by
-      cases o <;> simp only [Proof.RsaPkcs1Enc.writtenMsg] <;> rw [hO, hM] <;> exact id
+    have key : ∀ o, Proof.RsaPkcs1Enc.writtenMsgEnd m ((ep s).out.setWidth 64) ((ep s).ml.setWidth 64) (ep s).K r o →
+        Proof.RsaPkcs1Enc.writtenMsgEnd m' ((ep s).out.setWidth 64) ((ep s).ml.setWidth 64) (ep s).K r o := fun o => by
+      cases o <;> simp only [Proof.RsaPkcs1Enc.writtenMsgEnd] <;> rw [hO, hM] <;> exact id
     exact key _ hres
   · have ok := hin.ok
     rw [ep_lay] at ok

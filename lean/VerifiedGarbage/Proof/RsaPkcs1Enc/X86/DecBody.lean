@@ -3660,7 +3660,7 @@ theorem selLoop_vp : VP (SL P 0) selLoop (SL P P.K) := by
 
 /-- What the shared contract states of the result `r` and the memory `m`. -/
 def Res (P : EP) (σ : State) (m : Mem) (r : BitVec 32) : Prop :=
-  Proof.RsaPkcs1Enc.writtenMsg m (P.out.setWidth 64) (P.ml.setWidth 64) P.K r
+  Proof.RsaPkcs1Enc.writtenMsgEnd m (P.out.setWidth 64) (P.ml.setWidth 64) P.K r
     (Spec.RsaPkcs1Enc.decrypt P.nB P.eB (dB P σ) (pB P σ) (qB P σ) (dpB P σ) (dqB P σ) (qiB P σ) (cB P σ))
 
 /-- The end of the body. -/

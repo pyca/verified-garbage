@@ -8,7 +8,7 @@ public import VerifiedGarbage.Spec.Rsa.PrivatePrecompute
 # RSAES-PKCS1-v1_5 with implicit rejection: the decryption contract, on every target
 
 **Trusted** (as every file in `Spec/`). In the module `rsa_pkcs1_enc`,
-`vg_rsa_pkcs1_decrypt_precomputed_front`: RSAES-PKCS1-V1_5-DECRYPT with
+`vg_rsa_pkcs1_decrypt_precomputed`: RSAES-PKCS1-V1_5-DECRYPT with
 implicit rejection (`RsaPkcs1Enc.decrypt`), with RSADP checked against `e`
 (`Rsa.privateChecked`), given the key's precomputed values
 (`Rsa.privatePrecompute`, `Spec/Rsa/PrivatePrecompute.lean`). It writes the
@@ -54,27 +54,27 @@ namespace VG.Spec.RsaPkcs1Enc
 open Rsa (bytesAt wordsAt lenValid scratchWords publicScratchWords written scratchSafety
   publicScratchSafety exponentDoc Outcome)
 
-/-! ## `vg_rsa_pkcs1_decrypt_precomputed_front` -/
+/-! ## `vg_rsa_pkcs1_decrypt_precomputed` -/
 
 /-- The postcondition of decryption, with the outcome `o`, for the `nLen`
 octets at `out` and the word at `msgLen`: for a message `M`, return 1, `M`
 at the start of `out` and zeros after it, and its length at `msgLen`; for an
 error, return 0 (`invalid`) or 2 (`fault`), zeros and a length of 0. -/
-def writtenMsgFront (m' : Mem) (out msgLen : Addr) (nLen : Nat) (r : BitVec 32) :
+def writtenMsg (m' : Mem) (out msgLen : Addr) (nLen : Nat) (r : BitVec 32) :
     Outcome → Prop
   | .ok M => r = 1 ∧ bytesAt m' out nLen = M ++ List.replicate (nLen - M.length) 0 ∧
       wordsAt m' msgLen 1 = [BitVec.ofNat 64 M.length]
   | .invalid => r = 0 ∧ bytesAt m' out nLen = List.replicate nLen 0 ∧ wordsAt m' msgLen 1 = [0]
   | .fault => r = 2 ∧ bytesAt m' out nLen = List.replicate nLen 0 ∧ wordsAt m' msgLen 1 = [0]
 
-/-- `vg_rsa_pkcs1_decrypt_precomputed_front(out: *mut u8, out_len: usize,
+/-- `vg_rsa_pkcs1_decrypt_precomputed(out: *mut u8, out_len: usize,
 msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8,
 e_len: usize, d: *const u8, d_len: usize, input: *const u8,
 input_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize,
 dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize,
 qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize,
 pre: *const u64, pre_len: usize) -> u32`. -/
-def decryptPrecomputedFrontSig : Sig where
+def decryptPrecomputedSig : Sig where
   params := [("out", .slice true .u8 "out_len"), ("msg_len", .array true .u64 1),
     ("n", .slice false .u8 "n_len"), ("e", .slice false .u8 "e_len"),
     ("d", .slice false .u8 "d_len"), ("input", .slice false .u8 "input_len"),
@@ -87,12 +87,12 @@ def decryptPrecomputedFrontSig : Sig where
 /-- RSAES-PKCS1-V1_5-DECRYPT with implicit rejection of the ciphertext
 `input` with the private key `(n, e, d, p, q, dP, dQ, qInv)` (`decrypt`),
 given `pre` holding the key's precomputed values (`Rsa.privatePrecompute`),
-with the message at the start of `out` (`writtenMsgFront`). Constant time
+with the message at the start of `out` (`writtenMsg`). Constant time
 but for the public key and the modulus' precomputed values: in particular,
 not the validity of the padding, the message length, the alternative length
 or which message is returned. -/
-def decryptPrecomputedFrontContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  decryptPrecomputedFrontSig.contract A
+def decryptPrecomputedContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  decryptPrecomputedSig.contract A
     (pre := fun _out outLen _msgLen n nLen _e eLen _d dLen _input inputLen p pLen q qLen _dp
         dpLen _dq dqLen _qinv qinvLen _scratch scratchLen pre preLen m =>
       lenValid nLen.toNat ∧ outLen.toNat = nLen.toNat ∧ inputLen.toNat = nLen.toNat ∧
@@ -105,7 +105,7 @@ def decryptPrecomputedFrontContract {M : ISA} (A : Abi M) (stack : Nat := 0) : C
           (bytesAt m q qLen.toNat) = some (Rsa.wordsAt m pre preLen.toNat))
     (post := fun out _outLen msgLen n nLen e eLen d dLen input _inputLen p pLen q qLen dp _dpLen
         dq _dqLen qinv _qinvLen _scratch _scratchLen _pre _preLen m m' r =>
-      writtenMsgFront m' out msgLen nLen.toNat r
+      writtenMsg m' out msgLen nLen.toNat r
         (decrypt (bytesAt m n nLen.toNat) (bytesAt m e eLen.toNat) (bytesAt m d dLen.toNat)
           (bytesAt m p pLen.toNat) (bytesAt m q qLen.toNat) (bytesAt m dp pLen.toNat)
           (bytesAt m dq qLen.toNat) (bytesAt m qinv pLen.toNat) (bytesAt m input nLen.toNat)))
@@ -115,12 +115,12 @@ def decryptPrecomputedFrontContract {M : ISA} (A : Abi M) (stack : Nat := 0) : C
       (bytesAt m n nLen.toNat ++ bytesAt m e eLen.toNat).map (·.toNat) ++
         Rsa.privatePrecomputedLeak m pre nLen.toNat)
 
-def decryptPrecomputedFrontApi : Api where
+def decryptPrecomputedApi : Api where
   module := "rsa_pkcs1_enc"
-  name := "vg_rsa_pkcs1_decrypt_precomputed_front"
-  sig := decryptPrecomputedFrontSig
+  name := "vg_rsa_pkcs1_decrypt_precomputed"
+  sig := decryptPrecomputedSig
   writeArgs := true
-  contracts := some fun A stack => decryptPrecomputedFrontContract A stack
+  contracts := some fun A stack => decryptPrecomputedContract A stack
   summary := "RSAES-PKCS1-V1_5-DECRYPT (RFC 8017 §7.2.2) with implicit rejection \
     (draft-irtf-cfrg-rsa-guidance), of the ciphertext `input` with the private key `(n, e, \
     d, p, q, dp, dq, qinv)`, RSADP checked against `e`: returns 1 and writes the message, or \
@@ -130,7 +130,7 @@ def decryptPrecomputedFrontApi : Api where
     ciphertext is not below `n` or the key is refused, or 2 if RSADP fails its check \
     against `e`. " ++
     Rsa.privatePrecomputedDoc ++ ".\n\n\
-    Contract: `VG.Spec.RsaPkcs1Enc.decryptPrecomputedFrontContract`. Constant time but for \
+    Contract: `VG.Spec.RsaPkcs1Enc.decryptPrecomputedContract`. Constant time but for \
     the public key: timing may depend on the pointers, the lengths, the contents of `n` and \
     `e` and the first `2 * ⌈n_len / 8⌉` words of `pre` (the modulus' values), not on the \
     ciphertext, the private key, the rest of `pre`, the validity of the padding, the length \

@@ -30,7 +30,7 @@ use alloc::vec::Vec;
 use core::fmt;
 
 use crate::arch::dispatch::rsa_pkcs1_enc::{
-    vg_rsa_pkcs1_decrypt_precomputed_front_auto, vg_rsa_pkcs1_encrypt_random_auto,
+    vg_rsa_pkcs1_decrypt_precomputed_auto, vg_rsa_pkcs1_encrypt_random_auto,
 };
 use crate::entropy::{self, Step, Stop};
 use crate::rsa::{PrivateKey, PublicKey, public_scratch_words, scratch_words};
@@ -206,7 +206,7 @@ impl PrivateKey {
         // the dispatcher calls only an
         // implementation the CPU has the features of.
         let r = unsafe {
-            vg_rsa_pkcs1_decrypt_precomputed_front_auto(
+            vg_rsa_pkcs1_decrypt_precomputed_auto(
                 dit,
                 out.as_mut_ptr(),
                 k,
@@ -241,7 +241,7 @@ impl PrivateKey {
             1 => {
                 // The function returns at most `n_len - 11` bytes.
                 // NO-SECRET-RESIDUE: the bytes after the message are zeros
-                // (`RsaPkcs1Enc.writtenMsgFront`).
+                // (`RsaPkcs1Enc.writtenMsg`).
                 out.truncate(len[0] as usize);
                 Ok(out)
             }

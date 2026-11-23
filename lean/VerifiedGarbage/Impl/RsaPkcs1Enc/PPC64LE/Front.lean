@@ -8,8 +8,8 @@ public import VerifiedGarbage.Impl.RsaPkcs1Enc.PPC64LE.Decrypt
 /-!
 # RSAES-PKCS1-v1_5 decryption with the message first, on PPC64LE
 
-`vg_rsa_pkcs1_decrypt_precomputed_front` takes the arguments of
-`vg_rsa_pkcs1_decrypt_precomputed` and calls it (`callee`, by `name`) with
+`vg_rsa_pkcs1_decrypt_precomputed` takes the arguments of
+`vg_rsa_pkcs1_decrypt_precomputed_body` and calls it (`callee`, by `name`) with
 them: the eight argument registers as they came, and its 17 stack arguments
 copied to the frame's Parameter Save Area (`r1 + 96`, as
 `withStackScratchArgs` does, `Impl/StackScratch/PPC64LE/Args.lean`), in a
@@ -100,16 +100,16 @@ def restore : List Instr :=
 /-- After the call: the message moved to the start of `out`. -/
 def tail : Prog isa := .seq clearBuf (.seq copyIn (.seq shift copyOut))
 
-/-- The function's body, calling `vg_rsa_pkcs1_decrypt_precomputed`
+/-- The function's body, calling `vg_rsa_pkcs1_decrypt_precomputed_body`
 (`callee`) by `name`. -/
 def body (name : String) (callee : Prog isa) : Prog isa :=
   .seq (.block setup) (.seq (.call name callee) (.seq (.block after) (.seq tail (.block restore))))
 
-/-- `vg_rsa_pkcs1_decrypt_precomputed_front`, calling `callee` by `name`. -/
+/-- `vg_rsa_pkcs1_decrypt_precomputed`, calling `callee` by `name`. -/
 def code (name : String) (callee : Prog isa) : Prog isa :=
   .frame (.alloc frameBytes) (body name callee) (.free frameBytes)
 
-/-- The name of `vg_rsa_pkcs1_decrypt_precomputed`'s code before its
+/-- The name of `vg_rsa_pkcs1_decrypt_precomputed_body`'s code before its
 cleanup, an internal function. -/
 def bodyName : String := "vg_rsa_pkcs1_decrypt_precomputed_body"
 
@@ -120,13 +120,13 @@ namespace VG.Impl.RsaPkcs1Enc.PPC64LE.Fn
 open VG.PPC64LE
 open VG.Impl.Scrub.PPC64LE (scrubAll)
 
-/-- `Spec.RsaPkcs1Enc.decryptPrecomputedFrontApi`'s function as emitted,
-calling `vg_rsa_pkcs1_decrypt_precomputed`'s code before its cleanup
+/-- `Spec.RsaPkcs1Enc.decryptPrecomputedApi`'s function as emitted,
+calling `vg_rsa_pkcs1_decrypt_precomputed_body`'s code before its cleanup
 (`Decrypt.codeP`) as the internal function `Front.bodyName`, then its
 cleanup: the 3920 bytes of stack its frame (272) and the callee (3648) use
 zeroed, and every volatile register cleared, as for
-`vg_rsa_pkcs1_decrypt_precomputed` (`Fn.decryptPrecomputed`). -/
-def decryptPrecomputedFront : Prog isa :=
+`vg_rsa_pkcs1_decrypt_precomputed_body` (`Fn.decryptPrecomputed`). -/
+def decryptPrecomputed : Prog isa :=
   scrubAll 32 3920 Impl.Scrub.PPC64LE.Clear.all (Front.code Front.bodyName Impl.RsaPkcs1Enc.PPC64LE.Decrypt.codeP)
 
 end VG.Impl.RsaPkcs1Enc.PPC64LE.Fn

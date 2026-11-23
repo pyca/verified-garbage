@@ -6,8 +6,8 @@ public import VerifiedGarbage.Impl.Scrub.AArch64.Writes
 /-!
 # RSAES-PKCS1-v1_5 decryption with the message first, on AArch64
 
-`vg_rsa_pkcs1_decrypt_precomputed_front` takes the arguments of
-`vg_rsa_pkcs1_decrypt_precomputed` and calls it (`body`, by its name) with
+`vg_rsa_pkcs1_decrypt_precomputed` takes the arguments of
+`vg_rsa_pkcs1_decrypt_precomputed_body` and calls it (`body`, by its name) with
 them: the argument registers `x0`–`x7` as they came, and its 17 stack
 arguments copied to the bottom of a frame of `frameBytes` (272) bytes,
 RSAES-OAEP's (`Impl/RsaOaep/AArch64.lean`), inside one saving `x30`. `out`,
@@ -67,12 +67,12 @@ def ret : List Instr := [.ldrSp .x0 sR]
 /-- After the call: the message moved to the start of `out`. -/
 def tail : Prog isa := seqs [clearBuf, copyIn, shift, copyOut, .block ret]
 
-/-- The inner frame's body, calling `vg_rsa_pkcs1_decrypt_precomputed`
+/-- The inner frame's body, calling `vg_rsa_pkcs1_decrypt_precomputed_body`
 (`callee`) by `name`. -/
 def body (name : String) (callee : Prog isa) : Prog isa :=
   seqs [.block setup, .call name callee, .block after, tail]
 
-/-- `vg_rsa_pkcs1_decrypt_precomputed_front`, calling `callee` by `name`. -/
+/-- `vg_rsa_pkcs1_decrypt_precomputed`, calling `callee` by `name`. -/
 def code (name : String) (callee : Prog isa) : Prog isa :=
   .frame (.push .x30) (.frame (.alloc frameBytes) (body name callee) (.free frameBytes)) (.pop .x30)
 
@@ -83,11 +83,11 @@ namespace VG.Impl.RsaPkcs1Enc.AArch64.Fn
 open VG.AArch64
 open VG.Impl.Scrub.AArch64 (scrubOf)
 
-/-- `Spec.RsaPkcs1Enc.decryptPrecomputedFrontApi`'s function as emitted,
-calling `vg_rsa_pkcs1_decrypt_precomputed`'s code `callee` by `name`, then
+/-- `Spec.RsaPkcs1Enc.decryptPrecomputedApi`'s function as emitted,
+calling `vg_rsa_pkcs1_decrypt_precomputed_body`'s code `callee` by `name`, then
 its cleanup: the registers the code may write cleared, and the 3776 bytes of
 stack its frames (288) and the callee (3488) use zeroed. -/
-def decryptPrecomputedFront (name : String) (callee : Prog isa) : Prog isa :=
+def decryptPrecomputed (name : String) (callee : Prog isa) : Prog isa :=
   scrubOf 3776 32 (Front.code name callee)
 
 end VG.Impl.RsaPkcs1Enc.AArch64.Fn
