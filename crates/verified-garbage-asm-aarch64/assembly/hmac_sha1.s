@@ -342,77 +342,18 @@ vg_hmac_sha1_init_sha2:
 	sub sp, sp, #1136
 	movi v31.2d, #0
 	add x9, sp, #0
+	movz x10, #17, lsl #0
+29:
 	str q31, [x9, #0]
 	str q31, [x9, #16]
 	str q31, [x9, #32]
 	str q31, [x9, #48]
-	str q31, [x9, #64]
-	str q31, [x9, #80]
-	str q31, [x9, #96]
-	str q31, [x9, #112]
-	str q31, [x9, #128]
-	str q31, [x9, #144]
-	str q31, [x9, #160]
-	str q31, [x9, #176]
-	str q31, [x9, #192]
-	str q31, [x9, #208]
-	str q31, [x9, #224]
-	str q31, [x9, #240]
-	str q31, [x9, #256]
-	str q31, [x9, #272]
-	str q31, [x9, #288]
-	str q31, [x9, #304]
-	str q31, [x9, #320]
-	str q31, [x9, #336]
-	str q31, [x9, #352]
-	str q31, [x9, #368]
-	str q31, [x9, #384]
-	str q31, [x9, #400]
-	str q31, [x9, #416]
-	str q31, [x9, #432]
-	str q31, [x9, #448]
-	str q31, [x9, #464]
-	str q31, [x9, #480]
-	str q31, [x9, #496]
-	str q31, [x9, #512]
-	str q31, [x9, #528]
-	str q31, [x9, #544]
-	str q31, [x9, #560]
-	str q31, [x9, #576]
-	str q31, [x9, #592]
-	str q31, [x9, #608]
-	str q31, [x9, #624]
-	str q31, [x9, #640]
-	str q31, [x9, #656]
-	str q31, [x9, #672]
-	str q31, [x9, #688]
-	str q31, [x9, #704]
-	str q31, [x9, #720]
-	str q31, [x9, #736]
-	str q31, [x9, #752]
-	str q31, [x9, #768]
-	str q31, [x9, #784]
-	str q31, [x9, #800]
-	str q31, [x9, #816]
-	str q31, [x9, #832]
-	str q31, [x9, #848]
-	str q31, [x9, #864]
-	str q31, [x9, #880]
-	str q31, [x9, #896]
-	str q31, [x9, #912]
-	str q31, [x9, #928]
-	str q31, [x9, #944]
-	str q31, [x9, #960]
-	str q31, [x9, #976]
-	str q31, [x9, #992]
-	str q31, [x9, #1008]
-	str q31, [x9, #1024]
-	str q31, [x9, #1040]
-	str q31, [x9, #1056]
-	str q31, [x9, #1072]
-	str q31, [x9, #1088]
-	str q31, [x9, #1104]
-	str q31, [x9, #1120]
+	add x9, x9, #64
+	sub x10, x10, #1
+	cbnz x10, 29b
+	str q31, [x9, #0]
+	str q31, [x9, #16]
+	str q31, [x9, #32]
 	add sp, sp, #1136
 	b 21b
 	.p2align 6
@@ -534,22 +475,15 @@ vg_hmac_sha1_finalize_sha2:
 	sub sp, sp, #256
 	movi v31.2d, #0
 	add x9, sp, #0
+	movz x10, #4, lsl #0
+20:
 	str q31, [x9, #0]
 	str q31, [x9, #16]
 	str q31, [x9, #32]
 	str q31, [x9, #48]
-	str q31, [x9, #64]
-	str q31, [x9, #80]
-	str q31, [x9, #96]
-	str q31, [x9, #112]
-	str q31, [x9, #128]
-	str q31, [x9, #144]
-	str q31, [x9, #160]
-	str q31, [x9, #176]
-	str q31, [x9, #192]
-	str q31, [x9, #208]
-	str q31, [x9, #224]
-	str q31, [x9, #240]
+	add x9, x9, #64
+	sub x10, x10, #1
+	cbnz x10, 20b
 	add sp, sp, #256
 	ret
 	.p2align 6
@@ -882,77 +816,18 @@ vg_hmac_sha1_init:
 	sub sp, sp, #1136
 	movi v31.2d, #0
 	add x9, sp, #0
+	movz x10, #17, lsl #0
+29:
 	str q31, [x9, #0]
 	str q31, [x9, #16]
 	str q31, [x9, #32]
 	str q31, [x9, #48]
-	str q31, [x9, #64]
-	str q31, [x9, #80]
-	str q31, [x9, #96]
-	str q31, [x9, #112]
-	str q31, [x9, #128]
-	str q31, [x9, #144]
-	str q31, [x9, #160]
-	str q31, [x9, #176]
-	str q31, [x9, #192]
-	str q31, [x9, #208]
-	str q31, [x9, #224]
-	str q31, [x9, #240]
-	str q31, [x9, #256]
-	str q31, [x9, #272]
-	str q31, [x9, #288]
-	str q31, [x9, #304]
-	str q31, [x9, #320]
-	str q31, [x9, #336]
-	str q31, [x9, #352]
-	str q31, [x9, #368]
-	str q31, [x9, #384]
-	str q31, [x9, #400]
-	str q31, [x9, #416]
-	str q31, [x9, #432]
-	str q31, [x9, #448]
-	str q31, [x9, #464]
-	str q31, [x9, #480]
-	str q31, [x9, #496]
-	str q31, [x9, #512]
-	str q31, [x9, #528]
-	str q31, [x9, #544]
-	str q31, [x9, #560]
-	str q31, [x9, #576]
-	str q31, [x9, #592]
-	str q31, [x9, #608]
-	str q31, [x9, #624]
-	str q31, [x9, #640]
-	str q31, [x9, #656]
-	str q31, [x9, #672]
-	str q31, [x9, #688]
-	str q31, [x9, #704]
-	str q31, [x9, #720]
-	str q31, [x9, #736]
-	str q31, [x9, #752]
-	str q31, [x9, #768]
-	str q31, [x9, #784]
-	str q31, [x9, #800]
-	str q31, [x9, #816]
-	str q31, [x9, #832]
-	str q31, [x9, #848]
-	str q31, [x9, #864]
-	str q31, [x9, #880]
-	str q31, [x9, #896]
-	str q31, [x9, #912]
-	str q31, [x9, #928]
-	str q31, [x9, #944]
-	str q31, [x9, #960]
-	str q31, [x9, #976]
-	str q31, [x9, #992]
-	str q31, [x9, #1008]
-	str q31, [x9, #1024]
-	str q31, [x9, #1040]
-	str q31, [x9, #1056]
-	str q31, [x9, #1072]
-	str q31, [x9, #1088]
-	str q31, [x9, #1104]
-	str q31, [x9, #1120]
+	add x9, x9, #64
+	sub x10, x10, #1
+	cbnz x10, 29b
+	str q31, [x9, #0]
+	str q31, [x9, #16]
+	str q31, [x9, #32]
 	add sp, sp, #1136
 	b 21b
 	.p2align 6
@@ -1072,22 +947,15 @@ vg_hmac_sha1_finalize:
 	sub sp, sp, #256
 	movi v31.2d, #0
 	add x9, sp, #0
+	movz x10, #4, lsl #0
+20:
 	str q31, [x9, #0]
 	str q31, [x9, #16]
 	str q31, [x9, #32]
 	str q31, [x9, #48]
-	str q31, [x9, #64]
-	str q31, [x9, #80]
-	str q31, [x9, #96]
-	str q31, [x9, #112]
-	str q31, [x9, #128]
-	str q31, [x9, #144]
-	str q31, [x9, #160]
-	str q31, [x9, #176]
-	str q31, [x9, #192]
-	str q31, [x9, #208]
-	str q31, [x9, #224]
-	str q31, [x9, #240]
+	add x9, x9, #64
+	sub x10, x10, #1
+	cbnz x10, 20b
 	add sp, sp, #256
 	ret
 	.p2align 6
