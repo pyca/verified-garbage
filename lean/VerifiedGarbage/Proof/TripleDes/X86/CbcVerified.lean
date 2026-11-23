@@ -38,7 +38,7 @@ namespace VG.Proof.TripleDes.X86.Cbc
 
 open VG VG.X86 VG.Impl.TripleDes.X86 VG.Impl.Modes
 open VG.Proof.Modes.X86 (cbcEncChained_wp cbcDecLevels_wp)
-open VG.Proof.TripleDes.X86.Mode (dirCoreSpec wideCoreSpec KeyArgs Fits dirFits wideFits)
+open VG.Proof.TripleDes.X86.Mode (dirCoreSpec wideCoreSpec KeyArgs)
 open VG.Proof.TripleDes.X86.Fb
 
 /-- Triple DES decryption under the schedule at the first argument. -/
@@ -53,28 +53,23 @@ def decPost (s s' : State) : Prop :=
   dataAt s'.mem s = Spec.Cbc.decrypt (invCiph s) (ivAt s.mem s) (dataAt s.mem s) ∧
     ivAt s'.mem s = Spec.Cbc.next (ivAt s.mem s) (dataAt s.mem s)
 
-/-- The bitsliced core's cipher in the decryption direction. -/
-theorem invCipher_eq (k : Spec.TripleDes.Schedule) :
-    (wideCoreSpec .decrypt).cipher ((wideFits .decrypt).toKey k) = Spec.TripleDes.invCipher k := rfl
-
-/-- CBC encryption that updates the chaining value, over any core that
-fits, whose cipher is Triple DES's. -/
-theorem cbcEncryptChained_wp_of {c : VG.Impl.Modes.X86.Core} {cs : Proof.Modes.X86.CoreSpec c} {w : Nat}
-    (f : Fits cs w) (hc : ∀ k, cs.cipher (f.toKey k) = Spec.TripleDes.cipher k) {s₀ : State}
-    (hp : (fbX86 w 8 encPost).pre s₀) :
-    WP isa (c.seq (Mode.cbcEncChained c.bw)) s₀ fun s' => abiPreserved s₀ s' ∧ (fbX86 w 8 encPost).post s₀ s' :=
-  WP.mono (cbcEncChained_wp cs (seqPre_of f (step_block f) (by decide) (by decide) hp) (keyArgs_of f hp))
-    fun _ ⟨h1, h2, h3⟩ => by tdes_post_eq f hc h2 h3; exact ⟨h1, h2, h3⟩
+theorem invCipher_eq (s : State) :
+    (wideCoreSpec .decrypt).cipher (Spec.TripleDes.scheduleAt s.mem ((arg s 0).setWidth 64)) = invCiph s := rfl
 
 theorem cbcEncryptChained_wp {s₀ : State} (hp : (fbX86 118 8 encPost).pre s₀) :
     WP isa cbcEncryptChained s₀ fun s' => abiPreserved s₀ s' ∧ (fbX86 118 8 encPost).post s₀ s' :=
-  cbcEncryptChained_wp_of dirFits (fun _ => rfl) hp
+  WP.mono (cbcEncChained_wp dirCoreSpec (seqPre_of rfl (by decide) (by decide) hp)
+      (keyArgs_of hp))
+    fun _ ⟨h1, h2, h3⟩ => by tdes_post_eq h2 h3; exact ⟨h1, h2, h3⟩
 
 theorem cbcDecryptChained_wp {s₀ : State} (hp : (fbX86 151 8 decPost).pre s₀) :
     WP isa cbcDecryptChained s₀ fun s' => abiPreserved s₀ s' ∧ (fbX86 151 8 decPost).post s₀ s' :=
   WP.mono (cbcDecLevels_wp (wideCoreSpec .decrypt) (levels_fit .decrypt)
-      (seqPre_of (wideFits .decrypt) rfl (by decide) (by decide) hp) (keyArgs_of (wideFits .decrypt) hp))
-    fun _ ⟨h1, h2, h3⟩ => by tdes_post_eq (wideFits .decrypt) invCipher_eq h2 h3; exact ⟨h1, h2, h3⟩
+      (seqPreW_of .decrypt rfl (by decide) (by decide) hp) (keyArgsW_of .decrypt hp))
+    fun _ ⟨h1, h2, h3⟩ => by
+      simp only [Proof.Modes.X86.blocks0, Proof.Modes.X86.iv0, Proof.Modes.X86.Dp, Proof.Modes.X86.P,
+        Proof.Modes.X86.N, wideCore_ka, Nat.reduceAdd, dataW_eq, ivW_eq, invCipher_eq] at h2 h3
+      exact ⟨h1, h2, h3⟩
 
 /-! ## Constant time -/
 

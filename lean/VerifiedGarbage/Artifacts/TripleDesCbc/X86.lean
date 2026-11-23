@@ -2,12 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.TripleDes.X86.Scrub
 public import VerifiedGarbage.Impl.TripleDes.X86.Fn
-public import VerifiedGarbage.Proof.TripleDes.X86.Ssse3Verified
-public import VerifiedGarbage.Impl.TripleDes.X86.Ssse3
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86.Print
 import VerifiedGarbage.Proof.TripleDes.X86.CbcLit
-import VerifiedGarbage.Proof.TripleDes.X86.Ssse3Lit
 
 /-! # Triple DES-CBC on x86 -/
 
@@ -16,10 +13,6 @@ import VerifiedGarbage.Proof.TripleDes.X86.Ssse3Lit
 namespace VG.Artifacts.TripleDesCbc.X86
 
 def artifacts : List Artifact := [
-  Spec.TripleDes.cbcEncryptChainedApi.artifact X86.target {
-    suffix := "_ssse3"
-    code := Impl.TripleDes.X86.Ssse3.Fn.cbcEncryptChained
-    verified := Proof.TripleDes.X86.Ssse3.cbcEncryptChained_scrubbed },
   Spec.TripleDes.cbcEncryptChainedApi.artifact X86.target {
     code := Impl.TripleDes.X86.Fn.cbcEncryptChained
     verified := Proof.TripleDes.X86.Scrub.cbcEncryptChained_scrubbed },
