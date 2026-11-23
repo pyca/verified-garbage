@@ -566,10 +566,7 @@ fn tls_records(c: &mut Criterion) {
     /// (alerts, handshake messages, small requests); records of 112 to 240
     /// bytes with their content type, fewer than 16 blocks; a 2048-byte
     /// record; and records of 288, 416, 432 and 448 bytes of text.
-    const TLS_SIZES: [usize; 29] = [
-        15, 31, 47, 63, 111, 127, 207, 239, 254, 255, 256, 257, 287, 415, 431, 447, 1023, 1024,
-        1025, 2047, 4095, 4096, 4097, 9999, 10000, 10001, 16383, 16384, 16385,
-    ];
+    const TLS_SIZES: [usize; 7] = [16, 32, 80, 192, 240, 256, 272];
 
     tls_record_rows(c, &TLS_SIZES, Offsets::DEFAULT, "");
     tls_connection_rows(c);
@@ -805,7 +802,7 @@ fn tls_record_rows(c: &mut Criterion, sizes: &[usize], offsets: Offsets, label: 
 
             // Records shorter than 256 bytes, sealed in place too
             // (`encrypt_in_place`, as QUIC and aws-lc-rs's callers seal).
-            if size < 256 {
+            if size <= 272 {
                 let mut g = c.benchmark_group(format!("aes-{bits}-gcm-tls-seal-in-place") + label);
                 g.throughput(Throughput::Bytes(size as u64 + 1));
                 g.bench(BenchmarkId::new(VG, size), |b| {
