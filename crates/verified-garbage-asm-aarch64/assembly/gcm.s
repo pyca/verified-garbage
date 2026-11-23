@@ -5012,7 +5012,8 @@ vg_aes_gcm_seal_with_powers_aes_sha3:
 	lsl x9, x4, #4
 	add x23, x23, x9
 	sub x24, x24, x9
-	bl {vg_aes_ctr32_aes}
+	add x6, x3, #0
+	bl {vg_aes_ctr32_to_aes}
 	cbz x24, 266f
 	movz x4, #1, lsl #0
 	movz x9, #0, lsl #0
@@ -7620,7 +7621,8 @@ vg_aes_gcm_seal_with_powers_aes_sha3:
 	lsl x9, x4, #4
 	add x23, x23, x9
 	sub x24, x24, x9
-	bl {vg_aes_ctr32_aes}
+	add x6, x3, #0
+	bl {vg_aes_ctr32_to_aes}
 	cbz x24, 2156f
 	movz x4, #1, lsl #0
 	movi v0.2d, #0
@@ -8085,7 +8087,8 @@ vg_aes_gcm_seal_with_powers_aes_sha3:
 	lsl x9, x4, #4
 	add x23, x23, x9
 	sub x24, x24, x9
-	bl {vg_aes_ctr32_aes}
+	add x6, x3, #0
+	bl {vg_aes_ctr32_to_aes}
 	cbz x24, 2211f
 	movz x4, #1, lsl #0
 	movi v0.2d, #0
@@ -9748,7 +9751,8 @@ vg_aes_gcm_seal_with_powers_aes_sha3:
 	lsl x9, x4, #4
 	add x23, x23, x9
 	sub x24, x24, x9
-	bl {vg_aes_ctr32_aes}
+	add x6, x3, #0
+	bl {vg_aes_ctr32_to_aes}
 	cbz x24, 2320f
 	movz x4, #1, lsl #0
 	movi v0.2d, #0
@@ -10760,7 +10764,8 @@ vg_aes_gcm_open_with_powers_aes_sha3:
 	lsl x9, x4, #4
 	add x23, x23, x9
 	sub x24, x24, x9
-	bl {vg_aes_ctr32_aes}
+	add x6, x3, #0
+	bl {vg_aes_ctr32_to_aes}
 	cbz x24, 2115f
 	movz x4, #1, lsl #0
 	movz x9, #0, lsl #0
@@ -12408,7 +12413,8 @@ vg_aes_gcm_open_with_powers_aes_sha3:
 	lsl x9, x4, #4
 	add x23, x23, x9
 	sub x24, x24, x9
-	bl {vg_aes_ctr32_aes}
+	add x6, x3, #0
+	bl {vg_aes_ctr32_to_aes}
 	cbz x24, 2196f
 	movz x4, #1, lsl #0
 	movi v0.2d, #0
@@ -12525,7 +12531,8 @@ vg_aes_gcm_open_with_powers_aes_sha3:
 	lsl x9, x4, #4
 	add x23, x23, x9
 	sub x24, x24, x9
-	bl {vg_aes_ctr32_aes}
+	add x6, x3, #0
+	bl {vg_aes_ctr32_to_aes}
 	cbz x24, 2215f
 	movz x4, #1, lsl #0
 	movi v0.2d, #0
@@ -13080,7 +13087,8 @@ vg_aes_gcm_open_with_powers_aes_sha3:
 	lsl x9, x4, #4
 	add x23, x23, x9
 	sub x24, x24, x9
-	bl {vg_aes_ctr32_aes}
+	add x6, x3, #0
+	bl {vg_aes_ctr32_to_aes}
 	cbz x24, 2287f
 	movz x4, #1, lsl #0
 	movi v0.2d, #0
@@ -14931,7 +14939,8 @@ vg_aes_gcm_open_with_powers_aes_sha3:
 	lsl x9, x4, #4
 	add x23, x23, x9
 	sub x24, x24, x9
-	bl {vg_aes_ctr32_aes}
+	add x6, x3, #0
+	bl {vg_aes_ctr32_to_aes}
 	cbz x24, 2430f
 	movz x4, #1, lsl #0
 	movi v0.2d, #0
@@ -20953,7 +20962,8 @@ vg_aes_gcm_stream_encrypt_aes:
 	lsl x9, x4, #4
 	add x23, x23, x9
 	sub x24, x24, x9
-	bl {vg_aes_ctr32_aes}
+	add x6, x3, #0
+	bl {vg_aes_ctr32_to_aes}
 	cbz x24, 228f
 	movz x4, #1, lsl #0
 	movz x9, #0, lsl #0
@@ -21482,7 +21492,8 @@ vg_aes_gcm_stream_decrypt_aes:
 	lsl x9, x4, #4
 	add x23, x23, x9
 	sub x24, x24, x9
-	bl {vg_aes_ctr32_aes}
+	add x6, x3, #0
+	bl {vg_aes_ctr32_to_aes}
 	cbz x24, 252f
 	movz x4, #1, lsl #0
 	movz x9, #0, lsl #0
@@ -23124,7 +23135,8 @@ vg_aes_gcm_seal_with_powers_aes:
 	lsl x9, x4, #4
 	add x23, x23, x9
 	sub x24, x24, x9
-	bl {vg_aes_ctr32_aes}
+	add x6, x3, #0
+	bl {vg_aes_ctr32_to_aes}
 	cbz x24, 266f
 	movz x4, #1, lsl #0
 	movz x9, #0, lsl #0
@@ -23591,7 +23603,8 @@ vg_aes_gcm_seal_with_powers_aes:
 	lsl x9, x4, #4
 	add x23, x23, x9
 	sub x24, x24, x9
-	bl {vg_aes_ctr32_aes}
+	add x6, x3, #0
+	bl {vg_aes_ctr32_to_aes}
 	cbz x24, 2137f
 	movz x4, #1, lsl #0
 	movi v0.2d, #0
@@ -24601,7 +24614,8 @@ vg_aes_gcm_open_with_powers_aes:
 	lsl x9, x4, #4
 	add x23, x23, x9
 	sub x24, x24, x9
-	bl {vg_aes_ctr32_aes}
+	add x6, x3, #0
+	bl {vg_aes_ctr32_to_aes}
 	cbz x24, 2115f
 	movz x4, #1, lsl #0
 	movz x9, #0, lsl #0
@@ -25137,7 +25151,8 @@ vg_aes_gcm_open_with_powers_aes:
 	lsl x9, x4, #4
 	add x23, x23, x9
 	sub x24, x24, x9
-	bl {vg_aes_ctr32_aes}
+	add x6, x3, #0
+	bl {vg_aes_ctr32_to_aes}
 	cbz x24, 2183f
 	movz x4, #1, lsl #0
 	movi v0.2d, #0
@@ -27062,11 +27077,18 @@ vg_aes_gcm_stream_encrypt_neon:
 	adrp x16, {vg_aes_ctr32_neon}
 	add x16, x16, {vg_aes_ctr32_neon}
 	mov v9.d[0], x16
+	umov x16, v10.d[0]
+	str x16, [sp, #24]
+	adrp x16, {vg_aes_ctr32_to_neon}
+	add x16, x16, {vg_aes_ctr32_to_neon}
+	mov v10.d[0], x16
 	bl {vg_aes_gcm_stream_encrypt_core}
 	ldr x16, [sp, #8]
 	mov v8.d[0], x16
 	ldr x16, [sp, #16]
 	mov v9.d[0], x16
+	ldr x16, [sp, #24]
+	mov v10.d[0], x16
 	ldr x30, [sp, #0]
 	add sp, sp, #32
 	movz x1, #0, lsl #0
@@ -27113,6 +27135,7 @@ vg_aes_gcm_stream_encrypt_neon:
 	tst x1, x1
 	mov v8.d[1], x1
 	mov v9.d[1], x1
+	mov v10.d[1], x1
 	movz x0, #0, lsl #0
 	sub sp, sp, #2592
 	movi v31.2d, #0
@@ -27146,11 +27169,18 @@ vg_aes_gcm_stream_decrypt_neon:
 	adrp x16, {vg_aes_ctr32_neon}
 	add x16, x16, {vg_aes_ctr32_neon}
 	mov v9.d[0], x16
+	umov x16, v10.d[0]
+	str x16, [sp, #24]
+	adrp x16, {vg_aes_ctr32_to_neon}
+	add x16, x16, {vg_aes_ctr32_to_neon}
+	mov v10.d[0], x16
 	bl {vg_aes_gcm_stream_decrypt_core}
 	ldr x16, [sp, #8]
 	mov v8.d[0], x16
 	ldr x16, [sp, #16]
 	mov v9.d[0], x16
+	ldr x16, [sp, #24]
+	mov v10.d[0], x16
 	ldr x30, [sp, #0]
 	add sp, sp, #32
 	movz x1, #0, lsl #0
@@ -27197,6 +27227,7 @@ vg_aes_gcm_stream_decrypt_neon:
 	tst x1, x1
 	mov v8.d[1], x1
 	mov v9.d[1], x1
+	mov v10.d[1], x1
 	movz x0, #0, lsl #0
 	sub sp, sp, #2592
 	movi v31.2d, #0
@@ -28379,7 +28410,8 @@ vg_aes_gcm_seal_with_powers_neon:
 	lsl x9, x4, #4
 	add x23, x23, x9
 	sub x24, x24, x9
-	bl {vg_aes_ctr32_neon}
+	add x6, x3, #0
+	bl {vg_aes_ctr32_to_neon}
 	cbz x24, 258f
 	movz x4, #1, lsl #0
 	movz x9, #0, lsl #0
@@ -29370,7 +29402,8 @@ vg_aes_gcm_open_with_powers_neon:
 	lsl x9, x4, #4
 	add x23, x23, x9
 	sub x24, x24, x9
-	bl {vg_aes_ctr32_neon}
+	add x6, x3, #0
+	bl {vg_aes_ctr32_to_neon}
 	cbz x24, 2107f
 	movz x4, #1, lsl #0
 	movz x9, #0, lsl #0
@@ -30635,11 +30668,18 @@ vg_aes_gcm_stream_encrypt:
 	adrp x16, {vg_aes_ctr32}
 	add x16, x16, {vg_aes_ctr32}
 	mov v9.d[0], x16
+	umov x16, v10.d[0]
+	str x16, [sp, #24]
+	adrp x16, {vg_aes_ctr32_to}
+	add x16, x16, {vg_aes_ctr32_to}
+	mov v10.d[0], x16
 	bl {vg_aes_gcm_stream_encrypt_core}
 	ldr x16, [sp, #8]
 	mov v8.d[0], x16
 	ldr x16, [sp, #16]
 	mov v9.d[0], x16
+	ldr x16, [sp, #24]
+	mov v10.d[0], x16
 	ldr x30, [sp, #0]
 	add sp, sp, #32
 	movz x1, #0, lsl #0
@@ -30686,6 +30726,7 @@ vg_aes_gcm_stream_encrypt:
 	tst x1, x1
 	mov v8.d[1], x1
 	mov v9.d[1], x1
+	mov v10.d[1], x1
 	movz x0, #0, lsl #0
 	sub sp, sp, #2592
 	movi v31.2d, #0
@@ -30719,11 +30760,18 @@ vg_aes_gcm_stream_decrypt:
 	adrp x16, {vg_aes_ctr32}
 	add x16, x16, {vg_aes_ctr32}
 	mov v9.d[0], x16
+	umov x16, v10.d[0]
+	str x16, [sp, #24]
+	adrp x16, {vg_aes_ctr32_to}
+	add x16, x16, {vg_aes_ctr32_to}
+	mov v10.d[0], x16
 	bl {vg_aes_gcm_stream_decrypt_core}
 	ldr x16, [sp, #8]
 	mov v8.d[0], x16
 	ldr x16, [sp, #16]
 	mov v9.d[0], x16
+	ldr x16, [sp, #24]
+	mov v10.d[0], x16
 	ldr x30, [sp, #0]
 	add sp, sp, #32
 	movz x1, #0, lsl #0
@@ -30770,6 +30818,7 @@ vg_aes_gcm_stream_decrypt:
 	tst x1, x1
 	mov v8.d[1], x1
 	mov v9.d[1], x1
+	mov v10.d[1], x1
 	movz x0, #0, lsl #0
 	sub sp, sp, #2592
 	movi v31.2d, #0
@@ -31952,7 +32001,8 @@ vg_aes_gcm_seal_with_powers:
 	lsl x9, x4, #4
 	add x23, x23, x9
 	sub x24, x24, x9
-	bl {vg_aes_ctr32}
+	add x6, x3, #0
+	bl {vg_aes_ctr32_to}
 	cbz x24, 258f
 	movz x4, #1, lsl #0
 	movz x9, #0, lsl #0
@@ -32943,7 +32993,8 @@ vg_aes_gcm_open_with_powers:
 	lsl x9, x4, #4
 	add x23, x23, x9
 	sub x24, x24, x9
-	bl {vg_aes_ctr32}
+	add x6, x3, #0
+	bl {vg_aes_ctr32_to}
 	cbz x24, 2107f
 	movz x4, #1, lsl #0
 	movz x9, #0, lsl #0

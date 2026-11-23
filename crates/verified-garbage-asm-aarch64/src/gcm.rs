@@ -1229,8 +1229,8 @@ b 264f
 263:
 264:
 .inst 0x8b0a02f7,0xcb0a0318,0xd344ff04,0x910002e3,0x910002a0,0x910002c1,0x9100c282,0x91080265
-.inst 0xd37cec89,0x8b0902f7,0xcb090318
-bl {vg_aes_ctr32_aes}
+.inst 0xd37cec89,0x8b0902f7,0xcb090318,0x91000066
+bl {vg_aes_ctr32_to_aes}
 cbz x24, 266f
 .inst 0xd2800024,0xd2800009,0xf9002289,0xf9002689
 b 267f
@@ -1755,8 +1755,8 @@ b 2142f
 2141:
 2142:
 .inst 0xd347ff49,0xd379e129,0x8b0902f7,0x910002fb,0xcb090358,0xd2800019,0xd344ff04,0x910002e3
-.inst 0x910002a0,0x910002c1,0x9100c282,0x91080265,0xd37cec89,0x8b0902f7,0xcb090318
-bl {vg_aes_ctr32_aes}
+.inst 0x910002a0,0x910002c1,0x9100c282,0x91080265,0xd37cec89,0x8b0902f7,0xcb090318,0x91000066
+bl {vg_aes_ctr32_to_aes}
 cbz x24, 2156f
 .inst 0xd2800024,0x6f00e400,0x3d801280
 b 2157f
@@ -1940,8 +1940,8 @@ b 2197f
 2196:
 2197:
 .inst 0x4e200800,0x3d800680,0x910002fb,0x91000358,0xd2800019,0xd344ff04,0x910002e3,0x910002a0
-.inst 0x910002c1,0x9100c282,0x91080265,0xd37cec89,0x8b0902f7,0xcb090318
-bl {vg_aes_ctr32_aes}
+.inst 0x910002c1,0x9100c282,0x91080265,0xd37cec89,0x8b0902f7,0xcb090318,0x91000066
+bl {vg_aes_ctr32_to_aes}
 cbz x24, 2211f
 .inst 0xd2800024,0x6f00e400,0x3d801280
 b 2212f
@@ -2389,8 +2389,8 @@ b 2306f
 2305:
 2306:
 .inst 0x4e200800,0x3d800680,0x910002fb,0x91000358,0xd2800019,0xd344ff04,0x910002e3,0x910002a0
-.inst 0x910002c1,0x9100c282,0x91080265,0xd37cec89,0x8b0902f7,0xcb090318
-bl {vg_aes_ctr32_aes}
+.inst 0x910002c1,0x9100c282,0x91080265,0xd37cec89,0x8b0902f7,0xcb090318,0x91000066
+bl {vg_aes_ctr32_to_aes}
 cbz x24, 2320f
 .inst 0xd2800024,0x6f00e400,0x3d801280
 b 2321f
@@ -2537,6 +2537,7 @@ cbnz x10, 2360b
 .inst 0x3d80013f,0x3d80053f,0x911083ff,0xd65f03c0
 .p2align 6",
         vg_ghash_aes = sym super::aes_gcm_siv::vg_ghash_aes::vg_ghash_aes,
+        vg_aes_ctr32_to_aes = sym super::aes::vg_aes_ctr32_to_aes::vg_aes_ctr32_to_aes,
         vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes::vg_aes_ctr32_aes,
         vg_ghash_with_powers_aes = sym super::gcm::vg_ghash_with_powers_aes::vg_ghash_with_powers_aes,
         VG_GCM_TAIL_IDX = sym super::consts::VG_GCM_TAIL_IDX,
@@ -2904,8 +2905,8 @@ b 2111f
 .inst 0xd280003b,0xcb0a037b
 cbz x27, 2113f
 .inst 0xf9407677,0xf9407a78,0xd2800019,0xd344ff04,0x910002e3,0x910002a0,0x910002c1,0x9100c282
-.inst 0x91080265,0xd37cec89,0x8b0902f7,0xcb090318
-bl {vg_aes_ctr32_aes}
+.inst 0x91080265,0xd37cec89,0x8b0902f7,0xcb090318,0x91000066
+bl {vg_aes_ctr32_to_aes}
 cbz x24, 2115f
 .inst 0xd2800024,0xd2800009,0xf9002289,0xf9002689
 b 2116f
@@ -3288,7 +3289,8 @@ b 2192f
 cbz x27, 2194f
 .inst 0xf9407677,0xf9407a7a,0xd347ff49,0xd379e129,0x8b0902f7,0xcb090358,0xd2800019,0xd344ff04
 .inst 0x910002e3,0x910002a0,0x910002c1,0x9100c282,0x91080265,0xd37cec89,0x8b0902f7,0xcb090318
-bl {vg_aes_ctr32_aes}
+.inst 0x91000066
+bl {vg_aes_ctr32_to_aes}
 cbz x24, 2196f
 .inst 0xd2800024,0x6f00e400,0x3d801280
 b 2197f
@@ -3348,8 +3350,8 @@ b 2195f
 2194:
 .inst 0x3dc05260,0x3d800e80,0xf9407677,0xf9407a7a,0xd347ff49,0xd379e129,0x91000138,0xd2800019
 .inst 0xd344ff04,0x910002e3,0x910002a0,0x910002c1,0x9100c282,0x91080265,0xd37cec89,0x8b0902f7
-.inst 0xcb090318
-bl {vg_aes_ctr32_aes}
+.inst 0xcb090318,0x91000066
+bl {vg_aes_ctr32_to_aes}
 cbz x24, 2215f
 .inst 0xd2800024,0x6f00e400,0x3d801280
 b 2216f
@@ -3582,8 +3584,8 @@ b 2283f
 .inst 0xd280003b,0xcb0a037b
 cbz x27, 2285f
 .inst 0xf9407677,0xf9407a78,0xd2800019,0xd344ff04,0x910002e3,0x910002a0,0x910002c1,0x9100c282
-.inst 0x91080265,0xd37cec89,0x8b0902f7,0xcb090318
-bl {vg_aes_ctr32_aes}
+.inst 0x91080265,0xd37cec89,0x8b0902f7,0xcb090318,0x91000066
+bl {vg_aes_ctr32_to_aes}
 cbz x24, 2287f
 .inst 0xd2800024,0x6f00e400,0x3d801280
 b 2288f
@@ -4132,8 +4134,8 @@ b 2426f
 .inst 0xd280003b,0xcb0a037b
 cbz x27, 2428f
 .inst 0xf9407677,0xf9407a78,0xd2800019,0xd344ff04,0x910002e3,0x910002a0,0x910002c1,0x9100c282
-.inst 0x91080265,0xd37cec89,0x8b0902f7,0xcb090318
-bl {vg_aes_ctr32_aes}
+.inst 0x91080265,0xd37cec89,0x8b0902f7,0xcb090318,0x91000066
+bl {vg_aes_ctr32_to_aes}
 cbz x24, 2430f
 .inst 0xd2800024,0x6f00e400,0x3d801280
 b 2431f
@@ -4215,6 +4217,7 @@ cbnz x10, 2449b
 .p2align 6",
         vg_ghash_aes = sym super::aes_gcm_siv::vg_ghash_aes::vg_ghash_aes,
         vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes::vg_aes_ctr32_aes,
+        vg_aes_ctr32_to_aes = sym super::aes::vg_aes_ctr32_to_aes::vg_aes_ctr32_to_aes,
         vg_ghash_with_powers_aes = sym super::gcm::vg_ghash_with_powers_aes::vg_ghash_with_powers_aes,
         VG_GCM_TAIL_IDX = sym super::consts::VG_GCM_TAIL_IDX,
     )
@@ -6368,8 +6371,8 @@ b 226f
 225:
 226:
 .inst 0x8b0a02f7,0xcb0a0318,0xd344ff04,0x910002e3,0x910002a0,0x910002c1,0x9100c282,0x91080265
-.inst 0xd37cec89,0x8b0902f7,0xcb090318
-bl {vg_aes_ctr32_aes}
+.inst 0xd37cec89,0x8b0902f7,0xcb090318,0x91000066
+bl {vg_aes_ctr32_to_aes}
 cbz x24, 228f
 .inst 0xd2800024,0xd2800009,0xf9002289,0xf9002689
 b 229f
@@ -6497,6 +6500,7 @@ cbnz x10, 267b
 .inst 0x910c03ff,0xd65f03c0
 .p2align 6",
         vg_ghash_aes = sym super::aes_gcm_siv::vg_ghash_aes::vg_ghash_aes,
+        vg_aes_ctr32_to_aes = sym super::aes::vg_aes_ctr32_to_aes::vg_aes_ctr32_to_aes,
         vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes::vg_aes_ctr32_aes,
     )
 }
@@ -6678,8 +6682,8 @@ b 250f
 249:
 250:
 .inst 0x8b0a02f7,0xcb0a0318,0xd344ff04,0x910002e3,0x910002a0,0x910002c1,0x9100c282,0x91080265
-.inst 0xd37cec89,0x8b0902f7,0xcb090318
-bl {vg_aes_ctr32_aes}
+.inst 0xd37cec89,0x8b0902f7,0xcb090318,0x91000066
+bl {vg_aes_ctr32_to_aes}
 cbz x24, 252f
 .inst 0xd2800024,0xd2800009,0xf9002289,0xf9002689
 b 253f
@@ -6736,6 +6740,7 @@ cbnz x10, 267b
 .inst 0x910c03ff,0xd65f03c0
 .p2align 6",
         vg_ghash_aes = sym super::aes_gcm_siv::vg_ghash_aes::vg_ghash_aes,
+        vg_aes_ctr32_to_aes = sym super::aes::vg_aes_ctr32_to_aes::vg_aes_ctr32_to_aes,
         vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes::vg_aes_ctr32_aes,
     )
 }
@@ -7534,8 +7539,8 @@ b 264f
 263:
 264:
 .inst 0x8b0a02f7,0xcb0a0318,0xd344ff04,0x910002e3,0x910002a0,0x910002c1,0x9100c282,0x91080265
-.inst 0xd37cec89,0x8b0902f7,0xcb090318
-bl {vg_aes_ctr32_aes}
+.inst 0xd37cec89,0x8b0902f7,0xcb090318,0x91000066
+bl {vg_aes_ctr32_to_aes}
 cbz x24, 266f
 .inst 0xd2800024,0xd2800009,0xf9002289,0xf9002689
 b 267f
@@ -7758,8 +7763,8 @@ b 2123f
 2122:
 2123:
 .inst 0x4e200800,0x3d800680,0x910002fb,0x91000358,0xd2800019,0xd344ff04,0x910002e3,0x910002a0
-.inst 0x910002c1,0x9100c282,0x91080265,0xd37cec89,0x8b0902f7,0xcb090318
-bl {vg_aes_ctr32_aes}
+.inst 0x910002c1,0x9100c282,0x91080265,0xd37cec89,0x8b0902f7,0xcb090318,0x91000066
+bl {vg_aes_ctr32_to_aes}
 cbz x24, 2137f
 .inst 0xd2800024,0x6f00e400,0x3d801280
 b 2138f
@@ -7904,6 +7909,7 @@ cbnz x10, 2177b
 .inst 0x3d80013f,0x3d80053f,0x910c83ff,0xd65f03c0
 .p2align 6",
         vg_ghash_aes = sym super::aes_gcm_siv::vg_ghash_aes::vg_ghash_aes,
+        vg_aes_ctr32_to_aes = sym super::aes::vg_aes_ctr32_to_aes::vg_aes_ctr32_to_aes,
         vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes::vg_aes_ctr32_aes,
         vg_ghash_with_powers_aes = sym super::gcm::vg_ghash_with_powers_aes::vg_ghash_with_powers_aes,
         VG_GCM_TAIL_IDX = sym super::consts::VG_GCM_TAIL_IDX,
@@ -8271,8 +8277,8 @@ b 2111f
 .inst 0xd280003b,0xcb0a037b
 cbz x27, 2113f
 .inst 0xf9407677,0xf9407a78,0xd2800019,0xd344ff04,0x910002e3,0x910002a0,0x910002c1,0x9100c282
-.inst 0x91080265,0xd37cec89,0x8b0902f7,0xcb090318
-bl {vg_aes_ctr32_aes}
+.inst 0x91080265,0xd37cec89,0x8b0902f7,0xcb090318,0x91000066
+bl {vg_aes_ctr32_to_aes}
 cbz x24, 2115f
 .inst 0xd2800024,0xd2800009,0xf9002289,0xf9002689
 b 2116f
@@ -8494,8 +8500,8 @@ b 2179f
 .inst 0xd280003b,0xcb0a037b
 cbz x27, 2181f
 .inst 0xf9407677,0xf9407a78,0xd2800019,0xd344ff04,0x910002e3,0x910002a0,0x910002c1,0x9100c282
-.inst 0x91080265,0xd37cec89,0x8b0902f7,0xcb090318
-bl {vg_aes_ctr32_aes}
+.inst 0x91080265,0xd37cec89,0x8b0902f7,0xcb090318,0x91000066
+bl {vg_aes_ctr32_to_aes}
 cbz x24, 2183f
 .inst 0xd2800024,0x6f00e400,0x3d801280
 b 2184f
@@ -8575,6 +8581,7 @@ cbnz x10, 2202b
 .p2align 6",
         vg_ghash_aes = sym super::aes_gcm_siv::vg_ghash_aes::vg_ghash_aes,
         vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes::vg_aes_ctr32_aes,
+        vg_aes_ctr32_to_aes = sym super::aes::vg_aes_ctr32_to_aes::vg_aes_ctr32_to_aes,
         vg_ghash_with_powers_aes = sym super::gcm::vg_ghash_with_powers_aes::vg_ghash_with_powers_aes,
         VG_GCM_TAIL_IDX = sym super::consts::VG_GCM_TAIL_IDX,
     )
@@ -9480,15 +9487,19 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_encrypt_neon(ctx: *const [u64;
         r".inst 0x4e081e08,0x4e083d30,0xf9000bf0",
         concat!("adrp x16, ", vg_sym_page!("{vg_aes_ctr32_neon}")),
         concat!("add x16, x16, ", vg_sym_pageoff!("{vg_aes_ctr32_neon}")),
-        r".inst 0x4e081e09
+        r".inst 0x4e081e09,0x4e083d50,0xf9000ff0",
+        concat!("adrp x16, ", vg_sym_page!("{vg_aes_ctr32_to_neon}")),
+        concat!("add x16, x16, ", vg_sym_pageoff!("{vg_aes_ctr32_to_neon}")),
+        r".inst 0x4e081e0a
 bl {vg_aes_gcm_stream_encrypt_core}
-.inst 0xf94007f0,0x4e081e08,0xf9400bf0,0x4e081e09,0xf94003fe,0x910083ff,0xd2800001,0xd2800002
-.inst 0xd2800003,0xd2800004,0xd2800005,0xd2800006,0xd2800007,0xd2800008,0xd2800009,0xd280000a
-.inst 0xd280000b,0xd280000c,0xd280000d,0xd280000e,0xd280000f,0xd2800010,0xd2800011,0x6f00e400
-.inst 0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e404,0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410
-.inst 0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418
-.inst 0x6f00e419,0x6f00e41a,0x6f00e41b,0x6f00e41c,0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f
-.inst 0x4e181c28,0x4e181c29,0xd2800000,0xd12883ff,0x6f00e41f,0x910003e9,0xd280050a
+.inst 0xf94007f0,0x4e081e08,0xf9400bf0,0x4e081e09,0xf9400ff0,0x4e081e0a,0xf94003fe,0x910083ff
+.inst 0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005,0xd2800006,0xd2800007,0xd2800008
+.inst 0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d,0xd280000e,0xd280000f,0xd2800010
+.inst 0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e404,0x6f00e405,0x6f00e406
+.inst 0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416
+.inst 0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b,0x6f00e41c,0x6f00e41d,0x6f00e41e
+.inst 0x6f00e41f,0xea01003f,0x4e181c28,0x4e181c29,0x4e181c2a,0xd2800000,0xd12883ff,0x6f00e41f
+.inst 0x910003e9,0xd280050a
 20:
 .inst 0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x91010129,0xd100054a
 cbnz x10, 20b
@@ -9497,6 +9508,7 @@ cbnz x10, 20b
         vg_aes_gcm_stream_encrypt_core = sym super::aes::vg_aes_gcm_stream_encrypt_core::vg_aes_gcm_stream_encrypt_core,
         vg_ghash_neon = sym super::aes_gcm_siv::vg_ghash_neon::vg_ghash_neon,
         vg_aes_ctr32_neon = sym super::aes::vg_aes_ctr32_neon::vg_aes_ctr32_neon,
+        vg_aes_ctr32_to_neon = sym super::aes::vg_aes_ctr32_to_neon::vg_aes_ctr32_to_neon,
     )
 }
 
@@ -9525,15 +9537,19 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_decrypt_neon(ctx: *const [u64;
         r".inst 0x4e081e08,0x4e083d30,0xf9000bf0",
         concat!("adrp x16, ", vg_sym_page!("{vg_aes_ctr32_neon}")),
         concat!("add x16, x16, ", vg_sym_pageoff!("{vg_aes_ctr32_neon}")),
-        r".inst 0x4e081e09
+        r".inst 0x4e081e09,0x4e083d50,0xf9000ff0",
+        concat!("adrp x16, ", vg_sym_page!("{vg_aes_ctr32_to_neon}")),
+        concat!("add x16, x16, ", vg_sym_pageoff!("{vg_aes_ctr32_to_neon}")),
+        r".inst 0x4e081e0a
 bl {vg_aes_gcm_stream_decrypt_core}
-.inst 0xf94007f0,0x4e081e08,0xf9400bf0,0x4e081e09,0xf94003fe,0x910083ff,0xd2800001,0xd2800002
-.inst 0xd2800003,0xd2800004,0xd2800005,0xd2800006,0xd2800007,0xd2800008,0xd2800009,0xd280000a
-.inst 0xd280000b,0xd280000c,0xd280000d,0xd280000e,0xd280000f,0xd2800010,0xd2800011,0x6f00e400
-.inst 0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e404,0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410
-.inst 0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418
-.inst 0x6f00e419,0x6f00e41a,0x6f00e41b,0x6f00e41c,0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f
-.inst 0x4e181c28,0x4e181c29,0xd2800000,0xd12883ff,0x6f00e41f,0x910003e9,0xd280050a
+.inst 0xf94007f0,0x4e081e08,0xf9400bf0,0x4e081e09,0xf9400ff0,0x4e081e0a,0xf94003fe,0x910083ff
+.inst 0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005,0xd2800006,0xd2800007,0xd2800008
+.inst 0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d,0xd280000e,0xd280000f,0xd2800010
+.inst 0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e404,0x6f00e405,0x6f00e406
+.inst 0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416
+.inst 0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b,0x6f00e41c,0x6f00e41d,0x6f00e41e
+.inst 0x6f00e41f,0xea01003f,0x4e181c28,0x4e181c29,0x4e181c2a,0xd2800000,0xd12883ff,0x6f00e41f
+.inst 0x910003e9,0xd280050a
 20:
 .inst 0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x91010129,0xd100054a
 cbnz x10, 20b
@@ -9542,6 +9558,7 @@ cbnz x10, 20b
         vg_aes_gcm_stream_decrypt_core = sym super::aes::vg_aes_gcm_stream_decrypt_core::vg_aes_gcm_stream_decrypt_core,
         vg_ghash_neon = sym super::aes_gcm_siv::vg_ghash_neon::vg_ghash_neon,
         vg_aes_ctr32_neon = sym super::aes::vg_aes_ctr32_neon::vg_aes_ctr32_neon,
+        vg_aes_ctr32_to_neon = sym super::aes::vg_aes_ctr32_to_neon::vg_aes_ctr32_to_neon,
     )
 }
 
@@ -10161,8 +10178,8 @@ b 256f
 255:
 256:
 .inst 0x8b0a02f7,0xcb0a0318,0xd344ff04,0x910002e3,0x910002a0,0x910002c1,0x9100c282,0x91080265
-.inst 0xd37cec89,0x8b0902f7,0xcb090318
-bl {vg_aes_ctr32_neon}
+.inst 0xd37cec89,0x8b0902f7,0xcb090318,0x91000066
+bl {vg_aes_ctr32_to_neon}
 cbz x24, 258f
 .inst 0xd2800024,0xd2800009,0xf9002289,0xf9002689
 b 259f
@@ -10345,6 +10362,7 @@ cbnz x10, 2114b
 .inst 0x3d80013f,0x912843ff,0xd65f03c0
 .p2align 6",
         vg_ghash_neon = sym super::aes_gcm_siv::vg_ghash_neon::vg_ghash_neon,
+        vg_aes_ctr32_to_neon = sym super::aes::vg_aes_ctr32_to_neon::vg_aes_ctr32_to_neon,
         vg_aes_ctr32_neon = sym super::aes::vg_aes_ctr32_neon::vg_aes_ctr32_neon,
     )
 }
@@ -10689,8 +10707,8 @@ b 2103f
 .inst 0xd280003b,0xcb0a037b
 cbz x27, 2105f
 .inst 0xf9407677,0xf9407a78,0xd2800019,0xd344ff04,0x910002e3,0x910002a0,0x910002c1,0x9100c282
-.inst 0x91080265,0xd37cec89,0x8b0902f7,0xcb090318
-bl {vg_aes_ctr32_neon}
+.inst 0x91080265,0xd37cec89,0x8b0902f7,0xcb090318,0x91000066
+bl {vg_aes_ctr32_to_neon}
 cbz x24, 2107f
 .inst 0xd2800024,0xd2800009,0xf9002289,0xf9002689
 b 2108f
@@ -10756,6 +10774,7 @@ cbnz x10, 2122b
 .p2align 6",
         vg_ghash_neon = sym super::aes_gcm_siv::vg_ghash_neon::vg_ghash_neon,
         vg_aes_ctr32_neon = sym super::aes::vg_aes_ctr32_neon::vg_aes_ctr32_neon,
+        vg_aes_ctr32_to_neon = sym super::aes::vg_aes_ctr32_to_neon::vg_aes_ctr32_to_neon,
     )
 }
 
@@ -11362,15 +11381,19 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_encrypt(ctx: *const [u64; 32],
         r".inst 0x4e081e08,0x4e083d30,0xf9000bf0",
         concat!("adrp x16, ", vg_sym_page!("{vg_aes_ctr32}")),
         concat!("add x16, x16, ", vg_sym_pageoff!("{vg_aes_ctr32}")),
-        r".inst 0x4e081e09
+        r".inst 0x4e081e09,0x4e083d50,0xf9000ff0",
+        concat!("adrp x16, ", vg_sym_page!("{vg_aes_ctr32_to}")),
+        concat!("add x16, x16, ", vg_sym_pageoff!("{vg_aes_ctr32_to}")),
+        r".inst 0x4e081e0a
 bl {vg_aes_gcm_stream_encrypt_core}
-.inst 0xf94007f0,0x4e081e08,0xf9400bf0,0x4e081e09,0xf94003fe,0x910083ff,0xd2800001,0xd2800002
-.inst 0xd2800003,0xd2800004,0xd2800005,0xd2800006,0xd2800007,0xd2800008,0xd2800009,0xd280000a
-.inst 0xd280000b,0xd280000c,0xd280000d,0xd280000e,0xd280000f,0xd2800010,0xd2800011,0x6f00e400
-.inst 0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e404,0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410
-.inst 0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418
-.inst 0x6f00e419,0x6f00e41a,0x6f00e41b,0x6f00e41c,0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f
-.inst 0x4e181c28,0x4e181c29,0xd2800000,0xd12883ff,0x6f00e41f,0x910003e9,0xd280050a
+.inst 0xf94007f0,0x4e081e08,0xf9400bf0,0x4e081e09,0xf9400ff0,0x4e081e0a,0xf94003fe,0x910083ff
+.inst 0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005,0xd2800006,0xd2800007,0xd2800008
+.inst 0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d,0xd280000e,0xd280000f,0xd2800010
+.inst 0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e404,0x6f00e405,0x6f00e406
+.inst 0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416
+.inst 0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b,0x6f00e41c,0x6f00e41d,0x6f00e41e
+.inst 0x6f00e41f,0xea01003f,0x4e181c28,0x4e181c29,0x4e181c2a,0xd2800000,0xd12883ff,0x6f00e41f
+.inst 0x910003e9,0xd280050a
 20:
 .inst 0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x91010129,0xd100054a
 cbnz x10, 20b
@@ -11379,6 +11402,7 @@ cbnz x10, 20b
         vg_aes_gcm_stream_encrypt_core = sym super::aes::vg_aes_gcm_stream_encrypt_core::vg_aes_gcm_stream_encrypt_core,
         vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
+        vg_aes_ctr32_to = sym super::aes::vg_aes_ctr32_to::vg_aes_ctr32_to,
     )
 }
 
@@ -11407,15 +11431,19 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_decrypt(ctx: *const [u64; 32],
         r".inst 0x4e081e08,0x4e083d30,0xf9000bf0",
         concat!("adrp x16, ", vg_sym_page!("{vg_aes_ctr32}")),
         concat!("add x16, x16, ", vg_sym_pageoff!("{vg_aes_ctr32}")),
-        r".inst 0x4e081e09
+        r".inst 0x4e081e09,0x4e083d50,0xf9000ff0",
+        concat!("adrp x16, ", vg_sym_page!("{vg_aes_ctr32_to}")),
+        concat!("add x16, x16, ", vg_sym_pageoff!("{vg_aes_ctr32_to}")),
+        r".inst 0x4e081e0a
 bl {vg_aes_gcm_stream_decrypt_core}
-.inst 0xf94007f0,0x4e081e08,0xf9400bf0,0x4e081e09,0xf94003fe,0x910083ff,0xd2800001,0xd2800002
-.inst 0xd2800003,0xd2800004,0xd2800005,0xd2800006,0xd2800007,0xd2800008,0xd2800009,0xd280000a
-.inst 0xd280000b,0xd280000c,0xd280000d,0xd280000e,0xd280000f,0xd2800010,0xd2800011,0x6f00e400
-.inst 0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e404,0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410
-.inst 0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418
-.inst 0x6f00e419,0x6f00e41a,0x6f00e41b,0x6f00e41c,0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f
-.inst 0x4e181c28,0x4e181c29,0xd2800000,0xd12883ff,0x6f00e41f,0x910003e9,0xd280050a
+.inst 0xf94007f0,0x4e081e08,0xf9400bf0,0x4e081e09,0xf9400ff0,0x4e081e0a,0xf94003fe,0x910083ff
+.inst 0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005,0xd2800006,0xd2800007,0xd2800008
+.inst 0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d,0xd280000e,0xd280000f,0xd2800010
+.inst 0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e404,0x6f00e405,0x6f00e406
+.inst 0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416
+.inst 0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b,0x6f00e41c,0x6f00e41d,0x6f00e41e
+.inst 0x6f00e41f,0xea01003f,0x4e181c28,0x4e181c29,0x4e181c2a,0xd2800000,0xd12883ff,0x6f00e41f
+.inst 0x910003e9,0xd280050a
 20:
 .inst 0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x91010129,0xd100054a
 cbnz x10, 20b
@@ -11424,6 +11452,7 @@ cbnz x10, 20b
         vg_aes_gcm_stream_decrypt_core = sym super::aes::vg_aes_gcm_stream_decrypt_core::vg_aes_gcm_stream_decrypt_core,
         vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
+        vg_aes_ctr32_to = sym super::aes::vg_aes_ctr32_to::vg_aes_ctr32_to,
     )
 }
 
@@ -12043,8 +12072,8 @@ b 256f
 255:
 256:
 .inst 0x8b0a02f7,0xcb0a0318,0xd344ff04,0x910002e3,0x910002a0,0x910002c1,0x9100c282,0x91080265
-.inst 0xd37cec89,0x8b0902f7,0xcb090318
-bl {vg_aes_ctr32}
+.inst 0xd37cec89,0x8b0902f7,0xcb090318,0x91000066
+bl {vg_aes_ctr32_to}
 cbz x24, 258f
 .inst 0xd2800024,0xd2800009,0xf9002289,0xf9002689
 b 259f
@@ -12227,6 +12256,7 @@ cbnz x10, 2114b
 .inst 0x3d80013f,0x912843ff,0xd65f03c0
 .p2align 6",
         vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
+        vg_aes_ctr32_to = sym super::aes::vg_aes_ctr32_to::vg_aes_ctr32_to,
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
     )
 }
@@ -12571,8 +12601,8 @@ b 2103f
 .inst 0xd280003b,0xcb0a037b
 cbz x27, 2105f
 .inst 0xf9407677,0xf9407a78,0xd2800019,0xd344ff04,0x910002e3,0x910002a0,0x910002c1,0x9100c282
-.inst 0x91080265,0xd37cec89,0x8b0902f7,0xcb090318
-bl {vg_aes_ctr32}
+.inst 0x91080265,0xd37cec89,0x8b0902f7,0xcb090318,0x91000066
+bl {vg_aes_ctr32_to}
 cbz x24, 2107f
 .inst 0xd2800024,0xd2800009,0xf9002289,0xf9002689
 b 2108f
@@ -12638,6 +12668,7 @@ cbnz x10, 2122b
 .p2align 6",
         vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
+        vg_aes_ctr32_to = sym super::aes::vg_aes_ctr32_to::vg_aes_ctr32_to,
     )
 }
 

@@ -274,7 +274,8 @@ vg_aes_gcm_stream_decrypt_core:
 	lsl x9, x4, #4
 	add x23, x23, x9
 	sub x24, x24, x9
-	umov x16, v9.d[0]
+	add x6, x3, #0
+	umov x16, v10.d[0]
 	blr x16
 	cbz x24, 252f
 	movz x4, #1, lsl #0
