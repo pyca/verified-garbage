@@ -124,7 +124,7 @@ theorem topFront_ok (h : In Ex base bytes len args s) (X : XGeo args base bytes 
       sv u.mem base len .wide 4 = 2 ^ (16 * bc len .wide) % P ∧
       sv u.mem base len .wide 5 = sv s.mem base len .wide b ∧
       sv u.mem base len .wide 8 = 2 ^ (8 * (bc len .wide - xl)) * xv s.mem args xl ∧
-      Frame (frameR base (s.gpr .esp) (stR len 0)) s.mem u.mem ∧ Kept base len [] [] s.mem u.mem ∧
+      Frame (frameF base (s.gpr .esp) (stR len 0)) s.mem u.mem ∧ Kept base len [] [] s.mem u.mem ∧
       Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s u := by
   have bl := h.bytes_lt
   have est : st len .wide = 2 * bc len .wide + 32 := rfl
@@ -133,7 +133,7 @@ theorem topFront_ok (h : In Ex base bytes len args s) (X : XGeo args base bytes 
   have nb : numBase = 3336 := rfl
   have xf := X.fit
   obtain f8 := h.slot_fit .wide (j := 8) (by decide)
-  refine WP.seq (WP.mono (ctxP_ok h hP) fun u₁ ⟨C₁, one₁, R₁, F₁, k₁, K₁⟩ => ?_)
+  refine WP.seq (WP.mono (ctxP_ok h RF hP) fun u₁ ⟨C₁, one₁, R₁, F₁, k₁, K₁⟩ => ?_)
   have h₁ := C₁.inp
   refine WP.seq (WP.mono (copyIn_ok h₁ (j := b) (d := 5) hb9 hb (by decide)) fun u₂ ⟨O₂, V₂, K₂⟩ => ?_)
   obtain C₂ : CtxOk Ex base bytes len args .wide P u₂ := by
@@ -143,14 +143,15 @@ theorem topFront_ok (h : In Ex base bytes len args s) (X : XGeo args base bytes 
     · intro p hp; simp only [List.mem_singleton] at hp; subst hp; dsimp only; omega_arith
   obtain G₂ : Frame (frameR base (s.gpr .esp) (stR len 0)) u₁.mem u₂.mem :=
     stR_of_outside h (by decide) O₂ ⟨_, by simp, slot_in h .wide (j := 5) (by decide)⟩
-  obtain S₂ : Step Ex base bytes len args s u₂ := Step.ops h (F₁.trans G₂) (K₁.trans (K₂.mono (by decide)))
+  obtain S₂ : Step Ex base bytes len args s u₂ :=
+    Step.opsF h RF (F₁.trans (frameF_of G₂)) (K₁.trans (K₂.mono (by decide)))
   obtain X₂ := X.keep ⟨rfl, rfl⟩ S₂.keeps
   refine WP.seq (WP.mono (loadTopCtx_ok C₂ (d := 8) (p := 10) (l := 11) (L := xl) (by decide) (by decide)
     (by decide) (by decide) X₂.e11 X₂.pos X₂.le X₂.fit X₂.rd X₂.apart) fun u₃ ⟨C₃, V₃, O₃, K₃⟩ => WP.block_nil ?_)
   rw [bytes_keep h X.apart (by omega_arith) RF hx40 S₂.frame] at V₃
   obtain G₃ : Frame (frameR base (s.gpr .esp) (stR len 0)) u₂.mem u₃.mem :=
     stR_of_outside h (by decide) O₃ ⟨_, by simp, slot_in h .wide (j := 8) (by decide)⟩
-  refine ⟨C₃, ?_, ?_, ?_, V₃, (F₁.trans G₂).trans G₃,
+  refine ⟨C₃, ?_, ?_, ?_, V₃, (F₁.trans (frameF_of G₂)).trans (frameF_of G₃),
     (k₁.trans (kept_ops h G₂ h.room)).trans (kept_ops h G₃ h.room), S₂.keeps.trans (K₃.mono (by decide))⟩
   · rw [slotKeep C₂.inp (by decide) (by decide) O₃, slotKeep h₁ (by decide) (by decide) O₂, one₁]
   · rw [slotKeep C₂.inp (by decide) (by decide) O₃, slotKeep h₁ (by decide) (by decide) O₂, R₁]
@@ -164,7 +165,7 @@ theorem powTop_ok (h : In Ex base bytes len args s) (X : XGeo args base bytes le
       CtxOk Ex base bytes len args .wide P u ∧
       sv u.mem base len .wide 6 = sv s.mem base len .wide b ^ xv s.mem args xl % P ∧
       sv u.mem base len .wide 3 = 1 ∧
-      Frame (frameR base (s.gpr .esp) (stR len 0)) s.mem u.mem ∧ Kept base len [] [] s.mem u.mem ∧
+      Frame (frameF base (s.gpr .esp) (stR len 0)) s.mem u.mem ∧ Kept base len [] [] s.mem u.mem ∧
       Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s u := by
   have xp := X.pos
   have xle := X.le
@@ -180,7 +181,7 @@ theorem powTop_ok (h : In Ex base bytes len args s) (X : XGeo args base bytes le
   obtain sp₃ : u₃.gpr .esp = s.gpr .esp := K₃.1 _ (by decide)
   rw [sp₃] at F
   obtain G := stR_widen F (pwR_in C₃.inp .wide 0)
-  refine ⟨C, Y, ?_, F₃.trans G, k₃.trans (kept_ops h G h.room), K₃.trans K⟩
+  refine ⟨C, Y, ?_, F₃.trans (frameF_of G), k₃.trans (kept_ops h G h.room), K₃.trans K⟩
   rw [pwR_sv3 C₃.inp F (by rw [← sp₃]; exact C₃.inp.room), one₃]
 
 /-- A copy of the wide slot 15 into 16. -/
@@ -427,7 +428,7 @@ theorem pair_ok (h : In Ex base bytes len args s) {p g y x : Nat} (h9 : sv s.mem
     fun u₃ ⟨C₃, Y₃, _, F₃, k₃, K₃⟩ => ?_)
   obtain xe : xv u₂.mem args xl = x := by rw [xv, bytes_keep h X.apart (by omega_arith) RF hx40 S₁₂.frame]; exact hx
   rw [k₁₂.slot_eq, h10, xe] at Y₃
-  obtain S₃ : Step Ex base bytes len args u₂ u₃ := Step.ops S₂.inp F₃ K₃
+  obtain S₃ : Step Ex base bytes len args u₂ u₃ := Step.opsF S₂.inp (S₁₂.room RF) F₃ K₃
   refine WP.seq (WP.mono (eqW_ok C₃.inp (a := 6) (b := 12) (by decide) (by decide)) fun u₄ ⟨m₄, e₄, K₄⟩ => ?_)
   rw [Y₃, k₃.slot_eq, k₁₂.slot_eq, h12] at e₄
   obtain S₄ : Step Ex base bytes len args u₃ u₄ := Step.regs C₃.inp m₄ K₄

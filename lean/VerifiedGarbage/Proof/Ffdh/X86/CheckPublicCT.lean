@@ -245,12 +245,13 @@ def Q1 (Ex : List Region → List Region → Prop) (base : Addr) (bytes len dlen
 
 theorem pubQ_trace :
     RelCT isa (Both fun u => Q1 Ex base bytes len dlen args sp D u ∧ ¬ dlen = 2 * len) pubQ fun _ _ => True := by
-  refine VG.RelCT.seq (aRel (F := Run Ex base bytes len args sp) (fun _ h => h.1.1.run) loadQ_check
-    fun x h => ?_) ?_
+  refine VG.RelCT.seq (aRel (F := fun u => Run Ex base bytes len args sp u ∧ RoomF sp base bytes)
+    (fun _ h => h.1.1.run) loadQ_check fun x h => ?_) ?_
   · obtain ⟨⟨A, _⟩, n2⟩ := h
     have h3 : dlen = 3 * len := by have := A.geo.dl; omega_using [n2, this]
     exact WP.mono (loadComp_ok A.run.1 A.geo (k := 2) (j := 11) (by decide) (by omega_using [h3]) (by decide))
-      fun u ⟨_, O, K⟩ => ⟨(Step.slot A.run.1 (by decide) O K).inp, A.run.2.1.keep K, (K.1 _ (by decide)).trans A.run.2.2⟩
+      fun u ⟨_, O, K⟩ => ⟨⟨(Step.slot A.run.1 (by decide) O K).inp, A.run.2.1.keep K,
+        (K.1 _ (by decide)).trans A.run.2.2⟩, A.room⟩
   · exact VG.RelCT.seq (powP_trace (b := 12) (e := 11) (by decide) (by decide) (by decide) (by decide) copy12_check
       VG.Proof.Ffdh.X86.CheckDomain.copy11_check)
       (RelCT.taint (A := taint) τA (fun _ _ h => h.1.agree h.2) VG.Proof.Ffdh.X86.CheckDomain.eqStatus_check)
