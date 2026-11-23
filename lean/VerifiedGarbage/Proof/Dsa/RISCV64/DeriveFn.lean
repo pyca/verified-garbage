@@ -366,8 +366,8 @@ theorem yv_b7 (L : Lay) : 256 ≤ slot L.wp 7 ∧ slot L.wp 7 + 8 * L.wp ≤ L.q
 `a4 :=` the mask of `y ≠ 0` and `y ≠ 1`. Memory changes only in the P
 space's arrays and the buffer's first `p_len` octets. -/
 theorem yValue_ok {s : State} {L : Lay} {key x : Addr} {p : Nat} (hL : L.Ok) (hs : ScrL s L)
-    (hr : Regs s L key x) (hin : InP s L) (hi : PInv s L) (hk : Src s L key (2 * L.pl + L.ql))
-    (hx : Src s L x L.ql) (hp0 : arrP s.mem L 0 = p) (hp : 2 ≤ p) (hpo : p % 2 = 1)
+    (hr : Regs s L key x) (hsw : word s.mem L.S hSig = x) (hin : InP s L) (hi : PInv s L)
+    (hk : Src s L key (2 * L.pl + L.ql)) (hx : Src s L x L.ql) (hp0 : arrP s.mem L 0 = p) (hp : 2 ≤ p) (hpo : p % 2 = 1)
     (hrr : arrP s.mem L 24 = 2 ^ (128 * L.wp) % p) :
     WP isa yValue s fun t =>
       (Spec.Rsa.os2ip (Spec.Rsa.bytesAt t.mem L.Buf L.pl) = gOf s.mem L key ^ kOf s.mem L x % p ∧
@@ -394,7 +394,7 @@ theorem yValue_ok {s : State} {L : Lay} {key x : Addr} {p : Nat} (hL : L.Ok) (hs
   obtain hm2 : s₂.mem = s.mem := by rw [m2, m1]
   -- `g^x mod p` into array 4.
   refine WP.seq (WP.mono (powSrc_ok (N := off key (L.pl + L.ql)) (E := x) (p := p) hL (hs.congr k12.2.2)
-      (hr.keepM k12 hm2) (hin.keep k12) (by
+      (hr.keepM k12 hm2) (by rw [hm2]; exact hsw) (hin.keep k12) (by
         show ((word s₂.mem L.S (slot L.wp 0)).toNat * (s₂.gpr .t1).toNat + 1) % 2 ^ 64 = 0
         rw [hm2, k12.gpr (by decide)]; exact hi)
       ((hk.keep k12.2.1 k12.2.2).sub (o := L.pl + L.ql) (k := L.pl) (by omega_using [])) b7 (hx.keep k12.2.1 k12.2.2)
@@ -500,7 +500,7 @@ theorem dmask_eq (y k q : Nat) :
 
 theorem dbody_ok {s₀ s : State} {L : Lay} {key x out : Addr} (hL : L.Ok) (hP : ParamsOk s₀.mem L key)
     (hc : Checked s₀ s L key x 0) (hkp : Kept L s₀.mem s.mem) (hw : word s.mem L.S Sign.hOut = out)
-    (hk : Src s L key (2 * L.pl + L.ql)) (hx : Src s L x L.ql)
+    (hsw : word s.mem L.S hSig = x) (hk : Src s L key (2 * L.pl + L.ql)) (hx : Src s L x L.ql)
     (hout : ∀ i < 3 * L.pl + 2 * L.ql, InRegions s.wr (off out i) 1)
     (hno : out.toNat + (3 * L.pl + 2 * L.ql) ≤ 2 ^ 64) (hos : Src s L out (3 * L.pl + 2 * L.ql))
     (hko : ∀ i < 2 * L.pl + L.ql, ∀ y, ofs out y < 3 * L.pl + 2 * L.ql → off key i ≠ y)
@@ -537,7 +537,7 @@ theorem dbody_ok {s₀ s : State} {L : Lay} {key x out : Addr} (hL : L.Ok) (hP :
   generalize gOf s₀.mem L key = g at eg
   unfold body
   -- y.
-  refine WP.seq (WP.mono (yValue_ok hL scr regs ip inv hk hx p0 (by omega_using [B]) hpo p24)
+  refine WP.seq (WP.mono (yValue_ok hL scr regs hsw ip inv hk hx p0 (by omega_using [B]) hpo p24)
     fun s₁ ⟨⟨vy, my, ip1, b1, oq1⟩, k1⟩ => ?_)
   rw [eg, ex] at vy my
   generalize hy : g ^ kOf s₀.mem L x % p = y at vy my
@@ -935,7 +935,7 @@ theorem deriveWith_ok {X : Prog isa → Prog isa → Prog isa} (s : State) (h : 
   refine WP.seq (hX Out₁ F.scr F.regs F.sigw F.lens (srcK s₁ k₁.2.1 k₁.2.2)
     (fun t hP hc Kd kc => ?_) (fun t hn Kd hrt scrt kc => ?_))
   · have kt := k₁.trans kc
-    refine WP.mono (dbody_ok hL hP hc Kd (hwo t Kd) (srcK t kt.2.1 kt.2.2) (srcX t kt.2.1 kt.2.2)
+    refine WP.mono (dbody_ok hL hP hc Kd (hwo t Kd) ((kept_sig Kd).trans F.sigw) (srcK t kt.2.1 kt.2.2) (srcX t kt.2.1 kt.2.2)
       (hout t kt.2.2) hno (srcO t kt.2.1 kt.2.2) hko hxo) fun u ⟨⟨ob, r0u, ⟨m, Km, Om⟩, h6u, scru⟩, ku⟩ => ?_
     refine WP.mono (sfinish_ok h6u (hwr' u scru) hal'
       (fun i hi => (outSep Om (by simp only [saveOff]; omega_using [hi])).trans

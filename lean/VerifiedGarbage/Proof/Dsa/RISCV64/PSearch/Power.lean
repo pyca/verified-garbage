@@ -171,7 +171,7 @@ theorem zeroTop4_ok {s : State} {B : Addr} {Z w : Nat} (h : Env s B Z w) :
 /-- The registers `powC` writes. -/
 def powCRegs : List Reg :=
   loadRegs ++ VG.Proof.Dsa.RISCV64.copyRegs ++ [.s9, .s10] ++ VG.Proof.Bignum.RISCV64.Win.powWRegs ++
-    [.t3, .s0] ++ elemRangeRegs
+    ([.ra] : List Reg) ++ [.t3, .s0] ++ elemRangeRegs
 
 /-- `powC`: h (the `pLen` bytes at `H`, `s7`) into array 4, `h^e mod p` for
 the `eB` bytes of `e` at `S + sE` into array 4, and `a0 = 0` exactly when it
@@ -201,10 +201,10 @@ theorem powC_ok {s : State} {G : GP} {H : Addr} {p : Nat} (hl : G.pLen = 128 ∨
   obtain e28 := e 28
   unfold powC
   rw [show VG.Impl.Rsa.RISCV64.Keys.seqs [VG.Impl.Dsa.RISCV64.loadArr 4, VG.Impl.Dsa.RISCV64.copy 1 24,
-      Code.block [scr .s9 sE, .li .s10 (eBytes G.pLen G.qLen)], VG.Impl.Bignum.RISCV64.ModExp.powWin,
+      Code.block [scr .s9 sE, .li .s10 (eBytes G.pLen G.qLen)], VG.Impl.Bignum.RISCV64.ModExp.powWinFn,
       .block zeroTop4, VG.Impl.Dsa.RISCV64.elemRange] =
     .seq (VG.Impl.Dsa.RISCV64.loadArr 4) (.seq (VG.Impl.Dsa.RISCV64.copy 1 24)
-      (.seq (.block [scr .s9 sE, .li .s10 (eBytes G.pLen G.qLen)]) (.seq VG.Impl.Bignum.RISCV64.ModExp.powWin
+      (.seq (.block [scr .s9 sE, .li .s10 (eBytes G.pLen G.qLen)]) (.seq VG.Impl.Bignum.RISCV64.ModExp.powWinFn
         (.seq (.block zeroTop4) VG.Impl.Dsa.RISCV64.elemRange)))) from rfl]
   -- h into array 4.
   refine WP.seq (WP.mono (loadArr_ok en (j := 4) (N := H) (by decide) h7 h8 (by omega) (by omega) hHrd hHsep)
@@ -242,11 +242,11 @@ theorem powC_ok {s : State} {G : GP} {H : Addr} {p : Nat} (hl : G.pLen = 128 ∨
   obtain en3 := en2.keep k3
   obtain hE : ∀ i < eBytes G.pLen G.qLen, InRegions (s₃.rd ++ s₃.wr) (off (G.sa sE) i) 1 := fun i hi => by
     rw [k3.2.1, k3.2.2, k2.2.1, k2.2.2, k1.2.1, k1.2.2]; exact hErd i hi
-  refine WP.seq (WP.mono (VG.Proof.Bignum.RISCV64.Win.powWin_ok (D := G.sa sE) (L := eBytes G.pLen G.qLen)
+  refine WP.seq (WP.mono (VG.Proof.Bignum.RISCV64.Win.powWinCall_ok (name := "vg_bignum_pow_win") (D := G.sa sE) (L := eBytes G.pLen G.qLen)
     en3.hs (by omega) (by omega) (by omega) en3.a7 en3.s5 en3.t0
     (by rw [m3, W0, k3.gpr (by decide), k2.gpr (by decide), k1.gpr (by decide)]; exact hinv)
     (by rw [m3, A0]; exact hp) (by rw [m3, A0]; exact hpo) (by rw [m3, A0, A1]; exact Nat.mod_lt _ (by omega))
-    b9 b10 heB (by omega) hE hEsep) fun s₄ ⟨⟨r4, o4⟩, k4⟩ => ?_)
+    b9 b10 heB (by omega) hE hEsep) fun s₄ ⟨⟨r4, o4, _⟩, k4⟩ => ?_)
   obtain pw2 : 2 ^ (64 * pw G.pLen) * 2 ^ (64 * pw G.pLen) = 2 ^ (128 * pw G.pLen) := by
     rw [← Nat.pow_add, show 64 * pw G.pLen + 64 * pw G.pLen = 128 * pw G.pLen by omega]
   obtain eE : Spec.Rsa.bytesAt s₂.mem (G.sa sE) (eBytes G.pLen G.qLen) =
@@ -437,7 +437,7 @@ rather than search for the invariants of the loops itself. -/
 theorem certC (pLen qLen : Nat) : CertC pLen qLen := by
   obtain gen : ∀ n : Nat, ∃ hc, (VG.Taint.check VG.RISCV64.taint (Taint.ofRegs [.s6, .s7, .s8, .a7, .s5, .t0])
       (VG.Impl.Rsa.RISCV64.Keys.seqs [VG.Impl.Dsa.RISCV64.loadArr 4, VG.Impl.Dsa.RISCV64.copy 1 24,
-        .block [scr .s9 sE, .li .s10 n], VG.Impl.Bignum.RISCV64.ModExp.powWin,
+        .block [scr .s9 sE, .li .s10 n], VG.Impl.Bignum.RISCV64.ModExp.powWinFn,
         .block zeroTop4, VG.Impl.Dsa.RISCV64.elemRange]) hc).isSome = true := by
     intro n
     have hS : VG.Taint.AllOk VG.RISCV64.taint [] := .nil

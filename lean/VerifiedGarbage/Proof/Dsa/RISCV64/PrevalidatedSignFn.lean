@@ -223,7 +223,8 @@ theorem signPre_correct (s : State) (h : spContract.pre s) :
   unfold PrevalidatedSign.body
   refine WP.mono (sbodyWith_ok hL hP₁ hc (setMask_KPOk hL hc.scr hc.regs hc.inp hc.inv hvt) Kd
     (srcK t kt.2.1 kt.2.2) (srcN t kt.2.1 kt.2.2) (by omega_using [])
-    ((srcD t kt.2.1 kt.2.2).take (Nat.min_le_left _ _)) (hwd t Kd) (hwo t Kd) (hout t kt.2.2) hno
+    ((srcD t kt.2.1 kt.2.2).take (Nat.min_le_left _ _)) (hwd t Kd) ((kept_sig Kd).trans F.sigw) (hwo t Kd)
+    (hout t kt.2.2) hno
     (srcO t kt.2.1 kt.2.2)) fun u ⟨⟨ob, r0u, ⟨m, Km, Om⟩, h6u, scru⟩, ku⟩ => ?_
   refine WP.mono (sfinish_ok h6u (hwr' u scru) hal'
     (fun i hi => (outSep Om (by simp only [saveOff]; omega_using [hi])).trans

@@ -93,7 +93,8 @@ theorem PLow.keepQ {L : Lay} (hL : L.Ok) {m m' : Mem} (h : PLow L m m') : Outsid
 /-- `keyPair`: the mask of `g^x mod p = y` into `hMask`. Memory changes only
 in `hMask` and in the P space's arrays 1–23. -/
 theorem keyPair_ok {s : State} {L : Lay} {key sig : Addr} {p : Nat} (hL : L.Ok) (hs : ScrL s L)
-    (hr : Regs s L key sig) (hin : InP s L) (hi : PInv s L) (hk : Src s L key (3 * L.pl + 2 * L.ql))
+    (hr : Regs s L key sig) (hsw : word s.mem L.S hSig = sig) (hin : InP s L) (hi : PInv s L)
+    (hk : Src s L key (3 * L.pl + 2 * L.ql))
     (hp0 : arrP s.mem L 0 = p) (hp : 2 ≤ p) (hpo : p % 2 = 1) (hrr : arrP s.mem L 24 = 2 ^ (128 * L.wp) % p) :
     WP isa keyPair s fun t =>
       (word t.mem L.S hMask = mask (decide (gOf s.mem L key ^ xOf s.mem L key % p = yOf s.mem L key)) ∧
@@ -116,7 +117,7 @@ theorem keyPair_ok {s : State} {L : Lay} {key sig : Addr} {p : Nat} (hL : L.Ok) 
   have hm3 : s₃.mem = s.mem := by rw [m3, hm2]
   -- `g^x mod p` into array 4.
   refine WP.seq (WP.mono (powSrc_ok (N := off key (L.pl + L.ql)) (E := off key (3 * L.pl + L.ql)) (p := p) hL
-      (hs.congr k13.2.2) (hr.keepM k13 hm3) (hin.keep k13) (by
+      (hs.congr k13.2.2) (hr.keepM k13 hm3) (by rw [hm3]; exact hsw) (hin.keep k13) (by
         show ((word s₃.mem L.S (slot L.wp 0)).toNat * (s₃.gpr .t1).toNat + 1) % 2 ^ 64 = 0
         rw [hm3, k13.gpr (by decide)]; exact hi)
       ((hk.keep k13.2.1 k13.2.2).sub (o := L.pl + L.ql) (k := L.pl) (by omega_using [])) b7

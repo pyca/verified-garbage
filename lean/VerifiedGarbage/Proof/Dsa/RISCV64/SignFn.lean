@@ -563,7 +563,8 @@ open VG.Impl.Bignum VG.Impl.Bignum.RISCV64 VG.Impl.Dsa.RISCV64 VG.Impl.Dsa.RISCV
 open VG.Proof.Bignum (slot)
 
 theorem inverseK_ok {s : State} {L : Lay} {key sig : Addr} (hL : L.Ok) (h : QS s L key sig) (hi : QInv s L)
-    (hsg : Src s L sig L.ql) (hq2 : 2 ≤ arrQ s.mem L 0) (hqo : arrQ s.mem L 0 % 2 = 1)
+    (hsg : Src s L sig L.ql) (hsw : word s.mem L.S hSig = sig) (hq2 : 2 ≤ arrQ s.mem L 0)
+    (hqo : arrQ s.mem L 0 % 2 = 1)
     (h24 : arrQ s.mem L 24 = 2 ^ (128 * L.wq) % arrQ s.mem L 0) :
     WP isa inverseK s fun t =>
       (QS t L key sig ∧ QInv t L ∧
@@ -611,7 +612,7 @@ theorem inverseK_ok {s : State} {L : Lay} {key sig : Addr} (hL : L.Ok) (h : QS s
   obtain m53 : s₅.mem = s₃.mem := by rw [m5, m4]
   obtain e5 := Q3.inq.env.keep k35
   obtain k15 := (((k1.trans k2).trans k3).trans k35)
-  refine WP.mono (Win.powWin_ok (D := L.Buf) (L := L.ql) e5.hs (by omega_using [hwq]) (by omega_using [hwq])
+  refine WP.seq (WP.mono (Win.powWinCall_ok (name := "vg_bignum_pow_win") (D := L.Buf) (L := L.ql) e5.hs (by omega_using [hwq]) (by omega_using [hwq])
     (by omega_using [hwq, e24]) e5.a7 e5.s5 e5.t0
     (by rw [m53, W0, k15.gpr (by decide)]; exact hi)
     (by rw [m53]; show 2 ≤ arrQ s₃.mem L 0; rw [A0]; exact hq2)
@@ -622,8 +623,22 @@ theorem inverseK_ok {s : State} {L : Lay} {key sig : Addr} (hL : L.Ok) (h : QS s
       rw [k35.2.1, k35.2.2]
       exact (ScrL.bufN (s := s₃) Q3.scr hL (n := L.ql) (by rcases hL.pl with e | e | e <;> omega_using [hwq, e])).ld
         (show i + 1 ≤ L.ql by omega_using [hi]))
-    (buf_apartQ L (by omega_using [hwq]))) fun t ⟨⟨r4, o4'⟩, k6⟩ => ?_
-  obtain o4 : Outside L.Q (slot L.wq 1) (23 * (8 * (L.wq + 2))) s₃.mem t.mem := by rw [← m53]; exact o4'
+    (buf_apartQ L (by omega_using [hwq]))) fun s₆ ⟨⟨r4, o4', _⟩, k6⟩ => ?_)
+  obtain o6 : Outside L.Q (slot L.wq 1) (23 * (8 * (L.wq + 2))) s₃.mem s₆.mem := by rw [← m53]; exact o4'
+  -- `ra` again from the header.
+  obtain qa6 : QArr L s.mem s₆.mem :=
+    ((QArr.of o2 (by omega_using [e1, e4]) (by omega_using [e4, e28])).trans (QArr.of o3 (by omega_using []) (by omega_using [e1, e28]))).trans
+      (QArr.of o6 (by omega_using []) (by omega_using [e1, e28]))
+  obtain k36 := k35.trans k6
+  obtain ⟨hin, hal⟩ := ScrL.hdr (Q3.scr.congr k36.2.2) hL (d := 32) (by decide) (by decide)
+  obtain sw6 : word s₆.mem L.S hSig = sig := ((qa6.body hL).word (by decide)).trans hsw
+  refine WP.mono (WP.keep [.ra] (Q := fun u => u.gpr .ra = sig ∧ u.mem = s₆.mem)
+    (by brun [hSig, (k36.gpr (r := .s6) (by decide)).trans Q3.regs.s6, hin, hal]; exact sw6) (by rfl) (by rfl))
+    fun t ⟨⟨tra, mt⟩, k7⟩ => ?_
+  obtain k3t : Keep ([.s7, .t2, .s8, .s9, .s10] ++ Win.powWRegs) s₃ t :=
+    keep_restored (k36.trans k7) (r := .ra) (by rw [tra, Q3.regs.ra]) (by decide)
+  obtain o4 : Outside L.Q (slot L.wq 1) (23 * (8 * (L.wq + 2))) s₃.mem t.mem := by rw [mt]; exact o6
+  rw [← mt] at r4
   rw [m53] at r4
   obtain r4 := r4 (by
     show arrQ s₃.mem L 1 = 2 ^ (64 * L.wq) * 2 ^ (64 * L.wq) % arrQ s₃.mem L 0
@@ -632,10 +647,10 @@ theorem inverseK_ok {s : State} {L : Lay} {key sig : Addr} (hL : L.Ok) (h : QS s
   obtain qa : QArr L s.mem t.mem :=
     ((QArr.of o2 (by omega_using [e1, e4]) (by omega_using [e4, e28])).trans (QArr.of o3 (by omega_using []) (by omega_using [e1, e28]))).trans
       (QArr.of o4 (by omega_using []) (by omega_using [e1, e28]))
-  refine ⟨⟨Q3.step (k35.trans k6) (Body.ofQ hL o4 (by omega_using [hwq, e1])), ?_, ?_, fun j hj hj24 => ?_, qa⟩,
-    (k15.trans k6).mono (by decide)⟩
+  obtain k1t : Keep invRegs s t := (((k1.trans k2).trans k3).trans k3t).mono (by decide)
+  refine ⟨⟨Q3.step k3t (Body.ofQ hL o4 (by omega_using [hwq, e1])), ?_, ?_, fun j hj hj24 => ?_, qa⟩, k1t⟩
   · show ((word t.mem L.Q (slot L.wq 0)).toNat * (t.gpr .t1).toNat + 1) % 2 ^ 64 = 0
-    rw [o4.word (by omega_using [e0, e1]) (by omega_arith), W0, (k15.trans k6).gpr (by decide)]; exact hi
+    rw [o4.word (by omega_using [e0, e1]) (by omega_arith), W0, k1t.gpr (by decide)]; exact hi
   · show wordsVal t.mem L.Q (slot L.wq 4) L.wq = _
     rw [r4]
     show arrQ s₃.mem L 4 ^ _ % arrQ s₃.mem L 0 = _
@@ -873,8 +888,8 @@ def gkRegs : List Reg := [.s9] ++ ptrRegs ++ powPRegs ++ [.s7, .t2] ++ [.s8] ++ 
 /-- `gk`: `g^k mod p` to the buffer's first `p_len` octets. Memory changes
 only in the P space's arrays 1–23 and the buffer's first `p_len` octets. -/
 theorem gk_ok {s : State} {L : Lay} {key nonce : Addr} {p : Nat} (hL : L.Ok) (hs : ScrL s L)
-    (hr : Regs s L key nonce) (hin : InP s L) (hi : PInv s L) (hk : Src s L key (2 * L.pl + L.ql))
-    (hn : Src s L nonce L.ql) (hp0 : arrP s.mem L 0 = p) (hp : 2 ≤ p) (hpo : p % 2 = 1)
+    (hr : Regs s L key nonce) (hsw : word s.mem L.S hSig = nonce) (hin : InP s L) (hi : PInv s L)
+    (hk : Src s L key (2 * L.pl + L.ql)) (hn : Src s L nonce L.ql) (hp0 : arrP s.mem L 0 = p) (hp : 2 ≤ p) (hpo : p % 2 = 1)
     (hrr : arrP s.mem L 24 = 2 ^ (128 * L.wp) % p) :
     WP isa gk s fun t =>
       (Spec.Rsa.os2ip (Spec.Rsa.bytesAt t.mem L.Buf L.pl) = gOf s.mem L key ^ kOf s.mem L nonce % p ∧
@@ -890,7 +905,7 @@ theorem gk_ok {s : State} {L : Lay} {key nonce : Addr} {p : Nat} (hL : L.Ok) (hs
   have hm2 : s₂.mem = s.mem := by rw [m2, m1]
   -- `g^k mod p` into array 4.
   refine WP.seq (WP.mono (powSrc_ok (N := off key (L.pl + L.ql)) (E := nonce) (p := p) hL (hs.congr k12.2.2)
-      (hr.keepM k12 hm2) (hin.keep k12) (by
+      (hr.keepM k12 hm2) (by rw [hm2]; exact hsw) (hin.keep k12) (by
         show ((word s₂.mem L.S (slot L.wp 0)).toNat * (s₂.gpr .t1).toNat + 1) % 2 ^ 64 = 0
         rw [hm2, k12.gpr (by decide)]; exact hi)
       ((hk.keep k12.2.1 k12.2.2).sub (o := L.pl + L.ql) (k := L.pl) (by omega_using [])) b7 (hn.keep k12.2.1 k12.2.2)
@@ -1039,9 +1054,9 @@ def KPOk (kp : Prog isa) (s : State) (L : Lay) (key : Addr) : Prop :=
 
 /-- `keyPair` is a first step of signing. -/
 theorem keyPair_KPOk {s : State} {L : Lay} {key sig : Addr} (hL : L.Ok) (hs : ScrL s L)
-    (hr : Regs s L key sig) (hin : InP s L) (hi : PInv s L) (hk : Src s L key (3 * L.pl + 2 * L.ql)) :
-    KPOk keyPair s L key :=
-  fun _ p0 hp hpo p24 => keyPair_ok hL hs hr hin hi hk p0 hp hpo p24
+    (hr : Regs s L key sig) (hsw : word s.mem L.S hSig = sig) (hin : InP s L) (hi : PInv s L)
+    (hk : Src s L key (3 * L.pl + 2 * L.ql)) : KPOk keyPair s L key :=
+  fun _ p0 hp hpo p24 => keyPair_ok hL hs hr hsw hin hi hk p0 hp hpo p24
 
 /-- The registers of `Sign.body` up to `output`. -/
 def sprefixRegs : List Reg :=
@@ -1055,6 +1070,7 @@ theorem sprefix_ok {s₀ s : State} {L : Lay} {key nonce dig : Addr} {d : Nat} {
     (hL : L.Ok) (hK : ParamsOk s₀.mem L key) (hc : Checked s₀ s L key nonce d) (hfst : KPOk kp s L key)
     (hkp : Kept L s₀.mem s.mem) (hk : Src s L key (3 * L.pl + 2 * L.ql)) (hn : Src s L nonce L.ql)
     (hd : d < 2 ^ 16) (hdg : Src s L dig d) (hdg8 : word s.mem L.S hDigest = dig)
+    (hsw : word s.mem L.S hSig = nonce)
     (hcont : ∀ t, QS t L key nonce → BKept L s.mem t.mem →
       word t.mem L.S hMask = mask (decide (gOf s₀.mem L key ^ xOf s.mem L key % pOf s₀.mem L key =
           yOf s₀.mem L key) &&
@@ -1115,7 +1131,8 @@ theorem sprefix_ok {s₀ s : State} {L : Lay} {key nonce dig : Addr} {d : Nat} {
     rw [mask_arrP hL w₁ 24 (by decide), PLow.arr hL o₁ (by decide) (.inr (by decide))]; exact p24
   obtain hr₁ := regs.ofBKept k₁ K₁
   -- `g^k mod p` to the buffer.
-  refine WP.seq (WP.mono (gk_ok (p := p) hL (scr.congr k₁.2.2) hr₁ ip₁ i₁ (hk2.keep k₁.2.1 k₁.2.2)
+  refine WP.seq (WP.mono (gk_ok (p := p) hL (scr.congr k₁.2.2) hr₁ (by rw [K₁.word (by decide) (by decide)]; exact hsw)
+      ip₁ i₁ (hk2.keep k₁.2.1 k₁.2.2)
       (hn.keep k₁.2.1 k₁.2.2) p0₁ (by omega_using [B]) hpo p24₁)
     fun s₂ ⟨⟨gk₂, _, _, m₂, o₂, b₂⟩, k₂⟩ => ?_)
   rw [(vals K₁).2.2.1, (vals K₁).2.1] at gk₂
@@ -1148,7 +1165,8 @@ theorem sprefix_ok {s₀ s : State} {L : Lay} {key nonce dig : Addr} {d : Nat} {
   obtain K₅ := K₃.trans (BKept.ofBody hL ((qa₄.body hL).trans (qb₅.body hL)))
   obtain k₁₅ := (k₁₃.trans k₄).trans k₅
   -- `w = k^(q − 2) mod q`.
-  refine WP.seq (WP.mono (inverseK_ok hL Q₅ I₅ (hn.keep k₁₅.2.1 k₁₅.2.2) (by rw [q0₅]; omega_using [B])
+  refine WP.seq (WP.mono (inverseK_ok hL Q₅ I₅ (hn.keep k₁₅.2.1 k₁₅.2.2)
+      (by rw [K₅.word (by decide) (by decide)]; exact hsw) (by rw [q0₅]; omega_using [B])
       (by rw [q0₅]; exact hqo) (by rw [q0₅, kj₅ 24 (by decide) (by decide)]; exact h24₄))
     fun s₆ ⟨⟨Q₆, I₆, w4₆, k24₆, qa₆⟩, k₆⟩ => ?_)
   rw [q0₅, bq₅, (vals K₅).2.1] at w4₆
@@ -1187,7 +1205,7 @@ theorem sbodyWith_ok {s₀ s : State} {L : Lay} {key nonce dig out : Addr} {d : 
     (hL : L.Ok) (hK : ParamsOk s₀.mem L key) (hc : Checked s₀ s L key nonce d) (hfst : KPOk kp s L key)
     (hkp : Kept L s₀.mem s.mem) (hk : Src s L key (3 * L.pl + 2 * L.ql)) (hn : Src s L nonce L.ql)
     (hd : d < 2 ^ 16) (hdg : Src s L dig d) (hdg8 : word s.mem L.S hDigest = dig)
-    (hw : word s.mem L.S Sign.hOut = out) (hout : ∀ i < 2 * L.ql, InRegions s.wr (off out i) 1)
+    (hsw : word s.mem L.S hSig = nonce) (hw : word s.mem L.S Sign.hOut = out) (hout : ∀ i < 2 * L.ql, InRegions s.wr (off out i) 1)
     (hno : out.toNat + 2 * L.ql ≤ 2 ^ 64) (hos : Src s L out (2 * L.ql)) :
     WP isa (.seq kp Sign.tail) s fun t =>
       (Spec.Rsa.bytesAt t.mem out (2 * L.ql) =
@@ -1213,7 +1231,7 @@ theorem sbodyWith_ok {s₀ s : State} {L : Lay} {key nonce dig out : Addr} {d : 
     have := VG.Proof.Bignum.os2ip_lt (Spec.Rsa.bytesAt s.mem (off key L.pl) L.ql)
     rwa [VG.Proof.Bignum.bytesAt_length] at this
   unfold Sign.tail
-  refine sprefix_ok hL hK hc hfst hkp hk hn hd hdg hdg8 fun s₇ Q₇ K₇ m₇ r25₇ s6₇ k₁₇ => ?_
+  refine sprefix_ok hL hK hc hfst hkp hk hn hd hdg hdg8 hsw fun s₇ Q₇ K₇ m₇ r25₇ s6₇ k₁₇ => ?_
   unfold ParamsOk at hK
   generalize pOf s₀.mem L key = p at hK m₇ r25₇ s6₇ ⊢
   generalize qOf s₀.mem L key = q at hK hqlt m₇ r25₇ s6₇ ⊢
@@ -1260,7 +1278,7 @@ theorem sbody_ok {s₀ s : State} {L : Lay} {key nonce dig out : Addr} {d : Nat}
     (hL : L.Ok) (hK : ParamsOk s₀.mem L key) (hc : Checked s₀ s L key nonce d)
     (hkp : Kept L s₀.mem s.mem) (hk : Src s L key (3 * L.pl + 2 * L.ql)) (hn : Src s L nonce L.ql)
     (hd : d < 2 ^ 16) (hdg : Src s L dig d) (hdg8 : word s.mem L.S hDigest = dig)
-    (hw : word s.mem L.S Sign.hOut = out) (hout : ∀ i < 2 * L.ql, InRegions s.wr (off out i) 1)
+    (hsw : word s.mem L.S hSig = nonce) (hw : word s.mem L.S Sign.hOut = out) (hout : ∀ i < 2 * L.ql, InRegions s.wr (off out i) 1)
     (hno : out.toNat + 2 * L.ql ≤ 2 ^ 64) (hos : Src s L out (2 * L.ql)) :
     WP isa Sign.body s fun t =>
       (Spec.Rsa.bytesAt t.mem out (2 * L.ql) =
@@ -1279,7 +1297,8 @@ theorem sbody_ok {s₀ s : State} {L : Lay} {key nonce dig out : Addr} {d : Nat}
           then 1 else 0) ∧
         (∃ m, BKept L s.mem m ∧ Outside out 0 (2 * L.ql) m t.mem) ∧ t.gpr .s6 = L.S ∧ ScrL t L) ∧
         Keep sbodyRegs s t :=
-  sbodyWith_ok hL hK hc (keyPair_KPOk hL hc.scr hc.regs hc.inp hc.inv hk) hkp hk hn hd hdg hdg8 hw hout hno hos
+  sbodyWith_ok hL hK hc (keyPair_KPOk hL hc.scr hc.regs hsw hc.inp hc.inv hk) hkp hk hn hd hdg hdg8 hsw hw hout hno
+    hos
 
 end VG.Proof.Dsa.RISCV64
 
@@ -1786,7 +1805,8 @@ theorem sign_correct (s : State) (h : sContract.pre s) :
         8 * (Spec.Dsa.bitLength (qOf s.mem (slayOf s) (s.gpr .a2)) / 8) := by
       have := hKt.1.1.1; unfold Spec.Dsa.supportedSizes at this; omega_using [this]
     refine WP.mono (sbody_ok hL hK.1 hc Kd (srcK t kt.2.1 kt.2.2) (srcN t kt.2.1 kt.2.2) (by omega_using [])
-      ((srcD t kt.2.1 kt.2.2).take (Nat.min_le_left _ _)) (hwd t Kd) (hwo t Kd) (hout t kt.2.2) hno
+      ((srcD t kt.2.1 kt.2.2).take (Nat.min_le_left _ _)) (hwd t Kd) ((kept_sig Kd).trans F.sigw) (hwo t Kd)
+      (hout t kt.2.2) hno
       (srcO t kt.2.1 kt.2.2)) fun u ⟨⟨ob, r0u, ⟨m, Km, Om⟩, h6u, scru⟩, ku⟩ => ?_
     refine WP.mono (sfinish_ok h6u (hwr' u scru) hal'
       (fun i hi => (outSep Om (by simp only [saveOff]; omega_using [hi])).trans

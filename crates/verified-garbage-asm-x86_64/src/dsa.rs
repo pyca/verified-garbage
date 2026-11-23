@@ -61,7 +61,7 @@ pub const VG_DSA_SIGN_RANDOM_PREVALIDATED_ADX_FEATURES: verified_garbage_cpu::Fe
 /// * The exact key bytes must satisfy validatePrivateKeyBytes p_len q_len key = true. A successful vg_dsa_validate_private_key call establishes this only while the key bytes remain unchanged. Primality remains the caller's responsibility.
 /// * Provide fresh independent random octets; never reuse a completed signing tape for another signature.
 /// * `out`, `used` and `scratch` must not overlap each other, `key`, `digest`, `rand` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `used`, `key`, `digest`, `rand` and `scratch` may overlap the return address on the stack or the 264 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `out`, `used`, `key`, `digest`, `rand` and `scratch` may overlap the return address on the stack or the 328 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `bmi2` and `adx` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_dsa_sign_random_prevalidated_adx(out: *mut u8, out_len: usize, used: *mut [u64; 1], key: *const u8, key_len: usize, p_len: usize, q_len: usize, digest: *const u8, digest_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
@@ -151,7 +151,7 @@ jmp 226f
 .base64 "QYgCSYPCAUmD6wE="
 jne 227b
 226:
-.base64 "SMfAAAAAAEiJhCTIAAAASImEJNAAAABIiYQk2AAAAEiJhCTgAAAASItUJDhIi4QkkAAAAEiJAkiLhCTAAAAASI2kJPgAAABmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjWQk+EyJHCRIjaQkAP////MPf4Qk8AAAAPMPf4Qk4AAAAPMPf4Qk0AAAAPMPf4QkwAAAAPMPf4QksAAAAPMPf4QkoAAAAPMPf4QkkAAAAPMPf4QkgAAAAPMPf0QkcPMPf0QkYPMPf0QkUPMPf0QkQPMPf0QkMPMPf0QkIPMPf0QkEPMPfwQkSI2kJAABAABIjWQkCInAMckx0jH2Mf9FMcBFMclFMdLD"
+.base64 "SMfAAAAAAEiJhCTIAAAASImEJNAAAABIiYQk2AAAAEiJhCTgAAAASItUJDhIi4QkkAAAAEiJAkiLhCTAAAAASI2kJPgAAABmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjWQk+EyJHCRIjaQkwP7///MPf4QkMAEAAPMPf4QkIAEAAPMPf4QkEAEAAPMPf4QkAAEAAPMPf4Qk8AAAAPMPf4Qk4AAAAPMPf4Qk0AAAAPMPf4QkwAAAAPMPf4QksAAAAPMPf4QkoAAAAPMPf4QkkAAAAPMPf4QkgAAAAPMPf0QkcPMPf0QkYPMPf0QkUPMPf0QkQPMPf0QkMPMPf0QkIPMPf0QkEPMPfwQkSI2kJEABAABIjWQkCInAMckx0jH2Mf9FMcBFMclFMdLD"
 .p2align 6"#,
         vg_dsa_sign_prevalidated_adx = sym super::dsa::vg_dsa_sign_prevalidated_adx::vg_dsa_sign_prevalidated_adx,
     )
@@ -279,7 +279,7 @@ pub const VG_DSA_GENERATE_KEY_ADX_FEATURES: verified_garbage_cpu::Features = ver
 /// * scratch_len must be at least 64*p_len + 1024 words; destroy scratch after use.
 /// * Caller must assure domain validity and supply fresh independent random bytes.
 /// * `out`, `used` and `scratch` must not overlap each other, `params`, `rand` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `used`, `params`, `rand` and `scratch` may overlap the return address on the stack or the 264 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `out`, `used`, `params`, `rand` and `scratch` may overlap the return address on the stack or the 328 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `bmi2` and `adx` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_dsa_generate_key_adx(out: *mut u8, out_len: usize, used: *mut [u64; 1], params: *const u8, params_len: usize, p_len: usize, q_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
@@ -363,7 +363,7 @@ jmp 223f
 .base64 "QYgCSYPCAUmD6wE="
 jne 224b
 223:
-.base64 "SMfAAAAAAEiJhCTIAAAASImEJNAAAABIiYQk2AAAAEiJhCTgAAAASItUJDhIi4QkkAAAAEiJAkiLhCTAAAAASI2kJPgAAABmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjWQk+EyJHCRIjaQkAP////MPf4Qk8AAAAPMPf4Qk4AAAAPMPf4Qk0AAAAPMPf4QkwAAAAPMPf4QksAAAAPMPf4QkoAAAAPMPf4QkkAAAAPMPf4QkgAAAAPMPf0QkcPMPf0QkYPMPf0QkUPMPf0QkQPMPf0QkMPMPf0QkIPMPf0QkEPMPfwQkSI2kJAABAABIjWQkCInAMckx0jH2Mf9FMcBFMclFMdLD"
+.base64 "SMfAAAAAAEiJhCTIAAAASImEJNAAAABIiYQk2AAAAEiJhCTgAAAASItUJDhIi4QkkAAAAEiJAkiLhCTAAAAASI2kJPgAAABmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjWQk+EyJHCRIjaQkwP7///MPf4QkMAEAAPMPf4QkIAEAAPMPf4QkEAEAAPMPf4QkAAEAAPMPf4Qk8AAAAPMPf4Qk4AAAAPMPf4Qk0AAAAPMPf4QkwAAAAPMPf4QksAAAAPMPf4QkoAAAAPMPf4QkkAAAAPMPf4QkgAAAAPMPf0QkcPMPf0QkYPMPf0QkUPMPf0QkQPMPf0QkMPMPf0QkIPMPf0QkEPMPfwQkSI2kJEABAABIjWQkCInAMckx0jH2Mf9FMcBFMclFMdLD"
 .p2align 6"#,
         vg_dsa_check_parameters_adx = sym super::dsa::vg_dsa_check_parameters_adx::vg_dsa_check_parameters_adx,
         vg_dsa_derive_key_checked_adx = sym super::dsa::vg_dsa_derive_key_checked_adx::vg_dsa_derive_key_checked_adx,
@@ -424,7 +424,7 @@ call {vg_dsa_derive_key_shared}
 /// * The exact key bytes must satisfy validatePrivateKeyBytes p_len q_len key = true. A successful vg_dsa_validate_private_key call establishes this only while the key bytes remain unchanged. Primality remains the caller's responsibility.
 /// * Provide fresh independent random octets; never reuse a completed signing tape for another signature.
 /// * `out`, `used` and `scratch` must not overlap each other, `key`, `digest`, `rand` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `used`, `key`, `digest`, `rand` and `scratch` may overlap the return address on the stack or the 264 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `out`, `used`, `key`, `digest`, `rand` and `scratch` may overlap the return address on the stack or the 328 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_dsa_sign_random_prevalidated(out: *mut u8, out_len: usize, used: *mut [u64; 1], key: *const u8, key_len: usize, p_len: usize, q_len: usize, digest: *const u8, digest_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
@@ -513,7 +513,7 @@ jmp 226f
 .base64 "QYgCSYPCAUmD6wE="
 jne 227b
 226:
-.base64 "SMfAAAAAAEiJhCTIAAAASImEJNAAAABIiYQk2AAAAEiJhCTgAAAASItUJDhIi4QkkAAAAEiJAkiLhCTAAAAASI2kJPgAAABmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjWQk+EyJHCRIjaQkAP////MPf4Qk8AAAAPMPf4Qk4AAAAPMPf4Qk0AAAAPMPf4QkwAAAAPMPf4QksAAAAPMPf4QkoAAAAPMPf4QkkAAAAPMPf4QkgAAAAPMPf0QkcPMPf0QkYPMPf0QkUPMPf0QkQPMPf0QkMPMPf0QkIPMPf0QkEPMPfwQkSI2kJAABAABIjWQkCInAMckx0jH2Mf9FMcBFMclFMdLD"
+.base64 "SMfAAAAAAEiJhCTIAAAASImEJNAAAABIiYQk2AAAAEiJhCTgAAAASItUJDhIi4QkkAAAAEiJAkiLhCTAAAAASI2kJPgAAABmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjWQk+EyJHCRIjaQkwP7///MPf4QkMAEAAPMPf4QkIAEAAPMPf4QkEAEAAPMPf4QkAAEAAPMPf4Qk8AAAAPMPf4Qk4AAAAPMPf4Qk0AAAAPMPf4QkwAAAAPMPf4QksAAAAPMPf4QkoAAAAPMPf4QkkAAAAPMPf4QkgAAAAPMPf0QkcPMPf0QkYPMPf0QkUPMPf0QkQPMPf0QkMPMPf0QkIPMPf0QkEPMPfwQkSI2kJEABAABIjWQkCInAMckx0jH2Mf9FMcBFMclFMdLD"
 .p2align 6"#,
         vg_dsa_sign_prevalidated = sym super::dsa::vg_dsa_sign_prevalidated::vg_dsa_sign_prevalidated,
     )
@@ -626,7 +626,7 @@ call {vg_dsa_verify_prevalidated_shared}
 /// * scratch_len must be at least 64*p_len + 1024 words; destroy scratch after use.
 /// * Caller must assure domain validity and supply fresh independent random bytes.
 /// * `out`, `used` and `scratch` must not overlap each other, `params`, `rand` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `used`, `params`, `rand` and `scratch` may overlap the return address on the stack or the 264 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `out`, `used`, `params`, `rand` and `scratch` may overlap the return address on the stack or the 328 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_dsa_generate_key(out: *mut u8, out_len: usize, used: *mut [u64; 1], params: *const u8, params_len: usize, p_len: usize, q_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
@@ -709,7 +709,7 @@ jmp 223f
 .base64 "QYgCSYPCAUmD6wE="
 jne 224b
 223:
-.base64 "SMfAAAAAAEiJhCTIAAAASImEJNAAAABIiYQk2AAAAEiJhCTgAAAASItUJDhIi4QkkAAAAEiJAkiLhCTAAAAASI2kJPgAAABmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjWQk+EyJHCRIjaQkAP////MPf4Qk8AAAAPMPf4Qk4AAAAPMPf4Qk0AAAAPMPf4QkwAAAAPMPf4QksAAAAPMPf4QkoAAAAPMPf4QkkAAAAPMPf4QkgAAAAPMPf0QkcPMPf0QkYPMPf0QkUPMPf0QkQPMPf0QkMPMPf0QkIPMPf0QkEPMPfwQkSI2kJAABAABIjWQkCInAMckx0jH2Mf9FMcBFMclFMdLD"
+.base64 "SMfAAAAAAEiJhCTIAAAASImEJNAAAABIiYQk2AAAAEiJhCTgAAAASItUJDhIi4QkkAAAAEiJAkiLhCTAAAAASI2kJPgAAABmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjWQk+EyJHCRIjaQkwP7///MPf4QkMAEAAPMPf4QkIAEAAPMPf4QkEAEAAPMPf4QkAAEAAPMPf4Qk8AAAAPMPf4Qk4AAAAPMPf4Qk0AAAAPMPf4QkwAAAAPMPf4QksAAAAPMPf4QkoAAAAPMPf4QkkAAAAPMPf4QkgAAAAPMPf0QkcPMPf0QkYPMPf0QkUPMPf0QkQPMPf0QkMPMPf0QkIPMPf0QkEPMPfwQkSI2kJEABAABIjWQkCInAMckx0jH2Mf9FMcBFMclFMdLD"
 .p2align 6"#,
         vg_dsa_check_parameters = sym super::dsa::vg_dsa_check_parameters::vg_dsa_check_parameters,
         vg_dsa_derive_key_checked = sym super::dsa::vg_dsa_derive_key_checked::vg_dsa_derive_key_checked,
@@ -1365,12 +1365,20 @@ pub(crate) mod vg_dsa_check_parameters;
 pub(crate) mod vg_dsa_check_parameters_adx;
 
 #[rustfmt::skip]
+#[path = "internal/vg_dsa_check_parameters_shared.rs"]
+pub(crate) mod vg_dsa_check_parameters_shared;
+
+#[rustfmt::skip]
 #[path = "internal/vg_dsa_derive_key_checked.rs"]
 pub(crate) mod vg_dsa_derive_key_checked;
 
 #[rustfmt::skip]
 #[path = "internal/vg_dsa_derive_key_checked_adx.rs"]
 pub(crate) mod vg_dsa_derive_key_checked_adx;
+
+#[rustfmt::skip]
+#[path = "internal/vg_dsa_derive_key_checked_shared.rs"]
+pub(crate) mod vg_dsa_derive_key_checked_shared;
 
 #[rustfmt::skip]
 #[path = "internal/vg_dsa_derive_key_shared.rs"]
@@ -1411,6 +1419,10 @@ pub(crate) mod vg_dsa_sign_prevalidated;
 #[rustfmt::skip]
 #[path = "internal/vg_dsa_sign_prevalidated_adx.rs"]
 pub(crate) mod vg_dsa_sign_prevalidated_adx;
+
+#[rustfmt::skip]
+#[path = "internal/vg_dsa_sign_prevalidated_shared.rs"]
+pub(crate) mod vg_dsa_sign_prevalidated_shared;
 
 #[rustfmt::skip]
 #[path = "internal/vg_dsa_validate_private_key_shared.rs"]

@@ -76,10 +76,12 @@ def rRanges : Prog isa :=
           (.seq (nonZero 25) (.block [.store .d .a4 .s6 hMask]))))))))))))
 
 /-- `w = k^(q − 2) mod q` into array 4: k into array 4, `R² mod q` into array
-1, the power over the buffer's `q_len` octets. -/
+1, the power over the buffer's `q_len` octets (a call of `vg_bignum_pow_win`,
+then `ra` again from `hSig`). -/
 def inverseK : Prog isa :=
   .seq (.block Verify.ptrR) (.seq (loadArr 4) (.seq (copy 1 24)
-    (.seq (.block (Verify.ptrBuf ++ [.addi .s9 .s7 0, .addi .s10 .s8 0])) ModExp.powWin)))
+    (.seq (.block (Verify.ptrBuf ++ [.addi .s9 .s7 0, .addi .s10 .s8 0]))
+      (.seq ModExp.powWinFn (.block [.load .d .ra .s6 hSig])))))
 
 /-- The accumulator (`a5`, `w + 1` words) `:= [a3] + [a4]` (`w` words each),
 the carry in `s4`. -/

@@ -4093,46 +4093,15 @@ vg_cmac_triple_des_stream_init:
 	sub sp, sp, #640
 	movi v31.2d, #0
 	add x9, sp, #0
+	movz x10, #10, lsl #0
+27:
 	str q31, [x9, #0]
 	str q31, [x9, #16]
 	str q31, [x9, #32]
 	str q31, [x9, #48]
-	str q31, [x9, #64]
-	str q31, [x9, #80]
-	str q31, [x9, #96]
-	str q31, [x9, #112]
-	str q31, [x9, #128]
-	str q31, [x9, #144]
-	str q31, [x9, #160]
-	str q31, [x9, #176]
-	str q31, [x9, #192]
-	str q31, [x9, #208]
-	str q31, [x9, #224]
-	str q31, [x9, #240]
-	str q31, [x9, #256]
-	str q31, [x9, #272]
-	str q31, [x9, #288]
-	str q31, [x9, #304]
-	str q31, [x9, #320]
-	str q31, [x9, #336]
-	str q31, [x9, #352]
-	str q31, [x9, #368]
-	str q31, [x9, #384]
-	str q31, [x9, #400]
-	str q31, [x9, #416]
-	str q31, [x9, #432]
-	str q31, [x9, #448]
-	str q31, [x9, #464]
-	str q31, [x9, #480]
-	str q31, [x9, #496]
-	str q31, [x9, #512]
-	str q31, [x9, #528]
-	str q31, [x9, #544]
-	str q31, [x9, #560]
-	str q31, [x9, #576]
-	str q31, [x9, #592]
-	str q31, [x9, #608]
-	str q31, [x9, #624]
+	add x9, x9, #64
+	sub x10, x10, #1
+	cbnz x10, 27b
 	add sp, sp, #640
 	ret
 	.p2align 6
@@ -6723,49 +6692,18 @@ vg_cmac_triple_des_absorb:
 	sub sp, sp, #688
 	movi v31.2d, #0
 	add x9, sp, #0
+	movz x10, #10, lsl #0
+230:
 	str q31, [x9, #0]
 	str q31, [x9, #16]
 	str q31, [x9, #32]
 	str q31, [x9, #48]
-	str q31, [x9, #64]
-	str q31, [x9, #80]
-	str q31, [x9, #96]
-	str q31, [x9, #112]
-	str q31, [x9, #128]
-	str q31, [x9, #144]
-	str q31, [x9, #160]
-	str q31, [x9, #176]
-	str q31, [x9, #192]
-	str q31, [x9, #208]
-	str q31, [x9, #224]
-	str q31, [x9, #240]
-	str q31, [x9, #256]
-	str q31, [x9, #272]
-	str q31, [x9, #288]
-	str q31, [x9, #304]
-	str q31, [x9, #320]
-	str q31, [x9, #336]
-	str q31, [x9, #352]
-	str q31, [x9, #368]
-	str q31, [x9, #384]
-	str q31, [x9, #400]
-	str q31, [x9, #416]
-	str q31, [x9, #432]
-	str q31, [x9, #448]
-	str q31, [x9, #464]
-	str q31, [x9, #480]
-	str q31, [x9, #496]
-	str q31, [x9, #512]
-	str q31, [x9, #528]
-	str q31, [x9, #544]
-	str q31, [x9, #560]
-	str q31, [x9, #576]
-	str q31, [x9, #592]
-	str q31, [x9, #608]
-	str q31, [x9, #624]
-	str q31, [x9, #640]
-	str q31, [x9, #656]
-	str q31, [x9, #672]
+	add x9, x9, #64
+	sub x10, x10, #1
+	cbnz x10, 230b
+	str q31, [x9, #0]
+	str q31, [x9, #16]
+	str q31, [x9, #32]
 	add sp, sp, #688
 	ret
 	.p2align 6
@@ -8074,46 +8012,15 @@ vg_cmac_triple_des_finish:
 	sub sp, sp, #640
 	movi v31.2d, #0
 	add x9, sp, #0
+	movz x10, #10, lsl #0
+211:
 	str q31, [x9, #0]
 	str q31, [x9, #16]
 	str q31, [x9, #32]
 	str q31, [x9, #48]
-	str q31, [x9, #64]
-	str q31, [x9, #80]
-	str q31, [x9, #96]
-	str q31, [x9, #112]
-	str q31, [x9, #128]
-	str q31, [x9, #144]
-	str q31, [x9, #160]
-	str q31, [x9, #176]
-	str q31, [x9, #192]
-	str q31, [x9, #208]
-	str q31, [x9, #224]
-	str q31, [x9, #240]
-	str q31, [x9, #256]
-	str q31, [x9, #272]
-	str q31, [x9, #288]
-	str q31, [x9, #304]
-	str q31, [x9, #320]
-	str q31, [x9, #336]
-	str q31, [x9, #352]
-	str q31, [x9, #368]
-	str q31, [x9, #384]
-	str q31, [x9, #400]
-	str q31, [x9, #416]
-	str q31, [x9, #432]
-	str q31, [x9, #448]
-	str q31, [x9, #464]
-	str q31, [x9, #480]
-	str q31, [x9, #496]
-	str q31, [x9, #512]
-	str q31, [x9, #528]
-	str q31, [x9, #544]
-	str q31, [x9, #560]
-	str q31, [x9, #576]
-	str q31, [x9, #592]
-	str q31, [x9, #608]
-	str q31, [x9, #624]
+	add x9, x9, #64
+	sub x10, x10, #1
+	cbnz x10, 211b
 	add sp, sp, #640
 	ret
 	.p2align 6

@@ -10,8 +10,10 @@ public import VerifiedGarbage.TCB.AArch64.Isa
 of `W` bytes (`sub sp, sp, #W`), zeroes those granules (`str q31, [x9, #16k]`,
 `x9` its base and `q31` zero), and releases it. What `c`'s frames held there
 is then gone from the stack below the stack pointer, where its caller cannot
-clear it. `scrubAll` zeroes every granule, after clearing the registers;
-`scrubAllL` does so for `4080 < W < 8176`, in two frames. `W` is a multiple
+clear it. `scrubAll` zeroes every granule, after clearing the registers:
+below 256 bytes by a store for each, and from there by a loop of four
+stores a pass (`scrubTailLoop`), the shorter code there; `scrubAllL` does so
+for `4080 < W < 8176`, in two frames. `W` is a multiple
 of 16 and at most what the contract lets the function use of the stack.
 -/
 
@@ -38,15 +40,32 @@ def scrubStoresL (ks : List Nat) : List Instr := ks.map fun k => .strq .v31 .x9 
 def scrubTailG (W : Nat) (ks : List Nat) : Prog isa :=
   .frame (.alloc W) (.block (.vop (.movi0 .v31) :: .addSp .x9 0 :: scrubStoresL ks)) (.free W)
 
+/-- One pass of the zeroing loop: the four granules at `x9` zeroed, `x9`
+past them and `x10`, the passes left, one fewer. -/
+def scrubPass : List Instr :=
+  [.strq .v31 .x9 0, .strq .v31 .x9 16, .strq .v31 .x9 32, .strq .v31 .x9 48,
+   .addImm .x .x9 .x9 64, .subImm .x .x10 .x10 1]
+
+/-- The `W` bytes at the stack pointer zeroed by a loop, for `64 ≤ W`: `W / 64`
+passes of `scrubPass` (`cbnz x10`), then a store for each granule left. -/
+def scrubLoopBody (W : Nat) : Prog isa :=
+  .seq (.block [.vop (.movi0 .v31), .addSp .x9 0, .movz .x .x10 (BitVec.ofNat 16 (W / 64)) 0])
+    (.seq (.loop (.block scrubPass) (.nonzero .x .x10)) (.block (scrubStoresL (List.range (W % 64 / 16)))))
+
+/-- The frame of `W` bytes, `64 ≤ W`, zeroed by a loop. -/
+def scrubTailLoop (W : Nat) : Prog isa := .frame (.alloc W) (scrubLoopBody W) (.free W)
+
 /-- The frame of `W` bytes, `4080 < W < 8176`, with all its 16-byte granules
 zeroed: as two frames, one of `W - 4080` bytes and below it one of 4080, since
-an `alloc` takes less than 4096 bytes; the stores, from the inner frame's
-base, reach the outer one too. -/
+an `alloc` takes less than 4096 bytes; the loop, from the inner frame's base,
+reaches the outer one too. -/
 def scrubTailL (W : Nat) : Prog isa :=
-  .frame (.alloc (W - 4080))
-    (.frame (.alloc 4080) (.block (.vop (.movi0 .v31) :: .addSp .x9 0 :: scrubStoresL (List.range (W / 16))))
-      (.free 4080))
-    (.free (W - 4080))
+  .frame (.alloc (W - 4080)) (.frame (.alloc 4080) (scrubLoopBody W) (.free 4080)) (.free (W - 4080))
+
+/-- The frame of `W` bytes, zeroed: by a store for each granule below 256
+bytes, and from there, where the loop is the shorter code, by a loop. -/
+def scrubTail (W : Nat) : Prog isa :=
+  if 256 ≤ W then scrubTailLoop W else scrubTailG W (List.range (W / 16))
 
 /-- `c`, then the granules `ks` of the `W` bytes below the stack pointer
 zeroed; nothing if there are none. -/
@@ -95,7 +114,7 @@ abbrev clearsAll : List Instr := clearsOf Clear.all
 secret residue whatever `c` leaves, for code whose frames stay within those
 `W` bytes and that writes no register `cl` leaves (`Scrub.noResidue_scrubAll`). -/
 def scrubAll (W rb : Nat) (cl : Clear) (c : Prog isa) : Prog isa :=
-  scrubSel W (List.range (W / 16)) (withRet rb (.seq c (.block (clearsOf cl))))
+  if W < 16 then withRet rb (.seq c (.block (clearsOf cl))) else .seq (withRet rb (.seq c (.block (clearsOf cl)))) (scrubTail W)
 
 /-- `scrubAll` for `4080 < W < 8176` bytes of stack, zeroed by `scrubTailL`. -/
 def scrubAllL (W rb : Nat) (cl : Clear) (c : Prog isa) : Prog isa :=

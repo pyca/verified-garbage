@@ -1,32 +1,61 @@
 module
 
-public import VerifiedGarbage.Impl.MlDsa.X86.Arith.Basic
-public import VerifiedGarbage.Impl.MlKem.X86.Ntt
+public import VerifiedGarbage.Impl.MlDsa.X86.Arith.Mul
 
 /-!
 # ML-DSA on x86 (32-bit): `vg_mldsa_ntt` and `vg_mldsa_inv_ntt`
 
-The layers are those of ML-KEM on x86 (`Impl.MlKem.X86.layerCode`), with
-the butterflies of ML-DSA: a table of 256 zetas is stored in `scratch` as
-`u32`s (through `edx`, from `eax = scratch`), and read through `ebp`; the
-end of the polynomial, `f + 1024`, is stored in the argument slot of
-`scratch`, which the loops over blocks compare their pointer with. In a
-block, `esi` points at coefficient `j`, `edi` at `j + len`, and `ecx`
-counts the butterflies left. The zetas are in Montgomery form (times
-`2³² mod q`), so that `mred` of a coefficient times one is the coefficient
-times the zeta, reduced.
+## `ntt(f, scratch)` (Algorithm 41)
 
-* `ntt(f, scratch)` (Algorithm 41): the table of `ζ^BitRev8(m) · 2³² mod q`,
-  and the layers with `len` = 128, 64, …, 1, whose zetas are consecutive
-  from `m = 1` up. A butterfly computes `t = ζ · f[j + len] mod q` in `ebx`,
-  and stores `f[j] - t` (`f[j] + q - t`, reduced) to `f[j + len]` and
-  `f[j] + t` (reduced) to `f[j]`.
-* `nttInv(f, scratch)` (Algorithm 42): the table of the negated zetas (the
-  `z` of Algorithm 42) in Montgomery form, and the layers with `len` = 1,
-  2, …, 128, whose zetas are consecutive from `m = 255` down. A butterfly
-  stores `f[j] + f[j + len]` (reduced) to `f[j]` and
-  `z · (f[j] + q - f[j + len]) mod q` to `f[j + len]`. Then every
-  coefficient is multiplied by `8347681 = 256⁻¹ mod q`, in Montgomery form.
+Four butterflies at a time, on the doublewords of XMM registers, with the
+pieces of `Impl/MlDsa/X86/Arith/Mul.lean` (`vmont`, `vmont2`), inside the
+MCDT frame `pmuludq` needs; the function uses only `eax`, `ecx`, `edx` and
+the XMM registers, and its arguments are at `[esp + 16]` and `[esp + 20]`
+there. A table of 256 zetas in Montgomery form (times `2³² mod q`) is
+stored in `scratch` as `u32`s (`table`, through `edx`), and read through
+`edx`, which moves up it from entry 1, a block at a time; the end of the
+polynomial, `f + 1024`, is stored in the argument slot of `scratch`, which
+the loops compare `eax` with (`nttInit`).
+
+The coefficients are not reduced between the layers: a butterfly
+(`bfTail`) leaves `a + t` and `a + 2q - t` for `t`, the Montgomery product
+of `b` and the zeta, less than `2q` (`vmont`), so after `l` layers they are
+less than `(1 + 2l) · q`. The model has no `psubd`: `a + 2q - t` is
+`a + (2q + 1) + (t xor 0xFFFFFFFF)`, with `2q + 1` in the doublewords of
+`xmm3` and `0xFFFFFFFF` in those of `xmm4` (`q` is in those of `xmm7` and
+`-q⁻¹ mod 2³²` in those of `xmm6`, for `vmont`).
+
+* A layer with `len ≥ 4` (`layer4`) is a loop over its blocks, each a loop
+  over its groups of four butterflies (`fBody`): `eax` points at
+  coefficient `j`, `[eax + 4·len]` is coefficient `j + len`, the zeta of
+  the block is in every doubleword of `xmm5` (`blkInit`), and `ecx` counts
+  the groups left.
+* The layers with `len = 2` and `len = 1` (`layerFlat`) are loops over
+  eight coefficients, the vectors at `[eax]` and `[eax + 16]`, which are
+  gathered into the `a`s (`xmm1`) and the `b`s (`xmm0`) of four butterflies
+  (`gath2`, `gath1`), whose results are scattered back (`scat2`, `scat1`).
+  With `len = 2` the two blocks' zetas are in doublewords 0 and 2 of `xmm5`
+  (`zl2`), which `vmont` reads; with `len = 1` the four blocks' are its
+  doublewords (`zl1`), and `vmont2` multiplies doubleword by doubleword.
+  Both use `xmm5` as their temporary, so that `xmm1` keeps the `a`s.
+* A last pass (`pass finInit finCore`) reduces every coefficient `x < 17q`:
+  `x - (x >> 23) · q = (x mod 2²³) + (k << 13) - k` for `k = x >> 23` is
+  less than `2q` (`finFold`, which also subtracts `q`), and `q` is added
+  back where that is negative (`finSub`).
+
+## `nttInv(f, scratch)` (Algorithm 42)
+
+The same pieces, in the other order: the layers with `len = 1` and
+`len = 2` (`layerFlat`), then those with `len` = 4, …, 128 (`layer4`). The
+table (`montNegZetaRev`) holds the negated zetas (the `z` of Algorithm 42)
+in the order of use, so that `edx` moves up it from entry 1 as in `ntt`. A
+butterfly leaves `a + b` and the Montgomery product of `a + 128q - b` and
+the zeta (`iBody`, `iBody2`, `iBody1`: `bfTail` on the `a`s and the `b`s,
+with `128q + 1` in the doublewords of `xmm3`, then `vmont` or `vmont2`), so
+the coefficients are less than `2^l · q` after `l` layers, and the sums and
+`a + 128q` stay below `2³²`. A last pass (`pass scaleInit scaleCore`)
+multiplies every coefficient by `8347681 = 256⁻¹ mod q`, in Montgomery
+form, and reduces it (`vmont`, `vcsub`).
 
 Every address and branch depends only on the pointers.
 -/
@@ -36,7 +65,7 @@ Every address and branch depends only on the pointers.
 namespace VG.Impl.MlDsa.X86.Arith
 
 open VG.X86
-open VG.Impl.MlKem.X86 (at_ leaf layerCode layers zUp zDown ldScratch)
+open VG.Impl.MlKem.X86 (at_)
 
 /-- `++`, grouping to the right. -/
 local infixr:65 " +++ " => HAppend.hAppend
@@ -100,46 +129,183 @@ def montNegZetaTable : List Nat := [
 /-- `8347681 · 2³² mod q`: `256⁻¹` in Montgomery form. -/
 def scaleImm : BitVec 32 := 16382
 
+/-- The table of `NTT⁻¹`: entry `k` is `-ζ^BitRev8(256 - k) · 2³² mod q`,
+the negated zetas in the order of use. -/
+def montNegZetaRev : List Nat := (List.range 256).map fun k => montNegZetaTable.getD ((256 - k) % 256) 0
+
 /-- The 256 entries of `T` as `u32`s at `[eax]`, through `edx`. -/
 def table (T : List Nat) : List Instr :=
   (List.range 256).flatMap fun k => [.mov .edx (.imm (BitVec.ofNat 32 (T.getD k 0))), .store (at_ .eax (4 * k)) .edx]
 
-/-- The butterfly of `NTT` on `[esi]` and `[edi]` with the zeta at `[ebp]`. -/
-def bflyBody : List Instr :=
-  ([.mov .eax (.mem (at_ .edi 0)), .mov .edx (.mem (at_ .ebp 0)), .mul .edx] : List Instr) +++ mred .ebx +++
-  ([.mov .eax (.mem (at_ .esi 0)), .alu .add .eax (.imm qImm), .alu .sub .eax (.reg .ebx)] : List Instr) +++
-  csubQ .eax .edx +++
-  ([.store (at_ .edi 0) .eax, .mov .eax (.mem (at_ .esi 0)), .alu .add .eax (.reg .ebx)] : List Instr) +++
-  csubQ .eax .edx +++
-  ([.store (at_ .esi 0) .eax, .alu .add .esi (.imm 4), .alu .add .edi (.imm 4), .alu .sub .ecx (.imm 1)] : List Instr)
+/-! ## `ntt` -/
 
-/-- The butterfly of `NTT⁻¹` on `[esi]` and `[edi]` with the zeta at `[ebp]`. -/
-def ibflyBody : List Instr :=
-  ([.mov .ebx (.mem (at_ .esi 0)), .alu .add .ebx (.imm qImm), .alu .sub .ebx (.mem (at_ .edi 0)),
-    .mov .eax (.mem (at_ .esi 0)), .alu .add .eax (.mem (at_ .edi 0))] : List Instr) +++ csubQ .eax .edx +++
-  ([.store (at_ .esi 0) .eax, .mov .eax (.reg .ebx), .mov .edx (.mem (at_ .ebp 0)), .mul .edx] : List Instr) +++
-  mred .ebx +++
-  ([.store (at_ .edi 0) .ebx, .alu .add .esi (.imm 4), .alu .add .edi (.imm 4), .alu .sub .ecx (.imm 1)] : List Instr)
+/-- A butterfly's sum and difference: from the `a`s in `xmm1` and the `t`s
+in `xmm0`, `a + t` in `xmm1` and `a + c - t` in `xmm2`, with `c + 1` in the
+doublewords of `xmm3`. -/
+def bfTail : List Instr :=
+  [xmov .xmm2 .xmm0, xb .pxor .xmm2 .xmm4, xb .paddd .xmm2 .xmm3, xb .paddd .xmm2 .xmm1, xb .paddd .xmm1 .xmm0]
 
-/-- The table `T`, `ebp` at entry `z`, and `f + 1024` in the slot of `scratch`. -/
-def nttSetup (T : List Nat) (z : Nat) : List Instr :=
+/-- Four butterflies of a layer with `len ≥ 4` (`d = 4 · len`), on the
+vectors at `[eax]` and `[eax + d]`, with the zeta in `xmm5`. -/
+def fBody (d : Nat) : List Instr :=
+  ([.movdquLoad .xmm0 (at_ .eax d)] : List Instr) +++ vmont .xmm0 .xmm5 .xmm2 .xmm1 +++
+  ([.movdquLoad .xmm1 (at_ .eax 0)] : List Instr) +++ bfTail +++
+  ([.movdquStore (at_ .eax 0) .xmm1, .movdquStore (at_ .eax d) .xmm2] : List Instr)
+
+/-- The butterflies of two blocks with `len = 2`: the `b`s (coefficients 2,
+3, 6 and 7 of the eight at `[eax]`) in `xmm0` and the `a`s in `xmm1`. -/
+def gath2 : List Instr :=
+  [.movdquLoad .xmm0 (at_ .eax 0), .movdquLoad .xmm2 (at_ .eax 16), xmov .xmm1 .xmm0, xb .punpckhqdq .xmm0 .xmm2,
+    xb .punpcklqdq .xmm1 .xmm2]
+
+/-- The butterflies of four blocks with `len = 1`: the `b`s (coefficients
+1, 3, 5 and 7) in `xmm0` and the `a`s in `xmm1`. -/
+def gath1 : List Instr :=
+  [.movdquLoad .xmm0 (at_ .eax 0), .movdquLoad .xmm2 (at_ .eax 16), .xop (.pshufd .xmm0 .xmm0 0xD8),
+    .xop (.pshufd .xmm2 .xmm2 0xD8), xmov .xmm1 .xmm0, xb .punpckhqdq .xmm0 .xmm2, xb .punpcklqdq .xmm1 .xmm2]
+
+/-- The sums in `xmm1` and the differences in `xmm2`, back to where
+`gath2` took them from. -/
+def scat2 : List Instr :=
+  [xmov .xmm0 .xmm1, xb .punpcklqdq .xmm0 .xmm2, xb .punpckhqdq .xmm1 .xmm2, .movdquStore (at_ .eax 0) .xmm0,
+    .movdquStore (at_ .eax 16) .xmm1]
+
+/-- The same for `gath1`. -/
+def scat1 : List Instr :=
+  [xmov .xmm0 .xmm1, xb .punpckldq .xmm0 .xmm2, xb .punpckhdq .xmm1 .xmm2, .movdquStore (at_ .eax 0) .xmm0,
+    .movdquStore (at_ .eax 16) .xmm1]
+
+/-- The zetas of two blocks, in doublewords 0 and 2 of `xmm5`. -/
+def zl2 : List Instr := [.movqLoad .xmm5 (at_ .edx 0), .xop (.pshufd .xmm5 .xmm5 0x98)]
+
+/-- The zetas of four blocks, in the doublewords of `xmm5`. -/
+def zl1 : List Instr := [.movdquLoad .xmm5 (at_ .edx 0)]
+
+/-- Eight coefficients of the layer with `len = 2`. -/
+def fBody2 : List Instr := gath2 +++ vmont .xmm0 .xmm5 .xmm2 .xmm5 +++ bfTail +++ scat2
+
+/-- Eight coefficients of the layer with `len = 1`. -/
+def fBody1 : List Instr := gath1 +++ vmont2 .xmm0 .xmm5 .xmm2 +++ bfTail +++ scat1
+
+/-- `eax ← f`. -/
+def layStart : List Instr := [.mov .eax (.mem (at_ .esp 16))]
+
+/-- The zeta of a block in every doubleword of `xmm5`, `edx` on to the next
+one, and the groups of four butterflies of the block in `ecx`. -/
+def blkInit (len : Nat) : List Instr :=
+  [.mov .ecx (.mem (at_ .edx 0)), .xop (.movd .xmm5 .ecx), .xop (.pshufd .xmm5 .xmm5 0), .alu .add .edx (.imm 4),
+    .mov .ecx (.imm (BitVec.ofNat 32 (len / 4)))]
+
+/-- The next group of four butterflies. -/
+def groupEnd : List Instr := [.alu .add .eax (.imm 16), .alu .sub .ecx (.imm 1)]
+
+/-- The next block, if any. -/
+def blkEnd (len : Nat) : List Instr :=
+  [.alu .add .eax (.imm (BitVec.ofNat 32 (4 * len))), .alu .cmp .eax (.mem (at_ .esp 20))]
+
+/-- A layer with `len ≥ 4`, four butterflies at a time by `body (4 · len)`. -/
+def layer4 (body : Nat → List Instr) (len : Nat) : Prog isa :=
+  .seq (.block layStart)
+    (.loop (.seq (.block (blkInit len))
+      (.seq (.loop (.block (body (4 * len) +++ groupEnd)) .ne) (.block (blkEnd len)))) .ne)
+
+/-- The next eight coefficients, `dz` bytes of zetas on. -/
+def flatEnd (dz : Nat) : List Instr :=
+  [.alu .add .eax (.imm 32), .alu .add .edx (.imm (BitVec.ofNat 32 dz)), .alu .cmp .eax (.mem (at_ .esp 20))]
+
+/-- A layer with `len < 4`, eight coefficients at a time: the zetas by
+`zl`, `dz` bytes of them. -/
+def layerFlat (zl body : List Instr) (dz : Nat) : Prog isa :=
+  .seq (.block layStart) (.loop (.block (zl +++ body +++ flatEnd dz)) .ne)
+
+/-- The constants of the layers (`c + 1` for `bfTail` in `xmm3`), and
+`eax ← scratch`. -/
+def nttConsts (c3 : BitVec 32) : List Instr :=
+  vconst .xmm7 qImm +++ vconst .xmm6 qInvImm +++ vconst .xmm4 0xFFFFFFFF +++ vconst .xmm3 c3 +++
+  ([.mov .eax (.mem (at_ .esp 20))] : List Instr)
+
+/-- The table `T` at `[eax]`, `edx` at its entry 1, and `f + 1024` in the
+slot of `scratch`. -/
+def nttTable (T : List Nat) : List Instr :=
   table T +++
-  ([.mov .ebp (.reg .eax), .alu .add .ebp (.imm (BitVec.ofNat 32 (4 * z))), .mov .edx (.mem (at_ .esp 20)),
-    .alu .add .edx (.imm 1024), .store (at_ .esp 24) .edx] : List Instr)
+  ([.mov .edx (.reg .eax), .alu .add .edx (.imm 4), .mov .eax (.mem (at_ .esp 16)), .alu .add .eax (.imm 1024),
+    .store (at_ .esp 20) .eax] : List Instr)
+
+/-- The constants, and the table `T` in `scratch`. -/
+def nttInit (T : List Nat) (c3 : BitVec 32) : Prog isa := .seq (.block (nttConsts c3)) (.block (nttTable T))
+
+/-- A pass over the coefficients, four at a time by `core` on `xmm0`. -/
+def passStep (core : List Instr) : List Instr :=
+  ([.movdquLoad .xmm0 (at_ .eax 0)] : List Instr) +++ core +++
+  ([.movdquStore (at_ .eax 0) .xmm0, .alu .add .eax (.imm 16), .alu .cmp .eax (.mem (at_ .esp 20))] : List Instr)
+
+/-- A pass, after `init` sets its constants. -/
+def pass (init core : List Instr) : Prog isa :=
+  .seq (.block (init +++ layStart)) (.loop (.block (passStep core)) .ne)
+
+/-- `2q + 1`. -/
+def fwdC : BitVec 32 := 16760835
+
+/-- The constants of the last pass of `ntt`: `2²³ - 1` in the doublewords
+of `xmm5` and `2³² - q + 1` in those of `xmm3`. -/
+def finInit : List Instr := vconst .xmm5 0x7FFFFF +++ vconst .xmm3 4286586880
+
+/-- `xmm0 ← x - (x >> 23) · q - q` for the doublewords `x` of `xmm0`. -/
+def finFold : List Instr :=
+  [xmov .xmm1 .xmm0, .xop (.shift .psrld .xmm1 23), xb .pand .xmm0 .xmm5, xmov .xmm2 .xmm1,
+    .xop (.shift .pslld .xmm2 13), xb .paddd .xmm0 .xmm2, xb .pxor .xmm1 .xmm4, xb .paddd .xmm0 .xmm1,
+    xb .paddd .xmm0 .xmm3]
+
+/-- `q` added back to the doublewords of `xmm0` that are negative. -/
+def finSub : List Instr :=
+  [xmov .xmm1 .xmm0, .xop (.shift .psrld .xmm1 31), xb .paddd .xmm1 .xmm4, xb .pandn .xmm1 .xmm7,
+    xb .paddd .xmm0 .xmm1]
+
+/-- `xmm0 ← xmm0 mod q` for doublewords less than `17q`. -/
+def finCore : List Instr := finFold +++ finSub
 
 def ntt : Prog isa :=
-  leaf (.seq (.block ldScratch) (.seq (.block (nttSetup montZetaTable 1))
-    (layers (layerCode bflyBody zUp) [128, 64, 32, 16, 8, 4, 2, 1])))
+  .frame (.mcdtEnter .eax)
+    (.seq (nttInit montZetaTable fwdC)
+      (.seq (layer4 fBody 128) (.seq (layer4 fBody 64) (.seq (layer4 fBody 32) (.seq (layer4 fBody 16)
+        (.seq (layer4 fBody 8) (.seq (layer4 fBody 4) (.seq (layerFlat zl2 fBody2 8)
+          (.seq (layerFlat zl1 fBody1 16) (pass finInit finCore))))))))))
+    .mcdtLeave
 
-/-- `[esi] ← [esi] · 8347681 mod q`, and on to the next coefficient. -/
-def scaleBody : List Instr :=
-  ([.mov .eax (.mem (at_ .esi 0)), .mov .edx (.imm scaleImm), .mul .edx] : List Instr) +++ mred .ebx +++
-  ([.store (at_ .esi 0) .ebx, .alu .add .esi (.imm 4), .alu .sub .ecx (.imm 1)] : List Instr)
+/-! ## `nttInv` -/
+
+/-- `128q + 1`. -/
+def invC : BitVec 32 := 1072693377
+
+/-- Four butterflies of a layer with `len ≥ 4` (`d = 4 · len`). -/
+def iBody (d : Nat) : List Instr :=
+  ([.movdquLoad .xmm0 (at_ .eax d), .movdquLoad .xmm1 (at_ .eax 0)] : List Instr) +++ bfTail +++
+  ([.movdquStore (at_ .eax 0) .xmm1, xmov .xmm0 .xmm2] : List Instr) +++ vmont .xmm0 .xmm5 .xmm2 .xmm1 +++
+  ([.movdquStore (at_ .eax d) .xmm0] : List Instr)
+
+/-- Eight coefficients of the layer with `len = 2`. -/
+def iBody2 : List Instr :=
+  gath2 +++ bfTail +++ ([xmov .xmm0 .xmm2] : List Instr) +++ vmont .xmm0 .xmm5 .xmm2 .xmm5 +++
+  ([xmov .xmm2 .xmm0] : List Instr) +++ scat2
+
+/-- Eight coefficients of the layer with `len = 1`. -/
+def iBody1 : List Instr :=
+  gath1 +++ bfTail +++ ([xmov .xmm0 .xmm2] : List Instr) +++ vmont2 .xmm0 .xmm5 .xmm2 +++
+  ([xmov .xmm2 .xmm0] : List Instr) +++ scat1
+
+/-- The constants of the last pass of `nttInv`: `256⁻¹` in Montgomery form
+in the doublewords of `xmm5` and `2³² - q` in those of `xmm3`. -/
+def scaleInit : List Instr := vconst .xmm5 scaleImm +++ vconst .xmm3 4286586879
+
+/-- `xmm0 ← xmm0 · 256⁻¹ mod q` for doublewords less than `256q`. -/
+def scaleCore : List Instr := vmont .xmm0 .xmm5 .xmm2 .xmm1 +++ vcsub .xmm0 .xmm1
 
 def nttInv : Prog isa :=
-  leaf (.seq (.block ldScratch) (.seq (.block (nttSetup montNegZetaTable 255))
-    (.seq (layers (layerCode ibflyBody zDown) [1, 2, 4, 8, 16, 32, 64, 128])
-      (.seq (.block [.mov .esi (.mem (at_ .esp 20))])
-        (.seq (.block [.mov .ecx (.imm 256)]) (.loop (.block scaleBody) .ne))))))
+  .frame (.mcdtEnter .eax)
+    (.seq (nttInit montNegZetaRev invC)
+      (.seq (layerFlat zl1 iBody1 16) (.seq (layerFlat zl2 iBody2 8) (.seq (layer4 iBody 4) (.seq (layer4 iBody 8)
+        (.seq (layer4 iBody 16) (.seq (layer4 iBody 32) (.seq (layer4 iBody 64) (.seq (layer4 iBody 128)
+          (pass scaleInit scaleCore))))))))))
+    .mcdtLeave
 
 end VG.Impl.MlDsa.X86.Arith

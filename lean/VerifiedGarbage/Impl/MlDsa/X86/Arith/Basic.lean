@@ -5,23 +5,10 @@ public import VerifiedGarbage.Impl.MlKem.X86.Basic
 /-!
 # ML-DSA on x86 (32-bit): arithmetic modulo `q`, `vg_mldsa_add` and `vg_mldsa_sub`
 
-Coefficients are `u32`s less than `q = 8380417 < 2²³`. The pieces of code
-the arithmetic functions share:
-
-* `csubQ r t`: `r ← r mod q` for `r < 2q`, without a branch: `sub r, q`
-  borrows exactly when `r < q`, `sbb t, t` turns the borrow into a mask, and
-  `q` masked with it is added back;
-* `mredRaw r` and `mred r`: a Montgomery reduction of the 64-bit product
-  `x` in `edx:eax` (`mul` leaves it there), for `x < q · 2³²`: with
-  `m = (x mod 2³²) · (-q⁻¹ mod 2³²) mod 2³²` (a `mul`, its low half),
-  `x + m · q` (another `mul`) is a multiple of `2³²`, and `mredRaw` leaves
-  `(x + m · q) / 2³²`, less than `2q` and congruent to `x · 2⁻³²`, in `r`:
-  the high half of `x`, plus the high half of `m · q`, plus the carry of
-  their low halves, which is 1 exactly when the low half of `m · q` is not 0
-  (`add eax, 0xFFFFFFFF` sets the carry to it). `mred` then reduces it with
-  `csubQ`. They use `eax` and `edx`. `mul` is the only multiplication of the
-  model, and its timing does not depend on its operands (it is on Intel's
-  DOIT list).
+Coefficients are `u32`s less than `q = 8380417 < 2²³`. `csubQ r t` is
+`r ← r mod q` for `r < 2q`, without a branch: `sub r, q` borrows exactly
+when `r < q`, `sbb t, t` turns the borrow into a mask, and `q` masked with
+it is added back.
 
 The functions are leaves (`Impl.MlKem.X86.leaf`), which save the caller's
 `ebx`, `esi`, `edi` and `ebp` in a frame of 16 bytes; their arguments are
@@ -56,15 +43,6 @@ def qInvImm : BitVec 32 := 4236238847
 /-- `r ← r mod q` for `r < 2q`, with the temporary `t`. -/
 def csubQ (r t : Reg) : List Instr :=
   [.alu .sub r (.imm qImm), .alu .sbb t (.reg t), .alu .and t (.imm qImm), .alu .add r (.reg t)]
-
-/-- `r ← (x + m · q) / 2³²` for `x` in `edx:eax`: less than `2q` and
-congruent to `x · 2⁻³²` modulo `q`, if `x < q · 2³²`. -/
-def mredRaw (r : Reg) : List Instr :=
-  [.mov r (.reg .edx), .mov .edx (.imm qInvImm), .mul .edx, .mov .edx (.imm qImm), .mul .edx,
-    .alu .add .eax (.imm 0xFFFFFFFF), .alu .adc r (.reg .edx)]
-
-/-- `r ← x · 2⁻³² mod q` for `x` in `edx:eax`, if `x < q · 2³²`. -/
-def mred (r : Reg) : List Instr := mredRaw r +++ csubQ r .edx
 
 /-! ## `add` and `sub` -/
 

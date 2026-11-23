@@ -116,10 +116,11 @@ def products : Prog isa :=
       (.seq (.block ptrBuf) (.seq (storeBE 6) (.seq (.block ptrBuf2) (storeBE 5)))))))))))
 
 /-- In the P space, the power of the number at `s7` (`p_len` octets) by the
-`q_len` octets at `s9`, into array 4. -/
+`q_len` octets at `s9`, into array 4: a call of `vg_bignum_pow_win`, then
+`ra` again from `hSig`. -/
 def powP : Prog isa :=
   .seq (.block (getP .s8)) (.seq (loadArr 4) (.seq (copy 1 24)
-    (.seq (.block (getQ .s10)) ModExp.powWin)))
+    (.seq (.block (getQ .s10)) (.seq ModExp.powWinFn (.block [.load .d .ra .s6 hSig])))))
 
 /-- The joint table `T_(i + 4 j) = g^i y^j R mod p` for `i, j < 4`, in arrays
 `8 + i + 4 j`, from g in array 4, y in array 5 and `R² mod p` in array 1;

@@ -389,22 +389,15 @@ vg_dsa_sign_random_prevalidated:
 	sub sp, sp, #256
 	movi v31.2d, #0
 	add x9, sp, #0
+	movz x10, #4, lsl #0
+228:
 	str q31, [x9, #0]
 	str q31, [x9, #16]
 	str q31, [x9, #32]
 	str q31, [x9, #48]
-	str q31, [x9, #64]
-	str q31, [x9, #80]
-	str q31, [x9, #96]
-	str q31, [x9, #112]
-	str q31, [x9, #128]
-	str q31, [x9, #144]
-	str q31, [x9, #160]
-	str q31, [x9, #176]
-	str q31, [x9, #192]
-	str q31, [x9, #208]
-	str q31, [x9, #224]
-	str q31, [x9, #240]
+	add x9, x9, #64
+	sub x10, x10, #1
+	cbnz x10, 228b
 	add sp, sp, #256
 	ret
 	.p2align 6
@@ -9971,22 +9964,15 @@ vg_dsa_generate_key:
 	sub sp, sp, #256
 	movi v31.2d, #0
 	add x9, sp, #0
+	movz x10, #4, lsl #0
+225:
 	str q31, [x9, #0]
 	str q31, [x9, #16]
 	str q31, [x9, #32]
 	str q31, [x9, #48]
-	str q31, [x9, #64]
-	str q31, [x9, #80]
-	str q31, [x9, #96]
-	str q31, [x9, #112]
-	str q31, [x9, #128]
-	str q31, [x9, #144]
-	str q31, [x9, #160]
-	str q31, [x9, #176]
-	str q31, [x9, #192]
-	str q31, [x9, #208]
-	str q31, [x9, #224]
-	str q31, [x9, #240]
+	add x9, x9, #64
+	sub x10, x10, #1
+	cbnz x10, 225b
 	add sp, sp, #256
 	ret
 	.p2align 6
@@ -18914,54 +18900,15 @@ vg_dsa_parameter_search_sha1_sha2_sha256_sha2:
 	sub sp, sp, #768
 	movi v31.2d, #0
 	add x9, sp, #0
+	movz x10, #12, lsl #0
+2280:
 	str q31, [x9, #0]
 	str q31, [x9, #16]
 	str q31, [x9, #32]
 	str q31, [x9, #48]
-	str q31, [x9, #64]
-	str q31, [x9, #80]
-	str q31, [x9, #96]
-	str q31, [x9, #112]
-	str q31, [x9, #128]
-	str q31, [x9, #144]
-	str q31, [x9, #160]
-	str q31, [x9, #176]
-	str q31, [x9, #192]
-	str q31, [x9, #208]
-	str q31, [x9, #224]
-	str q31, [x9, #240]
-	str q31, [x9, #256]
-	str q31, [x9, #272]
-	str q31, [x9, #288]
-	str q31, [x9, #304]
-	str q31, [x9, #320]
-	str q31, [x9, #336]
-	str q31, [x9, #352]
-	str q31, [x9, #368]
-	str q31, [x9, #384]
-	str q31, [x9, #400]
-	str q31, [x9, #416]
-	str q31, [x9, #432]
-	str q31, [x9, #448]
-	str q31, [x9, #464]
-	str q31, [x9, #480]
-	str q31, [x9, #496]
-	str q31, [x9, #512]
-	str q31, [x9, #528]
-	str q31, [x9, #544]
-	str q31, [x9, #560]
-	str q31, [x9, #576]
-	str q31, [x9, #592]
-	str q31, [x9, #608]
-	str q31, [x9, #624]
-	str q31, [x9, #640]
-	str q31, [x9, #656]
-	str q31, [x9, #672]
-	str q31, [x9, #688]
-	str q31, [x9, #704]
-	str q31, [x9, #720]
-	str q31, [x9, #736]
-	str q31, [x9, #752]
+	add x9, x9, #64
+	sub x10, x10, #1
+	cbnz x10, 2280b
 	add sp, sp, #768
 	ret
 	.p2align 6
@@ -25571,54 +25518,15 @@ vg_dsa_parameter_search:
 	sub sp, sp, #768
 	movi v31.2d, #0
 	add x9, sp, #0
+	movz x10, #12, lsl #0
+2280:
 	str q31, [x9, #0]
 	str q31, [x9, #16]
 	str q31, [x9, #32]
 	str q31, [x9, #48]
-	str q31, [x9, #64]
-	str q31, [x9, #80]
-	str q31, [x9, #96]
-	str q31, [x9, #112]
-	str q31, [x9, #128]
-	str q31, [x9, #144]
-	str q31, [x9, #160]
-	str q31, [x9, #176]
-	str q31, [x9, #192]
-	str q31, [x9, #208]
-	str q31, [x9, #224]
-	str q31, [x9, #240]
-	str q31, [x9, #256]
-	str q31, [x9, #272]
-	str q31, [x9, #288]
-	str q31, [x9, #304]
-	str q31, [x9, #320]
-	str q31, [x9, #336]
-	str q31, [x9, #352]
-	str q31, [x9, #368]
-	str q31, [x9, #384]
-	str q31, [x9, #400]
-	str q31, [x9, #416]
-	str q31, [x9, #432]
-	str q31, [x9, #448]
-	str q31, [x9, #464]
-	str q31, [x9, #480]
-	str q31, [x9, #496]
-	str q31, [x9, #512]
-	str q31, [x9, #528]
-	str q31, [x9, #544]
-	str q31, [x9, #560]
-	str q31, [x9, #576]
-	str q31, [x9, #592]
-	str q31, [x9, #608]
-	str q31, [x9, #624]
-	str q31, [x9, #640]
-	str q31, [x9, #656]
-	str q31, [x9, #672]
-	str q31, [x9, #688]
-	str q31, [x9, #704]
-	str q31, [x9, #720]
-	str q31, [x9, #736]
-	str q31, [x9, #752]
+	add x9, x9, #64
+	sub x10, x10, #1
+	cbnz x10, 2280b
 	add sp, sp, #768
 	ret
 	.p2align 6

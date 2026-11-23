@@ -100,7 +100,7 @@ def esAddr : Instr → Bool
   | .store m _ | .store8 m _ | .movzx8 _ m => esBase m
   | .shift .. | .bswap _ | .mul _ => true
   | .symPush .. | .push _ | .pop .. | .alloc _ | .free _ | .movdquLoad .. | .movdquStore .. | .movqLoad .. | .movqStore .. | .movdquTbl .. | .movqTbl .. | .xop .. | .mop _ | .mmxStore .. | .mmxEnter | .emms
-  | .pmuludq .. | .mcdtEnter _ | .mcdtLeave | .callr _ => false
+  | .pmuludq .. | .pmullw .. | .pmulhw .. | .mcdtEnter _ | .mcdtLeave | .callr _ => false
 
 /-- `i` writes neither `esp` nor `esi`, and addresses through them. -/
 def esOk (i : Instr) : Bool := !Taint.clobbers i .esp && !Taint.clobbers i .esi && esAddr i
