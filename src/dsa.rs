@@ -217,11 +217,9 @@ impl PrivateKey {
         if x.len() != q.len() {
             return Err(Error::Length);
         }
-        let mut packed = public.packed.clone();
-        // NO-SECRET-RESIDUE: growing the clone frees an allocation that holds
-        // only the public key; `x` is written to the new one.
-        packed.extend_from_slice(x);
-        Ok(Self::new(public, Secret(packed)))
+        // One allocation of the exact length, written once.
+        let packed = Secret([&public.packed[..], x].concat());
+        Ok(Self::new(public, packed))
     }
 
     /// The key of a public key and its packed private bytes, not yet validated.
