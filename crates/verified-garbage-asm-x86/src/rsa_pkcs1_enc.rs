@@ -208,6 +208,75 @@ jne 27b
     )
 }
 
+/// The CPU features `vg_rsa_pkcs1_decrypt_precomputed_front_sha256_shani` requires (`Artifact.features`).
+pub const VG_RSA_PKCS1_DECRYPT_PRECOMPUTED_FRONT_SHA256_SHANI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::SHA);
+
+/// `vg_rsa_pkcs1_decrypt_precomputed`, with the message first: computes and returns what `vg_rsa_pkcs1_decrypt_precomputed` does with the same arguments, but on success writes the message at the start of `out` and zeros after it, so that the caller can shorten `out` to the message's length without moving it. `pre` (`pre_len` words) must hold what `vg_rsa_private_precompute` wrote for `n`, `p` and `q` (returning 1), as `n`, `p` and `q` must be valid.
+///
+/// Contract: `VG.Spec.RsaPkcs1Enc.decryptPrecomputedFrontContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, the contents of `n` and `e` and the first `2 * ⌈n_len / 8⌉` words of `pre` (the modulus' values), not on the ciphertext, the private key, the rest of `pre`, the validity of the padding, the length of the message or which message is returned.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// The function may overwrite the arguments on the stack, as the calling convention lets it.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of `out_len` bytes.
+/// * `msg_len` must be valid for reads and writes of 8 bytes.
+/// * `n` must be valid for reads of `n_len` bytes.
+/// * `e` must be valid for reads of `e_len` bytes.
+/// * `d` must be valid for reads of `d_len` bytes.
+/// * `input` must be valid for reads of `input_len` bytes.
+/// * `p` must be valid for reads of `p_len` bytes.
+/// * `q` must be valid for reads of `q_len` bytes.
+/// * `dp` must be valid for reads of `dp_len` bytes.
+/// * `dq` must be valid for reads of `dq_len` bytes.
+/// * `qinv` must be valid for reads of `qinv_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `pre` must be valid for reads of `8 * pre_len` bytes.
+/// * `n_len` must be in 64..=1024.
+/// * `out_len` and `input_len` must be `n_len`.
+/// * `e_len` and `d_len` must be in 1..=`n_len`.
+/// * `p_len` and `q_len` must be in 1..`n_len`.
+/// * `dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`.
+/// * `scratch_len` must be at least `16 * n_len + 32`.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `pre_len` must be `2 * ⌈n_len / 8⌉ + max(2, ⌈p_len / 8⌉) + max(2, ⌈q_len / 8⌉)`.
+/// * `pre` must hold what `vg_rsa_private_precompute` wrote for `n`, `p` and `q` (returning 1), and not have changed since.
+/// * `out`, `msg_len` and `scratch` must not overlap each other, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv` or `pre` (distinct Rust objects never do).
+/// * None of `out`, `msg_len`, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv`, `scratch` and `pre` may overlap the arguments on the stack, overlap the return address on the stack or the 3732 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `ssse3` and `sha` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_rsa_pkcs1_decrypt_precomputed_front_sha256_shani(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, d: *const u8, d_len: usize, input: *const u8, input_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "U1VWV42kJHD///+LhCSkAAAAiQQki4QkqAAAAIlEJASLhCSsAAAAiUQkCIuEJLAAAACJRCQMi4QktAAAAIlEJBCLhCS4AAAAiUQkFIuEJLwAAACJRCQYi4QkwAAAAIlEJByLhCTEAAAAiUQkIIuEJMgAAACJRCQki4QkzAAAAIlEJCiLhCTQAAAAiUQkLIuEJNQAAACJRCQwi4Qk2AAAAIlEJDSLhCTcAAAAiUQkOIuEJOAAAACJRCQ8i4Qk5AAAAIlEJECLhCToAAAAiUQkRIuEJOwAAACJRCRIi4Qk8AAAAIlEJEyLhCT0AAAAiUQkUIuEJPgAAACJRCRUi4Qk/AAAAIlEJFiLhCQAAQAAiUQkXIuEJAQBAACJRCRg"
+call {vg_rsa_pkcs1_decrypt_precomputed_body_sha256_shani}
+.base64 "iUQkZIusJPgAAACJ7oHGAAgAALkACAAAuAAAAAA="
+20:
+.base64 "iAaDxgGD6QE="
+jne 20b
+.base64 "i7QkpAAAAInrgcMACAAAi4wktAAAAA=="
+21:
+.base64 "D7YGiAODwwGDxgGD6QGD+QA="
+jne 21b
+.base64 "i4QktAAAAIuUJKwAAACLEinQiUQkeLgBAAAAiUQkfLgLAAAAiYQkgAAAAA=="
+22:
+.base64 "ie6BxgAIAACJ9wN8JHyLRCR4g+ABugAAAAApwrkABAAA"
+23:
+.base64 "D7YGD7YfMcMh0zHYiAaDxgGDxwGD6QE="
+jne 23b
+.base64 "i0QkeNHoiUQkeItEJHwBwIlEJHyLhCSAAAAAg+gBiYQkgAAAAA=="
+jne 22b
+.base64 "ie6BxgAIAACLnCSkAAAAi4wktAAAAA=="
+24:
+.base64 "D7YGiAODwwGDxgGD6QGD+QA="
+jne 24b
+.base64 "i0QkZI2kJJAAAACLPCSLdCQEi2wkCFtbW1tmD+/AuQAAAACNpCRs8f//8w9/BCTzD39EJBDzD39EJCDzD39EJDDzD39EJEDzD39EJFDzD39EJGDzD39EJHDzD3+EJIAAAADzD3+EJJAAAADzD3+EJKAAAADzD3+EJLAAAADzD3+EJMAAAADzD3+EJNAAAADzD3+EJOAAAADzD3+EJPAAAADzD3+EJAABAADzD3+EJBABAADzD3+EJCABAADzD3+EJDABAADzD3+EJEABAADzD3+EJFABAADzD3+EJGABAADzD3+EJHABAADzD3+EJIABAADzD3+EJJABAADzD3+EJKABAADzD3+EJLABAADzD3+EJMABAADzD3+EJNABAADzD3+EJOABAADzD3+EJPABAADzD3+EJAACAADzD3+EJBACAADzD3+EJCACAADzD3+EJDACAADzD3+EJEACAADzD3+EJFACAADzD3+EJGACAADzD3+EJHACAADzD3+EJIACAADzD3+EJJACAADzD3+EJKACAADzD3+EJLACAADzD3+EJMACAADzD3+EJNACAADzD3+EJOACAADzD3+EJPACAADzD3+EJAADAADzD3+EJBADAADzD3+EJCADAADzD3+EJDADAADzD3+EJEADAADzD3+EJFADAADzD3+EJGADAADzD3+EJHADAADzD3+EJIADAADzD3+EJJADAADzD3+EJKADAADzD3+EJLADAADzD3+EJMADAADzD3+EJNADAADzD3+EJOADAADzD3+EJPADAADzD3+EJAAEAADzD3+EJBAEAADzD3+EJCAEAADzD3+EJDAEAADzD3+EJEAEAADzD3+EJFAEAADzD3+EJGAEAADzD3+EJHAEAADzD3+EJIAEAADzD3+EJJAEAADzD3+EJKAEAADzD3+EJLAEAADzD3+EJMAEAADzD3+EJNAEAADzD3+EJOAEAADzD3+EJPAEAADzD3+EJAAFAADzD3+EJBAFAADzD3+EJCAFAADzD3+EJDAFAADzD3+EJEAFAADzD3+EJFAFAADzD3+EJGAFAADzD3+EJHAFAADzD3+EJIAFAADzD3+EJJAFAADzD3+EJKAFAADzD3+EJLAFAADzD3+EJMAFAADzD3+EJNAFAADzD3+EJOAFAADzD3+EJPAFAADzD3+EJAAGAADzD3+EJBAGAADzD3+EJCAGAADzD3+EJDAGAADzD3+EJEAGAADzD3+EJFAGAADzD3+EJGAGAADzD3+EJHAGAADzD3+EJIAGAADzD3+EJJAGAADzD3+EJKAGAADzD3+EJLAGAADzD3+EJMAGAADzD3+EJNAGAADzD3+EJOAGAADzD3+EJPAGAADzD3+EJAAHAADzD3+EJBAHAADzD3+EJCAHAADzD3+EJDAHAADzD3+EJEAHAADzD3+EJFAHAADzD3+EJGAHAADzD3+EJHAHAADzD3+EJIAHAADzD3+EJJAHAADzD3+EJKAHAADzD3+EJLAHAADzD3+EJMAHAADzD3+EJNAHAADzD3+EJOAHAADzD3+EJPAHAADzD3+EJAAIAADzD3+EJBAIAADzD3+EJCAIAADzD3+EJDAIAADzD3+EJEAIAADzD3+EJFAIAADzD3+EJGAIAADzD3+EJHAIAADzD3+EJIAIAADzD3+EJJAIAADzD3+EJKAIAADzD3+EJLAIAADzD3+EJMAIAADzD3+EJNAIAADzD3+EJOAIAADzD3+EJPAIAADzD3+EJAAJAADzD3+EJBAJAADzD3+EJCAJAADzD3+EJDAJAADzD3+EJEAJAADzD3+EJFAJAADzD3+EJGAJAADzD3+EJHAJAADzD3+EJIAJAADzD3+EJJAJAADzD3+EJKAJAADzD3+EJLAJAADzD3+EJMAJAADzD3+EJNAJAADzD3+EJOAJAADzD3+EJPAJAADzD3+EJAAKAADzD3+EJBAKAADzD3+EJCAKAADzD3+EJDAKAADzD3+EJEAKAADzD3+EJFAKAADzD3+EJGAKAADzD3+EJHAKAADzD3+EJIAKAADzD3+EJJAKAADzD3+EJKAKAADzD3+EJLAKAADzD3+EJMAKAADzD3+EJNAKAADzD3+EJOAKAADzD3+EJPAKAADzD3+EJAALAADzD3+EJBALAADzD3+EJCALAADzD3+EJDALAADzD3+EJEALAADzD3+EJFALAADzD3+EJGALAADzD3+EJHALAADzD3+EJIALAADzD3+EJJALAADzD3+EJKALAADzD3+EJLALAADzD3+EJMALAADzD3+EJNALAADzD3+EJOALAADzD3+EJPALAADzD3+EJAAMAADzD3+EJBAMAADzD3+EJCAMAADzD3+EJDAMAADzD3+EJEAMAADzD3+EJFAMAADzD3+EJGAMAADzD3+EJHAMAADzD3+EJIAMAADzD3+EJJAMAADzD3+EJKAMAADzD3+EJLAMAADzD3+EJMAMAADzD3+EJNAMAADzD3+EJOAMAADzD3+EJPAMAADzD3+EJAANAADzD3+EJBANAADzD3+EJCANAADzD3+EJDANAADzD3+EJEANAADzD3+EJFANAADzD3+EJGANAADzD3+EJHANAADzD3+EJIANAADzD3+EJJANAADzD3+EJKANAADzD3+EJLANAADzD3+EJMANAADzD3+EJNANAADzD3+EJOANAADzD3+EJPANAADzD3+EJAAOAADzD3+EJBAOAADzD3+EJCAOAADzD3+EJDAOAADzD3+EJEAOAADzD3+EJFAOAADzD3+EJGAOAADzD3+EJHAOAADzD3+EJIAOAACJjCSQDgAAjaQklA4AALoAAAAAMclmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/8M="
+.p2align 6"#,
+        vg_rsa_pkcs1_decrypt_precomputed_body_sha256_shani = sym super::rsa::vg_rsa_pkcs1_decrypt_precomputed_body_sha256_shani::vg_rsa_pkcs1_decrypt_precomputed_body_sha256_shani,
+    )
+}
+
 /// `vg_rsa_pkcs1_decrypt`, given the key's precomputed values `pre`: computes and returns what `vg_rsa_pkcs1_decrypt` does with the same arguments. `pre` (`pre_len` words) must hold what `vg_rsa_private_precompute` wrote for `n`, `p` and `q` (returning 1), as `n`, `p` and `q` must be valid.
 ///
 /// Contract: `VG.Spec.RsaPkcs1Enc.decryptPrecomputedContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, the contents of `n` and `e` and the first `2 * ⌈n_len / 8⌉` words of `pre` (the modulus' values), not on the ciphertext, the private key, the rest of `pre`, the validity of the padding, the length of the message or which message is returned.
@@ -311,5 +380,70 @@ jne 27b
         vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch::vg_sha256_finalize_scratch,
         vg_hmac_sha256_init_scratch = sym super::hmac_sha256::vg_hmac_sha256_init_scratch::vg_hmac_sha256_init_scratch,
         vg_hmac_sha256_finalize_scratch = sym super::hmac_sha256::vg_hmac_sha256_finalize_scratch::vg_hmac_sha256_finalize_scratch,
+    )
+}
+
+/// `vg_rsa_pkcs1_decrypt_precomputed`, with the message first: computes and returns what `vg_rsa_pkcs1_decrypt_precomputed` does with the same arguments, but on success writes the message at the start of `out` and zeros after it, so that the caller can shorten `out` to the message's length without moving it. `pre` (`pre_len` words) must hold what `vg_rsa_private_precompute` wrote for `n`, `p` and `q` (returning 1), as `n`, `p` and `q` must be valid.
+///
+/// Contract: `VG.Spec.RsaPkcs1Enc.decryptPrecomputedFrontContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, the contents of `n` and `e` and the first `2 * ⌈n_len / 8⌉` words of `pre` (the modulus' values), not on the ciphertext, the private key, the rest of `pre`, the validity of the padding, the length of the message or which message is returned.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// The function may overwrite the arguments on the stack, as the calling convention lets it.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of `out_len` bytes.
+/// * `msg_len` must be valid for reads and writes of 8 bytes.
+/// * `n` must be valid for reads of `n_len` bytes.
+/// * `e` must be valid for reads of `e_len` bytes.
+/// * `d` must be valid for reads of `d_len` bytes.
+/// * `input` must be valid for reads of `input_len` bytes.
+/// * `p` must be valid for reads of `p_len` bytes.
+/// * `q` must be valid for reads of `q_len` bytes.
+/// * `dp` must be valid for reads of `dp_len` bytes.
+/// * `dq` must be valid for reads of `dq_len` bytes.
+/// * `qinv` must be valid for reads of `qinv_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `pre` must be valid for reads of `8 * pre_len` bytes.
+/// * `n_len` must be in 64..=1024.
+/// * `out_len` and `input_len` must be `n_len`.
+/// * `e_len` and `d_len` must be in 1..=`n_len`.
+/// * `p_len` and `q_len` must be in 1..`n_len`.
+/// * `dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`.
+/// * `scratch_len` must be at least `16 * n_len + 32`.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `pre_len` must be `2 * ⌈n_len / 8⌉ + max(2, ⌈p_len / 8⌉) + max(2, ⌈q_len / 8⌉)`.
+/// * `pre` must hold what `vg_rsa_private_precompute` wrote for `n`, `p` and `q` (returning 1), and not have changed since.
+/// * `out`, `msg_len` and `scratch` must not overlap each other, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv` or `pre` (distinct Rust objects never do).
+/// * None of `out`, `msg_len`, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv`, `scratch` and `pre` may overlap the arguments on the stack, overlap the return address on the stack or the 3732 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_rsa_pkcs1_decrypt_precomputed_front(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, d: *const u8, d_len: usize, input: *const u8, input_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "U1VWV42kJHD///+LhCSkAAAAiQQki4QkqAAAAIlEJASLhCSsAAAAiUQkCIuEJLAAAACJRCQMi4QktAAAAIlEJBCLhCS4AAAAiUQkFIuEJLwAAACJRCQYi4QkwAAAAIlEJByLhCTEAAAAiUQkIIuEJMgAAACJRCQki4QkzAAAAIlEJCiLhCTQAAAAiUQkLIuEJNQAAACJRCQwi4Qk2AAAAIlEJDSLhCTcAAAAiUQkOIuEJOAAAACJRCQ8i4Qk5AAAAIlEJECLhCToAAAAiUQkRIuEJOwAAACJRCRIi4Qk8AAAAIlEJEyLhCT0AAAAiUQkUIuEJPgAAACJRCRUi4Qk/AAAAIlEJFiLhCQAAQAAiUQkXIuEJAQBAACJRCRg"
+call {vg_rsa_pkcs1_decrypt_precomputed_body}
+.base64 "iUQkZIusJPgAAACJ7oHGAAgAALkACAAAuAAAAAA="
+20:
+.base64 "iAaDxgGD6QE="
+jne 20b
+.base64 "i7QkpAAAAInrgcMACAAAi4wktAAAAA=="
+21:
+.base64 "D7YGiAODwwGDxgGD6QGD+QA="
+jne 21b
+.base64 "i4QktAAAAIuUJKwAAACLEinQiUQkeLgBAAAAiUQkfLgLAAAAiYQkgAAAAA=="
+22:
+.base64 "ie6BxgAIAACJ9wN8JHyLRCR4g+ABugAAAAApwrkABAAA"
+23:
+.base64 "D7YGD7YfMcMh0zHYiAaDxgGDxwGD6QE="
+jne 23b
+.base64 "i0QkeNHoiUQkeItEJHwBwIlEJHyLhCSAAAAAg+gBiYQkgAAAAA=="
+jne 22b
+.base64 "ie6BxgAIAACLnCSkAAAAi4wktAAAAA=="
+24:
+.base64 "D7YGiAODwwGDxgGD6QGD+QA="
+jne 24b
+.base64 "i0QkZI2kJJAAAACLPCSLdCQEi2wkCFtbW1tmD+/AuQAAAACNpCRs8f//8w9/BCTzD39EJBDzD39EJCDzD39EJDDzD39EJEDzD39EJFDzD39EJGDzD39EJHDzD3+EJIAAAADzD3+EJJAAAADzD3+EJKAAAADzD3+EJLAAAADzD3+EJMAAAADzD3+EJNAAAADzD3+EJOAAAADzD3+EJPAAAADzD3+EJAABAADzD3+EJBABAADzD3+EJCABAADzD3+EJDABAADzD3+EJEABAADzD3+EJFABAADzD3+EJGABAADzD3+EJHABAADzD3+EJIABAADzD3+EJJABAADzD3+EJKABAADzD3+EJLABAADzD3+EJMABAADzD3+EJNABAADzD3+EJOABAADzD3+EJPABAADzD3+EJAACAADzD3+EJBACAADzD3+EJCACAADzD3+EJDACAADzD3+EJEACAADzD3+EJFACAADzD3+EJGACAADzD3+EJHACAADzD3+EJIACAADzD3+EJJACAADzD3+EJKACAADzD3+EJLACAADzD3+EJMACAADzD3+EJNACAADzD3+EJOACAADzD3+EJPACAADzD3+EJAADAADzD3+EJBADAADzD3+EJCADAADzD3+EJDADAADzD3+EJEADAADzD3+EJFADAADzD3+EJGADAADzD3+EJHADAADzD3+EJIADAADzD3+EJJADAADzD3+EJKADAADzD3+EJLADAADzD3+EJMADAADzD3+EJNADAADzD3+EJOADAADzD3+EJPADAADzD3+EJAAEAADzD3+EJBAEAADzD3+EJCAEAADzD3+EJDAEAADzD3+EJEAEAADzD3+EJFAEAADzD3+EJGAEAADzD3+EJHAEAADzD3+EJIAEAADzD3+EJJAEAADzD3+EJKAEAADzD3+EJLAEAADzD3+EJMAEAADzD3+EJNAEAADzD3+EJOAEAADzD3+EJPAEAADzD3+EJAAFAADzD3+EJBAFAADzD3+EJCAFAADzD3+EJDAFAADzD3+EJEAFAADzD3+EJFAFAADzD3+EJGAFAADzD3+EJHAFAADzD3+EJIAFAADzD3+EJJAFAADzD3+EJKAFAADzD3+EJLAFAADzD3+EJMAFAADzD3+EJNAFAADzD3+EJOAFAADzD3+EJPAFAADzD3+EJAAGAADzD3+EJBAGAADzD3+EJCAGAADzD3+EJDAGAADzD3+EJEAGAADzD3+EJFAGAADzD3+EJGAGAADzD3+EJHAGAADzD3+EJIAGAADzD3+EJJAGAADzD3+EJKAGAADzD3+EJLAGAADzD3+EJMAGAADzD3+EJNAGAADzD3+EJOAGAADzD3+EJPAGAADzD3+EJAAHAADzD3+EJBAHAADzD3+EJCAHAADzD3+EJDAHAADzD3+EJEAHAADzD3+EJFAHAADzD3+EJGAHAADzD3+EJHAHAADzD3+EJIAHAADzD3+EJJAHAADzD3+EJKAHAADzD3+EJLAHAADzD3+EJMAHAADzD3+EJNAHAADzD3+EJOAHAADzD3+EJPAHAADzD3+EJAAIAADzD3+EJBAIAADzD3+EJCAIAADzD3+EJDAIAADzD3+EJEAIAADzD3+EJFAIAADzD3+EJGAIAADzD3+EJHAIAADzD3+EJIAIAADzD3+EJJAIAADzD3+EJKAIAADzD3+EJLAIAADzD3+EJMAIAADzD3+EJNAIAADzD3+EJOAIAADzD3+EJPAIAADzD3+EJAAJAADzD3+EJBAJAADzD3+EJCAJAADzD3+EJDAJAADzD3+EJEAJAADzD3+EJFAJAADzD3+EJGAJAADzD3+EJHAJAADzD3+EJIAJAADzD3+EJJAJAADzD3+EJKAJAADzD3+EJLAJAADzD3+EJMAJAADzD3+EJNAJAADzD3+EJOAJAADzD3+EJPAJAADzD3+EJAAKAADzD3+EJBAKAADzD3+EJCAKAADzD3+EJDAKAADzD3+EJEAKAADzD3+EJFAKAADzD3+EJGAKAADzD3+EJHAKAADzD3+EJIAKAADzD3+EJJAKAADzD3+EJKAKAADzD3+EJLAKAADzD3+EJMAKAADzD3+EJNAKAADzD3+EJOAKAADzD3+EJPAKAADzD3+EJAALAADzD3+EJBALAADzD3+EJCALAADzD3+EJDALAADzD3+EJEALAADzD3+EJFALAADzD3+EJGALAADzD3+EJHALAADzD3+EJIALAADzD3+EJJALAADzD3+EJKALAADzD3+EJLALAADzD3+EJMALAADzD3+EJNALAADzD3+EJOALAADzD3+EJPALAADzD3+EJAAMAADzD3+EJBAMAADzD3+EJCAMAADzD3+EJDAMAADzD3+EJEAMAADzD3+EJFAMAADzD3+EJGAMAADzD3+EJHAMAADzD3+EJIAMAADzD3+EJJAMAADzD3+EJKAMAADzD3+EJLAMAADzD3+EJMAMAADzD3+EJNAMAADzD3+EJOAMAADzD3+EJPAMAADzD3+EJAANAADzD3+EJBANAADzD3+EJCANAADzD3+EJDANAADzD3+EJEANAADzD3+EJFANAADzD3+EJGANAADzD3+EJHANAADzD3+EJIANAADzD3+EJJANAADzD3+EJKANAADzD3+EJLANAADzD3+EJMANAADzD3+EJNANAADzD3+EJOANAADzD3+EJPANAADzD3+EJAAOAADzD3+EJBAOAADzD3+EJCAOAADzD3+EJDAOAADzD3+EJEAOAADzD3+EJFAOAADzD3+EJGAOAADzD3+EJHAOAADzD3+EJIAOAACJjCSQDgAAjaQklA4AALoAAAAAMclmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/8M="
+.p2align 6"#,
+        vg_rsa_pkcs1_decrypt_precomputed_body = sym super::rsa::vg_rsa_pkcs1_decrypt_precomputed_body::vg_rsa_pkcs1_decrypt_precomputed_body,
     )
 }
