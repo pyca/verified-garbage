@@ -534,7 +534,8 @@ with any doubling `dbl` that doubles a Jacobian triple in place. -/
 theorem mulQJO_ok (hc : CfgOk c) (h46 : c.n = 4 ∨ c.n = 6) (hC : Law c.C) (hO : PrimeOrder c.C)
     (hKn : KilledByN c.C) {dbl : Pt → Prog isa} (hD : DblOk c.MP' c.rcbSlots c.C dbl)
     (hn2 : c.C.n % 2 = 1) (hn64 : c.C.n % 64 < 33) (hnb : 128 ≤ c.C.n)
-    (hJ5 : 64 * c.n ≤ 5 * (Impl.Ecdh.X86_64.Cfg.jwinJ c - 1) + 1) :
+    (hJ5 : 64 * c.n ≤ 5 * (Impl.Ecdh.X86_64.Cfg.jwinJ c - 1) + 1)
+    (hbo : (jwQO c).buildOC.inline = (jwQO c).buildO.inline := by rfl) :
     MulOk c (Impl.Ecdh.X86_64.Cfg.mulQJO c dbl) (mulQJW c) := by
   have hp3 := hc.p_ge
   obtain h : MulOk c (.seq (.block (Impl.Ecdh.X86_64.Cfg.maskK c)) (.seq (Impl.Ecdh.X86_64.Cfg.jwinPrepO c)
@@ -544,7 +545,7 @@ theorem mulQJO_ok (hc : CfgOk c) (h46 : c.n = 4 ∨ c.n = 6) (hC : Law c.C) (hO 
     (fun hP _ hkJ _ _ hs hM hF =>
       WP.mono (winJacOW_ok (jwLayQO hc h46) (unitMod_pow_two hc.p_odd (64 * c.n)) hC hc.am3 hO hD hc.p_lt
         (show c.mont 1 < c.C.p from Nat.mod_lt _ (by omega_arith))
-        (show toM c.C.p (2 ^ (64 * c.n)) (c.mont 1) = 1 by rw [toM_cmont hc]; rfl) hn2 hn64 hnb hP hkJ hs hM hF)
+        (show toM c.C.p (2 ^ (64 * c.n)) (c.mont 1) = 1 by rw [toM_cmont hc]; rfl) hn2 hn64 hnb hP hkJ hs hM hF hbo)
         fun _ ⟨a, b, r⟩ => ⟨a, b.mono fun _ hw => List.mem_append_left _ hw, r⟩)
   rw [List.append_nil] at h
   exact @h

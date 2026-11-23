@@ -1219,7 +1219,8 @@ theorem winJacO_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n)))
     (hpn : C.p < 2 ^ (64 * K.M.n)) (hone_lt : K.one < C.p) (hone : toM C.p (2 ^ (64 * K.M.n)) K.one = 1)
     (hn2 : C.n % 2 = 1) (hn64 : C.n % 64 < 33) (hnb : 128 ≤ C.n) {P : Point C} (hP : onCurve C P = true)
     {k : Nat} (hkJ : k ≤ 2 * 32 ^ (K.J - 1)) {base : Addr} {s : State}
-    (hs : Scr s base size) (hM : ModOkW K.M size C.p s.mem base) (hF : JacWinFixedO K C base s P k) :
+    (hs : Scr s base size) (hM : ModOkW K.M size C.p s.mem base) (hF : JacWinFixedO K C base s P k)
+    (hbo : K.buildOC.inline = K.buildO.inline) :
     WP isa (K.windowO dbl).inline s fun s' => KeepRegs (powClob K.M.n) s s' ∧
       Unch base (jwW K) s.mem s'.mem ∧ ModOkW K.M size C.p s'.mem base ∧
       (∀ x ∈ [K.R.x, K.R.y, K.R.z], wordsVal s'.mem base x K.M.n < C.p) ∧
@@ -1230,6 +1231,7 @@ theorem winJacO_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n)))
   obtain hP0 := hF.ne_infinity hC
   rw [JacWinCfg.windowO]
   simp only [Code.inline]
+  rw [hbo]
   refine WP.seq (WP.mono (jbuildO_ok hL hp hC hM3 hO hP hP0 (by omega_arith) hs hM hF.toJacWinPt)
     fun s₁ ⟨F₁, T₁⟩ => ?_)
   refine WP.seq (WP.mono (jfirstO_ok hL hP hF (by omega_arith) hkJ F₁ T₁) fun s₂ I₂ => ?_)

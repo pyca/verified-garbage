@@ -198,6 +198,10 @@ structure Cfg where
   complete addition its comb and windows call, and its callers run it inline
   (`mulRun`) rather than calling it, so that it calls only that function. -/
   mulAdd : Bool := false
+  /-- Whether ECDH's odd window method builds its table of odd multiples by a
+  call of `vg_<curve>_ecdh_table` (with `fnSuffix`, `Ecdh.X86_64.Cfg.tableFn`),
+  which the curve's ECDH functions with the same layout share. -/
+  ecdhTable : Bool := false
   /-- Whether `x = X Z⁻¹` out of Montgomery form, the first two products of
   the public key's, ECDH's and the signature's tails, is a call of one
   function, `vg_<curve>_affine_x` (`affineX`, named after `inverse`'s curve),

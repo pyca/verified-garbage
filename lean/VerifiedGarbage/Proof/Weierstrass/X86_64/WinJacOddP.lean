@@ -1221,7 +1221,8 @@ theorem winJacOP_ok (hL : JacWinLay K size) (hn4 : K.M.n = 4) (hp : UnitMod C.p 
       scalCode ((opCall? K.M op).getD (.block (ForwardField.code K.M op))) = true)
     {P : Point C} (hP : onCurve C P = true)
     {k : Nat} (hkJ : k ≤ 2 * 32 ^ (K.J - 1)) {base : Addr} {s : State}
-    (hs : Scr s base size) (hM : ModOkW K.M size C.p s.mem base) (hF : JacWinFixedO K C base s P k) :
+    (hs : Scr s base size) (hM : ModOkW K.M size C.p s.mem base) (hF : JacWinFixedO K C base s P k)
+    (hbo : K.buildOC.inline = K.buildO.inline) :
     WP isa (K.windowOP dbl).inline s fun s' => KeepRegs (powClob K.M.n) s s' ∧
       Unch base (jwW K) s.mem s'.mem ∧ ModOkW K.M size C.p s'.mem base ∧
       (∀ x ∈ [K.R.x, K.R.y, K.R.z], wordsVal s'.mem base x K.M.n < C.p) ∧
@@ -1230,6 +1231,7 @@ theorem winJacOP_ok (hL : JacWinLay K size) (hn4 : K.M.n = 4) (hp : UnitMod C.p 
   obtain hP0 := hF.ne_infinity hC
   rw [JacWinCfg.windowOP]
   simp only [Code.inline]
+  rw [hbo]
   refine WP.seq (WP.mono (jbuildO_ok hL hp hC hM3 hO hP hP0 (by omega_arith) hs hM hF.toJacWinPt)
     fun s₁ ⟨F₁, T₁⟩ => ?_)
   refine WP.seq (WP.mono (jfirstOP_ok hL hP hF (by omega_arith) hkJ F₁ T₁) fun s₂ I₂ => ?_)
@@ -1248,7 +1250,8 @@ theorem winJacOW_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n))
     (hpn : C.p < 2 ^ (64 * K.M.n)) (hone_lt : K.one < C.p) (hone : toM C.p (2 ^ (64 * K.M.n)) K.one = 1)
     (hn2 : C.n % 2 = 1) (hn64 : C.n % 64 < 33) (hnb : 128 ≤ C.n) {P : Point C} (hP : onCurve C P = true)
     {k : Nat} (hkJ : k ≤ 2 * 32 ^ (K.J - 1)) {base : Addr} {s : State}
-    (hs : Scr s base size) (hM : ModOkW K.M size C.p s.mem base) (hF : JacWinFixedO K C base s P k) :
+    (hs : Scr s base size) (hM : ModOkW K.M size C.p s.mem base) (hF : JacWinFixedO K C base s P k)
+    (hbo : K.buildOC.inline = K.buildO.inline) :
     WP isa (K.windowOW dbl).inline s fun s' => KeepRegs (powClob K.M.n) s s' ∧
       Unch base (jwW K) s.mem s'.mem ∧ ModOkW K.M size C.p s'.mem base ∧
       (∀ x ∈ [K.R.x, K.R.y, K.R.z], wordsVal s'.mem base x K.M.n < C.p) ∧
@@ -1260,7 +1263,7 @@ theorem winJacOW_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n))
     simp only [JacWinCfg.weaveOk, Bool.and_eq_true, decide_eq_true_eq, List.all_eq_true] at hw
     obtain ⟨⟨hn4, hJ3⟩, hsc⟩ := hw
     exact winJacOP_ok hL hn4 hp hC hM3 hO hD hpn hone_lt hone hn2 hn64 hnb hJ3
-      (fun op hop => ⟨List.all_eq_true.mpr (hsc op hop).1, (hsc op hop).2⟩) hP hkJ hs hM hF
-  · exact winJacO_ok hL hp hC hM3 hO hD hpn hone_lt hone hn2 hn64 hnb hP hkJ hs hM hF
+      (fun op hop => ⟨List.all_eq_true.mpr (hsc op hop).1, (hsc op hop).2⟩) hP hkJ hs hM hF hbo
+  · exact winJacO_ok hL hp hC hM3 hO hD hpn hone_lt hone hn2 hn64 hnb hP hkJ hs hM hF hbo
 
 end VG.Proof.Weierstrass.X86_64

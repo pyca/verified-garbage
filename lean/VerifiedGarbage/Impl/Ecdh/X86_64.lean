@@ -216,9 +216,15 @@ def jwinPrep : Prog isa :=
   .seq (.block (WinCfg.addConst c.n (c.sl K) c.winK (JacWinCfg.offset (jwinJ c))))
     (bits c.winK c.winBits (8 * (c.n + 1)))
 
+/-- The function that builds the odd window method's table (`ecdhTable`):
+`vg_<curve>_ecdh_table`, with `fnSuffix`, for a curve with `checkPoint`. -/
+def tableFn : Option String :=
+  if c.ecdhTable then c.checkPoint.map fun C => s!"vg_{C.curve}_ecdh_table" ++ c.fnSuffix else none
+
 /-- The odd window method's configuration: `jwinCfg`, its windows read from
-bit 1 of its table of bits (`JacWinCfg.windowO`). -/
-def jwinCfgO : JacWinCfg := { jwinCfg c with bits := c.winBits + 1 }
+bit 1 of its table of bits (`JacWinCfg.windowO`), and its table built by a
+call of `tableFn` if the curve names one. -/
+def jwinCfgO : JacWinCfg := { jwinCfg c with bits := c.winBits + 1, buildFn := tableFn c }
 
 /-- `k = d` if `d` is odd, else `n - d` (`oddScalar`, in `d`'s slot, through
 the window's), then `k + 32^J - 1` and its bits, from the slot of `d`. -/
