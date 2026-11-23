@@ -647,7 +647,7 @@ open VG.Impl.Ffdh.X86.ParamSearch
 open VG.Proof.Ffdh.X86.KeySearch (Ctl Aligned upd bytes_frame)
 open VG.Proof.Dsa.X86 (argumentPointer)
 
-theorem callee_stack : stackUse Impl.Ffdh.X86.Candidate.code = 172 := by rsa_stack_use
+theorem callee_stack : stackUse Impl.Ffdh.X86.Candidate.code = 252 := by rsa_stack_use
 
 /-- No instruction of the callee writes `esp`: walked once, for `callee_noSp` and `body_noSp`. -/
 private theorem callee_all :
@@ -730,12 +730,12 @@ theorem ret_eq {o t : State} (A : PSearchABI o) (he : t.gpr .esp = o.gpr .esp - 
 
 /-- The stack below the call. -/
 theorem below_eq {o t : State} (A : PSearchABI o) (he : t.gpr .esp = o.gpr .esp - BitVec.ofNat 32 argsBytes) :
-    below (t.gpr .esp) (stackUse Impl.Ffdh.X86.Candidate.code + 4) = ⟨low o + BitVec.ofNat 64 80, 176⟩ := by
+    below (t.gpr .esp) (stackUse Impl.Ffdh.X86.Candidate.code + 4) = ⟨low o + BitVec.ofNat 64 0, 256⟩ := by
   have h1 : 292 ≤ (o.gpr .esp).toNat := A.stackLow
   obtain hl := low_toNat A
   have := (o.gpr .esp).isLt
-  obtain e : (o.gpr .esp - BitVec.ofNat 32 argsBytes - BitVec.ofNat 32 (172 + 4)).setWidth 64 =
-      low o + BitVec.ofNat 64 80 := by
+  obtain e : (o.gpr .esp - BitVec.ofNat 32 argsBytes - BitVec.ofNat 32 (252 + 4)).setWidth 64 =
+      low o + BitVec.ofNat 64 0 := by
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_setWidth, BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_ofNat, hl, argsBytes]
     omega_arith
@@ -806,7 +806,7 @@ theorem call_ok {o t : State} {e : BitVec 32} {used n : Nat}
   have hS := A.sBound
   obtain hA : Aligned liveDs := by decide
   obtain Fs : Region.Sub (frR o) (lowR o) := low_sub (by decide)
-  obtain Bs : Region.Sub ⟨low o + BitVec.ofNat 64 80, 176⟩ (lowR o) := low_sub (by decide)
+  obtain Bs : Region.Sub ⟨low o + BitVec.ofNat 64 0, 256⟩ (lowR o) := low_sub (by decide)
   obtain fr : Frame (frameR o) t.mem u.mem := hf.sub fun r hr => by
     rw [below_eq A h.esp] at hr
     simp only [callWr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr

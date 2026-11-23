@@ -356,9 +356,9 @@ theorem combStage_ok (h : In Ex base bytes len args s) {P G x bits : Nat}
     · exact .inr ⟨by simp only [rowsOff]; omega_using [], by simp only [rowsOff]; omega_using [nb, en]⟩
     · exact .inr ⟨by simp only [iOff]; omega_using [], by simp only [iOff]; omega_using [nb, en]⟩
     · exact hs p (by simpa only [stR, List.mem_cons, List.not_mem_nil, or_false] using hp)
-  refine ⟨⟨C.inp, fR_widen F inF, K⟩, ⟨fun j a b _ => combR_sv h F h.room a b, fun d a b c hd => ?_⟩, Y⟩
+  refine ⟨⟨C.inp, fF_widen F inF, K⟩, ⟨fun j a b _ => combR_sv h F E.room a b, fun d a b c hd => ?_⟩, Y⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hd
-  exact combR_w32 h F h.room a b c hd.1 hd.2
+  exact combR_w32 h F E.room a b c hd.1 hd.2
 
 end
 
@@ -523,7 +523,7 @@ theorem body_ok (h : In Ex base bytes len args s) {dlen : Nat} (G : DomGeo args 
       · exact cx
       · exact ctx_frameF CR cstk cwide (fR_fit h) r hr
     obtain E : CombEnv Ex base bytes len args (comp s.mem args len 0) (comp s.mem args len 1) x bits u :=
-      ⟨CR.keep Ku, by rw [spu]; exact cstk, CVu.ents, v13, sm⟩
+      ⟨CR.keep Ku, by rw [spu]; exact cstk, by rw [spu]; exact cwide, by rw [spu]; exact RF, CVu.ents, v13, sm⟩
     refine WP.mono (tailWith_ok Ox' Oy' h9a xy v13 F.v14 v15 xlt ylt
       (combStage_ok F.inp E (by rw [v9, sP]) xb hR CVu.w16)) fun t ⟨E', Bx, By, Ft, Kt⟩ =>
       ⟨_, E', FF Ft, Ku.trans Kt, ?_⟩
@@ -1233,7 +1233,8 @@ theorem frontC_ok (hD : Spec.Ffdh.domainValid len D = true) (hm : KeyGen.modOk l
   simp only [Bool.and_eq_true, decide_eq_true_eq, beq_iff_eq] at mv
   have p1 : 1 < (Spec.Ffdh.domainOf len D).p := by have := Nat.two_pow_pos 511; have := mv.1.1.2; omega_arith
   refine ⟨⟨⟨⟨F.inp, A.run.2.1.keep F.keeps, spu⟩, G.keep ⟨rfl, rfl⟩ F.keeps⟩, _, _,
-    Nat.mod_lt _ (Nat.two_pow_pos _), F.inp, ⟨A.rd.keep F.keeps, by rw [spu]; exact A.stk, Vu.ents, F.v13, sm⟩,
+    Nat.mod_lt _ (Nat.two_pow_pos _), F.inp, ⟨A.rd.keep F.keeps, by rw [spu]; exact A.stk, by rw [spu]; exact A.wide,
+      by rw [spu]; exact A.geo.ox.room, Vu.ents, F.v13, sm⟩,
     by rw [F.v9, pa]; exact safeM_of p1 mv.1.1.1, Vu.w16, A.run.2.1.keep F.keeps, spu⟩, F.gate.congr ?_⟩
   have hp : CheckPrivate.params x.mem args len dlen = Spec.Ffdh.domainOf len D := congrArg (Spec.Ffdh.domainOf len) A.dom
   rw [← A.st, KeyGen.keyStatus_two, hp]
