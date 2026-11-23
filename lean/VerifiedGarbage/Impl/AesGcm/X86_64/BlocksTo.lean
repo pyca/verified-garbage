@@ -35,9 +35,13 @@ holds `src`). -/
 def argSrc : Nat := 32
 def argDst : Nat := 48
 
+/-- Load only the two pointers needed by a fused piece. -/
+def pointers : List Instr :=
+  [.mov .r11 (.mem (at_ .rsp 24)), .mov .r10 (.mem (at_ .rsp 8))]
+
 /-- The arguments kept, with `scratch` in `r11` and `dst` in `r10`. -/
 def entry : List Instr :=
-  [.mov .r11 (.mem (at_ .rsp 24)), .mov .r10 (.mem (at_ .rsp 8)), .store (at_ .r11 argCtx) .rdi,
+  pointers ++ [.store (at_ .r11 argCtx) .rdi,
     .store (at_ .r11 argRounds) .rsi, .store (at_ .r11 argCtr) .rdx, .store (at_ .r11 argY) .rcx,
     .store (at_ .r11 argSrc) .r8, .store (at_ .r11 argN) .r9, .store (at_ .r11 argDst) .r10]
 

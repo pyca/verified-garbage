@@ -68,7 +68,7 @@ abbrev kR (M : CtxMode) (s : State) : Region := ⟨K s, M.len⟩
 
 /-- `blocksToPreM M`, by name (with the output's length `dst_n` replaced by
 `n`, which it equals). -/
-structure BT (M : CtxMode) (s : State) : Prop where
+structure BT (M : CtxMode) (s : State) (aliasOK : Bool := false) : Prop where
   rd : s.rd = [kR M s, srcR s, aR s]
   wr : s.wr = wR s
   dn : stackArg s 1 = s.gpr .r9
@@ -85,7 +85,7 @@ structure BT (M : CtxMode) (s : State) : Prop where
   y_d : (yR s).Disjoint (dR s)
   y_s : (yR s).Disjoint (sR s)
   y_a : (yR s).Disjoint (aR s)
-  r_d : (srcR s).Disjoint (dR s)
+  r_d : if aliasOK then Src s = Dst s ∨ (srcR s).Disjoint (dR s) else (srcR s).Disjoint (dR s)
   r_s : (srcR s).Disjoint (sR s)
   d_s : (dR s).Disjoint (sR s)
   d_a : (dR s).Disjoint (aR s)
@@ -110,6 +110,15 @@ structure BT (M : CtxMode) (s : State) : Prop where
   w_sp : (SP s).toNat + 32 ≤ 2 ^ 64
   rounds : (s.gpr .rsi).toNat = 10 ∨ (s.gpr .rsi).toNat = 12 ∨ (s.gpr .rsi).toNat = 14
   ok : M.ok s.mem (K s)
+
+theorem BT.layout {M : CtxMode} {s : State} {aliasOK : Bool} (hp : BT M s aliasOK) :
+    Src s = Dst s ∨ (srcR s).Disjoint (dR s) := by
+  cases aliasOK
+  · exact Or.inr hp.r_d
+  · exact hp.r_d
+
+theorem BT.buffers {M : CtxMode} {s : State} (hp : BT M s) : BT M s true :=
+  { hp with r_d := hp.layout }
 
 theorem BT.ofM {M : CtxMode} {s : State} (h : Proof.AesGcm.blocksToPreM M s) : BT M s := by
   simp only [Proof.AesGcm.blocksToPreM, Proof.AesGcm.args, Proof.AesGcm.arg, Proof.AesGcm.ret,
@@ -142,7 +151,7 @@ structure Kept (s : State) (q : Nat) (m : Mem) : Prop where
 abbrev kR' (s : State) : Region := ⟨S s, 56⟩
 
 section
-variable {M : CtxMode} {s : State} (hp : BT M s)
+variable {M : CtxMode} {s : State} {aliasOK : Bool} (hp : BT M s aliasOK)
 include hp
 
 theorem s_in {d k : Nat} (h : d + k ≤ 2112) : InRegions s.wr (S s + BitVec.ofNat 64 d) k :=
@@ -183,6 +192,18 @@ theorem keep_r {m m' : Mem} (hf : Frame (wR s) m m') : m'.readW (SP s) 64 = m.re
     · exact hp.t_y
     · exact hp.t_d
     · exact hp.t_s) (by decide)
+
+theorem pointers_ok : WP isa (.block pointers) s fun t =>
+    t.gpr .r11 = S s ∧ t.gpr .r10 = Dst s ∧
+    (∀ r, r ≠ .r11 → r ≠ .r10 → t.gpr r = s.gpr r) ∧
+    t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr := by
+  have src := a_in hp (i := 2) (by decide)
+  have dst := a_in hp (i := 0) (by decide)
+  apply WP.of_runBlock
+  refine ⟨(s.setReg .r11 (S s)).setReg .r10 (Dst s), by xrun [pointers, src, dst], ?_, ?_, ?_, rfl, rfl, rfl⟩
+  · simp [S, stackArg, stackArgAddr, gpr_setReg]
+  · simp [Dst, stackArg, stackArgAddr, gpr_setReg]
+  · intro r a b; simp [gpr_setReg, a, b]
 
 /-- The entry: the arguments kept, with `scratch` in `r11` and `dst` in `r10`. -/
 theorem entry_ok : WP isa (.block entry) s fun s₁ => s₁.gpr .r11 = S s ∧
@@ -227,7 +248,7 @@ theorem entry_ok : WP isa (.block entry) s fun s₁ => s₁.gpr .r11 = S s ∧
   have hn : BitVec.ofNat 64 (n s - 0) = s.gpr .r9 := by simp
   apply WP.of_runBlock
   refine ⟨_, by
-    simp only [entry, argCtx, argRounds, argCtr, argY, argSrc, argN, argDst]
+    simp only [entry, pointers, argCtx, argRounds, argCtr, argY, argSrc, argN, argDst]
     xrun [a₀, a₂, e₀, e₂, w₁, w₂, w₃, w₄, w₅, w₆, w₇],
     ?_, ?_, ?_, ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_, ?_, ?_⟩
   · simp [gpr_setReg]
@@ -303,12 +324,14 @@ structure Mid (s : State) (q k : Nat) (st : State) : Prop where
   wr : st.wr = s.wr
   kept : Kept s k st.mem
   frame : Frame (wR s) s.mem st.mem
+  /-- Before the first ciphertext store the short CTR path can still read all its input. -/
+  src0 : q = 0 → blocksAt st.mem (Src s) (n s) = blocksAt s.mem (Src s) (n s)
   data : blocksAt st.mem (Dst s) q = ct s q
   ctr : blockAt st.mem (C s) = Nat.repeat inc32 q (cb s)
   y : blockAt st.mem (Y s) = ghashFrom (hk s) (y₀ s) (ct s q)
 
 section
-variable {M : CtxMode} {s : State} (hp : BT M s)
+variable {M : CtxMode} {s : State} {aliasOK : Bool} (hp : BT M s aliasOK)
 include hp
 
 /-- The slots of the arguments are apart from the other regions written. -/
@@ -320,8 +343,9 @@ theorem kR'_disj : ∀ r ∈ [cR s, yR s, dR s], (kR' s).Disjoint r := by
   · exact (hp.y_s.sub_right (kR'_sub (s := s))).symm
   · exact (hp.d_s.sub_right (kR'_sub (s := s))).symm
 
-/-- The plaintext is apart from everything written. -/
-theorem src_wR : ∀ r ∈ wR s, (srcR s).Disjoint r := by
+omit hp in
+/-- The plaintext is apart from everything written for disjoint buffers. -/
+theorem src_wR (hp : BT M s) : ∀ r ∈ wR s, (srcR s).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
@@ -373,11 +397,17 @@ omit hp in
 theorem frame_kR' {m m' : Mem} (hf : Frame [kR' s] m m') : Frame (wR s) m m' :=
   hf.sub fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact ⟨sR s, by simp, kR'_sub⟩
 
+theorem source_kept {m m' : Mem} (hf : Frame [kR' s] m m') :
+    blocksAt m' (Src s) (n s) = blocksAt m (Src s) (n s) :=
+  blocksAt_frame hf (fun r hr => by
+    simp only [List.mem_singleton] at hr; subst hr
+    rw [Nat.mul_comm]; exact hp.r_s.sub_right kR'_sub) (by have := hp.w_r; omega_arith)
+
 theorem mid_entry {s₁ : State} (hsp : s₁.gpr .rsp = s.gpr .rsp)
     (hcs : ∀ r ∈ calleeSaved, s₁.gpr r = s.gpr r)
     (hk : Kept s 0 s₁.mem) (hf : Frame [kR' s] s.mem s₁.mem) (hrd : s₁.rd = s.rd) (hwr : s₁.wr = s.wr) :
     Mid s 0 0 s₁ :=
-  ⟨Nat.zero_le _, hsp, hcs, hrd, hwr, hk, frame_kR' hf, rfl,
+  ⟨Nat.zero_le _, hsp, hcs, hrd, hwr, hk, frame_kR' hf, fun _ => source_kept hp hf, rfl,
     block_kR' hf (kR'_disj hp _ (by simp)).symm, block_kR' hf (kR'_disj hp _ (by simp)).symm⟩
 
 /-- `Mid` through a frame of `scratch`'s slots that keeps the stack pointer
@@ -386,7 +416,7 @@ theorem Mid.slots {q k k' : Nat} {st st' : State} (h : Mid s q k st)
     (hsp : st'.gpr .rsp = st.gpr .rsp) (hcs : ∀ r ∈ calleeSaved, st'.gpr r = st.gpr r) (hk : Kept s k' st'.mem)
     (hf : Frame [kR' s] st.mem st'.mem) (hrd : st'.rd = st.rd) (hwr : st'.wr = st.wr) : Mid s q k' st' := by
   refine ⟨h.q_le, by rw [hsp, h.rsp], fun r hr => by rw [hcs r hr, h.saved r hr], hrd.trans h.rd,
-    hwr.trans h.wr, hk, h.frame.trans (frame_kR' hf), ?_, ?_, ?_⟩
+    hwr.trans h.wr, hk, h.frame.trans (frame_kR' hf), fun e => (source_kept hp hf).trans (h.src0 e), ?_, ?_, ?_⟩
   · rw [← h.data]
     exact blocksAt_frame hf (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr

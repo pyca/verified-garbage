@@ -781,8 +781,9 @@ theorem ghArgsTo_ok {st : State} (h : MidD s 0 0 st) :
   · simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp [gpr_setReg, gpr_arithFlags]
 
+omit hp in
 /-- GHASH reads the encrypted blocks from the destination. -/
-theorem ghArgsOut_ok {st : State} (hsp : st.gpr .rsp = SP s) (hrd : st.rd = s.rd) (hwr : st.wr = s.wr)
+theorem ghArgsOut_ok {aliasOK : Bool} (hp : BT M s aliasOK) {st : State} (hsp : st.gpr .rsp = SP s) (hrd : st.rd = s.rd) (hwr : st.wr = s.wr)
     (hk : Kept s 0 st.mem) (ha : st.mem.readW (SP s + BitVec.ofNat 64 24) 64 = S s) :
     WP isa (.block (Impl.AesGcm.X86_64.BlocksToDec.ghArgsAt argDst)) st fun st' =>
       GhCall st' (K s + BitVec.ofNat 64 240) (Y s) (Dst s) (W5 s) (n s) ∧ st'.gpr .rsp = SP s ∧
@@ -833,9 +834,10 @@ theorem ghArgsOut_ok {st : State} (hsp : st.gpr .rsp = SP s) (hrd : st.rd = s.rd
   · simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp [gpr_setReg, gpr_arithFlags]
 
+omit hp in
 /-- The arguments of `vg_aes_ctr32_to` on the `n` blocks, from `src` to
 `dst`, with the arguments kept in memory `m`. -/
-theorem ctrArgsTo_ok {st : State} (hsp : st.gpr .rsp = SP s) (hrd : st.rd = s.rd) (hwr : st.wr = s.wr)
+theorem ctrArgsTo_ok {aliasOK : Bool} (hp : BT M s aliasOK) {st : State} (hsp : st.gpr .rsp = SP s) (hrd : st.rd = s.rd) (hwr : st.wr = s.wr)
     (hk : Kept s 0 st.mem) (ha : st.mem.readW (SP s + BitVec.ofNat 64 24) 64 = S s) :
     WP isa (.block ctrArgsTo) st fun st' =>
       CtrToCall st' (K s) (C s) (Src s) (Dst s) (W5 s) (R s) (n s) ∧ st'.gpr .rsp = SP s ∧
@@ -868,7 +870,7 @@ theorem ctrArgsTo_ok {st : State} (hsp : st.gpr .rsp = SP s) (hrd : st.rd = s.rd
     by omega_arith, by omega_arith,
     hp.k_c.sub_left pK, by rw [dst_eq]; exact hp.k_d.sub_left pK, (hp.k_s.sub_left pK).sub_right s48,
     by rw [src_eq]; exact hp.c_r, by rw [dst_eq]; exact hp.c_d, hp.c_s.sub_right s48,
-    Or.inr (by rw [src_eq, dst_eq]; exact hp.r_d), by rw [src_eq]; exact hp.r_s.sub_right s48,
+    by simpa only [src_eq, dst_eq] using hp.layout, by rw [src_eq]; exact hp.r_s.sub_right s48,
     by rw [dst_eq]; exact hp.d_s.sub_right s48, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩,
     by simp [gpr_setReg, gpr_arithFlags, hsp], fun r hr => ?_, rfl, rfl, rfl⟩
   all_goals try simp only [gpr_setReg, gpr_arithFlags, reduceCtorEq, ↓reduceIte, hsp]
@@ -1049,8 +1051,9 @@ structure Encrypted (s b : State) : Prop where
   out : blocksAt b.mem (Dst s) (n s) = ct s (n s)
   ctr : blockAt b.mem (C s) = Nat.repeat inc32 (n s) (cb s)
 
+omit hp in
 /-- Encrypt directly from the source and preserve the arguments for GHASH. -/
-theorem encryptCtr_ok (v : Proof.Aes.X86_64.Ctr32ToImpl) {st : State} (h : Mid s 0 0 st) :
+theorem encryptCtr_ok {aliasOK : Bool} (hp : BT M s aliasOK) (v : Proof.Aes.X86_64.Ctr32ToImpl) {st : State} (h : Mid s 0 0 st) :
     WP isa (.seq (.block ctrArgsTo) (.call v.callee.name v.callee.code)) st (Encrypted s) := by
   have hn := n16_lt hp
   have hw := hp.w_d
@@ -1101,7 +1104,7 @@ theorem encryptCtr_ok (v : Proof.Aes.X86_64.Ctr32ToImpl) {st : State} (h : Mid s
   have bsp : b.gpr .rsp = SP s := (B.saved _ (by decide)).trans sp
   have out := B.out
   have ctr := B.ctr
-  rw [m, keep_sch hp h.frame, h.ctr, blocksAt_frame h.frame (by rw [src_eq]; exact src_wR hp) (by omega_arith)] at out
+  rw [m, keep_sch hp h.frame, h.ctr, h.src0 rfl] at out
   rw [m, h.ctr] at ctr
   have H := h_sub (s := s) (M := M)
   have he : blockAt b.mem (K s + BitVec.ofNat 64 240) = hk s := by
@@ -1125,7 +1128,8 @@ theorem encryptCtr_ok (v : Proof.Aes.X86_64.Ctr32ToImpl) {st : State} (h : Mid s
   exact ⟨bsp, fun r hr => (B.saved r hr).trans ((cs r hr).trans (h.saved r hr)),
     B.rd.trans (rd.trans h.rd), B.wr.trans (wr.trans h.wr), kept, arg, frame, he, ye, out, ctr⟩
 
-theorem encryptHash_ok (g : GhashImpl) {b : State} (h : Encrypted s b) :
+omit hp in
+theorem encryptHash_ok {aliasOK : Bool} (hp : BT M s aliasOK) (g : GhashImpl) {b : State} (h : Encrypted s b) :
     WP isa (.seq (.block (Impl.AesGcm.X86_64.BlocksToDec.ghArgsAt argDst)) (.call g.fn.name g.fn.code)) b (Done s) := by
   have hn := n16_lt hp
   have rs := ret_sub (s := s)
@@ -1475,7 +1479,8 @@ theorem tailTo_rel (g : GhashImpl) (v : Proof.Aes.X86_64.Ctr32ToImpl) :
   obtain ⟨⟨-, ⟨M₁, -⟩, ⟨M₂, -⟩⟩, -⟩ := hP
   exact (RelCT.seq gh (d.mono (fun _ _ h => h.2) fun _ _ h => h)) _ _ _ _ _ _ ⟨M₁, M₂⟩ e₁ e₂
 
-theorem encryptCalls_rel (g : GhashImpl) (v : Proof.Aes.X86_64.Ctr32ToImpl) :
+omit hp hp' pb in
+theorem encryptCalls_rel {a b : Bool} (hp : BT M s₀ a) (hp' : BT M s₀' b) (pb : Pub s₀ s₀') (g : GhashImpl) (v : Proof.Aes.X86_64.Ctr32ToImpl) :
     RelCT isa (fun a b => Mid s₀ 0 0 a ∧ Mid s₀' 0 0 b)
       (.seq (.seq (.block ctrArgsTo) (.call v.callee.name v.callee.code))
         (.seq (.block (Impl.AesGcm.X86_64.BlocksToDec.ghArgsAt argDst)) (.call g.fn.name g.fn.code)))

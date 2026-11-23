@@ -147,10 +147,11 @@ theorem split_ok {s₁ : State} (h9 : s₁.gpr .r9 = s.gpr .r9) (h11 : s₁.gpr 
   exact WP.mono (Blocks.split_ok (aligned := aligned) (s := s) h9) fun st ⟨a, b, c, d, e, f⟩ =>
     ⟨a, by rw [b, h11]; exact AlignedScratch.ptr_eq aligned (S s) hp.w_s, c, d, e, f⟩
 
+omit hp in
 /-- What the out-of-place loops need, from the arguments in their
 registers, `r9 = 16 ⌊n / 16⌋`, the output in `r10` and the working space in
 `r11`. -/
-theorem spreTo_of {q lo : Nat} {s₃ : State} (hq16 : lo ≤ q) (hqle : q ≤ n s) (h9 : s₃.gpr .r9 = BitVec.ofNat 64 q)
+theorem spreTo_of {aliasOK : Bool} (hp : BT M s aliasOK) {q lo : Nat} {s₃ : State} (hq16 : lo ≤ q) (hqle : q ≤ n s) (h9 : s₃.gpr .r9 = BitVec.ofNat 64 q)
     (hg : ∀ r ∈ argRegs, s₃.gpr r = s.gpr r) (h10 : s₃.gpr .r10 = Dst s)
     (h11 : s₃.gpr .r11 = S s + BitVec.ofNat 64 (AlignedScratch.offset aligned (S s))) (hrd : s₃.rd = s.rd)
     (hwr : s₃.wr = s.wr) (hf₃ : Frame [kR' s] s.mem s₃.mem) : SPreTo M s₃ lo := by
@@ -182,19 +183,24 @@ theorem spreTo_of {q lo : Nat} {s₃ : State} (hq16 : lo ≤ q) (hqle : q ≤ n 
     ⟨srcR s, by rw [rd]; simp, contains_prefix _ hqn⟩, ⟨dR s, by rw [wr]; simp, contains_prefix _ hqn⟩,
     ⟨sR s, by rw [wr]; simp, Offset.contains_base _ (by have := AlignedScratch.offset_bounds aligned (S s); omega_using [this]) (by have := AlignedScratch.offset_bounds aligned (S s); omega_using [ts])⟩,
     hp.k_c, hp.k_y, hp.k_d.sub_right pd, hp.k_s.sub_right ps,
-    hp.c_r.symm.sub_left pr, hp.y_r.symm.sub_left pr, Or.inr ((hp.r_d.sub_left pr).sub_right pd),
+    hp.c_r.symm.sub_left pr, hp.y_r.symm.sub_left pr, hp.layout.imp_right (fun apart => (apart.sub_left pr).sub_right pd),
     (hp.r_s.sub_left pr).sub_right ps, hp.c_d.symm.sub_left pd, hp.y_d.symm.sub_left pd,
     (hp.d_s.sub_left pd).sub_right ps, hp.c_s.symm.sub_left ps, hp.y_s.symm.sub_left ps, hp.c_y,
     by have := hp.w_r; omega_using [hqle, this], by have := hp.w_d; omega_using [hqle, this], hp.w_k, by rw [ts]; have := AlignedScratch.offset_bounds aligned (S s); omega_using [hws, this],
     M.frame hf₃ (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact hp.k_s.sub_right kR'_sub) hp.w_k hp.ok]
 
+omit hp in
 /-- `Mid` after the out-of-place loops, from what they leave. -/
-theorem mid_of_postTo {q k : Nat} {s₃ s₄ : State} (hqn : q ≤ n s) (h9 : s₃.gpr .r9 = BitVec.ofNat 64 q)
+private theorem postToFacts {aliasOK : Bool} (hp : BT M s aliasOK) {q : Nat} {s₃ s₄ : State} (hqn : q ≤ n s) (h9 : s₃.gpr .r9 = BitVec.ofNat 64 q)
     (hg : ∀ r ∈ argRegs, s₃.gpr r = s.gpr r) (hcs : ∀ r ∈ calleeSaved, s₃.gpr r = s.gpr r)
     (h10 : s₃.gpr .r10 = Dst s) (h11 : s₃.gpr .r11 = S s + BitVec.ofNat 64 (AlignedScratch.offset aligned (S s)))
-    (hrd : s₃.rd = s.rd) (hwr : s₃.wr = s.wr) (hkp : Kept s k s₃.mem) (hf₃ : Frame [kR' s] s.mem s₃.mem)
-    (P : EPostTo s₃ s₄) : Mid s q k s₄ := by
+    (hf₃ : Frame [kR' s] s.mem s₃.mem)
+    (P : EPostTo s₃ s₄) : (∀ r ∈ calleeSaved, s₄.gpr r = s.gpr r) ∧
+      Frame (wR s) s.mem s₄.mem ∧ blocksAt s₄.mem (Dst s) q = ct s q ∧
+      blockAt s₄.mem (C s) = Nat.repeat inc32 q (cb s) ∧
+      blockAt s₄.mem (Y s) = ghashFrom (hk s) (y₀ s) (ct s q) ∧
+      (∀ k, Kept s k s₃.mem → Kept s k s₄.mem) := by
   obtain hn : n s < 2 ^ 64 := (s.gpr .r9).isLt
   have data := P.data
   have ctr := P.ctr
@@ -252,12 +258,22 @@ theorem mid_of_postTo {q k : Nat} {s₃ s₄ : State} (hqn : q ≤ n s) (h9 : s�
     · exact ⟨yR s, by simp, fun _ h => h⟩
     · exact ⟨dR s, by simp, pd⟩
     · exact ⟨sR s, by simp, Offset.sub_base _ (by have := AlignedScratch.offset_bounds aligned (S s); omega_using [this])⟩
-  refine ⟨hqn, ?_, fun r hr => ?_, P.rd.trans hrd, P.wr.trans hwr, hkp.frame frame fk, fw, data, ctr, y⟩
-  · rw [P.gpr _ (by decide) (by decide) (by decide) (by decide) (by decide)]; exact hg _ (by simp [argRegs])
-  · have hr' : r ≠ .rax ∧ r ≠ .rdx ∧ r ≠ .r8 ∧ r ≠ .r9 ∧ r ≠ .r10 := by
+  refine ⟨?_, fw, data, ctr, y, fun _ h => h.frame frame fk⟩
+  intro r hr
+  have hr' : r ≠ .rax ∧ r ≠ .rdx ∧ r ≠ .r8 ∧ r ≠ .r9 ∧ r ≠ .r10 := by
       simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
-    rw [P.gpr r hr'.1 hr'.2.1 hr'.2.2.1 hr'.2.2.2.1 hr'.2.2.2.2]; exact hcs r hr
+  rw [P.gpr r hr'.1 hr'.2.1 hr'.2.2.1 hr'.2.2.2.1 hr'.2.2.2.2]; exact hcs r hr
+
+theorem mid_of_postTo {q k : Nat} {s₃ s₄ : State} (hqn : q ≤ n s) (h9 : s₃.gpr .r9 = BitVec.ofNat 64 q)
+    (hg : ∀ r ∈ argRegs, s₃.gpr r = s.gpr r) (hcs : ∀ r ∈ calleeSaved, s₃.gpr r = s.gpr r)
+    (h10 : s₃.gpr .r10 = Dst s) (h11 : s₃.gpr .r11 = S s + BitVec.ofNat 64 (AlignedScratch.offset aligned (S s)))
+    (hrd : s₃.rd = s.rd) (hwr : s₃.wr = s.wr) (hkp : Kept s k s₃.mem) (hf₃ : Frame [kR' s] s.mem s₃.mem)
+    (P : EPostTo s₃ s₄) : Mid s q k s₄ := by
+  obtain ⟨saved, frame, data, ctr, y, kept⟩ := postToFacts hp hqn h9 hg hcs h10 h11 hf₃ P
+  exact ⟨hqn, saved _ (by decide), saved, P.rd.trans hrd, P.wr.trans hwr,
+    kept _ hkp, frame, fun _ => blocksAt_frame frame (by
+      rw [Nat.mul_comm]; exact src_wR hp) (by have := hp.w_r; omega_arith), data, ctr, y⟩
 
 omit hp in
 /-- `cmp r9, 16`. -/
@@ -503,7 +519,7 @@ namespace VG.Proof.AesGcm.X86_64.BlocksTo
 
 open VG VG.X86_64 VG.X86_64.RegUpd VG.Impl.AesGcm.X86_64 VG.Impl.AesGcm.X86_64.BlocksTo VG.WriteBytes
 open VG.Impl.AesGcm.X86_64.Blocks (argCtx argRounds argCtr argY argN)
-open VG.Proof.Gcm.X86_64.Stitch (CtxMode)
+open VG.Proof.Gcm.X86_64.Stitch (CtxMode SPreTo EPostTo)
 open VG.Spec.Gcm (Block blockAt blocksAt ctxCiph ctxH ctr32 ghashFrom inc32 aesWith)
 
 /-- What the function returns with. -/
@@ -513,8 +529,9 @@ section
 variable {M : CtxMode} {s : State} (hp : BT M s)
 include hp
 
+omit hp in
 /-- The output is not all of memory: the key context is apart from it. -/
-theorem n16_lt : n s * 16 < 2 ^ 64 := by
+theorem n16_lt {aliasOK : Bool} (hp : BT M s aliasOK) : n s * 16 < 2 ^ 64 := by
   have hw := hp.w_d
   refine Nat.lt_of_not_le fun hge => hp.k_d (K s) ?_ ?_
   · simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; have := M.ge; omega_arith
@@ -522,14 +539,48 @@ theorem n16_lt : n s * 16 < 2 ^ 64 := by
     have := (K s - Dst s).isLt
     omega_arith
 
+omit hp in
+/-- A piece that consumes the whole message can return directly. It only
+loads the destination and scratch arguments before entering the fused loop. -/
+theorem fusedWhole_ok {aliasOK : Bool} (hp : BT M s aliasOK) {aligned : Bool} {lo : Nat} {piece : Prog isa} (hlen : lo ≤ n s)
+    (ok : ∀ t, SPreTo M t lo → WP isa piece t (EPostTo t)) :
+    WP isa (.seq (.block (pointers ++ Blocks.scratchSetup aligned)) piece) s (Done s) := by
+  apply WP.seq
+  rw [WP.block_append_iff]
+  refine WP.mono (pointers_ok hp) fun t ⟨scr, dst, regs, mem, rd, wr⟩ => ?_
+  refine WP.mono (Blocks.scratch_ok (aligned := aligned) t) fun u ⟨scr', regs', mem', rd', wr'⟩ => ?_
+  have keep : ∀ r, r ≠ .r11 → r ≠ .r10 → u.gpr r = s.gpr r :=
+    fun r a b => (regs' r a).trans (regs r a b)
+  have args : ∀ r ∈ argRegs, u.gpr r = s.gpr r := by
+    intro r hr
+    simp only [argRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> exact keep _ (by decide) (by decide)
+  have saved : ∀ r ∈ calleeSaved, u.gpr r = s.gpr r := by
+    intro r hr
+    simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> exact keep _ (by decide) (by decide)
+  have hn : u.gpr .r9 = BitVec.ofNat 64 (n s) := by
+    rw [keep _ (by decide) (by decide)]; exact ((BitVec.ofNat_toNat _ _).trans (BitVec.setWidth_eq _)).symm
+  have out := (regs' .r10 (by decide)).trans dst
+  have work : u.gpr .r11 = S s + BitVec.ofNat 64 (AlignedScratch.offset aligned (S s)) := by
+    rw [scr', scr]; exact AlignedScratch.ptr_eq aligned _ hp.w_s
+  have frame : Frame [kR' s] s.mem u.mem := by rw [mem', mem]; exact Frame.refl _ _
+  refine WP.mono (ok u (spreTo_of hp hlen (Nat.le_refl _) hn args out work
+    (rd'.trans rd) (wr'.trans wr) frame)) fun v post => ?_
+  obtain ⟨saved', writes, data, ctr, y, _⟩ :=
+    postToFacts hp (Nat.le_refl _) hn args saved out work frame post
+  exact ⟨⟨saved', keep_r hp writes⟩, data, ctr, y⟩
+
+omit hp in
 /-- With nothing left, `Mid` is the end. -/
-theorem done_of {q : Nat} {st : State} (h : Mid s q q st) (h0 : n s - q = 0) : Done s st := by
+theorem done_of {aliasOK : Bool} (hp : BT M s aliasOK) {q : Nat} {st : State} (h : Mid s q q st) (h0 : n s - q = 0) : Done s st := by
   obtain hq : q = n s := by have := h.q_le; omega_arith
   subst hq
   exact ⟨⟨h.saved, keep_r hp h.frame⟩, h.data, h.ctr, h.y⟩
 
+omit hp in
 /-- The head of `tail`: `rcx` the number of blocks left, `ZF` if none. -/
-theorem tailHead_ok {q : Nat} {st : State} (h : Mid s q q st) :
+theorem tailHead_ok {aliasOK : Bool} (hp : BT M s aliasOK) {q : Nat} {st : State} (h : Mid s q q st) :
     WP isa (.block [.mov .r11 (.mem (at_ .rsp 24)), .mov .rcx (.mem (at_ .r11 argN)), .alu .test .rcx (.reg .rcx)])
       st fun st' => Mid s q q st' ∧ st'.zf = some (decide (n s - q = 0)) ∧
         st'.gpr .r11 = S s ∧ st'.gpr .rcx = BitVec.ofNat 64 (n s - q) ∧ st'.mem = st.mem := by
@@ -605,7 +656,10 @@ theorem Mid.copy {q : Nat} {st st' : State} (h : Mid s q q st)
     simp only [List.mem_singleton] at hr; subst hr; exact hd
   refine ⟨hq, by rw [hsp, h.rsp], fun r hr => by rw [hcs r hr, h.saved r hr], hrd.trans h.rd, hwr.trans h.wr,
     h.kept.frame hf (one ((kR'_disj hp (dR s) (by simp)).sub_right ds)), h.frame.trans (hf.sub fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact ⟨dR s, by simp, ds⟩), ?_, ?_, ?_⟩
+      simp only [List.mem_singleton] at hr; subst hr; exact ⟨dR s, by simp, ds⟩), ?_, ?_, ?_, ?_⟩
+  · intro zero
+    rw [← h.src0 zero]
+    exact blocksAt_frame hf (by simpa only [srcR, Nat.mul_comm (n s) 16] using one (hp.r_d.sub_right ds)) (by omega_arith)
   · rw [← h.data]
     exact blocksAt_frame hf (one (Offset.base_disjoint (Dst s) (k := 16 * q) (e := 16 * q) (n := 16 * (n s - q))
       (Nat.le_refl _) (by omega_arith))) (by omega_arith)
@@ -1134,8 +1188,9 @@ section
 variable {M : CtxMode} {s : State} (hp : BT M s)
 include hp
 
+omit hp in
 /-- `scratch` on the stack, at `Mid`. -/
-theorem mid_S {q k : Nat} {st : State} (h : Mid s q k st) :
+theorem mid_S {aliasOK : Bool} (hp : BT M s aliasOK) {q k : Nat} {st : State} (h : Mid s q k st) :
     st.mem.readW (st.gpr .rsp + BitVec.ofNat 64 24) 64 = S s ∧
       InRegions (st.rd ++ st.wr) (st.gpr .rsp + BitVec.ofNat 64 24) 8 := by
   refine ⟨?_, ?_⟩
@@ -1231,8 +1286,9 @@ section
 variable {M : CtxMode} {s₀ s₀' : State} (hp : BT M s₀) (hp' : BT M s₀') (pb : Pub s₀ s₀')
 include hp hp' pb
 
+omit hp hp' pb in
 /-- Loading `scratch` from the stack, in two runs at `Mid`. -/
-theorem mid_hS {q k q' k' : Nat} {s₁ s₂ : State} (h₁ : Mid s₀ q k s₁) (h₂ : Mid s₀' q' k' s₂) :
+theorem mid_hS {a b : Bool} (hp : BT M s₀ a) (hp' : BT M s₀' b) (pb : Pub s₀ s₀') {q k q' k' : Nat} {s₁ s₂ : State} (h₁ : Mid s₀ q k s₁) (h₂ : Mid s₀' q' k' s₂) :
     s₁.mem.readW (s₁.gpr .rsp + BitVec.ofNat 64 24) 64 = s₂.mem.readW (s₂.gpr .rsp + BitVec.ofNat 64 24) 64 ∧
       InRegions (s₁.rd ++ s₁.wr) (s₁.gpr .rsp + BitVec.ofNat 64 24) 8 ∧
       InRegions (s₂.rd ++ s₂.wr) (s₂.gpr .rsp + BitVec.ofNat 64 24) 8 :=
