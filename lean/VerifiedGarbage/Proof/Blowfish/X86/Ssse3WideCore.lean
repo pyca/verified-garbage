@@ -28,9 +28,19 @@ S-box's sixteen rows and the index vectors of one block
 
 * the working space's sixteen-byte places, read through the stores at
   other places (`rd_wr`, `Same`);
-* `planes_wp`: xL after the round's entry of P, and the four registers of
-  its bytes;
-* `sbox_wp`: an S-box's entries of the sixteen blocks, into F.
+* `planesX_wp`: xL after the round's entry of P, and the four registers of
+  its bytes; `sboxF_wp`, `sboxL_wp`: an S-box's entries of the sixteen
+  blocks, into F, and with the last S-box into the new xL; `round_wp`: a
+  round, `roundStep` of each block (`Proof/Blowfish/F.lean`), with the
+  entries of P read in the order of use through a pointer;
+* `blocksIn_wp`, `blocksOutX_wp`: the blocks' bytes to their halves and
+  back; `cryptBlocks_wp`: the function, `feistel` of each of the sixteen
+  blocks for the order of the entries of P at its pointer; `call_wp`;
+* `crypt_wp`: the modes' core, which gives the function the schedule's P
+  to encrypt and a copy of it in reverse, written to the working space
+  (`revPs_wp`), to decrypt; `wideCoreSpec up`, `wideFits up`: it meets
+  what the modes need, with 111 words of working space and eight bytes of
+  stack.
 -/
 
 @[expose] public section

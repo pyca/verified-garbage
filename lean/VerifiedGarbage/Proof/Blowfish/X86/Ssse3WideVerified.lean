@@ -10,9 +10,9 @@ public import VerifiedGarbage.Proof.Framework.X86.ScrubSel
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Spec.Blowfish.Contract
+public import VerifiedGarbage.Proof.Blowfish.X86.Frame
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 import VerifiedGarbage.Proof.Blowfish.X86.Scrub
-import VerifiedGarbage.Proof.Blowfish.X86.Frame
 import VerifiedGarbage.Proof.Blowfish.Scratch
 import VerifiedGarbage.Proof.Blowfish.X86.Ssse3Lit
 import VerifiedGarbage.Proof.Blowfish.X86.Ssse3WideLit
@@ -231,9 +231,10 @@ theorem cfbDecrypt_scrubbed :
 namespace Ecb
 
 open VG.Impl.Modes
-open VG.Proof.Modes.X86 (EcbPre stkRegion ecbLevels_wp eScrR)
+open VG.Proof.Modes.X86 (stkRegion ecbLevels_wp eScrR)
 open VG.Proof.Blowfish (dirCipher dirCipher_bytes bytesAt_eq dirBlock)
-open VG.Proof.Blowfish.X86 (dir KeyArgs KeyArgsN)
+open VG.Proof.Blowfish.X86 (dir KeyArgs KeyArgsN ecbFrameSat)
+open VG.Impl.Blowfish.X86 (at_)
 
 /-- ECB on x86 with its working space as the fourth argument, encrypting
 (`up`) or decrypting. -/
@@ -278,7 +279,8 @@ theorem stk_apart {s : State} (hfit : (s.gpr .esp).toNat + 20 ≤ 2 ^ 32) (hlo :
     rw [e]; exact this
 
 /-- `ecbX86`'s precondition gives the mode's. -/
-theorem ecbPre_of {up : Bool} {s : State} (h : (ecbX86 up).pre s) : EcbPre (core16 up) s := by
+theorem ecbPre_of {up : Bool} {s : State} (h : (ecbX86 up).pre s) :
+    Proof.Modes.X86.EcbPre (core16 up) s := by
   obtain ⟨hrd, hwr, -, dKS, dDS, dAD, dAS, dRD, dRS, -, dSD, dSS, fK, fD, fS, fE, fLo⟩ := h
   have hL := (wideCoreSpec up).layout
   obtain ⟨sA, sR⟩ := stk_apart fE fLo

@@ -6,8 +6,11 @@ public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86.Print
 public import VerifiedGarbage.Proof.Blowfish.X86.Ssse3Verified
 public import VerifiedGarbage.Impl.Blowfish.X86.Ssse3
+public import VerifiedGarbage.Proof.Blowfish.X86.Ssse3WideVerified
+public import VerifiedGarbage.Impl.Blowfish.X86.Ssse3Wide
 import VerifiedGarbage.Proof.Blowfish.X86.Lit
 import VerifiedGarbage.Proof.Blowfish.X86.Ssse3Lit
+import VerifiedGarbage.Proof.Blowfish.X86.Ssse3WideLit
 
 /-! # Blowfish on x86 -/
 
@@ -24,8 +27,16 @@ def artifacts : List Artifact := [
     code := Impl.Blowfish.X86.Fn.expandKey
     verified := Proof.Blowfish.X86.Scrub.expandKey_scrubbed },
   Spec.Blowfish.ecbEncryptApi.artifact X86.target {
+    suffix := "_ssse3"
+    code := Impl.Blowfish.X86.Ssse3.Wide.Fn.ecbEncrypt
+    verified := Proof.Blowfish.X86.Ssse3.Wide.Ecb.ecbEncrypt_scrubbed },
+  Spec.Blowfish.ecbEncryptApi.artifact X86.target {
     code := Impl.Blowfish.X86.Fn.ecbEncrypt
     verified := Proof.Blowfish.X86.Scrub.ecbEncrypt_scrubbed },
+  Spec.Blowfish.ecbDecryptApi.artifact X86.target {
+    suffix := "_ssse3"
+    code := Impl.Blowfish.X86.Ssse3.Wide.Fn.ecbDecrypt
+    verified := Proof.Blowfish.X86.Ssse3.Wide.Ecb.ecbDecrypt_scrubbed },
   Spec.Blowfish.ecbDecryptApi.artifact X86.target {
     code := Impl.Blowfish.X86.Fn.ecbDecrypt
     verified := Proof.Blowfish.X86.Scrub.ecbDecrypt_scrubbed }]
