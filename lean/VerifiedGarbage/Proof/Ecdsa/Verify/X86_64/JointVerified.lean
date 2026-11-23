@@ -83,7 +83,7 @@ theorem jointVerify_p256_adx_public_ct :
     ConstantTime isa (VPre p256vx) (JointPublic p256vx p256GTab)
       (Impl.Ecdsa.Verify.X86_64.Cfg.jointVerify p256vx publicJointAdx (jointDouble publicJointAdx.K)).inline := by
   have hc := p256vx_ok hI
-  refine jointVerify_ct_of_points hc joint_adx_before_ct ?_ joint_adx_after_ct
+  refine jointVerify_ct_of_points hc joint_adx_before_ct ?_ joint_adx_after_ct (hw := p256vx_shared)
   intro s₀ t₀ ps pt pub
   exact jointPoints_relCT hc.toBaseCfgOk hL (hc.jdbl hL) (.ofGTab rfl hT (by decide) (by decide) rfl) rfl (by decide +kernel)
     joint_adx_add_layout joint_adx_init_layout joint_adx_prep_layout (joint_adx_doubler hc hL)

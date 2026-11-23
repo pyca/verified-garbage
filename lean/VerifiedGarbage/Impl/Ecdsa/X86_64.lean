@@ -202,6 +202,11 @@ structure Cfg where
   call of `vg_<curve>_ecdh_table` (with `fnSuffix`, `Ecdh.X86_64.Cfg.tableFn`),
   which the curve's ECDH functions with the same layout share. -/
   ecdhTable : Bool := false
+  /-- Whether the parts of joint verification (`Verify.X86_64.Cfg.jointVerifyWith`) that
+  call nothing and are the same for every way of computing the points are calls of
+  functions, `vg_ecdsa_<curve>_verify_<part>` (with `fnSuffix`, `Verify.X86_64.Cfg.shareV`),
+  which the curve's verification functions with the same configuration share. -/
+  verifyShared : Bool := false
   /-- Whether `x = X Z⁻¹` out of Montgomery form, the first two products of
   the public key's, ECDH's and the signature's tails, is a call of one
   function, `vg_<curve>_affine_x` (`affineX`, named after `inverse`'s curve),

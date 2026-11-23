@@ -22,8 +22,9 @@ def p256GTab : CombData :=
 (`gtab`) and without the comb, which only signing and key generation run. -/
 def p256v : Cfg := { p256 with comb := none, gtab := some p256GTab }
 
-/-- `p256v` multiplying with BMI2 and ADX. -/
-def p256vx : Cfg := { p256x with comb := none, gtab := some p256GTab }
+/-- `p256v` multiplying with BMI2 and ADX, the parts of its verification that do not
+compute the points calls of functions its AVX512_IFMA variant shares (`verifyShared`). -/
+def p256vx : Cfg := { p256x with comb := none, gtab := some p256GTab, verifyShared := true }
 
 /-- The top digit's additions run in the loop's first iteration, rather
 than in a copy of them before it (`peel`), which would write the digits'

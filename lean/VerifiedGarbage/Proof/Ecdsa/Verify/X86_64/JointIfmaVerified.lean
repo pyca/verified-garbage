@@ -718,7 +718,7 @@ theorem jointVerify_p256_ifma_ok {s : State} (hp : VPre p256vx s) :
     WP isa (Impl.Ecdsa.Verify.X86_64.Cfg.jointVerifyWith p256vx ifmaPoints).inline s fun t =>
       (∀ r ∈ Cfg.saved.map Prod.fst, t.gpr r = s.gpr r) ∧ VPost p256vx s t := by
   have hc := p256vx_ok hI
-  refine jointVerifyWith_ok hc.toBaseCfgOk hL rfl (by decide +kernel) (by decide +kernel) hp ?_
+  refine jointVerifyWith_ok hc.toBaseCfgOk hL rfl (by decide +kernel) (by decide +kernel) hp ?_ (hw := p256vx_shared)
   intro a g hM Q hQ hRep
   exact ifmaPoints_ok hL hT hI hO hp hM hQ hRep
 
@@ -820,7 +820,7 @@ theorem jointVerify_p256_ifma_public_ct :
     ConstantTime isa (VPre p256vx) (JointPublic p256vx p256GTab)
       (Impl.Ecdsa.Verify.X86_64.Cfg.jointVerifyWith p256vx ifmaPoints).inline := by
   have hc := p256vx_ok hI
-  refine jointVerifyWith_ct_of_points hc joint_adx_before_ct ?_ joint_adx_after_ct
+  refine jointVerifyWith_ct_of_points hc joint_adx_before_ct ?_ joint_adx_after_ct (hw := p256vx_shared)
   intro s₀ t₀ ps pt pub
   exact ifmaPoints_relCT hL hT hI hO ps pt pub
 
