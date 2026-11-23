@@ -211,6 +211,10 @@ theorem word_pslld16 (a : BitVec 128) {j : Nat} (hj : j < 4) :
   rw [Nat.add_zero] at h0 h2
   exact ⟨h0.trans (ext16_shl _).1, h1.trans (((ext16_shl _).2).trans h2.symm)⟩
 
+theorem or_zero16 (x : BitVec 16) : x ||| 0 = x := BitVec.or_zero
+
+theorem zero_or16 (x : BitVec 16) : 0 ||| x = x := BitVec.zero_or
+
 theorem word_por (a b : BitVec 128) (i : Nat) : word (XBinOp.eval .por a b) i = word a i ||| word b i := by
   apply BitVec.eq_of_getLsbD_eq; intro j hj
   simp only [XBinOp.eval, BitVec.getLsbD_or, getLsbD_word _ _ _ hj]
@@ -255,11 +259,11 @@ theorem mul_lanes {A B G : BitVec 128} {x0 x1 y0 y1 γ : Nat → Zq}
   have m0 : word (mergeV (montV A B) (montV (montV A B) G) (montV A (swapV B))) (2 * j) =
       montW (word A (2 * j)) (word B (2 * j)) +
         montW (montW (word A (2 * j + 1)) (word B (2 * j + 1))) (word G (2 * j + 1)) := by
-    rw [mergeV, word_por, (word_pslld16 _ hj).1, BitVec.or_zero, (word_psrld16 _ hj).1, (word_pslld16 _ hj).2,
+    rw [mergeV, word_por, (word_pslld16 _ hj).1, or_zero16, (word_psrld16 _ hj).1, (word_pslld16 _ hj).2,
       word_paddw _ _ h0, (word_psrld16 _ hj).1, word_montV _ _ h0, word_montV _ _ h1, word_montV _ _ h1]
   have m1 : word (mergeV (montV A B) (montV (montV A B) G) (montV A (swapV B))) (2 * j + 1) =
       montW (word A (2 * j)) (word B (2 * j + 1)) + montW (word A (2 * j + 1)) (word B (2 * j)) := by
-    rw [mergeV, word_por, (word_psrld16 _ hj).2, BitVec.zero_or, (word_pslld16 _ hj).2, word_paddw _ _ h0,
+    rw [mergeV, word_por, (word_psrld16 _ hj).2, zero_or16, (word_pslld16 _ hj).2, word_paddw _ _ h0,
       (word_psrld16 _ hj).1, word_montV _ _ h0, word_montV _ _ h1, sw0, sw1]
   have key := baseW (ha j hj).1 (ha j hj).2 (hb j hj).1 (hb j hj).2 (hg j hj)
   rw [mulV, word_caddV _ h0, word_montV _ _ h0, word_caddV _ h1, word_montV _ _ h1, word_r2V h0, word_r2V h1, m0, m1]
@@ -367,12 +371,11 @@ theorem mulCore_wp {f : XReg → BitVec 128} {is : List Instr} {Q : State → Pr
     (iF' : InRegions (s.rd ++ s.wr) PF' 16) (iG : InRegions (s.rd ++ s.wr) PG 16)
     (iG' : InRegions (s.rd ++ s.wr) PG' 16) (iT : InRegions (s.rd ++ s.wr) PT 8) (iH : InRegions s.wr PH 16)
     (iH' : InRegions s.wr PH' 16)
-    (k : ∀ (g : XReg → BitVec 128) (V : BitVec 128),
+    (k : ∀ (g : XReg → BitVec 128) (V L H : BitVec 128),
       V = mulV (XBinOp.eval .packssdw (s.mem.readW PF 128) (s.mem.readW PF' 128))
         (XBinOp.eval .packssdw (s.mem.readW PG 128) (s.mem.readW PG' 128)) (zsel2 s.mem PT) →
-      VK g → g .xmm4 = r2V →
-      WP isa (.block is) { ({ s with mem := (s.mem.writeW PH (XBinOp.eval .punpcklwd V 0)).writeW PH'
-        (XBinOp.eval .punpckhwd V 0) } : State) with xmm := g } Q) :
+      L = XBinOp.eval .punpcklwd V 0 → H = XBinOp.eval .punpckhwd V 0 → VK g → g .xmm4 = r2V →
+      WP isa (.block is) { ({ s with mem := (s.mem.writeW PH L).writeW PH' H } : State) with xmm := g } Q) :
     WP isa (.block (mulCore ++ is)) { s with xmm := f } Q := by
   rw [mulCore_eq]
   refine mulLoad_wp eF eF' eG eG' iF iF' iG iG' fun g₀ a0 a3 b1 b5 r₀ => ?_
@@ -403,16 +406,16 @@ theorem mulCore_wp {f : XReg → BitVec 128} {is : List Instr} {Q : State → Pr
   refine wcadd_wp (.inl rfl) c₆ fun g₇ v₇ r₇ => ?_
   have c₇ : VK g₇ := c₆.of_eq (r₇ _ (by decide) (by decide)) (r₇ _ (by decide) (by decide))
   have R7 : g₇ .xmm4 = r2V := by
-    rw [r₇ _ (by decide) (by decide), r₆ _ (by decide) (by decide), r₅ _ (by decide) (by decide) (by decide), R4,
-      r₃ _ (by decide), R2]
+    rw [r₇ .xmm4 (by decide) (by decide), r₆ .xmm4 (by decide) (by decide),
+      r₅ .xmm4 (by decide) (by decide) (by decide), R4, r₃ .xmm4 (by decide), R2]
   have H7 : g₇ .xmm0 = mulV (XBinOp.eval .packssdw (s.mem.readW PF 128) (s.mem.readW PF' 128))
       (XBinOp.eval .packssdw (s.mem.readW PG 128) (s.mem.readW PG' 128)) (zsel2 s.mem PT) := by
-    rw [v₇, v₆, v₅, r₅ _ (by decide) (by decide) (by decide), R4, r₃ _ (by decide), R2, T4, P4, Q4,
-      r₃ _ (by decide), r₃ _ (by decide), z₃, P2, Q2, a0, a3, b1, b5]
+    rw [v₇, v₆, v₅, r₅ .xmm4 (by decide) (by decide) (by decide), R4, r₃ .xmm4 (by decide), R2, T4, P4, Q4,
+      r₃ .xmm0 (by decide), r₃ .xmm3 (by decide), z₃, P2, Q2, a0, a3, b1, b5]
     rfl
   refine mulOut_wp eH eH' iH iH' fun g₈ L H eL eHh r₈ => ?_
-  rw [eL, eHh, H7]
-  exact k g₈ _ rfl (c₇.of_eq (r₈ _ (by decide) (by decide) (by decide)) (r₈ _ (by decide) (by decide) (by decide)))
+  exact k g₈ _ L H rfl (by rw [eL, H7]) (by rw [eHh, H7])
+    (c₇.of_eq (r₈ _ (by decide) (by decide) (by decide)) (r₈ _ (by decide) (by decide) (by decide)))
     ((r₈ _ (by decide) (by decide) (by decide)).trans R7)
 
 end VG.Proof.MlKem.X86.Vec
@@ -649,21 +652,21 @@ theorem mstep {s₀ : State} (hp : Pre s₀) {k : Nat} (hk : k < 32) {s : State}
   have hf' := hp.h_fit
   have sf := hp.s_fit
   have eF : s.ea (at_ .eax 0) = fA s₀ + BitVec.ofNat 64 (16 * (2 * k)) := by
-    rw [ea_at h.eax (by omega_using [ff, hk]), Nat.add_zero]
+    rw [Vec.ea_at h.eax (by omega_using [ff, hk]), Nat.add_zero]
   have eF' : s.ea (at_ .eax 16) = fA s₀ + BitVec.ofNat 64 (16 * (2 * k + 1)) := by
-    rw [ea_at h.eax (by omega_using [ff, hk])]
+    rw [Vec.ea_at h.eax (by omega_using [ff, hk])]
     exact congrArg (fun j => fA s₀ + BitVec.ofNat 64 j) (by omega_using [])
   have eG : s.ea (at_ .ecx 0) = gA s₀ + BitVec.ofNat 64 (16 * (2 * k)) := by
-    rw [ea_at h.ecx (by omega_using [gf, hk]), Nat.add_zero]
+    rw [Vec.ea_at h.ecx (by omega_using [gf, hk]), Nat.add_zero]
   have eG' : s.ea (at_ .ecx 16) = gA s₀ + BitVec.ofNat 64 (16 * (2 * k + 1)) := by
-    rw [ea_at h.ecx (by omega_using [gf, hk])]
+    rw [Vec.ea_at h.ecx (by omega_using [gf, hk])]
     exact congrArg (fun j => gA s₀ + BitVec.ofNat 64 j) (by omega_using [])
   have eT : s.ea (at_ .edx 0) = sA s₀ + BitVec.ofNat 64 (2 * (4 * k)) := by
-    rw [ea_at h.edx (by omega_using [sf, hk]), Nat.add_zero]
+    rw [Vec.ea_at h.edx (by omega_using [sf, hk]), Nat.add_zero]
   have eH : s.ea (at_ .ebx 0) = hA s₀ + BitVec.ofNat 64 (16 * (2 * k)) := by
-    rw [ea_at h.ebx (by omega_using [hf', hk]), Nat.add_zero]
+    rw [Vec.ea_at h.ebx (by omega_using [hf', hk]), Nat.add_zero]
   have eH' : s.ea (at_ .ebx 16) = hA s₀ + BitVec.ofNat 64 (16 * (2 * k + 1)) := by
-    rw [ea_at h.ebx (by omega_using [hf', hk])]
+    rw [Vec.ea_at h.ebx (by omega_using [hf', hk])]
     exact congrArg (fun j => hA s₀ + BitVec.ofNat 64 j) (by omega_using [])
   have hm : 0 < s.mcdt := by rw [h.mcdt]; exact Nat.succ_pos _
   have hcon : (polyRegion (hA s₀)).Contains (hA s₀ + BitVec.ofNat 64 (16 * (2 * k))) (128 / 8) :=
@@ -672,12 +675,18 @@ theorem mstep {s₀ : State} (hp : Pre s₀) {k : Nat} (hk : k < 32) {s : State}
     Offset.contains_base _ (by omega_using [hk]) (by omega_using [hk])
   show WP isa (.block (mulCore ++ mulEnd)) { s with xmm := s.xmm } _
   refine mulCore_wp hm h.vk h.r2 eF eF' eG eG' eT eH eH'
-    (in_r hp h.rd (by simp) (Offset.contains_base _ (by omega_using [hk]) (by omega_using [hk])))
-    (in_r hp h.rd (by simp) (Offset.contains_base _ (by omega_using [hk]) (by omega_using [hk])))
-    (in_r hp h.rd (by simp) (Offset.contains_base _ (by omega_using [hk]) (by omega_using [hk])))
-    (in_r hp h.rd (by simp) (Offset.contains_base _ (by omega_using [hk]) (by omega_using [hk])))
-    (inRdN (in_w hp h.wr (by simp) (Offset.contains_base (sA s₀) (by omega_using [hk]) (by omega_using [hk]))))
-    (in_w hp h.wr (by simp) hcon) (in_w hp h.wr (by simp) hcon') fun g V eV cg g4 => ?_
+    (in_r hp h.rd (R := polyRegion (fA s₀)) (by simp)
+      (Offset.contains_base (fA s₀) (by omega_using [hk]) (by omega_using [hk])))
+    (in_r hp h.rd (R := polyRegion (fA s₀)) (by simp)
+      (Offset.contains_base (fA s₀) (by omega_using [hk]) (by omega_using [hk])))
+    (in_r hp h.rd (R := polyRegion (gA s₀)) (by simp)
+      (Offset.contains_base (gA s₀) (by omega_using [hk]) (by omega_using [hk])))
+    (in_r hp h.rd (R := polyRegion (gA s₀)) (by simp)
+      (Offset.contains_base (gA s₀) (by omega_using [hk]) (by omega_using [hk])))
+    (inRdN (in_w hp h.wr (R := polyRegion (sA s₀)) (by simp)
+      (Offset.contains_base (sA s₀) (by omega_using [hk]) (by omega_using [hk]))))
+    (in_w hp h.wr (R := polyRegion (hA s₀)) (by simp) hcon) (in_w hp h.wr (R := polyRegion (hA s₀)) (by simp) hcon') fun g V L H eV eL eH₂ cg g4 => ?_
+  subst eL eH₂
   have lanes : ∀ e < 8, (word V e).toNat = ((multiplyNTTs (Fp s₀) (Gp s₀))[8 * k + e]!).val := by
     have key := mul_lanes (A := XBinOp.eval .packssdw (s.mem.readW (fA s₀ + BitVec.ofNat 64 (16 * (2 * k))) 128)
         (s.mem.readW (fA s₀ + BitVec.ofNat 64 (16 * (2 * k + 1))) 128))
@@ -726,7 +735,7 @@ theorem mstep {s₀ : State} (hp : Pre s₀) {k : Nat} (hk : k < 32) {s : State}
   simp only [Nat.reduceMul, Nat.reduceAdd] at a₃
   have ea : (s.gpr .esp + BitVec.ofNat 32 32).setWidth 64 = argAddr s₀ 3 := by rw [h.esp]; exact a₃
   have i₃ : InRegions (s.rd ++ s.wr) (argAddr s₀ 3) 4 :=
-    inRdN (in_w hp h.wr (by simp) (hp.arg_in (by decide)))
+    inRdN (in_w hp h.wr (R := aR s₀) (by simp) (hp.arg_in (by decide)))
   have sl : ((s.mem.writeW (hA s₀ + BitVec.ofNat 64 (16 * (2 * k))) (XBinOp.eval .punpcklwd V 0)).writeW
       (hA s₀ + BitVec.ofNat 64 (16 * (2 * k + 1))) (XBinOp.eval .punpckhwd V 0)).readW (argAddr s₀ 3) 32 =
       hP s₀ + 1024 := by
@@ -790,7 +799,7 @@ theorem consts_wp {s₀ : State} (hp : Pre s₀) : WP isa (.block mulConsts) (B0
   obtain ⟨a₃, v₃⟩ := arg_B0 hp (i := 3) (by decide)
   simp only [Nat.reduceMul, Nat.reduceAdd] at a₃
   have i₃ : InRegions ((B0 s₀).rd ++ (B0 s₀).wr) (argAddr s₀ 3) 4 :=
-    inRdN (in_w hp rfl (by simp) (hp.arg_in (by decide)))
+    inRdN (in_w hp rfl (R := aR s₀) (by simp) (hp.arg_in (by decide)))
   apply WP.of_runBlock
   simp only [mulConsts, wconst, at_, List.cons_append, List.nil_append, runBlock_cons, runStep_some, runBlock_nil,
     exec, XOp.exec, State.setXmm, readSrc, State.ea, State.load32, State.setReg, a₃, i₃, v₃, Option.map_some,
@@ -813,7 +822,7 @@ theorem table_wp {s₀ : State} (hp : Pre s₀) {s : State} (h : S1 s₀ s) :
   · show (s.gpr .eax + BitVec.ofNat 32 (4 * k)).setWidth 64 = _
     rw [h.eax]
     exact ea_off (by omega_using [sf, hk])
-  · exact in_w hp h.wr (by simp) (Offset.contains_base (sA s₀) (by omega_using [hk]) (by omega_using [hk]))
+  · exact in_w hp h.wr (R := polyRegion (sA s₀)) (by simp) (Offset.contains_base (sA s₀) (by omega_using [hk]) (by omega_using [hk]))
   have esp₂ : s₂.gpr .esp = (B0 s₀).gpr .esp := (o₂.gpr .esp (by decide)).trans h.esp
   have eax₂ : s₂.gpr .eax = sP s₀ := (o₂.gpr .eax (by decide)).trans h.eax
   have rd₂ : s₂.rd = (B0 s₀).rd := o₂.rd.trans h.rd
@@ -823,10 +832,10 @@ theorem table_wp {s₀ : State} (hp : Pre s₀) {s : State} (h : S1 s₀ s) :
   have e24 : (s₂.gpr .esp + BitVec.ofNat 32 24).setWidth 64 = argAddr s₀ 1 := by rw [esp₂]; exact a₁
   have e28 : (s₂.gpr .esp + BitVec.ofNat 32 28).setWidth 64 = argAddr s₀ 2 := by rw [esp₂]; exact a₂
   have e32 : (s₂.gpr .esp + BitVec.ofNat 32 32).setWidth 64 = argAddr s₀ 3 := by rw [esp₂]; exact a₃
-  have in0 : InRegions (s₂.rd ++ s₂.wr) (argAddr s₀ 0) 4 := inRdN (in_w hp wr₂ (by simp) (hp.arg_in (by decide)))
-  have in1 : InRegions (s₂.rd ++ s₂.wr) (argAddr s₀ 1) 4 := inRdN (in_w hp wr₂ (by simp) (hp.arg_in (by decide)))
-  have in2 : InRegions (s₂.rd ++ s₂.wr) (argAddr s₀ 2) 4 := inRdN (in_w hp wr₂ (by simp) (hp.arg_in (by decide)))
-  have in3 : InRegions s₂.wr (argAddr s₀ 3) 4 := in_w hp wr₂ (by simp) (hp.arg_in (by decide))
+  have in0 : InRegions (s₂.rd ++ s₂.wr) (argAddr s₀ 0) 4 := inRdN (in_w hp wr₂ (R := aR s₀) (by simp) (hp.arg_in (by decide)))
+  have in1 : InRegions (s₂.rd ++ s₂.wr) (argAddr s₀ 1) 4 := inRdN (in_w hp wr₂ (R := aR s₀) (by simp) (hp.arg_in (by decide)))
+  have in2 : InRegions (s₂.rd ++ s₂.wr) (argAddr s₀ 2) 4 := inRdN (in_w hp wr₂ (R := aR s₀) (by simp) (hp.arg_in (by decide)))
+  have in3 : InRegions s₂.wr (argAddr s₀ 3) 4 := in_w hp wr₂ (R := aR s₀) (by simp) (hp.arg_in (by decide))
   have hsa : ∀ r ∈ [polyRegion (sA s₀)], (aR s₀).Disjoint r := fun r hr => by
     rw [List.mem_singleton.mp hr]; exact hp.s_a.symm
   have w0 : s₂.mem.readW (argAddr s₀ 0) 32 = hP s₀ := by
@@ -870,16 +879,19 @@ theorem pub_esp {s₀ s₀' : State} (hp : Pre s₀) (hp' : Pre s₀') (hq : Pub
     (B0 s₀).gpr .esp = (B0 s₀').gpr .esp := by
   rw [B0_esp hp, B0_esp hp', hq.1]
 
-theorem body_piece : Piece Pre Pub (fun s₀ s => s = B0 s₀) (fun s₀ s => MI s₀ 32 s)
-    (.seq (.block mulConsts) (.seq (.block mulTable) (.loop (.block (mulCore ++ mulEnd)) .ne))) := by
+theorem body_of {h₁ h₂ h₃ : Taint.Hint VG.X86.Taint.T}
+    (t₁ : (VG.X86.sseTaint.check (τr [.esp]) (.block mulConsts) h₁).isSome = true)
+    (t₂ : (VG.X86.sseTaint.check (τr [.esp, .eax]) (.block mulTable) h₂).isSome = true)
+    (t₃ : (VG.X86.sseTaint.check (τr [.esp, .eax, .ecx, .edx, .ebx]) (.block (mulCore ++ mulEnd)) h₃).isSome = true) :
+    Piece Pre Pub (fun s₀ s => s = B0 s₀) (fun s₀ s => MI s₀ 32 s)
+      (.seq (.block mulConsts) (.seq (.block mulTable) (.loop (.block (mulCore ++ mulEnd)) .ne))) := by
   refine Piece.seq (B := fun s₀ s => S1 s₀ s)
-    (sse [.esp] (fun s₀ s hp e => e ▸ consts_wp hp) (fun s₀ s₀' s s' hp hp' hq e e' r hr => ?_) (by taint_decide))
+    (sse [.esp] (fun s₀ s hp e => e ▸ consts_wp hp) (fun s₀ s₀' s s' hp hp' hq e e' r hr => ?_) t₁)
     (Piece.seq (B := fun s₀ s => MI s₀ 0 s)
-      (sse [.esp, .eax] (fun s₀ s hp h => table_wp hp h) (fun s₀ s₀' s s' hp hp' hq h h' r hr => ?_)
-        (by taint_decide))
+      (sse [.esp, .eax] (fun s₀ s hp h => table_wp hp h) (fun s₀ s₀' s s' hp hp' hq h h' r hr => ?_) t₂)
       (Piece.loop (fun k s₀ s => MI s₀ k s) (by decide) fun k hk =>
         sse [.esp, .eax, .ecx, .edx, .ebx] (fun s₀ s hp h => mstep hp hk h)
-          (fun s₀ s₀' s s' hp hp' hq h h' r hr => ?_) (by taint_decide)))
+          (fun s₀ s₀' s s' hp hp' hq h h' r hr => ?_) t₃))
   · simp only [List.mem_singleton] at hr
     subst hr
     rw [e, e', pub_esp hp hp' hq]
@@ -894,6 +906,10 @@ theorem body_piece : Piece Pre Pub (fun s₀ s => s = B0 s₀) (fun s₀ s => MI
     · rw [h.ecx, h'.ecx, gP, gP, hq.2.2.2.1]
     · rw [h.edx, h'.edx, sP, sP, hq.2.2.2.2]
     · rw [h.ebx, h'.ebx, hP, hP, hq.2.1]
+
+theorem body_piece : Piece Pre Pub (fun s₀ s => s = B0 s₀) (fun s₀ s => MI s₀ 32 s)
+    (.seq (.block mulConsts) (.seq (.block mulTable) (.loop (.block (mulCore ++ mulEnd)) .ne))) :=
+  body_of (by taint_decide) (by taint_decide) (by taint_decide)
 
 /-- What the function leaves: the coefficients of the product at `h`. -/
 def FinOk (s₀ : State) (s : State) : Prop :=
