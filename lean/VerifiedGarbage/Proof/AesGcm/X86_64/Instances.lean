@@ -1,5 +1,8 @@
 module
 
+public import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.Compact
+public import VerifiedGarbage.Proof.AesGcm.X86_64.ScrubStub
+
 public import VerifiedGarbage.Proof.Gcm.PrecomputedContract
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Flag
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.Flagged
@@ -29,6 +32,8 @@ public import VerifiedGarbage.Proof.Gcm.X86_64.StitchR.Ok
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Piece
 meta import VerifiedGarbage.Impl.Gcm.X86_64.StitchR
 meta import VerifiedGarbage.Impl.Gcm.X86_64.StitchAvx8
+meta import VerifiedGarbage.Impl.Gcm.X86_64.StitchZHTo
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.OpenSplit.Seal
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Tab
 public import VerifiedGarbage.Proof.Gcm.Poly
 import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Bcast
@@ -2037,6 +2042,79 @@ def StreamTo.BlkToFn.ofPreparedBlocks {M : Proof.Gcm.X86_64.Stitch.CtxMode}
     | _ => .ofFull name g v (Or.inr rfl) (fun t h => ok t h (Nat.mod_one _)) pc
   | other => .ofBlocks name B other
 
+open VG.Impl.Scrub.X86_64 (VecLevel)
+
+/-- The level of the vector instructions of the loops named `n`. -/
+def StitchName.lv : StitchName → VecLevel
+  | .vaes => .avx
+  | .vaesAvx512 => .evex
+  | .aesniAvx => .avx
+
+/-- The level of the vector instructions of `v`'s own code: its loops'. -/
+def GcmVariant.own (v : GcmVariant) : VecLevel :=
+  match v.stitch with
+  | none => .sse
+  | some p => p.name.lv
+
+/-- The level of the cleanup of `v`'s functions. -/
+def GcmVariant.lv (v : GcmVariant) : VecLevel := v.impl.lv v.own
+
+/-- The level of the vector instructions of the out-of-place loops named `n`. -/
+def StitchToName.lv : StitchToName → VecLevel
+  | .vaes => .avx
+  | .vaesAvx512 => .evex
+  | .aesniAvx => .avx
+
+/-- The level of `v`'s out-of-place loops, if any. -/
+def GcmVariant.toLv (v : GcmVariant) : VecLevel :=
+  match v.stitch with
+  | some p => (p.toPart.map (·.name.lv)).getD .sse
+  | none => .sse
+
+/-- The level of the cleanup of `v`'s `seal_gather` on the key context:
+`lv`'s and its out-of-place loops'. -/
+def GcmVariant.lvG (v : GcmVariant) : VecLevel := (v.lv.join v.ctr.ctrTo.level).join v.toLv
+
+abbrev WideSealOk (M : Proof.Gcm.X86_64.Stitch.CtxMode) :=
+  ∀ t, Proof.Gcm.X86_64.Stitch.SPreTo M t 16 → WP VG.X86_64.isa
+    Impl.Gcm.X86_64.StitchZHTo.encR t (Proof.Gcm.X86_64.Stitch.EPostTo t)
+
+theorem wideSealPiece : PieceTo Impl.Gcm.X86_64.StitchZHTo.encR true true 16 := by
+  refine ⟨?_,?_,?_,?_,?_,⟨?_,?_⟩⟩
+  taint_decide_all
+
+theorem vaesSealTaint : ∃ hc, (VG.X86_64.taint.check (VG.X86_64.Taint.ofRegs BlocksToDec.sealRegs)
+    Impl.Gcm.X86_64.StitchR.encToFromTwo hc).isSome = true := by
+  exact ⟨_, by taint_decide⟩
+
+theorem aesniSealTaint : ∃ hc, (VG.X86_64.taint.check (VG.X86_64.Taint.ofRegs BlocksToDec.sealRegs)
+    Impl.Gcm.X86_64.StitchAvx8.encBuffers hc).isSome = true := by
+  exact ⟨_, by taint_decide⟩
+
+theorem wideSealTaint : ∃ hc, (VG.X86_64.taint.check (VG.X86_64.Taint.ofRegs BlocksToDec.sealRegs)
+    Impl.Gcm.X86_64.StitchZHTo.encR hc).isSome = true := by
+  exact ⟨_, by taint_decide⟩
+
+def selectSealLeaf {M : Proof.Gcm.X86_64.Stitch.CtxMode} (v : GcmVariant) (name : String)
+    (supported : Bool) (short : FusedShortOk M) (wide : Option (PLift (WideSealOk M))) : Option (BlocksTo.SealFn M) :=
+  if supported then match v.shortBackend with
+  | some .vaes => some (.ofFull name v.gh.impl v.ctr.ctrTo (.inl (.inl rfl)) short.1 vaesShortPiece vaesSealTaint)
+  | some .aesniAvx => some (.ofFull name v.gh.impl v.ctr.ctrTo (.inl (.inr rfl)) short.2 aesniShortPiece aesniSealTaint)
+  | some .vaesAvx512 => wide.map fun ok => .ofFull name v.gh.impl v.ctr.ctrTo (.inr rfl) ok.down wideSealPiece wideSealTaint
+  | none => none
+  else none
+
+def sealLeafR (v : GcmVariant) : Option (BlocksTo.SealFn Proof.Gcm.X86_64.Stitch.CtxMode.prepared) :=
+  selectSealLeaf v ("vg_aes_gcm_seal_blocks_prepared" ++ v.impl.suffix) v.stitchToR.isSome
+    ⟨fun _ h => Proof.Gcm.X86_64.StitchR.encToFromTwo_ok 24 (by decide) h,
+     fun _ h => Proof.Gcm.X86_64.StitchAvx8.encBuffers_ok 24 (by decide) h⟩
+    (some ⟨fun t h => Proof.Gcm.X86_64.StitchZHTo.stitchToR_ok t h (Nat.mod_one _)⟩)
+
+def sealBlkR (v : GcmVariant) : BlkFn Proof.Gcm.X86_64.Stitch.CtxMode.prepared :=
+  match sealLeafR v with
+  | some f => if v.lvG.level ≤ v.lv.level then OneBlocks.withAlias (blkR v) f else blkR v
+  | none => blkR v
+
 def blkToR (v : GcmVariant) : StreamTo.BlkToFn Proof.Gcm.X86_64.Stitch.CtxMode.prepared :=
   .ofPreparedBlocks ("vg_aes_gcm_encrypt_blocks_to_prepared" ++ v.impl.suffix) v.gh.impl v.ctr.ctrTo (blkR v) v.shortBackend
     ⟨fun _ h => Proof.Gcm.X86_64.StitchR.encToFromTwo_ok 24 (by decide) h,
@@ -2168,6 +2246,17 @@ def GcmVariant.r16 (v : GcmVariant) : Option (PLift (R16 v)) :=
 def blkR16 (v : GcmVariant) : BlkFn Proof.Gcm.X86_64.Stitch.CtxMode.prepared16 :=
   v.impl.blkM v.stitchR16 ("vg_aes_gcm_encrypt_blocks_prepared16" ++ v.impl.suffix)
     ("vg_aes_gcm_decrypt_blocks_prepared16" ++ v.impl.suffix)
+
+def sealLeafR16 (v : GcmVariant) : Option (BlocksTo.SealFn Proof.Gcm.X86_64.Stitch.CtxMode.prepared16) :=
+  selectSealLeaf v ("vg_aes_gcm_seal_blocks_prepared16" ++ v.impl.suffix) v.stitchToR16.isSome
+    ⟨fun _ h => Proof.Gcm.X86_64.StitchR.encToFromTwo_ok 8 (by decide) h,
+     fun _ h => Proof.Gcm.X86_64.StitchAvx8.encBuffers_ok 8 (by decide) h⟩
+    none
+
+def sealBlkR16 (v : GcmVariant) : BlkFn Proof.Gcm.X86_64.Stitch.CtxMode.prepared16 :=
+  match sealLeafR16 v with
+  | some f => if v.lvG.level ≤ v.lv.level then OneBlocks.withAlias (blkR16 v) f else blkR16 v
+  | none => blkR16 v
 
 def blkToR16 (v : GcmVariant) : StreamTo.BlkToFn Proof.Gcm.X86_64.Stitch.CtxMode.prepared16 :=
   .ofPreparedBlocks ("vg_aes_gcm_encrypt_blocks_to_prepared16" ++ v.impl.suffix) v.gh.impl v.ctr.ctrTo (blkR16 v) v.shortBackend
@@ -2612,6 +2701,12 @@ def StitchToCode.flagged {al : Bool} (c : StitchToCode Proof.Gcm.X86_64.Stitch.C
     StitchToCode Proof.Gcm.X86_64.Stitch.CtxMode.flagged al :=
   { c with ok := fun s hp hn => c.ok s (sPreTo_ofFlagged hp) hn }
 
+def sealLeafF (v : GcmVariant) : Option (BlocksTo.SealFn Proof.Gcm.X86_64.Stitch.CtxMode.flagged) :=
+  selectSealLeaf v ("vg_aes_gcm_seal_blocks_prepared" ++ v.impl.suffix) v.stitchToR.isSome
+    ⟨fun _ h => Proof.Gcm.X86_64.StitchR.encToFromTwo_ok 24 (by decide) (sPreTo_ofFlagged h),
+     fun _ h => Proof.Gcm.X86_64.StitchAvx8.encBuffers_ok 24 (by decide) (sPreTo_ofFlagged h)⟩
+    (some ⟨fun t h => Proof.Gcm.X86_64.StitchZHTo.stitchToR_ok t (sPreTo_ofFlagged h) (Nat.mod_one _)⟩)
+
 def blkToF (v : GcmVariant) : StreamTo.BlkToFn Proof.Gcm.X86_64.Stitch.CtxMode.flagged :=
   .ofPreparedBlocks ("vg_aes_gcm_encrypt_blocks_to_prepared" ++ v.impl.suffix) v.gh.impl v.ctr.ctrTo (blkF v) v.shortBackend
     ⟨fun _ h => Proof.Gcm.X86_64.StitchR.encToFromTwo_ok 24 (by decide) (sPreTo_ofFlagged h),
@@ -2619,17 +2714,17 @@ def blkToF (v : GcmVariant) : StreamTo.BlkToFn Proof.Gcm.X86_64.Stitch.CtxMode.f
 
 /-- `vg_aes_gcm_seal_prepared` of a variant whose loops read the 48 powers: by
 the flag, its code on the powers or its code on the key context. -/
-def sealCodeF (v : GcmVariant) : Prog VG.X86_64.isa :=
+def sealCodeF (v : GcmVariant) (B : BlkFn Proof.Gcm.X86_64.Stitch.CtxMode.prepared := blkR v) : Prog VG.X86_64.isa :=
   Impl.Gcm.X86_64.Flag.onFlag 48
-    (Impl.StackScratch.X86_64.withStackArgScratch 2600 3 (v.impl.sealCodeP (v.impl.withBlk (blkR v))))
+    (Impl.StackScratch.X86_64.withStackArgScratch 2600 3 (v.impl.sealCodeP (v.impl.withBlk B)))
     (Impl.StackScratch.X86_64.withStackArgScratch 2600 3 (v.impl.sealCode v.impl.callees))
 
-theorem sealCodeF_verified (v : GcmVariant) :
-    Verified X86_64.target (sealCodeF v) (VG.Proof.AesGcm.Flag.sealRoundsContractB 48 X86_64.abi 2624) :=
-  Flag.seal_onFlagB (sealSelPrepared_framed v.impl (blkR v) Short.shortFacts) (sealSel_framed v.impl Short.shortFacts)
+theorem sealCodeF_verified (v : GcmVariant) (B : BlkFn Proof.Gcm.X86_64.Stitch.CtxMode.prepared := blkR v) :
+    Verified X86_64.target (sealCodeF v B) (VG.Proof.AesGcm.Flag.sealRoundsContractB 48 X86_64.abi 2624) :=
+  Flag.seal_onFlagB (sealSelPrepared_framed v.impl B Short.shortFacts) (sealSel_framed v.impl Short.shortFacts)
 
-theorem sealCodeF_spAll (v : GcmVariant) : (sealCodeF v).all (fun i => !X86_64.isa.writesSp i) = true :=
-  VG.X86_64.onFlag_spSafe (X86_64.withStackArgScratch_spSafe (sealCodeP_spSafe v.impl (blkR v)))
+theorem sealCodeF_spAll (v : GcmVariant) (B : BlkFn Proof.Gcm.X86_64.Stitch.CtxMode.prepared := blkR v) : (sealCodeF v B).all (fun i => !X86_64.isa.writesSp i) = true :=
+  VG.X86_64.onFlag_spSafe (X86_64.withStackArgScratch_spSafe (sealCodeP_spSafe v.impl B))
     (X86_64.withStackArgScratch_spSafe (sealCode_spSafe v.impl v.impl.blkB))
 
 theorem sealCodeF_xdepth (v : GcmVariant) : (sealCodeF v).x86_64Depth ≤ 2624 := by
@@ -2846,6 +2941,12 @@ def blkToDecF16 (v : GcmVariant) : BlkToDecFn (Proof.Gcm.X86_64.Stitch.CtxMode.f
 def openSplitFnF16 (v : GcmVariant) : OpenToSplit.OpenSplitFn (Proof.Gcm.X86_64.Stitch.CtxMode.flaggedT 16) :=
   .of ("vg_aes_gcm_open_split_prepared16" ++ v.impl.suffix) v.impl (blkF16 v) (blkToDecF16 v)
 
+def sealLeafF16 (v : GcmVariant) : Option (BlocksTo.SealFn (Proof.Gcm.X86_64.Stitch.CtxMode.flaggedT 16)) :=
+  selectSealLeaf v ("vg_aes_gcm_seal_blocks_prepared16" ++ v.impl.suffix) v.stitchToR16.isSome
+    ⟨fun _ h => Proof.Gcm.X86_64.StitchR.encToFromTwo_ok 8 (by decide) (sPreTo_ofFlagged16 h),
+     fun _ h => Proof.Gcm.X86_64.StitchAvx8.encBuffers_ok 8 (by decide) (sPreTo_ofFlagged16 h)⟩
+    none
+
 def blkToF16 (v : GcmVariant) : StreamTo.BlkToFn (Proof.Gcm.X86_64.Stitch.CtxMode.flaggedT 16) :=
   .ofPreparedBlocks ("vg_aes_gcm_encrypt_blocks_to_prepared16" ++ v.impl.suffix) v.gh.impl v.ctr.ctrTo (blkF16 v)
     v.shortBackend
@@ -2948,18 +3049,18 @@ theorem openToCodeR16_onFlag_spAll (v : GcmVariant) (r : R16 v) :
 
 /-- `vg_aes_gcm_seal_prepared` of a variant whose loops read 16 powers: by the
 count, its code on them or its code on the key context. -/
-def sealCodeF16 (v : GcmVariant) : Prog VG.X86_64.isa :=
+def sealCodeF16 (v : GcmVariant) (B : BlkFn Proof.Gcm.X86_64.Stitch.CtxMode.prepared16 := blkR16 v) : Prog VG.X86_64.isa :=
   Impl.Gcm.X86_64.Flag.onFlag 16
-    (Impl.StackScratch.X86_64.withStackArgScratch 2600 3 (v.impl.sealCodeP (v.impl.withBlk (blkR16 v))))
+    (Impl.StackScratch.X86_64.withStackArgScratch 2600 3 (v.impl.sealCodeP (v.impl.withBlk B)))
     (Impl.StackScratch.X86_64.withStackArgScratch 2600 3 (v.impl.sealCode v.impl.callees))
 
-theorem sealCodeF16_verified (v : GcmVariant) (r : R16 v) :
-    Verified X86_64.target (sealCodeF16 v) (VG.Proof.AesGcm.Flag.sealRoundsContractB 16 X86_64.abi 2624) :=
-  Flag.seal_onFlag16B (sealSelPrepared16_framed v.impl (blkR16 v) Short.shortFacts r.short)
+theorem sealCodeF16_verified (v : GcmVariant) (r : R16 v) (B : BlkFn Proof.Gcm.X86_64.Stitch.CtxMode.prepared16 := blkR16 v) :
+    Verified X86_64.target (sealCodeF16 v B) (VG.Proof.AesGcm.Flag.sealRoundsContractB 16 X86_64.abi 2624) :=
+  Flag.seal_onFlag16B (sealSelPrepared16_framed v.impl B Short.shortFacts r.short)
     (sealSel_framed v.impl Short.shortFacts)
 
-theorem sealCodeF16_spAll (v : GcmVariant) : (sealCodeF16 v).all (fun i => !X86_64.isa.writesSp i) = true :=
-  VG.X86_64.onFlag_spSafe (X86_64.withStackArgScratch_spSafe (sealCodeP_spSafe v.impl (blkR16 v)))
+theorem sealCodeF16_spAll (v : GcmVariant) (B : BlkFn Proof.Gcm.X86_64.Stitch.CtxMode.prepared16 := blkR16 v) : (sealCodeF16 v B).all (fun i => !X86_64.isa.writesSp i) = true :=
+  VG.X86_64.onFlag_spSafe (X86_64.withStackArgScratch_spSafe (sealCodeP_spSafe v.impl B))
     (X86_64.withStackArgScratch_spSafe (sealCode_spSafe v.impl v.impl.blkB))
 
 theorem sealCodeF16_xdepth (v : GcmVariant) : (sealCodeF16 v).x86_64Depth ≤ 2624 := by

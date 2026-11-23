@@ -330,21 +330,6 @@ open VG.X86_64 VG.X86_64.Scrub
 open VG.Impl.Scrub.X86_64 (VecLevel)
 open VG.Impl.AesGcm.X86_64 (Callees Fn)
 
-/-- The level of the vector instructions of the loops named `n`. -/
-def StitchName.lv : StitchName → VecLevel
-  | .vaes => .avx
-  | .vaesAvx512 => .evex
-  | .aesniAvx => .avx
-
-/-- The level of the vector instructions of `v`'s own code: its loops'. -/
-def GcmVariant.own (v : GcmVariant) : VecLevel :=
-  match v.stitch with
-  | none => .sse
-  | some p => p.name.lv
-
-/-- The level of the cleanup of `v`'s functions. -/
-def GcmVariant.lv (v : GcmVariant) : VecLevel := v.impl.lv v.own
-
 /-- The level of the cleanup of `v`'s `open` on prepared powers, whose code
 past the short path is in VEX (`FastOpen.openFin`). -/
 def GcmVariant.lvA (v : GcmVariant) : VecLevel := v.impl.lv (v.own.join .avx)
@@ -892,18 +877,6 @@ open VG.Impl.Scrub.X86_64 (VecLevel)
 open VG.Impl.AesGcm.X86_64 (Callees Fn)
 open VG.Impl.StackScratch.X86_64 (withStackArgScratch)
 
-/-- The level of the vector instructions of the out-of-place loops named `n`. -/
-def StitchToName.lv : StitchToName → VecLevel
-  | .vaes => .avx
-  | .vaesAvx512 => .evex
-  | .aesniAvx => .avx
-
-/-- The level of `v`'s out-of-place loops, if any. -/
-def GcmVariant.toLv (v : GcmVariant) : VecLevel :=
-  match v.stitch with
-  | some p => (p.toPart.map (·.name.lv)).getD .sse
-  | none => .sse
-
 /-- The level of the cleanup of `v`'s `open_to`: `lvA`'s, its out-of-place
 `vg_aes_ctr32_to`'s and its out-of-place loops'. -/
 def GcmVariant.lvT (v : GcmVariant) : VecLevel := (v.lvA.join v.ctrTo.level).join v.toLv
@@ -1272,10 +1245,6 @@ open VG.X86_64 VG.X86_64.Scrub
 open VG.Impl.Scrub.X86_64 (VecLevel)
 open VG.Impl.AesGcm.X86_64 (Callees Fn)
 open VG.Impl.StackScratch.X86_64 (withStackScratch withStackArgScratch)
-
-/-- The level of the cleanup of `v`'s `seal_gather` on the key context:
-`lv`'s and its out-of-place loops'. -/
-def GcmVariant.lvG (v : GcmVariant) : VecLevel := (v.lv.join v.ctrTo.level).join v.toLv
 
 theorem GcmVariant.lv_le_lvG (v : GcmVariant) : v.lv.level ≤ v.lvG.level :=
   Nat.le_trans (level_join_left _ _) (level_join_left _ _)
