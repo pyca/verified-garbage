@@ -149,4 +149,11 @@ def directBase (lv : Impl.Scrub.X86_64.VecLevel) (c : Callees) (ctr : Fn) : Prog
 def directPrepared (lv : Impl.Scrub.X86_64.VecLevel) (n : Nat) (c : Callees) (ctr blockTo : Fn) : Prog isa :=
   Impl.Scrub.X86_64.scrubAll lv 0 5128 (Impl.Gcm.X86_64.Flag.onFlag n (prepared c ctr blockTo) (plain c ctr))
 
+/-- Use the register-destination kernel when the CPU variant provides one. -/
+def directSeal (baseLv preparedLv : Impl.Scrub.X86_64.VecLevel) (n : Nat) (c : Callees) (ctr : Fn)
+    (blocks : Option Fn) : Prog isa :=
+  match blocks with
+  | some b => directPrepared preparedLv n c ctr b
+  | none => directBase baseLv c ctr
+
 end VG.Impl.AesGcm.X86_64.DirectGather
