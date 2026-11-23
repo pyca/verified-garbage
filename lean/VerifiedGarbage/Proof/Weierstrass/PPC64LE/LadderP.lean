@@ -548,7 +548,7 @@ theorem ptCall_ok {S : Impl.Weierstrass.Mont.Modulus} [NeZero S.m] (hM : ModOk S
           toM S.m (2 ^ (64 * S.k)) (wordsVal t'.mem (t.gpr .r3) (enc S.k dbl 1) S.k),
           toM S.m (2 ^ (64 * S.k)) (wordsVal t'.mem (t.gpr .r3) (enc S.k dbl 2) S.k)) =
         ptVal a0 dbl (Eb S.k S.m dbl t.mem (t.gpr .r3)),
-      fun _ _ => True⟩)
+      fun _ _ => True, none⟩)
     (fun t ⟨hp, _, _⟩ => by
       obtain ⟨tr, t', he, A, G, O, L, E⟩ := fnOps_ok hM hodd (ptOps_opsOk a0 dbl) hp
       exact ⟨tr, t', he, A, G, O, L, E.trans (ptOps_run _ a0 dbl)⟩)
