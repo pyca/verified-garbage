@@ -17,7 +17,8 @@ and the modes' core are the baseline's over its call (`roundWith`,
 `Modes.coreWith`): `core`.
 
 The S-boxes S1 to S4 are a static table in byte planes, `VG_CAST5_SSSE3`:
-byte `p` of `S_{j+1}[x]` at `1024 j + 256 p + x`, then the constants. A
+byte `p` of `S_{j+1}[x]` at `1024 j + 256 p + x`, then the constants (and
+then the planes of S5 to S8, for key expansion, `Ssse3Key.lean`). A
 look-up of a byte `x` in a plane of 256 bytes reads the plane's sixteen rows
 of sixteen bytes, each through `pshufb` with the row's index vector, and ORs
 them: the index vector of row `r` holds `x`'s low nibble where `x`'s high
@@ -60,12 +61,17 @@ def tableName : String := "VG_CAST5_SSSE3"
 
 /-! ## The table -/
 
-/-- The S-box `S_{j+1}`. -/
+/-- The S-box `S_{j+1}`: S1 to S4, which the rounds use, and S5 to S8, which
+key expansion does. -/
 def sboxOf : Nat → Byte → Spec.Cast5.Word
   | 0 => Spec.Cast5.S1
   | 1 => Spec.Cast5.S2
   | 2 => Spec.Cast5.S3
-  | _ => Spec.Cast5.S4
+  | 3 => Spec.Cast5.S4
+  | 4 => Spec.Cast5.S5
+  | 5 => Spec.Cast5.S6
+  | 6 => Spec.Cast5.S7
+  | _ => Spec.Cast5.S8
 
 /-- Byte `p` of `S_{j+1}[x]`. -/
 def planeByte (j p x : Nat) : Byte := (sboxOf j (BitVec.ofNat 8 x) >>> (8 * p)).setWidth 8
@@ -73,15 +79,22 @@ def planeByte (j p x : Nat) : Byte := (sboxOf j (BitVec.ofNat 8 x) >>> (8 * p)).
 /-- Eight bytes as a little-endian word. -/
 def le8 (f : Nat → Byte) : BitVec 64 := f 7 ++ f 6 ++ f 5 ++ f 4 ++ f 3 ++ f 2 ++ f 1 ++ f 0
 
-/-- The planes: word `w` holds the bytes `8 (w mod 32)` on of plane
-`w / 32 mod 4` of S-box `w / 128`. -/
+/-- The planes of S1 to S4: word `w` holds the bytes `8 (w mod 32)` on of
+plane `w / 32 mod 4` of S-box `w / 128`. -/
 def planes : List (BitVec 64) :=
   (List.range 512).map fun w => le8 fun c => planeByte (w / 128) (w / 32 % 4) (8 * (w % 32) + c)
+
+/-- The planes of S5 to S8, as those of S1 to S4. -/
+def keyPlanes : List (BitVec 64) :=
+  (List.range 512).map fun w => le8 fun c => planeByte (4 + w / 128) (w / 32 % 4) (8 * (w % 32) + c)
 
 /-- The constants, 16 bytes each (two words): the sixteen rows `C_r` (zero
 at byte `r`, `0x80` elsewhere), the shuffle that gathers the bytes 0, 4, 8
 and 12, then 1, 5, 9 and 13, and so on, `0x0f` in every byte, and the
-shuffle that puts the bytes 0, 4, 8 and 12 in every doubleword. -/
+shuffle that puts the bytes 0, 4, 8 and 12 in every doubleword; then, for
+sixteen blocks (`Ssse3Wide.lean`), the shuffles that take two blocks' left
+and right halves as big-endian doublewords, the one that reverses the bytes
+of every doubleword, `0xff` in every byte and 1 in every doubleword. -/
 def consts : List (BitVec 64) := [
   0x8080808080808000, 0x8080808080808080, 0x8080808080800080, 0x8080808080808080,
   0x8080808080008080, 0x8080808080808080, 0x8080808000808080, 0x8080808080808080,
@@ -92,16 +105,21 @@ def consts : List (BitVec 64) := [
   0x8080808080808080, 0x8080800080808080, 0x8080808080808080, 0x8080008080808080,
   0x8080808080808080, 0x8000808080808080, 0x8080808080808080, 0x0080808080808080,
   0x0d0905010c080400, 0x0f0b07030e0a0602, 0x0f0f0f0f0f0f0f0f, 0x0f0f0f0f0f0f0f0f,
-  0x0c0804000c080400, 0x0c0804000c080400
+  0x0c0804000c080400, 0x0c0804000c080400,
+  0x08090a0b00010203, 0x8080808080808080, 0x0c0d0e0f04050607, 0x8080808080808080,
+  0x0405060700010203, 0x0c0d0e0f08090a0b, 0xffffffffffffffff, 0xffffffffffffffff,
+  0x0000000100000001, 0x0000000100000001
 ]
 
-/-- `VG_CAST5_SSSE3`: the planes, then the constants. -/
-def table : List (BitVec 64) := planes ++ consts
+/-- `VG_CAST5_SSSE3`: the planes of S1 to S4, the constants, then the planes
+of S5 to S8 (`Ssse3Key.lean`). -/
+def table : List (BitVec 64) := planes ++ consts ++ keyPlanes
 
 /-! ## The table's and the working space's offsets -/
 
-/-- Plane `p` of S-box `j`. -/
-def planeOff (j p : Nat) : Nat := 1024 * j + 256 * p
+/-- Plane `p` of S-box `j`: those of S5 to S8 (`j` from 4 on) are after the
+constants, 384 bytes further. -/
+def planeOff (j p : Nat) : Nat := 1024 * j + 256 * p + 384 * (j / 4)
 /-- The row `C_r`. -/
 def oC (r : Nat) : Nat := 4096 + 16 * r
 /-- The shuffle that gathers. -/
@@ -110,6 +128,16 @@ def oT : Nat := 4352
 def oM : Nat := 4368
 /-- The shuffle that spreads `I` to every doubleword. -/
 def oS : Nat := 4384
+/-- Two blocks' left halves, as big-endian doublewords, to the low quadword. -/
+def oKL : Nat := 4400
+/-- Two blocks' right halves. -/
+def oKR : Nat := 4416
+/-- The bytes of every doubleword reversed. -/
+def oBS : Nat := 4432
+/-- `0xff` in every byte. -/
+def oOnes : Nat := 4448
+/-- 1 in every doubleword. -/
+def oOne : Nat := 4464
 
 /-- The index vector of row `r`, in the working space. -/
 def vOff (r : Nat) : Nat := 272 + 16 * r
@@ -205,5 +233,54 @@ def cfbEncryptFinal : Prog isa := (core true).seqFinal (Mode.cfbEnc 2)
 def cfbDecryptFinal : Prog isa := (core true).seqFinal (Mode.cfbDec 2)
 /-- OFB of a message's last piece. -/
 def ofbFinal : Prog isa := (core true).seqFinal (Mode.ofb 2)
+
+/-! ## The functions as emitted
+
+Each function with its working space in a frame on the stack, which it
+wipes (`withStackScratchWiped`), then its cleanup
+(`Impl.Scrub.X86.scrubSel rb W ws`): of the `W` bytes of stack below `esp`
+that its contract reserves, the doublewords `ws` its code may leave
+different in two runs zeroed, and the registers a callee may change
+cleared, so that it returns without secret residue.
+
+The frame is larger than its working space and header need (664 bytes for
+660), so that the working space, which `withStackScratchWiped` puts 28 bytes
+above the frame's base for five arguments, is at a multiple of 16 when `esp`
+is one at the call: the look-ups' 16-byte loads and stores then cross no
+page, or line of the cache. -/
+
+namespace Fn
+
+/-- The doublewords of the 672 bytes of stack below `esp` that the residue
+analysis finds a function may leave different in two runs: the look-ups'
+call and its table's address, the frame's header, and the four bytes at the
+frame's top that the working space does not reach. -/
+def words : List Nat := [1, 2, 3, 4, 5, 6, 7, 8, 167]
+
+/-- `Spec.Cast5.cbcEncryptChainedApi`'s function as emitted. -/
+def cbcEncryptChained : Prog isa :=
+  Impl.Scrub.X86.scrubSel 0 672 words (Impl.StackScratch.X86.withStackScratchWiped 664 5 158 Ssse3.cbcEncryptChained)
+
+/-- `Spec.Cast5.ofbApi`'s function as emitted. -/
+def ofb : Prog isa :=
+  Impl.Scrub.X86.scrubSel 0 672 words (Impl.StackScratch.X86.withStackScratchWiped 664 5 158 Ssse3.ofb)
+
+/-- `Spec.Cast5.cfbEncryptApi`'s function as emitted. -/
+def cfbEncrypt : Prog isa :=
+  Impl.Scrub.X86.scrubSel 0 672 words (Impl.StackScratch.X86.withStackScratchWiped 664 5 158 Ssse3.cfbEncrypt)
+
+/-- `Spec.Cast5.cfbEncryptFinalApi`'s function as emitted. -/
+def cfbEncryptFinal : Prog isa :=
+  Impl.Scrub.X86.scrubSel 0 672 words (Impl.StackScratch.X86.withStackScratchWiped 664 5 158 Ssse3.cfbEncryptFinal)
+
+/-- `Spec.Cast5.cfbDecryptFinalApi`'s function as emitted. -/
+def cfbDecryptFinal : Prog isa :=
+  Impl.Scrub.X86.scrubSel 0 672 words (Impl.StackScratch.X86.withStackScratchWiped 664 5 158 Ssse3.cfbDecryptFinal)
+
+/-- `Spec.Cast5.ofbFinalApi`'s function as emitted. -/
+def ofbFinal : Prog isa :=
+  Impl.Scrub.X86.scrubSel 0 672 words (Impl.StackScratch.X86.withStackScratchWiped 664 5 158 Ssse3.ofbFinal)
+
+end Fn
 
 end VG.Impl.Cast5.X86.Ssse3

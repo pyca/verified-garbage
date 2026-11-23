@@ -16,7 +16,7 @@
 /// * `schedule` must be valid for reads and writes of 4168 bytes.
 /// * `key_len` must be in 4..=56.
 /// * `schedule` must not overlap `key` or the arguments on the stack (distinct Rust objects never do).
-/// * Neither `key` nor `schedule` may overlap the return address on the stack or the 412 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * Neither `key` nor `schedule` may overlap the return address on the stack or the 424 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_blowfish_expand_key_auto(_dit: verified_garbage_cpu::Dit<'_>, key: *const u8, key_len: usize, schedule: *mut [u8; 4168]) {
@@ -57,7 +57,7 @@ pub unsafe fn vg_blowfish_expand_key_auto(_dit: verified_garbage_cpu::Dit<'_>, k
 ///
 /// Contract: `VG.Spec.Blowfish.ecbEncryptContract`. Constant time: only pointers and `n` may affect timing, not the schedule or data, including the S-box indices.
 ///
-/// It runs `vg_blowfish_ecb_encrypt`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_blowfish_ecb_encrypt_ssse3` if the CPU supports its features (`VG_BLOWFISH_ECB_ENCRYPT_SSSE3_FEATURES`); or else `vg_blowfish_ecb_encrypt`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
@@ -68,19 +68,48 @@ pub unsafe fn vg_blowfish_expand_key_auto(_dit: verified_garbage_cpu::Dit<'_>, k
 /// * `schedule` must be valid for reads of 4168 bytes.
 /// * `data` must be valid for reads and writes of `8 * n` bytes.
 /// * `data` must not overlap `schedule` (distinct Rust objects never do).
-/// * Neither `schedule` nor `data` may overlap the arguments on the stack, overlap the return address on the stack or the 276 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * Neither `schedule` nor `data` may overlap the arguments on the stack, overlap the return address on the stack or the 920 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_blowfish_ecb_encrypt_auto(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 4168], data: *mut [u8; 8], n: usize) {
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::blowfish::vg_blowfish_ecb_encrypt(schedule, data, n) }
+    /// The type of the implementations.
+    type Impl = unsafe extern "C" fn(schedule: *const [u8; 4168], data: *mut [u8; 8], n: usize);
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        if const { verified_garbage_cpu::target_contains(crate::blowfish::VG_BLOWFISH_ECB_ENCRYPT_SSSE3_FEATURES) }
+            || cpu.contains(crate::blowfish::VG_BLOWFISH_ECB_ENCRYPT_SSSE3_FEATURES)
+        {
+            return crate::blowfish::vg_blowfish_ecb_encrypt_ssse3;
+        }
+        crate::blowfish::vg_blowfish_ecb_encrypt
+    }
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "C" fn first(schedule: *const [u8; 4168], data: *mut [u8; 8], n: usize) {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(schedule, data, n) }
+    }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(schedule, data, n) }
 }
 
 /// Blowfish ECB decryption (SP 800-38A §6.1's construction) of `n` complete 8-byte blocks at `data`, in place, under the schedule written by `vg_blowfish_expand_key`. No padding is added or removed. For `n = 0`, no data is transformed.
 ///
 /// Contract: `VG.Spec.Blowfish.ecbDecryptContract`. Constant time: only pointers and `n` may affect timing, not the schedule or data, including the S-box indices.
 ///
-/// It runs `vg_blowfish_ecb_decrypt`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_blowfish_ecb_decrypt_ssse3` if the CPU supports its features (`VG_BLOWFISH_ECB_DECRYPT_SSSE3_FEATURES`); or else `vg_blowfish_ecb_decrypt`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
@@ -91,10 +120,39 @@ pub unsafe fn vg_blowfish_ecb_encrypt_auto(_dit: verified_garbage_cpu::Dit<'_>, 
 /// * `schedule` must be valid for reads of 4168 bytes.
 /// * `data` must be valid for reads and writes of `8 * n` bytes.
 /// * `data` must not overlap `schedule` (distinct Rust objects never do).
-/// * Neither `schedule` nor `data` may overlap the arguments on the stack, overlap the return address on the stack or the 276 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * Neither `schedule` nor `data` may overlap the arguments on the stack, overlap the return address on the stack or the 920 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_blowfish_ecb_decrypt_auto(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 4168], data: *mut [u8; 8], n: usize) {
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::blowfish::vg_blowfish_ecb_decrypt(schedule, data, n) }
+    /// The type of the implementations.
+    type Impl = unsafe extern "C" fn(schedule: *const [u8; 4168], data: *mut [u8; 8], n: usize);
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        if const { verified_garbage_cpu::target_contains(crate::blowfish::VG_BLOWFISH_ECB_DECRYPT_SSSE3_FEATURES) }
+            || cpu.contains(crate::blowfish::VG_BLOWFISH_ECB_DECRYPT_SSSE3_FEATURES)
+        {
+            return crate::blowfish::vg_blowfish_ecb_decrypt_ssse3;
+        }
+        crate::blowfish::vg_blowfish_ecb_decrypt
+    }
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "C" fn first(schedule: *const [u8; 4168], data: *mut [u8; 8], n: usize) {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(schedule, data, n) }
+    }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(schedule, data, n) }
 }
