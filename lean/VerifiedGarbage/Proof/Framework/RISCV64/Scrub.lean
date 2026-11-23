@@ -369,14 +369,22 @@ theorem wipe_run : ∀ (cs : List Nat) (u : State), (∀ b ∈ cs, 0 < b ∧ b �
       rw [es] at ef
       exact ef
 
+theorem setWidth_sext32 (y : BitVec 32) : (y.signExtend 64).setWidth 32 = y := by
+  ext i hi
+  rw [BitVec.getElem_setWidth, ← BitVec.getLsbD_eq_getElem, BitVec.getLsbD_signExtend]
+  simp [hi]; omega
+
 /-- What `retFix rb` leaves in `a0`. -/
 def fixA (rb : Nat) (x : BitVec 64) : BitVec 64 :=
-  if rb = 0 then 0 else if rb < 64 then (x <<< (64 - rb)) >>> (64 - rb) else x
+  if rb = 0 then 0 else if rb = 32 then (x.setWidth 32).signExtend 64
+  else if rb < 64 then (x <<< (64 - rb)) >>> (64 - rb) else x
 
 theorem fixA_low {rb : Nat} (hrb : rb ≤ 64) (x : BitVec 64) : (fixA rb x).setWidth rb = x.setWidth rb := by
   unfold fixA
   split
   · next h => subst h; exact BitVec.eq_nil _ |>.trans (BitVec.eq_nil _).symm
+  split
+  · next h => subst h; exact setWidth_sext32 _
   · split
     · ext i hi
       simp only [BitVec.getElem_setWidth, BitVec.getLsbD_ushiftRight, BitVec.getLsbD_shiftLeft]
@@ -384,16 +392,17 @@ theorem fixA_low {rb : Nat} (hrb : rb ≤ 64) (x : BitVec 64) : (fixA rb x).setW
       omega
     · next h₁ h₂ => rfl
 
-theorem fixA_hi {rb : Nat} (hrb : rb ≤ 64) (x : BitVec 64) : fixA rb x >>> rb = 0 := by
+theorem fixA_hi {rb : Nat} (hrb : rb ≤ 64) (h32 : rb ≠ 32) (x : BitVec 64) : fixA rb x >>> rb = 0 := by
   unfold fixA
-  split
-  · simp
+  by_cases h0 : rb = 0
+  · subst h0; simp
+  simp only [h0, h32, ite_false]
   · split
     · ext i hi
       simp only [BitVec.getElem_ushiftRight, BitVec.getLsbD_ushiftRight, BitVec.getLsbD_shiftLeft]
       simp
       omega
-    · next h₁ h₂ =>
+    · next h₁ =>
       obtain rfl : rb = 64 := by omega
       ext i hi; simp
 
@@ -426,6 +435,15 @@ theorem retFix_run {rb : Nat} (hrb : rb ≤ 64) (u : State) :
   · next h =>
     rw [show [zeroR .a0] = [Reg.a0].map zeroR from rfl, zeroRs_run]
     simp only [List.mem_singleton]
+  split
+  · next h₁ h₂ =>
+    simp only [execBlock, isa, exec_addiw (show imm12 0 by decide),
+      show BitVec.ofInt 32 0 = 0 from by decide, Option.map_some, addrs,
+      List.map_nil, List.nil_append, Option.some.injEq, Prod.mk.injEq, and_true]
+    cases u
+    simp only [State.write, State.mk.injEq, and_true]
+    funext r'
+    by_cases h : r' = .a0 <;> simp [h]
   · split
     · next h₁ h₂ =>
       simp only [ite_true, execBlock, isa, exec, show 64 - rb < 64 by omega, ite_true,
@@ -519,6 +537,7 @@ structure ScrubAbi (A : Abi isa) : Prop where
   pub : ∀ s₁ s₂, A.pub s₁ s₂ → s₁.sp = s₂.sp
   mem : ∀ s, A.mem s = s.mem
   ret : ∀ s, A.ret s = s.gpr .a0
+  retExt : A.retExt = abi.retExt
   rdSub : ∀ s r, r ∈ A.rd s → r ∈ s.rd
   argsLen : ∀ ws f, A.args ws = some f → ∀ s, (f s).length = ws.length
 
@@ -543,14 +562,14 @@ theorem abi_wf_stack {ws : List Nat} {n : Nat} {s : State} (h : abi.wf ws n s) :
 
 theorem ScrubAbi.plain : ScrubAbi abi :=
   ⟨rfl, rfl, fun _ => rfl, fun _ _ _ h => ⟨(abi_wf_stack h).1, (abi_wf_stack h).2, fun _ hr hn => absurd hr hn⟩,
-    fun _ _ h => h, fun _ => rfl, fun _ => rfl, fun _ _ h => h, abi_args_len⟩
+    fun _ _ h => h, fun _ => rfl, fun _ => rfl, rfl, fun _ _ h => h, abi_args_len⟩
 
 theorem ScrubAbi.consts (cs : List (String × List (BitVec 64))) : ScrubAbi (abi.withConsts cs) := by
   cases cs with
   | nil => exact ScrubAbi.plain
   | cons c cs =>
     refine ⟨rfl, rfl, fun _ => rfl, fun ws n s h => ?_, fun _ _ h => h.1, fun _ => rfl, fun _ => rfl,
-      fun _ _ h => List.mem_of_mem_take h, abi_args_len⟩
+      rfl, fun _ _ h => List.mem_of_mem_take h, abi_args_len⟩
     obtain ⟨hw, hdrop, -, hdis, -⟩ := h
     refine ⟨(abi_wf_stack hw).1, (abi_wf_stack hw).2, fun r hr hn q hq => ?_⟩
     have hr' : r ∈ (abi.rd s).drop ((abi.rd s).length - (c :: cs).length) := by
@@ -568,7 +587,26 @@ theorem ScrubAbi.tables {A : Abi isa} (hA : ScrubAbi A) (sig : Sig) (ts : List (
   | nil => exact hA
   | cons t ts =>
     exact ⟨hA.ptrBits, hA.reserved, hA.wr, fun ws n s h => hA.wf ws n s h.1,
-      fun s₁ s₂ h => hA.pub s₁ s₂ h.1, hA.mem, hA.ret, hA.rdSub, hA.argsLen⟩
+      fun s₁ s₂ h => hA.pub s₁ s₂ h.1, hA.mem, hA.ret, hA.retExt, hA.rdSub, hA.argsLen⟩
+
+/-- The psABI's `u32` result (`abi.retExt`): its bit 31 sign-extended. -/
+def sext32Of (r : BitVec 64) : BitVec 64 := (r.setWidth 32).signExtend 64
+
+/-- A contract `Sig.contract` derives for a 32-bit result requires `a0` sign-extended. -/
+theorem contract_retExt32 {A : Abi isa} (hA : ScrubAbi A) {sig : Sig} {pre post wa stack leak}
+    (h : sig.retBits A.ptrBits = 32) :
+    (sig.contract A pre post wa stack leak).retExt = some sext32Of := by
+  simp only [Sig.contract, hA.retExt]
+  unfold Sig.retBits at h
+  rcases e : sig.ret with _ | ⟨_ | _ | _⟩ <;> rw [e] at h
+  · cases h
+  · rfl
+  · cases h
+  · simp only [IntTy.bits, hA.ptrBits] at h; cases h
+
+/-- What `retFix 32` leaves in `a0` is as the psABI requires. -/
+theorem fixA_sext (x : BitVec 64) : fixA 32 x = sext32Of (fixA 32 x) := by
+  simp only [fixA, sext32Of, show (32 : Nat) ≠ 0 by decide, ite_false, ite_true, setWidth_sext32]
 
 /-- The calling convention of every RISC-V artifact (`Api.artifact`). -/
 theorem ScrubAbi.of (cs : List (String × List (BitVec 64))) (sig : Sig) (ts : List (String × List FnTable)) :
@@ -955,6 +993,24 @@ theorem wipeMem_below (cs : List Nat) (sp x : Addr) (U : Nat → BitVec 64) (m :
     wipeMem cs sp U m x = if (below sp cs.sum).Contains x 1 then wipeZ cs sp U x else m x := by
   simp only [wipeMem, below_contains_iff]
 
+/-- Two states that agree on everything outside the buffers but `a0` agree
+on everything but the result (`RetOutside`): if the result's width is not
+32, on `a0`'s bits above it; if it is, `a0` is the sign-extension the
+contract requires (`k.retExt`) in both. -/
+theorem retOutside_of {k : Contract isa} {rb : Nat} {X Y : State} (O : Outside 64 X Y)
+    (ha : rb ≠ 32 → X.gpr .a0 >>> rb = Y.gpr .a0 >>> rb)
+    (hc : rb = 32 → k.retExt = some sext32Of ∧ X.gpr .a0 = sext32Of (X.gpr .a0) ∧
+      Y.gpr .a0 = sext32Of (Y.gpr .a0)) :
+    RetOutside k rb X Y := by
+  by_cases h32 : rb = 32
+  · obtain ⟨hk, h₁, h₂⟩ := hc h32
+    exact .inr ⟨O, _, hk, h₁, h₂⟩
+  · obtain ⟨h₁, h₂, h₃, -, h₅, h₆⟩ := O
+    exact .inl ⟨h₁, h₂, h₃, ha h32, h₅, h₆⟩
+
+theorem ushiftRight_64 (x : BitVec 64) : x >>> 64 = 0 := by
+  ext i hi; simp
+
 /-- Code verified against a contract that `Sig.contract` derives, whose
 frames use at most `stack` bytes, run by `scrubAll`, which clears the `stack`
 bytes below `sp` and the caller-saved registers: verified against the same
@@ -1047,15 +1103,14 @@ theorem Verified.scrubAll {A : Abi isa} {sig : Sig} {pre : Curry (sig.words A.pt
       rcases this with hr | rfl
       · rw [ha₁.1 r hr, ha₂.1 r hr]; exact hg r h2
       · rw [ha₁.2.2, ha₂.2.2]; exact hg _ (by decide)
-    refine .inl ⟨show u₁.rd = u₂.rd by simp only [rd₁, rd₂, hrd], show u₁.wr = u₂.wr by simp only [wr₁, wr₂, hwr], fun r hr => ?_, ?_, ?_, fun x hx => ?_⟩
+    refine retOutside_of ⟨show u₁.rd = u₂.rd by simp only [rd₁, rd₂, hrd],
+      show u₁.wr = u₂.wr by simp only [wr₁, wr₂, hwr], fun r hr => ?_,
+      by rw [ushiftRight_64, ushiftRight_64], ?_, fun x hx => ?_⟩ (fun h32 => ?_) (fun h32 => ?_)
     · show finG _ u₁.gpr r = finG _ u₂.gpr r
       simp only [finG, hr, ite_false]
       split
       · rfl
       · next h => exact keep r h hr
-    · show finG _ u₁.gpr .a0 >>> _ = finG _ u₂.gpr .a0 >>> _
-      simp only [finG, show Reg.a0 ∉ scratchRegs by decide, ite_false, ite_true]
-      rw [fixA_hi hrb, fixA_hi hrb]
     · show u₁.sp = u₂.sp
       rw [hsp₁, hsp₂, hsp]
     · show wipeMem (chunks stack) s₁.sp u₁.unknowns u₁.mem x = wipeMem (chunks stack) s₂.sp u₂.unknowns u₂.mem x
@@ -1077,6 +1132,13 @@ theorem Verified.scrubAll {A : Abi isa} {sig : Sig} {pre : Curry (sig.words A.pt
           · simp only [List.mem_singleton] at hr; subst hr; rw [← hsp]; exact nb)
         rw [f₁, f₂]
         exact hm x hx'
+    · show finG _ u₁.gpr .a0 >>> _ = finG _ u₂.gpr .a0 >>> _
+      simp only [finG, show Reg.a0 ∉ scratchRegs by decide, ite_false, ite_true]
+      rw [fixA_hi hrb h32, fixA_hi hrb h32]
+    · refine ⟨contract_retExt32 hA h32, ?_, ?_⟩ <;>
+      · show finG _ _ .a0 = sext32Of (finG _ _ .a0)
+        simp only [finG, show Reg.a0 ∉ scratchRegs by decide, ite_false, ite_true, h32]
+        exact fixA_sext _
 
 /-! ## A registration's code, scrubbed -/
 
