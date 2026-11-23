@@ -13,10 +13,10 @@ the functions built with `u` (their names end in `_umaal`, `suffix`), whose
 multiplication is by `umaal` on the limbs packed in words (`mulU`); the
 other field operations are the same functions for both.
 
-`r0` holds the working space, `r8` the output pointer, `r10` the link
-register, `r11` the ladder or squaring counter, and `r6` the limb mask.
-Registers `r4` through `r11` are saved in the working space and restored
-before returning. Multiplications, additions, subtractions and the
+`r0` holds the working space, `r8` the output pointer, `r11` the ladder or
+squaring counter, and `r6` the limb mask. `x448` writes no `r10`: registers
+`r4` through `r9`, `r11` and the link register are saved in the working
+space and restored before returning (`savedL`). Multiplications, additions, subtractions and the
 multiplication by `a24` are calls of the functions `vg_gf448_r16_*` below,
 which keep `r0`, `r8`, `r10` and `r11`.
 -/
@@ -352,9 +352,14 @@ def initSlots : List Instr :=
 
 def saved : List Reg := [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11]
 
+/-- The registers `x448` saves, in order: `saved` but with the link register
+in `r10`'s place, since it writes no `r10`, which its callers may use for the
+address of the field's multiplication. -/
+def savedL : List Reg := [.r4, .r5, .r6, .r7, .r8, .r9, .lr, .r11]
+
 def setup : List Instr :=
-  (List.range 8).map (fun i => .str (saved[i]!) .r3 (4 * i)) ++
-  [.mov .r8 (.reg .r0), .mov .r10 (.reg .lr), .mov .r0 (.reg .r3), .movw .r6 65535] ++
+  (List.range 8).map (fun i => .str (savedL[i]!) .r3 (4 * i)) ++
+  [.mov .r8 (.reg .r0), .mov .r0 (.reg .r3), .movw .r6 65535] ++
   (List.range 28).flatMap decodeLimb ++ initSlots
 
 /-- Add `1 + 2^224`, then select the carried result when the carry is one. -/
@@ -370,13 +375,21 @@ def packLimb (i : Nat) : List Instr :=
   [ld .r3 (X2 + 4 * i), .strb .r3 .r8 (2 * i), .mov .r3 (.shifted .r3 .lsr 8),
     .strb .r3 .r8 (2 * i + 1)]
 
+/-- The last multiplication, the canonical reduction and the encoding, then
+`tail`. -/
+def finishT (u : Bool) (tail : List Instr) : Prog isa :=
+  .seq (Op.code u (.mul X2 X2 T7)) (.block (freeze ++ (List.range 28).flatMap packLimb ++ tail))
+
+/-- `finishT` with the link register from `r10` and `saved` restored. -/
 def finish (u : Bool) : Prog isa :=
-  .seq (Op.code u (.mul X2 X2 T7)) (.block (freeze ++ (List.range 28).flatMap packLimb ++
-    .mov .lr (.reg .r10) :: (List.range 8).map fun i => ld (saved[i]!) (4 * i)))
+  finishT u (.mov .lr (.reg .r10) :: (List.range 8).map fun i => ld (saved[i]!) (4 * i))
+
+/-- `finishT` with `savedL` restored. -/
+def finishL (u : Bool) : Prog isa := finishT u ((List.range 8).map fun i => ld (savedL[i]!) (4 * i))
 
 /-- What follows the setup. -/
 def afterSetup (u : Bool) : Prog isa :=
-  .seq bits <| .seq (ladder u) <| .seq (.block lastSwap) <| .seq (invert u) (finish u)
+  .seq bits <| .seq (ladder u) <| .seq (.block lastSwap) <| .seq (invert u) (finishL u)
 
 def x448 (u : Bool) : Prog isa := .seq (.block setup) (afterSetup u)
 

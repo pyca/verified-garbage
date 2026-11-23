@@ -193,10 +193,51 @@ theorem Outside2.whole {base : Addr} {x nx y ny : Nat} {m m' : Mem}
     (h : Outside2 base x nx y ny m m') (hx : x + nx ≤ 8192) (hy : y + ny ≤ 8192) :
     Outside base 0 8192 m m' := fun p hp => h p (by omega_using [hx, hp]) (by omega_using [hy, hp])
 
-theorem Saved.field {base : Addr} {g : Reg → BitVec 32} {m m' : Mem} (h : Saved base g m)
-    {o : Nat} (hm : FieldMem base o m m') (ho : 32 ≤ o) : Saved base g m' := by
+theorem SavedL.field {L : List Reg} {base : Addr} {g : Reg → BitVec 32} {m m' : Mem}
+    (h : SavedL L base g m) {o : Nat} (hm : FieldMem base o m m') (ho : 32 ≤ o) : SavedL L base g m' := by
   intro i hi
   exact (hm.word (Or.inl (by omega_using [ho, hi])) (by simp only [ACC]; omega_using [hi])).trans (h i hi)
+
+theorem Saved.field {base : Addr} {g : Reg → BitVec 32} {m m' : Mem} (h : Saved base g m)
+    {o : Nat} (hm : FieldMem base o m m') (ho : 32 ≤ o) : Saved base g m' := SavedL.field h hm ho
+
+/-- What the last multiplication, the canonical reduction and the encoding
+leave, before `finishT`'s tail. -/
+structure FinMid (L : List Reg) (s : State) (base p : Addr) (g : Reg → BitVec 32) (w : State) : Prop where
+  scr : Scr w base
+  saved : SavedL L base g w.mem
+  keeps : Keeps workRegs s w
+  frame : Frame [⟨base, 8192⟩, ⟨p, 56⟩] s.mem w.mem
+  result : Spec.X448.bytesAt w.mem p 56 = Spec.X448.encodeUCoordinate (E s.mem base 1 * E s.mem base 21)
+
+theorem finishT_ok {L : List Reg} {tail : List Instr} {s : State} {base p : Addr} (hs : Scr s base)
+    (hb : BoundedEnv s.mem base) (hp : State.addr (s.gpr .r8) = p)
+    (hfit : (s.gpr .r8).toNat + 56 ≤ 2 ^ 32) (hw : ∀ j < 56, InRegions s.wr (off p j) 1)
+    (hfar : ∀ j < 8192, 56 ≤ ofs p (off base j)) {g : Reg → BitVec 32} (sv : SavedL L base g s.mem)
+    {Q : State → Prop} (ht : ∀ w, FinMid L s base p g w → WP isa (.block tail) w Q) :
+    WP isa (finishT fv tail) s Q := by
+  refine WP.seq (WP.mono (mulCall_ok hs (o := X2) (a := X2) (b := T7) (by decide) (by decide)
+    (by decide) (hb 1) (hb 21)) fun u ⟨uk, ub, uv⟩ => ?_)
+  have us := hs.of_keeps uk.1 (by decide)
+  rw [List.append_assoc, WP.block_append_iff]
+  refine WP.mono (freeze_ok us ub) fun v ⟨vb, vv, vm, vk⟩ => ?_
+  have vs := us.of_keeps vk (by decide)
+  rw [WP.block_append_iff]
+  refine WP.mono (output_ok (p := p) vs vb (by rw [vk.1 _ (by decide), uk.1.1 _ (by decide)]; exact hp)
+    (by rw [vk.1 _ (by decide), uk.1.1 _ (by decide)]; exact hfit)
+    (by intro j hj; rw [vk.2.2, uk.1.2.2]; exact hw j hj) hfar) fun w ⟨wv, wm, wk⟩ => ?_
+  refine ht w ⟨vs.of_keeps wk (by decide), ?_, (uk.1.mono ?_).trans ((vk.mono ?_).trans (wk.mono ?_)), ?_, ?_⟩
+  · have svv := (SavedL.field sv uk.2 (by decide)).field vm (by decide)
+    intro i hi
+    exact (output_word wm (by decide) (by omega_using [hi]) hfar).trans (svv i hi)
+  · intro r hr; exact List.mem_cons_of_mem _ hr
+  · intro r hr; exact hr
+  · intro r hr; exact List.mem_cons_of_mem _ hr
+  · exact (((uk.2.whole (by decide)).trans (vm.whole (by decide))).frame.mono (by simp)).trans
+      (wm.frame.mono (by simp))
+  · rw [wv, vv, encodeUCoordinate_eq]
+    refine congrArg (VG.Proof.X25519.leBytes 56) ?_
+    exact congrArg Fin.val uv
 
 def finishRegs : List Reg := saved ++ workRegs
 
@@ -208,37 +249,36 @@ theorem finish_ok {s : State} {base p : Addr} (hs : Scr s base) (hb : BoundedEnv
       (∀ i < 8, t.gpr (saved[i]!) = g (saved[i]!)) ∧ t.gpr .lr = s.gpr .r10 ∧ Keeps finishRegs s t ∧
       Frame [⟨base, 8192⟩, ⟨p, 56⟩] s.mem t.mem ∧
       Spec.X448.bytesAt t.mem p 56 = Spec.X448.encodeUCoordinate (E s.mem base 1 * E s.mem base 21) := by
-  refine WP.seq (WP.mono (mulCall_ok hs (o := X2) (a := X2) (b := T7) (by decide) (by decide)
-    (by decide) (hb 1) (hb 21)) fun u ⟨uk, ub, uv⟩ => ?_)
-  have us := hs.of_keeps uk.1 (by decide)
-  rw [List.append_assoc, WP.block_append_iff]
-  refine WP.mono (freeze_ok us ub) fun v ⟨vb, vv, vm, vk⟩ => ?_
-  have vs := us.of_keeps vk (by decide)
-  rw [WP.block_append_iff]
-  refine WP.mono (output_ok (p := p) vs vb (by rw [vk.1 _ (by decide), uk.1.1 _ (by decide)]; exact hp)
-    (by rw [vk.1 _ (by decide), uk.1.1 _ (by decide)]; exact hfit)
-    (by intro j hj; rw [vk.2.2, uk.1.2.2]; exact hw j hj) hfar) fun w ⟨wv, wm, wk⟩ => ?_
+  refine finishT_ok hs hb hp hfit hw hfar sv fun w W => ?_
   refine VG.Proof.X25519.Arm.wp_mov (VG.Proof.X25519.Arm.op2_reg _ _) fun w' hw' => ?_
-  have ws := (vs.of_keeps wk (by decide)).of_upd hw' (by decide) (by decide)
-  have svv := (sv.field uk.2 (by decide)).field vm (by decide)
-  have svw : Saved base g w'.mem := by
-    intro i hi
-    rw [hw'.mem]
-    exact (output_word wm (by decide) (by omega_using [hi]) hfar).trans (svv i hi)
+  have ws := W.scr.of_upd hw' (by decide) (by decide)
+  have svw : Saved base g w'.mem := by rw [hw'.mem]; exact W.saved
   refine WP.mono (restore_ok ws svw) fun t ⟨tr, tm, tk⟩ => ?_
-  refine ⟨tr, ?_, (uk.1.mono ?_).trans ((vk.mono ?_).trans ((wk.mono ?_).trans
-    ((rest_keeps (hw'.rest (ws := [.lr]) (by decide))).mono ?_ |>.trans (tk.mono ?_)))), ?_, ?_⟩
-  · rw [tk.1 _ (by decide), hw'.gpr, wk.1 _ (by decide), vk.1 _ (by decide), uk.1.1 _ (by decide)]
-  · intro r hr; exact List.mem_append_right _ (List.mem_cons_of_mem _ hr)
+  refine ⟨tr, ?_, (W.keeps.mono ?_).trans
+    (((rest_keeps (hw'.rest (ws := [.lr]) (by decide))).mono ?_).trans (tk.mono ?_)), ?_, ?_⟩
+  · rw [tk.1 _ (by decide), hw'.gpr, W.keeps.1 _ (by decide)]
   · intro r hr; exact List.mem_append_right _ hr
-  · intro r hr; exact List.mem_append_right _ (List.mem_cons_of_mem _ hr)
   · intro r hr; simp only [List.mem_singleton] at hr; subst r; decide
   · intro r hr; exact List.mem_append_left _ hr
-  · rw [tm, hw'.mem]
-    exact (((uk.2.whole (by decide)).trans (vm.whole (by decide))).frame.mono (by simp)).trans
-      (wm.frame.mono (by simp))
-  · rw [tm, hw'.mem, wv, vv, encodeUCoordinate_eq]
-    refine congrArg (VG.Proof.X25519.leBytes 56) ?_
-    exact congrArg Fin.val uv
+  · rw [tm, hw'.mem]; exact W.frame
+  · rw [tm, hw'.mem]; exact W.result
+
+def finishRegsL : List Reg := savedL ++ workRegs
+
+theorem finishL_ok {s : State} {base p : Addr} (hs : Scr s base) (hb : BoundedEnv s.mem base)
+    (hp : State.addr (s.gpr .r8) = p)
+    (hfit : (s.gpr .r8).toNat + 56 ≤ 2 ^ 32) (hw : ∀ j < 56, InRegions s.wr (off p j) 1)
+    (hfar : ∀ j < 8192, 56 ≤ ofs p (off base j)) {g : Reg → BitVec 32} (sv : SavedL savedL base g s.mem) :
+    WP isa (finishL fv) s fun t =>
+      (∀ i < 8, t.gpr (savedL[i]!) = g (savedL[i]!)) ∧ Keeps finishRegsL s t ∧
+      Frame [⟨base, 8192⟩, ⟨p, 56⟩] s.mem t.mem ∧
+      Spec.X448.bytesAt t.mem p 56 = Spec.X448.encodeUCoordinate (E s.mem base 1 * E s.mem base 21) := by
+  refine finishT_ok hs hb hp hfit hw hfar sv fun w W => ?_
+  refine WP.mono (restoreL_ok savedL_inj savedL_mem (by decide) W.scr W.saved) fun t ⟨tr, tm, tk⟩ => ?_
+  refine ⟨tr, (W.keeps.mono ?_).trans (tk.mono ?_), ?_, ?_⟩
+  · intro r hr; exact List.mem_append_right _ hr
+  · intro r hr; exact List.mem_append_left _ hr
+  · rw [tm]; exact W.frame
+  · rw [tm]; exact W.result
 
 end VG.Proof.X448.Arm
