@@ -235,6 +235,18 @@ theorem implies {p : Params} (hsat : ∃ s, (preparedSignContract p X86_64.abi 4
     exact ⟨hdi, hsi, hdx, hcx, h8, hsp, hb⟩
   sat := hsat
 
+/-- As `implies`, with the stack of an entry that calls the shared body. -/
+theorem implies152 {p : Params} (hsat : ∃ s, (preparedSignContract p X86_64.abi 152).pre s) :
+    (signKP p 152).Implies (preparedSignContract p X86_64.abi 152) where
+  pre := by sig_implies_pre [preparedSignContract, preparedSignSig, signKP, X86_64.abi, X86_64.argRegs]
+  post := by sig_implies_post [preparedSignContract, preparedSignSig, signKP, X86_64.abi, X86_64.argRegs]
+  pub := by
+    intro s₁ s₂ _ _ h
+    sig_pub [preparedSignContract, preparedSignSig, signKP, X86_64.abi, X86_64.argRegs] at h
+    obtain ⟨hsp, hb, hdi, hsi, hdx, hcx, h8⟩ := h
+    exact ⟨hdi, hsi, hdx, hcx, h8, hsp, hb⟩
+  sat := hsat
+
 def externalSat (p : Params) (m : Mem) : State where
   gpr r := match r with
     | .rdi => 0x1000 | .rsi => 0xA000 | .rdx => 0xA100 | .rcx => 0xB000 | .r8 => 0x10000 | .rsp => 0x80000
@@ -249,6 +261,20 @@ def externalSat (p : Params) (m : Mem) : State where
 
 theorem sat {P : Impl.MlDsa.X86_64.Verify.Prims} (C : Verify.PrimsOk P) {p : Params}
     (hp : p ∈ Verify.params) : ∃ s, (preparedSignContract p X86_64.abi 40).pre s := by
+  have hsz : p.skLen < 0x10000 ∧ preparedSecretKeyBytes p < 0x7000 := by
+    simp only [Verify.params, List.mem_cons, List.not_mem_nil, or_false] at hp
+    rcases hp with rfl | rfl | rfl <;> decide
+  obtain ⟨_, s', _, _, _, hk⟩ := Verify.Prepare.prepareSecret_correct C hp _
+    (Message.runSat_pre hsz.1 (by omega_using [hsz]))
+  refine ⟨externalSat p s'.mem, ?_⟩
+  simp only [Verify.params, List.mem_cons, List.not_mem_nil, or_false] at hp
+  rcases hp with rfl | rfl | rfl <;>
+    sig_pre [preparedSignContract, preparedSignSig, X86_64.abi, X86_64.argRegs] <;> sig_and_intros
+  all_goals first | exact hk | rfl | decide | exact Region.disjoint_of_sep (by decide)
+
+/-- As `sat`, with the stack of an entry that calls the shared body. -/
+theorem sat152 {P : Impl.MlDsa.X86_64.Verify.Prims} (C : Verify.PrimsOk P) {p : Params}
+    (hp : p ∈ Verify.params) : ∃ s, (preparedSignContract p X86_64.abi 152).pre s := by
   have hsz : p.skLen < 0x10000 ∧ preparedSecretKeyBytes p < 0x7000 := by
     simp only [Verify.params, List.mem_cons, List.not_mem_nil, or_false] at hp
     rcases hp with rfl | rfl | rfl <;> decide
@@ -491,6 +517,21 @@ theorem signPreparedEntry_verified (v : ArithImpl) {p : Params} (hp : p ∈ para
   have hK := signKernel v hp
   Verified.of_correct (Sign.Prepared.entryP_correct hK) (Sign.Prepared.entryP_ct hK)
     (Sign.Prepared.signKPN_nil_implies (Sign.Prepared.implies (Sign.Prepared.sat (Verify.prims_okWith v) hp)))
+
+/-- `vg_mldsa*_sign_prepared` of a variant that calls the body shared by
+every variant, `b`. -/
+theorem signPreparedEntryV_verified (v : ArithImpl) {p : Params} (hp : p ∈ params) (n b : String) :
+    Verified X86_64.target (Impl.MlDsa.X86_64.Sign.entry n
+      (Impl.MlDsa.X86_64.Sign.signVia (viaNames v p) b (Impl.MlDsa.X86_64.Sign.sign (Sign.primsWith v.code true) p)) 1)
+      (preparedSignContract p (X86_64.abi.withFns (viaNames v p)) 152) :=
+  have hK := kernelVia v hp b
+  have I := Sign.Prepared.implies152 (Sign.Prepared.sat152 (Verify.prims_okWith v) hp)
+  VG.X86_64.Scrub.verified_withFns
+    (fun s h => let ⟨t, s', he, ha, hq⟩ := Sign.Prepared.entryP_correct (n := n) hK s (I.pre s h)
+      ⟨t, s', he, ha, I.post s s' h hq⟩)
+    (fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hpub e₁ e₂ => Sign.Prepared.entryP_ct (n := n) hK s₁ s₂ t₁ t₂ s₁' s₂'
+      (I.pre _ h₁) (I.pre _ h₂) ⟨I.pub _ _ h₁ h₂ hpub.1, hpub.2⟩ e₁ e₂)
+    I.sat
 
 theorem verifyPreparedEntry_verified (v : ArithImpl) {p : Params} (hp : p ∈ params) (n : String) :
     Verified X86_64.target (Impl.MlDsa.X86_64.Verify.entry n

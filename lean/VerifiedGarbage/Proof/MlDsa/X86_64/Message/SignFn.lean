@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Verified
 import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseOCT
 import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.SignCT
 import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Via
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubFns
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Inv
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Entry
 
@@ -175,6 +176,13 @@ theorem signViaFn (v : ArithImpl) {p : Params} (hp : p ∈ params) (n : String) 
   · rw [signVia_depth, x86_64Depth_noSp nosp, ← e]
     omega_using [depth]
 
+/-- `signViaFn`, as the entry of an encoded key calls it. -/
+theorem kernelVia (v : ArithImpl) {p : Params} (hp : p ∈ params) (n : String) :
+    Sign.KernelFn p 144 (viaNames v p)
+      (Impl.MlDsa.X86_64.Sign.signVia (viaNames v p) n (Impl.MlDsa.X86_64.Sign.sign (primsWith v.code true) p)) :=
+  have h := signViaFn v hp n
+  ⟨h.ok, h.ct, h.sp, h.depth, by decide⟩
+
 theorem kabs_spSafe : Impl.Sha3.X86_64.Stream.absorb.all (fun i => !isa.writesSp i) = true := by lit_decide
 theorem kpad_spSafe : Impl.Sha3.X86_64.Stream.pad.all (fun i => !isa.writesSp i) = true := by lit_decide
 theorem ksqz_spSafe : Impl.Sha3.X86_64.Stream.squeeze.all (fun i => !isa.writesSp i) = true := by lit_decide
@@ -212,6 +220,21 @@ theorem signEntry_verified (v : ArithImpl) {p : Params} (hp : p ∈ params) (n :
       (signContract p X86_64.abi 40) :=
   have hK := signKernel v hp
   Verified.of_correct (Sign.entry0_correct hK) (Sign.entry0_ct hK) (Sign.signK0N_nil_implies (Sign.signK0_implies (ok3_of hp)))
+
+/-- `vg_mldsa*_sign` of a variant that calls the body shared by every
+variant, `b`. -/
+theorem signEntryV_verified (v : ArithImpl) {p : Params} (hp : p ∈ params) (n b : String) :
+    Verified X86_64.target (Impl.MlDsa.X86_64.Sign.entry n
+      (Impl.MlDsa.X86_64.Sign.signVia (viaNames v p) b (Impl.MlDsa.X86_64.Sign.sign (primsWith v.code true) p)) 0)
+      (signContract p (X86_64.abi.withFns (viaNames v p)) 152) :=
+  have hK := kernelVia v hp b
+  have I := Sign.signK0_implies152 (ok3_of hp)
+  VG.X86_64.Scrub.verified_withFns
+    (fun s h => let ⟨t, s', he, ha, hq⟩ := Sign.entry0_correct (n := n) hK s (I.pre s h)
+      ⟨t, s', he, ha, I.post s s' h hq⟩)
+    (fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hpub e₁ e₂ => Sign.entry0_ct (n := n) hK s₁ s₂ t₁ t₂ s₁' s₂'
+      (I.pre _ h₁) (I.pre _ h₂) ⟨I.pub _ _ h₁ h₂ hpub.1, hpub.2⟩ e₁ e₂)
+    I.sat
 
 theorem signEntry_spSafe {n : String} {c : Prog isa} (hc : c.all (fun i => !isa.writesSp i) = true)
     (flag : Nat) : (Impl.MlDsa.X86_64.Sign.entry n c flag).all (fun i => !isa.writesSp i) = true := by
