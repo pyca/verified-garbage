@@ -25529,7 +25529,7 @@ vg_ecdh_p521_adx:
 	mov QWORD PTR [rdi+1272], rax
 	mov rax, QWORD PTR [rdi+1496]
 	mov QWORD PTR [rdi+1280], rax
-	call {vg_p521_inv_mod_p_adx}
+	call {vg_p521_inv_mod_p}
 	mov r12, rsi
 	mov esi, 2512
 	mov edx, 1072
