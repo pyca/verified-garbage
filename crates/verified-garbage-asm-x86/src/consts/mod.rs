@@ -7,10 +7,6 @@
 pub struct Table<const N: usize>(pub [u8; N]);
 
 #[rustfmt::skip]
-mod vg_blowfish_ssse3;
-pub use vg_blowfish_ssse3::VG_BLOWFISH_SSSE3;
-
-#[rustfmt::skip]
 mod vg_brainpoolp256r1_comb;
 pub use vg_brainpoolp256r1_comb::VG_BRAINPOOLP256R1_COMB;
 
@@ -101,3 +97,7 @@ pub use vg_sm4_aesni_wide::VG_SM4_AESNI_WIDE;
 #[rustfmt::skip]
 mod vg_sm4_key_aesni;
 pub use vg_sm4_key_aesni::VG_SM4_KEY_AESNI;
+
+#[rustfmt::skip]
+mod vg_triple_des_ssse3;
+pub use vg_triple_des_ssse3::VG_TRIPLE_DES_SSSE3;

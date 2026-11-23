@@ -134,11 +134,11 @@ theorem jointPrefix_ok {c : Cfg} (hc : BaseCfgOk c) {s₀ : State} (hp : VPre c 
   refine front_ok hc hp fun g _ _ hF => mid_ok hc hF fun _ hM => WP.block_nil ⟨g,hM⟩
 
 theorem jointVerify_cut {c : Cfg} {pts : Prog isa} {s s' : State} {t : List Leak}
-    (he : Exec isa (Impl.Ecdsa.Verify.X86_64.Cfg.jointVerifyWith c pts).inline s t s') :
+    (hw : SharedOk c) (he : Exec isa (Impl.Ecdsa.Verify.X86_64.Cfg.jointVerifyWith c pts).inline s t s') :
     ∃ a b tp tc ts, Exec isa (jointPrefix c) s tp a ∧
       Exec isa pts.inline a tc b ∧
       Exec isa (Impl.Ecdsa.Verify.X86_64.Cfg.jointTail c).inline b ts s' ∧ t=tp++tc++ts := by
-  rw [jointVerifyWith_inline] at he
+  rw [jointVerifyWith_inline c pts hw] at he
   cases he with
   | seq e0 h => cases h with
     | seq e1 h => cases h with
@@ -162,11 +162,12 @@ theorem jointVerifyWith_ct_of_points {c : Cfg} {pts : Prog isa} {d : CombData}
     (points : ∀ {s₀ t₀ : State},VPre c s₀ → VPre c t₀ → JointPublic c d s₀ t₀ →
       RelCT isa (fun s t => (∃ g,Mid c s₀ (s₀.gpr .rcx) g s) ∧ (∃ h,Mid c t₀ (t₀.gpr .rcx) h t))
         pts.inline (fun s t => X86_64.Taint.Agree (Taint.ofRegs [.rdi]) s t))
-    (after : ScratchCT (Impl.Ecdsa.Verify.X86_64.Cfg.jointTail c).inline) :
+    (after : ScratchCT (Impl.Ecdsa.Verify.X86_64.Cfg.jointTail c).inline)
+    (hw : SharedOk c := by intro h; exact absurd h (by decide)) :
     ConstantTime isa (VPre c) (JointPublic c d) (Impl.Ecdsa.Verify.X86_64.Cfg.jointVerifyWith c pts).inline := by
   intro s₀ t₀ ls lt s' t' ps pt pub es et
-  obtain ⟨a,b,lp,lc,lf,ep,ec,ef,he⟩ := jointVerify_cut es
-  obtain ⟨a',b',lp',lc',lf',ep',ec',ef',he'⟩ := jointVerify_cut et
+  obtain ⟨a,b,lp,lc,lf,ep,ec,ef,he⟩ := jointVerify_cut hw es
+  obtain ⟨a',b',lp',lc',lf',ep',ec',ef',he'⟩ := jointVerify_cut hw et
   have hp := before _ _ _ _ _ _ trivial trivial pub.regs ep ep'
   obtain ⟨_,_,wp,pm⟩ := jointPrefix_ok hc ps
   obtain ⟨_,_,wp',pm'⟩ := jointPrefix_ok hc pt
@@ -184,8 +185,9 @@ theorem jointVerify_ct_of_points {c : Cfg} {j : Joint.Cfg} {double : Prog isa} {
       RelCT isa (fun s t => (∃ g,Mid c s₀ (s₀.gpr .rcx) g s) ∧ (∃ h,Mid c t₀ (t₀.gpr .rcx) h t))
         (Impl.Ecdsa.Verify.X86_64.Cfg.jointPoints c j double).inline
         (fun s t => X86_64.Taint.Agree (Taint.ofRegs [.rdi]) s t))
-    (after : ScratchCT (Impl.Ecdsa.Verify.X86_64.Cfg.jointTail c).inline) :
+    (after : ScratchCT (Impl.Ecdsa.Verify.X86_64.Cfg.jointTail c).inline)
+    (hw : SharedOk c := by intro h; exact absurd h (by decide)) :
     ConstantTime isa (VPre c) (JointPublic c d) (Impl.Ecdsa.Verify.X86_64.Cfg.jointVerify c j double).inline :=
-  jointVerifyWith_ct_of_points hc before points after
+  jointVerifyWith_ct_of_points hc before points after hw
 
 end VG.Proof.Ecdsa.Verify.X86_64

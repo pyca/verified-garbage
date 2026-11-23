@@ -589,7 +589,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅</td>
+<td>✅ SSSE3</td>
 
 <td>✅</td>
 
@@ -609,7 +609,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅</td>
+<td>✅ SSSE3</td>
 
 <td>✅</td>
 
@@ -629,7 +629,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅</td>
+<td>✅ SSSE3</td>
 
 <td>✅</td>
 
@@ -669,7 +669,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅</td>
+<td>✅ SSSE3</td>
 
 <td>✅</td>
 
@@ -829,7 +829,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ SSSE3</td>
+<td>✅</td>
 
 <td>✅</td>
 
@@ -849,7 +849,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ SSSE3</td>
+<td>✅</td>
 
 <td>✅</td>
 
@@ -869,7 +869,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ SSSE3</td>
+<td>✅</td>
 
 <td>✅</td>
 
@@ -889,7 +889,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ SSSE3</td>
+<td>✅</td>
 
 <td>✅</td>
 

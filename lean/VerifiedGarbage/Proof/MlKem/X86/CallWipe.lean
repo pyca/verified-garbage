@@ -16,9 +16,10 @@ public import VerifiedGarbage.Proof.Framework.RegionsSub
 public import VerifiedGarbage.Proof.Framework.X86.Lit
 public import VerifiedGarbage.Proof.Framework.X86.Mmx
 public import VerifiedGarbage.Proof.Framework.X86.RegUpd
-public import VerifiedGarbage.Proof.MlKem.X86.NttSetup
 public import VerifiedGarbage.Proof.MlKem.X86.Red
-public import VerifiedGarbage.Proof.MlKem.X86.Table
+public import VerifiedGarbage.Proof.MlKem.X86.Unpack
+public import VerifiedGarbage.Impl.MlKem.X86.Ntt
+public import VerifiedGarbage.Proof.MlKem.X86.Leaf
 public import VerifiedGarbage.Proof.MlKem.X86.TopCall
 public import VerifiedGarbage.Proof.MlKem.X86.TopLocal
 public import VerifiedGarbage.Proof.MlKem.X86.TopKem

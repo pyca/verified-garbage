@@ -606,9 +606,17 @@ GROUPS = {
         "lib": [],
         "tests": ["cavp::triple_des_cfb"],
     },
+    "triple_des_cfb8": {
+        "lib": [],
+        "tests": ["cavp::triple_des_cfb8"],
+    },
     "triple_des_ecb": {
         "lib": [],
         "tests": ["cavp::triple_des_ecb"],
+    },
+    "triple_des_ofb": {
+        "lib": [],
+        "tests": ["cavp::triple_des_ofb"],
     },
     "x25519": {
         "lib": ["x25519"],

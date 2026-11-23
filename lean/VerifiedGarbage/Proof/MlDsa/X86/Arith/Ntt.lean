@@ -65,6 +65,7 @@ open VG.Proof.MlDsa.X86.Arith
 open VG.Spec.MlDsa VG.Proof.MlDsa
 open VG.Proof.MlKem.X86 (toNat_ofNat32 eq_ofNat_of_toNat E0 retR Piece ea_add ea_off ptr_next satState add_ofNat_add
   cnt_next cnt_ne)
+open VG.Proof.MlKem.X86 (M0 mcdtR McdtEnd McdtPost M0_esp M0_wr M0_rd M0_frame ret_mcdt)
 
 /-! ## Straight-line XMM code -/
 
@@ -1221,6 +1222,7 @@ open VG.Proof.MlDsa.Arith
 open VG.Proof.MlDsa.X86.Arith VG.Proof.MlDsa.X86.Arith.Vec
 open VG.Spec.MlDsa VG.Proof.MlDsa
 open VG.Proof.MlKem.X86 (Piece satState)
+open VG.Proof.MlKem.X86 (M0 mcdtR McdtEnd McdtPost M0_esp M0_wr M0_rd M0_frame ret_mcdt)
 
 theorem tab : NttLoop.TabOK montZetaTable zetas := fun _ hk => montZeta_eq hk
 
@@ -1328,6 +1330,7 @@ open VG.Proof.MlDsa.Arith
 open VG.Proof.MlDsa.X86.Arith VG.Proof.MlDsa.X86.Arith.Vec
 open VG.Spec.MlDsa VG.Proof.MlDsa
 open VG.Proof.MlKem.X86 (Piece satState)
+open VG.Proof.MlKem.X86 (M0 mcdtR McdtEnd McdtPost M0_esp M0_wr M0_rd M0_frame ret_mcdt)
 
 theorem tab : NttLoop.TabOK montNegZetaRev zvI := fun k hk => by
   rw [montNegZetaRev, getD_map_range hk, montNegZeta_eq (Nat.mod_lt _ (by decide))]

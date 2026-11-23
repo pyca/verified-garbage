@@ -13,7 +13,8 @@ import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointLit
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Lit
 import VerifiedGarbage.Proof.Framework.LitShare
 public import VerifiedGarbage.Impl.P256.X86_64.Joint
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointMain
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointMain
+import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointChecks
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Main
 import VerifiedGarbage.Proof.Ecdsa.X86_64.VerifiedAdx
@@ -363,7 +364,12 @@ open VG.Proof.Weierstrass.X86_64 (InvSounds)
 
 theorem p256v_ok (hI : InvSounds) : CfgOk p256v := cfgOk_gtab (p256_ok hI) _
 
-theorem p256vx_ok (hI : InvSounds) : CfgOk p256vx := cfgOk_gtab (p256x_ok hI) _
+theorem p256vx_ok (hI : InvSounds) : CfgOk p256vx :=
+  { p256x_ok hI with comb := fun _ hd => (by cases hd), comb_am3 := fun _ hd => (by cases hd) }
+
+/-- The parts of `p256vx`'s verification its functions share call nothing (`SharedOk`). -/
+theorem p256vx_shared : SharedOk p256vx := fun _ =>
+  ⟨by kernel_rfl, by kernel_rfl, by kernel_rfl⟩
 
 theorem preG_of {s : State} (h : verifyGX86_64.pre s) : VPre p256v s := by
   obtain ⟨h1, h2, h3, h4, h5, -, h7, held, fit, hdw⟩ := h
@@ -478,7 +484,7 @@ theorem jointVerify_p256_adx_ok {s : State} (hp : VPre p256vx s) :
     WP isa (Impl.Ecdsa.Verify.X86_64.Cfg.jointVerify p256vx publicJointAdx (jointDouble publicJointAdx.K)).inline s fun t =>
       (∀ r∈Cfg.saved.map Prod.fst,t.gpr r=s.gpr r) ∧ VPost p256vx s t := by
   have hc := p256vx_ok hI
-  refine jointVerify_ok hc.toBaseCfgOk hL rfl (by decide +kernel) (by decide +kernel) hp ?_
+  refine jointVerify_ok hc.toBaseCfgOk hL rfl (by decide +kernel) (by decide +kernel) hp ?_ (hw := p256vx_shared)
   intro a g hM Q hQ hRep
   exact jointPoints_ok hc.toBaseCfgOk hL (.ofGTab rfl hT (by decide) (by decide) rfl) rfl (hc.jdbl hL)
     (by decide +kernel)
