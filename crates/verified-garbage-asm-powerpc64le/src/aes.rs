@@ -113,3 +113,6 @@ pub(crate) mod vg_aes_gcm_encrypt_blocks_split;
 #[rustfmt::skip]
 #[path = "internal/vg_aes_gcm_open_split.rs"]
 pub(crate) mod vg_aes_gcm_open_split;
+
+#[path = "internal/bench_gcm_blocks_buffers.rs"]
+pub(crate) mod bench_gcm_blocks_buffers;

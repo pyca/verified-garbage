@@ -736,7 +736,9 @@ b 238f
 .base64 "QrrsegAALCg="
 beq %cr0, 240f
 .base64 "eOujf3jjhH8wAL44EADeOHjbZ38C4eh6wAE/OQ=="
-bl {vg_aes_gcm_encrypt_blocks}
+or %r10,%r9,%r9
+or %r9,%r7,%r7
+bl {bench_gcm_blocks_buffers}
 .base64 "DwAAODgA+X5QuJl9FGIbfwAAQDsAADko"
 beq %cr0, 242f
 .base64 "AAAAOEAAHvhIAB74QADeOAEA4Dh466N/eOOEfzAAvjg="
@@ -929,7 +931,7 @@ bl {vg_aes_ctr32}
 241:
 .base64 "AAB/6AAAdPgIAH/oCAB0+Hj77H/wAAzopgMIfIAATOqIAGzqkACM6pgArOqgAMzqqADs6rAADOu4ACzrwABM68gAbOvQAIzr2ACs6+AAzOvoAOzr8AQhOAAAADgR+yH4IACBOQAADPgIAAz4EAAM+BgADPggAAz4KAAM+DAADPg4AAz4QAAM+EgADPhQAAz4WAAM+GAADPhoAAz4cAAM+HgADPiAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8AAAM+AgADPgQAAz4GAAM+CAADPgoAAz4MAAM+DgADPhAAAz4SAAM+FAADPhYAAz4YAAM+GgADPhwAAz4eAAM+IAADPiIAAz4kAAM+JgADPigAAz4qAAM+LAADPi4AAz4wAAM+MgADPjwBCE4AABgOAAAgDgAAKA4AADAOAAA4DgAAAA5AAAgOQAAQDkAAGA5AACAOcQEABDEDCEQxBRCEMQcYxDEJIQQxCylEMQ0xhDEPOcQxEQIEcRMKRHEVEoRxFxrEcRkjBHEbK0RxHTOEcR87xHEhBASxIwxEsSUUhLEnHMSIACATg==""#,
         vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
-        vg_aes_gcm_encrypt_blocks = sym super::aes::vg_aes_gcm_encrypt_blocks::vg_aes_gcm_encrypt_blocks,
+        bench_gcm_blocks_buffers = sym super::aes::bench_gcm_blocks_buffers::bench_gcm_blocks_buffers,
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
     )
 }
@@ -1388,8 +1390,9 @@ b 244f
 243:
 .base64 "QrosewAALCg="
 beq %cr0, 245f
-.base64 "wskoeyQ+C3kkHwh5eEMKfXjDB394q6l+FFoYfxRatX5QyCt/cAB/+Xjro39444R/MAC+OBAA3jjAAR84AACBOWAADPg="
-bl {vg_aes_gcm_encrypt_blocks_split}
+.base64 "wskoeyQ+C3kkHwh5eEMKfXjDB394q6l+FFoYfxRatX5QyCt/cAB/+Xjro39444R/MAC+OBAA3jg="
+addi %r10,%r31,448
+bl {bench_gcm_blocks_buffers}
 b 246f
 245:
 246:
@@ -1548,7 +1551,7 @@ bl {vg_ghash}
 bl {vg_aes_ctr32}
 .base64 "AAB/6AAAdPgIAH/oCAB0+Hj77H/wAAzopgMIfIAATOqIAGzqkACM6pgArOqgAMzqqADs6rAADOu4ACzrwABM68gAbOvQAIzr2ACs6+AAzOvoAOzrAAUhOAAAADgB+yH4IACBOQAADPgIAAz4EAAM+BgADPggAAz4KAAM+DAADPg4AAz4QAAM+EgADPhQAAz4WAAM+GAADPhoAAz4cAAM+HgADPiAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8AAAM+AgADPgQAAz4GAAM+CAADPgoAAz4MAAM+DgADPhAAAz4SAAM+FAADPhYAAz4YAAM+GgADPhwAAz4eAAM+IAADPiIAAz4kAAM+JgADPigAAz4qAAM+LAADPi4AAz4wAAM+MgADPjQAAz42AAM+AAFITgAAGA4AACAOAAAoDgAAMA4AADgOAAAADkAACA5AABAOQAAYDkAAIA5xAQAEMQMIRDEFEIQxBxjEMQkhBDELKUQxDTGEMQ85xDERAgRxEwpEcRUShHEXGsRxGSMEcRsrRHEdM4RxHzvEcSEEBLEjDESxJRSEsSccxIgAIBO""#,
         vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
-        vg_aes_gcm_encrypt_blocks_split = sym super::aes::vg_aes_gcm_encrypt_blocks_split::vg_aes_gcm_encrypt_blocks_split,
+        bench_gcm_blocks_buffers = sym super::aes::bench_gcm_blocks_buffers::bench_gcm_blocks_buffers,
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
     )
 }
