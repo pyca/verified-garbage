@@ -685,45 +685,25 @@ impl AesGcm {
         plaintext: &[&[u8]],
         out: &mut [u8],
     ) -> Result<Block, Error> {
-        crate::dit::enter!(dit);
-        let len = Self::plaintext_len(nonce, plaintext)?;
-        if len != out.len() as u64 {
-            return Err(Error::InvalidOutputLength);
-        }
-        add_len(0, aad.len(), MAX_AAD).map_err(|()| Error::InvalidAadLength)?;
-        // SAFETY: the unique output slice is writable for the checked length.
-        Ok(unsafe { self.seal_pieces(dit, nonce, aad, plaintext, out.as_mut_ptr(), out.len()) })
+        // SAFETY: MaybeUninit<u8> has the layout of u8. encrypt_uninit
+        // writes only initialized bytes and leaves the slice alone on error.
+        let dst = unsafe { core::slice::from_raw_parts_mut(out.as_mut_ptr().cast(), out.len()) };
+        self.encrypt_uninit(nonce, aad, plaintext, dst)
+            .map(|(_, tag)| tag)
     }
 
-    /// Encrypts the concatenation of `plaintext` onto the end of `out`,
-    /// returning its authentication tag. The input limits are those of
-    /// [`encrypt`](Self::encrypt). An error leaves `out` unchanged.
-    #[cfg(feature = "alloc")]
-    pub fn encrypt_append(
+    /// Like [`encrypt`](Self::encrypt), with output storage that may be
+    /// uninitialized. Its length must equal the combined plaintext length.
+    /// Returns the initialized ciphertext in that storage and its tag.
+    /// On error, the output is untouched.
+    pub fn encrypt_uninit<'out>(
         &self,
         nonce: &[u8],
         aad: &[u8],
         plaintext: &[&[u8]],
-        out: &mut alloc::vec::Vec<u8>,
-    ) -> Result<Block, Error> {
+        out: &'out mut [MaybeUninit<u8>],
+    ) -> Result<(&'out mut [u8], Block), Error> {
         crate::dit::enter!(dit);
-        let len = Self::plaintext_len(nonce, plaintext)?;
-        add_len(0, aad.len(), MAX_AAD).map_err(|()| Error::InvalidAadLength)?;
-        let len = usize::try_from(len).map_err(|_| Error::InvalidTextLength)?;
-        let start = out.len();
-        out.reserve(len);
-        let dst = out.spare_capacity_mut().as_mut_ptr().cast();
-        // SAFETY: reserve provided len writable bytes beyond the initialized
-        // prefix. sealGatherPost specifies every ciphertext byte for arbitrary
-        // prior destination contents. Publish exactly those bytes after it returns.
-        unsafe {
-            let tag = self.seal_pieces(dit, nonce, aad, plaintext, dst, len);
-            out.set_len(start + len);
-            Ok(tag)
-        }
-    }
-
-    fn plaintext_len(nonce: &[u8], plaintext: &[&[u8]]) -> Result<u64, Error> {
         if plaintext.len() > Self::MAX_PIECES {
             return Err(Error::TooManyPieces);
         }
@@ -732,22 +712,28 @@ impl AesGcm {
         for p in plaintext {
             len = add_len(len, p.len(), MAX_TEXT).map_err(|()| Error::InvalidTextLength)?;
         }
-        Ok(len)
+        if len != out.len() as u64 {
+            return Err(Error::InvalidOutputLength);
+        }
+        add_len(0, aad.len(), MAX_AAD).map_err(|()| Error::InvalidAadLength)?;
+        let tag = self.seal_pieces(dit, nonce, aad, plaintext, out);
+        // SAFETY: the gather contract specifies every byte of the ciphertext
+        // for arbitrary prior destination contents, including an empty output.
+        Ok((unsafe { out.assume_init_mut() }, tag))
     }
 
-    /// Seal the caller's plaintext pieces into a separate ciphertext buffer.
-    /// The caller must provide an exclusive destination writable for `len`
-    /// bytes, the checked total length of the input pieces.
+    /// Seal the caller's checked plaintext pieces into their exact-size destination.
     #[inline(always)]
-    unsafe fn seal_pieces(
+    fn seal_pieces(
         &self,
         dit: crate::dit::Dit<'_>,
         nonce: &[u8],
         aad: &[u8],
         plaintext: &[&[u8]],
-        dst: *mut u8,
-        len: usize,
+        out: &mut [MaybeUninit<u8>],
     ) -> Block {
+        let dst = out.as_mut_ptr().cast();
+        let len = out.len();
         // The descriptors of the pieces, as `vg_aes_gcm_seal_gather` takes
         // them: each its address and its length. Only the first
         // `plaintext.len()` are written, and the function reads only those.
@@ -1612,19 +1598,21 @@ mod tests {
         let tag = k.encrypt(&nonce, &[], &bytes, &mut out);
         assert_eq!((&out[..], tag), (&want[..n], Ok(want_tag)));
         let empty = [&msg[..0]; AesGcm::MAX_PIECES + 1];
-        #[cfg(feature = "alloc")]
-        {
-            let mut out = alloc::vec![0x5a];
-            assert_eq!(
-                k.encrypt_append(&nonce, &[], &empty, &mut out),
-                Err(Error::TooManyPieces)
-            );
-            assert_eq!(
-                k.encrypt_append(&[], &[], &bytes, &mut out),
-                Err(Error::InvalidNonceLength)
-            );
-            assert_eq!(out, [0x5a]);
-        }
+        let mut untouched = [core::mem::MaybeUninit::new(0x5a)];
+        assert_eq!(
+            k.encrypt_uninit(&nonce, &[], &empty, &mut untouched),
+            Err(Error::TooManyPieces)
+        );
+        assert_eq!(
+            k.encrypt_uninit(&[], &[], &bytes, &mut untouched),
+            Err(Error::InvalidNonceLength)
+        );
+        assert_eq!(
+            k.encrypt_uninit(&nonce, &[], &[], &mut untouched),
+            Err(Error::InvalidOutputLength)
+        );
+        // SAFETY: the byte started initialized, and errors leave it untouched.
+        assert_eq!(unsafe { untouched[0].assume_init() }, 0x5a);
         let tag = k.encrypt(&nonce, &[], &empty, &mut []);
         assert_eq!(tag, Err(Error::TooManyPieces));
         assert_eq!(

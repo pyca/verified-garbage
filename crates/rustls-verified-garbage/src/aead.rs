@@ -66,9 +66,17 @@ impl Key {
             && plain.len() >= 4096
             && let Some(piece) = plain.single_chunk()
         {
-            let tag = key
-                .encrypt_append(nonce, aad, &[piece, extra], out)
+            let len = piece.len() + extra.len();
+            let (_, tag) = key
+                .encrypt_uninit(
+                    nonce,
+                    aad,
+                    &[piece, extra],
+                    &mut out.spare_capacity_mut()[..len],
+                )
                 .map_err(|_| ())?;
+            // SAFETY: encrypt_uninit initialized these len bytes immediately after the prefix.
+            unsafe { out.set_len(start + len) };
             out.extend_from_slice(&tag);
             return Ok(());
         }
