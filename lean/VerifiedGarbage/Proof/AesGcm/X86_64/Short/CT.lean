@@ -412,6 +412,26 @@ theorem powOk_powers (hF : ShortFacts) {M : Gcm.X86_64.Stitch.CtxMode} :
     PowOk M Impl.AesGcm.X86_64.Short.powers Impl.AesGcm.X86_64.Short.ghash :=
   fun _ => ⟨_, powFrom_powers hF⟩
 
+def BoundedOk (M : Gcm.X86_64.Stitch.CtxMode) (lng : Prog isa) : Prop :=
+  ∀ {s s₁ : State} {Ctx W SP Np A D : Addr} {nl al n : Nat}, OneCtx s 4 Ctx W SP Np A D nl al n →
+    CtxExt M Ctx (W + BitVec.ofNat 64 16) W SP D n s → OneEntry s Ctx W SP A D n s₁ →
+    s.gpr .rdx = Np → (s.gpr .rcx).toNat = nl → (s.gpr .r9).toNat = al →
+    IsShort nl al n → WP isa lng s₁ (SealRunPost s Ctx W SP Np A D nl al n)
+
+/-- `seal` after the entry: `cond`, then the short path or the other
+instances' body, which leave the same. -/
+theorem sealMid_with {M : Gcm.X86_64.Stitch.CtxMode}
+    {body lng : Prog isa} (hbody : BoundedOk M body) (hlng : SealLongOk M lng) {s s₁ : State}
+    {Ctx W SP Np A D : Addr} {nl al n : Nat} (C : OneCtx s 4 Ctx W SP Np A D nl al n)
+    (X : CtxExt M Ctx (W + BitVec.ofNat 64 16) W SP D n s) (E : OneEntry s Ctx W SP A D n s₁)
+    (hNp : s.gpr .rdx = Np) (hnl : (s.gpr .rcx).toNat = nl) (hal : (s.gpr .r9).toNat = al) :
+    WP isa (.seq Impl.AesGcm.X86_64.Short.cond (.ite .e lng body)) s₁
+      (SealRunPost s Ctx W SP Np A D nl al n) :=
+  WP.seq (WP.mono (condE_ok C E hnl hal) fun _ ⟨hz, E₂, _⟩ =>
+    WP.ite (decide ¬IsShort _ _ _) (eval_e hz) (fun _ => hlng C X E₂ hNp hnl hal) fun h => by
+      have h' := Decidable.not_not.mp (of_decide_eq_false h)
+      exact hbody C X E₂ hNp hnl hal h')
+
 /-- `seal` after the entry: `cond`, then the short path or the other
 instances' body, which leave the same. -/
 theorem sealMid_ok (hF : ShortFacts) {M : Gcm.X86_64.Stitch.CtxMode}
@@ -421,10 +441,8 @@ theorem sealMid_ok (hF : ShortFacts) {M : Gcm.X86_64.Stitch.CtxMode}
     (hNp : s.gpr .rdx = Np) (hnl : (s.gpr .rcx).toNat = nl) (hal : (s.gpr .r9).toNat = al) :
     WP isa (.seq Impl.AesGcm.X86_64.Short.cond (.ite .e lng (Impl.AesGcm.X86_64.Short.sealShort pw gh))) s₁
       (SealRunPost s Ctx W SP Np A D nl al n) :=
-  WP.seq (WP.mono (condE_ok C E hnl hal) fun _ ⟨hz, E₂, _⟩ =>
-    WP.ite (decide ¬IsShort _ _ _) (eval_e hz) (fun _ => hlng C X E₂ hNp hnl hal) fun h => by
-      have h' := Decidable.not_not.mp (of_decide_eq_false h)
-      exact sealShort_ok hF C (hpw X).choose_spec E₂ hNp hnl hal h'.1 h'.2.1 h'.2.2.1 h'.2.2.2.1)
+  sealMid_with (M := M) (fun C X E hNp hnl hal h =>
+    sealShort_ok hF C (hpw X).choose_spec E hNp hnl hal h.1 h.2.1 h.2.2.1 h.2.2.2.1) hlng C X E hNp hnl hal
 
 /-- `vg_aes_gcm_seal` with the short path, the table of powers from `pw`,
 and `lng` when the short path does not apply, for a key context of kind
@@ -1411,16 +1429,24 @@ theorem openShort_rel (hF : ShortFacts) {pw gh : Prog isa} {tm tm' : Mem → Mem
 
 /-! ## The functions -/
 
+def BoundedRel (M : Gcm.X86_64.Stitch.CtxMode) (lng : Prog isa) : Prop :=
+  ∀ {s₀ s₀' : State} {Ctx W SP Np A D : Addr} {nl al n R : Nat},
+    OneCtx s₀ 4 Ctx W SP Np A D nl al n → OneCtx s₀' 4 Ctx W SP Np A D nl al n →
+    CtxExt M Ctx (W + BitVec.ofNat 64 16) W SP D n s₀ → CtxExt M Ctx (W + BitVec.ofNat 64 16) W SP D n s₀' →
+    s₀.gpr .rdx = Np → (s₀.gpr .rcx).toNat = nl → (s₀.gpr .r9).toNat = al → (s₀.gpr .rsi).toNat = R →
+    s₀'.gpr .rdx = Np → (s₀'.gpr .rcx).toNat = nl → (s₀'.gpr .r9).toNat = al → (s₀'.gpr .rsi).toNat = R →
+    IsShort nl al n → RelCT isa (fun s₁ s₂ => OneEntry s₀ Ctx W SP A D n s₁ ∧ OneEntry s₀' Ctx W SP A D n s₂) lng fun _ _ => True
+
 /-- `vg_aes_gcm_seal` with the short path, the table of powers from `pw`,
 and `lng` when the short path does not apply, in two runs. -/
-theorem sealMW_rel (hF : ShortFacts) (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M)
-    {pw gh lng : Prog isa} (hpw : PowOk M pw gh) (hpc : PowCT pw gh) (hlng : SealLongOk M lng)
+theorem sealWith_rel (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M)
+    {body lng : Prog isa} (hbody : BoundedOk M body) (hct : BoundedRel M body) (hlng : SealLongOk M lng)
     (hlr : SealLongRel M lng) {s₀ s₀' : State}
     (hp : (Proof.AesGcm.sealX86_64M M).pre s₀) (hp' : (Proof.AesGcm.sealX86_64M M).pre s₀')
     (hq : Proof.AesGcm.sealX86_64.pub s₀ s₀') :
-    RelCT isa (fun s₁ s₂ => s₁ = s₀ ∧ s₂ = s₀') (Impl.AesGcm.X86_64.Short.«seal» (v.withBlk B) pw gh lng)
+    RelCT isa (fun s₁ s₂ => s₁ = s₀ ∧ s₂ = s₀') (Impl.AesGcm.X86_64.Short.«seal» (v.withBlk B) (lng := lng) (shortBody := body))
       fun _ _ => True :=
-  sealM_relOf hp hp' hq (sealMid_ok hF hpw hlng) fun {Ctx W SP _ A D nl al n _} C C' X X' hNp hnl hal hR hNp' hnl' hal' hR' => by
+  sealM_relOf hp hp' hq (sealMid_with hbody hlng) fun {Ctx W SP _ A D nl al n _} C C' X X' hNp hnl hal hR hNp' hnl' hal' hR' => by
     have hlt := C.data.ok.lt
     have hw : ∀ {s₀ : State} {Np : Addr} (C : OneCtx s₀ 4 Ctx W SP Np A D nl al n), (s₀.gpr .rcx).toNat = nl →
         (s₀.gpr .r9).toNat = al → ∀ s, OneEntry s₀ Ctx W SP A D n s →
@@ -1434,9 +1460,23 @@ theorem sealMW_rel (hF : ShortFacts) (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMod
       ((hlr C C' X X' hNp hnl hal hR hNp' hnl' hal' hR').mono
         (fun _ _ h => ⟨h.1.1.2, h.1.2.2⟩) fun _ _ h => h) ?_)
     by_cases hs : IsShort nl al n
-    · exact (sealShort_rel hpc C C' (hpw X).choose_spec (hpw X').choose_spec hNp hnl hal hR hNp' hnl' hal' hR' hs).mono
+    · exact (hct C C' X X' hNp hnl hal hR hNp' hnl' hal' hR' hs).mono
         (fun _ _ h => ⟨h.1.1.2, h.1.2.2⟩) fun _ _ h => h
     · exact RelCT.of_false fun _ _ h => by have := h.1.1.1.symm.trans h.2; simp [hs] at this
+
+/-- `vg_aes_gcm_seal` with the short path, the table of powers from `pw`,
+and `lng` when the short path does not apply, in two runs. -/
+theorem sealMW_rel (hF : ShortFacts) (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M)
+    {pw gh lng : Prog isa} (hpw : PowOk M pw gh) (hpc : PowCT pw gh) (hlng : SealLongOk M lng)
+    (hlr : SealLongRel M lng) {s₀ s₀' : State}
+    (hp : (Proof.AesGcm.sealX86_64M M).pre s₀) (hp' : (Proof.AesGcm.sealX86_64M M).pre s₀')
+    (hq : Proof.AesGcm.sealX86_64.pub s₀ s₀') :
+    RelCT isa (fun s₁ s₂ => s₁ = s₀ ∧ s₂ = s₀') (Impl.AesGcm.X86_64.Short.«seal» (v.withBlk B) pw gh lng)
+      fun _ _ => True :=
+  sealWith_rel v B (fun C X E hNp hnl hal h =>
+    sealShort_ok hF C (hpw X).choose_spec E hNp hnl hal h.1 h.2.1 h.2.2.1 h.2.2.2.1)
+    (fun C C' X X' => sealShort_rel hpc C C' (hpw X).choose_spec (hpw X').choose_spec)
+    hlng hlr hp hp' hq
 
 theorem sealM_rel (hF : ShortFacts) (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M) {s₀ s₀' : State}
     (hp : (Proof.AesGcm.sealX86_64M M).pre s₀) (hp' : (Proof.AesGcm.sealX86_64M M).pre s₀')
