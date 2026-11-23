@@ -16,12 +16,13 @@ expansion, CBC encryption, CFB, OFB). It is `ssse3` code: the dispatchers
 of the functions that call it run them only where the CPU has SSSE3.
 
 Its convention is its own (only the code below calls it): the halves in
-`ecx` (xL) and `edx` (xR), the schedule's address in `esi`, and working
+`edx` (xL) and `ebp` (xR), the schedule's address in `esi`, and working
 space at `edi`, of which it writes the bytes 64 to 383; it returns the
 encrypted halves in `ecx` and `edx`, keeps `esi`, `edi` and `esp`, and
 changes `eax`, `ebx`, `ebp`, the flags and the XMM registers. It uses eight
 bytes of stack: its return address and the slot in which it takes the
-address of its table of constants, `VG_BLOWFISH_SSSE3`.
+address of its table of constants, `VG_BLOWFISH_SSSE3` (in `eax`, losing
+`ecx`: the halves then go to `ecx` and `edx`, where the rounds keep them).
 
 A look-up of a byte `x` in a plane of 256 bytes (the schedule holds each
 S-box as four planes, one of each byte of its entries) reads the plane's
@@ -170,12 +171,18 @@ def finish : List Instr :=
   [.alu .xor .ecx (.mem (at_ .ebp 0)), .alu .xor .edx (.mem (at_ .ebp 4)), .mov .eax (.reg .ecx),
    .mov .ecx (.reg .edx), .mov .edx (.reg .eax)]
 
-/-- `vg_blowfish_encrypt_block_ssse3`: the halves in `ecx` and `edx`
-encrypted under the schedule at `esi`, with the working space at `edi`. -/
+/-- The table's address, the halves and the pointer to P where the rounds
+keep them. -/
+def start : List Instr :=
+  [.mov tbr (.reg .eax), .mov .ecx (.reg .edx), .mov .edx (.reg .ebp), .mov .ebp (.reg .esi),
+   .alu .add .ebp (imm pOff)]
+
+/-- `vg_blowfish_encrypt_block_ssse3`: the halves in `edx` and `ebp`
+encrypted under the schedule at `esi`, to `ecx` and `edx`, with the working
+space at `edi`. -/
 def encryptBlock : Prog isa :=
-  .seq (.frame (.symPush tbr tableName) (.block []) (.pop .eax 1))
-    (.seq (.block [.mov .ebp (.reg .esi), .alu .add .ebp (imm pOff)])
-      (.seq (.loop (.block round) .ne) (.block finish)))
+  .seq (.frame (.symPush .eax tableName) (.block []) (.pop .ecx 1))
+    (.seq (.block start) (.seq (.loop (.block round) .ne) (.block finish)))
 
 /-! ## The modes' core -/
 
@@ -184,8 +191,8 @@ def blkOff : Nat := 8
 
 /-- The schedule's address and the buffer's block, as big-endian words. -/
 def cryptHead : List Instr :=
-  [.mov .esi (.mem (argOp 0)), .mov .ecx (.mem (at_ sb blkOff)), .bswap .ecx,
-   .mov .edx (.mem (at_ sb (blkOff + 4))), .bswap .edx]
+  [.mov .esi (.mem (argOp 0)), .mov .edx (.mem (at_ sb blkOff)), .bswap .edx,
+   .mov .ebp (.mem (at_ sb (blkOff + 4))), .bswap .ebp]
 
 /-- The halves back to the buffer. -/
 def cryptTail : List Instr :=
@@ -229,12 +236,65 @@ encrypted under the schedule whose address is at `esp + 12`, with the
 working space at `ebp`, of which key expansion itself uses the first 64
 bytes. -/
 def blkKey : Prog isa :=
-  .seq (.block [.mov .ecx (.mem (at_ .ebp xlOff)), .mov .edx (.mem (at_ .ebp xrOff)),
-      .mov .esi (.mem (at_ .esp 12)), .mov .edi (.reg .ebp)])
+  .seq (.block [.mov .edx (.mem (at_ .ebp xlOff)), .mov .esi (.mem (at_ .esp 12)), .mov .edi (.reg .ebp),
+      .mov .ebp (.mem (at_ .ebp xrOff))])
     (.seq (.call fnName encryptBlock)
       (.block [.mov .ebp (.reg .edi), .store (at_ .ebp xlOff) .ecx, .store (at_ .ebp xrOff) .edx]))
 
 /-- Key expansion. -/
 def expandKey : Prog isa := expandKeyWith blkKey
+
+/-! ## The functions as emitted
+
+Each function with its working space in a frame on the stack, which it
+wipes (`withStackScratchWiped`), then its cleanup
+(`Impl.Scrub.X86.scrubSel rb W ws`): of the `W` bytes of stack below `esp`
+that its contract reserves, the doublewords `ws` its code may leave
+different in two runs zeroed, and the registers a callee may change
+cleared, so that it returns without secret residue. -/
+
+namespace Fn
+
+/-- The doublewords of the 456 bytes of stack below `esp` that the residue
+analysis finds a mode's function may leave different in two runs: the block
+function's return address and the header of the working space's frame. -/
+def words : List Nat := [1, 2, 3, 4, 5, 6, 7]
+
+/-- Those of the 412 bytes of key expansion. -/
+def keyWords : List Nat := [1, 2, 3, 4, 5, 6]
+
+/-- `Spec.Blowfish.cbcEncryptChainedApi`'s function as emitted. -/
+def cbcEncryptChained : Prog isa :=
+  Impl.Scrub.X86.scrubSel 0 456 words (Impl.StackScratch.X86.withStackScratchWiped 448 4 106 Ssse3.cbcEncryptChained)
+
+/-- `Spec.Blowfish.ofbApi`'s function as emitted. -/
+def ofb : Prog isa :=
+  Impl.Scrub.X86.scrubSel 0 456 words (Impl.StackScratch.X86.withStackScratchWiped 448 4 106 Ssse3.ofb)
+
+/-- `Spec.Blowfish.cfbEncryptApi`'s function as emitted. -/
+def cfbEncrypt : Prog isa :=
+  Impl.Scrub.X86.scrubSel 0 456 words (Impl.StackScratch.X86.withStackScratchWiped 448 4 106 Ssse3.cfbEncrypt)
+
+/-- `Spec.Blowfish.cfbDecryptApi`'s function as emitted. -/
+def cfbDecrypt : Prog isa :=
+  Impl.Scrub.X86.scrubSel 0 456 words (Impl.StackScratch.X86.withStackScratchWiped 448 4 106 Ssse3.cfbDecrypt)
+
+/-- `Spec.Blowfish.cfbEncryptFinalApi`'s function as emitted. -/
+def cfbEncryptFinal : Prog isa :=
+  Impl.Scrub.X86.scrubSel 0 456 words (Impl.StackScratch.X86.withStackScratchWiped 448 4 106 Ssse3.cfbEncryptFinal)
+
+/-- `Spec.Blowfish.cfbDecryptFinalApi`'s function as emitted. -/
+def cfbDecryptFinal : Prog isa :=
+  Impl.Scrub.X86.scrubSel 0 456 words (Impl.StackScratch.X86.withStackScratchWiped 448 4 106 Ssse3.cfbDecryptFinal)
+
+/-- `Spec.Blowfish.ofbFinalApi`'s function as emitted. -/
+def ofbFinal : Prog isa :=
+  Impl.Scrub.X86.scrubSel 0 456 words (Impl.StackScratch.X86.withStackScratchWiped 448 4 106 Ssse3.ofbFinal)
+
+/-- `Spec.Blowfish.expandKeyApi`'s function as emitted. -/
+def expandKey : Prog isa :=
+  Impl.Scrub.X86.scrubSel 0 412 keyWords (Impl.StackScratch.X86.withStackScratchWiped 404 3 96 Ssse3.expandKey)
+
+end Fn
 
 end VG.Impl.Blowfish.X86.Ssse3
