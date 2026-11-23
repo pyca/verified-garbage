@@ -133,40 +133,6 @@ theorem invJA_w :
 
 /-! ## The table's inversion by a call -/
 
-/-- Words that read the same, as numbers, are the same. -/
-private theorem word_eq_of_wordsVal {m m' : Mem} {base : Addr} : ∀ {d k : Nat},
-    wordsVal m base d k = wordsVal m' base d k → ∀ j < k, word m base (d + 8 * j) = word m' base (d + 8 * j)
-  | _, 0, _, _, hj => absurd hj (Nat.not_lt_zero _)
-  | d, k + 1, h, j, hj => by
-    simp only [wordsVal] at h
-    obtain ha := (word m base d).isLt
-    obtain hb := (word m' base d).isLt
-    obtain e1 : (word m base d).toNat = (word m' base d).toNat := by omega_arith
-    obtain e2 : wordsVal m base (d + 8) k = wordsVal m' base (d + 8) k := by omega_arith
-    rcases j with _ | j
-    · exact BitVec.eq_of_toNat_eq e1
-    · have := word_eq_of_wordsVal e2 j (by omega_arith)
-      rwa [show d + 8 + 8 * j = d + 8 * (j + 1) by omega_arith] at this
-
-/-- Bytes whose word reads the same are the same. -/
-private theorem byte_of_word {m m' : Mem} {base : Addr} {d : Nat} (h : word m base d = word m' base d)
-    {j : Nat} (hj : j < 8) : m (off base d + BitVec.ofNat 64 j) = m' (off base d + BitVec.ofNat 64 j) := by
-  obtain e := congrArg (fun v : BitVec 64 => v.extractLsb' (8 * j) 8) h
-  change ((m.read (off base d) 8).setWidth 64).extractLsb' (8 * j) 8 =
-    ((m'.read (off base d) 8).setWidth 64).extractLsb' (8 * j) 8 at e
-  rw [BitVec.setWidth_eq, BitVec.setWidth_eq, Mem.extractLsb'_read _ _ hj, Mem.extractLsb'_read _ _ hj] at e
-  exact e
-
-/-- The bytes of words that read the same, as a number, are the same. -/
-private theorem byte_of_wordsVal {m m' : Mem} {base : Addr} {d k : Nat}
-    (h : wordsVal m base d k = wordsVal m' base d k) {x : Addr} (hx : d ≤ ofs base x)
-    (hx' : ofs base x < d + 8 * k) : m x = m' x := by
-  obtain ⟨j, hj, i, hi, rfl⟩ : ∃ j < k, ∃ i < 8, x = off base (d + 8 * j) + BitVec.ofNat 64 i := by
-    refine ⟨(ofs base x - d) / 8, by omega_arith, (ofs base x - d) % 8, Nat.mod_lt _ (by decide), ?_⟩
-    rw [off, Offset.add_add, show d + 8 * ((ofs base x - d) / 8) + (ofs base x - d) % 8 = ofs base x by omega_arith,
-      BitVec.ofNat_toNat, BitVec.setWidth_eq, BitVec.add_comm, BitVec.sub_add_cancel]
-  exact byte_of_word (word_eq_of_wordsVal h j hj) hi
-
 /-- What the call writes, but for the bytes it keeps: `E.x`, the table of the
 bits of `n - 2`, the temporary area, `ACC`, and the function's working area
 below the window's table of bits. -/
@@ -218,7 +184,7 @@ theorem invSpecJACall (hc : CfgOk c) (h6 : c.n = 6) (hi : c.inverse ≠ none) {b
   refine ⟨fun t ht hM hz => ?_, fun w hw => ?_, fun w hw => ?_⟩
   · have hn := ht.nowrap
     rw [hMn] at hz
-    unfold Impl.Ecdh.X86_64.Cfg.invJACall
+    unfold Impl.Ecdh.X86_64.Cfg.invJACall Impl.Ecdh.X86_64.Cfg.invCallTo
     simp only [Code.inline]
     refine WP.seq ?_
     rw [WP.block_append_iff]

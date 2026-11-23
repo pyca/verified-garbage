@@ -44,10 +44,7 @@ argument (`finalX`: `ModeFns.modeX true` but the data `len` bytes). The table
 of S-boxes is readable, where the static `VG_CAST5_S1234` puts it, and holds
 the S-boxes. Each is constant time from the modes' initial taint
 (`ModeFns.τFb`); the `_framed` theorems run them with their working space on
-the stack, zeroed on return. The three are instances of the same theorems
-for any core that fits (`cfbEncryptFinal_wp_of`, `cfbDecryptFinal_wp_of`,
-`ofbFinal_wp_of`, over `ModeFns.Fits cs tab b n` and the precondition
-`GFPre tab b n`).
+the stack, zeroed on return.
 -/
 
 @[expose] public section
@@ -60,8 +57,8 @@ open VG.Proof.Modes.X86 (SeqPre byteMode)
 open VG.Proof.Cast5.X86.Mode (dirCoreSpec KeyArgs)
 open VG.Proof.Cast5 (Held)
 open VG.Proof.Cast5.X86 (ecbConsts_eq s1234_length)
-open VG.Proof.Cast5.X86.ModeFns (keyA ivA scrA argsA tabA retA stkA scr_eq τFb τG stkG_eq argBytes_agree ciph fbK
-  satMem_held scrG stkG stkG_apart Fits dirFits keyFacts_of)
+open VG.Proof.Cast5.X86.ModeFns (keyA ivA scrA argsA tabA retA stkA scr_eq τFb stk_eq argBytes_agree ciph fbK
+  satMem_held)
 
 /-- The data, `len` bytes. -/
 abbrev dataF (s : State) : Region := ⟨(arg s 3).setWidth 64, (arg s 4).toNat⟩
@@ -105,142 +102,81 @@ def finalX (post : State → State → Prop) : Contract isa where
   pub s₁ s₂ := s₁.gpr .esp = s₂.gpr .esp ∧ (∀ i < 6, arg s₁ i = arg s₂ i) ∧
     s₁.syms s1234Sym = s₂.syms s1234Sym
 
-/-! ## Any core that fits -/
-
-/-- The readable regions: the table too if `tab`. -/
-def rdGF : Bool → State → List Region
-  | true, s => rdF s
-  | false, s => [keyA s, argsA s]
-
-/-- The writable regions, with a working space of `b` bytes. -/
-def wrGF (b : Nat) (s : State) : List Region := [dataF s, ivA s, scrG b s]
-
-/-- A final function's precondition on x86 for a core that fits
-(`ModeFns.Fits cs tab b n`): `ModeFns.GPre tab b n true` with the data `len`
-bytes. -/
-structure GFPre (tab : Bool) (b n : Nat) (s : State) : Prop where
-  rdEq : s.rd = rdGF tab s
-  wrEq : s.wr = wrGF b s
-  sp : n ≤ (s.gpr .esp).toNat
-  espFit : (s.gpr .esp).toNat + 28 ≤ 2 ^ 32
-  nv : (arg s 1).toNat = 12 ∨ (arg s 1).toNat = 16
-  fitK : (arg s 0).toNat + 128 ≤ 2 ^ 32
-  fitV : (arg s 2).toNat + 8 ≤ 2 ^ 32
-  fitD : (arg s 3).toNat + (arg s 4).toNat ≤ 2 ^ 32
-  fitS : (arg s 5).toNat + b ≤ 2 ^ 32
-  tabOk : tab = true → (s.syms s1234Sym).toNat + 4096 ≤ 2 ^ 32 ∧
-    Held s.mem ((s.syms s1234Sym).setWidth 64) s1234 ∧ (∀ r ∈ s.wr, (tabA s).Disjoint r) ∧
-    (tabA s).Disjoint (stkG n s)
-  dDS : (dataF s).Disjoint (scrG b s)
-  dVS : (ivA s).Disjoint (scrG b s)
-  dVD : (ivA s).Disjoint (dataF s)
-  dKw : ∀ r ∈ s.wr, (keyA s).Disjoint r
-  dAw : ∀ r ∈ s.wr, (argsA s).Disjoint r
-  dRw : ∀ r ∈ s.wr, (retA s).Disjoint r
-  dSw : ∀ r ∈ s.wr, (stkG n s).Disjoint r
-  dKs : (keyA s).Disjoint (stkG n s)
-
-/-- `FPre` is the precondition for a core with the table, 304 bytes of
-working space and four bytes of stack. -/
-theorem FPre.gen {s : State} (h : FPre s) : GFPre true 304 4 s :=
-  ⟨h.rdEq, h.wrEq, h.sp, h.espFit, h.nv, h.fitK, h.fitV, h.fitD, h.fitS, fun _ => ⟨h.fitT, h.held, h.dTw, h.dTs⟩,
-    h.dDS, h.dVS, h.dVD, h.dKw, h.dAw, h.dRw, h.dSw, h.dKs⟩
-
 section
-variable {tab : Bool} {b n : Nat} {s : State}
+variable {s : State}
 
-theorem GFPre.mem_wr_data (h : GFPre tab b n s) : dataF s ∈ s.wr := by rw [h.wrEq]; simp [wrGF]
-theorem GFPre.mem_wr_scr (h : GFPre tab b n s) : scrG b s ∈ s.wr := by rw [h.wrEq]; simp [wrGF]
-theorem GFPre.mem_wr_iv (h : GFPre tab b n s) : ivA s ∈ s.wr := by rw [h.wrEq]; simp [wrGF]
-theorem GFPre.mem_iv (h : GFPre tab b n s) : ivA s ∈ s.rd ++ s.wr := by rw [h.rdEq, h.wrEq]; simp [wrGF]
-theorem GFPre.mem_args (h : GFPre tab b n s) : argsA s ∈ s.rd ++ s.wr := by
-  rw [h.rdEq]; cases tab <;> simp [rdGF, rdF]
-theorem GFPre.mem_key (h : GFPre tab b n s) : keyA s ∈ s.rd ++ s.wr := by
-  rw [h.rdEq]; cases tab <;> simp [rdGF, rdF]
-theorem GFPre.mem_tab (h : GFPre true b n s) : tabA s ∈ s.rd ++ s.wr := by rw [h.rdEq]; simp [rdGF, rdF]
+theorem FPre.mem_wr_data (h : FPre s) : dataF s ∈ s.wr := by rw [h.wrEq]; simp [wrF]
+theorem FPre.mem_wr_scr (h : FPre s) : scrA s ∈ s.wr := by rw [h.wrEq]; simp [wrF]
+theorem FPre.mem_wr_iv (h : FPre s) : ivA s ∈ s.wr := by rw [h.wrEq]; simp [wrF]
+theorem FPre.mem_iv (h : FPre s) : ivA s ∈ s.rd ++ s.wr := by rw [h.rdEq, h.wrEq]; simp [rdF, wrF]
+theorem FPre.mem_args (h : FPre s) : argsA s ∈ s.rd ++ s.wr := by rw [h.rdEq]; simp [rdF]
+theorem FPre.mem_key (h : FPre s) : keyA s ∈ s.rd ++ s.wr := by rw [h.rdEq]; simp [rdF]
+theorem FPre.mem_tab (h : FPre s) : tabA s ∈ s.rd ++ s.wr := by rw [h.rdEq]; simp [rdF]
+
+/-- The word below `esp` is apart from the arguments and the return address. -/
+theorem stk_apart (h : FPre s) :
+    Region.Disjoint (stkA s) (argsA s) ∧ Region.Disjoint (stkA s) (retA s) := by
+  have hlo := h.sp
+  have hfit := h.espFit
+  have e : (s.gpr .esp - BitVec.ofNat 32 4).setWidth 64 = (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 4 :=
+    VG.X86.Taint.sub_setWidth hlo
+  have ea : argAddr s 0 = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 4 := addr_eq (by omega_using [hfit])
+  refine ⟨?_, ?_⟩
+  · show Region.Disjoint ⟨(s.gpr .esp - BitVec.ofNat 32 4).setWidth 64, 4⟩ ⟨argAddr s 0, 24⟩
+    rw [e, ea]; exact VG.Offset.disjoint_below_above _ (by decide)
+  · show Region.Disjoint ⟨(s.gpr .esp - BitVec.ofNat 32 4).setWidth 64, 4⟩ _
+    have := VG.Offset.disjoint_below_above ((s.gpr .esp).setWidth 64) (m := 4) (a := 0) (l := 4) (by decide)
+    rw [BitVec.add_zero] at this
+    rw [e]; exact this
 
 end
 
-section
-variable {c : VG.Impl.Modes.X86.Core} {cs : Proof.Modes.X86.CoreSpec c} {tab : Bool} {b n : Nat}
-
-/-- `GFPre` gives the modes' precondition, for steps of a byte and a core
-that fits. -/
-theorem seqPre_of (f : Fits cs tab b n) {s : State} (h : GFPre tab b n s) : SeqPre c byteMode s := by
-  have hL := cs.layout
-  have e1 : ∀ k : Nat, byteMode.step * k = k := fun k => Nat.one_mul k
-  obtain ⟨sA, sR⟩ := stkG_apart h.sp h.espFit
+/-- `FPre` gives the modes' precondition, for steps of a byte. -/
+theorem seqPre_of {s : State} (h : FPre s) : SeqPre (dirCore true) byteMode s := by
+  have hL := (dirCoreSpec true).layout
+  have e1 : ∀ n : Nat, byteMode.step * n = n := fun n => Nat.one_mul n
+  obtain ⟨sA, sR⟩ := stk_apart h
   have mS := h.mem_wr_scr
   have mD := h.mem_wr_data
-  obtain hka := f.ka
-  obtain hbw := f.bw
-  obtain hsk := f.stack
-  obtain htot := f.total
-  obtain hroom := hL.room
-  refine ⟨?_, ?_, ⟨?_, ?_⟩, ?_, (fun _ => ?_), ?_, ?_, ?_, ?_, ?_, (fun _ => ?_), ?_, ?_, ?_, ?_,
-    (fun _ => ?_), ?_, ?_, ?_, ?_, ?_, ?_, hL⟩
-  · show (⟨argAddr s 0, 4 * (c.ka + 4)⟩ : Region) ∈ _
-    rw [hka]; exact h.mem_args
-  · rw [hka]; exact h.espFit
-  · show (⟨(arg s (c.ka + 3)).setWidth 64, 4 * c.total⟩ : Region) ∈ _
-    rw [hka, htot]; exact mS
-  · show (arg s (c.ka + 3)).toNat + 4 * c.total ≤ 2 ^ 32
-    rw [hka, htot]; exact h.fitS
-  · show (⟨(arg s c.ka).setWidth 64, 4 * c.bw⟩ : Region) ∈ _
-    rw [hka, hbw]; exact h.mem_iv
-  · show (⟨(arg s c.ka).setWidth 64, 4 * c.bw⟩ : Region) ∈ _
-    rw [hka, hbw]; exact h.mem_wr_iv
-  · show (arg s c.ka).toNat + 4 * c.bw ≤ 2 ^ 32
-    rw [hka, hbw]; exact h.fitV
-  · show (⟨(arg s (c.ka + 1)).setWidth 64, byteMode.step * (arg s (c.ka + 2)).toNat⟩ : Region) ∈ _
-    rw [e1, hka]; exact mD
-  · show (arg s (c.ka + 1)).toNat + byteMode.step * (arg s (c.ka + 2)).toNat ≤ 2 ^ 32
-    rw [e1, hka]; exact h.fitD
-  · show Region.Disjoint ⟨(arg s (c.ka + 1)).setWidth 64, byteMode.step * (arg s (c.ka + 2)).toNat⟩ _
-    rw [e1, scr_eq f, hka]; exact h.dDS
-  · show Region.Disjoint ⟨(arg s c.ka).setWidth 64, 4 * c.bw⟩ _
-    rw [scr_eq f, hka, hbw]; exact h.dVS
-  · show Region.Disjoint ⟨(arg s c.ka).setWidth 64, 4 * c.bw⟩
-      ⟨(arg s (c.ka + 1)).setWidth 64, byteMode.step * (arg s (c.ka + 2)).toNat⟩
-    rw [e1, hka, hbw]; exact h.dVD
-  · show Region.Disjoint ⟨argAddr s 0, 4 * (c.ka + 4)⟩ _
-    rw [scr_eq f, hka]; exact h.dAw _ mS
-  · show Region.Disjoint ⟨argAddr s 0, 4 * (c.ka + 4)⟩
-      ⟨(arg s (c.ka + 1)).setWidth 64, byteMode.step * (arg s (c.ka + 2)).toNat⟩
-    rw [e1, hka]; exact h.dAw _ mD
-  · rw [scr_eq f]; exact h.dRw _ mS
-  · show Region.Disjoint _ ⟨(arg s (c.ka + 1)).setWidth 64, byteMode.step * (arg s (c.ka + 2)).toNat⟩
-    rw [e1, hka]; exact h.dRw _ mD
-  · show Region.Disjoint _ ⟨(arg s c.ka).setWidth 64, 4 * c.bw⟩
-    rw [hka, hbw]; exact h.dRw _ h.mem_wr_iv
-  · show Region.Disjoint (Proof.Modes.X86.stkRegion (s.gpr .esp) c.stack)
-      ⟨(arg s (c.ka + 1)).setWidth 64, byteMode.step * (arg s (c.ka + 2)).toNat⟩
-    rw [e1, hka, hsk]; exact h.dSw _ mD
-  · show Region.Disjoint (Proof.Modes.X86.stkRegion (s.gpr .esp) c.stack)
-      ⟨Proof.Modes.X86.slotA (arg s (c.ka + 3)) c.slots, 40⟩
-    rw [hka, hsk]
-    exact (h.dSw _ mS).sub_right (VG.Offset.sub_base _ (by omega_arith))
-  · show Region.Disjoint (Proof.Modes.X86.stkRegion (s.gpr .esp) c.stack) ⟨argAddr s 0, 4 * (c.ka + 4)⟩
-    rw [hka, hsk]; exact sA
-  · rw [hsk]; exact sR
-  · rw [hsk]; exact h.sp
-  · rw [hbw]; exact ⟨by decide, by decide⟩
+  refine ⟨h.mem_args, h.espFit, ⟨mS, h.fitS⟩, h.mem_iv, fun _ => h.mem_wr_iv, h.fitV,
+    by simp only [Proof.Modes.X86.dataRegion, e1]; exact mD, by rw [e1]; exact h.fitD,
+    by simp only [Proof.Modes.X86.dataRegion, e1]; exact h.dDS, h.dVS,
+    fun _ => by simp only [Proof.Modes.X86.dataRegion, e1]; exact h.dVD, h.dAw _ mS,
+    by simp only [Proof.Modes.X86.dataRegion, e1]; exact h.dAw _ mD,
+    h.dRw _ mS, by simp only [Proof.Modes.X86.dataRegion, e1]; exact h.dRw _ mD, fun _ => h.dRw _ h.mem_wr_iv,
+    by simp only [Proof.Modes.X86.dataRegion, e1]; exact h.dSw _ mD,
+    (h.dSw _ mS).sub_right (VG.Offset.sub_base _ (by simp [dirCore, coreSlots])), sA, sR, h.sp,
+    by simp [byteMode, dirCore], hL⟩
 
-/-- `GFPre` gives the key's, for a core that fits. -/
-theorem keyArgs_of (f : Fits cs tab b n) {s : State} (h : GFPre tab b n s) :
-    cs.KeyArgs s [Modes.X86.scrR s c]
-      (f.toKey (Spec.Cast5.scheduleAt s.mem ((arg s 0).setWidth 64), (arg s 1).toNat)) := by
+theorem keyArgs_of {s : State} (h : FPre s) :
+    KeyArgs s [Modes.X86.scrR s (dirCore true)]
+      (Spec.Cast5.scheduleAt s.mem ((arg s 0).setWidth 64), (arg s 1).toNat) := by
+  obtain ⟨sA, -⟩ := stk_apart h
+  have hfit := h.espFit
+  have ea : ∀ k, k + 4 ≤ 24 → (⟨addr (s.gpr .esp) (4 + k), 4⟩ : Region).Sub (argsA s) := by
+    intro k hk
+    have e0 : argAddr s 0 = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 4 := addr_eq (by omega_using [hfit])
+    have ek : addr (s.gpr .esp) (4 + k) = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 4 + BitVec.ofNat 64 k := by
+      rw [addr_eq (by omega_using [hfit, hk]), VG.Offset.add_add]
+    show Region.Sub ⟨addr (s.gpr .esp) (4 + k), 4⟩ ⟨argAddr s 0, 24⟩
+    rw [e0, ek]; exact VG.Offset.sub_base _ hk
+  have argSub : (Mode.argR s).Sub (argsA s) := by
+    have e0 : argAddr s 0 = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 4 := addr_eq (by omega_using [hfit])
+    show Region.Sub ⟨addr (s.gpr .esp) 4, 8⟩ ⟨argAddr s 0, 24⟩
+    rw [e0, show addr (s.gpr .esp) 4 = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 4 + BitVec.ofNat 64 0 by
+      rw [BitVec.add_zero]; exact addr_eq (by omega_using [hfit])]
+    exact VG.Offset.sub_base _ (by decide)
   have mS := h.mem_wr_scr
-  refine f.keyArgs (keyFacts_of h.sp h.espFit h.mem_args h.mem_key h.nv h.fitK (fun ht => ?_) h.dKw h.dAw h.dKs
-    fun r hr => ?_)
-  · subst ht
-    obtain ⟨fT, held, dTw, dTs⟩ := h.tabOk rfl
-    refine ⟨fT, h.mem_tab, held, dTw, dTs, fun r hr => ?_⟩
-    simp only [List.mem_singleton] at hr; subst hr; rw [scr_eq f]; exact dTw _ mS
-  · simp only [List.mem_singleton] at hr; subst hr; rw [scr_eq f]
-    exact ⟨h.dKw _ mS, h.dAw _ mS, h.dSw _ mS⟩
-
-end
+  refine ⟨arg s 0, ⟨by omega_using [hfit], h.sp, ⟨_, h.mem_args, by
+      show (⟨argAddr s 0, 24⟩ : Region).Contains (argAddr s 0) 8
+      simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega_using []⟩, rfl, ?_, h.nv, h.fitK, ⟨_, h.mem_key,
+    Region.contains_self _ _⟩, rfl, h.fitT, ⟨_, h.mem_tab, Region.contains_self _ _⟩, h.held,
+    fun r hr => ⟨h.dKw r hr, h.dTw r hr, (h.dAw r hr).sub_left argSub⟩, h.dKs, h.dTs,
+    (sA.symm.sub_left argSub)⟩, fun r hr => ?_⟩
+  · show arg s 1 = BitVec.ofNat 32 (arg s 1).toNat
+    rw [BitVec.ofNat_toNat, BitVec.setWidth_eq]
+  · simp only [List.mem_singleton] at hr; subst hr; rw [scr_eq]
+    exact ⟨h.dKw _ mS, h.dTw _ mS, (h.dAw _ mS).sub_left argSub, h.dSw _ mS⟩
 
 /-- The functions' postconditions. -/
 def encPost (s s' : State) : Prop :=
@@ -248,45 +184,23 @@ def encPost (s s' : State) : Prop :=
 def decPost (s s' : State) : Prop :=
   Spec.Cfb.DecryptFinal (ciph s) 8 s.mem s'.mem ((arg s 2).setWidth 64) ((arg s 3).setWidth 64) (arg s 4).toNat
 
-section
-variable {c : VG.Impl.Modes.X86.Core} {cs : Proof.Modes.X86.CoreSpec c} {tab : Bool} {b n : Nat}
-
-/-- CFB64 encryption of a message's last piece over any core that fits,
-whose cipher is CAST5's. -/
-theorem cfbEncryptFinal_wp_of (f : Fits cs tab b n)
-    (hc : ∀ k r, cs.cipher (f.toKey (k, r)) = Spec.Cast5.cipher k r) {s₀ : State} (hp : GFPre tab b n s₀) :
-    WP isa (c.seqFinal (Mode.cfbEnc c.bw)) s₀ fun s' => abiPreserved s₀ s' ∧ encPost s₀ s' :=
-  WP.mono (Proof.Modes.X86.cfbEncFinal_wp cs (seqPre_of f hp) rfl rfl (keyArgs_of f hp)) fun _ ⟨h1, h2⟩ => by
-    simp only [Proof.Modes.X86.Dp, Proof.Modes.X86.P, Proof.Modes.X86.N, f.ka, f.bw, Nat.reduceMul, Nat.reduceAdd,
-      hc] at h2
-    exact ⟨h1, h2⟩
-
-/-- CFB64 decryption of a message's last piece over any core that fits. -/
-theorem cfbDecryptFinal_wp_of (f : Fits cs tab b n)
-    (hc : ∀ k r, cs.cipher (f.toKey (k, r)) = Spec.Cast5.cipher k r) {s₀ : State} (hp : GFPre tab b n s₀) :
-    WP isa (c.seqFinal (Mode.cfbDec c.bw)) s₀ fun s' => abiPreserved s₀ s' ∧ decPost s₀ s' :=
-  WP.mono (Proof.Modes.X86.cfbDecFinal_wp cs (seqPre_of f hp) rfl rfl (keyArgs_of f hp)) fun _ ⟨h1, h2⟩ => by
-    simp only [Proof.Modes.X86.Dp, Proof.Modes.X86.P, Proof.Modes.X86.N, f.ka, f.bw, Nat.reduceMul, Nat.reduceAdd,
-      hc] at h2
-    exact ⟨h1, h2⟩
-
-end
-
 theorem cfbEncryptFinal_wp {s₀ : State} (hp : (finalX encPost).pre s₀) :
     WP isa cfbEncryptFinal s₀ fun s' => abiPreserved s₀ s' ∧ (finalX encPost).post s₀ s' :=
-  cfbEncryptFinal_wp_of (dirFits true) (fun _ _ => rfl) (FPre.gen hp)
+  WP.mono (Proof.Modes.X86.cfbEncFinal_wp (dirCoreSpec true) (seqPre_of hp) rfl rfl (keyArgs_of hp))
+    fun _ ⟨h1, h2⟩ => ⟨h1, h2⟩
 
 theorem cfbDecryptFinal_wp {s₀ : State} (hp : (finalX decPost).pre s₀) :
     WP isa cfbDecryptFinal s₀ fun s' => abiPreserved s₀ s' ∧ (finalX decPost).post s₀ s' :=
-  cfbDecryptFinal_wp_of (dirFits true) (fun _ _ => rfl) (FPre.gen hp)
+  WP.mono (Proof.Modes.X86.cfbDecFinal_wp (dirCoreSpec true) (seqPre_of hp) rfl rfl (keyArgs_of hp))
+    fun _ ⟨h1, h2⟩ => ⟨h1, h2⟩
 
 /-! ## Constant time -/
 
-theorem τG_wf {tab : Bool} {b n : Nat} {s : State} (h : GFPre tab b n s) : VG.X86.Taint.Wf (τG b n) s := by
+theorem τFb_wf {s : State} (h : FPre s) : VG.X86.Taint.Wf τFb s := by
   have hw := h.wrEq
-  simp only [wrGF] at hw
+  simp only [wrF] at hw
   refine VG.X86.Taint.Wf.entryRoom rfl ⟨fun _ => ⟨?_, ?_, ?_⟩, fun _ h => (List.not_mem_nil h).elim,
-    fun _ h => (List.not_mem_nil h).elim, fun _ => ⟨by simp only [τG]; have := h.espFit; omega_using [this], ?_⟩, ?_⟩ ?_
+    fun _ h => (List.not_mem_nil h).elim, fun _ => ⟨by simp only [τFb]; have := h.espFit; omega_using [this], ?_⟩, ?_⟩ ?_
   · rw [hw]
     exact .cons (Nat.zero_le _) (.cons (Nat.le_refl _) (.cons (Nat.le_refl _) .nil))
   · simp only [hw, List.pairwise_cons, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq,
@@ -300,36 +214,29 @@ theorem τG_wf {tab : Bool} {b n : Nat} {s : State} (h : GFPre tab b n s) : VG.X
   · intro r hr
     exact VG.X86.Taint.frame_disjoint (n := 24) (by have := h.espFit; omega_using [this]) (h.dRw r hr) (h.dAw r hr)
   · intro p hp
-    simp only [τG, List.mem_cons, List.not_mem_nil, or_false] at hp
-    rcases hp with rfl | rfl | rfl <;> refine ⟨by simp [τG], ?_⟩ <;>
+    simp only [τFb, List.mem_cons, List.not_mem_nil, or_false] at hp
+    rcases hp with rfl | rfl | rfl <;> refine ⟨by decide, ?_⟩ <;>
       simp [VG.X86.Taint.region, hw, addr, arg, argAddr]
   · intro _
     refine ⟨h.sp, fun r hr => ?_⟩
-    simp only [τG]
-    rw [stkG_eq s h.sp]
+    simp only [τFb]
+    rw [stk_eq s h.sp]
     exact h.dSw r hr
-
-/-- Two states that satisfy the precondition and agree on `esp` and the
-arguments agree for the analysis. -/
-theorem τG_agree {tab : Bool} {b n : Nat} {s₁ s₂ : State} (h₁ : GFPre tab b n s₁) (h₂ : GFPre tab b n s₂)
-    (sp : s₁.gpr .esp = s₂.gpr .esp) (args : ∀ i < 6, arg s₁ i = arg s₂ i) :
-    VG.X86.Taint.Agree (τG b n) s₁ s₂ := by
-  refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun _ => ?_, τG_wf h₁, τG_wf h₂,
-    VG.X86.Taint.slotsOk_empty, VG.X86.Taint.slotsAgree_empty, fun _ => sp,
-    fun k h4 hk => argBytes_agree rfl rfl h₁.espFit h₂.espFit args h4 hk⟩
-  · simp only [τG, RegSet.mem_ofList, List.mem_singleton] at hr
-    subst r; exact sp
-  · rw [h₁.wrEq, h₂.wrEq]
-    simp only [wrGF, dataF, ivA, scrG, args 2 (by decide), args 3 (by decide), args 4 (by decide),
-      args 5 (by decide)]
 
 theorem τFb_agree {post : State → State → Prop} {s₁ s₂ : State} (h₁ : (finalX post).pre s₁)
     (h₂ : (finalX post).pre s₂) (hp : (finalX post).pub s₁ s₂) :
     VG.X86.Taint.AgreeS [s1234Sym] τFb s₁ s₂ := by
   obtain ⟨sp, args, sy⟩ := hp
-  refine ⟨τG_agree (FPre.gen h₁) (FPre.gen h₂) sp args, fun n hn => ?_⟩
-  simp only [List.mem_singleton] at hn
-  subst hn; exact sy
+  refine ⟨⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun _ => ?_, τFb_wf h₁, τFb_wf h₂,
+    VG.X86.Taint.slotsOk_empty, VG.X86.Taint.slotsAgree_empty, fun _ => sp,
+    fun k h4 hk => argBytes_agree rfl rfl h₁.espFit h₂.espFit args h4 hk⟩, fun n hn => ?_⟩
+  · simp only [τFb, RegSet.mem_ofList, List.mem_singleton] at hr
+    subst r; exact sp
+  · rw [h₁.wrEq, h₂.wrEq]
+    simp only [wrF, dataF, ivA, scrA, args 2 (by decide), args 3 (by decide), args 4 (by decide),
+      args 5 (by decide)]
+  · simp only [List.mem_singleton] at hn
+    subst hn; exact sy
 
 theorem cfbEncryptFinal_ct : ConstantTime isa (finalX encPost).pre (finalX encPost).pub cfbEncryptFinal :=
   VG.Taint.constantTime (A := taintSym [s1234Sym]) τFb (fun _ _ h₁ h₂ hp => τFb_agree h₁ h₂ hp)
@@ -517,20 +424,10 @@ theorem cfbDecryptFinal_framed :
 def ofbPost (s s' : State) : Prop :=
   Spec.Ofb.CryptFinal (ciph s) 8 s.mem s'.mem ((arg s 2).setWidth 64) ((arg s 3).setWidth 64) (arg s 4).toNat
 
-/-- OFB of a message's last piece over any core that fits, whose cipher is
-CAST5's. -/
-theorem ofbFinal_wp_of {c : VG.Impl.Modes.X86.Core} {cs : Proof.Modes.X86.CoreSpec c} {tab : Bool} {b n : Nat}
-    (f : Fits cs tab b n) (hc : ∀ k r, cs.cipher (f.toKey (k, r)) = Spec.Cast5.cipher k r) {s₀ : State}
-    (hp : GFPre tab b n s₀) :
-    WP isa (c.seqFinal (Mode.ofb c.bw)) s₀ fun s' => abiPreserved s₀ s' ∧ ofbPost s₀ s' :=
-  WP.mono (Proof.Modes.X86.ofbFinal_wp cs (seqPre_of f hp) rfl rfl (keyArgs_of f hp)) fun _ ⟨h1, h2⟩ => by
-    simp only [Proof.Modes.X86.Dp, Proof.Modes.X86.P, Proof.Modes.X86.N, f.ka, f.bw, Nat.reduceMul, Nat.reduceAdd,
-      hc] at h2
-    exact ⟨h1, h2⟩
-
 theorem ofbFinal_wp {s₀ : State} (hp : (finalX ofbPost).pre s₀) :
     WP isa ofbFinal s₀ fun s' => abiPreserved s₀ s' ∧ (finalX ofbPost).post s₀ s' :=
-  ofbFinal_wp_of (dirFits true) (fun _ _ => rfl) (FPre.gen hp)
+  WP.mono (Proof.Modes.X86.ofbFinal_wp (dirCoreSpec true) (seqPre_of hp) rfl rfl (keyArgs_of hp))
+    fun _ ⟨h1, h2⟩ => ⟨h1, h2⟩
 
 theorem ofbFinal_ct : ConstantTime isa (finalX ofbPost).pre (finalX ofbPost).pub ofbFinal :=
   VG.Taint.constantTime (A := taintSym [s1234Sym]) τFb (fun _ _ h₁ h₂ hp => τFb_agree h₁ h₂ hp)

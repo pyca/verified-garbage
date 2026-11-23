@@ -24,7 +24,7 @@ windows, the doublings in place and the mixed additions by calls of
 def Cfg.mulQJ4F (c : Impl.Ecdsa.X86_64.Cfg) : Prog isa :=
   .seq (.block (maskK c))
     (.seq (c.winPrep (c.sl K)) (Impl.Weierstrass.X86_64.P521F.Win.windowF (c.winCfg PX PY BP)
-      (InvCfg.inv (Cfg.invWin c))))
+      (Cfg.invWinProg c)))
 
 /-- `vg_ecdh_p521_adx`. -/
 def exchangeP521Adx : Prog isa := Cfg.exchangeWith Impl.Ecdsa.X86_64.p521x (Cfg.mulQJ4F Impl.Ecdsa.X86_64.p521x)

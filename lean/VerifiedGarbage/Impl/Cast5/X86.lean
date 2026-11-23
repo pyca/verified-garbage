@@ -139,26 +139,18 @@ def feistel (up : Bool) : List Instr :=
    .mov .edx (.mem (at_ .esi kpOff)), if up then .alu .add .edx (imm 4) else .alu .sub .edx (imm 4),
    .store (at_ .esi kpOff) .edx]
 
-/-- A round of Type `t` (1, 2 or 3) over the look-up `lk`: code that, for
-the bytes `Id, Ic, Ib, Ia` of `I` in the lanes of `xmm0`, leaves `S4[Id],
-S3[Ic], S2[Ib], S1[Ia]` in those of `xmm1`, and keeps `ebx`, `ebp`, `esi`,
-`edi` and `esp`. -/
-def roundWith (lk : Prog isa) (t : Nat) (up : Bool) : Prog isa :=
+/-- A round of Type `t` (1, 2 or 3). -/
+def round (t : Nat) (up : Bool) : Prog isa :=
   .seq (.block (mask t ++ rotate ++ spread))
-    (.seq lk
+    (.seq (scan s1234Sym)
       (.block (([.movdquStore (at_ .esi 0) .xmm1] : List Instr) ++ combine t ++ feistel up)))
-
-/-- A round of Type `t`, its look-ups the scan of `VG_CAST5_S1234`. -/
-def round (t : Nat) (up : Bool) : Prog isa := roundWith (scan s1234Sym) t up
 
 /-- Three rounds, of Types 1, 2 and 3 (encryption) or 3, 2 and 1
 (decryption), then the count of groups left down (ZF set at 0). -/
-def groupWith (lk : Prog isa) (up : Bool) : Prog isa :=
-  .seq (roundWith lk (if up then 1 else 3) up) (.seq (roundWith lk 2 up)
-    (.seq (roundWith lk (if up then 3 else 1) up)
+def group (up : Bool) : Prog isa :=
+  .seq (round (if up then 1 else 3) up) (.seq (round 2 up)
+    (.seq (round (if up then 3 else 1) up)
       (.block [.mov .edx (.mem (at_ .esi gcOff)), .alu .sub .edx (imm 1), .store (at_ .esi gcOff) .edx])))
-
-def group (up : Bool) : Prog isa := groupWith (scan s1234Sym) up
 
 /-- The count of groups, `rounds / 4 + 1`: 4 for 12 rounds, 5 for 16; ZF set
 if `rounds` is 16. -/
@@ -169,27 +161,23 @@ def groups : List Instr :=
 /-- Encrypting the block `(L₀, R₀)` in `(ebx, ebp)`, with the subkeys and
 the number of rounds in the working space: rounds 1–15 in groups of three,
 then round 16 if there are 16. -/
-def encryptBlockWith (lk : Prog isa) : Prog isa :=
+def encryptBlock : Prog isa :=
   .seq (.block (([.mov .edx (.mem (at_ .esi schedOff)), .store (at_ .esi kpOff) .edx] : List Instr) ++
       groups))
-    (.seq (.loop (groupWith lk true) .ne)
+    (.seq (.loop (group true) .ne)
       (.seq (.block [.mov .ecx (.mem (at_ .esi roundsOff)), .alu .cmp .ecx (imm 16)])
-        (.ite .e (roundWith lk 1 true) (.block []))))
-
-def encryptBlock : Prog isa := encryptBlockWith (scan s1234Sym)
+        (.ite .e (round 1 true) (.block []))))
 
 /-- Decrypting the block in `(ebx, ebp)`: round 16 if there are 16, then the
 rest in groups of three, down from the last; the subkeys' pointer starts at
 `Kmₙ`, `schedule + 4 (rounds - 1)`. -/
-def decryptBlockWith (lk : Prog isa) : Prog isa :=
+def decryptBlock : Prog isa :=
   .seq (.block (([.mov .edx (.mem (at_ .esi roundsOff)), .alu .add .edx (.reg .edx),
       .alu .add .edx (.reg .edx), .mov .ecx (.mem (at_ .esi schedOff)), .alu .add .edx (.reg .ecx),
       .alu .sub .edx (imm 4),
       .store (at_ .esi kpOff) .edx] : List Instr) ++ groups))
-    (.seq (.ite .e (roundWith lk 1 false) (.block []))
-      (.loop (groupWith lk false) .ne))
-
-def decryptBlock : Prog isa := decryptBlockWith (scan s1234Sym)
+    (.seq (.ite .e (round 1 false) (.block []))
+      (.loop (group false) .ne))
 
 /-- The block at the data slot into `(ebx, ebp)` = `(L₀, R₀)`. -/
 def load : List Instr :=

@@ -6,12 +6,9 @@ public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86.Print
 public import VerifiedGarbage.Proof.Blowfish.X86.Ssse3Verified
 public import VerifiedGarbage.Impl.Blowfish.X86.Ssse3
-public import VerifiedGarbage.Proof.Blowfish.X86.Ssse3WideVerified
-public import VerifiedGarbage.Impl.Blowfish.X86.Ssse3Wide
 import VerifiedGarbage.Proof.Blowfish.X86.ModesLit
 import VerifiedGarbage.Proof.Blowfish.X86.FbFinalLit
 import VerifiedGarbage.Proof.Blowfish.X86.Ssse3Lit
-import VerifiedGarbage.Proof.Blowfish.X86.Ssse3WideLit
 
 /-! # Blowfish-CFB64 on x86 -/
 
@@ -29,8 +26,8 @@ def artifacts : List Artifact := [
     verified := Proof.Blowfish.X86.Scrub.cfbEncrypt_scrubbed },
   Spec.Blowfish.cfbDecryptApi.artifact X86.target {
     suffix := "_ssse3"
-    code := Impl.Blowfish.X86.Ssse3.Wide.Fn.cfbDecrypt
-    verified := Proof.Blowfish.X86.Ssse3.Wide.cfbDecrypt_scrubbed },
+    code := Impl.Blowfish.X86.Ssse3.Fn.cfbDecrypt
+    verified := Proof.Blowfish.X86.Ssse3.cfbDecrypt_scrubbed },
   Spec.Blowfish.cfbDecryptApi.artifact X86.target {
     code := Impl.Blowfish.X86.Fn.cfbDecrypt
     verified := Proof.Blowfish.X86.Scrub.cfbDecrypt_scrubbed },

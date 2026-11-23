@@ -23,7 +23,10 @@ instructions in an ISA model) go in their own PR before either.
    the arguments on it, and that none wraps around the address space:
    `Sig.layoutDoc`). Choose
    `pub` honestly: only lengths and pointers are public unless the algorithm
-   says otherwise.
+   says otherwise. A secret result of variable length goes first in its
+   buffer, zeros after it (as `RsaOaep.writtenDecrypt`), so that the Rust
+   code returns it by truncating, never by moving it (CLAUDE.md, "The
+   cryptography is in the verified code").
    Only functions the Rust code calls get an `Api`. A function only other
    verified functions call (a compression function, a field
    multiplication, a block function under a mode) needs no `Api`, contract

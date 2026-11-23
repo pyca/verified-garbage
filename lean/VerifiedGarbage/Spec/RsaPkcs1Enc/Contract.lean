@@ -12,7 +12,10 @@ public import VerifiedGarbage.Spec.Rsa.PrivatePrecompute
 (`RsaPkcs1Enc.decrypt`), with RSADP checked against `e`
 (`Rsa.privateChecked`); and `vg_rsa_pkcs1_decrypt_precomputed`, the same
 given the key's precomputed values (`Rsa.privatePrecompute`,
-`Spec/Rsa/PrivatePrecompute.lean`). Encryption, `vg_rsa_pkcs1_encrypt_random`, is in
+`Spec/Rsa/PrivatePrecompute.lean`); and `vg_rsa_pkcs1_decrypt_precomputed_front`,
+which computes the same but writes the message at the start of `out`, zeros
+after it, so that its caller can shorten the buffer to the message without
+moving it (and leaving a copy of it outside the message). Encryption, `vg_rsa_pkcs1_encrypt_random`, is in
 `Spec/RsaPkcs1Enc/Random.lean`; the arguments it shares with decryption are
 as here.
 
@@ -150,6 +153,66 @@ def decryptPrecomputedApi : Api where
     Rsa.privatePrecomputedDoc ++ ".\n\n\
     Contract: `VG.Spec.RsaPkcs1Enc.decryptPrecomputedContract`. Constant time but for the \
     public key: timing may depend on the pointers, the lengths, the contents of `n` and \
+    `e` and the first `2 * ⌈n_len / 8⌉` words of `pre` (the modulus' values), not on the \
+    ciphertext, the private key, the rest of `pre`, the validity of the padding, the length \
+    of the message or which message is returned."
+  safety := ["`n_len` must be in 64..=1024.", "`out_len` and `input_len` must be `n_len`.",
+    "`e_len` and `d_len` must be in 1..=`n_len`.", "`p_len` and `q_len` must be in 1..`n_len`.",
+    "`dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`."] ++
+    scratchSafety ++ Rsa.privatePrecomputedSafety
+
+/-! ## `vg_rsa_pkcs1_decrypt_precomputed_front` -/
+
+/-- `writtenMsg` with the message first: for a message `M`, return 1, `M` at
+the start of `out` and zeros after it, and its length at `msgLen`; for an
+error, as `writtenMsg`, return 0 (`invalid`) or 2 (`fault`), zeros and a
+length of 0. -/
+def writtenMsgFront (m' : Mem) (out msgLen : Addr) (nLen : Nat) (r : BitVec 32) :
+    Outcome → Prop
+  | .ok M => r = 1 ∧ bytesAt m' out nLen = M ++ List.replicate (nLen - M.length) 0 ∧
+      wordsAt m' msgLen 1 = [BitVec.ofNat 64 M.length]
+  | .invalid => r = 0 ∧ bytesAt m' out nLen = List.replicate nLen 0 ∧ wordsAt m' msgLen 1 = [0]
+  | .fault => r = 2 ∧ bytesAt m' out nLen = List.replicate nLen 0 ∧ wordsAt m' msgLen 1 = [0]
+
+/-- `decryptPrecomputedContract`, word for word but for its postcondition,
+`writtenMsgFront` in place of `writtenMsg`: the message at the start of `out`. -/
+def decryptPrecomputedFrontContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  decryptPrecomputedSig.contract A
+    (pre := fun _out outLen _msgLen n nLen _e eLen _d dLen _input inputLen p pLen q qLen _dp
+        dpLen _dq dqLen _qinv qinvLen _scratch scratchLen pre preLen m =>
+      lenValid nLen.toNat ∧ outLen.toNat = nLen.toNat ∧ inputLen.toNat = nLen.toNat ∧
+        1 ≤ eLen.toNat ∧ eLen.toNat ≤ nLen.toNat ∧ 1 ≤ dLen.toNat ∧ dLen.toNat ≤ nLen.toNat ∧
+        1 ≤ pLen.toNat ∧ pLen.toNat < nLen.toNat ∧ 1 ≤ qLen.toNat ∧ qLen.toNat < nLen.toNat ∧
+        dpLen.toNat = pLen.toNat ∧ qinvLen.toNat = pLen.toNat ∧ dqLen.toNat = qLen.toNat ∧
+        scratchWords nLen.toNat ≤ scratchLen.toNat ∧
+        preLen.toNat = Rsa.privatePrecomputedWords nLen.toNat pLen.toNat qLen.toNat ∧
+        Rsa.privatePrecompute (bytesAt m n nLen.toNat) (bytesAt m p pLen.toNat)
+          (bytesAt m q qLen.toNat) = some (Rsa.wordsAt m pre preLen.toNat))
+    (post := fun out _outLen msgLen n nLen e eLen d dLen input _inputLen p pLen q qLen dp _dpLen
+        dq _dqLen qinv _qinvLen _scratch _scratchLen _pre _preLen m m' r =>
+      writtenMsgFront m' out msgLen nLen.toNat r
+        (decrypt (bytesAt m n nLen.toNat) (bytesAt m e eLen.toNat) (bytesAt m d dLen.toNat)
+          (bytesAt m p pLen.toNat) (bytesAt m q qLen.toNat) (bytesAt m dp pLen.toNat)
+          (bytesAt m dq qLen.toNat) (bytesAt m qinv pLen.toNat) (bytesAt m input nLen.toNat)))
+    (writeArgs := true) (stack := stack)
+    (leak := some fun _out _outLen _msgLen n nLen e eLen _d _dLen _input _inputLen _p _pLen _q
+        _qLen _dp _dpLen _dq _dqLen _qinv _qinvLen _scratch _scratchLen pre _preLen m =>
+      (bytesAt m n nLen.toNat ++ bytesAt m e eLen.toNat).map (·.toNat) ++
+        Rsa.privatePrecomputedLeak m pre nLen.toNat)
+
+def decryptPrecomputedFrontApi : Api where
+  module := "rsa_pkcs1_enc"
+  name := "vg_rsa_pkcs1_decrypt_precomputed_front"
+  sig := decryptPrecomputedSig
+  writeArgs := true
+  contracts := some fun A stack => decryptPrecomputedFrontContract A stack
+  summary := "`vg_rsa_pkcs1_decrypt_precomputed`, with the message first: computes and \
+    returns what `vg_rsa_pkcs1_decrypt_precomputed` does with the same arguments, but on \
+    success writes the message at the start of `out` and zeros after it, so that the caller \
+    can shorten `out` to the message's length without moving it. " ++
+    Rsa.privatePrecomputedDoc ++ ".\n\n\
+    Contract: `VG.Spec.RsaPkcs1Enc.decryptPrecomputedFrontContract`. Constant time but for \
+    the public key: timing may depend on the pointers, the lengths, the contents of `n` and \
     `e` and the first `2 * ⌈n_len / 8⌉` words of `pre` (the modulus' values), not on the \
     ciphertext, the private key, the rest of `pre`, the validity of the padding, the length \
     of the message or which message is returned."

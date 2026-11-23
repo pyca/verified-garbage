@@ -23,7 +23,7 @@ open VG.Proof.Weierstrass.X86_64
 /-- ECDH's window method in Jacobian coordinates: the table, its
 normalization, the loop and its last iteration. -/
 def winBuildJ : Prog isa := WinCfg.build winK
-def winNormJ : Prog isa := WinCfg.normTbl winK (InvCfg.inv (Impl.Ecdh.X86_64.Cfg.invWin p521))
+def winNormJ : Prog isa := WinCfg.normTbl winK (Impl.Ecdh.X86_64.Cfg.invWinProg p521)
 def winLoopJ : Prog isa := .loop (WinCfg.stepJ winK) .ne
 def winLastJ : Prog isa := WinCfg.stepLast winK
 

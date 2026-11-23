@@ -20,12 +20,12 @@ pub const VG_BLOWFISH_CFB64_ENCRYPT_SSSE3_FEATURES: verified_garbage_cpu::Featur
 /// * `iv` must be valid for reads and writes of 8 bytes.
 /// * `data` must be valid for reads and writes of `8 * n` bytes.
 /// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
-/// * None of `schedule`, `iv` and `data` may overlap the arguments on the stack, overlap the return address on the stack or the 460 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `schedule`, `iv` and `data` may overlap the arguments on the stack, overlap the return address on the stack or the 456 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `ssse3` target feature.
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_blowfish_cfb64_encrypt_ssse3(schedule: *const [u8; 4168], iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
     core::arch::naked_asm!(
-        r#".base64 "jaQkPP7//4uEJMgBAACJRCQEi4QkzAEAAIlEJAiLhCTQAQAAiUQkDIuEJNQBAACJRCQQieCDwBiJRCQUi0QkFImYgAEAAImwhAEAAIm4iAEAAImojAEAAInHi3QkCIsGiYeYAQAAi0YEiYecAQAAi0QkDImHkAEAAItEJBCJh5QBAACFwA=="
+        r#".base64 "jaQkQP7//4uEJMQBAACJRCQEi4QkyAEAAIlEJAiLhCTMAQAAiUQkDIuEJNABAACJRCQQieCDwBiJRCQUi0QkFImYgAEAAImwhAEAAIm4iAEAAImojAEAAInHi3QkCIsGiYeYAQAAi0YEiYecAQAAi0QkDImHkAEAAItEJBCJh5QBAACFwA=="
 je 20f
 22:
 .base64 "i7eQAQAAi6+UAQAAi4eYAQAAiUcIi4ecAQAAiUcMi3QkBItXCA/Ki28MD80="
@@ -35,7 +35,7 @@ jne 22b
 jmp 21f
 20:
 21:
-.base64 "i3QkCIuHmAEAAIkGi4ecAQAAiUYEi5+AAQAAi7eEAQAAi6+MAQAAi7+IAQAAZg/vwLkAAAAA8w9/RCQY8w9/RCQo8w9/RCQ48w9/RCRI8w9/RCRY8w9/RCRo8w9/RCR48w9/hCSIAAAA8w9/hCSYAAAA8w9/hCSoAAAA8w9/hCS4AAAA8w9/hCTIAAAA8w9/hCTYAAAA8w9/hCToAAAA8w9/hCT4AAAA8w9/hCQIAQAA8w9/hCQYAQAA8w9/hCQoAQAA8w9/hCQ4AQAA8w9/hCRIAQAA8w9/hCRYAQAA8w9/hCRoAQAA8w9/hCR4AQAA8w9/hCSIAQAA8w9/hCSYAQAA8w9/hCSoAQAAiYwkuAEAAImMJLwBAACNpCTEAQAAjaQkNP7//7kAAAAAiUwkBIlMJAiJTCQMiUwkEIlMJBSJTCQYiUwkHImMJMgBAACNpCTMAQAAuAAAAAC6AAAAADHJZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7//D"
+.base64 "i3QkCIuHmAEAAIkGi4ecAQAAiUYEi5+AAQAAi7eEAQAAi6+MAQAAi7+IAQAAZg/vwLkAAAAA8w9/RCQY8w9/RCQo8w9/RCQ48w9/RCRI8w9/RCRY8w9/RCRo8w9/RCR48w9/hCSIAAAA8w9/hCSYAAAA8w9/hCSoAAAA8w9/hCS4AAAA8w9/hCTIAAAA8w9/hCTYAAAA8w9/hCToAAAA8w9/hCT4AAAA8w9/hCQIAQAA8w9/hCQYAQAA8w9/hCQoAQAA8w9/hCQ4AQAA8w9/hCRIAQAA8w9/hCRYAQAA8w9/hCRoAQAA8w9/hCR4AQAA8w9/hCSIAQAA8w9/hCSYAQAA8w9/hCSoAQAAiYwkuAEAAImMJLwBAACNpCTAAQAAjaQkOP7//7kAAAAAiUwkBIlMJAiJTCQMiUwkEIlMJBSJTCQYiUwkHI2kJMgBAAC4AAAAALoAAAAAMclmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/8M="
 .p2align 6"#,
         vg_blowfish_encrypt_block_ssse3 = sym super::blowfish::vg_blowfish_encrypt_block_ssse3::vg_blowfish_encrypt_block_ssse3,
     )
@@ -109,64 +109,24 @@ pub const VG_BLOWFISH_CFB64_DECRYPT_SSSE3_FEATURES: verified_garbage_cpu::Featur
 /// * `iv` must be valid for reads and writes of 8 bytes.
 /// * `data` must be valid for reads and writes of `8 * n` bytes.
 /// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
-/// * None of `schedule`, `iv` and `data` may overlap the arguments on the stack, overlap the return address on the stack or the 924 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `schedule`, `iv` and `data` may overlap the arguments on the stack, overlap the return address on the stack or the 456 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `ssse3` target feature.
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_blowfish_cfb64_decrypt_ssse3(schedule: *const [u8; 4168], iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
     core::arch::naked_asm!(
-        r#".base64 "jaQkbPz//4uEJJgDAACJRCQEi4QknAMAAIlEJAiLhCSgAwAAiUQkDIuEJKQDAACJRCQQieCDwBiJRCQUi0QkFImYUAMAAImwVAMAAIm4WAMAAImoXAMAAInHi3QkCIsGiYdoAwAAi0YEiYdsAwAAi0QkDImHYAMAAItEJBCJh2QDAACFwIuHZAMAAIP4EA=="
-jb 20f
+        r#".base64 "jaQkQP7//4uEJMQBAACJRCQEi4QkyAEAAIlEJAiLhCTMAQAAiUQkDIuEJNABAACJRCQQieCDwBiJRCQUi0QkFImYgAEAAImwhAEAAIm4iAEAAImojAEAAInHi3QkCIsGiYeYAQAAi0YEiYecAQAAi0QkDImHkAEAAItEJBCJh5QBAACFwA=="
+je 20f
 22:
-.base64 "i7dgAwAAi69kAwAAi4doAwAAiYeAAQAAi4dsAwAAiYeEAQAAiwaJh2gDAACLRgSJh2wDAACLh2gDAACJh4gBAACLh2wDAACJh4wBAACLRgiJh2gDAACLRgyJh2wDAACLh2gDAACJh5ABAACLh2wDAACJh5QBAACLRhCJh2gDAACLRhSJh2wDAACLh2gDAACJh5gBAACLh2wDAACJh5wBAACLRhiJh2gDAACLRhyJh2wDAACLh2gDAACJh6ABAACLh2wDAACJh6QBAACLRiCJh2gDAACLRiSJh2wDAACLh2gDAACJh6gBAACLh2wDAACJh6wBAACLRiiJh2gDAACLRiyJh2wDAACLh2gDAACJh7ABAACLh2wDAACJh7QBAACLRjCJh2gDAACLRjSJh2wDAACLh2gDAACJh7gBAACLh2wDAACJh7wBAACLRjiJh2gDAACLRjyJh2wDAACLh2gDAACJh8ABAACLh2wDAACJh8QBAACLRkCJh2gDAACLRkSJh2wDAACLh2gDAACJh8gBAACLh2wDAACJh8wBAACLRkiJh2gDAACLRkyJh2wDAACLh2gDAACJh9ABAACLh2wDAACJh9QBAACLRlCJh2gDAACLRlSJh2wDAACLh2gDAACJh9gBAACLh2wDAACJh9wBAACLRliJh2gDAACLRlyJh2wDAACLh2gDAACJh+ABAACLh2wDAACJh+QBAACLRmCJh2gDAACLRmSJh2wDAACLh2gDAACJh+gBAACLh2wDAACJh+wBAACLRmiJh2gDAACLRmyJh2wDAACLh2gDAACJh/ABAACLh2wDAACJh/QBAACLRnCJh2gDAACLRnSJh2wDAACLh2gDAACJh/gBAACLh2wDAACJh/wBAACLRniJh2gDAACLRnyJh2wDAACLdCQEifKBwgAQAAA="
-call {vg_blowfish_crypt_blocks16_ssse3}
-.base64 "i7dgAwAAi69kAwAAiwYzh4ABAACJBotGBDOHhAEAAIlGBItGCDOHiAEAAIlGCItGDDOHjAEAAIlGDItGEDOHkAEAAIlGEItGFDOHlAEAAIlGFItGGDOHmAEAAIlGGItGHDOHnAEAAIlGHItGIDOHoAEAAIlGIItGJDOHpAEAAIlGJItGKDOHqAEAAIlGKItGLDOHrAEAAIlGLItGMDOHsAEAAIlGMItGNDOHtAEAAIlGNItGODOHuAEAAIlGOItGPDOHvAEAAIlGPItGQDOHwAEAAIlGQItGRDOHxAEAAIlGRItGSDOHyAEAAIlGSItGTDOHzAEAAIlGTItGUDOH0AEAAIlGUItGVDOH1AEAAIlGVItGWDOH2AEAAIlGWItGXDOH3AEAAIlGXItGYDOH4AEAAIlGYItGZDOH5AEAAIlGZItGaDOH6AEAAIlGaItGbDOH7AEAAIlGbItGcDOH8AEAAIlGcItGdDOH9AEAAIlGdItGeDOH+AEAAIlGeItGfDOH/AEAAIlGfIHGgAAAAIPtEIm3YAMAAImvZAMAAIP9EA=="
-jae 22b
+.base64 "i7eQAQAAi6+UAQAAi4eYAQAAiUcIi4ecAQAAiUcMi3QkBItXCA/Ki28MD80="
+call {vg_blowfish_encrypt_block_ssse3}
+.base64 "D8kPyolPCIlXDIu3kAEAAIuvlAEAAIsGiYeYAQAAi0YEiYecAQAAiwYzRwiJBotGBDNHDIlGBIPGCIPtAYm3kAEAAImvlAEAAA=="
+jne 22b
 jmp 21f
 20:
 21:
-.base64 "i4dkAwAAg/gI"
-jb 23f
-25:
-.base64 "i7dgAwAAi69kAwAAi4doAwAAiYeAAQAAi4dsAwAAiYeEAQAAiwaJh2gDAACLRgSJh2wDAACLh2gDAACJh4gBAACLh2wDAACJh4wBAACLRgiJh2gDAACLRgyJh2wDAACLh2gDAACJh5ABAACLh2wDAACJh5QBAACLRhCJh2gDAACLRhSJh2wDAACLh2gDAACJh5gBAACLh2wDAACJh5wBAACLRhiJh2gDAACLRhyJh2wDAACLh2gDAACJh6ABAACLh2wDAACJh6QBAACLRiCJh2gDAACLRiSJh2wDAACLh2gDAACJh6gBAACLh2wDAACJh6wBAACLRiiJh2gDAACLRiyJh2wDAACLh2gDAACJh7ABAACLh2wDAACJh7QBAACLRjCJh2gDAACLRjSJh2wDAACLh2gDAACJh7gBAACLh2wDAACJh7wBAACLRjiJh2gDAACLRjyJh2wDAACLdCQEifKBwgAQAAA="
-call {vg_blowfish_crypt_blocks16_ssse3}
-.base64 "i7dgAwAAi69kAwAAiwYzh4ABAACJBotGBDOHhAEAAIlGBItGCDOHiAEAAIlGCItGDDOHjAEAAIlGDItGEDOHkAEAAIlGEItGFDOHlAEAAIlGFItGGDOHmAEAAIlGGItGHDOHnAEAAIlGHItGIDOHoAEAAIlGIItGJDOHpAEAAIlGJItGKDOHqAEAAIlGKItGLDOHrAEAAIlGLItGMDOHsAEAAIlGMItGNDOHtAEAAIlGNItGODOHuAEAAIlGOItGPDOHvAEAAIlGPIPGQIPtCIm3YAMAAImvZAMAAIP9CA=="
-jae 25b
-jmp 24f
-23:
-24:
-.base64 "i4dkAwAAg/gE"
-jb 26f
-28:
-.base64 "i7dgAwAAi69kAwAAi4doAwAAiYeAAQAAi4dsAwAAiYeEAQAAiwaJh2gDAACLRgSJh2wDAACLh2gDAACJh4gBAACLh2wDAACJh4wBAACLRgiJh2gDAACLRgyJh2wDAACLh2gDAACJh5ABAACLh2wDAACJh5QBAACLRhCJh2gDAACLRhSJh2wDAACLh2gDAACJh5gBAACLh2wDAACJh5wBAACLRhiJh2gDAACLRhyJh2wDAACLdCQEifKBwgAQAAA="
-call {vg_blowfish_crypt_blocks16_ssse3}
-.base64 "i7dgAwAAi69kAwAAiwYzh4ABAACJBotGBDOHhAEAAIlGBItGCDOHiAEAAIlGCItGDDOHjAEAAIlGDItGEDOHkAEAAIlGEItGFDOHlAEAAIlGFItGGDOHmAEAAIlGGItGHDOHnAEAAIlGHIPGIIPtBIm3YAMAAImvZAMAAIP9BA=="
-jae 28b
-jmp 27f
-26:
-27:
-.base64 "i4dkAwAAg/gC"
-jb 29f
-211:
-.base64 "i7dgAwAAi69kAwAAi4doAwAAiYeAAQAAi4dsAwAAiYeEAQAAiwaJh2gDAACLRgSJh2wDAACLh2gDAACJh4gBAACLh2wDAACJh4wBAACLRgiJh2gDAACLRgyJh2wDAACLdCQEifKBwgAQAAA="
-call {vg_blowfish_crypt_blocks16_ssse3}
-.base64 "i7dgAwAAi69kAwAAiwYzh4ABAACJBotGBDOHhAEAAIlGBItGCDOHiAEAAIlGCItGDDOHjAEAAIlGDIPGEIPtAom3YAMAAImvZAMAAIP9Ag=="
-jae 211b
-jmp 210f
-29:
-210:
-.base64 "i4dkAwAAhcA="
-je 212f
-214:
-.base64 "i7dgAwAAi69kAwAAi4doAwAAiYeAAQAAi4dsAwAAiYeEAQAAiwaJh2gDAACLRgSJh2wDAACLdCQEifKBwgAQAAA="
-call {vg_blowfish_crypt_blocks16_ssse3}
-.base64 "i7dgAwAAi69kAwAAiwYzh4ABAACJBotGBDOHhAEAAIlGBIPGCIPtAYm3YAMAAImvZAMAAA=="
-jne 214b
-jmp 213f
-212:
-213:
-.base64 "i3QkCIuHaAMAAIkGi4dsAwAAiUYEi59QAwAAi7dUAwAAi69cAwAAi79YAwAAZg/vwLkAAAAA8w9/RCQY8w9/RCQo8w9/RCQ48w9/RCRI8w9/RCRY8w9/RCRo8w9/RCR48w9/hCSIAAAA8w9/hCSYAAAA8w9/hCSoAAAA8w9/hCS4AAAA8w9/hCTIAAAA8w9/hCTYAAAA8w9/hCToAAAA8w9/hCT4AAAA8w9/hCQIAQAA8w9/hCQYAQAA8w9/hCQoAQAA8w9/hCQ4AQAA8w9/hCRIAQAA8w9/hCRYAQAA8w9/hCRoAQAA8w9/hCR4AQAA8w9/hCSIAQAA8w9/hCSYAQAA8w9/hCSoAQAA8w9/hCS4AQAA8w9/hCTIAQAA8w9/hCTYAQAA8w9/hCToAQAA8w9/hCT4AQAA8w9/hCQIAgAA8w9/hCQYAgAA8w9/hCQoAgAA8w9/hCQ4AgAA8w9/hCRIAgAA8w9/hCRYAgAA8w9/hCRoAgAA8w9/hCR4AgAA8w9/hCSIAgAA8w9/hCSYAgAA8w9/hCSoAgAA8w9/hCS4AgAA8w9/hCTIAgAA8w9/hCTYAgAA8w9/hCToAgAA8w9/hCT4AgAA8w9/hCQIAwAA8w9/hCQYAwAA8w9/hCQoAwAA8w9/hCQ4AwAA8w9/hCRIAwAA8w9/hCRYAwAA8w9/hCRoAwAA8w9/hCR4AwAAiYwkiAMAAImMJIwDAACNpCSUAwAAjaQkZPz//7kAAAAAiUwkBIlMJAiJTCQMiUwkEIlMJBSJTCQYiUwkHImMJJgDAACNpCScAwAAuAAAAAC6AAAAADHJZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7//D"
+.base64 "i3QkCIuHmAEAAIkGi4ecAQAAiUYEi5+AAQAAi7eEAQAAi6+MAQAAi7+IAQAAZg/vwLkAAAAA8w9/RCQY8w9/RCQo8w9/RCQ48w9/RCRI8w9/RCRY8w9/RCRo8w9/RCR48w9/hCSIAAAA8w9/hCSYAAAA8w9/hCSoAAAA8w9/hCS4AAAA8w9/hCTIAAAA8w9/hCTYAAAA8w9/hCToAAAA8w9/hCT4AAAA8w9/hCQIAQAA8w9/hCQYAQAA8w9/hCQoAQAA8w9/hCQ4AQAA8w9/hCRIAQAA8w9/hCRYAQAA8w9/hCRoAQAA8w9/hCR4AQAA8w9/hCSIAQAA8w9/hCSYAQAA8w9/hCSoAQAAiYwkuAEAAImMJLwBAACNpCTAAQAAjaQkOP7//7kAAAAAiUwkBIlMJAiJTCQMiUwkEIlMJBSJTCQYiUwkHI2kJMgBAAC4AAAAALoAAAAAMclmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/8M="
 .p2align 6"#,
-        vg_blowfish_crypt_blocks16_ssse3 = sym super::blowfish::vg_blowfish_crypt_blocks16_ssse3::vg_blowfish_crypt_blocks16_ssse3,
+        vg_blowfish_encrypt_block_ssse3 = sym super::blowfish::vg_blowfish_encrypt_block_ssse3::vg_blowfish_encrypt_block_ssse3,
     )
 }
 
@@ -238,12 +198,12 @@ pub const VG_BLOWFISH_CFB64_ENCRYPT_FINAL_SSSE3_FEATURES: verified_garbage_cpu::
 /// * `iv` must be valid for reads and writes of 8 bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
 /// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
-/// * None of `schedule`, `iv` and `data` may overlap the arguments on the stack, overlap the return address on the stack or the 460 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `schedule`, `iv` and `data` may overlap the arguments on the stack, overlap the return address on the stack or the 456 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `ssse3` target feature.
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_blowfish_cfb64_encrypt_final_ssse3(schedule: *const [u8; 4168], iv: *mut [u8; 8], data: *mut u8, len: usize) {
     core::arch::naked_asm!(
-        r#".base64 "jaQkPP7//4uEJMgBAACJRCQEi4QkzAEAAIlEJAiLhCTQAQAAiUQkDIuEJNQBAACJRCQQieCDwBiJRCQUi0QkFImYgAEAAImwhAEAAIm4iAEAAImojAEAAInHi3QkCIsGiYeYAQAAi0YEiYecAQAAi0QkDImHkAEAAItEJBCJh5QBAACFwA=="
+        r#".base64 "jaQkQP7//4uEJMQBAACJRCQEi4QkyAEAAIlEJAiLhCTMAQAAiUQkDIuEJNABAACJRCQQieCDwBiJRCQUi0QkFImYgAEAAImwhAEAAIm4iAEAAImojAEAAInHi3QkCIsGiYeYAQAAi0YEiYecAQAAi0QkDImHkAEAAItEJBCJh5QBAACFwA=="
 je 20f
 22:
 .base64 "i7eQAQAAi6+UAQAAi4eYAQAAiUcIi4ecAQAAiUcMi3QkBItXCA/Ki28MD80="
@@ -263,7 +223,7 @@ jne 22b
 jmp 21f
 20:
 21:
-.base64 "i3QkCIuHmAEAAIkGi4ecAQAAiUYEi5+AAQAAi7eEAQAAi6+MAQAAi7+IAQAAZg/vwLkAAAAA8w9/RCQY8w9/RCQo8w9/RCQ48w9/RCRI8w9/RCRY8w9/RCRo8w9/RCR48w9/hCSIAAAA8w9/hCSYAAAA8w9/hCSoAAAA8w9/hCS4AAAA8w9/hCTIAAAA8w9/hCTYAAAA8w9/hCToAAAA8w9/hCT4AAAA8w9/hCQIAQAA8w9/hCQYAQAA8w9/hCQoAQAA8w9/hCQ4AQAA8w9/hCRIAQAA8w9/hCRYAQAA8w9/hCRoAQAA8w9/hCR4AQAA8w9/hCSIAQAA8w9/hCSYAQAA8w9/hCSoAQAAiYwkuAEAAImMJLwBAACNpCTEAQAAjaQkNP7//7kAAAAAiUwkBIlMJAiJTCQMiUwkEIlMJBSJTCQYiUwkHImMJMgBAACNpCTMAQAAuAAAAAC6AAAAADHJZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7//D"
+.base64 "i3QkCIuHmAEAAIkGi4ecAQAAiUYEi5+AAQAAi7eEAQAAi6+MAQAAi7+IAQAAZg/vwLkAAAAA8w9/RCQY8w9/RCQo8w9/RCQ48w9/RCRI8w9/RCRY8w9/RCRo8w9/RCR48w9/hCSIAAAA8w9/hCSYAAAA8w9/hCSoAAAA8w9/hCS4AAAA8w9/hCTIAAAA8w9/hCTYAAAA8w9/hCToAAAA8w9/hCT4AAAA8w9/hCQIAQAA8w9/hCQYAQAA8w9/hCQoAQAA8w9/hCQ4AQAA8w9/hCRIAQAA8w9/hCRYAQAA8w9/hCRoAQAA8w9/hCR4AQAA8w9/hCSIAQAA8w9/hCSYAQAA8w9/hCSoAQAAiYwkuAEAAImMJLwBAACNpCTAAQAAjaQkOP7//7kAAAAAiUwkBIlMJAiJTCQMiUwkEIlMJBSJTCQYiUwkHI2kJMgBAAC4AAAAALoAAAAAMclmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/8M="
 .p2align 6"#,
         vg_blowfish_encrypt_block_ssse3 = sym super::blowfish::vg_blowfish_encrypt_block_ssse3::vg_blowfish_encrypt_block_ssse3,
     )
@@ -347,12 +307,12 @@ pub const VG_BLOWFISH_CFB64_DECRYPT_FINAL_SSSE3_FEATURES: verified_garbage_cpu::
 /// * `iv` must be valid for reads and writes of 8 bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
 /// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
-/// * None of `schedule`, `iv` and `data` may overlap the arguments on the stack, overlap the return address on the stack or the 460 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `schedule`, `iv` and `data` may overlap the arguments on the stack, overlap the return address on the stack or the 456 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `ssse3` target feature.
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_blowfish_cfb64_decrypt_final_ssse3(schedule: *const [u8; 4168], iv: *mut [u8; 8], data: *mut u8, len: usize) {
     core::arch::naked_asm!(
-        r#".base64 "jaQkPP7//4uEJMgBAACJRCQEi4QkzAEAAIlEJAiLhCTQAQAAiUQkDIuEJNQBAACJRCQQieCDwBiJRCQUi0QkFImYgAEAAImwhAEAAIm4iAEAAImojAEAAInHi3QkCIsGiYeYAQAAi0YEiYecAQAAi0QkDImHkAEAAItEJBCJh5QBAACFwA=="
+        r#".base64 "jaQkQP7//4uEJMQBAACJRCQEi4QkyAEAAIlEJAiLhCTMAQAAiUQkDIuEJNABAACJRCQQieCDwBiJRCQUi0QkFImYgAEAAImwhAEAAIm4iAEAAImojAEAAInHi3QkCIsGiYeYAQAAi0YEiYecAQAAi0QkDImHkAEAAItEJBCJh5QBAACFwA=="
 je 20f
 22:
 .base64 "i7eQAQAAi6+UAQAAi4eYAQAAiUcIi4ecAQAAiUcMi3QkBItXCA/Ki28MD80="
@@ -372,7 +332,7 @@ jne 22b
 jmp 21f
 20:
 21:
-.base64 "i3QkCIuHmAEAAIkGi4ecAQAAiUYEi5+AAQAAi7eEAQAAi6+MAQAAi7+IAQAAZg/vwLkAAAAA8w9/RCQY8w9/RCQo8w9/RCQ48w9/RCRI8w9/RCRY8w9/RCRo8w9/RCR48w9/hCSIAAAA8w9/hCSYAAAA8w9/hCSoAAAA8w9/hCS4AAAA8w9/hCTIAAAA8w9/hCTYAAAA8w9/hCToAAAA8w9/hCT4AAAA8w9/hCQIAQAA8w9/hCQYAQAA8w9/hCQoAQAA8w9/hCQ4AQAA8w9/hCRIAQAA8w9/hCRYAQAA8w9/hCRoAQAA8w9/hCR4AQAA8w9/hCSIAQAA8w9/hCSYAQAA8w9/hCSoAQAAiYwkuAEAAImMJLwBAACNpCTEAQAAjaQkNP7//7kAAAAAiUwkBIlMJAiJTCQMiUwkEIlMJBSJTCQYiUwkHImMJMgBAACNpCTMAQAAuAAAAAC6AAAAADHJZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7//D"
+.base64 "i3QkCIuHmAEAAIkGi4ecAQAAiUYEi5+AAQAAi7eEAQAAi6+MAQAAi7+IAQAAZg/vwLkAAAAA8w9/RCQY8w9/RCQo8w9/RCQ48w9/RCRI8w9/RCRY8w9/RCRo8w9/RCR48w9/hCSIAAAA8w9/hCSYAAAA8w9/hCSoAAAA8w9/hCS4AAAA8w9/hCTIAAAA8w9/hCTYAAAA8w9/hCToAAAA8w9/hCT4AAAA8w9/hCQIAQAA8w9/hCQYAQAA8w9/hCQoAQAA8w9/hCQ4AQAA8w9/hCRIAQAA8w9/hCRYAQAA8w9/hCRoAQAA8w9/hCR4AQAA8w9/hCSIAQAA8w9/hCSYAQAA8w9/hCSoAQAAiYwkuAEAAImMJLwBAACNpCTAAQAAjaQkOP7//7kAAAAAiUwkBIlMJAiJTCQMiUwkEIlMJBSJTCQYiUwkHI2kJMgBAAC4AAAAALoAAAAAMclmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/8M="
 .p2align 6"#,
         vg_blowfish_encrypt_block_ssse3 = sym super::blowfish::vg_blowfish_encrypt_block_ssse3::vg_blowfish_encrypt_block_ssse3,
     )
