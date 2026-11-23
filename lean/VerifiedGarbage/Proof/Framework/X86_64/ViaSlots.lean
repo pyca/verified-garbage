@@ -106,24 +106,15 @@ theorem SlotsOk.of_frame {slots : List (Int × String)} {E : Addr} {d k D : Nat}
 /-- **The slots along a run**: code that writes `rsp` only in its frames
 keeps the stack pointer, and the slots, which it may not write. -/
 theorem SlotInv.exec {slots : List (Int × String)} {E : Addr} {d D : Nat} {c : Prog isa}
-    {s s' : State} {t : List Leak} (e : Exec isa c s t s') (hn : NoSp c) (hsp : SpSafe c)
+    {s s' : State} {t : List Leak} (e : Exec isa c s t s') (hsp : SpSafe c)
     (hfit : SlotsFit slots D) (hdD : d + c.x86_64Depth ≤ D) (hD : D + 16 ≤ 2 ^ 64)
     (h : SlotInv slots E d s) : SlotInv slots E d s' := by
-  have hk := depth_le_x86_64Depth c
   obtain ⟨hrd, hwr⟩ := Exec.rdwr e
   refine ⟨by rw [Exec.rsp hsp e]; exact h.1, ?_⟩
-  exact h.2.of_frame hfit (k := 8 * c.depth) (by omega) h.1 (Exec.frameSp e hn (by omega)) hrd hwr (Exec.syms e)
+  exact h.2.of_frame hfit (k := c.x86_64Depth) (by omega) h.1 (Exec.stackFrame hsp e (by omega)) hrd hwr (Exec.syms e)
 
 /-! ## The pieces of code -/
 
-theorem NoSp.seq₁ {a b : Prog isa} (h : NoSp (.seq a b)) : NoSp a := fun i hi => h i (List.mem_append_left _ hi)
-theorem NoSp.seq₂ {a b : Prog isa} (h : NoSp (.seq a b)) : NoSp b := fun i hi => h i (List.mem_append_right _ hi)
-theorem NoSp.ite₁ {cd : Cond} {a b : Prog isa} (h : NoSp (.ite cd a b)) : NoSp a :=
-  fun i hi => h i (List.mem_append_left _ hi)
-theorem NoSp.ite₂ {cd : Cond} {a b : Prog isa} (h : NoSp (.ite cd a b)) : NoSp b :=
-  fun i hi => h i (List.mem_append_right _ hi)
-theorem NoSp.frame {i j : Instr} {b : Prog isa} (h : NoSp (.frame i b j)) : NoSp b :=
-  fun i' hi => h i' (by simp [instrs, hi])
 theorem SpSafe.seq₁ {a b : Prog isa} (h : SpSafe (.seq a b)) : SpSafe a := fun i hi => h i (List.mem_append_left _ hi)
 theorem SpSafe.seq₂ {a b : Prog isa} (h : SpSafe (.seq a b)) : SpSafe b := fun i hi => h i (List.mem_append_right _ hi)
 theorem SpSafe.ite₁ {cd : Cond} {a b : Prog isa} (h : SpSafe (.ite cd a b)) : SpSafe a :=
@@ -195,50 +186,50 @@ theorem slot_icall {slots : List (Int × String)} {E : Addr} {d : Nat} {n : Stri
 to the same states. -/
 theorem Exec.toSlots {slots : List (Int × String)} {E : Addr} {D : Nat} (hfit : SlotsFit slots D)
     (hD : D + 16 ≤ 2 ^ 64) {c : Prog isa} {s s' : State} {t : List Leak} (e : Exec isa c s t s') :
-    ∀ {d : Nat}, NoSp c → SpSafe c → d + c.x86_64Depth ≤ D → SlotInv slots E d s →
+    ∀ {d : Nat}, SpSafe c → d + c.x86_64Depth ≤ D → SlotInv slots E d s →
       ∃ t', Exec isa (Code.viaSlots slots d c) s t' s' := by
   induction e with
-  | block h => intro _ _ _ _ _; exact ⟨_, Exec.block h⟩
+  | block h => intro _ _ _ _; exact ⟨_, Exec.block h⟩
   | @seq a b _ _ _ _ _ e₁ _ ih₁ ih₂ =>
-    intro d hn hsp hdD hi
+    intro d hsp hdD hi
     simp only [Code.x86_64Depth] at hdD
-    obtain ⟨_, e₁'⟩ := ih₁ hn.seq₁ hsp.seq₁ (by omega) hi
-    obtain ⟨_, e₂'⟩ := ih₂ hn.seq₂ hsp.seq₂ (by omega)
-      (SlotInv.exec e₁ hn.seq₁ hsp.seq₁ hfit (by omega) hD hi)
+    obtain ⟨_, e₁'⟩ := ih₁ hsp.seq₁ (by omega) hi
+    obtain ⟨_, e₂'⟩ := ih₂ hsp.seq₂ (by omega)
+      (SlotInv.exec e₁ hsp.seq₁ hfit (by omega) hD hi)
     exact ⟨_, Exec.seq e₁' e₂'⟩
   | iteT hc _ ih =>
-    intro d hn hsp hdD hi
+    intro d hsp hdD hi
     simp only [Code.x86_64Depth] at hdD
-    obtain ⟨_, e'⟩ := ih hn.ite₁ hsp.ite₁ (by omega) hi
+    obtain ⟨_, e'⟩ := ih hsp.ite₁ (by omega) hi
     exact ⟨_, Exec.iteT hc e'⟩
   | iteF hc _ ih =>
-    intro d hn hsp hdD hi
+    intro d hsp hdD hi
     simp only [Code.x86_64Depth] at hdD
-    obtain ⟨_, e'⟩ := ih hn.ite₂ hsp.ite₂ (by omega) hi
+    obtain ⟨_, e'⟩ := ih hsp.ite₂ (by omega) hi
     exact ⟨_, Exec.iteF hc e'⟩
   | loopExit _ hc ih =>
-    intro d hn hsp hdD hi
-    obtain ⟨_, e'⟩ := ih hn hsp hdD hi
+    intro d hsp hdD hi
+    obtain ⟨_, e'⟩ := ih hsp hdD hi
     exact ⟨_, Exec.loopExit e' hc⟩
   | loopNext e₁ hc _ ih₁ ih₂ =>
-    intro d hn hsp hdD hi
-    obtain ⟨_, e₁'⟩ := ih₁ hn hsp hdD hi
-    obtain ⟨_, e₂'⟩ := ih₂ hn hsp hdD (SlotInv.exec e₁ hn hsp hfit hdD hD hi)
+    intro d hsp hdD hi
+    obtain ⟨_, e₁'⟩ := ih₁ hsp hdD hi
+    obtain ⟨_, e₂'⟩ := ih₂ hsp hdD (SlotInv.exec e₁ hsp hfit hdD hD hi)
     exact ⟨_, Exec.loopNext e₁' hc e₂'⟩
   | @call m b _ _ _ _ _ hc eb hr _ =>
-    intro d _ _ _ hi
+    intro d _ _ hi
     cases ho : slotOff slots m with
     | none => exact ⟨_, by simp only [Code.viaSlots, ho]; exact Exec.call hc eb hr⟩
     | some off =>
       obtain ⟨hic, -⟩ := slot_icall hi ho
       exact ⟨_, by simp only [Code.viaSlots, ho, slotCall, Code.icalls]; exact Exec.icall hic hc eb hr⟩
   | @frame i j b _ _ _ _ _ hp _ hq ih =>
-    intro d hn hsp hdD hi
+    intro d hsp hdD hi
     simp only [Code.x86_64Depth] at hdD
-    obtain ⟨_, e'⟩ := ih hn.frame hsp.frame (by rw [pushBytes_eq]; omega) (hi.push hp hfit (by omega))
+    obtain ⟨_, e'⟩ := ih hsp.frame (by rw [pushBytes_eq]; omega) (hi.push hp hfit (by omega))
     exact ⟨_, Exec.frame hp e' hq⟩
-  | icall h₁ h₂ e h₃ _ => intro _ _ _ _ _; exact ⟨_, Exec.icall h₁ h₂ e h₃⟩
-  | icallNext h₁ h₂ e _ => intro _ _ _ _ _; exact ⟨_, Exec.icallNext h₁ h₂ e⟩
+  | icall h₁ h₂ e h₃ _ => intro _ _ _ _; exact ⟨_, Exec.icall h₁ h₂ e h₃⟩
+  | icallNext h₁ h₂ e _ => intro _ _ _ _; exact ⟨_, Exec.icallNext h₁ h₂ e⟩
 
 /-! ## Where a run's leaks end -/
 
@@ -361,37 +352,36 @@ theorem Exec.slotCall_inv {disp : Int} {n : String} {b : Prog isa} {s s' : State
 /-- **A run of `c` made to call through the slots is a run of `c`**, from and
 to the same states. -/
 theorem Exec.ofSlots₁ {slots : List (Int × String)} {E : Addr} {D : Nat} (hfit : SlotsFit slots D)
-    (hD : D + 16 ≤ 2 ^ 64) : ∀ (c : Prog isa) (d : Nat), Code.icallFree c = true → NoSp c → SpSafe c →
+    (hD : D + 16 ≤ 2 ^ 64) : ∀ (c : Prog isa) (d : Nat), Code.icallFree c = true → SpSafe c →
     d + c.x86_64Depth ≤ D → ∀ {s s' : State} {t' : List Leak},
     Exec isa (Code.viaSlots slots d c) s t' s' → SlotInv slots E d s → ∃ t, Exec isa c s t s'
-  | .block is, _, _, _, _, _, _, _, _, e, _ => ⟨_, e⟩
-  | .seq a b, d, hc, hn, hsp, hdD, _, _, _, e, hd => by
+  | .block is, _, _, _, _, _, _, _, e, _ => ⟨_, e⟩
+  | .seq a b, d, hc, hsp, hdD, _, _, _, e, hd => by
     simp only [Code.icallFree, Bool.and_eq_true] at hc
     simp only [Code.x86_64Depth] at hdD
     cases e with
     | seq e₁ e₂ =>
-      obtain ⟨_, o₁⟩ := Exec.ofSlots₁ hfit hD a d hc.1 hn.seq₁ hsp.seq₁ (by omega) e₁ hd
-      obtain ⟨_, o₂⟩ := Exec.ofSlots₁ hfit hD b d hc.2 hn.seq₂ hsp.seq₂ (by omega) e₂
-        (SlotInv.exec o₁ hn.seq₁ hsp.seq₁ hfit (by omega) hD hd)
+      obtain ⟨_, o₁⟩ := Exec.ofSlots₁ hfit hD a d hc.1 hsp.seq₁ (by omega) e₁ hd
+      obtain ⟨_, o₂⟩ := Exec.ofSlots₁ hfit hD b d hc.2 hsp.seq₂ (by omega) e₂
+        (SlotInv.exec o₁ hsp.seq₁ hfit (by omega) hD hd)
       exact ⟨_, Exec.seq o₁ o₂⟩
-  | .ite cd a b, d, hc, hn, hsp, hdD, _, _, _, e, hd => by
+  | .ite cd a b, d, hc, hsp, hdD, _, _, _, e, hd => by
     simp only [Code.icallFree, Bool.and_eq_true] at hc
     simp only [Code.x86_64Depth] at hdD
     cases e with
     | iteT h e =>
-      obtain ⟨_, o⟩ := Exec.ofSlots₁ hfit hD a d hc.1 hn.ite₁ hsp.ite₁ (by omega) e hd
+      obtain ⟨_, o⟩ := Exec.ofSlots₁ hfit hD a d hc.1 hsp.ite₁ (by omega) e hd
       exact ⟨_, Exec.iteT h o⟩
     | iteF h e =>
-      obtain ⟨_, o⟩ := Exec.ofSlots₁ hfit hD b d hc.2 hn.ite₂ hsp.ite₂ (by omega) e hd
+      obtain ⟨_, o⟩ := Exec.ofSlots₁ hfit hD b d hc.2 hsp.ite₂ (by omega) e hd
       exact ⟨_, Exec.iteF h o⟩
-  | .loop b cd, d, hc, hn, hsp, hdD, s, s', t', e, hd => by
+  | .loop b cd, d, hc, hsp, hdD, s, s', t', e, hd => by
     simp only [Code.icallFree] at hc
     have hdD' : d + b.x86_64Depth ≤ D := hdD
-    have hn' : NoSp b := hn
     have hsp' : SpSafe b := hsp
     change Exec isa (.loop (Code.viaSlots slots d b) cd) s t' s' at e
     have ihb := fun {s s' : State} {t' : List Leak} (e : Exec isa (Code.viaSlots slots d b) s t' s')
-      (hd : SlotInv slots E d s) => Exec.ofSlots₁ hfit hD b d hc hn' hsp' hdD' e hd
+      (hd : SlotInv slots E d s) => Exec.ofSlots₁ hfit hD b d hc hsp' hdD' e hd
     generalize hL : (Code.loop (Code.viaSlots slots d b) cd : Prog isa) = L at e
     induction e with
     | loopExit f h =>
@@ -401,10 +391,10 @@ theorem Exec.ofSlots₁ {slots : List (Int × String)} {E : Addr} {D : Nat} (hfi
     | loopNext f h _ _ ihr =>
       cases hL
       obtain ⟨_, o⟩ := ihb f hd
-      obtain ⟨_, r⟩ := ihr (SlotInv.exec o hn' hsp' hfit hdD' hD hd) rfl
+      obtain ⟨_, r⟩ := ihr (SlotInv.exec o hsp' hfit hdD' hD hd) rfl
       exact ⟨_, Exec.loopNext o h r⟩
     | _ => cases hL
-  | .call m b, d, _, _, _, _, s, s', t', e, hd => by
+  | .call m b, d, _, _, _, s, s', t', e, hd => by
     cases ho : slotOff slots m with
     | none =>
       have e' : Exec isa (.call m b) s t' s' := by simp only [Code.viaSlots, ho] at e; exact e
@@ -413,22 +403,22 @@ theorem Exec.ofSlots₁ {slots : List (Int × String)} {E : Addr} {D : Nat} (hfi
       have e' : Exec isa (slotCall (off + d) m b) s t' s' := by simp only [Code.viaSlots, ho] at e; exact e
       obtain ⟨_, _, _, hcall, fb, hr, -⟩ := Exec.slotCall_inv e'
       exact ⟨_, Exec.call hcall fb hr⟩
-  | .frame i b j, d, hc, hn, hsp, hdD, _, _, _, e, hd => by
+  | .frame i b j, d, hc, hsp, hdD, _, _, _, e, hd => by
     simp only [Code.icallFree] at hc
     simp only [Code.x86_64Depth] at hdD
     cases e with
     | frame hp fb hq =>
-      obtain ⟨_, o⟩ := Exec.ofSlots₁ hfit hD b (d + pushBytes i) hc hn.frame hsp.frame
+      obtain ⟨_, o⟩ := Exec.ofSlots₁ hfit hD b (d + pushBytes i) hc hsp.frame
         (by rw [pushBytes_eq]; omega) fb (hd.push hp hfit (by omega))
       exact ⟨_, Exec.frame hp o hq⟩
-  | .icall .., _, hc, _, _, _, _, _, _, _, _ => by simp only [Code.icallFree, Bool.false_eq_true] at hc
+  | .icall .., _, hc, _, _, _, _, _, _, _ => by simp only [Code.icallFree, Bool.false_eq_true] at hc
 
 theorem Exec.ofSlots_det {slots : List (Int × String)} {E : Addr} {D : Nat} (hfit : SlotsFit slots D)
-    (hD : D + 16 ≤ 2 ^ 64) {c : Prog isa} {d : Nat} (hc : Code.icallFree c = true) (hn : NoSp c)
+    (hD : D + 16 ≤ 2 ^ 64) {c : Prog isa} {d : Nat} (hc : Code.icallFree c = true)
     (hsp : SpSafe c) (hdD : d + c.x86_64Depth ≤ D) {s s' s'' : State} {t' t : List Leak}
     (e : Exec isa (Code.viaSlots slots d c) s t' s') (o : Exec isa c s t s'') (hd : SlotInv slots E d s) :
     s'' = s' := by
-  obtain ⟨_, x⟩ := Exec.ofSlots₁ hfit hD c d hc hn hsp hdD e hd
+  obtain ⟨_, x⟩ := Exec.ofSlots₁ hfit hD c d hc hsp hdD e hd
   exact (Exec.det o x).2
 
 /-! ## Two runs leak the same if the runs of the code do -/
@@ -444,14 +434,14 @@ theorem SymsAgree.of {slots : List (Int × String)} {a b a' b' : State} (h : Sym
 runs of `c` do**: each leaks what that run of `c` does, with the slot's
 address and the callee's at each call made so, which the two agree on. -/
 theorem Exec.ofSlots₂ {slots : List (Int × String)} {E : Addr} {D : Nat} (hfit : SlotsFit slots D)
-    (hD : D + 16 ≤ 2 ^ 64) : ∀ (c : Prog isa) (d : Nat), Code.icallFree c = true → NoSp c → SpSafe c →
+    (hD : D + 16 ≤ 2 ^ 64) : ∀ (c : Prog isa) (d : Nat), Code.icallFree c = true → SpSafe c →
     d + c.x86_64Depth ≤ D → ∀ {s₁ s₂ s₁' s₂' : State} {t₁' t₂' t₁ t₂ : List Leak},
     Exec isa (Code.viaSlots slots d c) s₁ t₁' s₁' → Exec isa (Code.viaSlots slots d c) s₂ t₂' s₂' →
     SlotInv slots E d s₁ → SlotInv slots E d s₂ → SymsAgree slots s₁ s₂ →
     Exec isa c s₁ t₁ s₁' → Exec isa c s₂ t₂ s₂' → t₁ = t₂ → t₁' = t₂'
-  | .block is, _, _, _, _, _, _, _, _, _, _, _, _, _, e₁, e₂, _, _, _, o₁, o₂, h => by
+  | .block is, _, _, _, _, _, _, _, _, _, _, _, _, e₁, e₂, _, _, _, o₁, o₂, h => by
     rw [(Exec.det e₁ o₁).1, (Exec.det e₂ o₂).1]; exact h
-  | .seq a b, d, hc, hn, hsp, hdD, _, _, _, _, _, _, _, _, e₁, e₂, hd₁, hd₂, hy, o₁, o₂, h => by
+  | .seq a b, d, hc, hsp, hdD, _, _, _, _, _, _, _, _, e₁, e₂, hd₁, hd₂, hy, o₁, o₂, h => by
     simp only [Code.icallFree, Bool.and_eq_true] at hc
     simp only [Code.x86_64Depth] at hdD
     cases e₁ with
@@ -462,17 +452,17 @@ theorem Exec.ofSlots₂ {slots : List (Int × String)} {E : Addr} {D : Nat} (hfi
     | seq p₁ q₁ =>
     cases o₂ with
     | seq p₂ q₂ =>
-    obtain rfl := Exec.ofSlots_det hfit hD hc.1 hn.seq₁ hsp.seq₁ (by omega) f₁ p₁ hd₁
-    obtain rfl := Exec.ofSlots_det hfit hD hc.1 hn.seq₁ hsp.seq₁ (by omega) f₂ p₂ hd₂
+    obtain rfl := Exec.ofSlots_det hfit hD hc.1 hsp.seq₁ (by omega) f₁ p₁ hd₁
+    obtain rfl := Exec.ofSlots_det hfit hD hc.1 hsp.seq₁ (by omega) f₂ p₂ hd₂
     have hA := Exec.prefix hc.1 p₁ p₂ h
     rw [hA] at h
     have hB := List.append_cancel_left h
-    rw [Exec.ofSlots₂ hfit hD a d hc.1 hn.seq₁ hsp.seq₁ (by omega) f₁ f₂ hd₁ hd₂ hy p₁ p₂ hA,
-      Exec.ofSlots₂ hfit hD b d hc.2 hn.seq₂ hsp.seq₂ (by omega) g₁ g₂
-        (SlotInv.exec p₁ hn.seq₁ hsp.seq₁ hfit (by omega) hD hd₁)
-        (SlotInv.exec p₂ hn.seq₁ hsp.seq₁ hfit (by omega) hD hd₂)
+    rw [Exec.ofSlots₂ hfit hD a d hc.1 hsp.seq₁ (by omega) f₁ f₂ hd₁ hd₂ hy p₁ p₂ hA,
+      Exec.ofSlots₂ hfit hD b d hc.2 hsp.seq₂ (by omega) g₁ g₂
+        (SlotInv.exec p₁ hsp.seq₁ hfit (by omega) hD hd₁)
+        (SlotInv.exec p₂ hsp.seq₁ hfit (by omega) hD hd₂)
         (hy.of (Exec.syms p₁) (Exec.syms p₂)) q₁ q₂ hB]
-  | .ite cd a b, d, hc, hn, hsp, hdD, _, _, _, _, _, _, _, _, e₁, e₂, hd₁, hd₂, hy, o₁, o₂, h => by
+  | .ite cd a b, d, hc, hsp, hdD, _, _, _, _, _, _, _, _, e₁, e₂, hd₁, hd₂, hy, o₁, o₂, h => by
     simp only [Code.icallFree, Bool.and_eq_true] at hc
     simp only [Code.x86_64Depth] at hdD
     cases e₁ with
@@ -490,7 +480,7 @@ theorem Exec.ofSlots₂ {slots : List (Int × String)} {E : Addr} {D : Nat} (hfi
           | iteF c₂' _ => rw [c₂] at c₂'; cases c₂'
           | iteT _ p₂ =>
             simp only [List.cons.injEq, true_and] at h ⊢
-            exact Exec.ofSlots₂ hfit hD a d hc.1 hn.ite₁ hsp.ite₁ (by omega) f₁ f₂ hd₁ hd₂ hy p₁ p₂ h
+            exact Exec.ofSlots₂ hfit hD a d hc.1 hsp.ite₁ (by omega) f₁ f₂ hd₁ hd₂ hy p₁ p₂ h
     | iteF c₁ f₁ =>
       cases o₁ with
       | iteT c₁' _ => rw [c₁] at c₁'; cases c₁'
@@ -505,17 +495,16 @@ theorem Exec.ofSlots₂ {slots : List (Int × String)} {E : Addr} {D : Nat} (hfi
           | iteT c₂' _ => rw [c₂] at c₂'; cases c₂'
           | iteF _ p₂ =>
             simp only [List.cons.injEq, true_and] at h ⊢
-            exact Exec.ofSlots₂ hfit hD b d hc.2 hn.ite₂ hsp.ite₂ (by omega) f₁ f₂ hd₁ hd₂ hy p₁ p₂ h
-  | .loop b cd, d, hc, hn, hsp, hdD, s₁, s₂, s₁', s₂', t₁', t₂', t₁, t₂, e₁, e₂, hd₁, hd₂, hy, o₁, o₂, h => by
+            exact Exec.ofSlots₂ hfit hD b d hc.2 hsp.ite₂ (by omega) f₁ f₂ hd₁ hd₂ hy p₁ p₂ h
+  | .loop b cd, d, hc, hsp, hdD, s₁, s₂, s₁', s₂', t₁', t₂', t₁, t₂, e₁, e₂, hd₁, hd₂, hy, o₁, o₂, h => by
     simp only [Code.icallFree] at hc
     have hdD' : d + b.x86_64Depth ≤ D := hdD
-    have hn' : NoSp b := hn
     have hsp' : SpSafe b := hsp
     have ihb := fun {s₁ s₂ s₁' s₂' : State} {t₁' t₂' t₁ t₂ : List Leak}
       (e₁ : Exec isa (Code.viaSlots slots d b) s₁ t₁' s₁') (e₂ : Exec isa (Code.viaSlots slots d b) s₂ t₂' s₂')
       (hd₁ : SlotInv slots E d s₁) (hd₂ : SlotInv slots E d s₂) (hy : SymsAgree slots s₁ s₂)
       (o₁ : Exec isa b s₁ t₁ s₁') (o₂ : Exec isa b s₂ t₂ s₂') (h : t₁ = t₂) =>
-      Exec.ofSlots₂ hfit hD b d hc hn' hsp' hdD' e₁ e₂ hd₁ hd₂ hy o₁ o₂ h
+      Exec.ofSlots₂ hfit hD b d hc hsp' hdD' e₁ e₂ hd₁ hd₂ hy o₁ o₂ h
     change Exec isa (.loop (Code.viaSlots slots d b) cd) s₁ t₁' s₁' at e₁
     change Exec isa (.loop (Code.viaSlots slots d b) cd) s₂ t₂' s₂' at e₂
     generalize hL : (Code.loop (Code.viaSlots slots d b) cd : Prog isa) = L at e₁ e₂
@@ -524,18 +513,18 @@ theorem Exec.ofSlots₂ {slots : List (Int × String)} {E : Addr} {D : Nat} (hfi
       cases hL
       cases o₁ with
       | loopNext p₁ c₁' _ =>
-        rw [Exec.ofSlots_det hfit hD hc hn' hsp' hdD' f₁ p₁ hd₁, c₁] at c₁'; cases c₁'
+        rw [Exec.ofSlots_det hfit hD hc hsp' hdD' f₁ p₁ hd₁, c₁] at c₁'; cases c₁'
       | loopExit p₁ _ =>
         cases e₂ with
         | loopExit f₂ c₂ =>
           cases o₂ with
-          | loopNext p₂ c₂' _ => rw [Exec.ofSlots_det hfit hD hc hn' hsp' hdD' f₂ p₂ hd₂, c₂] at c₂'; cases c₂'
+          | loopNext p₂ c₂' _ => rw [Exec.ofSlots_det hfit hD hc hsp' hdD' f₂ p₂ hd₂, c₂] at c₂'; cases c₂'
           | loopExit p₂ _ =>
             have hb := Exec.prefix hc p₁ p₂ h
             rw [ihb f₁ f₂ hd₁ hd₂ hy p₁ p₂ hb]
         | loopNext f₂ c₂ _ =>
           cases o₂ with
-          | loopExit p₂ c₂' => rw [Exec.ofSlots_det hfit hD hc hn' hsp' hdD' f₂ p₂ hd₂, c₂] at c₂'; cases c₂'
+          | loopExit p₂ c₂' => rw [Exec.ofSlots_det hfit hD hc hsp' hdD' f₂ p₂ hd₂, c₂] at c₂'; cases c₂'
           | loopNext p₂ _ _ =>
             have hb := Exec.prefix hc p₁ p₂ h
             rw [hb, List.append_cancel_left_eq] at h
@@ -545,29 +534,29 @@ theorem Exec.ofSlots₂ {slots : List (Int × String)} {E : Addr} {D : Nat} (hfi
       cases hL
       cases o₁ with
       | loopExit p₁ c₁' =>
-        rw [Exec.ofSlots_det hfit hD hc hn' hsp' hdD' f₁ p₁ hd₁, c₁] at c₁'; cases c₁'
+        rw [Exec.ofSlots_det hfit hD hc hsp' hdD' f₁ p₁ hd₁, c₁] at c₁'; cases c₁'
       | loopNext p₁ _ q₁ =>
-        obtain rfl := Exec.ofSlots_det hfit hD hc hn' hsp' hdD' f₁ p₁ hd₁
+        obtain rfl := Exec.ofSlots_det hfit hD hc hsp' hdD' f₁ p₁ hd₁
         cases e₂ with
         | loopExit f₂ c₂ =>
           cases o₂ with
-          | loopNext p₂ c₂' _ => rw [Exec.ofSlots_det hfit hD hc hn' hsp' hdD' f₂ p₂ hd₂, c₂] at c₂'; cases c₂'
+          | loopNext p₂ c₂' _ => rw [Exec.ofSlots_det hfit hD hc hsp' hdD' f₂ p₂ hd₂, c₂] at c₂'; cases c₂'
           | loopExit p₂ _ =>
             have hb := Exec.prefix hc p₁ p₂ h
             rw [hb, List.append_cancel_left_eq] at h
             simp at h
         | loopNext f₂ c₂ r₂ =>
           cases o₂ with
-          | loopExit p₂ c₂' => rw [Exec.ofSlots_det hfit hD hc hn' hsp' hdD' f₂ p₂ hd₂, c₂] at c₂'; cases c₂'
+          | loopExit p₂ c₂' => rw [Exec.ofSlots_det hfit hD hc hsp' hdD' f₂ p₂ hd₂, c₂] at c₂'; cases c₂'
           | loopNext p₂ _ q₂ =>
-            obtain rfl := Exec.ofSlots_det hfit hD hc hn' hsp' hdD' f₂ p₂ hd₂
+            obtain rfl := Exec.ofSlots_det hfit hD hc hsp' hdD' f₂ p₂ hd₂
             have hb := Exec.prefix hc p₁ p₂ h
             rw [hb, List.append_cancel_left_eq, List.cons.injEq] at h
             rw [ihb f₁ f₂ hd₁ hd₂ hy p₁ p₂ hb,
-              ihr _ _ _ _ _ (SlotInv.exec p₁ hn' hsp' hfit hdD' hD hd₁) (SlotInv.exec p₂ hn' hsp' hfit hdD' hD hd₂)
+              ihr _ _ _ _ _ (SlotInv.exec p₁ hsp' hfit hdD' hD hd₁) (SlotInv.exec p₂ hsp' hfit hdD' hD hd₂)
                 (hy.of (Exec.syms p₁) (Exec.syms p₂)) q₁ q₂ h.2 rfl r₂]
     | _ => cases hL
-  | .call m b, d, _, _, _, _, s₁, s₂, s₁', s₂', t₁', t₂', t₁, t₂, e₁, e₂, hd₁, hd₂, hy, o₁, o₂, h => by
+  | .call m b, d, _, _, _, s₁, s₂, s₁', s₂', t₁', t₂', t₁, t₂, e₁, e₂, hd₁, hd₂, hy, o₁, o₂, h => by
     cases ho : slotOff slots m with
     | none =>
       have e₁' : Exec isa (.call m b) s₁ t₁' s₁' := by simp only [Code.viaSlots, ho] at e₁; exact e₁
@@ -585,7 +574,7 @@ theorem Exec.ofSlots₂ {slots : List (Int × String)} {E : Addr} {D : Nat} (hfi
       have hm := slotOff_mem ho
       rw [(slot_icall hd₁ ho).2, (slot_icall hd₂ ho).2,
         show isa.fnAddr s₁ m = isa.fnAddr s₂ m from hy _ hm, ← k₁, ← k₂, h]
-  | .frame i b j, d, hc, hn, hsp, hdD, s₁, s₂, s₁', s₂', t₁', t₂', t₁, t₂, e₁, e₂, hd₁, hd₂, hy, o₁, o₂, h => by
+  | .frame i b j, d, hc, hsp, hdD, s₁, s₂, s₁', s₂', t₁', t₂', t₁, t₂, e₁, e₂, hd₁, hd₂, hy, o₁, o₂, h => by
     simp only [Code.icallFree] at hc
     simp only [Code.x86_64Depth] at hdD
     cases e₁ with
@@ -602,13 +591,13 @@ theorem Exec.ofSlots₂ {slots : List (Int × String)} {E : Addr} {D : Nat} (hfi
     have hi₁ := hd₁.push hp₁ hfit (by omega)
     have hi₂ := hd₂.push hp₂ hfit (by omega)
     have hdb : d + pushBytes i + b.x86_64Depth ≤ D := by rw [pushBytes_eq]; omega
-    obtain rfl := Exec.ofSlots_det hfit hD hc hn.frame hsp.frame hdb fb₁ p₁ hi₁
-    obtain rfl := Exec.ofSlots_det hfit hD hc hn.frame hsp.frame hdb fb₂ p₂ hi₂
+    obtain rfl := Exec.ofSlots_det hfit hD hc hsp.frame hdb fb₁ p₁ hi₁
+    obtain rfl := Exec.ofSlots_det hfit hD hc hsp.frame hdb fb₂ p₂ hi₂
     obtain ⟨hA, hT, hR⟩ := append3_inj' (by simp only [List.length_map]; exact addrs_length _ _ _)
       (fun hv => Exec.prefix hc p₁ p₂ hv) (by simp only [List.length_map]; exact addrs_length _ _ _) h
-    rw [hA, hR, Exec.ofSlots₂ hfit hD b (d + pushBytes i) hc hn.frame hsp.frame hdb fb₁ fb₂ hi₁ hi₂
+    rw [hA, hR, Exec.ofSlots₂ hfit hD b (d + pushBytes i) hc hsp.frame hdb fb₁ fb₂ hi₁ hi₂
       (hy.of (push_syms hp₁) (push_syms hp₂)) p₁ p₂ hT]
-  | .icall .., _, hc, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _ => by
+  | .icall .., _, hc, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _ => by
     simp only [Code.icallFree, Bool.false_eq_true] at hc
 
 /-! ## The slots' contract -/
@@ -635,7 +624,7 @@ for code that makes no indirect call and writes `rsp` only in its frames, if
 theorem SlotVerified.of_verified {c : Prog isa} {K : Contract isa} {m : Nat} {fns : List String}
     (hcor : ∀ s, K.pre s → ∃ t s', Exec isa c s t s' ∧ abiPreserved s s' ∧ K.post s s')
     (hct : ConstantTime isa K.pre K.pub c)
-    (hc : Code.icallFree c = true) (hn : NoSp c) (hsp : SpSafe c)
+    (hc : Code.icallFree c = true) (hsp : SpSafe c)
     (hD : c.x86_64Depth + 8 * (m + 1 + fns.length) + 16 ≤ 2 ^ 64)
     (hrsp : ∀ s₁ s₂, K.pre s₁ → K.pre s₂ → K.pub s₁ s₂ → s₁.gpr .rsp = s₂.gpr .rsp) :
     SlotVerified (Code.viaSlots (slotsOf m fns) 0 c) K m fns := by
@@ -646,13 +635,13 @@ theorem SlotVerified.of_verified {c : Prog isa} {K : Contract isa} {m : Nat} {fn
   refine ⟨fun s hs => ?_, fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hp e₁ e₂ => ?_⟩
   · obtain ⟨t, b, e, habi, hpost⟩ := hcor _ hs.2.1
     have e' := exec_of_dropSlot e
-    obtain ⟨t', e''⟩ := Exec.toSlots hfit hD' e' hn hsp (d := 0) (by omega) (hinv s hs)
+    obtain ⟨t', e''⟩ := Exec.toSlots hfit hD' e' hsp (d := 0) (by omega) (hinv s hs)
     obtain ⟨hrd, hwr⟩ := Exec.rdwr e
     refine ⟨t', _, e'', habi, ?_⟩
     show K.post (dropSlot s) (dropSlot (b.withRegions s.rd s.wr))
     rw [dropSlot_withRegions hrd hwr]; exact hpost
-  · obtain ⟨_, o₁⟩ := Exec.ofSlots₁ hfit hD' c 0 hc hn hsp (by omega) e₁ (hinv s₁ h₁)
-    obtain ⟨_, o₂⟩ := Exec.ofSlots₁ hfit hD' c 0 hc hn hsp (by omega) e₂ (hinv s₂ h₂)
+  · obtain ⟨_, o₁⟩ := Exec.ofSlots₁ hfit hD' c 0 hc hsp (by omega) e₁ (hinv s₁ h₁)
+    obtain ⟨_, o₂⟩ := Exec.ofSlots₁ hfit hD' c 0 hc hsp (by omega) e₂ (hinv s₂ h₂)
     -- The runs from the states without the slots' region, widened, are these.
     obtain ⟨tν₁, b₁, eν₁, -, -⟩ := hcor _ h₁.2.1
     obtain ⟨tν₂, b₂, eν₂, -, -⟩ := hcor _ h₂.2.1
@@ -660,7 +649,7 @@ theorem SlotVerified.of_verified {c : Prog isa} {K : Contract isa} {m : Nat} {fn
     obtain ⟨rfl, -⟩ := Exec.det o₂ (exec_of_dropSlot eν₂)
     have hsp₁₂ : s₁.gpr .rsp = s₂.gpr .rsp := hrsp (dropSlot s₁) (dropSlot s₂) h₁.2.1 h₂.2.1 hp.1
     have hinv₂ : SlotInv (slotsOf m fns) (s₁.gpr .rsp) 0 s₂ := by rw [hsp₁₂]; exact hinv s₂ h₂
-    exact Exec.ofSlots₂ hfit hD' c 0 hc hn hsp (by omega) e₁ e₂ (hinv s₁ h₁) hinv₂
+    exact Exec.ofSlots₂ hfit hD' c 0 hc hsp (by omega) e₁ e₂ (hinv s₁ h₁) hinv₂
       (fun p hp' => hp.2 _ (slotsOf_mem hp').1) o₁ o₂ (hct _ _ _ _ _ _ h₁.2.1 h₂.2.1 hp.1 eν₁ eν₂)
 
 end VG.X86_64
