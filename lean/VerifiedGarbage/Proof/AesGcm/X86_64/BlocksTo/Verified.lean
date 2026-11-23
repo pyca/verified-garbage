@@ -271,16 +271,32 @@ theorem cmp16_ok {s₁ : State} (h9 : s₁.gpr .r9 = s.gpr .r9) :
   simp
 
 omit hp in
-theorem cmpMinimum_ok {minimum : Nat} (cut : minimum = 2 ∨ minimum = 16)
+def minimumFor (minimum count : Nat) : Nat :=
+  if minimum = 5 then (if count % 4 = 0 then 16 else 5) else minimum
+
+omit hp in
+theorem cmpMinimum_ok {minimum : Nat} (cut : (minimum = 2 ∨ minimum = 5) ∨ minimum = 16)
     {s₁ : State} (h9 : s₁.gpr .r9 = s.gpr .r9) :
-    WP isa (.block [.alu .cmp .r9 (imm minimum)]) s₁ fun s₂ => s₂.gpr = s₁.gpr ∧ s₂.mem = s₁.mem ∧
-      s₂.rd = s₁.rd ∧ s₂.wr = s₁.wr ∧ s₂.cf = some (decide (n s < minimum)) := by
-  rcases cut with rfl | rfl
+    WP isa (compareCount minimum) s₁ fun s₂ => s₂.gpr = s₁.gpr ∧ s₂.mem = s₁.mem ∧
+      s₂.rd = s₁.rd ∧ s₂.wr = s₁.wr ∧ s₂.cf = some (decide (n s < minimumFor minimum (n s))) := by
+  rcases cut with (rfl | rfl) | rfl
   · have e : BitVec.signExtend 64 (BitVec.ofNat 32 2) = 2 := by decide
+    change WP isa (.block [.alu .cmp .r9 (imm 2)]) s₁ _
     apply WP.of_runBlock
     simp only [imm, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc, arithFlags, State.setFlags,
       isa, e, h9, Option.bind_some, Option.some.injEq, exists_eq_left']
-    simp
+    simp [minimumFor,n]
+  · refine WP.seq (WP.mono (Blocks.test3_ok (s := s) h9) fun t ⟨g,m,rd,wr,z⟩ => ?_)
+    refine WP.ite (decide (n s % 4 = 0)) (by simp only [eval,z]) (fun he => ?_) (fun he => ?_)
+    · have hc : n s % 4 = 0 := by simpa using he
+      exact WP.mono (cmp16_ok (s := s) (g ▸ h9)) fun _ ⟨g',m',rd',wr',f⟩ =>
+        ⟨g'.trans g,m'.trans m,rd'.trans rd,wr'.trans wr,by simpa [minimumFor,hc] using f⟩
+    · have hc : n s % 4 ≠ 0 := by simpa using he
+      have e : BitVec.signExtend 64 (BitVec.ofNat 32 5) = 5 := by decide
+      apply WP.of_runBlock
+      simp only [imm, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc, arithFlags, State.setFlags,
+        isa, e, g, h9, m, rd, wr, Option.bind_some, Option.some.injEq, exists_eq_left']
+      simp [minimumFor,hc,n]
   · exact cmp16_ok h9
 
 /-- The interleaved part, from the state after the entry. -/
@@ -852,7 +868,7 @@ open VG.Proof.Gcm.X86_64.Stitch (CtxMode SPreTo EPostTo StitchToOkM)
 
 /-- The blocks a `piece` that takes them all is given: all of them if at
 least 16, else none. -/
-def qf (s : State) (minimum : Nat := 16) : Nat := if n s < minimum then 0 else n s
+def qf (s : State) (minimum : Nat := 16) : Nat  := if n s < minimumFor minimum (n s) then 0 else n s
 
 section
 variable {aligned : Bool} {M : CtxMode} {s : State} (hp : BT M s)
@@ -956,10 +972,10 @@ theorem restZeroTo_ok {q : Nat} (hq : q = n s) {st : State} (h : Mid s q q st) :
 theorem restFullTo_ok {st : State} (h : Mid s (qf s) (qf s) st) :
     WP isa (.block rest) st (Mid s (qf s) (qf s)) := by
   by_cases h16 : n s < 16
-  · have hq : qf s = 0 := by simp [qf, h16]
+  · have hq : qf s = 0 := by simp [qf, minimumFor, h16]
     rw [hq] at h ⊢
     exact rest_ok hp (by omega_using [h16]) h
-  · exact restZeroTo_ok hp (by simp [qf, h16]) h
+  · exact restZeroTo_ok hp (by simp [qf, minimumFor, h16]) h
 
 /-- Frame and marshal an entire prefix before invoking an out-of-place piece. -/
 theorem allPiece_ok {lo : Nat} {piece : Prog isa} (hlo : lo ≤ n s)
@@ -996,7 +1012,7 @@ theorem allPiece_ok {lo : Nat} {piece : Prog isa} (hlo : lo ≤ n s)
     fun s₅ hP => mid_of_postTo hp (Nat.le_refl _) h9 ga gc h10₄ g11 rd₄' wr₄' hk₄ hf₄ hP
 
 /-- With `full`, all the blocks by `piece` (if at least 16). -/
-theorem stitchFrom_ok {piece : Prog isa} {minimum : Nat} (cut : minimum = 2 ∨ minimum = 16)
+theorem stitchFrom_ok {piece : Prog isa} {minimum : Nat} (cut : (minimum = 2 ∨ minimum = 5) ∨ minimum = 16)
     (hpiece : ∀ t, SPreTo M t minimum → WP isa piece t (EPostTo t))
     {s₁ : State} (h11 : s₁.gpr .r11 = S s) (h10 : s₁.gpr .r10 = Dst s)
     (hg : ∀ r, r ≠ .r11 → r ≠ .r10 → s₁.gpr r = s.gpr r)
@@ -1004,17 +1020,18 @@ theorem stitchFrom_ok {piece : Prog isa} {minimum : Nat} (cut : minimum = 2 ∨ 
     WP isa (stitchPart piece aligned true minimum) s₁ (Mid s (qf s minimum) (qf s minimum)) := by
   obtain hn : n s < 2 ^ 64 := (s.gpr .r9).isLt
   refine WP.seq (WP.mono (cmpMinimum_ok cut (hg _ (by decide) (by decide))) fun s₂ ⟨g₂, m₂, rd₂, wr₂, cf₂⟩ => ?_)
-  refine WP.ite (decide (n s < minimum)) (by simp only [eval, cf₂]) (fun h => ?_) (fun h => ?_)
-  · have h16 : n s < minimum := by simpa using h
+  refine WP.ite (decide (n s < minimumFor minimum (n s))) (by simp only [eval, cf₂]) (fun h => ?_) (fun h => ?_)
+  · have h16 : n s < minimumFor minimum (n s) := by simpa using h
     obtain hq : qf s minimum = 0 := by simp [qf, h16]
     rw [hq]
     exact WP.block_nil (mid_entry hp (by rw [g₂]; exact hg _ (by decide) (by decide))
       (fun r hr => by rw [g₂]; exact hg r (by rintro rfl; simp [calleeSaved] at hr) (by rintro rfl; simp [calleeSaved] at hr))
       (by rw [m₂]; exact hk) (by rw [m₂]; exact hf) (rd₂.trans hrd) (wr₂.trans hwr))
-  · have h16 : minimum ≤ n s := by simp at h; omega_using [h]
-    obtain hq : qf s minimum = n s := by simp [qf, show ¬ n s < minimum by omega_using [h16]]
+  · have h16 : ¬ n s < minimumFor minimum (n s) := by simpa using h
+    have hlo : minimum ≤ n s := by unfold minimumFor at h16; split at h16 <;> simp_all <;> split at h16 <;> omega_arith
+    obtain hq : qf s minimum = n s := by simp [qf, h16]
     rw [hq]
-    exact allPiece_ok (aligned := aligned) hp h16 (fun t h _ => hpiece t h)
+    exact allPiece_ok (aligned := aligned) hp hlo (fun t h _ => hpiece t h)
       (g₂ ▸ h11) (g₂ ▸ h10) (fun r a b => by rw [g₂]; exact hg r a b)
       (m₂ ▸ hk) (m₂ ▸ hf) (rd₂.trans hrd) (wr₂.trans hwr)
 

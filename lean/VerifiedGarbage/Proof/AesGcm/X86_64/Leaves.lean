@@ -1671,13 +1671,17 @@ theorem encryptVaesShort_stub :
     stubCallee (Impl.AesGcm.X86_64.BlocksToDec.encryptPrepared ctrToStub ghStub
       Impl.Gcm.X86_64.StitchR.encToFromTwo true 2) 1 (fun _ => 0) 24 = true := by lit_decide
 
+theorem encryptAesniShort_stub :
+    stubCallee (Impl.AesGcm.X86_64.BlocksToDec.encryptPrepared ctrToStub ghStub
+      Impl.Gcm.X86_64.StitchAvx8.encBuffers true 5) 1 (fun _ => 0) 24 = true := by lit_decide
+
 theorem blkToP_side_of (v : GcmVariant) {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M)
     (hB : calleeSide B.enc.code v.lv.level 8 = true) (st : Option (StitchToCode M true)) (n : Option StitchToName)
     (hst : st.map (·.enc) = n.map StitchToName.encR ∧ encFullTo st = (n.map StitchToName.fullR).getD false)
     (hn : ((n.map StitchToName.lv).getD .sse).level ≤ v.lvG.level)
-    (flags : ∀ nm, n = some nm → v.shortVaes = (match nm with | .vaes => true | _ => false))
+    (flags : ∀ nm, n = some nm → v.shortBackend = some nm)
     (fused : FusedShortOk M) :
-    calleeSide (StreamTo.BlkToFn.ofPreparedBlocks "" v.gh.impl v.ctr.ctrTo B v.shortVaes fused st).fn.code v.lvG.level 24 = true := by
+    calleeSide (StreamTo.BlkToFn.ofPreparedBlocks "" v.gh.impl v.ctr.ctrTo B v.shortBackend fused st).fn.code v.lvG.level 24 = true := by
   cases st with
   | none =>
     cases n with
@@ -1700,13 +1704,14 @@ theorem blkToP_side_of (v : GcmVariant) {M : Gcm.X86_64.Stitch.CtxMode} (B : Blk
       cases nm
       · exact calleeSide_of_fill (encryptPrepared_fill (n := fun _ => 0) _ _ _ hc hg) hn encryptVaesShort_stub
       · exact calleeSide_of_fill (encryptPrepared_fill (n := fun _ => 0) _ _ _ hc hg) hn (encryptPrepared_stub .vaesAvx512)
-      · exact calleeSide_of_fill (encryptPrepared_fill (n := fun _ => 0) _ _ _ hc hg) hn (encryptPrepared_stub .aesniAvx)
+      · exact calleeSide_of_fill (encryptPrepared_fill (n := fun _ => 0) _ _ _ hc hg) hn encryptAesniShort_stub
 
 /-- `v`'s `blkToR`. -/
 theorem blkToR_side (v : GcmVariant) : calleeSide (blkToR v).fn.code v.lvG.level 24 = true := by
   have hB := (blkR_sides v).1
-  have fused : FusedShortOk Gcm.X86_64.Stitch.CtxMode.prepared := fun _ h =>
-    Gcm.X86_64.StitchR.encToFromTwo_ok 24 (by decide) h
+  have fused : FusedShortOk Gcm.X86_64.Stitch.CtxMode.prepared := ⟨fun _ h =>
+    Gcm.X86_64.StitchR.encToFromTwo_ok 24 (by decide) h, fun _ h =>
+    Gcm.X86_64.StitchAvx8.encBuffers_ok 24 (by decide) h⟩
   have side := blkToP_side_of v (blkR v) hB v.stitchToR
   have hl := v.toLv_le_lvG
   rcases v with ⟨ctr, key, gh, _ | ⟨name, sfx, fs, eP, dP, pP, pR, _ | ⟨tname, tpiece, tpP, _ | q, tpD⟩⟩⟩
@@ -1721,8 +1726,9 @@ theorem blkToR_side (v : GcmVariant) : calleeSide (blkToR v).fn.code v.lvG.level
 /-- `v`'s `blkToF`. -/
 theorem blkToF_side (v : GcmVariant) : calleeSide (blkToF v).fn.code v.lvG.level 24 = true := by
   have hB := (blkF_sides v).1
-  have fused : FusedShortOk Gcm.X86_64.Stitch.CtxMode.flagged := fun _ h =>
-    Gcm.X86_64.StitchR.encToFromTwo_ok 24 (by decide) (sPreTo_ofFlagged h)
+  have fused : FusedShortOk Gcm.X86_64.Stitch.CtxMode.flagged := ⟨fun _ h =>
+    Gcm.X86_64.StitchR.encToFromTwo_ok 24 (by decide) (sPreTo_ofFlagged h), fun _ h =>
+    Gcm.X86_64.StitchAvx8.encBuffers_ok 24 (by decide) (sPreTo_ofFlagged h)⟩
   have side := blkToP_side_of v (blkF v) hB (v.stitchToR.map StitchToCode.flagged)
   have hl := v.toLv_le_lvG
   rcases v with ⟨ctr, key, gh, _ | ⟨name, sfx, fs, eP, dP, pP, pR, _ | ⟨tname, tpiece, tpP, _ | q, tpD⟩⟩⟩
@@ -1737,8 +1743,9 @@ theorem blkToF_side (v : GcmVariant) : calleeSide (blkToF v).fn.code v.lvG.level
 /-- `v`'s `blkToR16`. -/
 theorem blkToR16_side (v : GcmVariant) : calleeSide (blkToR16 v).fn.code v.lvG.level 24 = true := by
   have hB := (blkR16_sides v).1
-  have fused : FusedShortOk Gcm.X86_64.Stitch.CtxMode.prepared16 := fun _ h =>
-    Gcm.X86_64.StitchR.encToFromTwo_ok 8 (by decide) h
+  have fused : FusedShortOk Gcm.X86_64.Stitch.CtxMode.prepared16 := ⟨fun _ h =>
+    Gcm.X86_64.StitchR.encToFromTwo_ok 8 (by decide) h, fun _ h =>
+    Gcm.X86_64.StitchAvx8.encBuffers_ok 8 (by decide) h⟩
   have side := blkToP_side_of v (blkR16 v) hB v.stitchToR16
   have hl := v.toLv_le_lvG
   rcases v with ⟨ctr, key, gh, _ | ⟨name, sfx, fs, eP, dP, pP, pR, _ | ⟨tname, tpiece, tpP, _ | q, tpD⟩⟩⟩
@@ -1753,8 +1760,9 @@ theorem blkToR16_side (v : GcmVariant) : calleeSide (blkToR16 v).fn.code v.lvG.l
 /-- `v`'s `blkToF16`. -/
 theorem blkToF16_side (v : GcmVariant) : calleeSide (blkToF16 v).fn.code v.lvG.level 24 = true := by
   have hB := (blkF16_sides v).1
-  have fused : FusedShortOk (Gcm.X86_64.Stitch.CtxMode.flaggedT 16) := fun _ h =>
-    Gcm.X86_64.StitchR.encToFromTwo_ok 8 (by decide) (sPreTo_ofFlagged16 h)
+  have fused : FusedShortOk (Gcm.X86_64.Stitch.CtxMode.flaggedT 16) := ⟨fun _ h =>
+    Gcm.X86_64.StitchR.encToFromTwo_ok 8 (by decide) (sPreTo_ofFlagged16 h), fun _ h =>
+    Gcm.X86_64.StitchAvx8.encBuffers_ok 8 (by decide) (sPreTo_ofFlagged16 h)⟩
   have side := blkToP_side_of v (blkF16 v) hB (v.stitchToR16.map StitchToCode.flagged16)
   have hl := v.toLv_le_lvG
   rcases v with ⟨ctr, key, gh, _ | ⟨name, sfx, fs, eP, dP, pP, pR, _ | ⟨tname, tpiece, tpP, _ | q, tpD⟩⟩⟩

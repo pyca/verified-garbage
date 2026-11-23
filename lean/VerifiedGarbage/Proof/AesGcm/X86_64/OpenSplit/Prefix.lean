@@ -1172,7 +1172,7 @@ theorem encryptHash_ok (g : GhashImpl) {b : State} (h : Encrypted s b) :
     rw [cm, h.hashKey, h.y, h.out] at y
     exact y
 
-theorem encryptPrepared_wp {aligned : Bool} {p : Prog isa} {minimum : Nat} (cut : minimum = 2 ∨ minimum = 16)
+theorem encryptPrepared_wp {aligned : Bool} {p : Prog isa} {minimum : Nat} (cut : (minimum = 2 ∨ minimum = 5) ∨ minimum = 16)
     (hpce : ∀ t, Proof.Gcm.X86_64.Stitch.SPreTo M t minimum → WP isa p t (Proof.Gcm.X86_64.Stitch.EPostTo t))
     (g : GhashImpl) (v : Proof.Aes.X86_64.Ctr32ToImpl) :
     WP isa (Impl.AesGcm.X86_64.BlocksToDec.encryptPrepared ⟨v.callee.name, v.callee.code⟩ g.fn p aligned minimum) s (Done s) := by
@@ -1515,7 +1515,7 @@ theorem encryptCalls_rel (g : GhashImpl) (v : Proof.Aes.X86_64.Ctr32ToImpl) :
 end
 
 theorem encryptPrepared_ct {M : CtxMode} {aligned : Bool} {piece : Prog isa}
-    {minimum : Nat} (cut : minimum = 2 ∨ minimum = 16)
+    {minimum : Nat} (cut : (minimum = 2 ∨ minimum = 5) ∨ minimum = 16)
     (ok : ∀ t, Proof.Gcm.X86_64.Stitch.SPreTo M t minimum → WP isa piece t (Proof.Gcm.X86_64.Stitch.EPostTo t))
     (pc : PieceTo piece aligned true minimum)
     (g : GhashImpl) (v : Proof.Aes.X86_64.Ctr32ToImpl) :
