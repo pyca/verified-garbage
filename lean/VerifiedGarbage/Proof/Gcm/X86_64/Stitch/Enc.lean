@@ -85,7 +85,7 @@ read; out of place, the output, apart from the data. -/
 theorem QG.keepM {ix : Bool} {s₀ : State} (hp : LPre ix s₀) {lo : Nat → Nat} {a : Addr} {X : Nat → Block}
     {P : Nat → Nat → Block} {yl : Nat → Block} {ord : Nat → Nat} {base : Nat} {fin : Bool} {j c g : Nat}
     (hc : c + 8 ≤ nb s₀) (hg : 16 * g + 16 ≤ nb s₀) (ha : a.toNat = (dp s₀).toNat + 256 * g)
-    (hsep : ix = false → ∀ i, lo j ≤ i → i < 16 → ¬ (c ≤ 16 * g + i ∧ 16 * g + i < c + 8))
+    (hsep : dp s₀ = Stitch.wp ix s₀ → ∀ i, lo j ≤ i → i < 16 → ¬ (c ≤ 16 * g + i ∧ 16 * g + i < c + 8))
     {t t' : State} (h : QG s₀ lo a X P yl ord base fin j t) (hgpr : t'.gpr = t.gpr) (hrd : t'.rd = t.rd)
     (hwr : t'.wr = t.wr) (hlane : ∀ r, r ≠ .xmm13 → r ∉ aregs → ∀ l < 2, t'.lane r l = t.lane r l)
     (hf : Frame [⟨wAddr ix s₀ c, 128⟩] t.mem t'.mem) : QG s₀ lo a X P yl ord base fin j t' := by
@@ -93,10 +93,12 @@ theorem QG.keepM {ix : Bool} {s₀ : State} (hp : LPre ix s₀) {lo : Nat → Na
   have hww := hp.wrap_w
   refine QG.keepW ha (fun i hi hi' => ?_) (hp.w_p.symm.sub_right (Offset.sub_base _ (by omega_using [hc]))) h hgpr hrd hwr
     hlane hf
-  cases ix
-  · intro x h₁ h₂
-    exact run_sep hw (by omega_using [hg, hi']) hc (hsep rfl i hi hi') h₁ h₂
-  · exact ((hp.d_w rfl).sub_left (Offset.sub_base _ (by omega_using [hg, hi']))).sub_right (Offset.sub_base _ (by omega_using [hc]))
+  rcases hp.d_w with eq | apart
+  · change Region.Disjoint _ ⟨Stitch.wp ix s₀ + _, _⟩
+    rw [← eq]
+    intro x h₁ h₂
+    exact run_sep hw (by omega_using [hg, hi']) hc (hsep eq i hi hi') h₁ h₂
+  · exact (apart.sub_left (Offset.sub_base _ (by omega_using [hg, hi']))).sub_right (Offset.sub_base _ (by omega_using [hc]))
 
 theorem QG.data {s₀ : State} (hp : SPre s₀) {lo : Nat → Nat} {a : Addr} {X : Nat → Block}
     {P : Nat → Nat → Block} {yl : Nat → Block} {ord : Nat → Nat} {base : Nat} {fin : Bool} {j c g : Nat}

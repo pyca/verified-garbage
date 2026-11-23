@@ -340,12 +340,8 @@ theorem batchM_ok {ix st ld : Bool} {s₀ : State} (hp : Stitch.LPre ix s₀) (h
       (fun a b hab hb l hl => by
         rw [i₂, o₂, e16, show 64 * (j + a) = 64 * j + 16 * (4 * a) by omega_using [], addr, oaddr]
         simp only [aregs, List.length_cons, List.length_nil] at hb
-        cases ix
-        · cases ld
-          · exact Offset.disjoint _ (Or.inr (by omega_using [hab])) (by omega_using [hc, hwd, hb, hl]) (by omega_using [hc, hwd, hab, hb])
-          · exact absurd (hld rfl) (by decide)
-        · exact ((hp.d_w rfl).sub_left (Offset.sub_base _ (by omega_using [hc, hb, hl]))).sub_right
-            (Offset.sub_base _ (by omega_using [hc, hab, hb])))
+        exact hp.separate (.inr (by omega_using [hab])) (by omega_using [hc, hb, hl])
+          (by omega_using [hc, hab, hb]))
       (by simp only [aregs, List.length_cons, List.length_nil]; omega_using [hc, hrdx, hwr]))
     fun s₃ ⟨b₃, fr₃, g₃, rd₃, wr₃, x₃, _⟩ => ?_
   obtain hm₂ : s₂.mem = s.mem := by rw [f₂.mem, f₁.mem]
@@ -367,10 +363,7 @@ theorem batchM_ok {ix st ld : Bool} {s₀ : State} (hp : Stitch.LPre ix s₀) (h
       Region.Disjoint ⟨bAddr s₀ k, 16⟩ r := fun k hk hck r hr => by
     simp only [List.mem_singleton] at hr
     subst hr
-    cases ix
-    · intro a h₁ h₂
-      exact VG.Proof.Aes.X86_64.AesNi.run_sep hwd hk hc (by omega_using [hck]) h₁ h₂
-    · exact ((hp.d_w rfl).sub_left (Offset.sub_base _ (by omega_using [hk]))).sub_right (Offset.sub_base _ (by omega_using [hc]))
+    exact hp.separate (.inr (by omega_using [hck])) (by omega_using [hk]) (by omega_using [hc])
   refine ⟨⟨by omega_using [hc], fun l hl => ?_, fun l hl => ?_, fun l hl => ?_, by rw [gs, hI.rdi],
     by rw [gs, hI.rsi], by rw [gs, hI.r10], ?_, ?_, ?_,
     by rw [rd₃, f₂.rd, f₁.rd, hI.rd], by rw [wr₃, f₂.wr, f₁.wr, hI.wr]⟩,
@@ -524,7 +517,7 @@ data. -/
 theorem QG.keepM {ix : Bool} {s₀ : State} (hp : Stitch.LPre ix s₀) {lo : Nat → Nat} {a : Addr} {X : Nat → Block}
     {P : Nat → Nat → Block} {yl : Nat → Block} {j c g : Nat}
     (hc : c + 16 ≤ nb s₀) (hg : 16 * g + 16 ≤ nb s₀) (ha : a.toNat = (dp s₀).toNat + 256 * g)
-    (hsep : ix = false → ∀ i, lo j ≤ i → i < 16 → ¬ (c ≤ 16 * g + i ∧ 16 * g + i < c + 16))
+    (hsep : dp s₀ = Stitch.wp ix s₀ → ∀ i, lo j ≤ i → i < 16 → ¬ (c ≤ 16 * g + i ∧ 16 * g + i < c + 16))
     {t t' : State} (h : QG s₀ lo a X P yl j t) (hgpr : t'.gpr = t.gpr) (hrd : t'.rd = t.rd)
     (hwr : t'.wr = t.wr) (hlane : ∀ r, r ≠ .xmm13 → r ∉ aregs → ∀ l < 4, t'.zlane r l = t.zlane r l)
     (hf : Frame [⟨Stitch.wAddr ix s₀ c, 256⟩] t.mem t'.mem) : QG s₀ lo a X P yl j t' := by
@@ -532,10 +525,12 @@ theorem QG.keepM {ix : Bool} {s₀ : State} (hp : Stitch.LPre ix s₀) {lo : Nat
   have hww := hp.wrap_w
   refine QG.keepW ha (fun i hi hi' => ?_) (hp.w_p.symm.sub_right (Offset.sub_base _ (by omega_using [hc]))) h hgpr hrd hwr
     hlane hf
-  cases ix
-  · intro x h₁ h₂
-    exact run_sep hw (by omega_using [hg, hi']) hc (hsep rfl i hi hi') h₁ h₂
-  · exact ((hp.d_w rfl).sub_left (Offset.sub_base _ (by omega_using [hg, hi']))).sub_right (Offset.sub_base _ (by omega_using [hc]))
+  rcases hp.d_w with eq | apart
+  · change Region.Disjoint _ ⟨Stitch.wp ix s₀ + _, _⟩
+    rw [← eq]
+    intro x h₁ h₂
+    exact run_sep hw (by omega_using [hg, hi']) hc (hsep eq i hi hi') h₁ h₂
+  · exact (apart.sub_left (Offset.sub_base _ (by omega_using [hg, hi']))).sub_right (Offset.sub_base _ (by omega_using [hc]))
 
 theorem QG.data {s₀ : State} (hp : SPre s₀) {lo : Nat → Nat} {a : Addr} {X : Nat → Block}
     {P : Nat → Nat → Block} {yl : Nat → Block} {j c g : Nat}

@@ -943,12 +943,12 @@ structure XReady (to : Bool) (m₀ : Mem) (S D : Addr) (n g : Nat) (ks : Nat →
 /-- The source and the destination, in place (`to = false`, the same) or
 out of place (disjoint). -/
 def Mode (to : Bool) (S D : Addr) (n : Nat) : Prop :=
-  (to = false ∧ S = D) ∨ (to = true ∧ Region.Disjoint ⟨S, 16 * n⟩ ⟨D, 16 * n⟩)
+  (to = false ∧ S = D) ∨ (to = true ∧ SrcDst S D n)
 
 theorem Mode.sd {to : Bool} {S D : Addr} {n : Nat} (h : Mode to S D n) : SrcDst S D n := by
   rcases h with ⟨_, h⟩ | ⟨_, h⟩
   · exact .inl h
-  · exact .inr h
+  · exact h
 
 /-- Before the XOR phase of group `g`: the keystream is in the words; the
 output pointer, out of place, in its slot. -/

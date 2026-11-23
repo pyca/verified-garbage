@@ -61,7 +61,7 @@ theorem batchTo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) (g : Nat �
     WP isa (batchTo j g) s fun s' => AInvTo s₀ (c + 16) s' ∧ Q 10 s' ∧ s'.gpr = s.gpr ∧
       (∀ r, r ≠ .xmm13 → r ≠ .xmm14 → r ∉ aregs → r ∉ G → ∀ l < 4, s'.zlane r l = s.zlane r l) ∧
       Frame [⟨oAddr s₀ c, 256⟩] s.mem s'.mem ∧ VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s' :=
-  WP.mono (StitchZH.batchM_ok (ix := true) (ld := true) hp.toM rfl (fun _ => rfl) g G hG Q hg hq hqx hc (hI.toM hp) hCache hgh
+  WP.mono (StitchZH.batchM_ok (ix := true) (ld := true) hp.toM rfl (fun _ => rfl) g G hG Q hg hq hqx hc hI.toM hCache hgh
     (fun _ => hI.r8) hrdx hQ) fun _ ⟨hA, h⟩ => ⟨hA.toTo h.2.1 hI.r8, h⟩
 
 end VG.Proof.Gcm.X86_64.StitchZHTo
@@ -98,11 +98,11 @@ theorem bodyTo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {P : Nat →
     {e : Nat} (he : 16 * (e + 1) ≤ nb s₀) {s : State} (hI : EInvTo s₀ P e s)
     (hCache : VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s) :
     WP isa bodyTo s fun s' => EInvTo s₀ P (e + 1) s' ∧ s'.cf = some (decide (nb s₀ - 16 * e < 32)) ∧ VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s' :=
-  WP.mono (StitchZH.bodyM_ok hp.toM hf he (hI.toM hp) hCache) fun _ ⟨h, hc, hk⟩ => ⟨h.toTo, hc, hk⟩
+  WP.mono (StitchZH.bodyM_ok hp.toM hf he hI.toM hCache) fun _ ⟨h, hc, hk⟩ => ⟨h.toTo, hc, hk⟩
 
 theorem firstTo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {P : Nat → Nat → Block} {s : State}
     (hR : ReadyTo s₀ P s) (hCache : VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s) : WP isa firstTo s fun t => EInvTo s₀ P 1 t ∧ VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) t :=
-  WP.mono (StitchZH.firstM_ok hp.toM hp.nb16 (hR.toM hp) hCache) fun _ ⟨h, hk⟩ => ⟨h.toTo, hk⟩
+  WP.mono (StitchZH.firstM_ok hp.toM hp.nb16 hR.toM hCache) fun _ ⟨h, hk⟩ => ⟨h.toTo, hk⟩
 
 end VG.Proof.Gcm.X86_64.StitchZHTo
 
@@ -140,7 +140,7 @@ theorem bigRestTo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {P : Nat 
     (hl₁ : ∀ l < 4, s₁.zlane .xmm2 l = s.zlane .xmm2 l)
     (hCache : VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s₁) :
     WP isa bigRestTo s₁ fun s' => ∃ e, EInvTo s₀ P e s' ∧ VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s' :=
-  WP.mono (StitchZH.bigRestM_ok hp.toM hf hT hT2 h96 (hI.toM hp) (hA₁.toM hp) hv₁ hm₁ hg₁ hl₁ hCache)
+  WP.mono (StitchZH.bigRestM_ok hp.toM hf hT hT2 h96 hI.toM hA₁.toM hv₁ hm₁ hg₁ hl₁ hCache)
     fun _ ⟨e, h, hk⟩ => ⟨e, h.toTo, hk⟩
 
 /-- The loop of one group, for any number of blocks: it stops with fewer than
@@ -150,6 +150,6 @@ theorem loopERTo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {P : Nat �
     (hCache : VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s) :
     WP isa (.ite .b (.block []) (.loop bodyTo .ae)) s fun s' => ∃ e, nb s₀ - 16 * (e - 1) < 32 ∧
       EInvTo s₀ P e s' ∧ VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s' :=
-  WP.mono (StitchZH.loopERM_ok hp.toM hf (hI.toM hp) hcf hCache) fun _ ⟨e, he, h, hk⟩ => ⟨e, he, h.toTo, hk⟩
+  WP.mono (StitchZH.loopERM_ok hp.toM hf hI.toM hcf hCache) fun _ ⟨e, he, h, hk⟩ => ⟨e, he, h.toTo, hk⟩
 
 end VG.Proof.Gcm.X86_64.StitchZHTo

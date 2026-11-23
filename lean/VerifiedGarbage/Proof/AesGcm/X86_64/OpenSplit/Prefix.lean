@@ -868,7 +868,7 @@ theorem ctrArgsTo_ok {st : State} (hsp : st.gpr .rsp = SP s) (hrd : st.rd = s.rd
     by omega_arith, by omega_arith,
     hp.k_c.sub_left pK, by rw [dst_eq]; exact hp.k_d.sub_left pK, (hp.k_s.sub_left pK).sub_right s48,
     by rw [src_eq]; exact hp.c_r, by rw [dst_eq]; exact hp.c_d, hp.c_s.sub_right s48,
-    by rw [src_eq, dst_eq]; exact hp.r_d, by rw [src_eq]; exact hp.r_s.sub_right s48,
+    Or.inr (by rw [src_eq, dst_eq]; exact hp.r_d), by rw [src_eq]; exact hp.r_s.sub_right s48,
     by rw [dst_eq]; exact hp.d_s.sub_right s48, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩,
     by simp [gpr_setReg, gpr_arithFlags, hsp], fun r hr => ?_, rfl, rfl, rfl⟩
   all_goals try simp only [gpr_setReg, gpr_arithFlags, reduceCtorEq, ↓reduceIte, hsp]

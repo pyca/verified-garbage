@@ -182,7 +182,7 @@ theorem spreTo_of {q lo : Nat} {s₃ : State} (hq16 : lo ≤ q) (hqle : q ≤ n 
     ⟨srcR s, by rw [rd]; simp, contains_prefix _ hqn⟩, ⟨dR s, by rw [wr]; simp, contains_prefix _ hqn⟩,
     ⟨sR s, by rw [wr]; simp, Offset.contains_base _ (by have := AlignedScratch.offset_bounds aligned (S s); omega_using [this]) (by have := AlignedScratch.offset_bounds aligned (S s); omega_using [ts])⟩,
     hp.k_c, hp.k_y, hp.k_d.sub_right pd, hp.k_s.sub_right ps,
-    hp.c_r.symm.sub_left pr, hp.y_r.symm.sub_left pr, (hp.r_d.sub_left pr).sub_right pd,
+    hp.c_r.symm.sub_left pr, hp.y_r.symm.sub_left pr, Or.inr ((hp.r_d.sub_left pr).sub_right pd),
     (hp.r_s.sub_left pr).sub_right ps, hp.c_d.symm.sub_left pd, hp.y_d.symm.sub_left pd,
     (hp.d_s.sub_left pd).sub_right ps, hp.c_s.symm.sub_left ps, hp.y_s.symm.sub_left ps, hp.c_y,
     by have := hp.w_r; omega_using [hqle, this], by have := hp.w_d; omega_using [hqle, this], hp.w_k, by rw [ts]; have := AlignedScratch.offset_bounds aligned (S s); omega_using [hws, this],

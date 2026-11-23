@@ -29,7 +29,7 @@ private theorem callArgs (L : Lay Ctx St W SP) (e : Env Ctx St W SP s)
   have ws : Region.Sub ⟨W+512#64,2048⟩ ⟨W,2560⟩ := Lay.wSub (by decide)
   refine ⟨di, si, dx, cx, nb, scr, o, rounds, q.wrap, d.ok.wrap, (L.cs.sub_left ks).sub_right cs,
     d.ctx.sub_left ks, (L.cw'.sub_left ks).sub_right ws, (q.st.sub_right cs).symm,
-    (d.ok.st.sub_right cs).symm, L.st_w (by decide) (.inr ⟨by decide, by decide⟩), apart,
+    (d.ok.st.sub_right cs).symm, L.st_w (by decide) (.inr ⟨by decide, by decide⟩), Or.inr apart,
     q.w.sub_right ws, d.ok.w.sub_right ws, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [e.rsp]; exact L.kc.sub_right ks
   · rw [e.rsp]; exact L.ks.sub_right cs

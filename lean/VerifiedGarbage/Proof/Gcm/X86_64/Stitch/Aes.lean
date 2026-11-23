@@ -102,8 +102,8 @@ structure LPre (ix : Bool) (s₀ : State) : Prop where
   p_y : (pR s₀).Disjoint (yR s₀)
   c_y : (cR s₀).Disjoint (yR s₀)
   d_p : (dR s₀).Disjoint (pR s₀)
-  /-- Out of place, the output is apart from the data. -/
-  d_w : ix = true → (dR s₀).Disjoint (wR ix s₀)
+  /-- The forward pass can overwrite its input or write into a disjoint region. -/
+  d_w : dp s₀ = wp ix s₀ ∨ (dR s₀).Disjoint (wR ix s₀)
   wrap_d : (dp s₀).toNat + 16 * nb s₀ ≤ 2 ^ 64
   wrap_w : (wp ix s₀).toNat + 16 * nb s₀ ≤ 2 ^ 64
   wrap_k : (kp s₀).toNat + 256 ≤ 2 ^ 64
@@ -126,13 +126,13 @@ theorem SPre.toM {s₀ : State} {lo : Nat} (hp : SPre s₀ lo) : LPre false s₀
   p_y := hp.p_y
   c_y := hp.c_y
   d_p := hp.d_p
-  d_w := fun h => absurd h (by decide)
+  d_w := Or.inl rfl
   wrap_d := hp.wrap_d
   wrap_w := hp.wrap_d
   wrap_k := hp.wrap_k
   wrap_p := hp.wrap_p
 
-theorem SPreTo.toM {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) : LPre true s₀ where
+theorem SPreTo.toM {M : CtxMode} {s₀ : State} {lo : Nat} (hp : SPreTo M s₀ lo) : LPre true s₀ where
   rounds := hp.rounds
   k_in := StitchZTo.inRegions_prefix hp.k_in M.ge
   c_in := hp.c_in
@@ -149,13 +149,22 @@ theorem SPreTo.toM {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) : LPre true
   p_y := hp.p_y
   c_y := hp.c_y
   d_p := hp.s_p
-  d_w := fun _ => hp.s_o
+  d_w := hp.s_o
   wrap_d := hp.wrap_s
   wrap_w := hp.wrap_o
   wrap_k := by
     have := hp.wrap_k; have := M.ge
     show (kp s₀).toNat + 256 ≤ 2 ^ 64; omega_arith
   wrap_p := hp.wrap_p
+
+/-- A store cannot affect a read at a nonoverlapping offset under either layout. -/
+theorem LPre.separate {ix : Bool} {s₀ : State} (hp : LPre ix s₀) {a n b m : Nat}
+    (order : a + n ≤ b ∨ b + m ≤ a) (ha : a + n ≤ 16 * nb s₀) (hb : b + m ≤ 16 * nb s₀) :
+    Region.Disjoint ⟨dp s₀ + BitVec.ofNat 64 a, n⟩ ⟨wp ix s₀ + BitVec.ofNat 64 b, m⟩ := by
+  rcases hp.d_w with eq | apart
+  · rw [← eq]
+    exact Offset.disjoint _ order (by omega_using [hp.wrap_d, ha]) (by omega_using [hp.wrap_d, hb])
+  · exact (apart.sub_left (Offset.sub_base _ ha)).sub_right (Offset.sub_base _ hb)
 
 /-- The key schedule is not in the output or the working space. -/
 theorem sch_frameM {ix : Bool} {s₀ : State} (hp : LPre ix s₀) {m : Mem}
@@ -452,12 +461,8 @@ theorem batchM_ok {ix st ld : Bool} {s₀ : State} (hp : LPre ix s₀) (hst : st
       (fun a b hab hb l hl => by
         rw [i₂, o₂, e16, show 32 * (j + a) = 32 * j + 16 * (2 * a) by omega_using [], addr, oaddr]
         simp only [aregs, List.length_cons, List.length_nil] at hb
-        cases ix
-        · cases ld
-          · exact Offset.disjoint _ (Or.inr (by omega_using [hab])) (by omega_using [hc, hwd, hb, hl]) (by omega_using [hc, hwd, hab, hb])
-          · exact absurd (hld rfl) (by decide)
-        · exact ((hp.d_w rfl).sub_left (Offset.sub_base _ (by omega_using [hc, hb, hl]))).sub_right
-            (Offset.sub_base _ (by omega_using [hc, hab, hb])))
+        exact hp.separate (.inr (by omega_using [hab])) (by omega_using [hc, hb, hl])
+          (by omega_using [hc, hab, hb]))
       (by simp only [aregs, List.length_cons, List.length_nil]; omega_using [hc, hrdx, hwr]))
     fun s₃ ⟨b₃, fr₃, g₃, rd₃, wr₃, x₃⟩ => ?_
   have hm₂ : s₂.mem = s.mem := by rw [f₂.mem, f₁.mem]
@@ -480,10 +485,7 @@ theorem batchM_ok {ix st ld : Bool} {s₀ : State} (hp : LPre ix s₀) (hst : st
       Region.Disjoint ⟨bAddr s₀ k, 16⟩ r := fun k hk hck r hr => by
     simp only [List.mem_singleton] at hr
     subst hr
-    cases ix
-    · intro a h₁ h₂
-      exact VG.Proof.Aes.X86_64.AesNi.run_sep hwd hk hc (by omega_using [hck]) h₁ h₂
-    · exact ((hp.d_w rfl).sub_left (Offset.sub_base _ (by omega_using [hk]))).sub_right (Offset.sub_base _ (by omega_using [hc]))
+    exact hp.separate (.inr (by omega_using [hck])) (by omega_using [hk]) (by omega_using [hc])
   refine ⟨⟨by omega_using [hc], fun l hl => ?_, fun l hl => ?_, fun l hl => ?_, by rw [gs, hI.rdi],
     by rw [gs, hI.rsi], by rw [gs, hI.r10], ?_, ?_, ?_,
     by rw [rd₃, f₂.rd, f₁.rd, hI.rd], by rw [wr₃, f₂.wr, f₁.wr, hI.wr]⟩,

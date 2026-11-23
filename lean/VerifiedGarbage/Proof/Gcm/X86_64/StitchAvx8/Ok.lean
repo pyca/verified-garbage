@@ -1419,7 +1419,7 @@ private theorem inRegions_prefix' {rs : List Region} {a : Addr} {n L : Nat} (h :
 
 /-- The state `t` the setup starts from, after `toEntry`, from `s₀`. -/
 structure Start (M : CtxMode) (s₀ t : State) (lo : Nat := 16) (absolute : Bool := false) : Prop where
-  pre : Stitch.SPreBuffers M s₀ lo
+  pre : Stitch.SPreTo M s₀ lo
   rbx : t.gpr .rbx = if absolute then sp s₀ else sp s₀ - op s₀
   r8 : t.gpr .r8 = op s₀
   gpr : ∀ r, r ≠ .rbx → r ≠ .r8 → t.gpr r = s₀.gpr r
@@ -1725,7 +1725,7 @@ theorem toWith_ok (M : CtxMode) (dec : Bool) {su : List Instr} {rest : Nat → P
       (∀ k < nb v, blockAt s.mem (srcBlk v true k) = blk v k) →
       (∀ k < 8, x * φ (P k) = φ (hk v) ^ (8 - k)) →
       WP isa (rest (nr v)) s fun w => Post v dec w ∧ w.mem.readW (pp v + 816) 64 = v.mem.readW (pp v + 816) 64)
-    (s₀ : State) (hp : Stitch.SPreBuffers M s₀) :
+    (s₀ : State) (hp : Stitch.SPreTo M s₀) :
     WP isa (Impl.Gcm.X86_64.StitchAvx8.toWith su rest) s₀ fun x =>
       if dec then DPostTo s₀ x else EPostTo s₀ x := by
   rw [Impl.Gcm.X86_64.StitchAvx8.toWith]
@@ -1762,7 +1762,7 @@ theorem toWith_ok (M : CtxMode) (dec : Bool) {su : List Instr} {rest : Nat → P
 
 /-- The short prepared kernel, with identical ranges or two separate buffers. -/
 theorem encShortBuffers_ok {np : Nat} {hn : 8 ≤ np ∧ np ≤ 24} {s₀ : State}
-    (hp : Stitch.SPreBuffers (CtxMode.preparedN np hn) s₀ 1) (hlt : nb s₀ < 16) :
+    (hp : Stitch.SPreTo (CtxMode.preparedN np hn) s₀ 1) (hlt : nb s₀ < 16) :
     WP isa Impl.Gcm.X86_64.StitchAvx8.encShortBuffers s₀ fun w => EPostTo s₀ w ∧ w.gpr .r8 = op s₀ := by
   refine WP.seq (WP.mono (shortEntry_ok s₀ (in_sub hp.p_in (off := 816) (by decide)))
     fun t ⟨m,b,d,g,rd,wr⟩ => ?_)
@@ -1816,7 +1816,7 @@ theorem encShortBuffers_ok {np : Nat} {hn : 8 ≤ np ∧ np ≤ 24} {s₀ : Stat
 theorem encBuffersWith_ok (M : CtxMode) {su : List Instr}
     (hsu : ∀ t, SPreM M t → WP isa (.block su) t fun u => ∃ P : Nat → Block, Ready t P u ∧
       ∀ k < 8, x * φ (P k) = φ (hk t) ^ (8 - k)) :
-    ∀ s₀, Stitch.SPreBuffers M s₀ → WP isa (encToWith su) s₀ (EPostTo s₀) := fun s₀ hp =>
+    ∀ s₀, Stitch.SPreTo M s₀ → WP isa (encToWith su) s₀ (EPostTo s₀) := fun s₀ hp =>
   toWith_ok M false hsu (fun hv hS hR hsrc hP => encRestI_ok hv hS hR hsrc hP) s₀ hp
 
 /-- The out-of-place encryption loop after the setup `su`. -/
@@ -1824,7 +1824,7 @@ theorem encToWith_ok (M : CtxMode) {su : List Instr}
     (hsu : ∀ t, SPreM M t → WP isa (.block su) t fun u => ∃ P : Nat → Block, Ready t P u ∧
       ∀ k < 8, x * φ (P k) = φ (hk t) ^ (8 - k)) :
     StitchToOkM M (encToWith su) 1 := fun s₀ hp _ =>
-  encBuffersWith_ok M hsu s₀ hp.buffers
+  encBuffersWith_ok M hsu s₀ hp
 
 /-- Out of place, the setup computing the powers, for any key context. -/
 theorem stitchTo_ok (M : CtxMode) : StitchToOkM M encTo 1 :=
@@ -1842,7 +1842,7 @@ blocks from 16 on. -/
 theorem decToR_okN (np : Nat) (hn : 8 ≤ np ∧ np ≤ 24 := by decide) :
     StitchToDecOkM (CtxMode.preparedN np hn) Impl.Gcm.X86_64.StitchAvx8.decToR 1 := fun s₀ hp _ =>
   toWith_ok (CtxMode.preparedN np hn) true (fun _ hp => setupR_ok hp.toPrepared hn.1)
-    (fun hv hS hR hsrc hP => decRestI_ok (rem := true) hv hS (fun h => Bool.noConfusion h) hR hsrc hP) s₀ hp.buffers
+    (fun hv hS hR hsrc hP => decRestI_ok (rem := true) hv hS (fun h => Bool.noConfusion h) hR hsrc hP) s₀ hp
 
 open VG.Impl.Gcm.X86_64.StitchAvx8 (encRS decRS)
 open VG.Proof.Gcm.X86_64.Stitch (StitchOkSmall)
@@ -1856,7 +1856,7 @@ theorem encRS_ok {s : State} {lo np : Nat} (hp : SPrePrepared s lo np) (hn : 8 �
     exact ⟨_,rfl,rfl⟩
   refine WP.seq (WP.mono enter fun z hz => ?_)
   subst z
-  have h : Stitch.SPreBuffers (CtxMode.preparedN np hn) t 1 :=
+  have h : Stitch.SPreTo (CtxMode.preparedN np hn) t 1 :=
     { rounds := hp.base.rounds, nb16 := h1, k_in := hp.k_in, c_in := hp.base.c_in, y_in := hp.base.y_in,
       s_in := in_rdwr hp.base.d_in, o_in := hp.base.d_in, p_in := hp.base.p_in,
       k_c := hp.c_k.symm, k_y := hp.y_k.symm, k_o := hp.d_k.symm, k_p := hp.p_k.symm,
@@ -1889,7 +1889,7 @@ theorem encBuffers_ok (np : Nat) (hn : 8 ≤ np ∧ np ≤ 24) {s : State}
   have post {u : State} (hu : EPostTo t u) : EPostTo s u := by
     cases s; cases t; simp only at g m rd wr; subst g m rd wr; exact {hu with}
   refine WP.ite (decide (nb s < 16)) (by simp only [eval,cf]) (fun h => ?_) (fun h => ?_)
-  · exact WP.mono (encShortBuffers_ok (pre (Nat.le_trans (by decide : 1 ≤ 5) hp.nb16)).buffers
+  · exact WP.mono (encShortBuffers_ok (pre (Nat.le_trans (by decide : 1 ≤ 5) hp.nb16))
       (by simpa [nb,g] using h)) fun _ w => post w.1
   · exact WP.mono (stitchToR_okN np hn t (pre (by simpa using h)) (Nat.mod_one _)) fun _ => post
 

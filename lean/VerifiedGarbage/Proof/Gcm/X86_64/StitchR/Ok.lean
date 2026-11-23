@@ -367,7 +367,7 @@ theorem midCTo_ok {s₀ : State} (hp : SPreTo CtxMode.prepared s₀) {P : Nat �
     · simp only [T, h2, ↓reduceIte]; exact t g (by omega_using [hg, h2]) k hk l hl
   have hA₁ := (hR.a.pow hp fr g₁ rd₁ wr₁ fun r h7 h8 h9 h10 _ h12 l hl => z₁ r h7 h8 h9 h10 h12 l hl)
   exact WP.mono (StitchZC.midRestM_ok hp.toM (hp.k_c.symm.sub_right (Region.sub_prefix CtxMode.prepared.ge)) hp.s_c
-    hr hT (fun k l => by simp only [T, ↓reduceIte]) hp.nb16 (hR.toM hp) (hA₁.toM hp) hv pm g₁
+    hr hT (fun k l => by simp only [T, ↓reduceIte]) hp.nb16 hR.toM hA₁.toM hv pm g₁
     (fun l hl => z₁ _ (by decide) (by decide) (by decide) (by decide) (by decide) l hl)
     (hCache.keep hh₁ (hA₁.keys hp))) fun _ h => h.toEPostTo
 
@@ -401,8 +401,8 @@ theorem bigSTo_ok {s₀ : State} (hp : SPreTo CtxMode.prepared s₀) {P : Nat �
     · subst h2; simp only [T, ↓reduceIte]; rw [hP k hk l hl]
     · simp only [T, h2, ↓reduceIte]; exact t g (by omega_using [hg, h2]) k hk l hl
   have hA₁ := (hI.a.pow hp fr g₁ rd₁ wr₁ fun r h7 h8 h9 h10 _ h12 l hl => z₁ r h7 h8 h9 h10 h12 l hl)
-  exact WP.mono (StitchZC.bigSelM_ok hp.toM hf hT (fun k l => by simp only [T, ↓reduceIte]) (hI.toM hp)
-    (hA₁.toM hp) hv pm g₁
+  exact WP.mono (StitchZC.bigSelM_ok hp.toM hf hT (fun k l => by simp only [T, ↓reduceIte]) hI.toM
+    hA₁.toM hv pm g₁
     (fun l hl => z₁ _ (by decide) (by decide) (by decide) (by decide) (by decide) l hl)
     (hCache.keep hh₁ (hA₁.keys hp))) fun _ ⟨e, h, hk⟩ => ⟨e, h.toTo, hk⟩
 
@@ -890,6 +890,7 @@ structure EInvRTo (s₀ : State) (P : Nat → Nat → Block) (e : Nat) (s : Stat
   rsi : s.gpr .rsi = s₀.gpr .rsi
   frame : Frame [oR s₀, pR s₀] s₀.mem s.mem
   blocks : ∀ k < 16 * e, blockAt s.mem (oAddr s₀ k) = ctbT s₀ k
+  unread : ∀ k < nb s₀, 16 * e ≤ k → blockAt s.mem (sAddr s₀ k) = pblk s₀ k
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
   rdx : s.gpr .rdx = op s₀ + BitVec.ofNat 64 (256 * e)
@@ -983,6 +984,7 @@ theorem lastGRTo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {P : Nat �
       rsi := by rw [g₅ _ (by decide) (by decide)]; exact hA₄.rsi
       frame := by rw [m₅]; exact hA₄.frame
       blocks := fun k hk => by rw [m₅]; exact hA₄.blocks k hk
+      unread := fun k hk hc => by rw [m₅]; exact hA₄.unread k hk hc
       rd := by rw [rd₅]; exact hA₄.rd
       wr := by rw [wr₅]; exact hA₄.wr
       rdx := by rw [d₅, F.gpr, hd]
@@ -1123,7 +1125,7 @@ theorem remETo_ok {M : CtxMode} {s₀ : State} {lo : Nat} (hp : SPreTo M s₀ lo
       dS := fun j (hj : j < r) i hi => by
         show Region.Disjoint ⟨sAddr s₀ (16 * e) + BitVec.ofNat 64 (16 * j), 16⟩ ⟨oAddr s₀ (16 * e), 16 * i⟩
         rw [Offset.add_add]
-        exact (hp.s_o.sub_left (Offset.sub_base _ (by omega_arith))).sub_right (Offset.sub_base _ (by omega_arith))
+        exact hp.toM.separate (.inr (by omega_arith)) (by omega_arith) (by omega_arith)
       dK := fun j (hj : j < r) => by
         show Region.Disjoint ⟨pp s₀ - BitVec.ofNat 64 512 + BitVec.ofNat 64 (768 + 16 * j), 16⟩
           ⟨oAddr s₀ (16 * e), 16 * r⟩
@@ -1229,11 +1231,7 @@ theorem remETo_ok {M : CtxMode} {s₀ : State} {lo : Nat} (hp : SPreTo M s₀ lo
       rw [Offset.add_add, ← Nat.mul_add,
         toS _ (hp.s_c.sub_left (Offset.sub_base _ (by omega_arith)))
           ((hp.s_p.sub_left (Offset.sub_base _ (by omega_arith))).sub_right (Offset.sub_base _ (by omega_arith)))]
-      exact blockAt_frame hI.frame fun r hr => by
-        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-        rcases hr with rfl | rfl
-        · exact hp.s_o.sub_left (Offset.sub_base _ (by omega_arith))
-        · exact hp.s_p.sub_left (Offset.sub_base _ (by omega_arith))
+      exact hI.unread _ hk (Nat.le_add_right _ _)
   -- The ciphertext of the blocks after the last group.
   obtain hX : ∀ j < r, E.X j = ctbT s₀ (16 * e + j) := fun j hj => by
     show blockAt s₃.mem (sAddr s₀ (16 * e) + BitVec.ofNat 64 (16 * j)) ^^^
@@ -1716,6 +1714,7 @@ theorem encShortTo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀ 1) (hc : 
     rsi := gs _ (by decide) (by decide) (by decide) (by decide) (by decide)
     frame := by rw [hm]; exact Frame.refl _ _
     blocks := fun k hk => by simp at hk
+    unread := fun _ _ _ => by rw [hm]
     rd := by rw [rd₆, rd₅, rd₄]
     wr := by rw [wr₆, wr₅, wr₄]
     rdx := by rw [g₆ _ (by decide) (by decide), rdx, g₄ _ (by decide)]; simp [Stitch.op]

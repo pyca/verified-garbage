@@ -517,7 +517,7 @@ structure CtrToCall (s : State) (K C D O S : Addr) (R n : Nat) : Prop where
   cd : (⟨C, 16⟩ : Region).Disjoint ⟨D, 16 * n⟩
   co : (⟨C, 16⟩ : Region).Disjoint ⟨O, 16 * n⟩
   cs : (⟨C, 16⟩ : Region).Disjoint ⟨S, 2048⟩
-  dO : (⟨D, 16 * n⟩ : Region).Disjoint ⟨O, 16 * n⟩
+  dO : D = O ∨ (⟨D, 16 * n⟩ : Region).Disjoint ⟨O, 16 * n⟩
   ds : (⟨D, 16 * n⟩ : Region).Disjoint ⟨S, 2048⟩
   os : (⟨O, 16 * n⟩ : Region).Disjoint ⟨S, 2048⟩
   stkK : (below (s.gpr .rsp) 8).Disjoint ⟨K, 240⟩
