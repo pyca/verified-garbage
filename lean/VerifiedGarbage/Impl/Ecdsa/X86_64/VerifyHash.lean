@@ -90,8 +90,10 @@ namespace VG.Impl.Ecdsa.X86_64.VerifyHash.Fn
 open VG.X86_64
 open VG.Impl.Scrub.X86_64 (scrubAll)
 
-/-- `vg_ecdsa_<curve>_verify`, with the verification `core` of a hash of `len` bytes, as emitted: its code, then its cleanup. -/
-def verifyHash (len : Nat) (wide : Bool) (core : Prog isa) : Prog isa := scrubAll .sse 32 96 (_root_.VG.Impl.Ecdsa.X86_64.VerifyHash.verifyHash len wide core)
+/-- `vg_ecdsa_<curve>_verify`, with the verification `core` of a hash of `len` bytes, as emitted: its code, then its cleanup
+of the `stack` bytes below `rsp` it uses (`bufBytes` and the core's 8, or 16 for a core whose calls call). -/
+def verifyHash (len : Nat) (wide : Bool) (core : Prog isa) (stack : Nat := 96) : Prog isa :=
+  scrubAll .sse 32 stack (_root_.VG.Impl.Ecdsa.X86_64.VerifyHash.verifyHash len wide core)
 
 /-- `Fn.verifyHash` for a `core` with EVEX instructions, clearing `zmm16`–`zmm31` too, as emitted: its code, then its cleanup. -/
 def verifyHashEvex (len : Nat) (wide : Bool) (core : Prog isa) : Prog isa := scrubAll .evex 32 96 (_root_.VG.Impl.Ecdsa.X86_64.VerifyHash.verifyHash len wide core)

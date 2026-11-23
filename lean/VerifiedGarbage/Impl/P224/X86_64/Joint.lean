@@ -24,7 +24,12 @@ generator's digits at `6000`. Its additions and doublings are calls of
 def publicJoint : Joint.Cfg :=
   ⟨p224v.winCfg Impl.Ecdh.X86_64.PX Impl.Ecdh.X86_64.PY Impl.Ecdh.X86_64.BP,
     6000,"VG_P224_COMB",4000,5408,some Impl.Weierstrass.PointOps.p224,false,false,false,7,
-    Impl.Weierstrass.dblJMul,false⟩
+    Impl.Weierstrass.dblJMul,false,false⟩
+
+/-- `publicJoint` for the proofs: the additions' calls run the end of the
+addition inline (`Joint.Cfg.flat`), the code of `publicJoint` with its calls
+inlined at every depth. -/
+def publicJointF : Joint.Cfg := { publicJoint with flat := true }
 
 /-- The joint loop's doubler: a call of `vg_p224_jac_double`. -/
 def jointDouble (K : Impl.Weierstrass.WinCfg) : Prog isa := PointOps.doubleCall Impl.Weierstrass.PointOps.p224 K

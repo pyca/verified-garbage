@@ -10832,6 +10832,12 @@ vg_ecdsa_p521_verify:
 	test rdx, rdx
 	je 236f
 	mov r12, rsi
+	mov esi, 1432
+	mov edx, 1216
+	mov ecx, 1648
+	call {vg_p521_mul_mod_p}
+	mov rsi, r12
+	mov r12, rsi
 	mov esi, 1720
 	mov edx, 1216
 	mov ecx, 1216
@@ -12547,12 +12553,6 @@ vg_ecdsa_p521_verify:
 	sub rdi, 1360
 	mov r12, rsi
 	mov esi, 1432
-	mov edx, 1216
-	mov ecx, 1648
-	call {vg_p521_mul_mod_p}
-	mov rsi, r12
-	mov r12, rsi
-	mov esi, 1432
 	mov edx, 1432
 	mov ecx, 1936
 	call {vg_p521_mul_mod_p}
@@ -13521,6 +13521,24 @@ vg_ecdsa_p521_verify:
 	mov QWORD PTR [rdi+2064], rax
 	mov rax, QWORD PTR [rdi+1208]
 	mov QWORD PTR [rdi+2072], rax
+	mov rax, QWORD PTR [rdi+1216]
+	mov QWORD PTR [rdi+1432], rax
+	mov rax, QWORD PTR [rdi+1224]
+	mov QWORD PTR [rdi+1440], rax
+	mov rax, QWORD PTR [rdi+1232]
+	mov QWORD PTR [rdi+1448], rax
+	mov rax, QWORD PTR [rdi+1240]
+	mov QWORD PTR [rdi+1456], rax
+	mov rax, QWORD PTR [rdi+1248]
+	mov QWORD PTR [rdi+1464], rax
+	mov rax, QWORD PTR [rdi+1256]
+	mov QWORD PTR [rdi+1472], rax
+	mov rax, QWORD PTR [rdi+1264]
+	mov QWORD PTR [rdi+1480], rax
+	mov rax, QWORD PTR [rdi+1272]
+	mov QWORD PTR [rdi+1488], rax
+	mov rax, QWORD PTR [rdi+1280]
+	mov QWORD PTR [rdi+1496], rax
 	mov r12, rsi
 	mov esi, 1720
 	mov edx, 1216
@@ -13909,7 +13927,7 @@ vg_ecdsa_p521_verify:
 	sub rdi, 1360
 	mov r12, rsi
 	mov esi, 1432
-	mov edx, 1216
+	mov edx, 1432
 	mov ecx, 1936
 	call {vg_p521_mul_mod_p}
 	mov rsi, r12
@@ -28203,6 +28221,12 @@ vg_ecdsa_p521_verify_adx:
 	test rdx, rdx
 	je 236f
 	mov r12, rsi
+	mov esi, 1432
+	mov edx, 1216
+	mov ecx, 1648
+	call {vg_p521_mul_mod_p_adx}
+	mov rsi, r12
+	mov r12, rsi
 	mov esi, 1720
 	mov edx, 1216
 	mov ecx, 1216
@@ -29278,12 +29302,6 @@ vg_ecdsa_p521_verify_adx:
 	sub rdi, 1360
 	mov r12, rsi
 	mov esi, 1432
-	mov edx, 1216
-	mov ecx, 1648
-	call {vg_p521_mul_mod_p_adx}
-	mov rsi, r12
-	mov r12, rsi
-	mov esi, 1432
 	mov edx, 1432
 	mov ecx, 1936
 	call {vg_p521_mul_mod_p_adx}
@@ -30252,6 +30270,24 @@ vg_ecdsa_p521_verify_adx:
 	mov QWORD PTR [rdi+2064], rax
 	mov rax, QWORD PTR [rdi+1208]
 	mov QWORD PTR [rdi+2072], rax
+	mov rax, QWORD PTR [rdi+1216]
+	mov QWORD PTR [rdi+1432], rax
+	mov rax, QWORD PTR [rdi+1224]
+	mov QWORD PTR [rdi+1440], rax
+	mov rax, QWORD PTR [rdi+1232]
+	mov QWORD PTR [rdi+1448], rax
+	mov rax, QWORD PTR [rdi+1240]
+	mov QWORD PTR [rdi+1456], rax
+	mov rax, QWORD PTR [rdi+1248]
+	mov QWORD PTR [rdi+1464], rax
+	mov rax, QWORD PTR [rdi+1256]
+	mov QWORD PTR [rdi+1472], rax
+	mov rax, QWORD PTR [rdi+1264]
+	mov QWORD PTR [rdi+1480], rax
+	mov rax, QWORD PTR [rdi+1272]
+	mov QWORD PTR [rdi+1488], rax
+	mov rax, QWORD PTR [rdi+1280]
+	mov QWORD PTR [rdi+1496], rax
 	mov r12, rsi
 	mov esi, 1720
 	mov edx, 1216
@@ -30640,7 +30676,7 @@ vg_ecdsa_p521_verify_adx:
 	sub rdi, 1360
 	mov r12, rsi
 	mov esi, 1432
-	mov edx, 1216
+	mov edx, 1432
 	mov ecx, 1936
 	call {vg_p521_mul_mod_p_adx}
 	mov rsi, r12

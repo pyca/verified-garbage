@@ -34,6 +34,11 @@ def publicJoint : Joint.Cfg :=
     gBits := 6000, tsym := "VG_SECP256K1_GTAB", cache := 4000, selected := 5408,
     pts := some Impl.Weierstrass.PointOps.secp256k1, gw := 9, dbl := dblJ0 }
 
+/-- `publicJoint` for the proofs: the additions' calls run the end of the
+addition inline (`Joint.Cfg.flat`), the code of `publicJoint` with its calls
+inlined at every depth. -/
+def publicJointF : Joint.Cfg := { publicJoint with flat := true }
+
 /-- The joint loop's doubler: a call of `vg_secp256k1_jac_double`. -/
 def jointDouble (K : WinCfg) : Prog isa := PointOps.doubleCall Impl.Weierstrass.PointOps.secp256k1 K dblJ0
 

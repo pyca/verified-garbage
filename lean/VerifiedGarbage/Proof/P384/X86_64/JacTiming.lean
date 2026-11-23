@@ -125,8 +125,8 @@ open VG VG.X86_64 VG.Impl.Weierstrass.X86_64 VG.Impl.P384.X86_64
 open VG.Proof.Weierstrass.X86_64
 
 /-- The window of the joint verifier, baseline and with ADX. -/
-def nafJacWin := publicJoint.K
-def nafJacWinAdx := publicJointAdx.K
+def nafJacWin := publicJointF.K
+def nafJacWinAdx := publicJointAdxF.K
 
 theorem nafCachedJac_checks : CachedJacChecks nafJacWin nafJacWin.R nafJacWin.E nafJacWin.D 6160 := by
   have hT : p384T.Ok nafJacWin.M := p384HT_ok

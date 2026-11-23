@@ -24,6 +24,13 @@ def jacTail (S : RcbSlots) (p q o : Pt) : List FOp :=
    .mul S.t4 S.t4 S.t1, .sub o.y o.y S.t4,
    .mul o.z p.z q.z, .mul o.z o.z S.t3]
 
+/-- The end of the Jacobian additions from `U1`, `S1`, `H` and `r` in `t2`, `t4`, `t3`
+and `t5`, and `Z` (`Z1 Z2`, or `Z1` for an affine second point) in `o.z`:
+`jacTail`, but `Z3 = Z H` from `o.z`, so that both additions end with the
+same code. -/
+def jacEndTail (S : RcbSlots) (p q o : Pt) : List FOp :=
+  (jacTail S p q o).take 11 ++ [.mul o.z o.z S.t3]
+
 /-- Mixed-addition header, after copying `p.x` and `p.y` to `t2` and `t4`.
 The second point is affine, so its Jacobian z coordinate is one. -/
 def jacMixedHead (S : RcbSlots) (p q : Pt) : List FOp :=
