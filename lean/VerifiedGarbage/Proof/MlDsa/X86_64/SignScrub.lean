@@ -149,7 +149,7 @@ theorem sigmaV_side (v : ArithImpl) {ℓ : Nat} (hℓ : ℓ = 4 ∨ ℓ = 5 ∨ 
     ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
   all_goals refine ⟨by simp [Impl.MlDsa.X86_64.Sign.slotNames], ?_⟩
   all_goals first
-    | assumption
+    | with_reducible assumption
     | (rcases hℓ with rfl | rfl | rfl <;> simpa [Impl.MlDsa.X86_64.Sign.Prims.dotInv, primsWith])
 
 /-- What the cleanup needs of the body over `v`, from what it needs of its
@@ -279,6 +279,8 @@ theorem signMessage_depth {n : String} {c : Prog isa} {p : Spec.MlDsa.Params} {f
     Impl.MlDsa.X86_64.Message.signRegs, Code.x86_64Depth, Instr.frameBytes,
     List.length_cons, List.length_nil, Nat.zero_max, Nat.max_zero]
   have := kabs_depth; have := kpad_depth; have := ksqz_depth
+  refine Nat.le_trans (Nat.add_le_add_right (m := 152) ?_ _) (by decide)
+  simp only [Nat.max_le]
   omega
 
 /-- What the cleanup needs of the entry of `v`'s variant of ML-DSA-44's signing, which calls the body `b`. -/

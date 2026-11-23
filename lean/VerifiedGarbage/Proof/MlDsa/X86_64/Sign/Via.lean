@@ -97,7 +97,7 @@ theorem fillSlots_ok : ∀ (ns : List String) (o : Nat) (s : State),
   | [], _, s, _ => WP.block_nil ⟨⟨rfl, rfl⟩, Keep.refl _ _⟩
   | n :: ns, o, s, hw => by
     rw [fillSlots, show (Instr.leaSym .rax n :: .store (at_ .rsp o) .rax :: fillSlots (o + 8) ns) =
-      [.leaSym .rax n, .store (at_ .rsp o) .rax] ++ fillSlots (o + 8) ns from rfl, WP.block_append_iff]
+      ([.leaSym .rax n, .store (at_ .rsp o) .rax] : List Instr) ++ fillSlots (o + 8) ns from rfl, WP.block_append_iff]
     have h0 := hw 0 (by simp)
     rw [Nat.mul_zero, Nat.add_zero] at h0
     refine WP.mono_syms (WP.keep [.rax] (Q := fun s1 =>

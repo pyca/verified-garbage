@@ -99,32 +99,6 @@ theorem sign_noSp_depth (v : ArithImpl) {p : Params} (hp : p ∈ params) (vs : B
       (dep2 (v.ok.dotInv 5 (.inr (.inl rfl))).depth) (dep2 (v.ok.dotInv 7 (.inr (.inr rfl))).depth) p vs)
       (sign0_depth h3 vs))⟩
 
-/-- `vg_mldsa*_sign`, with the polynomial arithmetic of `v`. -/
-theorem signKernel (v : ArithImpl) {p : Params} (hp : p ∈ params) :
-    Sign.KernelFn p 32 [] (Impl.MlDsa.X86_64.Sign.sign (primsWith v.code) p) := by
-  have h3 := ok3_of hp
-  have hdot : Proof.MlDsa.X86_64.Sign.DotSl (primsWith v.code) p [] := fun h => Bool.noConfusion h
-  obtain ⟨nosp, depth⟩ := sign_noSp_depth v hp false
-  refine ⟨fun σ h => sign_correct (prims_okWith v) h3 hdot (Proof.MlDsa.X86_64.Sign.sign_ctl v h3) σ
-      (Proof.MlDsa.X86_64.Sign.signKS_nil_pre h),
-    fun _ _ _ _ _ _ h₁ h₂ hp e₁ e₂ => sign_ct (prims_okWith v) h3 hdot _ _ _ _ _ _
-      (Proof.MlDsa.X86_64.Sign.signKS_nil_pre h₁) (Proof.MlDsa.X86_64.Sign.signKS_nil_pre h₂)
-      (Proof.MlDsa.X86_64.Sign.signKS_nil_pub hp.1) e₁ e₂,
-    SpSafe.of_all (Proof.MlDsa.X86_64.Sign.sign_spSafe v h3), ?_, by decide⟩
-  rw [x86_64Depth_noSp nosp]
-  omega_using [depth]
-
-/-- `vg_mldsa*_sign`, with the polynomial arithmetic of `v`, as `sign_message` calls it. -/
-theorem signFn (v : ArithImpl) {p : Params} (hp : p ∈ params) :
-    SignFn p [] (Impl.MlDsa.X86_64.Sign.sign (primsWith v.code) p) :=
-  have K := signKernel v hp
-  ⟨fun σ h => K.ok σ (Sign.signK_mono (by decide) (by decide) h),
-    fun _ _ _ _ _ _ h₁ h₂ hp e₁ e₂ => K.ct _ _ _ _ _ _ (Sign.signK_mono (by decide) (by decide) h₁)
-      (Sign.signK_mono (by decide) (by decide) h₂) hp e₁ e₂,
-    K.sp, Nat.le_trans K.depth (by decide)⟩
-
-
-
 /-! ## `vg_mldsa*_sign` of a variant, calling one body shared by every variant -/
 
 theorem fillSlots_spSafe : ∀ (o : Nat) (ns : List String),
@@ -215,12 +189,6 @@ theorem signMessage_spSafe {p : Params} {n : String} {c : Prog isa} (hc : c.all 
 
 /-! ## `vg_mldsa*_sign`: the entry of an encoded key -/
 
-theorem signEntry_verified (v : ArithImpl) {p : Params} (hp : p ∈ params) (n : String) :
-    Verified X86_64.target (Impl.MlDsa.X86_64.Sign.entry n (Impl.MlDsa.X86_64.Sign.sign (primsWith v.code) p) 0)
-      (signContract p X86_64.abi 40) :=
-  have hK := signKernel v hp
-  Verified.of_correct (Sign.entry0_correct hK) (Sign.entry0_ct hK) (Sign.signK0N_nil_implies (Sign.signK0_implies (ok3_of hp)))
-
 /-- `vg_mldsa*_sign` of a variant that calls the body shared by every
 variant, `b`. -/
 theorem signEntryV_verified (v : ArithImpl) {p : Params} (hp : p ∈ params) (n b : String) :
@@ -228,7 +196,7 @@ theorem signEntryV_verified (v : ArithImpl) {p : Params} (hp : p ∈ params) (n 
       (Impl.MlDsa.X86_64.Sign.signVia (viaNames v p) b (Impl.MlDsa.X86_64.Sign.sign (primsWith v.code true) p)) 0)
       (signContract p (X86_64.abi.withFns (viaNames v p)) 152) :=
   have hK := kernelVia v hp b
-  have I := Sign.signK0_implies152 (ok3_of hp)
+  have I := Sign.signK0_implies (ok3_of hp)
   VG.X86_64.Scrub.verified_withFns
     (fun s h => let ⟨t, s', he, ha, hq⟩ := Sign.entry0_correct (n := n) hK s (I.pre s h)
       ⟨t, s', he, ha, I.post s s' h hq⟩)

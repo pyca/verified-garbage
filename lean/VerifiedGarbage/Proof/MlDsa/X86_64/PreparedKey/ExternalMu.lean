@@ -69,10 +69,6 @@ def signKP (p : Params) (D : Nat) : Contract isa where
 def signKPN (p : Params) (D : Nat) (N : List String) : Contract isa :=
   { signKP p D with pub := fun s₁ s₂ => (signKP p D).pub s₁ s₂ ∧ ∀ f ∈ N, s₁.syms f = s₂.syms f }
 
-theorem signKPN_nil_implies {p : Params} {D : Nat} {k : Contract isa} (h : (signKP p D).Implies k) :
-    (signKPN p D []).Implies k :=
-  ⟨h.pre, h.post, fun s₁ s₂ h₁ h₂ hp => ⟨h.pub s₁ s₂ h₁ h₂ hp, fun _ hf => absurd hf List.not_mem_nil⟩, h.sat⟩
-
 section
 variable {p : Params} {S : Nat} {σ s : State} (hp : (signKP p (S + 8)).pre σ) (hs : Moved .r9 1 σ s)
 include hp hs
@@ -224,19 +220,7 @@ theorem entryP_ct {p : Params} {S : Nat} {N : List String} {n : String} {c : Pro
     State.callEntry_gpr _ (by decide), State.callEntry_gpr _ (by decide), h₁.r9, h₂.r9]
   exact ⟨e1, e2, e3, e4, e5, by rw [e6], e7, rfl⟩
 
-theorem implies {p : Params} (hsat : ∃ s, (preparedSignContract p X86_64.abi 40).pre s) :
-    (signKP p 40).Implies (preparedSignContract p X86_64.abi 40) where
-  pre := by sig_implies_pre [preparedSignContract, preparedSignSig, signKP, X86_64.abi, X86_64.argRegs]
-  post := by sig_implies_post [preparedSignContract, preparedSignSig, signKP, X86_64.abi, X86_64.argRegs]
-  pub := by
-    intro s₁ s₂ _ _ h
-    sig_pub [preparedSignContract, preparedSignSig, signKP, X86_64.abi, X86_64.argRegs] at h
-    obtain ⟨hsp, hb, hdi, hsi, hdx, hcx, h8⟩ := h
-    exact ⟨hdi, hsi, hdx, hcx, h8, hsp, hb⟩
-  sat := hsat
-
-/-- As `implies`, with the stack of an entry that calls the shared body. -/
-theorem implies152 {p : Params} (hsat : ∃ s, (preparedSignContract p X86_64.abi 152).pre s) :
+theorem implies {p : Params} (hsat : ∃ s, (preparedSignContract p X86_64.abi 152).pre s) :
     (signKP p 152).Implies (preparedSignContract p X86_64.abi 152) where
   pre := by sig_implies_pre [preparedSignContract, preparedSignSig, signKP, X86_64.abi, X86_64.argRegs]
   post := by sig_implies_post [preparedSignContract, preparedSignSig, signKP, X86_64.abi, X86_64.argRegs]
@@ -260,20 +244,6 @@ def externalSat (p : Params) (m : Mem) : State where
   wr := [⟨0xB000, p.sigLen⟩, ⟨0x10000, 8 * scratchWords p⟩]
 
 theorem sat {P : Impl.MlDsa.X86_64.Verify.Prims} (C : Verify.PrimsOk P) {p : Params}
-    (hp : p ∈ Verify.params) : ∃ s, (preparedSignContract p X86_64.abi 40).pre s := by
-  have hsz : p.skLen < 0x10000 ∧ preparedSecretKeyBytes p < 0x7000 := by
-    simp only [Verify.params, List.mem_cons, List.not_mem_nil, or_false] at hp
-    rcases hp with rfl | rfl | rfl <;> decide
-  obtain ⟨_, s', _, _, _, hk⟩ := Verify.Prepare.prepareSecret_correct C hp _
-    (Message.runSat_pre hsz.1 (by omega_using [hsz]))
-  refine ⟨externalSat p s'.mem, ?_⟩
-  simp only [Verify.params, List.mem_cons, List.not_mem_nil, or_false] at hp
-  rcases hp with rfl | rfl | rfl <;>
-    sig_pre [preparedSignContract, preparedSignSig, X86_64.abi, X86_64.argRegs] <;> sig_and_intros
-  all_goals first | exact hk | rfl | decide | exact Region.disjoint_of_sep (by decide)
-
-/-- As `sat`, with the stack of an entry that calls the shared body. -/
-theorem sat152 {P : Impl.MlDsa.X86_64.Verify.Prims} (C : Verify.PrimsOk P) {p : Params}
     (hp : p ∈ Verify.params) : ∃ s, (preparedSignContract p X86_64.abi 152).pre s := by
   have hsz : p.skLen < 0x10000 ∧ preparedSecretKeyBytes p < 0x7000 := by
     simp only [Verify.params, List.mem_cons, List.not_mem_nil, or_false] at hp
@@ -510,14 +480,6 @@ namespace VG.Proof.MlDsa.X86_64.Message
 open VG VG.X86_64 VG.Spec.MlDsa
 open VG.Proof.MlDsa.X86_64
 
-theorem signPreparedEntry_verified (v : ArithImpl) {p : Params} (hp : p ∈ params) (n : String) :
-    Verified X86_64.target (Impl.MlDsa.X86_64.Sign.entry n
-      (Impl.MlDsa.X86_64.Sign.sign (Sign.primsWith v.code) p) 1)
-      (preparedSignContract p X86_64.abi 40) :=
-  have hK := signKernel v hp
-  Verified.of_correct (Sign.Prepared.entryP_correct hK) (Sign.Prepared.entryP_ct hK)
-    (Sign.Prepared.signKPN_nil_implies (Sign.Prepared.implies (Sign.Prepared.sat (Verify.prims_okWith v) hp)))
-
 /-- `vg_mldsa*_sign_prepared` of a variant that calls the body shared by
 every variant, `b`. -/
 theorem signPreparedEntryV_verified (v : ArithImpl) {p : Params} (hp : p ∈ params) (n b : String) :
@@ -525,7 +487,7 @@ theorem signPreparedEntryV_verified (v : ArithImpl) {p : Params} (hp : p ∈ par
       (Impl.MlDsa.X86_64.Sign.signVia (viaNames v p) b (Impl.MlDsa.X86_64.Sign.sign (Sign.primsWith v.code true) p)) 1)
       (preparedSignContract p (X86_64.abi.withFns (viaNames v p)) 152) :=
   have hK := kernelVia v hp b
-  have I := Sign.Prepared.implies152 (Sign.Prepared.sat152 (Verify.prims_okWith v) hp)
+  have I := Sign.Prepared.implies (Sign.Prepared.sat (Verify.prims_okWith v) hp)
   VG.X86_64.Scrub.verified_withFns
     (fun s h => let ⟨t, s', he, ha, hq⟩ := Sign.Prepared.entryP_correct (n := n) hK s (I.pre s h)
       ⟨t, s', he, ha, I.post s s' h hq⟩)

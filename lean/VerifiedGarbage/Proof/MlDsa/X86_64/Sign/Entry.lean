@@ -81,27 +81,7 @@ def signSat (p : Params) : State where
   rd := [⟨0x1000, p.skLen⟩, ⟨0x3000, 64⟩, ⟨0x3100, 32⟩]
   wr := [⟨0x4000, p.sigLen⟩, ⟨0x10000, 8 * scratchWords p⟩]
 
-theorem signK0_implies_of {p : Params} (hsat : ∃ s, (signContract p X86_64.abi 40).pre s) :
-    (signK0 p 40).Implies (signContract p X86_64.abi 40) where
-  pre := by sig_implies_pre [signContract, signSig, signK0, X86_64.abi, X86_64.argRegs]
-  post := by sig_implies_post [signContract, signSig, signK0, X86_64.abi, X86_64.argRegs]
-  pub := by
-    intro s₁ s₂ _ _ h
-    sig_pub [signContract, signSig, signK0, X86_64.abi, X86_64.argRegs] at h
-    obtain ⟨hsp, hb, hdi, hsi, hdx, hcx, h8⟩ := h
-    exact ⟨hdi, hsi, hdx, hcx, h8, hsp, hb⟩
-  sat := hsat
-
-theorem signK0_implies {p : Params} (h3 : Ok3 p) :
-    (signK0 p 40).Implies (signContract p X86_64.abi 40) := by
-  refine signK0_implies_of ?_
-  rcases h3 with rfl | rfl | rfl
-  · sig_implies_sat [signContract, signSig, X86_64.abi, X86_64.argRegs] [signSat] using signSat mlDsa44
-  · sig_implies_sat [signContract, signSig, X86_64.abi, X86_64.argRegs] [signSat] using signSat mlDsa65
-  · sig_implies_sat [signContract, signSig, X86_64.abi, X86_64.argRegs] [signSat] using signSat mlDsa87
-
-/-- As `signK0_implies`, with the stack of an entry that calls the shared body. -/
-theorem signK0_implies_of152 {p : Params} (hsat : ∃ s, (signContract p X86_64.abi 152).pre s) :
+theorem signK0_implies_of {p : Params} (hsat : ∃ s, (signContract p X86_64.abi 152).pre s) :
     (signK0 p 152).Implies (signContract p X86_64.abi 152) where
   pre := by sig_implies_pre [signContract, signSig, signK0, X86_64.abi, X86_64.argRegs]
   post := by sig_implies_post [signContract, signSig, signK0, X86_64.abi, X86_64.argRegs]
@@ -112,18 +92,13 @@ theorem signK0_implies_of152 {p : Params} (hsat : ∃ s, (signContract p X86_64.
     exact ⟨hdi, hsi, hdx, hcx, h8, hsp, hb⟩
   sat := hsat
 
-theorem signK0_implies152 {p : Params} (h3 : Ok3 p) :
+theorem signK0_implies {p : Params} (h3 : Ok3 p) :
     (signK0 p 152).Implies (signContract p X86_64.abi 152) := by
-  refine signK0_implies_of152 ?_
+  refine signK0_implies_of ?_
   rcases h3 with rfl | rfl | rfl
   · sig_implies_sat [signContract, signSig, X86_64.abi, X86_64.argRegs] [signSat] using signSat mlDsa44
   · sig_implies_sat [signContract, signSig, X86_64.abi, X86_64.argRegs] [signSat] using signSat mlDsa65
   · sig_implies_sat [signContract, signSig, X86_64.abi, X86_64.argRegs] [signSat] using signSat mlDsa87
-
-/-- `signK0N` with no functions' addresses is `signK0`. -/
-theorem signK0N_nil_implies {p : Params} {D : Nat} {k : Contract isa} (h : (signK0 p D).Implies k) :
-    (signK0N p D []).Implies k :=
-  ⟨h.pre, h.post, fun s₁ s₂ h₁ h₂ hp => ⟨h.pub s₁ s₂ h₁ h₂ hp, fun _ hf => absurd hf List.not_mem_nil⟩, h.sat⟩
 
 /-- What `d ← flag` leaves. -/
 structure Moved (d : Reg) (v : BitVec 64) (σ s : State) : Prop where

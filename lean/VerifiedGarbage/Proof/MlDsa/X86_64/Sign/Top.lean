@@ -347,16 +347,6 @@ theorem signK_mono {p : Params} {D D' : Nat} (hD : D ≤ D') (hD' : D' < 2 ^ 64)
   exact ⟨hrd, hwr, d1, d2, d3, d4, d5, d6, d7, r1, r2, r3, r4, r5, k1.sub_left hb, k2.sub_left hb, k3.sub_left hb,
     k4.sub_left hb, k5.sub_left hb, n1, n2, n3, n4, n5, by omega_using [hD, hsp], hprep⟩
 
-/-- `signK`'s precondition is `signKS`'s, for a body with no callees in words. -/
-theorem signKS_nil_pre {p : Params} {D : Nat} {s : State} (h : (signK p D).pre s) : (signKS p D []).pre s :=
-  ⟨⟨by rw [h.1]; simp [slotRs], h.2⟩,
-    fun _ _ _ hx _ => by simp only [Region.Contains, List.length_nil, Nat.mul_zero] at hx; omega_using [hx],
-    .inl rfl, fun _ h => absurd h (Nat.not_lt_zero _)⟩
-
-theorem signKS_nil_pub {p : Params} {D : Nat} {s₁ s₂ : State} (h : (signK p D).pub s₁ s₂) :
-    (signKS p D []).pub s₁ s₂ :=
-  ⟨h, fun _ h => absurd h List.not_mem_nil⟩
-
 /-! ## The layout -/
 
 theorem contains_prefix {a : Addr} {n k : Nat} (h : n ≤ k) : (⟨a, k⟩ : Region).Contains a n := by
