@@ -58,13 +58,13 @@ structure OneCtx (s : State) (k : Nat) (Ctx W SP Np A D : Addr) (nl al n : Nat) 
 
 /-- `OneCtx`, from `oneLay` and where the buffers are, with `work` the `w`-th
 of `k` arguments on the stack. -/
-theorem OneCtx.of {cl w k : Nat} {s : State} (hp : Proof.AesGcm.oneLay cl w k s) (hcl : 256 ≤ cl)
+theorem OneCtx.ofAt {cl w k id il : Nat} {s : State} (hp : Proof.AesGcm.oneLay cl w k s id il) (hcl : 256 ≤ cl)
     (pc : Covers [⟨s.gpr .rdi, cl⟩] (s.rd ++ s.wr)) (pn : Covers [⟨s.gpr .rdx, (s.gpr .rcx).toNat⟩] (s.rd ++ s.wr))
     (pa : Covers [⟨s.gpr .r8, (s.gpr .r9).toNat⟩] (s.rd ++ s.wr))
     (pm : Covers [⟨s.gpr .rsp + BitVec.ofNat 64 8, 8 * k⟩] (s.rd ++ s.wr))
-    (pd : Covers [⟨stackArg s 0, (stackArg s 1).toNat⟩] s.wr) (pW : Covers [⟨stackArg s w, 2560⟩] s.wr) :
-    OneCtx s k (s.gpr .rdi) (stackArg s w) (s.gpr .rsp) (s.gpr .rdx) (s.gpr .r8) (stackArg s 0)
-      (s.gpr .rcx).toNat (s.gpr .r9).toNat (stackArg s 1).toNat := by
+    (pd : Covers [⟨stackArg s id, (stackArg s il).toNat⟩] s.wr) (pW : Covers [⟨stackArg s w, 2560⟩] s.wr) :
+    OneCtx s k (s.gpr .rdi) (stackArg s w) (s.gpr .rsp) (s.gpr .rdx) (s.gpr .r8) (stackArg s id)
+      (s.gpr .rcx).toNat (s.gpr .r9).toNat (stackArg s il).toNat := by
   simp only [Proof.AesGcm.oneLay, Proof.AesGcm.stk24, Proof.AesGcm.ret, Proof.AesGcm.args,
     Proof.AesGcm.arg, Proof.AesGcm.rounds] at hp
   sig_split hp
@@ -99,10 +99,19 @@ theorem OneCtx.of {cl w k : Nat} {s : State} (hp : Proof.AesGcm.oneLay cl w k s)
   refine ⟨L, ⟨pc, covers_off pW (show 16 + 80 ≤ 2560 by decide) (by decide), pW⟩, ww, fun i hi => ?_,
     d_wa.symm, ⟨pn, by have := (s.gpr .rcx).isLt; omega_arith, wn, d_nw.sub_right hSt, d_nw, k_n⟩,
     ⟨pa, by have := (s.gpr .r9).isLt; omega_arith, wa, d_aw.sub_right hSt, d_aw, k_a⟩,
-    ⟨⟨covers_left pd, by have := (stackArg s 1).isLt; omega_arith, wd, d_dw.sub_right hSt, d_dw, k_d⟩, pd, d_cd⟩,
+    ⟨⟨covers_left pd, by have := (stackArg s il).isLt; omega_arith, wd, d_dw.sub_right hSt, d_dw, k_d⟩, pd, d_cd⟩,
     r_d, r_w, d_dw, d_da.symm, hR, t_c, t_w, t_d, sp24⟩
   have := in_off pm (d := 8 * i) (n := 8) (by omega_arith) (by omega_arith)
   rwa [add_ofNat_assoc, show 8 + 8 * i = 8 * (i + 1) by omega_arith] at this
+
+theorem OneCtx.of {cl w k : Nat} {s : State} (hp : Proof.AesGcm.oneLay cl w k s) (hcl : 256 ≤ cl)
+    (pc : Covers [⟨s.gpr .rdi, cl⟩] (s.rd ++ s.wr)) (pn : Covers [⟨s.gpr .rdx, (s.gpr .rcx).toNat⟩] (s.rd ++ s.wr))
+    (pa : Covers [⟨s.gpr .r8, (s.gpr .r9).toNat⟩] (s.rd ++ s.wr))
+    (pm : Covers [⟨s.gpr .rsp + BitVec.ofNat 64 8, 8 * k⟩] (s.rd ++ s.wr))
+    (pd : Covers [⟨stackArg s 0, (stackArg s 1).toNat⟩] s.wr) (pW : Covers [⟨stackArg s w, 2560⟩] s.wr) :
+    OneCtx s k (s.gpr .rdi) (stackArg s w) (s.gpr .rsp) (s.gpr .rdx) (s.gpr .r8) (stackArg s 0)
+      (s.gpr .rcx).toNat (s.gpr .r9).toNat (stackArg s 1).toNat :=
+  OneCtx.ofAt (id := 0) (il := 1) hp hcl pc pn pa pm pd pW
 
 /-- What `seal`'s precondition gives: `OneCtx`, and `tag`, 16 bytes to write
 at `T` (the third argument on the stack). -/
@@ -184,17 +193,16 @@ abbrev entryFrame (W : Addr) : List Region :=
   [⟨W + BitVec.ofNat 64 128, 64⟩, ⟨W + BitVec.ofNat 64 200, 16⟩, ⟨W + BitVec.ofNat 64 232, 8⟩]
 
 /-- `oneEntry wo`, with `W` at `[rsp + wo]`, and what it writes (`entryFrame`). -/
-theorem oneEntry_okL {s : State} {k : Nat} (hk : 2 ≤ k) {Ctx W SP Np A D : Addr} {nl al n : Nat}
+theorem oneEntryAt_okL {s : State} {k : Nat} {id il : Nat} (hid : id < k) (hil : il < k) {Ctx W SP Np A D : Addr} {nl al n : Nat}
     (C : OneCtx s k Ctx W SP Np A D nl al n) {wo : Nat} (hCtx : s.gpr .rdi = Ctx) (hSP : s.gpr .rsp = SP)
-    (hA : s.gpr .r8 = A) (hD : stackArg s 0 = D) (hn : (stackArg s 1).toNat = n)
+    (hA : s.gpr .r8 = A) (hD : stackArg s id = D) (hn : (stackArg s il).toNat = n)
     (hW' : s.mem.readW (SP + BitVec.ofNat 64 wo) 64 = W) (a₂ : InRegions (s.rd ++ s.wr) (SP + BitVec.ofNat 64 wo) 8) :
-    WP isa (.block (oneEntry wo)) s fun s' => OneEntry s Ctx W SP A D n s' ∧ Frame (entryFrame W) s.mem s'.mem := by
-  have hD' : s.mem.readW (SP + BitVec.ofNat 64 8) 64 = D := by rw [← hD, ← hSP]; rfl
-  have hn' : s.mem.readW (SP + BitVec.ofNat 64 16) 64 = BitVec.ofNat 64 n := by
+    WP isa (.block (oneEntry wo (8 * (id + 1)) (8 * (il + 1)))) s fun s' => OneEntry s Ctx W SP A D n s' ∧ Frame (entryFrame W) s.mem s'.mem := by
+  have hD' : s.mem.readW (SP + BitVec.ofNat 64 (8 * (id + 1))) 64 = D := by rw [← hD, ← hSP]; rfl
+  have hn' : s.mem.readW (SP + BitVec.ofNat 64 (8 * (il + 1))) 64 = BitVec.ofNat 64 n := by
     rw [← hn, BitVec.ofNat_toNat, BitVec.setWidth_eq, ← hSP]; rfl
-  have a₀ := C.args 0 (by omega_arith)
-  have a₁ := C.args 1 (by omega_arith)
-  simp only [Nat.zero_add, Nat.mul_one] at a₀ a₁
+  have a₀ := C.args id hid
+  have a₁ := C.args il hil
   obtain ⟨s₀, run₀, hax₀, hg₀, hm₀, hrd₀, hwr₀⟩ : ∃ s₀', runBlock isa [.mov .rax (.mem (at_ .rsp wo))] s = some s₀' ∧
       s₀'.gpr .rax = W ∧ (∀ r, r ≠ .rax → s₀'.gpr r = s.gpr r) ∧ s₀'.mem = s.mem ∧ s₀'.rd = s.rd ∧ s₀'.wr = s.wr := by
     refine ⟨_, by xrun [hSP, a₂], ?_, ?_, ?_, ?_, ?_⟩
@@ -214,7 +222,7 @@ theorem oneEntry_okL {s : State} {k : Nat} (hk : 2 ≤ k) {Ctx W SP Np A D : Add
   have w₅ := in_off C.perm.w (show 208 + 8 ≤ 2560 by decide) (by decide)
   rw [← hwr₀, ← hwr₁] at w₁ w₂ w₃ w₄ w₅
   rw [← hrd₀, ← hwr₀, ← hrd₁, ← hwr₁] at a₀ a₁
-  have dAW : ∀ i < 2, ∀ (m : Mem) (k' : Nat), Frame [⟨W + BitVec.ofNat 64 128, k'⟩] s.mem m → k' ≤ 2432 →
+  have dAW : ∀ i < k, ∀ (m : Mem) (k' : Nat), Frame [⟨W + BitVec.ofNat 64 128, k'⟩] s.mem m → k' ≤ 2432 →
       m.readW (SP + BitVec.ofNat 64 (8 * (i + 1))) 64 = s.mem.readW (SP + BitVec.ofNat 64 (8 * (i + 1))) 64 :=
     fun i hi m k' hf hk' => hf.readW (r := ⟨SP + BitVec.ofNat 64 (8 * (i + 1)), 8⟩) (Region.contains_self _ _)
       (fun r hr => by
@@ -222,27 +230,25 @@ theorem oneEntry_okL {s : State} {k : Nat} (hk : 2 ≤ k) {Ctx W SP Np A D : Add
         have := (C.dA.sub_left (show Region.Sub ⟨SP + BitVec.ofNat 64 (8 * (i + 1)), 8⟩ ⟨SP + BitVec.ofNat 64 8, 8 * k⟩ by
           rw [show 8 * (i + 1) = 8 + 8 * i by omega_arith, ← add_ofNat_assoc]; exact Offset.sub_base _ (by omega_arith)))
         exact this.sub_right (Lay.wSub (by omega_arith))) (by decide)
-  have hD₁ : s₁.mem.readW (SP + BitVec.ofNat 64 8) 64 = D := by
-    have := dAW 0 (by decide) _ 48 (hm₀ ▸ f₁) (by decide); simpa [hD'] using this
-  have hn₁ : s₁.mem.readW (SP + BitVec.ofNat 64 16) 64 = BitVec.ofNat 64 n := by
-    have := dAW 1 (by decide) _ 48 (hm₀ ▸ f₁) (by decide); simpa [hn'] using this
-  have sA : ∀ e d, (e = 8 ∨ e = 16) → 176 ≤ d → d + 8 ≤ 240 →
-      Mem.Sep (SP + BitVec.ofNat 64 e) (64 / 8) (W + BitVec.ofNat 64 d) (64 / 8) := by
-    intro e d he h₁ h₂
-    refine Region.Disjoint.sep (?_ : (⟨SP + BitVec.ofNat 64 e, 8⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 d, 8⟩)
-      (Region.contains_self _ _) (Region.contains_self _ _)
-    have hs : Region.Sub ⟨SP + BitVec.ofNat 64 e, 8⟩ ⟨SP + BitVec.ofNat 64 8, 8 * k⟩ := by
-      rcases he with rfl | rfl
-      · exact Region.sub_prefix (by omega_arith)
-      · rw [show (16 : Nat) = 8 + 8 by rfl, ← add_ofNat_assoc]; exact Offset.sub_base _ (by omega_arith)
+  have hD₁ : s₁.mem.readW (SP + BitVec.ofNat 64 (8 * (id + 1))) 64 = D := by
+    have := dAW id hid _ 48 (hm₀ ▸ f₁) (by decide); simpa [hD'] using this
+  have hn₁ : s₁.mem.readW (SP + BitVec.ofNat 64 (8 * (il + 1))) 64 = BitVec.ofNat 64 n := by
+    have := dAW il hil _ 48 (hm₀ ▸ f₁) (by decide); simpa [hn'] using this
+  have sA : ∀ i < k, ∀ d, 176 ≤ d → d + 8 ≤ 240 →
+      Mem.Sep (SP + BitVec.ofNat 64 (8 * (i + 1))) (64 / 8) (W + BitVec.ofNat 64 d) (64 / 8) := by
+    intro i hi d _ _
+    apply Region.Disjoint.sep _ (Region.contains_self _ _) (Region.contains_self _ _)
+    have hs : Region.Sub ⟨SP + BitVec.ofNat 64 (8 * (i + 1)), 8⟩ ⟨SP + BitVec.ofNat 64 8, 8 * k⟩ := by
+      rw [show 8 * (i + 1) = 8 + 8 * i by omega_arith, ← add_ofNat_assoc]
+      exact Offset.sub_base _ (by omega_arith)
     exact (C.dA.sub_left hs).sub_right (Lay.wSub (by omega_arith))
-  have p₁ := sA 8 176 (.inl rfl) (by decide) (by decide)
-  have p₂ := sA 8 232 (.inl rfl) (by decide) (by decide)
-  have p₃ := sA 8 184 (.inl rfl) (by decide) (by decide)
-  have p₄ := sA 16 176 (.inr rfl) (by decide) (by decide)
-  have p₅ := sA 16 232 (.inr rfl) (by decide) (by decide)
-  have p₆ := sA 16 184 (.inr rfl) (by decide) (by decide)
-  have p₇ := sA 16 200 (.inr rfl) (by decide) (by decide)
+  have p₁ := sA id hid 176 (by decide) (by decide)
+  have p₂ := sA id hid 232 (by decide) (by decide)
+  have p₃ := sA id hid 184 (by decide) (by decide)
+  have p₄ := sA il hil 176 (by decide) (by decide)
+  have p₅ := sA il hil 232 (by decide) (by decide)
+  have p₆ := sA il hil 184 (by decide) (by decide)
+  have p₇ := sA il hil 200 (by decide) (by decide)
   have sep : ∀ a d : Nat, a + 8 ≤ d ∨ d + 8 ≤ a → a + 8 ≤ 2560 → d + 8 ≤ 2560 →
       Mem.Sep (W + BitVec.ofNat 64 a) (64 / 8) (W + BitVec.ofNat 64 d) (64 / 8) :=
     fun a d h ha hd => Offset.sep W h (by omega_arith) (by omega_arith)
@@ -256,16 +262,16 @@ theorem oneEntry_okL {s : State} {k : Nat} (hk : 2 ≤ k) {Ctx W SP Np A D : Add
   have q₇ := sep 184 200 (by decide) (by decide) (by decide)
   have q₈ := sep 184 208 (by decide) (by decide) (by decide)
   have q₉ := sep 200 208 (by decide) (by decide) (by decide)
-  have e : oneEntry wo = [.mov .rax (.mem (at_ .rsp wo))] ++ save .rax ++
+  have e : oneEntry wo (8 * (id + 1)) (8 * (il + 1)) = [.mov .rax (.mem (at_ .rsp wo))] ++ save .rax ++
       [.mov .r15 (.reg .rax), .mov .r14 (.reg .r15), .alu .add .r14 (imm 16), .mov .r13 (.reg .rdi),
         .store (at_ .r15 roundsO) .rsi, .store (at_ .r15 aadO) .r8, .store (at_ .r15 alenO) .r9,
-        .mov .rax (.mem (at_ .rsp 8)), .store (at_ .r15 dataO) .rax, .mov .rax (.mem (at_ .rsp 16)),
+        .mov .rax (.mem (at_ .rsp (8 * (id + 1)))), .store (at_ .r15 dataO) .rax, .mov .rax (.mem (at_ .rsp (8 * (il + 1)))),
         .store (at_ .r15 lenO) .rax, .mov .r12 (.reg .rdx), .mov .rbp (.reg .rcx)] := by
     simp [oneEntry, ptr, stO]
   obtain ⟨s₂, run₂, h15, h14, h13, h12, hbp, hsp, hm₂, hrd₂, hwr₂⟩ : ∃ s₂, runBlock isa
       [.mov .r15 (.reg .rax), .mov .r14 (.reg .r15), .alu .add .r14 (imm 16), .mov .r13 (.reg .rdi),
         .store (at_ .r15 roundsO) .rsi, .store (at_ .r15 aadO) .r8, .store (at_ .r15 alenO) .r9,
-        .mov .rax (.mem (at_ .rsp 8)), .store (at_ .r15 dataO) .rax, .mov .rax (.mem (at_ .rsp 16)),
+        .mov .rax (.mem (at_ .rsp (8 * (id + 1)))), .store (at_ .r15 dataO) .rax, .mov .rax (.mem (at_ .rsp (8 * (il + 1)))),
         .store (at_ .r15 lenO) .rax, .mov .r12 (.reg .rdx), .mov .rbp (.reg .rcx)] s₁ = some s₂ ∧
       s₂.gpr .r15 = W ∧ s₂.gpr .r14 = W + BitVec.ofNat 64 16 ∧ s₂.gpr .r13 = Ctx ∧ s₂.gpr .r12 = s.gpr .rdx ∧
       s₂.gpr .rbp = s.gpr .rcx ∧ s₂.gpr .rsp = SP ∧
@@ -342,6 +348,13 @@ theorem oneEntry_okL {s : State} {k : Nat} (hk : 2 ≤ k) {Ctx W SP Np A D : Add
       · exact ⟨_, List.mem_cons_self .., Offset.sub _ (by decide) (by decide)⟩
       · exact ⟨_, by simp, fun _ h => h⟩
       · exact ⟨_, by simp, fun _ h => h⟩
+
+theorem oneEntry_okL {s : State} {k : Nat} (hk : 2 ≤ k) {Ctx W SP Np A D : Addr} {nl al n : Nat}
+    (C : OneCtx s k Ctx W SP Np A D nl al n) {wo : Nat} (hCtx : s.gpr .rdi = Ctx) (hSP : s.gpr .rsp = SP)
+    (hA : s.gpr .r8 = A) (hD : stackArg s 0 = D) (hn : (stackArg s 1).toNat = n)
+    (hW' : s.mem.readW (SP + BitVec.ofNat 64 wo) 64 = W) (a₂ : InRegions (s.rd ++ s.wr) (SP + BitVec.ofNat 64 wo) 8) :
+    WP isa (.block (oneEntry wo)) s fun s' => OneEntry s Ctx W SP A D n s' ∧ Frame (entryFrame W) s.mem s'.mem :=
+  oneEntryAt_okL (id := 0) (il := 1) (by omega_arith) (by omega_arith) C hCtx hSP hA hD hn hW' a₂
 
 /-- `oneEntry wo`, with `W` at `[rsp + wo]`. -/
 theorem oneEntry_ok {s : State} {k : Nat} (hk : 2 ≤ k) {Ctx W SP Np A D : Addr} {nl al n : Nat}

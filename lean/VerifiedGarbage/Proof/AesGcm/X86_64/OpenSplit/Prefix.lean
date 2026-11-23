@@ -1561,7 +1561,7 @@ theorem preCallToDec_ok (T : BlkToDecFn M) {q : Nat} (hq : 16 * q ≤ sl) {st : 
     (hpf'.sub fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact b56 (by decide) (by decide)).trans
       (hE.sub fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact b56 (by decide) (by decide))
   have kM := h.kM
-  obtain ⟨hpre, cr, cw, gU, -, a0, -, -⟩ := callIn h hq hsp hrd hwr hm h_di h_si h_dx h_cx h_8 h_9 h_10 h_11 h_ax
+  obtain ⟨hpre, cr, cw, gU, -, a0, -, -⟩ := callIn h.toCallInputs.regions hq hsp hrd hwr hm h_di h_si h_dx h_cx h_8 h_9 h_10 h_11 h_ax
   -- What the push and the return address leave as it was.
   obtain keep : ∀ {p : Addr} {k : Nat}, (⟨p, k⟩ : Region).Disjoint (below SP 56) → k ≤ 2 ^ 64 →
       bytesAt (pushed [.rax, .r10, .r11] st).callEntry.mem p k = bytesAt s.mem p k := fun hd hk => by

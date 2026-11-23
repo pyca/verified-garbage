@@ -111,7 +111,7 @@ vg_aes_ctr32_to:
 	mov r10, r8
 	ldr r11, [sp, #0]
 	ldr r8, [sp, #4]
-	ldr r9, [sp, #8]
+	ldr r9, [r8, #136]
 	str r9, [r8, #192]
 	cmp r11, #0
 	beq 21f

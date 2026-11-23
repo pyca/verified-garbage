@@ -703,7 +703,7 @@ structure Done (L : KemLay) (s₀ s : State) : Prop extends F L (L.p.k + 4) s₀
   eax : s.gpr .eax = accV L s₀ s
 
 /-- The keys, from the rows. -/
-theorem fin_piece [GOK L] :
+theorem fin_piece :
     Piece (TPre (Y L)) (TPub (Y L) (lk L)) (B L (L.p.k * L.p.k) L.p.k) (Done L)
       (.seq (copyW 3 ⟨3, L.kgRS, 32⟩ ⟨1, 384 * L.p.k, 32⟩ 8) <|
         seqs ((List.range L.p.k).map kgEnc) <|

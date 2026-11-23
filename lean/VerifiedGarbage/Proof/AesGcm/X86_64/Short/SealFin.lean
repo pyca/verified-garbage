@@ -140,18 +140,25 @@ theorem finKsA_ksOk : KsOk finKsA := by
     simp only [State.setMem_xmm]
     rw [f₂.xmm r (by simp [a, b, c]), k₁ r a b]
 
-theorem finKsA_rel : KsRel finKsA := fun {Ctx W SP D R r} _ => by
-  have wCtrs : ∀ s, FinI Ctx W SP D R r s → WP isa (.block finCtrsA) s fun t =>
+abbrev KsInputs (Ctx W SP : Addr) (R : Nat) (s : State) :=
+  Env Ctx (W+16#64) W SP s ∧ s.mem.readW (W+176#64) 64=BitVec.ofNat 64 R
+
+theorem finKsA_rel_inputs {Ctx W SP : Addr} {R : Nat} :
+    RelCT isa (fun s t => KsInputs Ctx W SP R s ∧ KsInputs Ctx W SP R t) finKsA fun _ _ => True := by
+  have wCtrs : ∀ s, KsInputs Ctx W SP R s → WP isa (.block finCtrsA) s fun t =>
       t.gpr .rdi = Ctx ∧ t.gpr .rsi = BitVec.ofNat 64 R ∧ t.gpr .r10 = Ctx + BitVec.ofNat 64 (16 * R) := fun s h => by
-    obtain ⟨t, run, -, -, di, si, r10, -⟩ := finCtrsA_ok s h.env h.rounds
+    obtain ⟨t, run, -, -, di, si, r10, -⟩ := finCtrsA_ok s h.1 h.2
     exact WP.of_runBlock ⟨t, run, di, si, r10⟩
-  exact rel_piece [.rdi, .rsi, .r10] (fun _ h => h.env) (fun _ h => h.env) (keepsEnv (by decide +kernel))
+  exact rel_piece [.rdi, .rsi, .r10] (fun _ h => h.1) (fun _ h => h.1) (keepsEnv (by decide +kernel))
       ⟨_, by taint_decide⟩ wCtrs wCtrs (fun _ _ h₁ h₂ r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl
         · rw [h₁.1, h₂.1]
         · rw [h₁.2.1, h₂.2.1]
         · rw [h₁.2.2, h₂.2.2]) ⟨_, by taint_decide⟩
+
+theorem finKsA_rel : KsRel finKsA := fun _ => finKsA_rel_inputs.mono
+  (fun _ _ h => ⟨⟨h.1.env,h.1.rounds⟩,h.2.env,h.2.rounds⟩) (fun _ _ h => h)
 
 end VG.Proof.AesGcm.X86_64.Short
 

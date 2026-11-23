@@ -1,5 +1,16 @@
 module
 
+public import VerifiedGarbage.Proof.AesGcm.PPC64LE.DirectGather.Return
+import VerifiedGarbage.Proof.Framework.PPC64LE.Alloc
+import VerifiedGarbage.Proof.Framework.PPC64LE.Inline
+import VerifiedGarbage.Proof.AesGcm.PPC64LE.TextAbsorb
+import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.AesGcm.PPC64LE.DirectGather.FinishCT
+import VerifiedGarbage.Proof.AesGcm.PPC64LE.DirectGather.StartCT
+public import VerifiedGarbage.Proof.AesGcm.PPC64LE.SealEntry
+import VerifiedGarbage.Proof.Framework.PPC64LE.RelCT
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.AesGcm.PPC64LE.GatherSplit.Contract
 public import VerifiedGarbage.Impl.AesGcm.PPC64LE.Fn
 public import VerifiedGarbage.Proof.Framework.PPC64LE.ScrubProved
 public import VerifiedGarbage.Proof.Framework.Registration
@@ -9,16 +20,171 @@ public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Blocks
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.SplitBlocks.Verified
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.SealSplit.Frame
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Frame
-public import VerifiedGarbage.Proof.AesGcm.PPC64LE.GatherSplit.Verified
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.OpenTo.Verified
 public import VerifiedGarbage.Proof.AesGcm.RoundsTo
 import VerifiedGarbage.Proof.AesGcm.Scratch
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.Blocks.Lit
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.SplitBlocks.Lit
 import VerifiedGarbage.Proof.Aes.PPC64LE.CodeLit
 import VerifiedGarbage.Proof.Gcm.PPC64LE.Vpmsum.Lit
+
+/-! # The direct gather entry meets its ciphertext, tag and ABI obligations -/
+
+@[expose] public section
+namespace VG.Proof.AesGcm.PPC64LE.DirectGather
+open VG VG.PPC64LE VG.Proof.AesGcm.PPC64LE.Gather
+open VG.Impl.AesGcm.PPC64LE.DirectGather
+open VG.Impl.StackScratch.PPC64LE
+
+theorem release {s e y : State} (h : GatherSplit.Layout s) (p : Args s e) (abi : abiPreserved e y)
+    (post : gatherPost s y) (m : Mem) (us : Nat → BitVec 64) (fl : Frame [stack s] y.mem m) :
+    abiPreserved s { freed 1280 y with mem:=m,unknowns:=us } ∧ gatherPost s { freed 1280 y with mem:=m,unknowns:=us } := by
+  have keep : ∀ r∈preserved,r≠Reg.r0 ∧ r≠Reg.r12 := by decide
+  constructor
+  · apply abiPreserved_lost
+    simp only [abiPreserved,freed_gpr_eq,freed_sp_eq,freed_lr_eq]
+    obtain ⟨gpr,sp,lr⟩ := abi
+    refine ⟨fun r hr => (gpr r hr).trans (p.regs r (keep r hr).1 (keep r hr).2),?_,lr.trans p.lr⟩
+    rw [sp,p.sp]; exact base_old s
+  · have same {r : Region} (dis : r.Disjoint (stack s)) :
+        VG.Spec.Aes.bytesAt m r.base r.len=VG.Spec.Aes.bytesAt y.mem r.base r.len :=
+      List.map_congr_left fun i hi => lost_byte fl dis (List.mem_range.mp hi)
+    have d := same (stack_disjoint h (r:=dR s) (by simp)).symm
+    have t := same (stack_disjoint h (r:=tgR s) (by simp)).symm
+    show _=(VG.Spec.Aes.bytesAt m (Dst s) (L s),VG.Spec.Aes.bytesAt m (Tg s) 16)
+    change VG.Spec.Aes.bytesAt m (Dst s) (L s)=_ at d
+    change VG.Spec.Aes.bytesAt m (Tg s) 16=_ at t
+    rw [d,t]; exact post
+
+theorem code_wp [Proof.Gcm.PPC64LE.GhashLaw] [Proof.Gcm.PPC64LE.Vpmsum.FoldLaw] {s : State}
+    (h : GatherSplit.Layout s) : WP isa code s (fun y => abiPreserved s y ∧ gatherPost s y) := by
+  obtain ⟨run,pp⟩ := args_run h
+  unfold code withStackScratchArgs
+  refine WP.alloc ⟨by decide,by decide,by decide⟩ (by omega_using [h.space]) ?_
+  refine WP.seq (WP.mono (show WP isa (.block (setArgs 1280 3)) (allocated 1280 s) (Args s) from
+    ⟨_,_,.block run,pp⟩) fun e p => ?_)
+  unfold body
+  refine WP.seq (WP.mono p.one fun t q => ?_)
+  refine WP.seq (WP.mono (WP.with_rdwr (aad_wp h p q)) fun v ⟨oa,rd,wr,_⟩ => ?_)
+  refine WP.seq (WP.mono (loadArgs_wp p q oa wr) fun u b => ?_)
+  obtain init := start h p q oa rd wr b
+  refine WP.seq (WP.mono (pieces_exact init.input init.atZero) fun z loop => ?_)
+  refine WP.seq (WP.mono (init.finish h loop) fun x done => ?_)
+  refine WP.mono (prepared h p init loop done) fun _ ⟨abi,post⟩ => release h p abi post
+
+end VG.Proof.AesGcm.PPC64LE.DirectGather
+
+/-! # The timing contract of the direct gather implementation -/
+@[expose] public section
+namespace VG.Proof.AesGcm.PPC64LE.DirectGather
+open VG VG.PPC64LE VG.Proof.AesGcm.PPC64LE.Gather
+open VG.Impl.AesGcm.PPC64LE.DirectGather
+open VG.Impl.StackScratch.PPC64LE
+open VG.Proof.Gather.PPC64LE (Eq2 TT rel_seq ct_of)
+
+variable {s d e f u v z t : State}
+
+theorem startPublic (hp : gatherPub s d) (p : Start s e u) (q : Start d f v) :
+    LoopPublic (argsFor s u) (argsFor d v) u v := by
+  obtain ⟨key,rnds,_,_,_,_,desc,n,sp,dst,_,_,mem⟩ := hp
+  have bases : base s=base d := congrArg (· - 1280) sp
+  refine ⟨bases,desc,congrArg BitVec.toNat n,⟨p.dst.trans (dst.trans q.dst.symm),
+    p.r28.trans (rnds.trans q.r28.symm),p.r29.trans (key.trans q.r29.symm),
+    p.r30.trans ((congrArg (· + 144) bases).trans q.r30.symm),
+    p.r31.trans ((congrArg (· + 128) bases).trans q.r31.symm)⟩,?_⟩
+  intro j hj
+  change j<Cnt s*16 at hj
+  change u.mem (Src s+BitVec.ofNat 64 j)=v.mem (Src s+BitVec.ofNat 64 j)
+  have inside {s e u : State} (r : Start s e u) (hj : j<Cnt s*16) :
+      s.mem (Src s+BitVec.ofNat 64 j)=u.mem (Src s+BitVec.ofNat 64 j) := by
+    apply r.agree _ (List.mem_cons_self ..)
+    exact Offset.contains_base _ (by omega_using [hj]) (by have f:=r.input.countFit; change Cnt s*16<2^64 at f; omega_using [f,hj])
+  have hj' : j<Cnt d*16 := by simpa only [Cnt,n] using hj
+  have ddesc : Src s=Src d := desc
+  exact (inside p hj).symm.trans ((mem j hj).trans (by rw [ddesc]; exact inside q hj'))
+
+theorem Start.returnI {b : Nat} (h : GatherSplit.Layout s) (p : Start s e u)
+    (q : LoopAt (argsFor s u) u (Cnt s) b z) (f : Finished (argsFor s u) u z (iv s) (aad s) t) :
+    SealEntry.ReturnI (work s) (Tg s) (base s) t := by
+  refine ⟨(argsFor s u).finalV u,p.r31,p.tag,f.env,?_⟩
+  rw [f.wr,q.wr,p.wr,h.base.pre.2.1]; exact Covers.of_mem (by simp)
+
+variable [Proof.Gcm.PPC64LE.GhashLaw] [Proof.Gcm.PPC64LE.Vpmsum.FoldLaw]
+
+theorem fromStart_rel (hp : gatherPub s d) (h : GatherSplit.Layout s) (g : GatherSplit.Layout d)
+    (p : Start s e u) (q : Start d f v) :
+    RelCT isa (Eq2 u v) (.seq pieces (.seq finish (.seq (.block Impl.AesGcm.PPC64LE.tagOut)
+      (.block Impl.AesGcm.PPC64LE.restore)))) TT := by
+  have pub := startPublic hp p q
+  obtain ⟨_,_,_,_,_,aad,_,_,sp,_,_,tag,_⟩ := hp
+  have count := pub.count
+  have hash := (pub.hashed (Nat.le_refl _)).trans (congrArg ((argsFor d v).hashed v) count)
+  refine rel_seq (pieces_rel pub p.input q.input p.atZero q.atZero) (pieces_exact p.input p.atZero)
+    (pieces_exact q.input q.atZero) (fun z t x y => ?_)
+  have y' := y
+  rw [←hash] at y'
+  have len {s e u : State} (h : GatherSplit.Layout s) (p : Start s e u) :
+      ((argsFor s u).V .r23).toNat=(argsFor s u).pos u (Cnt s) := by
+    change (u.gpr .r23).toNat=_; rw [p.len,p.total h]
+  refine rel_seq (finish_rel pub p.input q.input x y' (p.r22.trans (aad.trans q.r22.symm)) (len h p) (len g q))
+    (p.finish h x) (q.finish g y) (fun a b x' y' => ?_)
+  have apart := (stack_disjoint h (r:=tgR s) (by simp)).symm
+  have ret := q.returnI g y y'
+  exact ct_at (SealEntry.return_ct (W:=work s) (T:=Tg s) (sp:=base s) (apart.sub_right (Offset.sub_base _ (by decide : 128+16≤1280))))
+    (p.returnI h x x') (by simpa only [work,base,Tg,sp,tag] using ret)
+
+theorem body_rel (hp : gatherPub s d) (h : GatherSplit.Layout s) (g : GatherSplit.Layout d) (p : Args s e) (q : Args d f) :
+    RelCT isa (Eq2 e f) body TT := by
+  have sp := hp.2.2.2.2.2.2.2.2.1
+  have bs : base s=base d := congrArg (· - 1280) sp
+  refine rel_seq (entry_rel hp p q) p.one q.one (fun t u x y => ?_)
+  refine rel_seq (aad_rel hp h g p q x y) (WP.with_rdwr (aad_wp h p x)) (WP.with_rdwr (aad_wp g q y))
+    (fun b c ⟨a,ar,aw,_⟩ ⟨j,jr,jw,_⟩ => ?_)
+  have workEq : work s=work d := congrArg (· + 128) bs
+  refine rel_seq (loadArgs_rel (a.env.sp.trans (p.sp.trans (bs.trans (q.sp.symm.trans j.env.sp.symm))))
+    (a.env.r31.trans (x.r31.trans (workEq.trans (y.r31.symm.trans j.env.r31.symm)))))
+    (loadArgs_wp p x a aw) (loadArgs_wp q y j jw) (fun v w b c => ?_)
+  exact fromStart_rel hp h g (start h p x a ar aw b) (start g q y j jr jw c)
+
+theorem timing : ConstantTime isa GatherSplit.contract.pre GatherSplit.contract.pub code := by
+  refine VG.Proof.Gather.PPC64LE.ct_of fun s d hs hd hp => ?_
+  have h := GatherSplit.layout_pre hs
+  have g := GatherSplit.layout_pre hd
+  have pub := Gather.gatherPub_of hp
+  have sp := pub.2.2.2.2.2.2.2.2.1
+  have bs : base s=base d := congrArg (· - 1280) sp
+  refine (RelCT.alloc (bytes:=1280) (body:=.seq (.block (setArgs 1280 3)) body) (P:=Eq2 s d) (R:=TT) (fun a b ⟨rfl,rfl⟩ => sp)
+    ((?_ : RelCT isa (Eq2 (allocated 1280 s) (allocated 1280 d)) _ TT).mono
+      (fun a b ⟨s',d',⟨hs,hd⟩,ha,hb⟩ => by subst s' d'; exact ⟨ha,hb⟩) fun _ _ h => h)).mono
+    (fun _ _ h => h) fun _ _ _ => trivial
+  obtain ⟨one,ea⟩ := args_run h
+  obtain ⟨two,eb⟩ := args_run g
+  refine rel_seq ?_ (WP.block ⟨_,one,ea⟩) (WP.block ⟨_,two,eb⟩)
+    (fun _ _ p q => body_rel pub h g p q)
+  rintro _ _ ta tb sa sb ⟨rfl,rfl⟩ ra rb
+  rw [Exec.block_iff,one] at ra
+  rw [Exec.block_iff,two] at rb
+  obtain ⟨rfl,rfl⟩ := Prod.mk.inj (Option.some.inj ra)
+  obtain ⟨rfl,rfl⟩ := Prod.mk.inj (Option.some.inj rb)
+  exact ⟨congrArg (fun ptr => setArgsTrace 1280 ptr 3) bs,trivial⟩
+
+end VG.Proof.AesGcm.PPC64LE.DirectGather
+
+/-! # Direct POWER8 AES-GCM gather seal -/
+
+@[expose] public section
+namespace VG.Proof.AesGcm.PPC64LE.DirectGather
+open VG VG.PPC64LE
+
+theorem verified [Proof.Gcm.PPC64LE.GhashLaw] [Proof.Gcm.PPC64LE.Vpmsum.FoldLaw] :
+    Verified PPC64LE.target Impl.AesGcm.PPC64LE.DirectGather.code GatherSplit.contract := by
+  refine ⟨?_,timing,GatherSplit.sat_pre⟩
+  intro s hs
+  obtain ⟨t,z,ex,abi,post⟩ := code_wp (GatherSplit.layout_pre hs)
+  exact ⟨t,z,ex,abi,Gather.gatherPost_of post⟩
+
+end VG.Proof.AesGcm.PPC64LE.DirectGather
 
 /-!
 # AES-GCM on PPC64LE, without secret residue
@@ -352,9 +518,9 @@ theorem sealGather_scrubbed [Proof.Gcm.PPC64LE.GhashLaw] [Proof.Gcm.PPC64LE.Vpms
     VerifiedScrubbed PPC64LE.target Impl.AesGcm.PPC64LE.Fn.sealGather
       (Spec.Gcm.sealGatherContract PPC64LE.abi 1552) 0 :=
   verifiedScrubbedAll (api := Spec.Gcm.sealGatherApi) {
-      code := Impl.AesGcm.PPC64LE.GatherSplit.sealGather
-      verified := Proof.AesGcm.sealGather_keyed GatherSplit.verified }
-    1552 clearAll
+      code := Impl.AesGcm.PPC64LE.DirectGather.code
+      verified := Proof.AesGcm.sealGather_keyed DirectGather.verified }
+    1280 clearAll
     (sealGatherOut _)
     (by dsimp only; lit_decide)
 

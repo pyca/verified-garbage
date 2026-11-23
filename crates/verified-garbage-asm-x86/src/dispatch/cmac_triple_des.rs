@@ -28,7 +28,7 @@ pub unsafe fn vg_cmac_triple_des_stream_init_auto(_dit: verified_garbage_cpu::Di
 ///
 /// Contract: `VG.Spec.Cmac.tdesAbsorbContract`. Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
 ///
-/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_cmac_triple_des_absorb_ssse3` if the CPU supports its features (`VG_CMAC_TRIPLE_DES_ABSORB_SSSE3_FEATURES`); or else `vg_cmac_triple_des_absorb`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs `vg_cmac_triple_des_absorb`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
 ///
 /// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
@@ -37,48 +37,19 @@ pub unsafe fn vg_cmac_triple_des_stream_init_auto(_dit: verified_garbage_cpu::Di
 /// * `state` must be valid for reads and writes of 416 bytes.
 /// * `data` must be valid for reads of `len` bytes.
 /// * `state` must not overlap `data` or the arguments on the stack (distinct Rust objects never do).
-/// * Neither `state` nor `data` may overlap the return address on the stack or the 752 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * Neither `state` nor `data` may overlap the return address on the stack or the 740 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_cmac_triple_des_absorb_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 52], count: u64, data: *const u8, len: usize) {
-    /// The type of the implementations.
-    type Impl = unsafe extern "C" fn(state: *mut [u64; 52], count: u64, data: *const u8, len: usize);
-    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
-    /// features the CPU has.
-    #[cold]
-    fn select() -> Impl {
-        let cpu = verified_garbage_cpu::detected();
-        if const { verified_garbage_cpu::target_contains(crate::cmac_triple_des::VG_CMAC_TRIPLE_DES_ABSORB_SSSE3_FEATURES) }
-            || cpu.contains(crate::cmac_triple_des::VG_CMAC_TRIPLE_DES_ABSORB_SSSE3_FEATURES)
-        {
-            return crate::cmac_triple_des::vg_cmac_triple_des_absorb_ssse3;
-        }
-        crate::cmac_triple_des::vg_cmac_triple_des_absorb
-    }
-    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
-    /// after it, and runs it.
-    #[cold]
-    unsafe extern "C" fn first(state: *mut [u64; 52], count: u64, data: *const u8, len: usize) {
-        let f = select();
-        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
-        // SAFETY: the caller's obligations, which are those of every implementation, `f`
-        // among them, and the CPU has the features `f` needs.
-        unsafe { f(state, count, data, len) }
-    }
-    /// The function to call: `first`, until it records the implementation it chose.
-    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
-        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
-    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
-    // or an implementation `select` returned, which needs only features the CPU has. Calling
-    // either carries the caller's obligations, which are those of every implementation.
-    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(state, count, data, len) }
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::cmac_triple_des::vg_cmac_triple_des_absorb(state, count, data, len) }
 }
 
 /// Finishes a TDEA-CMAC computation (NIST SP 800-38B §6.2, with `Tlen = 64`): if the streaming state `*state` represents a message of `count` bytes, shorter than 2⁶⁴ bytes, under a TDEA key (as `vg_cmac_triple_des_stream_init` and `vg_cmac_triple_des_absorb` set it up), writes the MAC of that message under that key to `*out`: `Cₙ = CIPH_K(Cₙ₋₁ ⊕ Mₙ)`, where `Mₙ = K1 ⊕ Mₙ*` if the message's last bytes `Mₙ*` are a complete block, and `Mₙ = K2 ⊕ (Mₙ* ‖ 10ʲ)` otherwise (step 4). The caller truncates it (step 7) and compares it (§6.3).
 ///
 /// Contract: `VG.Spec.Cmac.tdesFinishContract`. Constant time: only the pointers and `count` may affect timing, not the state.
 ///
-/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_cmac_triple_des_finish_ssse3` if the CPU supports its features (`VG_CMAC_TRIPLE_DES_FINISH_SSSE3_FEATURES`); or else `vg_cmac_triple_des_finish`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs `vg_cmac_triple_des_finish`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
 ///
 /// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
@@ -88,39 +59,10 @@ pub unsafe fn vg_cmac_triple_des_absorb_auto(_dit: verified_garbage_cpu::Dit<'_>
 /// * `out` must be valid for reads and writes of 8 bytes.
 /// * The contents of `state` on return are unspecified.
 /// * `state` and `out` must not overlap each other or the arguments on the stack (distinct Rust objects never do).
-/// * Neither `state` nor `out` may overlap the return address on the stack or the 748 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * Neither `state` nor `out` may overlap the return address on the stack or the 736 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_cmac_triple_des_finish_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 52], count: u64, out: *mut [u8; 8]) {
-    /// The type of the implementations.
-    type Impl = unsafe extern "C" fn(state: *mut [u64; 52], count: u64, out: *mut [u8; 8]);
-    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
-    /// features the CPU has.
-    #[cold]
-    fn select() -> Impl {
-        let cpu = verified_garbage_cpu::detected();
-        if const { verified_garbage_cpu::target_contains(crate::cmac_triple_des::VG_CMAC_TRIPLE_DES_FINISH_SSSE3_FEATURES) }
-            || cpu.contains(crate::cmac_triple_des::VG_CMAC_TRIPLE_DES_FINISH_SSSE3_FEATURES)
-        {
-            return crate::cmac_triple_des::vg_cmac_triple_des_finish_ssse3;
-        }
-        crate::cmac_triple_des::vg_cmac_triple_des_finish
-    }
-    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
-    /// after it, and runs it.
-    #[cold]
-    unsafe extern "C" fn first(state: *mut [u64; 52], count: u64, out: *mut [u8; 8]) {
-        let f = select();
-        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
-        // SAFETY: the caller's obligations, which are those of every implementation, `f`
-        // among them, and the CPU has the features `f` needs.
-        unsafe { f(state, count, out) }
-    }
-    /// The function to call: `first`, until it records the implementation it chose.
-    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
-        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
-    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
-    // or an implementation `select` returned, which needs only features the CPU has. Calling
-    // either carries the caller's obligations, which are those of every implementation.
-    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(state, count, out) }
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::cmac_triple_des::vg_cmac_triple_des_finish(state, count, out) }
 }

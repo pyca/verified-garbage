@@ -214,7 +214,8 @@ theorem g₁_wp : WP isa (.block SealSplit.preTest) σ (G₁ Ctx W SP sl σ) := 
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl <;> exact g₁ _ (by decide)) rd₁ wr₁, ax₁, zf₁, m₁, rd₁, wr₁⟩
 
-theorem g₂_wp {s : State} (g : G₀ Ctx W SP sl σ s) : WP isa (.block SealSplit.preArgs) s (G₂ Ctx W SP D S R sl σ) := by
+omit h in
+theorem g₂_wp (h : CallInputs M Ctx W SP D S R n sl σ) {s : State} (g : G₀ Ctx W SP sl σ s) : WP isa (.block SealSplit.preArgs) s (G₂ Ctx W SP D S R sl σ) := by
   obtain ⟨he, ax, m, rd, wr⟩ := g
   refine WP.mono (pre2_ok (R := R) (D := D) (S := S) he (by rw [m]; exact h.rounds) (by rw [m]; exact h.dat)
     (by rw [m]; exact h.src)) fun s₂ ⟨di, si, dx, cx, r8, r9, r10, r11, a, g₂, m₂, rd₂, wr₂⟩ => ?_
@@ -229,7 +230,8 @@ theorem mid2_zero {s : State} (g : G₁ Ctx W SP sl σ s) (h0 : sl / 16 = 0) : M
   · rw [h0, m]; rfl
   · rw [h0, m]; rfl
 
-theorem mid2_call_wp (T : BlkToFn M) {s : State} (g : G₂ Ctx W SP D S R sl σ s) :
+omit h in
+theorem mid2_call_wp (h : CallRegions M Ctx W SP D S R n sl σ) (T : BlkToFn M) {s : State} (g : G₂ Ctx W SP D S R sl σ s) :
     WP isa (.frame (.push [.rax, .r10, .r11]) (.call T.fn.name T.fn.code) (.pop .rax 3)) s
       (Mid2 Ctx W SP D S R sl σ) := by
   obtain ⟨he, di, si, dx, cx, r8, r9, r10, r11, ax, m, rd, wr⟩ := g
@@ -293,9 +295,10 @@ variable {M : CtxMode} {Ctx W SP D S : Addr} {R n sl : Nat} {σ σ' : State}
   (h : PP M Ctx W SP D S R n sl σ) (h' : PP M Ctx W SP D S R n sl σ')
 include h h'
 
+omit h h' in
 /-- The call of `vg_aes_gcm_encrypt_blocks_to`, in two runs: the same public
 arguments. -/
-theorem call_rel (T : BlkToFn M) :
+theorem call_rel (h : CallRegions M Ctx W SP D S R n sl σ) (h' : CallRegions M Ctx W SP D S R n sl σ') (T : BlkToFn M) :
     RelCT isa (fun s₁ s₂ => G₂ Ctx W SP D S R sl σ s₁ ∧ G₂ Ctx W SP D S R sl σ' s₂)
       (.frame (.push [.rax, .r10, .r11]) (.call T.fn.name T.fn.code) (.pop .rax 3)) fun _ _ => True := by
   have hq : 16 * (sl / 16) ≤ sl := Nat.mul_div_le _ _
@@ -317,8 +320,9 @@ theorem call_rel (T : BlkToFn M) :
     gU₂ _ (by decide : Reg.r9 ≠ .rsp), di₁, di₂, si₁, si₂, dx₁, dx₂, cx₁, cx₂, r8₁, r8₂, r9₁, r9₂, hU₁, hU₂,
     a0₁, a0₂, a1₁, a1₂, a2₁, a2₂, and_self]
 
+omit h h' in
 /-- `prefix`'s call, from states with the number of whole blocks in `rax`. -/
-theorem callPart_rel (T : BlkToFn M) :
+theorem callPart_rel (h : CallInputs M Ctx W SP D S R n sl σ) (h' : CallInputs M Ctx W SP D S R n sl σ') (T : BlkToFn M) :
     RelCT isa (fun a b => G₀ Ctx W SP sl σ a ∧ G₀ Ctx W SP sl σ' b)
       (.seq (.block SealSplit.preArgs) (.frame (.push [.rax, .r10, .r11]) (.call T.fn.name T.fn.code) (.pop .rax 3)))
       fun a b => Mid2 Ctx W SP D S R sl σ a ∧ Mid2 Ctx W SP D S R sl σ' b := by
@@ -331,8 +335,8 @@ theorem callPart_rel (T : BlkToFn M) :
       · rw [e₁.r14, e₂.r14]
       · rw [e₁.r15, e₂.r15])
     (fun _ _ g => g) (fun _ g => g₂_wp h g) (fun _ g => g₂_wp h' g)) ?_
-  exact (rel_wp (call_rel h h' T) (fun _ _ g => g) (fun _ g => mid2_call_wp h T g)
-    (fun _ g => mid2_call_wp h' T g)).mono (fun _ _ g => g) fun _ _ g => g.2
+  exact (rel_wp (call_rel h.regions h'.regions T) (fun _ _ g => g) (fun _ g => mid2_call_wp h.regions T g)
+    (fun _ g => mid2_call_wp h'.regions T g)).mono (fun _ _ g => g) fun _ _ g => g.2
 
 /-- After `prefix`'s call (or none): the bytes left copied, and `rest`. -/
 theorem tail_rel :
@@ -376,7 +380,7 @@ theorem prefix_ct (T : BlkToFn M) :
   · refine StreamTo.RelCT.of_imp (sl / 16 = 0) (fun _ _ g => by
       have e := g.2; simp only [eval, g.1.1.2.2.1] at e; simpa using e) fun h0 => ?_
     exact skip_rel fun _ _ g => ⟨mid2_zero g.1.1 h0, mid2_zero g.1.2 h0⟩
-  · exact (callPart_rel h h' T).mono (fun _ _ g =>
+  · exact (callPart_rel h.toCallInputs h'.toCallInputs T).mono (fun _ _ g =>
       ⟨⟨g.1.1.1, g.1.1.2.1, g.1.1.2.2.2⟩, ⟨g.1.2.1, g.1.2.2.1, g.1.2.2.2.2⟩⟩) fun _ _ g => g
   exact tail_rel h h'
 

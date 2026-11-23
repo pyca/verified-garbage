@@ -116,7 +116,7 @@ theorem init_scrubSide :
 
 /-- `vg_sm4_gcm_init` as emitted (`Impl.Sm4Gcm.RISCV64.Fn.init`) meets its contract in constant
 time and returns without secret residue: the theorem its registration binds. -/
-theorem init_scrubbed [VG.Proof.Gcm.RISCV64.GhashLaw] :
+theorem init_scrubbed :
     VerifiedScrubbed target Impl.Sm4Gcm.RISCV64.Fn.init
       (Spec.Sm4.Gcm.initContract RISCV64.abi 5808) 0 :=
   verifiedScrubbedAll (api := Spec.Sm4.Gcm.initApi) (W := 5808)

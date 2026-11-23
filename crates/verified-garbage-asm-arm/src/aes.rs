@@ -782,7 +782,3 @@ pub(crate) mod vg_aes_encrypt_blocks_keyed;
 #[rustfmt::skip]
 #[path = "internal/vg_aes_expand_key_scratch.rs"]
 pub(crate) mod vg_aes_expand_key_scratch;
-
-#[rustfmt::skip]
-#[path = "internal/vg_aes_gcm_seal_entry.rs"]
-pub(crate) mod vg_aes_gcm_seal_entry;

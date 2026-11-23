@@ -41,10 +41,6 @@ subkeys (384–399), the chaining value (400–407) and the bytes held back
   state as its key, `out` as its state and the `h` bytes held back as the
   last bytes.
 
-`absorb` and `finish` are `absorbWith` and `finishWith` of those runs in
-their frames (`updFrame`, `finFrame`): the code around the runs, for any
-code that does a run's work from the same registers.
-
 Only the pointers, the key length, `count` and `len` can affect timing: the
 branches are on them, and so are the number of bytes copied and of blocks
 chained.
@@ -161,14 +157,8 @@ def absorbPre : Prog isa := .seq (.block absSave) (.seq (countHeld .eax) (.seq f
 /-- Everything after the second. -/
 def absorbPost : Prog isa := .seq (.block rest) (.seq copy (.block (restore 5)))
 
-/-- `absorb` over the code `u` of a run of `update` on registers: the key
-schedule in `eax`, the chaining value's address in `edx`, the blocks' in
-`ebx`, their number in `esi` and the working space in `edi`; `u` keeps the
-callee-saved registers. -/
-def absorbWith (u : Prog isa) : Prog isa :=
-  .seq absorbPre (.seq u (.seq chain2 (.seq u absorbPost)))
-
-def absorb : Prog isa := absorbWith updFrame
+def absorb : Prog isa :=
+  .seq absorbPre (.seq updFrame (.seq chain2 (.seq updFrame absorbPost)))
 
 /-! ## `vg_cmac_triple_des_finish` -/
 
@@ -193,13 +183,7 @@ return address's place). -/
 def finFrame : Prog isa :=
   .frame (.push [.edi, .esi, .ebx, .edx, .eax, .ecx]) Impl.CmacTripleDes.X86.finalize (.pop .eax 6)
 
-/-- `finish` over the code `f` of a run of `finalize` on registers: the key
-schedule and the subkeys in `eax`, the chaining value's address (`out`) in
-`edx`, the last bytes' in `ebx`, their number in `esi` and the working
-space in `edi`; `f` keeps the callee-saved registers. -/
-def finishWith (f : Prog isa) : Prog isa := .seq finPre (.seq f (.block (restore 4)))
-
-def finish : Prog isa := finishWith finFrame
+def finish : Prog isa := .seq finPre (.seq finFrame (.block (restore 4)))
 
 end VG.Impl.CmacTripleDes.Stream.X86
 

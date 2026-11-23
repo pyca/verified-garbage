@@ -137,7 +137,7 @@ theorem invU_ct [InvLaw] {F : KIn → State → Prop} {j : Nat} (hj : j < 16) (h
     fun _ _ h => h
 
 /-- `invU_ct` at the width `kw` sets (`kHalf`, `kOne`). -/
-theorem invK_ct [InvLaw] {F : KIn → State → Prop} {kw : List Instr} {j : Nat}
+theorem invK_ct {F : KIn → State → Prop} {kw : List Instr} {j : Nat}
     (hK : ∀ {F : KIn → State → Prop} {hc : VG.Taint.Hint VG.X86_64.Taint.T}, Stab F csI allR →
       (taint.check (Taint.ofRegs [.rdi, .r12, .r9]) (.seq (.block kw) (inverseN aU aV aX₂ j)) hc).isSome = true →
       RelCT isa (Two (KG F)) (inverseK kw aU aV aX₂ j) (Two (KG F)))

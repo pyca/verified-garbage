@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Framework.Arm.ScrubProved
 public import VerifiedGarbage.Impl.AesGcm.Arm.Fn
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.AesGcm.Arm.Frame
-public import VerifiedGarbage.Proof.AesGcm.Arm.Gather.Verified
+public import VerifiedGarbage.Proof.AesGcm.Arm.DirectGather.Verified
 public import VerifiedGarbage.Proof.AesGcm.Arm.OpenTo
 public import VerifiedGarbage.Proof.AesGcm.RoundsTo
 import VerifiedGarbage.Proof.AesGcm.Scratch
@@ -15,7 +15,7 @@ meta import VerifiedGarbage.Proof.Framework.Arm.ScrubProved
 meta import VerifiedGarbage.Impl.AesGcm.Arm.Fn
 meta import VerifiedGarbage.Proof.Framework.Registration
 meta import VerifiedGarbage.Proof.AesGcm.Arm.Frame
-meta import VerifiedGarbage.Proof.AesGcm.Arm.Gather.Verified
+meta import VerifiedGarbage.Proof.AesGcm.Arm.DirectGather.Verified
 meta import VerifiedGarbage.Proof.AesGcm.Arm.OpenTo
 meta import VerifiedGarbage.Proof.AesGcm.RoundsTo
 meta import VerifiedGarbage.Proof.AesGcm.Scratch
@@ -43,10 +43,8 @@ function is stated with the next that is (2576, 2592, 2608, 2624;
 `Arm.Scrub.Verified.stack_le`), whose precondition the same state as before
 satisfies.
 
-`vg_aes_gcm_seal_gather` calls `vg_aes_gcm_seal`'s code as it is verified,
-without the wipe, under a name of its own (`vg_aes_gcm_seal_entry`,
-`sealFnEntry`), which the emitter writes as an internal function: its own
-wipe covers the frames of that call.
+`vg_aes_gcm_seal_gather` writes ciphertext directly while walking the
+descriptors. Its final wipe covers the private workspace and nested CTR calls.
 -/
 
 @[expose] public section
@@ -283,11 +281,6 @@ theorem openToSat : ∃ s, (Proof.AesGcm.openToRoundsContract Arm.abi 2624).pre 
 
 /-! ## The code: its frames, and no indirect call -/
 
-/-- `vg_aes_gcm_seal`'s code, as `vg_aes_gcm_seal_gather` calls it: under a
-name of its own. -/
-def sealFnEntry [VG.Proof.Gcm.Arm.GhashLaw] : Gather.SealFn :=
-  ⟨Spec.Gcm.sealApi.name ++ "_entry", Gather.sealFn.code, Gather.sealFn.verified, Gather.sealFn.depth⟩
-
 theorem init_code :
     CodeOk (Impl.StackScratch.Arm.withRegScratch 2560 .r3 init) 2576 := by
   lit_decide
@@ -324,9 +317,7 @@ theorem open_code :
     CodeOk (Impl.StackScratch.Arm.withStackScratch 2592 6 «open») 2608 := by
   lit_decide
 
-theorem sealGather_code [VG.Proof.Gcm.Arm.GhashLaw] :
-    CodeOk (Impl.AesGcm.Arm.SealGather.sealGather sealFnEntry.name sealFnEntry.code) 2640 := by
-  simp only [sealFnEntry, Gather.sealFn]
+theorem sealGather_code : CodeOk Impl.AesGcm.Arm.DirectGather.sealGather 2640 := by
   lit_decide
 
 theorem openTo_code :
@@ -416,8 +407,8 @@ theorem «open» [VG.Proof.Gcm.Arm.GhashLaw] : VerifiedScrubbed target Impl.AesG
 /-- `vg_aes_gcm_seal_gather`. -/
 theorem sealGather [VG.Proof.Gcm.Arm.GhashLaw] : VerifiedScrubbed target Impl.AesGcm.Arm.Fn.sealGather (Spec.Gcm.sealGatherContract abi 2640) 0 :=
   verifiedScrubbedAll (api := Spec.Gcm.sealGatherApi)
-    { code := Impl.AesGcm.Arm.SealGather.sealGather Scrub.sealFnEntry.name Scrub.sealFnEntry.code
-      verified := Proof.AesGcm.sealGather_keyed (Gather.sealGather_verified Scrub.sealFnEntry) }
+    { code := Impl.AesGcm.Arm.DirectGather.sealGather
+      verified := Proof.AesGcm.sealGather_keyed DirectGather.Local.verified }
     (Scrub.sealGatherOut _) (scrubSideF_of Scrub.sealGather_code Scrub.frameOk_2640 _)
 
 /-- `vg_aes_gcm_open_to`. -/

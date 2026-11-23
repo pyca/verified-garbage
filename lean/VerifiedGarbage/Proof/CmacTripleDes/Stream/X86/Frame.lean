@@ -885,12 +885,8 @@ where k0 : p + BitVec.ofNat 64 0 = p := BitVec.add_zero p
 
 theorem bytesAt_zero (m : Mem) (p : Addr) : Spec.Aes.bytesAt m p 0 = [] := rfl
 
-/-- `absorb` over any code `u` that does what a run of `update` in its frame
-does (`upd_wp`). -/
-theorem absorbWith_wp {u : Prog isa}
-    (hu : ∀ {s : State} {W C D S : BitVec 32} {n : Nat}, UArgs s W C D S n → WP isa u s (UPost s W C D S n))
-    {s₀ : State} (h0 : absorbX86.pre s₀) :
-    WP isa (absorbWith u) s₀ fun s' => abiPreserved s₀ s' ∧ absorbX86.post s₀ s' := by
+theorem absorb_wp {s₀ : State} (h0 : absorbX86.pre s₀) :
+    WP isa absorb s₀ fun s' => abiPreserved s₀ s' ∧ absorbX86.post s₀ s' := by
   obtain hp := APre.of h0
   have hL := hp.lt
   have fSt : (aSt s₀).toNat + 416 ≤ 2 ^ 32 := hp.fSt
@@ -901,12 +897,12 @@ theorem absorbWith_wp {u : Prog isa}
   obtain hsum := nb_le (aC s₀) (aL s₀)
   obtain hrr := rest_le (aC s₀) (aL s₀)
   obtain hh := held_le (aC s₀)
-  unfold absorbWith
+  unfold absorb
   refine WP.seq (WP.mono (absorbPre_wp hp) fun s₅ h₅ => ?_)
-  refine WP.seq (WP.mono (hu h₅.args) fun s₆ h₆ => ?_)
+  refine WP.seq (WP.mono (upd_wp h₅.args) fun s₆ h₆ => ?_)
   obtain a₆ := upd_aft hp (h₅.mem ▸ m4_big hp) h₅.ctx h₅.ebp h₆
   refine WP.seq (WP.mono (chain2_mid hp a₆) fun s₇ ⟨h₇, m₇⟩ => ?_)
-  refine WP.seq (WP.mono (hu h₇.args) fun s₈ h₈ => ?_)
+  refine WP.seq (WP.mono (upd_wp h₇.args) fun s₈ h₈ => ?_)
   obtain a₈ := upd_aft hp h₇.aft.frame h₇.aft.ctx h₇.aft.ebp h₈
   unfold absorbPost
   refine WP.seq (WP.mono (rest_wp hp a₈.ctx a₈.ebp) fun s₉ h₉ => ?_)
@@ -1153,9 +1149,6 @@ theorem absorbWith_wp {u : Prog isa}
       rw [hr', m₁₁, m₁₀', e, dat _ F8 _ _ (by omega_using [hsum]),
         List.take_of_length_le (by simp only [List.length_drop, hdl]; unfold restOf leftOf; omega_using []),
         List.drop_drop, ← hn, hf']
-
-theorem absorb_wp {s₀ : State} (h0 : absorbX86.pre s₀) :
-    WP isa absorb s₀ fun s' => abiPreserved s₀ s' ∧ absorbX86.post s₀ s' := absorbWith_wp upd_wp h0
 
 end VG.Proof.CmacTripleDes.Stream.X86
 
@@ -1440,21 +1433,17 @@ theorem finPre_wp {s₀ : State} (hp : HPre s₀) : WP isa finPre s₀ (HMid s�
 
 /-! ## The whole function -/
 
-/-- `finish` over any code `f` that does what a run of `finalize` in its
-frame does (`fin_wp`). -/
-theorem finishWith_wp {f : Prog isa}
-    (hf : ∀ {s : State} {K St P S : BitVec 32} {L : Nat}, FArgs s K St P S L → WP isa f s (FPost s K St P S L))
-    {s₀ : State} (h0 : finishX86.pre s₀) :
-    WP isa (finishWith f) s₀ fun s' => abiPreserved s₀ s' ∧ finishX86.post s₀ s' := by
+theorem finish_wp {s₀ : State} (h0 : finishX86.pre s₀) :
+    WP isa finish s₀ fun s' => abiPreserved s₀ s' ∧ finishX86.post s₀ s' := by
   obtain hp := HPre.of h0
   have fS : (arg s₀ 4).toNat + 688 ≤ 2 ^ 32 := hp.fS
   have fSt : (arg s₀ 0).toNat + 416 ≤ 2 ^ 32 := hp.fSt
   have fSt₂ : (hSt s₀).toNat + 416 ≤ 2 ^ 32 := hp.fSt
   have fS₂ : (hSc s₀).toNat + 688 ≤ 2 ^ 32 := hp.fS
   have e24 := hp.esp24
-  unfold finishWith
+  unfold finish
   refine WP.seq (WP.mono (finPre_wp hp) fun s₁ h₁ => ?_)
-  refine WP.seq (WP.mono (hf h₁.args) fun s₂ h₂ => ?_)
+  refine WP.seq (WP.mono (fin_wp h₁.args) fun s₂ h₂ => ?_)
   obtain f₂ : Frame [hoR s₀, ⟨(hSc s₀).setWidth 64, 640⟩, below (hE s₀) 24] s₁.mem s₂.mem := by
     have := h₂.frame; rw [h₁.esp] at this; exact this
   obtain F₂ : Frame (HBig s₀) s₀.mem s₂.mem := (h₁.mem ▸ hMem_frame hp).trans (f₂.sub fun r hr => by
@@ -1533,9 +1522,6 @@ theorem finishWith_wp {f : Prog isa}
       Proof.CmacTripleDes.Stream.tdesCmac_eq]
 
 /-! ## Constant time -/
-
-theorem finish_wp {s₀ : State} (h0 : finishX86.pre s₀) :
-    WP isa finish s₀ fun s' => abiPreserved s₀ s' ∧ finishX86.post s₀ s' := finishWith_wp fin_wp h0
 
 /-- What `finalize` leaves. -/
 structure HAft (s₀ s : State) : Prop where

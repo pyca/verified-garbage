@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Argon2.X86_64.DeriveScrub
 public import VerifiedGarbage.Impl.Argon2.X86_64.Fn
 public import VerifiedGarbage.Proof.Argon2.X86_64.DeriveVerified
-public import VerifiedGarbage.TCB.Emit
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Argon2.X86_64.DeriveLit

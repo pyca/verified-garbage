@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.TCB.Emit
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.RsaPss.X86.Scrub
 public import VerifiedGarbage.Impl.RsaPss.X86.Fn

@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.AesGcm.RISCV64.Bitslice
 public import VerifiedGarbage.Impl.AesGcm.RISCV64.OpenTo
-public import VerifiedGarbage.Impl.AesGcm.RISCV64.SealGather
+public import VerifiedGarbage.Impl.AesGcm.RISCV64.DirectGather
 public import VerifiedGarbage.Impl.Scrub.RISCV64
 
 /-!
@@ -77,10 +77,10 @@ def openToBs : Prog isa :=
   scrubSel 32 [(2048, [(0, 256)]), (2048, [(0, 256)]), (160, [(0, 20)])]
     (withStackScratchArgs 2608 5 Impl.AesGcm.RISCV64.OpenTo.openToBs)
 
-/-- `vg_aes_gcm_seal_gather_bitsliced`, then its cleanup: the frames of its
-call of `vg_aes_gcm_seal_bitsliced`'s code, 32 bytes lower, below its own. -/
+/-- Direct gather seal, followed by clearing the secret-bearing words of
+its own workspace and its callees' stack frames. -/
 def sealGatherBs : Prog isa :=
-  scrubSel 0 [(2048, [(0, 256)]), (2048, [(0, 256)]), (176, [(0, 22)])]
-    Impl.AesGcm.RISCV64.SealGather.sealGatherBs
+  scrubSel 0 [(2048, [(0, 256)]), (2048, [(0, 256)]), (160, [(0, 20)])]
+    Impl.AesGcm.RISCV64.DirectGather.sealGather
 
 end VG.Impl.AesGcm.RISCV64.Fn

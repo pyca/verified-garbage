@@ -43,11 +43,6 @@ read through the first stack argument, and its cipher
   `prepare_wp`: the table's address to the buffer's first slot, taken with
   `symPush` in the four bytes below `esp`, and the 48 rounds' keys in the
   order of use (`Ready`).
-
-The block function and the keys' conversion use the first 432 bytes of the
-buffer (`le_len`): their lemmas are for a buffer of any length `N` of at
-least as many (`crypt_blk`, `prepBody_wp`), of which the modes' core's, of
-944 bytes, is one (`crypt_wp`, `prepare_wp`).
 -/
 
 @[expose] public section
@@ -326,26 +321,21 @@ theorem ea_sb {B : BitVec 32} (hB : s.gpr sb = B) {o : Nat} (h : B.toNat + o < 2
   show (s.gpr sb + BitVec.ofNat 32 o).setWidth 64 = _
   rw [hB]; exact addr_eq h
 
-/-- An offset within the 432 bytes the block function uses is within a
-buffer of at least as many. -/
-theorem le_len {N : Nat} (hN : 432 ≤ N) {a : Nat} (h : a ≤ 432) : a ≤ N := Nat.le_trans h hN
-
 /-- A round of DES in the scratch buffer at `B`: with the right half `r`
 in `xmm7` and the left half `l` in the target's slot (both rotated right
 by one), and the keys of the round `j` at `[kr + koff]`, the input half
 goes to its slot and `xmm7` holds `l` with the round function of `r`. -/
 theorem round_step {f : XReg → BitVec 128} {is : List Instr} {Q : State → Prop} {sin stgt koff j : Nat}
     {B : BitVec 32} {k : Schedule} {l r : BitVec 32}
-    (hB : s.gpr sb = B) (hb : s.gpr tbr = s.syms tableName) {N : Nat} (hN : 432 ≤ N)
-    (hw : (⟨B.setWidth 64, N⟩ : Region) ∈ s.wr)
-    (hfit : B.toNat + N ≤ 2 ^ 32) (hsl : (sin = sA ∧ stgt = sB) ∨ (sin = sB ∧ stgt = sA)) (hj : j < 48)
+    (hB : s.gpr sb = B) (hb : s.gpr tbr = s.syms tableName) (hw : (⟨B.setWidth 64, 944⟩ : Region) ∈ s.wr)
+    (hfit : B.toNat + 944 ≤ 2 ^ 32) (hsl : (sin = sA ∧ stgt = sB) ∨ (sin = sB ∧ stgt = sA)) (hj : j < 48)
     (hka : s.ea (at_ kr koff) = sa B (keyOff + 8 * j)) (hK : Keys s.mem B k)
     (hX : dword (f .xmm7) 0 = r.rotateRight 1) (hT : dword (s.mem.readW (sa B stgt) 128) 0 = l.rotateRight 1)
     (k' : ∀ g : XReg → BitVec 128,
       dword (g .xmm7) 0 = (l ^^^ roundFunction r ((k.getD (ord j) 0).setWidth 48)).rotateRight 1 →
       WP isa (.block is) { ({ s with mem := s.mem.writeW (sa B sin) (f .xmm7) } : State) with xmm := g } Q) :
     WP isa (.block (round sin stgt koff ++ is)) { s with xmm := f } Q := by
-  have hin : ∀ o n, o + n ≤ N → InRegions s.wr (sa B o) n := fun o n h =>
+  have hin : ∀ o n, o + n ≤ 944 → InRegions s.wr (sa B o) n := fun o n h =>
     ⟨_, hw, VG.Offset.contains_base _ h (by omega_arith)⟩
   have hsin : sin + 16 ≤ 48 ∧ 16 ≤ sin := by rcases hsl with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> simp [sA, sB]
   have hstgt : stgt + 16 ≤ 48 ∧ 16 ≤ stgt := by rcases hsl with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> simp [sA, sB]
@@ -353,7 +343,7 @@ theorem round_step {f : XReg → BitVec 128} {is : List Instr} {Q : State → Pr
   refine round_wp (ea_sb hB (by omega_arith)) (ea_sb hB (by omega_arith)) hka hb (hin _ _ (by omega_arith))
     ⟨_, List.mem_append_right _ hw, VG.Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
     ⟨_, List.mem_append_right _ hw,
-      VG.Offset.contains_base _ (show keyOff + 8 * j + 8 ≤ N by simp only [keyOff]; omega_arith)
+      VG.Offset.contains_base _ (show keyOff + 8 * j + 8 ≤ 944 by simp only [keyOff]; omega_arith)
         (by simp only [keyOff]; omega_arith)⟩ fun g hg => k' g ?_
   have eK : (s.mem.writeW (sa B sin) (f .xmm7)).readW (sa B (keyOff + 8 * j)) 64 =
       kw1 (k.getD (ord j) 0) ++ kw0 (k.getD (ord j) 0) := by
@@ -555,22 +545,21 @@ structure PInv (s₀ : State) (B : BitVec 32) (k : Schedule) (p t : Nat) (st : B
 abbrev rk (k : Schedule) (i : Nat) : BitVec 48 := (k.getD (ord i) 0).setWidth 48
 
 /-- Two rounds, and the count. -/
-theorem double_wp {s₀ : State} {B : BitVec 32} {k : Schedule} {N : Nat} (hN : 432 ≤ N)
-    (hw : (⟨B.setWidth 64, N⟩ : Region) ∈ s₀.wr)
-    (hfit : B.toNat + N ≤ 2 ^ 32) {p t : Nat} (hp : p < 3) (ht : t < 8) {st : BitVec 32 × BitVec 32}
+theorem double_wp {s₀ : State} {B : BitVec 32} {k : Schedule} (hw : (⟨B.setWidth 64, 944⟩ : Region) ∈ s₀.wr)
+    (hfit : B.toNat + 944 ≤ 2 ^ 32) {p t : Nat} (hp : p < 3) (ht : t < 8) {st : BitVec 32 × BitVec 32}
     (h : PInv s₀ B k p t st s) :
     WP isa (.block double) s fun s' =>
       PInv s₀ B k p (t + 1) (feistelStep (rk k (16 * p + 2 * t + 1)) (feistelStep (rk k (16 * p + 2 * t)) st)) s' ∧
         eval .ne s' = some (decide (t + 1 < 8)) := by
-  have hw' : (⟨B.setWidth 64, N⟩ : Region) ∈ s.wr := by rw [h.base.wr]; exact hw
+  have hw' : (⟨B.setWidth 64, 944⟩ : Region) ∈ s.wr := by rw [h.base.wr]; exact hw
   show WP isa (.block (round sA sB 0 ++ (round sB sA 8 ++ [.alu .add kr (.imm 16), .alu .sub .ecx (.imm 1)])))
     { s with xmm := s.xmm } _
-  refine round_step (j := 16 * p + 2 * t) (l := st.1) (r := st.2) h.base.sb h.base.tb hN hw' hfit (.inl ⟨rfl, rfl⟩)
+  refine round_step (j := 16 * p + 2 * t) (l := st.1) (r := st.2) h.base.sb h.base.tb hw' hfit (.inl ⟨rfl, rfl⟩)
     (by omega_arith)
     (ea_kr h.kr (by show B.toNat + (keyOff + 8 * (16 * p + 2 * t) + 0) < 2 ^ 32; have := keyOff_eq; omega_arith))
     h.base.keys h.x7 h.sl fun g₁ h₁ => ?_
   refine round_step (j := 16 * p + 2 * t + 1) (l := st.2) (r := st.1 ^^^ roundFunction st.2 (rk k (16 * p + 2 * t)))
-    h.base.sb h.base.tb hN hw' hfit (.inr ⟨rfl, rfl⟩) (by omega_arith)
+    h.base.sb h.base.tb hw' hfit (.inr ⟨rfl, rfl⟩) (by omega_arith)
     ((ea_kr (s := s) h.kr
         (by show B.toNat + (keyOff + 8 * (16 * p + 2 * t) + 8) < 2 ^ 32; have := keyOff_eq; omega_arith)).trans
       (congrArg (sa B) (show keyOff + 8 * (16 * p + 2 * t) + 8 = keyOff + 8 * (16 * p + 2 * t + 1) by omega_arith)))
@@ -669,9 +658,8 @@ structure OInv (s₀ : State) (B : BitVec 32) (k : Schedule) (p : Nat) (v : BitV
   sl : dword (s.mem.readW (sa B sB) 128) 0 = (hi v).rotateRight 1
 
 /-- A pass: eight double rounds, and the exchange of the halves. -/
-theorem pass_wp {s₀ : State} {B : BitVec 32} {k : Schedule} {N : Nat} (hN : 432 ≤ N)
-    (hw : (⟨B.setWidth 64, N⟩ : Region) ∈ s₀.wr)
-    (hfit : B.toNat + N ≤ 2 ^ 32) {p : Nat} (hp : p < 3) {v : BitVec 64} (h : OInv s₀ B k p v s) :
+theorem pass_wp {s₀ : State} {B : BitVec 32} {k : Schedule} (hw : (⟨B.setWidth 64, 944⟩ : Region) ∈ s₀.wr)
+    (hfit : B.toNat + 944 ≤ 2 ^ 32) {p : Nat} (hp : p < 3) {v : BitVec 64} (h : OInv s₀ B k p v s) :
     WP isa (.seq (.block [.mov .ecx (.imm 8)]) (.seq (.loop (.block double) .ne) (.block exchange))) s fun s' =>
       OInv s₀ B k (p + 1) (desCore (componentSchedule k p) (dirOf p) v) s' ∧
         eval .ne s' = some (decide (p + 1 < 3)) := by
@@ -686,14 +674,14 @@ theorem pass_wp {s₀ : State} {B : BitVec 32} {k : Schedule} {N : Nat} (hN : 43
       by rw [u₁.upd.other _ (by decide)]; exact h.edx, by rw [u₁.xmm]; exact h.x7,
       by rw [u₁.upd.mem]; exact h.sl⟩
   refine WP.seq (WP.mono (count_loop (I := fun t u => PInv s₀ B k p t (pk k p (hi v, lo v) (2 * t)) u) (by decide) h₁
-    fun t u ht hI => WP.mono (double_wp hN hw hfit hp ht hI) fun u' ⟨a, b⟩ => ⟨?_, b⟩) fun s₂ h₂ => ?_)
+    fun t u ht hI => WP.mono (double_wp hw hfit hp ht hI) fun u' ⟨a, b⟩ => ⟨?_, b⟩) fun s₂ h₂ => ?_)
   · rw [show 2 * (t + 1) = 2 * t + 1 + 1 by omega_arith, pk_succ, pk_succ]; exact a
-  have hw' : (⟨B.setWidth 64, N⟩ : Region) ∈ s₂.wr := by rw [h₂.base.wr]; exact hw
+  have hw' : (⟨B.setWidth 64, 944⟩ : Region) ∈ s₂.wr := by rw [h₂.base.wr]; exact hw
   have ea : s₂.ea (at_ sb sB) = sa B sB := ea_sb h₂.base.sb (by simp only [sB]; omega_arith)
-  have hin : InRegions s₂.wr (sa B sB) 16 := ⟨_, hw', VG.Offset.contains_base _ (le_len hN (by decide)) (by decide)⟩
+  have hin : InRegions s₂.wr (sa B sB) 16 := ⟨_, hw', VG.Offset.contains_base _ (by decide) (by decide)⟩
   show WP isa (.block (ld .xmm0 sb sB :: stx sb sB .xmm7 :: x .movdqa .xmm7 .xmm0 :: [.alu .sub .edx (.imm 1)]))
     { s₂ with xmm := s₂.xmm } _
-  refine wp_ld ea ⟨_, List.mem_append_right _ hw', VG.Offset.contains_base _ (le_len hN (by decide)) (by decide)⟩
+  refine wp_ld ea ⟨_, List.mem_append_right _ hw', VG.Offset.contains_base _ (by decide) (by decide)⟩
     (wp_st ea hin (wp_xs rfl (xsubi fun s₃ u₃ z₃ => WP.block_nil ⟨⟨⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_, ?_, ?_, ?_⟩, ?_⟩)))
   · rw [u₃.upd.other _ (by decide)]; exact h₂.base.sb
   · rw [u₃.upd.other _ (by decide), u₃.upd.syms]; exact h₂.base.tb
@@ -727,11 +715,10 @@ def passes (k : Schedule) (v : BitVec 64) : Nat → BitVec 64
   | p + 1 => desCore (componentSchedule k p) (dirOf p) (passes k v p)
 
 /-- The 48 rounds. -/
-theorem rounds_wp {s₀ : State} {B : BitVec 32} {k : Schedule} {N : Nat} (hN : 432 ≤ N)
-    (hw : (⟨B.setWidth 64, N⟩ : Region) ∈ s₀.wr)
-    (hfit : B.toNat + N ≤ 2 ^ 32) {v : BitVec 64} (h : OInv s₀ B k 0 v s) :
+theorem rounds_wp {s₀ : State} {B : BitVec 32} {k : Schedule} (hw : (⟨B.setWidth 64, 944⟩ : Region) ∈ s₀.wr)
+    (hfit : B.toNat + 944 ≤ 2 ^ 32) {v : BitVec 64} (h : OInv s₀ B k 0 v s) :
     WP isa rounds s (OInv s₀ B k 3 (passes k v 3)) :=
-  count_loop (I := fun p u => OInv s₀ B k p (passes k v p) u) (by decide) h fun _ _ hp hI => pass_wp hN hw hfit hp hI
+  count_loop (I := fun p u => OInv s₀ B k p (passes k v p) u) (by decide) h fun _ _ hp hI => pass_wp hw hfit hp hI
 
 /-! ## The block's two ends -/
 
@@ -747,28 +734,27 @@ theorem sa_add4 (B : BitVec 32) (o : Nat) : sa B o + 4 = sa B (o + 4) := by
   rw [sa, BitVec.add_assoc, show (4 : Addr) = BitVec.ofNat 64 4 from rfl, ← BitVec.ofNat_add]
 
 /-- The block to the first round's halves. -/
-theorem head_wp {B : BitVec 32} {k : Schedule} (hB : s.gpr sb = B) {N : Nat} (hN : 432 ≤ N)
-    (hw : (⟨B.setWidth 64, N⟩ : Region) ∈ s.wr)
-    (hfit : B.toNat + N ≤ 2 ^ 32) (htb : s.mem.readW (B.setWidth 64) 32 = s.syms tableName) (hk : Keys s.mem B k) :
+theorem head_wp {B : BitVec 32} {k : Schedule} (hB : s.gpr sb = B) (hw : (⟨B.setWidth 64, 944⟩ : Region) ∈ s.wr)
+    (hfit : B.toNat + 944 ≤ 2 ^ 32) (htb : s.mem.readW (B.setWidth 64) 32 = s.syms tableName) (hk : Keys s.mem B k) :
     WP isa (.block cryptHead) s
       (OInv s B k 0 (permute Spec.TripleDes.ip (decodeBlock (blockAt s.mem (sa B blkOff))))) := by
-  have ha : ∀ o, o + 4 ≤ N → addr B o = sa B o := fun o h => addr_eq (by omega_arith)
-  have hin : ∀ o, o + 4 ≤ N → InRegions (s.rd ++ s.wr) (addr B o) 4 := fun o h => by
+  have ha : ∀ o, o + 4 ≤ 944 → addr B o = sa B o := fun o h => addr_eq (by omega_arith)
+  have hin : ∀ o, o + 4 ≤ 944 → InRegions (s.rd ++ s.wr) (addr B o) 4 := fun o h => by
     rw [ha o h]; exact ⟨_, List.mem_append_right _ hw, VG.Offset.contains_base _ h (by omega_arith)⟩
   show WP isa (.block (.mov tbr (.mem ⟨sb, 0⟩) :: .mov .esi (.mem ⟨sb, blkOff⟩) :: .mov .ecx (.mem ⟨sb, blkOff + 4⟩) ::
     .bswap .esi :: .bswap .ecx :: (ip ++ [.xop (.movd .xmm0 .esi), stx sb sB .xmm0, .xop (.movd .xmm7 .ecx),
       .mov kr (.reg sb), .alu .add kr (.imm (BitVec.ofNat 32 keyOff)), .mov .edx (.imm 3)]))) s _
-  refine wp_ldm hB (hin 0 (by omega_arith)) fun s₁ u₁ => ?_
-  refine wp_ldm (B := B) (by rw [u₁.other _ (by decide)]; exact hB) (by rw [u₁.rd, u₁.wr]; exact hin _ (le_len hN (by decide)))
+  refine wp_ldm hB (hin 0 (by decide)) fun s₁ u₁ => ?_
+  refine wp_ldm (B := B) (by rw [u₁.other _ (by decide)]; exact hB) (by rw [u₁.rd, u₁.wr]; exact hin _ (by decide))
     fun s₂ u₂ => ?_
   refine wp_ldm (B := B) (by rw [u₂.other _ (by decide), u₁.other _ (by decide)]; exact hB)
-    (by rw [u₂.rd, u₂.wr, u₁.rd, u₁.wr]; exact hin _ (le_len hN (by decide))) fun s₃ u₃ => ?_
+    (by rw [u₂.rd, u₂.wr, u₁.rd, u₁.wr]; exact hin _ (by decide)) fun s₃ u₃ => ?_
   refine wp_bswap fun s₄ u₄ => wp_bswap fun s₅ u₅ => ip_wp fun s₆ a₆ b₆ o₆ m₆ r₆ w₆ y₆ => ?_
   have mem₅ : s₅.mem = s.mem := by rw [u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.mem]
   have e_esi : s₅.gpr .esi = bswap (s.mem.readW (sa B blkOff) 32) := by
-    rw [u₅.other _ (by decide), u₄.gpr, u₃.other _ (by decide), u₂.gpr, u₁.mem, ha _ (le_len hN (by decide))]
+    rw [u₅.other _ (by decide), u₄.gpr, u₃.other _ (by decide), u₂.gpr, u₁.mem, ha _ (by decide)]
   have e_ecx : s₅.gpr .ecx = bswap (s.mem.readW (sa B (blkOff + 4)) 32) := by
-    rw [u₅.gpr, u₄.other _ (by decide), u₃.gpr, u₂.mem, u₁.mem, ha _ (le_len hN (by decide))]
+    rw [u₅.gpr, u₄.other _ (by decide), u₃.gpr, u₂.mem, u₁.mem, ha _ (by decide)]
   have hv : s₅.gpr .esi ++ s₅.gpr .ecx = decodeBlock (blockAt s.mem (sa B blkOff)) := by
     rw [VG.Proof.TripleDes.X86.decodeBlock_readW, e_esi, e_ecx, sa_add4]
   rw [hv] at a₆ b₆
@@ -781,12 +767,12 @@ theorem head_wp {B : BitVec 32} {k : Schedule} (hB : s.gpr sb = B) {N : Nat} (hN
   have sb₆ : s₆.gpr sb = B := by rw [g₆ _ (by decide) (by decide) (by decide) (by decide)]; exact hB
   have tb₆ : s₆.gpr tbr = s.syms tableName := by
     rw [o₆ _ (by decide) (by decide) (by decide), u₅.other _ (by decide), u₄.other _ (by decide),
-      u₃.other _ (by decide), u₂.other _ (by decide), u₁.gpr, ha 0 (by omega_arith)]
+      u₃.other _ (by decide), u₂.other _ (by decide), u₁.gpr, ha 0 (by decide)]
     exact (congrArg (s.mem.readW · 32) (BitVec.add_zero _)).trans htb
   show WP isa (.block (.xop (.movd .xmm0 .esi) :: stx sb sB .xmm0 :: .xop (.movd .xmm7 .ecx) ::
     .mov kr (.reg sb) :: .alu .add kr (.imm (BitVec.ofNat 32 keyOff)) :: [.mov .edx (.imm 3)])) { s₆ with xmm := s₆.xmm } _
   refine wp_xs rfl (wp_st (ea_sb sb₆ (by simp only [sB]; omega_arith))
-    ⟨_, by rw [wr₆]; exact hw, VG.Offset.contains_base _ (le_len hN (by decide)) (by decide)⟩ (wp_xs rfl (xmov fun s₇ u₇ =>
+    ⟨_, by rw [wr₆]; exact hw, VG.Offset.contains_base _ (by decide) (by decide)⟩ (wp_xs rfl (xmov fun s₇ u₇ =>
       xaddi fun s₈ u₈ => xmovi fun s₉ u₉ => WP.block_nil ⟨⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_, ?_, ?_, ?_⟩)))
   · rw [u₉.upd.other _ (by decide), u₈.upd.other _ (by decide), u₇.upd.other _ (by decide)]; exact sb₆
   · rw [u₉.upd.other _ (by decide), u₈.upd.other _ (by decide), u₇.upd.other _ (by decide), u₉.upd.syms, u₈.upd.syms,
@@ -821,36 +807,35 @@ theorem readW_dword0 (m : Mem) (a : Addr) : m.readW a 32 = dword (m.readW a 128)
   exact h.symm
 
 /-- The halves after the last exchange to the block. -/
-theorem tail_wp {s₀ : State} {B : BitVec 32} {k : Schedule} {N : Nat} (hN : 432 ≤ N)
-    (hw : (⟨B.setWidth 64, N⟩ : Region) ∈ s₀.wr)
-    (hfit : B.toNat + N ≤ 2 ^ 32) {V : BitVec 64} (h : OInv s₀ B k 3 V s) :
+theorem tail_wp {s₀ : State} {B : BitVec 32} {k : Schedule} (hw : (⟨B.setWidth 64, 944⟩ : Region) ∈ s₀.wr)
+    (hfit : B.toNat + 944 ≤ 2 ^ 32) {V : BitVec 64} (h : OInv s₀ B k 3 V s) :
     WP isa (.block cryptTail) s fun s' =>
       s'.gpr sb = B ∧ s'.gpr .esp = s₀.gpr .esp ∧ s'.rd = s₀.rd ∧ s'.wr = s₀.wr ∧ s'.syms = s₀.syms ∧
         Keys s'.mem B k ∧ Frame [⟨sa B blkOff, 40⟩] s₀.mem s'.mem ∧
         blockAt s'.mem (sa B blkOff) = encodeBlock (permute Spec.TripleDes.fp V) := by
-  have hw' : (⟨B.setWidth 64, N⟩ : Region) ∈ s.wr := by rw [h.base.wr]; exact hw
-  have ha : ∀ o, o + 4 ≤ N → addr B o = sa B o := fun o h => addr_eq (by omega_arith)
-  have hin : ∀ o, o + 4 ≤ N → InRegions s.wr (addr B o) 4 := fun o h => by
+  have hw' : (⟨B.setWidth 64, 944⟩ : Region) ∈ s.wr := by rw [h.base.wr]; exact hw
+  have ha : ∀ o, o + 4 ≤ 944 → addr B o = sa B o := fun o h => addr_eq (by omega_arith)
+  have hin : ∀ o, o + 4 ≤ 944 → InRegions s.wr (addr B o) 4 := fun o h => by
     rw [ha o h]; exact ⟨_, hw', VG.Offset.contains_base _ h (by omega_arith)⟩
-  have hin' : ∀ o, o + 4 ≤ N → InRegions (s.rd ++ s.wr) (addr B o) 4 := fun o h =>
+  have hin' : ∀ o, o + 4 ≤ 944 → InRegions (s.rd ++ s.wr) (addr B o) 4 := fun o h =>
     let ⟨r, hr, c⟩ := hin o h; ⟨r, List.mem_append_right _ hr, c⟩
   show WP isa (.block (stx sb sA .xmm7 :: .mov .esi (.mem ⟨sb, sB⟩) :: .mov .ecx (.mem ⟨sb, sA⟩) ::
     (fp ++ [.bswap .esi, .bswap .ecx, .store ⟨sb, blkOff⟩ .esi, .store ⟨sb, blkOff + 4⟩ .ecx]))) { s with xmm := s.xmm } _
   refine wp_st (ea_sb h.base.sb (by simp only [sA]; omega_arith))
-    ⟨_, hw', VG.Offset.contains_base _ (le_len hN (by decide)) (by decide)⟩ ?_
-  refine wp_ldm (B := B) h.base.sb (hin' _ (le_len hN (by decide))) fun s₂ u₂ => ?_
+    ⟨_, hw', VG.Offset.contains_base _ (by decide) (by decide)⟩ ?_
+  refine wp_ldm (B := B) h.base.sb (hin' _ (by decide)) fun s₂ u₂ => ?_
   refine wp_ldm (B := B) (by rw [u₂.other _ (by decide)]; exact h.base.sb)
-    (by rw [u₂.rd, u₂.wr]; exact hin' _ (le_len hN (by decide))) fun s₃ u₃ => ?_
+    (by rw [u₂.rd, u₂.wr]; exact hin' _ (by decide)) fun s₃ u₃ => ?_
   have e_l : s₃.gpr .esi = (hi V).rotateRight 1 := by
     rw [u₃.other _ (by decide), u₂.gpr]
     show (s.mem.writeW (sa B sA) (s.xmm .xmm7)).readW (addr B sB) 32 = _
-    rw [ha _ (le_len hN (by decide)), Mem.readW_writeW_sep (VG.Offset.sep _ (.inr (by decide)) (by decide) (by decide)) (by decide),
+    rw [ha _ (by decide), Mem.readW_writeW_sep (VG.Offset.sep _ (.inr (by decide)) (by decide) (by decide)) (by decide),
       readW_dword0]
     exact h.sl
   have e_r : s₃.gpr .ecx = (lo V).rotateRight 1 := by
     rw [u₃.gpr, u₂.mem]
     show (s.mem.writeW (sa B sA) (s.xmm .xmm7)).readW (addr B sA) 32 = _
-    rw [ha _ (le_len hN (by decide)), readW_dword0, readW_self128]
+    rw [ha _ (by decide), readW_dword0, readW_self128]
     exact h.x7
   refine fp_wp e_l e_r fun s₄ a₄ b₄ o₄ m₄ r₄ w₄ y₄ => ?_
   refine wp_bswap fun s₅ u₅ => wp_bswap fun s₆ u₆ => ?_
@@ -859,15 +844,15 @@ theorem tail_wp {s₀ : State} {B : BitVec 32} {k : Schedule} {N : Nat} (hN : 43
       u₃.other _ (by decide), u₂.other _ (by decide)]
     exact h.base.sb
   have wr₆ : s₆.wr = s.wr := by rw [u₆.wr, u₅.wr, w₄, u₃.wr, u₂.wr]
-  refine wp_stm (b := sb) (B := B) (o := blkOff) sb₆ (by rw [wr₆]; exact hin _ (le_len hN (by decide))) fun s₇ u₇ => ?_
+  refine wp_stm (b := sb) (B := B) (o := blkOff) sb₆ (by rw [wr₆]; exact hin _ (by decide)) fun s₇ u₇ => ?_
   refine wp_stm (b := sb) (B := B) (o := blkOff + 4) ((congrFun u₇.gpr _).trans sb₆)
-    (by rw [u₇.wr, wr₆]; exact hin _ (le_len hN (by decide))) fun s₈ u₈ => WP.block_nil ?_
+    (by rw [u₇.wr, wr₆]; exact hin _ (by decide)) fun s₈ u₈ => WP.block_nil ?_
   rw [show hi V ++ lo V = V from VG.Proof.TripleDes.halves_append V] at a₄ b₄
   have e₆ : s₆.gpr .esi = bswap (hi (permute Spec.TripleDes.fp V)) := by rw [u₆.other _ (by decide), u₅.gpr, a₄]
   have c₆ : s₆.gpr .ecx = bswap (lo (permute Spec.TripleDes.fp V)) := by rw [u₆.gpr, u₅.other _ (by decide), b₄]
   have mem₈ : s₈.mem = (s.mem.writeW (sa B sA) (s.xmm .xmm7)).writeW (sa B blkOff)
       (VG.byteRev64 (permute Spec.TripleDes.fp V)) := by
-    rw [u₈.mem, u₇.mem, u₇.gpr, e₆, c₆, u₆.mem, u₅.mem, m₄, u₃.mem, u₂.mem, ha _ (le_len hN (by decide)), ha _ (le_len hN (by decide)),
+    rw [u₈.mem, u₇.mem, u₇.gpr, e₆, c₆, u₆.mem, u₅.mem, m₄, u₃.mem, u₂.mem, ha _ (by decide), ha _ (by decide),
       ← sa_add4, VG.Proof.TripleDes.X86.writeW_pair, VG.Proof.TripleDes.X86.bswapPair,
       VG.Proof.TripleDes.halves_append]
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
@@ -917,24 +902,6 @@ theorem passes3 (k : Schedule) (v : BitVec 64) :
     passes k v 3 = desCore (componentSchedule k 2) .encrypt (desCore (componentSchedule k 1) .decrypt
       (desCore (componentSchedule k 0) .encrypt v)) := rfl
 
-/-- The block at byte 8 of a buffer of `N` bytes at `B`, enciphered in place,
-with the table's address in the buffer's first slot and the rounds' keys in
-it: the keys stay, and of memory only the block and the two slots change. -/
-theorem crypt_blk {s : State} {B : BitVec 32} {k : Schedule} {N : Nat} (hN : 432 ≤ N) (hB : s.gpr sb = B)
-    (hw : (⟨B.setWidth 64, N⟩ : Region) ∈ s.wr) (hfit : B.toNat + N ≤ 2 ^ 32)
-    (htb : s.mem.readW (B.setWidth 64) 32 = s.syms tableName) (hk : Keys s.mem B k) :
-    WP isa crypt s fun s' => s'.gpr sb = B ∧ s'.gpr .esp = s.gpr .esp ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
-      s'.syms = s.syms ∧ Keys s'.mem B k ∧ Frame [⟨sa B blkOff, 40⟩] s.mem s'.mem ∧
-      bytesAt s'.mem (sa B blkOff) 8 = dirCipher .encrypt k (bytesAt s.mem (sa B blkOff) 8) := by
-  show WP isa (.seq (.block cryptHead) (.seq rounds (.block cryptTail))) s _
-  refine WP.seq (WP.mono (head_wp hB hN hw hfit htb hk) fun s₁ h₁ =>
-    WP.seq (WP.mono (rounds_wp hN hw hfit h₁) fun s₂ h₂ =>
-    WP.mono (tail_wp hN hw hfit h₂) fun s₃ ⟨a, b, c, d, e, f, g, hblk⟩ => ?_))
-  refine ⟨a, b, c, d, e, f, g, ?_⟩
-  rw [bytesAt_eq, hblk, VG.Proof.TripleDes.X86.Mode.dirCipher_bytes, passes3]
-  show _ = (Spec.TripleDes.encryptBlock k _).toList
-  rw [VG.Proof.TripleDes.encryptBlock_eq_cores]
-
 /-- The block of the core's buffer, enciphered in place. -/
 theorem crypt_wp {s : State} {B : BitVec 32} {k : Schedule} (hB : s.gpr sb = B) (hs : ScrIn s B core.total)
     (hr : Ready s B k) :
@@ -944,7 +911,10 @@ theorem crypt_wp {s : State} {B : BitVec 32} {k : Schedule} (hB : s.gpr sb = B) 
         dirCipher .encrypt k (bytesAt s.mem (blkAddr core B j) (4 * core.bw))) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr := by
   obtain ⟨htb, hk, hfit⟩ := hr
-  refine WP.mono (crypt_blk (N := 944) (by decide) hB hs.wr hfit htb hk) fun s₃ ⟨a, b, c, d, e, f, g, hblk⟩ => ?_
+  have hw : (⟨B.setWidth 64, 944⟩ : Region) ∈ s.wr := hs.wr
+  show WP isa (.seq (.block cryptHead) (.seq rounds (.block cryptTail))) s _
+  refine WP.seq (WP.mono (head_wp hB hw hfit htb hk) fun s₁ h₁ => WP.seq (WP.mono (rounds_wp hw hfit h₁) fun s₂ h₂ =>
+    WP.mono (tail_wp hw hfit h₂) fun s₃ ⟨a, b, c, d, e, f, g, hblk⟩ => ?_))
   refine ⟨a, b, ⟨?_, f, hfit⟩, ?_, fun j hj => ?_, c, d⟩
   · rw [e, ← htb]
     exact g.readW (r := ⟨B.setWidth 64, 4⟩) (Region.contains_self _ _) (fun r hr => by
@@ -955,8 +925,9 @@ theorem crypt_wp {s : State} {B : BitVec 32} {k : Schedule} (hB : s.gpr sb = B) 
     exact VG.Offset.sub_base _ (by decide)
   · obtain rfl : j = 0 := by have : j < 1 := hj; omega_arith
     have eB : blkAddr core B 0 = sa B blkOff := by simp [blkAddr, slotA, core, blkOff]
-    rw [show 4 * core.bw = 8 from rfl, eB]
-    exact hblk
+    rw [show 4 * core.bw = 8 from rfl, eB, bytesAt_eq, hblk, VG.Proof.TripleDes.X86.Mode.dirCipher_bytes, passes3]
+    show _ = (Spec.TripleDes.encryptBlock k _).toList
+    rw [VG.Proof.TripleDes.encryptBlock_eq_cores]
 
 /-! ## The keys -/
 
@@ -1113,8 +1084,8 @@ theorem keyAt_wp {src : Reg} {off dst i i' : Nat} {X Dv B P : BitVec 32} {S : Bi
     (eS4 : addr X (off + 4) = P.setWidth 64 + BitVec.ofNat 64 (8 * i) + 4)
     (eD : addr Dv dst = sa B (keyOff + 8 * i')) (eD4 : addr Dv (dst + 4) = sa B (keyOff + 8 * i') + 4)
     (hi : i < 48) (hi' : i' < 48) (hrs : (⟨P.setWidth 64, 384⟩ : Region) ∈ s.rd ++ s.wr)
-    {N : Nat} (hN : 432 ≤ N) (hw : (⟨B.setWidth 64, N⟩ : Region) ∈ s.wr)
-    (hdis : Region.Disjoint ⟨P.setWidth 64, 384⟩ ⟨B.setWidth 64, N⟩)
+    (hw : (⟨B.setWidth 64, 944⟩ : Region) ∈ s.wr)
+    (hdis : Region.Disjoint ⟨P.setWidth 64, 384⟩ ⟨B.setWidth 64, 944⟩)
     (hS : s.mem.readW (P.setWidth 64 + BitVec.ofNat 64 (8 * i)) 64 = S)
     (k' : ∀ s', s'.mem = s.mem.writeW (sa B (keyOff + 8 * i')) (kq S) →
       (∀ r, r ≠ .ebx → r ≠ .ebp → s'.gpr r = s.gpr r) → s'.rd = s.rd → s'.wr = s.wr → s'.syms = s.syms →
@@ -1124,9 +1095,9 @@ theorem keyAt_wp {src : Reg} {off dst i i' : Nat} {X Dv B P : BitVec 32} {S : Bi
     VG.Offset.contains_base _ (by omega_arith) (by omega_arith)
   have cS4 : (⟨P.setWidth 64, 384⟩ : Region).Contains (P.setWidth 64 + BitVec.ofNat 64 (8 * i) + 4) 4 := by
     rw [add4]; exact VG.Offset.contains_base _ (by omega_arith) (by omega_arith)
-  have cD : (⟨B.setWidth 64, N⟩ : Region).Contains (sa B (keyOff + 8 * i')) 4 :=
+  have cD : (⟨B.setWidth 64, 944⟩ : Region).Contains (sa B (keyOff + 8 * i')) 4 :=
     VG.Offset.contains_base _ (by have := keyOff_eq; omega_arith) (by have := keyOff_eq; omega_arith)
-  have cD4 : (⟨B.setWidth 64, N⟩ : Region).Contains (sa B (keyOff + 8 * i') + 4) 4 := by
+  have cD4 : (⟨B.setWidth 64, 944⟩ : Region).Contains (sa B (keyOff + 8 * i') + 4) 4 := by
     rw [add4]; exact VG.Offset.contains_base _ (by have := keyOff_eq; omega_arith) (by have := keyOff_eq; omega_arith)
   refine key_wp hsrc hD h1 h2 (by rw [eS]; exact ⟨_, hrs, cS⟩) (by rw [eS4]; exact ⟨_, hrs, cS4⟩)
     (by rw [eD]; exact ⟨_, hw, cD⟩) (by rw [eD4]; exact ⟨_, hw, cD4⟩) (by rw [eS, eD]; exact hdis.sep cS cD)
@@ -1157,8 +1128,8 @@ theorem addr_add4 {P : BitVec 32} {a b c : Nat} (hc : a + b = c + 4) (h : P.toNa
     addr (P + BitVec.ofNat 32 a) b = P.setWidth 64 + BitVec.ofNat 64 c + 4 := (addr_add hc h).trans (add4 _ _).symm
 
 /-- The schedule's words are apart from the keys the loop writes. -/
-theorem sched_read {m₁ m : Mem} {B P : BitVec 32} (hf : Frame [⟨sa B keyOff, 384⟩] m₁ m) {N : Nat} (hN : 432 ≤ N)
-    (hdis : Region.Disjoint ⟨P.setWidth 64, 384⟩ ⟨B.setWidth 64, N⟩) {i : Nat} (hi : i < 48) :
+theorem sched_read {m₁ m : Mem} {B P : BitVec 32} (hf : Frame [⟨sa B keyOff, 384⟩] m₁ m)
+    (hdis : Region.Disjoint ⟨P.setWidth 64, 384⟩ ⟨B.setWidth 64, 944⟩) {i : Nat} (hi : i < 48) :
     m.readW (P.setWidth 64 + BitVec.ofNat 64 (8 * i)) 64 = m₁.readW (P.setWidth 64 + BitVec.ofNat 64 (8 * i)) 64 :=
   hf.readW (r := ⟨_, 8⟩) (Region.contains_self _ _) (fun r hr => by
     obtain rfl := List.mem_singleton.mp hr
@@ -1190,30 +1161,29 @@ theorem prepBody_eq : prepBody = key .eax 0 0 ++ (key .edx 0 128 ++ (key .eax 25
 
 /-- A round's keys of the three passes, and the count. -/
 theorem prepBody_wp {s₁ : State} {B P : BitVec 32} {k : Schedule} {t : Nat}
-    (hrs : (⟨P.setWidth 64, 384⟩ : Region) ∈ s₁.rd ++ s₁.wr) {N : Nat} (hN : 432 ≤ N)
-    (hw : (⟨B.setWidth 64, N⟩ : Region) ∈ s₁.wr)
-    (hdis : Region.Disjoint ⟨P.setWidth 64, 384⟩ ⟨B.setWidth 64, N⟩)
-    (hP : P.toNat + 384 ≤ 2 ^ 32) (hfit : B.toNat + N ≤ 2 ^ 32)
+    (hrs : (⟨P.setWidth 64, 384⟩ : Region) ∈ s₁.rd ++ s₁.wr) (hw : (⟨B.setWidth 64, 944⟩ : Region) ∈ s₁.wr)
+    (hdis : Region.Disjoint ⟨P.setWidth 64, 384⟩ ⟨B.setWidth 64, 944⟩)
+    (hP : P.toNat + 384 ≤ 2 ^ 32) (hfit : B.toNat + 944 ≤ 2 ^ 32)
     (hS : ∀ i < 48, s₁.mem.readW (P.setWidth 64 + BitVec.ofNat 64 (8 * i)) 64 = k.getD i 0)
     (ht : t < 16) (h : KInv s₁ B P k t s) :
     WP isa (.block prepBody) s fun s' => KInv s₁ B P k (t + 1) s' ∧ eval .ne s' = some (decide (t + 1 < 16)) := by
   have hrs' : (⟨P.setWidth 64, 384⟩ : Region) ∈ s.rd ++ s.wr := by rw [h.rd, h.wr]; exact hrs
-  have hw' : (⟨B.setWidth 64, N⟩ : Region) ∈ s.wr := by rw [h.wr]; exact hw
+  have hw' : (⟨B.setWidth 64, 944⟩ : Region) ∈ s.wr := by rw [h.wr]; exact hw
   have hko := keyOff_eq
   rw [prepBody_eq]
   refine keyAt_wp (i := t) (i' := t) h.eax h.esi (by decide) (by decide)
     (addr_add (by omega_arith) (by omega_arith)) (addr_add4 (by omega_arith) (by omega_arith))
     (addr_add (by omega_arith) (by omega_arith)) (addr_add4 (by omega_arith) (by omega_arith))
-    (by omega_arith) (by omega_arith) hrs' hN hw' hdis
-    ((sched_read h.frame hN hdis (by omega_arith)).trans (hS _ (by omega_arith))) fun s₂ m₂ g₂ rd₂ wr₂ sy₂ => ?_
+    (by omega_arith) (by omega_arith) hrs' hw' hdis
+    ((sched_read h.frame hdis (by omega_arith)).trans (hS _ (by omega_arith))) fun s₂ m₂ g₂ rd₂ wr₂ sy₂ => ?_
   obtain f₂ : Frame [⟨sa B keyOff, 384⟩] s₁.mem s₂.mem := by
     rw [m₂]; exact h.frame.writeW (List.mem_singleton_self _) _ (keys_contains B (by omega_arith))
   refine keyAt_wp (i := 31 - t) (i' := 16 + t) ((g₂ .edx (by decide) (by decide)).trans h.edx)
     ((g₂ .esi (by decide) (by decide)).trans h.esi) (by decide) (by decide)
     (addr_add (by omega_arith) (by omega_arith)) (addr_add4 (by omega_arith) (by omega_arith))
     (addr_add (by omega_arith) (by omega_arith)) (addr_add4 (by omega_arith) (by omega_arith))
-    (by omega_arith) (by omega_arith) (by rw [rd₂, wr₂]; exact hrs') hN (by rw [wr₂]; exact hw') hdis
-    ((sched_read f₂ hN hdis (by omega_arith)).trans (hS _ (by omega_arith))) fun s₃ m₃ g₃ rd₃ wr₃ sy₃ => ?_
+    (by omega_arith) (by omega_arith) (by rw [rd₂, wr₂]; exact hrs') (by rw [wr₂]; exact hw') hdis
+    ((sched_read f₂ hdis (by omega_arith)).trans (hS _ (by omega_arith))) fun s₃ m₃ g₃ rd₃ wr₃ sy₃ => ?_
   obtain f₃ : Frame [⟨sa B keyOff, 384⟩] s₁.mem s₃.mem := by
     rw [m₃]; exact f₂.writeW (List.mem_singleton_self _) _ (keys_contains B (by omega_arith))
   refine keyAt_wp (i := 32 + t) (i' := 32 + t)
@@ -1221,8 +1191,8 @@ theorem prepBody_wp {s₁ : State} {B P : BitVec 32} {k : Schedule} {t : Nat}
     ((g₃ .esi (by decide) (by decide)).trans ((g₂ .esi (by decide) (by decide)).trans h.esi)) (by decide) (by decide)
     (addr_add (by omega_arith) (by omega_arith)) (addr_add4 (by omega_arith) (by omega_arith))
     (addr_add (by omega_arith) (by omega_arith)) (addr_add4 (by omega_arith) (by omega_arith))
-    (by omega_arith) (by omega_arith) (by rw [rd₃, wr₃, rd₂, wr₂]; exact hrs') hN (by rw [wr₃, wr₂]; exact hw') hdis
-    ((sched_read f₃ hN hdis (by omega_arith)).trans (hS _ (by omega_arith))) fun s₄ m₄ g₄ rd₄ wr₄ sy₄ => ?_
+    (by omega_arith) (by omega_arith) (by rw [rd₃, wr₃, rd₂, wr₂]; exact hrs') (by rw [wr₃, wr₂]; exact hw') hdis
+    ((sched_read f₃ hdis (by omega_arith)).trans (hS _ (by omega_arith))) fun s₄ m₄ g₄ rd₄ wr₄ sy₄ => ?_
   obtain f₄ : Frame [⟨sa B keyOff, 384⟩] s₁.mem s₄.mem := by
     rw [m₄]; exact f₃.writeW (List.mem_singleton_self _) _ (keys_contains B (by omega_arith))
   obtain G : ∀ r, r ≠ .ebx → r ≠ .ebp → s₄.gpr r = s.gpr r := fun r a b =>
@@ -1324,7 +1294,7 @@ theorem prepare_wp {s : State} {B : BitVec 32} {rs : List Region} {k : Schedule}
   obtain eax₂ : s₂.gpr .eax = p := u₂.gpr.trans hval
   refine WP.mono (count_loop (I := KInv s₇ B p (Spec.TripleDes.scheduleAt s.mem (p.setWidth 64))) (n := 16)
     (by decide) ⟨?_, ?_, ?_, ?_, ?_, rfl, rfl, rfl, rfl, Frame.refl _ _, fun i _ h => absurd h (Nat.not_lt_zero _)⟩
-    fun t u ht hI => prepBody_wp (by rw [RD, WR]; exact hsch) (by decide) (by rw [WR]; exact hw) dPB hfitP hfB (fun i hi => ?_)
+    fun t u ht hI => prepBody_wp (by rw [RD, WR]; exact hsch) (by rw [WR]; exact hw) dPB hfitP hfB (fun i hi => ?_)
       ht hI) fun s₈ h₈ => ?_
   · exact (G _ (by decide) (by decide) (by decide) (by decide)).trans sb₀
   · rw [u₇.other _ (by decide), u₆.other _ (by decide), u₅.other _ (by decide), u₄.other _ (by decide),

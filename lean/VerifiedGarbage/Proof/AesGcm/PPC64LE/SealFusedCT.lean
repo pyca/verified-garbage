@@ -62,58 +62,32 @@ theorem bi_agree {c st w sp : Addr} {R : Nat} {A D N : BitVec 64} {s t : State}
   · rw [he.r30,he'.r30,hst,hst']
   · rw [he.r31,he'.r31,hw,hw']
 
-def ArgsI (c st w sp : Addr) (R : Nat) (A D N : BitVec 64) (t : State) : Prop :=
-  ∃ s, BK c st w sp R A D N s ∧ t=argsState s
-
 theorem kern_of {c st w : Addr} {D N : BitVec 64} {V : Reg → BitVec 64} {s : State}
     (K : KernS c w D N.toNat) (hstw : st = w + BitVec.ofNat 64 16) (hc : V .r29 = c) (hst : V .r30 = st)
     (hw : V .r31 = w) (hd : V .r27 = D) (hn : V .r23 = N) (hk : Covers [⟨w + 448, 704⟩] s.wr) :
     Kern V s :=
   KernS.kern (by rw [hc, hw, hd, hn]; exact K) (by rw [hst, hw]; exact hstw) (by rw [hw]; exact hk)
 
-theorem block_call_ct [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.FoldLaw]
-    {c st w sp : Addr} {R : Nat} {A D N : BitVec 64}
-    (L : Lay c st w) (K : KernS c w D N.toNat) (hstw : st = w + BitVec.ofNat 64 16) (hv : R=10 ∨ R=12 ∨ R=14) :
-    CT (ArgsI c st w sp R A D N)
-      (.call "vg_aes_gcm_encrypt_blocks" Impl.AesGcm.PPC64LE.Blocks.encrypt) := by
-  refine RelCT.callEx Blocks.encrypt_correct Blocks.encrypt_ct fun a b ⟨⟨s,⟨hs,hk⟩,ea⟩,⟨t,⟨ht,hk'⟩,eb⟩⟩ => ?_
-  subst a b
-  obtain ⟨V,hc,hst,hw,hR,ha,hd,hn,he,hdata⟩ := hs
-  obtain ⟨V',hc',hst',hw',hR',ha',hd',hn',he',hdata'⟩ := ht
-  have hds : DataW (V .r29) (V .r30) (V .r31) s (V .r27) (V .r23).toNat := by
-    rw [hc,hst,hw,hd,hn]; exact hdata
-  have hdt : DataW (V' .r29) (V' .r30) (V' .r31) t (V' .r27) (V' .r23).toNat := by
-    rw [hc',hst',hw',hd',hn']; exact hdata'
-  have hcs := args_call (L.v hc hst hw) (kern_of K hstw hc hst hw hd hn hk) he hds hR hv
-  have hct := args_call (L.v hc' hst' hw') (kern_of K hstw hc' hst' hw' hd' hn' hk') he' hdt hR' hv
-  refine ⟨blockReads (argsState s),blockWrites (argsState s),
-    blockReads (argsState t),blockWrites (argsState t),hcs.pre,hct.pre,?_,
-    hcs.reads,hcs.writes,hct.reads,hct.writes⟩
-  sig_eval [Proof.Gcm.encryptBlocksContractOf,Proof.Gcm.cryptBlocksSigOf,PPC64LE.abi,PPC64LE.argRegs]
-  simp only [he.r29,he'.r29,he.r30,he'.r30,he.r31,he'.r31,he.r28,he'.r28,
-    he.fr .r27 (by decide),he'.fr .r27 (by decide),he.fr .r23 (by decide),he'.fr .r23 (by decide),
-    hc,hc',hst,hst',hw,hw',hR,hR',hd,hd',hn,hn',he.sp,he'.sp]
-  trivial
-
-theorem blockArgs_taint : ∃ h, (VG.Taint.check VG.PPC64LE.taint (Taint.ofRegs bodyPublic)
-    (.block Impl.AesGcm.PPC64LE.SealFused.blockArgs) h).isSome=true := ⟨_,by taint_decide⟩
+theorem whole_taint : ∃ h, (VG.Taint.check vectorTaint (Taint.ofRegs bodyPublic)
+    (.seq (.block Impl.AesGcm.PPC64LE.SealFused.blockArgs)
+      Impl.AesGcm.PPC64LE.SealFused.aliasCall) h).isSome=true := ⟨_,by taint_decide⟩
 
 theorem whole_ct [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.FoldLaw]
     {c st w sp : Addr} {R : Nat} {A D N : BitVec 64}
-    (L : Lay c st w) (K : KernS c w D N.toNat) (hstw : st = w + BitVec.ofNat 64 16) (hv : R=10 ∨ R=12 ∨ R=14) :
+    (_L : Lay c st w) (_K : KernS c w D N.toNat) (_hstw : st = w + BitVec.ofNat 64 16) (_hv : R=10 ∨ R=12 ∨ R=14) :
     CT (BK c st w sp R A D N)
-      (.seq (.block Impl.AesGcm.PPC64LE.SealFused.blockArgs)
-        (.call "vg_aes_gcm_encrypt_blocks" Impl.AesGcm.PPC64LE.Blocks.encrypt)) := by
-  obtain ⟨_,hc⟩ := blockArgs_taint
-  exact CT.seq (J := ArgsI c st w sp R A D N) (CT.taint bodyPublic (fun _ _ hs ht => bi_agree hs.1 ht.1) hc)
-    (fun s hs => WP.mono (args_ok s) fun t ht => ⟨s,hs,ht⟩) (block_call_ct L K hstw hv)
+      (.seq (.block Impl.AesGcm.PPC64LE.SealFused.blockArgs) Impl.AesGcm.PPC64LE.SealFused.aliasCall) := by
+  obtain ⟨_,hc⟩ := whole_taint
+  refine RelCT.taint (A := vectorTaint) (Taint.ofRegs bodyPublic) (fun _ _ ⟨hs,ht⟩ => ?_) hc
+  obtain ⟨sp,regs⟩ := bi_agree hs.1 ht.1
+  exact ⟨sp,fun r hr => regs r (Taint.mem_ofRegs.mp hr)⟩
 
 theorem whole_bi [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.FoldLaw]
     {c st w sp : Addr} {R : Nat} {A D N : BitVec 64} {s : State}
     (L : Lay c st w) (K : KernS c w D N.toNat) (hstw : st = w + BitVec.ofNat 64 16) (hv : R=10 ∨ R=12 ∨ R=14)
     (hs : BK c st w sp R A D N s) :
     WP isa (.seq (.block Impl.AesGcm.PPC64LE.SealFused.blockArgs)
-      (.call "vg_aes_gcm_encrypt_blocks" Impl.AesGcm.PPC64LE.Blocks.encrypt)) s
+      Impl.AesGcm.PPC64LE.SealFused.aliasCall) s
       (BI c st w sp R A D N) := by
   obtain ⟨⟨V,hc,hst,hw,hR,ha,hd,hn,he,hdata⟩,hk⟩ := hs
   have hds : DataW (V .r29) (V .r30) (V .r31) s (V .r27) (V .r23).toNat := by

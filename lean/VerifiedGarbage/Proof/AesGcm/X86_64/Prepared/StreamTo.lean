@@ -801,7 +801,7 @@ theorem prefixF_ok (hF : ShortFacts) (v : Proof.Aes.X86_64.Ctr32Impl) (T : BlkTo
     · have h0' : sl / 16 ≠ 0 := of_decide_eq_false h0
       exact sPath_ok h ⟨by omega_arith, by omega_arith⟩ hF v (fun r hr => (g₂ r).trans (g₁ r hr)) (m₂.trans m₁)
         (rd₂.trans rd₁) (wr₂.trans wr₁)
-  · exact WP.seq (WP.mono (call_ok h T he₁ ax₁ m₁ rd₁ wr₁) fun _ H => tail_ok h H)
+  · exact WP.seq (WP.mono (call_ok h.toCallInputs T he₁ ax₁ m₁ rd₁ wr₁) fun _ H => tail_ok h H)
 
 end
 
@@ -993,7 +993,7 @@ theorem prefixFRel (hF : Short.ShortFacts) (v : Proof.Aes.X86_64.Ctr32Impl)
     · refine StreamTo.RelCT.of_imp (sl / 16 ≠ 0) (fun _ _ g => by
         have e := g.2; simp only [eval, g.1.1.2.1] at e; simpa using e) fun h0 => ?_
       exact sPath_rel h h' hF v ⟨by omega_using [h0], by omega_using [h4]⟩ fun _ _ g => ⟨g.1.1.2.2, g.1.2.2.2⟩
-  · exact RelCT.seq ((callPart_rel h h' T).mono (fun _ _ g =>
+  · exact RelCT.seq ((callPart_rel h.toCallInputs h'.toCallInputs T).mono (fun _ _ g =>
       ⟨⟨he h g.1.1.2.2, g.1.1.1, g.1.1.2.2.2⟩, ⟨he h' g.1.2.2.2, g.1.2.1, g.1.2.2.2.2⟩⟩) fun _ _ g => g)
       (tail_rel h h')
 
