@@ -315,16 +315,32 @@ def CalleeAt (base : Addr) (bytes len : Nat) (args : Nat → BitVec 32) (sp : Bi
   In (fun _ _ => True) base bytes len args u ∧ u.gpr .esp = sp - BitVec.ofNat 32 80 ∧
     Region.Disjoint ⟨(u.gpr .esp).setWidth 64, 76⟩ ⟨base, bytes⟩
 
+/-- The copy of the arguments reaches the callee's state, its memory the caller's but for the 176 bytes
+below the caller's `esp`. -/
+theorem callee_atF {s : State} (h : In Ex base bytes len args s) (RF : RoomF (s.gpr .esp) base bytes) :
+    WP isa (.block ((List.range 18).flatMap copyArg)) (allocFrame argsFrame s.callEntry) fun u =>
+      CalleeAt base bytes len args (s.gpr .esp) u ∧ Frame (frameF base (s.gpr .esp) []) s.mem u.mem := by
+  have low := RF.low
+  obtain ⟨r4, r76, -, -, -⟩ := callee_regions low
+  generalize ht0 : allocFrame argsFrame s.callEntry = t0
+  obtain ⟨t0esp, t0esp80, -, t0wr, t0rd, t0mem, t0gpr⟩ := callee_entry ht0 low
+  obtain frameEq : below (s.gpr .esp - 4) 76 = ⟨(t0.gpr .esp).setWidth 64, 76⟩ := by simp only [below]; rw [t0esp]
+  rw [frameEq] at r76
+  obtain Fret : Frame [⟨(s.gpr .esp - 4).setWidth 64, 4⟩] s.mem t0.mem := by
+    rw [t0mem]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
+  refine callee_copy h RF ht0 fun u K Fc S => ?_
+  obtain uesp : u.gpr .esp = t0.gpr .esp := K.1 _ (by decide)
+  obtain ue : u.gpr .esp = s.gpr .esp - BitVec.ofNat 32 80 := by rw [uesp, t0esp80]
+  exact ⟨⟨in_callee h RF (f := u) ue (by rw [K.1 _ (by decide), t0gpr _ (by decide)])
+    (by rw [K.2.1, t0rd]) (by rw [K.2.2, t0wr, uesp]) (by rw [uesp]; exact S), ue, callee_frame_apart RF ue⟩,
+    (frameF_of_sub Fret fun r hr => by rw [List.mem_singleton.mp hr]; exact r4).trans
+      (frameF_of_sub Fc fun r hr => by rw [List.mem_singleton.mp hr]; exact r76)⟩
+
 /-- The copy of the arguments reaches the callee's state. -/
 theorem callee_at {s : State} (h : In Ex base bytes len args s) (RF : RoomF (s.gpr .esp) base bytes) :
     WP isa (.block ((List.range 18).flatMap copyArg)) (allocFrame argsFrame s.callEntry)
-      (CalleeAt base bytes len args (s.gpr .esp)) := by
-  obtain ⟨-, t0esp80, -, t0wr, t0rd, -, t0gpr⟩ := callee_entry rfl RF.low
-  refine callee_copy h RF rfl fun u K _ S => ?_
-  obtain uesp : u.gpr .esp = (allocFrame argsFrame s.callEntry).gpr .esp := K.1 _ (by decide)
-  obtain ue : u.gpr .esp = s.gpr .esp - BitVec.ofNat 32 80 := by rw [uesp, t0esp80]
-  exact ⟨in_callee h RF (f := u) ue (by rw [K.1 _ (by decide), t0gpr _ (by decide)])
-    (by rw [K.2.1, t0rd]) (by rw [K.2.2, t0wr, uesp]) (by rw [uesp]; exact S), ue, callee_frame_apart RF ue⟩
+      (CalleeAt base bytes len args (s.gpr .esp)) :=
+  WP.mono (callee_atF h RF) fun _ h => h.1
 
 
 /-- What a call by `argCall` leaves: the caller's inputs and registers, the changes within a stage's, and
@@ -571,7 +587,7 @@ theorem winCall_ok {M : Nat} {s : State} (C : CtxOk Ex base bytes len args .wide
 theorem winTopCall_ok {M L : Nat} {s : State} (C : CtxOk Ex base bytes len args .wide M s)
     (RF : RoomF (s.gpr .esp) base bytes) (h3 : sv s.mem base len .wide 3 = 1)
     (h4 : sv s.mem base len .wide 4 = 2 ^ (16 * bc len .wide) % M) (hx : args 11 = BitVec.ofNat 32 L)
-    (hL0 : 0 < L) (hL : 2 * L ≤ 2 * bc len .wide) (hL32 : 2 * L < 2 ^ 32) :
+    (hL0 : 0 < L) (hL : 2 * L ≤ 2 * bc len .wide) :
     WP isa winTopCall s fun u => CtxOk Ex base bytes len args .wide M u ∧
       Frame (frameF base (s.gpr .esp) (pwR len .wide)) s.mem u.mem ∧
       Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s u ∧

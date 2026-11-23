@@ -213,7 +213,7 @@ theorem ctxP_ok (h : In Ex base bytes len args s) (RF : RoomF (s.gpr .esp) base 
 
 /-- A prepared context keeps one in its slot 3 through an exponentiation. -/
 theorem pwR_sv3 (h : In Ex base bytes len args s) {sp : BitVec 32} {m m' : Mem}
-    (F : Frame (frameR base sp (pwR len .wide)) m m') (R : CallRoom sp base bytes) :
+    (F : Frame (frameF base sp (pwR len .wide)) m m') (R : RoomF sp base bytes) :
     sv m' base len .wide 3 = sv m base len .wide 3 := by
   have nw := h.scratch.nowrap
   obtain f8 := h.slot_fit .wide (j := 8) (by decide)
@@ -229,7 +229,7 @@ theorem pwR_sv3 (h : In Ex base bytes len args s) {sp : BitVec 32} {m m' : Mem}
   obtain e7 := lo_wide len 7
   obtain e8 := lo_wide len 8
   have nb : numBase = 3336 := rfl
-  refine frameR_val32 F R nw (by omega_arith) ?_ (pwR_fit h .wide)
+  refine frameF_val32 F R nw (by omega_arith) ?_ (pwR_fit h .wide)
   intro p hp
   simp only [pwR, List.mem_cons, List.not_mem_nil, or_false] at hp
   rcases hp with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp only [winOff] <;> omega_arith
@@ -285,13 +285,13 @@ theorem powP_ok (h : In Ex base bytes len args s) (RF : RoomF (s.gpr .esp) base 
     rw [slotKeep h₂ (by decide) (by decide) O₃, slotKeep h₁ (by decide) (by decide) O₂, one₁]
   obtain R₃ : sv u₃.mem base len .wide 4 = 2 ^ (16 * bc len .wide) % P := by
     rw [slotKeep h₂ (by decide) (by decide) O₃, slotKeep h₁ (by decide) (by decide) O₂, R₁]
-  refine WP.mono (windowPower_ok C₃ one₃ R₃) fun u ⟨C, F, K, Y⟩ => ?_
+  refine WP.mono (winCall_ok C₃ (by rw [sp₃]; exact RF) one₃ R₃) fun u ⟨C, F, K, Y⟩ => ?_
   rw [B₃, E₃] at Y
   rw [sp₃] at F
-  obtain G := stR_widen F (pwR_in C₃.inp .wide 0)
-  refine ⟨C, Y, ?_, ((F₁.trans (frameF_of G₂)).trans (frameF_of G₃)).trans (frameF_of G), ?_, ?_⟩
-  · rw [pwR_sv3 C₃.inp F (by rw [← sp₃]; exact C₃.inp.room), one₃]
-  · exact (((k₁.trans (kept_ops h G₂ h.room)).trans (kept_ops h G₃ h.room)).trans (kept_ops h G h.room))
+  obtain G := frameF_widen F (pwR_in C₃.inp .wide 0)
+  refine ⟨C, Y, ?_, ((F₁.trans (frameF_of G₂)).trans (frameF_of G₃)).trans G, ?_, ?_⟩
+  · rw [pwR_sv3 C₃.inp F RF, one₃]
+  · exact (((k₁.trans (kept_ops h G₂ h.room)).trans (kept_ops h G₃ h.room)).trans (keptF_ops h G RF))
   · exact ((K₁.trans (K₂.mono (by decide))).trans (K₃.mono (by decide))).trans K
 
 /-! ## Single instructions -/
