@@ -5,6 +5,7 @@ public import VerifiedGarbage.Impl.Sm4.Arm.Ecb
 public import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Arm.Call
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.Framework.Mem
@@ -902,6 +903,7 @@ open VG.Impl.Aes.Arm (sb t0 t1 kp)
 theorem savedSlot_eq : savedSlot = 352 := rfl
 theorem dSlot_eq : dSlot = 361 := rfl
 theorem nSlot_eq : nSlot = 362 := rfl
+theorem lrSlot_eq : lrSlot = 363 := rfl
 
 /-- The scratch buffer at `b`, in the writable regions. -/
 structure ScrIn (rs : List Region) (b : BitVec 32) : Prop where
@@ -1217,6 +1219,99 @@ theorem crypt8_wp {s₀ : State} {E : Nat → Spec.Sm4.Word} (hp : KeyCtx s₀ E
   have c₀₂ := c₁.trans c₂
   obtain ⟨s₃, e₃, c₃, -, -, hout⟩ := fromBs_step hp c₀₂ X₂
   exact WP.of_runBlock ⟨s₃, e₃, c₃, hout⟩
+
+/-! ## The eight blocks as a function, `vg_sm4_crypt8`
+
+`crypt8Call_wp`: a call of `vg_sm4_crypt8` does what `crypt8` does
+(`crypt8_wp`). The function keeps its return address in the slot `lrSlot`,
+above the table, which `crypt8` writes only below: so the memory a call
+changes is the slots below the table and that slot (`CallCtx`). -/
+
+/-- What a call of `vg_sm4_crypt8` keeps: as `Ctx`, but for the slot of its
+return address. -/
+structure CallCtx (s₀ s : State) : Prop where
+  rd : s.rd = s₀.rd
+  wr : s.wr = s₀.wr
+  sp : s.sp = s₀.sp
+  keep : ∀ r, r ∉ layerWrites → r ≠ kp → s.gpr r = s₀.gpr r
+  frame : Frame [⟨State.addr (s₀.gpr sb), 4 * tableSlot⟩, ⟨wordAddr (s₀.gpr sb) lrSlot, 4⟩] s₀.mem s.mem
+
+theorem CallCtx.base {s₀ s : State} (hc : CallCtx s₀ s) : s.gpr sb = s₀.gpr sb :=
+  hc.keep _ (by decide) (by decide)
+
+/-- The tail buffer, past a store to the slot `lrSlot`. -/
+theorem tailBlock_lr {s s' : State} (hfit : (s.gpr sb).toNat + 4 * slots ≤ 2 ^ 32) (hb : s'.gpr sb = s.gpr sb)
+    (hf : Frame [⟨wordAddr (s.gpr sb) lrSlot, 4⟩] s.mem s'.mem) {j : Nat} (hj : j < 8) :
+    tailBlock s' j = tailBlock s j := by
+  rw [slots_eq] at hfit
+  apply Vector.ext; intro u hu
+  simp only [tailBlock, Spec.Sm4.blockAt, Vector.getElem_ofFn, hb]
+  rw [VG.Offset.add_add]
+  refine hf _ fun r hr => ?_
+  simp only [List.mem_singleton] at hr; subst hr
+  rw [slot_addr (by rw [lrSlot_eq]; omega_arith)]
+  exact not_contains_off _ (.inl (by rw [lrSlot_eq, tailSlot_eq]; omega_arith))
+    (by rw [tailSlot_eq]; omega_arith) (by decide) (by rw [lrSlot_eq]; omega_arith)
+
+/-- `vg_sm4_crypt8`'s code: as `crypt8`, and `lr` back. -/
+theorem crypt8Fn_wp {s₀ : State} {E : Nat → Spec.Sm4.Word} (hp : KeyCtx s₀ E) :
+    WP isa crypt8Fn s₀ fun s' => (CallCtx s₀ s' ∧
+      ∀ b < 8, tailBlock s' b = outBlock (quads .enc E 8 (ofBlock (tailBlock s₀ b)))) ∧
+      s'.gpr .lr = s₀.gpr .lr := by
+  have hw : ScrIn s₀.wr (s₀.gpr sb) := ⟨hp.scr, hp.fit⟩
+  have hfit := hp.fit
+  obtain ⟨s₁, e₁, m₁, g₁, rd₁, wr₁, sp₁, -, f₁⟩ := stSlot_ok s₀ .lr sb (k := lrSlot) rfl (by decide) hw
+  obtain b₁ : s₁.gpr sb = s₀.gpr sb := by rw [g₁]
+  obtain hk₁ : KeyCtx s₁ E :=
+    { scr := by rw [b₁, wr₁]; exact hp.scr
+      fit := by rw [b₁]; exact hfit
+      keys := fun e he => (hp.keys e he).congr fun j hj => by
+        rw [b₁, entryW, entryW, m₁, readW_slot_write hfit _
+          (by rw [tableSlot_eq, slots_eq]; omega_arith) (by decide),
+          ite_eq_right (by rw [tableSlot_eq, lrSlot_eq]; omega_arith)] }
+  obtain t₁ : ∀ j < 8, tailBlock s₁ j = tailBlock s₀ j := fun j hj => tailBlock_lr hfit b₁ f₁ hj
+  refine WP.seq (WP.of_runBlock ⟨s₁, e₁, ?_⟩)
+  refine WP.seq (WP.mono (crypt8_wp hk₁) fun s₂ ⟨c₂, o₂⟩ => ?_)
+  obtain b₂ : s₂.gpr sb = s₀.gpr sb := by rw [c₂.base, b₁]
+  obtain ⟨s₃, e₃, r₃, g₃, m₃, rd₃, wr₃, sp₃⟩ := ldSlot_ok s₂ .lr sb (k := lrSlot) b₂ (by decide)
+    (by rw [c₂.wr, wr₁]; exact hw)
+  refine WP.of_runBlock ⟨s₃, e₃, ⟨⟨by rw [rd₃, c₂.rd, rd₁], by rw [wr₃, c₂.wr, wr₁], by rw [sp₃, c₂.sp, sp₁],
+    fun r h1 h2 => ?_, ?_⟩, fun j hj => ?_⟩, ?_⟩
+  · rw [g₃ r (fun h => h1 (by subst h; decide)), c₂.keep r h1 h2, g₁]
+  · rw [m₃]
+    refine (f₁.sub fun r hr => ⟨r, by simp only [List.mem_singleton] at hr; simp [hr], fun _ h => h⟩).trans
+      ((by rw [← b₁]; exact c₂.frame : Frame [⟨State.addr (s₀.gpr sb), 4 * tableSlot⟩] s₁.mem s₂.mem).sub
+        fun r hr => ⟨r, by simp only [List.mem_singleton] at hr; simp [hr], fun _ h => h⟩)
+  · rw [show tailBlock s₃ j = tailBlock s₂ j by simp only [tailBlock, m₃, g₃ sb (by decide)], o₂ j hj, t₁ j hj]
+  · obtain hd : Region.Disjoint ⟨wordAddr (s₀.gpr sb) lrSlot, 4⟩ ⟨State.addr (s₀.gpr sb), 4 * tableSlot⟩ := by
+      rw [slot_addr (by rw [slots_eq] at hfit; rw [lrSlot_eq]; omega_arith)]
+      exact VG.Offset.disjoint_base _ (by rw [lrSlot_eq, tableSlot_eq]; omega_arith) (by rw [lrSlot_eq]; omega_arith)
+    have f₂ := c₂.frame
+    rw [b₁] at f₂
+    rw [r₃, f₂.readW (r := ⟨wordAddr (s₀.gpr sb) lrSlot, 4⟩) (Region.contains_self _ _)
+      (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hd) (by decide), m₁,
+      readW_slot_write hfit _ (by decide) (by decide), ite_eq_left rfl]
+
+/-- A call of `vg_sm4_crypt8` does what `crypt8` does. -/
+theorem crypt8Call_wp {s : State} {E : Nat → Spec.Sm4.Word} (hp : KeyCtx s E) :
+    WP isa crypt8Call s fun s' => CallCtx s s' ∧
+      ∀ b < 8, tailBlock s' b = outBlock (quads .enc E 8 (ofBlock (tailBlock s b))) := by
+  have g8 : s.callEntry.gpr sb = s.gpr sb := State.callEntry_gpr _ (by decide)
+  have hc : KeyCtx s.callEntry E :=
+    { scr := by rw [g8, State.callEntry_wr]; exact hp.scr
+      fit := by rw [g8]; exact hp.fit
+      keys := fun e he => by rw [g8, State.callEntry_mem]; exact hp.keys e he }
+  obtain ⟨tr, s₂, he, ⟨c, out⟩, lr⟩ := crypt8Fn_wp hc
+  refine ⟨_, s₂, .call (call_callEntry s) he (by show (if _ then _ else _) = _; rw [ite_eq_left lr]),
+    ⟨by rw [c.rd, State.callEntry_rd], by rw [c.wr, State.callEntry_wr], by rw [c.sp, State.callEntry_sp],
+      fun r h1 h2 => ?_, ?_⟩, fun j hj => ?_⟩
+  · have hl : ∀ r ∈ linkRegs, r ∈ layerWrites := by decide
+    rw [c.keep r h1 h2]
+    exact State.callEntry_gpr _ (fun h => h1 (hl r h))
+  · have f := c.frame
+    rw [g8, State.callEntry_mem] at f; exact f
+  · rw [out j hj]
+    simp only [tailBlock, g8, State.callEntry_mem]
 
 end VG.Proof.Sm4.Arm
 
@@ -1737,7 +1832,8 @@ end
 
 `dataGroup_wp`: one iteration of the data loop copies the group's blocks
 (eight, or the last one to seven) to the tail buffer, transforms it
-(`crypt8_wp`), copies the blocks back and steps to the next group. The data
+(`crypt8Call_wp`, a call of `vg_sm4_crypt8`), copies the blocks back and
+steps to the next group. The data
 pointer and the blocks left live in their slots (`dSlot`, `nSlot`) between
 the steps, which use every other register.
 -/
@@ -2000,14 +2096,28 @@ theorem dataGroup_wp {s₀ : State} {b D : BitVec 32} {n : Nat} {E : Nat → Spe
     { scr := by rw [base₄, wr₄']; exact hwS.mem
       fit := by rw [base₄]; exact hfit'
       keys := fun e he => by rw [base₄]; exact sc₄.keys e he }
-  refine WP.seq (WP.mono (crypt8_wp hkey) fun s₅ ⟨c₅, b₅⟩ => ?_)
+  refine WP.seq (WP.mono (crypt8Call_wp hkey) fun s₅ ⟨c₅, b₅⟩ => ?_)
   obtain base₅ : s₅.gpr sb = b := by rw [c₅.base, base₄]
-  obtain f₅ : Frame [⟨State.addr b, 4 * tableSlot⟩] s₄.mem s₅.mem := by have := c₅.frame; rw [base₄] at this; exact this
-  obtain keep₅ : ∀ j, tableSlot ≤ j → j < slots → s₅.mem.readW (wordAddr b j) 32 = s₄.mem.readW (wordAddr b j) 32 :=
-    fun j h1 h2 => slot_keep hfit' (Nat.le_refl _) f₅
-      (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact dTab) h1 h2
-  obtain sc₅ : ScrOk s₀ b E s₅.mem := sc₄.frame hfit' f₅ fun r hr => by
-    simp only [List.mem_singleton] at hr; subst hr; exact dTab.sub_left subTab
+  obtain f₅ : Frame [⟨State.addr b, 4 * tableSlot⟩, ⟨wordAddr b lrSlot, 4⟩] s₄.mem s₅.mem := by
+    have := c₅.frame; rw [base₄] at this; exact this
+  -- The call keeps the slots from `tableSlot` to `lrSlot`.
+  obtain dCall : ∀ r ∈ [(⟨State.addr b, 4 * tableSlot⟩ : Region), ⟨wordAddr b lrSlot, 4⟩],
+      (slotsRegion b tableSlot lrSlot).Disjoint r := fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact dTab.sub_left (sub_ts tableSlot lrSlot (Nat.le_refl _) (by decide) (by decide))
+    · rw [slot_addr (by rw [lrSlot_eq]; omega_arith)]
+      exact VG.Offset.disjoint _ (.inl (by decide)) (by decide) (by decide)
+  obtain subCall : ∀ r ∈ [(⟨State.addr b, 4 * tableSlot⟩ : Region), ⟨wordAddr b lrSlot, 4⟩],
+      Region.Sub r ⟨State.addr b, 4 * slots⟩ := fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact Region.sub_prefix (by rw [slots_eq, tableSlot_eq]; omega_arith)
+    · exact slot_sub hfit' (by decide)
+  obtain keep₅ : ∀ j, tableSlot ≤ j → j < lrSlot → s₅.mem.readW (wordAddr b j) 32 = s₄.mem.readW (wordAddr b j) 32 :=
+    fun j h1 h2 => slot_keep hfit' (by decide) f₅ dCall h1 h2
+  obtain sc₅ : ScrOk s₀ b E s₅.mem := sc₄.frame hfit' f₅ fun r hr =>
+    (dCall r hr).sub_left (VG.Offset.sub _ (Nat.le_refl _) (by decide))
   obtain wr₅ : s₅.wr = s.wr := by rw [c₅.wr, wr₄']
   obtain rd₅ : s₅.rd = s.rd := by rw [c₅.rd, rd₄, rd₄a, rd₃]
   obtain sp₅ : s₅.sp = s.sp := by rw [c₅.sp, sp₄, sp₄a, sp₃]
@@ -2095,9 +2205,7 @@ theorem dataGroup_wp {s₀ : State} {b D : BitVec 32} {n : Nat} {E : Nat → Spe
           simp only [List.mem_singleton] at hr; subst hr; rw [hA]
           exact not_contains_off _ (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)
       rw [f₉ _ hout,
-        f₅.bytes (R := ⟨State.addr D, 16 * n⟩) (dD fun r hr => by
-          simp only [List.mem_singleton] at hr; subst hr
-          exact Region.sub_prefix (by rw [slots_eq, tableSlot_eq]; omega_arith)) (by simp only; omega_arith) hin,
+        f₅.bytes (R := ⟨State.addr D, 16 * n⟩) (dD subCall) (by simp only; omega_arith) hin,
         fs.bytes (R := ⟨State.addr D, 16 * n⟩) (dD hsub) (by simp only; omega_arith) hin,
         f₃.bytes (R := ⟨State.addr D, 16 * n⟩) (dD fun r hr => by
           simp only [List.mem_singleton] at hr; subst hr; exact subT) (by simp only; omega_arith) hin,
@@ -2108,11 +2216,9 @@ theorem dataGroup_wp {s₀ : State} {b D : BitVec 32} {n : Nat} {E : Nat → Spe
   obtain fr₉ : Frame [⟨State.addr b, 4 * slots⟩, ⟨State.addr D, 16 * n⟩] s.mem s₉.mem := by
     refine ((f₃.sub fun r hr => ⟨⟨State.addr b, 4 * slots⟩, List.mem_cons_self, ?_⟩).trans
       ((fs.sub fun r hr => ⟨⟨State.addr b, 4 * slots⟩, List.mem_cons_self, hsub r hr⟩).trans
-      ((f₅.sub fun r hr => ⟨⟨State.addr b, 4 * slots⟩, List.mem_cons_self, ?_⟩).trans
+      ((f₅.sub fun r hr => ⟨⟨State.addr b, 4 * slots⟩, List.mem_cons_self, subCall r hr⟩).trans
       (f₉.sub fun r hr => ⟨⟨State.addr D, 16 * n⟩, List.mem_cons_of_mem _ List.mem_cons_self, ?_⟩))))
     · simp only [List.mem_singleton] at hr; subst hr; exact subT
-    · simp only [List.mem_singleton] at hr; subst hr
-      exact Region.sub_prefix (by rw [slots_eq, tableSlot_eq]; omega_arith)
     · simp only [List.mem_singleton] at hr; subst hr; exact subA
   -- On to the next group.
   obtain r2₉ : s₉.gpr .r2 = BitVec.ofNat 32 v := by

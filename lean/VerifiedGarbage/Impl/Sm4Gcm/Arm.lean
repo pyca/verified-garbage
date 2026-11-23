@@ -82,9 +82,9 @@ def ghFrame : Prog isa :=
   .frame (.push [.r12, .lr]) (.call "vg_ghash" Impl.Gcm.Arm.ghash) (.pop .r12 8)
 
 /-- `vg_sm4_expand_key(key = r0, schedule = r1)`'s code, called as the internal
-`vg_sm4_expand_key_core`. -/
-def keyCall : Prog isa :=
-  .call (Spec.Sm4.expandKeyApi.name ++ "_core") (Impl.StackScratch.Arm.withRegScratch 1456 .r2 Impl.Sm4.Arm.expandKey)
+`vg_sm4_expand_key_core` (`Impl.Sm4.Arm.keyCall`), which `vg_sm4_expand_key`
+calls too. -/
+def keyCall : Prog isa := Impl.Sm4.Arm.keyCall
 
 /-! ## Loops -/
 
