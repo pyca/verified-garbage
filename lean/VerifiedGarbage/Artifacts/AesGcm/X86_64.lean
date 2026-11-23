@@ -112,22 +112,6 @@ namespace VG.Artifacts.AesGcm.X86_64.AesGcm
 
 open VG.Proof.AesGcm.X86_64
 
-/-- Prepared direct sealing uses the same whole-block leaf as in-place sealing. -/
-def directGatherArtifact (v : GcmVariant) (n : Nat) (hn : n = 16 ∨ n = 48)
-    (leaf : Option (BlocksTo.SealFn (.flaggedT n)))
-    (side : ∀ b ∈ leaf, VG.X86_64.Scrub.calleeSide b.fn.code v.lvG.level 24 = true) : Artifact :=
-  match h : leaf with
-  | some b => Spec.Gcm.sealGatherPreparedApi.artifact X86_64.target {
-      suffix := v.impl.suffix
-      code := Impl.AesGcm.X86_64.DirectGather.directPrepared v.lvT n v.impl.callees (DirectGather.ctrFn v) b.fn
-      verified := DirectGather.prepared_verified v n hn b (side b (by simp))
-      spSafe := DirectGather.prepared_spSafe v n b (side b (by simp)) }
-  | none => Spec.Gcm.sealGatherPreparedApi.artifact X86_64.target {
-      suffix := v.impl.suffix
-      code := Impl.AesGcm.X86_64.DirectGather.directBase v.lvTW v.impl.callees (DirectGather.ctrFn v)
-      verified := DirectGather.base_verified v
-      spSafe := DirectGather.base_spSafe v }
-
 /-- The prepared artifacts of the implementations `v` whose loops read the
 48 prepared powers: by the flag, those or the ones on the key context. -/
 def artifactsR (v : GcmVariant) : List Artifact := [
@@ -136,9 +120,7 @@ def artifactsR (v : GcmVariant) : List Artifact := [
     code := Impl.AesGcm.X86_64.placeSealArgs ("vg_aes_gcm_seal_blocks_prepared" ++ v.impl.suffix)
       (Impl.AesGcm.X86_64.Fn.sealP v.lv 48 v.impl.short v.impl.fin (v.impl.withBlk (sealBlkR v)) v.impl.callees)
     verified := Proof.AesGcm.X86_64.OneBlocks.place_verified _ (Proof.AesGcm.X86_64.sealR_scrubbed v)
-    spSafe := by
-      rw [Proof.AesGcm.X86_64.OneBlocks.place_all]
-      exact Proof.AesGcm.X86_64.sealR_spSafeFn v },
+    spSafe := Proof.AesGcm.X86_64.OneBlocks.place_spAll _ (Proof.AesGcm.X86_64.sealR_spSafeFn v) },
   Spec.Gcm.openPreparedApi.artifact X86_64.target {
     suffix := v.impl.suffix
     code := Impl.AesGcm.X86_64.Fn.openP v.lvA 48 v.impl.short (v.impl.withBlk (blkR v)) v.impl.callees
@@ -160,7 +142,12 @@ def artifactsR (v : GcmVariant) : List Artifact := [
     code := Impl.AesGcm.X86_64.Fn.streamDecryptP v.lv 48 (v.impl.withBlk (blkR v)) v.impl.callees
     verified := Proof.AesGcm.X86_64.streamDecryptR_scrubbed v
     spSafe := Proof.AesGcm.X86_64.streamDecryptR_spSafeFn v },
-  directGatherArtifact v 48 (Or.inr rfl) (sealLeafF v) (sealLeafF_side v)]
+  Spec.Gcm.sealGatherPreparedApi.artifact X86_64.target {
+    suffix := v.impl.suffix
+    code := Impl.AesGcm.X86_64.DirectGather.directSeal v.lvTW v.lvT 48 v.impl.callees (DirectGather.ctrFn v)
+      ((sealLeafF v).map (·.fn))
+    verified := Proof.AesGcm.X86_64.DirectGather.selected_verified v 48 (Or.inr rfl) (sealLeafF v) (sealLeafF_side v)
+    spSafe := Proof.AesGcm.X86_64.DirectGather.selected_spSafe v 48 (sealLeafF v) (sealLeafF_side v) }]
 
 /-- The prepared artifacts of the implementations `v`, which read only the
 key context. -/
@@ -204,9 +191,7 @@ def artifactsR16W (v : GcmVariant) (r : R16 v) : List Artifact := [
     code := Impl.AesGcm.X86_64.placeSealArgs ("vg_aes_gcm_seal_blocks_prepared16" ++ v.impl.suffix)
       (Impl.AesGcm.X86_64.Fn.sealP v.lv 16 v.impl.short v.impl.fin (v.impl.withBlk (sealBlkR16 v)) v.impl.callees)
     verified := Proof.AesGcm.X86_64.OneBlocks.place_verified _ (Proof.AesGcm.X86_64.sealR16_scrubbed v r)
-    spSafe := by
-      rw [Proof.AesGcm.X86_64.OneBlocks.place_all]
-      exact Proof.AesGcm.X86_64.sealR16_spSafeFn v r },
+    spSafe := Proof.AesGcm.X86_64.OneBlocks.place_spAll _ (Proof.AesGcm.X86_64.sealR16_spSafeFn v r) },
   Spec.Gcm.openPreparedApi.artifact X86_64.target {
     suffix := v.impl.suffix
     code := Impl.AesGcm.X86_64.Fn.openP v.lvA 16 v.impl.short (v.impl.withBlk (blkR16 v)) v.impl.callees
@@ -228,7 +213,12 @@ def artifactsR16W (v : GcmVariant) (r : R16 v) : List Artifact := [
     code := Impl.AesGcm.X86_64.Fn.streamDecryptP v.lv 16 (v.impl.withBlk (blkR16 v)) v.impl.callees
     verified := Proof.AesGcm.X86_64.streamDecryptR16_scrubbed v
     spSafe := Proof.AesGcm.X86_64.streamDecryptR16_spSafeFn v },
-  directGatherArtifact v 16 (Or.inl rfl) (sealLeafF16 v) (sealLeafF16_side v)]
+  Spec.Gcm.sealGatherPreparedApi.artifact X86_64.target {
+    suffix := v.impl.suffix
+    code := Impl.AesGcm.X86_64.DirectGather.directSeal v.lvTW v.lvT 16 v.impl.callees (DirectGather.ctrFn v)
+      ((sealLeafF16 v).map (·.fn))
+    verified := Proof.AesGcm.X86_64.DirectGather.selected_verified v 16 (Or.inl rfl) (sealLeafF16 v) (sealLeafF16_side v)
+    spSafe := Proof.AesGcm.X86_64.DirectGather.selected_spSafe v 16 (sealLeafF16 v) (sealLeafF16_side v) }]
 
 /-- The artifacts of a variant: its prepared ones, for what its loops read:
 16 prepared powers (`r16`), 48 (`stitchR`), or the key context alone. -/

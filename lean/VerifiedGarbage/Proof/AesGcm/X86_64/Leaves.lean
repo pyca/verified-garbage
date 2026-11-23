@@ -2273,7 +2273,7 @@ end VG.Proof.AesGcm.X86_64.DirectGather
 namespace VG.Proof.AesGcm.X86_64.DirectGather
 open VG VG.X86_64 VG.X86_64.Scrub
 open VG.Impl.AesGcm.X86_64 (Callees Fn)
-open VG.Impl.AesGcm.X86_64.DirectGather (general directBase directPrepared)
+open VG.Impl.AesGcm.X86_64.DirectGather (general directBase directPrepared directSeal)
 open VG.Impl.Scrub.X86_64 (VecLevel)
 open VG.Proof.Gcm.X86_64.Stitch (CtxMode)
 
@@ -2338,5 +2338,20 @@ theorem prepared_spSafe (v : GcmVariant) (n : Nat) (b : BlocksTo.SealFn (CtxMode
     (directPrepared v.lvT n v.impl.callees (ctrFn v) b.fn).all (fun i => !isa.writesSp i)=true :=
   scrubKs_spSafe (onFlag_spSafe (withStackArgScratch_spSafe (ready_safe v b bt).sp)
     (withStackArgScratch_spSafe (plain_safe v).sp))
+
+theorem selected_verified (v : GcmVariant) (n : Nat) (hn : n=16 ∨ n=48)
+    (leaf : Option (BlocksTo.SealFn (CtxMode.flaggedT n)))
+    (side : ∀ b ∈ leaf, calleeSide b.fn.code v.lvG.level 24 = true) :
+    VerifiedScrubbed target (directSeal v.lvTW v.lvT n v.impl.callees (ctrFn v) (leaf.map (·.fn))) publicContract 0 := by
+  cases leaf with
+  | none => exact base_verified v
+  | some b => exact prepared_verified v n hn b (side b (by simp))
+
+theorem selected_spSafe (v : GcmVariant) (n : Nat) (leaf : Option (BlocksTo.SealFn (CtxMode.flaggedT n)))
+    (side : ∀ b ∈ leaf, calleeSide b.fn.code v.lvG.level 24 = true) :
+    (directSeal v.lvTW v.lvT n v.impl.callees (ctrFn v) (leaf.map (·.fn))).all (fun i => !isa.writesSp i)=true := by
+  cases leaf with
+  | none => exact base_spSafe v
+  | some b => exact prepared_spSafe v n b (side b (by simp))
 
 end VG.Proof.AesGcm.X86_64.DirectGather

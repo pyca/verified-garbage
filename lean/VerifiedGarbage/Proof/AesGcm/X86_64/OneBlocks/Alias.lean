@@ -134,6 +134,10 @@ theorem place_all (target : String) (p : Prog isa) (test : Instr → Bool) :
   | frame i b j h => simp only [Impl.AesGcm.X86_64.placeSealArgs,Code.all,h]
   | icall => rfl
 
+theorem place_spAll (target : String) {p : Prog isa} (h : p.all (fun i => !isa.writesSp i) = true) :
+    (Impl.AesGcm.X86_64.placeSealArgs target p).all (fun i => !isa.writesSp i) = true :=
+  (place_all target p _).trans h
+
 open VG.Proof.Gcm.X86_64.Stitch (CtxMode)
 open BlocksTo
 
