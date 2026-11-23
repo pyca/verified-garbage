@@ -350,7 +350,17 @@ vg_ecdh_secp256k1:
 	mov rax, QWORD PTR [rdi+1464]
 	mov QWORD PTR [rdi+568], rax
 	call {vg_secp256k1_mul}
-	call {vg_secp256k1_inv_mod_p}
+	movabs rax, -2866531139136965327
+	mov QWORD PTR [rdi+128], rax
+	movabs rax, 4792955903429050368
+	mov QWORD PTR [rdi+1024], rax
+	movabs rax, 1125900419072058
+	mov QWORD PTR [rdi+1032], rax
+	movabs rax, 0
+	mov QWORD PTR [rdi+1040], rax
+	movabs rax, 0
+	mov QWORD PTR [rdi+1048], rax
+	call {vg_inv4_mod_p}
 	call {vg_secp256k1_affine_x}
 	mov rdx, QWORD PTR [rdi+1088]
 	sub rdx, QWORD PTR [rdi+96]

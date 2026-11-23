@@ -17946,7 +17946,17 @@ vg_ecdh_p224:
 	mov QWORD PTR [rdi+600], rax
 	test rbx, rbx
 	jne 217b
-	call {vg_p224_inv_mod_p}
+	movabs rax, -1
+	mov QWORD PTR [rdi+128], rax
+	movabs rax, 1
+	mov QWORD PTR [rdi+1024], rax
+	movabs rax, 1125895611613184
+	mov QWORD PTR [rdi+1032], rax
+	movabs rax, 1125899906842624
+	mov QWORD PTR [rdi+1040], rax
+	movabs rax, 4294443008
+	mov QWORD PTR [rdi+1048], rax
+	call {vg_inv4_mod_p}
 	call {vg_p224_affine_x}
 	mov rdx, QWORD PTR [rdi+1088]
 	sub rdx, QWORD PTR [rdi+96]

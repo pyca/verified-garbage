@@ -524,7 +524,17 @@ vg_ec_brainpoolp256r1_public_key:
 	movq r13, xmm3
 	movq r14, xmm4
 	movq r15, xmm5
-	call {vg_brainpoolp256r1_inv_mod_p}
+	movabs rax, -4132240052652766791
+	mov QWORD PTR [rdi+128], rax
+	movabs rax, -4161823605906349129
+	mov QWORD PTR [rdi+1024], rax
+	movabs rax, -6381386978957365564
+	mov QWORD PTR [rdi+1032], rax
+	movabs rax, 1888426209243862047
+	mov QWORD PTR [rdi+1040], rax
+	movabs rax, 6907815856143100873
+	mov QWORD PTR [rdi+1048], rax
+	call {vg_inv4_mod_p}
 	call {vg_brainpoolp256r1_affine_x}
 	mov r8d, 0
 	mov r9d, 0

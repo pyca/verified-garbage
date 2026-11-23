@@ -37,13 +37,14 @@ jne 22b
 call {vg_p192_check_point}
 .base64 "SIuHAAUAAEiJhwACAABIi4cIBQAASImHCAIAAEiLhxAFAABIiYcQAgAASIuHGAUAAEiJhxgCAABIi4egBQAASImHIAIAAEiLh6gFAABIiYcoAgAASIuHsAUAAEiJhzACAABIi4e4BQAASImHOAIAAA=="
 call {vg_p192_mul}
-call {vg_p192_inv_mod_p}
+.base64 "SLgBAAAAAAAAAEiJh4AAAABIuAAAAAAAAAgASImHAAQAAEi4AAAAAAAADABIiYcIBAAASLgAAAAAAAAIAEiJhxAEAABIuAAAAAAAAAAASImHGAQAAA=="
+call {vg_inv4_mod_p}
 call {vg_p192_affine_x}
 .base64 "SIuXQAQAAEgrV2BIi5dIBAAASBtXaEiLl1AEAABIG1dwSIuXWAQAAEgbV3hIGcBIicVIi5dABAAASAuXSAQAAEgLl1AEAABIC5dYBAAAuQAAAABIKdFIGdJIIepIi4fABQAASCHQSImHwAUAAEiLl0ACAABIC5dIAgAASAuXUAIAAEgLl1gCAAC5AAAAAEgp0UgZ0kiLh8AFAABIIdBIiYfABQAASIuPwAUAAEiLh6AEAABIIchID8hIiUYQSIuHqAQAAEghyEgPyEiJRghIi4ewBAAASCHISA/ISIkGSIuHuAQAAEghyEiJyEiD4AFIix9Ii28ITItnEEyLbxhMi3cgTIt/KGYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ZkUP78BmRQ/vyWZFD+/SZkUP79tmRQ/v5GZFD+/tZkUP7/ZmRQ/v/0Ux20iNZCT4TIkcJEiNZCQIicAxyTHSMfYx/0UxwEUxyUUx0sM="
 .p2align 6"#,
         vg_p192_check_point = sym super::ec_p192_compressed::vg_p192_check_point::vg_p192_check_point,
         vg_p192_mul = sym super::ec_p192::vg_p192_mul::vg_p192_mul,
-        vg_p192_inv_mod_p = sym super::ec_p192::vg_p192_inv_mod_p::vg_p192_inv_mod_p,
+        vg_inv4_mod_p = sym super::ec_brainpoolp256r1::vg_inv4_mod_p::vg_inv4_mod_p,
         vg_p192_affine_x = sym super::ec_p192::vg_p192_affine_x::vg_p192_affine_x,
     )
 }

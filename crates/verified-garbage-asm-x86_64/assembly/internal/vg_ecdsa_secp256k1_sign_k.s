@@ -271,7 +271,17 @@ vg_ecdsa_secp256k1_sign_k:
 	mov rax, QWORD PTR [rdi+376]
 	mov QWORD PTR [rdi+568], rax
 	call {vg_secp256k1_mul}
-	call {vg_secp256k1_inv_mod_p}
+	movabs rax, -2866531139136965327
+	mov QWORD PTR [rdi+128], rax
+	movabs rax, 4792955903429050368
+	mov QWORD PTR [rdi+1024], rax
+	movabs rax, 1125900419072058
+	mov QWORD PTR [rdi+1032], rax
+	movabs rax, 0
+	mov QWORD PTR [rdi+1040], rax
+	movabs rax, 0
+	mov QWORD PTR [rdi+1048], rax
+	call {vg_inv4_mod_p}
 	call {vg_secp256k1_affine_x}
 	mov r8, QWORD PTR [rdi+1184]
 	mov r9, QWORD PTR [rdi+1192]
@@ -643,7 +653,17 @@ vg_ecdsa_secp256k1_sign_k:
 	mov rax, QWORD PTR [rdi+1472]
 	and rax, rdx
 	mov QWORD PTR [rdi+1472], rax
-	call {vg_secp256k1_inv_mod_n}
+	movabs rax, 5408259542528602431
+	mov QWORD PTR [rdi+128], rax
+	movabs rax, -3111492720122750874
+	mov QWORD PTR [rdi+1024], rax
+	movabs rax, 856935592407084165
+	mov QWORD PTR [rdi+1032], rax
+	movabs rax, 2241931050538735040
+	mov QWORD PTR [rdi+1040], rax
+	movabs rax, 8005036599103549236
+	mov QWORD PTR [rdi+1048], rax
+	call {vg_inv4_mod_n}
 	mov r8d, 0
 	mov r9d, 0
 	mov r10d, 0
