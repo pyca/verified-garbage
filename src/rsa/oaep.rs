@@ -321,6 +321,8 @@ fn decrypt_with(
     match r {
         1 => {
             // The message is at most `n_len - 2 hLen - 2` bytes.
+            // NO-SECRET-RESIDUE: the bytes after the message are zeros
+            // (`RsaOaep.writtenDecrypt`).
             out.truncate(len[0] as usize);
             Ok(out)
         }

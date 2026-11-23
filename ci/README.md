@@ -22,6 +22,7 @@ CI runs each of these, and fails if it does:
 | `check_lean_speed.py` | The rules of "Keeping proofs fast" that need no build (allowances in `lean_speed_allowed.py`) |
 | `check_mcdt.py` | Intel's MCDT instructions run only inside the MXCSR prologue and epilogue |
 | `check_registrations.py` | Registration and variant files only bind |
+| `check_secret_residue.py` | Every move, shortening or growth of a buffer in `src/` says why it leaves no secret behind |
 | `check_skills.py` | The skills' frontmatter and links, and CLAUDE.md's list of them |
 | `check_vectors.py` | `vectors/sources/` describes the files under `vectors/` |
 | `cpu_tests.py lint` | `rust_matrix.toml`'s CPU-feature lines |
