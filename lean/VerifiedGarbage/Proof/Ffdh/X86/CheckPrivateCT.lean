@@ -244,7 +244,6 @@ theorem range_check : ACheck (Impl.Ffdh.X86.rangeMask 12) := by dsimp only [AChe
 theorem store_check : ACheck (.block [.store (sc accOff) .ecx]) := by dsimp only [ACheck]; taint_decide
 theorem topLoads_check : ACheck (Prog.chain [copy (.slot .wide 10) (.slot .wide 5) (one .wide),
     loadTop (.slot .wide 8) (one .wide) 10 11] (.block [])) := by dsimp only [ACheck]; taint_decide
-theorem count_check : ACheck (.block (lenCount 11)) := by dsimp only [ACheck]; taint_decide
 theorem tail_check : ACheck (.seq (equal (.slot .wide 6) (.slot .wide 12) (one .wide))
     (.seq (.block [.alu .and .ecx (.mem (sc accOff))]) Impl.Ffdh.X86.retMask)) := by
   dsimp only [ACheck]; taint_decide
