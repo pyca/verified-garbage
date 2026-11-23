@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Xdh.Arm
+public import VerifiedGarbage.Proof.Framework.Arm.ViaReg
 public import VerifiedGarbage.Proof.Xdh.Common
 public import VerifiedGarbage.Proof.Xdh.Rel
 public import VerifiedGarbage.Proof.Framework.Arm.Call
@@ -17,6 +18,7 @@ import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Arm.Inline
 meta import VerifiedGarbage.Impl.Xdh.Arm
+meta import VerifiedGarbage.Proof.Framework.Arm.ViaReg
 meta import VerifiedGarbage.Proof.Xdh.Common
 meta import VerifiedGarbage.Proof.Xdh.Rel
 meta import VerifiedGarbage.Proof.Framework.Arm.Call
@@ -110,7 +112,7 @@ structure Callee (n w d : Nat) (fns : List String) (f : List Byte → List Byte 
     Prop where
   hv : ∀ s, k.pre s → ∃ t s', Exec isa c s t s' ∧ abiPreserved s s' ∧ k.post s s'
   hct : ConstantTime isa k.pre k.pub c
-  pre : ∀ s, CallPre n w s → (∀ r ∈ s.rd ++ s.wr, (belowA s.sp d).Disjoint r) → k.pre s
+  pre : ∀ s, CallPre n w s → d ≤ s.sp.toNat → (∀ r ∈ s.rd ++ s.wr, (belowA s.sp d).Disjoint r) → k.pre s
   post : ∀ s s', k.post s s' →
     bytesAt s'.mem (State.addr (s.gpr .r0)) n =
       f (bytesAt s.mem (State.addr (s.gpr .r1)) n) (bytesAt s.mem (State.addr (s.gpr .r2)) n)
@@ -250,6 +252,15 @@ theorem Pushed.room {n w d : Nat} {s e : State} (h : ExPre n w d s) (he : Pushed
     show s.sp - BitVec.ofNat 32 4 - BitVec.ofNat 32 4 = s.sp - BitVec.ofNat 32 8 by bv_omega]
   exact h.2.2.2.2.2.2
 
+/-- The callee's stack is there. -/
+theorem Pushed.roomSp {n w d : Nat} {s e : State} (h : ExPre n w d s) (he : Pushed n w s e) :
+    d ≤ (e.callEntry.withRegions s.rd s.wr).sp.toNat := by
+  have hsp := h.2.2.2.2.2.1
+  simp only [State.withRegions_sp, State.callEntry_sp, he.sp,
+    show s.sp - BitVec.ofNat 32 4 - BitVec.ofNat 32 4 = s.sp - BitVec.ofNat 32 8 by bv_omega,
+    sub_toNat' (show 8 ≤ s.sp.toNat by omega_using [hsp])]
+  omega_using [hsp]
+
 /-- The regions the call is given are ours. -/
 theorem Pushed.covers {n w : Nat} {s e : State} (he : Pushed n w s e) :
     Covers (s.rd ++ s.wr) (e.rd ++ e.wr) ∧ Covers s.wr e.wr :=
@@ -265,6 +276,7 @@ theorem called_wp {n w d : Nat} {f : List Byte → List Byte → List Byte} {fns
     WP isa (.call name c) e (Called n w f s) := by
   have hcp := he.callPre h
   have hroom := he.room h
+  have hroomSp := he.roomSp h
   have hs := slot_sep h
   have hB := B_toNat h
   have hes : State.addr e.sp = B s := by rw [he.sp]; exact addr44 h
@@ -275,7 +287,7 @@ theorem called_wp {n w d : Nat} {f : List Byte → List Byte → List Byte} {fns
   obtain ⟨⟨rd, wr, d1, d2, d3, d4, d5, b0, b1, b2, b3⟩, f0, f1, f2, f3, hsp, -⟩ := h
   obtain ⟨hcov, hw⟩ := he.covers
   have hd : armStack c ≤ e.sp.toNat := by have := hk.st; rw [hen]; omega_using [hesp, this]
-  refine WP.callF hk.hv (hk.pre _ hcp hroom) hcov hw (by simpa using hd) (fun z rd' wr' sp' fr' pres' post' => ?_)
+  refine WP.callF hk.hv (hk.pre _ hcp hroomSp hroom) hcov hw (by simpa using hd) (fun z rd' wr' sp' fr' pres' post' => ?_)
   have hpost := hk.post _ _ post'
   have g (r : Reg) (hr : r ∈ [Reg.r0, .r1, .r2]) : (e.callEntry.withRegions s.rd s.wr).gpr r = s.gpr r := by
     rw [State.withRegions_gpr, State.callEntry_gpr _ (by revert r; decide), he.gpr]
@@ -532,7 +544,9 @@ theorem exchange_ct {n w d : Nat} {f : List Byte → List Byte → List Byte} {f
           rw [State.withRegions_gpr, State.callEntry_gpr _ (by revert r; decide)]; rfl
         have r₂ := k₂.room p₂
         rw [hrd, hwr] at r₂
-        refine ⟨hk.pre _ (k₁.callPre p₁) (k₁.room p₁), hk.pre _ c₂ r₂, hk.pub _ _ ?_, k₁.covers.1, k₁.covers.2, v₂.1, v₂.2⟩
+        have q₂ := k₂.roomSp p₂
+        rw [hrd, hwr] at q₂
+        refine ⟨hk.pre _ (k₁.callPre p₁) (k₁.roomSp p₁) (k₁.room p₁), hk.pre _ c₂ q₂ r₂, hk.pub _ _ ?_, k₁.covers.1, k₁.covers.2, v₂.1, v₂.2⟩
         refine ⟨?_, ?_, ?_, ?_, ?_, ?_⟩
         · rw [g _ (by simp), g _ (by simp), q0]
         · rw [g _ (by simp), g _ (by simp), q1]
@@ -556,5 +570,160 @@ theorem exchange_correct {n w d : Nat} {f : List Byte → List Byte → List Byt
   fun _ h => by
     obtain ⟨t, s', he, ha, hp⟩ := exchange_wp hk (name := name) hn h
     exact ⟨t, s', he, ha, hp⟩
+
+/-! ## A callee that calls a function by its address in `r10`
+
+`entryReg fn .r10 name c'` saves `r10` and `lr` in a frame of 8 bytes,
+puts `fn`'s address in `r10` and calls `c'`, `c` made to call `fn` by it
+(`Code.viaRegAt`), with the arguments as they came: from a callee `c` of the
+exchange, it is one, with 8 bytes of stack, for runs that agree on `fn`'s
+address (`Callee.entryReg`). -/
+
+section Entry
+
+open VG.Proof.Arm VG.Impl.Arm
+
+/-- What the entry needs: the callee's needs, and 8 bytes of stack apart
+from the arguments. -/
+def EntryPre (n w : Nat) (s : State) : Prop :=
+  CallPre n w s ∧ 8 ≤ s.sp.toNat ∧ ∀ r ∈ s.rd ++ s.wr, (belowA s.sp 8).Disjoint r
+
+/-- The entry's contract: `f` of the scalar and the point at `out`. -/
+def entryContract (n w : Nat) (fns : List String) (f : List Byte → List Byte → List Byte) : Contract isa where
+  pre := EntryPre n w
+  post s s' := bytesAt s'.mem (State.addr (s.gpr .r0)) n =
+    f (bytesAt s.mem (State.addr (s.gpr .r1)) n) (bytesAt s.mem (State.addr (s.gpr .r2)) n)
+  pub := Pub fns
+
+/-- `CallPre` reads only the argument registers and the regions. -/
+theorem CallPre.of_eq {n w : Nat} {s t : State} (h : CallPre n w s) (hrd : t.rd = s.rd) (hwr : t.wr = s.wr)
+    (hg : ∀ r ∈ [Reg.r0, .r1, .r2, .r3], t.gpr r = s.gpr r) : CallPre n w t := by
+  obtain ⟨rd, wr, d1, d2, d3, d4, d5, b0, b1, b2, b3⟩ := h
+  simp only [CallPre, outR, scR, ptR, wsR, hrd, hwr, hg .r0 (by simp), hg .r1 (by simp), hg .r2 (by simp),
+    hg .r3 (by simp)]
+  exact ⟨rd, wr, d1, d2, d3, d4, d5, b0, b1, b2, b3⟩
+
+/-- The state the call starts in: the frame pushed and `fn`'s address in `r10`. -/
+abbrev eTwo (fn : String) (s : State) : State := (pushed [.r10, .lr] s).setReg .r10 (s.syms fn)
+
+/-- The frame's region. -/
+abbrev eFr (s : State) : Region := belowA s.sp 8
+
+theorem eTwo_gpr (fn : String) (s : State) {r : Reg} (h : r ≠ .r10) : (eTwo fn s).gpr r = s.gpr r := by
+  simp only [eTwo, State.setReg, h, ↓reduceIte, pushed_gpr]
+
+theorem eTwo_mem (fn : String) (s : State) :
+    (eTwo fn s).mem = (s.mem.writeW (State.addr (s.sp - BitVec.ofNat 32 8)) (s.gpr .r10)).writeW
+      (State.addr (s.sp - BitVec.ofNat 32 8 + 4)) (s.gpr .lr) := rfl
+
+theorem eTwo_sp (fn : String) (s : State) : (eTwo fn s).sp = s.sp - BitVec.ofNat 32 8 := rfl
+
+theorem eTwo_wr (fn : String) (s : State) : (eTwo fn s).wr = eFr s :: s.wr := rfl
+
+theorem eTwo_rd (fn : String) (s : State) : (eTwo fn s).rd = s.rd := rfl
+
+/-- The entry state of the call. -/
+abbrev eCall (fn : String) (s : State) : State := (eTwo fn s).callEntry.withRegions s.rd s.wr
+
+theorem eCall_gpr (fn : String) (s : State) {r : Reg} (h : r ∉ linkRegs) (h10 : r ≠ .r10) :
+    (eCall fn s).gpr r = s.gpr r := by
+  rw [State.withRegions_gpr, State.callEntry_gpr _ h, eTwo_gpr fn s h10]
+
+theorem eCall_regAt (fn : String) (s : State) : RegAt fn .r10 (eCall fn s) := by
+  unfold RegAt
+  rw [State.withRegions_gpr, State.callEntry_gpr _ (by decide)]
+  simp only [eTwo, State.setReg, ↓reduceIte]
+  rfl
+
+theorem eCall_callPre {n w : Nat} (fn : String) {s : State} (h : CallPre n w s) : CallPre n w (eCall fn s) :=
+  h.of_eq rfl rfl fun r hr => eCall_gpr fn s (by revert r; decide) (by revert r; decide)
+
+/-- The frame's two words, and the frame apart from a region apart from it. -/
+theorem eFr_words {s : State} (hsp : 8 ≤ s.sp.toNat) :
+    State.addr (s.sp - BitVec.ofNat 32 8 + 4) = State.addr (s.sp - BitVec.ofNat 32 8) + BitVec.ofNat 64 4 ∧
+      (⟨State.addr (s.sp - BitVec.ofNat 32 8), 4⟩ : Region).Disjoint
+        ⟨State.addr (s.sp - BitVec.ofNat 32 8) + BitVec.ofNat 64 4, 4⟩ := by
+  have hs := sub_toNat' (sp := s.sp) hsp
+  have := s.sp.isLt
+  exact ⟨Arm.addr_add (by rw [hs]; omega_using [hsp]), Offset.base_disjoint _ (k := 4) (e := 4) (by omega_using [])
+    (by omega_using [])⟩
+
+theorem eFr_sub (s : State) {d : Nat} (hd : d ≤ 4) :
+    Region.Sub ⟨State.addr (s.sp - BitVec.ofNat 32 8) + BitVec.ofNat 64 d, 4⟩ (eFr s) :=
+  Offset.sub_base _ (by omega_using [hd])
+
+theorem Callee.entry_wp {n w : Nat} {fn name : String} {f : List Byte → List Byte → List Byte} {c : Prog isa}
+    {k : Contract isa} (hk : Callee n w 0 [] f c k) (hn : c.noFrames = true) (hr : KeepsReg .r10 c) {s : State}
+    (h : EntryPre n w s) :
+    WP isa (entryReg fn .r10 name (Code.viaRegAt fn .r10 c)) s fun z =>
+      abiPreserved s z ∧ (entryContract n w [fn] f).post s z := by
+  obtain ⟨hcp, hsp, hroom⟩ := h
+  obtain ⟨wd, wsep⟩ := eFr_words hsp
+  have hfr : ∀ {d : Nat}, d ≤ 4 → ∀ r ∈ s.wr,
+      (⟨State.addr (s.sp - BitVec.ofNat 32 8) + BitVec.ofNat 64 d, 4⟩ : Region).Disjoint r :=
+    fun hd r hr' => fun a ha hb => hroom r (List.mem_append_right _ hr') a (eFr_sub s hd a ha) hb
+  have hv' := Exec.viaRegAt_ok (n := fn) hk.hv hr
+  refine WP.frame (rs := [.r10, .lr]) (r := .r10) (by decide) (by simpa using hsp) (by decide) ?_
+  refine WP.seq (VG.Proof.X25519.Arm.WP.cons (s' := eTwo fn s) rfl (WP.block_nil ?_))
+  refine WP.seq (WP.callCalls hv' ⟨hk.pre _ (eCall_callPre fn hcp) (Nat.zero_le _)
+      (fun r _ => belowA_zero_disjoint _ r), eCall_regAt fn s⟩
+    (covers_mem fun r hr' => by
+      rw [eTwo_rd, eTwo_wr]
+      rcases List.mem_append.mp hr' with hr' | hr'
+      · exact List.mem_append_left _ hr'
+      · exact List.mem_append_right _ (List.mem_cons_of_mem _ hr'))
+    (covers_mem fun r hr' => by rw [eTwo_wr]; exact List.mem_cons_of_mem _ hr')
+    (fun z rd' wr' sp' fr' pres' _ post' => ?_) (by rw [noFrames_viaRegAt]; exact hn))
+  -- The frame's words, which the call does not write.
+  have zlr : z.mem.readW (State.addr (z.sp + BitVec.ofNat 32 4)) 32 = s.gpr .lr := by
+    rw [sp', eTwo_sp, show s.sp - BitVec.ofNat 32 8 + BitVec.ofNat 32 4 = s.sp - BitVec.ofNat 32 8 + 4 from rfl, wd,
+      Frame.readW fr' (r := ⟨State.addr (s.sp - BitVec.ofNat 32 8) + BitVec.ofNat 64 4, 4⟩)
+        (Region.contains_self _ _) (hfr (by decide)) (by decide), eTwo_mem, wd, Mem.readW_writeW_self32]
+  have zr10 : z.mem.readW (State.addr (s.sp - BitVec.ofNat 32 8)) 32 = s.gpr .r10 := by
+    have h0 := hfr (d := 0) (by decide)
+    simp only [BitVec.add_zero] at h0
+    rw [Frame.readW fr' (r := ⟨State.addr (s.sp - BitVec.ofNat 32 8), 4⟩) (Region.contains_self _ _) h0 (by decide),
+      eTwo_mem, wd, Mem.readW_writeW_sep (Region.Disjoint.sep wsep (Region.contains_self _ _)
+        (Region.contains_self _ _)), Mem.readW_writeW_self32]
+    all_goals decide
+  have hin : InRegions (z.rd ++ z.wr) (State.addr (z.sp + BitVec.ofNat 32 4)) 4 := by
+    refine ⟨eFr s, by rw [wr', eTwo_wr]; simp, ?_⟩
+    rw [sp', eTwo_sp, show s.sp - BitVec.ofNat 32 8 + BitVec.ofNat 32 4 = s.sp - BitVec.ofNat 32 8 + 4 from rfl, wd]
+    exact Offset.contains_base _ (by decide) (by decide)
+  refine VG.Proof.X25519.Arm.WP.cons (s' := z.setReg .lr (z.mem.readW (State.addr (z.sp + BitVec.ofNat 32 4)) 32))
+    (by simp only [exec, show (4 : Nat) < 4096 by decide, ite_true, State.load32, hin, Option.map_some]) (WP.block_nil ?_)
+  intro m u hm
+  -- The bytes at `out`, apart from the frame.
+  have hout : (outR n s).Disjoint (eFr s) := fun a ha hb => hroom _ (by
+    obtain ⟨-, wr, -⟩ := hcp; simp [wr]) a hb ha
+  have hpost := hk.post _ _ post'
+  simp only [State.withRegions_mem, State.callEntry_mem, eCall_gpr fn s (r := .r0) (by decide) (by decide),
+    eCall_gpr fn s (r := .r1) (by decide) (by decide), eCall_gpr fn s (r := .r2) (by decide) (by decide)] at hpost
+  have hpf : Frame [eFr s] s.mem (eTwo fn s).mem := by
+    have := storeWords_frame [s.gpr .r10, s.gpr .lr] s.mem (s.sp - BitVec.ofNat 32 8)
+      (by rw [sub_toNat' hsp]; have := s.sp.isLt; simp; omega_using [hsp])
+    exact this
+  have hsc : (scR n s).Disjoint (eFr s) := fun a ha hb => hroom _ (by
+    obtain ⟨rd, -⟩ := hcp; simp [rd]) a hb ha
+  have hpt : (ptR n s).Disjoint (eFr s) := fun a ha hb => hroom _ (by
+    obtain ⟨rd, -⟩ := hcp; simp [rd]) a hb ha
+  rw [bytes_lost hpf hsc, bytes_lost hpf hpt] at hpost
+  refine ⟨⟨fun r hr' => ?_, ?_⟩, ?_⟩ <;> dsimp only
+  · by_cases h10 : r = .r10
+    · subst h10
+      simp only [popped, State.setReg, ↓reduceIte, sp']
+      exact zr10
+    · rw [popped_gpr h10]
+      by_cases hl : r = .lr
+      · subst hl; simp only [State.setReg, ↓reduceIte]; exact zlr
+      · simp only [State.setReg, hl, ↓reduceIte]
+        rw [pres' r hr' hl, eTwo_gpr fn s h10]
+  · simp only [popped_sp, State.setReg, sp', pushed_sp, List.length_cons, List.length_nil]
+    exact BitVec.sub_add_cancel _ _
+  · change bytesAt m _ n = _
+    rw [bytes_lost (F := eFr s) (by simpa [State.setReg] using hm) hout]
+    exact hpost
+
+end Entry
 
 end VG.Proof.Xdh.Arm

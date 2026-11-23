@@ -33,4 +33,10 @@ def Code.viaRegAt (n : String) (r : Reg) : Prog isa → Prog isa
   | .frame i b j => .frame i (viaRegAt n r b) j
   | .icall i m b nx => .icall i m b nx
 
+/-- `push {r, lr}; adrSym r, n; bl name; ldr lr, [sp, #4]; pop {r}`: the
+call of `name`, whose code is `body`, with `n`'s address in `r`, from a frame
+of 8 bytes that keeps the caller's `r` and the return address. -/
+def entryReg (n : String) (r : Reg) (name : String) (body : Prog isa) : Prog isa :=
+  .frame (.push [r, .lr]) (.seq (.block [.adrSym r n]) (.seq (.call name body) (.block [.ldrSp .lr 4]))) (.pop r 8)
+
 end VG.Impl.Arm

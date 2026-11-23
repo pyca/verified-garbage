@@ -738,7 +738,7 @@ theorem callee {c : Prog isa} (hv : Verified Arm.target c (Proof.X25519.x25519Co
     (hn : c.noFrames = true) : Callee 32 4096 0 [] Spec.X25519.x25519 c (Proof.X25519.x25519Contract Arm.abi) where
   hv := hv.1
   hct := hv.2.1
-  pre s h _ := by
+  pre s h _ _ := by
     obtain ⟨rd, wr, d1, d2, d3, d4, d5, b0, b1, b2, b3⟩ := h
     sig_pre [Proof.X25519.x25519Contract, Proof.X25519.x25519Sig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val,
       Arm.State.addr]
