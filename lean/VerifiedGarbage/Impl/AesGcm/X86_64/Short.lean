@@ -345,8 +345,8 @@ def kB : MemOp := { base := .rdx, index := some .r10 }
 /-- The plaintext byte at the current offset of a bounded record. -/
 abbrev xorSrc (source : Reg) : MemOp := { base := source, index := some .r10 }
 
-/-- Eight (if `w`) or four bytes at `[rsi + r10]` XORed with those at
-`[rdx + r10]` through `rax`, stored back and, if `g`, at `[rdi + r10]`. -/
+/-- Eight (if `w`) or four bytes at `[source + r10]` XORed with those at
+`[rdx + r10]` through `rax`, stored at `[rsi + r10]` and, if `g`, at `[rdi + r10]`. -/
 def xorWord (g w : Bool) (source : Reg := .rsi) : List Instr :=
   (if w then ([.mov .rax (.mem (xorSrc source)), .alu .xor .rax (.mem kB), .store srcB .rax] : List Instr) ++
       (if g then [.store dstB .rax] else [])
@@ -354,8 +354,8 @@ def xorWord (g w : Bool) (source : Reg := .rsi) : List Instr :=
       (if g then [.store32 dstB .rax] else [])) ++
   [.alu .add .r10 (imm (if w then 8 else 4))]
 
-/-- The bytes from `r10` to `rcx` at `rsi` XORed with those at `rdx`, one at
-a time, and if `g` also stored at `rdi`. -/
+/-- The bytes from `r10` to `rcx` at `source` XORed with those at `rdx`, one at
+a time, stored at `rsi` and, if `g`, at `rdi`. -/
 def xorBytes (g : Bool) (source : Reg := .rsi) : Prog isa :=
   .loop (.block (([.movzx8 .rax (xorSrc source), .movzx8 .r9 kB, .alu .xor .rax (.reg .r9), .store8 srcB .rax] : List Instr) ++
     (if g then [.store8 dstB .rax] else []) ++
