@@ -229,7 +229,7 @@ structure CtrToCall (s : State) (K C D S Src : Addr) (R n : Nat) : Prop where
   cs : (⟨C, 16⟩ : Region).Disjoint ⟨S, 2048⟩
   ds : (⟨D, 16 * n⟩ : Region).Disjoint ⟨S, 2048⟩
   xc : (⟨Src, 16 * n⟩ : Region).Disjoint ⟨C, 16⟩
-  xd : (⟨Src, 16 * n⟩ : Region).Disjoint ⟨D, 16 * n⟩
+  xd : Src = D ∨ (⟨Src, 16 * n⟩ : Region).Disjoint ⟨D, 16 * n⟩
   xs : (⟨Src, 16 * n⟩ : Region).Disjoint ⟨S, 2048⟩
   fit : D.toNat + 16 * n ≤ 2 ^ 64
   xfit : Src.toNat + 16 * n ≤ 2 ^ 64
@@ -392,7 +392,7 @@ structure CtrBsToCall (s : State) (B K C D S Src : Addr) (R n : Nat) : Prop wher
   cs : (⟨C, 16⟩ : Region).Disjoint ⟨S, 2048⟩
   ds : (⟨D, 16 * n⟩ : Region).Disjoint ⟨S, 2048⟩
   xc : (⟨Src, 16 * n⟩ : Region).Disjoint ⟨C, 16⟩
-  xd : (⟨Src, 16 * n⟩ : Region).Disjoint ⟨D, 16 * n⟩
+  xd : Src = D ∨ (⟨Src, 16 * n⟩ : Region).Disjoint ⟨D, 16 * n⟩
   xs : (⟨Src, 16 * n⟩ : Region).Disjoint ⟨S, 2048⟩
   fit : D.toNat + 16 * n ≤ 2 ^ 64
   xfit : Src.toNat + 16 * n ≤ 2 ^ 64

@@ -9,7 +9,6 @@ public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignVerified
 public import VerifiedGarbage.Proof.Dsa.AArch64.GenerateKeyCorrect
 public import VerifiedGarbage.Proof.Variants.DsaArithmetic.AArch64
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.RefillVerified
-public import VerifiedGarbage.TCB.Emit
 public import VerifiedGarbage.Proof.Variants.MdHash.AArch64
 public import VerifiedGarbage.Proof.Variants.MillerRabin.AArch64
 public import VerifiedGarbage.Proof.Framework.QualifiedName

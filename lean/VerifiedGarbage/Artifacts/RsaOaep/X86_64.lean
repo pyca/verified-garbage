@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.TCB.Emit
 public import VerifiedGarbage.TCB.X86_64.Print
 public import VerifiedGarbage.Spec.RsaOaep.MdTables
 public import VerifiedGarbage.Proof.Framework.Registration

@@ -134,11 +134,16 @@ block in `counterBase`. -/
 def ctrSetup : List Instr :=
   setup ++ setMask counterStep counterOne ++ load counterBase .r5
 
+/-- Encrypt whole blocks starting at r6 and store at r6 plus the displacement
+in `o`. The counter at r5 advances by the original block count in r7. -/
+def ctrData (o : Reg) : Prog isa :=
+  .seq (.block ctrSetup) (.seq (batches false true o) (.block (store counterBase .r5)))
+
 /-- `vg_aes_ctr32(schedule = r3, rounds = r4, counter = r5, data = r6, n = r7,
 scratch = r8)`: counter mode on the `n` blocks at `r6`, in place, and the
 counter block, `n` further on, stored back. -/
 def ctr32 : Prog isa :=
   .ite (.zero .d .r7) (.block [])
-    (.seq (.block ctrSetup) (.seq (batches false true) (.block (store counterBase .r5))))
+    (ctrData .r0)
 
 end VG.Impl.Aes.PPC64LE.Crypto

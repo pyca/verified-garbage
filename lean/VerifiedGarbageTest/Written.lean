@@ -26,6 +26,11 @@ beyond (`writtenOk`), and the emitter exports the bound as a constant and
 documents it. The checks (`Rust.checkWritten`) refuse a bound larger than
 the buffer, on a parameter that is not a writable array or not a parameter,
 and two bounds on one parameter.
+
+The same artifact, renamed, is a test of `Rust.checkName`: a registration's
+suffix (`Registration.suffix`) that is not letters, digits and underscores,
+such as one that ends the function and starts another before its proven
+code, is refused.
 -/
 
 namespace VG.Test.Written
@@ -138,4 +143,26 @@ pub unsafe extern \"C\" fn vg_test_written(buf: *mut [u64; 4], other: *mut [u8; 
 
 #guard Rust.writtenName "vg_x25519_base" "scratch" == "VG_X25519_BASE_SCRATCH_WRITTEN"
 
+/-- The artifact, its name `name` and its module `module`. -/
+def named (name : String) (module : String := "test") : Artifact :=
+  { artifact [] with name := name, module := module }
+
+#guard (Rust.checkName (artifact [])).isOk
+#guard (Rust.checkName (named "vg_test_written_avx2")).isOk
+#guard (Rust.checkName (named "vg_test_written" "aes_gcm2")).isOk
+-- A suffix that ends the function and starts another, which the proven code
+-- would then follow.
+#guard !(Rust.checkName (named "vg_test_written() { core::arch::naked_asm!(\"ret\") }\n\
+  pub unsafe extern \"C\" fn vg_test_written_verified")).isOk
+#guard !(Rust.checkName (named "vg_test_written;")).isOk
+#guard !(Rust.checkName (named "vg_test_written_AVX2")).isOk
+#guard !(Rust.checkName (named "vg_test_written ")).isOk
+-- Not its base's name followed by a suffix.
+#guard !(Rust.checkName (named "vg_test")).isOk
+#guard !(Rust.checkName (named "vg_other")).isOk
+-- Its module is not a Rust module's name.
+#guard !(Rust.checkName (named "vg_test_written" "")).isOk
+#guard !(Rust.checkName (named "vg_test_written" "../test")).isOk
+#guard !(Rust.checkName (named "vg_test_written" "Test")).isOk
+#guard !(Rust.checkName (named "vg_test_written" "1test")).isOk
 end VG.Test.Written

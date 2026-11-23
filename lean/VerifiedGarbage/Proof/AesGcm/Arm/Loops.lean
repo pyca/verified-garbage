@@ -235,6 +235,7 @@ theorem xorLoopG_ok {to : Bool} (s : State) {X S D : BitVec 32} {n : Nat} (h : L
     (hx : XSrc to s X D n) :
     WP isa (xorLoopG to) s fun s' =>
       s'.mem = writeBytes s.mem (State.addr D) (xorBytes s.mem (State.addr X) (State.addr S) n) ∧
+      s'.gpr (xsrc to) = X + BitVec.ofNat 32 n ∧
       s'.gpr .r1 = S + BitVec.ofNat 32 n ∧ s'.gpr .r2 = D + BitVec.ofNat 32 n ∧ s'.gpr .r3 = 0 ∧
       (∀ r, r ≠ .r0 → r ≠ .r1 → r ≠ .r2 → r ≠ .r3 → r ≠ .r12 → r ≠ xsrc to → s'.gpr r = s.gpr r) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp := by
@@ -274,7 +275,7 @@ theorem xorLoopG_ok {to : Bool} (s : State) {X S D : BitVec 32} {n : Nat} (h : L
   have ev : isa.eval .ne t' = some !decide (i + 1 = n) := eval_ne' hz
   by_cases he : i + 1 = n
   · left
-    refine ⟨by rw [ev]; simp [he], by rw [hmem, he], by rw [r1', he], by rw [r2', he], ?_, gg,
+    refine ⟨by rw [ev]; simp [he], by rw [hmem, he], by rw [rx', he], by rw [r1', he], by rw [r2', he], ?_, gg,
       by rw [rd', rd], by rw [wr', wr], by rw [sp', sp]⟩
     rw [r3', dec32 hi hn32, he, Nat.sub_self]; rfl
   · right
@@ -286,7 +287,7 @@ theorem xorLoop_ok (s : State) {S D : BitVec 32} {n : Nat} (h : LoopPre s S D n)
     WP isa xorLoop s fun s' =>
       s'.mem = writeBytes s.mem (State.addr D) (xorBytes s.mem (State.addr D) (State.addr S) n) ∧
       LoopOut s S D n s' :=
-  WP.mono (xorLoopG_ok s h (XSrc.inPlace h)) fun _ ⟨m, r1, r2, r3, g, rd, wr, sp⟩ =>
+  WP.mono (xorLoopG_ok s h (XSrc.inPlace h)) fun _ ⟨m, _, r1, r2, r3, g, rd, wr, sp⟩ =>
     ⟨m, r1, r2, r3, fun r h₀ h₁ h₂ h₃ h₄ => g r h₀ h₁ h₂ h₃ h₄ h₂, rd, wr, sp⟩
 
 end VG.Proof.AesGcm.Arm

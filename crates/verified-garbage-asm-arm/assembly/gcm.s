@@ -441,8 +441,9 @@ vg_aes_gcm_seal:
 	mov r1, r8
 	add r2, r10, #48
 	add lr, r11, #512
+	mov r6, r3
 	push {r12, lr}
-	bl {vg_aes_ctr32}
+	bl {vg_aes_ctr32_to}
 	ldr r12, [sp], #8
 	b 244f
 243:
@@ -1265,8 +1266,9 @@ vg_aes_gcm_open:
 	mov r1, r8
 	add r2, r10, #48
 	add lr, r11, #512
+	mov r6, r3
 	push {r12, lr}
-	bl {vg_aes_ctr32}
+	bl {vg_aes_ctr32_to}
 	ldr r12, [sp], #8
 	b 267f
 266:
@@ -1800,8 +1802,9 @@ vg_aes_gcm_stream_encrypt:
 	mov r1, r8
 	add r2, r10, #48
 	add lr, r11, #512
+	mov r6, r3
 	push {r12, lr}
-	bl {vg_aes_ctr32}
+	bl {vg_aes_ctr32_to}
 	ldr r12, [sp], #8
 	b 28f
 27:
@@ -2214,8 +2217,9 @@ vg_aes_gcm_stream_decrypt:
 	mov r1, r8
 	add r2, r10, #48
 	add lr, r11, #512
+	mov r6, r3
 	push {r12, lr}
-	bl {vg_aes_ctr32}
+	bl {vg_aes_ctr32_to}
 	ldr r12, [sp], #8
 	b 229f
 228:
@@ -2671,48 +2675,72 @@ vg_aes_gcm_stream_verify:
 	bx lr
 
 vg_aes_gcm_seal_gather:
-	sub sp, sp, #40
+	sub sp, sp, #2608
 	add r12, sp, #0
-	str lr, [r12, #20]
-	str r0, [r12, #24]
-	str r1, [r12, #28]
-	str r2, [r12, #32]
-	str r3, [r12, #36]
-	ldr lr, [r12, #40]
+	str lr, [r12, #32]
+	ldr lr, [sp, #2608]
 	str lr, [r12, #0]
-	ldr lr, [r12, #44]
+	ldr lr, [sp, #2612]
 	str lr, [r12, #4]
-	ldr lr, [r12, #56]
+	ldr lr, [sp, #2624]
 	str lr, [r12, #8]
-	ldr lr, [r12, #60]
+	ldr lr, [sp, #2628]
 	str lr, [r12, #12]
-	ldr lr, [r12, #64]
+	ldr lr, [sp, #2632]
 	str lr, [r12, #16]
-	ldr r0, [r12, #48]
-	ldr r2, [r12, #56]
-	ldr lr, [r12, #52]
-	cmp lr, #0
+	ldr lr, [sp, #2616]
+	str lr, [r12, #20]
+	ldr lr, [sp, #2620]
+	str lr, [r12, #24]
+	add lr, sp, #36
+	str lr, [r12, #28]
+	ldr lr, [sp, #32]
+	ldr r12, [sp, #28]
+	str r4, [r12, #128]
+	str r5, [r12, #132]
+	str r6, [r12, #136]
+	str r7, [r12, #140]
+	str r8, [r12, #144]
+	str r9, [r12, #148]
+	str r10, [r12, #152]
+	str r11, [r12, #156]
+	str lr, [r12, #160]
+	mov r11, r12
+	add r10, r11, #16
+	mov r9, r0
+	mov r8, r1
+	mov r4, r2
+	mov r5, r3
+	cmp r5, #12
 	beq 20f
-22:
-	ldr r1, [r0, #0]
-	ldr r3, [r0, #4]
-	lsr r3, r3, #2
-	cmp r3, #0
-	beq 23f
-25:
-	ldr r12, [r1, #0]
-	str r12, [r2, #0]
-	add r1, r1, #4
-	add r2, r2, #4
-	subs r3, r3, #1
-	bne 25b
-	b 24f
-23:
-24:
-	ldr r3, [r0, #4]
-	and r3, r3, #3
-	cmp r3, #0
+	mov r0, #0
+	str r0, [r10, #0]
+	str r0, [r10, #4]
+	str r0, [r10, #8]
+	str r0, [r10, #12]
+	mov r7, r5
+	mov r6, #0
+	cmp r5, #0
+	beq 22f
+	cmp r6, #0
+	beq 24f
+	mov r3, #16
+	sub r3, r3, r6
+	cmp r5, r3
+	mov r12, #0
+	adc r12, r12, #0
+	cmp r12, #0
 	beq 26f
+	b 27f
+26:
+	mov r3, r5
+27:
+	add r2, r10, #32
+	add r2, r2, r6
+	mov r1, r4
+	add r4, r4, r3
+	sub r5, r5, r3
+	add r6, r6, r3
 28:
 	ldrb r12, [r1, #0]
 	strb r12, [r2, #0]
@@ -2720,29 +2748,553 @@ vg_aes_gcm_seal_gather:
 	add r2, r2, #1
 	subs r3, r3, #1
 	bne 28b
-	b 27f
-26:
-27:
-	add r0, r0, #8
-	subs lr, lr, #1
-	bne 22b
+	cmp r6, #16
+	beq 29f
+	b 210f
+29:
+	add r0, r9, #240
+	add r1, r10, #0
+	add r2, r10, #32
+	mov r3, #1
+	add r12, r11, #512
+	push {r12, lr}
+	bl {vg_ghash}
+	ldr r12, [sp], #8
+210:
+	b 25f
+24:
+25:
+	mov r2, r4
+	lsr r3, r5, #4
+	and r12, r5, #15
+	sub r0, r5, r12
+	add r4, r4, r0
+	mov r5, r12
+	cmp r3, #0
+	beq 211f
+	add r0, r9, #240
+	add r1, r10, #0
+	add r12, r11, #512
+	push {r12, lr}
+	bl {vg_ghash}
+	ldr r12, [sp], #8
+	b 212f
+211:
+212:
+	cmp r5, #0
+	beq 213f
+	mov r1, r4
+	add r2, r10, #32
+	mov r3, r5
+215:
+	ldrb r12, [r1, #0]
+	strb r12, [r2, #0]
+	add r1, r1, #1
+	add r2, r2, #1
+	subs r3, r3, #1
+	bne 215b
+	b 214f
+213:
+214:
+	b 23f
+22:
+23:
+	and r6, r7, #15
+	cmp r6, #0
+	beq 216f
+	mov r12, #0
+	str r12, [r11, #96]
+	str r12, [r11, #100]
+	str r12, [r11, #104]
+	str r12, [r11, #108]
+	add r1, r10, #32
+	add r2, r11, #96
+	mov r3, r6
+218:
+	ldrb r12, [r1, #0]
+	strb r12, [r2, #0]
+	add r1, r1, #1
+	add r2, r2, #1
+	subs r3, r3, #1
+	bne 218b
+	add r0, r9, #240
+	add r1, r10, #0
+	add r2, r11, #96
+	mov r3, #1
+	add r12, r11, #512
+	push {r12, lr}
+	bl {vg_ghash}
+	ldr r12, [sp], #8
+	b 217f
+216:
+217:
+	mov r4, #0
+	mov r5, #0
+	mov r6, r7
+	mov r7, #0
+	lsl r0, r5, #3
+	orr r0, r0, r4, lsr #29
+	rev r0, r0
+	str r0, [r11, #96]
+	lsl r0, r4, #3
+	rev r0, r0
+	str r0, [r11, #100]
+	lsl r0, r7, #3
+	orr r0, r0, r6, lsr #29
+	rev r0, r0
+	str r0, [r11, #104]
+	lsl r0, r6, #3
+	rev r0, r0
+	str r0, [r11, #108]
+	add r0, r9, #240
+	add r1, r10, #0
+	add r2, r11, #96
+	mov r3, #1
+	add r12, r11, #512
+	push {r12, lr}
+	bl {vg_ghash}
+	ldr r12, [sp], #8
 	b 21f
 20:
+	ldr r0, [r4, #0]
+	ldr r1, [r4, #4]
+	ldr r2, [r4, #8]
+	mov r3, #16777216
+	str r0, [r10, #0]
+	str r1, [r10, #4]
+	str r2, [r10, #8]
+	str r3, [r10, #12]
 21:
-	add r12, sp, #0
-	ldr r0, [r12, #24]
-	ldr r1, [r12, #28]
-	ldr r2, [r12, #32]
-	ldr r3, [r12, #36]
-	bl {vg_aes_gcm_seal_entry}
-	add r12, sp, #0
-	ldr lr, [r12, #20]
-	add sp, sp, #40
+	ldr r0, [r10, #0]
+	ldr r1, [r10, #4]
+	ldr r2, [r10, #8]
+	ldr r3, [r10, #12]
+	rev r3, r3
+	add r3, r3, #1
+	rev r3, r3
+	str r0, [r10, #48]
+	str r1, [r10, #52]
+	str r2, [r10, #56]
+	str r3, [r10, #60]
+	mov r0, #0
+	str r0, [r10, #16]
+	str r0, [r10, #20]
+	str r0, [r10, #24]
+	str r0, [r10, #28]
+	ldr r4, [sp, #0]
+	ldr r5, [sp, #4]
+	mov r6, #0
+	cmp r5, #0
+	beq 219f
+	cmp r6, #0
+	beq 221f
+	mov r3, #16
+	sub r3, r3, r6
+	cmp r5, r3
+	mov r12, #0
+	adc r12, r12, #0
+	cmp r12, #0
+	beq 223f
+	b 224f
+223:
+	mov r3, r5
+224:
+	add r2, r10, #32
+	add r2, r2, r6
+	mov r1, r4
+	add r4, r4, r3
+	sub r5, r5, r3
+	add r6, r6, r3
+225:
+	ldrb r12, [r1, #0]
+	strb r12, [r2, #0]
+	add r1, r1, #1
+	add r2, r2, #1
+	subs r3, r3, #1
+	bne 225b
+	cmp r6, #16
+	beq 226f
+	b 227f
+226:
+	add r0, r9, #240
+	add r1, r10, #16
+	add r2, r10, #32
+	mov r3, #1
+	add r12, r11, #512
+	push {r12, lr}
+	bl {vg_ghash}
+	ldr r12, [sp], #8
+227:
+	b 222f
+221:
+222:
+	mov r2, r4
+	lsr r3, r5, #4
+	and r12, r5, #15
+	sub r0, r5, r12
+	add r4, r4, r0
+	mov r5, r12
+	cmp r3, #0
+	beq 228f
+	add r0, r9, #240
+	add r1, r10, #16
+	add r12, r11, #512
+	push {r12, lr}
+	bl {vg_ghash}
+	ldr r12, [sp], #8
+	b 229f
+228:
+229:
+	cmp r5, #0
+	beq 230f
+	mov r1, r4
+	add r2, r10, #32
+	mov r3, r5
+232:
+	ldrb r12, [r1, #0]
+	strb r12, [r2, #0]
+	add r1, r1, #1
+	add r2, r2, #1
+	subs r3, r3, #1
+	bne 232b
+	b 231f
+230:
+231:
+	b 220f
+219:
+220:
+	ldr r6, [sp, #4]
+	and r6, r6, #15
+	cmp r6, #0
+	beq 233f
+	mov r12, #0
+	str r12, [r11, #96]
+	str r12, [r11, #100]
+	str r12, [r11, #104]
+	str r12, [r11, #108]
+	add r1, r10, #32
+	add r2, r11, #96
+	mov r3, r6
+235:
+	ldrb r12, [r1, #0]
+	strb r12, [r2, #0]
+	add r1, r1, #1
+	add r2, r2, #1
+	subs r3, r3, #1
+	bne 235b
+	add r0, r9, #240
+	add r1, r10, #16
+	add r2, r11, #96
+	mov r3, #1
+	add r12, r11, #512
+	push {r12, lr}
+	bl {vg_ghash}
+	ldr r12, [sp], #8
+	b 234f
+233:
+234:
+	ldr r7, [sp, #20]
+	ldr r0, [sp, #24]
+	str r0, [r11, #256]
+	mov r0, #0
+	str r0, [r11, #260]
+	ldr r0, [r11, #256]
+	cmp r0, #0
+	beq 236f
+238:
+	ldr r4, [r7, #0]
+	ldr r5, [r7, #4]
+	add r7, r7, #8
+	ldr r0, [r11, #260]
+	ldr r2, [sp, #8]
+	add r2, r2, r0
+	and r6, r0, #15
+	add r0, r0, r5
+	str r0, [r11, #260]
+	cmp r5, #0
+	beq 239f
+	cmp r6, #0
+	beq 241f
+	mov r3, #16
+	sub r3, r3, r6
+	cmp r5, r3
+	mov r12, #0
+	adc r12, r12, #0
+	cmp r12, #0
+	beq 243f
+	b 244f
+243:
+	mov r3, r5
+244:
+	cmp r3, #0
+	beq 245f
+	add r1, r10, #64
+	add r1, r1, r6
+	sub r5, r5, r3
+247:
+	ldrb r12, [r4, #0]
+	ldrb r0, [r1, #0]
+	eor r12, r12, r0
+	strb r12, [r2, #0]
+	add r1, r1, #1
+	add r2, r2, #1
+	add r4, r4, #1
+	subs r3, r3, #1
+	bne 247b
+	b 246f
+245:
+246:
+	b 242f
+241:
+242:
+	mov r6, r2
+	cmp r5, #0
+	beq 248f
+	mov r3, r4
+	lsr r12, r5, #4
+	and r0, r5, #15
+	sub r1, r5, r0
+	add r4, r4, r1
+	mov r5, r0
+	cmp r12, #0
+	beq 250f
+	mov r2, r6
+	mov r0, r12
+	add r1, r11, #512
+	push {r0, r1, r2}
+	mov r0, r9
+	mov r1, r8
+	add r2, r10, #48
+	bl {vg_aes_ctr32_to}
+	ldr r12, [sp], #12
+	add r6, r6, r12, lsl #4
+	b 251f
+250:
+251:
+	cmp r5, #0
+	beq 252f
+	mov r12, #0
+	str r12, [r10, #64]
+	str r12, [r10, #68]
+	str r12, [r10, #72]
+	str r12, [r10, #76]
+	mov r0, r9
+	mov r1, r8
+	add r2, r10, #48
+	add r3, r10, #64
+	mov r12, #1
+	add lr, r11, #512
+	push {r12, lr}
+	bl {vg_aes_ctr32}
+	ldr r12, [sp], #8
+	add r1, r10, #64
+	mov r2, r6
+	mov r3, r5
+254:
+	ldrb r12, [r4, #0]
+	ldrb r0, [r1, #0]
+	eor r12, r12, r0
+	strb r12, [r2, #0]
+	add r1, r1, #1
+	add r2, r2, #1
+	add r4, r4, #1
+	subs r3, r3, #1
+	bne 254b
+	b 253f
+252:
+253:
+	b 249f
+248:
+249:
+	b 240f
+239:
+240:
+	ldr r0, [r11, #256]
+	subs r0, r0, #1
+	str r0, [r11, #256]
+	bne 238b
+	b 237f
+236:
+237:
+	ldr r4, [sp, #8]
+	ldr r5, [sp, #12]
+	mov r6, #0
+	cmp r5, #0
+	beq 255f
+	cmp r6, #0
+	beq 257f
+	mov r3, #16
+	sub r3, r3, r6
+	cmp r5, r3
+	mov r12, #0
+	adc r12, r12, #0
+	cmp r12, #0
+	beq 259f
+	b 260f
+259:
+	mov r3, r5
+260:
+	add r2, r10, #32
+	add r2, r2, r6
+	mov r1, r4
+	add r4, r4, r3
+	sub r5, r5, r3
+	add r6, r6, r3
+261:
+	ldrb r12, [r1, #0]
+	strb r12, [r2, #0]
+	add r1, r1, #1
+	add r2, r2, #1
+	subs r3, r3, #1
+	bne 261b
+	cmp r6, #16
+	beq 262f
+	b 263f
+262:
+	add r0, r9, #240
+	add r1, r10, #16
+	add r2, r10, #32
+	mov r3, #1
+	add r12, r11, #512
+	push {r12, lr}
+	bl {vg_ghash}
+	ldr r12, [sp], #8
+263:
+	b 258f
+257:
+258:
+	mov r2, r4
+	lsr r3, r5, #4
+	and r12, r5, #15
+	sub r0, r5, r12
+	add r4, r4, r0
+	mov r5, r12
+	cmp r3, #0
+	beq 264f
+	add r0, r9, #240
+	add r1, r10, #16
+	add r12, r11, #512
+	push {r12, lr}
+	bl {vg_ghash}
+	ldr r12, [sp], #8
+	b 265f
+264:
+265:
+	cmp r5, #0
+	beq 266f
+	mov r1, r4
+	add r2, r10, #32
+	mov r3, r5
+268:
+	ldrb r12, [r1, #0]
+	strb r12, [r2, #0]
+	add r1, r1, #1
+	add r2, r2, #1
+	subs r3, r3, #1
+	bne 268b
+	b 267f
+266:
+267:
+	b 256f
+255:
+256:
+	ldr r6, [sp, #12]
+	and r6, r6, #15
+	cmp r6, #0
+	beq 269f
+	mov r12, #0
+	str r12, [r11, #96]
+	str r12, [r11, #100]
+	str r12, [r11, #104]
+	str r12, [r11, #108]
+	add r1, r10, #32
+	add r2, r11, #96
+	mov r3, r6
+271:
+	ldrb r12, [r1, #0]
+	strb r12, [r2, #0]
+	add r1, r1, #1
+	add r2, r2, #1
+	subs r3, r3, #1
+	bne 271b
+	add r0, r9, #240
+	add r1, r10, #16
+	add r2, r11, #96
+	mov r3, #1
+	add r12, r11, #512
+	push {r12, lr}
+	bl {vg_ghash}
+	ldr r12, [sp], #8
+	b 270f
+269:
+270:
+	ldr r4, [sp, #4]
+	mov r5, #0
+	ldr r6, [sp, #12]
+	mov r7, #0
+	lsl r0, r5, #3
+	orr r0, r0, r4, lsr #29
+	rev r0, r0
+	str r0, [r11, #96]
+	lsl r0, r4, #3
+	rev r0, r0
+	str r0, [r11, #100]
+	lsl r0, r7, #3
+	orr r0, r0, r6, lsr #29
+	rev r0, r0
+	str r0, [r11, #104]
+	lsl r0, r6, #3
+	rev r0, r0
+	str r0, [r11, #108]
+	add r0, r9, #240
+	add r1, r10, #16
+	add r2, r11, #96
+	mov r3, #1
+	add r12, r11, #512
+	push {r12, lr}
+	bl {vg_ghash}
+	ldr r12, [sp], #8
+	ldr r0, [r10, #16]
+	str r0, [r11, #0]
+	ldr r0, [r10, #20]
+	str r0, [r11, #4]
+	ldr r0, [r10, #24]
+	str r0, [r11, #8]
+	ldr r0, [r10, #28]
+	str r0, [r11, #12]
+	mov r0, r9
+	mov r1, r8
+	mov r2, r10
+	add r3, r11, #0
+	mov r12, #1
+	add lr, r11, #512
+	push {r12, lr}
+	bl {vg_aes_ctr32}
+	ldr r12, [sp], #8
+	ldr r1, [sp, #16]
+	ldr r0, [r11, #0]
+	str r0, [r1, #0]
+	ldr r0, [r11, #4]
+	str r0, [r1, #4]
+	ldr r0, [r11, #8]
+	str r0, [r1, #8]
+	ldr r0, [r11, #12]
+	str r0, [r1, #12]
+	ldr r4, [r11, #128]
+	ldr r5, [r11, #132]
+	ldr r6, [r11, #136]
+	ldr r7, [r11, #140]
+	ldr r8, [r11, #144]
+	ldr r9, [r11, #148]
+	ldr r10, [r11, #152]
+	ldr lr, [r11, #160]
+	ldr r11, [r11, #156]
+	add sp, sp, #2608
 	sub sp, sp, #2640
 	add r12, sp, #0
 	mov r2, #0
 	mov r3, #82
-29:
+272:
 	str r2, [r12, #0]
 	str r2, [r12, #4]
 	str r2, [r12, #8]
@@ -2753,7 +3305,7 @@ vg_aes_gcm_seal_gather:
 	str r2, [r12, #28]
 	add r12, r12, #32
 	subs r3, r3, #1
-	bne 29b
+	bne 272b
 	str r2, [r12, #0]
 	str r2, [r12, #4]
 	str r2, [r12, #8]

@@ -118,9 +118,9 @@ place, XORing the keystream into the `n` blocks at `src` and writing the
 result to the `n` blocks at `dst`.
 
 The code may read `keys` (960 bytes) and `src` (`16 n` bytes), and read and
-write `counter`, `dst` and `scratch`. `src` overlaps none of the regions it
-may write, and neither `src` nor `dst` wraps around the end of the address
-space. The pointers, `rounds` and `n` are public; the round keys, the
+write `counter`, `dst` and `scratch`. The source and destination are identical
+or disjoint. Neither buffer wraps around the end of the address space.
+The pointers, `rounds` and `n` are public; the round keys, the
 counter block and the data are secret. -/
 def ctr32BsToRISCV64 : Contract RISCV64.isa where
   pre s :=
@@ -132,7 +132,7 @@ def ctr32BsToRISCV64 : Contract RISCV64.isa where
     s.rd = [keys, src] ∧ s.wr = [counter, data, scratch] ∧
     keys.Disjoint counter ∧ keys.Disjoint data ∧ keys.Disjoint scratch ∧
     counter.Disjoint data ∧ counter.Disjoint scratch ∧ data.Disjoint scratch ∧
-    src.Disjoint counter ∧ src.Disjoint data ∧ src.Disjoint scratch ∧
+    src.Disjoint counter ∧ (s.gpr .a6 = s.gpr .a3 ∨ src.Disjoint data) ∧ src.Disjoint scratch ∧
     (s.gpr .a3).toNat + 16 * (s.gpr .a4).toNat ≤ 2 ^ 64 ∧
     (s.gpr .a6).toNat + 16 * (s.gpr .a4).toNat ≤ 2 ^ 64 ∧
     ((s.gpr .a1).toNat = 10 ∨ (s.gpr .a1).toNat = 12 ∨ (s.gpr .a1).toNat = 14) ∧
@@ -569,7 +569,7 @@ theorem correctBsTo {s₀ : State} (hp : Proof.Aes.ctr32BsToRISCV64.pre s₀) :
   refine WP.mono (correctBsWith (o := true) (S := s₀.gpr .a6) (w := w)
     ⟨by rw [hrd]; simp, by rw [hwr]; simp, by rw [hwr]; simp, by rw [hwr]; simp,
       List.mem_append_left _ (by rw [hrd]; simp), fun _ => rfl, fun h => absurd h (by decide),
-      dKC, dKD, dKS, dCD, dCS, dDS, sC, sS, .inr sD, hR, hal, hw⟩)
+      dKC, dKD, dKS, dCD, dCS, dDS, sC, sS, sD, hR, hal, hw⟩)
     fun s' ⟨h₁, h₂, h₃, h₄⟩ => ⟨h₁, h₂, fun w' hw' => ⟨?_, h₄⟩⟩
   rw [h₃, aesWith_congr hw hw']
 

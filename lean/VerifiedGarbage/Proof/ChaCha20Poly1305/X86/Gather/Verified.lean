@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86.Verified
 public import VerifiedGarbage.Impl.ChaCha20Poly1305.X86.SealGather
-import VerifiedGarbage.Proof.AesGcm.X86.Gather.Callee
 import VerifiedGarbage.Proof.Aes.X86.AesNi.Lit
 import VerifiedGarbage.Proof.Aes.X86.VariantProof
 import VerifiedGarbage.Proof.ChaCha20.X86.Lit
@@ -39,7 +38,6 @@ meta import VerifiedGarbage.Proof.Aes.X86.VariantProof
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Spec.ChaCha20Poly1305.Contract
 meta import VerifiedGarbage.Proof.AesGcm.X86.Callee
-meta import VerifiedGarbage.Proof.AesGcm.X86.Gather.Callee
 meta import VerifiedGarbage.Spec.ChaCha20Poly1305.OutOfPlace
 
 /-! ### `ChaCha20Poly1305.X86.Gather.CT`, which only this module used -/

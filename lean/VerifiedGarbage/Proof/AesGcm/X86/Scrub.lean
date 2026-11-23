@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 public import VerifiedGarbage.Proof.Framework.X86.ScrubCall
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.AesGcm.X86.Frame
-public import VerifiedGarbage.Proof.AesGcm.X86.Gather.Verified
+public import VerifiedGarbage.Proof.AesGcm.X86.DirectGather.Verified
 public import VerifiedGarbage.Proof.AesGcm.X86.OpenTo.Verified
 public import VerifiedGarbage.Proof.AesGcm.Rounds
 public import VerifiedGarbage.Proof.AesGcm.RoundsTo
@@ -17,7 +17,7 @@ meta import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 meta import VerifiedGarbage.Proof.Framework.X86.ScrubCall
 meta import VerifiedGarbage.Proof.Framework.Registration
 meta import VerifiedGarbage.Proof.AesGcm.X86.Frame
-meta import VerifiedGarbage.Proof.AesGcm.X86.Gather.Verified
+meta import VerifiedGarbage.Proof.AesGcm.X86.DirectGather.Verified
 meta import VerifiedGarbage.Proof.AesGcm.X86.OpenTo.Verified
 meta import VerifiedGarbage.Proof.AesGcm.Rounds
 meta import VerifiedGarbage.Proof.AesGcm.RoundsTo
@@ -51,9 +51,8 @@ registers (`Impl.Scrub.X86.scrubAll`). One theorem each states
   not depend on the implementations but through the calls, so one stub
   serves all of them.
 
-`vg_aes_gcm_seal_gather` calls `vg_aes_gcm_seal`'s code without the
-cleanup, as the internal `vg_aes_gcm_seal<suffix>_core` (`Gather.sealFn`):
-its own cleanup zeroes the stack of that call.
+The gather implementation encrypts directly from descriptors and discharges
+its cleanup obligation with the same callee facts.
 -/
 
 @[expose] public section
@@ -204,7 +203,7 @@ materialize_code sealStub := withStackScratch 2604 9 («seal» stub)
 materialize_code openStub := withStackScratch 2608 10 («open» stub)
 materialize_code openToStub := withStackScratch 2616 12 (Open.openTo stub stubFn)
 materialize_code sealGatherStub :=
-  SealGather.sealGather "" (withStackScratch 2604 9 («seal» stub))
+  VG.Impl.AesGcm.X86.DirectGather.sealGather stub
 
 theorem init_side : scrubFSide (withStackScratch 2580 3 (init stub)) [] 2612 = true := by lit_decide
 theorem streamInit_side : scrubFSide (withStackScratch 2584 4 (streamInit stub)) [] 2608 = true := by
@@ -224,7 +223,7 @@ theorem open_side : scrubFSide (withStackScratch 2608 10 («open» stub)) [] 264
 theorem openTo_side : scrubFSide (withStackScratch 2616 12 (Open.openTo stub stubFn)) [] 2696 = true := by
   lit_decide
 theorem sealGather_side :
-    scrubFSide (SealGather.sealGather "" (withStackScratch 2604 9 («seal» stub))) [] 2688 = true := by
+    scrubFSide (VG.Impl.AesGcm.X86.DirectGather.sealGather stub) [] 2688 = true := by
   lit_decide
 
 variable (v : GcmImpl)
@@ -286,7 +285,7 @@ theorem openTo_scrub :
   exact scrubFSide_of_fill (n := 0) (by fill_calls) openTo_side
 
 theorem sealGather_scrub :
-    scrubFSide (SealGather.sealGather (Gather.sealFn v).name (Gather.sealFn v).code) [] 2688 = true := by
+    scrubFSide (VG.Impl.AesGcm.X86.DirectGather.sealGather v.callees) [] 2688 = true := by
   obtain ⟨hc, hk, hg⟩ := holes v
   exact scrubFSide_of_fill (n := 0) (by fill_calls) sealGather_side
 
@@ -382,12 +381,12 @@ theorem openTo_scrubbed :
     (@openToOut _) (hs := openTo_scrub v)
 
 theorem sealGather_scrubbed :
-    VerifiedScrubbed target (Impl.AesGcm.X86.Fn.sealGather v.callees v.suffix)
+    VerifiedScrubbed target (Impl.AesGcm.X86.Fn.sealGather v.callees)
       (Spec.Gcm.sealGatherContract X86.abi 2688) 0 :=
   verifiedScrubbedAll (api := Spec.Gcm.sealGatherApi)
-    { code := SealGather.sealGather (Gather.sealFn v).name (Gather.sealFn v).code
-      verified := Proof.AesGcm.sealGather_keyed (Gather.sealGather_verified (Gather.sealFn v))
-      spSafe := Gather.sealGather_spSafe v }
+    { code := VG.Impl.AesGcm.X86.DirectGather.sealGather v.callees
+      verified := Proof.AesGcm.sealGather_keyed (DirectGather.sealGather_verified v)
+      spSafe := DirectGather.core_safe v }
     (sealGatherOut _) (hs := sealGather_scrub v)
 
 /-! ## `spSafe` of the functions as emitted, which their registrations state -/
@@ -419,7 +418,7 @@ theorem openTo_spSafeF :
     (Impl.AesGcm.X86.Fn.openTo v.callees (OpenTo.toFn v)).all (fun i => !isa.writesSp i) = true :=
   scrubAll_spSafe (OpenTo.openTo_spSafe v)
 theorem sealGather_spSafeF :
-    (Impl.AesGcm.X86.Fn.sealGather v.callees v.suffix).all (fun i => !isa.writesSp i) = true :=
-  scrubAll_spSafe (Gather.sealGather_spSafe v)
+    (Impl.AesGcm.X86.Fn.sealGather v.callees).all (fun i => !isa.writesSp i) = true :=
+  scrubAll_spSafe (DirectGather.core_safe v)
 
 end VG.Proof.AesGcm.X86.Scrub

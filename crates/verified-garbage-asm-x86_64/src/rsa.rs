@@ -4441,6 +4441,54 @@ pub(crate) mod vg_rsa_mont_mul;
 pub(crate) mod vg_rsa_mont_mul_adx;
 
 #[rustfmt::skip]
+#[path = "internal/vg_rsa_pkcs1_decrypt_precomputed_body.rs"]
+pub(crate) mod vg_rsa_pkcs1_decrypt_precomputed_body;
+
+#[rustfmt::skip]
+#[path = "internal/vg_rsa_pkcs1_decrypt_precomputed_body_crt_adx.rs"]
+pub(crate) mod vg_rsa_pkcs1_decrypt_precomputed_body_crt_adx;
+
+#[rustfmt::skip]
+#[path = "internal/vg_rsa_pkcs1_decrypt_precomputed_body_crt_ifma.rs"]
+pub(crate) mod vg_rsa_pkcs1_decrypt_precomputed_body_crt_ifma;
+
+#[rustfmt::skip]
+#[path = "internal/vg_rsa_pkcs1_decrypt_precomputed_body_crt_ifma512.rs"]
+pub(crate) mod vg_rsa_pkcs1_decrypt_precomputed_body_crt_ifma512;
+
+#[rustfmt::skip]
+#[path = "internal/vg_rsa_pkcs1_decrypt_precomputed_body_sha256_avx2.rs"]
+pub(crate) mod vg_rsa_pkcs1_decrypt_precomputed_body_sha256_avx2;
+
+#[rustfmt::skip]
+#[path = "internal/vg_rsa_pkcs1_decrypt_precomputed_body_sha256_avx2_crt_adx.rs"]
+pub(crate) mod vg_rsa_pkcs1_decrypt_precomputed_body_sha256_avx2_crt_adx;
+
+#[rustfmt::skip]
+#[path = "internal/vg_rsa_pkcs1_decrypt_precomputed_body_sha256_avx2_crt_ifma.rs"]
+pub(crate) mod vg_rsa_pkcs1_decrypt_precomputed_body_sha256_avx2_crt_ifma;
+
+#[rustfmt::skip]
+#[path = "internal/vg_rsa_pkcs1_decrypt_precomputed_body_sha256_avx2_crt_ifma512.rs"]
+pub(crate) mod vg_rsa_pkcs1_decrypt_precomputed_body_sha256_avx2_crt_ifma512;
+
+#[rustfmt::skip]
+#[path = "internal/vg_rsa_pkcs1_decrypt_precomputed_body_sha256_shani.rs"]
+pub(crate) mod vg_rsa_pkcs1_decrypt_precomputed_body_sha256_shani;
+
+#[rustfmt::skip]
+#[path = "internal/vg_rsa_pkcs1_decrypt_precomputed_body_sha256_shani_crt_adx.rs"]
+pub(crate) mod vg_rsa_pkcs1_decrypt_precomputed_body_sha256_shani_crt_adx;
+
+#[rustfmt::skip]
+#[path = "internal/vg_rsa_pkcs1_decrypt_precomputed_body_sha256_shani_crt_ifma.rs"]
+pub(crate) mod vg_rsa_pkcs1_decrypt_precomputed_body_sha256_shani_crt_ifma;
+
+#[rustfmt::skip]
+#[path = "internal/vg_rsa_pkcs1_decrypt_precomputed_body_sha256_shani_crt_ifma512.rs"]
+pub(crate) mod vg_rsa_pkcs1_decrypt_precomputed_body_sha256_shani_crt_ifma512;
+
+#[rustfmt::skip]
 #[path = "internal/vg_rsa_pkcs1_encrypt_precomputed.rs"]
 pub(crate) mod vg_rsa_pkcs1_encrypt_precomputed;
 

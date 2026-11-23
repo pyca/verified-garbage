@@ -919,29 +919,46 @@ theorem seal_mid {s₀ s₁ s₂ s₃ : State} (h : onePre n wi s₀)
 
 end
 
-theorem seal_wp [VG.Proof.Gcm.Arm.GhashLaw] {s₀ : State} (h : sealArm.pre s₀) :
-    WP isa «seal» s₀ fun s' => abiPreserved s₀ s' ∧ sealArm.post s₀ s' := by
-  have h' : onePre 6 5 s₀ := sealPreArm.one h
+/-- The ciphertext can come from either contiguous or gathered plaintext. -/
+abbrev sealNonce (s : State) := bytesAt s.mem (State.addr (s.gpr .r2)) (s.gpr .r3).toNat
+abbrev sealAad (s : State) := bytesAt s.mem (State.addr (arg s 0)) (arg s 1).toNat
+abbrev sealH (s : State) := ctxH s.mem (State.addr (s.gpr .r0))
+abbrev sealCipher (s : State) := ctxCiph s.mem (State.addr (s.gpr .r0)) (s.gpr .r1).toNat
+abbrev sealData (s t : State) := bytesAt t.mem (State.addr (arg s 2)) (arg s 3).toNat
+
+structure TagReady (n wi : Nat) (s₀ s₃ : State) (plain : List Byte) : Prop where
+  env : ∃ k7, Env (s₀.gpr .r0) (oSt s₀ wi) (arg s₀ wi) s₀.sp k7 (s₀.gpr .r1) s₃
+  args : ArgsKeep n s₀ s₃
+  hashKey : blockAt s₃.mem (State.addr (s₀.gpr .r0)+240#64) = sealH s₀
+  aad : Absorbed s₃.mem (State.addr (oSt s₀ wi)+16#64) (State.addr (oSt s₀ wi)+32#64) (sealH s₀)
+    (sealAad s₀ ++ zeros (padLen (sealAad s₀).length))
+  counter : blockAt s₃.mem (State.addr (oSt s₀ wi)) = j0 (sealH s₀) (sealNonce s₀)
+  cipher : ciphOf s₃.mem (State.addr (s₀.gpr .r0)) (s₀.gpr .r1).toNat = sealCipher s₀
+  data : sealData s₀ s₃ = gctr (sealCipher s₀) (inc32 (j0 (sealH s₀) (sealNonce s₀))) plain
+  saved : SavedAt s₃.mem (arg s₀ wi) s₀
+
+theorem seal_tag_wp [VG.Proof.Gcm.Arm.GhashLaw] {n wi : Nat} {s₀ s₃ : State} {plain : List Byte}
+    (h' : onePre n wi s₀) (hn : 5≤n)
+    (tagW : (⟨State.addr (arg s₀ 4),16⟩ : Region) ∈ s₀.wr)
+    (dT : (⟨State.addr (arg s₀ 2),(arg s₀ 3).toNat⟩ : Region).Disjoint ⟨State.addr (arg s₀ 4),16⟩)
+    (tW : (⟨State.addr (arg s₀ 4),16⟩ : Region).Disjoint ⟨State.addr (arg s₀ wi),2560⟩)
+    (fT : (arg s₀ 4).toNat+16≤2^32) (ready : TagReady n wi s₀ s₃ plain) :
+    WP isa (.seq (oneTag 0) (.seq (.block tagOut) (.block restore))) s₃ fun s' =>
+      abiPreserved s₀ s' ∧ encryptWith (sealCipher s₀) (sealH s₀) 16 (sealNonce s₀) plain (sealAad s₀) =
+      (sealData s₀ s', bytesAt s'.mem (State.addr (arg s₀ 4)) 16) := by
+  obtain ⟨⟨k7,he₃⟩,args₃,hH₃,hab₃,hj₃,hc₃,hD₃,sv₃⟩ := ready
   have L := oneLay h'
   have fW := h'.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1
   have spf := h'.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1
-  have hin : args s₀ 6 ∈ s₀.rd := h'.1.2.2.2
-  obtain ⟨-, hwr, -, -, -, -, -, -, -, -, -, dT, -, -, tW, -, -, -, -, -, -, -, -, -, -, -, -, fT, -⟩ := h
+  have hin : args s₀ n ∈ s₀.rd := h'.1.2.2.2
   have dTW : ∀ {d k : Nat}, d + k ≤ 2560 → (⟨State.addr (arg s₀ 4), 16⟩ : Region).Disjoint
-      ⟨State.addr (arg s₀ 5) + BitVec.ofNat 64 d, k⟩ := fun hd => tW.sub_right (Lay.wSub hd)
-  refine WP.seq (one1_wp (wi := 5) h' (by decide) (by decide) fun s₁ h1 =>
-    WP.seq (WP.mono (oneAad_ok h' (by decide) h1) fun s₂ oa => ?_))
-  obtain ⟨k7, he₂⟩ := oa.env
-  have hw : (⟨State.addr (arg s₀ 2), (arg s₀ 3).toNat⟩ : Region) ∈ s₀.wr := by rw [hwr]; simp
-  refine WP.seq (WP.mono (oneCrypt_ok h' hw (by decide) he₂ oa.args oa.cb) fun s₃ oc => ?_)
-  have he₃ := oc.env
-  obtain ⟨hH₃, hab₃, hj₃, hc₃, hD₃, sv₃⟩ := seal_mid h' hw h1 oa oc
-  refine WP.seq (WP.mono (oneTag_ok h' (by decide) (o := 0) (.inl rfl) he₃ oc.args hH₃ (length_bytesAt _ _ _).symm hab₃)
+      ⟨State.addr (arg s₀ wi) + BitVec.ofNat 64 d, k⟩ := fun hd => tW.sub_right (Lay.wSub hd)
+  refine WP.seq (WP.mono (oneTag_ok h' hn (o := 0) (.inl rfl) he₃ args₃ hH₃ (length_bytesAt _ _ _).symm hab₃)
     fun s₄ ot => ?_)
   obtain ⟨k7'', he₄⟩ := ot.env
-  obtain ⟨i4, v4⟩ := ot.args.at spf hin 4 (by decide) (show 4 * 4 = 16 from rfl)
+  obtain ⟨i4, v4⟩ := ot.args.at spf hin 4 (by omega_using [hn]) (show 4 * 4 = 16 from rfl)
   obtain ⟨s₅, run₅, hb₅, hf₅, g₅, rd₅, wr₅, sp₅⟩ := tagOut_ok L he₄ i4 v4
-    (by rw [ot.args.wr, hwr]; exact covers_of_mem (by simp)) fT (by simpa using dTW (d := 0) (k := 16) (by decide))
+    (by rw [ot.args.wr]; exact covers_of_mem tagW) fT (by simpa using dTW (d := 0) (k := 16) (by decide))
   refine WP.seq (WP.of_runBlock ⟨s₅, run₅, ?_⟩)
   have he₅ := he₄.keep (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -967,10 +984,25 @@ theorem seal_wp [VG.Proof.Gcm.Arm.GhashLaw] {s₀ : State} (h : sealArm.pre s₀
     bytesAt_frame hf₅ (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact dT) (by omega_using [])
   have ho := ot.out
   rw [hc₃, hj₃, add_ofNat_zero, ← Proof.Gcm.fullTag_eq] at ho
-  simp only [sealArm, encryptWith, hm, hD₅, hD₄, hD₃, hb₅, ho]
+  simp only [sealData,sealCipher,sealAad,sealH,sealNonce] at hD₃ ho ⊢
+  simp only [encryptWith, hm, hD₅, hD₄, hD₃, hb₅, ho]
   refine Prod.ext rfl ?_
   exact List.take_of_length_le (by
     rw [Spec.Gcm.fullTag, Proof.Gcm.length_gctr, Cmac.toBytes_length])
+
+theorem seal_wp [VG.Proof.Gcm.Arm.GhashLaw] {s₀ : State} (h : sealArm.pre s₀) :
+    WP isa «seal» s₀ fun s' => abiPreserved s₀ s' ∧ sealArm.post s₀ s' := by
+  have h' : onePre 6 5 s₀ := sealPreArm.one h
+  obtain ⟨-, hwr, -, -, -, -, -, -, -, -, -, dT, -, -, tW, -, -, -, -, -, -, -, -, -, -, -, -, fT, -⟩ := h
+  refine WP.seq (one1_wp (wi := 5) h' (by decide) (by decide) fun s₁ h1 =>
+    WP.seq (WP.mono (oneAad_ok h' (by decide) h1) fun s₂ oa => ?_))
+  obtain ⟨k7, he₂⟩ := oa.env
+  have hw : (⟨State.addr (arg s₀ 2), (arg s₀ 3).toNat⟩ : Region) ∈ s₀.wr := by rw [hwr]; simp
+  refine WP.seq (WP.mono (oneCrypt_ok h' hw (by decide) he₂ oa.args oa.cb) fun s₃ oc => ?_)
+  have he₃ := oc.env
+  obtain ⟨hH₃, hab₃, hj₃, hc₃, hD₃, sv₃⟩ := seal_mid h' hw h1 oa oc
+  exact seal_tag_wp h' (by decide) (by rw [hwr]; simp) dT tW fT
+    ⟨⟨_,he₃⟩,oc.args,hH₃,hab₃,hj₃,hc₃,hD₃,sv₃⟩
 
 end VG.Proof.AesGcm.Arm
 
@@ -1909,22 +1941,25 @@ theorem cryptWhole_ct {to : Bool} {k8 : BitVec 32} {R : Nat} {S T : BitVec 32} {
     · let J₂ : State → Prop := fun s => ∃ k7, Env c st w sp k7 k8 s ∧ DataW c st w sp k7 k8 s T n ∧ j ≤ n ∧
         (R = 10 ∨ R = 12 ∨ R = 14) ∧ s.gpr .r0 = c ∧ s.gpr .r1 = BitVec.ofNat 32 R ∧
         s.gpr .r2 = st + BitVec.ofNat 32 48 ∧ s.gpr .r3 = S + BitVec.ofNat 32 j ∧
-        s.gpr .r12 = BitVec.ofNat 32 nb ∧ s.gpr .lr = w + BitVec.ofNat 32 512 ∧ S = T
+        s.gpr .r12 = BitVec.ofNat 32 nb ∧ s.gpr .lr = w + BitVec.ofNat 32 512 ∧ s.gpr .r6 = s.gpr .r3 ∧ S = T
       refine CT.seq (J := J₂) ?_ (fun s ⟨k7, he, hd, _, hm, hj, h8, hR, h3, h12, _⟩ => ?_) ?_
       · obtain ⟨_, hc⟩ : ∃ h, (VG.Taint.check VG.Arm.taint (Taint.ofRegs [.r8, .r9, .r10, .r11])
-            (.block [.mov .r0 (.reg .r9), .mov .r1 (.reg .r8), addI .r2 .r10 48, addI .lr .r11 scrO]) h).isSome =
+            (.block [.mov .r0 (.reg .r9), .mov .r1 (.reg .r8), addI .r2 .r10 48, addI .lr .r11 scrO, .mov .r6 (.reg .r3)]) h).isSome =
             true := ⟨_, by taint_decide⟩
         exact CT.taint _ (fun s₁ s₂ ⟨_, h₁, _, _, _, _, e₁, _⟩ ⟨_, h₂, _, _, _, _, e₂, _⟩ r hr =>
           pin8 h₁ h₂ e₁ e₂ (by simpa using hr)) hc
-      · obtain ⟨s₂, run₂, h0', h1', h2', hlr', hg₂, hk₂⟩ := wholeArgs_ok he
+      · obtain ⟨s₂, run₂, h0', h1', h2', hlr', h6', hg₂, hk₂⟩ := wholeArgs_ok he
         refine WP.of_runBlock ⟨s₂, run₂, k7, he.keep (fun r hr => by
           simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-          rcases hr with rfl | rfl | rfl | rfl | rfl <;> exact hg₂ _ (by decide) (by decide) (by decide) (by decide))
+          rcases hr with rfl | rfl | rfl | rfl | rfl <;> exact hg₂ _ (by decide) (by decide) (by decide) (by decide) (by decide))
           hk₂.sp hk₂.rd hk₂.wr, hd.of_eq hk₂.rd hk₂.wr, hj, hR, h0', by rw [h1', h8], h2',
-          by rw [hg₂ _ (by decide) (by decide) (by decide) (by decide), h3],
-          by rw [hg₂ _ (by decide) (by decide) (by decide) (by decide), h12], hlr', hm⟩
-      · refine CT.ctr fun s₁ s₂ ⟨_, he₁, hd₁, hj₁, hR, a0, a1, a2, a3, a12, alr, e⟩
-          ⟨_, he₂, hd₂, _, _, b0, b1, b2, b3, b12, blr, _⟩ => ?_
+          by rw [hg₂ _ (by decide) (by decide) (by decide) (by decide) (by decide), h3],
+          by rw [hg₂ _ (by decide) (by decide) (by decide) (by decide) (by decide), h12], hlr', h6'.trans (hg₂ _ (by decide) (by decide) (by decide) (by decide) (by decide)).symm, hm⟩
+      · refine ctrFrame_rel true (fun _ _ ⟨a, b⟩ _ =>
+          ⟨by obtain ⟨_, _, _, _, _, _, _, _, _, _, _, h, _⟩ := a; exact h,
+           by obtain ⟨_, _, _, _, _, _, _, _, _, _, _, h, _⟩ := b; exact h⟩) ?_
+        rintro s₁ s₂ ⟨⟨_, he₁, hd₁, hj₁, hR, a0, a1, a2, a3, a12, alr, _, e⟩,
+          ⟨_, he₂, hd₂, _, _, b0, b1, b2, b3, b12, blr, _, _⟩⟩
         subst e
         exact ⟨_, _, _, _, _, _, ctrWhole_mk L he₁ a0 a1 a2 a3 a12 alr hR (hd₁.sub (by omega_using [h0]) (by omega_using [h0])),
           ctrWhole_mk L he₂ b0 b1 b2 b3 b12 blr hR (hd₂.sub (by omega_using [h0]) (by omega_using [h0])), he₁.sp.trans he₂.sp.symm⟩
@@ -1966,7 +2001,7 @@ theorem cryptWhole_ct {to : Bool} {k8 : BitVec 32} {R : Nat} {S T : BitVec 32} {
           by rw [hg₂ _ (by decide) (by decide) (by decide), h6 rfl]⟩
       have mk : ∀ s, J₂ s → CtrToCall s c (st + BitVec.ofNat 32 48) (S + BitVec.ofNat 32 j) (T + BitVec.ofNat 32 j)
           (w + BitVec.ofNat 32 512) R nb := by
-        intro s ⟨k7, he, hd, hsr, hm, hj, hR, a0, a1, a2, a3, a8, _⟩
+        intro s ⟨k7, he, hd, hsr, hm, hj, hR, a0, a1, a2, a3, a8, a6⟩
         obtain ⟨dST, sp12, bc, bst, bw, bS, bT⟩ := hm
         have hdj := hd.sub (j := j) (k := 16 * nb) (by omega_using [h0]) (by omega_using [h0])
         have hsj := hsr.sub (j := j) (k := 16 * nb) (by omega_using [h0]) (by omega_using [h0])
@@ -1975,7 +2010,7 @@ theorem cryptWhole_ct {to : Bool} {k8 : BitVec 32} {R : Nat} {S T : BitVec 32} {
         have eC := L.stA (d := 48) (by decide)
         have eW := L.wA (d := 512) (by decide)
         have hk := he.sp
-        refine ⟨he.r9, a8, by rw [he.r10], a3, a0, a1, a2, hR, by rw [hk]; exact sp12,
+        refine ⟨he.r9, a8, by rw [he.r10], a3, a0, a1, a2, a6, hR, by rw [hk]; exact sp12,
           by have := L.cw; omega_using [this], by rw [L.stN (by decide)]; have := L.sw; omega_using [this], hsj.fit, hdj.ok.fit,
           by rw [L.wN (by decide)]; have := L.ww; omega_using [this], ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
         all_goals try simp only [eC, eW]
@@ -1986,7 +2021,8 @@ theorem cryptWhole_ct {to : Bool} {k8 : BitVec 32} {R : Nat} {S T : BitVec 32} {
         · exact L.st_w (by decide) (.inr ⟨by decide, by decide⟩)
         · exact hdj.ok.w.sub_right (Lay.wSub (by decide))
         · exact hsj.st.sub_right (Lay.stSub (by decide))
-        · rw [eS, eD]
+        · right
+          rw [eS, eD]
           exact (dST.sub_left (Offset.sub_base _ (by omega_using [h0]))).sub_right (Offset.sub_base _ (by omega_using [h0]))
         · exact hsj.w.sub_right (Lay.wSub (by decide))
         · rw [hk]; exact bc.sub_right (Region.sub_prefix (by decide))
@@ -2066,9 +2102,9 @@ theorem cryptTail_ct {to : Bool} {k8 : BitVec 32} {R : Nat} {S T : BitVec 32} {n
       · exact h₁.env.pin h₂.env (by simp)
 
 /-- `cryptTo`, from the start of a whole block. -/
-theorem cryptTo_ct {k8 : BitVec 32} {R : Nat} {S T : BitVec 32} {n : Nat} :
-    CT (CrMG true c st w sp k8 R S T n 0 0) cryptTo := by
-  refine CT.seq (J := fun s => CrMG true c st w sp k8 R S T n 0 0 s ∧ s.z = decide (n - 0 = 0)) ?_
+theorem cryptTo_from_ct {k8 : BitVec 32} {R : Nat} {S T : BitVec 32} {n q j : Nat} :
+    CT (CrMG true c st w sp k8 R S T n q j) cryptTo := by
+  refine CT.seq (J := fun s => CrMG true c st w sp k8 R S T n q j s ∧ s.z = decide (n - j = 0)) ?_
     (fun s ⟨k7, icb, P, m₀, hP, hs⟩ => ?_) ?_
   · obtain ⟨_, hc⟩ : ∃ h, (VG.Taint.check VG.Arm.taint (Taint.ofRegs [.r5]) (.block [.cmp .r5 (imm 0)]) h).isSome =
         true := ⟨_, by taint_decide⟩
@@ -2080,11 +2116,15 @@ theorem cryptTo_ct {k8 : BitVec 32} {R : Nat} {S T : BitVec 32} {n : Nat} :
       by rw [hg₁, hs.r8], hs.rounds, hs.data.of_eq hrd₁ hwr₁, fun h => by rw [hm₁]; exact hs.ctr h,
       fun h => by rw [hm₁]; exact hs.done h, by rw [hm₁]; exact hs.rest, hs.whole, by rw [hm₁]; exact hs.frame,
       fun h => by rw [hg₁]; exact hs.r6 h, hs.src.of_eq hrd₁ hwr₁, hs.mode⟩
-  refine CT.ite (decide (n - 0 = 0)) (fun s h => h.2) (fun _ => CT.skip) fun _ => ?_
-  refine CT.seq (J := CrMG true c st w sp k8 R S T n 0 (0 + 16 * ((n - 0) / 16)))
+  refine CT.ite (decide (n - j = 0)) (fun s h => h.2) (fun _ => CT.skip) fun _ => ?_
+  refine CT.seq (J := CrMG true c st w sp k8 R S T n q (j + 16 * ((n - j) / 16)))
     (CT.mono (cryptWhole_ct L) fun _ h => h.1)
     (fun s ⟨⟨k7, icb, P, m₀, hP, hs⟩, _⟩ => WP.mono (cryptWholeG_ok L hs (CrMidG.ciph L hs)) fun s' ⟨j, hj, hm, _⟩ =>
       ⟨k7, icb, P, m₀, hP, by rw [hj] at hm; exact hm⟩) (cryptTail_ct L)
+
+theorem cryptTo_ct {k8 : BitVec 32} {R : Nat} {S T : BitVec 32} {n : Nat} :
+    CT (CrMG true c st w sp k8 R S T n 0 0) cryptTo :=
+  cryptTo_from_ct L
 
 theorem crypt_ct {k8 : BitVec 32} {R : Nat} {D : BitVec 32} {n q : Nat} :
     CT (CrI c st w sp k8 R D n q) crypt := by
