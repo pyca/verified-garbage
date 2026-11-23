@@ -102,12 +102,12 @@ theorem satC (u : Bool) :
 
 theorem verified :
     Verified target code (Spec.EcKey.Secp256k1.inst.compressPublicKeyContract (abi.withConsts (secp256k1With false).constsK) 0) :=
-  Verified.of_correct (compress_correctT secp256k1 secp256k1_ok (List.mem_singleton_self _)) ct
+  Verified.of_correct (compress_correct secp256k1 secp256k1_ok (List.mem_singleton_self _)) ct
     (withTables_implies (compress_implies _ sat) (satC false))
 
 theorem verifiedU :
     Verified target codeU (Spec.EcKey.Secp256k1.inst.compressPublicKeyContract (abi.withConsts (secp256k1With true).constsK) 0) :=
-  Verified.of_correct (compress_correctT (secp256k1With true) secp256k1u_ok (List.mem_singleton_self _)) ctU
+  Verified.of_correct (compress_correct (secp256k1With true) secp256k1u_ok (List.mem_singleton_self _)) ctU
     (withTables_implies (compress_implies _ sat) (satC true))
 
 end VG.Proof.EcKey.Compressed.Arm.Secp256k1

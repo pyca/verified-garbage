@@ -244,14 +244,16 @@ theorem compress_key (c : Cfg) (s : State) :
   rw [show 2 * c.C.len + 1 = 1 + 2 * c.C.len by omega_using [], compress_eq hlen hhead hx hy]
   simp only [hv]
 
-/-- `compress_correct` for a state whose readable regions are those of the
-contract, then the tables `K` (none, or the curve's table of constants, which
-`ht` gives). -/
-theorem compress_correctG (c : Cfg) (hc : CfgOk c) (K : List (String × List (BitVec 64)))
-    (s : State) (hs : (compressContract c.C).pre (stripConsts K s))
-    (ht : c.tbl = true → ConstTblOk c (ptr s .r2) s) :
+/-- `vg_ec_<curve>_compress_public_key`, under a contract that lists the
+table of constants. -/
+theorem compress_correct (c : Cfg) (hc : CfgOk c) {K : List (String × List (BitVec 64))}
+    (hK : (c.constSym, c.constTbl) ∈ K) (s : State) (hs : ((compressContract c.C).withTablesArm K).pre s) :
     ∃ t s', Exec isa (Impl.EcKey.Compressed.Arm.compress c) s t s' ∧
-      abiPreserved s s' ∧ (compressContract c.C).post s s' := by
+      abiPreserved s s' ∧ ((compressContract c.C).withTablesArm K).post s s' := by
+  obtain ⟨hs, hk⟩ := hs
+  obtain ht : ConstTblOk c (ptr s .r2) s := tbl_of_consts hk hK
+    (show (⟨ptr s .r2, 8192⟩ : Region) ∈ (stripConsts K s).wr by
+      rw [hs.2.1]; exact List.mem_cons_of_mem _ (List.mem_singleton_self _))
   obtain ⟨hrd, hwr, hpo, hpw, how, hfit, hpkfit, hwfit⟩ := hs
   simp only [stripConsts_gpr, stripConsts_wr] at hrd hwr hpo hpw how hfit hpkfit hwfit
   obtain hp : InputPre c (1 + 2 * c.C.len) s :=
@@ -298,23 +300,5 @@ theorem compress_correctG (c : Cfg) (hc : CfgOk c) (K : List (String × List (Bi
   · exact hsave (.r10, 24) (by decide)
   · exact hsave (.r11, 28) (by decide)
   · exact hsave (.lr, 32) (by decide)
-
-/-- `vg_ec_<curve>_compress_public_key`, for a curve that copies no table. -/
-theorem compress_correct (c : Cfg) (hc : CfgOk c) (hn : c.tblSym = none)
-    (s : State) (hs : (compressContract c.C).pre s) :
-    ∃ t s', Exec isa (Impl.EcKey.Compressed.Arm.compress c) s t s' ∧
-      abiPreserved s s' ∧ (compressContract c.C).post s s' :=
-  compress_correctG c hc [] s (by rw [stripConsts_nil]; exact hs) (noTbl hn)
-
-/-- `compress_correct` under a contract that lists the table of constants. -/
-theorem compress_correctT (c : Cfg) (hc : CfgOk c) {K : List (String × List (BitVec 64))}
-    (hK : (c.constSym, c.constTbl) ∈ K) (s : State) (hs : ((compressContract c.C).withTablesArm K).pre s) :
-    ∃ t s', Exec isa (Impl.EcKey.Compressed.Arm.compress c) s t s' ∧
-      abiPreserved s s' ∧ ((compressContract c.C).withTablesArm K).post s s' := by
-  obtain ⟨hp, hk⟩ := hs
-  obtain hwr := hp.2.1
-  exact compress_correctG c hc K s hp fun _ => tbl_of_consts hk hK
-    (show (⟨ptr s .r2, 8192⟩ : Region) ∈ (stripConsts K s).wr by
-      rw [hwr]; exact List.mem_cons_of_mem _ (List.mem_singleton_self _))
 
 end VG.Proof.EcKey.Compressed.Arm

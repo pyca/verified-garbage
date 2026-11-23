@@ -102,7 +102,7 @@ theorem satC (u : Bool) :
 theorem verified (hL : Proof.Weierstrass.Law Spec.Secp256k1.curve) :
     Verified target code
       (Spec.EcKey.Secp256k1.inst.decompressPublicKeyContract (abi.withConsts (secp256k1With false).constsK) 0) :=
-  Verified.of_correct (decompress_correctT secp256k1 secp256k1_ok _ (candidateThree_correct secp256k1_ok (by decide +kernel))
+  Verified.of_correct (decompress_correct secp256k1 secp256k1_ok _ (candidateThree_correct secp256k1_ok (by decide +kernel))
       (List.mem_singleton_self _)) ct
     (withTables_implies (decompress_implies Spec.EcKey.Secp256k1.inst _
       (Proof.Weierstrass.rootFacts_three_mod_four hL (by decide +kernel)) sat) (satC false))
@@ -110,7 +110,7 @@ theorem verified (hL : Proof.Weierstrass.Law Spec.Secp256k1.curve) :
 theorem verifiedU (hL : Proof.Weierstrass.Law Spec.Secp256k1.curve) :
     Verified target codeU
       (Spec.EcKey.Secp256k1.inst.decompressPublicKeyContract (abi.withConsts (secp256k1With true).constsK) 0) :=
-  Verified.of_correct (decompress_correctT (secp256k1With true) secp256k1u_ok _
+  Verified.of_correct (decompress_correct (secp256k1With true) secp256k1u_ok _
       (candidateThree_correct secp256k1u_ok (by decide +kernel)) (List.mem_singleton_self _)) ctU
     (withTables_implies (decompress_implies Spec.EcKey.Secp256k1.inst _
       (Proof.Weierstrass.rootFacts_three_mod_four hL (by decide +kernel)) sat) (satC true))

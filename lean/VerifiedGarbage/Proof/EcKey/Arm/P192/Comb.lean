@@ -167,7 +167,7 @@ theorem combPk_pre {u : Bool} {s : State} (h : (combPkSpec u).pre s) : combPkPre
   sig_pre [Spec.EcKey.P192.inst,Spec.EcKey.Instance.publicKeyContract,Spec.EcKey.Instance.publicKeySig,
     Spec.P192.curve,Spec.EcKey.scratchWords,abi,argRegs,reduceClassify,Loc.val,State.addr] at h₁
   obtain ⟨_sp,rd,wr,_od,os,ds,fo,fd,fs⟩ := h₁
-  refine ⟨⟨hk.rd_strip rd,wr,os,ds,fo,fd,fs,fun _ => tbl_of_consts hk
+  refine ⟨⟨hk.rd_strip rd,wr,os,ds,fo,fd,fs,tbl_of_consts hk
     (List.mem_append_right _ (List.mem_singleton_self _)) ?_⟩,hk⟩
   rw [wr]; exact List.mem_cons_of_mem _ (List.mem_singleton_self _)
 
@@ -222,7 +222,7 @@ theorem combPk_sat (u : Bool) : (combPkSpec u).pre (combPkSat u) := by
   obtain ⟨W, eW⟩ : ∃ W, (p192With u).constTbl = W := ⟨_, rfl⟩
   have hk : combPkK u = [(p192Comb.tsym,p192CombWords),((p192With u).constSym, W)] := by rw [← eW]; rfl
   have hs₁ : (combPkSat u).syms "VG_P192_COMB" = 0x100000 := by cases u <;> decide
-  have hs₂ : (combPkSat u).syms (p192With u).constSym = 0x115000 := by cases u <;> decide
+  have hs₂ : (combPkSat u).syms "VG_P192_FRAME_CONSTS" = 0x115000 := by cases u <;> decide
   rw [comb_words_length, show (0x100000 : Addr) + BitVec.ofNat 64 (8 * 10752) = 0x115000 by decide] at held₂
   have hmem : (combPkSat u).mem = constMem 0x100000 (p192CombWords ++ (p192With u).constTbl) := by
     show combPkMem u = _; unfold combPkMem; rfl

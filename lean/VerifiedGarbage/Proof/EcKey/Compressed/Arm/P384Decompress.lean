@@ -102,7 +102,7 @@ theorem satC (u : Bool) :
 theorem verified (hL : Proof.Weierstrass.Law Spec.P384.curve) :
     Verified target code
       (Spec.EcKey.P384.inst.decompressPublicKeyContract (abi.withConsts (p384With false).constsK) 0) :=
-  Verified.of_correct (decompress_correctT p384 p384_ok _ (candidateThree_correct p384_ok (by decide +kernel))
+  Verified.of_correct (decompress_correct p384 p384_ok _ (candidateThree_correct p384_ok (by decide +kernel))
       (List.mem_singleton_self _)) ct
     (withTables_implies (decompress_implies Spec.EcKey.P384.inst _
       (Proof.Weierstrass.rootFacts_three_mod_four hL (by decide +kernel)) sat) (satC false))
@@ -110,7 +110,7 @@ theorem verified (hL : Proof.Weierstrass.Law Spec.P384.curve) :
 theorem verifiedU (hL : Proof.Weierstrass.Law Spec.P384.curve) :
     Verified target codeU
       (Spec.EcKey.P384.inst.decompressPublicKeyContract (abi.withConsts (p384With true).constsK) 0) :=
-  Verified.of_correct (decompress_correctT (p384With true) p384u_ok _
+  Verified.of_correct (decompress_correct (p384With true) p384u_ok _
       (candidateThree_correct p384u_ok (by decide +kernel)) (List.mem_singleton_self _)) ctU
     (withTables_implies (decompress_implies Spec.EcKey.P384.inst _
       (Proof.Weierstrass.rootFacts_three_mod_four hL (by decide +kernel)) sat) (satC true))

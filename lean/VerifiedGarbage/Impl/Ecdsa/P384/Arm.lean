@@ -14,7 +14,7 @@ open VG.Arm
 `vg_p384_mul_mod_<p|n>_umaal` if `u`. -/
 def p384With (u : Bool) : Cfg :=
   ⟨6, Spec.P384.curve, Impl.Weierstrass.Mont.p384p, Impl.Weierstrass.Mont.p384n, some Impl.Weierstrass.Mul.p384, u,
-    some "VG_P384_FRAME_CONSTS"⟩
+    "VG_P384_FRAME_CONSTS"⟩
 
 /-- P-384 as the code has it. -/
 def p384 : Cfg := p384With false
