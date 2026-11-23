@@ -42,12 +42,13 @@ theorem body48_keeps (ld : Bool) : (body48 ld).all Instr.keepsH = true := by
 
 theorem body48M_ok {ix : Bool} {s₀ : State} (hp : Stitch.LPre ix s₀) {T : Nat → Nat → Nat → Block}
     (hT : FinOk48 (hk s₀) T) {e : Nat} (he : 16 * (e + 5) ≤ nb s₀) {s : State} (hI : EInv3M ix s₀ T e s)
-    (hCache : VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s) :
-    WP isa (body48 ix) s fun s' => EInv3M ix s₀ T (e + 3) s' ∧ s'.cf = some (decide (nb s₀ - 16 * (e + 2) < 96)) ∧
+    (hCache : VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s)
+    (load : Bool := ix) (same : ∀ e t, EInv3M ix s₀ T e t → Stitch.oA t load = Stitch.oA t ix := by intros; rfl) :
+    WP isa (body48 load) s fun s' => EInv3M ix s₀ T (e + 3) s' ∧ s'.cf = some (decide (nb s₀ - 16 * (e + 2) < 96)) ∧
       VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s' := by
-  suffices h : WP isa (body48 ix) s fun s' => EInv3M ix s₀ T (e + 3) s' ∧
+  suffices h : WP isa (body48 load) s fun s' => EInv3M ix s₀ T (e + 3) s' ∧
       s'.cf = some (decide (nb s₀ - 16 * (e + 2) < 96)) from
-    WP.mono (WP.hkeepCode (by rfl) (body48_keeps ix) h)
+    WP.mono (WP.hkeepCode (by rfl) (body48_keeps load) h)
       (fun t ⟨⟨hi, hz⟩, hh⟩ => ⟨hi, hz, hCache.keep hh (hi.a.keys hp)⟩)
 
   have hw := hp.wrap_w
@@ -78,18 +79,20 @@ theorem body48M_ok {ix : Bool} {s₀ : State} (hp : Stitch.LPre ix s₀) {T : Na
   refine WP.seq (WP.mono (batchM_ok (st := false) (ld := ix) hp (by cases ix <;> rfl) id (gq48 0) gRegs48 gRegs48_ok
     (Q 0) (hgq 0 (by decide)) (hq 0)
     (hqx 0 _ (by omega_arith) (by omega_arith)) (c := 16 * (e + 2)) (j := 12) (by omega_arith) hI.a hCache
-    (gq48_keeps 0) hr8 (by show a.toNat + _ = _; omega_arith) hQ₀) fun s₁ ⟨hA₁, hQ₁, hg₁, _, _, hCache₁⟩ => ?_)
+    (gq48_keeps 0) hr8 (by show a.toNat + _ = _; omega_arith) hQ₀ load (same _ _ hI)) fun s₁ ⟨hA₁, hQ₁, hg₁, _, _, hCache₁⟩ => ?_)
   refine WP.seq (WP.mono (batchM_ok (st := false) (ld := ix) hp (by cases ix <;> rfl) id (gq48 1) gRegs48 gRegs48_ok
     (Q 1) (hgq 1 (by decide)) (hq 1)
     (hqx 1 _ (by omega_arith) (by omega_arith)) (c := 16 * (e + 2) + 16) (j := 16) (by omega_arith) hA₁ hCache₁
     (gq48_keeps 1) (fun hi => by rw [hg₁]; exact hr8 hi)
-    (by rw [hg₁]; show a.toNat + _ = _; omega_arith) (hQ₁.next (by decide) (Nat.le_refl _)))
+    (by rw [hg₁]; show a.toNat + _ = _; omega_arith) (hQ₁.next (by decide) (Nat.le_refl _)) load (by
+      rw [Stitch.oA_congr load hg₁, Stitch.oA_congr ix hg₁]; exact same _ _ hI))
     fun s₂ ⟨hA₂, hQ₂, hg₂, _, _, hCache₂⟩ => ?_)
   refine WP.seq (WP.mono (batchM_ok (st := false) (ld := ix) hp (by cases ix <;> rfl) id (gq48 2) gRegs48 gRegs48_ok
     (Q 2) (hgq 2 (by decide)) (hq 2)
     (hqx 2 _ (by omega_arith) (by omega_arith)) (c := 16 * (e + 2) + 16 + 16) (j := 20) (by omega_arith) hA₂ hCache₂
     (gq48_keeps 2) (fun hi => by rw [hg₂, hg₁]; exact hr8 hi)
-    (by rw [hg₂, hg₁]; show a.toNat + _ = _; omega_arith) (hQ₂.next (by decide) (Nat.le_refl _)))
+    (by rw [hg₂, hg₁]; show a.toNat + _ = _; omega_arith) (hQ₂.next (by decide) (Nat.le_refl _)) load (by
+      rw [Stitch.oA_congr load (hg₂.trans hg₁), Stitch.oA_congr ix (hg₂.trans hg₁)]; exact same _ _ hI))
     fun s₃ ⟨hA₃, hQ₃, hg₃, _, _, _⟩ => ?_)
   refine WP.mono (next48_ok s₃ 96 96 (by decide)) fun s' ⟨frdx, fr9, fcf, fg, fl, fm, frd, fwr⟩ => ?_
   obtain ⟨hE₃, h2⟩ := hQ₃
@@ -115,23 +118,37 @@ theorem body48M_ok {ix : Bool} {s₀ : State} (hp : Stitch.LPre ix s₀) {T : Na
 
 theorem loop48M_ok {ix : Bool} {s₀ : State} (hp : Stitch.LPre ix s₀) {T : Nat → Nat → Nat → Block}
     (hT : FinOk48 (hk s₀) T) {s : State} (hI : EInv3M ix s₀ T 1 s) (h96 : 96 ≤ nb s₀)
-    (hCache : VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s) :
-    WP isa (.loop (body48 ix) .ae) s fun s' => ∃ e, nb s₀ - 16 * (e - 1) < 96 ∧ EInv3M ix s₀ T e s' ∧
+    (hCache : VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s)
+    (load : Bool := ix) (same : ∀ e t, EInv3M ix s₀ T e t → Stitch.oA t load = Stitch.oA t ix := by intros; rfl) :
+    WP isa (.loop (body48 load) .ae) s fun s' => ∃ e, nb s₀ - 16 * (e - 1) < 96 ∧ EInv3M ix s₀ T e s' ∧
       VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s' := by
   let I : Nat → State → Prop := fun m s => ∃ e, m = nb s₀ - 16 * e ∧ 16 * (e + 5) ≤ nb s₀ ∧ EInv3M ix s₀ T e s ∧
     VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s
-  obtain hstep : ∀ m s, I m s → WP isa (body48 ix) s (fun s' =>
+  obtain hstep : ∀ m s, I m s → WP isa (body48 load) s (fun s' =>
       (eval .ae s' = some false ∧ ∃ e, nb s₀ - 16 * (e - 1) < 96 ∧ EInv3M ix s₀ T e s' ∧
         VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s') ∨
       (eval .ae s' = some true ∧ ∃ m' < m, I m' s')) := by
     rintro m s ⟨e, rfl, he, hI, hCI⟩
-    refine WP.mono (body48M_ok hp hT he hI hCI) fun s' ⟨hI', hcf', hCI'⟩ => ?_
+    refine WP.mono (body48M_ok hp hT he hI hCI load same) fun s' ⟨hI', hcf', hCI'⟩ => ?_
     by_cases hlt : nb s₀ - 16 * (e + 2) < 96
     · exact .inl ⟨by simp only [eval, hcf', hlt, decide_true, Option.map_some, Bool.not_true],
         e + 3, by omega_arith, hI', hCI'⟩
     · exact .inr ⟨by simp only [eval, hcf', hlt, decide_false, Option.map_some, Bool.not_false],
         nb s₀ - 16 * (e + 3), by omega_arith, e + 3, rfl, by omega_arith, hI', hCI'⟩
   exact WP.loop (M := isa) I hstep (nb s₀ - 16 * 1) s ⟨1, rfl, by omega_arith, hI, hCache⟩
+
+/-- With zero source displacement, the indexed loop used by separate buffers
+also encrypts in place. Its invariant protects each unprocessed input block. -/
+theorem loop48IndexedInPlace_ok {s₀ : State} (hp : SPre s₀) (zero : s₀.gpr .r8 = 0)
+    {T : Nat → Nat → Nat → Block} (hT : FinOk48 (hk s₀) T) {s : State} (hI : EInv3M false s₀ T 1 s)
+    (h96 : 96 ≤ nb s₀) (hCache : VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s) :
+    WP isa (.loop (body48 true) .ae) s fun s' => ∃ e, nb s₀ - 16 * (e - 1) < 96 ∧ EInv3M false s₀ T e s' ∧
+      VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s' := by
+  refine loop48M_ok hp.toM hT hI h96 hCache true ?_
+  intro e t inv
+  change t.gpr .rdx + t.gpr .r8 = t.gpr .rdx
+  rw [inv.gpr .r8 (by decide) (by decide) (fun h => absurd h (by decide)) (by decide) (by decide),
+      zero, show (0 : Addr) = 0#64 from rfl, BitVec.add_zero]
 
 /-- `StitchZ.bigRestM_ok` with the round keys cached. -/
 theorem bigRestM_ok {ix : Bool} {s₀ : State} (hp : Stitch.LPre ix s₀) {P : Nat → Nat → Block}

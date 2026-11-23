@@ -232,8 +232,9 @@ theorem batchM_ok {ix st ld : Bool} {s₀ : State} (hp : Stitch.LPre ix s₀) (h
     (hCache : VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s)
     (hgh : ∀ j, (g j).all Instr.keepsH = true)
     (hr8 : ix = true → s.gpr .r8 = if ld then dp s₀ - Stitch.op s₀ else Stitch.op s₀ - dp s₀)
-    (hrdx : (s.gpr .rdx).toNat + 64 * j = (Stitch.wp ld s₀).toNat + 16 * c) (hQ : Q 1 s) :
-    WP isa (batch j g st ld) s fun s' => AInvM ix s₀ (c + 16) s' ∧ Q 10 s' ∧ s'.gpr = s.gpr ∧
+    (hrdx : (s.gpr .rdx).toNat + 64 * j = (Stitch.wp ld s₀).toNat + 16 * c) (hQ : Q 1 s)
+    (load : Bool := ld) (same : Stitch.oA s load = Stitch.oA s ld := by rfl) :
+    WP isa (batch j g st load) s fun s' => AInvM ix s₀ (c + 16) s' ∧ Q 10 s' ∧ s'.gpr = s.gpr ∧
       (∀ r, r ≠ .xmm13 → r ≠ .xmm14 → r ∉ aregs → r ∉ G → ∀ l < 4, s'.zlane r l = s.zlane r l) ∧
       Frame [⟨Stitch.wAddr ix s₀ c, 256⟩] s.mem s'.mem ∧ VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s' := by
   have hwd := hp.wrap_d
@@ -259,7 +260,7 @@ theorem batchM_ok {ix st ld : Bool} {s₀ : State} (hp : Stitch.LPre ix s₀) (h
       rw [hr8 rfl]
       exact StitchZTo.src_addr (raddr i)
     · exact raddr i
-  exact batchAt_ok hp g G hG Q hg hq hqx hc hI hCache hgh addr oaddr
+  exact batchAt_ok hp g G hG Q hg hq hqx hc hI hCache hgh (same ▸ addr) oaddr
     (by simp only [aregs, List.length_cons, List.length_nil]; omega_using [hc, hrdx, hwr]) hQ
 
 theorem batch_ok {s₀ : State} (hp : SPre s₀) (g : Nat → List Instr) (G : List XReg)
@@ -280,17 +281,14 @@ theorem batch_ok {s₀ : State} (hp : SPre s₀) (g : Nat → List Instr) (G : L
     WP isa (batch j g false indexed) s fun s' => AInv s₀ (c + 16) s' ∧ Q 10 s' ∧ s'.gpr = s.gpr ∧
       (∀ r, r ≠ .xmm13 → r ≠ .xmm14 → r ∉ aregs → r ∉ G → ∀ l < 4, s'.zlane r l = s.zlane r l) ∧
       Frame [⟨bAddr s₀ c, 256⟩] s.mem s'.mem ∧ VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s' := by
-  have out (i : Nat) : s.gpr .rdx + BitVec.ofNat 64 (64 * j + 16 * i) = bAddr s₀ (c + i) :=
-    addr_eq (by omega_using [hrdx])
-  have src (i : Nat) : Stitch.oA s indexed + BitVec.ofNat 64 (64 * j + 16 * i) = bAddr s₀ (c + i) := by
+  have same : Stitch.oA s indexed = Stitch.oA s false := by
     cases indexed with
-    | false => exact out i
+    | false => rfl
     | true =>
-      change s.gpr .rdx + s.gpr .r8 + _ = _
+      change s.gpr .rdx + s.gpr .r8 = s.gpr .rdx
       rw [zero rfl, show (0 : Addr) = 0#64 from rfl, BitVec.add_zero]
-      exact out i
-  exact WP.mono (batchAt_ok (ix := false) (st := false) (ld := indexed) hp.toM g G hG Q hg hq hqx hc hI.toM hCache hgh
-    src out (by simp only [aregs, List.length_cons, List.length_nil]; omega_using [hc, hrdx, hp.wrap_d]) hQ)
+  exact WP.mono (batchM_ok (ld := false) hp.toM rfl (fun h => absurd h (by decide)) g G hG Q hg hq hqx
+    hc hI.toM hCache hgh (fun h => absurd h (by decide)) hrdx hQ indexed same)
     fun _ ⟨hA, h⟩ => ⟨hA.toAInv, h⟩
 
 end VG.Proof.Gcm.X86_64.StitchZH
