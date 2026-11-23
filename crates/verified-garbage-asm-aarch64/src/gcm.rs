@@ -5444,7 +5444,6 @@ cbz x24, 2158f
 .inst 0xd344ff49
 cbz x9, 2160f
 .inst 0xd2800209,0xcb180129,0x4e010d21",
-        gather_leaf = sym vg_aes_gcm_seal_gather_aes_sha3,
         concat!("adrp x10, ", vg_sym_page!("{VG_GCM_TAIL_IDX}")),
         concat!("add x10, x10, ", vg_sym_pageoff!("{VG_GCM_TAIL_IDX}")),
         r".inst 0x3dc00140,0x6e218400,0x3dc01282,0x4e000042,0xcb0902ea,0x3dc00143,0x6e221c63,0x3d800143
@@ -6212,6 +6211,7 @@ bl {vg_aes_ctr32_aes}
 cbnz x10, 2360b
 .inst 0x3d80013f,0x3d80053f,0x911083ff,0xd65f03c0
 .p2align 6",
+        gather_leaf = sym vg_aes_gcm_seal_gather_aes_sha3,
         vg_ghash_aes = sym super::aes_gcm_siv::vg_ghash_aes::vg_ghash_aes,
         vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes::vg_aes_ctr32_aes,
         vg_ghash_with_powers_aes = sym super::gcm::vg_ghash_with_powers_aes::vg_ghash_with_powers_aes,
