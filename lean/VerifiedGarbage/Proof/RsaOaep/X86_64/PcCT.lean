@@ -425,7 +425,7 @@ theorem call_ok (v : PublicImpl) {s t : State} (hp : PPre H s) (L : Lay t (fb s)
   have rd : ∀ i < 4, t.mem.readW (off (fb s) (8 * i)) 64 = W i := fun i hi => R.rd i rfl (by unfold nW frameBytes; omega_using [hi])
   have hpre := call_pre hp L.rsp ((rd 0 (by decide)).trans hw0) ((rd 1 (by decide)).trans hw1)
       ((rd 2 (by decide)).trans hw2) ((rd 3 (by decide)).trans hw3) hdi hsi hdx hcx h8 h9
-  refine WP.call_mx (s := t) (k := ⟨pdContract.pre, pdChkContract.post, pdContract.pub⟩) (rd := callRd s)
+  refine WP.call_mx (s := t) (k := ⟨pdContract.pre, pdChkContract.post, pdContract.pub, none⟩) (rd := callRd s)
     (wr := pubWr s) v.ok v.nosp (by rw [v.depth]; decide) hpre hc hw ?_
   intro s' hrd' hwr' hcs hfr _ ⟨s₂, hm₂, hg₂, hpost⟩ hmx
   rw [v.depth, L.rsp] at hfr

@@ -2180,6 +2180,6 @@ theorem dec_implies : fnContract.Implies (Spec.RsaPkcs1Enc.decryptContract abi s
 
 /-- `vg_rsa_pkcs1_decrypt`. -/
 theorem dec_verified : Verified target code (Spec.RsaPkcs1Enc.decryptContract abi stackBytes) :=
-  Verified.of_correct code_correct code_ct dec_implies
+  Verified.of_correct (k := fnContract) code_correct code_ct dec_implies
 
 end VG.Proof.RsaPkcs1Enc.PPC64LE.Dec

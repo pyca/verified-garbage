@@ -89,7 +89,7 @@ theorem callOp_ok {f : String} {body : Prog isa} (hn : body.noCalls = true) {n :
   refine WP.seq (WP.call (k := ⟨fun t => t.rd = [] ∧ t.wr = [⟨base, 8192⟩] ∧ t.gpr .r0 = s.gpr .r12 ∧
       t.gpr .r1 = (BitVec.ofNat 16 o).setWidth 32 ∧ t.gpr .r2 = (BitVec.ofNat 16 a).setWidth 32 ∧
       t.gpr .r3 = (BitVec.ofNat 16 b).setWidth 32 ∧ t.mem = s.mem,
-      fun t t' => Kept n base o t.mem t'.mem ∧ V t.mem t'.mem ∧ t'.gpr .r12 = t.gpr .r0, fun _ _ => True⟩)
+      fun t t' => Kept n base o t.mem t'.mem ∧ V t.mem t'.mem ∧ t'.gpr .r12 = t.gpr .r0, fun _ _ => True, none⟩)
     (fun t ⟨h1, h2, h3, h4, h5, h6, h7⟩ => by
       obtain ⟨tr, t', he, A, K, W, R⟩ := hbody t h1 h2 h3 h4 h5 h6 h7
       exact ⟨tr, t', he, A, K, W, R⟩)

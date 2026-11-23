@@ -126,7 +126,7 @@ private theorem guardOutside {limit : Nat} (bound : limit=96 ∨ limit=224) {a b
       · simpa only [loadState,gpr_write_of_ne _ _ _ same] using g r he
     · simpa only [loadState,gpr_write_of_ne _ _ _ (by decide : Reg.x0 ≠ .x12)] using x0
   exact Residue.noResidue_of_blind (c := (.block (afterLoad limit))) (by rcases bound with rfl | rfl <;> lit_decide)
-    (⟨fun _ => True, fun _ _ => True, fun _ _ => True⟩ : Contract isa) 0 _ _ _ _ _ _
+    (⟨fun _ => True, fun _ _ => True, fun _ _ => True, none⟩ : Contract isa) 0 _ _ _ _ _ _
     trivial trivial trivial after unknown (.block sa) (.block sb)
 
 private theorem sameRecord {a b : State} (pub : gatherPub a b) : recordWithin limit a ↔ recordWithin limit b := by
