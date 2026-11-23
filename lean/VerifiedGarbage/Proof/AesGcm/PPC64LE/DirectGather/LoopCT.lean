@@ -67,40 +67,21 @@ theorem addresses_agree {V₁ V₂ : Reg → Addr} {E sp : Addr} {s t : State} (
   · exact e.r30.trans (h.state.trans f.r30.symm)
   · exact e.r31.trans (h.work.trans f.r31.symm)
 
-theorem fusedCall_rel [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.FoldLaw]
-    {sp C S E : Addr} {R b : Nat} {s t : State} (x : BulkAbi sp C S E R b s)
-    (y : BulkAbi sp C S E R b t) (cfg : SealSplit.Call.Config s) (cfg' : SealSplit.Call.Config t) :
-    RelCT isa (Eq2 s t) (.call "vg_aes_gcm_encrypt_blocks_split" Impl.AesGcm.PPC64LE.SplitBlocks.encrypt) TT := by
-  refine RelCT.callEx SplitBlocks.encrypt_correct SplitBlocks.encrypt_ct ?_
-  intro left right both
-  obtain ⟨hl,hr⟩ := both
-  subst left; subst right
-  refine ⟨reads s,writes s,reads t,writes t,cfg.pre,cfg'.pre,?_,cfg.reads,cfg.writes,cfg'.reads,cfg'.writes⟩
-  have rs : s.gpr .r4=t.gpr .r4 := BitVec.eq_of_toNat_eq (x.rounds.trans y.rounds.symm)
-  have r8 : s.gpr .r8=t.gpr .r8 := BitVec.eq_of_toNat_eq (x.readBlocks.trans y.readBlocks.symm)
-  have r10 : s.gpr .r10=t.gpr .r10 := BitVec.eq_of_toNat_eq (x.writeBlocks.trans y.writeBlocks.symm)
-  sig_pub [Proof.Gcm.encryptBlocksSplitContract,Proof.Gcm.encryptBlocksSplitSig,
-    PPC64LE.abi,PPC64LE.argRegs,stackArg,stackArgAddr,List.getD,List.range,List.range.loop]
-  simp only [x.stack,y.stack,x.key,y.key,rs,r8,r10,x.counter,y.counter,x.hash,y.hash,x.src,y.src,x.dst,y.dst,
-    true_and]
-  exact x.scratch.trans y.scratch.symm
-
-theorem bulkPrepare_certificate : ∃ cert, (taint.check (Taint.ofRegs piecePublic) bulkPrepare cert).isSome=true :=
+theorem bulkRun_certificate : ∃ cert, (VG.Taint.check vectorTaint (Taint.ofRegs piecePublic) bulkRun cert).isSome=true :=
   ⟨_,by taint_decide⟩
 
 theorem bulkRun_rel [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.FoldLaw]
     {V₁ V₂ : Reg → Addr} {sp S E : Addr} {R n : Nat} {s t : State} (pub : SharedRegs V₁ V₂)
     (env : Env (cursors V₁ E) sp s) (env' : Env (cursors V₂ E) sp t)
-    (w : V₁ .r31=sp+128) (st : V₁ .r30=sp+144)
+    (_w : V₁ .r31=sp+128) (_st : V₁ .r30=sp+144)
     (p : s.gpr .r24=S) (p' : t.gpr .r24=S) (l : s.gpr .r25=BitVec.ofNat 64 n) (l' : t.gpr .r25=BitVec.ofNat 64 n)
-    (hn : n<2^64) (hR : (V₁ .r28).toNat=R) (rounds : R=10 ∨ R=12 ∨ R=14)
-    (space : BulkSpace sp (V₁ .r29) S E n s) (space' : BulkSpace sp (V₂ .r29) S E n t) :
+    (_hn : n<2^64) (_hR : (V₁ .r28).toNat=R) (_rounds : R=10 ∨ R=12 ∨ R=14)
+    (_space : BulkSpace sp (V₁ .r29) S E n s) (_space' : BulkSpace sp (V₂ .r29) S E n t) :
     RelCT isa (Eq2 s t) bulkRun TT := by
-  obtain ⟨_,cert⟩ := bulkPrepare_certificate
-  exact rel_seq (rel_taint piecePublic (env.sp.trans env'.sp.symm) (addresses_agree pub env env' (p.trans p'.symm) (l.trans l'.symm)) cert)
-    (bulkPrepare_wp env w st p l hn hR rounds space)
-    (bulkPrepare_wp env' (pub.work.symm.trans w) (pub.state.symm.trans st) p' l' hn (by rwa [←pub.rounds]) rounds space')
-    (fun _ _ a b => fusedCall_rel a.abi (pub.key ▸ b.abi) a.cfg b.cfg)
+  obtain ⟨_,cert⟩ := bulkRun_certificate
+  refine RelCT.taint (A := vectorTaint) (Taint.ofRegs piecePublic) (fun _ _ ⟨rfl,rfl⟩ => ?_) cert
+  exact ⟨env.sp.trans env'.sp.symm,fun r hr => addresses_agree pub env env' (p.trans p'.symm) (l.trans l'.symm)
+    r (Taint.mem_ofRegs.mp hr)⟩
 
 theorem bulkTest (s : State) {n : Nat} (h : s.gpr .r25=BitVec.ofNat 64 n) (fit : n<2^64) :
     WP isa (.block [.lsr .d .r12 .r25 9]) s (· = s.write .r12 (BitVec.ofNat 64 (n/512))) := by

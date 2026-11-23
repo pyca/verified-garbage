@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.AesGcm.PPC64LE.SealSplit.Call
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.SplitBlocks.Contract
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Env
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.SealFused
+import VerifiedGarbage.Proof.AesGcm.PPC64LE.SplitBlocks.Buffers
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.SigEval
 import VerifiedGarbage.Proof.Framework.Offset
@@ -70,6 +71,7 @@ structure BulkAbi (sp C S E : Addr) (R b : Nat) (s : State) : Prop where
   dst : s.gpr .r9=E
   writeBlocks : (s.gpr .r10).toNat=b
   scratch : s.mem.readW (sp+96) 64=sp+576
+  scratchReg : s.gpr .r0=sp+576
 
 theorem bulkConfig {sp C S E : Addr} {R b : Nat} {s : State} (a : BulkAbi sp C S E R b s)
     (h : BulkSpace sp C S E (b*16) s) (rounds : R=10 ∨ R=12 ∨ R=14) :
@@ -294,11 +296,60 @@ theorem bulkPrepare_wp
     ⟨xa.plain.sp.trans taken.env.sp,xa.key,xa.rounds,xa.counter,xa.hash,
      (xa.keep.gpr (by decide)).trans taken.r7,by change (x.gpr .r8).toNat=_; rw [xa.keep.gpr (by decide),taken.r8,toNat64 hb],
      (xa.keep.gpr (by decide)).trans taken.r9,by change (x.gpr .r10).toNat=_; rw [xa.keep.gpr (by decide),taken.r10,toNat64 hb],
-     by rw [plain]; exact Mem.readW_writeW_self64 _ _ _⟩
+     by rw [plain]; exact Mem.readW_writeW_self64 _ _ _,xa.scratch⟩
   have renv : Env (cursors V (E+BitVec.ofNat 64 k)) sp y :=
     envV.keep (fun r hr => xa.keep.gpr (by revert r; decide)) xa.plain.sp xa.plain.rd xa.plain.wr
   exact ⟨abi,bulkConfig abi cap rounds,renv,(xa.keep.gpr (by decide)).trans taken.ptr,
     (xa.keep.gpr (by decide)).trans taken.left,rd,wr,plain⟩
+
+theorem sharedArgs_ok (s : State) :
+    WP isa (.block [VG.Impl.AesGcm.PPC64LE.mov .r10 .r0]) s (· = s.write .r10 (s.gpr .r0)) := by
+  apply WP.of_runBlock
+  simp only [VG.Impl.AesGcm.PPC64LE.mov,runBlock_cons,runStep_some,runBlock_nil,exec_logic,BitVec.or_self,
+    Option.some.injEq,exists_eq_left']
+
+theorem sharedCall_ok [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.FoldLaw]
+    {sp C S E : Addr} {R n : Nat} {s : State} (a : BulkAbi sp C S E R (blocks n) s)
+    (cfg : SealSplit.Call.Config s) :
+    WP isa Impl.AesGcm.PPC64LE.DirectGather.sharedCall s (SealSplit.Call.Result s) := by
+  let rd := SealSplit.Call.reads s
+  let wr := SealSplit.Call.writes s
+  let u := (s.write .r10 (s.gpr .r0)).callEntry.withRegions rd wr
+  let v := s.callEntry.withRegions rd wr
+  obtain ⟨layout,rounds,_,scratch⟩ := SplitBlocks.Contract.shared_pre _ cfg.pre
+  have count : (s.gpr .r8).toNat=(s.gpr .r10).toNat := a.readBlocks.trans a.writeBlocks.symm
+  have groupsFit : SplitBlocks.prefixCount u=(s.gpr .r8).toNat := by
+    rw [SplitBlocks.prefixCount_eq]
+    change (s.gpr .r8).toNat / 8 * 8 = _
+    rw [a.readBlocks]; dsimp [blocks]; omega
+  have reg : s.gpr .r0=s.mem.readW (s.sp+96) 64 := by rw [a.stack,a.scratch,a.scratchReg]
+  have sameN : u.gpr .r8=v.gpr .r10 := BitVec.eq_of_toNat_eq count
+  have sameK : (SplitBlocks.bufferState u).gpr .r8 = v.gpr .r8 := BitVec.eq_of_toNat_eq groupsFit
+  have sameS : (SplitBlocks.bufferState u).gpr .r11 = SplitBlocks.Contract.scratch v := reg
+  have pre : SplitBlocks.BufferPre u := by
+    refine ⟨?_,rounds,?_,Or.inr groupsFit⟩
+    · rw [groupsFit,sameN]
+      exact SplitBlocks.sameLayout (b := SplitBlocks.Contract.prep (SplitBlocks.bufferState u)) layout rfl rfl rfl rfl sameS rfl sameK rfl rfl
+    · change Covers [⟨s.gpr .r0,704⟩] wr
+      rw [reg]; exact scratch
+  apply WP.seq
+  refine WP.mono (sharedArgs_ok s) fun _ eq => ?_
+  subst_vars
+  refine WP.call (k := SplitBlocks.bufferContract) SplitBlocks.encryptBuffers_correct
+    (rd := rd) (wr := wr) pre cfg.reads cfg.writes ?_
+  intro t hrd hwr hsp hf hcs _ hp
+  have hd := hp.data
+  change Spec.Gcm.blocksAt t.mem (s.gpr .r9) (s.gpr .r8).toNat=SplitBlocks.bufferOutput u at hd
+  have drop : (Spec.Gcm.blocksAt s.mem (s.gpr .r9) (s.gpr .r10).toNat).drop (s.gpr .r8).toNat=[] := by
+    apply List.drop_eq_nil_of_le
+    simp only [Spec.Gcm.blocksAt,List.length_map,List.length_range,←count,Nat.le_refl]
+  refine ⟨hrd,hwr,hsp,?_,hf,?_,?_,?_⟩
+  · intro r hr
+    have keep : ∀ r ∈ preserved, r ≠ .r10 := by decide
+    simpa only [RegUpd.gpr_write,keep r hr,ite_false] using hcs r hr
+  · rw [drop,List.append_nil,←count]; exact hd
+  · rw [←count]; exact hp.ctr
+  · rw [←count,hd]; exact hp.hash
 
 /-- Compose the argument stores and the data helper. The caller's descriptor
 may be larger than the multiple of 128 bytes passed to the fused helper. -/
@@ -312,7 +363,7 @@ theorem bulkRun_at [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.
   let b := blocks n
   have hkn : k≤n := by dsimp [k,bulkLen]; omega
   refine WP.seq (WP.mono (bulkPrepare_wp env w st h24 h25 hn hR rounds space) fun y ⟨abi,cfg,renv,ptr,left,rd,wr,plain⟩ => ?_)
-  refine WP.mono (SealSplit.Call.ok cfg) fun t post => ?_
+  refine WP.mono (sharedCall_ok abi cfg) fun t post => ?_
   have frame := post.frame
   rw [SealSplit.Call.writes,abi.counter,abi.hash,abi.dst,abi.writeBlocks,abi.stack,abi.scratch] at frame
   change Frame (callAreas sp E (b*16)) y.mem t.mem at frame

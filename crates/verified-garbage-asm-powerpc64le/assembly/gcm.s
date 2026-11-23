@@ -1976,7 +1976,9 @@ vg_aes_gcm_seal:
 	or %r7, %r27, %r27
 	rldicl %r8, %r23, 60, 4
 	addi %r9, %r31, 448
-	bl {vg_aes_gcm_encrypt_blocks}
+	or %r10, %r9, %r9
+	or %r9, %r7, %r7
+	bl {vg_aes_gcm_encrypt_blocks_buffers}
 	li %r0, 15
 	and %r25, %r23, %r0
 	subf %r12, %r25, %r23
@@ -3556,7 +3558,8 @@ vg_aes_gcm_seal_gather:
 	addi %r0, %r31, 448
 	addi %r12, %r1, 0
 	std %r0, 96(%r12)
-	bl {vg_aes_gcm_encrypt_blocks_split}
+	or %r10, %r0, %r0
+	bl {vg_aes_gcm_encrypt_blocks_buffers}
 	b 246f
 245:
 246:

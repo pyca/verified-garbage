@@ -103,12 +103,8 @@ pub(crate) mod vg_aes_expand_key_scratch;
 pub(crate) mod vg_aes_gcm_decrypt_blocks_to;
 
 #[rustfmt::skip]
-#[path = "internal/vg_aes_gcm_encrypt_blocks.rs"]
-pub(crate) mod vg_aes_gcm_encrypt_blocks;
-
-#[rustfmt::skip]
-#[path = "internal/vg_aes_gcm_encrypt_blocks_split.rs"]
-pub(crate) mod vg_aes_gcm_encrypt_blocks_split;
+#[path = "internal/vg_aes_gcm_encrypt_blocks_buffers.rs"]
+pub(crate) mod vg_aes_gcm_encrypt_blocks_buffers;
 
 #[rustfmt::skip]
 #[path = "internal/vg_aes_gcm_open_split.rs"]

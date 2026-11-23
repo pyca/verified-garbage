@@ -49,7 +49,10 @@ def bulkPrepare : Prog isa :=
     (.seq (.block [.store .d .r11 .r31 112])
     (.seq (.block bulkRegs) (.block [.store .d .r0 .r12 96])))
 
-def bulkRun : Prog isa := .seq bulkPrepare (.call "vg_aes_gcm_encrypt_blocks_split" SplitBlocks.encrypt)
+def sharedCall : Prog isa := .seq (.block [mov .r10 .r0])
+  (.call "vg_aes_gcm_encrypt_blocks_buffers" SplitBlocks.encryptBuffers)
+
+def bulkRun : Prog isa := .seq bulkPrepare sharedCall
 
 /-- Only a complete number of fused eight-block batches enters the bulk call.
 Its short copy fallback consequently receives zero source blocks. W+112

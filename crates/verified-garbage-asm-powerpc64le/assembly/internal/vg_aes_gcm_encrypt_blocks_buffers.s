@@ -1,14 +1,14 @@
-// The functions of `src/internal/vg_aes_gcm_encrypt_blocks_split.rs` of `verified-garbage-asm-powerpc64le`, as text: generated from
+// The functions of `src/internal/vg_aes_gcm_encrypt_blocks_buffers.rs` of `verified-garbage-asm-powerpc64le`, as text: generated from
 // Lean (`lean/VerifiedGarbage/TCB/Rust.lean`) with them, and not compiled.
 // Each instruction the printer encodes is here as its text, and in
 // `src/` as its machine code, which `lean/VerifiedGarbage/TCB/<ISA>/Encode.lean`
 // gives.
 
-vg_aes_gcm_encrypt_blocks_split:
-	cmpldi %cr0, %r10, 0
-	beq %cr0, 20f
-	addi %r12, %r1, 0
-	ld %r11, 96(%r12)
+vg_aes_gcm_encrypt_blocks_buffers:
+	or %r11, %r10, %r10
+	or %r10, %r8, %r8
+	rldicl %r8, %r8, 61, 3
+	rldicr %r8, %r8, 3, 60
 	std %r17, 152(%r11)
 	std %r19, 160(%r11)
 	or %r17, %r7, %r7
@@ -34,7 +34,7 @@ vg_aes_gcm_encrypt_blocks_split:
 	or %r31, %r9, %r9
 	rldicl %r12, %r25, 59, 5
 	cmpldi %cr0, %r12, 0
-	beq %cr0, 22f
+	beq %cr0, 20f
 	or %r3, %r29, %r29
 	or %r4, %r28, %r28
 	or %r5, %r27, %r27
@@ -46,7 +46,7 @@ vg_aes_gcm_encrypt_blocks_split:
 	or %r9, %r26, %r26
 	addi %r10, %r31, 64
 	cmpldi %cr0, %r7, 0
-	beq %cr0, 24f
+	beq %cr0, 22f
 	std %r14, 0(%r10)
 	std %r15, 8(%r10)
 	std %r16, 16(%r10)
@@ -348,7 +348,7 @@ vg_aes_gcm_encrypt_blocks_split:
 	stxvd2x 45, %r16, %r11
 	or %r11, %r24, %r24
 	addi %r12, %r4, 1
-26:
+24:
 	lxvd2x 40, %r9, %r0
 	vperm %v8, %v8, %v8, %v19
 	stxvd2x 40, %r11, %r0
@@ -356,14 +356,14 @@ vg_aes_gcm_encrypt_blocks_split:
 	addi %r11, %r11, 16
 	addi %r12, %r12, -1
 	cmpldi %cr0, %r12, 0
-	bne %cr0, 26b
+	bne %cr0, 24b
 	or %r3, %r24, %r24
 	li %r23, 64
 	li %r24, 80
 	lxvd2x 32, %r5, %r0
 	vperm %v0, %v0, %v0, %v19
 	stxvd2x 32, %r16, %r15
-27:
+25:
 	lxvd2x 32, %r16, %r15
 	lxvd2x 49, %r16, %r20
 	vadduwm %v18, %v17, %v17
@@ -477,8 +477,8 @@ vg_aes_gcm_encrypt_blocks_split:
 	addi %r9, %r3, 160
 	addi %r10, %r4, -10
 	cmpldi %cr0, %r10, 0
-	beq %cr0, 28f
-210:
+	beq %cr0, 26f
+28:
 	lxvd2x 40, %r9, %r0
 	vcipher %v0, %v0, %v8
 	vcipher %v1, %v1, %v8
@@ -491,10 +491,10 @@ vg_aes_gcm_encrypt_blocks_split:
 	addi %r9, %r9, 16
 	addi %r10, %r10, -1
 	cmpldi %cr0, %r10, 0
-	bne %cr0, 210b
-	b 29f
-28:
-29:
+	bne %cr0, 28b
+	b 27f
+26:
+27:
 	vcipherlast %v0, %v0, %v9
 	vcipherlast %v1, %v1, %v9
 	vcipherlast %v2, %v2, %v9
@@ -504,87 +504,87 @@ vg_aes_gcm_encrypt_blocks_split:
 	vcipherlast %v6, %v6, %v9
 	vcipherlast %v7, %v7, %v9
 	cmpldi %cr0, %r19, 0
-	beq %cr0, 211f
+	beq %cr0, 29f
 	rldicl %r12, %r19, 61, 3
 	cmpldi %cr0, %r12, 0
-	bne %cr0, 213f
+	bne %cr0, 211f
 	addi %r12, %r19, -1
 	rldicl %r12, %r12, 1, 63
 	cmpldi %cr0, %r12, 0
-	beq %cr0, 215f
+	beq %cr0, 213f
 	lxvd2x 40, %r6, %r0
-	b 216f
-215:
+	b 214f
+213:
 	lxvd2x 40, %r17, %r0
-216:
+214:
 	addi %r12, %r19, -2
 	rldicl %r12, %r12, 1, 63
 	cmpldi %cr0, %r12, 0
-	beq %cr0, 217f
+	beq %cr0, 215f
 	lxvd2x 41, %r6, %r20
-	b 218f
-217:
+	b 216f
+215:
 	lxvd2x 41, %r17, %r20
-218:
+216:
 	addi %r12, %r19, -3
 	rldicl %r12, %r12, 1, 63
 	cmpldi %cr0, %r12, 0
-	beq %cr0, 219f
+	beq %cr0, 217f
 	lxvd2x 43, %r6, %r21
-	b 220f
-219:
+	b 218f
+217:
 	lxvd2x 43, %r17, %r21
-220:
+218:
 	addi %r12, %r19, -4
 	rldicl %r12, %r12, 1, 63
 	cmpldi %cr0, %r12, 0
-	beq %cr0, 221f
+	beq %cr0, 219f
 	lxvd2x 44, %r6, %r22
-	b 222f
-221:
+	b 220f
+219:
 	lxvd2x 44, %r17, %r22
-222:
+220:
 	addi %r12, %r19, -5
 	rldicl %r12, %r12, 1, 63
 	cmpldi %cr0, %r12, 0
-	beq %cr0, 223f
+	beq %cr0, 221f
 	lxvd2x 46, %r6, %r23
-	b 224f
-223:
+	b 222f
+221:
 	lxvd2x 46, %r17, %r23
-224:
+222:
 	addi %r12, %r19, -6
 	rldicl %r12, %r12, 1, 63
 	cmpldi %cr0, %r12, 0
-	beq %cr0, 225f
+	beq %cr0, 223f
 	lxvd2x 47, %r6, %r24
-	b 226f
-225:
+	b 224f
+223:
 	lxvd2x 47, %r17, %r24
-226:
+224:
 	addi %r12, %r19, -7
 	rldicl %r12, %r12, 1, 63
 	cmpldi %cr0, %r12, 0
-	beq %cr0, 227f
+	beq %cr0, 225f
 	lxvd2x 48, %r6, %r18
-	b 228f
-227:
+	b 226f
+225:
 	lxvd2x 48, %r17, %r18
-228:
+226:
 	addi %r12, %r19, -8
 	rldicl %r12, %r12, 1, 63
 	cmpldi %cr0, %r12, 0
-	beq %cr0, 229f
+	beq %cr0, 227f
 	lxvd2x 49, %r6, %r11
-	b 230f
-229:
+	b 228f
+227:
 	lxvd2x 49, %r17, %r11
-230:
+228:
 	rldicr %r12, %r19, 4, 59
 	add %r17, %r17, %r12
 	li %r19, 0
-	b 214f
-213:
+	b 212f
+211:
 	lxvd2x 40, %r17, %r0
 	lxvd2x 41, %r17, %r20
 	lxvd2x 43, %r17, %r21
@@ -595,9 +595,9 @@ vg_aes_gcm_encrypt_blocks_split:
 	lxvd2x 49, %r17, %r11
 	addi %r17, %r17, 128
 	addi %r19, %r19, -8
-214:
-	b 212f
-211:
+212:
+	b 210f
+29:
 	lxvd2x 40, %r6, %r0
 	lxvd2x 41, %r6, %r20
 	lxvd2x 43, %r6, %r21
@@ -606,7 +606,7 @@ vg_aes_gcm_encrypt_blocks_split:
 	lxvd2x 47, %r6, %r24
 	lxvd2x 48, %r6, %r18
 	lxvd2x 49, %r6, %r11
-212:
+210:
 	vperm %v8, %v8, %v8, %v19
 	vxor %v0, %v0, %v8
 	vperm %v9, %v9, %v9, %v19
@@ -718,7 +718,7 @@ vg_aes_gcm_encrypt_blocks_split:
 	vxor %v10, %v16, %v18
 	vsldoi %v10, %v10, %v10, 8
 	cmpldi %cr0, %r7, 0
-	bne %cr0, 27b
+	bne %cr0, 25b
 	li %r11, 12
 	stwbrx %r8, %r5, %r11
 	vperm %v10, %v10, %v10, %v19
@@ -733,37 +733,37 @@ vg_aes_gcm_encrypt_blocks_split:
 	ld %r23, 64(%r12)
 	ld %r24, 72(%r12)
 	ld %r18, 80(%r12)
-	b 25f
-24:
-25:
+	b 23f
+22:
+23:
 	li %r0, 7
 	and %r11, %r25, %r0
 	subf %r12, %r11, %r25
 	rldicr %r12, %r12, 4, 59
 	add %r30, %r30, %r12
 	or %r25, %r11, %r11
-	b 23f
-22:
-23:
+	b 21f
+20:
+21:
 	cmpldi %cr0, %r19, 0
-	beq %cr0, 231f
+	beq %cr0, 229f
 	or %r11, %r30, %r30
 	li %r0, 0
-233:
+231:
 	lxvd2x 49, %r17, %r0
 	stxvd2x 49, %r11, %r0
 	addi %r17, %r17, 16
 	addi %r11, %r11, 16
 	addi %r19, %r19, -1
 	cmpldi %cr0, %r19, 0
-	bne %cr0, 233b
-	b 232f
-231:
-232:
+	bne %cr0, 231b
+	b 230f
+229:
+230:
 	ld %r17, 152(%r31)
 	ld %r19, 160(%r31)
 	cmpldi %cr0, %r25, 0
-	beq %cr0, 234f
+	beq %cr0, 232f
 	or %r3, %r29, %r29
 	or %r4, %r28, %r28
 	or %r5, %r27, %r27
@@ -775,9 +775,9 @@ vg_aes_gcm_encrypt_blocks_split:
 	or %r5, %r30, %r30
 	or %r6, %r25, %r25
 	bl {vg_ghash}
-	b 235f
-234:
-235:
+	b 233f
+232:
+233:
 	ld %r0, 56(%r31)
 	mtlr %r0
 	or %r12, %r31, %r31
@@ -788,7 +788,4 @@ vg_aes_gcm_encrypt_blocks_split:
 	ld %r29, 32(%r12)
 	ld %r30, 40(%r12)
 	ld %r31, 48(%r12)
-	b 21f
-20:
-21:
 	blr
