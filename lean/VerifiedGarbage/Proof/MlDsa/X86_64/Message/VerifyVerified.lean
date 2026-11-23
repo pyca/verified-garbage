@@ -247,7 +247,7 @@ theorem verifyCall_tr {n : String} {c : Prog isa} (hV : VerifyFn p c) (hp : p �
       fun _ _ => True := by
   refine call_tr (verifyArgs_ok hp) hV.ok hV.ct (verifyRd p) (verifyWr p)
     (fun L g mx m₀ t t1 hL hc hφ hm => verifyK_pre hp hL hφ.1.facts hc hφ.1.prep hm)
-    (fun L g₁ g₂ mx₁ mx₂ m₁ m₂ a b a1 b1 hL hi c₁ c₂ φ₁ φ₂ f₁ f₂ => ?_)
+    (fun L g₁ g₂ mx₁ mx₂ m₁ m₂ a b a1 b1 hL hi c₁ c₂ φ₁ φ₂ f₁ f₂ _ _ => ?_)
     (fun L g mx m₀ t hL hc hφ => ?_)
   · have F := φ₁.1.facts
     obtain ⟨x1, x2, x3, x4, x5⟩ := verifyRegsL F.e c₁ f₁

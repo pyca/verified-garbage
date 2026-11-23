@@ -10,7 +10,6 @@ import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Sha3.X86_64.Round
 import VerifiedGarbage.Proof.Framework.X86_64.Spill
-import VerifiedGarbage.Proof.Framework.X86_64.Syms
 
 /-!
 # ML-DSA on x86-64, `sign_message` and `verify_message`: where everything is
@@ -87,9 +86,7 @@ structure Lay where
   E : Nat
   rd : List Region
   wr : List Region
-  /-- The functions whose addresses the callee needs both runs to agree on,
-  and those addresses. -/
-  ns : List String := []
+  /-- The addresses of the functions the callee calls, which both runs agree on. -/
   nsy : List Addr := []
 
 namespace Lay
@@ -199,7 +196,6 @@ structure Ctx (L : Lay) (g : Reg → BitVec 64) (mx : BitVec 32) (m₀ : Mem) (t
   pKey : t.mem.readW (L.SP + BitVec.ofNat 64 64) 64 = L.key
   hdr : bytesAt t.mem L.SP 2 = [0, BitVec.ofNat 8 L.ctxLen.toNat]
   frame : Frame [L.XS, L.STK] m₀ t.mem
-  syms : L.ns.map t.syms = L.nsy
 
 namespace Ctx
 
@@ -207,21 +203,20 @@ variable {L : Lay} {g : Reg → BitVec 64} {mx : BitVec 32} {m₀ : Mem} {t t' :
 
 /-- Code that writes only caller-saved registers. -/
 theorem regs (hc : Ctx L g mx m₀ t) (hrd : t'.rd = t.rd) (hwr : t'.wr = t.wr) (hm : t'.mem = t.mem)
-    (hmx : t'.mxcsr = t.mxcsr) (hg : ∀ r ∈ calleeSaved, t'.gpr r = t.gpr r) (hy : t'.syms = t.syms) :
-    Ctx L g mx m₀ t' :=
+    (hmx : t'.mxcsr = t.mxcsr) (hg : ∀ r ∈ calleeSaved, t'.gpr r = t.gpr r) : Ctx L g mx m₀ t' :=
   ⟨hrd.trans hc.rd, hwr.trans hc.wr, (hg .rsp (by decide)).trans hc.rsp,
     fun r hr hr' => (hg r hr).trans (hc.cs r hr hr'), by rw [hmx]; exact hc.mx,
     by rw [hm]; exact hc.pScr, by rw [hm]; exact hc.pRnd, by rw [hm]; exact hc.pSig,
     by rw [hm]; exact hc.pCtxLen, by rw [hm]; exact hc.pCtx, by rw [hm]; exact hc.pLen,
     by rw [hm]; exact hc.pMsg, by rw [hm]; exact hc.pKey, by rw [hm]; exact hc.hdr,
-    by rw [hm]; exact hc.frame, by rw [hy]; exact hc.syms⟩
+    by rw [hm]; exact hc.frame⟩
 
 /-- The same state, with the entry registers, MXCSR and memory given by others equal to them. -/
 theorem congr (hc : Ctx L g mx m₀ t) {g' : Reg → BitVec 64} {mx' : BitVec 32} {m₀' : Mem}
     (hg : ∀ r ∈ calleeSaved, r ≠ .rsp → g r = g' r) (hmx : mx = mx') (hm : m₀ = m₀') : Ctx L g' mx' m₀' t := by
   subst hmx hm
   exact ⟨hc.rd, hc.wr, hc.rsp, fun r hr hr' => (hc.cs r hr hr').trans (hg r hr hr'), hc.mx, hc.pScr, hc.pRnd,
-    hc.pSig, hc.pCtxLen, hc.pCtx, hc.pLen, hc.pMsg, hc.pKey, hc.hdr, hc.frame, hc.syms⟩
+    hc.pSig, hc.pCtxLen, hc.pCtx, hc.pLen, hc.pMsg, hc.pKey, hc.hdr, hc.frame⟩
 
 /-- A slot of the frame is readable. -/
 theorem inFr (hc : Ctx L g mx m₀ t) {d : Nat} (h₂ : d + 8 ≤ 72) :
@@ -270,7 +265,7 @@ theorem Ctx.of_frame {L : Lay} (hL : L.Ok) {g : Reg → BitVec 64} {mx : BitVec 
     (hc : Ctx L g mx m₀ t) (hrd : t'.rd = t.rd) (hwr : t'.wr = t.wr)
     (hcs : ∀ r ∈ calleeSaved, t'.gpr r = t.gpr r)
     (hmx : t'.mxcsr.extractLsb' 6 10 = t.mxcsr.extractLsb' 6 10) {rs : List Region}
-    (hf : Frame (rs ++ [⟨L.B, 152⟩]) t.mem t'.mem) (hrs : ∀ r ∈ rs, Within r L.XS) (hy : t'.syms = t.syms) :
+    (hf : Frame (rs ++ [⟨L.B, 152⟩]) t.mem t'.mem) (hrs : ∀ r ∈ rs, Within r L.XS) :
     Ctx L g mx m₀ t' := by
   have hdisj : ∀ d n, d + n ≤ 72 → ∀ r ∈ rs ++ [⟨L.B, 152⟩],
       Region.Disjoint ⟨L.SP + BitVec.ofNat 64 d, n⟩ r := by
@@ -294,7 +289,7 @@ theorem Ctx.of_frame {L : Lay} (hL : L.Ok) {g : Reg → BitVec 64} {mx : BitVec 
     (keep 24 (by omega_using [])).trans hc.pSig, (keep 32 (by omega_using [])).trans hc.pCtxLen,
     (keep 40 (by omega_using [])).trans hc.pCtx, (keep 48 (by omega_using [])).trans hc.pLen,
     (keep 56 (by omega_using [])).trans hc.pMsg, (keep 64 (by omega_using [])).trans hc.pKey, khdr.trans hc.hdr,
-    hc.frame.trans (Frame.sub hf fun r hr => ?_), by rw [hy]; exact hc.syms⟩
+    hc.frame.trans (Frame.sub hf fun r hr => ?_)⟩
   rcases List.mem_append.mp hr with hr | hr
   · exact ⟨L.XS, by simp, (hrs r hr).sub⟩
   · simp only [List.mem_singleton] at hr; subst hr
@@ -332,7 +327,7 @@ theorem call_ok {L : Lay} (hL : L.Ok) {g : Reg → BitVec 64} {mx : BitVec 32} {
     refine covers_of_within fun r hr => ?_
     obtain ⟨R, hR, hw⟩ := hwX r hr
     exact ⟨R, List.mem_cons_of_mem _ hR, hw⟩
-  refine VG.X86_64.WP.of_syms (WP.call_mx hv hsp (by omega_using [hd]) hpre hcov hcovw fun s' hrd hwr hcs hf hg hpost hmx hy => ?_)
+  refine WP.call_mx hv hsp (by omega_using [hd]) hpre hcov hcovw fun s' hrd hwr hcs hf hg hpost hmx => ?_
   have hf' : Frame (wr ++ [⟨L.B, 152⟩]) t.mem s'.mem := by
     refine Frame.sub hf fun r hr => ?_
     rcases List.mem_append.mp hr with hr | hr
@@ -363,7 +358,7 @@ theorem call_ok {L : Lay} (hL : L.Ok) {g : Reg → BitVec 64} {mx : BitVec 32} {
     (keep 24 (by omega_using [])).trans hc.pSig, (keep 32 (by omega_using [])).trans hc.pCtxLen,
     (keep 40 (by omega_using [])).trans hc.pCtx, (keep 48 (by omega_using [])).trans hc.pLen,
     (keep 56 (by omega_using [])).trans hc.pMsg, (keep 64 (by omega_using [])).trans hc.pKey, khdr.trans hc.hdr,
-    hc.frame.trans (Frame.sub hf' fun r hr => ?_), by rw [hy]; exact hc.syms⟩ hf' hg hpost
+    hc.frame.trans (Frame.sub hf' fun r hr => ?_)⟩ hf' hg hpost
   · rw [hcs .rsp (by simp [calleeSaved]), hc.rsp]
   · rcases List.mem_append.mp hr with hr | hr
     · exact ⟨L.XS, by simp, (hwsub r hr).sub⟩

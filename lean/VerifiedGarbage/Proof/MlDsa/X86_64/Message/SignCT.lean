@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.MlKem.X86_64.Rel
+import VerifiedGarbage.Proof.Framework.X86_64.Syms
 
 /-!
 # ML-DSA on x86-64, `sign_message`: constant time
@@ -46,7 +47,10 @@ def signI (p : Params) (L : Lay) (m₁ m₂ : Mem) : Prop :=
 /-- The layout is that of a run of `sign_message` from a state with the
 memory `m`, past the branch on `ctx_len`. -/
 def SOk (p : Params) (prep : Bool) (L : Lay) (m : Mem) : Prop :=
-  ∃ σ, SPre p prep σ ∧ (σ.gpr .r8).toNat < 256 ∧ slay p prep σ = L ∧ σ.mem = m
+  ∃ σ ys, SPre p prep σ ∧ (σ.gpr .r8).toNat < 256 ∧ slay p prep σ ys = L ∧ σ.mem = m
+
+/-- The state names the addresses of the layout for the callee's callees `N`. -/
+abbrev SyOk (N : List String) (L : Lay) (t : State) : Prop := L.nsy = N.map t.syms
 
 /-- `μ` at `X + 840`. -/
 def MuOk (L : Lay) (m : Mem) (t : State) : Prop :=
@@ -77,10 +81,11 @@ structure SFacts (p : Params) (L : Lay) : Prop where
   inMu : ∃ R ∈ L.wr, Within ⟨L.MU, 64⟩ R
 
 theorem SOk.facts (hp : p ∈ params) {L : Lay} {m : Mem} (h : SOk p prep L m) : SFacts p L := by
-  obtain ⟨σ, hσ, _, rfl, -⟩ := h
-  exact ⟨(keyLen_ge hp prep).2.2, (skLen_ge hp).1, rfl, hσ.rndScr.symm.sub_left (slay_X p prep σ).sub, hσ.stkRnd, by simp [slay, hσ.rd],
-    by simp [slay, hσ.wr], ⟨rScr p σ, by simp [slay, hσ.wr], within_base _ (by rw [mScr_eq]; simp [scrLen, oE])⟩,
-    ⟨rScr p σ, by simp [slay, hσ.wr], mu_within p prep σ⟩⟩
+  obtain ⟨σ, ys, hσ, _, rfl, -⟩ := h
+  exact ⟨(keyLen_ge hp prep).2.2, (skLen_ge hp).1, rfl, hσ.rndScr.symm.sub_left (slay_X p prep σ ys).sub, hσ.stkRnd,
+    by simp [slay, hσ.rd], by simp [slay, hσ.wr],
+    ⟨rScr p σ, by simp [slay, hσ.wr], within_base _ (by rw [mScr_eq]; simp [scrLen, oE])⟩,
+    ⟨rScr p σ, by simp [slay, hσ.wr], mu_within p prep σ ys⟩⟩
 
 /-- The registers after the moves of the arguments of the signing function on `μ`. -/
 theorem signRegsL {L : Lay} (hE : oE p = L.E) {g : Reg → BitVec 64} {mx : BitVec 32} {m₀ : Mem} {t t1 : State}
@@ -97,14 +102,18 @@ theorem signRegsL {L : Lay} (hE : oE p = L.E) {g : Reg → BitVec 64} {mx : BitV
 
 /-- Two runs of the call of the signing function on `μ`. -/
 theorem signCall_tr {N : List String} {n : String} {c : Prog isa} (hS : SignFn p N c) (hp : p ∈ params) :
-    RelCT isa (Two (signI p) fun L m t => SOk p prep L m ∧ MuOk L m t) (callA n c (signArgs p prep))
-      fun _ _ => True := by
-  refine call_tr (signArgs_ok hp) hS.ok hS.ct
+    RelCT isa (Two (signI p) fun L m t => SOk p prep L m ∧ MuOk L m t ∧ SyOk N L t)
+      (callA n c (signArgs p prep)) fun _ _ => True := by
+  refine call_tr (k := Sign.signKN p 144 N) (signArgs_ok hp) hS.ok hS.ct
     (fun L => [⟨L.key, L.keyLen⟩, ⟨L.MU, 64⟩, ⟨L.rnd, 32⟩]) (fun L => [⟨L.sig, p.sigLen⟩, ⟨L.scr, scrLen p⟩])
-    (fun L g mx m₀ t t1 hL hc hφ hm => ?_) (fun L g₁ g₂ mx₁ mx₂ m₁ m₂ a b a1 b1 hL hi c₁ c₂ φ₁ φ₂ f₁ f₂ => ?_)
+    (fun L g mx m₀ t t1 hL hc hφ hm => ?_) (fun L g₁ g₂ mx₁ mx₂ m₁ m₂ a b a1 b1 hL hi c₁ c₂ φ₁ φ₂ f₁ f₂ ya yb => ?_)
     (fun L g mx m₀ t hL hc hφ => ?_)
-  · obtain ⟨⟨σ, hσ, h8, rfl, hm₀⟩, -⟩ := hφ
+  · obtain ⟨⟨σ, ys, hσ, h8, rfl, hm₀⟩, -⟩ := hφ
     exact signK_pre hp hσ h8 hc hm₀ hm
+  refine ⟨?_, fun f hf => ?_⟩
+  swap
+  · have e := List.map_inj_left.mp (φ₁.2.2.symm.trans φ₂.2.2) f hf
+    exact (congrFun ya f).trans (e.trans (congrFun yb f).symm)
   · have F := φ₁.1.facts hp
     obtain ⟨x1, x2, x3, x4, x5, x6⟩ := signRegsL F.e c₁ f₁
     obtain ⟨y1, y2, y3, y4, y5, y6⟩ := signRegsL F.e c₂ f₂
@@ -135,7 +144,7 @@ theorem signCall_tr {N : List String} {n : String} {c : Prog isa} (hS : SignFn p
         bytesAt a1.callEntry.mem L.MU 64 = bytesAt a.mem L.MU 64 := fun c f => by
       rw [(c.regs f.2.2.1 f.2.2.2 f.1.2.1 f.1.2.2 fun r hr => f.2.gpr (argRegs_cs r hr)).ce_bytesAt
         (hL.stk_x (d := 144) (n := 8) (e := 840) (k := 64) (by decide) (by decide)) (by decide), f.1.2.1]
-    rw [ek c₁ f₁, ek c₂ f₂, er c₁ f₁, er c₂ f₂, eμ c₁ f₁, eμ c₂ f₂, φ₁.2, φ₂.2,
+    rw [ek c₁ f₁, ek c₂ f₂, er c₁ f₁, er c₂ f₂, eμ c₁ f₁, eμ c₂ f₂, φ₁.2.1, φ₂.2.1,
       ← leak_eq F.sk hL, ← leak_eq F.sk hL]
     exact hi
   · have F := hφ.1.facts hp
@@ -179,8 +188,8 @@ theorem sPubP_of {s₁ s₂ : State} (h : (preparedSignMessageContract p X86_64.
   exact ⟨a, b, c, d, e, f, g, h, i, j⟩
 
 /-- Two runs from states agreeing on the public data have the same layout. -/
-theorem slay_eq {s₁ s₂ : State} (h₁ : SPre p prep s₁) (h₂ : SPre p prep s₂) (h : SPub p s₁ s₂) :
-    slay p prep s₁ = slay p prep s₂ := by
+theorem slay_eq {s₁ s₂ : State} (h₁ : SPre p prep s₁) (h₂ : SPre p prep s₂) (h : SPub p s₁ s₂) (ys : List Addr) :
+    slay p prep s₁ ys = slay p prep s₂ ys := by
   have e1 : s₁.rd = s₂.rd := by
     rw [h₁.rd, h₂.rd]; simp only [rSk, rMsg, rCtx, rRnd, rArgs, stackArgAddr, h.rdi, h.rsi, h.rdx, h.rcx, h.r8,
       h.r9, h.rsp]
@@ -190,10 +199,11 @@ theorem slay_eq {s₁ s₂ : State} (h₁ : SPre p prep s₁) (h₂ : SPre p pre
 
 /-- The body of the frame. -/
 theorem signBody_tr {N : List String} {n : String} {c : Prog isa} (hS : SignFn p N c) (hp : p ∈ params) :
-    RelCT isa (Two (signI p) fun L m _ => SOk p prep L m)
+    RelCT isa (Two (signI p) fun L m t => SOk p prep L m ∧ SyOk N L t)
       (.seq (muHash p (.slotOff fKey 64)) (callA n c (signArgs p prep))) fun _ _ => True := by
   have hE := oE_lt hp
-  have mh := muHash_tr (I := signI p) (Φ := fun L m _ => SOk p prep L m) hE (fun _ _ _ h => (h.facts hp).e)
+  have mh := muHash_tr (I := signI p) (Φ := fun L m t => SOk p prep L m ∧ SyOk N L t) hE
+    (fun _ _ _ h => (h.1.facts hp).e)
     (tr := .slotOff fKey 64) (by decide) (fun L => L.key + BitVec.ofNat 64 64)
     (fun L g mx m t hc _ => by rw [hc.slotOff, fKey, hc.pKey])
     fun L hL => by
@@ -203,57 +213,62 @@ theorem signBody_tr {N : List String} {n : String} {c : Prog isa} (hS : SignFn p
         (hL.xKey.symm.sub_left w.sub).sub_right (Region.sub_prefix (by decide : 200 ≤ 1024)),
         (hL.xKey.symm.sub_left w.sub).sub_right (Offset.sub_base _ (by decide : 200 + 640 ≤ 1024)),
         (hL.kKey.sub_left (Region.sub_prefix (by decide : 152 ≤ 224))).sub_right w.sub⟩
-  have mh' := two_wp (I := signI p) (Φ := fun L m _ => SOk p prep L m) (Ψ := fun L m t => SOk p prep L m ∧ MuOk L m t) mh
+  have mh' := two_wp (I := signI p) (Φ := fun L m t => SOk p prep L m ∧ SyOk N L t)
+    (Ψ := fun L m t => SOk p prep L m ∧ MuOk L m t ∧ SyOk N L t) mh
     fun L g mx m₀ t hL hc hφ => by
       have := hL.hKey
       have w : Within ⟨L.key + BitVec.ofNat 64 64, 64⟩ L.KEY := within_off _ (by omega_using [this])
-      refine WP.mono (muHash_ok hL (hφ.facts hp).e hc (tr := .slotOff fKey 64) (by decide)
+      refine WP.mono_syms (muHash_ok hL (hφ.1.facts hp).e hc (tr := .slotOff fKey 64) (by decide)
         (fun t' hc' => by rw [hc'.slotOff, fKey, hc'.pKey]) ⟨_, List.mem_append_left _ hL.inKey, w⟩
         ((hL.xKey.symm.sub_left w.sub).sub_right (Region.sub_prefix (by decide : 200 ≤ 1024)))
         ((hL.xKey.symm.sub_left w.sub).sub_right (Offset.sub_base _ (by decide : 200 + 640 ≤ 1024)))
         ((hL.kKey.sub_left (Region.sub_prefix (by decide : 152 ≤ 224))).sub_right w.sub))
-        fun t' ⟨hc', _, hμ⟩ => ⟨hc', hφ, ?_⟩
+        fun t' ⟨hc', _, hμ⟩ hy => ⟨hc', hφ.1, ?_, by rw [SyOk, hy]; exact hφ.2⟩
       unfold MuOk
       rw [hμ, hc.bytesAt_eq (hL.xKey.sub_right w.sub) (hL.kKey.sub_right w.sub) (by decide)]
   exact mh'.seq (signCall_tr hS hp)
 
 /-- The entry states of two runs: the precondition and the public data. -/
-abbrev SP2 (p : Params) (prep : Bool) (x y : State) : Prop :=
-  SPre p prep x ∧ SPre p prep y ∧ SPub p x y
+abbrev SP2 (p : Params) (prep : Bool) (N : List String) (x y : State) : Prop :=
+  SPre p prep x ∧ SPre p prep y ∧ SPub p x y ∧ ∀ f ∈ N, x.syms f = y.syms f
 
 /-- After `cmp`. -/
 abbrev ACmp (x x1 : State) : Prop :=
   x1.gpr = x.gpr ∧ x1.mem = x.mem ∧ x1.rd = x.rd ∧ x1.wr = x.wr ∧ x1.mxcsr = x.mxcsr ∧
-    isa.eval .b x1 = some (decide ((x.gpr .r8).toNat < 256))
+    isa.eval .b x1 = some (decide ((x.gpr .r8).toNat < 256)) ∧ x1.syms = x.syms
 
 /-- After the moves before the push. -/
 abbrev AMov (x x2 : State) : Prop :=
   (x.gpr .r8).toNat < 256 ∧ ((x2.gpr .r10 = stackArg x 0 ∧ x2.gpr .r11 = stackArg x 1 ∧ x2.gpr .rax = 0 ∧
     x2.mem = x.mem ∧ x2.mxcsr = x.mxcsr) ∧ (∀ r, r ∉ [Reg.r10, .r11, .rax] → x2.gpr r = x.gpr r) ∧
-    x2.rd = x.rd ∧ x2.wr = x.wr)
+    x2.rd = x.rd ∧ x2.wr = x.wr ∧ x2.syms = x.syms)
 
 theorem spOnly_nomem {i : Instr} (h : ∀ s, isa.addrs i s = []) (hc : Taint.clobbers i .rsp = false) : SpOnly i :=
   ⟨fun s₁ s₂ _ => by rw [h, h], hc⟩
 
 theorem signMessage_ct {N : List String} {n : String} {c : Prog isa} (hS : SignFn p N c) (hp : p ∈ params) :
-    ConstantTime isa (SPre p prep) (SPub p) (signMessage n c p (flagOf prep)) := by
+    ConstantTime isa (SPre p prep) (fun s₁ s₂ => SPub p s₁ s₂ ∧ ∀ f ∈ N, s₁.syms f = s₂.syms f)
+      (signMessage n c p (flagOf prep)) := by
   refine RelCT.constantTime (Q := fun _ _ => True) ?_
-  have e0 : (fun s₁ s₂ => SPre p prep s₁ ∧ SPre p prep s₂ ∧ SPub p s₁ s₂) =
-      Ghost (SP2 p prep) (fun x a => a = x) := by
+  have e0 : (fun s₁ s₂ => SPre p prep s₁ ∧ SPre p prep s₂ ∧ (SPub p s₁ s₂ ∧ ∀ f ∈ N, s₁.syms f = s₂.syms f)) =
+      Ghost (SP2 p prep N) (fun x a => a = x) := by
     funext a b; apply propext
     exact ⟨fun h => ⟨a, b, h, rfl, rfl⟩, fun ⟨_, _, h, e₁, e₂⟩ => e₁ ▸ e₂ ▸ h⟩
   rw [e0]
   unfold signMessage top
   -- `cmp r8, 256`.
-  have hcmp := ghost_step (P := SP2 p prep) (A := fun x a => a = x) (B := ACmp) (c := .block [.alu .cmp .r8 (.imm 256)])
+  have hcmp := ghost_step (P := SP2 p prep N) (A := fun x a => a = x) (B := ACmp) (c := .block [.alu .cmp .r8 (.imm 256)])
     (block_rsp_tr (fun i hi => by
         simp only [List.mem_singleton] at hi; subst hi; exact spOnly_nomem (fun _ => rfl) rfl)
-      fun a b ⟨x, y, hxy, e₁, e₂⟩ => by subst e₁ e₂; exact hxy.2.2.rsp)
-    fun x y a b _ e₁ e₂ => by subst e₁ e₂; exact ⟨cmp_ok _, cmp_ok _⟩
+      fun a b ⟨x, y, hxy, e₁, e₂⟩ => by subst e₁ e₂; exact hxy.2.2.1.rsp)
+    fun x y a b _ e₁ e₂ => by
+      subst e₁ e₂
+      exact ⟨WP.mono_syms (cmp_ok _) fun _ h hy => ⟨h.1, h.2.1, h.2.2.1, h.2.2.2.1, h.2.2.2.2.1, h.2.2.2.2.2, hy⟩,
+        WP.mono_syms (cmp_ok _) fun _ h hy => ⟨h.1, h.2.1, h.2.2.1, h.2.2.2.1, h.2.2.2.2.1, h.2.2.2.2.2, hy⟩⟩
   refine RelCT.seq hcmp (RelCT.ite (fun a b ⟨x, y, hxy, f₁, f₂⟩ => by
-    rw [f₁.2.2.2.2.2, f₂.2.2.2.2.2, hxy.2.2.r8]) ?_ ?_)
+    rw [f₁.2.2.2.2.2.1, f₂.2.2.2.2.2.1, hxy.2.2.1.r8]) ?_ ?_)
   · -- `ctx_len < 256`.
-    have hmov := ghost_step (P := SP2 p prep) (A := fun x a => ACmp x a ∧ (x.gpr .r8).toNat < 256) (B := AMov)
+    have hmov := ghost_step (P := SP2 p prep N) (A := fun x a => ACmp x a ∧ (x.gpr .r8).toNat < 256) (B := AMov)
       (c := .block [.mov .r10 (.mem (stk 8)), .mov .r11 (.mem (stk 16)), .mov32 .rax (.imm 0)])
       (block_rsp_tr (fun i hi => by
           simp only [List.mem_cons, List.not_mem_nil, or_false] at hi
@@ -261,58 +276,63 @@ theorem signMessage_ct {N : List String} {n : String} {c : Prog isa} (hS : SignF
           · exact ⟨fun s₁ s₂ h => by simp [addrs, srcAddrs, State.ea, stk, h], rfl⟩
           · exact ⟨fun s₁ s₂ h => by simp [addrs, srcAddrs, State.ea, stk, h], rfl⟩
           · exact spOnly_nomem (fun _ => rfl) rfl)
-        fun a b ⟨x, y, hxy, f₁, f₂⟩ => by rw [f₁.1.1, f₂.1.1]; exact hxy.2.2.rsp)
+        fun a b ⟨x, y, hxy, f₁, f₂⟩ => by rw [f₁.1.1, f₂.1.1]; exact hxy.2.2.1.rsp)
       fun x y a b hxy f₁ f₂ => by
         have mv : ∀ {x a : State}, SPre p prep x → ACmp x a →
             (x.gpr .r8).toNat < 256 → WP isa (.block [.mov .r10 (.mem (stk 8)), .mov .r11 (.mem (stk 16)),
               .mov32 .rax (.imm 0)]) a (AMov x) := fun hx f h8 =>
-          WP.mono (signMov_ok hx f.1 f.2.1 f.2.2.1) fun x2 ⟨h, k⟩ =>
+          WP.mono_syms (signMov_ok hx f.1 f.2.1 f.2.2.1) fun x2 ⟨h, k⟩ hy =>
             ⟨h8, ⟨h.1, h.2.1, h.2.2.1, h.2.2.2.1, h.2.2.2.2.trans f.2.2.2.2.1⟩,
-              fun r hr => (k.gpr hr).trans (by rw [f.1]), k.2.1.trans f.2.2.1, k.2.2.trans f.2.2.2.1⟩
+              fun r hr => (k.gpr hr).trans (by rw [f.1]), k.2.1.trans f.2.2.1, k.2.2.trans f.2.2.2.1,
+              hy.trans f.2.2.2.2.2.2⟩
         exact ⟨mv hxy.1 f₁.1 f₁.2, mv hxy.2.1 f₂.1 f₂.2⟩
     refine RelCT.seq (RelCT.mono hmov (fun a b ⟨⟨x, y, hxy, f₁, f₂⟩, hc⟩ => ⟨x, y, hxy, ⟨f₁, ?_⟩, ⟨f₂, ?_⟩⟩)
       fun _ _ h => h) ?_
-    · rw [f₁.2.2.2.2.2] at hc; simpa using hc
-    · rw [f₁.2.2.2.2.2, hxy.2.2.r8, ← f₂.2.2.2.2.2] at hc
-      rw [f₂.2.2.2.2.2] at hc; simpa using hc
+    · rw [f₁.2.2.2.2.2.1] at hc; simpa using hc
+    · rw [f₁.2.2.2.2.2.1, hxy.2.2.1.r8, ← f₂.2.2.2.2.2.1] at hc
+      rw [f₂.2.2.2.2.2.1] at hc; simpa using hc
     refine RelCT.frame (R := fun _ _ => True) (fun a b ⟨x, y, hxy, f₁, f₂⟩ => by
-      rw [f₁.2.2.1 _ (by decide), f₂.2.2.1 _ (by decide)]; exact hxy.2.2.rsp) ?_
+      rw [f₁.2.2.1 _ (by decide), f₂.2.2.1 _ (by decide)]; exact hxy.2.2.1.rsp) ?_
     -- The frame's body, from the push.
     let A : State → State → Prop := fun x a => ∃ s₁, AMov x s₁ ∧ a = pushed signRegs s₁
-    let B : State → State → Prop := fun x t => (x.gpr .r8).toNat < 256 ∧ Ctx (slay p prep x) x.gpr x.mxcsr x.mem t
-    have hdr := ghost_step (P := SP2 p prep) (A := A) (B := B) (c := .block setHdr)
+    let B : State → State → Prop := fun x t => (x.gpr .r8).toNat < 256 ∧
+      Ctx (slay p prep x (N.map x.syms)) x.gpr x.mxcsr x.mem t ∧ t.syms = x.syms
+    have hdr := ghost_step (P := SP2 p prep N) (A := A) (B := B) (c := .block setHdr)
       (block_rsp_tr (fun i hi => by
           simp only [setHdr, List.mem_singleton] at hi; subst hi
           exact ⟨fun s₁ s₂ h => by simp [addrs, State.ea, stk, h], rfl⟩)
         fun a b ⟨x, y, hxy, ⟨s₁, f₁, e₁⟩, ⟨s₂, f₂, e₂⟩⟩ => by
           subst e₁ e₂
-          rw [pushed_rsp, pushed_rsp, f₁.2.2.1 _ (by decide), f₂.2.2.1 _ (by decide), hxy.2.2.rsp])
+          rw [pushed_rsp, pushed_rsp, f₁.2.2.1 _ (by decide), f₂.2.2.1 _ (by decide), hxy.2.2.1.rsp])
       fun x y a b hxy fa fb => by
         have en : ∀ {x a : State}, SPre p prep x → A x a →
-            WP isa (.block setHdr) a (B x) := fun hx ⟨s₁, f, e⟩ => by
+            WP isa (.block setHdr) a (B x) := fun {x _} hx ⟨s₁, f, e⟩ => by
           subst e
           have h := hx
-          have hL := slay_ok hp h f.1
-          refine WP.mono (entry_ok hL rfl (by decide) (by rw [f.2.2.1 _ (by decide), slay_B])
-            (f.2.2.2.1.trans rfl) (f.2.2.2.2.trans rfl) (signRegs_vals f.2.2.1 f.2.1.1 f.2.1.2.1 f.2.1.2.2.1)
-            (f.2.2.1 _ (by decide))) fun t ⟨hc, _, _⟩ =>
-            ⟨f.1, hc.congr (fun r hr _ => f.2.2.1 r (cs_tmp r hr)) f.2.1.2.2.2.2 f.2.1.2.2.2.1⟩
+          have hL := slay_ok hp h f.1 (N.map x.syms)
+          refine WP.mono_syms (entry_ok hL rfl (by decide) (by rw [f.2.2.1 _ (by decide), slay_B _ _ _ _])
+            (f.2.2.2.1.trans rfl) (f.2.2.2.2.1.trans rfl) (signRegs_vals f.2.2.1 f.2.1.1 f.2.1.2.1 f.2.1.2.2.1)
+            (f.2.2.1 _ (by decide))) fun t ⟨hc, _, _⟩ hy =>
+            ⟨f.1, hc.congr (fun r hr _ => f.2.2.1 r (cs_tmp r hr)) f.2.1.2.2.2.2 f.2.1.2.2.2.1,
+              hy.trans ((pushRegs_syms _ _).trans f.2.2.2.2.2)⟩
         exact ⟨en hxy.1 fa, en hxy.2.1 fb⟩
     refine RelCT.seq (RelCT.mono hdr (fun a b ⟨s₁, s₂, ⟨x, y, hxy, f₁, f₂⟩, e₁, e₂⟩ =>
-      ⟨x, y, hxy, ⟨s₁, f₁, e₁⟩, ⟨s₂, f₂, e₂⟩⟩) fun a b ⟨x, y, hxy, ⟨h8x, ca⟩, ⟨h8y, cb⟩⟩ => ?_)
+      ⟨x, y, hxy, ⟨s₁, f₁, e₁⟩, ⟨s₂, f₂, e₂⟩⟩) fun a b ⟨x, y, hxy, ⟨h8x, ca, sa⟩, ⟨h8y, cb, sb⟩⟩ => ?_)
       (signBody_tr hS hp)
     have hx := hxy.1
     have hy := hxy.2.1
-    have hpub := hxy.2.2
-    have e := slay_eq hx hy hpub
-    refine ⟨slay p prep x, x.gpr, y.gpr, x.mxcsr, y.mxcsr, x.mem, y.mem, slay_ok hp hx h8x, ?_, ca, e ▸ cb,
-      ⟨x, hx, h8x, rfl, rfl⟩, ⟨y, hy, h8y, e.symm, rfl⟩⟩
+    have hpub := hxy.2.2.1
+    have ey : N.map x.syms = N.map y.syms := List.map_congr_left hxy.2.2.2
+    have e : slay p prep x (N.map x.syms) = slay p prep y (N.map y.syms) := by rw [← ey]; exact slay_eq hx hy hpub _
+    refine ⟨slay p prep x (N.map x.syms), x.gpr, y.gpr, x.mxcsr, y.mxcsr, x.mem, y.mem,
+      slay_ok hp hx h8x (N.map x.syms), ?_, ca, e ▸ cb, ⟨⟨x, _, hx, h8x, rfl, rfl⟩, by rw [SyOk, sa]; rfl⟩,
+      ⟨⟨y, _, hy, h8y, e.symm, rfl⟩, by rw [SyOk, sb]; exact ey⟩⟩
     have lk := hpub.leak
     rw [← hpub.rdi, ← hpub.rsi, ← hpub.rdx, ← hpub.rcx, ← hpub.r8, ← hpub.r9] at lk
     exact lk
   · exact block_rsp_tr (fun i hi => by
         simp only [List.mem_singleton] at hi; subst hi; exact spOnly_nomem (fun _ => rfl) rfl)
-      fun a b ⟨⟨x, y, hxy, f₁, f₂⟩, _⟩ => by rw [f₁.1, f₂.1]; exact hxy.2.2.rsp
+      fun a b ⟨⟨x, y, hxy, f₁, f₂⟩, _⟩ => by rw [f₁.1, f₂.1]; exact hxy.2.2.1.rsp
 
 end
 

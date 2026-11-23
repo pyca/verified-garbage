@@ -195,10 +195,10 @@ theorem cs_r11 : ∀ r ∈ calleeSaved, r ≠ .r11 := by decide
 theorem cs_tmp : ∀ r ∈ calleeSaved, r ∉ [Reg.r10, .r11, .rax] := by decide
 
 /-- The arguments of `signRegs`, pushed. -/
-theorem signRegs_vals {p : Params} {prep : Bool} {s s2 : State} (hk : ∀ r, r ∉ [Reg.r10, .r11, .rax] → s2.gpr r = s.gpr r)
+theorem signRegs_vals {p : Params} {prep : Bool} {ys : List Addr} {s s2 : State} (hk : ∀ r, r ∉ [Reg.r10, .r11, .rax] → s2.gpr r = s.gpr r)
     (h10 : s2.gpr .r10 = stackArg s 0) (h11 : s2.gpr .r11 = stackArg s 1) (hax : s2.gpr .rax = 0) :
     ∀ j (hj : j < 9), s2.gpr (signRegs[j]'(by simp [signRegs]; omega_using [hj])) =
-      (slay p prep s).vals[j]'(by simp [Lay.vals]; omega_using [hj]) := by
+      (slay p prep s ys).vals[j]'(by simp [Lay.vals]; omega_using [hj]) := by
   intro j hj
   have : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7 ∨ j = 8 := by omega_using [hj]
   rcases this with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>

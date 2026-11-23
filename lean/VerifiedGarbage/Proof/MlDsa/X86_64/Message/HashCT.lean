@@ -101,7 +101,7 @@ theorem kabs_tr_of {Φ : Lay → Mem → State → Prop} (hΦ : ∀ L m t, Φ L 
   refine call_tr hok Proof.Sha3.X86_64.Stream.Absorb.absorb_correct
     Proof.Sha3.X86_64.Stream.Absorb.absorb_ct (fun L => [⟨dp L, n L⟩]) (fun L => [⟨L.ST, 200⟩, ⟨L.KS, 640⟩])
     (fun L g mx m₀ t t1 hL hc hφ hm => absorb_pre (args L g mx m₀ t t1 hL hc hφ hm))
-    (fun L g₁ g₂ mx₁ mx₂ m₁ m₂ a b a1 b1 hL _ c₁ c₂ φ₁ φ₂ f₁ f₂ => ?_) fun L _ _ m₀ t hL _ hφ => ?_
+    (fun L g₁ g₂ mx₁ mx₂ m₁ m₂ a b a1 b1 hL _ c₁ c₂ φ₁ φ₂ f₁ f₂ _ _ => ?_) fun L _ _ m₀ t hL _ hφ => ?_
   · have x := args L g₁ mx₁ m₁ a a1 hL c₁ φ₁ f₁
     have y := args L g₂ mx₂ m₂ b b1 hL c₂ φ₂ f₂
     simp only [Proof.Sha3.absorbX86_64, gpr_ce _ _ _ (by decide : Reg.rdi ≠ .rsp),
@@ -146,7 +146,7 @@ theorem kpad_tr {Φ : Lay → Mem → State → Prop} (hΦ : ∀ L m t, Φ L m t
   refine call_tr hok Proof.Sha3.X86_64.Stream.Pad.pad_correct Proof.Sha3.X86_64.Stream.Pad.pad_ct
     (fun _ => []) (fun L => [⟨L.ST, 200⟩, ⟨L.KS, 640⟩])
     (fun L g mx m₀ t t1 hL hc hφ hm => pad_pre (args L g mx m₀ t t1 hL hc hφ hm))
-    (fun L g₁ g₂ mx₁ mx₂ m₁ m₂ a b a1 b1 hL _ c₁ c₂ φ₁ φ₂ f₁ f₂ => ?_) fun L _ _ m₀ t hL _ hφ => ?_
+    (fun L g₁ g₂ mx₁ mx₂ m₁ m₂ a b a1 b1 hL _ c₁ c₂ φ₁ φ₂ f₁ f₂ _ _ => ?_) fun L _ _ m₀ t hL _ hφ => ?_
   · have x := args L g₁ mx₁ m₁ a a1 hL c₁ φ₁ f₁
     have y := args L g₂ mx₂ m₂ b b1 hL c₂ φ₂ f₂
     simp only [Proof.Sha3.padX86_64, gpr_ce _ _ _ (by decide : Reg.rdi ≠ .rsp),
@@ -177,7 +177,7 @@ theorem ksqz_tr {Φ : Lay → Mem → State → Prop} (hΦ : ∀ L m t, Φ L m t
   refine call_tr hok Proof.Sha3.X86_64.Stream.Squeeze.squeeze_correct
     Proof.Sha3.X86_64.Stream.Squeeze.squeeze_ct (fun _ => []) (fun L => [⟨L.ST, 200⟩, ⟨L.MU, 64⟩, ⟨L.KS, 640⟩])
     (fun L g mx m₀ t t1 hL hc hφ hm => squeeze_pre (args L g mx m₀ t t1 hL hc hφ hm))
-    (fun L g₁ g₂ mx₁ mx₂ m₁ m₂ a b a1 b1 hL _ c₁ c₂ φ₁ φ₂ f₁ f₂ => ?_) fun L _ _ m₀ t hL _ hφ => ?_
+    (fun L g₁ g₂ mx₁ mx₂ m₁ m₂ a b a1 b1 hL _ c₁ c₂ φ₁ φ₂ f₁ f₂ _ _ => ?_) fun L _ _ m₀ t hL _ hφ => ?_
   · have x := args L g₁ mx₁ m₁ a a1 hL c₁ φ₁ f₁
     have y := args L g₂ mx₂ m₂ b b1 hL c₂ φ₂ f₂
     simp only [Proof.Sha3.squeezeX86_64, gpr_ce _ _ _ (by decide : Reg.rdi ≠ .rsp),

@@ -133,7 +133,7 @@ theorem keyLen_ge {p : Params} (hp : p ∈ params) (prep : Bool) :
   rcases hp with rfl | rfl | rfl <;> cases prep <;> decide
 
 /-- The layout of a run of `sign_message` from `s`. -/
-def slay (p : Params) (prep : Bool) (s : State) : Lay where
+def slay (p : Params) (prep : Bool) (s : State) (ys : List Addr := []) : Lay where
   B := s.gpr .rsp - BitVec.ofNat 64 224
   key := s.gpr .rdi
   keyLen := keyLen p prep
@@ -147,16 +147,17 @@ def slay (p : Params) (prep : Bool) (s : State) : Lay where
   E := oE p
   rd := s.rd
   wr := s.wr
+  nsy := ys
 
-theorem slay_B (p : Params) (prep : Bool) (s : State) :
-    (slay p prep s).B + BitVec.ofNat 64 224 = s.gpr .rsp := BitVec.sub_add_cancel _ _
+theorem slay_B (p : Params) (prep : Bool) (s : State) (ys : List Addr := []) :
+    (slay p prep s ys).B + BitVec.ofNat 64 224 = s.gpr .rsp := BitVec.sub_add_cancel _ _
 
-theorem slay_X (p : Params) (prep : Bool) (s : State) : Within (slay p prep s).XS (rScr p s) :=
+theorem slay_X (p : Params) (prep : Bool) (s : State) (ys : List Addr := []) : Within (slay p prep s ys).XS (rScr p s) :=
   ⟨oE p, rfl, by show oE p + 1024 ≤ mScrLen p; rw [mScr_eq]⟩
 
 theorem slay_ok {p : Params} {prep : Bool} (hp : p ∈ params) {s : State} (h : SPre p prep s)
-    (h8 : (s.gpr .r8).toNat < 256) : (slay p prep s).Ok := by
-  have hX := slay_X p prep s
+    (h8 : (s.gpr .r8).toNat < 256) (ys : List Addr := []) : (slay p prep s ys).Ok := by
+  have hX := slay_X p prep s ys
   have hXs := hX.sub
   refine ⟨h8, oE_lt hp, ⟨(keyLen_ge hp prep).1, (keyLen_ge hp prep).2.1⟩, ?_, ⟨rScr p s, by simp [slay, h.wr], hX⟩, by simp [slay, h.rd],
     by simp [slay, h.rd], by simp [slay, h.rd], h.skScr.symm.sub_left hXs, h.msgScr.symm.sub_left hXs,
@@ -169,14 +170,15 @@ theorem slay_ok {p : Params} {prep : Bool} (hp : p ∈ params) {s : State} (h : 
     have := h.nSig; have := h.nScr
     rcases hR with rfl | rfl <;> simp only <;> omega_arith
 
-theorem mu_eq (p : Params) (prep : Bool) (s : State) :
-    (slay p prep s).MU = stackArg s 1 + BitVec.ofNat 64 (oE p + 840) := by
+theorem mu_eq (p : Params) (prep : Bool) (s : State) (ys : List Addr := []) :
+    (slay p prep s ys).MU = stackArg s 1 + BitVec.ofNat 64 (oE p + 840) := by
   simp only [Lay.MU, Lay.X, slay, add_add]
 
 
-theorem mu_nowrap {p : Params} {prep : Bool} {s : State} (h : SPre p prep s) : (slay p prep s).MU.toNat + 64 ≤ 2 ^ 64 := by
+theorem mu_nowrap {p : Params} {prep : Bool} {s : State} (h : SPre p prep s) (ys : List Addr := []) :
+    (slay p prep s ys).MU.toNat + 64 ≤ 2 ^ 64 := by
   have hn : (stackArg s 1).toNat + (oE p + 1024) ≤ 2 ^ 64 := by rw [← mScr_eq]; exact h.nScr
-  rw [mu_eq]
+  rw [mu_eq p prep s ys]
   generalize oE p = e at hn ⊢
   generalize stackArg s 1 = x at hn ⊢
   clear h
