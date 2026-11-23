@@ -1187,7 +1187,10 @@ jmp 2120f
 .base64 "SYuH0AAAAEmJh8AAAABIwegESIXA"
 je 2126f
 .base64 "TInvSYu3sAAAAEyJ8kiDwjBMifFIg8EQTYuHyAAAAEmJwUyJ+EgFwAEAAFA="
-call {vg_aes_gcm_encrypt_blocks_prepared_vaes_vpclmul_avx512}
+push r9
+push r8
+call {vg_aes_gcm_encrypt_blocks_to_prepared_vaes_vpclmul_avx512}
+add rsp, 16
 .base64 "WEmLh9AAAABIicFIg+EPSYmP0AAAAEgpyEkDh8gAAABJiYfIAAAA"
 jmp 2127f
 2126:
@@ -1303,7 +1306,10 @@ jmp 2159f
 .base64 "SYuH0AAAAEmJh8AAAABIwegESIXA"
 je 2161f
 .base64 "TInvSYu3sAAAAEyJ8kiDwjBMifFIg8EQTYuHyAAAAEmJwUyJ+EgFwAEAAFA="
-call {vg_aes_gcm_encrypt_blocks_prepared_vaes_vpclmul_avx512}
+push r9
+push r8
+call {vg_aes_gcm_encrypt_blocks_to_prepared_vaes_vpclmul_avx512}
+add rsp, 16
 .base64 "WEmLh9AAAABIicFIg+EPSYmP0AAAAEgpyEkDh8gAAABJiYfIAAAA"
 jmp 2162f
 2161:
@@ -1379,7 +1385,7 @@ jmp 21b
 .p2align 6"#,
         vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul::vg_ghash_vpclmul,
         vg_aes_gcm_encrypt_blocks_vaes_vpclmul_avx512 = sym super::aes::vg_aes_gcm_encrypt_blocks_vaes_vpclmul_avx512::vg_aes_gcm_encrypt_blocks_vaes_vpclmul_avx512,
-        vg_aes_gcm_encrypt_blocks_prepared_vaes_vpclmul_avx512 = sym super::aes::vg_aes_gcm_encrypt_blocks_prepared_vaes_vpclmul_avx512::vg_aes_gcm_encrypt_blocks_prepared_vaes_vpclmul_avx512,
+        vg_aes_gcm_encrypt_blocks_to_prepared_vaes_vpclmul_avx512 = sym super::aes::vg_aes_gcm_encrypt_blocks_to_prepared_vaes_vpclmul_avx512::vg_aes_gcm_encrypt_blocks_to_prepared_vaes_vpclmul_avx512,
         VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
     )
 }
@@ -2573,7 +2579,10 @@ jmp 267f
 .base64 "SYuH0AAAAEmLj8gAAABIAcFJiY/IAAAASYuPwAAAAEgBwUmJj8AAAABJi4/YAAAASCnBSYmP0AAAAEmLh9AAAABIwegESIXA"
 je 276f
 .base64 "TInvSYu3sAAAAEyJ8kiDwjBMifFIg8EQTYuHyAAAAEmJwUyJ+EgFwAEAAFA="
-call {vg_aes_gcm_encrypt_blocks_prepared_vaes_vpclmul_avx512}
+push r9
+push r8
+call {vg_aes_gcm_encrypt_blocks_to_prepared_vaes_vpclmul_avx512}
+add rsp, 16
 .base64 "WEmLh9AAAABIicFIg+EPSYmP0AAAAEgpyEmLj8gAAABIAcFJiY/IAAAASYuPwAAAAEgBwUmJj8AAAAA="
 jmp 277f
 276:
@@ -2673,7 +2682,7 @@ jmp 21b
         vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul::vg_ghash_vpclmul,
         vg_aes_gcm_encrypt_blocks_vaes_vpclmul_avx512 = sym super::aes::vg_aes_gcm_encrypt_blocks_vaes_vpclmul_avx512::vg_aes_gcm_encrypt_blocks_vaes_vpclmul_avx512,
         vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
-        vg_aes_gcm_encrypt_blocks_prepared_vaes_vpclmul_avx512 = sym super::aes::vg_aes_gcm_encrypt_blocks_prepared_vaes_vpclmul_avx512::vg_aes_gcm_encrypt_blocks_prepared_vaes_vpclmul_avx512,
+        vg_aes_gcm_encrypt_blocks_to_prepared_vaes_vpclmul_avx512 = sym super::aes::vg_aes_gcm_encrypt_blocks_to_prepared_vaes_vpclmul_avx512::vg_aes_gcm_encrypt_blocks_to_prepared_vaes_vpclmul_avx512,
     )
 }
 
@@ -3606,7 +3615,10 @@ jmp 236f
 .base64 "SYuH0AAAAEmJh8AAAABIwegESIXA"
 je 238f
 .base64 "TInvSYu3sAAAAEyJ8kiDwjBMifFIg8EQTYuHyAAAAEmJwUyJ+EgFwAEAAFA="
-call {vg_aes_gcm_encrypt_blocks_prepared16_vaes_vpclmul}
+push r9
+push r8
+call {vg_aes_gcm_encrypt_blocks_to_prepared16_vaes_vpclmul}
+add rsp, 16
 .base64 "WEmLh9AAAABIicFIg+EPSYmP0AAAAEgpyEkDh8gAAABJiYfIAAAA"
 jmp 239f
 238:
@@ -3657,7 +3669,7 @@ jmp 21b
         vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul::vg_ghash_vpclmul,
         vg_aes_gcm_encrypt_blocks_vaes_vpclmul = sym super::aes::vg_aes_gcm_encrypt_blocks_vaes_vpclmul::vg_aes_gcm_encrypt_blocks_vaes_vpclmul,
         vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
-        vg_aes_gcm_encrypt_blocks_prepared16_vaes_vpclmul = sym super::aes::vg_aes_gcm_encrypt_blocks_prepared16_vaes_vpclmul::vg_aes_gcm_encrypt_blocks_prepared16_vaes_vpclmul,
+        vg_aes_gcm_encrypt_blocks_to_prepared16_vaes_vpclmul = sym super::aes::vg_aes_gcm_encrypt_blocks_to_prepared16_vaes_vpclmul::vg_aes_gcm_encrypt_blocks_to_prepared16_vaes_vpclmul,
     )
 }
 
@@ -4505,7 +4517,10 @@ jmp 267f
 .base64 "SYuH0AAAAEmLj8gAAABIAcFJiY/IAAAASYuPwAAAAEgBwUmJj8AAAABJi4/YAAAASCnBSYmP0AAAAEmLh9AAAABIwegESIXA"
 je 276f
 .base64 "TInvSYu3sAAAAEyJ8kiDwjBMifFIg8EQTYuHyAAAAEmJwUyJ+EgFwAEAAFA="
-call {vg_aes_gcm_encrypt_blocks_prepared16_vaes_vpclmul}
+push r9
+push r8
+call {vg_aes_gcm_encrypt_blocks_to_prepared16_vaes_vpclmul}
+add rsp, 16
 .base64 "WEmLh9AAAABIicFIg+EPSYmP0AAAAEgpyEmLj8gAAABIAcFJiY/IAAAASYuPwAAAAEgBwUmJj8AAAAA="
 jmp 277f
 276:
@@ -4605,7 +4620,7 @@ jmp 21b
         vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul::vg_ghash_vpclmul,
         vg_aes_gcm_encrypt_blocks_vaes_vpclmul = sym super::aes::vg_aes_gcm_encrypt_blocks_vaes_vpclmul::vg_aes_gcm_encrypt_blocks_vaes_vpclmul,
         vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
-        vg_aes_gcm_encrypt_blocks_prepared16_vaes_vpclmul = sym super::aes::vg_aes_gcm_encrypt_blocks_prepared16_vaes_vpclmul::vg_aes_gcm_encrypt_blocks_prepared16_vaes_vpclmul,
+        vg_aes_gcm_encrypt_blocks_to_prepared16_vaes_vpclmul = sym super::aes::vg_aes_gcm_encrypt_blocks_to_prepared16_vaes_vpclmul::vg_aes_gcm_encrypt_blocks_to_prepared16_vaes_vpclmul,
     )
 }
 
@@ -5564,7 +5579,10 @@ jmp 244f
 .base64 "SYuH0AAAAEmJh8AAAABIwegESIXA"
 je 250f
 .base64 "TInvSYu3sAAAAEyJ8kiDwjBMifFIg8EQTYuHyAAAAEmJwUyJ+EgFwAEAAFA="
-call {vg_aes_gcm_encrypt_blocks_prepared16_aesni_pclmul_avx}
+push r9
+push r8
+call {vg_aes_gcm_encrypt_blocks_to_prepared16_aesni_pclmul_avx}
+add rsp, 16
 .base64 "WEmLh9AAAABIicFIg+EPSYmP0AAAAEgpyEkDh8gAAABJiYfIAAAA"
 jmp 251f
 250:
@@ -5680,7 +5698,10 @@ jmp 283f
 .base64 "SYuH0AAAAEmJh8AAAABIwegESIXA"
 je 285f
 .base64 "TInvSYu3sAAAAEyJ8kiDwjBMifFIg8EQTYuHyAAAAEmJwUyJ+EgFwAEAAFA="
-call {vg_aes_gcm_encrypt_blocks_prepared16_aesni_pclmul_avx}
+push r9
+push r8
+call {vg_aes_gcm_encrypt_blocks_to_prepared16_aesni_pclmul_avx}
+add rsp, 16
 .base64 "WEmLh9AAAABIicFIg+EPSYmP0AAAAEgpyEkDh8gAAABJiYfIAAAA"
 jmp 286f
 285:
@@ -5755,7 +5776,7 @@ jmp 21b
 .p2align 6"#,
         vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
         vg_aes_gcm_encrypt_blocks_aesni_pclmul_avx = sym super::aes::vg_aes_gcm_encrypt_blocks_aesni_pclmul_avx::vg_aes_gcm_encrypt_blocks_aesni_pclmul_avx,
-        vg_aes_gcm_encrypt_blocks_prepared16_aesni_pclmul_avx = sym super::aes::vg_aes_gcm_encrypt_blocks_prepared16_aesni_pclmul_avx::vg_aes_gcm_encrypt_blocks_prepared16_aesni_pclmul_avx,
+        vg_aes_gcm_encrypt_blocks_to_prepared16_aesni_pclmul_avx = sym super::aes::vg_aes_gcm_encrypt_blocks_to_prepared16_aesni_pclmul_avx::vg_aes_gcm_encrypt_blocks_to_prepared16_aesni_pclmul_avx,
         VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
     )
 }
@@ -6604,7 +6625,10 @@ jmp 267f
 .base64 "SYuH0AAAAEmLj8gAAABIAcFJiY/IAAAASYuPwAAAAEgBwUmJj8AAAABJi4/YAAAASCnBSYmP0AAAAEmLh9AAAABIwegESIXA"
 je 276f
 .base64 "TInvSYu3sAAAAEyJ8kiDwjBMifFIg8EQTYuHyAAAAEmJwUyJ+EgFwAEAAFA="
-call {vg_aes_gcm_encrypt_blocks_prepared16_aesni_pclmul_avx}
+push r9
+push r8
+call {vg_aes_gcm_encrypt_blocks_to_prepared16_aesni_pclmul_avx}
+add rsp, 16
 .base64 "WEmLh9AAAABIicFIg+EPSYmP0AAAAEgpyEmLj8gAAABIAcFJiY/IAAAASYuPwAAAAEgBwUmJj8AAAAA="
 jmp 277f
 276:
@@ -6704,7 +6728,7 @@ jmp 21b
         vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
         vg_aes_gcm_encrypt_blocks_aesni_pclmul_avx = sym super::aes::vg_aes_gcm_encrypt_blocks_aesni_pclmul_avx::vg_aes_gcm_encrypt_blocks_aesni_pclmul_avx,
         vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
-        vg_aes_gcm_encrypt_blocks_prepared16_aesni_pclmul_avx = sym super::aes::vg_aes_gcm_encrypt_blocks_prepared16_aesni_pclmul_avx::vg_aes_gcm_encrypt_blocks_prepared16_aesni_pclmul_avx,
+        vg_aes_gcm_encrypt_blocks_to_prepared16_aesni_pclmul_avx = sym super::aes::vg_aes_gcm_encrypt_blocks_to_prepared16_aesni_pclmul_avx::vg_aes_gcm_encrypt_blocks_to_prepared16_aesni_pclmul_avx,
     )
 }
 
