@@ -13,36 +13,36 @@ pieces of `Impl/MlDsa/X86/Arith/Mul.lean` (`vmont`, `vmont2`), inside the
 MCDT frame `pmuludq` needs; the function uses only `eax`, `ecx`, `edx` and
 the XMM registers, and its arguments are at `[esp + 16]` and `[esp + 20]`
 there. A table of 256 zetas in Montgomery form (times `2³² mod q`) is
-stored in `scratch` as `u32`s (`table`), and read through `edx`, which
-moves up it from entry 1, a block at a time; the end of the polynomial,
-`f + 1024`, is stored in the argument slot of `scratch`, which the loops
-compare `eax` with.
+stored in `scratch` as `u32`s (`table`, through `edx`), and read through
+`edx`, which moves up it from entry 1, a block at a time; the end of the
+polynomial, `f + 1024`, is stored in the argument slot of `scratch`, which
+the loops compare `eax` with (`nttInit`).
 
 The coefficients are not reduced between the layers: a butterfly
-(`bfTail`) leaves `a + t` and `a + 2q - t` for `t = ζ · b · 2⁻³²… < 2q`
-(`vmont`), so after `l` layers they are less than `(1 + 2l) · q`. The
-model has no `psubd`: `a + 2q - t` is `a + (2q + 1) + (t xor 0xFFFFFFFF)`,
-with `2q + 1` in the doublewords of `xmm3` and `0xFFFFFFFF` in those of
-`xmm4` (`q` in those of `xmm7` and `-q⁻¹ mod 2³²` in those of `xmm6`, for
-`vmont`).
+(`bfTail`) leaves `a + t` and `a + 2q - t` for `t`, the Montgomery product
+of `b` and the zeta, less than `2q` (`vmont`), so after `l` layers they are
+less than `(1 + 2l) · q`. The model has no `psubd`: `a + 2q - t` is
+`a + (2q + 1) + (t xor 0xFFFFFFFF)`, with `2q + 1` in the doublewords of
+`xmm3` and `0xFFFFFFFF` in those of `xmm4` (`q` is in those of `xmm7` and
+`-q⁻¹ mod 2³²` in those of `xmm6`, for `vmont`).
 
 * A layer with `len ≥ 4` (`layer4`) is a loop over its blocks, each a loop
   over its groups of four butterflies (`fBody`): `eax` points at
   coefficient `j`, `[eax + 4·len]` is coefficient `j + len`, the zeta of
-  the block is in every doubleword of `xmm5`, and `ecx` counts the groups
-  left.
+  the block is in every doubleword of `xmm5` (`blkInit`), and `ecx` counts
+  the groups left.
 * The layers with `len = 2` and `len = 1` (`layerFlat`) are loops over
-  eight coefficients, the vectors at `[eax]` and `[eax + 16]`: they are
-  gathered into the vector of the `a`s (`xmm1`) and that of the `b`s
-  (`xmm0`) of four butterflies (`gath2`, `gath1`), whose results are
-  scattered back (`scat2`, `scat1`). With `len = 2` the two blocks' zetas
-  are in doublewords 0 and 2 of `xmm5` (`zl2`), which `vmont` reads; with
-  `len = 1` the four blocks' are its doublewords (`zl1`), and `vmont2`
-  multiplies doubleword by doubleword. Both use `xmm5` as their temporary,
-  so that `xmm1` keeps the `a`s.
+  eight coefficients, the vectors at `[eax]` and `[eax + 16]`, which are
+  gathered into the `a`s (`xmm1`) and the `b`s (`xmm0`) of four butterflies
+  (`gath2`, `gath1`), whose results are scattered back (`scat2`, `scat1`).
+  With `len = 2` the two blocks' zetas are in doublewords 0 and 2 of `xmm5`
+  (`zl2`), which `vmont` reads; with `len = 1` the four blocks' are its
+  doublewords (`zl1`), and `vmont2` multiplies doubleword by doubleword.
+  Both use `xmm5` as their temporary, so that `xmm1` keeps the `a`s.
 * A last pass (`pass finInit finCore`) reduces every coefficient `x < 17q`:
   `x - (x >> 23) · q = (x mod 2²³) + (k << 13) - k` for `k = x >> 23` is
-  less than `2q`, and is reduced like `vcsub` does.
+  less than `2q` (`finFold`, which also subtracts `q`), and `q` is added
+  back where that is negative (`finSub`).
 
 ## `nttInv(f, scratch)` (Algorithm 42)
 

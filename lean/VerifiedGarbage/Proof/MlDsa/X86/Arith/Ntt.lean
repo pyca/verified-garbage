@@ -25,6 +25,31 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # ML-DSA on x86 (32-bit): `vg_mldsa_ntt`
+
+The vector code of `Impl/MlDsa/X86/Arith/Ntt.lean`, against the contract
+the scalar code it replaces had.
+
+* The code of four butterflies (`BodyOk`: `fBody_ok`, `fBody2_ok`,
+  `fBody1_ok`) stores, at `[eax]` and `[eax + d]`, the vectors
+  `Lazy.lean` describes, from those it loads there and the zetas in `xmm5`
+  (run an instruction at a time, as in `Mul.lean`).
+* In memory (`Base`, `Co`), the coefficients a layer has done stand for
+  those of the layer's result `G`, and the others for those of its
+  argument `f`; `body_step` is a step on two vectors of coefficients, none
+  of which is done, whose pairs are a layer's (`NewOk`).
+* A layer with `len ≥ 4` (`lay4_piece`) is the loop over its blocks
+  (`LInv`) of the loop over a block's groups (`GInv`), with the zeta of the
+  block from the table (`blkInit_wp`, `gstep`, `blkEnd_wp`); the layers
+  with `len = 2` and `len = 1` (`layFlat_piece`) are one loop (`FInv`,
+  `fstep`), whose zetas are loaded for each step (`ZlOk`, `FlatOk`). Before
+  each layer (`LS`) every coefficient stands for that of the layers so far.
+* `init_piece` sets the constants and the table (`table_spec`), and a pass
+  (`pass_piece`, `pstep`) reduces the coefficients (`finCore_ok`).
+
+The function is its body inside the MCDT frame (`Piece.mcdt`), constant
+time by the analysis of general and XMM registers (`Piece.sse`) from `esp`
+and the pointers `eax` and `edx` (and the counter `ecx`), which each piece
+gets from the arguments.
 -/
 
 @[expose] public section
@@ -1153,7 +1178,8 @@ theorem verified : Verified X86.target Impl.MlDsa.X86.Arith.ntt (nttContract X86
     refine ⟨st, ?_⟩
     sig_pre [nttContract, inPlaceContract, inPlaceSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     simp only [a0, a1, e]
-    trace_state
-    sorry
+    refine ⟨by decide, by decide, rfl, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, by decide, by decide,
+      reduced_below satZero 0 (by decide)⟩
+    all_goals exact Region.disjoint_of_sep (by decide)
 
 end VG.Proof.MlDsa.X86.Arith.NttFwd
