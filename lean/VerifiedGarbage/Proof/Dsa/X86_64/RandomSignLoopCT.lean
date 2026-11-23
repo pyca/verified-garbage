@@ -59,11 +59,12 @@ theorem random_sign_loop_ct (S : Signer) {s t : State}
     {hs : RandomSignABI S.stack s} {ht : RandomSignABI S.stack t}
     {hqs : 1 < Spec.Dsa.decodeBE (randomQBytes s)} {hqt : 1 < Spec.Dsa.decodeBE (randomQBytes t)}
     (hpub : RandomSignPublicAgree s t) (hvs : RandomValid S s) (hvt : RandomValid S t) (fuel : Nat) :
-    RelCT isa (RandomSignLoopAgree hs ht hqs hqt fuel)
+    RelCT isa (fun a b => RandomSignLoopAgree hs ht hqs hqt fuel a b ∧ SymsAgree [S.nm, S.ns] a b)
       (.loop (.seq (RandomSign.attempt S.name S.code) randomSignStatusTest) .e)
       (fun _ _ => True) := by
-  refine RelCT.loop (M := isa) (RandomSignLoopAgree hs ht hqs hqt) ?_ fuel
-  intro n a b tsa tsb u w ⟨hf, hn, used, ha, hb, htrace⟩ ea eb
+  refine RelCT.loop (M := isa) (fun n a b => RandomSignLoopAgree hs ht hqs hqt n a b ∧ SymsAgree [S.nm, S.ns] a b)
+    ?_ fuel
+  intro n a b tsa tsb u w ⟨⟨hf, hn, used, ha, hb, htrace⟩, hsy⟩ ea eb
   cases n with
   | zero => omega
   | succ n =>
@@ -75,7 +76,7 @@ theorem random_sign_loop_ct (S : Signer) {s t : State}
     | seq eaa eat =>
       cases eb with
       | seq eba ebt =>
-        have hattempt := random_sign_attempt_agreement S ha hb hpub (by omega_using [hn]) htrace hvs hvt eaa eba
+        have hattempt := random_sign_attempt_agreement S ha hb hpub (by omega_using [hn]) htrace hvs hvt hsy eaa eba
         have hpa := random_post_of_exec (random_sign_step S ha (by omega_using []) (by omega_using [hn]) hvs) eaa
         have hpb := random_post_of_exec (random_sign_step S hb (by omega_using []) (by omega_using [hn]) hvt) eba
         obtain ⟨_, hrunA⟩ := hpa.1
@@ -103,7 +104,7 @@ theorem random_sign_loop_ct (S : Signer) {s t : State}
           have hb' := hpb'.2.2 hfourB
           simp only [Nat.add_sub_cancel] at ha' hb'
           rw [← hused] at hb' hnext
-          exact ⟨n, by omega_using [], by omega_using [hf'], by omega_using [hn], used + (randomSignDraw (randomInput s) used).used,
-            ha', hb', hnext⟩
+          exact ⟨n, by omega_using [], ⟨by omega_using [hf'], by omega_using [hn], used + (randomSignDraw (randomInput s) used).used,
+            ha', hb', hnext⟩, (hsy.exec eaa eba).exec eat ebt⟩
 
 end VG.Proof.Dsa.X86_64

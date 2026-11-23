@@ -353,7 +353,11 @@ vg_dsa_sign_random_prevalidated_adx:
 	xor r11d, r11d
 	lea rsp, [rsp-8]
 	mov QWORD PTR [rsp], r11
-	lea rsp, [rsp-256]
+	lea rsp, [rsp-320]
+	movdqu XMMWORD PTR [rsp+304], xmm0
+	movdqu XMMWORD PTR [rsp+288], xmm0
+	movdqu XMMWORD PTR [rsp+272], xmm0
+	movdqu XMMWORD PTR [rsp+256], xmm0
 	movdqu XMMWORD PTR [rsp+240], xmm0
 	movdqu XMMWORD PTR [rsp+224], xmm0
 	movdqu XMMWORD PTR [rsp+208], xmm0
@@ -370,7 +374,7 @@ vg_dsa_sign_random_prevalidated_adx:
 	movdqu XMMWORD PTR [rsp+32], xmm0
 	movdqu XMMWORD PTR [rsp+16], xmm0
 	movdqu XMMWORD PTR [rsp], xmm0
-	lea rsp, [rsp+256]
+	lea rsp, [rsp+320]
 	lea rsp, [rsp+8]
 	mov eax, eax
 	xor ecx, ecx
@@ -776,7 +780,11 @@ vg_dsa_generate_key_adx:
 	xor r11d, r11d
 	lea rsp, [rsp-8]
 	mov QWORD PTR [rsp], r11
-	lea rsp, [rsp-256]
+	lea rsp, [rsp-320]
+	movdqu XMMWORD PTR [rsp+304], xmm0
+	movdqu XMMWORD PTR [rsp+288], xmm0
+	movdqu XMMWORD PTR [rsp+272], xmm0
+	movdqu XMMWORD PTR [rsp+256], xmm0
 	movdqu XMMWORD PTR [rsp+240], xmm0
 	movdqu XMMWORD PTR [rsp+224], xmm0
 	movdqu XMMWORD PTR [rsp+208], xmm0
@@ -793,7 +801,7 @@ vg_dsa_generate_key_adx:
 	movdqu XMMWORD PTR [rsp+32], xmm0
 	movdqu XMMWORD PTR [rsp+16], xmm0
 	movdqu XMMWORD PTR [rsp], xmm0
-	lea rsp, [rsp+256]
+	lea rsp, [rsp+320]
 	lea rsp, [rsp+8]
 	mov eax, eax
 	xor ecx, ecx
@@ -1123,7 +1131,11 @@ vg_dsa_sign_random_prevalidated:
 	xor r11d, r11d
 	lea rsp, [rsp-8]
 	mov QWORD PTR [rsp], r11
-	lea rsp, [rsp-256]
+	lea rsp, [rsp-320]
+	movdqu XMMWORD PTR [rsp+304], xmm0
+	movdqu XMMWORD PTR [rsp+288], xmm0
+	movdqu XMMWORD PTR [rsp+272], xmm0
+	movdqu XMMWORD PTR [rsp+256], xmm0
 	movdqu XMMWORD PTR [rsp+240], xmm0
 	movdqu XMMWORD PTR [rsp+224], xmm0
 	movdqu XMMWORD PTR [rsp+208], xmm0
@@ -1140,7 +1152,7 @@ vg_dsa_sign_random_prevalidated:
 	movdqu XMMWORD PTR [rsp+32], xmm0
 	movdqu XMMWORD PTR [rsp+16], xmm0
 	movdqu XMMWORD PTR [rsp], xmm0
-	lea rsp, [rsp+256]
+	lea rsp, [rsp+320]
 	lea rsp, [rsp+8]
 	mov eax, eax
 	xor ecx, ecx
@@ -1546,7 +1558,11 @@ vg_dsa_generate_key:
 	xor r11d, r11d
 	lea rsp, [rsp-8]
 	mov QWORD PTR [rsp], r11
-	lea rsp, [rsp-256]
+	lea rsp, [rsp-320]
+	movdqu XMMWORD PTR [rsp+304], xmm0
+	movdqu XMMWORD PTR [rsp+288], xmm0
+	movdqu XMMWORD PTR [rsp+272], xmm0
+	movdqu XMMWORD PTR [rsp+256], xmm0
 	movdqu XMMWORD PTR [rsp+240], xmm0
 	movdqu XMMWORD PTR [rsp+224], xmm0
 	movdqu XMMWORD PTR [rsp+208], xmm0
@@ -1563,7 +1579,7 @@ vg_dsa_generate_key:
 	movdqu XMMWORD PTR [rsp+32], xmm0
 	movdqu XMMWORD PTR [rsp+16], xmm0
 	movdqu XMMWORD PTR [rsp], xmm0
-	lea rsp, [rsp+256]
+	lea rsp, [rsp+320]
 	lea rsp, [rsp+8]
 	mov eax, eax
 	xor ecx, ecx

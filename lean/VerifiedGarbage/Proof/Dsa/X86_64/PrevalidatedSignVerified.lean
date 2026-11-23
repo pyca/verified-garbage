@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.X86_64.CallInline
 public import VerifiedGarbage.Proof.Dsa.PrivateKeyWitness
 public import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
+public import VerifiedGarbage.Proof.Framework.X86_64.ForwardSlots
 import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Rsa.X86_64.CallMont
 import VerifiedGarbage.Proof.Dsa.X86_64.PrevalidatedVerified
@@ -1268,14 +1269,6 @@ theorem signing_patch (s b : State) (hv : Mem) (u : Nat → BitVec 64)
   sig_post [Spec.Dsa.signContract, Spec.Dsa.signSig, abi, argRegs, stackArgs_five, List.range, List.range.loop] at hp ⊢
   simpa only [State.patch_gpr, patch_mem, bytesAt_overlay hm] using hp
 
-theorem signing_call_verified (M : Mont) (Sq : MontS) {c : Prog isa}
-    (hc : c.InlineOk = true) (hin : c.inline = SignVerify.sign Sq.mm M.mm)
-    (hmx : (SignVerify.sign Sq.mm M.mm).allInstrs (fun i => !loadsMxcsr i) = true) :
-    Verified target c (Spec.Dsa.signContract abi 8) :=
-  Verified.of_inline_sig hc (hin ▸ signingCorrect M Sq hmx) (hin ▸ signingConstantTime M Sq)
-    signing_implies8 (fun _ h => Sig.clear_of_pre h) (fun _ _ _ _ h => Sig.rsp_of_pub h)
-    signing_patch
-
 end VG.Proof.Dsa.X86_64
 
 end
@@ -1385,11 +1378,12 @@ theorem prevalidatedSign_patch (s b : State) (hv : Mem) (u : Nat → BitVec 64)
     (signContractWith Spec.Dsa.validatePrivateKeyBytes abi).post s (b.patch (hole (s.gpr .rsp)) hv u) :=
   signWith_post (signing_patch s b hv u (signWith_pre hs).1 hc (signWith_post' hp))
 
-theorem prevalidated_sign_call_verified (M : Mont) (Sq : MontS) {c : Prog isa}
-    (hc : c.InlineOk = true) (hin : c.inline = PrevalidatedSign.sign Sq.mm M.mm)
+theorem prevalidated_sign_slot_verified (M : Mont) (Sq : MontS) {c : Prog isa} {fns : List String}
+    (hc : c.InlineOkNS (slotsOf 5 fns) 1 = true) (hm : 8 + 8 * (5 + 1) + 8 * fns.length ≤ 2 ^ 64)
+    (hin : c.inlineAll = PrevalidatedSign.sign Sq.mm M.mm)
     (hmx : (PrevalidatedSign.sign Sq.mm M.mm).allInstrs (fun i => !loadsMxcsr i) = true) :
-    Verified target c (signContractWith Spec.Dsa.validatePrivateKeyBytes abi 8) :=
-  Verified.of_inline_sig hc (hin ▸ prevalidatedSigningCorrect M Sq hmx) (hin ▸ prevalidatedSigningConstantTime M Sq)
+    SlotVerified c (signContractWith Spec.Dsa.validatePrivateKeyBytes abi 8) 5 fns :=
+  SlotVerified.of_inline hc hm (hin ▸ prevalidatedSigningCorrect M Sq hmx) (hin ▸ prevalidatedSigningConstantTime M Sq)
     prevalidatedSign_implies8 (fun _ h => Sig.clear_of_pre h) (fun _ _ _ _ h => Sig.rsp_of_pub h)
     prevalidatedSign_patch
 

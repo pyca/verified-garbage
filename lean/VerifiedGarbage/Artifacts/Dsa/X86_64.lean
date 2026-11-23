@@ -30,10 +30,10 @@ def artifacts : List Artifact :=
   (VG.Proof.Variants.DsaArithmetic.X86_64.variants.flatMap fun (a : Proof.Dsa.X86_64.Slots.SlotBackend) => [
     Spec.Dsa.randomSignPrevalidatedApi.artifact X86_64.target {
       suffix := a.backend.suffix
-      code := Impl.Dsa.X86_64.Fn.randomSignPrevalidated a.backend.level (prevalidatedSignerName a.backend) a.backend.sq
-        a.backend.mul
-      verified := Proof.Dsa.X86_64.BackendScrub.randomSign_scrubbed a.backend
-      spSafe := Proof.Dsa.X86_64.BackendScrub.randomSign_spSafe a.backend },
+      code := Impl.Dsa.X86_64.Fn.randomSignPrevalidatedS a.backend.level (prevalidatedSignerName a.backend) a.nm a.ns
+        a.bm a.bs
+      verified := Proof.Dsa.X86_64.BackendScrub.randomSign_scrubbed a
+      spSafe := Proof.Dsa.X86_64.BackendScrub.randomSign_spSafe a },
     Spec.Dsa.validatePrivateKeyApi.artifact X86_64.target {
       suffix := a.backend.suffix
       code := Impl.Dsa.X86_64.Fn.validatePrivateKeyS a.backend.level a.nm a.ns a.bm a.bs
@@ -51,10 +51,10 @@ def artifacts : List Artifact :=
       spSafe := Proof.Dsa.X86_64.Slots.verify_spSafe a },
     Spec.Dsa.generateKeyApi.artifact X86_64.target {
       suffix := a.backend.suffix
-      code := Impl.Dsa.X86_64.Fn.generateKey a.backend.level (keygenCheckName a.backend) (keygenDeriveName a.backend)
-        a.backend.sq a.backend.mul
-      verified := Proof.Dsa.X86_64.BackendScrub.generateKey_scrubbed a.backend
-      spSafe := Proof.Dsa.X86_64.BackendScrub.generateKey_spSafe a.backend },
+      code := Impl.Dsa.X86_64.Fn.generateKeyS a.backend.level (keygenCheckName a.backend) (keygenDeriveName a.backend)
+        a.nm a.ns a.bm a.bs
+      verified := Proof.Dsa.X86_64.BackendScrub.generateKey_scrubbed a
+      spSafe := Proof.Dsa.X86_64.BackendScrub.generateKey_spSafe a },
     Spec.Dsa.deriveKeyApi.artifact X86_64.target {
       suffix := a.backend.suffix
       code := Impl.Dsa.X86_64.Fn.deriveKeyS a.backend.level a.nm a.ns a.bm a.bs

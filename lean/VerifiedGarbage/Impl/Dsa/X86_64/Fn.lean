@@ -27,35 +27,6 @@ open VG.Impl.Scrub.X86_64 (VecLevel scrubAll)
 /-- `Spec.Dsa.parameterInitApi`'s function as emitted. -/
 def parameterInit : Prog isa := scrubAll .sse 32 0 ParameterSearch.init
 
-/-- `Spec.Dsa.randomSignPrevalidatedApi`'s function as emitted, over the
-squaring `sq` and multiplication `mul`, calling its signer as `name`, its
-cleanup at the level `v`. -/
-def randomSignPrevalidated (v : VecLevel) (name : String) (sq : Prog isa) (mul : Nat → Nat → Nat → Prog isa) :
-    Prog isa :=
-  scrubAll v 32 264 (RandomSign.code name (PrevalidatedSign.sign sq mul))
-
-/-- `Spec.Dsa.validatePrivateKeyApi`'s function as emitted. -/
-def validatePrivateKey (v : VecLevel) (sq : Prog isa) (mul : Nat → Nat → Nat → Prog isa) : Prog isa :=
-  scrubAll v 32 8 (PrevalidatedSign.validate sq mul)
-
-/-- `Spec.Dsa.validatePublicKeyApi`'s function as emitted. -/
-def validatePublicKey (v : VecLevel) (sq : Prog isa) (mul : Nat → Nat → Nat → Prog isa) : Prog isa :=
-  scrubAll v 32 8 (Prevalidated.validate sq mul)
-
-/-- `Spec.Dsa.verifyPrevalidatedApi`'s function as emitted. -/
-def verifyPrevalidated (v : VecLevel) (sq : Prog isa) (mul : Nat → Nat → Nat → Prog isa) : Prog isa :=
-  scrubAll v 32 8 (Prevalidated.verify sq mul)
-
-/-- `Spec.Dsa.generateKeyApi`'s function as emitted, calling its checks of
-the parameters as `check` and its derivation as `derive`. -/
-def generateKey (v : VecLevel) (check derive : String) (sq : Prog isa) (mul : Nat → Nat → Nat → Prog isa) :
-    Prog isa :=
-  scrubAll v 32 264 (GenerateKey.code check derive (Generate.checkParameters sq mul) (Generate.deriveChecked sq mul))
-
-/-- `Spec.Dsa.deriveKeyApi`'s function as emitted. -/
-def deriveKey (v : VecLevel) (sq : Prog isa) (mul : Nat → Nat → Nat → Prog isa) : Prog isa :=
-  scrubAll v 32 8 (Generate.deriveKey sq mul)
-
 /-- `Spec.Dsa.parameterSearchApi`'s function as emitted, calling its search
 for each width (`c₁₂₈`, `c₂₅₆`, `c₃₈₄`) by its name, with the addresses
 `f₁₂₈`, `f₂₅₆` and `f₃₈₄` loads (`ParameterSearch.fnAddrs`). -/
@@ -110,5 +81,29 @@ def verifyPrevalidatedS (v : VecLevel) (nm ns : String) (bm bs : Prog isa) : Pro
 /-- `Spec.Dsa.deriveKeyApi`'s function as emitted, as `validatePrivateKeyS`. -/
 def deriveKeyS (v : VecLevel) (nm ns : String) (bm bs : Prog isa) : Prog isa :=
   scrubAll v 32 56 (slotted 40 3 "vg_dsa_derive_key_shared" Generate.deriveKey nm ns bm bs)
+
+/-- The signer for a validated private key over the multiplication `nm` and
+the squaring `ns`, as an internal function that `randomSignPrevalidatedS` calls. -/
+def signerS (nm ns : String) (bm bs : Prog isa) : Prog isa :=
+  slotted 56 5 "vg_dsa_sign_prevalidated_shared" PrevalidatedSign.sign nm ns bm bs
+
+/-- The checks of the parameters, as `signerS`, called by `generateKeyS`. -/
+def checkS (nm ns : String) (bm bs : Prog isa) : Prog isa :=
+  slotted 56 0 "vg_dsa_check_parameters_shared" Generate.checkParameters nm ns bm bs
+
+/-- The derivation from checked parameters, as `signerS`, called by `generateKeyS`. -/
+def deriveCheckedS (nm ns : String) (bm bs : Prog isa) : Prog isa :=
+  slotted 56 3 "vg_dsa_derive_key_checked_shared" Generate.deriveChecked nm ns bm bs
+
+/-- `Spec.Dsa.randomSignPrevalidatedApi`'s function as emitted, calling its
+signer (`signerS`) as `name`, its cleanup at the level `v`. -/
+def randomSignPrevalidatedS (v : VecLevel) (name nm ns : String) (bm bs : Prog isa) : Prog isa :=
+  scrubAll v 32 328 (RandomSign.code name (signerS nm ns bm bs))
+
+/-- `Spec.Dsa.generateKeyApi`'s function as emitted, calling its checks of
+the parameters (`checkS`) as `check` and its derivation (`deriveCheckedS`) as
+`derive`. -/
+def generateKeyS (v : VecLevel) (check derive nm ns : String) (bm bs : Prog isa) : Prog isa :=
+  scrubAll v 32 328 (GenerateKey.code check derive (checkS nm ns bm bs) (deriveCheckedS nm ns bm bs))
 
 end VG.Impl.Dsa.X86_64.Fn

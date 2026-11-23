@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Framework.X86_64.ForwardSlots
 public import VerifiedGarbage.Proof.Dsa.X86_64.PrevalidatedVerified
 public import VerifiedGarbage.Proof.Dsa.X86_64.ValidatePrivateVerified
 public import VerifiedGarbage.Proof.Dsa.X86_64.DeriveCheckedVerified
+public import VerifiedGarbage.Proof.Dsa.X86_64.PrevalidatedSignVerified
 public import VerifiedGarbage.Proof.Framework.X86_64.ScrubProved
 public import VerifiedGarbage.Proof.Framework.X86_64.ScrubPaths
 public import VerifiedGarbage.Impl.Scrub.X86_64.Fn
@@ -17,14 +18,18 @@ public import VerifiedGarbage.Proof.Dsa.X86_64.Scrub
 /-!
 # DSA's functions over its arithmetic on x86-64, calling it through slots
 
-Four of DSA's functions are emitted once, over every implementation of
+Seven of DSA's functions are emitted once, over every implementation of
 the arithmetic (`SlotBackend`): each is an internal function that calls the
 multiplication and the squaring through slots above its stack arguments
 (`Impl.Dsa.X86_64.Fn.slotBody`), which meets its contract with the slots
 (`Contract.withSlots`, `prevalidated_slot_verified` and the others), and each
 implementation's function stores the addresses of its own there and calls it
 (`Fn.slotted`, `Verified.forwardS`), its contract making them public
-(`Abi.withFns`). It returns with its whole stack wiped (`scrubbedFns`).
+(`Abi.withFns`). Four are entry points, which return with their whole stack
+wiped (`scrubbedFns`); the other three are what the complete entry points
+call (`signer_verified`, `parameters_verified`, `deriveChecked_verified`), and
+those entry points' cleanup (`Proof/Dsa/X86_64/BackendScrub.lean`) is
+`scrubbedFns`'s too.
 
 The kernel evaluates what these need of the code, for an implementation, in
 one declaration (`entriesOk`).
@@ -149,45 +154,271 @@ theorem EntryOk.of_eval {k bytes m stack : Nat} {name : String}
   simp only [Bool.or_eq_true, beq_iff_eq] at this
   rcases this with rfl | rfl <;> simp
 
-/-- The tests of the four functions over the arithmetic that it is called
-through slots by, for the kernel: one evaluation. -/
-noncomputable def entriesOk (k : Nat) (nm ns : String) (bm bs : Prog isa) : Bool :=
+/-- `entryOk` and that the call with its frame never touches MXCSR, for a
+function that complete entry points call. -/
+noncomputable def entryOkM (k bytes m stack : Nat) (name : String)
+    (entry : Prog isa → (Nat → Nat → Nat → Prog isa) → Prog isa) (nm ns : String) (bm bs : Prog isa) : Bool :=
+  entryOk k bytes m stack name entry nm ns bm bs &&
+  (Fn.slotted bytes m name entry nm ns bm bs).allInstrs (fun i => !touchesMxcsr i)
+
+/-- What `entryOkM` shows. -/
+structure EntryOkM (k bytes m stack : Nat) (name : String)
+    (entry : Prog isa → (Nat → Nat → Nat → Prog isa) → Prog isa) (nm ns : String) (bm bs : Prog isa) : Prop
+    extends EntryOk k bytes m stack name entry nm ns bm bs where
+  mx : (Fn.slotted bytes m name entry nm ns bm bs).allInstrs (fun i => !touchesMxcsr i) = true
+
+theorem EntryOkM.of_eval {k bytes m stack : Nat} {name : String}
+    {entry : Prog isa → (Nat → Nat → Nat → Prog isa) → Prog isa} {nm ns : String} {bm bs : Prog isa}
+    (h : entryOkM k bytes m stack name entry nm ns bm bs = true) : EntryOkM k bytes m stack name entry nm ns bm bs := by
+  simp only [entryOkM, Bool.and_eq_true] at h
+  exact { EntryOk.of_eval h.1 with mx := h.2 }
+
+/-- What the cleanup needs of code `c` that calls indirectly only `nm` and
+`ns`, in `stack` bytes: the level of its instructions, its indirect calls and
+its stack. -/
+noncomputable def outerOk (k stack : Nat) (nm ns : String) (c : Prog isa) : Bool :=
+  c.allInstrs (Ins k) && (UpperLock.inames c).all (fun n => n == nm || n == ns) && Nat.ble c.x86_64Depth stack
+
+/-- What `outerOk` shows. -/
+structure OuterOk (k stack : Nat) (nm ns : String) (c : Prog isa) : Prop where
+  ins : c.allInstrs (Ins k) = true
+  inames : ∀ n ∈ UpperLock.inames c, n ∈ [nm, ns]
+  depth : c.x86_64Depth ≤ stack
+
+theorem OuterOk.of_eval {k stack : Nat} {nm ns : String} {c : Prog isa} (h : outerOk k stack nm ns c = true) :
+    OuterOk k stack nm ns c := by
+  simp only [outerOk, Bool.and_eq_true, Nat.ble_eq] at h
+  obtain ⟨⟨h₁, h₂⟩, h₃⟩ := h
+  refine ⟨h₁, fun n hn => ?_, h₃⟩
+  have := List.all_eq_true.mp h₂ n hn
+  simp only [Bool.or_eq_true, beq_iff_eq] at this
+  rcases this with rfl | rfl <;> simp
+
+/-- The tests of the functions over the arithmetic that it is called through
+slots by, and of the complete entry points that call three of them, for the
+implementation with the name suffix `sfx`, for the kernel: one evaluation. -/
+noncomputable def entriesOk (k : Nat) (sfx nm ns : String) (bm bs : Prog isa) : Bool :=
   entryOk k 24 0 40 "vg_dsa_validate_public_key_shared" Prevalidated.validate nm ns bm bs &&
   entryOk k 56 4 72 "vg_dsa_verify_prevalidated_shared" Prevalidated.verify nm ns bm bs &&
   entryOk k 24 0 40 "vg_dsa_validate_private_key_shared" PrevalidatedSign.validate nm ns bm bs &&
-  entryOk k 40 3 56 "vg_dsa_derive_key_shared" Generate.deriveKey nm ns bm bs
+  entryOk k 40 3 56 "vg_dsa_derive_key_shared" Generate.deriveKey nm ns bm bs &&
+  entryOkM k 56 5 72 "vg_dsa_sign_prevalidated_shared" PrevalidatedSign.sign nm ns bm bs &&
+  entryOkM k 56 0 72 "vg_dsa_check_parameters_shared" Generate.checkParameters nm ns bm bs &&
+  entryOkM k 56 3 72 "vg_dsa_derive_key_checked_shared" Generate.deriveChecked nm ns bm bs &&
+  outerOk k 328 nm ns (RandomSign.code ("vg_dsa_sign_prevalidated" ++ sfx) (Fn.signerS nm ns bm bs)) &&
+  outerOk k 328 nm ns (GenerateKey.code ("vg_dsa_check_parameters" ++ sfx) ("vg_dsa_derive_key_checked" ++ sfx)
+    (Fn.checkS nm ns bm bs) (Fn.deriveCheckedS nm ns bm bs))
+
+/-- What `entriesOk` shows. -/
+structure EntriesOk (k : Nat) (sfx nm ns : String) (bm bs : Prog isa) : Prop where
+  validate : EntryOk k 24 0 40 "vg_dsa_validate_public_key_shared" Prevalidated.validate nm ns bm bs
+  verify : EntryOk k 56 4 72 "vg_dsa_verify_prevalidated_shared" Prevalidated.verify nm ns bm bs
+  validatePrivate : EntryOk k 24 0 40 "vg_dsa_validate_private_key_shared" PrevalidatedSign.validate nm ns bm bs
+  derive : EntryOk k 40 3 56 "vg_dsa_derive_key_shared" Generate.deriveKey nm ns bm bs
+  sign : EntryOkM k 56 5 72 "vg_dsa_sign_prevalidated_shared" PrevalidatedSign.sign nm ns bm bs
+  parameters : EntryOkM k 56 0 72 "vg_dsa_check_parameters_shared" Generate.checkParameters nm ns bm bs
+  deriveChecked : EntryOkM k 56 3 72 "vg_dsa_derive_key_checked_shared" Generate.deriveChecked nm ns bm bs
+  randomSign : OuterOk k 328 nm ns (RandomSign.code ("vg_dsa_sign_prevalidated" ++ sfx) (Fn.signerS nm ns bm bs))
+  generateKey : OuterOk k 328 nm ns (GenerateKey.code ("vg_dsa_check_parameters" ++ sfx)
+    ("vg_dsa_derive_key_checked" ++ sfx) (Fn.checkS nm ns bm bs) (Fn.deriveCheckedS nm ns bm bs))
+
+theorem EntriesOk.of_eval {k : Nat} {sfx nm ns : String} {bm bs : Prog isa} (h : entriesOk k sfx nm ns bm bs = true) :
+    EntriesOk k sfx nm ns bm bs := by
+  simp only [entriesOk, Bool.and_eq_true] at h
+  obtain ⟨⟨⟨⟨⟨⟨⟨⟨h₁, h₂⟩, h₃⟩, h₄⟩, h₅⟩, h₆⟩, h₇⟩, h₈⟩, h₉⟩ := h
+  exact ⟨.of_eval h₁, .of_eval h₂, .of_eval h₃, .of_eval h₄, .of_eval h₅, .of_eval h₆, .of_eval h₇, .of_eval h₈,
+    .of_eval h₉⟩
+
+/-! ## The functions the complete entry points call -/
+
+theorem prevalidatedSignSat72 : ∃ s, (signContractWith Spec.Dsa.validatePrivateKeyBytes abi 72).pre s := by
+  have ho : ∃ s, (Spec.Dsa.signContract abi 72).pre s ∧ s = prevalidatedSignSatState := by
+    sig_implies_sat [Spec.Dsa.signContract, Spec.Dsa.signSig, abi, argRegs, stackArgs_five, List.range,
+      List.range.loop]
+      [prevalidatedSignSatState, signingSatState, stackArg, stackArgAddr, Mem.readW, Mem.read]
+      using prevalidatedSignSatState
+  obtain ⟨s, h, rfl⟩ := ho
+  exact ⟨_, signWith_of_pre h prevalidatedSignSat_valid⟩
+
+/-- The signer for a validated private key over the multiplication `nm` and
+the squaring `ns` (`Fn.signerS`) meets its contract with their addresses
+public, in 72 bytes of stack. -/
+theorem signer_verified (M : Mont) (Sq : MontS) {k : Nat} {nm ns : String} {bm bs : Prog isa}
+    (e : EntryOkM k 56 5 72 "vg_dsa_sign_prevalidated_shared" PrevalidatedSign.sign nm ns bm bs)
+    (hin : (Fn.slotBody 5 PrevalidatedSign.sign nm ns bm bs).inlineAll = PrevalidatedSign.sign Sq.mm M.mm)
+    (hmx : (PrevalidatedSign.sign Sq.mm M.mm).allInstrs (fun i => !loadsMxcsr i) = true) :
+    Verified target (Fn.signerS nm ns bm bs)
+      (signContractWith Spec.Dsa.validatePrivateKeyBytes (abi.withFns [nm, ns]) 72) := by
+  have hb := prevalidated_sign_slot_verified (fns := [nm, ns]) M Sq e.inl
+    (by simp only [List.length_cons, List.length_nil]; decide) hin hmx
+  exact Verified.forwardS (sig := Spec.Dsa.signSig) (bytes := 56) hb (by decide)
+    (by simp only [List.length_cons, List.length_nil]; decide) (by decide) e.sp e.depth
+    (fun
+      | [_, _, _, _, _, _, _, _, _, _, _], m₁, m₂, _, hb, _, h => by
+        simp only [Spec.Dsa.signSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+          forall_eq_or_imp, forall_eq, Elem.size] at hb
+        change @Curry.apply (Mem → Prop) [_, _, _, _, _, _, _, _, _, _, _] _ _ m₁ at h
+        change @Curry.apply (Mem → Prop) [_, _, _, _, _, _, _, _, _, _, _] _ _ m₂
+        dsimp only [Curry.apply, ArgWord.ofRaw] at h ⊢
+        erw [bytes_of hb.2.1]
+        exact h)
+    (fun
+      | [_, _, _, _, _, _, _, _, _, _, _], m₁, m₂, m', r, _, hb, _, h => by
+        simp only [Spec.Dsa.signSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+          forall_eq_or_imp, forall_eq, Elem.size] at hb
+        change @Curry.apply (Mem → Mem → BitVec _ → Prop) [_, _, _, _, _, _, _, _, _, _, _] _ _ m₁ m' r at h
+        change @Curry.apply (Mem → Mem → BitVec _ → Prop) [_, _, _, _, _, _, _, _, _, _, _] _ _ m₂ m' r
+        dsimp only [Curry.apply, ArgWord.ofRaw] at h ⊢
+        erw [bytes_of hb.2.1, bytes_of hb.2.2.1, bytes_of hb.2.2.2.1]
+        exact h)
+    (fun
+      | [_, _, _, _, _, _, _, _, _, _, _], m, m₁, m₂, r, _, _, hb, _, h => by
+        simp only [Spec.Dsa.signSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+          forall_eq_or_imp, forall_eq, Elem.size] at hb
+        change @Curry.apply (Mem → Mem → BitVec _ → Prop) [_, _, _, _, _, _, _, _, _, _, _] _ _ m m₁ r at h
+        change @Curry.apply (Mem → Mem → BitVec _ → Prop) [_, _, _, _, _, _, _, _, _, _, _] _ _ m m₂ r
+        dsimp only [Curry.apply, ArgWord.ofRaw] at h ⊢
+        erw [bytes_of hb.1]
+        exact h)
+    prevalidatedSignSat72
+    (fun
+      | [_, _, _, _, _, _, _, _, _, _, _], m₁, m₂, _, hb, _ => by
+        simp only [Spec.Dsa.signSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+          forall_eq_or_imp, forall_eq, Elem.size] at hb
+        change @Curry.apply (Mem → List Nat) [_, _, _, _, _, _, _, _, _, _, _] _ _ m₁ =
+          @Curry.apply (Mem → List Nat) [_, _, _, _, _, _, _, _, _, _, _] _ _ m₂
+        dsimp only [Curry.apply, ArgWord.ofRaw]
+        erw [bytes_of hb.2.1, bytes_of hb.2.2.1, bytes_of hb.2.2.2.1]
+        rfl)
+
+theorem parametersSat72 : ∃ s, (Proof.Dsa.checkParametersContract abi 72).pre s := by
+  sig_implies_sat [Proof.Dsa.checkParametersContract, Proof.Dsa.checkParametersSig, abi, argRegs, stackArgs_zero,
+    List.range, List.range.loop]
+    [parametersSatState, stackArg, stackArgAddr, Mem.readW, Mem.read] using parametersSatState
+
+/-- The checks of the parameters over `nm` and `ns` (`Fn.checkS`), as `signer_verified`. -/
+theorem parameters_verified (M : Mont) (Sq : MontS) {k : Nat} {nm ns : String} {bm bs : Prog isa}
+    (e : EntryOkM k 56 0 72 "vg_dsa_check_parameters_shared" Generate.checkParameters nm ns bm bs)
+    (hin : (Fn.slotBody 0 Generate.checkParameters nm ns bm bs).inlineAll = Generate.checkParameters Sq.mm M.mm)
+    (hmx : (Generate.checkParameters Sq.mm M.mm).allInstrs (fun i => !loadsMxcsr i) = true) :
+    Verified target (Fn.checkS nm ns bm bs) (Proof.Dsa.checkParametersContract (abi.withFns [nm, ns]) 72) := by
+  have hb := parameters_slot_verified (fns := [nm, ns]) M Sq e.inl
+    (by simp only [List.length_cons, List.length_nil]; decide) hin hmx
+  exact Verified.forwardS (sig := Proof.Dsa.checkParametersSig) (bytes := 56) hb (by decide)
+    (by simp only [List.length_cons, List.length_nil]; decide) (by decide) e.sp e.depth
+    (fun | [_, _, _, _, _, _], _, _, _, _, _, h => h)
+    (fun
+      | [_, _, _, _, _, _], m₁, m₂, m', r, _, hb, _, h => by
+        simp only [Proof.Dsa.checkParametersSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+          forall_eq_or_imp, forall_eq, Elem.size] at hb
+        change @Curry.apply (Mem → Mem → BitVec _ → Prop) [_, _, _, _, _, _] _ _ m₁ m' r at h
+        change @Curry.apply (Mem → Mem → BitVec _ → Prop) [_, _, _, _, _, _] _ _ m₂ m' r
+        dsimp only [Curry.apply, ArgWord.ofRaw] at h ⊢
+        erw [bytes_of hb.1]
+        exact h)
+    (fun | [_, _, _, _, _, _], _, _, _, _, _, _, _, _, h => h)
+    parametersSat72
+    (fun
+      | [_, _, _, _, _, _], m₁, m₂, _, hb, _ => by
+        simp only [Proof.Dsa.checkParametersSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+          forall_eq_or_imp, forall_eq, Elem.size] at hb
+        change @Curry.apply (Mem → List Nat) [_, _, _, _, _, _] _ _ m₁ =
+          @Curry.apply (Mem → List Nat) [_, _, _, _, _, _] _ _ m₂
+        dsimp only [Curry.apply, ArgWord.ofRaw]
+        erw [bytes_of hb.1]
+        rfl)
+
+theorem deriveCheckedSat72 : ∃ s, (Spec.Dsa.deriveKeyDomainCheckedContract abi 72).pre s := by
+  have ho : ∃ s, (Spec.Dsa.deriveKeyContract abi 72).pre s ∧ s = deriveCheckedSatState := by
+    sig_implies_sat [Spec.Dsa.deriveKeyContract, Spec.Dsa.deriveKeySig, abi, argRegs, stackArgs_three,
+      List.range, List.range.loop]
+      [deriveCheckedSatState, deriveSatState, stackArg, stackArgAddr, Mem.readW, Mem.read]
+      using deriveCheckedSatState
+  obtain ⟨s, h, rfl⟩ := ho
+  exact ⟨_, deriveChecked_of_pre h deriveCheckedSat_valid⟩
+
+/-- The derivation from checked parameters over `nm` and `ns`
+(`Fn.deriveCheckedS`), as `signer_verified`. -/
+theorem deriveChecked_verified (M : Mont) (Sq : MontS) {k : Nat} {nm ns : String} {bm bs : Prog isa}
+    (e : EntryOkM k 56 3 72 "vg_dsa_derive_key_checked_shared" Generate.deriveChecked nm ns bm bs)
+    (hin : (Fn.slotBody 3 Generate.deriveChecked nm ns bm bs).inlineAll = Generate.deriveChecked Sq.mm M.mm)
+    (hmx : (Generate.deriveChecked Sq.mm M.mm).allInstrs (fun i => !loadsMxcsr i) = true) :
+    Verified target (Fn.deriveCheckedS nm ns bm bs)
+      (Spec.Dsa.deriveKeyDomainCheckedContract (abi.withFns [nm, ns]) 72) := by
+  have hb := derive_checked_slot_verified (fns := [nm, ns]) M Sq e.inl
+    (by simp only [List.length_cons, List.length_nil]; decide) hin hmx
+  exact Verified.forwardS (sig := Spec.Dsa.deriveKeySig) (bytes := 56) hb (by decide)
+    (by simp only [List.length_cons, List.length_nil]; decide) (by decide) e.sp e.depth
+    (fun
+      | [_, _, _, _, _, _, _, _, _], m₁, m₂, _, hb, _, h => by
+        simp only [Spec.Dsa.deriveKeySig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+          forall_eq_or_imp, forall_eq, Elem.size] at hb
+        change @Curry.apply (Mem → Prop) [_, _, _, _, _, _, _, _, _] _ _ m₁ at h
+        change @Curry.apply (Mem → Prop) [_, _, _, _, _, _, _, _, _] _ _ m₂
+        dsimp only [Curry.apply, ArgWord.ofRaw] at h ⊢
+        erw [bytes_of hb.2.1]
+        exact h)
+    (fun
+      | [_, _, _, _, _, _, _, _, _], m₁, m₂, m', r, _, hb, _, h => by
+        simp only [Spec.Dsa.deriveKeySig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+          forall_eq_or_imp, forall_eq, Elem.size] at hb
+        change @Curry.apply (Mem → Mem → BitVec _ → Prop) [_, _, _, _, _, _, _, _, _] _ _ m₁ m' r at h
+        change @Curry.apply (Mem → Mem → BitVec _ → Prop) [_, _, _, _, _, _, _, _, _] _ _ m₂ m' r
+        dsimp only [Curry.apply, ArgWord.ofRaw] at h ⊢
+        erw [bytes_of hb.2.1, bytes_of hb.2.2.1]
+        exact h)
+    (fun
+      | [_, _, _, _, _, _, _, _, _], m, m₁, m₂, r, _, _, hb, _, h => by
+        simp only [Spec.Dsa.deriveKeySig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+          forall_eq_or_imp, forall_eq, Elem.size] at hb
+        change @Curry.apply (Mem → Mem → BitVec _ → Prop) [_, _, _, _, _, _, _, _, _] _ _ m m₁ r at h
+        change @Curry.apply (Mem → Mem → BitVec _ → Prop) [_, _, _, _, _, _, _, _, _] _ _ m m₂ r
+        dsimp only [Curry.apply, ArgWord.ofRaw] at h ⊢
+        erw [bytes_of hb.1]
+        exact h)
+    deriveCheckedSat72
+    (fun
+      | [_, _, _, _, _, _, _, _, _], m₁, m₂, _, hb, _ => by
+        simp only [Spec.Dsa.deriveKeySig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+          forall_eq_or_imp, forall_eq, Elem.size] at hb
+        change @Curry.apply (Mem → List Nat) [_, _, _, _, _, _, _, _, _] _ _ m₁ =
+          @Curry.apply (Mem → List Nat) [_, _, _, _, _, _, _, _, _] _ _ m₂
+        dsimp only [Curry.apply, ArgWord.ofRaw]
+        erw [bytes_of hb.2.1, bytes_of hb.2.2.1]
+        rfl)
 
 /-- An implementation of the arithmetic (`backend`) that the functions over it
-call through slots: its multiplication `nm` (code `bm`) and squaring `ns`
-(code `bs`), which run as `M` and `Sq` inlined. -/
+call through slots: its multiplication `backend.nm` and squaring `backend.ns`,
+which run as `M` and `Sq` inlined. -/
 structure SlotBackend where
   backend : Backend
-  nm : String
-  ns : String
-  bm : Prog isa
-  bs : Prog isa
   M : Mont
   Sq : MontS
-  checks : entriesOk backend.level.level nm ns bm bs = true
-  validateIn : (Fn.slotBody 0 Prevalidated.validate nm ns bm bs).inlineAll = Prevalidated.validate Sq.mm M.mm
-  verifyIn : (Fn.slotBody 4 Prevalidated.verify nm ns bm bs).inlineAll = Prevalidated.verify Sq.mm M.mm
-  validatePrivateIn :
-    (Fn.slotBody 0 PrevalidatedSign.validate nm ns bm bs).inlineAll = PrevalidatedSign.validate Sq.mm M.mm
-  deriveIn : (Fn.slotBody 3 Generate.deriveKey nm ns bm bs).inlineAll = Generate.deriveKey Sq.mm M.mm
+  checks : entriesOk backend.level.level backend.suffix backend.nm backend.ns backend.bm backend.bs = true
+  validateIn : (Fn.slotBody 0 Prevalidated.validate backend.nm backend.ns backend.bm backend.bs).inlineAll =
+    Prevalidated.validate Sq.mm M.mm
+  verifyIn : (Fn.slotBody 4 Prevalidated.verify backend.nm backend.ns backend.bm backend.bs).inlineAll =
+    Prevalidated.verify Sq.mm M.mm
+  validatePrivateIn : (Fn.slotBody 0 PrevalidatedSign.validate backend.nm backend.ns backend.bm backend.bs).inlineAll =
+    PrevalidatedSign.validate Sq.mm M.mm
+  deriveIn : (Fn.slotBody 3 Generate.deriveKey backend.nm backend.ns backend.bm backend.bs).inlineAll =
+    Generate.deriveKey Sq.mm M.mm
   validateMx : (Prevalidated.validate Sq.mm M.mm).allInstrs (fun i => !loadsMxcsr i) = true
   verifyMx : (Prevalidated.verify Sq.mm M.mm).allInstrs (fun i => !loadsMxcsr i) = true
   validatePrivateMx : (PrevalidatedSign.validate Sq.mm M.mm).allInstrs (fun i => !loadsMxcsr i) = true
   deriveMx : (Generate.deriveKey Sq.mm M.mm).allInstrs (fun i => !loadsMxcsr i) = true
 
-theorem SlotBackend.ok (A : SlotBackend) :
-    EntryOk A.backend.level.level 24 0 40 "vg_dsa_validate_public_key_shared" Prevalidated.validate A.nm A.ns A.bm A.bs ∧
-    EntryOk A.backend.level.level 56 4 72 "vg_dsa_verify_prevalidated_shared" Prevalidated.verify A.nm A.ns A.bm A.bs ∧
-    EntryOk A.backend.level.level 24 0 40 "vg_dsa_validate_private_key_shared" PrevalidatedSign.validate A.nm A.ns
-      A.bm A.bs ∧
-    EntryOk A.backend.level.level 40 3 56 "vg_dsa_derive_key_shared" Generate.deriveKey A.nm A.ns A.bm A.bs := by
-  have h := A.checks
-  simp only [entriesOk, Bool.and_eq_true] at h
-  exact ⟨.of_eval h.1.1.1, .of_eval h.1.1.2, .of_eval h.1.2, .of_eval h.2⟩
+/-- Its multiplication's name. -/
+abbrev SlotBackend.nm (A : SlotBackend) : String := A.backend.nm
+/-- Its squaring's name. -/
+abbrev SlotBackend.ns (A : SlotBackend) : String := A.backend.ns
+/-- Its multiplication's code. -/
+abbrev SlotBackend.bm (A : SlotBackend) : Prog isa := A.backend.bm
+/-- Its squaring's code. -/
+abbrev SlotBackend.bs (A : SlotBackend) : Prog isa := A.backend.bs
+
+theorem SlotBackend.ok (A : SlotBackend) : EntriesOk A.backend.level.level A.backend.suffix A.nm A.ns A.bm A.bs :=
+  .of_eval A.checks
 
 theorem verify_sat : ∃ s, (Spec.Dsa.verifyPrevalidatedContract abi 72).pre s := by
   have ho : ∃ s, (Spec.Dsa.verifyContract abi 72).pre s ∧ s = prevalidatedSatState := by
@@ -203,7 +434,7 @@ contract in constant time and returns without secret residue. -/
 theorem verify_scrubbed (A : SlotBackend) :
     VerifiedScrubbed target (Fn.verifyPrevalidatedS A.backend.level A.nm A.ns A.bm A.bs)
       (Spec.Dsa.verifyPrevalidatedApi.contract (X86_64.abi.withFns [A.nm, A.ns]) 72) 32 := by
-  obtain ⟨-, e, -, -⟩ := A.ok
+  have e := A.ok.verify
   have hb := prevalidated_slot_verified (fns := [A.nm, A.ns]) A.M A.Sq e.inl
     (by simp only [List.length_cons, List.length_nil]; decide) A.verifyIn A.verifyMx
   have hw : Verified target (Fn.slotted 56 4 "vg_dsa_verify_prevalidated_shared" Prevalidated.verify A.nm A.ns A.bm A.bs)
@@ -251,7 +482,7 @@ constant time and returns without secret residue. -/
 theorem validatePublic_scrubbed (A : SlotBackend) :
     VerifiedScrubbed target (Fn.validatePublicKeyS A.backend.level A.nm A.ns A.bm A.bs)
       (Spec.Dsa.validatePublicKeyApi.contract (X86_64.abi.withFns [A.nm, A.ns]) 40) 32 := by
-  obtain ⟨e, -, -, -⟩ := A.ok
+  have e := A.ok.validate
   have hb := validating_slot_verified (fns := [A.nm, A.ns]) A.M A.Sq e.inl
     (by simp only [List.length_cons, List.length_nil]; decide) A.validateIn A.validateMx
   have hw : Verified target (Fn.slotted 24 0 "vg_dsa_validate_public_key_shared" Prevalidated.validate A.nm A.ns A.bm A.bs)
@@ -291,7 +522,7 @@ constant time and returns without secret residue. -/
 theorem validatePrivate_scrubbed (A : SlotBackend) :
     VerifiedScrubbed target (Fn.validatePrivateKeyS A.backend.level A.nm A.ns A.bm A.bs)
       (Spec.Dsa.validatePrivateKeyApi.contract (X86_64.abi.withFns [A.nm, A.ns]) 40) 32 := by
-  obtain ⟨-, -, e, -⟩ := A.ok
+  have e := A.ok.validatePrivate
   have hb := validating_private_slot_verified (fns := [A.nm, A.ns]) A.M A.Sq e.inl
     (by simp only [List.length_cons, List.length_nil]; decide) A.validatePrivateIn A.validatePrivateMx
   have hw : Verified target (Fn.slotted 24 0 "vg_dsa_validate_private_key_shared" PrevalidatedSign.validate A.nm A.ns A.bm A.bs)
@@ -331,7 +562,7 @@ constant time and returns without secret residue. -/
 theorem deriveKey_scrubbed (A : SlotBackend) :
     VerifiedScrubbed target (Fn.deriveKeyS A.backend.level A.nm A.ns A.bm A.bs)
       (Spec.Dsa.deriveKeyApi.contract (X86_64.abi.withFns [A.nm, A.ns]) 56) 32 := by
-  obtain ⟨-, -, -, e⟩ := A.ok
+  have e := A.ok.derive
   have hb := derive_slot_verified (fns := [A.nm, A.ns]) A.M A.Sq e.inl
     (by simp only [List.length_cons, List.length_nil]; decide) A.deriveIn A.deriveMx
   have hw : Verified target (Fn.slotted 40 3 "vg_dsa_derive_key_shared" Generate.deriveKey A.nm A.ns A.bm A.bs)
@@ -371,22 +602,22 @@ theorem deriveKey_scrubbed (A : SlotBackend) :
 
 theorem validatePublic_spSafe (A : SlotBackend) :
     (Fn.validatePublicKeyS A.backend.level A.nm A.ns A.bm A.bs).all (fun i => !isa.writesSp i) = true := by
-  obtain ⟨e, -, -, -⟩ := A.ok
+  have e := A.ok.validate
   exact scrubKs_spSafe (forwardS_spSafe e.sp)
 
 theorem verify_spSafe (A : SlotBackend) :
     (Fn.verifyPrevalidatedS A.backend.level A.nm A.ns A.bm A.bs).all (fun i => !isa.writesSp i) = true := by
-  obtain ⟨-, e, -, -⟩ := A.ok
+  have e := A.ok.verify
   exact scrubKs_spSafe (forwardS_spSafe e.sp)
 
 theorem validatePrivate_spSafe (A : SlotBackend) :
     (Fn.validatePrivateKeyS A.backend.level A.nm A.ns A.bm A.bs).all (fun i => !isa.writesSp i) = true := by
-  obtain ⟨-, -, e, -⟩ := A.ok
+  have e := A.ok.validatePrivate
   exact scrubKs_spSafe (forwardS_spSafe e.sp)
 
 theorem deriveKey_spSafe (A : SlotBackend) :
     (Fn.deriveKeyS A.backend.level A.nm A.ns A.bm A.bs).all (fun i => !isa.writesSp i) = true := by
-  obtain ⟨-, -, -, e⟩ := A.ok
+  have e := A.ok.derive
   exact scrubKs_spSafe (forwardS_spSafe e.sp)
 
 end VG.Proof.Dsa.X86_64.Slots

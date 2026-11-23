@@ -223,7 +223,7 @@ private theorem valid_tail (S : Signer) {s t a b : State}
     (hra : a.gpr .rax = 1) (hrb : b.gpr .rax = 1) (hp : RandomSignPublicAgree s t)
     (htrace : (randomSignRemaining (randomInput s) 0 8).trace = (randomSignRemaining (randomInput t) 0 8).trace)
     (hstatus : (randomSignRemaining (randomInput s) 0 8).status = (randomSignRemaining (randomInput t) 0 8).status)
-    (hvs : RandomValid S s) (hvt : RandomValid S t)
+    (hvs : RandomValid S s) (hvt : RandomValid S t) (hsy : SymsAgree [S.nm, S.ns] a b)
     {tsa tsb : List Leak} {u w : State} (ea : Exec isa (randomSignTail S) a tsa u)
     (eb : Exec isa (randomSignTail S) b tsb w) : tsa = tsb := by
   cases ea with
@@ -246,7 +246,7 @@ private theorem valid_tail (S : Signer) {s t a b : State}
             | iteT hc _ => simp only [eval, hbz] at hc; contradiction
             | iteF _ ebl =>
               have hloop := (random_sign_loop_ct S hp hvs hvt 8 _ _ _ _ _ _
-                ⟨by decide, by decide, 0, har, hbr, htrace⟩ eal ebl).1
+                ⟨⟨by decide, by decide, 0, har, hbr, htrace⟩, hsy.exec eac ebc⟩ eal ebl).1
               obtain ⟨⟨_, hrunA⟩, hsta, _⟩ := random_post_of_exec (random_sign_loop_correct S har (by decide) (by decide) hvs) eal
               obtain ⟨⟨_, hrunB⟩, hstb, _⟩ := random_post_of_exec (random_sign_loop_correct S hbr (by decide) (by decide) hvt) ebl
               rw [← hstatus] at hstb
@@ -258,7 +258,7 @@ theorem random_sign_body_valid_ct (S : Signer) {s t : State}
     (hq : 1 < Spec.Dsa.decodeBE (randomQBytes s))
     (htrace : (randomSignRemaining (randomInput s) 0 8).trace = (randomSignRemaining (randomInput t) 0 8).trace)
     (hstatus : (randomSignRemaining (randomInput s) 0 8).status = (randomSignRemaining (randomInput t) 0 8).status)
-    (hvs : RandomValid S s) (hvt : RandomValid S t)
+    (hvs : RandomValid S s) (hvt : RandomValid S t) (hsy : SymsAgree [S.nm, S.ns] s t)
     {tsa tsb : List Leak} {u w : State}
     (ea : Exec isa (RandomSign.body S.name S.code) (allocState Random.frameBytes s) tsa u)
     (eb : Exec isa (RandomSign.body S.name S.code) (allocState Random.frameBytes t) tsb w) : tsa = tsb := by
@@ -272,7 +272,9 @@ theorem random_sign_body_valid_ct (S : Signer) {s t : State}
           have hinit := random_sign_init_agreement hs ht hp (.seq eae eap) (.seq ebe ebp)
           obtain ⟨hra, har⟩ := random_post_of_exec (random_sign_init_running hs hq) (.seq eae eap)
           obtain ⟨hrb, hbr⟩ := random_post_of_exec (random_sign_init_running ht hqt) (.seq ebe ebp)
-          have htail := valid_tail S har hbr hra hrb hp htrace hstatus hvs hvt eat ebt
+          have htail := valid_tail S har hbr hra hrb hp htrace hstatus hvs hvt
+            ((show SymsAgree [S.nm, S.ns] (allocState Random.frameBytes s) (allocState Random.frameBytes t) from hsy).exec
+              (.seq eae eap) (.seq ebe ebp)) eat ebt
           rw [← List.append_assoc, ← List.append_assoc, hinit, htail]
 
 end VG.Proof.Dsa.X86_64

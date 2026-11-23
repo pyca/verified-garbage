@@ -54,7 +54,7 @@ theorem random_sign_attempt_agreement (S : Signer) {s t a b : State}
     (hpub : RandomSignPublicAgree s t) (hbound : fuel + 1 < 2 ^ 64)
     (htrace : (randomSignRemaining (randomInput s) used (fuel + 1)).trace =
       (randomSignRemaining (randomInput t) used (fuel + 1)).trace)
-    (hvs : RandomValid S s) (hvt : RandomValid S t)
+    (hvs : RandomValid S s) (hvt : RandomValid S t) (hsy : SymsAgree [S.nm, S.ns] a b)
     {tsa tsb : List Leak} {u w : State}
     (ea : Exec isa (RandomSign.attempt S.name S.code) a tsa u)
     (eb : Exec isa (RandomSign.attempt S.name S.code) b tsb w) : tsa = tsb := by
@@ -94,7 +94,7 @@ theorem random_sign_attempt_agreement (S : Signer) {s t a b : State}
               rw [← hbm] at hnonceb
               rw [← hused] at hbr'
               have hsingle := random_sign_single_agreement S har' hbr' hpub (by omega_using []) hbound
-                hnoncea hnonceb hsucc hvs hvt eata ebtb
+                hnoncea hnonceb hsucc hvs hvt ((hsy.exec eas ebs).exec eac ebc) eata ebtb
               rw [hsample, hcmp, hsingle]
             | iteF hcb _ =>
               simp only [eval, haz, Option.some.injEq, hstatus] at hca

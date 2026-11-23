@@ -19,6 +19,7 @@ import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignFinishAgreement
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignSingleCT
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignBody
 import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86_64.ForwardSlots
 meta import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignCall
 meta import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignPublic
 meta import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignBodyCT
@@ -180,12 +181,12 @@ theorem random_sign_body_agreement (S : Signer) {s t : State}
     (hs : RandomSignABI S.stack s) (ht : RandomSignABI S.stack t) (hp : RandomSignPublicAgree s t)
     (htrace : (randomSignRemaining (randomInput s) 0 8).trace = (randomSignRemaining (randomInput t) 0 8).trace)
     (hstatus : (randomSignRemaining (randomInput s) 0 8).status = (randomSignRemaining (randomInput t) 0 8).status)
-    (hvs : RandomValid S s) (hvt : RandomValid S t)
+    (hvs : RandomValid S s) (hvt : RandomValid S t) (hsy : SymsAgree [S.nm, S.ns] s t)
     {tsa tsb : List Leak} {u w : State}
     (ea : Exec isa (RandomSign.body S.name S.code) (allocState Random.frameBytes s) tsa u)
     (eb : Exec isa (RandomSign.body S.name S.code) (allocState Random.frameBytes t) tsb w) : tsa = tsb := by
   by_cases hq : 1 < Spec.Dsa.decodeBE (randomQBytes s)
-  · exact random_sign_body_valid_ct S hs ht hp hq htrace hstatus hvs hvt ea eb
+  · exact random_sign_body_valid_ct S hs ht hp hq htrace hstatus hvs hvt hsy ea eb
   · exact random_sign_body_invalid_ct S hs ht hp hq ea eb
 
 theorem random_sign_alloc {extra : Nat} {s : State} (h : RandomSignABI extra s) :
@@ -196,9 +197,10 @@ theorem random_sign_alloc {extra : Nat} {s : State} (h : RandomSignABI extra s) 
 
 theorem random_sign_constantTime (S : Signer) :
     ConstantTime isa (fun s => (randomSignCheckedContract abi (S.stack + 256)).pre s ∧ RandomValid S s)
-      (randomSignCheckedContract abi (S.stack + 256)).pub
+      (randomSignCheckedContract (abi.withFns [S.nm, S.ns]) (S.stack + 256)).pub
       (RandomSign.code S.name S.code) := by
   intro s t tsa tsb u w ⟨hs, hvs⟩ ⟨ht, hvt⟩ hpub ea eb
+  obtain ⟨hpub, hsy⟩ := pub_withFns.mp hpub
   have hsa := randomSignABI_of hs
   have hta := randomSignABI_of ht
   obtain ⟨hp, hstatus, _, htrace⟩ := random_sign_public_related hsa hta hpub
@@ -210,7 +212,7 @@ theorem random_sign_constantTime (S : Signer) :
       rw [random_sign_alloc hta, Option.some.injEq] at hbp
       subst hap
       subst hbp
-      have hh := random_sign_body_agreement S hsa hta hp htrace hstatus hvs hvt hab hbb
+      have hh := random_sign_body_agreement S hsa hta hp htrace hstatus hvs hvt hsy hab hbb
       simpa only [isa, addrs, List.map_nil, List.nil_append, List.append_nil] using hh
 
 end VG.Proof.Dsa.X86_64
@@ -220,7 +222,6 @@ end
 end
 
 /-! Complete verification of randomized DSA signing for every x86-64 backend:
-`vg_dsa_sign_random`, which calls the fully checked signer, and
 `vg_dsa_sign_random_prevalidated`, which calls the signer for a validated
 private key. -/
 
@@ -275,40 +276,16 @@ theorem random_sign_sat_pre (extra : Nat) (hb : extra < 2 ^ 32) :
     | decide +kernel
     | (intro a h₁ h₂; simp only [Region.Contains, stackArgAddr, randomSignSatState] at h₁ h₂; bv_omega)
 
-theorem random_sign_satisfiable (v : Backend) :
-    ∃ s, (randomSignCheckedContract abi (v.stack + 256)).pre s :=
-  ⟨_, random_sign_sat_pre v.stack v.stackBound⟩
-
-/-- A backend's fully checked signer, which accepts every key. -/
-def Backend.signer (v : Backend) : Signer where
-  name := randomSignerName v
-  code := SignVerify.sign v.sq v.mul
-  stack := v.stack
-  valid := fun _ _ _ => true
-  verified := Verified.of_narrow v.signVerified (fun s => s) (fun _ s => s)
-    (fun _ h => (signWith_pre h).1) (fun _ _ _ _ e => e) (fun _ _ _ _ _ ha hp => ⟨ha, signWith_post hp⟩)
-    (fun _ _ _ _ h => signWith_pub h)
-    (by obtain ⟨s, hs⟩ := v.signVerified.2.2; exact ⟨s, signWith_of_pre hs rfl⟩)
-  sp := v.signSp
-  depth := v.signDepth
-  stackBound := v.stackBound
-  noMx := v.signMx
-
-theorem random_sign_verified (v : Backend) :
-    Verified target (RandomSign.code (randomSignerName v) (SignVerify.sign v.sq v.mul))
-      (randomSignCheckedContract abi (v.stack + 256)) :=
-  ⟨fun s h => random_sign_correct v.signer s h rfl,
-    fun s₁ s₂ t₁ t₂ u₁ u₂ h₁ h₂ => random_sign_constantTime v.signer s₁ s₂ t₁ t₂ u₁ u₂ ⟨h₁, rfl⟩ ⟨h₂, rfl⟩,
-    random_sign_satisfiable v⟩
-
 def prevalidatedSignerName (v : Backend) : String := "vg_dsa_sign_prevalidated" ++ v.suffix
 
 /-- A backend's signer for a validated private key. -/
 def Backend.prevalidatedSigner (v : Backend) : Signer where
   name := prevalidatedSignerName v
-  code := PrevalidatedSign.sign v.sq v.mul
+  code := Fn.signerS v.nm v.ns v.bm v.bs
   stack := v.stack
   valid := Spec.Dsa.validatePrivateKeyBytes
+  nm := v.nm
+  ns := v.ns
   verified := v.prevalidatedSignVerified
   sp := v.prevalidatedSignSp
   depth := v.prevalidatedSignDepth
@@ -355,8 +332,8 @@ theorem random_sign_sat_key :
     exact ite_eq_left ⟨h₁, h₂⟩
 
 theorem random_sign_prevalidated_verified (v : Backend) :
-    Verified target (RandomSign.code (prevalidatedSignerName v) (PrevalidatedSign.sign v.sq v.mul))
-      (Spec.Dsa.randomSignPrevalidatedContract abi (v.stack + 256)) :=
+    Verified target (RandomSign.code (prevalidatedSignerName v) (Fn.signerS v.nm v.ns v.bm v.bs))
+      (Spec.Dsa.randomSignPrevalidatedContract (abi.withFns [v.nm, v.ns]) (v.stack + 256)) :=
   ⟨fun s h => random_sign_correct v.prevalidatedSigner s (randomPrevalidated_pre h).1
       (randomPrevalidated_pre h).2,
     fun s₁ s₂ t₁ t₂ u₁ u₂ h₁ h₂ => random_sign_constantTime v.prevalidatedSigner s₁ s₂ t₁ t₂ u₁ u₂

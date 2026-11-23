@@ -22,6 +22,7 @@ import Mathlib.Tactic.Attr.Core
 import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86_64.ForwardSlots
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 meta import VerifiedGarbage.Impl.Dsa.X86_64.RandomSign
 meta import VerifiedGarbage.Proof.Dsa.X86_64.RandomFrame
@@ -177,18 +178,19 @@ def RandomSignCallRelated (S : Signer) (a b : State) : Prop :=
   ∃ s t, ∃ hs : RandomSignABI S.stack s, ∃ ht : RandomSignABI S.stack t,
     RandomValid S s ∧ RandomValid S t ∧ RandomSignCallState hs a ∧ RandomSignCallState ht b ∧ RandomSignPublicAgree s t ∧
     randomCallPublicKey s a = randomCallPublicKey t b ∧
-    Spec.Dsa.signStatus (randomCallResult s a) = Spec.Dsa.signStatus (randomCallResult t b)
+    Spec.Dsa.signStatus (randomCallResult s a) = Spec.Dsa.signStatus (randomCallResult t b) ∧
+    SymsAgree [S.nm, S.ns] a b
 
 theorem random_signer_ct (S : Signer) : RelCT isa (RandomSignCallRelated S)
     (.call S.name S.code) (fun _ _ => True) := by
   apply VG.X86_64.RelCT.callExMx S.verified.1 S.verified.2.1 S.noMx (fun _ _ h => h)
-  intro a b ⟨s, t, hs, ht, hvs, hvt, ha, hb, hp, hk, hr⟩
+  intro a b ⟨s, t, hs, ht, hvs, hvt, ha, hb, hp, hk, hr, hsy⟩
   obtain ⟨hca, hwa⟩ := random_call_covers hs ha.rd ha.wr
   obtain ⟨hcb, hwb⟩ := random_call_covers ht hb.rd hb.wr
   exact ⟨randomCallRd s, randomCallWr s, randomCallRd t, randomCallWr t,
     random_call_pre_with S hs ha.sp ha.args ha.di ha.si ha.dx ha.cx ha.r8 ha.r9 ha.key hvs,
     random_call_pre_with S ht hb.sp hb.args hb.di hb.si hb.dx hb.cx hb.r8 hb.r9 hb.key hvt,
-    random_call_public ha hb hp hk hr, hca, hwa, hcb, hwb,
+    pub_withFns.mpr ⟨random_call_public ha hb hp hk hr, hsy⟩, hca, hwa, hcb, hwb,
     ha.sp.trans (hp.base.trans hb.sp.symm)⟩
 
 end VG.Proof.Dsa.X86_64
