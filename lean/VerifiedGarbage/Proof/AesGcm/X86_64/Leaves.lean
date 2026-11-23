@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.AesGcm.X86_64.BoundedGather
 public import VerifiedGarbage.Proof.AesGcm.X86_64.DirectGather.Verified
 import VerifiedGarbage.Proof.AesGcm.X86_64.DirectGather.General
 import VerifiedGarbage.Proof.AesGcm.X86_64.DirectGather.Bulk
@@ -2334,6 +2335,53 @@ theorem prepared_scrub {c : Callees} {ctr b : Fn} (lv : VecLevel) (hk : 1≤lv.l
     { suffix := "", code := onFlag n (prepared c ctr b) (plain c ctr), stack := 2672, verified := verified,
       spSafe := onFlag_spSafe (withStackArgScratch_spSafe rs.sp) (withStackArgScratch_spSafe ws.sp) }
     lv (sealGatherPreparedOut _) f hk (Nat.le_refl _) (ha:=flag_ok hn)
+
+abbrev boundedCore (c : Callees) (ctr f : Fn) :=
+  dispatch (withBounded (quick f)) (withBounded (general c ctr (some f)))
+private abbrev boundedStub := Finished (boundedCore stub5 ctrToStub (fnStub "B"))
+
+private theorem fillBounded {k : Nat} {c : Callees} {ctr f : Fn} (hs : CalleesSide k c)
+    (ht : calleeSide ctr.code k 24=true) (hf : calleeSide f.code k 24=true) :
+    Fill k (fun _ => 24) boundedStub (Finished (boundedCore c ctr f)) := by
+  obtain ⟨a,b,g,e,d⟩ := hs
+  have ac := calleeSide_mono (Nat.le_refl k) (show 8≤24 by decide) a
+  have gh := calleeSide_mono (Nat.le_refl k) (show 8≤24 by decide) g
+  repeat (any_goals (first | exact Fill.refl _ | refine Fill.seq ?_ ?_ | exact Fill.hole _ _ (by assumption)
+    | refine Fill.ite _ ?_ ?_ | refine Fill.loop _ ?_ | refine Fill.call _ _ ?_))
+
+private theorem boundedStub_ok : stubCallee boundedStub 2 (fun _=>24) 56 = true := by lit_decide
+private theorem boundedFlag_ok :
+    stubSide (onFlag 48 (withStackArgScratch 2616 5 boundedStub) rawStub) 2 (fun _=>24) 2672 []=true := by lit_decide
+
+private theorem bounded_sp {p : Prog isa} (h : p.all (fun i => !isa.writesSp i)=true) :
+    (withBounded p).all (fun i => !isa.writesSp i)=true := by
+  simp only [withBounded, Code.all, h, Bool.true_and, Bool.and_true]
+  decide +kernel
+
+theorem boundedSafe (v : GcmImpl) (ctr f : Fn) {k : Nat} (hk : 2≤k) (hc : CalleesSide k v.callees)
+    (ht : calleeSide ctr.code k 24=true) (hf : calleeSide f.code k 24=true)
+    (sp : ctr.code.all (fun i => !isa.writesSp i)=true) (fp : f.code.all (fun i => !isa.writesSp i)=true) :
+    CoreSafe (boundedCore v.callees ctr f) := by
+  apply of_side _ (calleeSide_of_fill (fillBounded hc ht hf) hk boundedStub_ok)
+  have g := bounded_sp (sp_general v ctr (some f) sp (fun b hb => (Option.mem_some_iff.mp hb) ▸ fp))
+  have q : (quick f).all (fun i => !isa.writesSp i)=true := by
+    simp only [quick,firstBlocks,callSeal,Code.all,fp,Bool.and_true]
+    decide +kernel
+  have bq := bounded_sp q
+  simp only [boundedCore,dispatch,enter,Code.all,g,bq,Bool.and_true]
+  decide +kernel
+
+theorem bounded_scrub {c : Callees} {ctr b : Fn} (lv : VecLevel) (hk : 2≤lv.level)
+    (hs : CalleesSide lv.level c) (ct : calleeSide ctr.code lv.level 24=true) (bt : calleeSide b.code lv.level 24=true)
+    (verified : Verified target (onFlag 48 (preparedBounded c ctr b) (plain c ctr)) publicContract)
+    (rs : CoreSafe (boundedCore c ctr b)) (ws : CoreSafe (baseCore c ctr)) :
+    VerifiedScrubbed target (scrubAll lv 0 2672 (onFlag 48 (preparedBounded c ctr b) (plain c ctr))) publicContract 0 := by
+  have f := Fill.seq (Fill.block (Impl.Gcm.X86_64.Flag.testFlag 48))
+    (Fill.ite .ae (Fill.seq (Fill.seq (Fill.block []) (Fill.block [])) (frameFill (fillBounded hs ct bt))) (frameFill (fillBase hs ct)))
+  exact verifiedScrubbedAllFill (api:=Spec.Gcm.sealGatherPreparedApi)
+    { suffix := "", code := onFlag 48 (preparedBounded c ctr b) (plain c ctr), stack := 2672, verified := verified,
+      spSafe := onFlag_spSafe (withStackArgScratch_spSafe rs.sp) (withStackArgScratch_spSafe ws.sp) }
+    lv (sealGatherPreparedOut _) f hk (Nat.le_refl _) (ha:=boundedFlag_ok)
 
 end VG.Proof.AesGcm.X86_64.DirectGather
 

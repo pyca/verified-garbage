@@ -27,4 +27,14 @@ def withBounded (fallback : Prog isa) : Prog isa :=
 def preparedBounded (c : Callees) (ctr toFn : Fn) : Prog isa :=
   framed (dispatch (withBounded (quick toFn)) (withBounded (general c ctr (some toFn))))
 
+/-- Use the bounded record routine only on the variant providing its AVX-512 instructions. -/
+def directSeal48 (baseLv lv : Impl.Scrub.X86_64.VecLevel) (short : Bool)
+    (c : Callees) (ctr : Fn) (blocks : Option Fn) : Prog isa :=
+  match blocks with
+  | some b =>
+    if short = true ∧ lv = .evex then
+      Impl.Scrub.X86_64.scrubAll lv 0 2672 (Impl.Gcm.X86_64.Flag.onFlag 48 (preparedBounded c ctr b) (plain c ctr))
+    else directPrepared lv 48 c ctr b
+  | none => directBase baseLv c ctr
+
 end VG.Impl.AesGcm.X86_64.DirectGather
