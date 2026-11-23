@@ -9,7 +9,6 @@ public import VerifiedGarbage.Proof.Variants.MillerRabin.X86_64.Base
 public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
 public import VerifiedGarbage.Proof.Framework.X86_64.Depth
 public import VerifiedGarbage.TCB.X86_64.Target
-public import VerifiedGarbage.TCB.Emit
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Entry
 public import VerifiedGarbage.Spec.Dsa.Generate
 import Mathlib.Data.Nat.Basic

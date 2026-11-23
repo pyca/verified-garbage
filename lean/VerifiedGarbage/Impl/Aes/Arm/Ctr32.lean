@@ -7,7 +7,7 @@ public import VerifiedGarbage.Impl.Aes.Arm.Linear
 
 `vg_aes_ctr32(schedule = r0, rounds = r1, counter = r2, data = r3, n = [sp], scratch = [sp, #4])`,
 in place, and `vg_aes_ctr32_to(schedule = r0, rounds = r1, counter = r2, src = r3, n = [sp],
-scratch = [sp, #4], dst = [sp, #8])`, from `src` to `dst`: the same code
+scratch = [sp, #4], dst = r6)`, with identical or disjoint data ranges: the same code
 (`ctr32Gen`), but for where the XOR stores (`dstReg`).
 
 Constant-time AES in the style of BearSSL's `aes_ct` (Thomas Pornin, MIT
@@ -112,8 +112,8 @@ def keyBody : List Instr := keyLoad ++ ortho ++ keyStore ++ keyStep
 def keyDone : List Instr :=
   [.dp .add .r12 kp (.imm 32), movR .r10 .r8, .ldrSp .r11 0, .ldrSp sb 4]
 
-/-- Out of place, after `keyDone`: the destination (`[sp, #8]`) to its slot. -/
-def dstSave (to : Bool) : List Instr := if to then [.ldrSp kp 8, stS dstSlot kp] else []
+/-- Out of place, after `keyDone`: the saved destination (`r6`) to its slot. -/
+def dstSave (to : Bool) : List Instr := if to then [ldS kp 34, stS dstSlot kp] else []
 
 /-- The counter block `c + b` (`b < 2`): word `k` in `q (2k + b)`. -/
 def ctrBlock (b : Nat) : List Instr :=
@@ -189,7 +189,7 @@ def ctr32Gen (to : Bool) : Prog isa :=
 /-- `vg_aes_ctr32`, in place. -/
 def ctr32 : Prog isa := ctr32Gen false
 
-/-- `vg_aes_ctr32_to`, from `src` (`r3`) to `dst` (`[sp, #8]`). -/
+/-- `vg_aes_ctr32_to`, from `src` (`r3`) to `dst` (`r6`). -/
 def ctr32To : Prog isa := ctr32Gen true
 
 end VG.Impl.Aes.Arm

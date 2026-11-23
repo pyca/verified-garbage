@@ -223,7 +223,7 @@ open VG VG.X86_64 VG.Impl.Mont VG.Impl.Mont.X86_64 VG.Impl.Weierstrass VG.Impl.W
 open VG.Proof.Mont VG.Proof.Mont.X86_64 Spec.Weierstrass
 open VG.Proof.X25519.X86_64 (Keeps)
 
-def cachedEntryEnv (K : WinCfg) {m : Nat} [NeZero m] (E : Nat → Fin m)
+def cachedEntryEnv (K : WinCfg) {m : Nat} (E : Nat → Fin m)
     (tbl dst : Nat) (b : BitVec 8) : Nat → Fin m :=
   let e := cachedTransferEnv K.M.n E K.E (K.tblPt ((nafMagnitude b-1)/2+1))
     dst (tbl+16*K.M.n*((nafMagnitude b-1)/2))
