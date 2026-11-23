@@ -738,7 +738,7 @@ theorem callee {c : Prog isa} (hv : Verified Arm.target c (Proof.X25519.x25519Co
     (hn : c.noFrames = true) : Callee 32 4096 0 [] Spec.X25519.x25519 c (Proof.X25519.x25519Contract Arm.abi) where
   hv := hv.1
   hct := hv.2.1
-  pre s h := by
+  pre s h _ := by
     obtain ⟨rd, wr, d1, d2, d3, d4, d5, b0, b1, b2, b3⟩ := h
     sig_pre [Proof.X25519.x25519Contract, Proof.X25519.x25519Sig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val,
       Arm.State.addr]
@@ -772,7 +772,7 @@ theorem exchange_verified {c : Prog isa} (name : String)
   Verified.of_correct (k := exContract 32 4096 0 [] Spec.X25519.x25519) (exchange_correct (callee hv hn) (by decide))
     (exchange_ct (callee hv hn) ht) (by
       contract_implies [Spec.X25519.exchangeContract, Spec.X25519.exchangeSig, Proof.X25519.x25519Sig,
-        exContract, ExPre, CallPre, ExPost, Pub, Proof.Xdh.Arm.outR, Proof.Xdh.Arm.scR, Proof.Xdh.Arm.ptR, Proof.Xdh.Arm.wsR,
+        exContract, ExPre, CallPre, ExPost, Pub, belowA_zero_disjoint, Proof.Xdh.Arm.outR, Proof.Xdh.Arm.scR, Proof.Xdh.Arm.ptR, Proof.Xdh.Arm.wsR,
         Proof.Xdh.Arm.frR, ret32, Arm.abi, Arm.argRegs,
         Arm.reduceClassify, Arm.Loc.val,
         Arm.State.addr] [Proof.X25519.Arm.x25519Sat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read] using Proof.X25519.Arm.x25519Sat)

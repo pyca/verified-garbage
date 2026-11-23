@@ -394,7 +394,7 @@ theorem callee {c : Prog isa} (hv : Verified Arm.target c (Proof.X448.x448Contra
     (hn : c.noFrames = true) : Callee 56 8192 0 [] Spec.X448.x448 c (Proof.X448.x448Contract Arm.abi) where
   hv := hv.1
   hct := hv.2.1
-  pre s h := by
+  pre s h _ := by
     obtain ⟨rd, wr, d1, d2, d3, d4, d5, b0, b1, b2, b3⟩ := h
     sig_pre [Proof.X448.x448Contract, Proof.X448.x448Sig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val,
       Arm.State.addr]
@@ -428,7 +428,7 @@ theorem exchange_verified {c : Prog isa} (name : String)
   Verified.of_correct (k := exContract 56 8192 0 [] Spec.X448.x448) (exchange_correct (callee hv hn) (by decide))
     (exchange_ct (callee hv hn) ht) (by
       contract_implies [Spec.X448.exchangeContract, Spec.X448.exchangeSig, Proof.X448.x448Sig,
-        exContract, ExPre, CallPre, ExPost, Pub, Proof.Xdh.Arm.outR, Proof.Xdh.Arm.scR, Proof.Xdh.Arm.ptR, Proof.Xdh.Arm.wsR,
+        exContract, ExPre, CallPre, ExPost, Pub, belowA_zero_disjoint, Proof.Xdh.Arm.outR, Proof.Xdh.Arm.scR, Proof.Xdh.Arm.ptR, Proof.Xdh.Arm.wsR,
         Proof.Xdh.Arm.frR, ret32, Arm.abi, Arm.argRegs,
         Arm.reduceClassify, Arm.Loc.val,
         Arm.State.addr] [Proof.X448.Arm.satState, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read] using Proof.X448.Arm.satState)

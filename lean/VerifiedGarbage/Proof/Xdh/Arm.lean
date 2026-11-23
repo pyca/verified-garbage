@@ -79,7 +79,8 @@ def CallPre (n w : Nat) (s : State) : Prop :=
 frames, apart from the arguments. -/
 def ExPre (n w d : Nat) (s : State) : Prop :=
   CallPre n w s ∧ (frR s).Disjoint (outR n s) ∧ (frR s).Disjoint (scR n s) ∧
-    (frR s).Disjoint (ptR n s) ∧ (frR s).Disjoint (wsR w s) ∧ 8 + d ≤ s.sp.toNat
+    (frR s).Disjoint (ptR n s) ∧ (frR s).Disjoint (wsR w s) ∧ 8 + d ≤ s.sp.toNat ∧
+    ∀ r ∈ s.rd ++ s.wr, (belowA (s.sp - BitVec.ofNat 32 8) d).Disjoint r
 
 /-- What it leaves: `f` of the scalar and the point at `out`, and 0 in `r0`
 if that is all zero, 1 otherwise. -/
@@ -109,12 +110,16 @@ structure Callee (n w d : Nat) (fns : List String) (f : List Byte → List Byte 
     Prop where
   hv : ∀ s, k.pre s → ∃ t s', Exec isa c s t s' ∧ abiPreserved s s' ∧ k.post s s'
   hct : ConstantTime isa k.pre k.pub c
-  pre : ∀ s, CallPre n w s → k.pre s
+  pre : ∀ s, CallPre n w s → (∀ r ∈ s.rd ++ s.wr, (belowA s.sp d).Disjoint r) → k.pre s
   post : ∀ s s', k.post s s' →
     bytesAt s'.mem (State.addr (s.gpr .r0)) n =
       f (bytesAt s.mem (State.addr (s.gpr .r1)) n) (bytesAt s.mem (State.addr (s.gpr .r2)) n)
   pub : ∀ s₁ s₂, Pub fns s₁ s₂ → k.pub s₁ s₂
   st : armStack c ≤ d
+
+/-- No byte is below `sp` within 0 bytes. -/
+theorem belowA_zero_disjoint (sp : BitVec 32) (r : Region) : (belowA sp 0).Disjoint r :=
+  fun _ h => absurd h (by simp only [Region.Contains]; omega)
 
 /-- Code without frames uses no stack. -/
 theorem armStack_of_noFrames : ∀ {c : Prog isa}, c.noFrames = true → armStack c = 0
@@ -139,18 +144,18 @@ variable {n w d : Nat} {s : State}
 abbrev B (s : State) : Addr := State.addr s.sp - BitVec.ofNat 64 8
 
 theorem addr4 (h : ExPre n w d s) : State.addr (s.sp - BitVec.ofNat 32 4) = B s + BitVec.ofNat 64 4 := by
-  have hsp := h.2.2.2.2.2
+  have hsp := h.2.2.2.2.2.1
   rw [B, FrameStack.addr_sub' (by omega_using [hsp])]
   bv_omega
 
 theorem addr44 (h : ExPre n w d s) :
     State.addr (s.sp - BitVec.ofNat 32 4 - BitVec.ofNat 32 4) = B s := by
-  have hsp := h.2.2.2.2.2
+  have hsp := h.2.2.2.2.2.1
   rw [B, show s.sp - BitVec.ofNat 32 4 - BitVec.ofNat 32 4 = s.sp - BitVec.ofNat 32 8 by bv_omega,
     FrameStack.addr_sub' (by omega_using [hsp])]
 
 theorem B_toNat (h : ExPre n w d s) : (B s).toNat + 8 ≤ 2 ^ 32 := by
-  have hsp := h.2.2.2.2.2
+  have hsp := h.2.2.2.2.2.1
   have e := VG.Proof.X25519.Arm.addr_toNat s.sp
   have := s.sp.isLt
   rw [B, BitVec.toNat_sub, BitVec.toNat_ofNat, e]
@@ -237,6 +242,14 @@ theorem Pushed.callPre {n w d : Nat} {s e : State} (h : ExPre n w d s) (he : Pus
     g .r0 (by simp), g .r1 (by simp), g .r2 (by simp), g .r3 (by simp)]
   exact ⟨rd, wr, d1, d2, d3, d4, d5, b0, b1, b2, b3⟩
 
+/-- The callee's stack is apart from the arguments. -/
+theorem Pushed.room {n w d : Nat} {s e : State} (h : ExPre n w d s) (he : Pushed n w s e) :
+    ∀ r ∈ (e.callEntry.withRegions s.rd s.wr).rd ++ (e.callEntry.withRegions s.rd s.wr).wr,
+      (belowA (e.callEntry.withRegions s.rd s.wr).sp d).Disjoint r := by
+  simp only [State.withRegions_rd, State.withRegions_wr, State.withRegions_sp, State.callEntry_sp, he.sp,
+    show s.sp - BitVec.ofNat 32 4 - BitVec.ofNat 32 4 = s.sp - BitVec.ofNat 32 8 by bv_omega]
+  exact h.2.2.2.2.2.2
+
 /-- The regions the call is given are ours. -/
 theorem Pushed.covers {n w : Nat} {s e : State} (he : Pushed n w s e) :
     Covers (s.rd ++ s.wr) (e.rd ++ e.wr) ∧ Covers s.wr e.wr :=
@@ -251,17 +264,18 @@ theorem called_wp {n w d : Nat} {f : List Byte → List Byte → List Byte} {fns
     (hk : Callee n w d fns f c k) {name : String} {s e : State} (h : ExPre n w d s) (he : Pushed n w s e) :
     WP isa (.call name c) e (Called n w f s) := by
   have hcp := he.callPre h
+  have hroom := he.room h
   have hs := slot_sep h
   have hB := B_toNat h
   have hes : State.addr e.sp = B s := by rw [he.sp]; exact addr44 h
-  have hesp : 8 + d ≤ s.sp.toNat := h.2.2.2.2.2
+  have hesp : 8 + d ≤ s.sp.toNat := h.2.2.2.2.2.1
   have hen : e.sp.toNat = s.sp.toNat - 8 := by
     rw [he.sp, show s.sp - BitVec.ofNat 32 4 - BitVec.ofNat 32 4 = s.sp - BitVec.ofNat 32 8 by bv_omega,
       sub_toNat' (by omega_using [hesp])]
-  obtain ⟨⟨rd, wr, d1, d2, d3, d4, d5, b0, b1, b2, b3⟩, f0, f1, f2, f3, hsp⟩ := h
+  obtain ⟨⟨rd, wr, d1, d2, d3, d4, d5, b0, b1, b2, b3⟩, f0, f1, f2, f3, hsp, -⟩ := h
   obtain ⟨hcov, hw⟩ := he.covers
   have hd : armStack c ≤ e.sp.toNat := by have := hk.st; rw [hen]; omega_using [hesp, this]
-  refine WP.callF hk.hv (hk.pre _ hcp) hcov hw (by simpa using hd) (fun z rd' wr' sp' fr' pres' post' => ?_)
+  refine WP.callF hk.hv (hk.pre _ hcp hroom) hcov hw (by simpa using hd) (fun z rd' wr' sp' fr' pres' post' => ?_)
   have hpost := hk.post _ _ post'
   have g (r : Reg) (hr : r ∈ [Reg.r0, .r1, .r2]) : (e.callEntry.withRegions s.rd s.wr).gpr r = s.gpr r := by
     rw [State.withRegions_gpr, State.callEntry_gpr _ (by revert r; decide), he.gpr]
@@ -421,7 +435,7 @@ theorem lr_ok {n w d : Nat} {f : List Byte → List Byte → List Byte} {s v : S
 theorem exchange_wp {n w d : Nat} {f : List Byte → List Byte → List Byte} {fns : List String} {c : Prog isa} {k : Contract isa}
     (hk : Callee n w d fns f c k) {name : String} (hn : n < 4096) {s : State} (h : ExPre n w d s) :
     WP isa (exchange name c n) s fun z => abiPreserved s z ∧ ExPost n f s z := by
-  have hsp := h.2.2.2.2.2
+  have hsp := h.2.2.2.2.2.1
   refine WP.frame (rs := [.lr]) (by decide) (by simp only [List.length_singleton]; omega_using [hsp]) (by decide) ?_
   refine WP.seq (WP.frame (rs := [.r0]) (by decide) ?_ (by decide) ?_)
   · simp only [pushed_sp, List.length_singleton, Nat.mul_one, BitVec.toNat_sub, BitVec.toNat_ofNat]
@@ -462,9 +476,9 @@ theorem exchange_ct {n w d : Nat} {f : List Byte → List Byte → List Byte} {f
   · intro a₁ a₂ t₁ t₂ a₁' a₂' ⟨s₁, s₂, ⟨hs₁, hs₂⟩, e₁, e₂⟩ x₁ x₂
     rw [hs₁] at e₁
     rw [hs₂] at e₂
-    rw [push_pushed (by decide) (by simp only [List.length_singleton]; have := p₁.2.2.2.2.2; omega_using [this]),
+    rw [push_pushed (by decide) (by simp only [List.length_singleton]; have := p₁.2.2.2.2.2.1; omega_using [this]),
       Option.some.injEq] at e₁
-    rw [push_pushed (by decide) (by simp only [List.length_singleton]; have := p₂.2.2.2.2.2; omega_using [this]),
+    rw [push_pushed (by decide) (by simp only [List.length_singleton]; have := p₂.2.2.2.2.2.1; omega_using [this]),
       Option.some.injEq] at e₂
     · subst e₁ e₂
       -- The inner frame, around the call.
@@ -482,7 +496,7 @@ theorem exchange_ct {n w d : Nat} {f : List Byte → List Byte → List Byte} {f
               change Frame [⟨State.addr (_ - BitVec.ofNat 32 4 - BitVec.ofNat 32 4), 4⟩] z.mem m at hm
               rw [addr44 p₁] at hm; exact hm))
           simp only [pushed_sp, List.length_singleton, Nat.mul_one, BitVec.toNat_sub, BitVec.toNat_ofNat]
-          have := σ₁.sp.isLt; have := p₁.2.2.2.2.2; omega_using [this]
+          have := σ₁.sp.isLt; have := p₁.2.2.2.2.2.1; omega_using [this]
         have w₂ : WP isa (.frame (.push [.r0]) (.call name c) (.pop .r1 4)) (pushed [.lr] σ₂)
             (Popped n w f σ₂) := by
           refine WP.frame (rs := [.r0]) (by decide) ?_ (by decide)
@@ -490,7 +504,7 @@ theorem exchange_ct {n w d : Nat} {f : List Byte → List Byte → List Byte} {f
               change Frame [⟨State.addr (_ - BitVec.ofNat 32 4 - BitVec.ofNat 32 4), 4⟩] z.mem m at hm
               rw [addr44 p₂] at hm; exact hm))
           simp only [pushed_sp, List.length_singleton, Nat.mul_one, BitVec.toNat_sub, BitVec.toNat_ofNat]
-          have := σ₂.sp.isLt; have := p₂.2.2.2.2.2; omega_using [this]
+          have := σ₂.sp.isLt; have := p₂.2.2.2.2.2.1; omega_using [this]
         obtain ⟨_, y₁, ey₁, hy₁⟩ := w₁
         obtain ⟨_, y₂, ey₂, hy₂⟩ := w₂
         obtain ⟨-, rfl⟩ := Exec.det x₁ ey₁
@@ -501,10 +515,10 @@ theorem exchange_ct {n w d : Nat} {f : List Byte → List Byte → List Byte} {f
         rw [hs₂] at e₂
         rw [push_pushed (by decide) (by
           simp only [pushed_sp, List.length_singleton, Nat.mul_one, BitVec.toNat_sub, BitVec.toNat_ofNat]
-          have := σ₁.sp.isLt; have := p₁.2.2.2.2.2; omega_using [this]), Option.some.injEq] at e₁
+          have := σ₁.sp.isLt; have := p₁.2.2.2.2.2.1; omega_using [this]), Option.some.injEq] at e₁
         rw [push_pushed (by decide) (by
           simp only [pushed_sp, List.length_singleton, Nat.mul_one, BitVec.toNat_sub, BitVec.toNat_ofNat]
-          have := σ₂.sp.isLt; have := p₂.2.2.2.2.2; omega_using [this]), Option.some.injEq] at e₂
+          have := σ₂.sp.isLt; have := p₂.2.2.2.2.2.1; omega_using [this]), Option.some.injEq] at e₂
         subst e₁ e₂
         refine RelCT.call hk.hv hk.hct σ₁.rd σ₁.wr (P := Eq2 (M := isa) (pushed [.r0] (pushed [.lr] σ₁))
           (pushed [.r0] (pushed [.lr] σ₂))) (fun a b ⟨ha, hb⟩ => ?_) _ _ _ _ _ _ ⟨rfl, rfl⟩ y₁ y₂
@@ -516,7 +530,9 @@ theorem exchange_ct {n w d : Nat} {f : List Byte → List Byte → List Byte} {f
         have g {s : State} (r : Reg) (hr : r ∈ [Reg.r0, .r1, .r2, .r3]) :
             ((pushed [.r0] (pushed [.lr] s)).callEntry.withRegions σ₁.rd σ₁.wr).gpr r = s.gpr r := by
           rw [State.withRegions_gpr, State.callEntry_gpr _ (by revert r; decide)]; rfl
-        refine ⟨hk.pre _ (k₁.callPre p₁), hk.pre _ c₂, hk.pub _ _ ?_, k₁.covers.1, k₁.covers.2, v₂.1, v₂.2⟩
+        have r₂ := k₂.room p₂
+        rw [hrd, hwr] at r₂
+        refine ⟨hk.pre _ (k₁.callPre p₁) (k₁.room p₁), hk.pre _ c₂ r₂, hk.pub _ _ ?_, k₁.covers.1, k₁.covers.2, v₂.1, v₂.2⟩
         refine ⟨?_, ?_, ?_, ?_, ?_, ?_⟩
         · rw [g _ (by simp), g _ (by simp), q0]
         · rw [g _ (by simp), g _ (by simp), q1]
