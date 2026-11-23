@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.X86.VLanes
 public import VerifiedGarbage.Proof.MlKem.X86.Leaf
-import VerifiedGarbage.Proof.MlKem.X86.Table
 public import VerifiedGarbage.Proof.MlKem.NttLayer
 public import VerifiedGarbage.Proof.MlKem.PolyContract
 public import VerifiedGarbage.Proof.MlKem.Mem
@@ -23,7 +22,6 @@ meta import VerifiedGarbage.Proof.Framework.Sig
 meta import VerifiedGarbage.Proof.MlKem.X86.Common
 meta import VerifiedGarbage.Proof.MlKem.X86.VLanes
 meta import VerifiedGarbage.Proof.MlKem.X86.Leaf
-meta import VerifiedGarbage.Proof.MlKem.X86.Table
 meta import VerifiedGarbage.Proof.MlKem.NttLayer
 meta import VerifiedGarbage.Proof.MlKem.X86.Mcdt
 meta import VerifiedGarbage.Impl.MlKem.X86.Ntt
@@ -116,6 +114,14 @@ theorem Pre.arg_in {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i < 2) : (aR s
   have := hp.sp'
   simp only [argAddr, Region.Contains, E0] at this ⊢
   bv_omega
+
+/-- The pointer compared with the end of a polynomial. -/
+theorem end_cmp (x : BitVec 32) {X : Nat} (hX : X ≤ 1024) :
+    (x + BitVec.ofNat 32 X - (x + 1024) == 0) = decide (X = 1024) := by
+  rw [sub_beq_zero, BitVec.toNat_add, BitVec.toNat_add, toNat_ofNat32 (by omega_arith),
+    show (1024 : BitVec 32).toNat = 1024 from rfl]
+  simp only [Nat.reducePow]
+  exact decide_eq_decide.mpr (by constructor <;> intro h <;> omega_arith)
 
 end VG.Proof.MlKem.X86.NttLoop
 

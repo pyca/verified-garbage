@@ -15,7 +15,9 @@ public import VerifiedGarbage.Proof.Sha256.X86.Lit
 public import VerifiedGarbage.Proof.Sha3.X86.Lit
 public import VerifiedGarbage.Proof.MlDsa.X86.Sign.Params
 public import VerifiedGarbage.Proof.MlKem.X86.TopKeep
-import VerifiedGarbage.Proof.MlKem.X86.Table
+import VerifiedGarbage.Proof.MlKem.X86.Unpack
+import VerifiedGarbage.Impl.MlKem.X86.Ntt
+import VerifiedGarbage.Proof.MlKem.X86.Leaf
 
 /-! ### `MlDsa.X86.Sign.Inv`, which this module and modules that import it used -/
 
