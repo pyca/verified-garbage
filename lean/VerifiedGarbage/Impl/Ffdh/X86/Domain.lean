@@ -26,7 +26,8 @@ eighteen such arguments (`fill`), computed from its own: the length `p_len`
 rest zero. All of them are public.
 
 The wide slots used: p (9), g (10), q (11), y (12), x (13), one (14),
-`p − 1` (15), the scalar's bound (16), zero (17) and the result (19). Only
+`p − 1` (15), the scalar's bound (16), zero, then two for the generator's
+test (17), and the result (19). Only
 public values (the domain, a public value, the statuses the contracts
 release) choose branches.
 -/

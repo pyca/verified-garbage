@@ -19,9 +19,9 @@ import VerifiedGarbage.Proof.Framework.Omega
 /-!
 # FFDH on i686: powers of two
 
-`ladderStep_ok`: a bit of x. The accumulator, `y R mod M`, is squared to
-`y² R mod M` and doubled modulo `M`, and the doubled one replaces it under
-the bit's mask: `y² 2^b R mod M`. `ladderPower_ok`: over the `8 L` bits of
+`ladderStep_ok`: a bit of x. The accumulator, where it is `y R mod M`, is
+squared to `y² R mod M` and doubled modulo `M`, and the doubled one replaces
+it under the bit's mask: `y² 2^b R mod M`. `ladderPower_ok`: over the `8 L` bits of
 x's public length from the top, from Montgomery one, slot 6 is
 `2^x mod M` (`ladder_exp`: the bits of x above bit `k`, doubled, and bit
 `k`, are the bits above bit `k − 1`). `ladderCall_ok` is the call, and
@@ -45,6 +45,12 @@ theorem ladder_exp (x k : Nat) : (2 ^ (x / 2 ^ (k + 1))) ^ 2 * 2 ^ bit x k = 2 ^
   unfold bit
   rw [Nat.pow_succ, ← Nat.div_div_eq_div_mul]
   omega_arith
+
+/-- A bit below bit `N` of `x` is the bit of `x mod 2^N`. -/
+theorem bit_mod (x : Nat) {N k : Nat} (hk : k < N) : bit (x % 2 ^ N) k = bit x k := by
+  unfold bit
+  rw [show 2 ^ N = 2 ^ k * 2 ^ (N - k) by rw [← Nat.pow_add]; congr 1; omega_arith, Nat.mod_mul_right_div_self,
+    Nat.mod_mod_of_dvd _ ⟨2 ^ (N - k - 1), by rw [← Nat.pow_succ']; congr 1; omega_arith⟩]
 
 section
 variable {Ex : List Region → List Region → Prop} {s : State} {base : Addr} {bytes len : Nat}
@@ -112,15 +118,17 @@ theorem bitMask_ok (h : In Ex base bytes len args s) {b : Nat} (hb : (s.gpr .eax
   refine WP.mono (storeW_ok (h.regs K₃ m₃) (d := winOff) (by omega_arith) .ecx) fun u ⟨I, O, W, K⟩ =>
     ⟨I, by rw [m₃] at O; exact O, by rw [W, e₃], K₃.trans (K.mono (by decide))⟩
 
-/-- One bit of x: `y R mod M` to `y² 2^b R mod M` for the bit `b` at `n − 1`, and the count down one. -/
-theorem ladderStep_ok {M : Nat} (C : CtxOk Ex base bytes len args .wide M s) {y n : Nat}
-    (hy : sv s.mem base len .wide 6 = y * 2 ^ (8 * bc len .wide) % M) (hn0 : 0 < n) (hn : n < 2 ^ 32)
+/-- One bit of x: the accumulator, where it is `y R mod M`, to `y² 2^b R mod M` for the bit `b` at
+`n − 1`; it stays below `M`, and the count is down one. -/
+theorem ladderStep_ok {M : Nat} (C : CtxOk Ex base bytes len args .wide M s) {n : Nat}
+    (hlt : sv s.mem base len .wide 6 < M) (hn0 : 0 < n) (hn : n < 2 ^ 32)
     (he : s.gpr .esi = BitVec.ofNat 32 n) :
     WP isa ladderStep s fun u =>
       CtxOk Ex base bytes len args .wide M u ∧ Frame (frameR base (s.gpr .esp) (pwR len .wide)) s.mem u.mem ∧
       Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s u ∧
       u.gpr .esi = BitVec.ofNat 32 (n - 1) ∧ u.zf = some (decide (n = 1)) ∧
-      sv u.mem base len .wide 6 =
+      sv u.mem base len .wide 6 < M ∧
+      ∀ y, sv s.mem base len .wide 6 = y * 2 ^ (8 * bc len .wide) % M → sv u.mem base len .wide 6 =
         y ^ 2 * 2 ^ bit (sv s.mem base len .wide 13) (n - 1) * 2 ^ (8 * bc len .wide) % M := by
   have h := C.inp
   have P1 := C.gt
@@ -139,10 +147,11 @@ theorem ladderStep_ok {M : Nat} (C : CtxOk Ex base bytes len args .wide M s) {y 
   unfold ladderStep
   -- The square.
   refine WP.seq (WP.mono (cmul_ok C (o := 6) (a := 6) (b := 6) (by decide) (by decide) (by decide) (by decide)
-    (by decide) (by decide) (by rw [hy]; exact Nat.mod_lt _ (by omega_arith))) fun s₁ ⟨C₁, K₁, F₁, L₁, V₁⟩ => ?_)
-  obtain Y₁ : sv s₁.mem base len .wide 6 = y ^ 2 * 2 ^ (8 * bc len .wide) % M := by
-    obtain v := VG.Proof.Bignum.mont_cancel cp (o := sv s₁.mem base len .wide 6)
-      (c := y ^ 2 * 2 ^ (8 * bc len .wide))
+    (by decide) (by decide) hlt) fun s₁ ⟨C₁, K₁, F₁, L₁, V₁⟩ => ?_)
+  generalize hZ : sv s₁.mem base len .wide 6 = Z at L₁ V₁
+  obtain Y₁ : ∀ y, sv s.mem base len .wide 6 = y * 2 ^ (8 * bc len .wide) % M →
+      Z = y ^ 2 * 2 ^ (8 * bc len .wide) % M := fun y hy => by
+    obtain v := VG.Proof.Bignum.mont_cancel cp (o := Z) (c := y ^ 2 * 2 ^ (8 * bc len .wide))
       (by rw [V₁, hy, ← Nat.mul_mod, Nat.mul_mul_mul_comm, Nat.pow_two, Nat.mul_assoc (y * y)])
     rwa [Nat.mod_eq_of_lt L₁] at v
   obtain x₁ : sv s₁.mem base len .wide 13 = sv s.mem base len .wide 13 := pw_x h (pw_mul F₁) h.room
@@ -162,11 +171,11 @@ theorem ladderStep_ok {M : Nat} (C : CtxOk Ex base bytes len args .wide M s) {y 
     (by intro p hp; obtain rfl := List.mem_singleton.mp hp; dsimp only; omega_arith)
     (by intro p hp; obtain rfl := List.mem_singleton.mp hp; exact .inr ⟨by omega_arith, by dsimp only; omega_arith⟩)
   obtain m₁₃ : s₃.mem = s₁.mem := by rw [m₃, U₂.mem]
-  obtain six₄ : sv s₄.mem base len .wide 6 = y ^ 2 * 2 ^ (8 * bc len .wide) % M := by
-    simp only [sv]; rw [O₄.val32 (.inr (by omega_arith)) (by omega_arith), m₁₃]; exact Y₁
+  obtain six₄ : sv s₄.mem base len .wide 6 = Z := by
+    simp only [sv]; rw [O₄.val32 (.inr (by omega_arith)) (by omega_arith), m₁₃]; exact hZ
   -- Twice the accumulator, modulo `M`.
   obtain lt₄ : sv s₄.mem base len .wide 6 < sv s₄.mem base len .wide 0 := by
-    rw [six₄, C₄.mod]; exact Nat.mod_lt _ (by omega_arith)
+    rw [six₄, C₄.mod]; exact L₁
   refine WP.seq (WP.mono (addMod_ok C₄.inp .wide (o := 7) (a := 6) (b := 6) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) lt₄ lt₄) fun s₅ ⟨F₅, V₅, K₅⟩ => ?_)
   rw [six₄, C₄.mod] at V₅
@@ -186,7 +195,7 @@ theorem ladderStep_ok {M : Nat} (C : CtxOk Ex base bytes len args .wide M s) {y 
     (by intro p hp
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hp
         rcases hp with rfl | rfl <;> dsimp only <;> omega_arith)
-  obtain six₅ : sv s₅.mem base len .wide 6 = y ^ 2 * 2 ^ (8 * bc len .wide) % M := by
+  obtain six₅ : sv s₅.mem base len .wide 6 = Z := by
     simp only [sv]; rw [keep₅ _ _ (by omega_arith) (.inr (by omega_arith)) (.inl (by omega_arith))]; exact six₄
   obtain W₅ : w32 s₅.mem base winOff = (cmask (decide (b = 1))).toNat := by
     rw [← w32_val32_one, keep₅ _ _ (by omega_arith) (.inl (by omega_arith)) (.inl (by omega_arith)), w32_val32_one]
@@ -224,7 +233,7 @@ theorem ladderStep_ok {M : Nat} (C : CtxOk Ex base bytes len args .wide M s) {y 
   refine ⟨C₇.regs (T.keeps []) T.mem, by rw [T.mem]; exact (((pw_mul F₁).trans G₄).trans (pw_add F₅)).trans G₇,
     ((K₁.mono (by decide)).trans (U₂.keeps.mono (by decide))).trans
       ((K₂₇.mono (by decide)).trans ((T.keeps []).mono (by decide))),
-    by rw [(T.keeps []).1 _ (by decide), esi₇], ?_, ?_⟩
+    by rw [(T.keeps []).1 _ (by decide), esi₇], ?_, ?_, ?_⟩
   · rw [z, BitVec.and_self, esi₇]
     congr 1
     by_cases e : n = 1
@@ -239,26 +248,35 @@ theorem ladderStep_ok {M : Nat} (C : CtxOk Ex base bytes len args .wide M s) {y 
     rw [T.mem, V₇, U₆.mem]
     rcases (show b = 0 ∨ b = 1 by omega_arith) with rfl | rfl
     · simp only [show decide ((0 : Nat) = 1) = false from by decide, Bool.false_eq_true, ↓reduceIte]
-      rw [Nat.pow_zero, Nat.mul_one]; exact six₅
-    · rw [V₅, ← Nat.add_mod, Nat.pow_one, Nat.mul_right_comm, Nat.mul_two]
+      rw [six₅]; exact L₁
+    · rw [V₅]
+      simp only [decide_true, ↓reduceIte]
+      exact Nat.mod_lt _ (by omega_arith)
+  · intro y hy
+    obtain eZ := Y₁ y hy
+    simp only [sv] at six₅ V₅ ⊢
+    rw [T.mem, V₇, U₆.mem]
+    rcases (show b = 0 ∨ b = 1 by omega_arith) with rfl | rfl
+    · simp only [show decide ((0 : Nat) = 1) = false from by decide, Bool.false_eq_true, ↓reduceIte]
+      rw [Nat.pow_zero, Nat.mul_one, six₅]; exact eZ
+    · rw [V₅, eZ, ← Nat.add_mod, Nat.pow_one, Nat.mul_right_comm, Nat.mul_two]
       simp only [decide_true, ↓reduceIte]
 
-/-- Slot 6 two to the power of x (slot 13, below `2^(8 L)` for the public length `L` in argument 11)
+/-- Slot 6 two to the power of x's low `8 L` bits (x in slot 13, the public length `L` in argument 11)
 modulo `M`. -/
 theorem ladderPower_ok {M L : Nat} (C : CtxOk Ex base bytes len args .wide M s)
     (h3 : sv s.mem base len .wide 3 = 1) (h4 : sv s.mem base len .wide 4 = 2 ^ (16 * bc len .wide) % M)
-    (hx : args 11 = BitVec.ofNat 32 L) (hL0 : 0 < L) (hL : L ≤ 1024)
-    (h13 : sv s.mem base len .wide 13 < 2 ^ (8 * L)) :
+    (hx : args 11 = BitVec.ofNat 32 L) (hL0 : 0 < L) (hL : L ≤ 1024) :
     WP isa ladderPower s fun u =>
       CtxOk Ex base bytes len args .wide M u ∧ Frame (frameR base (s.gpr .esp) (pwR len .wide)) s.mem u.mem ∧
       Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s u ∧
-      sv u.mem base len .wide 6 = 2 ^ sv s.mem base len .wide 13 % M := by
+      sv u.mem base len .wide 6 = 2 ^ (sv s.mem base len .wide 13 % 2 ^ (8 * L)) % M := by
   have h := C.inp
   have hM := C.gt
   have cp := C.coprime
   obtain RR : 2 ^ (16 * bc len .wide) = 2 ^ (8 * bc len .wide) * 2 ^ (8 * bc len .wide) := by
     rw [← Nat.pow_add]; congr 1; omega_arith
-  generalize hX : sv s.mem base len .wide 13 = x at h13 ⊢
+  generalize hX : sv s.mem base len .wide 13 = x
   unfold ladderPower
   -- One in Montgomery form into slot 6.
   refine WP.seq (WP.mono (cmul_ok C (o := 6) (a := 4) (b := 3) (by decide) (by decide) (by decide) (by decide)
@@ -285,11 +303,13 @@ theorem ladderPower_ok {M L : Nat} (C : CtxOk Ex base bytes len args .wide M s)
   refine WP.seq (WP.mono (PublicRt.countLoop (N := 8 * L) (by omega_arith) (fun j t =>
       CtxOk Ex base bytes len args .wide M t ∧ Frame (frameR base (s.gpr .esp) (pwR len .wide)) s₅.mem t.mem ∧
       Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s₅ t ∧ t.gpr .esi = BitVec.ofNat 32 (8 * L - j) ∧
-      sv t.mem base len .wide 6 = 2 ^ (x / 2 ^ (8 * L - j)) * 2 ^ (8 * bc len .wide) % M)
-    (fun j t hj ⟨Ct, Ft, Kt, et, Yt⟩ => WP.mono (ladderStep_ok Ct Yt (by omega_arith) (by omega_arith) et)
-      fun u ⟨Cu, Fu, Ku, eu, zu, Yu⟩ => ?_)
+      sv t.mem base len .wide 6 = 2 ^ (x % 2 ^ (8 * L) / 2 ^ (8 * L - j)) * 2 ^ (8 * bc len .wide) % M)
+    (fun j t hj ⟨Ct, Ft, Kt, et, Yt⟩ => WP.mono (ladderStep_ok Ct
+      (by rw [Yt]; exact Nat.mod_lt _ (by omega_arith)) (by omega_arith) (by omega_arith) et)
+      fun u ⟨Cu, Fu, Ku, eu, zu, _, Yu⟩ => ?_)
     ⟨C₅, Frame.refl _ _, Keeps.refl _ _, by rw [esi₅, Nat.sub_zero],
-      by rw [sv, m₅, Nat.sub_zero, Nat.div_eq_of_lt h13, Nat.pow_zero, Nat.one_mul]; exact Y₁⟩)
+      by rw [sv, m₅, Nat.sub_zero, Nat.div_eq_of_lt (Nat.mod_lt _ (Nat.two_pow_pos _)), Nat.pow_zero,
+        Nat.one_mul]; exact Y₁⟩)
     fun s₆ ⟨C₆, F₆, K₆, _, Y₆⟩ => ?_)
   · have spt : t.gpr .esp = s.gpr .esp := by rw [Kt.1 _ (by decide), sp₅]
     rw [spt] at Fu
@@ -297,7 +317,8 @@ theorem ladderPower_ok {M L : Nat} (C : CtxOk Ex base bytes len args .wide M s)
     rw [xt] at Yu
     refine ⟨⟨Cu, Ft.trans Fu, Kt.trans Ku, by rw [eu, Nat.sub_sub], ?_⟩,
       by rw [zu]; congr 1; exact decide_eq_decide.mpr (by omega_arith)⟩
-    rw [Yu, Nat.sub_sub, show 8 * L - j = 8 * L - (j + 1) + 1 by omega_arith, ladder_exp]
+    rw [Yu _ Yt, Nat.sub_sub, ← bit_mod x (N := 8 * L) (by omega_arith),
+      show 8 * L - j = 8 * L - (j + 1) + 1 by omega_arith, ladder_exp]
   -- Out of Montgomery form.
   rw [Nat.sub_self, Nat.pow_zero, Nat.div_one] at Y₆
   obtain F₀₆ : Frame (frameR base (s.gpr .esp) (pwR len .wide)) s.mem s₆.mem := by
@@ -318,23 +339,24 @@ theorem ladderBody_noSp :
     NoSp (.seq (.block ((List.range 18).flatMap copyArg)) ladderPower : Prog isa) :=
   NoSp.of_all (by rsa_stack_shape)
 
-/-- `ladderPower`, called: slot 6 two to the power of x (slot 13), with the changes within a stage's. -/
+/-- `ladderPower`, called: slot 6 two to the power of x's low `8 L` bits, with the changes within a
+stage's. -/
 theorem ladderCall_ok {M L : Nat} (C : CtxOk Ex base bytes len args .wide M s)
     (RF : RoomF (s.gpr .esp) base bytes) (h3 : sv s.mem base len .wide 3 = 1)
     (h4 : sv s.mem base len .wide 4 = 2 ^ (16 * bc len .wide) % M) (hx : args 11 = BitVec.ofNat 32 L)
-    (hL0 : 0 < L) (hL : L ≤ 1024) (h13 : sv s.mem base len .wide 13 < 2 ^ (8 * L)) :
+    (hL0 : 0 < L) (hL : L ≤ 1024) :
     WP isa ladderCall s fun u => CtxOk Ex base bytes len args .wide M u ∧
       Frame (frameF base (s.gpr .esp) (pwR len .wide)) s.mem u.mem ∧
       Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s u ∧
-      sv u.mem base len .wide 6 = 2 ^ sv s.mem base len .wide 13 % M := by
+      sv u.mem base len .wide 6 = 2 ^ (sv s.mem base len .wide 13 % 2 ^ (8 * L)) % M := by
   unfold ladderCall
   refine WP.mono (argCall_ok ladderBody_noSp C.inp RF (pwR_fit C.inp .wide)
-    (R := WinMem base len M (2 ^ sv s.mem base len .wide 13 % M))
+    (R := WinMem base len M (2 ^ (sv s.mem base len .wide 13 % 2 ^ (8 * L)) % M))
     (fun W F hr => winMem_below C.inp RF W F hr) fun u hu Fs => ?_)
     fun w ⟨I, F, K, a, b, c⟩ => ⟨⟨I, a, C.gt, C.odd, b⟩, F, K, c⟩
   have e := fun j (hj : j ≤ 27) => frameF_sv C.inp RF Fs hj
   refine WP.mono (ladderPower_ok (ctx_callee C RF hu Fs) (by rw [e 3 (by decide)]; exact h3)
-    (by rw [e 4 (by decide)]; exact h4) hx hL0 hL (by rw [e 13 (by decide)]; exact h13))
+    (by rw [e 4 (by decide)]; exact h4) hx hL0 hL)
     fun v ⟨Cv, F, K, Y⟩ => ⟨F, K, Cv.mod, Cv.inv, ?_⟩
   rw [Y, e 13 (by decide)]
 

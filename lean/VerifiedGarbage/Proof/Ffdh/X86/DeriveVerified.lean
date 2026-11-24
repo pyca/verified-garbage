@@ -90,7 +90,7 @@ open VG VG.X86 VG.X86.Wp VG.Impl.Mont.X86 VG.Impl.Bignum.X86 VG.Impl.Bignum.X86.
 open VG.Proof.Mont.X86 VG.Proof.Bignum.X86 VG.Proof.Bignum.X86.CrtRt VG.Proof.Ffdh.X86
 open VG.Proof.Ffdh.X86.CheckDomain (domBytes argNum_comp)
 open VG.Proof.Ffdh.X86.CheckPublic (bytes_keep)
-open VG.Proof.Ffdh.X86.CheckPrivate (XGeo xv loadX_ok boundTest_ok scalar_iff params powTop_ok)
+open VG.Proof.Ffdh.X86.CheckPrivate (XGeo xv loadX_ok boundTest_ok scalar_iff params powTopG_ok)
 open VG.Proof.Ffdh.X86.KeyGen (OutAt export_ok copy19_ok statusOf_ok comp_lt)
 open VG.Impl.Ffdh.X86
 
@@ -113,7 +113,8 @@ theorem front_ok (h : In Ex base bytes len args s) (G : DomGeo args base bytes l
     WP isa (Prog.chain dFront (.block [])) s fun u => Step Ex base bytes len args s u ∧
       Gate u (Spec.Ffdh.privateValid (params s.mem args len dlen) (xv s.mem args xl) = false) ∧
       sv u.mem base len .wide 9 = comp s.mem args len 0 ∧ sv u.mem base len .wide 10 = comp s.mem args len 1 ∧
-      sv u.mem base len .wide 14 = 1 ∧ sv u.mem base len .wide 15 = pm1 len (comp s.mem args len 0) := by
+      sv u.mem base len .wide 14 = 1 ∧ sv u.mem base len .wide 15 = pm1 len (comp s.mem args len 0) ∧
+      sv u.mem base len .wide 13 = xv s.mem args xl := by
   have dl := G.dl
   have fit := G.fit
   have lw := G.lower
@@ -158,11 +159,12 @@ theorem front_ok (h : In Ex base bytes len args s) (G : DomGeo args base bytes l
     (fun n2 => comp_keep h G RF hb40 S₁₃.frame (by omega_using [dl, n2]))) fun u ⟨S₄, k₄, z, _⟩ => ?_
   have kk : ∀ {j}, 9 ≤ j ∧ j ≤ 19 ∧ j ∉ [16, 17] →
       sv u.mem base len .wide j = sv u₃.mem base len .wide j := fun hj => k₄.slot_eq hj
-  refine ⟨S₁₃.trans S₄, Gate.of_eval z (scalar_iff hpa.symm hqa), ?_, ?_, ?_, ?_⟩
+  refine ⟨S₁₃.trans S₄, Gate.of_eval z (scalar_iff hpa.symm hqa), ?_, ?_, ?_, ?_, ?_⟩
   · rw [kk (by decide), v9]
   · rw [kk (by decide), v10]
   · rw [kk (by decide), v14]
   · rw [kk (by decide), v15]
+  · rw [kk (by decide), V₃]
 
 /-- Zeros written for y, and 2 returned. -/
 theorem fail_ok (h : In Ex base bytes len args s) (O : OutAt args base bytes len 0 (s.gpr .esp) s.wr)
@@ -197,7 +199,7 @@ theorem tail_ok (h : In Ex base bytes len args s) (X : XGeo args base bytes len 
     (RF : RoomF (s.gpr .esp) base bytes) (hx40 : Region.Disjoint ⟨byteAddr (args 10), xl⟩ (below (s.gpr .esp) 176))
     (O : OutAt args base bytes len 0 (s.gpr .esp) s.wr) (h1 : args 1 = BitVec.ofNat 32 len)
     {p g x P : Nat} (h9 : sv s.mem base len .wide 9 = p) (hP : safeM p = P) (h10 : sv s.mem base len .wide 10 = g)
-    (hx : xv s.mem args xl = x) (h14 : sv s.mem base len .wide 14 = 1)
+    (hx : xv s.mem args xl = x) (h13 : sv s.mem base len .wide 13 = x) (h14 : sv s.mem base len .wide 14 = 1)
     (h15 : sv s.mem base len .wide 15 = pm1 len p) (Plt : P < 2 ^ (8 * len)) (Ppos : 0 < P) :
     WP isa DerivePublic.tail s fun t =>
       t.gpr .eax = BitVec.ofNat 32 (if accept len p (g ^ x % P) then 1 else 3) ∧
@@ -211,10 +213,9 @@ theorem tail_ok (h : In Ex base bytes len args s) (X : XGeo args base bytes len 
   have ylt : g ^ x % P < 2 ^ (8 * len) := Nat.lt_trans (Nat.mod_lt _ Ppos) Plt
   unfold DerivePublic.tail
   -- y.
-  refine WP.seq (WP.mono (powTop_ok h X RF hx40 (b := 10) (by decide) (by decide) (P := P) (by rw [h9, hP]))
-    fun u₁ ⟨C₁, Y₁, _, F₁, k₁, K₁⟩ => ?_)
+  refine WP.seq (WP.mono (powTopG_ok h X RF hx40 (P := P) (by rw [h9, hP]) (by rw [h13, hx]))
+    fun u₁ ⟨C₁, Y₁, S₁, k₁⟩ => ?_)
   rw [h10, hx] at Y₁
-  have S₁ : Step Ex base bytes len args s u₁ := Step.opsF h RF F₁ K₁
   -- Its range as the acceptance mask.
   refine WP.seq (WP.mono (rangeMask_ok S₁.inp (a := 6) (by decide)) fun u₂ ⟨I₂, e₂, O₂, K₂⟩ => ?_)
   rw [Y₁, k₁.slot_eq, h15, k₁.slot_eq, h14] at e₂
@@ -268,7 +269,7 @@ theorem body_ok (h : In Ex base bytes len args s) (G : DomGeo args base bytes le
   have hpa := comp_p s.mem args h2
   have hga := comp_g s.mem args h2
   rw [body_eq]
-  refine WP.chain_split (front_ok h G X RF hb40 hx40) fun u ⟨S, Gt, V9, V10, V14, V15⟩ => ?_
+  refine WP.chain_split (front_ok h G X RF hb40 hx40) fun u ⟨S, Gt, V9, V10, V14, V15, V13⟩ => ?_
   have Ou : OutAt args base bytes len 0 (u.gpr .esp) u.wr := by rw [S.esp]; exact O.keep rfl S.keeps
   have FF : ∀ {t : State}, Frame (⟨byteAddr (args 0), len⟩ :: frameF base (u.gpr .esp) (fR len)) u.mem t.mem →
       Frame (⟨byteAddr (args 0), len⟩ :: frameF base (s.gpr .esp) (fR len)) s.mem t.mem := fun {t} Ft => by
@@ -296,7 +297,7 @@ theorem body_ok (h : In Ex base bytes len args s) (G : DomGeo args base bytes le
     have Xu := X.keep ⟨rfl, rfl⟩ S.keeps
     have xf := X.fit
     refine WP.mono (tail_ok (x := xv s.mem args xl) S.inp Xu (by rw [S.esp]; exact RF) (by rw [S.esp]; exact hx40) Ou h1 V9 rfl V10
-      (by rw [xv, bytes_keep h X.apart (by omega_using [xf]) RF hx40 S.frame]) V14 V15 Plt
+      (by rw [xv, bytes_keep h X.apart (by omega_using [xf]) RF hx40 S.frame]) V13 V14 V15 Plt
       (Nat.lt_trans Nat.zero_lt_one (safeM_gt _))) fun t ⟨E, B, Ft, Kt⟩ =>
       ⟨_, E, FF Ft, S.keeps.trans Kt, fun e => ?_⟩
     dsimp only
@@ -575,7 +576,7 @@ end
 The contract releases the domain and the status: runs with the same ones
 leak the same traces. The one branch on x, whether it is an invalid scalar,
 is whether the status is 2; the rest, x's power over its public `x_len`
-bytes (`CheckPrivate.powTop_trace`) and the masked output, has no branch on
+bytes (`CheckPrivate.powTopG_trace`) and the masked output, has no branch on
 it.
 -/
 
@@ -658,8 +659,9 @@ theorem front_trace :
 
 /-- The tail: x's power over its `xl` bytes, then the mask, the output and the status by the taint
 analysis. -/
-theorem tail_trace {P : State → Prop}
-    (hP : ∀ x, P x → RX Ex base bytes len xl args sp x ∧ (RoomF sp base bytes ∧ Region.Disjoint ⟨byteAddr (args 10), xl⟩ (below sp 176))) :
+theorem tail_trace {P : State → Prop} {g : Nat}
+    (hP : ∀ x, P x → RX Ex base bytes len xl args sp x ∧ (RoomF sp base bytes ∧ Region.Disjoint ⟨byteAddr (args 10), xl⟩ (below sp 176)))
+    (hg : ∀ x, P x → sv x.mem base len .wide 10 = g) :
     RelCT isa (Both P) Impl.Ffdh.X86.DerivePublic.tail fun _ _ => True := by
   by_cases hx : (args 11 = BitVec.ofNat 32 xl ∧ 0 < xl ∧ xl ≤ 1024) ∧
     (RoomF sp base bytes ∧ Region.Disjoint ⟨byteAddr (args 10), xl⟩ (below sp 176))
@@ -668,7 +670,8 @@ theorem tail_trace {P : State → Prop}
     obtain ⟨⟨R, X⟩, d⟩ := hP _ h.1
     exact ⟨⟨X.e11, X.pos, by have := X.le; have := R.1.upper'; omega_arith⟩, d⟩
   unfold Impl.Ffdh.X86.DerivePublic.tail
-  exact VG.RelCT.seq ((CheckPrivate.powTop_trace hx.1 hx.2.1 hx.2.2).mono (fun _ _ h => ⟨(hP _ h.1).1, (hP _ h.2).1⟩)
+  exact VG.RelCT.seq ((CheckPrivate.powTopG_trace hx.1 hx.2.1 hx.2.2).mono
+    (fun _ _ h => ⟨⟨(hP _ h.1).1, hg _ h.1⟩, ⟨(hP _ h.2).1, hg _ h.2⟩⟩)
     fun _ _ h => h) (RelCT.taint (A := taint) τA (fun _ _ h => h.1.agree h.2) rest_check)
 
 theorem body_relCT :
@@ -677,12 +680,15 @@ theorem body_relCT :
   rw [body_eq]
   apply VG.RelCT.chain
   refine VG.RelCT.seq (VG.Proof.Bignum.X86.PublicRt.relCT_both
-    (F := fun u => (RX Ex base bytes len xl args sp u ∧ (RoomF sp base bytes ∧ Region.Disjoint ⟨byteAddr (args 10), xl⟩ (below sp 176))) ∧
-      Gate u (St = 2)) front_trace fun x A => ?_) ?_
+    (F := fun u => ((RX Ex base bytes len xl args sp u ∧ (RoomF sp base bytes ∧ Region.Disjoint ⟨byteAddr (args 10), xl⟩ (below sp 176))) ∧
+      sv u.mem base len .wide 10 = (Spec.Ffdh.domainOf len D).g) ∧ Gate u (St = 2)) front_trace fun x A => ?_) ?_
   · refine WP.mono (front_ok A.run.1 A.geo A.x (by rw [A.run.2.2]; exact A.room) (by rw [A.run.2.2]; exact A.hb40) (by rw [A.run.2.2]; exact A.hx40))
-      fun u ⟨S, G, _⟩ => ⟨⟨⟨run_step A.run S, A.x.keep ⟨rfl, rfl⟩ S.keeps⟩, A.room, A.hx40⟩, G.congr ?_⟩
-    rw [← A.st, KeyGen.keyStatus_two, CheckPrivate.params, A.dom]
-  · exact gate_relCT (fun _ h => h.2) (aEnd (fun _ h => h.1.1.1.1) fail_check) (tail_trace fun _ h => h.1.1)
+      fun u ⟨S, G, _, V10, _⟩ => ⟨⟨⟨⟨run_step A.run S, A.x.keep ⟨rfl, rfl⟩ S.keeps⟩, A.room, A.hx40⟩, ?_⟩, G.congr ?_⟩
+    · rw [V10, comp_g x.mem args (dlen := dlen) (by have := A.geo.dl; omega_using [this])]
+      exact congrArg (fun d => (Spec.Ffdh.domainOf len d).g) A.dom
+    · rw [← A.st, KeyGen.keyStatus_two, CheckPrivate.params, A.dom]
+  · exact gate_relCT (fun _ h => h.2) (aEnd (fun _ h => h.1.1.1.1.1) fail_check)
+      (tail_trace (fun _ h => h.1.1.1) fun _ h => h.1.1.2)
 
 end
 
