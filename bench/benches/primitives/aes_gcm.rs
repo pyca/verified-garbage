@@ -52,7 +52,7 @@ pub fn bench(c: &mut Criterion) {
         for (name, nonce_len, aad_len) in [("tls", 12, 5), ("long-aad", 12, 17), ("iv8", 8, 5), ("iv16-aad33", 16, 33), ("no-aad", 12, 0)] {
             let n = &nonce[..nonce_len];
             let a = &aad[..aad_len];
-            let sizes: &[usize] = &[97,112,113,127,128,129,160,224];
+            let sizes: &[usize] = &[112,128,129,143,144,145,159,160,161,176,192,193,224];
             for identical in [false, true] {
                 let layout = if identical { "identical" } else { "disjoint" };
                 let mut group = c.benchmark_group(format!("paired-aes-{bits}-gcm-{name}-{layout}"));
