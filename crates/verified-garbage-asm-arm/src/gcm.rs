@@ -4229,20 +4229,20 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_gcm_seal_contiguous(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        r"sub sp, sp, #2624
+        r"sub sp, sp, #2592
 add r12, sp, #0
 str lr, [r12, #28]
-ldr lr, [sp, #2624]
+ldr lr, [sp, #2592]
 str lr, [r12, #0]
-ldr lr, [sp, #2628]
+ldr lr, [sp, #2596]
 str lr, [r12, #4]
-ldr lr, [sp, #2632]
+ldr lr, [sp, #2604]
 str lr, [r12, #8]
-ldr lr, [sp, #2636]
+ldr lr, [sp, #2608]
 str lr, [r12, #12]
-ldr lr, [sp, #2640]
+ldr lr, [sp, #2612]
 str lr, [r12, #16]
-ldr lr, [sp, #2644]
+ldr lr, [sp, #2600]
 str lr, [r12, #20]
 add lr, sp, #32
 str lr, [r12, #24]
@@ -4545,9 +4545,9 @@ ldr r12, [sp], #8
 b 234f
 233:
 234:
-ldr r4, [sp, #8]
-ldr r6, [sp, #12]
-ldr r5, [sp, #16]
+ldr r4, [sp, #20]
+ldr r5, [sp, #12]
+ldr r6, [sp, #8]
 cmp r5, #0
 beq 236f
 mov r3, r4
@@ -4606,13 +4606,6 @@ b 241f
 b 237f
 236:
 237:
-ldr r0, [sp, #12]
-ldr r1, [sp, #16]
-ldr r2, [sp, #20]
-add r12, sp, #0
-str r0, [r12, #8]
-str r1, [r12, #12]
-str r2, [r12, #16]
 ldr r4, [sp, #8]
 ldr r5, [sp, #12]
 mov r6, #0
@@ -4786,11 +4779,11 @@ ldr r9, [r11, #148]
 ldr r10, [r11, #152]
 ldr lr, [r11, #160]
 ldr r11, [r11, #156]
-add sp, sp, #2624
-sub sp, sp, #2672
+add sp, sp, #2592
+sub sp, sp, #2608
 add r12, sp, #0
 mov r2, #0
-mov r3, #83
+mov r3, #81
 260:
 str r2, [r12, #0]
 str r2, [r12, #4]
@@ -4807,7 +4800,7 @@ str r2, [r12, #0]
 str r2, [r12, #4]
 str r2, [r12, #8]
 str r2, [r12, #12]
-add sp, sp, #2672
+add sp, sp, #2608
 mov r0, #0
 mov r1, #0
 mov r2, #0
