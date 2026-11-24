@@ -80,12 +80,19 @@ def finishMasks (c : Callees) (enc : Fn) : Prog isa :=
   let args := regs .rbx ++ [.mov .r12 (.mem (at_ .r15 dataO)), .mov .rbp (.mem (at_ .r15 lenO))]
   .seq (.block args) (.seq (makeMasks enc) (.seq maskXor (maskAuth c)))
 
-def masksBody (c : Callees) (ctr enc : Fn) : Prog isa :=
-  .seq (oneAad c) (.seq (bulk (separate ctr c.gh)) (finishMasks c enc))
-
 def finishScalar (c : Callees) : Prog isa :=
  .seq (.block (regs .rbx ++ [.mov .r12 (.mem (at_ .r15 dataO)), .mov .rbp (.mem (at_ .r15 lenO))]))
   (.seq (cryptTailG c true) (oneTag c 0))
+
+/-- The branch depends only on the number of bytes left after the bulk loop. -/
+def maskChoice (f g : Prog isa) : Prog isa :=
+  .seq (.block [.mov .rax (.mem (at_ .r15 lenO)),.alu .test .rax (.reg .rax)]) (.ite .e f g)
+
+def maskFinish (c : Callees) (enc : Fn) (aligned : Bool) : Prog isa :=
+  if aligned then maskChoice (finishScalar c) (finishMasks c enc) else finishMasks c enc
+
+def masksBody (c : Callees) (ctr enc : Fn) (aligned : Bool) : Prog isa :=
+  .seq (oneAad c) (.seq (bulk (separate ctr c.gh)) (maskFinish c enc aligned))
 
 /-- The AES-NI/PCLMUL profile hashes the complete ciphertext once both the
 whole and partial blocks have reached their destination. -/
@@ -119,8 +126,8 @@ def one (c : Callees) (vec wide prepared : Bool) (kernel : Prog isa) : Prog isa 
   framed (body c vec wide prepared kernel)
 
 /-- A preallocated record sealed using the bitsliced two-mask completion. -/
-def preparedMasks (level : Impl.Scrub.X86_64.VecLevel) (c : Callees) (ctr : Fn) : Prog isa :=
-  Impl.Scrub.X86_64.scrubAll level 0 2640 (framed (masksBody c ctr maskAES))
+def preparedMasks (level : Impl.Scrub.X86_64.VecLevel) (c : Callees) (ctr : Fn) (aligned : Bool) : Prog isa :=
+  Impl.Scrub.X86_64.scrubAll level 0 2640 (framed (masksBody c ctr maskAES aligned))
 
 /-- One entry per CPU variant. The prepared flag selects whether the key
 already holds enough powers of the hash subkey. Buffer layout has no effect

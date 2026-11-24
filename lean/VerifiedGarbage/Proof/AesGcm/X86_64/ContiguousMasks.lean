@@ -530,19 +530,64 @@ theorem scalarMasks_ct (v : GcmImpl) {M : CtxMode} : FinishCT M (scalarMasks v) 
     (RelCT.seq (rel_next ((makeMasks_rel L).mono (fun _ _ ⟨l,r⟩ => ⟨⟨l.tag.env,l.tag.rounds⟩,r.tag.env,r.tag.rounds⟩) (fun _ _ h => h)) prep prep)
       (RelCT.seq (rel_next tailCT tailw tailw) (authMasks_rel v L dt)))
 
-theorem masksRecord_ok (v : GcmImpl) (ctr : Proof.Aes.X86_64.Ctr32ToImpl) {M : CtxMode} :
-    RecordOk M (Contiguous.masksBody v.callees ⟨ctr.callee.name,ctr.callee.code⟩ Contiguous.maskAES) := by
+private theorem maskChoice_step {s u : State} {Ctx W SP D : Addr} {n : Nat} (p : ObPost Ctx W SP D n s u) :
+    ∃ t, runBlock isa [.mov .rax (.mem (at_ .r15 lenO)),.alu .test .rax (.reg .rax)] u=some t ∧
+      t.zf=some (decide (n%16=0)) ∧ t.mem=u.mem ∧ ObPost Ctx W SP D n s t := by
+  have read := p.env.perm.wR (show 208+8≤2560 by decide)
+  have hr : n%16<16 := Nat.mod_lt _ (by decide)
+  obtain ⟨t,run,zf,g,m,rd,wr⟩ : ∃ t, runBlock isa [.mov .rax (.mem (at_ .r15 lenO)),.alu .test .rax (.reg .rax)] u=some t ∧
+      t.zf=some (decide (n%16=0)) ∧ (∀ r,r≠.rax → t.gpr r=u.gpr r) ∧ t.mem=u.mem ∧ t.rd=u.rd ∧ t.wr=u.wr := by
+    refine ⟨_,by xrun [p.env.r15,read,p.len],?_,?_,?_,?_,?_⟩
+    · simp only [zf_arithFlags]; exact congrArg some (and_self_beq (by omega_using [hr]))
+    · intro r hr;simp [gpr_setReg,hr]
+    all_goals rfl
+  exact ⟨t,run,zf,m,p.env.keep (fun r hr => g _ (by
+    simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
+    rcases hr with rfl|rfl|rfl|rfl <;> decide)) rd wr,rd.trans p.rd,wr.trans p.wr,m ▸ p.frame,m ▸ p.tlen,m ▸ p.dat,m ▸ p.len⟩
+
+private theorem choiceOk {M : CtxMode} {f g : Prog isa} (a : FinishOk M f) (b : FinishOk M g) : FinishOk M (Contiguous.maskChoice f g) := by
+  intro Ctx W SP S D R n al s u H icb bytes reg ob p bulk hH hcb hal habs read src apart dread dst dout dw
+  obtain ⟨t,run,zf,m,p'⟩ := maskChoice_step p
+  have bt : BlocksResult Ctx W R S D (n/16) s t := by simpa only [BlocksResult,m] using bulk
+  have fs := a reg ob p' bt hH hcb hal habs read (m ▸ src) apart dread (m ▸ dst) dout dw
+  have gs := b reg ob p' bt hH hcb hal habs read (m ▸ src) apart dread (m ▸ dst) dout dw
+  exact WP.seq (WP.of_runBlock ⟨t,run,WP.ite (decide (n%16=0)) (eval_e zf) (fun _ => fs) (fun _ => gs)⟩)
+
+private theorem choiceCT {M : CtxMode} {f g : Prog isa} (a : FinishCT M f) (b : FinishCT M g) : FinishCT M (Contiguous.maskChoice f g) := by
+  intro Ctx W SP S D R n al L hR dw
+  let P := AfterBulk M Ctx W SP S D R n al
+  let F (s : State) := s.zf=some (decide (n%16=0)) ∧ P s
+  have next (s) (h : P s) : WP isa (.block [.mov .rax (.mem (at_ .r15 lenO)),.alu .test .rax (.reg .rax)]) s F := by
+    obtain ⟨_,aa,p⟩ := h.origin
+    obtain ⟨t,run,zf,_,p'⟩ := maskChoice_step p
+    exact WP.of_runBlock ⟨t,run,zf,afterBulk_ok aa p'⟩
+  apply RelCT.seq (Short.rel_next (rel_env_regs [] (fun _ (h : P _) => h.scalar.tag.env) (fun _ (h : P _) => h.scalar.tag.env)
+    (fun _ _ _ _ _ h => by cases h) ⟨_,by taint_decide⟩) next next)
+  exact rel_ite_e (fun _ _ h => h.1.1.trans h.2.1.symm)
+    ((a L hR dw).mono (fun _ _ h => ⟨h.1.1.2,h.1.2.2⟩) (fun _ _ h => h))
+    ((b L hR dw).mono (fun _ _ h => ⟨h.1.1.2,h.1.2.2⟩) (fun _ _ h => h))
+
+theorem masksRecord_ok (facts : Short.ShortFacts) (aligned : Bool) (v : GcmImpl) (ctr : Proof.Aes.X86_64.Ctr32ToImpl) {M : CtxMode} :
+    RecordOk M (Contiguous.masksBody v.callees ⟨ctr.callee.name,ctr.callee.code⟩ Contiguous.maskAES aligned) := by
   intro o u Ctx W SP Np A S D nl al n C X geo wrap src dst E hp hl ha
   have bulk : BulkOk M (Contiguous.bulk (Contiguous.separate ⟨ctr.callee.name,ctr.callee.code⟩ v.callees.gh)) :=
     fun h ob a b c => separate_bulk_ok ctr v.gh h ob a b c
-  exact body_ok bulk (scalarMasks_ok v) C X geo wrap ha src dst (oneMid_ok v C E hp hl ha)
+  have fin : FinishOk M (Contiguous.maskFinish v.callees Contiguous.maskAES aligned) := by
+    cases aligned
+    · exact scalarMasks_ok v
+    · exact choiceOk (finish_plain facts v false false) (scalarMasks_ok v)
+  exact body_ok bulk fin C X geo wrap ha src dst (oneMid_ok v C E hp hl ha)
 
-theorem masksRecord_ct (v : GcmImpl) (ctr : Proof.Aes.X86_64.Ctr32ToImpl) {M : CtxMode} :
-    RecordCT M (Contiguous.masksBody v.callees ⟨ctr.callee.name,ctr.callee.code⟩ Contiguous.maskAES) := by
+theorem masksRecord_ct (facts : Short.ShortFacts) (aligned : Bool) (v : GcmImpl) (ctr : Proof.Aes.X86_64.Ctr32ToImpl) {M : CtxMode} :
+    RecordCT M (Contiguous.masksBody v.callees ⟨ctr.callee.name,ctr.callee.code⟩ Contiguous.maskAES aligned) := by
   intro o p Ctx W SP Np A S D nl al n R a b
   have bulk : BulkOk M (Contiguous.bulk (Contiguous.separate ⟨ctr.callee.name,ctr.callee.code⟩ v.callees.gh)) :=
     fun h ob a b c => separate_bulk_ok ctr v.gh h ob a b c
+  have fin : FinishCT M (Contiguous.maskFinish v.callees Contiguous.maskAES aligned) := by
+    cases aligned
+    · exact scalarMasks_ct v
+    · exact choiceCT (finishPlain_ct facts v false false) (scalarMasks_ct v)
   exact RelCT.seq (ordinaryAad_ct v a b) (run_ct bulk (separate_ct ctr v.gh) (separate_keeps ctr v.gh)
-    (scalarMasks_ct v) a.ctx.lay (a.rounds ▸ a.ctx.rounds) a.ctx.dE)
+    fin a.ctx.lay (a.rounds ▸ a.ctx.rounds) a.ctx.dE)
 
 end VG.Proof.AesGcm.X86_64.ContiguousSeal
