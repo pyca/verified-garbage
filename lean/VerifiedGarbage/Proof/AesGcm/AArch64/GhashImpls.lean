@@ -1751,7 +1751,7 @@ theorem storePowers_scrubbed :
 powers of the hash key it leaves in vector registers cleared. -/
 theorem storePowersAes_scrubbed :
     VerifiedScrubbed AArch64.target Impl.Gcm.AArch64.Fn.keyPowers (Spec.Gcm.storePowersContract AArch64.abi) 0 :=
-  ⟨Proof.Gcm.AArch64.Pmull.keyPowersCleared_verified, Proof.Gcm.AArch64.Pmull.keyPowersCleared_noResidue _⟩
+  ⟨Proof.Gcm.AArch64.Pmull.keyPowersCleared_verified, Proof.Gcm.AArch64.Pmull.keyPowersCleared_noResidue _, fun ty _ h => by cases ty <;> cases h⟩
 
 end VG.Proof.AesGcm.AArch64
 

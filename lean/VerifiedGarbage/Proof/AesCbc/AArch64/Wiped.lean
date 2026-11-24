@@ -327,7 +327,7 @@ theorem _root_.VG.Proof.AesCbc.AArch64.Decrypt.codeC_scrubbed :
     VerifiedScrubbed _root_.VG.AArch64.target Impl.AesCbc.AArch64.Fn.decrypt
       (Sig.contract AArch64.abi Spec.Cbc.aesSig (Proof.AesCbc.Wipe.pre 64)   (Proof.AesCbc.Wipe.scrubbedPost 64 (Proof.AesCbc.Wipe.decPost 64))) 0 :=
   ⟨Proof.AesCbc.AArch64.Wiped.decryptSha3C_scrubbed,
-    Proof.AesCbc.AArch64.Decrypt.codeC_noResidue _⟩
+    Proof.AesCbc.AArch64.Decrypt.codeC_noResidue _, fun ty _ h => by cases ty <;> cases h⟩
 
 /-- The function as its registration binds it: it meets its contract in constant time and returns
 without secret residue. -/
@@ -335,6 +335,6 @@ theorem _root_.VG.Proof.AesCbc.AArch64.Decrypt.codeAesC_scrubbed :
     VerifiedScrubbed _root_.VG.AArch64.target Impl.AesCbc.AArch64.Fn.decryptAes
       (Sig.contract AArch64.abi Spec.Cbc.aesSig (Proof.AesCbc.Wipe.pre 64)   (Proof.AesCbc.Wipe.scrubbedPost 64 (Proof.AesCbc.Wipe.decPost 64))) 0 :=
   ⟨Proof.AesCbc.AArch64.Wiped.decryptAesC_scrubbed,
-    Proof.AesCbc.AArch64.Decrypt.codeAesC_noResidue _⟩
+    Proof.AesCbc.AArch64.Decrypt.codeAesC_noResidue _, fun ty _ h => by cases ty <;> cases h⟩
 
 end VG.Proof.AesCbc.AArch64.Wiped
