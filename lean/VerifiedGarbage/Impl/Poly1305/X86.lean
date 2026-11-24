@@ -177,9 +177,10 @@ def selectTop : List Instr :=
 def reduce : List Instr :=
   plus5 ++ (List.range 4).flatMap selectWord ++ selectTop
 
-/-! ## Sixteen blocks or more: two lanes in radix `2²⁶`, with SSE2
+/-! ## Many blocks: two lanes in radix `2²⁶`, with SSE2
 
-From 16 blocks on (`pairs`), the blocks are absorbed two at a time in the
+From 8 blocks on in `blocks`, and 16 in `update` (`pairs`), the blocks are
+absorbed two at a time in the
 two 64-bit lanes of `xmm0`, …, `xmm4`, which hold five limbs of 26 bits (and
 a little more) of two numbers `A` (the low lanes) and `B`: with `h` the
 accumulator before blocks `m₁, m₂, …`, the lanes start as `A = h + m₁`,
@@ -489,7 +490,7 @@ def pairs : Prog isa := .frame (.alloc 512) pairsBody (.free 512)
 /-! ## `blocks(state, blocks, n)`
 
 `esi` walks the blocks; the loop ends where it reaches `blocks + 16 n`,
-recomputed from the arguments after each block. From 16 blocks on, the pairs
+recomputed from the arguments after each block. From 8 blocks on, the pairs
 of blocks are absorbed first (`pairs`), and the loop absorbs the block that
 may be left. -/
 
@@ -504,7 +505,7 @@ def body : Prog isa :=
 
 def blocks : Prog isa :=
   .seq (.block (setup ++ ([.mov .esi (.mem (at_ .esp 8)), .mov .ecx (.mem (at_ .esp 12)),
-    .alu .cmp .ecx (.imm 16)] : List Instr)))
+    .alu .cmp .ecx (.imm 8)] : List Instr)))
   (.seq (.ite .b (.block []) (.seq (.block [.shift .shr .ecx 1]) pairs))
   (.seq (.block atEnd)
   (.seq (.ite .e (.block []) (.loop body .ne))

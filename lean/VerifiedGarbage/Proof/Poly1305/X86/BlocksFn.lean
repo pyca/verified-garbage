@@ -20,7 +20,7 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 # Poly1305 on x86 (32-bit): `blocks`, the whole function
 
 `vg_poly1305_blocks`, from its prologue, the pairs of blocks it absorbs from
-16 blocks on (`Sse2.lean`), the step of its loop (`body_ok`) and its
+8 blocks on (`Sse2.lean`), the step of its loop (`body_ok`) and its
 epilogue (`Blocks.lean`): it is correct (`blocks_ok`) and constant time
 (`blocks_ct`), for the functions that call it (ChaCha20-Poly1305's).
 -/
@@ -33,14 +33,14 @@ open VG VG.X86 VG.Impl.Poly1305.X86
 open VG.Spec.Poly1305 (P clamp leNum bytesAt accumulate Repr)
 
 theorem blocks_eq : blocks = .seq (.block (setup ++ ([.mov .esi (.mem (at_ .esp 8)),
-    .mov .ecx (.mem (at_ .esp 12)), .alu .cmp .ecx (.imm 16)] : List Instr)))
+    .mov .ecx (.mem (at_ .esp 12)), .alu .cmp .ecx (.imm 8)] : List Instr)))
     (.seq (.ite .b (.block []) (.seq (.block [.shift .shr .ecx 1]) pairs))
       (.seq (.block atEnd) (.seq (.ite .e (.block []) (.loop body .ne)) (.block (reduce ++ restore))))) := rfl
 
 theorem prologue_ok {s₀ : State} (hp : BPre s₀) :
     WP isa (.block (setup ++ ([.mov .esi (.mem (at_ .esp 8)), .mov .ecx (.mem (at_ .esp 12)),
-      .alu .cmp .ecx (.imm 16)] : List Instr))) s₀ fun s => ∃ F, SetupF s₀ F ∧
-        BInv s₀ F 0 s ∧ s.gpr .ecx = arg s₀ 2 ∧ s.cf = some (decide (nb s₀ < 16)) := by
+      .alu .cmp .ecx (.imm 8)] : List Instr))) s₀ fun s => ∃ F, SetupF s₀ F ∧
+        BInv s₀ F 0 s ∧ s.gpr .ecx = arg s₀ 2 ∧ s.cf = some (decide (nb s₀ < 8)) := by
   have hfit := hp.st_fit
   refine WP.block_append (WP.mono (setup_ok (arg0_eq s₀) (hp.argIn (i := 0) (by decide)) hfit
     (by rw [hp.wr]; exact List.mem_singleton_self _)) fun s₁ ⟨F, A₁, c₁, hF, sv, co⟩ => ?_)
@@ -89,7 +89,7 @@ private theorem BPre.stk_eq {s₀ : State} (hp : BPre s₀) : below (s₀.gpr .e
 
 /-- The number of pairs into `ecx`: what `pairs` starts from. -/
 private theorem blockPairsArg_ok {s₀ : State} (hp : BPre s₀) {F : Nat → Nat} {s : State} (h : BInv s₀ F 0 s)
-    (hecx : s.gpr .ecx = arg s₀ 2) (h16 : 16 ≤ nb s₀) :
+    (hecx : s.gpr .ecx = arg s₀ 2) (h16 : 8 ≤ nb s₀) :
     WP isa (.block [.shift .shr .ecx 1]) s fun s₂ =>
       BInv s₀ F 0 s₂ ∧ Sse2.PPre (stp s₀) (bp s₀) (nb s₀ / 2) s₂ := by
   have hbf := hp.bl_fit
@@ -148,13 +148,15 @@ private theorem blockPairsRun_ok {s₀ : State} (hp : BPre s₀) {F : Nat → Na
   show _ = Poly1305.absorbAll (Rn s₀) (A0 s₀) (bytesAt s₀.mem ((bp s₀).setWidth 64) (16 * (2 * p))) % P
   rw [show 16 * (2 * p) = 32 * p by omega_using []]
 
-/-- From 16 blocks on, the pairs of blocks. -/
+/-- From 8 blocks on, the pairs of blocks. -/
 theorem blockPairs_ok {s₀ : State} (hp : BPre s₀) {F : Nat → Nat} (hF : SetupF s₀ F) {s : State}
-    (hL : BInv s₀ F 0 s) (hcx : s.gpr .ecx = arg s₀ 2) (hcf : s.cf = some (decide (nb s₀ < 16))) :
+    (hL : BInv s₀ F 0 s) (hcx : s.gpr .ecx = arg s₀ 2) (hcf : s.cf = some (decide (nb s₀ < 8))) :
     WP isa (.ite .b (.block []) (.seq (.block [.shift .shr .ecx 1]) pairs)) s fun s' =>
       ∃ i, i ≤ nb s₀ ∧ nb s₀ - i < 16 ∧ BInv s₀ F i s' := by
-  refine WP.ite (decide (nb s₀ < 16)) (by simp only [eval, hcf])
-    (fun hb => WP.block_nil ⟨0, Nat.zero_le _, by simpa using hb, hL⟩) (fun hb => ?_)
+  refine WP.ite (decide (nb s₀ < 8)) (by simp only [eval, hcf])
+    (fun hb => WP.block_nil ⟨0, Nat.zero_le _, by
+      have h8 : nb s₀ < 8 := by simpa using hb
+      omega_using [h8], hL⟩) (fun hb => ?_)
   simp only [decide_eq_false_iff_not, Nat.not_lt] at hb
   exact WP.seq (WP.mono (blockPairsArg_ok hp hL hcx hb) fun s₂ ⟨hI₂, hP₂⟩ =>
     WP.mono (blockPairsRun_ok hp hF hI₂ hP₂ (by omega_using [])) fun s' h' =>
@@ -306,10 +308,10 @@ private theorem blocks_rel {a b : State} (ha : BPre a) (hb : BPre b) (hesp : a.g
   refine rel_then (R := VG.X86.Taint.Agree (blocksτ [.esi, .edi] false)) ?_
     fun x₃ y₃ A₃ => rel_checkT A₃ tEnd
   -- The pairs, taken by both runs or by neither.
-  refine rel_iteR (b := decide (nb a < 16)) cf₁ cf₂ (fun _ => RelCT.nil fun u v huv => by
+  refine rel_iteR (b := decide (nb a < 8)) cf₁ cf₂ (fun _ => RelCT.nil fun u v huv => by
     obtain ⟨rfl, rfl⟩ := huv
     exact VG.X86.taint.le_sound (τ := blocksτ [.esi, .edi] false) (by decide) A₁) fun hbq => ?_
-  have h16 : 16 ≤ nb a := by simpa using hbq
+  have h16 : 8 ≤ nb a := by simpa using hbq
   refine rel_seqR (rel_taint [] (fun _ h => absurd h List.not_mem_nil) ⟨_, by taint_decide⟩)
     (blockPairsArg_ok ha I₁ cx₁ h16) (blockPairsArg_ok hb I₂ cx₂ (by rw [enb]; exact h16))
     fun x₄ y₄ _ ⟨D₁, P₁⟩ ⟨D₂, P₂⟩ => ?_

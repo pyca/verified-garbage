@@ -37,7 +37,7 @@ vg_poly1305_blocks:
 	mov DWORD PTR [edi+96], eax
 	mov esi, DWORD PTR [esp+8]
 	mov ecx, DWORD PTR [esp+12]
-	cmp ecx, 16
+	cmp ecx, 8
 	jb 20f
 	shr ecx, 1
 	lea esp, [esp-512]
