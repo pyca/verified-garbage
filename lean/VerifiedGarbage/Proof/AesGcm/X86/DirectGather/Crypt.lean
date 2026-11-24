@@ -19,20 +19,22 @@ open VG.Spec.Gcm (Block blockAt)
 open VG.Spec.Aes (bytesAt)
 open VG.Proof.Gcm (xorKs)
 
-structure KeyStreamPost (C St W SP : BitVec 32) (ciph : Block → Block) (icb : Block) (off k : Nat)
+variable {N : Nat}
+
+structure KeyStreamPost (N : Nat) (C St W SP : BitVec 32) (ciph : Block → Block) (icb : Block) (off k : Nat)
     (s t : State) : Prop where
-  env : Env C St W SP t
+  env : Env N C St W SP t
   rd : t.rd = s.rd
   wr : t.wr = s.wr
-  frame : Frame (ksFrame St W SP) s.mem t.mem
+  frame : Frame (ksFrame N St W SP) s.mem t.mem
   ctr : CtrS t.mem St ciph icb (off+k)
   xor : ∀ d : List Byte, d.length = k → List.zipWith (· ^^^ ·) d (bytesAt t.mem (w64 St+64#64) k) = xorKs ciph icb off d
 
-theorem keyStream_ok (v : GcmImpl) {C St W SP : BitVec 32} {s : State} {R off k : Nat}
-    {ciph : Block → Block} {icb : Block} (L : Lay C St W SP 32) (E : Env C St W SP s)
+theorem keyStream_ok (v : GcmImpl) [WSize N v.ctr.scr] {C St W SP : BitVec 32} {s : State} {R off k : Nat}
+    {ciph : Block → Block} {icb : Block} (L : Lay N C St W SP 32) (E : Env N C St W SP s)
     (r : RoundsAt s.mem W R) (cipher : ciphOf s.mem C R = ciph) (ctr : CtrS s.mem St ciph icb off)
     (aligned : off%16 = 0) (hk : k < 16) (nz : k ≠ 0) :
-    WP isa (.seq (.block ksArgs) (.seq (ctrCall v.callees) (.block unscr))) s (KeyStreamPost C St W SP ciph icb off k s) := by
+    WP isa (.seq (.block ksArgs) (.seq (ctrCall v.callees) (.block unscr))) s (KeyStreamPost N C St W SP ciph icb off k s) := by
   refine WP.seq (WP.mono (ksReady L rfl E r) ?_)
   rintro u ⟨m,ready,rd,wr⟩
   refine WP.mono (ctrW_ok (vg:=v) L rfl ready) ?_
@@ -58,7 +60,7 @@ theorem keyStream_ok (v : GcmImpl) {C St W SP : BitVec 32} {s : State} {R off k 
     simpa only [hd] using (key d hd).1
 
 theorem tailCursors_ok {C St W SP D T : BitVec 32} {s : State} {n : Nat}
-    (L : Lay C St W SP 32) (E : Env C St W SP s)
+    (L : Lay N C St W SP 32) (E : Env N C St W SP s)
     (src : slotv s.mem W dataO = D) (len : slotv s.mem W lenO = BitVec.ofNat 32 n)
     (arg : s.mem.readW (w64 SP) 32 = T) (ar : InRegions (s.rd++s.wr) (w64 SP) 4) (hlt : n < 2^32) :
     WP isa (.block Open.tailRegs) s fun t =>
@@ -75,8 +77,8 @@ theorem tailCursors_ok {C St W SP D T : BitVec 32} {s : State} {n : Nat}
 abbrev tailPtr (D : BitVec 32) (n : Nat) := D+BitVec.ofNat 32 (16*(n/16))
 
 theorem xorTail_ok {C St W SP D T : BitVec 32} {s : State} {n : Nat}
-    (L : Lay C St W SP 32) (st : St = W+16#32) (E : Env C St W SP s)
-    (P : PieceRegions C W SP D T n) (A : PieceAccess s SP D T n)
+    (L : Lay N C St W SP 32) (st : St = W+16#32) (E : Env N C St W SP s)
+    (P : PieceRegions N C W SP D T n) (A : PieceAccess s SP D T n)
     (src : slotv s.mem W dataO = D) (len : slotv s.mem W lenO = BitVec.ofNat 32 n)
     (hlt : n < 2^32) (nz : n%16 ≠ 0) :
     WP isa (.seq (.block Open.tailRegs) (.seq (xorLoopG true) (.block [.mov .esi (.reg .ebp),.alu .add .esi (imm stO)])))
@@ -92,7 +94,7 @@ theorem xorTail_ok {C St W SP D T : BitVec 32} {s : State} {n : Nat}
   have key := L.aS (o:=64) (by decide)
   have ds : Region.Sub ⟨w64 (tailPtr D n),n%16⟩ ⟨w64 D,n⟩ := by rw [d]; exact Offset.sub_base _ (by omega_using [])
   have ts : Region.Sub ⟨w64 (tailPtr T n),n%16⟩ ⟨w64 T,n⟩ := by rw [t]; exact Offset.sub_base _ (by omega_using [])
-  have ks : Region.Sub ⟨w64 (St+64#32),n%16⟩ ⟨w64 W,2560⟩ := by
+  have ks : Region.Sub ⟨w64 (St+64#32),n%16⟩ ⟨w64 W,N⟩ := by
     rw [st,BitVec.add_assoc]
     change Region.Sub ⟨w64 (W+80#32),_⟩ _
     rw [L.aW (by decide)]; exact Lay.wSub (by omega_using [])
@@ -127,38 +129,40 @@ open VG.Spec.Aes (bytesAt)
 open VG.Spec.Gcm (Block)
 open VG.Proof.Gcm (xorKs)
 
+variable {N : Nat}
+
 section
-variable {C St W SP D T : BitVec 32} {R n : Nat} (L : Lay C St W SP 32) (st : St = W+16#32)
-  (P : PieceRegions C W SP D T n)
+variable {C St W SP D T : BitVec 32} {R n : Nat} (L : Lay N C St W SP 32) (st : St = W+16#32)
+  (P : PieceRegions N C W SP D T n)
 
 include L st P
 
 omit P in
-theorem stSub : Region.Sub ⟨w64 St,80⟩ ⟨w64 W,2560⟩ := by
+theorem stSub : Region.Sub ⟨w64 St,80⟩ ⟨w64 W,N⟩ := by
   rw [st,L.aW (by decide)]; exact Lay.wSub (by decide)
 
-theorem PieceAccess.dataW {s : State} (A : PieceAccess s SP D T n) : DataW C St W SP 32 s T n :=
+theorem PieceAccess.dataW {s : State} (A : PieceAccess s SP D T n) : DataW N C St W SP 32 s T n :=
   ⟨⟨covers_left A.wr,P.fT,P.dstWork.sub_right (stSub L st),P.dstWork,P.stackDst⟩,A.wr,P.dstCtx⟩
 
 omit st P in
-theorem whole_crFrame {m m' : Mem} (f : Frame (wholeFrame St W SP T (n/16)) m m') :
-    Frame (crFrame St W SP 32 T n) m m' := by
+theorem whole_crFrame {m m' : Mem} (f : Frame (wholeFrame N St W SP T (n/16)) m m') :
+    Frame (crFrame N St W SP 32 T n) m m' := by
   refine f.sub ?_
   intro x hx
   simp only [List.mem_cons,List.not_mem_nil,or_false] at hx
   rcases hx with rfl | rfl | rfl | rfl
   · exact ⟨⟨w64 St+48#64,32⟩,by simp [crFrame],by rw [L.aS (by decide)]; exact Region.sub_prefix (by decide)⟩
   · exact ⟨_,List.mem_cons_self ..,Region.sub_prefix (Nat.mul_div_le _ _)⟩
-  · exact ⟨wsR W,by simp [crFrame],by rw [L.aW (by decide)]; exact Offset.sub _ (by decide) (by decide)⟩
+  · exact ⟨wsR N W,by simp [crFrame],by rw [L.aW (by decide)]; exact Lay.hi_ws⟩
   · exact ⟨below SP 32,by simp [crFrame],L.below_sub (by decide)⟩
 
 theorem keptSlot {s : State} (A : PieceAccess s SP D T n) {m u : Mem}
-    (f : Frame (crFrame St W SP 32 T n) m u) {d : Nat} (lo : 128 ≤ d) (hi : d+4 ≤ 240) :
+    (f : Frame (crFrame N St W SP 32 T n) m u) {d : Nat} (lo : 128 ≤ d) (hi : d+4 ≤ 240) :
     slotv u W d = slotv m W d :=
   slot_frame f (fun r hr => (kept_crFrame L (A.dataW L st P) r hr).sub_left (Offset.sub _ lo (by omega_using [hi])))
 
 theorem afterAccess {s t : State} (A : PieceAccess s SP D T n) (rd : t.rd = s.rd) (wr : t.wr = s.wr)
-    (f : Frame (crFrame St W SP 32 T n) s.mem t.mem) :
+    (f : Frame (crFrame N St W SP 32 T n) s.mem t.mem) :
     PieceAccess t SP D T n := by
   refine ⟨?_,by rw [rd,wr]; exact A.argR,by rw [rd,wr]; exact A.rd,by rw [wr]; exact A.wr⟩
   refine Eq.trans (f.readW (r:=⟨w64 SP,4⟩) (Region.contains_self _ _) ?_ (by decide)) A.dstArg
@@ -167,10 +171,10 @@ theorem afterAccess {s t : State} (A : PieceAccess s SP D T n) (rd : t.rd = s.rd
   rcases hr with rfl | rfl | rfl | rfl
   · exact P.argDst
   · exact P.argWork.sub_right (fun _ h => stSub L st _ (Lay.stSub (by decide) _ h))
-  · exact P.argWork.sub_right (Lay.wSub (by decide))
+  · exact P.argWork.sub_right (Lay.wsSub)
   · exact ret_below L.sp
 
-theorem srcFrame {m u : Mem} (f : Frame (crFrame St W SP 32 T n) m u) :
+theorem srcFrame {m u : Mem} (f : Frame (crFrame N St W SP 32 T n) m u) :
     bytesAt u (w64 D) n = bytesAt m (w64 D) n := by
   refine bytesAt_frame f ?_ (by have hn := P.fD; omega_using [hn])
   intro r hr
@@ -178,24 +182,24 @@ theorem srcFrame {m u : Mem} (f : Frame (crFrame St W SP 32 T n) m u) :
   rcases hr with rfl | rfl | rfl | rfl
   · exact P.srcDst
   · exact P.srcWork.sub_right (fun _ h => stSub L st _ (Lay.stSub (by decide) _ h))
-  · exact P.srcWork.sub_right (Lay.wSub (by decide))
+  · exact P.srcWork.sub_right (Lay.wsSub)
   · exact P.stackSrc.symm
 
-structure PiecePost (s : State) (C St W SP D T : BitVec 32) (ciph : Block → Block) (icb : Block)
+structure PiecePost (N : Nat) (s : State) (C St W SP D T : BitVec 32) (ciph : Block → Block) (icb : Block)
     (off n : Nat) (t : State) : Prop where
-  env : Env C St W SP t
+  env : Env N C St W SP t
   rd : t.rd = s.rd
   wr : t.wr = s.wr
-  frame : Frame (crFrame St W SP 32 T n) s.mem t.mem
+  frame : Frame (crFrame N St W SP 32 T n) s.mem t.mem
   ctr : CtrS t.mem St ciph icb (off+n)
   out : bytesAt t.mem (w64 T) n = xorKs ciph icb off (bytesAt s.mem (w64 D) n)
 
 theorem tailResult {s u z : State} {off : Nat} {ciph : Block → Block} {icb : Block}
-    (A : PieceAccess s SP D T n) (h : WholePost s St W SP D T ciph icb off (n/16) u)
-    (v : State) (k : KeyStreamPost C St W SP ciph icb (off+16*(n/16)) (n%16) u v)
+    (A : PieceAccess s SP D T n) (h : WholePost N s St W SP D T ciph icb off (n/16) u)
+    (v : State) (k : KeyStreamPost N C St W SP ciph icb (off+16*(n/16)) (n%16) u v)
     (m : z.mem = WriteBytes.writeBytes v.mem (w64 (tailPtr T n)) (xorBytes v.mem (w64 (tailPtr D n)) (w64 (St+64#32)) (n%16)))
     (bp : z.gpr .ebp = W) (si : z.gpr .esi = St) (sp : z.gpr .esp = SP)
-    (rd : z.rd = v.rd) (wr : z.wr = v.wr) (nz : n%16 ≠ 0) : PiecePost s C St W SP D T ciph icb off n z := by
+    (rd : z.rd = v.rd) (wr : z.wr = v.wr) (nz : n%16 ≠ 0) : PiecePost N s C St W SP D T ciph icb off n z := by
   have hn := P.fD
   have ht := P.fT
   have n64 : n < 2^64 := by omega_using [hn]
@@ -207,7 +211,7 @@ theorem tailResult {s u z : State} {off : Nat} {ciph : Block → Block} {icb : B
   have xt : Frame [⟨w64 T+BitVec.ofNat 64 (16*(n/16)),n%16⟩] v.mem z.mem := by
     rw [m,←ts]; exact writeBytes_frame' _ xlen
   have before := (whole_crFrame L h.frame).trans (ksFrame_crFrame L rfl k.frame (D:=T) (n:=n))
-  have wf := part_crFrame (St:=St) (W:=W) (SP:=SP) (K:=32) (n:=n) (by omega_using []) xt
+  have wf := part_crFrame (N:=N) (St:=St) (W:=W) (SP:=SP) (K:=32) (n:=n) (by omega_using []) xt
   have dataW := A.dataW L st P
   have outPre : bytesAt z.mem (w64 T) (16*(n/16)) = bytesAt u.mem (w64 T) (16*(n/16)) := by
     rw [bytesAt_frame xt (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact split_disj (by omega_using [n64])) (by omega_using [n64])]
@@ -237,9 +241,9 @@ theorem tailResult {s u z : State} {off : Nat} {ciph : Block → Block} {icb : B
     rw [Proof.Gcm.xorKs_append,length_bytesAt,outPre,h.out,tail]
 
 omit st P in
-theorem tailTest {u : State} (env : Env C St W SP u) (len : slotv u.mem W lenO = BitVec.ofNat 32 n)
+theorem tailTest {u : State} (env : Env N C St W SP u) (len : slotv u.mem W lenO = BitVec.ofNat 32 n)
     (hlt : n < 2^32) : WP isa (.block Open.tailLen) u fun y =>
-    y.zf = some (decide (n%16=0)) ∧ Env C St W SP y ∧ y.mem = u.mem ∧ y.rd = u.rd ∧ y.wr = u.wr := by
+    y.zf = some (decide (n%16=0)) ∧ Env N C St W SP y ∧ y.mem = u.mem ∧ y.rd = u.rd ∧ y.wr = u.wr := by
   have mask := and15 (BitVec.ofNat 32 n)
   rw [toNat_ofNat32 hlt] at mask
   refine WP.of_runBlock ⟨_,by xrun [Open.tailLen,env.ebp,L.aW,env.wIn',len],?_⟩
@@ -247,11 +251,11 @@ theorem tailTest {u : State} (env : Env C St W SP u) (len : slotv u.mem W lenO =
   change some ((_ &&& _) == 0) = _
   rw [mask,and_self_beq32 (by omega_using [])]
 
-theorem decTo_ok (v : GcmImpl) {s : State} {off : Nat} {ciph : Block → Block} {icb : Block}
-    (E : Env C St W SP s) (A : PieceAccess s SP D T n) (r : RoundsAt s.mem W R)
+theorem decTo_ok (v : GcmImpl) [WSize N v.ctr.scr] {s : State} {off : Nat} {ciph : Block → Block} {icb : Block}
+    (E : Env N C St W SP s) (A : PieceAccess s SP D T n) (r : RoundsAt s.mem W R)
     (src : slotv s.mem W dataO = D) (len : slotv s.mem W lenO = BitVec.ofNat 32 n) (hlt : n < 2^32)
     (aligned : n ≠ 0 → off%16 = 0) (cipher : ciphOf s.mem C R = ciph) (ctr : CtrS s.mem St ciph icb off) :
-    WP isa (Open.decTo v.callees v.callees.ctr) s (PiecePost s C St W SP D T ciph icb off n) := by
+    WP isa (Open.decTo v.callees v.callees.ctr) s (PiecePost N s C St W SP D T ciph icb off n) := by
   have dataW := A.dataW L st P
   refine WP.seq (WP.mono (wholeTo_ok v L st E P A r src len hlt (fun h => aligned (by omega_using [h])) cipher ctr) ?_)
   intro u h
@@ -273,7 +277,7 @@ theorem decTo_ok (v : GcmImpl) {s : State} {off : Nat} {ciph : Block → Block} 
     refine WP.seq (WP.mono (keyStream_ok v L ey rounds cipher' ct (by have a := aligned (by omega_using [hk]); omega_using [a])
       (k:=n%16) (by omega_using []) hk) ?_)
     intro z k₁
-    have k : KeyStreamPost C St W SP ciph icb (off+16*(n/16)) (n%16) u z :=
+    have k : KeyStreamPost N C St W SP ciph icb (off+16*(n/16)) (n%16) u z :=
       ⟨k₁.env,k₁.rd.trans rd,k₁.wr.trans wr,by rw [←m]; exact k₁.frame,k₁.ctr,k₁.xor⟩
     have sf := f.trans (ksFrame_crFrame L rfl k.frame (D:=T) (n:=n))
     have access := afterAccess L st P A (k.rd.trans h.rd) (k.wr.trans h.wr) sf
@@ -285,7 +289,7 @@ theorem decTo_ok (v : GcmImpl) {s : State} {off : Nat} {ciph : Block → Block} 
 omit P st in
 /-- The empty remainder can contain a wrapped one-past-end input or output
 pointer on IA-32. Its value is never used as a memory address. -/
-theorem decTo_empty (v : GcmImpl) {s : State} (e : Env C St W SP s) (len : slotv s.mem W lenO = 0) :
+theorem decTo_empty (v : GcmImpl) {s : State} (e : Env N C St W SP s) (len : slotv s.mem W lenO = 0) :
     WP isa (Open.decTo v.callees v.callees.ctr) s fun t =>
       t.mem = s.mem ∧ t.gpr .ebp = W ∧ t.gpr .esi = St ∧ t.gpr .esp = SP ∧ t.rd = s.rd ∧ t.wr = s.wr := by
   refine WP.seq (WP.seq (WP.of_runBlock ⟨_,by xrun [e.ebp,L.aW,e.wIn',len],?_⟩))

@@ -139,7 +139,7 @@ theorem absorbTail_ct (v : Ctr32Impl) {K W SP : BitVec 32} (L : Lay K W SP) {R :
     (fun s₂ ⟨s₁, ⟨s, hs, hm₁, _, _, _, hrd₁, hwr₁⟩, hm₂, hdi, hdx, hcx, hbp₂, hsp₂, hrd₂, hwr₂⟩ => ?_)
     (updBlock_ct v L hR hy fun _ h => h)
   have hB := hs.buf (by omega_using [h0])
-  have he : WEnv W s₂ := ⟨hbp₂, by rw [hwr₂, hwr₁]; exact hs.env.perm.w, L.fw⟩
+  have he : WEnv 2560 W s₂ := ⟨hbp₂, by rw [hwr₂, hwr₁]; exact hs.env.perm.w, L.fw, by decide⟩
   refine WP.mono (padLoop_ok (S := Q) (d := 32) (t := t) (m := s₁.mem) he hm₂ hdi hdx hcx (by omega_using [h0])
     (by omega_using [ht]) (by rw [hrd₂, hwr₂, hrd₁, hwr₁]; exact hB.rd) hB.wrap (hB.w.sub_right (Lay.wSub (by decide)))
     (by decide)) fun s₃ ⟨_, f₃, g₃, rd₃, wr₃⟩ => ?_

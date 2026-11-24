@@ -15,20 +15,22 @@ open VG.Proof.Gcm (xorKs)
 open VG.Spec.Gcm (Block)
 open VG.Spec.Aes (bytesAt)
 
+variable {N : Nat}
+
 namespace TextInput
-variable {a : Text} {s : State} (p : TextInput a s)
+variable {a : Text} {s : State} (p : TextInput N a s)
 include p
 
 theorem frameSlot {o n : Nat} (od : n ≤ a.len) (lo : 128 ≤ o) (hi : o+4 ≤ 240)
     (d160 : o+4 ≤ 160 ∨ 164 ≤ o) (d168 : o+4 ≤ 168 ∨ 176 ≤ o)
     (d180 : o+4 ≤ 180 ∨ 184 ≤ o) (d196 : o+4 ≤ 196 ∨ 200 ≤ o) :
-    ∀ r ∈ a.frame n, (⟨w64 a.W+BitVec.ofNat 64 o,4⟩ : Region).Disjoint r := by
+    ∀ r ∈ a.frame N n, (⟨w64 a.W+BitVec.ofNat 64 o,4⟩ : Region).Disjoint r := by
   intro r hr
   simp only [Text.frame,crFrame,List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at hr
   rcases hr with (rfl | rfl | rfl | rfl) | rfl | rfl | rfl | rfl | rfl
   · exact ((p.dstOutside.w.sub_left (Region.sub_prefix od)).sub_right (Lay.wSub (by omega_using [hi]))).symm
   · exact (p.lay.st_w (by decide) (.inr ⟨by omega_using [lo],by omega_using [hi]⟩)).symm
-  · exact Lay.w_w (.inl hi) (by omega_using [hi]) (by decide)
+  · exact Lay.w_ws hi
   · exact (p.lay.stk_w (by omega_using [hi])).symm
   · exact (p.argW.sub_right (Lay.wSub (by omega_using [hi]))).symm
   · exact Lay.w_w d160 (by omega_using [hi]) (by decide)
@@ -36,7 +38,7 @@ theorem frameSlot {o n : Nat} (od : n ≤ a.len) (lo : 128 ≤ o) (hi : o+4 ≤ 
   · exact Lay.w_w d180 (by omega_using [hi]) (by decide)
   · exact Lay.w_w d196 (by omega_using [hi]) (by decide)
 
-theorem setupSlot {o : Nat} (lt : o+4 ≤ 2560)
+theorem setupSlot {o : Nat} (lt : o+4 ≤ 768)
     (d160 : o+4 ≤ 160 ∨ 164 ≤ o) (d168 : o+4 ≤ 168 ∨ 176 ≤ o)
     (d196 : o+4 ≤ 196 ∨ 200 ≤ o) (d276 : o+4 ≤ 276 ∨ 284 ≤ o) :
     ∀ r ∈ setupFrame a.W a.SP, (⟨w64 a.W+BitVec.ofNat 64 o,4⟩ : Region).Disjoint r := by
@@ -51,7 +53,7 @@ theorem setupSlot {o : Nat} (lt : o+4 ≤ 2560)
 
 theorem pieceSlot {o i : Nat} (hi : i<a.count) (pos : a.size s.mem i ≠ 0)
     (lo : 128 ≤ o) (fit : o+4 ≤ 240) (sep : o+4 ≤ 168 ∨ 176 ≤ o) :
-    ∀ r ∈ pieceFrame a.st a.W a.SP (atByte a.O (a.off s.mem i)) (a.size s.mem i),
+    ∀ r ∈ pieceFrame N a.st a.W a.SP (atByte a.O (a.off s.mem i)) (a.size s.mem i),
       (⟨w64 a.W+BitVec.ofNat 64 o,4⟩ : Region).Disjoint r := by
   intro r hr
   rcases List.mem_append.mp hr with h | h
@@ -59,7 +61,7 @@ theorem pieceSlot {o i : Nat} (hi : i<a.count) (pos : a.size s.mem i ≠ 0)
     rcases h with rfl | rfl | rfl | rfl
     · exact ((p.input i hi pos).dstWork.sub_right (Lay.wSub (by omega_using [fit]))).symm
     · exact (p.lay.st_w (by decide) (.inr ⟨by omega_using [lo],by omega_using [fit]⟩)).symm
-    · exact Lay.w_w (.inl fit) (by omega_using [fit]) (by decide)
+    · exact Lay.w_ws fit
     · exact (p.lay.stk_w (by omega_using [fit])).symm
   · simp only [List.mem_cons,List.not_mem_nil,or_false] at h
     rcases h with rfl | rfl
@@ -67,8 +69,8 @@ theorem pieceSlot {o i : Nat} (hi : i<a.count) (pos : a.size s.mem i ≠ 0)
     · exact (p.argW.sub_right (Lay.wSub (by omega_using [fit]))).symm
 
 theorem pieceSub {i : Nat} (hi : i<a.count) (pos : a.size s.mem i ≠ 0) {m u : Mem}
-    (f : Frame (pieceFrame a.st a.W a.SP (atByte a.O (a.off s.mem i)) (a.size s.mem i)) m u) :
-    Frame (a.frame (a.off s.mem (i+1))) m u := by
+    (f : Frame (pieceFrame N a.st a.W a.SP (atByte a.O (a.off s.mem i)) (a.size s.mem i)) m u) :
+    Frame (a.frame N (a.off s.mem (i+1))) m u := by
   refine f.sub ?_
   intro r hr
   have span := p.span hi
@@ -82,7 +84,7 @@ theorem pieceSub {i : Nat} (hi : i<a.count) (pos : a.size s.mem i ≠ 0) {m u : 
     exact Offset.sub_base _ (Nat.le_refl _)
   all_goals exact ⟨_,by simp [Text.frame,crFrame],fun _ h => h⟩
 
-theorem outsideCtx : a.Outside ⟨w64 a.C,256⟩ := ⟨p.lay.cw,p.argCtx,p.lay.kc.symm⟩
+theorem outsideCtx : Text.Outside N a ⟨w64 a.C,256⟩ := ⟨p.lay.cw,p.argCtx,p.lay.kc.symm⟩
 
 theorem setupCtr {d : Nat} (hd : d+16 ≤ 80) : ∀ r ∈ setupFrame a.W a.SP,
     (⟨w64 a.st+BitVec.ofNat 64 d,16⟩ : Region).Disjoint r := by
@@ -93,20 +95,20 @@ theorem setupCtr {d : Nat} (hd : d+16 ≤ 80) : ∀ r ∈ setupFrame a.W a.SP,
     exact (p.argW.sub_right (fun _ q => stSub p.lay rfl _ (Lay.stSub hd _ q))).symm
   all_goals exact p.lay.st_w hd (.inr ⟨by decide,by decide⟩)
 
-structure Loaded (a : Text) (s : State) (icb : Block) (i : Nat) (y : State) : Prop where
-  args : PieceArgs a.C a.st a.W a.SP (a.source s.mem i) (atByte a.O (a.off s.mem i)) y (a.size s.mem i) (a.off s.mem i)
+structure Loaded (N : Nat) (a : Text) (s : State) (icb : Block) (i : Nat) (y : State) : Prop where
+  args : PieceArgs N a.C a.st a.W a.SP (a.source s.mem i) (atByte a.O (a.off s.mem i)) y (a.size s.mem i) (a.off s.mem i)
   rd : y.rd=s.rd
   wr : y.wr=s.wr
   ptr : slotv y.mem a.W rO = a.desc (i+1)
   count : slotv y.mem a.W tglO = BitVec.ofNat 32 (a.count-i)
   off : slotv y.mem a.W xlO = BitVec.ofNat 32 (a.off s.mem (i+1))
   dest : y.mem.readW (w64 a.SP) 32 = atByte a.O (a.off s.mem i)
-  frame : Frame (a.frame (a.off s.mem i)) s.mem y.mem
+  frame : Frame (a.frame N (a.off s.mem i)) s.mem y.mem
   ctr : CtrS y.mem a.st (ciphOf s.mem a.C a.rounds) icb (a.off s.mem i)
   out : bytesAt y.mem (w64 a.O) (a.off s.mem i) = xorKs (ciphOf s.mem a.C a.rounds) icb 0 (a.buf s.mem i)
 
-theorem load_ok {icb : Block} {i : Nat} {u : State} (hi : i<a.count) (h : TextAt a s icb i u) :
-    WP isa (.block Impl.AesGcm.X86.DirectGather.nextPiece) u (Loaded a s icb i) := by
+theorem load_ok {icb : Block} {i : Nat} {u : State} (hi : i<a.count) (h : TextAt N a s icb i u) :
+    WP isa (.block Impl.AesGcm.X86.DirectGather.nextPiece) u (Loaded N a s icb i) := by
   refine WP.mono (p.descStep hi h) ?_
   rintro y ⟨m,di,zf,bp,si,sp,rd,wr⟩
   have od := p.off_le (Nat.le_of_lt hi)
@@ -127,20 +129,20 @@ theorem load_ok {icb : Block} {i : Nat} {u : State} (hi : i<a.count) (h : TextAt
     h.ctr.congr (blockAt_frame f (p.setupCtr (by decide))) (blockAt_frame f (p.setupCtr (by decide))),
     (bytesAt_frame f (fun r hr => (z r hr).sub_left (Region.sub_prefix od)) (by omega_using [flt])).trans h.out⟩
 
-structure Advanced (a : Text) (s : State) (icb : Block) (i : Nat) (z : State) : Prop where
-  env : Env a.C a.st a.W a.SP z
+structure Advanced (N : Nat) (a : Text) (s : State) (icb : Block) (i : Nat) (z : State) : Prop where
+  env : Env N a.C a.st a.W a.SP z
   rd : z.rd=s.rd
   wr : z.wr=s.wr
   ptr : slotv z.mem a.W rO = a.desc (i+1)
   count : slotv z.mem a.W tglO = BitVec.ofNat 32 (a.count-i)
   off : slotv z.mem a.W xlO = BitVec.ofNat 32 (a.off s.mem (i+1))
-  frame : Frame (a.frame (a.off s.mem (i+1))) s.mem z.mem
+  frame : Frame (a.frame N (a.off s.mem (i+1))) s.mem z.mem
   ctr : CtrS z.mem a.st (ciphOf s.mem a.C a.rounds) icb (a.off s.mem (i+1))
   out : bytesAt z.mem (w64 a.O) (a.off s.mem (i+1)) = xorKs (ciphOf s.mem a.C a.rounds) icb 0 (a.buf s.mem (i+1))
 
-theorem advance_ok (v : GcmImpl) {icb : Block} {i : Nat} {y : State} (hi : i<a.count) (h : Loaded a s icb i y) :
+theorem advance_ok (v : GcmImpl) [WSize N v.ctr.scr] {icb : Block} {i : Nat} {y : State} (hi : i<a.count) (h : Loaded N a s icb i y) :
     WP isa (.seq (.ite .e (.block []) Impl.AesGcm.X86.DirectGather.partialHead) (Open.decTo v.callees v.callees.ctr))
-      y (Advanced a s icb i) := by
+      y (Advanced N a s icb i) := by
   have ord := p.off_le (Nat.le_of_lt hi)
   have span := p.span hi
   have fit := p.dstFit
@@ -176,7 +178,7 @@ theorem advance_ok (v : GcmImpl) {icb : Block} {i : Nat} {y : State} (hi : i<a.c
       · rw [dst]; exact split_disj (by omega_using [span,fit])
       · exact ((p.dstOutside.w.sub_left (Region.sub_prefix ord)).sub_right
           (fun _ q => stSub p.lay rfl _ (Lay.stSub (by decide) _ q)))
-      · exact (p.dstOutside.w.sub_left (Region.sub_prefix ord)).sub_right (Lay.wSub (by decide))
+      · exact (p.dstOutside.w.sub_left (Region.sub_prefix ord)).sub_right (Lay.wsSub)
       · exact p.dstOutside.stack.sub_left (Region.sub_prefix ord)
       · exact (p.dstOutside.w.sub_left (Region.sub_prefix ord)).sub_right (Lay.wSub (by decide))
       · exact p.dstOutside.sp.sub_left (Region.sub_prefix ord)
@@ -190,9 +192,9 @@ theorem advance_ok (v : GcmImpl) {icb : Block} {i : Nat} {y : State} (hi : i<a.c
       by rw [gl]; exact done.ctr,?_⟩
     rw [gl,bytesAt_add,pt,Proof.Gcm.xorKs_append,Proof.Gcm.length_gathered,Nat.zero_add,keepPrev,h.out,out]
 
-theorem countdown {icb : Block} {i : Nat} {z : State} (hi : i<a.count) (h : Advanced a s icb i z) :
+theorem countdown {icb : Block} {i : Nat} {z : State} (hi : i<a.count) (h : Advanced N a s icb i z) :
     WP isa (.block [.mov .ecx (slot tglO),.alu .sub .ecx (imm 1),.store (at_ .ebp tglO) .ecx]) z fun t =>
-      TextAt a s icb (i+1) t ∧ t.zf=some (decide (i+1=a.count)) := by
+      TextAt N a s icb (i+1) t ∧ t.zf=some (decide (i+1=a.count)) := by
   have fin := p.off_le (i:=i+1) (by omega_using [hi])
   refine WP.mono (decrement_ok p.lay h.env (by omega_using [hi]) (by have f:=p.countLt; omega_using [hi,f]) h.count) ?_
   rintro t ⟨m,zf,g,rd,wr⟩
@@ -219,24 +221,24 @@ theorem countdown {icb : Block} {i : Nat} {z : State} (hi : i<a.count) (h : Adva
       exact (p.dstOutside.w.sub_left (Region.sub_prefix fin)).sub_right (Lay.wSub (by decide)))
       (by have lt:=p.lenLt; omega_using [fin,lt])).trans h.out⟩,by simpa only [curr] using zf⟩
 
-theorem pieces_ok (v : GcmImpl) {icb : Block} (ptr : slotv s.mem a.W rO=a.Src)
+theorem pieces_ok (v : GcmImpl) [WSize N v.ctr.scr] {icb : Block} (ptr : slotv s.mem a.W rO=a.Src)
     (count : slotv s.mem a.W tglO=BitVec.ofNat 32 a.count) (off : slotv s.mem a.W xlO=0)
     (ctr : CtrS s.mem a.st (ciphOf s.mem a.C a.rounds) icb 0) :
-    WP isa (Impl.AesGcm.X86.DirectGather.pieces v.callees) s (TextAt a s icb a.count) := by
+    WP isa (Impl.AesGcm.X86.DirectGather.pieces v.callees) s (TextAt N a s icb a.count) := by
   refine WP.seq (WP.of_runBlock ⟨_,by xrun [p.env.ebp,p.lay.aW,p.env.wIn',count],?_⟩)
   let u := arithFlags (s.setReg .ecx (BitVec.ofNat 32 a.count))
     (BitVec.ofNat 32 a.count &&& BitVec.ofNat 32 a.count) false false
-  have start : TextAt a s icb 0 u :=
+  have start : TextAt N a s icb 0 u :=
     ⟨⟨p.env.ebp,p.env.esi,p.env.esp,p.env.ctxR,p.env.stW,p.env.wW,p.env.ctx⟩,rfl,rfl,
       by change slotv s.mem a.W rO=a.desc 0; simpa [Text.desc,atByte] using ptr,count,off,Frame.refl _ _,ctr,rfl⟩
   refine WP.ite (decide (a.count=0)) (congrArg some (and_self_beq32 p.countLt)) (fun z => ?_) (fun nz => ?_)
   · have zero : a.count=0 := by simpa using z
     apply WP.block_nil
-    change TextAt a s icb a.count u
+    change TextAt N a s icb a.count u
     rw [zero]
     exact start
   · have pos : 0<a.count := Nat.pos_of_ne_zero (by simpa using nz)
-    refine WP.loop (M:=isa) (c:=.ne) (fun n t => ∃ i, n=a.count-i ∧ i<a.count ∧ TextAt a s icb i t)
+    refine WP.loop (M:=isa) (c:=.ne) (fun n t => ∃ i, n=a.count-i ∧ i<a.count ∧ TextAt N a s icb i t)
       ?_ (a.count-0) _ ⟨0,rfl,pos,start⟩
     rintro _ t ⟨i,rfl,hi,at_⟩
     refine WP.seq (WP.mono (p.load_ok hi at_) ?_)

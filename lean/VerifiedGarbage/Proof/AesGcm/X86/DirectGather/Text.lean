@@ -12,6 +12,8 @@ namespace VG.Proof.AesGcm.X86.DirectGather
 
 open VG VG.X86 VG.Impl.AesGcm.X86
 
+variable {N : Nat}
+
 abbrev setup (m : Mem) (W SP S D O : BitVec 32) (off n : Nat) :=
   afterCursors (afterDescriptor m W S D (BitVec.ofNat 32 n)) W SP O (BitVec.ofNat 32 off) (BitVec.ofNat 32 n)
 
@@ -40,10 +42,10 @@ theorem setupFrame_ok (m : Mem) (W SP S D O : BitVec 32) (off n : Nat) :
   exact Frame.refl _ _
 
 theorem setupSlots (m : Mem) (W SP S D O : BitVec 32) {off n : Nat} (flt : off<2^32)
-    (argW : (⟨w64 SP,4⟩ : Region).Disjoint ⟨w64 W,2560⟩) : SetupSlots (setup m W SP S D O off n) W SP S D O off n := by
-  have sep (d : Nat) (hd : d+4 ≤ 2560) : Mem.Sep (w64 SP) 4 (w64 W+BitVec.ofNat 64 d) 4 :=
+    (argW : (⟨w64 SP,4⟩ : Region).Disjoint ⟨w64 W,N⟩) (hN : 768 ≤ N := by wbig) : SetupSlots (setup m W SP S D O off n) W SP S D O off n := by
+  have sep (d : Nat) (hd : d+4 ≤ 768) : Mem.Sep (w64 SP) 4 (w64 W+BitVec.ofNat 64 d) 4 :=
     (argW.sub_right (Lay.wSub hd)).sep (Region.contains_self _ _) (Region.contains_self _ _)
-  have sep' (d : Nat) (hd : d+4 ≤ 2560) : Mem.Sep (w64 W+BitVec.ofNat 64 d) 4 (w64 SP) 4 :=
+  have sep' (d : Nat) (hd : d+4 ≤ 768) : Mem.Sep (w64 W+BitVec.ofNat 64 d) 4 (w64 SP) 4 :=
     (argW.sub_right (Lay.wSub hd)).symm.sep (Region.contains_self _ _) (Region.contains_self _ _)
   obtain mask := and15 (BitVec.ofNat 32 off)
   rw [toNat_ofNat32 flt] at mask
@@ -72,6 +74,8 @@ open VG.Spec.Aes (bytesAt)
 open VG.Proof.Gcm (xorKs)
 open VG.Proof.AesGcm.X86.Gather (sb sl)
 
+variable {N : Nat}
+
 structure Text where
   C : BitVec 32
   W : BitVec 32
@@ -91,46 +95,47 @@ abbrev size (a : Text) (m : Mem) (i : Nat) := sl m a.Src i
 abbrev desc (a : Text) (i : Nat) := atByte a.Src (8*i)
 abbrev dstArg (a : Text) := w64 (a.SP+28#32)
 
-abbrev frame (a : Text) (l : Nat) : List Region :=
-  crFrame a.st a.W a.SP 32 a.O l ++
+abbrev frame (a : Text) (N : Nat) (l : Nat) : List Region :=
+  crFrame N a.st a.W a.SP 32 a.O l ++
   [⟨w64 a.SP,4⟩,⟨w64 a.W+160#64,4⟩,⟨w64 a.W+168#64,8⟩,⟨w64 a.W+180#64,4⟩,⟨w64 a.W+196#64,4⟩]
 
-structure Outside (a : Text) (X : Region) : Prop where
-  w : X.Disjoint ⟨w64 a.W,2560⟩
+structure Outside (N : Nat) (a : Text) (X : Region) : Prop where
+  w : X.Disjoint ⟨w64 a.W,N⟩
   sp : X.Disjoint ⟨w64 a.SP,4⟩
   stack : X.Disjoint (below a.SP 32)
 
-theorem Outside.frame {a : Text} (L : Lay a.C a.st a.W a.SP 32) {X : Region} (h : Outside a X) {n : Nat}
-    (d : X.Disjoint ⟨w64 a.O,n⟩) : ∀ r ∈ a.frame n, X.Disjoint r := by
+theorem Outside.frame {a : Text} (L : Lay N a.C a.st a.W a.SP 32) {X : Region} (h : Text.Outside N a X) {n : Nat}
+    (d : X.Disjoint ⟨w64 a.O,n⟩) : ∀ r ∈ a.frame N n, X.Disjoint r := by
   intro r hr
   simp only [Text.frame,crFrame,List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at hr
   rcases hr with (rfl | rfl | rfl | rfl) | rfl | rfl | rfl | rfl | rfl
   · exact d
   · exact h.w.sub_right (fun _ q => stSub L rfl _ (Lay.stSub (by decide) _ q))
-  · exact h.w.sub_right (Lay.wSub (by decide))
+  · exact h.w.sub_right (Lay.wsSub)
   · exact h.stack
   · exact h.sp
   all_goals exact h.w.sub_right (Lay.wSub (by decide))
 
-theorem Outside.setup {a : Text} {X : Region} (h : Outside a X) : ∀ r ∈ setupFrame a.W a.SP, X.Disjoint r := by
+theorem Outside.setup {a : Text} {X : Region} (h : Text.Outside N a X) (hN : 768 ≤ N := by wbig) : ∀ r ∈ setupFrame a.W a.SP, X.Disjoint r := by
   intro r hr
   simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl
   case inr.inr.inr.inr => exact h.sp
   all_goals exact h.w.sub_right (Lay.wSub (by decide))
 
-theorem setup_sub {m u : Mem} (a : Text) (n : Nat) (f : Frame (setupFrame a.W a.SP) m u) :
-    Frame (a.frame n) m u := by
+theorem setup_sub {m u : Mem} (a : Text) (n : Nat) (f : Frame (setupFrame a.W a.SP) m u)
+    (hN : 768 ≤ N := by wbig) :
+    Frame (a.frame N n) m u := by
   refine f.sub ?_
   intro r hr
   simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl
   case inr.inr.inr.inl =>
-    exact ⟨wsR a.W,by simp [frame,crFrame],Offset.sub _ (by decide) (by decide)⟩
+    exact ⟨wsR N a.W,by simp [frame,crFrame],Lay.wsIn (by decide) (by decide)⟩
   all_goals exact ⟨_,by simp [frame,crFrame],fun _ q => q⟩
 
-theorem frame_mono {m u : Mem} (a : Text) {n k : Nat} (le : k≤n) (f : Frame (a.frame k) m u) :
-    Frame (a.frame n) m u := by
+theorem frame_mono {m u : Mem} (a : Text) {n k : Nat} (le : k≤n) (f : Frame (a.frame N k) m u) :
+    Frame (a.frame N n) m u := by
   refine f.sub ?_
   intro r hr
   simp only [frame,crFrame,List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at hr
@@ -140,9 +145,9 @@ theorem frame_mono {m u : Mem} (a : Text) {n k : Nat} (le : k≤n) (f : Frame (a
 
 end Text
 
-structure TextInput (a : Text) (s : State) : Prop where
-  lay : Lay a.C a.st a.W a.SP 32
-  env : Env a.C a.st a.W a.SP s
+structure TextInput (N : Nat) (a : Text) (s : State) : Prop where
+  lay : Lay N a.C a.st a.W a.SP 32
+  env : Env N a.C a.st a.W a.SP s
   rounds : RoundsAt s.mem a.W a.rounds
   total : a.off s.mem a.count = a.len
   countLt : a.count < 2^32
@@ -153,35 +158,38 @@ structure TextInput (a : Text) (s : State) : Prop where
   srcR : ∀ i < a.count, Covers [⟨w64 (a.source s.mem i),a.size s.mem i⟩] (s.rd++s.wr)
   srcFit : ∀ i < a.count, (a.source s.mem i).toNat+a.size s.mem i ≤ 2^32
   dstW : Covers [⟨w64 a.O,a.len⟩] s.wr
-  descOutside : a.Outside ⟨w64 a.Src,a.count*8⟩
-  srcOutside : ∀ i < a.count, a.Outside ⟨w64 (a.source s.mem i),a.size s.mem i⟩
-  dstOutside : a.Outside ⟨w64 a.O,a.len⟩
-  argOutside : a.Outside ⟨a.dstArg,4⟩
+  descOutside : Text.Outside N a ⟨w64 a.Src,a.count*8⟩
+  srcOutside : ∀ i < a.count, Text.Outside N a ⟨w64 (a.source s.mem i),a.size s.mem i⟩
+  dstOutside : Text.Outside N a ⟨w64 a.O,a.len⟩
+  argOutside : Text.Outside N a ⟨a.dstArg,4⟩
   descDst : (⟨w64 a.Src,a.count*8⟩ : Region).Disjoint ⟨w64 a.O,a.len⟩
   srcDst : ∀ i < a.count, (⟨w64 (a.source s.mem i),a.size s.mem i⟩ : Region).Disjoint ⟨w64 a.O,a.len⟩
   argDst : (⟨a.dstArg,4⟩ : Region).Disjoint ⟨w64 a.O,a.len⟩
   ctxDst : (⟨w64 a.C,256⟩ : Region).Disjoint ⟨w64 a.O,a.len⟩
   argCtx : (⟨w64 a.C,256⟩ : Region).Disjoint ⟨w64 a.SP,4⟩
-  argW : (⟨w64 a.SP,4⟩ : Region).Disjoint ⟨w64 a.W,2560⟩
+  argW : (⟨w64 a.SP,4⟩ : Region).Disjoint ⟨w64 a.W,N⟩
   spFit : a.SP.toNat+4 ≤ 2^32
   spW : Covers [⟨w64 a.SP,4⟩] s.wr
   argR : InRegions (s.rd++s.wr) a.dstArg 4
   arg : s.mem.readW a.dstArg 32 = a.O
 
-structure TextAt (a : Text) (s : State) (icb : Block) (i : Nat) (u : State) : Prop where
-  env : Env a.C a.st a.W a.SP u
+macro_rules | `(tactic| wbig) => `(tactic| exact Lay.big (TextInput.lay (by assumption)))
+macro_rules | `(tactic| wlt) => `(tactic| exact Lay.nlt (TextInput.lay (by assumption)))
+
+structure TextAt (N : Nat) (a : Text) (s : State) (icb : Block) (i : Nat) (u : State) : Prop where
+  env : Env N a.C a.st a.W a.SP u
   rd : u.rd=s.rd
   wr : u.wr=s.wr
   ptr : slotv u.mem a.W rO = a.desc i
   count : slotv u.mem a.W tglO = BitVec.ofNat 32 (a.count-i)
   off : slotv u.mem a.W xlO = BitVec.ofNat 32 (a.off s.mem i)
-  frame : Frame (a.frame (a.off s.mem i)) s.mem u.mem
+  frame : Frame (a.frame N (a.off s.mem i)) s.mem u.mem
   ctr : CtrS u.mem a.st (ciphOf s.mem a.C a.rounds) icb (a.off s.mem i)
   out : bytesAt u.mem (w64 a.O) (a.off s.mem i) = xorKs (ciphOf s.mem a.C a.rounds) icb 0 (a.buf s.mem i)
 
 namespace TextInput
 
-variable {a : Text} {s : State} (p : TextInput a s)
+variable {a : Text} {s : State} (p : TextInput N a s)
 include p
 
 theorem off_le {i : Nat} (hi : i≤a.count) : a.off s.mem i ≤ a.len := by
@@ -192,7 +200,7 @@ theorem span {i : Nat} (hi : i<a.count) : a.off s.mem i + a.size s.mem i ≤ a.l
   rw [←Gather.gl_succ p.descFit hi]; exact p.off_le (by omega_using [hi])
 
 theorem input (i : Nat) (hi : i<a.count) (pos : a.size s.mem i ≠ 0) :
-    PieceRegions a.C a.W a.SP (a.source s.mem i) (atByte a.O (a.off s.mem i)) (a.size s.mem i) := by
+    PieceRegions N a.C a.W a.SP (a.source s.mem i) (atByte a.O (a.off s.mem i)) (a.size s.mem i) := by
   have span := p.span hi
   have fit := p.dstFit
   obtain nk : a.O.toNat+a.off s.mem i < 2^32 := by omega_using [span,fit,pos]
@@ -212,7 +220,7 @@ theorem accesses {i : Nat} (hi : i<a.count) (pos : a.size s.mem i ≠ 0) {u : St
   rw [wr,w64_add (by omega_using [fit,pos,span])]
   exact covers_off p.dstW span (by omega_using [fit])
 
-theorem descStep {i : Nat} (hi : i<a.count) {u : State} {icb : Block} (h : TextAt a s icb i u) :
+theorem descStep {i : Nat} (hi : i<a.count) {u : State} {icb : Block} (h : TextAt N a s icb i u) :
     WP isa (.block Impl.AesGcm.X86.DirectGather.nextPiece) u fun y =>
       y.mem = setup u.mem a.W a.SP (a.desc i) (a.source s.mem i) a.O (a.off s.mem i) (a.size s.mem i) ∧
       y.gpr .edi = atByte a.O (a.off s.mem i) ∧ y.zf = some (decide (a.off s.mem i%16=0)) ∧
@@ -234,7 +242,7 @@ theorem descStep {i : Nat} (hi : i<a.count) {u : State} {icb : Block} (h : TextA
     ((h.frame.readW m4 du (by decide)).trans (ofNat_toNat32 _).symm)
     (by rw [h.rd,h.wr]; exact p.descR _ _ ⟨_,List.mem_singleton_self _,m0⟩)
     (by rw [h.rd,h.wr]; exact p.descR _ _ ⟨_,List.mem_singleton_self _,m4⟩)
-    (p.descOutside.w.sep m4 (Offset.contains_base _ (by decide) (by decide))) h.off
+    (p.descOutside.w.sep m4 (Offset.contains_base _ (by wle) (by decide))) h.off
     (by rw [h.rd,h.wr]; exact p.argR)
     ((h.frame.readW (r:=⟨a.dstArg,4⟩) (Region.contains_self _ _) ar (by decide)).trans p.arg)
     (by rw [h.wr]; exact p.spW _ _ ⟨_,List.mem_singleton_self _,Region.contains_self _ _⟩) p.argOutside.w) ?_

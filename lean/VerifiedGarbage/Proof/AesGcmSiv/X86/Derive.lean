@@ -115,7 +115,7 @@ theorem cargs {p : Prm} {s : State} (L : Lay p) (esp : s.gpr .esp = p.SP) (P : P
     (ecx : s.gpr .ecx = BitVec.ofNat 32 p.R) (edx : s.gpr .edx = p.W + BitVec.ofNat 32 112)
     (ebx : s.gpr .ebx = D) (edi : s.gpr .edi = BitVec.ofNat 32 n)
     (ebp : s.gpr .ebp = p.W + BitVec.ofNat 32 768) :
-    CtrCall s Q (p.W + BitVec.ofNat 32 112) D (p.W + BitVec.ofNat 32 768) p.R n := by
+    CtrCall 2048 s Q (p.W + BitVec.ofNat 32 112) D (p.W + BitVec.ofNat 32 768) p.R n := by
   have hsp := L.sp
   refine ⟨eax, ecx, edx, ebx, edi, ebp, L.rounds3, by rw [esp]; omega_arith, ?_, hD.dk, ?_, ?_, ?_, hD.ds.sub_right ?_,
     ?_, ?_, ?_, ?_, hQ.wrap, ?_, hD.wrap, ?_, hQ.rd, ?_⟩
@@ -156,7 +156,7 @@ theorem callCtr_ok (v : GcmImpl) {p : Prm} {s : State} (L : Lay p) (E : Env p s)
   refine WP.seq (WP.of_runBlock ⟨_, by grun [], ?_⟩)
   -- The call.
   have e768 : s.gpr .ebp + BitVec.ofNat 32 768 = p.W + BitVec.ofNat 32 768 := by rw [E.ebp]
-  refine WP.seq (WP.mono (Proof.AesGcm.X86.ctr_call v (cargs L (by gregs [E.esp])
+  refine WP.seq (WP.mono (Proof.AesGcm.X86.ctr_call2048 v (cargs L (by gregs [E.esp])
     (E.perm.of_eq (by gmems []) (by gmems [])) (hQ.of_eq (by gmems []) (by gmems [])) (hD.of_eq (by gmems []))
     (by gregs [eax]) (by gregs [ecx]) (by gregs [edx]) (by gregs [ebx]) (by gregs [edi]) (by gregs [e768])))
     fun s₂ P => ?_)
@@ -203,7 +203,7 @@ theorem callCtr_ct (v : GcmImpl) {p : Prm} (L : Lay p) {Q D : BitVec 32} {n : Na
     CT I (callCtr v.callees) := by
   -- The state after `ebp := W + 768`, as `CtrCall` needs it.
   have call : ∀ s, I s → ∀ s', runBlock isa [.alu .add .ebp (imm scrO)] s = some s' →
-      CtrCall s' Q (p.W + BitVec.ofNat 32 112) D (p.W + BitVec.ofNat 32 768) p.R n ∧ s'.gpr .esp = p.SP := by
+      CtrCall 2048 s' Q (p.W + BitVec.ofNat 32 112) D (p.W + BitVec.ofNat 32 768) p.R n ∧ s'.gpr .esp = p.SP := by
     intro s hs s' run
     obtain ⟨E, hQ, hD, eax, ecx, edx, ebx, edi⟩ := hI s hs
     have e := run
@@ -218,8 +218,8 @@ theorem callCtr_ct (v : GcmImpl) {p : Prm} (L : Lay p) {Q D : BitVec 32} {n : Na
     (CT.taint [.ebp] (pin_ebp fun s h => (hI s h).1.ebp) (by taint_decide))
     (fun s hs => WP.of_runBlock ⟨_, by grun [], s, hs, by grun []⟩) ?_
   refine CT.seq (J := fun s => s.gpr .ebp = p.W + BitVec.ofNat 32 768)
-    (Proof.AesGcm.X86.ctr_ct v (E := p.SP) fun s ⟨s₀, h₀, run⟩ => call s₀ h₀ s run)
-    (fun s ⟨s₀, h₀, run⟩ => WP.mono (Proof.AesGcm.X86.ctr_call v (call s₀ h₀ s run).1) fun s₁ g => by
+    (Proof.AesGcm.X86.ctr_ct2048 v (E := p.SP) fun s ⟨s₀, h₀, run⟩ => call s₀ h₀ s run)
+    (fun s ⟨s₀, h₀, run⟩ => WP.mono (Proof.AesGcm.X86.ctr_call2048 v (call s₀ h₀ s run).1) fun s₁ g => by
       rw [g.saved .ebp (by decide), (call s₀ h₀ s run).1.ebp]) ?_
   exact CT.taint [.ebp] (pin_ebp fun _ h => h) (by taint_decide)
 

@@ -9,18 +9,19 @@ namespace VG.Proof.AesGcm.X86.DirectGather
 open VG VG.X86 VG.Impl.AesGcm.X86
 open VG.Spec.Gcm
 open VG.Proof.Gcm
+
 /-- Unary facts shared by the functional and leakage proofs at the text boundary. -/
 structure BeforeText (p : BitVec 32 × (Nat → BitVec 32)) (s e ent aad u : State) : Prop where
   initial : Gather.Lay s
   prepared : Prepared s e
   publicArgs : pubSw 12 8 e=p
-  entry : OEnt p e ent
-  auth : OAad p e aad
-  authFrame : Frame (oF p) ent.mem aad.mem
+  entry : OEnt 2560 p e ent
+  auth : OAad 2560 p e aad
+  authFrame : Frame (oF 2560 p) ent.mem aad.mem
   setup : SetupPost aad (work s) (SP s) 9 10 rO tglO (w64 (work s)+BitVec.ofNat 64 xlO) u
 
 theorem BeforeText.start {p s e ent aad u} (h : BeforeText p s e ent aad u) :
-  TextInput (text s) u ∧ TextAt (text s) u (Spec.Gcm.inc32 (jOf p e)) 0 u ∧
+  TextInput 2560 (text s) u ∧ TextAt 2560 (text s) u (Spec.Gcm.inc32 (jOf p e)) 0 u ∧
     Frame [Gather.stkR s] s.mem u.mem := by
   obtain ⟨l,hp,rfl,he,ha,fr,setup⟩ := h
   have b := begun l hp he ha fr setup
@@ -29,17 +30,17 @@ theorem BeforeText.start {p s e ent aad u} (h : BeforeText p s e ent aad u) :
     Frame.refl _ _,b.ctr,rfl⟩
 
 abbrev TagBridge : Prop := ∀ {p s e ent aad u y z}, BeforeText p s e ent aad u →
-  TextInput (text s) u → TextAt (text s) u (Spec.Gcm.inc32 (jOf p e)) (text s).count y →
-  SetupPost y (work s) (SP s) 6 7 dataO lenO (w64 (SP s)) z → OTIn p e z
+  TextInput 2560 (text s) u → TextAt 2560 (text s) u (Spec.Gcm.inc32 (jOf p e)) (text s).count y →
+  SetupPost y (work s) (SP s) 6 7 dataO lenO (w64 (SP s)) z → OTIn 2560 p e z
 
 private theorem loopFrame {s t u : State}
     (h : SetupPost t (work s) (SP s) 9 10 rO tglO (w64 (work s)+BitVec.ofNat 64 xlO) u) :
-    Frame ((text s).frame (Gather.L s)) t.mem u.mem :=
+    Frame ((text s).frame 2560 (Gather.L s)) t.mem u.mem :=
   h.frame.mono (by simp [slotSetupFrame,Text.frame,crFrame,text,rO,tglO,xlO])
 
 theorem tagFrame {s u z : State}
     (h : SetupPost u (work s) (SP s) 6 7 dataO lenO (w64 (SP s)) z) :
-    Frame ((text s).frame (Gather.L s)) u.mem z.mem := by
+    Frame ((text s).frame 2560 (Gather.L s)) u.mem z.mem := by
   apply h.frame.sub
   intro r hr
   simp only [slotSetupFrame,List.mem_cons,List.not_mem_nil,or_false] at hr
@@ -49,7 +50,7 @@ theorem tagFrame {s u z : State}
   · exact ⟨_,by simp [Text.frame,text],fun _ h => h⟩
 
 private theorem argAfterText {s e u y : State} {icb : Block} (l : Gather.Lay s) (h : Prepared s e)
-    (b : Begun s e u) (atEnd : TextAt (text s) u icb (text s).count y) (i : Nat) (hi : i<11) :
+    (b : Begun s e u) (atEnd : TextAt 2560 (text s) u icb (text s).count y) (i : Nat) (hi : i<11) :
     y.mem.readW (argA (SP s) i) 32=arg s (Impl.AesGcm.X86.DirectGather.sourceSlot i) := by
   have op := h.op l
   have sp : e.gpr .esp=SP s := h.regs _ (by decide)
@@ -58,7 +59,7 @@ private theorem argAfterText {s e u y : State} {icb : Block} (l : Gather.Lay s) 
   have da := op.d_a.symm
   rw [←argsR_eq,sp,h.scratch] at wa
   rw [←argsR_eq,sp,h.arg_eq 6 (by decide),h.arg_eq 7 (by decide)] at da
-  have out : (text s).Outside ⟨argA (SP s) i,4⟩ := by
+  have out : Text.Outside 2560 (text s) ⟨argA (SP s) i,4⟩ := by
     refine ⟨wa.sub_left sub,?_,?_⟩
     · change Region.Disjoint ⟨addr (SP s) (4+4*i),4⟩ ⟨w64 (SP s),4⟩
       rw [norm l (by omega_using [hi])]
@@ -76,9 +77,9 @@ private theorem argAfterText {s e u y : State} {icb : Block} (l : Gather.Lay s) 
   exact (fr.readW (r:=⟨argA (SP s) i,4⟩) (w:=32) (Region.contains_self _ _) (out.frame b.input.lay (da.sub_left sub)) (by decide)).trans
     (private_arg_kept l h b.frame i hi)
 
-private theorem authBlock {s e u : State} (h : Prepared s e) (p : TextInput (text s) u)
-    (G : OL (pub e)) {d : Nat} (hd : d+16≤48) :
-    ∀ r ∈ (text s).frame (Gather.L s),
+private theorem authBlock {s e u : State} (h : Prepared s e) (p : TextInput 2560 (text s) u)
+    (G : OL 2560 (pub e)) {d : Nat} (hd : d+16≤48) :
+    ∀ r ∈ (text s).frame 2560 (Gather.L s),
       (⟨w64 (stOf ((pub e).2 8))+BitVec.ofNat 64 d,16⟩ : Region).Disjoint r := by
   have z := h.params
   intro r hr
@@ -100,7 +101,7 @@ theorem tagBridge_ok : TagBridge := by
   have G := (h.op l).ol rfl (by decide) (p:=pub e) rfl
   have ft := hy.frame
   rw [input.total] at ft
-  have fr : Frame ((text s).frame (Gather.L s)) aad.mem z.mem :=
+  have fr : Frame ((text s).frame 2560 (Gather.L s)) aad.mem z.mem :=
     ((loopFrame ls).trans ft).trans (tagFrame setup)
   have o := ha.o
   have regs {r : Reg} (hr : r≠.eax) : z.gpr r=y.gpr r := setup.regs r hr
@@ -111,14 +112,14 @@ theorem tagBridge_ok : TagBridge := by
       (n3 : k+4≤180 ∨ 184≤k) (n4 : k+4≤196 ∨ 200≤k) :
       slotv z.mem ((pub e).2 8) k=slotv aad.mem ((pub e).2 8) k := by
     rw [par.w]; exact slot_frame fr (input.frameSlot (Nat.le_refl _) lo hi n1 n2 n3 n4)
-  have ctx : ∀ r ∈ (text s).frame (Gather.L s), (⟨w64 ((pub e).2 0),256⟩ : Region).Disjoint r := by
+  have ctx : ∀ r ∈ (text s).frame 2560 (Gather.L s), (⟨w64 ((pub e).2 0),256⟩ : Region).Disjoint r := by
     rw [par.c]; exact input.outsideCtx.frame input.lay input.ctxDst
-  have ad : ∀ r ∈ (text s).frame (Gather.L s),
+  have ad : ∀ r ∈ (text s).frame 2560 (Gather.L s),
       (⟨w64 ((pub e).2 4),((pub e).2 5).toNat⟩ : Region).Disjoint r := by
     change ∀ r ∈ _, (⟨w64 (arg e 4),(arg e 5).toNat⟩ : Region).Disjoint r
     rw [h.arg_eq 4 (by decide),h.arg_eq 5 (by decide)]
     exact ((zones l).outside l.ba).frame input.lay l.ad
-  have htag : OEnv (pub e) e z := by
+  have htag : OEnv 2560 (pub e) e z := by
     refine ⟨o.env.keep ?_ ?_ ?_ rd wr ?_,⟨?_,o.rounds.2⟩,?_,?_,?_,?_,?_,?_,?_,?_,?_,?_,?_,?_ ,
       rd.trans o.rd,wr.trans o.wr,?_,?_,?_⟩
     · rw [regs (by decide),hy.env.ebp,o.env.ebp,par.w]; rfl

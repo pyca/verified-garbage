@@ -614,7 +614,7 @@ open VG VG.X86 VG.Proof.AesGcm.X86
 /-- AES-GCM's layout, with the `K` bytes below `SP` apart from the context,
 the state and `W`. -/
 structure Lay4 (Ctx St W SP : BitVec 32) (K : Nat) : Prop where
-  lay : Lay Ctx St W SP 28
+  lay : Lay 2560 Ctx St W SP 28
   k28 : 28 ≤ K
   sp : K ≤ SP.toNat
   kc : (below SP K).Disjoint ⟨w64 Ctx, 256⟩
@@ -634,16 +634,16 @@ theorem cw : (⟨w64 Ctx, 256⟩ : Region).Disjoint ⟨w64 W, 2560⟩ := L.lay.c
 theorem sb : (⟨w64 St, 80⟩ : Region).Disjoint ⟨w64 W + BitVec.ofNat 64 96, 2464⟩ := L.lay.sb
 
 theorem st_w {a n d k : Nat} (ha : a + n ≤ 80) (hd : (d + k ≤ 16) ∨ (96 ≤ d ∧ d + k ≤ 2560)) :
-    (⟨w64 St + BitVec.ofNat 64 a, n⟩ : Region).Disjoint ⟨w64 W + BitVec.ofNat 64 d, k⟩ := L.lay.st_w ha hd
+    (⟨w64 St + BitVec.ofNat 64 a, n⟩ : Region).Disjoint ⟨w64 W + BitVec.ofNat 64 d, k⟩ := L.lay.st_wN ha hd
 
 theorem ctx_w {a n d k : Nat} (ha : a + n ≤ 256) (hd : d + k ≤ 2560) :
-    (⟨w64 Ctx + BitVec.ofNat 64 a, n⟩ : Region).Disjoint ⟨w64 W + BitVec.ofNat 64 d, k⟩ := L.lay.ctx_w ha hd
+    (⟨w64 Ctx + BitVec.ofNat 64 a, n⟩ : Region).Disjoint ⟨w64 W + BitVec.ofNat 64 d, k⟩ := L.lay.ctx_wN ha hd
 
 theorem stk_st {a n : Nat} (ha : a + n ≤ 80) :
     (below SP K).Disjoint ⟨w64 St + BitVec.ofNat 64 a, n⟩ := L.ks.sub_right (Lay.stSub ha)
 
 theorem stk_w {a n : Nat} (ha : a + n ≤ 2560) :
-    (below SP K).Disjoint ⟨w64 W + BitVec.ofNat 64 a, n⟩ := L.kw.sub_right (Lay.wSub ha)
+    (below SP K).Disjoint ⟨w64 W + BitVec.ofNat 64 a, n⟩ := L.kw.sub_right (Lay.wSubN ha)
 
 /-- The stack the calls use, at `esp = SP`. -/
 theorem below_sub {k : Nat} (hk : k ≤ K) : Region.Sub (below SP k) (below SP K) :=
@@ -652,9 +652,9 @@ theorem below_sub {k : Nat} (hk : k ≤ K) : Region.Sub (below SP k) (below SP K
 /-- What AES-GCM's pieces use below `SP` is within it. -/
 theorem below28 : Region.Sub (below SP 28) (below SP K) := L.below_sub L.k28
 
-theorem aW {o : Nat} (ho : o < 2560) : w64 (W + BitVec.ofNat 32 o) = w64 W + BitVec.ofNat 64 o := L.lay.aW ho
+theorem aW {o : Nat} (ho : o < 2560) : w64 (W + BitVec.ofNat 32 o) = w64 W + BitVec.ofNat 64 o := L.lay.aWN ho
 theorem aS {o : Nat} (ho : o < 80) : w64 (St + BitVec.ofNat 32 o) = w64 St + BitVec.ofNat 64 o := L.lay.aS ho
-theorem nW {o : Nat} (ho : o < 2560) : (W + BitVec.ofNat 32 o).toNat = W.toNat + o := L.lay.nW ho
+theorem nW {o : Nat} (ho : o < 2560) : (W + BitVec.ofNat 32 o).toNat = W.toNat + o := L.lay.nWN ho
 theorem nS {o : Nat} (ho : o < 80) : (St + BitVec.ofNat 32 o).toNat = St.toNat + o := L.lay.nS ho
 end Lay4
 
@@ -668,11 +668,11 @@ theorem Lay4.of {Ctx St W SP : BitVec 32} {K : Nat} (fc : Ctx.toNat + 256 ≤ 2 
     (kw : (below SP K).Disjoint ⟨w64 W, 2560⟩) : Lay4 Ctx St W SP K :=
   have hb := VG.X86.below_sub (sp := SP) k28 sp
   ⟨⟨fc, fs, fw, by decide, by decide, by omega_using [k28, sp], cs, cw, sa, sb, kc.sub_left hb, ks.sub_left hb,
-    kw.sub_left hb⟩, k28, sp, kc, ks, kw⟩
+    kw.sub_left hb, by decide⟩, k28, sp, kc, ks, kw⟩
 
 /-- Data apart from the `K` bytes below `SP` is apart from the `k ≤ K`. -/
 theorem DataOk.mono {St W SP : BitVec 32} {K k : Nat} {s : State} {D : BitVec 32} {n : Nat}
-    (h : DataOk St W SP K s D n) (hk : k ≤ K) (hsp : K ≤ SP.toNat) : DataOk St W SP k s D n :=
+    (h : DataOk 2560 St W SP K s D n) (hk : k ≤ K) (hsp : K ≤ SP.toNat) : DataOk 2560 St W SP k s D n :=
   { h with stk := h.stk.sub_left (VG.X86.below_sub hk hsp) }
 
 end VG.Proof.Sm4Gcm.X86
@@ -744,7 +744,7 @@ structure CtrReady (Ctx St W SP : BitVec 32) (C Dp : BitVec 32) (nb : Nat) (s : 
 
 /-- What `ctrW` leaves. -/
 structure CtrOut (Ctx St W SP : BitVec 32) (C Dp : BitVec 32) (nb : Nat) (s s' : State) : Prop where
-  env : Env Ctx St W SP s'
+  env : Env 2560 Ctx St W SP s'
   frame : Frame [⟨w64 C, 16⟩, ⟨w64 Dp, 16 * nb⟩, below SP 1536] s.mem s'.mem
   out : blocksAt s'.mem (w64 Dp) nb = ctr32 (ciphOf s.mem Ctx) (blockAt s.mem (w64 C)) (blocksAt s.mem (w64 Dp) nb)
   ctr : blockAt s'.mem (w64 C) = Nat.repeat Spec.Gcm.inc32 nb (blockAt s.mem (w64 C))

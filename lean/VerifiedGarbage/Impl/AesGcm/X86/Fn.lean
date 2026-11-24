@@ -58,11 +58,14 @@ def streamFinish : Prog isa :=
 def streamVerify : Prog isa :=
   Impl.Scrub.X86.scrubAll 32 2636 (withStackScratch 2604 9 (Impl.AesGcm.X86.streamVerify c))
 
-/-- `vg_aes_gcm_seal`, as emitted. -/
-def «seal» : Prog isa := Impl.Scrub.X86.scrubAll 0 2636 (withStackScratch 2604 9 (Impl.AesGcm.X86.«seal» c))
+/-- `vg_aes_gcm_seal`, as emitted, with a working space of `n` words of 8 bytes: 320, or 96
+over an implementation of `vg_aes_ctr32_to` that uses no more than 256 bytes of its own. -/
+def «seal» (n : Nat) : Prog isa :=
+  Impl.Scrub.X86.scrubAll 0 (8 * n + 76) (withStackScratch (8 * n + 44) 9 (Impl.AesGcm.X86.«seal» c))
 
-/-- `vg_aes_gcm_open`, as emitted. -/
-def «open» : Prog isa := Impl.Scrub.X86.scrubAll 32 2640 (withStackScratch 2608 10 (Impl.AesGcm.X86.«open» c))
+/-- `vg_aes_gcm_open`, as emitted, with a working space of `n` words, as `seal`'s. -/
+def «open» (n : Nat) : Prog isa :=
+  Impl.Scrub.X86.scrubAll 32 (8 * n + 80) (withStackScratch (8 * n + 48) 10 (Impl.AesGcm.X86.«open» c))
 
 /-- `vg_aes_gcm_open_to`, calling `vg_aes_ctr32_to` (`f`) for its whole
 blocks, as emitted. -/

@@ -18,6 +18,8 @@ section
 namespace VG.Proof.Aes.X86.AesNi
 open VG VG.X86
 open VG.Proof.Aes.X86 (GPre dstP dstR srcR schP nRounds ctrP datP nBlk scrP schR ctrR scrR)
+
+variable {B : Nat}
 open VG.Spec.Gcm (Block blockAt aesWith)
 
 section
@@ -33,7 +35,7 @@ abbrev pfx : BitVec 96 := (s₀.mem.readW ((ctrP s₀).setWidth 64) 128).extract
 end
 
 namespace GPre
-variable {to : Bool} {s₀ : State} (hp : GPre to s₀)
+variable {to : Bool} {s₀ : State} (hp : GPre to s₀ B)
 include hp
 
 omit hp in
@@ -56,7 +58,7 @@ theorem block_out {k : Nat} (hk : k < nBlk s₀) : InRegions s₀.wr (tAddr s₀
   ⟨dstR to s₀, hp.wD, tblock_contains hp hk⟩
 
 /-- Data and scratch writes preserve every byte of the schedule. -/
-theorem sch_frame {m : Mem} (hf : Frame [dstR to s₀, scrR s₀] s₀.mem m) :
+theorem sch_frame {m : Mem} (hf : Frame [dstR to s₀, scrR s₀ B] s₀.mem m) :
     Spec.Aes.bytesAt m ((schP s₀).setWidth 64) (16 * (nRounds s₀ + 1)) = sch s₀ := by
   have hn : 16 * (nRounds s₀ + 1) ≤ 240 := by
     rcases hp.rounds with h | h | h <;> omega_using [h]
@@ -73,7 +75,7 @@ theorem sch_frame {m : Mem} (hf : Frame [dstR to s₀, scrR s₀] s₀.mem m) :
 /-- The readable round keys and their standard byte representation. -/
 theorem keys {s : State} (hptr : s.gpr .eax = schP s₀)
     (hrd : s.rd = s₀.rd) (hwr : s.wr = s₀.wr)
-    (hf : Frame [dstR to s₀, scrR s₀] s₀.mem s.mem) :
+    (hf : Frame [dstR to s₀, scrR s₀ B] s₀.mem s.mem) :
     Keys (nRounds s₀) (sch s₀) s := by
   have hnr : nRounds s₀ ≤ 14 := by rcases hp.rounds with h | h | h <;> omega_using [h]
   have he : ∀ j ≤ nRounds s₀, s.ea (Impl.Aes.X86.AesNi.at_ .eax (16 * j)) =
@@ -108,6 +110,8 @@ section
 namespace VG.Proof.Aes.X86.AesNi
 open VG VG.X86
 open VG.Proof.Aes.X86 (GPre dstP dstR srcR schP nRounds ctrP datP nBlk scrP scrR ctrR)
+
+variable {B : Nat}
 open VG.Spec.Gcm (blockAt inc32)
 
 /-- `edx` in the loops: the counter pointer in place, and out of place the
@@ -117,7 +121,7 @@ abbrev edxAt (to : Bool) (s₀ : State) (p : Nat) : BitVec 32 :=
 
 /-- After c encrypted blocks, public data/count registers point at block p.
 The prefix and saved callee registers stay in scratch throughout both loops. -/
-structure Inv (to : Bool) (s₀ : State) (c p : Nat) (s : State) : Prop where
+structure Inv (B : Nat) (to : Bool) (s₀ : State) (c p : Nat) (s : State) : Prop where
   le : c ≤ nBlk s₀
   ebx : s.gpr .ebx = (cb s₀).extractLsb' 0 32 + BitVec.ofNat 32 c
   esp : s.gpr .esp = s₀.gpr .esp
@@ -128,7 +132,7 @@ structure Inv (to : Bool) (s₀ : State) (c p : Nat) (s : State) : Prop where
   edi : s.gpr .edi = BitVec.ofNat 32 (nBlk s₀ - p)
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
-  frame : Frame [dstR to s₀, scrR s₀] s₀.mem s.mem
+  frame : Frame [dstR to s₀, scrR s₀ B] s₀.mem s.mem
   saved : Saved s₀ s.mem
   scratchPrefix : s.mem.readW (addr (scrP s₀) 16) 128 = (0 : BitVec 32) ++ pfx s₀
   blocks : ∀ k < nBlk s₀,
@@ -141,7 +145,7 @@ theorem run_in {to : Bool} {s₀ : State} {c n : Nat} (hn : c + n ≤ nBlk s₀)
   Offset.sub_base _ (by omega_using [hn])
 
 /-- A destination block outside the encrypted run cannot overlap that run. -/
-theorem run_sep {to : Bool} {s₀ : State} (hp : GPre to s₀) {c n k : Nat} (hk : k < nBlk s₀)
+theorem run_sep {to : Bool} {s₀ : State} (hp : GPre to s₀ B) {c n k : Nat} (hk : k < nBlk s₀)
     (hn : c + n ≤ nBlk s₀) (hout : ¬ (c ≤ k ∧ k < c + n)) :
     Region.Disjoint ⟨tAddr s₀ to k, 16⟩ ⟨tAddr s₀ to c, 16 * n⟩ := by
   have hw := hp.fD
@@ -149,7 +153,7 @@ theorem run_sep {to : Bool} {s₀ : State} (hp : GPre to s₀) {c n k : Nat} (hk
 
 /-- The source blocks not yet read are as they were: they are the
 destination's in place, and apart from everything written out of place. -/
-theorem Inv.src {to : Bool} {s₀ s : State} (hp : GPre to s₀) {c p : Nat} (hI : Inv to s₀ c p s) {k : Nat}
+theorem Inv.src {to : Bool} {s₀ s : State} (hp : GPre to s₀ B) {c p : Nat} (hI : Inv B to s₀ c p s) {k : Nat}
     (hk : k < nBlk s₀) (hc : c ≤ k) : blockAt s.mem (bAddr s₀ k) = blk s₀ k := by
   rcases hp.sd with he | hdis
   · have e : bAddr s₀ k = tAddr s₀ to k := by simp only [bAddr, tAddr, he]
@@ -165,9 +169,9 @@ theorem Inv.src {to : Bool} {s₀ s : State} (hp : GPre to s₀) {c p : Nat} (hI
 
 /-- Entry setup, with `edx` set for the loops, supplies the loop invariant
 before any data is encrypted. -/
-theorem Inv.of_start {to : Bool} {s₀ s₁ s : State} (hp : GPre to s₀) (hs : Start s₀ s₁)
+theorem Inv.of_start {to : Bool} {s₀ s₁ s : State} (hp : GPre to s₀ B) (hs : Start B s₀ s₁)
     (hg : ∀ r, r ≠ .edx → s.gpr r = s₁.gpr r) (hedx : s.gpr .edx = edxAt to s₀ 0) (hm : s.mem = s₁.mem)
-    (hrd : s.rd = s₁.rd) (hwr : s.wr = s₁.wr) : Inv to s₀ 0 0 s := by
+    (hrd : s.rd = s₁.rd) (hwr : s.wr = s₁.wr) : Inv B to s₀ 0 0 s := by
   refine ⟨Nat.zero_le _, ?_, by rw [hg _ (by decide)]; exact hs.esp, by rw [hg _ (by decide)]; exact hs.ecx,
     hedx, by rw [hg _ (by decide)]; exact hs.ebp, ?_, ?_, by rw [hrd]; exact hs.rd, by rw [hwr]; exact hs.wr,
     ?_, by rw [hm]; exact hs.saved, by rw [hm]; exact hs.scratchPrefix, ?_⟩
@@ -195,6 +199,8 @@ namespace VG.Proof.Aes.X86.AesNi
 open VG VG.X86 VG.X86.RegUpd
 open VG.Proof.Aes.X86 (GPre datP nBlk)
 
+variable {B : Nat}
+
 /-- Bounded natural counts are zero exactly when their word is zero. -/
 theorem beq_ofNat_zero {k : Nat} (hk : k < 2 ^ 32) :
     (BitVec.ofNat 32 k == 0) = decide (k = 0) := by
@@ -208,12 +214,12 @@ theorem beq_ofNat_zero {k : Nat} (hk : k < 2 ^ 32) :
 
 /-- Public pointer and remaining-count advancement, without changing memory:
 out of place the destination pointer advances with the source's. -/
-theorem advance_ok {to : Bool} {s₀ : State} (hp : GPre to s₀) {c p n : Nat}
-    (hn : p + n ≤ nBlk s₀) {s : State} (hI : Inv to s₀ c p s) :
+theorem advance_ok {to : Bool} {s₀ : State} (hp : GPre to s₀ B) {c p n : Nat}
+    (hn : p + n ≤ nBlk s₀) {s : State} (hI : Inv B to s₀ c p s) :
     WP isa (.block (([.alu .add .esi (.imm (BitVec.ofNat 32 (16 * n)))] : List Instr) ++
       Impl.Aes.X86.AesNi.advTo to (BitVec.ofNat 32 (16 * n)) ++
       ([.alu .sub .edi (.imm (BitVec.ofNat 32 n))] : List Instr))) s fun s' =>
-      Inv to s₀ c (p + n) s' ∧ s'.zf = some (decide (nBlk s₀ - (p + n) = 0)) := by
+      Inv B to s₀ c (p + n) s' ∧ s'.zf = some (decide (nBlk s₀ - (p + n) = 0)) := by
   have hw := hp.fSrc
   have hsub : BitVec.ofNat 32 (nBlk s₀ - p) - BitVec.ofNat 32 n =
       BitVec.ofNat 32 (nBlk s₀ - (p + n)) := by
@@ -256,9 +262,9 @@ theorem advance_ok {to : Bool} {s₀ : State} (hp : GPre to s₀) {c p n : Nat}
 
 /-- The bulk-loop branch depends only on the public remaining count. -/
 theorem cmpEdi_ok {to : Bool} {s₀ : State} {c p n : Nat} (hn : n < 2 ^ 32)
-    (hp : p ≤ nBlk s₀) {s : State} (hI : Inv to s₀ c p s) :
+    (hp : p ≤ nBlk s₀) {s : State} (hI : Inv B to s₀ c p s) :
     WP isa (.block [.alu .cmp .edi (.imm (BitVec.ofNat 32 n))]) s fun s' =>
-      Inv to s₀ c p s' ∧ s'.cf = some (decide (nBlk s₀ - p < n)) := by
+      Inv B to s₀ c p s' ∧ s'.cf = some (decide (nBlk s₀ - p < n)) := by
   have hnb : nBlk s₀ < 2 ^ 32 := (arg s₀ 4).isLt
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, isa, exec, execAlu,
@@ -269,9 +275,9 @@ theorem cmpEdi_ok {to : Bool} {s₀ : State} {c p n : Nat} (hn : n < 2 ^ 32)
     Nat.mod_eq_of_lt hn, Nat.mod_eq_of_lt (show nBlk s₀ - p < 2 ^ 32 by omega)]
 
 /-- Zero detection between the bulk and tail loops also uses only the count. -/
-theorem testEdi_ok {to : Bool} {s₀ : State} {c p : Nat} {s : State} (hI : Inv to s₀ c p s) :
+theorem testEdi_ok {to : Bool} {s₀ : State} {c p : Nat} {s : State} (hI : Inv B to s₀ c p s) :
     WP isa (.block [.alu .test .edi (.reg .edi)]) s fun s' =>
-      Inv to s₀ c p s' ∧ s'.zf = some (decide (nBlk s₀ - p = 0)) := by
+      Inv B to s₀ c p s' ∧ s'.zf = some (decide (nBlk s₀ - p = 0)) := by
   have hnb : nBlk s₀ < 2 ^ 32 := (arg s₀ 4).isLt
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, isa, exec, execAlu,

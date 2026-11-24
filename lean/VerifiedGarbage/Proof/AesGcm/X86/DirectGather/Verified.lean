@@ -20,6 +20,7 @@ namespace VG.Proof.AesGcm.X86.DirectGather
 open VG VG.X86 VG.Impl.AesGcm.X86 VG.Spec.Gcm
 open VG.Spec.Aes (bytesAt)
 
+
 abbrev expected (s : State) := encryptWith (ctxCiph s.mem (w64 (Gather.K s)) (arg s 1).toNat)
   (ctxH s.mem (w64 (Gather.K s))) 16 (bytesAt s.mem (w64 (Gather.Nn s)) (Gather.NL s))
   (Gather.pt s (Gather.Cnt s)) (bytesAt s.mem (w64 (Gather.Ad s)) (Gather.AL s))
@@ -61,7 +62,7 @@ theorem source {s t : State} (h : Gather.Lay s) (p : Prepared s t) : Source s t 
   · rw [a,al]; exact Proof.Cmac.bytesAt_frame f (sep h.ba) (by omega_using [h.oa])
 
 theorem ciphertext {s t x y z : State} (h : Gather.Lay s) (p : Prepared s t)
-    (b : Begun s t x) (a : TextAt (text s) x (inc32 (jOf (pub t) t)) (text s).count y)
+    (b : Begun s t x) (a : TextAt 2560 (text s) x (inc32 (jOf (pub t) t)) (text s).count y)
     (ts : SetupPost y (work s) (SP s) 6 7 dataO lenO (w64 (SP s)) z) :
     bytesAt z.mem (w64 (Gather.Dst s)) (Gather.L s) = (expected s).1 := by
   have f := start_frame h p b.frame
@@ -83,7 +84,7 @@ theorem ciphertext {s t x y z : State} (h : Gather.Lay s) (p : Prepared s t)
   rw [Proof.Gcm.gctr_eq,← key,←j]; exact out
 
 theorem tag_suffix (v : GcmImpl) {s t z : State} (h : Gather.Lay s) (p : Prepared s t)
-    (ti : OTIn (pub t) t z)
+    (ti : OTIn 2560 (pub t) t z)
     (ct : bytesAt z.mem (w64 (Gather.Dst s)) (Gather.L s) = (expected s).1) :
     WP isa (.seq (oneTag v.callees 0) (.seq (tagOut 0) (.block restore))) z fun u =>
       abiPreserved t u ∧ Gather.gatherPost s u := by
@@ -96,13 +97,13 @@ theorem tag_suffix (v : GcmImpl) {s t z : State} (h : Gather.Lay s) (p : Prepare
   refine WP.seq (WP.mono ((oneTag_pc (vg := v) G (o := 0) (.inl rfl)).wp (t,z) z ⟨ti,rfl⟩) ?_)
   intro a fa
   obtain ⟨o,tag,frame⟩ := fa
-  have bp : WEnv ((pub t).2 8) a := ⟨o.env.ebp,o.env.wW,G.L.fw⟩
+  have bp : WEnv 2560 ((pub t).2 8) a := ⟨o.env.ebp,o.env.wW,G.L.fw,by decide⟩
   refine WP.seq (WP.mono (tagOut_ok bp (o := 0) (by decide) (o.tp.trans tg) (o.wr ▸ tgW) h.ot) ?_)
   intro b fb
   obtain ⟨tag',one,bp',_,sp',rd',wr'⟩ := fb
   have saved := o.saved.frame one (fun r hr => by
     obtain rfl := List.mem_singleton.mp hr
-    rw [ps.w]; exact (h.bt.sub_left (fun x hx => (zones h).workspace x (Lay.wSub (d := 128) (n := 16) (by decide) x hx))))
+    rw [ps.w]; exact (h.bt.sub_left (fun x hx => (zones h).workspace x (Lay.wSub (N := 2560) (d := 128) (n := 16) (by decide) (by decide) x hx))))
   have rsep : ∀ r ∈ [Gather.tgR s], (⟨w64 (SP s),4⟩ : Region).Disjoint r := fun r hr => by
     obtain rfl := List.mem_singleton.mp hr; exact h.bt.sub_left (zones h).ret
   have ret := ret_kept one rsep
@@ -136,6 +137,7 @@ public section
 namespace VG.Proof.AesGcm.X86.DirectGather
 open VG VG.X86 VG.X86.RegUpd VG.Impl.AesGcm.X86
 open VG.Impl.AesGcm.X86.DirectGather (body frameArgs pieces partialHead)
+
 
 theorem body_safe (v : GcmImpl) : (body v.callees).all (fun i => !isa.writesSp i) = true := by
   simp only [body,pieces,partialHead,Open.decTo,Open.wholeTo,Open.ctrToCall,
@@ -175,7 +177,7 @@ theorem body_wp (v : GcmImpl) {s t : State} (h : Gather.Lay s) (p : Prepared s t
   have b := begun h p en au.1 au.2 ls
   refine WP.seq (WP.mono (b.input.pieces_ok v b.ptr b.count b.off b.ctr) ?_)
   intro y ay
-  have ky : KeepEnv (work s) (SP s) 12 y :=
+  have ky : KeepEnv 2560 (work s) (SP s) 12 y :=
     keep.keep (ay.env.ebp.trans keep.ebp.symm) (ay.env.esp.trans keep.esp.symm)
       (ay.rd.trans ls.rd) (ay.wr.trans ls.wr)
   have perm : InRegions y.wr (w64 (SP s)) 4 := by

@@ -143,7 +143,7 @@ theorem entry_ok {s : State} (h : onePre s) : WP isa ocbEntry s (Entered s (prmO
     rw [arg, argAddr, hSP]
     exact rfl
   obtain aw' : (argsR SP 11).Disjoint ⟨w64 (arg s 10), 2560⟩ := aw.sub_right (Region.sub_prefix (by decide))
-  obtain ke : KeepEnv (arg s 10) SP 11 s₁ := ⟨bp₁, sp₁, by rw [wr₁]; exact wW, by rw [rd₁, wr₁]; exact rA, aw', fa, fw⟩
+  obtain ke : KeepEnv 2560 (arg s 10) SP 11 s₁ := ⟨bp₁, sp₁, by rw [wr₁]; exact wW, by rw [rd₁, wr₁]; exact rA, aw', fa, fw, by decide⟩
   obtain ⟨s₃, run₃, sl₃, f₃, g₃, rd₃, wr₃⟩ := keeps_ok entryPs (fun p hp => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hp
     rcases hp with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide) (by decide) ke

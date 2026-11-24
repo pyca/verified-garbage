@@ -13,7 +13,9 @@ whose algorithm and pieces these follow.
 ## The working space
 
 Every function has a buffer `W` of 2560 bytes (`scratch` or `work`, its
-last argument):
+last argument), but `seal` and `open` over an implementation of
+`vg_aes_ctr32_to` that uses 256 bytes of its own or fewer, whose `W` is of
+768 bytes (`Fn.seal`, `Fn.open`):
 
 * `[0, 16)`: the tag `finish`, `verify` and `seal` compute;
 * `[16, 96)`: the streaming state of `seal` and `open`;
@@ -28,7 +30,7 @@ last argument):
   values before it);
 * `[212, 216)`: the pointer `tag`, copied from the arguments on entry;
 * `[272, 288)`: the arguments of the piece running (`dO`, `nO`, `bO`);
-* `[512, 2560)`: the working space of the functions called.
+* `[512, 2560)`, or `[512, 768)`: the working space of the functions called.
 
 ## Registers
 

@@ -133,11 +133,11 @@ theorem updCall_ok (v : Ctr32Impl) {K W SP : BitVec 32} {s : State} (L : Lay K W
 
 /-- The frame and call of `vg_aes_ctr32_to` in place: AES-GCM's, with any
 implementation of `vg_aes_ghash` beside it. -/
-theorem ctrFrame_ok (v : Ctr32Impl) {s : State} {K C D S : BitVec 32} {R n : Nat} (h : CtrCall s K C D S R n) :
+theorem ctrFrame_ok (v : Ctr32Impl) {s : State} {K C D S : BitVec 32} {R n : Nat} (h : CtrCall 2048 s K C D S R n) :
     WP isa (.frame (.push [.ebx, .ebp, .edi, .ebx, .edx, .ecx, .eax]) (.call v.callee.name v.callee.code)
       (.pop .eax 7)) s
-      (CtrPost s K C D S R n) :=
-  Proof.AesGcm.X86.ctr_call ⟨v, .scalar⟩ h
+      (CtrPost 2048 s K C D S R n) :=
+  Proof.AesGcm.X86.ctr_call2048 ⟨v, .scalar⟩ h
 
 /-- A call of `vg_aes_ctr32_to` on `n` blocks at `Q`, from the counter block at
 `W + c`, with its working space at `W + 384`. -/
@@ -236,7 +236,7 @@ theorem ctrCall_ct (v : Ctr32Impl) {K W SP : BitVec 32} (L : Lay K W SP) {R : Na
   have b32 : Region.Sub (below SP 32) (below SP 60) := below_sub60 (by decide) hsp
   -- The state after `ebp := W + 384`, as `CtrCall` needs it.
   have call : ∀ s, I s → ∀ s', runBlock isa [.alu .add .ebp (imm scrO)] s = some s' →
-      CtrCall s' K (W + BitVec.ofNat 32 c) Q (W + BitVec.ofNat 32 384) R n ∧ s'.gpr .esp = SP := by
+      CtrCall 2048 s' K (W + BitVec.ofNat 32 c) Q (W + BitVec.ofNat 32 384) R n ∧ s'.gpr .esp = SP := by
     intro s hs s' run
     obtain ⟨E, hq, hqw, hqc, hqk, eax, ecx, edx, ebx, edi⟩ := hI s hs
     have e := run
@@ -268,7 +268,7 @@ theorem ctrCall_ct (v : Ctr32Impl) {K W SP : BitVec 32} (L : Lay K W SP) {R : Na
       simp only [List.mem_singleton] at hr; subst hr; rw [(hI _ h₁).1.ebp, (hI _ h₂).1.ebp]) (by taint_decide))
     (fun s hs => WP.of_runBlock ⟨_, by crun [], s, hs, by crun []⟩) ?_
   refine CT.seq (J := fun s => s.gpr .ebp = W + BitVec.ofNat 32 384)
-    ((Proof.AesGcm.X86.ctr_ct ⟨v, .scalar⟩ (E := SP) fun s ⟨s₀, h₀, run⟩ => call s₀ h₀ s run :
+    ((Proof.AesGcm.X86.ctr_ct2048 ⟨v, .scalar⟩ (E := SP) fun s ⟨s₀, h₀, run⟩ => call s₀ h₀ s run :
       CT _ (.frame (.push [.ebx, .ebp, .edi, .ebx, .edx, .ecx, .eax]) (.call v.callee.name v.callee.code)
         (.pop .eax 7))))
     (fun s ⟨s₀, h₀, run⟩ => WP.mono (ctrFrame_ok v (call s₀ h₀ s run).1) fun s₁ g => by

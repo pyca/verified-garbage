@@ -14,22 +14,24 @@ quantities here are buffer addresses, lengths, and round count. -/
 namespace VG.Proof.AesGcm.X86.DirectGather
 open VG VG.X86 VG.X86.RegUpd VG.Impl.AesGcm.X86
 
-structure WholePre (C St W SP D T : BitVec 32) (n R : Nat) (s : State) : Prop where
-  env : Env C St W SP s
+variable {N : Nat}
+
+structure WholePre (N : Nat) (C St W SP D T : BitVec 32) (n R : Nat) (s : State) : Prop where
+  env : Env N C St W SP s
   access : PieceAccess s SP D T n
   rounds : RoundsAt s.mem W R
   src : slotv s.mem W dataO = D
   len : slotv s.mem W lenO = BitVec.ofNat 32 n
 
-private structure Split (C St W SP D T : BitVec 32) (n R : Nat) (s : State) : Prop extends WholePre C St W SP D T n R s where
+private structure Split (N : Nat) (C St W SP D T : BitVec 32) (n R : Nat) (s : State) : Prop extends WholePre N C St W SP D T n R s where
   bx : s.gpr .ebx=D
   di : s.gpr .edi=BitVec.ofNat 32 (n/16)
   zf : s.zf=some (decide (n/16=0))
 
-theorem wholeTo_ct (v : GcmImpl) {C St W SP D T : BitVec 32} {n R : Nat}
-    (L : Lay C St W SP 32) (st : St=W+16#32) (P : PieceRegions C W SP D T n) (hlt : n < 2^32) :
-    CT (WholePre C St W SP D T n R) (Open.wholeTo v.callees.ctr) := by
-  refine CT.seq (J:=Split C St W SP D T n R) (CT.taint [.ebp] (fun s₁ s₂ a b r hr => by
+theorem wholeTo_ct (v : GcmImpl) [WSize N v.ctr.scr] {C St W SP D T : BitVec 32} {n R : Nat}
+    (L : Lay N C St W SP 32) (st : St=W+16#32) (P : PieceRegions N C W SP D T n) (hlt : n < 2^32) :
+    CT (WholePre N C St W SP D T n R) (Open.wholeTo v.callees.ctr) := by
+  refine CT.seq (J:=Split N C St W SP D T n R) (CT.taint [.ebp] (fun s₁ s₂ a b r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact a.env.ebp.trans b.env.ebp.symm) (by taint_decide)) ?_ ?_
   · intro s h
     have sh := shr4 hlt
@@ -39,7 +41,7 @@ theorem wholeTo_ct (v : GcmImpl) {C St W SP D T : BitVec 32} {n R : Nat}
     simp only [sh]
     exact congrArg some (and_self_beq32 (by omega_using [hlt]))
   refine CT.ite (decide (n/16=0)) (fun _ h => h.zf) (fun _ => CT.nil) (fun _ => ?_)
-  refine CT.seq (J:=fun s => CtrToCall s C (St+48#32) D (W+512#32) T R (n/16) ∧ s.gpr .esp=SP)
+  refine CT.seq (J:=fun s => CtrToCall v.ctr.scr s C (St+48#32) D (W+512#32) T R (n/16) ∧ s.gpr .esp=SP)
     (CT.taint [.ebp,.esi] (fun s₁ s₂ a b r hr => by
       simp only [List.mem_cons,List.not_mem_nil,or_false] at hr; rcases hr with rfl | rfl
       · exact a.env.ebp.trans b.env.ebp.symm
@@ -47,7 +49,7 @@ theorem wholeTo_ct (v : GcmImpl) {C St W SP D T : BitVec 32} {n R : Nat}
   · intro s h
     obtain ⟨u,run,ax,cx,dx,bp,g,m,rd,wr⟩ := ctrArgs_ok L h.env h.rounds
     have sp := (g .esp (by decide) (by decide) (by decide) (by decide)).trans h.env.esp
-    exact WP.of_runBlock ⟨u,run,pieceCall L st h.env P h.access h.rounds ax cx dx
+    exact WP.of_runBlock ⟨u,run,pieceCall v L st h.env P h.access h.rounds ax cx dx
       ((g _ (by decide) (by decide) (by decide) (by decide)).trans h.bx)
       ((g _ (by decide) (by decide) (by decide) (by decide)).trans h.di) bp sp m rd wr,sp⟩
   refine CT.seq (J:=fun s => s.gpr .ebp=W+512#32) (ctrTo_ct v fun _ h => h)

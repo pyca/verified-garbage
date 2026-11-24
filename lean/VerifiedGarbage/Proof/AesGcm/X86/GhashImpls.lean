@@ -22,6 +22,8 @@ namespace VG.Proof.AesGcm.X86
 
 open VG VG.X86
 
+variable {N : Nat}
+
 namespace GhashImpl
 
 /-- `vg_ghash_pclmul`. -/
