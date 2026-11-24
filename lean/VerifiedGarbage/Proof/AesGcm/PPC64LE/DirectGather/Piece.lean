@@ -33,7 +33,7 @@ theorem head_wp {V : Reg → BitVec 64} {sp S E : Addr} {P n : Nat} {icb : Block
     {s : State} (env : Env V sp s) (hS : s.gpr .r24 = S) (hE : s.gpr .r21 = E)
     (count : s.gpr .r25 = BitVec.ofNat 64 n) (off : s.gpr .r26 = BitVec.ofNat 64 (P % 16))
     (src : DataOk (V .r30) (V .r31) s S n) (dst : DataW (V .r29) (V .r30) (V .r31) s E n)
-    (sep : (⟨S,n⟩ : Region).Disjoint ⟨E,n⟩) (hn : n ≠ 0) (hP : P % 16 ≠ 0)
+    (buffers : S = E ∨ (⟨S,n⟩ : Region).Disjoint ⟨E,n⟩) (hn : n ≠ 0) (hP : P % 16 ≠ 0)
     (ctr : Ctr s.mem (V .r30 + BitVec.ofNat 64 48) (V .r30 + BitVec.ofNat 64 64) ciph icb P) :
     let k := min (16-P%16) n
     WP isa head s fun t =>
@@ -66,12 +66,12 @@ theorem head_wp {V : Reg → BitVec 64} {sp S E : Addr} {P n : Nat} {icb : Block
   have same := hu.trans hv
   have out := dst.take kLe
   have xp : XorPre true v A S E k := by
-    refine ⟨v3,v4,fun _ => v7,v5,kPos,by have := src.lt; omega_using [kLe,this],?_,?_,?_,?_,(fun h => nomatch h),.inr ?_⟩
+    refine ⟨v3,v4,fun _ => v7,v5,kPos,by have := src.lt; omega_using [kLe,this],?_,?_,?_,?_,(fun h => nomatch h),?_⟩
     · rw [same.rd,same.wr]; exact covers_left (env.perm.stC (by omega_using [rest]))
     · rw [same.rd,same.wr]; exact (src.take kLe).rd
     · rw [same.wr]; exact out.wr
     · exact (out.ok.st.sub_right (Lay.stSub (by omega_using [rest]))).symm
-    · exact (sep.sub_left (Region.sub_prefix kLe)).sub_right (Region.sub_prefix kLe)
+    · exact buffers.imp Eq.symm fun sep => (sep.sub_left (Region.sub_prefix kLe)).sub_right (Region.sub_prefix kLe)
   refine WP.mono (xorLoopWith_ok true v xp) fun t post => ?_
   have hm := post.mem
   rw [same.mem] at hm
@@ -109,7 +109,7 @@ theorem ctrTo_wp {V : Reg → BitVec 64} {sp S E : Addr} {P nb R : Nat} {icb : B
     (h5 : s.gpr .r5 = V .r30 + BitVec.ofNat 64 48) (h6 : s.gpr .r6 = S)
     (h7 : s.gpr .r7 = BitVec.ofNat 64 nb) (h26 : s.gpr .r26 = E-S)
     (src : DataOk (V .r30) (V .r31) s S (16*nb)) (dst : DataW (V .r29) (V .r30) (V .r31) s E (16*nb))
-    (sep : (⟨S,16*nb⟩ : Region).Disjoint ⟨E,16*nb⟩) (rounds : R=10 ∨ R=12 ∨ R=14)
+    (buffers : S = E ∨ (⟨S,16*nb⟩ : Region).Disjoint ⟨E,16*nb⟩) (rounds : R=10 ∨ R=12 ∨ R=14)
     (aligned : P % 16 = 0)
     (ctr : Ctr s.mem (V .r30 + BitVec.ofNat 64 48) (V .r30 + BitVec.ofNat 64 64)
       (ciphOf s.mem (V .r29) R) icb P) :
@@ -129,7 +129,7 @@ theorem ctrTo_wp {V : Reg → BitVec 64} {sp S E : Addr} {P nb R : Nat} {icb : B
   have r5 : u.gpr .r5 = C := h5
   have r6 : u.gpr .r6 = S := h6
   have post := ctrData_wp .r26 E u (fun t h => (h.effects.keep.gpr (by decide)).trans (by rw [r6]; exact h26))
-    (by decide) (.inr (by rwa [r6,r7]))
+    (by decide) (by rw [r6,r7]; exact buffers.imp_left Eq.symm)
     (by rw [r3]; simp [u,rd,wr]) (by rw [r5]; simp [u,wr]) (by rw [r7]; simp [u,wr])
     (by rw [r6,r7]; simp [u,rd,wr]) (by rw [r3,r7]; exact dst.ctx.sub_left (Region.sub_prefix (by decide)))
     (by rw [r5,r7]; exact (dst.ok.st.sub_right (Lay.stSub (by decide))).symm)
@@ -153,7 +153,7 @@ theorem whole_wp {V : Reg → BitVec 64} {sp S E : Addr} {P n R : Nat} {icb : Bl
     (count : s.gpr .r25 = BitVec.ofNat 64 n) (rounds : R = 10 ∨ R = 12 ∨ R = 14)
     (hR : V .r28 = BitVec.ofNat 64 R)
     (src : DataOk (V .r30) (V .r31) s S n) (dst : DataW (V .r29) (V .r30) (V .r31) s E n)
-    (sep : (⟨S,n⟩ : Region).Disjoint ⟨E,n⟩) (aligned : n = 0 ∨ P % 16 = 0)
+    (buffers : S = E ∨ (⟨S,n⟩ : Region).Disjoint ⟨E,n⟩) (aligned : n = 0 ∨ P % 16 = 0)
     (ctr : Ctr s.mem (V .r30 + BitVec.ofNat 64 48) (V .r30 + BitVec.ofNat 64 64)
       (ciphOf s.mem (V .r29) R) icb P) :
     let k := 16*(n/16)
@@ -209,7 +209,7 @@ theorem whole_wp {V : Reg → BitVec 64} {sp S E : Addr} {P n R : Nat} {icb : Bl
     have x := ctrTo_wp (V := u.gpr) (P := P) (R := R) (nb := nb) hu (u3.trans u29.symm) u4
       (by rwa [u30]) u6 u7 u26 (by rw [u30,u31]; exact (src.take kLe).of_eq kept.rd kept.wr)
       (by rw [u29,u30,u31]; exact (dst.take kLe).of_eq kept.rd kept.wr)
-      ((sep.sub_left (Region.sub_prefix kLe)).sub_right (Region.sub_prefix kLe)) rounds ha
+      (buffers.imp_right fun sep => (sep.sub_left (Region.sub_prefix kLe)).sub_right (Region.sub_prefix kLe)) rounds ha
       (by rw [u29,u30,kept.mem]; exact ctr)
     refine WP.mono x fun t ⟨hkeep,frame,out,advance⟩ => ?_
     rw [u29,kept.mem] at out advance
@@ -237,7 +237,7 @@ only written non-stack range is the corresponding interval in the output. -/
 structure Range (V : Reg → Addr) (entry : State) (S E : Addr) (n : Nat) : Prop where
   src : DataOk (V .r30) (V .r31) entry S n
   dst : DataW (V .r29) (V .r30) (V .r31) entry E n
-  sep : (⟨S,n⟩ : Region).Disjoint ⟨E,n⟩
+  buffers : S = E ∨ (⟨S,n⟩ : Region).Disjoint ⟨E,n⟩
 
 structure Progress (V : Reg → Addr) (sp : Addr) (R : Nat) (icb : Block) (P : Nat) (S E : Addr)
     (n : Nat) (entry : State) (j : Nat) (s : State) : Prop where
@@ -253,11 +253,17 @@ structure Progress (V : Reg → Addr) (sp : Addr) (R : Nat) (icb : Block) (P : N
 
 variable {V : Reg → Addr} {sp S E : Addr} {R P n j k : Nat} {icb : Block} {entry s t : State}
 
+theorem Range.drop {u : State} (a : Range V entry S E n) (hj : j ≤ n)
+    (rd : u.rd=entry.rd) (wr : u.wr=entry.wr) :
+    Range V u (S + BitVec.ofNat 64 j) (E + BitVec.ofNat 64 j) (n-j) := by
+  have sub (X : Addr) : Region.Sub ⟨X+BitVec.ofNat 64 j,n-j⟩ ⟨X,n⟩ :=
+    Offset.sub_base _ (Nat.le_of_eq (Nat.add_sub_of_le hj))
+  exact ⟨(a.src.drop hj).of_eq rd wr,(a.dst.drop hj).of_eq rd wr,
+    a.buffers.imp (congrArg (· + BitVec.ofNat 64 j)) fun h => (h.sub_left (sub S)).sub_right (sub E)⟩
+
 theorem Range.remaining (a : Range V entry S E n) (p : Progress V sp R icb P S E n entry j s) :
     Range V s (S + BitVec.ofNat 64 j) (E + BitVec.ofNat 64 j) (n-j) :=
-  ⟨(a.src.drop p.le).of_eq p.rd p.wr, (a.dst.drop p.le).of_eq p.rd p.wr,
-   (a.sep.sub_left (Offset.sub_base _ (by have := p.le; omega_using [this]))).sub_right
-     (Offset.sub_base _ (by have := p.le; omega_using [this]))⟩
+  a.drop p.le p.rd p.wr
 
 theorem Progress.ciph (p : Progress V sp R icb P S E n entry j s) (a : Range V entry S E n)
     (L : Lay (V .r29) (V .r30) (V .r31)) (rounds : R=10 ∨ R=12 ∨ R=14) :
@@ -291,7 +297,9 @@ theorem Progress.join (p : Progress V sp R icb P S E n entry j s) (a : Range V e
     refine bytesAt_frame p.frame (fun r hr => ?_) (by have := a.src.lt; omega_using [hjk,this])
     simp only [crFrame,List.mem_cons,List.not_mem_nil,or_false] at hr
     rcases hr with rfl | rfl
-    · exact (a.sep.sub_left subS).sub_right subE
+    · rcases a.buffers with rfl | apart
+      · exact hsep.symm
+      · exact (apart.sub_left subS).sub_right subE
     · exact (a.src.st.sub_left subS).sub_right subW
   refine ⟨done_appendTo (keptE.trans p.out) (by rwa [←keptS]),?_⟩
   apply Frame.trans (p.frame.sub ?_) (frame.sub ?_)
@@ -354,7 +362,7 @@ theorem atWhole (p : Progress V sp R icb P S E n o j s) (a : Range V o S E n)
   have ct : Ctr s.mem (V .r30+BitVec.ofNat 64 48) (V .r30+BitVec.ofNat 64 64)
       (ciphOf s.mem (V .r29) R) icb (P+j) := by rw [old]; exact p.ctr
   obtain ⟨tr,t,hx,⟨ptr,dest,left,frame,cipher,ctr⟩,keep⟩ :=
-    whole_wp p.env p.ptr he p.left rounds hR ra.src ra.dst ra.sep aligned ct
+    whole_wp p.env p.ptr he p.left rounds hR ra.src ra.dst ra.buffers aligned ct
   refine ⟨tr,t,hx,p.extend a (by dsimp [k]; have := p.le; omega_using [this]) ?_ keep.2.1 keep.2.2 ?_ ?_ ?_ ?_ ?_⟩
   · apply advanceEnv p.env _ keep (Exec.sp hx)
     exact dest.trans (add_ofNat_assoc ..)
@@ -381,7 +389,7 @@ theorem atHead (p : Progress V sp R icb P S E n o 0 s) (a : Range V o S E n)
   have ct := p.ctr
   rw [Nat.add_zero] at ct
   obtain ⟨tr,t,hx,⟨ptr,dest,left,frame,ctr,cipher⟩,keep⟩ := head_wp p.env hS he h0 h26
-    (a.src.of_eq p.rd p.wr) (a.dst.of_eq p.rd p.wr) a.sep hn hP ct
+    (a.src.of_eq p.rd p.wr) (a.dst.of_eq p.rd p.wr) a.buffers hn hP ct
   have advance : Progress V sp R icb P S E n o (0+k) t := by
     refine p.extend a (by rw [Nat.zero_add]; exact Nat.min_le_right _ _) ?_ keep.2.1 keep.2.2 ?_ ?_ ?_ ?_ ?_
     · rw [Nat.zero_add]
@@ -428,7 +436,7 @@ theorem atTail (p : Progress V sp R icb P S E n o j s) (a : Range V o S E n)
   have tin : TailIn true (cursors V (E+BitVec.ofNat 64 n)) sp R icb (P+j) (S+BitVec.ofNat 64 j)
       (E+BitVec.ofNat 64 j) k (ciphOf o.mem (V .r29) R) True u :=
     ⟨env,p.ptr,p.left,fun _ => he,hR,rounds,aligned,ra.src.of_eq (s' := u) rfl rfl,ra.dst.of_eq (s' := u) rfl rfl,
-      (fun h => nomatch h),.inr ra.sep,old,fun _ => p.ctr⟩
+      (fun h => nomatch h),ra.buffers.imp_left Eq.symm,old,fun _ => p.ctr⟩
   obtain ⟨tr',t,ex,out⟩ := cryptTailWith_ok (V := cursors V (E+BitVec.ofNat 64 n)) L tin tail
   have joined := p.join a (k := k) (Nat.le_of_eq hsum) (out.out trivial) out.frame
   rw [hsum] at joined
