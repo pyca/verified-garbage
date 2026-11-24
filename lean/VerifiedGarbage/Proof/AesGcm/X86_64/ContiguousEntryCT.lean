@@ -1,7 +1,7 @@
 module
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Sig
-public import VerifiedGarbage.Proof.AesGcm.Flag
+public import VerifiedGarbage.Proof.AesGcm.SealBuffers
 import VerifiedGarbage.Proof.AesGcm.Scratch
 import VerifiedGarbage.Proof.Framework.X86_64.FlagBranch
 import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
@@ -199,37 +199,6 @@ theorem rawVerified {contract : Contract isa} {M : CtxMode} {body : Prog isa}
   · exact (entry_ct hw hc (inputs s hs) (inputs t ht) (publicArgs s t pb) s t _ _ _ _ ⟨rfl,rfl⟩ ex ey).1
 
 end VG.Proof.AesGcm.X86_64.ContiguousSeal
-
-namespace VG.Proof.AesGcm.SealBuffers
-open VG VG.Spec.Gcm VG.Spec.Aes
-
-abbrev Agree (m₁ m₂ : Mem) (p : Addr) (n : Nat) : Prop :=
-  ∀ a, (⟨p,n⟩ : Region).Contains a 1 → m₁ a = m₂ a
-
-/-- The full-tag encryption equation used by the operations on an expanded key. -/
-def Equation (ctx nonce aad src dst tag : Addr) (rounds nl al n : Nat) (m out : Mem) : Prop :=
-  encryptWith (ctxCiph m ctx rounds) (ctxH m ctx) 16 (bytesAt m nonce nl) (bytesAt m src n)
-    (bytesAt m aad al) = (bytesAt out dst n,bytesAt out tag 16)
-
-theorem keyed {ctx nonce aad src dst tag : Addr} {rounds nl al n : Nat} {m out : Mem} {key : List Byte}
-    (hk : KeyRounds m ctx rounds key) (h : Equation ctx nonce aad src dst tag rounds nl al n m out) :
-    aesGcmEncrypt key 16 (bytesAt m nonce nl) (bytesAt m src n) (bytesAt m aad al) =
-      (bytesAt out dst n,bytesAt out tag 16) := by
-  obtain ⟨cipher,hash,_⟩ := keyRounds_ctx hk
-  unfold Equation at h
-  rwa [cipher,hash,← encrypt_eq] at h
-
-theorem keyRounds_local {m m' : Mem} {ctx : Addr} {rounds : Nat} {key : List Byte}
-    (h : Agree m m' ctx 256) (hk : KeyRounds m ctx rounds key) : KeyRounds m' ctx rounds key := by
-  obtain ⟨_,_,r⟩ := keyRounds_ctx hk
-  refine ⟨hk.1,hk.2.1,?_,(ctxH_congr (agree_of h)).trans hk.2.2.2⟩
-  rw [bytesAt_congr (fun i hi => agree_of h i (by rw [← hk.2.1] at hi; rcases r with r|r|r <;> omega))]; exact hk.2.2.1
-
-theorem prepared_local {m m' : Mem} {ctx : Addr} (h : Agree m m' ctx 1032) (valid : PreparedRepr m ctx) :
-    PreparedRepr m' ctx :=
-  (Flag.flaggedPowers_congr (agree_of h) (show Flag.FlaggedPowers 0 m ctx from ⟨Nat.zero_le _,valid⟩)).2
-
-end VG.Proof.AesGcm.SealBuffers
 
 namespace VG.Proof.AesGcm.SealBuffers
 open VG VG.Spec.Gcm
