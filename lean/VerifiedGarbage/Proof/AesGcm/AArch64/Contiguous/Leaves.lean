@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Contiguous.ShortCT
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Contiguous.Record
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Contiguous.Medium
 meta import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.AesGcm.AArch64.RelBase
 import VerifiedGarbage.Proof.AesGcm.AArch64.DirectGather.LeafCT
@@ -28,6 +29,9 @@ structure BackendFacts (v : GcmImpl) : Prop where
   sizes : 768 ≤ v.calls.pwWn ∧ v.calls.pwWn ≤ 2560 ∧ v.calls.pwWn % 16 = 0
   general : scrubSide (generalFrame v.calls) (v.calls.pwWn+80) 0 own [] = true
   depth : 16*(Impl.AesGcm.AArch64.DirectGather.framed v.calls).aarch64Depth < 2^64
+  mediumSide : scrubSide (mediumFrame v.callees) 800 0 own [] = true
+  mediumDepth : 16*(mediumInner v.callees).aarch64Depth < 2^64
+  hash16 : DirectGather.Hash16WithOk
   hash : DirectGather.HashEightWithOk
 
 end VG.Proof.AesGcm.AArch64.Contiguous
@@ -46,6 +50,7 @@ def leafContract (extra : State → Prop) : Contract isa where
   pub a b := onePub 3 a b ∧ a.dit=b.dit
 
 def standard (s : State) : Prop := (s.gpr .x3).toNat=12 ∧ (s.gpr .x5).toNat≤16
+def bounded (s : State) : Prop := standard s ∧ (stackArg s 0).toNat ≤ 224
 def short (s : State) : Prop := standard s ∧ (stackArg s 0).toNat ≤ 96
 
 private theorem scrubLeaf {p : State → Prop} {code : Prog isa} {W : Nat}
@@ -84,5 +89,16 @@ theorem shortLeaf (hash : DirectGather.HashEightWithOk) (sat : ∃ s, (leafContr
   intro a b pa pb pub
   exact Short.frame_rel hash pa.1 pb.1 pa.2.1 pb.2.1 pa.2.2.1.1 pb.2.2.1.1 pa.2.2.1.2 pb.2.2.1.2
     pa.2.2.2 pb.2.2.2 pub.1
+
+theorem boundedLeaf {v : GcmImpl} (facts : BackendFacts v) (z : v.calls.ctr.scratch=0)
+    (sat : ∃ s, (leafContract bounded).pre s) :
+    VerifiedScrubbed target (scrubAll 800 0 own (mediumFrame v.calls.callees)) (leafContract bounded) 0 := by
+  have zero : v.ctr.scratch=0 := v.ctr.scratch_eq.symm.trans z
+  apply scrubLeaf (by decide) facts.mediumSide
+  refine ⟨fun _ h => MediumRecord.frame_ok v zero facts.hash16 h.1 h.2.1 h.2.2.1.1 h.2.2.1.2 h.2.2.2
+    (DirectGather.keepsV_of_gatherSide facts.mediumSide) facts.mediumDepth,ct_of ?_,sat⟩
+  intro a b pa pb pub
+  exact MediumRecord.frame_rel v zero facts.hash16 pa.1 pb.1 pa.2.1 pb.2.1 pa.2.2.1.1 pb.2.2.1.1
+    pa.2.2.1.2 pb.2.2.1.2 pa.2.2.2 pb.2.2.2 pub.1 pub.2
 
 end VG.Proof.AesGcm.AArch64.Contiguous
