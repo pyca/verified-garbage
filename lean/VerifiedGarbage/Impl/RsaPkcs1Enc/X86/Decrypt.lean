@@ -100,7 +100,7 @@ def privSrc : List Nat := [0, 4, 3, 4, 5, 6, 9, 4, 11, 12, 13, 14, 15, 16, 17, 1
 
 def privArgs : List Instr := (privSrc.zipIdx).flatMap fun (j, i) => copyArg j i
 
-/-- `privArgs`, then `vg_rsa_pkcs1_decrypt_precomputed`'s `pre` and `pre_len` (its arguments 23
+/-- `privArgs`, then `vg_rsa_pkcs1_decrypt_precomputed_body`'s `pre` and `pre_len` (its arguments 23
 and 24) as `vg_rsa_private_checked_precomputed`'s last two, in the slots `oR` and `oI`, which
 the body uses only after the call. -/
 def privArgsP : List Instr := privArgs ++ copyArg 23 20 ++ copyArg 24 21
@@ -349,7 +349,7 @@ def body (privN : String) (priv : Prog isa) (args : List Instr := privArgs) : Pr
     (.seq (.block dCopy) (.seq Impl.Bignum.X86.copyBytes (.seq (hashD F) (.seq (kdkMac F) (.seq (clLoop F)
     (.seq (amLoop F) (.seq alPart selPart))))))))))
 
-/-- `vg_rsa_pkcs1_decrypt`; with `args := privArgsP`, `vg_rsa_pkcs1_decrypt_precomputed`, calling
+/-- `vg_rsa_pkcs1_decrypt`; with `args := privArgsP`, `vg_rsa_pkcs1_decrypt_precomputed_body`, calling
 `vg_rsa_private_checked_precomputed`. -/
 def code (privN : String) (priv : Prog isa) (args : List Instr := privArgs) : Prog isa :=
   wrap frameBytes (body F privN priv args)

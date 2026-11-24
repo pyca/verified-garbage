@@ -598,10 +598,10 @@ theorem pdP_call (P : PublicImpl) (name : String)
   have hv := P.ok
   obtain hpre := pdP_pre hp hq he hw0 hw1 hw2 hw3 hdi hsi hdx hcx h8 h9
   obtain hdd : 8 * (P.code).depth + 16 < 2 ^ 64 := by rw [P.depth]; decide
-  have hpre' : (⟨pdContract.pre, pdChkContract.post, pdContract.pub⟩ : Contract isa).pre
+  have hpre' : (⟨pdContract.pre, pdChkContract.post, pdContract.pub, none⟩ : Contract isa).pre
       (t.callEntry.withRegions (pdRdP s) (pdWr s)) := hpre
   obtain hcov := Covers.append_left cr cw.right
-  refine WP.call_mx (k := ⟨pdContract.pre, pdChkContract.post, pdContract.pub⟩) (rd := pdRdP s) (wr := pdWr s)
+  refine WP.call_mx (k := ⟨pdContract.pre, pdChkContract.post, pdContract.pub, none⟩) (rd := pdRdP s) (wr := pdWr s)
     hv P.nosp hdd
     hpre' hcov cw ?_
   intro s' hrd hwr hcs hf _ ⟨s₂, hm₂, hg₂, hpost⟩ hmx
@@ -985,10 +985,10 @@ theorem pdP_view {a s t : State} (S : SibP a s) (h : J5P s t) :
 
 theorem pdP_ct (P : PublicImpl) (name : String) :
     RelCT isa (Two (AtP J5P)) (.call name (P.code)) fun _ _ => True := by
-  have hct : ConstantTime isa (⟨pdContract.pre, pdChkContract.post, pdContract.pub⟩ : Contract isa).pre
-      (⟨pdContract.pre, pdChkContract.post, pdContract.pub⟩ : Contract isa).pub (P.code) :=
+  have hct : ConstantTime isa (⟨pdContract.pre, pdChkContract.post, pdContract.pub, none⟩ : Contract isa).pre
+      (⟨pdContract.pre, pdChkContract.post, pdContract.pub, none⟩ : Contract isa).pub (P.code) :=
     P.ct
-  refine RelCT.callEx (k := ⟨pdContract.pre, pdChkContract.post, pdContract.pub⟩)
+  refine RelCT.callEx (k := ⟨pdContract.pre, pdChkContract.post, pdContract.pub, none⟩)
     P.ok hct fun t₁ t₂ ⟨a, ⟨s₁, S₁, j₁⟩, ⟨s₂, S₂, j₂⟩⟩ => ?_
   obtain ⟨r₁, a0₁, a1₁, a2₁, a3₁, w₁', e₁⟩ := pdP_view S₁ j₁
   obtain ⟨r₂, a0₂, a1₂, a2₂, a3₂, w₂', e₂⟩ := pdP_view S₂ j₂

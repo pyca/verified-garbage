@@ -99,7 +99,7 @@ theorem callR_ok {enc : Nat → Nat} {f : String} {body : Prog isa} (hn : body.n
     exact Covers.one h
   refine WP.call (k := ⟨fun t => t.rd = [] ∧ t.wr = [⟨base, 8192⟩] ∧ t.gpr .r0 = s.gpr .r12 ∧
       (t.gpr .r1).toNat = enc o ∧ (t.gpr .r2).toNat = enc a ∧ (t.gpr .r3).toNat = enc b ∧ t.mem = s.mem,
-      fun t t' => Kept n base (enc o) t.mem t'.mem ∧ V t.mem t'.mem ∧ t'.gpr .r12 = t.gpr .r0, fun _ _ => True⟩)
+      fun t t' => Kept n base (enc o) t.mem t'.mem ∧ V t.mem t'.mem ∧ t'.gpr .r12 = t.gpr .r0, fun _ _ => True, none⟩)
     (fun t ⟨h1, h2, h3, h4, h5, h6, h7⟩ => by
       obtain ⟨tr, t', he, A, K, W, R⟩ := hbody t h1 h2 h3 h4 h5 h6 h7
       exact ⟨tr, t', he, A, K, W, R⟩)
@@ -739,7 +739,7 @@ theorem ptCall_ok {S : Impl.Weierstrass.Mont.Modulus} {m k : Nat} [NeZero m] (hm
         (Eb k' m' dbl t'.mem (State.addr (t.gpr .r0)) 0, Eb k' m' dbl t'.mem (State.addr (t.gpr .r0)) 1,
           Eb k' m' dbl t'.mem (State.addr (t.gpr .r0)) 2) =
         ptVal a0 dbl (Eb k' m' dbl t.mem (State.addr (t.gpr .r0))),
-      fun _ _ => True⟩)
+      fun _ _ => True, none⟩)
     (fun t ⟨hp, _, _⟩ => by
       obtain ⟨tr, t', he, A, O, R, L, E⟩ := fnOps_ok (S := ⟨c, w, m', k', d⟩) hM hodd (ptOps_opsOk a0 dbl) hp
       exact ⟨tr, t', he, A, O, R, L, E.trans (ptOps_run _ a0 dbl)⟩)

@@ -447,7 +447,7 @@ theorem ctAS_ok (hMK : MulKey) (gh : Gh8Ok) {tb : List Instr} {k : Reg → BitVe
     (htb : ∀ u : State, Env Wn Ctx (W + BitVec.ofNat 64 16) W SP u → u.rd = ρ.rd → u.wr = ρ.wr →
       Frame [workR Wn W, ⟨D, n⟩] ρ.mem u.mem → KeyAt H u.mem W → WP isa (.block tb) u (Stitch.TblPost W H u)) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) (hWs : 1024 ≤ Wn := by first | with_reducible assumption | decide | omega) :
     WP isa (.seq Impl.AesGcm.AArch64.Fast.front (.seq (Impl.AesGcm.AArch64.Stitch.stitched [] tb
-        Impl.Gcm.AArch64.Stitch.enc) (.block (Impl.AesGcm.AArch64.Stitch.whole ++
+        Impl.Gcm.AArch64.Stitch.sealInPlace) (.block (Impl.AesGcm.AArch64.Stitch.whole ++
         ([.add .x .x23 .x23 .x9, mov .x27 .x23, .sub .x .x24 .x26 .x9, imm .x25 0] : List Instr))))) s₁
       fun s₄ => Mid Wn Ctx W SP H R n D Tg (D + BitVec.ofNat 64 (Stitch.pre n)) ρ s₄ ∧
         CrIn Wn Ctx (W + BitVec.ofNat 64 16) W SP s₄.gpr R (Stitch.pre n) (D + BitVec.ofNat 64 (Stitch.pre n))
@@ -499,7 +499,7 @@ theorem runWithSX_rel (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) (gh : Gh8Ok) 
     (htbrel : ∀ v₁ v₂ : State, v₁.sp = SP → v₂.sp = SP → (∀ r ∈ stRegs, v₁.gpr r = v₂.gpr r) →
       v₁.rd = ρ₁.rd → v₁.wr = ρ₁.wr → Frame [workR Wn W, ⟨D, n⟩] ρ₁.mem v₁.mem →
       v₂.rd = ρ₂.rd → v₂.wr = ρ₂.wr → Frame [workR Wn W, ⟨D, n⟩] ρ₂.mem v₂.mem →
-      RelCT isa (Eq2 v₁ v₂) (.seq (.block tb) Impl.Gcm.AArch64.Stitch.enc) TT) (hv : v.ctr.scratch ≤ Wn - 512 := by first | with_reducible assumption | exact v.ctr.scratch_le) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) (hWs : 1024 ≤ Wn := by first | with_reducible assumption | decide | omega) :
+      RelCT isa (Eq2 v₁ v₂) (.seq (.block tb) Impl.Gcm.AArch64.Stitch.sealInPlace) TT) (hv : v.ctr.scratch ≤ Wn - 512 := by first | with_reducible assumption | exact v.ctr.scratch_le) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) (hWs : 1024 ≤ Wn := by first | with_reducible assumption | decide | omega) :
     RelCT isa (Eq2 σ₁ σ₂) (Impl.AesGcm.AArch64.Stitch.runWithS v.callees tb cl) TT := by
   obtain ⟨x4₁, x5₁, x6₁, x7₁⟩ := hx₁
   obtain ⟨x4₂, x5₂, x6₂, x7₂⟩ := hx₂
@@ -509,7 +509,7 @@ theorem runWithSX_rel (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) (gh : Gh8Ok) 
   obtain subR : Region.Sub ⟨D + BitVec.ofNat 64 (Stitch.pre n), n - Stitch.pre n⟩ ⟨D, n⟩ := Offset.sub_base D (by omega_using [hpn])
   unfold Impl.AesGcm.AArch64.Stitch.runWithS
   obtain chunk : RelCT isa (Eq2 σ₁ σ₂) (.seq Impl.AesGcm.AArch64.Fast.front (.seq (Impl.AesGcm.AArch64.Stitch.stitched []
-      tb Impl.Gcm.AArch64.Stitch.enc) (.block (Impl.AesGcm.AArch64.Stitch.whole ++
+      tb Impl.Gcm.AArch64.Stitch.sealInPlace) (.block (Impl.AesGcm.AArch64.Stitch.whole ++
       [.add .x .x23 .x23 .x9, mov .x27 .x23, .sub .x .x24 .x26 .x9, imm .x25 0])))) TT := by
     refine rel_seq (rel_taint [.x4, .x5, .x6, .x7, .x19, .x20, .x21, .x23]
         (by rw [hJ₁.env.sp, hJ₂.env.sp])

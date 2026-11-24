@@ -40,7 +40,7 @@ abbrev pwRest : List Instr :=
   (List.range 8).flatMap (fun k => Impl.Gcm.AArch64.Pmull.loadPw (k + 1)) ++ Impl.AesGcm.AArch64.Stitch.tbl
 
 theorem pwRestEnc_rel {u₁ u₂ : State} (hsp : u₁.sp = u₂.sp) (hr : ∀ r ∈ Reg.x5 :: stRegs, u₁.gpr r = u₂.gpr r) :
-    RelCT isa (Eq2 u₁ u₂) (.seq (.block pwRest) Impl.Gcm.AArch64.Stitch.enc) TT :=
+    RelCT isa (Eq2 u₁ u₂) (.seq (.block pwRest) Impl.Gcm.AArch64.Stitch.sealInPlace) TT :=
   rel_taint (.x5 :: stRegs) hsp hr ⟨_, by taint_decide⟩
 
 theorem pwRestDec_rel {u₁ u₂ : State} (hsp : u₁.sp = u₂.sp) (hr : ∀ r ∈ Reg.x5 :: stRegs, u₁.gpr r = u₂.gpr r) :

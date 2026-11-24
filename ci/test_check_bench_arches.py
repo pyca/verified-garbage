@@ -1022,6 +1022,9 @@ class Budget(unittest.TestCase):
         # A group without copies: each side's rounds, and the references once.
         self.assertAlmostEqual(planned({'sha1': 3}, 2, 1, 8, 0), 3 * 2 * per)
         self.assertAlmostEqual(planned({'sha1': 3}, 2, 5, 8, 2), 3 * 12 * per)
+        # The references' copies count when they run from them too.
+        both = {'sha256': 1, 'md5': 1}
+        self.assertAlmostEqual(planned(both, 1, 1, 8, 2, True) - planned(both, 1, 1, 8, 2), 2 * 7 * per)
         self.assertAlmostEqual(planned({'sha1': 3}, 1, 1, 8, 2), 3 * 3 * per)
         # AES-GCM's run from 7 more copies of each side's binary.
         self.assertAlmostEqual(planned({'aes-128-gcm-encrypt': 6}, 2, 1, 8, 0), 6 * 16 * per)

@@ -284,7 +284,7 @@ theorem call_ok (v : PublicImpl) {s t : State} (hp : PPre s) (hj : J5 s t) :
   have hpre := call_pre hp hj
   obtain ⟨h, hdi, hsi, hdx, hcx, h8, h9⟩ := hj
   obtain ⟨hc, hw⟩ := call_covers hp h
-  refine WP.call_mx (s := t) (k := ⟨pdContract.pre, pdChkContract.post, pdContract.pub⟩) (rd := callRd s)
+  refine WP.call_mx (s := t) (k := ⟨pdContract.pre, pdChkContract.post, pdContract.pub, none⟩) (rd := callRd s)
     (wr := pubWr s) v.ok v.nosp (by rw [v.depth]; decide) hpre hc hw ?_
   intro s' hrd hwr hcs hf _ ⟨s₂, hm₂, hg₂, hpost⟩ hmx
   rw [v.depth, h.rsp] at hf

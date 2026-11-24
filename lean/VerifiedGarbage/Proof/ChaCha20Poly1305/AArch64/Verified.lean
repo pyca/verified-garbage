@@ -2379,7 +2379,8 @@ theorem openWr_covers {s : State} (h : preOpenW s) : Covers (openWr s) s.wr := b
 `match`es on `decrypt` that are not the same term by evaluating `decrypt`, so the postconditions
 below are unfolded by rewriting, not by unification. -/
 private theorem contract_post_mk {M : ISA} (pre : M.State → Prop) (post : M.State → M.State → Prop)
-    (pub : M.State → M.State → Prop) : (Contract.mk pre post pub).post = post := rfl
+    (pub : M.State → M.State → Prop) (retExt : Option (BitVec 64 → BitVec 64)) :
+    (Contract.mk pre post pub retExt).post = post := rfl
 
 /-- `openInAArch64`'s postcondition, which reads only the memory and the registers, gives `openW`'s. -/
 private theorem openW_post_of {t t' u u' : State} (h : openInAArch64.post t t') (hm : t.mem = u.mem)

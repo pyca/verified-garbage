@@ -134,6 +134,15 @@ def abi : Abi isa where
   rd s := s.rd
   wr s := s.wr
   ret s := s.gpr .x0
+  -- AAPCS64 "Result return": a result is returned "in the same registers as
+  -- would be used for such an argument", and C.16 puts an integer of at most
+  -- 8 bytes in "the least significant bits of a 64-bit register and the
+  -- remaining bits filled with unspecified values". Apple's differences
+  -- concern only types narrower than 32 bits, which no `IntTy` is.
+  retExt
+    | .u32 => none
+    | .u64 => none
+    | .usize => none
   sym := some fun s name => s.syms name
 
 /-- Reducible, as an `abbrev` would be, but not inlined: an `abbrev` is compiled into

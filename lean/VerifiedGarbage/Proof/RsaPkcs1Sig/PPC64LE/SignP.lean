@@ -160,6 +160,6 @@ theorem sign_impliesP : fnContractP.Implies (Spec.RsaPkcs1Sig.signPrecomputedCon
 
 /-- `vg_rsa_pkcs1_sign_precomputed`. -/
 theorem codeP_verified : Verified target codeP (Spec.RsaPkcs1Sig.signPrecomputedContract abi stackBytes) :=
-  Verified.of_correct codeP_correct codeP_ct sign_impliesP
+  Verified.of_correct (k := fnContractP) codeP_correct codeP_ct sign_impliesP
 
 end VG.Proof.RsaPkcs1Sig.PPC64LE.Sign

@@ -171,20 +171,7 @@ def setup : List Instr :=
 def finish : List Instr :=
   [.vop (.rev .rev64b Y Y), .strq Y .x20 16, .rev32 .x12 .x10, .str .w .x12 .x20 60]
 
-/-- One iteration of `seal`'s loop: batch `i + 1` (at `x9 + 128`) encrypted
-while batch `i` (at `x9`) is hashed. -/
-def encBody (nr : Nat) : List Instr :=
-  parts nr 128 ++ stores 128 ++
-    ([.addImm .x .x9 .x9 128, .subImm .x .x11 .x11 1] : List Instr)
-
-/-- `seal`'s loop over `x11 ≥ 1` batches: the first encrypted, then each
-next one encrypted while the one before is hashed, then the last hashed. -/
-def encLoop (nr : Nat) : Prog isa :=
-  .seq (.block (aesPart nr 0 ++ stores 0 ++ ([.subImm .x .x11 .x11 1] : List Instr)))
-    (.seq (.ite (.zero .x .x11) (.block []) (.loop (.block (encBody nr)) (.nonzero .x .x11)))
-      (.block (ghPart ++ ([.addImm .x .x9 .x9 128] : List Instr))))
-
-/-- Sealing from a separate source in `x15`. GHASH and all stores use
+/-- Sealing from the source in `x15`. GHASH and all stores use
 the destination at `x9`; only counter mode reads plaintext at `x15`. -/
 def encToLoop (nr : Nat) : Prog isa :=
   let advance := [.addImm .x .x15 .x15 128, .addImm .x .x9 .x9 128]
@@ -215,9 +202,14 @@ def byRounds (f : Nat → Prog isa) : Prog isa :=
   .seq (.block [.subImm .x .x13 .x22 10, .subImm .x .x14 .x22 12])
     (.ite (.zero .x .x13) (f 10) (.ite (.zero .x .x14) (f 12) (f 14)))
 
-/-- Encrypt and hash the first `128 ⌊x26 / 128⌋` bytes of the text at `x23`
-(at least 128), with the table of keys set up. -/
-def enc : Prog isa := .seq (.block setup) (.seq (byRounds encLoop) (.block finish))
+/-- Encrypt whole batches from x15 into x23. The buffers may be identical or disjoint. -/
+def sealBuffers : Prog isa := .seq (.block setup) (.seq (byRounds encToLoop) (.block finish))
+
+/-- Both sealing entry points call the same interleaved kernel. -/
+def sealCall : Prog isa := .call "vg_aes_gcm_seal_batches_aes_sha3" sealBuffers
+
+/-- Point the shared kernel's input cursor at the in-place buffer. -/
+def sealInPlace : Prog isa := .seq (.block [.addImm .x .x15 .x23 0]) sealCall
 
 /-- Decrypt and hash them: in place, or, with `to`, the plaintext to the
 destination at `x15` (which the loop advances past it). -/

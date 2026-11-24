@@ -36,12 +36,12 @@ meta import VerifiedGarbage.Proof.Mgf1.Bytes
 meta import VerifiedGarbage.Proof.RsaPkcs1Enc.Contract
 
 /-!
-# `vg_rsa_pkcs1_decrypt_precomputed_front` on AArch64
+# `vg_rsa_pkcs1_decrypt_precomputed` on AArch64
 
 `Front.code` (`Impl/RsaPkcs1Enc/AArch64/Front.lean`) against
-`Spec.RsaPkcs1Enc.decryptPrecomputedFrontContract` with 3776 bytes of stack
+`Spec.RsaPkcs1Enc.decryptPrecomputedContract` with 3776 bytes of stack
 (`front_verified`), for any callee verified against
-`Proof.RsaPkcs1Enc.decryptPrecomputedContract` with 3488: its proof is used
+`Proof.RsaPkcs1Enc.decryptPrecomputedBodyContract` with 3488: its proof is used
 only through that contract. Both contracts have the same precondition and
 public data; `FPre` names what the function uses of it.
 
@@ -84,11 +84,11 @@ open VG.Proof.RsaOaep.AArch64 (off off_off word Lay Rep Geo Step)
 
 /-! ## The contracts, by name -/
 
-/-- `vg_rsa_pkcs1_decrypt_precomputed`'s contract, the callee's. -/
-abbrev DK (n : Nat) : Contract isa := Proof.RsaPkcs1Enc.decryptPrecomputedContract AArch64.abi n
+/-- `vg_rsa_pkcs1_decrypt_precomputed_body`'s contract, the callee's. -/
+abbrev DK (n : Nat) : Contract isa := Proof.RsaPkcs1Enc.decryptPrecomputedBodyContract AArch64.abi n
 
-/-- `vg_rsa_pkcs1_decrypt_precomputed_front`'s. -/
-abbrev FK (n : Nat) : Contract isa := Spec.RsaPkcs1Enc.decryptPrecomputedFrontContract AArch64.abi n
+/-- `vg_rsa_pkcs1_decrypt_precomputed`'s. -/
+abbrev FK (n : Nat) : Contract isa := Spec.RsaPkcs1Enc.decryptPrecomputedContract AArch64.abi n
 
 theorem stackArgs17 (s : State) :
     List.map (stackArg s) (List.range 17) = [stackArg s 0, stackArg s 1, stackArg s 2, stackArg s 3,
@@ -144,7 +144,7 @@ structure FPre (s : State) : Prop where
     Spec.Rsa.privatePrecomputedWords (s.gpr .x4).toNat (stackArg s 4).toNat (stackArg s 6).toNat
 
 theorem fpre_of {s : State} (h : (FK 3776).pre s) : FPre s := by
-  sig_pre [Spec.RsaPkcs1Enc.decryptPrecomputedFrontContract, Spec.RsaPkcs1Enc.decryptPrecomputedFrontSig,
+  sig_pre [Spec.RsaPkcs1Enc.decryptPrecomputedContract, Spec.RsaPkcs1Enc.decryptPrecomputedSig,
     AArch64.abi, AArch64.argRegs, stackArgs17, List.append_eq,
     _root_.List.range, _root_.List.range.loop] at h
   sig_split h
@@ -393,14 +393,14 @@ theorem ce_argA : stackArgAddr (cEntry s w) 0 = F s := by
 end
 
 theorem call_pre {s w : State} (h : (FK 3776).pre s) (hr : Ready s w) : (DK 3488).pre (cEntry s w) := by
-  sig_pre [Spec.RsaPkcs1Enc.decryptPrecomputedFrontContract, Spec.RsaPkcs1Enc.decryptPrecomputedFrontSig,
+  sig_pre [Spec.RsaPkcs1Enc.decryptPrecomputedContract, Spec.RsaPkcs1Enc.decryptPrecomputedSig,
     AArch64.abi, AArch64.argRegs, stackArgs17, List.append_eq,
     _root_.List.range, _root_.List.range.loop] at h
   sig_split h
   rename_i sp1 sp2 rd wr oM oN oE oD oI oP oQ oDP oDQ oQI oS oPr oA mN mE mD mI mP mQ mDP mDQ mQI mS mPr mA
     nS eS dS iS pS qS dpS dqS qiS sPr sA kO kM kN kE kD kI kP kQ kDP kDQ kQI kS kPr kA bO bM bN bE bD bI bP bQ
     bDP bDQ bQI bS bPr kv olk ilk el1 elk dl1 dlk pl1 plk ql1 qlk dpl qil dql slk prl
-  sig_pre [Proof.RsaPkcs1Enc.decryptPrecomputedContract, Proof.RsaPkcs1Enc.decryptPrecomputedSig,
+  sig_pre [Proof.RsaPkcs1Enc.decryptPrecomputedBodyContract, Proof.RsaPkcs1Enc.decryptPrecomputedBodySig,
     Proof.RsaPkcs1Enc.decryptSig, AArch64.abi, AArch64.argRegs, stackArgs17, List.append_eq,
     _root_.List.range, _root_.List.range.loop]
   simp only [ce_argA hr, hr.gpr .x0 (by decide) (by decide), hr.gpr .x1 (by decide) (by decide), hr.gpr .x2 (by decide) (by decide),
@@ -460,7 +460,7 @@ structure Called (s u : State) : Prop where
   wK : word u.mem (F s) sK = s.gpr .x4
   wMl : word u.mem (F s) sMl = s.gpr .x2
   lr : u.mem.readW (s.sp - 16) 64 = s.gpr .x30
-  post : Proof.RsaPkcs1Enc.writtenMsg u.mem (s.gpr .x0) (s.gpr .x2) (kOf s) ((u.gpr .x0).setWidth 32) (decOf s)
+  post : Proof.RsaPkcs1Enc.writtenMsgEnd u.mem (s.gpr .x0) (s.gpr .x2) (kOf s) ((u.gpr .x0).setWidth 32) (decOf s)
 
 theorem call_covers {s w : State} (hp : FPre s) (hr : Ready s w) :
     Covers (rdC s ++ s.wr) (w.rd ++ w.wr) ∧ Covers s.wr w.wr := by
@@ -484,10 +484,10 @@ theorem call_ok {name : String} {callee : Prog isa}
   obtain ⟨cr, cw⟩ := call_covers hp hr
   refine WP.callFV hv (call_pre h hr) cr cw (fun u hrd hwr hsp hf hcs hvs hpost => ?_)
     (by omega_arith)
-  sig_post [Proof.RsaPkcs1Enc.decryptPrecomputedContract, Proof.RsaPkcs1Enc.decryptPrecomputedSig,
+  sig_post [Proof.RsaPkcs1Enc.decryptPrecomputedBodyContract, Proof.RsaPkcs1Enc.decryptPrecomputedBodySig,
     Proof.RsaPkcs1Enc.decryptSig, AArch64.abi, AArch64.argRegs, stackArgs17, List.append_eq,
     _root_.List.range, _root_.List.range.loop] at hpost
-  sig_pre [Spec.RsaPkcs1Enc.decryptPrecomputedFrontContract, Spec.RsaPkcs1Enc.decryptPrecomputedFrontSig,
+  sig_pre [Spec.RsaPkcs1Enc.decryptPrecomputedContract, Spec.RsaPkcs1Enc.decryptPrecomputedSig,
     AArch64.abi, AArch64.argRegs, stackArgs17, List.append_eq,
     _root_.List.range, _root_.List.range.loop] at h
   sig_split h
@@ -558,12 +558,12 @@ structure DataO (s : State) (o : Spec.Rsa.Outcome) (m0 : Mem) (R : BitVec 64) (M
   ml : m0.readW (s.gpr .x2) 64 = BitVec.ofNat 64 M.length
   fin : ∀ m' : Mem, Spec.Rsa.bytesAt m' (s.gpr .x0) (kOf s) = M ++ List.replicate (kOf s - M.length) 0 →
     m'.readW (s.gpr .x2) 64 = m0.readW (s.gpr .x2) 64 →
-    Spec.RsaPkcs1Enc.writtenMsgFront m' (s.gpr .x0) (s.gpr .x2) (kOf s) (R.setWidth 32) o
+    Spec.RsaPkcs1Enc.writtenMsg m' (s.gpr .x0) (s.gpr .x2) (kOf s) (R.setWidth 32) o
 
 abbrev Data (s : State) := DataO s (decOf s)
 
 theorem dataO_of {s : State} {o : Spec.Rsa.Outcome} {m0 : Mem} {R : BitVec 64}
-    (h : Proof.RsaPkcs1Enc.writtenMsg m0 (s.gpr .x0) (s.gpr .x2) (kOf s) (R.setWidth 32) o) :
+    (h : Proof.RsaPkcs1Enc.writtenMsgEnd m0 (s.gpr .x0) (s.gpr .x2) (kOf s) (R.setWidth 32) o) :
     ∃ M, DataO s o m0 R M := by
   cases o with
   | ok M =>
@@ -1152,7 +1152,7 @@ theorem front_ok {name : String} {callee : Prog isa}
     · simp only [h30, ite_false]; exact hx.cs r hr h30
   · show x.sp + BitVec.ofNat 64 272 + 16 = s.sp
     rw [hx.sp, F_off, BitVec.add_assoc, show BitVec.ofNat 64 (3488 + 272) + 16 = BitVec.ofNat 64 3776 from rfl, ← sp_B]
-  · sig_post [Spec.RsaPkcs1Enc.decryptPrecomputedFrontContract, Spec.RsaPkcs1Enc.decryptPrecomputedFrontSig,
+  · sig_post [Spec.RsaPkcs1Enc.decryptPrecomputedContract, Spec.RsaPkcs1Enc.decryptPrecomputedSig,
       AArch64.abi, AArch64.argRegs, stackArgs17, List.append_eq,
       _root_.List.range, _root_.List.range.loop]
     have hbO := hp.bO
@@ -1169,7 +1169,7 @@ theorem front_ok {name : String} {callee : Prog isa}
         rw [List.mem_singleton.mp hr]; exact (hp.kM.sub_left hS).symm) (by decide)
     obtain hr0 : (popped .x30 (freed frameBytes x)).gpr .x0 = R := by
       rw [popped_gpr]; simp only [reduceCtorEq, ite_false]; exact hx0
-    show Spec.RsaPkcs1Enc.writtenMsgFront mm (s.gpr .x0) (s.gpr .x2) (kOf s)
+    show Spec.RsaPkcs1Enc.writtenMsg mm (s.gpr .x0) (s.gpr .x2) (kOf s)
       ((popped .x30 (freed frameBytes x)).gpr .x0 |>.setWidth 32) (decOf s)
     rw [hr0]
     exact hD.fin mm hbm hmm
@@ -1199,7 +1199,7 @@ structure PubEq (s₁ s₂ : State) : Prop where
   a : ∀ j < 17, stackArg s₁ j = stackArg s₂ j
 
 theorem pub_of {s₁ s₂ : State} (h : (FK 3776).pub s₁ s₂) : PubEq s₁ s₂ := by
-  sig_pub_keep [Spec.RsaPkcs1Enc.decryptPrecomputedFrontContract, Spec.RsaPkcs1Enc.decryptPrecomputedFrontSig,
+  sig_pub_keep [Spec.RsaPkcs1Enc.decryptPrecomputedContract, Spec.RsaPkcs1Enc.decryptPrecomputedSig,
     AArch64.abi, AArch64.argRegs, stackArgs17, List.append_eq,
     _root_.List.range, _root_.List.range.loop] at h
   obtain ⟨hsp, hd, hl, h0, h1, h2, h3, h4, h5, h6, h7, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13,
@@ -1235,7 +1235,7 @@ theorem leak_eq {s : State} (hp : FPre s) {m : Mem} (hf : Frame [stkR s] s.mem m
 
 theorem call_pub {s₁ s₂ w₁ w₂ : State} (h₁ : FPre s₁) (h₂ : FPre s₂) (hp : PubEq s₁ s₂) (r₁ : Ready s₁ w₁)
     (r₂ : Ready s₂ w₂) : (DK 3488).pub (cEntry s₁ w₁) (cEntry s₂ w₂) := by
-  sig_pub_keep [Proof.RsaPkcs1Enc.decryptPrecomputedContract, Proof.RsaPkcs1Enc.decryptPrecomputedSig,
+  sig_pub_keep [Proof.RsaPkcs1Enc.decryptPrecomputedBodyContract, Proof.RsaPkcs1Enc.decryptPrecomputedBodySig,
     Proof.RsaPkcs1Enc.decryptSig, AArch64.abi, AArch64.argRegs, stackArgs17, List.append_eq,
     _root_.List.range, _root_.List.range.loop]
   have := h₁.kv.2
@@ -1491,8 +1491,8 @@ theorem front_ct {name : String} {callee : Prog isa} (hv : Verified AArch64.targ
 
 /-! ## `Verified` -/
 
-/-- `vg_rsa_pkcs1_decrypt_precomputed_front`, calling any implementation
-`callee` of `vg_rsa_pkcs1_decrypt_precomputed` verified with 3488 bytes of
+/-- `vg_rsa_pkcs1_decrypt_precomputed`, calling any implementation
+`callee` of `vg_rsa_pkcs1_decrypt_precomputed_body` verified with 3488 bytes of
 stack, which its frames fit in. -/
 theorem front_verified {name : String} {callee : Prog isa} (hv : Verified AArch64.target callee (DK 3488))
     (hd : 16 * callee.aarch64Depth ≤ 3488) (hsat : ∃ s, (FK 3776).pre s) :

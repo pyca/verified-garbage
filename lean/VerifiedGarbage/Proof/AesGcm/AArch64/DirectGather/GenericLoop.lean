@@ -124,7 +124,7 @@ theorem batches_progress {Wn R n T h k : Nat} {Ctx St W SP D O B : Addr} {icb Y 
   have rd := z.rd.trans p.rd
   have wr := z.wr.trans p.wr
   have keep (r : Reg) (hr : r ∈ preserved) (h23 : r ≠ .x23) (h24 : r ≠ .x24) (h26 : r ≠ .x26) (h30 : r ≠ .x30) :=
-    (z.saved r hr h23 h24 h26).trans (p.saved r hr h30)
+    (z.saved r hr h23 h24 h26 h30).trans (p.saved r hr h30)
   refine ⟨pre n, h+k+8*(n/128),by rw [ite_eq_right nz],by rw [ite_eq_right nz]; omega, npre, ⟨_, bsize.symm⟩, Nat.le_of_eq jsize, bytes, ctr, ?_, ?_, z.src, z.dst,
     by rw [z.rest]; congr 1; unfold pre; omega, hs.env.keep (fun r hr => ?_) (z.sp.trans p.sp) rd wr,
     keep, F, rd, wr⟩

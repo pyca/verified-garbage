@@ -48,10 +48,7 @@ impl Algorithm {
 }
 
 impl Key {
-    /// Appends the plaintext `plain ‖ extra` to `out`, seals it there and
-    /// appends its tag: one copy of the plaintext, which a record's buffer
-    /// needs anyway, rather than writing every byte of it twice (zeroed,
-    /// then encrypted into from where the plaintext is).
+    /// Appends the ciphertext of `plain ‖ extra` and its tag to `out`.
     pub(crate) fn seal_append(
         &self,
         nonce: &[u8; 12],
@@ -62,6 +59,29 @@ impl Key {
     ) -> Result<(), ()> {
         let start = out.len();
         out.reserve(plain.len() + extra.len() + TAG_LEN);
+        // For bulk records the gather routine encrypts straight from
+        // the caller into spare record capacity, including TLS 1.3's type byte.
+        if let Self::AesGcm(key) = self
+            && plain.len() >= 4096
+            && let Some(piece) = plain.single_chunk()
+        {
+            let len = piece.len() + extra.len();
+            // TLS 1.2 has one plaintext slice. TLS 1.3 also authenticates
+            // the encrypted content-type byte after the caller's payload.
+            let pieces = [piece, extra];
+            let plaintext = if extra.is_empty() {
+                &pieces[..1]
+            } else {
+                &pieces[..]
+            };
+            let (_, tag) = key
+                .encrypt_uninit(nonce, aad, plaintext, &mut out.spare_capacity_mut()[..len])
+                .map_err(drop)?;
+            // SAFETY: encrypt_uninit initialized these len bytes immediately after the prefix.
+            unsafe { out.set_len(start + len) };
+            out.extend_from_slice(&tag);
+            return Ok(());
+        }
         for piece in plain.chunks() {
             out.extend_from_slice(piece);
         }

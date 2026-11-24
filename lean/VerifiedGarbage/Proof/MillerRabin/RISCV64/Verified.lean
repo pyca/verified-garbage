@@ -907,7 +907,7 @@ theorem round_implies : fnContract.Implies (roundContract RISCV64.abi compact fr
 /-- `vg_miller_rabin_round`, given the core (`Core.lean`'s `core_ok`). -/
 theorem round_verified_of (hcore : CoreOk) :
     Verified RISCV64.target round (roundContract RISCV64.abi compact frameBytes) :=
-  Verified.of_correct (fn_correct hcore) round_ct round_implies
+  Verified.of_correct (k := fnContract) (fn_correct hcore) round_ct round_implies
 
 /-- `vg_miller_rabin_round`, verified against the shared contract. -/
 theorem round_verified : Verified RISCV64.target round (roundContract RISCV64.abi compact frameBytes) :=

@@ -138,13 +138,13 @@ structure KPreM (s₀ : State) (to : Bool) : Prop where
 
 /-- What the encryption leaves: the batches encrypted, the counter advanced,
 `Y` continued over the ciphertext, and nothing else written. -/
-structure EPost (s₀ s : State) : Prop where
+structure EPost (s₀ s : State) (clobbers : List Reg := kRegs) : Prop where
   data : blocksAt s.mem (dp s₀) (8 * nb s₀) = ctr32 (ciph s₀) (icb s₀) (blocksAt s₀.mem (dp s₀) (8 * nb s₀))
   ctr : blockAt s.mem (stp s₀ + BitVec.ofNat 64 48) = Nat.repeat inc32 (8 * nb s₀) (icb s₀)
   y : blockAt s.mem (stp s₀ + BitVec.ofNat 64 16) =
     ghashFrom (hk s₀) (y₀ s₀) (blocksAt s.mem (dp s₀) (8 * nb s₀))
   frame : Frame [yR s₀, cR s₀, dR s₀] s₀.mem s.mem
-  gpr : ∀ r, r ∉ kRegs → s.gpr r = s₀.gpr r
+  gpr : ∀ r, r ∉ clobbers → s.gpr r = s₀.gpr r
   sp : s.sp = s₀.sp
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
@@ -1060,7 +1060,8 @@ theorem dataInv_store1 {m₀ m : Mem} {D : Addr} {n k : Nat} {ks : Nat → Byte}
   ⟨dataInvM_self.mp h'.1, h'.2⟩
 
 /-- The eight blocks of batch `c` stored at `p + o`, the output's batch `c`. -/
-theorem stores_ok {s₀ : State} {to : Bool} (hp : KPreM s₀ to) {c o : Nat} (hc : c < nb s₀) (ho : o ≤ 128)
+theorem stores_ok {s₀ : State} {to : Bool} (hn : 128 * nb s₀ < 2 ^ 64)
+    (hw : InRegions s₀.wr (op s₀ to) (128 * nb s₀)) {c o : Nat} (hc : c < nb s₀) (ho : o ≤ 128)
     (ho16 : o % 16 = 0) (u : State) (p : Reg)
     (hx9 : u.gpr p + BitVec.ofNat 64 o = op s₀ to + BitVec.ofNat 64 (128 * c))
     (hdata : DataInvM s₀.mem u.mem (dp s₀) (op s₀ to) (8 * nb s₀) (8 * c) (kst s₀)) (hwr : u.wr = s₀.wr)
@@ -1070,7 +1071,6 @@ theorem stores_ok {s₀ : State} {to : Bool} (hp : KPreM s₀ to) {c o : Nat} (h
       DataInvM s₀.mem u'.mem (dp s₀) (op s₀ to) (8 * nb s₀) (8 * (c + 1)) (kst s₀) ∧
         Frame [oR s₀ to] u.mem u'.mem ∧
         u'.gpr = u.gpr ∧ u'.v = u.v ∧ u'.sp = u.sp ∧ u'.rd = u.rd ∧ u'.wr = u.wr := by
-  have hn := hp.n16
   refine WP.mono (wp_range_flatMap (M := isa) (fun j u' =>
       DataInvM s₀.mem u'.mem (dp s₀) (op s₀ to) (8 * nb s₀) (8 * c + j) (kst s₀) ∧
         Frame [oR s₀ to] u.mem u'.mem ∧
@@ -1082,7 +1082,7 @@ theorem stores_ok {s₀ : State} {to : Bool} (hp : KPreM s₀ to) {c o : Nat} (h
     rw [g₁, ← Offset.add_add, hx9, Offset.add_add_eq _ (show 128 * c + 16 * j = 16 * (8 * c + j) by omega_arith)]
   have hw : InRegions u₁.wr (u₁.gpr p + BitVec.ofNat 64 (o + 16 * j)) 16 := by
     rw [ha, wr₁, hwr]
-    exact CallLay.inRegions_sub hp.o_in (by omega_arith) (by omega_arith)
+    exact CallLay.inRegions_sub hw (by omega_arith) (by omega_arith)
   rw [WP.block_cons_iff]
   refine ⟨_, exec_strq (by omega_arith) hw, WP.block_nil ?_⟩
   rw [ha]

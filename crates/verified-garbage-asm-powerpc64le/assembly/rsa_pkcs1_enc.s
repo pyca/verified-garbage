@@ -4,7 +4,7 @@
 // `src/` as its machine code, which `lean/VerifiedGarbage/TCB/<ISA>/Encode.lean`
 // gives.
 
-vg_rsa_pkcs1_decrypt_precomputed_front:
+vg_rsa_pkcs1_decrypt_precomputed:
 	stdu %r1, -272(%r1)
 	addi %r12, %r1, 0
 	ld %r0, 368(%r12)

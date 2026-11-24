@@ -4,9 +4,9 @@
 
 /// RSAES-PKCS1-V1_5-DECRYPT (RFC 8017 §7.2.2) with implicit rejection (draft-irtf-cfrg-rsa-guidance), of the ciphertext `input` with the private key `(n, e, d, p, q, dp, dq, qinv)`, RSADP checked against `e`: returns 1 and writes the message, or for an invalid padding the alternative message, at the start of `out` and zeros after it, so that the caller can shorten `out` to the message's length without moving it, and its length to `*msg_len`; or writes zeros to `out` and `*msg_len` and returns 0 if the ciphertext is not below `n` or the key is refused, or 2 if RSADP fails its check against `e`. `pre` (`pre_len` words) must hold what `vg_rsa_private_precompute` wrote for `n`, `p` and `q` (returning 1), as `n`, `p` and `q` must be valid.
 ///
-/// Contract: `VG.Spec.RsaPkcs1Enc.decryptPrecomputedFrontContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, the contents of `n` and `e` and the first `2 * ⌈n_len / 8⌉` words of `pre` (the modulus' values), not on the ciphertext, the private key, the rest of `pre`, the validity of the padding, the length of the message or which message is returned.
+/// Contract: `VG.Spec.RsaPkcs1Enc.decryptPrecomputedContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, the contents of `n` and `e` and the first `2 * ⌈n_len / 8⌉` words of `pre` (the modulus' values), not on the ciphertext, the private key, the rest of `pre`, the validity of the padding, the length of the message or which message is returned.
 ///
-/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_rsa_pkcs1_decrypt_precomputed_front_sha256_shani_crt_ifma512` if the CPU supports its features (`VG_RSA_PKCS1_DECRYPT_PRECOMPUTED_FRONT_SHA256_SHANI_CRT_IFMA512_FEATURES`) and it also supports `avx512fp16`; `vg_rsa_pkcs1_decrypt_precomputed_front_sha256_shani_crt_ifma` if the CPU supports its features (`VG_RSA_PKCS1_DECRYPT_PRECOMPUTED_FRONT_SHA256_SHANI_CRT_IFMA_FEATURES`); `vg_rsa_pkcs1_decrypt_precomputed_front_sha256_shani_crt_adx` if the CPU supports its features (`VG_RSA_PKCS1_DECRYPT_PRECOMPUTED_FRONT_SHA256_SHANI_CRT_ADX_FEATURES`); `vg_rsa_pkcs1_decrypt_precomputed_front_sha256_shani` if the CPU supports its features (`VG_RSA_PKCS1_DECRYPT_PRECOMPUTED_FRONT_SHA256_SHANI_FEATURES`); `vg_rsa_pkcs1_decrypt_precomputed_front_sha256_avx2_crt_ifma512` if the CPU supports its features (`VG_RSA_PKCS1_DECRYPT_PRECOMPUTED_FRONT_SHA256_AVX2_CRT_IFMA512_FEATURES`) and it also supports `avx512fp16`; `vg_rsa_pkcs1_decrypt_precomputed_front_sha256_avx2_crt_ifma` if the CPU supports its features (`VG_RSA_PKCS1_DECRYPT_PRECOMPUTED_FRONT_SHA256_AVX2_CRT_IFMA_FEATURES`); `vg_rsa_pkcs1_decrypt_precomputed_front_sha256_avx2_crt_adx` if the CPU supports its features (`VG_RSA_PKCS1_DECRYPT_PRECOMPUTED_FRONT_SHA256_AVX2_CRT_ADX_FEATURES`); `vg_rsa_pkcs1_decrypt_precomputed_front_sha256_avx2` if the CPU supports its features (`VG_RSA_PKCS1_DECRYPT_PRECOMPUTED_FRONT_SHA256_AVX2_FEATURES`); `vg_rsa_pkcs1_decrypt_precomputed_front_crt_ifma512` if the CPU supports its features (`VG_RSA_PKCS1_DECRYPT_PRECOMPUTED_FRONT_CRT_IFMA512_FEATURES`) and it also supports `avx512fp16`; `vg_rsa_pkcs1_decrypt_precomputed_front_crt_ifma` if the CPU supports its features (`VG_RSA_PKCS1_DECRYPT_PRECOMPUTED_FRONT_CRT_IFMA_FEATURES`); `vg_rsa_pkcs1_decrypt_precomputed_front_crt_adx` if the CPU supports its features (`VG_RSA_PKCS1_DECRYPT_PRECOMPUTED_FRONT_CRT_ADX_FEATURES`); or else `vg_rsa_pkcs1_decrypt_precomputed_front`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_rsa_pkcs1_decrypt_precomputed_sha256_shani_crt_ifma512` if the CPU supports its features (`VG_RSA_PKCS1_DECRYPT_PRECOMPUTED_SHA256_SHANI_CRT_IFMA512_FEATURES`) and it also supports `avx512fp16`; `vg_rsa_pkcs1_decrypt_precomputed_sha256_shani_crt_ifma` if the CPU supports its features (`VG_RSA_PKCS1_DECRYPT_PRECOMPUTED_SHA256_SHANI_CRT_IFMA_FEATURES`); `vg_rsa_pkcs1_decrypt_precomputed_sha256_shani_crt_adx` if the CPU supports its features (`VG_RSA_PKCS1_DECRYPT_PRECOMPUTED_SHA256_SHANI_CRT_ADX_FEATURES`); `vg_rsa_pkcs1_decrypt_precomputed_sha256_shani` if the CPU supports its features (`VG_RSA_PKCS1_DECRYPT_PRECOMPUTED_SHA256_SHANI_FEATURES`); `vg_rsa_pkcs1_decrypt_precomputed_sha256_avx2_crt_ifma512` if the CPU supports its features (`VG_RSA_PKCS1_DECRYPT_PRECOMPUTED_SHA256_AVX2_CRT_IFMA512_FEATURES`) and it also supports `avx512fp16`; `vg_rsa_pkcs1_decrypt_precomputed_sha256_avx2_crt_ifma` if the CPU supports its features (`VG_RSA_PKCS1_DECRYPT_PRECOMPUTED_SHA256_AVX2_CRT_IFMA_FEATURES`); `vg_rsa_pkcs1_decrypt_precomputed_sha256_avx2_crt_adx` if the CPU supports its features (`VG_RSA_PKCS1_DECRYPT_PRECOMPUTED_SHA256_AVX2_CRT_ADX_FEATURES`); `vg_rsa_pkcs1_decrypt_precomputed_sha256_avx2` if the CPU supports its features (`VG_RSA_PKCS1_DECRYPT_PRECOMPUTED_SHA256_AVX2_FEATURES`); `vg_rsa_pkcs1_decrypt_precomputed_crt_ifma512` if the CPU supports its features (`VG_RSA_PKCS1_DECRYPT_PRECOMPUTED_CRT_IFMA512_FEATURES`) and it also supports `avx512fp16`; `vg_rsa_pkcs1_decrypt_precomputed_crt_ifma` if the CPU supports its features (`VG_RSA_PKCS1_DECRYPT_PRECOMPUTED_CRT_IFMA_FEATURES`); `vg_rsa_pkcs1_decrypt_precomputed_crt_adx` if the CPU supports its features (`VG_RSA_PKCS1_DECRYPT_PRECOMPUTED_CRT_ADX_FEATURES`); or else `vg_rsa_pkcs1_decrypt_precomputed`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
@@ -38,7 +38,7 @@
 /// * None of `out`, `msg_len`, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv`, `scratch` and `pre` may overlap the return address on the stack or the 3784 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_rsa_pkcs1_decrypt_precomputed_front_auto(_dit: verified_garbage_cpu::Dit<'_>, out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, d: *const u8, d_len: usize, input: *const u8, input_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
+pub unsafe fn vg_rsa_pkcs1_decrypt_precomputed_auto(_dit: verified_garbage_cpu::Dit<'_>, out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, d: *const u8, d_len: usize, input: *const u8, input_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
     // SAFETY: it takes no argument and writes no memory but its stack.
     verified_garbage_cpu::mcdt_entered(unsafe { crate::mcdt::vg_mcdt_enter() });
     /// The type of the implementations.
@@ -48,62 +48,62 @@ pub unsafe fn vg_rsa_pkcs1_decrypt_precomputed_front_auto(_dit: verified_garbage
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if const { verified_garbage_cpu::target_contains(verified_garbage_cpu::Features(crate::rsa_pkcs1_enc::VG_RSA_PKCS1_DECRYPT_PRECOMPUTED_FRONT_SHA256_SHANI_CRT_IFMA512_FEATURES.0 | verified_garbage_cpu::feature::AVX512FP16)) }
-            || cpu.contains(verified_garbage_cpu::Features(crate::rsa_pkcs1_enc::VG_RSA_PKCS1_DECRYPT_PRECOMPUTED_FRONT_SHA256_SHANI_CRT_IFMA512_FEATURES.0 | verified_garbage_cpu::feature::AVX512FP16))
+        if const { verified_garbage_cpu::target_contains(verified_garbage_cpu::Features(crate::rsa_pkcs1_enc::VG_RSA_PKCS1_DECRYPT_PRECOMPUTED_SHA256_SHANI_CRT_IFMA512_FEATURES.0 | verified_garbage_cpu::feature::AVX512FP16)) }
+            || cpu.contains(verified_garbage_cpu::Features(crate::rsa_pkcs1_enc::VG_RSA_PKCS1_DECRYPT_PRECOMPUTED_SHA256_SHANI_CRT_IFMA512_FEATURES.0 | verified_garbage_cpu::feature::AVX512FP16))
         {
-            return crate::rsa_pkcs1_enc::vg_rsa_pkcs1_decrypt_precomputed_front_sha256_shani_crt_ifma512;
+            return crate::rsa_pkcs1_enc::vg_rsa_pkcs1_decrypt_precomputed_sha256_shani_crt_ifma512;
         }
-        if const { verified_garbage_cpu::target_contains(crate::rsa_pkcs1_enc::VG_RSA_PKCS1_DECRYPT_PRECOMPUTED_FRONT_SHA256_SHANI_CRT_IFMA_FEATURES) }
-            || cpu.contains(crate::rsa_pkcs1_enc::VG_RSA_PKCS1_DECRYPT_PRECOMPUTED_FRONT_SHA256_SHANI_CRT_IFMA_FEATURES)
+        if const { verified_garbage_cpu::target_contains(crate::rsa_pkcs1_enc::VG_RSA_PKCS1_DECRYPT_PRECOMPUTED_SHA256_SHANI_CRT_IFMA_FEATURES) }
+            || cpu.contains(crate::rsa_pkcs1_enc::VG_RSA_PKCS1_DECRYPT_PRECOMPUTED_SHA256_SHANI_CRT_IFMA_FEATURES)
         {
-            return crate::rsa_pkcs1_enc::vg_rsa_pkcs1_decrypt_precomputed_front_sha256_shani_crt_ifma;
+            return crate::rsa_pkcs1_enc::vg_rsa_pkcs1_decrypt_precomputed_sha256_shani_crt_ifma;
         }
-        if const { verified_garbage_cpu::target_contains(crate::rsa_pkcs1_enc::VG_RSA_PKCS1_DECRYPT_PRECOMPUTED_FRONT_SHA256_SHANI_CRT_ADX_FEATURES) }
-            || cpu.contains(crate::rsa_pkcs1_enc::VG_RSA_PKCS1_DECRYPT_PRECOMPUTED_FRONT_SHA256_SHANI_CRT_ADX_FEATURES)
+        if const { verified_garbage_cpu::target_contains(crate::rsa_pkcs1_enc::VG_RSA_PKCS1_DECRYPT_PRECOMPUTED_SHA256_SHANI_CRT_ADX_FEATURES) }
+            || cpu.contains(crate::rsa_pkcs1_enc::VG_RSA_PKCS1_DECRYPT_PRECOMPUTED_SHA256_SHANI_CRT_ADX_FEATURES)
         {
-            return crate::rsa_pkcs1_enc::vg_rsa_pkcs1_decrypt_precomputed_front_sha256_shani_crt_adx;
+            return crate::rsa_pkcs1_enc::vg_rsa_pkcs1_decrypt_precomputed_sha256_shani_crt_adx;
         }
-        if const { verified_garbage_cpu::target_contains(crate::rsa_pkcs1_enc::VG_RSA_PKCS1_DECRYPT_PRECOMPUTED_FRONT_SHA256_SHANI_FEATURES) }
-            || cpu.contains(crate::rsa_pkcs1_enc::VG_RSA_PKCS1_DECRYPT_PRECOMPUTED_FRONT_SHA256_SHANI_FEATURES)
+        if const { verified_garbage_cpu::target_contains(crate::rsa_pkcs1_enc::VG_RSA_PKCS1_DECRYPT_PRECOMPUTED_SHA256_SHANI_FEATURES) }
+            || cpu.contains(crate::rsa_pkcs1_enc::VG_RSA_PKCS1_DECRYPT_PRECOMPUTED_SHA256_SHANI_FEATURES)
         {
-            return crate::rsa_pkcs1_enc::vg_rsa_pkcs1_decrypt_precomputed_front_sha256_shani;
+            return crate::rsa_pkcs1_enc::vg_rsa_pkcs1_decrypt_precomputed_sha256_shani;
         }
-        if const { verified_garbage_cpu::target_contains(verified_garbage_cpu::Features(crate::rsa_pkcs1_enc::VG_RSA_PKCS1_DECRYPT_PRECOMPUTED_FRONT_SHA256_AVX2_CRT_IFMA512_FEATURES.0 | verified_garbage_cpu::feature::AVX512FP16)) }
-            || cpu.contains(verified_garbage_cpu::Features(crate::rsa_pkcs1_enc::VG_RSA_PKCS1_DECRYPT_PRECOMPUTED_FRONT_SHA256_AVX2_CRT_IFMA512_FEATURES.0 | verified_garbage_cpu::feature::AVX512FP16))
+        if const { verified_garbage_cpu::target_contains(verified_garbage_cpu::Features(crate::rsa_pkcs1_enc::VG_RSA_PKCS1_DECRYPT_PRECOMPUTED_SHA256_AVX2_CRT_IFMA512_FEATURES.0 | verified_garbage_cpu::feature::AVX512FP16)) }
+            || cpu.contains(verified_garbage_cpu::Features(crate::rsa_pkcs1_enc::VG_RSA_PKCS1_DECRYPT_PRECOMPUTED_SHA256_AVX2_CRT_IFMA512_FEATURES.0 | verified_garbage_cpu::feature::AVX512FP16))
         {
-            return crate::rsa_pkcs1_enc::vg_rsa_pkcs1_decrypt_precomputed_front_sha256_avx2_crt_ifma512;
+            return crate::rsa_pkcs1_enc::vg_rsa_pkcs1_decrypt_precomputed_sha256_avx2_crt_ifma512;
         }
-        if const { verified_garbage_cpu::target_contains(crate::rsa_pkcs1_enc::VG_RSA_PKCS1_DECRYPT_PRECOMPUTED_FRONT_SHA256_AVX2_CRT_IFMA_FEATURES) }
-            || cpu.contains(crate::rsa_pkcs1_enc::VG_RSA_PKCS1_DECRYPT_PRECOMPUTED_FRONT_SHA256_AVX2_CRT_IFMA_FEATURES)
+        if const { verified_garbage_cpu::target_contains(crate::rsa_pkcs1_enc::VG_RSA_PKCS1_DECRYPT_PRECOMPUTED_SHA256_AVX2_CRT_IFMA_FEATURES) }
+            || cpu.contains(crate::rsa_pkcs1_enc::VG_RSA_PKCS1_DECRYPT_PRECOMPUTED_SHA256_AVX2_CRT_IFMA_FEATURES)
         {
-            return crate::rsa_pkcs1_enc::vg_rsa_pkcs1_decrypt_precomputed_front_sha256_avx2_crt_ifma;
+            return crate::rsa_pkcs1_enc::vg_rsa_pkcs1_decrypt_precomputed_sha256_avx2_crt_ifma;
         }
-        if const { verified_garbage_cpu::target_contains(crate::rsa_pkcs1_enc::VG_RSA_PKCS1_DECRYPT_PRECOMPUTED_FRONT_SHA256_AVX2_CRT_ADX_FEATURES) }
-            || cpu.contains(crate::rsa_pkcs1_enc::VG_RSA_PKCS1_DECRYPT_PRECOMPUTED_FRONT_SHA256_AVX2_CRT_ADX_FEATURES)
+        if const { verified_garbage_cpu::target_contains(crate::rsa_pkcs1_enc::VG_RSA_PKCS1_DECRYPT_PRECOMPUTED_SHA256_AVX2_CRT_ADX_FEATURES) }
+            || cpu.contains(crate::rsa_pkcs1_enc::VG_RSA_PKCS1_DECRYPT_PRECOMPUTED_SHA256_AVX2_CRT_ADX_FEATURES)
         {
-            return crate::rsa_pkcs1_enc::vg_rsa_pkcs1_decrypt_precomputed_front_sha256_avx2_crt_adx;
+            return crate::rsa_pkcs1_enc::vg_rsa_pkcs1_decrypt_precomputed_sha256_avx2_crt_adx;
         }
-        if const { verified_garbage_cpu::target_contains(crate::rsa_pkcs1_enc::VG_RSA_PKCS1_DECRYPT_PRECOMPUTED_FRONT_SHA256_AVX2_FEATURES) }
-            || cpu.contains(crate::rsa_pkcs1_enc::VG_RSA_PKCS1_DECRYPT_PRECOMPUTED_FRONT_SHA256_AVX2_FEATURES)
+        if const { verified_garbage_cpu::target_contains(crate::rsa_pkcs1_enc::VG_RSA_PKCS1_DECRYPT_PRECOMPUTED_SHA256_AVX2_FEATURES) }
+            || cpu.contains(crate::rsa_pkcs1_enc::VG_RSA_PKCS1_DECRYPT_PRECOMPUTED_SHA256_AVX2_FEATURES)
         {
-            return crate::rsa_pkcs1_enc::vg_rsa_pkcs1_decrypt_precomputed_front_sha256_avx2;
+            return crate::rsa_pkcs1_enc::vg_rsa_pkcs1_decrypt_precomputed_sha256_avx2;
         }
-        if const { verified_garbage_cpu::target_contains(verified_garbage_cpu::Features(crate::rsa_pkcs1_enc::VG_RSA_PKCS1_DECRYPT_PRECOMPUTED_FRONT_CRT_IFMA512_FEATURES.0 | verified_garbage_cpu::feature::AVX512FP16)) }
-            || cpu.contains(verified_garbage_cpu::Features(crate::rsa_pkcs1_enc::VG_RSA_PKCS1_DECRYPT_PRECOMPUTED_FRONT_CRT_IFMA512_FEATURES.0 | verified_garbage_cpu::feature::AVX512FP16))
+        if const { verified_garbage_cpu::target_contains(verified_garbage_cpu::Features(crate::rsa_pkcs1_enc::VG_RSA_PKCS1_DECRYPT_PRECOMPUTED_CRT_IFMA512_FEATURES.0 | verified_garbage_cpu::feature::AVX512FP16)) }
+            || cpu.contains(verified_garbage_cpu::Features(crate::rsa_pkcs1_enc::VG_RSA_PKCS1_DECRYPT_PRECOMPUTED_CRT_IFMA512_FEATURES.0 | verified_garbage_cpu::feature::AVX512FP16))
         {
-            return crate::rsa_pkcs1_enc::vg_rsa_pkcs1_decrypt_precomputed_front_crt_ifma512;
+            return crate::rsa_pkcs1_enc::vg_rsa_pkcs1_decrypt_precomputed_crt_ifma512;
         }
-        if const { verified_garbage_cpu::target_contains(crate::rsa_pkcs1_enc::VG_RSA_PKCS1_DECRYPT_PRECOMPUTED_FRONT_CRT_IFMA_FEATURES) }
-            || cpu.contains(crate::rsa_pkcs1_enc::VG_RSA_PKCS1_DECRYPT_PRECOMPUTED_FRONT_CRT_IFMA_FEATURES)
+        if const { verified_garbage_cpu::target_contains(crate::rsa_pkcs1_enc::VG_RSA_PKCS1_DECRYPT_PRECOMPUTED_CRT_IFMA_FEATURES) }
+            || cpu.contains(crate::rsa_pkcs1_enc::VG_RSA_PKCS1_DECRYPT_PRECOMPUTED_CRT_IFMA_FEATURES)
         {
-            return crate::rsa_pkcs1_enc::vg_rsa_pkcs1_decrypt_precomputed_front_crt_ifma;
+            return crate::rsa_pkcs1_enc::vg_rsa_pkcs1_decrypt_precomputed_crt_ifma;
         }
-        if const { verified_garbage_cpu::target_contains(crate::rsa_pkcs1_enc::VG_RSA_PKCS1_DECRYPT_PRECOMPUTED_FRONT_CRT_ADX_FEATURES) }
-            || cpu.contains(crate::rsa_pkcs1_enc::VG_RSA_PKCS1_DECRYPT_PRECOMPUTED_FRONT_CRT_ADX_FEATURES)
+        if const { verified_garbage_cpu::target_contains(crate::rsa_pkcs1_enc::VG_RSA_PKCS1_DECRYPT_PRECOMPUTED_CRT_ADX_FEATURES) }
+            || cpu.contains(crate::rsa_pkcs1_enc::VG_RSA_PKCS1_DECRYPT_PRECOMPUTED_CRT_ADX_FEATURES)
         {
-            return crate::rsa_pkcs1_enc::vg_rsa_pkcs1_decrypt_precomputed_front_crt_adx;
+            return crate::rsa_pkcs1_enc::vg_rsa_pkcs1_decrypt_precomputed_crt_adx;
         }
-        crate::rsa_pkcs1_enc::vg_rsa_pkcs1_decrypt_precomputed_front
+        crate::rsa_pkcs1_enc::vg_rsa_pkcs1_decrypt_precomputed
     }
     /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
     /// after it, and runs it.

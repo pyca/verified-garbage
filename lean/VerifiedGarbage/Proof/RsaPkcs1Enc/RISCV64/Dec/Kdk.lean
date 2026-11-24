@@ -41,7 +41,7 @@ section
 Untrusted: everything here is checked by Lean. As on PPC64LE
 (`Proof/RsaPkcs1Enc/PPC64LE/DecPre.lean`): `DPre pc s`, the shared
 contract's precondition (`decryptContract`, or with `pc`
-`decryptPrecomputedContract`, with the stack of the frame and of
+`decryptPrecomputedBodyContract`, with the stack of the frame and of
 `vg_rsa_private_checked`'s, `stackBytes`), by name (`dPre_of`); with `pc`,
 what it says of `pre` (`PreX`).
 -/
@@ -180,7 +180,7 @@ abbrev HypD (pc : Bool) (s : State) : Prop :=
       (Spec.Rsa.bytesAt s.mem (stackArg s 5) (stackArg s 6).toNat) =
     some (Spec.Rsa.wordsAt s.mem (stackArg s 15) (stackArg s 16).toNat)
 
-/-- What `vg_rsa_pkcs1_decrypt_precomputed`'s precondition adds: `pre`'s facts. -/
+/-- What `vg_rsa_pkcs1_decrypt_precomputed_body`'s precondition adds: `pre`'s facts. -/
 structure PreX (s : State) : Prop where
   oP : (oR s).Disjoint (preR s)
   mP : (mlR s).Disjoint (preR s)

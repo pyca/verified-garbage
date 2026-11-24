@@ -920,7 +920,7 @@ theorem call_ok {f : String} {body : Prog isa} (hn : body.noCalls = true) {s : S
   refine WP.call (k := ⟨fun t => t.rd = [] ∧ t.wr = [wsRegion base] ∧ Entry hasB t base o a b ∧
       Bounded t.mem base a ∧ Bounded t.mem base b,
       fun t t' => t'.gpr .r0 = t.gpr .r0 ∧ FieldMem base o t.mem t'.mem ∧ Bounded t'.mem base o ∧
-        r (fe t'.mem base o) (fe t.mem base a) (fe t.mem base b), fun _ _ => True⟩)
+        r (fe t'.mem base o) (fe t.mem base a) (fe t.mem base b), fun _ _ => True, none⟩)
     (fun t ⟨_, _, he, ha', hb'⟩ => by
       obtain ⟨tr, t', hx, P, R0, _, _, M, B, V⟩ := hbody t he ha' hb'
       exact ⟨tr, t', hx, ⟨P, Exec.sp hx⟩, R0, M, B, V⟩)

@@ -79,7 +79,7 @@ variable (c : Callees)
 /-- `runWithP`, the first bytes encrypted and hashed by the interleaved loop. -/
 def runWithS (tb : List Instr) (cl : Prog isa) : Prog isa :=
   .seq front
-  (.seq (stitched [] tb Gcm.AArch64.Stitch.enc)
+  (.seq (stitched [] tb Gcm.AArch64.Stitch.sealInPlace)
   (.seq (.block (whole ++ [.add .x .x23 .x23 .x9, mov .x27 .x23, .sub .x .x24 .x26 .x9, imm .x25 0]))
   (.seq (Tail.cryptAlT c)
   (.seq (.block ([mov .x23 .x27] ++ whole ++ [.sub .x .x24 .x26 .x9] ++ absSeg2 16))

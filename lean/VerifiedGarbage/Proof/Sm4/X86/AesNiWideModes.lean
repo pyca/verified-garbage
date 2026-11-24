@@ -407,17 +407,17 @@ def frameSat : State where
   wr := [⟨0x2000, 16⟩, ⟨0x3000, 0⟩, ⟨0x8004, 16⟩]
 
 theorem frameSat_fb (post : Spec.Sm4.ofbSig.Post X86.abi.ptrBits) :
-    ∃ s, (Spec.Sm4.ofbSig.contract X86.abi (post := post) (writeArgs := true) (stack := 756)).pre s := by
+    ∃ s, (Spec.Sm4.ofbSig.contract X86.abi (post := post) (writeArgs := true) (stack := 760)).pre s := by
   implies_sat [Spec.Sm4.ofbSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     [frameSat, X86.arg, X86.argAddr, Mem.readW, Mem.read] using frameSat
 
 theorem frameSat_cbc (post : Spec.Sm4.cbcChainedSig.Post X86.abi.ptrBits) :
-    ∃ s, (Spec.Sm4.cbcChainedSig.contract X86.abi (post := post) (writeArgs := true) (stack := 756)).pre s := by
+    ∃ s, (Spec.Sm4.cbcChainedSig.contract X86.abi (post := post) (writeArgs := true) (stack := 760)).pre s := by
   implies_sat [Spec.Sm4.cbcChainedSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     [frameSat, X86.arg, X86.argAddr, Mem.readW, Mem.read] using frameSat
 
 theorem frameSat_ctr (post : Spec.Sm4.ctrSig.Post X86.abi.ptrBits) :
-    ∃ s, (Spec.Sm4.ctrSig.contract X86.abi (post := post) (writeArgs := true) (stack := 756)).pre s := by
+    ∃ s, (Spec.Sm4.ctrSig.contract X86.abi (post := post) (writeArgs := true) (stack := 760)).pre s := by
   implies_sat [Spec.Sm4.ctrSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     [frameSat, X86.arg, X86.argAddr, Mem.readW, Mem.read] using frameSat
 
@@ -467,31 +467,31 @@ theorem ctr_verified : Verified X86.target ctr (Proof.Sm4.ctrScratchContract X86
 
 /-- `cbcDecryptChained` with its working space on the stack. -/
 theorem cbcDecryptChained_framed :
-    Verified X86.target (Impl.StackScratch.X86.withStackScratchWiped 752 4 182 cbcDecryptChained)
-      (Spec.Sm4.cbcDecryptChainedContract X86.abi 756) :=
+    Verified X86.target (Impl.StackScratch.X86.withStackScratchWiped 756 4 182 cbcDecryptChained)
+      (Spec.Sm4.cbcDecryptChainedContract X86.abi 760) :=
   X86.Verified.stackScratchWiped (sig := Spec.Sm4.cbcChainedSig) (nm := "scratch") (e := .u64)
     (n := 91) (post := Proof.Sm4.cbcDecChainedPost X86.abi.ptrBits) (wa := true) (stack := 4)
-    (bytes := 752) cbcDecryptChained_verified (by decide) (by lit_decide) (by lit_decide) (by decide)
+    (bytes := 756) cbcDecryptChained_verified (by decide) (by lit_decide) (by lit_decide) (by decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial)
     (Proof.Sm4.cbcDecChainedPost_local _) (Proof.Sm4.cbcDecChainedPostOut_local _) (frameSat_cbc _)
 
 /-- `cfbDecrypt` with its working space on the stack. -/
 theorem cfbDecrypt_framed :
-    Verified X86.target (Impl.StackScratch.X86.withStackScratchWiped 752 4 182 cfbDecrypt)
-      (Spec.Sm4.cfbDecryptContract X86.abi 756) :=
+    Verified X86.target (Impl.StackScratch.X86.withStackScratchWiped 756 4 182 cfbDecrypt)
+      (Spec.Sm4.cfbDecryptContract X86.abi 760) :=
   X86.Verified.stackScratchWiped (sig := Spec.Sm4.cfbSig) (nm := "scratch") (e := .u64)
     (n := 91) (post := Proof.Sm4.cfbDecPost X86.abi.ptrBits) (wa := true) (stack := 4)
-    (bytes := 752) cfbDecrypt_verified (by decide) (by lit_decide) (by lit_decide) (by decide)
+    (bytes := 756) cfbDecrypt_verified (by decide) (by lit_decide) (by lit_decide) (by decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial)
     (Proof.Sm4.cfbDecPost_local _) (Proof.Sm4.cfbDecPostOut_local _) (frameSat_fb _)
 
 /-- `ctr` with its working space on the stack. -/
 theorem ctr_framed :
-    Verified X86.target (Impl.StackScratch.X86.withStackScratchWiped 752 4 182 ctr)
-      (Spec.Sm4.ctrContract X86.abi 756) :=
+    Verified X86.target (Impl.StackScratch.X86.withStackScratchWiped 756 4 182 ctr)
+      (Spec.Sm4.ctrContract X86.abi 760) :=
   X86.Verified.stackScratchWiped (sig := Spec.Sm4.ctrSig) (nm := "scratch") (e := .u64)
     (n := 91) (post := Proof.Sm4.ctrPost X86.abi.ptrBits) (wa := true) (stack := 4)
-    (bytes := 752) ctr_verified (by decide) (by lit_decide) (by lit_decide) (by decide)
+    (bytes := 756) ctr_verified (by decide) (by lit_decide) (by lit_decide) (by decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial)
     (Proof.Sm4.ctrPost_local _) (Proof.Sm4.ctrPostOut_local _) (frameSat_ctr _)
 

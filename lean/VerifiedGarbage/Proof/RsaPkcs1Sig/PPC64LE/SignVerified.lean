@@ -1789,6 +1789,6 @@ theorem sign_implies : fnContract.Implies (Spec.RsaPkcs1Sig.signContract abi sta
 
 /-- `vg_rsa_pkcs1_sign`. -/
 theorem code_verified : Verified target code (Spec.RsaPkcs1Sig.signContract abi stackBytes) :=
-  Verified.of_correct code_correct code_ct sign_implies
+  Verified.of_correct (k := fnContract) code_correct code_ct sign_implies
 
 end VG.Proof.RsaPkcs1Sig.PPC64LE.Sign

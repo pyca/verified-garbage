@@ -329,7 +329,7 @@ vg_rsa_pkcs1_encrypt_random:
 	ret
 	.p2align 6
 
-vg_rsa_pkcs1_decrypt_precomputed_front_sha256_shani:
+vg_rsa_pkcs1_decrypt_precomputed_sha256_shani:
 	push ebx
 	push ebp
 	push esi
@@ -721,7 +721,7 @@ vg_rsa_pkcs1_decrypt_precomputed_front_sha256_shani:
 	ret
 	.p2align 6
 
-vg_rsa_pkcs1_decrypt_precomputed_front:
+vg_rsa_pkcs1_decrypt_precomputed:
 	push ebx
 	push ebp
 	push esi

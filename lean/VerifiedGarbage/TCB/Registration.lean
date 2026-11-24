@@ -430,7 +430,7 @@ whose calls and frames use `stack` bytes of stack (`Api.contracts`), or, if
 def Api.contract {M : ISA} (api : Api) (A : Abi M) (stack : Nat) : Contract M :=
   match api.contracts with
   | some f => f A stack
-  | none => ⟨fun _ => False, fun _ _ => False, fun _ _ => False⟩
+  | none => { pre _ := False, post _ _ := False, pub _ _ := False }
 
 /-- An implementation of `api` on `target`: what a registration file states
 of a function made from `api` (see `Api.artifact`). -/

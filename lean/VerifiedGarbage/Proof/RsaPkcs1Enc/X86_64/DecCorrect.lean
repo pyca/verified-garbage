@@ -61,7 +61,7 @@ theorem result_ok {s : State} (hp : DPre s) {R : BitVec 64} {EM : List Byte} {m 
     (hres : Spec.Rsa.writtenOutcome m (s.gpr .rdi) (kOf s) (R.setWidth 32) (privOut s))
     (hEM : Spec.Rsa.bytesAt m (s.gpr .rdi) (kOf s) = EM)
     (hF : Fin s R EM (amOf s) (vEM EM (kOf s)) (okOf R) (lEM s EM) t) (hAM : (amOf s).length = kOf s) :
-    Proof.RsaPkcs1Enc.writtenMsg t.mem (s.gpr .rdi) (s.gpr .rdx) (kOf s) ((t.gpr .rax).setWidth 32)
+    Proof.RsaPkcs1Enc.writtenMsgEnd t.mem (s.gpr .rdi) (s.gpr .rdx) (kOf s) ((t.gpr .rax).setWidth 32)
       (Spec.RsaPkcs1Enc.decrypt (nB s) (eB s) (dB s) (pB s) (qB s) (dpB s) (dqB s) (qiB s) (cB s)) := by
   have hk1 := hp.k1
   have hk2 := hp.k2
@@ -140,16 +140,16 @@ theorem ret_frame {s : State} (hp : DPre s) {m : Mem} (h : Frame (wrs s) s.mem m
   · exact hp.dRm
   · exact hp.dRs
 
-/-- `Proof.RsaPkcs1Enc.writtenMsg` of buffers apart from a frame, whatever the
+/-- `Proof.RsaPkcs1Enc.writtenMsgEnd` of buffers apart from a frame, whatever the
 frame's bytes hold. -/
-theorem writtenMsg_frame {regions : List Region} {m m' : Mem} {out ml : Addr} {n : Nat} {r : BitVec 32}
+theorem writtenMsgEnd_frame {regions : List Region} {m m' : Mem} {out ml : Addr} {n : Nat} {r : BitVec 32}
     {o : Spec.Rsa.Outcome} (f : Frame regions m m') (fit : n < 2 ^ 64)
     (sepO : ∀ q ∈ regions, (⟨out, n⟩ : Region).Disjoint q)
     (sepM : ∀ q ∈ regions, (⟨ml, 8 * 1⟩ : Region).Disjoint q)
-    (h : Proof.RsaPkcs1Enc.writtenMsg m out ml n r o) : Proof.RsaPkcs1Enc.writtenMsg m' out ml n r o := by
+    (h : Proof.RsaPkcs1Enc.writtenMsgEnd m out ml n r o) : Proof.RsaPkcs1Enc.writtenMsgEnd m' out ml n r o := by
   have hb := Proof.Rsa.rsa_bytes_frame f fit sepO
   have hw := Proof.Rsa.wordsAt_frame f (n := 1) (by decide) sepM
-  cases o <;> simp only [Proof.RsaPkcs1Enc.writtenMsg] at h ⊢ <;> rw [hb, hw] <;> exact h
+  cases o <;> simp only [Proof.RsaPkcs1Enc.writtenMsgEnd] at h ⊢ <;> rw [hb, hw] <;> exact h
 
 /-- The function, with the code `A`, `B` before `rest`, which leave what
 the call of the private-key operation leaves (`hfront`). -/
@@ -185,7 +185,7 @@ theorem decWith_ok (v : Compress) {A : List Instr} {B : Prog isa} {s : State} (h
     have := result_ok hp hpost.res rfl hF hAM
     simp only [decK]
     have hsi := hp.hsi
-    exact writtenMsg_frame fm (s.gpr .r8).isLt (sep (by have := hp.dKo; rwa [hsi] at this))
+    exact writtenMsgEnd_frame fm (s.gpr .r8).isLt (sep (by have := hp.dKo; rwa [hsi] at this))
       (sep hp.dKm) this
 
 end VG.Proof.RsaPkcs1Enc.X86_64.Dec

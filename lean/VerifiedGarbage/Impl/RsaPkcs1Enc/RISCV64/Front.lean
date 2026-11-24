@@ -8,8 +8,8 @@ public import VerifiedGarbage.Impl.Scrub.RISCV64
 /-!
 # RSAES-PKCS1-v1_5 decryption with the message first, on RISC-V
 
-`vg_rsa_pkcs1_decrypt_precomputed_front` takes the arguments of
-`vg_rsa_pkcs1_decrypt_precomputed` and calls it (`body`, by its name) with
+`vg_rsa_pkcs1_decrypt_precomputed` takes the arguments of
+`vg_rsa_pkcs1_decrypt_precomputed_body` and calls it (`body`, by its name) with
 them: the eight argument registers as they came, and its 17 stack arguments
 copied to the bottom of a frame of `frameBytes` (176) bytes (`copyArg`, as
 `withStackScratchArgs` copies them), which keeps `sp` a multiple of 16 at
@@ -106,12 +106,12 @@ def ret : List Instr := [.addSp .t0 0, .load .d .ra .t0 sRa]
 def tail : Prog isa :=
   .seq (.block diff) (.seq clearBuf (.seq copyIn (.seq shift (.seq copyOut (.block ret)))))
 
-/-- The function's body, calling `vg_rsa_pkcs1_decrypt_precomputed`
+/-- The function's body, calling `vg_rsa_pkcs1_decrypt_precomputed_body`
 (`callee`) by `name`. -/
 def body (name : String) (callee : Prog isa) : Prog isa :=
   .seq (.block setup) (.seq (.call name callee) (.seq (.block load) tail))
 
-/-- `vg_rsa_pkcs1_decrypt_precomputed_front`, calling `callee` by `name`. -/
+/-- `vg_rsa_pkcs1_decrypt_precomputed`, calling `callee` by `name`. -/
 def code (name : String) (callee : Prog isa) : Prog isa :=
   .frame (.alloc frameBytes) (body name callee) (.free frameBytes)
 
@@ -122,14 +122,14 @@ namespace VG.Impl.RsaPkcs1Enc.RISCV64.Fn
 open VG.RISCV64
 open VG.Impl.Scrub.RISCV64 (scrubAll)
 
-/-- The internal name of `vg_rsa_pkcs1_decrypt_precomputed`'s code before
-its cleanup, which `vg_rsa_pkcs1_decrypt_precomputed_front` calls. -/
+/-- The internal name of `vg_rsa_pkcs1_decrypt_precomputed_body`'s code before
+its cleanup, which `vg_rsa_pkcs1_decrypt_precomputed` calls. -/
 def bodyName : String := "vg_rsa_pkcs1_decrypt_precomputed_body"
 
-/-- `vg_rsa_pkcs1_decrypt_precomputed_front`: `Front.code` calling
-`vg_rsa_pkcs1_decrypt_precomputed`'s code before its cleanup, then the
+/-- `vg_rsa_pkcs1_decrypt_precomputed`: `Front.code` calling
+`vg_rsa_pkcs1_decrypt_precomputed_body`'s code before its cleanup, then the
 cleanup of the 3632 bytes of stack its frame (176) and the callee (3456)
 use. -/
-def decryptPrecomputedFront : Prog isa := scrubAll 32 3632 (Front.code bodyName Decrypt.codeP)
+def decryptPrecomputed : Prog isa := scrubAll 32 3632 (Front.code bodyName Decrypt.codeP)
 
 end VG.Impl.RsaPkcs1Enc.RISCV64.Fn

@@ -6,7 +6,7 @@
 ///
 /// Contract: `VG.Spec.Cast5.expandKeyContract`. Constant time: only pointers and `key_len` may affect timing, not the key bytes.
 ///
-/// It runs `vg_cast5_expand_key`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_cast5_expand_key_ssse3` if the CPU supports its features (`VG_CAST5_EXPAND_KEY_SSSE3_FEATURES`); or else `vg_cast5_expand_key`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
@@ -18,12 +18,41 @@
 /// * `key_len` must be in 5..=16.
 /// * The contents of `scratch` on return are unspecified.
 /// * `schedule` and `scratch` must not overlap each other, `key` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `key`, `schedule` and `scratch` may overlap the return address on the stack or the 4 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `key`, `schedule` and `scratch` may overlap the return address on the stack or the 888 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_cast5_expand_key_auto(_dit: verified_garbage_cpu::Dit<'_>, key: *const u8, key_len: usize, schedule: *mut [u8; 128], scratch: *mut [u64; 32]) {
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::cast5::vg_cast5_expand_key(key, key_len, schedule, scratch) }
+    /// The type of the implementations.
+    type Impl = unsafe extern "C" fn(key: *const u8, key_len: usize, schedule: *mut [u8; 128], scratch: *mut [u64; 32]);
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        if const { verified_garbage_cpu::target_contains(crate::cast5::VG_CAST5_EXPAND_KEY_SSSE3_FEATURES) }
+            || cpu.contains(crate::cast5::VG_CAST5_EXPAND_KEY_SSSE3_FEATURES)
+        {
+            return crate::cast5::vg_cast5_expand_key_ssse3;
+        }
+        crate::cast5::vg_cast5_expand_key
+    }
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "C" fn first(key: *const u8, key_len: usize, schedule: *mut [u8; 128], scratch: *mut [u64; 32]) {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(key, key_len, schedule, scratch) }
+    }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(key, key_len, schedule, scratch) }
 }
 
 /// CAST-128 (CAST5) ECB encryption (RFC 2144 §2, SP 800-38A §6.1) of `n` complete 8-byte blocks at `data`, in place, with `rounds` rounds under the subkeys written by `vg_cast5_expand_key`: 12 for a key of up to 10 bytes, 16 for a longer one (§2.5). Only the least significant 5 bits of each rotate subkey are used. No padding is added. For `n = 0`, no data is transformed.

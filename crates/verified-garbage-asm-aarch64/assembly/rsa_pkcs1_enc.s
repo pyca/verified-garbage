@@ -4,7 +4,7 @@
 // `src/` as its machine code, which `lean/VerifiedGarbage/TCB/<ISA>/Encode.lean`
 // gives.
 
-vg_rsa_pkcs1_decrypt_precomputed_front_sha256_sha2:
+vg_rsa_pkcs1_decrypt_precomputed_sha256_sha2:
 	str x30, [sp, #-16]!
 	sub sp, sp, #272
 	add x9, sp, #0
@@ -174,7 +174,7 @@ vg_rsa_pkcs1_decrypt_precomputed_front_sha256_sha2:
 	ret
 	.p2align 6
 
-vg_rsa_pkcs1_decrypt_precomputed_front:
+vg_rsa_pkcs1_decrypt_precomputed:
 	str x30, [sp, #-16]!
 	sub sp, sp, #272
 	add x9, sp, #0

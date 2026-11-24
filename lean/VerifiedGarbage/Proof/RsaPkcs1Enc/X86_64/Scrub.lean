@@ -13,7 +13,7 @@ import VerifiedGarbage.Proof.Framework.Lit
 # RSAES-PKCS1-v1_5 on x86-64, without secret residue
 
 Each function as emitted (`Impl.RsaPkcs1Enc.X86_64.Fn`, and
-`vg_rsa_pkcs1_decrypt_precomputed_front` in `FrontScrub.lean`, which calls
+`vg_rsa_pkcs1_decrypt_precomputed` in `FrontScrub.lean`, which calls
 decryption's code here), over any implementation of SHA-256's compression
 function (`Compress`) and of the private CRT operation (`CrtImpl`), or of
 the public operation (`PublicImpl`), its whole stack wiped by its cleanup at
