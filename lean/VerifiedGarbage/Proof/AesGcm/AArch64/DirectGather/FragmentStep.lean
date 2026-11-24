@@ -9,37 +9,6 @@ public import VerifiedGarbage.Proof.AesGcm.AArch64.Loops
 /-! The word-at-a-time tail of short gather encryption. Both source words
 are read before either write, so both stores carry exactly the same ciphertext. -/
 
-public section
-
-namespace VG.Proof.AesGcm.AArch64.DirectGather
-
-open VG VG.AArch64 VG.AArch64.RegUpd VG.Impl.AesGcm.AArch64.DirectGather
-
-theorem xorWord_ok (sz : Size) (s : State)
-    (src : InRegions (s.rd ++ s.wr) (s.gpr .x0) (sz.bits / 8))
-    (key : InRegions (s.rd ++ s.wr) (s.gpr .x1) (sz.bits / 8))
-    (dst : InRegions s.wr (s.gpr .x2) (sz.bits / 8))
-    (auth : InRegions s.wr (s.gpr .x3) (sz.bits / 8)) :
-    let n := sz.bits / 8
-    let ct := s.mem.read (s.gpr .x0) n ^^^ s.mem.read (s.gpr .x1) n
-    WP isa (.block (xorWord sz)) s fun t =>
-      t.mem = (s.mem.write (s.gpr .x2) n ct).write (s.gpr .x3) n ct ∧
-      (∀ r, r ≠ .x14 → r ≠ .x15 → t.gpr r = s.gpr r) ∧
-      t.sp = s.sp ∧ t.rd = s.rd ∧ t.wr = s.wr := by
-  cases sz <;> apply WP.of_runBlock
-  all_goals
-    simp only [Size.bits, Nat.reduceDiv] at src key dst auth
-    simp only [xorWord, runBlock_cons, runStep_some, runBlock_nil, exec, addr, State.load, State.store,
-      State.read, Size.bits, Nat.reduceDiv, Nat.reduceMod, Nat.reduceMul, Nat.reduceLT, and_self,
-      ↓reduceIte, Size.bytes, BitVec.add_zero, src, key, dst, auth, Option.map_some,
-      Option.bind_some, gpr_write, mem_write, rd_write, wr_write, BitVec.setWidth_eq, reduceCtorEq,
-      Option.some.injEq, exists_eq_left']
-  all_goals simp +contextual [sp_write, BitVec.setWidth_setWidth_of_le _ (show 32 ≤ 64 by decide)]
-
-end VG.Proof.AesGcm.AArch64.DirectGather
-
-/-! Machine steps of the direct short-record fragment loop. -/
-
 @[expose] public section
 namespace VG.Proof.AesGcm.AArch64.DirectGather.Fragment
 
@@ -104,9 +73,47 @@ theorem byteData_ok (s : State) (h : Access s 1) :
     simp [gpr_write, hr.1, hr.2]
   · simp [putBoth, State.write, State.read, Size.bits, byte_xor]
 
-theorem wordData_ok (sz : Size) (s : State) (h : Access s (sz.bits / 8)) :
-    WP isa (.block (DirectGather.xorWord sz)) s (Wrote s (sz.bits / 8) [.x14,.x15]) := by
-  refine (xorWord_ok sz s h.src h.key h.dst h.auth).mono fun t ⟨hm,hg,hsp,hr,hw⟩ => ?_
-  exact ⟨⟨fun r hn => hg _ (fun he => hn (by simp [he])) (fun he => hn (by simp [he])), hsp, hr, hw⟩, hm⟩
+/-- Permissions for the second word in a potentially overlapping pair. -/
+structure OffsetAccess (s : State) (d : Addr) (n : Nat) : Prop where
+  src : InRegions (s.rd ++ s.wr) (s.gpr .x0 + d) n
+  key : InRegions (s.rd ++ s.wr) (s.gpr .x1 + d) n
+  dst : InRegions s.wr (s.gpr .x2 + d) n
+  auth : InRegions s.wr (s.gpr .x3 + d) n
+
+def wordAt (s : State) (n : Nat) (d : Addr) :=
+  s.mem.read (s.gpr .x0 + d) n ^^^ s.mem.read (s.gpr .x1 + d) n
+
+def placeWord (s : State) (m : Mem) (d : Addr) (n : Nat) (v : BitVec (8*n)) : Mem :=
+  (m.write (s.gpr .x2 + d) n v).write (s.gpr .x3 + d) n v
+
+abbrev endRegs : List Reg := [.x0,.x1,.x2,.x3,.x12,.x13,.x14,.x15]
+
+/-- Both XORs use entry memory, including when the plaintext occupies the
+output buffer. The two writes then agree on the bytes the words share. -/
+theorem xorEnds_ok (sz : Size) (s : State) (d : Addr)
+    (h : Access s (sz.bits/8)) (q : OffsetAccess s d (sz.bits/8))
+    (delta : s.gpr .x12 - BitVec.ofNat 64 (sz.bits/8) = d) :
+    let n := sz.bits/8
+    WP isa (.block (DirectGather.xorEnds sz n)) s fun t =>
+      Kept s t endRegs ∧ (∀ r ∈ ([.x0,.x1,.x2,.x3] : List Reg), t.gpr r = s.gpr r + d) ∧
+      t.mem = placeWord s (placeWord s s.mem 0 n (wordAt s n 0)) d n (wordAt s n d) := by
+  cases sz <;> apply WP.of_runBlock
+  all_goals
+    simp only [Size.bits,Nat.reduceDiv] at h q delta
+    simp only [DirectGather.xorEnds,runBlock_cons,runStep_some,runBlock_nil,exec,addr,State.load,
+      State.store,State.read,Size.bits,Size.bytes,Nat.reduceDiv,Nat.reduceMod,Nat.reduceMul,
+      Nat.reduceLT,and_self,↓reduceIte,BitVec.add_zero,h.src,h.key,h.dst,h.auth,
+      Option.map_some,Option.bind_some,gpr_write,mem_write,rd_write,wr_write,BitVec.setWidth_eq,
+      reduceCtorEq,Option.some.injEq,exists_eq_left',delta,q.src,q.key,q.dst,q.auth]
+  all_goals
+    refine ⟨⟨?_, rfl, rfl, rfl⟩, ?_, ?_⟩
+    · intro r hr
+      simp only [endRegs, List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+      simp_all only [gpr_write, ite_false]
+    · intro r hr
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl <;> rfl
+    · simp [placeWord, wordAt,
+        BitVec.setWidth_setWidth_of_le _ (show 32 ≤ 64 by decide)]
 
 end VG.Proof.AesGcm.AArch64.DirectGather.Fragment

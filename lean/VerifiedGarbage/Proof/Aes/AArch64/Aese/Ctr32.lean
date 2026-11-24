@@ -275,8 +275,8 @@ open VG.AArch64 in
 `vg_aes_ctr32_to_aes` (`schedule = x0, rounds = x1, counter = x2, src = x3,
 n = x4, scratch = x5, dst = x6`): the `n` blocks at `src` XORed with the
 keystream into the `n` blocks at `dst`, with `src` only read. `src` and `dst`
-may not overlap each other, nor the other buffers (but `schedule` and `src`,
-both only read), and may not wrap around the end of the address space. `dst`
+may coincide or be disjoint. The output must be disjoint from the other buffers,
+and both pointers and may not wrap around the end of the address space. `dst`
 is public too. -/
 def ctr32ToAArch64 : Contract AArch64.isa where
   pre s :=
@@ -288,7 +288,7 @@ def ctr32ToAArch64 : Contract AArch64.isa where
     s.rd = [sched, src] ∧ s.wr = [counter, dst, scratch] ∧
     sched.Disjoint counter ∧ sched.Disjoint dst ∧ sched.Disjoint scratch ∧
     counter.Disjoint src ∧ counter.Disjoint dst ∧ counter.Disjoint scratch ∧
-    src.Disjoint dst ∧ src.Disjoint scratch ∧ dst.Disjoint scratch ∧
+    (s.gpr .x6 = s.gpr .x3 ∨ src.Disjoint dst) ∧ src.Disjoint scratch ∧ dst.Disjoint scratch ∧
     (s.gpr .x3).toNat + 16 * (s.gpr .x4).toNat ≤ 2 ^ 64 ∧
     (s.gpr .x6).toNat + 16 * (s.gpr .x4).toNat ≤ 2 ^ 64 ∧
     ((s.gpr .x1).toNat = 10 ∨ (s.gpr .x1).toNat = 12 ∨ (s.gpr .x1).toNat = 14)
@@ -315,7 +315,7 @@ def ctr32ToAArch64With (n : Nat) : Contract AArch64.isa where
     s.rd = [sched, src] ∧ s.wr = [counter, dst, scratch] ∧
     sched.Disjoint counter ∧ sched.Disjoint dst ∧ sched.Disjoint scratch ∧
     counter.Disjoint src ∧ counter.Disjoint dst ∧ counter.Disjoint scratch ∧
-    src.Disjoint dst ∧ src.Disjoint scratch ∧ dst.Disjoint scratch ∧
+    (s.gpr .x6 = s.gpr .x3 ∨ src.Disjoint dst) ∧ src.Disjoint scratch ∧ dst.Disjoint scratch ∧
     (s.gpr .x3).toNat + 16 * (s.gpr .x4).toNat ≤ 2 ^ 64 ∧
     (s.gpr .x6).toNat + 16 * (s.gpr .x4).toNat ≤ 2 ^ 64 ∧
     ((s.gpr .x1).toNat = 10 ∨ (s.gpr .x1).toNat = 12 ∨ (s.gpr .x1).toNat = 14)
@@ -790,22 +790,22 @@ structure Pre (to : Bool) (s₀ : State) (n : Nat := 2048) : Prop where
   wr : s₀.wr = [⟨cp s₀, 16⟩, oR s₀ to, ⟨s₀.gpr .x5, n⟩]
   s_c : Region.Disjoint ⟨kp s₀, 240⟩ ⟨cp s₀, 16⟩
   c_o : Region.Disjoint ⟨cp s₀, 16⟩ (oR s₀ to)
-  /-- Out of place, the data and the output do not overlap. -/
-  src : to = true → (dR s₀).Disjoint (oR s₀ to)
+  /-- The input and output may coincide exactly or be disjoint. -/
+  layout : op s₀ to = dp s₀ ∨ (dR s₀).Disjoint (oR s₀ to)
   wrap : (dp s₀).toNat + 16 * nb s₀ ≤ 2 ^ 64
   wrapO : (op s₀ to).toNat + 16 * nb s₀ ≤ 2 ^ 64
   rounds : nr s₀ = 10 ∨ nr s₀ = 12 ∨ nr s₀ = 14
 
 theorem pre_ofW {n : Nat} {s₀ : State} (h : (Proof.Aes.ctr32AArch64With n).pre s₀) : Pre false s₀ n := by
   obtain ⟨h1, h2, h3, _, _, h6, _, _, h9, h10⟩ := h
-  exact ⟨h1, h2, h3, h6, fun h => Bool.noConfusion h, h9, h9, h10⟩
+  exact ⟨h1, h2, h3, h6, Or.inl rfl, h9, h9, h10⟩
 
 theorem pre_of {s₀ : State} (h : Proof.Aes.ctr32AArch64.pre s₀) : Pre false s₀ :=
   pre_ofW (n := 2048) h
 
 theorem preTo_ofW {n : Nat} {s₀ : State} (h : (Proof.Aes.ctr32ToAArch64With n).pre s₀) : Pre true s₀ n := by
   obtain ⟨h1, h2, h3, _, _, _, h7, _, h9, _, _, h12, h13, h14⟩ := h
-  exact ⟨h1, h2, h3, h7, fun _ => h9, h12, h13, h14⟩
+  exact ⟨h1, h2, h3, h7, h9, h12, h13, h14⟩
 
 theorem preTo_of {s₀ : State} (h : Proof.Aes.ctr32ToAArch64.pre s₀) : Pre true s₀ :=
   preTo_ofW (n := 2048) h
@@ -824,11 +824,6 @@ theorem dat : dR s₀ ∈ s₀.rd ++ s₀.wr := by
 theorem out : oR s₀ to ∈ s₀.wr := by rw [hp.wr]; exact List.mem_cons_of_mem _ List.mem_cons_self
 
 theorem cpIn : (⟨cp s₀, 16⟩ : Region) ∈ s₀.wr := by rw [hp.wr]; exact List.mem_cons_self
-
-theorem dDO : op s₀ to = dp s₀ ∨ Region.Disjoint (dR s₀) (oR s₀ to) := by
-  cases to with
-  | false => exact .inl rfl
-  | true => exact .inr (hp.src rfl)
 
 theorem n16 : 16 * nb s₀ < 2 ^ 64 := by
   refine Nat.lt_of_not_le fun hc => hp.c_o (cp s₀) (by simp [Region.Contains]) ?_
@@ -912,7 +907,7 @@ theorem blocks_ok {to : Bool} {s₀ : State} {n : Nat} (hp : Pre to s₀ n) (rs 
       hI.x2, ctrVec, c0, Nat.zero_add, BitVec.add_assoc, ← BitVec.ofNat_add, ← hp.cb_frame hI.frame,
       ctrVec_st]
   rw [WP.block_append_iff]
-  refine WP.mono (xorData_ok (m₀ := s₀.mem) (D := dp s₀) (O := op s₀ to) (c := c) to hp.n16 hp.dDO
+  refine WP.mono (xorData_ok (m₀ := s₀.mem) (D := dp s₀) (O := op s₀ to) (c := c) to hp.n16 hp.layout
       rs 0 s₂ hbr.1 h31
       (by rw [f₂.gpr, f₁.gpr _ (by decide), hI.x3])
       (by rw [f₂.gpr, f₁.gpr _ (by simp [outR_ne_x12]), hI.xo]) (by omega_using [hlen]) (by omega_using [hc])

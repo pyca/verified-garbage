@@ -95,30 +95,35 @@ def shortKeys (base nr : Nat) : Prog isa := Id.run do
       ([.vop (.logic .eor r r .v30), .strq r .x19 (base + 16*i)] : List Instr))
   return .block (seed ++ counters ++ rounds ++ last)
 
-/-- Write the XOR of one plaintext and keystream word to the two ciphertext buffers. -/
-def xorWord (sz : Size) : List Instr :=
-    [.ldr sz .x14 .x0 0, .ldr sz .x15 .x1 0, .logic .eor sz .x14 .x14 .x15,
-     .str sz .x14 .x2 0, .str sz .x14 .x3 0]
+/-- Load both ends before storing either one, since the two words may
+overlap when the whole fragment is shorter than twice the word width. -/
+def xorEnds (sz : Size) (n : Nat) : List Instr :=
+  [.ldr sz .x14 .x0 0, .ldr sz .x15 .x1 0, .logic .eor sz .x13 .x14 .x15,
+   .subImm .x .x12 .x12 n, .add .x .x0 .x0 .x12, .add .x .x1 .x1 .x12,
+   .ldr sz .x14 .x0 0, .ldr sz .x15 .x1 0, .logic .eor sz .x14 .x14 .x15,
+   .str sz .x13 .x2 0, .str sz .x13 .x3 0,
+   .add .x .x2 .x2 .x12, .add .x .x3 .x3 .x12, .str sz .x14 .x2 0, .str sz .x14 .x3 0]
 
 /-- The next keystream bytes and plaintext share no storage. Write the XOR
 to both the caller and the padded GHASH input at the same time. -/
-def shortPiece : Prog isa :=
+def shortPieceWith (input : List Instr) : Prog isa :=
   let step := fun n => [ptr .x0 .x0 n, ptr .x1 .x1 n, ptr .x2 .x2 n, ptr .x3 .x3 n]
   let blocks := [.ldrq .v0 .x0 0, .ldrq .v1 .x1 0, .vop (.logic .eor .v0 .v0 .v1),
     .strq .v0 .x2 0, .strq .v0 .x3 0] ++ step 16 ++ [.subImm .x .x13 .x13 1]
   let bytes := [.ldrb .x14 .x0 0, .ldrb .x15 .x1 0, .logic .eor .w .x14 .x14 .x15,
     .strb .x14 .x2 0, .strb .x14 .x3 0] ++ step 1 ++ [.subImm .x .x12 .x12 1]
-  let overlap := fun sz n =>
-    .block (xorWord sz ++ [.subImm .x .x12 .x12 n] ++
-      ([.x0, .x1, .x2, .x3] : List Reg).map (fun r => Instr.add .x r r .x12) ++ xorWord sz ++ step n)
+  let overlap := fun sz n => .block (xorEnds sz n ++ step n)
   let tail := .seq (.block [.lsr .x .x14 .x12 3]) <|
     .ite (.nonzero .x .x14) (overlap .x 8) <|
     .seq (.block [.lsr .x .x14 .x12 2]) <|
     .ite (.nonzero .x .x14) (overlap .w 4) (.loop (.block bytes) (.nonzero .x .x12))
-  .seq (.block [.ldr .x .x0 .x6 0, .ldr .x .x12 .x6 8, ptr .x6 .x6 16,
-      .lsr .x .x13 .x12 4, imm .x14 15, .logic .and .x .x12 .x12 .x14]) <|
+  .seq (.block (input ++ [.lsr .x .x13 .x12 4, imm .x14 15, .logic .and .x .x12 .x12 .x14])) <|
   .seq (.ite (.zero .x .x13) (.block []) (.loop (.block blocks) (.nonzero .x .x13))) <|
     .ite (.zero .x .x12) (.block []) tail
+
+/-- The next descriptor supplies the source pointer and length. -/
+def shortPiece : Prog isa :=
+  shortPieceWith [.ldr .x .x0 .x6 0, .ldr .x .x12 .x6 8, ptr .x6 .x6 16]
 
 open Gcm.AArch64.Pmull in
 /-- Hash exactly eight blocks with the ordinary GHASH register convention. -/
@@ -126,9 +131,14 @@ def hashEight : List Instr := prologueT ++ powersS ++ body 8
 
 /-- The accumulator initially holds zero. The hash ends in the register
 used by the final tag operation. -/
-def shortHash (base : Nat) : List Instr :=
+def shortHashWith (base : Nat) (core : List Instr) : List Instr :=
   [ptr .x0 .x21 240, ptr .x1 .x19 (base+128), .vop (.movi0 .v0), .strq .v0 .x1 0,
-   ptr .x2 .x19 base, imm .x3 8] ++ hashEight ++ [.vop (.logic .orr .v16 .v0 .v0)]
+   ptr .x2 .x19 base, imm .x3 8] ++ core ++ [.vop (.logic .orr .v16 .v0 .v0)]
+
+abbrev shortHash (base : Nat) := shortHashWith base hashEight
+
+/-- Fold eight authentication blocks with the powers supplied by the key. -/
+abbrev hashEightWith := VG.Impl.Gcm.AArch64.Pmull.prologueW ++ VG.Impl.Gcm.AArch64.Pmull.body 8
 
 /-- Process the descriptors after the nonce and AAD have been absorbed. -/
 def text (c : Callees) (stitch : Bool) : Prog isa :=
@@ -161,10 +171,12 @@ def streamO := 0
 def authO := 224
 
 /-- Save the caller and initialize the pointers and padded length. -/
-def shortSetup : List Instr :=
+def shortSetupAt (lengthOffset : Nat) : List Instr :=
   [.addSp .x9 0] ++ save .x9 ++
   [mov .x19 .x9, mov .x21 .x0, mov .x22 .x1, mov .x23 .x2, mov .x24 .x5,
-   .ldrSp .x26 (shortWork+8), .addImm .x .x25 .x26 15, .lsr .x .x25 .x25 4, .lsl .x .x25 .x25 4]
+   .ldrSp .x26 lengthOffset, .addImm .x .x25 .x26 15, .lsr .x .x25 .x25 4, .lsl .x .x25 .x25 4]
+
+abbrev shortSetup := shortSetupAt (shortWork+8)
 
 /-- Clear the eight input blocks for GHASH before filling the record. -/
 def shortZero : List Instr :=
@@ -187,8 +199,10 @@ def writeTag (maskOffset tagArgOffset : Nat) : List Instr :=
   [.ldrq .v0 .x19 maskOffset, .vop (.logic .eor .v16 .v16 .v0),
     .ldrSp .x10 tagArgOffset, .strq .v16 .x10 0]
 
-def shortTagOut : List Instr :=
-  .vop (.rev .rev64b .v16 .v16) :: writeTag streamO (shortWork+16)
+def shortTagAt (offset : Nat) : List Instr :=
+  .vop (.rev .rev64b .v16 .v16) :: writeTag streamO offset
+
+abbrev shortTagOut := shortTagAt (shortWork+16)
 
 def shortBody : Prog isa :=
   .seq (.block shortSetup) <| .seq (.block shortZero) <| .seq shortAad <|

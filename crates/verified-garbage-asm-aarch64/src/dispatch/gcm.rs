@@ -474,6 +474,70 @@ pub unsafe fn vg_aes_gcm_seal_gather_auto(_dit: verified_garbage_cpu::Dit<'_>, c
     unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(ctx, rounds, nonce, nonce_len, aad, aad_len, src, src_count, dst, len, tag) }
 }
 
+/// `vg_aes_gcm_seal_contiguous` with the 8 prepared powers of the hash subkey of the key context at `*pw` (`VG.Spec.Gcm.Powers8Repr`), which it may read instead of computing them. Computes the same result as `vg_aes_gcm_seal_contiguous`. The powers are secret, as the key context is: they may not affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealContiguousWithPowersContract`.
+///
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_gcm_seal_contiguous_with_powers_aes_sha3` if the CPU supports its features (`VG_AES_GCM_SEAL_CONTIGUOUS_WITH_POWERS_AES_SHA3_FEATURES`); `vg_aes_gcm_seal_contiguous_with_powers_aes` if the CPU supports its features (`VG_AES_GCM_SEAL_CONTIGUOUS_WITH_POWERS_AES_FEATURES`); `vg_aes_gcm_seal_contiguous_with_powers_neon` if detection reports some CPU feature; or else `vg_aes_gcm_seal_contiguous_with_powers`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `src` must be valid for reads of `len` bytes, and `dst` for reads and writes of `len` bytes. The two pointers must be identical or their regions disjoint.
+/// * `tag` must be valid for reads and writes of 16 bytes.
+/// * `pw` must be valid for reads of 128 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `*pw` must be what a `*_store_powers` function wrote for the same key context (the contract's precondition: `VG.Spec.Gcm.Powers8Repr` of `pw` and its hash subkey).
+/// * `dst` and `tag` must not overlap each other, `ctx`, `nonce`, `aad`, `src` when distinct from `dst`, `pw` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `src` when distinct from `dst`, `dst`, `tag` and `pw` may overlap the 2640 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_aes_gcm_seal_contiguous_with_powers_auto(_dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, dst: *mut u8, len: usize, tag: *mut [u8; 16], pw: *const [u64; 16]) {
+    /// The type of the implementations.
+    type Impl = unsafe extern "C" fn(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, dst: *mut u8, len: usize, tag: *mut [u8; 16], pw: *const [u64; 16]);
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_SEAL_CONTIGUOUS_WITH_POWERS_AES_SHA3_FEATURES) }
+            || cpu.contains(crate::gcm::VG_AES_GCM_SEAL_CONTIGUOUS_WITH_POWERS_AES_SHA3_FEATURES)
+        {
+            return crate::gcm::vg_aes_gcm_seal_contiguous_with_powers_aes_sha3;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_SEAL_CONTIGUOUS_WITH_POWERS_AES_FEATURES) }
+            || cpu.contains(crate::gcm::VG_AES_GCM_SEAL_CONTIGUOUS_WITH_POWERS_AES_FEATURES)
+        {
+            return crate::gcm::vg_aes_gcm_seal_contiguous_with_powers_aes;
+        }
+        if const { verified_garbage_cpu::COMPILED.0 != 0 }
+            || cpu.0 != 0
+        {
+            return crate::gcm::vg_aes_gcm_seal_contiguous_with_powers_neon;
+        }
+        crate::gcm::vg_aes_gcm_seal_contiguous_with_powers
+    }
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "C" fn first(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, dst: *mut u8, len: usize, tag: *mut [u8; 16], pw: *const [u64; 16]) {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(ctx, rounds, nonce, nonce_len, aad, aad_len, src, dst, len, tag, pw) }
+    }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(ctx, rounds, nonce, nonce_len, aad, aad_len, src, dst, len, tag, pw) }
+}
+
 /// `vg_aes_gcm_seal` with the 8 prepared powers of the hash subkey of the key context at `*pw` (`VG.Spec.Gcm.Powers8Repr`), which it may read instead of computing them. Computes the same result as `vg_aes_gcm_seal`. The powers are secret, as the key context is: they may not affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealWithPowersContract`.
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_gcm_seal_with_powers_aes_sha3` if the CPU supports its features (`VG_AES_GCM_SEAL_WITH_POWERS_AES_SHA3_FEATURES`); `vg_aes_gcm_seal_with_powers_aes` if the CPU supports its features (`VG_AES_GCM_SEAL_WITH_POWERS_AES_FEATURES`); `vg_aes_gcm_seal_with_powers_neon` if detection reports some CPU feature; or else `vg_aes_gcm_seal_with_powers`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.

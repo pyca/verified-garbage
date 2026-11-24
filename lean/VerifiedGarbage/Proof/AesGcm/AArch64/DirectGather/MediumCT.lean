@@ -22,7 +22,7 @@ namespace VG.Proof.AesGcm.AArch64.DirectGather.Mid
 open VG VG.AArch64 VG.Impl.AesGcm.AArch64.DirectGather
 open VG.Proof.AesGcm.AArch64.Gather
 
-theorem prefix_rel {a b : State} (la : Gather.Lay .plain a) (lb : Gather.Lay .plain b)
+theorem prefix_rel {a b : State} (la : BoundedLay a) (lb : BoundedLay b)
     (an : L a ≤ 224) (bn : L b ≤ 224) (pub : gatherPub a b) :
     RelCT isa (Eq2 (allocated Medium.work a) (allocated Medium.work b))
       (.seq (.block Medium.setup) (.seq (.block Medium.zero) Medium.aad)) TT := by
@@ -34,7 +34,7 @@ theorem prefix_rel {a b : State} (la : Gather.Lay .plain a) (lb : Gather.Lay .pl
   exact rel_taint [.x4,.x19,.x24,.x25] (p.sp.trans (w.trans q.sp.symm))
     (by agree_tac [p.x19,q.x19,w,x4,y4,Ad,q4,p.x24,q.x24,AL,q5,p.x25,q.x25,blocks,L,len]) ⟨_,by taint_decide⟩
 
-private theorem loopPub {a b u v : State} (la : Gather.Lay .plain a) (lb : Gather.Lay .plain b)
+private theorem loopPub {a b u v : State} (la : BoundedLay a) (lb : BoundedLay b)
     (pub : gatherPub a b) (hu : Header a u) (hv : Header b v) (cu : Cursors a u) (cv : Cursors b v) :
     Fragment.LoopPub u v := by
   have bytes := descriptorBytes_agree la pub cu.ds cu.n (hu.toLocalMem.agree la.bds) (hv.toLocalMem.agree lb.bds)
@@ -47,7 +47,7 @@ private theorem loopPub {a b u v : State} (la : Gather.Lay .plain a) (lb : Gathe
   · rw [cu.auth,cv.auth,textOff,textOff,bl,w]
 
 theorem body_rel (hash : Hash16Ok) (v : GcmImpl) (scratch : v.ctr.scratch = 0)
-    {a b : State} (la : Gather.Lay .plain a) (lb : Gather.Lay .plain b)
+    {a b : State} (la : BoundedLay a) (lb : BoundedLay b)
     (ra : recordWithin 224 a) (rb : recordWithin 224 b) (pub : gatherPub a b) :
     RelCT isa (Eq2 (allocated Medium.work a) (allocated Medium.work b)) (Medium.body v.callees) TT := by
   obtain ⟨ai,aa,an⟩ := ra

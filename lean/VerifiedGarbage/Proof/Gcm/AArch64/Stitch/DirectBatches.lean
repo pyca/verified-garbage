@@ -80,7 +80,7 @@ structure BatchIn (Wn : Nat) (Ctx St W SP D O : Addr) (R n : Nat) (s : State) : 
   x26 : s.gpr .x26 = O
   src : DataOk Wn St W s D n
   dst : DataW Wn Ctx St W s O n
-  apart : (⟨D, n⟩ : Region).Disjoint ⟨O, n⟩
+  apart : BufferLayout D O n
 
 /-- The kernel uses x15 for input, x23 for output, and x26 for the available length. -/
 structure BatchArgs (Wn : Nat) (Ctx St W SP D O : Addr) (R n : Nat) (s : State) : Prop where
@@ -92,7 +92,7 @@ structure BatchArgs (Wn : Nat) (Ctx St W SP D O : Addr) (R n : Nat) (s : State) 
   x26 : s.gpr .x26 = BitVec.ofNat 64 n
   src : DataOk Wn St W s D n
   dst : DataW Wn Ctx St W s O n
-  apart : (⟨D, n⟩ : Region).Disjoint ⟨O, n⟩
+  apart : BufferLayout D O n
 
 theorem BatchArgs.sealPre {Wn R n : Nat} {Ctx St W SP D O : Addr} {s : State}
     (h : BatchArgs Wn Ctx St W SP D O R n s) (L : Lay Wn Ctx St W) (hn : 128 ≤ n)
@@ -105,7 +105,7 @@ theorem BatchArgs.sealPre {Wn R n : Nat} {Ctx St W SP D O : Addr} {s : State}
   · rw [h.x15, hnb]
     exact covers_prefix h.src.rd hpn _ _ ⟨_, List.mem_singleton_self _, Region.contains_self _ _⟩
   · simp only [dR, dp, hnb, h.x15, h.x23]
-    exact Or.inr ((h.apart.sub_left (Region.sub_prefix hpn)).sub_right (Region.sub_prefix hpn))
+    exact (h.apart.take hpn).imp Eq.symm id
   · rw [h.x15, hnb]; have := h.src.wrap; omega
 
 /-- The complete eight-block kernel and its table, with the original
@@ -124,6 +124,49 @@ structure BatchMid (Ctx St W D O : Addr) (R n : Nat) (s t : State) : Prop where
   sp : t.sp = s.sp
   rd : t.rd = s.rd
   wr : t.wr = s.wr
+
+/-- Finish a shared two-pointer batch from an already prepared table. This
+also applies when the table was loaded from the caller's cached powers. -/
+theorem sealPrepared_ok {Wn R n : Nat} {Ctx St W SP D O : Addr} {s u : State}
+    (hu : BatchArgs Wn Ctx St W SP D O R n u)
+    (L : Lay Wn Ctx St W) (hash : Gh8Ok) (hp : SealToPre u)
+    (F : Frame [tblR W] s.mem u.mem) (qreg : ∀ r, r ≠ .x0 → r ≠ .x5 → r ∉ kRegsT true → u.gpr r = s.gpr r)
+    (qsp : u.sp = s.sp) (qrd : u.rd = s.rd) (qwr : u.wr = s.wr) :
+    WP isa sealCall u (BatchMid Ctx St W D O R n s) := by
+  have hW := hu.env.perm.hWn
+  have H : blockAt u.mem (Ctx + BitVec.ofNat 64 240) = Spec.Gcm.ctxH s.mem Ctx :=
+    blockAt_frame F fun r hr => (tbl_ctx L r hr).sub_left (Lay.ctxSub (by decide))
+  refine WP.mono (sealCall_ok hp hash) fun t z => ?_
+  have en : nb u = n / 128 := by simp only [nb, hu.x26, toNat_ofNat_of_lt hu.src.lt]
+  have eR : rounds u = R := by simp only [rounds, hu.x22, toNat_rounds hu.rounds]
+  have ekey : ciph u = ciphOf s.mem Ctx R := by
+    unfold ciph ksch kc ciphOf
+    rw [eR, hu.env.x21, bytesAt_frame F (fun r hr => (tbl_ctx L r hr).sub_left
+      (Region.sub_prefix (by have := hu.rounds; omega))) (by have := hu.rounds; omega)]
+  have ectr : icb u = blockAt s.mem (St + BitVec.ofNat 64 48) := by
+    unfold icb stp; rw [hu.env.x20, blockAt_frame F (tbl_st L (by decide))]
+  have ey : y₀ u = blockAt s.mem (St + BitVec.ofNat 64 16) := by
+    unfold y₀ stp; rw [hu.env.x20, blockAt_frame F (tbl_st L (by decide))]
+  have eh : hk u = Spec.Gcm.ctxH s.mem Ctx := by simpa only [hk, kc, hu.env.x21] using H
+  have pfx : 16 * (8 * (n / 128)) ≤ n := by have := Nat.mul_div_le n 128; omega
+  have esrc : blocksAt u.mem D (8 * (n / 128)) = blocksAt s.mem D (8 * (n / 128)) :=
+    blocksAt_frame F (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact (hu.src.w.sub_left (Region.sub_prefix pfx)).sub_right (Lay.wSub (by omega)))
+      (by have := hu.src.lt; omega)
+  refine ⟨by simpa only [en, dp, hu.x23, hu.x15, ekey, ectr, esrc] using z.data,
+    by simpa only [en, stp, hu.env.x20, ectr] using z.ctr,
+    by simpa only [en, stp, hu.env.x20, dp, hu.x23, eh, ey] using z.y,
+    by simpa only [pre, en, hu.x15] using z.src, by simpa only [pre, en, dp, hu.x23] using z.dst,
+    ?_, fun r h0 h5 hr hl => (z.gpr r (by simpa only [List.mem_append, not_or] using And.intro hr hl)).trans (qreg r h0 h5 hr),
+    z.sp.trans qsp, z.rd.trans qrd,
+    z.wr.trans qwr⟩
+  have f := z.frame
+  simp only [yR, cR, dR, dp, stp, hu.env.x20, hu.x23, en] at f
+  exact (F.mono (fun r hr => by simp only [List.mem_singleton] at hr; subst r; simp)).trans
+    (f.mono fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl <;> simp)
 
 theorem batchTableSeal_ok {Wn R n : Nat} {Ctx St W SP D O : Addr} {s : State}
     (h : BatchArgs Wn Ctx St W SP D O R n s) (L : Lay Wn Ctx St W) (hn : 128 ≤ n) (gh : GatherLaws) :
@@ -144,37 +187,7 @@ theorem batchTableSeal_ok {Wn R n : Nat} {Ctx St W SP D O : Addr} {s : State}
   have H : blockAt u.mem (Ctx + BitVec.ofNat 64 240) = Spec.Gcm.ctxH s.mem Ctx :=
     blockAt_frame F fun r hr => (tbl_ctx L r hr).sub_left (Lay.ctxSub (by decide))
   have hp := hu.sealPre L hn (by rw [H]; simpa only [h.env.x19, h.env.x21] using q.tbl)
-  refine WP.mono (sealCall_ok hp gh.hash) fun t z => ?_
-  have en : nb u = n / 128 := by simp only [nb, hu.x26, toNat_ofNat_of_lt h.src.lt]
-  have eR : rounds u = R := by simp only [rounds, hu.x22, toNat_rounds hu.rounds]
-  have ekey : ciph u = ciphOf s.mem Ctx R := by
-    unfold ciph ksch kc ciphOf
-    rw [eR, hu.env.x21, bytesAt_frame F (fun r hr => (tbl_ctx L r hr).sub_left
-      (Region.sub_prefix (by have := h.rounds; omega))) (by have := h.rounds; omega)]
-  have ectr : icb u = blockAt s.mem (St + BitVec.ofNat 64 48) := by
-    unfold icb stp; rw [hu.env.x20, blockAt_frame F (tbl_st L (by decide))]
-  have ey : y₀ u = blockAt s.mem (St + BitVec.ofNat 64 16) := by
-    unfold y₀ stp; rw [hu.env.x20, blockAt_frame F (tbl_st L (by decide))]
-  have eh : hk u = Spec.Gcm.ctxH s.mem Ctx := by simpa only [hk, kc, hu.env.x21] using H
-  have pfx : 16 * (8 * (n / 128)) ≤ n := by have := Nat.mul_div_le n 128; omega
-  have esrc : blocksAt u.mem D (8 * (n / 128)) = blocksAt s.mem D (8 * (n / 128)) :=
-    blocksAt_frame F (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr
-      exact (h.src.w.sub_left (Region.sub_prefix pfx)).sub_right (Lay.wSub (by omega)))
-      (by have := h.src.lt; omega)
-  refine ⟨by simpa only [en, dp, hu.x23, hu.x15, ekey, ectr, esrc] using z.data,
-    by simpa only [en, stp, hu.env.x20, ectr] using z.ctr,
-    by simpa only [en, stp, hu.env.x20, dp, hu.x23, eh, ey] using z.y,
-    by simpa only [pre, en, hu.x15] using z.src, by simpa only [pre, en, dp, hu.x23] using z.dst,
-    ?_, fun r h0 h5 hr hl => (z.gpr r (by simpa only [List.mem_append, not_or] using And.intro hr hl)).trans (q.gpr r h0 h5),
-    z.sp.trans q.sp, z.rd.trans q.rd,
-    z.wr.trans q.wr⟩
-  have f := z.frame
-  simp only [yR, cR, dR, dp, stp, hu.env.x20, hu.x23, en] at f
-  exact (F.mono (fun r hr => by simp only [List.mem_singleton] at hr; subst r; simp)).trans
-    (f.mono fun r hr => by
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl <;> simp)
+  exact sealPrepared_ok hu L gh.hash hp F (fun r h0 h5 _ => q.gpr r h0 h5) q.sp q.rd q.wr
 
 end VG.Proof.Gcm.AArch64.Stitch
 
