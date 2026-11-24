@@ -231,6 +231,92 @@ theorem maskTop_ok (hb : Bx s base size) {src N : Nat} {c : Bool} (hc : s.cf = s
   · rw [u₅.mem, u₄.mem, u₃.mem, u₂.mem]
   · exact ((u₂.keeps.widen u₃.keeps).widen u₄.keeps).widen u₅.keeps
 
+/-- `cmpI`: the borrow of a subtraction of `m`, `k + 1` words. -/
+theorem cmpI_ok (hb : Bx s base size) {m src : Nat} :
+    ∀ k, src + 4 * (k + 1) ≤ size →
+    WP isa (.block (cmpI m src (k + 1))) s fun u =>
+      (∃ c D, u.cf = some c ∧ D < 2 ^ (32 * (k + 1)) ∧
+        D + yVal (mw m) (k + 1) = val32 s.mem base src (k + 1) + 2 ^ (32 * (k + 1)) * c.toNat) ∧
+      u.mem = s.mem ∧ Keeps [.eax] s u
+  | 0, hk => by
+    rw [show cmpI m src (0 + 1) = [.mov .eax (.mem (bp (src + 4 * 0))), .alu .sub .eax (.imm (mw m 0))] from rfl]
+    refine wp_movS (readSrc_bp hb (d := src + 4 * 0) (by omega_using [hk])) fun s₁ u₁ _ => ?_
+    refine wp_subS rfl fun s₂ u₂ c₂ => WP.block_nil
+      ⟨⟨_, (s₂.gpr .eax).toNat, c₂, (s₂.gpr .eax).isLt, ?_⟩, by rw [u₂.mem, u₁.mem], u₁.keeps.trans u₂.keeps⟩
+    have hX := (s.mem.readW (off base (src + 4 * 0)) 32).isLt; have hY := (mw m 0).isLt
+    rw [u₂.gpr, sub_toNat, u₁.gpr]
+    simp only [yVal, val32, w32, Nat.mul_zero, Nat.add_zero, Nat.pow_zero, Nat.one_mul, Nat.zero_add, Nat.mul_one] at hX ⊢
+    by_cases h : (s.mem.readW (off base src) 32).toNat < (mw m 0).toNat <;>
+      simp only [h, decide_true, decide_false, Bool.toNat_true, Bool.toNat_false] <;> omega_using [hX, hY, h]
+  | k + 1, hk => by
+    have e : cmpI m src (k + 1 + 1) = cmpI m src (k + 1) ++
+        ([.mov .eax (.mem (bp (src + 4 * (k + 1)))), .alu .sbb .eax (.imm (mw m (k + 1)))] : List Instr) := by
+      simp only [cmpI, List.range_succ, List.flatMap_append, List.flatMap_cons, List.flatMap_nil, List.append_nil,
+        Nat.add_one_ne_zero, ite_false]
+    rw [e]
+    refine WP.block_append (WP.mono (cmpI_ok hb k (by omega_using [hk])) fun s₁ ⟨⟨c₁, D₁, hc₁, hD₁, V₁⟩, M₁, K₁⟩ => ?_)
+    have hb₁ := hb.of_keeps K₁ (by decide)
+    refine wp_movS (readSrc_bp hb₁ (d := src + 4 * (k + 1)) (by omega_using [hk])) fun s₂ u₂ cf₂ => ?_
+    refine wp_sbbS rfl (by rw [cf₂]; exact hc₁) fun s₃ u₃ c₃ => WP.block_nil
+      ⟨⟨_, D₁ + 2 ^ (32 * (k + 1)) * (s₃.gpr .eax).toNat, c₃, ?_, ?_⟩, by rw [u₃.mem, u₂.mem, M₁],
+        (K₁.trans u₂.keeps).trans u₃.keeps⟩
+    · have hl := (s₃.gpr .eax).isLt
+      have := Nat.mul_le_mul_left (2 ^ (32 * (k + 1))) (show (s₃.gpr .eax).toNat + 1 ≤ 2 ^ 32 from hl)
+      rw [pow32_succ (k + 1)]
+      rw [Nat.mul_add] at this
+      omega_using [this, hD₁]
+    · have hX := (s.mem.readW (off base (src + 4 * (k + 1))) 32).isLt; have hY := (mw m (k + 1)).isLt
+      have hc := Bool.toNat_le c₁
+      have eY : yVal (mw m) (k + 1 + 1) = yVal (mw m) (k + 1) + 2 ^ (32 * (k + 1)) * (mw m (k + 1)).toNat := rfl
+      have W : (s₃.gpr .eax).toNat + (mw m (k + 1)).toNat + c₁.toNat = w32 s.mem base (src + 4 * (k + 1)) +
+          2 ^ 32 * (decide ((s₂.gpr .eax).toNat < (mw m (k + 1)).toNat + c₁.toNat)).toNat := by
+        rw [u₃.gpr, sub3_toNat, u₂.gpr, M₁]
+        simp only [w32]
+        by_cases h : (s.mem.readW (off base (src + 4 * (k + 1))) 32).toNat < (mw m (k + 1)).toNat + c₁.toNat <;>
+          simp only [h, decide_true, decide_false, Bool.toNat_true, Bool.toNat_false] <;> omega_using [hX, hY, hc, h]
+      rw [val32_succ s.mem base src (k + 1), pow32_succ (k + 1), eY]
+      generalize 2 ^ (32 * (k + 1)) = P at *
+      grind
+
+/-- The words of `m` are 0, -1 or 1, as `maskSrc` needs. -/
+def MaskWords (m N : Nat) : Prop := ∀ j < N, mw m j = 0 ∨ mw m j = -1 ∨ mw m j = 1
+
+theorem maskBit_ok {L : List Instr} {Q : State → Prop} {b : Bool}
+    (hm : s.gpr .eax = if b then BitVec.allOnes 32 else 0)
+    (hk : ∀ u, Keeps [.ebx] s u → u.mem = s.mem → u.gpr .ebx = (if b then 1 else 0) → WP isa (.block L) u Q) :
+    WP isa (.block (maskBit ++ L)) s Q := by
+  simp only [maskBit, List.cons_append, List.nil_append]
+  refine wp_movS rfl fun s₁ u₁ _ => ?_
+  refine wp_logicS (.inl rfl) rfl fun s₂ u₂ => hk s₂ (u₁.keeps.trans u₂.keeps) (by rw [u₂.mem, u₁.mem]) ?_
+  rw [u₂.gpr, u₁.gpr, hm]
+  cases b <;> decide
+
+/-- `maskSrc`'s words: those of `m` if the mask `eax` is all ones, else zero. -/
+theorem maskSrc_ok {m N D : Nat} {b : Bool} (hw : MaskWords m N)
+    (hm : s.gpr .eax = if b then BitVec.allOnes 32 else 0) (hbit : s.gpr .ebx = if b then 1 else 0) :
+    SrcOk (maskSrc m) (fun j => if b then mw m j else 0) .edx base D N s := by
+  intro j hj t ht _ _ _
+  unfold maskSrc
+  have hneg : (-1 : BitVec 32) = BitVec.allOnes 32 := by decide
+  split
+  next h => dsimp only; rw [h]; cases b <;> rfl
+  next h0 =>
+    split
+    next h =>
+      dsimp only
+      rw [readSrc, ht _ (by decide), hm, h, hneg]
+    next h1 =>
+      have h := ((hw j hj).resolve_left h0).resolve_left h1
+      dsimp only
+      rw [readSrc, ht _ (by decide), hbit, h]
+
+theorem maskSrc_yVal (m : Nat) (b : Bool) : ∀ N,
+    yVal (fun j => if b then mw m j else 0) N = if b then yVal (mw m) N else 0
+  | 0 => by cases b <;> rfl
+  | N + 1 => by
+    rw [yVal, maskSrc_yVal m b N]
+    cases b <;> simp [yVal]
+
 /-- The first `k` words of `selectsP`. -/
 def selP (src tmp k : Nat) : List Instr :=
   (List.range k).flatMap fun j =>

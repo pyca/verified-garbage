@@ -17,29 +17,30 @@ modulus is in the code (immediates), so it is not stored.
 
 * `mulFn`: Montgomery's product: `ebx`, `esi`,
   `edi` and `ebp` are saved in the own working space, `ebp` holds `ws`,
-  `esi` points to `[b]` and `edi` to `[a]`. Modulo P-256's `p`, P-521's, and
+  `esi` points to `[b]` and `edi` to `[a]`. Modulo P-521's `p`, and
   moduli of three words, it is coarsely integrated operand scanning, as
   `Impl/Mont/X86.lean`'s `mul`, but with its rows unrolled: row `i` adds
-  `a_i [b]` (`mulRowB`) and `q m` (`redRowI`: P-256's
-  sparse reduction for its `p`; for P-521's `p = 2⁵²¹ - 1`, whose `q` is the
-  low word, that word cleared and `2⁹ q` added at word 16, `p521Red`; else a
-  row of the modulus's words as immediates) to the accumulator's words from
-  `i`, whose low word becomes zero. Modulo any other, it is by columns
-  (`colsMul`), and a square, at equal public operand pointers, has its own
-  (`colsSquare`). The accumulator's words from `N` are
-  then below `2m`, reduced by a conditional subtraction (`diffsI`, `maskTop`,
-  `selectsP`) into `[o]`, through `ecx`. `esi` and `edi` are restored
-  before the result is stored, `ebx` and `ebp` after. For P-256 field
-  squaring, equal public operand
-  pointers select a full-width Comba square (36 word products) followed by
-  eight sparse REDC rounds; the common final subtraction is unchanged.
-  For P-521's, they select `p521Square` (153 word products, then the
-  reduction as two rows by `2⁹`).
+  `a_i [b]` (`rowG`) and `q m` (`redRowI`: for P-521's `p = 2⁵²¹ - 1`, whose
+  `q` is the low word, that word cleared and `2⁹ q` added at word 16,
+  `p521Red`; else a row of the modulus's words as immediates) to the
+  accumulator's words from `i`, whose low word becomes zero. Modulo any
+  other, it is by columns (`colsMul`), and a square, at equal public operand
+  pointers, has its own (`colsSquare`); modulo P-256's `p`, the columns of the
+  reduction are of `p + 1`'s three words that are not zero (`pRed`). The
+  accumulator's words from `N` are then below `2m`, reduced by a conditional
+  subtraction (`csubOut`) into `[o]`, through `ecx`. `esi` and `edi` are
+  restored before the result is stored, `ebx` and `ebp` after. For P-521's
+  `p`, equal public operand pointers select `p521Square` (153 word products,
+  then the reduction as two rows by `2⁹`).
 * `addFn`, `subFn`: `[a] ± [b]` into the accumulator through pointers in
   `ecx` and `edx` (`chainP`), then a conditional subtraction (the sum) or
   addition of `m` under the mask of the borrow (the difference) into
-  `[o]`. Only `eax`, `ecx`, `edx` and `ebp` are written; `ebp` is saved in
-  the own working space.
+  `[o]`. Only `eax`, `ecx`, `edx` and `ebp` are written, and modulo P-256's
+  `p` `ebx`; `ebp` and `ebx` are saved in the own working space.
+
+The conditional subtraction selects the number or its difference with `m`
+(`diffsI`, `maskTop`, `selectsP`), but modulo P-256's `p`, whose words are 0, 1
+and -1, subtracts `m` under the mask, from registers (`maskedOut`).
 
 The functions never write `esi` or `edi` but to restore them before any
 store at an address that depends on an offset (`o`): every other store is at
@@ -79,7 +80,7 @@ def saveAt (k : Nat) : Nat := tmpAt k + 8 * k
 /-- The modulus `m` of `k` words, as `Impl/Mont/X86.lean`'s operations have
 it (its words are not in memory: `mo` is unused). -/
 def mod (k m : Nat) : Mod :=
-  { n := k, mo := 0, tmp := tmpAt k, minv := BitVec.ofNat 64 (minv m), red := p256RedChoice k m }
+  { n := k, mo := 0, tmp := tmpAt k, minv := BitVec.ofNat 64 (minv m) }
 
 /-- 32-bit word `j` of `m`. -/
 def mw (m j : Nat) : BitVec 32 := BitVec.ofNat 32 (m >>> (32 * j))
@@ -142,6 +143,13 @@ def bWord (j : Nat) : Src := .mem (at_ .esi (4 * j))
 /-- `m_j`. -/
 def mWord (m j : Nat) : Src := .imm (mw m j)
 
+/-- Add or subtract `ecx` (`first`) or zero, with the carry or borrow, at word
+`j` of the window at `[ebp + acc]`. -/
+def sparseStep (acc j : Nat) (op : AluOp) (first : Bool) : List Instr :=
+  [.mov .eax (.mem { base := .ebp, disp := acc + 4 * j }),
+   .alu op .eax (if first then .reg .ecx else .imm 0),
+   .store { base := .ebp, disp := acc + 4 * j } .eax]
+
 /-- P-521's field modulus. -/
 def p521Prime : Nat := 2 ^ 521 - 1
 
@@ -160,11 +168,10 @@ def p521Red (acc : Nat) : List Instr :=
     sparseStep acc 16 .add true ++ ([.mov .ecx (.reg .edx)] : List Instr) ++
     sparseStep acc 17 .adc true ++ sparseStep acc 18 .adc false ++ sparseStep acc 19 .adc false
 
-/-- The window `+= q m`, `q` in `ecx`: P-256's sparse identity when certified,
-P-521's shift, else a row of the modulus's words. -/
+/-- The window `+= q m`, `q` in `ecx`: P-521's shift, else a row of the
+modulus's words. -/
 def redRowI (M : Mod) (m acc : Nat) : List Instr :=
-  if p256RedEnabled M then p256Red acc
-  else if p521RedEnabled M m then p521Red acc
+  if p521RedEnabled M m then p521Red acc
   else rowG (mWord m) acc (words M) (carryUp acc (words M))
 
 /-- Row `i`: `ecx = a_i` (through `edi`), the window at `own + 4i`
@@ -204,11 +211,46 @@ def selectsP (src tmp N : Nat) : List Instr :=
     [.mov .edx (.mem (bp (src + 4 * j))), .alu .xor .edx (.mem (bp (tmp + 4 * j))), .alu .and .edx (.reg .eax),
       .alu .xor .edx (.mem (bp (src + 4 * j))), .store (at_ .ecx (4 * j)) .edx]
 
+/-- The comparison of `[ebp + src]` with `m`, `N` words: `diffsI` without its
+stores. -/
+def cmpI (m src N : Nat) : List Instr :=
+  (List.range N).flatMap fun j =>
+    [.mov .eax (.mem (bp (src + 4 * j))), .alu (if j = 0 then .sub else .sbb) .eax (.imm (mw m j))]
+
+/-- Word `j` of `m` (0, -1 or 1) under the mask `eax`, where `ebx` is its low
+bit. -/
+def maskSrc (m j : Nat) : Src :=
+  if mw m j = 0 then .imm 0 else if mw m j = -1 then .reg .eax else .reg .ebx
+
+/-- `ebx`, the low bit of the mask `eax`. -/
+def maskBit : List Instr := [.mov .ebx (.reg .eax), .alu .and .ebx (.imm 1)]
+
+/-- `[ecx] = [ebp + src]` plus or minus `m` under the mask `eax` (`maskBit`
+before), `N` words, through `edx`. -/
+def maskedOut (op op' : AluOp) (m src N : Nat) : List Instr :=
+  (List.range N).flatMap fun j =>
+    [.mov .edx (.mem (bp (src + 4 * j))), .alu (if j = 0 then op else op') .edx (maskSrc m j),
+      .store (at_ .ecx (4 * j)) .edx]
+
+/-- P-256's field, whose modulus has words 0, 1 and -1 only. -/
+def p256Field (k m : Nat) : Bool := k == 4 && m == p256Prime
+
+/-- The mask of the conditional subtraction of `m`, in `eax`, and
+`ecx = ws + o`. -/
+def csubHead (k m src : Nat) : List Instr :=
+  (if p256Field k m then cmpI m src (2 * k) else diffsI m src (tmpAt k) (2 * k)) ++ maskTop src (2 * k) ++ outPtr
+
+/-- `[ecx]`, the number at `[ebp + src]` without `m` if the mask is all ones:
+the difference `diffsI` left, selected, or, modulo P-256's `p`, its
+subtraction under the mask. -/
+def csubSel (k m src : Nat) : List Instr :=
+  if p256Field k m then maskBit ++ maskedOut .sub .sbb m src (2 * k) else selectsP src (tmpAt k) (2 * k)
+
 /-- The number below `2m` at `[ebp + src]` reduced modulo `m` into `[ecx]`
 (`ecx = ws + o`, formed after the mask), with `rest` (restoring registers
 that the stores through `ecx` must not lose) before the stores. -/
 def csubOut (k m src : Nat) (rest : List Instr) : List Instr :=
-  diffsI m src (tmpAt k) (2 * k) ++ maskTop src (2 * k) ++ outPtr ++ rest ++ selectsP src (tmpAt k) (2 * k)
+  csubHead k m src ++ rest ++ csubSel k m src
 
 /-! ## The functions -/
 
@@ -229,44 +271,11 @@ def mulRestoreSI (k : Nat) : List Instr :=
 def restoreBP (k : Nat) : List Instr :=
   [.mov .ebx (.mem (bp (saveAt k))), .mov .ebp (.mem (bp (saveAt k + 12)))]
 
-/-- Sparse reduction of an already populated product. Unlike CIOS, carry
-and borrow propagate through every remaining high word. -/
-def squareRed (acc extra : Nat) : List Instr :=
-  [.mov .eax (.imm 0), .store (bp acc) .eax] ++
-  multiChain (acc + 12) positiveMask (7 + extra) ++
-  sparseChain (acc + 28) .sub .sbb (3 + extra)
-
-/-- One full-product REDC round, including its reduction digit. -/
-def squareRound (i : Nat) : List Instr :=
-  [.mov .ecx (.mem (bp (own 4 + 4 * i)))] ++ squareRed (own 4 + 4 * i) (7 - i)
-
-/-- The first `r` reduction rounds. -/
-def squareRounds : Nat → List Instr
-  | 0 => []
-  | r + 1 => squareRounds r ++ squareRound r
-
 /-- Words `0 … j - 1` of the operand at `[r]` copied to `[ebp + d]`, before
 Comba uses the general-purpose registers for its accumulator. -/
 def copyWords (r : Reg) (d : Nat) : Nat → List Instr
   | 0 => []
   | j + 1 => copyWords r d j ++ [.mov .eax (.mem (at_ r (4 * j))), .store (bp (d + 4 * j)) .eax]
-
-/-- The sixteen Comba columns, before modular reduction. -/
-def squareProduct : List Instr :=
-  VG.Impl.X25519.X86.zeroAcc ++
-    VG.Impl.X25519.X86.cols (own 4) 16 (VG.Impl.X25519.X86.sqrTerms (tmpAt 4))
-
-/-- Restore the Montgomery base after the Comba accumulator used `ebp`. -/
-def squareProductBase : List Instr := squareProduct ++ [.mov .ebp (.reg .edi)]
-
-/-- Copy, square, and initialize the extra high word for REDC. -/
-def squareInit : List Instr :=
-  copyWords .esi (tmpAt 4) 8 ++ [.mov .edi (.reg .ebp)] ++ squareProductBase ++
-    [.store (bp (own 4 + 64)) .ebx]
-
-/-- The square before the common final conditional subtraction. -/
-def squareBody : List Instr := squareInit ++ squareRounds 8
-
 
 /-! ## P-521's square
 
@@ -339,7 +348,8 @@ doubled). Column `c < N` adds the products `a_i b_{c-i}` and
 `q_i m_{c-i}`, and then `q_c m_0` for its digit `q_c`, which clears the
 column's low word. The columns from `N` are the result's words, which
 overwrite the digits as they are no longer needed. Products by a zero word
-of `m` are left out. -/
+of `m` are left out. Modulo P-256's `p = -1` modulo `2⁹⁶`, a column's low word
+is its digit (`pCol`). -/
 
 /-- Column `c` of `[A] [B]`, `N` words each. -/
 def mulTerms (A B N c : Nat) : List Impl.X25519.X86.Term :=
@@ -377,13 +387,50 @@ carry in the accumulator. -/
 def highCols (k m Q : Nat) (ts : Nat → List Impl.X25519.X86.Term) : List Instr :=
   Impl.X25519.X86.cols Q (2 * k) fun j => ts (2 * k + j) ++ redTerms Q m (2 * k) (2 * k + j)
 
+/-- The offsets of the digits whose words column `c` adds. -/
+def pAdds (Q c : Nat) : List Nat :=
+  (if 3 ≤ c ∧ c < 11 then [Q + 4 * (c - 3)] else []) ++ (if 6 ≤ c ∧ c < 14 then [Q + 4 * (c - 6)] else [])
+
+/-- Column `c` of `[Q] (p + 1)`, `p + 1 = 2²²⁴ (2³² - 1) + 2¹⁹² + 2⁹⁶`, added to
+the accumulator: `(2³² - 1) q` for a digit `q`, to which up to two digits are
+added before it is accumulated (`(2³² - 1)² + 2 (2³² - 1) < 2⁶⁴`), or the
+digits alone. -/
+def pRed (Q c : Nat) : List Instr :=
+  if 7 ≤ c ∧ c < 15 then
+    ([.mov .eax (.imm 0), .mov .edx (.mem (Impl.X25519.X86.sc (Q + 4 * (c - 7)))), .alu .sub .eax (.reg .edx),
+      .alu .sbb .edx (.imm 0)] : List Instr) ++
+      (((pAdds Q c).flatMap fun d =>
+        ([.alu .add .eax (.mem (Impl.X25519.X86.sc d)), .alu .adc .edx (.imm 0)] : List Instr)) ++
+      ([.alu .add .ebx (.reg .eax), .alu .adc .ecx (.reg .edx), .alu .adc .ebp (.imm 0)] : List Instr))
+  else (pAdds Q c).flatMap fun d => Impl.X25519.X86.accAdd (.mem (Impl.X25519.X86.sc d))
+
+/-- Column `c` of the product by columns modulo P-256's `p`, its low word
+stored at `[edi + o]`: below 8, that is the digit, which clears the column's
+low word as `p = -1` modulo `2³²`. -/
+def pCol (Q : Nat) (ts : Nat → List Impl.X25519.X86.Term) (o c : Nat) : List Instr :=
+  (ts c).flatMap Impl.X25519.X86.Term.code ++ (pRed Q c ++ Impl.X25519.X86.colEnd o)
+
+/-- Columns `0 … n - 1` (below 8). -/
+def pLow (Q : Nat) (ts : Nat → List Impl.X25519.X86.Term) : Nat → List Instr
+  | 0 => []
+  | n + 1 => pLow Q ts n ++ pCol Q ts (Q + 4 * n) n
+
+/-- Columns `8 … 8 + n - 1`. -/
+def pHigh (Q : Nat) (ts : Nat → List Impl.X25519.X86.Term) : Nat → List Instr
+  | 0 => []
+  | n + 1 => pHigh Q ts n ++ pCol Q ts (Q + 4 * n) (8 + n)
+
+/-- The columns, the result's `2k` words at `[edi + Q]` and the carry in the
+accumulator. -/
+def allCols (k m Q : Nat) (ts : Nat → List Impl.X25519.X86.Term) : List Instr :=
+  if p256Field k m then pLow Q ts 8 ++ pHigh Q ts 8 else lowCols k m Q ts (2 * k) ++ highCols k m Q ts
+
 /-- The columns of the copied operands, and the result's top word. `ebp` is
 `ws` before and after. -/
 def montCols (k m : Nat) (ts : Nat → List Impl.X25519.X86.Term) : List Instr :=
   .mov .edi (.reg .ebp) :: (Impl.X25519.X86.zeroAcc ++
-    (lowCols k m (own k + 4 * (2 * k)) ts (2 * k) ++
-      (highCols k m (own k + 4 * (2 * k)) ts ++
-        [.store (Impl.X25519.X86.sc (own k + 16 * k)) .ebx, .mov .ebp (.reg .edi)])))
+    (allCols k m (own k + 4 * (2 * k)) ts ++
+      [.store (Impl.X25519.X86.sc (own k + 16 * k)) .ebx, .mov .ebp (.reg .edi)]))
 
 /-- The product by columns. -/
 def colsMul (k m : Nat) : List Instr :=
@@ -394,14 +441,11 @@ def colsMul (k m : Nat) : List Instr :=
 def colsSquare (k m : Nat) : List Instr :=
   copyWords .edi (own k) (2 * k) ++ montCols k m (sqTerms (own k) (2 * k))
 
-/-- Public operand-pointer equality selects the dedicated P-256 square, or
-P-521's, or the square by columns of any other modulus of four words or more
-(for fewer, the rows are as fast). -/
+/-- Public operand-pointer equality selects P-521's square, or the square by
+columns of any other modulus of four words or more (for fewer, the rows are as
+fast). -/
 def mulBody (k m : Nat) : Prog isa :=
-  if k = 4 ∧ m = p256Prime then
-    .seq (.block [.alu .cmp .edi (.reg .esi)])
-      (.ite .e (.block squareBody) (.block (rowsF k m (2 * k))))
-  else if k = 9 ∧ m = p521Prime then
+  if k = 9 ∧ m = p521Prime then
     .seq (.block [.alu .cmp .edi (.reg .esi)])
       (.ite .e (.block p521Square) (.block (rowsF k m (2 * k))))
   else if 4 ≤ k ∧ k ≤ 9 then
@@ -428,15 +472,19 @@ def chainP (op op' : AluOp) (acc N : Nat) : List Instr :=
     [.mov .eax (.mem (at_ .ecx (4 * j))), .alu (if j = 0 then op else op') .eax (.mem (at_ .edx (4 * j))),
       .store (bp (acc + 4 * j)) .eax]
 
-/-- `ebp` restored. -/
-def restoreP (k : Nat) : List Instr := [.mov .ebp (.mem (bp (saveAt k + 12)))]
+/-- `ebx` saved, for the code that uses it. -/
+def saveB (k m : Nat) : List Instr := if p256Field k m then [.store (bp (saveAt k)) .ebx] else []
+
+/-- What `add` and `sub` changed restored: `ebp`, and `ebx` if it was saved. -/
+def restoreP (k m : Nat) : List Instr :=
+  if p256Field k m then restoreBP k else [.mov .ebp (.mem (bp (saveAt k + 12)))]
 
 /-- `vg_<curve>_add_mod_<p|n>`: the sum and its carry word, then the
 conditional subtraction. -/
 def addFn (k m : Nat) : Prog isa :=
-  .block (asEntry k ++ chainP .add .adc (own k) (2 * k) ++
+  .block (asEntry k ++ saveB k m ++ chainP .add .adc (own k) (2 * k) ++
     [.mov .eax (.imm 0), .alu .adc .eax (.imm 0), .store (bp (own k + 4 * (2 * k))) .eax] ++
-    csubOut k m (own k) [] ++ restoreP k)
+    csubOut k m (own k) [] ++ restoreP k m)
 
 /-- `[ebp + tmp] = m` masked with `eax`, `N` words, through `edx`. -/
 def maskedI (m tmp N : Nat) : List Instr :=
@@ -449,11 +497,16 @@ def addOut (src tmp N : Nat) : List Instr :=
     [.mov .edx (.mem (bp (src + 4 * j))), .alu (if j = 0 then .add else .adc) .edx (.mem (bp (tmp + 4 * j))),
       .store (at_ .ecx (4 * j)) .edx]
 
+/-- The difference at `[ebp + own]` plus `m` under the mask `eax`, into `[o]`. -/
+def caddOut (k m : Nat) : List Instr :=
+  if p256Field k m then outPtr ++ maskBit ++ maskedOut .add .adc m (own k) (2 * k)
+  else maskedI m (tmpAt k) (2 * k) ++ outPtr ++ addOut (own k) (tmpAt k) (2 * k)
+
 /-- `vg_<curve>_sub_mod_<p|n>`: the difference, and `m` added under the mask
 of its borrow, into `[o]`. -/
 def subFn (k m : Nat) : Prog isa :=
-  .block (asEntry k ++ chainP .sub .sbb (own k) (2 * k) ++ [.alu .sbb .eax (.reg .eax)] ++
-    maskedI m (tmpAt k) (2 * k) ++ outPtr ++ addOut (own k) (tmpAt k) (2 * k) ++ restoreP k)
+  .block (asEntry k ++ saveB k m ++ chainP .sub .sbb (own k) (2 * k) ++ [.alu .sbb .eax (.reg .eax)] ++
+    caddOut k m ++ restoreP k m)
 
 /-! ## Calls of the functions -/
 

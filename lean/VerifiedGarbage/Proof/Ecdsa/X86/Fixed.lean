@@ -1,7 +1,6 @@
 module
 public import VerifiedGarbage.Proof.Ecdsa.X86.Layout
 
-import VerifiedGarbage.Proof.Mont.X86.RedRow
 
 /-!
 # ECDSA on x86 (32-bit): what every phase keeps
@@ -211,9 +210,7 @@ theorem tbl_apart_tbl {j j' t : Nat} (hjj : j ≠ j') (ht : t < 64 * c.n) :
 theorem modP_of (hc : CfgOk c) {base : Addr} {m : Mem} (h : wordsVal m base (c.sl MP) c.n = c.C.p) :
     ModOkW c.MP' size c.C.p m base :=
   ⟨hc.n0, sl_le c hc.n10 (by decide), sl_le c hc.n10 (by decide), sl_apart c (by decide), h,
-    hc.minv_p, by
-      change (VG.Impl.Mont.X86.p256RedChoice c.n c.C.p).ok c.n c.C.p && true && true && true && true = true
-      rw [VG.Proof.Mont.X86.p256RedChoice_ok]; rfl⟩
+    hc.minv_p, rfl⟩
 
 theorem modN_of (hc : CfgOk c) {base : Addr} {m : Mem} (h : wordsVal m base (c.sl MN) c.n = c.C.n) :
     ModOkW c.MN' size c.C.n m base :=
