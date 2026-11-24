@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.EcKey.Compressed.X86
 public import VerifiedGarbage.Impl.EcKey.X86
+public import VerifiedGarbage.Impl.Weierstrass.X86.PowWindow
 public import VerifiedGarbage.Spec.Weierstrass
 
 /-! # Shared SEC 1 coordinate recovery on ARMv7 -/
@@ -77,13 +78,19 @@ def tonelliSetup (c : Cfg) : List Instr :=
 /-- P-521's `(p + 1) / 4 = 2^519`: the root is 519 squarings. -/
 def p521RootOps : List PowerOp := [.squares 519]
 
+/-- The slots of the root's saved powers: the exponents' and the complete
+addition's, which a root by a power does not use otherwise, and `W0`. -/
+def rootSlots : List Nat := [EXPP, EXPN, T0, T1, T2, T3, T4, T5, W0]
+
+def rootTab (c : Cfg) : List Nat := rootSlots.map c.sl
+
 /-- The root's candidate: for `p ≡ 3 (mod 4)` the power `(p + 1) / 4`, by
-P-521's chain for its `p`, else by the generic power; for P-224, Tonelli and
-Shanks' descent. -/
+P-521's chain for its `p`, else by a sliding window over the exponent, which
+is public (`windowOps`); for P-224, Tonelli and Shanks' descent. -/
 def rootCandidate (c : Cfg) : Prog isa :=
   if c.C.p % 4 = 3 then
     if c.C.p = Mont.p521Prime then chainPower (rootPow c 2) c.SP p521RootOps
-    else rootPower c ((c.C.p + 1) / 4) 2
+    else tabPower (rootPow c 2) c.SP (rootTab c) (windowOps ((c.C.p + 1) / 4) (64 * c.n))
   else progs [tonelliPowers c, .block (tonelliSetup c), .loop (descentRound c) .ne]
 
 def parityMask (c : Cfg) : List Instr :=

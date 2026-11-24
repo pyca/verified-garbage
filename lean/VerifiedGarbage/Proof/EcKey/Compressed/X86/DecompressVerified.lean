@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.Ecdsa.X86.Setup
 public import VerifiedGarbage.Proof.EcKey.Compressed.X86.Front
 public import VerifiedGarbage.Impl.EcKey.Compressed.X86.Decompress
 public import VerifiedGarbage.Proof.Weierstrass.X86.P256Power
+public import VerifiedGarbage.Proof.Weierstrass.X86.PowWindow
 import VerifiedGarbage.Proof.EcKey.X86.Finish
 public import VerifiedGarbage.Proof.Ecdsa.X86.Layout
 public import VerifiedGarbage.Impl.EcKey.Compressed.Root
@@ -209,15 +210,38 @@ theorem p521Root_bound : ∀ op ∈ Impl.EcKey.Compressed.X86.p521RootOps, power
   simp only [Impl.EcKey.Compressed.X86.p521RootOps, List.mem_singleton, forall_eq, powerOpBound]
   decide
 
+theorem rootSlots_ok : ∀ i ∈ Impl.EcKey.Compressed.X86.rootSlots,
+    i < 45 ∧ i ∉ [ACC, PT, TMP] ∧ W2 ≠ i ∧ MP ≠ i := by decide
+
+/-- The root's saved powers are slots apart from the power's own. -/
+theorem rootTab_lay {c : Cfg} (hc : CfgOk c) :
+    TabLay (Impl.EcKey.Compressed.X86.rootPow c 2) c.wk (Impl.EcKey.Compressed.X86.rootTab c) := by
+  have h10 := hc.n10
+  refine ⟨fun o ho => ?_, fun o ho => ?_, fun o ho => ?_, fun o ho => ?_, ?_⟩
+  · obtain ⟨i, hi, rfl⟩ := List.mem_map.mp ho
+    exact sl_below_wk c (rootSlots_ok i hi).1
+  · obtain ⟨i, hi, rfl⟩ := List.mem_map.mp ho
+    change ∀ w ∈ slW c [ACC, PT, TMP] ++ wkW c, _
+    exact apart_append (apart_slW (rootSlots_ok i hi).2.1) (apart_wk (rootSlots_ok i hi).1)
+  · obtain ⟨i, hi, rfl⟩ := List.mem_map.mp ho
+    exact sl_apart c (rootSlots_ok i hi).2.2.1
+  · obtain ⟨i, hi, rfl⟩ := List.mem_map.mp ho
+    exact sl_apart c (rootSlots_ok i hi).2.2.2
+  · exact List.pairwise_map.mpr ((by decide : Impl.EcKey.Compressed.X86.rootSlots.Pairwise (· ≠ ·)).imp
+      fun h => sl_apart c h)
+
+/-- What the three-mod-four candidate writes: the power's slots and its saved
+powers. -/
+abbrev rootThreeWrites (c : Cfg) : List (Nat × Nat) :=
+  powWx (Impl.EcKey.Compressed.X86.rootPow c 2) c.wk ++
+    tabW (Impl.EcKey.Compressed.X86.rootPow c 2) (Impl.EcKey.Compressed.X86.rootTab c)
+
 /-- The three-mod-four candidate uses an exponent derived from the prime. -/
 theorem rootThree_ok {c : Cfg} (hc : CfgOk c) (hp : c.C.p % 4 = 3)
     {base : Addr} {s : State} (hs : Scr s base size)
-    (_hM : ModOkW c.MP' size c.C.p s.mem base) (hB : sv c base s W2 < c.C.p)
-    (hO : sv c base s ONEP = 2 ^ (64 * c.n) % c.C.p) :
+    (_hM : ModOkW c.MP' size c.C.p s.mem base) (hB : sv c base s W2 < c.C.p) :
     WP isa (Impl.EcKey.Compressed.X86.rootCandidate c) s fun s' =>
-      Keeps powClob s s' ∧
-      Unch base ([(c.sl EXPP, 8 * c.n), (bitsAt c.n 2, 64 * c.n)] ++
-        powWx (Impl.EcKey.Compressed.X86.rootPow c 2) c.wk) s.mem s'.mem ∧
+      Keeps powClob s s' ∧ Unch base (rootThreeWrites c) s.mem s'.mem ∧
       sv c base s' ACC < c.C.p ∧
       toM c.C.p (2 ^ (64 * c.n)) (sv c base s' ACC) =
         toM c.C.p (2 ^ (64 * c.n)) (sv c base s W2) ^ ((c.C.p + 1) / 4) := by
@@ -228,12 +252,15 @@ theorem rootThree_ok {c : Cfg} (hc : CfgOk c) (hp : c.C.p % 4 = 3)
     refine WP.mono (chainPower_ok (rootPow_lay hc (j := 2) (by decide)) (rootPow_wk hc (by decide))
       (unitMod_pow_two hc.p_odd (64 * c.n)) Impl.EcKey.Compressed.X86.p521RootOps p521Root_bound
       p521Root_exponent hs _hM hB) fun s' ⟨K, U, L, V⟩ =>
-      ⟨K, U.mono (fun w hw => List.mem_append_right _ hw), L, ?_⟩
+      ⟨K, U.mono (fun w hw => List.mem_append_left _ hw), L, ?_⟩
     rw [he]
     exact V
   next _ =>
-    exact rootPower_ok hc (by decide)
-      (by have := hc.p_lt; have := hc.p_ge; omega_arith) hs _hM hB hO
+    have h10 := hc.n10
+    exact windowPower_ok (rootPow_lay hc (j := 2) (by decide)) (rootPow_wk hc (by decide))
+      (unitMod_pow_two hc.p_odd (64 * c.n)) (rootTab_lay hc) rfl
+      (by have := hc.p_ge; omega_arith) (by have := hc.p_lt; have := hc.p_ge; omega_arith)
+      (by omega_arith) hs _hM hB
 
 end VG.Proof.EcKey.Compressed.X86
 
@@ -293,12 +320,14 @@ theorem candidate_apart {c : Cfg} (hc : CfgOk c) {i : Nat} (hi : i < 45) (hw : i
 theorem candidateThree_correct {c : Cfg} (hc : CfgOk c) (hp : c.C.p % 4 = 3) :
     CandidateCorrect c Impl.EcKey.Compressed.rootThreeModFour := by
   intro base s hs hM hB hO
-  refine WP.mono (rootThree_ok hc hp hs hM hB hO) fun s' ⟨k, U, lt, v⟩ => ?_
+  refine WP.mono (rootThree_ok hc hp hs hM hB) fun s' ⟨k, U, lt, v⟩ => ?_
   refine ⟨k, U.mono ?_, lt, ?_⟩
   · intro w hw
-    simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false, powWx, powW,
-      Impl.EcKey.Compressed.X86.rootPow] at hw
-    rcases hw with (rfl | rfl) | (rfl | rfl | rfl) | rfl | rfl
+    simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false, powWx, powW, tabW,
+      Impl.EcKey.Compressed.X86.rootTab, Impl.EcKey.Compressed.X86.rootSlots, List.map_cons,
+      List.map_nil, Impl.EcKey.Compressed.X86.rootPow] at hw
+    rcases hw with ((rfl | rfl | rfl) | rfl | rfl) |
+      rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
     all_goals simp [candidateWrites, candidateSlots, slWk, wkW, slW, MP'_n, MP'_tmp]
   · simpa only [Impl.EcKey.Compressed.rootThreeModFour, pow_eq_npow] using v
 
