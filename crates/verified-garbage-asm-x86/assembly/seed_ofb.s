@@ -5,14 +5,14 @@
 // gives.
 
 vg_seed_ofb_aesni:
-	lea esp, [esp-672]
-	mov eax, DWORD PTR [esp+676]
-	mov DWORD PTR [esp+4], eax
+	lea esp, [esp-676]
 	mov eax, DWORD PTR [esp+680]
-	mov DWORD PTR [esp+8], eax
+	mov DWORD PTR [esp+4], eax
 	mov eax, DWORD PTR [esp+684]
-	mov DWORD PTR [esp+12], eax
+	mov DWORD PTR [esp+8], eax
 	mov eax, DWORD PTR [esp+688]
+	mov DWORD PTR [esp+12], eax
+	mov eax, DWORD PTR [esp+692]
 	mov DWORD PTR [esp+16], eax
 	mov eax, esp
 	add eax, 24
@@ -444,8 +444,8 @@ vg_seed_ofb_aesni:
 	movdqu XMMWORD PTR [esp+648], xmm0
 	mov DWORD PTR [esp+664], ecx
 	mov DWORD PTR [esp+668], ecx
-	lea esp, [esp+672]
-	lea esp, [esp-676]
+	lea esp, [esp+676]
+	lea esp, [esp-680]
 	mov ecx, 0
 	mov DWORD PTR [esp+4], ecx
 	mov DWORD PTR [esp+8], ecx
@@ -453,7 +453,8 @@ vg_seed_ofb_aesni:
 	mov DWORD PTR [esp+16], ecx
 	mov DWORD PTR [esp+20], ecx
 	mov DWORD PTR [esp+24], ecx
-	lea esp, [esp+676]
+	mov DWORD PTR [esp+676], ecx
+	lea esp, [esp+680]
 	mov eax, 0
 	mov edx, 0
 	xor ecx, ecx
@@ -681,14 +682,14 @@ vg_seed_ofb:
 	.p2align 6
 
 vg_seed_ofb_final_aesni:
-	lea esp, [esp-672]
-	mov eax, DWORD PTR [esp+676]
-	mov DWORD PTR [esp+4], eax
+	lea esp, [esp-676]
 	mov eax, DWORD PTR [esp+680]
-	mov DWORD PTR [esp+8], eax
+	mov DWORD PTR [esp+4], eax
 	mov eax, DWORD PTR [esp+684]
-	mov DWORD PTR [esp+12], eax
+	mov DWORD PTR [esp+8], eax
 	mov eax, DWORD PTR [esp+688]
+	mov DWORD PTR [esp+12], eax
+	mov eax, DWORD PTR [esp+692]
 	mov DWORD PTR [esp+16], eax
 	mov eax, esp
 	add eax, 24
@@ -1146,8 +1147,8 @@ vg_seed_ofb_final_aesni:
 	movdqu XMMWORD PTR [esp+648], xmm0
 	mov DWORD PTR [esp+664], ecx
 	mov DWORD PTR [esp+668], ecx
-	lea esp, [esp+672]
-	lea esp, [esp-676]
+	lea esp, [esp+676]
+	lea esp, [esp-680]
 	mov ecx, 0
 	mov DWORD PTR [esp+4], ecx
 	mov DWORD PTR [esp+8], ecx
@@ -1155,7 +1156,8 @@ vg_seed_ofb_final_aesni:
 	mov DWORD PTR [esp+16], ecx
 	mov DWORD PTR [esp+20], ecx
 	mov DWORD PTR [esp+24], ecx
-	lea esp, [esp+676]
+	mov DWORD PTR [esp+676], ecx
+	lea esp, [esp+680]
 	mov eax, 0
 	mov edx, 0
 	xor ecx, ecx

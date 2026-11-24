@@ -454,20 +454,20 @@ def frameSat : State where
 
 theorem frameSat_cbc (post : Spec.Camellia.cbcChainedSig.Post X86.abi.ptrBits) :
     ∃ s, (Spec.Camellia.cbcChainedSig.contract X86.abi (pre := Proof.Camellia.cbcChainedPre X86.abi.ptrBits)
-      (post := post) (writeArgs := true) (stack := 892)).pre s := by
+      (post := post) (writeArgs := true) (stack := 888)).pre s := by
   implies_sat [Spec.Camellia.cbcChainedSig, Proof.Camellia.cbcChainedPre, X86.abi, X86.argSlots, X86.argVal,
       X86.argBytes]
     [frameSat, X86.arg, X86.argAddr, Mem.readW, Mem.read] using frameSat
 
 theorem frameSat_cfb (post : Spec.Camellia.cfbSig.Post X86.abi.ptrBits) :
     ∃ s, (Spec.Camellia.cfbSig.contract X86.abi (pre := Spec.Camellia.cfbPre X86.abi.ptrBits) (post := post)
-      (writeArgs := true) (stack := 892)).pre s := by
+      (writeArgs := true) (stack := 888)).pre s := by
   implies_sat [Spec.Camellia.cfbSig, Spec.Camellia.cfbPre, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     [frameSat, X86.arg, X86.argAddr, Mem.readW, Mem.read] using frameSat
 
 theorem frameSat_ctr (post : Spec.Camellia.ctrSig.Post X86.abi.ptrBits) :
     ∃ s, (Spec.Camellia.ctrSig.contract X86.abi (pre := Spec.Camellia.ctrPre X86.abi.ptrBits) (post := post)
-      (writeArgs := true) (stack := 892)).pre s := by
+      (writeArgs := true) (stack := 888)).pre s := by
   implies_sat [Spec.Camellia.ctrSig, Spec.Camellia.ctrPre, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     [frameSat, X86.arg, X86.argAddr, Mem.readW, Mem.read] using frameSat
 
@@ -518,36 +518,36 @@ theorem ctr_verified : Verified X86.target ctr (Proof.Camellia.ctrScratchContrac
 
 /-- `cbcDecryptChained` with its working space on the stack. -/
 theorem cbcDecryptChained_framed :
-    Verified X86.target (Impl.StackScratch.X86.withStackScratchWiped 888 5 214 cbcDecryptChained)
-      (Spec.Camellia.cbcDecryptChainedContract X86.abi 892) :=
+    Verified X86.target (Impl.StackScratch.X86.withStackScratchWiped 884 5 214 cbcDecryptChained)
+      (Spec.Camellia.cbcDecryptChainedContract X86.abi 888) :=
   Proof.Camellia.cbcDecryptChained_of_sk <|
   X86.Verified.stackScratchWiped (sig := Spec.Camellia.cbcChainedSig) (nm := "scratch") (e := .u64)
     (n := 107) (pre := Proof.Camellia.cbcChainedPre X86.abi.ptrBits)
     (post := Proof.Camellia.cbcDecChainedPost X86.abi.ptrBits) (wa := true) (stack := 4)
-    (bytes := 888) cbcDecryptChained_verified (by decide) (by lit_decide) (by lit_decide) (by decide)
+    (bytes := 884) cbcDecryptChained_verified (by decide) (by lit_decide) (by lit_decide) (by decide)
     (Proof.Camellia.cbcChainedPre_local _)
     (Proof.Camellia.cbcDecChainedPost_local _) (Proof.Camellia.cbcDecChainedPostOut_local _) (frameSat_cbc _)
 
 /-- `cfbDecrypt` with its working space on the stack. -/
 theorem cfbDecrypt_framed :
-    Verified X86.target (Impl.StackScratch.X86.withStackScratchWiped 888 5 214 cfbDecrypt)
-      (Spec.Camellia.cfbDecryptContract X86.abi 892) :=
+    Verified X86.target (Impl.StackScratch.X86.withStackScratchWiped 884 5 214 cfbDecrypt)
+      (Spec.Camellia.cfbDecryptContract X86.abi 888) :=
   Proof.Camellia.cfbDecrypt_of_sk <|
   X86.Verified.stackScratchWiped (sig := Spec.Camellia.cfbSig) (nm := "scratch") (e := .u64)
     (n := 107) (pre := Spec.Camellia.cfbPre X86.abi.ptrBits)
     (post := Proof.Camellia.cfbDecryptPostSk X86.abi.ptrBits) (wa := true) (stack := 4)
-    (bytes := 888) cfbDecrypt_verified (by decide) (by lit_decide) (by lit_decide) (by decide)
+    (bytes := 884) cfbDecrypt_verified (by decide) (by lit_decide) (by lit_decide) (by decide)
     (Proof.Camellia.cfbPre_local _)
     (Proof.Camellia.cfbDecryptPost_local _) (Proof.Camellia.cfbDecryptPostOut_local _) (frameSat_cfb _)
 
 /-- `ctr` with its working space on the stack. -/
 theorem ctr_framed :
-    Verified X86.target (Impl.StackScratch.X86.withStackScratchWiped 888 5 214 ctr)
-      (Spec.Camellia.ctrContract X86.abi 892) :=
+    Verified X86.target (Impl.StackScratch.X86.withStackScratchWiped 884 5 214 ctr)
+      (Spec.Camellia.ctrContract X86.abi 888) :=
   Proof.Camellia.ctr_of_sk <|
   X86.Verified.stackScratchWiped (sig := Spec.Camellia.ctrSig) (nm := "scratch") (e := .u64)
     (n := 107) (pre := Spec.Camellia.ctrPre X86.abi.ptrBits) (post := Proof.Camellia.ctrPostSk X86.abi.ptrBits)
-    (wa := true) (stack := 4) (bytes := 888) ctr_verified (by decide) (by lit_decide) (by lit_decide) (by decide)
+    (wa := true) (stack := 4) (bytes := 884) ctr_verified (by decide) (by lit_decide) (by lit_decide) (by decide)
     (Proof.Camellia.ctrPre_local _)
     (Proof.Camellia.ctrPost_local _) (Proof.Camellia.ctrPostOut_local _) (frameSat_ctr _)
 

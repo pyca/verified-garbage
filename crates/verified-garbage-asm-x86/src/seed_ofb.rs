@@ -20,12 +20,12 @@ pub const VG_SEED_OFB_AESNI_FEATURES: verified_garbage_cpu::Features = verified_
 /// * `iv` must be valid for reads and writes of 16 bytes.
 /// * `data` must be valid for reads and writes of `16 * n` bytes.
 /// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
-/// * None of `schedule`, `iv` and `data` may overlap the arguments on the stack, overlap the return address on the stack or the 676 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `schedule`, `iv` and `data` may overlap the arguments on the stack, overlap the return address on the stack or the 680 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `ssse3` and `aes` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_seed_ofb_aesni(schedule: *const [u8; 128], iv: *mut [u8; 16], data: *mut [u8; 16], n: usize) {
     core::arch::naked_asm!(
-        r#".base64 "jaQkYP3//4uEJKQCAACJRCQEi4QkqAIAAIlEJAiLhCSsAgAAiUQkDIuEJLACAACJRCQQieCDwBiJRCQUi0QkFImYYAIAAImwZAIAAIm4aAIAAImobAIAAInHi3QkCIsGiYd4AgAAi0YEiYd8AgAAi0YIiYeAAgAAi0YMiYeEAgAA"
+        r#".base64 "jaQkXP3//4uEJKgCAACJRCQEi4QkrAIAAIlEJAiLhCSwAgAAiUQkDIuEJLQCAACJRCQQieCDwBiJRCQUi0QkFImYYAIAAImwZAIAAIm4aAIAAImobAIAAInHi3QkCIsGiYd4AgAAi0YEiYd8AgAAi0YIiYeAAgAAi0YMiYeEAgAA"
 call 2f
 2:
 mov eax, DWORD PTR [esp]
@@ -47,7 +47,7 @@ jne 23b
 jmp 22f
 21:
 22:
-.base64 "i3QkCIuHeAIAAIkGi4d8AgAAiUYEi4eAAgAAiUYIi4eEAgAAiUYMi59gAgAAi7dkAgAAi69sAgAAi79oAgAAZg/vwLkAAAAA8w9/RCQY8w9/RCQo8w9/RCQ48w9/RCRI8w9/RCRY8w9/RCRo8w9/RCR48w9/hCSIAAAA8w9/hCSYAAAA8w9/hCSoAAAA8w9/hCS4AAAA8w9/hCTIAAAA8w9/hCTYAAAA8w9/hCToAAAA8w9/hCT4AAAA8w9/hCQIAQAA8w9/hCQYAQAA8w9/hCQoAQAA8w9/hCQ4AQAA8w9/hCRIAQAA8w9/hCRYAQAA8w9/hCRoAQAA8w9/hCR4AQAA8w9/hCSIAQAA8w9/hCSYAQAA8w9/hCSoAQAA8w9/hCS4AQAA8w9/hCTIAQAA8w9/hCTYAQAA8w9/hCToAQAA8w9/hCT4AQAA8w9/hCQIAgAA8w9/hCQYAgAA8w9/hCQoAgAA8w9/hCQ4AgAA8w9/hCRIAgAA8w9/hCRYAgAA8w9/hCRoAgAA8w9/hCR4AgAA8w9/hCSIAgAAiYwkmAIAAImMJJwCAACNpCSgAgAAjaQkXP3//7kAAAAAiUwkBIlMJAiJTCQMiUwkEIlMJBSJTCQYjaQkpAIAALgAAAAAugAAAAAxyWYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ww=="
+.base64 "i3QkCIuHeAIAAIkGi4d8AgAAiUYEi4eAAgAAiUYIi4eEAgAAiUYMi59gAgAAi7dkAgAAi69sAgAAi79oAgAAZg/vwLkAAAAA8w9/RCQY8w9/RCQo8w9/RCQ48w9/RCRI8w9/RCRY8w9/RCRo8w9/RCR48w9/hCSIAAAA8w9/hCSYAAAA8w9/hCSoAAAA8w9/hCS4AAAA8w9/hCTIAAAA8w9/hCTYAAAA8w9/hCToAAAA8w9/hCT4AAAA8w9/hCQIAQAA8w9/hCQYAQAA8w9/hCQoAQAA8w9/hCQ4AQAA8w9/hCRIAQAA8w9/hCRYAQAA8w9/hCRoAQAA8w9/hCR4AQAA8w9/hCSIAQAA8w9/hCSYAQAA8w9/hCSoAQAA8w9/hCS4AQAA8w9/hCTIAQAA8w9/hCTYAQAA8w9/hCToAQAA8w9/hCT4AQAA8w9/hCQIAgAA8w9/hCQYAgAA8w9/hCQoAgAA8w9/hCQ4AgAA8w9/hCRIAgAA8w9/hCRYAgAA8w9/hCRoAgAA8w9/hCR4AgAA8w9/hCSIAgAAiYwkmAIAAImMJJwCAACNpCSkAgAAjaQkWP3//7kAAAAAiUwkBIlMJAiJTCQMiUwkEIlMJBSJTCQYiYwkpAIAAI2kJKgCAAC4AAAAALoAAAAAMclmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/8M="
 .p2align 6"#,
         VG_SEED_AESNI = sym super::consts::VG_SEED_AESNI,
     )
@@ -104,12 +104,12 @@ pub const VG_SEED_OFB_FINAL_AESNI_FEATURES: verified_garbage_cpu::Features = ver
 /// * `iv` must be valid for reads and writes of 16 bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
 /// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
-/// * None of `schedule`, `iv` and `data` may overlap the arguments on the stack, overlap the return address on the stack or the 676 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `schedule`, `iv` and `data` may overlap the arguments on the stack, overlap the return address on the stack or the 680 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `ssse3` and `aes` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_seed_ofb_final_aesni(schedule: *const [u8; 128], iv: *mut [u8; 16], data: *mut u8, len: usize) {
     core::arch::naked_asm!(
-        r#".base64 "jaQkYP3//4uEJKQCAACJRCQEi4QkqAIAAIlEJAiLhCSsAgAAiUQkDIuEJLACAACJRCQQieCDwBiJRCQUi0QkFImYYAIAAImwZAIAAIm4aAIAAImobAIAAInHi3QkCIsGiYd4AgAAi0YEiYd8AgAAi0YIiYeAAgAAi0YMiYeEAgAA"
+        r#".base64 "jaQkXP3//4uEJKgCAACJRCQEi4QkrAIAAIlEJAiLhCSwAgAAiUQkDIuEJLQCAACJRCQQieCDwBiJRCQUi0QkFImYYAIAAImwZAIAAIm4aAIAAImobAIAAInHi3QkCIsGiYd4AgAAi0YEiYd8AgAAi0YIiYeAAgAAi0YMiYeEAgAA"
 call 2f
 2:
 mov eax, DWORD PTR [esp]
@@ -141,7 +141,7 @@ jne 23b
 jmp 22f
 21:
 22:
-.base64 "i3QkCIuHeAIAAIkGi4d8AgAAiUYEi4eAAgAAiUYIi4eEAgAAiUYMi59gAgAAi7dkAgAAi69sAgAAi79oAgAAZg/vwLkAAAAA8w9/RCQY8w9/RCQo8w9/RCQ48w9/RCRI8w9/RCRY8w9/RCRo8w9/RCR48w9/hCSIAAAA8w9/hCSYAAAA8w9/hCSoAAAA8w9/hCS4AAAA8w9/hCTIAAAA8w9/hCTYAAAA8w9/hCToAAAA8w9/hCT4AAAA8w9/hCQIAQAA8w9/hCQYAQAA8w9/hCQoAQAA8w9/hCQ4AQAA8w9/hCRIAQAA8w9/hCRYAQAA8w9/hCRoAQAA8w9/hCR4AQAA8w9/hCSIAQAA8w9/hCSYAQAA8w9/hCSoAQAA8w9/hCS4AQAA8w9/hCTIAQAA8w9/hCTYAQAA8w9/hCToAQAA8w9/hCT4AQAA8w9/hCQIAgAA8w9/hCQYAgAA8w9/hCQoAgAA8w9/hCQ4AgAA8w9/hCRIAgAA8w9/hCRYAgAA8w9/hCRoAgAA8w9/hCR4AgAA8w9/hCSIAgAAiYwkmAIAAImMJJwCAACNpCSgAgAAjaQkXP3//7kAAAAAiUwkBIlMJAiJTCQMiUwkEIlMJBSJTCQYjaQkpAIAALgAAAAAugAAAAAxyWYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ww=="
+.base64 "i3QkCIuHeAIAAIkGi4d8AgAAiUYEi4eAAgAAiUYIi4eEAgAAiUYMi59gAgAAi7dkAgAAi69sAgAAi79oAgAAZg/vwLkAAAAA8w9/RCQY8w9/RCQo8w9/RCQ48w9/RCRI8w9/RCRY8w9/RCRo8w9/RCR48w9/hCSIAAAA8w9/hCSYAAAA8w9/hCSoAAAA8w9/hCS4AAAA8w9/hCTIAAAA8w9/hCTYAAAA8w9/hCToAAAA8w9/hCT4AAAA8w9/hCQIAQAA8w9/hCQYAQAA8w9/hCQoAQAA8w9/hCQ4AQAA8w9/hCRIAQAA8w9/hCRYAQAA8w9/hCRoAQAA8w9/hCR4AQAA8w9/hCSIAQAA8w9/hCSYAQAA8w9/hCSoAQAA8w9/hCS4AQAA8w9/hCTIAQAA8w9/hCTYAQAA8w9/hCToAQAA8w9/hCT4AQAA8w9/hCQIAgAA8w9/hCQYAgAA8w9/hCQoAgAA8w9/hCQ4AgAA8w9/hCRIAgAA8w9/hCRYAgAA8w9/hCRoAgAA8w9/hCR4AgAA8w9/hCSIAgAAiYwkmAIAAImMJJwCAACNpCSkAgAAjaQkWP3//7kAAAAAiUwkBIlMJAiJTCQMiUwkEIlMJBSJTCQYiYwkpAIAAI2kJKgCAAC4AAAAALoAAAAAMclmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/8M="
 .p2align 6"#,
         VG_SEED_AESNI = sym super::consts::VG_SEED_AESNI,
     )

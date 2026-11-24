@@ -5,14 +5,14 @@
 // gives.
 
 vg_seed_cfb128_encrypt_aesni:
-	lea esp, [esp-672]
-	mov eax, DWORD PTR [esp+676]
-	mov DWORD PTR [esp+4], eax
+	lea esp, [esp-676]
 	mov eax, DWORD PTR [esp+680]
-	mov DWORD PTR [esp+8], eax
+	mov DWORD PTR [esp+4], eax
 	mov eax, DWORD PTR [esp+684]
-	mov DWORD PTR [esp+12], eax
+	mov DWORD PTR [esp+8], eax
 	mov eax, DWORD PTR [esp+688]
+	mov DWORD PTR [esp+12], eax
+	mov eax, DWORD PTR [esp+692]
 	mov DWORD PTR [esp+16], eax
 	mov eax, esp
 	add eax, 24
@@ -444,8 +444,8 @@ vg_seed_cfb128_encrypt_aesni:
 	movdqu XMMWORD PTR [esp+648], xmm0
 	mov DWORD PTR [esp+664], ecx
 	mov DWORD PTR [esp+668], ecx
-	lea esp, [esp+672]
-	lea esp, [esp-676]
+	lea esp, [esp+676]
+	lea esp, [esp-680]
 	mov ecx, 0
 	mov DWORD PTR [esp+4], ecx
 	mov DWORD PTR [esp+8], ecx
@@ -453,7 +453,8 @@ vg_seed_cfb128_encrypt_aesni:
 	mov DWORD PTR [esp+16], ecx
 	mov DWORD PTR [esp+20], ecx
 	mov DWORD PTR [esp+24], ecx
-	lea esp, [esp+676]
+	mov DWORD PTR [esp+676], ecx
+	lea esp, [esp+680]
 	mov eax, 0
 	mov edx, 0
 	xor ecx, ecx
@@ -681,14 +682,14 @@ vg_seed_cfb128_encrypt:
 	.p2align 6
 
 vg_seed_cfb128_decrypt_aesni:
-	lea esp, [esp-736]
-	mov eax, DWORD PTR [esp+740]
-	mov DWORD PTR [esp+4], eax
+	lea esp, [esp-740]
 	mov eax, DWORD PTR [esp+744]
-	mov DWORD PTR [esp+8], eax
+	mov DWORD PTR [esp+4], eax
 	mov eax, DWORD PTR [esp+748]
-	mov DWORD PTR [esp+12], eax
+	mov DWORD PTR [esp+8], eax
 	mov eax, DWORD PTR [esp+752]
+	mov DWORD PTR [esp+12], eax
+	mov eax, DWORD PTR [esp+756]
 	mov DWORD PTR [esp+16], eax
 	mov eax, esp
 	add eax, 24
@@ -2177,8 +2178,8 @@ vg_seed_cfb128_decrypt_aesni:
 	movdqu XMMWORD PTR [esp+712], xmm0
 	mov DWORD PTR [esp+728], ecx
 	mov DWORD PTR [esp+732], ecx
-	lea esp, [esp+736]
-	lea esp, [esp-740]
+	lea esp, [esp+740]
+	lea esp, [esp-744]
 	mov ecx, 0
 	mov DWORD PTR [esp+4], ecx
 	mov DWORD PTR [esp+8], ecx
@@ -2186,7 +2187,8 @@ vg_seed_cfb128_decrypt_aesni:
 	mov DWORD PTR [esp+16], ecx
 	mov DWORD PTR [esp+20], ecx
 	mov DWORD PTR [esp+24], ecx
-	lea esp, [esp+740]
+	mov DWORD PTR [esp+740], ecx
+	lea esp, [esp+744]
 	mov eax, 0
 	mov edx, 0
 	xor ecx, ecx
@@ -2919,14 +2921,14 @@ vg_seed_cfb128_decrypt:
 	.p2align 6
 
 vg_seed_cfb128_encrypt_final_aesni:
-	lea esp, [esp-672]
-	mov eax, DWORD PTR [esp+676]
-	mov DWORD PTR [esp+4], eax
+	lea esp, [esp-676]
 	mov eax, DWORD PTR [esp+680]
-	mov DWORD PTR [esp+8], eax
+	mov DWORD PTR [esp+4], eax
 	mov eax, DWORD PTR [esp+684]
-	mov DWORD PTR [esp+12], eax
+	mov DWORD PTR [esp+8], eax
 	mov eax, DWORD PTR [esp+688]
+	mov DWORD PTR [esp+12], eax
+	mov eax, DWORD PTR [esp+692]
 	mov DWORD PTR [esp+16], eax
 	mov eax, esp
 	add eax, 24
@@ -3384,8 +3386,8 @@ vg_seed_cfb128_encrypt_final_aesni:
 	movdqu XMMWORD PTR [esp+648], xmm0
 	mov DWORD PTR [esp+664], ecx
 	mov DWORD PTR [esp+668], ecx
-	lea esp, [esp+672]
-	lea esp, [esp-676]
+	lea esp, [esp+676]
+	lea esp, [esp-680]
 	mov ecx, 0
 	mov DWORD PTR [esp+4], ecx
 	mov DWORD PTR [esp+8], ecx
@@ -3393,7 +3395,8 @@ vg_seed_cfb128_encrypt_final_aesni:
 	mov DWORD PTR [esp+16], ecx
 	mov DWORD PTR [esp+20], ecx
 	mov DWORD PTR [esp+24], ecx
-	lea esp, [esp+676]
+	mov DWORD PTR [esp+676], ecx
+	lea esp, [esp+680]
 	mov eax, 0
 	mov edx, 0
 	xor ecx, ecx
@@ -3647,14 +3650,14 @@ vg_seed_cfb128_encrypt_final:
 	.p2align 6
 
 vg_seed_cfb128_decrypt_final_aesni:
-	lea esp, [esp-672]
-	mov eax, DWORD PTR [esp+676]
-	mov DWORD PTR [esp+4], eax
+	lea esp, [esp-676]
 	mov eax, DWORD PTR [esp+680]
-	mov DWORD PTR [esp+8], eax
+	mov DWORD PTR [esp+4], eax
 	mov eax, DWORD PTR [esp+684]
-	mov DWORD PTR [esp+12], eax
+	mov DWORD PTR [esp+8], eax
 	mov eax, DWORD PTR [esp+688]
+	mov DWORD PTR [esp+12], eax
+	mov eax, DWORD PTR [esp+692]
 	mov DWORD PTR [esp+16], eax
 	mov eax, esp
 	add eax, 24
@@ -4112,8 +4115,8 @@ vg_seed_cfb128_decrypt_final_aesni:
 	movdqu XMMWORD PTR [esp+648], xmm0
 	mov DWORD PTR [esp+664], ecx
 	mov DWORD PTR [esp+668], ecx
-	lea esp, [esp+672]
-	lea esp, [esp-676]
+	lea esp, [esp+676]
+	lea esp, [esp-680]
 	mov ecx, 0
 	mov DWORD PTR [esp+4], ecx
 	mov DWORD PTR [esp+8], ecx
@@ -4121,7 +4124,8 @@ vg_seed_cfb128_decrypt_final_aesni:
 	mov DWORD PTR [esp+16], ecx
 	mov DWORD PTR [esp+20], ecx
 	mov DWORD PTR [esp+24], ecx
-	lea esp, [esp+676]
+	mov DWORD PTR [esp+676], ecx
+	lea esp, [esp+680]
 	mov eax, 0
 	mov edx, 0
 	xor ecx, ecx
