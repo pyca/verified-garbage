@@ -290,7 +290,7 @@ theorem verifiedScrubbedSel {api : Api} (r : Unscrubbed api target) {n W rb : Na
   have hv' := Verified.scrubSel hA hv hn hns hws rfl hp
   have h0 : r.stack ≠ 0 := Nat.pos_iff_ne_zero.mp (Nat.lt_of_lt_of_le hn.1 hns)
   exact ⟨hv', RTaint.noResidue_of_verified hv' (sel_pre hA (fun _ _ _ hn h => wf_top hn h) h0)
-    (fun _ _ _ _ _ _ _ hj => absurd hj (Nat.not_lt_zero _)) hres⟩
+    (fun _ _ _ _ _ _ _ hj => absurd hj (Nat.not_lt_zero _)) hres, fun ty _ h => by cases ty <;> cases h⟩
 
 /-- The stores of `wipeWords ws` write `esp` in none of them. -/
 theorem wipeWords_all : ∀ ws : List Nat, (wipeWords ws).all (fun i => !isa.writesSp i) = true

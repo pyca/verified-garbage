@@ -143,7 +143,7 @@ theorem _root_.VG.Proof.Seed.AArch64.ModesResidue.expandKeyCode_scrubbed :
     VerifiedScrubbed AArch64.target Impl.Seed.AArch64.Fn.expandKey
       (Spec.Seed.expandKeyContract AArch64.abi 976) 0 :=
   ⟨Proof.Seed.AArch64.ModesResidue.expandKeyCode_verified,
-    Proof.Seed.AArch64.ModesResidue.expandKeyCode_noResidue⟩
+    Proof.Seed.AArch64.ModesResidue.expandKeyCode_noResidue, fun ty _ h => by cases ty <;> cases h⟩
 
 /-- The function as its registration binds it: it meets its contract in constant time and returns
 without secret residue. -/
@@ -151,7 +151,7 @@ theorem _root_.VG.Proof.Seed.AArch64.ModesResidue.cbcEncryptChainedCode_scrubbed
     VerifiedScrubbed AArch64.target Impl.Seed.AArch64.Fn.cbcEncryptChained
       (Spec.Seed.cbcEncryptChainedContract AArch64.abi 1456) 0 :=
   ⟨Proof.Seed.AArch64.ModesResidue.cbcEncryptChainedCode_verified,
-    Proof.Seed.AArch64.ModesResidue.cbcEncryptChainedCode_noResidue⟩
+    Proof.Seed.AArch64.ModesResidue.cbcEncryptChainedCode_noResidue, fun ty _ h => by cases ty <;> cases h⟩
 
 /-- The function as its registration binds it: it meets its contract in constant time and returns
 without secret residue. -/
@@ -159,7 +159,7 @@ theorem _root_.VG.Proof.Seed.AArch64.ModesResidue.cbcDecryptChainedCode_scrubbed
     VerifiedScrubbed AArch64.target Impl.Seed.AArch64.Fn.cbcDecryptChained
       (Spec.Seed.cbcDecryptChainedContract AArch64.abi 1456) 0 :=
   ⟨Proof.Seed.AArch64.ModesResidue.cbcDecryptChainedCode_verified,
-    Proof.Seed.AArch64.ModesResidue.cbcDecryptChainedCode_noResidue⟩
+    Proof.Seed.AArch64.ModesResidue.cbcDecryptChainedCode_noResidue, fun ty _ h => by cases ty <;> cases h⟩
 
 /-- The function as its registration binds it: it meets its contract in constant time and returns
 without secret residue. -/
@@ -167,7 +167,7 @@ theorem _root_.VG.Proof.Seed.AArch64.ModesResidue.cfbEncryptCode_scrubbed :
     VerifiedScrubbed AArch64.target Impl.Seed.AArch64.Fn.cfbEncrypt
       (Spec.Seed.cfbEncryptContract AArch64.abi 1456) 0 :=
   ⟨Proof.Seed.AArch64.ModesResidue.cfbEncryptCode_verified,
-    Proof.Seed.AArch64.ModesResidue.cfbEncryptCode_noResidue⟩
+    Proof.Seed.AArch64.ModesResidue.cfbEncryptCode_noResidue, fun ty _ h => by cases ty <;> cases h⟩
 
 /-- The function as its registration binds it: it meets its contract in constant time and returns
 without secret residue. -/
@@ -175,7 +175,7 @@ theorem _root_.VG.Proof.Seed.AArch64.ModesResidue.cfbDecryptCode_scrubbed :
     VerifiedScrubbed AArch64.target Impl.Seed.AArch64.Fn.cfbDecrypt
       (Spec.Seed.cfbDecryptContract AArch64.abi 1456) 0 :=
   ⟨Proof.Seed.AArch64.ModesResidue.cfbDecryptCode_verified,
-    Proof.Seed.AArch64.ModesResidue.cfbDecryptCode_noResidue⟩
+    Proof.Seed.AArch64.ModesResidue.cfbDecryptCode_noResidue, fun ty _ h => by cases ty <;> cases h⟩
 
 /-- The function as its registration binds it: it meets its contract in constant time and returns
 without secret residue. -/
@@ -183,7 +183,7 @@ theorem _root_.VG.Proof.Seed.AArch64.ModesResidue.cfbEncryptFinalCode_scrubbed :
     VerifiedScrubbed AArch64.target Impl.Seed.AArch64.Fn.cfbEncryptFinal
       (Spec.Seed.cfbEncryptFinalContract AArch64.abi 1456) 0 :=
   ⟨Proof.Seed.AArch64.ModesResidue.cfbEncryptFinalCode_verified,
-    Proof.Seed.AArch64.ModesResidue.cfbEncryptFinalCode_noResidue⟩
+    Proof.Seed.AArch64.ModesResidue.cfbEncryptFinalCode_noResidue, fun ty _ h => by cases ty <;> cases h⟩
 
 /-- The function as its registration binds it: it meets its contract in constant time and returns
 without secret residue. -/
@@ -191,7 +191,7 @@ theorem _root_.VG.Proof.Seed.AArch64.ModesResidue.cfbDecryptFinalCode_scrubbed :
     VerifiedScrubbed AArch64.target Impl.Seed.AArch64.Fn.cfbDecryptFinal
       (Spec.Seed.cfbDecryptFinalContract AArch64.abi 1456) 0 :=
   ⟨Proof.Seed.AArch64.ModesResidue.cfbDecryptFinalCode_verified,
-    Proof.Seed.AArch64.ModesResidue.cfbDecryptFinalCode_noResidue⟩
+    Proof.Seed.AArch64.ModesResidue.cfbDecryptFinalCode_noResidue, fun ty _ h => by cases ty <;> cases h⟩
 
 /-- The function as its registration binds it: it meets its contract in constant time and returns
 without secret residue. -/
@@ -199,7 +199,7 @@ theorem _root_.VG.Proof.Seed.AArch64.ModesResidue.ofbCode_scrubbed :
     VerifiedScrubbed AArch64.target Impl.Seed.AArch64.Fn.ofb
       (Spec.Seed.ofbContract AArch64.abi 1456) 0 :=
   ⟨Proof.Seed.AArch64.ModesResidue.ofbCode_verified,
-    Proof.Seed.AArch64.ModesResidue.ofbCode_noResidue⟩
+    Proof.Seed.AArch64.ModesResidue.ofbCode_noResidue, fun ty _ h => by cases ty <;> cases h⟩
 
 /-- The function as its registration binds it: it meets its contract in constant time and returns
 without secret residue. -/
@@ -207,6 +207,6 @@ theorem _root_.VG.Proof.Seed.AArch64.ModesResidue.ofbFinalCode_scrubbed :
     VerifiedScrubbed AArch64.target Impl.Seed.AArch64.Fn.ofbFinal
       (Spec.Seed.ofbFinalContract AArch64.abi 1456) 0 :=
   ⟨Proof.Seed.AArch64.ModesResidue.ofbFinalCode_verified,
-    Proof.Seed.AArch64.ModesResidue.ofbFinalCode_noResidue⟩
+    Proof.Seed.AArch64.ModesResidue.ofbFinalCode_noResidue, fun ty _ h => by cases ty <;> cases h⟩
 
 end VG.Proof.Seed.AArch64.ModesResidue

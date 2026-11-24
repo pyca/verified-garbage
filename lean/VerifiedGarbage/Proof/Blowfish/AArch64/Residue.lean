@@ -64,6 +64,6 @@ theorem _root_.VG.Proof.Blowfish.AArch64.expandKeyCleared_scrubbed :
     VerifiedScrubbed AArch64.target Impl.Blowfish.AArch64.Fn.expandKey
       (Spec.Blowfish.expandKeyContract (AArch64.abi.withConsts Impl.Blowfish.AArch64.initConsts)) 0 :=
   ⟨Proof.Blowfish.AArch64.expandKeyCleared_verified,
-    Proof.Blowfish.AArch64.expandKeyCleared_noResidue⟩
+    Proof.Blowfish.AArch64.expandKeyCleared_noResidue, fun ty _ h => by cases ty <;> cases h⟩
 
 end VG.Proof.Blowfish.AArch64

@@ -28,7 +28,7 @@ theorem verifiedScrubbedOfL {c : Prog isa} {k : Contract isa} {W rb : Nat} (hv :
   ⟨Verified.scrubAllL (Clear.of_wf _) hv hW hrb hok,
     noResidue_scrubAllL (Clear.of_wf _) (Clear.of_keeps _) hv hW hok.sp hd
       (Code.all_of_allInstrs (allInstrs_of_sideAll hs))
-      (fun _ _ _ n hn => by rw [inames_of_noIcall (noIcall_of_sideAll hs)] at hn; cases hn) hrb⟩
+      (fun _ _ _ n hn => by rw [inames_of_noIcall (noIcall_of_sideAll hs)] at hn; cases hn) hrb, fun ty _ h => by cases ty <;> cases h⟩
 
 /-- The functions `c` calls indirectly have the same addresses in two runs
 its contract relates, when they are those of the tables of its ABI. -/
@@ -50,7 +50,7 @@ theorem verifiedScrubbedOfT {c : Prog isa} {k : Contract isa} {W rb : Nat} {sig 
     (hrb : rb = 0 ∨ rb = 32 ∨ rb = 64) :
     VerifiedScrubbed target (scrubOf W rb c) k rb :=
   ⟨Verified.scrubAll (Clear.of_wf _) hv hW hrb hok,
-    noResidue_scrubAll (Clear.of_wf _) (Clear.of_keeps _) hv hW hok.sp hd hdit (syms_of_tablesCall hpub ht) hrb⟩
+    noResidue_scrubAll (Clear.of_wf _) (Clear.of_keeps _) hv hW hok.sp hd hdit (syms_of_tablesCall hpub ht) hrb, fun ty _ h => by cases ty <;> cases h⟩
 
 /-- `syms_of_tablesCall` for a contract whose ABI has the tables over any
 ABI `A` (one with tables of constants, `Abi.withConsts`). -/
@@ -73,7 +73,7 @@ theorem verifiedScrubbedOfTA {A : Abi isa} {c : Prog isa} {k : Contract isa} {W 
     (hrb : rb = 0 ∨ rb = 32 ∨ rb = 64) :
     VerifiedScrubbed target (scrubOf W rb c) k rb :=
   ⟨Verified.scrubAll (Clear.of_wf _) hv hW hrb hok,
-    noResidue_scrubAll (Clear.of_wf _) (Clear.of_keeps _) hv hW hok.sp hd hdit (syms_of_tablesCallA hpub ht) hrb⟩
+    noResidue_scrubAll (Clear.of_wf _) (Clear.of_keeps _) hv hW hok.sp hd hdit (syms_of_tablesCallA hpub ht) hrb, fun ty _ h => by cases ty <;> cases h⟩
 
 /-- `verifiedScrubbedOfT` for `4080 < W < 8176` bytes of stack. -/
 theorem verifiedScrubbedOfLT {c : Prog isa} {k : Contract isa} {W rb : Nat} {sig : Sig}
@@ -84,7 +84,7 @@ theorem verifiedScrubbedOfLT {c : Prog isa} {k : Contract isa} {W rb : Nat} {sig
     (hrb : rb = 0 ∨ rb = 32 ∨ rb = 64) :
     VerifiedScrubbed target (scrubOfL W rb c) k rb :=
   ⟨Verified.scrubAllL (Clear.of_wf _) hv hW hrb hok,
-    noResidue_scrubAllL (Clear.of_wf _) (Clear.of_keeps _) hv hW hok.sp hd hdit (syms_of_tablesCall hpub ht) hrb⟩
+    noResidue_scrubAllL (Clear.of_wf _) (Clear.of_keeps _) hv hW hok.sp hd hdit (syms_of_tablesCall hpub ht) hrb, fun ty _ h => by cases ty <;> cases h⟩
 
 /-- `Code.all` of code with its holes filled, from the code's and the
 fillings'. -/

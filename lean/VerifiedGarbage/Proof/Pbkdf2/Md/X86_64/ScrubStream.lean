@@ -143,7 +143,7 @@ theorem initFn_scrubbed (v : MdHash) (lv : VecLevel) (hS : v.I.S.stateBytes < 2 
   have s := verifiedScrubbedAll v.shortPlain lv (hmacInitOut v.I v.reprLocal hS _) h₁
   have l := verifiedScrubbedAll v.anyPlain lv (hmacInitAnyOut v.I v.reprLocal hS _) h₂
   ⟨initEntry_verified s.verified l.verified (by omega_using []) hn v.hBlock v.hmacInitF.2.2,
-    initEntry_noResidue s.noResidue l.noResidue (by omega_using []) hn v.hBlock⟩
+    initEntry_noResidue s.noResidue l.noResidue (by omega_using []) hn v.hBlock, fun ty _ h => by cases ty <;> cases h⟩
 
 theorem initFn_spSafe (v : MdHash) (lv : VecLevel) :
     (Impl.Pbkdf2.Md.X86_64.Fn.hmacInit lv v.I.S.H.blockSize v.H).all (fun i => !isa.writesSp i) = true := by

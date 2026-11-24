@@ -195,7 +195,7 @@ theorem verifiedScrubbedKs {api : Api} (r : Unscrubbed api target) (v : VecLevel
     VerifiedScrubbed target (scrubKs v rb n ks r.code) r.contract rb := by
   subst hn hb
   have h := scrubSideG_ok r v .avx true ks (chunksA r.stack) (gsAll ks) hs hpost hres (by decide)
-  exact ⟨h.1, h.2⟩
+  exact ⟨h.1, h.2, fun ty _ h => by cases ty <;> cases h⟩
 
 /-- What the cleanup `scrubKs v rb n ks` needs of its literals alone, the
 stack `n` of the code and the result's bits `rb`: the chunks `chunksA n`
@@ -266,7 +266,7 @@ theorem verifiedScrubbedKsF {api : Api} (r : Unscrubbed api target) (v : VecLeve
   have key := Verified.scrubM (f := .avx) (ScrubAbi.of r.consts api.sig r.tables) hv (SpSafe.of_all r.spSafe) hd
     hcs hst hcv' hlv' (fun _ => hmx) hrb' hp hr ht (.inl mem_xregs) (fun _ => mem_xregs)
     (fun _ _ e => absurd e (by decide)) hgk
-  exact ⟨key.1, key.2 (tablesCall_syms hic rfl)⟩
+  exact ⟨key.1, key.2 (tablesCall_syms hic rfl), fun ty _ h => by cases ty <;> cases h⟩
 
 /-- `verifiedScrubbedKsF` for `scrubAll v rb n`, which wipes every granule
 of the stack: for code generic over an implementation it calls. -/

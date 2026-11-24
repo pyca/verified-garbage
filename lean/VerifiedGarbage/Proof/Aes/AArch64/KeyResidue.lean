@@ -62,7 +62,7 @@ theorem _root_.VG.Proof.Aes.AArch64.KeyResidue.expandKeyCode_scrubbed :
     VerifiedScrubbed AArch64.target Impl.Aes.AArch64.Fn.expandKey
       (Spec.Aes.expandKeyContract AArch64.abi 512) 0 :=
   ⟨Proof.Aes.AArch64.KeyResidue.expandKeyCode_verified,
-    Proof.Aes.AArch64.KeyResidue.expandKeyCode_noResidue⟩
+    Proof.Aes.AArch64.KeyResidue.expandKeyCode_noResidue, fun ty _ h => by cases ty <;> cases h⟩
 
 /-- The function as its registration binds it: it meets its contract in constant time and returns
 without secret residue. -/
@@ -70,6 +70,6 @@ theorem _root_.VG.Proof.Aes.AArch64.KeyResidue.expandKeyAesCode_scrubbed :
     VerifiedScrubbed AArch64.target Impl.Aes.AArch64.Fn.expandKeyAes
       (Spec.Aes.expandKeyContract AArch64.abi 512) 0 :=
   ⟨Proof.Aes.AArch64.KeyResidue.expandKeyAesCode_verified,
-    Proof.Aes.AArch64.KeyResidue.expandKeyAesCode_noResidue⟩
+    Proof.Aes.AArch64.KeyResidue.expandKeyAesCode_noResidue, fun ty _ h => by cases ty <;> cases h⟩
 
 end VG.Proof.Aes.AArch64.KeyResidue

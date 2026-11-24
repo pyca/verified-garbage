@@ -25,6 +25,6 @@ abbrev renderOnly (T : Target) : Target := { T with noResidue := some fun _ _ _ 
 /-- `Verified` on `T` is `VerifiedScrubbed` on `renderOnly T`. -/
 theorem renderOnly_verified {T : Target} {c : Prog T.isa} {k : Contract T.isa} {retBits : Nat}
     (h : Verified T c k) : VerifiedScrubbed (renderOnly T) c k retBits :=
-  ⟨h, trivial⟩
+  ⟨h, trivial, fun ty _ h => by cases ty <;> cases h⟩
 
 end VG.Test

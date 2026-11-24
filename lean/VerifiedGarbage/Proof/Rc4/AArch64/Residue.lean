@@ -54,6 +54,6 @@ theorem _root_.VG.Proof.Rc4.AArch64.applyCleared_scrubbed :
     VerifiedScrubbed AArch64.target Impl.Rc4.AArch64.Fn.apply
       (Spec.Rc4.applyContract AArch64.abi) 0 :=
   ⟨Proof.Rc4.AArch64.applyCleared_verified,
-    Proof.Rc4.AArch64.applyCleared_noResidue⟩
+    Proof.Rc4.AArch64.applyCleared_noResidue, fun ty _ h => by cases ty <;> cases h⟩
 
 end VG.Proof.Rc4.AArch64

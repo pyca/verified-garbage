@@ -305,7 +305,7 @@ theorem boundedLeaf_verified {limit bytes : Nat} (body : Prog isa)
     intro a h
     exact hm a fun bad => h _ (List.mem_singleton_self _) (by change (a-(leafFrame bytes s).base).toNat+1 ≤ bytes; exact bad)
   obtain ⟨wf,kp,dit,rb⟩ := keeps_of_side side
-  refine ⟨Verified.scrubAllOfV h hk side,?_⟩
+  refine ⟨Verified.scrubAllOfV h hk side,?_, fun ty _ h => by cases ty <;> cases h⟩
   simp only [scrubSide,Nat.ne_of_gt size.1,↓reduceIte,Bool.and_eq_true,decide_eq_true_eq,beq_iff_eq] at side
   refine noResidue_scrubAll wf kp h ⟨size.1,by omega,size.2.2⟩ hk.sp side.1.1.1.1.1.2 dit ?_ rb
   intro a b _ n hn

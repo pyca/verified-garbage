@@ -53,13 +53,13 @@ theorem checkEk1024Cleared_noResidue (k : Contract isa) : NoResidue checkEk1024C
 its contract in constant time and returns without secret residue. -/
 theorem checkEk_scrubbed :
     VerifiedScrubbed AArch64.target Impl.MlKem.AArch64.Fn.checkEk (Spec.MlKem.checkEkContract AArch64.abi) 32 :=
-  ⟨checkEk768Cleared_verified, checkEk768Cleared_noResidue _⟩
+  ⟨checkEk768Cleared_verified, checkEk768Cleared_noResidue _, fun ty _ h => by cases ty <;> cases h⟩
 
 /-- `vg_mlkem1024_check_ek` as emitted (`Impl.MlKem.AArch64.Fn.checkEk1024`)
 meets its contract in constant time and returns without secret residue. -/
 theorem checkEk1024_scrubbed :
     VerifiedScrubbed AArch64.target Impl.MlKem.AArch64.Fn.checkEk1024 (Spec.MlKem1024.checkEkContract AArch64.abi)
       32 :=
-  ⟨checkEk1024Cleared_verified, checkEk1024Cleared_noResidue _⟩
+  ⟨checkEk1024Cleared_verified, checkEk1024Cleared_noResidue _, fun ty _ h => by cases ty <;> cases h⟩
 
 end VG.Proof.MlKem.AArch64.Residue

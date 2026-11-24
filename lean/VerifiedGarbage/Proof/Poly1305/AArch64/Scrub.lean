@@ -49,7 +49,7 @@ namespace VG.Proof.Poly1305.AArch64.Fn
 open VG.AArch64 VG.AArch64.Scrub VG.Spec.Poly1305
 
 theorem init : VerifiedScrubbed target Impl.Poly1305.AArch64.init (initContract abi) 0 :=
-  ⟨init_verified, init_noResidue _⟩
+  ⟨init_verified, init_noResidue _, fun ty _ h => by cases ty <;> cases h⟩
 
 theorem update : VerifiedScrubbed target Impl.Poly1305.AArch64.Fn.update (updateContract abi 128) 0 :=
   verifiedScrubbedAll (api := updateApi)

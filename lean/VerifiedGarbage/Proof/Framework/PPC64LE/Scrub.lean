@@ -1053,6 +1053,7 @@ structure ScrubAbi (A : Abi isa) : Prop where
   pub : ∀ s₁ s₂, A.pub s₁ s₂ → s₁.sp = s₂.sp
   mem : ∀ s, A.mem s = s.mem
   ret : ∀ s, A.ret s = s.gpr .r3
+  retExt : A.retExt = abi.retExt
   rdSub : ∀ s r, r ∈ A.rd s → r ∈ s.rd
   argsLen : ∀ ws f, A.args ws = some f → ∀ s, (f s).length = ws.length
 
@@ -1080,14 +1081,14 @@ theorem abi_wf_stack {ws : List Nat} {n : Nat} {s : State} (h : abi.wf ws n s) :
 
 theorem ScrubAbi.plain : ScrubAbi abi :=
   ⟨rfl, rfl, fun _ => rfl, fun _ _ _ h => ⟨abi_wf_stack h, fun _ hr hn => absurd hr hn⟩,
-    fun _ _ h => h, fun _ => rfl, fun _ => rfl, fun _ _ h => h, abi_args_len⟩
+    fun _ _ h => h, fun _ => rfl, fun _ => rfl, rfl, fun _ _ h => h, abi_args_len⟩
 
 theorem ScrubAbi.consts (cs : List (String × List (BitVec 64))) : ScrubAbi (abi.withConsts cs) := by
   cases cs with
   | nil => exact ScrubAbi.plain
   | cons c cs =>
     refine ⟨rfl, rfl, fun _ => rfl, fun ws n s h => ?_, fun _ _ h => h.1, fun _ => rfl, fun _ => rfl,
-      fun _ _ h => List.mem_of_mem_take h, abi_args_len⟩
+      rfl, fun _ _ h => List.mem_of_mem_take h, abi_args_len⟩
     obtain ⟨hw, hdrop, -, hdis, -⟩ := h
     refine ⟨abi_wf_stack hw, fun r hr hn q hq => ?_⟩
     have hr' : r ∈ (abi.rd s).drop ((abi.rd s).length - (c :: cs).length) := by
@@ -1105,7 +1106,88 @@ theorem ScrubAbi.tables {A : Abi isa} (hA : ScrubAbi A) (sig : Sig) (ts : List (
   | nil => exact hA
   | cons t ts =>
     exact ⟨hA.ptrBits, hA.reserved, hA.wr, fun ws n s h => hA.wf ws n s h.1,
-      fun s₁ s₂ h => hA.pub s₁ s₂ h.1, hA.mem, hA.ret, hA.rdSub, hA.argsLen⟩
+      fun s₁ s₂ h => hA.pub s₁ s₂ h.1, hA.mem, hA.ret, hA.retExt, hA.rdSub, hA.argsLen⟩
+
+/-- ELFv2's `u32` result (`abi.retExt`): zero-extended. -/
+def zext32Of (r : BitVec 64) : BitVec 64 := (r.setWidth 32).setWidth 64
+
+/-- ELFv2's only rule for a result (`abi.retExt`): a `u32`'s, zero-extended. -/
+theorem abi_retExt_some {ty : IntTy} {f : BitVec 64 → BitVec 64} (h : abi.retExt ty = some f) :
+    f = zext32Of := by
+  cases ty with
+  | u32 => cases h; rfl
+  | u64 => cases h
+  | usize => cases h
+
+/-- A contract `Sig.contract` derives that requires a rule of its result is for a
+32-bit result. -/
+theorem retBits_of_retExt {A : Abi isa} (hA : ScrubAbi A) {sig : Sig} {pre post wa stack leak}
+    {f : BitVec 64 → BitVec 64} (h : (sig.contract A pre post wa stack leak).retExt = some f) :
+    sig.retBits A.ptrBits = 32 := by
+  simp only [Sig.contract, hA.retExt] at h
+  unfold Sig.retBits
+  rcases e : sig.ret with _ | ⟨_ | _ | _⟩ <;> rw [e] at h <;> first | rfl | cases h
+
+/-- What `retFix 32` leaves in `r3` is as ELFv2 requires. -/
+theorem fixA_zext (x : BitVec 64) : fixA 32 x = zext32Of (fixA 32 x) := by
+  simp only [fixA, zext32Of, show (32 : Nat) ≠ 0 by decide, show (32 : Nat) < 64 by decide,
+    ite_false, ite_true]
+  ext i hi
+  simp only [BitVec.getElem_setWidth, BitVec.getLsbD_setWidth, BitVec.getLsbD_ushiftRight,
+    BitVec.getLsbD_shiftLeft]
+  by_cases h : i < 32 <;> simp [h] <;> omega
+
+/-- Code with a result of `rb` bits, 32 wherever `k` requires a rule of its result, whose
+every run from `k.pre` ends, for a 32-bit result, with `r3` as `retFix 32` leaves it,
+returns its result as ELFv2 requires. -/
+theorem retAbi_of_fixA {c : Prog isa} {k : Contract isa} {rb : Nat}
+    (hk : ∀ f, k.retExt = some f → rb = 32)
+    (ha : rb = 32 → ∀ s t s', k.pre s → Exec isa c s t s' → ∃ x, s'.gpr .r3 = fixA rb x) :
+    RetAbi target c k := by
+  intro ty f hty hf s t s' hs he
+  obtain rfl := abi_retExt_some hty
+  obtain h32 := hk _ hf
+  obtain ⟨x, hx⟩ := ha h32 s t s' hs he
+  subst h32
+  show s'.gpr .r3 = zext32Of (s'.gpr .r3)
+  rw [hx]
+  exact fixA_zext x
+
+/-- The clearing's last block leaves `r3` as it was. -/
+theorem last_r3 {u u' : State} {t : List Leak} {ca : Bool} {vs : List VReg}
+    (h : execBlock isa ((if ca then [.addc .r0 .r0 .r0] else []) ++ vs.map zeroV) u = some (u', t)) :
+    u'.gpr .r3 = u.gpr .r3 := by
+  cases ca with
+  | false =>
+    simp only [Bool.false_eq_true, ite_false, List.nil_append] at h
+    rw [zeroVs_run] at h
+    simp only [Option.some.injEq, Prod.mk.injEq] at h
+    rw [← h.1]
+  | true =>
+    simp only [ite_true, List.cons_append, List.nil_append, execBlock, isa, exec_addc] at h
+    rw [zeroVs_run] at h
+    simp only [Option.map_some, Option.some.injEq, Prod.mk.injEq] at h
+    rw [← h.1]
+    simp [State.writeCarry, State.write]
+
+/-- What `scrubTail rb cs cl` leaves in `r3`, with `cl.r3` set and `r3` none of the
+registers it zeroes: `retFix rb` of what was there. -/
+theorem scrubTail_r3 {rb : Nat} {cs : List Nat} {cl : Clear} (hcl : cl.r3 = true)
+    (hgs : Reg.r3 ∉ cl.gs) {u u' : State} {t : List Leak}
+    (he : Exec isa (scrubTail rb cs cl) u t u') : ∃ x, u'.gpr .r3 = fixA rb x := by
+  cases he with | seq _ h₂ =>
+  cases h₂ with | seq _ h₃ =>
+  cases h₃ with | seq h₄ h₅ =>
+  cases h₅ with | seq h₆ h₇ =>
+  cases h₄ with | block b₄ =>
+  cases h₆ with | block b₆ =>
+  cases h₇ with | block b₇ =>
+  rw [retFixIf_run] at b₄
+  rw [zeroRs_run] at b₆
+  simp only [Option.some.injEq, Prod.mk.injEq] at b₄ b₆
+  rw [last_r3 b₇, ← b₆.1, ← b₄.1]
+  simp only [hgs, ite_false, hcl, and_self, ite_true]
+  exact ⟨_, rfl⟩
 
 /-- The calling convention of every PPC64LE artifact (`Api.artifact`). -/
 theorem ScrubAbi.of (cs : List (String × List (BitVec 64))) (sig : Sig) (ts : List (String × List FnTable)) :

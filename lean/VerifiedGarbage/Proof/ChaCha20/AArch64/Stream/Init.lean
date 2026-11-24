@@ -352,11 +352,11 @@ returning, which the residue analysis then proves leaves nothing secret
 theorem init_scrubbed : VerifiedScrubbed AArch64.target Impl.ChaCha20.AArch64.Fn.init
     (Spec.ChaCha20.initContract AArch64.abi) 0 :=
   ⟨Clears.Verified.withClears init_verified (by decide),
-    RTaint.noResidue_of_check ⟨_, by taint_decide⟩ _⟩
+    RTaint.noResidue_of_check ⟨_, by taint_decide⟩ _, fun ty _ h => by cases ty <;> cases h⟩
 
 theorem setNonce_scrubbed : VerifiedScrubbed AArch64.target Impl.ChaCha20.AArch64.Fn.setNonce
     (Spec.ChaCha20.setNonceContract AArch64.abi) 0 :=
   ⟨Clears.Verified.withClears setNonce_verified (by decide),
-    RTaint.noResidue_of_check ⟨_, by taint_decide⟩ _⟩
+    RTaint.noResidue_of_check ⟨_, by taint_decide⟩ _, fun ty _ h => by cases ty <;> cases h⟩
 
 end VG.Proof.ChaCha20.AArch64.Stream

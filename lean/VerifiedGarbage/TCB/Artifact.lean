@@ -110,7 +110,8 @@ Every contract without `leak` is constant time in the usual sense.
 
 `post` sees only the result's own bits (`setWidth`); what the calling
 convention requires of the rest of the result register is `retExt`, the
-convention's `Abi.retExt` for the result's type. -/
+convention's `Abi.retExt` for the result's type, which every artifact's code
+meets (`RetAbi`, `VerifiedScrubbed`). -/
 def Sig.contract {M : ISA} (A : Abi M) (sig : Sig)
     (pre : Curry (sig.words A.ptrBits) (Mem → Prop) := Curry.const (fun _ => True) _)
     (post : sig.Post A.ptrBits) (writeArgs : Bool := false) (stack : Nat := 0)

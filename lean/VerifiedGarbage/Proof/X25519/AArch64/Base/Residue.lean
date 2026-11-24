@@ -74,6 +74,6 @@ theorem _root_.VG.Proof.X25519.AArch64.Base.x25519BaseCleared_scrubbed [Ed25519.
     VerifiedScrubbed _root_.VG.AArch64.target Impl.X25519.AArch64.Fn.x25519Base
       (Spec.X25519.x25519BaseContract (AArch64.abi.withConsts Impl.Ed25519.AArch64.combConsts)) 0 :=
   ⟨Proof.X25519.AArch64.Base.x25519BaseCleared_verified,
-    Proof.X25519.AArch64.Base.x25519BaseCleared_noResidue⟩
+    Proof.X25519.AArch64.Base.x25519BaseCleared_noResidue, fun ty _ h => by cases ty <;> cases h⟩
 
 end VG.Proof.X25519.AArch64.Base
