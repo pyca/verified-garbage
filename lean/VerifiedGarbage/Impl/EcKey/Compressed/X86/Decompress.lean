@@ -84,13 +84,29 @@ def rootSlots : List Nat := [EXPP, EXPN, T0, T1, T2, T3, T4, T5, W0]
 
 def rootTab (c : Cfg) : List Nat := rootSlots.map c.sl
 
+def p384Prime : Nat := 2 ^ 384 - 2 ^ 128 - 2 ^ 96 + 2 ^ 32 - 1
+
+/-- P-384's `(p + 1) / 4 = 2^382 - 2^126 - 2^94 + 2^30`: 255 ones, a zero, 32
+ones, 63 zeros, a one and 30 zeros. With `x_k = x^(2^k - 1)`, each from two
+before it (`x_(a+b) = x_a^(2^b) x_b`): `x_2`, `x_3`, `x_6`, `x_12`, `x_15`,
+`x_30`, `x_32`, `x_60`, `x_120`, `x_240` and `x_255`, then the bits below
+them. This uses 383 squarings and 14 other multiplications. -/
+def p384RootOps : List TabOp :=
+  [.put 0, .squares 1, .mul 0, .put 1, .squares 1, .mul 0, .put 2, .squares 3, .mul 2, .put 3,
+    .squares 6, .mul 3, .squares 3, .mul 2, .put 4, .squares 15, .mul 4, .put 5,
+    .squares 2, .mul 1, .put 6, .get 5, .squares 30, .mul 5, .put 7, .squares 60, .mul 7, .put 7,
+    .squares 120, .mul 7, .squares 15, .mul 4, .squares 33, .mul 6, .squares 64, .mul 0,
+    .squares 30]
+
 /-- The root's candidate: for `p ≡ 3 (mod 4)` the power `(p + 1) / 4`, by
-P-521's chain for its `p`, else by a sliding window over the exponent, which
-is public (`windowOps`); for P-224, Tonelli and Shanks' descent. -/
+P-521's and P-384's chains for their `p`, else by a sliding window over the
+exponent, which is public (`windowOps`); for P-224, Tonelli and Shanks'
+descent. -/
 def rootCandidate (c : Cfg) : Prog isa :=
   if c.C.p % 4 = 3 then
     if c.C.p = Mont.p521Prime then chainPower (rootPow c 2) c.SP p521RootOps
-    else tabPower (rootPow c 2) c.SP (rootTab c) (windowOps ((c.C.p + 1) / 4) (64 * c.n))
+    else tabPower (rootPow c 2) c.SP (rootTab c)
+      (if c.C.p = p384Prime then p384RootOps else windowOps ((c.C.p + 1) / 4) (64 * c.n))
   else progs [tonelliPowers c, .block (tonelliSetup c), .loop (descentRound c) .ne]
 
 def parityMask (c : Cfg) : List Instr :=
