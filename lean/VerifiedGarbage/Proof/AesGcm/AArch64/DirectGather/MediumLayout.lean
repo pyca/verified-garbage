@@ -42,7 +42,7 @@ theorem loopPre {s t : State} {extra : List Region} (l : BoundedLay s extra) (h 
 abbrev ghBase (s : State) := base s + BitVec.ofNat 64 Medium.authO
 abbrev aadOff (s : State) := Medium.authO+224-16*blocks s
 
-structure Header (s t : State) : Prop extends LocalMem s t where
+structure Header (s t : State) (len : Nat := L s) : Prop extends LocalMem s t where
   sp : t.sp = base s
   saved : SavedAt t.mem (base s) s
   x19 : t.gpr .x19 = base s
@@ -50,8 +50,8 @@ structure Header (s t : State) : Prop extends LocalMem s t where
   x22 : t.gpr .x22 = s.gpr .x1
   x23 : t.gpr .x23 = Nn s
   x24 : t.gpr .x24 = BitVec.ofNat 64 (AL s)
-  x25 : t.gpr .x25 = BitVec.ofNat 64 (16*blocks s)
-  x26 : t.gpr .x26 = BitVec.ofNat 64 (L s)
+  x25 : t.gpr .x25 = BitVec.ofNat 64 (16*((len+15)/16))
+  x26 : t.gpr .x26 = BitVec.ofNat 64 len
   x6 : t.gpr .x6 = Src s
   x7 : t.gpr .x7 = s.gpr .x7
 
@@ -68,32 +68,35 @@ theorem entered {s : State} {extra : List Region} (l : BoundedLay s extra) (hn :
   exact ⟨⟨localT,sp,saved,b,k,r,n,(by simpa only [a,allocated,AL,BitVec.ofNat_toNat,BitVec.setWidth_eq] using al),ceil,len,other _ (by decide),other _ (by decide)⟩,
     other _ (by decide)⟩
 
-theorem aadInput {s : State} (hn : L s ≤ 224) :
-    aadOff s = Medium.authO + (224-16*blocks s) := by
-  unfold aadOff Medium.authO blocks
+theorem aadInputAt {len : Nat} (hn : len ≤ 224) :
+    (Medium.authO+224-16*((len+15)/16)) = Medium.authO + (224-16*((len+15)/16)) := by
+  unfold Medium.authO
   omega
 
 /-- The zeroed input after filling the AAD slot. The following bytes form
 the padded ciphertext slot, and the last 16 bytes will hold the lengths. -/
-theorem zeroAad_layout {s : State} {m : Mem} (hn : L s ≤ 224) (hal : AL s ≤ 16)
+theorem zeroAad_layoutAt {s : State} {m : Mem} {len : Nat} (hn : len ≤ 224) (hal : AL s ≤ 16)
     (hz : bytesAt m (ghBase s) 256 = zeros 256) :
-    bytesAt (writeBytes m (base s + BitVec.ofNat 64 (aadOff s)) (aadBytes s)) (ghBase s) 256 =
-      zeros (16*(14-blocks s)) ++ aadBytes s ++ zeros (16-AL s) ++ zeros (16*blocks s) ++ zeros 16 := by
-  have bound : blocks s ≤ 14 := by unfold blocks; omega
+    bytesAt (writeBytes m (base s + BitVec.ofNat 64 ((Medium.authO+224-16*((len+15)/16)))) (aadBytes s)) (ghBase s) 256 =
+      zeros (16*(14-((len+15)/16))) ++ aadBytes s ++ zeros (16-AL s) ++ zeros (16*((len+15)/16)) ++ zeros 16 := by
+  have bound : ((len+15)/16) ≤ 14 := by omega
   have al : (aadBytes s).length = AL s := Proof.AesCcm.length_bytesAt _ _ _
-  rw [aadInput hn,← Offset.add_add,show 224-16*blocks s = 16*(14-blocks s) by omega]
-  simpa only [al] using paddedAad (G := ghBase s) (k := 14) (b := blocks s)
+  rw [aadInputAt hn,← Offset.add_add,show 224-16*((len+15)/16) = 16*(14-((len+15)/16)) by omega]
+  simpa only [al] using paddedAad (G := ghBase s) (k := 14) (b := ((len+15)/16))
     (aadBytes s) bound (by rw [al]; exact hal) (by decide) hz
 
 
-abbrev aadLayout (s : State) := zeros (16*(14-blocks s)) ++ aadBytes s ++
-  zeros (16-AL s) ++ zeros (16*blocks s) ++ zeros 16
+abbrev aadLayout (s : State) (len : Nat := L s) := zeros (16*(14-((len+15)/16))) ++ aadBytes s ++
+  zeros (16-AL s) ++ zeros (16*((len+15)/16)) ++ zeros 16
 
-theorem Header.advance {s t u : State} (h : Header s t) {d n : Nat}
+theorem aadInput {s : State} (hn : L s ≤ 224) :
+    aadOff s = Medium.authO + (224-16*blocks s) := aadInputAt hn
+
+theorem Header.advance {s t u : State} {len : Nat} (h : Header s t len) {d n : Nat}
     (f : Frame [⟨base s + BitVec.ofNat 64 d,n⟩] t.mem u.mem)
     (low : 216 ≤ d) (high : d+n ≤ Medium.work)
     (g : ∀ r, r ∉ loopRegs → u.gpr r = t.gpr r) (sp : u.sp = t.sp)
-    (rd : u.rd = t.rd) (wr : u.wr = t.wr) : Header s u := by
+    (rd : u.rd = t.rd) (wr : u.wr = t.wr) : Header s u len := by
   have subF : Frame [scratch s] t.mem u.mem := f.sub fun r hr => by
     obtain rfl := List.mem_singleton.mp hr
     exact ⟨_,List.mem_singleton_self _,Offset.sub_base _ high⟩
@@ -104,13 +107,12 @@ theorem Header.advance {s t u : State} (h : Header s t) {d n : Nat}
   intro r hr; obtain rfl := List.mem_singleton.mp hr
   exact Offset.disjoint _ (.inl low) (by decide) (by change d+n ≤ 752 at high; omega)
 
-/-- After setup and AAD absorption, only the short frame has changed. -/
-theorem prefix_ok {s : State} {extra : List Region} (l : BoundedLay s extra) (hn : L s ≤ 224) (hal : AL s ≤ 16) :
-    WP isa (.seq (.block Medium.setup) (.seq (.block Medium.zero) Medium.aad)) (allocated Medium.work s)
-      fun t => Header s t ∧ bytesAt t.mem (ghBase s) 256 = aadLayout s ∧
+theorem fillMedium (early : Bool) {s a : State} {len : Nat} (hn : len ≤ 224) (hal : AL s ≤ 16)
+    (ba : (scratch s).Disjoint (aR s)) (ar : Covers [aR s] (s.rd ++ s.wr))
+    (ha : Header s a len) (a4 : a.gpr .x4 = Ad s) :
+    WP isa (.seq (.block Medium.zero) (Medium.aadWith early)) a fun t =>
+      Header s t len ∧ bytesAt t.mem (ghBase s) 256 = aadLayout s len ∧
         bytesAt t.mem (base s+224) 256 = zeros 256 ∧ bytesAt t.mem (base s+736) 16 = zeros 16 := by
-  refine WP.seq ((entered l hn).mono ?_)
-  intro a ⟨ha,a4⟩
   refine WP.seq ((zero_ok a ha.x19 ha.scratchWr).mono ?_)
   intro z ⟨zm,zg,zsp,zrd,zwr⟩
   have fz : Frame [⟨base s+224,528⟩] a.mem z.mem := by
@@ -127,38 +129,79 @@ theorem prefix_ok {s : State} {extra : List Region} (l : BoundedLay s extra) (hn
     simpa only [ghBase,Medium.authO,BitVec.add_assoc,show (224:Addr)+256#64=480#64 by decide] using slice 256 256 (by decide)
   have z4 := (congrFun zg .x4).trans a4
   have al : (aadBytes s).length = AL s := Proof.AesCcm.length_bytesAt _ _ _
-  have ar : aR s ∈ s.rd := by rw [l.rd]; simp
-  have b6 : blocks s ≤ 14 := by unfold blocks; omega
-  have asub : (⟨base s + BitVec.ofNat 64 (aadOff s), AL s⟩ : Region).Sub (scratch s) :=
-    Offset.sub_base _ (by change 480+224-16*blocks s+AL s ≤ 752; omega)
+  have b6 : ((len+15)/16) ≤ 14 := by omega
+  have asub : (⟨base s + BitVec.ofNat 64 (Medium.authO+224-16*((len+15)/16)), AL s⟩ : Region).Sub (scratch s) :=
+    Offset.sub_base _ (by change 480+224-16*((len+15)/16)+AL s ≤ 752; omega)
   have ad : bytesAt z.mem (z.gpr .x4) (AL s) = aadBytes s := by
     rw [z4]; exact bytesAt_frame hz.frame (by simpa only [List.mem_singleton,forall_eq] using
-      (l.ba.sub_left (scratch_sub s)).symm) (by omega)
-  refine (aad_ok b6 z hz.x19 hz.x25 hz.x24 ?_).mono ?_
+      ba.symm) (by omega)
+  refine (aadWith_ok early b6 z hz.x19 hz.x25 hz.x24 ?_).mono ?_
   · rw [z4]
-    exact ⟨by omega,Covers.of_mem (by
-      intro r hr; obtain rfl := List.mem_singleton.mp hr
-      rw [hz.rd]; exact List.mem_append_left _ ar),
-      covers_off hz.scratchWr (by change 480+224-16*blocks s+AL s ≤ 752; omega) (by decide),
-      ((l.ba.sub_left (scratch_sub s)).sub_left asub).symm⟩
+    exact ⟨by omega,ar.trans hz.toLocalMem.read,
+      covers_off hz.scratchWr (by change 480+224-16*((len+15)/16)+AL s ≤ 752; omega) (by decide),
+      (ba.sub_left asub).symm⟩
   · intro t ⟨tm,tg,tsp,trd,twr⟩
     rw [ad] at tm
-    have f : Frame [⟨base s+BitVec.ofNat 64 (aadOff s),AL s⟩] z.mem t.mem := by
+    have f : Frame [⟨base s+BitVec.ofNat 64 (Medium.authO+224-16*((len+15)/16)),AL s⟩] z.mem t.mem := by
       rw [tm]; apply writeBytes_frame
       rw [al]; exact Region.contains_self _ _
-    refine ⟨hz.advance f (by change 216 ≤ 480+224-16*blocks s; omega)
-      (by change 480+224-16*blocks s+AL s ≤ 752; omega) tg tsp trd twr,?_,?_,?_⟩
-    · rw [tm]; exact zeroAad_layout hn hal z0
+    refine ⟨hz.advance f (by change 216 ≤ 480+224-16*((len+15)/16); omega)
+      (by change 480+224-16*((len+15)/16)+AL s ≤ 752; omega) tg tsp trd twr,?_,?_,?_⟩
+    · rw [tm]; exact zeroAad_layoutAt hn hal z0
     · rw [bytesAt_frame f (by
         intro q hq; obtain rfl := List.mem_singleton.mp hq
-        exact Offset.disjoint _ (.inl (by change 224+256 ≤ 480+224-16*blocks s; omega))
-          (by decide) (by change 480+224-16*blocks s+AL s ≤ 2^64; omega)) (by decide)]
+        exact Offset.disjoint _ (.inl (by change 224+256 ≤ 480+224-16*((len+15)/16); omega))
+          (by decide) (by change 480+224-16*((len+15)/16)+AL s ≤ 2^64; omega)) (by decide)]
       simpa only [BitVec.add_zero] using slice 0 256 (by decide)
     · rw [bytesAt_frame f (by
         intro q hq; obtain rfl := List.mem_singleton.mp hq
-        exact Offset.disjoint _ (.inr (by change 480+224-16*blocks s+AL s ≤ 736; omega))
-          (by decide) (by change 480+224-16*blocks s+AL s ≤ 2^64; omega)) (by decide)]
+        exact Offset.disjoint _ (.inr (by change 480+224-16*((len+15)/16)+AL s ≤ 736; omega))
+          (by decide) (by change 480+224-16*((len+15)/16)+AL s ≤ 2^64; omega)) (by decide)]
       simpa only [BitVec.add_assoc,show (224:Addr)+512#64=736 by decide] using slice 512 16 (by decide)
+
+/-- After setup and AAD absorption, only the short frame has changed. -/
+theorem prefix_ok {s : State} {extra : List Region} (l : BoundedLay s extra) (hn : L s ≤ 224) (hal : AL s ≤ 16) :
+    WP isa (.seq (.block Medium.setup) (.seq (.block Medium.zero) Medium.aad)) (allocated Medium.work s)
+      fun t => Header s t ∧ bytesAt t.mem (ghBase s) 256 = aadLayout s ∧
+        bytesAt t.mem (base s+224) 256 = zeros 256 ∧ bytesAt t.mem (base s+736) 16 = zeros 16 := by
+  refine WP.seq ((entered l hn).mono ?_)
+  intro a ⟨ha,a4⟩
+  exact fillMedium false hn hal (l.ba.sub_left (scratch_sub s)) (Covers.of_mem (by
+    intro r hr; obtain rfl := List.mem_singleton.mp hr
+    exact List.mem_append_left _ (by rw [l.rd]; simp))) ha a4
+
+theorem authFilledFor {s : State} {m m' : Mem} {n : Nat} {D : Addr}
+    (apart : (scratch s).Disjoint ⟨D,n⟩)
+    (hn : n ≤ 224) (hal : AL s ≤ 16) (ct : List Byte) (hlen : ct.length = n)
+    (f : Frame [(⟨D,n⟩ : Region),⟨base s + BitVec.ofNat 64 ((Medium.authO+240-16*((n+15)/16))),n⟩] m m')
+    (b : bytesAt m (ghBase s) 256 = aadLayout s n)
+    (v : bytesAt m' (base s + BitVec.ofNat 64 ((Medium.authO+240-16*((n+15)/16)))) (n) = ct) :
+    bytesAt m' (ghBase s) 240 = zeros (16*(14-((n+15)/16))) ++ aadBytes s ++ zeros (16-AL s) ++ ct ++
+      zeros (padLen (n)) := by
+  let pre := zeros (16*(14-((n+15)/16))) ++ aadBytes s ++ zeros (16-AL s)
+  have ha := Proof.AesCcm.length_bytesAt s.mem (Ad s) (AL s)
+  change (aadBytes s).length = AL s at ha
+  have hc : ((n+15)/16) ≤ 14 := by omega
+  have hp : pre.length = 240-16*((n+15)/16) := by simp [pre,zeros,ha]; omega
+  have pad : n + padLen (n) = 16 * ((n+15)/16) := by unfold padLen; omega
+  have u := fillSlot (width := 240) (by decide) (m := m) (m' := m') (G := ghBase s) (dst := (⟨D,n⟩ : Region))
+    pre (zeros (padLen (n))) ct
+  have pos : ghBase s + BitVec.ofNat 64 pre.length = base s + BitVec.ofNat 64 ((Medium.authO+240-16*((n+15)/16))) := by
+    rw [hp,ghBase,Offset.add_add]
+    congr 2
+    unfold Medium.authO; omega
+  apply u
+  · simpa only [pos,hlen] using f
+  · exact apart.sub_left (Offset.sub_base _ (by decide))
+  · simp [hp,hlen,zeros]; omega
+  · rw [Proof.AesCcm.bytesAt_prefix _ _ (show 240 ≤ 256 by decide),b]
+    have eq : aadLayout s n = (pre ++ zeros ct.length ++ zeros (padLen (n))) ++ zeros 16 := by
+      change (pre ++ zeros (16*((n+15)/16))) ++ zeros 16 = _
+      rw [List.append_assoc pre (zeros ct.length),show zeros ct.length ++ zeros (padLen (n)) = zeros (16*((n+15)/16)) by
+        rw [zeros,zeros,zeros,List.replicate_append_replicate,hlen,pad]]
+    rw [eq,List.take_left']
+    simp [hp,zeros,hlen]; omega
+  · simpa only [pos,hlen] using v
 
 theorem authFilled {s : State} {m m' : Mem} {extra : List Region} (l : BoundedLay s extra)
     (hn : L s ≤ 224) (hal : AL s ≤ 16) (ct : List Byte) (hlen : ct.length = L s)
@@ -166,31 +209,8 @@ theorem authFilled {s : State} {m m' : Mem} {extra : List Region} (l : BoundedLa
     (b : bytesAt m (ghBase s) 256 = aadLayout s)
     (v : bytesAt m' (base s + BitVec.ofNat 64 (textOff s)) (L s) = ct) :
     bytesAt m' (ghBase s) 240 = zeros (16*(14-blocks s)) ++ aadBytes s ++ zeros (16-AL s) ++ ct ++
-      zeros (padLen (L s)) := by
-  let pre := zeros (16*(14-blocks s)) ++ aadBytes s ++ zeros (16-AL s)
-  have ha := Proof.AesCcm.length_bytesAt s.mem (Ad s) (AL s)
-  change (aadBytes s).length = AL s at ha
-  have hc : blocks s ≤ 14 := by unfold blocks; omega
-  have hp : pre.length = 240-16*blocks s := by simp [pre,zeros,ha]; omega
-  have pad : L s + padLen (L s) = 16 * blocks s := by unfold padLen blocks; omega
-  have u := fillSlot (width := 240) (by decide) (m := m) (m' := m') (G := ghBase s) (dst := dR s)
-    pre (zeros (padLen (L s))) ct
-  have pos : ghBase s + BitVec.ofNat 64 pre.length = base s + BitVec.ofNat 64 (textOff s) := by
-    rw [hp,ghBase,Offset.add_add]
-    congr 2
-    unfold textOff Medium.authO; omega
-  apply u
-  · simpa only [pos,hlen] using f
-  · exact (l.bd.sub_left (scratch_sub s)).sub_left (Offset.sub_base _ (by decide))
-  · simp [hp,hlen,zeros]; omega
-  · rw [Proof.AesCcm.bytesAt_prefix _ _ (show 240 ≤ 256 by decide),b]
-    have eq : aadLayout s = (pre ++ zeros ct.length ++ zeros (padLen (L s))) ++ zeros 16 := by
-      change (pre ++ zeros (16*blocks s)) ++ zeros 16 = _
-      rw [List.append_assoc pre (zeros ct.length),show zeros ct.length ++ zeros (padLen (L s)) = zeros (16*blocks s) by
-        rw [zeros,zeros,zeros,List.replicate_append_replicate,hlen,pad]]
-    rw [eq,List.take_left']
-    simp [hp,zeros,hlen]; omega
-  · simpa only [pos,hlen] using v
+      zeros (padLen (L s)) :=
+  authFilledFor (l.bd.sub_left (scratch_sub s)) hn hal ct hlen f b v
 
 
 end VG.Proof.AesGcm.AArch64.DirectGather.Mid

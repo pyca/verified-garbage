@@ -438,11 +438,11 @@ theorem shortPiece_ok {b s} (h : PiecePre b s) : WP isa shortPiece s (PiecePost 
 
 /-- The contiguous entry receives its source and length in registers. All
 subsequent instructions are the same fragment as for a gather descriptor. -/
-theorem directPiece_ok {b s} (h : Layout b s) (src : s.gpr .x6 = b.src)
+theorem directPiece_ok {b s} {source : Reg} (h : Layout b s) (src : s.gpr source = b.src)
     (len : s.gpr .x26 = BitVec.ofNat 64 b.len) (key : s.gpr .x1 = b.key)
     (dst : s.gpr .x2 = b.dst) (auth : s.gpr .x3 = b.auth) :
-    WP isa (shortPieceWith [mov .x0 .x6,mov .x12 .x26]) s (Cursor b s b.len b.len) := by
-  let head : List Instr := [mov .x0 .x6,mov .x12 .x26,.lsr .x .x13 .x12 4,
+    WP isa (shortPieceWith [mov .x0 source,mov .x12 .x26]) s (Cursor b s b.len b.len) := by
+  let head : List Instr := [mov .x0 source,mov .x12 .x26,.lsr .x .x13 .x12 4,
     imm .x14 15,.logic .and .x .x12 .x12 .x14]
   change WP isa (.seq (.block head) pieceSuffix) s _
   have initial : WP isa (.block head) s fun t =>

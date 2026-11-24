@@ -84,9 +84,9 @@ def artifactsDS (g : GcmVariant) : List Artifact := [
 def contiguousArtifact (g : GcmVariant) : Artifact :=
   Spec.Gcm.sealContiguousWithPowersApi.artifact AArch64.target {
     suffix := g.impl.suffix
-    code := Impl.AesGcm.AArch64.Contiguous.select g.calls
+    code := Impl.AesGcm.AArch64.Contiguous.select g.calls GhashWithImpl.aes.fn
     verified := Proof.AesGcm.AArch64.Contiguous.public_verified
-      (Proof.AesGcm.AArch64.Contiguous.backendFacts g.impl) }
+      (Proof.AesGcm.AArch64.Contiguous.backendFacts g.impl GhashWithImpl.aes) }
 
 /-- The gather implementation consumes the original input slices on each backend. -/
 def gatherArtifact (g : GcmVariant) : Artifact :=

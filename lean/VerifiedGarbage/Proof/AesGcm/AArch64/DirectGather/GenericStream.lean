@@ -50,6 +50,22 @@ structure SourcePre (s : State) (S D : Addr) (n : Nat) : Prop where
   wr : Covers [⟨D,n⟩] s.wr
   layout : BufferLayout S D n
 
+/-- Only these pointer registers and the resulting memory are live after a partial block. -/
+structure TailDone (s : State) (S K D : Addr) (n : Nat) (t : State) : Prop where
+  mem : t.mem = writeBytes s.mem D (xorBytes s.mem S K n)
+  src : t.gpr .x23 = S + BitVec.ofNat 64 n
+  dst : t.gpr .x26 = D + BitVec.ofNat 64 n
+  rest : t.gpr .x24 = 0
+  gpr : ∀ r ∈ [Reg.x19,.x20,.x21,.x22,.x25,.x27,.x28], t.gpr r = s.gpr r
+  sp : t.sp = s.sp
+  rd : t.rd = s.rd
+  wr : t.wr = s.wr
+
+abbrev TailLaw (prog : Prog isa) : Prop := ∀ {s : State} {S K D : Addr} {n : Nat},
+  s.gpr .x23 = S → s.gpr .x11 = K → s.gpr .x26 = D → s.gpr .x24 = BitVec.ofNat 64 n →
+  s.gpr .x10 = BitVec.ofNat 64 n → SourcePre s S D n → LoopPre s K D n → n < 16 →
+  WP isa prog s (TailDone s S K D n)
+
 theorem SourcePre.next {s : State} {S D : Addr} {n i : Nat} (h : SourcePre s S D n)
     (hi : i < n) (xs : List Byte) (hlen : xs.length = i) :
     writeBytes s.mem D xs (S + BitVec.ofNat 64 i) = s.mem (S + BitVec.ofNat 64 i) := by
@@ -103,6 +119,15 @@ theorem xorBytes_ok {s : State} {S K D : Addr} {n rem : Nat}
     · left; exact ⟨by rw [ev,e]; simp, e ▸ hu⟩
     · right; exact ⟨by rw [ev]; simp; omega_arith, n-(i+1), by omega_arith, i+1,rfl,by omega_arith,hu⟩
 
+theorem byteTail_law : TailLaw Impl.AesGcm.AArch64.DirectGather.xorBytes := by
+  intro s S K D n src key dst len count data ks _
+  refine (xorBytes_ok (byte_start src key dst count len) data ks (Nat.le_refl n)).mono ?_
+  intro t q
+  refine ⟨q.mem,q.src,q.dst,by rw [q.rest,Nat.sub_self]; rfl,?_,q.sp,q.rd,q.wr⟩
+  intro r hr
+  simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
+  rcases hr with rfl|rfl|rfl|rfl|rfl|rfl|rfl <;> exact q.gpr _ (by decide)
+
 end VG.Proof.AesGcm.AArch64.DirectGather.Generic
 
 /-! Full-block CTR-to calls followed by the final partial block of a descriptor. -/
@@ -113,11 +138,11 @@ namespace VG.Proof.AesGcm.AArch64.DirectGather.Generic
 open VG VG.AArch64 VG.AArch64.RegUpd VG.WriteBytes VG.Impl.AesGcm.AArch64
 open VG.Spec.Aes (bytesAt)
 open VG.Spec.Gcm (Block blockAt)
-open VG.Proof.Gcm (Ctr xorKs)
+open VG.Proof.Gcm (Ctr CtrUsing xorKs)
 variable {Wn : Nat} {Ctx St W SP : Addr} {k : Reg → BitVec 64} {R P : Nat} {icb : Block}
   {D O : Addr} {n : Nat} {m₀ : Mem} {j : Nat} {s : State}
 
-structure Encrypted (Wn : Nat) (Ctx St W SP : Addr) (k : Reg → BitVec 64) (R : Nat) (icb : Block)
+structure EncryptedWith (next : Block → Block) (Wn : Nat) (Ctx St W SP : Addr) (k : Reg → BitVec 64) (R : Nat) (icb : Block)
     (P : Nat) (D O : Addr) (n : Nat) (m₀ : Mem) (t : State) : Prop where
   env : Env Wn Ctx St W SP t
   kept : KeptTo k t
@@ -125,15 +150,17 @@ structure Encrypted (Wn : Nat) (Ctx St W SP : Addr) (k : Reg → BitVec 64) (R :
   dst : t.gpr .x26 = O + BitVec.ofNat 64 n
   rest : t.gpr .x24 = 0
   offset : t.gpr .x25 = BitVec.ofNat 64 ((P+n)%16)
-  ctr : Ctr t.mem (St + 48) (St + 64) (ciphOf m₀ Ctx R) icb (P+n)
+  ctr : CtrUsing next t.mem (St + 48) (St + 64) (ciphOf m₀ Ctx R) icb (P+n)
   out : bytesAt t.mem O n = xorKs (ciphOf m₀ Ctx R) icb P (bytesAt m₀ D n)
   frame : Frame (crFrame Wn St W O n) m₀ t.mem
 
+abbrev Encrypted := EncryptedWith id
+
 set_option linter.unusedSimpArgs false in
-theorem directTail_ok (h : Cr3G Wn true Ctx St W SP k R icb P D O n m₀ j s)
+theorem directTailWith_ok {next : Block → Block} {prog : Prog isa} (runTail : TailLaw prog) (h : Cr3Using next Wn true Ctx St W SP k R icb P D O n m₀ j s)
     (hc : Ctr m₀ (St + 48) (St + 64) (ciphOf m₀ Ctx R) icb P) (hpos : n-j ≠ 0) :
     WP isa (.seq (.block [mov .x10 .x24, mov .x25 .x24, ptr .x11 .x20 64])
-        Impl.AesGcm.AArch64.DirectGather.xorBytes) s (Encrypted Wn Ctx St W SP k R icb P D O n m₀) := by
+        prog) s (EncryptedWith next Wn Ctx St W SP k R icb P D O n m₀) := by
   have data : DataOk Wn St W s D n := h.data
   obtain ⟨hw,hd,x26⟩ := h.outAt
   have hj := h.le
@@ -153,8 +180,8 @@ theorem directTail_ok (h : Cr3G Wn true Ctx St W SP k R icb P D O n m₀ j s)
     ⟨by omega_arith, by rw [g.rd,g.wr]; exact (data.drop h.le).rd, by rw [g.wr]; exact rem.wr, sd⟩
   have lk : LoopPre t (St+BitVec.ofNat 64 64) (O + BitVec.ofNat 64 j) (n-j) :=
     ⟨by omega_arith, by rw [g.rd,g.wr]; exact covers_left (h.env.perm.stC (by omega_arith)), ls.wr, kd⟩
-  refine (xorBytes_ok (byte_start ((g.others _ (by decide)).trans h.x23) x11
-    ((g.others _ (by decide)).trans x26) x10 ((g.others _ (by decide)).trans h.x24)) ls lk (Nat.le_refl _)).mono
+  refine (runTail ((g.others _ (by decide)).trans h.x23) x11
+    ((g.others _ (by decide)).trans x26) ((g.others _ (by decide)).trans h.x24) x10 ls lk ht).mono
     fun u a => ?_
   have hmem := a.mem
   rw [g.mem] at hmem
@@ -166,7 +193,7 @@ theorem directTail_ok (h : Cr3G Wn true Ctx St W SP k R icb P D O n m₀ j s)
       (p := St + BitVec.ofNat 64 o)
   obtain ⟨mc,hmc,hks,hcb⟩ := h.ctr1 hpos hc
   have hw0 := h.whole.resolve_left hpos
-  obtain ⟨hbytes,hctr⟩ := Proof.Gcm.ctr_tail hmc hw0 hks hcb (d := bytesAt s.mem (D + BitVec.ofNat 64 j) (n-j))
+  obtain ⟨hbytes,hctr⟩ := Proof.Gcm.ctr_tail_using hmc hw0 hks hcb (d := bytesAt s.mem (D + BitVec.ofNat 64 j) (n-j))
     (by rw [length_bytesAt]; omega_arith) (by rw [length_bytesAt]; omega_arith)
   rw [length_bytesAt] at hbytes hctr
   have hprefix := bytesAt_frame fw (p := O) (n := j) (fun r hr => by
@@ -186,7 +213,7 @@ theorem directTail_ok (h : Cr3G Wn true Ctx St W SP k R icb P D O n m₀ j s)
     exact (kept r (List.mem_append_right [Reg.x19,.x20,.x21] hr)).trans (h.kept r hr)
   · rw [a.src,Offset.add_add, Nat.add_sub_of_le hj]
   · rw [a.dst,Offset.add_add, Nat.add_sub_of_le hj]
-  · rw [a.rest,Nat.sub_self]; rfl
+  · exact a.rest
   · rw [a.gpr _ (by decide),x25]; congr 1; omega_arith
   · rw [show P+n = P+j+(n-j) by omega_arith]
     exact hctr.congr (keyFrame 48 (by decide)) (keyFrame 64 (by decide))
@@ -195,15 +222,23 @@ theorem directTail_ok (h : Cr3G Wn true Ctx St W SP k R icb P D O n m₀ j s)
   · exact h.frame.trans (fw.sub fun r hr => by simp only [List.mem_singleton] at hr; subst hr
                                                exact ⟨_,List.mem_cons_self ..,Offset.sub_base O (by omega_arith)⟩)
 
-theorem aligned_ok (L : Lay Wn Ctx St W) (v : GcmImpl) (h : CrInG Wn true Ctx St W SP k R P D O n s)
+theorem directTail_ok (h : Cr3G Wn true Ctx St W SP k R icb P D O n m₀ j s)
+    (hc : Ctr m₀ (St + 48) (St + 64) (ciphOf m₀ Ctx R) icb P) (hpos : n-j ≠ 0) :
+    WP isa (.seq (.block [mov .x10 .x24, mov .x25 .x24, ptr .x11 .x20 64])
+        Impl.AesGcm.AArch64.DirectGather.xorBytes) s (Encrypted Wn Ctx St W SP k R icb P D O n m₀) :=
+  directTailWith_ok byteTail_law h hc hpos
+
+theorem alignedWith_ok {first tail : Prog isa} (tailLaw : TailLaw tail) (L : Lay Wn Ctx St W) (v : GcmImpl) (h : CrInG Wn true Ctx St W SP k R P D O n s)
     (hP : P % 16 = 0) (hc : Ctr s.mem (St+48) (St+64) (ciphOf s.mem Ctx R) icb P)
-    (hv : v.ctr.scratch ≤ Wn - 512) :
-    WP isa (Impl.AesGcm.AArch64.DirectGather.aligned v.callees) s
+    (firstLaw : ∀ {u : State}, Cr1G Wn true Ctx St W SP k R icb P D O n s.mem 0 u →
+      WP isa first u fun z => CrMidG Wn true Ctx St W SP k R icb P D O n s.mem (0+16*((n-0)/16)) z ∧
+        n-(0+16*((n-0)/16)) < 16) (hv : v.ctr.scratch ≤ Wn - 512) :
+    WP isa (Impl.AesGcm.AArch64.DirectGather.alignedWith v.callees first tail) s
       (Encrypted Wn Ctx St W SP k R icb P D O n s.mem) := by
   have ciph {m' : Mem} (f : Frame (crFrame Wn St W O n) s.mem m') :=
     ciph_frame f (ctx_crFrame L (OutAt.dataW h.outAt h.data)) h.rounds
   refine WP.seq ((crArgsG_ok L true (h.mid (icb := icb) hP)).mono fun s₁ h₁ =>
-    WP.seq ((ctrCallG1_ok L v h₁ (ciph h₁.frame) hv).mono fun t ⟨ht,hlt⟩ => ?_))
+    WP.seq ((firstLaw h₁).mono fun t ⟨ht,hlt⟩ => ?_))
   refine WP.ite (decide (n - (0+16*((n-0)/16)) = 0)) (eval_zero ht.x24 (by omega_arith)) (fun e => ?_) (fun e => ?_)
   · have he := of_decide_eq_true e
     have eqn : 0+16*((n-0)/16) = n := by omega_arith
@@ -212,7 +247,15 @@ theorem aligned_ok (L : Lay Wn Ctx St W) (v : GcmImpl) (h : CrInG Wn true Ctx St
       by rw [ht.x24,Nat.sub_self]; rfl,by rw [ht.x25]; congr 1; omega_arith,ht.ctr hc,ht.done hc,ht.frame⟩⟩
   · have he := of_decide_eq_false e
     exact WP.seq ((crSeg2_ok L ht hlt).mono fun s₃ h₃ => WP.seq
-      ((ctrCall2_ok L v h₃ (ciph h₃.frame) hv).mono fun _ h₄ => directTail_ok h₄ hc he))
+      ((ctrCall2_ok L v h₃ (ciph h₃.frame) hv).mono fun _ h₄ => directTailWith_ok tailLaw h₄ hc he))
+
+theorem aligned_ok (L : Lay Wn Ctx St W) (v : GcmImpl) (h : CrInG Wn true Ctx St W SP k R P D O n s)
+    (hP : P % 16 = 0) (hc : Ctr s.mem (St+48) (St+64) (ciphOf s.mem Ctx R) icb P)
+    (hv : v.ctr.scratch ≤ Wn - 512) :
+    WP isa (Impl.AesGcm.AArch64.DirectGather.aligned v.callees) s
+      (Encrypted Wn Ctx St W SP k R icb P D O n s.mem) := by
+  refine alignedWith_ok byteTail_law L v h hP hc (fun a => ?_) hv
+  exact ctrCallG1_ok L v a (ciph_frame a.frame (ctx_crFrame L (OutAt.dataW h.outAt h.data)) h.rounds) hv
 
 end VG.Proof.AesGcm.AArch64.DirectGather.Generic
 
@@ -224,7 +267,7 @@ namespace VG.Proof.AesGcm.AArch64.DirectGather.Generic
 open VG VG.AArch64 VG.AArch64.RegUpd VG.WriteBytes VG.Impl.AesGcm.AArch64
 open VG.Spec.Aes (bytesAt)
 open VG.Spec.Gcm (Block blockAt)
-open VG.Proof.Gcm (Ctr xorKs)
+open VG.Proof.Gcm (Ctr CtrUsing xorKs)
 
 structure Head (Wn : Nat) (Ctx St W SP : Addr) (k : Reg → BitVec 64) (R : Nat) (icb : Block)
     (P : Nat) (D O : Addr) (n j : Nat) (s t : State) : Prop where
@@ -313,7 +356,7 @@ namespace VG.Proof.AesGcm.AArch64.DirectGather.Generic
 open VG VG.AArch64
 open VG.Spec.Aes (bytesAt)
 open VG.Spec.Gcm (Block blockAt blocksAt gathered gatheredLen)
-open VG.Proof.Gcm (Ctr xorKs)
+open VG.Proof.Gcm (Ctr CtrUsing xorKs)
 open VG.Proof.AesGcm.AArch64.Gather (sb sl)
 open VG.Impl.AesGcm.AArch64.DirectGather (hashO)
 

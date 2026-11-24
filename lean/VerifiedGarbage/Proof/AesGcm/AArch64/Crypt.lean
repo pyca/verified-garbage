@@ -717,7 +717,7 @@ abbrev Cr2 (Wn : Nat) (Ctx St W SP : Addr) (k : Reg → BitVec 64) (R : Nat) (ic
   Cr2G Wn false Ctx St W SP k R icb P D D n m₀ j s
 
 /-- After the second call: a new keystream block, if there are bytes left. -/
-structure Cr3G (Wn : Nat) (to : Bool) (Ctx St W SP : Addr) (k : Reg → BitVec 64) (R : Nat) (icb : Block) (P : Nat)
+structure Cr3Using (next : Block → Block) (Wn : Nat) (to : Bool) (Ctx St W SP : Addr) (k : Reg → BitVec 64) (R : Nat) (icb : Block) (P : Nat)
     (D O : Addr) (n : Nat) (m₀ : Mem) (j : Nat) (s : State) : Prop where
   env : Env Wn Ctx St W SP s
   kept : cond to (KeptTo k s) (Kept k s)
@@ -732,13 +732,15 @@ structure Cr3G (Wn : Nat) (to : Bool) (Ctx St W SP : Addr) (k : Reg → BitVec 6
   ctr1 : n - j ≠ 0 → Ctr m₀ (St + BitVec.ofNat 64 48) (St + BitVec.ofNat 64 64) (ciphOf m₀ Ctx R) icb P →
     ∃ mc : Mem, Ctr mc (St + BitVec.ofNat 64 48) (St + BitVec.ofNat 64 64) (ciphOf m₀ Ctx R) icb (P + j) ∧
       blockAt s.mem (St + BitVec.ofNat 64 64) = ciphOf m₀ Ctx R (blockAt mc (St + BitVec.ofNat 64 48)) ∧
-      blockAt s.mem (St + BitVec.ofNat 64 48) = Spec.Gcm.inc32 (blockAt mc (St + BitVec.ofNat 64 48))
+      next (blockAt s.mem (St + BitVec.ofNat 64 48)) = Spec.Gcm.inc32 (blockAt mc (St + BitVec.ofNat 64 48))
   done : Ctr m₀ (St + BitVec.ofNat 64 48) (St + BitVec.ofNat 64 64) (ciphOf m₀ Ctx R) icb P →
     bytesAt s.mem O j = xorKs (ciphOf m₀ Ctx R) icb P (bytesAt m₀ D j)
   rest : bytesAt s.mem (D + BitVec.ofNat 64 j) (n - j) = bytesAt m₀ (D + BitVec.ofNat 64 j) (n - j)
   whole : n - j = 0 ∨ (P + j) % 16 = 0
   frame : Frame (crFrame Wn St W O n) m₀ s.mem
   outAt : OutAt Wn to Ctx St W s D O n j
+
+abbrev Cr3G := Cr3Using id
 
 abbrev Cr3 (Wn : Nat) (Ctx St W SP : Addr) (k : Reg → BitVec 64) (R : Nat) (icb : Block) (P : Nat) (D : Addr)
     (n : Nat) (m₀ : Mem) (j : Nat) (s : State) : Prop :=

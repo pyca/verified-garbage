@@ -33,32 +33,13 @@ abbrev layout (s : State) :=
   Spec.Gcm.zeros (16*(6-count s)) ++ aadBytes s ++ Spec.Gcm.zeros (16-AL s) ++
   Spec.Gcm.zeros (16*count s) ++ Spec.Gcm.zeros 16
 
-theorem scratchApart (o : State) (c : Caller o) (r : Region) (hr : r ∈ externalRegions o) :
-    (scratch o).Disjoint r :=
-  (c.stack r hr).sub_left (Offset.sub_below _ (by decide) (by decide))
-
-theorem argsApart (o : State) : (callerArgs o).Disjoint (scratch o) := by
-  simpa only [callerArgs,stackArgAddr,scratch,base,shortWork,Nat.mul_zero,BitVec.add_zero] using
-    Offset.base_disjoint_below o.sp (by decide : 368+24 ≤ 2^64)
-
-theorem argRead {o t : State} (c : Caller o) (m : LocalMem o t) (i : Nat) (hi : i < 3) :
-    InRegions (t.rd ++ t.wr) (base o + BitVec.ofNat 64 (shortWork+8*i)) 8 := by
-  rw [scratchArg]
-  exact m.read _ _ (c.read _ _ ⟨callerArgs o,by simp,stackArg_contains o i hi⟩)
-
-theorem argVal {o t : State} (m : LocalMem o t) (i : Nat) (hi : i < 3) :
-    t.mem.readW (base o + BitVec.ofNat 64 (shortWork+8*i)) 64 = stackArg o i := by
-  rw [scratchArg]
-  exact m.frame.read (stackArg_contains o i hi)
-    (by simpa only [List.mem_singleton,forall_eq] using argsApart o) (by decide)
-
 theorem enter {o : State} (c : Caller o) (hn : len o ≤ 96) :
     WP isa (.block (shortSetupAt shortWork)) (allocated shortWork o) fun t =>
       Header o t (len o) ∧ t.gpr .x4 = Ad o := by
   let a := allocated shortWork o
   have ha : LocalMem o a := ⟨Frame.refl _ _,rfl,rfl⟩
-  refine (shortSetupAt_ok (.inl rfl) a hn ha.scratchWr (argRead c ha 0 (by decide))
-    (by simpa only [len,a,allocated,base,shortWork,Nat.mul_zero,Nat.add_zero,BitVec.ofNat_toNat,BitVec.setWidth_eq] using argVal ha 0 (by decide))).mono ?_
+  refine (shortSetupAt_ok (.inl rfl) a hn ha.scratchWr (BoundedArgs.argRead c ha 0 (by decide))
+    (by simpa only [len,a,allocated,Compact.base,DirectGather.size,shortWork,Nat.mul_zero,Nat.add_zero,BitVec.ofNat_toNat,BitVec.setWidth_eq] using BoundedArgs.argVal ha 0 (by decide))).mono ?_
   intro t ⟨b,k,r,n,al,l,ceil,other,saved,fr,sp,rd,wr⟩
   have m : LocalMem o t := ⟨fr.sub (fun q hq => by
     obtain rfl := List.mem_singleton.mp hq
@@ -70,7 +51,7 @@ theorem prefix_ok {o : State} (c : Caller o) (hn : len o ≤ 96) (hal : AL o ≤
     WP isa (.seq (.block (shortSetupAt shortWork)) (.seq (.block shortZero) shortAad)) (allocated shortWork o)
       fun t => Header o t (len o) ∧ Spec.Aes.bytesAt t.mem (ghBase o) 128 = layout o := by
   refine WP.seq ((enter c hn).mono fun a ⟨h,x4⟩ =>
-    fillShort hn hal (scratchApart _ c _ (by simp [externalRegions])) ?_ h x4)
+    fillShort hn hal (BoundedArgs.scratchApart DirectGather.size _ c _ (by simp [externalRegions])) ?_ h x4)
   exact (Covers.of_mem fun r hr => by rw [List.mem_singleton.mp hr]; simp).trans c.read
 
 theorem pointers_ok {W : Addr} {c : Nat} (hc : c ≤ 6) (s : State)
@@ -110,8 +91,8 @@ theorem ready {o s : State} (c : Caller o) (iv : NL o = 12) (hn : len o ≤ 96)
     (h : Header o s (len o)) (input : Spec.Aes.bytesAt s.mem (ghBase o) 128 = layout o) :
     WP isa (.seq (Impl.Gcm.AArch64.Stitch.byRounds (shortKeys streamO)) (.block directPointers)) s (Ready o) := by
   have hc : count o ≤ 6 := by unfold count; omega
-  refine WP.seq ((shortKeysPhaseFor o s c.rounds ?_ ?_ (scratchApart _ c _ (by simp [externalRegions]))
-    (scratchApart _ c _ (by simp [externalRegions])) h.toLocalMem iv h.x19 h.x21 h.x22 h.x23).mono ?_)
+  refine WP.seq ((shortKeysPhaseFor o s c.rounds ?_ ?_ (BoundedArgs.scratchApart DirectGather.size _ c _ (by simp [externalRegions]))
+    (BoundedArgs.scratchApart DirectGather.size _ c _ (by simp [externalRegions])) h.toLocalMem iv h.x19 h.x21 h.x22 h.x23).mono ?_)
   · exact (Covers.of_mem fun r hr => by rw [List.mem_singleton.mp hr]; simp).trans c.read
   · exact (Covers.of_mem fun r hr => by rw [List.mem_singleton.mp hr]; simp).trans c.read
   intro k hk
@@ -139,8 +120,8 @@ theorem pieceLayout {o s : State} (c : Caller o) (hn : len o ≤ 96) (h : Ready 
   have ks : ((buffers o).reg (buffers o).key).Sub (scratch o) :=
     Offset.sub_base _ (by change 16+len o ≤ 368; omega)
   have aut : ((buffers o).reg (buffers o).auth).Sub (scratch o) := Offset.sub_base _ text
-  have sSrc := scratchApart _ c (srcR o) (by simp [externalRegions])
-  have sDst := scratchApart _ c (dstR o) (by simp [externalRegions])
+  have sSrc := BoundedArgs.scratchApart DirectGather.size _ c (srcR o) (by simp [externalRegions])
+  have sDst := BoundedArgs.scratchApart DirectGather.size _ c (dstR o) (by simp [externalRegions])
   have rd := c.read.trans h.toLocalMem.read
   have wDst : Covers [dstR o] s.wr :=
     (Covers.of_mem fun r hr => by rw [List.mem_singleton.mp hr]; simp).trans
@@ -172,7 +153,7 @@ theorem ciphertext {o s t : State} (c : Caller o) (hn : len o ≤ 96) (h : Ready
   have orig (j : Nat) (hj : j < len o) : s.mem (Fragment.off (o.gpr .x6) j) = o.mem (Fragment.off (o.gpr .x6) j) := by
     apply h.frame _; intro q hq hit
     obtain rfl := List.mem_singleton.mp hq
-    exact (scratchApart _ c (srcR o) (by simp [externalRegions])) _ hit
+    exact (BoundedArgs.scratchApart DirectGather.size _ c (srcR o) (by simp [externalRegions])) _ hit
       (Offset.contains_base _ (by change j+1 ≤ len o; omega) (by omega))
   have hl : (out o).plain.length = len o := Proof.Cmac.bytesAt_length ..
   rw [Proof.Gcm.gctr_eq]
@@ -204,9 +185,9 @@ theorem finishPre {o s t : State} (c : Caller o) (hn : len o ≤ 96) (al : AL o 
     ShortFinishPreFor o t (base o) (6-count o) (out o) 376 := by
   let slot : Region := ⟨(buffers o).auth,len o⟩
   have f : Frame [dstR o,slot] s.mem t.mem := p.written.frame
-  have ds := scratchApart _ c (dstR o) (by simp [externalRegions])
-  have ts := scratchApart _ c (tagR o) (by simp [externalRegions])
-  have bk := scratchApart _ c (kR .plain o) (by simp [externalRegions])
+  have ds := BoundedArgs.scratchApart DirectGather.size _ c (dstR o) (by simp [externalRegions])
+  have ts := BoundedArgs.scratchApart DirectGather.size _ c (tagR o) (by simp [externalRegions])
+  have bk := BoundedArgs.scratchApart DirectGather.size _ c (kR .plain o) (by simp [externalRegions])
   have whole := cursorFrame h hn p
   have apart {r : Region} (a : (scratch o).Disjoint r) (b : r.Disjoint (dstR o)) :
       ∀ q ∈ [scratch o,dstR o], r.Disjoint q := by
@@ -218,7 +199,7 @@ theorem finishPre {o s t : State} (c : Caller o) (hn : len o ≤ 96) (al : AL o 
     change base o+376#64 = stackArgAddr o 1 at arg
     rw [arg]
     exact whole.readW (r := callerArgs o) (stackArg_contains o 1 (by decide))
-      (apart (argsApart o).symm c.dstArgs.symm) (by decide)
+      (apart (BoundedArgs.argsApart DirectGather.size o).symm c.dstArgs.symm) (by decide)
   have kc : Covers [kR .plain o] (t.rd ++ t.wr) := by
     rw [p.rd,p.wr]
     exact (Covers.of_mem fun r hr => by rw [List.mem_singleton.mp hr]; simp).trans (c.read.trans h.toLocalMem.read)
@@ -234,7 +215,7 @@ theorem finishPre {o s t : State} (c : Caller o) (hn : len o ≤ 96) (al : AL o 
     · obtain rfl := List.mem_singleton.mp hr
       exact Offset.disjoint _ (.inl (by change 128+88 ≤ 224+112-16*count o; omega)) (by decide)
         (by change 224+112-16*count o+len o ≤ 2^64; omega)
-  · rw [p.rd,p.wr]; exact argRead c h.toLocalMem 1 (by decide)
+  · rw [p.rd,p.wr]; exact BoundedArgs.argRead c h.toLocalMem 1 (by decide)
   · rw [p.wr,h.wr]; obtain ⟨r,hr,hc⟩ := c.write _ _ ⟨tagR o,by simp,Region.contains_self _ _⟩
     exact ⟨r,List.mem_cons_of_mem _ hr,hc⟩
   · apply blockAt_frame whole
@@ -260,12 +241,12 @@ theorem loadPowers {o s t : State} (c : Caller o) (key : Prepared.Powers o)
   have slot : base o + 384#64 = stackArgAddr o 2 := scratchArg o 2
   have ptr : InRegions (t.rd ++ t.wr) (t.sp+384#64) 8 := by
     rw [p.sp,cur.rd,cur.wr]
-    exact argRead c h.toLocalMem 2 (by decide)
+    exact BoundedArgs.argRead c h.toLocalMem 2 (by decide)
   have addr : t.mem.readW (t.sp+384#64) 64 = stackArg o 2 := by
     rw [p.sp,slot]
     exact mem.readW (r := callerArgs o) (stackArg_contains o 2 (by decide)) (by
       intro r hr; rcases List.mem_cons.mp hr with rfl|hr
-      · exact argsApart o
+      · exact BoundedArgs.argsApart DirectGather.size o
       · exact List.mem_singleton.mp hr ▸ c.dstArgs.symm) (by decide)
   have sep : (Prepared.powerR o).Disjoint (scratch o) :=
     key.stack.sub_right (Offset.sub_below _ (by decide) (by decide))

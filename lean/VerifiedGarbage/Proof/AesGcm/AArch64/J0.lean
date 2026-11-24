@@ -106,6 +106,18 @@ structure J0In (Wn : Nat) (Ctx St W SP : Addr) (k : Reg → BitVec 64) (H : Bloc
   data : DataOk Wn St W s Np n
   hH : blockAt s.mem (Ctx + BitVec.ofNat 64 240) = H
 
+/-- The fixed 12-byte path reads the nonce pointer but no nonce length registers. -/
+structure FixedNonceIn (Wn : Nat) (Ctx St W SP : Addr) (k : Reg → BitVec 64) (H : Block) (Np : Addr) (s : State) : Prop where
+  env : Env Wn Ctx St W SP s
+  kept : Kept k s
+  x23 : s.gpr .x23 = Np
+  data : DataOk Wn St W s Np 12
+  hH : blockAt s.mem (Ctx + BitVec.ofNat 64 240) = H
+
+theorem J0In.fixed {Wn : Nat} {Ctx St W SP : Addr} {k : Reg → BitVec 64} {H : Block} {Np : Addr} {s : State}
+    (h : J0In Wn Ctx St W SP k H Np 12 s) : FixedNonceIn Wn Ctx St W SP k H Np s :=
+  ⟨h.env,h.kept,h.x23,h.data,h.hH⟩
+
 /-- Before the first call of `j0hash`: a zero accumulator, and the call on the
 whole blocks of the nonce. -/
 structure J1 (Wn : Nat) (Ctx St W SP : Addr) (k : Reg → BitVec 64) (H : Block) (Np : Addr) (n : Nat) (m₀ : Mem)
@@ -174,7 +186,7 @@ theorem t_j0Frame {m m' : Mem} (h : Frame (tFrame St W 0) m m') : Frame (j0Frame
     · exact ⟨_, by simp, fun _ h => h⟩
 
 /-- `J₀` of a 12-byte nonce. -/
-theorem j012_ok {k : Reg → BitVec 64} {H : Block} {Np : Addr} {s : State} (h : J0In Wn Ctx St W SP k H Np 12 s) :
+theorem fixedNonce_ok {k : Reg → BitVec 64} {H : Block} {Np : Addr} {s : State} (h : FixedNonceIn Wn Ctx St W SP k H Np s) :
     WP isa (.block j012) s (J0Mid Wn Ctx St W SP k H (bytesAt s.mem Np 12) s.mem) := by
   have he := h.env
   have hd := h.data
@@ -208,6 +220,9 @@ theorem j012_ok {k : Reg → BitVec 64} {H : Block} {Np : Addr} {s : State} (h :
         add_ofNat_assoc, List.append_assoc]
     rw [Proof.Gcm.j0_12 _ (length_bytesAt _ _ _), blockAt, hm, Proof.Cmac.bytesAt_store4, Proof.Cmac.le4_readW,
       Proof.Cmac.le4_readW, Proof.Cmac.le4_readW, le4_one, hb]
+
+theorem j012_ok {k : Reg → BitVec 64} {H : Block} {Np : Addr} {s : State} (h : J0In Wn Ctx St W SP k H Np 12 s) :
+    WP isa (.block j012) s (J0Mid Wn Ctx St W SP k H (bytesAt s.mem Np 12) s.mem) := fixedNonce_ok L h.fixed
 
 /-- The first counter block, and the accumulator zeroed. -/
 theorem initState_ok {k : Reg → BitVec 64} {H : Block} {iv : List Byte} {m₀ : Mem} {s : State}

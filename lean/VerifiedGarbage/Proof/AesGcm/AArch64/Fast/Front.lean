@@ -2,6 +2,7 @@ module
 public import VerifiedGarbage.Proof.AesGcm.AArch64.J0
 public import VerifiedGarbage.Impl.AesGcm.AArch64.Fast
 public import VerifiedGarbage.Proof.Gcm.AArch64.Pmull.Groups
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.Mul
 
 import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.Pad
 import VerifiedGarbage.Proof.AesGcm.AArch64.Front
@@ -90,7 +91,7 @@ theorem slots_frontFrame' : ∀ r ∈ frontFrame' St W, (⟨W + BitVec.ofNat 64 
 
 omit L in
 /-- `j012` writes only `x9`–`x12` of the registers. -/
-theorem j012_others {k : Reg → BitVec 64} {H : Block} {Np : Addr} {s : State} (h : J0In Wn Ctx St W SP k H Np 12 s) :
+theorem fixedNonce_others {k : Reg → BitVec 64} {H : Block} {Np : Addr} {s : State} (h : FixedNonceIn Wn Ctx St W SP k H Np s) :
     WP isa (.block j012) s fun s' => Others [.x9, .x10, .x11, .x12] s s' := by
   have he := h.env
   have hd := h.data
@@ -104,6 +105,10 @@ theorem j012_others {k : Reg → BitVec 64} {H : Block} {Np : Addr} {s : State} 
   rw [add_ofNat_zero] at r₀ w₀
   refine WP.of_runBlock ⟨_, by simp only [j012]; arun [h.x23, he.x20, r₀, r₁, r₂, w₀, w₁, w₂, w₃, add_ofNat_zero], ?_⟩
   others_tac
+
+omit L in
+theorem j012_others {k : Reg → BitVec 64} {H : Block} {Np : Addr} {s : State} (h : J0In Wn Ctx St W SP k H Np 12 s) :
+    WP isa (.block j012) s fun s' => Others [.x9, .x10, .x11, .x12] s s' := fixedNonce_others h.fixed
 
 omit L in
 /-- `initState` writes only `x9`–`x12` of the registers. -/
@@ -125,19 +130,47 @@ theorem initState_others {s : State} (he : Env Wn Ctx St W SP s) :
     add_ofNat_zero], ?_⟩
   others_tac
 
+/-- Loading or deriving the prepared hash key after the nonce and local state are initialized. -/
+abbrev FrontKey (source : List Instr) (Wn : Nat) (Ctx St W SP : Addr) (H : Block) (s₀ : State) : Prop :=
+  ∀ {s : State}, Env Wn Ctx St W SP s → blockAt s.mem (Ctx + BitVec.ofNat 64 240) = H →
+    Frame (j0Frame St W) s₀.mem s.mem → s.rd = s₀.rd → s.wr = s₀.wr → s.gpr .x8 = s₀.gpr .x8 →
+    WP isa (.block source) s fun t => HKey H t ∧ Regs [.x0,.x5,.x6,.x7] s t
+
+omit L in
+/-- Derive the multiplication key from the hash subkey stored with the AES schedule. -/
+theorem rawKey_ok {u : State} {H : Block} (hu : Env Wn Ctx St W SP u)
+    (hH : blockAt u.mem (Ctx+BitVec.ofNat 64 240) = H) :
+    WP isa (.block ([ptr .x0 .x21 240] ++ Impl.AesGcm.AArch64.Fast.key)) u
+      fun t => HKey H t ∧ Regs [.x0,.x5,.x6,.x7] u t := by
+  rw [WP.block_append_iff]
+  obtain ⟨v,runV,xv,rv⟩ : ∃ v, runBlock isa [ptr .x0 .x21 240] u = some v ∧
+      v.gpr .x0 = Ctx+BitVec.ofNat 64 240 ∧ Regs [.x0] u v := by
+    refine ⟨_,by arun [],?_⟩
+    exact ⟨by simp [gpr_write,hu.x21],⟨by others_tac,rfl,rfl,rfl,rfl⟩⟩
+  refine WP.of_runBlock ⟨v,runV,?_⟩
+  have ev := hu.of_regs rv
+  refine (key_ok (H := H) (by rw [xv,add_ofNat_zero];exact ev.perm.ctxR (by decide))
+    (by rw [xv,add_ofNat_zero,rv.mem];exact hH)).mono ?_
+  intro t ht
+  obtain ⟨key,g,_,mem,rd,wr,sp⟩ := ht
+  refine ⟨key,⟨?_,mem.trans rv.mem,sp.trans rv.sp,rd.trans rv.rd,wr.trans rv.wr⟩⟩
+  intro r hr
+  simp only [List.mem_cons,List.not_mem_nil,or_false,not_or] at hr
+  exact (g _ hr.2.1 hr.2.2.1 hr.2.2.2).trans (rv.others _ (by simpa using hr.1))
+
 /-- `front`, from the 12-byte nonce at `Np`, the `al` (at most 16) bytes of
 additional data at `A` (`x4`, `x5`), and the data (`x6`, `x7`). -/
-theorem front_ok (hMK : MulKey) {k : Reg → BitVec 64} {H : Block} {Np A D : Addr} {al n : Nat} {s₀ : State}
-    (hJ : J0In Wn Ctx St W SP k H Np 12 s₀) (haad : DataOk Wn St W s₀ A al) (hal : al ≤ 16)
+theorem frontWith_ok (source : List Instr) (hMK : MulKey) {k : Reg → BitVec 64} {H : Block} {Np A D : Addr} {al n : Nat} {s₀ : State}
+    (hJ : FixedNonceIn Wn Ctx St W SP k H Np s₀) (haad : DataOk Wn St W s₀ A al) (hal : al ≤ 16)
     (h4 : s₀.gpr .x4 = A) (h5 : s₀.gpr .x5 = BitVec.ofNat 64 al) (h6 : s₀.gpr .x6 = D)
-    (h7 : s₀.gpr .x7 = BitVec.ofNat 64 n) :
-    WP isa Impl.AesGcm.AArch64.Fast.front s₀
+    (h7 : s₀.gpr .x7 = BitVec.ofNat 64 n) (key : FrontKey source Wn Ctx St W SP H s₀) :
+    WP isa (Impl.AesGcm.AArch64.Fast.frontWith source) s₀
       (FFront Wn Ctx St W SP H (bytesAt s₀.mem Np 12) (bytesAt s₀.mem A al) D n s₀) := by
-  unfold Impl.AesGcm.AArch64.Fast.front
-  simp only [Impl.AesGcm.AArch64.Fast.hPrime, List.append_assoc]
+  unfold Impl.AesGcm.AArch64.Fast.frontWith
+  simp only [List.append_assoc]
   refine WP.seq ?_
   rw [WP.block_append_iff]
-  refine WP.mono (WP.with_rdwr (WP.block_and (j012_ok L hJ) (j012_others hJ)))
+  refine WP.mono (WP.with_rdwr (WP.block_and (fixedNonce_ok L hJ) (fixedNonce_others hJ)))
     fun s₁ ⟨⟨h₁, o₁⟩, rd₁, wr₁⟩ => ?_
   rw [WP.block_append_iff]
   have he₁ := h₁.env
@@ -167,22 +200,9 @@ theorem front_ok (hMK : MulKey) {k : Reg → BitVec 64} {H : Block} {Np A D : Ad
   obtain v₂ : ∀ r ∈ [Reg.x25, .x27, .x23, .x26], s₂.gpr r = s₁'.gpr r := fun r hr => o₂ r (by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl <;> decide)
-  obtain ⟨s₃, run₃, x0₃, r₃⟩ : ∃ s₃, runBlock isa [ptr .x0 .x21 240] s₂ = some s₃ ∧
-      s₃.gpr .x0 = Ctx + BitVec.ofNat 64 240 ∧ Regs [.x0] s₂ s₃ := by
-    refine ⟨_, by arun [], ?_⟩
-    exact ⟨by simp [gpr_write, he₂.x21], ⟨by others_tac, rfl, rfl, rfl, rfl⟩⟩
-  refine WP.of_runBlock ⟨s₃, run₃, ?_⟩
-  obtain he₃ := he₂.of_regs r₃
-  rw [WP.block_append_iff]
-  refine WP.mono (key_ok (H := H) (by rw [x0₃, add_ofNat_zero]; exact he₃.perm.ctxR (by decide))
-    (by rw [x0₃, add_ofNat_zero, r₃.mem]; exact h₂.hH)) fun s₄ ⟨hk₄, g₄, v₄, m₄, rd₄, wr₄, sp₄⟩ => ?_
-  obtain he₄ : Env Wn Ctx St W SP s₄ := he₃.keep (fun r hr => g₄ r (by
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl <;> decide) (by
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl <;> decide) (by
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl <;> decide)) sp₄ rd₄ wr₄
+  refine WP.mono (key he₂ h₂.hH h₂.frame (rd₂.trans (r₁'.rd.trans rd₁))
+    (wr₂.trans (r₁'.wr.trans wr₁)) (kg₂ _ (by decide))) fun s₄ ⟨hk₄, regs₄⟩ => ?_
+  obtain he₄ : Env Wn Ctx St W SP s₄ := he₂.of_regs regs₄
   rw [WP.block_append_iff]
   refine WP.mono (keep_ok (by rw [he₄.x19]; exact he₄.perm.wW (by decide))
     (by rw [he₄.x19]; exact he₄.perm.wW (by decide))) fun s₅ ⟨m₅, y₅, v₅, g₅, rd₅, wr₅, sp₅⟩ => ?_
@@ -209,10 +229,7 @@ theorem front_ok (hMK : MulKey) {k : Reg → BitVec 64} {H : Block} {Np A D : Ad
     exact ⟨by rw [e₀]; exact hk₄.t, by rw [e₁, e₀]; exact hk₄.sw⟩
   obtain hk₅ : HKey H s₅ := hk₄.of_v (v₅ C (by decide)) (v₅ _ (by decide)) (v₅ _ (by decide))
   obtain g₅' : ∀ r ∈ [Reg.x25, .x27, .x23, .x26], s₅.gpr r = s₁'.gpr r := fun r hr => by
-    rw [g₅, g₄ r (by simp at hr; rcases hr with rfl | rfl | rfl | rfl <;> decide)
-      (by simp at hr; rcases hr with rfl | rfl | rfl | rfl <;> decide)
-      (by simp at hr; rcases hr with rfl | rfl | rfl | rfl <;> decide),
-      r₃.others r (by simp at hr; rcases hr with rfl | rfl | rfl | rfl <;> decide), v₂ r hr]
+    rw [g₅, regs₄.others r (by simp at hr; rcases hr with rfl | rfl | rfl | rfl <;> decide), v₂ r hr]
   obtain ⟨s₆, run₆, x13₆, x12₆, r₆, v₆⟩ : ∃ s₆, runBlock isa [mov .x13 .x25, mov .x12 .x27] s₅ =
       some s₆ ∧ s₆.gpr .x13 = BitVec.ofNat 64 al ∧ s₆.gpr .x12 = A ∧ Regs [.x13, .x12] s₅ s₆ ∧ s₆.v = s₅.v := by
     refine ⟨_, by arun [], ?_⟩
@@ -226,7 +243,7 @@ theorem front_ok (hMK : MulKey) {k : Reg → BitVec 64} {H : Block} {Np A D : Ad
   obtain F₆ : Frame (frontFrame' St W) s₀.mem s₆.mem := by
     rw [r₆.mem]
     refine (h₂.frame.sub fun r hr => ⟨r, List.mem_append_left _ hr, fun _ h => h⟩).trans ?_
-    rw [← r₃.mem, ← m₄]
+    rw [← regs₄.mem]
     exact fk.sub fun r hr => ⟨r, List.mem_append_right _ hr, fun _ h => h⟩
   obtain dA : ∀ r ∈ frontFrame' St W, (⟨A, al⟩ : Region).Disjoint r := by
     intro r hr
@@ -238,7 +255,7 @@ theorem front_ok (hMK : MulKey) {k : Reg → BitVec 64} {H : Block} {Np A D : Ad
     · exact haad.w.sub_right (Lay.wSub (by have := L.hWn; have : Impl.AesGcm.AArch64.Fast.hO = 288 := rfl; omega))
   obtain hA₆ : bytesAt s₆.mem A al = bytesAt s₀.mem A al := bytesAt_frame F₆ dA (by have := haad.lt; omega_using [hal])
   refine WP.seq (WP.mono (WP.with_rdwr (padMul_ok hMK he₆ hk₆ hy₆ x12₆ x13₆ hal
-      (by rw [r₆.rd, r₆.wr, rd₅, wr₅, rd₄, wr₄, r₃.rd, r₃.wr, rd₂, wr₂, r₁'.rd, r₁'.wr, rd₁, wr₁]; exact haad.rd)
+      (by rw [r₆.rd, r₆.wr, rd₅, wr₅, regs₄.rd, regs₄.wr, rd₂, wr₂, r₁'.rd, r₁'.wr, rd₁, wr₁]; exact haad.rd)
       (haad.w.sub_right (Lay.wSub (by have := L.hWn; omega)))))
     fun s₇ ⟨⟨y₇, hk₇, he₇, og₇, f₇, v₇⟩, rd₇, wr₇⟩ => ?_)
   refine WP.mono (storeY_ok y₇ (by rw [he₇.x20]; exact he₇.perm.stW (by decide)))
@@ -252,7 +269,7 @@ theorem front_ok (hMK : MulKey) {k : Reg → BitVec 64} {H : Block} {Np A D : Ad
     exact (f₇.sub fun r hr => ⟨r, by simp at hr ⊢; exact .inl hr, fun _ h => h⟩).trans
       (f₈.sub fun r hr => ⟨r, by simp at hr ⊢; exact .inr hr, fun _ h => h⟩)
   obtain F₂₈ : Frame [keyR W, ⟨W + BitVec.ofNat 64 96, 16⟩, ⟨St + BitVec.ofNat 64 16, 16⟩] s₂.mem s₈.mem := by
-    obtain fk' : Frame [keyR W] s₂.mem s₅.mem := by rw [← r₃.mem, ← m₄]; exact fk
+    obtain fk' : Frame [keyR W] s₂.mem s₅.mem := by rw [← regs₄.mem]; exact fk
     refine (fk'.sub fun r hr => ⟨r, by simp at hr ⊢; exact .inl hr, fun _ h => h⟩).trans
       (F₅₈.sub fun r hr => ⟨r, by simp at hr ⊢; exact .inr hr, fun _ h => h⟩)
   obtain F₈ : Frame (frontFrame' St W) s₀.mem s₈.mem := by
@@ -276,7 +293,7 @@ theorem front_ok (hMK : MulKey) {k : Reg → BitVec 64} {H : Block} {Np A D : Ad
     obtain ⟨h0, h5, h6, h7, h9, h11, h12, h13, h14, h15⟩ := hr
     rw [g₈, og₇ r (by simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]; exact ⟨h9, h11, h12, h13, h14, h15⟩),
       r₆.others r (by simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]; exact ⟨h13, h12⟩),
-      g₅, g₄ r h5 h6 h7, r₃.others r (by simp only [List.mem_singleton]; exact h0)]
+      g₅, regs₄.others r (by simpa only [List.mem_cons,List.not_mem_nil,or_false,not_or] using And.intro h0 ⟨h5,h6,h7⟩)]
   refine ⟨he₇.keep (fun r _ => by rw [g₈]) o₈.sp o₈.rd o₈.wr, by rw [gg _ (by decide), kg₂ _ (by decide)],
     by rw [gg _ (by decide), kg₂ _ (by decide)], by rw [gg _ (by decide), v₂ _ (by simp), x23₁'],
     by rw [gg _ (by decide), v₂ _ (by simp), x26₁'], ?_, ?_, ?_, ?_, ?_, F₈, ?_, ?_⟩
@@ -296,8 +313,20 @@ theorem front_ok (hMK : MulKey) {k : Reg → BitVec 64} {H : Block} {Np A D : Ad
     rcases hr with rfl | rfl
     · exact Offset.disjoint W (.inr (by decide)) (by decide) (by decide)
     · exact (L.st_w (a := 16) (n := 16) (by decide) (.inr ⟨by decide, by decide⟩)).symm
-  · rw [o₈.rd, rd₇, r₆.rd, rd₅, rd₄, r₃.rd, rd₂, r₁'.rd, rd₁]
-  · rw [o₈.wr, wr₇, r₆.wr, wr₅, wr₄, r₃.wr, wr₂, r₁'.wr, wr₁]
+  · rw [o₈.rd, rd₇, r₆.rd, rd₅, regs₄.rd, rd₂, r₁'.rd, rd₁]
+  · rw [o₈.wr, wr₇, r₆.wr, wr₅, regs₄.wr, wr₂, r₁'.wr, wr₁]
+
+/-- `front`, from the 12-byte nonce at `Np`, the `al` (at most 16) bytes of
+additional data at `A` (`x4`, `x5`), and the data (`x6`, `x7`). -/
+theorem front_ok (hMK : MulKey) {k : Reg → BitVec 64} {H : Block} {Np A D : Addr} {al n : Nat} {s₀ : State}
+    (hJ : J0In Wn Ctx St W SP k H Np 12 s₀) (haad : DataOk Wn St W s₀ A al) (hal : al ≤ 16)
+    (h4 : s₀.gpr .x4 = A) (h5 : s₀.gpr .x5 = BitVec.ofNat 64 al) (h6 : s₀.gpr .x6 = D)
+    (h7 : s₀.gpr .x7 = BitVec.ofNat 64 n) :
+    WP isa Impl.AesGcm.AArch64.Fast.front s₀
+      (FFront Wn Ctx St W SP H (bytesAt s₀.mem Np 12) (bytesAt s₀.mem A al) D n s₀) := by
+  refine frontWith_ok L _ hMK hJ.fixed haad hal h4 h5 h6 h7 ?_
+  intro u hu hH _ _ _ _
+  exact rawKey_ok hu hH
 
 end
 
