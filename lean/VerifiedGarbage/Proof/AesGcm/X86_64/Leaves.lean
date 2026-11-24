@@ -2814,7 +2814,7 @@ private theorem spMasks (narrow : Bool) (v : GcmImpl) {ctr : Fn} (ct : Sp ctr.co
   have lens := tag.2.2.2.1
   simp only [core,softwareBody,chooseBatch,batchMasks,batchKeys,batchText,batchAuth,gh,maskFinish,maskChoice,alignedTag,directEcbTag,VG.Impl.AesGcm.X86_64.Contiguous.oneMask,bulk,finishMasks,VG.Impl.AesGcm.X86_64.Contiguous.makeMasks,VG.Impl.AesGcm.X86_64.Contiguous.call,
     VG.Impl.AesGcm.X86_64.Contiguous.maskXor,maskAuth,Code.all,aa,sep,enc,pad,lens,Bool.true_and,Bool.and_true]
-  decide +kernel
+  cases narrow <;> decide +kernel
 
 /-- The software AES backends share one bounded counter batch for both layouts. -/
 theorem masks (narrow : Bool) (v : GcmVariant) : Certificate (preparedMasks narrow v.lvTW v.impl.callees (ctrFn v)) := by
