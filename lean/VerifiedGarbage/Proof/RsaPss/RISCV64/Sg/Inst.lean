@@ -623,12 +623,7 @@ theorem code_correct {vs : List MVar} {gs : List MVar} (hok : OK vs gs) (s : Sta
   rw [e]
   sig_post [Spec.RsaPss.signMdTableContract, Spec.RsaPss.signMdTableSig, Spec.MdHashTable.param, 
     Abi.withTables, abi, argRegs, stackArgs_sixteen, List.append_eq]
-  intro H' G' hH' hG'
-  rw [hH] at hH'
-  rw [hG] at hG'
-  cases hH'
-  cases hG'
-  exact hr
+  exact ⟨_, _, hH, hG, hr⟩
 
 /-! ## Constant time -/
 

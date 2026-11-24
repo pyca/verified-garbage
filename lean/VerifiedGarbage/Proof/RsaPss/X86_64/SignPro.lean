@@ -132,8 +132,8 @@ def signK : Contract isa where
       (stackArg s 9).toNat = (stackArg s 1).toNat ∧ (stackArg s 7).toNat = (stackArg s 3).toNat ∧
       Spec.RsaPss.scratchWords (s.gpr .rcx).toNat ≤ (stackArg s 15).toNat ∧
       Spec.RsaPss.digestLenOk 64 s.mem (stackArg s 16) (stackArg s 11)
-  post s s' := ∀ H G, Spec.MdHashTable.hashAt 64 s.mem (stackArg s 16) = some H →
-    Spec.MdHashTable.hashAt 64 s.mem (stackArg s 17) = some G →
+  post s s' := ∃ H G, Spec.MdHashTable.hashAt 64 s.mem (stackArg s 16) = some H ∧
+    Spec.MdHashTable.hashAt 64 s.mem (stackArg s 17) = some G ∧
     Spec.Rsa.writtenOutcome s'.mem (s.gpr .rdi) (s.gpr .rcx).toNat ((s'.gpr .rax).setWidth 32)
       (Spec.RsaPss.sign H G (Spec.Rsa.bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat)
         (Spec.Rsa.bytesAt s.mem (s.gpr .r8) (s.gpr .r9).toNat)

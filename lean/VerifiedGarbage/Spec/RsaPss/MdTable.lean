@@ -126,8 +126,8 @@ def signMdTableContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
         scratchWords nLen.toNat ≤ scratchLen.toNat ∧ digestLenOk A.ptrBits m hash digestLen)
     (post := fun out _outLen n nLen e eLen p pLen q qLen dp _dpLen dq _dqLen qinv _qinvLen
         digest _digestLen salt saltLen _scratch _scratchLen hash mgf1 m m' r =>
-      ∀ H G, MdHashTable.hashAt A.ptrBits m hash = some H →
-        MdHashTable.hashAt A.ptrBits m mgf1 = some G →
+      ∃ H G, MdHashTable.hashAt A.ptrBits m hash = some H ∧
+        MdHashTable.hashAt A.ptrBits m mgf1 = some G ∧
         writtenOutcome m' out nLen.toNat r
           (sign H G (bytesAt m n nLen.toNat) (bytesAt m e eLen.toNat) (bytesAt m p pLen.toNat)
             (bytesAt m q qLen.toNat) (bytesAt m dp pLen.toNat) (bytesAt m dq qLen.toNat)
@@ -243,8 +243,8 @@ def signPrecomputedMdTableContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Co
         digestLenOk A.ptrBits m hash digestLen)
     (post := fun out _outLen n nLen e eLen p pLen q qLen dp _dpLen dq _dqLen qinv _qinvLen
         digest _digestLen salt saltLen _scratch _scratchLen hash mgf1 _pre _preLen m m' r =>
-      ∀ H G, MdHashTable.hashAt A.ptrBits m hash = some H →
-        MdHashTable.hashAt A.ptrBits m mgf1 = some G →
+      ∃ H G, MdHashTable.hashAt A.ptrBits m hash = some H ∧
+        MdHashTable.hashAt A.ptrBits m mgf1 = some G ∧
         writtenOutcome m' out nLen.toNat r
           (sign H G (bytesAt m n nLen.toNat) (bytesAt m e eLen.toNat) (bytesAt m p pLen.toNat)
             (bytesAt m q qLen.toNat) (bytesAt m dp pLen.toNat) (bytesAt m dq qLen.toNat)

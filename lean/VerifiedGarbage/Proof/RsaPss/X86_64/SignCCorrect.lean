@@ -919,9 +919,6 @@ theorem signCWith_ok {f : MdFns} {g : Impl.Mgf1.X86_64.Table.Fns} {privN : Strin
   set rest := Spec.Rsa.bytesAt s.mem (s.gpr .rdx + 1) ((s.gpr .rcx).toNat - 1) with hrest
   obtain hnB : Spec.Rsa.bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat = n₀ :: rest := bytesAt_cons _ _ (by omega_arith)
   obtain hrl : rest.length = (s.gpr .rcx).toNat - 1 := by simp [hrest, Spec.Rsa.bytesAt]
-  obtain hHs : ∀ H G, Spec.MdHashTable.hashAt 64 s.mem (stackArg s 16) = some H →
-      Spec.MdHashTable.hashAt 64 s.mem (stackArg s 17) = some G → H = Hs ∧ G = Gs := fun H G a b =>
-    ⟨Option.some.inj (a.symm.trans E.hH), Option.some.inj (b.symm.trans E.hG)⟩
   obtain hx3' : t3.mxcsr.extractLsb' 6 10 = s.mxcsr.extractLsb' 6 10 := by rw [hx3, hx2', hx2, hx1]; rfl
   refine WP.ite (M := isa) _ (show isa.eval .e t3 = _ by rw [show isa.eval .e t3 = t3.zf from rfl, hz3, hz2', hz2])
     (fun hb => ?_) (fun hb => ?_)
@@ -929,7 +926,7 @@ theorem signCWith_ok {f : MdFns} {g : Impl.Mgf1.X86_64.Table.Fns} {privN : Strin
     rw [decide_eq_true_eq] at hb
     obtain h0 : n₀ = 0 := BitVec.eq_of_toNat_eq hb
     refine fail_done hp L3 R3 hw3 hcs3 (by simp [proW, upd]) (by simp [proW, upd]) (by simp [proW, upd])
-      (by simp [proW, upd]) (by simp [proW, upd]) (fun H G _ _ => ?_) hx3'
+      (by simp [proW, upd]) (by simp [proW, upd]) E.hH E.hG ?_ hx3'
     rw [signOut, hnB, h0]; exact RsaPss.sign_zero₂ ..
   rw [decide_eq_false_iff_not] at hb
   obtain h0 : n₀ ≠ 0 := fun h => hb (by rw [h]; rfl)
@@ -1016,10 +1013,9 @@ theorem signCWith_ok {f : MdFns} {g : Impl.Mgf1.X86_64.Table.Fns} {privN : Strin
     rw [decide_eq_true_eq] at hb9
     refine fail_done hp L9 R9 hw9 hcs9 (by simp [hW6, proW1, proW, upd]) (by simp [hW6, proW1, proW, upd])
       (by simp [hW6, proW1, proW, upd]) (by simp [hW6, proW1, proW, upd]) (by simp [hW6, proW1, proW, upd])
-      (fun H G a b => ?_) hmx9
-    obtain ⟨rfl, rfl⟩ := hHs H G a b
-    rw [signOut, RsaPss.sign_encode₂ H G heb, hHl]
-    cases he : Spec.RsaPss.encode H G (Spec.Rsa.bytesAt s.mem (stackArg s 10) T.H.D)
+      E.hH E.hG ?_ hmx9
+    rw [signOut, RsaPss.sign_encode₂ Hs Gs heb, hHl]
+    cases he : Spec.RsaPss.encode Hs Gs (Spec.Rsa.bytesAt s.mem (stackArg s 10) T.H.D)
       (Spec.Rsa.bytesAt s.mem (stackArg s 12) (stackArg s 13).toNat) eb with
     | none => rfl
     | some e =>
@@ -1039,17 +1035,16 @@ theorem signCWith_ok {f : MdFns} {g : Impl.Mgf1.X86_64.Table.Fns} {privN : Strin
       (by simp [hW6, proW1, proW, upd]) (by simp [hW6, proW1, proW, upd]) (by simp [hW6, proW1, proW, upd])
       (by simp [hW6, proW1, proW, upd]))
     fun u3 ⟨W2, L3', wr3, cs3, mx3, R3', w, hout3⟩ => ?_
-  refine ⟨L3', wr3.trans hw9, fun r hr => (cs3 r hr).trans (hcs9 r hr), ?_, ?_, ?_, fun H G a b => ?_,
+  refine ⟨L3', wr3.trans hw9, fun r hr => (cs3 r hr).trans (hcs9 r hr), ?_, ?_, ?_, ⟨Hs, Gs, E.hH, E.hG, ?_⟩,
     by rw [mx3]; exact hmx9⟩
   · rw [R3'.rd (d := sRbx) 41 rfl (by decide), w 41 (by decide) (by decide)]; simp [hW6, proW1, proW, upd]
   · rw [R3'.rd (d := sRbp) 42 rfl (by decide), w 42 (by decide) (by decide)]; simp [hW6, proW1, proW, upd]
   · rw [R3'.rd (d := sR12) 43 rfl (by decide), w 43 (by decide) (by decide)]; simp [hW6, proW1, proW, upd]
-  · obtain ⟨rfl, rfl⟩ := hHs H G a b
-    obtain hem : Spec.Rsa.bytesAt t9.mem (off (stackArg s 14) oEm) k = Spec.RsaPss.zeros lo ++ e := by
+  · obtain hem : Spec.Rsa.bytesAt t9.mem (off (stackArg s 14) oEm) k = Spec.RsaPss.zeros lo ++ e := by
       rw [bytesAt_off, List.map_congr_left fun i hi => R9.scr _ (by have := List.mem_range.mp hi; unfold oEm oRsa; omega_arith)]
       exact em_input hlok hlo hbytes
     rw [hem] at hout3
-    rw [signOut, RsaPss.sign_encode₂ H G heb, hHl, he, bytesAt_length]
+    rw [signOut, RsaPss.sign_encode₂ Hs Gs heb, hHl, he, bytesAt_length]
     exact hout3
 
 end VG.Proof.RsaPss.X86_64

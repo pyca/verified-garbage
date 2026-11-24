@@ -1095,12 +1095,7 @@ theorem code_correct (hc : MdHashTable.PPC64LE.Coh vs) (hc' : MdHashTable.PPC64L
   rw [e]
   sig_post [Spec.RsaPss.signMdTableContract, Spec.RsaPss.signMdTableSig, Spec.MdHashTable.param, Spec.MdHashTable.param,
     Abi.withTables, abi, argRegs, stackArgs_sixteen, List.append_eq]
-  intro H' G' hH' hG'
-  rw [hH] at hH'
-  rw [hG] at hG'
-  cases hH'
-  cases hG'
-  exact hr (fun h => nomatch h)
+  exact ⟨_, _, hH, hG, hr (fun h => nomatch h)⟩
 
 /-- Constant time, for `vg_rsa_pss_sign` and its variant, from what their
 contracts give: the tables of the first run, which the public data makes the

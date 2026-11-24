@@ -67,7 +67,8 @@ theorem signOut (tsH tsG : List FnTable) (stack : Nat) :
       dsimp only [Curry.apply, ArgWord.ofRaw] at hp h ⊢
       have e' := bytesAt_of (n := (nLen.setWidth _).toNat) hb.1
         (by rw [← hp.2.1]; exact toNat_sw_le _ (ScrubAbi.plain.tables _ _) outLen)
-      exact fun H G h1 h2 => writtenOutcome_of e' (h H G h1 h2)
+      obtain ⟨H, G, hH, hG, outcome⟩ := h
+      exact ⟨H, G, hH, hG, writtenOutcome_of e' outcome⟩
 
 theorem verifyOut (tsH tsG : List FnTable) (stack : Nat) :
     PostOut (Spec.RsaPss.verifyPrecomputedMdTableContract

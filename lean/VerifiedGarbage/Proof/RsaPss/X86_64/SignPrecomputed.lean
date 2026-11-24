@@ -452,8 +452,8 @@ theorem signPrecomputed_postOut (tsH tsG : List FnTable) :
     have hby : Spec.Rsa.bytesAt m₂ out nLen.toNat = Spec.Rsa.bytesAt m₁ out nLen.toNat :=
       VG.Proof.Rsa.X86_64.bytesAt_agree (by simp only [Elem.size]; omega_using [hol])
         (by have := outLen.isLt; simp only [Elem.size]; omega_using []) hb.1
-    intro H G hH hG
-    have h' : Spec.Rsa.writtenOutcome m₁ out nLen.toNat r _ := h H G hH hG
+    obtain ⟨H, G, hH, hG, h'⟩ := h
+    refine ⟨H, G, hH, hG, ?_⟩
     show Spec.Rsa.writtenOutcome m₂ out nLen.toNat r _
     revert h'
     generalize Spec.RsaPss.sign _ _ _ _ _ _ _ _ _ _ _ = o

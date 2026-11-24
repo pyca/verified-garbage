@@ -122,7 +122,8 @@ theorem signOut (tsH tsG : List FnTable) (stack : Nat) :
         [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _] _ _ _ m₂ r
       dsimp only [Curry.apply, ArgWord.ofRaw] at hp h ⊢
       have e' := bytesAt_of hb.1 (hp.2.1 ▸ toNat_sw_le _ (ScrubAbi.plain.tables _ _) outLen)
-      exact fun H G h1 h2 => writtenOutcome_of e' (h H G h1 h2)
+      obtain ⟨H, G, hH, hG, outcome⟩ := h
+      exact ⟨H, G, hH, hG, writtenOutcome_of e' outcome⟩
 
 /-- `vg_rsa_pss_sign_precomputed`, with the tables of every hash function and
 the private-key operation's public precomputation and check holes of 96

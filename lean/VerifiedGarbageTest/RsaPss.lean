@@ -242,6 +242,21 @@ def checkMgf1 : Except String Unit := do
       unless mgf1 H seed len == blocks.take len do throw s!"MGF1 with {H.rust}, {len} octets"
     unless (H.hash []).length == H.len do throw s!"{H.rust}: digest length"
 
+/-- Both signing entry points take the message hash and MGF1 table pointers in
+stack arguments 16 and 17 on x86-64. Both contracts require each lookup. -/
+example (before after : X86_64.State)
+    (missing : Spec.MdHashTable.hashAt 64 before.mem (X86_64.stackArg before 16) = none ∨
+      Spec.MdHashTable.hashAt 64 before.mem (X86_64.stackArg before 17) = none) :
+    ¬ (Spec.RsaPss.signMdTableContract X86_64.abi).post before after ∧
+    ¬ (Spec.RsaPss.signPrecomputedMdTableContract X86_64.abi).post before after := by
+  have incompatible {H G : Hash}
+      (hash : Spec.MdHashTable.hashAt 64 before.mem (X86_64.stackArg before 16) = some H)
+      (mgf1 : Spec.MdHashTable.hashAt 64 before.mem (X86_64.stackArg before 17) = some G) : False := by
+    rcases missing with h | h
+    · cases h.symm.trans hash
+    · cases h.symm.trans mgf1
+  constructor <;> rintro ⟨_, _, hash, mgf1, _⟩ <;> exact incompatible hash mgf1
+
 #assert_no_compiler_overrides Spec.RsaPss.encodeK Spec.RsaPss.verify Spec.RsaPss.sign Spec.Mgf1.mgf1
 
 run_cmd do

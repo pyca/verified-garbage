@@ -1521,9 +1521,7 @@ theorem sign_correct (s : State) (h : (signCK vs K).pre s) :
     Spec.MdHashTable.wordCount, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.fns,
     Spec.MdHashTable.dataWords, Abi.withTables, Sig.wordIndex, abi, argRegs,
     List.append_eq, _root_.List.range, _root_.List.range.loop]
-  intro H G hH' hG'
-  cases hH'.symm.trans E.hH
-  cases hG'.symm.trans E.hG
+  refine ⟨_, _, E.hH, E.hG, ?_⟩
   rw [E.hl, E.hD]
   exact hr
 
@@ -1683,9 +1681,7 @@ theorem signP_correct (s : State) (h : (signPCK vs K).pre s) :
     Spec.MdHashTable.param, Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.wordCount,
     Spec.MdHashTable.fns, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Abi.withTables, Sig.wordIndex, abi,
     argRegs, List.append_eq, _root_.List.range, _root_.List.range.loop]
-  intro H G hH' hG'
-  cases hH'.symm.trans E.hH
-  cases hG'.symm.trans E.hG
+  refine ⟨_, _, E.hH, E.hG, ?_⟩
   rw [E.hl, E.hD]
   exact hr
 

@@ -948,12 +948,8 @@ theorem code_ok (hc : MdHashTable.Arm.Coh mvs) (hcg : HashTable.Arm.Coh vs) (v :
       (rw := (P.lay w.h.D).rw) hsp']
     exact hin.ok.push_apart r hr
   · sign_post
-    intro H G hH hG
-    rw [show BitVec.setWidth 64 (stackArg s 18) = State.addr (stackArg s 18) from rfl,
-      MdHashTable.Arm.hashAt_tableOf hfit hidx, Option.some.injEq] at hH
-    rw [show BitVec.setWidth 64 (stackArg s 19) = State.addr (stackArg s 19) from rfl,
-      Proof.HashTable.Arm.hashAt_tableOf hfitg hidxg, Option.some.injEq] at hG
-    subst hH hG
+    refine ⟨_, _, MdHashTable.Arm.hashAt_tableOf hfit hidx,
+      Proof.HashTable.Arm.hashAt_tableOf hfitg hidxg, ?_⟩
     rw [BitVec.setWidth_append_eq_right]
     have ro := fun {R : Region} (hR : R ∈ (P.lay w.h.D).ro) =>
       entered_ro (F := frameBytes) (A := 80) (C := 3488) (argv := P.argv w.h.D) (rw := (P.lay w.h.D).rw) hin.ok
@@ -1622,12 +1618,8 @@ theorem code_okP (hc : MdHashTable.Arm.Coh mvs) (hcg : HashTable.Arm.Coh vs) (v 
       (rw := (P.lay w.h.D).rw) hsp']
     exact hin.ok.push_apart r hr
   · sign_postP
-    intro H G hH hG
-    rw [show BitVec.setWidth 64 (stackArg s 18) = State.addr (stackArg s 18) from rfl,
-      MdHashTable.Arm.hashAt_tableOf hfit hidx, Option.some.injEq] at hH
-    rw [show BitVec.setWidth 64 (stackArg s 19) = State.addr (stackArg s 19) from rfl,
-      Proof.HashTable.Arm.hashAt_tableOf hfitg hidxg, Option.some.injEq] at hG
-    subst hH hG
+    refine ⟨_, _, MdHashTable.Arm.hashAt_tableOf hfit hidx,
+      Proof.HashTable.Arm.hashAt_tableOf hfitg hidxg, ?_⟩
     rw [BitVec.setWidth_append_eq_right]
     obtain ro := fun {R : Region} (hR : R ∈ (P.lay w.h.D).ro) =>
       entered_ro (F := frameBytes) (A := 88) (C := 3488) (argv := (P.lay w.h.D).argv) (rw := (P.lay w.h.D).rw) hin.ok

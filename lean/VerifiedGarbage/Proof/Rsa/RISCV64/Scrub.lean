@@ -345,7 +345,8 @@ theorem pssSignOut (tsH tsG : List FnTable) (stack : Nat) :
       rw [BitVec.setWidth_eq, BitVec.setWidth_eq] at hol
       have e' : Spec.Rsa.bytesAt m₂ out (nLen.setWidth 64).toNat = Spec.Rsa.bytesAt m₁ out (nLen.setWidth 64).toNat :=
         e _ (by rw [BitVec.setWidth_eq]; exact hol.symm)
-      exact fun H G h1 h2 => writtenOutcome_of e' (h H G h1 h2)
+      obtain ⟨H, G, hH, hG, outcome⟩ := h
+      exact ⟨H, G, hH, hG, writtenOutcome_of e' outcome⟩
 
 theorem pssVerifyOut (tsH tsG : List FnTable) (stack : Nat) :
     PostOut (Spec.RsaPss.verifyPrecomputedMdTableContract

@@ -449,12 +449,7 @@ theorem codeP_correct (hok : OK vs gs) (s : State)
   sig_post [Spec.RsaPss.signPrecomputedMdTableContract, Spec.RsaPss.signPrecomputedMdTableSig,
     Spec.MdHashTable.param, Spec.MdHashTable.param, Abi.withTables, abi, argRegs, stackArgs_eighteen,
     List.append_eq]
-  intro H' G' hH' hG'
-  rw [hH] at hH'
-  rw [hG] at hG'
-  cases hH'
-  cases hG'
-  exact hr
+  exact ⟨_, _, hH, hG, hr⟩
 
 /-- Constant time: `code_constantTimeG` with the variant's contract's facts. -/
 theorem codeP_constantTime (hok : OK vs gs) :

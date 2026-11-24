@@ -634,8 +634,8 @@ structure SDone (s t : State) : Prop where
   rbx : t.mem.readW (off (fb s) sRbx) 64 = s.gpr .rbx
   rbp : t.mem.readW (off (fb s) sRbp) 64 = s.gpr .rbp
   r12 : t.mem.readW (off (fb s) sR12) 64 = s.gpr .r12
-  out : ∀ H G, Spec.MdHashTable.hashAt 64 s.mem (stackArg s 16) = some H →
-    Spec.MdHashTable.hashAt 64 s.mem (stackArg s 17) = some G →
+  out : ∃ H G, Spec.MdHashTable.hashAt 64 s.mem (stackArg s 16) = some H ∧
+    Spec.MdHashTable.hashAt 64 s.mem (stackArg s 17) = some G ∧
     Spec.Rsa.writtenOutcome t.mem (s.gpr .rdi) (s.gpr .rcx).toNat ((t.gpr .rax).setWidth 32) (signOut H G s)
   /-- MXCSR's control bits. -/
   mx : t.mxcsr.extractLsb' 6 10 = s.mxcsr.extractLsb' 6 10
@@ -644,8 +644,9 @@ theorem fail_done {s t : State} (hp : SPre tsH tsG s) {V : Nat → Byte} {W : Na
     (L : Lay t (fb s) (stackArg s 14)) (R : Rep t.mem (fb s) (stackArg s 14) V W) (hw : t.wr = frR s :: s.wr)
     (hcs : ∀ r ∈ [Reg.r13, .r14, .r15], t.gpr r = s.gpr r)
     (h16 : W 16 = s.gpr .rdi) (h17 : W 17 = s.gpr .rcx) (h41 : W 41 = s.gpr .rbx) (h42 : W 42 = s.gpr .rbp)
-    (h43 : W 43 = s.gpr .r12) (hinv : ∀ H G, Spec.MdHashTable.hashAt 64 s.mem (stackArg s 16) = some H →
-      Spec.MdHashTable.hashAt 64 s.mem (stackArg s 17) = some G → signOut H G s = .invalid)
+    (h43 : W 43 = s.gpr .r12) {H G : Spec.Mgf1.Hash}
+    (hH : Spec.MdHashTable.hashAt 64 s.mem (stackArg s 16) = some H)
+    (hG : Spec.MdHashTable.hashAt 64 s.mem (stackArg s 17) = some G) (hinv : signOut H G s = .invalid)
     (hmx : t.mxcsr.extractLsb' 6 10 = s.mxcsr.extractLsb' 6 10) :
     WP isa signFail t (SDone s) := by
   have hk1 := hp.k1; have hk2 := hp.k2
@@ -662,7 +663,9 @@ theorem fail_done {s t : State} (hp : SPre tsH tsG s) {V : Nat → Byte} {W : Na
   · rw [R'.rd (d := sRbx) 41 rfl (by decide), h41]
   · rw [R'.rd (d := sRbp) 42 rfl (by decide), h42]
   · rw [R'.rd (d := sR12) 43 rfl (by decide), h43]
-  · intro H G hH hG; rw [hinv H G hH hG]; exact ⟨by rw [hax]; rfl, hz⟩
+  · refine ⟨H, G, hH, hG, ?_⟩
+    rw [hinv]
+    exact ⟨by rw [hax]; rfl, hz⟩
 
 /-- Stack arguments, kept where the function does not write. -/
 theorem argsKept_of {s : State} (hp : SPre tsH tsG s) {m : Mem} (hM : Frame (wrR s) s.mem m) : ArgsKept s m := by
@@ -740,7 +743,8 @@ theorem restore_ok {s t : State} (hp : SPre tsH tsG s) (D : SDone s t) :
       · rw [k.gpr (by decide)]; exact D.cs _ (by simp)
       · rw [k.gpr (by decide)]; exact D.cs _ (by simp)
       · rw [k.gpr (by decide)]; exact D.cs _ (by simp)
-  · intro H G hH hG
+  · obtain ⟨H, G, hH, hG, outcome⟩ := D.out
+    refine ⟨H, G, hH, hG, ?_⟩
     show Spec.Rsa.writtenOutcome m _ _ ((t'.gpr .rax).setWidth 32) _
     have hsi := hp.hsi
     refine Proof.Rsa.writtenOutcome_frame fm (s.gpr .rcx).isLt (fun q hq => by
@@ -748,6 +752,6 @@ theorem restore_ok {s t : State} (hp : SPre tsH tsG s) (D : SDone s t) :
       have := (hp.dKo.sub_left (frame_sub s)).symm
       rwa [hsi] at this) ?_
     rw [hm, k.gpr (show Reg.rax ∉ [Reg.rbx, .rbp, .r12] by decide)]
-    exact D.out H G hH hG
+    exact outcome
 
 end VG.Proof.RsaPss.X86_64

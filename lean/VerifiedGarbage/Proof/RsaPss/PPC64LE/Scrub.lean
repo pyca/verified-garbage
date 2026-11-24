@@ -61,7 +61,8 @@ theorem signOut (tsH tsG : List FnTable) (stack : Nat) :
       have e' : Spec.Rsa.bytesAt m₂ out (nLen.setWidth 64).toNat =
           Spec.Rsa.bytesAt m₁ out (nLen.setWidth 64).toNat :=
         e _ (by rw [BitVec.setWidth_eq]; exact hol.symm)
-      exact fun H G h1 h2 => writtenOutcome_of e' (h H G h1 h2)
+      obtain ⟨H, G, hH, hG, outcome⟩ := h
+      exact ⟨H, G, hH, hG, writtenOutcome_of e' outcome⟩
 
 theorem verifyOut (tsH tsG : List FnTable) (stack : Nat) :
     PostOut (Spec.RsaPss.verifyPrecomputedMdTableContract
