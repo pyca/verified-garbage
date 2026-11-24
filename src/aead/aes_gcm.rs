@@ -48,16 +48,9 @@ use crate::arch::dispatch::gcm::vg_aes_gcm_open_auto;
     target_arch = "riscv64"
 )))]
 use crate::arch::dispatch::gcm::vg_aes_gcm_open_to_auto;
-#[cfg(not(any(
-    target_arch = "x86",
-    target_arch = "x86_64",
-    target_arch = "aarch64",
-    target_arch = "riscv64",
-    all(target_arch = "powerpc64", target_endian = "little")
-)))]
-use crate::arch::dispatch::gcm::vg_aes_gcm_seal_auto;
 #[cfg(any(
     target_arch = "x86",
+    target_arch = "arm",
     all(target_arch = "powerpc64", target_endian = "little")
 ))]
 use crate::arch::dispatch::gcm::vg_aes_gcm_seal_contiguous_auto as seal_contiguous_kernel;
@@ -335,12 +328,7 @@ impl AesGcm {
         Ok(self.seal(dit, nonce, aad, data))
     }
 
-    #[cfg(any(
-        target_arch = "x86",
-        target_arch = "aarch64",
-        target_arch = "riscv64",
-        all(target_arch = "powerpc64", target_endian = "little")
-    ))]
+    #[cfg(not(target_arch = "x86_64"))]
     #[inline(always)]
     fn seal(&self, dit: crate::dit::Dit<'_>, nonce: &[u8], aad: &[u8], data: &mut [u8]) -> Block {
         let len = data.len();
@@ -355,12 +343,7 @@ impl AesGcm {
     /// The caller checked the record lengths. The source is readable and the
     /// destination writable for `len` bytes. They are identical or disjoint.
     /// The writable range is exclusive and disjoint from the context, nonce and AAD.
-    #[cfg(any(
-        target_arch = "x86",
-        target_arch = "aarch64",
-        target_arch = "riscv64",
-        all(target_arch = "powerpc64", target_endian = "little")
-    ))]
+    #[cfg(not(target_arch = "x86_64"))]
     #[inline(always)]
     unsafe fn seal_contiguous(
         &self,
@@ -398,49 +381,16 @@ impl AesGcm {
     }
 
     /// Encrypt the checked record in place with the platform's seal entry.
-    #[cfg(not(any(
-        target_arch = "x86",
-        target_arch = "aarch64",
-        target_arch = "riscv64",
-        all(target_arch = "powerpc64", target_endian = "little")
-    )))]
+    #[cfg(target_arch = "x86_64")]
     #[inline(always)]
     fn seal(&self, dit: crate::dit::Dit<'_>, nonce: &[u8], aad: &[u8], data: &mut [u8]) -> Block {
         let mut tag: Block = [0; 16];
-        // SAFETY: `self.ctx` is the key context `vg_aes_gcm_init` wrote for
-        // `self.rounds` (10, 12 or 14) rounds, valid for reads of 256 bytes,
-        // followed on x86-64 by the powers `vg_aes_gcm_prepare` wrote for the
-        // same key (`AesGcm::new`), valid for reads of 1032 bytes in all,
-        // and on RISC-V next to its bitsliced
-        // form `vg_aes_gcm_bitslice` wrote (`self.bk`, 1248 bytes, read
-        // only); `nonce` and `aad` are valid for reads
-        // and `data` for reads and writes of their lengths, and `tag` (a
-        // local) for reads and writes of 16 bytes. They are distinct objects
-        // (`data` a unique borrow), so the writable ones overlap nothing
-        // else, nor anything on the stack, and none wraps around the end of
-        // the address space.
+        // SAFETY: the constructor initialized the 1032-byte prepared key context.
+        // The nonce, AAD, exclusive payload and detached tag use the checked lengths.
         unsafe {
-            #[cfg(target_arch = "x86_64")]
             vg_aes_gcm_seal_prepared_auto(
                 dit,
                 self.ctx.0.as_ptr(),
-                self.rounds,
-                nonce.as_ptr(),
-                nonce.len(),
-                aad.as_ptr(),
-                aad.len(),
-                data.as_mut_ptr(),
-                data.len(),
-                &mut tag,
-            );
-            #[cfg(not(any(
-                target_arch = "x86_64",
-                target_arch = "aarch64",
-                target_arch = "riscv64"
-            )))]
-            vg_aes_gcm_seal_auto(
-                dit,
-                self.key(),
                 self.rounds,
                 nonce.as_ptr(),
                 nonce.len(),
@@ -779,12 +729,7 @@ impl AesGcm {
     ) -> Block {
         let dst = out.as_mut_ptr().cast();
         let len = out.len();
-        #[cfg(any(
-            target_arch = "x86",
-            target_arch = "aarch64",
-            target_arch = "riscv64",
-            all(target_arch = "powerpc64", target_endian = "little")
-        ))]
+        #[cfg(not(target_arch = "x86_64"))]
         if let [input] = plaintext {
             // SAFETY: the checked length equals input.len(). The exclusive
             // destination is disjoint from the borrowed input and metadata.

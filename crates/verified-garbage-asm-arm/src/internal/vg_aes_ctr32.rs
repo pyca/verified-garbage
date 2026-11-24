@@ -406,118 +406,74 @@ mov r7, r5
 mov r5, lr
 mov r3, r11
 mov r0, r12
-and r10, r0, #255
-and r11, r0, #64512
-eor r10, r10, r11, ror #2
-and r11, r0, #768
-eor r10, r10, r11, ror #26
-and r11, r0, #15728640
-eor r10, r10, r11, ror #4
-and r11, r0, #983040
-eor r10, r10, r11, ror #28
-and r11, r0, #3221225472
-eor r10, r10, r11, ror #6
-and r11, r0, #1056964608
-eor r10, r10, r11, ror #30
-mov r0, r10
-and r10, r1, #255
-and r11, r1, #64512
-eor r10, r10, r11, ror #2
-and r11, r1, #768
-eor r10, r10, r11, ror #26
-and r11, r1, #15728640
-eor r10, r10, r11, ror #4
-and r11, r1, #983040
-eor r10, r10, r11, ror #28
-and r11, r1, #3221225472
-eor r10, r10, r11, ror #6
-and r11, r1, #1056964608
-eor r10, r10, r11, ror #30
-mov r1, r10
-and r10, r2, #255
-and r11, r2, #64512
-eor r10, r10, r11, ror #2
-and r11, r2, #768
-eor r10, r10, r11, ror #26
-and r11, r2, #15728640
-eor r10, r10, r11, ror #4
-and r11, r2, #983040
-eor r10, r10, r11, ror #28
-and r11, r2, #3221225472
-eor r10, r10, r11, ror #6
-and r11, r2, #1056964608
-eor r10, r10, r11, ror #30
-mov r2, r10
-and r10, r3, #255
-and r11, r3, #64512
-eor r10, r10, r11, ror #2
-and r11, r3, #768
-eor r10, r10, r11, ror #26
-and r11, r3, #15728640
-eor r10, r10, r11, ror #4
-and r11, r3, #983040
-eor r10, r10, r11, ror #28
-and r11, r3, #3221225472
-eor r10, r10, r11, ror #6
-and r11, r3, #1056964608
-eor r10, r10, r11, ror #30
-mov r3, r10
-and r10, r4, #255
-and r11, r4, #64512
-eor r10, r10, r11, ror #2
-and r11, r4, #768
-eor r10, r10, r11, ror #26
-and r11, r4, #15728640
-eor r10, r10, r11, ror #4
-and r11, r4, #983040
-eor r10, r10, r11, ror #28
-and r11, r4, #3221225472
-eor r10, r10, r11, ror #6
-and r11, r4, #1056964608
-eor r10, r10, r11, ror #30
-mov r4, r10
-and r10, r5, #255
-and r11, r5, #64512
-eor r10, r10, r11, ror #2
-and r11, r5, #768
-eor r10, r10, r11, ror #26
-and r11, r5, #15728640
-eor r10, r10, r11, ror #4
-and r11, r5, #983040
-eor r10, r10, r11, ror #28
-and r11, r5, #3221225472
-eor r10, r10, r11, ror #6
-and r11, r5, #1056964608
-eor r10, r10, r11, ror #30
-mov r5, r10
-and r10, r6, #255
-and r11, r6, #64512
-eor r10, r10, r11, ror #2
-and r11, r6, #768
-eor r10, r10, r11, ror #26
-and r11, r6, #15728640
-eor r10, r10, r11, ror #4
-and r11, r6, #983040
-eor r10, r10, r11, ror #28
-and r11, r6, #3221225472
-eor r10, r10, r11, ror #6
-and r11, r6, #1056964608
-eor r10, r10, r11, ror #30
-mov r6, r10
-and r10, r7, #255
-and r11, r7, #64512
-eor r10, r10, r11, ror #2
-and r11, r7, #768
-eor r10, r10, r11, ror #26
-and r11, r7, #15728640
-eor r10, r10, r11, ror #4
-and r11, r7, #983040
-eor r10, r10, r11, ror #28
-and r11, r7, #3221225472
-eor r10, r10, r11, ror #6
-and r11, r7, #1056964608
-eor r10, r10, r11, ror #30
-mov r7, r10
+movw r11, #13056
+movt r11, #13056
+eor r10, r0, r0, lsr #2
+and r10, r10, r11
+eor r0, r0, r10
+eor r0, r0, r10, ror #30
+eor r10, r1, r1, lsr #2
+and r10, r10, r11
+eor r1, r1, r10
+eor r1, r1, r10, ror #30
+eor r10, r2, r2, lsr #2
+and r10, r10, r11
+eor r2, r2, r10
+eor r2, r2, r10, ror #30
+eor r10, r3, r3, lsr #2
+and r10, r10, r11
+eor r3, r3, r10
+eor r3, r3, r10, ror #30
+eor r10, r4, r4, lsr #2
+and r10, r10, r11
+eor r4, r4, r10
+eor r4, r4, r10, ror #30
+eor r10, r5, r5, lsr #2
+and r10, r10, r11
+eor r5, r5, r10
+eor r5, r5, r10, ror #30
+eor r10, r6, r6, lsr #2
+and r10, r10, r11
+eor r6, r6, r10
+eor r6, r6, r10, ror #30
+eor r10, r7, r7, lsr #2
+and r10, r10, r11
+eor r7, r7, r10
+eor r7, r7, r10, ror #30
+movw r11, #3072
+movt r11, #783
+eor r10, r0, r0, lsr #4
+and r10, r10, r11
+eor r0, r0, r10
+eor r0, r0, r10, ror #28
+eor r10, r1, r1, lsr #4
+and r10, r10, r11
+eor r1, r1, r10
+eor r1, r1, r10, ror #28
+eor r10, r2, r2, lsr #4
+and r10, r10, r11
+eor r2, r2, r10
+eor r2, r2, r10, ror #28
+eor r10, r3, r3, lsr #4
+and r10, r10, r11
+eor r3, r3, r10
+eor r3, r3, r10, ror #28
+eor r10, r4, r4, lsr #4
+and r10, r10, r11
+eor r4, r4, r10
+eor r4, r4, r10, ror #28
+eor r10, r5, r5, lsr #4
+and r10, r10, r11
+eor r5, r5, r10
+eor r5, r5, r10, ror #28
+eor r10, r6, r6, lsr #4
+and r10, r10, r11
+eor r6, r6, r10
+eor r6, r6, r10, ror #28
+eor r10, r7, r7, lsr #4
+and r10, r10, r11
+eor r7, r7, r10
+eor r7, r7, r10, ror #28
 eor r12, r7, r7, ror #8
 ror r10, r0, #8
 eor r0, r0, r10
@@ -777,118 +733,74 @@ mov r7, r5
 mov r5, lr
 mov r3, r11
 mov r0, r12
-and r10, r0, #255
-and r11, r0, #64512
-eor r10, r10, r11, ror #2
-and r11, r0, #768
-eor r10, r10, r11, ror #26
-and r11, r0, #15728640
-eor r10, r10, r11, ror #4
-and r11, r0, #983040
-eor r10, r10, r11, ror #28
-and r11, r0, #3221225472
-eor r10, r10, r11, ror #6
-and r11, r0, #1056964608
-eor r10, r10, r11, ror #30
-mov r0, r10
-and r10, r1, #255
-and r11, r1, #64512
-eor r10, r10, r11, ror #2
-and r11, r1, #768
-eor r10, r10, r11, ror #26
-and r11, r1, #15728640
-eor r10, r10, r11, ror #4
-and r11, r1, #983040
-eor r10, r10, r11, ror #28
-and r11, r1, #3221225472
-eor r10, r10, r11, ror #6
-and r11, r1, #1056964608
-eor r10, r10, r11, ror #30
-mov r1, r10
-and r10, r2, #255
-and r11, r2, #64512
-eor r10, r10, r11, ror #2
-and r11, r2, #768
-eor r10, r10, r11, ror #26
-and r11, r2, #15728640
-eor r10, r10, r11, ror #4
-and r11, r2, #983040
-eor r10, r10, r11, ror #28
-and r11, r2, #3221225472
-eor r10, r10, r11, ror #6
-and r11, r2, #1056964608
-eor r10, r10, r11, ror #30
-mov r2, r10
-and r10, r3, #255
-and r11, r3, #64512
-eor r10, r10, r11, ror #2
-and r11, r3, #768
-eor r10, r10, r11, ror #26
-and r11, r3, #15728640
-eor r10, r10, r11, ror #4
-and r11, r3, #983040
-eor r10, r10, r11, ror #28
-and r11, r3, #3221225472
-eor r10, r10, r11, ror #6
-and r11, r3, #1056964608
-eor r10, r10, r11, ror #30
-mov r3, r10
-and r10, r4, #255
-and r11, r4, #64512
-eor r10, r10, r11, ror #2
-and r11, r4, #768
-eor r10, r10, r11, ror #26
-and r11, r4, #15728640
-eor r10, r10, r11, ror #4
-and r11, r4, #983040
-eor r10, r10, r11, ror #28
-and r11, r4, #3221225472
-eor r10, r10, r11, ror #6
-and r11, r4, #1056964608
-eor r10, r10, r11, ror #30
-mov r4, r10
-and r10, r5, #255
-and r11, r5, #64512
-eor r10, r10, r11, ror #2
-and r11, r5, #768
-eor r10, r10, r11, ror #26
-and r11, r5, #15728640
-eor r10, r10, r11, ror #4
-and r11, r5, #983040
-eor r10, r10, r11, ror #28
-and r11, r5, #3221225472
-eor r10, r10, r11, ror #6
-and r11, r5, #1056964608
-eor r10, r10, r11, ror #30
-mov r5, r10
-and r10, r6, #255
-and r11, r6, #64512
-eor r10, r10, r11, ror #2
-and r11, r6, #768
-eor r10, r10, r11, ror #26
-and r11, r6, #15728640
-eor r10, r10, r11, ror #4
-and r11, r6, #983040
-eor r10, r10, r11, ror #28
-and r11, r6, #3221225472
-eor r10, r10, r11, ror #6
-and r11, r6, #1056964608
-eor r10, r10, r11, ror #30
-mov r6, r10
-and r10, r7, #255
-and r11, r7, #64512
-eor r10, r10, r11, ror #2
-and r11, r7, #768
-eor r10, r10, r11, ror #26
-and r11, r7, #15728640
-eor r10, r10, r11, ror #4
-and r11, r7, #983040
-eor r10, r10, r11, ror #28
-and r11, r7, #3221225472
-eor r10, r10, r11, ror #6
-and r11, r7, #1056964608
-eor r10, r10, r11, ror #30
-mov r7, r10
+movw r11, #13056
+movt r11, #13056
+eor r10, r0, r0, lsr #2
+and r10, r10, r11
+eor r0, r0, r10
+eor r0, r0, r10, ror #30
+eor r10, r1, r1, lsr #2
+and r10, r10, r11
+eor r1, r1, r10
+eor r1, r1, r10, ror #30
+eor r10, r2, r2, lsr #2
+and r10, r10, r11
+eor r2, r2, r10
+eor r2, r2, r10, ror #30
+eor r10, r3, r3, lsr #2
+and r10, r10, r11
+eor r3, r3, r10
+eor r3, r3, r10, ror #30
+eor r10, r4, r4, lsr #2
+and r10, r10, r11
+eor r4, r4, r10
+eor r4, r4, r10, ror #30
+eor r10, r5, r5, lsr #2
+and r10, r10, r11
+eor r5, r5, r10
+eor r5, r5, r10, ror #30
+eor r10, r6, r6, lsr #2
+and r10, r10, r11
+eor r6, r6, r10
+eor r6, r6, r10, ror #30
+eor r10, r7, r7, lsr #2
+and r10, r10, r11
+eor r7, r7, r10
+eor r7, r7, r10, ror #30
+movw r11, #3072
+movt r11, #783
+eor r10, r0, r0, lsr #4
+and r10, r10, r11
+eor r0, r0, r10
+eor r0, r0, r10, ror #28
+eor r10, r1, r1, lsr #4
+and r10, r10, r11
+eor r1, r1, r10
+eor r1, r1, r10, ror #28
+eor r10, r2, r2, lsr #4
+and r10, r10, r11
+eor r2, r2, r10
+eor r2, r2, r10, ror #28
+eor r10, r3, r3, lsr #4
+and r10, r10, r11
+eor r3, r3, r10
+eor r3, r3, r10, ror #28
+eor r10, r4, r4, lsr #4
+and r10, r10, r11
+eor r4, r4, r10
+eor r4, r4, r10, ror #28
+eor r10, r5, r5, lsr #4
+and r10, r10, r11
+eor r5, r5, r10
+eor r5, r5, r10, ror #28
+eor r10, r6, r6, lsr #4
+and r10, r10, r11
+eor r6, r6, r10
+eor r6, r6, r10, ror #28
+eor r10, r7, r7, lsr #4
+and r10, r10, r11
+eor r7, r7, r10
+eor r7, r7, r10, ror #28
 ldr r10, [r9, #0]
 eor r0, r0, r10
 ldr r10, [r9, #4]
