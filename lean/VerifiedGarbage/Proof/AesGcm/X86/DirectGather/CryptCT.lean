@@ -59,7 +59,7 @@ theorem xorTail_ct {C St W SP D T : BitVec 32} {n R : Nat} (L : Lay C St W SP 32
       by rw [rd,wr,L.aS (by decide)]; exact covers_left (h.env.stC (by omega_using [])),
       by rw [rd,wr,d]; exact covers_off h.access.rd (by omega_using []) (by omega_using [hlt]),
       by rw [wr,t]; exact covers_off h.access.wr (by omega_using []) (by omega_using [hlt]),
-      ((P.dstWork.sub_left ts).sub_right ks).symm,.inr ((P.srcDst.sub_left ds).sub_right ts)⟩,bp⟩
+      ((P.dstWork.sub_left ts).sub_right ks).symm,P.srcDst.imp (congrArg (fun p => tailPtr p n)) (fun hd => (hd.sub_left ds).sub_right ts)⟩,bp⟩
   refine CT.seq (J:=fun s => s.gpr .ebp=W) (xorTo_ct (fun _ h => ⟨h.wp.edx,h.wp.src,h.wp.edi,h.wp.ecx⟩))
     (fun s h => WP.mono (xorLoopG_ok true s h.wp) fun t a => (a.other _ (by decide) (by decide) (by decide) (by decide)
       (by decide) (by decide)).trans h.bp) ?_

@@ -74,9 +74,10 @@ def ctr32X86 : Contract X86.isa where
 open _root_.VG.X86 in
 /-- X86 (32-bit) contract for `vg_aes_ctr32_to(schedule: *const [u8; 240],
 rounds: usize, counter: *mut [u8; 16], src: *const [u8; 16], n: usize,
-scratch: *mut [u64; 256], dst: *mut [u8; 16])`: `ctr32X86` out of place, the
-`n` blocks at `src` XORed with the keystream and written to `dst`, a buffer
-apart from every other; `src` is only read. The arguments are 28 bytes above
+scratch: *mut [u64; 256], dst: *mut [u8; 16])`: the original `n` blocks at
+`src` are XORed with the keystream and written to `dst`. The two pointers
+may be identical. A distinct source is read-only and disjoint from the
+destination. The arguments are 28 bytes above
 the return address, all public, in two regions: the first six, which a
 caller pushes, and `dst`, which it may store in a frame of its own. -/
 def ctr32ToX86 : Contract X86.isa where
@@ -92,7 +93,7 @@ def ctr32ToX86 : Contract X86.isa where
     s.rd = [sched, args, last, src] ∧ s.wr = [counter, dst, scratch] ∧
     sched.Disjoint counter ∧ sched.Disjoint dst ∧ sched.Disjoint scratch ∧
     counter.Disjoint dst ∧ counter.Disjoint scratch ∧ dst.Disjoint scratch ∧
-    src.Disjoint counter ∧ src.Disjoint dst ∧ src.Disjoint scratch ∧
+    src.Disjoint counter ∧ ((arg s 3) = (arg s 6) ∨ src.Disjoint dst) ∧ src.Disjoint scratch ∧
     args.Disjoint counter ∧ args.Disjoint dst ∧ args.Disjoint scratch ∧
     last.Disjoint counter ∧ last.Disjoint dst ∧ last.Disjoint scratch ∧
     ret.Disjoint counter ∧ ret.Disjoint dst ∧ ret.Disjoint scratch ∧
@@ -284,7 +285,7 @@ theorem GPre.ofTo {s : State} (h : Proof.Aes.ctr32ToX86.pre s) : GPre true s := 
     rSrc := by rw [hrd]; exact List.mem_append_left _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _
       (List.mem_cons_of_mem _ (List.mem_singleton_self _))))
     dSC := dSC, dSB := dSB, dSD := dSD, dCD := dCD, dCS := dSrcC.symm, dCB := dCB, dDB := dDB, dSrcB := dSrcB,
-    sd := .inr dSrcD, aC := disj_join aC lC, aD := disj_join aD lD, aB := disj_join aB lB, rC := rC, rD := rD, rB := rB, fS := fS, fC := fC,
+    sd := dSrcD.imp (congrArg (BitVec.setWidth 64)) id, aC := disj_join aC lC, aD := disj_join aD lD, aB := disj_join aB lB, rC := rC, rD := rD, rB := rB, fS := fS, fC := fC,
     fSrc := fSrc, fD := fD, fB := fB, fSp := fSp, rounds := hR }
 
 theorem GPre.argSub {to : Bool} {s : State} (hp : GPre to s) {i : Nat} (hi : i < 6 ∨ (to = true ∧ i = 6)) :

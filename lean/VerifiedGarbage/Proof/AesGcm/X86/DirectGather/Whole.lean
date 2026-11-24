@@ -19,7 +19,7 @@ structure PieceRegions (C W SP D T : BitVec 32) (n : Nat) : Prop where
   srcWork : (⟨w64 D,n⟩ : Region).Disjoint ⟨w64 W,2560⟩
   dstWork : (⟨w64 T,n⟩ : Region).Disjoint ⟨w64 W,2560⟩
   dstCtx : (⟨w64 C,256⟩ : Region).Disjoint ⟨w64 T,n⟩
-  srcDst : (⟨w64 D,n⟩ : Region).Disjoint ⟨w64 T,n⟩
+  srcDst : D = T ∨ (⟨w64 D,n⟩ : Region).Disjoint ⟨w64 T,n⟩
   stackSrc : (below SP 32).Disjoint ⟨w64 D,n⟩
   stackDst : (below SP 32).Disjoint ⟨w64 T,n⟩
   argWork : (⟨w64 SP,4⟩ : Region).Disjoint ⟨w64 W,2560⟩
@@ -58,7 +58,7 @@ theorem pieceCall {C St W SP D T : BitVec 32} {s u : State} {n R : Nat}
   · rw [kw,L.aS (by decide)]; exact L.st_w (by decide) (.inr ⟨by decide,by decide⟩)
   · rw [kw]; exact (P.dstWork.sub_left (Region.sub_prefix hk)).sub_right (Lay.wSub (by decide))
   · exact (P.srcWork.sub_left (Region.sub_prefix hk)).sub_right cw
-  · exact (P.srcDst.sub_left (Region.sub_prefix hk)).sub_right (Region.sub_prefix hk)
+  · exact P.srcDst.imp id (fun hd => (hd.sub_left (Region.sub_prefix hk)).sub_right (Region.sub_prefix hk))
   · rw [kw]; exact (P.srcWork.sub_left (Region.sub_prefix hk)).sub_right (Lay.wSub (by decide))
   · rw [sp]; exact (L.kc.sub_right (Region.sub_prefix (by decide))).sub_left k28
   · rw [sp]; exact (L.kw.sub_right cw).sub_left k28

@@ -140,7 +140,7 @@ structure HeadAccess (s : State) (St SP D T : BitVec 32) (b k : Nat) : Prop wher
   wr : Covers [⟨w64 T,k⟩] s.wr
   stack : InRegions s.wr (w64 SP) 4
   disj : (⟨w64 (headKey St b),k⟩ : Region).Disjoint ⟨w64 T,k⟩
-  sd : (⟨w64 D,k⟩ : Region).Disjoint ⟨w64 T,k⟩
+  sd : D = T ∨ (⟨w64 D,k⟩ : Region).Disjoint ⟨w64 T,k⟩
 
 theorem partialHead_ok {C St W SP D T : BitVec 32} {K n b : Nat} {s : State}
     (L : Lay C St W SP K) (e : Env C St W SP s) (hs : W+16#32 = St)
@@ -177,7 +177,7 @@ theorem partialHead_ok {C St W SP D T : BitVec 32} {K n b : Nat} {s : State}
     have wr₁ : v.wr = s.wr := wr.trans hu.wr
     have hx : XorPreG true v (headKey St b) D T k :=
       ⟨dx,di',si,(fun h => nomatch h),cx,pk,kl,access.fK,access.fS,access.fD,by rw [rd₁,wr₁]; exact access.rd,
-       by rw [rd₁,wr₁]; exact access.rdS,by rw [wr₁]; exact access.wr,access.disj,.inr access.sd⟩
+       by rw [rd₁,wr₁]; exact access.rdS,by rw [wr₁]; exact access.wr,access.disj,access.sd⟩
     refine WP.seq (WP.mono (xorLoopG_ok true v hx) ?_)
     intro x h
     have bp' := (h.other .ebp (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)).trans bp
@@ -337,7 +337,7 @@ theorem makeHeadAccess {C St W SP D T : BitVec 32} {n b k : Nat} {s : State} (L 
     rw [key]; exact fun _ hx => stSub L st _ (Lay.stSub (by omega_using [hb]) _ hx)
   refine ⟨?_,by omega_using [fd,kn],by omega_using [ft,kn],?_,covers_pre A.rd kn (by omega_using [fd]),
     covers_pre A.wr kn (by omega_using [ft]),wsp,((P.dstWork.sub_left (Region.sub_prefix kn)).sub_right sk).symm,
-    (P.srcDst.sub_left (Region.sub_prefix kn)).sub_right (Region.sub_prefix kn)⟩
+    P.srcDst.imp id (fun hd => (hd.sub_left (Region.sub_prefix kn)).sub_right (Region.sub_prefix kn))⟩
   · unfold headKey
     rw [BitVec.add_assoc,←BitVec.ofNat_add,toNat_add32 (by omega_using [fw,bl])]; omega_using [fw,hb]
   · rw [key]; exact covers_left (E.stC (by omega_using [hb]))
@@ -409,7 +409,7 @@ theorem restRegions (hk : k<n) : PieceRegions C W SP (atByte D k) (atByte T k) (
   have t : w64 (atByte T k) = w64 T+BitVec.ofNat 64 k := w64_add (by omega_using [ft,hk])
   have ds : Region.Sub ⟨w64 (atByte D k),n-k⟩ ⟨w64 D,n⟩ := by rw [d]; exact Offset.sub_base _ (by omega_using [hk])
   have ts : Region.Sub ⟨w64 (atByte T k),n-k⟩ ⟨w64 T,n⟩ := by rw [t]; exact Offset.sub_base _ (by omega_using [hk])
-  exact ⟨P.srcWork.sub_left ds,P.dstWork.sub_left ts,P.dstCtx.sub_right ts,(P.srcDst.sub_left ds).sub_right ts,
+  exact ⟨P.srcWork.sub_left ds,P.dstWork.sub_left ts,P.dstCtx.sub_right ts,P.srcDst.imp (congrArg (fun p => atByte p k)) (fun hd => (hd.sub_left ds).sub_right ts),
     P.stackSrc.sub_right ds,P.stackDst.sub_right ts,P.argWork,P.argDst.sub_right ts,P.fSP,
     by unfold atByte; rw [toNat_add32 (by omega_using [fd,hk])]; omega_using [fd,hk],
     by unfold atByte; rw [toNat_add32 (by omega_using [ft,hk])]; omega_using [ft,hk]⟩
@@ -480,7 +480,9 @@ theorem restDone (hk : k<n) (rd : u.rd=s.rd) (wr : u.wr=s.wr)
     intro r hr
     simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
     rcases hr with rfl | rfl | rfl
-    · exact (P.srcDst.sub_left sub).sub_right (Region.sub_prefix (Nat.le_of_lt hk))
+    · rcases P.srcDst with rfl | hd
+      · rw [da]; exact (split_disj (by omega_using [hk,ft])).symm
+      exact (hd.sub_left sub).sub_right (Region.sub_prefix (Nat.le_of_lt hk))
     · exact (P.srcWork.sub_left sub).sub_right (Lay.wSub (by decide))
     · exact hstk.sub_left sub
   refine ⟨done.env,done.rd.trans rd,done.wr.trans wr,(pieceFrameHead h (Nat.le_of_lt hk)).trans

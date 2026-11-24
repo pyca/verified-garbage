@@ -107,7 +107,7 @@ structure CtrToCall (s : State) (K C D S T : BitVec 32) (R n : Nat) : Prop where
   cs : (⟨w64 C, 16⟩ : Region).Disjoint ⟨w64 S, 2048⟩
   ts : (⟨w64 T, 16 * n⟩ : Region).Disjoint ⟨w64 S, 2048⟩
   dc : (⟨w64 D, 16 * n⟩ : Region).Disjoint ⟨w64 C, 16⟩
-  dt : (⟨w64 D, 16 * n⟩ : Region).Disjoint ⟨w64 T, 16 * n⟩
+  dt : D = T ∨ (⟨w64 D, 16 * n⟩ : Region).Disjoint ⟨w64 T, 16 * n⟩
   ds : (⟨w64 D, 16 * n⟩ : Region).Disjoint ⟨w64 S, 2048⟩
   bk : (below (s.gpr .esp) 28).Disjoint ⟨w64 K, 240⟩
   bc : (below (s.gpr .esp) 28).Disjoint ⟨w64 C, 16⟩
@@ -697,7 +697,7 @@ theorem toCall {s₀ s : State} (h : W1 p T s₀ s) {s₁ : State}
   · rw [eS, L.aS (by decide)]; exact L.st_w (by decide) (.inr ⟨by decide, by decide⟩)
   · rw [eS]; exact ((D.w_t.sub_left (Lay.wSub (by decide))).sub_right (Region.sub_prefix hk)).symm
   · exact (G.d_w.sub_left (Region.sub_prefix hk)).sub_right cw
-  · exact (D.d_t.sub_left (Region.sub_prefix hk)).sub_right (Region.sub_prefix hk)
+  · exact .inr <| (D.d_t.sub_left (Region.sub_prefix hk)).sub_right (Region.sub_prefix hk)
   · rw [eS]; exact (G.d_w.sub_left (Region.sub_prefix hk)).sub_right (Lay.wSub (by decide))
   · rw [esp]; exact (L.kc.sub_right (Region.sub_prefix (by decide))).sub_left k28
   · rw [esp]; exact (L.kw.sub_right cw).sub_left k28

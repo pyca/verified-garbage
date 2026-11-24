@@ -104,7 +104,7 @@ theorem xorTail_ok {C St W SP D T : BitVec 32} {s : State} {n : Nat}
       by rw [rd,wr,key]; exact covers_left (E.stC (by omega_using [])),
       by rw [rd,wr,d]; exact covers_off A.rd (by omega_using []) (by omega_using [hlt]),
       by rw [wr,t]; exact covers_off A.wr (by omega_using []) (by omega_using [hlt]),
-      ((P.dstWork.sub_left ts).sub_right ks).symm,.inr ((P.srcDst.sub_left ds).sub_right ts)⟩
+      ((P.dstWork.sub_left ts).sub_right ks).symm,P.srcDst.imp (congrArg (fun p => tailPtr p n)) (fun hd => (hd.sub_left ds).sub_right ts)⟩
   refine WP.seq (WP.mono (xorLoopG_ok true u hx) ?_)
   intro z hz
   have bp' := (hz.other .ebp (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)).trans bp
@@ -170,17 +170,6 @@ theorem afterAccess {s t : State} (A : PieceAccess s SP D T n) (rd : t.rd = s.rd
   · exact P.argWork.sub_right (Lay.wSub (by decide))
   · exact ret_below L.sp
 
-theorem srcFrame {m u : Mem} (f : Frame (crFrame St W SP 32 T n) m u) :
-    bytesAt u (w64 D) n = bytesAt m (w64 D) n := by
-  refine bytesAt_frame f ?_ (by have hn := P.fD; omega_using [hn])
-  intro r hr
-  simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl
-  · exact P.srcDst
-  · exact P.srcWork.sub_right (fun _ h => stSub L st _ (Lay.stSub (by decide) _ h))
-  · exact P.srcWork.sub_right (Lay.wSub (by decide))
-  · exact P.stackSrc.symm
-
 structure PiecePost (s : State) (C St W SP D T : BitVec 32) (ciph : Block → Block) (icb : Block)
     (off n : Nat) (t : State) : Prop where
   env : Env C St W SP t
@@ -214,8 +203,23 @@ theorem tailResult {s u z : State} {off : Nat} {ciph : Block → Block} {icb : B
     have d := data_ksFrame L rfl dataW (a:=0) (l:=16*(n/16)) (by omega_using [])
     simp only [BitVec.add_zero] at d
     exact bytesAt_frame k.frame d (by omega_using [n64])
-  have source := congrArg (List.drop (16*(n/16))) (srcFrame L st P before)
-  rw [bytesAt_drop _ _ jle,bytesAt_drop _ _ jle,show n-16*(n/16) = n%16 by omega_using []] at source
+  -- Only the unprocessed suffix must still contain the original plaintext.
+  have prefixFrame := (whole_crFrame (n:=16*(n/16)) L (by simpa using h.frame)).trans
+    (ksFrame_crFrame L rfl k.frame (D:=T) (n:=16*(n/16)))
+  have source : bytesAt v.mem (w64 D + BitVec.ofNat 64 (16*(n/16))) (n%16) =
+      bytesAt s.mem (w64 D + BitVec.ofNat 64 (16*(n/16))) (n%16) := by
+    refine bytesAt_frame prefixFrame ?_ (by omega_using [n64])
+    intro r hr
+    have sub : Region.Sub ⟨w64 D + BitVec.ofNat 64 (16*(n/16)),n%16⟩ ⟨w64 D,n⟩ :=
+      Offset.sub_base _ (by omega_using [])
+    simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl
+    · rcases P.srcDst with rfl | hd
+      · exact (split_disj (by omega_using [n64])).symm
+      exact (hd.sub_left sub).sub_right (Region.sub_prefix jle)
+    · exact (P.srcWork.sub_left sub).sub_right (fun _ hx => stSub L st _ (Lay.stSub (by decide) _ hx))
+    · exact (P.srcWork.sub_left sub).sub_right (Lay.wSub (by decide))
+    · exact (P.stackSrc.sub_right sub).symm
   have written := bytesAt_writeBytes_self v.mem (w64 (tailPtr T n)) _ (by rw [xlen]; omega_using [])
   rw [xlen] at written
   have tail : bytesAt z.mem (w64 T+BitVec.ofNat 64 (16*(n/16))) (n%16) =

@@ -113,46 +113,58 @@ theorem KeepEnv.argW {W SP : BitVec 32} {n : Nat} {s : State} (h : KeepEnv W SP 
     {o : Nat} (ho : o + 4 ≤ 2560) : (⟨argA SP i, 4⟩ : Region).Disjoint ⟨w64 W + BitVec.ofNat 64 o, 4⟩ :=
   (h.aw.sub_left (argA_sub hi h.fa)).sub_right (Lay.wSub ho)
 
+/-- Read a single ABI word into a workspace slot. The input may be above a private frame. -/
+theorem keep_readable {W SP : BitVec 32} {s : State} {i o : Nat}
+    (esp : s.gpr .esp = SP) (ebp : s.gpr .ebp = W) (fw : W.toNat + 2560 ≤ 2^32)
+    (hw : Covers [⟨w64 W,2560⟩] s.wr) (rIn : InRegions (s.rd ++ s.wr) (argA SP i) 4)
+    (ho : o + 4 ≤ 2560) :
+    ∃ s', runBlock isa (keep i o) s = some s' ∧
+      s'.mem = s.mem.writeW (w64 W + BitVec.ofNat 64 o) (s.mem.readW (argA SP i) 32) ∧
+      (∀ r, r ≠ .eax → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
+  have aW : w64 (W + BitVec.ofNat 32 o) = w64 W + BitVec.ofNat 64 o := w64_add (by omega_using [ho, fw])
+  have wIn : InRegions s.wr (w64 W + BitVec.ofNat 64 o) 4 := in_off hw ho (by decide)
+  refine ⟨_, by xrun [keep, esp, ebp, aW, wIn, rIn], ?_, ?_, ?_, ?_⟩
+  · mems []
+  · intro r hr; simp only [gpr_setMem, gpr_setReg_of_ne _ _ hr]
+  all_goals rfl
+
 /-- `keep i o`. -/
 theorem keep_ok {W SP : BitVec 32} {n : Nat} {s : State} (h : KeepEnv W SP n s) {i o : Nat} (hi : i < n)
     (ho : o + 4 ≤ 2560) :
     ∃ s', runBlock isa (keep i o) s = some s' ∧
       s'.mem = s.mem.writeW (w64 W + BitVec.ofNat 64 o) (s.mem.readW (argA SP i) 32) ∧
-      (∀ r, r ≠ .eax → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
-  have aW : w64 (W + BitVec.ofNat 32 o) = w64 W + BitVec.ofNat 64 o := w64_add (by have := h.fw; omega_using [ho, this])
-  have wIn : InRegions s.wr (w64 W + BitVec.ofNat 64 o) 4 := in_off h.wW ho (by decide)
-  have rIn := h.argIn hi
-  refine ⟨_, by xrun [keep, h.esp, h.ebp, aW, wIn, rIn], ?_, ?_, ?_, ?_⟩
-  · mems []
-  · intro r hr; simp only [gpr_setMem, gpr_setReg_of_ne _ _ hr]
-  all_goals rfl
+      (∀ r, r ≠ .eax → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr :=
+  keep_readable h.esp h.ebp h.fw h.wW (h.argIn hi) ho
 
 /-- The slot of `p`'s copy. -/
 abbrev keepR (W : BitVec 32) (p : Nat × Nat) : Region := ⟨w64 W + BitVec.ofNat 64 p.2, 4⟩
 
 /-- The copies of the arguments `ps` (argument, offset): each slot holds its argument. -/
-theorem keeps_ok {W SP : BitVec 32} {n : Nat} (ps : List (Nat × Nat))
+theorem keeps_at {W SP : BitVec 32} (index : Nat → Nat) {n : Nat} (ps : List (Nat × Nat))
     (hps : ∀ p ∈ ps, p.1 < n ∧ p.2 + 4 ≤ 2560 ∧ p.2 % 4 = 0) (hnd : (ps.map (·.2)).Nodup)
-    {s : State} (h : KeepEnv W SP n s) :
-    ∃ s', runBlock isa (ps.flatMap fun p => keep p.1 p.2) s = some s' ∧
-      (∀ p ∈ ps, slotv s'.mem W p.2 = s.mem.readW (argA SP p.1) 32) ∧
+    {s : State} (esp : s.gpr .esp = SP) (ebp : s.gpr .ebp = W)
+    (wW : Covers [⟨w64 W, 2560⟩] s.wr) (fw : W.toNat + 2560 ≤ 2^32)
+    (readable : ∀ i < n, InRegions (s.rd ++ s.wr) (argA SP (index i)) 4)
+    (separate : ∀ i < n, (⟨argA SP (index i), 4⟩ : Region).Disjoint ⟨w64 W, 2560⟩) :
+    ∃ s', runBlock isa (ps.flatMap fun p => keep (index p.1) p.2) s = some s' ∧
+      (∀ p ∈ ps, slotv s'.mem W p.2 = s.mem.readW (argA SP (index p.1)) 32) ∧
       Frame (ps.map (keepR W)) s.mem s'.mem ∧
       (∀ r, r ≠ .eax → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   induction ps generalizing s with
   | nil => exact ⟨s, rfl, fun _ h => by simp at h, Frame.refl _ _, fun _ _ => rfl, rfl, rfl⟩
   | cons p ps ih =>
     obtain ⟨hp1, hp2, hp4⟩ := hps p (List.mem_cons_self ..)
-    obtain ⟨s₁, run₁, m₁, g₁, rd₁, wr₁⟩ := keep_ok h hp1 hp2
-    have h₁ : KeepEnv W SP n s₁ := h.keep (g₁ _ (by decide)) (g₁ _ (by decide)) rd₁ wr₁
+    obtain ⟨s₁, run₁, m₁, g₁, rd₁, wr₁⟩ := keep_readable esp ebp fw wW (readable p.1 hp1) hp2
     have hnd' := List.nodup_cons.mp hnd
     obtain ⟨s', run', sl, fr, g', rd', wr'⟩ :=
-      ih (fun q hq => hps q (List.mem_cons_of_mem _ hq)) hnd'.2 h₁
-    have fw : Frame [keepR W p] s.mem s₁.mem := by
+      ih (fun q hq => hps q (List.mem_cons_of_mem _ hq)) hnd'.2 ((g₁ _ (by decide)).trans esp) ((g₁ _ (by decide)).trans ebp)
+        (wr₁ ▸ wW) (by simpa only [rd₁, wr₁] using readable)
+    have writeFrame : Frame [keepR W p] s.mem s₁.mem := by
       rw [m₁]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
-    have argS : ∀ q ∈ ps, s₁.mem.readW (argA SP q.1) 32 = s.mem.readW (argA SP q.1) 32 := fun q hq => by
+    have argS : ∀ q ∈ ps, s₁.mem.readW (argA SP (index q.1)) 32 = s.mem.readW (argA SP (index q.1)) 32 := fun q hq => by
       have := hps q (List.mem_cons_of_mem _ hq)
-      exact fw.readW (r := ⟨argA SP q.1, 4⟩) (Region.contains_self _ _) (fun r hr => by
-        simp only [List.mem_singleton] at hr; subst hr; exact h.argW this.1 hp2) (by decide)
+      exact writeFrame.readW (r := ⟨argA SP (index q.1), 4⟩) (Region.contains_self _ _) (fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr; exact (separate q.1 this.1).sub_right (Lay.wSub hp2)) (by decide)
     refine ⟨s', runBlock_app_of run₁ run', fun q hq => ?_, ?_, fun r hr => by rw [g' r hr, g₁ r hr],
       by rw [rd', rd₁], by rw [wr', wr₁]⟩
     · rcases List.mem_cons.mp hq with rfl | hq
@@ -164,7 +176,18 @@ theorem keeps_ok {W SP : BitVec 32} {n : Nat} (ps : List (Nat × Nat))
         have := hps q' (List.mem_cons_of_mem _ hq')
         exact Lay.w_w (by omega_using [hp4, ne, this]) (by omega_using [hp2]) (by omega_using [this])
       · rw [sl q hq, argS q hq]
-    · exact (fw.mono (by simp)).trans (fr.mono (fun r hr => List.mem_cons_of_mem _ hr))
+    · exact (writeFrame.mono (by simp)).trans (fr.mono (fun r hr => List.mem_cons_of_mem _ hr))
+
+/-- The copies of the arguments `ps` (argument, offset): each slot holds its argument. -/
+theorem keeps_ok {W SP : BitVec 32} {n : Nat} (ps : List (Nat × Nat))
+    (hps : ∀ p ∈ ps, p.1 < n ∧ p.2 + 4 ≤ 2560 ∧ p.2 % 4 = 0) (hnd : (ps.map (·.2)).Nodup)
+    {s : State} (h : KeepEnv W SP n s) :
+    ∃ s', runBlock isa (ps.flatMap fun p => keep p.1 p.2) s = some s' ∧
+      (∀ p ∈ ps, slotv s'.mem W p.2 = s.mem.readW (argA SP p.1) 32) ∧
+      Frame (ps.map (keepR W)) s.mem s'.mem ∧
+      (∀ r, r ≠ .eax → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr :=
+  keeps_at id ps hps hnd h.esp h.ebp h.wW h.fw (fun _ hi => h.argIn hi)
+    (fun _ hi => h.aw.sub_left (argA_sub hi h.fa))
 
 /-- The end of every function: our caller's registers restored. -/
 theorem exit_ok {s s₀ : State} {W : BitVec 32} (hbp : s.gpr .ebp = W) (hsp : s.gpr .esp = s₀.gpr .esp)

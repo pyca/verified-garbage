@@ -70,7 +70,7 @@ theorem headPart_ct {I : State → Prop} {C St W SP D T : BitVec 32} {n off : Na
     refine WP.mono (headArgs_ok L x.env x.bO x.len x.src x.cx x.di kn hlt) ?_
     rintro t ⟨m,dx,si,di,cx,bp,sp,rd,wr⟩
     exact ⟨⟨dx,di,si,(fun e => nomatch e),cx,Nat.pos_of_ne_zero nz,klim,a.fK,a.fS,a.fD,
-      by rw [rd,wr]; exact a.rd,by rw [rd,wr]; exact a.rdS,by rw [wr]; exact a.wr,a.disj,.inr a.sd⟩,bp,sp⟩
+      by rw [rd,wr]; exact a.rd,by rw [rd,wr]; exact a.rdS,by rw [wr]; exact a.wr,a.disj,a.sd⟩,bp,sp⟩
   refine CT.seq (J:=fun s => s.gpr .ebp=W ∧ s.gpr .esp=SP)
     (xorTo_ct fun _ h => ⟨h.xor.edx,h.xor.src,h.xor.edi,h.xor.ecx⟩) ?_ ?_
   · exact fun s h => WP.mono (xorLoopG_ok true s h.xor) fun t g => ⟨(g.other _ (by decide) (by decide) (by decide)
