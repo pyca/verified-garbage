@@ -1,7 +1,10 @@
 module
 
 public import VerifiedGarbage.Impl.AesGcm.AArch64.Contiguous.Prepared
+public import VerifiedGarbage.Impl.AesGcm.AArch64.Contiguous.CachedFront
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.Front
+public import VerifiedGarbage.Proof.Gcm.AArch64.Pmull.PrepKey
+public import VerifiedGarbage.Proof.AesGcm.AArch64.CalleePw
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Seal
 import VerifiedGarbage.Proof.AesGcm.AArch64.OneEntry
 import VerifiedGarbage.Proof.Framework.AArch64.LaneRestore
@@ -124,24 +127,81 @@ open VG.Spec.Aes (bytesAt)
 open VG.Spec.Gcm (ctxH blockAt)
 open VG.Proof.Gcm.AArch64.Pmull (MulKey)
 
+open VG.Impl.Gcm.AArch64.Pmull (C tReg sReg poly loadPw pwOff)
+open VG.Proof.Gcm.AArch64.Pmull (keyV pp)
+
+abbrev FirstPower := ∀ H, keyV H = pp H 1
+
+theorem cachedKey_ok {u : State} {P : Addr} {H : Spec.Gcm.Block}
+    (ptr : u.gpr .x8 = P)
+    (take : InRegions (u.rd++u.wr) (P+16#64) 16) (key : u.mem.read (P+16#64) 16 = keyV H) :
+    WP isa (.block cachedKey) u fun z => Fast.HKey H z ∧ Regs [.x0,.x5,.x6,.x7] u z := by
+  have off : pwOff 1 = 16 := by decide
+  refine WP.of_runBlock ⟨_,by unfold cachedKey; arun [off,ptr,take],?_⟩
+  refine ⟨⟨?_,?_,?_⟩,⟨?_,rfl,rfl,rfl,rfl⟩⟩
+  · simp [v_setV,gpr_write]; rfl
+  · simpa [v_setV,v_write,tReg,sReg,C] using key
+  · simp [v_setV,v_write,tReg,sReg,C]; rfl
+  · intro r hr
+    simp only [List.mem_cons,List.not_mem_nil,or_false,not_or] at hr
+    simp [gpr_setV,gpr_write,hr.2.1]
+
+abbrev withPower (s : State) (p : Addr) := s.write .x .x8 p
+
+theorem powerPtr_ok {wn : Nat} {o s : State} {W : Addr} (e : Entry wn o s W)
+    (slot : InRegions (o.rd++o.wr) (stackArgAddr o 2) 8) (sep : (slotR o.sp 16).Disjoint (workR wn W)) :
+    WP isa (.block [.ldrSp .x8 16]) s fun t => t = withPower s (stackArg o 2) := by
+  have a : InRegions (s.rd++s.wr) (s.sp+16#64) 8 := by rw [e.rd,e.wr,e.env.sp]; exact slot
+  have k : s.mem.read (s.sp+16#64) 8 = stackArg o 2 := by
+    rw [e.env.sp]
+    exact e.frame.readW (r := slotR o.sp 16) (Region.contains_self _ _)
+      (by simpa only [List.mem_singleton,forall_eq] using sep) (by decide)
+  exact WP.of_runBlock ⟨_,by arun [a,k],rfl⟩
+
 theorem front_ok {wn : Nat} {o s : State} {W : Addr} (L : Lay wn (o.gpr .x0) (word W 16) W)
-    (mul : MulKey) (e : Entry wn o s W) (hn : (o.gpr .x3).toNat = 12) (ha : (o.gpr .x5).toNat ≤ 16)
+    (mul : MulKey) (preparedKey : FirstPower) (e : Entry wn o s W) (hn : (o.gpr .x3).toNat = 12) (ha : (o.gpr .x5).toNat ≤ 16)
     (nonce : DataOk wn (word W 16) W o (o.gpr .x2) 12)
-    (aad : DataOk wn (word W 16) W o (o.gpr .x4) (o.gpr .x5).toNat) :
-    WP isa Impl.AesGcm.AArch64.Fast.front s
+    (aad : DataOk wn (word W 16) W o (o.gpr .x4) (o.gpr .x5).toNat)
+    (slot : InRegions (o.rd++o.wr) (stackArgAddr o 2) 8) (disSlot : (slotR o.sp 16).Disjoint (workR wn W))
+    (powers : GhWCall o (o.gpr .x0) (word (word W 16) 16) (word W 512) (stackArg o 2))
+    (disP : (⟨stackArg o 2,128⟩ : Region).Disjoint (workR wn W))
+    (sub : ∀ r ∈ j0Frame (word W 16) W, r.Sub (workR wn W)) :
+    WP isa cachedFront s
       (Fast.FFront wn (o.gpr .x0) (word W 16) W o.sp (ctxH o.mem (o.gpr .x0))
         (bytesAt o.mem (o.gpr .x2) 12) (bytesAt o.mem (o.gpr .x4) (o.gpr .x5).toNat)
         (o.gpr .x6) (stackArg o 0).toNat s) := by
   have size : o.gpr .x3 = BitVec.ofNat 64 12 := by rw [← hn]; simp
   have hh : blockAt s.mem (word (o.gpr .x0) 240) = ctxH o.mem (o.gpr .x0) :=
     blockAt_frame e.frame (by simpa only [List.mem_singleton,forall_eq] using (L.cw'.sub_left (Offset.sub_base (o.gpr .x0) (by decide : 240 + 16 ≤ 256))))
-  have j : J0In wn (o.gpr .x0) (word W 16) W o.sp s.gpr (ctxH o.mem (o.gpr .x0)) (o.gpr .x2) 12 s :=
-    ⟨e.env,fun _ _ => rfl,e.x23,e.x24.trans size,e.x26.trans size,e.x27,nonce.of_eq e.rd e.wr,hh⟩
+  refine WP.seq ((powerPtr_ok e slot disSlot).mono ?_)
+  rintro _ rfl
+  let u := withPower s (stackArg o 2)
+  have g : Regs [.x8] s u := ⟨by
+    intro r hr
+    have ne : r ≠ .x8 := by simpa only [List.mem_singleton] using hr
+    simp [u,withPower,gpr_write,ne],rfl,rfl,rfl,rfl⟩
+  have j : J0In wn (o.gpr .x0) (word W 16) W o.sp u.gpr (ctxH o.mem (o.gpr .x0)) (o.gpr .x2) 12 u :=
+    ⟨e.env.of_regs g,fun _ _ => rfl,e.x23,e.x24.trans size,e.x26.trans size,e.x27,nonce.of_eq e.rd e.wr,hh⟩
   have nonceBytes : bytesAt s.mem (o.gpr .x2) 12 = bytesAt o.mem (o.gpr .x2) 12 :=
     bytesAt_frame e.frame (by simpa only [List.mem_singleton,forall_eq] using nonce.w) (by decide)
   have aadBytes : bytesAt s.mem (o.gpr .x4) (o.gpr .x5).toNat = bytesAt o.mem (o.gpr .x4) (o.gpr .x5).toNat :=
     bytesAt_frame e.frame (by simpa only [List.mem_singleton,forall_eq] using aad.w) (Nat.le_of_lt (o.gpr .x5).isLt)
   rw [← nonceBytes,← aadBytes]
-  exact Fast.front_ok L mul j (aad.of_eq e.rd e.wr) ha e.x4 (by simpa using e.x5) e.x6 (by simpa using e.x7)
+  apply WP.mono (Q := Fast.FFront _ _ _ _ _ _ _ _ _ _ u) (Q' := _) (s := u) (c := Impl.AesGcm.AArch64.Fast.frontWith cachedKey)
+  · refine Fast.frontWith_ok L cachedKey mul (n := (stackArg o 0).toNat) j (aad.of_eq e.rd e.wr) ha e.x4 (by simpa [u,withPower,gpr_write] using e.x5) e.x6
+      (by simpa [u,withPower,gpr_write] using e.x7) ?_
+    intro t _ _ f rd wr x8
+    have frame : Frame [workR wn W] o.mem t.mem := e.frame.trans (f.sub fun r h => ⟨_,.head _,sub r h⟩)
+    have access : (⟨stackArg o 2,128⟩ : Region).Contains (stackArg o 2 + 16#64) 16 :=
+      Offset.contains_base _ (by decide) (by decide)
+    refine cachedKey_ok (P := stackArg o 2) (x8.trans (by simp [u,withPower,gpr_write])) ?_ ?_
+    · rw [rd,wr]; change InRegions (s.rd++s.wr) _ _; rw [e.rd,e.wr]
+      exact powers.reads _ _ ⟨_,.head _,access⟩
+    · rw [preparedKey]
+      have old := (powers.repr 0 (by decide)).2
+      exact (frame.read (r := ⟨stackArg o 2,128⟩) access
+        (by simpa only [List.mem_singleton,forall_eq] using disP) (by decide)).trans old
+  · intro t h
+    exact ⟨h.env,h.x22,h.x28,h.x23,h.x26,h.hH,h.j0,h.cb,h.y,h.key,h.frame,h.rd,h.wr⟩
 
 end VG.Proof.AesGcm.AArch64.Contiguous.Prepared

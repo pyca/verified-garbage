@@ -30,7 +30,7 @@ theorem auth_rel {wn n : Nat} {Ctx St W SP O P : Addr} {a b : State}
     (pa : GhWCall a Ctx (word St 16) (word W 512) P) (pb : GhWCall b Ctx (word St 16) (word W 512) P)
     (sa : a.mem.readW (word a.sp 16) 64 = P) (sb : b.mem.readW (word b.sp 16) 64 = P)
     (ra : InRegions (a.rd++a.wr) (word a.sp 16) 8) (rb : InRegions (b.rd++b.wr) (word b.sp 16) 8) :
-    RelCT isa (Eq2 a b) (.seq (.block (authRemainder fused)) (Impl.AesGcm.AArch64.Fast.pwSel v.callees 16 g.fn)) TT := by
+    RelCT isa (Eq2 a b) (.seq (.block (authRemainder fused)) (authBlocks v.callees g.fn)) TT := by
   refine rel_seq (rel_taint [.x19,.x20,.x21,.x27] (ea.sp.trans eb.sp.symm)
     (by agree_tac [ea.x19,eb.x19,ea.x20,eb.x20,ea.x21,eb.x21,oa,ob]) (by cases fused <;> exact ⟨_,by taint_decide⟩))
     (WP.with_rdwr (authCallArgs (x := []) fused L ea da oa na rfl (by decide)))
@@ -38,6 +38,9 @@ theorem auth_rel {wn n : Nat} {Ctx St W SP O P : Addr} {a b : State}
   intro u z ⟨⟨_,_,_,hu,mu⟩,rd,wr⟩ ⟨⟨_,_,_,hz,mz⟩,rd',wr'⟩
   have su := hu.env.sp.trans ea.sp.symm
   have sz := hz.env.sp.trans eb.sp.symm
+  have small : (n - done fused n - 0) / 16 < 2^64 := by have := hu.call.n_lt; omega
+  refine rel_ite (eval_zero hu.call.x3 small) (eval_zero hz.call.x3 small) (fun _ => ?_) (fun _ => ?_)
+  · exact rel_taint [] (hu.env.sp.trans hz.env.sp.symm) (by agree_tac []) ⟨.block [] 256,by decide⟩
   exact pwSel_rel v g (k := 16) (by decide)
     (by rw [su,mu]; exact sa) (by rw [su,rd,wr]; exact ra)
     (by rw [sz,mz]; exact sb) (by rw [sz,rd',wr']; exact rb)
@@ -88,7 +91,7 @@ theorem enc_rel {wn R n : Nat} {Ctx W D O P : Addr} {a b : State} {aa ai ba bi :
     refine r.crIn f.env ?_ ?_ (q.src.of_eq f.rd f.wr) (q.dst.of_eq f.rd f.wr) q.mode
     · rw [n22]; rcases q.rates with e|e|e <;> rw [e] <;> decide
     · rw [n22,toNat_ofNat_of_lt (by rcases q.rates with e|e|e <;> rw [e] <;> decide)]
-  exact DirectGather.Generic.aligned_rel L v (build x f fs) (sp ▸ build y h ht) (done_mod ..) hv
+  exact Tail.aligned_rel L v (build x f fs) (sp ▸ build y h ht) (done_mod ..) hv
 
 theorem record_rel {wn R n : Nat} {Ctx W D O P : Addr} {a b : State} {aa ai ba bi : List Byte}
     (v : GcmImpl) (g : GhashWithImpl) (fused : Bool) (gh : Proof.Gcm.AArch64.Stitch.Gh8Ok)
@@ -98,8 +101,8 @@ theorem record_rel {wn R n : Nat} {Ctx W D O P : Addr} {a b : State} {aa ai ba b
     (sp : a.sp = b.sp) (tag : a.gpr .x28 = b.gpr .x28)
     (hn : fused = true → 128 ≤ n) (hv : v.ctr.scratch ≤ wn-512) :
     RelCT isa (Eq2 a b) (.seq (if fused then batches (!v.stitch) else .block []) <| .seq (.block (remainder fused)) <|
-      .seq (Impl.AesGcm.AArch64.DirectGather.aligned v.callees) <| .seq (.block (authRemainder fused)) <|
-      .seq (Impl.AesGcm.AArch64.Fast.pwSel v.callees 16 g.fn) <|
+      .seq (Impl.AesGcm.AArch64.Contiguous.Tail.aligned v.callees) <| .seq (.block (authRemainder fused)) <|
+      .seq (authBlocks v.callees g.fn) <|
       .seq (.block (Impl.AesGcm.AArch64.Fast.hReload ++ Impl.Gcm.AArch64.Pmull.loadRev Impl.Gcm.AArch64.Pmull.Y .x20 16 ++
         [mov .x13 .x24,mov .x12 .x23])) <| .seq Impl.AesGcm.AArch64.Fast.padMulT <|
       .seq (Impl.Gcm.AArch64.Stitch.byRounds Impl.AesGcm.AArch64.Contiguous.Tag.finish) (.block restore)) TT := by

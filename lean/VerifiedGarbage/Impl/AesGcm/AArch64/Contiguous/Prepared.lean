@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Impl.Gcm.AArch64.Forward
+public import VerifiedGarbage.Impl.AesGcm.AArch64.Contiguous.CachedFront
+public import VerifiedGarbage.Impl.AesGcm.AArch64.Contiguous.Tail
 public import VerifiedGarbage.Impl.AesGcm.AArch64.Contiguous.Tag
 public import VerifiedGarbage.Impl.AesGcm.AArch64.Contiguous.Bounded
 
@@ -45,12 +47,16 @@ def authArgs (fused : Bool) : List Instr :=
 
 abbrev authRemainder (fused : Bool) := authArgs fused ++ absSeg2 16
 
+/-- A zero whole-block count leaves the GHASH accumulator untouched. -/
+def authBlocks (c : Callees) (gh : Fn) : Prog isa :=
+  .ite (.zero .x .x3) (.block []) (Fast.pwSel c 16 gh)
+
 /-- Prepared hardware record with the common CTR loop for all tails. -/
 def preparedBody (c : Callees) (gh : Fn) (fused forward : Bool) : Prog isa :=
-  .seq (.block preparedArgs) <| .seq front <|
+  .seq (.block preparedArgs) <| .seq cachedFront <|
   .seq (if fused then batches forward else .block []) <|
-  .seq (.block (remainder fused)) <| .seq (DirectGather.aligned c) <|
-  .seq (.block (authRemainder fused)) <| .seq (Fast.pwSel c 16 gh) <|
+  .seq (.block (remainder fused)) <| .seq (Tail.aligned c) <|
+  .seq (.block (authRemainder fused)) <| .seq (authBlocks c gh) <|
   .seq (.block (hReload ++ loadRev Y .x20 16 ++ [mov .x13 .x24,mov .x12 .x23])) <|
   .seq padMulT <| .seq (VG.Impl.Gcm.AArch64.Stitch.byRounds Tag.finish) (.block restore)
 
@@ -69,8 +75,7 @@ def select (v : Calls) (gh : Fn) : Prog isa :=
   let fallback := clear (v.pwWn+80) (generalFrame v)
   let hardware := fun fused => Impl.Scrub.AArch64.scrubAll (v.pwWn+32) 0
     (preparedClear fused (!v.stitch)) (preparedFrame v gh fused)
-  let threshold := if v.stitch then 768 else 4096
-  let large := .seq (.block [imm .x9 threshold,.subs .x .x11 .x10 .x9,.sbc .x .x11 .x11 .x11])
+  let large := .seq (.block [imm .x9 768,.subs .x .x11 .x10 .x9,.sbc .x .x11 .x11 .x11])
     (.ite (.nonzero .x .x11) (hardware false) (hardware true))
   let overShort := if v.ctr.scratch = 0 then
     .seq (.block [imm .x9 225,.subs .x .x11 .x10 .x9,.sbc .x .x11 .x11 .x11])

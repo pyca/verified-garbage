@@ -2787,6 +2787,7 @@ theorem backendFacts (v : GcmImpl) (g : GhashWithImpl) : BackendFacts v g :=
     Nat.lt_of_le_of_lt (depth_of_holes (W := 752) v.callsOk fnOk_nil (mediumInner holes)) (by decide),
     (fun s hn z init => DirectGather.trimmedHash_at s hn
       (fun h => DirectGather.zeroFold init (z _ (.inl ⟨rfl,h⟩)))
-      (fun h => DirectGather.zeroFold init (z _ (.inr ⟨rfl,h⟩)))),Proof.Gcm.AArch64.Pmull.hashEightWith_at,Proof.Gcm.AArch64.Stitch.gh8Ok,Proof.Gcm.AArch64.Pmull.mulV_keyV⟩
+      (fun h => DirectGather.zeroFold init (z _ (.inr ⟨rfl,h⟩)))),Proof.Gcm.AArch64.Pmull.hashEightWith_at,Proof.Gcm.AArch64.Stitch.gh8Ok,Proof.Gcm.AArch64.Pmull.mulV_keyV,
+    Proof.Gcm.AArch64.Pmull.prepPow.key⟩
 
 end VG.Proof.AesGcm.AArch64.Contiguous

@@ -363,7 +363,7 @@ open VG.Spec.Gcm (Block blockAt blocksAt inc32 aesWith ghashFrom ctr32)
 open VG.Impl.Gcm.AArch64.Stitch
 
 theorem firstTo_values {s₀ s : State} (hp : SealToPre s₀) (hI : SealInv s₀ 0 0 s) :
-    WP isa (.block (aesPart (rounds s₀) 0 .x15 ++ stores 0 ++ [.subImm .x .x11 .x11 1])) s
+    WP isa (.block (aesPart (rounds s₀) 0 .x15 ++ stores 0 ++ ([.subImm .x .x11 .x11 1] : List Instr))) s
       (fun t => SealInv s₀ 1 0 t ∧ EncValues s₀ 0 t) := by
   have h1 := hp.nb1
   -- The first batch.
@@ -404,7 +404,7 @@ theorem firstTo_values {s₀ s : State} (hp : SealToPre s₀) (hI : SealInv s₀
 
 theorem lastTo_ok {s₀ s₂ : State} (hp : SealToPre s₀) (gh : Gh8Ok)
     (hI₂ : SealInv s₀ (nb s₀) (nb s₀ - 1) s₂) :
-    WP isa (.block (ghPart ++ [.addImm .x .x15 .x15 128, .addImm .x .x9 .x9 128])) s₂
+    WP isa (.block (ghPart ++ ([.addImm .x .x15 .x15 128, .addImm .x .x9 .x9 128] : List Instr))) s₂
       (SealInv s₀ (nb s₀) (nb s₀)) := by
   have h1 := hp.nb1
   have hct : ∀ {c h : Nat} {s : State}, SealInv s₀ c h s → h < c →

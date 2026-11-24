@@ -39,6 +39,7 @@ structure BackendFacts (v : GcmImpl) (g : GhashWithImpl) : Prop where
   hash : DirectGather.HashEightWithOk
   stitch : VG.Proof.Gcm.AArch64.Stitch.Gh8Ok
   mul : VG.Proof.Gcm.AArch64.Pmull.MulKey
+  preparedKey : ∀ H, VG.Proof.Gcm.AArch64.Pmull.keyV H = VG.Proof.Gcm.AArch64.Pmull.pp H 1
 
 end VG.Proof.AesGcm.AArch64.Contiguous
 
@@ -104,10 +105,10 @@ theorem preparedLeaf {v : GcmImpl} {g : GhashWithImpl} (facts : BackendFacts v g
   have hv := facts.scratch
   have side := facts.prepared f
   apply scrubLeaf (by omega) side
-  refine ⟨fun _ h => Prepared.frame_ok v g f facts.stitch facts.mul h.1 h.2.1 h.2.2.1.1 h.2.2.1.2 h.2.2.2
+  refine ⟨fun _ h => Prepared.frame_ok v g f facts.stitch facts.mul facts.preparedKey h.1 h.2.1 h.2.2.1.1 h.2.2.1.2 h.2.2.2
     sz.1 sz.2.1 sz.2.2 hv (facts.vectors f),ct_of ?_,sat⟩
   intro a b pa pb pub
-  exact Prepared.frame_rel v g f facts.stitch facts.mul pa.1 pb.1 pa.2.1 pb.2.1 pa.2.2.1.1 pb.2.2.1.1
+  exact Prepared.frame_rel v g f facts.stitch facts.mul facts.preparedKey pa.1 pb.1 pa.2.1 pb.2.1 pa.2.2.1.1 pb.2.2.1.1
     pa.2.2.1.2 pb.2.2.1.2 pa.2.2.2 sz.1 sz.2.1 sz.2.2 hv pub.1
 
 end VG.Proof.AesGcm.AArch64.Contiguous

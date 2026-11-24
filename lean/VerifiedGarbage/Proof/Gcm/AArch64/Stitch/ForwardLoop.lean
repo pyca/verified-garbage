@@ -36,8 +36,8 @@ private theorem parts_forward_run {s₀ s : State} (hp : SealToPre s₀) {h : Na
   · exact ghIn_at hp.toKPre.toM (g9.trans hi.x9) (by omega)
       (g19.trans (hi.gpr _ (notMem_kRegsT _ (by decide)))) (by rw [fr.rd, fr.wr, hi.rd, hi.wr])
 
-private theorem advance_eq (xs : List Instr) : xs ++ [.addImm .x .x15 .x15 128, .addImm .x .x9 .x9 128] ++
-    [.subImm .x .x11 .x11 1] = xs ++ adv true := by rw [List.append_assoc]; rfl
+private theorem advance_eq (xs : List Instr) : xs ++ ([.addImm .x .x15 .x15 128, .addImm .x .x9 .x9 128] : List Instr) ++
+    ([.subImm .x .x11 .x11 1] : List Instr) = xs ++ adv true := by rw [List.append_assoc]; rfl
 
 private theorem stepForward {s₀ s : State} (hp : SealToPre s₀) (gh : Gh8Ok) {h : Nat}
     (hh : h+1 < nb s₀) (hi : SealInv s₀ (h+1) h s) (cache : CipherBatch s) :
@@ -52,7 +52,7 @@ private theorem stepForward {s₀ s : State} (hp : SealToPre s₀) (gh : Gh8Ok) 
       (fun j hj => ciphertext_of_dataInvM hi.data (by omega) (by have := hi.le; omega))
 
 private theorem firstForward {s₀ s : State} (hp : SealToPre s₀) (hi : SealInv s₀ 0 0 s) :
-    WP isa (.block ((aesPart (rounds s₀) 0 .x15).flatMap lowerXor3 ++ stores 0 ++ [.subImm .x .x11 .x11 1] ++ capture))
+    WP isa (.block ((aesPart (rounds s₀) 0 .x15).flatMap lowerXor3 ++ stores 0 ++ ([.subImm .x .x11 .x11 1] : List Instr) ++ capture))
       s fun t => SealInv s₀ 1 0 t ∧ CipherBatch t := by
   rw [WP.block_append_iff]
   refine WP.mono (of_equal_run (y := aesPart (rounds s₀) 0 .x15 ++ stores 0 ++ [.subImm .x .x11 .x11 1])
@@ -62,7 +62,7 @@ private theorem firstForward {s₀ s : State} (hp : SealToPre s₀) (hi : SealIn
 
 private theorem lastForward {s₀ s : State} (hp : SealToPre s₀) (gh : Gh8Ok)
     (hi : SealInv s₀ (nb s₀) (nb s₀-1) s) (hc : CipherBatch s) :
-    WP isa (.block (residentHash.flatMap lowerXor3 ++ [.addImm .x .x15 .x15 128, .addImm .x .x9 .x9 128]))
+    WP isa (.block (residentHash.flatMap lowerXor3 ++ ([.addImm .x .x15 .x15 128, .addImm .x .x9 .x9 128] : List Instr)))
       s (SealInv s₀ (nb s₀) (nb s₀)) := by
   refine of_equal_run ?_ (lastTo_ok hp gh hi)
   have h1 := hp.nb1

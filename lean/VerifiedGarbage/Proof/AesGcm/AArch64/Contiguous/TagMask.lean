@@ -1,5 +1,7 @@
 module
 
+-- separate module: The AES round proof can be checked independently of the polynomial arithmetic in TagLengths.
+
 public import VerifiedGarbage.Impl.AesGcm.AArch64.Contiguous.Tag
 public import VerifiedGarbage.Proof.Aes.AArch64.Aese.Rounds
 public import VerifiedGarbage.Proof.Gcm.AArch64.Stitch.Steps

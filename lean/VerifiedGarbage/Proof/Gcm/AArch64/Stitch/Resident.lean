@@ -59,7 +59,7 @@ local macro "prove_resident_pair" s:ident h:ident : tactic => `(tactic| (
     have gh {t : State} (g : t.gpr = ($s).gpr) (rd : t.rd = ($s).rd) (wr : t.wr = ($s).wr) : GhIn t :=
       ($h).of g rd wr
     dsimp only [residentPair, pairWith, forwardLd, pa, pb, pk, pl, cipherReg]
-    simp (config := { decide := true }) (disch := first | exact gh rfl rfl rfl | decide) only [↓reduceIte,
+    simp (disch := first | exact gh rfl rfl rfl | decide) only [show decide True = true by rfl, show ¬ (1:Nat) = 3 by decide, show ¬ (2:Nat) = 3 by decide, ↓reduceIte,
       List.nil_append, List.cons_append, runBlock_cons, runStep_some, runBlock_nil, orSelf, swLoad, packedLoad,
       exec_trn, exec_eor, exec_pmull0, exec_pmull1, v_setV, gpr_setV, mem_setV, reduceCtorEq,
       Option.some.injEq]

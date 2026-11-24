@@ -30,11 +30,13 @@ def leftover : Prog isa :=
       .add .x .x25 .x25 .x10, imm .x9 15, .logic .and .x .x25 .x25 .x9]) xorBytes
 
 /-- Encrypt the rest of a piece, beginning at a counter block boundary. -/
-def aligned (c : Callees) : Prog isa :=
-  .seq (.block (crArgsG true)) <| .seq (ctrCallG c true) <|
+def alignedWith (c : Callees) (first tail : Prog isa) : Prog isa :=
+  .seq (.block (crArgsG true)) <| .seq first <|
     .ite (.zero .x .x24) (.block []) <|
     .seq crSeg2 <| .seq (ctrCall c) <|
-    .seq (.block [mov .x10 .x24, mov .x25 .x24, ptr .x11 .x20 64]) xorBytes
+    .seq (.block [mov .x10 .x24, mov .x25 .x24, ptr .x11 .x20 64]) tail
+
+def aligned (c : Callees) : Prog isa := alignedWith c (ctrCallG c true) xorBytes
 
 /-- Pointers to the descriptors and their count, kept across nonce and AAD
 processing in two unused words between the saved registers and scratch. -/

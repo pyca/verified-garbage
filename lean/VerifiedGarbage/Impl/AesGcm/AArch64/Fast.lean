@@ -77,10 +77,12 @@ def storeY : List Instr := [.vop (.rev .rev64b Y Y), .strq Y .x20 16]
 /-- `J₀` of the 12-byte nonce, the first counter block, `H'`, and the
 additional data (`x4`, `x5`) absorbed; the data and its length (`x6`, `x7`)
 kept in `x23` and `x26`. -/
-def front : Prog isa :=
+def frontWith (source : List Instr) : Prog isa :=
   .seq (.block (j012 ++ ([mov .x25 .x5, mov .x27 .x4, mov .x23 .x6, mov .x26 .x7] : List Instr) ++
-      initState ++ hPrime ++ ([mov .x13 .x25, mov .x12 .x27] : List Instr)))
+      initState ++ source ++ keep ++ ([mov .x13 .x25, mov .x12 .x27] : List Instr)))
     (.seq padMul (.block storeY))
+
+def front : Prog isa := frontWith (([ptr .x0 .x21 240] : List Instr) ++ key)
 
 /-- Hash the encoded bit lengths and store the accumulator. -/
 abbrev finishLengths : List Instr :=

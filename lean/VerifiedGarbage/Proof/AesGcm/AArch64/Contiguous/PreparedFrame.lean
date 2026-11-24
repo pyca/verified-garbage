@@ -73,6 +73,12 @@ theorem frontWork {wn : Nat} {W : Addr} (lim : 768 ≤ wn) :
   · exact Lay.wSub (by omega)
   · exact Lay.wSub (by change 288+32≤wn; omega)
 
+private theorem frontReady {wn : Nat} {W : Addr} {o a : State} (c : Inner wn W o) (e : Entry wn o a W)
+    (mul : MulKey) (key : FirstPower) (iv : (o.gpr .x3).toNat = 12) (aad : (o.gpr .x5).toNat ≤ 16) :
+    WP isa cachedFront a (PreparedFront wn W o a) :=
+  front_ok c.lay mul key e iv aad c.iv c.aad (c.args 2 (by decide)) c.ext.slotWork c.powers c.ext.powersWork
+    (fun r h => frontWork c.lay.hWn.1 r (List.mem_append_left _ h))
+
 theorem frontSlots {wn : Nat} {Ctx W : Addr} (L : Lay wn Ctx (word W 16) W) {d : Nat} (lo : 216 ≤ d)
     (hi : d+8 ≤ 288 ∨ 320 ≤ d ∧ d+8 ≤ 512) :
     ∀ r ∈ Fast.frontFrame' (word W 16) W, (slotR W d).Disjoint r := by
@@ -124,12 +130,12 @@ theorem fromFront {wn : Nat} {W : Addr} {o a t : State} (c : Inner wn W o) (e : 
       exact Offset.disjoint W (.inl (by decide)) (by decide) (by decide)
 
 theorem body_ok {wn : Nat} {W : Addr} {o : State} (v : GcmImpl) (g : GhashWithImpl) (fused : Bool)
-    (gh : Gh8Ok) (mk : MulKey) (c : Inner wn W o) (hv : v.ctr.scratch ≤ wn-512)
+    (gh : Gh8Ok) (mk : MulKey) (preparedKey : FirstPower) (c : Inner wn W o) (hv : v.ctr.scratch ≤ wn-512)
     (hn : (o.gpr .x3).toNat = 12) (ha : (o.gpr .x5).toNat ≤ 16) (hb : fused = true → 128 ≤ nBytes o) :
     WP isa (preparedBody v.callees g.fn fused (!v.calls.stitch)) o fun z => GprAbi o z ∧ result o z := by
   refine WP.seq ((entry_ok c.hw c.args c.argsWork c.perm).mono ?_)
   intro a e
-  refine WP.seq ((front_ok c.lay mk e hn ha c.iv c.aad).mono ?_)
+  refine WP.seq ((frontReady c e mk preparedKey hn ha).mono ?_)
   intro t f
   obtain ⟨q,ext,saved,fr⟩ := fromFront c e f
   have rd := f.rd.trans e.rd
@@ -269,7 +275,7 @@ theorem entryResult {o s z : State} {wn : Nat} (e : RecordEntry o s wn) (c : Cal
     bytes (srcR o) (by simp [externalRegions]) (Nat.le_of_lt (stackArg o 0).isLt)] at post
   exact post
 
-theorem frame_ok {o : State} (v : GcmImpl) (g : GhashWithImpl) (fused : Bool) (gh : Gh8Ok) (mk : MulKey)
+theorem frame_ok {o : State} (v : GcmImpl) (g : GhashWithImpl) (fused : Bool) (gh : Gh8Ok) (mk : MulKey) (preparedKey : FirstPower)
     (c : Caller o) (p : Powers o) (iv : (o.gpr .x3).toNat = 12) (ha : (o.gpr .x5).toNat ≤ 16)
     (hn : fused = true → 128 ≤ nBytes o) (lo : 768 ≤ v.calls.pwWn) (hi : v.calls.pwWn ≤ 2560)
     (align : v.calls.pwWn % 16 = 0) (hv : v.ctr.scratch ≤ v.calls.pwWn-512)
@@ -286,7 +292,7 @@ theorem frame_ok {o : State} (v : GcmImpl) (g : GhashWithImpl) (fused : Bool) (g
   have nr := e.regs .x3 (by decide) (by decide)
   have al := e.regs .x5 (by decide) (by decide)
   have len := e.args 0 (by decide)
-  refine (body_ok v g fused gh mk en hv (by rw [nr]; exact iv) (by rw [al]; exact ha)
+  refine (body_ok v g fused gh mk preparedKey en hv (by rw [nr]; exact iv) (by rw [al]; exact ha)
     (by intro h; change 128 ≤ (stackArg _ 0).toNat; rw [show stackArg _ 0 = stackArg o 0 from len]; exact hn h)).mono ?_
   intro z ⟨abi,post⟩ m u fr
   have hold : ∀ r ∈ preserved, r ≠ .x16 ∧ r ≠ .x17 := by decide
@@ -324,7 +330,7 @@ theorem entry_rel {wn : Nat} {W : Addr} {a b : State} (ca : Inner wn W a) (cb : 
   exact rel_taint [.x9] (sx.trans (sp.trans sy.symm)) (by agree_tac [x9,y9]) ⟨_,by taint_decide⟩
 
 theorem body_rel {wn : Nat} {W : Addr} {a b : State} (v : GcmImpl) (g : GhashWithImpl) (fused : Bool)
-    (gh : Gh8Ok) (mk : MulKey) (ca : Inner wn W a) (cb : Inner wn W b) (hv : v.ctr.scratch ≤ wn-512)
+    (gh : Gh8Ok) (mk : MulKey) (preparedKey : FirstPower) (ca : Inner wn W a) (cb : Inner wn W b) (hv : v.ctr.scratch ≤ wn-512)
     (ai : (a.gpr .x3).toNat = 12) (bi : (b.gpr .x3).toNat = 12)
     (aa : (a.gpr .x5).toNat ≤ 16) (ba : (b.gpr .x5).toNat ≤ 16)
     (hn : fused = true → 128 ≤ nBytes a) (pub : onePub 3 a b) :
@@ -334,10 +340,16 @@ theorem body_rel {wn : Nat} {W : Addr} {a b : State} (v : GcmImpl) (g : GhashWit
   refine rel_seq (entry_rel ca cb sp) (entry_ok ca.hw ca.args ca.argsWork ca.perm)
     (entry_ok cb.hw cb.args cb.argsWork cb.perm) ?_
   intro u z e f
-  refine rel_seq (rel_taint [.x4,.x5,.x6,.x7,.x19,.x20,.x21,.x23] (e.env.sp.trans (sp.trans f.env.sp.symm))
-    (by agree_tac [e.x4,f.x4,e.x5,f.x5,e.x6,f.x6,e.x7,f.x7,e.env.x19,f.env.x19,e.env.x20,f.env.x20,
-      e.env.x21,f.env.x21,e.x23,f.x23,q0,q2,q4,q5,q6,stk 0 (by decide)]) ⟨_,by taint_decide⟩)
-    (front_ok ca.lay mk e ai aa ca.iv ca.aad) (front_ok cb.lay mk f bi ba cb.iv cb.aad) ?_
+  have sEq := e.env.sp.trans (sp.trans f.env.sp.symm)
+  have cc : RelCT isa (Eq2 u z) cachedFront TT := by
+    refine rel_seq (rel_taint [] sEq (by agree_tac []) ⟨_,by taint_decide⟩)
+      (powerPtr_ok e (ca.args 2 (by decide)) ca.ext.slotWork)
+      (powerPtr_ok f (cb.args 2 (by decide)) cb.ext.slotWork) ?_
+    rintro _ _ rfl rfl
+    refine rel_taint [.x4,.x5,.x6,.x7,.x8,.x19,.x20,.x21,.x23] sEq ?_ ⟨_,by taint_decide⟩
+    agree_tac [withPower,gpr_write,e.x4,f.x4,e.x5,f.x5,e.x6,f.x6,e.x7,f.x7,e.env.x19,f.env.x19,
+      e.env.x20,f.env.x20,e.env.x21,f.env.x21,e.x23,f.x23,q0,q2,q4,q5,q6,stk 0 (by decide),stk 2 (by decide)] <;> simp
+  refine rel_seq cc (frontReady ca e mk preparedKey ai aa) (frontReady cb f mk preparedKey bi ba) ?_
   intro t w ft fw
   obtain ⟨x,ex,_,_⟩ := fromFront ca e ft
   obtain ⟨y,ey,_,_⟩ := fromFront cb f fw
@@ -350,7 +362,7 @@ theorem body_rel {wn : Nat} {W : Addr} {a b : State} (v : GcmImpl) (g : GhashWit
   exact record_rel v g fused gh ca.lay x y ex ey (ft.env.sp.trans (sp.trans fw.env.sp.symm)) x28 hn hv
 
 theorem frame_rel {a b : State} (v : GcmImpl) (g : GhashWithImpl) (fused : Bool)
-    (gh : Gh8Ok) (mk : MulKey) (ca : Caller a) (cb : Caller b) (pa : Powers a) (pb : Powers b)
+    (gh : Gh8Ok) (mk : MulKey) (preparedKey : FirstPower) (ca : Caller a) (cb : Caller b) (pa : Powers a) (pb : Powers b)
     (ai : (a.gpr .x3).toNat = 12) (bi : (b.gpr .x3).toNat = 12)
     (aa : (a.gpr .x5).toNat ≤ 16) (ba : (b.gpr .x5).toNat ≤ 16)
     (hn : fused = true → 128 ≤ nBytes a) (lo : 768 ≤ v.calls.pwWn) (hi : v.calls.pwWn ≤ 2560)
@@ -379,7 +391,7 @@ theorem frame_rel {a b : State} (v : GcmImpl) (g : GhashWithImpl) (fused : Bool)
     exact ⟨by simp only [allocated,sp],rfl,rfl⟩
   · have p := inner ca pa e lo ai
     have p' := inner cb pb f lo bi
-    exact body_rel v g fused gh mk p (base ▸ p') hv (by rw [e.regs .x3 (by decide) (by decide)]; exact ai)
+    exact body_rel v g fused gh mk preparedKey p (base ▸ p') hv (by rw [e.regs .x3 (by decide) (by decide)]; exact ai)
       (by rw [f.regs .x3 (by decide) (by decide)]; exact bi) (by rw [e.regs .x5 (by decide) (by decide)]; exact aa)
       (by rw [f.regs .x5 (by decide) (by decide)]; exact ba) (fun h => by
         change 128 ≤ (stackArg u 0).toNat; rw [show stackArg u 0 = stackArg a 0 from e.args 0 (by decide)]; exact hn h) pub'

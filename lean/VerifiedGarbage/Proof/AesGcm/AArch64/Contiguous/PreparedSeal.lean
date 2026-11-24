@@ -237,7 +237,7 @@ structure Ready (wn R n : Nat) (Ctx W D O P : Addr) (aad nonce : List Byte) (s :
   key : Fast.KeyAt (ctxH s.mem Ctx) s.mem W
 
 abbrev encPart (c : Callees) (fused forward : Bool) : Prog isa :=
-  .seq (if fused then batches forward else .block []) (.seq (.block (remainder fused)) (DirectGather.aligned c))
+  .seq (if fused then batches forward else .block []) (.seq (.block (remainder fused)) (Impl.AesGcm.AArch64.Contiguous.Tail.aligned c))
 
 structure Text (wn R n p : Nat) (Ctx W D O : Addr) (aad nonce : List Byte) (s t : State) : Prop where
   env : Env wn Ctx (word W 16) W s.sp t
@@ -347,7 +347,7 @@ theorem authenticate_ok {wn R n : Nat} {Ctx W D O P : Addr} {s t : State} {aad n
     (q : Ready wn R n Ctx W D O P aad nonce s) (ext : External wn n W O P s)
     (txt : Text wn R n (done fused n) Ctx W D O aad nonce s t) :
     let p := done fused n
-    WP isa (.seq (.block (authRemainder fused)) (Impl.AesGcm.AArch64.Fast.pwSel v.callees 16 g.fn)) t
+    WP isa (.seq (.block (authRemainder fused)) (authBlocks v.callees g.fn)) t
       (Auth wn R n (p+16*((n-p)/16)) Ctx W D O aad nonce s) := by
   have hp := done_le fused n
   have lim := L.hWn
@@ -449,7 +449,7 @@ theorem finalPart_ok {wn R n j : Nat} {Ctx W D O P Tg : Addr} {s t o : State} {a
   rfl
 
 abbrev afterFront (c : Callees) (gh : Fn) (fused forward : Bool) : Prog isa :=
-  .seq (encPart c fused forward) (.seq (.seq (.block (authRemainder fused)) (Impl.AesGcm.AArch64.Fast.pwSel c 16 gh)) finalPart)
+  .seq (encPart c fused forward) (.seq (.seq (.block (authRemainder fused)) (authBlocks c gh)) finalPart)
 
 theorem afterFront_ok {wn R n : Nat} {Ctx W D O P Tg : Addr} {s o : State} {aad nonce : List Byte}
     (v : GcmImpl) (g : GhashWithImpl) (fused : Bool) (gh : Gh8Ok) (mk : MulKey) (L : Lay wn Ctx (word W 16) W)

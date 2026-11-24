@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Contiguous.PreparedEntry
-public import VerifiedGarbage.Proof.AesGcm.AArch64.DirectGather.GenericStream
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Contiguous.Aligned
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Stitch.Pre
 import VerifiedGarbage.Proof.Gcm.AArch64.Stitch.Ok
 import VerifiedGarbage.Proof.Framework.AddrArith
@@ -85,7 +85,7 @@ theorem encrypt_remainder {wn : Nat} (v : GcmImpl) (fused : Bool) {s : State} {n
     (out : s.mem.readW (word W dstO) 64 = O)
     (ctr : Ctr s.mem (St+48) (St+64) (ciphOf s.mem Ctx R) iv (done fused n))
     (hv : v.ctr.scratch ≤ wn-512) :
-    WP isa (.seq (.block (remainder fused)) (Impl.AesGcm.AArch64.DirectGather.aligned v.callees)) s fun t =>
+    WP isa (.seq (.block (remainder fused)) (Impl.AesGcm.AArch64.Contiguous.Tail.aligned v.callees)) s fun t =>
       ∃ r, TailArgs fused n D O s r ∧ Encrypted wn Ctx St W SP r.gpr R iv (done fused n)
         (word D (done fused n)) (word O (done fused n)) (n-done fused n) s.mem t ∧
         t.rd = s.rd ∧ t.wr = s.wr := by
@@ -96,7 +96,7 @@ theorem encrypt_remainder {wn : Nat} (v : GcmImpl) (fused : Bool) {s : State} {n
   intro r p
   have args := p.crIn en rounds nr sd od mode
   have ci := p.mem ▸ ctr
-  refine (WP.with_rdwr (aligned_ok L v args (done_mod ..) ci hv)).mono ?_
+  refine (WP.with_rdwr (Tail.aligned_ok L v args (done_mod ..) ci hv)).mono ?_
   intro t ⟨text,rd,wr⟩
   exact ⟨r,p,p.mem ▸ text,rd.trans p.rd,wr.trans p.wr⟩
 
@@ -147,7 +147,7 @@ theorem authCall {wn : Nat} (v : GcmImpl) (g : GhashWithImpl) (fused : Bool) {s 
     (aligned : x.length % 16 = 0) (pw : GhWCall s Ctx (word St 16) (word W 512) P)
     (slot : s.mem.readW (word s.sp 16) 64 = P) (read : InRegions (s.rd++s.wr) (word s.sp 16) 8) :
     let k := n-done fused n
-    WP isa (.seq (.block (authRemainder fused)) (Impl.AesGcm.AArch64.Fast.pwSel v.callees 16 g.fn)) s fun t =>
+    WP isa (.seq (.block (authRemainder fused)) (authBlocks v.callees g.fn)) s fun t =>
       ∃ u, Regs [.x9,.x23,.x24,.x26] s u ∧ u.gpr .x26 = BitVec.ofNat 64 n ∧
         AbsMid wn Ctx St W SP u.gpr 16 H x (word O (done fused n)) k (u.gpr .x25).toNat s.mem (16*(k/16)) t ∧
         k-16*(k/16) < 16 ∧ t.rd = s.rd ∧ t.wr = s.wr := by
@@ -156,8 +156,16 @@ theorem authCall {wn : Nat} (v : GcmImpl) (g : GhashWithImpl) (fused : Bool) {s 
   have sp := h.env.sp.trans env.sp.symm
   have p : GhWCall a Ctx (word St 16) (word W 512) P :=
     ⟨by rw [rd,wr]; exact pw.reads,pw.yp,pw.sp,mem ▸ pw.repr⟩
-  refine (WP.with_rdwr (absCall2With_ok L (.inr rfl) h (pwSel_call v g (k := 16) (by decide)
-    (by rw [sp,mem]; exact slot) (by rw [sp,rd,wr]; exact read) h.call p))).mono ?_
+  have run : WP isa (authBlocks v.callees g.fn) a (GhPost a (word Ctx 240) (word St 16)
+      (word (word O (done fused n)) 0) (word W 512) ((n-done fused n-0)/16)) := by
+    refine WP.ite _ (eval_zero h.call.x3 (by have := h.call.n_lt; omega)) (fun zero => ?_) (fun _ => ?_)
+    · have eq := of_decide_eq_true zero
+      refine WP.block_nil ⟨rfl,rfl,rfl,fun _ _ _ => rfl,Frame.refl _ _,?_⟩
+      rw [eq]
+      rfl
+    · exact pwSel_call v g (k := 16) (by decide)
+        (by rw [sp,mem]; exact slot) (by rw [sp,rd,wr]; exact read) h.call p
+  refine (WP.with_rdwr (absCall2With_ok L (.inr rfl) h run)).mono ?_
   intro t ⟨⟨m,lt⟩,tr,tw⟩
   simp only [Nat.zero_add,Nat.sub_zero] at m lt
   exact ⟨u,r,n26,m,lt,tr.trans rd,tw.trans wr⟩
