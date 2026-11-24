@@ -18,6 +18,11 @@ public import VerifiedGarbage.Spec.Aes.Contract
 public import VerifiedGarbage.Proof.Aes.Contract
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Aes.X86.AesNi.Lit
+public import VerifiedGarbage.Proof.Aes.X86.Sbox
+public import VerifiedGarbage.Proof.Framework.X86.Linear
+public import VerifiedGarbage.Proof.Aes.Ct32.Layers
+public import VerifiedGarbage.Proof.Framework.X86.Wp
+public import VerifiedGarbage.Proof.Framework.X86.Spill
 import VerifiedGarbage.Proof.Aes.X86.Ctr32
 public import VerifiedGarbage.Proof.Aes.KeyExp
 public import VerifiedGarbage.Proof.Aes.Ct32.Bitsliced
@@ -30,6 +35,87 @@ section
 /-! ### `Aes.X86.ExpandKey`, which this module and modules that import it used -/
 
 section
+
+/-!
+# `ortho` on x86 (32-bit)
+
+It is checked by evaluation over the lane domain (`Framework/X86/Linear.lean`):
+the kernel runs it on the input words (the slots `0 … 7`) as atoms and
+compares every output bit with the input bit given in
+`Proof/Aes/Ct32/Layers.lean`. Position `p = 8r + 2c + b` of a word of the
+bitsliced state is byte `r + 4c` of block `b`.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Aes.X86
+
+open VG VG.X86 VG.X86.Straight VG.Bitslice VG.Impl.Aes.X86 VG.Proof.Aes VG.Proof.Aes.Ct32
+
+/-- The state slots hold input words `0 … 7`. -/
+def qIns : List (Nat × Nat) := (List.range 8).map fun k => (k, k)
+
+/-- The output slots `j`, bit `p` the XOR of the input bits `g j p`. -/
+def qOuts (g : Nat → Nat → List Nat) : List (Nat × (Nat → List Nat)) :=
+  (List.range 8).map fun j => (j, g j)
+
+theorem ortho_toBs_check :
+    check (lanes 32 8) linCfg (linExt 0) ortho (linEnv qIns) (linPost 64 8 (qOuts toBsG)) = true := by
+  decide +kernel
+
+theorem ortho_fromBs_check :
+    check (lanes 32 8) linCfg (linExt 0) ortho (linEnv qIns) (linPost 64 8 (qOuts fromBsG)) = true := by
+  decide +kernel
+
+theorem q_linear {k xb : Nat} {c : Cfg} {is : List Instr} {g : Nat → Nat → List Nat}
+    (hchk : check (lanes 32 k) c (linExt xb) is (linEnv qIns) (linPost c.slots k (qOuts g)) = true)
+    (hk : 256 ≤ 2 ^ k) (hcb : c.base = sb)
+    (hw : [Reg.esp, .esi, .edi].all (fun r => is.all fun i => i.dst != some r) = true)
+    {s : State} (hok : Ok c s) (W : Nat → BitVec 32) (hW : ∀ i < 8, W i = Q s i)
+    (hext : ∀ j < c.exts,
+      32 * (xb + j) + 32 ≤ 2 ^ k ∧ W (xb + j) = s.mem.readW (wordAddr (s.gpr c.ext) j) 32) :
+    ∃ s', runBlock isa is s = some s' ∧
+      (∀ j < 8, ∀ p < 32, (Q s' j).getLsbD p = xorBits W (g j p)) ∧
+      s'.rd = s.rd ∧ s'.wr = s.wr ∧ (∀ r, r ∉ tmpRegs → s'.gpr r = s.gpr r) ∧
+      Frame [slotRegion c s] s.mem s'.mem := by
+  obtain ⟨s', hs', hout, hrd, hwr, hoth, hfr⟩ := linear_ok hchk hok W (fun j i hji _ => by
+    simp only [qIns, List.mem_map, List.mem_range, Prod.mk.injEq] at hji
+    obtain ⟨i, hi, rfl, rfl⟩ := hji
+    exact ⟨by omega_using [hk, hi], by rw [hW i hi, hcb]⟩) hext
+  have hmem : ∀ j < 8, (j, g j) ∈ qOuts g := fun j hj => by
+    simp only [qOuts, List.mem_map, List.mem_range]; exact ⟨j, hj, rfl⟩
+  have hsb : s'.gpr sb = s.gpr sb := hoth sb (keeps_rest hw sb (by decide))
+  refine ⟨s', hs', fun j hj p hp => ?_, hrd, hwr, fun r hr => hoth r (keeps_rest hw r hr), hfr⟩
+  have := hout j (g j) (hmem j hj) p hp
+  rw [hcb] at this
+  rw [Q, hsb]; exact this
+
+theorem toBs_ok {s : State} (hok : Ok linCfg s) :
+    ∃ s', runBlock isa ortho s = some s' ∧
+      (∀ j < 8, ∀ p < 32, (Q s' j).getLsbD p =
+        (Q s (p % 2 + 2 * (idx p / 4))).getLsbD (8 * (idx p % 4) + j)) ∧
+      s'.rd = s.rd ∧ s'.wr = s.wr ∧ (∀ r, r ∉ tmpRegs → s'.gpr r = s.gpr r) ∧
+      Frame [slotRegion linCfg s] s.mem s'.mem := by
+  obtain ⟨s', hs', hout, rest⟩ := q_linear ortho_toBs_check (by decide) rfl
+    (by decide +kernel) hok (Q s) (fun _ _ => rfl) (fun j hj => by simp [linCfg] at hj)
+  refine ⟨s', hs', fun j hj p hp => ?_, rest⟩
+  rw [hout j hj p hp, toBsG, xorBits_cons, xorBits_nil, Bool.xor_false,
+    bitOf_word _ _ _ (by omega_using [hj])]
+
+theorem fromBs_ok {s : State} (hok : Ok linCfg s) :
+    ∃ s', runBlock isa ortho s = some s' ∧
+      (∀ k < 8, ∀ t < 32, (Q s' k).getLsbD t = (Q s (t % 8)).getLsbD (pos (k % 2) (t / 8 + 4 * (k / 2)))) ∧
+      s'.rd = s.rd ∧ s'.wr = s.wr ∧ (∀ r, r ∉ tmpRegs → s'.gpr r = s.gpr r) ∧
+      Frame [slotRegion linCfg s] s.mem s'.mem := by
+  obtain ⟨s', hs', hout, rest⟩ := q_linear ortho_fromBs_check (by decide) rfl
+    (by decide +kernel) hok (Q s) (fun _ _ => rfl) (fun j hj => by simp [linCfg] at hj)
+  refine ⟨s', hs', fun j hj p hp => ?_, rest⟩
+  rw [hout j hj p hp, fromBsG, xorBits_cons, xorBits_nil, Bool.xor_false,
+    bitOf_word _ _ _ (by simp only [pos]; omega_using [hj, hp])]
+
+end VG.Proof.Aes.X86
+
+end
 
 /-!
 # The AES key expansion on x86 (32-bit)
@@ -51,6 +137,18 @@ open VG.Spec.Aes (sbox xtimes subBytes subWord rotWord rcon xorWord)
 open VG.X86.Wp (Upd Mupd Fupd wp_mov wp_movi wp_addi wp_add wp_addm wp_sub wp_subi wp_cmp wp_cmpi wp_test
   wp_ldm wp_xorm wp_stm wp_shr wp_ror wp_andi wp_xor sub_beq sub_ofNat toNat_ofNat_lt ofNat_pred
   ofNat_beq_zero)
+
+theorem restore_ok {s : State} {B : BitVec 32} {N : Nat} {g : Reg → BitVec 32} (hb : s.gpr .edi = B)
+    (hfit : B.toNat + N ≤ 2 ^ 32) (hw : reg32 B N ∈ s.wr) (hs : Spill.Saved s.mem (addr B) g savedRegs)
+    (hN : 272 ≤ N := by omega_arith) :
+    WP isa (.block restoreRegs) s
+      (Spill.Restored s · g ([(.ebx, 256), (.esi, 260), (.ebp, 268)] ++ [(.edi, 264)])) := by
+  rw [show restoreRegs =
+    Spill.restoreCode .edi ([(.ebx, 256), (.esi, 260), (.ebp, 268)] ++ [(.edi, 264)]) ++ [] from rfl]
+  exact Spill.restoreBase_ok _ (by decide)
+    (fun p h => have : p.2 + 4 ≤ 272 := by revert p h; decide
+      by rw [hb]; exact in_rd (in_reg hw hfit (by omega_arith) (by decide)))
+    (by rw [hb]; exact hs.sub (by decide)) fun s' r => WP.block_nil r
 
 /-! ## The S-box on every byte -/
 
