@@ -25,559 +25,71 @@ pub const USES: &[&str] = &["aes_gcm", "aes", "gcm"];
     all(target_arch = "powerpc64", target_endian = "little"),
     target_arch = "riscv64"
 ))]
+pub fn bench(c: &mut Criterion) { paired::bench(c); }
+
+mod paired {
+// Temporary shared benchmark harness for the base and candidate.
+use std::{hint::black_box, mem::MaybeUninit};
+
+use criterion::{BenchmarkId, Criterion, Throughput};
+use openssl::{
+    cipher::Cipher,
+    cipher_ctx::CipherCtx,
+};
+use verified_garbage::aead::aes_gcm::AesGcm;
+
+use crate::{BenchDyn, VG};
+
+
+
 pub fn bench(c: &mut Criterion) {
-    use std::hint::black_box;
-
-    use aws_lc_rs::aead::{AES_128_GCM, Aad, LessSafeKey, Nonce, UnboundKey};
-    use criterion::{BenchmarkId, Throughput};
-    use openssl::cipher::Cipher as OsslCipher;
-    use openssl::cipher_ctx::CipherCtx;
-    use openssl::symm::{Cipher, Crypter, Mode, decrypt_aead, encrypt_aead};
-    use verified_garbage::aead::aes_gcm::AesGcm;
-
-    use crate::{AWS_LC, BenchDyn, OPENSSL, SIZES, VG};
-
-    /// The sizes measured one-shot only, besides `SIZES`.
-    const RECORD_SIZES: [usize; 3] = [128, 192, 384];
-    /// The sizes measured one-shot only whose buffers outgrow the caches.
-    const LARGE_SIZES: [usize; 1] = [1 << 20];
-    /// The sizes measured with a key reused across messages.
-    const REUSED_SIZES: [usize; 3] = [600, 1350, 4000];
-
-    let key = [0x42; 16];
-    let nonce = [0x24; 12];
-    let aad = [0x5a; 16];
-    let cipher = Cipher::aes_128_gcm();
-    let aws_lc_key = |key: &[u8]| LessSafeKey::new(UnboundKey::new(&AES_128_GCM, key).unwrap());
-    let mut sizes = [
-        SIZES.as_slice(),
-        RECORD_SIZES.as_slice(),
-        LARGE_SIZES.as_slice(),
-    ]
-    .concat();
-    sizes.sort_unstable();
-    for size in sizes {
-        let data = vec![0u8; size];
-        let mut buf = data.clone();
-        let tag = AesGcm::new(&key)
-            .unwrap()
-            .encrypt_in_place(&nonce, &aad, &mut buf)
-            .unwrap();
-        let ct = buf.clone();
-        let mut aws_lc_ct = data.clone();
-        let aws_lc_tag = aws_lc_key(&key)
-            .seal_in_place_separate_tag(
-                Nonce::assume_unique_for_key(nonce),
-                Aad::from(aad),
-                &mut aws_lc_ct,
-            )
-            .unwrap();
-        assert_eq!((&aws_lc_ct, aws_lc_tag.as_ref()), (&ct, &tag[..]));
-
-        let mut g = c.benchmark_group("aes-128-gcm-encrypt");
-        g.throughput(Throughput::Bytes(size as u64));
-        g.bench(BenchmarkId::new(VG, size), |b| {
-            b.iter(|| {
-                let k = AesGcm::new(black_box(&key)).unwrap();
-                k.encrypt_in_place(black_box(&nonce), black_box(&aad), black_box(&mut buf))
-                    .unwrap()
-            })
-        });
-        let mut t = [0u8; 16];
-        g.bench(BenchmarkId::new(OPENSSL, size), |b| {
-            b.iter(|| {
-                encrypt_aead(
-                    cipher,
-                    black_box(&key),
-                    Some(black_box(&nonce)),
-                    black_box(&aad),
-                    black_box(&data),
-                    &mut t,
-                )
-                .unwrap()
-            })
-        });
-        g.bench(BenchmarkId::new(AWS_LC, size), |b| {
-            b.iter(|| {
-                aws_lc_key(black_box(&key))
-                    .seal_in_place_separate_tag(
-                        Nonce::assume_unique_for_key(*black_box(&nonce)),
-                        Aad::from(black_box(&aad)),
-                        black_box(&mut buf),
-                    )
-                    .unwrap()
-            })
-        });
-        g.finish();
-
-        // Out of place: from `data` into a separate buffer.
-        let mut out = vec![0u8; size];
-        let mut ossl_out = vec![0u8; size + cipher.block_size()];
-        let mut aws_lc_tag = [0u8; 16];
-        let mut g = c.benchmark_group("aes-128-gcm-encrypt-out-of-place");
-        g.throughput(Throughput::Bytes(size as u64));
-        g.bench(BenchmarkId::new(VG, size), |b| {
-            b.iter(|| {
-                let k = AesGcm::new(black_box(&key)).unwrap();
-                k.encrypt(
-                    black_box(&nonce),
-                    black_box(&aad),
-                    &[black_box(&data[..])],
-                    black_box(&mut out),
-                )
-                .unwrap()
-            })
-        });
-        g.bench(BenchmarkId::new(OPENSSL, size), |b| {
-            b.iter(|| {
-                let mut s = Crypter::new(
-                    cipher,
-                    Mode::Encrypt,
-                    black_box(&key),
-                    Some(black_box(&nonce)),
-                )
-                .unwrap();
-                s.aad_update(black_box(&aad)).unwrap();
-                let n = s.update(black_box(&data), &mut ossl_out).unwrap();
-                s.finalize(&mut ossl_out[n..]).unwrap();
-                s.get_tag(&mut t).unwrap();
-            })
-        });
-        g.bench(BenchmarkId::new(AWS_LC, size), |b| {
-            b.iter(|| {
-                aws_lc_key(black_box(&key))
-                    .seal_out_of_place_scatter(
-                        Nonce::assume_unique_for_key(*black_box(&nonce)),
-                        Aad::from(black_box(&aad)),
-                        black_box(&data),
-                        black_box(&mut out),
-                        &[],
-                        &mut aws_lc_tag,
-                    )
-                    .unwrap()
-            })
-        });
-        g.finish();
-
-        // Out of place from two pieces, `data` and one more byte: a TLS 1.3
-        // record, whose payload is followed by its content type.
-        let ty = [0x17u8];
-        let mut out = vec![0u8; size + 1];
-        let mut aws_lc_out = vec![0u8; size];
-        let mut aws_lc_extra = [0u8; 1 + 16];
-        let pieces_tag = AesGcm::new(&key)
-            .unwrap()
-            .encrypt(&nonce, &aad, &[&data, &ty], &mut out)
-            .unwrap();
-        aws_lc_key(&key)
-            .seal_out_of_place_scatter(
-                Nonce::assume_unique_for_key(nonce),
-                Aad::from(aad),
-                &data,
-                &mut aws_lc_out,
-                &ty,
-                &mut aws_lc_extra,
-            )
-            .unwrap();
-        assert_eq!(
-            (
-                [&aws_lc_out[..], &aws_lc_extra[..1]].concat(),
-                &aws_lc_extra[1..]
-            ),
-            (out.clone(), &pieces_tag[..])
-        );
-        let mut g = c.benchmark_group("aes-128-gcm-encrypt-two-pieces");
-        g.throughput(Throughput::Bytes(size as u64 + 1));
-        g.bench(BenchmarkId::new(VG, size), |b| {
-            b.iter(|| {
-                let k = AesGcm::new(black_box(&key)).unwrap();
-                k.encrypt(
-                    black_box(&nonce),
-                    black_box(&aad),
-                    &[black_box(&data[..]), black_box(&ty[..])],
-                    black_box(&mut out),
-                )
-                .unwrap()
-            })
-        });
-        let mut ossl_out = vec![0u8; size + 1 + cipher.block_size()];
-        g.bench(BenchmarkId::new(OPENSSL, size), |b| {
-            b.iter(|| {
-                let mut s = Crypter::new(
-                    cipher,
-                    Mode::Encrypt,
-                    black_box(&key),
-                    Some(black_box(&nonce)),
-                )
-                .unwrap();
-                s.aad_update(black_box(&aad)).unwrap();
-                let n = s.update(black_box(&data), &mut ossl_out).unwrap();
-                let n = n + s.update(black_box(&ty), &mut ossl_out[n..]).unwrap();
-                s.finalize(&mut ossl_out[n..]).unwrap();
-                s.get_tag(&mut t).unwrap();
-            })
-        });
-        g.bench(BenchmarkId::new(AWS_LC, size), |b| {
-            b.iter(|| {
-                aws_lc_key(black_box(&key))
-                    .seal_out_of_place_scatter(
-                        Nonce::assume_unique_for_key(*black_box(&nonce)),
-                        Aad::from(black_box(&aad)),
-                        black_box(&data),
-                        black_box(&mut aws_lc_out),
-                        black_box(&ty),
-                        &mut aws_lc_extra,
-                    )
-                    .unwrap()
-            })
-        });
-        g.finish();
-
-        let mut g = c.benchmark_group("aes-128-gcm-decrypt");
-        g.throughput(Throughput::Bytes(size as u64));
-        g.bench(BenchmarkId::new(VG, size), |b| {
-            b.iter(|| {
-                buf.copy_from_slice(&ct);
-                let k = AesGcm::new(black_box(&key)).unwrap();
-                k.decrypt_in_place(
-                    black_box(&nonce),
-                    black_box(&aad),
-                    black_box(&mut buf),
-                    &tag,
-                )
-                .unwrap()
-            })
-        });
-        g.bench(BenchmarkId::new(OPENSSL, size), |b| {
-            b.iter(|| {
-                decrypt_aead(
-                    cipher,
-                    black_box(&key),
-                    Some(black_box(&nonce)),
-                    black_box(&aad),
-                    black_box(&ct),
-                    &tag,
-                )
-                .unwrap()
-            })
-        });
-        g.bench(BenchmarkId::new(AWS_LC, size), |b| {
-            b.iter(|| {
-                buf.copy_from_slice(&ct);
-                aws_lc_key(black_box(&key))
-                    .open_in_place_separate_tag(
-                        Nonce::assume_unique_for_key(*black_box(&nonce)),
-                        Aad::from(black_box(&aad)),
-                        &tag,
-                        black_box(&mut buf),
-                    )
-                    .unwrap();
-            })
-        });
-        g.finish();
-
-        // Out of place: from `ct` into a separate buffer.
-        let mut out = vec![0u8; size];
-        let mut ossl_out = vec![0u8; size + cipher.block_size()];
-        let mut g = c.benchmark_group("aes-128-gcm-decrypt-out-of-place");
-        g.throughput(Throughput::Bytes(size as u64));
-        g.bench(BenchmarkId::new(VG, size), |b| {
-            b.iter(|| {
-                let k = AesGcm::new(black_box(&key)).unwrap();
-                k.decrypt(
-                    black_box(&nonce),
-                    black_box(&aad),
-                    black_box(&ct),
-                    &tag,
-                    black_box(&mut out),
-                )
-                .unwrap()
-            })
-        });
-        g.bench(BenchmarkId::new(OPENSSL, size), |b| {
-            b.iter(|| {
-                let mut s = Crypter::new(
-                    cipher,
-                    Mode::Decrypt,
-                    black_box(&key),
-                    Some(black_box(&nonce)),
-                )
-                .unwrap();
-                s.aad_update(black_box(&aad)).unwrap();
-                s.set_tag(&tag).unwrap();
-                let n = s.update(black_box(&ct), &mut ossl_out).unwrap();
-                s.finalize(&mut ossl_out[n..]).unwrap();
-            })
-        });
-        g.bench(BenchmarkId::new(AWS_LC, size), |b| {
-            b.iter(|| {
-                aws_lc_key(black_box(&key))
-                    .open_separate_gather(
-                        Nonce::assume_unique_for_key(*black_box(&nonce)),
-                        Aad::from(black_box(&aad)),
-                        black_box(&ct),
-                        &tag,
-                        black_box(&mut out),
-                    )
-                    .unwrap()
-            })
-        });
-        g.finish();
-
-        if !SIZES.contains(&size) {
-            continue;
+    let nonce = [0x24; 24];
+    let aad = [17; 64];
+    for bits in [128, 192, 256] {
+        let key = vec![0x5a; bits / 8];
+        let cipher = match bits { 128 => Cipher::aes_128_gcm(), 192 => Cipher::aes_192_gcm(), _ => Cipher::aes_256_gcm() };
+        let vg = AesGcm::new(&key).unwrap();
+        for (name, nonce_len, aad_len) in [("tls", 12, 5), ("long-aad", 12, 17), ("iv8", 8, 5), ("iv16-aad33", 16, 33), ("no-aad", 12, 0)] {
+            let n = &nonce[..nonce_len];
+            let a = &aad[..aad_len];
+            let sizes: &[usize] = &[112,128,129,143,144,145,159,160,161,176,192,193,224];
+            for identical in [false, true] {
+                let layout = if identical { "identical" } else { "disjoint" };
+                let mut group = c.benchmark_group(format!("paired-aes-{bits}-gcm-{name}-{layout}"));
+                for &size in sizes {
+                    let src = (0..size).map(|i| (17*i+3) as u8).collect::<Vec<_>>();
+                    let mut reference = vec![0; size+16];
+                    let mut tag = [0;16];
+                    let mut ctx = CipherCtx::new().unwrap();
+                    ctx.encrypt_init(Some(cipher), None, None).unwrap();
+                    ctx.set_iv_length(nonce_len).unwrap();
+                    ctx.encrypt_init(None, Some(&key), Some(n)).unwrap();
+                    ctx.cipher_update(a, None).unwrap();
+                    let written = ctx.cipher_update(&src, Some(&mut reference)).unwrap();
+                    let end = ctx.cipher_final(&mut reference[written..]).unwrap();
+                    assert_eq!(written + end, size);
+                    ctx.tag(&mut tag).unwrap();
+                    let mut input = src.clone();
+                    let mut dst = vec![MaybeUninit::<u8>::uninit();size];
+                    group.throughput(Throughput::Bytes(size as u64));
+                    if identical {
+                        assert_eq!(vg.encrypt_in_place(n,a,&mut input).unwrap(),tag);
+                        assert_eq!(input,reference[..size]);
+                        group.bench(BenchmarkId::new(VG,size),|b| b.iter(||vg.encrypt_in_place(black_box(n),black_box(a),black_box(&mut input)).unwrap()));
+                    } else {
+                        let (ct, actual) = vg.encrypt_uninit(n,a,&[&src],&mut dst).unwrap();
+                        assert_eq!(actual,tag);assert_eq!(ct,&reference[..size]);
+                        group.bench(BenchmarkId::new(VG,size),|b| b.iter(||vg.encrypt_uninit(black_box(n),black_box(a),&[black_box(&src)],black_box(&mut dst)).unwrap().1));
+                    }
+                }
+                group.finish();
+            }
         }
-        let mut g = c.benchmark_group("aes-128-gcm-stream");
-        g.throughput(Throughput::Bytes(size as u64));
-        g.bench(BenchmarkId::new(VG, size), |b| {
-            b.iter(|| {
-                let k = AesGcm::new(black_box(&key)).unwrap();
-                let mut s = k.encryptor(black_box(&nonce)).unwrap();
-                s.update_aad(black_box(&aad)).unwrap();
-                s.update(black_box(&mut buf)).unwrap();
-                s.finalize()
-            })
-        });
-        let mut out = vec![0u8; size + cipher.block_size()];
-        g.bench(BenchmarkId::new(OPENSSL, size), |b| {
-            b.iter(|| {
-                let mut s = Crypter::new(
-                    cipher,
-                    Mode::Encrypt,
-                    black_box(&key),
-                    Some(black_box(&nonce)),
-                )
-                .unwrap();
-                s.aad_update(black_box(&aad)).unwrap();
-                let n = s.update(black_box(&data), &mut out).unwrap();
-                s.finalize(&mut out[n..]).unwrap();
-                s.get_tag(&mut t).unwrap();
-            })
-        });
-        g.finish();
     }
-
-    // A key reused for every message: in place, and out of place from two
-    // pieces (a TLS 1.3 record's payload and its content type), each next to
-    // OpenSSL's context and aws-lc-rs's key, also set up once.
-    let vg_key = AesGcm::new(&key).unwrap();
-    let aws_lc_reused = aws_lc_key(&key);
-    let mut ossl = CipherCtx::new().unwrap();
-    ossl.encrypt_init(Some(OsslCipher::aes_128_gcm()), Some(&key), None)
-        .unwrap();
-    let ty = [0x17u8];
-    for size in REUSED_SIZES {
-        let data = vec![0u8; size];
-        let mut buf = data.clone();
-        let mut ossl_out = vec![0u8; size + 1 + 16];
-        let mut t = [0u8; 16];
-        let mut ossl_seal = |pieces: &[&[u8]], out: &mut [u8]| {
-            ossl.encrypt_init(None, None, Some(&nonce)).unwrap();
-            ossl.cipher_update(&aad, None).unwrap();
-            let mut n = 0;
-            for p in pieces {
-                n += ossl.cipher_update(p, Some(&mut out[n..])).unwrap();
-            }
-            ossl.cipher_final(&mut out[n..]).unwrap();
-            ossl.tag(&mut t).unwrap();
-            t
-        };
-
-        let tag = vg_key.encrypt_in_place(&nonce, &aad, &mut buf).unwrap();
-        let ossl_tag = ossl_seal(&[&data], &mut ossl_out);
-        assert_eq!((&buf[..], &tag[..]), (&ossl_out[..size], &ossl_tag[..]));
-        let mut g = c.benchmark_group("aes-128-gcm-encrypt-reused-key");
-        g.throughput(Throughput::Bytes(size as u64));
-        g.bench(BenchmarkId::new(VG, size), |b| {
-            b.iter(|| {
-                vg_key
-                    .encrypt_in_place(black_box(&nonce), black_box(&aad), black_box(&mut buf))
-                    .unwrap()
-            })
-        });
-        g.bench(BenchmarkId::new(OPENSSL, size), |b| {
-            b.iter(|| ossl_seal(&[black_box(&data)], &mut ossl_out))
-        });
-        g.bench(BenchmarkId::new(AWS_LC, size), |b| {
-            b.iter(|| {
-                aws_lc_reused
-                    .seal_in_place_separate_tag(
-                        Nonce::assume_unique_for_key(*black_box(&nonce)),
-                        Aad::from(black_box(&aad)),
-                        black_box(&mut buf),
-                    )
-                    .unwrap()
-            })
-        });
-        g.finish();
-
-        let mut out = vec![0u8; size + 1];
-        let mut aws_lc_out = vec![0u8; size];
-        let mut aws_lc_extra = [0u8; 1 + 16];
-        let tag = vg_key
-            .encrypt(&nonce, &aad, &[&data, &ty], &mut out)
-            .unwrap();
-        let ossl_tag = ossl_seal(&[&data, &ty], &mut ossl_out);
-        assert_eq!((&out[..], &tag[..]), (&ossl_out[..size + 1], &ossl_tag[..]));
-        let mut g = c.benchmark_group("aes-128-gcm-encrypt-two-pieces-reused-key");
-        g.throughput(Throughput::Bytes(size as u64 + 1));
-        g.bench(BenchmarkId::new(VG, size), |b| {
-            b.iter(|| {
-                vg_key
-                    .encrypt(
-                        black_box(&nonce),
-                        black_box(&aad),
-                        &[black_box(&data[..]), black_box(&ty[..])],
-                        black_box(&mut out),
-                    )
-                    .unwrap()
-            })
-        });
-        g.bench(BenchmarkId::new(OPENSSL, size), |b| {
-            b.iter(|| ossl_seal(&[black_box(&data), black_box(&ty)], &mut ossl_out))
-        });
-        g.bench(BenchmarkId::new(AWS_LC, size), |b| {
-            b.iter(|| {
-                aws_lc_reused
-                    .seal_out_of_place_scatter(
-                        Nonce::assume_unique_for_key(*black_box(&nonce)),
-                        Aad::from(black_box(&aad)),
-                        black_box(&data),
-                        black_box(&mut aws_lc_out),
-                        black_box(&ty),
-                        &mut aws_lc_extra,
-                    )
-                    .unwrap()
-            })
-        });
-        g.finish();
-
-        // Seal into the spare capacity of a reusable record buffer.
-        let mut record = Vec::with_capacity(size + 1 + 16);
-        let mut g = c.benchmark_group("aes-128-gcm-encrypt-uninit-reused-key");
-        g.throughput(Throughput::Bytes(size as u64 + 1));
-        g.bench(BenchmarkId::new(VG, size), |b| {
-            b.iter(|| {
-                record.clear();
-                vg_key
-                    .encrypt_uninit(
-                        black_box(&nonce),
-                        black_box(&aad),
-                        &[black_box(&data), black_box(&ty)],
-                        black_box(&mut record.spare_capacity_mut()[..size + 1]),
-                    )
-                    .unwrap()
-                    .1
-            })
-        });
-        g.bench(BenchmarkId::new(OPENSSL, size), |b| {
-            b.iter(|| {
-                record.clear();
-                record.resize(size + 1 + 16, 0);
-                ossl_seal(&[black_box(&data), black_box(&ty)], black_box(&mut record))
-            })
-        });
-        g.bench(BenchmarkId::new(AWS_LC, size), |b| {
-            b.iter(|| {
-                record.clear();
-                record.resize(size + 1 + 16, 0);
-                let (ciphertext, tail) = record.split_at_mut(size);
-                aws_lc_reused
-                    .seal_out_of_place_scatter(
-                        Nonce::assume_unique_for_key(*black_box(&nonce)),
-                        Aad::from(black_box(&aad)),
-                        black_box(&data),
-                        ciphertext,
-                        black_box(&ty),
-                        tail,
-                    )
-                    .unwrap()
-            })
-        });
-        g.finish();
-
-        // Two halves, so that whole blocks follow the first piece.
-        let (h1, h2) = data.split_at(size / 2);
-        let mut out = vec![0u8; size];
-        let mut aws_lc_out = vec![0u8; h1.len()];
-        let mut aws_lc_extra = vec![0u8; h2.len() + 16];
-        let tag = vg_key.encrypt(&nonce, &aad, &[h1, h2], &mut out).unwrap();
-        let ossl_tag = ossl_seal(&[h1, h2], &mut ossl_out);
-        assert_eq!((&out[..], &tag[..]), (&ossl_out[..size], &ossl_tag[..]));
-        let mut g = c.benchmark_group("aes-128-gcm-encrypt-halves-reused-key");
-        g.throughput(Throughput::Bytes(size as u64));
-        g.bench(BenchmarkId::new(VG, size), |b| {
-            b.iter(|| {
-                vg_key
-                    .encrypt(
-                        black_box(&nonce),
-                        black_box(&aad),
-                        &[black_box(h1), black_box(h2)],
-                        black_box(&mut out),
-                    )
-                    .unwrap()
-            })
-        });
-        g.bench(BenchmarkId::new(OPENSSL, size), |b| {
-            b.iter(|| ossl_seal(&[black_box(h1), black_box(h2)], &mut ossl_out))
-        });
-        g.bench(BenchmarkId::new(AWS_LC, size), |b| {
-            b.iter(|| {
-                aws_lc_reused
-                    .seal_out_of_place_scatter(
-                        Nonce::assume_unique_for_key(*black_box(&nonce)),
-                        Aad::from(black_box(&aad)),
-                        black_box(h1),
-                        black_box(&mut aws_lc_out),
-                        black_box(h2),
-                        &mut aws_lc_extra,
-                    )
-                    .unwrap()
-            })
-        });
-        g.finish();
-    }
-
-    // Small streaming fragments reuse the partial-block keystream: they
-    // should not repeatedly enter the whole-block counter-mode primitive.
-    let size = 64;
-    let data = vec![0u8; size];
-    let mut buf = data.clone();
-    let mut out = [0u8; 32];
-    let mut tag = [0u8; 16];
-    let mut g = c.benchmark_group("aes-128-gcm-stream-bytes");
-    g.throughput(Throughput::Bytes(size as u64));
-    g.bench(BenchmarkId::new(VG, size), |b| {
-        b.iter(|| {
-            let k = AesGcm::new(black_box(&key)).unwrap();
-            let mut s = k.encryptor(black_box(&nonce)).unwrap();
-            s.update_aad(black_box(&aad)).unwrap();
-            for byte in buf.chunks_mut(1) {
-                s.update(black_box(byte)).unwrap();
-            }
-            s.finalize()
-        })
-    });
-    g.bench(BenchmarkId::new(OPENSSL, size), |b| {
-        b.iter(|| {
-            let mut s = Crypter::new(
-                cipher,
-                Mode::Encrypt,
-                black_box(&key),
-                Some(black_box(&nonce)),
-            )
-            .unwrap();
-            s.aad_update(black_box(&aad)).unwrap();
-            for byte in data.chunks(1) {
-                s.update(black_box(byte), &mut out).unwrap();
-            }
-            s.finalize(&mut out).unwrap();
-            s.get_tag(&mut tag).unwrap();
-        })
-    });
-    g.finish();
-    tls_records(c);
 }
+
+}
+
 
 /// TLS records, as a TLS library seals and opens them with a key reused for
 /// the connection: AES-128-GCM and AES-256-GCM, a 12-byte nonce and a TLS 1.3
