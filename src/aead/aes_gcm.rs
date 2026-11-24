@@ -706,6 +706,7 @@ impl AesGcm {
     /// one piece (`&[buf]`); there may be at most
     /// [`MAX_PIECES`](Self::MAX_PIECES). The nonce is as for
     /// [`encrypt_in_place`](Self::encrypt_in_place).
+    #[cfg_attr(target_arch = "x86_64", inline)]
     pub fn encrypt(
         &self,
         nonce: &[u8],
