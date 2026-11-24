@@ -10,6 +10,7 @@ public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.TCB.X86.Target
 import VerifiedGarbage.Proof.Framework.X86.RelCT
 public import VerifiedGarbage.Proof.Dsa.X86.PowCorrect
+public import VerifiedGarbage.Proof.Dsa.X86.PowJoint
 public import VerifiedGarbage.Proof.Dsa.X86.StackFrame
 import VerifiedGarbage.Proof.Dsa.X86.PowCallFrame
 import VerifiedGarbage.Proof.Framework.X86.CallWith
