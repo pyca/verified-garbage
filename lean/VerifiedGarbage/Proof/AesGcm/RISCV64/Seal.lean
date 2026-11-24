@@ -369,32 +369,21 @@ section
 variable {V : Reg → BitVec 64} {sp : Addr} (L : Lay (V .s2) (V .s1) (V .s0))
 include L
 
-/-- `oneTag o`, or with the round keys bitsliced (`bs`), from the buffer at `V s7`. -/
-theorem oneTagB_ok [VG.Proof.Gcm.RISCV64.GhashLaw] {bs : Bool} {o R : Nat} (ho : o = 0 ∨ o = 112) {H : Block}
-    {a : List Byte} {D : Addr} {s : State}
-    (he : Env V sp s) (h28 : V .s3 = BitVec.ofNat 64 R) (hR : R = 10 ∨ R = 12 ∨ R = 14)
-    (hH : blockAt s.mem (V .s2 + BitVec.ofNat 64 240) = H) (hl : (V .s10).toNat = a.length)
+/-- Absorb the ciphertext and its padding once, then continue with the tag implementation. -/
+theorem oneTagAbsorb_ok [VG.Proof.Gcm.RISCV64.GhashLaw] {H : Block} {a : List Byte} {D : Addr} {s : State}
+    (he : Env V sp s) (hH : blockAt s.mem (V .s2 + BitVec.ofNat 64 240) = H)
     (hab : Absorbed s.mem (V .s1 + BitVec.ofNat 64 16) (V .s1 + BitVec.ofNat 64 32) H (a ++ zeros (padLen a.length)))
     (hd : DataOk (V .s1) (V .s0) s D (V .s11).toNat)
-    (hDs : s.mem.readW (V .s0 + BitVec.ofNat 64 dataO) 64 = D) {S' D' : Addr} {n' : Nat}
-    (hb : bs = true → BkIn (V .s7) (V .s2) (V .s1) (V .s0) sp R s.mem S' D' n' s) :
-    WP isa (oneTagB bs o) s (OT V sp o R H a (blockAt s.mem (V .s1)) D s.mem) := by
+    (hDs : s.mem.readW (V .s0 + BitVec.ofNat 64 dataO) 64 = D)
+    {tail : Prog isa} {post : State → Prop}
+    (k : ∀ t, Env V sp t → blockAt t.mem (V .s2+BitVec.ofNat 64 240)=H →
+      blockAt t.mem (V .s1+BitVec.ofNat 64 16)=ghash H (blocks (padded a (bytesAt s.mem D (V .s11).toNat))) →
+      t.rd=s.rd → t.wr=s.wr →
+      Frame (absFrame (V .s1) (V .s0) 16 sp ++ tFrame (V .s1) (V .s0) 16 sp) s.mem t.mem →
+      WP isa tail t post) :
+    WP isa (.seq (.block dataArgs) (.seq (absorb 16) (.seq (.block [.logicImm .and .s6 .s11 15])
+      (.seq (flush 16) tail)))) s post := by
   have hk := he.stk'
-  have dC : ∀ r ∈ otFrame (V .s1) (V .s0) o sp, (⟨V .s2, 256⟩ : Region).Disjoint r := by
-    intro r hr
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl | rfl
-    · exact L.cs.sub_right (Region.sub_prefix (by decide))
-    · exact L.cw'.sub_right (Lay.wSub (by decide))
-    · exact L.cw'.sub_right (Lay.wSub (by omega_using [ho]))
-    · exact L.cw'.sub_right (Lay.wSub (by decide))
-    · exact hk.c
-  have dJ : ∀ r ∈ absFrame (V .s1) (V .s0) 16 sp ++ tFrame (V .s1) (V .s0) 16 sp,
-      (⟨V .s1, 16⟩ : Region).Disjoint r := by
-    intro r hr
-    rcases List.mem_append.mp hr with hr | hr
-    · simpa using stb_abs16 L hk (d := 0) (.inl rfl) r hr
-    · simpa using stb_t16 L hk (d := 0) (.inl rfl) r hr
   have hx : (a ++ zeros (padLen a.length)).length % 16 = 0 := by
     simp only [List.length_append, Proof.Gcm.length_zeros]; exact Proof.Gcm.length_pad_mod _
   refine WP.seq (WP.mono (dataArgs_ok he L.wal hDs) fun s₁ ⟨a24, a25, a26, g₁, k₁⟩ => ?_)
@@ -421,43 +410,73 @@ theorem oneTagB_ok [VG.Proof.Gcm.RISCV64.GhashLaw] {bs : Bool} {o R : Nat} (ho :
   refine WP.seq (WP.mono (WP.with_rdwr' (flush_ok L (yo := 16) (.inr rfl) (x := (a ++ zeros (padLen a.length)) ++ ct)
     (H := H) ⟨he₃, by rw [k₃.mem]; exact hH₂⟩ (by rw [a26', hlx]))) fun s₄ ⟨fl, rd₄, wr₄⟩ => ?_)
   rw [k₃.mem] at fl
-  have e22 := fl.env.fr .s10 (by decide)
-  have e23 := fl.env.fr .s11 (by decide)
+  have f₄ : Frame (absFrame (V .s1) (V .s0) 16 sp ++ tFrame (V .s1) (V .s0) 16 sp) s.mem s₄.mem :=
+    (ab.frame.mono (fun r hr => List.mem_append_left _ hr)).trans
+      (fl.frame.mono (fun r hr => List.mem_append_right _ hr))
+  have hw := (fl.abs (ab.abs hab)).whole_eq (by
+      simp only [List.length_append, Proof.Gcm.length_zeros]; exact Proof.Gcm.length_pad_mod _)
+  rw [padded_eq] at hw
+  exact k s₄ fl.env fl.hH hw (rd₄.trans (k₃.rd.trans (rd₂.trans k₁.rd)))
+    (wr₄.trans (k₃.wr.trans (wr₂.trans k₁.wr))) f₄
+
+/-- `oneTag o`, or with the round keys bitsliced (`bs`), from the buffer at `V s7`. -/
+theorem oneTagB_ok [VG.Proof.Gcm.RISCV64.GhashLaw] {bs : Bool} {o R : Nat} (ho : o = 0 ∨ o = 112) {H : Block}
+    {a : List Byte} {D : Addr} {s : State}
+    (he : Env V sp s) (h28 : V .s3 = BitVec.ofNat 64 R) (hR : R = 10 ∨ R = 12 ∨ R = 14)
+    (hH : blockAt s.mem (V .s2 + BitVec.ofNat 64 240) = H) (hl : (V .s10).toNat = a.length)
+    (hab : Absorbed s.mem (V .s1 + BitVec.ofNat 64 16) (V .s1 + BitVec.ofNat 64 32) H (a ++ zeros (padLen a.length)))
+    (hd : DataOk (V .s1) (V .s0) s D (V .s11).toNat)
+    (hDs : s.mem.readW (V .s0 + BitVec.ofNat 64 dataO) 64 = D) {S' D' : Addr} {n' : Nat}
+    (hb : bs = true → BkIn (V .s7) (V .s2) (V .s1) (V .s0) sp R s.mem S' D' n' s) :
+    WP isa (oneTagB bs o) s (OT V sp o R H a (blockAt s.mem (V .s1)) D s.mem) := by
+  have hk := he.stk'
+  have dC : ∀ r ∈ otFrame (V .s1) (V .s0) o sp, (⟨V .s2, 256⟩ : Region).Disjoint r := by
+    intro r hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl | rfl
+    · exact L.cs.sub_right (Region.sub_prefix (by decide))
+    · exact L.cw'.sub_right (Lay.wSub (by decide))
+    · exact L.cw'.sub_right (Lay.wSub (by omega_using [ho]))
+    · exact L.cw'.sub_right (Lay.wSub (by decide))
+    · exact hk.c
+  have dJ : ∀ r ∈ absFrame (V .s1) (V .s0) 16 sp ++ tFrame (V .s1) (V .s0) 16 sp,
+      (⟨V .s1, 16⟩ : Region).Disjoint r := by
+    intro r hr
+    rcases List.mem_append.mp hr with hr | hr
+    · simpa using stb_abs16 L hk (d := 0) (.inl rfl) r hr
+    · simpa using stb_t16 L hk (d := 0) (.inl rfl) r hr
+  refine oneTagAbsorb_ok L he hH hab hd hDs fun s₄ env₄ hH₄ hw rd₄ wr₄ f₄ => ?_
+  have e22 := env₄.fr .s10 (by decide)
+  have e23 := env₄.fr .s11 (by decide)
   have h₅ : WP isa (.block [mov .s4 .s10, mov .s6 .s11]) s₄ fun s₅ =>
       s₅.gpr .s4 = V .s10 ∧ s₅.gpr .s6 = V .s11 ∧ (∀ r, r ≠ .s4 → r ≠ .s6 → s₅.gpr r = s₄.gpr r) ∧
         Keeps s₄ s₅ := by
     crun [Int.reduceNatCast', mov, e22, e23]
     exact ⟨fun r a b => by simp [a, b], ⟨rfl, rfl, rfl, rfl⟩⟩
   refine WP.seq (WP.mono h₅ fun s₅ ⟨h24₅, h26₅, g₅, k₅⟩ => ?_)
-  have he₅ := fl.env.keep (fun r hr => g₅ r (by revert r; decide) (by revert r; decide)) k₅.sp k₅.rd k₅.wr
-  have f₄ : Frame (absFrame (V .s1) (V .s0) 16 sp ++ tFrame (V .s1) (V .s0) 16 sp) s.mem s₄.mem :=
-    (ab.frame.mono (fun r hr => List.mem_append_left _ hr)).trans
-      (fl.frame.mono (fun r hr => List.mem_append_right _ hr))
+  have he₅ := env₄.keep (fun r hr => g₅ r (by revert r; decide) (by revert r; decide)) k₅.sp k₅.rd k₅.wr
   have hj : ∀ r ∈ absFrame (V .s1) (V .s0) 16 sp ++ tFrame (V .s1) (V .s0) 16 sp,
       ∃ r' ∈ j0Frame (V .s1) (V .s0) sp, Region.Sub r r' := fun r hr => by
     rcases List.mem_append.mp hr with hr | hr
     · exact abs16_j0 r hr
     · exact t16_j0 r hr
-  refine WP.mono (tagB_ok L (bs := bs) ho he₅ h28 hR (H := H) (by rw [k₅.mem]; exact fl.hH) rfl
+  refine WP.mono (tagB_ok L (bs := bs) ho he₅ h28 hR (H := H) (by rw [k₅.mem]; exact hH₄) rfl
     (S := S') (D := D') (n := n') fun hbs => ?_) fun s₆ tg => ?_
   · obtain hb₀ := hb hbs
     rw [k₅.mem]
     refine hb₀.frame hR f₄ (fun r hr => ?_) (fun r hr => ?_)
-      (by rw [k₅.rd, rd₄, k₃.rd, rd₂, k₁.rd]) (by rw [k₅.wr, wr₄, k₃.wr, wr₂, k₁.wr])
+      (by rw [k₅.rd, rd₄]) (by rw [k₅.wr, wr₄])
     · obtain ⟨r', hr', hs⟩ := hj r hr; exact (hb₀.j0Frame r' hr').sub_right hs
     · obtain ⟨r', hr', hs⟩ := hj r hr; exact (ctx_j0Frame L hk r' hr').sub_right hs
   rw [h24₅, h26₅, k₅.mem] at tg
   refine ⟨tg.env, ?_, ?_⟩
   · rw [tg.out]
-    have hw := (fl.abs (ab.abs hab)).whole_eq (by
-      simp only [List.length_append, Proof.Gcm.length_zeros]; exact Proof.Gcm.length_pad_mod _)
-    rw [padded_eq] at hw
     rw [hw, ciph_frame f₄ (fun r hr => by
         rcases List.mem_append.mp hr with hr | hr
         · obtain ⟨r', hr', hs⟩ := abs_otSub (o := o) r hr; exact (dC r' hr').sub_right hs
         · obtain ⟨r', hr', hs⟩ := t_otSub (o := o) r hr; exact (dC r' hr').sub_right hs) hR,
       blockAt_frame f₄ dJ, hl]
-    simp only [ct, length_bytesAt]
+    simp only [length_bytesAt]
   · refine (f₄.sub fun r hr => ?_).trans (tg.frame.sub tag_otSub)
     rcases List.mem_append.mp hr with hr | hr
     · exact abs_otSub r hr
