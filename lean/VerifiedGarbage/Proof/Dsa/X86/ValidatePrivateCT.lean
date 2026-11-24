@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Mont.X86.DynamicTiming
 import VerifiedGarbage.Proof.Dsa.X86.LayoutAgreement
 import VerifiedGarbage.Proof.Dsa.X86.VerifySizedTiming
 import VerifiedGarbage.Proof.Dsa.X86.KeyTiming
+import VerifiedGarbage.Proof.Dsa.X86.GenerateTiming
 import VerifiedGarbage.Proof.Dsa.X86.CheckingDispatchCT
 public import VerifiedGarbage.Proof.Dsa.X86.EntryTiming
 import VerifiedGarbage.Proof.Dsa.X86.InstalledInputs
@@ -152,7 +153,7 @@ theorem privateValidatingSized_relCT (L : CallLayout) (digestLen : Nat)
     have Yc : CallOperand L (.input .y) L.pLen := .inl ⟨_, Y, Nat.le_refl _⟩
     have Xc : CallOperand L (.input .x) L.qLen := .inl ⟨_, X, Nat.le_refl _⟩
     have Kc : CallOperand L (.input .nonce) L.qLen := .inl ⟨_, K, Nat.le_refl _⟩
-    have CT := RelCT.seq (RelCT.seq (callPublicKey_relCT L Pc Qc Gc Yc)
+    have CT := RelCT.seq (RelCT.seq (RelCT.seq (callDomain_relCT L Pc Qc Gc Yc) (generateSubgroup_relCT L Pc Qc Gc))
       (callPrivateKey_relCT L Pc Qc Gc Yc Xc Kc))
       (result_relCT.mono (fun _ _ H => H.workspace) (fun _ _ h => h))
     exact CT.mono (fun _ _ H => ⟨(H.2 True.intro).1.ready, (H.2 True.intro).2.ready⟩) (fun _ _ h => h)
