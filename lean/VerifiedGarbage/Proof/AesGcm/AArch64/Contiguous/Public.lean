@@ -12,18 +12,6 @@ import VerifiedGarbage.Proof.Framework.Contract
 equality, and two separate permissions otherwise. Both feed the same proof. -/
 
 @[expose] public section
-namespace VG.Sig
-variable {n dst len : String} {ps : List (String × Param)} {vs : List Addr} {e : Elem} {p q l : Addr}
-
-theorem bufs_inOut : bufs ((n,.inOutSlice e dst len)::ps) (p::q::l::vs) =
-    if p=q then (⟨q,l.toNat*e.size⟩,true)::bufs ps vs
-    else (⟨p,l.toNat*e.size⟩,false)::(⟨q,l.toNat*e.size⟩,true)::bufs ps vs := rfl
-
-theorem lists_inOut {pb : Nat} {m : Mem} : lists pb m ((n,.inOutSlice e dst len)::ps) (p::q::l::vs) =
-    lists pb m ps vs := rfl
-
-end VG.Sig
-
 namespace VG.Proof.AesGcm.AArch64.Contiguous
 open VG VG.AArch64 VG.Impl.AesGcm.AArch64.Contiguous
 
@@ -34,7 +22,7 @@ theorem public_pre {s : State} (h : publicContract.pre s) : (leafContract Guard.
   all_goals
     sig_pre [publicContract,Spec.Gcm.sealContiguousWithPowersContract,Spec.Gcm.sealContiguousAuxSig,
       Spec.Gcm.sealContiguousSig,Spec.Gcm.withPowersParam,Spec.Gcm.sealWithPowersPre,Spec.Gcm.sealPre,
-      abi,argRegs,Gather.stackArgs_three,List.cons_append,List.nil_append,Sig.bufs_inOut,Sig.lists_inOut] at h
+      abi,argRegs,Gather.stackArgs_three,List.cons_append,List.nil_append] at h
     simp only [eq,↓reduceIte] at h
     simp [Sig.pairFacts,Sig.conj,List.filterMap_cons,and_assoc] at h
   case pos =>
@@ -94,7 +82,7 @@ theorem example_pre (same : Bool) : publicContract.pre (exampleState same) := by
   have pw := (examplePowers same).repr
   sig_pre [publicContract,Spec.Gcm.sealContiguousWithPowersContract,Spec.Gcm.sealContiguousAuxSig,
     Spec.Gcm.sealContiguousSig,Spec.Gcm.withPowersParam,Spec.Gcm.sealWithPowersPre,Spec.Gcm.sealPre,
-    abi,argRegs,Gather.stackArgs_three,List.cons_append,List.nil_append,Sig.bufs_inOut,Sig.lists_inOut]
+    abi,argRegs,Gather.stackArgs_three,List.cons_append,List.nil_append]
   cases same <;> simp only [exampleState] at *
   all_goals
     simp [Sig.pairFacts,Sig.conj,List.filterMap_cons,and_assoc]
