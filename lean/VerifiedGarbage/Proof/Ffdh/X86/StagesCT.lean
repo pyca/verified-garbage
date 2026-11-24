@@ -397,7 +397,7 @@ theorem preparePub_relCT {m : Nat} :
       Gate u (safeM m / 2 ^ (32 * (cwc len .wide - 1)) = 0))
     (relCT_both (RelCT.taint (A := taint) τA (fun _ _ h => ag _ _ h.1 h.2) topTest_check) fun s B => ?_) ?_
   · refine WP.mono (topTest_ok B.1.inp) fun u ⟨mu, K, z⟩ =>
-      ⟨⟨B.1.regs (K.mono (by decide)) mu, by rw [mu]; exact B.2.1, B.2.2.1.keep K, (K.1 _ (by decide)).trans B.2.2.2⟩,
+      ⟨⟨B.1.regs K mu, by rw [mu]; exact B.2.1, B.2.2.1.keep K, (K.1 _ (by decide)).trans B.2.2.2⟩,
         Gate.of_eval z (decide_eq_true_iff.trans (by rw [topW_eq B.1.inp.lower', B.1.mod]))⟩
   refine gate_relCT (fun _ h => h.2)
     (relCT_both (VG.RelCT.taint (A := sseTaint) τA (fun _ _ h => ag _ _ h.1.1.1 h.2.1.1) powerTwo_check)

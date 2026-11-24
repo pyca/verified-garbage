@@ -76,7 +76,7 @@ theorem loadX_ok (h : In Ex base bytes len args s) (X : XGeo args base bytes len
 
 /-- The steps of `powTop` before its power. -/
 abbrev topFront (b : Nat) : List (Prog isa) :=
-  [Impl.Ffdh.X86.ctxP, copy (.slot .wide b) (.slot .wide 5) (one .wide), loadTop (.slot .wide 8) (one .wide) 10 11]
+  [Impl.Ffdh.X86.ctxPub, copy (.slot .wide b) (.slot .wide 5) (one .wide), loadTop (.slot .wide 8) (one .wide) 10 11]
 
 theorem powTop_eq (b : Nat) :
     Impl.Ffdh.X86.powTop b = Prog.chain (topFront b) Impl.Ffdh.X86.winTopCall := rfl
@@ -99,7 +99,7 @@ theorem topFront_ok (h : In Ex base bytes len args s) (X : XGeo args base bytes 
   have nb : numBase = 3336 := rfl
   have xf := X.fit
   obtain f8 := h.slot_fit .wide (j := 8) (by decide)
-  refine WP.seq (WP.mono (ctxP_ok h RF hP) fun u₁ ⟨C₁, one₁, R₁, F₁, k₁, K₁⟩ => ?_)
+  refine WP.seq (WP.mono (ctxPub_ok h RF hP) fun u₁ ⟨C₁, one₁, R₁, F₁, k₁, K₁⟩ => ?_)
   have h₁ := C₁.inp
   refine WP.seq (WP.mono (copyIn_ok h₁ (j := b) (d := 5) hb9 hb (by decide)) fun u₂ ⟨O₂, V₂, K₂⟩ => ?_)
   obtain C₂ : CtxOk Ex base bytes len args .wide P u₂ := by
@@ -174,7 +174,7 @@ theorem powTopG_ok (h : In Ex base bytes len args s) (X : XGeo args base bytes l
       fun u ⟨C, Y, _, F, k, K⟩ => ?_
     exact ⟨C, by rw [Y, k₁.slot_eq, xe], S₁.trans (Step.opsF S₁.inp RF₁ F K), k₁.trans k.mono⟩
   · have g2 : sv s.mem base len .wide 10 = 2 := Classical.not_not.mp g2
-    refine WP.seq (WP.mono (ctxP_ok S₁.inp RF₁ nine₁) fun u₂ ⟨C₂, one₂, R₂, F₂, k₂, K₂⟩ => ?_)
+    refine WP.seq (WP.mono (ctxPub_ok S₁.inp RF₁ nine₁) fun u₂ ⟨C₂, one₂, R₂, F₂, k₂, K₂⟩ => ?_)
     obtain sp₂ : u₂.gpr .esp = u₁.gpr .esp := K₂.1 _ (by decide)
     obtain x13₂ : sv u₂.mem base len .wide 13 = xv s.mem args xl := by rw [k₂.slot_eq, k₁.slot_eq, h13]
     obtain xlt : xv s.mem args xl < 2 ^ (8 * xl) := by

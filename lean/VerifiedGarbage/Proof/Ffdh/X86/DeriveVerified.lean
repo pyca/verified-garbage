@@ -659,9 +659,9 @@ theorem front_trace :
 
 /-- The tail: x's power over its `xl` bytes, then the mask, the output and the status by the taint
 analysis. -/
-theorem tail_trace {P : State → Prop} {g : Nat}
+theorem tail_trace {P : State → Prop} {g m : Nat}
     (hP : ∀ x, P x → RX Ex base bytes len xl args sp x ∧ (RoomF sp base bytes ∧ Region.Disjoint ⟨byteAddr (args 10), xl⟩ (below sp 176)))
-    (hg : ∀ x, P x → sv x.mem base len .wide 10 = g) :
+    (hg : ∀ x, P x → sv x.mem base len .wide 10 = g ∧ sv x.mem base len .wide 9 = m) :
     RelCT isa (Both P) Impl.Ffdh.X86.DerivePublic.tail fun _ _ => True := by
   by_cases hx : (args 11 = BitVec.ofNat 32 xl ∧ 0 < xl ∧ xl ≤ 1024) ∧
     (RoomF sp base bytes ∧ Region.Disjoint ⟨byteAddr (args 10), xl⟩ (below sp 176))
@@ -681,11 +681,14 @@ theorem body_relCT :
   apply VG.RelCT.chain
   refine VG.RelCT.seq (VG.Proof.Bignum.X86.PublicRt.relCT_both
     (F := fun u => ((RX Ex base bytes len xl args sp u ∧ (RoomF sp base bytes ∧ Region.Disjoint ⟨byteAddr (args 10), xl⟩ (below sp 176))) ∧
-      sv u.mem base len .wide 10 = (Spec.Ffdh.domainOf len D).g) ∧ Gate u (St = 2)) front_trace fun x A => ?_) ?_
+      (sv u.mem base len .wide 10 = (Spec.Ffdh.domainOf len D).g ∧
+        sv u.mem base len .wide 9 = (Spec.Ffdh.domainOf len D).p)) ∧ Gate u (St = 2)) front_trace fun x A => ?_) ?_
   · refine WP.mono (front_ok A.run.1 A.geo A.x (by rw [A.run.2.2]; exact A.room) (by rw [A.run.2.2]; exact A.hb40) (by rw [A.run.2.2]; exact A.hx40))
-      fun u ⟨S, G, _, V10, _⟩ => ⟨⟨⟨⟨run_step A.run S, A.x.keep ⟨rfl, rfl⟩ S.keeps⟩, A.room, A.hx40⟩, ?_⟩, G.congr ?_⟩
+      fun u ⟨S, G, V9, V10, _⟩ => ⟨⟨⟨⟨run_step A.run S, A.x.keep ⟨rfl, rfl⟩ S.keeps⟩, A.room, A.hx40⟩, ?_, ?_⟩, G.congr ?_⟩
     · rw [V10, comp_g x.mem args (dlen := dlen) (by have := A.geo.dl; omega_using [this])]
       exact congrArg (fun d => (Spec.Ffdh.domainOf len d).g) A.dom
+    · rw [V9, comp_p x.mem args (dlen := dlen) (by have := A.geo.dl; omega_using [this])]
+      exact congrArg (fun d => (Spec.Ffdh.domainOf len d).p) A.dom
     · rw [← A.st, KeyGen.keyStatus_two, CheckPrivate.params, A.dom]
   · exact gate_relCT (fun _ h => h.2) (aEnd (fun _ h => h.1.1.1.1.1) fail_check)
       (tail_trace (fun _ h => h.1.1.1) fun _ h => h.1.1.2)
