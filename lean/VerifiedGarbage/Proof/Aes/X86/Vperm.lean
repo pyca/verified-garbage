@@ -569,9 +569,9 @@ def f0 (x k : BitVec 128) : BitVec 128 := LcV x ^^^ k
 def fr (y k : BitVec 128) : BitVec 128 := mixV (ioV y) (joV y) k
 def fl (y k : BitVec 128) : BitVec 128 := tblV (tblV sbou (ioV y) ^^^ tblV sbot (joV y)) sr ^^^ k
 
-theorem dirOk : DirOk enc all f0 fr fl where
+theorem dirOk {b : Bool} : DirOk (dir b) all f0 fr fl where
   slots := rfl
-  le := by decide
+  le := (by decide : slots ≤ 464)
   first := fun _ _ hT h7 => first_val hT h7
   round := fun ld f hT h6 h7 => by
     obtain ⟨a, b⟩ := invert_val (ld := ld) (f := f) (a := 3) (hT 3 (by decide)) h6 h7
@@ -581,9 +581,9 @@ theorem dirOk : DirOk enc all f0 fr fl where
     obtain ⟨a, b⟩ := invert_val (ld := ld) (f := f) (a := 3) (hT 3 (by decide)) h6 h7
     rw [xvals_append]
     exact last_val hT a b
-  firstOk := by decide +kernel
-  roundOk := by decide +kernel
-  lastOk := by decide +kernel
+  firstOk := (by decide +kernel : codeOk (slots + 16) false first = true)
+  roundOk := (by decide +kernel : codeOk slots true (invert 3 ++ mix) = true)
+  lastOk := (by decide +kernel : codeOk slots true (invert 3 ++ last) = true)
 
 /-- The slots of round keys `k`, for `R` rounds. -/
 def slotKey (R : Nat) (k : Nat → BitVec 128) (j : Nat) : BitVec 128 := if j < R then LcV (k j) else k j ^^^ c63
@@ -769,6 +769,13 @@ structure Args (k N : Nat) (B : BitVec 32) (s₀ : State) : Prop where
   argIn : InRegions (s₀.rd ++ s₀.wr) (addr (s₀.gpr .esp) (4 + 4 * k)) 4
   arg : s₀.mem.readW (addr (s₀.gpr .esp) (4 + 4 * k)) 32 = B
 
+theorem savedRegs_mem {d : Dir} {p : Reg × Nat} (hp : p ∈ d.savedRegs) :
+    p = (.ebx, d.saved) ∨ p = (.esi, d.saved + 4) ∨ p = (.ebp, d.saved + 8) ∨ p = (.edi, d.saved + 12) := by
+  unfold Dir.savedRegs at hp
+  split at hp
+  · simpa only [List.mem_cons, List.not_mem_nil, or_false] using hp
+  · exact absurd hp List.not_mem_nil
+
 /-- The setup, with the first `n` tables stored. -/
 structure TabSt (d : Dir) (all : List (BitVec 128)) (B : BitVec 32) (s₀ : State) (n : Nat) (s : State) : Prop where
   edi : s.gpr .edi = B
@@ -799,8 +806,7 @@ theorem TabSt.store {s s' : State} {n o w : Nat} (h : TabSt d all B s₀ n s) (h
     rw [hm]
     refine h.saved.of_readW fun p hp => ?_
     have hp' : d.saved ≤ p.2 ∧ p.2 + 4 ≤ d.saved + 16 := by
-      simp only [Dir.savedRegs, List.mem_cons, List.not_mem_nil, or_false] at hp
-      rcases hp with rfl | rfl | rfl | rfl <;> exact ⟨by omega_using [], by omega_using []⟩
+      rcases savedRegs_mem hp with rfl | rfl | rfl | rfl <;> exact ⟨by omega_using [], by omega_using []⟩
     exact Mem.readW_writeW_sep (Region.Disjoint.sep (r₁ := ⟨addr B p.2, 4⟩) (r₂ := ⟨addr B o, w / 8⟩)
       (part_disj hfit hp'.2 (by omega_using [hw]) (.inr (by omega_using [hw, hp'])))
       (Region.contains_self _ _) (Region.contains_self _ _)) (by decide)
@@ -964,20 +970,20 @@ theorem seg_ok {is rest : List Instr} {s : State} {Q : State → Prop} {n : Nat}
 
 end
 
-theorem Enc.derive_ok {N : Nat} {B : BitVec 32} {s₀ s : State} (h : TabSt enc Enc.all B s₀ 12 s)
+theorem Enc.derive_ok {b : Bool} {N : Nat} {B : BitVec 32} {s₀ s : State} (h : TabSt (Enc.dir b) Enc.all B s₀ 12 s)
     (hfit : B.toNat + N ≤ 2 ^ 32) (hN : 480 ≤ N) (hscr : reg32 B N ∈ s.wr) :
-    WP isa (.block enc.derive) s fun s' => TabSt enc Enc.all B s₀ 14 s' ∧ s'.xmm .xmm6 = inv ∧ s'.xmm .xmm7 = mask := by
+    WP isa (.block (Enc.dir b).derive) s fun s' => TabSt (Enc.dir b) Enc.all B s₀ 14 s' ∧ s'.xmm .xmm6 = inv ∧ s'.xmm .xmm7 = mask := by
   show WP isa (.block (splat .xmm7 0x0f0f0f0f ++ ([tl .xmm0 4, tl .xmm1 5, sb .xmm0 .xmm1] ++
     .movdquStore (at_ .edi (16 * 12)) .xmm0 :: ([sb .xmm0 .xmm1, sb .xmm0 .xmm1] ++
     .movdquStore (at_ .edi (16 * 13)) .xmm0 :: ([tl .xmm6 2] ++ []))))) s _
   refine wp_splat fun s₁ u₁ x₁ => ?_
-  have h₁ : TabSt enc Enc.all B s₀ 12 s₁ :=
+  have h₁ : TabSt (Enc.dir b) Enc.all B s₀ 12 s₁ :=
     ⟨by rw [u₁.other _ (by decide)]; exact h.edi, by rw [u₁.other _ (by decide)]; exact h.esp,
       u₁.rd.trans h.rd, u₁.wr.trans h.wr, by rw [u₁.mem]; exact h.frame, by rw [u₁.mem]; exact h.saved,
       by rw [u₁.mem]; exact h.tab⟩
   have t4 : s₁.mem.readW (s₁.ea (at_ .edi (16 * 4))) 128 = sr := h₁.ld 4 (by decide)
   have t5 : s₁.mem.readW (s₁.ea (at_ .edi (16 * 5))) 128 = rot := h₁.ld 5 (by decide)
-  refine seg_ok h₁ hfit hN (by rw [u₁.wr]; exact hscr) (by decide) (by decide +kernel) ?_ fun s₂ h₂ w₂ x₂ => ?_
+  refine seg_ok h₁ hfit hN (by rw [u₁.wr]; exact hscr) (by decide : 16 * 12 + 16 ≤ 464) (by decide +kernel) ?_ fun s₂ h₂ w₂ x₂ => ?_
   · simp only [tl, sb, xvals, xval, put_apply, reduceCtorEq, ite_true, ite_false, t4, t5, sb_rot]
     decide +kernel
   have x₂0 : s₂.xmm .xmm0 = rsr := by
@@ -989,7 +995,7 @@ theorem Enc.derive_ok {N : Nat} {B : BitVec 32} {s₀ s : State} (h : TabSt enc 
     simp only [tl, sb, xvals, xval, put_apply, reduceCtorEq, ite_true, ite_false, t5]
   have x₂7 : s₂.xmm .xmm7 = mask := by
     rw [x₂, xvals_keep _ _ _ _ (by decide), x₁, put_self, splat_mask]
-  refine seg_ok h₂ hfit hN (by rw [w₂, u₁.wr]; exact hscr) (by decide) (by decide +kernel) ?_ fun s₃ h₃ w₃ x₃ => ?_
+  refine seg_ok h₂ hfit hN (by rw [w₂, u₁.wr]; exact hscr) (by decide : 16 * 13 + 16 ≤ 464) (by decide +kernel) ?_ fun s₃ h₃ w₃ x₃ => ?_
   · simp only [sb, xvals, xval, put_apply, reduceCtorEq, ite_true, ite_false, x₂0, x₂1, sb_rot]
     decide +kernel
   refine h₃.run hfit (by rw [w₃, w₂, u₁.wr]; exact hscr) (by omega_using [hN]) (by decide +kernel)
@@ -1074,11 +1080,11 @@ structure SetupOk (d : Dir) (all : List (BitVec 128)) : Prop where
     d.saved + 16 ≤ N → reg32 B N ∈ s.wr → WP isa (.block d.derive) s fun s' =>
       TabSt d all B s₀ all.length s' ∧ s'.xmm .xmm6 = inv ∧ s'.xmm .xmm7 = mask
 
-theorem Enc.setupOk : SetupOk enc Enc.all where
+theorem Enc.setupOk {b : Bool} : SetupOk (Enc.dir b) Enc.all where
   len := rfl
-  le := by decide
-  tabs := by decide +kernel
-  tabsLe := by decide
+  le := (by decide : Enc.slots ≤ 464)
+  tabs := (by decide +kernel : ∀ j < Enc.tabs.length, Enc.tabs.getD j 0 = Enc.all.getD j 0)
+  tabsLe := (by decide : Enc.tabs.length ≤ Enc.all.length)
   derive := Enc.derive_ok
 
 theorem Dec.setupOk : SetupOk dec Dec.all where
@@ -1100,9 +1106,12 @@ theorem setup_ok {d : Dir} {all : List (BitVec 128)} (hd : SetupOk d all) {k N :
   have e₁ : s₁.gpr .eax = B := u₁.gpr.trans ha.arg
   have hfits : Spill.Fits (d.saved + 16) d.savedRegs := by
     refine ⟨fun p hp => ?_, ?_⟩
-    · simp only [Dir.savedRegs, List.mem_cons, List.not_mem_nil, or_false] at hp
-      rcases hp with rfl | rfl | rfl | rfl <;> omega_using []
-    · simp only [Dir.savedRegs, List.pairwise_cons, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+    · rcases savedRegs_mem hp with rfl | rfl | rfl | rfl <;> omega_using []
+    · unfold Dir.savedRegs
+      split
+      swap
+      · exact List.Pairwise.nil
+      simp only [List.pairwise_cons, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
         forall_eq, List.Pairwise.nil, and_true, false_imp_iff, implies_true]
       omega_using []
   have hfit' : B.toNat + (d.saved + 16) ≤ 2 ^ 32 := by omega_using [hfit, hN]
@@ -1114,8 +1123,7 @@ theorem setup_ok {d : Dir} {all : List (BitVec 128)} (hd : SetupOk d all) {k N :
   have hm : s₃.mem = Spill.saveMem s₀.mem (addr B) s₀.gpr d.savedRegs := by
     rw [u₃.mem, u₂.mem, u₁.mem]
     refine Spill.saveMem_congr _ _ (fun _ _ => rfl) fun p hp => u₁.other _ ?_
-    simp only [Dir.savedRegs, List.mem_cons, List.not_mem_nil, or_false] at hp
-    rcases hp with rfl | rfl | rfl | rfl <;> exact Reg.noConfusion
+    rcases savedRegs_mem hp with rfl | rfl | rfl | rfl <;> exact Reg.noConfusion
   have h₃ : TabSt d all B s₀ 0 s₃ :=
     { edi := by rw [u₃.gpr, u₂.gpr, e₁]
       esp := by rw [u₃.other _ (by decide), u₂.gpr, u₁.other _ (by decide)]
@@ -1289,12 +1297,12 @@ namespace Enc
 
 open VG.Impl.Aes.X86.Vperm.Enc
 
-variable {N : Nat} {B S : BitVec 32} {R : Nat} {w : List Byte} {s₀ : State}
+variable {b : Bool} {N : Nat} {B S : BitVec 32} {R : Nat} {w : List Byte} {s₀ : State}
 
-theorem prepHead_ok (hN : enc.saved + 16 ≤ N) (hs : Sched N B S R w s₀) {s : State}
-    (h : TabSt enc all B s₀ all.length s) (h6 : s.xmm .xmm6 = inv) (h7 : s.xmm .xmm7 = mask)
+theorem prepHead_ok (hN : (dir b).saved + 16 ≤ N) (hs : Sched N B S R w s₀) {s : State}
+    (h : TabSt (dir b) all B s₀ all.length s) (h6 : s.xmm .xmm6 = inv) (h7 : s.xmm .xmm7 = mask)
     {sk : Nat → BitVec 128} :
-    WP isa (.block prepHead) s (SlotSt enc all B sk s₀ 0 (S + BitVec.ofNat 32 (16 * 0)) 0 R) := by
+    WP isa (.block prepHead) s (SlotSt (dir b) all B sk s₀ 0 (S + BitVec.ofNat 32 (16 * 0)) 0 R) := by
   obtain ⟨i0, a0⟩ := h.arg hN hs (i := 0) (by decide)
   obtain ⟨i1, a1⟩ := h.arg hN hs (i := 1) (by decide)
   refine WP.mono (wp_g (Q := fun s' => s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.gpr .edi = s.gpr .edi ∧
@@ -1319,11 +1327,11 @@ theorem prepHead_ok (hN : enc.saved + 16 ≤ N) (hs : Sched N B S R w s₀) {s :
       fun i hi => absurd hi (Nat.not_lt_zero i), by rw [si]; exact (BitVec.add_zero S).symm, bx, cx⟩
 
 /-- A round key's slot. -/
-theorem prepBody_ok (hfit : B.toNat + N ≤ 2 ^ 32) (hN : enc.saved + 16 ≤ N) (hscr : reg32 B N ∈ s₀.wr)
+theorem prepBody_ok (hfit : B.toNat + N ≤ 2 ^ 32) (hN : (dir b).saved + 16 ≤ N) (hscr : reg32 B N ∈ s₀.wr)
     (hs : Sched N B S R w s₀) {j : Nat} (hj : j < R) {s : State}
-    (h : SlotSt enc all B (slotKey R (keyAt S s₀)) s₀ j (S + BitVec.ofNat 32 (16 * j)) j (R - j) s) :
+    (h : SlotSt (dir b) all B (slotKey R (keyAt S s₀)) s₀ j (S + BitVec.ofNat 32 (16 * j)) j (R - j) s) :
     WP isa (.block prepBody) s fun s' =>
-      SlotSt enc all B (slotKey R (keyAt S s₀)) s₀ (j + 1) (S + BitVec.ofNat 32 (16 * (j + 1))) (j + 1) (R - (j + 1)) s' ∧
+      SlotSt (dir b) all B (slotKey R (keyAt S s₀)) s₀ (j + 1) (S + BitVec.ofNat 32 (16 * (j + 1))) (j + 1) (R - (j + 1)) s' ∧
         s'.zf = some (decide (R = j + 1)) := by
   have hR := hs.le
   obtain ⟨ki, ke⟩ := h.tab.key hN hs (j := j) (by omega_using [hj, hR])
@@ -1331,7 +1339,7 @@ theorem prepBody_ok (hfit : B.toNat + N ≤ 2 ^ 32) (hN : enc.saved + 16 ≤ N) 
   rw [prepBody, show ([.movdquLoad .xmm0 (at_ .esi 0)] : List Instr) ++ keyx ++ _ = (.movdquLoad .xmm0 (at_ .esi 0) :: keyx) ++
     ([.movdquStore (at_ .ebx 0) .xmm0, .alu .add .esi (.imm 16), .alu .add .ebx (.imm 16),
       .alu .sub .ecx (.imm 1)] : List Instr) from rfl]
-  refine h.run hfit (by rw [h.tab.wr]; exact hscr) (n := 224) (by omega_using [hN, show enc.saved = 464 from rfl])
+  refine h.run hfit (by rw [h.tab.wr]; exact hscr) (n := 224) (by omega_using [hN, show (dir b).saved = 464 from rfl])
     (by rw [he]; exact ki) (by decide +kernel) fun s₁ h₁ w₁ x₁ => ?_
   refine h₁.store setupOk hfit hN (by rw [w₁, h.tab.wr]; exact hscr) (by omega_using [hj, hR]) ?_ fun s₂ h₂ w₂ => ?_
   · rw [x₁, slotKey, ite_eq_left hj, xvals_load, keyx_val (fun k hk => h.tab.ld k hk)
@@ -1362,17 +1370,17 @@ theorem prepBody_ok (hfit : B.toNat + N ≤ 2 ^ 32) (hN : enc.saved + 16 ≤ N) 
       exact congrArg some (decide_eq_decide.mpr (by omega_using [hj]))
 
 /-- The slots written. -/
-theorem prep_ok (hfit : B.toNat + N ≤ 2 ^ 32) (hN : enc.saved + 16 ≤ N) (hscr : reg32 B N ∈ s₀.wr)
-    (hs : Sched N B S R w s₀) {s : State} (h : TabSt enc all B s₀ all.length s) (h6 : s.xmm .xmm6 = inv)
+theorem prep_ok (hfit : B.toNat + N ≤ 2 ^ 32) (hN : (dir b).saved + 16 ≤ N) (hscr : reg32 B N ∈ s₀.wr)
+    (hs : Sched N B S R w s₀) {s : State} (h : TabSt (dir b) all B s₀ all.length s) (h6 : s.xmm .xmm6 = inv)
     (h7 : s.xmm .xmm7 = mask) :
-    WP isa enc.prep s fun s' => TabSt enc all B s₀ all.length s' ∧
-      CoreIn enc all N B R (slotKey R (keyAt S s₀)) s' := by
+    WP isa (dir b).prep s fun s' => TabSt (dir b) all B s₀ all.length s' ∧
+      CoreIn (dir b) all N B R (slotKey R (keyAt S s₀)) s' := by
   have hR := hs.le
   refine WP.seq (WP.mono (prepHead_ok hN hs h h6 h7 (sk := slotKey R (keyAt S s₀))) fun s₁ h₁ => ?_)
-  refine WP.seq (WP.mono (Q := SlotSt enc all B (slotKey R (keyAt S s₀)) s₀ R (S + BitVec.ofNat 32 (16 * R)) R 0) ?_
+  refine WP.seq (WP.mono (Q := SlotSt (dir b) all B (slotKey R (keyAt S s₀)) s₀ R (S + BitVec.ofNat 32 (16 * R)) R 0) ?_
     fun s₂ h₂ => ?_)
   · refine WP.loop (M := isa) (fun n s' => ∃ j, n = R - j ∧ j < R ∧
-      SlotSt enc all B (slotKey R (keyAt S s₀)) s₀ j (S + BitVec.ofNat 32 (16 * j)) j (R - j) s')
+      SlotSt (dir b) all B (slotKey R (keyAt S s₀)) s₀ j (S + BitVec.ofNat 32 (16 * j)) j (R - j) s')
       (fun n s' ⟨j, hn, hj, i⟩ => ?_) R s₁ ⟨0, rfl, by omega_using [hR], h₁⟩
     refine WP.mono (prepBody_ok hfit hN hscr hs hj i) fun s'' ⟨i', z⟩ => ?_
     by_cases e : R = j + 1
@@ -1386,7 +1394,7 @@ theorem prep_ok (hfit : B.toNat + N ≤ 2 ^ 32) (hN : enc.saved + 16 ≤ N) (hsc
     rw [show prepTail = splat .xmm1 0x63636363 ++ ([.movdquLoad .xmm0 (at_ .esi 0), px .xmm0 .xmm1] ++
       [.movdquStore (at_ .ebx 0) .xmm0]) from rfl]
     refine wp_splat fun s₃ u₃ x₃ => ?_
-    have h₃ : SlotSt enc all B (slotKey R (keyAt S s₀)) s₀ R (S + BitVec.ofNat 32 (16 * R)) R 0 s₃ :=
+    have h₃ : SlotSt (dir b) all B (slotKey R (keyAt S s₀)) s₀ R (S + BitVec.ofNat 32 (16 * R)) R 0 s₃ :=
       ⟨⟨by rw [u₃.other _ (by decide)]; exact h₂.tab.edi, by rw [u₃.other _ (by decide)]; exact h₂.tab.esp,
         u₃.rd.trans h₂.tab.rd, u₃.wr.trans h₂.tab.wr, by rw [u₃.mem]; exact h₂.tab.frame,
         by rw [u₃.mem]; exact h₂.tab.saved, by rw [u₃.mem]; exact h₂.tab.tab⟩,
@@ -1583,7 +1591,7 @@ structure CryptOk (d : Dir) (all : List (BitVec 128))
       ∀ {s : State}, CoreIn d all N B R sk s → WP isa d.core s fun s' => Kept s s' ∧
         st (s'.xmm .xmm0) = F R w (st (s.xmm .xmm0))
 
-theorem Enc.cryptOk : CryptOk enc Enc.all cipher where
+theorem Enc.cryptOk {b : Bool} : CryptOk (Enc.dir b) Enc.all cipher where
   setup := Enc.setupOk
   prep := fun {N B S R w s₀} hfit hN hscr hs => ⟨Enc.slotKey R (keyAt S s₀), fun h h6 h7 =>
     Enc.prep_ok hfit hN hscr hs h h6 h7, fun h => WP.mono (core_ok Enc.dirOk h) fun s' ⟨k, e⟩ => ⟨k, by
@@ -1620,10 +1628,13 @@ theorem CoreIn.of_frame {s s' : State} (h : CoreIn d all N B R sk s) (hedi : s'.
 
 /-- The callee-saved registers restored. -/
 theorem restore_ok {s : State} (hedi : s.gpr .edi = B) (hesp : s.gpr .esp = s₀.gpr .esp) (hfit : B.toNat + N ≤ 2 ^ 32)
-    (hN : d.saved + 16 ≤ N) (hscr : reg32 B N ∈ s.wr) (hs : Spill.Saved s.mem (addr B) s₀.gpr d.savedRegs) :
+    (hN : d.saved + 16 ≤ N) (hscr : reg32 B N ∈ s.wr) (hk : d.keep = true)
+    (hs : Spill.Saved s.mem (addr B) s₀.gpr d.savedRegs) :
     WP isa (.block d.restore) s fun s' => s'.mem = s.mem ∧ ∀ r ∈ calleeSaved, s'.gpr r = s₀.gpr r := by
   rw [show d.restore = Spill.restoreCode .edi
-    ([(.ebx, d.saved), (.esi, d.saved + 4), (.ebp, d.saved + 8)] ++ [(.edi, d.saved + 12)]) ++ [] from rfl]
+    ([(.ebx, d.saved), (.esi, d.saved + 4), (.ebp, d.saved + 8)] ++ [(.edi, d.saved + 12)]) ++ [] by
+      rw [Dir.restore, Dir.savedRegs, ite_eq_left hk]; rfl]
+  rw [Dir.savedRegs, ite_eq_left hk] at hs
   refine Spill.restoreBase_ok _ (fun p hp => ?_) (fun p hp => ?_) (by rw [hedi]; exact hs) fun s' u =>
     WP.block_nil ⟨u.mem, fun r hr => ?_⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hp

@@ -2,10 +2,16 @@ module
 
 public import VerifiedGarbage.Proof.Framework.X86.ArgTaint
 public import VerifiedGarbage.Proof.CmacAes.X86.UpdateLoop
+import VerifiedGarbage.Proof.Aes.X86.Chain
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.X86.Lit
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.X86.ArgTaint
 meta import VerifiedGarbage.Proof.CmacAes.X86.UpdateLoop
+meta import VerifiedGarbage.Proof.Aes.X86.Chain
+meta import VerifiedGarbage.Proof.Framework.Lit
+meta import VerifiedGarbage.Proof.Framework.X86.Lit
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.X86.RelCT
@@ -23,10 +29,10 @@ analysis covers the code between the calls, from `esp`, the stack arguments
 correctness proof pins to the public arguments), and each call of
 `vg_aes_ctr32_to`, in its frame, is constant time by its own proof (`ctr_rel`).
 
-The chaining with AES-NI (`updateNi`) has no frame and no call: the taint
-analysis covers all of it, from `esp`, the stack arguments and the words
+The chaining around a chain (`updateChain`) has no frame and no call: the
+taint analysis covers all of it, from `esp`, the stack arguments and the words
 among them that are the addresses of the state and the scratch buffer
-(`niτ₀`).
+(`chainτ₀`).
 -/
 
 @[expose] public section
@@ -238,18 +244,18 @@ theorem update_rel {s₀ s₀' : State} (h0 : updateX86.pre s₀) (h0' : updateX
 theorem updateCalls_ct : ConstantTime isa updateX86.pre updateX86.pub (updateCalls v.callee) :=
   fun _ _ _ _ _ _ h₁ h₂ hq e₁ e₂ => (update_rel v h₁ h₂ hq _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1
 
-/-! ## With AES-NI -/
+/-! ## Around a chain -/
 
 /-- The taint analysis starts with `esp` public, and the words holding
 `state` and `scratch` known to be the base addresses of the writable regions. -/
-def niτ₀ : VG.X86.Taint.T :=
+def chainτ₀ : VG.X86.Taint.T :=
   { regs := .ofList [.esp], flags := false, lens := [16, 2176], argLen := 28, argBases := [(12, 0), (24, 1)] }
 
-theorem ni_wf₀ {s : State} (hp : UPre s) : VG.X86.Taint.Wf niτ₀ s := by
+theorem chain_wf₀ {s : State} (hp : UPre s) : VG.X86.Taint.Wf chainτ₀ s := by
   have fI := hp.st_fit; have fS := hp.scr_fit; have fE := hp.esp_fit
   refine VG.X86.Taint.Wf.entry rfl rfl ⟨fun _ => ⟨?_, ?_, ?_⟩,
     fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim,
-    fun _ => ⟨by simp only [niτ₀]; omega_using [fE], ?_⟩, ?_⟩
+    fun _ => ⟨by simp only [chainτ₀]; omega_using [fE], ?_⟩, ?_⟩
   · rw [hp.wr]
     exact .cons (Nat.le_refl _) (.cons (Nat.le_refl _) .nil)
   · simp only [hp.wr, List.pairwise_cons, List.mem_cons, List.not_mem_nil, or_false, forall_eq,
@@ -262,36 +268,42 @@ theorem ni_wf₀ {s : State} (hp : UPre s) : VG.X86.Taint.Wf niτ₀ s := by
     · exact VG.X86.Taint.frame_disjoint (n := 24) (by omega_using [fE]) hp.ret_st hp.args_st
     · exact VG.X86.Taint.frame_disjoint (n := 24) (by omega_using [fE]) hp.ret_scr hp.args_scr
   · intro p hp'
-    simp only [niτ₀, List.mem_cons, List.not_mem_nil, or_false] at hp'
+    simp only [chainτ₀, List.mem_cons, List.not_mem_nil, or_false] at hp'
     rcases hp' with rfl | rfl <;> refine ⟨by decide, ?_⟩ <;>
       simp [VG.X86.Taint.region, hp.wr, addr, arg, argAddr]
 
-theorem ni_agree₀ {s₁ s₂ : State} (h₁ : UPre s₁) (h₂ : UPre s₂) (hpub : updateX86.pub s₁ s₂) :
-    VG.X86.Taint.Agree niτ₀ s₁ s₂ := by
+theorem chain_agree₀ {s₁ s₂ : State} (h₁ : UPre s₁) (h₂ : UPre s₂) (hpub : updateX86.pub s₁ s₂) :
+    VG.X86.Taint.Agree chainτ₀ s₁ s₂ := by
   obtain ⟨hesp, ha⟩ := hpub
   have fE₁ := h₁.esp_fit; have fE₂ := h₂.esp_fit
-  refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun _ => ?_, ni_wf₀ h₁, ni_wf₀ h₂,
+  refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun _ => ?_, chain_wf₀ h₁, chain_wf₀ h₂,
     VG.X86.Taint.slotsOk_empty, VG.X86.Taint.slotsAgree_empty, fun _ => hesp,
     fun k h4 hk => ?_⟩
-  · simp only [niτ₀, RegSet.mem_ofList, List.mem_cons, List.not_mem_nil, or_false] at hr
+  · simp only [chainτ₀, RegSet.mem_ofList, List.mem_cons, List.not_mem_nil, or_false] at hr
     subst hr; exact hesp
   · rw [h₁.wr, h₂.wr]
     simp only [stR, scrR, St, S, ha 2 (by decide), ha 5 (by decide)]
-  · simp only [niτ₀] at hk
-    rw [show VG.X86.Taint.depth niτ₀.stk = 0 from rfl, Nat.zero_add]
+  · simp only [chainτ₀] at hk
+    rw [show VG.X86.Taint.depth chainτ₀.stk = 0 from rfl, Nat.zero_add]
     rw [VG.X86.Taint.argByte_eq (n := 28) fE₁ h4 hk, VG.X86.Taint.argByte_eq (n := 28) fE₂ h4 hk,
       Mem.readW_byte s₁.mem _ (Nat.mod_lt _ (by decide)), Mem.readW_byte s₂.mem _ (Nat.mod_lt _ (by decide))]
     exact congrArg _ (ha _ (by omega_using [hk]))
 
-theorem updateNi_ct : ConstantTime isa updateX86.pre updateX86.pub updateNi :=
-  VG.Taint.constantTime (A := sseTaint) niτ₀ (fun _ _ h₁ h₂ hp => ni_agree₀ (UPre.of h₁) (UPre.of h₂) hp)
-    (by taint_decide)
+-- The code around each chain, as literals for the kernel's evaluation.
+materialize_code updateAesNi := updateChain Impl.Aes.X86.Chain.aesNi
+materialize_code updateSsse3 := updateChain Impl.Aes.X86.Chain.ssse3
+
+theorem updateChain_ct {name : String} {c : Impl.Aes.X86.Chain} (h : Impl.Aes.X86.Chain.of name = some c) :
+    ConstantTime isa updateX86.pre updateX86.pub (updateChain c) := by
+  rcases Proof.Aes.X86.Chain.of_cases h with rfl | rfl <;>
+    exact VG.Taint.constantTime (A := sseTaint) chainτ₀ (fun _ _ h₁ h₂ hp => chain_agree₀ (UPre.of h₁) (UPre.of h₂) hp)
+      (by taint_decide)
 
 /-- `vg_cmac_aes_update` over `v`, whichever chaining it is. -/
 theorem update_ct : ConstantTime isa updateX86.pre updateX86.pub (update v.callee) := by
   unfold update
-  split
-  · exact updateNi_ct
+  rcases Proof.Aes.X86.Chain.choose_cases v.callee.name updateChain (updateCalls v.callee) with ⟨c, h, e⟩ | e <;> rw [e]
+  · exact updateChain_ct h
   · exact updateCalls_ct v
 
 end VG.Proof.CmacAes.X86

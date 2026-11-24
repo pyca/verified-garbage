@@ -243,8 +243,7 @@ theorem body_ok (hd : CryptOk d all F) (hp : BPre s₀) {sk : Nat → BitVec 128
       rw [h.esp]
       exact (hp.aD.sub_left (argSub hp (i := 1) (by decide))).sub_right hsub
     · refine h.saved.of_frame hf' (R := ⟨addr (bScrP s₀) d.saved, 16⟩) (fun q hq => ?_) (fun r hr => ?_)
-      · simp only [Dir.savedRegs, List.mem_cons, List.not_mem_nil, or_false] at hq
-        rcases hq with rfl | rfl | rfl | rfl <;>
+      · rcases savedRegs_mem hq with rfl | rfl | rfl | rfl <;>
           exact part_contains fB (by omega_using [hsl, hsv]) (by omega_using []) (by omega_using []) (by decide)
       · simp only [List.mem_singleton] at hr; subst hr
         exact hdB _ _ (by omega_using [hsl, hsv])
@@ -268,7 +267,7 @@ theorem body_ok (hd : CryptOk d all F) (hp : BPre s₀) {sk : Nat → BitVec 128
       exact congrArg some (decide_eq_decide.mpr (by omega_using [hc]))
 
 /-- The functions of whole blocks. -/
-theorem blocks_ok (hd : CryptOk d all F) (hp : BPre s₀) :
+theorem blocks_ok (hd : CryptOk d all F) (hk : d.keep = true) (hp : BPre s₀) :
     WP isa d.blocks s₀ fun s' => abiPreserved s₀ s' ∧ (Proof.Aes.blocksX86 F).post s₀ s' ∧
       Frame [bDatR s₀, reg32 (bScrP s₀) (d.saved + 16)] s₀.mem s'.mem := by
   have hsl := hd.setup.le
@@ -287,7 +286,7 @@ theorem blocks_ok (hd : CryptOk d all F) (hp : BPre s₀) :
       · exact .inl ⟨by simp [eval, z, e], by rw [e]; exact i'⟩
       · exact .inr ⟨by simp [eval, z, e], bN s₀ - (c + 1), by omega_using [hn, hc], c + 1, rfl,
           by omega_using [hc, e], i'⟩
-  · refine WP.mono (restore_ok h₄.core.edi h₄.esp hp.fB hN (by rw [h₄.wr]; exact (args_of hp).scr) h₄.saved)
+  · refine WP.mono (restore_ok h₄.core.edi h₄.esp hp.fB hN (by rw [h₄.wr]; exact (args_of hp).scr) hk h₄.saved)
       fun s' ⟨m, g⟩ => ⟨⟨g, ?_⟩, ?_, by rw [m]; exact h₄.frame⟩
     · rw [m]
       refine h₄.frame.readW (Region.contains_self _ _) (fun r hr => ?_) (by decide)
@@ -305,12 +304,12 @@ theorem blocks_ok (hd : CryptOk d all F) (hp : BPre s₀) :
       exact hb
 
 /-- Beyond `W` bytes it leaves the scratch buffer as it was. -/
-theorem unwritten (hd : CryptOk d all F) (s : State) (hs : (Proof.Aes.blocksX86 F).pre s) (t : List Leak) (s' : State)
+theorem unwritten (hd : CryptOk d all F) (hk : d.keep = true) (s : State) (hs : (Proof.Aes.blocksX86 F).pre s) (t : List Leak) (s' : State)
     (he : Exec isa d.blocks s t s') : ∀ i, d.saved + 16 ≤ i → i < 2048 →
       s'.mem ((arg s 4).setWidth 64 + BitVec.ofNat 64 i) = s.mem ((arg s 4).setWidth 64 + BitVec.ofNat 64 i) := by
   obtain hp := BPre.of hs
   have fB := hp.fB
-  obtain ⟨t', s'', he', -, -, hf⟩ := blocks_ok hd hp
+  obtain ⟨t', s'', he', -, -, hf⟩ := blocks_ok hd hk hp
   obtain ⟨-, rfl⟩ := Exec.det he he'
   intro i h1 hi
   refine hf _ fun r hr hc => ?_
@@ -321,9 +320,9 @@ theorem unwritten (hd : CryptOk d all F) (s : State) (hs : (Proof.Aes.blocksX86 
       BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show i < 2 ^ 64 by omega_using [hi])] at hc
     omega_using [h1, hc]
 
-theorem correct (hd : CryptOk d all F) (s : State) (hs : (Proof.Aes.blocksX86 F).pre s) :
+theorem correct (hd : CryptOk d all F) (hk : d.keep = true) (s : State) (hs : (Proof.Aes.blocksX86 F).pre s) :
     ∃ t s', Exec isa d.blocks s t s' ∧ abiPreserved s s' ∧ (Proof.Aes.blocksX86 F).post s s' := by
-  obtain ⟨t, s', he, ha, hq, -⟩ := blocks_ok hd (BPre.of hs)
+  obtain ⟨t, s', he, ha, hq, -⟩ := blocks_ok hd hk (BPre.of hs)
   exact ⟨t, s', he, ha, hq⟩
 
 end
@@ -340,24 +339,24 @@ theorem decrypt_ct : ConstantTime isa (Proof.Aes.blocksX86 Spec.Aes.invCipher).p
 def variant : Proof.Aes.X86.BlocksImpl where
   enc := ⟨"vg_aes_encrypt_blocks_ssse3", encryptBlocks⟩
   encStack := by lit_decide
-  encOk := correct Enc.cryptOk
+  encOk := correct Enc.cryptOk rfl
   encCt := encrypt_ct
   encNosp := NoSp.of_all (by lit_decide)
   encSpSafe := Code.all_of_spTest (by lit_decide)
   encScrub := by lit_decide
   dec := ⟨"vg_aes_decrypt_blocks_ssse3", decryptBlocks⟩
   decStack := by lit_decide
-  decOk := correct Dec.cryptOk
+  decOk := correct Dec.cryptOk rfl
   decCt := decrypt_ct
   decNosp := NoSp.of_all (by lit_decide)
   decSpSafe := Code.all_of_spTest (by lit_decide)
   decScrub := by lit_decide
   encWritten := 480
   encWrittenLe := by decide
-  encWrittenOk := unwritten Enc.cryptOk
+  encWrittenOk := unwritten Enc.cryptOk rfl
   decWritten := 720
   decWrittenLe := by decide
-  decWrittenOk := unwritten Dec.cryptOk
+  decWrittenOk := unwritten Dec.cryptOk rfl
   suffix := "_ssse3"
   features := ["ssse3"]
   expand := Proof.Aes.X86.Ctr32Impl.scalar.expand

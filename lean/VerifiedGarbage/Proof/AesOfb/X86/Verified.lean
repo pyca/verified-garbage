@@ -20,11 +20,11 @@ precondition, and the shared contract of `Spec/Ofb/Contract.lean`, with 24
 bytes of stack: each call of a block function pushes its five arguments and
 the return address.
 
-The whole-block code of `v` is `cryptCode v`: with AES-NI (`hardware`, as
-AES-CBC chooses its code), the loop that keeps the output block in a
-register and calls nothing (`Impl.AesOfb.X86.cryptNi`, `Ni` in `Body.lean`),
-which needs none of those 24 bytes; for any other implementation, `crypt`
-around its block function. Both meet the same contract (`cryptCode_verified`).
+The whole-block code of `v` is `cryptCode v`: around its chain if it has one
+(`Chain.of`), the loop that keeps the output block in a register and calls
+nothing (`Impl.AesOfb.X86.cryptChain`, `Chained` in `Body.lean`), which needs
+none of those 24 bytes; for any other implementation, `crypt` around its block
+function. Both meet the same contract (`cryptCode_verified`).
 -/
 
 @[expose] public section
@@ -35,7 +35,7 @@ open VG VG.X86 VG.Impl.AesOfb.X86
 open VG.Impl.AesCbc.X86 (whole blkCall)
 open VG.Proof.AesCbc.X86
 open VG.Proof.Aes.X86 (BlocksImpl)
-open VG.Proof.AesCbc.X86.Wiped (hardware)
+open VG.Impl.Aes.X86 (Chain)
 
 theorem crypt_spSafe (v : BlocksImpl) : (crypt v.enc).all (fun i => !isa.writesSp i) = true := by
   simp only [crypt, whole, body, blkCall, Code.all, v.encSpSafe]
@@ -75,24 +75,33 @@ theorem crypt_verified (v : BlocksImpl) :
 
 /-! ## The code of each implementation -/
 
-/-- The whole-block code for `v`: with AES-NI, the loop that keeps the
-output block in a register with no call (`Impl.AesOfb.X86.cryptNi`); for
-any other implementation, `crypt` around its block function. -/
-def cryptCode (v : BlocksImpl) : Prog isa := if hardware v then cryptNi else crypt v.enc
+/-- The whole-block code for `v`: around its chain if it has one (`Chain.of`),
+which keeps the output block in a register with no call; otherwise `crypt`
+around its block function. -/
+def cryptCode (v : BlocksImpl) : Prog isa :=
+  Chain.choose v.enc.name cryptChain (crypt v.enc)
+
+theorem cryptCode_some {v : BlocksImpl} {c : Chain} (h : Chain.of v.enc.name = some c) :
+    cryptCode v = cryptChain c := Proof.Aes.X86.Chain.choose_some h _ _
+
+theorem cryptCode_none {v : BlocksImpl} (h : Chain.of v.enc.name = none) : cryptCode v = crypt v.enc :=
+  Proof.Aes.X86.Chain.choose_none h _ _
+
+theorem cryptCode_cases (v : BlocksImpl) :
+    (∃ c, Chain.of v.enc.name = some c ∧ cryptCode v = cryptChain c) ∨ cryptCode v = crypt v.enc :=
+  Proof.Aes.X86.Chain.choose_cases _ _ _
 
 /-- `cryptCode v` runs to the code's own contract. -/
 theorem cryptCode_correct (v : BlocksImpl) (s : State) (hs : (modeX86 ofbMode).pre s) :
     ∃ t s', Exec isa (cryptCode v) s t s' ∧ abiPreserved s s' ∧ (modeX86 ofbMode).post s s' := by
-  unfold cryptCode
-  split
-  · exact Ni.correct s hs
+  rcases cryptCode_cases v with ⟨c, h, e⟩ | e <;> rw [e]
+  · exact Chained.correct h s hs
   · exact whole_wp (body_ok v) hs
 
 theorem cryptCode_ct (v : BlocksImpl) :
     ConstantTime isa (modeX86 ofbMode).pre (modeX86 ofbMode).pub (cryptCode v) := by
-  unfold cryptCode
-  split
-  · exact Ni.ct
+  rcases cryptCode_cases v with ⟨c, h, e⟩ | e <;> rw [e]
+  · exact Chained.ct h
   · exact whole_ct (body_ok v) (body_ct v)
 
 theorem cryptCode_verified (v : BlocksImpl) :
@@ -100,9 +109,8 @@ theorem cryptCode_verified (v : BlocksImpl) :
   Verified.of_correct (cryptCode_correct v) (cryptCode_ct v) ofb_implies
 
 theorem cryptCode_spSafe (v : BlocksImpl) : (cryptCode v).all (fun i => !isa.writesSp i) = true := by
-  unfold cryptCode
-  split
-  · exact Ni.spSafe
+  rcases cryptCode_cases v with ⟨c, h, e⟩ | e <;> rw [e]
+  · exact Chained.spSafe h
   · exact crypt_spSafe v
 
 end VG.Proof.AesOfb.X86
