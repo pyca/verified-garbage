@@ -640,6 +640,18 @@ and `ctxPub` (`prepPubCall_ok`, `ctxPub_ok`). -/
 /-- The top word of the wide slot 0, the modulus. -/
 abbrev topW (m : Mem) (base : Addr) (len : Nat) : Nat := w32 m base (numBase + (bc len .wide - 4))
 
+/-- The top word of a number of the working space is its high digit. -/
+theorem topW_eq (hl : 64 ≤ len) (m : Mem) :
+    topW m base len = sv m base len .wide 0 / 2 ^ (32 * (cwc len .wide - 1)) := by
+  obtain g := bc_ge hl .wide
+  obtain bw := bc_eq_cwc len .wide
+  obtain ⟨k, ek⟩ : ∃ k, cwc len .wide = k + 1 := ⟨cwc len .wide - 1, by omega_arith⟩
+  obtain z0 : lo len (.slot .wide 0) = numBase := sl_zero len .wide
+  obtain e0k : numBase + (bc len .wide - 4) = numBase + 4 * k := by omega_arith
+  show w32 m base (numBase + (bc len .wide - 4)) = val32 m base (lo len (.slot .wide 0)) (cwc len .wide) / _
+  rw [e0k, z0, ek, Nat.add_sub_cancel, val32_succ, Nat.add_mul_div_left _ _ (Nat.two_pow_pos _),
+    Nat.div_eq_of_lt (val32_lt _ _ _ _), Nat.zero_add]
+
 theorem beq_zero_toNat (x : BitVec 32) : (x == 0) = decide (x.toNat = 0) := by
   by_cases h : x = 0
   · subst h; rfl
