@@ -863,5 +863,14 @@ if __name__ == "__main__":
     sys.argv.extend(["--work-dir", "control-measures"])
     status = max(status, main())
     sets["placement_control"] = json.loads(saved.read_text())
+    head = pathlib.Path(sys.argv[2]).resolve()
+    subprocess.run(["git","fetch","--depth=1","origin","41fb2bc06b73bfdf44d64c8fc4c1931f3bd00125"],cwd=head,check=True)
+    (head / "crates/verified-garbage-asm-x86_64/src/gcm.rs").write_bytes(subprocess.check_output(["git","show","41fb2bc06b73bfdf44d64c8fc4c1931f3bd00125:crates/verified-garbage-asm-x86_64/src/gcm.rs"],cwd=head))
+    del os.environ["VG_BENCH_PLACEMENT_CONTROL"]
+    companion=result.with_name("tag-only-comparison.json")
+    sys.argv[sys.argv.index("--json")+1]=str(companion)
+    sys.argv[sys.argv.index("--work-dir")+1]="comparison-companion"
+    status=max(status,main())
+    sets["tag_only_comparison"]=json.loads(companion.read_text())
     result.write_text(json.dumps(sets,indent=2))
     sys.exit(status)
