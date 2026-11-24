@@ -129,13 +129,6 @@ theorem separate_ct {M : CtxMode} (ctr : Proof.Aes.X86_64.Ctr32ToImpl) (gh : Gha
       ⟨_,by taint_decide⟩) (fun _ h => by subst h; exact prepH hu) (fun _ h => by subst h; exact prepH hz))
     (gh_rel gh (fun _ _ h => ⟨_,_,_,_,_,h.1.1,h.2.1,h.1.2.trans h.2.2.symm⟩))
 
-structure BulkIn (M : CtxMode) (Ctx W SP S D : Addr) (R n : Nat) (s : State) : Prop where
-  reg : SealRegions M Ctx W SP D S R n n s
-  ob : ObPre M Ctx W SP R D n s
-  read : InRegions (s.rd++s.wr) (SP+8#64) 8
-  src : s.mem.readW (SP+8#64) 64=S
-  apart : (⟨SP+8#64,8⟩ : Region).Disjoint ⟨W,2560⟩
-
 def KernelKeeps (M : CtxMode) (kernel : Prog isa) : Prop :=
   ∀ {Ctx W SP S D : Addr} {R n : Nat} {s : State}, KernelIn M Ctx W SP S D R n s →
     WP isa kernel s fun t => Env Ctx (W+16#64) W SP t

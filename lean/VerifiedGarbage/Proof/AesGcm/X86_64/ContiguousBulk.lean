@@ -177,4 +177,11 @@ theorem fused_bulk_ok {M : CtxMode} (T : BlocksTo.SealFn M) {Ctx W SP S D : Addr
       ObPost Ctx W SP D n s t ∧ BlocksResult Ctx W R S D (n/16) s t := by
   exact bulk_ok (hash:=true) _ (fun hu q read origin dest _ => fused_ok T hu (Nat.mul_div_le n 16) q read origin dest) h ob src slot apart
 
+structure BulkIn (M : CtxMode) (Ctx W SP S D : Addr) (R n : Nat) (s : State) : Prop where
+  reg : SealRegions M Ctx W SP D S R n n s
+  ob : ObPre M Ctx W SP R D n s
+  read : InRegions (s.rd++s.wr) (SP+8#64) 8
+  src : s.mem.readW (SP+8#64) 64=S
+  apart : (⟨SP+8#64,8⟩ : Region).Disjoint ⟨W,2560⟩
+
 end VG.Proof.AesGcm.X86_64.ContiguousSeal

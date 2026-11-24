@@ -22,14 +22,6 @@ open VG.Spec.Gcm (ctxH)
 open VG.Spec.Aes (bytesAt)
 open Short (SpanLayout ShortFacts rel_next)
 
-structure AfterAad (M : CtxMode) (Ctx W SP S D : Addr) (R n al : Nat) (u : State) extends BulkIn M Ctx W SP S D R n u where
-  alen : u.mem.readW (W+184#64) 64=BitVec.ofNat 64 al
-  dst : u.mem.readW (SP+16#64) 64=D
-  slotRead : InRegions (u.rd++u.wr) (SP+16#64) 8
-  dstWork : (⟨SP+16#64,8⟩ : Region).Disjoint ⟨W,2560⟩
-  dstOut : (⟨SP+16#64,8⟩ : Region).Disjoint ⟨D,n⟩
-  slotDst : (⟨SP+8#64,8⟩ : Region).Disjoint ⟨D,n⟩
-
 structure AfterBulk (M : CtxMode) (Ctx W SP S D : Addr) (R n al : Nat) (u : State) : Prop where
   scalar : ScalarI Ctx W SP S (D+BitVec.ofNat 64 (16*(n/16))) R al n (n%16) u
   origin : ∃ s, AfterAad M Ctx W SP S D R n al s ∧ ObPost Ctx W SP D n s u
@@ -54,55 +46,12 @@ theorem afterBulk_ok {M : CtxMode} {Ctx W SP S D : Addr} {R n al : Nat} {s u : S
   have tag : OneT Ctx W SP R al (D+BitVec.ofNat 64 (16*(n/16))) (n%16) n u :=
     ⟨p.env,⟨(keep 176 (by decide) (by decide)).trans h.reg.rounds.1,h.reg.rounds.2⟩,(keep 184 (by decide) (by decide)).trans h.alen,p.dat,p.len,d.ok,p.tlen⟩
   have src : u.mem.readW (SP+8#64) 64=S := by
-    rw [p.frame.readW (Region.contains_self _ _) (fun r hr => by
-      simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
-      rcases hr with rfl|rfl|rfl|rfl|rfl|rfl
-      · exact h.apart.sub_right (Lay.wSub (by decide))
-      · rw [add_ofNat_assoc]; exact h.apart.sub_right (Lay.wSub (by decide))
-      · rw [add_ofNat_assoc]; exact h.apart.sub_right (Lay.wSub (by decide))
-      · exact h.slotDst.sub_right (Region.sub_prefix (by omega_arith))
-      · exact h.apart.sub_right (Lay.wSub (by decide))
-      · exact Offset.disjoint_below SP (by decide)) (by decide),h.src]
+    exact (bulkSlot p h.apart h.slotDst (by decide)).trans h.src
   refine ⟨⟨tag,by rw [p.rd,p.wr]; exact h.read,src,by rw [off]; exact q,d,?_⟩,⟨s,h,p⟩,h.apart,x⟩
   rw [off]
   rcases h.reg.sD with same|apart
   · exact .inl (by rw [same])
   · exact .inr ((apart.sub_left (Offset.sub_base _ (by omega_arith))).sub_right (Offset.sub_base _ (by omega_arith)))
-
-theorem afterAad_ok {M : CtxMode} {s₀ s₁ s₂ : State} {Ctx W SP Np A S D : Addr} {nl al n : Nat}
-    (C : OneCtx s₀ 5 Ctx W SP Np A D nl al n) (X : CtxExt M Ctx (W+16#64) W SP D n s₀)
-    (geo : SpanLayout s₀ S S D W SP n n) (nowrap : S.toNat+n≤2^64)
-    (ha : (s₀.gpr .r9).toNat=al) (src : s₀.mem.readW (SP+8#64) 64=S)
-    (dst : s₀.mem.readW (SP+16#64) 64=D)
-    (m : OneMid s₀ Ctx W SP D n (ctxH s₀.mem Ctx) (bytesAt s₀.mem Np nl) (bytesAt s₀.mem A al) s₁.mem s₂) :
-    AfterAad M Ctx W SP S D (s₀.gpr .rsi).toNat n al s₂ := by
-  have dM {p : Addr} {k : Nat} (w : (⟨p,k⟩ : Region).Disjoint ⟨W,2560⟩) (sp : (⟨p,k⟩ : Region).Disjoint (below SP 8)) :
-      ∀ b ∈ [(⟨W,2560⟩ : Region),below SP 8], (⟨p,k⟩ : Region).Disjoint b := by
-    intro b hb
-    simp only [List.mem_cons,List.not_mem_nil,or_false] at hb
-    rcases hb with rfl|rfl <;> assumption
-  have b8 := below_sub (sp:=SP) (a:=8) (b:=24) (by decide) (by decide)
-  have ext := X.keep m.rd m.wr m.frame (dM X.cw (X.ct.sub_left b8).symm)
-  have hd := C.data.of_eq m.rd m.wr
-  have ob : ObPre M Ctx W SP (s₀.gpr .rsi).toNat D n s₂ :=
-    ⟨m.env,m.rounds,m.dat,m.len,hd,C.t_c,C.t_w,C.t_d,C.sp24,ext⟩
-  have reg : Split.SealRegions M Ctx W SP D S (s₀.gpr .rsi).toNat n n s₂ :=
-    ⟨m.env,C.lay,m.rounds,hd,by rw [m.rd,m.wr]; exact geo.leftRead,geo.leftWork,geo.leftAlias,
-     nowrap,Nat.le_refl _,C.t_w,C.t_d,geo.leftStack.symm,X.ct,C.sp24,ext⟩
-  have read : InRegions (s₂.rd++s₂.wr) (SP+8#64) 8 := by rw [m.rd,m.wr]; exact C.args 0 (by decide)
-  have dw := C.dA.sub_left (Region.sub_prefix (show 8≤8*5 by decide))
-  have dq := C.dAD.sub_left (Region.sub_prefix (show 8≤8*5 by decide))
-  have ds := Offset.disjoint_below SP (n:=24) (d:=8) (k:=8) (by decide)
-  have orig : s₂.mem.readW (SP+8#64) 64=S := by
-    rw [m.frame.readW (Region.contains_self _ _) (dM dw (ds.sub_right b8)) (by decide),src]
-  have alen : s₂.mem.readW (W+184#64) 64=BitVec.ofNat 64 al := by rw [m.alen,← ha,BitVec.ofNat_toNat,BitVec.setWidth_eq]
-  have sub : Region.Sub ⟨SP+16#64,8⟩ ⟨SP+8#64,8*5⟩ := by
-    rw [show (16#64 : Addr)=BitVec.ofNat 64 (8+8) from rfl,← add_ofNat_assoc]; exact Offset.sub_base _ (by decide)
-  have dest : s₂.mem.readW (SP+16#64) 64=D := by
-    rw [m.frame.readW (Region.contains_self _ _) (dM (C.dA.sub_left sub)
-      ((Offset.disjoint_below SP (n:=24) (d:=16) (k:=8) (by decide)).sub_right b8)) (by decide),dst]
-  exact ⟨⟨reg,ob,read,orig,dw⟩,alen,dest,by rw [m.rd,m.wr]; exact C.args 1 (by decide),
-    C.dA.sub_left sub,C.dAD.sub_left sub,dq⟩
 
 def FinishCT (M : CtxMode) (f : Prog isa) : Prop :=
   ∀ {Ctx W SP S D : Addr} {R n al : Nat}, Lay Ctx (W+16#64) W SP → (R=10 ∨ R=12 ∨ R=14) →

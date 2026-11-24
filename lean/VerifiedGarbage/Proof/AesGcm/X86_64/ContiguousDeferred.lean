@@ -162,15 +162,7 @@ theorem deferredFinish_ct (v : GcmImpl) {M : CtxMode} : FinishCT M (deferredFini
       · exact a.dstWork.sub_right (Lay.wSub (by decide))
       · exact a.dstOut.sub_right (Offset.sub_base _ (by omega_arith))
       · exact Offset.disjoint_below _ (by decide)) (by decide)]
-    rw [p.frame.readW (r:=⟨SP+16#64,8⟩) (Region.contains_self _ _) (fun b hb => by
-      simp only [List.mem_cons,List.not_mem_nil,or_false] at hb
-      rcases hb with rfl|rfl|rfl|rfl|rfl|rfl
-      · exact a.dstWork.sub_right (Lay.wSub (by decide))
-      · rw [add_ofNat_assoc]; exact a.dstWork.sub_right (Lay.wSub (by decide))
-      · rw [add_ofNat_assoc]; exact a.dstWork.sub_right (Lay.wSub (by decide))
-      · exact a.dstOut.sub_right (Region.sub_prefix (by omega_arith))
-      · exact a.dstWork.sub_right (Lay.wSub (by decide))
-      · exact Offset.disjoint_below _ (by decide)) (by decide),a.dst]
+    exact (bulkSlot p a.dstWork a.dstOut (by decide)).trans a.dst
   let P (s : State) := T s ∧ s.gpr .r12=D ∧ s.gpr .rbp=BitVec.ofNat 64 n ∧ s.gpr .rbx=0 ∧ DataOk (W+16#64) W SP s D n
   have setup (s) (g : G s) : WP isa (.block deferredSetup) s P := by
     refine (deferredSetup_ok g.1.env g.2.2.1 g.2.2.2 g.1.tlen).mono fun t ⟨env,m,rd,wr,ptr,len,z⟩ => ?_

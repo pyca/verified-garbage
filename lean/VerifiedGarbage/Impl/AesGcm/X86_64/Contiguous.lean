@@ -69,9 +69,11 @@ def body (c : Callees) (vec wide prepared : Bool) (kernel : Prog isa) : Prog isa
   let long := .seq (aad c vec wide prepared) (.seq (bulk kernel) (if vec then finishVec prepared wide else finishScalar c))
   if prepared && wide then .seq Short.cond (.ite .e long bounded) else long
 
+def core (record : Prog isa) : Prog isa :=
+  .seq (.block (oneEntry 40 16 24)) (.seq record (.seq (.block (tagOut (at_ .rsp 32))) (.block restore)))
+
 def framed (record : Prog isa) : Prog isa :=
-  Impl.StackScratch.X86_64.withStackArgScratch 2608 4 (.seq (.block (oneEntry 40 16 24))
-    (.seq record (.seq (.block (tagOut (at_ .rsp 32))) (.block restore))))
+  Impl.StackScratch.X86_64.withStackArgScratch 2608 4 (core record)
 
 def one (c : Callees) (vec wide prepared : Bool) (kernel : Prog isa) : Prog isa :=
   framed (body c vec wide prepared kernel)
@@ -79,13 +81,16 @@ def one (c : Callees) (vec wide prepared : Bool) (kernel : Prog isa) : Prog isa 
 /-- One entry per CPU variant. The prepared flag selects whether the key
 already holds enough powers of the hash subkey. Buffer layout has no effect
 on this choice. -/
-def prepared (level : Impl.Scrub.X86_64.VecLevel) (defer wide : Bool) (threshold : Nat)
+def selected (defer wide : Bool) (threshold : Nat)
     (c : Callees) (ctr : Fn) (blocks : Option Fn) : Prog isa :=
   let plain := if defer then framed (deferredBody c ctr) else
     one c blocks.isSome wide false (separate ctr c.gh)
-  let selected := match blocks with
+  match blocks with
     | some b => Impl.Gcm.X86_64.Flag.onFlag threshold (one c true wide true (fused b)) plain
     | none => plain
-  Impl.Scrub.X86_64.scrubAll level 0 2640 selected
+
+def prepared (level : Impl.Scrub.X86_64.VecLevel) (defer wide : Bool) (threshold : Nat)
+    (c : Callees) (ctr : Fn) (blocks : Option Fn) : Prog isa :=
+  Impl.Scrub.X86_64.scrubAll level 0 2640 (selected defer wide threshold c ctr blocks)
 
 end VG.Impl.AesGcm.X86_64.Contiguous
