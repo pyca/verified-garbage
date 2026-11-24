@@ -36,7 +36,7 @@ structure Args where
 
 abbrev Args.st (p : Args) := p.work+BitVec.ofNat 64 16
 
-def Args.regs (p : Args) (payload : Bool) : Reg → Addr
+@[expose] def Args.regs (p : Args) (payload : Bool) : Reg → Addr
   | .s0 => p.work
   | .s1 => p.st
   | .s2 => p.ctx
