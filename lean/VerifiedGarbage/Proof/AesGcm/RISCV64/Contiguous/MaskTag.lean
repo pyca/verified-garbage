@@ -1,7 +1,8 @@
 module
 
 public import VerifiedGarbage.Impl.AesGcm.RISCV64.Contiguous
-public import VerifiedGarbage.Proof.AesGcm.RISCV64.Tag
+public import VerifiedGarbage.Proof.AesGcm.RISCV64.Seal
+import VerifiedGarbage.Proof.AesGcm.RISCV64.Tag
 import VerifiedGarbage.Proof.AesGcm.RISCV64.Flush
 import VerifiedGarbage.Proof.Cmac.Spec
 import VerifiedGarbage.Proof.Cmac.Mem
@@ -98,5 +99,45 @@ theorem maskTag_wp [VG.Proof.Gcm.RISCV64.GhashLaw] {V : Reg → BitVec 64} {sp :
   · rw [←um]
     exact (frame.sub (fun r hr => ⟨r,List.mem_cons_of_mem _ hr,fun _ hx => hx⟩)).trans
       (ft.sub (fun r hr => ⟨r,Or.inl (List.mem_singleton.mp hr) |> List.mem_cons.mpr,fun _ hx => hx⟩))
+
+/-- Authenticate the ciphertext in its final destination with the precomputed mask. -/
+theorem authenticate_wp [VG.Proof.Gcm.RISCV64.GhashLaw] {V : Reg → BitVec 64} {sp : Addr} {s : State}
+    {D : Addr} {a : List Byte} {H : Block}
+    (L : Lay (V .s2) (V .s1) (V .s0)) (he : Env V sp s) (hH : blockAt s.mem (V .s2+BitVec.ofNat 64 240)=H)
+    (hl : (V .s10).toNat=a.length)
+    (hab : VG.Proof.Gcm.Absorbed s.mem (V .s1+BitVec.ofNat 64 16) (V .s1+BitVec.ofNat 64 32) H
+      (a++VG.Spec.Gcm.zeros (VG.Spec.Gcm.padLen a.length)))
+    (hd : DataOk (V .s1) (V .s0) s D (V .s11).toNat) (slot : s.mem.readW (V .s0+BitVec.ofNat 64 dataO) 64=D) :
+    WP isa (.seq (.block dataArgs) (.seq (absorb 16) (.seq (.block [.logicImm .and .s6 .s11 15])
+      (.seq (flush 16) VG.Impl.AesGcm.RISCV64.Contiguous.maskTag)))) s fun t => Env V sp t ∧
+      bytesAt t.mem (V .s0) 16 = toBytes (ghashFrom H
+        (VG.Spec.Gcm.ghash H (VG.Spec.Gcm.blocks (VG.Proof.Gcm.padded a (bytesAt s.mem D (V .s11).toNat))))
+        [ofBytes (VG.Proof.Gcm.lensBlock a.length (V .s11).toNat)] ^^^ blockAt s.mem (V .s0+BitVec.ofNat 64 256)) ∧
+      Frame (otFrame (V .s1) (V .s0) 0 sp) s.mem t.mem := by
+  refine oneTagAbsorb_ok L he hH hab hd slot fun u eu hk hy _ _ fr =>
+    WP.mono (maskTag_wp L eu) fun t ⟨et,tag,ft⟩ => ⟨et,?_,?_⟩
+  · have hm : blockAt u.mem (V .s0+BitVec.ofNat 64 256)=blockAt s.mem (V .s0+BitVec.ofNat 64 256) := by
+      apply blockAt_frame fr
+      intro r hr
+      rcases List.mem_append.mp hr with ab | fl
+      · simp only [absFrame,List.mem_cons,List.not_mem_nil,or_false] at ab
+        rcases ab with rfl | rfl | rfl | rfl
+        · exact (L.st_w (by decide) (.inr ⟨by decide,by decide⟩)).symm
+        · exact (L.st_w (by decide) (.inr ⟨by decide,by decide⟩)).symm
+        · exact Lay.w_w (.inl (by decide)) (by decide) (by decide)
+        · exact he.stk'.w.sub_left (Lay.wSub (by decide))
+      · simp only [tFrame,List.mem_cons,List.not_mem_nil,or_false] at fl
+        rcases fl with rfl | rfl | rfl | rfl
+        · exact (L.st_w (by decide) (.inr ⟨by decide,by decide⟩)).symm
+        · exact Lay.w_w (.inr (by decide)) (by decide) (by decide)
+        · exact Lay.w_w (.inl (by decide)) (by decide) (by decide)
+        · exact he.stk'.w.sub_left (Lay.wSub (by decide))
+    rw [tag,hk,hy,hl,hm]
+  · apply Frame.trans (fr.sub (fun r hr => (List.mem_append.mp hr).elim (abs_otSub r) (t_otSub r)))
+    apply ft.sub
+    intro r hr
+    rcases List.mem_cons.mp hr with rfl | hr
+    · exact ⟨_,by simp [otFrame],fun _ hx => hx⟩
+    · exact t_otSub r hr
 
 end VG.Proof.AesGcm.RISCV64.Contiguous
