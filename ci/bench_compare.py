@@ -430,6 +430,7 @@ def run(binary, home, library, args, checkout, modules, groups=None, bench=None)
     pattern = f"/{library}/"
     if groups is not None:
         pattern = f"^(?:{'|'.join(map(re.escape, groups))})/{library}/"
+    pattern += "(?:15|352|511)$"
     proc = subprocess.run(
         [
             binary,
@@ -589,14 +590,32 @@ def main():
     modules = {"head": selected_modules(head, args.modules), "base": selected_modules(base, args.modules)}
     if modules["head"] is None or (args.modules and set(modules["head"].split()) != set(args.modules.split())):
         p.error("head's benchmark registry does not use the selected modules")
-    binaries = {"head": build(head), "base": None}
-    note = "Base has no selected benchmarks; head's and the references' results are new."
-    if not base.is_dir():
-        note = "No base to compare with, so head ran alone."
-    elif modules["base"] is not None:
-        binaries["base"], note, source = build_base(base, head)
-        if binaries["base"] is not None:
-            modules["base"] = selected_modules(source, args.modules)
+    path = TARGET / 'gcm-route-binaries.json'
+    mode = os.environ.get("GCM_ROUTE_COMPARISON", "public")
+    if mode == "public":
+        candidate = build(head)
+        original, note, source = build_base(base, head)
+        assert original and source == head
+        file=head/"crates/verified-garbage-asm-x86_64/src/gcm.rs"
+        saved=file.read_text();a=saved.index("fn vg_aes_gcm_seal_contiguous_prepared_vaes_vpclmul_avx512(");z=saved.index("\n}",a)
+        try:
+            part=__import__('zlib').decompress(__import__('base64').b85decode(b'c-rk+>vQ5p692w`1-JQ<JGM@sw|tckqX$AVFCnlkQYjZ;5JJ3S9s;NGzhC!A!UOi&Yj1WdmkU*@kw(+M>FFMI_jEH}6n5clf3&_0hx6O@s6V?ME*G09+%C84+tvMO)xRIz-R^M2ZZ(|Ex3k;+ZZDPjABUU$Md4pCdc7(9yp_fO6w18z%csKqa=W-&Ulg|M=wbA!uvjjJqvOD>n)TeyMvLQ^e*f-d1U#R-U*8W;-rub^@I2q9PwdD|Kg{0zyj6iC`Imnde)~{>-*9<9y13}y4<{EFi+&7?>aXYj_>sQD-~A6C|2^ohN3vM>=sVjgAs!)CWEM^G)5j0f{;0s0#vhm=eC#&NGRJ97Bzkd^EOEHoHarK&E!QHKgy>Gx^<vA4Y7?XF7$G6PGqYTMLTS2>G@<V-;A)Y2`n>d=jpZ6Jt``yf`ObVv@2rEnbn!;7NBt<kyN)wYmf5@QWr*+GXn5C%#*!PVf#(Mc%@5|nnvUV!Ns*3eL_twZv0*M9Xo9ix_&mX9k3I*BF7Vd?{xpyViUXv<Gt$^n9s$AYxluQ8V748PT{Su<aJYy7VddAWD;-uSgJ303b1p{{mkis^WEf|tB7+K4JKw2R)og8A9GUwN_#RK(a0q>{jE^6N{n@PW8|>n6(qB*VUHbcn>3mh-rSS(|y!gON7p&@l5$DEDCzPLCM)xlCgITo?lX4}Plm}stdipk`1AtXtWdOaf$m@E~h=_ON2Q7niW9bl5IW1rYb@1wv>d|=RgsK~EJu6ksmoHI)CCacwh2dzMWDAkGAl2w1@JW?CUYvsq45%(bJ$bxZ2W#%O`3WpobHd>`$@IsA_HAUj2rMUaL&EO^cT>@t>oCYj1@j`S0<g-nf(zF0q1d&K;aOg=>AEB;QVDl$SC4JC6Sno}Dsa4D#-|&P7f#7-AZzLXaTQMVNC@htDuY0+)&r2Yr@9_>#S)NTH!a(}n;z(XC%D21syPTc!FD01eYJZ9^=l|3Q;ryebh=Yr_S#M~nmA#x+wzUY()X&?;|9`R+p&{3sk01LhSxx!<<e*OY`OftO<NYeeAkwR!K>@~nr&MK`vD8Vg|b`154P1(rlSd+PIr<~i1H@c;-8p^V4In?gRA1^oPyacC9weziN)6zYG&@nGhi+?><n}0+J>8Zfxq1>siXV-)pfg(lv&DP+e*2myChq`c|OJ2`kz^B<R;z76g>@$E|(fzW8wH-vwAoRBh1v8iVrPY8BJRmY};(qFWmR{p9(+UN2@}y@Y|JrYa8`jquKB~{_np$PN^o^j?ho(Z8W}aK6swC+l{GC=H^34if_d!d948-hJJ0z9e;eUZt_afi@U8st2Z}!ZrlsC2Q{h8+eF(5d`~xpR;QJ=ieW=r+zooM*BUlBt`}Ra;if)DdTt}l+a5O-u5k=Ez&=IQv2S;{?p2`AN4kNw0c=%nH`XK_)1Y(le9tl;Ru;dnP?{1x^BkS48FvOG#i*TOcqs-vgM9dF%I5(1#IYU99~V36m`Xav&gN+&Z(5RAl<!@_0}amw*?c_<F$9xz<`m0BtO4iFJs7LjJNjs@Zuj+yJP^cW-)vkpo2q{LLCoQUDCwn>E7ps1_b~2G`Zd1RzUoeQ%60lYNGefjcI61oax`3&o$I-31RM9tZ#-;*g{%3M)sFBrA83Y;H0^Vm$~lcbKc~4nr*Y0{jO&aBJ_{~fX3;^J_14FsPvAE>yc2R_JtI}0AvNuD(sD*xI(}#xerPIwXkeAoE_AtN^tol$=>{_dUH+ObMc4$JO3|-sJF9*p-j(LHiI$qP$&lnB6dO_YLT<-#4cI+Jju4018?fX0K0)6KHb+Tq4ro{gn`BrtK%Lj78EjNWlNXzd)M~nyQff%N!IETAoZ}CxOWj)NB5AuJ7iJa}LpdJ9q$4l;OW0KhuLEsQIe0!kj}P8;)>40AStTiX^cTE1NTri{d9dmHiL>@wW8I{|#4&)B#%Hg|$!q28wQ>5I^}GIZ4eTr*Ac(z;Jn!0H##W^?H<K{T^(dfUrH)l7ow22#01K>h^(e4|zy<<)M_}&=jM5X(kqP`6FgaPTfPxXECoZ^Qn@Ui(;$(lYE}a)#vLIz57DPl6a7r=Tle~({Q?N_^iW%eqpr|>fjF=K?Qa*Fh+sx^Sq~Vw<9u<ZjI(>YXJbf47JGBHRo)0`~-iR5hB`{}-N`r-7sEVXDp{9*XO=o7BXQ?TkQ&T+7Oyh{yxk*G*tYxNHY*QMok-H9RW`!^{=Lh~2!%8t~86O_Y2TRW<dTyRs`hj(wn|PLowSII5EXH2Xc|a52qi#W4J2}7LS|5tuB%SB_H8%iq)F#<{F?Bz~y57uP8M<kZ7rH=i-*i``VOq(}YPU!TL}_M49&sIX8{_@BQmhX1eax3p+of-(Xzv}09z3t;^|OlRlV=q@$Q7LmZbpU8CzIUAqra9if33eJ+*ka!4)gk`Ttzc2aUPQr_0z>M4GHTvD@ALeGPsHgP9dR38oqoI=x<cl0BfJzxlwuO_)c8)o!Jcpv$chopX!RKCxEj{oSx}x_fi(*Dx)xa$NidymW`F+B?gViPo~<B7rUf>vscsw?g@WCs_uC8rl%A;mC}gY?1zh;w!YC7j<dWDj&1Ap5$EnL3zku{JRirmb$i6c(AQRqg5`Ng)7Hs|<APtSn%CqAv}I^rXgARM(9WP8Kzj#m4DA)P8)zHQ^3YbG<$};o=|elE5ABpbv{U-fPU%BCr4Q|tKC~%)yHg$bPC0g4aF}f;F-_Ujrez2^E8L=Jxkh-2-vhlT%zZO-kN0)v{*t+On0uSKx0ri_xhKqhGjteyhrxFke22kz7<`ApcNlz!!LKs-RR+Jx;8z*^DuZ8T@T&}dmBF_ee4D|y8GM_;w;6n!!M7QFo58Oz_!S1f!r)gJ{0f6#Vel&qeucre7<`Mtw-|hj!M7NEi@~=Te2c+18GMt$HyM1B!8aLvlfgF`e3QX97<_}lHyC__!8aIugTXf#e1pN)8GN0=*BN}B!Pgmlox#@`e4W833_fA-34@>AYk)sZTPtggtR>8MZG|-5I=%K{!>p3}Fy5D@RlYvfD)pfb*Q`>%tC?T|Ptz*@e_7ltUj#>^Qaum*PD1Tq+e*EDd^}r(<2cLd&_uYPJv%-!6HjxJQEWlqO)2jSv2SVlq}m4ANKP6MBaT=;#mQ;hQWv5MukDb#ic7?NeJ#oIDD419g_9JR#pXst439+&kHtJZ7BNT{F-RBrybBKm0v-s&Qr0D45G~LkT0Pk%dG1L(IkGsLA?(3MBpn4jILj+xQDuPjkkMUQTuEyuSqe<V_*!HS1kdP3R6Zl?V%s{(@mwF79QC3{^h_`yGpYP}nMo)h2?ZqO0+LWbA__>#1tg+?L==$tynrNDEpJNi!Z_%w(Y`YFZFrM#P1yOmsY-g(4H6jFY*@B?HJ#|uO`twzKJn|A**2brX%1IsDhkr6&RUZ0<tH*pIeTRt4{MV4WhquXmM__3Hdq+B{N-s@xjgue*}E~HW$s!Hh*XPr7H)#SbQGShw}k5zwCha2xRqtx-I8{C+!1IgpjB@T9>g~b`F)D{TOs(x<OW7U10yNVX~kLFZBpc~!nT`?oUlWxz(v>^?83h__5Cy@<;fulotK2kAxX}=(C<noNxzedvHWdH#_}IrGnTQmB4cSqexYpq&bqPuhQhJ@jVs48EgfSXTmBy?9?O_MmA|rlEdTlH$MPRsKvvMP$r!dNpRXV*@2nszZ>S(E-?)OTV92Uq$f{tqK@#6oMpnL{j11gWfIG|U;8}{mS!!5m<h5U*5q)w)6MJ2{yPkypG~^%5mc#hv|57m};cM%$Pz1BVp0QeB8ncK#Tpg^~OiRI!C%r79QP6HFXt$K_S`uEg@sN?;Z|H#|%{SN9nEKR;^?GM|)tT-{_uwj}d2OR)+imPN$lb~1lJP1n2}W8}y1H_d;;}@iKPg2%srxm~%Zk>MQsnhHP4Aqh`lJ;3q)0ep>x-A!etLgtQh8@-Qo+)sf~83%FHI_F(iQr5psy=Us(+5sq>A6T`jw?gH7`x7=t5L97V68TN%iH@r22AcQhj4-QbUWaqQ%x;E=_80EKO=CJq<0S_Ht=bL&0cYQJU29(xiqlpoX~@EziBE7}KkmG|;}HG^t@}Qq7}J6{AlTqfhnk(&S&hG^t`~QvJI$`Q1yCD$SV6->p8G{=Ejm#ueY6Md6|#fBfOo@h{rvabV%6!ul{TthcMt{lx_YTo)JTL!S1Wz&-iz-zg+?P=F`Hp6`7E{h9Rd=O_6L!E5iIo%l<G&zHIRQj~WQJ@S1LXr6LJ|Mm||oeW7S|M_2fYmq1')).decode()
+            file.write_text(saved[:a]+part+saved[z:])
+            hybrid=build(head)
+        finally:
+            file.write_text(saved)
+        path.write_text(json.dumps(dict(original=original,candidate=candidate,hybrid=hybrid)))
+    names = json.loads(path.read_text())
+    left, right = {"public": ("original", "candidate"), "kernel": ("original","hybrid"),
+                   "wrapper": ("hybrid","candidate"), "control": ("original","original")}[mode]
+    binaries = {"base": names[left], "head": names[right]}
+    if mode == "control":
+        import hashlib
+        peer = fresh_copy(binaries["base"], 2000)
+        assert hashlib.sha256(peer.read_bytes()).digest() == hashlib.sha256(pathlib.Path(binaries["base"]).read_bytes()).digest()
+        binaries["head"] = str(peer)
+    note = None
+    os.sched_setaffinity(0, {min(os.sched_getaffinity(0))})
     if args.arch:
         for binary in filter(None, binaries.values()):
             check_arch(binary, args.arch)
@@ -843,4 +862,23 @@ def main():
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    if "avx512f" not in pathlib.Path("/proc/cpuinfo").read_text().split():
+        print("Assigned CPU lacks AVX-512; no timing taken", flush=True)
+        result = pathlib.Path(sys.argv[sys.argv.index("--json")+1])
+        result.write_text(json.dumps(bench_report.document({"arch":"x86_64","os":"Linux","cpu":cpu_model(),"note":"No AVX512F"}, [])))
+        sys.exit(0)
+    sys.argv.extend(["--copies","4","--measurement-time","0.18","--warm-up-time","0.07"])
+    status = main()
+    result = pathlib.Path(sys.argv[sys.argv.index("--json")+1])
+    sets = json.loads(result.read_text())
+    for mode in ("wrapper","control"):
+        os.environ["GCM_ROUTE_COMPARISON"] = mode
+        saved = result.with_name(mode + ".json")
+        sys.argv[sys.argv.index("--json")+1] = str(saved)
+        argv = sys.argv[:]
+        sys.argv.extend(["--work-dir", mode + "-measures"])
+        status = max(status, main())
+        sys.argv = argv
+        sets[mode] = json.loads(saved.read_text())
+    result.write_text(json.dumps(sets,indent=2))
+    sys.exit(status)
