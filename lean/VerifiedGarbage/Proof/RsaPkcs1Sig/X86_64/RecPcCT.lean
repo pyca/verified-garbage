@@ -614,7 +614,7 @@ theorem call_ok (v : PublicImpl) {s t : State} (hp : PPreR s) (h : J1 s t) :
   obtain hpre := call_pre hp h
   obtain ⟨he, hw0, hw1, hw2, hw3, hdi, hsi, hdx, hcx, h8, h9, hsig⟩ := h
   obtain ⟨hc, hw⟩ := call_covers hp hsig he
-  refine WP.call_mx (s := t) (k := ⟨pdContract.pre, pdChkContract.post, pdContract.pub⟩) (rd := callRd s)
+  refine WP.call_mx (s := t) (k := ⟨pdContract.pre, pdChkContract.post, pdContract.pub, none⟩) (rd := callRd s)
     (wr := pubWr s) v.ok v.nosp (by rw [v.depth]; decide) hpre hc hw ?_
   intro s' hrd hwr hcs hf _ ⟨s₂, hm₂, hg₂, hpost⟩ hmx
   rw [v.depth, he.rsp] at hf

@@ -99,7 +99,7 @@ theorem callOp_ok {f : String} {body : Prog isa} (hn : body.noFrames = true) {n 
   refine WP.call (k := ⟨fun t => t.rd = [] ∧ t.wr = [⟨base, 8192⟩] ∧ t.gpr .r3 = base ∧ lo t .r4 = o ∧
       lo t .r5 = a ∧ lo t .r6 = b ∧ t.mem = s.mem,
       fun t t' => (∀ r, r ∉ fnClob → t'.gpr r = t.gpr r) ∧ Kept n base o t.mem t'.mem ∧ V t.mem t'.mem,
-      fun _ _ => True⟩)
+      fun _ _ => True, none⟩)
     (fun t ⟨h1, h2, h3, h4, h5, h6, h7⟩ => by
       obtain ⟨tr, t', he, A, G, K, W⟩ := hbody t h1 h2 h3 h4 h5 h6 h7
       exact ⟨tr, t', he, A, G, K, W⟩)

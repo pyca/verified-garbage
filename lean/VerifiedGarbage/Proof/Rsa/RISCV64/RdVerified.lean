@@ -48,6 +48,6 @@ theorem pre_ok [InvLaw] : ∀ d s, S5 d s → s.gpr .s0 = 0 → WP isa (seqs [se
 /-- `vg_rsa_recover_primes_det`. -/
 theorem rd_verified [InvLaw] :
     Verified RISCV64.target VG.Impl.Rsa.RISCV64.RecoverDet.code (Spec.Rsa.recoverPrimesDetContract RISCV64.abi) :=
-  Verified.of_correct rd_correct (code_ct pre_ok) rd_implies
+  Verified.of_correct (k := fnContract) rd_correct (code_ct pre_ok) rd_implies
 
 end VG.Proof.Rsa.RISCV64.RecDet

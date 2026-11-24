@@ -471,7 +471,7 @@ theorem qMul_ok (hc : CfgOk c) (h3 : 3 ≤ c.n) (hnf : ∀ C, c.mul = some C →
         fun t t' => (∀ r, r ∉ powClob → t'.gpr r = t.gpr r) ∧ Unch base (mulFW c) t.mem t'.mem ∧
           (∀ x ∈ [c.sl RX, c.sl RY, c.sl RZ], wordsVal t'.mem base x c.n < c.C.p) ∧
           Q 0 (tmv c.C c.n base t' (c.sl RX)) (tmv c.C c.n base t' (c.sl RY)) (tmv c.C c.n base t' (c.sl RZ)),
-        fun _ _ => True⟩)
+        fun _ _ => True, none⟩)
       (fun t ⟨hwr, h3t, hm⟩ => by
         obtain sv_t : ∀ i, sv c base t i = sv c base s₂ i := fun i => by
           show wordsVal t.mem _ _ _ = wordsVal s₂.mem _ _ _; rw [hm]

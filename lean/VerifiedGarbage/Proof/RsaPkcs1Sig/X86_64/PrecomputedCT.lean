@@ -234,7 +234,7 @@ theorem call_ok (v : PublicImpl) {s t : State} (hp : Pre s) (hsig : stackArg s 2
           (Spec.Rsa.bytesAt s.mem (stackArg s 1) (s.gpr .rsi).toNat))) ∧
       (∀ r ∈ calleeSaved, t'.gpr r = t.gpr r) ∧ t'.mxcsr.extractLsb' 6 10 = t.mxcsr.extractLsb' 6 10 := by
   obtain ⟨hc, hw⟩ := call_covers hp hsig he
-  refine WP.call_mx (s := t) (k := ⟨pdContract.pre, pdChkContract.post, pdContract.pub⟩) (rd := callRd s) (wr := pubWr s) v.ok v.nosp (by rw [v.depth]; decide)
+  refine WP.call_mx (s := t) (k := ⟨pdContract.pre, pdChkContract.post, pdContract.pub, none⟩) (rd := callRd s) (wr := pubWr s) v.ok v.nosp (by rw [v.depth]; decide)
     (Pc.call_pre (s := s) (t := t) hp hsig he.rsp hw0 hw1 hw2 hw3 hdi hsi hdx hcx h8 h9) hc hw ?_
   intro s' hrd hwr hcs hf _ ⟨s₂, hm₂, hg₂, hpost⟩ hmx
   rw [v.depth, he.rsp] at hf

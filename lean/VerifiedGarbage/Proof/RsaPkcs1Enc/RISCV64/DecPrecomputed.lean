@@ -170,6 +170,6 @@ theorem decP_implies : fnContractP.Implies (Proof.RsaPkcs1Enc.decryptPrecomputed
 /-- `vg_rsa_pkcs1_decrypt_precomputed_body`, calling `vg_rsa_private_checked_precomputed`. -/
 theorem codeP_verified :
     Verified target codeP (Proof.RsaPkcs1Enc.decryptPrecomputedBodyContract abi stackBytes) :=
-  Verified.of_correct codeP_correct codeP_ct decP_implies
+  Verified.of_correct (k := fnContractP) codeP_correct codeP_ct decP_implies
 
 end VG.Proof.RsaPkcs1Enc.RISCV64.Dec

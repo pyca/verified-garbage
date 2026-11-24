@@ -34,7 +34,7 @@ def RegAt (n : String) (r : Reg) (s : State) : Prop := s.gpr r = s.syms n
 
 /-- `k` from states where `r` holds `n`'s address, for runs that agree on it. -/
 def Contract.reg (n : String) (r : Reg) (k : Contract isa) : Contract isa :=
-  ⟨fun s => k.pre s ∧ RegAt n r s, k.post, fun s t => k.pub s t ∧ s.syms n = t.syms n⟩
+  ⟨fun s => k.pre s ∧ RegAt n r s, k.post, fun s t => k.pub s t ∧ s.syms n = t.syms n, k.retExt⟩
 
 /-- What the lift needs of the code: no instruction writes `r`, which a call
 does not change. -/

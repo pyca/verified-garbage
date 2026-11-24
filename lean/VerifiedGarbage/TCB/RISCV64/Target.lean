@@ -97,6 +97,15 @@ def abi : Abi isa where
   rd s := s.rd
   wr s := s.wr
   ret s := s.gpr .a0
+  -- psABI "Integer Calling Convention": "Values are returned in the same
+  -- manner as a first named argument of the same type would be passed", and
+  -- "integer scalars narrower than XLEN bits are widened according to the
+  -- sign of their type up to 32 bits, then sign-extended to XLEN bits": a
+  -- `u32` is sign-extended from bit 31, even though it is unsigned.
+  retExt
+    | .u32 => some fun r => (r.setWidth 32).signExtend 64
+    | .u64 => none
+    | .usize => none
   sym := some fun s name => s.syms name
   -- `lhu`/`sh`, `lwu`/`sw` and `ld`/`sd` fault on an address not a multiple of 2,
   -- 4 and 8 (`TCB/RISCV64/Isa.lean`), and a `u16`'s, `u32`'s and `u64`'s alignments

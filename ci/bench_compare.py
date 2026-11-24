@@ -40,7 +40,10 @@ does not exist, HEAD runs alone, next to OpenSSL and aws-lc-rs.
 OpenSSL's and aws-lc-rs's code is the same on both sides, so their
 benchmarks are only a reference point for HEAD's times, not part of the
 comparison: they run once, with HEAD's binary, with `--openssl` or when BASE
-does not exist; and only without `VG_CPU_FEATURES`, which does not change
+does not exist (with `--reference-copies`, also from the copies of
+`FRESH_COPIES`' groups, keeping the fastest as HEAD's do: for numbers that
+compare the libraries, where one run of theirs beside the fastest of eight
+of HEAD's would favour HEAD); and only without `VG_CPU_FEATURES`, which does not change
 their code either, unless `--openssl-with-features` asks for them under it
 too (`OPENSSL_ia32cap` in the environment then masks their own x86 CPU
 features, and `OPENSSL_armcap` replaces their AArch64 ones: OpenSSL and
@@ -394,15 +397,16 @@ def matching_groups(groups, patterns):
     return {g: n for g, n in groups.items() if any(r.fullmatch(g) for r in regexes)}
 
 
-def planned_seconds(groups, sides, rounds, copies, references):
+def planned_seconds(groups, sides, rounds, copies, references, reference_copies=False):
     """How long measuring `groups` (by benchmark count) takes, in seconds:
     `rounds` runs of each of `sides` sides, `copies - 1` more of each for
-    the groups of FRESH_COPIES, and one of each of `references` libraries."""
+    the groups of FRESH_COPIES, and one of each of `references` libraries
+    (with `reference_copies`, as many more of each for those groups)."""
     total = 0
     for group, n in groups.items():
         runs = sides * rounds + references
         if copies > 1 and FRESH_COPIES.match(group):
-            runs += sides * (copies - 1)
+            runs += (sides + (references if reference_copies else 0)) * (copies - 1)
         total += n * runs * SECONDS_PER_RUN
     return total
 
@@ -560,6 +564,8 @@ def main():
     p.add_argument("--measurement-time", type=float, default=0.3)
     p.add_argument("--openssl", action="store_true",
                    help="also run OpenSSL's and aws-lc-rs's benchmarks, for reference")
+    p.add_argument("--reference-copies", action="store_true",
+                   help="run them from the copies too, keeping the fastest, as head's: for comparing the libraries")
     p.add_argument("--openssl-with-features", action="store_true",
                    help="run them even under VG_CPU_FEATURES (with --openssl, or without a base)")
     p.add_argument("--work-dir", type=pathlib.Path, default=pathlib.Path("bench-compare"))
@@ -613,7 +619,7 @@ def main():
     with_references = (args.openssl or binaries["base"] is None) and (not cpu_features or args.openssl_with_features)
     measured = {g: listed[g] for g in (groups if groups is not None else listed)}
     seconds = planned_seconds(measured, sum(b is not None for b in binaries.values()), args.rounds, args.copies,
-                              len(REFERENCES) if with_references else 0)
+                              len(REFERENCES) if with_references else 0, args.reference_copies)
     if args.budget_minutes and seconds > args.budget_minutes * 60:
         message = over_budget(measured, seconds, args.budget_minutes)
         print(f"::error::{message}")
@@ -716,6 +722,18 @@ def main():
             print(name, file=sys.stderr)
             references[library] = run(binaries["head"], args.work_dir.resolve() / library, library, args, head,
                                        modules["head"], groups)
+        # With --reference-copies, they get the same draws as head: the
+        # fastest of the copies, for the groups that head ran from copies.
+        for c in range(1, args.copies if args.reference_copies and copied else 0):
+            print(f"references: copy {c + 1}/{args.copies} of {len(copied)} group(s)", file=sys.stderr)
+            copy = fresh_copy(binaries["head"], c)
+            try:
+                for library, times in references.items():
+                    again = run(str(copy), work / f"{library}-copy-{c}", library, args, head, modules["head"], copied)
+                    for bench_id, t in again.items():
+                        times[bench_id] = min(t, times.get(bench_id, t))
+            finally:
+                copy.unlink()
 
     title = ", ".join([*([f"VG_CPU_FEATURES={cpu_features}"] if cpu_features else []),
                        *([f"shard {shard}/{shards}"] if shards > 1 else [])])
@@ -726,7 +744,8 @@ def main():
         f"## Benchmarks ({title})" if title else "## Benchmarks",
         "",
         f"{runs} on this runner; a slowdown of more than {args.threshold:.0%} fails."
-        + (" OpenSSL (through rust-openssl) and aws-lc-rs ran once, for reference"
+        + (" OpenSSL (through rust-openssl) and aws-lc-rs ran "
+           + ("as head did, from the same copies" if args.reference_copies and copied else "once, for reference")
            + (f", with OPENSSL_ia32cap={ia32cap}" if ia32cap
               else f", with OPENSSL_armcap={armcap}" if armcap
               else ", with all of this CPU's features" if cpu_features else "") + "." if with_references
