@@ -155,6 +155,21 @@ theorem digest224_sel : VG.X86.Scrub.SelScrub (48 + Impl.MdStream.X86.Digest.dfr
     (Impl.MdStream.X86.Digest.digest (Proof.Pbkdf2.Stream.X86.sha224H stream)) :=
   ⟨by decide, _, by taint_decide_ct⟩
 
+materialize_code hmacInitCode := Impl.Hmac.X86.Fn.sha256InitBody (sha256M stream cmpN cmpC) (pbkdf2Fns stream cmpN cmpC)
+
+/-- What the cleanup of `vg_hmac_sha256_init` with this implementation needs of
+its code: the residue analysis of both its paths, evaluated here once. -/
+theorem hmacInit_sel : VG.X86.Scrub.SelScrub 1700 0 1700 Impl.Hmac.X86.Fn.sha256InitWords
+    (Impl.Hmac.X86.Fn.sha256InitBody (sha256M stream cmpN cmpC) (pbkdf2Fns stream cmpN cmpC)) :=
+  ⟨by decide, _, by taint_decide_ct⟩
+
+materialize_code hmacInit224Code := Impl.Hmac.X86.Fn.sha256InitBody (sha224M stream cmpN cmpC) (pbkdf2Fns224 stream cmpN cmpC)
+
+/-- The same of `vg_hmac_sha224_init`. -/
+theorem hmacInit224_sel : VG.X86.Scrub.SelScrub 1700 0 1700 Impl.Hmac.X86.Fn.sha256InitWords
+    (Impl.Hmac.X86.Fn.sha256InitBody (sha224M stream cmpN cmpC) (pbkdf2Fns224 stream cmpN cmpC)) :=
+  ⟨by decide, _, by taint_decide_ct⟩
+
 /-- The backend. Its checks of the code (`spSafe`, `NoSp`, the stack) are one kernel
 evaluation (`taint_decide_all`), which evaluates the compression function they all
 contain once. -/
@@ -210,7 +225,9 @@ def variant : Proof.Sha256.X86.Variants.Backend := by
     iter224NoSp := NoSp.of_all ?_,
     iter224Stack := ?_,
     digestSel := digest_sel,
-    digest224Sel := digest224_sel }
+    digest224Sel := digest224_sel,
+    hmacInitSel := hmacInit_sel,
+    hmacInit224Sel := hmacInit224_sel }
   taint_decide_all
 
 end VG.Proof.Variants.Sha256.X86.ShaNi
