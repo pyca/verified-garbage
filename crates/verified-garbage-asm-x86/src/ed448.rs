@@ -183,20 +183,20 @@ pub(crate) mod vg_ed448_scalar_reduce;
 pub(crate) mod vg_ed448_verify_equation;
 
 #[rustfmt::skip]
-#[path = "internal/vg_gf448_r16_add.rs"]
-pub(crate) mod vg_gf448_r16_add;
+#[path = "internal/vg_gf448_r32_add.rs"]
+pub(crate) mod vg_gf448_r32_add;
 
 #[rustfmt::skip]
-#[path = "internal/vg_gf448_r16_mul.rs"]
-pub(crate) mod vg_gf448_r16_mul;
+#[path = "internal/vg_gf448_r32_mul.rs"]
+pub(crate) mod vg_gf448_r32_mul;
 
 #[rustfmt::skip]
-#[path = "internal/vg_gf448_r16_sqr.rs"]
-pub(crate) mod vg_gf448_r16_sqr;
+#[path = "internal/vg_gf448_r32_sqr.rs"]
+pub(crate) mod vg_gf448_r32_sqr;
 
 #[rustfmt::skip]
-#[path = "internal/vg_gf448_r16_sub.rs"]
-pub(crate) mod vg_gf448_r16_sub;
+#[path = "internal/vg_gf448_r32_sub.rs"]
+pub(crate) mod vg_gf448_r32_sub;
 
 #[rustfmt::skip]
 #[path = "internal/vg_keccak_absorb_scratch.rs"]

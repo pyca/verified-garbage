@@ -12,7 +12,7 @@ and `R` (the signature's first 57 bytes) decode, `S` (its last 57) is below
 otherwise.
 
 Field elements and their arithmetic are X448's on this target, as for
-base-point multiplication (`ScalarBase.lean`): twenty-eight 16-bit limbs in
+base-point multiplication (`ScalarBase.lean`): fourteen 32-bit words in
 the 128-byte slots of the working space, with `edi` the working space and
 `esi` the loop counter; the callee-saved registers are saved in the working
 space's first 16 bytes. The point formulas are the shared ones
@@ -27,8 +27,8 @@ reduction works on slot 1 alone, which comparisons and decoding use.
   X448's `bitsLoop`; then, once `A` is decoded, the bytes at `KBITS` are recoded in place into
   `k`'s digits (`vrecode`), each zero or odd and below 16, which sum to `k` at the powers of two.
 * `S < L`: its byte 56 is 0 and its low 448 bits plus `2^448 - L` (the
-  limbs `kLimb` of scalar reduction) do not carry out of 448 bits.
-* Decoding a point (RFC 8032 §5.2.3) at `esi` into the slots `xo` and `yo`: the twenty-eight limbs of `y`, which must be below `p`
+  words `kWord`) do not carry out of 448 bits.
+* Decoding a point (RFC 8032 §5.2.3) at `esi` into the slots `xo` and `yo`: the fourteen words of `y`, which must be below `p`
   (they are equal to their full reduction) with bits 448–454 of the encoding
   0; the sign bit to `SIGN`; `u = y² - 1`, `v = d y² - 1` (`decodeUV`), the
   candidate root `x = u³v (u⁵v³)^((p-3)/4)` (by `root`, X448's addition chain
@@ -63,7 +63,7 @@ and on `k`'s digits, and every branch on the pointers and on the bits of `k`.
 namespace VG.Impl.Ed448.X86
 
 open VG.X86
-open VG.Impl.X448.X86 (at_ sc ld st slot BITS bitsLoop TMP X2 Op ops cswap freeze copy pass sqn T0 T1 T2 T3
+open VG.Impl.X448.X86 (at_ sc ld st wordAt slot BITS bitsLoop X2 Op ops cswap freeze copy clearCarry sqn T0 T1 T2 T3
   T4 T5 T6 T7 restore)
 
 /-! ## The working space -/
@@ -92,39 +92,37 @@ def VTAB : Nat := 5120
 /-- `BAD |= r`. -/
 def orBad (r : Reg) : List Instr := [.alu .or r (.mem (sc BAD)), st r BAD]
 
-/-- `ecx |= ` limb `i` of slot 1 XORed with that of the slot at `a`. -/
+/-- `ecx |= ` word `i` of slot 1 XORed with that of the slot at `a`. -/
 def diffLimb (a i : Nat) : List Instr :=
   [ld .eax (X2 + 4 * i), .alu .xor .eax (.mem (sc (a + 4 * i))), .alu .or .ecx (.reg .eax)]
 
-/-- `BAD |= 0` exactly when slot 1 and the slot at `a` have the same limbs. -/
+/-- `BAD |= 0` exactly when slot 1 and the slot at `a` have the same words. -/
 def diffSlot (a : Nat) : List Instr :=
-  .mov .ecx (.imm 0) :: (List.range 28).flatMap (diffLimb a) ++ orBad .ecx
+  .mov .ecx (.imm 0) :: (List.range 14).flatMap (diffLimb a) ++ orBad .ecx
 
 /-- `BAD |= 0` exactly when the slots at `a` and `b` hold the same field
 element: the one at `a` fully reduced (in slot 1) and copied back, the one at
-`b` fully reduced in slot 1, and their limbs compared. -/
+`b` fully reduced in slot 1, and their words compared. -/
 def eqSlots (a b : Nat) : List Instr :=
   copy X2 a ++ freeze ++ copy a X2 ++ copy X2 b ++ freeze ++ diffSlot a
 
-/-- Limb `i` of the 56 bytes at `esi + src` into `eax`. -/
-def byteLimb (src i : Nat) : List Instr :=
-  [.movzx8 .eax (at_ .esi (src + 2 * i)), .movzx8 .edx (at_ .esi (src + 2 * i + 1)),
-    .shift .ror .edx 24, .alu .add .eax (.reg .edx)]
-
-/-- The twenty-eight limbs of the 56 bytes at `esi` into the slot at `o`. -/
+/-- The fourteen words of the 56 bytes at `esi` into the slot at `o`. -/
 def loadLimbs (o : Nat) : List Instr :=
-  (List.range 28).flatMap fun i => byteLimb 0 i ++ [st .eax (o + 4 * i)]
+  (List.range 14).flatMap fun i => [.mov .eax (.mem (wordAt .esi i)), st .eax (o + 4 * i)]
 
-/-- Limb `i` of `S`'s low 448 bits plus that of `2^448 - L`, into `TMP`. -/
+/-- Word `k` of `K = 2^448 - L` (`Impl/Ed448/X86/Scalar.lean`). -/
+def kWord (k : Nat) : Nat := kLimb (2 * k) + 65536 * kLimb (2 * k + 1)
+
+/-- Word `i` of `S`'s low 448 bits plus that of `2^448 - L`, and the carry. -/
 def sLimb (i : Nat) : List Instr :=
-  byteLimb 57 i ++ [.alu .add .eax (.imm (BitVec.ofNat 32 (kLimb i))), st .eax (TMP + 4 * i)]
+  [.mov .eax (.mem (at_ .esi (57 + 4 * i))), .alu .adc .eax (.imm (BitVec.ofNat 32 (kWord i)))]
 
 /-- `BAD |= 0` exactly when `S` (the signature's last 57 bytes, at
-`esi + 57`) is below `L`: the carry out of 448 bits of its low limbs plus
+`esi + 57`) is below `L`: the carry out of 448 bits of its low words plus
 `2^448 - L`, ORed with its byte 56. -/
 def sCheck : List Instr :=
-  (List.range 28).flatMap sLimb ++ pass TMP TMP ++
-    [.movzx8 .eax (at_ .esi 113), .alu .or .eax (.reg .ebx)] ++ orBad .eax
+  clearCarry ++ (List.range 14).flatMap sLimb ++
+    [.alu .sbb .ecx (.reg .ecx), .movzx8 .eax (at_ .esi 113), .alu .or .eax (.reg .ecx)] ++ orBad .eax
 
 /-! ## Decoding a point -/
 
@@ -154,21 +152,25 @@ def signByte : List Instr :=
   [.movzx8 .eax (at_ .esi 56), .mov .edx (.reg .eax), .shift .shr .edx 7, st .edx SIGN,
     .alu .and .eax (.imm 0x7f)]
 
-/-- The 57 bytes at `esi`: `y`'s limbs into slot `yo`, the sign bit to `SIGN`, and `BAD |= 0`
+/-- The 57 bytes at `esi`: `y`'s words into slot `yo`, the sign bit to `SIGN`, and `BAD |= 0`
 exactly when bits 448–454 are 0 and `y < p`. -/
 def decodeY (yo : Nat) : List Instr :=
   loadLimbs (slot yo) ++ signByte ++ orBad .eax ++ copy X2 (slot yo) ++ freeze ++ diffSlot (slot yo)
 
-/-- `edx = ⋁` the limbs of slot 1. -/
+/-- `edx = ⋁` the words of slot 1. -/
 def orLimbs : List Instr :=
-  ld .edx X2 :: (List.range 27).flatMap fun i => [.alu .or .edx (.mem (sc (X2 + 4 * (i + 1))))]
+  ld .edx X2 :: (List.range 13).flatMap fun i => [.alu .or .edx (.mem (sc (X2 + 4 * (i + 1))))]
+
+/-- `r = 1` if it is 0, else 0, with `eax`. -/
+def isZero (r : Reg) : List Instr :=
+  [.mov .eax (.imm 0), .alu .sub .eax (.reg r), .alu .sbb r (.reg r), .alu .add r (.imm 1)]
 
 /-- The sign, with `-x` in slot 12: `x` fully reduced in slot 1; `BAD |= 0`
 exactly when `x ≠ 0` or the sign bit is 0; then `x` swapped with `-x` by the
 mask of `x`'s low bit differing from the sign bit. -/
 def decodeSign (xo : Nat) : List Instr :=
   copy X2 (slot xo) ++ freeze ++ orLimbs ++
-    [.alu .sub .edx (.imm 1), .shift .shr .edx 31, .alu .and .edx (.mem (sc SIGN))] ++ orBad .edx ++
+    isZero .edx ++ [.alu .and .edx (.mem (sc SIGN))] ++ orBad .edx ++
     [ld .eax X2, .alu .and .eax (.imm 1), .alu .xor .eax (.mem (sc SIGN)), .mov .ebx (.imm 0),
       .alu .sub .ebx (.reg .eax)] ++ cswap (slot xo) (slot 12)
 
@@ -259,13 +261,13 @@ def vrecode : Prog isa := .seq (.block recInit) (.loop recBit .ne)
 
 /-! ### The table of `-A`'s odd multiples -/
 
-/-- The limbs of the slot at `a` to the twenty-eight words at `ebp + o`. -/
+/-- The words of the slot at `a` to the fourteen words at `ebp + o`. -/
 def toEntry (o a : Nat) : List Instr :=
-  (List.range 28).flatMap fun i => [ld .eax (a + 4 * i), .store (at_ .ebp (o + 4 * i)) .eax]
+  (List.range 14).flatMap fun i => [ld .eax (a + 4 * i), .store (at_ .ebp (o + 4 * i)) .eax]
 
-/-- The twenty-eight words at `ebp + a` to the limbs of the slot at `o`. -/
+/-- The fourteen words at `ebp + a` to those of the slot at `o`. -/
 def fromEntry (o a : Nat) : List Instr :=
-  (List.range 28).flatMap fun i => [.mov .eax (.mem (at_ .ebp (a + 4 * i))), st .eax (o + 4 * i)]
+  (List.range 14).flatMap fun i => [.mov .eax (.mem (at_ .ebp (a + 4 * i))), st .eax (o + 4 * i)]
 
 /-- `Q` (slots 0–2) to the entry at byte `esi` of the working space; then `esi` moved to the next
 entry, and ZF set after the last. -/
@@ -373,7 +375,7 @@ def vcmp : Prog isa :=
 callee-saved registers restored, and `eax = (BAD == 0)`. -/
 def vfinish : Prog isa :=
   .seq vdouble <| .seq (.block [.mov .esi (.imm 2)]) <| .seq (.loop vcmp .ne) <|
-  .block ([ld .ecx BAD, .alu .sub .ecx (.imm 1), .shift .shr .ecx 31] ++ restore ++ [.mov .eax (.reg .ecx)])
+  .block (ld .ecx BAD :: isZero .ecx ++ restore ++ [.mov .eax (.reg .ecx)])
 
 /-- After the decodings: `A` negated, `k`'s digits, the table of `-A`'s odd multiples, `Q`, `R`
 copied back, and the comparison. -/

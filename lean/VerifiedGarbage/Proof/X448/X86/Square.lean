@@ -41,18 +41,18 @@ theorem counter_keep {base : Addr} {s t : State} (hg : ∀ r, r ≠ .esi → t.g
     hm ▸ WsOut2.refl _ _ _ _ _ _⟩
 
 def ISpec (base : Addr) (code : Prog isa) (f : Env → Env) : Prop :=
-  ∀ s, Scr s base → CallCtx s base → BoundedEnv s.mem base → WP isa code s fun t =>
-    IKeep base s t ∧ BoundedEnv t.mem base ∧ E t.mem base = f (E s.mem base)
+  ∀ s, Scr s base → CallCtx s base → WP isa code s fun t =>
+    IKeep base s t ∧ E t.mem base = f (E s.mem base)
 
 theorem ISpec.seq {base : Addr} {c₁ c₂ : Prog isa} {f g : Env → Env}
     (h₁ : ISpec base c₁ f) (h₂ : ISpec base c₂ g) :
-    ISpec base (.seq c₁ c₂) (fun e => g (f e)) := fun s hs hc hb =>
-  WP.seq (WP.mono (h₁ s hs hc hb) fun t ⟨tk, tb, te⟩ =>
-    WP.mono (h₂ t (tk.scr hs) (tk.ctx hc) tb) fun u ⟨uk, ub, ue⟩ => ⟨tk.trans uk, ub, by rw [ue, te]⟩)
+    ISpec base (.seq c₁ c₂) (fun e => g (f e)) := fun s hs hc =>
+  WP.seq (WP.mono (h₁ s hs hc) fun t ⟨tk, te⟩ =>
+    WP.mono (h₂ t (tk.scr hs) (tk.ctx hc)) fun u ⟨uk, ue⟩ => ⟨tk.trans uk, by rw [ue, te]⟩)
 
 theorem opsI (base : Addr) (xs : List FieldOp) :
-    ISpec base (ops (xs.map FieldOp.impl)) (applyOps xs) := fun _ hs hc hb =>
-  WP.mono (ops_ok hs hc hb xs) fun _ ⟨tk, tb, te⟩ => ⟨tk.ikeep, tb, te⟩
+    ISpec base (ops (xs.map FieldOp.impl)) (applyOps xs) := fun _ hs hc =>
+  WP.mono (ops_ok hs hc xs) fun _ ⟨tk, te⟩ => ⟨tk.ikeep, te⟩
 
 def opSqn (o : Index) (n : Nat) (e : Env) : Env := Function.update e o (Proof.X448.sqn (e o) n)
 
@@ -62,31 +62,30 @@ theorem opMul_update (o : Index) (e : Env) (v : Spec.X448.Fe) :
 
 theorem sqnI (base : Addr) (o : Index) {n : Nat} (hn : 1 ≤ n) (hn' : n < 2 ^ 16) :
     ISpec base (Impl.X448.X86.sqn (slot o.val) n) (opSqn o n) := by
-  intro s hs hc hb
+  intro s hs hc
   rw [Impl.X448.X86.sqn, WP.seq_iff]
   refine WP.mono (setCounter_ok s n hn') fun t ⟨tc, tg, tm, tr, tw⟩ => ?_
   have kt : IKeep base s t := counter_keep tg tm tr tw
-  let inv := fun m (u : State) => 1 ≤ m ∧ m ≤ n ∧ IKeep base s u ∧ BoundedEnv u.mem base ∧
+  let inv := fun m (u : State) => 1 ≤ m ∧ m ≤ n ∧ IKeep base s u ∧
     u.gpr .esi = BitVec.ofNat 32 m ∧
     E u.mem base = Function.update (E s.mem base) o (Proof.X448.sqn (E s.mem base o) (n - m))
   refine WP.loop (M := isa) inv ?_ n t ?_
-  · intro m u ⟨hm, hm', ku, bu, cu, eu⟩
+  · intro m u ⟨hm, hm', ku, cu, eu⟩
     obtain ⟨m, rfl⟩ : ∃ k, m = k + 1 := ⟨m - 1, by omega_using [hm]⟩
     rw [WP.seq_iff]
-    refine WP.mono (mulE (ku.scr hs) (ku.ctx hc) bu o o o) fun v ⟨kv, bv, ev⟩ => ?_
+    refine WP.mono (mulE (ku.scr hs) (ku.ctx hc) o o o) fun v ⟨kv, ev⟩ => ?_
     have cv : v.gpr .esi = BitVec.ofNat 32 (m + 1) := (kv.regs.1 _ (by decide)).trans cu
     refine WP.mono (decCounter_ok (by omega_using [hn', hm']) cv) fun w ⟨cw, wg, wm, wr, ww, wz⟩ => ?_
     have kw : IKeep base s w := ku.trans (kv.ikeep.trans (counter_keep wg wm wr ww))
-    have bw : BoundedEnv w.mem base := wm ▸ bv
     have ew : E w.mem base = Function.update (E s.mem base) o (Proof.X448.sqn (E s.mem base o) (n - m)) := by
       rw [wm, ev, eu, opMul_update, ← Proof.X448.sqn]
       rw [show (n - (m + 1)).succ = n - m by omega_using [hm']]
     simp only [eval, wz, Option.map_some]
     rcases Nat.eq_zero_or_pos m with rfl | hm
-    · exact Or.inl ⟨rfl, kw, bw, ew⟩
-    · refine Or.inr ⟨?_, m, by omega_using [], hm, by omega_using [hm'], kw, bw, cw, ew⟩
+    · exact Or.inl ⟨rfl, kw, ew⟩
+    · refine Or.inr ⟨?_, m, by omega_using [], hm, by omega_using [hm'], kw, cw, ew⟩
       rw [decide_eq_false (by omega_using [hm] : ¬m = 0)]; rfl
-  · refine ⟨hn, by omega_using [], kt, tm ▸ hb, tc, ?_⟩
+  · refine ⟨hn, by omega_using [], kt, tc, ?_⟩
     rw [tm, Nat.sub_self, Proof.X448.sqn, Function.update_eq_self]
 
 end VG.Proof.X448.X86

@@ -45,7 +45,6 @@ public import VerifiedGarbage.Proof.Sha512.Spec
 public import VerifiedGarbage.Proof.Sha512.X86.Stream.Init
 public import VerifiedGarbage.Proof.X25519.X86.Basic
 public import VerifiedGarbage.Proof.X448.Bytes
-public import VerifiedGarbage.Proof.X448.X86.Carry
 public import VerifiedGarbage.Proof.X448.X86.Columns
 public import VerifiedGarbage.Proof.X448.X86.Copy
 public import VerifiedGarbage.Proof.X448.X86.Counters

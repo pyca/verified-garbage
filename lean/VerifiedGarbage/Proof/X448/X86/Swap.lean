@@ -34,7 +34,7 @@ theorem xor_sel (sw : Bool) (a b : BitVec 32) :
     · rw [BitVec.xor_comm a b, ← BitVec.xor_assoc, BitVec.xor_self, BitVec.zero_xor]
 
 theorem swapStep_ok {s : State} {base : Addr} (hs : Scr s base) {x y i : Nat}
-    (hx : Slot x) (hy : Slot y) (hi : i < 28) {sw : Bool} (hc : s.gpr .ebx = mask sw) :
+    (hx : Slot x) (hy : Slot y) (hi : i < 14) {sw : Bool} (hc : s.gpr .ebx = mask sw) :
     WP isa (.block
       [ld .eax (x + 4 * i), ld .ecx (y + 4 * i), .mov .edx (.reg .eax), .alu .xor .edx (.reg .ecx),
         .alu .and .edx (.reg .ebx), .alu .xor .eax (.reg .edx),
@@ -43,8 +43,8 @@ theorem swapStep_ok {s : State} {base : Addr} (hs : Scr s base) {x y i : Nat}
         (if sw then word s.mem base (y + 4 * i) else word s.mem base (x + 4 * i))).writeW
         (off base (y + 4 * i)) (if sw then word s.mem base (x + 4 * i) else word s.mem base (y + 4 * i)) ∧
       Keeps [.eax, .ecx, .edx] s t := by
-  have hx' : x + 112 ≤ 3584 := hx
-  have hy' : y + 112 ≤ 3584 := hy
+  have hx' : x + 56 ≤ 3584 := hx
+  have hy' : y + 56 ≤ 3584 := hy
   have lx := hs.read (d := x + 4 * i) (n := 4) (by omega_using [hi, hx'])
   have ly := hs.read (d := y + 4 * i) (n := 4) (by omega_using [hi, hy'])
   have wx := hs.write (d := x + 4 * i) (n := 4) (by omega_using [hi, hx'])
@@ -62,14 +62,14 @@ theorem swapStep_ok {s : State} {base : Addr} (hs : Scr s base) {x y i : Nat}
   simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
   simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, hr.1, hr.2.1, hr.2.2, ite_false]
 
-/-- Reading two disjoint words after writing a limb pair. -/
+/-- Reading two disjoint words after writing a word pair. -/
 theorem pair_write {m : Mem} {base : Addr} {x y n j : Nat} (hx : Slot x) (hy : Slot y)
-    (hxy : x + 112 ≤ y ∨ y + 112 ≤ x) (hn : n < 28) (hj : j < 28) (vx vy : BitVec 32) :
+    (hxy : x + 56 ≤ y ∨ y + 56 ≤ x) (hn : n < 14) (hj : j < 14) (vx vy : BitVec 32) :
     let m' := (m.writeW (off base (x + 4 * n)) vx).writeW (off base (y + 4 * n)) vy
     limbs m' base x j = (if j = n then vx.toNat else limbs m base x j) ∧
     limbs m' base y j = (if j = n then vy.toNat else limbs m base y j) := by
-  have xb : x + 112 ≤ 8192 := Nat.le_trans hx (by decide)
-  have yb : y + 112 ≤ 8192 := Nat.le_trans hy (by decide)
+  have xb : x + 56 ≤ 8192 := Nat.le_trans hx (by decide)
+  have yb : y + 56 ≤ 8192 := Nat.le_trans hy (by decide)
   dsimp only
   constructor
   · simp only [limbs, word]
@@ -87,20 +87,20 @@ theorem pair_write {m : Mem} {base : Addr} {x y n j : Nat} (hx : Slot x) (hy : S
       apply congrArg BitVec.toNat
       exact Mem.readW_writeW_sep (Offset.sep base (by omega_using [hxy, hn, hj]) (by omega_using [hj, yb]) (by omega_using [hn, xb])) (by decide)
 
-/-- Swap all twenty-eight limbs under the mask, preserving all other bytes. -/
+/-- Swap all fourteen words under the mask, preserving all other bytes. -/
 theorem cswap_ok {s : State} {base : Addr} (hs : Scr s base) {x y : Nat} (hx : Slot x) (hy : Slot y)
-    (hxy : x + 112 ≤ y ∨ y + 112 ≤ x) {sw : Bool} (hc : s.gpr .ebx = mask sw) :
+    (hxy : x + 56 ≤ y ∨ y + 56 ≤ x) {sw : Bool} (hc : s.gpr .ebx = mask sw) :
     WP isa (.block (cswap x y)) s fun t =>
-      (∀ i < 28, limbs t.mem base x i = if sw then limbs s.mem base y i else limbs s.mem base x i) ∧
-      (∀ i < 28, limbs t.mem base y i = if sw then limbs s.mem base x i else limbs s.mem base y i) ∧
-      Outside2 base x 112 y 112 s.mem t.mem ∧ Keeps [.eax, .ecx, .edx] s t := by
+      (∀ i < 14, limbs t.mem base x i = if sw then limbs s.mem base y i else limbs s.mem base x i) ∧
+      (∀ i < 14, limbs t.mem base y i = if sw then limbs s.mem base x i else limbs s.mem base y i) ∧
+      Outside2 base x 56 y 56 s.mem t.mem ∧ Keeps [.eax, .ecx, .edx] s t := by
   let inv := fun n (t : State) =>
     (∀ i < n, limbs t.mem base x i = if sw then limbs s.mem base y i else limbs s.mem base x i) ∧
     (∀ i < n, limbs t.mem base y i = if sw then limbs s.mem base x i else limbs s.mem base y i) ∧
     Outside2 base x (4 * n) y (4 * n) s.mem t.mem ∧ Keeps [.eax, .ecx, .edx] s t
-  have xb : x + 112 ≤ 8192 := Nat.le_trans hx (by decide)
-  have yb : y + 112 ≤ 8192 := Nat.le_trans hy (by decide)
-  have step : ∀ n t, n < 28 → inv n t → WP isa (.block
+  have xb : x + 56 ≤ 8192 := Nat.le_trans hx (by decide)
+  have yb : y + 56 ≤ 8192 := Nat.le_trans hy (by decide)
+  have step : ∀ n t, n < 14 → inv n t → WP isa (.block
       [ld .eax (x + 4 * n), ld .ecx (y + 4 * n), .mov .edx (.reg .eax), .alu .xor .edx (.reg .ecx),
         .alu .and .edx (.reg .ebx), .alu .xor .eax (.reg .edx),
         .alu .xor .ecx (.reg .edx), st .eax (x + 4 * n), st .ecx (y + 4 * n)]) t (inv (n + 1)) := by
@@ -111,7 +111,7 @@ theorem cswap_ok {s : State} {base : Addr} (hs : Scr s base) {x y : Nat} (hx : S
       congrArg BitVec.toNat (tm.word (by omega_using []) (by omega_using [hxy, hn]) (by omega_using [xb, hn]))
     have ey : limbs t.mem base y n = limbs s.mem base y n :=
       congrArg BitVec.toNat (tm.word (by omega_using [hxy, hn]) (by omega_using []) (by omega_using [yb, hn]))
-    have pair := fun (j : Nat) (hj : j < 28) => pair_write (m := t.mem) (base := base) hx hy hxy hn hj
+    have pair := fun (j : Nat) (hj : j < 14) => pair_write (m := t.mem) (base := base) hx hy hxy hn hj
       (if sw then word t.mem base (y + 4 * n) else word t.mem base (x + 4 * n))
       (if sw then word t.mem base (x + 4 * n) else word t.mem base (y + 4 * n))
     refine ⟨?_, ?_, ?_, tk.trans uk⟩
@@ -131,7 +131,7 @@ theorem cswap_ok {s : State} {base : Addr} (hs : Scr s base) {x y : Nat} (hx : S
       intro p hp hq
       rw [um, writeW_outside _ _ _ (by omega_using [yb, hn] : y + 4 * n + 4 ≤ 8192) p (by omega_using [hq]),
         writeW_outside _ _ _ (by omega_using [xb, hn] : x + 4 * n + 4 ≤ 8192) p (by omega_using [hp])]
-  exact wp_range_flatMap (M := isa) (N := 28) inv step 28 (by decide) s
+  exact wp_range_flatMap (M := isa) (N := 14) inv step 14 (by decide) s
     ⟨fun _ hi => by omega, fun _ hi => by omega, Outside2.refl _ _ _ _ _ _, Keeps.refl _ _⟩
 
 end VG.Proof.X448.X86

@@ -12,11 +12,11 @@ public import VerifiedGarbage.Spec.Ed448
 the encoding of `[s]B` for the 456-bit little-endian scalar `s`, without
 pruning.
 
-Field elements are X448's on this target (twenty-eight 16-bit limbs in the
+Field elements are X448's on this target (fourteen 32-bit words in the
 128-byte slots of the working space, `Impl/X448/X86.lean`), and so is the
 field arithmetic: multiplications (and squarings, as multiplications of a
 slot by itself), additions and subtractions, which are calls of the field
-functions `vg_gf448_r16_*` (their arguments in the 20 bytes of stack below
+functions `vg_gf448_r32_*` (their arguments in the 20 bytes of stack below
 the return address), the constant-time swap, the inversion, the full
 reduction of slot 1 and its output. Points are the
 specification's projective coordinates `(X : Y : Z)`. As in X448, `edi`
@@ -37,7 +37,7 @@ doubling formulas, `Impl/Ed448/Formulas.lean`'s `doubleOps`), the table entry
 of the row's four bits of the scalar, 114 apart, selected into `Q`'s `x` and
 `y` (slots 8 and 9), and `T = R + Q` (§5.2.4's addition, `addOps`, into slots
 3–5) copied into `R`. The selection scans every entry (`combSelect`): the
-slots are zeroed, and each entry's limbs, which are immediates of the code,
+slots are zeroed, and each entry's words, which are immediates of the code,
 are ORed in under the mask of the entry's index being the row's (`selEntry`),
 so the same instructions run whatever the bits. Finally `R` is encoded
 (§5.2.2): `Z` inverted with X448's addition chain, `x = X/Z` (into slot 1)
@@ -80,16 +80,16 @@ def initVal (i : Nat) : Nat :=
   else if i = 11 then Spec.Ed448.d.val
   else 0
 
-/-- Limb `k` of slot `i`'s initial value. -/
-def initLimb (i k : Nat) : Nat := initVal i / 2 ^ (16 * k) % 65536
+/-- Word `k` of slot `i`'s initial value. -/
+def initLimb (i k : Nat) : Nat := initVal i / 2 ^ (32 * k) % 2 ^ 32
 
-/-- Limb `k` of slot `i`, through `ebp = edi + 64`, the address of slot 0,
+/-- Word `k` of slot `i`, through `ebp = edi + 64`, the address of slot 0,
 if it is not zero (the slots are zeroed first). -/
 def initStep (i k : Nat) : List Instr :=
   if initLimb i k = 0 then []
   else [.mov .eax (.imm (BitVec.ofNat 32 (initLimb i k))), .store (at_ .ebp (128 * i + 4 * k)) .eax]
 
-def initSlot (i : Nat) : List Instr := (List.range 28).flatMap (initStep i)
+def initSlot (i : Nat) : List Instr := (List.range 14).flatMap (initStep i)
 
 /-- The 704 words of the slots zeroed, through `ebp` from `edi + 64` (`eax`
 counts them down). -/
@@ -114,9 +114,9 @@ def baseEntry : Prog isa := .seq (.block (save 12)) (.seq initSlots baseBits)
 
 /-! ## The four-column comb -/
 
-/-- Limb `j` of coordinate `c` (0 is `x`, 1 is `y`) of the table's entry `i`. -/
+/-- Word `j` of coordinate `c` (0 is `x`, 1 is `y`) of the table's entry `i`. -/
 def combLimb (i c j : Nat) : Nat :=
-  (if c = 0 then (Comb.entry i).1.val else (Comb.entry i).2.val) / 2 ^ (16 * j) % 65536
+  (if c = 0 then (Comb.entry i).1.val else (Comb.entry i).2.val) / 2 ^ (32 * j) % 2 ^ 32
 
 /-- The row's index into `ecx`: bits `t`, `t + 114`, `t + 228` and `t + 342` of the scalar
 (`t = esi`), as `b₀ + 2 b₁ + 4 b₂ + 8 b₃`, each bit a byte at `ebp + o`, for `ebp = edi + t`. -/
@@ -131,20 +131,20 @@ def selMask (i : Nat) : List Instr :=
   [.mov .eax (.reg .ecx), .alu .xor .eax (.imm (BitVec.ofNat 32 i)), .alu .sub .eax (.imm 1),
     .shift .shr .eax 31, .mov .ebx (.imm 0), .alu .sub .ebx (.reg .eax)]
 
-/-- The limb `v j`, under the mask `ebx`, ORed into limb `j` of the slot at `o`. -/
+/-- The word `v j`, under the mask `ebx`, ORed into word `j` of the slot at `o`. -/
 def selLimb (o : Nat) (v : Nat → Nat) (j : Nat) : List Instr :=
   [.mov .eax (.imm (BitVec.ofNat 32 (v j))), .alu .and .eax (.reg .ebx),
     .alu .or .eax (.mem (sc (o + 4 * j))), st .eax (o + 4 * j)]
 
-/-- The twenty-eight limbs `v`, under the mask `ebx`, ORed into the slot at `o`. -/
-def selCoord (o : Nat) (v : Nat → Nat) : List Instr := (List.range 28).flatMap (selLimb o v)
+/-- The fourteen words `v`, under the mask `ebx`, ORed into the slot at `o`. -/
+def selCoord (o : Nat) (v : Nat → Nat) : List Instr := (List.range 14).flatMap (selLimb o v)
 
 /-- Entry `i` ORed into slots 8 (`x`) and 9 (`y`) if it is the row's. -/
 def selEntry (i : Nat) : List Instr :=
   selMask i ++ selCoord (slot 8) (combLimb i 0) ++ selCoord (slot 9) (combLimb i 1)
 
 /-- The slot at `o` zeroed (`eax` is zero). -/
-def zeroSlot (o : Nat) : List Instr := (List.range 28).flatMap fun j => [st .eax (o + 4 * j)]
+def zeroSlot (o : Nat) : List Instr := (List.range 14).flatMap fun j => [st .eax (o + 4 * j)]
 
 /-- Slots 8 and 9 zeroed, then every entry scanned: the row's entry, of index `ecx`, in slots 8
 and 9. -/
@@ -179,7 +179,7 @@ restored. -/
 def baseEncode : Prog isa :=
   .seq invert <| .seq (ops [.mul (slot 4) (slot 1) (slot 21), .mul X2 (slot 0) (slot 21)]) <|
     .block (freeze ++ signBit ++ copy X2 (slot 4) ++ freeze ++
-      (List.range 28).flatMap Impl.X448.X86.packLimb ++ Impl.X448.X86.restore)
+      (List.range 14).flatMap Impl.X448.X86.packWord ++ Impl.X448.X86.restore)
 
 /-- `vg_ed448_scalar_base(out = [esp + 4], scalar = [esp + 8], scratch = [esp + 12])`. -/
 def scalarBase : Prog isa := .seq baseEntry (.seq combLoop baseEncode)

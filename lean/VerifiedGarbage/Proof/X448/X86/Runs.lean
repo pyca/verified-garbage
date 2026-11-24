@@ -39,7 +39,7 @@ two runs whose public data agree, by the function's own constant time
 knows of the other's state is carried in the relation.
 
 `RF base` relates two runs with the working space at `base`, the call stack
-apart from it and bounded slots (`FInv`) in each, that agree on `esp`: a
+apart from it (`FInv`) in each, that agree on `esp`: a
 field operation (`fieldOp_rel`), and a list of them (`ops_rel`), leaks the
 same and keeps `RF`.
 -/
@@ -51,11 +51,10 @@ namespace VG.Proof.X448.X86
 open VG VG.X86 VG.Impl.X448.X86 VG.Proof.X448.Radix16
 
 /-- What a run of the field arithmetic knows: the working space at `base`,
-the stack its calls use apart from it, and every slot bounded. -/
+and the stack its calls use apart from it. -/
 structure FInv (base : Addr) (s : State) : Prop where
   scr : Scr s base
   ctx : CallCtx s base
-  bounded : BoundedEnv s.mem base
 
 /-- Two runs of the field arithmetic whose stack pointers agree. -/
 def RF (base : Addr) (s₁ s₂ : State) : Prop :=
@@ -73,14 +72,14 @@ theorem RF.agree {base : Addr} {s₁ s₂ : State} (h : RF base s₁ s₂) :
   · exact h.2.2
   · exact edi_eq h.1.scr h.2.1.scr
 
-/-- Code that keeps `Keep` and the bounds keeps `RF`. -/
+/-- Code that keeps `Keep` keeps `RF`. -/
 theorem RF.keep {base : Addr} {c : Prog isa} (htr : RelCT isa (RF base) c fun _ _ => True)
-    (hw : ∀ s, FInv base s → WP isa c s fun t => Keep base s t ∧ BoundedEnv t.mem base) :
+    (hw : ∀ s, FInv base s → WP isa c s fun t => Keep base s t) :
     RelCT isa (RF base) c (RF base) := by
-  refine (htr.wpDep (F := fun (s t : State) => Keep base s t ∧ BoundedEnv t.mem base)
+  refine (htr.wpDep (F := fun (s t : State) => Keep base s t)
     fun s₁ s₂ h => ⟨hw s₁ h.1, hw s₂ h.2.1⟩).mono (fun _ _ h => h) ?_
-  rintro t₁ t₂ ⟨-, s₁, s₂, ⟨f₁, f₂, e⟩, ⟨k₁, b₁⟩, ⟨k₂, b₂⟩⟩
-  exact ⟨⟨k₁.scr f₁.scr, k₁.ctx f₁.ctx, b₁⟩, ⟨k₂.scr f₂.scr, k₂.ctx f₂.ctx, b₂⟩,
+  rintro t₁ t₂ ⟨-, s₁, s₂, ⟨f₁, f₂, e⟩, k₁, k₂⟩
+  exact ⟨⟨k₁.scr f₁.scr, k₁.ctx f₁.ctx⟩, ⟨k₂.scr f₂.scr, k₂.ctx f₂.ctx⟩,
     by rw [k₁.regs.1 _ (by decide), k₂.regs.1 _ (by decide), e]⟩
 
 /-! ## The callee's precondition at a call -/
@@ -139,25 +138,32 @@ theorem entryOf_covw (hs : Scr s base) :
 
 end
 
-theorem fits_slot {o : Nat} (h : Slot o) : Proof.X448.Field16.Fits (BitVec.ofNat 32 o) := by
-  have : o + 112 ≤ 3584 := h
-  show (BitVec.ofNat 32 o).toNat + 112 ≤ 3584
+theorem fits_slot {o : Nat} (h : Slot o) : Proof.X448.Field32.Fits (BitVec.ofNat 32 o) := by
+  have : o + 56 ≤ 3584 := h
+  show (BitVec.ofNat 32 o).toNat + 56 ≤ 3584
   rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [this])]; exact this
 
-theorem limbs_slot {m : Mem} {base : Addr} {a : Nat} (h : Slot a) (hb : Bounded m base a) :
-    Proof.X448.Field16.Limbs m base (BitVec.ofNat 32 a) := by
-  have : a + 112 ≤ 3584 := h
-  rw [limbs_spec, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [this])]; exact hb
+theorem apart_slot {o a : Nat} (ho : Slot o) (ha : Slot a) (h : SlotApart o a) :
+    Proof.X448.Field32.Apart (BitVec.ofNat 32 o) (BitVec.ofNat 32 a) := by
+  have ho' : o + 56 ≤ 3584 := ho
+  have ha' : a + 56 ≤ 3584 := ha
+  rcases h with rfl | h
+  · exact .inl rfl
+  · refine .inr ?_
+    show (BitVec.ofNat 32 o).toNat + 56 ≤ (BitVec.ofNat 32 a).toNat ∨ _
+    rw [BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [ho']),
+      Nat.mod_eq_of_lt (by omega_using [ha'])]
+    exact h
 
 /-- A binary function's precondition, at its call after the offsets' `mov`s. -/
 theorem callPre_bin {r : Nat → Nat → Nat → Prop} {s : State} {base : Addr} (hs : Scr s base)
     (hc : CallCtx s base) {o a b : Nat} (ho : Slot o) (ha : Slot a) (hb : Slot b)
-    (ab : Bounded s.mem base a) (bb : Bounded s.mem base b) (heax : s.gpr .eax = BitVec.ofNat 32 o)
+    (hoa : SlotApart o a) (hob : SlotApart o b) (heax : s.gpr .eax = BitVec.ofNat 32 o)
     (hecx : s.gpr .ecx = BitVec.ofNat 32 a) (hedx : s.gpr .edx = BitVec.ofNat 32 b) :
     CallPre (binX86 r) [.edx, .ecx, .eax, .edi] [below (s.gpr .esp) (4 * [Reg.edx, .ecx, .eax, .edi].length)]
       [⟨base, 8192⟩] s := by
-  have ha' : a + 112 ≤ 3584 := ha
-  have hb' : b + 112 ≤ 3584 := hb
+  have ha' : a + 56 ≤ 3584 := ha
+  have hb' : b + 56 ≤ 3584 := hb
   have av := fun i (hi : i < 4) => entryOf_arg (rs := [.edx, .ecx, .eax, .edi]) (base := base) (by decide)
     (by decide) hc hi
   have w : WsEq base s.mem (entryOf [.edx, .ecx, .eax, .edi] s base).mem := entryOf_mem (by decide) (by decide) hc
@@ -171,17 +177,17 @@ theorem callPre_bin {r : Nat → Nat → Nat → Prop} {s : State} {base : Addr}
     · rw [a1]; exact fits_slot ho
     · rw [a2]; exact fits_slot ha
     · rw [a3]; exact fits_slot hb
-    · rw [hw, a2]; exact limbs_slot ha (w.bounded (by omega_using [ha']) ab)
-    · rw [hw, a3]; exact limbs_slot hb (w.bounded (by omega_using [hb']) bb)
+    · rw [a1, a2]; exact apart_slot ho ha hoa
+    · rw [a1, a3]; exact apart_slot ho hb hob
   exact ⟨pre, entryOf_cov hs, entryOf_covw hs⟩
 
 /-- A unary field function's precondition, at its call after the offsets' `mov`s. -/
 theorem callPre_un {r : Nat → Nat → Prop} {s : State} {base : Addr} (hs : Scr s base) (hc : CallCtx s base)
-    {o a : Nat} (ho : Slot o) (ha : Slot a) (ab : Bounded s.mem base a)
+    {o a : Nat} (ho : Slot o) (ha : Slot a) (hoa : SlotApart o a)
     (heax : s.gpr .eax = BitVec.ofNat 32 o) (hecx : s.gpr .ecx = BitVec.ofNat 32 a) :
     CallPre (unX86 r) [.ecx, .eax, .edi] [below (s.gpr .esp) (4 * [Reg.ecx, .eax, .edi].length)]
       [⟨base, 8192⟩] s := by
-  have ha' : a + 112 ≤ 3584 := ha
+  have ha' : a + 56 ≤ 3584 := ha
   have av := fun i (hi : i < 3) => entryOf_arg (rs := [.ecx, .eax, .edi]) (base := base) (by decide)
     (by decide) hc hi
   have w : WsEq base s.mem (entryOf [.ecx, .eax, .edi] s base).mem := entryOf_mem (by decide) (by decide) hc
@@ -193,13 +199,13 @@ theorem callPre_un {r : Nat → Nat → Prop} {s : State} {base : Addr} (hs : Sc
     refine ⟨entryOf_fnPre (by decide) hs hc (av 0 (by decide)), ?_, ?_, ?_⟩
     · rw [a1]; exact fits_slot ho
     · rw [a2]; exact fits_slot ha
-    · rw [hw, a2]; exact limbs_slot ha (w.bounded (by omega_using [ha']) ab)
+    · rw [a1, a2]; exact apart_slot ho ha hoa
   exact ⟨pre, entryOf_cov hs, entryOf_covw hs⟩
 
 /-! ## Calls -/
 
 /-- Before a call: the working space, the call stack apart from it, the
-slots bounded, `esp` at `sp` in both runs, `edi` the same, and the
+`esp` at `sp` in both runs, `edi` the same, and the
 offsets `v` in `eax`, `ecx` and `edx`. -/
 def MovRel (base : Addr) (sp : BitVec 32) (v : List (Reg × Nat)) (t₁ t₂ : State) : Prop :=
   FInv base t₁ ∧ FInv base t₂ ∧ t₁.gpr .esp = sp ∧ t₂.gpr .esp = sp ∧
@@ -226,7 +232,7 @@ theorem movs_rel {base : Addr} (sp : BitVec 32) (v : List (Reg × Nat))
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with h | h <;> simp_all
   have fi : ∀ {s t : State}, FInv base s → Keeps (v.map Prod.fst) s t → t.mem = s.mem → FInv base t :=
-    fun f k m => ⟨f.scr.of_keeps k (ne _ (by simp)), f.ctx.keep (k.1 _ (ne _ (by simp))), m ▸ f.bounded⟩
+    fun f k m => ⟨f.scr.of_keeps k (ne _ (by simp)), f.ctx.keep (k.1 _ (ne _ (by simp)))⟩
   exact ⟨fi f₁ k₁ m₁, fi f₂ k₂ m₂, by rw [k₁.1 _ (ne _ (by simp)), sp₁],
     by rw [k₂.1 _ (ne _ (by simp)), ← e, sp₁], fun p hp => ⟨v₁ p hp, v₂ p hp⟩⟩
 
@@ -266,9 +272,9 @@ theorem call3_tr {name : String} {body : Prog isa} {r : Nat → Nat → Nat → 
     have gd := g _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self))
     refine ⟨?_, ?_, e₁.trans e₂.symm, ?_⟩
     · rw [← e₁]; exact callPre_bin f₁.scr f₁.ctx (slot_bound o) (slot_bound a) (slot_bound b)
-        (f₁.bounded a) (f₁.bounded b) ga.1 gc.1 gd.1
+        (slot_apart o a) (slot_apart o b) ga.1 gc.1 gd.1
     · rw [← e₂]; exact callPre_bin f₂.scr f₂.ctx (slot_bound o) (slot_bound a) (slot_bound b)
-        (f₂.bounded a) (f₂.bounded b) ga.2 gc.2 gd.2
+        (slot_apart o a) (slot_apart o b) ga.2 gc.2 gd.2
     · have hr : ∀ q ∈ [Reg.edx, .ecx, .eax, .edi], t₁.gpr q = t₂.gpr q := by
         intro q hq
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
@@ -301,8 +307,8 @@ theorem call2_tr {name : String} {body : Prog isa} {r : Nat → Nat → Prop}
     have ga := hv' _ (List.mem_cons_self)
     have gc := hv' _ (List.mem_cons_of_mem _ List.mem_cons_self)
     refine ⟨?_, ?_, e₁.trans e₂.symm, ?_⟩
-    · rw [← e₁]; exact callPre_un f₁.scr f₁.ctx (slot_bound o) (slot_bound a) (f₁.bounded a) ga.1 gc.1
-    · rw [← e₂]; exact callPre_un f₂.scr f₂.ctx (slot_bound o) (slot_bound a) (f₂.bounded a) ga.2 gc.2
+    · rw [← e₁]; exact callPre_un f₁.scr f₁.ctx (slot_bound o) (slot_bound a) (slot_apart o a) ga.1 gc.1
+    · rw [← e₂]; exact callPre_un f₂.scr f₂.ctx (slot_bound o) (slot_bound a) (slot_apart o a) ga.2 gc.2
     · have hr : ∀ q ∈ [Reg.ecx, .eax, .edi], t₁.gpr q = t₂.gpr q := by
         intro q hq
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
@@ -331,7 +337,7 @@ theorem copy_check (o a : Nat) :
   exact (congrArg Option.isSome h).symm.trans h0
 
 theorem fieldOp_rel {base : Addr} (op : FieldOp) : RelCT isa (RF base) op.impl.code (RF base) := by
-  refine RF.keep ?_ fun s h => WP.mono (fieldOp_ok h.scr h.ctx h.bounded op) fun _ ⟨k, b, _⟩ => ⟨k, b⟩
+  refine RF.keep ?_ fun s h => WP.mono (fieldOp_ok h.scr h.ctx op) fun _ ⟨k, _⟩ => k
   cases op with
   | mul o a b =>
     change RelCT isa (RF base) (mulCall (slot o.val) (slot a.val) (slot b.val)) _
@@ -503,8 +509,8 @@ theorem ops_stack (xs : List FieldOp) : stackUse (ops (xs.map FieldOp.impl)) ≤
 theorem ops_FE {bs : State → Addr} {σ s : State} (h : FE bs σ s) (xs : List FieldOp) :
     WP isa (ops (xs.map FieldOp.impl)) s fun t => FE bs σ t ∧ Keep (bs σ) s t ∧
       E t.mem (bs σ) = applyOps xs (E s.mem (bs σ)) :=
-  h.wp (ops_nosp xs) (ops_stack xs) (WP.mono (ops_ok h.fin.scr h.fin.ctx h.fin.bounded xs)
-    fun _ ⟨k, b, e⟩ => ⟨⟨k.scr h.fin.scr, k.ctx h.fin.ctx, b⟩, k.regs.1 _ (by decide), k.regs.2.2, k, e⟩)
+  h.wp (ops_nosp xs) (ops_stack xs) (WP.mono (ops_ok h.fin.scr h.fin.ctx xs)
+    fun _ ⟨k, e⟩ => ⟨⟨k.scr h.fin.scr, k.ctx h.fin.ctx⟩, k.regs.1 _ (by decide), k.regs.2.2, k, e⟩)
 
 /-- The traces of field operations agree in two runs in `FE`. -/
 theorem ops_tr {P₀ F : State → State → Prop} {bs : State → Addr}
@@ -521,7 +527,7 @@ theorem FInv.of_counter {base : Addr} {s t : State} (hf : FInv base s)
     (hg : ∀ r, r ≠ .esi → t.gpr r = s.gpr r) (hm : t.mem = s.mem) (hr : t.rd = s.rd)
     (hw : t.wr = s.wr) : FInv base t :=
   let k := counter_keep (base := base) hg hm hr hw
-  ⟨k.scr hf.scr, k.ctx hf.ctx, hm ▸ hf.bounded⟩
+  ⟨k.scr hf.scr, k.ctx hf.ctx⟩
 
 theorem eval_ne {s : State} {b : Bool} (h : s.zf = some b) : isa.eval .ne s = some (!b) := by
   change s.zf.map (!·) = _
@@ -541,10 +547,10 @@ theorem sqBody_ok {base : Addr} (o : Index) {m : Nat} (hm : m + 1 < 2 ^ 16) {s :
       fun t => FInv base t ∧ t.gpr .esp = s.gpr .esp ∧ t.gpr .esi = BitVec.ofNat 32 m ∧
         t.zf = some (decide (m = 0)) := by
   rw [WP.seq_iff]
-  refine WP.mono (mulE hf.scr hf.ctx hf.bounded o o o) fun v ⟨kv, bv, _⟩ => ?_
+  refine WP.mono (mulE hf.scr hf.ctx o o o) fun v ⟨kv, _⟩ => ?_
   have cv : v.gpr .esi = BitVec.ofNat 32 (m + 1) := (kv.regs.1 _ (by decide)).trans he
   refine WP.mono (decCounter_ok (k := m) (by omega_using [hm]) cv) fun w ⟨cw, wg, wm, wr, ww, wz⟩ => ?_
-  exact ⟨FInv.of_counter ⟨kv.scr hf.scr, kv.ctx hf.ctx, bv⟩ wg wm wr ww,
+  exact ⟨FInv.of_counter ⟨kv.scr hf.scr, kv.ctx hf.ctx⟩ wg wm wr ww,
     (wg _ (by decide)).trans (kv.regs.1 _ (by decide)), cw, wz⟩
 
 theorem sqn_rel (base : Addr) (o : Index) {n : Nat} (hn : 1 ≤ n) (hn' : n < 2 ^ 16) :
