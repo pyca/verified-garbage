@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.AesGcm.RISCV64.Contiguous.Payload
 public import VerifiedGarbage.Proof.AesGcm.RISCV64.Contiguous.Timing
+import VerifiedGarbage.Proof.AesGcm.RISCV64.CTSeal
+import VerifiedGarbage.Proof.AesGcm.RISCV64.CryptOk
 import VerifiedGarbage.Proof.AesGcm.RISCV64.CTAbsorb
 import VerifiedGarbage.Proof.AesGcm.RISCV64.Flush
 import VerifiedGarbage.Proof.Framework.RISCV64.Steps
@@ -109,5 +111,63 @@ theorem shortPayload_rel [VG.Proof.Gcm.RISCV64.GhashLaw] {V : Reg → BitVec 64}
     fun u v ⟨eu,ku,fu,_,_⟩ ⟨ev,kv,fv,_,_⟩ => authenticate_rel L eu ev
       (p.write.ok.of_eq ku.rd ku.wr ku.sp) (q.write.ok.of_eq kv.rd kv.wr kv.sp)
       ((data_slot L p.write fu).trans p.slot) ((data_slot L q.write fv).trans q.slot)
+
+private theorem longCtr_ct {c st w sp X D kb : Addr} {R n : Nat} (L : Lay c st w) :
+    CT (CrMB true true kb c st w sp R X D n 0 0) (.seq (cryptWholeB true true) (cryptTailB true true)) := by
+  apply CT.seq (J := CrMB true true kb c st w sp R X D n 0 (16*(n/16))) (cryptWholeB_ct L) ?_ (cryptTailB_ct L)
+  intro s h
+  obtain ⟨V,icb,P,m0,ctx,s1,s0,hP,mid,bk⟩ := h
+  have lv := L.v ctx s1 s0
+  refine WP.mono (WP.with_rdwr' (cryptWholeB_ok lv mid (mid.ciph lv) (fun h => (bk h).2))) fun t ⟨⟨j,eq,mt,_⟩,rd,wr⟩ => ?_
+  have idx : j=16*(n/16) := by simpa using eq
+  rw [idx] at mt
+  exact ⟨V,icb,P,m0,ctx,s1,s0,hP,mt,fun h => ⟨(bk h).1,(bk h).2.of_eq rd wr⟩⟩
+
+theorem longPayload_rel [VG.Proof.Gcm.RISCV64.GhashLaw] {V : Reg → BitVec 64} {sp X D A : Addr} {R : Nat}
+    {ha hb : Block} {a b : List Byte} {s t : State} (L : Lay (V .s2) (V .s1) (V .s0))
+    (p : PayloadIn V sp X D R ha a s) (q : PayloadIn V sp X D R hb b t)
+    (st : V .s1=V .s0+BitVec.ofNat 64 16)
+    (aS : DataOk (V .s1) (V .s0) s A (V .s10).toNat) (aT : DataOk (V .s1) (V .s0) t A (V .s10).toNat)
+    (slotS : s.mem.readW (V .s0+BitVec.ofNat 64 aadO) 64=A) (slotT : t.mem.readW (V .s0+BitVec.ofNat 64 aadO) 64=A) :
+    RelCT isa (Eq2 s t) VG.Impl.AesGcm.RISCV64.Contiguous.longPayload TT := by
+  have ss {v : State} {H : Block} {aad : List Byte} (h : PayloadIn V sp X D R H aad v) :
+      CrMB true true (V .s7) (V .s2) (V .s1) (V .s0) sp R X D (V .s11).toNat 0 0 v :=
+    ⟨V,_,0,v.mem,rfl,rfl,rfl,rfl,h.start,fun _ => ⟨rfl,h.keys⟩⟩
+  have rr : RelCT isa (Eq2 s t) (.seq (cryptWholeB true true) (cryptTailB true true)) TT :=
+    RelCT.mono (longCtr_ct L) (fun _ _ e => by obtain ⟨rfl,rfl⟩ := e; exact ⟨ss p,ss q⟩) fun _ _ _ => trivial
+  have lv : Lay (V .s2) (V .s0+BitVec.ofNat 64 16) (V .s0) := st ▸ L
+  have state {v u : State} {H : Block} {aad : List Byte} (h : PayloadIn V sp X D R H aad v)
+      (input : DataOk (V .s1) (V .s0) v A (V .s10).toNat) (slot : v.mem.readW (V .s0+BitVec.ofNat 64 aadO) 64=A)
+      (out : CrOut true V sp R (VG.Spec.Gcm.inc32 (blockAt v.mem (V .s1))) 0 X D (V .s11).toNat v.mem u)
+      (rd : u.rd=v.rd) (wr : u.wr=v.wr) :
+      OneIK (V .s2) (V .s0) sp R (V .s7) A (V .s10) D (V .s11) u ∧
+      (true=true → V .s7=V .s7 ∧ BkIn (V .s7) (V .s2) (V .s0+BitVec.ofNat 64 16) (V .s0) sp R u.mem X D (V .s11).toNat u) := by
+    have hs := out.env.sp.trans h.env.sp.symm
+    refine ⟨⟨V,rfl,st,rfl,h.roundsReg,rfl,rfl,rfl,out.env,st ▸ input.of_eq rd wr hs,st ▸ h.write.ok.of_eq rd wr hs,?_,?_⟩,fun _ => ⟨rfl,?_⟩⟩
+    · exact (slot_keep out.frame (slot_crFrame L h.write (by decide))).trans slot
+    · exact (slot_keep out.frame (slot_crFrame L h.write (by decide))).trans h.slot
+    · rw [←st]
+      exact h.keys.frame h.rounds out.frame h.keys.crFrame (ctx_crFrame L h.write) rd wr
+  apply RelCT.assoc
+  refine rel_seq rr (p.crypt L) (q.crypt L) fun u v ⟨ou,ru,wu⟩ ⟨ov,rv,wv⟩ => ?_
+  exact RelCT.mono (oneTagB_ct lv (bs := true) (kb := V .s7) (S' := X) (D' := D) (n' := (V .s11).toNat)
+    (.inl rfl) p.rounds) (fun _ _ e => by obtain ⟨rfl,rfl⟩ := e;exact ⟨state p aS slotS ou ru wu,state q aT slotT ov rv wv⟩)
+    fun _ _ _ => trivial
+
+theorem payload_rel [VG.Proof.Gcm.RISCV64.GhashLaw] {V : Reg → BitVec 64} {sp X D A : Addr} {R : Nat}
+    {ha hb : Block} {a b : List Byte} {s t : State} (L : Lay (V .s2) (V .s1) (V .s0))
+    (p : PayloadIn V sp X D R ha a s) (q : PayloadIn V sp X D R hb b t) (cs : s.gpr .t0=241) (ct : t.gpr .t0=241)
+    (st : V .s1=V .s0+BitVec.ofNat 64 16)
+    (aS : DataOk (V .s1) (V .s0) s A (V .s10).toNat) (aT : DataOk (V .s1) (V .s0) t A (V .s10).toNat)
+    (slotS : s.mem.readW (V .s0+BitVec.ofNat 64 aadO) 64=A) (slotT : t.mem.readW (V .s0+BitVec.ofNat 64 aadO) 64=A) :
+    RelCT isa (Eq2 s t) (.ite (.ltu .s5 .t0) VG.Impl.AesGcm.RISCV64.Contiguous.shortPayload
+      VG.Impl.AesGcm.RISCV64.Contiguous.longPayload) TT := by
+  have ev {v : State} (len : v.gpr .s5=V .s11) (cut : v.gpr .t0=241) :
+      isa.eval (.ltu .s5 .t0) v=some (decide ((V .s11).toNat<241)) := by
+    change some (decide (v.gpr .s5 < v.gpr .t0))=_
+    rw [len,cut];rfl
+  exact VG.Proof.Gather.RISCV64.rel_ite (ev p.len cs) (ev q.len ct)
+    (fun small => shortPayload_rel L p q (by have := of_decide_eq_true small;omega))
+    (fun _ => longPayload_rel L p q st aS aT slotS slotT)
 
 end VG.Proof.AesGcm.RISCV64.Contiguous
