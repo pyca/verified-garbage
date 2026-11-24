@@ -1,5 +1,14 @@
 module
 
+import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.AesGcm.AArch64.Loops
+import VerifiedGarbage.Proof.AesGcm.AArch64.Env
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Gcm.Clmul.Arith
+import VerifiedGarbage.Proof.Gcm.Short
+
 public import VerifiedGarbage.Impl.AesGcm.AArch64.DirectGather.Medium
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Contiguous.Leaves
 
@@ -2576,6 +2585,105 @@ def GcmVariant.viaRegs (g : GcmVariant) : List GcmVariant := if g.calls.pmull th
 
 end VG.Proof.AesGcm.AArch64
 
+/-! The initial zero-padded group permits a shorter fold chosen by public length. -/
+namespace VG.Proof.AesGcm.AArch64.DirectGather
+open VG VG.AArch64 VG.AArch64.RegUpd VG.Impl.AesGcm.AArch64
+open VG.Proof.Gcm.AArch64
+open VG.Proof.Gcm.AArch64.Pmull
+open VG.Proof.Gcm.Clmul
+open VG.Impl.Gcm.AArch64.Pmull (prologueW body advance)
+open VG.Impl.AesGcm.AArch64.DirectGather.Medium (chooseGroup firstHashGroup hashTrimmed)
+
+private theorem trimTest {n : Nat} (bound : n=129 ∨ n=161) {base s : State} (inv : Inv base 8 0 s) :
+    WP isa (.block [.subImm .x .x11 .x26 n,.lsr .x .x11 .x11 63]) s fun t =>
+      (t.gpr .x11 ≠ 0 ↔ ((s.gpr .x26 - BitVec.ofNat 64 n) >>> 63) ≠ 0) ∧
+      t.gpr .x26 = s.gpr .x26 ∧ Inv base 8 0 t := by
+  rcases bound with rfl|rfl <;>
+    refine WP.of_runBlock ⟨(s.write .x .x11 (s.gpr .x26 - _)).write .x .x11 ((s.gpr .x26 - _) >>> 63),by arun [],?_,?_,?_⟩ <;> first | rfl | skip <;>
+    exact ⟨inv.le,inv.c,inv.t,inv.sw,inv.y,inv.x0,inv.x1,inv.x2,inv.x3,inv.x5,inv.mem,inv.rd,inv.wr⟩
+
+private theorem runChoice {n : Nat} (bound : n=129 ∨ n=161) {yes no : Prog isa} {base s : State}
+    (inv : Inv base 8 0 s) (Q : State → Prop)
+    (left : ∀ t, ((s.gpr .x26 - BitVec.ofNat 64 n) >>> 63) ≠ 0 → t.gpr .x26=s.gpr .x26 → Inv base 8 0 t → WP isa yes t Q)
+    (right : ∀ t, ¬ ((s.gpr .x26 - BitVec.ofNat 64 n) >>> 63) ≠ 0 → t.gpr .x26=s.gpr .x26 → Inv base 8 0 t → WP isa no t Q) :
+    WP isa (chooseGroup n yes no) s Q := by
+  apply WP.seq
+  refine (trimTest bound inv).mono ?_; rintro t ⟨hit,len,i⟩
+  by_cases h : ((s.gpr .x26 - BitVec.ofNat 64 n) >>> 63) ≠ 0
+  · have e : isa.eval (.nonzero .x .x11) t = some true := by
+      change some (!(t.gpr .x11 == (0 : Addr))) = _; simp; exact hit.mpr h
+    apply WP.ite _ e
+    · exact fun _ => left t h len i
+    · intro bad; contradiction
+  · have z : t.gpr .x11=0 := by by_contra hn; exact h (hit.mp hn)
+    have e : isa.eval (.nonzero .x .x11) t = some false := by
+      change some (!(t.gpr .x11 == (0 : Addr))) = _; simp [z]
+    apply WP.ite _ e
+    · intro bad; contradiction
+    · exact fun _ => right t h len i
+
+private theorem shortGroup {k : Nat} (hk : k=2 ∨ k=4) {u t : State} (hp : Pm u) (N : nb u=16)
+    (zero : Ys u 0 = Ys u (8-k)) (inv : Inv u 8 0 t) :
+    WP isa (firstHashGroup k) t (Inv u 8 8) := by
+  have ne : k≠8 := by omega_using [hk]
+  simp only [firstHashGroup,ne,ite_false]
+  rw [WP.block_append_iff]
+  refine (advanceLeading (s₀:=u) (k:=8-k) (by omega_using [N]) (by omega_using [hk]) zero inv).mono ?_
+  intro z skipped
+  have first := body_ok hp (k:=k) (by omega_using [hk]) (by omega_using [hk]) (by decide)
+      (by omega_using [N,hk]) skipped
+  rwa [show 8-k+k=8 by omega_using [hk]] at first
+
+theorem zeroFold {s : State} {k : Nat} (init : Y₀ s = 0)
+    (z : Spec.Gcm.blocksAt s.mem (dp s) k = List.replicate k 0) : Ys s 0 = Ys s k := by
+  change Spec.Gcm.ghashFrom _ _ [] = Spec.Gcm.ghashFrom _ _ _
+  rw [z,init]
+  simpa only [List.append_nil] using (Proof.Gcm.ghashFrom_zeros (H₀ s) k []).symm
+
+theorem trimmedHash_at (s : State) (hn : nb s=16)
+    (six : ((s.gpr .x26-129#64) >>> 63) ≠ 0 → Ys s 0 = Ys s 6)
+    (four : ((s.gpr .x26-161#64) >>> 63) ≠ 0 → Ys s 0 = Ys s 4)
+    (hc : Covers ([hR s,Proof.Gcm.AArch64.dR s,⟨s.gpr .x5,128⟩] ++ [yR s]) (s.rd ++ s.wr))
+    (hw : Covers [yR s] s.wr) (hd : (yR s).Disjoint (Proof.Gcm.AArch64.dR s))
+    (repr : Spec.Gcm.Powers8Repr s.mem (s.gpr .x5) (H₀ s)) :
+    WP isa hashTrimmed s fun t =>
+      t.v .v16 = VRevOp.eval .rev64b (ext8 (Ys s 16) (Ys s 16)) ∧ t.mem = s.mem ∧
+      t.sp = s.sp ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.gpr .x19 = s.gpr .x19 := by
+  let u := s.withRegions [hR s,Proof.Gcm.AArch64.dR s,⟨s.gpr .x5,128⟩] [yR s]
+  have hp : Pm u := {
+    h_in := ⟨hR s, by simp [u], by
+      change (hR s).Contains (s.gpr .x0 + 0#64) 16
+      rw [BitVec.add_zero]; exact Region.contains_self _ _⟩
+    d_in := by change Proof.Gcm.AArch64.dR s ∈ [hR s,Proof.Gcm.AArch64.dR s,⟨s.gpr .x5,128⟩]; simp
+    y_in := List.mem_singleton_self _
+    y_d := hd }
+  have N : nb u = 16 := hn
+  have go : WP isa hashTrimmed u fun z =>
+      z.v .v16 = VRevOp.eval .rev64b (ext8 (Ys u 16) (Ys u 16)) ∧ z.mem=u.mem := by
+    apply WP.seq
+    refine (WP.gprs (prologueW_at hp (by simp [u]) repr) (rs:=[.x26]) (by lit_decide) rfl).mono ?_
+    rintro t ⟨inv,keep⟩
+    have len : t.gpr .x26 = s.gpr .x26 := keep _ (by simp)
+    apply WP.seq
+    refine (runChoice (n:=129) (.inl rfl) inv (Inv u 8 8) ?_ ?_).mono ?_
+    · intro z small _ i; exact shortGroup (k:=2) (.inl rfl) hp N (six (len ▸ small)) i
+    · intro z _ zlen i
+      apply runChoice (n:=161) (.inr rfl) i
+      · intro y small _ j; exact shortGroup (k:=4) (.inr rfl) hp N (four ((zlen.trans len) ▸ small)) j
+      · intro y _ _ j
+        simpa only [firstHashGroup,ite_true,List.nil_append] using body_ok hp (k:=8) (by decide) (by decide) (by decide) (by rw [N]; decide) j
+    · intro z first
+      rw [WP.block_append_iff]
+      refine (body_ok hp (k:=8) (by decide) (by decide) (by decide) (by rw [N]) first).mono ?_
+      intro y last
+      have v : y.v .v0 = ext8 (Ys u 16) (Ys u 16) := ρ_inj (by rw [ρ_ext8_self]; exact last.y)
+      refine WP.block_cons_iff.mpr ⟨_,exec_rev64b _ _ _,WP.block_nil ?_⟩
+      exact ⟨congrArg (VRevOp.eval .rev64b) v,last.mem⟩
+  refine WP.narrow (WP.gprs go (rs:=[.x19]) (by lit_decide) rfl) hc hw ?_ rfl
+  rintro t rd wr sp _ ⟨⟨v,m⟩,keep⟩
+  exact ⟨v,m,sp,rd,wr,keep _ (by simp)⟩
+end VG.Proof.AesGcm.AArch64.DirectGather
+
 namespace VG.Proof.AesGcm.AArch64.Contiguous
 open VG VG.AArch64 VG.AArch64.Scrub VG.Impl.Scrub.AArch64
 open VG.Impl.AesGcm.AArch64 (Calls)
@@ -2675,6 +2783,10 @@ theorem scratch_le (v : GcmImpl) : v.ctr.scratch ≤ v.calls.pwWn-512 := by
 theorem backendFacts (v : GcmImpl) (g : GhashWithImpl) : BackendFacts v g :=
   ⟨DirectGather.generalGather_shared v,DirectGather.generalSize v.callsOk,scratch_le v,
     generalSide v.callsOk,generalDepth v,preparedSide v g,fun f => DirectGather.keepsV_of_gatherSide (referenceSide v g f),
-    Proof.Gcm.AArch64.Pmull.hashEightWith_at,Proof.Gcm.AArch64.Stitch.gh8Ok,Proof.Gcm.AArch64.Pmull.mulV_keyV⟩
+    side_of_holes v.callsOk fnOk_nil (mediumFrame holes),
+    Nat.lt_of_le_of_lt (depth_of_holes (W := 752) v.callsOk fnOk_nil (mediumInner holes)) (by decide),
+    (fun s hn z init => DirectGather.trimmedHash_at s hn
+      (fun h => DirectGather.zeroFold init (z _ (.inl ⟨rfl,h⟩)))
+      (fun h => DirectGather.zeroFold init (z _ (.inr ⟨rfl,h⟩)))),Proof.Gcm.AArch64.Pmull.hashEightWith_at,Proof.Gcm.AArch64.Stitch.gh8Ok,Proof.Gcm.AArch64.Pmull.mulV_keyV⟩
 
 end VG.Proof.AesGcm.AArch64.Contiguous

@@ -72,9 +72,13 @@ def select (v : Calls) (gh : Fn) : Prog isa :=
   let threshold := if v.stitch then 768 else 4096
   let large := .seq (.block [imm .x9 threshold,.subs .x .x11 .x10 .x9,.sbc .x .x11 .x11 .x11])
     (.ite (.nonzero .x .x11) (hardware false) (hardware true))
+  let overShort := if v.ctr.scratch = 0 then
+    .seq (.block [imm .x9 225,.subs .x .x11 .x10 .x9,.sbc .x .x11 .x11 .x11])
+      (.ite (.nonzero .x .x11) (clear 800 (mediumFrame v.callees)) large)
+    else large
   if !v.pmull then fallback else
     .seq (.block standardGuard) <| .ite (.zero .x .x10)
       (.seq (.block [.ldrSp .x10 0,imm .x9 97,.subs .x .x11 .x10 .x9,.sbc .x .x11 .x11 .x11])
-        (.ite (.nonzero .x .x11) (clear DirectGather.shortWork shortFrame) large)) fallback
+        (.ite (.nonzero .x .x11) (clear DirectGather.shortWork shortFrame) overShort)) fallback
 
 end VG.Impl.AesGcm.AArch64.Contiguous

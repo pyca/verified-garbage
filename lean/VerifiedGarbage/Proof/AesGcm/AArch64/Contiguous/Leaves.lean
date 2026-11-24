@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Contiguous.PreparedFrame
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Contiguous.Medium
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Contiguous.ShortCT
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Contiguous.Record
 meta import VerifiedGarbage.Proof.Framework.Lit
@@ -32,6 +33,9 @@ structure BackendFacts (v : GcmImpl) (g : GhashWithImpl) : Prop where
   depth : 16*(Impl.AesGcm.AArch64.DirectGather.framed v.calls).aarch64Depth < 2^64
   prepared (f : Bool) : scrubSide (preparedFrame v.calls g.fn f) (v.calls.pwWn+32) 0 (preparedClear f (!v.calls.stitch)) [] = true
   vectors (f : Bool) : (withStackArgScratch (v.calls.pwWn+32) 3 (preparedBody v.callees g.fn f false)).allInstrs keepsV = true
+  mediumSide : scrubSide (mediumFrame v.callees) 800 0 own [] = true
+  mediumDepth : 16*(mediumInner v.callees).aarch64Depth < 2^64
+  hash16 : DirectGather.Hash16WithOk
   hash : DirectGather.HashEightWithOk
   stitch : VG.Proof.Gcm.AArch64.Stitch.Gh8Ok
   mul : VG.Proof.Gcm.AArch64.Pmull.MulKey
@@ -53,6 +57,7 @@ def leafContract (extra : State → Prop) : Contract isa where
 
 def standard (s : State) : Prop := (s.gpr .x3).toNat=12 ∧ (s.gpr .x5).toNat≤16
 def prepared (fused : Bool) (s : State) : Prop := standard s ∧ (fused=true → 128 ≤ (stackArg s 0).toNat)
+def bounded (s : State) : Prop := standard s ∧ (stackArg s 0).toNat ≤ 224
 def short (s : State) : Prop := standard s ∧ (stackArg s 0).toNat ≤ 96
 
 private theorem scrubLeaf {cl : Clear} {p : State → Prop} {code : Prog isa} {W : Nat}
@@ -104,5 +109,21 @@ theorem preparedLeaf {v : GcmImpl} {g : GhashWithImpl} (facts : BackendFacts v g
   intro a b pa pb pub
   exact Prepared.frame_rel v g f facts.stitch facts.mul pa.1 pb.1 pa.2.1 pb.2.1 pa.2.2.1.1 pb.2.2.1.1
     pa.2.2.1.2 pb.2.2.1.2 pa.2.2.2 sz.1 sz.2.1 sz.2.2 hv pub.1
+
+end VG.Proof.AesGcm.AArch64.Contiguous
+
+namespace VG.Proof.AesGcm.AArch64.Contiguous
+open VG VG.AArch64 VG.AArch64.Scrub VG.Impl.Scrub.AArch64 VG.Impl.AesGcm.AArch64.Contiguous
+open VG.Impl.AesGcm.AArch64.Fn (own)
+theorem boundedLeaf {v : GcmImpl} {g : GhashWithImpl} (facts : BackendFacts v g) (z : v.calls.ctr.scratch=0)
+    (sat : ∃ s, (leafContract bounded).pre s) :
+    VerifiedScrubbed target (scrubAll 800 0 own (mediumFrame v.calls.callees)) (leafContract bounded) 0 := by
+  have zero : v.ctr.scratch=0 := v.ctr.scratch_eq.symm.trans z
+  apply scrubLeaf (by decide) facts.mediumSide
+  refine ⟨fun _ h => MediumRecord.frame_ok v zero facts.hash16 h.1 h.2.1 h.2.2.1.1 h.2.2.1.2 h.2.2.2
+    (DirectGather.keepsV_of_gatherSide facts.mediumSide) facts.mediumDepth,ct_of ?_,sat⟩
+  intro a b pa pb pub
+  exact MediumRecord.frame_rel v zero facts.hash16 pa.1 pb.1 pa.2.1 pb.2.1 pa.2.2.1.1 pb.2.2.1.1
+    pa.2.2.1.2 pb.2.2.1.2 pa.2.2.2 pb.2.2.2 pub.1 pub.2
 
 end VG.Proof.AesGcm.AArch64.Contiguous

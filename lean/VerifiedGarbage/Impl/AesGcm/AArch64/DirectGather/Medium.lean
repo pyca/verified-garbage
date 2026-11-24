@@ -49,9 +49,41 @@ def tagOut := writeTag keyO (work+16)
 
 def finish : List Instr := lengths ++ (hashArgs ++ hash16) ++ tagOut ++ restore
 
-def body (c : Callees) : Prog isa :=
+def bodyWith (c : Callees) (endCode : Prog isa) : Prog isa :=
   .seq (.block setup) <| .seq (.block zero) <| .seq aad <| .seq (keys c) <|
-  .seq (.block cursors) <| .seq shortLoop <| .block finish
+  .seq (.block cursors) <| .seq shortLoop endCode
+
+abbrev body (c : Callees) := bodyWith c (.block finish)
+
+/-- All records use the same right-aligned sixteen-slot transcript. A record
+of at most 128 bytes has six leading zero blocks. Up to 160 bytes it has four.
+The public length chooses how much of the first eight-block group to hash. -/
+def firstHashGroup (k : Nat) : Prog isa :=
+  .block ((if k = 8 then [] else Gcm.AArch64.Pmull.advance (8-k)) ++ Gcm.AArch64.Pmull.body k)
+
+def chooseGroup (n : Nat) (yes no : Prog isa) : Prog isa :=
+  .seq (.block [.subImm .x .x11 .x26 n,.lsr .x .x11 .x11 63])
+    (.ite (.nonzero .x .x11) yes no)
+
+open Gcm.AArch64.Pmull in
+def hashTrimmed : Prog isa :=
+  .seq (.block prologueW) <|
+  .seq (chooseGroup 129 (firstHashGroup 2) (chooseGroup 161 (firstHashGroup 4) (firstHashGroup 8)))
+    (.block (Gcm.AArch64.Pmull.body 8 ++ [.vop (.rev .rev64b .v16 .v0)]))
+
+/-- Everything up to loading the tag pointer, before the final store. -/
+def tagPrefix : List Instr :=
+  [.ldrq .v0 .x19 keyO,.vop (.logic .eor .v16 .v16 .v0),.ldrSp .x10 (work+16)]
+
+def finishPrefix : Prog isa :=
+  .seq (.seq (.block lengths) (.seq (.block hashArgs) hashTrimmed)) (.block tagPrefix)
+
+def finishCached : Prog isa := .seq finishPrefix (.block ([.strq .v16 .x10 0] ++ restore))
+
+/-- The outer contiguous adapter occupies 48 bytes. Its caller supplied the
+powers pointer as the third stack argument. -/
+def bodyCached (c : Callees) : Prog isa :=
+  bodyWith c (.seq (.block [.ldrSp .x5 (work+48+16)]) finishCached)
 
 def leaf (c : Callees) : Prog isa :=
   Impl.Scrub.AArch64.scrubAll work 0 Fn.own (.frame (.alloc work) (body c) (.free work))

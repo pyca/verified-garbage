@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.AesGcm.AArch64.DirectGather.MediumFinish
 import VerifiedGarbage.Proof.AesGcm.AArch64.Stitch.ShortCT
 import VerifiedGarbage.Proof.AesGcm.AArch64.DirectGather.MediumKeys
 public import VerifiedGarbage.Impl.AesGcm.AArch64.DirectGather.Medium
-import VerifiedGarbage.Proof.AesGcm.AArch64.DirectGather.MediumBody
+public import VerifiedGarbage.Proof.AesGcm.AArch64.DirectGather.MediumBody
 import VerifiedGarbage.Proof.AesGcm.AArch64.DirectGather.MediumLoopEnd
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.AesGcm.AArch64.DirectGather.MediumLayout
@@ -22,7 +22,7 @@ namespace VG.Proof.AesGcm.AArch64.DirectGather.Mid
 open VG VG.AArch64 VG.Impl.AesGcm.AArch64.DirectGather
 open VG.Proof.AesGcm.AArch64.Gather
 
-theorem prefix_rel {a b : State} (la : BoundedLay a) (lb : BoundedLay b)
+theorem prefix_rel {a b : State} {ea : List Region} (la : BoundedLay a ea) {eb : List Region} (lb : BoundedLay b eb)
     (an : L a ≤ 224) (bn : L b ≤ 224) (pub : gatherPub a b) :
     RelCT isa (Eq2 (allocated Medium.work a) (allocated Medium.work b))
       (.seq (.block Medium.setup) (.seq (.block Medium.zero) Medium.aad)) TT := by
@@ -34,7 +34,7 @@ theorem prefix_rel {a b : State} (la : BoundedLay a) (lb : BoundedLay b)
   exact rel_taint [.x4,.x19,.x24,.x25] (p.sp.trans (w.trans q.sp.symm))
     (by agree_tac [p.x19,q.x19,w,x4,y4,Ad,q4,p.x24,q.x24,AL,q5,p.x25,q.x25,blocks,L,len]) ⟨_,by taint_decide⟩
 
-private theorem loopPub {a b u v : State} (la : BoundedLay a) (lb : BoundedLay b)
+private theorem loopPub {a b u v : State} {ea : List Region} (la : BoundedLay a ea) {eb : List Region} (lb : BoundedLay b eb)
     (pub : gatherPub a b) (hu : Header a u) (hv : Header b v) (cu : Cursors a u) (cv : Cursors b v) :
     Fragment.LoopPub u v := by
   have bytes := descriptorBytes_agree la pub cu.ds cu.n (hu.toLocalMem.agree la.bds) (hv.toLocalMem.agree lb.bds)
@@ -46,19 +46,21 @@ private theorem loopPub {a b u v : State} (la : BoundedLay a) (lb : BoundedLay b
   · rw [cu.key,cv.key,w]
   · rw [cu.auth,cv.auth,textOff,textOff,bl,w]
 
-theorem body_rel (hash : Hash16Ok) (v : GcmImpl) (scratch : v.ctr.scratch = 0)
-    {a b : State} (la : BoundedLay a) (lb : BoundedLay b)
-    (ra : recordWithin 224 a) (rb : recordWithin 224 b) (pub : gatherPub a b) :
-    RelCT isa (Eq2 (allocated Medium.work a) (allocated Medium.work b)) (Medium.body v.callees) TT := by
+theorem bodyWith_rel (endCode : Prog isa) (v : GcmImpl) (scratch : v.ctr.scratch = 0)
+    {a b : State} {ea : List Region} (la : BoundedLay a ea) {eb : List Region} (lb : BoundedLay b eb)
+    (ra : recordWithin 224 a) (rb : recordWithin 224 b) (pub : gatherPub a b)
+    (endRel : ∀ {x y u w : State}, Mid.Ready a x → Mid.Ready b y → Fragment.AtDesc x (Fragment.num x) u →
+      Fragment.AtDesc y (Fragment.num y) w → RelCT isa (Eq2 u w) endCode TT) :
+    RelCT isa (Eq2 (allocated Medium.work a) (allocated Medium.work b)) (Medium.bodyWith v.callees endCode) TT := by
   obtain ⟨ai,aa,an⟩ := ra
   obtain ⟨bi,ba,bn⟩ := rb
   have preRel := prefix_rel la lb an bn pub
-  have lp := fun {u w : State} => @loopPub a b u w la lb pub
+  have lp := fun {u w : State} => @loopPub a b u w ea la eb lb pub
   obtain ⟨key,rounds,nonce,_,_,_,_,_,sp,_,_,len,tag,_⟩ := pub
   have bw : base a = base b := by simp only [base,sp]
   have bl : blocks a = blocks b := by simp only [blocks,L,len]
   have k : K a = K b := key
-  unfold Medium.body
+  unfold Medium.bodyWith
   apply VG.RelCT.assoc
   apply VG.RelCT.assoc
   refine rel_seq (Fast.RelCT.assoc' preRel) (VG.WP.assoc' (prefix_ok la an aa))
@@ -82,6 +84,18 @@ theorem body_rel (hash : Hash16Ok) (v : GcmImpl) (scratch : v.ctr.scratch = 0)
   refine rel_seq (Fragment.shortLoop_rel px py (lp hx.toHeader hy.toHeader hx.toCursors hy.toCursors))
     (Fragment.shortLoop_ok x px) (Fragment.shortLoop_ok y py) ?_
   intro u w hu hw
+  exact endRel hx hy hu hw
+
+theorem body_rel (hash : Hash16Ok) (v : GcmImpl) (scratch : v.ctr.scratch = 0)
+    {a b : State} (la : BoundedLay a) (lb : BoundedLay b)
+    (ra : recordWithin 224 a) (rb : recordWithin 224 b) (pub : gatherPub a b) :
+    RelCT isa (Eq2 (allocated Medium.work a) (allocated Medium.work b)) (Medium.body v.callees) TT := by
+  refine bodyWith_rel _ v scratch la lb ra rb pub ?_
+  intro x y u w hx hy hu hw
+  have bw : base a = base b := by simp only [base,pub.2.2.2.2.2.2.2.2.1]
+  obtain ⟨ai,aa,an⟩ := ra
+  obtain ⟨bi,ba,bn⟩ := rb
+  obtain ⟨key,_,_,_,_,_,_,_,_,_,_,_,tag,_⟩ := pub
   exact mediumFinish_rel hash (loopFinish la an aa hx hu).1 (bw ▸ (loopFinish lb bn ba hy hw).1) key tag
 
 end VG.Proof.AesGcm.AArch64.DirectGather.Mid

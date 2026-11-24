@@ -209,10 +209,24 @@ private theorem limit_eval {n : Nat} {s t : State} (load : s.gpr .x10=stackArg s
   · have z : t.gpr .x11=0 := by by_contra hn; exact ok (cond.mp hn)
     simp [ok,z]
 
+private def boundedBranch (p : State → Prop) (accept : ∀ {s}, intermediate s → p s) :
+    Branch intermediate bounded p (limitCode 225) (.nonzero .x .x11) where
+  take s := decide ((stackArg s 0).toNat<225)
+  run s h := (limit_ok (.inr (.inl rfl)) s).mono fun t ⟨v,x10,test⟩ => by
+    refine ⟨v,limit_eval h.2.2.2 test,?_,fun _ => accept ⟨v.standard_iff.mpr h.2.2.1,x10.trans (h.2.2.2.trans (v.stackArg 0).symm)⟩⟩
+    intro yes
+    have sm := of_decide_eq_true yes
+    exact ⟨v.standard_iff.mpr h.2.2.1,by rw [v.stackArg]; omega⟩
+  same := by intro a b _ _ p; rw [p.1.2.2.2.2.2.2.2.2.2 0 (by decide)]
+  trace := by
+    intro a b _ _ pub
+    exact rel_taint [] pub.1.2.2.2.2.2.2.2.2.1 (by agree_tac []) ⟨_,by taint_decide⟩
+  residue := Residue.noResidue_of_blind (by decide +kernel) _ 0
+
 private def mediumBranch (n : Nat) (bound : n=768 ∨ n=4096) :
     Branch intermediate (prepared false) (prepared true) (limitCode n) (.nonzero .x .x11) where
   take s := decide ((stackArg s 0).toNat<n)
-  run s h := (limit_ok (.inr bound) s).mono fun t ⟨v,_,test⟩ => by
+  run s h := (limit_ok (.inr (.inr bound)) s).mono fun t ⟨v,_,test⟩ => by
     refine ⟨v,limit_eval h.2.2.2 test,fun _ => ⟨v.standard_iff.mpr h.2.2.1,fun e => Bool.noConfusion e⟩,?_⟩
     intro miss
     have big := of_decide_eq_false miss
@@ -290,9 +304,14 @@ theorem selected {v : GcmImpl} {g : GhashWithImpl} (facts : BackendFacts v g) : 
     exact generalLeaf facts
   · let n := if v.calls.stitch then 768 else 4096
     have hn : n=768 ∨ n=4096 := by cases h : v.calls.stitch <;> simp [n,h]
-    simp only [select,portable]
-    exact (nonceBranch standard id).checked ((shortBranch intermediate id).checked (shortLeaf facts.hash)
-      ((mediumBranch n hn).checked (preparedLeaf facts false) (preparedLeaf facts true))) (generalLeaf facts)
+    by_cases zero : v.calls.ctr.scratch=0
+    · simp only [select,portable,zero,ite_true]
+      exact (nonceBranch standard id).checked ((shortBranch intermediate id).checked (shortLeaf facts.hash)
+        ((boundedBranch intermediate id).checked (boundedLeaf facts zero)
+          ((mediumBranch n hn).checked (preparedLeaf facts false) (preparedLeaf facts true)))) (generalLeaf facts)
+    · simp only [select,portable,zero,ite_false]
+      exact (nonceBranch standard id).checked ((shortBranch intermediate id).checked (shortLeaf facts.hash)
+        ((mediumBranch n hn).checked (preparedLeaf facts false) (preparedLeaf facts true))) (generalLeaf facts)
 
 
 end VG.Proof.AesGcm.AArch64.Contiguous.Guard
