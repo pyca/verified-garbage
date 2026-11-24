@@ -1,5 +1,7 @@
 module
 
+-- separate module: The block arithmetic proof checks intermediate product spills independently from the function prologue, loop and frame cleanup.
+
 public import VerifiedGarbage.Impl.Gcm.RISCV64.Prepared
 public import VerifiedGarbage.Proof.Gcm.RISCV64.Law
 public import VerifiedGarbage.Proof.Framework.RISCV64.MRun
