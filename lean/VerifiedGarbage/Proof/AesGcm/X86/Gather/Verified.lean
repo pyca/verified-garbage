@@ -1,10 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.Rounds
-import VerifiedGarbage.Proof.AesGcm.X86.Gather.CT
 public import VerifiedGarbage.Proof.AesGcm.X86.Frame
 public import VerifiedGarbage.Impl.AesGcm.X86.SealGather
-public import VerifiedGarbage.Proof.AesGcm.X86.Gather.Callee
 public import VerifiedGarbage.Proof.AesGcm.X86.Gather.Loop
 import VerifiedGarbage.Proof.AesGcm.X86.Gather.Fn
 import VerifiedGarbage.Proof.Framework.X86.StackScratch
@@ -34,17 +32,7 @@ public import VerifiedGarbage.TCB.Mem
 public import VerifiedGarbage.Impl.StackScratch.X86
 public import VerifiedGarbage.Proof.Framework.X86.Call
 
-/-!
-# AES-GCM one-shot encryption out of place, from a list of slices, x86: `Verified`
-
-Untrusted: everything here is checked by Lean. The shared contract of
-`vg_aes_gcm_seal_gather`, with the 2688 bytes of stack below the stack
-pointer that its frame and its call use (`Proof.AesGcm.sealGatherRoundsContract`),
-implies the one the proof is written against (`gatherX86`,
-`gather_implies`), and so the code, calling an instance of
-`vg_aes_gcm_seal` by its shared contract (`sealFn`), is `Verified` against
-it (`sealGather_verified`).
--/
+/-! The IA-32 machine contract implies the shared AES-GCM gather contract. -/
 
 @[expose] public section
 
@@ -53,11 +41,6 @@ set_option linter.unusedSimpArgs false
 namespace VG.Proof.AesGcm.X86.Gather
 
 open VG VG.X86 VG.Impl.AesGcm.X86.SealGather
-
-theorem sealGather_correct (F : SealFn) (s : State) (hs : gatherX86.pre s) :
-    ∃ t s', Exec isa (sealGather F.name F.code) s t s' ∧ abiPreserved s s' ∧ gatherX86.post s s' := by
-  obtain ⟨t, s', he, ha, hp⟩ := sealGather_wp F hs
-  exact ⟨t, s', he, ha, hp⟩
 
 theorem filter_true' (l : List Region) : l.filter (fun _ => true) = l := List.filter_eq_self.mpr (by simp)
 theorem filter_false' (l : List Region) : l.filter (fun _ => false) = [] := List.filter_eq_nil_iff.mpr (by simp)
@@ -140,49 +123,5 @@ theorem gatherSat_pre : ∃ s, (Proof.AesGcm.sealGatherRoundsContract X86.abi 26
 
 theorem gather_implies : gatherX86.Implies (Proof.AesGcm.sealGatherRoundsContract X86.abi 2688) :=
   ⟨fun _ h => gatherPre_of_spec h, fun _ _ _ h => gatherPost_of h, fun _ _ _ _ h => gatherPub_of h, gatherSat_pre⟩
-
-theorem sealGather_verified (F : SealFn) :
-    Verified X86.target (sealGather F.name F.code) (Proof.AesGcm.sealGatherRoundsContract X86.abi 2688) :=
-  Verified.of_correct (k := gatherX86) (sealGather_correct F) (sealGather_ct F) gather_implies
-
-open VG.Impl.AesGcm.X86 VG.Impl.StackScratch.X86 in
-/-- The instance of `vg_aes_gcm_seal` calling the implementations `v`, with
-its working space in a frame of its own, without the cleanup of the exported
-function: the internal `vg_aes_gcm_seal<suffix>_core`, whose stack the
-cleanup of `vg_aes_gcm_seal_gather` zeroes (`Impl.AesGcm.X86.Fn.sealGather`). -/
-def sealFn (v : GcmImpl) : SealFn where
-  name := "vg_aes_gcm_seal" ++ v.suffix ++ "_core"
-  code := withStackScratch 2604 9 («seal» v.callees)
-  verified := seal_framed v
-  noSp := by
-    have hs := NoSp.of_all (seal_noEsp v)
-    have ha : NoSp (.block (setArgs 2604 9) : Prog isa) := NoSp.of_all (by decide +kernel)
-    intro i hi
-    simp only [withStackScratch, instrs, List.mem_cons, List.mem_append, List.mem_singleton,
-      List.not_mem_nil, or_false] at hi
-    rcases hi with (rfl | hi | hi) | rfl
-    · rfl
-    · exact ha i hi
-    · exact hs i hi
-    · rfl
-  depth := by
-    have := seal_stackUse v
-    simp only [withStackScratch, stackUse, frameBytes, Nat.zero_max]
-    exact Nat.le_trans (Nat.add_le_add_right this 2604) (by decide)
-
-/-- No instruction of the code, or of the instance it calls, writes `esp`
-but its frames' push and pop. -/
-theorem sealGather_spSafe (v : GcmImpl) :
-    (sealGather (sealFn v).name (sealFn v).code).all (fun i => !X86.isa.writesSp i) = true := by
-  have hc : (sealFn v).code.all (fun i => !X86.isa.writesSp i) = true :=
-    withStackScratch_spSafe (bytes := 2604) (n := 9) (seal_spSafe v)
-  have he : (Code.block entry : Prog isa).all (fun i => !X86.isa.writesSp i) = true := by decide +kernel
-  have hg : gather.all (fun i => !X86.isa.writesSp i) = true := by decide +kernel
-  have hr : (Code.block restore : Prog isa).all (fun i => !X86.isa.writesSp i) = true := by decide +kernel
-  show (!X86.isa.writesSp (.alloc 48) && ((Code.block entry : Prog isa).all (fun i => !X86.isa.writesSp i) &&
-      (gather.all (fun i => !X86.isa.writesSp i) && ((sealFn v).code.all (fun i => !X86.isa.writesSp i) &&
-        (Code.block restore : Prog isa).all (fun i => !X86.isa.writesSp i)))) &&
-      !X86.isa.writesSp (.free 48)) = true
-  rw [he, hg, hc, hr]; rfl
 
 end VG.Proof.AesGcm.X86.Gather

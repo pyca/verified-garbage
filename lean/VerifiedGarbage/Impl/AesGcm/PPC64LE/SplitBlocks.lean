@@ -107,6 +107,15 @@ def rest : Prog isa := restOf false
 
 def decRest : Prog isa := restOf true
 
+/-- Register-only seal entry shared by identical and disjoint buffers. The
+eight-way body reads every full group from the source. For identical buffers,
+any remaining blocks already occupy the destination. Disjoint callers supply
+whole groups and handle the record tail in their gather loop. -/
+def bufferArgs : List Instr :=
+ [mov .r11 .r10,mov .r10 .r8,.lsr .d .r8 .r8 3,.lsl .r8 .r8 3]
+
+def encryptBuffers : Prog isa := .seq (.block bufferArgs) rest
+
 /-- Nine-argument whole-block helper; `scratch` is at the incoming `sp+96`.
 Restore the extra saves before the leaf calls reuse the core's scratch. -/
 def cryptOf (dec : Bool) : Prog isa := .ite (.zero .d .r10) (.block [])

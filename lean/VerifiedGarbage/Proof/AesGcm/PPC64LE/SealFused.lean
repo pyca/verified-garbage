@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.AesGcm.PPC64LE.SealFused
+public import VerifiedGarbage.Proof.AesGcm.PPC64LE.SplitBlocks.Buffers
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Env
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Crypt
 public import VerifiedGarbage.Spec.Gcm.Contract
@@ -76,16 +77,50 @@ structure BlockPost (s t : State) : Prop where
   out : (Proof.Gcm.encryptBlocksContractOf PPC64LE.abi 88).post s t
 
 
+def aliasState (s : State) : State :=
+  (s.write .r10 (s.gpr .r9)).write .r9 (s.gpr .r7)
+
+theorem aliasArgs_ok (s : State) :
+    WP isa (.block Impl.AesGcm.PPC64LE.SealFused.aliasArgs) s (·=aliasState s) := by
+  apply WP.of_runBlock
+  simp only [Impl.AesGcm.PPC64LE.SealFused.aliasArgs,Impl.AesGcm.PPC64LE.mov,
+    runBlock_cons,runStep_some,runBlock_nil,exec_logic,BitVec.or_self,
+    RegUpd.gpr_write,reduceCtorEq,ite_false,Option.some.injEq,exists_eq_left']
+  rfl
+
+def aliasEntry (s : State) : State := (aliasState s).callEntry.withRegions (blockReads s) (blockWrites s)
+
+theorem alias_pre {s : State} (h : BlockCall s) : SplitBlocks.BufferPre (aliasEntry s) := by
+  obtain ⟨w,r⟩ := Blocks.shared_pre _ h.pre
+  let t := aliasEntry s
+  have hn : SplitBlocks.prefixCount t ≤ (s.gpr .r8).toNat := by
+    rw [SplitBlocks.prefixCount_eq]
+    change (s.gpr .r8).toNat / 8 * 8 ≤ _
+    omega
+  refine ⟨⟨⟨w.core.congr rfl rfl rfl rfl rfl rfl rfl,w.header,w.scratch,w.fit⟩,hn,?_,?_,Or.inl rfl⟩,r,?_,Or.inl rfl⟩
+  · change ((t.gpr .r8 >>> 3) <<< 3) = BitVec.ofNat 64 (((t.gpr .r8 >>> 3) <<< 3).toNat)
+    simp only [BitVec.ofNat_toNat,BitVec.setWidth_eq]
+  · change InRegions (blockReads s++blockWrites s) (s.gpr .r7) (16*SplitBlocks.prefixCount t)
+    refine ⟨⟨s.gpr .r7,(s.gpr .r8).toNat*16⟩,by simp [blockReads,blockWrites],?_⟩
+    simpa only [BitVec.add_zero] using (Offset.contains_base (s.gpr .r7) (d := 0)
+      (n := 16*SplitBlocks.prefixCount t) (k := (s.gpr .r8).toNat*16) (by omega_using [hn]) (by decide))
+  · exact Covers.of_mem (by simp [aliasEntry,aliasState,blockWrites,State.callEntry,RegUpd.gpr_write])
+
 theorem block_call [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.FoldLaw]
     {s : State} (h : BlockCall s) :
-    WP isa (.call "vg_aes_gcm_encrypt_blocks" Impl.AesGcm.PPC64LE.Blocks.encrypt) s (BlockPost s) := by
-  refine WP.call (k := Proof.Gcm.encryptBlocksContractOf PPC64LE.abi 88)
-    VG.Proof.AesGcm.PPC64LE.Blocks.encrypt_correct (rd := blockReads s) (wr := blockWrites s)
-    h.pre h.reads h.writes ?_
+    WP isa Impl.AesGcm.PPC64LE.SealFused.aliasCall s (BlockPost s) := by
+  apply WP.seq
+  refine WP.mono (aliasArgs_ok s) fun _ e => ?_
+  subst_vars
+  refine WP.call (k := SplitBlocks.bufferContract) SplitBlocks.encryptBuffers_correct
+    (rd := blockReads s) (wr := blockWrites s) (alias_pre h) h.reads h.writes ?_
   intro t hrd hwr hsp hf hcs _ hp
-  refine ⟨hrd,hwr,hsp,hcs,hf,?_⟩
-  sig_eval [Proof.Gcm.encryptBlocksContractOf,Proof.Gcm.cryptBlocksSigOf,PPC64LE.abi,PPC64LE.argRegs] at hp ⊢
-  exact hp
+  refine ⟨hrd,hwr,hsp,?_,hf,?_⟩
+  · intro r hr
+    have keep : ∀ r ∈ preserved, r ≠ .r9 ∧ r ≠ .r10 := by decide
+    simpa only [aliasState,RegUpd.gpr_write,(keep r hr).1,(keep r hr).2,ite_false] using hcs r hr
+  · sig_eval [Proof.Gcm.encryptBlocksContractOf,Proof.Gcm.cryptBlocksSigOf,PPC64LE.abi,PPC64LE.argRegs]
+    exact ⟨hp.data,hp.ctr,hp.hash⟩
 
 def argsState (s : State) : State :=
   ((((((s.write .r3 (s.gpr .r29)).write .r4 (s.gpr .r28)).write .r5 (s.gpr .r30+48)).write
@@ -222,7 +257,7 @@ theorem whole_ok [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.Fo
     (hd : DataW (V .r29) (V .r30) (V .r31) s (V .r27) (V .r23).toNat)
     (hR : V .r28=BitVec.ofNat 64 R) (hv : R=10 ∨ R=12 ∨ R=14) :
     WP isa (.seq (.block Impl.AesGcm.PPC64LE.SealFused.blockArgs)
-      (.call "vg_aes_gcm_encrypt_blocks" Impl.AesGcm.PPC64LE.Blocks.encrypt)) s
+      Impl.AesGcm.PPC64LE.SealFused.aliasCall) s
       (WholeOut V sp R s.mem) := by
   refine WP.seq (WP.mono (args_ok s) fun a ha => ?_)
   subst a

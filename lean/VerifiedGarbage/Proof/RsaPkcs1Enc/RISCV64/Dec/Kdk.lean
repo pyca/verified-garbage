@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Covers
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.RISCV64.Wp
@@ -24,6 +25,7 @@ public import VerifiedGarbage.TCB.RISCV64.Target
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.RsaPkcs1Enc.Contract
 
 /-! ### `RsaPkcs1Enc.RISCV64.Dec.Calls`, which this module and modules that import it used -/
 
@@ -190,11 +192,11 @@ structure PreX (s : State) : Prop where
   alP : (stackArg s 15).toNat % 8 = 0
   hyp : HypD true s
 
-theorem dPre_of {s : State} (h : (Spec.RsaPkcs1Enc.decryptContract RISCV64.abi stackBytes).pre s) :
+theorem dPre_of {s : State} (h : (Proof.RsaPkcs1Enc.decryptContract RISCV64.abi stackBytes).pre s) :
     DPre false s := by
   have e : stackBytes = 3455 + 1 := rfl
   rw [e] at h
-  sig_pre [Spec.RsaPkcs1Enc.decryptContract, Spec.RsaPkcs1Enc.decryptSig, RISCV64.abi, RISCV64.argRegs,
+  sig_pre [Proof.RsaPkcs1Enc.decryptContract, Proof.RsaPkcs1Enc.decryptSig, RISCV64.abi, RISCV64.argRegs,
     stackArgs_fifteen, List.append_eq, List.range, List.range.loop] at h
   sig_split h
   rename_i sp16 sp1 sp2 hrd hwr om on oe od oi op oq odp odq oqi os oa mn me md mi mp mq mdp mdq mqi ms ma ns es

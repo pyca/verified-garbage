@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.Contract
 public import VerifiedGarbage.Spec.RsaPkcs1Enc.Contract
 public import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.Impl.RsaPkcs1Enc.PPC64LE.Decrypt
@@ -186,10 +187,10 @@ structure PreX (s : State) : Prop where
     Spec.Rsa.privatePrecomputedWords (s.gpr .r7).toNat (stackArg s 4).toNat (stackArg s 6).toNat
   hyp : HypS true s
 
-theorem dPre_of {s : State} (h : (Spec.RsaPkcs1Enc.decryptContract abi stackBytes).pre s) : DPre false s := by
+theorem dPre_of {s : State} (h : (Proof.RsaPkcs1Enc.decryptContract abi stackBytes).pre s) : DPre false s := by
   have e : stackBytes = 3647 + 1 := rfl
   rw [e] at h
-  sig_pre [Spec.RsaPkcs1Enc.decryptContract, Spec.RsaPkcs1Enc.decryptSig, abi, argRegs,
+  sig_pre [Proof.RsaPkcs1Enc.decryptContract, Proof.RsaPkcs1Enc.decryptSig, abi, argRegs,
     stackArgs_fifteen, List.append_eq] at h
   simp only [Sig.pairFacts, List.filterMap_cons, List.filterMap_nil, Bool.cond_true, Bool.cond_false,
     Bool.true_or, Bool.false_or, List.cons_append, List.nil_append, Sig.conj, List.append_nil] at h

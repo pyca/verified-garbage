@@ -60,7 +60,7 @@ structure SO1 (W T : Addr) (s₀ s₁ : State) : Prop where
   s9 : s₁.gpr .s9 = T
   t1 : s₁.gpr .t1 = s₀.sp
 
-theorem one1At_wp {s₀ : State} {off tagO : Nat} {W T : Addr} (hoff : off % 8 = 0 ∧ off < 2048)
+theorem one1At_args_wp {s₀ : State} {off tagO : Nat} {W T : Addr} (hoff : off % 8 = 0 ∧ off < 2048)
     (htag : tagO = 0 ∨ tagO = 16)
     (hW : Covers [⟨W, 2560⟩] s₀.wr) (hWa : W.toNat % 8 = 0) (hsa : s₀.sp.toNat % 16 = 0)
     (hWi : InRegions (s₀.rd ++ s₀.wr) (s₀.sp + BitVec.ofNat 64 off) 8)
@@ -68,7 +68,7 @@ theorem one1At_wp {s₀ : State} {off tagO : Nat} {W T : Addr} (hoff : off % 8 =
     (hTi : InRegions (s₀.rd ++ s₀.wr) (s₀.sp + BitVec.ofNat 64 tagO) 8)
     (hTv : s₀.mem.readW (s₀.sp + BitVec.ofNat 64 tagO) 64 = T)
     (hTd : (⟨s₀.sp + BitVec.ofNat 64 tagO, 8⟩ : Region).Disjoint (oneR W)) :
-    WP isa (.block (oneEntryAt off tagO)) s₀ (SO1 W T s₀) := by
+    WP isa (.block (oneEntryAt off tagO)) s₀ fun z => SO1 W T s₀ z ∧ z.gpr .a6 = s₀.gpr .a6 ∧ z.gpr .a7 = s₀.gpr .a7 := by
   simp only [oneEntryAt, List.cons_append, List.nil_append]
   refine Steps.wp_addSp (imm := 0) (by decide) fun sA uA => ?_
   refine Steps.wp_ld (off := off) (a := s₀.sp + BitVec.ofNat 64 off) (by omega_using [hoff.2]) (by rw [uA.gpr, add_ofNat_zero])
@@ -127,6 +127,13 @@ theorem one1At_wp {s₀ : State} {off tagO : Nat} {W T : Addr} (hoff : off % 8 =
   refine Steps.wp_ld (off := tagO) (a := s₀.sp + BitVec.ofNat 64 tagO) (by omega_using [htag])
     (by rw [u₁₃.gpr, u₁₂.sp, m₁₁.sp, u₁₀.sp, m₉.sp, k₈.2.2.1, add_ofNat_zero])
     (Spill.al8 (by omega_using [hsa]) (by omega_using [htag])) (by rw [rd₁₃, wr₁₃]; exact hTi) fun s₁₄ u₁₄ => WP.block_nil ?_
+  have args : ∀ r, r = .a6 ∨ r = .a7 → s₁₄.gpr r = s₀.gpr r := by
+    intro r hr
+    rcases hr with rfl | rfl <;>
+      simp only [upd_gpr u₁₄, upd_gpr u₁₃, upd_gpr u₁₂, upd_gpr u₁₀, m₁₁.gpr, m₉.gpr,
+        upd_gpr u₈, upd_gpr u₇, upd_gpr u₆, upd_gpr u₅, upd_gpr u₄, upd_gpr u₃, reduceCtorEq, ite_false] <;>
+      exact e _ (by decide) (by decide)
+  refine ⟨?_, args _ (.inl rfl), args _ (.inr rfl)⟩
   refine ⟨⟨by rw [u₁₄.rd, rd₁₃], by rw [u₁₄.wr, wr₁₃], by rw [u₁₄.sp, sp₁₃]⟩, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_,
     ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [u₁₄.mem, m₁₃, ← hM]
@@ -148,6 +155,17 @@ theorem one1At_wp {s₀ : State} {off tagO : Nat} {W T : Addr} (hoff : off % 8 =
     | (rw [u₁₂.sp, m₁₁.sp, u₁₀.sp, m₉.sp, k₈.2.2.1, add_ofNat_zero])
     | (rw [m₁₃, ← hTv]; exact fM.readW (Region.contains_self _ _) (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact hTd) (by decide))
+theorem one1At_wp {s₀ : State} {off tagO : Nat} {W T : Addr} (hoff : off % 8 = 0 ∧ off < 2048)
+    (htag : tagO = 0 ∨ tagO = 16)
+    (hW : Covers [⟨W, 2560⟩] s₀.wr) (hWa : W.toNat % 8 = 0) (hsa : s₀.sp.toNat % 16 = 0)
+    (hWi : InRegions (s₀.rd ++ s₀.wr) (s₀.sp + BitVec.ofNat 64 off) 8)
+    (hWv : s₀.mem.readW (s₀.sp + BitVec.ofNat 64 off) 64 = W)
+    (hTi : InRegions (s₀.rd ++ s₀.wr) (s₀.sp + BitVec.ofNat 64 tagO) 8)
+    (hTv : s₀.mem.readW (s₀.sp + BitVec.ofNat 64 tagO) 64 = T)
+    (hTd : (⟨s₀.sp + BitVec.ofNat 64 tagO, 8⟩ : Region).Disjoint (oneR W)) :
+    WP isa (.block (oneEntryAt off tagO)) s₀ (SO1 W T s₀) :=
+  WP.mono (one1At_args_wp hoff htag hW hWa hsa hWi hWv hTi hTv hTd) fun _ h => h.1
+
 /-- `one1At_wp` with the tag at `sp`. -/
 theorem one1_wp {s₀ : State} {off : Nat} {W T : Addr} (hoff : off = 8 ∨ off = 16)
     (hW : Covers [⟨W, 2560⟩] s₀.wr) (hWa : W.toNat % 8 = 0) (hsa : s₀.sp.toNat % 16 = 0)

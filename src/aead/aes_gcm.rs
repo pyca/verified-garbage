@@ -1635,6 +1635,31 @@ mod tests {
     }
 
     #[test]
+    fn gather_across_fused_batches() {
+        let message: [u8; 787] = core::array::from_fn(|i| (i as u8).wrapping_mul(29));
+        let nonce = [7u8; 12];
+        for key_len in [16, 24, 32] {
+            let key_bytes = [3u8; 32];
+            let key = AesGcm::new(&key_bytes[..key_len]).unwrap();
+            let mut expected = message;
+            let expected_tag = key.encrypt_in_place(&nonce, b"aad", &mut expected).unwrap();
+            for split in [511, 512, 513, 639, 640, 641] {
+                let pieces: [&[u8]; 5] = [
+                    &[],
+                    &message[..split],
+                    &message[split..split + 1],
+                    &[],
+                    &message[split + 1..],
+                ];
+                let mut out = [0u8; 787];
+                let tag = key.encrypt(&nonce, b"aad", &pieces, &mut out).unwrap();
+                assert_eq!(out, expected);
+                assert_eq!(tag, expected_tag);
+            }
+        }
+    }
+
+    #[test]
     fn errors() {
         assert_eq!(AesGcm::new(&[0; 15]).err(), Some(InvalidKeyLength));
         let k = AesGcm::new(&[0; 32]).unwrap();

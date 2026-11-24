@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Impl.RsaPkcs1Enc.X86.Decrypt
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.Entry
@@ -129,7 +130,7 @@ end In
 abbrev stackBytes : Nat := 16 + frameBytes + 3448
 
 /-- The shared contract, with that stack. -/
-abbrev spec : Contract isa := Spec.RsaPkcs1Enc.decryptContract abi stackBytes
+abbrev spec : Contract isa := Proof.RsaPkcs1Enc.decryptContract abi stackBytes
 
 /-- The public parameters of an entry state. -/
 def ep (s : State) : EP where
@@ -159,7 +160,7 @@ theorem ep_lay (s : State) :
     (ep s).lay = layOf frameBytes (ep s).argv (ep s).ro (ep s).rw s 3448 := rfl
 
 theorem in_of_pre {s : State} (h : spec.pre s) : In (ep s) (entered frameBytes s) := by
-  sig_pre [Spec.RsaPkcs1Enc.decryptContract, Spec.RsaPkcs1Enc.decryptSig, abi, argSlots, argVal, argBytes,
+  sig_pre [Proof.RsaPkcs1Enc.decryptContract, Proof.RsaPkcs1Enc.decryptSig, abi, argSlots, argVal, argBytes,
     stackBelow] at h
   -- The lengths the contract states equal, rewritten in the precondition before it is split: a rewrite
   -- of a fact among the hundred it splits into replaces the fact in a context of that size.

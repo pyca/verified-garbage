@@ -20,6 +20,8 @@ public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.Arm.DecVerified
 public import VerifiedGarbage.TCB.Arm.Print
 public import VerifiedGarbage.Proof.Variants.RsaPrivateCrt.Arm
+public import VerifiedGarbage.Impl.RsaPkcs1Enc.Arm.Front
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.Arm.Front
 
 /-! # RSAES-PKCS1-v1_5 (RFC 8017) on ARMv7 -/
 
@@ -31,11 +33,11 @@ open VG.Proof.Rsa.Arm (CrtImpl)
 
 def artifacts : List Artifact :=
   VG.Proof.Variants.RsaPrivateCrt.Arm.variants.flatMap fun (v : CrtImpl) => [
-    Spec.RsaPkcs1Enc.decryptPrecomputedApi.artifact Arm.target {
+    Spec.RsaPkcs1Enc.decryptPrecomputedFrontApi.artifact Arm.target {
       suffix := v.suffix
-      code := Impl.RsaPkcs1Enc.Arm.Fn.decryptPrecomputed Proof.RsaPkcs1Enc.Arm.decFns (Proof.Rsa.Arm.privNameP v)
-        (Proof.Rsa.Arm.privCodeP v)
-      verified := Proof.RsaPkcs1Enc.Arm.Fn.decryptPrecomputed v },
+      code := Impl.RsaPkcs1Enc.Arm.Fn.decryptPrecomputedFront (Proof.RsaPkcs1Enc.Arm.Front.bodyName v)
+        (Proof.RsaPkcs1Enc.Arm.Dec.decryptCodeP v)
+      verified := Proof.RsaPkcs1Enc.Arm.Front.front_scrubbed v },
     Spec.RsaPkcs1Enc.encryptRandomApi.artifact Arm.target {
       suffix := v.suffix
       code := Impl.RsaPkcs1Enc.Arm.Fn.encryptRandom ("vg_rsa_pkcs1_encrypt_precomputed" ++ v.suffix)

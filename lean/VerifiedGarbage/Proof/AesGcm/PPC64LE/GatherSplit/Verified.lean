@@ -16,12 +16,6 @@ namespace VG.Proof.AesGcm.PPC64LE.GatherSplit
 open VG VG.PPC64LE
 
 
-theorem sat_pre : ∃ s,contract.pre s := by
-  sig_implies_sat [contract,Proof.AesGcm.sealGatherRoundsContract,Spec.Gcm.sealGatherSig,Spec.Gcm.sealGatherPre,PPC64LE.abi,
-    PPC64LE.argRegs,Gather.stackArgs_three,List.append_eq]
-    [Gather.gatherSat,stackArg,stackArgAddr,Mem.readW,Mem.read] using Gather.gatherSat
-
-
 theorem verified [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.FoldLaw] :
     Verified PPC64LE.target Impl.AesGcm.PPC64LE.GatherSplit.sealGather contract := by
   refine ⟨?_,?_,sat_pre⟩

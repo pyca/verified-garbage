@@ -276,7 +276,7 @@ structure SourceLayout (base : State) (n count : Nat) : Prop where
   reads : InRegions (base.rd++base.wr) (base.gpr .r17) (16*count)
   size : 16*count≤2^64
   work : (sourceRegion base count).Disjoint (Blocks.coreWork base)
-  data : (sourceRegion base count).Disjoint (Blocks.coreData base n)
+  data : base.gpr .r17 = base.gpr .r6 ∨ (sourceRegion base count).Disjoint (Blocks.coreData base n)
 
 def plaintext (base : State) (count i : Nat) : Spec.Gcm.Block :=
   if i<count then Spec.Gcm.blockAt base.mem (base.gpr .r17+BitVec.ofNat 64 (16*i))
@@ -299,7 +299,7 @@ theorem SourceLayout.read_block {base : State} {n count : Nat} (src : SourceLayo
 
 theorem SourceLayout.block_frame {base start : State} {n count : Nat} (src : SourceLayout base n count)
     (hf : Frame [Blocks.coreWork base,Blocks.coreData base n] base.mem start.mem)
-    {i : Nat} (hi : i<count) :
+    (hd : (sourceRegion base count).Disjoint (Blocks.coreData base n)) {i : Nat} (hi : i<count) :
     Spec.Gcm.blockAt start.mem (base.gpr .r17+BitVec.ofNat 64 (16*i))=
       Spec.Gcm.blockAt base.mem (base.gpr .r17+BitVec.ofNat 64 (16*i)) := by
   rw [← VG.Proof.Aes.PPC64LE.Crypto.read_blockAt,← VG.Proof.Aes.PPC64LE.Crypto.read_blockAt]
@@ -308,7 +308,7 @@ theorem SourceLayout.block_frame {base start : State} {n count : Nat} (src : Sou
     (by
       intro r hr
       simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
-      rcases hr with rfl | rfl; exacts [src.work,src.data]) (by decide)]
+      rcases hr with rfl | rfl; exacts [src.work,hd]) (by decide)]
 
 theorem reader_global (base start : State) (n nr count k : Nat) (lay : Blocks.CoreLayout base n)
     (src : SourceLayout base n count) (hk : k+8≤n)
@@ -335,7 +335,10 @@ theorem reader_global (base start : State) (n nr count k : Nat) (lay : Blocks.Co
     rw [readValue,VG.Proof.Aes.PPC64LE.Crypto.flip_load,VG.Proof.Aes.PPC64LE.Crypto.read_blockAt,plaintext]
     by_cases hsrc : i<count-k
     · rw [ite_eq_left hsrc,ite_eq_left (show k+i<count by omega_using [hsrc]),source_addr hsrc hin]
-      exact src.block_frame hf (by omega_using [hsrc])
+      rcases src.data with same | apart
+      · rw [same]
+        exact Blocks.processed_original_block hp (by omega_using []) (by omega_using [hk, hi])
+      · exact src.block_frame hf apart (by omega_using [hsrc])
     · rw [ite_eq_right hsrc,ite_eq_right (show ¬k+i<count by omega_using [hsrc]),ptr,Offset.add_add,
         show 16*k+16*i=16*(k+i) by omega_using []]
       exact Blocks.processed_original_block hp (by omega_using []) (by omega_using [hk, hi])

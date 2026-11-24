@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Impl.AesGcm.X86.SealGather
+public import VerifiedGarbage.Impl.AesGcm.X86.DirectGather
 public import VerifiedGarbage.Impl.StackScratch.X86
 public import VerifiedGarbage.Impl.Scrub.X86
 
@@ -69,11 +69,8 @@ blocks, as emitted. -/
 def openTo (f : Impl.AesGcm.X86.Fn) : Prog isa :=
   Impl.Scrub.X86.scrubAll 32 2696 (withStackScratch 2616 12 (Impl.AesGcm.X86.Open.openTo c f))
 
-/-- `vg_aes_gcm_seal_gather` of the variant whose names end with `sfx`,
-calling `vg_aes_gcm_seal`'s code, unscrubbed, as `vg_aes_gcm_seal<sfx>_core`,
-as emitted. -/
-def sealGather (sfx : String) : Prog isa :=
-  Impl.Scrub.X86.scrubAll 0 2688 (Impl.AesGcm.X86.SealGather.sealGather ("vg_aes_gcm_seal" ++ sfx ++ "_core")
-    (withStackScratch 2604 9 (Impl.AesGcm.X86.«seal» c)))
+/-- Seal directly from the source descriptors and wipe the private workspace. -/
+def sealGather : Prog isa :=
+  Impl.Scrub.X86.scrubAll 0 2688 (DirectGather.sealGather c)
 
 end VG.Impl.AesGcm.X86.Fn

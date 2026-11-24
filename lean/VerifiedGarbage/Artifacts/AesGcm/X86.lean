@@ -16,7 +16,6 @@ public import VerifiedGarbage.Proof.AesGcm.X86.CryptHead
 public import VerifiedGarbage.Proof.AesGcm.X86.CryptTail
 public import VerifiedGarbage.Proof.AesGcm.X86.CryptWhole
 public import VerifiedGarbage.Proof.AesGcm.X86.Flush
-public import VerifiedGarbage.Proof.AesGcm.X86.Gather.CT
 public import VerifiedGarbage.Proof.AesGcm.X86.Gather.Fn
 public import VerifiedGarbage.Proof.AesGcm.X86.Init
 public import VerifiedGarbage.Proof.Cmac.Frame
@@ -89,12 +88,11 @@ def artifactsOf (v : GcmImpl) : List Artifact := [
     verified := Proof.AesGcm.X86.Scrub.open_scrubbed v
     spSafe := Proof.AesGcm.X86.Scrub.open_spSafeF v }]
 
-/-- `vg_aes_gcm_seal_gather`, calling the instance of `vg_aes_gcm_seal` of the
-implementations `v`, without its cleanup (`vg_aes_gcm_seal<suffix>_core`). -/
+/-- Gather seal reads plaintext descriptors directly into the ciphertext destination. -/
 def artifactsGather (v : GcmImpl) : List Artifact := [
   Spec.Gcm.sealGatherApi.artifact X86.target {
     suffix := v.suffix
-    code := Impl.AesGcm.X86.Fn.sealGather v.callees v.suffix
+    code := Impl.AesGcm.X86.Fn.sealGather v.callees
     verified := Proof.AesGcm.X86.Scrub.sealGather_scrubbed v
     spSafe := Proof.AesGcm.X86.Scrub.sealGather_spSafeF v }]
 

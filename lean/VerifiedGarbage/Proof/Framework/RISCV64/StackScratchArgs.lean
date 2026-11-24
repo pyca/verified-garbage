@@ -50,7 +50,7 @@ theorem widths_le (sig : Sig) : ∀ w ∈ (sig.words abi.ptrBits).map (·.bits a
   | array _ _ _ => rw [h] at hp; simp [Param.words, ArgWord.bits, abi] at hp; omega_using [hp]
   | table _ => rw [h] at hp; simp [Param.words, ArgWord.bits, abi] at hp; omega_using [hp]
   | slice _ _ _ => rw [h] at hp; simp [Param.words, ArgWord.bits, abi] at hp; omega_using [hp]
-  | slices _ _ => rw [h] at hp; simp [Param.words, ArgWord.bits, abi] at hp; omega_using [hp]
+  | inOutSlice _ _ _ | slices _ _ => rw [h] at hp; simp [Param.words, ArgWord.bits, abi] at hp; omega_using [hp]
 
 /-- The arguments of a function whose arguments fill `a0`–`a7` and `m`
 doublewords of stack. -/

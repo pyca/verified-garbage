@@ -98,12 +98,12 @@ jne 217b
     )
 }
 
-/// The CPU features `vg_rsa_pkcs1_decrypt_precomputed_sha256_shani` requires (`Artifact.features`).
-pub const VG_RSA_PKCS1_DECRYPT_PRECOMPUTED_SHA256_SHANI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::SHA);
+/// The CPU features `vg_rsa_pkcs1_decrypt_precomputed_front_sha256_shani` requires (`Artifact.features`).
+pub const VG_RSA_PKCS1_DECRYPT_PRECOMPUTED_FRONT_SHA256_SHANI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::SHA);
 
-/// `vg_rsa_pkcs1_decrypt`, given the key's precomputed values `pre`: computes and returns what `vg_rsa_pkcs1_decrypt` does with the same arguments. `pre` (`pre_len` words) must hold what `vg_rsa_private_precompute` wrote for `n`, `p` and `q` (returning 1), as `n`, `p` and `q` must be valid.
+/// RSAES-PKCS1-V1_5-DECRYPT (RFC 8017 §7.2.2) with implicit rejection (draft-irtf-cfrg-rsa-guidance), of the ciphertext `input` with the private key `(n, e, d, p, q, dp, dq, qinv)`, RSADP checked against `e`: returns 1 and writes the message, or for an invalid padding the alternative message, at the start of `out` and zeros after it, so that the caller can shorten `out` to the message's length without moving it, and its length to `*msg_len`; or writes zeros to `out` and `*msg_len` and returns 0 if the ciphertext is not below `n` or the key is refused, or 2 if RSADP fails its check against `e`. `pre` (`pre_len` words) must hold what `vg_rsa_private_precompute` wrote for `n`, `p` and `q` (returning 1), as `n`, `p` and `q` must be valid.
 ///
-/// Contract: `VG.Spec.RsaPkcs1Enc.decryptPrecomputedContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, the contents of `n` and `e` and the first `2 * ⌈n_len / 8⌉` words of `pre` (the modulus' values), not on the ciphertext, the private key, the rest of `pre`, the validity of the padding, the length of the message or which message is returned.
+/// Contract: `VG.Spec.RsaPkcs1Enc.decryptPrecomputedFrontContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, the contents of `n` and `e` and the first `2 * ⌈n_len / 8⌉` words of `pre` (the modulus' values), not on the ciphertext, the private key, the rest of `pre`, the validity of the padding, the length of the message or which message is returned.
 ///
 /// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
@@ -134,83 +134,42 @@ pub const VG_RSA_PKCS1_DECRYPT_PRECOMPUTED_SHA256_SHANI_FEATURES: verified_garba
 /// * `pre_len` must be `2 * ⌈n_len / 8⌉ + max(2, ⌈p_len / 8⌉) + max(2, ⌈q_len / 8⌉)`.
 /// * `pre` must hold what `vg_rsa_private_precompute` wrote for `n`, `p` and `q` (returning 1), and not have changed since.
 /// * `out`, `msg_len` and `scratch` must not overlap each other, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv` or `pre` (distinct Rust objects never do).
-/// * None of `out`, `msg_len`, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv`, `scratch` and `pre` may overlap the arguments on the stack, overlap the return address on the stack or the 3568 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `out`, `msg_len`, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv`, `scratch` and `pre` may overlap the arguments on the stack, overlap the return address on the stack or the 3732 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `ssse3` and `sha` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_rsa_pkcs1_decrypt_precomputed_sha256_shani(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, d: *const u8, d_len: usize, input: *const u8, input_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_rsa_pkcs1_decrypt_precomputed_front_sha256_shani(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, d: *const u8, d_len: usize, input: *const u8, input_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
     core::arch::naked_asm!(
-        r#".base64 "U1VWV41kJJiLRCR8iQQki4QkjAAAAIlEJASLhCSIAAAAiUQkCIuEJIwAAACJRCQMi4QkkAAAAIlEJBCLhCSUAAAAiUQkFIuEJKAAAACJRCQYi4QkjAAAAIlEJByLhCSoAAAAiUQkIIuEJKwAAACJRCQki4QksAAAAIlEJCiLhCS0AAAAiUQkLIuEJLgAAACJRCQwi4QkvAAAAIlEJDSLhCTAAAAAiUQkOIuEJMQAAACJRCQ8i4QkyAAAAIlEJECLhCTMAAAAiUQkRIuEJNAAAACJRCRIi4Qk1AAAAIlEJEyLhCTYAAAAiUQkUIuEJNwAAACJRCRU"
-call {vg_rsa_private_checked_precomputed}
-.base64 "iUQkUIu0JNAAAACBxhAGAACLjCSMAAAAuAAAAAA="
+        r#".base64 "U1VWV42kJHD///+LhCSkAAAAiQQki4QkqAAAAIlEJASLhCSsAAAAiUQkCIuEJLAAAACJRCQMi4QktAAAAIlEJBCLhCS4AAAAiUQkFIuEJLwAAACJRCQYi4QkwAAAAIlEJByLhCTEAAAAiUQkIIuEJMgAAACJRCQki4QkzAAAAIlEJCiLhCTQAAAAiUQkLIuEJNQAAACJRCQwi4Qk2AAAAIlEJDSLhCTcAAAAiUQkOIuEJOAAAACJRCQ8i4Qk5AAAAIlEJECLhCToAAAAiUQkRIuEJOwAAACJRCRIi4Qk8AAAAIlEJEyLhCT0AAAAiUQkUIuEJPgAAACJRCRUi4Qk/AAAAIlEJFiLhCQAAQAAiUQkXIuEJAQBAACJRCRg"
+call {vg_rsa_pkcs1_decrypt_precomputed_body_sha256_shani}
+.base64 "iUQkZIusJPgAAACJ7oHGAAgAALkACAAAuAAAAAA="
 20:
 .base64 "iAaDxgGD6QE="
 jne 20b
-.base64 "i5wk0AAAAIHDEAYAAAOcJIwAAAArnCScAAAAi7QkmAAAAIuMJJwAAAA="
+.base64 "i7QkpAAAAInrgcMACAAAi4wktAAAAA=="
 21:
 .base64 "D7YGiAODwwGDxgGD6QGD+QA="
 jne 21b
-.base64 "i7wk0AAAAIPHAFc="
-call {vg_sha256_init_core}
-.base64 "WIu8JNAAAACDxwC+AAAAALgAAAAAi5Qk0AAAAIHCEAYAAIuMJIwAAACLrCTQAAAAgcUQCgAAVVFSUFZX"
-call {vg_sha256_update_scratch_shani}
-.base64 "WFhYWFhYi7wk0AAAAIPHAIuEJIwAAAC5AAAAAIuUJNAAAACBwtAAAACLrCTQAAAAgcUQCgAAVVJRUFc="
-call {vg_sha256_finalize_scratch_shani}
-.base64 "WFhYWFiLvCTQAAAAg8cAi7Qk0AAAAIPGYIuUJNAAAACBwtAAAAC5IAAAAIusJNAAAACBxRAKAABVUVJWVw=="
-call {vg_hmac_sha256_init_scratch_shani}
-.base64 "WFhYWFiLvCTQAAAAg8cAvkAAAAC4AAAAAIuUJKAAAACLjCSMAAAAi6wk0AAAAIHFEAoAAFVRUlBWVw=="
-call {vg_sha256_update_scratch_shani}
-.base64 "WFhYWFhYi5Qk0AAAAIPCAIu0JNAAAACDxmCLhCSMAAAAg8BAuQAAAACLvCTQAAAAgcfwAAAAi6wk0AAAAIHFEAoAAFVXUVBWUg=="
-call {vg_hmac_sha256_finalize_scratch_shani}
-.base64 "WFhYWFhYuAAAAACJRCRUuAgAAACJRCRY"
+.base64 "i4QktAAAAIuUJKwAAACLEinQiUQkeLgBAAAAiUQkfLgLAAAAiYQkgAAAAA=="
 22:
-.base64 "i5wk0AAAAIHDwAAAAItMJFSLlCSMAAAAuAAAAACIA4hLAbhsAAAAiEMCuGUAAACIQwO4bgAAAIhDBLhnAAAAiEMFuHQAAACIQwa4aAAAAIhDB7gIAAAAiEMIuAAAAACIQwmLvCTQAAAAg8cAi7Qk0AAAAIPGYIuUJNAAAACBwvAAAAC5IAAAAIusJNAAAACBxRAKAABVUVJWVw=="
-call {vg_hmac_sha256_init_scratch_shani}
-.base64 "WFhYWFiLvCTQAAAAg8cAvkAAAAC4AAAAAIuUJNAAAACBwsAAAAC5CgAAAIusJNAAAACBxRAKAABVUVJQVlc="
-call {vg_sha256_update_scratch_shani}
-.base64 "WFhYWFhYi5Qk0AAAAIPCAIu0JNAAAACDxmC4SgAAALkAAAAAi3wkVAH/Af8B/wH/Af8DvCTQAAAAgccQAQAAi6wk0AAAAIHFEAoAAFVXUVBWUg=="
-call {vg_hmac_sha256_finalize_scratch_shani}
-.base64 "WFhYWFhYi0QkVIPAAYlEJFQ7RCRY"
-jne 22b
-.base64 "uAAAAACJRCRUi4QkjAAAAIPAH8HoBYlEJFg="
+.base64 "ie6BxgAIAACJ9wN8JHyLRCR4g+ABugAAAAApwrkABAAA"
 23:
-.base64 "i5wk0AAAAIHDwAAAAItMJFSLlCSMAAAAuAAAAACIA4hLAbhtAAAAiEMCuGUAAACIQwO4cwAAAIhDBLhzAAAAiEMFuGEAAACIQwa4ZwAAAIhDB7hlAAAAiEMIidDB6AWIQwmJ0AHAAcABwIhDCou8JNAAAACDxwCLtCTQAAAAg8Zgi5Qk0AAAAIHC8AAAALkgAAAAi6wk0AAAAIHFEAoAAFVRUlZX"
-call {vg_hmac_sha256_init_scratch_shani}
-.base64 "WFhYWFiLvCTQAAAAg8cAvkAAAAC4AAAAAIuUJNAAAACBwsAAAAC5CwAAAIusJNAAAACBxRAKAABVUVJQVlc="
-call {vg_sha256_update_scratch_shani}
-.base64 "WFhYWFhYi5Qk0AAAAIPCAIu0JNAAAACDxmC4SwAAALkAAAAAi3wkVAH/Af8B/wH/Af8DvCTQAAAAgccQAgAAi6wk0AAAAIHFEAoAAFVXUVBWUg=="
-call {vg_hmac_sha256_finalize_scratch_shani}
-.base64 "WFhYWFhYi0QkVIPAAYlEJFQ7RCRY"
+.base64 "D7YGD7YfMcMh0zHYiAaDxgGDxwGD6QE="
 jne 23b
-.base64 "i4wkjAAAAIPpC7gAAAAA"
+.base64 "i0QkeNHoiUQkeItEJHwBwIlEJHyLhCSAAAAAg+gBiYQkgAAAAA=="
+jne 22b
+.base64 "ie6BxgAIAACLnCSkAAAAi4wktAAAAA=="
 24:
-.base64 "AcCDwAE5yA=="
-jb 24b
-.base64 "i7Qk0AAAAIHGEAEAAInHic27AAAAALmAAAAA"
-25:
-.base64 "D7YGwcgYD7ZWAQnQIfiJ6inCGdKD8v8x2CHQMcODxgKD6QE="
-jne 25b
-.base64 "iVwkXIt0JHyDxgKLjCSMAAAAg+kCugIAAAC7AAAAAL8AAAAA"
-26:
-.base64 "D7YGg+gBGcCJ3YP1/yHFIdUJ7wnDg8IBg8YBg+kB"
-jne 26b
-.base64 "i3QkfA+2BoPoARnAD7ZWAYPyAoPqARnSIdAh2In6g+oKGdKD8v8h0IlEJGCLlCSMAAAAKfqD6gGLTCRcMcohwjHKi0QkUIPwAYPoARnAiUQkZIucJIwAAAAp0yHCi7QkhAAAAIkWuAAAAACJRgSLdCR8i7wk0AAAAIHHEAIAALoAAAAAi4wkjAAAAA=="
-27:
-.base64 "D7YGD7YvMegjRCRgMeiJ1SndGe2D9f8jbCRkIeiIBoPGAYPHAYPCAYPpAQ=="
-jne 27b
-.base64 "i0QkUI1kJGiLPCSLdCQEi2wkCFtbW1tmD+/AjaQkEPL///MPfwQk8w9/RCQQ8w9/RCQg8w9/RCQw8w9/RCRA8w9/RCRQ8w9/RCRg8w9/RCRw8w9/hCSAAAAA8w9/hCSQAAAA8w9/hCSgAAAA8w9/hCSwAAAA8w9/hCTAAAAA8w9/hCTQAAAA8w9/hCTgAAAA8w9/hCTwAAAA8w9/hCQAAQAA8w9/hCQQAQAA8w9/hCQgAQAA8w9/hCQwAQAA8w9/hCRAAQAA8w9/hCRQAQAA8w9/hCRgAQAA8w9/hCRwAQAA8w9/hCSAAQAA8w9/hCSQAQAA8w9/hCSgAQAA8w9/hCSwAQAA8w9/hCTAAQAA8w9/hCTQAQAA8w9/hCTgAQAA8w9/hCTwAQAA8w9/hCQAAgAA8w9/hCQQAgAA8w9/hCQgAgAA8w9/hCQwAgAA8w9/hCRAAgAA8w9/hCRQAgAA8w9/hCRgAgAA8w9/hCRwAgAA8w9/hCSAAgAA8w9/hCSQAgAA8w9/hCSgAgAA8w9/hCSwAgAA8w9/hCTAAgAA8w9/hCTQAgAA8w9/hCTgAgAA8w9/hCTwAgAA8w9/hCQAAwAA8w9/hCQQAwAA8w9/hCQgAwAA8w9/hCQwAwAA8w9/hCRAAwAA8w9/hCRQAwAA8w9/hCRgAwAA8w9/hCRwAwAA8w9/hCSAAwAA8w9/hCSQAwAA8w9/hCSgAwAA8w9/hCSwAwAA8w9/hCTAAwAA8w9/hCTQAwAA8w9/hCTgAwAA8w9/hCTwAwAA8w9/hCQABAAA8w9/hCQQBAAA8w9/hCQgBAAA8w9/hCQwBAAA8w9/hCRABAAA8w9/hCRQBAAA8w9/hCRgBAAA8w9/hCRwBAAA8w9/hCSABAAA8w9/hCSQBAAA8w9/hCSgBAAA8w9/hCSwBAAA8w9/hCTABAAA8w9/hCTQBAAA8w9/hCTgBAAA8w9/hCTwBAAA8w9/hCQABQAA8w9/hCQQBQAA8w9/hCQgBQAA8w9/hCQwBQAA8w9/hCRABQAA8w9/hCRQBQAA8w9/hCRgBQAA8w9/hCRwBQAA8w9/hCSABQAA8w9/hCSQBQAA8w9/hCSgBQAA8w9/hCSwBQAA8w9/hCTABQAA8w9/hCTQBQAA8w9/hCTgBQAA8w9/hCTwBQAA8w9/hCQABgAA8w9/hCQQBgAA8w9/hCQgBgAA8w9/hCQwBgAA8w9/hCRABgAA8w9/hCRQBgAA8w9/hCRgBgAA8w9/hCRwBgAA8w9/hCSABgAA8w9/hCSQBgAA8w9/hCSgBgAA8w9/hCSwBgAA8w9/hCTABgAA8w9/hCTQBgAA8w9/hCTgBgAA8w9/hCTwBgAA8w9/hCQABwAA8w9/hCQQBwAA8w9/hCQgBwAA8w9/hCQwBwAA8w9/hCRABwAA8w9/hCRQBwAA8w9/hCRgBwAA8w9/hCRwBwAA8w9/hCSABwAA8w9/hCSQBwAA8w9/hCSgBwAA8w9/hCSwBwAA8w9/hCTABwAA8w9/hCTQBwAA8w9/hCTgBwAA8w9/hCTwBwAA8w9/hCQACAAA8w9/hCQQCAAA8w9/hCQgCAAA8w9/hCQwCAAA8w9/hCRACAAA8w9/hCRQCAAA8w9/hCRgCAAA8w9/hCRwCAAA8w9/hCSACAAA8w9/hCSQCAAA8w9/hCSgCAAA8w9/hCSwCAAA8w9/hCTACAAA8w9/hCTQCAAA8w9/hCTgCAAA8w9/hCTwCAAA8w9/hCQACQAA8w9/hCQQCQAA8w9/hCQgCQAA8w9/hCQwCQAA8w9/hCRACQAA8w9/hCRQCQAA8w9/hCRgCQAA8w9/hCRwCQAA8w9/hCSACQAA8w9/hCSQCQAA8w9/hCSgCQAA8w9/hCSwCQAA8w9/hCTACQAA8w9/hCTQCQAA8w9/hCTgCQAA8w9/hCTwCQAA8w9/hCQACgAA8w9/hCQQCgAA8w9/hCQgCgAA8w9/hCQwCgAA8w9/hCRACgAA8w9/hCRQCgAA8w9/hCRgCgAA8w9/hCRwCgAA8w9/hCSACgAA8w9/hCSQCgAA8w9/hCSgCgAA8w9/hCSwCgAA8w9/hCTACgAA8w9/hCTQCgAA8w9/hCTgCgAA8w9/hCTwCgAA8w9/hCQACwAA8w9/hCQQCwAA8w9/hCQgCwAA8w9/hCQwCwAA8w9/hCRACwAA8w9/hCRQCwAA8w9/hCRgCwAA8w9/hCRwCwAA8w9/hCSACwAA8w9/hCSQCwAA8w9/hCSgCwAA8w9/hCSwCwAA8w9/hCTACwAA8w9/hCTQCwAA8w9/hCTgCwAA8w9/hCTwCwAA8w9/hCQADAAA8w9/hCQQDAAA8w9/hCQgDAAA8w9/hCQwDAAA8w9/hCRADAAA8w9/hCRQDAAA8w9/hCRgDAAA8w9/hCRwDAAA8w9/hCSADAAA8w9/hCSQDAAA8w9/hCSgDAAA8w9/hCSwDAAA8w9/hCTADAAA8w9/hCTQDAAA8w9/hCTgDAAA8w9/hCTwDAAA8w9/hCQADQAA8w9/hCQQDQAA8w9/hCQgDQAA8w9/hCQwDQAA8w9/hCRADQAA8w9/hCRQDQAA8w9/hCRgDQAA8w9/hCRwDQAA8w9/hCSADQAA8w9/hCSQDQAA8w9/hCSgDQAA8w9/hCSwDQAA8w9/hCTADQAA8w9/hCTQDQAA8w9/hCTgDQAAjaQk8A0AALoAAAAAMclmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/8M="
+.base64 "D7YGiAODwwGDxgGD6QGD+QA="
+jne 24b
+.base64 "i0QkZI2kJJAAAACLPCSLdCQEi2wkCFtbW1tmD+/AuQAAAACNpCRs8f//8w9/BCTzD39EJBDzD39EJCDzD39EJDDzD39EJEDzD39EJFDzD39EJGDzD39EJHDzD3+EJIAAAADzD3+EJJAAAADzD3+EJKAAAADzD3+EJLAAAADzD3+EJMAAAADzD3+EJNAAAADzD3+EJOAAAADzD3+EJPAAAADzD3+EJAABAADzD3+EJBABAADzD3+EJCABAADzD3+EJDABAADzD3+EJEABAADzD3+EJFABAADzD3+EJGABAADzD3+EJHABAADzD3+EJIABAADzD3+EJJABAADzD3+EJKABAADzD3+EJLABAADzD3+EJMABAADzD3+EJNABAADzD3+EJOABAADzD3+EJPABAADzD3+EJAACAADzD3+EJBACAADzD3+EJCACAADzD3+EJDACAADzD3+EJEACAADzD3+EJFACAADzD3+EJGACAADzD3+EJHACAADzD3+EJIACAADzD3+EJJACAADzD3+EJKACAADzD3+EJLACAADzD3+EJMACAADzD3+EJNACAADzD3+EJOACAADzD3+EJPACAADzD3+EJAADAADzD3+EJBADAADzD3+EJCADAADzD3+EJDADAADzD3+EJEADAADzD3+EJFADAADzD3+EJGADAADzD3+EJHADAADzD3+EJIADAADzD3+EJJADAADzD3+EJKADAADzD3+EJLADAADzD3+EJMADAADzD3+EJNADAADzD3+EJOADAADzD3+EJPADAADzD3+EJAAEAADzD3+EJBAEAADzD3+EJCAEAADzD3+EJDAEAADzD3+EJEAEAADzD3+EJFAEAADzD3+EJGAEAADzD3+EJHAEAADzD3+EJIAEAADzD3+EJJAEAADzD3+EJKAEAADzD3+EJLAEAADzD3+EJMAEAADzD3+EJNAEAADzD3+EJOAEAADzD3+EJPAEAADzD3+EJAAFAADzD3+EJBAFAADzD3+EJCAFAADzD3+EJDAFAADzD3+EJEAFAADzD3+EJFAFAADzD3+EJGAFAADzD3+EJHAFAADzD3+EJIAFAADzD3+EJJAFAADzD3+EJKAFAADzD3+EJLAFAADzD3+EJMAFAADzD3+EJNAFAADzD3+EJOAFAADzD3+EJPAFAADzD3+EJAAGAADzD3+EJBAGAADzD3+EJCAGAADzD3+EJDAGAADzD3+EJEAGAADzD3+EJFAGAADzD3+EJGAGAADzD3+EJHAGAADzD3+EJIAGAADzD3+EJJAGAADzD3+EJKAGAADzD3+EJLAGAADzD3+EJMAGAADzD3+EJNAGAADzD3+EJOAGAADzD3+EJPAGAADzD3+EJAAHAADzD3+EJBAHAADzD3+EJCAHAADzD3+EJDAHAADzD3+EJEAHAADzD3+EJFAHAADzD3+EJGAHAADzD3+EJHAHAADzD3+EJIAHAADzD3+EJJAHAADzD3+EJKAHAADzD3+EJLAHAADzD3+EJMAHAADzD3+EJNAHAADzD3+EJOAHAADzD3+EJPAHAADzD3+EJAAIAADzD3+EJBAIAADzD3+EJCAIAADzD3+EJDAIAADzD3+EJEAIAADzD3+EJFAIAADzD3+EJGAIAADzD3+EJHAIAADzD3+EJIAIAADzD3+EJJAIAADzD3+EJKAIAADzD3+EJLAIAADzD3+EJMAIAADzD3+EJNAIAADzD3+EJOAIAADzD3+EJPAIAADzD3+EJAAJAADzD3+EJBAJAADzD3+EJCAJAADzD3+EJDAJAADzD3+EJEAJAADzD3+EJFAJAADzD3+EJGAJAADzD3+EJHAJAADzD3+EJIAJAADzD3+EJJAJAADzD3+EJKAJAADzD3+EJLAJAADzD3+EJMAJAADzD3+EJNAJAADzD3+EJOAJAADzD3+EJPAJAADzD3+EJAAKAADzD3+EJBAKAADzD3+EJCAKAADzD3+EJDAKAADzD3+EJEAKAADzD3+EJFAKAADzD3+EJGAKAADzD3+EJHAKAADzD3+EJIAKAADzD3+EJJAKAADzD3+EJKAKAADzD3+EJLAKAADzD3+EJMAKAADzD3+EJNAKAADzD3+EJOAKAADzD3+EJPAKAADzD3+EJAALAADzD3+EJBALAADzD3+EJCALAADzD3+EJDALAADzD3+EJEALAADzD3+EJFALAADzD3+EJGALAADzD3+EJHALAADzD3+EJIALAADzD3+EJJALAADzD3+EJKALAADzD3+EJLALAADzD3+EJMALAADzD3+EJNALAADzD3+EJOALAADzD3+EJPALAADzD3+EJAAMAADzD3+EJBAMAADzD3+EJCAMAADzD3+EJDAMAADzD3+EJEAMAADzD3+EJFAMAADzD3+EJGAMAADzD3+EJHAMAADzD3+EJIAMAADzD3+EJJAMAADzD3+EJKAMAADzD3+EJLAMAADzD3+EJMAMAADzD3+EJNAMAADzD3+EJOAMAADzD3+EJPAMAADzD3+EJAANAADzD3+EJBANAADzD3+EJCANAADzD3+EJDANAADzD3+EJEANAADzD3+EJFANAADzD3+EJGANAADzD3+EJHANAADzD3+EJIANAADzD3+EJJANAADzD3+EJKANAADzD3+EJLANAADzD3+EJMANAADzD3+EJNANAADzD3+EJOANAADzD3+EJPANAADzD3+EJAAOAADzD3+EJBAOAADzD3+EJCAOAADzD3+EJDAOAADzD3+EJEAOAADzD3+EJFAOAADzD3+EJGAOAADzD3+EJHAOAADzD3+EJIAOAACJjCSQDgAAjaQklA4AALoAAAAAMclmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/8M="
 .p2align 6"#,
-        vg_rsa_private_checked_precomputed = sym super::rsa::vg_rsa_private_checked_precomputed::vg_rsa_private_checked_precomputed,
-        vg_sha256_init_core = sym super::sha256::vg_sha256_init_core::vg_sha256_init_core,
-        vg_sha256_update_scratch_shani = sym super::sha256::vg_sha256_update_scratch_shani::vg_sha256_update_scratch_shani,
-        vg_sha256_finalize_scratch_shani = sym super::sha256::vg_sha256_finalize_scratch_shani::vg_sha256_finalize_scratch_shani,
-        vg_hmac_sha256_init_scratch_shani = sym super::hmac_sha256::vg_hmac_sha256_init_scratch_shani::vg_hmac_sha256_init_scratch_shani,
-        vg_hmac_sha256_finalize_scratch_shani = sym super::hmac_sha256::vg_hmac_sha256_finalize_scratch_shani::vg_hmac_sha256_finalize_scratch_shani,
+        vg_rsa_pkcs1_decrypt_precomputed_body_sha256_shani = sym super::rsa::vg_rsa_pkcs1_decrypt_precomputed_body_sha256_shani::vg_rsa_pkcs1_decrypt_precomputed_body_sha256_shani,
     )
 }
 
-/// `vg_rsa_pkcs1_decrypt`, given the key's precomputed values `pre`: computes and returns what `vg_rsa_pkcs1_decrypt` does with the same arguments. `pre` (`pre_len` words) must hold what `vg_rsa_private_precompute` wrote for `n`, `p` and `q` (returning 1), as `n`, `p` and `q` must be valid.
+/// RSAES-PKCS1-V1_5-DECRYPT (RFC 8017 §7.2.2) with implicit rejection (draft-irtf-cfrg-rsa-guidance), of the ciphertext `input` with the private key `(n, e, d, p, q, dp, dq, qinv)`, RSADP checked against `e`: returns 1 and writes the message, or for an invalid padding the alternative message, at the start of `out` and zeros after it, so that the caller can shorten `out` to the message's length without moving it, and its length to `*msg_len`; or writes zeros to `out` and `*msg_len` and returns 0 if the ciphertext is not below `n` or the key is refused, or 2 if RSADP fails its check against `e`. `pre` (`pre_len` words) must hold what `vg_rsa_private_precompute` wrote for `n`, `p` and `q` (returning 1), as `n`, `p` and `q` must be valid.
 ///
-/// Contract: `VG.Spec.RsaPkcs1Enc.decryptPrecomputedContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, the contents of `n` and `e` and the first `2 * ⌈n_len / 8⌉` words of `pre` (the modulus' values), not on the ciphertext, the private key, the rest of `pre`, the validity of the padding, the length of the message or which message is returned.
+/// Contract: `VG.Spec.RsaPkcs1Enc.decryptPrecomputedFrontContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, the contents of `n` and `e` and the first `2 * ⌈n_len / 8⌉` words of `pre` (the modulus' values), not on the ciphertext, the private key, the rest of `pre`, the validity of the padding, the length of the message or which message is returned.
 ///
 /// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
@@ -241,75 +200,34 @@ jne 27b
 /// * `pre_len` must be `2 * ⌈n_len / 8⌉ + max(2, ⌈p_len / 8⌉) + max(2, ⌈q_len / 8⌉)`.
 /// * `pre` must hold what `vg_rsa_private_precompute` wrote for `n`, `p` and `q` (returning 1), and not have changed since.
 /// * `out`, `msg_len` and `scratch` must not overlap each other, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv` or `pre` (distinct Rust objects never do).
-/// * None of `out`, `msg_len`, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv`, `scratch` and `pre` may overlap the arguments on the stack, overlap the return address on the stack or the 3568 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `out`, `msg_len`, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv`, `scratch` and `pre` may overlap the arguments on the stack, overlap the return address on the stack or the 3732 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_rsa_pkcs1_decrypt_precomputed(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, d: *const u8, d_len: usize, input: *const u8, input_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_rsa_pkcs1_decrypt_precomputed_front(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, d: *const u8, d_len: usize, input: *const u8, input_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
     core::arch::naked_asm!(
-        r#".base64 "U1VWV41kJJiLRCR8iQQki4QkjAAAAIlEJASLhCSIAAAAiUQkCIuEJIwAAACJRCQMi4QkkAAAAIlEJBCLhCSUAAAAiUQkFIuEJKAAAACJRCQYi4QkjAAAAIlEJByLhCSoAAAAiUQkIIuEJKwAAACJRCQki4QksAAAAIlEJCiLhCS0AAAAiUQkLIuEJLgAAACJRCQwi4QkvAAAAIlEJDSLhCTAAAAAiUQkOIuEJMQAAACJRCQ8i4QkyAAAAIlEJECLhCTMAAAAiUQkRIuEJNAAAACJRCRIi4Qk1AAAAIlEJEyLhCTYAAAAiUQkUIuEJNwAAACJRCRU"
-call {vg_rsa_private_checked_precomputed}
-.base64 "iUQkUIu0JNAAAACBxhAGAACLjCSMAAAAuAAAAAA="
+        r#".base64 "U1VWV42kJHD///+LhCSkAAAAiQQki4QkqAAAAIlEJASLhCSsAAAAiUQkCIuEJLAAAACJRCQMi4QktAAAAIlEJBCLhCS4AAAAiUQkFIuEJLwAAACJRCQYi4QkwAAAAIlEJByLhCTEAAAAiUQkIIuEJMgAAACJRCQki4QkzAAAAIlEJCiLhCTQAAAAiUQkLIuEJNQAAACJRCQwi4Qk2AAAAIlEJDSLhCTcAAAAiUQkOIuEJOAAAACJRCQ8i4Qk5AAAAIlEJECLhCToAAAAiUQkRIuEJOwAAACJRCRIi4Qk8AAAAIlEJEyLhCT0AAAAiUQkUIuEJPgAAACJRCRUi4Qk/AAAAIlEJFiLhCQAAQAAiUQkXIuEJAQBAACJRCRg"
+call {vg_rsa_pkcs1_decrypt_precomputed_body}
+.base64 "iUQkZIusJPgAAACJ7oHGAAgAALkACAAAuAAAAAA="
 20:
 .base64 "iAaDxgGD6QE="
 jne 20b
-.base64 "i5wk0AAAAIHDEAYAAAOcJIwAAAArnCScAAAAi7QkmAAAAIuMJJwAAAA="
+.base64 "i7QkpAAAAInrgcMACAAAi4wktAAAAA=="
 21:
 .base64 "D7YGiAODwwGDxgGD6QGD+QA="
 jne 21b
-.base64 "i7wk0AAAAIPHAFc="
-call {vg_sha256_init_core}
-.base64 "WIu8JNAAAACDxwC+AAAAALgAAAAAi5Qk0AAAAIHCEAYAAIuMJIwAAACLrCTQAAAAgcUQCgAAVVFSUFZX"
-call {vg_sha256_update_scratch}
-.base64 "WFhYWFhYi7wk0AAAAIPHAIuEJIwAAAC5AAAAAIuUJNAAAACBwtAAAACLrCTQAAAAgcUQCgAAVVJRUFc="
-call {vg_sha256_finalize_scratch}
-.base64 "WFhYWFiLvCTQAAAAg8cAi7Qk0AAAAIPGYIuUJNAAAACBwtAAAAC5IAAAAIusJNAAAACBxRAKAABVUVJWVw=="
-call {vg_hmac_sha256_init_scratch}
-.base64 "WFhYWFiLvCTQAAAAg8cAvkAAAAC4AAAAAIuUJKAAAACLjCSMAAAAi6wk0AAAAIHFEAoAAFVRUlBWVw=="
-call {vg_sha256_update_scratch}
-.base64 "WFhYWFhYi5Qk0AAAAIPCAIu0JNAAAACDxmCLhCSMAAAAg8BAuQAAAACLvCTQAAAAgcfwAAAAi6wk0AAAAIHFEAoAAFVXUVBWUg=="
-call {vg_hmac_sha256_finalize_scratch}
-.base64 "WFhYWFhYuAAAAACJRCRUuAgAAACJRCRY"
+.base64 "i4QktAAAAIuUJKwAAACLEinQiUQkeLgBAAAAiUQkfLgLAAAAiYQkgAAAAA=="
 22:
-.base64 "i5wk0AAAAIHDwAAAAItMJFSLlCSMAAAAuAAAAACIA4hLAbhsAAAAiEMCuGUAAACIQwO4bgAAAIhDBLhnAAAAiEMFuHQAAACIQwa4aAAAAIhDB7gIAAAAiEMIuAAAAACIQwmLvCTQAAAAg8cAi7Qk0AAAAIPGYIuUJNAAAACBwvAAAAC5IAAAAIusJNAAAACBxRAKAABVUVJWVw=="
-call {vg_hmac_sha256_init_scratch}
-.base64 "WFhYWFiLvCTQAAAAg8cAvkAAAAC4AAAAAIuUJNAAAACBwsAAAAC5CgAAAIusJNAAAACBxRAKAABVUVJQVlc="
-call {vg_sha256_update_scratch}
-.base64 "WFhYWFhYi5Qk0AAAAIPCAIu0JNAAAACDxmC4SgAAALkAAAAAi3wkVAH/Af8B/wH/Af8DvCTQAAAAgccQAQAAi6wk0AAAAIHFEAoAAFVXUVBWUg=="
-call {vg_hmac_sha256_finalize_scratch}
-.base64 "WFhYWFhYi0QkVIPAAYlEJFQ7RCRY"
-jne 22b
-.base64 "uAAAAACJRCRUi4QkjAAAAIPAH8HoBYlEJFg="
+.base64 "ie6BxgAIAACJ9wN8JHyLRCR4g+ABugAAAAApwrkABAAA"
 23:
-.base64 "i5wk0AAAAIHDwAAAAItMJFSLlCSMAAAAuAAAAACIA4hLAbhtAAAAiEMCuGUAAACIQwO4cwAAAIhDBLhzAAAAiEMFuGEAAACIQwa4ZwAAAIhDB7hlAAAAiEMIidDB6AWIQwmJ0AHAAcABwIhDCou8JNAAAACDxwCLtCTQAAAAg8Zgi5Qk0AAAAIHC8AAAALkgAAAAi6wk0AAAAIHFEAoAAFVRUlZX"
-call {vg_hmac_sha256_init_scratch}
-.base64 "WFhYWFiLvCTQAAAAg8cAvkAAAAC4AAAAAIuUJNAAAACBwsAAAAC5CwAAAIusJNAAAACBxRAKAABVUVJQVlc="
-call {vg_sha256_update_scratch}
-.base64 "WFhYWFhYi5Qk0AAAAIPCAIu0JNAAAACDxmC4SwAAALkAAAAAi3wkVAH/Af8B/wH/Af8DvCTQAAAAgccQAgAAi6wk0AAAAIHFEAoAAFVXUVBWUg=="
-call {vg_hmac_sha256_finalize_scratch}
-.base64 "WFhYWFhYi0QkVIPAAYlEJFQ7RCRY"
+.base64 "D7YGD7YfMcMh0zHYiAaDxgGDxwGD6QE="
 jne 23b
-.base64 "i4wkjAAAAIPpC7gAAAAA"
+.base64 "i0QkeNHoiUQkeItEJHwBwIlEJHyLhCSAAAAAg+gBiYQkgAAAAA=="
+jne 22b
+.base64 "ie6BxgAIAACLnCSkAAAAi4wktAAAAA=="
 24:
-.base64 "AcCDwAE5yA=="
-jb 24b
-.base64 "i7Qk0AAAAIHGEAEAAInHic27AAAAALmAAAAA"
-25:
-.base64 "D7YGwcgYD7ZWAQnQIfiJ6inCGdKD8v8x2CHQMcODxgKD6QE="
-jne 25b
-.base64 "iVwkXIt0JHyDxgKLjCSMAAAAg+kCugIAAAC7AAAAAL8AAAAA"
-26:
-.base64 "D7YGg+gBGcCJ3YP1/yHFIdUJ7wnDg8IBg8YBg+kB"
-jne 26b
-.base64 "i3QkfA+2BoPoARnAD7ZWAYPyAoPqARnSIdAh2In6g+oKGdKD8v8h0IlEJGCLlCSMAAAAKfqD6gGLTCRcMcohwjHKi0QkUIPwAYPoARnAiUQkZIucJIwAAAAp0yHCi7QkhAAAAIkWuAAAAACJRgSLdCR8i7wk0AAAAIHHEAIAALoAAAAAi4wkjAAAAA=="
-27:
-.base64 "D7YGD7YvMegjRCRgMeiJ1SndGe2D9f8jbCRkIeiIBoPGAYPHAYPCAYPpAQ=="
-jne 27b
-.base64 "i0QkUI1kJGiLPCSLdCQEi2wkCFtbW1tmD+/AjaQkEPL///MPfwQk8w9/RCQQ8w9/RCQg8w9/RCQw8w9/RCRA8w9/RCRQ8w9/RCRg8w9/RCRw8w9/hCSAAAAA8w9/hCSQAAAA8w9/hCSgAAAA8w9/hCSwAAAA8w9/hCTAAAAA8w9/hCTQAAAA8w9/hCTgAAAA8w9/hCTwAAAA8w9/hCQAAQAA8w9/hCQQAQAA8w9/hCQgAQAA8w9/hCQwAQAA8w9/hCRAAQAA8w9/hCRQAQAA8w9/hCRgAQAA8w9/hCRwAQAA8w9/hCSAAQAA8w9/hCSQAQAA8w9/hCSgAQAA8w9/hCSwAQAA8w9/hCTAAQAA8w9/hCTQAQAA8w9/hCTgAQAA8w9/hCTwAQAA8w9/hCQAAgAA8w9/hCQQAgAA8w9/hCQgAgAA8w9/hCQwAgAA8w9/hCRAAgAA8w9/hCRQAgAA8w9/hCRgAgAA8w9/hCRwAgAA8w9/hCSAAgAA8w9/hCSQAgAA8w9/hCSgAgAA8w9/hCSwAgAA8w9/hCTAAgAA8w9/hCTQAgAA8w9/hCTgAgAA8w9/hCTwAgAA8w9/hCQAAwAA8w9/hCQQAwAA8w9/hCQgAwAA8w9/hCQwAwAA8w9/hCRAAwAA8w9/hCRQAwAA8w9/hCRgAwAA8w9/hCRwAwAA8w9/hCSAAwAA8w9/hCSQAwAA8w9/hCSgAwAA8w9/hCSwAwAA8w9/hCTAAwAA8w9/hCTQAwAA8w9/hCTgAwAA8w9/hCTwAwAA8w9/hCQABAAA8w9/hCQQBAAA8w9/hCQgBAAA8w9/hCQwBAAA8w9/hCRABAAA8w9/hCRQBAAA8w9/hCRgBAAA8w9/hCRwBAAA8w9/hCSABAAA8w9/hCSQBAAA8w9/hCSgBAAA8w9/hCSwBAAA8w9/hCTABAAA8w9/hCTQBAAA8w9/hCTgBAAA8w9/hCTwBAAA8w9/hCQABQAA8w9/hCQQBQAA8w9/hCQgBQAA8w9/hCQwBQAA8w9/hCRABQAA8w9/hCRQBQAA8w9/hCRgBQAA8w9/hCRwBQAA8w9/hCSABQAA8w9/hCSQBQAA8w9/hCSgBQAA8w9/hCSwBQAA8w9/hCTABQAA8w9/hCTQBQAA8w9/hCTgBQAA8w9/hCTwBQAA8w9/hCQABgAA8w9/hCQQBgAA8w9/hCQgBgAA8w9/hCQwBgAA8w9/hCRABgAA8w9/hCRQBgAA8w9/hCRgBgAA8w9/hCRwBgAA8w9/hCSABgAA8w9/hCSQBgAA8w9/hCSgBgAA8w9/hCSwBgAA8w9/hCTABgAA8w9/hCTQBgAA8w9/hCTgBgAA8w9/hCTwBgAA8w9/hCQABwAA8w9/hCQQBwAA8w9/hCQgBwAA8w9/hCQwBwAA8w9/hCRABwAA8w9/hCRQBwAA8w9/hCRgBwAA8w9/hCRwBwAA8w9/hCSABwAA8w9/hCSQBwAA8w9/hCSgBwAA8w9/hCSwBwAA8w9/hCTABwAA8w9/hCTQBwAA8w9/hCTgBwAA8w9/hCTwBwAA8w9/hCQACAAA8w9/hCQQCAAA8w9/hCQgCAAA8w9/hCQwCAAA8w9/hCRACAAA8w9/hCRQCAAA8w9/hCRgCAAA8w9/hCRwCAAA8w9/hCSACAAA8w9/hCSQCAAA8w9/hCSgCAAA8w9/hCSwCAAA8w9/hCTACAAA8w9/hCTQCAAA8w9/hCTgCAAA8w9/hCTwCAAA8w9/hCQACQAA8w9/hCQQCQAA8w9/hCQgCQAA8w9/hCQwCQAA8w9/hCRACQAA8w9/hCRQCQAA8w9/hCRgCQAA8w9/hCRwCQAA8w9/hCSACQAA8w9/hCSQCQAA8w9/hCSgCQAA8w9/hCSwCQAA8w9/hCTACQAA8w9/hCTQCQAA8w9/hCTgCQAA8w9/hCTwCQAA8w9/hCQACgAA8w9/hCQQCgAA8w9/hCQgCgAA8w9/hCQwCgAA8w9/hCRACgAA8w9/hCRQCgAA8w9/hCRgCgAA8w9/hCRwCgAA8w9/hCSACgAA8w9/hCSQCgAA8w9/hCSgCgAA8w9/hCSwCgAA8w9/hCTACgAA8w9/hCTQCgAA8w9/hCTgCgAA8w9/hCTwCgAA8w9/hCQACwAA8w9/hCQQCwAA8w9/hCQgCwAA8w9/hCQwCwAA8w9/hCRACwAA8w9/hCRQCwAA8w9/hCRgCwAA8w9/hCRwCwAA8w9/hCSACwAA8w9/hCSQCwAA8w9/hCSgCwAA8w9/hCSwCwAA8w9/hCTACwAA8w9/hCTQCwAA8w9/hCTgCwAA8w9/hCTwCwAA8w9/hCQADAAA8w9/hCQQDAAA8w9/hCQgDAAA8w9/hCQwDAAA8w9/hCRADAAA8w9/hCRQDAAA8w9/hCRgDAAA8w9/hCRwDAAA8w9/hCSADAAA8w9/hCSQDAAA8w9/hCSgDAAA8w9/hCSwDAAA8w9/hCTADAAA8w9/hCTQDAAA8w9/hCTgDAAA8w9/hCTwDAAA8w9/hCQADQAA8w9/hCQQDQAA8w9/hCQgDQAA8w9/hCQwDQAA8w9/hCRADQAA8w9/hCRQDQAA8w9/hCRgDQAA8w9/hCRwDQAA8w9/hCSADQAA8w9/hCSQDQAA8w9/hCSgDQAA8w9/hCSwDQAA8w9/hCTADQAA8w9/hCTQDQAA8w9/hCTgDQAAjaQk8A0AALoAAAAAMclmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/8M="
+.base64 "D7YGiAODwwGDxgGD6QGD+QA="
+jne 24b
+.base64 "i0QkZI2kJJAAAACLPCSLdCQEi2wkCFtbW1tmD+/AuQAAAACNpCRs8f//8w9/BCTzD39EJBDzD39EJCDzD39EJDDzD39EJEDzD39EJFDzD39EJGDzD39EJHDzD3+EJIAAAADzD3+EJJAAAADzD3+EJKAAAADzD3+EJLAAAADzD3+EJMAAAADzD3+EJNAAAADzD3+EJOAAAADzD3+EJPAAAADzD3+EJAABAADzD3+EJBABAADzD3+EJCABAADzD3+EJDABAADzD3+EJEABAADzD3+EJFABAADzD3+EJGABAADzD3+EJHABAADzD3+EJIABAADzD3+EJJABAADzD3+EJKABAADzD3+EJLABAADzD3+EJMABAADzD3+EJNABAADzD3+EJOABAADzD3+EJPABAADzD3+EJAACAADzD3+EJBACAADzD3+EJCACAADzD3+EJDACAADzD3+EJEACAADzD3+EJFACAADzD3+EJGACAADzD3+EJHACAADzD3+EJIACAADzD3+EJJACAADzD3+EJKACAADzD3+EJLACAADzD3+EJMACAADzD3+EJNACAADzD3+EJOACAADzD3+EJPACAADzD3+EJAADAADzD3+EJBADAADzD3+EJCADAADzD3+EJDADAADzD3+EJEADAADzD3+EJFADAADzD3+EJGADAADzD3+EJHADAADzD3+EJIADAADzD3+EJJADAADzD3+EJKADAADzD3+EJLADAADzD3+EJMADAADzD3+EJNADAADzD3+EJOADAADzD3+EJPADAADzD3+EJAAEAADzD3+EJBAEAADzD3+EJCAEAADzD3+EJDAEAADzD3+EJEAEAADzD3+EJFAEAADzD3+EJGAEAADzD3+EJHAEAADzD3+EJIAEAADzD3+EJJAEAADzD3+EJKAEAADzD3+EJLAEAADzD3+EJMAEAADzD3+EJNAEAADzD3+EJOAEAADzD3+EJPAEAADzD3+EJAAFAADzD3+EJBAFAADzD3+EJCAFAADzD3+EJDAFAADzD3+EJEAFAADzD3+EJFAFAADzD3+EJGAFAADzD3+EJHAFAADzD3+EJIAFAADzD3+EJJAFAADzD3+EJKAFAADzD3+EJLAFAADzD3+EJMAFAADzD3+EJNAFAADzD3+EJOAFAADzD3+EJPAFAADzD3+EJAAGAADzD3+EJBAGAADzD3+EJCAGAADzD3+EJDAGAADzD3+EJEAGAADzD3+EJFAGAADzD3+EJGAGAADzD3+EJHAGAADzD3+EJIAGAADzD3+EJJAGAADzD3+EJKAGAADzD3+EJLAGAADzD3+EJMAGAADzD3+EJNAGAADzD3+EJOAGAADzD3+EJPAGAADzD3+EJAAHAADzD3+EJBAHAADzD3+EJCAHAADzD3+EJDAHAADzD3+EJEAHAADzD3+EJFAHAADzD3+EJGAHAADzD3+EJHAHAADzD3+EJIAHAADzD3+EJJAHAADzD3+EJKAHAADzD3+EJLAHAADzD3+EJMAHAADzD3+EJNAHAADzD3+EJOAHAADzD3+EJPAHAADzD3+EJAAIAADzD3+EJBAIAADzD3+EJCAIAADzD3+EJDAIAADzD3+EJEAIAADzD3+EJFAIAADzD3+EJGAIAADzD3+EJHAIAADzD3+EJIAIAADzD3+EJJAIAADzD3+EJKAIAADzD3+EJLAIAADzD3+EJMAIAADzD3+EJNAIAADzD3+EJOAIAADzD3+EJPAIAADzD3+EJAAJAADzD3+EJBAJAADzD3+EJCAJAADzD3+EJDAJAADzD3+EJEAJAADzD3+EJFAJAADzD3+EJGAJAADzD3+EJHAJAADzD3+EJIAJAADzD3+EJJAJAADzD3+EJKAJAADzD3+EJLAJAADzD3+EJMAJAADzD3+EJNAJAADzD3+EJOAJAADzD3+EJPAJAADzD3+EJAAKAADzD3+EJBAKAADzD3+EJCAKAADzD3+EJDAKAADzD3+EJEAKAADzD3+EJFAKAADzD3+EJGAKAADzD3+EJHAKAADzD3+EJIAKAADzD3+EJJAKAADzD3+EJKAKAADzD3+EJLAKAADzD3+EJMAKAADzD3+EJNAKAADzD3+EJOAKAADzD3+EJPAKAADzD3+EJAALAADzD3+EJBALAADzD3+EJCALAADzD3+EJDALAADzD3+EJEALAADzD3+EJFALAADzD3+EJGALAADzD3+EJHALAADzD3+EJIALAADzD3+EJJALAADzD3+EJKALAADzD3+EJLALAADzD3+EJMALAADzD3+EJNALAADzD3+EJOALAADzD3+EJPALAADzD3+EJAAMAADzD3+EJBAMAADzD3+EJCAMAADzD3+EJDAMAADzD3+EJEAMAADzD3+EJFAMAADzD3+EJGAMAADzD3+EJHAMAADzD3+EJIAMAADzD3+EJJAMAADzD3+EJKAMAADzD3+EJLAMAADzD3+EJMAMAADzD3+EJNAMAADzD3+EJOAMAADzD3+EJPAMAADzD3+EJAANAADzD3+EJBANAADzD3+EJCANAADzD3+EJDANAADzD3+EJEANAADzD3+EJFANAADzD3+EJGANAADzD3+EJHANAADzD3+EJIANAADzD3+EJJANAADzD3+EJKANAADzD3+EJLANAADzD3+EJMANAADzD3+EJNANAADzD3+EJOANAADzD3+EJPANAADzD3+EJAAOAADzD3+EJBAOAADzD3+EJCAOAADzD3+EJDAOAADzD3+EJEAOAADzD3+EJFAOAADzD3+EJGAOAADzD3+EJHAOAADzD3+EJIAOAACJjCSQDgAAjaQklA4AALoAAAAAMclmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/8M="
 .p2align 6"#,
-        vg_rsa_private_checked_precomputed = sym super::rsa::vg_rsa_private_checked_precomputed::vg_rsa_private_checked_precomputed,
-        vg_sha256_init_core = sym super::sha256::vg_sha256_init_core::vg_sha256_init_core,
-        vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch::vg_sha256_update_scratch,
-        vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch::vg_sha256_finalize_scratch,
-        vg_hmac_sha256_init_scratch = sym super::hmac_sha256::vg_hmac_sha256_init_scratch::vg_hmac_sha256_init_scratch,
-        vg_hmac_sha256_finalize_scratch = sym super::hmac_sha256::vg_hmac_sha256_finalize_scratch::vg_hmac_sha256_finalize_scratch,
+        vg_rsa_pkcs1_decrypt_precomputed_body = sym super::rsa::vg_rsa_pkcs1_decrypt_precomputed_body::vg_rsa_pkcs1_decrypt_precomputed_body,
     )
 }

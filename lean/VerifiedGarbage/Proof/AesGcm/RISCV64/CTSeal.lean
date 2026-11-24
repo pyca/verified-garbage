@@ -167,7 +167,7 @@ theorem cryptWholeB_ct {bs o : Bool} {b : Addr} {R : Nat} {S D : Addr} {n q j : 
     V .s3 = BitVec.ofNat 64 R ∧ Env V sp s ∧ DataW (V .s2) (V .s1) (V .s0) s D n ∧
     DataOk (V .s1) (V .s0) s S n ∧ Alias o S D n ∧ j ≤ n ∧
     (R = 10 ∨ R = 12 ∨ R = 14) ∧ s.gpr .a3 = D + BitVec.ofNat 64 j ∧
-    (o = true → s.gpr .a6 = S + BitVec.ofNat 64 j) ∧ s.gpr .a4 = BitVec.ofNat 64 nb ∧
+    s.gpr .a6 = S + BitVec.ofNat 64 j ∧ s.gpr .a4 = BitVec.ofNat 64 nb ∧
     BkB bs b V sp R s.mem S D n s
   refine CT.seq (J := J₁) ?_ (fun s ⟨V, icb, P, m₀, h29, h30, h31, hP, hs, hb⟩ => ?_) ?_
   · refine CT.taintWith (fun o => .block (splitCtrWith o)) o [.s4, .s5]
@@ -193,7 +193,7 @@ theorem cryptWholeB_ct {bs o : Bool} {b : Addr} {R : Nat} {S D : Addr} {n q j : 
       j ≤ n ∧ (R = 10 ∨ R = 12 ∨ R = 14) ∧
       s.gpr .a0 = V (keyReg bs) ∧ s.gpr .a1 = BitVec.ofNat 64 R ∧ s.gpr .a2 = V .s1 + BitVec.ofNat 64 48 ∧
       s.gpr .a3 = D + BitVec.ofNat 64 j ∧ s.gpr .a4 = BitVec.ofNat 64 nb ∧
-      s.gpr .a5 = V .s0 + BitVec.ofNat 64 512 ∧ (o = true → s.gpr .a6 = S + BitVec.ofNat 64 j) ∧
+      s.gpr .a5 = V .s0 + BitVec.ofNat 64 512 ∧ s.gpr .a6 = S + BitVec.ofNat 64 j ∧
       BkB bs b V sp R s.mem S D n s
     refine CT.seq (J := J₂) ?_
       (fun s ⟨V, h29, h30, h31, h28, he, hd, hsr, ha, hj, hR, h6, h6', h7, hb⟩ => ?_) ?_
@@ -208,63 +208,37 @@ theorem cryptWholeB_ct {bs o : Bool} {b : Addr} {R : Nat} {S D : Addr} {n q j : 
         hsr.of_eq hk₂.rd hk₂.wr hk₂.sp, ha, hj, hR,
         a3, a4, a5, by rw [hg₂ _ (by decide) (by decide) (by decide) (by decide), h6],
         by rw [hg₂ _ (by decide) (by decide) (by decide) (by decide), h7], a8,
-        fun ho => by rw [hg₂ _ (by decide) (by decide) (by decide) (by decide), h6' ho],
+        by rw [hg₂ _ (by decide) (by decide) (by decide) (by decide), h6'],
         fun hbs => ⟨(hb hbs).1, ((hb hbs).2.of_eq hk₂.rd hk₂.wr).memEq hk₂.mem⟩⟩
     · cases bs
-      · cases o
-        · refine CT.ctr fun s₁ s₂ ⟨V₁, a29, a30, a31, he₁, hd₁, _, _, hj₁, hR, a3, a4, a5, a6, a7, a8, _, _⟩
-            ⟨V₂, b29, b30, b31, he₂, hd₂, _, _, _, _, b3, b4, b5, b6, b7, b8, _, _⟩ => ?_
-          have hn₁ := hd₁.ok.lt
-          have g₁ := ctrWhole_mk (L.v a29 a30 a31) he₁ a3 a4 a5 a6 a7 a8 hR (by omega_arith)
-            (hd₁.sub (j := j) (k := 16 * nb) (by omega_arith) (by omega_arith))
-          have g₂ := ctrWhole_mk (L.v b29 b30 b31) he₂ b3 b4 b5 b6 b7 b8 hR (by omega_arith)
-            (hd₂.sub (j := j) (k := 16 * nb) (by omega_arith) (by omega_arith))
-          rw [a29, a30, a31] at g₁
-          rw [b29, b30, b31] at g₂
-          exact ⟨_, _, _, _, _, _, g₁, g₂, he₁.sp.trans he₂.sp.symm⟩
-        · refine ctrTo_rel fun s₁ s₂ ⟨⟨V₁, a29, a30, a31, he₁, hd₁, hs₁, ha₁, hj₁, hR, a3, a4, a5, a6, a7, a8, a9, _⟩,
-            ⟨V₂, b29, b30, b31, he₂, hd₂, hs₂, ha₂, _, _, b3, b4, b5, b6, b7, b8, b9, _⟩⟩ => ?_
-          have hn₁ := hd₁.ok.lt
-          have g₁ := ctrWholeTo_mk (L.v a29 a30 a31) he₁ a3 a4 a5 a6 a7 a8 (a9 rfl) hR (by omega_arith)
-            (hd₁.sub (j := j) (k := 16 * nb) (by omega_arith) (by omega_arith))
-            (hs₁.sub (j := j) (k := 16 * nb) (by omega_arith) (by omega_arith)) (ha₁.drop (by omega_arith))
-          have g₂ := ctrWholeTo_mk (L.v b29 b30 b31) he₂ b3 b4 b5 b6 b7 b8 (b9 rfl) hR (by omega_arith)
-            (hd₂.sub (j := j) (k := 16 * nb) (by omega_arith) (by omega_arith))
-            (hs₂.sub (j := j) (k := 16 * nb) (by omega_arith) (by omega_arith)) (ha₂.drop (by omega_arith))
-          rw [a29, a30, a31] at g₁
-          rw [b29, b30, b31] at g₂
-          exact ⟨_, _, _, _, _, _, _, g₁, g₂, he₁.sp.trans he₂.sp.symm⟩
-      · cases o
-        · refine ctrBs_rel fun s₁ s₂ ⟨⟨V₁, a29, a30, a31, he₁, hd₁, _, _, hj₁, hR, a3, a4, a5, a6, a7, a8, _, k₁⟩,
-            ⟨V₂, b29, b30, b31, he₂, hd₂, _, _, _, _, b3, b4, b5, b6, b7, b8, _, k₂⟩⟩ => ?_
-          have hn₁ := hd₁.ok.lt
-          obtain ⟨c₁, k₁⟩ := k₁ rfl
-          obtain ⟨c₂, k₂⟩ := k₂ rfl
-          have g₁ := ctrWholeBs_mk (L.v a29 a30 a31) he₁ a3 a4 a5 a6 a7 a8 hR (by omega_arith)
-            (hd₁.sub (j := j) (k := 16 * nb) (by omega_arith) (by omega_arith))
-            (k₁.sub (j := j) (k := 16 * nb) (by omega_arith))
-          have g₂ := ctrWholeBs_mk (L.v b29 b30 b31) he₂ b3 b4 b5 b6 b7 b8 hR (by omega_arith)
-            (hd₂.sub (j := j) (k := 16 * nb) (by omega_arith) (by omega_arith))
-            (k₂.sub (j := j) (k := 16 * nb) (by omega_arith))
-          rw [a29, a30, a31, c₁] at g₁
-          rw [b29, b30, b31, c₂] at g₂
-          exact ⟨_, _, _, _, _, _, _, g₁, g₂, he₁.sp.trans he₂.sp.symm⟩
-        · refine ctrBsTo_rel fun s₁ s₂ ⟨⟨V₁, a29, a30, a31, he₁, hd₁, hs₁, ha₁, hj₁, hR, a3, a4, a5, a6, a7, a8, a9,
-            k₁⟩, ⟨V₂, b29, b30, b31, he₂, hd₂, hs₂, ha₂, _, _, b3, b4, b5, b6, b7, b8, b9, k₂⟩⟩ => ?_
-          have hn₁ := hd₁.ok.lt
-          obtain ⟨c₁, k₁⟩ := k₁ rfl
-          obtain ⟨c₂, k₂⟩ := k₂ rfl
-          have g₁ := ctrWholeToBs_mk (L.v a29 a30 a31) he₁ a3 a4 a5 a6 a7 a8 (a9 rfl) hR (by omega_arith)
-            (hd₁.sub (j := j) (k := 16 * nb) (by omega_arith) (by omega_arith))
-            (hs₁.sub (j := j) (k := 16 * nb) (by omega_arith) (by omega_arith)) (ha₁.drop (by omega_arith))
-            (k₁.sub (j := j) (k := 16 * nb) (by omega_arith))
-          have g₂ := ctrWholeToBs_mk (L.v b29 b30 b31) he₂ b3 b4 b5 b6 b7 b8 (b9 rfl) hR (by omega_arith)
-            (hd₂.sub (j := j) (k := 16 * nb) (by omega_arith) (by omega_arith))
-            (hs₂.sub (j := j) (k := 16 * nb) (by omega_arith) (by omega_arith)) (ha₂.drop (by omega_arith))
-            (k₂.sub (j := j) (k := 16 * nb) (by omega_arith))
-          rw [a29, a30, a31, c₁] at g₁
-          rw [b29, b30, b31, c₂] at g₂
-          exact ⟨_, _, _, _, _, _, _, _, g₁, g₂, he₁.sp.trans he₂.sp.symm⟩
+      · refine ctrTo_rel fun s₁ s₂ ⟨⟨V₁, a29, a30, a31, he₁, hd₁, hs₁, ha₁, hj₁, hR, a3, a4, a5, a6, a7, a8, a9, _⟩,
+          ⟨V₂, b29, b30, b31, he₂, hd₂, hs₂, ha₂, _, _, b3, b4, b5, b6, b7, b8, b9, _⟩⟩ => ?_
+        have hn₁ := hd₁.ok.lt
+        have g₁ := ctrWholeTo_mk (L.v a29 a30 a31) he₁ a3 a4 a5 a6 a7 a8 a9 hR (by omega_arith)
+          (hd₁.sub (j := j) (k := 16 * nb) (by omega_arith) (by omega_arith))
+          (hs₁.sub (j := j) (k := 16 * nb) (by omega_arith) (by omega_arith)) ((ha₁.drop (by omega_arith)).buffers)
+        have g₂ := ctrWholeTo_mk (L.v b29 b30 b31) he₂ b3 b4 b5 b6 b7 b8 b9 hR (by omega_arith)
+          (hd₂.sub (j := j) (k := 16 * nb) (by omega_arith) (by omega_arith))
+          (hs₂.sub (j := j) (k := 16 * nb) (by omega_arith) (by omega_arith)) ((ha₂.drop (by omega_arith)).buffers)
+        rw [a29, a30, a31] at g₁
+        rw [b29, b30, b31] at g₂
+        exact ⟨_, _, _, _, _, _, _, g₁, g₂, he₁.sp.trans he₂.sp.symm⟩
+      · refine ctrBsTo_rel fun s₁ s₂ ⟨⟨V₁, a29, a30, a31, he₁, hd₁, hs₁, ha₁, hj₁, hR, a3, a4, a5, a6, a7, a8, a9,
+          k₁⟩, ⟨V₂, b29, b30, b31, he₂, hd₂, hs₂, ha₂, _, _, b3, b4, b5, b6, b7, b8, b9, k₂⟩⟩ => ?_
+        have hn₁ := hd₁.ok.lt
+        obtain ⟨c₁, k₁⟩ := k₁ rfl
+        obtain ⟨c₂, k₂⟩ := k₂ rfl
+        have g₁ := ctrWholeToBs_mk (L.v a29 a30 a31) he₁ a3 a4 a5 a6 a7 a8 a9 hR (by omega_arith)
+          (hd₁.sub (j := j) (k := 16 * nb) (by omega_arith) (by omega_arith))
+          (hs₁.sub (j := j) (k := 16 * nb) (by omega_arith) (by omega_arith)) ((ha₁.drop (by omega_arith)).buffers)
+          (k₁.sub (j := j) (k := 16 * nb) (by omega_arith))
+        have g₂ := ctrWholeToBs_mk (L.v b29 b30 b31) he₂ b3 b4 b5 b6 b7 b8 b9 hR (by omega_arith)
+          (hd₂.sub (j := j) (k := 16 * nb) (by omega_arith) (by omega_arith))
+          (hs₂.sub (j := j) (k := 16 * nb) (by omega_arith) (by omega_arith)) ((ha₂.drop (by omega_arith)).buffers)
+          (k₂.sub (j := j) (k := 16 * nb) (by omega_arith))
+        rw [a29, a30, a31, c₁] at g₁
+        rw [b29, b30, b31, c₂] at g₂
+        exact ⟨_, _, _, _, _, _, _, _, g₁, g₂, he₁.sp.trans he₂.sp.symm⟩
 
 theorem cryptTailB_ct {bs o : Bool} {b : Addr} {R : Nat} {S D : Addr} {n q j : Nat} :
     CT (CrMB bs o b c st w sp R S D n q j) (cryptTailB bs o) := by

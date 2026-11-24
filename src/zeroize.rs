@@ -27,8 +27,7 @@
 // The Rust code does not move secret bytes within a buffer or grow one that
 // holds them, which would leave a copy the caller cannot reach to wipe; every
 // call that moves, shortens or grows a buffer says why it does not
-// (`// NO-SECRET-RESIDUE:`, `ci/check_secret_residue.py`). One still does
-// (#6301), in RSAES-PKCS1-v1_5 decryption, until it truncates instead.
+// (`// NO-SECRET-RESIDUE:`, `ci/check_secret_residue.py`).
 
 mod sealed {
     pub trait Sealed {}

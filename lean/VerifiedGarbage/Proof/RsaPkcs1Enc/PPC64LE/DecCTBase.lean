@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.Contract
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.PPC64LE.DecPost
 meta import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Contract
@@ -23,6 +24,7 @@ public import VerifiedGarbage.Proof.Hmac.Generic.Implies
 public import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Hash
 public import VerifiedGarbage.Proof.Sha256.Stream
 public import VerifiedGarbage.TCB.PPC64LE.Isa
+meta import VerifiedGarbage.Proof.RsaPkcs1Enc.Contract
 
 /-! ### `RsaPkcs1Enc.PPC64LE.DecCalls`, which only this module used -/
 
@@ -113,11 +115,11 @@ def dataOf (pc : Bool) (s : State) : Data :=
       (·.toNat),
     (if pc then Spec.Rsa.privatePrecomputedLeak s.mem (stackArg s 15) (s.gpr .r7).toNat else []), s.sp)
 
-theorem pub_data {s₁ s₂ : State} (h : (Spec.RsaPkcs1Enc.decryptContract abi stackBytes).pub s₁ s₂) :
+theorem pub_data {s₁ s₂ : State} (h : (Proof.RsaPkcs1Enc.decryptContract abi stackBytes).pub s₁ s₂) :
     dataOf false s₁ = dataOf false s₂ := by
   have e : stackBytes = 3647 + 1 := rfl
   rw [e] at h
-  sig_pub [Spec.RsaPkcs1Enc.decryptContract, Spec.RsaPkcs1Enc.decryptSig, abi, argRegs, stackArgs_fifteen,
+  sig_pub [Proof.RsaPkcs1Enc.decryptContract, Proof.RsaPkcs1Enc.decryptSig, abi, argRegs, stackArgs_fifteen,
     List.append_eq] at h
   simp only [List.getD_cons_succ, List.getD_cons_zero] at h
   obtain ⟨hsp, hl, h3, h4, h5, h6, h7, h8, h9, h10, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13,

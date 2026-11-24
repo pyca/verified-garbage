@@ -124,6 +124,10 @@ inductive Param
   region, of `n` words of the target's pointer width, is among the read-only
   memory `Sig.lists` gives, which knows that width. -/
   | table (n : Nat)
+  /-- Source and destination pointers followed by their shared element count. Equal
+  pointers designate one writable buffer. Distinct pointers designate a read-only
+  source and a writable destination, which the ordinary separation rule keeps apart. -/
+  | inOutSlice (elem : Elem) (dst len : String)
   deriving DecidableEq, Repr
 
 structure Sig where
@@ -152,6 +156,7 @@ def Param.words (ptrBits : Nat) : Param → List ArgWord
   | .slice .. => [.addr, .int ptrBits]
   | .slices .. => [.addr, .int ptrBits]
   | .table _ => [.addr]
+  | .inOutSlice .. => [.addr, .addr, .int ptrBits]
 
 def Sig.words (sig : Sig) (ptrBits : Nat) : List ArgWord :=
   sig.params.flatMap fun p => p.2.words ptrBits
@@ -359,6 +364,10 @@ def Sig.bufs : List (String × Param) → List (BitVec 64) → List (Region × B
   | (_, .slice m e _) :: ps, p :: l :: vs => (⟨p, l.toNat * e.size⟩, m) :: Sig.bufs ps vs
   | (_, .slices ..) :: ps, _ :: _ :: vs => Sig.bufs ps vs
   | (_, .table _) :: ps, _ :: vs => Sig.bufs ps vs
+  | (_, .inOutSlice e ..) :: ps, src :: dst :: l :: vs =>
+    let n := l.toNat * e.size
+    let rest := (⟨dst, n⟩, true) :: Sig.bufs ps vs
+    if src = dst then rest else (⟨src, n⟩, false) :: rest
   | _, _ => []
 
 /-- The addresses of the buffers of `u16`, `u32` or `u64` (or of arrays of
@@ -378,6 +387,9 @@ def Sig.alignedBufs : List (String × Param) → List (BitVec 64) → List (Addr
     if 1 < e.align then (p, e.align) :: Sig.alignedBufs ps vs else Sig.alignedBufs ps vs
   | (_, .slices ..) :: ps, _ :: _ :: vs => Sig.alignedBufs ps vs
   | (_, .table _) :: ps, p :: vs => (p, 8) :: Sig.alignedBufs ps vs
+  | (_, .inOutSlice e ..) :: ps, src :: dst :: _ :: vs =>
+    if 1 < e.align then (src, e.align) :: (dst, e.align) :: Sig.alignedBufs ps vs
+    else Sig.alignedBufs ps vs
   | _, _ => []
 
 /-- The buffers of the arrays among the parameters, given the arguments'
@@ -389,6 +401,7 @@ def Sig.arrays : List (String × Param) → List (BitVec 64) → List (String ×
   | (_, .slice ..) :: ps, _ :: _ :: vs => Sig.arrays ps vs
   | (_, .slices ..) :: ps, _ :: _ :: vs => Sig.arrays ps vs
   | (_, .table _) :: ps, _ :: vs => Sig.arrays ps vs
+  | (_, .inOutSlice ..) :: ps, _ :: _ :: _ :: vs => Sig.arrays ps vs
   | _, _ => []
 
 /-- For each `(name, n)` of `written`, the function changes no byte at
@@ -434,6 +447,7 @@ def Sig.lists (ptrBits : Nat) (m : Mem) : List (String × Param) → List (BitVe
   | (_, .slices e _) :: ps, p :: n :: vs =>
     Sig.descRegion ptrBits p n.toNat :: Sig.listed ptrBits m e p n.toNat ++ Sig.lists ptrBits m ps vs
   | (_, .table n) :: ps, p :: vs => Sig.tableRegion ptrBits p n :: Sig.lists ptrBits m ps vs
+  | (_, .inOutSlice ..) :: ps, _ :: _ :: _ :: vs => Sig.lists ptrBits m ps vs
   | _, _ => []
 
 /-- The descriptors of the lists of slices among the parameters, given the
@@ -445,6 +459,7 @@ def Sig.descs (ptrBits : Nat) : List (String × Param) → List (BitVec 64) → 
   | (_, .slice ..) :: ps, _ :: _ :: vs => Sig.descs ptrBits ps vs
   | (_, .slices ..) :: ps, p :: n :: vs => Sig.descRegion ptrBits p n.toNat :: Sig.descs ptrBits ps vs
   | (_, .table _) :: ps, _ :: vs => Sig.descs ptrBits ps vs
+  | (_, .inOutSlice ..) :: ps, _ :: _ :: _ :: vs => Sig.descs ptrBits ps vs
   | _, _ => []
 
 /-- Whether each machine-level argument is public: pointers and lengths are. -/
@@ -452,6 +467,7 @@ def Param.pubs : Param → List Bool
   | .int _ pub => [pub]
   | .array .. => [true]
   | .slice .. => [true, true]
+  | .inOutSlice .. => [true, true, true]
   | .slices .. => [true, true]
   | .table _ => [true]
 
@@ -471,6 +487,7 @@ def Param.rust (name : String) : Param → String
   | .int ty _ => s!"{name}: {ty.rust}"
   | .array w e n => s!"{name}: *{if w then "mut" else "const"} [{e.rust}; {n}]"
   | .slice w e len => s!"{name}: *{if w then "mut" else "const"} {e.rust}, {len}: usize"
+  | .inOutSlice e dst len => s!"{name}: *const {e.rust}, {dst}: *mut {e.rust}, {len}: usize"
   | .slices _ count => s!"{name}: *const [usize; 2], {count}: usize"
   | .table n => s!"{name}: *const [usize; {n}]"
 
