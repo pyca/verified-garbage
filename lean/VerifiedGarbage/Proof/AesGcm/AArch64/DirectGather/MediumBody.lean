@@ -18,7 +18,7 @@ open VG.Spec.Aes (bytesAt)
 open VG.Spec.Gcm (blockAt inc32 zeros)
 open VG.AArch64.Scrub
 
-theorem preKeys {o s : State} (l : BoundedLay o) (iv : NL o = 12) (hn : L o ≤ 224)
+theorem preKeys {o s : State} {extra : List Region} (l : BoundedLay o extra) (iv : NL o = 12) (hn : L o ≤ 224)
     (h : Header o s) (zero : bytesAt s.mem (base o+224) 256 = zeros 256) :
     MediumKeysPre (base o) (K o) (o.gpr .x1).toNat (blocks o) s := by
   have bound : blocks o ≤ 14 := by unfold blocks; omega
@@ -41,7 +41,7 @@ theorem preKeys {o s : State} (l : BoundedLay o) (iv : NL o = 12) (hn : L o ≤ 
     simp only [zeros,List.drop_replicate,List.take_replicate,Nat.min_eq_left (show 16 ≤ 256-16*i by omega)]
     exact Proof.Gcm.ofBytes_zeros16
 
-private theorem keyCipher {o s : State} (l : BoundedLay o) (h : LocalMem o s) :
+private theorem keyCipher {o s : State} {extra : List Region} (l : BoundedLay o extra) (h : LocalMem o s) :
     ciphOf s.mem (K o) (o.gpr .x1).toNat = shortCipher o := by
   let n := (o.gpr .x1).toNat
   have small : n ≤ 14 := by rcases l.hR with e|e|e <;> simp only [n,e] <;> decide
@@ -51,14 +51,14 @@ private theorem keyCipher {o s : State} (l : BoundedLay o) (h : LocalMem o s) :
     (l.bk.sub_left (scratch_sub o)).symm.sub_left sub) (by change 16*(n+1) ≤ 2^64; omega)]
   rfl
 
-private theorem keyNonce {o s : State} (l : BoundedLay o) (iv : NL o = 12) (h : Header o s) :
+private theorem keyNonce {o s : State} {extra : List Region} (l : BoundedLay o extra) (iv : NL o = 12) (h : Header o s) :
     Counters.jZero s = shortJ0 o := by
   unfold Counters.jZero Counters.nonce shortJ0
   rw [h.x23,Proof.Gcm.j0_12 _ (by rw [Proof.Cmac.bytesAt_length,iv]),← iv]
   rw [bytesAt_frame h.frame (by simpa only [List.mem_singleton,forall_eq] using
     (l.bn.sub_left (scratch_sub o)).symm) (Nat.le_of_lt (o.gpr .x3).isLt)]
 
-theorem ready {o s : State} (v : GcmImpl) (v0 : v.ctr.scratch = 0) (l : BoundedLay o)
+theorem ready {o s : State} (v : GcmImpl) (v0 : v.ctr.scratch = 0) {extra : List Region} (l : BoundedLay o extra)
     (iv : NL o = 12) (hn : L o ≤ 224) (h : Header o s)
     (input : bytesAt s.mem (ghBase o) 256 = aadLayout o)
     (zero : bytesAt s.mem (base o+224) 256 = zeros 256)
@@ -104,12 +104,14 @@ theorem ready {o s : State} (v : GcmImpl) (v0 : v.ctr.scratch = 0) (l : BoundedL
       · exact Offset.disjoint_base _ (by decide) (by decide)
       · obtain rfl := List.mem_singleton.mp hr; exact Offset.disjoint _ (.inr (by decide)) (by decide) (by decide)) (by decide),acc,Proof.Gcm.ofBytes_zeros16]
 
-theorem body_ok (v : GcmImpl) (v0 : v.ctr.scratch = 0) (hash : Hash16Ok) (s : State)
-    (l : BoundedLay s) (iv : NL s = 12) (al : AL s ≤ 16) (hn : L s ≤ 224) :
-    WP isa (Medium.body v.callees) (allocated Medium.work s) fun t => gatherPost s t ∧
+theorem bodyWith_ok (v : GcmImpl) (v0 : v.ctr.scratch = 0) (endCode : Prog isa) (s : State)
+    {extra : List Region} (l : BoundedLay s extra) (iv : NL s = 12) (al : AL s ≤ 16) (hn : L s ≤ 224)
+    (endOk : ∀ {t z : State}, Ready s t → Fragment.AtDesc t (Fragment.num t) z →
+      WP isa endCode z fun u => gatherPost s u ∧ (∀ r ∈ preserved, u.gpr r = s.gpr r) ∧ u.sp = base s) :
+    WP isa (Medium.bodyWith v.callees endCode) (allocated Medium.work s) fun t => gatherPost s t ∧
       (∀ r ∈ preserved, t.gpr r = s.gpr r) ∧ t.sp = base s := by
   have front := prefix_ok l hn al
-  unfold Medium.body
+  unfold Medium.bodyWith
   refine WP.seq ((WP.seq_iff.mp front).mono (fun _ w => WP.seq ((WP.seq_iff.mp w).mono (fun _ w => WP.seq (w.mono ?_)))))
   intro q ⟨header,input,zero,acc⟩
   have key := ready v v0 l iv hn header input zero acc
@@ -117,6 +119,14 @@ theorem body_ok (v : GcmImpl) (v0 : v.ctr.scratch = 0) (hash : Hash16Ok) (s : St
   intro t r
   refine WP.seq ((Fragment.shortLoop_ok t (loopPre l r.toLocalMem r.toCursors hn)).mono ?_)
   intro z done
+  exact endOk r done
+
+theorem body_ok (v : GcmImpl) (v0 : v.ctr.scratch = 0) (hash : Hash16Ok) (s : State)
+    (l : BoundedLay s) (iv : NL s = 12) (al : AL s ≤ 16) (hn : L s ≤ 224) :
+    WP isa (Medium.body v.callees) (allocated Medium.work s) fun t => gatherPost s t ∧
+      (∀ r ∈ preserved, t.gpr r = s.gpr r) ∧ t.sp = base s := by
+  refine bodyWith_ok v v0 _ s l iv al hn ?_
+  intro t z r done
   have finish := (loopFinish l hn al r done).1
   exact (mediumFinish_ok hash s z (base s) _ finish).mono fun _ ⟨post,abi,sp,_,_,_⟩ => ⟨post,abi,sp⟩
 

@@ -132,15 +132,15 @@ abbrev HashEightWithOk := ∀ (s : State), nb s = 8 →
 abbrev shortCore (cached : Bool) := if cached then hashEightWith else hashEight
 abbrev CoreOk (cached : Bool) : Prop := if cached then HashEightWithOk else HashEightOk
 
-structure ShortPowers (s : State) (W K : Addr) : Prop where
+structure ShortPowers (s : State) (W K : Addr) (size : Nat := shortWork) : Prop where
   read : Covers [⟨s.gpr .x5,128⟩] (s.rd ++ s.wr)
-  apart : (⟨s.gpr .x5,128⟩ : Region).Disjoint ⟨W,shortWork⟩
+  apart : (⟨s.gpr .x5,128⟩ : Region).Disjoint ⟨W,size⟩
   repr : Spec.Gcm.Powers8Repr s.mem (s.gpr .x5) (blockAt s.mem (K+240#64))
 
-theorem ShortPowers.frame {s t : State} {W K : Addr} {r : Region} (p : ShortPowers s W K)
-    (fr : Frame [r] s.mem t.mem) (sub : r.Sub ⟨W,shortWork⟩)
+theorem ShortPowers.frame {s t : State} {W K : Addr} {r : Region} {size : Nat} (p : ShortPowers s W K size)
+    (fr : Frame [r] s.mem t.mem) (sub : r.Sub ⟨W,size⟩)
     (key : (⟨K+240#64,16⟩ : Region).Disjoint r) (reg : t.gpr .x5 = s.gpr .x5)
-    (rd : t.rd = s.rd) (wr : t.wr = s.wr) : ShortPowers t W K := by
+    (rd : t.rd = s.rd) (wr : t.wr = s.wr) : ShortPowers t W K size := by
   refine ⟨by rw [reg,rd,wr]; exact p.read, by rw [reg]; exact p.apart, ?_⟩
   rw [reg,blockAt_frame fr (by simpa only [List.mem_singleton,forall_eq] using key)]
   exact Proof.AesGcm.powers8Repr_congr (fun i hi => fr.bytes (R := ⟨s.gpr .x5,128⟩)

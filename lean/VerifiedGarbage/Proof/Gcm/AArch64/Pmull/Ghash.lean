@@ -331,6 +331,20 @@ structure Inv (s₀ : State) (K i : Nat) (s : State) : Prop where
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
 
+/-- Advancing over a prefix whose GHASH leaves the accumulator unchanged
+preserves the group invariant without evaluating its products. -/
+theorem advanceLeading {s₀ s : State} {K k : Nat} (hk : k ≤ nb s₀) (sz : 16 * k < 4096)
+    (zero : Ys s₀ 0 = Ys s₀ k) (I : Inv s₀ K 0 s) :
+    WP isa (.block (Impl.Gcm.AArch64.Pmull.advance k)) s (Inv s₀ K k) := by
+  refine (advance_ok k sz s).mono ?_
+  rintro t ⟨f2,f3,f5,reg,v,mem,rd,wr⟩
+  refine ⟨hk,by rw [v,I.c],fun m lo hi => by rw [v,I.t m lo hi],
+    fun m lo hi => by rw [v,I.sw m lo hi], by rw [v,I.y,zero],
+    (reg .x0 (by decide) (by decide) (by decide)).trans I.x0,
+    (reg .x1 (by decide) (by decide) (by decide)).trans I.x1,?_,?_,f5,
+    mem.trans I.mem,rd.trans I.rd,wr.trans I.wr⟩
+  · rw [f2,I.x2,blkAddr,blkAddr,Nat.mul_zero,add_ofNat_zero]
+  · rw [f3,I.x3,Nat.sub_zero,Offset.ofNat_sub_ofNat hk]
 /-- The invariant does not depend on `x6`. -/
 theorem Inv.of_x6 {s₀ : State} {K i : Nat} {s s' : State} (hI : Inv s₀ K i s)
     (hg : ∀ r, r ≠ .x6 → s'.gpr r = s.gpr r) (hv : s'.v = s.v) (hm : s'.mem = s.mem)

@@ -21,7 +21,7 @@ structure Ready (o t : State) : Prop extends Header o t, Cursors o t where
   input : bytesAt t.mem (ghBase o) 256 = aadLayout o
   zero : blockAt t.mem (base o+736) = 0
 
-theorem loopFinish {o s t : State} (l : BoundedLay o) (hn : L o ≤ 224) (al : AL o ≤ 16)
+theorem loopFinish {o s t : State} {extra : List Region} (l : BoundedLay o extra) (hn : L o ≤ 224) (al : AL o ≤ 16)
     (h : Ready o s) (p : Fragment.AtDesc s (Fragment.num s) t) :
     MediumFinishPre o t (base o) (14-blocks o) ∧ Frame [scratch o,dR o] s.mem t.mem := by
   have ag := h.toLocalMem.descriptors l

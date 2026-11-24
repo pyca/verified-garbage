@@ -45,7 +45,7 @@ theorem standard_ok (s : State) : WP isa (.block standardGuard) s fun t =>
 abbrev limitCode (n : Nat) : List Instr :=
   [Impl.AesGcm.AArch64.imm .x9 n,.subs .x .x11 .x10 .x9,.sbc .x .x11 .x11 .x11]
 
-theorem limit_ok {n : Nat} (bound : n=97 ∨ n=768) (s : State) :
+theorem limit_ok {n : Nat} (bound : n=97 ∨ n=225) (s : State) :
     WP isa (.block (limitCode n)) s fun t =>
       View s t ∧ t.gpr .x10 = s.gpr .x10 ∧ (t.gpr .x11 ≠ 0 ↔ (s.gpr .x10).toNat < n) := by
   have run : WP isa (.block (limitCode n)) s fun t => (t.gpr .x11 ≠ 0 ↔ (s.gpr .x10).toNat<n) ∧
