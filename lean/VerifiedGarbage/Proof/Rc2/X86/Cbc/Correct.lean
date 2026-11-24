@@ -124,62 +124,45 @@ theorem block_correct (d : Spec.Rc2.Direction) (s : State) (hs : (blockContract 
     exact saveMem_frame_le s.mem (addr32 (arg s 2)) (fun i => s₀.gpr (blockSavedReg i)) 5 64 (by decide) (by decide)
   obtain args₁ := arguments_frame 3 savedFrame sp₁ spFit (by simpa using argsScratch)
   rw [WP.block_append_iff]
-  obtain ⟨s₂, run₂, scratch₂, data₂, keep₂⟩ := pinBlock_ok s₁
-    (argRead s₁ (h₁.2.1.trans keep₀.rd) (h₁.2.2.1.trans keep₀.wr) sp₁ 1 (by decide))
+  have args (i : Nat) (hi : i < 3) :=
+    argRead s₁ (h₁.2.1.trans keep₀.rd) (h₁.2.2.1.trans keep₀.wr) sp₁ i hi
+  obtain ⟨s₂, run₂, scratch₂, key₂, data₂, keep₂⟩ := pinBlock_ok s₁ (args 0 (by decide)) (args 1 (by decide))
   refine WP.of_runBlock ⟨s₂, run₂, ?_⟩
   rw [h₁.1, scratch₀] at scratch₂
+  rw [args₁ 0 (by decide)] at key₂
   rw [args₁ 1 (by decide)] at data₂
   obtain sp₂ : s₂.gpr .esp = s.gpr .esp := (keep₂.reg .esp (by decide)).trans sp₁
   obtain rd₂ := keep₂.rd.trans (h₁.2.1.trans keep₀.rd)
   obtain wr₂ := keep₂.wr.trans (h₁.2.2.1.trans keep₀.wr)
   obtain frame₂ : Frame [⟨addr32 (arg s 2), 256⟩] s.mem s₂.mem := by rw [keep₂.mem]; exact savedFrame
-  obtain args₂ := arguments_frame 3 frame₂ sp₂ spFit (by simpa using argsScratch)
-  obtain base₂ : wordBase s₂ = addr32 (arg s 2) + 64 := by unfold wordBase; rw [scratch₂]
-  obtain wordsSub : Region.Sub ⟨wordBase s₂, 16⟩ ⟨addr32 (arg s 2), 256⟩ := by
-    rw [base₂]; exact Offset.sub_base (addr32 (arg s 2)) (d := 64) (n := 16) (k := 256) (by decide)
-  obtain area₂ : areaBase s₂ = addr32 (arg s 2) + BitVec.ofNat 64 48 := by unfold areaBase; rw [scratch₂]
-  obtain areaSub : Region.Sub ⟨areaBase s₂, 32⟩ ⟨addr32 (arg s 2), 256⟩ := by
-    rw [area₂]; exact Offset.sub_base (addr32 (arg s 2)) (d := 48) (n := 32) (k := 256) (by decide)
-  obtain dataWords : (Region.mk (addr32 (arg s 1)) 8).Disjoint ⟨wordBase s₂, 16⟩ := by
-    intro a ha hb; exact dataSep a ha (wordsSub a hb)
+  obtain area₂ : addr (s₂.gpr .ebp) 48 = addr32 (arg s 2) + BitVec.ofNat 64 48 := by
+    rw [scratch₂, addr_eq (by omega_arith)]; rfl
+  obtain areaSub : Region.Sub ⟨addr (s₂.gpr .ebp) 48, 8⟩ ⟨addr32 (arg s 2), 256⟩ := by
+    rw [area₂]; exact Offset.sub_base (addr32 (arg s 2)) (d := 48) (n := 8) (k := 256) (by decide)
   obtain env₂ : RoundEnv s₂ := by
     constructor
     · rw [scratch₂]; exact scratchFit
-    · rw [args₂ 0 (by decide)]; exact keyFit
-    · exact argRead s₂ rd₂ wr₂ sp₂ 0 (by decide)
-    · intro i hi
-      rw [args₂ 0 (by decide), rd₂, wr₂, hrd, hwr]
-      exact ⟨⟨addr32 (arg s 0), 128⟩, by simp, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
-    · rw [args₂ 0 (by decide), rd₂, wr₂, hrd, hwr]
+    · rw [key₂]; exact keyFit
+    · rw [key₂, rd₂, wr₂, hrd, hwr]
       exact ⟨⟨addr32 (arg s 0), 128⟩, by simp, Region.contains_self _ _⟩
-    · intro i hi
-      rw [wr₂, hwr, base₂, BitVec.add_assoc, show (64 : Addr) = BitVec.ofNat 64 64 from rfl, ← BitVec.ofNat_add]
-      exact ⟨⟨addr32 (arg s 2), 256⟩, by simp, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
     · rw [wr₂, hwr, area₂]
       exact ⟨⟨addr32 (arg s 2), 256⟩, by simp, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
-    · rw [args₂ 0 (by decide)]
+    · rw [key₂]
       intro a ha hb; exact keySep a ha (areaSub a hb)
-    · have ae : argAddr s₂ 0 = argAddr s 0 := by unfold argAddr; rw [sp₂]
-      rw [ae]
-      intro a ha hb
-      exact argsScratch a (Region.sub_prefix (by decide : 4 ≤ 12) a ha) (areaSub a hb)
-  obtain input₂ : Spec.Rc2.blockAt s₂.mem (addr32 (s₂.gpr .edi)) = Spec.Rc2.blockAt s.mem (addr32 (arg s 1)) := by
+  obtain input₂ : Spec.Rc2.blockAt s₂.mem (addr32 (s₂.gpr .esi)) = Spec.Rc2.blockAt s.mem (addr32 (arg s 1)) := by
     rw [data₂]; exact blockAt_frame frame₂ _ (by simpa using dataSep)
-  obtain schedule₂ : Spec.Rc2.scheduleAt s₂.mem (addr32 (arg s₂ 0)) = Spec.Rc2.scheduleAt s.mem (addr32 (arg s 0)) := by
-    rw [args₂ 0 (by decide)]; exact scheduleAt_frame frame₂ _ (by simpa using keySep)
-  obtain dataRead₂ : ∀ i < 8, InRegions (s₂.rd ++ s₂.wr) (addr32 (s₂.gpr .edi) + BitVec.ofNat 64 i) 1 := by
-    intro i hi
-    rw [rd₂, wr₂, data₂, hrd, hwr]
-    exact ⟨⟨addr32 (arg s 1), 8⟩, by simp, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
+  obtain schedule₂ : schedule s₂ = Spec.Rc2.scheduleAt s.mem (addr32 (arg s 0)) := by
+    unfold schedule
+    rw [key₂]; exact scheduleAt_frame frame₂ _ (by simpa using keySep)
   rw [WP.block_append_iff]
-  apply WP.mono (blockLoad_ok s₂ (by rw [data₂]; exact dataFit) env₂.scratchFit dataRead₂ env₂.wordWrite
-    (by rw [data₂]; exact dataWords))
+  apply WP.mono (blockLoad_ok s₂ (by rw [data₂]; exact dataFit) (by
+    rw [rd₂, wr₂, data₂, hrd, hwr]
+    exact ⟨⟨addr32 (arg s 1), 8⟩, by simp, Region.contains_self _ _⟩))
   intro s₃ h₃
   rw [WP.block_append_iff]
   apply WP.mono (rounds_ok d s₃ _ h₃.1 (h₃.2.env env₂))
   intro s₄ h₄
   obtain core := h₃.2.trans h₄.2
-  obtain env₄ := core.env env₂
   obtain sp₄ : s₄.gpr .esp = s.gpr .esp := (core.reg .esp (by decide)).trans sp₂
   obtain scratch₄ : s₄.gpr .ebp = arg s 2 := (core.reg .ebp (by decide)).trans scratch₂
   obtain rd₄ := core.rd.trans rd₂
@@ -191,24 +174,20 @@ theorem block_correct (d : Spec.Rc2.Direction) (s : State) (hs : (blockContract 
   obtain args₄ := arguments_frame 3 frame₄ sp₄ spFit (by simpa using argsScratch)
   let v := (List.range 16).foldl (fun v j => roundSpec d
     (Spec.Rc2.scheduleAt s.mem (addr32 (arg s 0))) j v) (Spec.Rc2.decodeBlock (Spec.Rc2.blockAt s.mem (addr32 (arg s 1))))
-  obtain words₄ : MemWords s₄.mem (wordBase s₄) v := by
+  obtain words₄ : Words s₄ v := by
     have h := h₄.1
     rw [h₃.2.schedule env₂, schedule₂, input₂] at h
     exact h
   rw [WP.block_append_iff]
-  obtain ⟨s₅, run₅, data₅, keep₅⟩ := loadArg_ok s₄ .edi 1 (argRead s₄ rd₄ wr₄ sp₄ 1 (by decide))
+  obtain ⟨s₅, run₅, data₅, keep₅⟩ := loadArg_ok s₄ .esi 1 (argRead s₄ rd₄ wr₄ sp₄ 1 (by decide))
   refine WP.of_runBlock ⟨s₅, run₅, ?_⟩
   rw [args₄ 1 (by decide)] at data₅
-  obtain base₅ : wordBase s₅ = wordBase s₄ := by unfold wordBase; rw [keep₅.reg .ebp (by decide)]
-  obtain writable₅ : ∀ i < 8, InRegions s₅.wr (addr32 (s₅.gpr .edi) + BitVec.ofNat 64 i) 1 := by
-    intro i hi
-    rw [keep₅.wr, wr₄, data₅, hwr]
-    exact ⟨⟨addr32 (arg s 1), 8⟩, by simp, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
   rw [WP.block_append_iff]
-  apply WP.mono (blockStore_ok s₅ v (by rw [keep₅.mem, base₅]; exact words₄)
-    (by rw [data₅]; exact dataFit) (by rw [keep₅.reg .ebp (by decide)]; exact env₄.scratchFit)
-    (by rw [keep₅.rd, keep₅.wr, base₅]; exact env₄.wordRead)
-    (by rw [base₅, core.base, data₅]; exact dataWords.symm) writable₅)
+  apply WP.mono (blockStore_ok s₅ v
+    (fun i hi => by rw [keep₅.reg _ (by rw [List.mem_singleton]; exact (wordReg_separate i).1)]; exact words₄ i hi)
+    (by rw [data₅]; exact dataFit) (by
+      rw [keep₅.wr, wr₄, data₅, hwr]
+      exact ⟨⟨addr32 (arg s 1), 8⟩, by simp, Region.contains_self _ _⟩))
   intro s₆ h₆
   obtain mem₆ : s₆.mem = s₄.mem.writeW (addr32 (arg s 1)) (pack v) := by rw [h₆.mem, keep₅.mem, data₅]
   obtain scratch₆ : s₆.gpr .ebp = arg s 2 := (h₆.reg .ebp (by decide)).trans ((keep₅.reg .ebp (by decide)).trans scratch₄)
@@ -229,8 +208,8 @@ theorem block_correct (d : Spec.Rc2.Direction) (s : State) (hs : (blockContract 
     obtain bound := List.mem_range.mp hi
     rw [keep₇.mem, mem₆, base₇, Mem.readW_writeW_sep
       (dataSep.symm.sep (Offset.contains_base _ (by omega_arith) (by omega_arith)) (Region.contains_self _ _)) (by decide)]
-    obtain sep : (Region.mk (addr32 (arg s 2)) 20).Disjoint ⟨areaBase s₂, 32⟩ := by
-      rw [area₂]; exact (Offset.disjoint_base (addr32 (arg s 2)) (d := 48) (n := 32) (k := 20) (by decide) (by decide)).symm
+    obtain sep : (Region.mk (addr32 (arg s 2)) 20).Disjoint ⟨addr (s₂.gpr .ebp) 48, 8⟩ := by
+      rw [area₂]; exact (Offset.disjoint_base (addr32 (arg s 2)) (d := 48) (n := 8) (k := 20) (by decide) (by decide)).symm
     rw [core.mem.readW (r := ⟨addr32 (arg s 2), 20⟩)
       (Offset.contains_base _ (by omega_arith) (by omega_arith)) (by simpa using sep) (by decide),
       keep₂.mem, h₁.2.2.2, scratch₀, saveMem_read _ _ _ 5 (by decide) i bound]

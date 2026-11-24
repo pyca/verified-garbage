@@ -21,8 +21,7 @@ through are stored back. Lane `k` of group `g` holds PITABLE's dword
 `4 g + k` (`piWord`); the dword `q = i >> 2` survives its mask (`LanesAt`),
 and its byte `i & 3` is chosen by two conditional shifts.
 
-`lrun`, `splat` and `found` serve the schedule's lookup too
-(`KeyLookup.lean`).
+`lrun` serves the schedule's lookup too (`KeyLookup.lean`).
 -/
 
 @[expose] public section
