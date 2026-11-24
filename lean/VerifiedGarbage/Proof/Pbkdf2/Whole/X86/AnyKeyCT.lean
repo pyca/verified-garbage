@@ -1295,6 +1295,33 @@ theorem anyFramed {I : Spec.Hmac.Instance} {c : Prog isa}
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial)
     (Hmac.initPost_local I.S _) (Hmac.initPostOut_local I.S _ hR hS) hsat rfl
 
+/-- `init`'s `_scratch` form with `n` words of working space, in a frame of
+them of which it zeroes the first `words` doublewords before returning: for
+the `n` its code uses (`HmacInit.verifiedW`), not the working space the
+instance gives every function called with it (`I.scratch`), so that the
+function as emitted zeroes no more. -/
+theorem initFramedWipedW {I : Spec.Hmac.Instance} {c : Prog isa} (n words : Nat)
+    (h : Verified X86.target c (Proof.Hmac.initScratchContract I.S n X86.abi 48))
+    (hR : Hmac.ReprLocal I.S)
+    (hsat : ∃ s, (I.initContract X86.abi (48 + (8 + 16 + 8 * n))).pre s)
+    (hsp : c.allInstrs (fun i => !Taint.clobbers i .esp) = true := by lit_decide)
+    (hd : stackUse c ≤ 48 := by lit_decide)
+    (hw : words ≤ 2 * n := by decide)
+    (hs : 8 * n < 4072 := by decide) (hS : I.S.stateBytes < 2 ^ 64 := by decide) :
+    Verified X86.target (Impl.StackScratch.X86.withStackScratchWiped (8 + 16 + 8 * n) 4 words c)
+      (I.initContract X86.abi (48 + (8 + 16 + 8 * n))) :=
+  X86.Verified.stackScratchWiped (sig := Spec.Hmac.initSig I.S) (nm := "scratch") (e := .u64)
+    (n := n) (pre := Spec.Hmac.initPre I.S X86.abi.ptrBits)
+    (post := Spec.Hmac.initPost I.S X86.abi.ptrBits) (wa := true) (stack := 48)
+    (bytes := 8 + 16 + 8 * n) (words := words) h
+    (by
+      refine ⟨?_, by omega_using [hs], by omega_using []⟩
+      change 8 + 4 * 4 + n * 8 ≤ 8 + 16 + 8 * n
+      omega_using [])
+    hsp hd (by change 4 * words ≤ n * 8; omega_using [hw])
+    (Hmac.initPre_local I.S _) (Hmac.initPost_local I.S _)
+    (Hmac.initPostOut_local I.S _ hR hS) hsat rfl
+
 /-- The frame of `withStackScratchWiped` keeps the stack pointer for any `c`
 that does, if it does for an empty body and its wipe (decided for literal
 sizes). -/

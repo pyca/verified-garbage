@@ -72,7 +72,7 @@ pub unsafe fn vg_hmac_sha256_init_auto(_dit: verified_garbage_cpu::Dit<'_>, inne
 /// * `out` must be valid for reads and writes of 32 bytes.
 /// * The contents of `inner` on return are unspecified.
 /// * `inner` and `out` must not overlap each other or `outer` (distinct Rust objects never do).
-/// * None of `inner`, `outer` and `out` may overlap the arguments on the stack, overlap the return address on the stack or the 908 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `inner`, `outer` and `out` may overlap the arguments on the stack, overlap the return address on the stack or the 284 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_hmac_sha256_finalize_auto(_dit: verified_garbage_cpu::Dit<'_>, inner: *mut [u8; 96], outer: *const [u8; 96], count: u64, out: *mut [u8; 32]) {
