@@ -3614,106 +3614,56 @@ vg_ecdsa_p224_verify:
 	mov DWORD PTR [edi+600], eax
 	mov eax, DWORD PTR [edi+700]
 	mov DWORD PTR [edi+604], eax
-	mov eax, DWORD PTR [edi+224]
+	mov eax, 1
+	mov DWORD PTR [edi+1152], eax
+	mov eax, -1
+	mov DWORD PTR [edi+1156], eax
+	mov eax, 0
+	mov DWORD PTR [edi+1160], eax
+	mov eax, -1
+	mov DWORD PTR [edi+1164], eax
+	mov eax, 0
+	mov DWORD PTR [edi+1168], eax
+	mov eax, -2
+	mov DWORD PTR [edi+1172], eax
+	mov eax, -1
+	mov DWORD PTR [edi+1176], eax
+	mov eax, 0
+	mov DWORD PTR [edi+1180], eax
+	mov eax, 59741
 	mov DWORD PTR [edi+992], eax
-	mov eax, DWORD PTR [edi+228]
+	mov eax, -1549543996
 	mov DWORD PTR [edi+996], eax
-	mov eax, DWORD PTR [edi+232]
+	mov eax, -333261126
 	mov DWORD PTR [edi+1000], eax
-	mov eax, DWORD PTR [edi+236]
+	mov eax, 524691044
 	mov DWORD PTR [edi+1004], eax
-	mov eax, DWORD PTR [edi+240]
+	mov eax, 1549603736
 	mov DWORD PTR [edi+1008], eax
-	mov eax, DWORD PTR [edi+244]
+	mov eax, 333261125
 	mov DWORD PTR [edi+1012], eax
-	mov eax, DWORD PTR [edi+248]
+	mov eax, -524750786
 	mov DWORD PTR [edi+1016], eax
-	mov eax, DWORD PTR [edi+252]
+	mov eax, 0
 	mov DWORD PTR [edi+1020], eax
-	mov esi, 256
-262:
-	sub esi, 1
-	mov eax, 992
-	mov ecx, 992
-	mov edx, 992
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p224_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	mov eax, 576
-	mov ecx, 992
-	mov edx, 1024
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p224_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	mov eax, edi
-	add eax, esi
-	movzx eax, BYTE PTR [eax+4356]
-	mov ecx, 0
-	sub ecx, eax
-	mov eax, DWORD PTR [edi+992]
-	mov edx, DWORD PTR [edi+1024]
-	xor edx, eax
-	and edx, ecx
-	xor eax, edx
-	mov DWORD PTR [edi+992], eax
-	mov eax, DWORD PTR [edi+996]
-	mov edx, DWORD PTR [edi+1028]
-	xor edx, eax
-	and edx, ecx
-	xor eax, edx
-	mov DWORD PTR [edi+996], eax
-	mov eax, DWORD PTR [edi+1000]
-	mov edx, DWORD PTR [edi+1032]
-	xor edx, eax
-	and edx, ecx
-	xor eax, edx
-	mov DWORD PTR [edi+1000], eax
-	mov eax, DWORD PTR [edi+1004]
-	mov edx, DWORD PTR [edi+1036]
-	xor edx, eax
-	and edx, ecx
-	xor eax, edx
-	mov DWORD PTR [edi+1004], eax
-	mov eax, DWORD PTR [edi+1008]
-	mov edx, DWORD PTR [edi+1040]
-	xor edx, eax
-	and edx, ecx
-	xor eax, edx
-	mov DWORD PTR [edi+1008], eax
-	mov eax, DWORD PTR [edi+1012]
-	mov edx, DWORD PTR [edi+1044]
-	xor edx, eax
-	and edx, ecx
-	xor eax, edx
-	mov DWORD PTR [edi+1012], eax
-	mov eax, DWORD PTR [edi+1016]
-	mov edx, DWORD PTR [edi+1048]
-	xor edx, eax
-	and edx, ecx
-	xor eax, edx
-	mov DWORD PTR [edi+1016], eax
-	mov eax, DWORD PTR [edi+1020]
-	mov edx, DWORD PTR [edi+1052]
-	xor edx, eax
-	and edx, ecx
-	xor eax, edx
-	mov DWORD PTR [edi+1020], eax
-	test esi, esi
-	jne 262b
-	mov eax, 992
-	mov ecx, 512
+	mov eax, -1549543996
+	mov DWORD PTR [edi+96], eax
+	mov eax, -333261126
+	mov DWORD PTR [edi+100], eax
+	mov eax, 524750785
+	mov DWORD PTR [edi+104], eax
+	mov eax, 59740
+	mov DWORD PTR [edi+108], eax
+	mov eax, 0
+	mov DWORD PTR [edi+112], eax
+	mov eax, 0
+	mov DWORD PTR [edi+116], eax
+	mov eax, 0
+	mov DWORD PTR [edi+120], eax
+	mov eax, 0
+	mov DWORD PTR [edi+124], eax
+	mov eax, 1152
+	mov ecx, 1056
 	mov edx, 1152
 	push eax
 	push ecx
@@ -3724,7 +3674,7 @@ vg_ecdsa_p224_verify:
 	pop eax
 	pop eax
 	pop eax
-	mov eax, 192
+	mov eax, 576
 	mov ecx, 1152
 	mov edx, 1184
 	push eax
@@ -3736,44 +3686,54 @@ vg_ecdsa_p224_verify:
 	pop eax
 	pop eax
 	pop eax
-	mov eax, 384
-	mov ecx, 1184
-	mov edx, 1280
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p224_mul_mod_n}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	mov eax, 1312
-	mov ecx, 1280
+	mov eax, 1184
+	mov ecx, 512
 	mov edx, 1344
 	push eax
 	push ecx
 	push edx
 	push edi
-	call {vg_p224_sub_mod_n}
+	call {vg_p224_sub_mod_p}
 	pop eax
 	pop eax
 	pop eax
 	pop eax
-	mov edx, DWORD PTR [edi+576]
-	or edx, DWORD PTR [edi+580]
-	or edx, DWORD PTR [edi+584]
-	or edx, DWORD PTR [edi+588]
-	or edx, DWORD PTR [edi+592]
-	or edx, DWORD PTR [edi+596]
-	or edx, DWORD PTR [edi+600]
-	or edx, DWORD PTR [edi+604]
-	mov ecx, 0
-	sub ecx, edx
-	sbb edx, edx
-	mov eax, DWORD PTR [edi+1472]
-	and eax, edx
-	mov DWORD PTR [edi+1472], eax
+	mov eax, 992
+	mov ecx, 1152
+	mov edx, 1152
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p224_add_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov eax, 576
+	mov ecx, 1152
+	mov edx, 1184
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p224_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov eax, 1184
+	mov ecx, 512
+	mov edx, 1280
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p224_sub_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
 	mov edx, DWORD PTR [edi+1344]
 	or edx, DWORD PTR [edi+1348]
 	or edx, DWORD PTR [edi+1352]
@@ -3786,6 +3746,52 @@ vg_ecdsa_p224_verify:
 	sub ecx, edx
 	sbb edx, edx
 	xor edx, -1
+	mov ebx, edx
+	mov edx, DWORD PTR [edi+1056]
+	sub edx, DWORD PTR [edi+96]
+	mov edx, DWORD PTR [edi+1060]
+	sbb edx, DWORD PTR [edi+100]
+	mov edx, DWORD PTR [edi+1064]
+	sbb edx, DWORD PTR [edi+104]
+	mov edx, DWORD PTR [edi+1068]
+	sbb edx, DWORD PTR [edi+108]
+	mov edx, DWORD PTR [edi+1072]
+	sbb edx, DWORD PTR [edi+112]
+	mov edx, DWORD PTR [edi+1076]
+	sbb edx, DWORD PTR [edi+116]
+	mov edx, DWORD PTR [edi+1080]
+	sbb edx, DWORD PTR [edi+120]
+	mov edx, DWORD PTR [edi+1084]
+	sbb edx, DWORD PTR [edi+124]
+	sbb eax, eax
+	mov edx, DWORD PTR [edi+1280]
+	or edx, DWORD PTR [edi+1284]
+	or edx, DWORD PTR [edi+1288]
+	or edx, DWORD PTR [edi+1292]
+	or edx, DWORD PTR [edi+1296]
+	or edx, DWORD PTR [edi+1300]
+	or edx, DWORD PTR [edi+1304]
+	or edx, DWORD PTR [edi+1308]
+	mov ecx, 0
+	sub ecx, edx
+	sbb edx, edx
+	xor edx, -1
+	and edx, eax
+	or edx, ebx
+	mov eax, DWORD PTR [edi+1472]
+	and eax, edx
+	mov DWORD PTR [edi+1472], eax
+	mov edx, DWORD PTR [edi+576]
+	or edx, DWORD PTR [edi+580]
+	or edx, DWORD PTR [edi+584]
+	or edx, DWORD PTR [edi+588]
+	or edx, DWORD PTR [edi+592]
+	or edx, DWORD PTR [edi+596]
+	or edx, DWORD PTR [edi+600]
+	or edx, DWORD PTR [edi+604]
+	mov ecx, 0
+	sub ecx, edx
+	sbb edx, edx
 	mov eax, DWORD PTR [edi+1472]
 	and eax, edx
 	mov DWORD PTR [edi+1472], eax

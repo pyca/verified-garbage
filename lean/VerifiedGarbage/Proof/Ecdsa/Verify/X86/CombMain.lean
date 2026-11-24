@@ -487,8 +487,9 @@ variable {c : VG.Impl.Ecdsa.X86.Cfg}
 
 /-- The inversion-free final check has the same result as affine conversion. -/
 theorem projectiveFinal_ok (hc : CfgOk c) (hC : Law c.C) (hnp : c.C.n < c.C.p)
-    (hpn : c.C.p ≤ 2 * c.C.n) (hm : c.mul = none) {s₀ : State} {base : Addr}
+    (hpn : c.C.p ≤ 2 * c.C.n) {s₀ : State} {base : Addr}
     {Q₁ Q₂ : Nat → Fe c.C → Fe c.C → Fe c.C → Prop} {s : State} (hP : Pts c s₀ base Q₁ Q₂ s)
+    (hk : sv c base s K = sigR c s₀)
     (hsp : SpOk (Impl.Ecdsa.Verify.X86.Cfg.projectiveFinal c) c.stk) :
     WP isa (Impl.Ecdsa.Verify.X86.Cfg.projectiveFinal c) s fun s' =>
       (∀ rd ∈ VG.Impl.Ecdsa.X86.Cfg.saved, s'.gpr rd.1 = s₀.gpr rd.1) ∧ s'.gpr .esp = s₀.gpr .esp ∧
@@ -531,17 +532,17 @@ theorem projectiveFinal_ok (hc : CfgOk c) (hC : Law c.C) (hnp : c.C.n < c.C.p)
     rw [flagW, flag_unch U h7 h0 hn (by decide)]
     exact hP.flag
   obtain wz : sv c base t W = 0 ↔ fx = Fin.ofNat c.C.p (sigR c s₀) * fz := by
-    rw [← toM_eq_zero_iff hpR wlt, wval, hP.k hm]
+    rw [← toM_eq_zero_iff hpR wlt, wval, hk]
     change fx - Fin.ofNat c.C.p (sigR c s₀) * fz = 0 ↔ _
     constructor <;> intro h <;> grind
   obtain xnz : sv c base t XN = 0 ↔ fx = (Fin.ofNat c.C.p (sigR c s₀) + Fin.ofNat c.C.p c.C.n) * fz := by
-    rw [← toM_eq_zero_iff hpR xnlt, xnval, hP.k hm]
+    rw [← toM_eq_zero_iff hpR xnlt, xnval, hk]
     change fx - (Fin.ofNat c.C.p (sigR c s₀) + Fin.ofNat c.C.p c.C.n) * fz = 0 ↔ _
     constructor <;> intro h <;> grind
   obtain z : fz ≠ 0 ↔ sv c base s RZ ≠ 0 := not_congr (toM_eq_zero_iff hpR hP.rz_lt)
   refine WP.mono (projectiveChecks_ok hc ht saved A flag) fun s' ⟨keep,esp',U',ret⟩ fr => ?_
   refine ⟨keep, by rw [esp',esp,hP.esp], fr, xo, (fx * fz ^ (c.C.p - 2)).isLt, Fin.ofNat_val_eq_self _, ?_⟩
-  simp only [v (i := RZ) (by decide) (by decide), v (i := K) (by decide) (by decide), hP.k hm, mn, wz, xnz] at ret
+  simp only [v (i := RZ) (by decide) (by decide), v (i := K) (by decide) (by decide), hk, mn, wz, xnz] at ret
   obtain iff : (A ∧ sv c base s RZ ≠ 0 ∧
       (fx = Fin.ofNat c.C.p (sigR c s₀) * fz ∨
         (sigR c s₀ < c.C.p - c.C.n ∧ fx = (Fin.ofNat c.C.p (sigR c s₀) + Fin.ofNat c.C.p c.C.n) * fz))) ↔
@@ -555,6 +556,7 @@ theorem projectiveFinal_ok (hc : CfgOk c) (hC : Law c.C) (hnp : c.C.n < c.C.p)
 
 theorem tail_dispatch_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} {base : Addr}
     {Q₁ Q₂ : Nat → Fe c.C → Fe c.C → Fe c.C → Prop} {s : State} (hP : Pts c s₀ base Q₁ Q₂ s)
+    (hk : sv c base s K = sigR c s₀)
     (hsp : SpOk (Impl.Ecdsa.Verify.X86.Cfg.tail c) c.stk) :
     WP isa (Impl.Ecdsa.Verify.X86.Cfg.tail c) s fun s' =>
       (∀ rd ∈ VG.Impl.Ecdsa.X86.Cfg.saved, s'.gpr rd.1 = s₀.gpr rd.1) ∧ s'.gpr .esp = s₀.gpr .esp ∧
@@ -564,9 +566,9 @@ theorem tail_dispatch_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} {base : Ad
           (0 < sigS c s₀ ∧ sigS c s₀ < c.C.n)) ∧ sv c base s RZ ≠ 0 ∧
           Fin.ofNat c.C.n xo = Fin.ofNat c.C.n (sigR c s₀) then 1 else 0 := by
   unfold Impl.Ecdsa.Verify.X86.Cfg.tail at hsp ⊢
-  by_cases h : c.mul.isNone ∧ c.C.len = 32 ∧ c.C.n < c.C.p ∧ c.C.p ≤ 2 * c.C.n
+  by_cases h : c.C.n < c.C.p ∧ c.C.p ≤ 2 * c.C.n
   · rw [ite_eq_left h] at hsp ⊢
-    exact projectiveFinal_ok hc hC h.2.2.1 h.2.2.2 (Option.isNone_iff_eq_none.mp h.1) hP hsp
+    exact projectiveFinal_ok hc hC h.1 h.2 hP hk hsp
   · rw [ite_eq_right h] at hsp ⊢
     exact vtail_ok hc hP hsp.left hsp.right
 
@@ -635,8 +637,8 @@ theorem verifyCombBody_ok (hc : CfgOk c) (hC : Law c.C) (hne : c.C.n < 2 ^ (8 * 
       obtain ⟨ht, ho, hap⟩ := hTb d hd
       exact ⟨ht.of_frame (by rw [hM.rd, hM.wr]) hM.whole hap, ho, hap⟩)
     hPc hQ hp.stk_wr h24 hspG H.points
-    fun s₃ hP => ?_
-  refine WP.mono (tail_dispatch_ok hc hC hP H.tail) fun s' ⟨saved, esp, frame, xo, hxo, hx, ret⟩ =>
+    fun s₃ hP hK => ?_
+  refine WP.mono (tail_dispatch_ok hc hC hP hK H.tail) fun s' ⟨saved, esp, frame, xo, hxo, hx, ret⟩ =>
     ⟨⟨saved, esp, frame⟩, ?_⟩
   obtain ⟨X1, Y1, Z1, X2, Y2, Z2, q1, q2, hsum⟩ := hP.pt
   obtain q1' : Rep c.C X1 Y1 Z1 (mul (sv c (ptr s₀ 3) s₂ U) (G c.C)) := by

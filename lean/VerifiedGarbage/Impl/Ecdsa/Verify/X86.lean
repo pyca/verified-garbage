@@ -194,12 +194,12 @@ def projectiveFinal : Prog isa :=
     (.seq (Mont.mulCall c.SP (c.sl XM) (c.sl K) (c.sl XM))
       (fprog c.SP (projectiveOps c.sl)))) (.block (projectiveChecks c))
 
-/-- A 256-bit curve with `n < p ≤ 2n` and no `vg_<curve>_mul` (`Cfg.mul`: its
-scalar would replace `r`, which this reads from `K`'s slot) compares
-projective coordinates directly: P-256, secp256k1 and brainpoolP256r1. The
-other curves convert to affine coordinates. -/
+/-- A curve with `n < p ≤ 2n` compares projective coordinates directly, with
+`r` from `K`'s slot, which the comb and the windows leave as it was (`points`
+would not, for a curve with `vg_<curve>_mul`). The others convert to affine
+coordinates. -/
 def tail : Prog isa :=
-  if c.mul.isNone ∧ c.C.len = 32 ∧ c.C.n < c.C.p ∧ c.C.p ≤ 2 * c.C.n then projectiveFinal c
+  if c.C.n < c.C.p ∧ c.C.p ≤ 2 * c.C.n then projectiveFinal c
   else .seq c.pPow (final c)
 
 /-- The scalar at slot `i` to where the multiplications read it: `K`'s slot,
