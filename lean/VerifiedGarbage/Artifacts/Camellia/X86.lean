@@ -2,11 +2,14 @@ module
 
 public import VerifiedGarbage.Proof.Camellia.X86.Scrub
 public import VerifiedGarbage.Impl.Camellia.X86.Fn
+public import VerifiedGarbage.Proof.Camellia.X86.AesNiExpandKey
+public import VerifiedGarbage.Impl.Camellia.X86.AesNiExpandKey
 public import VerifiedGarbage.Proof.Camellia.X86.AesNiWideEcb
 public import VerifiedGarbage.Impl.Camellia.X86.AesNiWideEcb
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86.Print
 import VerifiedGarbage.Proof.Camellia.X86.Lit
+import VerifiedGarbage.Proof.Camellia.X86.AesNiKeyLit
 import VerifiedGarbage.Proof.Camellia.X86.AesNiWideLit
 
 /-! # Camellia on x86 -/
@@ -16,6 +19,10 @@ import VerifiedGarbage.Proof.Camellia.X86.AesNiWideLit
 namespace VG.Artifacts.Camellia.X86
 
 def artifacts : List Artifact := [
+  Spec.Camellia.expandKeyApi.artifact X86.target {
+    suffix := "_aesni"
+    code := Impl.Camellia.X86.AesNiKey.Fn.expandKey
+    verified := Proof.Camellia.X86.AesNiKey.expandKey_scrubbed },
   Spec.Camellia.expandKeyApi.artifact X86.target {
     code := Impl.Camellia.X86.Fn.expandKey
     verified := Proof.Camellia.X86.Scrub.expandKey_scrubbed },
