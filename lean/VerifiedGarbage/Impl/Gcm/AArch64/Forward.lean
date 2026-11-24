@@ -36,11 +36,18 @@ def forwardLoop (nr : Nat) : Prog isa :=
   .seq (.ite (.zero .x .x11) (.block []) (.loop (.block step) (.nonzero .x .x11))) <|
     .block ((ghWith forwardLd).flatMap lowerXor3 ++ advance)
 
-/-- Save and restore the complete vector registers in unused bytes below the
-GHASH table in the caller's existing scratch. The caller scrubs this region. -/
-def forwardSeal : Prog isa :=
-  let save := (List.range 8).map fun j => Instr.strq (cipherReg j) .x19 (368 + 16 * j)
-  let restore := (List.range 8).map fun j => Instr.ldrq (cipherReg j) .x19 (368 + 16 * j)
-  .seq (.block (save ++ setup)) (.seq (byRounds forwardLoop) (.block (finish ++ restore)))
+/-- Volatile integer registers free throughout the batch loop. The round
+count, pointers, and block count are already in the shared kernel's registers. -/
+def vecSaves : List (VReg × Reg) :=
+  [(.v8,.x0),(.v9,.x1),(.v10,.x2),(.v11,.x3),(.v12,.x4),(.v13,.x5),(.v14,.x6),(.v15,.x7)]
+
+def forwardSave := vecSaves.map fun (v,r) => Instr.umov .x r v 0
+def forwardRestore := vecSaves.map fun (v,r) => Instr.vop (.ins .d2 v 0 r)
+
+def forwardCore : Prog isa := .seq (.block setup) (.seq (byRounds forwardLoop) (.block finish))
+
+def forwardSeal : Prog isa := .seq (.block forwardSave) (.seq forwardCore (.block forwardRestore))
+
+def forwardCall : Prog isa := .call "vg_aes_gcm_seal_batches_aes" forwardSeal
 
 end VG.Impl.Gcm.AArch64.Stitch
