@@ -1842,30 +1842,6 @@ vg_ec_p384_decompress_public_key:
 	pop eax
 	test esi, esi
 	jne 20b
-	mov eax, DWORD PTR [edi+1456]
-	mov DWORD PTR [edi+1840], eax
-	mov eax, DWORD PTR [edi+1460]
-	mov DWORD PTR [edi+1844], eax
-	mov eax, DWORD PTR [edi+1464]
-	mov DWORD PTR [edi+1848], eax
-	mov eax, DWORD PTR [edi+1468]
-	mov DWORD PTR [edi+1852], eax
-	mov eax, DWORD PTR [edi+1472]
-	mov DWORD PTR [edi+1856], eax
-	mov eax, DWORD PTR [edi+1476]
-	mov DWORD PTR [edi+1860], eax
-	mov eax, DWORD PTR [edi+1480]
-	mov DWORD PTR [edi+1864], eax
-	mov eax, DWORD PTR [edi+1484]
-	mov DWORD PTR [edi+1868], eax
-	mov eax, DWORD PTR [edi+1488]
-	mov DWORD PTR [edi+1872], eax
-	mov eax, DWORD PTR [edi+1492]
-	mov DWORD PTR [edi+1876], eax
-	mov eax, DWORD PTR [edi+1496]
-	mov DWORD PTR [edi+1880], eax
-	mov eax, DWORD PTR [edi+1500]
-	mov DWORD PTR [edi+1884], eax
 	mov eax, 640
 	mov ecx, 1456
 	mov edx, 1456
@@ -1902,7 +1878,24 @@ vg_ec_p384_decompress_public_key:
 	mov DWORD PTR [edi+728], eax
 	mov eax, DWORD PTR [edi+1500]
 	mov DWORD PTR [edi+732], eax
-	mov eax, 1840
+	mov esi, 1
+21:
+	sub esi, 1
+	mov eax, 1456
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 21b
+	mov eax, 640
 	mov ecx, 1456
 	mov edx, 1456
 	push eax
@@ -1938,7 +1931,24 @@ vg_ec_p384_decompress_public_key:
 	mov DWORD PTR [edi+1208], eax
 	mov eax, DWORD PTR [edi+1500]
 	mov DWORD PTR [edi+1212], eax
-	mov eax, 1840
+	mov esi, 3
+22:
+	sub esi, 1
+	mov eax, 1456
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 22b
+	mov eax, 1168
 	mov ecx, 1456
 	mov edx, 1456
 	push eax
@@ -1974,7 +1984,53 @@ vg_ec_p384_decompress_public_key:
 	mov DWORD PTR [edi+1256], eax
 	mov eax, DWORD PTR [edi+1500]
 	mov DWORD PTR [edi+1260], eax
-	mov eax, 1840
+	mov esi, 6
+23:
+	sub esi, 1
+	mov eax, 1456
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 23b
+	mov eax, 1216
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 3
+24:
+	sub esi, 1
+	mov eax, 1456
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 24b
+	mov eax, 1168
 	mov ecx, 1456
 	mov edx, 1456
 	push eax
@@ -2010,7 +2066,24 @@ vg_ec_p384_decompress_public_key:
 	mov DWORD PTR [edi+1304], eax
 	mov eax, DWORD PTR [edi+1500]
 	mov DWORD PTR [edi+1308], eax
-	mov eax, 1840
+	mov esi, 15
+25:
+	sub esi, 1
+	mov eax, 1456
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 25b
+	mov eax, 1264
 	mov ecx, 1456
 	mov edx, 1456
 	push eax
@@ -2046,7 +2119,24 @@ vg_ec_p384_decompress_public_key:
 	mov DWORD PTR [edi+1352], eax
 	mov eax, DWORD PTR [edi+1500]
 	mov DWORD PTR [edi+1356], eax
-	mov eax, 1840
+	mov esi, 2
+26:
+	sub esi, 1
+	mov eax, 1456
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 26b
+	mov eax, 688
 	mov ecx, 1456
 	mov edx, 1456
 	push eax
@@ -2082,7 +2172,48 @@ vg_ec_p384_decompress_public_key:
 	mov DWORD PTR [edi+1400], eax
 	mov eax, DWORD PTR [edi+1500]
 	mov DWORD PTR [edi+1404], eax
-	mov eax, 1840
+	mov eax, DWORD PTR [edi+1312]
+	mov DWORD PTR [edi+1456], eax
+	mov eax, DWORD PTR [edi+1316]
+	mov DWORD PTR [edi+1460], eax
+	mov eax, DWORD PTR [edi+1320]
+	mov DWORD PTR [edi+1464], eax
+	mov eax, DWORD PTR [edi+1324]
+	mov DWORD PTR [edi+1468], eax
+	mov eax, DWORD PTR [edi+1328]
+	mov DWORD PTR [edi+1472], eax
+	mov eax, DWORD PTR [edi+1332]
+	mov DWORD PTR [edi+1476], eax
+	mov eax, DWORD PTR [edi+1336]
+	mov DWORD PTR [edi+1480], eax
+	mov eax, DWORD PTR [edi+1340]
+	mov DWORD PTR [edi+1484], eax
+	mov eax, DWORD PTR [edi+1344]
+	mov DWORD PTR [edi+1488], eax
+	mov eax, DWORD PTR [edi+1348]
+	mov DWORD PTR [edi+1492], eax
+	mov eax, DWORD PTR [edi+1352]
+	mov DWORD PTR [edi+1496], eax
+	mov eax, DWORD PTR [edi+1356]
+	mov DWORD PTR [edi+1500], eax
+	mov esi, 30
+27:
+	sub esi, 1
+	mov eax, 1456
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 27b
+	mov eax, 1312
 	mov ecx, 1456
 	mov edx, 1456
 	push eax
@@ -2118,234 +2249,7 @@ vg_ec_p384_decompress_public_key:
 	mov DWORD PTR [edi+1448], eax
 	mov eax, DWORD PTR [edi+1500]
 	mov DWORD PTR [edi+1452], eax
-	mov eax, DWORD PTR [edi+1216]
-	mov DWORD PTR [edi+1456], eax
-	mov eax, DWORD PTR [edi+1220]
-	mov DWORD PTR [edi+1460], eax
-	mov eax, DWORD PTR [edi+1224]
-	mov DWORD PTR [edi+1464], eax
-	mov eax, DWORD PTR [edi+1228]
-	mov DWORD PTR [edi+1468], eax
-	mov eax, DWORD PTR [edi+1232]
-	mov DWORD PTR [edi+1472], eax
-	mov eax, DWORD PTR [edi+1236]
-	mov DWORD PTR [edi+1476], eax
-	mov eax, DWORD PTR [edi+1240]
-	mov DWORD PTR [edi+1480], eax
-	mov eax, DWORD PTR [edi+1244]
-	mov DWORD PTR [edi+1484], eax
-	mov eax, DWORD PTR [edi+1248]
-	mov DWORD PTR [edi+1488], eax
-	mov eax, DWORD PTR [edi+1252]
-	mov DWORD PTR [edi+1492], eax
-	mov eax, DWORD PTR [edi+1256]
-	mov DWORD PTR [edi+1496], eax
-	mov eax, DWORD PTR [edi+1260]
-	mov DWORD PTR [edi+1500], eax
-	mov esi, 4
-21:
-	sub esi, 1
-	mov eax, 1456
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	test esi, esi
-	jne 21b
-	mov eax, 1408
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	mov esi, 4
-22:
-	sub esi, 1
-	mov eax, 1456
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	test esi, esi
-	jne 22b
-	mov eax, 1408
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	mov esi, 4
-23:
-	sub esi, 1
-	mov eax, 1456
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	test esi, esi
-	jne 23b
-	mov eax, 1408
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	mov esi, 4
-24:
-	sub esi, 1
-	mov eax, 1456
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	test esi, esi
-	jne 24b
-	mov eax, 1408
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	mov esi, 4
-25:
-	sub esi, 1
-	mov eax, 1456
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	test esi, esi
-	jne 25b
-	mov eax, 1408
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	mov esi, 4
-26:
-	sub esi, 1
-	mov eax, 1456
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	test esi, esi
-	jne 26b
-	mov eax, 1408
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	mov esi, 4
-27:
-	sub esi, 1
-	mov eax, 1456
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	test esi, esi
-	jne 27b
-	mov eax, 1408
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	mov esi, 4
+	mov esi, 60
 28:
 	sub esi, 1
 	mov eax, 1456
@@ -2374,7 +2278,31 @@ vg_ec_p384_decompress_public_key:
 	pop eax
 	pop eax
 	pop eax
-	mov esi, 4
+	mov eax, DWORD PTR [edi+1456]
+	mov DWORD PTR [edi+1408], eax
+	mov eax, DWORD PTR [edi+1460]
+	mov DWORD PTR [edi+1412], eax
+	mov eax, DWORD PTR [edi+1464]
+	mov DWORD PTR [edi+1416], eax
+	mov eax, DWORD PTR [edi+1468]
+	mov DWORD PTR [edi+1420], eax
+	mov eax, DWORD PTR [edi+1472]
+	mov DWORD PTR [edi+1424], eax
+	mov eax, DWORD PTR [edi+1476]
+	mov DWORD PTR [edi+1428], eax
+	mov eax, DWORD PTR [edi+1480]
+	mov DWORD PTR [edi+1432], eax
+	mov eax, DWORD PTR [edi+1484]
+	mov DWORD PTR [edi+1436], eax
+	mov eax, DWORD PTR [edi+1488]
+	mov DWORD PTR [edi+1440], eax
+	mov eax, DWORD PTR [edi+1492]
+	mov DWORD PTR [edi+1444], eax
+	mov eax, DWORD PTR [edi+1496]
+	mov DWORD PTR [edi+1448], eax
+	mov eax, DWORD PTR [edi+1500]
+	mov DWORD PTR [edi+1452], eax
+	mov esi, 120
 29:
 	sub esi, 1
 	mov eax, 1456
@@ -2403,7 +2331,7 @@ vg_ec_p384_decompress_public_key:
 	pop eax
 	pop eax
 	pop eax
-	mov esi, 4
+	mov esi, 15
 210:
 	sub esi, 1
 	mov eax, 1456
@@ -2420,7 +2348,7 @@ vg_ec_p384_decompress_public_key:
 	pop eax
 	test esi, esi
 	jne 210b
-	mov eax, 1408
+	mov eax, 1264
 	mov ecx, 1456
 	mov edx, 1456
 	push eax
@@ -2432,7 +2360,7 @@ vg_ec_p384_decompress_public_key:
 	pop eax
 	pop eax
 	pop eax
-	mov esi, 4
+	mov esi, 33
 211:
 	sub esi, 1
 	mov eax, 1456
@@ -2449,7 +2377,7 @@ vg_ec_p384_decompress_public_key:
 	pop eax
 	test esi, esi
 	jne 211b
-	mov eax, 1408
+	mov eax, 1360
 	mov ecx, 1456
 	mov edx, 1456
 	push eax
@@ -2461,7 +2389,7 @@ vg_ec_p384_decompress_public_key:
 	pop eax
 	pop eax
 	pop eax
-	mov esi, 4
+	mov esi, 64
 212:
 	sub esi, 1
 	mov eax, 1456
@@ -2478,7 +2406,7 @@ vg_ec_p384_decompress_public_key:
 	pop eax
 	test esi, esi
 	jne 212b
-	mov eax, 1408
+	mov eax, 640
 	mov ecx, 1456
 	mov edx, 1456
 	push eax
@@ -2490,7 +2418,7 @@ vg_ec_p384_decompress_public_key:
 	pop eax
 	pop eax
 	pop eax
-	mov esi, 4
+	mov esi, 30
 213:
 	sub esi, 1
 	mov eax, 1456
@@ -2507,1746 +2435,6 @@ vg_ec_p384_decompress_public_key:
 	pop eax
 	test esi, esi
 	jne 213b
-	mov eax, 1408
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	mov esi, 4
-214:
-	sub esi, 1
-	mov eax, 1456
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	test esi, esi
-	jne 214b
-	mov eax, 1408
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	mov esi, 4
-215:
-	sub esi, 1
-	mov eax, 1456
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	test esi, esi
-	jne 215b
-	mov eax, 1408
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	mov esi, 4
-216:
-	sub esi, 1
-	mov eax, 1456
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	test esi, esi
-	jne 216b
-	mov eax, 1408
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	mov esi, 4
-217:
-	sub esi, 1
-	mov eax, 1456
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	test esi, esi
-	jne 217b
-	mov eax, 1408
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	mov esi, 4
-218:
-	sub esi, 1
-	mov eax, 1456
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	test esi, esi
-	jne 218b
-	mov eax, 1408
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	mov esi, 4
-219:
-	sub esi, 1
-	mov eax, 1456
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	test esi, esi
-	jne 219b
-	mov eax, 1408
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	mov esi, 4
-220:
-	sub esi, 1
-	mov eax, 1456
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	test esi, esi
-	jne 220b
-	mov eax, 1408
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	mov esi, 4
-221:
-	sub esi, 1
-	mov eax, 1456
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	test esi, esi
-	jne 221b
-	mov eax, 1408
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	mov esi, 4
-222:
-	sub esi, 1
-	mov eax, 1456
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	test esi, esi
-	jne 222b
-	mov eax, 1408
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	mov esi, 4
-223:
-	sub esi, 1
-	mov eax, 1456
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	test esi, esi
-	jne 223b
-	mov eax, 1408
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	mov esi, 4
-224:
-	sub esi, 1
-	mov eax, 1456
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	test esi, esi
-	jne 224b
-	mov eax, 1408
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	mov esi, 4
-225:
-	sub esi, 1
-	mov eax, 1456
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	test esi, esi
-	jne 225b
-	mov eax, 1408
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	mov esi, 4
-226:
-	sub esi, 1
-	mov eax, 1456
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	test esi, esi
-	jne 226b
-	mov eax, 1408
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	mov esi, 4
-227:
-	sub esi, 1
-	mov eax, 1456
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	test esi, esi
-	jne 227b
-	mov eax, 1408
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	mov esi, 4
-228:
-	sub esi, 1
-	mov eax, 1456
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	test esi, esi
-	jne 228b
-	mov eax, 1408
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	mov esi, 4
-229:
-	sub esi, 1
-	mov eax, 1456
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	test esi, esi
-	jne 229b
-	mov eax, 1408
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	mov esi, 4
-230:
-	sub esi, 1
-	mov eax, 1456
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	test esi, esi
-	jne 230b
-	mov eax, 1408
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	mov esi, 4
-231:
-	sub esi, 1
-	mov eax, 1456
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	test esi, esi
-	jne 231b
-	mov eax, 1408
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	mov esi, 4
-232:
-	sub esi, 1
-	mov eax, 1456
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	test esi, esi
-	jne 232b
-	mov eax, 1408
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	mov esi, 4
-233:
-	sub esi, 1
-	mov eax, 1456
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	test esi, esi
-	jne 233b
-	mov eax, 1408
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	mov esi, 4
-234:
-	sub esi, 1
-	mov eax, 1456
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	test esi, esi
-	jne 234b
-	mov eax, 1408
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	mov esi, 4
-235:
-	sub esi, 1
-	mov eax, 1456
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	test esi, esi
-	jne 235b
-	mov eax, 1408
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	mov esi, 4
-236:
-	sub esi, 1
-	mov eax, 1456
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	test esi, esi
-	jne 236b
-	mov eax, 1408
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	mov esi, 4
-237:
-	sub esi, 1
-	mov eax, 1456
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	test esi, esi
-	jne 237b
-	mov eax, 1408
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	mov esi, 4
-238:
-	sub esi, 1
-	mov eax, 1456
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	test esi, esi
-	jne 238b
-	mov eax, 1408
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	mov esi, 4
-239:
-	sub esi, 1
-	mov eax, 1456
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	test esi, esi
-	jne 239b
-	mov eax, 1408
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	mov esi, 4
-240:
-	sub esi, 1
-	mov eax, 1456
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	test esi, esi
-	jne 240b
-	mov eax, 1408
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	mov esi, 4
-241:
-	sub esi, 1
-	mov eax, 1456
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	test esi, esi
-	jne 241b
-	mov eax, 1408
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	mov esi, 4
-242:
-	sub esi, 1
-	mov eax, 1456
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	test esi, esi
-	jne 242b
-	mov eax, 1408
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	mov esi, 4
-243:
-	sub esi, 1
-	mov eax, 1456
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	test esi, esi
-	jne 243b
-	mov eax, 1408
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	mov esi, 4
-244:
-	sub esi, 1
-	mov eax, 1456
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	test esi, esi
-	jne 244b
-	mov eax, 1408
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	mov esi, 4
-245:
-	sub esi, 1
-	mov eax, 1456
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	test esi, esi
-	jne 245b
-	mov eax, 1408
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	mov esi, 4
-246:
-	sub esi, 1
-	mov eax, 1456
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	test esi, esi
-	jne 246b
-	mov eax, 1408
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	mov esi, 4
-247:
-	sub esi, 1
-	mov eax, 1456
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	test esi, esi
-	jne 247b
-	mov eax, 1408
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	mov esi, 4
-248:
-	sub esi, 1
-	mov eax, 1456
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	test esi, esi
-	jne 248b
-	mov eax, 1408
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	mov esi, 4
-249:
-	sub esi, 1
-	mov eax, 1456
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	test esi, esi
-	jne 249b
-	mov eax, 1408
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	mov esi, 4
-250:
-	sub esi, 1
-	mov eax, 1456
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	test esi, esi
-	jne 250b
-	mov eax, 1408
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	mov esi, 4
-251:
-	sub esi, 1
-	mov eax, 1456
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	test esi, esi
-	jne 251b
-	mov eax, 1408
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	mov esi, 4
-252:
-	sub esi, 1
-	mov eax, 1456
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	test esi, esi
-	jne 252b
-	mov eax, 1408
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	mov esi, 4
-253:
-	sub esi, 1
-	mov eax, 1456
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	test esi, esi
-	jne 253b
-	mov eax, 1408
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	mov esi, 4
-254:
-	sub esi, 1
-	mov eax, 1456
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	test esi, esi
-	jne 254b
-	mov eax, 1408
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	mov esi, 4
-255:
-	sub esi, 1
-	mov eax, 1456
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	test esi, esi
-	jne 255b
-	mov eax, 1408
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	mov esi, 4
-256:
-	sub esi, 1
-	mov eax, 1456
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	test esi, esi
-	jne 256b
-	mov eax, 1408
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	mov esi, 4
-257:
-	sub esi, 1
-	mov eax, 1456
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	test esi, esi
-	jne 257b
-	mov eax, 1408
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	mov esi, 4
-258:
-	sub esi, 1
-	mov eax, 1456
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	test esi, esi
-	jne 258b
-	mov eax, 1408
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	mov esi, 4
-259:
-	sub esi, 1
-	mov eax, 1456
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	test esi, esi
-	jne 259b
-	mov eax, 1408
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	mov esi, 4
-260:
-	sub esi, 1
-	mov eax, 1456
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	test esi, esi
-	jne 260b
-	mov eax, 1408
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	mov esi, 4
-261:
-	sub esi, 1
-	mov eax, 1456
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	test esi, esi
-	jne 261b
-	mov eax, 1408
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	mov esi, 4
-262:
-	sub esi, 1
-	mov eax, 1456
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	test esi, esi
-	jne 262b
-	mov eax, 1408
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	mov esi, 4
-263:
-	sub esi, 1
-	mov eax, 1456
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	test esi, esi
-	jne 263b
-	mov eax, 1408
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	mov esi, 5
-264:
-	sub esi, 1
-	mov eax, 1456
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	test esi, esi
-	jne 264b
-	mov eax, 1408
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	mov esi, 4
-265:
-	sub esi, 1
-	mov eax, 1456
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	test esi, esi
-	jne 265b
-	mov eax, 1408
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	mov esi, 4
-266:
-	sub esi, 1
-	mov eax, 1456
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	test esi, esi
-	jne 266b
-	mov eax, 1408
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	mov esi, 4
-267:
-	sub esi, 1
-	mov eax, 1456
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	test esi, esi
-	jne 267b
-	mov eax, 1408
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	mov esi, 4
-268:
-	sub esi, 1
-	mov eax, 1456
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	test esi, esi
-	jne 268b
-	mov eax, 1408
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	mov esi, 4
-269:
-	sub esi, 1
-	mov eax, 1456
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	test esi, esi
-	jne 269b
-	mov eax, 1408
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	mov esi, 4
-270:
-	sub esi, 1
-	mov eax, 1456
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	test esi, esi
-	jne 270b
-	mov eax, 1408
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	mov esi, 4
-271:
-	sub esi, 1
-	mov eax, 1456
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	test esi, esi
-	jne 271b
-	mov eax, 1408
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	mov esi, 64
-272:
-	sub esi, 1
-	mov eax, 1456
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	test esi, esi
-	jne 272b
-	mov eax, 640
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	mov esi, 30
-273:
-	sub esi, 1
-	mov eax, 1456
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	test esi, esi
-	jne 273b
 	mov eax, 256
 	mov ecx, 1456
 	mov edx, 1792

@@ -20,6 +20,8 @@ import VerifiedGarbage.Proof.Dsa.X86.Comb.Setup
 import VerifiedGarbage.Proof.Mont.X86.PublicPowerTiming
 import VerifiedGarbage.Proof.Mont.X86.CombDigitMath
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+import VerifiedGarbage.Proof.Dsa.X86.EntryTiming
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 
 /-! # The product of two powers of DSA's verification on IA-32
 
@@ -737,6 +739,371 @@ theorem core2_ok {s : State} {base : Addr} {size n e m : Nat}
     ⟨?_, St.mem, St.keeps⟩
   rw [V, u₁.mem, Uv, Vv, uw, vw]
 
+/-! ## The power by a window of two bits
+
+`coreW` is `core2`'s pass over one exponent, two bits an iteration: its
+entries are `core2`'s for `y = g²` (`tableW_ok`), the window `d` of the
+exponent's top two bits selects `g^(d mod 2) y^(d / 2) = g^d`, and an
+iteration takes the result `A` to `A⁴ g^d` (`win_step`).
+-/
+
+theorem shr30_nat (x : BitVec 32) : (x >>> 30).toNat = x.toNat / 2 ^ 30 := by
+  rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]
+
+/-- The top two bits of `j + 1` words. -/
+theorem top_bits32 (m : Mem) (base : Addr) (d j : Nat) :
+    val32 m base d (j + 1) * 4 / 2 ^ (32 * (j + 1)) = w32 m base (d + 4 * j) / 2 ^ 30 := by
+  have hP : 0 < 2 ^ (32 * j) := Nat.two_pow_pos _
+  have hV := val32_lt m base d j
+  have hq : val32 m base d j * 4 / 2 ^ (32 * j) < 4 := (Nat.div_lt_iff_lt_mul hP).2 (by omega)
+  rw [val32_succ, pow32_succ, Nat.mul_comm (2 ^ 32), ← Nat.div_div_eq_div_mul, Nat.add_mul,
+    Nat.mul_assoc, Nat.add_mul_div_left _ _ hP]
+  generalize val32 m base d j * 4 / 2 ^ (32 * j) = q at hq
+  omega
+
+/-- The window word: the exponent's top two bits. -/
+theorem digitW_ok {s : State} {base : Addr} {size n e : Nat} (hs : Scr s base size) (he : 0 < e)
+    (hu : slot n 8 + 4 * e ≤ size) :
+    WP isa (.block (digitW n e)) s fun t => Outside base 4 4 s.mem t.mem ∧
+      w32 t.mem base 4 = w32 s.mem base (slot n 8 + 4 * (e - 1)) / 2 ^ 30 ∧ Keeps [.eax, .ecx] s t := by
+  have h8 := slot_header n 8
+  unfold digitW windowOffset
+  refine wp_movS (readSrc_sc hs (by omega)) fun s₁ u₁ _ => ?_
+  refine wp_shr (by decide) fun s₂ u₂ _ => ?_
+  have k₂ : Keeps [.eax, .ecx] s s₂ := (u₁.keeps.mono (by decide)).trans (u₂.keeps.mono (by decide))
+  have m₂ : s₂.mem = s.mem := u₂.mem.trans u₁.mem
+  have hs₂ := hs.of_keeps k₂ (by decide)
+  refine wp_storeS (hs₂.ea (d := 4) (by omega)) (hs₂.write (d := 4) (n := 4) (by omega)) fun t mt =>
+    WP.block_nil ⟨?_, ?_, k₂.trans (mt.keeps _)⟩
+  · rw [mt.mem, m₂]; exact writeW32_outside _ _ _ (by decide)
+  · show (t.mem.readW (off base 4) 32).toNat = _
+    rw [mt.mem, Mem.readW_writeW_self32, u₂.gpr, shr30_nat, u₁.gpr]
+
+theorem win_entry (g d : Nat) : g ^ (d % 2) * (g * g) ^ (d / 2) = g ^ d := by
+  rw [← Nat.pow_two, ← Nat.pow_mul, ← Nat.pow_add, Nat.mod_add_div]
+
+theorem win_step (A g r k : Nat) (hk : 2 ≤ k) :
+    (A * A * (A * A) * g ^ (r / 2 ^ (k - 2))) ^ 2 ^ (k - 2) * g ^ (r % 2 ^ (k - 2)) = A ^ 2 ^ k * g ^ r := by
+  obtain ⟨j, rfl⟩ : ∃ j, k = j + 2 := ⟨k - 2, by omega⟩
+  rw [Nat.add_sub_cancel]
+  have hA : A ^ 2 ^ (j + 2) = (A * A * (A * A)) ^ 2 ^ j := by
+    rw [Nat.pow_add, Nat.mul_comm, Nat.pow_mul]
+    congr 1
+    rw [show (2 : Nat) ^ 2 = 2 + 2 from rfl, Nat.pow_add, Nat.pow_two]
+  generalize 2 ^ j = P at hA ⊢
+  have hu : g ^ r = (g ^ (r / P)) ^ P * g ^ (r % P) := by
+    rw [← Nat.pow_mul, ← Nat.pow_add, Nat.mul_comm, Nat.div_add_mod]
+  rw [hA, hu]
+  simp only [Nat.mul_pow]
+  ac_rfl
+
+theorem top2_digit (r i k W : Nat) (h : W = i + k) (hk : 2 ≤ k) :
+    r * 2 ^ i * 4 / 2 ^ W = r / 2 ^ (k - 2) := by
+  obtain ⟨j, rfl⟩ : ∃ j, k = j + 2 := ⟨k - 2, by omega⟩
+  subst h
+  rw [Nat.add_sub_cancel, show r * 2 ^ i * 4 = r * 2 ^ (i + 2) by rw [Nat.pow_add, Nat.mul_assoc],
+    show 2 ^ (i + (j + 2)) = 2 ^ j * 2 ^ (i + 2) by rw [← Nat.pow_add]; congr 1; omega]
+  exact Nat.mul_div_mul_right _ _ (Nat.two_pow_pos _)
+
+section
+variable {n m size e : Nat} {base : Addr} {s₀ : State}
+
+theorem digitWC_ok {t : State} (S : St n m size base s₀ t) (he0 : 0 < e) (he : e ≤ 2 * n) :
+    WP isa (.block (digitW n e)) t fun u => St n m size base s₀ u ∧ u.gpr .esi = t.gpr .esi ∧
+      w32 u.mem base 4 = val32 t.mem base (slot n 8) e * 4 / 2 ^ (32 * e) ∧
+      Kept n e base none t.mem u.mem := by
+  have bu : slot n 8 + 4 * e ≤ contextBytes n := (cell_bound he .u).2
+  have cb := S.ctx.size_le
+  refine WP.mono (digitW_ok S.ctx.scr he0 (by omega)) fun u ⟨O, V, K⟩ => ?_
+  refine ⟨S.write K (by decide) O (.inr ⟨rfl, rfl⟩), K.1 .esi (by decide), ?_, kept_hdr O he S.hz⟩
+  obtain ⟨j, rfl⟩ : ∃ j, e = j + 1 := ⟨e - 1, by omega⟩
+  rw [V, top_bits32]
+  rfl
+
+/-- The entries `R`, `g R`, `g² R` and `g³ R`: `core2`'s for `y = g²`. -/
+theorem tableW_ok {t : State} {g : Nat} (S : St n m size base s₀ t) (hn : 6 ≤ n) (he : e ≤ 2 * n)
+    (hr2 : wordsVal t.mem base (slot n 4) n = 2 ^ (128 * n) % m)
+    (hg : wordsVal t.mem base (slot n 5) n = g) :
+    WP isa (tableW n) t fun u => St n m size base s₀ u ∧ Tab n m base g (g * g) u.mem ∧
+      wordsVal u.mem base (slot n 6) n = 2 ^ (64 * n) % m ∧
+      val32 u.mem base (slot n 8) e = val32 t.mem base (slot n 8) e := by
+  have cop := S.ctx.coprime
+  have hm1 := S.ctx.gt_one
+  have mpos : 0 < m := by omega
+  unfold tableW
+  refine WP.seq (WP.mono (copyC_ok (e := e) S he .g .sel rfl rfl (by decide)) fun s₁ ⟨S₁, V₁, K₁, _⟩ => ?_)
+  have y₁ : wordsVal s₁.mem base (slot n 7) n = g := V₁.trans hg
+  refine WP.seq (WP.mono (table2_ok (e := e) (g := g) (y := g) S₁ hn he (by rw [K₁.y (by decide), hr2])
+    (by rw [K₁.g (by decide), hg]) y₁) fun s₂ ⟨S₂, T₂, A₂, U₂, _⟩ => ?_)
+  refine WP.seq (WP.mono (mulC_ok (e := e) (o := 7) (a := 4) (b := 5) S₂ hn he .sel rfl rfl (by decide) (by decide)
+    (by decide) (by decide) (by decide) (by decide) (by rw [T₂.gR]; exact Nat.mod_lt _ mpos))
+    fun s₃ ⟨S₃, _, L₃, P₃, K₃, _⟩ => ?_)
+  obtain q₃ : wordsVal s₃.mem base (slot n 7) n = g * g * 2 ^ (64 * n) % m := by
+    obtain v := VG.Proof.Dsa.mont_product cop (a := g) (b := g) (by rw [T₂.yR, Nat.mod_mod])
+      (by rw [T₂.gR, Nat.mod_mod]) P₃
+    rwa [Nat.mod_eq_of_lt L₃] at v
+  refine WP.seq (WP.mono (copyC_ok (e := e) S₃ he .sel .y rfl rfl (by decide)) fun s₄ ⟨S₄, V₄, K₄, _⟩ => ?_)
+  have y₄ : wordsVal s₄.mem base (slot n 4) n = g * g * 2 ^ (64 * n) % m := V₄.trans q₃
+  have g₄ : wordsVal s₄.mem base (slot n 5) n = g * 2 ^ (64 * n) % m := by
+    rw [K₄.g (by decide), K₃.g (by decide), T₂.gR]
+  have q₄ : wordsVal s₄.mem base (slot n 7) n = g * g * 2 ^ (64 * n) % m := by
+    rw [K₄.sel (by decide), q₃]
+  refine WP.seq (WP.mono (mulC_ok (e := e) (o := 7) (a := 7) (b := 5) S₄ hn he .sel rfl rfl (by decide) (by decide)
+    (by decide) (by decide) (by decide) (by decide) (by rw [g₄]; exact Nat.mod_lt _ mpos))
+    fun s₅ ⟨S₅, _, L₅, P₅, K₅, _⟩ => ?_)
+  obtain c₅ : wordsVal s₅.mem base (slot n 7) n = g * (g * g) * 2 ^ (64 * n) % m := by
+    obtain v := VG.Proof.Dsa.mont_product cop (a := g * g) (b := g) (by rw [q₄, Nat.mod_mod])
+      (by rw [g₄, Nat.mod_mod]) P₅
+    rwa [Nat.mod_eq_of_lt L₅, Nat.mul_comm (g * g) g] at v
+  refine WP.mono (copyC_ok (e := e) S₅ he .sel .gy rfl rfl (by decide)) fun u ⟨Su, Vu, Ku, _⟩ => ?_
+  have gyu : wordsVal u.mem base (cellGY n) n = wordsVal s₅.mem base (slot n 7) n := Vu
+  refine ⟨Su, ⟨?_, ?_, ?_, ?_⟩, ?_, ?_⟩
+  · rw [Ku.r (by decide), K₅.r (by decide), K₄.r (by decide), K₃.r (by decide), T₂.rR]
+  · rw [Ku.g (by decide), K₅.g (by decide), g₄]
+  · rw [Ku.y (by decide), K₅.y (by decide), y₄]
+  · rw [gyu, c₅]
+  · rw [Ku.acc (by decide), K₅.acc (by decide), K₄.acc (by decide), K₃.acc (by decide), A₂]
+  · rw [Ku.u (by decide), K₅.u (by decide), K₄.u (by decide), K₃.u (by decide), U₂, K₁.u (by decide)]
+
+/-- An iteration, with `2 c` bits of the exponent left after `i`. -/
+theorem stepW_ok {t : State} {g A r i c : Nat} (S : St n m size base s₀ t) (hn : 6 ≤ n) (he0 : 0 < e)
+    (he : e ≤ 2 * n) (T : Tab n m base g (g * g) t.mem)
+    (hA : wordsVal t.mem base (slot n 6) n = A * 2 ^ (64 * n) % m)
+    (hU : val32 t.mem base (slot n 8) e = r * 2 ^ i)
+    (hik : 32 * e = i + 2 * c) (hc0 : 0 < c) (hr : r < 2 ^ (2 * c))
+    (hc32 : c < 2 ^ 32) (hc : t.gpr .esi = BitVec.ofNat 32 c) :
+    WP isa (stepW n e) t fun u => St n m size base s₀ u ∧ Tab n m base g (g * g) u.mem ∧
+      u.gpr .esi = BitVec.ofNat 32 (c - 1) ∧ u.zf = some (decide (c = 1)) ∧
+      wordsVal u.mem base (slot n 6) n =
+        A * A * (A * A) * g ^ (r / 2 ^ (2 * c - 2)) * 2 ^ (64 * n) % m ∧
+      val32 u.mem base (slot n 8) e = r % 2 ^ (2 * c - 2) * 2 ^ (i + 2) := by
+  have cop := S.ctx.coprime
+  have hm1 := S.ctx.gt_one
+  have mpos : 0 < m := by omega
+  have dg := top2_digit r i (2 * c) (32 * e) hik (by omega)
+  obtain ⟨_, t₁⟩ := top_step r i (2 * c) (32 * e) hik (by omega)
+  obtain ⟨_, t₂⟩ := top_step (r % 2 ^ (2 * c - 1)) (i + 1) (2 * c - 1) (32 * e) (by omega) (by omega)
+  have mm : r % 2 ^ (2 * c - 1) % 2 ^ (2 * c - 1 - 1) = r % 2 ^ (2 * c - 2) := by
+    rw [show 2 * c - 1 - 1 = 2 * c - 2 by omega]
+    exact Nat.mod_mod_of_dvd _ (Nat.pow_dvd_pow 2 (by omega))
+  rw [mm, show i + 1 + 1 = i + 2 by omega] at t₂
+  have e2 : 2 ^ (2 * c) = 4 * 2 ^ (2 * c - 2) := by
+    obtain ⟨j, hj⟩ : ∃ j, 2 * c = j + 2 := ⟨2 * c - 2, by omega⟩
+    rw [hj, Nat.add_sub_cancel, Nat.pow_add, Nat.mul_comm]
+  have bd : r / 2 ^ (2 * c - 2) < 4 := (Nat.div_lt_iff_lt_mul (Nat.two_pow_pos _)).2 (by omega)
+  generalize r / 2 ^ (2 * c - 2) = d at dg bd ⊢
+  unfold stepW
+  refine WP.seq (WP.mono (mulC_ok (e := e) (o := 6) (a := 6) (b := 6) S hn he .acc rfl rfl (by decide) (by decide)
+    (by decide) (by decide) (by decide) (by decide) (by rw [hA]; exact Nat.mod_lt _ mpos))
+    fun s₁ ⟨S₁, i₁, L₁, P₁, K₁, _⟩ => ?_)
+  obtain a₁ : wordsVal s₁.mem base (slot n 6) n = A * A * 2 ^ (64 * n) % m := by
+    obtain v := VG.Proof.Dsa.mont_product cop (a := A) (b := A) (by rw [hA, Nat.mod_mod]) (by rw [hA, Nat.mod_mod]) P₁
+    rwa [Nat.mod_eq_of_lt L₁] at v
+  obtain T₁ := T.keep K₁ (.inr (.inl rfl))
+  refine WP.seq (WP.mono (mulC_ok (e := e) (o := 6) (a := 6) (b := 6) S₁ hn he .acc rfl rfl (by decide) (by decide)
+    (by decide) (by decide) (by decide) (by decide) (by rw [a₁]; exact Nat.mod_lt _ mpos))
+    fun s₁' ⟨S₁', i₁', L₁', P₁', K₁', _⟩ => ?_)
+  obtain a₁' : wordsVal s₁'.mem base (slot n 6) n = A * A * (A * A) * 2 ^ (64 * n) % m := by
+    obtain v := VG.Proof.Dsa.mont_product cop (a := A * A) (b := A * A) (by rw [a₁, Nat.mod_mod])
+      (by rw [a₁, Nat.mod_mod]) P₁'
+    rwa [Nat.mod_eq_of_lt L₁'] at v
+  obtain T₁' := T₁.keep K₁' (.inr (.inl rfl))
+  refine WP.seq (WP.mono (digitWC_ok S₁' he0 he) fun s₂ ⟨S₂, i₂, D₂, K₂⟩ => ?_)
+  obtain d₂ : w32 s₂.mem base 4 = d := by
+    rw [D₂, K₁'.u (by decide), K₁.u (by decide), hU, dg]
+  obtain T₂ := T₁'.keep K₂ (.inl rfl)
+  refine WP.seq (WP.mono (selectC_ok (e := e) S₂ he (by rw [d₂]; exact bd)) fun s₃ ⟨S₃, i₃, V₃, K₃⟩ => ?_)
+  obtain sel₃ : wordsVal s₃.mem base (slot n 7) n = g ^ d * 2 ^ (64 * n) % m := by
+    rw [V₃, T₂.entry (d := w32 s₂.mem base 4) (by rw [d₂]; exact bd), d₂, win_entry]
+  obtain a₃ : wordsVal s₃.mem base (slot n 6) n = A * A * (A * A) * 2 ^ (64 * n) % m := by
+    rw [K₃.acc (by decide), K₂.acc (by decide), a₁']
+  obtain T₃ := T₂.keep K₃ (.inr (.inr (.inl rfl)))
+  refine WP.seq (WP.mono (mulC_ok (e := e) (o := 6) (a := 6) (b := 7) S₃ hn he .acc rfl rfl (by decide) (by decide)
+    (by decide) (by decide) (by decide) (by decide) (by rw [sel₃]; exact Nat.mod_lt _ mpos))
+    fun s₄ ⟨S₄, i₄, L₄, P₄, K₄, _⟩ => ?_)
+  obtain a₄ : wordsVal s₄.mem base (slot n 6) n = A * A * (A * A) * g ^ d * 2 ^ (64 * n) % m := by
+    obtain v := VG.Proof.Dsa.mont_product cop (a := A * A * (A * A)) (b := g ^ d)
+      (by rw [a₃, Nat.mod_mod]) (by rw [sel₃, Nat.mod_mod]) P₄
+    rwa [Nat.mod_eq_of_lt L₄] at v
+  obtain T₄ := T₃.keep K₄ (.inr (.inl rfl))
+  refine WP.seq (WP.mono (shiftC_ok S₄ he0 he .u rfl) fun s₅ ⟨S₅, i₅, U₅, K₅⟩ => ?_)
+  have u₅ : val32 s₅.mem base (slot n 8) e = val32 s₄.mem base (slot n 8) e * 2 % 2 ^ (32 * e) := U₅
+  refine WP.seq (WP.mono (shiftC_ok S₅ he0 he .u rfl) fun s₆ ⟨S₆, i₆, U₆, K₆⟩ => ?_)
+  have u₆ : val32 s₆.mem base (slot n 8) e = val32 s₅.mem base (slot n 8) e * 2 % 2 ^ (32 * e) := U₆
+  obtain T₆ := (T₄.keep K₅ (.inr (.inr (.inr (.inl rfl))))).keep K₆ (.inr (.inr (.inr (.inl rfl))))
+  obtain c₆ : s₆.gpr .esi = BitVec.ofNat 32 c := by rw [i₆, i₅, i₄, i₃, i₂, i₁', i₁, hc]
+  refine wp_subS rfl fun v uv _ => ?_
+  refine wp_cmpS rfl fun u fu zu => WP.block_nil ?_
+  obtain mu : u.mem = s₆.mem := fu.mem.trans uv.mem
+  obtain ku : Keeps powerClob s₆ u := (uv.keeps.mono (by decide)).trans (fu.keeps _)
+  obtain Cu : Context n m base size u := ⟨S₆.ctx.scr.of_keeps ku (by decide), S₆.ctx.size_le,
+    mu ▸ S₆.ctx.modulus, S₆.ctx.gt_one, mu ▸ S₆.ctx.inverse⟩
+  refine ⟨⟨Cu, S₆.room, S₆.keeps.trans ku, mu ▸ S₆.mem⟩, mu ▸ T₆, ?_, ?_, ?_, ?_⟩
+  · rw [fu.gpr, uv.gpr, c₆, counter_sub hc32 hc0]
+  · rw [zu, uv.gpr, c₆, counter_sub hc32 hc0, counter_zero hc32 hc0]
+  · rw [mu, K₆.acc (by decide), K₅.acc (by decide), a₄]
+  · rw [mu, u₆, u₅, K₄.u (by decide), K₃.u (by decide), K₂.u (by decide), K₁'.u (by decide),
+      K₁.u (by decide), hU, t₁, t₂]
+
+/-- After `it` iterations: the result `A`, and the bits of the exponent
+left, `r`, at the top of its words. -/
+structure LoopW (n m size e : Nat) (g target it : Nat) (base : Addr) (s₀ t : State) : Prop where
+  st : St n m size base s₀ t
+  tab : Tab n m base g (g * g) t.mem
+  counter : t.gpr .esi = BitVec.ofNat 32 (16 * e - it)
+  value : ∃ A r, wordsVal t.mem base (slot n 6) n = A * 2 ^ (64 * n) % m ∧
+    val32 t.mem base (slot n 8) e = r * 2 ^ (2 * it) ∧ r < 2 ^ (2 * (16 * e - it)) ∧
+    A ^ 2 ^ (2 * (16 * e - it)) * g ^ r % m = target
+
+theorem loopW_ok {t : State} {g : Nat} (S : St n m size base s₀ t) (hn : 6 ≤ n) (he0 : 0 < e)
+    (he : e ≤ 2 * n) (T : Tab n m base g (g * g) t.mem)
+    (hA : wordsVal t.mem base (slot n 6) n = 2 ^ (64 * n) % m)
+    (hk32 : 16 * e < 2 ^ 32) (hc : t.gpr .esi = BitVec.ofNat 32 (16 * e)) :
+    WP isa (.loop (stepW n e) .ne) t
+      (LoopW n m size e g (g ^ val32 t.mem base (slot n 8) e % m) (16 * e) base s₀) := by
+  generalize htg : g ^ val32 t.mem base (slot n 8) e % m = target
+  obtain init : LoopW n m size e g target 0 base s₀ t :=
+    ⟨S, T, by rw [Nat.sub_zero]; exact hc, 1, val32 t.mem base (slot n 8) e,
+      by rw [Nat.one_mul]; exact hA, by rw [Nat.mul_zero, Nat.pow_zero, Nat.mul_one],
+      by rw [Nat.sub_zero, show 2 * (16 * e) = 32 * e by omega]; exact val32_lt _ _ _ _,
+      by rw [Nat.one_pow, Nat.one_mul]; exact htg⟩
+  refine WP.loop (M := isa)
+    (fun k u => ∃ i, k = 16 * e - i ∧ i < 16 * e ∧ LoopW n m size e g target i base s₀ u)
+    ?_ (16 * e) t ⟨0, rfl, by omega, init⟩
+  rintro k u ⟨i, rfl, hi, I⟩
+  obtain ⟨A, r, hA', hU, br, hT⟩ := I.value
+  obtain ⟨j, hj⟩ : ∃ j, 16 * e - i = j + 1 := ⟨16 * e - i - 1, by omega⟩
+  have hj' : 16 * e - (i + 1) = j := by omega
+  have cnt₀ := I.counter
+  rw [hj] at br hT cnt₀ ⊢
+  refine WP.mono (stepW_ok (i := 2 * i) (c := j + 1) I.st hn he0 he I.tab hA' hU (by omega) (by omega) br
+    (by omega) cnt₀) fun w ⟨S', T', cnt, zf, A', U'⟩ => ?_
+  rw [Nat.add_sub_cancel] at cnt
+  rw [show 2 * (j + 1) - 2 = 2 * j by omega] at A' U'
+  obtain next : LoopW n m size e g target (i + 1) base s₀ w := by
+    refine ⟨S', T', by rw [hj']; exact cnt, _, _, A', by rw [U']; congr 2, ?_, ?_⟩
+    · rw [hj']; exact Nat.mod_lt _ (Nat.two_pow_pos _)
+    · have := win_step A g r (2 * (j + 1)) (by omega)
+      rw [show 2 * (j + 1) - 2 = 2 * j by omega] at this
+      rw [hj', this]; exact hT
+  by_cases hdone : i + 1 = 16 * e
+  · refine .inl ⟨?_, ?_⟩
+    · have eq : j + 1 = 1 := by omega
+      simp only [eval, zf, eq, decide_true, Option.map_some, Bool.not_true]
+    · rw [hdone] at next
+      exact next
+  · refine .inr ⟨?_, 16 * e - (i + 1), by omega, i + 1, rfl, by omega, next⟩
+    obtain ne : j + 1 ≠ 1 := by omega
+    simp only [eval, zf, decide_eq_false ne, Option.map_some, Bool.not_false]
+
+theorem LoopW.finished {g target : Nat} {t : State} (I : LoopW n m size e g target (16 * e) base s₀ t) :
+    wordsVal t.mem base (slot n 6) n = target * 2 ^ (64 * n) % m := by
+  obtain ⟨A, r, hA, _, br, hT⟩ := I.value
+  simp only [Nat.sub_self, Nat.mul_zero, Nat.pow_zero] at br hT
+  obtain rfl : r = 0 := by omega
+  simp only [Nat.pow_one, Nat.pow_zero, Nat.mul_one] at hT
+  rw [hA, Nat.mul_mod A, hT, Nat.mul_mod_mod]
+
+end
+
+theorem coreW_ok {s : State} {base : Addr} {size n e m : Nat}
+    (hs : Scr s base size) (R : CallRoom (s.gpr .esp) base size) (hz : contextBytes n ≤ size)
+    (hn : 6 ≤ n) (hn48 : n ≤ 48) (he : 0 < e) (hen : e ≤ 2 * n)
+    (hv : wordsVal s.mem base (slot n 0) n = m) (hm1 : 1 < m) (hodd : m % 2 = 1) :
+    WP isa (coreW n e) s fun t =>
+      wordsVal t.mem base (slot n 6) n =
+        wordsVal s.mem base (slot n 5) n ^ val32 s.mem base (slot n 8) e % m ∧
+      OutsS base (s.gpr .esp) (coreRanges n) s.mem t.mem ∧ Keeps powerClob s t := by
+  have nw := hs.nowrap
+  unfold coreW setup2
+  refine WP.seq (WP.seq (WP.mono (VG.Proof.Dsa.X86.Comb.seed_ok hs (by omega) (by omega) hz hv hm1 hodd)
+    fun u ⟨Cu, _, Xu, Ou, Ku⟩ => ?_))
+  obtain Su : St n m size base s u := ⟨Cu, R, Ku, (OutsS.of_outs Ou).core (setupRanges_core n)⟩
+  obtain keep₀ : ∀ (c : Cell), slot n 5 ≤ c.off n →
+      val32 u.mem base (c.off n) (c.len n e) = val32 s.mem base (c.off n) (c.len n e) := by
+    intro c hc
+    have b := (cell_bound hen c).2
+    apply Ou.val32
+    · simp only [setupRanges, List.forall_mem_cons, List.not_mem_nil, false_imp_iff, implies_true, and_true]
+      simp only [slot_lin] at hc ⊢
+      omega
+    · omega
+  refine WP.mono (squaringsC_ok (e := e) hn hen 0 6 Su (by
+    rw [Xu, Nat.pow_zero, Nat.mul_one, show 64 * n + n = 65 * n by omega])) fun w ⟨Sw, Xw, Kw⟩ => ?_
+  have q : slot n 5 ≤ slot n 8 := by simp only [slot_lin]; omega
+  have gw : wordsVal w.mem base (slot n 5) n = wordsVal s.mem base (slot n 5) n := by
+    rw [Kw.g (by decide), wordsVal_eq_val32, wordsVal_eq_val32]; exact keep₀ .g (Nat.le_refl _)
+  have uw : val32 w.mem base (slot n 8) e = val32 s.mem base (slot n 8) e := (Kw.u (by decide)).trans (keep₀ .u q)
+  refine WP.seq (WP.mono (tableW_ok (e := e) Sw hn hen (by
+    rw [Xw, show 64 * n + n * 2 ^ (0 + 6) = 128 * n by rw [show (2 : Nat) ^ (0 + 6) = 64 from rfl]; omega]) gw)
+    fun v ⟨Sv, Tv, Av, Uv⟩ => ?_)
+  refine WP.seq (wp_movS rfl fun v₁ u₁ _ => WP.block_nil ?_)
+  obtain k₁ : Keeps powerClob v v₁ := u₁.keeps.mono (by decide)
+  obtain S₁ : St n m size base s v₁ := ⟨⟨Sv.ctx.scr.of_keeps k₁ (by decide), Sv.ctx.size_le,
+    u₁.mem ▸ Sv.ctx.modulus, Sv.ctx.gt_one, u₁.mem ▸ Sv.ctx.inverse⟩, Sv.room, Sv.keeps.trans k₁, u₁.mem ▸ Sv.mem⟩
+  refine WP.seq (WP.mono (loopW_ok S₁ hn he hen (u₁.mem ▸ Tv) (by rw [u₁.mem]; exact Av) (by omega) u₁.gpr)
+    fun x I => ?_)
+  refine WP.mono (finish_ok I.st (by omega) I.finished (Nat.mod_lt _ (by omega))) fun t ⟨St, V⟩ =>
+    ⟨?_, St.mem, St.keeps⟩
+  rw [V, u₁.mem, Uv, uw]
+
+/-- The power, by either pass. -/
+theorem core_ok {s : State} {base : Addr} {size n e m : Nat}
+    (hs : Scr s base size) (R : CallRoom (s.gpr .esp) base size) (hz : contextBytes n ≤ size)
+    (hn : 2 ≤ n) (hn48 : n ≤ 48) (he : 1 < e) (hen : e ≤ 2 * n)
+    (hv : wordsVal s.mem base (slot n 0) n = m) (hm1 : 1 < m) (hodd : m % 2 = 1) :
+    WP isa (core n e) s fun t =>
+      wordsVal t.mem base (slot n 6) n =
+        wordsVal s.mem base (slot n 5) n ^ val32 s.mem base (slot n 8) e % m ∧
+      OutsS base (s.gpr .esp) (coreRanges n) s.mem t.mem ∧ Keeps powerClob s t := by
+  unfold core
+  split
+  · exact coreW_ok hs R hz (by assumption) hn48 (by omega) hen hv hm1 hodd
+  · exact coreBits_ok hs R hz hn hn48 he hen hv hm1 hodd
+
+section
+open VG.X86.Spill
+
+theorem body_ok {s : State} {base : Addr} {size n e m : Nat}
+    (E : Entry s base size) (R : CallRoom (s.gpr .esp) base size) (hz : contextBytes n ≤ size)
+    (hn : 2 ≤ n) (hn48 : n ≤ 48) (he : 1 < e) (hen : e ≤ 2 * n)
+    (hv : wordsVal s.mem base (slot n 0) n = m) (hm1 : 1 < m) (hodd : m % 2 = 1) :
+    WP isa (body n e) s fun t =>
+      wordsVal t.mem base (slot n 6) n =
+        wordsVal s.mem base (slot n 5) n ^ val32 s.mem base (slot n 8) e % m ∧
+      OutsS base (s.gpr .esp) (scratch n) s.mem t.mem ∧
+      (∀ r ∈ calleeSaved, t.gpr r = s.gpr r) ∧ t.rd = s.rd ∧ t.wr = s.wr := by
+  have nw := E.nowrap
+  have hz24 : 24 ≤ size := by simp only [contextBytes, slot, stride] at hz; omega_using [hz]
+  unfold body
+  refine WP.seq (WP.mono (save_ok E hz24) fun u ⟨Su, Saved, Ou, Ku⟩ => ?_)
+  have uesp : u.gpr .esp = s.gpr .esp := Ku.1 _ (by decide)
+  have vals : ∀ {d k : Nat}, 24 ≤ d → d + 4 * k ≤ 2 ^ 64 →
+      val32 u.mem base d k = val32 s.mem base d k :=
+    fun hd hk => Ou.val32 (by omega_using [hd]) hk
+  have V : wordsVal u.mem base (slot n 0) n = m := by
+    rw [wordsVal_eq_val32, vals (by simp only [slot]; omega_using []) (by simp only [slot, stride]; omega_using [hn48]),
+      ← wordsVal_eq_val32, hv]
+  refine WP.seq (WP.mono (core_ok Su (by rw [uesp]; exact R) hz hn hn48 he hen V hm1 hodd)
+    fun v ⟨Vv, Ov, Kv⟩ => ?_)
+  rw [uesp] at Ov
+  refine WP.mono (restore_ok (Su.of_keeps Kv (by decide)) hz24 (core_saved Ov R nw hz24 Saved))
+    fun t R' => ⟨?_, ?_, R'.abi (by decide) (by decide) ?_, ?_, ?_⟩
+  · rw [R'.mem, Vv, wordsVal_eq_val32, vals (by simp only [slot]; omega_using [])
+      (by simp only [slot, stride]; omega_using [hn48]), vals (by simp only [slot]; omega_using [])
+      (by simp only [slot, stride]; omega_using [hn48, hen]), ← wordsVal_eq_val32]
+  · rw [R'.mem]
+    refine (OutsS.of_outs (Outs.of_outside (Ou.mono (by decide) (by decide)) (List.mem_cons_self ..))).trans ?_
+    refine Ov.widen fun y hy r hr => ?_
+    simp only [coreRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
+    have h0 := hy (0, 64) (List.mem_cons_self ..)
+    have h1 := hy _ (List.mem_cons_of_mem _ (List.mem_cons_self ..))
+    rcases hr with rfl | rfl <;> dsimp only at * <;> omega_arith
+  · exact (Kv.1 _ (by decide)).trans (Ku.1 _ (by decide))
+  · rw [R'.rd, Kv.2.1, Ku.2.1]
+  · rw [R'.wr, Kv.2.2, Ku.2.2]
+end
+
 /-! ## The trace
 
 Two runs of `core2` from the same stack pointer and working space leak the
@@ -1023,6 +1390,219 @@ theorem core2_relCT {size m : Nat} (hn : 6 ≤ n) (hn48 : n ≤ 48) (he : 0 < e)
   refine VG.RelCT.seq ((wc_loop2 hn he hen (32 * e)).mono (fun _ _ h => ⟨by omega, by omega, h⟩) fun _ _ h => h) ?_
   exact (wk_finish (base := base) (sp := sp) (cnt := some 0) (by omega)).mono
     (fun _ _ h => ⟨toWk _ h.1, toWk _ h.2⟩) fun _ _ h => h
+
+/-! ### The window's trace -/
+
+/-- A copy of the cell `src` into the cell `dst`. -/
+theorem wc_copy (he : e ≤ 2 * n) {cs cs' : List Cell} (src dst : Cell)
+    (hs : src.len n e = 2 * n) (hd : dst.len n e = 2 * n) (hne : dst ≠ src)
+    (hcs : ∀ x ∈ cs, x.len n e = 2 * n) (hsrc : dst ∈ cs' → src ∈ cs)
+    (hcs' : ∀ x ∈ cs', some x = some dst ∨ (x ∈ cs ∧ some x ≠ some dst)) :
+    RelCT isa (Both (Wc n base sp none cs)) (copyWords n (src.off n) (dst.off n))
+      (Both (Wc n base sp none cs')) :=
+  ((wc_taint (cnt := none) (cs := cs) (X := fun _ => True) (F := Wc n base sp none cs') (hc := copyHint false)
+    (copy_check false n _ _) fun u W _ => by
+      obtain ⟨size, m, s₀, S, e', _, B⟩ := W
+      exact WP.mono (copyC_ok (e := e) S he src dst hs hd hne) fun v ⟨Sv, V, K, _⟩ =>
+        wc_set Sv e' (fun _ h => nomatch h) B hcs K
+          (fun x hx hw => by obtain rfl := Option.some.inj hw; rw [V]; exact B src (hsrc hx)) hcs')).mono
+    (fun _ _ h => ⟨⟨h.1, trivial⟩, ⟨h.2, trivial⟩⟩) fun _ _ h => h
+
+theorem selCells_len (x : Cell) (hx : x ∈ Cell.sel :: loopCells) : x.len n e = 2 * n := by
+  simp only [loopCells, List.mem_cons, List.not_mem_nil, or_false] at hx
+  rcases hx with rfl | rfl | rfl | rfl | rfl | rfl <;> rfl
+
+/-- The window's entries. -/
+theorem wc_tableW (hn : 6 ≤ n) (he : e ≤ 2 * n) :
+    RelCT isa (Both (Wc n base sp none [.y])) (tableW n) (Both (Wc n base sp none loopCells)) := by
+  unfold tableW
+  refine VG.RelCT.seq (wc_copy (cs' := [.y]) he .g .sel rfl rfl (by decide) (res_len (by decide))
+    (by decide) (by decide)) ?_
+  refine VG.RelCT.seq (wc_table hn he) ?_
+  refine VG.RelCT.seq (wc_mul (cs' := .sel :: loopCells) hn he .sel .g rfl rfl rfl (by decide) (by decide)
+    (by decide) (by decide) (by decide) (by decide) (by decide) loopCells_len (by decide)) ?_
+  refine VG.RelCT.seq (wc_copy (cs' := .sel :: loopCells) he .sel .y rfl rfl (by decide) selCells_len
+    (by decide) (by decide)) ?_
+  refine VG.RelCT.seq (wc_mul (cs' := .sel :: loopCells) hn he .sel .g rfl rfl rfl (by decide) (by decide)
+    (by decide) (by decide) (by decide) (by decide) (by decide) selCells_len (by decide)) ?_
+  exact wc_copy (cs' := loopCells) he .sel .gy rfl rfl (by decide) selCells_len (by decide) (by decide)
+
+theorem digitW_check (n e : Nat) :
+    (VG.Taint.check taint (workspaceTaint true) (.block (digitW n e)) (.block [])).isSome = true :=
+  (congrArg Option.isSome (check_of_erase_eq (.block (digitW n e)) (.block (digitW 1 1)) (workspaceTaint true)
+    (.block []) rfl rfl rfl)).trans (by kernel_rfl)
+
+theorem wc_stepW {j : Nat} (hn : 6 ≤ n) (he0 : 0 < e) (he : e ≤ 2 * n) (hj : 0 < j) (hj32 : j < 2 ^ 32) :
+    RelCT isa (Both (Wc n base sp (some j) loopCells)) (stepW n e)
+      (Both fun u => Wc n base sp (some (j - 1)) loopCells u ∧ u.zf = some (decide (j = 1))) := by
+  have tr : ∀ s t : State, Both (Wc n base sp (some j) loopCells) s t →
+      Both (fun u => Wc n base sp (some j) loopCells u ∧ True) s t := fun _ _ h => ⟨⟨h.1, trivial⟩, ⟨h.2, trivial⟩⟩
+  have same : ∀ x ∈ loopCells, some x = some Cell.acc ∨ (x ∈ loopCells ∧ some x ≠ some Cell.acc) := by decide
+  unfold stepW
+  refine VG.RelCT.seq (wc_mul (cs' := loopCells) hn he .acc .acc rfl rfl rfl (by decide) (by decide) (by decide)
+    (by decide) (by decide) (by decide) (by decide) loopCells_len same) ?_
+  refine VG.RelCT.seq (wc_mul (cs' := loopCells) hn he .acc .acc rfl rfl rfl (by decide) (by decide) (by decide)
+    (by decide) (by decide) (by decide) (by decide) loopCells_len same) ?_
+  refine VG.RelCT.seq ((wc_taint (cnt := some j) (cs := loopCells) (X := fun _ => True)
+    (F := fun u => Wc n base sp (some j) loopCells u ∧ w32 u.mem base 4 < 4) (hc := .block [])
+    (digitW_check n e) fun u W _ => ?_).mono tr fun _ _ h => h) ?_
+  · obtain ⟨size, m, s₀, S, hsp, c, B⟩ := W
+    refine WP.mono (digitWC_ok S he0 he) fun v ⟨Sv, iv, D, K⟩ =>
+      ⟨wc_set Sv hsp (fun c' h => by rw [iv]; exact c c' h) B loopCells_len K (fun x _ hx => nomatch hx) (by decide), ?_⟩
+    rw [D]
+    exact (Nat.div_lt_iff_lt_mul (Nat.two_pow_pos _)).2 (by have := val32_lt u.mem base (slot n 8) e; omega)
+  refine VG.RelCT.seq (wc_taint (cnt := some j) (cs := loopCells) (F := Wc n base sp (some j) (.sel :: loopCells))
+    (hc := select2Hint) (select2_check n) fun u W hw => ?_) ?_
+  · obtain ⟨size, m, s₀, S, hsp, c, B⟩ := W
+    exact WP.mono (selectC_ok (e := e) S he hw) fun v ⟨Sv, iv, V, K⟩ =>
+      wc_set Sv hsp (fun c' h => by rw [iv]; exact c c' h) B loopCells_len K
+        (fun x _ hx => by obtain rfl := Option.some.inj hx; rw [show Cell.off n .sel = slot n 7 from rfl, V]; exact entry_lt B _)
+        (by decide)
+  refine VG.RelCT.seq (wc_mul (cs := .sel :: loopCells) (cs' := loopCells) hn he .acc .sel rfl rfl rfl (by decide)
+    (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) selCells_len (by decide)) ?_
+  refine VG.RelCT.seq ((wc_taint (cnt := some j) (cs := loopCells) (X := fun _ => True)
+    (F := Wc n base sp (some j) loopCells) (hc := shiftOneHint) (shiftOne_check e _) fun u W _ => ?_).mono tr
+    fun _ _ h => h) ?_
+  · obtain ⟨size, m, s₀, S, hsp, c, B⟩ := W
+    exact WP.mono (shiftC_ok S he0 he .u rfl) fun v ⟨Sv, iv, _, K⟩ =>
+      wc_set Sv hsp (fun c' h => by rw [iv]; exact c c' h) B loopCells_len K (fun x hm hx => by
+        obtain rfl := Option.some.inj hx; exact absurd hm (by decide)) (by decide)
+  refine VG.RelCT.seq ((wc_taint (cnt := some j) (cs := loopCells) (X := fun _ => True)
+    (F := Wc n base sp (some j) loopCells) (hc := shiftOneHint) (shiftOne_check e _) fun u W _ => ?_).mono tr
+    fun _ _ h => h) ?_
+  · obtain ⟨size, m, s₀, S, hsp, c, B⟩ := W
+    exact WP.mono (shiftC_ok S he0 he .u rfl) fun v ⟨Sv, iv, _, K⟩ =>
+      wc_set Sv hsp (fun c' h => by rw [iv]; exact c c' h) B loopCells_len K (fun x hm hx => by
+        obtain rfl := Option.some.inj hx; exact absurd hm (by decide)) (by decide)
+  refine (wc_taint (cnt := some j) (cs := loopCells) (X := fun _ => True) (hc := .block [])
+    (show (VG.Taint.check taint (workspaceTaint true) _ _).isSome = true from rfl) fun u W _ => ?_).mono tr
+    fun _ _ h => h
+  obtain ⟨size, m, s₀, S, hsp, c, B⟩ := W
+  have hc := c j rfl
+  refine wp_subS rfl fun v uv _ => ?_
+  refine wp_cmpS rfl fun w fw zw => WP.block_nil ?_
+  have mw : w.mem = u.mem := fw.mem.trans uv.mem
+  have kw : Keeps powerClob u w := (uv.keeps.mono (by decide)).trans (fw.keeps _)
+  refine ⟨⟨size, m, s₀, ⟨⟨S.ctx.scr.of_keeps kw (by decide), S.ctx.size_le, mw ▸ S.ctx.modulus, S.ctx.gt_one,
+    mw ▸ S.ctx.inverse⟩, S.room, S.keeps.trans kw, mw ▸ S.mem⟩, hsp, fun c' h => ?_, fun b hb => ?_⟩, ?_⟩
+  · cases h; rw [fw.gpr, uv.gpr, hc, counter_sub hj32 hj]
+  · rw [mw]; exact B b hb
+  · rw [zw, uv.gpr, hc, counter_sub hj32 hj, counter_zero hj32 hj]
+
+theorem wc_loopW (hn : 6 ≤ n) (he0 : 0 < e) (he : e ≤ 2 * n) (j : Nat) :
+    RelCT isa (fun s t => 0 < j ∧ j < 2 ^ 32 ∧ Both (Wc n base sp (some j) loopCells) s t)
+      (.loop (stepW n e) .ne) (Both (Wc n base sp (some 0) loopCells)) := by
+  refine VG.RelCT.loop (M := isa)
+    (I := fun j s t => 0 < j ∧ j < 2 ^ 32 ∧ Both (Wc n base sp (some j) loopCells) s t) (fun j => ?_) j
+  by_cases hj : 0 < j ∧ j < 2 ^ 32
+  · refine (wc_stepW hn he0 he hj.1 hj.2).mono (fun _ _ h => h.2.2) ?_
+    rintro s t ⟨⟨W₁, z₁⟩, ⟨W₂, z₂⟩⟩
+    have e₁ : isa.eval .ne s = some (!decide (j = 1)) := by show s.zf.map (!·) = _; rw [z₁]; rfl
+    have e₂ : isa.eval .ne t = some (!decide (j = 1)) := by show t.zf.map (!·) = _; rw [z₂]; rfl
+    refine ⟨e₁.trans e₂.symm, fun h => ?_, fun h => ?_⟩
+    · rw [e₁] at h
+      have d : j = 1 := by simpa using h
+      rw [d] at W₁ W₂
+      exact ⟨W₁, W₂⟩
+    · rw [e₁] at h
+      have : j ≠ 1 := by simpa using h
+      exact ⟨j - 1, by omega, by omega, by omega, W₁, W₂⟩
+  · exact VG.RelCT.of_false fun _ _ h => hj ⟨h.1, h.2.1⟩
+
+theorem coreW_relCT {size m : Nat} (hn : 6 ≤ n) (hn48 : n ≤ 48) (he : 0 < e) (hen : e ≤ 2 * n) :
+    RelCT isa (Both (CoreIn2 n base sp size m)) (coreW n e) (fun _ _ => True) := by
+  have toWc : ∀ u : State, Wk n base sp none [4] u → Wc n base sp none [.y] u := by
+    rintro u ⟨size, m, s₀, S, hsp, c, B⟩
+    exact ⟨size, m, s₀, S, hsp, c, fun x hx => by rw [List.mem_singleton.mp hx]; exact B 4 (by simp)⟩
+  have toWk : ∀ u : State, Wc n base sp (some 0) loopCells u → Wk n base sp (some 0) [] u := by
+    rintro u ⟨size, m, s₀, S, hsp, c, _⟩
+    exact ⟨size, m, s₀, S, hsp, c, fun _ h => nomatch h⟩
+  unfold coreW setup2
+  refine VG.RelCT.seq (VG.RelCT.seq (wk_seed2 (by omega) hn48) (wk_squarings (by omega) 6)) ?_
+  refine VG.RelCT.seq ((wc_tableW hn hen).mono (fun _ _ h => ⟨toWc _ h.1, toWc _ h.2⟩) fun _ _ h => h) ?_
+  refine VG.RelCT.seq (wc_start2 (16 * e)) ?_
+  refine VG.RelCT.seq ((wc_loopW hn he hen (16 * e)).mono (fun _ _ h => ⟨by omega, by omega, h⟩) fun _ _ h => h) ?_
+  exact (wk_finish (base := base) (sp := sp) (cnt := some 0) (by omega)).mono
+    (fun _ _ h => ⟨toWk _ h.1, toWk _ h.2⟩) fun _ _ h => h
+
+/-- The power's trace, by either pass. -/
+theorem core_relCT {size m : Nat} (hn : 2 ≤ n) (hn48 : n ≤ 48) (he : 1 < e) (hen : e ≤ 2 * n) :
+    RelCT isa (Both (CoreIn2 n base sp size m)) (core n e) (fun _ _ => True) := by
+  unfold core
+  split
+  · exact coreW_relCT (by assumption) hn48 (by omega) hen
+  · exact coreBits_relCT hn hn48 he hen
+
+/-! ### The body's trace
+
+Two runs from the same stack pointer and working space, each ready for the
+body (`BodyIn`), leak the same trace: the saves read the argument and store
+through public pointers, the core's traces agree (`core_relCT`), and it
+leaves `edi` as it found it, through which the restores read. -/
+
+/-- What the body needs of a run on entry: the working space at its first argument, the 96 bytes
+of stack below `esp` apart from it, and the modulus `m` odd and above 1. -/
+def BodyIn (n size m : Nat) (s : State) : Prop :=
+  Entry s ((arg s 0).setWidth 64) size ∧ CallRoom (s.gpr .esp) ((arg s 0).setWidth 64) size ∧
+    contextBytes n ≤ size ∧ wordsVal s.mem ((arg s 0).setWidth 64) (slot n 0) n = m ∧ 1 < m ∧ m % 2 = 1
+
+theorem edi_of_scr {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) :
+    s.gpr .edi = BitVec.ofNat 32 base.toNat := by
+  apply BitVec.eq_of_toNat_eq
+  have := hs.edi_toNat
+  have := (s.gpr .edi).isLt
+  rw [hs.edi_toNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]
+
+theorem body_relCT (n e size m : Nat) (hn : 2 ≤ n) (hn48 : n ≤ 48) (he : 1 < e) (hen : e ≤ 2 * n) :
+    RelCT isa (fun s t => s.gpr .esp = t.gpr .esp ∧ arg s 0 = arg t 0 ∧
+      readSrc s (.mem (VG.Impl.Mont.X86.at_ .esp 4)) = some (arg s 0) ∧
+      readSrc t (.mem (VG.Impl.Mont.X86.at_ .esp 4)) = some (arg t 0) ∧ BodyIn n size m s ∧ BodyIn n size m t)
+      (body n e) (fun _ _ => True) := by
+  unfold body
+  have saveCT : RelCT isa (fun s t => s.gpr .esp = t.gpr .esp ∧ arg s 0 = arg t 0 ∧
+      readSrc s (.mem (VG.Impl.Mont.X86.at_ .esp 4)) = some (arg s 0) ∧
+      readSrc t (.mem (VG.Impl.Mont.X86.at_ .esp 4)) = some (arg t 0))
+      (.block save) (VG.X86.Taint.Agree (workspaceTaint false)) := by
+    unfold save
+    rw [List.append_assoc]
+    exact RelCT.block_append (RelCT.seq (scratchArgument_relCT 0)
+      (checkedProgramChange (σ := workspaceTaint false) (hint := .block []) rfl rfl))
+  have saved := (saveCT.mono (P' := fun (s t : State) => s.gpr .esp = t.gpr .esp ∧ arg s 0 = arg t 0 ∧
+      readSrc s (.mem (VG.Impl.Mont.X86.at_ .esp 4)) = some (arg s 0) ∧
+      readSrc t (.mem (VG.Impl.Mont.X86.at_ .esp 4)) = some (arg t 0) ∧ BodyIn n size m s ∧ BodyIn n size m t)
+      (fun _ _ h => ⟨h.1, h.2.1, h.2.2.1, h.2.2.2.1⟩) fun _ _ h => h).wpDep
+    (F := fun (σ u : State) => CoreIn2 n ((arg σ 0).setWidth 64) (σ.gpr .esp) size m u ∧
+      (∀ r ∈ calleeSaved, r ≠ .edi → u.gpr r = σ.gpr r))
+    fun s t ⟨_, _, _, _, B₁, B₂⟩ => by
+      have go : ∀ σ, BodyIn n size m σ → WP isa (.block save) σ fun u =>
+          CoreIn2 n ((arg σ 0).setWidth 64) (σ.gpr .esp) size m u ∧ (∀ r ∈ calleeSaved, r ≠ .edi → u.gpr r = σ.gpr r) := by
+        intro σ ⟨E, R, hz, hm, hm1, hodd⟩
+        have hz24 : 24 ≤ size := by simp only [contextBytes, slot, stride] at hz; omega_using [hz]
+        refine WP.mono (save_ok E hz24) fun u ⟨Su, _, Ou, Ku⟩ => ?_
+        have hv : wordsVal u.mem ((arg σ 0).setWidth 64) (slot n 0) n =
+            wordsVal σ.mem ((arg σ 0).setWidth 64) (slot n 0) n := by
+          rw [wordsVal_eq_val32, wordsVal_eq_val32]
+          exact Ou.val32 (by simp only [slot]; omega_using []) (by have := E.nowrap; simp only [slot, stride] at hz ⊢; omega_using [hn48])
+        exact ⟨⟨Su, R, Ku.1 _ (by decide), hz, hv.trans hm, hm1, hodd⟩,
+          fun r hr hne => Ku.1 r (by revert hr hne; cases r <;> simp [calleeSaved])⟩
+      exact ⟨go s B₁, go t B₂⟩
+  refine VG.RelCT.seq (R := fun u v => ∃ p : Addr × BitVec 32, Both (CoreIn2 n p.1 p.2 size m) u v)
+    (saved.mono (fun _ _ h => h) fun u v ⟨_, σ₁, σ₂, ⟨SP, A0, _⟩, ⟨C₁, _⟩, ⟨C₂, _⟩⟩ =>
+      ⟨((arg σ₁ 0).setWidth 64, σ₁.gpr .esp), C₁, by rw [A0, SP]; exact C₂⟩) ?_
+  refine VG.RelCT.seq (R := VG.X86.Taint.Agree (workspaceTaint false)) ?_
+    ((checkedProgramChange (σ := { regs := .ofList [], flags := false }) (hint := .block []) (by rfl) rfl).mono
+      (fun _ _ h => h) (fun _ _ _ => trivial))
+  refine VG.RelCT.exists_ fun p => ?_
+  have go : ∀ u, CoreIn2 n p.1 p.2 size m u → WP isa (core n e) u fun w => w.gpr .edi = BitVec.ofNat 32 p.1.toNat := by
+    intro u ⟨hs, R, esp, hz, hv, hm1, hodd⟩
+    rw [← esp] at R
+    exact WP.mono (core_ok hs R hz hn hn48 he hen hv hm1 hodd) fun w ⟨_, _, K⟩ => by
+      rw [K.1 _ (by decide)]; exact edi_of_scr hs
+  refine ((core_relCT (base := p.1) (sp := p.2) (size := size) (m := m) hn hn48 he hen).wp (F₁ := fun (w : State) => w.gpr .edi = BitVec.ofNat 32 p.1.toNat)
+    (F₂ := fun (w : State) => w.gpr .edi = BitVec.ofNat 32 p.1.toNat) fun u v h => ⟨go u h.1, go v h.2⟩).mono
+    (fun _ _ h => h) fun w₁ w₂ ⟨_, e₁, e₂⟩ => agree_regs (rs := [.edi]) fun r hr => by
+      obtain rfl := List.mem_singleton.mp hr
+      rw [e₁, e₂]
 
 end
 

@@ -34,7 +34,8 @@ theorem pointsCombLadder_ok (hc : CfgOk c) (hC : Law c.C) (hne : c.C.n < 2 ^ (8 
     (hspG : SpOk c.gMul c.stk)
     (hsp : SpOk (Impl.Ecdsa.Verify.X86.Cfg.pointsCombLadder c) c.stk) {rest : Prog isa} {Q : State → Prop}
     (h : ∀ s', Pts c s₀ base (fun j X Y Z => Rep c.C X Y Z (mul (sv c base s U >>> j) (G c.C)))
-      (fun j X Y Z => Rep c.C X Y Z (mul (sv c base s V >>> j) P)) s' → WP isa rest s' Q) :
+      (fun j X Y Z => Rep c.C X Y Z (mul (sv c base s V >>> j) P)) s' →
+      sv c base s' K = sigR c s₀ → WP isa rest s' Q) :
     WP isa (.seq (Impl.Ecdsa.Verify.X86.Cfg.pointsCombLadder c) rest) s Q := by
   have h0 := hc.n0
   have h7 := hc.n10
@@ -124,7 +125,7 @@ theorem pointsCombLadder_ok (hc : CfgOk c) (hC : Law c.C) (hne : c.C.n < 2 ^ (8 
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hi
     rcases hi with rfl | rfl | rfl <;>
       exact (sv_winTW U₅ h7 hn (by decide) (by decide)).trans (v₄ (by decide))
-  refine WP.mono (sum_ok hc hs₅ M₅ (fun i hi => ?_)) fun s₆ ⟨hs₆, g₆, rd₆, wr₆, U₆, M₆, rz₆, t₆, rx₆⟩ f₆ => h s₆ ?_
+  refine WP.mono (sum_ok hc hs₅ M₅ (fun i hi => ?_)) fun s₆ ⟨hs₆, g₆, rd₆, wr₆, U₆, M₆, rz₆, t₆, rx₆⟩ f₆ => h s₆ ?_ ?_
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hi
     rcases hi with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · exact lt_of_eq_of_lt F₅.ap (hmont _)
@@ -181,6 +182,9 @@ theorem pointsCombLadder_ok (hc : CfgOk c) (hC : Law c.C) (hne : c.C.n < 2 ^ (8 
       tbl_unch U₁ h7 (by decide) ht (tbl_apart_tbl (by decide) ht)]
     exact hM.t₁ t ht
   · exact fun _ => (sv_unch U₆ h7 hn (i := K) (by decide) (apart_slWk (by decide) (by decide))).trans
+      ((v₅ (by decide) (by decide)).trans ((v₄ (by decide)).trans
+        ((W₃ (by decide) (by decide)).trans hM.k)))
+  · exact (sv_unch U₆ h7 hn (i := K) (by decide) (apart_slWk (by decide) (by decide))).trans
       ((v₅ (by decide) (by decide)).trans ((v₄ (by decide)).trans
         ((W₃ (by decide) (by decide)).trans hM.k)))
 

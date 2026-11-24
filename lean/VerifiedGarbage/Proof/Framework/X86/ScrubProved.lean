@@ -108,7 +108,7 @@ theorem verifiedScrubbed {api : Api} (r : Unscrubbed api target) {rb : Nat}
   unfold retBitsOf
   rw [e] at hv ⊢
   have h := Verified.scrub (ScrubAbi.of r.consts api.sig r.tables) hv hn hm rfl
-  exact ⟨h.1, h.2⟩
+  exact ⟨h.1, h.2, fun ty _ h => by cases ty <;> cases h⟩
 
 /-- `r`'s code, with frames and direct calls or calls through its tables,
 followed by the zeroing of its `W` bytes of stack below `esp` and `tail rb`
@@ -129,7 +129,7 @@ theorem verifiedScrubbedAll {api : Api} (r : Unscrubbed api target) (hpost : Pos
   rw [e] at hv hp ⊢
   have h := Verified.scrubAllT (ScrubAbi.of r.consts api.sig r.tables) hv (noSp_of_all r.spSafe) hd
     (tablesCall_fnAddr htc) hm hn rfl hp
-  exact ⟨h.1, h.2⟩
+  exact ⟨h.1, h.2, fun ty _ h => by cases ty <;> cases h⟩
 
 /-- The code as emitted, `c` and then its cleanup (`scrub`), writes `esp`
 only in its frames and calls, as `c` does: `Registration.spSafe` of a

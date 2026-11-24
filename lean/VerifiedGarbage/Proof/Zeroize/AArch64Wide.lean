@@ -301,6 +301,6 @@ theorem _root_.VG.Proof.Zeroize.AArch64.wide_scrubbed :
     VerifiedScrubbed AArch64.target Impl.Zeroize.AArch64.zeroizeWide
       (Spec.Zeroize.zeroizeContract AArch64.abi) 0 :=
   ⟨Proof.Zeroize.AArch64.wideVerified,
-    Proof.Zeroize.AArch64.wide_noResidue _ _⟩
+    Proof.Zeroize.AArch64.wide_noResidue _ _, fun ty _ h => by cases ty <;> cases h⟩
 
 end VG.Proof.Zeroize.AArch64

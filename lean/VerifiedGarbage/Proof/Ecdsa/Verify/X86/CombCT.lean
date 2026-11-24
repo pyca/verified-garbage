@@ -316,7 +316,7 @@ theorem vPoints_keep (hc : CfgOk c) (hC : Law c.C) (hne : c.C.n < 2 ^ (8 * c.C.l
       subst d'
       exact ⟨(vTables_keep ht h.keep).1, ht.2.1, ht.2.2⟩)
     hPc hQ hst (Cfg.stk_comb hcd) hspG hsp
-    (rest := .block []) (fun _ P => WP.block_nil P.keep)
+    (rest := .block []) (fun _ P _ => WP.block_nil P.keep)
   exact WP.mono (WP.seq_iff.mp H) (fun _ q => WP.block_nil_iff.mp q)
 
 structure VCombPre (c : Cfg) (s : State) : Prop extends

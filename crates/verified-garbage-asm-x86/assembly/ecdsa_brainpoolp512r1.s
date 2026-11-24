@@ -1750,39 +1750,103 @@ vg_ecdsa_brainpoolp512r1_verify:
 	pop eax
 	pop eax
 	pop eax
-	mov eax, DWORD PTR [edi+768]
+	mov eax, DWORD PTR [edi+2432]
 	mov DWORD PTR [edi+1920], eax
-	mov eax, DWORD PTR [edi+772]
+	mov eax, DWORD PTR [edi+2436]
 	mov DWORD PTR [edi+1924], eax
-	mov eax, DWORD PTR [edi+776]
+	mov eax, DWORD PTR [edi+2440]
 	mov DWORD PTR [edi+1928], eax
-	mov eax, DWORD PTR [edi+780]
+	mov eax, DWORD PTR [edi+2444]
 	mov DWORD PTR [edi+1932], eax
-	mov eax, DWORD PTR [edi+784]
+	mov eax, DWORD PTR [edi+2448]
 	mov DWORD PTR [edi+1936], eax
-	mov eax, DWORD PTR [edi+788]
+	mov eax, DWORD PTR [edi+2452]
 	mov DWORD PTR [edi+1940], eax
-	mov eax, DWORD PTR [edi+792]
+	mov eax, DWORD PTR [edi+2456]
 	mov DWORD PTR [edi+1944], eax
-	mov eax, DWORD PTR [edi+796]
+	mov eax, DWORD PTR [edi+2460]
 	mov DWORD PTR [edi+1948], eax
-	mov eax, DWORD PTR [edi+800]
+	mov eax, DWORD PTR [edi+2464]
 	mov DWORD PTR [edi+1952], eax
-	mov eax, DWORD PTR [edi+804]
+	mov eax, DWORD PTR [edi+2468]
 	mov DWORD PTR [edi+1956], eax
-	mov eax, DWORD PTR [edi+808]
+	mov eax, DWORD PTR [edi+2472]
 	mov DWORD PTR [edi+1960], eax
-	mov eax, DWORD PTR [edi+812]
+	mov eax, DWORD PTR [edi+2476]
 	mov DWORD PTR [edi+1964], eax
-	mov eax, DWORD PTR [edi+816]
+	mov eax, DWORD PTR [edi+2480]
 	mov DWORD PTR [edi+1968], eax
-	mov eax, DWORD PTR [edi+820]
+	mov eax, DWORD PTR [edi+2484]
 	mov DWORD PTR [edi+1972], eax
-	mov eax, DWORD PTR [edi+824]
+	mov eax, DWORD PTR [edi+2488]
 	mov DWORD PTR [edi+1976], eax
-	mov eax, DWORD PTR [edi+828]
+	mov eax, DWORD PTR [edi+2492]
 	mov DWORD PTR [edi+1980], eax
-	mov esi, 512
+	mov eax, DWORD PTR [edi+2432]
+	mov DWORD PTR [edi+1984], eax
+	mov eax, DWORD PTR [edi+2436]
+	mov DWORD PTR [edi+1988], eax
+	mov eax, DWORD PTR [edi+2440]
+	mov DWORD PTR [edi+1992], eax
+	mov eax, DWORD PTR [edi+2444]
+	mov DWORD PTR [edi+1996], eax
+	mov eax, DWORD PTR [edi+2448]
+	mov DWORD PTR [edi+2000], eax
+	mov eax, DWORD PTR [edi+2452]
+	mov DWORD PTR [edi+2004], eax
+	mov eax, DWORD PTR [edi+2456]
+	mov DWORD PTR [edi+2008], eax
+	mov eax, DWORD PTR [edi+2460]
+	mov DWORD PTR [edi+2012], eax
+	mov eax, DWORD PTR [edi+2464]
+	mov DWORD PTR [edi+2016], eax
+	mov eax, DWORD PTR [edi+2468]
+	mov DWORD PTR [edi+2020], eax
+	mov eax, DWORD PTR [edi+2472]
+	mov DWORD PTR [edi+2024], eax
+	mov eax, DWORD PTR [edi+2476]
+	mov DWORD PTR [edi+2028], eax
+	mov eax, DWORD PTR [edi+2480]
+	mov DWORD PTR [edi+2032], eax
+	mov eax, DWORD PTR [edi+2484]
+	mov DWORD PTR [edi+2036], eax
+	mov eax, DWORD PTR [edi+2488]
+	mov DWORD PTR [edi+2040], eax
+	mov eax, DWORD PTR [edi+2492]
+	mov DWORD PTR [edi+2044], eax
+	mov eax, DWORD PTR [edi+1920]
+	mov DWORD PTR [edi+832], eax
+	mov eax, DWORD PTR [edi+1924]
+	mov DWORD PTR [edi+836], eax
+	mov eax, DWORD PTR [edi+1928]
+	mov DWORD PTR [edi+840], eax
+	mov eax, DWORD PTR [edi+1932]
+	mov DWORD PTR [edi+844], eax
+	mov eax, DWORD PTR [edi+1936]
+	mov DWORD PTR [edi+848], eax
+	mov eax, DWORD PTR [edi+1940]
+	mov DWORD PTR [edi+852], eax
+	mov eax, DWORD PTR [edi+1944]
+	mov DWORD PTR [edi+856], eax
+	mov eax, DWORD PTR [edi+1948]
+	mov DWORD PTR [edi+860], eax
+	mov eax, DWORD PTR [edi+1952]
+	mov DWORD PTR [edi+864], eax
+	mov eax, DWORD PTR [edi+1956]
+	mov DWORD PTR [edi+868], eax
+	mov eax, DWORD PTR [edi+1960]
+	mov DWORD PTR [edi+872], eax
+	mov eax, DWORD PTR [edi+1964]
+	mov DWORD PTR [edi+876], eax
+	mov eax, DWORD PTR [edi+1968]
+	mov DWORD PTR [edi+880], eax
+	mov eax, DWORD PTR [edi+1972]
+	mov DWORD PTR [edi+884], eax
+	mov eax, DWORD PTR [edi+1976]
+	mov DWORD PTR [edi+888], eax
+	mov eax, DWORD PTR [edi+1980]
+	mov DWORD PTR [edi+892], eax
+	mov esi, 1
 28:
 	sub esi, 1
 	mov eax, 1920
@@ -1797,9 +1861,43 @@ vg_ecdsa_brainpoolp512r1_verify:
 	pop eax
 	pop eax
 	pop eax
-	mov eax, 2432
+	test esi, esi
+	jne 28b
+	mov eax, DWORD PTR [edi+1920]
+	mov DWORD PTR [edi+1152], eax
+	mov eax, DWORD PTR [edi+1924]
+	mov DWORD PTR [edi+1156], eax
+	mov eax, DWORD PTR [edi+1928]
+	mov DWORD PTR [edi+1160], eax
+	mov eax, DWORD PTR [edi+1932]
+	mov DWORD PTR [edi+1164], eax
+	mov eax, DWORD PTR [edi+1936]
+	mov DWORD PTR [edi+1168], eax
+	mov eax, DWORD PTR [edi+1940]
+	mov DWORD PTR [edi+1172], eax
+	mov eax, DWORD PTR [edi+1944]
+	mov DWORD PTR [edi+1176], eax
+	mov eax, DWORD PTR [edi+1948]
+	mov DWORD PTR [edi+1180], eax
+	mov eax, DWORD PTR [edi+1952]
+	mov DWORD PTR [edi+1184], eax
+	mov eax, DWORD PTR [edi+1956]
+	mov DWORD PTR [edi+1188], eax
+	mov eax, DWORD PTR [edi+1960]
+	mov DWORD PTR [edi+1192], eax
+	mov eax, DWORD PTR [edi+1964]
+	mov DWORD PTR [edi+1196], eax
+	mov eax, DWORD PTR [edi+1968]
+	mov DWORD PTR [edi+1200], eax
+	mov eax, DWORD PTR [edi+1972]
+	mov DWORD PTR [edi+1204], eax
+	mov eax, DWORD PTR [edi+1976]
+	mov DWORD PTR [edi+1208], eax
+	mov eax, DWORD PTR [edi+1980]
+	mov DWORD PTR [edi+1212], eax
+	mov eax, 832
 	mov ecx, 1920
-	mov edx, 1984
+	mov edx, 1920
 	push eax
 	push ecx
 	push edx
@@ -1809,109 +1907,3321 @@ vg_ecdsa_brainpoolp512r1_verify:
 	pop eax
 	pop eax
 	pop eax
-	mov eax, edi
-	add eax, esi
-	movzx eax, BYTE PTR [eax+5128]
-	mov ecx, 0
-	sub ecx, eax
 	mov eax, DWORD PTR [edi+1920]
-	mov edx, DWORD PTR [edi+1984]
-	xor edx, eax
-	and edx, ecx
-	xor eax, edx
-	mov DWORD PTR [edi+1920], eax
+	mov DWORD PTR [edi+896], eax
 	mov eax, DWORD PTR [edi+1924]
-	mov edx, DWORD PTR [edi+1988]
-	xor edx, eax
-	and edx, ecx
-	xor eax, edx
-	mov DWORD PTR [edi+1924], eax
+	mov DWORD PTR [edi+900], eax
 	mov eax, DWORD PTR [edi+1928]
-	mov edx, DWORD PTR [edi+1992]
-	xor edx, eax
-	and edx, ecx
-	xor eax, edx
-	mov DWORD PTR [edi+1928], eax
+	mov DWORD PTR [edi+904], eax
 	mov eax, DWORD PTR [edi+1932]
-	mov edx, DWORD PTR [edi+1996]
-	xor edx, eax
-	and edx, ecx
-	xor eax, edx
-	mov DWORD PTR [edi+1932], eax
+	mov DWORD PTR [edi+908], eax
 	mov eax, DWORD PTR [edi+1936]
-	mov edx, DWORD PTR [edi+2000]
-	xor edx, eax
-	and edx, ecx
-	xor eax, edx
-	mov DWORD PTR [edi+1936], eax
+	mov DWORD PTR [edi+912], eax
 	mov eax, DWORD PTR [edi+1940]
-	mov edx, DWORD PTR [edi+2004]
-	xor edx, eax
-	and edx, ecx
-	xor eax, edx
-	mov DWORD PTR [edi+1940], eax
+	mov DWORD PTR [edi+916], eax
 	mov eax, DWORD PTR [edi+1944]
-	mov edx, DWORD PTR [edi+2008]
-	xor edx, eax
-	and edx, ecx
-	xor eax, edx
-	mov DWORD PTR [edi+1944], eax
+	mov DWORD PTR [edi+920], eax
 	mov eax, DWORD PTR [edi+1948]
-	mov edx, DWORD PTR [edi+2012]
-	xor edx, eax
-	and edx, ecx
-	xor eax, edx
-	mov DWORD PTR [edi+1948], eax
+	mov DWORD PTR [edi+924], eax
 	mov eax, DWORD PTR [edi+1952]
-	mov edx, DWORD PTR [edi+2016]
-	xor edx, eax
-	and edx, ecx
-	xor eax, edx
-	mov DWORD PTR [edi+1952], eax
+	mov DWORD PTR [edi+928], eax
 	mov eax, DWORD PTR [edi+1956]
-	mov edx, DWORD PTR [edi+2020]
-	xor edx, eax
-	and edx, ecx
-	xor eax, edx
-	mov DWORD PTR [edi+1956], eax
+	mov DWORD PTR [edi+932], eax
 	mov eax, DWORD PTR [edi+1960]
-	mov edx, DWORD PTR [edi+2024]
-	xor edx, eax
-	and edx, ecx
-	xor eax, edx
-	mov DWORD PTR [edi+1960], eax
+	mov DWORD PTR [edi+936], eax
 	mov eax, DWORD PTR [edi+1964]
-	mov edx, DWORD PTR [edi+2028]
-	xor edx, eax
-	and edx, ecx
-	xor eax, edx
-	mov DWORD PTR [edi+1964], eax
+	mov DWORD PTR [edi+940], eax
 	mov eax, DWORD PTR [edi+1968]
-	mov edx, DWORD PTR [edi+2032]
-	xor edx, eax
-	and edx, ecx
-	xor eax, edx
-	mov DWORD PTR [edi+1968], eax
+	mov DWORD PTR [edi+944], eax
 	mov eax, DWORD PTR [edi+1972]
-	mov edx, DWORD PTR [edi+2036]
-	xor edx, eax
-	and edx, ecx
-	xor eax, edx
-	mov DWORD PTR [edi+1972], eax
+	mov DWORD PTR [edi+948], eax
 	mov eax, DWORD PTR [edi+1976]
-	mov edx, DWORD PTR [edi+2040]
-	xor edx, eax
-	and edx, ecx
-	xor eax, edx
-	mov DWORD PTR [edi+1976], eax
+	mov DWORD PTR [edi+952], eax
 	mov eax, DWORD PTR [edi+1980]
-	mov edx, DWORD PTR [edi+2044]
-	xor edx, eax
-	and edx, ecx
-	xor eax, edx
+	mov DWORD PTR [edi+956], eax
+	mov eax, 1152
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov eax, DWORD PTR [edi+1920]
+	mov DWORD PTR [edi+1536], eax
+	mov eax, DWORD PTR [edi+1924]
+	mov DWORD PTR [edi+1540], eax
+	mov eax, DWORD PTR [edi+1928]
+	mov DWORD PTR [edi+1544], eax
+	mov eax, DWORD PTR [edi+1932]
+	mov DWORD PTR [edi+1548], eax
+	mov eax, DWORD PTR [edi+1936]
+	mov DWORD PTR [edi+1552], eax
+	mov eax, DWORD PTR [edi+1940]
+	mov DWORD PTR [edi+1556], eax
+	mov eax, DWORD PTR [edi+1944]
+	mov DWORD PTR [edi+1560], eax
+	mov eax, DWORD PTR [edi+1948]
+	mov DWORD PTR [edi+1564], eax
+	mov eax, DWORD PTR [edi+1952]
+	mov DWORD PTR [edi+1568], eax
+	mov eax, DWORD PTR [edi+1956]
+	mov DWORD PTR [edi+1572], eax
+	mov eax, DWORD PTR [edi+1960]
+	mov DWORD PTR [edi+1576], eax
+	mov eax, DWORD PTR [edi+1964]
+	mov DWORD PTR [edi+1580], eax
+	mov eax, DWORD PTR [edi+1968]
+	mov DWORD PTR [edi+1584], eax
+	mov eax, DWORD PTR [edi+1972]
+	mov DWORD PTR [edi+1588], eax
+	mov eax, DWORD PTR [edi+1976]
+	mov DWORD PTR [edi+1592], eax
+	mov eax, DWORD PTR [edi+1980]
+	mov DWORD PTR [edi+1596], eax
+	mov eax, 1152
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov eax, DWORD PTR [edi+1920]
+	mov DWORD PTR [edi+1600], eax
+	mov eax, DWORD PTR [edi+1924]
+	mov DWORD PTR [edi+1604], eax
+	mov eax, DWORD PTR [edi+1928]
+	mov DWORD PTR [edi+1608], eax
+	mov eax, DWORD PTR [edi+1932]
+	mov DWORD PTR [edi+1612], eax
+	mov eax, DWORD PTR [edi+1936]
+	mov DWORD PTR [edi+1616], eax
+	mov eax, DWORD PTR [edi+1940]
+	mov DWORD PTR [edi+1620], eax
+	mov eax, DWORD PTR [edi+1944]
+	mov DWORD PTR [edi+1624], eax
+	mov eax, DWORD PTR [edi+1948]
+	mov DWORD PTR [edi+1628], eax
+	mov eax, DWORD PTR [edi+1952]
+	mov DWORD PTR [edi+1632], eax
+	mov eax, DWORD PTR [edi+1956]
+	mov DWORD PTR [edi+1636], eax
+	mov eax, DWORD PTR [edi+1960]
+	mov DWORD PTR [edi+1640], eax
+	mov eax, DWORD PTR [edi+1964]
+	mov DWORD PTR [edi+1644], eax
+	mov eax, DWORD PTR [edi+1968]
+	mov DWORD PTR [edi+1648], eax
+	mov eax, DWORD PTR [edi+1972]
+	mov DWORD PTR [edi+1652], eax
+	mov eax, DWORD PTR [edi+1976]
+	mov DWORD PTR [edi+1656], eax
+	mov eax, DWORD PTR [edi+1980]
+	mov DWORD PTR [edi+1660], eax
+	mov eax, 1152
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov eax, DWORD PTR [edi+1920]
+	mov DWORD PTR [edi+1664], eax
+	mov eax, DWORD PTR [edi+1924]
+	mov DWORD PTR [edi+1668], eax
+	mov eax, DWORD PTR [edi+1928]
+	mov DWORD PTR [edi+1672], eax
+	mov eax, DWORD PTR [edi+1932]
+	mov DWORD PTR [edi+1676], eax
+	mov eax, DWORD PTR [edi+1936]
+	mov DWORD PTR [edi+1680], eax
+	mov eax, DWORD PTR [edi+1940]
+	mov DWORD PTR [edi+1684], eax
+	mov eax, DWORD PTR [edi+1944]
+	mov DWORD PTR [edi+1688], eax
+	mov eax, DWORD PTR [edi+1948]
+	mov DWORD PTR [edi+1692], eax
+	mov eax, DWORD PTR [edi+1952]
+	mov DWORD PTR [edi+1696], eax
+	mov eax, DWORD PTR [edi+1956]
+	mov DWORD PTR [edi+1700], eax
+	mov eax, DWORD PTR [edi+1960]
+	mov DWORD PTR [edi+1704], eax
+	mov eax, DWORD PTR [edi+1964]
+	mov DWORD PTR [edi+1708], eax
+	mov eax, DWORD PTR [edi+1968]
+	mov DWORD PTR [edi+1712], eax
+	mov eax, DWORD PTR [edi+1972]
+	mov DWORD PTR [edi+1716], eax
+	mov eax, DWORD PTR [edi+1976]
+	mov DWORD PTR [edi+1720], eax
+	mov eax, DWORD PTR [edi+1980]
+	mov DWORD PTR [edi+1724], eax
+	mov eax, 1152
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov eax, DWORD PTR [edi+1920]
+	mov DWORD PTR [edi+1728], eax
+	mov eax, DWORD PTR [edi+1924]
+	mov DWORD PTR [edi+1732], eax
+	mov eax, DWORD PTR [edi+1928]
+	mov DWORD PTR [edi+1736], eax
+	mov eax, DWORD PTR [edi+1932]
+	mov DWORD PTR [edi+1740], eax
+	mov eax, DWORD PTR [edi+1936]
+	mov DWORD PTR [edi+1744], eax
+	mov eax, DWORD PTR [edi+1940]
+	mov DWORD PTR [edi+1748], eax
+	mov eax, DWORD PTR [edi+1944]
+	mov DWORD PTR [edi+1752], eax
+	mov eax, DWORD PTR [edi+1948]
+	mov DWORD PTR [edi+1756], eax
+	mov eax, DWORD PTR [edi+1952]
+	mov DWORD PTR [edi+1760], eax
+	mov eax, DWORD PTR [edi+1956]
+	mov DWORD PTR [edi+1764], eax
+	mov eax, DWORD PTR [edi+1960]
+	mov DWORD PTR [edi+1768], eax
+	mov eax, DWORD PTR [edi+1964]
+	mov DWORD PTR [edi+1772], eax
+	mov eax, DWORD PTR [edi+1968]
+	mov DWORD PTR [edi+1776], eax
+	mov eax, DWORD PTR [edi+1972]
+	mov DWORD PTR [edi+1780], eax
+	mov eax, DWORD PTR [edi+1976]
+	mov DWORD PTR [edi+1784], eax
+	mov eax, DWORD PTR [edi+1980]
+	mov DWORD PTR [edi+1788], eax
+	mov eax, 1152
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov eax, DWORD PTR [edi+1920]
+	mov DWORD PTR [edi+1792], eax
+	mov eax, DWORD PTR [edi+1924]
+	mov DWORD PTR [edi+1796], eax
+	mov eax, DWORD PTR [edi+1928]
+	mov DWORD PTR [edi+1800], eax
+	mov eax, DWORD PTR [edi+1932]
+	mov DWORD PTR [edi+1804], eax
+	mov eax, DWORD PTR [edi+1936]
+	mov DWORD PTR [edi+1808], eax
+	mov eax, DWORD PTR [edi+1940]
+	mov DWORD PTR [edi+1812], eax
+	mov eax, DWORD PTR [edi+1944]
+	mov DWORD PTR [edi+1816], eax
+	mov eax, DWORD PTR [edi+1948]
+	mov DWORD PTR [edi+1820], eax
+	mov eax, DWORD PTR [edi+1952]
+	mov DWORD PTR [edi+1824], eax
+	mov eax, DWORD PTR [edi+1956]
+	mov DWORD PTR [edi+1828], eax
+	mov eax, DWORD PTR [edi+1960]
+	mov DWORD PTR [edi+1832], eax
+	mov eax, DWORD PTR [edi+1964]
+	mov DWORD PTR [edi+1836], eax
+	mov eax, DWORD PTR [edi+1968]
+	mov DWORD PTR [edi+1840], eax
+	mov eax, DWORD PTR [edi+1972]
+	mov DWORD PTR [edi+1844], eax
+	mov eax, DWORD PTR [edi+1976]
+	mov DWORD PTR [edi+1848], eax
+	mov eax, DWORD PTR [edi+1980]
+	mov DWORD PTR [edi+1852], eax
+	mov eax, 1152
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov eax, DWORD PTR [edi+1920]
+	mov DWORD PTR [edi+1856], eax
+	mov eax, DWORD PTR [edi+1924]
+	mov DWORD PTR [edi+1860], eax
+	mov eax, DWORD PTR [edi+1928]
+	mov DWORD PTR [edi+1864], eax
+	mov eax, DWORD PTR [edi+1932]
+	mov DWORD PTR [edi+1868], eax
+	mov eax, DWORD PTR [edi+1936]
+	mov DWORD PTR [edi+1872], eax
+	mov eax, DWORD PTR [edi+1940]
+	mov DWORD PTR [edi+1876], eax
+	mov eax, DWORD PTR [edi+1944]
+	mov DWORD PTR [edi+1880], eax
+	mov eax, DWORD PTR [edi+1948]
+	mov DWORD PTR [edi+1884], eax
+	mov eax, DWORD PTR [edi+1952]
+	mov DWORD PTR [edi+1888], eax
+	mov eax, DWORD PTR [edi+1956]
+	mov DWORD PTR [edi+1892], eax
+	mov eax, DWORD PTR [edi+1960]
+	mov DWORD PTR [edi+1896], eax
+	mov eax, DWORD PTR [edi+1964]
+	mov DWORD PTR [edi+1900], eax
+	mov eax, DWORD PTR [edi+1968]
+	mov DWORD PTR [edi+1904], eax
+	mov eax, DWORD PTR [edi+1972]
+	mov DWORD PTR [edi+1908], eax
+	mov eax, DWORD PTR [edi+1976]
+	mov DWORD PTR [edi+1912], eax
+	mov eax, DWORD PTR [edi+1980]
+	mov DWORD PTR [edi+1916], eax
+	mov eax, DWORD PTR [edi+832]
+	mov DWORD PTR [edi+1920], eax
+	mov eax, DWORD PTR [edi+836]
+	mov DWORD PTR [edi+1924], eax
+	mov eax, DWORD PTR [edi+840]
+	mov DWORD PTR [edi+1928], eax
+	mov eax, DWORD PTR [edi+844]
+	mov DWORD PTR [edi+1932], eax
+	mov eax, DWORD PTR [edi+848]
+	mov DWORD PTR [edi+1936], eax
+	mov eax, DWORD PTR [edi+852]
+	mov DWORD PTR [edi+1940], eax
+	mov eax, DWORD PTR [edi+856]
+	mov DWORD PTR [edi+1944], eax
+	mov eax, DWORD PTR [edi+860]
+	mov DWORD PTR [edi+1948], eax
+	mov eax, DWORD PTR [edi+864]
+	mov DWORD PTR [edi+1952], eax
+	mov eax, DWORD PTR [edi+868]
+	mov DWORD PTR [edi+1956], eax
+	mov eax, DWORD PTR [edi+872]
+	mov DWORD PTR [edi+1960], eax
+	mov eax, DWORD PTR [edi+876]
+	mov DWORD PTR [edi+1964], eax
+	mov eax, DWORD PTR [edi+880]
+	mov DWORD PTR [edi+1968], eax
+	mov eax, DWORD PTR [edi+884]
+	mov DWORD PTR [edi+1972], eax
+	mov eax, DWORD PTR [edi+888]
+	mov DWORD PTR [edi+1976], eax
+	mov eax, DWORD PTR [edi+892]
 	mov DWORD PTR [edi+1980], eax
+	mov esi, 4
+29:
+	sub esi, 1
+	mov eax, 1920
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
 	test esi, esi
-	jne 28b
+	jne 29b
+	mov eax, 1536
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+210:
+	sub esi, 1
+	mov eax, 1920
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 210b
+	mov eax, 1536
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+211:
+	sub esi, 1
+	mov eax, 1920
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 211b
+	mov eax, 1728
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+212:
+	sub esi, 1
+	mov eax, 1920
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 212b
+	mov eax, 1728
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+213:
+	sub esi, 1
+	mov eax, 1920
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 213b
+	mov eax, 896
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+214:
+	sub esi, 1
+	mov eax, 1920
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 214b
+	mov eax, 1728
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+215:
+	sub esi, 1
+	mov eax, 1920
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 215b
+	mov eax, 1600
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+216:
+	sub esi, 1
+	mov eax, 1920
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 216b
+	mov eax, 832
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+217:
+	sub esi, 1
+	mov eax, 1920
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 217b
+	mov eax, 1728
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+218:
+	sub esi, 1
+	mov eax, 1920
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 218b
+	mov eax, 1600
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+219:
+	sub esi, 1
+	mov eax, 1920
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 219b
+	mov eax, 1792
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 5
+220:
+	sub esi, 1
+	mov eax, 1920
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 220b
+	mov eax, 1600
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 7
+221:
+	sub esi, 1
+	mov eax, 1920
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 221b
+	mov eax, 1664
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 7
+222:
+	sub esi, 1
+	mov eax, 1920
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 222b
+	mov eax, 1728
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 6
+223:
+	sub esi, 1
+	mov eax, 1920
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 223b
+	mov eax, 1856
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+224:
+	sub esi, 1
+	mov eax, 1920
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 224b
+	mov eax, 1856
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+225:
+	sub esi, 1
+	mov eax, 1920
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 225b
+	mov eax, 1536
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 5
+226:
+	sub esi, 1
+	mov eax, 1920
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 226b
+	mov eax, 1600
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+227:
+	sub esi, 1
+	mov eax, 1920
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 227b
+	mov eax, 896
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+228:
+	sub esi, 1
+	mov eax, 1920
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 228b
+	mov eax, 1536
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+229:
+	sub esi, 1
+	mov eax, 1920
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 229b
+	mov eax, 1600
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 5
+230:
+	sub esi, 1
+	mov eax, 1920
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 230b
+	mov eax, 896
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 5
+231:
+	sub esi, 1
+	mov eax, 1920
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 231b
+	mov eax, 1600
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+232:
+	sub esi, 1
+	mov eax, 1920
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 232b
+	mov eax, 1664
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 5
+233:
+	sub esi, 1
+	mov eax, 1920
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 233b
+	mov eax, 1600
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+234:
+	sub esi, 1
+	mov eax, 1920
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 234b
+	mov eax, 1856
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 8
+235:
+	sub esi, 1
+	mov eax, 1920
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 235b
+	mov eax, 832
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+236:
+	sub esi, 1
+	mov eax, 1920
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 236b
+	mov eax, 1856
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 6
+237:
+	sub esi, 1
+	mov eax, 1920
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 237b
+	mov eax, 1728
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+238:
+	sub esi, 1
+	mov eax, 1920
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 238b
+	mov eax, 896
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 5
+239:
+	sub esi, 1
+	mov eax, 1920
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 239b
+	mov eax, 832
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 7
+240:
+	sub esi, 1
+	mov eax, 1920
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 240b
+	mov eax, 1792
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+241:
+	sub esi, 1
+	mov eax, 1920
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 241b
+	mov eax, 1728
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+242:
+	sub esi, 1
+	mov eax, 1920
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 242b
+	mov eax, 896
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+243:
+	sub esi, 1
+	mov eax, 1920
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 243b
+	mov eax, 1728
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 5
+244:
+	sub esi, 1
+	mov eax, 1920
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 244b
+	mov eax, 1600
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+245:
+	sub esi, 1
+	mov eax, 1920
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 245b
+	mov eax, 1664
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 5
+246:
+	sub esi, 1
+	mov eax, 1920
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 246b
+	mov eax, 1600
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 5
+247:
+	sub esi, 1
+	mov eax, 1920
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 247b
+	mov eax, 1664
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 7
+248:
+	sub esi, 1
+	mov eax, 1920
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 248b
+	mov eax, 896
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+249:
+	sub esi, 1
+	mov eax, 1920
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 249b
+	mov eax, 1728
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 5
+250:
+	sub esi, 1
+	mov eax, 1920
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 250b
+	mov eax, 1728
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+251:
+	sub esi, 1
+	mov eax, 1920
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 251b
+	mov eax, 896
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 6
+252:
+	sub esi, 1
+	mov eax, 1920
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 252b
+	mov eax, 1600
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 5
+253:
+	sub esi, 1
+	mov eax, 1920
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 253b
+	mov eax, 1600
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+254:
+	sub esi, 1
+	mov eax, 1920
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 254b
+	mov eax, 896
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 5
+255:
+	sub esi, 1
+	mov eax, 1920
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 255b
+	mov eax, 1536
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 5
+256:
+	sub esi, 1
+	mov eax, 1920
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 256b
+	mov eax, 1600
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 8
+257:
+	sub esi, 1
+	mov eax, 1920
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 257b
+	mov eax, 896
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+258:
+	sub esi, 1
+	mov eax, 1920
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 258b
+	mov eax, 896
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 5
+259:
+	sub esi, 1
+	mov eax, 1920
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 259b
+	mov eax, 832
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 7
+260:
+	sub esi, 1
+	mov eax, 1920
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 260b
+	mov eax, 1600
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 8
+261:
+	sub esi, 1
+	mov eax, 1920
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 261b
+	mov eax, 1536
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+262:
+	sub esi, 1
+	mov eax, 1920
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 262b
+	mov eax, 1536
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 6
+263:
+	sub esi, 1
+	mov eax, 1920
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 263b
+	mov eax, 1856
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+264:
+	sub esi, 1
+	mov eax, 1920
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 264b
+	mov eax, 1664
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+265:
+	sub esi, 1
+	mov eax, 1920
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 265b
+	mov eax, 1600
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+266:
+	sub esi, 1
+	mov eax, 1920
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 266b
+	mov eax, 832
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 6
+267:
+	sub esi, 1
+	mov eax, 1920
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 267b
+	mov eax, 832
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 5
+268:
+	sub esi, 1
+	mov eax, 1920
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 268b
+	mov eax, 1664
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+269:
+	sub esi, 1
+	mov eax, 1920
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 269b
+	mov eax, 1664
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+270:
+	sub esi, 1
+	mov eax, 1920
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 270b
+	mov eax, 1536
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 6
+271:
+	sub esi, 1
+	mov eax, 1920
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 271b
+	mov eax, 1664
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+272:
+	sub esi, 1
+	mov eax, 1920
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 272b
+	mov eax, 896
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 6
+273:
+	sub esi, 1
+	mov eax, 1920
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 273b
+	mov eax, 896
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 5
+274:
+	sub esi, 1
+	mov eax, 1920
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 274b
+	mov eax, 1536
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 7
+275:
+	sub esi, 1
+	mov eax, 1920
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 275b
+	mov eax, 896
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 6
+276:
+	sub esi, 1
+	mov eax, 1920
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 276b
+	mov eax, 896
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+277:
+	sub esi, 1
+	mov eax, 1920
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 277b
+	mov eax, 896
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 5
+278:
+	sub esi, 1
+	mov eax, 1920
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 278b
+	mov eax, 832
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+279:
+	sub esi, 1
+	mov eax, 1920
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 279b
+	mov eax, 832
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+280:
+	sub esi, 1
+	mov eax, 1920
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 280b
+	mov eax, 1664
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 5
+281:
+	sub esi, 1
+	mov eax, 1920
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 281b
+	mov eax, 1856
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+282:
+	sub esi, 1
+	mov eax, 1920
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 282b
+	mov eax, 1856
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 5
+283:
+	sub esi, 1
+	mov eax, 1920
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 283b
+	mov eax, 1728
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 6
+284:
+	sub esi, 1
+	mov eax, 1920
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 284b
+	mov eax, 832
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 6
+285:
+	sub esi, 1
+	mov eax, 1920
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 285b
+	mov eax, 832
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 6
+286:
+	sub esi, 1
+	mov eax, 1920
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 286b
+	mov eax, 1600
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+287:
+	sub esi, 1
+	mov eax, 1920
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 287b
+	mov eax, 832
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+288:
+	sub esi, 1
+	mov eax, 1920
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 288b
+	mov eax, 1792
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+289:
+	sub esi, 1
+	mov eax, 1920
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 289b
+	mov eax, 1728
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+290:
+	sub esi, 1
+	mov eax, 1920
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 290b
+	mov eax, 832
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+291:
+	sub esi, 1
+	mov eax, 1920
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 291b
+	mov eax, 1792
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 5
+292:
+	sub esi, 1
+	mov eax, 1920
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 292b
+	mov eax, 1600
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 7
+293:
+	sub esi, 1
+	mov eax, 1920
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 293b
+	mov eax, 832
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 5
+294:
+	sub esi, 1
+	mov eax, 1920
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 294b
+	mov eax, 832
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 5
+295:
+	sub esi, 1
+	mov eax, 1920
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 295b
+	mov eax, 832
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+296:
+	sub esi, 1
+	mov eax, 1920
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 296b
+	mov eax, 1600
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+297:
+	sub esi, 1
+	mov eax, 1920
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 297b
+	mov eax, 1600
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 5
+298:
+	sub esi, 1
+	mov eax, 1920
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 298b
+	mov eax, 1792
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 5
+299:
+	sub esi, 1
+	mov eax, 1920
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 299b
+	mov eax, 1792
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+2100:
+	sub esi, 1
+	mov eax, 1920
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 2100b
+	mov eax, 1792
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+2101:
+	sub esi, 1
+	mov eax, 1920
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 2101b
+	mov eax, 1728
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 5
+2102:
+	sub esi, 1
+	mov eax, 1920
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 2102b
+	mov eax, 1728
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 7
+2103:
+	sub esi, 1
+	mov eax, 1920
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 2103b
+	mov eax, 1600
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+2104:
+	sub esi, 1
+	mov eax, 1920
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 2104b
+	mov eax, 1664
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 5
+2105:
+	sub esi, 1
+	mov eax, 1920
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 2105b
+	mov eax, 1792
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 8
+2106:
+	sub esi, 1
+	mov eax, 1920
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 2106b
+	mov eax, 1536
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 5
+2107:
+	sub esi, 1
+	mov eax, 1920
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 2107b
+	mov eax, 1600
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 5
+2108:
+	sub esi, 1
+	mov eax, 1920
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 2108b
+	mov eax, 1536
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 5
+2109:
+	sub esi, 1
+	mov eax, 1920
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 2109b
+	mov eax, 1664
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 11
+2110:
+	sub esi, 1
+	mov eax, 1920
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 2110b
+	mov eax, 896
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 5
+2111:
+	sub esi, 1
+	mov eax, 1920
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 2111b
+	mov eax, 1600
+	mov ecx, 1920
+	mov edx, 1920
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
 	mov eax, 704
 	mov ecx, 2112
 	mov edx, 2624
@@ -1985,7 +5295,7 @@ vg_ecdsa_brainpoolp512r1_verify:
 	pop eax
 	pop eax
 	mov esi, 64
-29:
+2112:
 	sub esi, 1
 	mov eax, edi
 	add eax, esi
@@ -2027,7 +5337,7 @@ vg_ecdsa_brainpoolp512r1_verify:
 	and edx, 1
 	mov BYTE PTR [ebx+4103], dl
 	test esi, esi
-	jne 29b
+	jne 2112b
 	call {vg_brainpoolp512r1_comb}
 	mov eax, DWORD PTR [edi+960]
 	mov DWORD PTR [edi+2688], eax
@@ -2222,7 +5532,7 @@ vg_ecdsa_brainpoolp512r1_verify:
 	mov eax, 0
 	mov DWORD PTR [edi+1148], eax
 	mov esi, 64
-210:
+2113:
 	sub esi, 1
 	mov eax, edi
 	add eax, esi
@@ -2264,7 +5574,7 @@ vg_ecdsa_brainpoolp512r1_verify:
 	and edx, 1
 	mov BYTE PTR [ebx+4103], dl
 	test esi, esi
-	jne 210b
+	jne 2113b
 	call {vg_brainpoolp512r1_window}
 	mov eax, 960
 	mov ecx, 2688
@@ -2842,170 +6152,104 @@ vg_ecdsa_brainpoolp512r1_verify:
 	mov DWORD PTR [edi+1144], eax
 	mov eax, DWORD PTR [edi+1340]
 	mov DWORD PTR [edi+1148], eax
-	mov eax, DWORD PTR [edi+384]
+	mov eax, 1633219077
+	mov DWORD PTR [edi+2240], eax
+	mov eax, 1236079690
+	mov DWORD PTR [edi+2244], eax
+	mov eax, 655718661
+	mov DWORD PTR [edi+2248], eax
+	mov eax, 2034217264
+	mov DWORD PTR [edi+2252], eax
+	mov eax, -1873084461
+	mov DWORD PTR [edi+2256], eax
+	mov eax, 1404565948
+	mov DWORD PTR [edi+2260], eax
+	mov eax, -2091824603
+	mov DWORD PTR [edi+2264], eax
+	mov eax, -524182921
+	mov DWORD PTR [edi+2268], eax
+	mov eax, -712409001
+	mov DWORD PTR [edi+2272], eax
+	mov eax, 424177624
+	mov DWORD PTR [edi+2276], eax
+	mov eax, -735314045
+	mov DWORD PTR [edi+2280], eax
+	mov eax, -1586648481
+	mov DWORD PTR [edi+2284], eax
+	mov eax, 542568140
+	mov DWORD PTR [edi+2288], eax
+	mov eax, 539892032
+	mov DWORD PTR [edi+2292], eax
+	mov eax, -1442880432
+	mov DWORD PTR [edi+2296], eax
+	mov eax, 1011653893
+	mov DWORD PTR [edi+2300], eax
+	mov eax, -38341457
 	mov DWORD PTR [edi+1920], eax
-	mov eax, DWORD PTR [edi+388]
+	mov eax, 276427350
 	mov DWORD PTR [edi+1924], eax
-	mov eax, DWORD PTR [edi+392]
+	mov eax, 20260702
 	mov DWORD PTR [edi+1928], eax
-	mov eax, DWORD PTR [edi+396]
+	mov eax, 967448071
 	mov DWORD PTR [edi+1932], eax
-	mov eax, DWORD PTR [edi+400]
+	mov eax, 1210070679
 	mov DWORD PTR [edi+1936], eax
-	mov eax, DWORD PTR [edi+404]
+	mov eax, 1647080705
 	mov DWORD PTR [edi+1940], eax
-	mov eax, DWORD PTR [edi+408]
+	mov eax, 181127647
 	mov DWORD PTR [edi+1944], eax
-	mov eax, DWORD PTR [edi+412]
+	mov eax, 87756225
 	mov DWORD PTR [edi+1948], eax
-	mov eax, DWORD PTR [edi+416]
+	mov eax, -1628569451
 	mov DWORD PTR [edi+1952], eax
-	mov eax, DWORD PTR [edi+420]
+	mov eax, 271178641
 	mov DWORD PTR [edi+1956], eax
-	mov eax, DWORD PTR [edi+424]
+	mov eax, -1324182593
 	mov DWORD PTR [edi+1960], eax
-	mov eax, DWORD PTR [edi+428]
+	mov eax, -2033442736
 	mov DWORD PTR [edi+1964], eax
-	mov eax, DWORD PTR [edi+432]
+	mov eax, -1736314902
 	mov DWORD PTR [edi+1968], eax
-	mov eax, DWORD PTR [edi+436]
+	mov eax, -539370099
 	mov DWORD PTR [edi+1972], eax
-	mov eax, DWORD PTR [edi+440]
+	mov eax, 1060344903
 	mov DWORD PTR [edi+1976], eax
-	mov eax, DWORD PTR [edi+444]
+	mov eax, -1776880531
 	mov DWORD PTR [edi+1980], eax
-	mov esi, 512
-211:
-	sub esi, 1
-	mov eax, 1920
-	mov ecx, 1920
-	mov edx, 1920
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_brainpoolp512r1_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	mov eax, 1088
-	mov ecx, 1920
-	mov edx, 1984
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_brainpoolp512r1_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	mov eax, edi
-	add eax, esi
-	movzx eax, BYTE PTR [eax+4612]
-	mov ecx, 0
-	sub ecx, eax
-	mov eax, DWORD PTR [edi+1920]
-	mov edx, DWORD PTR [edi+1984]
-	xor edx, eax
-	and edx, ecx
-	xor eax, edx
-	mov DWORD PTR [edi+1920], eax
-	mov eax, DWORD PTR [edi+1924]
-	mov edx, DWORD PTR [edi+1988]
-	xor edx, eax
-	and edx, ecx
-	xor eax, edx
-	mov DWORD PTR [edi+1924], eax
-	mov eax, DWORD PTR [edi+1928]
-	mov edx, DWORD PTR [edi+1992]
-	xor edx, eax
-	and edx, ecx
-	xor eax, edx
-	mov DWORD PTR [edi+1928], eax
-	mov eax, DWORD PTR [edi+1932]
-	mov edx, DWORD PTR [edi+1996]
-	xor edx, eax
-	and edx, ecx
-	xor eax, edx
-	mov DWORD PTR [edi+1932], eax
-	mov eax, DWORD PTR [edi+1936]
-	mov edx, DWORD PTR [edi+2000]
-	xor edx, eax
-	and edx, ecx
-	xor eax, edx
-	mov DWORD PTR [edi+1936], eax
-	mov eax, DWORD PTR [edi+1940]
-	mov edx, DWORD PTR [edi+2004]
-	xor edx, eax
-	and edx, ecx
-	xor eax, edx
-	mov DWORD PTR [edi+1940], eax
-	mov eax, DWORD PTR [edi+1944]
-	mov edx, DWORD PTR [edi+2008]
-	xor edx, eax
-	and edx, ecx
-	xor eax, edx
-	mov DWORD PTR [edi+1944], eax
-	mov eax, DWORD PTR [edi+1948]
-	mov edx, DWORD PTR [edi+2012]
-	xor edx, eax
-	and edx, ecx
-	xor eax, edx
-	mov DWORD PTR [edi+1948], eax
-	mov eax, DWORD PTR [edi+1952]
-	mov edx, DWORD PTR [edi+2016]
-	xor edx, eax
-	and edx, ecx
-	xor eax, edx
-	mov DWORD PTR [edi+1952], eax
-	mov eax, DWORD PTR [edi+1956]
-	mov edx, DWORD PTR [edi+2020]
-	xor edx, eax
-	and edx, ecx
-	xor eax, edx
-	mov DWORD PTR [edi+1956], eax
-	mov eax, DWORD PTR [edi+1960]
-	mov edx, DWORD PTR [edi+2024]
-	xor edx, eax
-	and edx, ecx
-	xor eax, edx
-	mov DWORD PTR [edi+1960], eax
-	mov eax, DWORD PTR [edi+1964]
-	mov edx, DWORD PTR [edi+2028]
-	xor edx, eax
-	and edx, ecx
-	xor eax, edx
-	mov DWORD PTR [edi+1964], eax
-	mov eax, DWORD PTR [edi+1968]
-	mov edx, DWORD PTR [edi+2032]
-	xor edx, eax
-	and edx, ecx
-	xor eax, edx
-	mov DWORD PTR [edi+1968], eax
-	mov eax, DWORD PTR [edi+1972]
-	mov edx, DWORD PTR [edi+2036]
-	xor edx, eax
-	and edx, ecx
-	xor eax, edx
-	mov DWORD PTR [edi+1972], eax
-	mov eax, DWORD PTR [edi+1976]
-	mov edx, DWORD PTR [edi+2040]
-	xor edx, eax
-	and edx, ecx
-	xor eax, edx
-	mov DWORD PTR [edi+1976], eax
-	mov eax, DWORD PTR [edi+1980]
-	mov edx, DWORD PTR [edi+2044]
-	xor edx, eax
-	and edx, ecx
-	xor eax, edx
-	mov DWORD PTR [edi+1980], eax
-	test esi, esi
-	jne 211b
-	mov eax, 1920
-	mov ecx, 960
+	mov eax, -1148106614
+	mov DWORD PTR [edi+128], eax
+	mov eax, 1931659731
+	mov DWORD PTR [edi+132], eax
+	mov eax, 623176615
+	mov DWORD PTR [edi+136], eax
+	mov eax, 181414830
+	mov DWORD PTR [edi+140], eax
+	mov eax, 1727492255
+	mov DWORD PTR [edi+144], eax
+	mov eax, 1833386001
+	mov DWORD PTR [edi+148], eax
+	mov eax, 1327317545
+	mov DWORD PTR [edi+152], eax
+	mov eax, 672087743
+	mov DWORD PTR [edi+156], eax
+	mov eax, 1
+	mov DWORD PTR [edi+160], eax
+	mov eax, 0
+	mov DWORD PTR [edi+164], eax
+	mov eax, 0
+	mov DWORD PTR [edi+168], eax
+	mov eax, 0
+	mov DWORD PTR [edi+172], eax
+	mov eax, 0
+	mov DWORD PTR [edi+176], eax
+	mov eax, 0
+	mov DWORD PTR [edi+180], eax
+	mov eax, 0
+	mov DWORD PTR [edi+184], eax
+	mov eax, 0
+	mov DWORD PTR [edi+188], eax
+	mov eax, 2240
+	mov ecx, 2048
 	mov edx, 2240
 	push eax
 	push ecx
@@ -3016,7 +6260,7 @@ vg_ecdsa_brainpoolp512r1_verify:
 	pop eax
 	pop eax
 	pop eax
-	mov eax, 320
+	mov eax, 1088
 	mov ecx, 2240
 	mov edx, 2304
 	push eax
@@ -3028,52 +6272,54 @@ vg_ecdsa_brainpoolp512r1_verify:
 	pop eax
 	pop eax
 	pop eax
-	mov eax, 704
-	mov ecx, 2304
-	mov edx, 2496
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_brainpoolp512r1_mul_mod_n}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	mov eax, 2560
-	mov ecx, 2496
+	mov eax, 2304
+	mov ecx, 960
 	mov edx, 2624
 	push eax
 	push ecx
 	push edx
 	push edi
-	call {vg_brainpoolp512r1_sub_mod_n}
+	call {vg_brainpoolp512r1_sub_mod_p}
 	pop eax
 	pop eax
 	pop eax
 	pop eax
-	mov edx, DWORD PTR [edi+1088]
-	or edx, DWORD PTR [edi+1092]
-	or edx, DWORD PTR [edi+1096]
-	or edx, DWORD PTR [edi+1100]
-	or edx, DWORD PTR [edi+1104]
-	or edx, DWORD PTR [edi+1108]
-	or edx, DWORD PTR [edi+1112]
-	or edx, DWORD PTR [edi+1116]
-	or edx, DWORD PTR [edi+1120]
-	or edx, DWORD PTR [edi+1124]
-	or edx, DWORD PTR [edi+1128]
-	or edx, DWORD PTR [edi+1132]
-	or edx, DWORD PTR [edi+1136]
-	or edx, DWORD PTR [edi+1140]
-	or edx, DWORD PTR [edi+1144]
-	or edx, DWORD PTR [edi+1148]
-	mov ecx, 0
-	sub ecx, edx
-	sbb edx, edx
-	mov eax, DWORD PTR [edi+2880]
-	and eax, edx
-	mov DWORD PTR [edi+2880], eax
+	mov eax, 1920
+	mov ecx, 2240
+	mov edx, 2240
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_add_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov eax, 1088
+	mov ecx, 2240
+	mov edx, 2304
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov eax, 2304
+	mov ecx, 960
+	mov edx, 2496
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp512r1_sub_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
 	mov edx, DWORD PTR [edi+2624]
 	or edx, DWORD PTR [edi+2628]
 	or edx, DWORD PTR [edi+2632]
@@ -3094,6 +6340,84 @@ vg_ecdsa_brainpoolp512r1_verify:
 	sub ecx, edx
 	sbb edx, edx
 	xor edx, -1
+	mov ebx, edx
+	mov edx, DWORD PTR [edi+2048]
+	sub edx, DWORD PTR [edi+128]
+	mov edx, DWORD PTR [edi+2052]
+	sbb edx, DWORD PTR [edi+132]
+	mov edx, DWORD PTR [edi+2056]
+	sbb edx, DWORD PTR [edi+136]
+	mov edx, DWORD PTR [edi+2060]
+	sbb edx, DWORD PTR [edi+140]
+	mov edx, DWORD PTR [edi+2064]
+	sbb edx, DWORD PTR [edi+144]
+	mov edx, DWORD PTR [edi+2068]
+	sbb edx, DWORD PTR [edi+148]
+	mov edx, DWORD PTR [edi+2072]
+	sbb edx, DWORD PTR [edi+152]
+	mov edx, DWORD PTR [edi+2076]
+	sbb edx, DWORD PTR [edi+156]
+	mov edx, DWORD PTR [edi+2080]
+	sbb edx, DWORD PTR [edi+160]
+	mov edx, DWORD PTR [edi+2084]
+	sbb edx, DWORD PTR [edi+164]
+	mov edx, DWORD PTR [edi+2088]
+	sbb edx, DWORD PTR [edi+168]
+	mov edx, DWORD PTR [edi+2092]
+	sbb edx, DWORD PTR [edi+172]
+	mov edx, DWORD PTR [edi+2096]
+	sbb edx, DWORD PTR [edi+176]
+	mov edx, DWORD PTR [edi+2100]
+	sbb edx, DWORD PTR [edi+180]
+	mov edx, DWORD PTR [edi+2104]
+	sbb edx, DWORD PTR [edi+184]
+	mov edx, DWORD PTR [edi+2108]
+	sbb edx, DWORD PTR [edi+188]
+	sbb eax, eax
+	mov edx, DWORD PTR [edi+2496]
+	or edx, DWORD PTR [edi+2500]
+	or edx, DWORD PTR [edi+2504]
+	or edx, DWORD PTR [edi+2508]
+	or edx, DWORD PTR [edi+2512]
+	or edx, DWORD PTR [edi+2516]
+	or edx, DWORD PTR [edi+2520]
+	or edx, DWORD PTR [edi+2524]
+	or edx, DWORD PTR [edi+2528]
+	or edx, DWORD PTR [edi+2532]
+	or edx, DWORD PTR [edi+2536]
+	or edx, DWORD PTR [edi+2540]
+	or edx, DWORD PTR [edi+2544]
+	or edx, DWORD PTR [edi+2548]
+	or edx, DWORD PTR [edi+2552]
+	or edx, DWORD PTR [edi+2556]
+	mov ecx, 0
+	sub ecx, edx
+	sbb edx, edx
+	xor edx, -1
+	and edx, eax
+	or edx, ebx
+	mov eax, DWORD PTR [edi+2880]
+	and eax, edx
+	mov DWORD PTR [edi+2880], eax
+	mov edx, DWORD PTR [edi+1088]
+	or edx, DWORD PTR [edi+1092]
+	or edx, DWORD PTR [edi+1096]
+	or edx, DWORD PTR [edi+1100]
+	or edx, DWORD PTR [edi+1104]
+	or edx, DWORD PTR [edi+1108]
+	or edx, DWORD PTR [edi+1112]
+	or edx, DWORD PTR [edi+1116]
+	or edx, DWORD PTR [edi+1120]
+	or edx, DWORD PTR [edi+1124]
+	or edx, DWORD PTR [edi+1128]
+	or edx, DWORD PTR [edi+1132]
+	or edx, DWORD PTR [edi+1136]
+	or edx, DWORD PTR [edi+1140]
+	or edx, DWORD PTR [edi+1144]
+	or edx, DWORD PTR [edi+1148]
+	mov ecx, 0
+	sub ecx, edx
+	sbb edx, edx
 	mov eax, DWORD PTR [edi+2880]
 	and eax, edx
 	mov DWORD PTR [edi+2880], eax

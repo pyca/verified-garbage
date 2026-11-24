@@ -118,7 +118,7 @@ theorem verifiedScrubbedAllFns {c : Prog isa} (v : VecLevel) {rb : Nat}
   have key := Verified.scrubM (f := .avx) (scrubAbi_fns x xs) h (SpSafe.of_all hsp) hd
     hcs hst hcv' hlv' (fun _ => hmx) hrb hpost hres ht (.inl mem_xregs)
     (fun _ => mem_xregs) (fun _ _ e => absurd e (by decide)) hgk
-  exact ⟨key.1, key.2 fun s₁ s₂ hp n hn => fns_pub hp n (hin n hn)⟩
+  exact ⟨key.1, key.2 fun s₁ s₂ hp n hn => fns_pub hp n (hin n hn), fun ty _ h => by cases ty <;> cases h⟩
 
 end
 

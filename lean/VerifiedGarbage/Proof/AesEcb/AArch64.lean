@@ -144,7 +144,7 @@ theorem encrypt_scrubbed (v : BlocksImpl) :
   rw [v.encScratch_eq]
   by_cases h : v.scratch = 0
   · simp only [h, ↓reduceIte]
-    exact ⟨Clears.Verified.withClears (encrypt_free v h) v.encVecsOk, v.encRes h _⟩
+    exact ⟨Clears.Verified.withClears (encrypt_free v h) v.encVecsOk, v.encRes h _, fun ty _ h => by cases ty <;> cases h⟩
   · simp only [h, ↓reduceIte]
     exact wiped_scrubbed (encrypt_verified v) encryptOk (Scrub.sideAll_noDit_of_calleeSide v.encScrub)
       v.encNoFrames
@@ -157,7 +157,7 @@ theorem decrypt_scrubbed (v : BlocksImpl) :
   rw [v.decScratch_eq]
   by_cases h : v.scratch = 0
   · simp only [h, ↓reduceIte]
-    exact ⟨Clears.Verified.withClears (decrypt_free v h) v.decVecsOk, v.decRes h _⟩
+    exact ⟨Clears.Verified.withClears (decrypt_free v h) v.decVecsOk, v.decRes h _, fun ty _ h => by cases ty <;> cases h⟩
   · simp only [h, ↓reduceIte]
     exact wiped_scrubbed (decrypt_verified v) decryptOk (Scrub.sideAll_noDit_of_calleeSide v.decScrub)
       v.decNoFrames

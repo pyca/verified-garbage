@@ -205,7 +205,7 @@ The guard observes only the public record lengths. -/
 theorem chooseRecord_scrubbed {limit : Nat} {leaf : Prog isa} (bound : limit=96 ∨ limit=224) (short : VerifiedScrubbed target leaf (boundedRecordContract limit) 0) {other : Prog isa}
     (h : VerifiedScrubbed target other (gatherAArch64 .plain) 0) :
     VerifiedScrubbed target (chooseRecord limit leaf other) (gatherAArch64 .plain) 0 :=
-  ⟨⟨branch_correct bound short other h.verified,ct_of (fun _ _ => select_rel bound short h.verified),h.verified.2.2⟩,branch_noResidue bound short h.noResidue⟩
+  ⟨⟨branch_correct bound short other h.verified,ct_of (fun _ _ => select_rel bound short h.verified),h.verified.2.2⟩,branch_noResidue bound short h.noResidue, fun ty _ h => by cases ty <;> cases h⟩
 
 theorem chooseShort_scrubbed {other : Prog isa} (short : VerifiedScrubbed target shortLeaf shortContract 0)
     (h : VerifiedScrubbed target other (gatherAArch64 .plain) 0) :

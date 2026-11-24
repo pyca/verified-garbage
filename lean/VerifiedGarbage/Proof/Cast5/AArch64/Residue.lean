@@ -72,7 +72,7 @@ theorem _root_.VG.Proof.Cast5.AArch64.Tbl.ecbEncryptCleared_scrubbed :
     VerifiedScrubbed AArch64.target Impl.Cast5.AArch64.Fn.ecbEncrypt
       (Spec.Cast5.ecbEncryptContract AArch64.abi) 0 :=
   ⟨Proof.Cast5.AArch64.Tbl.ecbEncryptCleared_verified,
-    Proof.Cast5.AArch64.Tbl.ecbEncryptCleared_noResidue⟩
+    Proof.Cast5.AArch64.Tbl.ecbEncryptCleared_noResidue, fun ty _ h => by cases ty <;> cases h⟩
 
 /-- The function as its registration binds it: it meets its contract in constant time and returns
 without secret residue. -/
@@ -80,6 +80,6 @@ theorem _root_.VG.Proof.Cast5.AArch64.Tbl.ecbDecryptCleared_scrubbed :
     VerifiedScrubbed AArch64.target Impl.Cast5.AArch64.Fn.ecbDecrypt
       (Spec.Cast5.ecbDecryptContract AArch64.abi) 0 :=
   ⟨Proof.Cast5.AArch64.Tbl.ecbDecryptCleared_verified,
-    Proof.Cast5.AArch64.Tbl.ecbDecryptCleared_noResidue⟩
+    Proof.Cast5.AArch64.Tbl.ecbDecryptCleared_noResidue, fun ty _ h => by cases ty <;> cases h⟩
 
 end VG.Proof.Cast5.AArch64.Tbl

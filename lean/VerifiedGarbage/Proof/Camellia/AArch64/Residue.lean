@@ -163,7 +163,7 @@ theorem _root_.VG.Proof.Camellia.AArch64.Residue.expandKeyCode_scrubbed :
     VerifiedScrubbed AArch64.target Impl.Camellia.AArch64.Fn.expandKey
       (Spec.Camellia.expandKeyContract AArch64.abi 160) 0 :=
   ⟨Proof.Camellia.AArch64.Residue.expandKeyCode_verified,
-    Proof.Camellia.AArch64.Residue.expandKeyCode_noResidue⟩
+    Proof.Camellia.AArch64.Residue.expandKeyCode_noResidue, fun ty _ h => by cases ty <;> cases h⟩
 
 /-- The function as its registration binds it: it meets its contract in constant time and returns
 without secret residue. -/
@@ -171,7 +171,7 @@ theorem _root_.VG.Proof.Camellia.AArch64.Residue.ecbEncryptCode_scrubbed :
     VerifiedScrubbed AArch64.target Impl.Camellia.AArch64.Fn.ecbEncrypt
       (Spec.Camellia.ecbContract AArch64.abi (Proof.Camellia.AArch64.specDir Impl.Camellia.AArch64.Dir.encrypt)   3248) 0 :=
   ⟨Proof.Camellia.AArch64.Residue.ecbEncryptCode_verified,
-    Proof.Camellia.AArch64.Residue.ecbEncryptCode_noResidue⟩
+    Proof.Camellia.AArch64.Residue.ecbEncryptCode_noResidue, fun ty _ h => by cases ty <;> cases h⟩
 
 /-- The function as its registration binds it: it meets its contract in constant time and returns
 without secret residue. -/
@@ -179,7 +179,7 @@ theorem _root_.VG.Proof.Camellia.AArch64.Residue.ecbDecryptCode_scrubbed :
     VerifiedScrubbed AArch64.target Impl.Camellia.AArch64.Fn.ecbDecrypt
       (Spec.Camellia.ecbContract AArch64.abi (Proof.Camellia.AArch64.specDir Impl.Camellia.AArch64.Dir.decrypt)   3248) 0 :=
   ⟨Proof.Camellia.AArch64.Residue.ecbDecryptCode_verified,
-    Proof.Camellia.AArch64.Residue.ecbDecryptCode_noResidue⟩
+    Proof.Camellia.AArch64.Residue.ecbDecryptCode_noResidue, fun ty _ h => by cases ty <;> cases h⟩
 
 /-- The function as its registration binds it: it meets its contract in constant time and returns
 without secret residue. -/
@@ -187,7 +187,7 @@ theorem _root_.VG.Proof.Camellia.AArch64.Residue.cbcEncryptChainedCode_scrubbed 
     VerifiedScrubbed AArch64.target Impl.Camellia.AArch64.Fn.cbcEncryptChained
       (Spec.Camellia.cbcEncryptChainedContract AArch64.abi 3344) 0 :=
   ⟨Proof.Camellia.AArch64.Residue.cbcEncryptChainedCode_verified,
-    Proof.Camellia.AArch64.Residue.cbcEncryptChainedCode_noResidue⟩
+    Proof.Camellia.AArch64.Residue.cbcEncryptChainedCode_noResidue, fun ty _ h => by cases ty <;> cases h⟩
 
 /-- The function as its registration binds it: it meets its contract in constant time and returns
 without secret residue. -/
@@ -195,7 +195,7 @@ theorem _root_.VG.Proof.Camellia.AArch64.Residue.cbcDecryptChainedCode_scrubbed 
     VerifiedScrubbed AArch64.target Impl.Camellia.AArch64.Fn.cbcDecryptChained
       (Spec.Camellia.cbcDecryptChainedContract AArch64.abi 3344) 0 :=
   ⟨Proof.Camellia.AArch64.Residue.cbcDecryptChainedCode_verified,
-    Proof.Camellia.AArch64.Residue.cbcDecryptChainedCode_noResidue⟩
+    Proof.Camellia.AArch64.Residue.cbcDecryptChainedCode_noResidue, fun ty _ h => by cases ty <;> cases h⟩
 
 /-- The function as its registration binds it: it meets its contract in constant time and returns
 without secret residue. -/
@@ -203,7 +203,7 @@ theorem _root_.VG.Proof.Camellia.AArch64.Residue.cfbEncryptCode_scrubbed :
     VerifiedScrubbed AArch64.target Impl.Camellia.AArch64.Fn.cfbEncrypt
       (Spec.Camellia.cfbEncryptContract AArch64.abi 3344) 0 :=
   ⟨Proof.Camellia.AArch64.Residue.cfbEncryptCode_verified,
-    Proof.Camellia.AArch64.Residue.cfbEncryptCode_noResidue⟩
+    Proof.Camellia.AArch64.Residue.cfbEncryptCode_noResidue, fun ty _ h => by cases ty <;> cases h⟩
 
 /-- The function as its registration binds it: it meets its contract in constant time and returns
 without secret residue. -/
@@ -211,7 +211,7 @@ theorem _root_.VG.Proof.Camellia.AArch64.Residue.cfbDecryptCode_scrubbed :
     VerifiedScrubbed AArch64.target Impl.Camellia.AArch64.Fn.cfbDecrypt
       (Spec.Camellia.cfbDecryptContract AArch64.abi 3344) 0 :=
   ⟨Proof.Camellia.AArch64.Residue.cfbDecryptCode_verified,
-    Proof.Camellia.AArch64.Residue.cfbDecryptCode_noResidue⟩
+    Proof.Camellia.AArch64.Residue.cfbDecryptCode_noResidue, fun ty _ h => by cases ty <;> cases h⟩
 
 /-- The function as its registration binds it: it meets its contract in constant time and returns
 without secret residue. -/
@@ -219,7 +219,7 @@ theorem _root_.VG.Proof.Camellia.AArch64.Residue.cfbEncryptFinalCode_scrubbed :
     VerifiedScrubbed AArch64.target Impl.Camellia.AArch64.Fn.cfbEncryptFinal
       (Spec.Camellia.cfbEncryptFinalContract AArch64.abi 3344) 0 :=
   ⟨Proof.Camellia.AArch64.Residue.cfbEncryptFinalCode_verified,
-    Proof.Camellia.AArch64.Residue.cfbEncryptFinalCode_noResidue⟩
+    Proof.Camellia.AArch64.Residue.cfbEncryptFinalCode_noResidue, fun ty _ h => by cases ty <;> cases h⟩
 
 /-- The function as its registration binds it: it meets its contract in constant time and returns
 without secret residue. -/
@@ -227,7 +227,7 @@ theorem _root_.VG.Proof.Camellia.AArch64.Residue.cfbDecryptFinalCode_scrubbed :
     VerifiedScrubbed AArch64.target Impl.Camellia.AArch64.Fn.cfbDecryptFinal
       (Spec.Camellia.cfbDecryptFinalContract AArch64.abi 3344) 0 :=
   ⟨Proof.Camellia.AArch64.Residue.cfbDecryptFinalCode_verified,
-    Proof.Camellia.AArch64.Residue.cfbDecryptFinalCode_noResidue⟩
+    Proof.Camellia.AArch64.Residue.cfbDecryptFinalCode_noResidue, fun ty _ h => by cases ty <;> cases h⟩
 
 /-- The function as its registration binds it: it meets its contract in constant time and returns
 without secret residue. -/
@@ -235,7 +235,7 @@ theorem _root_.VG.Proof.Camellia.AArch64.Residue.ofbCode_scrubbed :
     VerifiedScrubbed AArch64.target Impl.Camellia.AArch64.Fn.ofb
       (Spec.Camellia.ofbContract AArch64.abi 3344) 0 :=
   ⟨Proof.Camellia.AArch64.Residue.ofbCode_verified,
-    Proof.Camellia.AArch64.Residue.ofbCode_noResidue⟩
+    Proof.Camellia.AArch64.Residue.ofbCode_noResidue, fun ty _ h => by cases ty <;> cases h⟩
 
 /-- The function as its registration binds it: it meets its contract in constant time and returns
 without secret residue. -/
@@ -243,6 +243,6 @@ theorem _root_.VG.Proof.Camellia.AArch64.Residue.ofbFinalCode_scrubbed :
     VerifiedScrubbed AArch64.target Impl.Camellia.AArch64.Fn.ofbFinal
       (Spec.Camellia.ofbFinalContract AArch64.abi 3344) 0 :=
   ⟨Proof.Camellia.AArch64.Residue.ofbFinalCode_verified,
-    Proof.Camellia.AArch64.Residue.ofbFinalCode_noResidue⟩
+    Proof.Camellia.AArch64.Residue.ofbFinalCode_noResidue, fun ty _ h => by cases ty <;> cases h⟩
 
 end VG.Proof.Camellia.AArch64.Residue

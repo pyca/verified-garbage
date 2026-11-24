@@ -272,23 +272,20 @@ def W1 (Ex : List Region → List Region → Prop) (base : Addr) (bytes len dlen
     (sp : BitVec 32) (D : List Byte) (u : State) : Prop :=
   DomAt Ex base bytes len dlen args sp D u ∧
     Gate u (¬ (qD len D % 2 = 1 ∧ 2 < qD len D ∧ qD len D < pD len D - 1)) ∧
-    sv u.mem base len .wide 11 = qD len D ∧ sv u.mem base len .wide 15 = pD len D - 1 ∧
-    sv u.mem base len .wide 9 = pD len D
+    sv u.mem base len .wide 11 = qD len D ∧ sv u.mem base len .wide 15 = pD len D - 1
 
 /-- A run with a domain of three components, before the power to q: its q is the domain's third. -/
 theorem DomAt.qrun {u : State} (A : DomAt Ex base bytes len (3 * len) args sp D u) :
     QPower.QRun Ex base bytes len args sp ((D.drop (2 * len)).take len) u :=
   QPower.QRun.of_dom A.run A.room A.geo A.hb40 A.dom
 
-/-- The power to q runs over q's bytes from its first nonzero one, which the runs' domain fixes, in the
-context of p (slot 9), which the runs share. -/
-theorem subgroup_trace {m : Nat} (h3 : dlen = 3 * len) :
-    RelCT isa (Both fun u => DomAt Ex base bytes len dlen args sp D u ∧ sv u.mem base len .wide 9 = m) subgroup
-      fun _ _ => True := by
+/-- The power to q runs over q's bytes from its first nonzero one, which the runs' domain fixes. -/
+theorem subgroup_trace (h3 : dlen = 3 * len) :
+    RelCT isa (Both (DomAt Ex base bytes len dlen args sp D)) subgroup fun _ _ => True := by
   subst h3
   exact (VG.RelCT.seq QPower.qScan_relCT (VG.RelCT.seq (QPower.powQ_trace (b := 10) (by decide) (by decide)
     copy10_check) (RelCT.taint (A := taint) τA (fun _ _ h => h.1.agree h.2) eqStatus_check))).mono
-    (fun _ _ h => ⟨⟨h.1.1.qrun, h.1.2⟩, ⟨h.2.1.qrun, h.2.2⟩⟩) fun _ _ h => h
+    (fun _ _ h => ⟨h.1.qrun, h.2.qrun⟩) fun _ _ h => h
 
 theorem dividesFront_trace :
     RelCT isa (Both fun s => Run Ex base bytes len args sp s ∧ RoomF sp base bytes)
@@ -313,14 +310,14 @@ theorem divides_relCT (h3 : dlen = 3 * len) :
       ¬ ¬ (qD len D % 2 = 1 ∧ 2 < qD len D ∧ qD len D < pD len D - 1)) divides fun _ _ => True := by
   rw [divides_eq]
   apply VG.RelCT.chain
-  refine VG.RelCT.seq (relCT_both (F := fun u => (DomAt Ex base bytes len dlen args sp D u ∧
-      sv u.mem base len .wide 9 = pD len D) ∧ Gate u (¬ (pD len D - 1) % qD len D = 0)) (dividesFront_trace.mono
+  refine VG.RelCT.seq (relCT_both (F := fun u => DomAt Ex base bytes len dlen args sp D u ∧
+      Gate u (¬ (pD len D - 1) % qD len D = 0)) (dividesFront_trace.mono
         (fun _ _ h => ⟨⟨h.1.1.1.run, h.1.1.1.room⟩, ⟨h.2.1.1.run, h.2.1.1.room⟩⟩) fun _ _ h => h) fun x h => ?_) ?_
-  · obtain ⟨⟨A, _, h11, h15, h9⟩, c⟩ := h
+  · obtain ⟨⟨A, _, h11, h15⟩, c⟩ := h
     have c := Classical.not_not.mp c
     exact WP.mono (dividesFront_ok A.run.1 (by rw [A.run.2.2]; exact A.room) h11 h15 c.1 c.2.1)
-      fun u ⟨S, G, kk⟩ => ⟨⟨A.step S, by rw [kk 9 (by decide) (by decide) (by decide), h9]⟩, G⟩
-  · exact gate_relCT (fun _ h => h.2) (aEnd (fun _ h => h.1.1.1.run) ret0_check)
+      fun u ⟨S, G, _⟩ => ⟨A.step S, G⟩
+  · exact gate_relCT (fun _ h => h.2) (aEnd (fun _ h => h.1.1.run) ret0_check)
       ((subgroup_trace h3).mono (fun _ _ h => ⟨h.1.1.1, h.2.1.1⟩) fun _ _ h => h)
 
 theorem withQ_relCT :
@@ -332,14 +329,13 @@ theorem withQ_relCT :
   apply VG.RelCT.chain
   refine VG.RelCT.seq (aRel (F := W1 Ex base bytes len dlen args sp D) (fun _ h => h.1.1.run) withQFront_check
     fun x h => ?_) ?_
-  · obtain ⟨⟨A, h9, _, h15, _⟩, n2⟩ := h
+  · obtain ⟨⟨A, _, _, h15, _⟩, n2⟩ := h
     have h3 : dlen = 3 * len := by have := A.geo.dl; omega_using [n2, this]
     have G3 : DomGeo args base bytes len (3 * len) x.rd x.wr := h3 ▸ A.geo
-    refine WP.mono (withQFront_ok A.run.1 G3 h15) fun u ⟨S, Gt, q11, kk⟩ => ⟨A.step S, ?_, ?_, ?_, ?_⟩
+    refine WP.mono (withQFront_ok A.run.1 G3 h15) fun u ⟨S, Gt, q11, kk⟩ => ⟨A.step S, ?_, ?_, ?_⟩
     · rw [A.comp2 h3] at Gt; exact Gt
     · rw [q11, A.comp2 h3]
     · rw [kk 15 (by decide) (by decide) (by decide) (by decide), h15]
-    · rw [kk 9 (by decide) (by decide) (by decide) (by decide), h9]
   · exact gate_relCT (fun _ h => h.2.1) (aEnd (fun _ h => h.1.1.run) ret0_check) (divides_relCT h3)
 
 theorem checked_relCT :

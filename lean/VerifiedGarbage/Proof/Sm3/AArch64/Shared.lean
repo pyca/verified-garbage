@@ -181,6 +181,6 @@ theorem _root_.VG.Proof.Sm3.AArch64.Stream.init_scrubbed :
     VerifiedScrubbed _root_.VG.AArch64.target Impl.Sm3.AArch64.Stream.init
       (Spec.Sm3.initContract AArch64.abi) 0 :=
   ⟨Proof.Sm3.AArch64.Shared.init,
-    Proof.Sm3.AArch64.Stream.init_noResidue _ _⟩
+    Proof.Sm3.AArch64.Stream.init_noResidue _ _, fun ty _ h => by cases ty <;> cases h⟩
 
 end VG.Proof.Sm3.AArch64.Shared

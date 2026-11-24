@@ -141,40 +141,6 @@ def winTopCall : Prog isa := argCall "vg_ffdh_window_top_wide" (windowPowerWith 
 /-- The context of p: p in slot 0, one in slot 3, `R² mod p` in slot 4 and the inverse. -/
 def ctxP : Prog isa := .seq (copy (sl 9) (sl 0) n1) prepCall
 
-/-! ### The context of a public modulus
-
-`prepare` reaches `2^(8 B + B / 8) mod M` by doubling one that many times, as it must for a modulus
-that is secret. A modulus of a domain is public, and where its top word is not zero, `2^(8 B − 32)` is
-below it: `32 + B / 8` doublings from there reach the same number (`seedTwo`), which the same six
-squares take to `R² mod M`. For any other modulus `powerTwoPub` is `powerTwo`. -/
-
-/-- `eax` points to the top word of the wide slot `j`; `edx` changes. -/
-def topPtr (j : Nat) : List Instr :=
-  ptrTo (sl j) .eax .edx ++ cntTo n1 .edx ++ [.alu .add .eax (.reg .edx), .alu .sub .eax (.imm 4)]
-
-/-- ZF: the top word of the modulus (slot 0) is zero. -/
-def topTest : Prog isa := .block (topPtr 0 ++ [.mov .eax (.mem (at_ .eax 0)), .alu .test .eax (.reg .eax)])
-
-/-- `2^(8 B + B / 8) mod M` in slot 4, for a modulus whose top word is not zero: `2^(8 B − 32)`, doubled
-`32 + B / 8` times. -/
-def seedTwo : Prog isa :=
-  .seq (zero (sl 4) n1) <|
-  .seq (.block (topPtr 4 ++ [.mov .ecx (.imm 1), .store (at_ .eax 0) .ecx] ++ widthC 0 .wide .esi ++
-    [.shift .shr .esi 3, .alu .add .esi (.imm 32)])) (.loop (doubleStep .wide) .ne)
-
-/-- `powerTwo .wide`, from `2^(8 B − 32)` where the modulus, which is public, is above it. -/
-def powerTwoPub : Prog isa := .seq topTest (.ite .e (powerTwo .wide) seedTwo)
-
-/-- `prepare .wide` for a public modulus: `prepBasePre`, `powerTwoPub`, and `prepare`'s six squares. -/
-def preparePub : Prog isa :=
-  .seq (prepBasePre .wide) (.seq powerTwoPub (VG.Impl.Mont.X86.Dynamic.repeatSquaresWith (mul .wide 4 4 4) 6))
-
-/-- `preparePub`, called. -/
-def prepPubCall : Prog isa := argCall "vg_ffdh_prepare_public_wide" preparePub
-
-/-- `ctxP` for a public p: a domain's, in the functions that check a domain or a key of one. -/
-def ctxPub : Prog isa := .seq (copy (sl 9) (sl 0) n1) prepPubCall
-
 /-- Slot 6 the number in slot `b` to the power of the number in slot `e`, modulo p. -/
 def powP (b e : Nat) : Prog isa :=
   .seq ctxP (.seq (copy (sl b) (sl 5) n1) (.seq (copy (sl e) (sl 8) n1) winCall))
@@ -182,7 +148,7 @@ def powP (b e : Nat) : Prog isa :=
 /-- Slot 6 the number in slot `b` to the power of x (synthetic arguments 10 and 11), modulo p: x is
 loaded at the top of slot 8 and raised over its `x_len` public bytes only. -/
 def powTop (b : Nat) : Prog isa :=
-  .seq ctxPub (.seq (copy (sl b) (sl 5) n1) (.seq (loadTop (sl 8) n1 10 11) winTopCall))
+  .seq ctxP (.seq (copy (sl b) (sl 5) n1) (.seq (loadTop (sl 8) n1 10 11) winTopCall))
 
 /-! ### Powers of two
 
@@ -267,7 +233,7 @@ def winQCall : Prog isa :=
     (.seq (.block setQ) (.seq (loadTop (sl 8) n1 10 11) (windowPowerWith .wide (lenCount 11))))
 
 /-- Slot 6 the number in slot `b` to the power of q, modulo p, after `qScan`. -/
-def powQ (b : Nat) : Prog isa := .seq ctxPub (.seq (copy (sl b) (sl 5) n1) winQCall)
+def powQ (b : Nat) : Prog isa := .seq ctxP (.seq (copy (sl b) (sl 5) n1) winQCall)
 
 /-- `ecx` all ones if `1 < [a] < p − 1`, else zero, through the mask word. -/
 def rangeMask (a : Nat) : Prog isa :=
@@ -295,7 +261,7 @@ def twoTest : Prog isa := .seq (setSmall (sl 17) n1 2) (.seq (equal (sl 10) (sl 
 
 /-- Slot 6 `g^x mod p` for g in slot 10 and x both in slot 13 and at synthetic arguments 10 and 11: by
 `ladderCall` where g is two, else by `powTop`. -/
-def powTopG : Prog isa := .seq twoTest (.ite .e (powTop 10) (.seq ctxPub ladderCall))
+def powTopG : Prog isa := .seq twoTest (.ite .e (powTop 10) (.seq ctxP ladderCall))
 
 /-! ## `vg_ffdh_check_domain` -/
 

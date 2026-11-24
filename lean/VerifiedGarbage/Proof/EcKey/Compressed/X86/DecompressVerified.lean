@@ -35,6 +35,7 @@ public import VerifiedGarbage.Spec.Ecdsa.Generic
 import VerifiedGarbage.Proof.Ecdsa.X86.Finish
 import VerifiedGarbage.Proof.Weierstrass.X86.BytesLen
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Mont.X86.Instr
 public import VerifiedGarbage.Proof.Weierstrass.X86.Pow
@@ -230,6 +231,12 @@ theorem rootTab_lay {c : Cfg} (hc : CfgOk c) :
   · exact List.pairwise_map.mpr ((by decide : Impl.EcKey.Compressed.X86.rootSlots.Pairwise (· ≠ ·)).imp
       fun h => sl_apart c h)
 
+theorem p384Root_exponent : tabRun Impl.EcKey.Compressed.X86.p384RootOps
+    (1, List.replicate 9 0) =
+    some ((Impl.EcKey.Compressed.X86.p384Prime + 1) / 4,
+      [1, 2 ^ 2 - 1, 2 ^ 3 - 1, 2 ^ 6 - 1, 2 ^ 15 - 1, 2 ^ 30 - 1, 2 ^ 32 - 1, 2 ^ 120 - 1, 0]) := by
+  kernel_rfl
+
 /-- What the three-mod-four candidate writes: the power's slots and its saved
 powers. -/
 abbrev rootThreeWrites (c : Cfg) : List (Nat × Nat) :=
@@ -257,10 +264,19 @@ theorem rootThree_ok {c : Cfg} (hc : CfgOk c) (hp : c.C.p % 4 = 3)
     exact V
   next _ =>
     have h10 := hc.n10
-    exact windowPower_ok (rootPow_lay hc (j := 2) (by decide)) (rootPow_wk hc (by decide))
-      (unitMod_pow_two hc.p_odd (64 * c.n)) (rootTab_lay hc) rfl
-      (by have := hc.p_ge; omega_arith) (by have := hc.p_lt; have := hc.p_ge; omega_arith)
-      (by omega_arith) hs _hM hB
+    split
+    next h384 =>
+      have he : (c.C.p + 1) / 4 = (Impl.EcKey.Compressed.X86.p384Prime + 1) / 4 := by rw [h384]
+      rw [he]
+      exact tabPower_ok (rootPow_lay hc (j := 2) (by decide)) (rootPow_wk hc (by decide))
+        (unitMod_pow_two hc.p_odd (64 * c.n)) (rootTab_lay hc) _
+        (by rw [show (Impl.EcKey.Compressed.X86.rootTab c).length = 9 from rfl]
+            exact p384Root_exponent) hs _hM hB
+    next _ =>
+      exact windowPower_ok (rootPow_lay hc (j := 2) (by decide)) (rootPow_wk hc (by decide))
+        (unitMod_pow_two hc.p_odd (64 * c.n)) (rootTab_lay hc) rfl
+        (by have := hc.p_ge; omega_arith) (by have := hc.p_lt; have := hc.p_ge; omega_arith)
+        (by omega_arith) hs _hM hB
 
 end VG.Proof.EcKey.Compressed.X86
 
