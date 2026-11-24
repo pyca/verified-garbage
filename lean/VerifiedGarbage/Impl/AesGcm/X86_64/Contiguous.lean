@@ -11,10 +11,12 @@ def src := at_ .rsp 8
 def regs (r : Reg) : List Instr :=
   [.mov r (.mem src), .alu .add r (.mem (at_ .r15 tlenO)), .alu .sub r (.mem (at_ .r15 lenO))]
 def call (f : Fn) : Prog isa := .call f.name f.code
+def fusedArgs : List Instr :=
+  ([.mov .rdi (.reg .r13), .mov .rsi (.mem (at_ .r15 roundsO))] : List Instr) ++ ptr .rdx .r14 48 ++
+    ptr .rcx .r14 16 ++ [.mov .r8 (.mem src), .mov .r9 (.reg .rax), .mov .r10 (.mem (at_ .r15 dataO))] ++ ptr .rax .r15 bScrO
+
 def fused (f : Fn) : Prog isa :=
-  .seq (.block (([.mov .rdi (.reg .r13), .mov .rsi (.mem (at_ .r15 roundsO))] : List Instr) ++ ptr .rdx .r14 48 ++
-    ptr .rcx .r14 16 ++ [.mov .r8 (.mem src), .mov .r9 (.reg .rax), .mov .r10 (.mem (at_ .r15 dataO))] ++ ptr .rax .r15 bScrO))
-    (.frame (.push [.rax]) (call f) (.pop .rax 1))
+  .seq (.block fusedArgs) (.frame (.push [.rax]) (call f) (.pop .rax 1))
 def separate (ctr gh : Fn) : Prog isa :=
   .seq (.block (([.mov .rdi (.reg .r13), .mov .rsi (.mem (at_ .r15 roundsO))] : List Instr) ++ ptr .rdx .r14 48 ++
     [.mov .rcx (.mem src), .mov .r8 (.reg .rax), .mov .r11 (.mem (at_ .r15 dataO))] ++ ptr .r9 .r15 bScrO))

@@ -685,7 +685,7 @@ theorem oneCryptBlkTo_ok {R : Nat} {icb : Block} {P : Nat} (hP : P % 16 = 0) {D 
     fun hc₀ => by simpa using hc₀, fun _ => by simp [bytesAt]; rfl, rfl, .inr (by omega_arith), Frame.refl _ _⟩,
     ?_, hm₁, hrd₁, hwr₁⟩
   simp only [TailSrc, ↓reduceIte, Nat.sub_zero]
-  exact ⟨hbx, hQ.of_eq hrd₁ hwr₁, by simpa using hQD, trivial⟩
+  exact ⟨hbx, hQ.of_eq hrd₁ hwr₁, Or.inr (by simpa using hQD), trivial⟩
 
 /-- `oneCryptG`: counter mode over the `n` bytes kept at `W + 200` (`Q`), from
 the first counter block, into `D` (`CryptSrc`: in place, `Q` itself). -/

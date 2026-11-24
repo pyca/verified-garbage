@@ -51,7 +51,8 @@ theorem tail_ok (v : GcmImpl) (L : Lay Ctx St W SP) (p : PieceInput Ctx St W SP 
     (ctr : Ctr s.mem (St+48#64) (St+64#64) (ciphOf s.mem Ctx R) icb P) :
     WP isa (cryptTailG v.callees true) s (PieceOutput Ctx St W SP R icb P Q D n s) := by
   have src : TailSrc true St W SP s s.mem D 0 n Q := by
-    simpa [TailSrc] using And.intro p.rbx (And.intro p.src p.apart)
+    simp only [TailSrc, ↓reduceIte, Nat.sub_zero]
+    exact ⟨p.rbx, p.src, Or.inr (by simpa using p.apart), trivial⟩
   refine (cryptTailG_ok v L true (p.mid align) (by simpa using short) rfl src).mono fun t h =>
     ⟨h.env, h.rounds, h.ctr ctr, ?_, h.frame⟩
   simpa [bytesAt] using h.out ctr
