@@ -765,6 +765,13 @@ benches! {
 /// `$VG_BENCH_NAMES` set, each benchmark's name is printed before it, as
 /// `<name>: bench`, so that `--list` tells which one has each group.
 fn all(c: &mut Criterion) {
+    #[cfg(target_arch = "riscv64")]
+    {
+        unsafe extern "C" { static VG_BENCH_SEAL_ENTRY: core::sync::atomic::AtomicU8; }
+        let selected = std::env::var("VG_BENCH_SEAL_ENTRY").as_deref() != Ok("base");
+        unsafe { VG_BENCH_SEAL_ENTRY.store(u8::from(selected), core::sync::atomic::Ordering::Relaxed); }
+    }
+
     let modules = std::env::var("VG_BENCH_MODULES").unwrap_or_default();
     let modules: Vec<&str> = modules.split_whitespace().collect();
     let used = |m: &&str| BENCHES.iter().any(|(_, uses, _)| uses.contains(m));

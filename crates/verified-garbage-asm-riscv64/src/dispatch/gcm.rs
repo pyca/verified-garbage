@@ -2,6 +2,13 @@
 //! The dispatchers of the verified `gcm` functions for `riscv64`
 //! (`crate::gcm`, `VG.Rust.dispatcher`).
 
+// Diagnostic selector: the two measurements use this same linked executable.
+#[unsafe(no_mangle)]
+pub static VG_BENCH_SEAL_ENTRY: core::sync::atomic::AtomicU8 = core::sync::atomic::AtomicU8::new(1);
+fn measure_contiguous() -> bool {
+    VG_BENCH_SEAL_ENTRY.load(core::sync::atomic::Ordering::Relaxed) != 0
+}
+
 /// The AES-GCM key setup: writes the key context of the `key_len`-byte AES key at `key` to `*ctx`: its key schedule for `Nr = key_len / 4 + 6` rounds (FIPS 197 §5.2, as `vg_aes_expand_key` writes it) in the first `16 * (Nr + 1)` bytes, and the hash subkey `H = CIPH_K(0¹²⁸)` (NIST SP 800-38D §7.1 step 1) in bytes 240–255. The other bytes are unspecified. The other `vg_aes_gcm_*` functions read it, with `Nr` as their `rounds`.
 ///
 /// Contract: `VG.Spec.Gcm.initContract`. The key context is `VG.Spec.Gcm.KeyRepr`. Constant time: only the pointers and `key_len` may affect timing, not the key.
@@ -207,7 +214,7 @@ pub unsafe fn vg_aes_gcm_stream_verify_bitsliced_auto(_dit: verified_garbage_cpu
 #[inline]
 pub unsafe fn vg_aes_gcm_seal_bitsliced_auto(_dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16], bk: *const [u64; 156]) {
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::gcm::vg_aes_gcm_seal_contiguous_bitsliced(ctx, rounds, nonce, nonce_len, aad, aad_len, data, data, len, tag, bk) }
+    unsafe { if measure_contiguous() { crate::gcm::vg_aes_gcm_seal_contiguous_bitsliced(ctx, rounds, nonce, nonce_len, aad, aad_len, data, data, len, tag, bk) } else { crate::gcm::vg_aes_gcm_seal_bitsliced(ctx, rounds, nonce, nonce_len, aad, aad_len, data, len, tag, bk) } }
 }
 
 /// `vg_aes_gcm_open` with the bitsliced form of the key context at `*bk` (`VG.Spec.Gcm.CtxSlicedRepr`), which it may read instead of computing it. Computes the same result as `vg_aes_gcm_open`. The buffer is secret, as the key context is: it may not affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openBitslicedContract`.
@@ -286,5 +293,5 @@ pub unsafe fn vg_aes_gcm_open_to_bitsliced_auto(_dit: verified_garbage_cpu::Dit<
 #[inline]
 pub unsafe fn vg_aes_gcm_seal_gather_bitsliced_auto(_dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16], bk: *const [u64; 156]) {
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { if src_count == 1 { crate::gcm::vg_aes_gcm_seal_contiguous_bitsliced(ctx, rounds, nonce, nonce_len, aad, aad_len, (*src)[0] as *const u8, dst, len, tag, bk) } else { crate::gcm::vg_aes_gcm_seal_gather_bitsliced(ctx, rounds, nonce, nonce_len, aad, aad_len, src, src_count, dst, len, tag, bk) } }
+    unsafe { if measure_contiguous() && src_count == 1 { crate::gcm::vg_aes_gcm_seal_contiguous_bitsliced(ctx, rounds, nonce, nonce_len, aad, aad_len, (*src)[0] as *const u8, dst, len, tag, bk) } else { crate::gcm::vg_aes_gcm_seal_gather_bitsliced(ctx, rounds, nonce, nonce_len, aad, aad_len, src, src_count, dst, len, tag, bk) } }
 }

@@ -451,6 +451,7 @@ def run(binary, home, library, args, checkout, modules, groups=None, bench=None)
         ],
         env={
             **os.environ,
+            "VG_BENCH_SEAL_ENTRY": "base" if checkout == args.base.resolve() else "candidate",
             "CRITERION_HOME": str(home),
             "VG_BENCH_MODULES": modules,
             "VG_BENCHES": bench or "",
@@ -591,6 +592,10 @@ def main():
         binaries["base"], note, source = build_base(base, head)
         if binaries["base"] is not None:
             modules["base"] = selected_modules(source, args.modules)
+    # Isolate the effect of entry selection from link layout. Both sides and
+    # each fresh-copy pair execute exactly the same compiled instructions.
+    binaries["base"] = binaries["head"]
+    print(f"Same-binary entry comparison {binaries['head']}", file=sys.stderr)
     if args.arch:
         for binary in filter(None, binaries.values()):
             check_arch(binary, args.arch)
@@ -685,7 +690,7 @@ def main():
                 measure(interleaved(units(copied, owner), copies, c), lambda side: str(copies[side]),
                         lambda side, c=c: f"{side}-copy-{c}", copy_modules, spread)
             finally:
-                for copy in copies.values():
+                for copy in set(copies.values()):
                     if copy is not None:
                         copy.unlink()
         for side, times in spread.items():
