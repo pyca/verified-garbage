@@ -597,15 +597,15 @@ def main():
         binaries = {"head": str(peer), "base": str(control)}
         note = None
     else:
-        binaries = {"head": build(head), "base": None}
-        note = "Base has no selected benchmarks; head's and the references' results are new."
-        if not base.is_dir():
-            note = "No base to compare with, so head ran alone."
-        elif modules["base"] is not None:
-            binaries["base"], note, source = build_base(base, head)
-            if binaries["base"] is not None:
-                modules["base"] = selected_modules(source, args.modules)
-        shutil.copy2(binaries["base"], control)
+        import hashlib
+        binary = build(head)
+        shutil.copy2(binary, control)
+        assert hashlib.sha256(pathlib.Path(binary).read_bytes()).digest() == hashlib.sha256(control.read_bytes()).digest()
+        binaries = {"head": binary, "base": str(control)}
+        note = None
+        import subprocess
+        syms=subprocess.run(["nm", "-n", "-C", binary],capture_output=True,text=True)
+        print("SAME-ELF symbol offsets",*[line for line in syms.stdout.splitlines() if any(k in line.lower() for k in ("vg_aes_ctr32_to","vg_ghash","vg_aes_gcm_seal"))][:150],sep="\n")
     os.sched_setaffinity(0, {min(os.sched_getaffinity(0))})
     if args.arch:
         for binary in filter(None, binaries.values()):
@@ -649,6 +649,10 @@ def main():
         `into[side]`, a list of them per benchmark."""
         for side, bench, unit in order:
             print(f"{home(side)}{f': {bench}' if bench else ''}", file=sys.stderr)
+            if side == "base" or os.environ.get("VG_BENCH_PLACEMENT_CONTROL") == "1":
+                os.environ["VG_BENCH_OLD_ROUTE"] = "1"
+            else:
+                os.environ.pop("VG_BENCH_OLD_ROUTE",None)
             checkout = base if side == "base" else head
             times = run(binary_of(side), work / home(side) / (bench or "all"), VG, args, checkout,
                         modules_of(side, bench), unit, bench)
