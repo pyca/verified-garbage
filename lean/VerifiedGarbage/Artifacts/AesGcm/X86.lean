@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.AesGcm.X86.Contiguous.Scrub
+
 public import VerifiedGarbage.Proof.AesGcm.X86.GhashImpls
 public import VerifiedGarbage.Proof.AesGcm.X86.Scrub
 public import VerifiedGarbage.Impl.AesGcm.X86.Fn
@@ -102,6 +104,11 @@ def artifactsOf (v : GcmImpl) : List Artifact := [
 
 /-- Gather seal reads plaintext descriptors directly into the ciphertext destination. -/
 def artifactsGather (v : GcmImpl) : List Artifact := [
+  Spec.Gcm.sealContiguousApi.artifact X86.target {
+    suffix := v.suffix
+    code := Impl.AesGcm.X86.Contiguous.scrubbed v.callees
+    verified := Proof.AesGcm.X86.Contiguous.verifiedScrub v
+    spSafe := Proof.AesGcm.X86.Contiguous.scrubbedSafe v },
   Spec.Gcm.sealGatherApi.artifact X86.target
     (if h : v.ctr.scr ≤ 256 then
       { suffix := v.suffix

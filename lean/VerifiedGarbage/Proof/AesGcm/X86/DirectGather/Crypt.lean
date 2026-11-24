@@ -80,8 +80,8 @@ theorem xorTail_ok {C St W SP D T : BitVec 32} {s : State} {n : Nat}
     (L : Lay N C St W SP 32) (st : St = W+16#32) (E : Env N C St W SP s)
     (P : PieceRegions N C W SP D T n) (A : PieceAccess s SP D T n)
     (src : slotv s.mem W dataO = D) (len : slotv s.mem W lenO = BitVec.ofNat 32 n)
-    (hlt : n < 2^32) (nz : n%16 ≠ 0) :
-    WP isa (.seq (.block Open.tailRegs) (.seq (xorLoopG true) (.block [.mov .esi (.reg .ebp),.alu .add .esi (imm stO)])))
+    (hlt : n < 2^32) (nz : n%16 ≠ 0) (words : Bool := false) :
+    WP isa (.seq (.block Open.tailRegs) (.seq (xorTailCode words) (.block [.mov .esi (.reg .ebp),.alu .add .esi (imm stO)])))
       s fun t => t.mem = WriteBytes.writeBytes s.mem (w64 (tailPtr T n))
           (xorBytes s.mem (w64 (tailPtr D n)) (w64 (St+64#32)) (n%16)) ∧
         t.gpr .ebp = W ∧ t.gpr .esi = St ∧ t.gpr .esp = SP ∧ t.rd = s.rd ∧ t.wr = s.wr := by
@@ -106,8 +106,8 @@ theorem xorTail_ok {C St W SP D T : BitVec 32} {s : State} {n : Nat}
       by rw [rd,wr,key]; exact covers_left (E.stC (by omega_using [])),
       by rw [rd,wr,d]; exact covers_off A.rd (by omega_using []) (by omega_using [hlt]),
       by rw [wr,t]; exact covers_off A.wr (by omega_using []) (by omega_using [hlt]),
-      ((P.dstWork.sub_left ts).sub_right ks).symm,.inr ((P.srcDst.sub_left ds).sub_right ts)⟩
-  refine WP.seq (WP.mono (xorLoopG_ok true u hx) ?_)
+      ((P.dstWork.sub_left ts).sub_right ks).symm,P.srcDst.imp (congrArg (fun p => tailPtr p n)) (fun hd => (hd.sub_left ds).sub_right ts)⟩
+  refine WP.seq (WP.mono (xorTailCode_ok words hx) ?_)
   intro z hz
   have bp' := (hz.other .ebp (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)).trans bp
   have sp' := (hz.other .esp (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)).trans sp
@@ -174,17 +174,6 @@ theorem afterAccess {s t : State} (A : PieceAccess s SP D T n) (rd : t.rd = s.rd
   · exact P.argWork.sub_right (Lay.wsSub)
   · exact ret_below L.sp
 
-theorem srcFrame {m u : Mem} (f : Frame (crFrame N St W SP 32 T n) m u) :
-    bytesAt u (w64 D) n = bytesAt m (w64 D) n := by
-  refine bytesAt_frame f ?_ (by have hn := P.fD; omega_using [hn])
-  intro r hr
-  simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl
-  · exact P.srcDst
-  · exact P.srcWork.sub_right (fun _ h => stSub L st _ (Lay.stSub (by decide) _ h))
-  · exact P.srcWork.sub_right (Lay.wsSub)
-  · exact P.stackSrc.symm
-
 structure PiecePost (N : Nat) (s : State) (C St W SP D T : BitVec 32) (ciph : Block → Block) (icb : Block)
     (off n : Nat) (t : State) : Prop where
   env : Env N C St W SP t
@@ -218,8 +207,23 @@ theorem tailResult {s u z : State} {off : Nat} {ciph : Block → Block} {icb : B
     have d := data_ksFrame L rfl dataW (a:=0) (l:=16*(n/16)) (by omega_using [])
     simp only [BitVec.add_zero] at d
     exact bytesAt_frame k.frame d (by omega_using [n64])
-  have source := congrArg (List.drop (16*(n/16))) (srcFrame L st P before)
-  rw [bytesAt_drop _ _ jle,bytesAt_drop _ _ jle,show n-16*(n/16) = n%16 by omega_using []] at source
+  -- Only the unprocessed suffix must still contain the original plaintext.
+  have prefixFrame := (whole_crFrame (n:=16*(n/16)) L (by simpa using h.frame)).trans
+    (ksFrame_crFrame L rfl k.frame (D:=T) (n:=16*(n/16)))
+  have source : bytesAt v.mem (w64 D + BitVec.ofNat 64 (16*(n/16))) (n%16) =
+      bytesAt s.mem (w64 D + BitVec.ofNat 64 (16*(n/16))) (n%16) := by
+    refine bytesAt_frame prefixFrame ?_ (by omega_using [n64])
+    intro r hr
+    have sub : Region.Sub ⟨w64 D + BitVec.ofNat 64 (16*(n/16)),n%16⟩ ⟨w64 D,n⟩ :=
+      Offset.sub_base _ (by omega_using [])
+    simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl
+    · rcases P.srcDst with rfl | hd
+      · exact (split_disj (by omega_using [n64])).symm
+      exact (hd.sub_left sub).sub_right (Region.sub_prefix jle)
+    · exact (P.srcWork.sub_left sub).sub_right (fun _ hx => stSub L st _ (Lay.stSub (by decide) _ hx))
+    · exact (P.srcWork.sub_left sub).sub_right (Lay.wSub (by decide))
+    · exact (P.stackSrc.sub_right sub).symm
   have written := bytesAt_writeBytes_self v.mem (w64 (tailPtr T n)) _ (by rw [xlen]; omega_using [])
   rw [xlen] at written
   have tail : bytesAt z.mem (w64 T+BitVec.ofNat 64 (16*(n/16))) (n%16) =
@@ -254,8 +258,8 @@ theorem tailTest {u : State} (env : Env N C St W SP u) (len : slotv u.mem W lenO
 theorem decTo_ok (v : GcmImpl) [WSize N v.ctr.scr] {s : State} {off : Nat} {ciph : Block → Block} {icb : Block}
     (E : Env N C St W SP s) (A : PieceAccess s SP D T n) (r : RoundsAt s.mem W R)
     (src : slotv s.mem W dataO = D) (len : slotv s.mem W lenO = BitVec.ofNat 32 n) (hlt : n < 2^32)
-    (aligned : n ≠ 0 → off%16 = 0) (cipher : ciphOf s.mem C R = ciph) (ctr : CtrS s.mem St ciph icb off) :
-    WP isa (Open.decTo v.callees v.callees.ctr) s (PiecePost N s C St W SP D T ciph icb off n) := by
+    (aligned : n ≠ 0 → off%16 = 0) (cipher : ciphOf s.mem C R = ciph) (ctr : CtrS s.mem St ciph icb off) (words : Bool := false) :
+    WP isa (Open.decTo v.callees v.callees.ctr words) s (PiecePost N s C St W SP D T ciph icb off n) := by
   have dataW := A.dataW L st P
   refine WP.seq (WP.mono (wholeTo_ok v L st E P A r src len hlt (fun h => aligned (by omega_using [h])) cipher ctr) ?_)
   intro u h
@@ -282,7 +286,7 @@ theorem decTo_ok (v : GcmImpl) [WSize N v.ctr.scr] {s : State} {off : Nat} {ciph
     have sf := f.trans (ksFrame_crFrame L rfl k.frame (D:=T) (n:=n))
     have access := afterAccess L st P A (k.rd.trans h.rd) (k.wr.trans h.wr) sf
     refine WP.mono (xorTail_ok L st k.env P access ((keptSlot L st P A sf (by decide) (by decide)).trans src)
-        ((keptSlot L st P A sf (by decide) (by decide)).trans len) hlt hk) ?_
+        ((keptSlot L st P A sf (by decide) (by decide)).trans len) hlt hk words) ?_
     rintro t ⟨mem,bp,si,sp,r',w'⟩
     exact tailResult L st P A h z k mem bp si sp r' w' hk
 
