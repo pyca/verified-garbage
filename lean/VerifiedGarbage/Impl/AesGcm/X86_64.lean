@@ -97,6 +97,31 @@ structure Fn where
   name : String
   code : Prog isa
 
+/-- An in-place certification of the compact seal leaf: its destination
+register is initialized to its source. `Fn.callBlocks` supplies this argument
+on the caller side so both layouts call the same symbol. -/
+def Fn.withSameDst (f : Fn) : Fn :=
+  ⟨f.name,.seq (.block [.mov .r10 (.reg .r8)]) f.code⟩
+
+/-- Pass the destination to the compact leaf before CALL. Other block
+functions retain their existing calling convention. -/
+def Fn.callBlocks (f : Fn) : Prog isa :=
+  match f.code with
+  | .seq (.block [.mov .r10 (.reg .r8)]) body =>
+    .seq (.block [.mov .r10 (.reg .r8)]) (.call f.name body)
+  | body => .call f.name body
+
+/-- On seal, put the identical-buffer argument at call sites of this
+particular shared block symbol. Other call targets keep their code and ABI. -/
+def placeSealArgs (target : String) : Prog isa → Prog isa
+  | .block is => .block is
+  | .seq a b => .seq (placeSealArgs target a) (placeSealArgs target b)
+  | .ite c a b => .ite c (placeSealArgs target a) (placeSealArgs target b)
+  | .loop b c => .loop (placeSealArgs target b) c
+  | .call n b => if n = target then (Fn.mk n b).callBlocks else .call n b
+  | .frame i b j => .frame i (placeSealArgs target b) j
+  | .icall i n b a => .icall i n b a
+
 /-- The implementations called: of `vg_aes_ctr32`, `vg_aes_expand_key_scratch` and
 `vg_ghash`, and the instances of `vg_aes_gcm_encrypt_blocks` and
 `vg_aes_gcm_decrypt_blocks` that call them. -/

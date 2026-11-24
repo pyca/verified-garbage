@@ -276,7 +276,7 @@ def ctr32ToX86_64 : Contract X86_64.isa where
     s.rd = [sched, src] ∧ s.wr = [counter, dst, scratch] ∧
     sched.Disjoint counter ∧ sched.Disjoint dst ∧ sched.Disjoint scratch ∧
     counter.Disjoint src ∧ counter.Disjoint dst ∧ counter.Disjoint scratch ∧
-    src.Disjoint dst ∧ src.Disjoint scratch ∧ dst.Disjoint scratch ∧
+    (s.gpr .rcx = s.gpr .r11 ∨ src.Disjoint dst) ∧ src.Disjoint scratch ∧ dst.Disjoint scratch ∧
     ret.Disjoint counter ∧ ret.Disjoint dst ∧ ret.Disjoint scratch ∧
     (s.gpr .rcx).toNat + 16 * (s.gpr .r8).toNat ≤ 2 ^ 64 ∧
     (s.gpr .r11).toNat + 16 * (s.gpr .r8).toNat ≤ 2 ^ 64 ∧

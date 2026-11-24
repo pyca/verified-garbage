@@ -9,11 +9,11 @@ import VerifiedGarbage.Proof.Sha256.X86_64.Lit
 import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
-# `vg_rsa_pkcs1_decrypt_precomputed_front` on x86-64, without secret residue
+# `vg_rsa_pkcs1_decrypt_precomputed` on x86-64, without secret residue
 
-The function as emitted (`Impl.RsaPkcs1Enc.X86_64.Fn.decryptPrecomputedFront`)
+The function as emitted (`Impl.RsaPkcs1Enc.X86_64.Fn.decryptPrecomputed`)
 over any implementation of SHA-256's compression function and of the private
-CRT operation: `Front.code`, calling `vg_rsa_pkcs1_decrypt_precomputed`'s
+CRT operation: `Front.code`, calling `vg_rsa_pkcs1_decrypt_precomputed_body`'s
 code before its cleanup as an internal function of its own (`bodyName`), then
 the cleanup of the 3784 bytes of stack it and its callee use, at the level of
 the callee's cleanup. Its code is its code with a stub for the callee
@@ -31,12 +31,12 @@ namespace VG.Proof.RsaPkcs1Enc.X86_64.Front
 open VG VG.X86_64 VG.X86_64.Scrub VG.Impl.Scrub.X86_64 VG.Proof.Rsa.X86_64
 open VG.Proof.RsaPkcs1Enc.X86_64.Scrub (decStub decLevel dec_fill dec_stub0 dec_stub112 dec_stub560 init_side)
 
-/-- The name of `vg_rsa_pkcs1_decrypt_precomputed`'s code before its
+/-- The name of `vg_rsa_pkcs1_decrypt_precomputed_body`'s code before its
 cleanup, calling `h` and `c`, an internal function. -/
 def bodyName (h : Proof.Sha256.X86_64.Compress) (c : CrtImpl) : String :=
   "vg_rsa_pkcs1_decrypt_precomputed_body" ++ qualifiedName "" [("sha256", h.suffix), ("crt", c.suffix)]
 
-/-- `vg_rsa_pkcs1_decrypt_precomputed`'s code before its cleanup, over `h`
+/-- `vg_rsa_pkcs1_decrypt_precomputed_body`'s code before its cleanup, over `h`
 and `c`. -/
 abbrev decCode (h : Proof.Sha256.X86_64.Compress) (c : CrtImpl) : Prog isa :=
   Impl.RsaPkcs1Enc.X86_64.Decrypt.codeP (Dec.HH h) (Dec.privNameP c) (Dec.privCodeP c)
@@ -92,14 +92,14 @@ theorem front_spSafe {name : String} {callee : Prog isa} (h : callee.all (fun i 
 /-- The postcondition reads the memory on return only in `out` and
 `msg_len`. -/
 theorem front_postOut (stack : Nat) :
-    VG.X86_64.Scrub.PostOut (Spec.RsaPkcs1Enc.decryptPrecomputedFrontContract abi stack)
-      (Proof.RsaPkcs1Enc.decryptPrecomputedSig.retBits 64) := by
+    VG.X86_64.Scrub.PostOut (Spec.RsaPkcs1Enc.decryptPrecomputedContract abi stack)
+      (Proof.RsaPkcs1Enc.decryptPrecomputedBodySig.retBits 64) := by
   rw [fK_eq]
   refine VG.X86_64.Scrub.postOut_of_local_pre (leak := some _) VG.X86_64.Scrub.ScrubAbi.plain
     fun vs m m₁ m₂ r hlen hpre hb h => ?_
   obtain ⟨o, oL, ml, n, nL, e, eL, d, dL, i, iL, p, pL, q, qL, dp, dpL, dq, dqL, qi, qiL, sc, scL, pre, preL, rfl⟩ :=
     vs25 hlen
-  simp only [sig, Proof.RsaPkcs1Enc.decryptPrecomputedSig, Proof.RsaPkcs1Enc.decryptSig, Sig.bufs, List.cons_append,
+  simp only [sig, Proof.RsaPkcs1Enc.decryptPrecomputedBodySig, Proof.RsaPkcs1Enc.decryptSig, Sig.bufs, List.cons_append,
     List.nil_append, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq, Elem.size,
     Nat.mul_one] at hb
   obtain ⟨bo, bm, -⟩ := hb
@@ -114,12 +114,12 @@ theorem front_postOut (stack : Nat) :
   have hw : Spec.Rsa.wordsAt m₂ ml 1 = Spec.Rsa.wordsAt m₁ ml 1 := words_ag (k := 1) bm (by omega_arith)
   revert h
   generalize Spec.RsaPkcs1Enc.decrypt _ _ _ _ _ _ _ _ _ = oc
-  cases oc <;> simp only [Spec.RsaPkcs1Enc.writtenMsgFront, hby, hw] <;> exact id
+  cases oc <;> simp only [Spec.RsaPkcs1Enc.writtenMsg, hby, hw] <;> exact id
 
-/-- `vg_rsa_pkcs1_decrypt_precomputed_front` over `h` and `c`, before its
+/-- `vg_rsa_pkcs1_decrypt_precomputed` over `h` and `c`, before its
 cleanup. -/
 def frontPlain (h : Proof.Sha256.X86_64.Compress) (c : CrtImpl) :
-    Unscrubbed Spec.RsaPkcs1Enc.decryptPrecomputedFrontApi target where
+    Unscrubbed Spec.RsaPkcs1Enc.decryptPrecomputedApi target where
   code := Impl.RsaPkcs1Enc.X86_64.Front.code (bodyName h c) (decCode h c)
   verified := front_verified (Dec.decryptPrecomputed_verified h c) (Dec.decP_spSafe h c) (dec_depth h c)
   spSafe := front_spSafe (Dec.decP_spSafe h c)
@@ -131,18 +131,18 @@ theorem front_fill (h : Proof.Sha256.X86_64.Compress) (c : CrtImpl) :
   unfold Impl.RsaPkcs1Enc.X86_64.Front.tail Impl.RsaPkcs1Enc.X86_64.Front.toBuf
   fill_calls
 
-/-- `Spec.RsaPkcs1Enc.decryptPrecomputedFrontApi`'s function as emitted over
+/-- `Spec.RsaPkcs1Enc.decryptPrecomputedApi`'s function as emitted over
 `h` and `c` meets its contract in constant time and returns without secret
 residue. -/
 theorem front_scrubbed (h : Proof.Sha256.X86_64.Compress) (c : CrtImpl) :
     VerifiedScrubbed target
-      (Impl.RsaPkcs1Enc.X86_64.Fn.decryptPrecomputedFront (decLevel h c) (bodyName h c) (decCode h c))
-      (Spec.RsaPkcs1Enc.decryptPrecomputedFrontApi.contract X86_64.abi 3784) 32 :=
+      (Impl.RsaPkcs1Enc.X86_64.Fn.decryptPrecomputed (decLevel h c) (bodyName h c) (decCode h c))
+      (Spec.RsaPkcs1Enc.decryptPrecomputedApi.contract X86_64.abi 3784) 32 :=
   verifiedScrubbedAllFill (frontPlain h c) _ (front_postOut _) (front_fill h c) (Nat.zero_le _) (Nat.le_refl _)
     (ha := front_stub)
 
 theorem front_scrubbed_spSafe (h : Proof.Sha256.X86_64.Compress) (c : CrtImpl) :
-    (Impl.RsaPkcs1Enc.X86_64.Fn.decryptPrecomputedFront (decLevel h c) (bodyName h c) (decCode h c)).all
+    (Impl.RsaPkcs1Enc.X86_64.Fn.decryptPrecomputed (decLevel h c) (bodyName h c) (decCode h c)).all
       (fun i => !isa.writesSp i) = true :=
   scrubKs_spSafe (front_spSafe (Dec.decP_spSafe h c))
 

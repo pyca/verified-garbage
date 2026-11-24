@@ -353,7 +353,7 @@ in the data. -/
 theorem QG48.keepM {ix : Bool} {s₀ : State} (hp : Stitch.LPre ix s₀) {lo : Nat → Nat} {a : Addr} {X : Nat → Block}
     {T : Nat → Nat → Nat → Block} {yl : Nat → Block} {b j c g : Nat}
     (hc : c + 16 ≤ nb s₀) (hg : 16 * g + 48 ≤ nb s₀) (ha : a.toNat = (dp s₀).toNat + 256 * g)
-    (hsep : ix = false → ∀ i, lo j ≤ i → i < 48 → ¬ (c ≤ 16 * g + i ∧ 16 * g + i < c + 16))
+    (hsep : dp s₀ = Stitch.wp ix s₀ → ∀ i, lo j ≤ i → i < 48 → ¬ (c ≤ 16 * g + i ∧ 16 * g + i < c + 16))
     {t t' : State} (h : QG48 s₀ lo a X T yl b j t) (hgpr : t'.gpr = t.gpr) (hrd : t'.rd = t.rd)
     (hwr : t'.wr = t.wr) (hlane : ∀ r, r ≠ .xmm13 → r ∉ aregs → ∀ l < 4, t'.zlane r l = t.zlane r l)
     (hf : Frame [⟨Stitch.wAddr ix s₀ c, 256⟩] t.mem t'.mem) : QG48 s₀ lo a X T yl b j t' := by
@@ -361,10 +361,12 @@ theorem QG48.keepM {ix : Bool} {s₀ : State} (hp : Stitch.LPre ix s₀) {lo : N
   have hww := hp.wrap_w
   refine QG48.keepW ha (fun i hi hi' => ?_) (hp.w_p.symm.sub_right (Offset.sub_base _ (by omega_arith)))
     h hgpr hrd hwr hlane hf
-  cases ix
-  · intro x h₁ h₂
-    exact run_sep hw (by omega_arith) hc (hsep rfl i hi hi') h₁ h₂
-  · exact ((hp.d_w rfl).sub_left (Offset.sub_base _ (by omega_arith))).sub_right (Offset.sub_base _ (by omega_arith))
+  rcases hp.d_w with eq | apart
+  · change Region.Disjoint _ ⟨Stitch.wp ix s₀ + _, _⟩
+    rw [← eq]
+    intro x h₁ h₂
+    exact run_sep hw (by omega_arith) hc (hsep eq i hi hi') h₁ h₂
+  · exact (apart.sub_left (Offset.sub_base _ (by omega_arith))).sub_right (Offset.sub_base _ (by omega_arith))
 
 theorem QG48.data {s₀ : State} (hp : SPre s₀) {lo : Nat → Nat} {a : Addr} {X : Nat → Block}
     {T : Nat → Nat → Nat → Block} {yl : Nat → Block} {b j c g : Nat}

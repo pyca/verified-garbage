@@ -4989,14 +4989,14 @@ vg_camellia_expand_key:
 	.p2align 6
 
 vg_camellia_ecb_encrypt_aesni:
-	lea esp, [esp-880]
-	mov eax, DWORD PTR [esp+884]
-	mov DWORD PTR [esp+4], eax
+	lea esp, [esp-884]
 	mov eax, DWORD PTR [esp+888]
-	mov DWORD PTR [esp+8], eax
+	mov DWORD PTR [esp+4], eax
 	mov eax, DWORD PTR [esp+892]
-	mov DWORD PTR [esp+12], eax
+	mov DWORD PTR [esp+8], eax
 	mov eax, DWORD PTR [esp+896]
+	mov DWORD PTR [esp+12], eax
+	mov eax, DWORD PTR [esp+900]
 	mov DWORD PTR [esp+16], eax
 	mov eax, esp
 	add eax, 24
@@ -9390,8 +9390,8 @@ vg_camellia_ecb_encrypt_aesni:
 	movdqu XMMWORD PTR [esp+856], xmm0
 	mov DWORD PTR [esp+872], ecx
 	mov DWORD PTR [esp+876], ecx
-	lea esp, [esp+880]
-	lea esp, [esp-884]
+	lea esp, [esp+884]
+	lea esp, [esp-888]
 	mov ecx, 0
 	mov DWORD PTR [esp+4], ecx
 	mov DWORD PTR [esp+8], ecx
@@ -9399,7 +9399,8 @@ vg_camellia_ecb_encrypt_aesni:
 	mov DWORD PTR [esp+16], ecx
 	mov DWORD PTR [esp+20], ecx
 	mov DWORD PTR [esp+24], ecx
-	lea esp, [esp+884]
+	mov DWORD PTR [esp+884], ecx
+	lea esp, [esp+888]
 	mov eax, 0
 	mov edx, 0
 	xor ecx, ecx
@@ -9731,14 +9732,14 @@ vg_camellia_ecb_encrypt:
 	.p2align 6
 
 vg_camellia_ecb_decrypt_aesni:
-	lea esp, [esp-880]
-	mov eax, DWORD PTR [esp+884]
-	mov DWORD PTR [esp+4], eax
+	lea esp, [esp-884]
 	mov eax, DWORD PTR [esp+888]
-	mov DWORD PTR [esp+8], eax
+	mov DWORD PTR [esp+4], eax
 	mov eax, DWORD PTR [esp+892]
-	mov DWORD PTR [esp+12], eax
+	mov DWORD PTR [esp+8], eax
 	mov eax, DWORD PTR [esp+896]
+	mov DWORD PTR [esp+12], eax
+	mov eax, DWORD PTR [esp+900]
 	mov DWORD PTR [esp+16], eax
 	mov eax, esp
 	add eax, 24
@@ -14189,8 +14190,8 @@ vg_camellia_ecb_decrypt_aesni:
 	movdqu XMMWORD PTR [esp+856], xmm0
 	mov DWORD PTR [esp+872], ecx
 	mov DWORD PTR [esp+876], ecx
-	lea esp, [esp+880]
-	lea esp, [esp-884]
+	lea esp, [esp+884]
+	lea esp, [esp-888]
 	mov ecx, 0
 	mov DWORD PTR [esp+4], ecx
 	mov DWORD PTR [esp+8], ecx
@@ -14198,7 +14199,8 @@ vg_camellia_ecb_decrypt_aesni:
 	mov DWORD PTR [esp+16], ecx
 	mov DWORD PTR [esp+20], ecx
 	mov DWORD PTR [esp+24], ecx
-	lea esp, [esp+884]
+	mov DWORD PTR [esp+884], ecx
+	lea esp, [esp+888]
 	mov eax, 0
 	mov edx, 0
 	xor ecx, ecx

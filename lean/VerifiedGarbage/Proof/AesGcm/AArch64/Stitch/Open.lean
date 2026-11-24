@@ -679,8 +679,8 @@ theorem openRunASX_ok {Wn : Nat} (v : GcmImpl) (hMK : MulKey) (gh : Gh8Ok) {tb :
   obtain hP16 : P % 16 = 0 := by rw [← hP]; simp only [Stitch.pre]; omega_arith
   generalize hD' : D + BitVec.ofNat 64 P = D'
   obtain hsubD : Region.Sub ⟨D', n - P⟩ ⟨D, n⟩ := hD' ▸ Offset.sub_base D (by omega_arith)
-  obtain g₂' : ∀ r, r ∉ [Reg.x5, .x9, .x10, .x11, .x12, .x13, .x14, .x15] → s₂'.gpr r = s₂.gpr r :=
-    fun r hr => by rw [hm₂.gpr r hr, g₂c r (fun h => hr (by simp [h]))]
+  obtain g₂' : ∀ r, r ∉ [Reg.x5, .x9, .x10, .x11, .x12, .x13, .x14, .x15] → (hl : r ∉ linkRegs := by decide) → s₂'.gpr r = s₂.gpr r :=
+    fun r hr hl => by rw [hm₂.gpr r hr hl, g₂c r (fun h => hr (by simp [h]))]
   -- The rest of the text, apart from what the loop writes.
   obtain dSF : ∀ r ∈ Stitch.sFrame (W + BitVec.ofNat 64 16) W O n, (⟨D', n - P⟩ : Region).Disjoint r := by
     intro r hr

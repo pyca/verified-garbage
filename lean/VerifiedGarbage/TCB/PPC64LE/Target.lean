@@ -101,6 +101,14 @@ def abi : Abi isa where
   rd s := s.rd
   wr s := s.wr
   ret s := s.gpr .r3
+  -- ELFv2 §2.2.6 ("Return Values"): "Functions that return values of the
+  -- following types shall place the result in register r3 as signed or
+  -- unsigned integers, as appropriate, and sign extended or zero extended to
+  -- 64 bits where necessary", `int` among them: a `u32` is zero-extended.
+  retExt
+    | .u32 => some fun r => (r.setWidth 32).setWidth 64
+    | .u64 => none
+    | .usize => none
   sym := some fun s name => s.syms name
 
 /-- Reducible, as an `abbrev` would be, but not inlined: an `abbrev` is compiled into

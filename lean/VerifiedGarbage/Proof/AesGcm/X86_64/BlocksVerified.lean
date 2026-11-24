@@ -125,13 +125,18 @@ variable {M : CtxMode} {s : State} (hp : BP M s)
 include hp
 
 /-- `Ready` after `ctrCall`. -/
-theorem ctrCall_ready (c : Ctr32Impl) {q : Nat} {st : State} (h : Ready s q st) (hq : q < n s) :
-    WP isa (ctrCall ⟨c.callee.name, c.callee.code⟩) st (Ready s q) :=
-  WP.seq (WP.mono (ctrArgs_ok hp h hq) fun st₂ ⟨hc, R₂, _, _⟩ => WP.mono (ctr_call c hc) fun st₃ g => by
+theorem ctrCallWith_ready (leaf : Prog isa)
+    (ok : ∀ {t K C D W R n}, CtrCall t K C D W R n → WP isa leaf t (CtrPost t K C D W R n)) {q : Nat} {st : State} (h : Ready s q st) (hq : q < n s) :
+    WP isa (.seq (.block ctrArgs) leaf) st (Ready s q) :=
+  WP.seq (WP.mono (ctrArgs_ok hp h hq) fun st₂ ⟨hc, R₂, _, _⟩ => WP.mono (ok hc) fun st₃ g => by
     have f₃ := g.frame
     rw [R₂.rsp] at f₃
     exact R₂.frame f₃ (fun r hr => (apart_kR' hp (q := q) (by omega_using [hq])).ctr r hr) (fun r hr => (apart_a hp (q := q) (by omega_using [hq])).ctr r hr)
       (g.saved _ (by decide)) g.rd g.wr)
+
+theorem ctrCall_ready (c : Ctr32Impl) {q : Nat} {st : State} (h : Ready s q st) (hq : q < n s) :
+    WP isa (ctrCall ⟨c.callee.name, c.callee.code⟩) st (Ready s q) :=
+  ctrCallWith_ready hp _ (ctr_call c) h hq
 
 /-- `Ready` after `ghCall`. -/
 theorem ghCall_ready (g : GhashImpl) {q : Nat} {st : State} (h : Ready s q st) (hq : q < n s) :
@@ -230,8 +235,12 @@ theorem ready_rsp {q q' : Nat} {s₁ s₂ : State} (h₁ : Ready s₀ q s₁) (h
   intro r hr; simp only [List.mem_singleton] at hr; subst hr; rw [h₁.rsp, h₂.rsp, pb.sp]
 
 /-- `ctrCall`, in two runs `Ready` for the same blocks left. -/
-theorem ctrCall_rel (c : Ctr32Impl) {q : Nat} (hq : q < n s₀) :
-    RelCT isa (fun s₁ s₂ => Ready s₀ q s₁ ∧ Ready s₀' q s₂) (ctrCall ⟨c.callee.name, c.callee.code⟩)
+theorem ctrCallWith_rel (leaf : Prog isa)
+    (ok : ∀ {t K C D W R n}, CtrCall t K C D W R n → WP isa leaf t (CtrPost t K C D W R n))
+    (ct : ∀ {P : State → State → Prop}, (∀ a b, P a b → ∃ K C D W : Addr, ∃ R n : Nat,
+      CtrCall a K C D W R n ∧ CtrCall b K C D W R n ∧ a.gpr .rsp = b.gpr .rsp) →
+      RelCT isa P leaf fun _ _ => True) {q : Nat} (hq : q < n s₀) :
+    RelCT isa (fun s₁ s₂ => Ready s₀ q s₁ ∧ Ready s₀' q s₂) (.seq (.block ctrArgs) leaf)
       fun s₁ s₂ => Ready s₀ q s₁ ∧ Ready s₀' q s₂ := by
   have hq' : q < n s₀' := by rw [pb.en]; exact hq
   have a := rel_wp (rel_r11 (l₀ := ctrArgs) (l := ctrArgs.tail) rfl (P := fun s₁ s₂ => Ready s₀ q s₁ ∧ Ready s₀' q s₂) [.rsp] [.rsp]
@@ -240,11 +249,16 @@ theorem ctrCall_rel (c : Ctr32Impl) {q : Nat} (hq : q < n s₀) :
     (G₂ := fun st' => CtrCall st' (K s₀') (C s₀') (dq s₀' q) (S5 s₀') (R s₀') (n s₀' - q) ∧ Ready s₀' q st')
     (fun _ h => WP.mono (ctrArgs_ok hp h hq) fun _ h => ⟨h.1, h.2.1⟩)
     (fun _ h => WP.mono (ctrArgs_ok hp' h hq') fun _ h => ⟨h.1, h.2.1⟩)
-  refine (rel_wp (RelCT.seq a (ctr_rel c fun s₁ s₂ h => ?_)) (fun _ _ h => h) (fun _ h => ctrCall_ready hp c h hq)
-    (fun _ h => ctrCall_ready hp' c h hq')).mono (fun _ _ h => h) fun _ _ h => h.2
+  refine (rel_wp (RelCT.seq a (ct fun s₁ s₂ h => ?_)) (fun _ _ h => h) (fun _ h => ctrCallWith_ready hp leaf ok h hq)
+    (fun _ h => ctrCallWith_ready hp' leaf ok h hq')).mono (fun _ _ h => h) fun _ _ h => h.2
   obtain ⟨hr, ⟨c₁, -⟩, ⟨c₂, -⟩⟩ := h
   rw [pb.k, pb.c, pb.edq, pb.es5, pb.eR, pb.en] at c₂
   exact ⟨_, _, _, _, _, _, c₁, c₂, hr _ (List.mem_singleton_self _)⟩
+
+theorem ctrCall_rel (c : Ctr32Impl) {q : Nat} (hq : q < n s₀) :
+    RelCT isa (fun s₁ s₂ => Ready s₀ q s₁ ∧ Ready s₀' q s₂) (ctrCall ⟨c.callee.name, c.callee.code⟩)
+      fun s₁ s₂ => Ready s₀ q s₁ ∧ Ready s₀' q s₂ :=
+  ctrCallWith_rel hp hp' pb _ (ctr_call c) (ctr_rel c) hq
 
 /-- `ghCall`, in two runs `Ready` for the same blocks left. -/
 theorem ghCall_rel (g : GhashImpl) {q : Nat} (hq : q < n s₀) :
@@ -567,6 +581,29 @@ theorem encrypt_wp (v : GcmImpl) {M : CtxMode} {aligned : Bool} (st : Option (St
         (fun h16 _ M => WP.seq (WP.mono (rest_ok hp (by omega_using [h16]) M) fun st' M' => tl _ st' M'))
         h11 hg hk hf hrd hwr
 
+/-- The non-interleaved whole-block seal uses the two-pointer CTR at equal addresses. -/
+theorem encryptSeparateWP (v : GcmImpl) {M : CtxMode} {s : State} (pre : Proof.AesGcm.blocksPreM M s) :
+    WP isa (encryptSeparate ⟨v.ctr.ctrTo.callee.name, v.ctr.ctrTo.callee.code⟩ v.gh.fn) s (EncDone s) := by
+  have hp := BP.ofM pre
+  refine WP.seq (WP.mono (entry_ok hp) fun t ⟨_, hg, hk, hf, hrd, hwr⟩ => WP.seq (WP.block_nil ?_))
+  exact tail_calls hp _ _ (mid_entry hp hg hk hf hrd hwr)
+    (fun _ mid zero => encDone_of hp mid zero) (fun _ mid lt => encCalls_with hp v _ (ctrAlias_call v.ctr) mid lt)
+
+/-- The shared leaf and its equal-pointer setup preserve the whole-block timing contract. -/
+theorem encryptSeparateCT (v : GcmImpl) {M : CtxMode} :
+    ConstantTime isa (Proof.AesGcm.encryptBlocksX86_64M M).pre Proof.AesGcm.blocksPub
+      (encryptSeparate ⟨v.ctr.ctrTo.callee.name, v.ctr.ctrTo.callee.code⟩ v.gh.fn) := by
+  refine ct_of_rel fun s₀ s₀' h h' hq => ?_
+  have hp := BP.ofM h
+  have hp' := BP.ofM h'
+  have pb := Pub.of hq
+  refine RelCT.seq (entry_rel hp hp' pb) ?_
+  refine RelCT.seq (part_rel hp hp' pb false none (ys := fun s q => ctr32 (ciph s) (cb s) (blocksAt s.mem (D s) q))
+      (fun _ => rfl) (fun _ e => by cases e) fun _ e {_} _ {_} _ => by cases e) ?_
+  intro a b ta tb au bu ⟨q, ma, mb⟩ ea eb
+  exact tail_rel hp hp' pb (fun q hq => ctrCallWith_rel hp hp' pb _ (ctrAlias_call v.ctr) (ctrAlias_rel v.ctr) hq)
+      (fun q hq => ghCall_rel hp hp' pb v.gh hq) _ _ _ _ _ _ ⟨ma,mb⟩ ea eb
+
 theorem decrypt_wp (v : GcmImpl) {M : CtxMode} {aligned : Bool} (st : Option (StitchCode M aligned)) {s : State}
     (hpre : Proof.AesGcm.blocksPreM M s) :
     WP isa (decrypt v.callees.ctr v.callees.gh (st.map (·.dec)) aligned (decFull st) (decSmall st) (decSmall4 st) (st.map (·.decS))) s (DecDone s) := by
@@ -726,12 +763,24 @@ variable (v : GcmImpl) (st : Option StitchImpl)
 /-! The key context of `vg_aes_gcm_init` (`CtxMode.base`). -/
 
 theorem encryptBlocks_mxB :
-    (Blocks.encrypt v.callees.ctr v.callees.gh (st.map (·.enc)) false (st.any (·.full))).allInstrs (fun i => !loadsMxcsr i) = true := by
-  have h := encryptBlocks_mx v (st.map (·.code CtxMode.base)); rwa [map_code_enc, StitchImpl.encFull_code, StitchImpl.encSmall_code] at h
+    (v.encryptBase st).allInstrs (fun i => !loadsMxcsr i) = true := by
+  cases st with
+  | none =>
+    simp only [GcmImpl.encryptBase, Blocks.encryptSeparate, Blocks.blocks, Blocks.body, Blocks.head, Blocks.tail,
+      Blocks.ctrAlias, Blocks.aliasLeaf, Blocks.ghCall,
+      Code.allInstrs, v.ctr.ctrTo.mxcsr, v.gh.mxcsr, Nat.max_le, Bool.true_and, Bool.and_true] <;> decide +kernel
+  | some p =>
+    have h := encryptBlocks_mx v ((some p).map (·.code CtxMode.base)); rwa [map_code_enc, StitchImpl.encFull_code, StitchImpl.encSmall_code] at h
 
 theorem encryptBlocks_xdepthB :
-    (Blocks.encrypt v.callees.ctr v.callees.gh (st.map (·.enc)) false (st.any (·.full))).x86_64Depth ≤ 8 := by
-  have h := encryptBlocks_xdepth v (st.map (·.code CtxMode.base)); rwa [map_code_enc, StitchImpl.encFull_code, StitchImpl.encSmall_code] at h
+    (v.encryptBase st).x86_64Depth ≤ 8 := by
+  cases st with
+  | none =>
+    simp only [GcmImpl.encryptBase, Blocks.encryptSeparate, Blocks.blocks, Blocks.body, Blocks.head, Blocks.tail,
+      Blocks.ctrAlias, Blocks.aliasLeaf, Blocks.ghCall,
+      Code.x86_64Depth, v.ctr.ctrTo.noStack, v.gh.noStack, Nat.max_le, Bool.true_and, Bool.and_true] <;> decide +kernel
+  | some p =>
+    have h := encryptBlocks_xdepth v ((some p).map (·.code CtxMode.base)); rwa [map_code_enc, StitchImpl.encFull_code, StitchImpl.encSmall_code] at h
 
 theorem decryptBlocks_xdepthB :
     (Blocks.decrypt v.callees.ctr v.callees.gh (st.map (·.dec))).x86_64Depth ≤ 8 := by
@@ -742,8 +791,14 @@ theorem decryptBlocks_mxB :
   have h := decryptBlocks_mx v (st.map (·.code CtxMode.base)); rwa [map_code_dec, StitchImpl.decFull_code, StitchImpl.decSmall_code] at h
 
 theorem encryptBlocks_spSafeB :
-    (Blocks.encrypt v.callees.ctr v.callees.gh (st.map (·.enc)) false (st.any (·.full))).all (fun i => !X86_64.isa.writesSp i) = true := by
-  have h := encryptBlocks_spSafe v (st.map (·.code CtxMode.base)); rwa [map_code_enc, StitchImpl.encFull_code, StitchImpl.encSmall_code] at h
+    (v.encryptBase st).all (fun i => !X86_64.isa.writesSp i) = true := by
+  cases st with
+  | none =>
+    simp only [GcmImpl.encryptBase, Blocks.encryptSeparate, Blocks.blocks, Blocks.body, Blocks.head, Blocks.tail,
+      Blocks.ctrAlias, Blocks.aliasLeaf, Blocks.ghCall,
+      Code.all, v.ctr.ctrTo.spSafe, v.gh.spSafe, Nat.max_le, Bool.true_and, Bool.and_true] <;> decide +kernel
+  | some p =>
+    have h := encryptBlocks_spSafe v ((some p).map (·.code CtxMode.base)); rwa [map_code_enc, StitchImpl.encFull_code, StitchImpl.encSmall_code] at h
 
 theorem decryptBlocks_spSafeB :
     (Blocks.decrypt v.callees.ctr v.callees.gh (st.map (·.dec))).all (fun i => !X86_64.isa.writesSp i) = true := by

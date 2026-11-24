@@ -14,7 +14,7 @@ result, and the flags. Each takes the functions it calls, as its
 registration maps over their implementations. The frames of
 `vg_rsa_pkcs1_encrypt_random` use 2360 bytes, which is not a frame size of
 the model, so its contract reserves, and the cleanup zeroes, the next one,
-2368. (`vg_rsa_pkcs1_decrypt_precomputed_front` is in
+2368. (`vg_rsa_pkcs1_decrypt_precomputed` is in
 `Impl/RsaPkcs1Enc/Arm/Front.lean`.)
 -/
 

@@ -55,7 +55,11 @@ theorem AInvTo.pow {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {c : Nat} {
     by rw [hg]; exact h.rdi, by rw [hg]; exact h.rsi, by rw [hg]; exact h.r10, by rw [hg]; exact h.r8,
     h.frame.trans (hf.sub fun r hr => ⟨pR s₀, by simp, fun a ha => by
       simp only [List.mem_singleton] at hr; subst hr; exact ha⟩),
-    fun k hk => ?_, by rw [hrd]; exact h.rd, by rw [hwr]; exact h.wr⟩
+    fun k hk => ?_, fun k hk hc => by
+      rw [blockAt_frame hf fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr
+        exact hp.s_p.sub_left (Offset.sub_base _ (by omega_using [hk]))]
+      exact h.unread k hk hc, by rw [hrd]; exact h.rd, by rw [hwr]; exact h.wr⟩
   rw [blockAt_frame hf fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
     exact hp.o_p.sub_left (Offset.sub_base _ (by have := h.le; omega_arith))]
@@ -78,7 +82,7 @@ theorem bigRestTo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {P : Nat 
     (hm₁ : ∀ l < 4, s₁.mem.readW (pp s₀ + BitVec.ofNat 64 (832 + 16 * l)) 128 = poly) (hg₁ : s₁.gpr = s.gpr)
     (hl₁ : ∀ l < 4, s₁.zlane .xmm2 l = s.zlane .xmm2 l) :
     WP isa bigRestTo s₁ fun s' => ∃ e, EInvTo s₀ P e s' :=
-  WP.mono (StitchZ.bigRestM_ok hp.toM hf hT hT2 h96 (hI.toM hp) (hA₁.toM hp) hv₁ hm₁ hg₁ hl₁)
+  WP.mono (StitchZ.bigRestM_ok hp.toM hf hT hT2 h96 hI.toM hA₁.toM hv₁ hm₁ hg₁ hl₁)
     fun _ ⟨e, h⟩ => ⟨e, h.toTo⟩
 
 /-- `bigTo`: from the first group encrypted to all but up to two groups, all
@@ -86,7 +90,7 @@ but the last encrypted group hashed. -/
 theorem bigTo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {P : Nat → Nat → Block} (hf : FinOk (hk s₀) P)
     (hT : FinOk48 (hk s₀) (T48 P)) (h96 : 96 ≤ nb s₀) {s : State} (hI : EInvTo s₀ P 1 s) :
     WP isa bigTo s fun s' => ∃ e, EInvTo s₀ P e s' :=
-  WP.mono (StitchZ.bigM_ok hp.toM hf hT h96 (hI.toM hp)) fun _ ⟨e, h⟩ => ⟨e, h.toTo⟩
+  WP.mono (StitchZ.bigM_ok hp.toM hf hT h96 hI.toM) fun _ ⟨e, h⟩ => ⟨e, h.toTo⟩
 
 /-- The encryption after the setup, for any code `bigC` from `t` blocks on. -/
 theorem encTailGTo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) (hm : nb s₀ % 16 = 0) {P : Nat → Nat → Block}
@@ -97,6 +101,6 @@ theorem encTailGTo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) (hm : nb
       (.seq (.block [.alu .cmp .r9 (.imm 32)])
         (.seq (.ite .b (.block []) (.loop bodyTo .ae)) (.block (storeCtr ++ lastG ++ storeY))))))) s (EPostTo s₀) :=
   WP.mono (StitchZ.encTailGM_ok hp.toM hp.nb16 hm hf t hi ht
-    (fun s h hI => WP.mono (hbig s h hI.toTo) fun _ ⟨e, h⟩ => ⟨e, h.toM hp⟩) (hR.toM hp)) fun _ h => h.toEPostTo
+    (fun s h hI => WP.mono (hbig s h hI.toTo) fun _ ⟨e, h⟩ => ⟨e, h.toM⟩) hR.toM) fun _ h => h.toEPostTo
 
 end VG.Proof.Gcm.X86_64.StitchZTo

@@ -88,10 +88,10 @@ the count, its code on them or its code on the key context
 (`sealCodeF16`). -/
 def sealF16Plain (v : GcmVariant) (r : R16 v) : Unscrubbed Spec.Gcm.sealPreparedApi X86_64.target where
   suffix := v.impl.suffix
-  code := sealCodeF16 v
+  code := sealCodeF16 v (sealBlkR16 v)
   stack := 2624
-  verified := VG.Proof.AesGcm.Flag.seal_keyed (Flag.seal_ofB (Or.inl rfl) (sealCodeF16_verified v r))
-  spSafe := sealCodeF16_spAll v
+  verified := VG.Proof.AesGcm.Flag.seal_keyed (Flag.seal_ofB (Or.inl rfl) (sealCodeF16_verified v r (sealBlkR16 v)))
+  spSafe := sealCodeF16_spAll v (sealBlkR16 v)
 
 /-! ## `vg_aes_gcm_seal_prepared_aesni_pclmul` -/
 
@@ -261,9 +261,9 @@ them. -/
 powers: by the flag, its code on those or on the key context. -/
 def sealRPlain (v : GcmVariant) : Unscrubbed Spec.Gcm.sealPreparedApi X86_64.target where
   suffix := v.impl.suffix
-  code := sealCodeF v
-  verified := VG.Proof.AesGcm.Flag.seal_keyed (Flag.seal_ofB (Or.inr rfl) (sealCodeF_verified v))
-  spSafe := sealCodeF_spAll v
+  code := sealCodeF v (sealBlkR v)
+  verified := VG.Proof.AesGcm.Flag.seal_keyed (Flag.seal_ofB (Or.inr rfl) (sealCodeF_verified v (sealBlkR v)))
+  spSafe := sealCodeF_spAll v (sealBlkR v)
 
 /-- `vg_aes_gcm_open_prepared` of a variant whose loops read the 48 prepared
 powers: by the flag, its code on those or on the key context. -/
@@ -330,21 +330,6 @@ open VG.X86_64 VG.X86_64.Scrub
 open VG.Impl.Scrub.X86_64 (VecLevel)
 open VG.Impl.AesGcm.X86_64 (Callees Fn)
 
-/-- The level of the vector instructions of the loops named `n`. -/
-def StitchName.lv : StitchName → VecLevel
-  | .vaes => .avx
-  | .vaesAvx512 => .evex
-  | .aesniAvx => .avx
-
-/-- The level of the vector instructions of `v`'s own code: its loops'. -/
-def GcmVariant.own (v : GcmVariant) : VecLevel :=
-  match v.stitch with
-  | none => .sse
-  | some p => p.name.lv
-
-/-- The level of the cleanup of `v`'s functions. -/
-def GcmVariant.lv (v : GcmVariant) : VecLevel := v.impl.lv v.own
-
 /-- The level of the cleanup of `v`'s `open` on prepared powers, whose code
 past the short path is in VEX (`FastOpen.openFin`). -/
 def GcmVariant.lvA (v : GcmVariant) : VecLevel := v.impl.lv (v.own.join .avx)
@@ -364,6 +349,13 @@ theorem encrypt_fill {k : Nat} {n : String → Nat} (ctr gh : Fn) (hc : calleeSi
   unfold Impl.AesGcm.X86_64.Blocks.encrypt Impl.AesGcm.X86_64.Blocks.blocks Impl.AesGcm.X86_64.Blocks.body
   cases P <;> cases F <;> fill_calls_refl
 
+theorem encryptSeparate_fill {k : Nat} {n : String → Nat} (ctr gh : Fn) (hc : calleeSide ctr.code k (n "c") = true)
+    (hg : calleeSide gh.code k (n "g") = true) :
+    Fill k n (Impl.AesGcm.X86_64.Blocks.encryptSeparate ctrStub ghStub)
+      (Impl.AesGcm.X86_64.Blocks.encryptSeparate ctr gh) := by
+  unfold Impl.AesGcm.X86_64.Blocks.encryptSeparate Impl.AesGcm.X86_64.Blocks.blocks Impl.AesGcm.X86_64.Blocks.body
+  fill_calls_refl
+
 theorem decrypt_fill {k : Nat} {n : String → Nat} (ctr gh : Fn) (hc : calleeSide ctr.code k (n "c") = true)
     (hg : calleeSide gh.code k (n "g") = true) (P PS : Option (Prog isa)) (al F S S4 : Bool) :
     Fill k n (Impl.AesGcm.X86_64.Blocks.decrypt ctrStub ghStub P al F S S4 PS)
@@ -378,8 +370,9 @@ theorem blkB_sides (v : GcmVariant) :
     calleeSide v.impl.callees.enc.code v.lv.level 8 = true ∧ calleeSide v.impl.callees.dec.code v.lv.level 8 = true := by
   obtain ⟨h1, -, h3⟩ := v.impl.sides v.own
   have hl := (v.impl.lv_le v.own).2.2.2
+  have hc := calleeSide_mono (Nat.le_trans v.ctr.ctrToLevel (v.impl.lv_le v.own).1) (Nat.le_refl 0) v.ctr.ctrTo.side
   rcases v with ⟨ctr, key, gh, _ | ⟨name, sfx, fs, eP, dP, pP, pR, tP⟩⟩
-  · exact ⟨calleeSide_of_fill (ks := 0) (encrypt_fill (n := fun _ => 0) _ _ h1 h3 none none false false false false) hl
+  · exact ⟨calleeSide_of_fill (ks := 0) (encryptSeparate_fill (n := fun _ => 0) _ _ hc h3) hl
       (by lit_decide),
       calleeSide_of_fill (ks := 0) (decrypt_fill (n := fun _ => 0) _ _ h1 h3 none none false false false false) hl
       (by lit_decide)⟩
@@ -472,6 +465,102 @@ theorem blkR16_sides (v : GcmVariant) :
     · exact blkM_none_sides _ _ _ _
     · exact blkM_prep_sides _ .aesniAvx _ _ _ ⟨rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩ (by lit_decide)
         (by lit_decide)
+
+
+/-! ## Cleanup of the shared whole-block seal kernels -/
+
+section SharedSeal
+
+open VG.X86_64 VG.X86_64.Scrub VG.Impl.Scrub.X86_64
+open VG.Impl.AesGcm.X86_64 (Fn)
+
+private theorem seal_fill {k : Nat} (c g : Fn) (p : Prog isa) {minimum : Nat}
+    (hc : calleeSide c.code k 0 = true) (hg : calleeSide g.code k 0 = true) :
+    Fill k (fun _ => 0) (Impl.AesGcm.X86_64.BlocksToDec.sealPrepared ctrStub ghStub p true minimum)
+      (Impl.AesGcm.X86_64.BlocksToDec.sealPrepared c g p true minimum) := by
+  fill_calls_wide
+
+private theorem level_of_backend {v : GcmVariant} {nm : StitchToName} (h : v.shortBackend = some nm) :
+    nm.lv.level ≤ v.lvG.level := by
+  suffices v.toLv = nm.lv by rw [← this]; exact level_join_right _ _
+  rcases he : v.stitch with _ | pt
+  · simp [GcmVariant.shortBackend,he] at h
+  · rcases hp : pt.toPart with _ | x
+    · simp [GcmVariant.shortBackend,he,hp] at h
+    · simp [GcmVariant.shortBackend,he,hp] at h
+      simp [GcmVariant.toLv,he,hp,h]
+
+theorem selectSealLeaf_side {M} (v : GcmVariant) (name : String)
+    (supported : Bool) (short : FusedShortOk M) (wide : Option (PLift (WideSealOk M))) :
+    ∀ b ∈ selectSealLeaf v name supported short wide, calleeSide b.fn.code v.lvG.level 8 = true := by
+  intro b mem
+  have hc := calleeSide_mono (Nat.le_trans (level_join_right v.lv v.ctrTo.level)
+    (level_join_left (v.lv.join v.ctrTo.level) v.toLv)) (Nat.le_refl _) v.ctrTo.side
+  have hg := calleeSide_mono (Nat.le_trans (v.impl.lv_le v.own).2.2.1
+    (show v.lv.level ≤ v.lvG.level from Nat.le_trans (level_join_left _ _) (level_join_left _ _)))
+    (Nat.le_refl _) v.impl.gh.side
+  cases supported with
+  | false => simp [selectSealLeaf] at mem
+  | true =>
+    cases hn : v.shortBackend with
+    | none => simp [selectSealLeaf,hn] at mem
+    | some nm =>
+      have hl := level_of_backend hn
+      cases nm with
+      | vaes =>
+        simp [selectSealLeaf,hn] at mem
+        subst b
+        exact calleeSide_of_fill (seal_fill _ _ _ hc hg) hl (by lit_decide)
+      | aesniAvx =>
+        simp [selectSealLeaf,hn] at mem
+        subst b
+        exact calleeSide_of_fill (seal_fill _ _ _ hc hg) hl (by lit_decide)
+      | vaesAvx512 =>
+        cases wide with
+        | none => simp [selectSealLeaf,hn] at mem
+        | some ok =>
+          simp [selectSealLeaf,hn] at mem
+          subst b
+          exact calleeSide_of_fill (seal_fill _ _ _ hc hg) hl (by lit_decide)
+
+theorem sealLeafF_side (v : GcmVariant) : ∀ b ∈ sealLeafF v, calleeSide b.fn.code v.lvG.level 24 = true :=
+  fun b h => calleeSide_mono (Nat.le_refl _) (by decide : 8 ≤ 24) (selectSealLeaf_side v _ _ _ _ b h)
+
+theorem sealLeafF16_side (v : GcmVariant) : ∀ b ∈ sealLeafF16 v, calleeSide b.fn.code v.lvG.level 24 = true :=
+  fun b h => calleeSide_mono (Nat.le_refl _) (by decide : 8 ≤ 24) (selectSealLeaf_side v _ _ _ _ b h)
+
+theorem withSameDst_side (f : Fn) {k : Nat} (h : calleeSide f.code k 8 = true) :
+    calleeSide f.withSameDst.code k 8 = true := by
+  have level : (Instr.mov .r10 (.reg .r8)).vecLevel = 0 := rfl
+  simpa [level, Impl.AesGcm.X86_64.Fn.withSameDst, calleeSide, Code.x86_64Depth, Code.allInstrs,
+    UpperLock.inames, Instr.vecLevelR, loadsMxcsr] using h
+
+end SharedSeal
+
+theorem sealBlkR_sides (v : GcmVariant) :
+    calleeSide (sealBlkR v).enc.code v.lv.level 8 = true ∧ calleeSide (sealBlkR v).dec.code v.lv.level 8 = true := by
+  have base := blkR_sides v
+  cases hf : sealLeafR v with
+  | none => simpa only [sealBlkR,hf] using base
+  | some f =>
+    by_cases lv : v.lvG.level ≤ v.lv.level
+    · simp only [sealBlkR,hf,ite_eq_left lv]
+      have mem : f ∈ sealLeafR v := by simp [hf]
+      exact ⟨withSameDst_side _ (calleeSide_mono lv (Nat.le_refl _) (selectSealLeaf_side v _ _ _ _ f mem)),base.2⟩
+    · simpa only [sealBlkR,hf,ite_eq_right lv] using base
+
+
+theorem sealBlkR16_sides (v : GcmVariant) :
+    calleeSide (sealBlkR16 v).enc.code v.lv.level 8 = true ∧ calleeSide (sealBlkR16 v).dec.code v.lv.level 8 = true := by
+  have base := blkR16_sides v
+  cases hf : sealLeafR16 v with
+  | none => simpa only [sealBlkR16,hf] using base
+  | some f =>
+    by_cases lv : v.lvG.level ≤ v.lv.level
+    · simp only [sealBlkR16,hf,ite_eq_left lv]
+      have mem : f ∈ sealLeafR16 v := by simp [hf]
+      exact ⟨withSameDst_side _ (calleeSide_mono lv (Nat.le_refl _) (selectSealLeaf_side v _ _ _ _ f mem)),base.2⟩
+    · simpa only [sealBlkR16,hf,ite_eq_right lv] using base
 
 /-! ## The functions -/
 
@@ -588,10 +677,10 @@ theorem streamDecryptW_of (v : GcmVariant) (ks : Nat) (hks : ks ≤ v.lv.level)
 
 theorem sealR_of (v : GcmVariant) (s : Bool) (f : Bool) (ks : Nat) (hs : v.impl.short = s) (hf : v.impl.fin = f) (hks : ks ≤ v.lv.level)
     (ha : stubSide (Impl.Gcm.X86_64.Flag.onFlag 48 (withStackArgScratch 2600 3 (Impl.AesGcm.X86_64.Fn.sealCodeP s f stub5)) (withStackArgScratch 2600 3 (Impl.AesGcm.X86_64.Fn.sealCode s f stub5))) ks blkN 2624 [] = true) :
-    VerifiedScrubbed target (Impl.AesGcm.X86_64.Fn.sealP v.lv 48 v.impl.short v.impl.fin (v.impl.withBlk (blkR v)) v.impl.callees)
+    VerifiedScrubbed target (Impl.AesGcm.X86_64.Fn.sealP v.lv 48 v.impl.short v.impl.fin (v.impl.withBlk (sealBlkR v)) v.impl.callees)
       (Spec.Gcm.sealPreparedApi.contract X86_64.abi 2624) 0 := by
   rw [← hs, ← hf] at ha
-  have hp := sealCodeP_fill _ (withBlk_side v (blkR v) (blkR_sides v)) v.impl.short v.impl.fin
+  have hp := sealCodeP_fill _ (withBlk_side v (sealBlkR v) (sealBlkR_sides v)) v.impl.short v.impl.fin
   have hb := sealCode_fill _ (callees_side v) v.impl.short v.impl.fin
   have hf := Fill.seq (Fill.block (Impl.Gcm.X86_64.Flag.testFlag 48))
     (Fill.ite .ae (Fill.seq (Fill.seq (Fill.block []) (Fill.block [])) hp) hb)
@@ -648,10 +737,10 @@ theorem streamDecryptR_of (v : GcmVariant) (ks : Nat) (hks : ks ≤ v.lv.level)
 
 theorem sealR16_of (v : GcmVariant) (r : R16 v) (s : Bool) (f : Bool) (ks : Nat) (hs : v.impl.short = s) (hf : v.impl.fin = f) (hks : ks ≤ v.lv.level)
     (ha : stubSide (Impl.Gcm.X86_64.Flag.onFlag 16 (withStackArgScratch 2600 3 (Impl.AesGcm.X86_64.Fn.sealCodeP s f stub5)) (withStackArgScratch 2600 3 (Impl.AesGcm.X86_64.Fn.sealCode s f stub5))) ks blkN 2624 [] = true) :
-    VerifiedScrubbed target (Impl.AesGcm.X86_64.Fn.sealP v.lv 16 v.impl.short v.impl.fin (v.impl.withBlk (blkR16 v)) v.impl.callees)
+    VerifiedScrubbed target (Impl.AesGcm.X86_64.Fn.sealP v.lv 16 v.impl.short v.impl.fin (v.impl.withBlk (sealBlkR16 v)) v.impl.callees)
       (Spec.Gcm.sealPreparedApi.contract X86_64.abi 2624) 0 := by
   rw [← hs, ← hf] at ha
-  have hp := sealCodeP_fill _ (withBlk_side v (blkR16 v) (blkR16_sides v)) v.impl.short v.impl.fin
+  have hp := sealCodeP_fill _ (withBlk_side v (sealBlkR16 v) (sealBlkR16_sides v)) v.impl.short v.impl.fin
   have hb := sealCode_fill _ (callees_side v) v.impl.short v.impl.fin
   have hf := Fill.seq (Fill.block (Impl.Gcm.X86_64.Flag.testFlag 16))
     (Fill.ite .ae (Fill.seq (Fill.seq (Fill.block []) (Fill.block [])) hp) hb)
@@ -764,7 +853,7 @@ theorem streamDecryptW_scrubbed (v : GcmVariant) :
 constant time and returns without secret residue: `sealR_of`, its code over
 stubs evaluated for each kind of interleaved loops. -/
 theorem sealR_scrubbed (v : GcmVariant) :
-    VerifiedScrubbed target (Impl.AesGcm.X86_64.Fn.sealP v.lv 48 v.impl.short v.impl.fin (v.impl.withBlk (blkR v)) v.impl.callees)
+    VerifiedScrubbed target (Impl.AesGcm.X86_64.Fn.sealP v.lv 48 v.impl.short v.impl.fin (v.impl.withBlk (sealBlkR v)) v.impl.callees)
       (Spec.Gcm.sealPreparedApi.contract X86_64.abi 2624) 0 := by
   rcases v with ⟨ctr, key, gh, _ | ⟨name, sfx, fs, eP, dP, pP, pR, tP⟩⟩
   · exact sealR_of _ false false 0 rfl rfl (Nat.zero_le _) (by lit_decide)
@@ -816,7 +905,7 @@ theorem streamDecryptR_scrubbed (v : GcmVariant) :
 constant time and returns without secret residue: `sealR16_of`, its code over
 stubs evaluated for each kind of interleaved loops. -/
 theorem sealR16_scrubbed (v : GcmVariant) (r : R16 v) :
-    VerifiedScrubbed target (Impl.AesGcm.X86_64.Fn.sealP v.lv 16 v.impl.short v.impl.fin (v.impl.withBlk (blkR16 v)) v.impl.callees)
+    VerifiedScrubbed target (Impl.AesGcm.X86_64.Fn.sealP v.lv 16 v.impl.short v.impl.fin (v.impl.withBlk (sealBlkR16 v)) v.impl.callees)
       (Spec.Gcm.sealPreparedApi.contract X86_64.abi 2624) 0 := by
   rcases v with ⟨ctr, key, gh, _ | ⟨name, sfx, fs, eP, dP, pP, pR, tP⟩⟩
   · exact sealR16_of _ r false false 0 rfl rfl (Nat.zero_le _) (by lit_decide)
@@ -883,18 +972,6 @@ open VG.X86_64 VG.X86_64.Scrub
 open VG.Impl.Scrub.X86_64 (VecLevel)
 open VG.Impl.AesGcm.X86_64 (Callees Fn)
 open VG.Impl.StackScratch.X86_64 (withStackArgScratch)
-
-/-- The level of the vector instructions of the out-of-place loops named `n`. -/
-def StitchToName.lv : StitchToName → VecLevel
-  | .vaes => .avx
-  | .vaesAvx512 => .evex
-  | .aesniAvx => .avx
-
-/-- The level of `v`'s out-of-place loops, if any. -/
-def GcmVariant.toLv (v : GcmVariant) : VecLevel :=
-  match v.stitch with
-  | some p => (p.toPart.map (·.name.lv)).getD .sse
-  | none => .sse
 
 /-- The level of the cleanup of `v`'s `open_to`: `lvA`'s, its out-of-place
 `vg_aes_ctr32_to`'s and its out-of-place loops'. -/
@@ -1265,11 +1342,8 @@ open VG.Impl.Scrub.X86_64 (VecLevel)
 open VG.Impl.AesGcm.X86_64 (Callees Fn)
 open VG.Impl.StackScratch.X86_64 (withStackScratch withStackArgScratch)
 
-/-- The level of the cleanup of `v`'s `seal_gather` on the key context:
-`lv`'s and its out-of-place loops'. -/
-def GcmVariant.lvG (v : GcmVariant) : VecLevel := v.lv.join v.toLv
-
-theorem GcmVariant.lv_le_lvG (v : GcmVariant) : v.lv.level ≤ v.lvG.level := level_join_left _ _
+theorem GcmVariant.lv_le_lvG (v : GcmVariant) : v.lv.level ≤ v.lvG.level :=
+  Nat.le_trans (level_join_left _ _) (level_join_left _ _)
 
 theorem GcmVariant.toLv_le_lvG (v : GcmVariant) : v.toLv.level ≤ v.lvG.level := level_join_right _ _
 
@@ -1645,7 +1719,7 @@ theorem blocksToP_stub : (n : Option StitchToName) →
   | some .vaesAvx512 => by lit_decide
   | some .aesniAvx => by lit_decide
 
-theorem blkToP_side_of (v : GcmVariant) {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M)
+theorem blkToP_legacy_side_of (v : GcmVariant) {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M)
     (hB : calleeSide B.enc.code v.lv.level 8 = true) (st : Option (StitchToCode M true)) (n : Option StitchToName)
     (hst : st.map (·.enc) = n.map StitchToName.encR ∧ encFullTo st = (n.map StitchToName.fullR).getD false)
     (hn : ((n.map StitchToName.lv).getD .sse).level ≤ v.lvG.level) :
@@ -1655,57 +1729,123 @@ theorem blkToP_side_of (v : GcmVariant) {M : Gcm.X86_64.Stitch.CtxMode} (B : Blk
   exact calleeSide_of_fill (blocksTo_fill (n := fun _ => 8) _
     (calleeSide_mono v.lv_le_lvG (Nat.le_refl _) hB) _ true _) hn (blocksToP_stub n)
 
+theorem encryptPrepared_fill {k : Nat} {n : String → Nat} (c g : Fn) (p : Prog isa) {minimum : Nat}
+    (hc : calleeSide c.code k (n "t") = true) (hg : calleeSide g.code k (n "g") = true) :
+    Fill k n (Impl.AesGcm.X86_64.BlocksToDec.encryptPrepared ctrToStub ghStub p true minimum)
+      (Impl.AesGcm.X86_64.BlocksToDec.encryptPrepared c g p true minimum) := by
+  fill_calls_wide
+
+theorem encryptPrepared_stub (n : StitchToName) :
+    stubCallee (Impl.AesGcm.X86_64.BlocksToDec.encryptPrepared ctrToStub ghStub n.encR true)
+      n.lv.level (fun _ => 0) 24 = true := by
+  cases n <;> lit_decide
+
+theorem encryptVaesShort_stub :
+    stubCallee (Impl.AesGcm.X86_64.BlocksToDec.encryptPrepared ctrToStub ghStub
+      Impl.Gcm.X86_64.StitchR.encToFromTwo true 2) 1 (fun _ => 0) 24 = true := by lit_decide
+
+theorem encryptAesniShort_stub :
+    stubCallee (Impl.AesGcm.X86_64.BlocksToDec.encryptPrepared ctrToStub ghStub
+      Impl.Gcm.X86_64.StitchAvx8.encBuffers true 5) 1 (fun _ => 0) 24 = true := by lit_decide
+
+theorem blkToP_side_of (v : GcmVariant) {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M)
+    (hB : calleeSide B.enc.code v.lv.level 8 = true) (st : Option (StitchToCode M true)) (n : Option StitchToName)
+    (hst : st.map (·.enc) = n.map StitchToName.encR ∧ encFullTo st = (n.map StitchToName.fullR).getD false)
+    (hn : ((n.map StitchToName.lv).getD .sse).level ≤ v.lvG.level)
+    (flags : ∀ nm, n = some nm → v.shortBackend = some nm)
+    (fused : FusedShortOk M) :
+    calleeSide (StreamTo.BlkToFn.ofPreparedBlocks "" v.gh.impl v.ctr.ctrTo B v.shortBackend fused st).fn.code v.lvG.level 24 = true := by
+  cases st with
+  | none =>
+    cases n with
+    | none => exact blkToP_legacy_side_of v B hB none none ⟨rfl,rfl⟩ hn
+    | some nm => simp at hst
+  | some q =>
+    obtain ⟨p,full,ok,pc⟩ := q
+    cases n with
+    | none => simp at hst
+    | some nm =>
+      have he : p = nm.encR := Option.some.inj hst.1
+      have hf : full = true := by
+        cases nm <;> exact hst.2
+      subst p
+      subst full
+      have hc := calleeSide_mono (Nat.le_trans (level_join_right v.lv v.ctrTo.level)
+        (level_join_left (v.lv.join v.ctrTo.level) v.toLv)) (Nat.le_refl _) v.ctrTo.side
+      have hg := calleeSide_mono (Nat.le_trans (v.impl.lv_le v.own).2.2.1 v.lv_le_lvG) (Nat.le_refl _) v.impl.gh.side
+      simp only [StreamTo.BlkToFn.ofPreparedBlocks, flags nm rfl]
+      cases nm
+      · exact calleeSide_of_fill (encryptPrepared_fill (n := fun _ => 0) _ _ _ hc hg) hn encryptVaesShort_stub
+      · exact calleeSide_of_fill (encryptPrepared_fill (n := fun _ => 0) _ _ _ hc hg) hn (encryptPrepared_stub .vaesAvx512)
+      · exact calleeSide_of_fill (encryptPrepared_fill (n := fun _ => 0) _ _ _ hc hg) hn encryptAesniShort_stub
+
 /-- `v`'s `blkToR`. -/
 theorem blkToR_side (v : GcmVariant) : calleeSide (blkToR v).fn.code v.lvG.level 24 = true := by
   have hB := (blkR_sides v).1
+  have fused : FusedShortOk Gcm.X86_64.Stitch.CtxMode.prepared := ⟨fun _ h =>
+    Gcm.X86_64.StitchR.encToFromTwo_ok 24 (by decide) h, fun _ h =>
+    Gcm.X86_64.StitchAvx8.encBuffers_ok 24 (by decide) h⟩
+  have side := blkToP_side_of v (blkR v) hB v.stitchToR
   have hl := v.toLv_le_lvG
   rcases v with ⟨ctr, key, gh, _ | ⟨name, sfx, fs, eP, dP, pP, pR, _ | ⟨tname, tpiece, tpP, _ | q, tpD⟩⟩⟩
-  · exact blkToP_side_of _ _ hB _ none ⟨rfl, rfl⟩ (Nat.zero_le _)
-  · exact blkToP_side_of _ _ hB _ none ⟨rfl, rfl⟩ (Nat.zero_le _)
-  · exact blkToP_side_of _ _ hB _ none ⟨rfl, rfl⟩ (Nat.zero_le _)
+  · exact side none ⟨rfl, rfl⟩ (Nat.zero_le _) (by simp) fused
+  · exact side none ⟨rfl, rfl⟩ (Nat.zero_le _) (by simp) fused
+  · exact side none ⟨rfl, rfl⟩ (Nat.zero_le _) (by simp) fused
   · cases tname
-    · exact blkToP_side_of _ _ hB _ (some .vaes) ⟨rfl, rfl⟩ hl
-    · exact blkToP_side_of _ _ hB _ (some .vaesAvx512) ⟨rfl, rfl⟩ hl
-    · exact blkToP_side_of _ _ hB _ (some .aesniAvx) ⟨rfl, rfl⟩ hl
+    · exact side (some .vaes) ⟨rfl, rfl⟩ hl (by intro nm h; cases h; rfl) fused
+    · exact side (some .vaesAvx512) ⟨rfl, rfl⟩ hl (by intro nm h; cases h; rfl) fused
+    · exact side (some .aesniAvx) ⟨rfl, rfl⟩ hl (by intro nm h; cases h; rfl) fused
 
 /-- `v`'s `blkToF`. -/
 theorem blkToF_side (v : GcmVariant) : calleeSide (blkToF v).fn.code v.lvG.level 24 = true := by
   have hB := (blkF_sides v).1
+  have fused : FusedShortOk Gcm.X86_64.Stitch.CtxMode.flagged := ⟨fun _ h =>
+    Gcm.X86_64.StitchR.encToFromTwo_ok 24 (by decide) (sPreTo_ofFlagged h), fun _ h =>
+    Gcm.X86_64.StitchAvx8.encBuffers_ok 24 (by decide) (sPreTo_ofFlagged h)⟩
+  have side := blkToP_side_of v (blkF v) hB (v.stitchToR.map StitchToCode.flagged)
   have hl := v.toLv_le_lvG
   rcases v with ⟨ctr, key, gh, _ | ⟨name, sfx, fs, eP, dP, pP, pR, _ | ⟨tname, tpiece, tpP, _ | q, tpD⟩⟩⟩
-  · exact blkToP_side_of _ _ hB _ none ⟨rfl, rfl⟩ (Nat.zero_le _)
-  · exact blkToP_side_of _ _ hB _ none ⟨rfl, rfl⟩ (Nat.zero_le _)
-  · exact blkToP_side_of _ _ hB _ none ⟨rfl, rfl⟩ (Nat.zero_le _)
+  · exact side none ⟨rfl, rfl⟩ (Nat.zero_le _) (by simp) fused
+  · exact side none ⟨rfl, rfl⟩ (Nat.zero_le _) (by simp) fused
+  · exact side none ⟨rfl, rfl⟩ (Nat.zero_le _) (by simp) fused
   · cases tname
-    · exact blkToP_side_of _ _ hB _ (some .vaes) ⟨rfl, rfl⟩ hl
-    · exact blkToP_side_of _ _ hB _ (some .vaesAvx512) ⟨rfl, rfl⟩ hl
-    · exact blkToP_side_of _ _ hB _ (some .aesniAvx) ⟨rfl, rfl⟩ hl
+    · exact side (some .vaes) ⟨rfl, rfl⟩ hl (by intro nm h; cases h; rfl) fused
+    · exact side (some .vaesAvx512) ⟨rfl, rfl⟩ hl (by intro nm h; cases h; rfl) fused
+    · exact side (some .aesniAvx) ⟨rfl, rfl⟩ hl (by intro nm h; cases h; rfl) fused
 
 /-- `v`'s `blkToR16`. -/
 theorem blkToR16_side (v : GcmVariant) : calleeSide (blkToR16 v).fn.code v.lvG.level 24 = true := by
   have hB := (blkR16_sides v).1
+  have fused : FusedShortOk Gcm.X86_64.Stitch.CtxMode.prepared16 := ⟨fun _ h =>
+    Gcm.X86_64.StitchR.encToFromTwo_ok 8 (by decide) h, fun _ h =>
+    Gcm.X86_64.StitchAvx8.encBuffers_ok 8 (by decide) h⟩
+  have side := blkToP_side_of v (blkR16 v) hB v.stitchToR16
   have hl := v.toLv_le_lvG
   rcases v with ⟨ctr, key, gh, _ | ⟨name, sfx, fs, eP, dP, pP, pR, _ | ⟨tname, tpiece, tpP, _ | q, tpD⟩⟩⟩
-  · exact blkToP_side_of _ _ hB _ none ⟨rfl, rfl⟩ (Nat.zero_le _)
-  · exact blkToP_side_of _ _ hB _ none ⟨rfl, rfl⟩ (Nat.zero_le _)
-  · cases tname <;> exact blkToP_side_of _ _ hB _ none ⟨rfl, rfl⟩ (Nat.zero_le _)
+  · exact side none ⟨rfl, rfl⟩ (Nat.zero_le _) (by simp) fused
+  · exact side none ⟨rfl, rfl⟩ (Nat.zero_le _) (by simp) fused
+  · cases tname <;> exact side none ⟨rfl, rfl⟩ (Nat.zero_le _) (by simp) fused
   · cases tname
-    · exact blkToP_side_of _ _ hB _ (some .vaes) ⟨rfl, rfl⟩ hl
-    · exact blkToP_side_of _ _ hB _ none ⟨rfl, rfl⟩ (Nat.zero_le _)
-    · exact blkToP_side_of _ _ hB _ (some .aesniAvx) ⟨rfl, rfl⟩ hl
+    · exact side (some .vaes) ⟨rfl, rfl⟩ hl (by intro nm h; cases h; rfl) fused
+    · exact side none ⟨rfl, rfl⟩ (Nat.zero_le _) (by simp) fused
+    · exact side (some .aesniAvx) ⟨rfl, rfl⟩ hl (by intro nm h; cases h; rfl) fused
 
 /-- `v`'s `blkToF16`. -/
 theorem blkToF16_side (v : GcmVariant) : calleeSide (blkToF16 v).fn.code v.lvG.level 24 = true := by
   have hB := (blkF16_sides v).1
+  have fused : FusedShortOk (Gcm.X86_64.Stitch.CtxMode.flaggedT 16) := ⟨fun _ h =>
+    Gcm.X86_64.StitchR.encToFromTwo_ok 8 (by decide) (sPreTo_ofFlagged16 h), fun _ h =>
+    Gcm.X86_64.StitchAvx8.encBuffers_ok 8 (by decide) (sPreTo_ofFlagged16 h)⟩
+  have side := blkToP_side_of v (blkF16 v) hB (v.stitchToR16.map StitchToCode.flagged16)
   have hl := v.toLv_le_lvG
   rcases v with ⟨ctr, key, gh, _ | ⟨name, sfx, fs, eP, dP, pP, pR, _ | ⟨tname, tpiece, tpP, _ | q, tpD⟩⟩⟩
-  · exact blkToP_side_of _ _ hB _ none ⟨rfl, rfl⟩ (Nat.zero_le _)
-  · exact blkToP_side_of _ _ hB _ none ⟨rfl, rfl⟩ (Nat.zero_le _)
-  · cases tname <;> exact blkToP_side_of _ _ hB _ none ⟨rfl, rfl⟩ (Nat.zero_le _)
+  · exact side none ⟨rfl, rfl⟩ (Nat.zero_le _) (by simp) fused
+  · exact side none ⟨rfl, rfl⟩ (Nat.zero_le _) (by simp) fused
+  · cases tname <;> exact side none ⟨rfl, rfl⟩ (Nat.zero_le _) (by simp) fused
   · cases tname
-    · exact blkToP_side_of _ _ hB _ (some .vaes) ⟨rfl, rfl⟩ hl
-    · exact blkToP_side_of _ _ hB _ none ⟨rfl, rfl⟩ (Nat.zero_le _)
-    · exact blkToP_side_of _ _ hB _ (some .aesniAvx) ⟨rfl, rfl⟩ hl
+    · exact side (some .vaes) ⟨rfl, rfl⟩ hl (by intro nm h; cases h; rfl) fused
+    · exact side none ⟨rfl, rfl⟩ (Nat.zero_le _) (by simp) fused
+    · exact side (some .aesniAvx) ⟨rfl, rfl⟩ hl (by intro nm h; cases h; rfl) fused
 
 /-! ## `vg_aes_gcm_seal_split_prepared` -/
 
@@ -1793,7 +1933,8 @@ theorem GcmVariant.lvA_le_lvGA (v : GcmVariant) : v.lvA.level ≤ v.lvGA.level :
   generalize (v.impl.ctr.level.join v.impl.key.level).join v.impl.gh.level = a
   generalize v.own = b
   generalize v.toLv = c
-  cases a <;> cases b <;> cases c <;> decide
+  generalize v.ctrTo.level = d
+  cases a <;> cases b <;> cases c <;> cases d <;> decide
 
 /-- `v`'s `vg_aes_gcm_stream_encrypt_to_prepared16`. -/
 theorem toFnF16_side (v : GcmVariant) : calleeSide (toFnF16 v).fn.code v.lvGA.level 4856 = true :=
@@ -2002,7 +2143,7 @@ theorem sealGatherW_spSafeFn (v : GcmVariant) :
 /-- `sealPreparedApi`'s function over `v`: its code writes the stack pointer only in its frames and
 calls (the registration's `spSafe`). -/
 theorem sealR_spSafeFn (v : GcmVariant) :
-    (Impl.AesGcm.X86_64.Fn.sealP v.lv 48 v.impl.short v.impl.fin (v.impl.withBlk (blkR v)) v.impl.callees).all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+    (Impl.AesGcm.X86_64.Fn.sealP v.lv 48 v.impl.short v.impl.fin (v.impl.withBlk (sealBlkR v)) v.impl.callees).all (fun i => !VG.X86_64.isa.writesSp i) = true :=
   scrubKs_spSafe ((sealRPlain v).spSafe)
 
 /-- `openPreparedApi`'s function over `v`: its code writes the stack pointer only in its frames and
@@ -2043,7 +2184,7 @@ theorem sealGatherR_spSafeFn (v : GcmVariant) :
 /-- `sealPreparedApi`'s function over `v`, on 16 prepared powers: its code writes the stack pointer
 only in its frames and calls (the registration's `spSafe`). -/
 theorem sealR16_spSafeFn (v : GcmVariant) (r : R16 v) :
-    (Impl.AesGcm.X86_64.Fn.sealP v.lv 16 v.impl.short v.impl.fin (v.impl.withBlk (blkR16 v)) v.impl.callees).all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+    (Impl.AesGcm.X86_64.Fn.sealP v.lv 16 v.impl.short v.impl.fin (v.impl.withBlk (sealBlkR16 v)) v.impl.callees).all (fun i => !VG.X86_64.isa.writesSp i) = true :=
   scrubKs_spSafe ((sealF16Plain v r).spSafe)
 
 /-- `openPreparedApi`'s function over `v`, on 16 prepared powers: its code writes the stack pointer
@@ -2131,14 +2272,14 @@ private theorem sp_general (v : GcmImpl) (ctr : Fn) (f : Option Fn)
     decide +kernel
   | some b =>
     have bf := hf b rfl
-    simp only [general,pieces,Option.map_some,Option.getD_some,bulk,whole,Code.all,bf,ht,aa,tg,tail,Bool.true_and,Bool.and_true]
+    simp only [general,pieces,Option.map_some,Option.getD_some,bulk,callSeal,whole,Code.all,bf,ht,aa,tg,tail,Bool.true_and,Bool.and_true]
     decide +kernel
 
-private theorem baseStub_ok : stubCallee baseStub 0 (fun _=>24) 2512 = true := by lit_decide
-private theorem readyStub_ok : stubCallee readyStub 1 (fun _=>24) 2512 = true := by lit_decide
+private theorem baseStub_ok : stubCallee baseStub 0 (fun _=>24) 56 = true := by lit_decide
+private theorem readyStub_ok : stubCallee readyStub 1 (fun _=>24) 56 = true := by lit_decide
 
 private theorem of_side {p : Prog isa} {k : Nat} (sp : (Finished p).all (fun i => !isa.writesSp i)=true)
-    (hc : calleeSide (Finished p) k 2512=true) : CoreSafe p := by
+    (hc : calleeSide (Finished p) k 56=true) : CoreSafe p := by
   simp only [calleeSide,Bool.and_eq_true,decide_eq_true_eq] at hc
   refine ⟨sp,hc.1.1,?_⟩
   have both := (Code.allInstrs_eq _ _).symm.trans hc.1.2
@@ -2159,7 +2300,7 @@ theorem preparedSafe (v : GcmImpl) (ctr f : Fn) {k : Nat} (hk : 1≤k) (hc : Cal
   apply of_side _ (calleeSide_of_fill (fillReady hc ht hf) hk readyStub_ok)
   have g := sp_general v ctr (some f) sp (fun b hb => (Option.mem_some_iff.mp hb) ▸ fp)
   have q : (quick f).all (fun i => !isa.writesSp i)=true := by
-    simp only [quick,firstBlocks,Code.all,fp,Bool.and_true]
+    simp only [quick,firstBlocks,callSeal,Code.all,fp,Bool.and_true]
     decide +kernel
   simp only [readyCore,dispatch,enter,Code.all,g,q,Bool.and_true]
   decide +kernel
@@ -2168,29 +2309,29 @@ private theorem frameFill {k : Nat} {a b : Prog isa} (f : Fill k (fun _=>24) a b
     Fill k (fun _=>24) (withStackArgScratch 2616 5 a) (withStackArgScratch 2616 5 b) :=
   .frame _ _ (.seq (.block _) f)
 
-private theorem raw_ok : stubSide rawStub 0 (fun _=>24) 5128 []=true := by lit_decide
-private theorem flag_ok {n : Nat} (hn : n=16 ∨ n=48) : stubSide (flagStub n) 1 (fun _=>24) 5128 []=true := by
+private theorem raw_ok : stubSide rawStub 0 (fun _=>24) 2672 []=true := by lit_decide
+private theorem flag_ok {n : Nat} (hn : n=16 ∨ n=48) : stubSide (flagStub n) 1 (fun _=>24) 2672 []=true := by
   rcases hn with rfl|rfl <;> lit_decide
 
-abbrev publicContract := Spec.Gcm.sealGatherPreparedApi.contract X86_64.abi 5128
+abbrev publicContract := Spec.Gcm.sealGatherPreparedApi.contract X86_64.abi 2672
 
 theorem base_scrub {c : Callees} {ctr : Fn} (lv : VecLevel) (hs : CalleesSide lv.level c)
     (ct : calleeSide ctr.code lv.level 24=true)
     (verified : Verified target (plain c ctr) publicContract) (safe : CoreSafe (baseCore c ctr)) :
-    VerifiedScrubbed target (scrubAll lv 0 5128 (plain c ctr)) publicContract 0 :=
+    VerifiedScrubbed target (scrubAll lv 0 2672 (plain c ctr)) publicContract 0 :=
   verifiedScrubbedAllFill (api:=Spec.Gcm.sealGatherPreparedApi)
-    { suffix := "", code := plain c ctr, stack := 5128, verified := verified, spSafe := withStackArgScratch_spSafe safe.sp }
+    { suffix := "", code := plain c ctr, stack := 2672, verified := verified, spSafe := withStackArgScratch_spSafe safe.sp }
     lv (sealGatherPreparedOut _) (frameFill (fillBase hs ct)) (Nat.zero_le _) (Nat.le_refl _) (ha:=raw_ok)
 
 theorem prepared_scrub {c : Callees} {ctr b : Fn} (lv : VecLevel) (hk : 1≤lv.level) {n : Nat} (hn : n=16 ∨ n=48)
     (hs : CalleesSide lv.level c) (ct : calleeSide ctr.code lv.level 24=true) (bt : calleeSide b.code lv.level 24=true)
     (verified : Verified target (onFlag n (prepared c ctr b) (plain c ctr)) publicContract)
     (rs : CoreSafe (readyCore c ctr b)) (ws : CoreSafe (baseCore c ctr)) :
-    VerifiedScrubbed target (scrubAll lv 0 5128 (onFlag n (prepared c ctr b) (plain c ctr))) publicContract 0 := by
+    VerifiedScrubbed target (scrubAll lv 0 2672 (onFlag n (prepared c ctr b) (plain c ctr))) publicContract 0 := by
   have f := Fill.seq (Fill.block (Impl.Gcm.X86_64.Flag.testFlag n))
     (Fill.ite .ae (Fill.seq (Fill.seq (Fill.block []) (Fill.block [])) (frameFill (fillReady hs ct bt))) (frameFill (fillBase hs ct)))
   exact verifiedScrubbedAllFill (api:=Spec.Gcm.sealGatherPreparedApi)
-    { suffix := "", code := onFlag n (prepared c ctr b) (plain c ctr), stack := 5128, verified := verified,
+    { suffix := "", code := onFlag n (prepared c ctr b) (plain c ctr), stack := 2672, verified := verified,
       spSafe := onFlag_spSafe (withStackArgScratch_spSafe rs.sp) (withStackArgScratch_spSafe ws.sp) }
     lv (sealGatherPreparedOut _) f hk (Nat.le_refl _) (ha:=flag_ok hn)
 
@@ -2200,15 +2341,14 @@ end VG.Proof.AesGcm.X86_64.DirectGather
 namespace VG.Proof.AesGcm.X86_64.DirectGather
 open VG VG.X86_64 VG.X86_64.Scrub
 open VG.Impl.AesGcm.X86_64 (Callees Fn)
-open VG.Impl.AesGcm.X86_64.DirectGather (general directBase directPrepared)
+open VG.Impl.AesGcm.X86_64.DirectGather (general directBase directPrepared directSeal)
 open VG.Impl.Scrub.X86_64 (VecLevel)
 open VG.Proof.Gcm.X86_64.Stitch (CtxMode)
-open VG.Proof.AesGcm.X86_64.StreamTo (BlkToFn)
 
 abbrev ctrFn (v : GcmVariant) : Fn := ⟨v.ctrTo.callee.name,v.ctrTo.callee.code⟩
 abbrev PlainOk (v : GcmVariant) :=
   InitializedProof CtxMode.base (general v.impl.callees (ctrFn v) none)
-abbrev ReadyOk (v : GcmVariant) {n : Nat} (b : BlkToFn (CtxMode.flaggedT n)) :=
+abbrev ReadyOk (v : GcmVariant) {n : Nat} (b : BlocksTo.SealFn (CtxMode.flaggedT n)) :=
   InitializedProof (CtxMode.flaggedT n) (general v.impl.callees (ctrFn v) (some b.fn))
 
 private theorem generalProof (v : GcmVariant) {M : CtxMode} {f : Option Fn}
@@ -2220,7 +2360,7 @@ private theorem generalProof (v : GcmVariant) {M : CtxMode} {f : Option Fn}
 theorem plainProof (v : GcmVariant) : PlainOk v :=
   generalProof v plainPrefix_wp plainPrefix_rel
 
-theorem readyProof (v : GcmVariant) {n : Nat} (b : BlkToFn (CtxMode.flaggedT n)) : ReadyOk v b :=
+theorem readyProof (v : GcmVariant) {n : Nat} (b : BlocksTo.SealFn (CtxMode.flaggedT n)) : ReadyOk v b :=
   generalProof v (bulkPrefix_wp b) (bulkPrefix_rel b)
 
 theorem ctr_side (v : GcmVariant) :
@@ -2241,17 +2381,16 @@ theorem base_spSafe (v : GcmVariant) :
   scrubKs_spSafe (withStackArgScratch_spSafe (plain_safe v).sp)
 
 theorem lvG_le_T (v : GcmVariant) : v.lvG.level ≤ v.lvT.level := by
-  have h := Nat.le_trans v.lv_le_lvA (level_join_left v.lvA v.ctrTo.level)
-  exact join_mono_left v.toLv h
+  exact join_mono_left _ (join_mono_left _ v.lv_le_lvA)
 
-private theorem ready_safe (v : GcmVariant) {n : Nat} (b : BlkToFn (CtxMode.flaggedT n))
+private theorem ready_safe (v : GcmVariant) {n : Nat} (b : BlocksTo.SealFn (CtxMode.flaggedT n))
     (bt : calleeSide b.fn.code v.lvG.level 24=true) : CoreSafe (readyCore v.impl.callees (ctrFn v) b.fn) :=
   preparedSafe v.impl (ctrFn v) b.fn v.one_le_lvT (callees_sideT v)
     (calleeSide_mono v.lvTW_le_lvT (Nat.le_refl _) (ctr_side v))
     (calleeSide_mono (lvG_le_T v) (Nat.le_refl _) bt) v.ctrTo.spSafe b.spAll
 
 /-- A prepared context can use the fixed-shape and general direct entries; both preserve its public contract. -/
-theorem prepared_verified (v : GcmVariant) (n : Nat) (hn : n=16 ∨ n=48) (b : BlkToFn (CtxMode.flaggedT n))
+theorem prepared_verified (v : GcmVariant) (n : Nat) (hn : n=16 ∨ n=48) (b : BlocksTo.SealFn (CtxMode.flaggedT n))
     (bt : calleeSide b.fn.code v.lvG.level 24=true) :
     VerifiedScrubbed target (directPrepared v.lvT n v.impl.callees (ctrFn v) b.fn) publicContract 0 := by
   have ht : 16≤n ∧ n≤48 := by rcases hn with rfl|rfl <;> decide
@@ -2262,10 +2401,25 @@ theorem prepared_verified (v : GcmVariant) (n : Nat) (hn : n=16 ∨ n=48) (b : B
   exact prepared_scrub v.lvT v.one_le_lvT hn (callees_sideT v) cs bs (prepared_public hn
     (prepared_rounds ht.1 ht.2 Short.shortFacts b (readyProof v b) rs) (plain_rounds (plainProof v) ws)) rs ws
 
-theorem prepared_spSafe (v : GcmVariant) (n : Nat) (b : BlkToFn (CtxMode.flaggedT n))
+theorem prepared_spSafe (v : GcmVariant) (n : Nat) (b : BlocksTo.SealFn (CtxMode.flaggedT n))
     (bt : calleeSide b.fn.code v.lvG.level 24=true) :
     (directPrepared v.lvT n v.impl.callees (ctrFn v) b.fn).all (fun i => !isa.writesSp i)=true :=
   scrubKs_spSafe (onFlag_spSafe (withStackArgScratch_spSafe (ready_safe v b bt).sp)
     (withStackArgScratch_spSafe (plain_safe v).sp))
+
+theorem selected_verified (v : GcmVariant) (n : Nat) (hn : n=16 ∨ n=48)
+    (leaf : Option (BlocksTo.SealFn (CtxMode.flaggedT n)))
+    (side : ∀ b ∈ leaf, calleeSide b.fn.code v.lvG.level 24 = true) :
+    VerifiedScrubbed target (directSeal v.lvTW v.lvT n v.impl.callees (ctrFn v) (leaf.map (·.fn))) publicContract 0 := by
+  cases leaf with
+  | none => exact base_verified v
+  | some b => exact prepared_verified v n hn b (side b (by simp))
+
+theorem selected_spSafe (v : GcmVariant) (n : Nat) (leaf : Option (BlocksTo.SealFn (CtxMode.flaggedT n)))
+    (side : ∀ b ∈ leaf, calleeSide b.fn.code v.lvG.level 24 = true) :
+    (directSeal v.lvTW v.lvT n v.impl.callees (ctrFn v) (leaf.map (·.fn))).all (fun i => !isa.writesSp i)=true := by
+  cases leaf with
+  | none => exact base_spSafe v
+  | some b => exact prepared_spSafe v n b (side b (by simp))
 
 end VG.Proof.AesGcm.X86_64.DirectGather

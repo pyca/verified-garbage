@@ -6,8 +6,8 @@ public import VerifiedGarbage.Impl.Scrub.Arm
 /-!
 # RSAES-PKCS1-v1_5 decryption with the message first, on ARMv7
 
-`vg_rsa_pkcs1_decrypt_precomputed_front` takes the arguments of
-`vg_rsa_pkcs1_decrypt_precomputed` and calls it (`body`, by its name) with
+`vg_rsa_pkcs1_decrypt_precomputed` takes the arguments of
+`vg_rsa_pkcs1_decrypt_precomputed_body` and calls it (`body`, by its name) with
 them, in the frames of RSAES-OAEP's functions (`Impl/RsaOaep/Arm.lean`,
 `Impl.RsaPkcs1Sig.Arm.wrap` with a frame of `frameBytes`, 128 bytes): the
 four argument registers loaded back from the push, and the 21 stack
@@ -75,12 +75,12 @@ def tail : Prog isa :=
   seqs [.block clrBuf, Bignum.Arm.maskBytes, .block inSet, Bignum.Arm.copyBytes, shift, .block outSet,
     Bignum.Arm.copyBytes, .block ret]
 
-/-- The inner frame's body, calling `vg_rsa_pkcs1_decrypt_precomputed`
+/-- The inner frame's body, calling `vg_rsa_pkcs1_decrypt_precomputed_body`
 (`callee`) by `name`. -/
 def body (name : String) (callee : Prog isa) : Prog isa :=
   seqs [.block setup, .call name callee, .block after, tail]
 
-/-- `vg_rsa_pkcs1_decrypt_precomputed_front`, calling `callee` by `name`. -/
+/-- `vg_rsa_pkcs1_decrypt_precomputed`, calling `callee` by `name`. -/
 def code (name : String) (callee : Prog isa) : Prog isa := wrap frameBytes (body name callee)
 
 end VG.Impl.RsaPkcs1Enc.Arm.Front
@@ -89,11 +89,11 @@ namespace VG.Impl.RsaPkcs1Enc.Arm.Fn
 
 open VG.Arm VG.Impl.Scrub.Arm
 
-/-- `Spec.RsaPkcs1Enc.decryptPrecomputedFrontApi`'s function as emitted,
-calling `vg_rsa_pkcs1_decrypt_precomputed`'s code `callee` by `name`, then
+/-- `Spec.RsaPkcs1Enc.decryptPrecomputedApi`'s function as emitted,
+calling `vg_rsa_pkcs1_decrypt_precomputed_body`'s code `callee` by `name`, then
 its cleanup: the 3824 bytes of stack its push (56), its frame (128) and the
 callee (3640) use zeroed. -/
-def decryptPrecomputedFront (name : String) (callee : Prog isa) : Prog isa :=
+def decryptPrecomputed (name : String) (callee : Prog isa) : Prog isa :=
   scrubAll 32 3824 (Front.code name callee)
 
 end VG.Impl.RsaPkcs1Enc.Arm.Fn

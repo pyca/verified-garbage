@@ -1,37 +1,13 @@
-// The functions of `src/internal/vg_aes_gcm_encrypt_blocks_to_prepared_vaes_vpclmul_avx512.rs` of `verified-garbage-asm-x86_64`, as text: generated from
+// The functions of `src/internal/vg_aes_gcm_seal_blocks_prepared_vaes_vpclmul_avx512.rs` of `verified-garbage-asm-x86_64`, as text: generated from
 // Lean (`lean/VerifiedGarbage/TCB/Rust.lean`) with them, and not compiled.
 // Each instruction the printer encodes is here as its text, and in
 // `src/` as its machine code, which `lean/VerifiedGarbage/TCB/<ISA>/Encode.lean`
 // gives.
 
-vg_aes_gcm_encrypt_blocks_to_prepared_vaes_vpclmul_avx512:
-	mov r11, QWORD PTR [rsp+24]
-	mov r10, QWORD PTR [rsp+8]
-	mov QWORD PTR [r11], rdi
-	mov QWORD PTR [r11+8], rsi
-	mov QWORD PTR [r11+16], rdx
-	mov QWORD PTR [r11+24], rcx
-	mov QWORD PTR [r11+32], r8
-	mov QWORD PTR [r11+40], r9
-	mov QWORD PTR [r11+48], r10
+vg_aes_gcm_seal_blocks_prepared_vaes_vpclmul_avx512:
 	cmp r9, 16
 	jb 20f
-	mov rax, r9
-	add rax, rax
-	add rax, rax
-	add rax, rax
-	add rax, rax
-	add rax, r8
-	mov QWORD PTR [r11+32], rax
-	mov rax, r9
-	add rax, rax
-	add rax, rax
-	add rax, rax
-	add rax, rax
-	add rax, r10
-	mov QWORD PTR [r11+48], rax
-	mov eax, 0
-	mov QWORD PTR [r11+40], rax
+	mov r11, QWORD PTR [rsp+8]
 	add r11, 127
 	and r11, -64
 	lea rax, {VG_GCM_CONSTS}
@@ -3455,48 +3431,40 @@ vg_aes_gcm_encrypt_blocks_to_prepared_vaes_vpclmul_avx512:
 27:
 	jmp 21f
 20:
-21:
-	mov r11, QWORD PTR [rsp+24]
-	mov r8, QWORD PTR [r11+40]
-	mov rax, r8
-	and r8, 15
-	sub rax, r8
-	add rax, rax
-	add rax, rax
-	add rax, rax
-	add rax, rax
-	mov rcx, rax
-	add rax, QWORD PTR [r11+32]
-	mov QWORD PTR [r11+32], rax
-	add rcx, QWORD PTR [r11+48]
-	mov QWORD PTR [r11+48], rcx
-	mov QWORD PTR [r11+40], r8
-	mov r11, QWORD PTR [rsp+24]
+	mov r11, QWORD PTR [rsp+8]
+	mov QWORD PTR [r11], rdi
+	mov QWORD PTR [r11+8], rsi
+	mov QWORD PTR [r11+16], rdx
+	mov QWORD PTR [r11+24], rcx
+	mov QWORD PTR [r11+32], r8
+	mov QWORD PTR [r11+40], r9
+	mov QWORD PTR [r11+48], r10
+	mov r11, QWORD PTR [rsp+8]
 	mov rcx, QWORD PTR [r11+40]
 	test rcx, rcx
 	je 2173f
-	mov rsi, QWORD PTR [r11+32]
-	mov rdi, QWORD PTR [r11+48]
-	mov r10d, 0
-2175:
-	movdqu xmm0, XMMWORD PTR [rsi+r10*1]
-	movdqu XMMWORD PTR [rdi+r10*1], xmm0
-	add r10, 16
-	sub rcx, 1
-	jne 2175b
-	mov r11, QWORD PTR [rsp+24]
+	mov r11, QWORD PTR [rsp+8]
 	mov rdi, QWORD PTR [r11]
 	mov rsi, QWORD PTR [r11+8]
 	mov rdx, QWORD PTR [r11+16]
-	mov rcx, QWORD PTR [r11+24]
-	mov r8, QWORD PTR [r11+48]
-	mov r9, QWORD PTR [r11+40]
-	mov rax, r11
-	push rax
-	call {vg_aes_gcm_encrypt_blocks_prepared_vaes_vpclmul_avx512}
-	pop rax
+	mov rcx, QWORD PTR [r11+32]
+	mov r8, QWORD PTR [r11+40]
+	mov r9, r11
+	add r9, 64
+	mov r11, QWORD PTR [r11+48]
+	call {vg_aes_ctr32_to_vaes}
+	mov r11, QWORD PTR [rsp+8]
+	mov rdi, QWORD PTR [r11]
+	add rdi, 240
+	mov rsi, QWORD PTR [r11+24]
+	mov rdx, QWORD PTR [r11+48]
+	mov rcx, QWORD PTR [r11+40]
+	mov r8, r11
+	add r8, 64
+	call {vg_ghash_vpclmul}
 	jmp 2174f
 2173:
 2174:
+21:
 	ret
 	.p2align 6

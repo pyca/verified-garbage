@@ -65,7 +65,7 @@ theorem ReadyTo.ofReady2 {s₀ : State} {P : Nat → Nat → Block} {s : State} 
     ReadyTo s₀ P s :=
   ⟨⟨Nat.zero_le _, fun l hl => by rw [h.ctr l hl, Nat.zero_add], h.msk, h.inc, h.rdi, h.rsi, h.r10, h.r8,
     h.frame.mono fun r hr => by simp at hr ⊢; exact Or.inr hr, fun k hk => absurd hk (Nat.not_lt_zero _),
-    h.rd, h.wr⟩, h.rdx, h.rax, h.gpr, h.pw, h.m1, h.y, h.y1⟩
+    fun k hk _ => h.src k hk, h.rd, h.wr⟩, h.rdx, h.rax, h.gpr, h.pw, h.m1, h.y, h.y1⟩
 
 /-! ## The loop of one group -/
 
@@ -83,9 +83,9 @@ structure EInvTo (s₀ : State) (P : Nat → Nat → Block) (e : Nat) (s : State
 
 /-! ## As the in-place loop's, out of place -/
 
-theorem EInvTo.toM {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {P : Nat → Nat → Block} {e : Nat} {s : State}
+theorem EInvTo.toM {s₀ : State} {P : Nat → Nat → Block} {e : Nat} {s : State}
     (h : EInvTo s₀ P e s) : Stitch.EInvM true s₀ P e s :=
-  ⟨h.a.toM hp, h.one, h.rdx, h.r9, h.rax, fun _ => h.a.r8, fun r h1 h2 h3 h4 h5 => h.gpr r h1 h2 (h3 rfl) h4 h5,
+  ⟨h.a.toM, h.one, h.rdx, h.r9, h.rax, fun _ => h.a.r8, fun r h1 h2 h3 h4 h5 => h.gpr r h1 h2 (h3 rfl) h4 h5,
     h.pw, h.m1, h.y, h.y1⟩
 
 theorem _root_.VG.Proof.Gcm.X86_64.Stitch.EInvM.toTo {s₀ : State} {P : Nat → Nat → Block} {e : Nat} {s : State}
@@ -93,18 +93,18 @@ theorem _root_.VG.Proof.Gcm.X86_64.Stitch.EInvM.toTo {s₀ : State} {P : Nat →
   ⟨h.a.toTo rfl (h.r8 rfl), h.one, h.rdx, h.r9, h.rax, fun r h1 h2 h3 h4 h5 => h.gpr r h1 h2 (fun _ => h3) h4 h5,
     h.pw, h.m1, h.y, h.y1⟩
 
-theorem ReadyTo.toM {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {P : Nat → Nat → Block} {s : State}
+theorem ReadyTo.toM {s₀ : State} {P : Nat → Nat → Block} {s : State}
     (h : ReadyTo s₀ P s) : Stitch.ReadyM true s₀ P s :=
-  ⟨h.a.toM hp, h.rdx, fun _ => h.a.r8, h.rax, fun r h1 h2 h3 h4 => h.gpr r h1 h2 (h3 rfl) h4, h.pw, h.m1, h.y, h.y1⟩
+  ⟨h.a.toM, h.rdx, fun _ => h.a.r8, h.rax, fun r h1 h2 h3 h4 => h.gpr r h1 h2 (h3 rfl) h4, h.pw, h.m1, h.y, h.y1⟩
 
 theorem bodyTo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {P : Nat → Nat → Block}
     (hf : FinOk ordE (hk s₀) P) {e : Nat} (he : 16 * (e + 1) ≤ nb s₀) {s : State} (hI : EInvTo s₀ P e s) :
     WP isa bodyTo s fun s' => EInvTo s₀ P (e + 1) s' ∧ s'.cf = some (decide (nb s₀ - 16 * e < 32)) :=
-  WP.mono (Stitch.bodyM_ok hp.toM hf he (hI.toM hp)) fun _ ⟨h, hc⟩ => ⟨h.toTo, hc⟩
+  WP.mono (Stitch.bodyM_ok hp.toM hf he hI.toM) fun _ ⟨h, hc⟩ => ⟨h.toTo, hc⟩
 
 theorem firstTo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {P : Nat → Nat → Block} {s : State}
     (hR : ReadyTo s₀ P s) : WP isa firstTo s (EInvTo s₀ P 1) :=
-  WP.mono (Stitch.firstM_ok hp.toM hp.nb16 (hR.toM hp)) fun _ h => h.toTo
+  WP.mono (Stitch.firstM_ok hp.toM hp.nb16 hR.toM) fun _ h => h.toTo
 
 /-- `cmp r9, 32`. -/
 theorem cmpE_ok {s₀ : State} {P : Nat → Nat → Block} {e : Nat} {s : State} (hI : EInvTo s₀ P e s) :
@@ -123,19 +123,19 @@ theorem loopE_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) (hm : nb s₀
     (hf : FinOk ordE (hk s₀) P) {s : State}
     (hI : EInvTo s₀ P 1 s) (hcf : s.cf = some (decide (nb s₀ - 16 * (1 - 1) < 32))) :
     WP isa (.ite .b (.block []) (.loop bodyTo .ae)) s fun s' => ∃ e, nb s₀ = 16 * e ∧ EInvTo s₀ P e s' :=
-  WP.mono (Stitch.loopEM_from_ok hm hp.toM hf (hI.toM hp) hcf) fun _ ⟨e, he, h⟩ => ⟨e, he, h.toTo⟩
+  WP.mono (Stitch.loopEM_from_ok hm hp.toM hf hI.toM hcf) fun _ ⟨e, he, h⟩ => ⟨e, he, h.toTo⟩
 
 theorem finalTo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {P : Nat → Nat → Block}
     (hf : FinOk ordE (hk s₀) P) {e : Nat} (he : nb s₀ = 16 * e) {s : State} (hI : EInvTo s₀ P e s) :
     WP isa (.block (storeCtr ++ lastG ++ storeY)) s (EPostTo s₀) :=
-  WP.mono (Stitch.finalM_ok hp.toM hf he (hI.toM hp)) fun _ h => h.toEPostTo
+  WP.mono (Stitch.finalM_ok hp.toM hf he hI.toM) fun _ h => h.toEPostTo
 
 theorem encTailTo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) (hm : nb s₀ % 16 = 0) {P : Nat → Nat → Block}
     (hf : FinOk ordE (hk s₀) P) {s : State} (hR : ReadyTo s₀ P s) :
     WP isa (.seq firstTo (.seq (.block [.alu .cmp .r9 (.imm 32)])
       (.seq (.ite .b (.block []) (.loop bodyTo .ae)) (.block (storeCtr ++ lastG ++ storeY))))) s
       (EPostTo s₀) :=
-  WP.mono (Stitch.encTailM_ok hp.toM hp.nb16 hm hf (hR.toM hp)) fun _ h => h.toEPostTo
+  WP.mono (Stitch.encTailM_ok hp.toM hp.nb16 hm hf hR.toM) fun _ h => h.toEPostTo
 
 end VG.Proof.Gcm.X86_64.StitchTo
 

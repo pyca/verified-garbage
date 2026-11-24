@@ -114,7 +114,7 @@ materialize_code streamDecryptStub := withStackScratch 2600 8 (streamDecrypt stu
 materialize_code streamFinishStub := withStackScratch 2596 7 (streamFinish stub ctrStub)
 materialize_code streamVerifyStub := withStackScratch 2600 8 (streamVerify stub ctrStub)
 materialize_code sealStub := withStackScratch 2600 8 («seal» stub ctrStub)
-materialize_code openStub := withStackScratch 2616 9 («open» stub ctrStub)
+materialize_code openStub := withStackScratch 2604 9 («open» stub ctrStub)
 
 theorem init_side : scrubFSide (withStackScratch 2576 2 (init keyStub ctrStub)) [] 4112 = true := by lit_decide
 theorem streamEncrypt_side : scrubFSide (withStackScratch 2600 8 (streamEncrypt stub ctrStub)) [] 4136 = true := by
@@ -127,7 +127,7 @@ theorem streamVerify_side : scrubFSide (withStackScratch 2600 8 (streamVerify st
   lit_decide
 theorem seal_side : scrubFSide (withStackScratch 2600 8 («seal» stub ctrStub)) [] 4136 = true := by
   lit_decide
-theorem open_side : scrubFSide (withStackScratch 2616 9 («open» stub ctrStub)) [] 4152 = true := by
+theorem open_side : scrubFSide (withStackScratch 2604 9 («open» stub ctrStub)) [] 4140 = true := by
   lit_decide
 
 /-- `scrubFSide` of `vg_sm4_gcm_init`, whatever the implementation of the key schedule. -/
@@ -175,10 +175,10 @@ theorem seal_scrub :
     (scrubFSide_of_fill (n := 0) (by fill_calls) seal_side)
 
 theorem open_scrub :
-    scrubFSide (withStackScratch 2616 9 («open» v.callees ci.fn)) [] 4152 = true := by
+    scrubFSide (withStackScratch 2604 9 («open» v.callees ci.fn)) [] 4140 = true := by
   have hg : calleeSide v.gh.fn.code 0 = true := calleeSide_of_eq v.gh.stack v.gh.scrub
   have hc : calleeSide ci.fn.code 1516 = true := calleeSide_of_le ci.stack ci.scrub
-  exact scrubFSide_of_fillB (a := withStackScratch 2616 9 («open» v.callees ctrStub)) (by fillB_calls)
+  exact scrubFSide_of_fillB (a := withStackScratch 2604 9 («open» v.callees ctrStub)) (by fillB_calls)
     (scrubFSide_of_fill (n := 0) (by fill_calls) open_side)
 
 /-! ## The functions as emitted -/
@@ -239,9 +239,9 @@ theorem seal_scrubbed :
 
 /-- `vg_sm4_gcm_open`. -/
 theorem open_scrubbed :
-    VerifiedScrubbed target (Impl.Sm4Gcm.X86.Fn.«open» v.callees ci.fn) (Spec.Sm4.Gcm.openContract X86.abi 4152) 32 :=
+    VerifiedScrubbed target (Impl.Sm4Gcm.X86.Fn.«open» v.callees ci.fn) (Spec.Sm4.Gcm.openContract X86.abi 4140) 32 :=
   verifiedScrubbedAll (api := Spec.Sm4.Gcm.openApi)
-    { code := withStackScratch 2616 9 («open» v.callees ci.fn)
+    { code := withStackScratch 2604 9 («open» v.callees ci.fn)
       verified := open_framed v ci
       spSafe := withStackScratch_spSafe (open_spSafe v ci) }
     (@openOut _) (hs := open_scrub v ci)

@@ -551,6 +551,9 @@ theorem ctr32Wrap_expandSide (v : VecLevel) (c : Ctr32Impl) :
     X86_64.Scrub.calleeSide c.expand.code (c.level.join v).level 0 = true :=
   X86_64.Scrub.calleeSide_mono (X86_64.Scrub.level_join_left c.level v) (Nat.le_refl 0) c.expandSide
 
+theorem ctr32Wrap_toLevel (v : VecLevel) (c : Ctr32Impl) : c.ctrTo.level.level ≤ (c.level.join v).level :=
+  Nat.le_trans c.ctrToLevel (X86_64.Scrub.level_join_left c.level v)
+
 /-- `c`, its `vg_aes_ctr32` clearing the registers before it returns. -/
 def Ctr32Impl.wrapC (v : VecLevel) (c : Ctr32Impl) : Ctr32Impl :=
   { c with
@@ -563,6 +566,7 @@ def Ctr32Impl.wrapC (v : VecLevel) (c : Ctr32Impl) : Ctr32Impl :=
     spSafe := wrap_all v (clrAfter_sp v) c.spSafe
     noStack := by simp only [ctr32Wrap, Code.x86_64Depth, c.noStack]; rfl
     level := c.level.join v
+    ctrToLevel := ctr32Wrap_toLevel v c
     side := ctr32Wrap_side v c
     expandSide := ctr32Wrap_expandSide v c
     free := c.free.map (·.wrapC v)

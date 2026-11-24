@@ -344,7 +344,7 @@ def small (nr : Nat) (dec : Bool) : Prog isa :=
       (.seq (.ite .b (.block [])
           (.seq (.block ((List.range 8).flatMap prepCounter)) (.seq (ksTail nr 512) (.block highs))))
         (.seq (.block (smallSetup ++ StitchAvx.zero))
-          (.seq (.loop (.block ((if dec then StitchZH.remBodyD .rdx else StitchZH.remBody .rdx) ++
+          (.seq (.loop (.block ((if dec then StitchZH.remBodyD .rdx else StitchZH.remBody .rbx) ++
               StitchZH.remNext)) .ne)
             (.block (tailEnd nr (.alu .add .r11 (.imm 384)) ++ finish))))))
 
@@ -358,11 +358,21 @@ def dispatch (su : List Instr) (a b c : Prog isa) : Prog isa :=
 def enc : Prog isa := dispatch setup (encRest 10) (encRest 12) (encRest 14)
 /-- Encryption with a prepared key context: the powers loaded from it. -/
 def encR : Prog isa := dispatch setupR (encRest 10) (encRest 12) (encRest 14)
+/-- `rbx` restored. -/
+def toExit : List Instr := [.mov .rbx (.mem (at_ .r11 816))]
+
+/-- Short prepared encryption with independent cursors. Save the caller's RBX and keep
+the plaintext pointer there while the ordinary short loop advances its public block index. -/
+def encShortBuffers : Prog isa :=
+  .seq (.block [.store (at_ .r11 816) .rbx, .mov .rbx (.reg .r8), .mov .r8 (.reg .r10)])
+    (.seq (dispatch setupR (small 10 false) (small 12 false) (small 14 false))
+      (.block toExit))
+
 /-- Encryption with a prepared key context of 1 to 15 blocks, `small`, which
 `Blocks.fullBody` runs on fewer than 16 blocks only, after `encR`'s code,
 which keeps the addresses of `encR`'s loops wherever it runs from 16 blocks
 on. -/
-def encRS : Prog isa := dispatch setupR (small 10 false) (small 12 false) (small 14 false)
+def encRS : Prog isa := .seq (.block [.mov .r10 (.reg .r8)]) encShortBuffers
 def dec : Prog isa := dispatch setup (decRest 10 false) (decRest 12 false) (decRest 14 false)
 /-- Decryption with a prepared key context: the powers loaded from it. -/
 def decR : Prog isa := dispatch setupR (decRest 10 true) (decRest 12 true) (decRest 14 true)
@@ -384,9 +394,6 @@ ciphertext where it reads it, at `rdx + rbx`.
 def toEntry : List Instr :=
   [.store (at_ .r11 816) .rbx, .mov .rbx (.reg .r8), .alu .sub .rbx (.reg .r10), .mov .r8 (.reg .r10)]
 
-/-- `rbx` restored. -/
-def toExit : List Instr := [.mov .rbx (.mem (at_ .r11 816))]
-
 /-- Out of place, after the setup `su`: `rest nr` for the key size, between
 `toEntry` and `toExit`. -/
 def toWith (su : List Instr) (rest : Nat → Prog isa) : Prog isa :=
@@ -398,6 +405,10 @@ def encToWith (su : List Instr) : Prog isa := toWith su fun nr => encRest nr tru
 def encTo : Prog isa := encToWith setup
 /-- Encryption out of place with a prepared key context. -/
 def encToR : Prog isa := encToWith setupR
+
+/-- Select the prepared short or bulk loop by the public number of blocks. -/
+def encBuffers : Prog isa :=
+  .seq (.block [.alu .cmp .r9 (.imm 16)]) (.ite .b encShortBuffers encToR)
 
 /-- Decryption out of place with a prepared key context, of any number of
 blocks from 16 on: as `decR`, but each batch, and each block after the last

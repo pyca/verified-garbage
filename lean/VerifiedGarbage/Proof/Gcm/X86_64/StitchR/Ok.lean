@@ -367,7 +367,7 @@ theorem midCTo_ok {s₀ : State} (hp : SPreTo CtxMode.prepared s₀) {P : Nat �
     · simp only [T, h2, ↓reduceIte]; exact t g (by omega_using [hg, h2]) k hk l hl
   have hA₁ := (hR.a.pow hp fr g₁ rd₁ wr₁ fun r h7 h8 h9 h10 _ h12 l hl => z₁ r h7 h8 h9 h10 h12 l hl)
   exact WP.mono (StitchZC.midRestM_ok hp.toM (hp.k_c.symm.sub_right (Region.sub_prefix CtxMode.prepared.ge)) hp.s_c
-    hr hT (fun k l => by simp only [T, ↓reduceIte]) hp.nb16 (hR.toM hp) (hA₁.toM hp) hv pm g₁
+    hr hT (fun k l => by simp only [T, ↓reduceIte]) hp.nb16 hR.toM hA₁.toM hv pm g₁
     (fun l hl => z₁ _ (by decide) (by decide) (by decide) (by decide) (by decide) l hl)
     (hCache.keep hh₁ (hA₁.keys hp))) fun _ h => h.toEPostTo
 
@@ -401,8 +401,8 @@ theorem bigSTo_ok {s₀ : State} (hp : SPreTo CtxMode.prepared s₀) {P : Nat �
     · subst h2; simp only [T, ↓reduceIte]; rw [hP k hk l hl]
     · simp only [T, h2, ↓reduceIte]; exact t g (by omega_using [hg, h2]) k hk l hl
   have hA₁ := (hI.a.pow hp fr g₁ rd₁ wr₁ fun r h7 h8 h9 h10 _ h12 l hl => z₁ r h7 h8 h9 h10 h12 l hl)
-  exact WP.mono (StitchZC.bigSelM_ok hp.toM hf hT (fun k l => by simp only [T, ↓reduceIte]) (hI.toM hp)
-    (hA₁.toM hp) hv pm g₁
+  exact WP.mono (StitchZC.bigSelM_ok hp.toM hf hT (fun k l => by simp only [T, ↓reduceIte]) hI.toM
+    hA₁.toM hv pm g₁
     (fun l hl => z₁ _ (by decide) (by decide) (by decide) (by decide) (by decide) l hl)
     (hCache.keep hh₁ (hA₁.keys hp))) fun _ ⟨e, h, hk⟩ => ⟨e, h.toTo, hk⟩
 
@@ -890,6 +890,7 @@ structure EInvRTo (s₀ : State) (P : Nat → Nat → Block) (e : Nat) (s : Stat
   rsi : s.gpr .rsi = s₀.gpr .rsi
   frame : Frame [oR s₀, pR s₀] s₀.mem s.mem
   blocks : ∀ k < 16 * e, blockAt s.mem (oAddr s₀ k) = ctbT s₀ k
+  unread : ∀ k < nb s₀, 16 * e ≤ k → blockAt s.mem (sAddr s₀ k) = pblk s₀ k
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
   rdx : s.gpr .rdx = op s₀ + BitVec.ofNat 64 (256 * e)
@@ -983,6 +984,7 @@ theorem lastGRTo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {P : Nat �
       rsi := by rw [g₅ _ (by decide) (by decide)]; exact hA₄.rsi
       frame := by rw [m₅]; exact hA₄.frame
       blocks := fun k hk => by rw [m₅]; exact hA₄.blocks k hk
+      unread := fun k hk hc => by rw [m₅]; exact hA₄.unread k hk hc
       rd := by rw [rd₅]; exact hA₄.rd
       wr := by rw [wr₅]; exact hA₄.wr
       rdx := by rw [d₅, F.gpr, hd]
@@ -1002,7 +1004,7 @@ theorem lastGRTo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {P : Nat �
         exact congrArg (fun y => ghashFrom (hk s₀) y ((List.range 16).map X)) hI.y
       y1 := by rw [l₅]; exact y41 }
 
-theorem remETo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) (hc : CtxPow s₀ (oR s₀))
+theorem remETo_ok {M : CtxMode} {s₀ : State} {lo : Nat} (hp : SPreTo M s₀ lo) (hc : CtxPow s₀ (oR s₀))
     (hr : RemLaw (hk s₀) (powC s₀)) {P : Nat → Nat → Block} {e : Nat} {s : State} (hI : EInvRTo s₀ P e s) (hlt : nb s₀ - 16 * e < 16) (hne : nb s₀ ≠ 16 * e) :
     WP isa (remE .r8) s (EPostTo s₀) := by
   have hd := hp.toD
@@ -1123,7 +1125,7 @@ theorem remETo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) (hc : CtxPow
       dS := fun j (hj : j < r) i hi => by
         show Region.Disjoint ⟨sAddr s₀ (16 * e) + BitVec.ofNat 64 (16 * j), 16⟩ ⟨oAddr s₀ (16 * e), 16 * i⟩
         rw [Offset.add_add]
-        exact (hp.s_o.sub_left (Offset.sub_base _ (by omega_arith))).sub_right (Offset.sub_base _ (by omega_arith))
+        exact hp.toM.separate (.inr (by omega_arith)) (by omega_arith) (by omega_arith)
       dK := fun j (hj : j < r) => by
         show Region.Disjoint ⟨pp s₀ - BitVec.ofNat 64 512 + BitVec.ofNat 64 (768 + 16 * j), 16⟩
           ⟨oAddr s₀ (16 * e), 16 * r⟩
@@ -1229,11 +1231,7 @@ theorem remETo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) (hc : CtxPow
       rw [Offset.add_add, ← Nat.mul_add,
         toS _ (hp.s_c.sub_left (Offset.sub_base _ (by omega_arith)))
           ((hp.s_p.sub_left (Offset.sub_base _ (by omega_arith))).sub_right (Offset.sub_base _ (by omega_arith)))]
-      exact blockAt_frame hI.frame fun r hr => by
-        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-        rcases hr with rfl | rfl
-        · exact hp.s_o.sub_left (Offset.sub_base _ (by omega_arith))
-        · exact hp.s_p.sub_left (Offset.sub_base _ (by omega_arith))
+      exact hI.unread _ hk (Nat.le_add_right _ _)
   -- The ciphertext of the blocks after the last group.
   obtain hX : ∀ j < r, E.X j = ctbT s₀ (16 * e + j) := fun j hj => by
     show blockAt s₃.mem (sAddr s₀ (16 * e) + BitVec.ofNat 64 (16 * j)) ^^^
@@ -1570,7 +1568,7 @@ theorem _root_.VG.Proof.Gcm.X86_64.Stitch.SPrePrepared.ctxPow {s₀ : State} {lo
   pow := fun k hk => hp.pow k (by omega_using [hk, h8])
 
 /-- The same, out of place. -/
-theorem _root_.VG.Proof.Gcm.X86_64.Stitch.SPreTo.ctxPow {s₀ : State} {np : Nat} {hn : 8 ≤ np ∧ np ≤ 24} (hp : SPreTo (CtxMode.preparedN np hn) s₀)
+theorem _root_.VG.Proof.Gcm.X86_64.Stitch.SPreTo.ctxPow {s₀ : State} {lo np : Nat} {hn : 8 ≤ np ∧ np ≤ 24} (hp : SPreTo (CtxMode.preparedN np hn) s₀ lo)
     (h8 : 8 ≤ np) : CtxPow s₀ (Stitch.oR s₀) where
   k_in := by
     obtain ⟨r, hr, hc⟩ := hp.k_in
@@ -1610,7 +1608,7 @@ theorem setupS_okF {s₀ : State} {lo : Nat} (hp : SPre s₀ lo) :
     WP isa (.block (Impl.Gcm.X86_64.StitchR.setupS ++ ([.alu .add .r9 (.imm 16)] : List Instr))) s₀ fun s =>
       EInvR s₀ (fun k l => s₀.mem.readW (Stitch.pp s₀ + BitVec.ofNat 64 (32 * k + 16 * l)) 128) 0 s ∧
         s.mem = s₀.mem := by
-  simp only [Impl.Gcm.X86_64.StitchR.setupS, List.append_assoc]
+  simp only [Impl.Gcm.X86_64.StitchR.setupS, Impl.Gcm.X86_64.StitchR.setupSWith, List.append_assoc]
   rw [WP.block_append_iff]
   refine WP.mono (Pclmul.const_ok .xmm0 _ s₀ (by decide)) fun s₁ ⟨c₁, o₁⟩ => ?_
   rw [WP.block_append_iff]
@@ -1660,6 +1658,74 @@ theorem setupS_okF {s₀ : State} {lo : Nat} (hp : SPre s₀ lo) :
       m1 := fun l hl => by rw [l6 _ _ hl, lk _ (by decide) (by decide) (by decide) (by decide) l hl]; exact m1 l hl
       y := by rw [l6 _ _ (by decide), y0, g₄ _ (by decide), mm₄]; simp [ghashFrom]
       y1 := by rw [l6 _ _ (by decide)]; exact y1 }
+
+private theorem shortArgs_ok (s : State) :
+    WP isa (.block [.alu .add .r8 (.reg .rdx), .alu .add .r9 (.imm 16)]) s fun t =>
+      t.gpr .r8 = s.gpr .r8 + s.gpr .rdx ∧ t.gpr .r9 = s.gpr .r9 + 16 ∧
+      (∀ r, r ≠ .r8 → r ≠ .r9 → t.gpr r = s.gpr r) ∧
+      (∀ x l, t.lane x l = s.lane x l) ∧ t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr := by
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc, arithFlags,
+    State.setFlags, isa, State.setReg, reduceCtorEq, ↓reduceIte, Option.bind_some, Option.some.injEq, exists_eq_left']
+  exact ⟨trivial,rfl,fun r h8 h9 => by simp [h8,h9],fun _ _ => rfl,trivial,trivial,trivial⟩
+
+/-- The short out-of-place path starts at group zero with independent cursors. -/
+theorem encShortTo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀ 1) (hc : CtxPow s₀ (Stitch.oR s₀))
+    (hlt : nb s₀ < 16) : WP isa Impl.Gcm.X86_64.StitchR.encShortTo s₀ (EPostTo s₀) := by
+  unfold Impl.Gcm.X86_64.StitchR.encShortTo
+  apply WP.seq
+  simp only [Impl.Gcm.X86_64.StitchR.setupSWith, List.append_assoc]
+  rw [WP.block_append_iff]
+  refine WP.mono (Pclmul.const_ok .xmm0 _ s₀ (by decide)) fun s₁ ⟨c₁, o₁⟩ => ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (Pclmul.const_ok .xmm1 _ s₁ (by decide)) fun s₂ ⟨c₂, o₂⟩ => ?_
+  obtain o₁₂ := o₁.trans o₂
+  rw [show ([.vop (.vinserti128 .xmm0 .xmm0 .xmm0 1), .vop (.vinserti128 .xmm1 .xmm1 .xmm1 1)] : List Instr) ++
+      (Impl.Gcm.X86_64.StitchZTo.setupCTo ++ ([.alu .add .r8 (.reg .rdx), .alu .add .r9 (.imm 16)] : List Instr)) =
+    [.vop (.vinserti128 .xmm0 .xmm0 .xmm0 1)] ++ ([.vop (.vinserti128 .xmm1 .xmm1 .xmm1 1)] ++
+      (Impl.Gcm.X86_64.StitchZTo.setupCTo ++ ([.alu .add .r8 (.reg .rdx), .alu .add .r9 (.imm 16)] : List Instr))) from rfl, WP.block_append_iff]
+  refine WP.mono (StitchZP.vinsSelf_ok .xmm0 s₂) fun s₃ ⟨v₃, f₃⟩ => ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (StitchZP.vinsSelf_ok .xmm1 s₃) fun s₄ ⟨v₄, f₄⟩ => ?_
+  obtain m0 : ∀ l < 2, s₄.lane .xmm0 l = revMask := fun l hl => by
+    rw [f₄.lane _ (by decide) l hl, v₃ l hl]; show s₂.xmm .xmm0 = _; rw [o₂.xmm _ (by decide), c₁]; rfl
+  obtain m1 : ∀ l < 2, s₄.lane .xmm1 l = Impl.Gcm.X86_64.Pclmul.poly := fun l hl => by
+    rw [v₄ l hl, f₃.lane _ (by decide) 0 (by decide)]; exact c₂
+  obtain g₄ : ∀ r, r ≠ .rax → s₄.gpr r = s₀.gpr r := fun r hr => by rw [f₄.gpr, f₃.gpr, o₁₂.gpr r hr]
+  obtain mm₄ : s₄.mem = s₀.mem := by rw [f₄.mem, f₃.mem, o₁₂.mem]
+  obtain rd₄ : s₄.rd = s₀.rd := by rw [f₄.rd, f₃.rd, o₁₂.rd]
+  obtain wr₄ : s₄.wr = s₀.wr := by rw [f₄.wr, f₃.wr, o₁₂.wr]
+  rw [WP.block_append_iff]
+  refine WP.mono (StitchZTo.setupCTo_ok s₄ m0 (by rw [wr₄, g₄ _ (by decide)]; exact hp.y_in)
+    (by rw [wr₄, g₄ _ (by decide)]; exact hp.c_in))
+    fun s₅ ⟨y0,y1,c14,c15,_,rax,rdx,r8,gk,lk,m₅,rd₅,wr₅⟩ => ?_
+  refine WP.mono (shortArgs_ok s₅) fun s₆ ⟨a8,a9,g₆,l₆,m₆,rd₆,wr₆⟩ => ?_
+  have gs : ∀ r, r ≠ .rax → r ≠ .rdx → r ≠ .r8 → r ≠ .r9 → r ≠ .r10 → s₆.gpr r = s₀.gpr r :=
+    fun r a d e n t => by rw [g₆ r e n, gk r a d e t, g₄ r a]
+  have hm : s₆.mem = s₀.mem := by rw [m₆,m₅,mm₄]
+  apply remETo_ok hp hc (remLawC s₀) (e := 0) (P := fun k l => s₀.mem.readW
+    (Stitch.pp s₀ + BitVec.ofNat 64 (32*k+16*l)) 128) _ (by simpa using hlt) (by simpa using Nat.ne_of_gt hp.nb16)
+  exact {
+    le := Nat.zero_le _
+    ctr := fun l hl => by rw [l₆, c14 l hl, g₄ _ (by decide), mm₄, Nat.zero_add]
+    msk := fun l hl => by rw [l₆, lk _ (by decide) (by decide) (by decide) (by decide) l hl]; exact m0 l hl
+    inc := fun l hl => by rw [l₆]; exact c15 l hl
+    rdi := gs _ (by decide) (by decide) (by decide) (by decide) (by decide)
+    rsi := gs _ (by decide) (by decide) (by decide) (by decide) (by decide)
+    frame := by rw [hm]; exact Frame.refl _ _
+    blocks := fun k hk => by simp at hk
+    unread := fun _ _ _ => by rw [hm]
+    rd := by rw [rd₆, rd₅, rd₄]
+    wr := by rw [wr₆, wr₅, wr₄]
+    rdx := by rw [g₆ _ (by decide) (by decide), rdx, g₄ _ (by decide)]; simp [Stitch.op]
+    r8 := by rw [a8,r8,rdx,g₄ _ (by decide)]; simp [Stitch.sp]; bv_omega
+    r9 := by rw [a9,gk _ (by decide) (by decide) (by decide) (by decide), g₄ _ (by decide)]; exact r9_add16
+    rax := by rw [g₆ _ (by decide) (by decide), rax, g₄ _ (by decide)]
+    gpr := gs
+    pw := fun k hk l hl => by rw [hm]
+    m1 := fun l hl => by rw [l₆, lk _ (by decide) (by decide) (by decide) (by decide) l hl]; exact m1 l hl
+    y := by rw [l₆,y0,g₄ _ (by decide),mm₄]; simp [ghashFrom]
+    y1 := by rw [l₆]; exact y1 }
 
 theorem setupS_ok {s₀ : State} {lo : Nat} (hp : SPre s₀ lo) :
     WP isa (.block (Impl.Gcm.X86_64.StitchR.setupS ++ ([.alu .add .r9 (.imm 16)] : List Instr))) s₀
@@ -1717,6 +1783,27 @@ theorem stitchTo_okN (np : Nat) (hn : 8 ≤ np ∧ np ≤ 24 := by decide) (h8 :
     StitchToOkM (CtxMode.preparedN np hn) Impl.Gcm.X86_64.StitchR.encToR 1 := fun _ hp _ =>
   WP.seq (WP.mono (setupTo_ok hp h8) fun _ ⟨_, hR, hpw⟩ =>
     encTailRTo_ok hp (hp.ctxPow h8) (finE hpw) (remLawC _) hR)
+
+/-- Select the fused tail below sixteen blocks and the interleaved loop above it. -/
+theorem encToFromTwo_ok (np : Nat) (hn : 8 ≤ np ∧ np ≤ 24) {s : State}
+    (hp : SPreTo (CtxMode.preparedN np hn) s 2) :
+    WP isa Impl.Gcm.X86_64.StitchR.encToFromTwo s (EPostTo s) := by
+  refine WP.seq (WP.mono (cmp9_ok s) fun t ⟨cf,g,_,m,rd,wr⟩ => ?_)
+  have pre {lo : Nat} (h : lo ≤ nb s) : SPreTo (CtxMode.preparedN np hn) t lo := by
+    cases s; cases t
+    simp only at g m rd wr
+    subst g m rd wr
+    exact { hp with nb16 := h }
+  have post {u : State} (hu : EPostTo t u) : EPostTo s u := by
+    cases s; cases t
+    simp only at g m rd wr
+    subst g m rd wr
+    exact { hu with }
+  refine WP.ite (decide (nb s < 16)) (by simp only [eval, cf]) (fun h => ?_) (fun h => ?_)
+  · have ht := pre (Nat.le_trans (by decide : 1 ≤ 2) hp.nb16)
+    exact WP.mono (encShortTo_ok ht (ht.ctxPow hn.1) (by simpa [nb,g] using h)) fun _ => post
+  · have ht := pre (by simpa using h : 16 ≤ nb s)
+    exact WP.mono (stitchTo_okN np hn hn.1 t ht (Nat.mod_one _)) fun _ => post
 
 /-- The setup's powers give the products of an encryption body. -/
 theorem stitchTo_ok : StitchToOkM CtxMode.prepared Impl.Gcm.X86_64.StitchR.encToR 1 := stitchTo_okN 24

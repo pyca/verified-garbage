@@ -60,6 +60,7 @@ structure AInvTo (s₀ : State) (c : Nat) (s : State) : Prop where
   r8 : s.gpr .r8 = sp s₀ - op s₀
   frame : Frame [oR s₀, pR s₀] s₀.mem s.mem
   blocks : ∀ k < c, blockAt s.mem (oAddr s₀ k) = ctbT s₀ k
+  unread : ∀ k < nb s₀, c ≤ k → blockAt s.mem (sAddr s₀ k) = pblk s₀ k
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
 
@@ -69,7 +70,8 @@ theorem AInvTo.zframe {s₀ : State} {c : Nat} {s s' : State} {rs : List XReg} (
     fun l hl => by rw [f.zlane _ h0 l hl]; exact h.msk l hl,
     fun l hl => by rw [f.zlane _ h15 l hl]; exact h.inc l hl, by rw [f.gpr]; exact h.rdi,
     by rw [f.gpr]; exact h.rsi, by rw [f.gpr]; exact h.r10, by rw [f.gpr]; exact h.r8, by rw [f.mem]; exact h.frame,
-    fun k hk => by rw [f.mem]; exact h.blocks k hk, by rw [f.rd]; exact h.rd, by rw [f.wr]; exact h.wr⟩
+    fun k hk => by rw [f.mem]; exact h.blocks k hk,
+    fun k hk hc => by rw [f.mem]; exact h.unread k hk hc, by rw [f.rd]; exact h.rd, by rw [f.wr]; exact h.wr⟩
 
 /-- The encryption state kept by changes of `rdx` and `r9` alone. -/
 theorem AInvTo.gpr2 {s₀ : State} {c : Nat} {s s' : State} (h : AInvTo s₀ c s)
@@ -79,7 +81,8 @@ theorem AInvTo.gpr2 {s₀ : State} {c : Nat} {s s' : State} (h : AInvTo s₀ c s
     fun l hl' => by rw [hl]; exact h.inc l hl',
     by rw [hg _ (by decide) (by decide)]; exact h.rdi, by rw [hg _ (by decide) (by decide)]; exact h.rsi,
     by rw [hg _ (by decide) (by decide)]; exact h.r10, by rw [hg _ (by decide) (by decide)]; exact h.r8,
-    by rw [hm]; exact h.frame, fun k hk => by rw [hm]; exact h.blocks k hk, by rw [hrd]; exact h.rd,
+    by rw [hm]; exact h.frame, fun k hk => by rw [hm]; exact h.blocks k hk,
+    fun k hk hc => by rw [hm]; exact h.unread k hk hc, by rw [hrd]; exact h.rd,
     by rw [hwr]; exact h.wr⟩
 
 theorem AInvTo.keys {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {c : Nat} {s : State} (hI : AInvTo s₀ c s) :
@@ -89,26 +92,16 @@ theorem AInvTo.keys {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {c : Nat} 
       rw [hI.rd, hI.wr, hI.rdi]
       exact Stitch.in_sub_int hp.toD.k_in (by rcases hp.rounds with h | h | h <;> omega_using [hj, h])⟩
 
-/-- The plaintext is kept. -/
-theorem AInvTo.src {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {c : Nat} {s : State} (hI : AInvTo s₀ c s)
-    {k : Nat} (hk : k < nb s₀) : blockAt s.mem (sAddr s₀ k) = pblk s₀ k := by
-  have hw := hp.wrap_s
-  exact blockAt_frame hI.frame fun r hr => by
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl
-    · exact hp.s_o.sub_left (Offset.sub_base _ (by omega_using [hk]))
-    · exact hp.s_p.sub_left (Offset.sub_base _ (by omega_using [hk]))
-
 theorem aregs_ok : aregs.Nodup ∧ .xmm13 ∉ aregs ∧ ∀ r ∈ aregs, r ≠ .xmm14 ∧ r ≠ .xmm0 ∧ r ≠ .xmm15 := by decide
 
 /-- The same, as `StitchZ.AInvM` with the output at `r10`. -/
-theorem AInvTo.toM {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {c : Nat} {s : State} (h : AInvTo s₀ c s) :
+theorem AInvTo.toM {s₀ : State} {c : Nat} {s : State} (h : AInvTo s₀ c s) :
     StitchZ.AInvM true s₀ c s :=
-  ⟨h.le, h.ctr, h.msk, h.inc, h.rdi, h.rsi, h.r10, h.frame, h.blocks, fun _ hk _ => h.src hp hk, h.rd, h.wr⟩
+  ⟨h.le, h.ctr, h.msk, h.inc, h.rdi, h.rsi, h.r10, h.frame, h.blocks, h.unread, h.rd, h.wr⟩
 
 theorem _root_.VG.Proof.Gcm.X86_64.StitchZ.AInvM.toTo {s₀ : State} {c : Nat} {s s' : State}
     (h : StitchZ.AInvM true s₀ c s) (hg : s.gpr = s'.gpr) (hr8 : s'.gpr .r8 = sp s₀ - op s₀) : AInvTo s₀ c s :=
-  ⟨h.le, h.ctr, h.msk, h.inc, h.rdi, h.rsi, h.r10, by rw [hg]; exact hr8, h.frame, h.out, h.rd, h.wr⟩
+  ⟨h.le, h.ctr, h.msk, h.inc, h.rdi, h.rsi, h.r10, by rw [hg]; exact hr8, h.frame, h.out, h.src, h.rd, h.wr⟩
 
 theorem batchTo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) (g : Nat → List Instr) (G : List XReg)
     (hG : ∀ r ∈ G, r ∉ aregs ∧ r ≠ .xmm14 ∧ r ≠ .xmm0 ∧ r ≠ .xmm15)
@@ -125,7 +118,7 @@ theorem batchTo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) (g : Nat �
     WP isa (batchTo j g) s fun s' => AInvTo s₀ (c + 16) s' ∧ Q 10 s' ∧ s'.gpr = s.gpr ∧
       (∀ r, r ≠ .xmm13 → r ≠ .xmm14 → r ∉ aregs → r ∉ G → ∀ l < 4, s'.zlane r l = s.zlane r l) ∧
       Frame [⟨oAddr s₀ c, 256⟩] s.mem s'.mem :=
-  WP.mono (StitchZ.batchM_ok (ix := true) (ld := true) hp.toM rfl (fun _ => rfl) g G hG Q hg hq hqx hc (hI.toM hp)
+  WP.mono (StitchZ.batchM_ok (ix := true) (ld := true) hp.toM rfl (fun _ => rfl) g G hG Q hg hq hqx hc hI.toM
     (fun _ => hI.r8) hrdx hQ) fun _ ⟨hA, h⟩ => ⟨hA.toTo h.2.1 hI.r8, h⟩
 
 end VG.Proof.Gcm.X86_64.StitchZTo
@@ -226,6 +219,7 @@ structure Ready2To (s₀ : State) (P : Nat → Nat → Block) (s : State) : Prop
   rax : s.gpr .rax = cp s₀
   gpr : ∀ r, r ≠ .rax → r ≠ .rdx → r ≠ .r8 → r ≠ .r10 → s.gpr r = s₀.gpr r
   frame : Frame [pR s₀] s₀.mem s.mem
+  src : ∀ k < nb s₀, blockAt s.mem (sAddr s₀ k) = pblk s₀ k
   pw : ∀ k < 8, ∀ l < 2, s.mem.readW (pp s₀ + BitVec.ofNat 64 (32 * k + 16 * l)) 128 = P k l
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
@@ -260,7 +254,9 @@ theorem setupTTo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {s₁ : St
     by rw [r10, gs _ (by decide), gs _ (by decide)],
     by rw [r8, gs _ (by decide), gs _ (by decide)],
     by rw [rdx, gs _ (by decide)], by rw [rax, gs _ (by decide)],
-    fun r h1 h2 h3 h4 => by rw [gk r h1 h2 h3 h4, gs r h1], by rw [m₃]; exact fr, fun k hk l hl => ?_,
+    fun r h1 h2 h3 h4 => by rw [gk r h1 h2 h3 h4, gs r h1], by rw [m₃]; exact fr,
+    fun k hk => by rw [m₃]; exact hp₂ (hp.s_p.sub_left (Offset.sub_base _ (by omega_using [hk]))),
+    fun k hk l hl => ?_,
     by rw [rd₃, rd₂, rd₁], by rw [wr₃, wr₂, wr₁]⟩
   · rw [c14 l hl, gs _ (by decide), hp₂ hp.p_c.symm]
   · rw [lk _ (by decide) (by decide) (by decide) (by decide) l hl, l₂]; exact l0 l hl
@@ -326,7 +322,8 @@ theorem setupZTo_ok {s₀ : State} {P : Nat → Nat → Block} {s : State} (hR :
   · refine ⟨⟨Nat.zero_le _, fun l hl => by rw [c14 l hl, Nat.zero_add], m0, i15, by rw [f.gpr]; exact hR.rdi,
       by rw [f.gpr]; exact hR.rsi, by rw [f.gpr]; exact hR.r10, by rw [f.gpr]; exact hR.r8,
       by rw [f.mem]; exact hR.frame.mono fun r hr => by simp at hr ⊢; exact Or.inr hr,
-      fun k hk => absurd hk (Nat.not_lt_zero _), by rw [f.rd]; exact hR.rd, by rw [f.wr]; exact hR.wr⟩,
+      fun k hk => absurd hk (Nat.not_lt_zero _), fun k hk _ => by rw [f.mem]; exact hR.src k hk,
+      by rw [f.rd]; exact hR.rd, by rw [f.wr]; exact hR.wr⟩,
       by rw [f.gpr]; exact hR.rdx, by rw [f.gpr]; exact hR.rax,
       fun r h1 h2 h3 h4 => by rw [f.gpr]; exact hR.gpr r h1 h2 h3 h4,
       fun k hk l hl => ?_, p1, by rw [y0]; exact hR.y, y1⟩
@@ -349,9 +346,9 @@ structure EInvTo (s₀ : State) (P : Nat → Nat → Block) (e : Nat) (s : State
 
 /-! ## As the in-place loop's, out of place -/
 
-theorem EInvTo.toM {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {P : Nat → Nat → Block} {e : Nat} {s : State}
+theorem EInvTo.toM {s₀ : State} {P : Nat → Nat → Block} {e : Nat} {s : State}
     (h : EInvTo s₀ P e s) : StitchZ.EInvM true s₀ P e s :=
-  ⟨h.a.toM hp, h.one, h.rdx, h.r9, h.rax, fun _ => h.a.r8, fun r h1 h2 h3 h4 h5 => h.gpr r h1 h2 (h3 rfl) h4 h5,
+  ⟨h.a.toM, h.one, h.rdx, h.r9, h.rax, fun _ => h.a.r8, fun r h1 h2 h3 h4 h5 => h.gpr r h1 h2 (h3 rfl) h4 h5,
     h.pw, h.m1, h.y, h.y1⟩
 
 theorem _root_.VG.Proof.Gcm.X86_64.StitchZ.EInvM.toTo {s₀ : State} {P : Nat → Nat → Block} {e : Nat} {s : State}
@@ -359,19 +356,19 @@ theorem _root_.VG.Proof.Gcm.X86_64.StitchZ.EInvM.toTo {s₀ : State} {P : Nat �
   ⟨h.a.toTo rfl (h.r8 rfl), h.one, h.rdx, h.r9, h.rax, fun r h1 h2 h3 h4 h5 => h.gpr r h1 h2 (fun _ => h3) h4 h5,
     h.pw, h.m1, h.y, h.y1⟩
 
-theorem ReadyTo.toM {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {P : Nat → Nat → Block} {s : State}
+theorem ReadyTo.toM {s₀ : State} {P : Nat → Nat → Block} {s : State}
     (h : ReadyTo s₀ P s) : StitchZ.ReadyM true s₀ P s :=
-  ⟨h.a.toM hp, h.rdx, fun _ => h.a.r8, h.rax, fun r h1 h2 h3 h4 => h.gpr r h1 h2 (h3 rfl) h4, h.pw, h.m1, h.y, h.y1⟩
+  ⟨h.a.toM, h.rdx, fun _ => h.a.r8, h.rax, fun r h1 h2 h3 h4 => h.gpr r h1 h2 (h3 rfl) h4, h.pw, h.m1, h.y, h.y1⟩
 
 theorem bodyTo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {P : Nat → Nat → Block} (hf : FinOk (hk s₀) P)
     {e : Nat} (he : 16 * (e + 1) ≤ nb s₀) {s : State} (hI : EInvTo s₀ P e s) :
     WP isa bodyTo s fun s' => EInvTo s₀ P (e + 1) s' ∧ s'.cf = some (decide (nb s₀ - 16 * e < 32)) :=
-  WP.mono (StitchZ.bodyM_ok hp.toM hf he (hI.toM hp)) fun _ ⟨h, hc⟩ => ⟨h.toTo, hc⟩
+  WP.mono (StitchZ.bodyM_ok hp.toM hf he hI.toM) fun _ ⟨h, hc⟩ => ⟨h.toTo, hc⟩
 
 /-- The first group, with nothing between its rounds. -/
 theorem firstTo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {P : Nat → Nat → Block} {s : State}
     (hR : ReadyTo s₀ P s) : WP isa firstTo s (EInvTo s₀ P 1) :=
-  WP.mono (StitchZ.firstM_ok hp.toM hp.nb16 (hR.toM hp)) fun _ h => h.toTo
+  WP.mono (StitchZ.firstM_ok hp.toM hp.nb16 hR.toM) fun _ h => h.toTo
 
 /-- `cmp r9, 32`. -/
 theorem cmpE_ok {s₀ : State} {P : Nat → Nat → Block} {e : Nat} {s : State} (hI : EInvTo s₀ P e s) :
@@ -407,6 +404,6 @@ theorem _root_.VG.Proof.Gcm.X86_64.Stitch.EPostM.toEPostTo {s₀ s : State} (h :
 theorem finalTo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {P : Nat → Nat → Block} (hf : FinOk (hk s₀) P)
     {e : Nat} (he : nb s₀ = 16 * e) {s : State} (hI : EInvTo s₀ P e s) :
     WP isa (.block (storeCtr ++ lastG ++ storeY)) s (EPostTo s₀) :=
-  WP.mono (StitchZ.finalM_ok hp.toM hf he (hI.toM hp)) fun _ h => h.toEPostTo
+  WP.mono (StitchZ.finalM_ok hp.toM hf he hI.toM) fun _ h => h.toEPostTo
 
 end VG.Proof.Gcm.X86_64.StitchZTo

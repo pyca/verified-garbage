@@ -392,14 +392,15 @@ omit hp in
 theorem h_sub : Region.Sub ⟨K s + BitVec.ofNat 64 240, 16⟩ (kR M s) := Offset.sub_base _ (by have := M.ge; omega_using [this])
 
 /-- The encryption of the blocks left, from `Mid`. -/
-theorem encCalls_ok (v : GcmImpl) {q : Nat} {st₁ : State}
+theorem encCalls_with (v : GcmImpl) (leaf : Prog isa)
+    (ok : ∀ {t K C D W R n}, CtrCall t K C D W R n → WP isa leaf t (CtrPost t K C D W R n)) {q : Nat} {st₁ : State}
     (M : Mid s q q (ctr32 (ciph s) (cb s) (blocksAt s.mem (D s) q)) st₁) (hlt : q < n s) :
-    WP isa (.seq (ctrCall v.callees.ctr) (ghCall v.callees.gh)) st₁ (EncDone s) := by
+    WP isa (.seq (.seq (.block ctrArgs) leaf) (ghCall v.callees.gh)) st₁ (EncDone s) := by
   have hq := M.q_le
   have hw := hp.w_d
   have h16 := n16_lt hp
   refine WP.seq (WP.seq (WP.mono (ctrArgs_ok hp (M.ready hp) hlt) fun st₂ ⟨hc, R₂, sv₂, m₂⟩ =>
-    WP.mono (ctr_call v.ctr hc) fun st₃ g => ?_))
+    WP.mono (ok hc) fun st₃ g => ?_))
   have f₃ := g.frame
   rw [R₂.rsp] at f₃
   have R₃ : Ready s q st₃ := R₂.frame f₃ (fun r hr => (apart_kR' hp hq).ctr r hr)
@@ -445,6 +446,11 @@ theorem encCalls_ok (v : GcmImpl) {q : Nat} {st₁ : State}
     rw [blockAt_frame f₅ (c_gh hp), m₄, g.ctr, hC₂, ← Proof.Gcm.repeat_add, Nat.sub_add_cancel hq]
   · show blockAt st₅.mem (Y s) = ghashFrom (hk s) (y₀ s) (ctr32 (ciph s) (cb s) (blocksAt s.mem (D s) (n s)))
     rw [g'.out, hH, hY, hx, ← Proof.Gcm.ghashFrom_append, hall]
+
+theorem encCalls_ok (v : GcmImpl) {q : Nat} {st₁ : State}
+    (M : Mid s q q (ctr32 (ciph s) (cb s) (blocksAt s.mem (D s) q)) st₁) (hlt : q < n s) :
+    WP isa (.seq (ctrCall v.callees.ctr) (ghCall v.callees.gh)) st₁ (EncDone s) :=
+  encCalls_with hp v _ (ctr_call v.ctr) M hlt
 
 /-- The decryption of the blocks left, from `Mid`: hashed, then decrypted. -/
 theorem decCalls_ok (v : GcmImpl) {q : Nat} {st₁ : State}

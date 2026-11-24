@@ -1047,7 +1047,7 @@ theorem Verified.scrubAll {A : Abi isa} {sig : Sig} {pre : Curry (sig.words A.pt
       rcases this with hr | rfl
       · rw [ha₁.1 r hr, ha₂.1 r hr]; exact hg r h2
       · rw [ha₁.2.2, ha₂.2.2]; exact hg _ (by decide)
-    refine ⟨show u₁.rd = u₂.rd by simp only [rd₁, rd₂, hrd], show u₁.wr = u₂.wr by simp only [wr₁, wr₂, hwr], fun r hr => ?_, ?_, ?_, fun x hx => ?_⟩
+    refine .inl ⟨show u₁.rd = u₂.rd by simp only [rd₁, rd₂, hrd], show u₁.wr = u₂.wr by simp only [wr₁, wr₂, hwr], fun r hr => ?_, ?_, ?_, fun x hx => ?_⟩
     · show finG _ u₁.gpr r = finG _ u₂.gpr r
       simp only [finG, hr, ite_false]
       split

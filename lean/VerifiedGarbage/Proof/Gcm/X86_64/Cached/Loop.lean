@@ -157,10 +157,8 @@ private theorem batchAt_ok {ix st ld : Bool} {s₀ : State} (hp : Stitch.LPre ix
       (fun a b hab hb l hl => by
         rw [i₂, o₂, e16, show 64 * (j + a) = 64 * j + 16 * (4 * a) by omega_using [], addr, oaddr]
         simp only [aregs, List.length_cons, List.length_nil] at hb
-        cases ix
-        · exact Offset.disjoint _ (Or.inr (by omega_using [hab])) (by omega_using [hc, hwd, hb, hl]) (by omega_using [hc, hwd, hab, hb])
-        · exact ((hp.d_w rfl).sub_left (Offset.sub_base _ (by omega_using [hc, hb, hl]))).sub_right
-            (Offset.sub_base _ (by omega_using [hc, hab, hb])))
+        exact hp.separate (.inr (by omega_using [hab])) (by omega_using [hc, hb, hl])
+          (by omega_using [hc, hab, hb]))
       offsetBound)
     fun s₃ ⟨b₃, fr₃, g₃, rd₃, wr₃, x₃, _⟩ => ?_
   have hm₂ : s₂.mem = s.mem := by rw [f₂.mem, f₁.mem]
@@ -182,10 +180,7 @@ private theorem batchAt_ok {ix st ld : Bool} {s₀ : State} (hp : Stitch.LPre ix
       Region.Disjoint ⟨bAddr s₀ k, 16⟩ r := fun k hk hck r hr => by
     simp only [List.mem_singleton] at hr
     subst hr
-    cases ix
-    · intro a h₁ h₂
-      exact VG.Proof.Aes.X86_64.AesNi.run_sep hwd hk hc (by omega_using [hck]) h₁ h₂
-    · exact ((hp.d_w rfl).sub_left (Offset.sub_base _ (by omega_using [hk]))).sub_right (Offset.sub_base _ (by omega_using [hc]))
+    exact hp.separate (.inr (by omega_using [hck])) (by omega_using [hk]) (by omega_using [hc])
   refine ⟨⟨by omega_using [hc], fun l hl => ?_, fun l hl => ?_, fun l hl => ?_, by rw [gs, hI.rdi],
     by rw [gs, hI.rsi], by rw [gs, hI.r10], ?_, ?_, ?_,
     by rw [rd₃, f₂.rd, f₁.rd, hI.rd], by rw [wr₃, f₂.wr, f₁.wr, hI.wr]⟩,

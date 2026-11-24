@@ -49,7 +49,7 @@ structure EP where
   sl : Nat
   nB : List Byte
   eB : List Byte
-  /-- `vg_rsa_pkcs1_decrypt_precomputed`, given the key's precomputed values
+  /-- `vg_rsa_pkcs1_decrypt_precomputed_body`, given the key's precomputed values
   `pre` (`prl` words), of which it may leak `preL`. -/
   pc : Bool
   pre : BitVec 32
@@ -142,7 +142,7 @@ abbrev stackBytes : Nat := 56 + frameBytes + 3488
 abbrev spec : Contract isa := Proof.RsaPkcs1Enc.decryptContract abi stackBytes
 
 /-- The public parameters of an entry state (with `pc`, of
-`vg_rsa_pkcs1_decrypt_precomputed`). -/
+`vg_rsa_pkcs1_decrypt_precomputed_body`). -/
 def ep (s : State) (pc : Bool := false) : EP where
   B := s.sp - BitVec.ofNat 32 56 - BitVec.ofNat 32 frameBytes
   out := s.gpr .r0

@@ -342,7 +342,7 @@ def restore : List Instr := mvSlot .r11 oI oOut ++ mvSlot .r11 oNB oML
 def bodyP (privN : String) (priv : Prog isa) : Prog isa :=
   .seq (.block (setup ++ stash)) (.seq (.seq (.call privN priv) (.block restore)) (afterPriv H))
 
-/-- `vg_rsa_pkcs1_decrypt_precomputed`, calling
+/-- `vg_rsa_pkcs1_decrypt_precomputed_body`, calling
 `vg_rsa_private_checked_precomputed` (`priv`) by its name. -/
 def codeP (privN : String) (priv : Prog isa) : Prog isa :=
   .frame (.alloc frameBytes) (bodyP H privN priv) (.free frameBytes)

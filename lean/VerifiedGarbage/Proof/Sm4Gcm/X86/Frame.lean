@@ -2337,18 +2337,18 @@ space: its nine argument slots at `0x8004`. -/
 def openFrameSat : State :=
   { openSat with wr := [⟨0x3000, 0⟩, ⟨0x8004, 36⟩] }
 
-theorem openFrameSat_pre : ∃ s, (Spec.Sm4.Gcm.openContract X86.abi 4152).pre s := by
+theorem openFrameSat_pre : ∃ s, (Spec.Sm4.Gcm.openContract X86.abi 4140).pre s := by
   implies_sat [Spec.Sm4.Gcm.openContract, Spec.Sm4.Gcm.openSig, Spec.Sm4.Gcm.openPost,
     Spec.Sm4.Gcm.openLeak, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     [openFrameSat, openSat, X86.arg, X86.argAddr, Mem.readW, Mem.read] using openFrameSat
 
 theorem open_framed :
-    Verified X86.target (Impl.StackScratch.X86.withStackScratch 2616 9 («open» vg.callees ci.fn))
-      (Spec.Sm4.Gcm.openContract X86.abi 4152) :=
+    Verified X86.target (Impl.StackScratch.X86.withStackScratch 2604 9 («open» vg.callees ci.fn))
+      (Spec.Sm4.Gcm.openContract X86.abi 4140) :=
   X86.Verified.stackScratch (sig := Spec.Sm4.Gcm.openSig) (nm := "work") (e := .u64)
     (n := 320) (post := Spec.Sm4.Gcm.openPost X86.abi.ptrBits) (wa := true) (stack := 1536)
     (leak := some (Spec.Sm4.Gcm.openLeak X86.abi.ptrBits))
-    (bytes := 2616) (open_verified (vg := vg) (ci := ci)) (by decide) (open_noEsp vg ci)
+    (bytes := 2604) (open_verified (vg := vg) (ci := ci)) (by decide) (open_noEsp vg ci)
     (open_stackUse vg ci) (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (openPost_local _) (fun vs m m₁ m₂ r hl _ => openPostOut_local _ vs m m₁ m₂ r hl)
     openFrameSat_pre (hleak := openLeak_local _)
 

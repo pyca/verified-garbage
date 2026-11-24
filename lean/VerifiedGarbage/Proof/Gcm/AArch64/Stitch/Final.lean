@@ -138,15 +138,6 @@ theorem finish_ok {s₀ : State} {to : Bool} (hp : KPreM s₀ to) {hb : Nat → 
 
 /-! ## The loops -/
 
-theorem enc_ok {s₀ : State} (hp : KPre s₀) (gh : Gh8Ok) : WP isa enc s₀ (EPost s₀) := by
-  have hm := hp.toM
-  unfold enc
-  refine WP.seq (WP.mono (setup_ok hm (blockC s₀)) fun s₁ hI₁ => ?_)
-  refine WP.seq (WP.mono (byRounds_ok hm (f := encLoop) hI₁ fun s hI => encLoop_ok hm gh hI) fun s₂ hI₂ => ?_)
-  refine WP.mono (finish_ok hm hI₂) fun s' h =>
-    ⟨ctr32_of_dataInvM (O := dp s₀) h.data, h.ctr, ?_, h.frame, h.gpr, h.sp, h.rd, h.wr⟩
-  rw [h.y, ctr32_of_dataInvM (O := dp s₀) h.data, ctr32_eq_map]
-
 /-- The decryption to `op s₀ to`: over the text, or out of place. -/
 theorem decM_ok {s₀ : State} {to : Bool} (hp : KPreM s₀ to) (gh : Gh8Ok) :
     WP isa (dec to) s₀ (DPostT s₀ to) := by

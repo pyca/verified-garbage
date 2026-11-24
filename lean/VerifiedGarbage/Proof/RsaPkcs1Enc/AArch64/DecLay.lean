@@ -58,10 +58,10 @@ structure Lay where
   Q : Addr
   P : Nat
   /-- Further regions the function may read: none for
-  `vg_rsa_pkcs1_decrypt`; for `vg_rsa_pkcs1_decrypt_precomputed`, its last
+  `vg_rsa_pkcs1_decrypt`; for `vg_rsa_pkcs1_decrypt_precomputed_body`, its last
   stack arguments and `pre`. -/
   X : List Region
-  /-- `vg_rsa_pkcs1_decrypt_precomputed`'s `pre` and `pre_len`, our stack
+  /-- `vg_rsa_pkcs1_decrypt_precomputed_body`'s `pre` and `pre_len`, our stack
   arguments 15 and 16. -/
   pre : Addr
   prl : BitVec 64

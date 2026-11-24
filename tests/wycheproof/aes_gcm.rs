@@ -110,6 +110,11 @@ fn aes_gcm() {
                     let mut out = vec![0; c.msg.0.len()];
                     let sealed = key.encrypt(&c.iv.0, &c.aad.0, pieces, &mut out);
                     assert_eq!((out, sealed), (c.ct.0.clone(), Ok(tag)), "tcId {id}");
+                    let mut storage = vec![core::mem::MaybeUninit::uninit(); c.msg.0.len()];
+                    let (ciphertext, tag_out) = key
+                        .encrypt_uninit(&c.iv.0, &c.aad.0, pieces, &mut storage)
+                        .unwrap();
+                    assert_eq!((&ciphertext[..], tag_out), (&c.ct.0[..], tag), "tcId {id}");
                 }
                 assert_eq!(stream_decrypt(&key, c), Ok(c.msg.0.clone()), "tcId {id}");
                 for (so, doff) in OFFSETS {

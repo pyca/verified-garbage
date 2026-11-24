@@ -5,16 +5,16 @@
 // gives.
 
 vg_camellia_ofb_aesni:
-	lea esp, [esp-572]
-	mov eax, DWORD PTR [esp+576]
-	mov DWORD PTR [esp+4], eax
+	lea esp, [esp-576]
 	mov eax, DWORD PTR [esp+580]
-	mov DWORD PTR [esp+8], eax
+	mov DWORD PTR [esp+4], eax
 	mov eax, DWORD PTR [esp+584]
-	mov DWORD PTR [esp+12], eax
+	mov DWORD PTR [esp+8], eax
 	mov eax, DWORD PTR [esp+588]
-	mov DWORD PTR [esp+16], eax
+	mov DWORD PTR [esp+12], eax
 	mov eax, DWORD PTR [esp+592]
+	mov DWORD PTR [esp+16], eax
+	mov eax, DWORD PTR [esp+596]
 	mov DWORD PTR [esp+20], eax
 	mov eax, esp
 	add eax, 28
@@ -691,8 +691,8 @@ vg_camellia_ofb_aesni:
 	movdqu XMMWORD PTR [esp+524], xmm0
 	movdqu XMMWORD PTR [esp+540], xmm0
 	movdqu XMMWORD PTR [esp+556], xmm0
-	lea esp, [esp+572]
-	lea esp, [esp-576]
+	lea esp, [esp+576]
+	lea esp, [esp-580]
 	mov ecx, 0
 	mov DWORD PTR [esp+4], ecx
 	mov DWORD PTR [esp+8], ecx
@@ -701,7 +701,8 @@ vg_camellia_ofb_aesni:
 	mov DWORD PTR [esp+20], ecx
 	mov DWORD PTR [esp+24], ecx
 	mov DWORD PTR [esp+28], ecx
-	lea esp, [esp+576]
+	mov DWORD PTR [esp+576], ecx
+	lea esp, [esp+580]
 	mov eax, 0
 	mov edx, 0
 	xor ecx, ecx
@@ -1031,16 +1032,16 @@ vg_camellia_ofb:
 	.p2align 6
 
 vg_camellia_ofb_final_aesni:
-	lea esp, [esp-572]
-	mov eax, DWORD PTR [esp+576]
-	mov DWORD PTR [esp+4], eax
+	lea esp, [esp-576]
 	mov eax, DWORD PTR [esp+580]
-	mov DWORD PTR [esp+8], eax
+	mov DWORD PTR [esp+4], eax
 	mov eax, DWORD PTR [esp+584]
-	mov DWORD PTR [esp+12], eax
+	mov DWORD PTR [esp+8], eax
 	mov eax, DWORD PTR [esp+588]
-	mov DWORD PTR [esp+16], eax
+	mov DWORD PTR [esp+12], eax
 	mov eax, DWORD PTR [esp+592]
+	mov DWORD PTR [esp+16], eax
+	mov eax, DWORD PTR [esp+596]
 	mov DWORD PTR [esp+20], eax
 	mov eax, esp
 	add eax, 28
@@ -1743,8 +1744,8 @@ vg_camellia_ofb_final_aesni:
 	movdqu XMMWORD PTR [esp+524], xmm0
 	movdqu XMMWORD PTR [esp+540], xmm0
 	movdqu XMMWORD PTR [esp+556], xmm0
-	lea esp, [esp+572]
-	lea esp, [esp-576]
+	lea esp, [esp+576]
+	lea esp, [esp-580]
 	mov ecx, 0
 	mov DWORD PTR [esp+4], ecx
 	mov DWORD PTR [esp+8], ecx
@@ -1753,7 +1754,8 @@ vg_camellia_ofb_final_aesni:
 	mov DWORD PTR [esp+20], ecx
 	mov DWORD PTR [esp+24], ecx
 	mov DWORD PTR [esp+28], ecx
-	lea esp, [esp+576]
+	mov DWORD PTR [esp+576], ecx
+	lea esp, [esp+580]
 	mov eax, 0
 	mov edx, 0
 	xor ecx, ecx

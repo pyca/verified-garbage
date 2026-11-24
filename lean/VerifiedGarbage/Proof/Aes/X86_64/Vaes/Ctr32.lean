@@ -360,12 +360,12 @@ theorem out_pair {k : Nat} (hk : k + 2 ≤ nb s₀) : InRegions s₀.wr (oAddr s
 output, written before it. -/
 theorem sep_pair {i k : Nat} (hk : k < nb s₀) (hik : i + 2 ≤ k) :
     Mem.Sep (bAddr s₀ k) 16 (oAddr s₀ to i) 32 := by
-  cases to with
-  | true =>
-    exact (hp.src rfl).sep (hp.in_blk hk) (contains_offset (by omega_arith) (by have := hp.wrapD; omega_arith))
-  | false =>
+  rcases hp.src with same | apart
+  · change Mem.Sep _ 16 (dd s₀ to + _) 32
+    rw [← same]
     have hw := hp.wrap
-    exact Offset.sep (dp s₀) (.inr (by omega_arith)) (by omega_arith) (by omega_arith)
+    exact Offset.sep _ (.inr (by omega_arith)) (by omega_arith) (by omega_arith)
+  · exact apart.sep (hp.in_blk hk) (contains_offset (by omega_arith) (by have := hp.wrapD; omega_arith))
 
 end
 

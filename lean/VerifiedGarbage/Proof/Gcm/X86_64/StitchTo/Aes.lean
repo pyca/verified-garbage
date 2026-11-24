@@ -50,6 +50,7 @@ structure AInvTo (s₀ : State) (c : Nat) (s : State) : Prop where
   r8 : s.gpr .r8 = sp s₀ - op s₀
   frame : Frame [oR s₀, pR s₀] s₀.mem s.mem
   blocks : ∀ k < c, blockAt s.mem (oAddr s₀ k) = ctbT s₀ k
+  unread : ∀ k < nb s₀, c ≤ k → blockAt s.mem (sAddr s₀ k) = pblk s₀ k
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
 
@@ -59,7 +60,8 @@ theorem AInvTo.yframe {s₀ : State} {c : Nat} {s s' : State} {rs : List XReg} (
     fun l hl => by rw [f.lane _ h0 l hl]; exact h.msk l hl,
     fun l hl => by rw [f.lane _ h15 l hl]; exact h.inc l hl, by rw [f.gpr]; exact h.rdi,
     by rw [f.gpr]; exact h.rsi, by rw [f.gpr]; exact h.r10, by rw [f.gpr]; exact h.r8, by rw [f.mem]; exact h.frame,
-    fun k hk => by rw [f.mem]; exact h.blocks k hk, by rw [f.rd]; exact h.rd, by rw [f.wr]; exact h.wr⟩
+    fun k hk => by rw [f.mem]; exact h.blocks k hk,
+    fun k hk hc => by rw [f.mem]; exact h.unread k hk hc, by rw [f.rd]; exact h.rd, by rw [f.wr]; exact h.wr⟩
 
 theorem AInvTo.keys {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {c : Nat} {s : State} (hI : AInvTo s₀ c s) :
     Keys (nr s₀) (sch s₀) s :=
@@ -68,24 +70,14 @@ theorem AInvTo.keys {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {c : Nat} 
       rw [hI.rd, hI.wr, hI.rdi]
       exact Stitch.in_sub_int hp.toD.k_in (by rcases hp.rounds with h | h | h <;> omega_using [hj, h])⟩
 
-/-- The plaintext is kept. -/
-theorem AInvTo.src {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {c : Nat} {s : State} (hI : AInvTo s₀ c s)
-    {k : Nat} (hk : k < nb s₀) : blockAt s.mem (sAddr s₀ k) = pblk s₀ k := by
-  have hw := hp.wrap_s
-  exact blockAt_frame hI.frame fun r hr => by
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl
-    · exact hp.s_o.sub_left (Offset.sub_base _ (by omega_using [hk]))
-    · exact hp.s_p.sub_left (Offset.sub_base _ (by omega_using [hk]))
-
 /-- The same, as `Stitch.AInvM` with the output at `r10`. -/
-theorem AInvTo.toM {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {c : Nat} {s : State} (h : AInvTo s₀ c s) :
+theorem AInvTo.toM {s₀ : State} {c : Nat} {s : State} (h : AInvTo s₀ c s) :
     Stitch.AInvM true s₀ c s :=
-  ⟨h.le, h.ctr, h.msk, h.inc, h.rdi, h.rsi, h.r10, h.frame, h.blocks, fun _ hk _ => h.src hp hk, h.rd, h.wr⟩
+  ⟨h.le, h.ctr, h.msk, h.inc, h.rdi, h.rsi, h.r10, h.frame, h.blocks, h.unread, h.rd, h.wr⟩
 
 theorem _root_.VG.Proof.Gcm.X86_64.Stitch.AInvM.toTo {s₀ : State} {c : Nat} {s s' : State}
     (h : Stitch.AInvM true s₀ c s) (hg : s.gpr = s'.gpr) (hr8 : s'.gpr .r8 = sp s₀ - op s₀) : AInvTo s₀ c s :=
-  ⟨h.le, h.ctr, h.msk, h.inc, h.rdi, h.rsi, h.r10, by rw [hg]; exact hr8, h.frame, h.out, h.rd, h.wr⟩
+  ⟨h.le, h.ctr, h.msk, h.inc, h.rdi, h.rsi, h.r10, by rw [hg]; exact hr8, h.frame, h.out, h.src, h.rd, h.wr⟩
 
 theorem batchTo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) (g : Nat → List Instr) (G : List XReg)
     (hG : ∀ r ∈ G, r ≠ .xmm13 ∧ r ∉ aregs ∧ r ≠ .xmm14 ∧ r ≠ .xmm0 ∧ r ≠ .xmm15)
@@ -103,7 +95,7 @@ theorem batchTo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) (g : Nat �
       (∀ r, r ≠ .xmm13 → r ≠ .xmm14 → r ∉ aregs → r ∉ G → ∀ l < 2, s'.lane r l = s.lane r l) ∧
       Frame [⟨oAddr s₀ c, 128⟩] s.mem s'.mem :=
   have hm := hp.toM
-  WP.mono (Stitch.batchM_ok (ix := true) (ld := true) hm rfl (fun _ => rfl) g G hG Q hg hq hqx hc (hI.toM hp)
+  WP.mono (Stitch.batchM_ok (ix := true) (ld := true) hm rfl (fun _ => rfl) g G hG Q hg hq hqx hc hI.toM
     (fun _ => hI.r8) hrdx hQ) fun _ ⟨hA, h⟩ => ⟨hA.toTo h.2.1 hI.r8, h⟩
 
 end VG.Proof.Gcm.X86_64.StitchTo

@@ -43,7 +43,7 @@ section
 section
 
 /-!
-# `vg_rsa_pkcs1_decrypt_precomputed` on x86-64: the call with `pre`
+# `vg_rsa_pkcs1_decrypt_precomputed_body` on x86-64: the call with `pre`
 
 `Decrypt.codeP` is `Decrypt.code` but for its call, of
 `vg_rsa_private_checked_precomputed` (`privCodeP`), which it also gives the
@@ -51,7 +51,7 @@ key's precomputed values `pre` and `pre_len` as its stack arguments 14 and 15,
 over the slots of `out` and `msg_len`: those are kept in the slots `oI` and
 `oNB` across the call (`stash_ok`, `SetupP`) and put back after it
 (`restore_ok`), which leaves what the call in `Decrypt.code` leaves
-(`PostPriv`). From a state that `vg_rsa_pkcs1_decrypt_precomputed`'s
+(`PostPriv`). From a state that `vg_rsa_pkcs1_decrypt_precomputed_body`'s
 contract allows (`DPre` and `DPreP`, `dPreP_of`), the call meets that
 function's contract (`privP_pre`), and so `codeP` writes what `code` writes
 (`decP_ok`).
@@ -88,7 +88,7 @@ abbrev preR (s : State) : Region := ⟨stackArg s 17, (stackArg s 18).toNat * 8�
 /-- The stack arguments, with `pre` and `pre_len`. -/
 abbrev argsP (s : State) : Region := ⟨stackArgAddr s 0, 152⟩
 
-/-- What `vg_rsa_pkcs1_decrypt_precomputed`'s contract adds to `DPre`:
+/-- What `vg_rsa_pkcs1_decrypt_precomputed_body`'s contract adds to `DPre`:
 `pre`, the precomputed values of the key, and the stack arguments that give
 it. -/
 structure DPreP (s : State) : Prop where
@@ -109,10 +109,10 @@ structure DPreP (s : State) : Prop where
   key : Spec.Rsa.privatePrecompute (nB s) (pB s) (qB s) =
     some (Spec.Rsa.wordsAt s.mem (stackArg s 17) (stackArg s 18).toNat)
 
-theorem dPreP_of {s : State} (h : (Proof.RsaPkcs1Enc.decryptPrecomputedContract abi decStack).pre s) :
+theorem dPreP_of {s : State} (h : (Proof.RsaPkcs1Enc.decryptPrecomputedBodyContract abi decStack).pre s) :
     DPre s ∧ DPreP s := by
   rw [show decStack = 3480 from rfl] at h
-  sig_pre [Proof.RsaPkcs1Enc.decryptPrecomputedContract, Proof.RsaPkcs1Enc.decryptPrecomputedSig,
+  sig_pre [Proof.RsaPkcs1Enc.decryptPrecomputedBodyContract, Proof.RsaPkcs1Enc.decryptPrecomputedBodySig,
     Proof.RsaPkcs1Enc.decryptSig, abi, argRegs, stackArgs_nineteen, List.append_eq, List.range,
     List.range.loop] at h
   sig_split h
@@ -411,7 +411,7 @@ theorem restore_ok {s t t' : State} (hp : DPre s) (h : SetupP s t) (c : PostCall
 
 /-! ## The function -/
 
-/-- `vg_rsa_pkcs1_decrypt_precomputed`, from a state its contract allows:
+/-- `vg_rsa_pkcs1_decrypt_precomputed_body`, from a state its contract allows:
 `code`'s result. -/
 theorem decP_ok (v : Compress) (c : CrtImpl) {s : State} (hp : DPre s) (hq : DPreP s) :
     WP isa (codeP (HH v) (privNameP c) (privCodeP c)) s fun s' => abiPreserved s s' ∧ decK.post s s' := by
@@ -435,7 +435,7 @@ end
 end
 
 /-!
-# `vg_rsa_pkcs1_decrypt_precomputed` on x86-64: constant time
+# `vg_rsa_pkcs1_decrypt_precomputed_body` on x86-64: constant time
 
 `Decrypt.codeP` leaks what `Decrypt.code` leaks, and, in its call of
 `vg_rsa_private_checked_precomputed`, `pre`'s address and length and the
@@ -455,11 +455,11 @@ open VG.Proof.MlKem.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.RsaPk
 open VG.Proof.Rsa.X86_64 (CrtImpl chkContract chkContractP codeP_correct)
 open VG.Proof.Sha256.X86_64 (Compress)
 
-/-- `vg_rsa_pkcs1_decrypt_precomputed`'s contract, with `decK`'s
+/-- `vg_rsa_pkcs1_decrypt_precomputed_body`'s contract, with `decK`'s
 postcondition and its public data, with `pre`, `pre_len` and the modulus'
 values in `pre`. -/
 def decKP : Contract isa where
-  pre := (Proof.RsaPkcs1Enc.decryptPrecomputedContract abi decStack).pre
+  pre := (Proof.RsaPkcs1Enc.decryptPrecomputedBodyContract abi decStack).pre
   post := decK.post
   pub s₁ s₂ := decK.pub s₁ s₂ ∧ stackArg s₁ 17 = stackArg s₂ 17 ∧ stackArg s₁ 18 = stackArg s₂ 18 ∧
     Spec.Rsa.privatePrecomputedLeak s₁.mem (stackArg s₁ 17) (s₁.gpr .r8).toNat =
@@ -540,7 +540,7 @@ theorem bodyP_ct (v : Compress) (c : CrtImpl) :
     (RelCT.seq kdkMac_two (RelCT.seq clLoop_two (RelCT.seq amLoop_two (RelCT.seq maskPart_two
     (RelCT.seq alPart_two (RelCT.seq scanPart_two selPart_ct)))))))))
 
-/-- `vg_rsa_pkcs1_decrypt_precomputed` is constant time but for its public
+/-- `vg_rsa_pkcs1_decrypt_precomputed_body` is constant time but for its public
 data. -/
 theorem decP_constantTime (v : Compress) (c : CrtImpl) :
     ConstantTime isa decKP.pre decKP.pub (codeP (HH v) (privNameP c) (privCodeP c)) :=
@@ -571,10 +571,10 @@ end
 
 end
 
-/-! # `vg_rsa_pkcs1_decrypt_precomputed` on x86-64
+/-! # `vg_rsa_pkcs1_decrypt_precomputed_body` on x86-64
 
 `Decrypt.codeP`, which calls `vg_rsa_private_checked_precomputed` with the
-key's precomputed values `pre`, against `vg_rsa_pkcs1_decrypt_precomputed`'s
+key's precomputed values `pre`, against `vg_rsa_pkcs1_decrypt_precomputed_body`'s
 contract (`decryptPrecomputed_verified`): `decKP` implies it
 (`decP_implies`), with a state that meets it (`satisfiablePre`), which holds
 a real key (`Proof/Rsa/PreKey.lean`).
@@ -633,10 +633,10 @@ theorem pre_args : stackArg preState 0 = 1 ∧ stackArg preState 1 = 0x4000 ∧ 
 theorem stackArgs_nineteen (s : State) :
     List.map (stackArg s) (List.range 19) = [stackArg s 0, stackArg s 1, stackArg s 2, stackArg s 3, stackArg s 4, stackArg s 5, stackArg s 6, stackArg s 7, stackArg s 8, stackArg s 9, stackArg s 10, stackArg s 11, stackArg s 12, stackArg s 13, stackArg s 14, stackArg s 15, stackArg s 16, stackArg s 17, stackArg s 18] := rfl
 
-theorem satisfiablePre : ∃ s, (Proof.RsaPkcs1Enc.decryptPrecomputedContract abi decStack).pre s := by
+theorem satisfiablePre : ∃ s, (Proof.RsaPkcs1Enc.decryptPrecomputedBodyContract abi decStack).pre s := by
   refine ⟨preState, ?_⟩
   rw [show decStack = 3480 from rfl]
-  sig_pre [Proof.RsaPkcs1Enc.decryptPrecomputedContract, Proof.RsaPkcs1Enc.decryptPrecomputedSig,
+  sig_pre [Proof.RsaPkcs1Enc.decryptPrecomputedBodyContract, Proof.RsaPkcs1Enc.decryptPrecomputedBodySig,
     Proof.RsaPkcs1Enc.decryptSig, abi, argRegs, stackArgs_nineteen, List.append_eq]
   obtain ⟨-, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18⟩ := pre_args
   have ha : stackArgAddr preState 0 = 0x10008 := by decide
@@ -653,17 +653,17 @@ theorem satisfiablePre : ∃ s, (Proof.RsaPkcs1Enc.decryptPrecomputedContract ab
 
 /-! ## The code -/
 
-theorem decP_implies : decKP.Implies (Proof.RsaPkcs1Enc.decryptPrecomputedContract abi decStack) where
+theorem decP_implies : decKP.Implies (Proof.RsaPkcs1Enc.decryptPrecomputedBodyContract abi decStack) where
   pre := fun _ h => h
   post := by
     rw [show decStack = 3480 from rfl]
-    sig_implies_post [Proof.RsaPkcs1Enc.decryptPrecomputedContract, Proof.RsaPkcs1Enc.decryptPrecomputedSig,
+    sig_implies_post [Proof.RsaPkcs1Enc.decryptPrecomputedBodyContract, Proof.RsaPkcs1Enc.decryptPrecomputedBodySig,
       Proof.RsaPkcs1Enc.decryptSig, abi, argRegs, decKP, decK, stackArgs_nineteen, List.append_eq, List.range,
       List.range.loop]
   pub := by
     rintro s₁ s₂ - - h
     rw [show decStack = 3480 from rfl] at h
-    sig_pub [Proof.RsaPkcs1Enc.decryptPrecomputedContract, Proof.RsaPkcs1Enc.decryptPrecomputedSig,
+    sig_pub [Proof.RsaPkcs1Enc.decryptPrecomputedBodyContract, Proof.RsaPkcs1Enc.decryptPrecomputedBodySig,
       Proof.RsaPkcs1Enc.decryptSig, abi, argRegs, stackArgs_nineteen, List.append_eq, List.range,
       List.range.loop] at h
     obtain ⟨hsp, hl, hdi, hsi, hdx, hcx, h8, h9, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13,
@@ -677,12 +677,12 @@ theorem decP_implies : decKP.Implies (Proof.RsaPkcs1Enc.decryptPrecomputedContra
     exact ⟨hdi, hsi, hdx, hcx, h8, h9, hsp⟩
   sat := satisfiablePre
 
-/-- `vg_rsa_pkcs1_decrypt_precomputed`, calling
+/-- `vg_rsa_pkcs1_decrypt_precomputed_body`, calling
 `vg_rsa_private_checked_precomputed` for the implementation `c` of the CRT,
 meets its contract. -/
 theorem decryptPrecomputed_verified (v : Compress) (c : Proof.Rsa.X86_64.CrtImpl) :
     Verified target (codeP (HH v) (privNameP c) (privCodeP c))
-      (Proof.RsaPkcs1Enc.decryptPrecomputedContract abi decStack) :=
+      (Proof.RsaPkcs1Enc.decryptPrecomputedBodyContract abi decStack) :=
   Verified.of_correct (k := decKP) (decP_correct v c) (decP_constantTime v c) decP_implies
 
 end VG.Proof.RsaPkcs1Enc.X86_64.Dec

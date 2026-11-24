@@ -10,12 +10,12 @@ that the proofs of their callers compose. Only the callers' contracts, in
 `Spec/RsaPkcs1Enc/Contract.lean` and `Spec/RsaPkcs1Enc/Random.lean`, are
 trusted.
 
-`vg_rsa_pkcs1_decrypt_precomputed` (`decryptPrecomputedContract`), whose
-code `vg_rsa_pkcs1_decrypt_precomputed_front`
-(`Spec.RsaPkcs1Enc.decryptPrecomputedFrontContract`) calls, before its
-cleanup, as `vg_rsa_pkcs1_decrypt_precomputed_body`: the same decryption,
-with the same arguments, but with the message at the end of `out`, after
-zeros (`writtenMsg`). Its proofs go through that of `vg_rsa_pkcs1_decrypt`
+`vg_rsa_pkcs1_decrypt_precomputed_body` (`decryptPrecomputedBodyContract`):
+the code that `vg_rsa_pkcs1_decrypt_precomputed`
+(`Spec.RsaPkcs1Enc.decryptPrecomputedBodyContract`) calls, before its cleanup.
+It computes the same decryption, with the same arguments, but writes the
+message at the end of `out`, after zeros (`writtenMsgEnd`), which the caller
+moves to the start. Its proofs go through that of `vg_rsa_pkcs1_decrypt`
 (`decryptContract`), the same without the precomputed values, which some
 targets' proofs state on the way. The arguments are as in
 `Spec/RsaPkcs1Enc/Contract.lean`.
@@ -45,7 +45,7 @@ open VG.Spec.Rsa (bytesAt wordsAt lenValid scratchWords publicScratchWords writt
 octets at `out` and the word at `msgLen`: for a message `M`, return 1, `M`
 at the end of `out` after zeros, and its length at `msgLen`; for an error,
 return 0 (`invalid`) or 2 (`fault`), zeros and a length of 0. -/
-def writtenMsg (m' : Mem) (out msgLen : Addr) (nLen : Nat) (r : BitVec 32) : Outcome → Prop
+def writtenMsgEnd (m' : Mem) (out msgLen : Addr) (nLen : Nat) (r : BitVec 32) : Outcome → Prop
   | .ok M => r = 1 ∧ bytesAt m' out nLen = List.replicate (nLen - M.length) 0 ++ M ∧
       wordsAt m' msgLen 1 = [BitVec.ofNat 64 M.length]
   | .invalid => r = 0 ∧ bytesAt m' out nLen = List.replicate nLen 0 ∧ wordsAt m' msgLen 1 = [0]
@@ -82,7 +82,7 @@ def decryptContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
         scratchWords nLen.toNat ≤ scratchLen.toNat)
     (post := fun out _outLen msgLen n nLen e eLen d dLen input _inputLen p pLen q qLen dp _dpLen
         dq _dqLen qinv _qinvLen _scratch _scratchLen m m' r =>
-      writtenMsg m' out msgLen nLen.toNat r
+      writtenMsgEnd m' out msgLen nLen.toNat r
         (decrypt (bytesAt m n nLen.toNat) (bytesAt m e eLen.toNat) (bytesAt m d dLen.toNat)
           (bytesAt m p pLen.toNat) (bytesAt m q qLen.toNat) (bytesAt m dp pLen.toNat)
           (bytesAt m dq qLen.toNat) (bytesAt m qinv pLen.toNat) (bytesAt m input nLen.toNat)))
@@ -91,19 +91,19 @@ def decryptContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
         _qLen _dp _dpLen _dq _dqLen _qinv _qinvLen _scratch _scratchLen m =>
       (bytesAt m n nLen.toNat ++ bytesAt m e eLen.toNat).map (·.toNat))
 
-/-! ## `vg_rsa_pkcs1_decrypt_precomputed` -/
+/-! ## `vg_rsa_pkcs1_decrypt_precomputed_body` -/
 
 /-- The parameters of `vg_rsa_pkcs1_decrypt`, then the key's precomputed
 values `pre: *const u64, pre_len: usize`. -/
-def decryptPrecomputedSig : Sig where
+def decryptPrecomputedBodySig : Sig where
   params := decryptSig.params ++ [("pre", .slice false .u64 "pre_len")]
   ret := some .u32
 
 /-- `decryptContract`, given the key's precomputed values `pre`
 (`Spec.Rsa.privatePrecompute`): what `vg_rsa_pkcs1_decrypt` computes, given `pre`
 holding them. -/
-def decryptPrecomputedContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  decryptPrecomputedSig.contract A
+def decryptPrecomputedBodyContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  decryptPrecomputedBodySig.contract A
     (pre := fun _out outLen _msgLen n nLen _e eLen _d dLen _input inputLen p pLen q qLen _dp
         dpLen _dq dqLen _qinv qinvLen _scratch scratchLen pre preLen m =>
       lenValid nLen.toNat ∧ outLen.toNat = nLen.toNat ∧ inputLen.toNat = nLen.toNat ∧
@@ -116,7 +116,7 @@ def decryptPrecomputedContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contra
           (bytesAt m q qLen.toNat) = some (Spec.Rsa.wordsAt m pre preLen.toNat))
     (post := fun out _outLen msgLen n nLen e eLen d dLen input _inputLen p pLen q qLen dp _dpLen
         dq _dqLen qinv _qinvLen _scratch _scratchLen _pre _preLen m m' r =>
-      writtenMsg m' out msgLen nLen.toNat r
+      writtenMsgEnd m' out msgLen nLen.toNat r
         (decrypt (bytesAt m n nLen.toNat) (bytesAt m e eLen.toNat) (bytesAt m d dLen.toNat)
           (bytesAt m p pLen.toNat) (bytesAt m q qLen.toNat) (bytesAt m dp pLen.toNat)
           (bytesAt m dq qLen.toNat) (bytesAt m qinv pLen.toNat) (bytesAt m input nLen.toNat)))

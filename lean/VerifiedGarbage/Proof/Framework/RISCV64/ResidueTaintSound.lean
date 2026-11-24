@@ -1163,7 +1163,7 @@ theorem noResidue_of_verified {c : Prog isa} {k : Contract isa} {r W : Nat} {bp0
     obtain ⟨-, rfl⟩ := Exec.det e₁ f₁
     obtain ⟨-, rfl⟩ := Exec.det e₂ f₂
     obtain ⟨hW, hreg, hbp⟩ := hpre s₁ h₁
-    exact outside_of_done (TaintCT.agree_of_check hv.2.1 hτ h₁ h₂ hp (agree_init ho hu hW hreg hbp) e₁ e₂)
-      (by exact h) ho hp₁ hp₂
+    exact .inl (outside_of_done (TaintCT.agree_of_check hv.2.1 hτ h₁ h₂ hp (agree_init ho hu hW hreg hbp) e₁ e₂)
+      (by exact h) ho hp₁ hp₂)
 
 end VG.RISCV64.RTaint

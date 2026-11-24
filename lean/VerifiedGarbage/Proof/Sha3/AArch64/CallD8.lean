@@ -39,7 +39,7 @@ theorem D8.of {n : String} {s t : State} (h : D8 n s)
 /-- The contract `k` of code that calls the function `n` by the address in
 `d8`: from states where `d8` holds it, and for runs that agree on it. -/
 def Contract.d8 (n : String) (k : Contract isa) : Contract isa :=
-  ⟨fun s => k.pre s ∧ D8 n s, k.post, fun s t => k.pub s t ∧ s.syms n = t.syms n⟩
+  ⟨fun s => k.pre s ∧ D8 n s, k.post, fun s t => k.pub s t ∧ s.syms n = t.syms n, k.retExt⟩
 
 /-- A state where `d8` holds `n`'s address: `s` with it in `v8`. -/
 theorem D8.setV (n : String) (s : State) : D8 n (s.setV .v8 ((s.syms n).setWidth 128)) := by

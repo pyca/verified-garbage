@@ -41,7 +41,7 @@ branch depends only on the pointers, the lengths and the counters. `out`'s
 and `AM`'s bytes are all read, whichever is returned.
 
 The frame (`alloc frameBytes`) holds the private-key operation's twelve
-(or, for `vg_rsa_pkcs1_decrypt_precomputed`, fourteen) stack arguments (at
+(or, for `vg_rsa_pkcs1_decrypt_precomputed_body`, fourteen) stack arguments (at
 `sp`), then our caller's `s0`–`s9` and our return
 address (`saved`). Our own stack arguments are at `sp + frameBytes + 8 j`,
 from `t6` (`argBase`). The values kept across the calls are in `s0`–`s9`,
@@ -305,13 +305,13 @@ def body (pc : Bool) : Prog isa :=
   .seq (.block (setup pc)) (.seq (privCall pc) (.seq dBuild (.seq hashD (.seq kdkMac (.seq clLoop
     (.seq amLoop (.seq maskPart (.seq alPart (.seq scanPart selPart)))))))))
 
-/-- `vg_rsa_pkcs1_decrypt`, or with `pc` `vg_rsa_pkcs1_decrypt_precomputed`. -/
+/-- `vg_rsa_pkcs1_decrypt`, or with `pc` `vg_rsa_pkcs1_decrypt_precomputed_body`. -/
 def codeG (pc : Bool) : Prog isa := .frame (.alloc frameBytes) (body pc) (.free frameBytes)
 
 /-- `vg_rsa_pkcs1_decrypt`. -/
 abbrev code : Prog isa := codeG false
 
-/-- `vg_rsa_pkcs1_decrypt_precomputed`: with the key's precomputed values
+/-- `vg_rsa_pkcs1_decrypt_precomputed_body`: with the key's precomputed values
 `pre` (our stack arguments 15 and 16), calling
 `vg_rsa_private_checked_precomputed`. -/
 abbrev codeP : Prog isa := codeG true

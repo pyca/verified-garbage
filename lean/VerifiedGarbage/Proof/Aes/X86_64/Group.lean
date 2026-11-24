@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Aes.X86_64.Encrypt
 public import VerifiedGarbage.Proof.Framework.Bitslice.Sym
 public import VerifiedGarbage.Proof.Aes.Blocks
+import VerifiedGarbage.Proof.Framework.X86_64.KeepReg
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
@@ -14,9 +15,9 @@ section
 # Bitslicing the round keys, on x86-64
 
 The key loop of `vg_aes_ctr32` bitslices each round key (loaded as four
-identical blocks) with `toBs` and stores it in the scratch buffer. The
+identical blocks) with `keyToBs` and stores it in the scratch buffer. The
 loads and stores are checked by evaluation over the naming domain
-(`Bitslice.names`), `toBs` by its proof (`Encrypt.lean`).
+(`Bitslice.names`), the key transpose with the same lane checker as the data transpose.
 -/
 
 namespace VG.Proof.Aes.X86_64
@@ -29,7 +30,7 @@ open VG.Spec.Aes (roundKey)
 def loadCfg : Cfg := { base := sb, slots := 0, ext := .rdi, exts := 2 }
 
 def loadPost (e : Env Nat) : Bool :=
-  (List.range 4).all fun b => e.reg (q b) == some 0 && e.reg (q (b + 4)) == some 1
+  e.reg (q 0) == some 0 && e.reg (q 4) == some 1
 
 theorem keyLoad_check :
     check (names 64) loadCfg (fun k => some k) keyLoad { reg := fun _ => none, slot := fun _ => none }
@@ -47,8 +48,8 @@ def keyWrites : List Reg := [q 0, q 1, q 2, q 3, q 4, q 5, q 6, q 7, t0, .rdi, .
 theorem keyLoad_ok {s : State} {r : Region} {off : Nat} (hr : r ∈ s.rd ++ s.wr)
     (hb : s.gpr .rdi = r.base + BitVec.ofNat 64 off) (hoff : off + 16 ≤ r.len) (hn : r.len < 2 ^ 64) :
     ∃ s', runBlock isa keyLoad s = some s' ∧
-      (∀ b < 4, s'.gpr (q b) = s.mem.readW (wordAddr (s.gpr .rdi) 0) 64 ∧
-        s'.gpr (q (b + 4)) = s.mem.readW (wordAddr (s.gpr .rdi) 1) 64) ∧
+      (s'.gpr (q 0) = s.mem.readW (wordAddr (s.gpr .rdi) 0) 64 ∧
+        s'.gpr (q 4) = s.mem.readW (wordAddr (s.gpr .rdi) 1) 64) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.mem = s.mem ∧
       (∀ r, r ∉ sboxWrites ∨ r = .r15 → s'.gpr r = s.gpr r) := by
   obtain ⟨e', he, hpost⟩ := of_check _ _ _ keyLoad_check
@@ -58,16 +59,42 @@ theorem keyLoad_ok {s : State} {r : Region} {off : Nat} (hr : r ∈ s.rd ++ s.wr
     refine ⟨(fun _ _ h => by cases h), (fun _ _ _ h => by cases h), fun k a hk h => ?_⟩
     simp only [Option.some.injEq] at h; subst h; rfl
   obtain ⟨s', hs', p⟩ := run (names_sound V) hok hrel he
-  refine ⟨s', hs', fun b hb => ?_, p.rd, p.wr, ?_, fun r hr => p.other r ?_⟩
-  · have := List.all_eq_true.mp hpost b (List.mem_range.mpr hb)
-    simp only [Bool.and_eq_true, beq_iff_eq] at this
-    exact ⟨p.rel.reg _ _ this.1, p.rel.reg _ _ this.2⟩
+  simp only [loadPost, Bool.and_eq_true, beq_iff_eq] at hpost
+  refine ⟨s', hs', ⟨p.rel.reg _ _ hpost.1, p.rel.reg _ _ hpost.2⟩, p.rd, p.wr, ?_, fun r hr => p.other r ?_⟩
   · funext x
     exact p.frame x fun r' hr' hc => by
       simp only [List.mem_singleton] at hr'; subst hr'
       simp [slotRegion, loadCfg, Region.Contains] at hc
   · refine Bool.ne_false_of_eq_true (List.all_eq_true.mp keyLoad_writes r ?_)
     revert hr; cases r <;> decide
+
+/-- Each of the four lanes reads the same two key words. -/
+def keyBits (j p : Nat) : List Nat := [64 * (4 * (idx p / 8)) + (8 * (idx p % 8) + j)]
+
+theorem keyToBs_check :
+    check (lanes 64 9) linCfg (linExt 0) keyToBs (linEnv qIns) (linPost 9 (qOuts keyBits)) = true := by
+  decide +kernel
+
+abbrev keyWords (s : State) (i : Nat) := Q s (4 * (i / 4))
+
+theorem keyToBs_ok {s : State} (hok : Ok linCfg s) :
+    ∃ s', runBlock isa keyToBs s = some s' ∧
+      (∀ j < 8, ∀ p < 64, (Q s' j).getLsbD p =
+        (keyWords s (p % 4 + 4 * (idx p / 8))).getLsbD (8 * (idx p % 8) + j)) ∧
+      s'.rd = s.rd ∧ s'.wr = s.wr ∧ (∀ r, r ∉ sboxWrites → s'.gpr r = s.gpr r) ∧
+      Frame [slotRegion linCfg s] s.mem s'.mem := by
+  obtain ⟨s', hs', hout, rest⟩ := q_linear keyToBs_check (by decide) (by decide +kernel) hok (Q s)
+    (fun _ _ => rfl) (fun j hj => by simp [linCfg] at hj)
+  refine ⟨s', hs', fun j hj p hp => ?_, rest⟩
+  rw [hout j hj p hp, keyBits, xorBits_cons, xorBits_nil, Bool.xor_false,
+    bitOf_word _ _ _ (by omega_arith)]
+  rw [keyWords, show (p % 4 + 4 * (idx p / 8)) / 4 = idx p / 8 by omega_arith]
+
+theorem keyToBs_keeps_t1 {s s' : State} (h : runBlock isa keyToBs s = some s') :
+    s'.gpr t1 = s.gpr t1 := by
+  have wp : WP isa (.block keyToBs) s (· = s') := WP.of_runBlock ⟨_, h, rfl⟩
+  obtain ⟨t, _, e, rfl⟩ := wp
+  exact VG.X86_64.Exec.gpr_keeps (by decide +kernel) e
 
 /-! ## Storing it -/
 
@@ -260,17 +287,17 @@ theorem keyBody_ok {s₀ : State} {b sc : Addr} {R : Nat} {w : List Byte} (hk : 
   obtain ⟨s₁, hs₁, hq₁, hrd₁, hwr₁, hm₁, hoth₁⟩ := keyLoad_ok (r := ⟨sc, 240⟩) (off := 16 * j)
     (by rw [hi.rd, hi.wr]; exact hk.sch) hi.rdi (by simp only; omega_arith) (by simp only; omega_arith)
   refine WP.of_runBlock ⟨s₁, hs₁, ?_⟩
-  obtain hin : InRel (Q s₁) fun _ => rkv w j := by
+  obtain hin : InRel (keyWords s₁) fun _ => rkv w j := by
     intro bb hb i hi16 t ht
     obtain hbyte := hi.sched hk hi16
     rw [getD_eq _ hi16, rkv, Vector.getElem_ofFn]
-    simp only [Q]
+    simp only [keyWords, Q]
     by_cases h8 : i < 8
-    · rw [show bb + 4 * (i / 8) = bb by omega_arith, (hq₁ bb hb).1, show i % 8 = i by omega_arith,
+    · rw [show 4 * ((bb + 4 * (i / 8)) / 4) = 0 by omega_arith, hq₁.1, show i % 8 = i by omega_arith,
         readW_bit _ _ h8 ht, wordAddr, hi.rdi, ← hbyte]
       congr 2; rw [BitVec.add_assoc, ← BitVec.ofNat_add, BitVec.add_assoc, ← BitVec.ofNat_add]
       congr 2; omega_arith
-    · rw [show bb + 4 * (i / 8) = bb + 4 by omega_arith, (hq₁ bb hb).2, readW_bit _ _ (by omega_arith) ht,
+    · rw [show 4 * ((bb + 4 * (i / 8)) / 4) = 4 by omega_arith, hq₁.2, readW_bit _ _ (by omega_arith) ht,
         wordAddr, hi.rdi, ← hbyte]
       congr 2; rw [BitVec.add_assoc, ← BitVec.ofNat_add, BitVec.add_assoc, ← BitVec.ofNat_add]
       congr 2; omega_arith
@@ -279,7 +306,7 @@ theorem keyBody_ok {s₀ : State} {b sc : Addr} {R : Nat} {w : List Byte} (hk : 
   obtain hok₁ : Ok linCfg s₁ := Ok.of_region (r := ⟨b, sz⟩) (by rw [hwr₁, hi.wr]; exact hscr)
     (by simp only [linCfg]; rw [hoth₁ sb (.inl (by decide)), hsb]) (Nat.le_trans (by simp [linCfg]) hsz)
     (by simp [linCfg]) rfl
-  obtain ⟨s₂, hs₂, hq₂, hrd₂, hwr₂, hoth₂, hfr₂⟩ := toBs_ok hok₁
+  obtain ⟨s₂, hs₂, hq₂, hrd₂, hwr₂, hoth₂, hfr₂⟩ := keyToBs_ok hok₁
   refine WP.of_runBlock ⟨s₂, hs₂, ?_⟩
   obtain hbs₂ := bs_of_in hq₂ hin
   -- Store it.
@@ -327,7 +354,7 @@ theorem keyBody_ok {s₀ : State} {b sc : Addr} {R : Nat} {w : List Byte} (hk : 
   obtain hnew : KeyRel (fun k => s₄.mem.readW (wordAddr (keyAddr b R j) k) 64) (roundKey w j) :=
     keyRel_congr (keyRel_of_bs hbs₂) fun k hk => by rw [hm₄, ← hrsi₂, hst₃ k hk]
   obtain hr15 : s₃.gpr .r15 = BitVec.ofNat 64 j := by
-    rw [hg₃, show Reg.r15 = t1 from rfl, toBs_keeps_t1 hok₁ hs₂, show t1 = Reg.r15 from rfl,
+    rw [hg₃, show Reg.r15 = t1 from rfl, keyToBs_keeps_t1 hs₂, show t1 = Reg.r15 from rfl,
       hoth₁ .r15 (.inr rfl), hi.r15]
   obtain hrdi : s₃.gpr .rdi = sc + BitVec.ofNat 64 (16 * j) := by
     rw [hg₃, hoth₂ .rdi (by decide), hoth₁ .rdi (.inl (by decide)), hi.rdi]
@@ -943,12 +970,12 @@ structure XReady (to : Bool) (m₀ : Mem) (S D : Addr) (n g : Nat) (ks : Nat →
 /-- The source and the destination, in place (`to = false`, the same) or
 out of place (disjoint). -/
 def Mode (to : Bool) (S D : Addr) (n : Nat) : Prop :=
-  (to = false ∧ S = D) ∨ (to = true ∧ Region.Disjoint ⟨S, 16 * n⟩ ⟨D, 16 * n⟩)
+  (to = false ∧ S = D) ∨ (to = true ∧ SrcDst S D n)
 
 theorem Mode.sd {to : Bool} {S D : Addr} {n : Nat} (h : Mode to S D n) : SrcDst S D n := by
   rcases h with ⟨_, h⟩ | ⟨_, h⟩
   · exact .inl h
-  · exact .inr h
+  · exact h
 
 /-- Before the XOR phase of group `g`: the keystream is in the words; the
 output pointer, out of place, in its slot. -/

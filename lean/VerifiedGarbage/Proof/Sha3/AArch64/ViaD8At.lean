@@ -52,7 +52,7 @@ def DL (L : List (String × VReg)) (s : State) : Prop := ∀ p ∈ L, (s.v p.2).
 addresses in the registers `L` gives: from states where they hold them, and
 for runs that agree on them. -/
 def Contract.dL (L : List (String × VReg)) (k : Contract isa) : Contract isa :=
-  ⟨fun s => k.pre s ∧ DL L s, k.post, fun s t => k.pub s t ∧ ∀ p ∈ L, s.syms p.1 = t.syms p.1⟩
+  ⟨fun s => k.pre s ∧ DL L s, k.post, fun s t => k.pub s t ∧ ∀ p ∈ L, s.syms p.1 = t.syms p.1, k.retExt⟩
 
 theorem lookup_mem {L : List (String × VReg)} {m : String} {v : VReg} (h : L.lookup m = some v) :
     (m, v) ∈ L := by

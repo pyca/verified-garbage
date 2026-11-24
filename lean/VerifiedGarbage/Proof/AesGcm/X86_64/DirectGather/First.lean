@@ -1,4 +1,5 @@
 module
+public import VerifiedGarbage.Proof.AesGcm.X86_64.DirectGather.Call
 
 public import VerifiedGarbage.Impl.AesGcm.X86_64.DirectGather
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Split.CT
@@ -18,7 +19,6 @@ import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 namespace VG.Proof.AesGcm.X86_64.DirectGather
 
 open VG VG.X86_64 VG.X86_64.RegUpd VG.Impl.AesGcm.X86_64.DirectGather
-open VG.Proof.AesGcm.X86_64.StreamTo (BlkToFn)
 open VG.Proof.Gcm.X86_64.Stitch (CtxMode)
 
 structure FirstArgs (SP P D S : Addr) (n sl : Nat) (s : State) : Prop where
@@ -98,7 +98,7 @@ theorem firstMem_slots (m : Mem) (W S D : Addr) (n : Nat) :
         Mem.readW_writeW_sep (sep 176 200 (by decide) (by decide) (by decide)) (by decide),
         Mem.readW_writeW_sep (sep 176 224 (by decide) (by decide) (by decide)) (by decide)]
 
-theorem firstBlocks_wp {M : CtxMode} (T : BlkToFn M) {Ctx W SP P D S : Addr} {R n sl : Nat} {s : State}
+theorem firstBlocks_wp {M : CtxMode} (T : BlocksTo.SealFn M) {Ctx W SP P D S : Addr} {R n sl : Nat} {s : State}
     (he : Env Ctx (W + BitVec.ofNat 64 16) W SP s) (h : FirstArgs SP P D S n sl s)
     (c : Split.CallInputs M Ctx W SP D S R n sl (callState s W S D n)) :
     WP isa (firstBlocks T.fn) s (Split.Mid2 Ctx W SP D S R sl (callState s W S D n)) := by
@@ -107,7 +107,7 @@ theorem firstBlocks_wp {M : CtxMode} (T : BlkToFn M) {Ctx W SP P D S : Addr} {R 
   refine WP.seq (WP.mono (firstArgs_wp he h hs) fun t a => ?_)
   refine WP.ite (decide (sl / 16 = 0)) (by simp only [eval, a.zero]) (fun hz => ?_) (fun _ => ?_)
   · exact WP.block_nil (Split.mid2_zero ⟨a.env, a.count, a.zero, a.mem, a.rd, a.wr⟩ (of_decide_eq_true hz))
-  · exact Split.call_ok c T a.env a.count a.mem a.rd a.wr
+  · exact Split.Compact.call_ok c T a.env a.count a.mem a.rd a.wr
 
 open VG.Impl.AesGcm.X86_64 (at_)
 
@@ -142,7 +142,7 @@ theorem firstArgs_rel {Ctx W SP P D S : Addr} {n sl : Nat} {s t : State}
     rintro _ _ ⟨rfl, rfl⟩
     rw [es.rsp, et.rsp, a.desc, b.desc]
 
-theorem firstBlocks_rel {M : CtxMode} (T : BlkToFn M) {Ctx W SP P D S : Addr} {R n sl : Nat} {s t : State}
+theorem firstBlocks_rel {M : CtxMode} (T : BlocksTo.SealFn M) {Ctx W SP P D S : Addr} {R n sl : Nat} {s t : State}
     (es : Env Ctx (W + 16#64) W SP s) (et : Env Ctx (W + 16#64) W SP t)
     (a : FirstArgs SP P D S n sl s) (b : FirstArgs SP P D S n sl t)
     (c : Split.CallInputs M Ctx W SP D S R n sl (callState s W S D n))
@@ -155,7 +155,7 @@ theorem firstBlocks_rel {M : CtxMode} (T : BlkToFn M) {Ctx W SP P D S : Addr} {R
     exact ⟨firstArgs_wp es a hs, firstArgs_wp et b hs⟩
   · refine RelCT.ite (fun _ _ h => by simp only [eval, h.2.1.zero, h.2.2.zero]) ?_ ?_
     · exact StreamTo.skip_rel fun _ _ _ => trivial
-    · exact (Split.callPart_rel c c' T).mono (fun _ _ h =>
+    · exact (Split.Compact.callPart_rel c c' T).mono (fun _ _ h =>
         ⟨⟨h.1.2.1.env, h.1.2.1.count, h.1.2.1.mem, h.1.2.1.rd, h.1.2.1.wr⟩,
          ⟨h.1.2.2.env, h.1.2.2.count, h.1.2.2.mem, h.1.2.2.rd, h.1.2.2.wr⟩⟩) fun _ _ _ => trivial
 

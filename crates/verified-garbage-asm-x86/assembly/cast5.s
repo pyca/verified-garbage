@@ -4,6 +4,445 @@
 // `src/` as its machine code, which `lean/VerifiedGarbage/TCB/<ISA>/Encode.lean`
 // gives.
 
+vg_cast5_expand_key_ssse3:
+	lea esp, [esp-880]
+	mov eax, DWORD PTR [esp+884]
+	mov DWORD PTR [esp+4], eax
+	mov eax, DWORD PTR [esp+888]
+	mov DWORD PTR [esp+8], eax
+	mov eax, DWORD PTR [esp+892]
+	mov DWORD PTR [esp+12], eax
+	mov eax, esp
+	add eax, 20
+	mov DWORD PTR [esp+16], eax
+	mov eax, DWORD PTR [esp+16]
+	mov DWORD PTR [eax+64], ebx
+	mov DWORD PTR [eax+72], edi
+	mov DWORD PTR [eax+76], ebp
+	mov DWORD PTR [eax+68], esi
+	mov esi, eax
+	mov edi, DWORD PTR [esp+4]
+	mov ebx, DWORD PTR [esp+8]
+	mov edx, DWORD PTR [esp+12]
+	mov ecx, 0
+	mov DWORD PTR [esi+16], ecx
+	mov DWORD PTR [esi+20], ecx
+	mov DWORD PTR [esi+24], ecx
+	mov DWORD PTR [esi+28], ecx
+	add eax, 16
+20:
+	movzx ecx, BYTE PTR [edi]
+	mov BYTE PTR [eax], cl
+	add edi, 1
+	add eax, 1
+	sub ebx, 1
+	jne 20b
+	mov edi, edx
+	mov ebx, 2
+	movdqu xmm0, XMMWORD PTR [esi+16]
+	call {vg_cast5_key_lookup_ssse3}
+21:
+	mov eax, DWORD PTR [esi+824]
+	mov DWORD PTR [esi+52], eax
+	mov eax, DWORD PTR [esi+628]
+	mov DWORD PTR [esi+56], eax
+	mov eax, DWORD PTR [esi+700]
+	mov DWORD PTR [esi+60], eax
+	mov eax, DWORD PTR [esi+840]
+	xor eax, DWORD PTR [esi+768]
+	xor eax, DWORD PTR [esi+716]
+	xor eax, DWORD PTR [esi+644]
+	xor eax, DWORD PTR [esi+752]
+	mov ecx, DWORD PTR [esi+16]
+	bswap ecx
+	xor eax, ecx
+	bswap eax
+	mov DWORD PTR [esi+32], eax
+	movdqu xmm0, XMMWORD PTR [esi+32]
+	call {vg_cast5_key_lookup_ssse3}
+	mov eax, DWORD PTR [esi+796]
+	xor eax, DWORD PTR [esi+724]
+	xor eax, DWORD PTR [esi+664]
+	xor eax, DWORD PTR [esi+592]
+	xor eax, DWORD PTR [esi+52]
+	mov ecx, DWORD PTR [esi+24]
+	bswap ecx
+	xor eax, ecx
+	bswap eax
+	mov DWORD PTR [esi+36], eax
+	movdqu xmm0, XMMWORD PTR [esi+32]
+	call {vg_cast5_key_lookup_ssse3}
+	mov eax, DWORD PTR [esi+800]
+	xor eax, DWORD PTR [esi+740]
+	xor eax, DWORD PTR [esi+680]
+	xor eax, DWORD PTR [esi+620]
+	xor eax, DWORD PTR [esi+56]
+	mov ecx, DWORD PTR [esi+28]
+	bswap ecx
+	xor eax, ecx
+	bswap eax
+	mov DWORD PTR [esi+40], eax
+	movdqu xmm0, XMMWORD PTR [esi+32]
+	call {vg_cast5_key_lookup_ssse3}
+	mov eax, DWORD PTR [esi+816]
+	xor eax, DWORD PTR [esi+764]
+	xor eax, DWORD PTR [esi+692]
+	xor eax, DWORD PTR [esi+632]
+	xor eax, DWORD PTR [esi+60]
+	mov ecx, DWORD PTR [esi+20]
+	bswap ecx
+	xor eax, ecx
+	bswap eax
+	mov DWORD PTR [esi+44], eax
+	movdqu xmm0, XMMWORD PTR [esi+32]
+	call {vg_cast5_key_lookup_ssse3}
+	mov eax, DWORD PTR [esi+808]
+	xor eax, DWORD PTR [esi+748]
+	xor eax, DWORD PTR [esi+692]
+	xor eax, DWORD PTR [esi+624]
+	xor eax, DWORD PTR [esi+600]
+	mov DWORD PTR [edi], eax
+	mov eax, DWORD PTR [esi+800]
+	xor eax, DWORD PTR [esi+740]
+	xor eax, DWORD PTR [esi+700]
+	xor eax, DWORD PTR [esi+632]
+	xor eax, DWORD PTR [esi+680]
+	mov DWORD PTR [edi+4], eax
+	mov eax, DWORD PTR [esi+792]
+	xor eax, DWORD PTR [esi+732]
+	xor eax, DWORD PTR [esi+708]
+	xor eax, DWORD PTR [esi+640]
+	xor eax, DWORD PTR [esi+756]
+	mov DWORD PTR [edi+8], eax
+	mov eax, DWORD PTR [esi+784]
+	xor eax, DWORD PTR [esi+724]
+	xor eax, DWORD PTR [esi+716]
+	xor eax, DWORD PTR [esi+648]
+	xor eax, DWORD PTR [esi+832]
+	mov DWORD PTR [edi+12], eax
+	mov eax, DWORD PTR [esi+792]
+	mov DWORD PTR [esi+52], eax
+	mov eax, DWORD PTR [esi+596]
+	mov DWORD PTR [esi+56], eax
+	mov eax, DWORD PTR [esi+668]
+	mov DWORD PTR [esi+60], eax
+	mov eax, DWORD PTR [esi+808]
+	xor eax, DWORD PTR [esi+736]
+	xor eax, DWORD PTR [esi+684]
+	xor eax, DWORD PTR [esi+612]
+	xor eax, DWORD PTR [esi+720]
+	mov ecx, DWORD PTR [esi+40]
+	bswap ecx
+	xor eax, ecx
+	bswap eax
+	mov DWORD PTR [esi+16], eax
+	movdqu xmm0, XMMWORD PTR [esi+16]
+	call {vg_cast5_key_lookup_ssse3}
+	mov eax, DWORD PTR [esi+796]
+	xor eax, DWORD PTR [esi+724]
+	xor eax, DWORD PTR [esi+664]
+	xor eax, DWORD PTR [esi+592]
+	xor eax, DWORD PTR [esi+52]
+	mov ecx, DWORD PTR [esi+32]
+	bswap ecx
+	xor eax, ecx
+	bswap eax
+	mov DWORD PTR [esi+20], eax
+	movdqu xmm0, XMMWORD PTR [esi+16]
+	call {vg_cast5_key_lookup_ssse3}
+	mov eax, DWORD PTR [esi+800]
+	xor eax, DWORD PTR [esi+740]
+	xor eax, DWORD PTR [esi+680]
+	xor eax, DWORD PTR [esi+620]
+	xor eax, DWORD PTR [esi+56]
+	mov ecx, DWORD PTR [esi+36]
+	bswap ecx
+	xor eax, ecx
+	bswap eax
+	mov DWORD PTR [esi+24], eax
+	movdqu xmm0, XMMWORD PTR [esi+16]
+	call {vg_cast5_key_lookup_ssse3}
+	mov eax, DWORD PTR [esi+816]
+	xor eax, DWORD PTR [esi+764]
+	xor eax, DWORD PTR [esi+692]
+	xor eax, DWORD PTR [esi+632]
+	xor eax, DWORD PTR [esi+60]
+	mov ecx, DWORD PTR [esi+44]
+	bswap ecx
+	xor eax, ecx
+	bswap eax
+	mov DWORD PTR [esi+28], eax
+	movdqu xmm0, XMMWORD PTR [esi+16]
+	call {vg_cast5_key_lookup_ssse3}
+	mov eax, DWORD PTR [esi+836]
+	xor eax, DWORD PTR [esi+768]
+	xor eax, DWORD PTR [esi+664]
+	xor eax, DWORD PTR [esi+604]
+	xor eax, DWORD PTR [esi+624]
+	mov DWORD PTR [edi+16], eax
+	mov eax, DWORD PTR [esi+844]
+	xor eax, DWORD PTR [esi+776]
+	xor eax, DWORD PTR [esi+656]
+	xor eax, DWORD PTR [esi+596]
+	xor eax, DWORD PTR [esi+708]
+	mov DWORD PTR [edi+20], eax
+	mov eax, DWORD PTR [esi+820]
+	xor eax, DWORD PTR [esi+752]
+	xor eax, DWORD PTR [esi+680]
+	xor eax, DWORD PTR [esi+620]
+	xor eax, DWORD PTR [esi+732]
+	mov DWORD PTR [edi+24], eax
+	mov eax, DWORD PTR [esi+828]
+	xor eax, DWORD PTR [esi+760]
+	xor eax, DWORD PTR [esi+672]
+	xor eax, DWORD PTR [esi+612]
+	xor eax, DWORD PTR [esi+812]
+	mov DWORD PTR [edi+28], eax
+	mov eax, DWORD PTR [esi+824]
+	mov DWORD PTR [esi+52], eax
+	mov eax, DWORD PTR [esi+628]
+	mov DWORD PTR [esi+56], eax
+	mov eax, DWORD PTR [esi+700]
+	mov DWORD PTR [esi+60], eax
+	mov eax, DWORD PTR [esi+840]
+	xor eax, DWORD PTR [esi+768]
+	xor eax, DWORD PTR [esi+716]
+	xor eax, DWORD PTR [esi+644]
+	xor eax, DWORD PTR [esi+752]
+	mov ecx, DWORD PTR [esi+16]
+	bswap ecx
+	xor eax, ecx
+	bswap eax
+	mov DWORD PTR [esi+32], eax
+	movdqu xmm0, XMMWORD PTR [esi+32]
+	call {vg_cast5_key_lookup_ssse3}
+	mov eax, DWORD PTR [esi+796]
+	xor eax, DWORD PTR [esi+724]
+	xor eax, DWORD PTR [esi+664]
+	xor eax, DWORD PTR [esi+592]
+	xor eax, DWORD PTR [esi+52]
+	mov ecx, DWORD PTR [esi+24]
+	bswap ecx
+	xor eax, ecx
+	bswap eax
+	mov DWORD PTR [esi+36], eax
+	movdqu xmm0, XMMWORD PTR [esi+32]
+	call {vg_cast5_key_lookup_ssse3}
+	mov eax, DWORD PTR [esi+800]
+	xor eax, DWORD PTR [esi+740]
+	xor eax, DWORD PTR [esi+680]
+	xor eax, DWORD PTR [esi+620]
+	xor eax, DWORD PTR [esi+56]
+	mov ecx, DWORD PTR [esi+28]
+	bswap ecx
+	xor eax, ecx
+	bswap eax
+	mov DWORD PTR [esi+40], eax
+	movdqu xmm0, XMMWORD PTR [esi+32]
+	call {vg_cast5_key_lookup_ssse3}
+	mov eax, DWORD PTR [esi+816]
+	xor eax, DWORD PTR [esi+764]
+	xor eax, DWORD PTR [esi+692]
+	xor eax, DWORD PTR [esi+632]
+	xor eax, DWORD PTR [esi+60]
+	mov ecx, DWORD PTR [esi+20]
+	bswap ecx
+	xor eax, ecx
+	bswap eax
+	mov DWORD PTR [esi+44], eax
+	movdqu xmm0, XMMWORD PTR [esi+32]
+	call {vg_cast5_key_lookup_ssse3}
+	mov eax, DWORD PTR [esi+836]
+	xor eax, DWORD PTR [esi+768]
+	xor eax, DWORD PTR [esi+664]
+	xor eax, DWORD PTR [esi+604]
+	xor eax, DWORD PTR [esi+628]
+	mov DWORD PTR [edi+32], eax
+	mov eax, DWORD PTR [esi+844]
+	xor eax, DWORD PTR [esi+776]
+	xor eax, DWORD PTR [esi+656]
+	xor eax, DWORD PTR [esi+596]
+	xor eax, DWORD PTR [esi+704]
+	mov DWORD PTR [edi+36], eax
+	mov eax, DWORD PTR [esi+820]
+	xor eax, DWORD PTR [esi+752]
+	xor eax, DWORD PTR [esi+680]
+	xor eax, DWORD PTR [esi+620]
+	xor eax, DWORD PTR [esi+728]
+	mov DWORD PTR [edi+40], eax
+	mov eax, DWORD PTR [esi+828]
+	xor eax, DWORD PTR [esi+760]
+	xor eax, DWORD PTR [esi+672]
+	xor eax, DWORD PTR [esi+612]
+	xor eax, DWORD PTR [esi+808]
+	mov DWORD PTR [edi+44], eax
+	mov eax, DWORD PTR [esi+792]
+	mov DWORD PTR [esi+52], eax
+	mov eax, DWORD PTR [esi+596]
+	mov DWORD PTR [esi+56], eax
+	mov eax, DWORD PTR [esi+668]
+	mov DWORD PTR [esi+60], eax
+	mov eax, DWORD PTR [esi+808]
+	xor eax, DWORD PTR [esi+736]
+	xor eax, DWORD PTR [esi+684]
+	xor eax, DWORD PTR [esi+612]
+	xor eax, DWORD PTR [esi+720]
+	mov ecx, DWORD PTR [esi+40]
+	bswap ecx
+	xor eax, ecx
+	bswap eax
+	mov DWORD PTR [esi+16], eax
+	movdqu xmm0, XMMWORD PTR [esi+16]
+	call {vg_cast5_key_lookup_ssse3}
+	mov eax, DWORD PTR [esi+796]
+	xor eax, DWORD PTR [esi+724]
+	xor eax, DWORD PTR [esi+664]
+	xor eax, DWORD PTR [esi+592]
+	xor eax, DWORD PTR [esi+52]
+	mov ecx, DWORD PTR [esi+32]
+	bswap ecx
+	xor eax, ecx
+	bswap eax
+	mov DWORD PTR [esi+20], eax
+	movdqu xmm0, XMMWORD PTR [esi+16]
+	call {vg_cast5_key_lookup_ssse3}
+	mov eax, DWORD PTR [esi+800]
+	xor eax, DWORD PTR [esi+740]
+	xor eax, DWORD PTR [esi+680]
+	xor eax, DWORD PTR [esi+620]
+	xor eax, DWORD PTR [esi+56]
+	mov ecx, DWORD PTR [esi+36]
+	bswap ecx
+	xor eax, ecx
+	bswap eax
+	mov DWORD PTR [esi+24], eax
+	movdqu xmm0, XMMWORD PTR [esi+16]
+	call {vg_cast5_key_lookup_ssse3}
+	mov eax, DWORD PTR [esi+816]
+	xor eax, DWORD PTR [esi+764]
+	xor eax, DWORD PTR [esi+692]
+	xor eax, DWORD PTR [esi+632]
+	xor eax, DWORD PTR [esi+60]
+	mov ecx, DWORD PTR [esi+44]
+	bswap ecx
+	xor eax, ecx
+	bswap eax
+	mov DWORD PTR [esi+28], eax
+	movdqu xmm0, XMMWORD PTR [esi+16]
+	call {vg_cast5_key_lookup_ssse3}
+	mov eax, DWORD PTR [esi+808]
+	xor eax, DWORD PTR [esi+748]
+	xor eax, DWORD PTR [esi+692]
+	xor eax, DWORD PTR [esi+624]
+	xor eax, DWORD PTR [esi+604]
+	mov DWORD PTR [edi+48], eax
+	mov eax, DWORD PTR [esi+800]
+	xor eax, DWORD PTR [esi+740]
+	xor eax, DWORD PTR [esi+700]
+	xor eax, DWORD PTR [esi+632]
+	xor eax, DWORD PTR [esi+684]
+	mov DWORD PTR [edi+52], eax
+	mov eax, DWORD PTR [esi+792]
+	xor eax, DWORD PTR [esi+732]
+	xor eax, DWORD PTR [esi+708]
+	xor eax, DWORD PTR [esi+640]
+	xor eax, DWORD PTR [esi+752]
+	mov DWORD PTR [edi+56], eax
+	mov eax, DWORD PTR [esi+784]
+	xor eax, DWORD PTR [esi+724]
+	xor eax, DWORD PTR [esi+716]
+	xor eax, DWORD PTR [esi+648]
+	xor eax, DWORD PTR [esi+836]
+	mov DWORD PTR [edi+60], eax
+	add edi, 64
+	sub ebx, 1
+	jne 21b
+	mov ebx, DWORD PTR [esi+64]
+	mov edi, DWORD PTR [esi+72]
+	mov ebp, DWORD PTR [esi+76]
+	mov esi, DWORD PTR [esi+68]
+	pxor xmm0, xmm0
+	mov ecx, 0
+	movdqu XMMWORD PTR [esp+20], xmm0
+	movdqu XMMWORD PTR [esp+36], xmm0
+	movdqu XMMWORD PTR [esp+52], xmm0
+	movdqu XMMWORD PTR [esp+68], xmm0
+	movdqu XMMWORD PTR [esp+84], xmm0
+	movdqu XMMWORD PTR [esp+100], xmm0
+	movdqu XMMWORD PTR [esp+116], xmm0
+	movdqu XMMWORD PTR [esp+132], xmm0
+	movdqu XMMWORD PTR [esp+148], xmm0
+	movdqu XMMWORD PTR [esp+164], xmm0
+	movdqu XMMWORD PTR [esp+180], xmm0
+	movdqu XMMWORD PTR [esp+196], xmm0
+	movdqu XMMWORD PTR [esp+212], xmm0
+	movdqu XMMWORD PTR [esp+228], xmm0
+	movdqu XMMWORD PTR [esp+244], xmm0
+	movdqu XMMWORD PTR [esp+260], xmm0
+	movdqu XMMWORD PTR [esp+276], xmm0
+	movdqu XMMWORD PTR [esp+292], xmm0
+	movdqu XMMWORD PTR [esp+308], xmm0
+	movdqu XMMWORD PTR [esp+324], xmm0
+	movdqu XMMWORD PTR [esp+340], xmm0
+	movdqu XMMWORD PTR [esp+356], xmm0
+	movdqu XMMWORD PTR [esp+372], xmm0
+	movdqu XMMWORD PTR [esp+388], xmm0
+	movdqu XMMWORD PTR [esp+404], xmm0
+	movdqu XMMWORD PTR [esp+420], xmm0
+	movdqu XMMWORD PTR [esp+436], xmm0
+	movdqu XMMWORD PTR [esp+452], xmm0
+	movdqu XMMWORD PTR [esp+468], xmm0
+	movdqu XMMWORD PTR [esp+484], xmm0
+	movdqu XMMWORD PTR [esp+500], xmm0
+	movdqu XMMWORD PTR [esp+516], xmm0
+	movdqu XMMWORD PTR [esp+532], xmm0
+	movdqu XMMWORD PTR [esp+548], xmm0
+	movdqu XMMWORD PTR [esp+564], xmm0
+	movdqu XMMWORD PTR [esp+580], xmm0
+	movdqu XMMWORD PTR [esp+596], xmm0
+	movdqu XMMWORD PTR [esp+612], xmm0
+	movdqu XMMWORD PTR [esp+628], xmm0
+	movdqu XMMWORD PTR [esp+644], xmm0
+	movdqu XMMWORD PTR [esp+660], xmm0
+	movdqu XMMWORD PTR [esp+676], xmm0
+	movdqu XMMWORD PTR [esp+692], xmm0
+	movdqu XMMWORD PTR [esp+708], xmm0
+	movdqu XMMWORD PTR [esp+724], xmm0
+	movdqu XMMWORD PTR [esp+740], xmm0
+	movdqu XMMWORD PTR [esp+756], xmm0
+	movdqu XMMWORD PTR [esp+772], xmm0
+	movdqu XMMWORD PTR [esp+788], xmm0
+	movdqu XMMWORD PTR [esp+804], xmm0
+	movdqu XMMWORD PTR [esp+820], xmm0
+	movdqu XMMWORD PTR [esp+836], xmm0
+	movdqu XMMWORD PTR [esp+852], xmm0
+	lea esp, [esp+880]
+	lea esp, [esp-888]
+	mov ecx, 0
+	mov DWORD PTR [esp+4], ecx
+	mov DWORD PTR [esp+8], ecx
+	mov DWORD PTR [esp+12], ecx
+	mov DWORD PTR [esp+16], ecx
+	mov DWORD PTR [esp+20], ecx
+	mov DWORD PTR [esp+24], ecx
+	mov DWORD PTR [esp+876], ecx
+	mov DWORD PTR [esp+880], ecx
+	mov DWORD PTR [esp+884], ecx
+	lea esp, [esp+888]
+	mov eax, 0
+	mov edx, 0
+	xor ecx, ecx
+	pxor xmm0, xmm0
+	pxor xmm1, xmm1
+	pxor xmm2, xmm2
+	pxor xmm3, xmm3
+	pxor xmm4, xmm4
+	pxor xmm5, xmm5
+	pxor xmm6, xmm6
+	pxor xmm7, xmm7
+	ret
+	.p2align 6
+
 vg_cast5_expand_key:
 	mov eax, DWORD PTR [esp+16]
 	mov DWORD PTR [eax+64], ebx

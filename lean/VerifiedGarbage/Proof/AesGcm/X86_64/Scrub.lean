@@ -110,7 +110,7 @@ theorem init_fill (i : GcmImpl) (n : Nat) (hs : i.stitch = none) :
       (Impl.StackScratch.X86_64.withStackScratch n .rcx (Impl.AesGcm.X86_64.init (stubCallees none none false)))
       (Impl.StackScratch.X86_64.withStackScratch n .rcx (Impl.AesGcm.X86_64.init i.callees)) := by
   obtain ⟨h1, h2, h3⟩ := i.sides .sse
-  simp only [GcmImpl.callees, hs, Option.map_none, Option.any_none]
+  simp only [GcmImpl.callees, hs, Option.map_none]
   fill_calls
 
 /-- `Spec.Gcm.initApi`'s function as emitted over `c`, for an implementation
@@ -202,7 +202,7 @@ theorem streamInit_fill (i : GcmImpl) (m : Nat) (hs : i.stitch = none) :
       (Impl.StackScratch.X86_64.withStackScratch m .r8 (Impl.AesGcm.X86_64.streamInit (stubCallees none none false)))
       (Impl.StackScratch.X86_64.withStackScratch m .r8 (Impl.AesGcm.X86_64.streamInit i.callees)) := by
   obtain ⟨h1, h2, h3⟩ := i.sides .sse
-  simp only [GcmImpl.callees, hs, Option.map_none, Option.any_none]
+  simp only [GcmImpl.callees, hs, Option.map_none]
   fill_calls
 
 /-- `Spec.Gcm.streamInitApi`'s function as emitted over `n`, in 240 bytes
@@ -298,7 +298,7 @@ theorem streamAad_fill (i : GcmImpl) (m : Nat) (hs : i.stitch = none) :
       (Impl.StackScratch.X86_64.withStackScratch m .r9 (Impl.AesGcm.X86_64.streamAad (stubCallees none none false)))
       (Impl.StackScratch.X86_64.withStackScratch m .r9 (Impl.AesGcm.X86_64.streamAad i.callees)) := by
   obtain ⟨h1, h2, h3⟩ := i.sides .sse
-  simp only [GcmImpl.callees, hs, Option.map_none, Option.any_none]
+  simp only [GcmImpl.callees, hs, Option.map_none]
   fill_calls
 
 /-- `Spec.Gcm.streamAadApi`'s function as emitted over `n`, in 192 bytes
@@ -432,7 +432,7 @@ theorem streamFinish_fill (i : GcmImpl) (m : Nat) (hs : i.stitch = none) :
       (Impl.StackScratch.X86_64.withStackArgScratch m 0 (Impl.AesGcm.X86_64.streamFinish (stubCallees none none false)))
       (Impl.StackScratch.X86_64.withStackArgScratch m 0 (Impl.AesGcm.X86_64.streamFinish i.callees)) := by
   obtain ⟨h1, h2, h3⟩ := i.sides .sse
-  simp only [GcmImpl.callees, hs, Option.map_none, Option.any_none]
+  simp only [GcmImpl.callees, hs, Option.map_none]
   fill_calls
 
 /-- `Spec.Gcm.streamFinishApi`'s function as emitted over `c` and `n`, in 232
@@ -509,7 +509,7 @@ theorem streamVerify_fill (i : GcmImpl) (m : Nat) (hs : i.stitch = none) :
       (Impl.StackScratch.X86_64.withStackArgScratch m 1 (Impl.AesGcm.X86_64.streamVerify (stubCallees none none false)))
       (Impl.StackScratch.X86_64.withStackArgScratch m 1 (Impl.AesGcm.X86_64.streamVerify i.callees)) := by
   obtain ⟨h1, h2, h3⟩ := i.sides .sse
-  simp only [GcmImpl.callees, hs, Option.map_none, Option.any_none]
+  simp only [GcmImpl.callees, hs, Option.map_none]
   fill_calls
 
 /-- `Spec.Gcm.streamVerifyApi`'s function as emitted over `c` and `n`, in 304

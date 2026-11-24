@@ -38,15 +38,17 @@ def decrypt (dec : Fn) (piece : Option (Prog isa)) (aligned : Bool := false) : P
   BlocksTo.encrypt dec piece aligned false
 
 /-- The arguments of `vg_ghash` on the blocks at `src`. -/
-def ghArgsTo : List Instr :=
-  [.mov .r11 (.mem (at_ .rsp 24)), .mov .rdi (.mem (at_ .r11 argCtx)), .alu .add .rdi (imm 240),
-    .mov .rsi (.mem (at_ .r11 argY)), .mov .rdx (.mem (at_ .r11 argSrc)), .mov .rcx (.mem (at_ .r11 argN)),
+def ghArgsAt (dataSlot : Nat) (compact : Bool := false) : List Instr :=
+  [.mov .r11 (.mem (at_ .rsp (if compact then 8 else 24))), .mov .rdi (.mem (at_ .r11 argCtx)), .alu .add .rdi (imm 240),
+    .mov .rsi (.mem (at_ .r11 argY)), .mov .rdx (.mem (at_ .r11 dataSlot)), .mov .rcx (.mem (at_ .r11 argN)),
     .mov .r8 (.reg .r11), .alu .add .r8 (imm 64)]
+
+abbrev ghArgsTo : List Instr := ghArgsAt argSrc
 
 /-- The arguments of `vg_aes_ctr32_to` on them, from `src` to `dst` (in
 `r11`, loaded last). -/
-def ctrArgsTo : List Instr :=
-  [.mov .r11 (.mem (at_ .rsp 24)), .mov .rdi (.mem (at_ .r11 argCtx)), .mov .rsi (.mem (at_ .r11 argRounds)),
+def ctrArgsTo (compact : Bool := false) : List Instr :=
+  [.mov .r11 (.mem (at_ .rsp (if compact then 8 else 24))), .mov .rdi (.mem (at_ .r11 argCtx)), .mov .rsi (.mem (at_ .r11 argRounds)),
     .mov .rdx (.mem (at_ .r11 argCtr)), .mov .rcx (.mem (at_ .r11 argSrc)), .mov .r8 (.mem (at_ .r11 argN)),
     .mov .r9 (.reg .r11), .alu .add .r9 (imm 64), .mov .r11 (.mem (at_ .r11 argDst))]
 
@@ -61,5 +63,26 @@ def tailTo (gh ctrTo : Fn) : Prog isa :=
 (`vg_ghash`) and `ctrTo` (`vg_aes_ctr32_to`), and copying nothing. -/
 def decryptTo (gh ctrTo : Fn) : Prog isa :=
   .seq (.block BlocksTo.entry) (tailTo gh ctrTo)
+
+/-- On a short encryption the existing out-of-place counter routine writes
+the ciphertext, then GHASH consumes it at its destination. -/
+def encryptShort (ctrTo gh : Fn) (compact : Bool := false) : Prog isa :=
+  .seq (.block [.mov .r11 (.mem (at_ .rsp (if compact then 8 else 24))), .mov .rcx (.mem (at_ .r11 argN)), .alu .test .rcx (.reg .rcx)])
+    (.ite .e (.block [])
+      (.seq (.seq (.block (ctrArgsTo compact)) (.call ctrTo.name ctrTo.code))
+        (.seq (.block (ghArgsAt argDst compact)) (.call gh.name gh.code))))
+
+/-- Prepared encryption with a fused loop for messages of at least sixteen
+blocks. Both branches start with the same saved arguments. -/
+def encryptPrepared (ctrTo gh : Fn) (piece : Prog isa) (aligned : Bool) (minimum : Nat := 16) : Prog isa :=
+  .seq (.block BlocksTo.entry) (.seq (BlocksTo.stitchPart piece aligned true minimum) (encryptShort ctrTo gh))
+
+/-- Internal whole-block seal entry. The destination is in r10 for both
+layouts and the only stack argument is scratch. A fused loop that consumes
+the whole record returns without spilling the cursors or entering the tail. -/
+def sealPrepared (ctrTo gh : Fn) (piece : Prog isa) (aligned : Bool) (minimum : Nat) : Prog isa :=
+  .seq (BlocksTo.compareCount minimum)
+    (.ite .b (.seq (.block (BlocksTo.entry true)) (encryptShort ctrTo gh true))
+      (.seq (.block (BlocksTo.pointers true ++ Blocks.scratchSetup aligned)) piece))
 
 end VG.Impl.AesGcm.X86_64.BlocksToDec

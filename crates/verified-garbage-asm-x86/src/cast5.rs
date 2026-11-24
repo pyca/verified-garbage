@@ -3,6 +3,75 @@
 //! `assembly/cast5.s`.
 #![allow(dead_code)]
 
+/// The CPU features `vg_cast5_expand_key_ssse3` requires (`Artifact.features`).
+pub const VG_CAST5_EXPAND_KEY_SSSE3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3);
+
+/// CAST-128 (CAST5) key expansion (RFC 2144 §2.4): pads the `key_len` bytes at `key` with zero bytes to 16 bytes (§2.5) and writes the subkeys `K1 … K32` to `*schedule`, each a little-endian 32-bit word: the masking subkeys `Km1 … Km16`, then the rotate subkeys `Kr1 … Kr16` (§2.4.1). A key of up to 10 bytes is used with 12 rounds, a longer one with 16.
+///
+/// Contract: `VG.Spec.Cast5.expandKeyContract`. Constant time: only pointers and `key_len` may affect timing, not the key bytes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// # Safety
+///
+/// * `key` must be valid for reads of `key_len` bytes.
+/// * `schedule` must be valid for reads and writes of 128 bytes.
+/// * `scratch` must be valid for reads and writes of 256 bytes.
+/// * `key_len` must be in 5..=16.
+/// * The contents of `scratch` on return are unspecified.
+/// * `schedule` and `scratch` must not overlap each other, `key` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `key`, `schedule` and `scratch` may overlap the return address on the stack or the 888 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `ssse3` target feature.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_cast5_expand_key_ssse3(key: *const u8, key_len: usize, schedule: *mut [u8; 128], scratch: *mut [u64; 32]) {
+    core::arch::naked_asm!(
+        r#".base64 "jaQkkPz//4uEJHQDAACJRCQEi4QkeAMAAIlEJAiLhCR8AwAAiUQkDIngg8AUiUQkEItEJBCJWECJeEiJaEyJcESJxot8JASLXCQIi1QkDLkAAAAAiU4QiU4UiU4YiU4cg8AQ"
+20:
+.base64 "D7YPiAiDxwGDwAGD6wE="
+jne 20b
+.base64 "ide7AgAAAPMPb0YQ"
+call {vg_cast5_key_lookup_ssse3}
+21:
+.base64 "i4Y4AwAAiUY0i4Z0AgAAiUY4i4a8AgAAiUY8i4ZIAwAAM4YAAwAAM4bMAgAAM4aEAgAAM4bwAgAAi04QD8kxyA/IiUYg8w9vRiA="
+call {vg_cast5_key_lookup_ssse3}
+.base64 "i4YcAwAAM4bUAgAAM4aYAgAAM4ZQAgAAM0Y0i04YD8kxyA/IiUYk8w9vRiA="
+call {vg_cast5_key_lookup_ssse3}
+.base64 "i4YgAwAAM4bkAgAAM4aoAgAAM4ZsAgAAM0Y4i04cD8kxyA/IiUYo8w9vRiA="
+call {vg_cast5_key_lookup_ssse3}
+.base64 "i4YwAwAAM4b8AgAAM4a0AgAAM4Z4AgAAM0Y8i04UD8kxyA/IiUYs8w9vRiA="
+call {vg_cast5_key_lookup_ssse3}
+.base64 "i4YoAwAAM4bsAgAAM4a0AgAAM4ZwAgAAM4ZYAgAAiQeLhiADAAAzhuQCAAAzhrwCAAAzhngCAAAzhqgCAACJRwSLhhgDAAAzhtwCAAAzhsQCAAAzhoACAAAzhvQCAACJRwiLhhADAAAzhtQCAAAzhswCAAAzhogCAAAzhkADAACJRwyLhhgDAACJRjSLhlQCAACJRjiLhpwCAACJRjyLhigDAAAzhuACAAAzhqwCAAAzhmQCAAAzhtACAACLTigPyTHID8iJRhDzD29GEA=="
+call {vg_cast5_key_lookup_ssse3}
+.base64 "i4YcAwAAM4bUAgAAM4aYAgAAM4ZQAgAAM0Y0i04gD8kxyA/IiUYU8w9vRhA="
+call {vg_cast5_key_lookup_ssse3}
+.base64 "i4YgAwAAM4bkAgAAM4aoAgAAM4ZsAgAAM0Y4i04kD8kxyA/IiUYY8w9vRhA="
+call {vg_cast5_key_lookup_ssse3}
+.base64 "i4YwAwAAM4b8AgAAM4a0AgAAM4Z4AgAAM0Y8i04sD8kxyA/IiUYc8w9vRhA="
+call {vg_cast5_key_lookup_ssse3}
+.base64 "i4ZEAwAAM4YAAwAAM4aYAgAAM4ZcAgAAM4ZwAgAAiUcQi4ZMAwAAM4YIAwAAM4aQAgAAM4ZUAgAAM4bEAgAAiUcUi4Y0AwAAM4bwAgAAM4aoAgAAM4ZsAgAAM4bcAgAAiUcYi4Y8AwAAM4b4AgAAM4agAgAAM4ZkAgAAM4YsAwAAiUcci4Y4AwAAiUY0i4Z0AgAAiUY4i4a8AgAAiUY8i4ZIAwAAM4YAAwAAM4bMAgAAM4aEAgAAM4bwAgAAi04QD8kxyA/IiUYg8w9vRiA="
+call {vg_cast5_key_lookup_ssse3}
+.base64 "i4YcAwAAM4bUAgAAM4aYAgAAM4ZQAgAAM0Y0i04YD8kxyA/IiUYk8w9vRiA="
+call {vg_cast5_key_lookup_ssse3}
+.base64 "i4YgAwAAM4bkAgAAM4aoAgAAM4ZsAgAAM0Y4i04cD8kxyA/IiUYo8w9vRiA="
+call {vg_cast5_key_lookup_ssse3}
+.base64 "i4YwAwAAM4b8AgAAM4a0AgAAM4Z4AgAAM0Y8i04UD8kxyA/IiUYs8w9vRiA="
+call {vg_cast5_key_lookup_ssse3}
+.base64 "i4ZEAwAAM4YAAwAAM4aYAgAAM4ZcAgAAM4Z0AgAAiUcgi4ZMAwAAM4YIAwAAM4aQAgAAM4ZUAgAAM4bAAgAAiUcki4Y0AwAAM4bwAgAAM4aoAgAAM4ZsAgAAM4bYAgAAiUcoi4Y8AwAAM4b4AgAAM4agAgAAM4ZkAgAAM4YoAwAAiUcsi4YYAwAAiUY0i4ZUAgAAiUY4i4acAgAAiUY8i4YoAwAAM4bgAgAAM4asAgAAM4ZkAgAAM4bQAgAAi04oD8kxyA/IiUYQ8w9vRhA="
+call {vg_cast5_key_lookup_ssse3}
+.base64 "i4YcAwAAM4bUAgAAM4aYAgAAM4ZQAgAAM0Y0i04gD8kxyA/IiUYU8w9vRhA="
+call {vg_cast5_key_lookup_ssse3}
+.base64 "i4YgAwAAM4bkAgAAM4aoAgAAM4ZsAgAAM0Y4i04kD8kxyA/IiUYY8w9vRhA="
+call {vg_cast5_key_lookup_ssse3}
+.base64 "i4YwAwAAM4b8AgAAM4a0AgAAM4Z4AgAAM0Y8i04sD8kxyA/IiUYc8w9vRhA="
+call {vg_cast5_key_lookup_ssse3}
+.base64 "i4YoAwAAM4bsAgAAM4a0AgAAM4ZwAgAAM4ZcAgAAiUcwi4YgAwAAM4bkAgAAM4a8AgAAM4Z4AgAAM4asAgAAiUc0i4YYAwAAM4bcAgAAM4bEAgAAM4aAAgAAM4bwAgAAiUc4i4YQAwAAM4bUAgAAM4bMAgAAM4aIAgAAM4ZEAwAAiUc8g8dAg+sB"
+jne 21b
+.base64 "i15Ai35Ii25Mi3ZEZg/vwLkAAAAA8w9/RCQU8w9/RCQk8w9/RCQ08w9/RCRE8w9/RCRU8w9/RCRk8w9/RCR08w9/hCSEAAAA8w9/hCSUAAAA8w9/hCSkAAAA8w9/hCS0AAAA8w9/hCTEAAAA8w9/hCTUAAAA8w9/hCTkAAAA8w9/hCT0AAAA8w9/hCQEAQAA8w9/hCQUAQAA8w9/hCQkAQAA8w9/hCQ0AQAA8w9/hCREAQAA8w9/hCRUAQAA8w9/hCRkAQAA8w9/hCR0AQAA8w9/hCSEAQAA8w9/hCSUAQAA8w9/hCSkAQAA8w9/hCS0AQAA8w9/hCTEAQAA8w9/hCTUAQAA8w9/hCTkAQAA8w9/hCT0AQAA8w9/hCQEAgAA8w9/hCQUAgAA8w9/hCQkAgAA8w9/hCQ0AgAA8w9/hCREAgAA8w9/hCRUAgAA8w9/hCRkAgAA8w9/hCR0AgAA8w9/hCSEAgAA8w9/hCSUAgAA8w9/hCSkAgAA8w9/hCS0AgAA8w9/hCTEAgAA8w9/hCTUAgAA8w9/hCTkAgAA8w9/hCT0AgAA8w9/hCQEAwAA8w9/hCQUAwAA8w9/hCQkAwAA8w9/hCQ0AwAA8w9/hCREAwAA8w9/hCRUAwAAjaQkcAMAAI2kJIj8//+5AAAAAIlMJASJTCQIiUwkDIlMJBCJTCQUiUwkGImMJGwDAACJjCRwAwAAiYwkdAMAAI2kJHgDAAC4AAAAALoAAAAAMclmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/8M="
+.p2align 6"#,
+        vg_cast5_key_lookup_ssse3 = sym super::cast5::vg_cast5_key_lookup_ssse3::vg_cast5_key_lookup_ssse3,
+    )
+}
+
 /// CAST-128 (CAST5) key expansion (RFC 2144 §2.4): pads the `key_len` bytes at `key` with zero bytes to 16 bytes (§2.5) and writes the subkeys `K1 … K32` to `*schedule`, each a little-endian 32-bit word: the masking subkeys `Km1 … Km16`, then the rotate subkeys `Kr1 … Kr16` (§2.4.1). A key of up to 10 bytes is used with 12 rounds, a longer one with 16.
 ///
 /// Contract: `VG.Spec.Cast5.expandKeyContract`. Constant time: only pointers and `key_len` may affect timing, not the key bytes.
@@ -757,6 +826,10 @@ jmp 21f
 #[rustfmt::skip]
 #[path = "internal/vg_cast5_crypt_blocks16_ssse3.rs"]
 pub(crate) mod vg_cast5_crypt_blocks16_ssse3;
+
+#[rustfmt::skip]
+#[path = "internal/vg_cast5_key_lookup_ssse3.rs"]
+pub(crate) mod vg_cast5_key_lookup_ssse3;
 
 #[rustfmt::skip]
 #[path = "internal/vg_cast5_lookup_ssse3.rs"]

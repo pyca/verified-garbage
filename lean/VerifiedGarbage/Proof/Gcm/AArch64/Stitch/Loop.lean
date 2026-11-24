@@ -102,7 +102,7 @@ theorem body_ok {s₀ : State} {to : Bool} (hp : KPreM s₀ to) (gh : Gh8Ok) {hb
     (fun j hj => by rw [frt.mem]; exact hhb j hj)) fun u ⟨hy, ou⟩ => ?_
   rw [WP.block_append_iff]
   have gu : ∀ r, r ≠ .x10 → r ≠ .x12 → u.gpr r = s.gpr r := fun r h1 h2 => by rw [ou.gpr, gt r h1 h2]
-  refine WP.mono (stores_ok hp hc ho' ho16 u (outReg to) (by rw [gu _ hout10 hout12, hout])
+  refine WP.mono (stores_ok hp.n16 hp.o_in hc ho' ho16 u (outReg to) (by rw [gu _ hout10 hout12, hout])
       (by rw [ou.mem, frt.mem]; exact hI.data) (by rw [ou.wr, frt.wr, hI.wr])
     (fun j hj tt htt => by rw [ou.v _ (by unfold breg; split <;> decide)]; exact hv j hj tt htt))
     fun u₁ ⟨d₁, f₁, g₁, v₁, sp₁, rd₁, wr₁⟩ => ?_

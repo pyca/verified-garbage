@@ -4,7 +4,7 @@
 // `src/` as its machine code, which `lean/VerifiedGarbage/TCB/<ISA>/Encode.lean`
 // gives.
 
-vg_rsa_pkcs1_decrypt_precomputed_front_sha256_shani_crt_ifma512:
+vg_rsa_pkcs1_decrypt_precomputed_sha256_shani_crt_ifma512:
 	lea rsp, [rsp-296]
 	mov rax, QWORD PTR [rsp+304]
 	mov QWORD PTR [rsp], rax
@@ -277,7 +277,7 @@ vg_rsa_pkcs1_decrypt_precomputed_front_sha256_shani_crt_ifma512:
 	ret
 	.p2align 6
 
-vg_rsa_pkcs1_decrypt_precomputed_front_sha256_shani_crt_ifma:
+vg_rsa_pkcs1_decrypt_precomputed_sha256_shani_crt_ifma:
 	lea rsp, [rsp-296]
 	mov rax, QWORD PTR [rsp+304]
 	mov QWORD PTR [rsp], rax
@@ -550,7 +550,7 @@ vg_rsa_pkcs1_decrypt_precomputed_front_sha256_shani_crt_ifma:
 	ret
 	.p2align 6
 
-vg_rsa_pkcs1_decrypt_precomputed_front_sha256_shani_crt_adx:
+vg_rsa_pkcs1_decrypt_precomputed_sha256_shani_crt_adx:
 	lea rsp, [rsp-296]
 	mov rax, QWORD PTR [rsp+304]
 	mov QWORD PTR [rsp], rax
@@ -807,7 +807,7 @@ vg_rsa_pkcs1_decrypt_precomputed_front_sha256_shani_crt_adx:
 	ret
 	.p2align 6
 
-vg_rsa_pkcs1_decrypt_precomputed_front_sha256_shani:
+vg_rsa_pkcs1_decrypt_precomputed_sha256_shani:
 	lea rsp, [rsp-296]
 	mov rax, QWORD PTR [rsp+304]
 	mov QWORD PTR [rsp], rax
@@ -1182,7 +1182,7 @@ vg_rsa_pkcs1_decrypt_precomputed_front_sha256_shani:
 	ret
 	.p2align 6
 
-vg_rsa_pkcs1_decrypt_precomputed_front_sha256_avx2_crt_ifma512:
+vg_rsa_pkcs1_decrypt_precomputed_sha256_avx2_crt_ifma512:
 	lea rsp, [rsp-296]
 	mov rax, QWORD PTR [rsp+304]
 	mov QWORD PTR [rsp], rax
@@ -1455,7 +1455,7 @@ vg_rsa_pkcs1_decrypt_precomputed_front_sha256_avx2_crt_ifma512:
 	ret
 	.p2align 6
 
-vg_rsa_pkcs1_decrypt_precomputed_front_sha256_avx2_crt_ifma:
+vg_rsa_pkcs1_decrypt_precomputed_sha256_avx2_crt_ifma:
 	lea rsp, [rsp-296]
 	mov rax, QWORD PTR [rsp+304]
 	mov QWORD PTR [rsp], rax
@@ -1728,7 +1728,7 @@ vg_rsa_pkcs1_decrypt_precomputed_front_sha256_avx2_crt_ifma:
 	ret
 	.p2align 6
 
-vg_rsa_pkcs1_decrypt_precomputed_front_sha256_avx2_crt_adx:
+vg_rsa_pkcs1_decrypt_precomputed_sha256_avx2_crt_adx:
 	lea rsp, [rsp-296]
 	mov rax, QWORD PTR [rsp+304]
 	mov QWORD PTR [rsp], rax
@@ -1985,7 +1985,7 @@ vg_rsa_pkcs1_decrypt_precomputed_front_sha256_avx2_crt_adx:
 	ret
 	.p2align 6
 
-vg_rsa_pkcs1_decrypt_precomputed_front_sha256_avx2:
+vg_rsa_pkcs1_decrypt_precomputed_sha256_avx2:
 	lea rsp, [rsp-296]
 	mov rax, QWORD PTR [rsp+304]
 	mov QWORD PTR [rsp], rax
@@ -2242,7 +2242,7 @@ vg_rsa_pkcs1_decrypt_precomputed_front_sha256_avx2:
 	ret
 	.p2align 6
 
-vg_rsa_pkcs1_decrypt_precomputed_front_crt_ifma512:
+vg_rsa_pkcs1_decrypt_precomputed_crt_ifma512:
 	lea rsp, [rsp-296]
 	mov rax, QWORD PTR [rsp+304]
 	mov QWORD PTR [rsp], rax
@@ -2515,7 +2515,7 @@ vg_rsa_pkcs1_decrypt_precomputed_front_crt_ifma512:
 	ret
 	.p2align 6
 
-vg_rsa_pkcs1_decrypt_precomputed_front_crt_ifma:
+vg_rsa_pkcs1_decrypt_precomputed_crt_ifma:
 	lea rsp, [rsp-296]
 	mov rax, QWORD PTR [rsp+304]
 	mov QWORD PTR [rsp], rax
@@ -2788,7 +2788,7 @@ vg_rsa_pkcs1_decrypt_precomputed_front_crt_ifma:
 	ret
 	.p2align 6
 
-vg_rsa_pkcs1_decrypt_precomputed_front_crt_adx:
+vg_rsa_pkcs1_decrypt_precomputed_crt_adx:
 	lea rsp, [rsp-296]
 	mov rax, QWORD PTR [rsp+304]
 	mov QWORD PTR [rsp], rax
@@ -3045,7 +3045,7 @@ vg_rsa_pkcs1_decrypt_precomputed_front_crt_adx:
 	ret
 	.p2align 6
 
-vg_rsa_pkcs1_decrypt_precomputed_front:
+vg_rsa_pkcs1_decrypt_precomputed:
 	lea rsp, [rsp-296]
 	mov rax, QWORD PTR [rsp+304]
 	mov QWORD PTR [rsp], rax

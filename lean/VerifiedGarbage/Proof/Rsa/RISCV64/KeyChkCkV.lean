@@ -1016,6 +1016,6 @@ theorem ck_implies : ckContract.Implies (Spec.Rsa.checkKeyContract RISCV64.abi) 
 /-- `vg_rsa_check_key`. -/
 theorem ck_verified :
     Verified RISCV64.target VG.Impl.Rsa.RISCV64.CheckKey.code (Spec.Rsa.checkKeyContract RISCV64.abi) :=
-  Verified.of_correct ck_correct ck_ct ck_implies
+  Verified.of_correct (k := ckContract) ck_correct ck_ct ck_implies
 
 end VG.Proof.Rsa.RISCV64.KeyCheck

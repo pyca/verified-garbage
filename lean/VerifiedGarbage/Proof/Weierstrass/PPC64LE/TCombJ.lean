@@ -414,7 +414,7 @@ theorem maddCallF_ok (F : Impl.Weierstrass.Mont.Modulus) (name : String) [NeZero
         maddJF (Eb F.k F.m false t.mem (t.gpr .r3) 3) (Eb F.k F.m false t.mem (t.gpr .r3) 4)
           (Eb F.k F.m false t.mem (t.gpr .r3) 5) (Eb F.k F.m false t.mem (t.gpr .r3) 6)
           (Eb F.k F.m false t.mem (t.gpr .r3) 7),
-      fun _ _ => True⟩)
+      fun _ _ => True, none⟩)
     (fun t ⟨hp, _, _⟩ => by
       obtain ⟨tr, t', he, A, G, O, L, E⟩ := fnOps_ok hM hodd maddOps_opsOk hp
       exact ⟨tr, t', he, A, G, O, L, E.trans (maddOps_run _)⟩)

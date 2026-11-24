@@ -56,12 +56,7 @@ def streamVerify : Prog isa :=
 /-- `vg_sm4_gcm_seal`, as emitted. -/
 def «seal» : Prog isa := Impl.Scrub.X86.scrubAll 0 4136 (withStackScratch 2600 8 (Impl.Sm4Gcm.X86.«seal» c t))
 
-/-- `vg_sm4_gcm_open`, as emitted. Its frame is 2616 bytes for the 2604 its
-working space and nine argument slots need, so that it calls `vg_sm4_ctr32`
-with `esp` where the functions of eight arguments, whose frames are 2600
-bytes, do, modulo 16: a multiple of 16 on the callee's entry when `esp` is
-one at the call, which `vg_sm4_ctr32_aesni`'s frame is sized for
-(`Impl.Sm4.X86.AesNiWide.ctr32Framed`). -/
-def «open» : Prog isa := Impl.Scrub.X86.scrubAll 32 4152 (withStackScratch 2616 9 (Impl.Sm4Gcm.X86.«open» c t))
+/-- `vg_sm4_gcm_open`, as emitted. -/
+def «open» : Prog isa := Impl.Scrub.X86.scrubAll 32 4140 (withStackScratch 2604 9 (Impl.Sm4Gcm.X86.«open» c t))
 
 end VG.Impl.Sm4Gcm.X86.Fn

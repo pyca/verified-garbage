@@ -4,7 +4,7 @@
 // `src/` as its machine code, which `lean/VerifiedGarbage/TCB/<ISA>/Encode.lean`
 // gives.
 
-vg_rsa_pkcs1_decrypt_precomputed_front_umaal:
+vg_rsa_pkcs1_decrypt_precomputed_umaal:
 	push {r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, lr}
 	sub sp, sp, #128
 	add r12, sp, #0
@@ -364,7 +364,7 @@ vg_rsa_pkcs1_encrypt_random_umaal:
 	cmp r2, r2
 	bx lr
 
-vg_rsa_pkcs1_decrypt_precomputed_front:
+vg_rsa_pkcs1_decrypt_precomputed:
 	push {r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, lr}
 	sub sp, sp, #128
 	add r12, sp, #0

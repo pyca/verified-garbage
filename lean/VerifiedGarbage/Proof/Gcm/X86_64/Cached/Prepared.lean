@@ -775,7 +775,7 @@ theorem remGTo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {P : Nat →
     (fun n q' hq hn => by
       rw [eS, show A + BitVec.ofNat 64 (64 * q') = op s₀ + BitVec.ofNat 64 (16 * (16 * e) + 64 * q') by
         show op s₀ + BitVec.ofNat 64 (16 * (16 * e)) + _ = _; rw [Offset.add_add]]
-      exact (hp.s_o.sub_left (Offset.sub_base _ (by omega_arith))).sub_right (Offset.sub_base _ (by omega_arith)))
+      exact hp.toM.separate (.inr (by omega_arith)) (by omega_arith) (by omega_arith))
     (fun n hn => by
       show Region.Disjoint ⟨pp s₀ + BitVec.ofNat 64 (256 - 16 * r) + BitVec.ofNat 64 (16 * n), 16⟩
         ⟨oAddr s₀ (16 * e), 16 * r⟩
@@ -814,7 +814,7 @@ theorem remGTo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {P : Nat →
   obtain hX : ∀ j < r, blockAt s₁.mem (S + BitVec.ofNat 64 (16 * j)) ^^^
       ciph s₀ (Nat.repeat inc32 (16 * e + j) (cb s₀)) = ctbT s₀ (16 * e + j) := fun j hj => by
     obtain hk : 16 * e + j < nb s₀ := by omega_using [hnb, hj]
-    rw [eS, toS _ (cS _ hk), hI.a.src hp hk]
+    rw [eS, toS _ (cS _ hk), hI.a.unread _ hk (Nat.le_add_right _ _)]
   -- The blocks.
   obtain hb₂ : ∀ k < nb s₀, blockAt s₂.mem (oAddr s₀ k) = ctbT s₀ k := by
     intro k hk
@@ -1446,9 +1446,7 @@ theorem remCore_ok {ix : Bool} {s₀ : State} (hp : Stitch.LPre ix s₀) (hck : 
       show Region.Disjoint ⟨dp s₀ + BitVec.ofNat 64 (16 * (16 * e)) + BitVec.ofNat 64 (16 * n), 16⟩
         ⟨Stitch.wp ix s₀ + BitVec.ofNat 64 (16 * (16 * e)) + BitVec.ofNat 64 (64 * q'), 64⟩
       rw [Offset.add_add, Offset.add_add]
-      cases ix
-      · exact Offset.disjoint _ (.inr (by omega_using [hq])) (by omega_using [hex, hne, hwd, h1e, hle, hn, hr_def, hr1, hr15, hnb, hq, hn', hw]) (by omega_using [hwd, hnb, hq, hn'])
-      · exact ((hp.d_w rfl).sub_left (Offset.sub_base _ (by omega_using [hnb, hn']))).sub_right (Offset.sub_base _ (by omega_using [hex, hne, hwd, h1e, hle, hn, hr_def, hr1, hr15, hnb, hq, hn', hw])))
+      exact hp.separate (.inr (by omega_using [hq])) (by omega_using [hnb, hn']) (by omega_using [hex, hne, hwd, h1e, hle, hn, hr_def, hr1, hr15, hnb, hq, hn', hw]))
     (fun n hn' => by
       show Region.Disjoint ⟨pp s₀ + BitVec.ofNat 64 (256 - 16 * r) + BitVec.ofNat 64 (16 * n), 16⟩
         ⟨Stitch.wp ix s₀ + BitVec.ofNat 64 (16 * (16 * e)), 16 * r⟩

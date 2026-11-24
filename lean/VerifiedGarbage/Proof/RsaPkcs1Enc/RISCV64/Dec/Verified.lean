@@ -1791,7 +1791,7 @@ variable {pc : Bool}
 
 /-- The outcome, on the registers and the stack. -/
 def fnPost (s s' : State) : Prop :=
-  Proof.RsaPkcs1Enc.writtenMsg s'.mem (s.gpr .a0) (s.gpr .a2) (s.gpr .a4).toNat ((s'.gpr .a0).setWidth 32)
+  Proof.RsaPkcs1Enc.writtenMsgEnd s'.mem (s.gpr .a0) (s.gpr .a2) (s.gpr .a4).toNat ((s'.gpr .a0).setWidth 32)
     (Spec.RsaPkcs1Enc.decrypt (Spec.Rsa.bytesAt s.mem (s.gpr .a3) (s.gpr .a4).toNat)
       (Spec.Rsa.bytesAt s.mem (s.gpr .a5) (s.gpr .a6).toNat) (dBytes s)
       (Spec.Rsa.bytesAt s.mem (stackArg s 3) (stackArg s 4).toNat)
@@ -1852,7 +1852,7 @@ theorem result_ok {s : State} (h : DPre pc s) {x : BitVec 64} {mc : Mem} {t : St
   have hw : Spec.Rsa.wordsAt t.mem (s.gpr .a2) 1 = [t.mem.readW (s.gpr .a2) 64] := by
     simp only [Spec.Rsa.wordsAt, List.range_one, List.map_cons, List.map_nil, Nat.mul_zero, BitVec.add_zero]
   simp only [Spec.RsaPkcs1Enc.decrypt]
-  show Proof.RsaPkcs1Enc.writtenMsg _ _ _ _ _ (Spec.RsaPkcs1Enc.decryptWith (rsadpOf s)
+  show Proof.RsaPkcs1Enc.writtenMsgEnd _ _ _ _ _ (Spec.RsaPkcs1Enc.decryptWith (rsadpOf s)
     (Spec.Rsa.bytesAt s.mem (s.gpr .a3) (s.gpr .a4).toNat).length (dBytes s) (cOf s))
   cases hO : rsadpOf s (cOf s) with
   | ok EM' =>
@@ -2107,6 +2107,6 @@ theorem dec_implies : fnContract.Implies (Proof.RsaPkcs1Enc.decryptContract RISC
 
 /-- `vg_rsa_pkcs1_decrypt`. -/
 theorem dec_verified : Verified RISCV64.target code (Proof.RsaPkcs1Enc.decryptContract RISCV64.abi stackBytes) :=
-  Verified.of_correct code_correct code_ct dec_implies
+  Verified.of_correct (k := fnContract) code_correct code_ct dec_implies
 
 end VG.Proof.RsaPkcs1Enc.RISCV64.Dec

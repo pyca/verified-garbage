@@ -63,9 +63,9 @@ def batches (c : Callees) : Prog isa :=
   .ite (.zero .x .x9) (.block []) <|
     .seq (hashPending c) <|
     .seq (.block ([mov .x15 .x23, mov .x23 .x26, mov .x26 .x24] ++
-        tableFromKey ++ Gcm.AArch64.Stitch.setup)) <|
-    .seq (Gcm.AArch64.Stitch.byRounds Gcm.AArch64.Stitch.encToLoop) <|
-      .block (Gcm.AArch64.Stitch.finish ++ [mov .x26 .x9, mov .x23 .x15, imm .x10 127,
+        tableFromKey)) <|
+    .seq Gcm.AArch64.Stitch.sealCall <|
+      .block ([mov .x26 .x9, mov .x23 .x15, imm .x10 127,
         .logic .and .x .x24 .x24 .x10, .str .x .x26 .x19 hashO])
 
 /-- `x27` points to the descriptors, `x28` counts them and `x26` points to

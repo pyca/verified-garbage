@@ -127,6 +127,28 @@ theorem pre_args {sig : Sig} {pre : Curry (sig.words abi.ptrBits) (Mem → Prop)
   rw [wf_args hk]
   exact Iff.rfl
 
+/-- A witness for a stack frame remains a witness when the frame shrinks. -/
+theorem frameSat_of_le {sig : Sig} {pre : Curry (sig.words abi.ptrBits) (Mem → Prop)}
+    {post : sig.Post abi.ptrBits} {wa : Bool} {small large : Nat}
+    (hk : 6 ≤ (sig.words abi.ptrBits).length) (hl : small ≤ large) (hw : large < 2 ^ 64)
+    (h : ∃ s, (sig.contract abi pre post wa large).pre s) :
+    ∃ s, (sig.contract abi pre post wa small).pre s := by
+  obtain ⟨s, hs⟩ := h
+  refine ⟨s, (pre_args hk).mpr ?_⟩
+  obtain ⟨⟨space, args⟩, rd, wr, pairs, disj, bounds, hp⟩ := (pre_args hk).mp hs
+  refine ⟨⟨by omega_using [space, hl], args⟩, rd, wr, pairs, ?_, bounds, hp⟩
+  intro r hr a ha
+  rcases List.mem_cons.mp hr with rfl | hr
+  · exact disj _ (.head _) _ ha
+  · cases small with
+    | zero => exact False.elim (List.not_mem_nil hr)
+    | succ k =>
+      obtain rfl := List.mem_singleton.mp hr
+      cases large with
+      | zero => exact False.elim (Nat.not_succ_le_zero _ hl)
+      | succ j =>
+        exact (disj _ (.tail _ (.head _)) _ ha).sub_left (below_sub hl hw)
+
 /-- The postcondition of a contract with at least six argument words. -/
 theorem post_args {sig : Sig} {pre : Curry (sig.words abi.ptrBits) (Mem → Prop)}
     {post : sig.Post abi.ptrBits} {wa : Bool} {stack : Nat}

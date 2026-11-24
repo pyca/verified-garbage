@@ -359,6 +359,6 @@ theorem code_ct [InvLaw] : ConstantTime isa (Spec.Rsa.crtValuesContract RISCV64.
 
 /-- `vg_rsa_crt_values`. -/
 theorem crtValues_verified [InvLaw] : Verified RISCV64.target code (Spec.Rsa.crtValuesContract RISCV64.abi) :=
-  Verified.of_correct code_correct code_ct cv_implies
+  Verified.of_correct (k := fnContract) code_correct code_ct cv_implies
 
 end VG.Proof.Rsa.RISCV64.CrtValues

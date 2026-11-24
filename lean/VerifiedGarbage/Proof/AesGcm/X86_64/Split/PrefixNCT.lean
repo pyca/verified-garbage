@@ -405,7 +405,7 @@ theorem nLoop (hC : 1 ≤ sl / 256 ∧ sl / 256 < n / 256) {t : State} (hN : NC 
       by rw [add_ofNat_assoc]; exact h.env.perm.wW (by decide),
       in_pre h.srcCov (by omega_arith), in_pre h.data.wr (by omega_arith), h.env.perm.wW (by decide),
       h.ext.cs.sub_right cb_sub, h.ext.cs.sub_right y_sub, kD.sub_right dC, h.ext.cw.sub_right pW,
-      (h.sW.sub_left sC).sub_right cW, (h.sW.sub_left sC).sub_right yW, (h.sD.sub_left sC).sub_right dC,
+      (h.sW.sub_left sC).sub_right cW, (h.sW.sub_left sC).sub_right yW, Or.inr ((h.sD.sub_left sC).sub_right dC),
       (h.sW.sub_left sC).sub_right pW, (h.data.ok.w.sub_left dC).sub_right cW,
       (h.data.ok.w.sub_left dC).sub_right yW, (h.data.ok.w.sub_left dC).sub_right pW,
       ((L.sb.sub_left cb_sub).sub_right pB).symm, ((L.sb.sub_left y_sub).sub_right pB).symm,

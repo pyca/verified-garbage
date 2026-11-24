@@ -1,4 +1,5 @@
 module
+public import VerifiedGarbage.Proof.AesGcm.X86_64.DirectGather.Call
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.FrontFast
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.CT
@@ -13,7 +14,7 @@ open VG VG.X86_64 Gather
 open VG.Proof.Gcm.X86_64.Stitch (CtxMode)
 open VG.Impl.AesGcm.X86_64 (oneEntry)
 
-abbrev Layout (M : CtxMode) (s : State) := GatherLayout M s 2560 2512
+abbrev Layout (M : CtxMode) (s : State) := GatherLayout M s 2560 56
 
 namespace Layout
 variable {M : CtxMode} {s : State} (h : Layout M s)
@@ -21,7 +22,7 @@ include h
 
 theorem oneCtx (hc : 256 ≤ M.len) :
     OneCtx s 6 (K s) (W s) (SP s) (Nn s) (Ad s) (Dst s) (NL s) (AL s).toNat (L s) := by
-  have k : Region.Sub (below (SP s) 24) (below (SP s) 2512) := below_sub (by decide) (by decide)
+  have k : Region.Sub (below (SP s) 24) (below (SP s) 56) := below_sub (by decide) (by decide)
   have ar : stackArgAddr s 0 = SP s + 8#64 := by simp [stackArgAddr, SP]
   apply OneCtx.ofAt (cl := M.len) (w := 5) (id := 2) (il := 3) _ hc
   · rw [h.rd]; exact covers_of_mem (r := kR M s) (by simp)
@@ -101,7 +102,7 @@ theorem inputs {t : State} {H : Spec.Gcm.Block} {iv aad : List Byte} {mE : Mem}
     Split.CallInputs M (K s) (W s) (SP s) (Dst s) (sb s 0) (s.gpr .rsi).toNat (L s) (sl s 0)
       (callState t (W s) (sb s 0) (Dst s) (L s)) := by
   have c := h.oneCtx M.ge
-  have k : Region.Sub (below (SP s) 56) (below (SP s) 2512) := below_sub (by decide) (by decide)
+  have k : Region.Sub (below (SP s) 56) (below (SP s) 56) := below_sub (by decide) (by decide)
   have region := slice_mem s (i := 0) nz
   obtain ⟨sd, -, sw⟩ := h.ls _ region
   have f := firstMem_frame t.mem (W s) (sb s 0) (Dst s) (L s)
@@ -130,7 +131,6 @@ end Layout
 namespace Layout
 open VG.Spec.Aes (bytesAt)
 open VG.Spec.Gcm (ctxH)
-open VG.Proof.AesGcm.X86_64.StreamTo (BlkToFn)
 
 variable {th : Nat} {s : State} (h : Layout (CtxMode.flaggedT th) s)
 include h
@@ -158,7 +158,7 @@ abbrev WholeDone (s u m : State) (v : State) :=
   AadDone s u m ∧ Split.Mid2 (K s) (W s) (SP s) (Dst s) (sb s 0) (s.gpr .rsi).toNat (sl s 0)
     (callState m (W s) (sb s 0) (Dst s) (L s)) v
 
-theorem aad_blocks_wp (hf : Short.ShortFacts) (T : BlkToFn (CtxMode.flaggedT th)) (ht : 16 ≤ th)
+theorem aad_blocks_wp (hf : Short.ShortFacts) (T : BlocksTo.SealFn (CtxMode.flaggedT th)) (ht : 16 ≤ th)
     {u : State} (e : Initial s u) (g : frontGo false s = true) :
     WP isa (.seq VG.Impl.AesGcm.X86_64.Fast.aad (VG.Impl.AesGcm.X86_64.DirectGather.firstBlocks T.fn)) u
       fun v => ∃ m, WholeDone s u m v := by

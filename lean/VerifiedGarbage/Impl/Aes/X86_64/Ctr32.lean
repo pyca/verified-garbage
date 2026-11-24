@@ -80,11 +80,17 @@ def keySetup : List Instr :=
    .alu .add .rsi (.reg .rsi), .alu .add .rsi (.reg .rsi), .alu .add .rdi (.reg .rsi),
    movR .rsi .r9, .alu .add .rsi (.imm (BitVec.ofNat 32 lastKey))]
 
-/-- The round key at `rdi`, as four blocks for `toBs`. -/
-def keyLoad : List Instr :=
-  [.mov (q 0) (.mem (at_ .rdi 0)), .mov (q 4) (.mem (at_ .rdi 8)),
-   movR (q 1) (q 0), movR (q 2) (q 0), movR (q 3) (q 0),
-   movR (q 5) (q 4), movR (q 6) (q 4), movR (q 7) (q 4)]
+/-- Load the two halves of a round key once. -/
+def keyLoad : List Instr := [.mov (q 0) (.mem (at_ .rdi 0)), .mov (q 4) (.mem (at_ .rdi 8))]
+
+/-- The four AES lanes share a round key. Transpose its two words first, then
+broadcast the result for the final transpose across the four lanes. -/
+def keyToBs : List Instr :=
+  setMasks bsMasks ++
+  swapIn (q 0) t0 1 16 ++ swapIn (q 4) t0 1 16 ++
+  swapIn (q 0) t0 2 8 ++ swapIn (q 4) t0 2 8 ++ swapBetween (q 0) (q 4) t0 3 8 ++
+  [movR (q 1) (q 0), movR (q 2) (q 0), movR (q 3) (q 0),
+   movR (q 5) (q 4), movR (q 6) (q 4), movR (q 7) (q 4)] ++ ortho
 
 /-- Store the bitsliced round key at `rsi`. -/
 def keyStore : List Instr := (List.range 8).map fun j => .store (slotAt .rsi j) (q j)
@@ -94,7 +100,7 @@ passes zero). -/
 def keyStep : List Instr := [.alu .sub .rdi (.imm 16), .alu .sub .rsi (.imm 64), .alu .sub .r15 (.imm 1)]
 
 /-- Bitslice the round key at `rdi` to `rsi`, and step back. -/
-def keyBody : List Instr := keyLoad ++ toBs ++ keyStore ++ keyStep
+def keyBody : List Instr := keyLoad ++ keyToBs ++ keyStore ++ keyStep
 
 /-- `rdi := ` the first round key. -/
 def keyDone : List Instr := [movR .rdi .rsi, .alu .add .rdi (.imm 64)]

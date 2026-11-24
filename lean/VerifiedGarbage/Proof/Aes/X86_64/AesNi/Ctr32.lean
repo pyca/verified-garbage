@@ -318,23 +318,23 @@ structure Pre (to : Bool) (s₀ : State) : Prop where
   c_d : (cR s₀).Disjoint (ddR s₀ to)
   ret_c : (retR s₀).Disjoint (cR s₀)
   ret_d : (retR s₀).Disjoint (ddR s₀ to)
-  /-- Out of place, the data and the output do not overlap. -/
-  src : to = true → (dR s₀).Disjoint (ddR s₀ to)
+  /-- The input and output buffers are identical or disjoint. -/
+  src : dp s₀ = dd s₀ to ∨ (dR s₀).Disjoint (ddR s₀ to)
   wrap : (dp s₀).toNat + 16 * nb s₀ ≤ 2 ^ 64
   wrapD : (dd s₀ to).toNat + 16 * nb s₀ ≤ 2 ^ 64
   rounds : nr s₀ = 10 ∨ nr s₀ = 12 ∨ nr s₀ = 14
 
 theorem pre_of (s₀ : State) (h : ctr32X86_64.pre s₀) : Pre false s₀ := by
   obtain ⟨h1, h2, h3, h4, _, h6, _, _, h9, h10, _, h12, h13⟩ := h
-  exact ⟨h1, ⟨_, h2⟩, h3, h4, h6, h9, h10, fun h => Bool.noConfusion h, h12, h12, h13⟩
+  exact ⟨h1, ⟨_, h2⟩, h3, h4, h6, h9, h10, Or.inl rfl, h12, h12, h13⟩
 
 theorem preF_of (s₀ : State) (h : ctr32X86_64F.pre s₀) : Pre false s₀ := by
   obtain ⟨h1, h2, h3, h4, h6, h9, h10, h12, h13⟩ := h
-  exact ⟨h1, ⟨_, h2⟩, h3, h4, h6, h9, h10, fun h => Bool.noConfusion h, h12, h12, h13⟩
+  exact ⟨h1, ⟨_, h2⟩, h3, h4, h6, h9, h10, Or.inl rfl, h12, h12, h13⟩
 
 theorem preTo_of (s₀ : State) (h : ctr32ToX86_64.pre s₀) : Pre true s₀ := by
   obtain ⟨h1, h2, h3, h4, _, _, h7, _, h9, _, _, h12, h13, _, h15, h16, h17⟩ := h
-  exact ⟨h1, ⟨_, h2⟩, h3, h4, h7, h12, h13, fun _ => h9, h15, h16, h17⟩
+  exact ⟨h1, ⟨_, h2⟩, h3, h4, h7, h12, h13, h9, h15, h16, h17⟩
 
 namespace Pre
 variable {to : Bool} {s₀ : State} (hp : Pre to s₀)
@@ -378,22 +378,12 @@ theorem sch_frame {m : Mem} (hf : Frame [ddR s₀ to] s₀.mem m) :
 before it. -/
 theorem sep_src {i k : Nat} (hk : k < nb s₀) (hik : i < k) :
     Mem.Sep (bAddr s₀ k) 16 (oAddr s₀ to i) 16 := by
-  cases to with
-  | true => exact (hp.src rfl).sep (hp.in_blk hk) (hp.in_out (by omega_arith))
-  | false =>
-    have hw := hp.wrap
-    intro a h₁ h₂
-    change (a - (dp s₀ + BitVec.ofNat 64 (16 * i))).toNat < 16 at h₂
-    rw [off_toNat _ _ (by omega_arith)] at h₁ h₂
-    have := (a - dp s₀).isLt
-    omega_arith
-
-/-- Block `k` of the data does not overlap the output out of place. -/
-theorem src_disj {k : Nat} (hk : k < nb s₀) (ht : to = true) :
-    ∀ r ∈ [ddR s₀ to], Region.Disjoint ⟨bAddr s₀ k, 16⟩ r := by
-  simp only [List.mem_singleton, forall_eq]
-  exact (hp.src ht).sub_left fun x hx =>
-    (hp.in_blk hk).byte (by simp only [Region.Contains] at hx; omega_arith)
+  rcases hp.src with same | apart
+  · change Mem.Sep _ 16 (dd s₀ to + _ ) 16
+    rw [← same]
+    exact Offset.sep _ (.inr (by omega_arith)) (by have := hp.wrap; omega_arith)
+      (by have := hp.wrap; omega_arith)
+  · exact apart.sep (hp.in_blk hk) (hp.in_out (by omega_arith))
 
 end Pre
 
@@ -420,12 +410,13 @@ structure Inv (to : Bool) (s₀ : State) (c p : Nat) (s : State) : Prop where
 /-- The blocks of the data not yet read are as they were. -/
 theorem Inv.src {to : Bool} {s₀ : State} {c p : Nat} {s : State} (hp : Pre to s₀) (hI : Inv to s₀ c p s)
     {k : Nat} (hk : k < nb s₀) (hck : c ≤ k) : blockAt s.mem (bAddr s₀ k) = blk s₀ k := by
-  cases to with
-  | false =>
-    have := hI.blocks k hk
-    simp only [show ¬ k < c by omega_arith, ↓reduceIte] at this
-    exact this
-  | true => exact blockAt_frame hI.frame (hp.src_disj hk rfl)
+  rcases hp.src with same | apart
+  · have h := hI.blocks k hk
+    simp only [oAddr, ← same, show ¬ k < c by omega_arith, ↓reduceIte] at h
+    exact h
+  · exact blockAt_frame hI.frame fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact apart.sub_left (Offset.sub_base _ (by omega_arith))
 
 /-- `Inv.blocks` in place, about the data's blocks. -/
 theorem Inv.blocksIn {s₀ : State} {c p : Nat} {s : State} (hI : Inv false s₀ c p s) :

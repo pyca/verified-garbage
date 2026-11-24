@@ -8,14 +8,14 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
-# `vg_rsa_pkcs1_decrypt_precomputed_front` on PPC64LE, without secret residue
+# `vg_rsa_pkcs1_decrypt_precomputed` on PPC64LE, without secret residue
 
-The function as emitted (`Impl.RsaPkcs1Enc.PPC64LE.Fn.decryptPrecomputedFront`):
-`Front.code`, calling `vg_rsa_pkcs1_decrypt_precomputed`'s code before its
+The function as emitted (`Impl.RsaPkcs1Enc.PPC64LE.Fn.decryptPrecomputed`):
+`Front.code`, calling `vg_rsa_pkcs1_decrypt_precomputed_body`'s code before its
 cleanup (`Decrypt.codeP`) as an internal function of its own
 (`Front.bodyName`), then the cleanup of the 3920 bytes of stack it and its
 callee use and of every volatile register, as for
-`vg_rsa_pkcs1_decrypt_precomputed` (`Scrub.lean`). Its postcondition reads
+`vg_rsa_pkcs1_decrypt_precomputed_body` (`Scrub.lean`). Its postcondition reads
 the memory on return only within `out` and `msg_len` (`frontOut`).
 -/
 
@@ -97,19 +97,19 @@ theorem toNat_sw (x : BitVec 64) : (x.setWidth abi.ptrBits).toNat = x.toNat := b
   rw [BitVec.toNat_setWidth, ScrubAbi.plain.ptrBits]
   exact Nat.mod_eq_of_lt x.isLt
 
-theorem writtenMsgFront_of {m₁ m₂ : Mem} {o l : Addr} {n : Nat} {r : BitVec 32} {v : Spec.Rsa.Outcome}
+theorem writtenMsg_of {m₁ m₂ : Mem} {o l : Addr} {n : Nat} {r : BitVec 32} {v : Spec.Rsa.Outcome}
     (e : Spec.Rsa.bytesAt m₂ o n = Spec.Rsa.bytesAt m₁ o n) (el : Spec.Rsa.wordsAt m₂ l 1 = Spec.Rsa.wordsAt m₁ l 1)
-    (h : Spec.RsaPkcs1Enc.writtenMsgFront m₁ o l n r v) : Spec.RsaPkcs1Enc.writtenMsgFront m₂ o l n r v := by
-  cases v <;> simpa only [Spec.RsaPkcs1Enc.writtenMsgFront, e, el] using h
+    (h : Spec.RsaPkcs1Enc.writtenMsg m₁ o l n r v) : Spec.RsaPkcs1Enc.writtenMsg m₂ o l n r v := by
+  cases v <;> simpa only [Spec.RsaPkcs1Enc.writtenMsg, e, el] using h
 
 /-- The postcondition reads the memory on return only in `out` and
 `msg_len`. -/
 theorem frontOut (stack : Nat) :
-    PostOut (Spec.RsaPkcs1Enc.decryptPrecomputedFrontContract abi stack)
-      (Spec.RsaPkcs1Enc.decryptPrecomputedFrontSig.retBits 64) :=
+    PostOut (Spec.RsaPkcs1Enc.decryptPrecomputedContract abi stack)
+      (Spec.RsaPkcs1Enc.decryptPrecomputedSig.retBits 64) :=
   postOut_of_local_pre (leak := some _) ScrubAbi.plain fun
     | [out, outLen, ml, _, nLen, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _], m, m₁, m₂, r, _, hp, hb, h => by
-      simp only [Spec.RsaPkcs1Enc.decryptPrecomputedFrontSig, Sig.bufs, List.mem_cons, forall_eq_or_imp, Elem.size] at hb
+      simp only [Spec.RsaPkcs1Enc.decryptPrecomputedSig, Sig.bufs, List.mem_cons, forall_eq_or_imp, Elem.size] at hb
       change @Curry.apply (Mem → Prop) [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _] _ _ m at hp
       change @Curry.apply (Mem → Mem → BitVec _ → Prop)
         [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _] _ _ _ m₁ r at h
@@ -120,18 +120,18 @@ theorem frontOut (stack : Nat) :
         fun X hX => hX ▸ bytesAt_of hb.1
       have hol := hp.2.1
       rw [toNat_sw, toNat_sw] at hol
-      exact writtenMsgFront_of (e _ (by rw [toNat_sw]; exact hol.symm)) (wordsAt_of hb.2.1) h
+      exact writtenMsg_of (e _ (by rw [toNat_sw]; exact hol.symm)) (wordsAt_of hb.2.1) h
 
-/-- The stack `vg_rsa_pkcs1_decrypt_precomputed`'s code uses. -/
+/-- The stack `vg_rsa_pkcs1_decrypt_precomputed_body`'s code uses. -/
 theorem codeP_sdepth : sdepth Impl.RsaPkcs1Enc.PPC64LE.Decrypt.codeP ≤ 3648 := by lit_decide
 
-/-- `vg_rsa_pkcs1_decrypt_precomputed_front` as emitted
-(`Impl.RsaPkcs1Enc.PPC64LE.Fn.decryptPrecomputedFront`) meets its contract
+/-- `vg_rsa_pkcs1_decrypt_precomputed` as emitted
+(`Impl.RsaPkcs1Enc.PPC64LE.Fn.decryptPrecomputed`) meets its contract
 in constant time and returns without secret residue. -/
 theorem front_scrubbed :
-    VerifiedScrubbed PPC64LE.target Impl.RsaPkcs1Enc.PPC64LE.Fn.decryptPrecomputedFront
-      (Spec.RsaPkcs1Enc.decryptPrecomputedFrontContract PPC64LE.abi fStack) 32 :=
-  verifiedScrubbedAll (api := Spec.RsaPkcs1Enc.decryptPrecomputedFrontApi) {
+    VerifiedScrubbed PPC64LE.target Impl.RsaPkcs1Enc.PPC64LE.Fn.decryptPrecomputed
+      (Spec.RsaPkcs1Enc.decryptPrecomputedContract PPC64LE.abi fStack) 32 :=
+  verifiedScrubbedAll (api := Spec.RsaPkcs1Enc.decryptPrecomputedApi) {
       code := Impl.RsaPkcs1Enc.PPC64LE.Front.code Impl.RsaPkcs1Enc.PPC64LE.Front.bodyName
         Impl.RsaPkcs1Enc.PPC64LE.Decrypt.codeP
       verified := front_verified Dec.codeP_verified codeP_sdepth }
