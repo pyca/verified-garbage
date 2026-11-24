@@ -206,7 +206,7 @@ theorem input (i : Nat) (hi : i<a.count) (pos : a.size s.mem i ≠ 0) :
   obtain nk : a.O.toNat+a.off s.mem i < 2^32 := by omega_using [span,fit,pos]
   obtain sub : Region.Sub ⟨w64 (atByte a.O (a.off s.mem i)),a.size s.mem i⟩ ⟨w64 a.O,a.len⟩ := by
     rw [w64_add nk]; exact Offset.sub_base _ span
-  exact ⟨(p.srcOutside i hi).w,p.dstOutside.w.sub_left sub,p.ctxDst.sub_right sub,(p.srcDst i hi).sub_right sub,
+  exact ⟨(p.srcOutside i hi).w,p.dstOutside.w.sub_left sub,p.ctxDst.sub_right sub,.inr ((p.srcDst i hi).sub_right sub),
     (p.srcOutside i hi).stack.symm,p.dstOutside.stack.symm.sub_right sub,p.argW,
     p.dstOutside.sp.symm.sub_right sub,p.spFit,p.srcFit i hi,
     by unfold atByte; rw [toNat_add32 nk]; omega_using [span,fit]⟩
