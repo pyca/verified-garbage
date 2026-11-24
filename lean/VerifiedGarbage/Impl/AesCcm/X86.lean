@@ -36,7 +36,8 @@ conventions and pieces of x86's AES-GCM (`Impl/AesGcm/X86.lean`).
 * `[196, 212)` and `[240, 256)`: the received tag and the computed one,
   compared (AES-GCM's `recv` and `cmp`, with the address of the received tag,
   `tag`, kept at `W + 212`);
-* `[272, 284)`: the arguments of the piece running (`dO`, `nO`, `bO`);
+* `[272, 284)`: the arguments of the piece running (`dO`, `nO`, `bO`), and
+  `[288, 304)`: those of the chunk (`qO`, `mO`, `iO`, `kO`);
 * `[384, 2560)`: the working space of the functions called.
 
 ## Registers
@@ -66,19 +67,24 @@ As on x86-64:
   (`absorbPad`).
 * `absorbPad y`: the `nO` bytes at `dO` padded with zeros to whole blocks,
   chained: the whole blocks in one call, then the last bytes in `B`.
-* `mac y`: `b0`, `aad` and the payload (`absorbPad` of the data), so that
-  `W + y` holds `Yᵣ`.
+* `macPre y`: `b0` and `aad`.
+* `data enc y`: the data encrypted (`enc`) or decrypted, with the keystream
+  from `Ctr₁`, and the payload chained, so that `W + y` holds `Yᵣ`: the whole
+  blocks a chunk at a time, a call of `vg_cmac_aes_update` and one of
+  `vg_aes_ctr32_to` each, the payload first or last (`chunk`); then the last
+  bytes, the payload's in `B` (`absorbTail`) and the data's with a keystream
+  block (`ctrTail`). `vg_aes_ctr32_to` increments only the low 32 bits of the
+  counter block: as there are fewer than 2²⁸ blocks, they do not wrap around.
+  With AES-NI a chunk is six blocks: the CBC-MAC is a chain of dependent
+  rounds, so a CPU that executes out of order runs the counter blocks of the
+  chunks around it in between. With other implementations the chunk is all the
+  blocks.
 * `tag y`: `Yᵣ ⊕ CIPH_K(Ctr₀)` at `W + y`, by `vg_aes_ctr32_to` on it.
-* `ctr`: the data XORed with the keystream from `Ctr₁`: its whole blocks by
-  one call of `vg_aes_ctr32_to` from `Ctr₁`, which increments only the low 32
-  bits of the counter block: as there are fewer than 2²⁸ blocks, they do not
-  wrap around; then the last bytes with a keystream block.
 * `mask`: every byte of the data ANDed with `0 − ok`.
 
-`seal` computes the MAC of the payload, the tag, encrypts the payload, then
-copies the tag to `tag` (`tagOut`);
-`open` decrypts it, computes the MAC of the plaintext and the tag at
-`W + 96`, compares the first `tag_len` bytes of the two tags without a
+`seal` encrypts the payload and computes its MAC, then the tag, and copies
+it to `tag` (`tagOut`); `open` decrypts the data and computes the MAC of the
+plaintext, and the tag, at `W + 96`, compares the first `tag_len` bytes of the two tags without a
 branch (`recv`, `cmp`), and masks the data.
 
 Only the pointers, `rounds`, the lengths and `tag_len` can affect timing:
@@ -110,6 +116,12 @@ abbrev alenO : Nat := 164
 abbrev dataO : Nat := 168
 abbrev lenO : Nat := 172
 abbrev okO : Nat := 176
+/-- The address of the rest of the data, the whole blocks left in it, the
+index of its first counter block, and the blocks of its first chunk. -/
+abbrev qO : Nat := 288
+abbrev mO : Nat := 292
+abbrev iO : Nat := 296
+abbrev kO : Nat := 300
 abbrev scrO : Nat := 384
 
 /-! ## Calls -/
@@ -143,16 +155,21 @@ def updBlock (y : Nat) : Prog isa :=
   .seq (.block (keyArgs y ++ [.mov .ebx (.reg .ebp), .alu .add .ebx (imm blkO), .mov .esi (imm 1)] ++ updScr))
     (updCall c sfx)
 
+/-- The last `nO` bytes (less than 16) at `dO`, padded with zeros in `B` and
+chained into the MAC state at `W + y`, if there are any. -/
+def absorbTail (y : Nat) : Prog isa :=
+  .seq (.block [.mov .ecx (slot nO), .alu .test .ecx (.reg .ecx)])
+    (.ite .e (.block [])
+      (.seq (.block (zero4 blkO ++ [.mov .edi (slot dO), .mov .edx (.reg .ebp), .alu .add .edx (imm blkO),
+          .mov .ecx (slot nO)]))
+        (.seq copyLoop (updBlock c sfx y))))
+
 /-- The `nO` bytes at `dO`, padded with zeros to whole blocks, chained into
 the MAC state at `W + y`. -/
 def absorbPad (y : Nat) : Prog isa :=
   .seq (.block splitWhole)
   (.seq (.ite .e (.block []) (.seq (.block (keyArgs y ++ [.mov .esi (.reg .edi)] ++ updScr)) (updCall c sfx)))
-  (.seq (.block [.mov .ecx (slot nO), .alu .test .ecx (.reg .ecx)])
-    (.ite .e (.block [])
-      (.seq (.block (zero4 blkO ++ [.mov .edi (slot dO), .mov .edx (.reg .ebp), .alu .add .edx (imm blkO),
-          .mov .ecx (slot nO)]))
-        (.seq copyLoop (updBlock c sfx y))))))
+    (absorbTail c sfx y))
 
 /-- `B` zeroed, and the encoding (A.2.2) of the length `nO` (not 0, and less
 than 2³²) of the associated data at its start, its length (2 or 6) at `bO`. -/
@@ -210,14 +227,9 @@ def b0 (y : Nat) : Prog isa :=
       .store (at_ .ebp (blkO + 12)) .eax] ++ zero4 y))
     (updBlock c sfx y)))
 
-/-- `Yᵣ`, the CBC-MAC of the formatted nonce, associated data and payload
-(§6.1 steps 1–4), at `W + y`. -/
-def mac (y : Nat) : Prog isa :=
-  .seq (b0 c sfx y)
-  (.seq (aad c sfx y)
-  (.seq (.block [.mov .eax (slot dataO), .store (at_ .ebp dO) .eax, .mov .eax (slot lenO),
-      .store (at_ .ebp nO) .eax])
-    (absorbPad c sfx y)))
+/-- The CBC-MAC of the formatted nonce and associated data (§6.1 steps 1–4),
+at `W + y`. -/
+def macPre (y : Nat) : Prog isa := .seq (b0 c sfx y) (aad c sfx y)
 
 /-- `Yᵣ ⊕ CIPH_K(Ctr₀)` at `W + y`, by `vg_aes_ctr32_to` on it with a copy of
 `Ctr₀` (which it increments). -/
@@ -226,23 +238,65 @@ def tag (y : Nat) : Prog isa :=
       [.mov .ebx (.reg .ebp), .alu .add .ebx (imm y), .mov .edi (imm 1)]))
     (ctrCall c)
 
-/-! ## Counter mode -/
+/-! ## The data -/
 
-/-- The data XORed with the keystream from `Ctr₁` (§6.1 steps 5–8, §6.2
-steps 3–5): its whole blocks by `vg_aes_ctr32_to` from `Ctr₁`, then its last
-`len mod 16` bytes with a keystream block from `Ctrⱼ`, `j = ⌊len / 16⌋ + 1`. -/
-def ctr : Prog isa :=
-  .seq (.block ([.mov .eax (slot dataO), .store (at_ .ebp dO) .eax, .mov .eax (slot lenO),
-      .store (at_ .ebp nO) .eax] ++ splitWhole))
-  (.seq (.ite .e (.block [])
-    (.seq (.block ([.mov .eax (imm 1)] ++ ctrAt ++ keyArgs c1O)) (ctrCall c)))
-  (.seq (.block [.mov .ecx (slot nO), .alu .test .ecx (.reg .ecx)])
+/-- The blocks of a chunk of the data, of the `W + mO` left (not 0): with
+AES-NI six while six are left, otherwise all of them; in `esi`. -/
+def pick : Prog isa :=
+  if Impl.CmacAes.X86.hardware c then
+    .seq (.block [.mov .esi (slot mO), .alu .cmp .esi (imm 6)]) (.ite .b (.block []) (.block [.mov .esi (imm 6)]))
+  else .block [.mov .esi (slot mO)]
+
+/-- The chunk, `W + kO` blocks at `W + qO`'s address, chained into the MAC
+state at `W + y`. -/
+def updStep (y : Nat) : Prog isa :=
+  .seq (.block (keyArgs y ++ [.mov .ebx (slot qO), .mov .esi (slot kO)] ++ updScr)) (updCall c sfx)
+
+/-- The chunk XORed with the keystream from `Ctrᵢ`, `i` at `W + iO`. -/
+def ctrStep : Prog isa :=
+  .seq (.block ([.mov .eax (slot iO)] ++ ctrAt ++ keyArgs c1O ++ [.mov .ebx (slot qO), .mov .edi (slot kO)])) (ctrCall c)
+
+/-- On to the next chunk; ZF is set if no block is left. -/
+def advance : List Instr :=
+  [.mov .eax (slot kO), .mov .ecx (.reg .eax), .alu .add .ecx (slot iO), .store (at_ .ebp iO) .ecx,
+    .mov .ecx (.reg .eax), .alu .add .ecx (.reg .ecx), .alu .add .ecx (.reg .ecx), .alu .add .ecx (.reg .ecx),
+    .alu .add .ecx (.reg .ecx), .alu .add .ecx (slot qO), .store (at_ .ebp qO) .ecx, .mov .ecx (slot mO),
+    .alu .sub .ecx (.reg .eax), .store (at_ .ebp mO) .ecx]
+
+/-- A chunk of the data: chained before it is encrypted (`enc`), or after it
+is decrypted. -/
+def chunk (enc : Bool) (y : Nat) : Prog isa :=
+  .seq (pick c)
+  (.seq (.block [.store (at_ .ebp kO) .esi])
+    (if enc then .seq (updStep c sfx y) (.seq (ctrStep c) (.block advance))
+      else .seq (ctrStep c) (.seq (updStep c sfx y) (.block advance))))
+
+/-- The last `len mod 16` bytes of the data, at `dO` (`nO` of them), XORed
+with a keystream block from `Ctrⱼ`, `j = ⌊len / 16⌋ + 1`. -/
+def ctrTail : Prog isa :=
+  .seq (.block [.mov .ecx (slot nO), .alu .test .ecx (.reg .ecx)])
     (.ite .e (.block [])
       (.seq (.block ([.mov .eax (slot lenO), .shift .shr .eax 4, .alu .add .eax (imm 1)] ++ ctrAt ++ zero4 ksO ++
           keyArgs c1O ++ [.mov .ebx (.reg .ebp), .alu .add .ebx (imm ksO), .mov .edi (imm 1)]))
       (.seq (ctrCall c)
         (.seq (.block [.mov .edi (slot dO), .mov .edx (.reg .ebp), .alu .add .edx (imm ksO), .mov .ecx (slot nO)])
-          xorLoop))))))
+          xorLoop))))
+
+/-- The whole blocks of the data, a chunk at a time; `dO` and `nO` then the
+rest. -/
+def dataWhole (enc : Bool) (y : Nat) : Prog isa :=
+  .seq (.block ([.mov .eax (slot dataO), .store (at_ .ebp dO) .eax, .mov .eax (slot lenO),
+      .store (at_ .ebp nO) .eax] ++ splitWhole))
+    (.ite .e (.block [])
+      (.seq (.block [.store (at_ .ebp qO) .ebx, .store (at_ .ebp mO) .edi, .mov .eax (imm 1), .store (at_ .ebp iO) .eax])
+        (.loop (chunk c sfx enc y) .ne)))
+
+/-- The data XORed with the keystream from `Ctr₁` (§6.1 steps 5–8, §6.2
+steps 3–5), and the plaintext, padded with zeros to whole blocks, chained into
+the MAC state at `W + y`: the whole blocks, then the last `len mod 16` bytes. -/
+def data (enc : Bool) (y : Nat) : Prog isa :=
+  .seq (dataWhole c sfx enc y)
+    (if enc then .seq (absorbTail c sfx y) (ctrTail c) else .seq (ctrTail c) (absorbTail c sfx y))
 
 /-! ## Masking the data -/
 
@@ -273,14 +327,15 @@ def ccmEntry : Prog isa :=
 
 /-- `vg_aes_ccm_seal`. -/
 def «seal» : Prog isa :=
-  .seq ccmEntry (.seq ctrs (.seq (mac c sfx 0) (.seq (tag c 0) (.seq (ctr c) (.seq tagOut (.block restore))))))
+  .seq ccmEntry (.seq ctrs (.seq (macPre c sfx 0) (.seq (data c sfx true 0) (.seq (tag c 0)
+    (.seq tagOut (.block restore))))))
 
 /-- `vg_aes_ccm_open`. -/
 def «open» : Prog isa :=
   .seq ccmEntry
   (.seq ctrs
-  (.seq (ctr c)
-  (.seq (mac c sfx uO)
+  (.seq (macPre c sfx uO)
+  (.seq (data c sfx false uO)
   (.seq (tag c uO)
   (.seq recv
   (.seq (cmp uO)
