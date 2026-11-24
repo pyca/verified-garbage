@@ -315,22 +315,36 @@ pub const VG_AES_CFB128_DECRYPT_SSSE3_FEATURES: verified_garbage_cpu::Features =
 /// * `rounds` must be 10, 12 or 14.
 /// * The contents of `scratch` on return are unspecified.
 /// * `iv`, `data` and `scratch` must not overlap each other, `schedule` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `schedule`, `iv`, `data` and `scratch` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `schedule`, `iv`, `data` and `scratch` may overlap the return address on the stack or the 1108 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `ssse3` target feature.
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_cfb128_decrypt_ssse3(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        r#".base64 "i0QkGImYEAgAAImwFAgAAIm4GAgAAImoHAgAAIt0JBCLRCQUhcA="
+        r#".base64 "jaQkxPv//4uEJEAEAACJRCQEi4QkRAQAAIlEJAiLhCRIBAAAiUQkDIuEJEwEAACJRCQQi4QkUAQAAIlEJBSLhCRUBAAAiUQkGIngg8AgiUQkHItEJByJmAAEAACJsAQEAACJuAgEAACJqAwEAACLdCQQi3wkFIX/"
 je 20f
 22:
-.base64 "i0QkBItMJAiLXCQMvwEAAACLbCQYVVdTUVA="
+.base64 "u0AAAACD/0A="
+jb 23f
+jmp 24f
+23:
+.base64 "ifs="
+24:
+.base64 "i2wkDPMPb0UAifCLVCQcidk="
+25:
+.base64 "8w9/AvMPbwCDwBCDwhCD6QE="
+jne 25b
+.base64 "8w9/RQCLRCQEi0wkCItUJByLbCQYVVNSUVA="
 call {vg_aes_encrypt_blocks_ssse3}
-.base64 "WFhYWFiLXCQMiwaLCzHIiQaLRgSLSwQxyIlGBItGCItLCDHIiUYIi0YMi0sMMciJRgyLA4sOMciJA4tDBItOBDHIiUMEi0MIi04IMciJQwiLQwyLTgwxyIlDDIPGEItEJBQBwAHAAcABwANEJBA5xg=="
+.base64 "WFhYWFiLVCQcidk="
+26:
+.base64 "8w9vBvMPbwpmD+/B8w9/BoPGEIPCEIPpAQ=="
+jne 26b
+.base64 "Kd8="
 jne 22b
 jmp 21f
 20:
 21:
-.base64 "i0QkGIuYEAgAAIuwFAgAAIu4GAgAAIuoHAgAAGYP78C5AAAAAI1kJOjzD38EJIlMJBCJTCQUjWQkGLgAAAAAugAAAAAxyWYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ww=="
+.base64 "i0QkHIuYAAQAAIuwBAQAAIu4CAQAAIuoDAQAAI2kJDwEAABmD+/AuQAAAACNpCSs+///8w9/BCTzD39EJBDzD39EJCDzD39EJDDzD39EJEDzD39EJFDzD39EJGDzD39EJHDzD3+EJIAAAADzD3+EJJAAAADzD3+EJKAAAADzD3+EJLAAAADzD3+EJMAAAADzD3+EJNAAAADzD3+EJOAAAADzD3+EJPAAAADzD3+EJAABAADzD3+EJBABAADzD3+EJCABAADzD3+EJDABAADzD3+EJEABAADzD3+EJFABAADzD3+EJGABAADzD3+EJHABAADzD3+EJIABAADzD3+EJJABAADzD3+EJKABAADzD3+EJLABAADzD3+EJMABAADzD3+EJNABAADzD3+EJOABAADzD3+EJPABAADzD3+EJAACAADzD3+EJBACAADzD3+EJCACAADzD3+EJDACAADzD3+EJEACAADzD3+EJFACAADzD3+EJGACAADzD3+EJHACAADzD3+EJIACAADzD3+EJJACAADzD3+EJKACAADzD3+EJLACAADzD3+EJMACAADzD3+EJNACAADzD3+EJOACAADzD3+EJPACAADzD3+EJAADAADzD3+EJBADAADzD3+EJCADAADzD3+EJDADAADzD3+EJEADAADzD3+EJFADAADzD3+EJGADAADzD3+EJHADAADzD3+EJIADAADzD3+EJJADAADzD3+EJKADAADzD3+EJLADAADzD3+EJMADAADzD3+EJNADAADzD3+EJOADAADzD3+EJPADAADzD3+EJAAEAADzD3+EJBAEAADzD3+EJCAEAADzD3+EJDAEAADzD3+EJEAEAACJjCRQBAAAjaQkVAQAALgAAAAAugAAAAAxyWYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ww=="
 .p2align 6"#,
         vg_aes_encrypt_blocks_ssse3 = sym super::aes::vg_aes_encrypt_blocks_ssse3::vg_aes_encrypt_blocks_ssse3,
     )
@@ -397,7 +411,7 @@ pub const VG_AES_CFB128_DECRYPT_FINAL_SSSE3_FEATURES: verified_garbage_cpu::Feat
 /// * `rounds` must be 10, 12 or 14.
 /// * The contents of `scratch` on return are unspecified.
 /// * `iv`, `data` and `scratch` must not overlap each other, `schedule` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `schedule`, `iv`, `data` and `scratch` may overlap the return address on the stack or the 100 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `schedule`, `iv`, `data` and `scratch` may overlap the return address on the stack or the 1184 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `ssse3` target feature.
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_cfb128_decrypt_final_ssse3(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 272]) {
@@ -415,7 +429,7 @@ jne 22b
 jmp 21f
 20:
 21:
-.base64 "i0QkHIsYi3AEi3gIi2gMZg/vwLkAAAAA8w9/RCQgjWQkMGYP78C5AAAAAI1kJJzzD38EJPMPf0QkEPMPf0QkIPMPf0QkMPMPf0QkQPMPf0QkUIlMJGCNZCRkuAAAAAC6AAAAADHJZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7//D"
+.base64 "i0QkHIsYi3AEi3gIi2gMZg/vwLkAAAAA8w9/RCQgjWQkMGYP78CNpCRg+///8w9/BCTzD39EJBDzD39EJCDzD39EJDDzD39EJEDzD39EJFDzD39EJGDzD39EJHDzD3+EJIAAAADzD3+EJJAAAADzD3+EJKAAAADzD3+EJLAAAADzD3+EJMAAAADzD3+EJNAAAADzD3+EJOAAAADzD3+EJPAAAADzD3+EJAABAADzD3+EJBABAADzD3+EJCABAADzD3+EJDABAADzD3+EJEABAADzD3+EJFABAADzD3+EJGABAADzD3+EJHABAADzD3+EJIABAADzD3+EJJABAADzD3+EJKABAADzD3+EJLABAADzD3+EJMABAADzD3+EJNABAADzD3+EJOABAADzD3+EJPABAADzD3+EJAACAADzD3+EJBACAADzD3+EJCACAADzD3+EJDACAADzD3+EJEACAADzD3+EJFACAADzD3+EJGACAADzD3+EJHACAADzD3+EJIACAADzD3+EJJACAADzD3+EJKACAADzD3+EJLACAADzD3+EJMACAADzD3+EJNACAADzD3+EJOACAADzD3+EJPACAADzD3+EJAADAADzD3+EJBADAADzD3+EJCADAADzD3+EJDADAADzD3+EJEADAADzD3+EJFADAADzD3+EJGADAADzD3+EJHADAADzD3+EJIADAADzD3+EJJADAADzD3+EJKADAADzD3+EJLADAADzD3+EJMADAADzD3+EJNADAADzD3+EJOADAADzD3+EJPADAADzD3+EJAAEAADzD3+EJBAEAADzD3+EJCAEAADzD3+EJDAEAADzD3+EJEAEAADzD3+EJFAEAADzD3+EJGAEAADzD3+EJHAEAADzD3+EJIAEAADzD3+EJJAEAACNpCSgBAAAuAAAAAC6AAAAADHJZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7//D"
 .p2align 6"#,
         vg_aes_cfb128_decrypt_ssse3_core = sym super::aes::vg_aes_cfb128_decrypt_ssse3_core::vg_aes_cfb128_decrypt_ssse3_core,
         vg_aes_encrypt_blocks_ssse3 = sym super::aes::vg_aes_encrypt_blocks_ssse3::vg_aes_encrypt_blocks_ssse3,
@@ -472,21 +486,35 @@ jmp 21f
 /// * `rounds` must be 10, 12 or 14.
 /// * The contents of `scratch` on return are unspecified.
 /// * `iv`, `data` and `scratch` must not overlap each other, `schedule` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `schedule`, `iv`, `data` and `scratch` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `schedule`, `iv`, `data` and `scratch` may overlap the return address on the stack or the 1108 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_cfb128_decrypt(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        r#".base64 "i0QkGImYEAgAAImwFAgAAIm4GAgAAImoHAgAAIt0JBCLRCQUhcA="
+        r#".base64 "jaQkxPv//4uEJEAEAACJRCQEi4QkRAQAAIlEJAiLhCRIBAAAiUQkDIuEJEwEAACJRCQQi4QkUAQAAIlEJBSLhCRUBAAAiUQkGIngg8AgiUQkHItEJByJmAAEAACJsAQEAACJuAgEAACJqAwEAACLdCQQi3wkFIX/"
 je 20f
 22:
-.base64 "i0QkBItMJAiLXCQMvwEAAACLbCQYVVdTUVA="
+.base64 "u0AAAACD/0A="
+jb 23f
+jmp 24f
+23:
+.base64 "ifs="
+24:
+.base64 "i2wkDPMPb0UAifCLVCQcidk="
+25:
+.base64 "8w9/AvMPbwCDwBCDwhCD6QE="
+jne 25b
+.base64 "8w9/RQCLRCQEi0wkCItUJByLbCQYVVNSUVA="
 call {vg_aes_encrypt_blocks}
-.base64 "WFhYWFiLXCQMiwaLCzHIiQaLRgSLSwQxyIlGBItGCItLCDHIiUYIi0YMi0sMMciJRgyLA4sOMciJA4tDBItOBDHIiUMEi0MIi04IMciJQwiLQwyLTgwxyIlDDIPGEItEJBQBwAHAAcABwANEJBA5xg=="
+.base64 "WFhYWFiLVCQcidk="
+26:
+.base64 "8w9vBvMPbwpmD+/B8w9/BoPGEIPCEIPpAQ=="
+jne 26b
+.base64 "Kd8="
 jne 22b
 jmp 21f
 20:
 21:
-.base64 "i0QkGIuYEAgAAIuwFAgAAIu4GAgAAIuoHAgAAGYP78C5AAAAAI1kJOjzD38EJIlMJBCJTCQUjWQkGLgAAAAAugAAAAAxyWYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ww=="
+.base64 "i0QkHIuYAAQAAIuwBAQAAIu4CAQAAIuoDAQAAI2kJDwEAABmD+/AuQAAAACNpCSs+///8w9/BCTzD39EJBDzD39EJCDzD39EJDDzD39EJEDzD39EJFDzD39EJGDzD39EJHDzD3+EJIAAAADzD3+EJJAAAADzD3+EJKAAAADzD3+EJLAAAADzD3+EJMAAAADzD3+EJNAAAADzD3+EJOAAAADzD3+EJPAAAADzD3+EJAABAADzD3+EJBABAADzD3+EJCABAADzD3+EJDABAADzD3+EJEABAADzD3+EJFABAADzD3+EJGABAADzD3+EJHABAADzD3+EJIABAADzD3+EJJABAADzD3+EJKABAADzD3+EJLABAADzD3+EJMABAADzD3+EJNABAADzD3+EJOABAADzD3+EJPABAADzD3+EJAACAADzD3+EJBACAADzD3+EJCACAADzD3+EJDACAADzD3+EJEACAADzD3+EJFACAADzD3+EJGACAADzD3+EJHACAADzD3+EJIACAADzD3+EJJACAADzD3+EJKACAADzD3+EJLACAADzD3+EJMACAADzD3+EJNACAADzD3+EJOACAADzD3+EJPACAADzD3+EJAADAADzD3+EJBADAADzD3+EJCADAADzD3+EJDADAADzD3+EJEADAADzD3+EJFADAADzD3+EJGADAADzD3+EJHADAADzD3+EJIADAADzD3+EJJADAADzD3+EJKADAADzD3+EJLADAADzD3+EJMADAADzD3+EJNADAADzD3+EJOADAADzD3+EJPADAADzD3+EJAAEAADzD3+EJBAEAADzD3+EJCAEAADzD3+EJDAEAADzD3+EJEAEAACJjCRQBAAAjaQkVAQAALgAAAAAugAAAAAxyWYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ww=="
 .p2align 6"#,
         vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks::vg_aes_encrypt_blocks,
     )
@@ -546,7 +574,7 @@ jmp 21f
 /// * `rounds` must be 10, 12 or 14.
 /// * The contents of `scratch` on return are unspecified.
 /// * `iv`, `data` and `scratch` must not overlap each other, `schedule` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `schedule`, `iv`, `data` and `scratch` may overlap the return address on the stack or the 100 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `schedule`, `iv`, `data` and `scratch` may overlap the return address on the stack or the 1184 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_cfb128_decrypt_final(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
@@ -563,7 +591,7 @@ jne 22b
 jmp 21f
 20:
 21:
-.base64 "i0QkHIsYi3AEi3gIi2gMZg/vwLkAAAAA8w9/RCQgjWQkMGYP78C5AAAAAI1kJJzzD38EJPMPf0QkEPMPf0QkIPMPf0QkMPMPf0QkQPMPf0QkUIlMJGCNZCRkuAAAAAC6AAAAADHJZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7//D"
+.base64 "i0QkHIsYi3AEi3gIi2gMZg/vwLkAAAAA8w9/RCQgjWQkMGYP78CNpCRg+///8w9/BCTzD39EJBDzD39EJCDzD39EJDDzD39EJEDzD39EJFDzD39EJGDzD39EJHDzD3+EJIAAAADzD3+EJJAAAADzD3+EJKAAAADzD3+EJLAAAADzD3+EJMAAAADzD3+EJNAAAADzD3+EJOAAAADzD3+EJPAAAADzD3+EJAABAADzD3+EJBABAADzD3+EJCABAADzD3+EJDABAADzD3+EJEABAADzD3+EJFABAADzD3+EJGABAADzD3+EJHABAADzD3+EJIABAADzD3+EJJABAADzD3+EJKABAADzD3+EJLABAADzD3+EJMABAADzD3+EJNABAADzD3+EJOABAADzD3+EJPABAADzD3+EJAACAADzD3+EJBACAADzD3+EJCACAADzD3+EJDACAADzD3+EJEACAADzD3+EJFACAADzD3+EJGACAADzD3+EJHACAADzD3+EJIACAADzD3+EJJACAADzD3+EJKACAADzD3+EJLACAADzD3+EJMACAADzD3+EJNACAADzD3+EJOACAADzD3+EJPACAADzD3+EJAADAADzD3+EJBADAADzD3+EJCADAADzD3+EJDADAADzD3+EJEADAADzD3+EJFADAADzD3+EJGADAADzD3+EJHADAADzD3+EJIADAADzD3+EJJADAADzD3+EJKADAADzD3+EJLADAADzD3+EJMADAADzD3+EJNADAADzD3+EJOADAADzD3+EJPADAADzD3+EJAAEAADzD3+EJBAEAADzD3+EJCAEAADzD3+EJDAEAADzD3+EJEAEAADzD3+EJFAEAADzD3+EJGAEAADzD3+EJHAEAADzD3+EJIAEAADzD3+EJJAEAACNpCSgBAAAuAAAAAC6AAAAADHJZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7//D"
 .p2align 6"#,
         vg_aes_cfb128_decrypt_core = sym super::aes::vg_aes_cfb128_decrypt_core::vg_aes_cfb128_decrypt_core,
         vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks::vg_aes_encrypt_blocks,

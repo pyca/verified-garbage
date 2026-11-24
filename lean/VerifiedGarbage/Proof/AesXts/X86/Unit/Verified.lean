@@ -93,7 +93,7 @@ the same arguments and `esp` in both runs, are constant time.
 namespace VG.Proof.AesXts.X86.Unit
 
 open VG VG.X86
-open VG.Proof.AesCbc.X86 (modeX86 toNat_rounds)
+open VG.Proof.AesCbc.X86 (modeX86 modeX86K toNat_rounds)
 open VG.Proof.AesCbc (ciphOf)
 open VG.Proof.AesXts.Unit (blocks_bytesAt)
 open VG.Spec.Aes (bytesAt)
@@ -193,7 +193,7 @@ theorem callPre (enc : Bool) :
   obtain eSp : (pushed xRegs s).callEntry.gpr .esp = s.gpr .esp - BitVec.ofNat 32 28 := by
     rw [callEntry_esp']; rfl
   refine ⟨?_, ?_, ?_⟩
-  · simp only [modeX86, State.withRegions_rd, State.withRegions_wr, State.withRegions_gpr,
+  · simp only [modeX86, modeX86K, State.withRegions_rd, State.withRegions_wr, State.withRegions_gpr,
       arg_withRegions, argAddr_withRegions, a0, a1, a2, a3, a4, a5, eA, eSp, hR, hN]
     refine ⟨trivial, trivial, h.wt, h.wd, h.ws, h.td, h.ts, h.ds, h.bt.sub_left h.sub24, h.bd.sub_left h.sub24,
       h.bs.sub_left h.sub24, h.bt.sub_left h.subRet, h.bd.sub_left h.subRet, h.bs.sub_left h.subRet,
@@ -246,7 +246,7 @@ theorem xts_call (enc : Bool) {n : String} {c : Prog isa} (ok : XtsOk enc c) (no
     blocksAt_frame fE (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact (h.bd.sub_left b28).symm) (by have := h.fitD; omega_using [hN])
-  simp only [modeX86, AesXts.xtsMode, arg_withRegions, State.withRegions_mem, a0, a1, a2, a3, a4, hR, hN,
+  simp only [modeX86, modeX86K, AesXts.xtsMode, arg_withRegions, State.withRegions_mem, a0, a1, a2, a3, a4, hR, hN,
     Proof.AesXts.Unit.length_blocksAt] at post
   rw [eW, eT, eD] at post
   obtain b24 : Region.Sub (below (s.gpr .esp) (4 * xRegs.length)) (below (s.gpr .esp) 52) :=

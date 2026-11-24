@@ -235,7 +235,9 @@ fn block_batches_and_continuation() {
     let iv = [0x3c; 16];
     for key_len in [16, 24, 32] {
         let key = crate::bytes::pattern(key_len, 17, 3);
-        for blocks in [0usize, 1, 7, 8, 9, 15, 16, 17, 31, 32, 33, 63, 64, 65] {
+        for blocks in [
+            0usize, 1, 7, 8, 9, 15, 16, 17, 31, 32, 33, 63, 64, 65, 127, 128, 129,
+        ] {
             let plain = crate::bytes::pattern(16 * blocks, 73, 5);
             let mut ciphertext = plain.clone();
             run(&key, &iv, true, &mut ciphertext, &[]);

@@ -59,11 +59,11 @@ section
 /-!
 # AES-CFB128 on x86: one block, and constant time
 
-`encBody_ok` and `decBody_ok`: one run of `body` takes the loop invariant
+`encBody_ok`: one run of `body` takes the loop invariant
 AES-CBC's proofs share (`Proof/AesCbc/X86/Body.lean`) from `k` blocks to
 `k + 1`, for `cfbMode`, for any implementation of the block functions
 (`BlocksImpl`). The code before the call and the call are AES-OFB's
-(`Proof/AesOfb/X86/Body.lean`). `encBody_ct` and `decBody_ct`: they are
+(`Proof/AesOfb/X86/Body.lean`). `encBody_ct`: it is
 constant time, by the shared framework, with the call on the block at `iv`.
 -/
 
@@ -197,10 +197,6 @@ theorem encPost_eq : encPost =
       (zero4 .ebx 0 ++ (xor4 .ebx .esi .ebx 0 0 0 ++ advance)) := by
   simp only [encPost, List.append_assoc]
 
-theorem decPost_eq : decPost =
-    ([.mov .ebx (argOp 2)] : List Instr) ++ xor4 .esi .ebx .esi 0 0 0 ++ (xor4 .ebx .esi .ebx 0 0 0 ++ advance) := by
-  simp only [decPost, List.append_assoc]
-
 theorem encBody_ok (v : BlocksImpl) : BodyOk (cfbMode true) (body v.enc encPost) := by
   intro s₀ hp k hk s h
   obtain hd := hp.d32 hk
@@ -239,41 +235,6 @@ theorem encBody_ok (v : BlocksImpl) : BodyOk (cfbMode true) (body v.enc encPost)
   rw [i₆]
   simp only [chainK, cfbMode_chain, cts, ite_true, outSucc, next_snoc]
 
-theorem decBody_ok (v : BlocksImpl) : BodyOk (cfbMode false) (body v.enc decPost) := by
-  intro s₀ hp k hk s h
-  obtain hd := hp.d32 hk
-  obtain qN := hp.dataN hk
-  have hdf := hp.data_fit
-  have hiv := hp.iv_fit
-  rw [decPost_eq]
-  refine head_ok v hp hk h _ fun s₄ x => ?_
-  refine xor4_ok (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-    (by rw [x.ebx]; omega_using [hiv]) (by rw [x.esi, qN]; omega_using [hk, hdf]) (by rw [x.ebx]; omega_using [hiv])
-    (by rw [x.ebx, add0, x.regs]; exact covIv (by simp))
-    (by rw [x.esi, add0, hd, x.regs]; exact covBlk hk (by simp))
-    (by rw [x.ebx, add0, x.wr, hp.wr]; exact covIv (by simp)) fun s₆ g₆ => ?_
-  obtain m₆ : s₆.mem = Proof.Cmac.xor4Mem s₄.mem ((Iv s₀).setWidth 64) ((Iv s₀).setWidth 64) (blk s₀ k) := by
-    rw [g₆.mem, x.ebx, x.esi, add0, add0, hd]
-  obtain f₆ : Frame [ivR s₀] s₄.mem s₆.mem := by rw [m₆]; exact Proof.Cmac.xor4Mem_frame _ _ _ _
-  obtain b₆ : bytesAt s₆.mem (blk s₀ k) 16 = bytesAt s₄.mem (blk s₀ k) 16 :=
-    Proof.Cmac.bytesAt_frame f₆ (one (hp.blk_iv hk)) (by decide)
-  obtain hb := h.block hk
-  obtain i₆ : bytesAt s₆.mem ((Iv s₀).setWidth 64) 16 = (blks s₀)[k]'(by simp [Spec.Cbc.blocksAt]; exact hk) := by
-    rw [m₆, xorIn4_bytes _ (hp.blk_iv hk).symm, x.blk, hb]
-    exact xor_xor_cancel (by simp [Spec.Aes.bytesAt, ← hb])
-  obtain newBlk : bytesAt s₆.mem (blk s₀ k) 16 =
-      Spec.Cbc.xor ((blks s₀)[k]'(by simp [Spec.Cbc.blocksAt]; exact hk))
-        (Spec.Cbc.aesWith (R s₀) (wK s₀) (chainK (cfbMode false) s₀ k)) := by
-    rw [b₆, x.blk, hb, x.iv, h.iv]
-  obtain outSucc :
-      outK (cfbMode false) s₀ (k + 1) = outK (cfbMode false) s₀ k ++ [bytesAt s₆.mem (blk s₀ k) 16] := by
-    rw [newBlk]
-    simp only [outK, chainK, cfbMode_out, cfbMode_chain, cfb, cts, Bool.false_eq_true, ite_false,
-      take_succ_blks s₀ hk, decrypt_snoc]
-  refine linv_succ hp hk h x (fun r h₁ h₂ => g₆.gpr r h₁ h₂) g₆.rd g₆.wr f₆ outSucc ?_
-  rw [i₆]
-  simp only [chainK, cfbMode_chain, cts, Bool.false_eq_true, ite_false, take_succ_blks s₀ hk, next_snoc]
-
 /-! ## Constant time -/
 
 theorem pre_taint : ∃ h, (taint.check (argTaint [.esi] (4 + 4 * 6)) (.block ivArgs) h).isSome = true :=
@@ -282,17 +243,9 @@ theorem pre_taint : ∃ h, (taint.check (argTaint [.esi] (4 + 4 * 6)) (.block iv
 theorem encPost_taint : ∃ h, (taint.check (argTaint [.esi] (4 + 4 * 6)) (.block encPost) h).isSome = true :=
   ⟨_, by taint_decide⟩
 
-theorem decPost_taint : ∃ h, (taint.check (argTaint [.esi] (4 + 4 * 6)) (.block decPost) h).isSome = true :=
-  ⟨_, by taint_decide⟩
-
 theorem encBody_ct (v : BlocksImpl) : BodyCt (cfbMode true) (body v.enc encPost) :=
   fun hp hp' hq k => VG.Proof.AesCbc.X86.body_ct (D := fun s₀ _ => Iv s₀) (fun hq _ => pub_arg hq (by decide))
     v.encOk v.encCt v.encNosp v.encStack pre_taint encPost_taint
-    (@fun _ hp _ hk _ h => WP.mono (ivA_wp hp h) fun _ a => mid_of hp hk h a) hp hp' hq k
-
-theorem decBody_ct (v : BlocksImpl) : BodyCt (cfbMode false) (body v.enc decPost) :=
-  fun hp hp' hq k => VG.Proof.AesCbc.X86.body_ct (D := fun s₀ _ => Iv s₀) (fun hq _ => pub_arg hq (by decide))
-    v.encOk v.encCt v.encNosp v.encStack pre_taint decPost_taint
     (@fun _ hp _ hk _ h => WP.mono (ivA_wp hp h) fun _ a => mid_of hp hk h a) hp hp' hq k
 
 end VG.Proof.AesCfb.X86
@@ -881,7 +834,9 @@ the last ciphertext block in a register and calls nothing
 24 bytes; for any other implementation, `encrypt` around its block function.
 Both meet the same contract (`encryptCode_verified`). Decryption's is
 `decryptCode v`: with AES-NI (`hardware`), `Impl.AesCfb.X86.decryptNi` (`NiDec`
-above), six blocks at a time with no call.
+above), six blocks at a time with no call; for any other implementation,
+CBC's code, 64 blocks a call (`Proof/AesCbc/X86/Groups.lean`), which has a
+buffer on the stack (`decStack`).
 -/
 
 @[expose] public section
@@ -898,10 +853,6 @@ open VG.Proof.Aes.X86 (BlocksImpl)
 
 theorem encrypt_spSafe (v : BlocksImpl) : (encrypt v.enc).all (fun i => !isa.writesSp i) = true := by
   simp only [encrypt, whole, body, blkCall, Code.all, v.encSpSafe]
-  decide +kernel
-
-theorem decrypt_spSafe (v : BlocksImpl) : (decrypt v.enc).all (fun i => !isa.writesSp i) = true := by
-  simp only [decrypt, whole, body, blkCall, Code.all, v.encSpSafe]
   decide +kernel
 
 /-- The shared contract of encryption, from the code's own
@@ -979,11 +930,6 @@ theorem decrypt_implies :
   sig_implies [Proof.AesCfb.decryptRoundsContract, Spec.Cfb.aesSig, Spec.Cbc.aesSig, X86.abi, X86.argSlots,
     X86.argVal, X86.argBytes, modeX86, cfbMode, cfb, cts] [a0, a1, a2, a3, a4, a5, e, esp] using sat
 
-theorem decrypt_verified (v : BlocksImpl) :
-    Verified X86.target (decrypt v.enc) (Proof.AesCfb.decryptRoundsContract X86.abi 24) :=
-  Verified.of_correct (fun _ hs => whole_wp (decBody_ok v) hs) (whole_ct (decBody_ok v) (decBody_ct v))
-    decrypt_implies
-
 /-! ## The code of decryption of each implementation -/
 
 /-- The whole-block code of decryption for `v`: with AES-NI, the code that
@@ -991,29 +937,39 @@ enciphers six blocks at a time with no call (`Impl.AesCfb.X86.decryptNi`);
 for any other implementation, `decrypt` around its block function. -/
 def decryptCode (v : BlocksImpl) : Prog isa := if hardware v then decryptNi else decrypt v.enc
 
+open VG.Proof.AesCbc.X86.Wiped (decStack)
+open VG.Proof.AesCbc.X86.Groups (wholeX86 framed_correct framed_ct framed_verified framed_spSafe par_cfb fn_enc)
+
 /-- `decryptCode v` runs to the code's own contract. -/
-theorem decryptCode_correct (v : BlocksImpl) (s : State) (hs : (modeX86 (cfbMode false)).pre s) :
-    ∃ t s', Exec isa (decryptCode v) s t s' ∧ abiPreserved s s' ∧ (modeX86 (cfbMode false)).post s s' := by
+theorem decryptCode_correct (v : BlocksImpl) (s : State) (hs : (wholeX86 (cfbMode false) (decStack v)).pre s) :
+    ∃ t s', Exec isa (decryptCode v) s t s' ∧ abiPreserved s s' ∧
+      (wholeX86 (cfbMode false) (decStack v)).post s s' := by
   unfold decryptCode
+  revert hs
+  unfold decStack
   split
-  · exact NiDec.correct s hs
-  · exact whole_wp (decBody_ok v) hs
+  · exact fun hs => NiDec.correct s hs.1
+  · exact framed_correct par_cfb (fn_enc v) s
 
 theorem decryptCode_ct (v : BlocksImpl) :
-    ConstantTime isa (modeX86 (cfbMode false)).pre (modeX86 (cfbMode false)).pub (decryptCode v) := by
-  unfold decryptCode
+    ConstantTime isa (wholeX86 (cfbMode false) (decStack v)).pre (wholeX86 (cfbMode false) (decStack v)).pub
+      (decryptCode v) := by
+  unfold decryptCode decStack
   split
-  · exact NiDec.ct
-  · exact whole_ct (decBody_ok v) (decBody_ct v)
+  · exact fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ => NiDec.ct s₁ s₂ t₁ t₂ s₁' s₂' h₁.1 h₂.1
+  · exact framed_ct par_cfb (fn_enc v)
 
 theorem decryptCode_verified (v : BlocksImpl) :
-    Verified X86.target (decryptCode v) (Proof.AesCfb.decryptRoundsContract X86.abi 24) :=
-  Verified.of_correct (decryptCode_correct v) (decryptCode_ct v) decrypt_implies
+    Verified X86.target (decryptCode v) (Spec.Cfb.aesDecryptContract X86.abi (decStack v)) := by
+  unfold decryptCode decStack
+  split
+  · exact Proof.AesCfb.decrypt_keyed (Verified.of_correct NiDec.correct NiDec.ct decrypt_implies)
+  · exact Groups.cfb_keyed (framed_verified par_cfb (fn_enc v))
 
 theorem decryptCode_spSafe (v : BlocksImpl) : (decryptCode v).all (fun i => !isa.writesSp i) = true := by
   unfold decryptCode
   split
   · exact NiDec.spSafe
-  · exact decrypt_spSafe v
+  · exact framed_spSafe _ _ v.encSpSafe
 
 end VG.Proof.AesCfb.X86
