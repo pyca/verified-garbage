@@ -716,8 +716,7 @@ impl AesGcm {
         // SAFETY: MaybeUninit<u8> has the layout of u8. encrypt_uninit
         // writes only initialized bytes and leaves the slice alone on error.
         let dst = unsafe { core::slice::from_raw_parts_mut(out.as_mut_ptr().cast(), out.len()) };
-        self.encrypt_uninit(nonce, aad, plaintext, dst)
-            .map(|(_, tag)| tag)
+        self.encrypt_checked(nonce, aad, plaintext, dst)
     }
 
     /// Like [`encrypt`](Self::encrypt), with output storage that may be
@@ -731,6 +730,20 @@ impl AesGcm {
         plaintext: &[&[u8]],
         out: &'out mut [MaybeUninit<u8>],
     ) -> Result<(&'out mut [u8], Block), Error> {
+        let tag = self.encrypt_checked(nonce, aad, plaintext, out)?;
+        // SAFETY: both seal contracts initialize the entire destination on success.
+        Ok((unsafe { out.assume_init_mut() }, tag))
+    }
+
+    // Return the tag directly so encrypt can use the caller's return slot.
+    #[inline(always)]
+    fn encrypt_checked(
+        &self,
+        nonce: &[u8],
+        aad: &[u8],
+        plaintext: &[&[u8]],
+        out: &mut [MaybeUninit<u8>],
+    ) -> Result<Block, Error> {
         crate::dit::enter!(dit);
         if plaintext.len() > Self::MAX_PIECES {
             return Err(Error::TooManyPieces);
@@ -744,10 +757,7 @@ impl AesGcm {
             return Err(Error::InvalidOutputLength);
         }
         add_len(0, aad.len(), MAX_AAD).map_err(|()| Error::InvalidAadLength)?;
-        let tag = self.seal_pieces(dit, nonce, aad, plaintext, out);
-        // SAFETY: both seal contracts specify every byte of the ciphertext
-        // for arbitrary prior destination contents, including an empty output.
-        Ok((unsafe { out.assume_init_mut() }, tag))
+        Ok(self.seal_pieces(dit, nonce, aad, plaintext, out))
     }
 
     /// Seal the caller's checked plaintext pieces into their exact-size destination.
