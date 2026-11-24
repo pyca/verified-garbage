@@ -297,151 +297,61 @@ vg_x25519:
 	xor edx, ebx
 	mov DWORD PTR [edi+380], eax
 	mov DWORD PTR [edi+444], edx
-	mov ebx, 0
-	mov ecx, 0
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+320]
-	adc ecx, 0
-	adc ebp, 0
-	add ebx, DWORD PTR [edi+352]
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+448], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+324]
-	adc ecx, 0
-	adc ebp, 0
-	add ebx, DWORD PTR [edi+356]
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+452], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+328]
-	adc ecx, 0
-	adc ebp, 0
-	add ebx, DWORD PTR [edi+360]
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+456], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+332]
-	adc ecx, 0
-	adc ebp, 0
-	add ebx, DWORD PTR [edi+364]
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+460], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+336]
-	adc ecx, 0
-	adc ebp, 0
-	add ebx, DWORD PTR [edi+368]
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+464], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+340]
-	adc ecx, 0
-	adc ebp, 0
-	add ebx, DWORD PTR [edi+372]
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+468], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+344]
-	adc ecx, 0
-	adc ebp, 0
-	add ebx, DWORD PTR [edi+376]
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+472], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+348]
-	adc ecx, 0
-	adc ebp, 0
-	add ebx, DWORD PTR [edi+380]
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+476], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	mov eax, 38
-	mul ebx
-	mov ebx, eax
-	add ebx, DWORD PTR [edi+448]
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+448], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+452]
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+452], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+456]
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+456], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+460]
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+460], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+464]
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+464], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+468]
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+468], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+472]
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+472], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+476]
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+476], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	mov eax, 38
-	mul ebx
-	add eax, DWORD PTR [edi+448]
+	xor ecx, ecx
+	mov eax, DWORD PTR [edi+320]
+	adc eax, DWORD PTR [edi+352]
+	mov DWORD PTR [edi+448], eax
+	mov eax, DWORD PTR [edi+324]
+	adc eax, DWORD PTR [edi+356]
+	mov DWORD PTR [edi+452], eax
+	mov eax, DWORD PTR [edi+328]
+	adc eax, DWORD PTR [edi+360]
+	mov DWORD PTR [edi+456], eax
+	mov eax, DWORD PTR [edi+332]
+	adc eax, DWORD PTR [edi+364]
+	mov DWORD PTR [edi+460], eax
+	mov eax, DWORD PTR [edi+336]
+	adc eax, DWORD PTR [edi+368]
+	mov DWORD PTR [edi+464], eax
+	mov eax, DWORD PTR [edi+340]
+	adc eax, DWORD PTR [edi+372]
+	mov DWORD PTR [edi+468], eax
+	mov eax, DWORD PTR [edi+344]
+	adc eax, DWORD PTR [edi+376]
+	mov DWORD PTR [edi+472], eax
+	mov eax, DWORD PTR [edi+348]
+	adc eax, DWORD PTR [edi+380]
+	mov DWORD PTR [edi+476], eax
+	sbb ecx, ecx
+	and ecx, 38
+	mov eax, DWORD PTR [edi+448]
+	adc eax, ecx
+	mov DWORD PTR [edi+448], eax
+	mov eax, DWORD PTR [edi+452]
+	adc eax, 0
+	mov DWORD PTR [edi+452], eax
+	mov eax, DWORD PTR [edi+456]
+	adc eax, 0
+	mov DWORD PTR [edi+456], eax
+	mov eax, DWORD PTR [edi+460]
+	adc eax, 0
+	mov DWORD PTR [edi+460], eax
+	mov eax, DWORD PTR [edi+464]
+	adc eax, 0
+	mov DWORD PTR [edi+464], eax
+	mov eax, DWORD PTR [edi+468]
+	adc eax, 0
+	mov DWORD PTR [edi+468], eax
+	mov eax, DWORD PTR [edi+472]
+	adc eax, 0
+	mov DWORD PTR [edi+472], eax
+	mov eax, DWORD PTR [edi+476]
+	adc eax, 0
+	mov DWORD PTR [edi+476], eax
+	sbb ecx, ecx
+	and ecx, 38
+	mov eax, DWORD PTR [edi+448]
+	adc eax, ecx
 	mov DWORD PTR [edi+448], eax
 	mov ebx, 0
 	mov ecx, 0
@@ -980,191 +890,61 @@ vg_x25519:
 	mul ebx
 	add eax, DWORD PTR [edi+576]
 	mov DWORD PTR [edi+576], eax
-	mov ebx, 0
-	mov ecx, 0
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+320]
-	adc ecx, 0
-	adc ebp, 0
-	mov eax, DWORD PTR [edi+352]
-	xor eax, -1
-	add ebx, eax
-	adc ecx, 0
-	adc ebp, 0
-	add ebx, -75
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+480], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+324]
-	adc ecx, 0
-	adc ebp, 0
-	mov eax, DWORD PTR [edi+356]
-	xor eax, -1
-	add ebx, eax
-	adc ecx, 0
-	adc ebp, 0
-	add ebx, -1
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+484], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+328]
-	adc ecx, 0
-	adc ebp, 0
-	mov eax, DWORD PTR [edi+360]
-	xor eax, -1
-	add ebx, eax
-	adc ecx, 0
-	adc ebp, 0
-	add ebx, -1
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+488], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+332]
-	adc ecx, 0
-	adc ebp, 0
-	mov eax, DWORD PTR [edi+364]
-	xor eax, -1
-	add ebx, eax
-	adc ecx, 0
-	adc ebp, 0
-	add ebx, -1
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+492], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+336]
-	adc ecx, 0
-	adc ebp, 0
-	mov eax, DWORD PTR [edi+368]
-	xor eax, -1
-	add ebx, eax
-	adc ecx, 0
-	adc ebp, 0
-	add ebx, -1
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+496], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+340]
-	adc ecx, 0
-	adc ebp, 0
-	mov eax, DWORD PTR [edi+372]
-	xor eax, -1
-	add ebx, eax
-	adc ecx, 0
-	adc ebp, 0
-	add ebx, -1
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+500], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+344]
-	adc ecx, 0
-	adc ebp, 0
-	mov eax, DWORD PTR [edi+376]
-	xor eax, -1
-	add ebx, eax
-	adc ecx, 0
-	adc ebp, 0
-	add ebx, -1
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+504], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+348]
-	adc ecx, 0
-	adc ebp, 0
-	mov eax, DWORD PTR [edi+380]
-	xor eax, -1
-	add ebx, eax
-	adc ecx, 0
-	adc ebp, 0
-	add ebx, -1
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+508], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	mov eax, 38
-	mul ebx
-	mov ebx, eax
-	add ebx, DWORD PTR [edi+480]
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+480], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+484]
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+484], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+488]
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+488], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+492]
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+492], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+496]
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+496], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+500]
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+500], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+504]
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+504], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+508]
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+508], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	mov eax, 38
-	mul ebx
-	add eax, DWORD PTR [edi+480]
+	xor ecx, ecx
+	mov eax, DWORD PTR [edi+320]
+	sbb eax, DWORD PTR [edi+352]
+	mov DWORD PTR [edi+480], eax
+	mov eax, DWORD PTR [edi+324]
+	sbb eax, DWORD PTR [edi+356]
+	mov DWORD PTR [edi+484], eax
+	mov eax, DWORD PTR [edi+328]
+	sbb eax, DWORD PTR [edi+360]
+	mov DWORD PTR [edi+488], eax
+	mov eax, DWORD PTR [edi+332]
+	sbb eax, DWORD PTR [edi+364]
+	mov DWORD PTR [edi+492], eax
+	mov eax, DWORD PTR [edi+336]
+	sbb eax, DWORD PTR [edi+368]
+	mov DWORD PTR [edi+496], eax
+	mov eax, DWORD PTR [edi+340]
+	sbb eax, DWORD PTR [edi+372]
+	mov DWORD PTR [edi+500], eax
+	mov eax, DWORD PTR [edi+344]
+	sbb eax, DWORD PTR [edi+376]
+	mov DWORD PTR [edi+504], eax
+	mov eax, DWORD PTR [edi+348]
+	sbb eax, DWORD PTR [edi+380]
+	mov DWORD PTR [edi+508], eax
+	sbb ecx, ecx
+	and ecx, 38
+	mov eax, DWORD PTR [edi+480]
+	sbb eax, ecx
+	mov DWORD PTR [edi+480], eax
+	mov eax, DWORD PTR [edi+484]
+	sbb eax, 0
+	mov DWORD PTR [edi+484], eax
+	mov eax, DWORD PTR [edi+488]
+	sbb eax, 0
+	mov DWORD PTR [edi+488], eax
+	mov eax, DWORD PTR [edi+492]
+	sbb eax, 0
+	mov DWORD PTR [edi+492], eax
+	mov eax, DWORD PTR [edi+496]
+	sbb eax, 0
+	mov DWORD PTR [edi+496], eax
+	mov eax, DWORD PTR [edi+500]
+	sbb eax, 0
+	mov DWORD PTR [edi+500], eax
+	mov eax, DWORD PTR [edi+504]
+	sbb eax, 0
+	mov DWORD PTR [edi+504], eax
+	mov eax, DWORD PTR [edi+508]
+	sbb eax, 0
+	mov DWORD PTR [edi+508], eax
+	sbb ecx, ecx
+	and ecx, 38
+	mov eax, DWORD PTR [edi+480]
+	sbb eax, ecx
 	mov DWORD PTR [edi+480], eax
 	mov ebx, 0
 	mov ecx, 0
@@ -1703,523 +1483,173 @@ vg_x25519:
 	mul ebx
 	add eax, DWORD PTR [edi+608]
 	mov DWORD PTR [edi+608], eax
-	mov ebx, 0
-	mov ecx, 0
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+576]
-	adc ecx, 0
-	adc ebp, 0
-	mov eax, DWORD PTR [edi+608]
-	xor eax, -1
-	add ebx, eax
-	adc ecx, 0
-	adc ebp, 0
-	add ebx, -75
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+640], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+580]
-	adc ecx, 0
-	adc ebp, 0
-	mov eax, DWORD PTR [edi+612]
-	xor eax, -1
-	add ebx, eax
-	adc ecx, 0
-	adc ebp, 0
-	add ebx, -1
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+644], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+584]
-	adc ecx, 0
-	adc ebp, 0
-	mov eax, DWORD PTR [edi+616]
-	xor eax, -1
-	add ebx, eax
-	adc ecx, 0
-	adc ebp, 0
-	add ebx, -1
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+648], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+588]
-	adc ecx, 0
-	adc ebp, 0
-	mov eax, DWORD PTR [edi+620]
-	xor eax, -1
-	add ebx, eax
-	adc ecx, 0
-	adc ebp, 0
-	add ebx, -1
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+652], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+592]
-	adc ecx, 0
-	adc ebp, 0
-	mov eax, DWORD PTR [edi+624]
-	xor eax, -1
-	add ebx, eax
-	adc ecx, 0
-	adc ebp, 0
-	add ebx, -1
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+656], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+596]
-	adc ecx, 0
-	adc ebp, 0
-	mov eax, DWORD PTR [edi+628]
-	xor eax, -1
-	add ebx, eax
-	adc ecx, 0
-	adc ebp, 0
-	add ebx, -1
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+660], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+600]
-	adc ecx, 0
-	adc ebp, 0
-	mov eax, DWORD PTR [edi+632]
-	xor eax, -1
-	add ebx, eax
-	adc ecx, 0
-	adc ebp, 0
-	add ebx, -1
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+664], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+604]
-	adc ecx, 0
-	adc ebp, 0
-	mov eax, DWORD PTR [edi+636]
-	xor eax, -1
-	add ebx, eax
-	adc ecx, 0
-	adc ebp, 0
-	add ebx, -1
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+668], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	mov eax, 38
-	mul ebx
-	mov ebx, eax
-	add ebx, DWORD PTR [edi+640]
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+640], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+644]
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+644], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+648]
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+648], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+652]
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+652], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+656]
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+656], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+660]
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+660], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+664]
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+664], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+668]
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+668], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	mov eax, 38
-	mul ebx
-	add eax, DWORD PTR [edi+640]
+	xor ecx, ecx
+	mov eax, DWORD PTR [edi+576]
+	sbb eax, DWORD PTR [edi+608]
 	mov DWORD PTR [edi+640], eax
-	mov ebx, 0
-	mov ecx, 0
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+384]
-	adc ecx, 0
-	adc ebp, 0
-	add ebx, DWORD PTR [edi+416]
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+512], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+388]
-	adc ecx, 0
-	adc ebp, 0
-	add ebx, DWORD PTR [edi+420]
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+516], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+392]
-	adc ecx, 0
-	adc ebp, 0
-	add ebx, DWORD PTR [edi+424]
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+520], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+396]
-	adc ecx, 0
-	adc ebp, 0
-	add ebx, DWORD PTR [edi+428]
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+524], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+400]
-	adc ecx, 0
-	adc ebp, 0
-	add ebx, DWORD PTR [edi+432]
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+528], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+404]
-	adc ecx, 0
-	adc ebp, 0
-	add ebx, DWORD PTR [edi+436]
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+532], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+408]
-	adc ecx, 0
-	adc ebp, 0
-	add ebx, DWORD PTR [edi+440]
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+536], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+412]
-	adc ecx, 0
-	adc ebp, 0
-	add ebx, DWORD PTR [edi+444]
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+540], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	mov eax, 38
-	mul ebx
-	mov ebx, eax
-	add ebx, DWORD PTR [edi+512]
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+512], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+516]
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+516], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+520]
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+520], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+524]
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+524], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+528]
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+528], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+532]
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+532], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+536]
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+536], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+540]
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+540], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	mov eax, 38
-	mul ebx
-	add eax, DWORD PTR [edi+512]
+	mov eax, DWORD PTR [edi+580]
+	sbb eax, DWORD PTR [edi+612]
+	mov DWORD PTR [edi+644], eax
+	mov eax, DWORD PTR [edi+584]
+	sbb eax, DWORD PTR [edi+616]
+	mov DWORD PTR [edi+648], eax
+	mov eax, DWORD PTR [edi+588]
+	sbb eax, DWORD PTR [edi+620]
+	mov DWORD PTR [edi+652], eax
+	mov eax, DWORD PTR [edi+592]
+	sbb eax, DWORD PTR [edi+624]
+	mov DWORD PTR [edi+656], eax
+	mov eax, DWORD PTR [edi+596]
+	sbb eax, DWORD PTR [edi+628]
+	mov DWORD PTR [edi+660], eax
+	mov eax, DWORD PTR [edi+600]
+	sbb eax, DWORD PTR [edi+632]
+	mov DWORD PTR [edi+664], eax
+	mov eax, DWORD PTR [edi+604]
+	sbb eax, DWORD PTR [edi+636]
+	mov DWORD PTR [edi+668], eax
+	sbb ecx, ecx
+	and ecx, 38
+	mov eax, DWORD PTR [edi+640]
+	sbb eax, ecx
+	mov DWORD PTR [edi+640], eax
+	mov eax, DWORD PTR [edi+644]
+	sbb eax, 0
+	mov DWORD PTR [edi+644], eax
+	mov eax, DWORD PTR [edi+648]
+	sbb eax, 0
+	mov DWORD PTR [edi+648], eax
+	mov eax, DWORD PTR [edi+652]
+	sbb eax, 0
+	mov DWORD PTR [edi+652], eax
+	mov eax, DWORD PTR [edi+656]
+	sbb eax, 0
+	mov DWORD PTR [edi+656], eax
+	mov eax, DWORD PTR [edi+660]
+	sbb eax, 0
+	mov DWORD PTR [edi+660], eax
+	mov eax, DWORD PTR [edi+664]
+	sbb eax, 0
+	mov DWORD PTR [edi+664], eax
+	mov eax, DWORD PTR [edi+668]
+	sbb eax, 0
+	mov DWORD PTR [edi+668], eax
+	sbb ecx, ecx
+	and ecx, 38
+	mov eax, DWORD PTR [edi+640]
+	sbb eax, ecx
+	mov DWORD PTR [edi+640], eax
+	xor ecx, ecx
+	mov eax, DWORD PTR [edi+384]
+	adc eax, DWORD PTR [edi+416]
 	mov DWORD PTR [edi+512], eax
-	mov ebx, 0
-	mov ecx, 0
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+384]
-	adc ecx, 0
-	adc ebp, 0
-	mov eax, DWORD PTR [edi+416]
-	xor eax, -1
-	add ebx, eax
-	adc ecx, 0
-	adc ebp, 0
-	add ebx, -75
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+544], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+388]
-	adc ecx, 0
-	adc ebp, 0
-	mov eax, DWORD PTR [edi+420]
-	xor eax, -1
-	add ebx, eax
-	adc ecx, 0
-	adc ebp, 0
-	add ebx, -1
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+548], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+392]
-	adc ecx, 0
-	adc ebp, 0
-	mov eax, DWORD PTR [edi+424]
-	xor eax, -1
-	add ebx, eax
-	adc ecx, 0
-	adc ebp, 0
-	add ebx, -1
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+552], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+396]
-	adc ecx, 0
-	adc ebp, 0
-	mov eax, DWORD PTR [edi+428]
-	xor eax, -1
-	add ebx, eax
-	adc ecx, 0
-	adc ebp, 0
-	add ebx, -1
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+556], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+400]
-	adc ecx, 0
-	adc ebp, 0
-	mov eax, DWORD PTR [edi+432]
-	xor eax, -1
-	add ebx, eax
-	adc ecx, 0
-	adc ebp, 0
-	add ebx, -1
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+560], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+404]
-	adc ecx, 0
-	adc ebp, 0
-	mov eax, DWORD PTR [edi+436]
-	xor eax, -1
-	add ebx, eax
-	adc ecx, 0
-	adc ebp, 0
-	add ebx, -1
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+564], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+408]
-	adc ecx, 0
-	adc ebp, 0
-	mov eax, DWORD PTR [edi+440]
-	xor eax, -1
-	add ebx, eax
-	adc ecx, 0
-	adc ebp, 0
-	add ebx, -1
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+568], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+412]
-	adc ecx, 0
-	adc ebp, 0
-	mov eax, DWORD PTR [edi+444]
-	xor eax, -1
-	add ebx, eax
-	adc ecx, 0
-	adc ebp, 0
-	add ebx, -1
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+572], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	mov eax, 38
-	mul ebx
-	mov ebx, eax
-	add ebx, DWORD PTR [edi+544]
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+544], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+548]
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+548], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+552]
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+552], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+556]
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+556], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+560]
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+560], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+564]
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+564], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+568]
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+568], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+572]
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+572], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	mov eax, 38
-	mul ebx
-	add eax, DWORD PTR [edi+544]
+	mov eax, DWORD PTR [edi+388]
+	adc eax, DWORD PTR [edi+420]
+	mov DWORD PTR [edi+516], eax
+	mov eax, DWORD PTR [edi+392]
+	adc eax, DWORD PTR [edi+424]
+	mov DWORD PTR [edi+520], eax
+	mov eax, DWORD PTR [edi+396]
+	adc eax, DWORD PTR [edi+428]
+	mov DWORD PTR [edi+524], eax
+	mov eax, DWORD PTR [edi+400]
+	adc eax, DWORD PTR [edi+432]
+	mov DWORD PTR [edi+528], eax
+	mov eax, DWORD PTR [edi+404]
+	adc eax, DWORD PTR [edi+436]
+	mov DWORD PTR [edi+532], eax
+	mov eax, DWORD PTR [edi+408]
+	adc eax, DWORD PTR [edi+440]
+	mov DWORD PTR [edi+536], eax
+	mov eax, DWORD PTR [edi+412]
+	adc eax, DWORD PTR [edi+444]
+	mov DWORD PTR [edi+540], eax
+	sbb ecx, ecx
+	and ecx, 38
+	mov eax, DWORD PTR [edi+512]
+	adc eax, ecx
+	mov DWORD PTR [edi+512], eax
+	mov eax, DWORD PTR [edi+516]
+	adc eax, 0
+	mov DWORD PTR [edi+516], eax
+	mov eax, DWORD PTR [edi+520]
+	adc eax, 0
+	mov DWORD PTR [edi+520], eax
+	mov eax, DWORD PTR [edi+524]
+	adc eax, 0
+	mov DWORD PTR [edi+524], eax
+	mov eax, DWORD PTR [edi+528]
+	adc eax, 0
+	mov DWORD PTR [edi+528], eax
+	mov eax, DWORD PTR [edi+532]
+	adc eax, 0
+	mov DWORD PTR [edi+532], eax
+	mov eax, DWORD PTR [edi+536]
+	adc eax, 0
+	mov DWORD PTR [edi+536], eax
+	mov eax, DWORD PTR [edi+540]
+	adc eax, 0
+	mov DWORD PTR [edi+540], eax
+	sbb ecx, ecx
+	and ecx, 38
+	mov eax, DWORD PTR [edi+512]
+	adc eax, ecx
+	mov DWORD PTR [edi+512], eax
+	xor ecx, ecx
+	mov eax, DWORD PTR [edi+384]
+	sbb eax, DWORD PTR [edi+416]
+	mov DWORD PTR [edi+544], eax
+	mov eax, DWORD PTR [edi+388]
+	sbb eax, DWORD PTR [edi+420]
+	mov DWORD PTR [edi+548], eax
+	mov eax, DWORD PTR [edi+392]
+	sbb eax, DWORD PTR [edi+424]
+	mov DWORD PTR [edi+552], eax
+	mov eax, DWORD PTR [edi+396]
+	sbb eax, DWORD PTR [edi+428]
+	mov DWORD PTR [edi+556], eax
+	mov eax, DWORD PTR [edi+400]
+	sbb eax, DWORD PTR [edi+432]
+	mov DWORD PTR [edi+560], eax
+	mov eax, DWORD PTR [edi+404]
+	sbb eax, DWORD PTR [edi+436]
+	mov DWORD PTR [edi+564], eax
+	mov eax, DWORD PTR [edi+408]
+	sbb eax, DWORD PTR [edi+440]
+	mov DWORD PTR [edi+568], eax
+	mov eax, DWORD PTR [edi+412]
+	sbb eax, DWORD PTR [edi+444]
+	mov DWORD PTR [edi+572], eax
+	sbb ecx, ecx
+	and ecx, 38
+	mov eax, DWORD PTR [edi+544]
+	sbb eax, ecx
+	mov DWORD PTR [edi+544], eax
+	mov eax, DWORD PTR [edi+548]
+	sbb eax, 0
+	mov DWORD PTR [edi+548], eax
+	mov eax, DWORD PTR [edi+552]
+	sbb eax, 0
+	mov DWORD PTR [edi+552], eax
+	mov eax, DWORD PTR [edi+556]
+	sbb eax, 0
+	mov DWORD PTR [edi+556], eax
+	mov eax, DWORD PTR [edi+560]
+	sbb eax, 0
+	mov DWORD PTR [edi+560], eax
+	mov eax, DWORD PTR [edi+564]
+	sbb eax, 0
+	mov DWORD PTR [edi+564], eax
+	mov eax, DWORD PTR [edi+568]
+	sbb eax, 0
+	mov DWORD PTR [edi+568], eax
+	mov eax, DWORD PTR [edi+572]
+	sbb eax, 0
+	mov DWORD PTR [edi+572], eax
+	sbb ecx, ecx
+	and ecx, 38
+	mov eax, DWORD PTR [edi+544]
+	sbb eax, ecx
 	mov DWORD PTR [edi+544], eax
 	mov ebx, 0
 	mov ecx, 0
@@ -3463,151 +2893,61 @@ vg_x25519:
 	mul ebx
 	add eax, DWORD PTR [edi+704]
 	mov DWORD PTR [edi+704], eax
-	mov ebx, 0
-	mov ecx, 0
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+672]
-	adc ecx, 0
-	adc ebp, 0
-	add ebx, DWORD PTR [edi+704]
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+384], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+676]
-	adc ecx, 0
-	adc ebp, 0
-	add ebx, DWORD PTR [edi+708]
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+388], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+680]
-	adc ecx, 0
-	adc ebp, 0
-	add ebx, DWORD PTR [edi+712]
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+392], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+684]
-	adc ecx, 0
-	adc ebp, 0
-	add ebx, DWORD PTR [edi+716]
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+396], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+688]
-	adc ecx, 0
-	adc ebp, 0
-	add ebx, DWORD PTR [edi+720]
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+400], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+692]
-	adc ecx, 0
-	adc ebp, 0
-	add ebx, DWORD PTR [edi+724]
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+404], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+696]
-	adc ecx, 0
-	adc ebp, 0
-	add ebx, DWORD PTR [edi+728]
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+408], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+700]
-	adc ecx, 0
-	adc ebp, 0
-	add ebx, DWORD PTR [edi+732]
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+412], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	mov eax, 38
-	mul ebx
-	mov ebx, eax
-	add ebx, DWORD PTR [edi+384]
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+384], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+388]
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+388], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+392]
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+392], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+396]
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+396], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+400]
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+400], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+404]
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+404], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+408]
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+408], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+412]
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+412], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	mov eax, 38
-	mul ebx
-	add eax, DWORD PTR [edi+384]
+	xor ecx, ecx
+	mov eax, DWORD PTR [edi+672]
+	adc eax, DWORD PTR [edi+704]
+	mov DWORD PTR [edi+384], eax
+	mov eax, DWORD PTR [edi+676]
+	adc eax, DWORD PTR [edi+708]
+	mov DWORD PTR [edi+388], eax
+	mov eax, DWORD PTR [edi+680]
+	adc eax, DWORD PTR [edi+712]
+	mov DWORD PTR [edi+392], eax
+	mov eax, DWORD PTR [edi+684]
+	adc eax, DWORD PTR [edi+716]
+	mov DWORD PTR [edi+396], eax
+	mov eax, DWORD PTR [edi+688]
+	adc eax, DWORD PTR [edi+720]
+	mov DWORD PTR [edi+400], eax
+	mov eax, DWORD PTR [edi+692]
+	adc eax, DWORD PTR [edi+724]
+	mov DWORD PTR [edi+404], eax
+	mov eax, DWORD PTR [edi+696]
+	adc eax, DWORD PTR [edi+728]
+	mov DWORD PTR [edi+408], eax
+	mov eax, DWORD PTR [edi+700]
+	adc eax, DWORD PTR [edi+732]
+	mov DWORD PTR [edi+412], eax
+	sbb ecx, ecx
+	and ecx, 38
+	mov eax, DWORD PTR [edi+384]
+	adc eax, ecx
+	mov DWORD PTR [edi+384], eax
+	mov eax, DWORD PTR [edi+388]
+	adc eax, 0
+	mov DWORD PTR [edi+388], eax
+	mov eax, DWORD PTR [edi+392]
+	adc eax, 0
+	mov DWORD PTR [edi+392], eax
+	mov eax, DWORD PTR [edi+396]
+	adc eax, 0
+	mov DWORD PTR [edi+396], eax
+	mov eax, DWORD PTR [edi+400]
+	adc eax, 0
+	mov DWORD PTR [edi+400], eax
+	mov eax, DWORD PTR [edi+404]
+	adc eax, 0
+	mov DWORD PTR [edi+404], eax
+	mov eax, DWORD PTR [edi+408]
+	adc eax, 0
+	mov DWORD PTR [edi+408], eax
+	mov eax, DWORD PTR [edi+412]
+	adc eax, 0
+	mov DWORD PTR [edi+412], eax
+	sbb ecx, ecx
+	and ecx, 38
+	mov eax, DWORD PTR [edi+384]
+	adc eax, ecx
 	mov DWORD PTR [edi+384], eax
 	mov ebx, 0
 	mov ecx, 0
@@ -4146,191 +3486,61 @@ vg_x25519:
 	mul ebx
 	add eax, DWORD PTR [edi+384]
 	mov DWORD PTR [edi+384], eax
-	mov ebx, 0
-	mov ecx, 0
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+672]
-	adc ecx, 0
-	adc ebp, 0
-	mov eax, DWORD PTR [edi+704]
-	xor eax, -1
-	add ebx, eax
-	adc ecx, 0
-	adc ebp, 0
-	add ebx, -75
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+416], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+676]
-	adc ecx, 0
-	adc ebp, 0
-	mov eax, DWORD PTR [edi+708]
-	xor eax, -1
-	add ebx, eax
-	adc ecx, 0
-	adc ebp, 0
-	add ebx, -1
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+420], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+680]
-	adc ecx, 0
-	adc ebp, 0
-	mov eax, DWORD PTR [edi+712]
-	xor eax, -1
-	add ebx, eax
-	adc ecx, 0
-	adc ebp, 0
-	add ebx, -1
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+424], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+684]
-	adc ecx, 0
-	adc ebp, 0
-	mov eax, DWORD PTR [edi+716]
-	xor eax, -1
-	add ebx, eax
-	adc ecx, 0
-	adc ebp, 0
-	add ebx, -1
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+428], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+688]
-	adc ecx, 0
-	adc ebp, 0
-	mov eax, DWORD PTR [edi+720]
-	xor eax, -1
-	add ebx, eax
-	adc ecx, 0
-	adc ebp, 0
-	add ebx, -1
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+432], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+692]
-	adc ecx, 0
-	adc ebp, 0
-	mov eax, DWORD PTR [edi+724]
-	xor eax, -1
-	add ebx, eax
-	adc ecx, 0
-	adc ebp, 0
-	add ebx, -1
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+436], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+696]
-	adc ecx, 0
-	adc ebp, 0
-	mov eax, DWORD PTR [edi+728]
-	xor eax, -1
-	add ebx, eax
-	adc ecx, 0
-	adc ebp, 0
-	add ebx, -1
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+440], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+700]
-	adc ecx, 0
-	adc ebp, 0
-	mov eax, DWORD PTR [edi+732]
-	xor eax, -1
-	add ebx, eax
-	adc ecx, 0
-	adc ebp, 0
-	add ebx, -1
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+444], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	mov eax, 38
-	mul ebx
-	mov ebx, eax
-	add ebx, DWORD PTR [edi+416]
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+416], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+420]
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+420], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+424]
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+424], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+428]
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+428], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+432]
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+432], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+436]
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+436], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+440]
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+440], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+444]
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+444], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	mov eax, 38
-	mul ebx
-	add eax, DWORD PTR [edi+416]
+	xor ecx, ecx
+	mov eax, DWORD PTR [edi+672]
+	sbb eax, DWORD PTR [edi+704]
+	mov DWORD PTR [edi+416], eax
+	mov eax, DWORD PTR [edi+676]
+	sbb eax, DWORD PTR [edi+708]
+	mov DWORD PTR [edi+420], eax
+	mov eax, DWORD PTR [edi+680]
+	sbb eax, DWORD PTR [edi+712]
+	mov DWORD PTR [edi+424], eax
+	mov eax, DWORD PTR [edi+684]
+	sbb eax, DWORD PTR [edi+716]
+	mov DWORD PTR [edi+428], eax
+	mov eax, DWORD PTR [edi+688]
+	sbb eax, DWORD PTR [edi+720]
+	mov DWORD PTR [edi+432], eax
+	mov eax, DWORD PTR [edi+692]
+	sbb eax, DWORD PTR [edi+724]
+	mov DWORD PTR [edi+436], eax
+	mov eax, DWORD PTR [edi+696]
+	sbb eax, DWORD PTR [edi+728]
+	mov DWORD PTR [edi+440], eax
+	mov eax, DWORD PTR [edi+700]
+	sbb eax, DWORD PTR [edi+732]
+	mov DWORD PTR [edi+444], eax
+	sbb ecx, ecx
+	and ecx, 38
+	mov eax, DWORD PTR [edi+416]
+	sbb eax, ecx
+	mov DWORD PTR [edi+416], eax
+	mov eax, DWORD PTR [edi+420]
+	sbb eax, 0
+	mov DWORD PTR [edi+420], eax
+	mov eax, DWORD PTR [edi+424]
+	sbb eax, 0
+	mov DWORD PTR [edi+424], eax
+	mov eax, DWORD PTR [edi+428]
+	sbb eax, 0
+	mov DWORD PTR [edi+428], eax
+	mov eax, DWORD PTR [edi+432]
+	sbb eax, 0
+	mov DWORD PTR [edi+432], eax
+	mov eax, DWORD PTR [edi+436]
+	sbb eax, 0
+	mov DWORD PTR [edi+436], eax
+	mov eax, DWORD PTR [edi+440]
+	sbb eax, 0
+	mov DWORD PTR [edi+440], eax
+	mov eax, DWORD PTR [edi+444]
+	sbb eax, 0
+	mov DWORD PTR [edi+444], eax
+	sbb ecx, ecx
+	and ecx, 38
+	mov eax, DWORD PTR [edi+416]
+	sbb eax, ecx
 	mov DWORD PTR [edi+416], eax
 	mov ebx, 0
 	mov ecx, 0
@@ -6257,151 +5467,61 @@ vg_x25519:
 	mul ebx
 	add eax, DWORD PTR [edi+352]
 	mov DWORD PTR [edi+352], eax
-	mov ebx, 0
-	mov ecx, 0
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+576]
-	adc ecx, 0
-	adc ebp, 0
-	add ebx, DWORD PTR [edi+352]
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+352], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+580]
-	adc ecx, 0
-	adc ebp, 0
-	add ebx, DWORD PTR [edi+356]
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+356], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+584]
-	adc ecx, 0
-	adc ebp, 0
-	add ebx, DWORD PTR [edi+360]
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+360], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+588]
-	adc ecx, 0
-	adc ebp, 0
-	add ebx, DWORD PTR [edi+364]
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+364], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+592]
-	adc ecx, 0
-	adc ebp, 0
-	add ebx, DWORD PTR [edi+368]
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+368], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+596]
-	adc ecx, 0
-	adc ebp, 0
-	add ebx, DWORD PTR [edi+372]
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+372], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+600]
-	adc ecx, 0
-	adc ebp, 0
-	add ebx, DWORD PTR [edi+376]
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+376], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+604]
-	adc ecx, 0
-	adc ebp, 0
-	add ebx, DWORD PTR [edi+380]
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+380], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	mov eax, 38
-	mul ebx
-	mov ebx, eax
-	add ebx, DWORD PTR [edi+352]
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+352], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+356]
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+356], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+360]
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+360], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+364]
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+364], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+368]
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+368], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+372]
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+372], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+376]
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+376], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	add ebx, DWORD PTR [edi+380]
-	adc ecx, 0
-	adc ebp, 0
-	mov DWORD PTR [edi+380], ebx
-	mov ebx, ecx
-	mov ecx, ebp
-	mov ebp, 0
-	mov eax, 38
-	mul ebx
-	add eax, DWORD PTR [edi+352]
+	xor ecx, ecx
+	mov eax, DWORD PTR [edi+576]
+	adc eax, DWORD PTR [edi+352]
+	mov DWORD PTR [edi+352], eax
+	mov eax, DWORD PTR [edi+580]
+	adc eax, DWORD PTR [edi+356]
+	mov DWORD PTR [edi+356], eax
+	mov eax, DWORD PTR [edi+584]
+	adc eax, DWORD PTR [edi+360]
+	mov DWORD PTR [edi+360], eax
+	mov eax, DWORD PTR [edi+588]
+	adc eax, DWORD PTR [edi+364]
+	mov DWORD PTR [edi+364], eax
+	mov eax, DWORD PTR [edi+592]
+	adc eax, DWORD PTR [edi+368]
+	mov DWORD PTR [edi+368], eax
+	mov eax, DWORD PTR [edi+596]
+	adc eax, DWORD PTR [edi+372]
+	mov DWORD PTR [edi+372], eax
+	mov eax, DWORD PTR [edi+600]
+	adc eax, DWORD PTR [edi+376]
+	mov DWORD PTR [edi+376], eax
+	mov eax, DWORD PTR [edi+604]
+	adc eax, DWORD PTR [edi+380]
+	mov DWORD PTR [edi+380], eax
+	sbb ecx, ecx
+	and ecx, 38
+	mov eax, DWORD PTR [edi+352]
+	adc eax, ecx
+	mov DWORD PTR [edi+352], eax
+	mov eax, DWORD PTR [edi+356]
+	adc eax, 0
+	mov DWORD PTR [edi+356], eax
+	mov eax, DWORD PTR [edi+360]
+	adc eax, 0
+	mov DWORD PTR [edi+360], eax
+	mov eax, DWORD PTR [edi+364]
+	adc eax, 0
+	mov DWORD PTR [edi+364], eax
+	mov eax, DWORD PTR [edi+368]
+	adc eax, 0
+	mov DWORD PTR [edi+368], eax
+	mov eax, DWORD PTR [edi+372]
+	adc eax, 0
+	mov DWORD PTR [edi+372], eax
+	mov eax, DWORD PTR [edi+376]
+	adc eax, 0
+	mov DWORD PTR [edi+376], eax
+	mov eax, DWORD PTR [edi+380]
+	adc eax, 0
+	mov DWORD PTR [edi+380], eax
+	sbb ecx, ecx
+	and ecx, 38
+	mov eax, DWORD PTR [edi+352]
+	adc eax, ecx
 	mov DWORD PTR [edi+352], eax
 	mov ebx, 0
 	mov ecx, 0
