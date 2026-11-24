@@ -244,6 +244,7 @@ impl Drop for AesGcm {
 static IA32_BENCH_LEGACY: core::sync::atomic::AtomicBool = core::sync::atomic::AtomicBool::new(false);
 
 #[cfg(target_arch = "x86")]
+/// Select the historical IA-32 entry for this controlled benchmark process.
 pub fn ia32_select_benchmark_entry(legacy: bool) {
     IA32_BENCH_LEGACY.store(legacy, core::sync::atomic::Ordering::Relaxed);
 }
