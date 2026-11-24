@@ -317,10 +317,6 @@ theorem Sig.bufs_array {m : Bool} {e : Elem} {k : Nat} :
 theorem Sig.bufs_slice {m : Bool} {e : Elem} {len : String} :
     Sig.bufs ((n, .slice m e len) :: ps) (p :: l :: vs) = (⟨p, l.toNat * e.size⟩, m) :: Sig.bufs ps vs :=
   rfl
-theorem Sig.bufs_inOut {e : Elem} {dst len : String} {q : Addr} :
-    Sig.bufs ((n, .inOutSlice e dst len) :: ps) (p :: q :: l :: vs) =
-      if p = q then (⟨q, l.toNat * e.size⟩, true) :: Sig.bufs ps vs
-      else (⟨p, l.toNat * e.size⟩, false) :: (⟨q, l.toNat * e.size⟩, true) :: Sig.bufs ps vs := rfl
 theorem Sig.bufs_slices {e : Elem} {c : String} :
     Sig.bufs ((n, .slices e c) :: ps) (p :: l :: vs) = Sig.bufs ps vs := rfl
 
@@ -347,10 +343,6 @@ theorem Sig.alignedBufs_array {m : Bool} {e : Elem} {k : Nat} :
 theorem Sig.alignedBufs_slice {m : Bool} {e : Elem} {len : String} :
     Sig.alignedBufs ((n, .slice m e len) :: ps) (p :: l :: vs) =
       if 1 < e.align then (p, e.align) :: Sig.alignedBufs ps vs else Sig.alignedBufs ps vs := rfl
-theorem Sig.alignedBufs_inOut {e : Elem} {dst len : String} {q : Addr} :
-    Sig.alignedBufs ((n, .inOutSlice e dst len) :: ps) (p :: q :: l :: vs) =
-      if 1 < e.align then (p, e.align) :: (q, e.align) :: Sig.alignedBufs ps vs
-      else Sig.alignedBufs ps vs := rfl
 theorem Sig.alignedBufs_slices {e : Elem} {c : String} :
     Sig.alignedBufs ((n, .slices e c) :: ps) (p :: l :: vs) = Sig.alignedBufs ps vs := rfl
 theorem Sig.alignedBufs_table {k : Nat} :
@@ -363,8 +355,6 @@ theorem Sig.lists_array {pb : Nat} {m : Mem} {w : Bool} {e : Elem} {k : Nat} :
     Sig.lists pb m ((n, .array w e k) :: ps) (p :: vs) = Sig.lists pb m ps vs := rfl
 theorem Sig.lists_slice {pb : Nat} {m : Mem} {w : Bool} {e : Elem} {len : String} :
     Sig.lists pb m ((n, .slice w e len) :: ps) (p :: l :: vs) = Sig.lists pb m ps vs := rfl
-theorem Sig.lists_inOut {pb : Nat} {m : Mem} {e : Elem} {dst len : String} {q : Addr} :
-    Sig.lists pb m ((n, .inOutSlice e dst len) :: ps) (p :: q :: l :: vs) = Sig.lists pb m ps vs := rfl
 theorem Sig.lists_slices {pb : Nat} {m : Mem} {e : Elem} {c : String} :
     Sig.lists pb m ((n, .slices e c) :: ps) (p :: l :: vs) =
       Sig.descRegion pb p l.toNat :: Sig.listed pb m e p l.toNat ++ Sig.lists pb m ps vs := rfl
@@ -376,8 +366,6 @@ theorem Sig.descs_array {pb : Nat} {w : Bool} {e : Elem} {k : Nat} :
     Sig.descs pb ((n, .array w e k) :: ps) (p :: vs) = Sig.descs pb ps vs := rfl
 theorem Sig.descs_slice {pb : Nat} {w : Bool} {e : Elem} {len : String} :
     Sig.descs pb ((n, .slice w e len) :: ps) (p :: l :: vs) = Sig.descs pb ps vs := rfl
-theorem Sig.descs_inOut {pb : Nat} {e : Elem} {dst len : String} {q : Addr} :
-    Sig.descs pb ((n, .inOutSlice e dst len) :: ps) (p :: q :: l :: vs) = Sig.descs pb ps vs := rfl
 theorem Sig.descs_slices {pb : Nat} {e : Elem} {c : String} :
     Sig.descs pb ((n, .slices e c) :: ps) (p :: l :: vs) = Sig.descRegion pb p l.toNat :: Sig.descs pb ps vs :=
   rfl
@@ -451,12 +439,12 @@ macro_rules
       -- against the filtered list by evaluation, and evaluates the symbolic
       -- values in it (the stack arguments' memory reads) as far as it can:
       -- seconds for some contracts.
-      sig_simp [$ls,*] [Sig.bufs_nil, Sig.bufs_int, Sig.bufs_array, Sig.bufs_slice, Sig.bufs_inOut, Sig.bufs_slices,
+      sig_simp [$ls,*] [Sig.bufs_nil, Sig.bufs_int, Sig.bufs_array, Sig.bufs_slice, Sig.bufs_slices,
         Sig.alignedBufs_nil, Sig.alignedBufs_int, Sig.alignedBufs_array, Sig.alignedBufs_slice,
-        Sig.alignedBufs_inOut, Sig.alignedBufs_slices, Sig.alignedBufs_table, Elem.align_u8, Elem.align_u16, Elem.align_u32,
+        Sig.alignedBufs_slices, Sig.alignedBufs_table, Elem.align_u8, Elem.align_u16, Elem.align_u32,
         Elem.align_u64, Elem.align_array, Nat.reduceLT,
-        Sig.lists_nil, Sig.lists_int, Sig.lists_array, Sig.lists_slice, Sig.lists_inOut, Sig.lists_slices,
-        Sig.descs_nil, Sig.descs_int, Sig.descs_array, Sig.descs_slice, Sig.descs_inOut, Sig.descs_slices,
+        Sig.lists_nil, Sig.lists_int, Sig.lists_array, Sig.lists_slice, Sig.lists_slices,
+        Sig.descs_nil, Sig.descs_int, Sig.descs_array, Sig.descs_slice, Sig.descs_slices,
         Sig.conj_nil, Sig.conj_single, Sig.conj_cons_cons,
         Bool.cond_true, Bool.cond_false, List.append_nil, List.map_nil, Curry.apply, Curry.const, Curry.apply_const, ArgWord.ofRaw, Elem.size, List.filter_cons, List.filter_nil, List.map, List.cons_append, List.nil_append, List.all_cons, List.all_nil, Bool.not_true, Bool.not_false, Bool.and_true, Bool.and_false, Bool.true_and, Bool.false_and, Bool.and_self, Bool.or_true, Bool.true_or, Bool.or_false, Bool.false_or, Bool.false_eq_true, decide_true, decide_false, Nat.mul_one, Nat.one_mul, List.pairwise_cons, List.forall_mem_cons, List.not_mem_nil, List.Pairwise.nil, List.mem_cons, List.mem_nil_iff, forall_eq_or_imp, forall_eq, forall_false, implies_true, true_implies, false_implies, and_true, true_and, and_self, or_self, or_true, true_or, false_or, or_false, and_assoc, Nat.add_zero, List.zip_cons_cons, List.zip_nil_left, List.zip_nil_right, List.sum_cons, List.sum_nil, BitVec.setWidth_eq, BitVec.setWidth_32_64_32, BitVec.toNat_setWidth_32_64, BitVec.setWidth_setWidth_of_le, Sig.forall_pubs_cons, Sig.forall_pubs_nil, Nat.reduceAdd, Nat.reduceSub, Nat.reduceMul, Nat.reduceDiv,
         Nat.reduceLeDiff, Nat.reduceEqDiff, ↓reduceIte] $[$loc]?))

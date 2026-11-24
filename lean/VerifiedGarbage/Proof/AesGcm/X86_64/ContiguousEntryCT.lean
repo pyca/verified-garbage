@@ -324,7 +324,8 @@ theorem entryPre {P : Condition} {M : CtxMode} {s : State}
   have b : Region.Sub (below (SP s) 24) (below (SP s) 32) := below_sub (by decide) (by decide)
   by_cases same : stackArg s 0=stackArg s 1
   all_goals
-    sig_pre [workContract,workSig,sealContiguousSig,abi,argRegs,Gather.stackArgs_five,List.cons_append,List.nil_append] at h
+    sig_pre [Sig.bufs.eq_7,Sig.lists.eq_7,Sig.descs.eq_7,Sig.alignedBufs.eq_7,
+      workContract,workSig,sealContiguousSig,abi,argRegs,Gather.stackArgs_five,List.cons_append,List.nil_append] at h
     simp only [same,↓reduceIte] at h
     simp [Sig.pairFacts,Sig.conj,List.filterMap_cons,and_assoc] at h
   case pos =>
@@ -367,7 +368,8 @@ theorem witnessPowers : Proof.AesGcm.Flag.FlaggedPowers 48 witnessMem 0x1000 := 
   · decide +kernel
 
 theorem workSat {P : Condition} (ok : P 0x1000 10 witnessMem) : (workContract P).pre (witness true) := by
-  sig_pre [workContract,workSig,sealContiguousSig,abi,argRegs,Gather.stackArgs_five,List.cons_append,List.nil_append,
+  sig_pre [Sig.bufs.eq_7,Sig.lists.eq_7,Sig.descs.eq_7,Sig.alignedBufs.eq_7,
+      workContract,workSig,sealContiguousSig,abi,argRegs,Gather.stackArgs_five,List.cons_append,List.nil_append,
     witness,Gather.gatherSat,stackArg,stackArgAddr,Mem.readW,Mem.read,witnessMem]
   simp
   repeat' apply And.intro
@@ -378,7 +380,8 @@ private theorem stackFour (s : State) : List.map (stackArg s) (List.range 4) =
 
 theorem publicSat {P : Condition} (ok : P 0x1000 10 witnessMem) :
     ((sealContiguousSig 129).contract abi (pre P) (sealContiguousPost 64) true 2640).pre (witness false) := by
-  sig_pre [pre,sealContiguousSig,abi,argRegs,stackFour,List.cons_append,List.nil_append,
+  sig_pre [Sig.bufs.eq_7,Sig.lists.eq_7,Sig.descs.eq_7,Sig.alignedBufs.eq_7,
+      pre,sealContiguousSig,abi,argRegs,stackFour,List.cons_append,List.nil_append,
     witness,Gather.gatherSat,stackArg,stackArgAddr,Mem.readW,Mem.read,witnessMem]
   simp
   repeat' apply And.intro
