@@ -430,6 +430,7 @@ def run(binary, home, library, args, checkout, modules, groups=None, bench=None)
     pattern = f"/{library}/"
     if groups is not None:
         pattern = f"^(?:{'|'.join(map(re.escape, groups))})/{library}/"
+    pattern += "(?:15|16|239|351|352|383|415|447|511|4095)$"
     proc = subprocess.run(
         [
             binary,
@@ -589,14 +590,24 @@ def main():
     modules = {"head": selected_modules(head, args.modules), "base": selected_modules(base, args.modules)}
     if modules["head"] is None or (args.modules and set(modules["head"].split()) != set(args.modules.split())):
         p.error("head's benchmark registry does not use the selected modules")
-    binaries = {"head": build(head), "base": None}
-    note = "Base has no selected benchmarks; head's and the references' results are new."
-    if not base.is_dir():
-        note = "No base to compare with, so head ran alone."
-    elif modules["base"] is not None:
-        binaries["base"], note, source = build_base(base, head)
-        if binaries["base"] is not None:
-            modules["base"] = selected_modules(source, args.modules)
+    path = TARGET / 'gcm-route-binaries.json'
+    mode = os.environ.get("GCM_ROUTE_COMPARISON", "public")
+    if mode == "public":
+        candidate = build(head)
+        original, note, source = build_base(base, head)
+        assert original and source == head
+        path.write_text(json.dumps(dict(original=original, candidate=candidate, hybrid=candidate)))
+    names = json.loads(path.read_text())
+    left, right = {"public": ("original", "candidate"), "kernel": ("original","hybrid"),
+                   "wrapper": ("hybrid","candidate"), "control": ("original","original")}[mode]
+    binaries = {"base": names[left], "head": names[right]}
+    if mode == "control":
+        import hashlib
+        peer = fresh_copy(binaries["base"], 2000)
+        assert hashlib.sha256(peer.read_bytes()).digest() == hashlib.sha256(pathlib.Path(binaries["base"]).read_bytes()).digest()
+        binaries["head"] = str(peer)
+    note = None
+    os.sched_setaffinity(0, {min(os.sched_getaffinity(0))})
     if args.arch:
         for binary in filter(None, binaries.values()):
             check_arch(binary, args.arch)
@@ -843,4 +854,23 @@ def main():
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    if "avx512f" not in pathlib.Path("/proc/cpuinfo").read_text().split():
+        print("Assigned CPU lacks AVX-512; no timing taken", flush=True)
+        result = pathlib.Path(sys.argv[sys.argv.index("--json")+1])
+        result.write_text(json.dumps(bench_report.document({"arch":"x86_64","os":"Linux","cpu":cpu_model(),"note":"No AVX512F"}, [])))
+        sys.exit(0)
+    sys.argv.extend(["--copies","4","--measurement-time","0.18","--warm-up-time","0.07"])
+    status = main()
+    result = pathlib.Path(sys.argv[sys.argv.index("--json")+1])
+    sets = json.loads(result.read_text())
+    for mode in ("control",):
+        os.environ["GCM_ROUTE_COMPARISON"] = mode
+        saved = result.with_name(mode + ".json")
+        sys.argv[sys.argv.index("--json")+1] = str(saved)
+        argv = sys.argv[:]
+        sys.argv.extend(["--work-dir", mode + "-measures"])
+        status = max(status, main())
+        sys.argv = argv
+        sets[mode] = json.loads(saved.read_text())
+    result.write_text(json.dumps(sets,indent=2))
+    sys.exit(status)

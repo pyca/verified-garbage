@@ -161,7 +161,7 @@ import asm_layout
 # whose binaries run natively. bench_compare.py runs them itself, not through
 # ci/arm32-run, so on a host without AArch32 they fail rather than time QEMU.
 PLATFORMS = {
-    "x86_64": {"os": "ubuntu-26.04"},
+    "x86_64": {"os": "ubuntu-24.04"},
     "aarch64": {"os": "ubuntu-26.04-arm"},
     "x86": {
         "os": "ubuntu-26.04",

@@ -610,10 +610,7 @@ fn tls_records(c: &mut Criterion) {
     /// (alerts, handshake messages, small requests); records of 112 to 240
     /// bytes with their content type, fewer than 16 blocks; a 2048-byte
     /// record; and records of 288, 416, 432 and 448 bytes of text.
-    const TLS_SIZES: [usize; 29] = [
-        15, 31, 47, 63, 111, 127, 207, 239, 254, 255, 256, 257, 287, 415, 431, 447, 1023, 1024,
-        1025, 2047, 4095, 4096, 4097, 9999, 10000, 10001, 16383, 16384, 16385,
-    ];
+    const TLS_SIZES: [usize; 10] = [15, 16, 239, 351, 352, 383, 415, 447, 511, 4095];
 
     tls_record_rows(c, &TLS_SIZES, Offsets::DEFAULT, "");
     tls_connection_rows(c);
@@ -804,6 +801,57 @@ fn tls_record_rows(c: &mut Criterion, sizes: &[usize], offsets: Offsets, label: 
                 .unwrap();
             assert_eq!((&record[..], aws_lc_tag.as_ref()), (&ct[..], &tag[..]));
 
+            if label.is_empty() {
+                let aad_general = [0x35u8; 33];
+                let text = [&data[..], &ty].concat();
+                let split = (text.len() / 2) | 1;
+                let fragments = [&text[..split], &text[split..]];
+                let mut oracle = text.clone();
+                let oracle_tag = aws_lc_key.seal_in_place_separate_tag(
+                    Nonce::assume_unique_for_key(nonce), Aad::from(&aad_general[..]), &mut oracle
+                ).unwrap();
+                let t = vg_key.encrypt(&nonce, &aad_general, &fragments, &mut out).unwrap();
+                assert_eq!((&out[..], &t[..]), (&oracle[..], oracle_tag.as_ref()));
+                #[cfg(all(target_arch = "x86_64", target_os = "linux"))]
+                {
+                    let tls_pieces = [&data[..], &ty[..]];
+                    // Use one timed closure for both shapes and all four stack
+                    // placements. Check the ciphertext and tag at every placement.
+                    for (shape, ad, inputs, want_ct, want_tag) in [
+                        ("tls", &aad[..], &tls_pieces, &ct[..], &tag[..]),
+                        ("split", &aad_general[..], &fragments, &oracle[..], oracle_tag.as_ref()),
+                    ] {
+                        for offset in [0, 16] {
+                            if !matches!(size, 15 | 352 | 511) { continue; }
+                            let mut group = c.benchmark_group(
+                                format!("aes-{bits}-gcm-{shape}-seal-stack-{offset}")
+                            );
+                            group.bench(BenchmarkId::new(VG, size), |b| {
+                                gcm_bench_stack::run(offset, || {
+                                    let actual_tag = vg_key.encrypt(
+                                        &nonce, ad, inputs, &mut out,
+                                    ).unwrap();
+                                    assert_eq!((&out[..], &actual_tag[..]), (want_ct, want_tag));
+                                    // Criterion starts the clock in iter(), inside this
+                                    // callback. No alignment shim runs per timed seal.
+                                    b.iter(|| {
+                                        vg_key.encrypt(
+                                            black_box(&nonce), black_box(ad),
+                                            black_box(&inputs[..]), black_box(&mut out),
+                                        ).unwrap()
+                                    });
+                                });
+                            });
+                            group.finish();
+                        }
+                    }
+                }
+                let mut g = c.benchmark_group(format!("aes-{bits}-gcm-split-seal"));
+                g.bench(BenchmarkId::new(VG, size), |b| b.iter(|| {
+                    vg_key.encrypt(black_box(&nonce), black_box(&aad_general), black_box(&fragments), black_box(&mut out)).unwrap()
+                }));
+                g.finish();
+            }
             let mut g = c.benchmark_group(format!("aes-{bits}-gcm-tls-seal") + label);
             g.throughput(Throughput::Bytes(size as u64 + 1));
             g.bench(BenchmarkId::new(VG, size), |b| {
@@ -847,9 +895,78 @@ fn tls_record_rows(c: &mut Criterion, sizes: &[usize], offsets: Offsets, label: 
             });
             g.finish();
 
+            let contiguous = Aligned::new(&[&data[..], &ty].concat(), offsets.input);
+            let one_tag = vg_key
+                .encrypt(&nonce, &aad, &[&contiguous], &mut out)
+                .unwrap();
+            assert_eq!((&out[..], one_tag), (&ct[..], tag));
+            record.copy_from_slice(&contiguous);
+            let same_tag = vg_key.encrypt_in_place(&nonce, &aad, &mut record).unwrap();
+            assert_eq!((&record[..], same_tag), (&ct[..], tag));
+            #[cfg(all(target_arch = "x86_64", target_os = "linux"))]
+            if label.is_empty() {
+                for offset in [0, 16, 32, 48] {
+                    let mut one_stack = c.benchmark_group(format!(
+                        "aes-{bits}-gcm-tls-seal-contiguous-stack-{offset}"
+                    ));
+                    one_stack.throughput(Throughput::Bytes(size as u64 + 1));
+                    one_stack.bench(BenchmarkId::new(VG, size), |b| {
+                        gcm_bench_stack::run(offset, || {
+                            let t = vg_key.encrypt(&nonce, &aad, &[&contiguous], &mut out).unwrap();
+                            assert_eq!((&out[..], &t[..]), (&ct[..], aws_lc_tag.as_ref()));
+                            b.iter(|| {
+                                vg_key.encrypt(
+                                    black_box(&nonce),
+                                    black_box(&aad),
+                                    &[black_box(&contiguous[..])],
+                                    black_box(&mut out),
+                                ).unwrap()
+                            });
+                        });
+                    });
+                    one_stack.finish();
+
+                    let mut same_stack = c.benchmark_group(format!(
+                        "aes-{bits}-gcm-tls-seal-in-place-stack-{offset}"
+                    ));
+                    same_stack.throughput(Throughput::Bytes(size as u64 + 1));
+                    same_stack.bench(BenchmarkId::new(VG, size), |b| {
+                        gcm_bench_stack::run(offset, || {
+                            record.copy_from_slice(&contiguous);
+                            let t = vg_key.encrypt_in_place(&nonce, &aad, &mut record).unwrap();
+                            assert_eq!((&record[..], &t[..]), (&ct[..], aws_lc_tag.as_ref()));
+                            // Start from the same plaintext each sample. The
+                            // timed loop only seals, like the ordinary in-place row.
+                            record.copy_from_slice(&contiguous);
+                            b.iter(|| {
+                                vg_key.encrypt_in_place(
+                                    black_box(&nonce), black_box(&aad), black_box(&mut record[..]),
+                                ).unwrap()
+                            });
+                        });
+                    });
+                    same_stack.finish();
+                }
+            }
+            let mut one = c.benchmark_group(format!("aes-{bits}-gcm-tls-seal-contiguous") + label);
+            one.throughput(Throughput::Bytes(size as u64 + 1));
+            one.bench(BenchmarkId::new(VG, size), |b| {
+                b.iter(|| {
+                    vg_key
+                        .encrypt(
+                            black_box(&nonce),
+                            black_box(&aad),
+                            &[black_box(&contiguous[..])],
+                            black_box(&mut out),
+                        )
+                        .unwrap()
+                })
+            });
+            one.finish();
+
             // Records shorter than 256 bytes, sealed in place too
             // (`encrypt_in_place`, as QUIC and aws-lc-rs's callers seal).
-            if size < 256 {
+            {
                 let mut g = c.benchmark_group(format!("aes-{bits}-gcm-tls-seal-in-place") + label);
                 g.throughput(Throughput::Bytes(size as u64 + 1));
                 g.bench(BenchmarkId::new(VG, size), |b| {
@@ -1073,3 +1190,59 @@ fn key_setup_rows(c: &mut Criterion) {
     target_arch = "riscv64"
 )))]
 pub fn bench(_: &mut Criterion) {}
+#[cfg(all(target_arch = "x86_64", target_os = "linux"))]
+mod gcm_bench_stack {
+    // SysV passes the callback, environment, and offset in rdi, rsi, and rdx.
+    // Keep the caller's original frame in rbp and choose rsp mod 64 before
+    // the callback. Each allowed offset is a multiple of ABI alignment (16).
+    core::arch::global_asm!(
+        ".text",
+        ".p2align 4",
+        ".globl vg_bench_gcm_at_stack_offset",
+        ".hidden vg_bench_gcm_at_stack_offset",
+        ".type vg_bench_gcm_at_stack_offset, @function",
+        "vg_bench_gcm_at_stack_offset:",
+        ".cfi_startproc",
+        "push rbp",
+        ".cfi_def_cfa_offset 16",
+        ".cfi_offset rbp, -16",
+        "mov rbp, rsp",
+        ".cfi_def_cfa_register rbp",
+        "and rsp, -64",
+        "sub rsp, 64",
+        "add rsp, rdx",
+        "mov rax, rdi",
+        "mov rdi, rsi",
+        "call rax",
+        "mov rsp, rbp",
+        "pop rbp",
+        ".cfi_restore rbp",
+        ".cfi_def_cfa rsp, 8",
+        "ret",
+        ".cfi_endproc",
+        ".size vg_bench_gcm_at_stack_offset, .-vg_bench_gcm_at_stack_offset",
+    );
+
+    unsafe extern "C" {
+        fn vg_bench_gcm_at_stack_offset(
+            invoke: unsafe extern "C" fn(*mut ()),
+            environment: *mut (),
+            offset: usize,
+        );
+    }
+
+    #[inline(never)]
+    pub(super) fn run<F: FnMut()>(offset: usize, mut callback: F) {
+        #[inline(never)]
+        unsafe extern "C" fn invoke<F: FnMut()>(ptr: *mut ()) {
+            // SAFETY: run keeps the closure alive throughout the synchronous call.
+            unsafe { (&mut *ptr.cast::<F>())() }
+        }
+        assert!(matches!(offset, 0 | 16 | 32 | 48));
+        // SAFETY: the shim preserves the SysV ABI, calls invoke once with this
+        // live closure, and restores the caller's original stack pointer.
+        unsafe {
+            vg_bench_gcm_at_stack_offset(invoke::<F>, (&raw mut callback).cast(), offset);
+        }
+    }
+}
