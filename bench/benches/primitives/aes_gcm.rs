@@ -849,6 +849,9 @@ fn tls_record_rows(c: &mut Criterion, sizes: &[usize], offsets: Offsets, label: 
                 .encrypt(&nonce, &aad, &[&contiguous], &mut out)
                 .unwrap();
             assert_eq!((&out[..], one_tag), (&ct[..], tag));
+            record.copy_from_slice(&contiguous);
+            let same_tag = vg_key.encrypt_in_place(&nonce, &aad, &mut record).unwrap();
+            assert_eq!((&record[..], same_tag), (&ct[..], tag));
             let mut one = c.benchmark_group(format!("aes-{bits}-gcm-tls-seal-contiguous") + label);
             one.throughput(Throughput::Bytes(size as u64 + 1));
             one.bench(BenchmarkId::new(VG, size), |b| {
