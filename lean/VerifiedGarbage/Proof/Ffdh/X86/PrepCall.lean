@@ -327,11 +327,21 @@ def CalleeAt (base : Addr) (bytes len : Nat) (args : Nat → BitVec 32) (sp : Bi
   In (fun _ _ => True) base bytes len args u ∧ u.gpr .esp = sp - BitVec.ofNat 32 80 ∧
     Region.Disjoint ⟨(u.gpr .esp).setWidth 64, 76⟩ ⟨base, bytes⟩
 
+/-- The callee's state after the copy of the arguments, from the caller's `s`: its frame of 76 bytes at
+its `esp`, 80 bytes below the caller's, which it may write. -/
+structure CalleeIn (s u : State) : Prop where
+  esp : u.gpr .esp = s.gpr .esp - BitVec.ofNat 32 80
+  edi : u.gpr .edi = s.gpr .edi
+  rd : u.rd = s.rd
+  wr : u.wr = ⟨(u.gpr .esp).setWidth 64, 76⟩ :: s.wr
+  sub : Region.Sub ⟨(u.gpr .esp).setWidth 64, 76⟩ (below (s.gpr .esp) 176)
+
 /-- The copy of the arguments reaches the callee's state, its memory the caller's but for the 176 bytes
-below the caller's `esp`. -/
-theorem callee_atF {s : State} (h : In Ex base bytes len args s) (RF : RoomF (s.gpr .esp) base bytes) :
+below the caller's `esp`, with its frame. -/
+theorem callee_atW {s : State} (h : In Ex base bytes len args s) (RF : RoomF (s.gpr .esp) base bytes) :
     WP isa (.block ((List.range 18).flatMap copyArg)) (allocFrame argsFrame s.callEntry) fun u =>
-      CalleeAt base bytes len args (s.gpr .esp) u ∧ Frame (frameF base (s.gpr .esp) []) s.mem u.mem := by
+      CalleeAt base bytes len args (s.gpr .esp) u ∧ Frame (frameF base (s.gpr .esp) []) s.mem u.mem ∧
+      CalleeIn s u := by
   have low := RF.low
   obtain ⟨r4, r76, -, -, -⟩ := callee_regions low
   generalize ht0 : allocFrame argsFrame s.callEntry = t0
@@ -346,7 +356,16 @@ theorem callee_atF {s : State} (h : In Ex base bytes len args s) (RF : RoomF (s.
   exact ⟨⟨in_callee h RF (f := u) ue (by rw [K.1 _ (by decide), t0gpr _ (by decide)])
     (by rw [K.2.1, t0rd]) (by rw [K.2.2, t0wr, uesp]) (by rw [uesp]; exact S), ue, callee_frame_apart RF ue⟩,
     (frameF_of_sub Fret fun r hr => by rw [List.mem_singleton.mp hr]; exact r4).trans
-      (frameF_of_sub Fc fun r hr => by rw [List.mem_singleton.mp hr]; exact r76)⟩
+      (frameF_of_sub Fc fun r hr => by rw [List.mem_singleton.mp hr]; exact r76),
+    ⟨ue, by rw [K.1 _ (by decide), t0gpr _ (by decide)], by rw [K.2.1, t0rd], by rw [K.2.2, t0wr, uesp],
+      by rw [uesp]; exact r76⟩⟩
+
+/-- The copy of the arguments reaches the callee's state, its memory the caller's but for the 176 bytes
+below the caller's `esp`. -/
+theorem callee_atF {s : State} (h : In Ex base bytes len args s) (RF : RoomF (s.gpr .esp) base bytes) :
+    WP isa (.block ((List.range 18).flatMap copyArg)) (allocFrame argsFrame s.callEntry) fun u =>
+      CalleeAt base bytes len args (s.gpr .esp) u ∧ Frame (frameF base (s.gpr .esp) []) s.mem u.mem :=
+  WP.mono (callee_atW h RF) fun _ h => ⟨h.1, h.2.1⟩
 
 /-- The copy of the arguments reaches the callee's state. -/
 theorem callee_at {s : State} (h : In Ex base bytes len args s) (RF : RoomF (s.gpr .esp) base bytes) :
@@ -391,15 +410,6 @@ theorem frameF_inv {t : State} (h : In Ex base bytes len args t) {sp : BitVec 32
     have := h.need; simp only [invOff, CrtRt.need, Impl.Bignum.X86.CrtRt.numBase] at this ⊢; omega_arith)
     (fun _ h => nomatch h) (fun _ h => nomatch h)
   simpa only [val32, w32, Nat.mul_zero, Nat.add_zero] using this
-
-/-- The callee's state after the copy of the arguments, from the caller's `s`: its frame of 76 bytes at
-its `esp`, 80 bytes below the caller's, which it may write. -/
-structure CalleeIn (s u : State) : Prop where
-  esp : u.gpr .esp = s.gpr .esp - BitVec.ofNat 32 80
-  edi : u.gpr .edi = s.gpr .edi
-  rd : u.rd = s.rd
-  wr : u.wr = ⟨(u.gpr .esp).setWidth 64, 76⟩ :: s.wr
-  sub : Region.Sub ⟨(u.gpr .esp).setWidth 64, 76⟩ (below (s.gpr .esp) 176)
 
 /-- A call by `argCall` of `b`, which, from the callee's inputs (the caller's, the arguments copied, and
 memory the caller's but for the 176 bytes below its `esp`), keeps the registers, changes only the ranges `ws`,
