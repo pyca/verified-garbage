@@ -34,6 +34,6 @@ theorem verifiedScrubbedSel {c : Prog isa} {k : Contract isa}
     (hP₀ : ∀ s₁ s₂, Outside 0 s₁ s₂ → PAgree W (wbase s₂.sp 0 W) P₀ s₁.mem s₂.mem)
     (h : ∃ hc, ((rtaintG W).check (RTaintB.init, some (0, P₀, [])) c hc).any (doneG W r ks) = true) :
     VerifiedScrubbed target (scrubSel W ks c) k r :=
-  ⟨Verified.scrubSel hv hW hks hk, noResidue_scrubSel hv hW hk.sp hP₀ h⟩
+  ⟨Verified.scrubSel hv hW hks hk, noResidue_scrubSel hv hW hk.sp hP₀ h, fun ty _ h => by cases ty <;> cases h⟩
 
 end VG.AArch64.Scrub

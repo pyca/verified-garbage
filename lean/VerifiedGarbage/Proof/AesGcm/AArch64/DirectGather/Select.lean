@@ -52,7 +52,7 @@ private theorem View.abi {s u t : State} (v : View limit s u) (a : abiPreserved 
     a.2.1.trans v.keep.sp,fun r hr => (a.2.2 r hr).trans (v.v r hr)⟩
 
 private theorem View.pre {s u : State} (v : View limit s u) (h : gatherPre .plain s) : gatherPre .plain u := by
-  simpa only [gatherPre,K,Nn,NL,Ad,AL,Src,Cnt,Dst,L,Tg,gl,kR,nR,aR,dsR,lsR,dR,tgR,argR,stkR,stackArgAddr,
+  simpa only [gatherPre,gatherPreFor,K,Nn,NL,Ad,AL,Src,Cnt,Dst,L,Tg,gl,kR,nR,aR,dsR,lsR,dR,tgR,argR,stkR,stackArgAddr,
     v.keep.rd,v.keep.wr,v.keep.sp,v.keep.mem,v.arg,v.keep.others _ (by decide : Reg.x0 ∉ gr),
     v.keep.others _ (by decide : Reg.x1 ∉ gr),v.keep.others _ (by decide : Reg.x2 ∉ gr),
     v.keep.others _ (by decide : Reg.x3 ∉ gr),v.keep.others _ (by decide : Reg.x4 ∉ gr),
@@ -205,7 +205,7 @@ The guard observes only the public record lengths. -/
 theorem chooseRecord_scrubbed {limit : Nat} {leaf : Prog isa} (bound : limit=96 ∨ limit=224) (short : VerifiedScrubbed target leaf (boundedRecordContract limit) 0) {other : Prog isa}
     (h : VerifiedScrubbed target other (gatherAArch64 .plain) 0) :
     VerifiedScrubbed target (chooseRecord limit leaf other) (gatherAArch64 .plain) 0 :=
-  ⟨⟨branch_correct bound short other h.verified,ct_of (fun _ _ => select_rel bound short h.verified),h.verified.2.2⟩,branch_noResidue bound short h.noResidue⟩
+  ⟨⟨branch_correct bound short other h.verified,ct_of (fun _ _ => select_rel bound short h.verified),h.verified.2.2⟩,branch_noResidue bound short h.noResidue, fun ty _ h => by cases ty <;> cases h⟩
 
 theorem chooseShort_scrubbed {other : Prog isa} (short : VerifiedScrubbed target shortLeaf shortContract 0)
     (h : VerifiedScrubbed target other (gatherAArch64 .plain) 0) :

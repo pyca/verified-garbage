@@ -106,7 +106,7 @@ theorem place_verified {k : Contract isa} {bits : Nat} {p : Prog isa} (target : 
     obtain ⟨tr',t',e',_,_⟩ := ok s pre
     obtain ⟨rfl,rfl⟩ := Exec.det e (place_exec target e')
     exact e'
-  refine ⟨⟨?_,?_,nonempty⟩,?_⟩
+  refine ⟨⟨?_,?_,nonempty⟩,?_, fun ty _ h => by cases ty <;> cases h⟩
   · intro s pre
     obtain ⟨tr,t,e,abi,post⟩ := ok s pre
     exact ⟨tr,t,place_exec target e,abi,post⟩

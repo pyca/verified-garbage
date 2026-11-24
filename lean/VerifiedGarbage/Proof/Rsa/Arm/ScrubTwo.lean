@@ -307,6 +307,6 @@ theorem verifiedScrubbedAll2 {sig : Sig} {pre : Curry (sig.words abi.ptrBits) (M
     (hpost : PostOut (sig.contract abi pre post wa (a + b) leak) rb) :
     VerifiedScrubbed target (scrubAll2 rb a b c) (sig.contract abi pre post wa (a + b) leak) rb :=
   have h := Verified.scrubAll2 ScrubAbi.plain hv hok.1 hok.2 ha hb e hpost
-  ⟨h.1, h.2⟩
+  ⟨h.1, h.2, fun ty _ h => by cases ty <;> cases h⟩
 
 end VG.Proof.Rsa.Arm.ScrubTwo

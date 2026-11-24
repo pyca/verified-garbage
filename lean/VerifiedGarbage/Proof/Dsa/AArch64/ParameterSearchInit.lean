@@ -228,6 +228,6 @@ theorem _root_.VG.Proof.Dsa.AArch64.ParameterSearchInit.init_scrubbed :
     VerifiedScrubbed AArch64.target Impl.Dsa.AArch64.ParameterSearch.init
       (Spec.Dsa.parameterInitContract AArch64.abi) 32 :=
   ⟨Proof.Dsa.AArch64.ParameterSearchInit.init_verified,
-    Proof.Dsa.AArch64.ParameterSearchInit.init_noResidue _ _⟩
+    Proof.Dsa.AArch64.ParameterSearchInit.init_noResidue _ _, fun ty _ h => by cases ty <;> cases h⟩
 
 end VG.Proof.Dsa.AArch64.ParameterSearchInit

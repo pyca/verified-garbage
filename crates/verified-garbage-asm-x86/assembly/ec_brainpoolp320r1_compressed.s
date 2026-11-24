@@ -1509,91 +1509,348 @@ vg_ec_brainpoolp320r1_decompress_public_key:
 	pop eax
 	pop eax
 	pop eax
-	mov eax, 2087504778
+	mov eax, DWORD PTR [edi+1744]
+	mov DWORD PTR [edi+1224], eax
+	mov eax, DWORD PTR [edi+1748]
+	mov DWORD PTR [edi+1228], eax
+	mov eax, DWORD PTR [edi+1752]
+	mov DWORD PTR [edi+1232], eax
+	mov eax, DWORD PTR [edi+1756]
+	mov DWORD PTR [edi+1236], eax
+	mov eax, DWORD PTR [edi+1760]
+	mov DWORD PTR [edi+1240], eax
+	mov eax, DWORD PTR [edi+1764]
+	mov DWORD PTR [edi+1244], eax
+	mov eax, DWORD PTR [edi+1768]
+	mov DWORD PTR [edi+1248], eax
+	mov eax, DWORD PTR [edi+1772]
+	mov DWORD PTR [edi+1252], eax
+	mov eax, DWORD PTR [edi+1776]
+	mov DWORD PTR [edi+1256], eax
+	mov eax, DWORD PTR [edi+1780]
+	mov DWORD PTR [edi+1260], eax
+	mov eax, DWORD PTR [edi+1744]
+	mov DWORD PTR [edi+1264], eax
+	mov eax, DWORD PTR [edi+1748]
+	mov DWORD PTR [edi+1268], eax
+	mov eax, DWORD PTR [edi+1752]
+	mov DWORD PTR [edi+1272], eax
+	mov eax, DWORD PTR [edi+1756]
+	mov DWORD PTR [edi+1276], eax
+	mov eax, DWORD PTR [edi+1760]
+	mov DWORD PTR [edi+1280], eax
+	mov eax, DWORD PTR [edi+1764]
+	mov DWORD PTR [edi+1284], eax
+	mov eax, DWORD PTR [edi+1768]
+	mov DWORD PTR [edi+1288], eax
+	mov eax, DWORD PTR [edi+1772]
+	mov DWORD PTR [edi+1292], eax
+	mov eax, DWORD PTR [edi+1776]
+	mov DWORD PTR [edi+1296], eax
+	mov eax, DWORD PTR [edi+1780]
+	mov DWORD PTR [edi+1300], eax
+	mov eax, DWORD PTR [edi+1224]
 	mov DWORD PTR [edi+544], eax
-	mov eax, 1060439212
+	mov eax, DWORD PTR [edi+1228]
 	mov DWORD PTR [edi+548], eax
-	mov eax, 505740042
+	mov eax, DWORD PTR [edi+1232]
 	mov DWORD PTR [edi+552], eax
-	mov eax, -739987845
+	mov eax, DWORD PTR [edi+1236]
 	mov DWORD PTR [edi+556], eax
-	mov eax, -1111686277
+	mov eax, DWORD PTR [edi+1240]
 	mov DWORD PTR [edi+560], eax
-	mov eax, 2120479721
+	mov eax, DWORD PTR [edi+1244]
 	mov DWORD PTR [edi+564], eax
-	mov eax, -1266649063
+	mov eax, DWORD PTR [edi+1248]
 	mov DWORD PTR [edi+568], eax
-	mov eax, -129032681
+	mov eax, DWORD PTR [edi+1252]
 	mov DWORD PTR [edi+572], eax
-	mov eax, 229577709
+	mov eax, DWORD PTR [edi+1256]
 	mov DWORD PTR [edi+576], eax
-	mov eax, 886542792
+	mov eax, DWORD PTR [edi+1260]
 	mov DWORD PTR [edi+580], eax
-	mov esi, 40
+	mov esi, 1
 20:
 	sub esi, 1
-	mov eax, edi
-	add eax, esi
-	movzx eax, BYTE PTR [eax+544]
-	mov ebx, esi
-	add ebx, ebx
-	add ebx, ebx
-	add ebx, ebx
-	add ebx, edi
-	mov edx, eax
-	and edx, 1
-	mov BYTE PTR [ebx+4744], dl
-	mov edx, eax
-	shr edx, 1
-	and edx, 1
-	mov BYTE PTR [ebx+4745], dl
-	mov edx, eax
-	shr edx, 2
-	and edx, 1
-	mov BYTE PTR [ebx+4746], dl
-	mov edx, eax
-	shr edx, 3
-	and edx, 1
-	mov BYTE PTR [ebx+4747], dl
-	mov edx, eax
-	shr edx, 4
-	and edx, 1
-	mov BYTE PTR [ebx+4748], dl
-	mov edx, eax
-	shr edx, 5
-	and edx, 1
-	mov BYTE PTR [ebx+4749], dl
-	mov edx, eax
-	shr edx, 6
-	and edx, 1
-	mov BYTE PTR [ebx+4750], dl
-	mov edx, eax
-	shr edx, 7
-	and edx, 1
-	mov BYTE PTR [ebx+4751], dl
+	mov eax, 1224
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
 	test esi, esi
 	jne 20b
-	mov eax, DWORD PTR [edi+264]
+	mov eax, DWORD PTR [edi+1224]
+	mov DWORD PTR [edi+1544], eax
+	mov eax, DWORD PTR [edi+1228]
+	mov DWORD PTR [edi+1548], eax
+	mov eax, DWORD PTR [edi+1232]
+	mov DWORD PTR [edi+1552], eax
+	mov eax, DWORD PTR [edi+1236]
+	mov DWORD PTR [edi+1556], eax
+	mov eax, DWORD PTR [edi+1240]
+	mov DWORD PTR [edi+1560], eax
+	mov eax, DWORD PTR [edi+1244]
+	mov DWORD PTR [edi+1564], eax
+	mov eax, DWORD PTR [edi+1248]
+	mov DWORD PTR [edi+1568], eax
+	mov eax, DWORD PTR [edi+1252]
+	mov DWORD PTR [edi+1572], eax
+	mov eax, DWORD PTR [edi+1256]
+	mov DWORD PTR [edi+1576], eax
+	mov eax, DWORD PTR [edi+1260]
+	mov DWORD PTR [edi+1580], eax
+	mov eax, 544
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov eax, DWORD PTR [edi+1224]
+	mov DWORD PTR [edi+584], eax
+	mov eax, DWORD PTR [edi+1228]
+	mov DWORD PTR [edi+588], eax
+	mov eax, DWORD PTR [edi+1232]
+	mov DWORD PTR [edi+592], eax
+	mov eax, DWORD PTR [edi+1236]
+	mov DWORD PTR [edi+596], eax
+	mov eax, DWORD PTR [edi+1240]
+	mov DWORD PTR [edi+600], eax
+	mov eax, DWORD PTR [edi+1244]
+	mov DWORD PTR [edi+604], eax
+	mov eax, DWORD PTR [edi+1248]
+	mov DWORD PTR [edi+608], eax
+	mov eax, DWORD PTR [edi+1252]
+	mov DWORD PTR [edi+612], eax
+	mov eax, DWORD PTR [edi+1256]
+	mov DWORD PTR [edi+616], eax
+	mov eax, DWORD PTR [edi+1260]
+	mov DWORD PTR [edi+620], eax
+	mov eax, 1544
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov eax, DWORD PTR [edi+1224]
+	mov DWORD PTR [edi+984], eax
+	mov eax, DWORD PTR [edi+1228]
+	mov DWORD PTR [edi+988], eax
+	mov eax, DWORD PTR [edi+1232]
+	mov DWORD PTR [edi+992], eax
+	mov eax, DWORD PTR [edi+1236]
+	mov DWORD PTR [edi+996], eax
+	mov eax, DWORD PTR [edi+1240]
+	mov DWORD PTR [edi+1000], eax
+	mov eax, DWORD PTR [edi+1244]
+	mov DWORD PTR [edi+1004], eax
+	mov eax, DWORD PTR [edi+1248]
+	mov DWORD PTR [edi+1008], eax
+	mov eax, DWORD PTR [edi+1252]
+	mov DWORD PTR [edi+1012], eax
+	mov eax, DWORD PTR [edi+1256]
+	mov DWORD PTR [edi+1016], eax
+	mov eax, DWORD PTR [edi+1260]
+	mov DWORD PTR [edi+1020], eax
+	mov eax, 1544
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov eax, DWORD PTR [edi+1224]
+	mov DWORD PTR [edi+1024], eax
+	mov eax, DWORD PTR [edi+1228]
+	mov DWORD PTR [edi+1028], eax
+	mov eax, DWORD PTR [edi+1232]
+	mov DWORD PTR [edi+1032], eax
+	mov eax, DWORD PTR [edi+1236]
+	mov DWORD PTR [edi+1036], eax
+	mov eax, DWORD PTR [edi+1240]
+	mov DWORD PTR [edi+1040], eax
+	mov eax, DWORD PTR [edi+1244]
+	mov DWORD PTR [edi+1044], eax
+	mov eax, DWORD PTR [edi+1248]
+	mov DWORD PTR [edi+1048], eax
+	mov eax, DWORD PTR [edi+1252]
+	mov DWORD PTR [edi+1052], eax
+	mov eax, DWORD PTR [edi+1256]
+	mov DWORD PTR [edi+1056], eax
+	mov eax, DWORD PTR [edi+1260]
+	mov DWORD PTR [edi+1060], eax
+	mov eax, 1544
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov eax, DWORD PTR [edi+1224]
+	mov DWORD PTR [edi+1064], eax
+	mov eax, DWORD PTR [edi+1228]
+	mov DWORD PTR [edi+1068], eax
+	mov eax, DWORD PTR [edi+1232]
+	mov DWORD PTR [edi+1072], eax
+	mov eax, DWORD PTR [edi+1236]
+	mov DWORD PTR [edi+1076], eax
+	mov eax, DWORD PTR [edi+1240]
+	mov DWORD PTR [edi+1080], eax
+	mov eax, DWORD PTR [edi+1244]
+	mov DWORD PTR [edi+1084], eax
+	mov eax, DWORD PTR [edi+1248]
+	mov DWORD PTR [edi+1088], eax
+	mov eax, DWORD PTR [edi+1252]
+	mov DWORD PTR [edi+1092], eax
+	mov eax, DWORD PTR [edi+1256]
+	mov DWORD PTR [edi+1096], eax
+	mov eax, DWORD PTR [edi+1260]
+	mov DWORD PTR [edi+1100], eax
+	mov eax, 1544
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov eax, DWORD PTR [edi+1224]
+	mov DWORD PTR [edi+1104], eax
+	mov eax, DWORD PTR [edi+1228]
+	mov DWORD PTR [edi+1108], eax
+	mov eax, DWORD PTR [edi+1232]
+	mov DWORD PTR [edi+1112], eax
+	mov eax, DWORD PTR [edi+1236]
+	mov DWORD PTR [edi+1116], eax
+	mov eax, DWORD PTR [edi+1240]
+	mov DWORD PTR [edi+1120], eax
+	mov eax, DWORD PTR [edi+1244]
+	mov DWORD PTR [edi+1124], eax
+	mov eax, DWORD PTR [edi+1248]
+	mov DWORD PTR [edi+1128], eax
+	mov eax, DWORD PTR [edi+1252]
+	mov DWORD PTR [edi+1132], eax
+	mov eax, DWORD PTR [edi+1256]
+	mov DWORD PTR [edi+1136], eax
+	mov eax, DWORD PTR [edi+1260]
+	mov DWORD PTR [edi+1140], eax
+	mov eax, 1544
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov eax, DWORD PTR [edi+1224]
+	mov DWORD PTR [edi+1144], eax
+	mov eax, DWORD PTR [edi+1228]
+	mov DWORD PTR [edi+1148], eax
+	mov eax, DWORD PTR [edi+1232]
+	mov DWORD PTR [edi+1152], eax
+	mov eax, DWORD PTR [edi+1236]
+	mov DWORD PTR [edi+1156], eax
+	mov eax, DWORD PTR [edi+1240]
+	mov DWORD PTR [edi+1160], eax
+	mov eax, DWORD PTR [edi+1244]
+	mov DWORD PTR [edi+1164], eax
+	mov eax, DWORD PTR [edi+1248]
+	mov DWORD PTR [edi+1168], eax
+	mov eax, DWORD PTR [edi+1252]
+	mov DWORD PTR [edi+1172], eax
+	mov eax, DWORD PTR [edi+1256]
+	mov DWORD PTR [edi+1176], eax
+	mov eax, DWORD PTR [edi+1260]
+	mov DWORD PTR [edi+1180], eax
+	mov eax, 1544
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov eax, DWORD PTR [edi+1224]
+	mov DWORD PTR [edi+1184], eax
+	mov eax, DWORD PTR [edi+1228]
+	mov DWORD PTR [edi+1188], eax
+	mov eax, DWORD PTR [edi+1232]
+	mov DWORD PTR [edi+1192], eax
+	mov eax, DWORD PTR [edi+1236]
+	mov DWORD PTR [edi+1196], eax
+	mov eax, DWORD PTR [edi+1240]
+	mov DWORD PTR [edi+1200], eax
+	mov eax, DWORD PTR [edi+1244]
+	mov DWORD PTR [edi+1204], eax
+	mov eax, DWORD PTR [edi+1248]
+	mov DWORD PTR [edi+1208], eax
+	mov eax, DWORD PTR [edi+1252]
+	mov DWORD PTR [edi+1212], eax
+	mov eax, DWORD PTR [edi+1256]
+	mov DWORD PTR [edi+1216], eax
+	mov eax, DWORD PTR [edi+1260]
+	mov DWORD PTR [edi+1220], eax
+	mov eax, DWORD PTR [edi+1144]
 	mov DWORD PTR [edi+1224], eax
-	mov eax, DWORD PTR [edi+268]
+	mov eax, DWORD PTR [edi+1148]
 	mov DWORD PTR [edi+1228], eax
-	mov eax, DWORD PTR [edi+272]
+	mov eax, DWORD PTR [edi+1152]
 	mov DWORD PTR [edi+1232], eax
-	mov eax, DWORD PTR [edi+276]
+	mov eax, DWORD PTR [edi+1156]
 	mov DWORD PTR [edi+1236], eax
-	mov eax, DWORD PTR [edi+280]
+	mov eax, DWORD PTR [edi+1160]
 	mov DWORD PTR [edi+1240], eax
-	mov eax, DWORD PTR [edi+284]
+	mov eax, DWORD PTR [edi+1164]
 	mov DWORD PTR [edi+1244], eax
-	mov eax, DWORD PTR [edi+288]
+	mov eax, DWORD PTR [edi+1168]
 	mov DWORD PTR [edi+1248], eax
-	mov eax, DWORD PTR [edi+292]
+	mov eax, DWORD PTR [edi+1172]
 	mov DWORD PTR [edi+1252], eax
-	mov eax, DWORD PTR [edi+296]
+	mov eax, DWORD PTR [edi+1176]
 	mov DWORD PTR [edi+1256], eax
-	mov eax, DWORD PTR [edi+300]
+	mov eax, DWORD PTR [edi+1180]
 	mov DWORD PTR [edi+1260], eax
-	mov esi, 320
+	mov esi, 6
 21:
 	sub esi, 1
 	mov eax, 1224
@@ -1608,9 +1865,11 @@ vg_ec_brainpoolp320r1_decompress_public_key:
 	pop eax
 	pop eax
 	pop eax
-	mov eax, 1744
+	test esi, esi
+	jne 21b
+	mov eax, 1144
 	mov ecx, 1224
-	mov edx, 1264
+	mov edx, 1224
 	push eax
 	push ecx
 	push edx
@@ -1620,73 +1879,1792 @@ vg_ec_brainpoolp320r1_decompress_public_key:
 	pop eax
 	pop eax
 	pop eax
-	mov eax, edi
-	add eax, esi
-	movzx eax, BYTE PTR [eax+4744]
-	mov ecx, 0
-	sub ecx, eax
-	mov eax, DWORD PTR [edi+1224]
-	mov edx, DWORD PTR [edi+1264]
-	xor edx, eax
-	and edx, ecx
-	xor eax, edx
-	mov DWORD PTR [edi+1224], eax
-	mov eax, DWORD PTR [edi+1228]
-	mov edx, DWORD PTR [edi+1268]
-	xor edx, eax
-	and edx, ecx
-	xor eax, edx
-	mov DWORD PTR [edi+1228], eax
-	mov eax, DWORD PTR [edi+1232]
-	mov edx, DWORD PTR [edi+1272]
-	xor edx, eax
-	and edx, ecx
-	xor eax, edx
-	mov DWORD PTR [edi+1232], eax
-	mov eax, DWORD PTR [edi+1236]
-	mov edx, DWORD PTR [edi+1276]
-	xor edx, eax
-	and edx, ecx
-	xor eax, edx
-	mov DWORD PTR [edi+1236], eax
-	mov eax, DWORD PTR [edi+1240]
-	mov edx, DWORD PTR [edi+1280]
-	xor edx, eax
-	and edx, ecx
-	xor eax, edx
-	mov DWORD PTR [edi+1240], eax
-	mov eax, DWORD PTR [edi+1244]
-	mov edx, DWORD PTR [edi+1284]
-	xor edx, eax
-	and edx, ecx
-	xor eax, edx
-	mov DWORD PTR [edi+1244], eax
-	mov eax, DWORD PTR [edi+1248]
-	mov edx, DWORD PTR [edi+1288]
-	xor edx, eax
-	and edx, ecx
-	xor eax, edx
-	mov DWORD PTR [edi+1248], eax
-	mov eax, DWORD PTR [edi+1252]
-	mov edx, DWORD PTR [edi+1292]
-	xor edx, eax
-	and edx, ecx
-	xor eax, edx
-	mov DWORD PTR [edi+1252], eax
-	mov eax, DWORD PTR [edi+1256]
-	mov edx, DWORD PTR [edi+1296]
-	xor edx, eax
-	and edx, ecx
-	xor eax, edx
-	mov DWORD PTR [edi+1256], eax
-	mov eax, DWORD PTR [edi+1260]
-	mov edx, DWORD PTR [edi+1300]
-	xor edx, eax
-	and edx, ecx
-	xor eax, edx
-	mov DWORD PTR [edi+1260], eax
+	mov esi, 4
+22:
+	sub esi, 1
+	mov eax, 1224
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
 	test esi, esi
-	jne 21b
+	jne 22b
+	mov eax, 1024
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+23:
+	sub esi, 1
+	mov eax, 1224
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 23b
+	mov eax, 1064
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 5
+24:
+	sub esi, 1
+	mov eax, 1224
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 24b
+	mov eax, 584
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+25:
+	sub esi, 1
+	mov eax, 1224
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 25b
+	mov eax, 1064
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 9
+26:
+	sub esi, 1
+	mov eax, 1224
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 26b
+	mov eax, 584
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 5
+27:
+	sub esi, 1
+	mov eax, 1224
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 27b
+	mov eax, 1144
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 5
+28:
+	sub esi, 1
+	mov eax, 1224
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 28b
+	mov eax, 1184
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+29:
+	sub esi, 1
+	mov eax, 1224
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 29b
+	mov eax, 544
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 5
+210:
+	sub esi, 1
+	mov eax, 1224
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 210b
+	mov eax, 1024
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+211:
+	sub esi, 1
+	mov eax, 1224
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 211b
+	mov eax, 1144
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+212:
+	sub esi, 1
+	mov eax, 1224
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 212b
+	mov eax, 1104
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+213:
+	sub esi, 1
+	mov eax, 1224
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 213b
+	mov eax, 1184
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 5
+214:
+	sub esi, 1
+	mov eax, 1224
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 214b
+	mov eax, 544
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 6
+215:
+	sub esi, 1
+	mov eax, 1224
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 215b
+	mov eax, 1184
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 7
+216:
+	sub esi, 1
+	mov eax, 1224
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 216b
+	mov eax, 1184
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 5
+217:
+	sub esi, 1
+	mov eax, 1224
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 217b
+	mov eax, 544
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+218:
+	sub esi, 1
+	mov eax, 1224
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 218b
+	mov eax, 1024
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+219:
+	sub esi, 1
+	mov eax, 1224
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 219b
+	mov eax, 1104
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 5
+220:
+	sub esi, 1
+	mov eax, 1224
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 220b
+	mov eax, 1064
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 12
+221:
+	sub esi, 1
+	mov eax, 1224
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 221b
+	mov eax, 1184
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 8
+222:
+	sub esi, 1
+	mov eax, 1224
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 222b
+	mov eax, 584
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 6
+223:
+	sub esi, 1
+	mov eax, 1224
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 223b
+	mov eax, 1104
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+224:
+	sub esi, 1
+	mov eax, 1224
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 224b
+	mov eax, 1184
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+225:
+	sub esi, 1
+	mov eax, 1224
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 225b
+	mov eax, 584
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+226:
+	sub esi, 1
+	mov eax, 1224
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 226b
+	mov eax, 544
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+227:
+	sub esi, 1
+	mov eax, 1224
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 227b
+	mov eax, 1184
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+228:
+	sub esi, 1
+	mov eax, 1224
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 228b
+	mov eax, 1064
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+229:
+	sub esi, 1
+	mov eax, 1224
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 229b
+	mov eax, 1184
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 5
+230:
+	sub esi, 1
+	mov eax, 1224
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 230b
+	mov eax, 1064
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+231:
+	sub esi, 1
+	mov eax, 1224
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 231b
+	mov eax, 1104
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+232:
+	sub esi, 1
+	mov eax, 1224
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 232b
+	mov eax, 1144
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+233:
+	sub esi, 1
+	mov eax, 1224
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 233b
+	mov eax, 1104
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+234:
+	sub esi, 1
+	mov eax, 1224
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 234b
+	mov eax, 1144
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 8
+235:
+	sub esi, 1
+	mov eax, 1224
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 235b
+	mov eax, 584
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+236:
+	sub esi, 1
+	mov eax, 1224
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 236b
+	mov eax, 1024
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+237:
+	sub esi, 1
+	mov eax, 1224
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 237b
+	mov eax, 1104
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+238:
+	sub esi, 1
+	mov eax, 1224
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 238b
+	mov eax, 1144
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 6
+239:
+	sub esi, 1
+	mov eax, 1224
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 239b
+	mov eax, 1184
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+240:
+	sub esi, 1
+	mov eax, 1224
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 240b
+	mov eax, 1064
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 5
+241:
+	sub esi, 1
+	mov eax, 1224
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 241b
+	mov eax, 984
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+242:
+	sub esi, 1
+	mov eax, 1224
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 242b
+	mov eax, 1024
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 5
+243:
+	sub esi, 1
+	mov eax, 1224
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 243b
+	mov eax, 1024
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+244:
+	sub esi, 1
+	mov eax, 1224
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 244b
+	mov eax, 1104
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 7
+245:
+	sub esi, 1
+	mov eax, 1224
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 245b
+	mov eax, 1184
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 7
+246:
+	sub esi, 1
+	mov eax, 1224
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 246b
+	mov eax, 1064
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 6
+247:
+	sub esi, 1
+	mov eax, 1224
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 247b
+	mov eax, 1184
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+248:
+	sub esi, 1
+	mov eax, 1224
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 248b
+	mov eax, 1104
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 7
+249:
+	sub esi, 1
+	mov eax, 1224
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 249b
+	mov eax, 984
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 5
+250:
+	sub esi, 1
+	mov eax, 1224
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 250b
+	mov eax, 584
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+251:
+	sub esi, 1
+	mov eax, 1224
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 251b
+	mov eax, 1184
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+252:
+	sub esi, 1
+	mov eax, 1224
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 252b
+	mov eax, 584
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+253:
+	sub esi, 1
+	mov eax, 1224
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 253b
+	mov eax, 984
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 9
+254:
+	sub esi, 1
+	mov eax, 1224
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 254b
+	mov eax, 1064
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 5
+255:
+	sub esi, 1
+	mov eax, 1224
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 255b
+	mov eax, 1104
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+256:
+	sub esi, 1
+	mov eax, 1224
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 256b
+	mov eax, 544
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+257:
+	sub esi, 1
+	mov eax, 1224
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 257b
+	mov eax, 1184
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 7
+258:
+	sub esi, 1
+	mov eax, 1224
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 258b
+	mov eax, 1144
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+259:
+	sub esi, 1
+	mov eax, 1224
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 259b
+	mov eax, 1064
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+260:
+	sub esi, 1
+	mov eax, 1224
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 260b
+	mov eax, 1064
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+261:
+	sub esi, 1
+	mov eax, 1224
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 261b
+	mov eax, 1024
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 6
+262:
+	sub esi, 1
+	mov eax, 1224
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 262b
+	mov eax, 984
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 1
+263:
+	sub esi, 1
+	mov eax, 1224
+	mov ecx, 1224
+	mov edx, 1224
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_brainpoolp320r1_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 263b
 	mov eax, 224
 	mov ecx, 1224
 	mov edx, 1504

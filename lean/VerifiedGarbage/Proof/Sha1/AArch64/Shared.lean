@@ -79,6 +79,6 @@ theorem _root_.VG.Proof.Sha1.AArch64.Stream.init_scrubbed :
     VerifiedScrubbed _root_.VG.AArch64.target Impl.Sha1.AArch64.Stream.init
       (Spec.Sha1.initContract AArch64.abi) 0 :=
   ⟨Proof.Sha1.AArch64.Shared.init,
-    Proof.Sha1.AArch64.Stream.init_noResidue _ _⟩
+    Proof.Sha1.AArch64.Stream.init_noResidue _ _, fun ty _ h => by cases ty <;> cases h⟩
 
 end VG.Proof.Sha1.AArch64.Shared

@@ -233,7 +233,7 @@ theorem _root_.VG.Proof.Sm4.AArch64.ModesResidue.cbcEncryptChainedSm4Code_scrubb
     VerifiedScrubbed AArch64.target Impl.Sm4.AArch64.Fn.cbcEncryptChainedSm4
       (Spec.Sm4.cbcEncryptChainedContract AArch64.abi 112) 0 :=
   ⟨Proof.Sm4.AArch64.ModesResidue.cbcEncryptChainedSm4Code_verified,
-    Proof.Sm4.AArch64.ModesResidue.cbcEncryptChainedSm4Code_noResidue⟩
+    Proof.Sm4.AArch64.ModesResidue.cbcEncryptChainedSm4Code_noResidue, fun ty _ h => by cases ty <;> cases h⟩
 
 /-- The function as its registration binds it: it meets its contract in constant time and returns
 without secret residue. -/
@@ -241,7 +241,7 @@ theorem _root_.VG.Proof.Sm4.AArch64.ModesResidue.cbcEncryptChainedCode_scrubbed 
     VerifiedScrubbed AArch64.target Impl.Sm4.AArch64.Fn.cbcEncryptChained
       (Spec.Sm4.cbcEncryptChainedContract AArch64.abi 3264) 0 :=
   ⟨Proof.Sm4.AArch64.ModesResidue.cbcEncryptChainedCode_verified,
-    Proof.Sm4.AArch64.ModesResidue.cbcEncryptChainedCode_noResidue⟩
+    Proof.Sm4.AArch64.ModesResidue.cbcEncryptChainedCode_noResidue, fun ty _ h => by cases ty <;> cases h⟩
 
 /-- The function as its registration binds it: it meets its contract in constant time and returns
 without secret residue. -/
@@ -249,7 +249,7 @@ theorem _root_.VG.Proof.Sm4.AArch64.ModesResidue.cbcDecryptChainedSm4Code_scrubb
     VerifiedScrubbed AArch64.target Impl.Sm4.AArch64.Fn.cbcDecryptChainedSm4
       (Spec.Sm4.cbcDecryptChainedContract AArch64.abi 224) 0 :=
   ⟨Proof.Sm4.AArch64.ModesResidue.cbcDecryptChainedSm4Code_verified,
-    Proof.Sm4.AArch64.ModesResidue.cbcDecryptChainedSm4Code_noResidue⟩
+    Proof.Sm4.AArch64.ModesResidue.cbcDecryptChainedSm4Code_noResidue, fun ty _ h => by cases ty <;> cases h⟩
 
 /-- The function as its registration binds it: it meets its contract in constant time and returns
 without secret residue. -/
@@ -257,7 +257,7 @@ theorem _root_.VG.Proof.Sm4.AArch64.ModesResidue.cbcDecryptChainedCode_scrubbed 
     VerifiedScrubbed AArch64.target Impl.Sm4.AArch64.Fn.cbcDecryptChained
       (Spec.Sm4.cbcDecryptChainedContract AArch64.abi 3264) 0 :=
   ⟨Proof.Sm4.AArch64.ModesResidue.cbcDecryptChainedCode_verified,
-    Proof.Sm4.AArch64.ModesResidue.cbcDecryptChainedCode_noResidue⟩
+    Proof.Sm4.AArch64.ModesResidue.cbcDecryptChainedCode_noResidue, fun ty _ h => by cases ty <;> cases h⟩
 
 /-- The function as its registration binds it: it meets its contract in constant time and returns
 without secret residue. -/
@@ -265,7 +265,7 @@ theorem _root_.VG.Proof.Sm4.AArch64.ModesResidue.cfbEncryptSm4Code_scrubbed :
     VerifiedScrubbed AArch64.target Impl.Sm4.AArch64.Fn.cfbEncryptSm4
       (Spec.Sm4.cfbEncryptContract AArch64.abi 112) 0 :=
   ⟨Proof.Sm4.AArch64.ModesResidue.cfbEncryptSm4Code_verified,
-    Proof.Sm4.AArch64.ModesResidue.cfbEncryptSm4Code_noResidue⟩
+    Proof.Sm4.AArch64.ModesResidue.cfbEncryptSm4Code_noResidue, fun ty _ h => by cases ty <;> cases h⟩
 
 /-- The function as its registration binds it: it meets its contract in constant time and returns
 without secret residue. -/
@@ -273,7 +273,7 @@ theorem _root_.VG.Proof.Sm4.AArch64.ModesResidue.cfbEncryptCode_scrubbed :
     VerifiedScrubbed AArch64.target Impl.Sm4.AArch64.Fn.cfbEncrypt
       (Spec.Sm4.cfbEncryptContract AArch64.abi 3264) 0 :=
   ⟨Proof.Sm4.AArch64.ModesResidue.cfbEncryptCode_verified,
-    Proof.Sm4.AArch64.ModesResidue.cfbEncryptCode_noResidue⟩
+    Proof.Sm4.AArch64.ModesResidue.cfbEncryptCode_noResidue, fun ty _ h => by cases ty <;> cases h⟩
 
 /-- The function as its registration binds it: it meets its contract in constant time and returns
 without secret residue. -/
@@ -281,7 +281,7 @@ theorem _root_.VG.Proof.Sm4.AArch64.ModesResidue.cfbDecryptSm4Code_scrubbed :
     VerifiedScrubbed AArch64.target Impl.Sm4.AArch64.Fn.cfbDecryptSm4
       (Spec.Sm4.cfbDecryptContract AArch64.abi 224) 0 :=
   ⟨Proof.Sm4.AArch64.ModesResidue.cfbDecryptSm4Code_verified,
-    Proof.Sm4.AArch64.ModesResidue.cfbDecryptSm4Code_noResidue⟩
+    Proof.Sm4.AArch64.ModesResidue.cfbDecryptSm4Code_noResidue, fun ty _ h => by cases ty <;> cases h⟩
 
 /-- The function as its registration binds it: it meets its contract in constant time and returns
 without secret residue. -/
@@ -289,7 +289,7 @@ theorem _root_.VG.Proof.Sm4.AArch64.ModesResidue.cfbDecryptCode_scrubbed :
     VerifiedScrubbed AArch64.target Impl.Sm4.AArch64.Fn.cfbDecrypt
       (Spec.Sm4.cfbDecryptContract AArch64.abi 3264) 0 :=
   ⟨Proof.Sm4.AArch64.ModesResidue.cfbDecryptCode_verified,
-    Proof.Sm4.AArch64.ModesResidue.cfbDecryptCode_noResidue⟩
+    Proof.Sm4.AArch64.ModesResidue.cfbDecryptCode_noResidue, fun ty _ h => by cases ty <;> cases h⟩
 
 /-- The function as its registration binds it: it meets its contract in constant time and returns
 without secret residue. -/
@@ -297,7 +297,7 @@ theorem _root_.VG.Proof.Sm4.AArch64.ModesResidue.cfbEncryptFinalSm4Code_scrubbed
     VerifiedScrubbed AArch64.target Impl.Sm4.AArch64.Fn.cfbEncryptFinalSm4
       (Spec.Sm4.cfbEncryptFinalContract AArch64.abi 112) 0 :=
   ⟨Proof.Sm4.AArch64.ModesResidue.cfbEncryptFinalSm4Code_verified,
-    Proof.Sm4.AArch64.ModesResidue.cfbEncryptFinalSm4Code_noResidue⟩
+    Proof.Sm4.AArch64.ModesResidue.cfbEncryptFinalSm4Code_noResidue, fun ty _ h => by cases ty <;> cases h⟩
 
 /-- The function as its registration binds it: it meets its contract in constant time and returns
 without secret residue. -/
@@ -305,7 +305,7 @@ theorem _root_.VG.Proof.Sm4.AArch64.ModesResidue.cfbEncryptFinalCode_scrubbed :
     VerifiedScrubbed AArch64.target Impl.Sm4.AArch64.Fn.cfbEncryptFinal
       (Spec.Sm4.cfbEncryptFinalContract AArch64.abi 3264) 0 :=
   ⟨Proof.Sm4.AArch64.ModesResidue.cfbEncryptFinalCode_verified,
-    Proof.Sm4.AArch64.ModesResidue.cfbEncryptFinalCode_noResidue⟩
+    Proof.Sm4.AArch64.ModesResidue.cfbEncryptFinalCode_noResidue, fun ty _ h => by cases ty <;> cases h⟩
 
 /-- The function as its registration binds it: it meets its contract in constant time and returns
 without secret residue. -/
@@ -313,7 +313,7 @@ theorem _root_.VG.Proof.Sm4.AArch64.ModesResidue.cfbDecryptFinalSm4Code_scrubbed
     VerifiedScrubbed AArch64.target Impl.Sm4.AArch64.Fn.cfbDecryptFinalSm4
       (Spec.Sm4.cfbDecryptFinalContract AArch64.abi 112) 0 :=
   ⟨Proof.Sm4.AArch64.ModesResidue.cfbDecryptFinalSm4Code_verified,
-    Proof.Sm4.AArch64.ModesResidue.cfbDecryptFinalSm4Code_noResidue⟩
+    Proof.Sm4.AArch64.ModesResidue.cfbDecryptFinalSm4Code_noResidue, fun ty _ h => by cases ty <;> cases h⟩
 
 /-- The function as its registration binds it: it meets its contract in constant time and returns
 without secret residue. -/
@@ -321,7 +321,7 @@ theorem _root_.VG.Proof.Sm4.AArch64.ModesResidue.cfbDecryptFinalCode_scrubbed :
     VerifiedScrubbed AArch64.target Impl.Sm4.AArch64.Fn.cfbDecryptFinal
       (Spec.Sm4.cfbDecryptFinalContract AArch64.abi 3264) 0 :=
   ⟨Proof.Sm4.AArch64.ModesResidue.cfbDecryptFinalCode_verified,
-    Proof.Sm4.AArch64.ModesResidue.cfbDecryptFinalCode_noResidue⟩
+    Proof.Sm4.AArch64.ModesResidue.cfbDecryptFinalCode_noResidue, fun ty _ h => by cases ty <;> cases h⟩
 
 /-- The function as its registration binds it: it meets its contract in constant time and returns
 without secret residue. -/
@@ -329,7 +329,7 @@ theorem _root_.VG.Proof.Sm4.AArch64.ModesResidue.ofbSm4Code_scrubbed :
     VerifiedScrubbed AArch64.target Impl.Sm4.AArch64.Fn.ofbSm4
       (Spec.Sm4.ofbContract AArch64.abi 112) 0 :=
   ⟨Proof.Sm4.AArch64.ModesResidue.ofbSm4Code_verified,
-    Proof.Sm4.AArch64.ModesResidue.ofbSm4Code_noResidue⟩
+    Proof.Sm4.AArch64.ModesResidue.ofbSm4Code_noResidue, fun ty _ h => by cases ty <;> cases h⟩
 
 /-- The function as its registration binds it: it meets its contract in constant time and returns
 without secret residue. -/
@@ -337,7 +337,7 @@ theorem _root_.VG.Proof.Sm4.AArch64.ModesResidue.ofbCode_scrubbed :
     VerifiedScrubbed AArch64.target Impl.Sm4.AArch64.Fn.ofb
       (Spec.Sm4.ofbContract AArch64.abi 3264) 0 :=
   ⟨Proof.Sm4.AArch64.ModesResidue.ofbCode_verified,
-    Proof.Sm4.AArch64.ModesResidue.ofbCode_noResidue⟩
+    Proof.Sm4.AArch64.ModesResidue.ofbCode_noResidue, fun ty _ h => by cases ty <;> cases h⟩
 
 /-- The function as its registration binds it: it meets its contract in constant time and returns
 without secret residue. -/
@@ -345,7 +345,7 @@ theorem _root_.VG.Proof.Sm4.AArch64.ModesResidue.ofbFinalSm4Code_scrubbed :
     VerifiedScrubbed AArch64.target Impl.Sm4.AArch64.Fn.ofbFinalSm4
       (Spec.Sm4.ofbFinalContract AArch64.abi 112) 0 :=
   ⟨Proof.Sm4.AArch64.ModesResidue.ofbFinalSm4Code_verified,
-    Proof.Sm4.AArch64.ModesResidue.ofbFinalSm4Code_noResidue⟩
+    Proof.Sm4.AArch64.ModesResidue.ofbFinalSm4Code_noResidue, fun ty _ h => by cases ty <;> cases h⟩
 
 /-- The function as its registration binds it: it meets its contract in constant time and returns
 without secret residue. -/
@@ -353,6 +353,6 @@ theorem _root_.VG.Proof.Sm4.AArch64.ModesResidue.ofbFinalCode_scrubbed :
     VerifiedScrubbed AArch64.target Impl.Sm4.AArch64.Fn.ofbFinal
       (Spec.Sm4.ofbFinalContract AArch64.abi 3264) 0 :=
   ⟨Proof.Sm4.AArch64.ModesResidue.ofbFinalCode_verified,
-    Proof.Sm4.AArch64.ModesResidue.ofbFinalCode_noResidue⟩
+    Proof.Sm4.AArch64.ModesResidue.ofbFinalCode_noResidue, fun ty _ h => by cases ty <;> cases h⟩
 
 end VG.Proof.Sm4.AArch64.ModesResidue

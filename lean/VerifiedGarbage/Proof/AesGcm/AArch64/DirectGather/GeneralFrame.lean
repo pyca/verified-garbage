@@ -19,14 +19,20 @@ namespace VG.Proof.AesGcm.AArch64.DirectGather
 open VG VG.AArch64 VG.Proof.AesGcm.AArch64.Gather
 open VG.Impl.StackScratch.AArch64
 
+/-- Internal raw record contract: the single contiguous descriptor can refer
+to the writable destination itself. The postcondition always reads the
+plaintext from the entry state. -/
+def sharedGatherContract : Contract isa where
+  pre s := gatherPreFor .plain s (sharedSource s)
+  post := gatherPost
+  pub := gatherPub
+
 abbrev genBase (s : State) (wn : Nat) := s.sp - BitVec.ofNat 64 (wn+32)
 abbrev genStack (s : State) (wn : Nat) : Region := ⟨genBase s wn,wn+32⟩
 abbrev genWork (s : State) (wn : Nat) := genBase s wn + 32
 
-/-- The entry of the unframed, general gather implementation. The
-original gather layout remains the authority for all external buffers. -/
-structure GeneralEntry (o s : State) (wn : Nat) : Prop where
-  lay : Gather.Lay .plain o
+/-- The three stack arguments and working-space pointer after the common frame setup. -/
+structure RecordEntry (o s : State) (wn : Nat) : Prop where
   bound : wn ≤ 2560
   frame : Frame [⟨genBase o wn,32⟩] o.mem s.mem
   regs : ∀ r, r ≠ .x16 → r ≠ .x17 → s.gpr r = o.gpr r
@@ -36,6 +42,10 @@ structure GeneralEntry (o s : State) (wn : Nat) : Prop where
   args : ∀ i < 3, s.mem.readW (s.sp+BitVec.ofNat 64 (8*i)) 64 = stackArg o i
   work : s.mem.readW (s.sp+24) 64 = genWork o wn
 
+/-- A framed record entered by the gather API. -/
+structure GeneralEntry (o s : State) (wn : Nat) : Prop extends RecordEntry o s wn where
+  lay : Gather.Lay .plain o (Gather.sharedSource o)
+
 theorem genStack_sub (o : State) {wn : Nat} (hb : wn ≤ 2560) : (genStack o wn).Sub (stkR o) :=
   Offset.sub_below _ (by omega) (by omega)
 
@@ -44,21 +54,22 @@ theorem genArgAddr (o : State) (wn i : Nat) :
   unfold genBase stackArgAddr
   rw [← Offset.add_add,BitVec.sub_add_cancel]
 
-theorem generalEntry_run (o : State) (l : Gather.Lay .plain o) {wn : Nat} (hb : wn ≤ 2560)
+theorem recordEntry_run (o : State) {wn : Nat} (hb : wn ≤ 2560)
+    (read : ∀ i < 3, InRegions (o.rd ++ (allocated (wn+32) o).wr) (stackArgAddr o i) 8)
     (align : wn % 16 = 0) :
     let a := allocated (wn+32) o
     execBlock isa (setArgs (wn+32) 3) a =
       some (setArgsState (wn+32) 3 a,setArgsTrace (wn+32) a.sp 3) ∧
-      GeneralEntry o (setArgsState (wn+32) 3 a) wn := by
+      RecordEntry o (setArgsState (wn+32) 3 a) wn := by
   let a := allocated (wn+32) o
   have hr (i : Nat) (hi : i < 3) : InRegions (a.rd ++ a.wr) (a.sp+BitVec.ofNat 64 ((wn+32)+8*i)) 8 := by
     change InRegions (o.rd ++ a.wr) (genBase o wn + BitVec.ofNat 64 ((wn+32)+8*i)) 8
-    rw [genArgAddr,l.hA]; exact l.inArg _ (by omega) (by omega) _
+    rw [genArgAddr]; exact read i hi
   have hw (i : Nat) (hi : i ≤ 3) : InRegions a.wr (a.sp+BitVec.ofNat 64 (8*i)) 8 :=
     ⟨_,List.mem_cons_self ..,Offset.contains_base _ (by change 8*i+8 ≤ wn+32; omega) (by omega)⟩
   obtain ⟨run,frame,args,work⟩ := setArgs_run (bytes := wn+32) (m := 3) (u := a)
     (by omega) (by omega) (by change 32 ≤ wn+32; omega) hr hw
-  refine ⟨run,l,hb,frame,fun r h j => setArgsState_gpr _ _ _ h j,setArgsState_sp ..,
+  refine ⟨run,hb,frame,fun r h j => setArgsState_gpr _ _ _ h j,setArgsState_sp ..,
     setArgsState_rd ..,setArgsState_wr ..,?_,?_⟩
   · intro i hi
     rw [setArgsState_sp,args i hi]
@@ -66,7 +77,16 @@ theorem generalEntry_run (o : State) (l : Gather.Lay .plain o) {wn : Nat} (hb : 
     rw [genArgAddr]; rfl
   · rw [setArgsState_sp]; exact work
 
-theorem generalFramed_wp (o : State) (l : Gather.Lay .plain o) {wn : Nat} (hb : wn ≤ 2560)
+theorem generalEntry_run (o : State) (l : Gather.Lay .plain o (Gather.sharedSource o)) {wn : Nat} (hb : wn ≤ 2560)
+    (align : wn % 16 = 0) :
+    let a := allocated (wn+32) o
+    execBlock isa (setArgs (wn+32) 3) a =
+      some (setArgsState (wn+32) 3 a,setArgsTrace (wn+32) a.sp 3) ∧
+      GeneralEntry o (setArgsState (wn+32) 3 a) wn := by
+  obtain ⟨run,h⟩ := recordEntry_run o hb (fun i hi => by rw [l.hA]; exact l.inArg _ (by omega) (by omega) _) align
+  exact ⟨run,h,l⟩
+
+theorem generalFramed_wp (o : State) (l : Gather.Lay .plain o (Gather.sharedSource o)) {wn : Nat} (hb : wn ≤ 2560)
     (align : wn % 16 = 0) (body : Prog isa)
     (proved : ∀ s, GeneralEntry o s wn → WP isa body s fun t => gatherPost o t ∧ GprAbi s t) :
     WP isa (withStackArgScratch (wn+32) 3 body) o fun t => gatherPost o t ∧ GprAbi o t := by
@@ -89,7 +109,7 @@ theorem generalFramed_wp (o : State) (l : Gather.Lay .plain o) {wn : Nat} (hb : 
     rw [sp,entry.sp,genBase,BitVec.sub_add_cancel]
 
 
-theorem generalFramed_rel {a b : State} (la : Gather.Lay .plain a) (lb : Gather.Lay .plain b)
+theorem generalFramed_rel {a b : State} (la : Gather.Lay .plain a (Gather.sharedSource a)) (lb : Gather.Lay .plain b (Gather.sharedSource b))
     (pub : gatherPub a b) {wn : Nat} (hb : wn ≤ 2560) (align : wn % 16 = 0) (body : Prog isa)
     (run : ∀ u v, GeneralEntry a u wn → GeneralEntry b v wn → u.dit = v.dit →
       RelCT isa (Eq2 u v) body TT) :

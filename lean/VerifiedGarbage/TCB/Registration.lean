@@ -170,9 +170,22 @@ def Api.doc (api : Api) : String :=
   api.summary ++ "\n\n# Safety\n\n" ++
     "\n".intercalate (api.safety.map ("* " ++ ·))
 
+/-- `c` returns its result as the calling convention requires (#6302): for
+each rule `f` the convention has for a result type (`Abi.retExt`), if `k`
+requires it of the result (`Contract.retExt`, which `Sig.contract` sets to
+the convention's rule for the signature's result type), then every run of `c`
+from `k.pre` leaves the register(s) `T.abi.ret` reads as `f` gives them. The
+contract's postcondition sees only the result's own bits; a compiled caller
+may also rely on the rest. On a target whose convention has no rule, it holds
+of any code. -/
+def RetAbi (T : Target) (c : Prog T.isa) (k : Contract T.isa) : Prop :=
+  ∀ ty f, T.abi.retExt ty = some f → k.retExt = some f →
+    ∀ s t s', k.pre s → Exec T.isa c s t s' → T.abi.ret s' = f (T.abi.ret s')
+
 /-- The proof obligation for emitting `c` on target `T` with contract `k` and
-a result of `retBits` bits: `Verified`, and `c` returns without secret
-residue (`Target.noResidue`). It is one statement about the code that is
+a result of `retBits` bits: `Verified`, `c` returns without secret
+residue (`Target.noResidue`), and its result as the calling convention
+requires (`RetAbi`). It is one statement about the code that is
 emitted, whose cleanup is part of it. Every artifact proves it
 (`Artifact.verified`): on a target that does not define what it means to
 return without secret residue, it is false, and there is no artifact. -/
@@ -180,6 +193,7 @@ structure VerifiedScrubbed (T : Target) (c : Prog T.isa) (k : Contract T.isa) (r
     Prop where
   verified : Verified T c k
   noResidue : T.noResidue.elim False fun R => R c k retBits
+  retAbi : RetAbi T c k
 
 /-- The calling convention with the addresses of the functions `fns` public
 (`ISA.fnAddr`), which an indirect call observes (`Exec.icall`): where each

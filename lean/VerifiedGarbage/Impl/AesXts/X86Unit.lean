@@ -11,10 +11,11 @@ and `vg_aes_xts_decrypt_unit` with the same arguments (see
 `VG.Spec.Xts.aesEncryptUnitContract` and `aesDecryptUnitContract`), every
 argument on the stack (cdecl), composed of calls of the verified
 whole-block functions `vg_aes_xts_encrypt` and `vg_aes_xts_decrypt`
-(`Impl/AesXts/X86.lean`), each in a frame that pushes its six arguments.
-They are generic over the implementation of the block functions those call
-(`Blocks`): each is emitted once for each (e.g.
-`vg_aes_xts_encrypt_unit_aesni` calls `vg_aes_xts_encrypt_aesni`).
+(`Impl/AesXts/X86.lean`, and with AES-NI `Impl/AesXts/X86AesNi.lean`), each
+in a frame that pushes its six arguments. They are generic over the
+implementation of those functions (`Blocks`, their symbol and code): each
+is emitted once for each (e.g. `vg_aes_xts_encrypt_unit_aesni` calls
+`vg_aes_xts_encrypt_aesni`).
 
 The scratch buffer (2432 bytes): `[0, 2176)` is the working space of the
 whole-block functions, `[2176, 2192)` the tweak (`tO`), `[2192, 2208)` a
@@ -39,7 +40,7 @@ keeps `b = len mod 16` across the calls.
   deciphered with the tweak of block `m - 1`.
 
 The calls use 52 bytes of stack: the frame of their six arguments, the
-return address, and the whole-block functions' 24. Only the pointers,
+return address, and the whole-block functions' 24 at most. Only the pointers,
 `rounds` and `len` can affect timing: the branches are on `len`.
 -/
 
@@ -165,10 +166,10 @@ namespace VG.Impl.AesXts.X86Unit.Fn
 open VG.X86
 open VG.Impl.Aes.X86 (Blocks)
 
-/-- `vg_aes_xts_encrypt_unit` over the block function `f`, as emitted. -/
+/-- `vg_aes_xts_encrypt_unit` over the whole-block function `f`, as emitted. -/
 def encrypt (f : Blocks) : Prog isa := Impl.Scrub.X86.scrubAll 0 52 (Impl.AesXts.X86Unit.encrypt f)
 
-/-- `vg_aes_xts_decrypt_unit` over the block functions `e` and `d`, as emitted. -/
+/-- `vg_aes_xts_decrypt_unit` over the whole-block functions `e` and `d`, as emitted. -/
 def decrypt (e d : Blocks) : Prog isa := Impl.Scrub.X86.scrubAll 0 52 (Impl.AesXts.X86Unit.decrypt e d)
 
 end VG.Impl.AesXts.X86Unit.Fn

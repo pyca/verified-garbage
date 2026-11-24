@@ -257,6 +257,6 @@ theorem verifiedScrubbedSel {api : Api} (r : Unscrubbed api target) {n W rb : Na
   have hA := ScrubAbi.of r.consts api.sig r.tables
   have hv' := Verified.scrubSel hA hv hn hns hws rfl hpost
   have h0 : r.stack ≠ 0 := Nat.pos_iff_ne_zero.mp (Nat.lt_of_lt_of_le hn.1 hns)
-  exact ⟨hv', RTaint.noResidue_of_verified hv' (sel_pre hA h0 bp0 hbp) hres⟩
+  exact ⟨hv', RTaint.noResidue_of_verified hv' (sel_pre hA h0 bp0 hbp) hres, fun ty _ h => by cases ty <;> cases h⟩
 
 end VG.Arm.Scrub

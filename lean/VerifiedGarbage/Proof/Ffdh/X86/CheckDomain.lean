@@ -11,6 +11,7 @@ import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Stage
 import VerifiedGarbage.Proof.Bignum.X86.CrtRt.StageR
 import VerifiedGarbage.Proof.Ffdh.Domain
 import VerifiedGarbage.Proof.Ffdh.X86.Ops
+import VerifiedGarbage.Proof.Ffdh.X86.QPower
 public import VerifiedGarbage.Impl.Bignum.X86.ModulusCheck
 public import VerifiedGarbage.Impl.Bignum.X86.PublicFn
 public import VerifiedGarbage.Impl.Ffdh.X86.Domain
@@ -29,7 +30,8 @@ public import VerifiedGarbage.Spec.Rsa.Contract
 (`domainValid`), from the stages: p a valid modulus (RSA's check of its
 bytes), `1 < g < p − 1`, and with q, q odd with `2 < q < p − 1`
 (`withQ_ok`), q dividing `p − 1` (a Montgomery reduction modulo q is zero,
-`divides_ok`) and `g^q mod p = 1` (`subgroup_ok`).
+`divides_ok`) and `g^q mod p = 1` (`subgroup_ok`), the power raised over q's
+bytes from its first nonzero one (`Proof/Ffdh/X86/QPower.lean`).
 -/
 
 @[expose] public section
@@ -43,17 +45,22 @@ open VG.Impl.Ffdh.X86.CheckDomain (subgroup divides withQ checked)
 variable {Ex : List Region → List Region → Prop} {s : State} {base : Addr} {bytes len dlen : Nat}
   {args : Nat → BitVec 32}
 
-/-- `g^q mod p = 1`, for p, g and q in the wide slots 9, 10 and 11. -/
-theorem subgroup_ok (h : In Ex base bytes len args s) (RF : RoomF (s.gpr .esp) base bytes) {p g q : Nat} (h9 : sv s.mem base len .wide 9 = p)
-    (h10 : sv s.mem base len .wide 10 = g) (h11 : sv s.mem base len .wide 11 = q) (gt : 1 < p)
-    (odd : p % 2 = 1) :
-    WP isa subgroup s (Res base len s (if g ^ q % p = 1 then 1 else 0)) := by
+/-- `g^q mod p = 1`, for p and g in the wide slots 9 and 10 and q the domain's third component, raised
+over q's bytes from its first nonzero one. -/
+theorem subgroup_ok (h : In Ex base bytes len args s) (RF : RoomF (s.gpr .esp) base bytes)
+    (G : DomGeo args base bytes len (3 * len) s.rd s.wr)
+    (hb40 : Region.Disjoint ⟨byteAddr (args 2), 3 * len⟩ (below (s.gpr .esp) 176)) {p g : Nat}
+    (h9 : sv s.mem base len .wide 9 = p) (h10 : sv s.mem base len .wide 10 = g) (gt : 1 < p) (odd : p % 2 = 1) :
+    WP isa subgroup s (Res base len s (if g ^ comp s.mem args len 2 % p = 1 then 1 else 0)) := by
   unfold subgroup
-  refine WP.seq (WP.mono (powP_ok h RF (P := p) (b := 10) (e := 11) (by decide) (by decide) (by decide) (by decide)
-    (by rw [h9, safeM_of gt odd])) fun u ⟨C, V6, V3, F, _, K⟩ => ?_)
+  refine WP.seq (WP.mono (QPower.qScan_ok h G) fun u₁ ⟨S₁, Q₁, k₁⟩ => ?_)
+  obtain RF₁ := S₁.room RF
+  refine WP.seq (WP.mono (QPower.powQ_ok S₁.inp (G.keep ⟨rfl, rfl⟩ S₁.keeps) RF₁ (by rw [S₁.esp]; exact hb40)
+    (P := p) (b := 10) (by decide) (by decide) (by rw [k₁.slot_eq, h9, safeM_of gt odd])
+    (by rw [QPower.qBytes_keep h G RF hb40 S₁.frame]; exact Q₁)) fun u ⟨C, V6, V3, F, _, K⟩ => ?_)
   refine WP.mono (eqStatus_res C.inp (a := 6) (b := 3) (by decide) (by decide)) fun t R => ?_
-  rw [V6, V3, h10, h11] at R
-  exact (Step.opsF h RF F K).res R
+  rw [V6, V3, k₁.slot_eq, h10, comp_keep h G RF hb40 S₁.frame (k := 2) (by omega_arith)] at R
+  exact (S₁.trans (Step.opsF S₁.inp RF₁ F K)).res R
 
 /-- `divides` up to its branch. -/
 abbrev dividesFront : List (Prog isa) :=
@@ -127,18 +134,23 @@ theorem dividesFront_ok (h : In Ex base bytes len args s) (RF : RoomF (s.gpr .es
     obtain hj17 : 9 ≤ j ∧ j ≤ 19 ∧ j ∉ [17] := ⟨h9, h19, by simp; omega_arith⟩
     rw [m₇, m₆, k₅.slot_eq hj17, k₄.slot_eq hj', k₃.slot_eq hj5, k₂.slot_eq hj', k₁.slot_eq hj0]
 
-theorem divides_ok (h : In Ex base bytes len args s) (RF : RoomF (s.gpr .esp) base bytes) {p g q : Nat} (h9 : sv s.mem base len .wide 9 = p)
+theorem divides_ok (h : In Ex base bytes len args s) (RF : RoomF (s.gpr .esp) base bytes)
+    (G : DomGeo args base bytes len (3 * len) s.rd s.wr)
+    (hb40 : Region.Disjoint ⟨byteAddr (args 2), 3 * len⟩ (below (s.gpr .esp) 176)) {p g q : Nat}
+    (h9 : sv s.mem base len .wide 9 = p)
     (h10 : sv s.mem base len .wide 10 = g) (h11 : sv s.mem base len .wide 11 = q)
+    (hq : comp s.mem args len 2 = q)
     (h15 : sv s.mem base len .wide 15 = p - 1) (gt : 1 < p) (odd : p % 2 = 1) (q2 : 2 < q) (qodd : q % 2 = 1) :
     WP isa divides s (Res base len s (if (p - 1) % q = 0 ∧ g ^ q % p = 1 then 1 else 0)) := by
   rw [divides_eq]
-  refine WP.chain_split (dividesFront_ok h RF h11 h15 qodd q2) fun u ⟨S, G, kk⟩ => WP.gate G
+  refine WP.chain_split (dividesFront_ok h RF h11 h15 qodd q2) fun u ⟨S, Gt, kk⟩ => WP.gate Gt
     (fun nd => WP.mono (ret_res (base := base) (len := len)) fun t R => S.res ?_) (fun dv => ?_)
   · simp only [nd, false_and, ↓reduceIte]; exact R
   · have dv : (p - 1) % q = 0 := Classical.not_not.mp dv
-    refine WP.mono (subgroup_ok S.inp (S.room RF) (p := p) (g := g) (q := q) (by rw [kk 9 (by decide) (by decide) (by decide), h9])
-      (by rw [kk 10 (by decide) (by decide) (by decide), h10]) (by rw [kk 11 (by decide) (by decide) (by decide), h11])
-      gt odd) fun t R => S.res ?_
+    refine WP.mono (subgroup_ok S.inp (S.room RF) (G.keep ⟨rfl, rfl⟩ S.keeps) (by rw [S.esp]; exact hb40) (p := p)
+      (g := g) (by rw [kk 9 (by decide) (by decide) (by decide), h9])
+      (by rw [kk 10 (by decide) (by decide) (by decide), h10]) gt odd) fun t R => S.res ?_
+    rw [comp_keep h G RF hb40 S.frame (k := 2) (by omega_arith), hq] at R
     simp only [dv, true_and]; exact R
 
 /-- `withQ` up to its branch. -/
@@ -199,7 +211,7 @@ theorem withQFront_ok (h : In Ex base bytes len args s) (G : DomGeo args base by
 
 /-- q (the domain's third component) odd with `2 < q < p − 1`, then `divides`. -/
 theorem withQ_ok (h : In Ex base bytes len args s) (RF : RoomF (s.gpr .esp) base bytes) (G : DomGeo args base bytes len (3 * len) s.rd s.wr)
-    {p g : Nat} (h9 : sv s.mem base len .wide 9 = p) (h10 : sv s.mem base len .wide 10 = g)
+    (hb40 : Region.Disjoint ⟨byteAddr (args 2), 3 * len⟩ (below (s.gpr .esp) 176)) {p g : Nat} (h9 : sv s.mem base len .wide 9 = p) (h10 : sv s.mem base len .wide 10 = g)
     (h15 : sv s.mem base len .wide 15 = p - 1) (gt : 1 < p) (odd : p % 2 = 1) :
     WP isa withQ s (Res base len s
       (if (comp s.mem args len 2 % 2 = 1 ∧ 2 < comp s.mem args len 2 ∧ comp s.mem args len 2 < p - 1) ∧
@@ -210,9 +222,10 @@ theorem withQ_ok (h : In Ex base bytes len args s) (RF : RoomF (s.gpr .esp) base
   refine WP.gate Gt (fun nc => WP.mono (ret_res (base := base) (len := len)) fun t R => S.res ?_) (fun c => ?_)
   · simp only [nc, false_and, ↓reduceIte]; exact R
   · have c := Classical.not_not.mp c
-    refine WP.mono (divides_ok S.inp (S.room RF) (p := p) (g := g) (q := q)
-      (by rw [kk 9 (by decide) (by decide) (by decide) (by decide), h9])
+    refine WP.mono (divides_ok S.inp (S.room RF) (G.keep ⟨rfl, rfl⟩ S.keeps) (by rw [S.esp]; exact hb40) (p := p)
+      (g := g) (q := q) (by rw [kk 9 (by decide) (by decide) (by decide) (by decide), h9])
       (by rw [kk 10 (by decide) (by decide) (by decide) (by decide), h10]) q₈
+      (by rw [comp_keep h G RF hb40 S.frame (k := 2) (by omega_arith), hq])
       (by rw [kk 15 (by decide) (by decide) (by decide) (by decide), h15]) gt odd c.2.1 c.1) fun t R => S.res ?_
     simp only [c, true_and, and_self]; exact R
 
@@ -321,7 +334,8 @@ theorem checked_ok (h : In Ex base bytes len args s) (G : DomGeo args base bytes
       omega_arith
     subst e3
     obtain hq := comp_q (len := len) s.mem args
-    refine WP.mono (withQ_ok S₅.inp (S'.room RF) (G.keep ⟨rfl, rfl⟩ S'.keeps) (p := p) (g := g) (by rw [m₅, V9])
+    refine WP.mono (withQ_ok S₅.inp (S'.room RF) (G.keep ⟨rfl, rfl⟩ S'.keeps) (by rw [S'.esp]; exact hb40) (p := p)
+      (g := g) (by rw [m₅, V9])
       (by rw [m₅, V10]) (by rw [m₅, V15]) pgt podd) fun t R => S'.res ?_
     rw [comp_keep h G RF hb40 S'.frame (by omega_arith)] at R
     generalize hQ : comp s.mem args len 2 = Q at R hq

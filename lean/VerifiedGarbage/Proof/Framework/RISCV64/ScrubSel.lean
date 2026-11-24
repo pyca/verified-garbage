@@ -527,7 +527,12 @@ theorem verifiedScrubbedSel {api : Api} (r : Unscrubbed api target)
     VerifiedScrubbed target (scrubSel rb fs code) r.contract rb := by
   subst hc hW hb
   have h := of_selSide hs
-  exact ⟨scrubSelCode_verified r fs h.1 h.2.1 h.2.2 hpost,
-    scrubSel_noResidue r fs bp0 h.1 h.2.1 h.2.2 hpost hbp _ _ rfl rfl hres⟩
+  refine ⟨scrubSelCode_verified r fs h.1 h.2.1 h.2.2 hpost,
+    scrubSel_noResidue r fs bp0 h.1 h.2.1 h.2.2 hpost hbp _ _ rfl rfl hres,
+    retAbi_of_fixA (retBits32 r) fun _ _ _ _ he => ?_⟩
+  cases he with | seq _ hb =>
+  obtain ⟨-, rfl⟩ := Exec.det hb (.block (retFix_run h.2.2 _))
+  simp only [ite_true]
+  exact ⟨_, rfl⟩
 
 end VG.RISCV64.Scrub

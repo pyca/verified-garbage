@@ -274,6 +274,6 @@ secret residue: the theorem its registration binds. -/
 theorem scrubbed :
     VerifiedScrubbed target zeroize (Spec.Zeroize.zeroizeContract abi)
       (Spec.Zeroize.zeroizeSig.retBits abi.ptrBits) :=
-  ⟨verified, noResidue _ _⟩
+  ⟨verified, noResidue _ _, fun _ _ _ h => by cases h⟩
 
 end VG.Proof.Zeroize.RISCV64

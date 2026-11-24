@@ -330,13 +330,15 @@ arguments. It meets its contract in constant time and returns without secret res
 theorem parameterInit_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.Ffdh.PPC64LE.Generation.init
       (Spec.Ffdh.parameterInitContract PPC64LE.abi) 32 :=
-  ⟨Proof.Ffdh.PPC64LE.Generation.init_verified, Proof.Ffdh.PPC64LE.Generation.init_noResidue _ _⟩
+  ⟨Proof.Ffdh.PPC64LE.Generation.init_verified, Proof.Ffdh.PPC64LE.Generation.init_noResidue _ _,
+    PPC64LE.Scrub.retAbi_of_endsLi (by decide)⟩
 
 /-- `vg_ffdh_key_init` needs no cleanup: it reads no memory, so what it leaves is a function of its
 arguments. It meets its contract in constant time and returns without secret residue. -/
 theorem keyInit_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.Ffdh.PPC64LE.KeyGeneration.init
       (Spec.Ffdh.keyInitContract PPC64LE.abi) 32 :=
-  ⟨Proof.Ffdh.PPC64LE.KeyGeneration.init_verified, Proof.Ffdh.PPC64LE.KeyGeneration.init_noResidue _ _⟩
+  ⟨Proof.Ffdh.PPC64LE.KeyGeneration.init_verified, Proof.Ffdh.PPC64LE.KeyGeneration.init_noResidue _ _,
+    PPC64LE.Scrub.retAbi_of_endsLi (by decide)⟩
 
 end VG.Proof.Ffdh.PPC64LE.Scrub

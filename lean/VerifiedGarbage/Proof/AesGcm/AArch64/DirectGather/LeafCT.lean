@@ -1,5 +1,8 @@
 module
 
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Contract
+
+import VerifiedGarbage.Proof.AesGcm.AArch64.Gather.LoopCT
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Gather.Fn
 public import VerifiedGarbage.Proof.AesGcm.AArch64.DirectGather.FragmentLoop
 import VerifiedGarbage.Proof.AesGcm.ScratchGather
@@ -48,65 +51,107 @@ namespace VG.Proof.AesGcm.AArch64.DirectGather
 open VG VG.AArch64 VG.Proof.AesGcm.AArch64.Gather
 open VG.Impl.AesGcm.AArch64.DirectGather
 
+/-- The largest bounded record body uses 752 stack bytes. Input slices may
+be disjoint, or a single descriptor may name the destination itself. -/
+abbrev boundedStack (s : State) : Region := ⟨s.sp - 752,752⟩
+
+structure BoundedLay (s : State) : Prop where
+  rd : s.rd = [kR .plain s,nR s,aR s,dsR s] ++ lsR s ++ [argR s]
+  wr : s.wr = [dR s,tgR s]
+  kd : (kR .plain s).Disjoint (dR s)
+  dsDst : (dsR s).Disjoint (dR s)
+  dt : (dR s).Disjoint (tgR s)
+  da : (dR s).Disjoint (argR s)
+  bk : (boundedStack s).Disjoint (kR .plain s)
+  bn : (boundedStack s).Disjoint (nR s)
+  ba : (boundedStack s).Disjoint (aR s)
+  bds : (boundedStack s).Disjoint (dsR s)
+  bl : ∀ r ∈ lsR s, (boundedStack s).Disjoint r
+  barg : (boundedStack s).Disjoint (argR s)
+  bd : (boundedStack s).Disjoint (dR s)
+  bt : (boundedStack s).Disjoint (tgR s)
+  w₁ : 752 ≤ s.sp.toNat
+  hR : (s.gpr .x1).toNat = 10 ∨ (s.gpr .x1).toNat = 12 ∨ (s.gpr .x1).toNat = 14
+  hgl : gl s (Cnt s) = L s
+  ods : (Src s).toNat + Cnt s*16 ≤ 2^64
+  source : (∀ r ∈ lsR s, r.Disjoint (dR s)) ∨
+    (Cnt s = 1 ∧ sb s.mem (Src s) 0 = Dst s)
+
+theorem BoundedLay.ofGather {s : State} (l : Gather.Lay .plain s) : BoundedLay s := by
+  obtain ⟨rd,wr,kd,_,_,_,_,_,dsDst,_,ls,dt,da,_,_,_,_,_,_,sa,_⟩ := l.pre
+  have sub : (boundedStack s).Sub (stkR s) := Offset.sub_below _ (by decide) (by decide)
+  exact ⟨rd,wr,kd,dsDst,dt,da,l.bk.sub_left sub,l.bn.sub_left sub,l.ba.sub_left sub,l.bds.sub_left sub,
+    fun r hr => (l.bl r hr).sub_left sub,sa.sub_left sub,l.bd.sub_left sub,l.bt.sub_left sub,
+    Nat.le_trans (by decide) l.w₁,l.hR,l.hgl,l.ods, Or.inl fun r hr => (ls r hr).1⟩
+
+theorem stackArg_contains (s : State) (i : Nat) (hi : i < 3) :
+    (argR s).Contains (stackArgAddr s i) 8 := by
+  change (⟨s.sp + BitVec.ofNat 64 (8*0),24⟩ : Region).Contains (s.sp + BitVec.ofNat 64 (8*i)) 8
+  simp only [Nat.mul_zero,BitVec.add_zero]
+  exact Offset.contains_base _ (by omega) (by omega)
+
 namespace Compact
 
 /-- Size of a bounded gather frame, within the existing ABI's stack allowance. -/
-abbrev base (size : Fin 2593) (s : State) := s.sp - BitVec.ofNat 64 size.val
-abbrev scratch (size : Fin 2593) (s : State) : Region := ⟨base size s,size.val⟩
+abbrev base (size : Fin 753) (s : State) := s.sp - BitVec.ofNat 64 size.val
+abbrev scratch (size : Fin 753) (s : State) : Region := ⟨base size s,size.val⟩
 
-theorem scratch_sub (size : Fin 2593) (s : State) : (scratch size s).Sub (stkR s) :=
-  Offset.sub_below _ (by have := size.isLt; omega) (by have := size.isLt; omega)
+theorem scratch_sub (size : Fin 753) (s : State) : (scratch size s).Sub (boundedStack s) :=
+  Offset.sub_below _ (b := 752) (by have := size.isLt; omega) (by have := size.isLt; omega)
 
-theorem scratchArg (size : Fin 2593) (s : State) (i : Nat) :
+theorem scratchArg (size : Fin 753) (s : State) (i : Nat) :
     base size s + BitVec.ofNat 64 (size.val + 8*i) = stackArgAddr s i := by
   unfold base stackArgAddr
   rw [← Offset.add_add,BitVec.sub_add_cancel]
 
-structure LocalMem (size : Fin 2593) (s t : State) : Prop where
+structure LocalMem (size : Fin 753) (s t : State) : Prop where
   frame : Frame [scratch size s] s.mem t.mem
   rd : t.rd = s.rd
   wr : t.wr = scratch size s :: s.wr
 
-theorem LocalMem.agree {size : Fin 2593} {s t : State} (h : LocalMem size s t) {r : Region} (hd : (stkR s).Disjoint r)
+theorem LocalMem.agree {size : Fin 753} {s t : State} (h : LocalMem size s t) {r : Region} (hd : (boundedStack s).Disjoint r)
     {x : Addr} (hx : r.Contains x 1) : t.mem x = s.mem x :=
   h.frame x fun q hq hy => by
     simp only [List.mem_singleton] at hq
     exact hd x (scratch_sub size s _ (hq ▸ hy)) hx
 
-theorem LocalMem.descriptors {size : Fin 2593} {s t : State} (h : LocalMem size s t) (l : Gather.Lay .plain s) :
+theorem LocalMem.descriptors {size : Fin 753} {s t : State} (h : LocalMem size s t) (l : BoundedLay s) :
     ∀ r ∈ Sig.descRegion 64 (Src s) (Cnt s) :: lsR s, ∀ a, r.Contains a 1 → s.mem a = t.mem a := by
   intro r hr a ha
   rcases List.mem_cons.mp hr with rfl|hr
   · exact (h.agree l.bds ha).symm
   · exact (h.agree (l.bl r hr) ha).symm
 
-theorem LocalMem.arg {size : Fin 2593} {s t : State} (h : LocalMem size s t) (l : Gather.Lay .plain s) (i : Nat) (hi : i < 3) :
+theorem LocalMem.read {size : Fin 753} {s t : State} (h : LocalMem size s t) :
+    Covers (s.rd ++ s.wr) (t.rd ++ t.wr) := by
+  rw [h.rd,h.wr]
+  exact Covers.append (Covers.refl _) (Covers.of_mem fun _ hr => List.mem_cons_of_mem _ hr)
+
+theorem LocalMem.arg {size : Fin 753} {s t : State} (h : LocalMem size s t) (l : BoundedLay s) (i : Nat) (hi : i < 3) :
     t.mem.readW (base size s + BitVec.ofNat 64 (size.val+8*i)) 64 = stackArg s i := by
   rw [scratchArg]
   change t.mem.read _ 8 = s.mem.read _ 8
   apply h.frame.read (r := argR s)
-  · rw [l.hargR,l.hA]
-    apply contains_off <;> omega
+  · exact stackArg_contains s i hi
   · intro q hq
     simp only [List.mem_singleton] at hq
     subst q
     apply Region.Disjoint.sub_right _ (scratch_sub size s)
-    obtain ⟨_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,ha,_⟩ := l.pre
-    exact ha.symm
+    exact l.barg.symm
   · decide
 
-theorem LocalMem.argRead {size : Fin 2593} {s t : State} (h : LocalMem size s t) (l : Gather.Lay .plain s) (i : Nat) (hi : i < 3) :
+theorem LocalMem.argRead {size : Fin 753} {s t : State} (h : LocalMem size s t) (l : BoundedLay s) (i : Nat) (hi : i < 3) :
     InRegions (t.rd ++ t.wr) (base size s + BitVec.ofNat 64 (size.val+8*i)) 8 := by
-  rw [scratchArg,l.hA,h.rd]
-  exact l.inArg _ (by omega) (by omega) _
+  rw [scratchArg,h.rd]
+  exact ⟨argR s, List.mem_append_left _ (by rw [l.rd]; simp),stackArg_contains s i hi⟩
 
-theorem LocalMem.scratchWr {size : Fin 2593} {s t : State} (h : LocalMem size s t) : Covers [scratch size s] t.wr :=
+theorem LocalMem.scratchWr {size : Fin 753} {s t : State} (h : LocalMem size s t) : Covers [scratch size s] t.wr :=
   Covers.of_mem fun r hr => by rw [h.wr]; exact List.mem_cons.mpr (.inl (List.mem_singleton.mp hr))
 
 
 end Compact
 
-abbrev size : Fin 2593 := ⟨shortWork,by decide⟩
+abbrev size : Fin 753 := ⟨shortWork,by decide⟩
 abbrev base (s : State) := s.sp - BitVec.ofNat 64 shortWork
 abbrev scratch (s : State) : Region := ⟨base s,shortWork⟩
 abbrev LocalMem := Compact.LocalMem size
@@ -115,15 +160,15 @@ abbrev scratchArg := Compact.scratchArg size
 abbrev blocks (s : State) := (L s+15)/16
 abbrev textOff (s : State) := authO+112-16*blocks s
 
-theorem descriptors_lt {s : State} (l : Gather.Lay .plain s) : 16 * Cnt s < 2^64 := by
+theorem descriptors_lt {s : State} (l : BoundedLay s) : 16 * Cnt s < 2^64 := by
   have bound := l.ods
   apply Nat.lt_of_not_ge
   intro h
   have eq : Cnt s * 16 = 2^64 := by omega
-  apply l.bds (Bs s) (by simp [Region.Contains])
-  change ((Bs s - Src s).toNat + 1 ≤ Cnt s * 16)
+  apply l.bds (s.sp-752) (by simp [Region.Contains])
+  change (((s.sp-752) - Src s).toNat + 1 ≤ Cnt s * 16)
   rw [eq]
-  have := (Bs s - Src s).isLt
+  have := ((s.sp-752) - Src s).isLt
   omega
 
 structure Cursors (s t : State) : Prop where
@@ -135,8 +180,8 @@ structure Cursors (s t : State) : Prop where
 
 /-- The same loop writes the caller's ciphertext and the padded GHASH slot for
 either bounded layout. Its proof only needs the ordered keystream and output offsets. -/
-theorem Compact.loopPre {size : Fin 2593} {s t : State} {ko ao : Nat}
-    (l : Gather.Lay .plain s) (h : Compact.LocalMem size s t)
+theorem Compact.loopPre {size : Fin 753} {s t : State} {ko ao : Nat}
+    (l : BoundedLay s) (h : Compact.LocalMem size s t)
     (dst : t.gpr .x2 = Dst s) (tagged : t.gpr .x3 = Compact.base size s + BitVec.ofNat 64 ao)
     (keystream : t.gpr .x1 = Compact.base size s + BitVec.ofNat 64 ko)
     (ds : t.gpr .x6 = Src s) (num : t.gpr .x7 = s.gpr .x7)
@@ -158,16 +203,15 @@ theorem Compact.loopPre {size : Fin 2593} {s t : State} {ko ao : Nat}
     simp only [Fragment.readRegions,Fragment.descR,Fragment.stream,Fragment.num,num,keystream,ht,
       Fragment.ds,ds,listEq,dsR,Nat.mul_comm 16,key]
   have eo : Fragment.outRegions t = [dR s,auth] := by rw [Fragment.outRegions,ed,ea]
-  have wr := l.pre.2.1
-  have rd := l.pre.1
+  have wr := l.wr
+  have rd := l.rd
   have ro (r : Region) (hr : r ∈ dsR s :: lsR s) :
-      r ∈ s.rd ∧ r.Disjoint (dR s) ∧ (Compact.scratch size s).Disjoint r := by
+      r ∈ s.rd ∧ (Compact.scratch size s).Disjoint r := by
     rcases List.mem_cons.mp hr with rfl|hr
-    · exact ⟨by rw [rd]; simp, l.pre.2.2.2.2.2.2.2.2.1, l.bds.sub_left (Compact.scratch_sub size s)⟩
-    · have apart := l.pre.2.2.2.2.2.2.2.2.2.2.1 r hr
-      exact ⟨by rw [rd]; simp [hr],apart.1,(l.bl _ hr).sub_left (Compact.scratch_sub size s)⟩
+    · exact ⟨by rw [rd]; simp,l.bds.sub_left (Compact.scratch_sub size s)⟩
+    · exact ⟨by rw [rd]; simp [hr],(l.bl _ hr).sub_left (Compact.scratch_sub size s)⟩
   have sd := l.bd.sub_left (Compact.scratch_sub size s)
-  refine ⟨ht ▸ (by have := size.isLt; omega),by simpa [Fragment.num,num] using descriptors_lt l,?_,?_,?_,?_⟩
+  refine ⟨ht ▸ (by have := size.isLt; omega),by simpa [Fragment.num,num] using descriptors_lt l,?_,?_,?_,?_,?_⟩
   · rw [er,h.rd,h.wr]
     apply Covers.of_sub
     intro a ha
@@ -182,21 +226,45 @@ theorem Compact.loopPre {size : Fin 2593} {s t : State} {ko ao : Nat}
     · exact ⟨dR s,by simp,0,by simp,by simp⟩
     · obtain rfl := List.mem_singleton.mp ha
       exact ⟨Compact.scratch size s,by simp,ao,rfl,high⟩
-  · rw [er,eo]
-    intro a ha b hb
-    by_cases e : a = key
-    · subst a
-      rcases List.mem_cons.mp hb with rfl|hb
+  · intro r hr q hq
+    rw [eo] at hq
+    rcases List.mem_cons.mp hr with rfl|hr
+    · change (⟨t.gpr .x6,16*Fragment.num t⟩ : Region).Disjoint q
+      rw [ds,Fragment.num,num,Nat.mul_comm 16]
+      rcases List.mem_cons.mp hq with rfl|hq
+      · exact l.dsDst
+      · obtain rfl := List.mem_singleton.mp hq
+        exact ((l.bds.sub_left (Compact.scratch_sub size s)).sub_left authSub).symm
+    · obtain rfl := List.mem_singleton.mp hr
+      rw [show Fragment.stream t = key by simp only [Fragment.stream,ht,keystream,key]]
+      rcases List.mem_cons.mp hq with rfl|hq
       · exact sd.sub_left keySub
-      · simpa only [List.mem_singleton.mp hb] using kApart
-    · have facts := ro a (by simpa [e] using ha)
-      rcases List.mem_cons.mp hb with rfl|hb
-      · exact facts.2.1
-      · obtain rfl := List.mem_singleton.mp hb
-        exact (facts.2.2.sub_left authSub).symm
+      · simpa only [List.mem_singleton.mp hq] using kApart
+  · intro i hi
+    have mem : (Fragment.curBuf t i).reg (Fragment.curBuf t i).src ∈ lsR s := by
+      have ix : i < Cnt s := by simpa only [Fragment.num,num,Cnt] using hi
+      simpa only [Fragment.curBuf,Fragment.ds,Fragment.Buffers.reg,ds,listEq,lsR] using
+        Gather.slice_mem t.mem (Src s) ix
+    rcases l.source with apart | ⟨count,addr⟩
+    · exact Or.inr fun r hr => by
+        rw [eo] at hr
+        rcases List.mem_cons.mp hr with rfl|hr
+        · exact apart _ mem
+        · obtain rfl := List.mem_singleton.mp hr
+          exact (((l.bl _ mem).sub_left (Compact.scratch_sub size s)).sub_left authSub).symm
+    · have one : Fragment.num t = 1 := by simpa only [Fragment.num,num,Cnt] using count
+      have hz : i = 0 := by omega
+      subst i
+      refine Or.inl ⟨rfl,?_⟩
+      have descBytes : ∀ j < Cnt s*16, s.mem (Src s + BitVec.ofNat 64 j) = t.mem (Src s + BitVec.ofNat 64 j) := by
+        intro j hj
+        exact ag _ (List.mem_cons_self ..) _ (Offset.contains_base _ (by omega) (by have := l.ods; omega))
+      have samePtr := Gather.sb_agree (e₁ := s) (e₂ := t) descBytes (i := 0) (by omega)
+      simpa [Fragment.curBuf,Fragment.gl,Fragment.ds,ds,dst,Fragment.off,Spec.Gcm.gatheredLen,Sig.listed]
+        using samePtr.symm.trans addr
   · rw [ed,ea]; exact (sd.sub_left authSub).symm
 
-theorem loopPre {s t : State} (l : Gather.Lay .plain s) (h : LocalMem s t) (p : Cursors s t)
+theorem loopPre {s t : State} (l : BoundedLay s) (h : LocalMem s t) (p : Cursors s t)
     (hn : L s ≤ 96) : Fragment.LoopPre t := by
   apply Compact.loopPre (ko := 16) (ao := textOff s) l h p.d p.auth p.key p.ds p.n
   · change 16 + L s ≤ 336-16*((L s+15)/16); omega
@@ -217,11 +285,13 @@ abbrev recordWithin (limit : Nat) (s : State) := NL s = 12 ∧ AL s ≤ 16 ∧ L
 
 abbrev shortRecord := recordWithin 96
 
-def boundedRecordContract (limit : Nat) : Contract isa where
-  pre s := gatherPre .plain s ∧ recordWithin limit s
+def layoutRecordContract (pre : State → Prop) (limit : Nat) : Contract isa where
+  pre s := pre s ∧ recordWithin limit s
   post := gatherPost
   pub := gatherPub
 
+abbrev boundedRecordContract := layoutRecordContract (gatherPre .plain)
+abbrev sharedBoundedContract := layoutRecordContract BoundedLay
 abbrev shortContract := boundedRecordContract 96
 
 private def shortSat : State :=
@@ -243,10 +313,10 @@ abbrev rawLeaf : Prog isa := .frame (.alloc shortWork) shortBody (.free shortWor
 
 abbrev leafFrame (bytes : Nat) (s : State) : Region := ⟨s.sp - BitVec.ofNat 64 bytes,bytes⟩
 
-private theorem leafPost_frame {bytes : Nat} (hb : bytes ≤ 2592) {s t : State} (l : Gather.Lay .plain s)
+private theorem leafPost_frame {bytes : Nat} (hb : bytes ≤ 752) {s t : State} (l : BoundedLay s)
     (hq : gatherPost s t) {m : Mem} (fr : Frame [leafFrame bytes s] t.mem m) {v : State} (hm : v.mem = m) :
     gatherPost s v := by
-  have sub : (leafFrame bytes s).Sub (stkR s) := Offset.sub_below _ hb (by omega)
+  have sub : (leafFrame bytes s).Sub (boundedStack s) := Offset.sub_below _ (b := 752) hb (by omega)
   have d := bytesAt_frame fr (p := Dst s) (n := L s) (by
     simpa only [List.mem_singleton,forall_eq] using (l.bd.sub_left sub).symm) (Nat.le_of_lt (stackArg s 1).isLt)
   have tg := bytesAt_frame fr (p := Tg s) (n := 16) (by
@@ -274,38 +344,50 @@ theorem keepsV_of_gatherSide {c : Prog isa} {bytes : Nat}
 
 /-- The bounded direct paths share the public memory layout, stack allocation,
     ABI, timing and cleanup obligations. Only their inner bodies differ. -/
-theorem boundedLeaf_verified {limit bytes : Nat} (body : Prog isa)
-    (size : 0 < bytes ∧ bytes ≤ 2592 ∧ bytes % 16 = 0)
+theorem boundedRaw_verified {limit bytes : Nat} (body : Prog isa)
+    (size : 0 < bytes ∧ bytes ≤ 752 ∧ bytes % 16 = 0)
     (side : scrubSide (.frame (.alloc bytes) body (.free bytes)) bytes 0 Impl.AesGcm.AArch64.Fn.own [] = true)
-    (correct : ∀ s, Gather.Lay .plain s → NL s = 12 → AL s ≤ 16 → L s ≤ limit →
+    (correct : ∀ s, BoundedLay s → NL s = 12 → AL s ≤ 16 → L s ≤ limit →
       WP isa body (allocated bytes s) fun t => gatherPost s t ∧
         (∀ r ∈ preserved, t.gpr r = s.gpr r) ∧ t.sp = s.sp - BitVec.ofNat 64 bytes)
-    (timing : ∀ {a b}, Gather.Lay .plain a → Gather.Lay .plain b →
+    (timing : ∀ {a b}, BoundedLay a → BoundedLay b →
+      recordWithin limit a → recordWithin limit b → gatherPub a b →
+      RelCT isa (Eq2 (allocated bytes a) (allocated bytes b)) body TT) :
+    Verified target (.frame (.alloc bytes) body (.free bytes)) (sharedBoundedContract limit) := by
+  obtain ⟨sat,hp,hr⟩ := boundSat_pre limit
+  refine ⟨?_,ct_of ?_,⟨sat,BoundedLay.ofGather (Gather.lay hp),hr⟩⟩
+  · intro s ⟨hp,hn,ha,hl⟩
+    have l := hp
+    apply WP.withPreservedV (hc := keepsV_of_gatherSide side)
+    refine WP.alloc ⟨size.1,by omega,size.2.2⟩ (by have := l.w₁; omega) ((correct s l hn ha hl).mono ?_)
+    intro t ⟨out,g,sp⟩ m u hf
+    exact ⟨⟨g,by change t.sp + BitVec.ofNat 64 bytes = s.sp; rw [sp,BitVec.sub_add_cancel]⟩,
+      leafPost_frame size.2.1 l out hf rfl⟩
+  · intro a b pa pb pub
+    apply RelCT.alloc (P := Eq2 a b) (R := TT)
+    exact (timing pa.1 pb.1 pa.2 pb.2 pub).mono
+      (by rintro x y ⟨_,_,⟨rfl,rfl⟩,rfl,rfl⟩; exact ⟨rfl,rfl⟩) (fun _ _ h => h)
+
+theorem boundedLeaf_verified {limit bytes : Nat} (body : Prog isa)
+    (size : 0 < bytes ∧ bytes ≤ 752 ∧ bytes % 16 = 0)
+    (side : scrubSide (.frame (.alloc bytes) body (.free bytes)) bytes 0 Impl.AesGcm.AArch64.Fn.own [] = true)
+    (correct : ∀ s, BoundedLay s → NL s = 12 → AL s ≤ 16 → L s ≤ limit →
+      WP isa body (allocated bytes s) fun t => gatherPost s t ∧
+        (∀ r ∈ preserved, t.gpr r = s.gpr r) ∧ t.sp = s.sp - BitVec.ofNat 64 bytes)
+    (timing : ∀ {a b}, BoundedLay a → BoundedLay b →
       recordWithin limit a → recordWithin limit b → gatherPub a b →
       RelCT isa (Eq2 (allocated bytes a) (allocated bytes b)) body TT) :
     VerifiedScrubbed target (scrubAll bytes 0 Impl.AesGcm.AArch64.Fn.own
-       (.frame (.alloc bytes) body (.free bytes))) (boundedRecordContract limit) 0 := by
+       (.frame (.alloc bytes) body (.free bytes))) (sharedBoundedContract limit) 0 := by
   let raw := Code.frame (.alloc bytes) body (.free bytes)
-  have h : Verified target raw (boundedRecordContract limit) := by
-    refine ⟨?_,ct_of ?_,boundSat_pre limit⟩
-    · intro s ⟨hp,hn,ha,hl⟩
-      have l := Gather.lay hp
-      apply WP.withPreservedV (hc := keepsV_of_gatherSide side)
-      refine WP.alloc ⟨size.1,by omega,size.2.2⟩ (by have := l.w₁; omega) ((correct s l hn ha hl).mono ?_)
-      intro t ⟨out,g,sp⟩ m u hf
-      exact ⟨⟨g,by change t.sp + BitVec.ofNat 64 bytes = s.sp; rw [sp,BitVec.sub_add_cancel]⟩,
-        leafPost_frame size.2.1 l out hf rfl⟩
-    · intro a b pa pb pub
-      apply RelCT.alloc (P := Eq2 a b) (R := TT)
-      exact (timing (Gather.lay pa.1) (Gather.lay pb.1) pa.2 pb.2 pub).mono
-        (by rintro x y ⟨_,_,⟨rfl,rfl⟩,rfl,rfl⟩; exact ⟨rfl,rfl⟩) (fun _ _ h => h)
-  have hk : ScrubAllOk (boundedRecordContract limit) bytes 0 := by
-    refine ⟨fun s hs => by have := (Gather.lay hs.1).w₁; omega,fun s t v hs out hm _ =>
-      leafPost_frame size.2.1 (Gather.lay hs.1) out (m := v.mem) ?_ rfl,fun _ _ hp => hp.2.2.2.2.2.2.2.2.1⟩
+  have h : Verified target raw (sharedBoundedContract limit) := boundedRaw_verified body size side correct timing
+  have hk : ScrubAllOk (sharedBoundedContract limit) bytes 0 := by
+    refine ⟨fun s hs => by have := hs.1.w₁; omega,fun s t v hs out hm _ =>
+      leafPost_frame size.2.1 hs.1 out (m := v.mem) ?_ rfl,fun _ _ hp => hp.2.2.2.2.2.2.2.2.1⟩
     intro a h
     exact hm a fun bad => h _ (List.mem_singleton_self _) (by change (a-(leafFrame bytes s).base).toNat+1 ≤ bytes; exact bad)
   obtain ⟨wf,kp,dit,rb⟩ := keeps_of_side side
-  refine ⟨Verified.scrubAllOfV h hk side,?_⟩
+  refine ⟨Verified.scrubAllOfV h hk side,?_, fun ty _ h => by cases ty <;> cases h⟩
   simp only [scrubSide,Nat.ne_of_gt size.1,↓reduceIte,Bool.and_eq_true,decide_eq_true_eq,beq_iff_eq] at side
   refine noResidue_scrubAll wf kp h ⟨size.1,by omega,size.2.2⟩ hk.sp side.1.1.1.1.1.2 dit ?_ rb
   intro a b _ n hn
@@ -327,7 +409,7 @@ abbrev aadBytes (s : State) := bytesAt s.mem (Ad s) (AL s)
 abbrev ghBase (s : State) := base s + BitVec.ofNat 64 authO
 abbrev aadOff (s : State) := authO+96-16*blocks s
 
-structure Header (s t : State) : Prop extends LocalMem s t where
+structure Header (s t : State) (len : Nat := L s) : Prop extends LocalMem s t where
   sp : t.sp = base s
   saved : SavedAt t.mem (base s) s
   x19 : t.gpr .x19 = base s
@@ -335,12 +417,12 @@ structure Header (s t : State) : Prop extends LocalMem s t where
   x22 : t.gpr .x22 = s.gpr .x1
   x23 : t.gpr .x23 = Nn s
   x24 : t.gpr .x24 = BitVec.ofNat 64 (AL s)
-  x25 : t.gpr .x25 = BitVec.ofNat 64 (16*blocks s)
-  x26 : t.gpr .x26 = BitVec.ofNat 64 (L s)
+  x25 : t.gpr .x25 = BitVec.ofNat 64 (16*((len+15)/16))
+  x26 : t.gpr .x26 = BitVec.ofNat 64 len
   x6 : t.gpr .x6 = Src s
   x7 : t.gpr .x7 = s.gpr .x7
 
-theorem enteredShort {s : State} (l : Gather.Lay .plain s) (hn : L s ≤ 96) :
+theorem enteredShort {s : State} (l : BoundedLay s) (hn : L s ≤ 96) :
     WP isa (.block shortSetup) (allocated shortWork s) fun t => Header s t ∧ t.gpr .x4 = Ad s := by
   let a := allocated shortWork s
   have localA : LocalMem s a := ⟨Frame.refl _ _,rfl,rfl⟩
@@ -386,11 +468,11 @@ theorem zeroAad_layout {s : State} {m : Mem} (hn : L s ≤ 96) (hal : AL s ≤ 1
 abbrev aadLayout (s : State) := zeros (16*(6-blocks s)) ++ aadBytes s ++
   zeros (16-AL s) ++ zeros (16*blocks s) ++ zeros 16
 
-theorem Header.advance {s t u : State} (h : Header s t) {d n : Nat}
+theorem Header.advance {s t u : State} {len : Nat} (h : Header s t len) {d n : Nat}
     (f : Frame [⟨base s + BitVec.ofNat 64 d,n⟩] t.mem u.mem)
     (low : 216 ≤ d) (high : d+n ≤ shortWork)
     (g : ∀ r, r ∉ loopRegs → u.gpr r = t.gpr r) (sp : u.sp = t.sp)
-    (rd : u.rd = t.rd) (wr : u.wr = t.wr) : Header s u := by
+    (rd : u.rd = t.rd) (wr : u.wr = t.wr) : Header s u len := by
   have subF : Frame [scratch s] t.mem u.mem := f.sub fun r hr => by
     obtain rfl := List.mem_singleton.mp hr
     exact ⟨_,List.mem_singleton_self _,Offset.sub_base _ high⟩
@@ -402,11 +484,13 @@ theorem Header.advance {s t u : State} (h : Header s t) {d n : Nat}
   exact Offset.disjoint _ (.inl low) (by decide) (by change d+n ≤ 368 at high; omega)
 
 /-- After setup and AAD absorption, only the short frame has changed. -/
-theorem prefixShort {s : State} (l : Gather.Lay .plain s) (hn : L s ≤ 96) (hal : AL s ≤ 16) :
-    WP isa (.seq (.block shortSetup) (.seq (.block shortZero) shortAad)) (allocated shortWork s)
-      fun t => Header s t ∧ bytesAt t.mem (ghBase s) 128 = aadLayout s := by
-  refine WP.seq ((enteredShort l hn).mono ?_)
-  intro a ⟨ha,a4⟩
+theorem fillShort {s a : State} {len : Nat} (hn : len ≤ 96) (hal : AL s ≤ 16)
+    (ba : (scratch s).Disjoint (aR s)) (ar : Covers [aR s] (s.rd ++ s.wr))
+    (ha : Header s a len) (a4 : a.gpr .x4 = Ad s) :
+    WP isa (.seq (.block shortZero) shortAad) a fun t =>
+      Header s t len ∧ bytesAt t.mem (ghBase s) 128 =
+        zeros (16*(6-(len+15)/16)) ++ aadBytes s ++ zeros (16-AL s) ++
+        zeros (16*((len+15)/16)) ++ zeros 16 := by
   refine WP.seq ((shortZero_ok a ha.x19 ha.scratchWr).mono ?_)
   intro z ⟨zm,zg,zsp,zrd,zwr⟩
   have fz : Frame [⟨ghBase s,128⟩] a.mem z.mem := by
@@ -417,29 +501,37 @@ theorem prefixShort {s : State} (l : Gather.Lay .plain s) (hn : L s ≤ 96) (hal
     rw [zm]; exact bytesAt_writeBytes_self _ _ (List.replicate 128 0) (by simp)
   have z4 := (congrFun zg .x4).trans a4
   have al : (aadBytes s).length = AL s := Proof.AesCcm.length_bytesAt _ _ _
-  have ar : aR s ∈ s.rd := by rw [l.pre.1]; simp
-  have b6 : blocks s ≤ 6 := by unfold blocks; omega
-  have asub : (⟨base s + BitVec.ofNat 64 (aadOff s), AL s⟩ : Region).Sub (scratch s) :=
-    Offset.sub_base _ (by change 224+96-16*blocks s+AL s ≤ 368; omega)
+  have b6 : ((len+15)/16) ≤ 6 := by omega
+  have asub : (⟨base s + BitVec.ofNat 64 ((authO+96-16*((len+15)/16))), AL s⟩ : Region).Sub (scratch s) :=
+    Offset.sub_base _ (by change 224+96-16*((len+15)/16)+AL s ≤ 368; omega)
   have ad : bytesAt z.mem (z.gpr .x4) (AL s) = aadBytes s := by
     rw [z4]; exact bytesAt_frame hz.frame (by simpa only [List.mem_singleton,forall_eq] using
-      (l.ba.sub_left (scratch_sub s)).symm) (by omega)
+      ba.symm) (by omega)
   refine (shortAad_ok b6 z hz.x19 hz.x25 hz.x24 ?_).mono ?_
   · rw [z4]
-    exact ⟨by omega,Covers.of_mem (by
-      intro r hr; obtain rfl := List.mem_singleton.mp hr
-      rw [hz.rd]; exact List.mem_append_left _ ar),
-      covers_off hz.scratchWr (by change 224+96-16*blocks s+AL s ≤ 368; omega) (by decide),
-      ((l.ba.sub_left (scratch_sub s)).sub_left asub).symm⟩
+    exact ⟨by omega,ar.trans hz.toLocalMem.read,
+      covers_off hz.scratchWr (by change 224+96-16*((len+15)/16)+AL s ≤ 368; omega) (by decide),
+      (ba.sub_left asub).symm⟩
   · intro t ⟨tm,tg,tsp,trd,twr⟩
     rw [ad] at tm
-    have f : Frame [⟨base s+BitVec.ofNat 64 (aadOff s),AL s⟩] z.mem t.mem := by
+    have f : Frame [⟨base s+BitVec.ofNat 64 ((authO+96-16*((len+15)/16))),AL s⟩] z.mem t.mem := by
       rw [tm]; apply writeBytes_frame
       rw [al]; exact Region.contains_self _ _
-    refine ⟨hz.advance f (by change 216 ≤ 224+96-16*blocks s; omega)
-      (by change 224+96-16*blocks s+AL s ≤ 368; omega) tg tsp trd twr,?_⟩
+    refine ⟨hz.advance f (by change 216 ≤ 224+96-16*((len+15)/16); omega)
+      (by change 224+96-16*((len+15)/16)+AL s ≤ 368; omega) tg tsp trd twr,?_⟩
     rw [tm]
-    exact zeroAad_layout hn hal z0
+    have bound : (len+15)/16 ≤ 6 := by omega
+    have address : authO+96-16*((len+15)/16) = authO+(96-16*((len+15)/16)) := by unfold authO; omega
+    rw [address,← Offset.add_add,show 96-16*((len+15)/16) = 16*(6-((len+15)/16)) by omega]
+    simpa only [al] using paddedAad (G := ghBase s) (k := 6) (b := ((len+15)/16))
+      (aadBytes s) bound (by rw [al]; exact hal) (by decide) z0
+
+theorem prefixShort {s : State} (l : BoundedLay s) (hn : L s ≤ 96) (hal : AL s ≤ 16) :
+    WP isa (.seq (.block shortSetup) (.seq (.block shortZero) shortAad)) (allocated shortWork s)
+      fun t => Header s t ∧ bytesAt t.mem (ghBase s) 128 = aadLayout s := by
+  refine WP.seq ((enteredShort l hn).mono fun a ⟨ha,a4⟩ => fillShort hn hal
+    (l.ba.sub_left (scratch_sub s)) ?_ ha a4)
+  exact Covers.left (Covers.of_mem (fun r hr => by rw [l.rd,List.mem_singleton.mp hr]; simp))
 
 end VG.Proof.AesGcm.AArch64.DirectGather
 
@@ -477,37 +569,51 @@ theorem fillSlot {m m' : Mem} {G : Addr} {dst : Region} {width : Nat} (small : w
     rw [show pre.length+ct.length = (pre ++ zeros ct.length).length by simp [zeros], List.drop_left,List.take_length]
   rw [← hs,Proof.Cmac.Stream.bytesAt_append,Proof.Cmac.Stream.bytesAt_append,left,filled,right]
 
-theorem authFilled {s : State} {m m' : Mem} (l : Gather.Lay .plain s)
+abbrev shortBlocks (len : Nat) := (len+15)/16
+abbrev textOffset (len : Nat) := Impl.AesGcm.AArch64.DirectGather.authO + 112 - 16 * shortBlocks len
+abbrev aadLayoutFor (s : State) (len : Nat) :=
+  zeros (16*(6-shortBlocks len)) ++ aadBytes s ++ zeros (16-AL s) ++ zeros (16*shortBlocks len) ++ zeros 16
+
+theorem authFilledFor {s : State} {m m' : Mem} {len : Nat} {dst : Region} (apart : (scratch s).Disjoint dst)
+    (hn : len ≤ 96) (hal : AL s ≤ 16) (ct : List Byte) (hlen : ct.length = len)
+    (f : Frame [dst,⟨base s + BitVec.ofNat 64 (textOffset len),len⟩] m m')
+    (b : bytesAt m (ghBase s) 128 = (aadLayoutFor s len))
+    (v : bytesAt m' (base s + BitVec.ofNat 64 (textOffset len)) len = ct) :
+    bytesAt m' (ghBase s) 112 = zeros (16*(6-(shortBlocks len))) ++ aadBytes s ++ zeros (16-AL s) ++ ct ++
+      zeros (padLen len) := by
+  let pre := zeros (16*(6-(shortBlocks len))) ++ aadBytes s ++ zeros (16-AL s)
+  have ha := Proof.AesCcm.length_bytesAt s.mem (Ad s) (AL s)
+  change (aadBytes s).length = AL s at ha
+  have hc : shortBlocks len ≤ 6 := by unfold shortBlocks; omega
+  have hp : pre.length = 112-16*(shortBlocks len) := by simp [pre,zeros,ha]; omega
+  have pad : len + padLen len = 16 * (shortBlocks len) := by unfold padLen shortBlocks; omega
+  have u := fillSlot (width := 112) (by decide) (m := m) (m' := m') (G := ghBase s) (dst := dst)
+    pre (zeros (padLen len)) ct
+  have pos : ghBase s + BitVec.ofNat 64 pre.length = base s + BitVec.ofNat 64 (textOffset len) := by
+    rw [hp,ghBase,Offset.add_add]
+    congr 2
+    unfold textOffset VG.Impl.AesGcm.AArch64.DirectGather.authO; omega
+  apply u
+  · simpa only [pos,hlen] using f
+  · exact apart.sub_left (Offset.sub_base _ (by decide))
+  · simp [hp,hlen,zeros]; omega
+  · rw [Proof.AesCcm.bytesAt_prefix _ _ (show 112 ≤ 128 by decide),b]
+    have eq : (aadLayoutFor s len) = (pre ++ zeros ct.length ++ zeros (padLen len)) ++ zeros 16 := by
+      change (pre ++ zeros (16*(shortBlocks len))) ++ zeros 16 = _
+      rw [List.append_assoc pre (zeros ct.length),show zeros ct.length ++ zeros (padLen len) = zeros (16*(shortBlocks len)) by
+        rw [zeros,zeros,zeros,List.replicate_append_replicate,hlen,pad]]
+    rw [eq,List.take_left']
+    simp [hp,zeros,hlen]; omega
+  · simpa only [pos,hlen] using v
+
+theorem authFilled {s : State} {m m' : Mem} (l : BoundedLay s)
     (hn : L s ≤ 96) (hal : AL s ≤ 16) (ct : List Byte) (hlen : ct.length = L s)
     (f : Frame [dR s,⟨base s + BitVec.ofNat 64 (textOff s),L s⟩] m m')
     (b : bytesAt m (ghBase s) 128 = aadLayout s)
     (v : bytesAt m' (base s + BitVec.ofNat 64 (textOff s)) (L s) = ct) :
     bytesAt m' (ghBase s) 112 = zeros (16*(6-blocks s)) ++ aadBytes s ++ zeros (16-AL s) ++ ct ++
-      zeros (padLen (L s)) := by
-  let pre := zeros (16*(6-blocks s)) ++ aadBytes s ++ zeros (16-AL s)
-  have ha := Proof.AesCcm.length_bytesAt s.mem (Ad s) (AL s)
-  change (aadBytes s).length = AL s at ha
-  have hc : blocks s ≤ 6 := by unfold blocks; omega
-  have hp : pre.length = 112-16*blocks s := by simp [pre,zeros,ha]; omega
-  have pad : L s + padLen (L s) = 16 * blocks s := by unfold padLen blocks; omega
-  have u := fillSlot (width := 112) (by decide) (m := m) (m' := m') (G := ghBase s) (dst := dR s)
-    pre (zeros (padLen (L s))) ct
-  have pos : ghBase s + BitVec.ofNat 64 pre.length = base s + BitVec.ofNat 64 (textOff s) := by
-    rw [hp,ghBase,Offset.add_add]
-    congr 2
-    unfold textOff VG.Impl.AesGcm.AArch64.DirectGather.authO; omega
-  apply u
-  · simpa only [pos,hlen] using f
-  · exact (l.bd.sub_left (scratch_sub s)).sub_left (Offset.sub_base _ (by decide))
-  · simp [hp,hlen,zeros]; omega
-  · rw [Proof.AesCcm.bytesAt_prefix _ _ (show 112 ≤ 128 by decide),b]
-    have eq : aadLayout s = (pre ++ zeros ct.length ++ zeros (padLen (L s))) ++ zeros 16 := by
-      change (pre ++ zeros (16*blocks s)) ++ zeros 16 = _
-      rw [List.append_assoc pre (zeros ct.length),show zeros ct.length ++ zeros (padLen (L s)) = zeros (16*blocks s) by
-        rw [zeros,zeros,zeros,List.replicate_append_replicate,hlen,pad]]
-    rw [eq,List.take_left']
-    simp [hp,zeros,hlen]; omega
-  · simpa only [pos,hlen] using v
+      zeros (padLen (L s)) :=
+  authFilledFor (l.bd.sub_left (scratch_sub s)) hn hal ct hlen f b v
 
 end VG.Proof.AesGcm.AArch64.DirectGather
 
@@ -904,25 +1010,23 @@ theorem KeysPhaseOut.auth {o s t : State} (h : KeysPhaseOut o s t) :
   bytesAt_frame h.frame (by simpa only [List.mem_singleton, forall_eq] using
     (Offset.disjoint_base (base o) (d := 224) (n := 112) (k := 112) (by decide) (by decide))) (by decide)
 
-theorem shortKeysPhase (o s : State) (l : Gather.Lay .plain o) (m : LocalMem o s) (hn : NL o = 12)
+theorem shortKeysPhaseFor (o s : State) (rounds : VG.Proof.AesGcm.AArch64.rounds (o.gpr .x1))
+    (readNonce : Covers [nR o] (o.rd ++ o.wr)) (readKeys : Covers [kR .plain o] (o.rd ++ o.wr))
+    (bn : (scratch o).Disjoint (nR o)) (bk : (scratch o).Disjoint (kR .plain o)) (m : LocalMem o s) (hn : NL o = 12)
     (x19 : s.gpr .x19 = base o) (x21 : s.gpr .x21 = K o) (x22 : s.gpr .x22 = o.gpr .x1)
     (x23 : s.gpr .x23 = Nn o) :
     WP isa (Impl.Gcm.AArch64.Stitch.byRounds (shortKeys streamO)) s (KeysPhaseOut o s) := by
   let N := (o.gpr .x1).toNat
-  have hN : N ≤ 14 := by rcases l.hR with e|e|e <;> simp [N,e]
-  refine Stitch.byRoundsG_ok l.hR (by simpa using x22) ?_
+  have hN : N ≤ 14 := by rcases rounds with e|e|e <;> simp [N,e]
+  refine Stitch.byRoundsG_ok rounds (by simpa using x22) ?_
   intro u ug um _ usp urd uwr
   have k : u.gpr .x21 = K o := (ug _ (by decide) (by decide)).trans x21
   have n : u.gpr .x23 = Nn o := (ug _ (by decide) (by decide)).trans x23
   have w : u.gpr .x19 = base o := (ug _ (by decide) (by decide)).trans x19
   have nc : Covers [⟨Nn o,12⟩] (u.rd ++ u.wr) := by
-    rw [urd,m.rd,← hn]
-    exact Covers.of_mem fun r hr => List.mem_append_left _ (by
-      rw [l.pre.1,List.mem_singleton.mp hr]; simp [nR])
+    rw [urd,uwr,← hn]; exact readNonce.trans m.read
   have kc : Covers [⟨K o,256⟩] (u.rd ++ u.wr) := by
-    rw [urd,m.rd]
-    exact Covers.of_mem fun r hr => List.mem_append_left _ (by
-      rw [l.pre.1,List.mem_singleton.mp hr]; simp [kR])
+    rw [urd,uwr]; exact readKeys.trans m.read
   have wc : Covers [scratch o] u.wr := uwr ▸ m.scratchWr
   have keys : Counters.CanLoadKeys N u := by
     intro i hi; rw [k]; exact in_off kc (by omega) (by decide)
@@ -937,14 +1041,14 @@ theorem shortKeysPhase (o s : State) (l : Gather.Lay .plain o) (m : LocalMem o s
   have ks : aesWith N (sch N u) = shortCipher o := by
     unfold sch kp
     rw [um,k,bytesAt_frame m.frame (by
-      simpa only [List.mem_singleton, forall_eq] using ((l.bk.sub_left (scratch_sub o)).symm.sub_left kSub))
+      simpa only [List.mem_singleton, forall_eq] using (bk.symm.sub_left kSub))
       (by omega)]
     rfl
   have ns : Counters.jZero u = shortJ0 o := by
     unfold Counters.jZero Counters.nonce shortJ0
     rw [um,n,Proof.Gcm.j0_12 _ (by rw [Proof.Cmac.bytesAt_length,hn]), ← hn]
     rw [bytesAt_frame m.frame (by
-      simpa only [List.mem_singleton, forall_eq] using (l.bn.sub_left (scratch_sub o)).symm)
+      simpa only [List.mem_singleton, forall_eq] using bn.symm)
       (Nat.le_of_lt (o.gpr .x3).isLt)]
   have wf : Frame [⟨base o,112⟩] s.mem t.mem := by
     simpa only [kw, Nat.mul_zero, BitVec.add_zero, um] using h.frame
@@ -959,6 +1063,13 @@ theorem shortKeysPhase (o s : State) (l : Gather.Lay .plain o) (m : LocalMem o s
     have hs : r ∉ Counters.seedRegs := fun e => hr (by simpa [Counters.seedRegs] using
       (List.mem_append_left [.x13,.x14] e))
     exact (h.gpr _ hs).trans (ug _ (fun e => hr (by simp [e])) (fun e => hr (by simp [e])))
+
+theorem shortKeysPhase (o s : State) (l : BoundedLay o) (m : LocalMem o s) (hn : NL o = 12)
+    (x19 : s.gpr .x19 = base o) (x21 : s.gpr .x21 = K o) (x22 : s.gpr .x22 = o.gpr .x1)
+    (x23 : s.gpr .x23 = Nn o) :
+    WP isa (Impl.Gcm.AArch64.Stitch.byRounds (shortKeys streamO)) s (KeysPhaseOut o s) := by
+  apply shortKeysPhaseFor o s l.hR _ _ (l.bn.sub_left (scratch_sub o)) (l.bk.sub_left (scratch_sub o)) m hn x19 x21 x22 x23
+  all_goals exact Covers.left (Covers.of_mem (fun r hr => by rw [l.rd,List.mem_singleton.mp hr]; simp))
 
 end VG.Proof.AesGcm.AArch64.DirectGather
 
@@ -978,7 +1089,7 @@ structure Ready (o t : State) : Prop extends Header o t, Cursors o t where
     Proof.Gcm.ksByte (shortCipher o) (inc32 (shortJ0 o)) j
   input : bytesAt t.mem (ghBase o) 128 = aadLayout o
 
-theorem readyShort {o s : State} (l : Gather.Lay .plain o) (iv : NL o = 12) (hn : L o ≤ 96)
+theorem readyShort {o s : State} (l : BoundedLay o) (iv : NL o = 12) (hn : L o ≤ 96)
     (h : Header o s) (input : bytesAt s.mem (ghBase o) 128 = aadLayout o) :
     WP isa (.seq (Impl.Gcm.AArch64.Stitch.byRounds (shortKeys streamO)) (.block shortPointers)) s (Ready o) := by
   have hc : blocks o ≤ 6 := by unfold blocks; omega
@@ -1002,7 +1113,7 @@ theorem readyShort {o s : State} (l : Gather.Lay .plain o) (iv : NL o = 12) (hn 
   rw [m,bytesAt_frame hk.frame (by simpa only [List.mem_singleton,forall_eq,ghBase,authO] using
     (Offset.disjoint_base (base o) (d := 224) (n := 128) (k := 112) (by decide) (by decide))) (by decide),input]
 
-theorem loopFinish {o s t : State} (l : Gather.Lay .plain o) (hn : L o ≤ 96) (al : AL o ≤ 16)
+theorem loopFinish {o s t : State} (l : BoundedLay o) (hn : L o ≤ 96) (al : AL o ≤ 16)
     (h : Ready o s) (p : Fragment.AtDesc s (Fragment.num s) t) :
     ShortFinishPre o t (base o) (6-blocks o) ∧ Frame [scratch o,dR o] s.mem t.mem := by
   have ag := h.toLocalMem.descriptors l
@@ -1026,17 +1137,21 @@ theorem loopFinish {o s t : State} (l : Gather.Lay .plain o) (hn : L o ≤ 96) (
     · exact ⟨_,List.mem_cons_self ..,List.mem_singleton.mp hr ▸ slotSub⟩
   have whole := (h.frame.mono (fun r hr => List.mem_cons.mpr (.inl (List.mem_singleton.mp hr)))).trans small
   have hashSub : Region.Sub ⟨K o+240#64,16⟩ (kR .plain o) := Offset.sub_base _ (by decide)
-  obtain ⟨_,wr,kd,_,_,_,_,_,_,_,_,dt,da,_,_,_,_,_,_,sa,_⟩ := l.pre
+  have wr := l.wr
+  have kd := l.kd
+  have dt := l.dt
+  have da := l.da
+  have sa := l.barg
   let g (r : Reg) (hr : r ∉ Fragment.loopRegs) := p.gpr r hr
   have kc : Covers [kR .plain o] (t.rd ++ t.wr) := Covers.of_mem fun r hr => by
-    rw [p.rd,h.rd,l.pre.1,List.mem_singleton.mp hr]; simp
+    rw [p.rd,h.rd,l.rd,List.mem_singleton.mp hr]; simp
   have hkey : Covers [⟨K o+240#64,16⟩] (t.rd ++ t.wr) := covers_off kc (by decide) (by decide)
   have ct := p.gctr (shortCipher o) (inc32 (shortJ0 o)) (fun j hj => by
     change j < Fragment.total s at hj; rw [gl] at hj
     simpa only [Fragment.off,h.key] using h.stream j (by omega))
   change bytesAt t.mem _ (Fragment.total s) = _ ∧ bytesAt t.mem _ (Fragment.total s) = _ at ct
   rw [h.d,h.auth,gl,plain] at ct
-  have apart {r : Region} (a : (stkR o).Disjoint r) (b : r.Disjoint (dR o)) :
+  have apart {r : Region} (a : (boundedStack o).Disjoint r) (b : r.Disjoint (dR o)) :
       ∀ q ∈ [scratch o,dR o], r.Disjoint q := by
     intro q hq; rcases List.mem_cons.mp hq with rfl|hq
     · exact (a.sub_left (scratch_sub o)).symm
@@ -1045,7 +1160,7 @@ theorem loopFinish {o s t : State} (l : Gather.Lay .plain o) (hn : L o ≤ 96) (
     rw [whole.readW (r := argR o) (by
       have e := scratchArg o 2
       change base o + 384 = stackArgAddr o 2 at e
-      rw [e,l.hargR,l.hA]; apply contains_off <;> decide)
+      rw [e]; exact stackArg_contains o 2 (by decide))
       (apart sa da.symm) (by decide)]
     change o.mem.readW (base o + BitVec.ofNat 64 (shortWork+8*2)) 64 = _
     rw [scratchArg]; rfl
@@ -1072,7 +1187,7 @@ theorem loopFinish {o s t : State} (l : Gather.Lay .plain o) (hn : L o ≤ 96) (
   · exact authFilled l hn al _ (Proof.AesCcm.length_bytesAt _ _ _) f h.input (ct.2.trans ct.1.symm)
 
 
-theorem shortBody_ok (hash : HashEightOk) (s : State) (l : Gather.Lay .plain s) (iv : NL s = 12) (al : AL s ≤ 16)
+theorem shortBody_ok (hash : HashEightOk) (s : State) (l : BoundedLay s) (iv : NL s = 12) (al : AL s ≤ 16)
     (hn : L s ≤ 96) :
     WP isa shortBody (allocated shortWork s) fun t => gatherPost s t ∧
       (∀ r ∈ preserved, t.gpr r = s.gpr r) ∧ t.sp = base s := by
@@ -1098,7 +1213,7 @@ namespace VG.Proof.AesGcm.AArch64.DirectGather
 open VG VG.AArch64 VG.Impl.AesGcm.AArch64.DirectGather VG.Proof.AesGcm.AArch64.Gather
 open VG.Proof.AesGcm.AArch64 (Eq2 TT rel_seq rel_taint ct_of)
 
-theorem descriptorBytes_agree {a b u v : State} (la : Gather.Lay .plain a)
+theorem descriptorBytes_agree {a b u v : State} (la : BoundedLay a)
     (pub : gatherPub a b) (ds : u.gpr .x6 = Src a) (n : u.gpr .x7 = a.gpr .x7)
     (left : ∀ {x}, (dsR a).Contains x 1 → u.mem x = a.mem x)
     (right : ∀ {x}, (dsR b).Contains x 1 → v.mem x = b.mem x) :
@@ -1115,7 +1230,7 @@ theorem descriptorBytes_agree {a b u v : State} (la : Gather.Lay .plain a)
   simp only [Fragment.off,Fragment.ds,ds]
   exact (left A).trans ((descs i hi').trans (right B).symm)
 
-theorem shortBody_rel (hash : HashEightOk) {a b : State} (la : Gather.Lay .plain a) (lb : Gather.Lay .plain b)
+theorem shortBody_rel (hash : HashEightOk) {a b : State} (la : BoundedLay a) (lb : BoundedLay b)
     (ra : shortRecord a) (rb : shortRecord b) (pub : gatherPub a b) :
     RelCT isa (Eq2 (allocated shortWork a) (allocated shortWork b)) shortBody TT := by
   have originalPub := pub
@@ -1156,7 +1271,19 @@ theorem shortBody_rel (hash : HashEightOk) {a b : State} (la : Gather.Lay .plain
   have bFin := (loopFinish lb bn ba hv hy).1
   exact shortFinish_rel hash aFin (w ▸ bFin) q0 tag
 
+/-- The public gather entry supplies the disjoint case of the shared leaf. -/
+theorem BoundedLay.forGather {c : Prog isa} {lim : Nat}
+    (v : VerifiedScrubbed target c (sharedBoundedContract lim) 0) :
+    VerifiedScrubbed target c (boundedRecordContract lim) 0 := by
+  have pre : ∀ {s}, (boundedRecordContract lim).pre s → (sharedBoundedContract lim).pre s :=
+    fun h => ⟨BoundedLay.ofGather (Gather.lay h.1),h.2⟩
+  refine ⟨⟨fun s hp => v.verified.1 s (pre hp),?_,boundSat_pre lim⟩,?_,fun ty _ h => by cases ty <;> cases h⟩
+  · intro a b τ υ a' b' pa pb pub
+    exact v.verified.2.1 a b τ υ a' b' (pre pa) (pre pb) pub
+  · intro a b τ υ a' b' pa pb pub
+    exact v.noResidue a b τ υ a' b' (pre pa) (pre pb) pub
+
 theorem shortLeaf_verified (hash : HashEightOk) : VerifiedScrubbed target shortLeaf shortContract 0 :=
-  boundedLeaf_verified shortBody (by decide) shortSide (shortBody_ok hash) (shortBody_rel hash)
+  BoundedLay.forGather (boundedLeaf_verified shortBody (by decide) shortSide (shortBody_ok hash) (shortBody_rel hash))
 
 end VG.Proof.AesGcm.AArch64.DirectGather

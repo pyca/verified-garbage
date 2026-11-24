@@ -20,18 +20,18 @@ namespace VG.Proof.AesGcm.AArch64.DirectGather
 
 open VG VG.AArch64 VG.AArch64.RegUpd VG.Impl.AesGcm.AArch64.DirectGather
 
-theorem shortSetup_ok (s : State) {n : Nat} (hn : n ≤ 96)
+theorem shortSetupAt_ok {k : Nat} (arg : k = 368 ∨ k = 376) (s : State) {n : Nat} (hn : n ≤ 96)
     (hw : Covers [⟨s.sp, shortWork⟩] s.wr)
-    (hr : InRegions (s.rd ++ s.wr) (s.sp + BitVec.ofNat 64 (shortWork + 8)) 8)
-    (hlen : s.mem.readW (s.sp + BitVec.ofNat 64 (shortWork + 8)) 64 = BitVec.ofNat 64 n) :
-    WP isa (.block shortSetup) s fun t =>
+    (hr : InRegions (s.rd ++ s.wr) (s.sp + BitVec.ofNat 64 k) 8)
+    (hlen : s.mem.readW (s.sp + BitVec.ofNat 64 k) 64 = BitVec.ofNat 64 n) :
+    WP isa (.block (shortSetupAt k)) s fun t =>
       t.gpr .x19 = s.sp ∧ t.gpr .x21 = s.gpr .x0 ∧ t.gpr .x22 = s.gpr .x1 ∧
       t.gpr .x23 = s.gpr .x2 ∧ t.gpr .x24 = s.gpr .x5 ∧ t.gpr .x26 = BitVec.ofNat 64 n ∧
       t.gpr .x25 = BitVec.ofNat 64 (16 * ((n + 15) / 16)) ∧
       (∀ r, r ∉ [.x9, .x19, .x21, .x22, .x23, .x24, .x25, .x26] → t.gpr r = s.gpr r) ∧
       SavedAt t.mem s.sp s ∧ Frame [savedR s.sp] s.mem t.mem ∧
       t.sp = s.sp ∧ t.rd = s.rd ∧ t.wr = s.wr := by
-  unfold shortSetup
+  unfold shortSetupAt
   rw [List.append_assoc, WP.block_append_iff]
   refine WP.of_runBlock ⟨_, by arun [], ?_⟩
   let u := s.write .x .x9 s.sp
@@ -41,20 +41,21 @@ theorem shortSetup_ok (s : State) {n : Nat} (hn : n ≤ 96)
   refine WP.of_runBlock ⟨v, ?_, ?_⟩
   · simpa [u, State.write] using run
   have hframe : Frame [savedR s.sp] s.mem v.mem := hm ▸ savedMem_frame _ _ _
-  have hread : v.mem.readW (s.sp + BitVec.ofNat 64 (shortWork+8)) 64 = BitVec.ofNat 64 n := by
+  have hread : v.mem.readW (s.sp + BitVec.ofNat 64 k) 64 = BitVec.ofNat 64 n := by
     rw [← hlen]
     apply hframe.readW (r := ⟨_, 8⟩) (Region.contains_self _ _)
     · intro q hq
       simp only [List.mem_singleton] at hq
       subst q
-      exact Offset.disjoint s.sp (.inr (by decide)) (by decide) (by decide)
+      rcases arg with rfl | rfl <;> exact Offset.disjoint s.sp (.inr (by decide)) (by decide) (by decide)
     · decide
   have hs : v.sp = s.sp := hsp
-  have hrs : InRegions (v.rd ++ v.wr) (v.sp + BitVec.ofNat 64 (shortWork+8)) 8 := by
+  have hrs : InRegions (v.rd ++ v.wr) (v.sp + BitVec.ofNat 64 k) 8 := by
     simpa only [hs, hrd, hwr, u, rd_write, wr_write] using hr
-  refine WP.of_runBlock ⟨_, by arun [hrs], ?_⟩
+  have valid : k % 8 = 0 ∧ k < 32768 := by rcases arg with rfl|rfl <;> decide
+  refine WP.of_runBlock ⟨_, by arun [hrs,valid.1,valid.2], ?_⟩
   change v.mem.read _ 8 = _ at hread
-  simp only [State.read, BitVec.add_zero, gpr_write, reduceCtorEq, ite_false, ite_true, sp_write, rd_write, wr_write,
+  simp only [BitVec.add_zero, gpr_write, reduceCtorEq, ite_false, ite_true, sp_write, rd_write, wr_write,
     mem_write, BitVec.setWidth_eq, Size.bits, hs, hread, hg, hx]
   refine ⟨trivial, rfl, rfl, rfl, rfl, trivial, Stitch.ceil16_bv (by omega), ?_, ?_, hframe, trivial, hrd, hwr⟩
   · intro r h
@@ -66,6 +67,19 @@ theorem shortSetup_ok (s : State) {n : Nat} (hn : n ≤ 96)
     have hne : p.1 ≠ .x9 := (by decide : ∀ p ∈ VG.Impl.AesGcm.AArch64.saved, p.1 ≠ .x9) p hp
     simp [u, gpr_write, hne]
 
+
+theorem shortSetup_ok (s : State) {n : Nat} (hn : n ≤ 96)
+    (hw : Covers [⟨s.sp, shortWork⟩] s.wr)
+    (hr : InRegions (s.rd ++ s.wr) (s.sp + BitVec.ofNat 64 (shortWork + 8)) 8)
+    (hlen : s.mem.readW (s.sp + BitVec.ofNat 64 (shortWork + 8)) 64 = BitVec.ofNat 64 n) :
+    WP isa (.block shortSetup) s fun t =>
+      t.gpr .x19 = s.sp ∧ t.gpr .x21 = s.gpr .x0 ∧ t.gpr .x22 = s.gpr .x1 ∧
+      t.gpr .x23 = s.gpr .x2 ∧ t.gpr .x24 = s.gpr .x5 ∧ t.gpr .x26 = BitVec.ofNat 64 n ∧
+      t.gpr .x25 = BitVec.ofNat 64 (16 * ((n + 15) / 16)) ∧
+      (∀ r, r ∉ [.x9, .x19, .x21, .x22, .x23, .x24, .x25, .x26] → t.gpr r = s.gpr r) ∧
+      SavedAt t.mem s.sp s ∧ Frame [savedR s.sp] s.mem t.mem ∧
+      t.sp = s.sp ∧ t.rd = s.rd ∧ t.wr = s.wr :=
+  shortSetupAt_ok (.inr rfl) s hn hw hr hlen
 
 theorem shortZero_ok {W : Addr} (s : State) (hb : s.gpr .x19 = W)
     (hw : Covers [⟨W, shortWork⟩] s.wr) :

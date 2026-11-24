@@ -59,6 +59,14 @@ proves of its own instructions and each implementation of its own
 arguments, so that the hypotheses are stated with them and not with
 projections of `r`; `hW` and `hb` tie them to `r`'s stack and result. -/
 
+/-- `r`'s contract requires a rule of its result only for a 32-bit one. -/
+theorem retBits32 {api : Api} (r : Unscrubbed api target) :
+    ∀ f, r.contract.retExt = some f → retBitsOf r = 32 := by
+  intro f hf
+  obtain ⟨pre, post, leak, e⟩ := r.ofSig
+  rw [e] at hf
+  exact retBits_of_retExt (ScrubAbi.of r.consts api.sig r.tables) hf
+
 /-- `r`'s code with its cleanup (`scrubAll`, over `W` bytes of stack, the
 stack its frames use, with a result of `rb` bits) meets `r`'s contract in
 constant time and returns without secret residue, given `scrubSide`: the
@@ -70,6 +78,6 @@ theorem verifiedScrubbedAll {api : Api} (r : Unscrubbed api target) {W rb : Nat}
   subst hW hb
   obtain ⟨hd, hst, h16, htc, hrb⟩ := of_scrubSide hs
   have h := scrubCode_ok r hd hst h16 htc hrb hpost
-  exact ⟨h.1, h.2⟩
+  exact ⟨h.1, h.2, retAbi_of_fixA (retBits32 r) fun _ _ _ _ he => scrubAll_a0 hrb he⟩
 
 end VG.RISCV64.Scrub

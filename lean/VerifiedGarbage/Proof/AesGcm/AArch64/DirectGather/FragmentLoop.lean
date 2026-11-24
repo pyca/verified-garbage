@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Framework.Covers
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.AesGcm.AArch64.Env
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Gather.Loop
@@ -40,7 +41,7 @@ structure Layout (b : Buffers) (s : State) : Prop where
   lt : b.len < 2^64
   rd : Covers [b.reg b.src,b.reg b.key] (s.rd ++ s.wr)
   wr : Covers b.outs s.wr
-  src : ∀ r ∈ b.outs, (b.reg b.src).Disjoint r
+  src : b.src = b.dst ∨ ∀ r ∈ b.outs, (b.reg b.src).Disjoint r
   key : ∀ r ∈ b.outs, (b.reg b.key).Disjoint r
   disj : (b.reg b.dst).Disjoint (b.reg b.auth)
 
@@ -48,9 +49,10 @@ structure Prefix (b : Buffers) (m : Mem) (i : Nat) (m' : Mem) : Prop where
   frame : Frame b.outs m m'
   dst : ∀ j < i, m' (off b.dst j) = b.byte m j
   auth : ∀ j < i, m' (off b.auth j) = b.byte m j
+  unread : ∀ j, i ≤ j → j < b.len → m' (off b.dst j) = m (off b.dst j)
 
 theorem Prefix.empty (b : Buffers) (m : Mem) : Prefix b m 0 m :=
-  ⟨Frame.refl _ _, fun _ h => (Nat.not_lt_zero _ h).elim, fun _ h => (Nat.not_lt_zero _ h).elim⟩
+  ⟨Frame.refl _ _, fun _ h => (Nat.not_lt_zero _ h).elim, fun _ h => (Nat.not_lt_zero _ h).elim, fun _ _ _ => rfl⟩
 
 structure Pointers (b : Buffers) (i : Nat) (t : State) : Prop where
   src : t.gpr .x0 = off b.src i
@@ -70,18 +72,12 @@ theorem Layout.access {b s t} (h : Layout b s) {i n} (hin : i + n ≤ b.len) (p 
 
 /-- A write at offset 'start' extends the correct prefix even when its start
 is before the old end, as in the overlapping last-word case. -/
-theorem Prefix.put {b s t m i start n} (lay : Layout b s)
-    (h : Prefix b m i t.mem) (p : Pointers b start t)
-    (hstart : start ≤ i) (hi : i ≤ b.len) (hend : start + n ≤ b.len) :
-    Prefix b m (start + n) (putBoth t n) := by
+theorem Prefix.putValue {b s m m' i start n} (lay : Layout b s)
+    (h : Prefix b m i m') (v : BitVec (8*n)) (hstart : start ≤ i) (hcover : i ≤ start+n)
+    (hend : start+n ≤ b.len) (fv : ∀ j < n, v.extractLsb' (8*j) 8 = b.byte m (start+j)) :
+    Prefix b m (start+n) ((m'.write (off b.dst start) n v).write (off b.auth start) n v) := by
   have lt := lay.lt
   have c (a : Addr) := Offset.contains_base a hend (by omega : start < 2^64)
-  let v := t.mem.read (t.gpr .x0) n ^^^ t.mem.read (t.gpr .x1) n
-  have fv (j : Nat) (hj : j < n) : v.extractLsb' (8*j) 8 = b.byte m (start+j) := by
-    simp only [v, p.src, p.key, BitVec.extractLsb'_xor, Mem.extractLsb'_read _ _ hj,
-      off, Offset.add_add, Buffers.byte]
-    rw [h.frame.bytes lay.src (by exact Nat.le_of_lt lt) (by simpa using (show start+j < b.len by omega)),
-      h.frame.bytes lay.key (by exact Nat.le_of_lt lt) (by simpa using (show start+j < b.len by omega))]
   have wr (a : Addr) (j : Nat) (hj : j < start+n) (m₁ : Mem) (old : ∀ k < i, m₁ (off a k) = b.byte m k) :
       m₁.write (off a start) n v (off a j) = b.byte m j := by
     by_cases hx : start ≤ j
@@ -95,18 +91,15 @@ theorem Prefix.put {b s t m i start n} (lay : Layout b s)
         have hd := Offset.disjoint a (d := j) (n := 1) (e := start) (k := n) (.inl (by omega))
           (by omega) (by omega)
         exact hd _ (Region.contains_self _ _) cb
-  have da (j : Nat) (hj : j < start+n) :
+  have da (j : Nat) (hj : j < b.len) :
       ¬ (off b.dst j - off b.auth start).toNat < n :=
     fun bad => lay.disj _ (Offset.contains_base _ (by omega) (by omega)) ((c b.auth).byte bad)
-  refine ⟨(h.frame.write (r := b.reg b.dst) (by simp [Buffers.outs]) _ (by rw [p.dst]; exact c _)).write
-    (r := b.reg b.auth) (by simp [Buffers.outs]) _ (by rw [p.auth]; exact c _), ?_, ?_⟩
+  refine ⟨(h.frame.write (r := b.reg b.dst) (by simp [Buffers.outs]) _ (c _)).write
+    (r := b.reg b.auth) (by simp [Buffers.outs]) _ (c _), ?_, ?_, ?_⟩
   · intro j hj
-    change (t.mem.write _ n v).write _ n v _ = _
-    rw [p.auth, p.dst, Mem.write_apply (da j hj)]
+    rw [Mem.write_apply (da j (by omega))]
     exact wr _ _ hj _ h.dst
   · intro j hj
-    change (t.mem.write _ n v).write _ n v _ = _
-    rw [p.auth, p.dst]
     refine wr _ _ hj _ fun k hk => ?_
     rw [Mem.write_apply]
     · exact h.auth k hk
@@ -115,6 +108,33 @@ theorem Prefix.put {b s t m i start n} (lay : Layout b s)
       · exact lay.disj _ ((c _).byte bad) (Offset.contains_base _ (by omega) (by omega))
       · -- Only bytes before the new write need a prior value.
         exact False.elim (by omega)
+  · intro j hj hjl
+    rw [Mem.write_apply (da j hjl), Mem.write_apply]
+    · exact h.unread j (by omega) hjl
+    · rw [off, off, Offset.sub_toNat _ (by omega) (by omega)]; omega
+
+theorem Prefix.sourceWord {b s t m i n k} (h : Prefix b m i t.mem) (lay : Layout b s)
+    (p : Pointers b i t) (hend : i+k+n ≤ b.len) (j : Nat) (hj : j < n) :
+    (wordAt t n (BitVec.ofNat 64 k)).extractLsb' (8*j) 8 = b.byte m (i+k+j) := by
+  simp only [wordAt,p.src,p.key,BitVec.extractLsb'_xor,Mem.extractLsb'_read _ _ hj,
+    off,Offset.add_add,Buffers.byte]
+  have bound : i+k+j < b.len := by omega
+  have src : t.mem (off b.src (i+k+j)) = m (off b.src (i+k+j)) := by
+    rcases lay.src with eq | apart
+    · rw [eq]; exact h.unread _ (by omega) bound
+    · exact h.frame.bytes apart (Nat.le_of_lt lay.lt) bound
+  rw [src, h.frame.bytes lay.key (Nat.le_of_lt lay.lt) bound]
+
+theorem Prefix.put {b s t m i n} (lay : Layout b s)
+    (h : Prefix b m i t.mem) (p : Pointers b i t) (hend : i+n ≤ b.len) :
+    Prefix b m (i+n) (putBoth t n) := by
+  unfold putBoth
+  rw [p.dst, p.auth]
+  apply h.putValue lay _ (Nat.le_refl _) (by omega) hend
+  intro j hj
+  simpa [wordAt]
+    using h.sourceWord (k := 0) lay p (by simpa only [Nat.add_zero] using hend) j hj
+
 
 end VG.Proof.AesGcm.AArch64.DirectGather.Fragment
 
@@ -134,17 +154,17 @@ structure Cursor (b : Buffers) (s : State) (pos doneBytes : Nat) (t : State) : P
   ptrs : Pointers b pos t
   written : Prefix b s.mem doneBytes t.mem
 
-theorem Cursor.wrote {b s t u pos i n rs} (c : Cursor b s pos i t) (lay : Layout b s)
+theorem Cursor.wrote {b s t u i n rs} (c : Cursor b s i i t) (lay : Layout b s)
     (w : Wrote t n rs u) (regs : ∀ r ∈ rs, r = .x14 ∨ r = .x15)
-    (hpos : pos ≤ i) (hi : i ≤ b.len) (hend : pos + n ≤ b.len) :
-    Cursor b s pos (pos+n) u ∧ u.gpr .x12 = t.gpr .x12 ∧ u.gpr .x13 = t.gpr .x13 := by
+    (hend : i+n ≤ b.len) :
+    Cursor b s i (i+n) u ∧ u.gpr .x12 = t.gpr .x12 ∧ u.gpr .x13 = t.gpr .x13 := by
   have kept {r : Reg} (h : r ≠ .x14 ∧ r ≠ .x15) := w.gpr r fun h' => (regs r h').elim h.1 h.2
   refine ⟨⟨⟨fun r h => ?_, w.sp.trans c.sp, w.rd.trans c.rd, w.wr.trans c.wr⟩,
     ⟨(kept (by decide)).trans c.ptrs.src, (kept (by decide)).trans c.ptrs.key,
      (kept (by decide)).trans c.ptrs.dst, (kept (by decide)).trans c.ptrs.auth⟩, ?_⟩,
     kept (by decide), kept (by decide)⟩
   · exact (kept ⟨fun e => h (by simp [workRegs,e]), fun e => h (by simp [workRegs,e])⟩).trans (c.gpr r h)
-  · rw [w.mem]; exact c.written.put lay c.ptrs hpos hi hend
+  · rw [w.mem]; exact c.written.put lay c.ptrs hend
 
 /-- Advance four byte pointers by an immediate. -/
 theorem advance_ok {b s p i t} (c : Cursor b s p i t) (k : Nat) (hk : k < 4096) :
@@ -193,7 +213,7 @@ theorem step_ok {b s i t} (c : Cursor b s i i t) (lay : Layout b s) (block : Boo
     simp only [step, Bool.false_eq_true, ↓reduceIte, byteStep, blockStep, List.append_assoc]
     rw [WP.block_append_iff]
     first | refine (byteData_ok _ hacc).mono fun t₁ w => ?_ | refine (blockData_ok _ hacc).mono fun t₁ w => ?_
-    obtain ⟨c₁,h12,h13⟩ := c.wrote lay w (by simp) (Nat.le_refl _) (by simp only [width, ↓reduceIte] at hend; omega) hend
+    obtain ⟨c₁,h12,h13⟩ := c.wrote lay w (by simp) hend
     rw [WP.block_append_iff]
     refine (advance_ok c₁ _ (by decide)).mono fun t₂ ⟨c₂,h12',h13'⟩ => ?_
     first
@@ -243,51 +263,43 @@ namespace VG.Proof.AesGcm.AArch64.DirectGather.Fragment
 
 open VG VG.AArch64 VG.AArch64.RegUpd VG.Impl.AesGcm.AArch64 VG.Impl.AesGcm.AArch64.DirectGather
 
-abbrev slide (k : Nat) : List Instr :=
-  [.subImm .x .x12 .x12 k] ++ ([.x0,.x1,.x2,.x3] : List Reg).map (fun r => Instr.add .x r r .x12)
-
-theorem slide_ok {b s p i t n k} (c : Cursor b s p i t) (cnt : t.gpr .x12 = BitVec.ofNat 64 n)
-    (hk : k < 4096) (hlen : k ≤ n) :
-    WP isa (.block (slide k)) t fun u => Cursor b s (p + (n-k)) i u := by
-  apply WP.of_runBlock
-  simp only [slide,List.map_cons,List.map_nil,List.cons_append,List.nil_append,runBlock_cons, runStep_some,
-    runBlock_nil, exec, hk, ite_true, Option.some.injEq, exists_eq_left']
-  refine ⟨⟨fun r hr => ?_, c.sp, c.rd, c.wr⟩, ?_, c.written⟩
-  · have hs : r ≠ .x0 ∧ r ≠ .x1 ∧ r ≠ .x2 ∧ r ≠ .x3 ∧ r ≠ .x12 := by
-      simp only [workRegs,List.mem_cons,List.not_mem_nil,or_false,not_or] at hr
-      exact ⟨hr.1,hr.2.1,hr.2.2.1,hr.2.2.2.1,hr.2.2.2.2.1⟩
-    simpa only [gpr_write, hs.1, hs.2.1, hs.2.2.1, hs.2.2.2.1, hs.2.2.2.2, ite_false] using c.gpr r hr
-  · constructor <;> simp only [gpr_write, State.read, Size.bits, BitVec.setWidth_eq, reduceCtorEq,
-      ite_true, ite_false, c.ptrs.src, c.ptrs.key, c.ptrs.dst, c.ptrs.auth, cnt, Offset.ofNat_sub_ofNat hlen,
-      off, Offset.add_add]
-
 abbrev overlap (sz : Size) : Prog isa :=
-  let k := sz.bits / 8
-  .block (xorWord sz ++ slide k ++ xorWord sz ++ advance k)
+  .block (xorEnds sz (sz.bits/8) ++ advance (sz.bits/8))
 
 theorem overlap_ok {b s i t n} (sz : Size) (c : Cursor b s i i t) (lay : Layout b s)
     (cnt : t.gpr .x12 = BitVec.ofNat 64 n) (h₁ : sz.bits/8 ≤ n) (h₂ : n ≤ 2*(sz.bits/8))
     (hend : i+n ≤ b.len) :
     WP isa (overlap sz) t (Cursor b s (i+n) (i+n)) := by
   let k := sz.bits/8
-  have fit : k < 4096 := by cases sz <;> decide
-  have hword : i+k ≤ b.len := by dsimp [k]; omega
-  simp only [overlap,List.append_assoc]
-  rw [WP.block_append_iff]
-  refine (wordData_ok sz _ (lay.access hword c.ptrs c.rd c.wr)).mono fun t₁ w₁ => ?_
-  obtain ⟨c₁,x12,_⟩ := c.wrote lay w₁ (by simp) (Nat.le_refl _) (by omega) hword
-  -- Split at the end of the register slide, before re-reading the sources.
-  change WP isa (.block (slide k ++ (xorWord sz ++ advance k))) t₁ _
-  rw [WP.block_append_iff]
-  refine (slide_ok c₁ (x12.trans cnt) fit h₁).mono fun t₂ c₂ => ?_
-  have posEq : i+(n-k)+k = i+n := by dsimp [k]; omega
-  have enough : i+(n-k)+k ≤ b.len := posEq ▸ hend
-  rw [WP.block_append_iff]
-  refine (wordData_ok sz _ (lay.access enough c₂.ptrs c₂.rd c₂.wr)).mono fun t₃ w₂ => ?_
-  obtain ⟨c₃,_,_⟩ := c₂.wrote lay w₂ (by simp) (by dsimp [k]; omega) hword enough
-  refine (advance_ok c₃ k fit).mono fun _ ⟨done',_,_⟩ => ?_
-  change Cursor b s (i+(n-k)+k) (i+(n-k)+k) _ at done'
-  simpa only [posEq] using done'
+  let d := BitVec.ofNat 64 (n-k)
+  have lt := lay.lt
+  have e : i+(n-k)+k = i+n := by dsimp [k]; omega
+  have hfirst : i+k ≤ b.len := by dsimp [k]; omega
+  have hlast : i+(n-k)+k ≤ b.len := e ▸ hend
+  have q : OffsetAccess t d k := by
+    refine ⟨?_,?_,?_,?_⟩
+    all_goals
+      simp only [c.ptrs.src,c.ptrs.key,c.ptrs.dst,c.ptrs.auth,c.rd,c.wr,d,off,Offset.add_add]
+    · exact lay.rd _ _ ⟨_,by simp, Offset.contains_base _ hlast (by omega)⟩
+    · exact lay.rd _ _ ⟨_,by simp, Offset.contains_base _ hlast (by omega)⟩
+    · exact lay.wr _ _ ⟨_,by simp [Buffers.outs], Offset.contains_base _ hlast (by omega)⟩
+    · exact lay.wr _ _ ⟨_,by simp [Buffers.outs], Offset.contains_base _ hlast (by omega)⟩
+  rw [show overlap sz = .block (xorEnds sz k ++ advance k) from rfl, WP.block_append_iff]
+  refine (xorEnds_ok sz t d (lay.access hfirst c.ptrs c.rd c.wr) q
+    (by rw [cnt,Offset.ofNat_sub_ofNat h₁])).mono fun u ⟨kept,regs,mem⟩ => ?_
+  have first := c.written.putValue lay (wordAt t k 0) (Nat.le_refl _) (by omega) hfirst
+    (fun j hj => by simpa using
+      c.written.sourceWord (k := 0) lay c.ptrs (by simpa using hfirst) j hj)
+  have both := first.putValue lay (wordAt t k d) (start := i+(n-k)) (by dsimp [k]; omega)
+    (by dsimp [k]; omega) hlast (fun j hj => c.written.sourceWord lay c.ptrs hlast j hj)
+  have cur : Cursor b s (i+(n-k)) (i+n) u := by
+    refine ⟨⟨fun r hr => (kept.gpr _ hr).trans (c.gpr _ hr), kept.sp.trans c.sp,
+      kept.rd.trans c.rd,kept.wr.trans c.wr⟩, ?_, ?_⟩
+    · constructor <;> simp only [regs .x0 (by decide),regs .x1 (by decide),regs .x2 (by decide),regs .x3 (by decide),c.ptrs.src,c.ptrs.key,c.ptrs.dst,c.ptrs.auth,
+        off,d,Offset.add_add]
+    · rw [mem,← e]
+      simpa [placeWord,c.ptrs.dst,c.ptrs.auth,off,d,Offset.add_add] using both
+  exact (advance_ok cur k (by cases sz <;> decide)).mono fun _ ⟨done',_,_⟩ => by simpa only [e] using done'
 
 abbrev tail : Prog isa :=
   .seq (.block [.lsr .x .x14 .x12 3]) <|
@@ -381,26 +393,29 @@ structure PiecePost (b : Buffers) (s t : State) : Prop extends Kept s t pieceReg
   ptrs : Pointers b b.len t
   written : Prefix b s.mem b.len t.mem
 
-theorem shortPiece_ok {b s} (h : PiecePre b s) : WP isa shortPiece s (PiecePost b s) := by
-  change WP isa (.seq (.block decode) (.seq
-      (.ite (.zero .x .x13) (.block []) (.loop (.block blockStep) (.nonzero .x .x13)))
-      (.ite (.zero .x .x12) (.block []) tail))) s _
-  refine WP.seq ((decode_ok h).mono fun u d => ?_)
-  have L : Layout b u :=
-    ⟨h.lt, by rw [d.rd,d.wr]; exact h.rd, by rw [d.wr]; exact h.wr, h.src,h.key,h.disj⟩
+/-- The fragment after its source and length have been decoded. Gather and
+contiguous callers share the same loop, writes and carry into the byte tail. -/
+abbrev pieceSuffix : Prog isa :=
+  .seq (.ite (.zero .x .x13) (.block []) (.loop (.block blockStep) (.nonzero .x .x13)))
+    (.ite (.zero .x .x12) (.block []) tail)
+
+theorem pieceSuffix_ok {b u} (L : Layout b u) (pointers : Pointers b 0 u)
+    (full : u.gpr .x13 = BitVec.ofNat 64 (b.len/16))
+    (tailCount : u.gpr .x12 = BitVec.ofNat 64 (b.len%16)) :
+    WP isa pieceSuffix u (Cursor b u b.len b.len) := by
   have init : Cursor b u 0 0 u :=
-    ⟨⟨fun _ _ => rfl,rfl,rfl,rfl⟩,d.ptrs,Prefix.empty b _⟩
+    ⟨⟨fun _ _ => rfl,rfl,rfl,rfl⟩,pointers,Prefix.empty b _⟩
   let whole := (b.len/16)*16
   have fit : whole + b.len % 16 = b.len := by dsimp [whole]; omega
-  have hlt := h.lt
+  have hlt := L.lt
   have blocks : WP isa (.ite (.zero .x .x13) (.block []) (.loop (.block blockStep) (.nonzero .x .x13))) u
       fun v => Cursor b u whole whole v ∧ v.gpr .x12 = BitVec.ofNat 64 (b.len%16) := by
-    refine WP.ite _ (eval_zero d.whole (by omega)) (fun hz => ?_) (fun hp => ?_)
+    refine WP.ite _ (eval_zero full (by omega)) (fun hz => ?_) (fun hp => ?_)
     · have z : b.len / 16 = 0 := of_decide_eq_true hz
-      exact WP.block_nil ⟨by simpa [whole,z] using init,d.rest⟩
+      exact WP.block_nil ⟨by simpa [whole,z] using init,tailCount⟩
     · have z := of_decide_eq_false hp
-      refine (loop_ok true init L d.whole (by omega) (by change 0 + b.len /16 * 16 ≤ b.len; omega)).mono
-        fun _ ⟨c,rest⟩ => ⟨by simpa [whole,width] using c,rest.trans d.rest⟩
+      refine (loop_ok true init L full (by omega) (by change 0 + b.len /16 * 16 ≤ b.len; omega)).mono
+        fun _ ⟨c,rest⟩ => ⟨by simpa [whole,width] using c,rest.trans tailCount⟩
   refine WP.seq (blocks.mono fun v ⟨c,rest⟩ => ?_)
   have bytes : WP isa (.ite (.zero .x .x12) (.block []) tail) v (Cursor b u b.len b.len) := by
     refine WP.ite _ (eval_zero rest (by omega)) (fun hz => ?_) (fun hp => ?_)
@@ -408,9 +423,49 @@ theorem shortPiece_ok {b s} (h : PiecePre b s) : WP isa shortPiece s (PiecePost 
       exact WP.block_nil (by simpa only [show whole = b.len by omega] using c)
     · have z := of_decide_eq_false hp
       simpa only [fit] using tail_ok c L rest (by omega) (by omega) (Nat.le_of_eq fit)
-  refine bytes.mono fun w out => ⟨⟨fun r hr => ?_,out.sp.trans d.sp,out.rd.trans d.rd,out.wr.trans d.wr⟩,
+  exact bytes
+
+theorem shortPiece_ok {b s} (h : PiecePre b s) : WP isa shortPiece s (PiecePost b s) := by
+  change WP isa (.seq (.block decode) (.seq
+      (.ite (.zero .x .x13) (.block []) (.loop (.block blockStep) (.nonzero .x .x13)))
+      (.ite (.zero .x .x12) (.block []) tail))) s _
+  refine WP.seq ((decode_ok h).mono fun u d => ?_)
+  have L : Layout b u :=
+    ⟨h.lt, by rw [d.rd,d.wr]; exact h.rd, by rw [d.wr]; exact h.wr, h.src,h.key,h.disj⟩
+  refine (pieceSuffix_ok L d.ptrs d.whole d.rest).mono fun w out => ⟨⟨fun r hr => ?_,out.sp.trans d.sp,out.rd.trans d.rd,out.wr.trans d.wr⟩,
     (out.gpr .x6 (by decide)).trans d.desc,out.ptrs,by simpa only [d.mem] using out.written⟩
   exact (out.gpr r fun he => hr (List.mem_cons_of_mem _ he)).trans (d.gpr _ hr)
+
+/-- The contiguous entry receives its source and length in registers. All
+subsequent instructions are the same fragment as for a gather descriptor. -/
+theorem directPiece_ok {b s} (h : Layout b s) (src : s.gpr .x6 = b.src)
+    (len : s.gpr .x26 = BitVec.ofNat 64 b.len) (key : s.gpr .x1 = b.key)
+    (dst : s.gpr .x2 = b.dst) (auth : s.gpr .x3 = b.auth) :
+    WP isa (shortPieceWith [mov .x0 .x6,mov .x12 .x26]) s (Cursor b s b.len b.len) := by
+  let head : List Instr := [mov .x0 .x6,mov .x12 .x26,.lsr .x .x13 .x12 4,
+    imm .x14 15,.logic .and .x .x12 .x12 .x14]
+  change WP isa (.seq (.block head) pieceSuffix) s _
+  have initial : WP isa (.block head) s fun t =>
+      Kept s t workRegs ∧ t.mem = s.mem ∧ Pointers b 0 t ∧
+      t.gpr .x13 = BitVec.ofNat 64 (b.len/16) ∧ t.gpr .x12 = BitVec.ofNat 64 (b.len%16) := by
+    apply WP.of_runBlock
+    refine ⟨_,by arun [head],?_⟩
+    refine ⟨⟨fun r hr => ?_,rfl,rfl,rfl⟩,rfl,?_,?_,?_⟩
+    · have hs : r ≠ .x0 ∧ r ≠ .x12 ∧ r ≠ .x13 ∧ r ≠ .x14 := by
+        simp only [workRegs,List.mem_cons,List.not_mem_nil,or_false,not_or] at hr
+        exact ⟨hr.1,hr.2.2.2.2.1,hr.2.2.2.2.2.1,hr.2.2.2.2.2.2.1⟩
+      simp [gpr_write,hs.1,hs.2.1,hs.2.2.1,hs.2.2.2]
+    · constructor <;> simp [off,gpr_write,src,key,dst,auth]
+    · simpa [gpr_write,State.read,len] using lsr_ofNat b.len 4 h.lt
+    · simp only [gpr_write,Size.bits,BitVec.setWidth_eq,reduceCtorEq,ite_true,ite_false,len,BitVec.add_zero]
+      change (BitVec.ofNat 64 b.len &&& BitVec.ofNat 64 15) = _
+      rw [and15,BitVec.toNat_ofNat,Nat.mod_eq_of_lt h.lt]
+  refine WP.seq (initial.mono fun u ⟨kept,mem,ptrs,full,tailCount⟩ => ?_)
+  have lay : Layout b u :=
+    ⟨h.lt,by rw [kept.rd,kept.wr]; exact h.rd,by rw [kept.wr]; exact h.wr,h.src,h.key,h.disj⟩
+  refine (pieceSuffix_ok lay ptrs full tailCount).mono fun w out =>
+    ⟨⟨fun r hr => (out.gpr _ hr).trans (kept.gpr _ hr),out.sp.trans kept.sp,
+      out.rd.trans kept.rd,out.wr.trans kept.wr⟩,out.ptrs,by simpa only [mem] using out.written⟩
 
 end VG.Proof.AesGcm.AArch64.DirectGather.Fragment
 
@@ -455,17 +510,19 @@ abbrev outRegions (s : State) := [dout s,gout s]
 abbrev readRegions (s : State) := descR s :: stream s :: Sig.listed 64 s.mem .u8 (ds s) (num s)
 abbrev loopRegs : List Reg := .x7 :: pieceRegs
 
+def curBuf (s : State) (i : Nat) : Buffers :=
+  ⟨sb s.mem (ds s) i, off (s.gpr .x1) (gl s i), off (s.gpr .x2) (gl s i), off (s.gpr .x3) (gl s i),
+    sl s.mem (ds s) i⟩
+
 structure LoopPre (s : State) : Prop where
   len : total s < 2^64
   descriptors : 16*num s < 2^64
   rd : Covers (readRegions s) (s.rd ++ s.wr)
   wr : Covers (outRegions s) s.wr
-  apart : ∀ a ∈ readRegions s, ∀ b ∈ outRegions s, a.Disjoint b
+  apart : ∀ a ∈ [descR s,stream s], ∀ b ∈ outRegions s, a.Disjoint b
+  source : ∀ i < num s, (i = 0 ∧ (curBuf s i).src = (curBuf s i).dst) ∨
+    ∀ r ∈ outRegions s, ((curBuf s i).reg (curBuf s i).src).Disjoint r
   disj : (dout s).Disjoint (gout s)
-
-def curBuf (s : State) (i : Nat) : Buffers :=
-  ⟨sb s.mem (ds s) i, off (s.gpr .x1) (gl s i), off (s.gpr .x2) (gl s i), off (s.gpr .x3) (gl s i),
-    sl s.mem (ds s) i⟩
 
 structure AtDesc (s : State) (i : Nat) (t : State) : Prop extends Kept s t loopRegs where
   desc : t.gpr .x6 = off (ds s) (16*i)
@@ -476,11 +533,12 @@ structure AtDesc (s : State) (i : Nat) (t : State) : Prop extends Kept s t loopR
   frame : Frame (outRegions s) s.mem t.mem
   outD : ∀ j < gl s i, t.mem (off (s.gpr .x2) j) = (pt s i).getD j 0 ^^^ s.mem (off (s.gpr .x1) j)
   outG : ∀ j < gl s i, t.mem (off (s.gpr .x3) j) = (pt s i).getD j 0 ^^^ s.mem (off (s.gpr .x1) j)
+  firstMem : i = 0 → t.mem = s.mem
 
 theorem AtDesc.init (s : State) : AtDesc s 0 s := by
   have h0 : gl s 0 = 0 := rfl
   refine ⟨⟨fun _ _ => rfl,rfl,rfl,rfl⟩,by simp [off],by simp [num],?_,?_,?_,Frame.refl _ _,
-    fun _ h => (Nat.not_lt_zero _ (h0 ▸ h)).elim, fun _ h => (Nat.not_lt_zero _ (h0 ▸ h)).elim⟩ <;> simp [off,h0]
+    fun _ h => (Nat.not_lt_zero _ (h0 ▸ h)).elim, fun _ h => (Nat.not_lt_zero _ (h0 ▸ h)).elim,fun _ => rfl⟩ <;> simp [off,h0]
 
 theorem curBound {s : State} {i : Nat} (hi : i < num s) :
     gl s i + (curBuf s i).len ≤ total s := by
@@ -516,16 +574,21 @@ theorem piecePre {s i t} (pre : LoopPre s) (hi : i < num s) (atD : AtDesc s i t)
     rcases hr with rfl|rfl
     · exact ⟨dout s,by simp,gl s i,rfl,bound⟩
     · exact ⟨gout s,by simp,gl s i,rfl,bound⟩
-  have sep (R : Region) (hR : R ∈ readRegions s) (A : Region) (hA : Region.Sub A R) (B : Region) (hb : B ∈ b.outs) :
+  have sep (R : Region) (hR : R ∈ [descR s,stream s]) (A : Region) (hA : Region.Sub A R) (B : Region) (hb : B ∈ b.outs) :
       A.Disjoint B := by
     obtain ⟨B',hm,hs⟩ := curSub hi _ hb
     exact ((pre.apart R hR B' hm).sub_left hA).sub_right hs
-  refine ⟨⟨by omega, ?_, ?_, sep _ readSrc _ (fun _ hc => hc),
-    sep _ (show stream s ∈ readRegions s by simp) _ (Offset.sub_base _ bound),
+  refine ⟨⟨by omega, ?_, ?_, ?_,
+    sep _ (show stream s ∈ [descR s,stream s] by simp) _ (Offset.sub_base _ bound),
     (pre.disj.sub_left (Offset.sub_base _ bound)).sub_right (Offset.sub_base _ bound)⟩,
     ?_,?_,?_,?_,atD.key,atD.dst,atD.auth⟩
   · rw [atD.rd,atD.wr]; exact (rdSrc.trans pre.rd).pair (rdK.trans pre.rd)
   · rw [atD.wr]; exact wr.trans pre.wr
+  · rcases pre.source i hi with same | apart
+    · exact Or.inl same.2
+    · exact Or.inr fun B hb => by
+        obtain ⟨B',hm,hs⟩ := curSub hi _ hb
+        exact (apart B' hm).sub_right hs
   · rw [atD.rd,atD.wr,atD.desc]; exact rd0 _ (by omega)
   · rw [atD.rd,atD.wr,atD.desc, off,Offset.add_add]
     exact rd0 _ (by omega)
@@ -569,10 +632,11 @@ theorem extendOutput {s i t u} (pre : LoopPre s) (hi : i < num s) (cur : AtDesc 
   · let k := j - gl s i
     have e : gl s i + k = j := by dsimp [k]; omega
     have hk : k < (curBuf s i).len := by dsimp [k]; omega
-    have rdSrc : (curBuf s i).reg (curBuf s i).src ∈ readRegions s :=
-      List.mem_cons_of_mem _ <| List.mem_cons_of_mem _ <| slice_mem _ _ hi
-    have first := cur.frame.bytes (pre.apart _ rdSrc) (by change (curBuf s i).len ≤ _; omega) hk
-    have last := cur.frame.bytes (pre.apart _ (show stream s ∈ readRegions s by simp)) (Nat.le_of_lt lt)
+    have first : t.mem (off (curBuf s i).src k) = s.mem (off (curBuf s i).src k) := by
+      rcases pre.source i hi with same | apart
+      · rw [cur.firstMem same.1]
+      · exact cur.frame.bytes apart (by change (curBuf s i).len ≤ _; omega) hk
+    have last := cur.frame.bytes (pre.apart _ (show stream s ∈ [descR s,stream s] by simp)) (Nat.le_of_lt lt)
       (show j < total s by omega)
     rw [List.getElem?_append_right (by omega),hl, ← List.getD_eq_getElem?_getD]
     change _ = (Spec.Aes.bytesAt s.mem (curBuf s i).src (curBuf s i).len).getD k 0 ^^^ _
@@ -599,7 +663,7 @@ theorem body_ok {s i t} (pre : LoopPre s) (hi : i < num s) (c : AtDesc s i t) :
   simp only [countDown,runBlock_cons,runStep_some,runBlock_nil,exec,Nat.reduceLT,ite_true,
     Option.some.injEq,exists_eq_left']
   refine ⟨⟨fun r hr => ?_,piece.sp.trans c.sp,piece.rd.trans c.rd,piece.wr.trans c.wr⟩,
-    descEq, cntEq, ?_,?_,?_,c.frame.trans (piece.written.frame.sub (curSub hi)), pD,pG⟩
+    descEq, cntEq, ?_,?_,?_,c.frame.trans (piece.written.frame.sub (curSub hi)), pD,pG,fun hzero => False.elim (by omega)⟩
   · have h7 : r ≠ .x7 := fun h => hr (by simp [loopRegs,h])
     exact (gpr_write_of_ne _ _ _ h7).trans ((piece.gpr r fun he => hr (List.mem_cons_of_mem _ he)).trans (c.gpr r hr))
   · change u.gpr .x1 = _

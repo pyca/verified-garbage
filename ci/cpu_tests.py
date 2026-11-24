@@ -370,6 +370,10 @@ GROUPS = {
             "wycheproof::chacha20poly1305",
         ],
     },
+    "rc2_cbc": {
+        "lib": [],
+        "tests": ["cavp::rc2_cbc"],
+    },
     "rc4": {
         "lib": [],
         "tests": ["rfc6229"],

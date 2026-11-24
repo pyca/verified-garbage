@@ -1013,10 +1013,9 @@ theorem pwOff_mod (k : Nat) : pwOff k % 16 = 0 := by
   unfold pwOff; split <;> omega_using []
 
 /-- The power `H'ᵏ` at `pw + pwOff k`, as `tReg k` holds it. -/
-theorem read_pwOff {s₀ : State} (h : Proof.Gcm.ghashWithAArch64.pre s₀) {k : Nat} (hk1 : 1 ≤ k)
+theorem read_pwOff {s₀ : State} (hr : Spec.Gcm.Powers8Repr s₀.mem (s₀.gpr .x5) (H₀ s₀)) {k : Nat} (hk1 : 1 ≤ k)
     (hk : k ≤ 8) :
     x * φ (s₀.mem.read (s₀.gpr .x5 + BitVec.ofNat 64 (pwOff k)) 16) = φ (H₀ s₀) ^ k := by
-  have hr := h.2.2.2.2.2.2.2.2.2
   rcases Nat.even_or_odd' k with ⟨j, rfl | rfl⟩
   · obtain ⟨hv, -⟩ := hr (j - 1) (by omega_using [hk])
     obtain h1 : pwOff (2 * j) = 32 * (j - 1) := by
@@ -1065,12 +1064,13 @@ structure PW (s₀ : State) (K : Nat) (s : State) : Prop where
   wr : s.wr = s₀.wr
 
 /-- `H'ᴷ⁺¹` loaded. -/
-theorem loadPwI_ok {s₀ : State} (h : Proof.Gcm.ghashWithAArch64.pre s₀) {K : Nat} (hK8 : K + 1 ≤ 8)
+theorem loadPwI_ok {s₀ : State} (table : (⟨s₀.gpr .x5,128⟩ : Region) ∈ s₀.rd)
+    (repr : Spec.Gcm.Powers8Repr s₀.mem (s₀.gpr .x5) (H₀ s₀)) {K : Nat} (hK8 : K + 1 ≤ 8)
     {s : State} (hP : PW s₀ K s) :
     WP isa (.block (Impl.Gcm.AArch64.Pmull.loadPw (K + 1))) s (PW s₀ (K + 1)) := by
   obtain hin : InRegions (s.rd ++ s.wr) (s.gpr .x5 + BitVec.ofNat 64 (pwOff (K + 1))) 16 := by
     rw [hP.rd, hP.wr, hP.gpr]
-    refine ⟨⟨s₀.gpr .x5, 128⟩, by simp [h.1], contains_offset ?_ ?_⟩ <;>
+    refine ⟨⟨s₀.gpr .x5, 128⟩, List.mem_append_left _ table, contains_offset ?_ ?_⟩ <;>
       (unfold pwOff; split <;> omega_arith)
   refine WP.mono (loadPw_ok (K + 1) s hin hK8) fun s' ⟨t, w, o⟩ => ?_
   obtain kv : ∀ r, r ≠ tReg (K + 1) → r ≠ sReg (K + 1) → s'.v r = s.v r := fun r h1 h2 =>
@@ -1078,7 +1078,7 @@ theorem loadPwI_ok {s₀ : State} (h : Proof.Gcm.ghashWithAArch64.pre s₀) {K :
   refine ⟨fun k hk hkK => ?_, fun k hk hkK => ?_, by rw [o.gpr, hP.gpr], by rw [o.mem, hP.mem],
     by rw [o.rd, hP.rd], by rw [o.wr, hP.wr]⟩
   · rcases (by omega_using [hkK] : k = K + 1 ∨ k ≤ K) with rfl | hkK'
-    · rw [t, hP.gpr, hP.mem]; exact read_pwOff h hk (by omega_using [hK8])
+    · rw [t, hP.gpr, hP.mem]; exact read_pwOff repr hk (by omega_using [hK8])
     · rw [kv _ (tReg_ne hk (by omega_using [hK8, hkK]) (by omega_using []) hK8 (by omega_using [hkK'])) (tReg_ne_sReg _ _),
         hP.t k hk hkK']
   · rcases (by omega_using [hkK] : k = K + 1 ∨ k ≤ K) with rfl | hkK'
@@ -1087,28 +1087,28 @@ theorem loadPwI_ok {s₀ : State} (h : Proof.Gcm.ghashWithAArch64.pre s₀) {K :
         kv _ (fun e => tReg_ne_sReg _ _ e.symm) (sReg_ne hk (by omega_using [hK8, hkK]) (by omega_using []) hK8 (by omega_using [hkK'])),
         hP.sw k hk hkK']
 
-theorem prologueW_ok {s₀ : State} (h : Proof.Gcm.ghashWithAArch64.pre s₀) :
+theorem prologueW_at {s₀ : State} (hp : Pm s₀) (table : (⟨s₀.gpr .x5,128⟩ : Region) ∈ s₀.rd)
+    (repr : Spec.Gcm.Powers8Repr s₀.mem (s₀.gpr .x5) (H₀ s₀)) :
     WP isa (.block Impl.Gcm.AArch64.Pmull.prologueW) s₀ (Inv s₀ 8 0) := by
-  obtain hp := pm_of_with h
   simp only [Impl.Gcm.AArch64.Pmull.prologueW, List.append_assoc]
   obtain h₀ : PW s₀ 0 s₀ := ⟨fun _ _ h => absurd h (by omega_arith), fun _ _ h => absurd h (by omega_arith),
     rfl, rfl, rfl, rfl⟩
   rw [WP.block_append_iff]
-  refine WP.mono (loadPwI_ok h (K := 0) (by decide) h₀) fun s₁ h₁ => ?_
+  refine WP.mono (loadPwI_ok table repr (K := 0) (by decide) h₀) fun s₁ h₁ => ?_
   rw [WP.block_append_iff]
-  refine WP.mono (loadPwI_ok h (K := 1) (by decide) h₁) fun s₂ h₂ => ?_
+  refine WP.mono (loadPwI_ok table repr (K := 1) (by decide) h₁) fun s₂ h₂ => ?_
   rw [WP.block_append_iff]
-  refine WP.mono (loadPwI_ok h (K := 2) (by decide) h₂) fun s₃ h₃ => ?_
+  refine WP.mono (loadPwI_ok table repr (K := 2) (by decide) h₂) fun s₃ h₃ => ?_
   rw [WP.block_append_iff]
-  refine WP.mono (loadPwI_ok h (K := 3) (by decide) h₃) fun s₄ h₄ => ?_
+  refine WP.mono (loadPwI_ok table repr (K := 3) (by decide) h₃) fun s₄ h₄ => ?_
   rw [WP.block_append_iff]
-  refine WP.mono (loadPwI_ok h (K := 4) (by decide) h₄) fun s₅ h₅ => ?_
+  refine WP.mono (loadPwI_ok table repr (K := 4) (by decide) h₄) fun s₅ h₅ => ?_
   rw [WP.block_append_iff]
-  refine WP.mono (loadPwI_ok h (K := 5) (by decide) h₅) fun s₆ h₆ => ?_
+  refine WP.mono (loadPwI_ok table repr (K := 5) (by decide) h₅) fun s₆ h₆ => ?_
   rw [WP.block_append_iff]
-  refine WP.mono (loadPwI_ok h (K := 6) (by decide) h₆) fun s₇ h₇ => ?_
+  refine WP.mono (loadPwI_ok table repr (K := 6) (by decide) h₆) fun s₇ h₇ => ?_
   rw [WP.block_append_iff]
-  refine WP.mono (loadPwI_ok h (K := 7) (by decide) h₇) fun s₈ h₈ => ?_
+  refine WP.mono (loadPwI_ok table repr (K := 7) (by decide) h₇) fun s₈ h₈ => ?_
   rw [WP.block_append_iff]
   obtain hcb : WP isa (.block ([.movz .x .x5 0xc200 3, .vop (.dup .d2 C .x5)] : List Instr)) s₈ fun s₉ =>
       s₉.v C = ofVDwords poly poly ∧ (∀ r, r ≠ C → s₉.v r = s₈.v r) ∧
@@ -1140,6 +1140,10 @@ theorem prologueW_ok {s₀ : State} (h : Proof.Gcm.ghashWithAArch64.pre s₀) :
     exact h₈.sw k hk hk8
   · rw [fv, l₁₀, m₉, h₈.mem, g₉ .x1 (by decide), h₈.gpr, add_ofNat_zero]
     exact congrArg φ (ghashFrom_blocksAt_zero _ _ _ _).symm
+
+theorem prologueW_ok {s₀ : State} (h : Proof.Gcm.ghashWithAArch64.pre s₀) :
+    WP isa (.block Impl.Gcm.AArch64.Pmull.prologueW) s₀ (Inv s₀ 8 0) :=
+  prologueW_at (pm_of_with h) (by simp [h.1]) h.2.2.2.2.2.2.2.2.2
 
 theorem correctW {s₀ : State} (hs : Proof.Gcm.ghashWithAArch64.pre s₀) :
     WP isa Impl.Gcm.AArch64.Pmull.ghashW s₀ fun s' =>
@@ -1515,6 +1519,31 @@ theorem hashEight_at (s : State) (hn : nb s = 8)
       t.v .v0 = ext8 (Ys s 8) (Ys s 8) ∧ t.mem = s.mem ∧
       t.sp = s.sp ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.gpr .x19 = s.gpr .x19 := by
   exact fixedHash_at s hc hw hd (by lit_decide) (fun u hp eqn => hashEight_ok u hp (eqn.trans hn))
+
+/-- One fixed eight-block fold using a caller's read-only cached powers. -/
+theorem hashEightWith_at (s : State) (hn : nb s = 8)
+    (hc : Covers ([hR s,dR s,⟨s.gpr .x5,128⟩] ++ [yR s]) (s.rd ++ s.wr))
+    (hw : Covers [yR s] s.wr) (hd : (yR s).Disjoint (dR s))
+    (repr : Spec.Gcm.Powers8Repr s.mem (s.gpr .x5) (H₀ s)) :
+    WP isa (.block (Impl.Gcm.AArch64.Pmull.prologueW ++ body 8)) s fun t =>
+      t.v .v0 = ext8 (Ys s 8) (Ys s 8) ∧ t.mem = s.mem ∧
+      t.sp = s.sp ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.gpr .x19 = s.gpr .x19 := by
+  let u := s.withRegions [hR s,dR s,⟨s.gpr .x5,128⟩] [yR s]
+  have hp : Pm u := {
+    h_in := ⟨hR s, by simp [u], by
+      change (hR s).Contains (s.gpr .x0 + 0#64) 16
+      rw [BitVec.add_zero]; exact Region.contains_self _ _⟩
+    d_in := by change dR s ∈ [hR s,dR s,⟨s.gpr .x5,128⟩]; simp
+    y_in := List.mem_singleton_self _
+    y_d := hd }
+  have go : WP isa (.block (Impl.Gcm.AArch64.Pmull.prologueW ++ body 8)) u (Inv u 8 8) := by
+    rw [WP.block_append_iff]
+    refine (prologueW_at hp (by simp [u]) repr).mono fun _ h => ?_
+    exact body_ok hp (k := 8) (by decide) (by decide) (by decide) (by change 0+8 ≤ nb s; omega) h
+  refine WP.narrow (WP.gprs go (rs := [.x19]) (by lit_decide) rfl) hc hw ?_ rfl
+  intro t hrd hwr hsp _ hi
+  obtain ⟨inv,keep⟩ := hi
+  exact ⟨ρ_inj (by rw [ρ_ext8_self]; exact inv.y), inv.mem, hsp, hrd, hwr, keep _ (by simp)⟩
 
 /-- Two successive eight-block batches use the same precomputed powers.
 The final reversal exposes the hash in memory byte order for the tag XOR. -/

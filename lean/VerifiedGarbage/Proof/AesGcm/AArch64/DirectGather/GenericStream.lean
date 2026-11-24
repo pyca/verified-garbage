@@ -42,9 +42,24 @@ theorem byte_start {s : State} {S K D : Addr} {n rem : Nat}
   exact ⟨⟨fun _ _ => rfl,rfl,rfl,rfl⟩, by simp [xorBytes, Spec.Aes.bytesAt, writeBytes_nil],
     by simpa using hs, by simpa using hk, by simpa using hd, hc, hr⟩
 
+/-- While the loop consumes the source from the front, the next input byte
+still comes from the original memory in either admitted layout. -/
+structure SourcePre (s : State) (S D : Addr) (n : Nat) : Prop where
+  lt : n < 2 ^ 63
+  rd : Covers [⟨S,n⟩] (s.rd ++ s.wr)
+  wr : Covers [⟨D,n⟩] s.wr
+  layout : BufferLayout S D n
+
+theorem SourcePre.next {s : State} {S D : Addr} {n i : Nat} (h : SourcePre s S D n)
+    (hi : i < n) (xs : List Byte) (hlen : xs.length = i) :
+    writeBytes s.mem D xs (S + BitVec.ofNat 64 i) = s.mem (S + BitVec.ofNat 64 i) := by
+  rcases h.layout with rfl | apart
+  · exact dst_kept hi h.lt xs hlen
+  · exact src_kept apart hi h.lt xs hlen
+
 set_option linter.unusedSimpArgs false in
 theorem step_ok {s t : State} {S K D : Addr} {n rem i : Nat}
-    (a : ByteAt s S K D n rem i t) (hs : LoopPre s S D n) (hk : LoopPre s K D n)
+    (a : ByteAt s S K D n rem i t) (hs : SourcePre s S D n) (hk : LoopPre s K D n)
     (hi : i < n) (hr : n ≤ rem) :
     WP isa (.block xorStep) t (ByteAt s S K D n rem (i+1)) := by
   have hn := hs.lt
@@ -62,7 +77,7 @@ theorem step_ok {s t : State} {S K D : Addr} {n rem i : Nat}
   · simp only [byteRegs,List.mem_cons,List.not_mem_nil,or_false,not_or] at he
     simp [gpr_write, he.1, he.2.1, he.2.2.1, he.2.2.2.1, he.2.2.2.2.1, he.2.2.2.2.2.1, he.2.2.2.2.2.2]
     exact a.gpr r (by simpa [byteRegs] using he)
-  · simp only [mem_write, byte_xor, read_one, a.mem, src_kept hs.disj hi hn _ hlen,
+  · simp only [mem_write, byte_xor, read_one, a.mem, hs.next hi _ hlen,
       src_kept hk.disj hi hn _ hlen, xorBytes_succ, writeBytes_snoc _ _ _ _ (by rw [hlen]; omega_arith), hlen]
     rfl
   all_goals simp only [gpr_write, reduceCtorEq, ite_true, ite_false, State.read, Size.bits,
@@ -70,7 +85,7 @@ theorem step_ok {s t : State} {S K D : Addr} {n rem i : Nat}
   all_goals first | exact congrArg _ (succ_ofNat i) | rw [Offset.ofNat_sub_ofNat (by omega_arith)]; rfl
 
 theorem xorBytes_ok {s : State} {S K D : Addr} {n rem : Nat}
-    (a : ByteAt s S K D n rem 0 s) (hs : LoopPre s S D n) (hk : LoopPre s K D n)
+    (a : ByteAt s S K D n rem 0 s) (hs : SourcePre s S D n) (hk : LoopPre s K D n)
     (hr : n ≤ rem) :
     WP isa Impl.AesGcm.AArch64.DirectGather.xorBytes s (ByteAt s S K D n rem n) := by
   have hn := hs.lt
@@ -126,8 +141,7 @@ theorem directTail_ok (h : Cr3G Wn true Ctx St W SP k R icb P D O n m₀ j s)
   have ht := h.lt16
   have rem := hw.drop h.le
   have kd := (rem.ok.st.sub_right (Lay.stSub (d := 64) (by omega_arith : 64 + (n-j) ≤ 80))).symm
-  have sd := (hd.sub_left (Offset.sub_base D (d := j) (n := n-j) (by omega_arith))).sub_right
-    (Offset.sub_base O (d := j) (n := n-j) (by omega_arith))
+  have sd := hd.sub (j := j) (k := n-j) (by omega_arith)
   obtain ⟨t,run,x10,x25,x11,g⟩ : ∃ t, runBlock isa [mov .x10 .x24, mov .x25 .x24, ptr .x11 .x20 64] s =
       some t ∧ t.gpr .x10 = BitVec.ofNat 64 (n-j) ∧ t.gpr .x25 = BitVec.ofNat 64 (n-j) ∧
       t.gpr .x11 = St + BitVec.ofNat 64 64 ∧ Regs [.x10,.x25,.x11] s t := by
@@ -135,7 +149,7 @@ theorem directTail_ok (h : Cr3G Wn true Ctx St W SP k R icb P D O n m₀ j s)
     exact ⟨by simp [gpr_write,h.x24], by simp [gpr_write,h.x24],
       by simp [gpr_write,h.env.x20], ⟨by others_tac,rfl,rfl,rfl,rfl⟩⟩
   refine WP.seq (WP.of_runBlock ⟨t,run,?_⟩)
-  have ls : LoopPre t (D + BitVec.ofNat 64 j) (O + BitVec.ofNat 64 j) (n-j) :=
+  have ls : SourcePre t (D + BitVec.ofNat 64 j) (O + BitVec.ofNat 64 j) (n-j) :=
     ⟨by omega_arith, by rw [g.rd,g.wr]; exact (data.drop h.le).rd, by rw [g.wr]; exact rem.wr, sd⟩
   have lk : LoopPre t (St+BitVec.ofNat 64 64) (O + BitVec.ofNat 64 j) (n-j) :=
     ⟨by omega_arith, by rw [g.rd,g.wr]; exact covers_left (h.env.perm.stC (by omega_arith)), ls.wr, kd⟩
@@ -261,8 +275,8 @@ theorem leftover_ok {Wn : Nat} {Ctx St W SP : Addr} {k : Reg → BitVec 64} {R P
   have tr := reg.rd.trans rd
   have tw := reg.wr.trans wr
   have tm := reg.mem.trans m
-  have ls : LoopPre t D O j := ⟨by omega_arith, by rw [tr,tw]; exact (data.take hj).rd,
-    by rw [tw]; exact (hw.take hj).wr, (hd.sub_left (Region.sub_prefix hj)).sub_right (Region.sub_prefix hj)⟩
+  have ls : SourcePre t D O j := ⟨by omega_arith, by rw [tr,tw]; exact (data.take hj).rd,
+    by rw [tw]; exact (hw.take hj).wr, hd.take hj⟩
   have lk : LoopPre t (St + BitVec.ofNat 64 (64+P%16)) O j :=
     ⟨by omega_arith, by rw [tr,tw]; exact covers_left (h.env.perm.stC (by omega_arith)),ls.wr,
       ((hw.take hj).ok.st.sub_right (Lay.stSub (by omega_arith))).symm⟩
@@ -337,7 +351,8 @@ structure PiecesPre (a : TextArgs) (s : State) : Prop where
   dst : DataW a.Wn a.Ctx a.St a.W s a.dst (a.total s)
   apart : (⟨a.src,16*a.count⟩ : Region).Disjoint ⟨a.dst,a.total s⟩
   source : ∀ i < a.count, DataOk a.Wn a.St a.W s (sb s.mem a.src i) (sl s.mem a.src i)
-  sourceApart : ∀ i < a.count, (⟨sb s.mem a.src i,sl s.mem a.src i⟩ : Region).Disjoint ⟨a.dst,a.total s⟩
+  sourceLayout : ∀ i < a.count, sb s.mem a.src i = atOff a.dst (a.gl s i) ∨
+    (⟨sb s.mem a.src i,sl s.mem a.src i⟩ : Region).Disjoint ⟨a.dst,a.total s⟩
   ctr : Ctr s.mem (a.St+48) (a.St+64) (a.ciph s) a.icb 0
   hashPtr : s.mem.readW (a.W+352) 64 = a.dst
 

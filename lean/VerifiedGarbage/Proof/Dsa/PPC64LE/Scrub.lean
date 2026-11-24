@@ -261,6 +261,7 @@ arguments. It meets its contract in constant time and returns without secret res
 theorem parameterInit_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.Dsa.PPC64LE.Generation.init
       (Spec.Dsa.parameterInitContract PPC64LE.abi) 32 :=
-  ⟨Proof.Dsa.PPC64LE.Gen.init_verified, Proof.Dsa.PPC64LE.Gen.init_noResidue _ _⟩
+  ⟨Proof.Dsa.PPC64LE.Gen.init_verified, Proof.Dsa.PPC64LE.Gen.init_noResidue _ _,
+    PPC64LE.Scrub.retAbi_of_endsLi (by decide)⟩
 
 end VG.Proof.Dsa.PPC64LE.Scrub
