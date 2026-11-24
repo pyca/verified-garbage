@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Aes.X86.ExpandKey
-public import VerifiedGarbage.Impl.Aes.X86.Blocks
+public import VerifiedGarbage.Impl.Aes.X86.Sse
 public import VerifiedGarbage.Impl.Aes.X86.AesNiBlocks
 
 /-! AES implementations that generic x86 callers select by symbol and code. -/
@@ -21,12 +21,12 @@ structure Blocks where
   code : Prog isa
 /-- AES counter mode from `src` (argument 3) to `dst` (argument 6), which
 in-place callers give the same. -/
-def Ctr32.scalar : Ctr32 := ⟨"vg_aes_ctr32_to", ctr32To⟩
+def Ctr32.scalar : Ctr32 := ⟨"vg_aes_ctr32_to", Sse.ctr32To⟩
 def Ctr32.aesni : Ctr32 := ⟨"vg_aes_ctr32_to_aesni", AesNi.ctr32To⟩
 def ExpandKey.scalar : ExpandKey := ⟨"vg_aes_expand_key_scratch", expandKey⟩
 def ExpandKey.aesni : ExpandKey := ⟨"vg_aes_expand_key_scratch_aesni", AesNi.expandKey⟩
-def Blocks.encScalar : Blocks := ⟨"vg_aes_encrypt_blocks", encryptBlocks⟩
-def Blocks.decScalar : Blocks := ⟨"vg_aes_decrypt_blocks", decryptBlocks⟩
+def Blocks.encScalar : Blocks := ⟨"vg_aes_encrypt_blocks", Sse.encryptBlocks⟩
+def Blocks.decScalar : Blocks := ⟨"vg_aes_decrypt_blocks", Sse.decryptBlocks⟩
 def Blocks.encAesni : Blocks := ⟨"vg_aes_encrypt_blocks_aesni", AesNi.encryptBlocks⟩
 def Blocks.decAesni : Blocks := ⟨"vg_aes_decrypt_blocks_aesni", AesNi.decryptBlocks⟩
 end VG.Impl.Aes.X86
