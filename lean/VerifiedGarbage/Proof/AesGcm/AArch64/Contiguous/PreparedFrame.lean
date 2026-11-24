@@ -347,8 +347,7 @@ theorem body_rel {wn : Nat} {W : Addr} {a b : State} (v : GcmImpl) (g : GhashWit
   rw [← nr,← n,← q0,← q6,← q7,← pp] at y
   rw [← n,← q7,← pp] at ey
   have x28 := (ft.x28.trans (e.x28.trans (stk 1 (by decide)))).trans (fw.x28.trans f.x28).symm
-  have al (o : State) : (Aad o).length < 2^64 := by rw [Aad,length_bytesAt]; exact (o.gpr .x5).isLt
-  exact record_rel v g fused gh mk ca.lay x y ex ey (ft.env.sp.trans (sp.trans fw.env.sp.symm)) x28 (al a) (al b) hn hv
+  exact record_rel v g fused gh ca.lay x y ex ey (ft.env.sp.trans (sp.trans fw.env.sp.symm)) x28 hn hv
 
 theorem frame_rel {a b : State} (v : GcmImpl) (g : GhashWithImpl) (fused : Bool)
     (gh : Gh8Ok) (mk : MulKey) (ca : Caller a) (cb : Caller b) (pa : Powers a) (pb : Powers b)

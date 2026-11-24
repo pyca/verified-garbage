@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Gcm.AArch64.Forward
+public import VerifiedGarbage.Impl.AesGcm.AArch64.Contiguous.Tag
 public import VerifiedGarbage.Impl.AesGcm.AArch64.Contiguous.Bounded
 
 /-! The public-length specializations for a 12-byte nonce and at most one
@@ -10,7 +11,7 @@ block of AAD. The two-pointer counter and stitched loops admit either layout. -/
 namespace VG.Impl.AesGcm.AArch64.Contiguous
 
 open VG.AArch64
-open Fast (front hReload padMulT lensTag)
+open Fast (front hReload padMulT)
 open VG.Impl.Gcm.AArch64.Pmull (loadRev Y)
 
 /-- The incoming stack words are length, tag and powers; the frame adds the
@@ -51,8 +52,7 @@ def preparedBody (c : Callees) (gh : Fn) (fused forward : Bool) : Prog isa :=
   .seq (.block (remainder fused)) <| .seq (DirectGather.aligned c) <|
   .seq (.block (authRemainder fused)) <| .seq (Fast.pwSel c 16 gh) <|
   .seq (.block (hReload ++ loadRev Y .x20 16 ++ [mov .x13 .x24,mov .x12 .x23])) <|
-  .seq padMulT <| .seq (.block lensTag) <| .seq (ctrCall c) <|
-  .seq (.block tagOut) (.block restore)
+  .seq padMulT <| .seq (VG.Impl.Gcm.AArch64.Stitch.byRounds Tag.finish) (.block restore)
 
 def preparedFrame (v : Calls) (gh : Fn) (fused : Bool) : Prog isa :=
   Impl.StackScratch.AArch64.withStackArgScratch (v.pwWn+32) 3 (preparedBody v.callees gh fused (!v.stitch))

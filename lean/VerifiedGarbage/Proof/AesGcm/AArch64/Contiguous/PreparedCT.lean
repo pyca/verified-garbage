@@ -21,30 +21,6 @@ open VG.Proof.AesGcm.AArch64 (Eq2 TT rel_seq rel_taint)
 open VG.Proof.Gcm.AArch64.Pmull (MulKey)
 open VG.Spec.Gcm (Block)
 
-theorem final_rel {wn R n j : Nat} {Ctx W SP O Tg : Addr} {a b : State} {H H' : Block} {al bl : Nat}
-    (v : GcmImpl) (mk : MulKey) (L : Lay wn Ctx (word W 16) W)
-    (ea : Env wn Ctx (word W 16) W SP a) (eb : Env wn Ctx (word W 16) W SP b)
-    (da : DataOk wn (word W 16) W a O n) (db : DataOk wn (word W 16) W b O n)
-    (ka : Fast.KeyAt H a.mem W) (kb : Fast.KeyAt H' b.mem W)
-    (hj : j ≤ n) (hl : n-j <16) (ha : al < 2^64) (hb : bl < 2^64)
-    (aa : a.mem.readW (word W alenO) 64 = BitVec.ofNat 64 al) (ab : b.mem.readW (word W alenO) 64 = BitVec.ofNat 64 bl)
-    (ra : a.gpr .x22 = BitVec.ofNat 64 R) (rb : b.gpr .x22 = BitVec.ofNat 64 R) (rounds : R=10 ∨ R=12 ∨ R=14)
-    (pa : a.gpr .x23 = word O j) (pb : b.gpr .x23 = word O j)
-    (la : a.gpr .x24 = BitVec.ofNat 64 (n-j)) (lb : b.gpr .x24 = BitVec.ofNat 64 (n-j))
-    (na : a.gpr .x26 = BitVec.ofNat 64 n) (nb : b.gpr .x26 = BitVec.ofNat 64 n)
-    (ta : a.gpr .x28 = Tg) (tb : b.gpr .x28 = Tg) (hv : v.ctr.scratch ≤ wn-512) :
-    RelCT isa (Eq2 a b) (finalPart v.callees) TT := by
-  refine rel_seq (rel_taint [.x19,.x20,.x21,.x23,.x24,.x26] (ea.sp.trans eb.sp.symm)
-    (by agree_tac [ea.x19,eb.x19,ea.x20,eb.x20,ea.x21,eb.x21,pa,pb,la,lb,na,nb]) ⟨_,by taint_decide⟩)
-    (finish_ok mk L ea da ka hj hl ha aa ra rounds pa la na)
-    (finish_ok mk L eb db kb hj hl hb ab rb rounds pb lb nb) ?_
-  intro u z ⟨_,_,uk,up,_⟩ ⟨_,_,zk,zp,_⟩
-  refine rel_seq (rel_ctrLe v.ctr hv up.call zp.call (up.env.sp.trans zp.env.sp.symm))
-    (tagCall_ok L v (.inl rfl) up hv) (tagCall_ok L v (.inl rfl) zp hv) ?_
-  intro t w ht hw
-  exact rel_taint [.x19,.x28] (ht.env.sp.trans hw.env.sp.symm)
-    (by agree_tac [ht.env.x19,hw.env.x19,ht.kept .x28 (by decide),hw.kept .x28 (by decide),uk,zk,ta,tb]) ⟨_,by taint_decide⟩
-
 theorem auth_rel {wn n : Nat} {Ctx St W SP O P : Addr} {a b : State}
     (v : GcmImpl) (g : GhashWithImpl) (fused : Bool) (L : Lay wn Ctx St W)
     (ea : Env wn Ctx St W SP a) (eb : Env wn Ctx St W SP b)
@@ -115,18 +91,18 @@ theorem enc_rel {wn R n : Nat} {Ctx W D O P : Addr} {a b : State} {aa ai ba bi :
   exact DirectGather.Generic.aligned_rel L v (build x f fs) (sp ▸ build y h ht) (done_mod ..) hv
 
 theorem record_rel {wn R n : Nat} {Ctx W D O P : Addr} {a b : State} {aa ai ba bi : List Byte}
-    (v : GcmImpl) (g : GhashWithImpl) (fused : Bool) (gh : Proof.Gcm.AArch64.Stitch.Gh8Ok) (mk : MulKey)
+    (v : GcmImpl) (g : GhashWithImpl) (fused : Bool) (gh : Proof.Gcm.AArch64.Stitch.Gh8Ok)
     (L : Lay wn Ctx (word W 16) W)
     (x : Ready wn R n Ctx W D O P aa ai a) (y : Ready wn R n Ctx W D O P ba bi b)
     (ext : External wn n W O P a) (ext' : External wn n W O P b)
-    (sp : a.sp = b.sp) (tag : a.gpr .x28 = b.gpr .x28) (hla : aa.length < 2^64) (hlb : ba.length < 2^64)
+    (sp : a.sp = b.sp) (tag : a.gpr .x28 = b.gpr .x28)
     (hn : fused = true → 128 ≤ n) (hv : v.ctr.scratch ≤ wn-512) :
     RelCT isa (Eq2 a b) (.seq (if fused then batches (!v.stitch) else .block []) <| .seq (.block (remainder fused)) <|
       .seq (Impl.AesGcm.AArch64.DirectGather.aligned v.callees) <| .seq (.block (authRemainder fused)) <|
       .seq (Impl.AesGcm.AArch64.Fast.pwSel v.callees 16 g.fn) <|
       .seq (.block (Impl.AesGcm.AArch64.Fast.hReload ++ Impl.Gcm.AArch64.Pmull.loadRev Impl.Gcm.AArch64.Pmull.Y .x20 16 ++
         [mov .x13 .x24,mov .x12 .x23])) <| .seq Impl.AesGcm.AArch64.Fast.padMulT <|
-      .seq (.block Impl.AesGcm.AArch64.Fast.lensTag) <| .seq (ctrCall v.callees) <| .seq (.block tagOut) (.block restore)) TT := by
+      .seq (Impl.Gcm.AArch64.Stitch.byRounds Impl.AesGcm.AArch64.Contiguous.Tag.finish) (.block restore)) TT := by
   apply Fast.RelCT.seq_assoc3
   refine rel_seq (enc_rel v fused gh L x y sp hn hv) (encPart_ok v fused gh L x hn hv)
     (encPart_ok v fused gh L y hn hv) ?_
@@ -137,16 +113,11 @@ theorem record_rel {wn R n : Nat} {Ctx W D O P : Addr} {a b : State} {aa ai ba b
   refine rel_seq (auth_rel v g fused L f.env (sp ▸ h.env) (x.dst.ok.of_eq f.rd f.wr) (y.dst.ok.of_eq h.rd h.wr)
     f.x27 h.x27 nu nw pu pw su sw ru rw') (authenticate_ok v g fused L x ext f) (authenticate_ok v g fused L y ext' h) ?_
   intro i j m k
-  have inputs {a t : State} {aad nonce : List Byte} {z : Nat} (q : Ready wn R n Ctx W D O P aad nonce a)
-      (h : Auth wn R n z Ctx W D O aad nonce a t) :
-      Fast.KeyAt (Spec.Gcm.ctxH a.mem Ctx) t.mem W ∧ t.mem.readW (word W alenO) 64 = BitVec.ofNat 64 aad.length :=
-    ⟨q.key.frame h.frame (writes_slot L (by decide) (by decide) q.dst.ok),
-      (h.frame.readW (r := slotR W alenO) (Region.contains_self _ _) (writes_slot L (by decide) (by decide) q.dst.ok) (by decide)).trans q.aadSlot⟩
-  obtain ⟨ki,li⟩ := inputs x m
-  obtain ⟨kj,lj⟩ := inputs y k
-  apply Fast.RelCT.seq_assoc3
-  exact final_rel v mk L m.env (sp ▸ k.env) (x.dst.ok.of_eq m.rd m.wr) (y.dst.ok.of_eq k.rd k.wr)
-    ki kj m.bound m.last hla hlb li lj (m.x22.trans x.x22) (k.x22.trans y.x22) x.rates m.x23 k.x23 m.x24 k.x24 m.x26 k.x26
-    m.x28 (k.x28.trans tag.symm) hv
+  have eq22 := (m.x22.trans x.x22).trans (k.x22.trans y.x22).symm
+  have eq28 := m.x28.trans (tag.trans k.x28.symm)
+  exact rel_taint [.x19,.x20,.x21,.x22,.x23,.x24,.x26,.x28]
+    (m.env.sp.trans (sp.trans k.env.sp.symm))
+    (by agree_tac [m.env.x19,k.env.x19,m.env.x20,k.env.x20,m.env.x21,k.env.x21,eq22,m.x23,k.x23,
+      m.x24,k.x24,m.x26,k.x26,eq28]) ⟨_,by taint_decide⟩
 
 end VG.Proof.AesGcm.AArch64.Contiguous.Prepared

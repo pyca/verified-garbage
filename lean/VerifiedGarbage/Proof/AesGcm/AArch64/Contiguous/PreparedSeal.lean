@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Contiguous.Finish
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.AesGcm.ScratchPowers8
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Contiguous.TagReturn
 import VerifiedGarbage.Proof.Cmac.Spec
 import VerifiedGarbage.Proof.Gcm.Compose
 
@@ -382,8 +383,8 @@ open VG.Spec.Aes (bytesAt)
 open VG.Proof.Gcm.AArch64.Pmull (MulKey)
 open VG.Proof.Gcm.AArch64.Stitch (Gh8Ok)
 
-abbrev finalPart (c : Callees) : Prog isa :=
-  .seq finishProgram (.seq (ctrCall c) (.seq (.block tagOut) (.block restore)))
+abbrev finalPart : Prog isa :=
+  .seq finishProgram (.seq (Impl.Gcm.AArch64.Stitch.byRounds Impl.AesGcm.AArch64.Contiguous.Tag.finish) (.block restore))
 
 abbrev recordWrites (wn : Nat) (W O Tg : Addr) (n : Nat) : List Region := [workR wn W,⟨O,n⟩,⟨Tg,16⟩]
 
@@ -395,12 +396,12 @@ theorem ws_work {wn : Nat} {W : Addr} (lim : 768 ≤ wn) : ∀ r ∈ Fast.wsR wn
   · exact Lay.wSub (by omega)
 
 theorem finalPart_ok {wn R n j : Nat} {Ctx W D O P Tg : Addr} {s t o : State} {aad nonce : List Byte}
-    (v : GcmImpl) (mk : MulKey) (L : Lay wn Ctx (word W 16) W)
+    (mk : MulKey) (L : Lay wn Ctx (word W 16) W)
     (q : Ready wn R n Ctx W D O P aad nonce s) (h : Auth wn R n j Ctx W D O aad nonce s t)
-    (ha : aad.length < 2^64) (hv : v.ctr.scratch ≤ wn-512) (sv : SavedAt s.mem W o) (sp : s.sp = o.sp)
+    (ha : aad.length < 2^64) (sv : SavedAt s.mem W o) (sp : s.sp = o.sp)
     (tag : Covers [⟨Tg,16⟩] s.wr) (x28 : s.gpr .x28 = Tg)
     (tw : (⟨Tg,16⟩ : Region).Disjoint (workR wn W)) (ot : (⟨O,n⟩ : Region).Disjoint ⟨Tg,16⟩) :
-    WP isa (finalPart v.callees) t fun z => GprAbi o z ∧ Frame (recordWrites wn W O Tg n) s.mem z.mem ∧
+    WP isa finalPart t fun z => GprAbi o z ∧ Frame (recordWrites wn W O Tg n) s.mem z.mem ∧
       Spec.Gcm.encryptWith (ciphOf s.mem Ctx R) (ctxH s.mem Ctx) 16 nonce (bytesAt s.mem D n) aad =
         (bytesAt z.mem O n,bytesAt z.mem Tg 16) := by
   have lim := L.hWn
@@ -411,19 +412,28 @@ theorem finalPart_ok {wn R n j : Nat} {Ctx W D O P Tg : Addr} {s t o : State} {a
   have j0 := (blockAt_frame h.frame (writes_j0 L q.dst.ok)).trans q.j
   have ct := h.out
   rw [← Proof.Gcm.gctr_eq] at ct
-  refine WP.seq ((WP.with_rdwr (finish_ok mk L h.env (q.dst.ok.of_eq h.rd h.wr) key h.bound h.last ha al
-    (h.x22.trans q.x22) q.rates h.x23 h.x24 h.x26)).mono ?_)
-  intro u ⟨⟨k,m,x28k,post,fm⟩,_,wr⟩
-  rw [h.hash,j0] at post
-  have sv' := saved.frame fm (Fast.saved_wsR lim)
-  have post' := sp ▸ post
-  refine (return_ok v L post' hv (by rw [wr,h.wr]; exact tag) (x28k.trans (h.x28.trans x28)) sv' tw).mono ?_
+  refine WP.seq ((WP.with_rdwr (finish_ok mk h.env (q.dst.ok.of_eq h.rd h.wr) key h.bound h.last
+    h.x23 h.x24 h.x26)).mono ?_)
+  intro u ⟨⟨y,uk,ue,u22,u26,u28,fu⟩,_,wr⟩
+  have fm : Frame (Fast.wsR wn W) t.mem u.mem := fu.sub fun r hr => by
+    have eq := List.mem_singleton.mp hr; subst r; exact Fast.sub_low (by decide)
+  have ual := (fu.readW (r := slotR W alenO) (Region.contains_self _ _) (by
+    intro r hr; have eq := List.mem_singleton.mp hr; subst r
+    exact Offset.disjoint W (.inr (by decide)) (by decide) (by decide)) (by decide)).trans al
+  have uj : blockAt u.mem (word W 16) = Spec.Gcm.j0 (ctxH s.mem Ctx) nonce :=
+    (blockAt_frame fu (fun r hr => by have eq := List.mem_singleton.mp hr; subst r
+                                      exact st0_w L ⟨by decide,by omega⟩)).trans j0
+  rw [h.hash] at y
+  refine (Tag.return_ok mk (sp ▸ ue) uk y q.rates (u22.trans (h.x22.trans q.x22)) u26 q.src.lt ual ha
+    (saved.frame fm (Fast.saved_wsR lim)) (by rw [wr,h.wr]; exact tag)
+    (u28.trans (h.x28.trans x28)) tw).mono ?_
   intro z ⟨hout,abi,fz⟩
+  rw [uj] at hout
   have ow : ∀ r ∈ Fast.wsR wn W, (⟨O,n⟩ : Region).Disjoint r := fun r hr => q.dst.ok.w.sub_right (ws_work lim.1 r hr)
-  have cz : ciphOf m Ctx R = ciphOf s.mem Ctx R := (ciph_frame fm (fun r hr => L.cw'.sub_right (ws_work lim.1 r hr))
+  have cz : ciphOf u.mem Ctx R = ciphOf s.mem Ctx R := (ciph_frame fm (fun r hr => L.cw'.sub_right (ws_work lim.1 r hr))
     q.rates).trans (ciph_frame h.frame (writes_ctx L q.dst) q.rates)
   have oz : bytesAt z.mem O n = bytesAt t.mem O n := (bytesAt_frame fz (fun r hr => by
-    rcases List.mem_cons.mp hr with rfl|mem; exact ot; exact ow _ mem) (Nat.le_of_lt q.src.lt)).trans
+    have eq := List.mem_singleton.mp hr; subst r; exact ot) (Nat.le_of_lt q.src.lt)).trans
     (bytesAt_frame fm ow (Nat.le_of_lt q.src.lt))
   have fw : Frame (recordWrites wn W O Tg n) s.mem z.mem := by
     refine (h.frame.sub fun r hr => ?_).trans ((fm.sub fun r hr => ⟨_,List.mem_cons_self ..,ws_work lim.1 r hr⟩).trans
@@ -433,15 +443,13 @@ theorem finalPart_ok {wn R n j : Nat} {Ctx W D O P Tg : Addr} {s t o : State} {a
       · exact ⟨_,List.mem_cons_self ..,by unfold word; rw [add_ofNat_assoc]; exact Lay.wSub (by omega)⟩
       · exact ⟨_,List.mem_cons_self ..,Lay.wSub (by omega)⟩
       · exact ⟨_,by simp [recordWrites],fun _ hr => hr⟩
-    · rcases List.mem_cons.mp hr with rfl|mem
-      · exact ⟨_,by simp,fun _ hr => hr⟩
-      · exact ⟨_,List.mem_cons_self ..,ws_work lim.1 r mem⟩
+    · have eq := List.mem_singleton.mp hr; subst r; exact ⟨_,by simp,fun _ hr => hr⟩
   refine ⟨abi,fw,?_⟩
   rw [Spec.Gcm.encryptWith,← ct,Proof.Gcm.fullTag_eq,length_bytesAt,oz,hout,cz,List.take_of_length_le (by rw [Proof.Cmac.toBytes_length])]
   rfl
 
 abbrev afterFront (c : Callees) (gh : Fn) (fused forward : Bool) : Prog isa :=
-  .seq (encPart c fused forward) (.seq (.seq (.block (authRemainder fused)) (Impl.AesGcm.AArch64.Fast.pwSel c 16 gh)) (finalPart c))
+  .seq (encPart c fused forward) (.seq (.seq (.block (authRemainder fused)) (Impl.AesGcm.AArch64.Fast.pwSel c 16 gh)) finalPart)
 
 theorem afterFront_ok {wn R n : Nat} {Ctx W D O P Tg : Addr} {s o : State} {aad nonce : List Byte}
     (v : GcmImpl) (g : GhashWithImpl) (fused : Bool) (gh : Gh8Ok) (mk : MulKey) (L : Lay wn Ctx (word W 16) W)
@@ -455,6 +463,6 @@ theorem afterFront_ok {wn R n : Nat} {Ctx W D O P Tg : Addr} {s o : State} {aad 
   refine WP.seq ((encPart_ok v fused gh L q hn hv).mono ?_)
   intro t txt
   exact WP.seq ((authenticate_ok v g fused L q ext txt).mono fun u h =>
-    finalPart_ok v mk L q h ha hv sv sp tag x28 tw ot)
+    finalPart_ok mk L q h ha sv sp tag x28 tw ot)
 
 end VG.Proof.AesGcm.AArch64.Contiguous.Prepared
