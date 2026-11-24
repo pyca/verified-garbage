@@ -9,22 +9,13 @@ public import VerifiedGarbage.TCB.X86.Isa
 `vg_md5_compress(state, blocks, n, scratch)`, cdecl: the arguments are at
 `[esp + 4]`, `[esp + 8]`, `[esp + 12]` and `[esp + 16]`.
 
-The same structure as the x86-64 implementation, and the same schedule of
-each operation:
+The same structure as the x86-64 implementation:
 * The MD buffer `A, B, C, D` lives in `eax`, `ebx`, `ecx`, `edx`; the fully
   unrolled operations rename them: in operation `t`, word `k` of the
   specification's `(a, b, c, d)` is in `var t k`.
 * Each word `X[k]` is added straight from the block (a little-endian 32-bit
   load), so there is no message schedule to keep.
-* Each operation is scheduled for latency: `b` is the word the previous
-  operation computed, so everything that does not depend on it is computed
-  first. `a + X[k] + T[t+1]` is added before the auxiliary function, and so
-  are the terms of the auxiliary functions that do not depend on `b`: `G`
-  is added as `(¬d ∧ c) + (d ∧ b)` (the two terms have no bit in common),
-  and `F` and `H` start with `c ⊕ d`. On the path from one operation's `b`
-  to the next's are two instructions of `F` and `I` and one of `G` and
-  `H`, then the addition into `a`, the rotation and the addition of `b`.
-* `edi` holds the auxiliary function's terms, `esi` points to the current
+* `edi` holds the auxiliary function's value, `esi` points to the current
   block and `ebp` counts the blocks left; the state pointer is read from its
   argument slot into `edi` when the MD buffer is loaded and updated.
 * `ebx`, `esi`, `edi` and `ebp` are saved in `scratch[0..16)` and restored
@@ -51,29 +42,30 @@ def T0 : Reg := .edi
 
 def at_ (b : Reg) (d : Nat) : MemOp := { base := b, disp := d }
 
-/-- `a := a + fn(b, c, d)`, the auxiliary function of round `r`, using `T0`:
-`F = ((c ⊕ d) ∧ b) ⊕ d`, `G = (¬d ∧ c) + (d ∧ b)`, `H = (c ⊕ d) ⊕ b` and
-`I = (¬d ∨ b) ⊕ c`, each with the instructions not depending on `b` first. -/
-def fn (r : Nat) (a b c d : Reg) : List Instr :=
+/-- `T0 := fn(b, c, d)`, the auxiliary function of round `r`, as
+`F = ((c ⊕ d) ∧ b) ⊕ d`, `G = ((b ⊕ c) ∧ d) ⊕ c`, `H = (b ⊕ c) ⊕ d` and
+`I = ((d ⊕ 0xffffffff) ∨ b) ⊕ c`. -/
+def fn (r : Nat) (b c d : Reg) : List Instr :=
   match r with
-  | 0 => [.mov T0 (.reg c), .alu .xor T0 (.reg d), .alu .and T0 (.reg b), .alu .xor T0 (.reg d),
-      .alu .add a (.reg T0)]
-  | 1 => [.mov T0 (.reg d), .alu .xor T0 (.imm 0xffffffff), .alu .and T0 (.reg c),
-      .alu .add a (.reg T0), .mov T0 (.reg d), .alu .and T0 (.reg b), .alu .add a (.reg T0)]
-  | 2 => [.mov T0 (.reg c), .alu .xor T0 (.reg d), .alu .xor T0 (.reg b), .alu .add a (.reg T0)]
-  | _ => [.mov T0 (.reg d), .alu .xor T0 (.imm 0xffffffff), .alu .or T0 (.reg b),
-      .alu .xor T0 (.reg c), .alu .add a (.reg T0)]
+  | 0 => [.mov T0 (.reg c), .alu .xor T0 (.reg d), .alu .and T0 (.reg b), .alu .xor T0 (.reg d)]
+  | 1 => [.mov T0 (.reg b), .alu .xor T0 (.reg c), .alu .and T0 (.reg d), .alu .xor T0 (.reg c)]
+  | 2 => [.mov T0 (.reg b), .alu .xor T0 (.reg c), .alu .xor T0 (.reg d)]
+  | _ => [.mov T0 (.reg d), .alu .xor T0 (.imm 0xffffffff), .alu .or T0 (.reg b), .alu .xor T0 (.reg c)]
 
 /-- The rotation amount `s` of operation `t`. -/
 def rot (t : Nat) : Nat := (ss.getD (t / 16) []).getD (t % 4) 0
 
-/-- Operation `t`: `a := b + ((a + X[k] + T[t+1] + fn(b,c,d)) <<< s)`, the
-rotation as a right rotation by `32 - s`. -/
+/-- Operation `t`: `a := b + ((a + fn(b,c,d) + X[k] + T[t+1]) <<< s)`, the
+rotation as a right rotation by `32 - s`. The additions are in the order of
+the specification. -/
 def step (t : Nat) : List Instr :=
   let a := var t 0; let b := var t 1; let c := var t 2; let d := var t 3
-  ([.alu .add a (.mem (at_ .esi (4 * ks.getD t 0))), .alu .add a (.imm (Ts.getD t 0))] : List Instr) ++
-  fn (t / 16) a b c d ++
-  ([.shift .ror a (32 - rot t), .alu .add a (.reg b)] : List Instr)
+  fn (t / 16) b c d ++ ([
+    .alu .add a (.reg T0),
+    .alu .add a (.mem (at_ .esi (4 * ks.getD t 0))),
+    .alu .add a (.imm (Ts.getD t 0)),
+    .shift .ror a (32 - rot t),
+    .alu .add a (.reg b)] : List Instr)
 
 /-- Operations `0 … n-1`. -/
 def steps : Nat → Prog isa

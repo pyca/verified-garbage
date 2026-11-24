@@ -26,11 +26,9 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 /-!
 # MD5 compression function on x86 (32-bit): the 64 operations
 
-Each operation is the additions of the word and the constant (`head_ok`),
-the auxiliary function of its round added to them, symbolically executed
-once per round (`fn_ok`), and the rotation and the addition of `b`
-(`tail_ok`), the first and the last symbolically executed once for all
-operations.
+Each operation is the auxiliary function of its round, symbolically executed
+once per round (`fn_ok`), followed by the additions and the rotation,
+symbolically executed once for all operations (`tail_ok`).
 -/
 
 @[expose] public section
@@ -78,72 +76,55 @@ theorem var_ne (t : Nat) {i j : Nat} (hi : i < 4) (hj : j < 4) (h : i ≠ j) : v
 
 /-! ## The auxiliary functions -/
 
-theorem fn_ok (r : Nat) (hr : r < 4) (a b c d : Reg) (ha : a ≠ T0) (hb : b ≠ T0) (hc : c ≠ T0)
-    (hd : d ≠ T0) (hab : a ≠ b) (hac : a ≠ c) (had : a ≠ d)
-    (s : State) (va vb vc vd : Word) (h₀ : s.gpr a = va) (h₁ : s.gpr b = vb) (h₂ : s.gpr c = vc)
-    (h₃ : s.gpr d = vd) :
-    WP isa (.block (fn r a b c d)) s fun s' =>
-      s'.gpr a = va + roundFn r vb vc vd ∧
-      (∀ x, x ≠ a → x ≠ T0 → s'.gpr x = s.gpr x) ∧
+theorem fn_ok (r : Nat) (hr : r < 4) (b c d : Reg) (hb : b ≠ T0) (hc : c ≠ T0) (hd : d ≠ T0)
+    (s : State) (vb vc vd : Word) (h₁ : s.gpr b = vb) (h₂ : s.gpr c = vc) (h₃ : s.gpr d = vd) :
+    WP isa (.block (fn r b c d)) s fun s' =>
+      s'.gpr T0 = roundFn r vb vc vd ∧ (∀ x, x ≠ T0 → s'.gpr x = s.gpr x) ∧
       s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
-  have hba : b ≠ a := fun h => hab h.symm
-  have hca : c ≠ a := fun h => hac h.symm
-  have hda : d ≠ a := fun h => had h.symm
-  simp only [T0] at ha hb hc hd ⊢
+  simp only [T0] at hb hc hd ⊢
   apply WP.of_runBlock
   rcases (by omega_arith : r = 0 ∨ r = 1 ∨ r = 2 ∨ r = 3) with rfl | rfl | rfl | rfl <;>
   simp only [↓reduceIte, and_self, fn, T0, runBlock_cons, runStep_some,
     runBlock_nil, exec, execAlu, readSrc,
-    isa, RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg, RegUpd.gpr_arithFlags, RegUpd.mem_arithFlags, RegUpd.rd_arithFlags, RegUpd.wr_arithFlags, ha, hb, hc, hd,
-    hba, hda, h₀, h₁, h₂, h₃, Option.bind_some, Option.map_some, Option.some.injEq, exists_eq_left'] <;>
-  refine ⟨?_, fun x hx hx' => by simp [hx, hx'], trivial⟩
+    isa, RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg, RegUpd.gpr_arithFlags, RegUpd.mem_arithFlags, RegUpd.rd_arithFlags, RegUpd.wr_arithFlags, hb, hc, hd,
+    h₁, h₂, h₃, Option.bind_some, Option.map_some, Option.some.injEq, exists_eq_left'] <;>
+  refine ⟨?_, fun x hx => by simp [hx], trivial⟩
   · rw [show roundFn 0 = F from rfl, F_eq]
-  · rw [show roundFn 1 = G from rfl, G_add, BitVec.add_assoc]
-  · rw [show roundFn 2 = H from rfl, H_eq']
+  · rw [show roundFn 1 = G from rfl, G_eq]
+  · rfl
   · rw [show roundFn 3 = I from rfl, I_eq]
 
 /-! ## The rest of an operation -/
 
-/-- The instructions of an operation before the auxiliary function. -/
-def headI (a : Reg) (k : Nat) (T : Word) : List Instr := [
-  .alu .add a (.mem (at_ .esi (4 * k))),
-  .alu .add a (.imm T)]
-
 /-- The instructions of an operation after the auxiliary function. -/
-def tailI (a b : Reg) (n : Nat) : List Instr := [
+def tailI (a b : Reg) (k : Nat) (T : Word) (n : Nat) : List Instr := [
+  .alu .add a (.reg T0),
+  .alu .add a (.mem (at_ .esi (4 * k))),
+  .alu .add a (.imm T),
   .shift .ror a n,
   .alu .add a (.reg b)]
 
 theorem step_split (t : Nat) :
-    step t = headI (var t 0) (ks.getD t 0) (Ts.getD t 0) ++
-      (fn (t / 16) (var t 0) (var t 1) (var t 2) (var t 3) ++
-      tailI (var t 0) (var t 1) (32 - Proof.Md5.rot t)) := by
-  simp only [step, headI, tailI, List.append_assoc]; rfl
+    step t = fn (t / 16) (var t 1) (var t 2) (var t 3) ++
+      tailI (var t 0) (var t 1) (ks.getD t 0) (Ts.getD t 0) (32 - Proof.Md5.rot t) := rfl
 
-theorem head_ok (a : Reg) (k : Nat) (T : Word) (s : State) (va x : Word) (bp : BitVec 32)
-    (h₁ : s.gpr a = va) (hesi : s.gpr .esi = bp) (hin : InRegions (s.rd ++ s.wr) (addr bp (4 * k)) 4)
+theorem tail_ok (a b : Reg) (k : Nat) (T : Word) (n : Nat) (hn₁ : 1 ≤ n) (hn₂ : n ≤ 31)
+    (hab : a ≠ b) (hsi : a ≠ .esi) (s : State) (va vb f x : Word) (bp : BitVec 32)
+    (h₁ : s.gpr a = va) (h₂ : s.gpr b = vb) (h₃ : s.gpr T0 = f)
+    (hesi : s.gpr .esi = bp) (hin : InRegions (s.rd ++ s.wr) (addr bp (4 * k)) 4)
     (hx : s.mem.readW (addr bp (4 * k)) 32 = x) :
-    WP isa (.block (headI a k T)) s fun s' =>
-      s'.gpr a = va + x + T ∧
+    WP isa (.block (tailI a b k T n)) s fun s' =>
+      s'.gpr a = (va + f + x + T).rotateRight n + vb ∧
       (∀ r, r ≠ a → s'.gpr r = s.gpr r) ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
-  apply WP.of_runBlock
-  simp only [↓reduceIte, Nat.reducePow, and_self, headI, runBlock_cons, runStep_some,
-    runBlock_nil, exec, execAlu, readSrc, ea_mk, State.load32, at_,
-    isa, RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg, RegUpd.gpr_arithFlags, RegUpd.mem_arithFlags, RegUpd.rd_arithFlags, RegUpd.wr_arithFlags,
-    h₁, hesi, hin, hx, Option.bind_some, Option.some.injEq, exists_eq_left']
-  exact ⟨trivial, fun r hr => by simp [hr], trivial⟩
-
-theorem tail_ok (a b : Reg) (n : Nat) (hn₁ : 1 ≤ n) (hn₂ : n ≤ 31) (hab : a ≠ b)
-    (s : State) (va vb : Word) (h₁ : s.gpr a = va) (h₂ : s.gpr b = vb) :
-    WP isa (.block (tailI a b n)) s fun s' =>
-      s'.gpr a = va.rotateRight n + vb ∧
-      (∀ r, r ≠ a → s'.gpr r = s.gpr r) ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
+  have hsi' : Reg.esi ≠ a := fun h => hsi h.symm
   have hba : b ≠ a := fun h => hab h.symm
+  simp only [T0] at h₃
   apply WP.of_runBlock
-  simp only [↓reduceIte, Nat.reducePow, tailI, runBlock_cons, runStep_some,
-    runBlock_nil, exec, execAlu, execShift, readSrc,
-    isa, RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg, RegUpd.gpr_arithFlags, RegUpd.mem_arithFlags, RegUpd.rd_arithFlags, RegUpd.wr_arithFlags, RegUpd.gpr_setFlags, RegUpd.mem_setFlags, RegUpd.rd_setFlags, RegUpd.wr_setFlags, hba,
-    hn₁, hn₂, and_self, h₁, h₂, Option.bind_some, Option.some.injEq, exists_eq_left']
+  simp only [↓reduceIte, Nat.reducePow, tailI, T0, runBlock_cons, runStep_some,
+    runBlock_nil, exec, execAlu, execShift, readSrc, ea_mk, State.load32, at_,
+    isa, RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg, RegUpd.zf_setReg, RegUpd.gpr_arithFlags, RegUpd.mem_arithFlags, RegUpd.rd_arithFlags, RegUpd.wr_arithFlags, RegUpd.zf_arithFlags, RegUpd.gpr_setFlags, RegUpd.mem_setFlags, RegUpd.rd_setFlags, RegUpd.wr_setFlags, hsi', hba,
+    hn₁, hn₂, and_self, h₁, h₂, h₃, hesi, hin, hx,
+    Option.bind_some, Option.some.injEq, exists_eq_left']
   exact ⟨trivial, fun r hr => by simp [hr], trivial⟩
 
 /-! ## One operation -/
@@ -160,34 +141,28 @@ theorem step_ok (t : Nat) (ht : t < 64) (s : State) (v : HashValue) (X : Block) 
   obtain ⟨h0, h1, h2, h3⟩ := hv
   have hk := ks_lt t ht
   have hr := rot_range t ht
-  have n01 := var_ne t (i := 0) (j := 1) (by omega_arith) (by omega_arith) (by omega_arith)
-  have n02 := var_ne t (i := 0) (j := 2) (by omega_arith) (by omega_arith) (by omega_arith)
-  have n03 := var_ne t (i := 0) (j := 3) (by omega_arith) (by omega_arith) (by omega_arith)
   rw [step_split, WP.block_append_iff]
-  refine WP.mono (head_ok (var t 0) (ks.getD t 0) (Ts.getD t 0) s v[0]
-    (X ⟨ks.getD t 0, hk⟩) bp h0 hesi (hin _ hk) (hX _ hk))
-    fun s₁ ⟨a₁, e₁, m₁, rd₁, wr₁⟩ => ?_
-  rw [WP.block_append_iff]
-  refine WP.mono (fn_ok (t / 16) (by omega_arith) _ _ _ _ (var_ne_T0 t 0) (var_ne_T0 t 1) (var_ne_T0 t 2)
-    (var_ne_T0 t 3) n01 n02 n03 s₁ _ v[1] v[2] v[3] a₁ (by rw [e₁ _ n01.symm]; exact h1)
-    (by rw [e₁ _ n02.symm]; exact h2) (by rw [e₁ _ n03.symm]; exact h3))
+  refine WP.mono (fn_ok (t / 16) (by omega_arith) _ _ _ (var_ne_T0 t 1) (var_ne_T0 t 2) (var_ne_T0 t 3) s
+    v[1] v[2] v[3] h1 h2 h3) fun s₁ ⟨f₁, e₁, m₁, rd₁, wr₁⟩ => ?_
+  have e : ∀ k, s₁.gpr (var t k) = s.gpr (var t k) := fun k => e₁ _ (var_ne_T0 t k)
+  refine WP.mono (tail_ok (var t 0) (var t 1) (ks.getD t 0) (Ts.getD t 0) (32 - rot t) (by omega_arith)
+    (by omega_arith) (var_ne t (by omega_arith) (by omega_arith) (by omega_arith))
+    (var_ne_pub t 0 (by simp [pubRegs])) s₁ v[0] v[1] (roundFn (t / 16) v[1] v[2] v[3]) (X ⟨ks.getD t 0, hk⟩) bp
+    (by rw [e]; exact h0) (by rw [e]; exact h1) f₁ (by rw [e₁ _ (by decide)]; exact hesi)
+    (by rw [rd₁, wr₁]; exact hin _ hk) (by rw [m₁]; exact hX _ hk))
     fun s₂ ⟨a₂, e₂, m₂, rd₂, wr₂⟩ => ?_
-  refine WP.mono (tail_ok (var t 0) (var t 1) (32 - rot t) (by omega_arith) (by omega_arith) n01 s₂ _ v[1] a₂
-    (by rw [e₂ _ n01.symm (var_ne_T0 t 1), e₁ _ n01.symm]; exact h1))
-    fun s₃ ⟨a₃, e₃, m₃, rd₃, wr₃⟩ => ?_
-  have g : ∀ r, r ≠ var t 0 → r ≠ T0 → s₃.gpr r = s.gpr r := fun r h h' => by
-    rw [e₃ r h, e₂ r h h', e₁ r h]
-  refine ⟨?_, by rw [m₃, m₂, m₁], by rw [rd₃, rd₂, rd₁], by rw [wr₃, wr₂, wr₁], fun r hr =>
+  have g : ∀ r, r ≠ var t 0 → r ≠ T0 → s₂.gpr r = s.gpr r := fun r h h' => by rw [e₂ r h, e₁ r h']
+  refine ⟨?_, by rw [m₂, m₁], by rw [rd₂, rd₁], by rw [wr₂, wr₁], fun r hr =>
     g r (fun h => var_ne_pub t 0 hr h.symm) (fun h => by subst h; simp [pubRegs, T0] at hr)⟩
   rw [step_eq X v ht]
   simp only [Vars, var_succ_zero, var_succ t _ (show 0 < 3 by omega_arith),
     var_succ t _ (show 1 < 3 by omega_arith), var_succ t _ (show 2 < 3 by omega_arith), stepKX,
     Vector.getElem_mk, List.getElem_toArray, List.getElem_cons_zero, List.getElem_cons_succ]
   refine ⟨?_, ?_, ?_, ?_⟩
-  · rw [g _ n03.symm (var_ne_T0 t 3), h3]
-  · rw [a₃, rotateLeft_eq _ hr.1 hr.2, BitVec.add_comm (v[1]), add_fn]
-  · rw [g _ n01.symm (var_ne_T0 t 1), h1]
-  · rw [g _ n02.symm (var_ne_T0 t 2), h2]
+  · rw [g _ (var_ne t (by omega_arith) (by omega_arith) (by omega_arith)) (var_ne_T0 t 3), h3]
+  · rw [a₂, rotateLeft_eq _ hr.1 hr.2, BitVec.add_comm (v[1])]
+  · rw [g _ (var_ne t (by omega_arith) (by omega_arith) (by omega_arith)) (var_ne_T0 t 1), h1]
+  · rw [g _ (var_ne t (by omega_arith) (by omega_arith) (by omega_arith)) (var_ne_T0 t 2), h2]
 
 /-! ## The 64 operations -/
 
