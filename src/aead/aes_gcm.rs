@@ -329,10 +329,7 @@ impl AesGcm {
         Ok(self.seal(dit, nonce, aad, data))
     }
 
-    /// `vg_aes_gcm_seal` (on little-endian POWER, `vg_aes_gcm_seal_contiguous`; on x86-64, `vg_aes_gcm_seal_prepared`; on
-    /// AArch64, `vg_aes_gcm_seal_with_powers`; on RISC-V,
-    /// `vg_aes_gcm_seal_bitsliced`) of `data` in place, whose lengths the
-    /// caller checked.
+    /// Seal `data` in place with lengths already checked by the caller.
     #[inline(always)]
     fn seal(&self, dit: crate::dit::Dit<'_>, nonce: &[u8], aad: &[u8], data: &mut [u8]) -> Block {
         #[cfg(all(target_arch = "powerpc64", target_endian = "little"))]
