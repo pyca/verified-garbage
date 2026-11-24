@@ -163,6 +163,14 @@ theorem Ctr.congr {m m' : Mem} {cb ks : Addr} {ciph : Block → Block} {icb : Bl
     (h : Ctr m cb ks ciph icb n) (hc : blockAt m' cb = blockAt m cb) (hk : blockAt m' ks = blockAt m ks) :
     Ctr m' cb ks ciph icb n := ⟨hc.trans h.1, fun h0 => hk.trans (h.2 h0)⟩
 
+def CtrUsing (next : Block → Block) (m : Mem) (cb ks : Addr) (ciph : Block → Block) (icb : Block) (n : Nat) : Prop :=
+  next (blockAt m cb) = Nat.repeat inc32 ((n + 15) / 16) icb ∧
+    (n % 16 ≠ 0 → blockAt m ks = ciph (Nat.repeat inc32 (n / 16) icb))
+
+theorem CtrUsing.congr {next : Block → Block} {m m' : Mem} {cb ks : Addr} {ciph : Block → Block} {icb : Block} {n : Nat}
+    (h : CtrUsing next m cb ks ciph icb n) (hc : blockAt m' cb = blockAt m cb) (hk : blockAt m' ks = blockAt m ks) :
+    CtrUsing next m' cb ks ciph icb n := ⟨(congrArg next hc).trans h.1, fun h0 => hk.trans (h.2 h0)⟩
+
 theorem ctr_zero (m : Mem) (cb ks : Addr) (ciph : Block → Block) {icb : Block}
     (h : blockAt m cb = icb) : Ctr m cb ks ciph icb 0 := ⟨h, fun h0 => absurd rfl h0⟩
 
@@ -245,17 +253,25 @@ theorem ctr_whole {m m' : Mem} {cb ks dp : Addr} {ciph : Block → Block} {icb :
 
 /-- The last bytes, from a whole number of blocks: a keystream block from
 `vg_aes_ctr32` (of the counter block on a zero block), XORed in. -/
-theorem ctr_tail {m m₁ : Mem} {cb ks : Addr} {ciph : Block → Block} {icb : Block} {n : Nat}
+theorem ctr_tail_using {next : Block → Block} {m m₁ : Mem} {cb ks : Addr} {ciph : Block → Block} {icb : Block} {n : Nat}
     (h : Ctr m cb ks ciph icb n) (h0 : n % 16 = 0)
-    (hk : blockAt m₁ ks = ciph (blockAt m cb)) (hc : blockAt m₁ cb = inc32 (blockAt m cb))
+    (hk : blockAt m₁ ks = ciph (blockAt m cb)) (hc : next (blockAt m₁ cb) = inc32 (blockAt m cb))
     {d : List Byte} (hd : d.length < 16) (hd0 : d.length ≠ 0) :
-    List.zipWith (· ^^^ ·) d (bytesAt m₁ ks d.length) = xorKs ciph icb n d ∧ Ctr m₁ cb ks ciph icb (n + d.length) := by
+    List.zipWith (· ^^^ ·) d (bytesAt m₁ ks d.length) = xorKs ciph icb n d ∧ CtrUsing next m₁ cb ks ciph icb (n + d.length) := by
   have hcb : blockAt m cb = Nat.repeat inc32 (n / 16) icb := by rw [h.1]; congr 1; omega_using [h0]
   refine ⟨?_, ?_, fun _ => ?_⟩
   · refine zipWith_eq_xorKs (Cmac.bytesAt_length _ _ _) fun k hk' => ?_
     rw [getD_bytesAt' _ _ hk', bytes_toBytes_blockAt m₁ ks (k := k) (by omega_using [hd, hk']), hk, hcb, ksByte,
       show (n + k) / 16 = n / 16 by omega_using [h0, hd, hk'], show (n + k) % 16 = k by omega_using [h0, hd, hk']]
-  · rw [hc, hcb, show (n + d.length + 15) / 16 = n / 16 + 1 by omega_using [h0, hd, hd0]]; rfl
+  · change next (blockAt m₁ cb) = _
+    rw [hc, hcb, show (n + d.length + 15) / 16 = n / 16 + 1 by omega_using [h0, hd, hd0]]; rfl
   · rw [hk, hcb, show (n + d.length) / 16 = n / 16 by omega_using [h0, hd]]
+
+theorem ctr_tail {m m₁ : Mem} {cb ks : Addr} {ciph : Block → Block} {icb : Block} {n : Nat}
+    (h : Ctr m cb ks ciph icb n) (h0 : n % 16 = 0)
+    (hk : blockAt m₁ ks = ciph (blockAt m cb)) (hc : blockAt m₁ cb = inc32 (blockAt m cb))
+    {d : List Byte} (hd : d.length < 16) (hd0 : d.length ≠ 0) :
+    List.zipWith (· ^^^ ·) d (bytesAt m₁ ks d.length) = xorKs ciph icb n d ∧ Ctr m₁ cb ks ciph icb (n + d.length) :=
+  ctr_tail_using (next := id) h h0 hk hc hd hd0
 
 end VG.Proof.Gcm

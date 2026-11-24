@@ -21,19 +21,21 @@ public section
 namespace VG.Proof.AesGcm.AArch64.DirectGather.Mid
 
 open VG VG.AArch64 VG.AArch64.RegUpd VG.Impl.AesGcm.AArch64.DirectGather
+open VG.Impl.AesGcm.AArch64 (mov)
+open VG.Impl.AesGcm.AArch64.Stitch (atP)
 
-theorem setup_ok (s : State) {n : Nat} (hn : n ≤ 224)
+theorem setupAt_ok {off : Nat} (hoff : off = 752 ∨ off = 760) (s : State) {n : Nat} (hn : n ≤ 224)
     (hw : Covers [⟨s.sp, Medium.work⟩] s.wr)
-    (hr : InRegions (s.rd ++ s.wr) (s.sp + BitVec.ofNat 64 (Medium.work + 8)) 8)
-    (hlen : s.mem.readW (s.sp + BitVec.ofNat 64 (Medium.work + 8)) 64 = BitVec.ofNat 64 n) :
-    WP isa (.block Medium.setup) s fun t =>
+    (hr : InRegions (s.rd ++ s.wr) (s.sp + BitVec.ofNat 64 off) 8)
+    (hlen : s.mem.readW (s.sp + BitVec.ofNat 64 off) 64 = BitVec.ofNat 64 n) :
+    WP isa (.block (shortSetupAt off)) s fun t =>
       t.gpr .x19 = s.sp ∧ t.gpr .x21 = s.gpr .x0 ∧ t.gpr .x22 = s.gpr .x1 ∧
       t.gpr .x23 = s.gpr .x2 ∧ t.gpr .x24 = s.gpr .x5 ∧ t.gpr .x26 = BitVec.ofNat 64 n ∧
       t.gpr .x25 = BitVec.ofNat 64 (16 * ((n + 15) / 16)) ∧
       (∀ r, r ∉ [.x9, .x19, .x21, .x22, .x23, .x24, .x25, .x26] → t.gpr r = s.gpr r) ∧
       SavedAt t.mem s.sp s ∧ Frame [savedR s.sp] s.mem t.mem ∧
       t.sp = s.sp ∧ t.rd = s.rd ∧ t.wr = s.wr := by
-  unfold Medium.setup
+  unfold shortSetupAt
   rw [List.append_assoc, WP.block_append_iff]
   refine WP.of_runBlock ⟨_, by arun [], ?_⟩
   let u := s.write .x .x9 s.sp
@@ -43,20 +45,21 @@ theorem setup_ok (s : State) {n : Nat} (hn : n ≤ 224)
   refine WP.of_runBlock ⟨v, ?_, ?_⟩
   · simpa [u, State.write] using run
   have hframe : Frame [savedR s.sp] s.mem v.mem := hm ▸ savedMem_frame _ _ _
-  have hread : v.mem.readW (s.sp + BitVec.ofNat 64 (Medium.work+8)) 64 = BitVec.ofNat 64 n := by
+  have hread : v.mem.readW (s.sp + BitVec.ofNat 64 off) 64 = BitVec.ofNat 64 n := by
     rw [← hlen]
     apply hframe.readW (r := ⟨_, 8⟩) (Region.contains_self _ _)
     · intro q hq
       simp only [List.mem_singleton] at hq
       subst q
-      exact Offset.disjoint s.sp (.inr (by decide)) (by decide) (by decide)
+      rcases hoff with rfl|rfl <;> exact Offset.disjoint s.sp (.inr (by decide)) (by decide) (by decide)
     · decide
   have hs : v.sp = s.sp := hsp
-  have hrs : InRegions (v.rd ++ v.wr) (v.sp + BitVec.ofNat 64 (Medium.work+8)) 8 := by
+  have hrs : InRegions (v.rd ++ v.wr) (v.sp + BitVec.ofNat 64 off) 8 := by
     simpa only [hs, hrd, hwr, u, rd_write, wr_write] using hr
-  refine WP.of_runBlock ⟨_, by arun [hrs], ?_⟩
+  have imm : off % 8 = 0 ∧ off < 32768 := by rcases hoff with rfl|rfl <;> decide
+  refine WP.of_runBlock ⟨_, by arun [hrs, imm], ?_⟩
   change v.mem.read _ 8 = _ at hread
-  simp only [State.read, BitVec.add_zero, gpr_write, reduceCtorEq, ite_false, ite_true, sp_write, rd_write, wr_write,
+  simp only [BitVec.add_zero, gpr_write, reduceCtorEq, ite_false, ite_true, sp_write, rd_write, wr_write,
     mem_write, BitVec.setWidth_eq, Size.bits, hs, hread, hg, hx]
   refine ⟨trivial, rfl, rfl, rfl, rfl, trivial, Stitch.ceil16_bv (by omega), ?_, ?_, hframe, trivial, hrd, hwr⟩
   · intro r h
@@ -69,6 +72,19 @@ theorem setup_ok (s : State) {n : Nat} (hn : n ≤ 224)
     simp [u, gpr_write, hne]
 
 
+theorem setup_ok (s : State) {n : Nat} (hn : n ≤ 224)
+    (hw : Covers [⟨s.sp, Medium.work⟩] s.wr)
+    (hr : InRegions (s.rd ++ s.wr) (s.sp + BitVec.ofNat 64 (Medium.work + 8)) 8)
+    (hlen : s.mem.readW (s.sp + BitVec.ofNat 64 (Medium.work + 8)) 64 = BitVec.ofNat 64 n) :
+    WP isa (.block Medium.setup) s fun t =>
+      t.gpr .x19 = s.sp ∧ t.gpr .x21 = s.gpr .x0 ∧ t.gpr .x22 = s.gpr .x1 ∧
+      t.gpr .x23 = s.gpr .x2 ∧ t.gpr .x24 = s.gpr .x5 ∧ t.gpr .x26 = BitVec.ofNat 64 n ∧
+      t.gpr .x25 = BitVec.ofNat 64 (16 * ((n + 15) / 16)) ∧
+      (∀ r, r ∉ [.x9, .x19, .x21, .x22, .x23, .x24, .x25, .x26] → t.gpr r = s.gpr r) ∧
+      SavedAt t.mem s.sp s ∧ Frame [savedR s.sp] s.mem t.mem ∧
+      t.sp = s.sp ∧ t.rd = s.rd ∧ t.wr = s.wr :=
+  setupAt_ok (.inr rfl) s hn hw hr hlen
+
 theorem zero_ok {W : Addr} (s : State) (hb : s.gpr .x19 = W)
     (hw : Covers [⟨W, Medium.work⟩] s.wr) :
     WP isa (.block Medium.zero) s fun t =>
@@ -80,22 +96,25 @@ theorem zero_ok {W : Addr} (s : State) (hb : s.gpr .x19 = W)
   refine WP.mono (Stitch.zstores_range (off := Medium.keyO) 33 _ (by rfl) hb hw
     (by decide) (by decide) (by decide)) fun _ ⟨hm,hg,_,hs,hr,hw⟩ => ⟨hm,hg,hs,hr,hw⟩
 
-theorem aad_ok {W : Addr} {c al : Nat} (hc : c ≤ 14) (s : State)
+private theorem aadSetup_ok {code : Prog isa} {W : Addr} {c al : Nat} (hc : c ≤ 14) (s : State)
     (hb : s.gpr .x19 = W) (h25 : s.gpr .x25 = BitVec.ofNat 64 (16*c))
     (h24 : s.gpr .x24 = BitVec.ofNat 64 al)
-    (h : LoopPre s (s.gpr .x4) (W + BitVec.ofNat 64 (Medium.authO+224-16*c)) al) :
-    WP isa Medium.aad s fun t =>
+    (h : LoopPre s (s.gpr .x4) (W + BitVec.ofNat 64 (Medium.authO+224-16*c)) al)
+    (copyOk : ∀ (u : State) (S D : Addr), u.gpr .x12 = S → u.gpr .x11 = D →
+      u.gpr .x13 = BitVec.ofNat 64 al → LoopPre u S D al →
+      WP isa code u fun t => t.mem = WriteBytes.writeBytes u.mem D (Spec.Aes.bytesAt u.mem S al) ∧
+        (∀ r, r ∉ loopRegs → t.gpr r = u.gpr r) ∧ t.sp = u.sp ∧ t.rd = u.rd ∧ t.wr = u.wr) :
+    WP isa (.seq (.block (atP .x11 (Medium.authO+128) 0 ++ [mov .x12 .x4, mov .x13 .x24])) code) s fun t =>
       t.mem = WriteBytes.writeBytes s.mem (W + BitVec.ofNat 64 (Medium.authO+224-16*c))
         (Spec.Aes.bytesAt s.mem (s.gpr .x4) al) ∧
       (∀ r, r ∉ loopRegs → t.gpr r = s.gpr r) ∧ t.sp = s.sp ∧ t.rd = s.rd ∧ t.wr = s.wr := by
-  unfold Medium.aad
   refine WP.seq ?_
   rw [WP.block_append_iff]
   obtain ⟨u,run,hd,g,hm,_,hs,hr,hw⟩ := Stitch.atP_ok (c := c) .x11 (Medium.authO+128) 0 (by decide)
     (by unfold Medium.authO; omega) s hb h25 (by decide)
   refine WP.of_runBlock ⟨u,run,?_⟩
   refine WP.of_runBlock ⟨_,by arun [],?_⟩
-  refine WP.mono (copy_ok _ (S := s.gpr .x4) (D := W + BitVec.ofNat 64 (Medium.authO+224-16*c)) (n := al)
+  refine WP.mono (copyOk _ (s.gpr .x4) (W + BitVec.ofNat 64 (Medium.authO+224-16*c))
     (by simp [gpr_write, g .x4 (by decide)]) (by simpa [gpr_write] using hd)
     (by simp [gpr_write, g .x24 (by decide), h24])
     ⟨h.lt, by simpa only [rd_write, wr_write, hr, hw] using h.rd,
@@ -105,6 +124,31 @@ theorem aad_ok {W : Addr} {c al : Nat} (hc : c ≤ 14) (s : State)
   rw [g' r hh]
   simp only [loopRegs,List.mem_cons,List.not_mem_nil,or_false,not_or] at hh
   simp [gpr_write,hh.2.1,hh.2.2.1,g r hh.1]
+
+theorem aadWith_ok (early : Bool) {W : Addr} {c al : Nat} (hc : c ≤ 14) (s : State)
+    (hb : s.gpr .x19 = W) (h25 : s.gpr .x25 = BitVec.ofNat 64 (16*c))
+    (h24 : s.gpr .x24 = BitVec.ofNat 64 al)
+    (h : LoopPre s (s.gpr .x4) (W + BitVec.ofNat 64 (Medium.authO+224-16*c)) al) :
+    WP isa (Medium.aadWith early) s fun t =>
+      t.mem = WriteBytes.writeBytes s.mem (W + BitVec.ofNat 64 (Medium.authO+224-16*c))
+        (Spec.Aes.bytesAt s.mem (s.gpr .x4) al) ∧
+      (∀ r, r ∉ loopRegs → t.gpr r = s.gpr r) ∧ t.sp = s.sp ∧ t.rd = s.rd ∧ t.wr = s.wr := by
+  cases early with
+  | false =>
+    exact aadSetup_ok hc s hb h25 h24 h (fun u _ _ us ud un p => copy_ok u us ud un p)
+  | true =>
+    refine WP.ite (decide (al=0)) (eval_zero h24 (by have := h.lt; omega)) (fun empty => ?_) (fun nonempty => ?_)
+    · have e := of_decide_eq_true empty
+      subst al
+      exact WP.block_nil ⟨by simp [Spec.Aes.bytesAt,WriteBytes.writeBytes_nil], fun _ _ => rfl,rfl,rfl,rfl⟩
+    · apply aadSetup_ok hc s hb h25 h24 h
+      intro u src dst us ud un pre
+      obtain ⟨_,t,run,post⟩ := copy_ok u us ud un pre
+      have test := eval_zero un (by have := pre.lt; omega)
+      rw [nonempty] at test
+      cases run with
+      | iteT yes _ => rw [test] at yes; cases yes
+      | iteF _ child => exact ⟨_,t,child,post⟩
 
 theorem cursors_ok {W : Addr} {c : Nat} (hc : c ≤ 14) (s : State)
     (hb : s.gpr .x19 = W) (h25 : s.gpr .x25 = BitVec.ofNat 64 (16*c))

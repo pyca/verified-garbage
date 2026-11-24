@@ -9,9 +9,10 @@ import VerifiedGarbage.Proof.Framework.AArch64.Lit
 import VerifiedGarbage.Proof.Gcm.Clmul.Arith
 import VerifiedGarbage.Proof.Gcm.Short
 
-
 public import VerifiedGarbage.Impl.AesGcm.AArch64.DirectGather.Medium
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Contiguous.Leaves
+import VerifiedGarbage.Proof.AesGcm.AArch64.Contiguous.StandaloneBodyCT
+import VerifiedGarbage.Proof.AesGcm.AArch64.Contiguous.StandaloneSeal
 
 import VerifiedGarbage.Proof.AesGcm.AArch64.DirectGather.MediumCT
 import VerifiedGarbage.Proof.AesGcm.AArch64.DirectGather.MediumBody
@@ -2595,35 +2596,35 @@ open VG.Proof.Gcm.Clmul
 open VG.Impl.Gcm.AArch64.Pmull (prologueW body advance)
 open VG.Impl.AesGcm.AArch64.DirectGather.Medium (chooseGroup firstHashGroup hashTrimmed)
 
-private theorem trimTest {n : Nat} (bound : n=129 ∨ n=161) {base s : State} (inv : Inv base 8 0 s) :
+private theorem trimTest {n : Nat} (bound : n=113 ∨ n=129 ∨ n=161) {base s : State} (inv : Inv base 8 0 s) :
     WP isa (.block [.subImm .x .x11 .x26 n,.lsr .x .x11 .x11 63]) s fun t =>
       (t.gpr .x11 ≠ 0 ↔ ((s.gpr .x26 - BitVec.ofNat 64 n) >>> 63) ≠ 0) ∧
-      t.gpr .x26 = s.gpr .x26 ∧ Inv base 8 0 t := by
-  rcases bound with rfl|rfl <;>
-    refine WP.of_runBlock ⟨(s.write .x .x11 (s.gpr .x26 - _)).write .x .x11 ((s.gpr .x26 - _) >>> 63),by arun [],?_,?_,?_⟩ <;> first | rfl | skip <;>
+      t.gpr .x26 = s.gpr .x26 ∧ t.gpr .x24 = s.gpr .x24 ∧ Inv base 8 0 t := by
+  rcases bound with rfl|rfl|rfl <;>
+    refine WP.of_runBlock ⟨(s.write .x .x11 (s.gpr .x26 - _)).write .x .x11 ((s.gpr .x26 - _) >>> 63),by arun [],?_,?_,?_,?_⟩ <;> first | rfl | skip <;>
     exact ⟨inv.le,inv.c,inv.t,inv.sw,inv.y,inv.x0,inv.x1,inv.x2,inv.x3,inv.x5,inv.mem,inv.rd,inv.wr⟩
 
-private theorem runChoice {n : Nat} (bound : n=129 ∨ n=161) {yes no : Prog isa} {base s : State}
+private theorem runChoice {n : Nat} (bound : n=113 ∨ n=129 ∨ n=161) {yes no : Prog isa} {base s : State}
     (inv : Inv base 8 0 s) (Q : State → Prop)
-    (left : ∀ t, ((s.gpr .x26 - BitVec.ofNat 64 n) >>> 63) ≠ 0 → t.gpr .x26=s.gpr .x26 → Inv base 8 0 t → WP isa yes t Q)
-    (right : ∀ t, ¬ ((s.gpr .x26 - BitVec.ofNat 64 n) >>> 63) ≠ 0 → t.gpr .x26=s.gpr .x26 → Inv base 8 0 t → WP isa no t Q) :
+    (left : ∀ t, ((s.gpr .x26 - BitVec.ofNat 64 n) >>> 63) ≠ 0 → t.gpr .x26=s.gpr .x26 → t.gpr .x24=s.gpr .x24 → Inv base 8 0 t → WP isa yes t Q)
+    (right : ∀ t, ¬ ((s.gpr .x26 - BitVec.ofNat 64 n) >>> 63) ≠ 0 → t.gpr .x26=s.gpr .x26 → t.gpr .x24=s.gpr .x24 → Inv base 8 0 t → WP isa no t Q) :
     WP isa (chooseGroup n yes no) s Q := by
   apply WP.seq
-  refine (trimTest bound inv).mono ?_; rintro t ⟨hit,len,i⟩
+  refine (trimTest bound inv).mono ?_; rintro t ⟨hit,len,alen,i⟩
   by_cases h : ((s.gpr .x26 - BitVec.ofNat 64 n) >>> 63) ≠ 0
   · have e : isa.eval (.nonzero .x .x11) t = some true := by
       change some (!(t.gpr .x11 == (0 : Addr))) = _; simp; exact hit.mpr h
     apply WP.ite _ e
-    · exact fun _ => left t h len i
+    · exact fun _ => left t h len alen i
     · intro bad; contradiction
   · have z : t.gpr .x11=0 := by by_contra hn; exact h (hit.mp hn)
     have e : isa.eval (.nonzero .x .x11) t = some false := by
       change some (!(t.gpr .x11 == (0 : Addr))) = _; simp [z]
     apply WP.ite _ e
     · intro bad; contradiction
-    · exact fun _ => right t h len i
+    · exact fun _ => right t h len alen i
 
-private theorem shortGroup {k : Nat} (hk : k=2 ∨ k=4) {u t : State} (hp : Pm u) (N : nb u=16)
+private theorem shortGroup {k : Nat} (hk : k=1 ∨ k=2 ∨ k=4) {u t : State} (hp : Pm u) (N : nb u=16)
     (zero : Ys u 0 = Ys u (8-k)) (inv : Inv u 8 0 t) :
     WP isa (firstHashGroup k) t (Inv u 8 8) := by
   have ne : k≠8 := by omega_using [hk]
@@ -2643,6 +2644,8 @@ theorem zeroFold {s : State} {k : Nat} (init : Y₀ s = 0)
 
 theorem trimmedHash_at (s : State) (hn : nb s=16)
     (six : ((s.gpr .x26-129#64) >>> 63) ≠ 0 → Ys s 0 = Ys s 6)
+    (seven : s.gpr .x24 = 0 → ((s.gpr .x26-129#64) >>> 63) ≠ 0 → Ys s 0 = Ys s 7)
+    (eight : s.gpr .x24 = 0 → ((s.gpr .x26-113#64) >>> 63) ≠ 0 → Ys s 0 = Ys s 8)
     (four : ((s.gpr .x26-161#64) >>> 63) ≠ 0 → Ys s 0 = Ys s 4)
     (hc : Covers ([hR s,Proof.Gcm.AArch64.dR s,⟨s.gpr .x5,128⟩] ++ [yR s]) (s.rd ++ s.wr))
     (hw : Covers [yR s] s.wr) (hd : (yR s).Disjoint (Proof.Gcm.AArch64.dR s))
@@ -2662,16 +2665,30 @@ theorem trimmedHash_at (s : State) (hn : nb s=16)
   have go : WP isa hashTrimmed u fun z =>
       z.v .v16 = VRevOp.eval .rev64b (ext8 (Ys u 16) (Ys u 16)) ∧ z.mem=u.mem := by
     apply WP.seq
-    refine (WP.gprs (prologueW_at hp (by simp [u]) repr) (rs:=[.x26]) (by lit_decide) rfl).mono ?_
+    refine (WP.gprs (prologueW_at hp (by simp [u]) repr) (rs:=[.x24,.x26]) (by lit_decide) rfl).mono ?_
     rintro t ⟨inv,keep⟩
     have len : t.gpr .x26 = s.gpr .x26 := keep _ (by simp)
+    have al : t.gpr .x24 = s.gpr .x24 := keep _ (by simp)
     apply WP.seq
-    refine (runChoice (n:=129) (.inl rfl) inv (Inv u 8 8) ?_ ?_).mono ?_
-    · intro z small _ i; exact shortGroup (k:=2) (.inl rfl) hp N (six (len ▸ small)) i
-    · intro z _ zlen i
-      apply runChoice (n:=161) (.inr rfl) i
-      · intro y small _ j; exact shortGroup (k:=4) (.inr rfl) hp N (four ((zlen.trans len) ▸ small)) j
-      · intro y _ _ j
+    refine (runChoice (n:=129) (.inr (.inl rfl)) inv (Inv u 8 8) ?_ ?_).mono ?_
+    · intro z small zlen za i
+      have hlen := len ▸ small
+      by_cases empty : z.gpr .x24 = 0
+      · have emptyS : s.gpr .x24 = 0 := (za.trans al).symm.trans empty
+        apply WP.ite _ (show isa.eval (.zero .x .x24) z = some true from by change some (z.gpr .x24 == (0:Addr)) = _; simp [empty])
+        · intro _
+          apply runChoice (n:=113) (.inl rfl) i
+          · intro y hit _ _ j
+            exact advanceLeading (by omega_using [N]) (by decide) (eight emptyS ((zlen.trans len) ▸ hit)) j
+          · intro y _ _ _ j; exact shortGroup (k:=1) (.inl rfl) hp N (seven emptyS hlen) j
+        · intro bad; contradiction
+      · apply WP.ite _ (show isa.eval (.zero .x .x24) z = some false from by change some (z.gpr .x24 == (0:Addr)) = _; simpa using empty)
+        · intro bad; contradiction
+        · intro _; exact shortGroup (k:=2) (.inr (.inl rfl)) hp N (six hlen) i
+    · intro z _ zlen _ i
+      apply runChoice (n:=161) (.inr (.inr rfl)) i
+      · intro y small _ _ j; exact shortGroup (k:=4) (.inr (.inr rfl)) hp N (four ((zlen.trans len) ▸ small)) j
+      · intro y _ _ _ j
         simpa only [firstHashGroup,ite_true,List.nil_append] using body_ok hp (k:=8) (by decide) (by decide) (by decide) (by rw [N]; decide) j
     · intro z first
       rw [WP.block_append_iff]
@@ -2693,34 +2710,118 @@ open VG.Impl.AesGcm.AArch64.Contiguous
 open VG.Impl.StackScratch.AArch64 (withStackArgScratch)
 open Scrubbed
 
-private def generalHoles (wn : Nat) (st : Bool) : Prog isa := Code.frame (.alloc 48)
-    (.seq (.block generalArgs) (withStackArgScratch (wn+32) 3
-      (Impl.AesGcm.AArch64.DirectGather.body holes st))) (.free 48)
+private def preparedHoles (wn : Nat) (f forward : Bool) :=
+  withStackArgScratch (wn+32) 3 (preparedBody holes holeW f forward)
 
-theorem generalSide {c : Calls} (h : CallsOk c) :
-    scrubSide (generalFrame c) (c.pwWn+80) 0 own [] = true := by
-  unfold generalFrame Impl.AesGcm.AArch64.DirectGather.framed
-  rcases pw_cases h with ⟨st,w|w⟩|⟨st,w|w⟩ <;> rw [st,w]
-  · exact side_of_holes h fnOk_nil (generalHoles 1024 true)
-  · exact side_of_holes h fnOk_nil (generalHoles 2560 true)
-  · exact side_of_holes h fnOk_nil (generalHoles 768 false)
-  · exact side_of_holes h fnOk_nil (generalHoles 2560 false)
+/-- The saved-lane leaf borrows every caller-volatile high half. All other
+callees satisfy the ordinary, narrower cleanup certificate. -/
+private theorem forwardedSide {c : Calls} (hc : CallsOk c) {w : Prog isa} (hw : FnOk w) {x : Prog isa}
+    {W : Nat} (e : Prog isa) (hx : x = Code.fillN (fills c w) e := by kernel_rfl)
+    (he : calleeSide e Clear.all = true := by kernel_rfl)
+    (hd : (16 * Code.aarch64DepthN [0,0,0,0,0] e).ble W = true := by kernel_rfl)
+    (hW : 0 < W ∧ W < 4096 ∧ W % 16 = 0 := by decide) :
+    scrubSide x W 0 Clear.all [] = true := by
+  let high : Clear := ⟨[],[],hiVecs⟩
+  have expand {b : Prog isa} (h : FnOk b) : calleeSide b (own.union high) = true := sideAll_union_left h.side
+  have ⟨side,depth⟩ := side_depth_of_fillN (ds := [0,0,0,0,0]) hx
+    (by
+      intro b hb
+      simp only [fills,List.mem_cons,List.not_mem_nil,or_false] at hb
+      rcases hb with rfl|rfl|rfl|rfl|rfl
+      exacts [expand (b := c.ctr.code) hc.ctr,expand (b := c.key.code) hc.key,
+        expand (b := c.gh.code) hc.gh,expand (b := c.ctrTo.code) hc.ctrTo,expand hw])
+    (.cons (Nat.le_of_eq hc.ctr.depth) (.cons (Nat.le_of_eq hc.key.depth) (.cons (Nat.le_of_eq hc.gh.depth)
+      (.cons (Nat.le_of_eq hc.ctrTo.depth) (.cons (Nat.le_of_eq hw.depth) .nil)))))
+    (show calleeSide e (own.union high) = true from he) (Nat.le_refl _)
+  exact scrubSide_union (own := own) (cl := high) hW
+    (Nat.le_trans (Nat.mul_le_mul_left 16 depth) (Nat.le_of_ble_eq_true hd)) (.inl rfl) side (by decide)
 
-theorem generalDepth (v : GcmImpl) :
-    16*(Impl.AesGcm.AArch64.DirectGather.framed v.calls).aarch64Depth < 2^64 := by
-  have side := DirectGather.generalSide v.callsOk
-  have h := (DirectGather.generalSize v.callsOk).2.1
-  simp only [scrubSide, Nat.ne_of_gt (show 0 < v.calls.pwWn+32 by omega), ↓reduceIte, Bool.and_eq_true, decide_eq_true_eq] at side
-  have d := side.1.1.1.1.1.2
-  omega
+theorem referenceSide (v : GcmImpl) (g : GhashWithImpl) (f : Bool) :
+    scrubSide (withStackArgScratch (v.calls.pwWn+32) 3 (preparedBody v.callees g.fn f false))
+      (v.calls.pwWn+32) 0 own [] = true := by
+  have hw : FnOk (.call g.fn.name g.fn.code) := ⟨g.fnOk.side,g.fnOk.depth⟩
+  rcases pw_cases v.callsOk with ⟨_,w|w⟩|⟨_,w|w⟩ <;> rw [w] <;> cases f
+  · exact side_of_holes v.callsOk hw (preparedHoles 1024 false false)
+  · exact side_of_holes v.callsOk hw (preparedHoles 1024 true false)
+  · exact side_of_holes v.callsOk hw (preparedHoles 2560 false false)
+  · exact side_of_holes v.callsOk hw (preparedHoles 2560 true false)
+  · exact side_of_holes v.callsOk hw (preparedHoles 768 false false)
+  · exact side_of_holes v.callsOk hw (preparedHoles 768 true false)
+  · exact side_of_holes v.callsOk hw (preparedHoles 2560 false false)
+  · exact side_of_holes v.callsOk hw (preparedHoles 2560 true false)
 
-theorem backendFacts (v : GcmImpl) : BackendFacts v :=
-  ⟨DirectGather.generalGather_shared v,DirectGather.generalSize v.callsOk,
-    generalSide v.callsOk,generalDepth v,
-    side_of_holes v.callsOk fnOk_nil (mediumFrame holes),
-    Nat.lt_of_le_of_lt (depth_of_holes (W := 752) v.callsOk fnOk_nil (mediumInner holes)) (by decide),
+theorem preparedSide (v : GcmImpl) (g : GhashWithImpl) (f : Bool) :
+    scrubSide (preparedFrame v.calls g.fn f) (v.calls.pwWn+32) 0 (preparedClear f (!v.calls.stitch)) [] = true := by
+  have hw : FnOk (.call g.fn.name g.fn.code) := ⟨g.fnOk.side,g.fnOk.depth⟩
+  cases st : v.calls.stitch with
+  | true =>
+    unfold preparedFrame
+    rw [st]
+    cases f <;> exact referenceSide v g _
+  | false =>
+    cases f with
+    | false =>
+      unfold preparedFrame
+      rw [st]
+      exact referenceSide v g false
+    | true =>
+      simp only [preparedFrame,st,Bool.not_false,preparedClear,Bool.true_and,ite_true]
+      rcases pw_cases v.callsOk with ⟨bad,_⟩|⟨_,w|w⟩
+      · simp [st] at bad
+      · rw [w]; exact forwardedSide v.callsOk hw (preparedHoles 768 true true)
+      · rw [w]; exact forwardedSide v.callsOk hw (preparedHoles 2560 true true)
+
+private def standaloneHoles (wn : Nat) (pmull forward : Bool) :=
+  withStackArgScratch (wn+32) 2 (Impl.AesGcm.AArch64.Contiguous.Standalone.bodyUsing holes (wn+48) pmull forward)
+
+private theorem standaloneReferenceSide (v : GcmImpl) :
+    scrubSide (withStackArgScratch (v.calls.pwWn+32) 2 (Impl.AesGcm.AArch64.Contiguous.Standalone.bodyWith v.calls false))
+      (v.calls.pwWn+32) 0 own [] = true := by
+  unfold Impl.AesGcm.AArch64.Contiguous.Standalone.bodyWith
+  rcases pw_cases v.callsOk with ⟨_,w|w⟩|⟨_,w|w⟩ <;> rw [w] <;> cases v.calls.pmull
+  · exact side_of_holes v.callsOk fnOk_nil (standaloneHoles 1024 false false)
+  · exact side_of_holes v.callsOk fnOk_nil (standaloneHoles 1024 true false)
+  · exact side_of_holes v.callsOk fnOk_nil (standaloneHoles 2560 false false)
+  · exact side_of_holes v.callsOk fnOk_nil (standaloneHoles 2560 true false)
+  · exact side_of_holes v.callsOk fnOk_nil (standaloneHoles 768 false false)
+  · exact side_of_holes v.callsOk fnOk_nil (standaloneHoles 768 true false)
+  · exact side_of_holes v.callsOk fnOk_nil (standaloneHoles 2560 false false)
+  · exact side_of_holes v.callsOk fnOk_nil (standaloneHoles 2560 true false)
+
+private theorem standaloneSide (v : GcmImpl) :
+    scrubSide (Standalone.frame v.calls) (v.calls.pwWn+32) 0
+      (Impl.AesGcm.AArch64.Contiguous.Standalone.clear v.calls) [] = true := by
+  unfold Standalone.frame Impl.AesGcm.AArch64.Contiguous.Standalone.body
+    Impl.AesGcm.AArch64.Contiguous.Standalone.clear
+  cases st : v.calls.stitch
+  · cases pm : v.calls.pmull
+    · simpa only [Impl.AesGcm.AArch64.Contiguous.Standalone.bodyWith,pm,Bool.not_false,Bool.false_and,
+        Bool.false_eq_true,ite_false,Impl.AesGcm.AArch64.Contiguous.Standalone.bodyUsing,
+        Impl.AesGcm.AArch64.Contiguous.Standalone.encryptUsing] using standaloneReferenceSide v
+    · simp only [Bool.not_false,Bool.true_and,ite_true,Impl.AesGcm.AArch64.Contiguous.Standalone.bodyWith,pm]
+      rcases pw_cases v.callsOk with ⟨bad,_⟩|⟨_,w|w⟩
+      · simp [st] at bad
+      · rw [w]; exact forwardedSide v.callsOk fnOk_nil (standaloneHoles 768 true true)
+      · rw [w]; exact forwardedSide v.callsOk fnOk_nil (standaloneHoles 2560 true true)
+  · simpa only [Bool.not_true,Bool.and_false,Bool.false_eq_true,ite_false] using standaloneReferenceSide v
+
+theorem scratch_le (v : GcmImpl) : v.ctr.scratch ≤ v.calls.pwWn-512 := by
+  rw [pwWn_eq]
+  rcases v.ctr.scratch_ok with h|h <;> cases st : v.stitch <;>
+    simp [gcmPwWn, gcmWn, h, st]
+
+/-- Discharge the arithmetic and register obligations at the concrete registration. -/
+theorem backendFacts (v : GcmImpl) (g : GhashWithImpl) : BackendFacts v g :=
+  ⟨DirectGather.generalSize v.callsOk,scratch_le v,
+    Standalone.body_ok v Proof.Gcm.AArch64.Pmull.mulV_keyV (fun _ => Proof.Gcm.AArch64.Stitch.gatherLaws) (scratch_le v),
+    Standalone.body_rel v (fun _ => Proof.Gcm.AArch64.Stitch.gatherLaws) (scratch_le v),
+    standaloneSide v,DirectGather.keepsV_of_gatherSide (standaloneReferenceSide v),preparedSide v g,fun f => DirectGather.keepsV_of_gatherSide (referenceSide v g f),
+    side_of_holes v.callsOk fnOk_nil (Impl.AesGcm.AArch64.Contiguous.MediumDirect.frame holes),
     (fun s hn z init => DirectGather.trimmedHash_at s hn
       (fun h => DirectGather.zeroFold init (z _ (.inl ⟨rfl,h⟩)))
-      (fun h => DirectGather.zeroFold init (z _ (.inr ⟨rfl,h⟩)))),Proof.Gcm.AArch64.Pmull.hashEightWith_at⟩
+      (fun ha h => DirectGather.zeroFold init (z _ (.inr (.inr ⟨ha,.inl ⟨rfl,h⟩⟩))))
+      (fun ha h => DirectGather.zeroFold init (z _ (.inr (.inr ⟨ha,.inr ⟨rfl,h⟩⟩))))
+      (fun h => DirectGather.zeroFold init (z _ (.inr (.inl ⟨rfl,h⟩))))),Proof.Gcm.AArch64.Pmull.hashEightWith_at,Proof.Gcm.AArch64.Stitch.gh8Ok,Proof.Gcm.AArch64.Pmull.mulV_keyV,
+    Proof.Gcm.AArch64.Pmull.prepPow.key⟩
 
 end VG.Proof.AesGcm.AArch64.Contiguous

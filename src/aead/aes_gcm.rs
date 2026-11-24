@@ -66,8 +66,7 @@ use crate::arch::dispatch::gcm::{
 #[cfg(target_arch = "aarch64")]
 use crate::arch::dispatch::gcm::{
     vg_aes_gcm_open_to_with_powers_auto, vg_aes_gcm_open_with_powers_auto,
-    vg_aes_gcm_seal_contiguous_with_powers_auto, vg_aes_gcm_seal_with_powers_auto,
-    vg_aes_gcm_store_powers_auto,
+    vg_aes_gcm_seal_contiguous_with_powers_auto, vg_aes_gcm_store_powers_auto,
 };
 #[cfg(not(any(target_arch = "x86_64", target_arch = "riscv64")))]
 use crate::arch::dispatch::gcm::{vg_aes_gcm_stream_decrypt_auto, vg_aes_gcm_stream_encrypt_auto};
@@ -327,7 +326,16 @@ impl AesGcm {
         Ok(self.seal(dit, nonce, aad, data))
     }
 
-    /// Seal a bounded contiguous plaintext at `src` into `dst` and return its detached tag.
+    #[cfg(target_arch = "aarch64")]
+    #[inline(always)]
+    fn seal(&self, dit: crate::dit::Dit<'_>, nonce: &[u8], aad: &[u8], data: &mut [u8]) -> Block {
+        let len = data.len();
+        let dst = data.as_mut_ptr();
+        // SAFETY: both pointers refer to the same exclusive, initialized slice.
+        unsafe { self.seal_contiguous(dit, nonce, aad, dst.cast_const(), dst, len) }
+    }
+
+    /// Seal the plaintext at `src` into `dst` and return its detached tag.
     ///
     /// # Safety
     /// The caller checked the record lengths. The source is readable and the
@@ -367,27 +375,16 @@ impl AesGcm {
         tag
     }
 
-    /// `vg_aes_gcm_seal` (on x86-64, `vg_aes_gcm_seal_prepared`; on
-    /// AArch64, `vg_aes_gcm_seal_with_powers`; on RISC-V,
-    /// `vg_aes_gcm_seal_bitsliced`) of `data` in place, whose lengths the
-    /// caller checked.
+    /// Encrypt the checked record in place with the platform's seal entry.
+    #[cfg(not(target_arch = "aarch64"))]
     #[inline(always)]
     fn seal(&self, dit: crate::dit::Dit<'_>, nonce: &[u8], aad: &[u8], data: &mut [u8]) -> Block {
-        #[cfg(target_arch = "aarch64")]
-        if data.len() <= 224 && nonce.len() == 12 && aad.len() <= 16 {
-            let dst = data.as_mut_ptr();
-            // SAFETY: both pointers address the same exclusive, initialized bytes.
-            return unsafe {
-                self.seal_contiguous(dit, nonce, aad, dst.cast_const(), dst, data.len())
-            };
-        }
         let mut tag: Block = [0; 16];
         // SAFETY: `self.ctx` is the key context `vg_aes_gcm_init` wrote for
         // `self.rounds` (10, 12 or 14) rounds, valid for reads of 256 bytes,
         // followed on x86-64 by the powers `vg_aes_gcm_prepare` wrote for the
         // same key (`AesGcm::new`), valid for reads of 1032 bytes in all,
-        // and on AArch64 next to the powers `vg_aes_gcm_store_powers` wrote
-        // (`self.powers`, 128 bytes), and on RISC-V next to its bitsliced
+        // and on RISC-V next to its bitsliced
         // form `vg_aes_gcm_bitslice` wrote (`self.bk`, 1248 bytes, read
         // only); `nonce` and `aad` are valid for reads
         // and `data` for reads and writes of their lengths, and `tag` (a
@@ -408,20 +405,6 @@ impl AesGcm {
                 data.as_mut_ptr(),
                 data.len(),
                 &mut tag,
-            );
-            #[cfg(target_arch = "aarch64")]
-            vg_aes_gcm_seal_with_powers_auto(
-                dit,
-                self.key(),
-                self.rounds,
-                nonce.as_ptr(),
-                nonce.len(),
-                aad.as_ptr(),
-                aad.len(),
-                data.as_mut_ptr(),
-                data.len(),
-                &mut tag,
-                &self.powers.0,
             );
             #[cfg(target_arch = "riscv64")]
             vg_aes_gcm_seal_bitsliced_auto(
@@ -766,7 +749,7 @@ impl AesGcm {
         }
         add_len(0, aad.len(), MAX_AAD).map_err(|()| Error::InvalidAadLength)?;
         let tag = self.seal_pieces(dit, nonce, aad, plaintext, out);
-        // SAFETY: the gather contract specifies every byte of the ciphertext
+        // SAFETY: the seal contracts specify every byte of the ciphertext
         // for arbitrary prior destination contents, including an empty output.
         Ok((unsafe { out.assume_init_mut() }, tag))
     }
@@ -784,12 +767,9 @@ impl AesGcm {
         let dst = out.as_mut_ptr().cast();
         let len = out.len();
         #[cfg(target_arch = "aarch64")]
-        if len <= 224
-            && nonce.len() == 12
-            && aad.len() <= 16
-            && let [input] = plaintext
-        {
-            // SAFETY: the validated single input and exclusive output are disjoint and have equal lengths.
+        if let [input] = plaintext {
+            // SAFETY: the checked length equals input.len(). The exclusive
+            // destination is disjoint from the borrowed input and metadata.
             return unsafe { self.seal_contiguous(dit, nonce, aad, input.as_ptr(), dst, len) };
         }
         // The descriptors of the pieces, as `vg_aes_gcm_seal_gather` takes
@@ -1272,9 +1252,7 @@ mod tests {
         let lens = (1024..=1040)
             .chain((256..=656).step_by(16).flat_map(|l| [l, l + 5]))
             .chain(0..=17)
-            .chain([
-                95, 96, 97, 100, 223, 224, 225, 255, 300, 511, 512, 513, 767, 768, 769,
-            ])
+            .chain([95, 96, 97, 100, 255, 300, 511, 512, 513, 767, 768, 769])
             .chain([
                 1300, 1535, 1536, 2048, 2303, 2304, 2305, 3071, 3072, 3073, 3100,
             ]);

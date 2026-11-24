@@ -548,7 +548,7 @@ theorem pair_ok (p a k b l : Nat) (y : Bool) (s : State) (hin : GhIn s) (hp : p 
       s'.v T = polyMul (vdword (blkV s b ^^^ (if y then s.v Y else 0)) 0 ^^^
         vdword (blkV s b ^^^ (if y then s.v Y else 0)) 1) (vdword (tblV s (kOff p)) 1) ∧
       VOnly [A₁, A₂, S₁, S₂, KP, T, U, X₁, X₂] s s' := by
-  unfold pair
+  unfold pair pairWith
   simp only [List.append_assoc]
   rw [ld_eq, ld_eq, WP.block_append_iff]
   refine WP.mono (loadRev_ok A₁ .x9 (16 * a) s (Nat.mul_mod_right 16 _) (by omega_using [ha]) (hin.blk a ha))
@@ -1129,6 +1129,24 @@ theorem aesStep {s₀ : State} {to : Bool} (hp : KPreM s₀ to) {hb : Nat → Bl
 
 /-! ## GHASH -/
 
+theorem ghIn_at {s₀ t : State} {to : Bool} (hp : KPreM s₀ to) {h : Nat}
+    (hx9 : t.gpr .x9 = dp s₀ + BitVec.ofNat 64 (128 * h)) (hh : h < nb s₀)
+    (hx19 : t.gpr .x19 = wp s₀) (hrdwr : t.rd ++ t.wr = s₀.rd ++ s₀.wr) : GhIn t := by
+  have hn := hp.n16
+  have ha : ∀ j, t.gpr .x9 + BitVec.ofNat 64 (16 * j) = dp s₀ + BitVec.ofNat 64 (16 * (8 * h + j)) :=
+    fun j => by rw [hx9, Offset.add_add_eq _ (show 128 * h + 16 * j = 16 * (8 * h + j) by omega_arith)]
+  have ht : ∀ o, o + 16 ≤ 192 → t.gpr .x19 + BitVec.ofNat 64 (512 + o) =
+      wp s₀ + BitVec.ofNat 64 512 + BitVec.ofNat 64 o := fun o _ => by rw [hx19, Offset.add_add]
+  exact {
+    blk := fun j hj => by
+      rw [hrdwr, ha]; exact CallLay.inRegions_sub hp.d_in (by omega_arith) (by omega_arith)
+    sw := fun k hk1 hk8 => by
+      rw [hrdwr, show sOff k = 512 + 16 * (k - 1) from rfl, ht _ (by omega_arith)]
+      exact CallLay.inRegions_sub hp.t_in (by omega_arith) (by omega_arith)
+    key := fun p hp' => by
+      rw [hrdwr, show kOff p = 512 + (128 + 16 * p) by unfold kOff tbl; omega_arith, ht _ (by omega_arith)]
+      exact CallLay.inRegions_sub hp.t_in (by omega_arith) (by omega_arith) }
+
 /-- GHASH of the eight blocks at `x9`, the blocks `hb (8 h + j)`. -/
 theorem ghStep {s₀ : State} {to : Bool} (hp : KPreM s₀ to) (gh : Gh8Ok) {hb : Nat → Block} {h : Nat} {t : State}
     (hy : t.v Y = ext8 (yh s₀ hb (8 * h)) (yh s₀ hb (8 * h)))
@@ -1144,15 +1162,7 @@ theorem ghStep {s₀ : State} {to : Bool} (hp : KPreM s₀ to) (gh : Gh8Ok) {hb 
     fun j => by rw [hx9, Offset.add_add_eq _ (show 128 * h + 16 * j = 16 * (8 * h + j) by omega_arith)]
   have ht : ∀ o, o + 16 ≤ 192 → t.gpr .x19 + BitVec.ofNat 64 (512 + o) =
       wp s₀ + BitVec.ofNat 64 512 + BitVec.ofNat 64 o := fun o _ => by rw [hx19, Offset.add_add]
-  have hin : GhIn t := {
-    blk := fun j hj => by
-      rw [hrdwr, ha]; exact CallLay.inRegions_sub hp.d_in (by omega_arith) (by omega_arith)
-    sw := fun k hk1 hk8 => by
-      rw [hrdwr, show sOff k = 512 + 16 * (k - 1) from rfl, ht _ (by omega_arith)]
-      exact CallLay.inRegions_sub hp.t_in (by omega_arith) (by omega_arith)
-    key := fun p hp' => by
-      rw [hrdwr, show kOff p = 512 + (128 + 16 * p) by unfold kOff tbl; omega_arith, ht _ (by omega_arith)]
-      exact CallLay.inRegions_sub hp.t_in (by omega_arith) (by omega_arith) }
+  have hin := ghIn_at hp hx9 hh hx19 hrdwr
   refine WP.mono (ghPart_ok t hin hc) fun u ⟨e, o⟩ => ⟨?_, o⟩
   rw [e, hy, gh8V_congr rfl (b' := fun j => ext8 (hb (8 * h + j)) (hb (8 * h + j)))
     (S' := fun k => ext8 (Pmull.pp (hk s₀) k) (Pmull.pp (hk s₀) k))

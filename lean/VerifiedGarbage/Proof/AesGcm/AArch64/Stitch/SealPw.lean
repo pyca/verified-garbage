@@ -56,21 +56,20 @@ theorem pwRestDecTo_rel {u₁ u₂ : State} (hsp : u₁.sp = u₂.sp)
 
 /-- `pwTbl k` then `l`, in two runs that agree on the registers `rs` and find the
 same `pw` at `[sp + k]`. -/
-theorem pwTbl_relR (rs : List Reg) {k : Nat} (hk : k = 8 ∨ k = 16 ∨ k = 32) {l : Prog isa}
+theorem pwTblAligned_relR (rs : List Reg) {k : Nat} (hk : k % 8 = 0 ∧ k < 32768) {l : Prog isa}
     (hl : ∀ {u₁ u₂ : State}, u₁.sp = u₂.sp → (∀ r ∈ Reg.x5 :: rs, u₁.gpr r = u₂.gpr r) →
       RelCT isa (Eq2 u₁ u₂) (.seq (.block pwRest) l) TT)
     {v₁ v₂ : State} (hsp : v₁.sp = v₂.sp) (hr : ∀ r ∈ rs, v₁.gpr r = v₂.gpr r) {P : Addr}
     (hP₁ : v₁.mem.readW (v₁.sp + BitVec.ofNat 64 k) 64 = P) (hsl₁ : InRegions (v₁.rd ++ v₁.wr) (v₁.sp + BitVec.ofNat 64 k) 8)
     (hP₂ : v₂.mem.readW (v₂.sp + BitVec.ofNat 64 k) 64 = P) (hsl₂ : InRegions (v₂.rd ++ v₂.wr) (v₂.sp + BitVec.ofNat 64 k) 8) :
     RelCT isa (Eq2 v₁ v₂) (.seq (.block (Impl.AesGcm.AArch64.Stitch.pwTbl k)) l) TT := by
-  have hk' : k % 8 = 0 ∧ k < 32768 := by rcases hk with rfl | rfl | rfl <;> decide
   have t : ∃ h, (taint.check (Taint.ofRegs []) (.block [.ldrSp .x5 k]) h).isSome = true := by
-    rcases hk with rfl | rfl | rfl <;> exact ⟨_, by taint_decide⟩
+    exact ⟨.block [] 256,by rfl⟩
   unfold Impl.AesGcm.AArch64.Stitch.pwTbl
   rw [List.append_assoc]
   refine RelCT.seq_block_append ?_
-  obtain ⟨s₁, run₁, x5₁, g₁, sp₁, -, -, -⟩ := ldrSp_ok (t := .x5) hk' hP₁ hsl₁
-  obtain ⟨s₂, run₂, x5₂, g₂, sp₂, -, -, -⟩ := ldrSp_ok (t := .x5) hk' hP₂ hsl₂
+  obtain ⟨s₁, run₁, x5₁, g₁, sp₁, -, -, -⟩ := ldrSp_ok (t := .x5) hk hP₁ hsl₁
+  obtain ⟨s₂, run₂, x5₂, g₂, sp₂, -, -, -⟩ := ldrSp_ok (t := .x5) hk hP₂ hsl₂
   refine rel_seq (rel_taint [] hsp (by agree_tac []) t) (F₁ := fun u => u = s₁) (F₂ := fun u => u = s₂)
     (WP.of_runBlock ⟨s₁, run₁, rfl⟩) (WP.of_runBlock ⟨s₂, run₂, rfl⟩) fun _ _ e₁ e₂ => ?_
   subst e₁ e₂
@@ -78,6 +77,15 @@ theorem pwTbl_relR (rs : List Reg) {k : Nat} (hk : k = 8 ∨ k = 16 ∨ k = 32) 
   by_cases h5 : r = .x5
   · subst h5; rw [x5₁, x5₂]
   · rw [g₁ r h5, g₂ r h5]; exact hr r ((List.mem_cons.mp hr').resolve_left h5)
+
+theorem pwTbl_relR (rs : List Reg) {k : Nat} (hk : k = 8 ∨ k = 16 ∨ k = 32) {l : Prog isa}
+    (hl : ∀ {u₁ u₂ : State}, u₁.sp = u₂.sp → (∀ r ∈ Reg.x5 :: rs, u₁.gpr r = u₂.gpr r) →
+      RelCT isa (Eq2 u₁ u₂) (.seq (.block pwRest) l) TT)
+    {v₁ v₂ : State} (hsp : v₁.sp = v₂.sp) (hr : ∀ r ∈ rs, v₁.gpr r = v₂.gpr r) {P : Addr}
+    (hP₁ : v₁.mem.readW (v₁.sp + BitVec.ofNat 64 k) 64 = P) (hsl₁ : InRegions (v₁.rd ++ v₁.wr) (v₁.sp + BitVec.ofNat 64 k) 8)
+    (hP₂ : v₂.mem.readW (v₂.sp + BitVec.ofNat 64 k) 64 = P) (hsl₂ : InRegions (v₂.rd ++ v₂.wr) (v₂.sp + BitVec.ofNat 64 k) 8) :
+    RelCT isa (Eq2 v₁ v₂) (.seq (.block (Impl.AesGcm.AArch64.Stitch.pwTbl k)) l) TT :=
+  pwTblAligned_relR rs (by rcases hk with rfl | rfl | rfl <;> decide) hl hsp hr hP₁ hsl₁ hP₂ hsl₂
 
 /-- `pwTbl k` then `l`, in two runs that agree on the arguments and find the
 same `pw` at `[sp + k]`. -/

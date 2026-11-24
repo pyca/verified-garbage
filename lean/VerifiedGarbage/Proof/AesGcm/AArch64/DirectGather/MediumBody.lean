@@ -18,45 +18,53 @@ open VG.Spec.Aes (bytesAt)
 open VG.Spec.Gcm (blockAt inc32 zeros)
 open VG.AArch64.Scrub
 
-theorem preKeys {o s : State} {extra : List Region} (l : BoundedLay o extra) (iv : NL o = 12) (hn : L o ≤ 224)
-    (h : Header o s) (zero : bytesAt s.mem (base o+224) 256 = zeros 256) :
-    MediumKeysPre (base o) (K o) (o.gpr .x1).toNat (blocks o) s := by
-  have bound : blocks o ≤ 14 := by unfold blocks; omega
-  have keyR : Covers [kR .plain o] (s.rd ++ s.wr) := Covers.of_mem fun r hr => by
-    rw [h.rd,l.rd,List.mem_singleton.mp hr]; simp
-  have nonceR : Covers [⟨Nn o,12⟩] (s.rd ++ s.wr) := by
-    rw [h.rd,← iv]; exact Covers.of_mem fun r hr => List.mem_append_left _ (by
-      rw [l.rd,List.mem_singleton.mp hr]; simp [nR])
-  refine ⟨h.x19,h.x21,by simpa using h.x22,h.x25,l.hR,by omega,?_,h.scratchWr,
-    covers_prefix keyR (by decide),(l.bk.sub_left (scratch_sub o)).symm.sub_left (Region.sub_prefix (by decide)),?_,?_,?_⟩
-  · have le : 752 ≤ o.sp.toNat := by have := l.w₁; omega
-    unfold base
-    rw [BitVec.toNat_sub_of_le (show BitVec.ofNat 64 Medium.work ≤ o.sp from BitVec.le_def.mpr le)]
+theorem preKeysAt {o s : State} {len : Nat} (iv : NL o = 12) (hn : len ≤ 224)
+    (h : Header o s len) (zero : bytesAt s.mem (base o+224) 256 = zeros 256)
+    (rounds : VG.Proof.AesGcm.AArch64.rounds (o.gpr .x1)) (room : 752 ≤ o.sp.toNat)
+    (keyR : Covers [kR .plain o] (s.rd++s.wr)) (nonceR : Covers [nR o] (s.rd++s.wr))
+    (sk : (scratch o).Disjoint (kR .plain o)) :
+    MediumKeysPre (base o) (K o) (o.gpr .x1).toNat ((len+15)/16) s := by
+  have bound : (len+15)/16 ≤ 14 := by omega
+  have nonce : Covers [⟨Nn o,12⟩] (s.rd++s.wr) := by rw [← iv]; exact nonceR
+  refine ⟨h.x19,h.x21,by simpa using h.x22,h.x25,rounds,by omega,?_,h.scratchWr,
+    covers_prefix keyR (by decide),sk.symm.sub_left (Region.sub_prefix (by decide)),?_,?_,?_⟩
+  · unfold base
+    rw [BitVec.toNat_sub_of_le (show BitVec.ofNat 64 Medium.work ≤ o.sp from BitVec.le_def.mpr room)]
     change o.sp.toNat - 752 + 752 ≤ 2^64
     have := o.sp.isLt; omega
-  · rw [h.x23]; exact in_off nonceR (by decide) (by decide)
-  · rw [h.x23]; exact in_off nonceR (by decide) (by decide)
+  · rw [h.x23]; exact in_off nonce (by decide) (by decide)
+  · rw [h.x23]; exact in_off nonce (by decide) (by decide)
   · intro i hi
     rw [blockAt,Proof.Cmac.Stream.bytesAt_offset _ _ (show 16*i + 16 ≤ 256 by omega),zero]
     simp only [zeros,List.drop_replicate,List.take_replicate,Nat.min_eq_left (show 16 ≤ 256-16*i by omega)]
     exact Proof.Gcm.ofBytes_zeros16
 
-private theorem keyCipher {o s : State} {extra : List Region} (l : BoundedLay o extra) (h : LocalMem o s) :
+theorem preKeys {o s : State} {extra : List Region} (l : BoundedLay o extra) (iv : NL o = 12) (hn : L o ≤ 224)
+    (h : Header o s) (zero : bytesAt s.mem (base o+224) 256 = zeros 256) :
+    MediumKeysPre (base o) (K o) (o.gpr .x1).toNat (blocks o) s :=
+  preKeysAt iv hn h zero l.hR (by have := l.w₁; omega)
+    (Covers.of_mem fun r hr => by rw [h.rd,l.rd,List.mem_singleton.mp hr]; simp)
+    (Covers.of_mem fun r hr => by rw [h.rd,l.rd,List.mem_singleton.mp hr]; simp)
+    (l.bk.sub_left (scratch_sub o))
+
+theorem keyCipherAt {o s : State} (rounds : VG.Proof.AesGcm.AArch64.rounds (o.gpr .x1))
+    (sk : (scratch o).Disjoint (kR .plain o)) (h : LocalMem o s) :
     ciphOf s.mem (K o) (o.gpr .x1).toNat = shortCipher o := by
   let n := (o.gpr .x1).toNat
-  have small : n ≤ 14 := by rcases l.hR with e|e|e <;> simp only [n,e] <;> decide
+  have small : n ≤ 14 := by rcases rounds with e|e|e <;> simp only [n,e] <;> decide
   have sub : (⟨K o,16*(n+1)⟩ : Region).Sub (kR .plain o) := Region.sub_prefix (by change 16*(n+1) ≤ 256; omega)
   unfold ciphOf
   rw [bytesAt_frame h.frame (by simpa only [List.mem_singleton,forall_eq] using
-    (l.bk.sub_left (scratch_sub o)).symm.sub_left sub) (by change 16*(n+1) ≤ 2^64; omega)]
+    (sk.symm.sub_left sub)) (by change 16*(n+1) ≤ 2^64; omega)]
   rfl
 
-private theorem keyNonce {o s : State} {extra : List Region} (l : BoundedLay o extra) (iv : NL o = 12) (h : Header o s) :
+theorem keyNonceAt {o s : State} {len : Nat} (sn : (scratch o).Disjoint (nR o))
+    (iv : NL o = 12) (h : Header o s len) :
     Counters.jZero s = shortJ0 o := by
   unfold Counters.jZero Counters.nonce shortJ0
   rw [h.x23,Proof.Gcm.j0_12 _ (by rw [Proof.Cmac.bytesAt_length,iv]),← iv]
   rw [bytesAt_frame h.frame (by simpa only [List.mem_singleton,forall_eq] using
-    (l.bn.sub_left (scratch_sub o)).symm) (Nat.le_of_lt (o.gpr .x3).isLt)]
+    sn.symm) (Nat.le_of_lt (o.gpr .x3).isLt)]
 
 theorem ready {o s : State} (v : GcmImpl) (v0 : v.ctr.scratch = 0) {extra : List Region} (l : BoundedLay o extra)
     (iv : NL o = 12) (hn : L o ≤ 224) (h : Header o s)
@@ -89,8 +97,8 @@ theorem ready {o s : State} (v : GcmImpl) (v0 : v.ctr.scratch = 0) {extra : List
     (reg _ (by decide) (by decide)).trans h.x23,(reg _ (by decide) (by decide)).trans h.x24,
     (g _ (by decide)).trans k25,(reg _ (by decide) (by decide)).trans h.x26,
     x6.trans (hk.desc.trans h.x6),x7.trans (hk.count.trans h.x7)⟩
-  have kc := keyCipher l h.toLocalMem
-  have ns := keyNonce l iv h
+  have kc := keyCipherAt l.hR (l.bk.sub_left (scratch_sub o)) h.toLocalMem
+  have ns := keyNonceAt (l.bn.sub_left (scratch_sub o)) iv h
   refine ⟨header,⟨dst.trans (by rw [sp]; exact localK.arg l 0 (by decide)),auth,key,header.x6,header.x7⟩,
     by simpa only [m,kc,ns,medD,show (224:Addr)=224#64 by decide] using hk.mask,?_,?_,?_⟩
   · intro j hj

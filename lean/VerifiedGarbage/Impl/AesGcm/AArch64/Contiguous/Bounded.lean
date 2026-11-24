@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Impl.AesGcm.AArch64.Contiguous.General
+public import VerifiedGarbage.Impl.AesGcm.AArch64.DirectGather
 
 /-! The bounded specialization for a 12-byte nonce and at most one block of AAD. -/
 
@@ -27,18 +27,5 @@ def shortFrame : Prog isa :=
 
 def standardGuard : List Instr :=
   [.subImm .x .x10 .x3 12,imm .x9 17,.subs .x .x11 .x5 .x9,.csel .x .x10 .x9 .x10]
-
-/-- The whole entry branches only on the CPU specialization and public record sizes. -/
-def select (v : Calls) : Prog isa :=
-  let clear := fun n p => Impl.Scrub.AArch64.scrubAll n 0 Fn.own p
-  let fallback := clear (v.pwWn+80) (generalFrame v)
-  let overShort := if v.ctr.scratch = 0 then
-    .seq (.block [imm .x9 225,.subs .x .x11 .x10 .x9,.sbc .x .x11 .x11 .x11])
-      (.ite (.nonzero .x .x11) (clear 800 (mediumFrame v.callees)) fallback)
-    else fallback
-  if !v.pmull then fallback else
-    .seq (.block standardGuard) <| .ite (.zero .x .x10)
-      (.seq (.block [.ldrSp .x10 0,imm .x9 97,.subs .x .x11 .x10 .x9,.sbc .x .x11 .x11 .x11])
-        (.ite (.nonzero .x .x11) (clear DirectGather.shortWork shortFrame) overShort)) fallback
 
 end VG.Impl.AesGcm.AArch64.Contiguous

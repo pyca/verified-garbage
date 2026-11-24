@@ -13,17 +13,21 @@ def work := 752
 def keyO := 224
 def authO := 480
 
-def setup : List Instr :=
-  [.addSp .x9 0] ++ save .x9 ++
-  [mov .x19 .x9, mov .x21 .x0, mov .x22 .x1, mov .x23 .x2, mov .x24 .x5,
-   .ldrSp .x26 (work+8), .addImm .x .x25 .x26 15, .lsr .x .x25 .x25 4, .lsl .x .x25 .x25 4]
+abbrev setup := shortSetupAt (work+8)
 
 /-- Zero both the CTR input and the right-aligned GHASH record, including the accumulator. -/
 def zero : List Instr :=
   .vop (.movi0 .v0) :: (List.range 33).map fun i => .strq .v0 .x19 (keyO+16*i)
 
-def aad : Prog isa :=
-  .seq (.block (Stitch.atP .x11 (authO+128) 0 ++ [mov .x12 .x4, mov .x13 .x24])) copy
+/-- With a known nonempty AAD the copy can start immediately at the word-count test. -/
+def aadWith (early : Bool) : Prog isa :=
+  let args := .block (Stitch.atP .x11 (authO+128) 0 ++ [mov .x12 .x4, mov .x13 .x24])
+  if early then
+    .ite (.zero .x .x24) (.block [])
+      (.seq args (.seq (.block [.lsr .x .x14 .x13 2]) (.ite (.zero .x .x14) copyLoop copyW)))
+  else .seq args copy
+
+abbrev aad := aadWith false
 
 def seed : List Instr :=
   [.ldr .x .x9 .x23 0, .ldr .w .x10 .x23 8, .vop (.ins .d2 .v31 0 .x9),
@@ -45,9 +49,9 @@ open Gcm.AArch64.Pmull in
 def hash16 : List Instr :=
   (prologueT ++ powersS ++ Gcm.AArch64.Pmull.body 8 ++ Gcm.AArch64.Pmull.body 8) ++ [.vop (.rev .rev64b .v16 .v0)]
 
-def tagOut := writeTag keyO (work+16)
+def tagOut (tagOff : Nat := work+16) := writeTag keyO tagOff
 
-def finish : List Instr := lengths ++ (hashArgs ++ hash16) ++ tagOut ++ restore
+def finish (tagOff : Nat := work+16) : List Instr := lengths ++ (hashArgs ++ hash16) ++ tagOut tagOff ++ restore
 
 def bodyWith (c : Callees) (endCode : Prog isa) : Prog isa :=
   .seq (.block setup) <| .seq (.block zero) <| .seq aad <| .seq (keys c) <|
@@ -68,22 +72,19 @@ def chooseGroup (n : Nat) (yes no : Prog isa) : Prog isa :=
 open Gcm.AArch64.Pmull in
 def hashTrimmed : Prog isa :=
   .seq (.block prologueW) <|
-  .seq (chooseGroup 129 (firstHashGroup 2) (chooseGroup 161 (firstHashGroup 4) (firstHashGroup 8)))
+  .seq (chooseGroup 129
+    (.ite (.zero .x .x24) (chooseGroup 113 (.block (advance 8)) (firstHashGroup 1)) (firstHashGroup 2))
+    (chooseGroup 161 (firstHashGroup 4) (firstHashGroup 8)))
     (.block (Gcm.AArch64.Pmull.body 8 ++ [.vop (.rev .rev64b .v16 .v0)]))
 
 /-- Everything up to loading the tag pointer, before the final store. -/
-def tagPrefix : List Instr :=
-  [.ldrq .v0 .x19 keyO,.vop (.logic .eor .v16 .v16 .v0),.ldrSp .x10 (work+16)]
+def tagPrefix (tagOff : Nat := work+16) : List Instr :=
+  [.ldrq .v0 .x19 keyO,.vop (.logic .eor .v16 .v16 .v0),.ldrSp .x10 tagOff]
 
-def finishPrefix : Prog isa :=
-  .seq (.seq (.block lengths) (.seq (.block hashArgs) hashTrimmed)) (.block tagPrefix)
+def finishPrefix (tagOff : Nat := work+16) : Prog isa :=
+  .seq (.seq (.block lengths) (.seq (.block hashArgs) hashTrimmed)) (.block (tagPrefix tagOff))
 
-def finishCached : Prog isa := .seq finishPrefix (.block ([.strq .v16 .x10 0] ++ restore))
-
-/-- The outer contiguous adapter occupies 48 bytes. Its caller supplied the
-powers pointer as the third stack argument. -/
-def bodyCached (c : Callees) : Prog isa :=
-  bodyWith c (.seq (.block [.ldrSp .x5 (work+48+16)]) finishCached)
+def finishCached (tagOff : Nat := work+16) : Prog isa := .seq (finishPrefix tagOff) (.block ([.strq .v16 .x10 0] ++ restore))
 
 def leaf (c : Callees) : Prog isa :=
   Impl.Scrub.AArch64.scrubAll work 0 Fn.own (.frame (.alloc work) (body c) (.free work))

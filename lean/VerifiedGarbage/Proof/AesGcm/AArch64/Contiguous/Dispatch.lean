@@ -174,7 +174,7 @@ open VG.Impl.Scrub.AArch64 (scrubAll)
 open VG.Impl.AesGcm.AArch64.Fn (own)
 
 abbrev any (_ : State) : Prop := True
-abbrev intermediate (s : State) : Prop := standard s ∧ s.gpr .x10 = stackArg s 0
+abbrev intermediate (s : State) : Prop := standard s ∧ s.gpr .x10 = stackArg s 0 + 31
 
 instance (s : State) : Decidable (standard s) := inferInstanceAs (Decidable (_ ∧ _))
 
@@ -199,24 +199,36 @@ private def nonceBranch (p : State → Prop) (accept : ∀ {s}, standard s → p
     exact rel_taint [] pub.1.2.2.2.2.2.2.2.2.1 (by agree_tac []) ⟨_,by taint_decide⟩
   residue := Residue.noResidue_of_blind (by decide +kernel) _ 0
 
-private theorem limit_eval {n : Nat} {s t : State} (load : s.gpr .x10=stackArg s 0)
-    (cond : t.gpr .x11 ≠ 0 ↔ (s.gpr .x10).toNat<n) :
-    isa.eval (.nonzero .x .x11) t = some (decide ((stackArg s 0).toNat<n)) := by
-  rw [load] at cond
-  change some (!(t.gpr .x11 == (0 : Addr))) = _
-  by_cases ok : (stackArg s 0).toNat<n
-  · simp [ok]; exact cond.mpr ok
-  · have z : t.gpr .x11=0 := by by_contra hn; exact ok (cond.mp hn)
-    simp [ok,z]
+private theorem limit_eval {n : Nat} {v : Addr} {t : State}
+    (cond : t.gpr .x11 = 0 ↔ v.toNat<n) :
+    isa.eval (.zero .x .x11) t = some (decide (v.toNat<n)) := by
+  change some (t.gpr .x11 == (0 : Addr)) = _
+  by_cases ok : v.toNat<n
+  · simp [ok,cond.mpr ok]
+  · simp [ok]; exact fun h => ok (cond.mp h)
 
 private def boundedBranch (p : State → Prop) (accept : ∀ {s}, intermediate s → p s) :
-    Branch intermediate bounded p (limitCode 225) (.nonzero .x .x11) where
+    Branch intermediate bounded p (limitCode 225) (.zero .x .x11) where
   take s := decide ((stackArg s 0).toNat<225)
-  run s h := (limit_ok (.inr rfl) s).mono fun t ⟨v,x10,test⟩ => by
-    refine ⟨v,limit_eval h.2.2.2 test,?_,fun _ => accept ⟨v.standard_iff.mpr h.2.2.1,x10.trans (h.2.2.2.trans (v.stackArg 0).symm)⟩⟩
+  run s h := (limit_ok (.inr (.inl rfl)) s (room_for_bias h.1) h.2.2.2).mono fun t ⟨v,x10,test⟩ => by
+    refine ⟨v,limit_eval test,?_,fun _ => accept ⟨v.standard_iff.mpr h.2.2.1,by rw [x10,v.stackArg]⟩⟩
     intro yes
     have sm := of_decide_eq_true yes
     exact ⟨v.standard_iff.mpr h.2.2.1,by rw [v.stackArg]; omega⟩
+  same := by intro a b _ _ p; rw [p.1.2.2.2.2.2.2.2.2.2 0 (by decide)]
+  trace := by
+    intro a b _ _ pub
+    exact rel_taint [] pub.1.2.2.2.2.2.2.2.2.1 (by agree_tac []) ⟨_,by taint_decide⟩
+  residue := Residue.noResidue_of_blind (by decide +kernel) _ 0
+
+private def mediumBranch :
+    Branch intermediate (prepared false) (prepared true) (limitCode 768) (.zero .x .x11) where
+  take s := decide ((stackArg s 0).toNat<768)
+  run s h := (limit_ok (.inr (.inr rfl)) s (room_for_bias h.1) h.2.2.2).mono fun t ⟨v,_,test⟩ => by
+    refine ⟨v,limit_eval test,fun _ => ⟨v.standard_iff.mpr h.2.2.1,fun e => Bool.noConfusion e⟩,?_⟩
+    intro miss
+    have big := of_decide_eq_false miss
+    exact ⟨v.standard_iff.mpr h.2.2.1,fun _ => by rw [v.stackArg]; omega⟩
   same := by intro a b _ _ p; rw [p.1.2.2.2.2.2.2.2.2.2 0 (by decide)]
   trace := by
     intro a b _ _ pub
@@ -236,16 +248,16 @@ private theorem loadView (s : State) : View s (loaded s) := by
   exact gpr_write_of_ne _ _ _ (fun h => hr (h ▸ (by decide : Reg.x10 ∈ temps)))
 
 private theorem firstRun {s : State} (c : Caller s) :
-    WP isa (.block firstCode) s fun t => View s t ∧ t.gpr .x10=stackArg s 0 ∧
-      (t.gpr .x11 ≠ 0 ↔ (stackArg s 0).toNat<97) := by
-  obtain ⟨τ,t,exec,vt,x10,hit⟩ := limit_ok (.inl rfl) (loaded s)
+    WP isa (.block firstCode) s fun t => View s t ∧ t.gpr .x10=stackArg s 0+31 ∧
+      (t.gpr .x11 = 0 ↔ (stackArg s 0).toNat<97) := by
+  obtain ⟨τ,t,exec,vt,x10,hit⟩ := limit_ok (.inl rfl) (loaded s) (room_for_bias c) (by exact gpr_write_self ..)
   have full : WP isa (.block firstCode) s fun u => u=t := by
     refine ⟨[.addr (s.sp+0)]++τ,t,Exec.block ?_,rfl⟩
     rw [execBlock_cons_of (loadRun c),Exec.block_eq (T := target) exec]; rfl
   refine full.mono fun u e => e ▸ ?_
   have v := loadView s
   have keep : View s t := ⟨v.keep.trans vt.keep,fun r hr => (vt.vec r hr).trans (v.vec r hr),vt.dit.trans v.dit⟩
-  exact ⟨keep,x10.trans (gpr_write_self ..),by rwa [show (loaded s).gpr .x10=stackArg s 0 from gpr_write_self ..] at hit⟩
+  exact ⟨keep,x10,hit⟩
 
 private theorem firstOutside : NoResidue (.block firstCode) (leafContract standard) 0 := by
   intro a b τ υ s t pa pb pub out un ea eb
@@ -269,12 +281,10 @@ private theorem firstOutside : NoResidue (.block firstCode) (leafContract standa
     (⟨fun _ => True,fun _ _ => True,fun _ _ => True,none⟩ : Contract isa) 0 _ _ _ _ _ _ trivial trivial trivial
     eq un (.block ha) (.block hb)
 
-private def shortBranch (p : State → Prop) (accept : ∀ {s}, intermediate s → p s) : Branch standard short p firstCode (.nonzero .x .x11) where
+private def shortBranch (p : State → Prop) (accept : ∀ {s}, intermediate s → p s) : Branch standard short p firstCode (.zero .x .x11) where
   take s := decide ((stackArg s 0).toNat<97)
   run s h := (firstRun h.1).mono fun t ⟨v,x10,hit⟩ => by
-    have test := @limit_eval 97 (loaded s) t (by exact gpr_write_self ..)
-      (by simpa only [loaded,gpr_write_self,BitVec.setWidth_eq] using hit)
-    refine ⟨v,test,?_,fun _ => accept ⟨v.standard_iff.mpr h.2.2,x10.trans (v.stackArg 0).symm⟩⟩
+    refine ⟨v,limit_eval hit,?_,fun _ => accept ⟨v.standard_iff.mpr h.2.2,by rw [x10,v.stackArg]⟩⟩
     intro yes
     have sm := of_decide_eq_true yes
     exact ⟨v.standard_iff.mpr h.2.2,by rw [v.stackArg]; omega⟩
@@ -284,16 +294,19 @@ private def shortBranch (p : State → Prop) (accept : ∀ {s}, intermediate s �
     exact rel_taint [] pub.1.2.2.2.2.2.2.2.2.1 (by agree_tac []) ⟨_,by taint_decide⟩
   residue := firstOutside
 
-theorem selected {v : GcmImpl} (facts : BackendFacts v) : Checked any (select v.calls) := by
+theorem selected {v : GcmImpl} {g : GhashWithImpl} (facts : BackendFacts v g) : Checked any (select v.calls g.fn) := by
   by_cases portable : (!v.calls.pmull) = true
-  · simp only [select,portable,ite_true]; exact generalLeaf facts
+  · simp only [select,portable,ite_true]
+    exact generalLeaf facts
   · by_cases zero : v.calls.ctr.scratch=0
     · simp only [select,portable,zero,ite_true]
       exact (nonceBranch standard id).checked ((shortBranch intermediate id).checked (shortLeaf facts.hash)
-        ((boundedBranch any (fun _ => trivial)).checked (boundedLeaf facts zero) (generalLeaf facts))) (generalLeaf facts)
+        ((boundedBranch intermediate id).checked (boundedLeaf facts zero)
+          (mediumBranch.checked (preparedLeaf facts false) (preparedLeaf facts true)))) (generalLeaf facts)
     · simp only [select,portable,zero,ite_false]
-      exact (nonceBranch standard id).checked ((shortBranch any (fun _ => trivial)).checked
-        (shortLeaf facts.hash) (generalLeaf facts)) (generalLeaf facts)
+      exact (nonceBranch standard id).checked ((shortBranch intermediate id).checked (shortLeaf facts.hash)
+        (mediumBranch.checked (preparedLeaf facts false) (preparedLeaf facts true))) (generalLeaf facts)
+
 
 end VG.Proof.AesGcm.AArch64.Contiguous.Guard
 
@@ -359,8 +372,8 @@ theorem bothLayouts (same : Bool) : ∃ s, (leafContract Guard.any).pre s ∧
   refine ⟨exampleState same,⟨caller same,examplePowers same,trivial⟩,congrArg BitVec.toNat (args same).1,?_⟩
   cases same <;> decide
 
-theorem verified {v : GcmImpl} (facts : BackendFacts v) :
-    VerifiedScrubbed target (select v.calls) (leafContract Guard.any) 0 := by
+theorem verified {v : GcmImpl} {g : GhashWithImpl} (facts : BackendFacts v g) :
+    VerifiedScrubbed target (select v.calls g.fn) (leafContract Guard.any) 0 := by
   obtain ⟨s,p,_⟩ := bothLayouts true
   exact Guard.selected facts ⟨s,p⟩
 
