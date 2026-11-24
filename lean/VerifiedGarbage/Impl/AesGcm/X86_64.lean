@@ -643,11 +643,14 @@ def oneBlocks (f : Fn) : Prog isa :=
 
 /-- The data left (as ciphertext) absorbed and padded, and the tag of all of it
 (`len` at `W + 192`) into `W + o`. -/
+abbrev tagCiphertext (o : Nat) : Prog isa :=
+  .seq (absorbPad c 16)
+  (.seq (.block [.mov .rbx (.mem (at_ .r15 alenO)), .mov .rbp (.mem (at_ .r15 tlenO))])
+    (tag c o))
+
 def oneTag (o : Nat) : Prog isa :=
   .seq (.block [.mov .r12 (.mem (at_ .r15 dataO)), .mov .rbp (.mem (at_ .r15 lenO)), .mov32 .rbx (imm 0)])
-  (.seq (absorbPad c 16)
-  (.seq (.block [.mov .rbx (.mem (at_ .r15 alenO)), .mov .rbp (.mem (at_ .r15 tlenO))])
-    (tag c o)))
+    (tagCiphertext c o)
 
 /-- The data left, kept at `W + 200`, and its length, `lenO`: in place, the
 data at `r12`, from the start of a keystream block (`rbx = 0`); out of

@@ -120,7 +120,7 @@ place there (`Q = D + j`), out of place (`to`) at `Q`, in `rbx`, readable,
 apart from what is written and as they were in `m₀`. -/
 def TailSrc (to : Bool) (St W SP : Addr) (s : State) (m₀ : Mem) (D : Addr) (j n : Nat) (Q : Addr) : Prop :=
   if to then s.gpr .rbx = Q ∧ DataOk St W SP s Q (n - j) ∧
-    (⟨Q, n - j⟩ : Region).Disjoint ⟨D + BitVec.ofNat 64 j, n - j⟩ ∧ bytesAt s.mem Q (n - j) = bytesAt m₀ Q (n - j)
+    (Q = D + BitVec.ofNat 64 j ∨ (⟨Q, n - j⟩ : Region).Disjoint ⟨D + BitVec.ofNat 64 j, n - j⟩) ∧ bytesAt s.mem Q (n - j) = bytesAt m₀ Q (n - j)
   else Q = D + BitVec.ofNat 64 j
 
 section

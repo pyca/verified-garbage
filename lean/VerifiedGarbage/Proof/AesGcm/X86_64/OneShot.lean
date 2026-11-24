@@ -685,7 +685,7 @@ theorem oneCryptBlkTo_ok {R : Nat} {icb : Block} {P : Nat} (hP : P % 16 = 0) {D 
     fun hc₀ => by simpa using hc₀, fun _ => by simp [bytesAt]; rfl, rfl, .inr (by omega_arith), Frame.refl _ _⟩,
     ?_, hm₁, hrd₁, hwr₁⟩
   simp only [TailSrc, ↓reduceIte, Nat.sub_zero]
-  exact ⟨hbx, hQ.of_eq hrd₁ hwr₁, by simpa using hQD, trivial⟩
+  exact ⟨hbx, hQ.of_eq hrd₁ hwr₁, Or.inr (by simpa using hQD), trivial⟩
 
 /-- `oneCryptG`: counter mode over the `n` bytes kept at `W + 200` (`Q`), from
 the first counter block, into `D` (`CryptSrc`: in place, `Q` itself). -/
@@ -759,15 +759,14 @@ variable (v : GcmImpl) {Ctx W SP : Addr} (L : Lay Ctx (W + BitVec.ofNat 64 16) W
 include L
 
 /-- `oneTag o`: the ciphertext absorbed, padded, and the tag into `W + o`. -/
-theorem oneTag_ok {o R : Nat} (ho : o = 0 ∨ o = 112) {D : Addr} {n N al : Nat} {H : Block} {x : List Byte}
+theorem tagCiphertext_ok {o R : Nat} (ho : o = 0 ∨ o = 112) {D : Addr} {n N al : Nat} {H : Block} {x : List Byte}
     (hx16 : x.length % 16 = 0) {s : State}
     (he : Env Ctx (W + BitVec.ofNat 64 16) W SP s) (hH : blockAt s.mem (Ctx + BitVec.ofNat 64 240) = H)
-    (hR : RoundsAt s.mem W R) (hdat : s.mem.readW (W + BitVec.ofNat 64 200) 64 = D)
-    (hlen : s.mem.readW (W + BitVec.ofNat 64 208) 64 = BitVec.ofNat 64 n)
+    (hR : RoundsAt s.mem W R) (h12 : s.gpr .r12=D) (hbp : s.gpr .rbp=BitVec.ofNat 64 n) (hbx : s.gpr .rbx=BitVec.ofNat 64 (x.length%16))
     (htl : s.mem.readW (W + BitVec.ofNat 64 192) 64 = BitVec.ofNat 64 N) (hN : N < 2 ^ 64)
     (hal : s.mem.readW (W + BitVec.ofNat 64 184) 64 = BitVec.ofNat 64 al)
     (hd : DataOk (W + BitVec.ofNat 64 16) W SP s D n) (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 2560⟩) :
-    WP isa (oneTag v.callees o) s fun s' => Env Ctx (W + BitVec.ofNat 64 16) W SP s' ∧
+    WP isa (tagCiphertext v.callees o) s fun s' => Env Ctx (W + BitVec.ofNat 64 16) W SP s' ∧
       Frame (⟨W + BitVec.ofNat 64 o, 16⟩ :: wFrame W SP) s.mem s'.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
       blockAt s'.mem (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 48) = blockAt s.mem (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 48) ∧
       blockAt s'.mem (W + BitVec.ofNat 64 16) = inc32 (blockAt s.mem (W + BitVec.ofNat 64 16)) ∧
@@ -781,28 +780,10 @@ theorem oneTag_ok {o R : Nat} (ho : o = 0 ∨ o = 112) {D : Addr} {n N al : Nat}
     fun hf d hd => hf.readW (r := ⟨W + BitVec.ofNat 64 d, 8⟩) (Region.contains_self _ _) (kept_oneFrame L hDW hd)
       (by decide)
   have hlt := hd.lt
-  obtain q₁ := he.perm.wR (show 200 + 8 ≤ 2560 by decide)
-  obtain q₂ := he.perm.wR (show 208 + 8 ≤ 2560 by decide)
-  obtain ⟨s₁, run₁, h12, hbp, hbx, hg₁, hm₁, hrd₁, hwr₁⟩ : ∃ s₁, runBlock isa [.mov .r12 (.mem (at_ .r15 dataO)),
-      .mov .rbp (.mem (at_ .r15 lenO)), .mov32 .rbx (imm 0)] s = some s₁ ∧
-      s₁.gpr .r12 = D ∧ s₁.gpr .rbp = BitVec.ofNat 64 n ∧ s₁.gpr .rbx = BitVec.ofNat 64 (x.length % 16) ∧
-      (∀ r, r ≠ .r12 → r ≠ .rbp → r ≠ .rbx → s₁.gpr r = s.gpr r) ∧ s₁.mem = s.mem ∧ s₁.rd = s.rd ∧
-      s₁.wr = s.wr := by
-    refine ⟨_, by xrun [he.r15, q₁, q₂], ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-    · simp [gpr_setReg, hdat]
-    · simp [gpr_setReg, hlen]
-    · simp [gpr_setReg, hx16]
-    · intro r a b c; simp [gpr_setReg, a, b, c]
-    all_goals rfl
-  refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
-  obtain he₁ : Env Ctx (W + BitVec.ofNat 64 16) W SP s₁ := he.keep (fun r hr => by
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl <;> exact hg₁ _ (by decide) (by decide) (by decide)) hrd₁ hwr₁
-  obtain hai : AbsIn Ctx (W + BitVec.ofNat 64 16) W SP 16 H x D n s₁ :=
-    ⟨he₁, h12, hbp, hbx, hd.of_eq hrd₁ hwr₁, by rw [hm₁, hH]⟩
+  obtain hai : AbsIn Ctx (W + BitVec.ofNat 64 16) W SP 16 H x D n s :=
+    ⟨he, h12, hbp, hbx, hd, hH⟩
   refine WP.seq (WP.mono (WP.with_rdwr (absorbPad_ok v L (yo := 16) (.inr rfl) hai hx16))
     fun s₄ ⟨hf, hrd₄, hwr₄⟩ => ?_)
-  rw [hm₁] at hf
   obtain ⟨m₂, fa, ft⟩ := hf.frame
   have he₄ := hf.env
   obtain g₂ := absFrame_one fa
@@ -855,8 +836,8 @@ theorem oneTag_ok {o R : Nat} (ho : o = 0 ∨ o = 112) {D : Addr} {n N al : Nat}
     rw [hm₅, blockAt_frame ft dT0, blockAt_frame fa dS0]
   obtain hH₅ : blockAt s₅.mem (Ctx + BitVec.ofNat 64 240) = H := by rw [hm₅, hf.hH]
   refine WP.mono (WP.with_rdwr (tag_ok v L (by decide) (TagCall.base v) ho he₅ hH₅ hR₅ hJ₅)) fun s₆ ⟨ht, hrd₆, hwr₆⟩ =>
-    ⟨ht.env, (wFrame_cons g₅).trans (tagFrame_one ht.frame), by rw [hrd₆, hrd₅, hrd₄, hrd₁],
-      by rw [hwr₆, hwr₅, hwr₄, hwr₁], ?_, ht.j, fun hab => ?_⟩
+    ⟨ht.env, (wFrame_cons g₅).trans (tagFrame_one ht.frame), by rw [hrd₆, hrd₅, hrd₄],
+      by rw [hwr₆, hwr₅, hwr₄], ?_, ht.j, fun hab => ?_⟩
   · have d48 : ∀ r ∈ tagFrame (W + BitVec.ofNat 64 16) W SP o,
         (⟨W + BitVec.ofNat 64 16 + BitVec.ofNat 64 48, 16⟩ : Region).Disjoint r := by
       intro r hr
@@ -890,6 +871,45 @@ theorem oneTag_ok {o R : Nat} (ho : o = 0 ∨ o = 112) {D : Addr} {n N al : Nat}
     simp only [List.length_append, Proof.Gcm.length_zeros]; exact Proof.Gcm.length_pad_mod _)
   rw [ht.out, ciph_frame g₅ dC hR.2, hbx₅, hbp₅, toNat_ofNat_of_lt hN, BitVec.toNat_ofNat, lensBlock_mod_left,
     hm₅, hw]
+
+
+theorem oneTag_ok {o R : Nat} (ho : o = 0 ∨ o = 112) {D : Addr} {n N al : Nat} {H : Block} {x : List Byte}
+    (hx16 : x.length % 16 = 0) {s : State}
+    (he : Env Ctx (W + BitVec.ofNat 64 16) W SP s) (hH : blockAt s.mem (Ctx + BitVec.ofNat 64 240) = H)
+    (hR : RoundsAt s.mem W R) (hdat : s.mem.readW (W + BitVec.ofNat 64 200) 64 = D)
+    (hlen : s.mem.readW (W + BitVec.ofNat 64 208) 64 = BitVec.ofNat 64 n)
+    (htl : s.mem.readW (W + BitVec.ofNat 64 192) 64 = BitVec.ofNat 64 N) (hN : N < 2 ^ 64)
+    (hal : s.mem.readW (W + BitVec.ofNat 64 184) 64 = BitVec.ofNat 64 al)
+    (hd : DataOk (W + BitVec.ofNat 64 16) W SP s D n) (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 2560⟩) :
+    WP isa (oneTag v.callees o) s fun s' => Env Ctx (W + BitVec.ofNat 64 16) W SP s' ∧
+      Frame (⟨W + BitVec.ofNat 64 o, 16⟩ :: wFrame W SP) s.mem s'.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
+      blockAt s'.mem (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 48) = blockAt s.mem (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 48) ∧
+      blockAt s'.mem (W + BitVec.ofNat 64 16) = inc32 (blockAt s.mem (W + BitVec.ofNat 64 16)) ∧
+      (Absorbed s.mem (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 16) (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 32) H x →
+        bytesAt s'.mem (W + BitVec.ofNat 64 o) 16 =
+          toBytes (ghashFrom H (ghash H (blocks (x ++ bytesAt s.mem D n ++
+              zeros (padLen (x ++ bytesAt s.mem D n).length))))
+            [ofBytes (lensBlock al N)] ^^^ ciphOf s.mem Ctx R (blockAt s.mem (W + BitVec.ofNat 64 16)))) := by
+  obtain q₁ := he.perm.wR (show 200 + 8 ≤ 2560 by decide)
+  obtain q₂ := he.perm.wR (show 208 + 8 ≤ 2560 by decide)
+  obtain ⟨s₁, run₁, h12, hbp, hbx, hg₁, hm₁, hrd₁, hwr₁⟩ : ∃ s₁, runBlock isa [.mov .r12 (.mem (at_ .r15 dataO)),
+      .mov .rbp (.mem (at_ .r15 lenO)), .mov32 .rbx (imm 0)] s = some s₁ ∧
+      s₁.gpr .r12 = D ∧ s₁.gpr .rbp = BitVec.ofNat 64 n ∧ s₁.gpr .rbx = BitVec.ofNat 64 (x.length % 16) ∧
+      (∀ r, r ≠ .r12 → r ≠ .rbp → r ≠ .rbx → s₁.gpr r = s.gpr r) ∧ s₁.mem = s.mem ∧ s₁.rd = s.rd ∧
+      s₁.wr = s.wr := by
+    refine ⟨_, by xrun [he.r15, q₁, q₂], ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+    · simp [gpr_setReg, hdat]
+    · simp [gpr_setReg, hlen]
+    · simp [gpr_setReg, hx16]
+    · intro r a b c; simp [gpr_setReg, a, b, c]
+    all_goals rfl
+  refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
+  obtain he₁ : Env Ctx (W + BitVec.ofNat 64 16) W SP s₁ := he.keep (fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl <;> exact hg₁ _ (by decide) (by decide) (by decide)) hrd₁ hwr₁
+  refine (tagCiphertext_ok v L ho hx16 he₁ (hm₁ ▸ hH) (hm₁ ▸ hR) h12 hbp hbx (hm₁ ▸ htl) hN
+    (hm₁ ▸ hal) (hd.of_eq hrd₁ hwr₁) hDW).mono fun t ⟨env,fr,rd,wr,cb,j,tg⟩ =>
+    ⟨env,hm₁ ▸ fr,rd.trans hrd₁,wr.trans hwr₁,hm₁ ▸ cb,hm₁ ▸ j,hm₁ ▸ tg⟩
 
 end
 
