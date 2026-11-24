@@ -78,7 +78,7 @@ use crate::arch::dispatch::gcm::{vg_aes_gcm_stream_finish_auto, vg_aes_gcm_strea
 #[cfg(target_arch = "riscv64")]
 use crate::arch::dispatch::gcm::{
     vg_aes_gcm_bitslice_auto, vg_aes_gcm_open_bitsliced_auto, vg_aes_gcm_open_to_bitsliced_auto,
-    vg_aes_gcm_seal_bitsliced_auto, vg_aes_gcm_seal_gather_bitsliced_auto,
+    vg_aes_gcm_seal_contiguous_bitsliced_auto, vg_aes_gcm_seal_gather_bitsliced_auto,
     vg_aes_gcm_stream_decrypt_bitsliced_auto, vg_aes_gcm_stream_encrypt_bitsliced_auto,
     vg_aes_gcm_stream_finish_bitsliced_auto, vg_aes_gcm_stream_verify_bitsliced_auto,
 };
@@ -328,10 +328,13 @@ impl AesGcm {
 
     /// `vg_aes_gcm_seal` (on x86-64, `vg_aes_gcm_seal_prepared`; on
     /// AArch64, `vg_aes_gcm_seal_with_powers`; on RISC-V,
-    /// `vg_aes_gcm_seal_bitsliced`) of `data` in place, whose lengths the
+    /// `vg_aes_gcm_seal_contiguous_bitsliced`) of `data` in place, whose lengths the
     /// caller checked.
     #[inline(always)]
     fn seal(&self, dit: crate::dit::Dit<'_>, nonce: &[u8], aad: &[u8], data: &mut [u8]) -> Block {
+        #[cfg(target_arch = "riscv64")]
+        let tag;
+        #[cfg(not(target_arch = "riscv64"))]
         let mut tag: Block = [0; 16];
         // SAFETY: `self.ctx` is the key context `vg_aes_gcm_init` wrote for
         // `self.rounds` (10, 12 or 14) rounds, valid for reads of 256 bytes,
@@ -375,19 +378,11 @@ impl AesGcm {
                 &self.powers.0,
             );
             #[cfg(target_arch = "riscv64")]
-            vg_aes_gcm_seal_bitsliced_auto(
-                dit,
-                self.key(),
-                self.rounds,
-                nonce.as_ptr(),
-                nonce.len(),
-                aad.as_ptr(),
-                aad.len(),
-                data.as_mut_ptr(),
-                data.len(),
-                &mut tag,
-                &self.bk.0,
-            );
+            {
+                let len = data.len();
+                let dst = data.as_mut_ptr();
+                tag = self.seal_contiguous(dit, nonce, aad, dst.cast_const(), dst, len);
+            }
             #[cfg(not(any(
                 target_arch = "x86_64",
                 target_arch = "aarch64",
@@ -405,6 +400,45 @@ impl AesGcm {
                 data.len(),
                 &mut tag,
             );
+        }
+        tag
+    }
+
+    /// Seal from `src` to `dst` with checked lengths.
+    ///
+    /// # Safety
+    /// `src` must be readable and `dst` writable for `len` bytes. These
+    /// ranges must be identical or disjoint. The writable range must also
+    /// be disjoint from the key, nonce, AAD and tag.
+    #[cfg(target_arch = "riscv64")]
+    #[inline(always)]
+    unsafe fn seal_contiguous(
+        &self,
+        dit: crate::dit::Dit<'_>,
+        nonce: &[u8],
+        aad: &[u8],
+        src: *const u8,
+        dst: *mut u8,
+        len: usize,
+    ) -> Block {
+        let mut tag = [0; 16];
+        // SAFETY: the caller supplies the input and output range permissions.
+        // The constructor initialized the AES context for this round count.
+        unsafe {
+            vg_aes_gcm_seal_contiguous_bitsliced_auto(
+                dit,
+                self.key(),
+                self.rounds,
+                nonce.as_ptr(),
+                nonce.len(),
+                aad.as_ptr(),
+                aad.len(),
+                src,
+                dst,
+                len,
+                &mut tag,
+                &self.bk.0,
+            )
         }
         tag
     }
@@ -734,6 +768,12 @@ impl AesGcm {
     ) -> Block {
         let dst = out.as_mut_ptr().cast();
         let len = out.len();
+        #[cfg(target_arch = "riscv64")]
+        if let [piece] = plaintext {
+            // SAFETY: the shared plaintext slice and exclusive destination are
+            // disjoint. The caller checked their lengths.
+            return unsafe { self.seal_contiguous(dit, nonce, aad, piece.as_ptr(), dst, len) };
+        }
         // The descriptors of the pieces, as `vg_aes_gcm_seal_gather` takes
         // them: each its address and its length. Only the first
         // `plaintext.len()` are written, and the function reads only those.
