@@ -354,7 +354,7 @@ theorem tag_ok (v : Ctr32Impl) {K W SP : BitVec 32} {s : State} (L : Lay K W SP)
   obtain aY : w64 (W + BitVec.ofNat 32 y) = w64 W + BitVec.ofNat 64 y := L.aW (by omega_arith)
   obtain ⟨hq, hqw, hqc, hqk⟩ := tagCall_pre L E₃ hy
   refine WP.mono (ctrCall_ok v L E₃ hR (c := 64) (by decide) hq hqc hqk hqw hax hcx hdx hbx hdi)
-    fun s₄ ⟨E₄, rd₄, wr₄, _, f₄, o₄⟩ => ⟨E₄, by rw [rd₄, hrd₃], by rw [wr₄, hwr₃], ?_, ?_⟩
+    fun s₄ ⟨E₄, rd₄, wr₄, _, f₄, o₄, _⟩ => ⟨E₄, by rw [rd₄, hrd₃], by rw [wr₄, hwr₃], ?_, ?_⟩
   · have f₄' := f₄
     rw [aY] at f₄'
     refine (f₃.sub fun r hr => ?_).trans (f₄'.sub fun r hr => ?_)

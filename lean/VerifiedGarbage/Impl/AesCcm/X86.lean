@@ -37,7 +37,7 @@ conventions and pieces of x86's AES-GCM (`Impl/AesGcm/X86.lean`).
   compared (AES-GCM's `recv` and `cmp`, with the address of the received tag,
   `tag`, kept at `W + 212`);
 * `[272, 284)`: the arguments of the piece running (`dO`, `nO`, `bO`), and
-  `[288, 304)`: those of the chunk (`qO`, `mO`, `iO`, `kO`);
+  `[288, 300)`: those of the chunk (`qO`, `mO`, `kO`);
 * `[384, 2560)`: the working space of the functions called.
 
 ## Registers
@@ -73,7 +73,10 @@ As on x86-64:
   blocks a chunk at a time, a call of `vg_cmac_aes_update` and one of
   `vg_aes_ctr32_to` each, the payload first or last (`chunk`); then the last
   bytes, the payload's in `B` (`absorbTail`) and the data's with a keystream
-  block (`ctrTail`). `vg_aes_ctr32_to` increments only the low 32 bits of the
+  block (`ctrTail`). `Ctr₁` is written once, before the chunks, and each call
+  of `vg_aes_ctr32_to` leaves the counter block of the next: written a word at
+  a time before every call, its load in the callee would wait for the calls
+  before it. `vg_aes_ctr32_to` increments only the low 32 bits of the
   counter block: as there are fewer than 2²⁸ blocks, they do not wrap around.
   With AES-NI a chunk is six blocks: the CBC-MAC is a chain of dependent
   rounds, so a CPU that executes out of order runs the counter blocks of the
@@ -116,12 +119,11 @@ abbrev alenO : Nat := 164
 abbrev dataO : Nat := 168
 abbrev lenO : Nat := 172
 abbrev okO : Nat := 176
-/-- The address of the rest of the data, the whole blocks left in it, the
-index of its first counter block, and the blocks of its first chunk. -/
+/-- The address of the rest of the data, the whole blocks left in it, and the
+blocks of its first chunk. -/
 abbrev qO : Nat := 288
 abbrev mO : Nat := 292
-abbrev iO : Nat := 296
-abbrev kO : Nat := 300
+abbrev kO : Nat := 296
 abbrev scrO : Nat := 384
 
 /-! ## Calls -/
@@ -252,14 +254,14 @@ state at `W + y`. -/
 def updStep (y : Nat) : Prog isa :=
   .seq (.block (keyArgs y ++ [.mov .ebx (slot qO), .mov .esi (slot kO)] ++ updScr)) (updCall c sfx)
 
-/-- The chunk XORed with the keystream from `Ctrᵢ`, `i` at `W + iO`. -/
+/-- The chunk XORed with the keystream from the counter block at `W + 64`,
+which the callee increments. -/
 def ctrStep : Prog isa :=
-  .seq (.block ([.mov .eax (slot iO)] ++ ctrAt ++ keyArgs c1O ++ [.mov .ebx (slot qO), .mov .edi (slot kO)])) (ctrCall c)
+  .seq (.block (keyArgs c1O ++ [.mov .ebx (slot qO), .mov .edi (slot kO)])) (ctrCall c)
 
 /-- On to the next chunk; ZF is set if no block is left. -/
 def advance : List Instr :=
-  [.mov .eax (slot kO), .mov .ecx (.reg .eax), .alu .add .ecx (slot iO), .store (at_ .ebp iO) .ecx,
-    .mov .ecx (.reg .eax), .alu .add .ecx (.reg .ecx), .alu .add .ecx (.reg .ecx), .alu .add .ecx (.reg .ecx),
+  [.mov .eax (slot kO), .mov .ecx (.reg .eax), .alu .add .ecx (.reg .ecx), .alu .add .ecx (.reg .ecx), .alu .add .ecx (.reg .ecx),
     .alu .add .ecx (.reg .ecx), .alu .add .ecx (slot qO), .store (at_ .ebp qO) .ecx, .mov .ecx (slot mO),
     .alu .sub .ecx (.reg .eax), .store (at_ .ebp mO) .ecx]
 
@@ -288,7 +290,7 @@ def dataWhole (enc : Bool) (y : Nat) : Prog isa :=
   .seq (.block ([.mov .eax (slot dataO), .store (at_ .ebp dO) .eax, .mov .eax (slot lenO),
       .store (at_ .ebp nO) .eax] ++ splitWhole))
     (.ite .e (.block [])
-      (.seq (.block [.store (at_ .ebp qO) .ebx, .store (at_ .ebp mO) .edi, .mov .eax (imm 1), .store (at_ .ebp iO) .eax])
+      (.seq (.block (([.store (at_ .ebp qO) .ebx, .store (at_ .ebp mO) .edi, .mov .eax (imm 1)] : List Instr) ++ ctrAt))
         (.loop (chunk c sfx enc y) .ne)))
 
 /-- The data XORed with the keystream from `Ctr₁` (§6.1 steps 5–8, §6.2

@@ -303,7 +303,15 @@ vg_aes_ccm_seal_aesni:
 	mov DWORD PTR [ebp+288], ebx
 	mov DWORD PTR [ebp+292], edi
 	mov eax, 1
-	mov DWORD PTR [ebp+296], eax
+	mov ecx, DWORD PTR [ebp+48]
+	mov DWORD PTR [ebp+64], ecx
+	mov ecx, DWORD PTR [ebp+52]
+	mov DWORD PTR [ebp+68], ecx
+	mov ecx, DWORD PTR [ebp+56]
+	mov DWORD PTR [ebp+72], ecx
+	bswap eax
+	or eax, DWORD PTR [ebp+60]
+	mov DWORD PTR [ebp+76], eax
 217:
 	mov esi, DWORD PTR [ebp+292]
 	cmp esi, 6
@@ -312,13 +320,13 @@ vg_aes_ccm_seal_aesni:
 	jmp 219f
 218:
 219:
-	mov DWORD PTR [ebp+300], esi
+	mov DWORD PTR [ebp+296], esi
 	mov eax, DWORD PTR [ebp+144]
 	mov ecx, DWORD PTR [ebp+148]
 	mov edx, ebp
 	add edx, 0
 	mov ebx, DWORD PTR [ebp+288]
-	mov esi, DWORD PTR [ebp+300]
+	mov esi, DWORD PTR [ebp+296]
 	mov edi, ebp
 	add edi, 384
 	push edi
@@ -334,22 +342,12 @@ vg_aes_ccm_seal_aesni:
 	pop eax
 	pop eax
 	pop eax
-	mov eax, DWORD PTR [ebp+296]
-	mov ecx, DWORD PTR [ebp+48]
-	mov DWORD PTR [ebp+64], ecx
-	mov ecx, DWORD PTR [ebp+52]
-	mov DWORD PTR [ebp+68], ecx
-	mov ecx, DWORD PTR [ebp+56]
-	mov DWORD PTR [ebp+72], ecx
-	bswap eax
-	or eax, DWORD PTR [ebp+60]
-	mov DWORD PTR [ebp+76], eax
 	mov eax, DWORD PTR [ebp+144]
 	mov ecx, DWORD PTR [ebp+148]
 	mov edx, ebp
 	add edx, 64
 	mov ebx, DWORD PTR [ebp+288]
-	mov edi, DWORD PTR [ebp+300]
+	mov edi, DWORD PTR [ebp+296]
 	add ebp, 384
 	push ebx
 	push ebp
@@ -367,10 +365,7 @@ vg_aes_ccm_seal_aesni:
 	pop eax
 	pop eax
 	sub ebp, 384
-	mov eax, DWORD PTR [ebp+300]
-	mov ecx, eax
-	add ecx, DWORD PTR [ebp+296]
-	mov DWORD PTR [ebp+296], ecx
+	mov eax, DWORD PTR [ebp+296]
 	mov ecx, eax
 	add ecx, ecx
 	add ecx, ecx
@@ -1024,17 +1019,6 @@ vg_aes_ccm_open_aesni:
 	mov DWORD PTR [ebp+288], ebx
 	mov DWORD PTR [ebp+292], edi
 	mov eax, 1
-	mov DWORD PTR [ebp+296], eax
-217:
-	mov esi, DWORD PTR [ebp+292]
-	cmp esi, 6
-	jb 218f
-	mov esi, 6
-	jmp 219f
-218:
-219:
-	mov DWORD PTR [ebp+300], esi
-	mov eax, DWORD PTR [ebp+296]
 	mov ecx, DWORD PTR [ebp+48]
 	mov DWORD PTR [ebp+64], ecx
 	mov ecx, DWORD PTR [ebp+52]
@@ -1044,12 +1028,21 @@ vg_aes_ccm_open_aesni:
 	bswap eax
 	or eax, DWORD PTR [ebp+60]
 	mov DWORD PTR [ebp+76], eax
+217:
+	mov esi, DWORD PTR [ebp+292]
+	cmp esi, 6
+	jb 218f
+	mov esi, 6
+	jmp 219f
+218:
+219:
+	mov DWORD PTR [ebp+296], esi
 	mov eax, DWORD PTR [ebp+144]
 	mov ecx, DWORD PTR [ebp+148]
 	mov edx, ebp
 	add edx, 64
 	mov ebx, DWORD PTR [ebp+288]
-	mov edi, DWORD PTR [ebp+300]
+	mov edi, DWORD PTR [ebp+296]
 	add ebp, 384
 	push ebx
 	push ebp
@@ -1072,7 +1065,7 @@ vg_aes_ccm_open_aesni:
 	mov edx, ebp
 	add edx, 96
 	mov ebx, DWORD PTR [ebp+288]
-	mov esi, DWORD PTR [ebp+300]
+	mov esi, DWORD PTR [ebp+296]
 	mov edi, ebp
 	add edi, 384
 	push edi
@@ -1088,10 +1081,7 @@ vg_aes_ccm_open_aesni:
 	pop eax
 	pop eax
 	pop eax
-	mov eax, DWORD PTR [ebp+300]
-	mov ecx, eax
-	add ecx, DWORD PTR [ebp+296]
-	mov DWORD PTR [ebp+296], ecx
+	mov eax, DWORD PTR [ebp+296]
 	mov ecx, eax
 	add ecx, ecx
 	add ecx, ecx
@@ -1833,16 +1823,24 @@ vg_aes_ccm_seal:
 	mov DWORD PTR [ebp+288], ebx
 	mov DWORD PTR [ebp+292], edi
 	mov eax, 1
-	mov DWORD PTR [ebp+296], eax
+	mov ecx, DWORD PTR [ebp+48]
+	mov DWORD PTR [ebp+64], ecx
+	mov ecx, DWORD PTR [ebp+52]
+	mov DWORD PTR [ebp+68], ecx
+	mov ecx, DWORD PTR [ebp+56]
+	mov DWORD PTR [ebp+72], ecx
+	bswap eax
+	or eax, DWORD PTR [ebp+60]
+	mov DWORD PTR [ebp+76], eax
 217:
 	mov esi, DWORD PTR [ebp+292]
-	mov DWORD PTR [ebp+300], esi
+	mov DWORD PTR [ebp+296], esi
 	mov eax, DWORD PTR [ebp+144]
 	mov ecx, DWORD PTR [ebp+148]
 	mov edx, ebp
 	add edx, 0
 	mov ebx, DWORD PTR [ebp+288]
-	mov esi, DWORD PTR [ebp+300]
+	mov esi, DWORD PTR [ebp+296]
 	mov edi, ebp
 	add edi, 384
 	push edi
@@ -1858,22 +1856,12 @@ vg_aes_ccm_seal:
 	pop eax
 	pop eax
 	pop eax
-	mov eax, DWORD PTR [ebp+296]
-	mov ecx, DWORD PTR [ebp+48]
-	mov DWORD PTR [ebp+64], ecx
-	mov ecx, DWORD PTR [ebp+52]
-	mov DWORD PTR [ebp+68], ecx
-	mov ecx, DWORD PTR [ebp+56]
-	mov DWORD PTR [ebp+72], ecx
-	bswap eax
-	or eax, DWORD PTR [ebp+60]
-	mov DWORD PTR [ebp+76], eax
 	mov eax, DWORD PTR [ebp+144]
 	mov ecx, DWORD PTR [ebp+148]
 	mov edx, ebp
 	add edx, 64
 	mov ebx, DWORD PTR [ebp+288]
-	mov edi, DWORD PTR [ebp+300]
+	mov edi, DWORD PTR [ebp+296]
 	add ebp, 384
 	push ebx
 	push ebp
@@ -1891,10 +1879,7 @@ vg_aes_ccm_seal:
 	pop eax
 	pop eax
 	sub ebp, 384
-	mov eax, DWORD PTR [ebp+300]
-	mov ecx, eax
-	add ecx, DWORD PTR [ebp+296]
-	mov DWORD PTR [ebp+296], ecx
+	mov eax, DWORD PTR [ebp+296]
 	mov ecx, eax
 	add ecx, ecx
 	add ecx, ecx
@@ -2548,11 +2533,6 @@ vg_aes_ccm_open:
 	mov DWORD PTR [ebp+288], ebx
 	mov DWORD PTR [ebp+292], edi
 	mov eax, 1
-	mov DWORD PTR [ebp+296], eax
-217:
-	mov esi, DWORD PTR [ebp+292]
-	mov DWORD PTR [ebp+300], esi
-	mov eax, DWORD PTR [ebp+296]
 	mov ecx, DWORD PTR [ebp+48]
 	mov DWORD PTR [ebp+64], ecx
 	mov ecx, DWORD PTR [ebp+52]
@@ -2562,12 +2542,15 @@ vg_aes_ccm_open:
 	bswap eax
 	or eax, DWORD PTR [ebp+60]
 	mov DWORD PTR [ebp+76], eax
+217:
+	mov esi, DWORD PTR [ebp+292]
+	mov DWORD PTR [ebp+296], esi
 	mov eax, DWORD PTR [ebp+144]
 	mov ecx, DWORD PTR [ebp+148]
 	mov edx, ebp
 	add edx, 64
 	mov ebx, DWORD PTR [ebp+288]
-	mov edi, DWORD PTR [ebp+300]
+	mov edi, DWORD PTR [ebp+296]
 	add ebp, 384
 	push ebx
 	push ebp
@@ -2590,7 +2573,7 @@ vg_aes_ccm_open:
 	mov edx, ebp
 	add edx, 96
 	mov ebx, DWORD PTR [ebp+288]
-	mov esi, DWORD PTR [ebp+300]
+	mov esi, DWORD PTR [ebp+296]
 	mov edi, ebp
 	add edi, 384
 	push edi
@@ -2606,10 +2589,7 @@ vg_aes_ccm_open:
 	pop eax
 	pop eax
 	pop eax
-	mov eax, DWORD PTR [ebp+300]
-	mov ecx, eax
-	add ecx, DWORD PTR [ebp+296]
-	mov DWORD PTR [ebp+296], ecx
+	mov eax, DWORD PTR [ebp+296]
 	mov ecx, eax
 	add ecx, ecx
 	add ecx, ecx
