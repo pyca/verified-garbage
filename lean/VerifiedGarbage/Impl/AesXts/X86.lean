@@ -10,9 +10,9 @@ public import VerifiedGarbage.Impl.AesOcb.X86
 `vg_aes_xts_decrypt` with the same arguments, every argument
 on the stack (cdecl), composed of one call of the verified `vg_aes_encrypt_blocks` or
 `vg_aes_decrypt_blocks` on all the blocks, in place. They are generic over
-the implementation they call (`Blocks`): each is emitted once for each
-implementation (e.g. `vg_aes_xts_encrypt_aesni` calls
-`vg_aes_encrypt_blocks_aesni`).
+the implementation they call (`Blocks`), and are emitted for the baseline
+one (`vg_aes_xts_encrypt` calls `vg_aes_encrypt_blocks`); with AES-NI the
+functions are those of `Impl/AesXts/X86AesNi.lean`, which call nothing.
 
 They are built from AES-CBC's pieces (`Impl/AesCbc/X86.lean`), whose
 arguments are in the same places: the registers are saved in the scratch
