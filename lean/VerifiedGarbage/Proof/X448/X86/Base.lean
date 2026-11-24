@@ -107,7 +107,7 @@ namespace VG.Proof.X448.X86
 
 open VG VG.X86 VG.Impl.X448.X86 VG.Proof.X448.Radix16
 open VG.Proof.Ed448 (BaseCombUOk comb pt)
-open VG.Proof.Ed448.X86 (Args CombInv combLoop_ok initSlots_ok initSlots_E initSlots_bounded initE
+open VG.Proof.Ed448.X86 (Args CombInv combLoop_ok initSlots_ok initSlots_E initE
   stkR_below BitsG combLoopG_tr far_out Input)
 
 /-! ## The precondition -/
@@ -252,18 +252,14 @@ theorem entryB_stage {s₀ : State} (h : BPre s₀) : WP isa baseEntry s₀ (XMi
     · rw [o₅ _ (Or.inr (by rw [ofs_off' _ (by omega_using [hB, ht])]; omega_using [h448])), u₄.mem,
         decodeScalar448_top _ h448, show BITS + t = BITS + 448 + (t - 448) by omega_using [h448]]
       exact z₃ (t - 448) (by omega_using [ht, h448])
-  obtain slotOut : ∀ i : Index, ∀ j < 28,
-      limbs s₅.mem (bsX s₀) (slot i.val) j = limbs s₂.mem (bsX s₀) (slot i.val) j := fun i j hj => by
-    have hi := i.isLt
-    rw [o₅.limbs (d := slot i.val) (Or.inl (by simp only [slot]; omega_using [hB, hi]))
-        (by simp only [slot]; omega_using [hi]) hj, u₄.mem,
-      o₃.limbs (d := slot i.val) (Or.inl (by simp only [slot]; omega_using [hB, hi]))
-        (by simp only [slot]; omega_using [hi]) hj]
   obtain e₅ : ∀ i : Index, E s₅.mem (bsX s₀) i = Proof.X448.toFe (Impl.Ed448.X86.initVal i.val) := fun i => by
+    have hi := i.isLt
     rw [← initSlots_E l₂ i]
-    exact congrArg Proof.X448.toFe (valN_congr (slotOut i))
-  obtain b₅ : BoundedEnv s₅.mem (bsX s₀) := fun i j hj => by
-    rw [slotOut i j hj]; exact initSlots_bounded l₂ i j hj
+    refine congrArg Proof.X448.toFe ?_
+    rw [o₅.fe (d := slot i.val) (Or.inl (by simp only [slot]; omega_using [hB, hi]))
+        (by simp only [slot]; omega_using [hi]), u₄.mem,
+      o₃.fe (d := slot i.val) (Or.inl (by simp only [slot]; omega_using [hB, hi]))
+        (by simp only [slot]; omega_using [hi])]
   obtain ⟨er, eq, ed⟩ := initE _ e₅
   obtain k05 : Keeps [.eax, .ebx, .ebp, .edi, .edx, .esi, .ecx] s₀ s₅ :=
     (k03.mono (by decide)).trans ((u₄.rest (by decide)).trans (k₅.mono (by decide)))
@@ -274,13 +270,13 @@ theorem entryB_stage {s₀ : State} (h : BPre s₀) : WP isa baseEntry s₀ (XMi
     rw [← u₄.mem]; exact o₅.mono (by omega_using []) (by omega_using [hB])
   obtain ws : (⟨bsX s₀, 8192⟩ : Region) ∈ s₀.wr ++ [below (s₀.gpr .esp) 20] := by
     rw [h.wr]; simp
-  refine ⟨h, ⟨⟨hs₅, hc₅, b₅⟩, sp₅, k05.2.2, (Outside.frame (o03.trans o35)).mono fun r hr => by
+  refine ⟨h, ⟨⟨hs₅, hc₅⟩, sp₅, k05.2.2, (Outside.frame (o03.trans o35)).mono fun r hr => by
       rw [List.mem_singleton.mp hr]; exact ws⟩, k05.2.1,
     (((sv₁.outside o₂ (by decide)).outside o₃ (by decide)).outside (u₄.mem ▸ o₅) (by decide)), bits,
     fun s' h1 h2 h3 h4 h5 => ?_⟩
   have k' : Keeps (.esi :: workRegs) s₅ s' :=
     ⟨fun r hr => h2 r (fun e => hr (by subst r; exact List.mem_cons_self)), h4, h5⟩
-  exact ⟨hs₅.of_keeps k' (by decide), hc₅.keep (h2 _ (by decide)), h3 ▸ b₅, k', h1,
+  exact ⟨hs₅.of_keeps k' (by decide), hc₅.keep (h2 _ (by decide)), k', h1,
     h3 ▸ WsOut2.refl _ _ _ _ _ _, by rw [h3, er]; rfl, by rw [h3]; exact congrArg Spec.Ed448.Point.Z eq,
     by rw [h3]; exact ed⟩
 
@@ -292,7 +288,7 @@ def XL (σ s : State) : Prop := ∃ s₄, XMid σ s₄ ∧ CombInv (bsX σ) (kX 
 theorem loopB_stage {σ s : State} (h : XMid σ s) : WP isa Impl.Ed448.X86.combLoop s (XL σ) :=
   WP.mono (h.fe.wp (NoSp.of_all (by lit_decide)) (by lit_decide)
     (Q := fun t => CombInv (bsX σ) (kX σ) s t 0) (WP.mono (combLoop_ok h.bits h.start) fun t ht =>
-      ⟨⟨ht.scr, ht.ctx, ht.bounded⟩, ht.regs.1 _ (by decide), ht.regs.2.2, ht⟩))
+      ⟨⟨ht.scr, ht.ctx⟩, ht.regs.1 _ (by decide), ht.regs.2.2, ht⟩))
     fun t ⟨fe, ht⟩ => ⟨s, h, ht, fe⟩
 
 /-- `X²` and `Y²`. -/
@@ -334,8 +330,8 @@ theorem invertB_stage {σ s : State} (h : XU σ s) : WP isa Impl.X448.X86.invert
   have fe := h.fe
   refine WP.mono (fe.wp (NoSp.of_all (by lit_decide)) (by lit_decide)
     (Q := fun t => IKeep (bsX σ) s t ∧ E t.mem (bsX σ) = invEnv (E s.mem (bsX σ)))
-    (WP.mono (invert_ok fe.fin.scr fe.fin.ctx fe.fin.bounded) fun t ⟨k, b, e⟩ =>
-      ⟨⟨k.scr fe.fin.scr, k.ctx fe.fin.ctx, b⟩, k.regs.1 _ (by decide), k.regs.2.2, k, e⟩))
+    (WP.mono (invert_ok fe.fin.scr fe.fin.ctx) fun t ⟨k, e⟩ =>
+      ⟨⟨k.scr fe.fin.scr, k.ctx fe.fin.ctx⟩, k.regs.1 _ (by decide), k.regs.2.2, k, e⟩))
     fun t ⟨fe', k, e⟩ => ?_
   exact ⟨h.pre, fe', k.regs.2.1.trans h.rd, h.saved.wsout2 k.mem (by decide) (by decide),
     by rw [e, invEnv_x2, invEnv_eval, h.x, h.y]⟩
@@ -347,7 +343,7 @@ theorem finishX_ok {s₀ s : State} {n sc : Nat} (hA : Args s₀ n sc) (h0 : 0 <
     (hsp : s.gpr .esp = s₀.gpr .esp) (hr : s.rd = s₀.rd) (hwr : s.wr = s₀.wr)
     {base : Addr} (hm : Frame (s₀.wr ++ [below (s₀.gpr .esp) 20]) s₀.mem s.mem)
     (hawr : ∀ r ∈ s₀.wr ++ [below (s₀.gpr .esp) 20], (⟨argAddr s₀ 0, 4 * n⟩ : Region).Disjoint r)
-    (hs : Scr s base) (hc : CallCtx s base) (hb : BoundedEnv s.mem base)
+    (hs : Scr s base) (hc : CallCtx s base)
     (hout : outR s₀ ∈ s₀.wr) (hofit : (arg s₀ 0).toNat + 56 ≤ 2 ^ 32)
     (hd : (outR s₀).Disjoint ⟨base, 8192⟩)
     {g : Reg → BitVec 32} (sv : Saved base g s.mem) :
@@ -357,7 +353,7 @@ theorem finishX_ok {s₀ s : State} {n sc : Nat} (hA : Args s₀ n sc) (h0 : 0 <
       (∀ p ∈ savedSlots, t.gpr p.1 = g p.1) ∧ t.gpr .esp = s.gpr .esp ∧
       Frame (s₀.wr ++ [below (s₀.gpr .esp) 20]) s.mem t.mem := by
   obtain hfar : ∀ j < 8192, 56 ≤ ofs ((arg s₀ 0).setWidth 64) (off base j) := fun j hj => far_out hd hj
-  obtain hw56 : ∀ j < 56, InRegions s₀.wr (off ((arg s₀ 0).setWidth 64) j) 1 := fun j hj =>
+  obtain hw56 : ∀ k < 14, InRegions s₀.wr (off ((arg s₀ 0).setWidth 64) (4 * k)) 4 := fun j hj =>
     ⟨_, hout, Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj])⟩
   obtain ws : (⟨base, 8192⟩ : Region) ∈ s₀.wr ++ [below (s₀.gpr .esp) 20] :=
     List.mem_append_left _ (hwr ▸ hs.wr)
@@ -365,11 +361,11 @@ theorem finishX_ok {s₀ s : State} {n sc : Nat} (hA : Args s₀ n sc) (h0 : 0 <
     fun h => (Outside.frame h).mono fun r hr => by rw [List.mem_singleton.mp hr]; exact ws
   unfold finish
   refine WP.seq (WP.mono (mulCall_ok hs hc (o := X2) (a := X2) (b := T7) (by decide) (by decide)
-    (by decide) (hb 1) (hb 21)) fun u ⟨uk, ub, uv⟩ => ?_)
+    (by decide)) fun u ⟨uk, uv⟩ => ?_)
   have us := hs.of_keeps uk.keeps (by decide)
   simp only [List.append_assoc]
   rw [WP.block_append_iff]
-  refine WP.mono (freeze_ok us ub) fun v ⟨vb, vv, vm, vk⟩ => ?_
+  refine WP.mono (freeze_ok us) fun v ⟨vv, vm, vk⟩ => ?_
   have vs := us.of_keeps vk (by decide)
   obtain stk : callStk s = below (s₀.gpr .esp) 20 := by simp only [callStk, hsp]
   obtain frames : Frame (s₀.wr ++ [below (s₀.gpr .esp) 20]) s.mem v.mem := by
@@ -382,9 +378,9 @@ theorem finishX_ok {s₀ s : State} {n sc : Nat} (hA : Args s₀ n sc) (h0 : 0 <
   have hvsp : v.gpr .esp = s₀.gpr .esp := (ksv.1 _ (by decide)).trans hsp
   refine hA.loadF hvsp (ksv.2.1.trans hr) (ksv.2.2.trans hwr) (hm.trans frames) hawr h0 fun v' hv => ?_
   have vs' := vs.of_upd hv (by decide)
-  change WP isa (.block ((List.range 28).flatMap packLimb ++ restore)) v' _
+  change WP isa (.block ((List.range 14).flatMap packWord ++ restore)) v' _
   rw [WP.block_append_iff]
-  refine WP.mono (output_ok vs' (hv.mem ▸ vb) (by rw [hv.gpr])
+  refine WP.mono (output_ok vs' (by rw [hv.gpr])
     (by rw [hv.gpr]; exact hofit)
     (by intro j hj; rw [hv.wr, ksv.2.2, hwr]; exact hw56 j hj) hfar) fun w ⟨wv, wm, wk⟩ => ?_
   have ws' := vs'.of_keeps wk (by decide)
@@ -410,7 +406,7 @@ theorem finishB_stage {σ s : State} (h : XI σ s) :
   have hp := h.pre
   have fe := h.fe
   refine WP.mono (finishX_ok hp.args (by decide) fe.sp h.rd fe.wr fe.frame hp.args_wr fe.fin.scr fe.fin.ctx
-    fe.fin.bounded (by rw [hp.wr]; simp) hp.out_fit hp.out_sc h.saved) fun t ⟨bt, rt, spt, ft⟩ => ?_
+    (by rw [hp.wr]; simp) hp.out_fit hp.out_sc h.saved) fun t ⟨bt, rt, spt, ft⟩ => ?_
   refine ⟨⟨fun r hr => ?_, ?_⟩, by rw [bt, h.val]⟩
   · simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl
@@ -525,8 +521,8 @@ theorem finishB_tr : RelCT isa (Runs XP₀ XI) finish fun _ _ => True := by
   · intro σ s h
     have fe := h.fe
     exact WP.mono (fe.wp (op_nosp (.mul 1 1 21)) (op_stack (.mul 1 1 21)) (Q := fun _ => True)
-      (WP.mono (mulE fe.fin.scr fe.fin.ctx fe.fin.bounded 1 1 21) fun t ⟨k, b, _⟩ =>
-        ⟨⟨k.scr fe.fin.scr, k.ctx fe.fin.ctx, b⟩, k.regs.1 _ (by decide), k.regs.2.2, trivial⟩))
+      (WP.mono (mulE fe.fin.scr fe.fin.ctx 1 1 21) fun t ⟨k, _⟩ =>
+        ⟨⟨k.scr fe.fin.scr, k.ctx fe.fin.ctx⟩, k.regs.1 _ (by decide), k.regs.2.2, trivial⟩))
       fun t ⟨fe', _⟩ => fe'
   · refine RelCT.taint (A := taint) (τa 16) ?_ (by taint_decide)
     rintro s₁ s₂ ⟨σ₁, σ₂, hP, f₁, f₂⟩

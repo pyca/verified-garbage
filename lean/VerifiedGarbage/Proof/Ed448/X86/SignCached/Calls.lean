@@ -25,7 +25,6 @@ import VerifiedGarbage.Proof.Sha512.Spec
 import VerifiedGarbage.Proof.Sha512.X86.Stream.Init
 import VerifiedGarbage.Proof.X25519.X86.Basic
 import VerifiedGarbage.Proof.X448.Bytes
-import VerifiedGarbage.Proof.X448.X86.Carry
 import VerifiedGarbage.Proof.X448.X86.Columns
 import VerifiedGarbage.Proof.X448.X86.Copy
 import VerifiedGarbage.Proof.X448.X86.FnVerified

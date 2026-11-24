@@ -235,14 +235,9 @@ theorem stepHead_fin {s₀ s : State} {base : Addr} {k : Nat} {u : Spec.X448.Fe}
     wr₁ ▸ hs.wr, by rw [g₁ _ (by decide)]; exact hs.nowrap⟩
   have out₁ : Outside base SWAP 4 s.mem s₁.mem := by
     rw [m₁]; exact writeW_outside _ _ _ (by decide)
-  have bb₁ : BoundedEnv s₁.mem base := by
-    intro i j hj
-    rw [out₁.limbs (Or.inr (by simp only [slot, SWAP]; omega_using []))
-      (Nat.le_trans (slot_bound i) (by decide)) hj]
-    exact hi.bounded i j hj
-  refine WP.mono (swaps_ok hs₁ bb₁ c₁) fun s₂ ⟨k₂, bb₂, _⟩ => ?_
+  refine WP.mono (swaps_ok hs₁ c₁) fun s₂ ⟨k₂, _⟩ => ?_
   have hc₁ : CallCtx s₁ base := hi.ctx.keep (g₁ _ (by decide))
-  exact ⟨⟨k₂.scr hs₁, k₂.ctx hc₁, bb₂⟩, (k₂.regs.1 _ (by decide)).trans (g₁ _ (by decide)),
+  exact ⟨⟨k₂.scr hs₁, k₂.ctx hc₁⟩, (k₂.regs.1 _ (by decide)).trans (g₁ _ (by decide)),
     (k₂.regs.1 _ (by decide)).trans b₁⟩
 
 /-- `n + 1` iterations left. -/
@@ -309,7 +304,7 @@ theorem setup_rel : RelCT isa (W fun σ s => s = σ) (.block setup) (W S1) := by
   exact agree₀ hP.1 hP.2.1 hP.2.2
 
 theorem S1.af {σ s : State} (h : S1 σ s) : AF σ s :=
-  ⟨h.1, h.2.2.1.1 _ (by decide), h.2.2.1.2.2, XFrame.of_outside h.2.2.2.1⟩
+  ⟨h.1, h.2.1.1 _ (by decide), h.2.1.2.2, XFrame.of_outside h.2.2.1⟩
 
 theorem bits_rel : RelCT isa (W S1) bits (W Mid) := by
   refine W.step (RelCT.taint (A := taint) τf ?_ (by taint_decide)) fun σ s hp h => bits_stage hp h
@@ -331,7 +326,7 @@ theorem Sw.rf {σ₁ σ₂ s₂ s₄ s₂' s₄' t₁ t₂ : State} (hP : P₀ �
   obtain ⟨s₁', c₁, p₁, -⟩ := h₁.fin
   obtain ⟨s₂'', c₂, p₂, -⟩ := h₂.fin
   rw [← hP.base] at s₂'' c₂
-  exact ⟨⟨s₁', c₁, h₁.2.2.1⟩, ⟨s₂'', c₂, by rw [hP.base]; exact h₂.2.2.1⟩,
+  exact ⟨⟨s₁', c₁⟩, ⟨s₂'', c₂⟩,
     p₁.trans (hP.sp.trans p₂.symm)⟩
 
 theorem invert_piece : RelCT isa (W fun σ s => ∃ s₂ s₄, Sw σ s₂ s₄ s) Impl.X448.X86.invert
@@ -345,10 +340,10 @@ theorem invert_piece : RelCT isa (W fun σ s => ∃ s₂ s₄, Sw σ s₂ s₄ s
   exact ⟨_, Sw.rf hP h₁ h₂⟩
 
 theorem IvE.af {σ s : State} (h : IvE σ s) :
-    Scr s (bs σ) ∧ CallCtx s (bs σ) ∧ BoundedEnv s.mem (bs σ) ∧ AF σ s := by
-  obtain ⟨_, _, _, w, k, b, -, f⟩ := h
+    Scr s (bs σ) ∧ CallCtx s (bs σ) ∧ AF σ s := by
+  obtain ⟨_, _, _, w, k, -, f⟩ := h
   obtain ⟨hs, hc, sp, wr⟩ := w.fin
-  exact ⟨k.scr hs, k.ctx hc, b, k.scr hs, (k.regs.1 _ (by decide)).trans sp, k.regs.2.2.trans wr, f⟩
+  exact ⟨k.scr hs, k.ctx hc, k.scr hs, (k.regs.1 _ (by decide)).trans sp, k.regs.2.2.trans wr, f⟩
 
 theorem finishMul_rel (b : Addr) : RelCT isa (RF b) (mulCall X2 X2 T7) (RF b) :=
   fieldOp_rel (.mul 1 1 21)
@@ -360,10 +355,10 @@ theorem finish_rel : RelCT isa (fun t₁ t₂ => (∃ b, RF b t₁ t₂) ∧ W I
       ((RelCT.exists_ fun b => (finishMul_rel b).mono (fun _ _ h => h) fun _ _ _ => trivial).mono (fun _ _ h => h.1)
         fun _ _ h => h) ?_ fun _ _ _ _ hP _ g₁ g₂ => ⟨_, _, hP, g₁, g₂⟩
     intro σ s hp h
-    obtain ⟨hs, hc, hb, -, sp, wr, f⟩ := h.af
+    obtain ⟨hs, hc, -, sp, wr, f⟩ := h.af
     refine WP.mono (xframe hp (NoSp.of_all (by lit_decide)) (by lit_decide) sp wr f
-      (mulCall_ok hs hc (o := X2) (a := X2) (b := T7) (by decide) (by decide) (by decide) (hb 1) (hb 21)))
-      fun t ⟨⟨c, _, _⟩, f'⟩ => ⟨hs.of_keeps c.keeps (by decide), (c.keeps.1 _ (by decide)).trans sp,
+      (mulCall_ok hs hc (o := X2) (a := X2) (b := T7) (by decide) (by decide) (by decide)))
+      fun t ⟨⟨c, _⟩, f'⟩ => ⟨hs.of_keeps c.keeps (by decide), (c.keeps.1 _ (by decide)).trans sp,
         c.keeps.2.2.trans wr, f'⟩
   unfold finish
   exact RelCT.seq hm (RelCT.taint (A := taint) τf (fun _ _ ⟨_, _, hP, a₁, a₂⟩ => agreeF hP a₁ a₂)

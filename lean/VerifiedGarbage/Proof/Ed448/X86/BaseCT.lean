@@ -22,7 +22,6 @@ import VerifiedGarbage.Proof.Framework.X86.Mmx
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
 import VerifiedGarbage.Proof.X25519.X86.Basic
 import VerifiedGarbage.Proof.X448.Bytes
-import VerifiedGarbage.Proof.X448.X86.Carry
 import VerifiedGarbage.Proof.X448.X86.Columns
 import VerifiedGarbage.Proof.X448.X86.Copy
 import VerifiedGarbage.Proof.X448.X86.FnVerified
@@ -42,7 +41,6 @@ meta import VerifiedGarbage.Proof.Framework.X86.Mmx
 meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
 meta import VerifiedGarbage.Proof.X25519.X86.Basic
 meta import VerifiedGarbage.Proof.X448.Bytes
-meta import VerifiedGarbage.Proof.X448.X86.Carry
 meta import VerifiedGarbage.Proof.X448.X86.Columns
 meta import VerifiedGarbage.Proof.X448.X86.Copy
 meta import VerifiedGarbage.Proof.X448.X86.FnVerified
@@ -159,10 +157,10 @@ theorem selectG_ok {n : Nat} {σ s : State} (h : RowG bs k n σ s) :
   refine WP.mono (combDigit_ok fe.fin.scr (by omega_using [hB]) hn c bits) fun u ⟨d, ku, mu⟩ => ?_
   obtain hsu := fe.fin.scr.of_keeps ku (by decide)
   obtain K : Keep (bs σ) s u := ⟨ku.mono (by decide), by rw [mu]; exact WsOut2.refl _ _ _ _ _ _⟩
-  refine WP.mono (combSelect_ok hsu (mu ▸ fe.fin.bounded) (Proof.Ed448.combDigit_lt (k σ) n) d)
-    fun t ⟨kt, bt, _⟩ => ?_
+  refine WP.mono (combSelect_ok hsu (Proof.Ed448.combDigit_lt (k σ) n) d)
+    fun t ⟨kt, _⟩ => ?_
   obtain K' := K.trans kt
-  exact ⟨⟨K'.scr fe.fin.scr, K'.ctx fe.fin.ctx, bt⟩, K'.regs.1 _ (by decide), K'.regs.2.2, K'⟩
+  exact ⟨⟨K'.scr fe.fin.scr, K'.ctx fe.fin.ctx⟩, K'.regs.1 _ (by decide), K'.regs.2.2, K'⟩
 
 /-- A row's trace, and what the row leaves. -/
 theorem combStepG_rel (hP : ∀ σ₁ σ₂, P₀ σ₁ σ₂ → bs σ₁ = bs σ₂ ∧ σ₁.gpr .esp = σ₂.gpr .esp) (n : Nat) :
@@ -189,8 +187,7 @@ theorem combStepG_rel (hP : ∀ σ₁ σ₂, P₀ σ₁ σ₂ → bs σ₁ = bs 
     refine WP.mono (fe.wp (NoSp.of_all (by lit_decide)) (by lit_decide)
       (Q := fun t => t.gpr .esi = BitVec.ofNat 32 n ∧ t.mem = s.mem ∧ t.zf = some (decide (n = 0)))
       (wp_cmp rfl fun t f hz => WP.block_nil
-        ⟨⟨fe.fin.scr.of_keeps (f.rest []) (by decide), fe.fin.ctx.keep (congrFun f.gpr _),
-            f.mem ▸ fe.fin.bounded⟩, congrFun f.gpr _, f.wr, (congrFun f.gpr _).trans he, f.mem, ?_⟩))
+        ⟨⟨fe.fin.scr.of_keeps (f.rest []) (by decide), fe.fin.ctx.keep (congrFun f.gpr _)⟩, congrFun f.gpr _, f.wr, (congrFun f.gpr _).trans he, f.mem, ?_⟩))
       fun t ⟨fe', c, m, z⟩ => ⟨⟨fe', c, hn, fun i hi => by rw [m]; exact bits i hi⟩, z⟩
     rw [hz, he, show BitVec.ofNat 32 n - (0 : BitVec 32) = BitVec.ofNat 32 n from BitVec.sub_zero _,
       ofNat_beq_zero (by omega_using [hn])]
@@ -244,8 +241,8 @@ theorem baseEncode_tr : RelCT isa (Runs BP₀ fun σ s => ∃ s₄, BL σ s₄ s
     (RelCT.seq (R := Runs BP₀ (FE bsB)) ?_ ?_)
   · rintro σ s ⟨_, h⟩
     exact WP.mono (h.2.2.wp (NoSp.of_all (by lit_decide)) (by lit_decide) (Q := fun _ => True)
-      (WP.mono (invert_ok h.2.2.fin.scr h.2.2.fin.ctx h.2.2.fin.bounded) fun t ⟨k, b, _⟩ =>
-        ⟨⟨k.scr h.2.2.fin.scr, k.ctx h.2.2.fin.ctx, b⟩, k.regs.1 _ (by decide), k.regs.2.2, trivial⟩))
+      (WP.mono (invert_ok h.2.2.fin.scr h.2.2.fin.ctx) fun t ⟨k, _⟩ =>
+        ⟨⟨k.scr h.2.2.fin.scr, k.ctx h.2.2.fin.ctx⟩, k.regs.1 _ (by decide), k.regs.2.2, trivial⟩))
       fun t ⟨fe, _⟩ => fe
   · rw [encodeFields_impl]
     exact Runs.step (ops_tr (fun _ _ h => h.hp) (fun _ _ h => h.fs) encodeFields) fun σ s h =>

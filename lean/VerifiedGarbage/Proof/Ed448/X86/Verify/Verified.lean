@@ -39,7 +39,6 @@ import VerifiedGarbage.Proof.Sha512.Spec
 import VerifiedGarbage.Proof.Sha512.X86.Stream.Init
 import VerifiedGarbage.Proof.X25519.X86.Basic
 import VerifiedGarbage.Proof.X448.Bytes
-import VerifiedGarbage.Proof.X448.X86.Carry
 import VerifiedGarbage.Proof.X448.X86.Columns
 import VerifiedGarbage.Proof.X448.X86.Copy
 import VerifiedGarbage.Proof.X448.X86.FnVerified
@@ -77,7 +76,6 @@ meta import VerifiedGarbage.Proof.Sha512.Spec
 meta import VerifiedGarbage.Proof.Sha512.X86.Stream.Init
 meta import VerifiedGarbage.Proof.X25519.X86.Basic
 meta import VerifiedGarbage.Proof.X448.Bytes
-meta import VerifiedGarbage.Proof.X448.X86.Carry
 meta import VerifiedGarbage.Proof.X448.X86.Columns
 meta import VerifiedGarbage.Proof.X448.X86.Copy
 meta import VerifiedGarbage.Proof.X448.X86.FnVerified

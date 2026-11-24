@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.X448.Radix16Bytes
 public import VerifiedGarbage.Proof.Ed448.Scalar
 import VerifiedGarbage.Proof.X448.X86.Freeze
 import VerifiedGarbage.Proof.X448.X86.Columns
-import VerifiedGarbage.Proof.X448.X86.Carry
+import VerifiedGarbage.Proof.X448.X86.Step
 public import VerifiedGarbage.Impl.Ed448.X86.Scalar
 public import VerifiedGarbage.Proof.X448.X86.Swap
 import VerifiedGarbage.Proof.Framework.Range
@@ -273,7 +273,7 @@ end
 and the chunk at `W` (`fold_ok`); `reduceT o` the remainder of `TF` modulo
 `L` into `o` (`reduceT_ok`); together, `step o` folds a chunk into the
 remainder (`step_ok`). The working space is X448's (`Scr`: its base in
-`edi`), its numbers X448's limbs (`limbs`, `fe`, `Bounded`).
+`edi`), its numbers X448's limbs (`limbs`, `fe16`, `Bounded`).
 -/
 
 @[expose] public section
@@ -459,11 +459,11 @@ theorem foldSrc_ok {o : Nat} (ho : Buf o) {base : Addr} {r : Nat → Nat} {w : N
 
 /-- `fold o`: the limbs of `l + h c` into `TF`. -/
 theorem fold_ok {o : Nat} (ho : Buf o) {s : State} {base : Addr} (hs : Scr s base)
-    (hl : Bounded s.mem base o) (hv : fe s.mem base o < L) (hw : (word s.mem base W).toNat < radix) :
+    (hl : Bounded s.mem base o) (hv : fe16 s.mem base o < L) (hw : (word s.mem base W).toNat < radix) :
     WP isa (.block (fold o)) s fun t =>
       Keeps [.eax, .ebx, .ecx, .edx] s t ∧ Outside base TF 112 s.mem t.mem ∧
-      Bounded t.mem base TF ∧ fe t.mem base TF < 2 * L ∧
-      fe t.mem base TF % L = ((word s.mem base W).toNat + radix * fe s.mem base o) % L := by
+      Bounded t.mem base TF ∧ fe16 t.mem base TF < 2 * L ∧
+      fe16 t.mem base TF % L = ((word s.mem base W).toNat + radix * fe16 s.mem base o) % L := by
   have hT := TF_eq
   have hW := W_eq
   obtain ⟨ho1, ho2⟩ := ho
@@ -484,7 +484,7 @@ theorem fold_ok {o : Nat} (ho : Buf o) {s : State} {base : Addr} (hs : Scr s bas
     · rw [hm.word (Or.inl (by omega_arith)) (by omega_arith)]
     · rw [hp.regs.1 _ (by decide)]; exact e1
   · generalize hc : foldC cLimb (limbs s.mem base o) (word s.mem base W).toNat = c at ht hlt hmod hsum
-    obtain hval : fe t.mem base TF = valN c 28 := by
+    obtain hval : fe16 t.mem base TF = valN c 28 := by
       show valN (limbs t.mem base TF) 28 = _
       rw [valN_congr ht.outs]
       exact digits_val (Nat.lt_of_lt_of_le hlt two_L_le)
@@ -547,6 +547,19 @@ theorem selectStep_ok {o : Nat} (ho : Buf o) {k : Nat} (hk : k < 28) {s : State}
   · exact ((ht.rest (by decide)).trans ((hu.rest (by decide)).trans
       ((hv.rest (by decide)).trans ((hw.rest (by decide)).trans ((hx.rest (by decide)).trans (hy.rest _))))))
 
+/-- The mask of a carry `c` in `ebx`. -/
+theorem carryMask_ok {s : State} {c : Nat} (hc : (s.gpr .ebx).toNat = c) (hb : c < 2) :
+    WP isa (.block [.mov .ecx (.imm 0), .alu .sub .ecx (.reg .ebx)]) s fun t =>
+      t.gpr .ecx = mask (decide (c = 1)) ∧ t.mem = s.mem ∧ Keeps [.ecx] s t := by
+  have he : s.gpr .ebx = BitVec.ofNat 32 c := by rw [← hc, BitVec.ofNat_toNat, BitVec.setWidth_eq]
+  have hm : ∀ a < 2, (0 : BitVec 32) - BitVec.ofNat 32 a = mask (decide (a = 1)) := by decide
+  refine wp_mov rfl fun t ht => ?_
+  refine wp_alu (by simp [plain]) rfl fun u hu _ => WP.block_nil ⟨?_, ?_, ?_⟩
+  · rw [hu.gpr]; change t.gpr .ecx - t.gpr .ebx = _
+    rw [ht.gpr, ht.other .ebx (by decide), he]; exact hm c hb
+  · exact hu.mem.trans ht.mem
+  · exact ((ht.rest (by decide)).trans (hu.rest (by decide)))
+
 theorem select_ok {o : Nat} (ho : Buf o) {s : State} {base : Addr} (hs : Scr s base) {sw : Bool}
     (hc : s.gpr .ecx = mask sw) :
     WP isa (.block ((List.range 28).flatMap (Impl.Ed448.X86.selectStep o))) s fun t =>
@@ -577,10 +590,10 @@ theorem select_ok {o : Nat} (ho : Buf o) {s : State} {base : Addr} (hs : Scr s b
 
 /-- `reduceT o`: `TF` (below `2L`) modulo `L`, into `o`. -/
 theorem reduceT_ok {o : Nat} (ho : Buf o) {s : State} {base : Addr} (hs : Scr s base)
-    (hl : Bounded s.mem base TF) (hv : fe s.mem base TF < 2 * L) :
+    (hl : Bounded s.mem base TF) (hv : fe16 s.mem base TF < 2 * L) :
     WP isa (.block (reduceT o)) s fun t =>
       Keeps [.eax, .ebx, .ecx, .edx] s t ∧ Outside base o 112 s.mem t.mem ∧
-      Bounded t.mem base o ∧ fe t.mem base o = fe s.mem base TF % L := by
+      Bounded t.mem base o ∧ fe16 t.mem base o = fe16 s.mem base TF % L := by
   obtain ⟨ho1, ho2⟩ := ho
   have hT := TF_eq
   unfold reduceT
@@ -602,7 +615,7 @@ theorem reduceT_ok {o : Nat} (ho : Buf o) {s : State} {base : Addr} (hs : Scr s 
     rw [e, et]
   generalize hcf : (fun k => limbs s.mem base TF k + kLimb k) = c at h2
   obtain hval := pass_eq c 28
-  obtain hcv : valN c 28 = fe s.mem base TF + (radix ^ 28 - L) := by
+  obtain hcv : valN c 28 = fe16 s.mem base TF + (radix ^ 28 - L) := by
     rw [← hcf, valN_add, valN_kLimb]
   obtain hy := valN_lt (f := digit c) (n := 28) fun k _ => digit_lt _ _
   rw [hcv] at hval
@@ -611,7 +624,7 @@ theorem reduceT_ok {o : Nat} (ho : Buf o) {s : State} {base : Addr} (hs : Scr s 
   obtain ⟨hc1, hsel⟩ := csub_facts hLM hv hy hval
   rw [← h2.carry] at hc1
   rw [WP.block_append_iff]
-  refine WP.mono (freezeMask_ok (s := s2) rfl (by omega_arith)) fun s3 ⟨e3, m3, k3⟩ => ?_
+  refine WP.mono (carryMask_ok (s := s2) rfl (by omega_arith)) fun s3 ⟨e3, m3, k3⟩ => ?_
   obtain hs3 := (hs1.of_keeps h2.regs (by decide)).of_keeps k3 (by decide)
   refine WP.mono (select_ok ⟨ho1, ho2⟩ hs3 e3) fun t ⟨ht, mt, kt⟩ => ?_
   obtain hlt : ∀ k < 28, limbs t.mem base o k =
@@ -637,11 +650,11 @@ theorem reduceT_ok {o : Nat} (ho : Buf o) {s : State} {base : Addr} (hs : Scr s 
 
 /-- `step o`: the chunk at `W` folded into the remainder at `o`. -/
 theorem step_ok {o : Nat} (ho : Buf o) {s : State} {base : Addr} (hs : Scr s base)
-    (hl : Bounded s.mem base o) (hv : fe s.mem base o < L) (hw : (word s.mem base W).toNat < radix) :
+    (hl : Bounded s.mem base o) (hv : fe16 s.mem base o < L) (hw : (word s.mem base W).toNat < radix) :
     WP isa (.block (step o)) s fun t =>
       Keeps [.eax, .ebx, .ecx, .edx] s t ∧ Outside2 base TF 112 o 112 s.mem t.mem ∧
       Bounded t.mem base o ∧
-      fe t.mem base o = ((word s.mem base W).toNat + radix * fe s.mem base o) % L := by
+      fe16 t.mem base o = ((word s.mem base W).toNat + radix * fe16 s.mem base o) % L := by
   obtain ⟨ho1, ho2⟩ := ho
   unfold step
   rw [WP.block_append_iff]
