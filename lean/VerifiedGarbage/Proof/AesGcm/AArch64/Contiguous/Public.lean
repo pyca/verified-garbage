@@ -91,8 +91,8 @@ theorem example_pre (same : Bool) : publicContract.pre (exampleState same) := by
     repeat' apply And.intro
     all_goals first | exact pw | exact Region.disjoint_of_sep (by decide) | decide
 
-theorem public_verified {v : GcmImpl} (facts : BackendFacts v) :
-    VerifiedScrubbed target (select v.calls) publicContract 0 := by
+theorem public_verified {v : GcmImpl} {g : GhashWithImpl} (facts : BackendFacts v g) :
+    VerifiedScrubbed target (select v.calls g.fn) publicContract 0 := by
   have raw := verified facts
   refine ⟨raw.verified.of_implies ⟨fun _ => public_pre,fun _ _ _ => public_post,fun _ _ _ _ => public_pub,
     ⟨_,example_pre true⟩⟩,?_,fun ty _ h => by cases ty <;> cases h⟩

@@ -110,7 +110,7 @@ theorem BatchArgs.sealPre {Wn R n : Nat} {Ctx St W SP D O : Addr} {s : State}
 
 /-- The complete eight-block kernel and its table, with the original
 source, key, and counter in its postcondition. -/
-structure BatchMid (Ctx St W D O : Addr) (R n : Nat) (s t : State) : Prop where
+structure BatchMidWith (clobbers : List Reg) (Ctx St W D O : Addr) (R n : Nat) (s t : State) : Prop where
   data : blocksAt t.mem O (8 * (n / 128)) = Spec.Gcm.ctr32 (ciphOf s.mem Ctx R)
     (blockAt s.mem (St + BitVec.ofNat 64 48)) (blocksAt s.mem D (8 * (n / 128)))
   ctr : blockAt t.mem (St + BitVec.ofNat 64 48) =
@@ -120,23 +120,27 @@ structure BatchMid (Ctx St W D O : Addr) (R n : Nat) (s t : State) : Prop where
   src : t.gpr .x15 = D + BitVec.ofNat 64 (pre n)
   dst : t.gpr .x9 = O + BitVec.ofNat 64 (pre n)
   frame : Frame (sFrame St W O n) s.mem t.mem
-  gpr : ∀ r, r ≠ .x0 → r ≠ .x5 → r ∉ kRegsT true → (hl : r ∉ linkRegs := by decide) → t.gpr r = s.gpr r
+  gpr : ∀ r, r ≠ .x0 → r ≠ .x5 → r ∉ clobbers → (hl : r ∉ linkRegs := by decide) → t.gpr r = s.gpr r
   sp : t.sp = s.sp
   rd : t.rd = s.rd
   wr : t.wr = s.wr
 
+abbrev BatchMid := BatchMidWith (kRegsT true)
+
 /-- Finish a shared two-pointer batch from an already prepared table. This
 also applies when the table was loaded from the caller's cached powers. -/
-theorem sealPrepared_ok {Wn R n : Nat} {Ctx St W SP D O : Addr} {s u : State}
+theorem sealPreparedWith_ok {code : Prog isa} {clobbers : List Reg} {Wn R n : Nat} {Ctx St W SP D O : Addr} {s u : State}
     (hu : BatchArgs Wn Ctx St W SP D O R n u)
-    (L : Lay Wn Ctx St W) (hash : Gh8Ok) (hp : SealToPre u)
+    (L : Lay Wn Ctx St W)
+    (run : WP isa code u (fun t => SealToPost u t (clobbers ++ linkRegs)))
+    (kept : ∀ r, r ∉ clobbers → r ∉ kRegsT true)
     (F : Frame [tblR W] s.mem u.mem) (qreg : ∀ r, r ≠ .x0 → r ≠ .x5 → r ∉ kRegsT true → u.gpr r = s.gpr r)
     (qsp : u.sp = s.sp) (qrd : u.rd = s.rd) (qwr : u.wr = s.wr) :
-    WP isa sealCall u (BatchMid Ctx St W D O R n s) := by
+    WP isa code u (BatchMidWith clobbers Ctx St W D O R n s) := by
   have hW := hu.env.perm.hWn
   have H : blockAt u.mem (Ctx + BitVec.ofNat 64 240) = Spec.Gcm.ctxH s.mem Ctx :=
     blockAt_frame F fun r hr => (tbl_ctx L r hr).sub_left (Lay.ctxSub (by decide))
-  refine WP.mono (sealCall_ok hp hash) fun t z => ?_
+  refine WP.mono run fun t z => ?_
   have en : nb u = n / 128 := by simp only [nb, hu.x26, toNat_ofNat_of_lt hu.src.lt]
   have eR : rounds u = R := by simp only [rounds, hu.x22, toNat_rounds hu.rounds]
   have ekey : ciph u = ciphOf s.mem Ctx R := by
@@ -158,7 +162,7 @@ theorem sealPrepared_ok {Wn R n : Nat} {Ctx St W SP D O : Addr} {s u : State}
     by simpa only [en, stp, hu.env.x20, ectr] using z.ctr,
     by simpa only [en, stp, hu.env.x20, dp, hu.x23, eh, ey] using z.y,
     by simpa only [pre, en, hu.x15] using z.src, by simpa only [pre, en, dp, hu.x23] using z.dst,
-    ?_, fun r h0 h5 hr hl => (z.gpr r (by simpa only [List.mem_append, not_or] using And.intro hr hl)).trans (qreg r h0 h5 hr),
+    ?_, fun r h0 h5 hr hl => (z.gpr r (by simpa only [List.mem_append, not_or] using And.intro hr hl)).trans (qreg r h0 h5 (kept r hr)),
     z.sp.trans qsp, z.rd.trans qrd,
     z.wr.trans qwr⟩
   have f := z.frame
@@ -167,6 +171,14 @@ theorem sealPrepared_ok {Wn R n : Nat} {Ctx St W SP D O : Addr} {s u : State}
     (f.mono fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl <;> simp)
+
+theorem sealPrepared_ok {Wn R n : Nat} {Ctx St W SP D O : Addr} {s u : State}
+    (hu : BatchArgs Wn Ctx St W SP D O R n u)
+    (L : Lay Wn Ctx St W) (hash : Gh8Ok) (hp : SealToPre u)
+    (F : Frame [tblR W] s.mem u.mem) (qreg : ∀ r, r ≠ .x0 → r ≠ .x5 → r ∉ kRegsT true → u.gpr r = s.gpr r)
+    (qsp : u.sp = s.sp) (qrd : u.rd = s.rd) (qwr : u.wr = s.wr) :
+    WP isa sealCall u (BatchMid Ctx St W D O R n s) := by
+  exact sealPreparedWith_ok hu L (sealCall_ok hp hash) (fun _ h => h) F qreg qsp qrd qwr
 
 theorem batchTableSeal_ok {Wn R n : Nat} {Ctx St W SP D O : Addr} {s : State}
     (h : BatchArgs Wn Ctx St W SP D O R n s) (L : Lay Wn Ctx St W) (hn : 128 ≤ n) (gh : GatherLaws) :

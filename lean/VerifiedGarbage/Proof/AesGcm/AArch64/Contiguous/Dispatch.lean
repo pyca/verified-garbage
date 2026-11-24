@@ -209,6 +209,20 @@ private theorem limit_eval {n : Nat} {s t : State} (load : s.gpr .x10=stackArg s
   · have z : t.gpr .x11=0 := by by_contra hn; exact ok (cond.mp hn)
     simp [ok,z]
 
+private def mediumBranch (n : Nat) (bound : n=768 ∨ n=4096) :
+    Branch intermediate (prepared false) (prepared true) (limitCode n) (.nonzero .x .x11) where
+  take s := decide ((stackArg s 0).toNat<n)
+  run s h := (limit_ok (.inr bound) s).mono fun t ⟨v,_,test⟩ => by
+    refine ⟨v,limit_eval h.2.2.2 test,fun _ => ⟨v.standard_iff.mpr h.2.2.1,fun e => Bool.noConfusion e⟩,?_⟩
+    intro miss
+    have big := of_decide_eq_false miss
+    exact ⟨v.standard_iff.mpr h.2.2.1,fun _ => by rw [v.stackArg]; rcases bound with rfl|rfl <;> omega⟩
+  same := by intro a b _ _ p; rw [p.1.2.2.2.2.2.2.2.2.2 0 (by decide)]
+  trace := by
+    intro a b _ _ pub
+    rcases bound with rfl | rfl <;> exact rel_taint [] pub.1.2.2.2.2.2.2.2.2.1 (by agree_tac []) ⟨_,by taint_decide⟩
+  residue := Residue.noResidue_of_blind (by rcases bound with rfl|rfl <;> decide +kernel) _ 0
+
 private abbrev firstCode : List Instr := .ldrSp .x10 0 :: limitCode 97
 private abbrev loaded (s : State) := s.write .x .x10 (stackArg s 0)
 
@@ -270,12 +284,16 @@ private def shortBranch (p : State → Prop) (accept : ∀ {s}, intermediate s �
     exact rel_taint [] pub.1.2.2.2.2.2.2.2.2.1 (by agree_tac []) ⟨_,by taint_decide⟩
   residue := firstOutside
 
-theorem selected {v : GcmImpl} (facts : BackendFacts v) : Checked any (select v.calls) := by
+theorem selected {v : GcmImpl} {g : GhashWithImpl} (facts : BackendFacts v g) : Checked any (select v.calls g.fn) := by
   by_cases portable : (!v.calls.pmull) = true
-  · simp only [select,portable,ite_true]; exact generalLeaf facts
-  · simp only [select,portable]
-    exact (nonceBranch standard id).checked ((shortBranch any (fun _ => trivial)).checked (shortLeaf facts.hash)
-      (generalLeaf facts)) (generalLeaf facts)
+  · simp only [select,portable,ite_true]
+    exact generalLeaf facts
+  · let n := if v.calls.stitch then 768 else 4096
+    have hn : n=768 ∨ n=4096 := by cases h : v.calls.stitch <;> simp [n,h]
+    simp only [select,portable]
+    exact (nonceBranch standard id).checked ((shortBranch intermediate id).checked (shortLeaf facts.hash)
+      ((mediumBranch n hn).checked (preparedLeaf facts false) (preparedLeaf facts true))) (generalLeaf facts)
+
 
 end VG.Proof.AesGcm.AArch64.Contiguous.Guard
 
@@ -341,8 +359,8 @@ theorem bothLayouts (same : Bool) : ∃ s, (leafContract Guard.any).pre s ∧
   refine ⟨exampleState same,⟨caller same,examplePowers same,trivial⟩,congrArg BitVec.toNat (args same).1,?_⟩
   cases same <;> decide
 
-theorem verified {v : GcmImpl} (facts : BackendFacts v) :
-    VerifiedScrubbed target (select v.calls) (leafContract Guard.any) 0 := by
+theorem verified {v : GcmImpl} {g : GhashWithImpl} (facts : BackendFacts v g) :
+    VerifiedScrubbed target (select v.calls g.fn) (leafContract Guard.any) 0 := by
   obtain ⟨s,p,_⟩ := bothLayouts true
   exact Guard.selected facts ⟨s,p⟩
 

@@ -115,13 +115,15 @@ def ld (a : VReg) (j : Nat) : List Instr := [.ldrq a .x9 (16 * j), .vop (.rev .r
 
 /-- Pair `p`'s products: `X₁ ⊕ X₂` (`hi`), `A₁ ⊕ A₂` (`lo`) and `T ⊕ U`
 (`mid`), `Y` added to its second block if `y`. -/
-def pair (p : Nat) (a k b l : Nat) (y : Bool) : List Instr :=
-  ld A₁ a ++ ld A₂ b ++ (if y then [.vop (.logic .eor A₂ A₂ Y)] else []) ++
+def pairWith (load : VReg → Nat → List Instr) (p : Nat) (a k b l : Nat) (y : Bool) : List Instr :=
+  load A₁ a ++ load A₂ b ++ (if y then [.vop (.logic .eor A₂ A₂ Y)] else []) ++
   [.ldrq S₁ .x19 (sOff k), .ldrq S₂ .x19 (sOff l), .ldrq KP .x19 (kOff p),
    .vop (.perm .trn1 .d2 T A₁ A₂), .vop (.perm .trn2 .d2 U A₁ A₂), .vop (.logic .eor T T U),
    .vop (.pmull false X₁ A₁ S₁), .vop (.pmull true A₁ A₁ S₁),
    .vop (.pmull false X₂ A₂ S₂), .vop (.pmull true A₂ A₂ S₂),
    .vop (.pmull false U T KP), .vop (.pmull true T T KP)]
+
+abbrev pair := pairWith ld
 
 /-- The first pair's products, the sums. -/
 def addFirst : List Instr :=
@@ -138,9 +140,11 @@ def reduce : List Instr :=
    .vop (.ext T T T 8), .vop (.eor3 Y HI MID T)]
 
 /-- GHASH of the eight blocks at `x9`. -/
-def ghPart : List Instr :=
-  pair 0 1 7 2 6 false ++ addFirst ++ pair 1 3 5 4 4 false ++ addNext ++ pair 2 5 3 6 2 false ++ addNext ++
-    pair 3 7 1 0 8 true ++ addNext ++ reduce
+def ghWith (load : VReg → Nat → List Instr) : List Instr :=
+  pairWith load 0 1 7 2 6 false ++ addFirst ++ pairWith load 1 3 5 4 4 false ++ addNext ++ pairWith load 2 5 3 6 2 false ++ addNext ++
+    pairWith load 3 7 1 0 8 true ++ addNext ++ reduce
+
+abbrev ghPart := ghWith ld
 
 /-! ## The loops -/
 

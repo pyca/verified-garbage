@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Contiguous.PreparedFrame
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Contiguous.ShortCT
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Contiguous.Record
 meta import VerifiedGarbage.Proof.Framework.Lit
@@ -23,12 +24,17 @@ theorem shortSide : scrubSide shortFrame 368 0 own [] = true := by lit_decide
 
 /-- The selected cipher and hashing implementation supplies these facts once at
 registration. All memory and timing proofs below work for every selection. -/
-structure BackendFacts (v : GcmImpl) : Prop where
+structure BackendFacts (v : GcmImpl) (g : GhashWithImpl) : Prop where
   gather : Verified target (Impl.AesGcm.AArch64.DirectGather.framed v.calls) DirectGather.sharedGatherContract
   sizes : 768 ≤ v.calls.pwWn ∧ v.calls.pwWn ≤ 2560 ∧ v.calls.pwWn % 16 = 0
+  scratch : v.ctr.scratch ≤ v.calls.pwWn-512
   general : scrubSide (generalFrame v.calls) (v.calls.pwWn+80) 0 own [] = true
   depth : 16*(Impl.AesGcm.AArch64.DirectGather.framed v.calls).aarch64Depth < 2^64
+  prepared (f : Bool) : scrubSide (preparedFrame v.calls g.fn f) (v.calls.pwWn+32) 0 (preparedClear f (!v.calls.stitch)) [] = true
+  vectors (f : Bool) : (withStackArgScratch (v.calls.pwWn+32) 3 (preparedBody v.callees g.fn f false)).allInstrs keepsV = true
   hash : DirectGather.HashEightWithOk
+  stitch : VG.Proof.Gcm.AArch64.Stitch.Gh8Ok
+  mul : VG.Proof.Gcm.AArch64.Pmull.MulKey
 
 end VG.Proof.AesGcm.AArch64.Contiguous
 
@@ -46,12 +52,13 @@ def leafContract (extra : State → Prop) : Contract isa where
   pub a b := onePub 3 a b ∧ a.dit=b.dit
 
 def standard (s : State) : Prop := (s.gpr .x3).toNat=12 ∧ (s.gpr .x5).toNat≤16
+def prepared (fused : Bool) (s : State) : Prop := standard s ∧ (fused=true → 128 ≤ (stackArg s 0).toNat)
 def short (s : State) : Prop := standard s ∧ (stackArg s 0).toNat ≤ 96
 
-private theorem scrubLeaf {p : State → Prop} {code : Prog isa} {W : Nat}
+private theorem scrubLeaf {cl : Clear} {p : State → Prop} {code : Prog isa} {W : Nat}
     (sizes : 0<W ∧ W≤2640 ∧ W%16=0)
-    (side : scrubSide code W 0 own [] = true) (raw : Verified target code (leafContract p)) :
-    VerifiedScrubbed target (scrubAll W 0 own code) (leafContract p) 0 := by
+    (side : scrubSide code W 0 cl [] = true) (raw : Verified target code (leafContract p)) :
+    VerifiedScrubbed target (scrubAll W 0 cl code) (leafContract p) 0 := by
   have hk : ScrubAllOk (leafContract p) W 0 := by
     refine ⟨fun s hs => Nat.le_trans sizes.2.1 hs.1.room,?_,fun _ _ hp => hp.1.2.2.2.2.2.2.2.2.1⟩
     intro s t u hs post mem _
@@ -67,7 +74,7 @@ private theorem scrubLeaf {p : State → Prop} {code : Prog isa} {W : Nat}
   intro _ _ _ n hn
   exact False.elim (List.not_mem_nil (of_decide_eq_true (List.all_eq_true.mp side.1.1.1.1.2 n hn)))
 
-theorem generalLeaf {v : GcmImpl} (facts : BackendFacts v) (sat : ∃ s, (leafContract (fun _ => True)).pre s) :
+theorem generalLeaf {v : GcmImpl} {g : GhashWithImpl} (facts : BackendFacts v g) (sat : ∃ s, (leafContract (fun _ => True)).pre s) :
     VerifiedScrubbed target (scrubAll (v.calls.pwWn+80) 0 own (generalFrame v.calls))
       (leafContract (fun _ => True)) 0 := by
   have sz := facts.sizes
@@ -84,5 +91,18 @@ theorem shortLeaf (hash : DirectGather.HashEightWithOk) (sat : ∃ s, (leafContr
   intro a b pa pb pub
   exact Short.frame_rel hash pa.1 pb.1 pa.2.1 pb.2.1 pa.2.2.1.1 pb.2.2.1.1 pa.2.2.1.2 pb.2.2.1.2
     pa.2.2.2 pb.2.2.2 pub.1
+
+theorem preparedLeaf {v : GcmImpl} {g : GhashWithImpl} (facts : BackendFacts v g) (f : Bool) (sat : ∃ s, (leafContract (prepared f)).pre s) :
+    VerifiedScrubbed target (scrubAll (v.calls.pwWn+32) 0 (preparedClear f (!v.calls.stitch)) (preparedFrame v.calls g.fn f))
+      (leafContract (prepared f)) 0 := by
+  have sz := facts.sizes
+  have hv := facts.scratch
+  have side := facts.prepared f
+  apply scrubLeaf (by omega) side
+  refine ⟨fun _ h => Prepared.frame_ok v g f facts.stitch facts.mul h.1 h.2.1 h.2.2.1.1 h.2.2.1.2 h.2.2.2
+    sz.1 sz.2.1 sz.2.2 hv (facts.vectors f),ct_of ?_,sat⟩
+  intro a b pa pb pub
+  exact Prepared.frame_rel v g f facts.stitch facts.mul pa.1 pb.1 pa.2.1 pb.2.1 pa.2.2.1.1 pb.2.2.1.1
+    pa.2.2.1.2 pb.2.2.1.2 pa.2.2.2 sz.1 sz.2.1 sz.2.2 hv pub.1
 
 end VG.Proof.AesGcm.AArch64.Contiguous

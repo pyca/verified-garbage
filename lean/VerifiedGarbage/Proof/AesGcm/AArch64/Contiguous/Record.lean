@@ -2,8 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Contiguous.General
 public import VerifiedGarbage.Proof.AesGcm.AArch64.DirectGather.GeneralFrame
-public import VerifiedGarbage.Impl.AesGcm.AArch64.Fn
-public import VerifiedGarbage.Proof.AesGcm.AArch64.Callee
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Contiguous.Calls
 import VerifiedGarbage.Proof.Framework.AArch64.RelCT
 import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 import VerifiedGarbage.Proof.AesGcm.AArch64.RelBase
@@ -13,15 +12,6 @@ meta import VerifiedGarbage.Impl.AesGcm.AArch64.Contiguous.General
 /-! Both buffer layouts use the same general record body and timing proof. -/
 
 @[expose] public section
-namespace VG.Proof.AesGcm.AArch64
-open VG.Impl.AesGcm.AArch64 (Calls)
-
-/-- What the functions of `v` call, as `Impl/` takes it. -/
-def GcmImpl.calls (v : GcmImpl) : Calls :=
-  ⟨v.ctr.callee, v.ctr.to, v.key.fn, v.gh.fn, v.gh.pmull, v.stitch, v.suffix⟩
-
-end VG.Proof.AesGcm.AArch64
-
 namespace VG.Proof.AesGcm.AArch64.Contiguous
 
 open VG VG.AArch64 DirectGather
