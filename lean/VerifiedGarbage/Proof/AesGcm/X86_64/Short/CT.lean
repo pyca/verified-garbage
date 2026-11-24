@@ -73,8 +73,13 @@ open VG VG.X86_64 VG.X86_64.RegUpd VG.Impl.AesGcm.X86_64 VG.Impl.AesGcm.X86_64.S
 open VG.Proof.AesGcm.X86_64
 
 /-- When the short path applies. -/
-abbrev IsShort (nl al n : Nat) : Prop :=
-  nl = 12 ∧ al < 512 ∧ n < 512 ∧ nb16 al + nb16 n < 32 ∧ (0 < n ∨ 16 < al)
+abbrev IsShortAt (six : Bool) (nl al n : Nat) : Prop :=
+  nl = 12 ∧ al < 512 ∧ n < 512 ∧ nb16 al + nb16 n < blockLimit six ∧ (0 < n ∨ 16 < al)
+
+abbrev IsShort := IsShortAt false
+
+theorem IsShortAt.full {six : Bool} {nl al n : Nat} (h : IsShortAt six nl al n) : IsShort nl al n :=
+  ⟨h.1, h.2.1, h.2.2.1, Nat.lt_of_lt_of_le h.2.2.2.1 (by cases six <;> decide), h.2.2.2.2⟩
 
 /-- Both below `512` iff their OR is. -/
 theorem or_lt_512 {a b : Nat} : a ||| b < 512 ↔ a < 512 ∧ b < 512 := by
@@ -155,11 +160,11 @@ theorem condB2_ok {W : Addr} {nl al n : Nat} {s : State} (h : CondS W nl al n s)
     k₃.trans ⟨fun r _ _ _ => by rw [g₄], m₄, rd₄, wr₄⟩⟩⟩)
 
 /-- `cond`'s third block: the blocks of both lengths compared with 32. -/
-theorem condB3_ok {W : Addr} {nl al n : Nat} {s : State} (h : CondS W nl al n s) (hal : al < 512) (hn : n < 512) :
+theorem condB3_ok {W : Addr} {nl al n : Nat} {s : State} (h : CondS W nl al n s) (hal : al < 512) (hn : n < 512) (six : Bool := false) :
     WP isa (.block [.mov .rcx (.mem (at_ .r15 alenO)), .alu .add .rcx (imm 15), .shift .shr .rcx 4,
         .mov .rdx (.mem (at_ .r15 lenO)), .alu .add .rdx (imm 15), .shift .shr .rdx 4, .alu .add .rcx (.reg .rdx),
-        .alu .cmp .rcx (imm 32)]) s fun t =>
-      t.cf = some (decide (nb16 al + nb16 n < 32)) ∧ t.gpr .rax = s.gpr .rax ∧ CondKeep s t := by
+        .alu .cmp .rcx (imm (blockLimit six))]) s fun t =>
+      t.cf = some (decide (nb16 al + nb16 n < blockLimit six)) ∧ t.gpr .rax = s.gpr .rax ∧ CondKeep s t := by
   have r₁ : InRegions (s.rd ++ s.wr) (W + BitVec.ofNat 64 184) 8 := in_left (in_off h.w (by decide) (by decide))
   have r₂ : InRegions (s.rd ++ s.wr) (W + BitVec.ofNat 64 208) 8 := in_left (in_off h.w (by decide) (by decide))
   have hal' := h.alen
@@ -177,7 +182,7 @@ theorem condB3_ok {W : Addr} {nl al n : Nat} {s : State} (h : CondS W nl al n s)
     · intro r a b c; simp [gpr_setReg, gpr_arithFlags, gpr_setFlags, b, c]
     all_goals rfl
   obtain ⟨s₆, run₆, -, cf₆, g₆, m₆, rd₆, wr₆⟩ :=
-    cmpImm_ok s₅ .rcx cx₅ (by simp only [nb16]; omega_using [hal, hn]) (show 32 < 2 ^ 31 by decide)
+    cmpImm_ok s₅ .rcx cx₅ (by simp only [nb16]; omega_using [hal, hn]) (show blockLimit six < 2 ^ 31 by cases six <;> decide)
   exact WP.block_append_iff.mpr (WP.of_runBlock ⟨s₅, run₅, WP.of_runBlock ⟨s₆, run₆, cf₆, by rw [g₆, ax₅],
     k₅.trans ⟨fun r _ _ _ => by rw [g₆], m₆, rd₆, wr₆⟩⟩⟩)
 
@@ -221,43 +226,43 @@ theorem eval_ae {s : State} {b : Bool} (h : s.cf = some b) : isa.eval .ae s = so
 /-- `cond`: ZF clear iff the short path applies, with `rbp` the nonce's length
 and the lengths of the additional data and the text in `W`. -/
 theorem cond_ok {s : State} {W : Addr} {nl al n : Nat} (h : CondS W nl al n s) (hnl : nl < 2 ^ 64)
-    (hal : al < 2 ^ 64) (hn : n < 2 ^ 64) :
-    WP isa cond s fun s' => s'.zf = some (decide ¬IsShort nl al n) ∧ CondKeep s s' := by
+    (hal : al < 2 ^ 64) (hn : n < 2 ^ 64) (six : Bool := false) :
+    WP isa (condWith six) s fun s' => s'.zf = some (decide ¬IsShortAt six nl al n) ∧ CondKeep s s' := by
   refine WP.seq (WP.mono (condB1_ok h hnl) fun s₂ ⟨zf₂, ax₂, k₂⟩ => ?_)
   -- `rax := 1` iff the short path applies.
-  refine WP.seq (WP.mono (Q := fun (s₃ : State) => s₃.gpr .rax = BitVec.ofNat 64 (if IsShort nl al n then 1 else 0) ∧
+  refine WP.seq (WP.mono (Q := fun (s₃ : State) => s₃.gpr .rax = BitVec.ofNat 64 (if IsShortAt six nl al n then 1 else 0) ∧
       CondKeep s s₃) (WP.ite (!decide (nl = 12)) (eval_ne zf₂) (fun h12 => ?_) (fun h12 => ?_)) fun s₃ ⟨ax₃, k₃⟩ => ?_)
   · have h12 : nl ≠ 12 := by simpa using h12
     refine WP.block_nil ⟨?_, k₂⟩
     rw [ax₂]
-    simp [IsShort, h12]
+    simp [IsShortAt, h12]
   · have h12 : nl = 12 := by simpa using h12
     refine WP.seq (WP.mono (condB2_ok (h.keep k₂) hal hn) fun s₄ ⟨cf₄, ax₄, k₄⟩ => ?_)
     rw [ax₂] at ax₄
     refine WP.ite (!decide (al ||| n < 512)) (eval_ae cf₄) (fun h5 => ?_) (fun h5 => ?_)
     · have h5 : ¬(al < 512 ∧ n < 512) := fun h => by simp [or_lt_512.mpr h] at h5
       refine WP.block_nil ⟨?_, k₂.trans k₄⟩
-      have h5' : ¬IsShort nl al n := fun ⟨_, a, b, _⟩ => h5 ⟨a, b⟩
+      have h5' : ¬IsShortAt six nl al n := fun ⟨_, a, b, _⟩ => h5 ⟨a, b⟩
       rw [ax₄]
       simp only [h5', ↓reduceIte]
       rfl
     · have h5 : al < 512 ∧ n < 512 := or_lt_512.mp (by simpa using h5)
-      refine WP.seq (WP.mono (condB3_ok ((h.keep k₂).keep k₄) h5.1 h5.2) fun s₆ ⟨cf₆, ax₆, k₆⟩ => ?_)
+      refine WP.seq (WP.mono (condB3_ok ((h.keep k₂).keep k₄) h5.1 h5.2 six) fun s₆ ⟨cf₆, ax₆, k₆⟩ => ?_)
       rw [ax₄] at ax₆
-      refine WP.ite (!decide (nb16 al + nb16 n < 32)) (eval_ae cf₆) (fun h32 => ?_) (fun h32 => ?_)
-      · have h32 : ¬nb16 al + nb16 n < 32 := fun h => by simp [h] at h32
-        exact WP.block_nil ⟨by simp [ax₆, IsShort, h32], k₂.trans (k₄.trans k₆)⟩
-      · have h32 : nb16 al + nb16 n < 32 := by simpa using h32
+      refine WP.ite (!decide (nb16 al + nb16 n < blockLimit six)) (eval_ae cf₆) (fun h32 => ?_) (fun h32 => ?_)
+      · have h32 : ¬nb16 al + nb16 n < blockLimit six := fun h => by simp [h] at h32
+        exact WP.block_nil ⟨by simp [ax₆, IsShortAt, h32], k₂.trans (k₄.trans k₆)⟩
+      · have h32 : nb16 al + nb16 n < blockLimit six := by simpa using h32
         refine WP.seq (WP.mono (condB4_ok (((h.keep k₂).keep k₄).keep k₆) h5.1 h5.2) fun s₈ ⟨cf₈, ax₈, k₈⟩ => ?_)
         rw [ax₆] at ax₈
         refine WP.ite (decide (al + 17 * n < 17)) (eval_b cf₈) (fun h17 => ?_) (fun h17 => ?_)
         · have h17 : al + 17 * n < 17 := by simpa using h17
-          have hs : ¬IsShort nl al n := fun ⟨_, _, _, _, z⟩ => by omega_arith
+          have hs : ¬IsShortAt six nl al n := fun ⟨_, _, _, _, z⟩ => by omega_arith
           exact WP.block_nil ⟨by simp [ax₈, hs], k₂.trans (k₄.trans (k₆.trans k₈))⟩
         · have h17 : ¬al + 17 * n < 17 := by simpa using h17
-          have hs : IsShort nl al n := ⟨h12, h5.1, h5.2, h32, by omega_using [h17]⟩
+          have hs : IsShortAt six nl al n := ⟨h12, h5.1, h5.2, h32, by omega_using [h17]⟩
           refine WP.of_runBlock ⟨_, by xrun [], ?_, ?_⟩
-          · have e : (if IsShort nl al n then 1 else 0) = 1 := ite_eq_left_iff.mpr fun h => absurd hs h
+          · have e : (if IsShortAt six nl al n then 1 else 0) = 1 := ite_eq_left_iff.mpr fun h => absurd hs h
             rw [e]
             simp [gpr_setReg]
           · exact k₂.trans (k₄.trans (k₆.trans (k₈.trans ⟨fun r a _ _ => by simp [gpr_setReg, a], rfl, rfl, rfl⟩)))
@@ -305,12 +310,12 @@ theorem condS_of {s₀ s₁ : State} {Ctx W SP A D : Addr} {nl al n : Nat} (E : 
 entry kept. -/
 theorem condE_ok {k : Nat} {s₀ s₁ : State} {Ctx W SP Np A D : Addr} {nl al n : Nat}
     (C : OneCtx s₀ k Ctx W SP Np A D nl al n) (E : OneEntry s₀ Ctx W SP A D n s₁)
-    (hnl : (s₀.gpr .rcx).toNat = nl) (hal : (s₀.gpr .r9).toNat = al) :
-    WP isa Impl.AesGcm.X86_64.Short.cond s₁ fun s₂ => s₂.zf = some (decide ¬IsShort nl al n) ∧
+    (hnl : (s₀.gpr .rcx).toNat = nl) (hal : (s₀.gpr .r9).toNat = al) (six : Bool := false) :
+    WP isa (Impl.AesGcm.X86_64.Short.condWith six) s₁ fun s₂ => s₂.zf = some (decide ¬IsShortAt six nl al n) ∧
       OneEntry s₀ Ctx W SP A D n s₂ ∧ CondKeep s₁ s₂ := by
   have hlt := C.data.ok.lt
   refine WP.mono (cond_ok (condS_of E hnl hal) (by rw [← hnl]; exact BitVec.isLt _) (by rw [← hal]; exact BitVec.isLt _)
-    (by omega_using [hlt])) fun s₂ ⟨hz, K⟩ => ⟨hz, ?_, K⟩
+    (by omega_using [hlt]) six) fun s₂ ⟨hz, K⟩ => ⟨hz, ?_, K⟩
   exact E.keep C.lay (fun r hr => K.gpr r (by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> decide) (by
@@ -424,13 +429,13 @@ theorem sealMid_with {M : Gcm.X86_64.Stitch.CtxMode}
     {body lng : Prog isa} (hbody : BoundedOk M body) (hlng : SealLongOk M lng) {s s₁ : State}
     {Ctx W SP Np A D : Addr} {nl al n : Nat} (C : OneCtx s 4 Ctx W SP Np A D nl al n)
     (X : CtxExt M Ctx (W + BitVec.ofNat 64 16) W SP D n s) (E : OneEntry s Ctx W SP A D n s₁)
-    (hNp : s.gpr .rdx = Np) (hnl : (s.gpr .rcx).toNat = nl) (hal : (s.gpr .r9).toNat = al) :
-    WP isa (.seq Impl.AesGcm.X86_64.Short.cond (.ite .e lng body)) s₁
+    (hNp : s.gpr .rdx = Np) (hnl : (s.gpr .rcx).toNat = nl) (hal : (s.gpr .r9).toNat = al) (six : Bool := false) :
+    WP isa (.seq (Impl.AesGcm.X86_64.Short.condWith six) (.ite .e lng body)) s₁
       (SealRunPost s Ctx W SP Np A D nl al n) :=
-  WP.seq (WP.mono (condE_ok C E hnl hal) fun _ ⟨hz, E₂, _⟩ =>
-    WP.ite (decide ¬IsShort _ _ _) (eval_e hz) (fun _ => hlng C X E₂ hNp hnl hal) fun h => by
+  WP.seq (WP.mono (condE_ok C E hnl hal six) fun _ ⟨hz, E₂, _⟩ =>
+    WP.ite (decide ¬IsShortAt six _ _ _) (eval_e hz) (fun _ => hlng C X E₂ hNp hnl hal) fun h => by
       have h' := Decidable.not_not.mp (of_decide_eq_false h)
-      exact hbody C X E₂ hNp hnl hal h')
+      exact hbody C X E₂ hNp hnl hal (IsShortAt.full h'))
 
 /-- `seal` after the entry: `cond`, then the short path or the other
 instances' body, which leave the same. -/
@@ -869,8 +874,8 @@ theorem rel_seq_block_split {P Q : State → State → Prop} {l₁ l₂ : List I
 /-- `cond` in two runs with the same lengths: the same branches. -/
 theorem cond_rel {W : Addr} {nl al n : Nat} {F₁ F₂ : State → Prop}
     (h₁ : ∀ s, F₁ s → CondS W nl al n s) (h₂ : ∀ s, F₂ s → CondS W nl al n s)
-    (hnl : nl < 2 ^ 64) (hal : al < 2 ^ 64) (hn : n < 2 ^ 64) :
-    RelCT isa (fun s₁ s₂ => F₁ s₁ ∧ F₂ s₂) cond fun _ _ => True := by
+    (hnl : nl < 2 ^ 64) (hal : al < 2 ^ 64) (hn : n < 2 ^ 64) (six : Bool := false) :
+    RelCT isa (fun s₁ s₂ => F₁ s₁ ∧ F₂ s₂) (condWith six) fun _ _ => True := by
   have w₁ : ∀ {F : State → Prop}, (∀ s, F s → CondS W nl al n s) → ∀ s, F s →
       WP isa (.block [.mov32 .rax (imm 0), .alu .cmp .rbp (imm 12)]) s fun t =>
         t.zf = some (decide (nl = 12)) ∧ CondS W nl al n t := fun hF s h =>
@@ -902,14 +907,14 @@ theorem cond_rel {W : Addr} {nl al n : Nat} {F₁ F₂ : State → Prop}
   have w₃ : ∀ s, ((s.cf = some (decide (al ||| n < 512)) ∧ CondS W nl al n s) ∧ al < 512 ∧ n < 512) →
       WP isa (.block [.mov .rcx (.mem (at_ .r15 alenO)), .alu .add .rcx (imm 15), .shift .shr .rcx 4,
         .mov .rdx (.mem (at_ .r15 lenO)), .alu .add .rdx (imm 15), .shift .shr .rdx 4, .alu .add .rcx (.reg .rdx),
-        .alu .cmp .rcx (imm 32)]) s fun t => t.cf = some (decide (nb16 al + nb16 n < 32)) ∧
+        .alu .cmp .rcx (imm (blockLimit six))]) s fun t => t.cf = some (decide (nb16 al + nb16 n < blockLimit six)) ∧
           CondS W nl al n t ∧ al < 512 ∧ n < 512 :=
-    fun s h => WP.mono (condB3_ok h.1.2 h.2.1 h.2.2) fun _ ⟨c, _, k⟩ => ⟨c, h.1.2.keep k, h.2⟩
+    fun s h => WP.mono (condB3_ok h.1.2 h.2.1 h.2.2 six) fun _ ⟨c, _, k⟩ => ⟨c, h.1.2.keep k, h.2⟩
   have b3 := rel_next (rel_taint (P := fun s₁ s₂ =>
       ((s₁.cf = some (decide (al ||| n < 512)) ∧ CondS W nl al n s₁) ∧ al < 512 ∧ n < 512) ∧
       ((s₂.cf = some (decide (al ||| n < 512)) ∧ CondS W nl al n s₂) ∧ al < 512 ∧ n < 512))
       [.r15] (fun _ _ h r hr => by
-        simp only [List.mem_singleton] at hr; subst hr; rw [h.1.1.2.r15, h.2.1.2.r15]) ⟨_, by taint_decide⟩) w₃ w₃
+        simp only [List.mem_singleton] at hr; subst hr; rw [h.1.1.2.r15, h.2.1.2.r15]) (by cases six <;> exact ⟨_, by taint_decide⟩)) w₃ w₃
   have h5 : ∀ {s₁ s₂ : State}, ((s₁.cf = some (decide (al ||| n < 512)) ∧ CondS W nl al n s₁) ∧
       (s₂.cf = some (decide (al ||| n < 512)) ∧ CondS W nl al n s₂)) ∧ isa.eval .ae s₁ = some false →
       al < 512 ∧ n < 512 := fun h => by
@@ -920,14 +925,14 @@ theorem cond_rel {W : Addr} {nl al n : Nat} {F₁ F₂ : State → Prop}
     (RelCT.ite (fun _ _ h => (eval_ae h.1.1).trans (eval_ae h.2.1).symm)
       (none.mono (fun _ _ _ => trivial) fun _ _ h => h) ?_)
   -- `al + 17 n` compared with 17.
-  have w₄ : ∀ s, (s.cf = some (decide (nb16 al + nb16 n < 32)) ∧ CondS W nl al n s ∧ al < 512 ∧ n < 512) →
+  have w₄ : ∀ s, (s.cf = some (decide (nb16 al + nb16 n < blockLimit six)) ∧ CondS W nl al n s ∧ al < 512 ∧ n < 512) →
       WP isa (.block [.mov .rdx (.mem (at_ .r15 lenO)), .mov .rcx (.reg .rdx), .shift .shl .rcx 4,
         .alu .add .rcx (.reg .rdx), .alu .add .rcx (.mem (at_ .r15 alenO)), .alu .cmp .rcx (imm 17)]) s
         fun t => t.cf = some (decide (al + 17 * n < 17)) :=
     fun s h => WP.mono (condB4_ok h.2.1 h.2.2.1 h.2.2.2) fun _ ⟨c, _⟩ => c
   have b4 := rel_next (rel_taint (P := fun s₁ s₂ =>
-      (s₁.cf = some (decide (nb16 al + nb16 n < 32)) ∧ CondS W nl al n s₁ ∧ al < 512 ∧ n < 512) ∧
-      (s₂.cf = some (decide (nb16 al + nb16 n < 32)) ∧ CondS W nl al n s₂ ∧ al < 512 ∧ n < 512))
+      (s₁.cf = some (decide (nb16 al + nb16 n < blockLimit six)) ∧ CondS W nl al n s₁ ∧ al < 512 ∧ n < 512) ∧
+      (s₂.cf = some (decide (nb16 al + nb16 n < blockLimit six)) ∧ CondS W nl al n s₂ ∧ al < 512 ∧ n < 512))
       [.r15] (fun _ _ h r hr => by
         simp only [List.mem_singleton] at hr; subst hr; rw [h.1.2.1.r15, h.2.2.1.r15]) ⟨_, by taint_decide⟩) w₄ w₄
   refine RelCT.seq (b4.mono (fun _ _ h => h.1) fun _ _ h => h)
@@ -1443,24 +1448,24 @@ theorem sealWith_rel (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M)
     {body lng : Prog isa} (hbody : BoundedOk M body) (hct : BoundedRel M body) (hlng : SealLongOk M lng)
     (hlr : SealLongRel M lng) {s₀ s₀' : State}
     (hp : (Proof.AesGcm.sealX86_64M M).pre s₀) (hp' : (Proof.AesGcm.sealX86_64M M).pre s₀')
-    (hq : Proof.AesGcm.sealX86_64.pub s₀ s₀') :
-    RelCT isa (fun s₁ s₂ => s₁ = s₀ ∧ s₂ = s₀') (Impl.AesGcm.X86_64.Short.«seal» (v.withBlk B) (lng := lng) (shortBody := body))
+    (hq : Proof.AesGcm.sealX86_64.pub s₀ s₀') (six : Bool := false) :
+    RelCT isa (fun s₁ s₂ => s₁ = s₀ ∧ s₂ = s₀') (Impl.AesGcm.X86_64.Short.«seal» (v.withBlk B) (lng := lng) (shortBody := body) (sixBatches := six))
       fun _ _ => True :=
-  sealM_relOf hp hp' hq (sealMid_with hbody hlng) fun {Ctx W SP _ A D nl al n _} C C' X X' hNp hnl hal hR hNp' hnl' hal' hR' => by
+  sealM_relOf hp hp' hq (fun C X E hn hl ha => sealMid_with hbody hlng C X E hn hl ha six) fun {Ctx W SP _ A D nl al n _} C C' X X' hNp hnl hal hR hNp' hnl' hal' hR' => by
     have hlt := C.data.ok.lt
     have hw : ∀ {s₀ : State} {Np : Addr} (C : OneCtx s₀ 4 Ctx W SP Np A D nl al n), (s₀.gpr .rcx).toNat = nl →
         (s₀.gpr .r9).toNat = al → ∀ s, OneEntry s₀ Ctx W SP A D n s →
-        WP isa cond s fun u => u.zf = some (decide ¬IsShort nl al n) ∧ OneEntry s₀ Ctx W SP A D n u :=
-      fun C hnl hal s h => WP.mono (condE_ok C h hnl hal) fun _ ⟨z, E, _⟩ => ⟨z, E⟩
+        WP isa (condWith six) s fun u => u.zf = some (decide ¬IsShortAt six nl al n) ∧ OneEntry s₀ Ctx W SP A D n u :=
+      fun C hnl hal s h => WP.mono (condE_ok C h hnl hal six) fun _ ⟨z, E, _⟩ => ⟨z, E⟩
     have c := rel_next ((cond_rel (F₁ := OneEntry s₀ Ctx W SP A D n) (F₂ := OneEntry s₀' Ctx W SP A D n)
         (fun _ h => condS_of h hnl hal) (fun _ h => condS_of h hnl' hal')
-        (by rw [← hnl]; exact BitVec.isLt _) (by rw [← hal]; exact BitVec.isLt _) (by omega_arith)))
+        (by rw [← hnl]; exact BitVec.isLt _) (by rw [← hal]; exact BitVec.isLt _) (by omega_arith) six))
       (hw C hnl hal) (hw C' hnl' hal')
     refine RelCT.seq (c.mono (fun _ _ h => ⟨h.2.1, h.2.2⟩) fun _ _ h => h) (rel_ite_e (fun _ _ h => by rw [h.1.1, h.2.1])
       ((hlr C C' X X' hNp hnl hal hR hNp' hnl' hal' hR').mono
         (fun _ _ h => ⟨h.1.1.2, h.1.2.2⟩) fun _ _ h => h) ?_)
-    by_cases hs : IsShort nl al n
-    · exact (hct C C' X X' hNp hnl hal hR hNp' hnl' hal' hR' hs).mono
+    by_cases hs : IsShortAt six nl al n
+    · exact (hct C C' X X' hNp hnl hal hR hNp' hnl' hal' hR' (IsShortAt.full hs)).mono
         (fun _ _ h => ⟨h.1.1.2, h.1.2.2⟩) fun _ _ h => h
     · exact RelCT.of_false fun _ _ h => by have := h.1.1.1.symm.trans h.2; simp [hs] at this
 
