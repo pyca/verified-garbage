@@ -33,8 +33,10 @@ carry of that as 38 more, which cannot carry again. So:
   `lo + 38 hi` (`linear`); a square (`mul o a a`) is `sqr`, whose columns
   multiply each pair of distinct words once and add the product doubled (36
   multiplications rather than 64);
-* `add`: `a + b`; `sub`: `a + (2²⁵⁶ - 1 - b) + (2²⁵⁶ - 75) = a - b + 4p`, so
-  that every term is a natural number; `mulSmall`: `121665 a`;
+* `add` and `sub`: a carry (or borrow) through the eight words, `adc` or
+  `sbb` of the operands' words, then 38 added (or subtracted) for the carry
+  out, and 38 once more, into word 0, for a carry out of that (`addSub`);
+* `mulSmall`: `121665 a`, by columns;
 * `cswap`: with the mask `-swap`, as RFC 7748 §5 describes;
 * `freeze`: the full reduction of the result, by folding bit 255 in as 19,
   then selecting `x + 19 - 2²⁵⁵` with a mask if it is not negative.
@@ -184,16 +186,36 @@ def mul (o a b : Nat) : List Instr :=
 def mulSmall (o a : Nat) : List Instr :=
   linear o (fun k => [.mulI (a + 4 * k) 121665])
 
+/-- The carry flag cleared (and `ecx`). -/
+def clearCarry : List Instr := [.alu .xor .ecx (.reg .ecx)]
+
+/-- Word `k` of `[o]` = word `k` of `[a]`, `op` (`adc` or `sbb`) `src` with the carry. -/
+def carryStep (op : AluOp) (o a k : Nat) (src : Src) : List Instr :=
+  [.mov .eax (.mem (sc (a + 4 * k))), .alu op .eax src, .store (sc (o + 4 * k)) .eax]
+
+/-- The eight words of `[o]` = those of `[a]`, `op` the operands `src k`, with the carry from
+each word to the next. -/
+def carryPass (op : AluOp) (o a : Nat) (src : Nat → Src) : List Instr :=
+  (List.range 8).flatMap fun k => carryStep op o a k (src k)
+
+/-- `ecx` = 38 if the carry flag is set, else 0; the carry flag cleared. -/
+def carry38 : List Instr := [.alu .sbb .ecx (.reg .ecx), .alu .and .ecx (.imm 38)]
+
+/-- The operands of a fold: `ecx` into word 0, and the carry on. -/
+def foldSrc (k : Nat) : Src := if k = 0 then .reg .ecx else .imm 0
+
+/-- `[o] = [a] op [b]` for `op` an addition (`adc`) or a subtraction (`sbb`) of 256 bits, then 38
+`op` the result for a carry (or borrow) out, since `2²⁵⁶ = 38` modulo `p`, and 38 again, into word
+0, for a carry out of that. -/
+def addSub (op : AluOp) (o a b : Nat) : List Instr :=
+  clearCarry ++ carryPass op o a (fun k => .mem (sc (b + 4 * k))) ++ carry38 ++ carryPass op o o foldSrc ++
+    carry38 ++ carryStep op o o 0 (.reg .ecx)
+
 /-- `[o] = [a] + [b]`. -/
-def add (o a b : Nat) : List Instr :=
-  linear o (fun k => [.addM (a + 4 * k), .addM (b + 4 * k)])
+def add (o a b : Nat) : List Instr := addSub .adc o a b
 
-/-- The words of `2²⁵⁶ - 75`. -/
-def subK (k : Nat) : BitVec 32 := if k = 0 then 0xffffffb5 else 0xffffffff
-
-/-- `[o] = [a] - [b]`, as `[a] + (2²⁵⁶ - 1 - [b]) + (2²⁵⁶ - 75) = [a] - [b] + 4p`. -/
-def sub (o a b : Nat) : List Instr :=
-  linear o (fun k => [.addM (a + 4 * k), .addNot (b + 4 * k), .addI (subK k)])
+/-- `[o] = [a] - [b]`. -/
+def sub (o a b : Nat) : List Instr := addSub .sbb o a b
 
 /-- `[o] = [a]`. -/
 def copy (o a : Nat) : List Instr :=
