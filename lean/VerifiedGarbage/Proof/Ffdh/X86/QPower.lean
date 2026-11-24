@@ -210,6 +210,15 @@ theorem qScan_ok (h : In Ex base bytes len args s) (G : DomGeo args base bytes l
     exact ((kept_word S₃.inp (d := qpOff) (by decide) (by decide) O4).mono (by decide) (by decide)).trans
       ((kept_word S₄.inp (d := qlOff) (by decide) (by decide) O5).mono (by decide) (by decide))
 
+/-- q's bytes after a stage. -/
+theorem qBytes_keep (h : In Ex base bytes len args s) {rd wr : List Region}
+    (G : DomGeo args base bytes len (3 * len) rd wr) {sp : BitVec 32} (RF : RoomF sp base bytes)
+    (hb40 : Region.Disjoint ⟨byteAddr (args 2), 3 * len⟩ (below sp 176)) {m m' : Mem}
+    (F : Frame (frameF base sp (fR len)) m m') : qBytes m' args len = qBytes m args len := by
+  have up := G.upper
+  exact frame_bytes F (fun r hr => (dom_frame h G RF hb40 r hr).sub_left (Offset.sub_base _ (by omega_arith)))
+    (by omega_arith)
+
 /-- The scan's words through what keeps the header's words. -/
 theorem QAt.kept {bs : List Byte} {m m' : Mem} {js ds : List Nat} (Q : QAt base len args bs m)
     (k : Kept base len js ds m m') (hp : qpOff ∉ ds := by decide) (hl : qlOff ∉ ds := by decide) :
@@ -313,6 +322,7 @@ theorem winQCall_ok {M : Nat} (C : CtxOk Ex base bytes len args .wide M s)
   obtain lb := len_le_bc len
   obtain bw := bc_eq_cwc len .wide
   obtain f8 := C.inp.slot_fit .wide (j := 8) (by decide)
+  have blt := C.inp.bytes_lt
   have est : st len .wide = 2 * bc len .wide + 32 := rfl
   obtain ⟨a6, n6⟩ : byteAddr (args 6) = byteAddr (args 2) + BitVec.ofNat 64 (2 * len) ∧
       (args 6).toNat = (args 2).toNat + 2 * len := G.addr (k := 2) (by decide) (by omega_arith)
@@ -363,7 +373,8 @@ theorem winQCall_ok {M : Nat} (C : CtxOk Ex base bytes len args .wide M s)
       rcases hr with rfl | rfl
       · exact hb40.sub_left qsub
       · exact (hb40.sub_left qsub).sub_right (VG.X86.below_sub (by decide) RF.low)) (by omega_arith), ea,
-      ← hbs, show (2 * len + lead bs) = 2 * len + lead bs from rfl, ← VG.Offset.add_add]
+      ← VG.Offset.add_add]
+    subst hbs
     exact drop_bytes _ _ (by omega_arith)
   rw [qb, os2ip_drop_lead, ← qv] at V₁
   obtain sp₁ : u₁.gpr .esp = u.gpr .esp := (K₁.1 _ (by decide)).trans vesp
@@ -403,7 +414,6 @@ theorem powQ_ok (h : In Ex base bytes len args s) (G : DomGeo args base bytes le
   obtain e5 := lo_wide len 5
   obtain e8 := lo_wide len 8
   have nb : numBase = 3336 := rfl
-  have up := G.upper
   unfold powQ
   refine WP.seq (WP.mono (ctxP_ok h RF hP) fun u₁ ⟨C₁, one₁, R₁, F₁, k₁, K₁⟩ => ?_)
   have h₁ := C₁.inp
@@ -419,9 +429,7 @@ theorem powQ_ok (h : In Ex base bytes len args s) (G : DomGeo args base bytes le
   obtain S₂ : Step Ex base bytes len args s u₂ := Step.opsF h RF F₂ (K₁.trans (K₂.mono (by decide)))
   obtain k₂ : Kept base len [] [] s.mem u₂.mem := k₁.trans (kept_ops h G₂ h.room)
   obtain sp₂ : u₂.gpr .esp = s.gpr .esp := S₂.esp
-  obtain qb : qBytes u₂.mem args len = qBytes s.mem args len :=
-    frame_bytes S₂.frame (fun r hr => (dom_frame h G RF hb40 r hr).sub_left (Offset.sub_base _ (by omega_arith)))
-      (by omega_arith)
+  obtain qb : qBytes u₂.mem args len = qBytes s.mem args len := qBytes_keep h G RF hb40 S₂.frame
   obtain one₂ : sv u₂.mem base len .wide 3 = 1 := by rw [slotKeep h₁ (by decide) (by decide) O₂, one₁]
   refine WP.mono (winQCall_ok C₂ (G.keep ⟨rfl, rfl⟩ S₂.keeps) (by rw [sp₂]; exact RF) (by rw [sp₂]; exact hb40) one₂
     (by rw [slotKeep h₁ (by decide) (by decide) O₂, R₁]) (by rw [qb]; exact Q.kept k₂)) fun u ⟨C, F, K, Y⟩ => ?_
