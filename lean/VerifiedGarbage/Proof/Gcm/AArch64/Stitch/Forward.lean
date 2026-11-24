@@ -126,4 +126,13 @@ theorem forwardParts_ok {nr : Nat} (hnr : nr = 10 ∨ nr = 12 ∨ nr = 14) {s : 
     rw [run_forwardGh hc hi]
     exact VG.AArch64.Interleave.runBlock_of_WP hg
 
+theorem run_forwardParts_eq_seq {nr : Nat} (hn : nr = 10 ∨ nr = 12 ∨ nr = 14) (s : State) :
+    runBlock isa (forwardParts nr) s = runBlock isa (aesPart nr 128 .x15 ++ ghWith forwardLd) s := by
+  unfold forwardParts
+  rw [run_lowerXor3_block]
+  have hm := VG.Interleave.weaveG_merge (fuse (aesPart nr 128 .x15)) ((ghWith forwardLd).flatMap forwardGroup)
+  rw [fuse_flatten, forwardGroups_flatten] at hm
+  exact VG.Interleave.run_merge hm
+    (fps.indeps_of_check (forward_check nr (by rcases hn with rfl | rfl | rfl <;> decide))) trivial
+
 end VG.Proof.Gcm.AArch64.Stitch

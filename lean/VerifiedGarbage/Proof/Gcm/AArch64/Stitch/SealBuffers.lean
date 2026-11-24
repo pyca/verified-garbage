@@ -282,12 +282,17 @@ open VG.Proof.Gcm.AArch64.Pmull (ext8 VOnly rev64b_read)
 open VG.Spec.Gcm (Block blockAt blocksAt inc32 aesWith ghashFrom ctr32)
 open VG.Impl.Gcm.AArch64.Stitch
 
-theorem encToBody_ok {s₀ : State} (hp : SealToPre s₀) (gh : Gh8Ok) {c h o : Nat}
+/-- Ciphertext retained in the eight AES state registers after a batch. -/
+def EncValues (s₀ : State) (c : Nat) (s : State) : Prop :=
+  ∀ j < 8, ∀ tt < 16, vbyte (s.v (breg j)) tt =
+    kst s₀ (16 * (8 * c + j) + tt) ^^^ s₀.mem (s₀.gpr .x15 + BitVec.ofNat 64 (16 * (8 * c + j) + tt))
+
+theorem encToBody_values {s₀ : State} (hp : SealToPre s₀) (gh : Gh8Ok) {c h o : Nat}
     (hc : c < nb s₀) (hh : h < nb s₀) (hho : 128 * h + o = 128 * c) (ho : o = 0 ∨ o = 128)
     {s : State} (hI : SealInv s₀ c h s)
     (hhb : ∀ j < 8, blockAt s.mem (dp s₀ + BitVec.ofNat 64 (16 * (8 * h + j))) = cipherBlock s₀ (8 * h + j)) :
     WP isa (.block (parts (rounds s₀) o .x15 ++ stores o ++ adv true)) s
-      (SealInv s₀ (c + 1) (h + 1)) := by
+      (fun t => SealInv s₀ (c + 1) (h + 1) t ∧ EncValues s₀ c t) := by
   have ho' : o ≤ 128 := by omega_using [ho]
   have ho16 : o % 16 = 0 := by omega_using [hho]
   have hout : s.gpr .x9 + BitVec.ofNat 64 o = dp s₀ + BitVec.ofNat 64 (128 * c) := by
@@ -315,6 +320,10 @@ theorem encToBody_ok {s₀ : State} (hp : SealToPre s₀) (gh : Gh8Ok) {c h o : 
     fun u' ⟨x9', x11', g', v', m', sp', rd', wr'⟩ => ?_
   have gall : ∀ r, r ≠ .x9 → r ≠ .x11 → (true = true → r ≠ .x15) → u'.gpr r = u.gpr r :=
     fun r h9 h11 h15 => by rw [g' r h9 h11, g₂ r h15, g₁]
+  refine ⟨?_, fun j hj tt htt => ?_⟩
+  swap
+  · rw [v', v₂, v₁, ou.v _ (by unfold breg; split <;> decide)]
+    exact hv j hj tt htt
   refine ⟨by omega_using [hc], x9', ?_, x11', ?_, fun r hr => ?_, ?_, ?_, by rw [m', m₂]; exact d₁, ?_, ?_, ?_, ?_⟩
   · simp only [State.read] at x10t ⊢
     rw [gall _ (by decide) (by decide) (fun _ => by decide), ou.gpr]; exact x10t
@@ -332,6 +341,13 @@ theorem encToBody_ok {s₀ : State} (hp : SealToPre s₀) (gh : Gh8Ok) {c h o : 
   · rw [rd', rd₂, rd₁, ou.rd, frt.rd, hI.rd]
   · rw [wr', wr₂, wr₁, ou.wr, frt.wr, hI.wr]
 
+theorem encToBody_ok {s₀ : State} (hp : SealToPre s₀) (gh : Gh8Ok) {c h o : Nat}
+    (hc : c < nb s₀) (hh : h < nb s₀) (hho : 128 * h + o = 128 * c) (ho : o = 0 ∨ o = 128)
+    {s : State} (hI : SealInv s₀ c h s)
+    (hhb : ∀ j < 8, blockAt s.mem (dp s₀ + BitVec.ofNat 64 (16 * (8 * h + j))) = cipherBlock s₀ (8 * h + j)) :
+    WP isa (.block (parts (rounds s₀) o .x15 ++ stores o ++ adv true)) s
+      (SealInv s₀ (c + 1) (h + 1)) := WP.mono (encToBody_values hp gh hc hh hho ho hI hhb) fun _ p => p.1
+
 end VG.Proof.Gcm.AArch64.Stitch
 
 /-! The full gather encryption loop, including its first and last pipeline batches. -/
@@ -346,19 +362,10 @@ open VG.Proof.Gcm.AArch64.Pmull (ext8 VOnly rev64b_read)
 open VG.Spec.Gcm (Block blockAt blocksAt inc32 aesWith ghashFrom ctr32)
 open VG.Impl.Gcm.AArch64.Stitch
 
-theorem encToLoop_ok {s₀ : State} (hp : SealToPre s₀) (gh : Gh8Ok) {s : State}
-    (hI : SealInv s₀ 0 0 s) :
-    WP isa (encToLoop (rounds s₀)) s (SealInv s₀ (nb s₀) (nb s₀)) := by
-  have hn := hp.toKPre.toM.n16
+theorem firstTo_values {s₀ s : State} (hp : SealToPre s₀) (hI : SealInv s₀ 0 0 s) :
+    WP isa (.block (aesPart (rounds s₀) 0 .x15 ++ stores 0 ++ [.subImm .x .x11 .x11 1])) s
+      (fun t => SealInv s₀ 1 0 t ∧ EncValues s₀ 0 t) := by
   have h1 := hp.nb1
-  -- The batch at `x9 + 16 (8 h + j)`, once encrypted.
-  have hct : ∀ {c h : Nat} {s : State}, SealInv s₀ c h s → h < c →
-      ∀ j < 8, blockAt s.mem (dp s₀ + BitVec.ofNat 64 (16 * (8 * h + j))) = cipherBlock s₀ (8 * h + j) :=
-    fun hI hhc j hj => ciphertext_of_dataInvM hI.data (by omega_arith) (by have := hI.le; omega_arith)
-  have step_eq (xs : List Instr) : xs ++ [.addImm .x .x15 .x15 128, .addImm .x .x9 .x9 128] ++
-      [.subImm .x .x11 .x11 1] = xs ++ adv true := by rw [List.append_assoc]; rfl
-  simp only [encToLoop, step_eq]
-  refine WP.seq ?_
   -- The first batch.
   rw [WP.block_append_iff, WP.block_append_iff]
   refine WP.mono (aesToStep hp hI (by omega_arith) (show 128 * 0 + 0 = 128 * 0 by rfl) (by decide) (by decide))
@@ -369,6 +376,9 @@ theorem encToLoop_ok {s₀ : State} (hp : SealToPre s₀) (gh : Gh8Ok) {s : Stat
     (by rw [frt.wr, hI.wr]; rfl) hv) fun u ⟨d₁, f₁, g₁, v₁, sp₁, rd₁, wr₁⟩ => ?_
   rw [WP.block_cons_iff]
   refine ⟨_, exec_subImm_x (imm := 1) (by decide), WP.block_nil ?_⟩
+  refine ⟨?_, fun j hj k hk => ?_⟩
+  swap
+  · rw [v_write, v₁]; exact hv j hj k hk
   have hI₁ : SealInv s₀ 1 0 (u.write .x .x11 (u.read .x .x11 - BitVec.ofNat 64 1)) := {
     le := h1
     x9 := by rw [gpr_write_of_ne _ _ _ (by decide), g₁, gt _ (by decide) (by decide), hI.x9]
@@ -390,6 +400,60 @@ theorem encToLoop_ok {s₀ : State} (hp : SealToPre s₀) (gh : Gh8Ok) {s : Stat
     sp := by rw [sp_write, sp₁, frt.sp, hI.sp]
     rd := by rw [rd_write, rd₁, frt.rd, hI.rd]
     wr := by rw [wr_write, wr₁, frt.wr, hI.wr] }
+  exact hI₁
+
+theorem lastTo_ok {s₀ s₂ : State} (hp : SealToPre s₀) (gh : Gh8Ok)
+    (hI₂ : SealInv s₀ (nb s₀) (nb s₀ - 1) s₂) :
+    WP isa (.block (ghPart ++ [.addImm .x .x15 .x15 128, .addImm .x .x9 .x9 128])) s₂
+      (SealInv s₀ (nb s₀) (nb s₀)) := by
+  have h1 := hp.nb1
+  have hct : ∀ {c h : Nat} {s : State}, SealInv s₀ c h s → h < c →
+      ∀ j < 8, blockAt s.mem (dp s₀ + BitVec.ofNat 64 (16 * (8 * h + j))) = cipherBlock s₀ (8 * h + j) :=
+    fun hI hhc j hj => ciphertext_of_dataInvM hI.data (by omega_arith) (by have := hI.le; omega_arith)
+  rw [WP.block_append_iff]
+  refine WP.mono (ghStep hp.toKPre.toM gh (hb := cipherBlock s₀) (h := nb s₀ - 1) hI₂.y hI₂.cr hI₂.x9 (by omega_arith)
+    (hI₂.gpr _ (notMem_kRegsT _ (by decide))) (by rw [hI₂.rd, hI₂.wr]) hI₂.frame (hct hI₂ (by omega_arith))) fun u ⟨hy, ou⟩ => ?_
+  rw [WP.block_cons_iff]
+  refine ⟨_, exec_addImm_x (imm := 128) (by decide), ?_⟩
+  rw [WP.block_cons_iff]
+  refine ⟨_, exec_addImm_x (imm := 128) (by decide), WP.block_nil ?_⟩
+  have e : nb s₀ - 1 + 1 = nb s₀ := by omega_arith
+  exact {
+    le := Nat.le_refl _
+    x9 := by
+      simp only [gpr_write_self, State.read, BitVec.setWidth_eq, gpr_write_of_ne _ _ _ (show Reg.x9 ≠ Reg.x15 by decide), ou.gpr, hI₂.x9]
+      rw [Offset.add_add_eq _ (show 128 * (nb s₀ - 1) + 128 = 128 * nb s₀ by omega_arith)]
+    x10 := by
+      simp only [State.read, gpr_write_of_ne _ _ _ (show Reg.x10 ≠ Reg.x9 by decide), gpr_write_of_ne _ _ _ (show Reg.x10 ≠ Reg.x15 by decide), ou.gpr]; exact hI₂.x10
+    x11 := by rw [gpr_write_of_ne _ _ _ (by decide), gpr_write_of_ne _ _ _ (show Reg.x11 ≠ Reg.x15 by decide), ou.gpr, hI₂.x11]
+    x15 := by
+      simp only [gpr_write_of_ne _ _ _ (show Reg.x15 ≠ Reg.x9 by decide), gpr_write_self, State.read,
+        BitVec.setWidth_eq, ou.gpr, hI₂.x15]
+      rw [Offset.add_add_eq _ (show 128 * (nb s₀ - 1) + 128 = 128 * nb s₀ by omega_arith)]
+    gpr := fun r hr => by
+      rw [gpr_write_of_ne _ _ _ (fun h => hr (by simp [h, kRegsT, cond, kRegs])), gpr_write_of_ne _ _ _ ((kRegsT_not hr).2 rfl), ou.gpr, hI₂.gpr r hr]
+    y := by rw [v_write, v_write, hy, e]
+    cr := by rw [v_write, v_write, ou.v C (by decide), hI₂.cr]
+    data := by rw [mem_write, mem_write, ou.mem]; exact hI₂.data
+    frame := by rw [mem_write, mem_write, ou.mem]; exact hI₂.frame
+    sp := by rw [sp_write, sp_write, ou.sp, hI₂.sp]
+    rd := by rw [rd_write, rd_write, ou.rd, hI₂.rd]
+    wr := by rw [wr_write, wr_write, ou.wr, hI₂.wr] }
+
+theorem encToLoop_ok {s₀ : State} (hp : SealToPre s₀) (gh : Gh8Ok) {s : State}
+    (hI : SealInv s₀ 0 0 s) :
+    WP isa (encToLoop (rounds s₀)) s (SealInv s₀ (nb s₀) (nb s₀)) := by
+  have hn := hp.toKPre.toM.n16
+  have h1 := hp.nb1
+  -- The batch at `x9 + 16 (8 h + j)`, once encrypted.
+  have hct : ∀ {c h : Nat} {s : State}, SealInv s₀ c h s → h < c →
+      ∀ j < 8, blockAt s.mem (dp s₀ + BitVec.ofNat 64 (16 * (8 * h + j))) = cipherBlock s₀ (8 * h + j) :=
+    fun hI hhc j hj => ciphertext_of_dataInvM hI.data (by omega_arith) (by have := hI.le; omega_arith)
+  have step_eq (xs : List Instr) : xs ++ [.addImm .x .x15 .x15 128, .addImm .x .x9 .x9 128] ++
+      [.subImm .x .x11 .x11 1] = xs ++ adv true := by rw [List.append_assoc]; rfl
+  simp only [encToLoop, step_eq]
+  refine WP.seq ?_
+  refine WP.mono (firstTo_values hp hI) fun _ ⟨hI₁, _⟩ => ?_
   -- The loop, then the last batch hashed.
   refine WP.seq (WP.mono (Q := SealInv s₀ (nb s₀) (nb s₀ - 1)) ?_ fun s₂ hI₂ => ?_)
   · refine WP.ite (decide (nb s₀ - 1 = 0)) (eval_zero hI₁.x11 (by omega_arith)) (fun h => ?_) (fun h => ?_)
@@ -409,35 +473,7 @@ theorem encToLoop_ok {s₀ : State} (hp : SealToPre s₀) (gh : Gh8Ok) {s : Stat
           exact .inl ⟨by simp [hl], by rw [← e, show h + 1 + 1 - 1 = h + 1 by omega_arith]; exact hI'⟩
         · exact .inr ⟨by simp [hl], nb s₀ - (h + 1 + 1), by omega_arith, h + 1, rfl, by omega_arith, hI'⟩
       exact WP.loop (M := isa) I hstep _ _ ⟨0, rfl, by simp at h; omega_arith, hI₁⟩
-  · rw [WP.block_append_iff]
-    refine WP.mono (ghStep hp.toKPre.toM gh (hb := cipherBlock s₀) (h := nb s₀ - 1) hI₂.y hI₂.cr hI₂.x9 (by omega_arith)
-      (hI₂.gpr _ (notMem_kRegsT _ (by decide))) (by rw [hI₂.rd, hI₂.wr]) hI₂.frame (hct hI₂ (by omega_arith))) fun u ⟨hy, ou⟩ => ?_
-    rw [WP.block_cons_iff]
-    refine ⟨_, exec_addImm_x (imm := 128) (by decide), ?_⟩
-    rw [WP.block_cons_iff]
-    refine ⟨_, exec_addImm_x (imm := 128) (by decide), WP.block_nil ?_⟩
-    have e : nb s₀ - 1 + 1 = nb s₀ := by omega_arith
-    exact {
-      le := Nat.le_refl _
-      x9 := by
-        simp only [gpr_write_self, State.read, BitVec.setWidth_eq, gpr_write_of_ne _ _ _ (show Reg.x9 ≠ Reg.x15 by decide), ou.gpr, hI₂.x9]
-        rw [Offset.add_add_eq _ (show 128 * (nb s₀ - 1) + 128 = 128 * nb s₀ by omega_arith)]
-      x10 := by
-        simp only [State.read, gpr_write_of_ne _ _ _ (show Reg.x10 ≠ Reg.x9 by decide), gpr_write_of_ne _ _ _ (show Reg.x10 ≠ Reg.x15 by decide), ou.gpr]; exact hI₂.x10
-      x11 := by rw [gpr_write_of_ne _ _ _ (by decide), gpr_write_of_ne _ _ _ (show Reg.x11 ≠ Reg.x15 by decide), ou.gpr, hI₂.x11]
-      x15 := by
-        simp only [gpr_write_of_ne _ _ _ (show Reg.x15 ≠ Reg.x9 by decide), gpr_write_self, State.read,
-          BitVec.setWidth_eq, ou.gpr, hI₂.x15]
-        rw [Offset.add_add_eq _ (show 128 * (nb s₀ - 1) + 128 = 128 * nb s₀ by omega_arith)]
-      gpr := fun r hr => by
-        rw [gpr_write_of_ne _ _ _ (fun h => hr (by simp [h, kRegsT, cond, kRegs])), gpr_write_of_ne _ _ _ ((kRegsT_not hr).2 rfl), ou.gpr, hI₂.gpr r hr]
-      y := by rw [v_write, v_write, hy, e]
-      cr := by rw [v_write, v_write, ou.v C (by decide), hI₂.cr]
-      data := by rw [mem_write, mem_write, ou.mem]; exact hI₂.data
-      frame := by rw [mem_write, mem_write, ou.mem]; exact hI₂.frame
-      sp := by rw [sp_write, sp_write, ou.sp, hI₂.sp]
-      rd := by rw [rd_write, rd_write, ou.rd, hI₂.rd]
-      wr := by rw [wr_write, wr_write, ou.wr, hI₂.wr] }
+  · exact lastTo_ok hp gh hI₂
 
 end VG.Proof.Gcm.AArch64.Stitch
 
@@ -592,15 +628,20 @@ private theorem finishTo_ok {s₀ : State} (hp : SealToPre s₀) {s : State}
 
 /-- Interleaved encryption from x15 to x23. GHASH reads the new
 ciphertext and counter mode reads the original plaintext. -/
-theorem encTo_ok {s₀ : State} (hp : SealToPre s₀) (gh : Gh8Ok) :
-    WP isa (.seq (.block setup) (.seq (byRounds encToLoop) (.block finish))) s₀ (SealToPost s₀) := by
+theorem encLoopTo_ok {s₀ : State} (hp : SealToPre s₀) (loop : Nat → Prog isa)
+    (run : ∀ t, SealInv s₀ 0 0 t → WP isa (loop (rounds s₀)) t (SealInv s₀ (nb s₀) (nb s₀))) :
+    WP isa (.seq (.block setup) (.seq (byRounds loop) (.block finish))) s₀ (SealToPost s₀) := by
   refine WP.seq (WP.mono (setup_ok hp.toKPre.toM (cipherBlock s₀)) fun _ h => ?_)
-  refine WP.seq (WP.mono (byRounds_ok hp.toKPre.toM (f := encToLoop) h fun _ hi => encToLoop_ok hp gh (sealInv_start hi))
+  refine WP.seq (WP.mono (byRounds_ok hp.toKPre.toM (f := loop) h fun _ hi => run _ (sealInv_start hi))
     fun _ hi => ?_)
   refine WP.mono (finishTo_ok hp hi) fun _ z => ⟨ctr32_of_dataInvM z.data, z.ctr, ?_, z.dst, z.src, z.frame,
     z.gpr, z.sp, z.rd, z.wr⟩
   rw [z.y, ctr32_of_dataInvM z.data, ctr32_eq_map]
   rfl
+
+theorem encTo_ok {s₀ : State} (hp : SealToPre s₀) (gh : Gh8Ok) :
+    WP isa (.seq (.block setup) (.seq (byRounds encToLoop) (.block finish))) s₀ (SealToPost s₀) :=
+  encLoopTo_ok hp encToLoop fun _ hi => encToLoop_ok hp gh hi
 
 /-- Calling the shared kernel preserves the link register for the architectural return. -/
 theorem sealCall_ok {s : State} (hp : SealToPre s) (gh : Gh8Ok) :

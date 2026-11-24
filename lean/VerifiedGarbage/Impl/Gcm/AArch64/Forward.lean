@@ -31,8 +31,8 @@ def forwardParts (nr : Nat) : List Instr :=
 
 def forwardLoop (nr : Nat) : Prog isa :=
   let advance := [.addImm .x .x15 .x15 128, .addImm .x .x9 .x9 128]
-  let step := forwardParts nr ++ stores 128 ++ capture ++ advance ++ [.subImm .x .x11 .x11 1]
-  .seq (.block ((aesPart nr 0 .x15).flatMap lowerXor3 ++ stores 0 ++ capture ++ [.subImm .x .x11 .x11 1])) <|
+  let step := forwardParts nr ++ stores 128 ++ advance ++ [.subImm .x .x11 .x11 1] ++ capture
+  .seq (.block ((aesPart nr 0 .x15).flatMap lowerXor3 ++ stores 0 ++ [.subImm .x .x11 .x11 1] ++ capture)) <|
   .seq (.ite (.zero .x .x11) (.block []) (.loop (.block step) (.nonzero .x .x11))) <|
     .block ((ghWith forwardLd).flatMap lowerXor3 ++ advance)
 
