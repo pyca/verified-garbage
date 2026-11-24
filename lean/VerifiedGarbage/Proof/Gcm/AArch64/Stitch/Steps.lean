@@ -548,7 +548,7 @@ theorem pair_ok (p a k b l : Nat) (y : Bool) (s : State) (hin : GhIn s) (hp : p 
       s'.v T = polyMul (vdword (blkV s b ^^^ (if y then s.v Y else 0)) 0 ^^^
         vdword (blkV s b ^^^ (if y then s.v Y else 0)) 1) (vdword (tblV s (kOff p)) 1) ∧
       VOnly [A₁, A₂, S₁, S₂, KP, T, U, X₁, X₂] s s' := by
-  unfold pair
+  unfold pair pairWith
   simp only [List.append_assoc]
   rw [ld_eq, ld_eq, WP.block_append_iff]
   refine WP.mono (loadRev_ok A₁ .x9 (16 * a) s (Nat.mul_mod_right 16 _) (by omega_using [ha]) (hin.blk a ha))
