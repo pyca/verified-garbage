@@ -1,5 +1,7 @@
 module
 
+-- separate module: Ciphertext, tag and ABI restoration use only the functional payload postcondition. They can be checked separately from taint certificates.
+
 public import VerifiedGarbage.Proof.AesGcm.RISCV64.Contiguous.Body
 import VerifiedGarbage.Proof.Gcm.SealGather
 import VerifiedGarbage.Proof.AesGcm.RISCV64.StreamCrypt
