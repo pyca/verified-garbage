@@ -108,14 +108,14 @@ structure ScalarI (Ctx W SP S D : Addr) (R al n r : Nat) (s : State) : Prop wher
 theorem scalarCipher_ct (v : GcmImpl) {Ctx W SP S D : Addr} (L : Lay Ctx (W+16#64) W SP)
     {R al n r : Nat} (le : r≤n) (short : r<16) (dw : (⟨D,r⟩ : Region).Disjoint ⟨W,2560⟩) :
     RelCT isa (fun x y => ScalarI Ctx W SP S D R al n r x ∧ ScalarI Ctx W SP S D R al n r y)
-      (.seq (.block (Contiguous.regs .rbx ++ [.mov .r12 (.mem (at_ .r15 dataO)),.mov .rbp (.mem (at_ .r15 lenO))])) (cryptTailG v.callees true))
+      (.seq (.block (Contiguous.regs .rbx ++ ([.mov .r12 (.mem (at_ .r15 dataO)),.mov .rbp (.mem (at_ .r15 lenO))] : List Instr))) (cryptTailG v.callees true))
       (fun x y => OneT Ctx W SP R al D r n x ∧ OneT Ctx W SP R al D r n y) := by
   let Q := S+BitVec.ofNat 64 (n-r)
   let T := OneT Ctx W SP R al D r n
   let F (s : State) := T s ∧ CrMid Ctx (W+16#64) W SP R 0 0 D r s.mem 0 s ∧
     TailSrc true (W+16#64) W SP s s.mem D 0 r Q ∧ s.gpr .rbx=Q
   have setup (s) (h : ScalarI Ctx W SP S D R al n r s) :
-      WP isa (.block (Contiguous.regs .rbx ++ [.mov .r12 (.mem (at_ .r15 dataO)),.mov .rbp (.mem (at_ .r15 lenO))])) s F := by
+      WP isa (.block (Contiguous.regs .rbx ++ ([.mov .r12 (.mem (at_ .r15 dataO)),.mov .rbp (.mem (at_ .r15 lenO))] : List Instr))) s F := by
     refine (scalarArgs_ok h.tag.env h.slot h.src h.tag.tlen h.tag.len h.tag.dat le).mono fun t ⟨ptr,dest,len,env,m,rd,wr⟩ => ?_
     have tag : T t := ⟨env,by rw [m]; exact h.tag.rounds,by rw [m]; exact h.tag.alen,
       by rw [m]; exact h.tag.dat,by rw [m]; exact h.tag.len,h.tag.dD.of_eq rd wr,by rw [m]; exact h.tag.tlen⟩

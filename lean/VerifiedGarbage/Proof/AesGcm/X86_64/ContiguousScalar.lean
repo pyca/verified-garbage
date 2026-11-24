@@ -100,7 +100,7 @@ theorem scalarArgs_ok {Ctx W SP S D : Addr} {n r : Nat} {u : State}
     (env0 : Env Ctx (W+16#64) W SP u) (slot : InRegions (u.rd++u.wr) (SP+8#64) 8)
     (src : u.mem.readW (SP+8#64) 64=S) (total : u.mem.readW (W+192#64) 64=BitVec.ofNat 64 n)
     (len : u.mem.readW (W+208#64) 64=BitVec.ofNat 64 r) (dat : u.mem.readW (W+200#64) 64=D) (le : r≤n) :
-    WP isa (.block (Contiguous.regs .rbx ++ [.mov .r12 (.mem (at_ .r15 dataO)),.mov .rbp (.mem (at_ .r15 lenO))])) u
+    WP isa (.block (Contiguous.regs .rbx ++ ([.mov .r12 (.mem (at_ .r15 dataO)),.mov .rbp (.mem (at_ .r15 lenO))] : List Instr))) u
       fun x => x.gpr .rbx=S+BitVec.ofNat 64 (n-r) ∧ x.gpr .r12=D ∧ x.gpr .rbp=BitVec.ofNat 64 r ∧
         Env Ctx (W+16#64) W SP x ∧ x.mem=u.mem ∧ x.rd=u.rd ∧ x.wr=u.wr := by
   obtain ⟨t,run,ptr,g,mem,rd,wr,_⟩ := tailPtr_ok env0 slot src total len le
@@ -132,7 +132,7 @@ theorem scalarCipher_ok (v : GcmImpl) {M : CtxMode} {Ctx W SP S D : Addr} {R n :
     (slot : InRegions (s.rd++s.wr) (SP+8#64) 8) (src : u.mem.readW (SP+8#64) 64=S)
     (rounds : RoundsAt u.mem W R) (len : u.mem.readW (W+208#64) 64=BitVec.ofNat 64 (n-16*(n/16)))
     (hd : DataW Ctx (W+16#64) W SP u (D+BitVec.ofNat 64 (16*(n/16))) (n-16*(n/16))) :
-    WP isa (.seq (.block (Contiguous.regs .rbx ++ [.mov .r12 (.mem (at_ .r15 dataO)),.mov .rbp (.mem (at_ .r15 lenO))]))
+    WP isa (.seq (.block (Contiguous.regs .rbx ++ ([.mov .r12 (.mem (at_ .r15 dataO)),.mov .rbp (.mem (at_ .r15 lenO))] : List Instr)))
       (cryptTailG v.callees true)) u fun t => CrOutQ Ctx (W+16#64) W SP R icb (16*(n/16))
         (D+BitVec.ofNat 64 (16*(n/16))) (n-16*(n/16)) u.mem (S+BitVec.ofNat 64 (16*(n/16))) 0 t ∧ t.rd=u.rd ∧ t.wr=u.wr := by
   let off := 16*(n/16)

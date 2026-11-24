@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcm.X86_64.ContiguousVerified
 import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.Alias
 public import VerifiedGarbage.Impl.AesGcm.X86_64.BoundedGather
 
@@ -227,31 +226,32 @@ plaintext-to-ciphertext pass separate from authentication. -/
 def contiguousArtifact (v : GcmVariant) : Artifact :=
   let plain := fun _ : Unit =>
     let defer := v.impl.suffix == "_aesni_pclmul"
+    let cert := ContiguousSeal.unstitched v defer
     Spec.Gcm.sealContiguousPreparedApi.artifact X86_64.target {
       suffix := v.impl.suffix
       code := Impl.AesGcm.X86_64.Contiguous.prepared v.lvTW defer false 16 v.impl.callees (DirectGather.ctrFn v) none
-      verified := (ContiguousSeal.unstitched v defer).1
-      spSafe := (ContiguousSeal.unstitched v defer).2 }
+      verified := Proof.AesGcm.X86_64.ContiguousSeal.verified cert
+      spSafe := Proof.AesGcm.X86_64.ContiguousSeal.spSafe cert }
   if wide : v.impl.short = true ∧ v.lvT.level = 2 then
     match h : sealLeafR v with
     | none => plain ()
     | some b =>
-      let cert := ContiguousSeal.stitched48 v (show b∈sealLeafR v by rw [h]; rfl) (Nat.le_of_eq wide.2.symm)
+      let cert := ContiguousSeal.stitched48 v h (Nat.le_of_eq wide.2.symm)
       Spec.Gcm.sealContiguousPreparedApi.artifact X86_64.target {
         suffix := v.impl.suffix
         code := Impl.AesGcm.X86_64.Contiguous.prepared v.lvT false true 48 v.impl.callees (DirectGather.ctrFn v) (some b.fn)
-        verified := cert.1
-        spSafe := cert.2 }
+        verified := Proof.AesGcm.X86_64.ContiguousSeal.verified cert
+        spSafe := Proof.AesGcm.X86_64.ContiguousSeal.spSafe cert }
   else
     match h : sealLeafR16 v with
     | none => plain ()
     | some b =>
-      let cert := ContiguousSeal.stitched16 v (show b∈sealLeafR16 v by rw [h]; rfl)
+      let cert := ContiguousSeal.stitched16 v h
       Spec.Gcm.sealContiguousPreparedApi.artifact X86_64.target {
         suffix := v.impl.suffix
         code := Impl.AesGcm.X86_64.Contiguous.prepared v.lvT false false 16 v.impl.callees (DirectGather.ctrFn v) (some b.fn)
-        verified := cert.1
-        spSafe := cert.2 }
+        verified := Proof.AesGcm.X86_64.ContiguousSeal.verified cert
+        spSafe := Proof.AesGcm.X86_64.ContiguousSeal.spSafe cert }
 
 /-- The artifacts of a variant: its prepared ones, for what its loops read:
 16 prepared powers (`r16`), 48 (`stitchR`), or the key context alone. -/

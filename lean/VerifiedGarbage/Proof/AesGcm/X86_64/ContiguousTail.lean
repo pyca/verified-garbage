@@ -29,7 +29,7 @@ theorem tailPtr_ok {Ctx W SP S : Addr} {n r : Nat} {s : State}
     rw [← Offset.ofNat_sub_ofNat le, BitVec.sub_eq_add_neg, BitVec.sub_eq_add_neg, BitVec.add_assoc]
   unfold Contiguous.regs
   refine ⟨_,by xrun [Contiguous.src,env.rsp,env.r15,slot,src,total,len,rt,rr],?_,?_,?_,?_,?_,?_⟩
-  · exact (gpr_setReg_self _ _ _).trans ptr
+  · simpa only [gpr_setReg_self] using ptr
   · intro z nz; simp [gpr_setReg,nz]
   all_goals rfl
 

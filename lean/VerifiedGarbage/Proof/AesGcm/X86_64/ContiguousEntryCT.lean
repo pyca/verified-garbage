@@ -1,4 +1,13 @@
 module
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Sig
+import VerifiedGarbage.Proof.AesGcm.Flag
+import VerifiedGarbage.Proof.AesGcm.Scratch
+import VerifiedGarbage.Proof.Framework.X86_64.FlagBranch
+import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
+public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Verified
+public import VerifiedGarbage.Spec.Gcm.Contiguous
 public import VerifiedGarbage.Proof.AesGcm.X86_64.ContiguousRecord
 import VerifiedGarbage.Proof.AesGcm.X86_64.Fn
 import VerifiedGarbage.Proof.AesGcm.X86_64.StreamFinish
@@ -188,5 +197,247 @@ theorem rawVerified {contract : Contract isa} {M : CtxMode} {body : Prog isa}
   · obtain ⟨tr,t,run,regs,post⟩ := entry_ok hw (inputs s hs)
     exact ⟨tr,t,run,abiPreserved_of_exec mx run regs,outputs s t hs post⟩
   · exact (entry_ct hw hc (inputs s hs) (inputs t ht) (publicArgs s t pb) s t _ _ _ _ ⟨rfl,rfl⟩ ex ey).1
+
+end VG.Proof.AesGcm.X86_64.ContiguousSeal
+
+namespace VG.Proof.AesGcm.SealBuffers
+open VG VG.Spec.Gcm VG.Spec.Aes
+
+abbrev Agree (m₁ m₂ : Mem) (p : Addr) (n : Nat) : Prop :=
+  ∀ a, (⟨p,n⟩ : Region).Contains a 1 → m₁ a = m₂ a
+
+/-- The full-tag encryption equation used by the operations on an expanded key. -/
+def Equation (ctx nonce aad src dst tag : Addr) (rounds nl al n : Nat) (m out : Mem) : Prop :=
+  encryptWith (ctxCiph m ctx rounds) (ctxH m ctx) 16 (bytesAt m nonce nl) (bytesAt m src n)
+    (bytesAt m aad al) = (bytesAt out dst n,bytesAt out tag 16)
+
+theorem keyed {ctx nonce aad src dst tag : Addr} {rounds nl al n : Nat} {m out : Mem} {key : List Byte}
+    (hk : KeyRounds m ctx rounds key) (h : Equation ctx nonce aad src dst tag rounds nl al n m out) :
+    aesGcmEncrypt key 16 (bytesAt m nonce nl) (bytesAt m src n) (bytesAt m aad al) =
+      (bytesAt out dst n,bytesAt out tag 16) := by
+  obtain ⟨cipher,hash,_⟩ := keyRounds_ctx hk
+  unfold Equation at h
+  rwa [cipher,hash,← encrypt_eq] at h
+
+theorem keyRounds_local {m m' : Mem} {ctx : Addr} {rounds : Nat} {key : List Byte}
+    (h : Agree m m' ctx 256) (hk : KeyRounds m ctx rounds key) : KeyRounds m' ctx rounds key := by
+  obtain ⟨_,_,r⟩ := keyRounds_ctx hk
+  refine ⟨hk.1,hk.2.1,?_,(ctxH_congr (agree_of h)).trans hk.2.2.2⟩
+  rw [bytesAt_congr (fun i hi => agree_of h i (by rw [← hk.2.1] at hi; rcases r with r|r|r <;> omega))]; exact hk.2.2.1
+
+theorem prepared_local {m m' : Mem} {ctx : Addr} (h : Agree m m' ctx 1032) (valid : PreparedRepr m ctx) :
+    PreparedRepr m' ctx :=
+  (Flag.flaggedPowers_congr (agree_of h) (show Flag.FlaggedPowers 0 m ctx from ⟨Nat.zero_le _,valid⟩)).2
+
+end VG.Proof.AesGcm.SealBuffers
+
+namespace VG.Proof.AesGcm.SealBuffers
+open VG VG.Spec.Gcm
+
+abbrev sig := sealContiguousSig 129
+
+theorem agreements {m₁ m₂ : Mem} {k r iv nl ad al src dst n tag : Addr}
+    (h : ∀ b ∈ Sig.bufs sig.params [k,r,iv,nl,ad,al,src,dst,n,tag], Agree m₁ m₂ b.1.base b.1.len) :
+    Agree m₁ m₂ k 1032 ∧ Agree m₁ m₂ iv nl.toNat ∧ Agree m₁ m₂ ad al.toNat ∧ Agree m₁ m₂ src n.toNat ∧
+      Agree m₁ m₂ dst n.toNat ∧ Agree m₁ m₂ tag 16 := by
+  by_cases eq : src=dst
+  · subst src
+    simp [sig, sealContiguousSig, Sig.bufs, Elem.size] at h
+    exact ⟨h.1,h.2.1,h.2.2.1,h.2.2.2.1,h.2.2.2.1,h.2.2.2.2⟩
+  · simpa [sig,sealContiguousSig,Sig.bufs,Elem.size,eq] using h
+
+theorem postInputs (vs : List Addr) (m m' out : Mem) (r : BitVec 0) (hl : vs.length=(sig.words 64).length)
+    (hb : ∀ b∈Sig.bufs sig.params vs, ∀ a,b.1.Contains a 1 → m a=m' a)
+    (h : Curry.apply (sig.words 64) (sealContiguousPost 64) vs m out r) :
+    Curry.apply (sig.words 64) (sealContiguousPost 64) vs m' out r := by
+  match vs,hl with
+  | [k,rounds,iv,nl,ad,al,src,dst,n,tag],_ =>
+    obtain ⟨key,nonce,aad,pt,_⟩ := agreements hb
+    intro sk hk
+    have hₖ := keyRounds_local (m:=m') (m':=m) (fun a ha => (key a ((Region.sub_prefix (show 256≤1032 by decide)) _ ha)).symm) hk
+    change Spec.Gcm.aesGcmEncrypt sk 16 (Spec.Aes.bytesAt m' iv nl.toNat) (Spec.Aes.bytesAt m' src n.toNat) (Spec.Aes.bytesAt m' ad al.toNat) = _
+    rw [bytesAt_congr (agree_of nonce),bytesAt_congr (agree_of pt),bytesAt_congr (agree_of aad)]
+    exact h sk hₖ
+
+theorem postOutputs (vs : List Addr) (m out out' : Mem) (r : BitVec 0) (hl : vs.length=(sig.words 64).length)
+    (hb : ∀ b∈Sig.bufs sig.params vs, ∀ a,b.1.Contains a 1 → out a=out' a)
+    (h : Curry.apply (sig.words 64) (sealContiguousPost 64) vs m out r) :
+    Curry.apply (sig.words 64) (sealContiguousPost 64) vs m out' r := by
+  match vs,hl with
+  | [k,rounds,iv,nl,ad,al,src,dst,n,tag],_ =>
+    obtain ⟨_,_,_,_,d,t⟩ := agreements hb
+    intro sk hk
+    change _ = (Spec.Aes.bytesAt out' dst n.toNat,Spec.Aes.bytesAt out' tag 16)
+    rw [bytesAt_congr (agree_of d),bytesAt_congr (agree_of t)]
+    exact h sk hk
+
+end VG.Proof.AesGcm.SealBuffers
+
+namespace VG.Proof.AesGcm.X86_64.ContiguousSeal
+open VG VG.X86_64
+open VG.Proof.Gcm.X86_64.Stitch (CtxMode)
+open VG.Spec.Gcm
+
+open VG.Impl.AesGcm.X86_64.Contiguous
+abbrev Sp (c : Prog isa) := c.all (fun i => !isa.writesSp i)=true
+
+/-- Properties needed before assigning a private work area to the raw entry. -/
+structure CoreSafe (record : Prog isa) : Prop where
+  sp : Sp (core record)
+  depth : (core record).x86_64Depth ≤ 24
+  mx : (core record).allInstrs (fun i => !loadsMxcsr i)=true
+
+/-- One functional, leakage and stack certificate for an AES-GCM record body. -/
+structure RecordProof (M : CtxMode) (p : Prog isa) : Prop where
+  ok : RecordOk M p
+  ct : RecordCT M p
+  safe : CoreSafe p
+
+abbrev Condition := Addr → Addr → Mem → Prop
+def workSig : Sig := {sealContiguousSig 129 with params := (sealContiguousSig 129).params ++ [("scratch",.array true .u64 320)]}
+def pre (P : Condition) : Curry ((sealContiguousSig 129).words 64) (Mem → Prop) := fun k r _ _ _ _ _ _ _ _ => P k r
+def workContract (P : Condition) : Contract isa :=
+  workSig.contract abi (pre:=fun k r _ _ _ _ _ _ _ _ _ => P k r)
+    (post:=fun k r np nl a al src dst len tag _ => sealContiguousPost 64 k r np nl a al src dst len tag)
+    (writeArgs:=true) (stack:=32)
+
+theorem entryPublic {P : Condition} {s t : State} (h : (workContract P).pub s t) : EntryPublic s t := by
+  have arg (i : Nat) := h.2.1 i
+  refine ⟨?_,?_⟩
+  · intro r hr; simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
+    rcases hr with rfl|rfl|rfl|rfl|rfl|rfl|rfl
+    exacts [arg 0 (by decide),arg 1 (by decide),arg 2 (by decide),arg 3 (by decide),
+      arg 4 (by decide),arg 5 (by decide),h.1.1]
+  · intro i hi
+    have idx : i=0 ∨ i=1 ∨ i=2 ∨ i=3 ∨ i=4 := by omega
+    rcases idx with rfl|rfl|rfl|rfl|rfl
+    exacts [arg 6 (by decide),arg 7 (by decide),arg 8 (by decide),arg 9 (by decide),arg 10 (by decide)]
+
+theorem entryPost {P : Condition} {s t : State} (h : EntryPost s t) : (workContract P).post s t := by
+  sig_post [workContract,workSig,sealContiguousSig,sealContiguousPost,abi,argRegs,Gather.stackArgs_five,List.append_eq]
+  intro key hk
+  exact SealBuffers.keyed hk h
+
+theorem entryPre {P : Condition} {M : CtxMode} {s : State}
+    (valid : P (K s) (s.gpr .rsi) s.mem → rounds s ∧ M.ok s.mem (K s))
+    (h : (workContract P).pre s) : EntryPre M s := by
+  have b : Region.Sub (below (SP s) 24) (below (SP s) 32) := below_sub (by decide) (by decide)
+  by_cases same : stackArg s 0=stackArg s 1
+  all_goals
+    sig_pre [workContract,workSig,sealContiguousSig,abi,argRegs,Gather.stackArgs_five,List.cons_append,List.nil_append] at h
+    simp only [same,↓reduceIte] at h
+    simp [Sig.pairFacts,Sig.conj,List.filterMap_cons,and_assoc] at h
+  case pos =>
+    obtain ⟨room,top,rd,wr,kd,_,kw,nd,_,nw,ad,_,aw,dt,dw,da,tw,_,wa,_,_,_,rett,rt,rw,_,sk,sn,sa,sd,_,sw,_,bk,bn,ba,bd,_,bw,p⟩ := h
+    have sameAddr : S s=D s := same
+    have L : Proof.AesGcm.oneLay M.len 4 5 s 1 2 :=
+      ⟨kd.sub_left (Region.sub_prefix M.le),kw.sub_left (Region.sub_prefix M.le),nd,nw,ad,aw,dw,da,wa,rett,rw,
+       (sk.sub_left b).sub_right (Region.sub_prefix M.le),sn.sub_left b,sa.sub_left b,sd.sub_left b,sw.sub_left b,by omega_using [M.le,bk],bn,ba,bd,by change (stackArg s 4).toNat+2560≤2^64; omega_using [bw],by omega_arith,by omega_arith,(valid p).1⟩
+    apply EntryPre.ofLayout L _ _ _ _ _ _ (valid p).2 _ (Or.inl sameAddr) (sameAddr ▸ dw) (sameAddr ▸ (sd.sub_left b).symm)
+      (sameAddr ▸ bd) _ dt.symm tw rt
+    · exact covers_prefix (k:=1032) (covers_of_mem (by simp [rd,K])) M.le
+    all_goals apply covers_of_mem; simp [rd,wr,D,N,S,T,W,SP,stackArgAddr,same]
+  case neg =>
+    obtain ⟨room,top,rd,wr,kd,_,kw,nd,_,nw,ad,_,aw,sd,_,sw,dt,dw,da,tw,_,wa,_,_,_,_,rett,rt,rw,_,sk,sn,sa,ss,ds,_,ws,_,bk,bn,ba,bs,bd,_,bw,p⟩ := h
+    have L : Proof.AesGcm.oneLay M.len 4 5 s 1 2 :=
+      ⟨kd.sub_left (Region.sub_prefix M.le),kw.sub_left (Region.sub_prefix M.le),nd,nw,ad,aw,dw,da,wa,rett,rw,
+       (sk.sub_left b).sub_right (Region.sub_prefix M.le),sn.sub_left b,sa.sub_left b,ds.sub_left b,ws.sub_left b,by omega_using [M.le,bk],bn,ba,bd,by change (stackArg s 4).toNat+2560≤2^64; omega_using [bw],by omega_arith,by omega_arith,(valid p).1⟩
+    apply EntryPre.ofLayout L _ _ _ _ _ _ (valid p).2 _ (Or.inr sd) sw (ss.sub_left b).symm bs _ dt.symm tw rt
+    · exact covers_prefix (k:=1032) (covers_of_mem (by simp [rd,K])) M.le
+    all_goals apply covers_of_mem; simp [rd,wr,D,N,S,T,W,SP,stackArgAddr]
+
+/-- A zero-length in-place record, with valid zero powers in the prepared key. -/
+def witnessMem (a : Addr) : Byte :=
+  if a=0x1400 then 48 else if a=0x9021 then 0x50 else if a=0x9029 then 0x60 else 0
+
+def witness (scratch : Bool) : State :=
+  { Gather.gatherSat with
+    mem := witnessMem
+    rd := [⟨0x1000,1032⟩,⟨0x2000,0⟩,⟨0x3000,0⟩,⟨0x9008,if scratch then 40 else 32⟩]
+    wr := [⟨0,0⟩,⟨0x5000,16⟩]++(if scratch then [⟨0x6000,2560⟩] else []) }
+
+theorem witnessPowers : Proof.AesGcm.Flag.FlaggedPowers 48 witnessMem 0x1000 := by
+  apply Proof.AesGcm.Flag.flaggedPowers_of_zeroMem (Nat.le_refl _)
+  · intro i hi
+    have lo := Gather.ctx_low hi
+    simp only [witnessMem,Proof.AesGcm.Flag.ctx_ne1024 hi,ite_false]
+    have a : (0x1000+BitVec.ofNat 64 i : Addr)≠0x9021 := fun e => lo (by rw [e]; decide)
+    have b : (0x1000+BitVec.ofNat 64 i : Addr)≠0x9029 := fun e => lo (by rw [e]; decide)
+    simp only [a,b,ite_false]
+  · decide +kernel
+
+theorem workSat {P : Condition} (ok : P 0x1000 10 witnessMem) : (workContract P).pre (witness true) := by
+  sig_pre [workContract,workSig,sealContiguousSig,abi,argRegs,Gather.stackArgs_five,List.cons_append,List.nil_append,
+    witness,Gather.gatherSat,stackArg,stackArgAddr,Mem.readW,Mem.read,witnessMem]
+  simp
+  repeat' apply And.intro
+  all_goals first | exact ok | exact Region.disjoint_of_sep (by decide)
+
+private theorem stackFour (s : State) : List.map (stackArg s) (List.range 4) =
+  [stackArg s 0,stackArg s 1,stackArg s 2,stackArg s 3] := rfl
+
+theorem publicSat {P : Condition} (ok : P 0x1000 10 witnessMem) :
+    ((sealContiguousSig 129).contract abi (pre P) (sealContiguousPost 64) true 2640).pre (witness false) := by
+  sig_pre [pre,sealContiguousSig,abi,argRegs,stackFour,List.cons_append,List.nil_append,
+    witness,Gather.gatherSat,stackArg,stackArgAddr,Mem.readW,Mem.read,witnessMem]
+  simp
+  repeat' apply And.intro
+  all_goals first | exact ok | exact Region.disjoint_of_sep (by decide)
+
+def plainP : Condition := fun _ r _ => r.toNat=10 ∨ r.toNat=12 ∨ r.toNat=14
+def powerP (t : Nat) : Condition := fun k r m => plainP k r m ∧ Proof.AesGcm.Flag.FlaggedPowers t m k
+
+abbrev PreLocal (P : Condition) :=
+  ∀ {k r : Addr} {m m' : Mem}, SealBuffers.Agree m m' k 1032 → P k r m → P k r m'
+
+theorem preLocal {P : Condition} (loc : PreLocal P) (vs : List Addr) (m m' : Mem) (hl : vs.length=(SealBuffers.sig.words 64).length)
+    (hb : ∀ b∈Sig.bufs SealBuffers.sig.params vs, ∀ a,b.1.Contains a 1 → m a=m' a)
+    (h : Curry.apply (SealBuffers.sig.words 64) (pre P) vs m) : Curry.apply (SealBuffers.sig.words 64) (pre P) vs m' := by
+  match vs,hl with
+  | [k,r,iv,nl,a,al,s,d,n,t],_ => exact loc (SealBuffers.agreements hb).1 h
+
+theorem framedVerified {P : Condition} {M : CtxMode} {body : Prog isa} (p : RecordProof M body) (locality : PreLocal P)
+    (input : ∀ {k r m}, P k r m → plainP k r m ∧ M.ok m k) (inh : P 0x1000 10 witnessMem) :
+    Verified target (Impl.AesGcm.X86_64.Contiguous.framed body)
+      ((sealContiguousSig 129).contract abi (pre P) (sealContiguousPost 64) true 2640) := by
+  apply X86_64.Verified.stackArgScratchL (sig:=sealContiguousSig 129) (nm:="scratch") (e:=.u64) (n:=320)
+    (pre:=pre P) (post:=sealContiguousPost 64) (wa:=true) (stack:=32) (bytes:=2608)
+    (hpostOut:=fun vs m a b r hl _ hb _ => SealBuffers.postOutputs vs m a b r hl hb)
+    _ (by decide) (by decide) (by decide) p.safe.sp (Nat.le_trans p.safe.depth (by decide))
+    (fun vs a b hl hb _ => preLocal (P:=P) locality vs a b hl hb)
+    (fun vs a b m r hl hb _ => SealBuffers.postInputs vs a b m r hl hb) ⟨_,publicSat inh⟩
+  apply rawVerified (contract:=workContract P) p.ok p.ct p.safe.mx
+    (fun _ h => entryPre input h) (fun _ _ _ => entryPost) (fun _ _ => entryPublic) ⟨_,workSat inh⟩
+
+def preparedP : Condition := fun k r m => plainP k r m ∧ PreparedRepr m k
+
+theorem preparedLocal : PreLocal preparedP :=
+  fun h p => ⟨p.1,SealBuffers.prepared_local h p.2⟩
+
+theorem powersLocal (t : Nat) : PreLocal (powerP t) :=
+  fun h p => ⟨p.1,Proof.AesGcm.Flag.flaggedPowers_congr (agree_of h) p.2⟩
+
+abbrev apiContract := sealContiguousPreparedApi.contract abi 2640
+abbrev recordContract (P : Condition) :=
+  (sealContiguousSig 129).contract abi (pre P) (sealContiguousPost 64) true 2640
+
+theorem prepInhabited : preparedP 0x1000 10 witnessMem := ⟨Or.inl rfl,witnessPowers.2⟩
+theorem powerInhabited {t : Nat} (ht : t≤48) : powerP t 0x1000 10 witnessMem :=
+  ⟨Or.inl rfl,Nat.le_trans ht witnessPowers.1,witnessPowers.2⟩
+
+theorem plainPublic {c : Prog isa} (h : Verified target c (recordContract preparedP)) :
+    Verified target c apiContract :=
+  Verified.leak_flag h (fun _ _ _ _ _ _ _ _ _ _ _ => rfl)
+
+theorem onPowers {t : Nat} (ht : t=16 ∨ t=48) {a b : Prog isa}
+    (ha : Verified target a (recordContract (powerP t))) (hb : Verified target b (recordContract preparedP)) :
+    Verified target (Impl.Gcm.X86_64.Flag.onFlag t a b) apiContract :=
+  Verified.of_onFlagCtx ht (by decide) ha hb (fun _ _ _ _ _ _ _ _ _ _ _ p hf => ⟨p.1,hf,p.2⟩)
+    (fun _ _ _ _ _ _ _ _ _ _ _ p _ => p) (fun _ _ _ _ _ _ _ _ _ _ _ => rfl) ⟨_,publicSat prepInhabited⟩
+
+theorem outputLocal : VG.X86_64.Scrub.PostOut apiContract 0 :=
+  VG.X86_64.Scrub.postOut_of_local (sig:=sealContiguousSig 129) (post:=sealContiguousPost 64)
+    (leak:=some fun ctx rounds nonce nl aad al _ dst len tag => sealPreparedLeak 64 ctx rounds nonce nl aad al dst len tag)
+    VG.X86_64.Scrub.ScrubAbi.plain SealBuffers.postOutputs
 
 end VG.Proof.AesGcm.X86_64.ContiguousSeal

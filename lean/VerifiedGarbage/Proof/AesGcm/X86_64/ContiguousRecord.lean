@@ -53,7 +53,7 @@ private theorem aadFrameApart {W SP : Addr} {p : Addr} {k : Nat} (w : (⟨p,k⟩
       ∀ b ∈ [(⟨W,2560⟩ : Region),below SP 8], (⟨p,k⟩ : Region).Disjoint b := by
   intro b hb
   simp only [List.mem_cons,List.not_mem_nil,or_false] at hb
-  rcases hb with rfl|rfl <;> assumption
+  rcases hb with rfl|rfl <;> with_reducible assumption
 
 theorem afterAad_ok {M : CtxMode} {s₀ s₁ s₂ : State} {Ctx W SP Np A S D : Addr} {nl al n : Nat}
     (C : OneCtx s₀ 5 Ctx W SP Np A D nl al n) (X : CtxExt M Ctx (W+16#64) W SP D n s₀)
