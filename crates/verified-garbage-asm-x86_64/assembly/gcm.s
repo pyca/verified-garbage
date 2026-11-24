@@ -33354,16 +33354,6 @@ vg_aes_gcm_seal_contiguous_prepared_aesni:
 	mov r9, r15
 	add r9, 448
 	call {vg_aes_ctr32_to_aesni}
-	mov rdi, r13
-	add rdi, 240
-	mov rsi, r14
-	add rsi, 16
-	mov rdx, QWORD PTR [r15+200]
-	mov rcx, QWORD PTR [r15+208]
-	shr rcx, 4
-	mov r8, r15
-	add r8, 448
-	call {vg_ghash}
 	mov rax, QWORD PTR [r15+208]
 	mov rcx, rax
 	and rcx, 15
@@ -33410,8 +33400,8 @@ vg_aes_gcm_seal_contiguous_prepared_aesni:
 	jmp 215f
 214:
 215:
-	mov r12, QWORD PTR [r15+200]
-	mov rbp, QWORD PTR [r15+208]
+	mov r12, QWORD PTR [rsp+16]
+	mov rbp, QWORD PTR [r15+192]
 	mov ebx, 0
 	mov rdx, r12
 	mov rcx, rbp
