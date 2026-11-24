@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Impl.Weierstrass.X86.Naf
 public import VerifiedGarbage.Impl.Ecdh.X86.Window
 public import VerifiedGarbage.Impl.Weierstrass.X86.NafPrep
+public import VerifiedGarbage.Impl.Weierstrass.X86.PowWindow
 
 /-!
 # ECDSA signature verification on x86 (32-bit)
@@ -24,7 +25,7 @@ x86-64 and AArch64 (`Impl/Ecdsa/Verify/AArch64.lean`):
    into the flag, and the key's point, or `G` if the flag is clear, to the
    slots of ECDH's ladder;
 3. the masks of `r` and `s` in `[1, n-1]` into the flag, and
-   `w = s^(n-2)`, in Montgomery form modulo `n`;
+   `w = s^(n-2)`, in Montgomery form modulo `n` (`sPow`);
 4. `u = e w` and `v = r w` modulo `n`, out of Montgomery's form;
 5. `[u]G` by the signature's ladder (from the table of `u`'s bits), or, for
    a curve with a comb's tables (`verifyComb`), by its comb, saved
@@ -95,6 +96,37 @@ def loadS : List Instr :=
 def scalars : Prog isa :=
   .seq (.block (c.checkRange (c.sl K) ++ c.checkRange (c.sl PT)))
     (Mont.mulCall c.SN (c.sl SM') (c.sl PT) (c.sl R2N))
+
+/-- From `x^15 = x^(2^4 - 1)` in the accumulator and in slot 7, with `x³` in
+slot 1 (`windowTable`): `x^(2^k - 1)` for `k` = 8, 16, …, 256, 260 and 262,
+saving each of the first five in slot 8, which the table no longer needs. -/
+def p521ScalarChain : List TabOp :=
+  [.squares 4, .mul 7, .put 8, .squares 8, .mul 8, .put 8, .squares 16, .mul 8, .put 8,
+    .squares 32, .mul 8, .put 8, .squares 64, .mul 8, .put 8, .squares 128, .mul 8,
+    .squares 4, .mul 7, .squares 2, .mul 1]
+
+/-- P-521's `n - 2`: its top 262 bits, all ones, by `p521ScalarChain` (259
+squarings and 15 other multiplications, with the table's), then its 259
+other bits by windows of four over the table's odd powers. -/
+def p521ScalarOps : List TabOp :=
+  windowTable ++ p521ScalarChain ++ windowAdd 259 ((Spec.P521.n - 2) % 2 ^ 259) 0 []
+
+/-- The sequence for the power `m - 2` modulo a curve's order `m` of `bits`
+bits at most. -/
+def scalarOps (m bits : Nat) : List TabOp :=
+  if m = Spec.P521.n then p521ScalarOps else windowOps (m - 2) bits
+
+/-- The slots of the saved powers of `s`: the exponents' and the complete
+addition's, and `DX`, none of which holds anything between the checks of the
+key and the points. -/
+def sSlots : List Nat := [EXPP, EXPN, T0, T1, T2, T3, T4, T5, DX]
+
+/-- `w = s^(n-2)` modulo `n`, in `ACC`: the signature's inversion by
+divsteps for 256-bit scalars, else the power by `scalarOps`, whose
+multiplications the exponent places, since it is public (as `s` is, here). -/
+def sPow : Prog isa :=
+  if c.n = 4 ∧ c.C.len = 32 then c.nPow
+  else tabPower c.powN c.SN (sSlots.map c.sl) (scalarOps c.C.n (64 * c.n))
 
 /-- `u` and `v`, from `w R mod n` in `ACC`. -/
 def uv : Prog isa :=
@@ -215,7 +247,7 @@ def pointsComb : Prog isa :=
 
 /-- Everything after the checks of the key. -/
 def back : Prog isa :=
-  .seq (scalars c) <| .seq c.nPow <| .seq (uv c) <| .seq (points c) <|
+  .seq (scalars c) <| .seq (sPow c) <| .seq (uv c) <| .seq (points c) <|
   .seq c.pPow (final c)
 
 /-- `vg_ecdsa_<curve>_verify`. -/
@@ -231,7 +263,7 @@ def combFront : Prog isa :=
 
 /-- Scalar arithmetic before multiplying the two points. -/
 def combMid : Prog isa :=
-  .seq (scalars c) <| .seq c.nPow <| .seq (uv c) (.block [])
+  .seq (scalars c) <| .seq (sPow c) <| .seq (uv c) (.block [])
 
 /-- Verification body using the comb for its fixed-base multiplication. -/
 def verifyCombBody : Prog isa :=

@@ -79,7 +79,7 @@ theorem VKeep.ret {s₀ s' : State} {extra : List Region} (hp : VPre c s₀ extr
 structure VSp (c : Cfg) : Prop where
   validate : SpOk (Impl.Ecdh.X86.Cfg.validate c) c.stk
   scalars : SpOk (Impl.Ecdsa.Verify.X86.Cfg.scalars c) c.stk
-  nPow : SpOk c.nPow c.stk
+  nPow : SpOk (Impl.Ecdsa.Verify.X86.Cfg.sPow c) c.stk
   uv : SpOk (Impl.Ecdsa.Verify.X86.Cfg.uv c) c.stk
   points : SpOk (Impl.Ecdsa.Verify.X86.Cfg.points c) c.stk
   pPow : SpOk c.pPow c.stk
@@ -594,7 +594,7 @@ variable {c : Cfg}
 structure VCSp (c : Cfg) : Prop where
   validate : SpOk (Impl.Ecdh.X86.Cfg.validate c) c.stk
   scalars : SpOk (Impl.Ecdsa.Verify.X86.Cfg.scalars c) c.stk
-  nPow : SpOk c.nPow c.stk
+  nPow : SpOk (Impl.Ecdsa.Verify.X86.Cfg.sPow c) c.stk
   uv : SpOk (Impl.Ecdsa.Verify.X86.Cfg.uv c) c.stk
   points : SpOk (Impl.Ecdsa.Verify.X86.Cfg.pointsComb c) c.stk
   tail : SpOk (Impl.Ecdsa.Verify.X86.Cfg.tail c) c.stk
