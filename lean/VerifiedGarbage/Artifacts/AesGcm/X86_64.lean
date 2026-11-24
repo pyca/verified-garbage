@@ -224,6 +224,13 @@ def artifactsR16W (v : GcmVariant) (r : R16 v) : List Artifact := [
 The wide prepared loop needs ZMM registers; AES-NI without AVX keeps the
 plaintext-to-ciphertext pass separate from authentication. -/
 def contiguousArtifact (v : GcmVariant) : Artifact :=
+  let masks := fun _ : Unit =>
+    let cert := ContiguousSeal.masks v
+    Spec.Gcm.sealContiguousPreparedApi.artifact X86_64.target {
+      suffix := v.impl.suffix
+      code := Impl.AesGcm.X86_64.Contiguous.preparedMasks v.lvTW v.impl.callees (DirectGather.ctrFn v)
+      verified := Proof.AesGcm.X86_64.ContiguousSeal.verified cert
+      spSafe := Proof.AesGcm.X86_64.ContiguousSeal.spSafe cert }
   let plain := fun _ : Unit =>
     let defer := v.impl.suffix == "_aesni" || v.impl.suffix == "_aesni_pclmul"
     let cert := ContiguousSeal.unstitched v defer
@@ -232,7 +239,8 @@ def contiguousArtifact (v : GcmVariant) : Artifact :=
       code := Impl.AesGcm.X86_64.Contiguous.prepared v.lvTW defer false 16 v.impl.callees (DirectGather.ctrFn v) none
       verified := Proof.AesGcm.X86_64.ContiguousSeal.verified cert
       spSafe := Proof.AesGcm.X86_64.ContiguousSeal.spSafe cert }
-  if wide : v.impl.short = true ∧ v.lvT.level = 2 then
+  if v.impl.suffix == "" || v.impl.suffix == "_pclmul" then masks ()
+  else if wide : v.impl.short = true ∧ v.lvT.level = 2 then
     match h : sealLeafR v with
     | none => plain ()
     | some b =>

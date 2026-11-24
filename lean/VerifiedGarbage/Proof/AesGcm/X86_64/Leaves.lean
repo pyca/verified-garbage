@@ -1,6 +1,6 @@
 module
 import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.Short
-import VerifiedGarbage.Proof.AesGcm.X86_64.ContiguousDeferred
+import VerifiedGarbage.Proof.AesGcm.X86_64.ContiguousMasks
 public import VerifiedGarbage.Proof.AesGcm.X86_64.ContiguousEntryCT
 import VerifiedGarbage.Proof.AesGcm.X86_64.Short.BoundedReady
 import VerifiedGarbage.Proof.AesGcm.X86_64.Short.BoundedGuard
@@ -2770,6 +2770,60 @@ theorem unstitched (v : GcmVariant) (defer : Bool) : Certificate
     {suffix:="",code:=_,stack:=2640,verified:=h,spSafe:=sp} v.lvTW outputLocal
     (selectedFill (ctr:=ctrFn v) (blocks:=none) defer false 16 (callees_sideTW v) ct (fun _ mem => nomatch mem))
     (Nat.zero_le _) (Nat.le_refl _) (ha:=plainSide defer),scrubKs_spSafe sp⟩
+
+private theorem masksFill {k : Nat} {c : Callees} {ctr enc : Fn} (hs : CalleesSide k c)
+    (ct : calleeSide ctr.code k 8=true) (aes : calleeSide enc.code k 8=true) :
+    Fill k allowance (core (masksBody stub5 ctrToStub (fnStub "aes"))) (core (masksBody c ctr enc)) := by
+  let gh (o : Nat) : Fill k allowance (Impl.AesGcm.X86_64.ghash1 stub5 o .r15 96) (Impl.AesGcm.X86_64.ghash1 c o .r15 96) :=
+    .seq (.block _) (.hole _ _ hs.gh)
+  let len (o : Nat) : Fill k allowance (Impl.AesGcm.X86_64.lens stub5 o) (Impl.AesGcm.X86_64.lens c o) :=
+    .seq (.block _) (gh o)
+  let pad (o : Nat) : Fill k allowance (Impl.AesGcm.X86_64.absorbPad stub5 o) (Impl.AesGcm.X86_64.absorbPad c o) :=
+    .seq (.seq (.block _) (.ite _ (.block _) (.seq (.block _) (.hole _ _ hs.gh))))
+      (.seq (.block _) (.ite _ (.block _) (.seq (.block _) (.seq (.refl _) (gh o)))))
+  have nonce : Fill k allowance (Impl.AesGcm.X86_64.j0 stub5) (Impl.AesGcm.X86_64.j0 c) :=
+    .seq (.block _) (.seq (.ite _ (.block _) (.seq (.block _) (.seq (pad 0) (.seq (.block _) (len 0))))) (.block _))
+  have kernel := fillSeparate ct hs.gh
+  refine Fill.seq (.block _) (.seq ?_ (.refl _))
+  refine Fill.seq (.seq nonce (.seq (.block _) (pad 16))) (.seq (.seq (.block _) (.ite _ (.block _) (.seq kernel (.block _)))) ?_)
+  exact .seq (.block _) (.seq (.seq (.block _) (.hole _ _ aes)) (.seq (.refl _)
+    (.seq (.block _) (.seq (pad 16) (.seq (.block _) (.seq (len 16) (.block _)))))))
+
+private theorem masksCoreSide :
+    stubCallee (core (masksBody stub5 ctrToStub (fnStub "aes"))) 0 allowance 24=true := by lit_decide
+
+private theorem masksSide :
+    stubSide (framed (masksBody stub5 ctrToStub (fnStub "aes"))) 0 allowance 2640 []=true := by lit_decide
+
+private theorem spMasks (v : GcmImpl) {ctr : Fn} (ct : Sp ctr.code) : Sp (core (masksBody v.callees ctr maskAES)) := by
+  obtain ⟨aa,_,tag⟩ := spParts v
+  have sep := separateSp (ctr:=ctr) v ct
+  have enc : Sp maskAES.code := Proof.Aes.X86_64.BlocksImpl.scalar.encSpSafe
+  unfold Sp at *
+  simp only [Impl.AesGcm.X86_64.oneTag,Impl.AesGcm.X86_64.tag,Code.all,Bool.and_eq_true] at tag
+  have pad := tag.2.1
+  have lens := tag.2.2.2.1
+  simp only [core,masksBody,bulk,finishMasks,VG.Impl.AesGcm.X86_64.Contiguous.makeMasks,VG.Impl.AesGcm.X86_64.Contiguous.call,
+    VG.Impl.AesGcm.X86_64.Contiguous.maskXor,maskAuth,Code.all,aa,sep,enc,pad,lens,Bool.true_and,Bool.and_true]
+  decide +kernel
+
+/-- The software AES backends compute the two final counter masks together. -/
+theorem masks (v : GcmVariant) : Certificate (preparedMasks v.lvTW v.impl.callees (ctrFn v)) := by
+  let ctr := ctrFn v
+  have hc : calleeSide ctr.code v.lvTW.level 8=true :=
+    calleeSide_mono (level_join_right _ _) (show 0≤8 by decide) v.ctrTo.side
+  have enc : calleeSide maskAES.code v.lvTW.level 8=true :=
+    calleeSide_mono (Nat.zero_le _) (show 0≤8 by decide) Proof.Aes.X86_64.BlocksImpl.scalar.encSide
+  have fill := masksFill (callees_sideTW v) hc enc
+  have sp := spMasks (ctr:=ctr) v.impl v.ctrTo.spSafe
+  have safe := rawSafe sp (calleeSide_of_fill fill (Nat.zero_le _) masksCoreSide)
+  have p : RecordProof CtxMode.base (masksBody v.impl.callees ctr maskAES) :=
+    ⟨masksRecord_ok v.impl v.ctrTo,masksRecord_ct v.impl v.ctrTo,safe⟩
+  have raw := plainPublic (framedVerified (P:=preparedP) p preparedLocal (fun h => ⟨h.1,trivial⟩) prepInhabited)
+  have wrapper : Sp (framed (masksBody v.impl.callees ctr maskAES)) := withStackArgScratch_spSafe sp
+  exact ⟨verifiedScrubbedAllFill (api:=sealContiguousPreparedApi)
+    {suffix:="",code:=_,stack:=2640,verified:=raw,spSafe:=wrapper} v.lvTW outputLocal (frameFill fill)
+    (Nat.zero_le _) (Nat.le_refl _) (ha:=masksSide),scrubKs_spSafe wrapper⟩
 
 private theorem stitched {M : CtxMode} (v : GcmVariant) (wide : Bool) (leaf : BlocksTo.SealFn M)
     (level : (if wide then 2 else 1)≤v.lvT.level)

@@ -1,4 +1,5 @@
 module
+public import VerifiedGarbage.Impl.Aes.X86_64.Callee
 public import VerifiedGarbage.Impl.Gcm.X86_64.Flag
 public import VerifiedGarbage.Impl.Scrub.X86_64
 public import VerifiedGarbage.Impl.AesGcm.X86_64.Fn
@@ -43,6 +44,45 @@ def finishVec (prepared wide : Bool) : Prog isa :=
     (.ite .e (.block (Short.finLens ++ Short.finGh1 ++ Short.tagK 0))
       (.seq (.block (Short.finTextArgs ++ regs .rbx))
         (.seq (Short.xorText true .rbx) (.block (Short.finLens ++ Short.finGh2 ++ Short.tagK 0)))))))
+/-- The scalar bitsliced AES encryptor evaluates multiple lanes even for a
+single block. Share those rounds between the tag mask and the tail mask. -/
+def maskAES : Fn :=
+  ⟨Impl.Aes.X86_64.Blocks.encScalar.name, Impl.Aes.X86_64.Blocks.encScalar.code⟩
+
+def copyMask (fromOff toOff : Nat) : List Instr :=
+  [.movdquLoad .xmm0 (at_ .r14 fromOff), .movdquStore (at_ .r15 toOff) .xmm0]
+
+def pairArgs : List Instr :=
+  [.mov .rdi (.reg .r13), .mov .rsi (.mem (at_ .r15 roundsO))] ++ ptr .rdx .r15 256 ++
+    [.mov32 .rcx (imm 2)] ++ ptr .r8 .r15 scrO
+
+def mixMasks : List Instr :=
+  [.movdquLoad .xmm0 (at_ .r15 256), .movdquLoad .xmm1 (at_ .r14 16),
+    .xop (.bin .pxor .xmm0 .xmm1), .movdquStore (at_ .r15 0) .xmm0]
+
+def makeMasks (enc : Fn) : Prog isa :=
+  .seq (.block (copyMask 0 256 ++ copyMask 48 272 ++ pairArgs)) (call enc)
+
+def maskXor : Prog isa :=
+  .seq (.block [.alu .test .rbp (.reg .rbp)]) (.ite .e (.block [])
+    (.seq (.block ([.mov .rdi (.reg .r12), .mov .rcx (.reg .rbp)] ++ ptr .rsi .r15 272)) (xorLoopG true)))
+
+def authReload : List Instr :=
+  [.mov .r12 (.mem (at_ .r15 dataO)), .mov .rbp (.mem (at_ .r15 lenO)), .mov32 .rbx (imm 0)]
+
+def authLens : List Instr :=
+  [.mov .rbx (.mem (at_ .r15 alenO)), .mov .rbp (.mem (at_ .r15 tlenO))]
+
+def maskAuth (c : Callees) : Prog isa :=
+  .seq (.block authReload) (.seq (absorbPad c 16) (.seq (.block authLens) (.seq (lens c 16) (.block mixMasks))))
+
+def finishMasks (c : Callees) (enc : Fn) : Prog isa :=
+  let args := regs .rbx ++ [.mov .r12 (.mem (at_ .r15 dataO)), .mov .rbp (.mem (at_ .r15 lenO))]
+  .seq (.block args) (.seq (makeMasks enc) (.seq maskXor (maskAuth c)))
+
+def masksBody (c : Callees) (ctr enc : Fn) : Prog isa :=
+  .seq (oneAad c) (.seq (bulk (separate ctr c.gh)) (finishMasks c enc))
+
 def finishScalar (c : Callees) : Prog isa :=
  .seq (.block (regs .rbx ++ [.mov .r12 (.mem (at_ .r15 dataO)), .mov .rbp (.mem (at_ .r15 lenO))]))
   (.seq (cryptTailG c true) (oneTag c 0))
@@ -77,6 +117,10 @@ def framed (record : Prog isa) : Prog isa :=
 
 def one (c : Callees) (vec wide prepared : Bool) (kernel : Prog isa) : Prog isa :=
   framed (body c vec wide prepared kernel)
+
+/-- A preallocated record sealed using the bitsliced two-mask completion. -/
+def preparedMasks (level : Impl.Scrub.X86_64.VecLevel) (c : Callees) (ctr : Fn) : Prog isa :=
+  Impl.Scrub.X86_64.scrubAll level 0 2640 (framed (masksBody c ctr maskAES))
 
 /-- One entry per CPU variant. The prepared flag selects whether the key
 already holds enough powers of the hash subkey. Buffer layout has no effect
