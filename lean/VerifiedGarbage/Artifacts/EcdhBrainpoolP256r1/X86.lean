@@ -8,7 +8,6 @@ import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Spec.Ecdh.BrainpoolP256r1
-import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Weierstrass.Law
 import VerifiedGarbage.Proof.X25519.X86.Column
 public import VerifiedGarbage.Proof.EcKey.PublicKey
@@ -39,7 +38,7 @@ public import VerifiedGarbage.Proof.X25519.Field
 public import VerifiedGarbage.Impl.Ecdh.BrainpoolP256r1.X86
 public import VerifiedGarbage.Proof.X25519.X86.Arith
 public import VerifiedGarbage.Proof.X25519.X86.Fold
-public import VerifiedGarbage.TCB.X86.Print
+public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.BrainpoolP256r1.X86.Law
 public import VerifiedGarbage.Proof.Ecdh.X86.BrainpoolP256r1.Scrub
 
@@ -51,7 +50,7 @@ namespace VG.Artifacts.EcdhBrainpoolP256r1.X86
 
 open VG.Proof.BrainpoolP256r1.X86 (hasLaw)
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact X86.target) := [
   Spec.Ecdh.BrainpoolP256r1.exchangeApi.artifact X86.target {
     code := Impl.Ecdh.X86.Fn.exchangeBrainpoolP256r1
     verified := Proof.Ecdh.X86.BrainpoolP256r1.Scrub.exchange_scrubbed hasLaw.law hasLaw.inv }]

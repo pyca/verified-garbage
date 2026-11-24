@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Blowfish.RISCV64.Scrub
 public import VerifiedGarbage.Impl.Blowfish.RISCV64.Fn
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.RISCV64.Print
+public import VerifiedGarbage.TCB.RISCV64.Target
 import VerifiedGarbage.Proof.Blowfish.RISCV64.ModesLit
 
 /-! # Blowfish-CBC on RISC-V -/
@@ -12,7 +12,7 @@ import VerifiedGarbage.Proof.Blowfish.RISCV64.ModesLit
 
 namespace VG.Artifacts.BlowfishCbc.RISCV64
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact RISCV64.target) := [
   Spec.Blowfish.cbcEncryptChainedApi.artifact RISCV64.target {
     code := Impl.Blowfish.RISCV64.Fn.cbcEncryptChained
     verified := Proof.Blowfish.RISCV64.Scrub.cbcEncryptChained_scrubbed },

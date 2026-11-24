@@ -8,7 +8,7 @@ public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverVerified
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyStackSafety
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyVerified
-public import VerifiedGarbage.TCB.X86.Print
+public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignP.Verified
 public import VerifiedGarbage.Proof.Rsa.X86.PrivStackSafety
 public import VerifiedGarbage.Proof.Bignum.FrameOutside
@@ -154,7 +154,7 @@ public import VerifiedGarbage.Proof.Variants.RsaPrivateCrt.X86
 namespace VG.Artifacts.RsaPkcs1Sig.X86
 open VG.Proof.RsaPkcs1Sig.X86.Ver (baseline)
 
-def direct : List Artifact := [
+def direct : List (Artifact X86.target) := [
   Spec.RsaPkcs1Sig.verifyPrecomputedApi.artifact VG.X86.target {
     code := Impl.RsaPkcs1Sig.X86.Fn.verifyPrecomputed baseline.name baseline.code
     verified := Proof.RsaPkcs1Sig.X86.Scrub.verifyPrecomputed_scrubbed },
@@ -169,7 +169,7 @@ namespace VG.Artifacts.RsaPkcs1Sig.X86
 open VG.Proof.Rsa.X86.PrivChecked (CrtImpl privCodeP crtPBaseline)
 open VG.Proof.RsaPkcs1Sig.X86.Sgn
 
-def artifacts : List Artifact :=
+def artifacts : List (Artifact X86.target) :=
   direct ++
   (VG.Proof.Variants.RsaPrivateCrt.X86.variants.flatMap fun (v : CrtImpl) => [
     Spec.RsaPkcs1Sig.signPrecomputedApi.artifact X86.target {

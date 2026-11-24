@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Gcm.RISCV64.Law
 public import VerifiedGarbage.Proof.AesGcmSiv.RISCV64.Verified
 public import VerifiedGarbage.Proof.GcmSiv.Polyval
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.RISCV64.Print
+public import VerifiedGarbage.TCB.RISCV64.Target
 
 import VerifiedGarbage.Proof.Aes.RISCV64.CodeLit
 import VerifiedGarbage.Proof.Gcm.RISCV64.Lit
@@ -15,7 +15,7 @@ import VerifiedGarbage.Proof.Gcm.RISCV64.Lit
 
 namespace VG.Artifacts.AesGcmSiv.RISCV64
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact RISCV64.target) := [
   Spec.GcmSiv.sealApi.artifact RISCV64.target {
     code := Impl.AesGcmSiv.RISCV64.Fn.«seal»
     verified :=

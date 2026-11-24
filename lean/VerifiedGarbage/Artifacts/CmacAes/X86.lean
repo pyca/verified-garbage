@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Impl.CmacAes.Stream.X86
 public import VerifiedGarbage.Proof.CmacAes.Stream.X86.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.X86.Print
+public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Variants.AesCtr32.X86
 
 /-! # AES-CMAC (NIST SP 800-38B) on x86 -/
@@ -12,7 +12,7 @@ public import VerifiedGarbage.Proof.Variants.AesCtr32.X86
 
 namespace VG.Artifacts.CmacAes.X86
 
-def artifacts : List Artifact :=
+def artifacts : List (Artifact X86.target) :=
   VG.Proof.Variants.AesCtr32.X86.variants.flatMap fun (v : Proof.Aes.X86.Ctr32Impl) => [
     Spec.Cmac.aesInitApi.artifact X86.target {
       suffix := v.suffix

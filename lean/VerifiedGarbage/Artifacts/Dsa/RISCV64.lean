@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Dsa.RISCV64.Fn
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Variants.MillerRabin.RISCV64
-public import VerifiedGarbage.TCB.RISCV64.Print
+public import VerifiedGarbage.TCB.RISCV64.Target
 
 /-! # DSA (FIPS 186-4) on RISC-V -/
 
@@ -11,7 +11,7 @@ public import VerifiedGarbage.TCB.RISCV64.Print
 
 namespace VG.Artifacts.Dsa.RISCV64
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact RISCV64.target) := [
   Spec.Dsa.deriveKeyApi.artifact RISCV64.target {
     code := Impl.Dsa.RISCV64.Fn.deriveKey
     verified := Proof.Dsa.RISCV64.Fn.deriveKey },

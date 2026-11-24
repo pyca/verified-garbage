@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Impl.AesCtr.X86.Final
 public import VerifiedGarbage.Proof.AesCtr.X86.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.X86.Print
+public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Variants.AesBlocks.X86
 public import VerifiedGarbage.Proof.Variants.AesCtr32.X86
 
@@ -13,7 +13,7 @@ public import VerifiedGarbage.Proof.Variants.AesCtr32.X86
 
 namespace VG.Artifacts.AesCtr.X86
 
-def artifacts : List Artifact :=
+def artifacts : List (Artifact X86.target) :=
   (VG.Proof.Variants.AesCtr32.X86.variants.flatMap fun (v : Proof.Aes.X86.Ctr32Impl) => [
     Spec.Ctr.aesApi.artifact X86.target {
       suffix := v.suffix

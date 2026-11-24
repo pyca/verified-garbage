@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Rsa.RISCV64.Fn
 public import VerifiedGarbage.Proof.Rsa.RISCV64.IbInverse
 public import VerifiedGarbage.Proof.Divstep.TcSBounds
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.RISCV64.Print
+public import VerifiedGarbage.TCB.RISCV64.Target
 
 /-! # RSA (RFC 8017) on RISC-V -/
 
@@ -12,7 +12,7 @@ public import VerifiedGarbage.TCB.RISCV64.Print
 
 namespace VG.Artifacts.Rsa.RISCV64
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact RISCV64.target) := [
   Spec.Rsa.publicPrecomputeApi.artifact RISCV64.target {
     code := Impl.Rsa.RISCV64.Fn.publicPrecompute
     verified := Proof.Rsa.RISCV64.Fn.publicPrecompute },

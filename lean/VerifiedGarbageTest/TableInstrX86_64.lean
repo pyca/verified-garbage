@@ -98,8 +98,8 @@ theorem verified (w : BitVec 64) : Verified target (code w) (contract w) := by
   · cases e with | block e => rw [exec_code w s] at e; cases e; rfl
   · sig_pre [contract, sig, abi, argRegs, stackBelow, sat]
 
-def artifactOf (fn : String) (w : BitVec 64) : Artifact where
-  target := .of (renderOnly target)
+def artifactOf (fn : String) (w : BitVec 64) : EmitArtifact where
+  target := .of (renderOnly target) emitter
   module := "test"
   name := fn
   sig := sig
@@ -109,7 +109,7 @@ def artifactOf (fn : String) (w : BitVec 64) : Artifact where
   verified := renderOnly_verified (verified w)
   spSafe := rfl
 
-def artifact : Artifact := artifactOf "vg_test_alutbl" 42
+def artifact : EmitArtifact := artifactOf "vg_test_alutbl" 42
 
 /-- The rendering: the table read through a register, as any memory operand. -/
 def expected : String := "/// Returns 1 plus word 1 of its table.
@@ -146,8 +146,8 @@ pub static VG_TEST_ALUTBL: Table<16> = Table(*b\"\\
 
 -- Two artifacts carrying the same table: one static. Another giving it other
 -- words: refused.
-def same : Artifact := artifactOf "vg_test_alutbl_same" 42
-def other : Artifact := artifactOf "vg_test_alutbl_other" 41
+def same : EmitArtifact := artifactOf "vg_test_alutbl_same" 42
+def other : EmitArtifact := artifactOf "vg_test_alutbl_other" 41
 #guard (Rust.checkConsts [.of (.of artifact), .of (.of same)] (.of (.of artifact))).isOk
 #guard Rust.tables [artifact, same] == [(name, tbl 42)]
 #guard !(Rust.checkConsts [.of (.of artifact), .of (.of other)] (.of (.of artifact))).isOk

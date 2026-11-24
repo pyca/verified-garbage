@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86.Scrub
 public import VerifiedGarbage.Impl.ChaCha20Poly1305.X86.SealGather
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.X86.Print
+public import VerifiedGarbage.TCB.X86.Target
 import VerifiedGarbage.Spec.Gcm.OutOfPlace
 import VerifiedGarbage.Spec.ChaCha20Poly1305.OutOfPlace
 public import VerifiedGarbage.Proof.Variants.ChaCha20Xor.X86
@@ -14,7 +14,7 @@ public import VerifiedGarbage.Proof.Variants.ChaCha20Xor.X86
 
 namespace VG.Artifacts.ChaCha20Poly1305.X86
 
-def artifacts : List Artifact :=
+def artifacts : List (Artifact X86.target) :=
   VG.Proof.Variants.ChaCha20Xor.X86.variants.flatMap fun (v : Proof.ChaCha20.X86.XorImpl) => [
     Spec.ChaCha20Poly1305.sealApi.artifact X86.target {
       suffix := v.suffix

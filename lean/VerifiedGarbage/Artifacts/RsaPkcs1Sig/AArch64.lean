@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Fn
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.AArch64.Print
+public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Variants.RsaPrivateCrt.AArch64
 public import VerifiedGarbage.Proof.Variants.RsaPublicPrecomputed.AArch64
 
@@ -15,7 +15,7 @@ namespace VG.Artifacts.RsaPkcs1Sig.AArch64
 open VG.Proof.Rsa.AArch64 (PublicImpl CrtImpl)
 open VG.Proof.RsaPkcs1Sig.AArch64
 
-def artifacts : List Artifact :=
+def artifacts : List (Artifact AArch64.target) :=
   (VG.Proof.Variants.RsaPrivateCrt.AArch64.variants.flatMap fun (v : CrtImpl) => [
     Spec.RsaPkcs1Sig.signPrecomputedApi.artifact AArch64.target {
       suffix := v.suffix

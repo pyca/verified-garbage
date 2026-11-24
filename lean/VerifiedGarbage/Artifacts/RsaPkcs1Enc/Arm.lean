@@ -18,7 +18,6 @@ import VerifiedGarbage.Proof.RsaPkcs1Enc.Arm.RndVerified
 public import VerifiedGarbage.Impl.RsaPkcs1Enc.Arm.Random
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.Arm.DecVerified
-public import VerifiedGarbage.TCB.Arm.Print
 public import VerifiedGarbage.Proof.Variants.RsaPrivateCrt.Arm
 public import VerifiedGarbage.Impl.RsaPkcs1Enc.Arm.Front
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.Arm.Front
@@ -31,7 +30,7 @@ namespace VG.Artifacts.RsaPkcs1Enc.Arm
 
 open VG.Proof.Rsa.Arm (CrtImpl)
 
-def artifacts : List Artifact :=
+def artifacts : List (Artifact Arm.target) :=
   VG.Proof.Variants.RsaPrivateCrt.Arm.variants.flatMap fun (v : CrtImpl) => [
     Spec.RsaPkcs1Enc.decryptPrecomputedApi.artifact Arm.target {
       suffix := v.suffix

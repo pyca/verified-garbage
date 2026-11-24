@@ -7,7 +7,7 @@ public import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.Secp256k1Decompress
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Secp256k1.AArch64.Law
 public import VerifiedGarbage.Spec.EcKey.Secp256k1
-public import VerifiedGarbage.TCB.AArch64.Print
+public import VerifiedGarbage.TCB.AArch64.Target
 
 /-! # secp256k1 public keys (FIPS 186-5 §A.2) on AArch64 -/
 
@@ -17,7 +17,7 @@ namespace VG.Artifacts.EcSecp256k1.AArch64
 
 open VG.Proof.Secp256k1.AArch64 (hasLaw)
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact AArch64.target) := [
   Spec.EcKey.Secp256k1.inst.compressPublicKeyApi.artifact AArch64.target {
     code := Impl.EcKey.AArch64.Fn.compressSecp256k1
     verified := Proof.EcKey.Compressed.AArch64.Secp256k1.scrubbed hasLaw.inv },

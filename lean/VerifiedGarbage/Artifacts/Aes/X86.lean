@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Impl.Aes.X86.Fn
 public import VerifiedGarbage.Proof.Aes.X86.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.X86.Print
+public import VerifiedGarbage.TCB.X86.Target
 
 /-! # AES (FIPS 197) on x86 -/
 
@@ -11,7 +11,7 @@ public import VerifiedGarbage.TCB.X86.Print
 
 namespace VG.Artifacts.Aes.X86
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact X86.target) := [
   Spec.Aes.expandKeyApi.artifact X86.target {
     code := Impl.Aes.X86.Fn.expandKey
     verified := Proof.Aes.X86.Scrub.scalar_scrubbed },

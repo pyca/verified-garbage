@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.TripleDes.X86.Scrub
 public import VerifiedGarbage.Impl.TripleDes.X86.Fn
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.X86.Print
+public import VerifiedGarbage.TCB.X86.Target
 import VerifiedGarbage.Proof.TripleDes.X86.FunctionsLit
 
 /-! # Triple DES on x86 -/
@@ -12,7 +12,7 @@ import VerifiedGarbage.Proof.TripleDes.X86.FunctionsLit
 
 namespace VG.Artifacts.TripleDes.X86
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact X86.target) := [
   Spec.TripleDes.expandKeyApi.artifact X86.target {
     code := Impl.TripleDes.X86.Fn.expandKey
     verified := Proof.TripleDes.X86.Scrub.expandKey_scrubbed },

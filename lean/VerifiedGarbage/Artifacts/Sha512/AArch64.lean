@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Sha512.AArch64.Shared
 public import VerifiedGarbage.Proof.Sha512.AArch64.Stream.Init
 public import VerifiedGarbage.Proof.Sha512.AArch64.Sha3.Compress
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.AArch64.Print
+public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Hashes.Sha512
 public import VerifiedGarbage.Proof.Variants.Sha512Compress.AArch64
 
@@ -14,7 +14,7 @@ public import VerifiedGarbage.Proof.Variants.Sha512Compress.AArch64
 
 namespace VG.Artifacts.Sha512.AArch64
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact AArch64.target) := [
   Spec.Sha512.init384Api.artifact AArch64.target {
     code := Impl.Sha512.AArch64.Stream.init Spec.Sha512.H0_384
     verified := Proof.Sha512.AArch64.Stream.init384_scrubbed },

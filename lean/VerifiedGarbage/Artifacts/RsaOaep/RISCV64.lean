@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.RsaOaep.RISCV64.Fn
 public import VerifiedGarbage.Spec.RsaOaep.MdTables
-public import VerifiedGarbage.TCB.RISCV64.Print
+public import VerifiedGarbage.TCB.RISCV64.Target
 
 /-! # RSAES-OAEP (RFC 8017) on RISC-V -/
 
@@ -14,7 +14,7 @@ namespace VG.Artifacts.RsaOaep.RISCV64
 open VG.Proof.RsaOaep.RISCV64 (OK)
 open VG.Proof.MdHashTable.RISCV64 (vars tables fns3)
 
-def artifacts : List Artifact :=
+def artifacts : List (Artifact RISCV64.target) :=
   if h : OK vars then [
     Spec.RsaOaep.decryptPrecomputedMdTablesApi.artifact RISCV64.target {
       tables := [("hash", tables vars), ("mgf1", tables vars)]

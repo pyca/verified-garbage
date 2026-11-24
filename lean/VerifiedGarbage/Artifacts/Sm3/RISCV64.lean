@@ -4,7 +4,6 @@ public import VerifiedGarbage.TCB.RISCV64.Target
 public import VerifiedGarbage.Proof.Sm3.RISCV64.Scrub
 public import VerifiedGarbage.Impl.Sm3.RISCV64.Fn
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.RISCV64.Print
 
 /-! # SM3 (GB/T 32905-2016) on RISC-V -/
 
@@ -12,7 +11,7 @@ public import VerifiedGarbage.TCB.RISCV64.Print
 
 namespace VG.Artifacts.Sm3.RISCV64
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact RISCV64.target) := [
   Spec.Sm3.initApi.artifact RISCV64.target {
     code := Impl.Sm3.RISCV64.Fn.init
     verified := Proof.Sm3.RISCV64.init_scrubbed },

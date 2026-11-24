@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Gcm.Arm.Law
 public import VerifiedGarbage.Proof.AesGcm.Arm.Contiguous.Public
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.Arm.Print
+public import VerifiedGarbage.TCB.Arm.Target
 
 /-! # AES-GCM (NIST SP 800-38D) on ARMv7 -/
 
@@ -11,7 +11,7 @@ public import VerifiedGarbage.TCB.Arm.Print
 
 namespace VG.Artifacts.AesGcm.Arm
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact Arm.target) := [
   Spec.Gcm.initApi.artifact Arm.target {
     code := Impl.AesGcm.Arm.Fn.init
     verified := Proof.AesGcm.Arm.Fn.init },

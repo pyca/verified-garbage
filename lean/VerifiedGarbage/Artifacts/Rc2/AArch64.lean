@@ -8,7 +8,7 @@ public import VerifiedGarbage.Proof.Rc2.AArch64.Cbc.Chained
 public import VerifiedGarbage.Proof.Rc2.AArch64.CbcResidue
 public import VerifiedGarbage.Proof.Rc2.AArch64.InitResidue
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.AArch64.Print
+public import VerifiedGarbage.TCB.AArch64.Target
 
 /-! # RC2 on AArch64 -/
 
@@ -16,7 +16,7 @@ public import VerifiedGarbage.TCB.AArch64.Print
 
 namespace VG.Artifacts.Rc2.AArch64
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact AArch64.target) := [
   Spec.Rc2.cbcInitApi.artifact AArch64.target {
     code := Impl.Rc2.AArch64.Fn.cbcInit
     verified := Proof.Rc2.AArch64.InitResidue.cbcInitCode_scrubbed },

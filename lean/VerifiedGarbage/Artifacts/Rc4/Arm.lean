@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Rc4.Arm.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.Arm.Print
+public import VerifiedGarbage.TCB.Arm.Target
 
 /-! # RC4 on ARMv7 -/
 
@@ -10,7 +10,7 @@ public import VerifiedGarbage.TCB.Arm.Print
 
 namespace VG.Artifacts.Rc4.Arm
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact Arm.target) := [
   Spec.Rc4.initApi.artifact Arm.target {
     code := Impl.Rc4.Arm.Fn.init
     verified := Proof.Rc4.Arm.Fn.init },

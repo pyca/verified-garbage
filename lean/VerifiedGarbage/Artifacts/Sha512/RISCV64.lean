@@ -4,7 +4,6 @@ public import VerifiedGarbage.TCB.RISCV64.Target
 public import VerifiedGarbage.Proof.Sha512.RISCV64.Scrub
 public import VerifiedGarbage.Impl.Sha512.RISCV64.Fn
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.RISCV64.Print
 
 /-! # SHA-384, SHA-512, SHA-512/224 and SHA-512/256 (FIPS 180-4) on RISC-V -/
 
@@ -12,7 +11,7 @@ public import VerifiedGarbage.TCB.RISCV64.Print
 
 namespace VG.Artifacts.Sha512.RISCV64
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact RISCV64.target) := [
   Spec.Sha512.init384Api.artifact RISCV64.target {
     code := Impl.Sha512.RISCV64.Fn.init384
     verified := Proof.Sha512.RISCV64.init384_scrubbed },

@@ -7,7 +7,7 @@ public import VerifiedGarbage.Proof.Aes.X86_64.Scrub
 import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
 import VerifiedGarbage.Proof.Aes.X86_64.Lit
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.X86_64.Print
+public import VerifiedGarbage.TCB.X86_64.Target
 
 /-! # AES (FIPS 197) on x86-64 -/
 
@@ -15,7 +15,7 @@ public import VerifiedGarbage.TCB.X86_64.Print
 
 namespace VG.Artifacts.Aes.X86_64
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact X86_64.target) := [
   Spec.Aes.expandKeyApi.artifact X86_64.target {
     suffix := "_aesni"
     code := Impl.Aes.X86_64.Fn.expandKeyAesni

@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Rsa.X86_64.Fn
 public import VerifiedGarbage.Proof.Rsa.X86_64.Instances
-public import VerifiedGarbage.TCB.X86_64.Print
+public import VerifiedGarbage.TCB.X86_64.Target
 
 /-! # RSA (RFC 8017) on x86-64 -/
 
@@ -12,7 +12,7 @@ namespace VG.Artifacts.Rsa.X86_64
 
 open VG.Proof.Rsa.X86_64.Scrubbed
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact X86_64.target) := [
   Spec.Rsa.publicPrecomputeApi.artifact X86_64.target { code := Impl.Rsa.X86_64.Fn.publicPrecompute, verified := Proof.Rsa.X86_64.Scrubbed.publicPrecompute_scrubbed, spSafe := Proof.Rsa.X86_64.Scrubbed.publicPrecompute_spSafe },
   Spec.Rsa.publicPrecomputeApi.artifact X86_64.target { suffix := "_adx", code := Impl.Rsa.X86_64.Fn.publicPrecomputeAdx, verified := Proof.Rsa.X86_64.Scrubbed.publicPrecomputeAdx_scrubbed, spSafe := Proof.Rsa.X86_64.Scrubbed.publicPrecomputeAdx_spSafe },
   Spec.Rsa.privatePrecomputeApi.artifact X86_64.target { code := Impl.Rsa.X86_64.Fn.privatePrecompute, verified := Proof.Rsa.X86_64.Scrubbed.privatePrecompute_scrubbed, spSafe := Proof.Rsa.X86_64.Scrubbed.privatePrecompute_spSafe },

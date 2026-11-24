@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesSiv.Arm.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.Arm.Print
+public import VerifiedGarbage.TCB.Arm.Target
 
 /-! # AES-SIV (RFC 5297) on ARMv7 -/
 
@@ -10,7 +10,7 @@ public import VerifiedGarbage.TCB.Arm.Print
 
 namespace VG.Artifacts.AesSiv.Arm
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact Arm.target) := [
   Spec.Siv.initApi.artifact Arm.target {
     code := Impl.AesSiv.Arm.Fn.init
     verified := Proof.AesSiv.Arm.Fn.init },

@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Argon2.PPC64LE.HPrime.CT
 public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Verified
 public import VerifiedGarbage.Proof.Argon2.PPC64LE.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.PPC64LE.Print
+public import VerifiedGarbage.TCB.PPC64LE.Target
 
 /-! # Argon2 (RFC 9106) on PPC64LE -/
 
@@ -13,7 +13,7 @@ public import VerifiedGarbage.TCB.PPC64LE.Print
 
 namespace VG.Artifacts.Argon2.PPC64LE
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact PPC64LE.target) := [
   Spec.Argon2.deriveApi.artifact PPC64LE.target {
     code := Impl.Argon2.PPC64LE.Fn.derive
     verified := Proof.Argon2.PPC64LE.Scrub.derive_scrubbed }]

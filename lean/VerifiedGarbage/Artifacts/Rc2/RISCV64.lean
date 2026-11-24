@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Rc2.RISCV64.Scrub
 public import VerifiedGarbage.Impl.Rc2.RISCV64.Fn
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.RISCV64.Print
+public import VerifiedGarbage.TCB.RISCV64.Target
 import VerifiedGarbage.Proof.Rc2.RISCV64.Lit
 import VerifiedGarbage.Proof.Rc2.RISCV64.Cbc.Lit
 import VerifiedGarbage.Proof.Rc2.RISCV64.Stream.Lit
@@ -14,7 +14,7 @@ import VerifiedGarbage.Proof.Rc2.RISCV64.Stream.Lit
 
 namespace VG.Artifacts.Rc2.RISCV64
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact RISCV64.target) := [
   Spec.Rc2.cbcInitApi.artifact RISCV64.target {
     code := Impl.Rc2.RISCV64.Fn.cbcInit
     verified := Proof.Rc2.RISCV64.Scrub.cbcInit_scrubbed },

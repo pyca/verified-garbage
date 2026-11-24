@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Blake2.PPC64LE.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.PPC64LE.Print
+public import VerifiedGarbage.TCB.PPC64LE.Target
 
 /-! # BLAKE2b (RFC 7693) on PPC64LE -/
 
@@ -10,7 +10,7 @@ public import VerifiedGarbage.TCB.PPC64LE.Print
 
 namespace VG.Artifacts.Blake2b.PPC64LE
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact PPC64LE.target) := [
   Spec.Blake2.initBApi.artifact PPC64LE.target {
     code := Impl.Blake2.PPC64LE.Fn.initB
     verified := Proof.Blake2.PPC64LE.Scrub.initB_scrubbed },

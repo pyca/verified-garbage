@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Poly1305.RISCV64.Scrub
 public import VerifiedGarbage.TCB.RISCV64.Target
 public import VerifiedGarbage.Impl.Poly1305.RISCV64.Fn
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.RISCV64.Print
 import VerifiedGarbage.Proof.Poly1305.RISCV64.Lit
 
 /-! # Poly1305 (RFC 8439 §2.5) on RISC-V -/
@@ -13,7 +12,7 @@ import VerifiedGarbage.Proof.Poly1305.RISCV64.Lit
 
 namespace VG.Artifacts.Poly1305.RISCV64
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact RISCV64.target) := [
   Spec.Poly1305.initApi.artifact RISCV64.target {
     code := Impl.Poly1305.RISCV64.Fn.init
     verified := Proof.Poly1305.RISCV64.Scrub.init_scrubbed },

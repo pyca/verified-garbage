@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Md5.Arm.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.Arm.Print
+public import VerifiedGarbage.TCB.Arm.Target
 
 /-! # MD5 (RFC 1321) on ARMv7 -/
 
@@ -10,7 +10,7 @@ public import VerifiedGarbage.TCB.Arm.Print
 
 namespace VG.Artifacts.Md5.Arm
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact Arm.target) := [
   Spec.Md5.initApi.artifact Arm.target {
     code := Impl.Md5.Arm.Fn.init
     verified := Proof.Md5.Arm.Fn.init },

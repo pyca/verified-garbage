@@ -9,7 +9,7 @@ public import VerifiedGarbage.Proof.AesGcm.X86_64.GhashImpls
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Framework.X86_64.Registration
 public import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
-public import VerifiedGarbage.TCB.X86_64.Print
+public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Variants.AesCtr32.X86_64
 public import VerifiedGarbage.Proof.Variants.Ghash.X86_64
 public import VerifiedGarbage.Proof.Gcm.X86_64.PrepareScrub
@@ -44,7 +44,7 @@ open VG.Proof.AesGcm.X86_64.Scrub (gcmOf pairOf)
 
 /-- The artifacts calling the implementation `c` of `vg_aes_ctr32` and `n` of
 `vg_ghash`, a pair that a variant of AES-GCM calls (`streamPairs`). -/
-def artifacts (c : Ctr32Impl) (n : GhashName) : List Artifact := [
+def artifacts (c : Ctr32Impl) (n : GhashName) : List (Artifact X86_64.target) := [
   Spec.Gcm.streamFinishApi.artifact X86_64.target
     (match c.free, (pairOf c n).gh.free with
     | some f, some g =>
@@ -91,7 +91,7 @@ open VG.Proof.AesGcm.X86_64.Scrub (gcmOf gcmOfF)
 
 /-- The artifacts calling the implementation `c` of `vg_aes_ctr32`, with the
 key expansion for the same CPUs, and no GHASH. -/
-def artifacts (c : Ctr32Impl) : List Artifact :=
+def artifacts (c : Ctr32Impl) : List (Artifact X86_64.target) :=
   [Spec.Gcm.initApi.artifact X86_64.target
     (match c.free with
     | some fc =>
@@ -114,7 +114,7 @@ open VG.Proof.AesGcm.X86_64
 
 /-- The prepared artifacts of the implementations `v` whose loops read the
 48 prepared powers: by the flag, those or the ones on the key context. -/
-def artifactsR (v : GcmVariant) : List Artifact := [
+def artifactsR (v : GcmVariant) : List (Artifact X86_64.target) := [
   Spec.Gcm.sealPreparedApi.artifact X86_64.target {
     suffix := v.impl.suffix
     code := Impl.AesGcm.X86_64.placeSealArgs ("vg_aes_gcm_seal_blocks_prepared" ++ v.impl.suffix)
@@ -151,7 +151,7 @@ def artifactsR (v : GcmVariant) : List Artifact := [
 
 /-- The prepared artifacts of the implementations `v`, which read only the
 key context. -/
-def artifactsW (v : GcmVariant) : List Artifact := [
+def artifactsW (v : GcmVariant) : List (Artifact X86_64.target) := [
   Spec.Gcm.sealPreparedApi.artifact X86_64.target {
     suffix := v.impl.suffix
     code := Impl.AesGcm.X86_64.Fn.sealW v.lv v.impl.short v.impl.fin v.impl.callees
@@ -185,7 +185,7 @@ def artifactsW (v : GcmVariant) : List Artifact := [
 
 /-- The prepared artifacts of the implementations `v` whose loops read 16
 prepared powers: by the count, those or the ones on the key context. -/
-def artifactsR16W (v : GcmVariant) (r : R16 v) : List Artifact := [
+def artifactsR16W (v : GcmVariant) (r : R16 v) : List (Artifact X86_64.target) := [
   Spec.Gcm.sealPreparedApi.artifact X86_64.target {
     suffix := v.impl.suffix
     code := Impl.AesGcm.X86_64.placeSealArgs ("vg_aes_gcm_seal_blocks_prepared16" ++ v.impl.suffix)
@@ -223,7 +223,7 @@ def artifactsR16W (v : GcmVariant) (r : R16 v) : List Artifact := [
 /-- A single contiguous symbol per backend for in-place and disjoint writes.
 The wide prepared loop needs ZMM registers; AES-NI without AVX keeps the
 plaintext-to-ciphertext pass separate from authentication. -/
-def contiguousArtifact (v : GcmVariant) : Artifact :=
+def contiguousArtifact (v : GcmVariant) : Artifact X86_64.target :=
   let masks := fun _ : Unit =>
     let cert := ContiguousSeal.masks v
     Spec.Gcm.sealContiguousPreparedApi.artifact X86_64.target {
@@ -263,7 +263,7 @@ def contiguousArtifact (v : GcmVariant) : Artifact :=
 
 /-- The artifacts of a variant: its prepared ones, for what its loops read:
 16 prepared powers (`r16`), 48 (`stitchR`), or the key context alone. -/
-def artifacts (v : GcmVariant) : List Artifact :=
+def artifacts (v : GcmVariant) : List (Artifact X86_64.target) :=
   contiguousArtifact v :: match v.r16 with
   | some r => artifactsR16W v r.down
   | none => if v.stitchR.isSome then artifactsR v else artifactsW v
@@ -278,7 +278,7 @@ open VG.Proof.Aes.X86_64 (Ctr32Impl)
 open VG.Proof.AesGcm.X86_64.Scrub (gcmOf ghOf)
 
 /-- The artifacts calling the implementation `n` of `vg_ghash`, and no AES. -/
-def artifacts (n : GhashName) : List Artifact := [
+def artifacts (n : GhashName) : List (Artifact X86_64.target) := [
   Spec.Gcm.streamInitApi.artifact X86_64.target
     (match (ghOf n).gh.free with
     | some f =>
@@ -308,7 +308,7 @@ end VG.Artifacts.AesGcm.X86_64.Ghash
 
 namespace VG.Artifacts.AesGcm.X86_64
 
-def artifacts : List Artifact :=
+def artifacts : List (Artifact X86_64.target) :=
   ((Proof.AesGcm.X86_64.streamPairs VG.Proof.Variants.AesGcm.X86_64.variants).flatMap fun (c, n) =>
     AesCtr32Ghash.artifacts c n) ++
   (VG.Proof.Variants.AesCtr32.X86_64.variants.flatMap fun v => AesCtr32.artifacts v) ++

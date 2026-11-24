@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Impl.AesCbc.AArch64.Fn
 public import VerifiedGarbage.Proof.AesCbc.AArch64.Wiped
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.AArch64.Print
+public import VerifiedGarbage.TCB.AArch64.Target
 import VerifiedGarbage.Proof.AesCbc.AArch64.Decrypt.Lit
 public import VerifiedGarbage.Proof.AesCbc.AArch64.Caller
 public import VerifiedGarbage.Proof.Variants.AesCbc.AArch64
@@ -16,7 +16,7 @@ namespace VG.Artifacts.AesCbc.AArch64
 
 open VG.Proof.AesCbc.AArch64
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact AArch64.target) := [
   Spec.Cbc.aesDecryptApi.artifact VG.AArch64.target {
     suffix := "_aes_sha3"
     code := Impl.AesCbc.AArch64.Fn.decrypt

@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Sm4.X86_64.Ctr32Verified
 public import VerifiedGarbage.Proof.Sm4Gcm.X86_64.Frame
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Framework.X86_64.Registration
-public import VerifiedGarbage.TCB.X86_64.Print
+public import VerifiedGarbage.TCB.X86_64.Target
 import VerifiedGarbage.Proof.Sm4.X86_64.Ctr32Lit
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Frame
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Scrub
@@ -19,7 +19,7 @@ public import VerifiedGarbage.Proof.Variants.Ghash.X86_64
 
 namespace VG.Artifacts.Sm4Gcm.X86_64
 
-def direct : List Artifact := [Spec.Sm4.Gcm.initApi.artifact X86_64.target {
+def direct : List (Artifact X86_64.target) := [Spec.Sm4.Gcm.initApi.artifact X86_64.target {
   code := Impl.Sm4Gcm.X86_64.Fn.init
   verified := Proof.Sm4Gcm.X86_64.init_scrubbed
   spSafe := Proof.Sm4Gcm.X86_64.init_spSafeFn }]
@@ -35,7 +35,7 @@ open VG.Proof.Sm4Gcm.X86_64
 open VG.Proof.AesGcm.X86_64.Scrub (gcmOf ghOf)
 
 /-- The artifacts calling the implementation `n` of `vg_ghash`. -/
-def artifacts (n : GhashName) : List Artifact :=
+def artifacts (n : GhashName) : List (Artifact X86_64.target) :=
   let v : GcmImpl := { ctr := Ctr32Impl.scalar, key := KeyImpl.scalar, gh := n.impl }
   [Spec.Sm4.Gcm.sealApi.artifact X86_64.target {
     suffix := v.gh.suffix
@@ -96,7 +96,7 @@ end VG.Artifacts.Sm4Gcm.X86_64.Ghash
 
 namespace VG.Artifacts.Sm4Gcm.X86_64
 
-def artifacts : List Artifact :=
+def artifacts : List (Artifact X86_64.target) :=
   direct ++
   (VG.Proof.Variants.Ghash.X86_64.variants.flatMap fun v => Ghash.artifacts v)
 

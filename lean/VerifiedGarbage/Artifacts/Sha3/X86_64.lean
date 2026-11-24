@@ -6,7 +6,7 @@ import VerifiedGarbage.Proof.MlDsa.X86_64.CalleeLit
 public import VerifiedGarbage.Proof.Sha3.X86_64.Instances
 public import VerifiedGarbage.Proof.Sha3.X86_64.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.X86_64.Print
+public import VerifiedGarbage.TCB.X86_64.Target
 
 /-! # SHA-3 and SHAKE (FIPS 202) on x86-64 -/
 
@@ -14,7 +14,7 @@ public import VerifiedGarbage.TCB.X86_64.Print
 
 namespace VG.Artifacts.Sha3.X86_64
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact X86_64.target) := [
   Spec.Sha3.updateSha3_224Api.artifact X86_64.target { code := Impl.Sha3.X86_64.Fn.absorbSha3_224, verified := Proof.Sha3.X86_64.Scrub.absorbSha3_224_scrubbed, spSafe := Proof.Sha3.X86_64.Scrub.absorbSha3_224_spSafe },
   Spec.Sha3.finalizeSha3_224Api.artifact X86_64.target { code := Impl.Sha3.X86_64.Fn.finalizeSha3_224, verified := Proof.Sha3.X86_64.Scrub.finalizeSha3_224_scrubbed, spSafe := Proof.Sha3.X86_64.Scrub.finalizeSha3_224_spSafe },
   Spec.Sha3.updateSha3_256Api.artifact X86_64.target { code := Impl.Sha3.X86_64.Fn.absorbSha3_256, verified := Proof.Sha3.X86_64.Scrub.absorbSha3_256_scrubbed, spSafe := Proof.Sha3.X86_64.Scrub.absorbSha3_256_spSafe },

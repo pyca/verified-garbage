@@ -5,7 +5,7 @@ public import VerifiedGarbage.Impl.Sm4.X86.Fn
 public import VerifiedGarbage.Proof.Sm4.X86.AesNiScrub
 public import VerifiedGarbage.Impl.Sm4.X86.AesNiFn
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.X86.Print
+public import VerifiedGarbage.TCB.X86.Target
 import VerifiedGarbage.Proof.Sm4.X86.FbLit
 import VerifiedGarbage.Proof.Sm4.X86.FbFinalLit
 import VerifiedGarbage.Proof.Sm4.X86.AesNiLit
@@ -16,7 +16,7 @@ import VerifiedGarbage.Proof.Sm4.X86.AesNiLit
 
 namespace VG.Artifacts.Sm4Ofb.X86
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact X86.target) := [
   Spec.Sm4.ofbApi.artifact X86.target {
     suffix := "_aesni"
     code := Impl.Sm4.X86.AesNi.Fn.ofb

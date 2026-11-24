@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.ChaCha20.X86.Scrub
 public import VerifiedGarbage.Impl.ChaCha20.X86.Stream
 import VerifiedGarbage.Proof.ChaCha20.X86.Lit
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.X86.Print
+public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Variants.ChaCha20Xor.X86
 
 /-! # ChaCha20 (RFC 8439) on x86 -/
@@ -13,7 +13,7 @@ public import VerifiedGarbage.Proof.Variants.ChaCha20Xor.X86
 
 namespace VG.Artifacts.ChaCha20.X86
 
-def direct : List Artifact := [
+def direct : List (Artifact X86.target) := [
   Spec.ChaCha20.initApi.artifact X86.target {
     code := Impl.ChaCha20.X86.Fn.init
     verified := Proof.ChaCha20.X86.Scrub.init_scrubbed },
@@ -21,7 +21,7 @@ def direct : List Artifact := [
     code := Impl.ChaCha20.X86.Fn.setNonce
     verified := Proof.ChaCha20.X86.Scrub.setNonce_scrubbed } ]
 
-def artifacts : List Artifact :=
+def artifacts : List (Artifact X86.target) :=
   direct ++
   (VG.Proof.Variants.ChaCha20Xor.X86.variants.flatMap fun (v : Proof.ChaCha20.X86.XorImpl) => [
     Spec.ChaCha20.applyApi.artifact X86.target {

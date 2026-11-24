@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.AesCfb.PPC64LE.Verified
 public import VerifiedGarbage.Proof.AesCfb.PPC64LE.Final
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Aes.PPC64LE.Scrub
-public import VerifiedGarbage.TCB.PPC64LE.Print
+public import VerifiedGarbage.TCB.PPC64LE.Target
 
 /-! # AES-CFB128 (NIST SP 800-38A §6.3) on PPC64LE -/
 
@@ -12,7 +12,7 @@ public import VerifiedGarbage.TCB.PPC64LE.Print
 
 namespace VG.Artifacts.AesCfb.PPC64LE
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact PPC64LE.target) := [
   Spec.Cfb.aesEncryptApi.artifact PPC64LE.target {
     code := Impl.Aes.PPC64LE.Fn.cfbEncrypt
     verified := Proof.Aes.PPC64LE.Scrub.cfbEncrypt_scrubbed },

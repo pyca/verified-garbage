@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.PPC64LE.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.PPC64LE.Print
+public import VerifiedGarbage.TCB.PPC64LE.Target
 import VerifiedGarbage.Spec.ChaCha20Poly1305.OutOfPlace
 
 /-! # ChaCha20-Poly1305 (RFC 8439 §2.8) on PPC64LE -/
@@ -11,7 +11,7 @@ import VerifiedGarbage.Spec.ChaCha20Poly1305.OutOfPlace
 
 namespace VG.Artifacts.ChaCha20Poly1305.PPC64LE
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact PPC64LE.target) := [
   Spec.ChaCha20Poly1305.sealApi.artifact PPC64LE.target {
     code := Impl.ChaCha20Poly1305.PPC64LE.Fn.seal
     verified := Proof.ChaCha20Poly1305.PPC64LE.Scrub.seal_scrubbed },

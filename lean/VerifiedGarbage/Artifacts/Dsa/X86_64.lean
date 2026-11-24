@@ -8,7 +8,7 @@ public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SearchScrub
 public import VerifiedGarbage.Proof.Variants.DsaArithmetic.X86_64
 public import VerifiedGarbage.Proof.Variants.MillerRabin.X86_64
 public import VerifiedGarbage.Proof.Framework.QualifiedName
-public import VerifiedGarbage.TCB.X86_64.Print
+public import VerifiedGarbage.TCB.X86_64.Target
 
 /-! # DSA (FIPS 186-4) on x86-64 -/
 
@@ -16,7 +16,7 @@ public import VerifiedGarbage.TCB.X86_64.Print
 
 namespace VG.Artifacts.Dsa.X86_64
 
-def direct : List Artifact := [
+def direct : List (Artifact X86_64.target) := [
   Spec.Dsa.parameterInitApi.artifact X86_64.target { code := Impl.Dsa.X86_64.Fn.parameterInit, verified := Proof.Dsa.X86_64.ParameterSearchInit.init_scrubbed, spSafe := Proof.Dsa.X86_64.ParameterSearchInit.init_spSafe }]
 
 end VG.Artifacts.Dsa.X86_64
@@ -25,7 +25,7 @@ namespace VG.Artifacts.Dsa.X86_64
 
 open VG.Proof.Dsa.X86_64
 
-def artifacts : List Artifact :=
+def artifacts : List (Artifact X86_64.target) :=
   direct ++
   (VG.Proof.Variants.DsaArithmetic.X86_64.variants.flatMap fun (a : Proof.Dsa.X86_64.Slots.SlotBackend) => [
     Spec.Dsa.randomSignPrevalidatedApi.artifact X86_64.target {

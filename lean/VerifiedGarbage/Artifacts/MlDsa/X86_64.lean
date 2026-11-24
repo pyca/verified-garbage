@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.MlDsa.X86_64.SignScrub
 public import VerifiedGarbage.Proof.MlDsa.X86_64.VerifyScrub
 public import VerifiedGarbage.Proof.MlDsa.X86_64.PreparedKey.Scrub
 public import VerifiedGarbage.Proof.Variants.MlDsaArith.X86_64
-public import VerifiedGarbage.TCB.X86_64.Print
+public import VerifiedGarbage.TCB.X86_64.Target
 
 /-! # ML-DSA (FIPS 204) on x86-64 -/
 
@@ -18,7 +18,7 @@ namespace VG.Artifacts.MlDsa.X86_64.KeyGen
 open VG
 open VG.Proof.MlDsa.X86_64 (ArithImpl)
 
-def artifactsFor (v : ArithImpl) : List Artifact := [
+def artifactsFor (v : ArithImpl) : List (Artifact X86_64.target) := [
   Spec.MlDsa.keyGen44Api.artifact X86_64.target {
     suffix := v.code.sfx
     code := Impl.MlDsa.X86_64.Fn.keyGen v.level v.code Spec.MlDsa.mlDsa44
@@ -35,7 +35,7 @@ def artifactsFor (v : ArithImpl) : List Artifact := [
     verified := Proof.MlDsa.X86_64.FnScrub.keyGen87_scrubbed v
     spSafe := Proof.MlDsa.X86_64.FnScrub.keyGen87_spSafe v }]
 
-def artifacts : List Artifact :=
+def artifacts : List (Artifact X86_64.target) :=
   VG.Proof.Variants.MlDsaArith.X86_64.variants.flatMap fun v => artifactsFor v
 
 end VG.Artifacts.MlDsa.X86_64.KeyGen
@@ -46,7 +46,8 @@ namespace VG.Artifacts.MlDsa.X86_64.PreparedKey
 open VG
 open VG.Proof.MlDsa.X86_64 (ArithImpl)
 
-def artifactsFor (v : Proof.MlDsa.X86_64.PreparedKey.Scrub.PrepImpl) : List Artifact := [
+def artifactsFor (v : Proof.MlDsa.X86_64.PreparedKey.Scrub.PrepImpl) :
+    List (Artifact X86_64.target) := [
   (Spec.MlDsa.preparePublicKeyApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44").artifact X86_64.target {
     suffix := v.arith.code.sfx
     code := Impl.MlDsa.X86_64.Fn.preparePublic v.arith.level (Proof.MlDsa.X86_64.Verify.primsWith v.arith.code) Spec.MlDsa.mlDsa44
@@ -78,7 +79,7 @@ def artifactsFor (v : Proof.MlDsa.X86_64.PreparedKey.Scrub.PrepImpl) : List Arti
     verified := Proof.MlDsa.X86_64.FnScrub.prepareSecret87_scrubbed v.arith
     spSafe := Proof.MlDsa.X86_64.FnScrub.prepareSecret87_spSafe v.arith }]
 
-def artifacts : List Artifact :=
+def artifacts : List (Artifact X86_64.target) :=
   VG.Proof.Variants.MlDsaArith.X86_64.samplerFreeVariants.flatMap fun v => artifactsFor v
 
 end VG.Artifacts.MlDsa.X86_64.PreparedKey
@@ -89,7 +90,7 @@ namespace VG.Artifacts.MlDsa.X86_64.Sign
 open VG
 open VG.Proof.MlDsa.X86_64 (ArithImpl)
 
-def artifactsFor (v : ArithImpl) : List Artifact := [
+def artifactsFor (v : ArithImpl) : List (Artifact X86_64.target) := [
   Spec.MlDsa.sign44Api.artifact X86_64.target {
     suffix := v.code.sfx
     code := Impl.MlDsa.X86_64.Fn.signEntry v.level (Proof.MlDsa.signWithCacheName "mldsa44" ++ v.code.sfx) (Proof.MlDsa.signWithCacheName "mldsa44" ++ "_body") (Proof.MlDsa.X86_64.Sign.primsWith v.code true) Spec.MlDsa.mlDsa44 0
@@ -121,7 +122,7 @@ def artifactsFor (v : ArithImpl) : List Artifact := [
     verified := Proof.MlDsa.X86_64.SignScrub.preparedSign87_scrubbed v
     spSafe := Proof.MlDsa.X86_64.SignScrub.preparedSign87_spSafe v }]
 
-def artifacts : List Artifact :=
+def artifacts : List (Artifact X86_64.target) :=
   VG.Proof.Variants.MlDsaArith.X86_64.variants.flatMap fun v => artifactsFor v
 
 end VG.Artifacts.MlDsa.X86_64.Sign
@@ -132,7 +133,7 @@ namespace VG.Artifacts.MlDsa.X86_64.SignMessage
 open VG
 open VG.Proof.MlDsa.X86_64 (ArithImpl)
 
-def artifactsFor (v : ArithImpl) : List Artifact := [
+def artifactsFor (v : ArithImpl) : List (Artifact X86_64.target) := [
   Spec.MlDsa.signMessage44Api.artifact X86_64.target {
     suffix := v.code.sfx
     code := Impl.MlDsa.X86_64.Fn.signMessage v.level (Proof.MlDsa.signWithCacheName "mldsa44" ++ v.code.sfx) (Proof.MlDsa.signWithCacheName "mldsa44" ++ "_body") (Proof.MlDsa.X86_64.Sign.primsWith v.code true) Spec.MlDsa.mlDsa44 0
@@ -164,7 +165,7 @@ def artifactsFor (v : ArithImpl) : List Artifact := [
     verified := Proof.MlDsa.X86_64.SignScrub.preparedSignMessage87_scrubbed v
     spSafe := Proof.MlDsa.X86_64.SignScrub.preparedSignMessage87_spSafe v }]
 
-def artifacts : List Artifact :=
+def artifacts : List (Artifact X86_64.target) :=
   VG.Proof.Variants.MlDsaArith.X86_64.variants.flatMap fun v => artifactsFor v
 
 end VG.Artifacts.MlDsa.X86_64.SignMessage
@@ -175,7 +176,7 @@ namespace VG.Artifacts.MlDsa.X86_64.Verify
 open VG
 open VG.Proof.MlDsa.X86_64 (ArithImpl)
 
-def artifactsFor (v : ArithImpl) : List Artifact := [
+def artifactsFor (v : ArithImpl) : List (Artifact X86_64.target) := [
   Spec.MlDsa.verify44Api.artifact X86_64.target {
     suffix := v.code.sfx
     code := Impl.MlDsa.X86_64.Fn.verifyEntry v.level (Proof.MlDsa.verifyWithCacheName "mldsa44" ++ v.code.sfx) (Proof.MlDsa.X86_64.Verify.primsWith v.code) Spec.MlDsa.mlDsa44 0
@@ -207,7 +208,7 @@ def artifactsFor (v : ArithImpl) : List Artifact := [
     verified := Proof.MlDsa.X86_64.VerifyScrub.preparedVerify87_scrubbed v
     spSafe := Proof.MlDsa.X86_64.VerifyScrub.preparedVerify87_spSafe v }]
 
-def artifacts : List Artifact :=
+def artifacts : List (Artifact X86_64.target) :=
   VG.Proof.Variants.MlDsaArith.X86_64.variants.flatMap fun v => artifactsFor v
 
 end VG.Artifacts.MlDsa.X86_64.Verify
@@ -218,7 +219,7 @@ namespace VG.Artifacts.MlDsa.X86_64.VerifyMessageCached
 open VG
 open VG.Proof.MlDsa.X86_64 (ArithImpl)
 
-def artifactsFor (v : ArithImpl) : List Artifact := [
+def artifactsFor (v : ArithImpl) : List (Artifact X86_64.target) := [
   (Spec.MlDsa.verifyMessageCachedApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44").artifact X86_64.target {
     suffix := v.code.sfx
     code := Impl.MlDsa.X86_64.Fn.verifyMessage v.level (Proof.MlDsa.verifyWithCacheName "mldsa44" ++ v.code.sfx) (Proof.MlDsa.X86_64.Verify.primsWith v.code) Spec.MlDsa.mlDsa44 0
@@ -250,14 +251,14 @@ def artifactsFor (v : ArithImpl) : List Artifact := [
     verified := Proof.MlDsa.X86_64.VerifyScrub.preparedVerifyMessage87_scrubbed v
     spSafe := Proof.MlDsa.X86_64.VerifyScrub.preparedVerifyMessage87_spSafe v }]
 
-def artifacts : List Artifact :=
+def artifacts : List (Artifact X86_64.target) :=
   VG.Proof.Variants.MlDsaArith.X86_64.variants.flatMap fun v => artifactsFor v
 
 end VG.Artifacts.MlDsa.X86_64.VerifyMessageCached
 
 namespace VG.Artifacts.MlDsa.X86_64
 
-def artifacts : List Artifact :=
+def artifacts : List (Artifact X86_64.target) :=
   KeyGen.artifacts ++
   [
     Spec.MlDsa.pkTr44Api.artifact X86_64.target { code := Impl.MlDsa.X86_64.Fn.pkTr Spec.MlDsa.mlDsa44, verified := Proof.MlDsa.X86_64.FnScrub.pkTr44_scrubbed, spSafe := Proof.MlDsa.X86_64.FnScrub.pkTr44_spSafe },

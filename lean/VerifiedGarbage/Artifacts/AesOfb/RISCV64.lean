@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Aes.RISCV64.Scrub
 public import VerifiedGarbage.Impl.Aes.RISCV64.Fn
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.RISCV64.Print
+public import VerifiedGarbage.TCB.RISCV64.Target
 
 /-! # AES-OFB (NIST SP 800-38A §6.4) on RISC-V -/
 
@@ -11,7 +11,7 @@ public import VerifiedGarbage.TCB.RISCV64.Print
 
 namespace VG.Artifacts.AesOfb.RISCV64
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact RISCV64.target) := [
   Spec.Ofb.aesApi.artifact RISCV64.target {
     code := Impl.Aes.RISCV64.Fn.ofb
     verified := Proof.Aes.RISCV64.Scrub.ofb_scrubbed },

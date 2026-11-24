@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Sm3.Arm.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.Arm.Print
+public import VerifiedGarbage.TCB.Arm.Target
 
 /-! # SM3 (GB/T 32905-2016) on ARMv7 -/
 
@@ -10,7 +10,7 @@ public import VerifiedGarbage.TCB.Arm.Print
 
 namespace VG.Artifacts.Sm3.Arm
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact Arm.target) := [
   Spec.Sm3.initApi.artifact Arm.target {
     code := Impl.Sm3.Arm.Fn.init
     verified := Proof.Sm3.Arm.Fn.init },

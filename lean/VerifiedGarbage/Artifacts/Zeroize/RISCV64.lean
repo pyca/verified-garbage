@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Zeroize.RISCV64
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.RISCV64.Print
+public import VerifiedGarbage.TCB.RISCV64.Target
 
 /-! # Zeroization on RISC-V -/
 
@@ -10,7 +10,7 @@ public import VerifiedGarbage.TCB.RISCV64.Print
 
 namespace VG.Artifacts.Zeroize.RISCV64
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact RISCV64.target) := [
   Spec.Zeroize.zeroizeApi.artifact RISCV64.target {
     code := Impl.Zeroize.RISCV64.zeroize
     verified := Proof.Zeroize.RISCV64.scrubbed }]

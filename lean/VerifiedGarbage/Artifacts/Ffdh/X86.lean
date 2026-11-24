@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Ffdh.X86.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Impl.Ffdh.X86.Fn
-public import VerifiedGarbage.TCB.X86.Print
+public import VerifiedGarbage.TCB.X86.Target
 
 /-! # Finite-field Diffie–Hellman (SP 800-56A) on x86 -/
 
@@ -12,7 +12,7 @@ public import VerifiedGarbage.TCB.X86.Print
 namespace VG.Artifacts.Ffdh.X86
 open VG
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact X86.target) := [
   Spec.Ffdh.checkDomainApi.artifact X86.target {
     code := Impl.Ffdh.X86.Fn.checkDomain
     verified := Proof.Ffdh.X86.Scrub.checkDomain_scrubbed },

@@ -7,7 +7,7 @@ public import VerifiedGarbage.Impl.Sm4.X86.AesNiFn
 public import VerifiedGarbage.Proof.Sm4.X86.AesNiWideScrub
 public import VerifiedGarbage.Impl.Sm4.X86.AesNiWideFn
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.X86.Print
+public import VerifiedGarbage.TCB.X86.Target
 import VerifiedGarbage.Proof.Sm4.X86.CbcLit
 import VerifiedGarbage.Proof.Sm4.X86.AesNiLit
 import VerifiedGarbage.Proof.Sm4.X86.AesNiWideLit
@@ -18,7 +18,7 @@ import VerifiedGarbage.Proof.Sm4.X86.AesNiWideLit
 
 namespace VG.Artifacts.Sm4Cbc.X86
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact X86.target) := [
   Spec.Sm4.cbcEncryptChainedApi.artifact X86.target {
     suffix := "_aesni"
     code := Impl.Sm4.X86.AesNi.Fn.cbcEncryptChained

@@ -6,7 +6,7 @@ public import VerifiedGarbage.Spec.Ecdsa.Verify.P521
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Ecdsa.Arm.P521.Scrub
 public import VerifiedGarbage.Impl.Ecdsa.Arm.VerifyHash
-public import VerifiedGarbage.TCB.Arm.Print
+public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Impl.Ecdsa.P521.ArmFn
 public import VerifiedGarbage.Proof.P521.Arm.Law
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.P521Comb
@@ -19,7 +19,7 @@ namespace VG.Artifacts.EcdsaP521.Arm
 
 open VG.Proof.P521.Arm (hasLaw)
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact Arm.target) := [
   Spec.Ecdsa.P521.verifyHashApi.artifact Arm.target {
     code := Impl.Ecdsa.Arm.Fn.verifyP521
     verified := Proof.Ecdsa.Arm.Fn.verifyP521 hasLaw.law },

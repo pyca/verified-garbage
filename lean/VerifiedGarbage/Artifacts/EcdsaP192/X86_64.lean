@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Framework.X86_64.ScrubUp
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Scrub
-import VerifiedGarbage.TCB.X86_64.Target
 import VerifiedGarbage.Proof.Ecdsa.X86_64.P192.Lit
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P192.Lit
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvSpec
@@ -66,7 +65,7 @@ public import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombJ
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombJDigit
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombSelectY
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinLoop
-public import VerifiedGarbage.TCB.X86_64.Print
+public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.P192.X86_64.Law
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvInterface
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.P192
@@ -84,7 +83,7 @@ open VG.Proof.Ecdsa.Rfc6979.X86_64 (signCodeT OK p192 p192T_verified signCode_sp
 open VG.Proof.HmacTable.X86_64 (tables names)
 
 def artifactsFor (vs : List Proof.Pbkdf2.Md.X86_64.MdHash)
-    (hu : ∀ w ∈ vs, Proof.HmacTable.X86_64.HmacUp w) : List Artifact :=
+    (hu : ∀ w ∈ vs, Proof.HmacTable.X86_64.HmacUp w) : List (Artifact X86_64.target) :=
   if hv : OK vs then [
     Spec.Ecdsa.Rfc6979.Curves.p192SignApi.artifact X86_64.target
       { tables := [("hmac", tables vs)]
@@ -93,7 +92,7 @@ def artifactsFor (vs : List Proof.Pbkdf2.Md.X86_64.MdHash)
         spSafe := Proof.Ecdsa.Rfc6979.X86_64.p192T_spSafe hasLaw.law hasLaw.inv vs }]
   else []
 
-def artifacts : List Artifact :=
+def artifacts : List (Artifact X86_64.target) :=
   artifactsFor VG.Proof.Variants.MdHash.X86_64.variants Proof.HmacTable.X86_64.variants_up
 
 end VG.Artifacts.EcdsaP192.X86_64.Rfc6979
@@ -102,7 +101,7 @@ namespace VG.Artifacts.EcdsaP192.X86_64
 
 open VG.Proof.P192.X86_64 (hasLaw)
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact X86_64.target) := [
   Spec.Ecdsa.P192.verifyHashApi.artifact X86_64.target
     { code := Impl.Ecdsa.X86_64.VerifyHash.Fn.verifyHash Spec.Ecdsa.P192.inst.curve.len false
         Impl.Ecdsa.Verify.X86_64.verifyP192

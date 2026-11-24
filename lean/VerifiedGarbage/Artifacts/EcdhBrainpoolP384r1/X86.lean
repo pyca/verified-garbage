@@ -35,7 +35,6 @@ public import VerifiedGarbage.Proof.Weierstrass.X86.ScalarPower
 public import VerifiedGarbage.Proof.X25519.Field
 public import VerifiedGarbage.Proof.X25519.X86.Arith
 public import VerifiedGarbage.Proof.X25519.X86.Fold
-public import VerifiedGarbage.TCB.X86.Print
 public import VerifiedGarbage.Proof.BrainpoolP384r1.X86.Law
 public import VerifiedGarbage.Proof.Ecdh.X86.BrainpoolP384r1.Scrub
 
@@ -47,7 +46,7 @@ namespace VG.Artifacts.EcdhBrainpoolP384r1.X86
 
 open VG.Proof.BrainpoolP384r1.X86 (hasLaw)
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact X86.target) := [
   Spec.Ecdh.BrainpoolP384r1.exchangeApi.artifact X86.target {
     code := Impl.Ecdh.X86.Fn.exchangeBrainpoolP384r1
     verified := Proof.Ecdh.X86.BrainpoolP384r1.Scrub.exchange_scrubbed hasLaw.law }]

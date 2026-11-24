@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesOcb.AArch64.Frame
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.AArch64.Print
+public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Variants.AesBlocks.AArch64
 
 /-! # AES-OCB (RFC 7253) on AArch64 -/
@@ -13,7 +13,7 @@ namespace VG.Artifacts.AesOcb.AArch64
 
 open VG.Proof.AesOcb.AArch64
 
-def artifacts : List Artifact :=
+def artifacts : List (Artifact AArch64.target) :=
   VG.Proof.Variants.AesBlocks.AArch64.variants.flatMap fun (v : Proof.Aes.AArch64.BlocksImpl) => [
     Spec.Ocb.initApi.artifact AArch64.target {
       suffix := v.suffix

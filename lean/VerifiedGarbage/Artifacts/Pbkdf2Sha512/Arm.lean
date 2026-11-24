@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.Arm.Print
+public import VerifiedGarbage.TCB.Arm.Target
 
 /-! # PBKDF2-HMAC-SHA-512 (RFC 8018) on ARMv7 -/
 
@@ -10,7 +10,7 @@ public import VerifiedGarbage.TCB.Arm.Print
 
 namespace VG.Artifacts.Pbkdf2Sha512.Arm
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact Arm.target) := [
   Spec.Hmac.sha512I.pbkdf2Api.artifact Arm.target {
     code := Impl.Pbkdf2.Whole.Arm.Fn.sha512
     verified := Proof.Pbkdf2.Whole.Arm.Fn.sha512 }]

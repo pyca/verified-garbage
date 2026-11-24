@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesCcm.Arm.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.Arm.Print
+public import VerifiedGarbage.TCB.Arm.Target
 
 /-! # AES-CCM (NIST SP 800-38C) on ARMv7 -/
 
@@ -10,7 +10,7 @@ public import VerifiedGarbage.TCB.Arm.Print
 
 namespace VG.Artifacts.AesCcm.Arm
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact Arm.target) := [
   Spec.Ccm.sealApi.artifact Arm.target {
     code := Impl.AesCcm.Arm.Fn.«seal»
     verified := Proof.AesCcm.Arm.Fn.«seal» },

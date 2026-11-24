@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Poly1305.Arm.Scrub
 public import VerifiedGarbage.Proof.Variants.Poly1305Blocks.Arm
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.Arm.Print
+public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.TCB.Registration
 
 /-! # Poly1305 (RFC 8439 §2.5) on ARMv7 -/
@@ -12,7 +12,7 @@ public import VerifiedGarbage.TCB.Registration
 
 namespace VG.Artifacts.Poly1305.Arm
 
-def artifacts : List Artifact :=
+def artifacts : List (Artifact Arm.target) :=
   [Spec.Poly1305.initApi.artifact Arm.target {
     code := Impl.Poly1305.Arm.Fn.init
     verified := Proof.Poly1305.Arm.Fn.init }] ++

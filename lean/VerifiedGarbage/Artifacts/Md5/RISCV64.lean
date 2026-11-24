@@ -4,7 +4,6 @@ public import VerifiedGarbage.TCB.RISCV64.Target
 public import VerifiedGarbage.Proof.Md5.RISCV64.Scrub
 public import VerifiedGarbage.Impl.Md5.RISCV64.Fn
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.RISCV64.Print
 
 /-! # MD5 (RFC 1321) on RISC-V -/
 
@@ -12,7 +11,7 @@ public import VerifiedGarbage.TCB.RISCV64.Print
 
 namespace VG.Artifacts.Md5.RISCV64
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact RISCV64.target) := [
   Spec.Md5.initApi.artifact RISCV64.target {
     code := Impl.Md5.RISCV64.Fn.init
     verified := Proof.Md5.RISCV64.init_scrubbed },

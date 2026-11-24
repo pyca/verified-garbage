@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Seed.RISCV64.Scrub
 public import VerifiedGarbage.Impl.Seed.RISCV64.Fn
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.RISCV64.Print
+public import VerifiedGarbage.TCB.RISCV64.Target
 import VerifiedGarbage.Proof.Seed.RISCV64.Lit
 
 /-! # SEED on RISC-V -/
@@ -12,7 +12,7 @@ import VerifiedGarbage.Proof.Seed.RISCV64.Lit
 
 namespace VG.Artifacts.Seed.RISCV64
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact RISCV64.target) := [
   Spec.Seed.expandKeyApi.artifact RISCV64.target {
     code := Impl.Seed.RISCV64.Fn.expandKey
     verified := Proof.Seed.RISCV64.Scrub.expandKey_scrubbed },

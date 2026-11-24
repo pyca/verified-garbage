@@ -5,7 +5,7 @@ public import VerifiedGarbage.Impl.Camellia.X86.SseFn
 public import VerifiedGarbage.Proof.Camellia.X86.AesNiScrub
 public import VerifiedGarbage.Impl.Camellia.X86.AesNiFn
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.X86.Print
+public import VerifiedGarbage.TCB.X86.Target
 import VerifiedGarbage.Proof.Camellia.X86.SseLit
 import VerifiedGarbage.Proof.Camellia.X86.AesNiLit
 
@@ -15,7 +15,7 @@ import VerifiedGarbage.Proof.Camellia.X86.AesNiLit
 
 namespace VG.Artifacts.CamelliaOfb.X86
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact X86.target) := [
   Spec.Camellia.ofbApi.artifact X86.target {
     suffix := "_aesni"
     code := Impl.Camellia.X86.AesNi.Fn.ofb

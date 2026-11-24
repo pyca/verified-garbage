@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Aes.RISCV64.Scrub
 public import VerifiedGarbage.Impl.Aes.RISCV64.Fn
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.RISCV64.Print
+public import VerifiedGarbage.TCB.RISCV64.Target
 import VerifiedGarbage.Proof.Aes.RISCV64.CodeLit
 
 /-! # AES (FIPS 197) on RISC-V -/
@@ -12,7 +12,7 @@ import VerifiedGarbage.Proof.Aes.RISCV64.CodeLit
 
 namespace VG.Artifacts.Aes.RISCV64
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact RISCV64.target) := [
   Spec.Aes.expandKeyApi.artifact RISCV64.target {
     code := Impl.Aes.RISCV64.Fn.expandKey
     verified := Proof.Aes.RISCV64.Scrub.expandKey_scrubbed }]

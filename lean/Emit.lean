@@ -141,7 +141,7 @@ def main (args : List String) : IO UInt32 := do
   let jobs ← parts.mapM fun (t, mods) => do
     let driver := emitDir / s!"Driver{t}.lean"
     let targets := emitDir / s!"{t}.targets"
-    IO.FS.writeFile driver (VG.Emit.driver mods)
+    IO.FS.writeFile driver (← IO.ofExcept (VG.Emit.driver mods))
     if ← targets.pathExists then IO.FS.removeFile targets
     let partArgs := (if check then ["--check"] else []) ++ ["--part", targets.toString] ++
       (if check then args.drop 1 else args)

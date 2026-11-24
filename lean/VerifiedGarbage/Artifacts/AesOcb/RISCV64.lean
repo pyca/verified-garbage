@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.AesOcb.RISCV64.Init
 public import VerifiedGarbage.Proof.AesOcb.RISCV64.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.RISCV64.Print
+public import VerifiedGarbage.TCB.RISCV64.Target
 
 /-! # AES-OCB (RFC 7253) on RISC-V -/
 
@@ -11,7 +11,7 @@ public import VerifiedGarbage.TCB.RISCV64.Print
 
 namespace VG.Artifacts.AesOcb.RISCV64
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact RISCV64.target) := [
   Spec.Ocb.initApi.artifact RISCV64.target {
     code := Impl.AesOcb.RISCV64.Fn.init
     verified := Proof.AesOcb.RISCV64.init_scrubbed },

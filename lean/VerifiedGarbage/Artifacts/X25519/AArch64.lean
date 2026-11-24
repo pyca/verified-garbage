@@ -15,7 +15,7 @@ import Mathlib.Tactic.Positivity.Finset
 public import VerifiedGarbage.Proof.X25519.AArch64.Exchange
 public import VerifiedGarbage.Proof.X25519.AArch64.ExchangeResidue
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.AArch64.Print
+public import VerifiedGarbage.TCB.AArch64.Target
 
 /-! # X25519 (RFC 7748) on AArch64 -/
 
@@ -23,7 +23,7 @@ public import VerifiedGarbage.TCB.AArch64.Print
 
 namespace VG.Artifacts.X25519.AArch64
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact AArch64.target) := [
   Spec.X25519.exchangeApi.artifact AArch64.target {
     code := Impl.X25519.AArch64.Fn.exchange
     verified := Proof.X25519.AArch64.ExchangeResidue.exchangeCode_scrubbed },

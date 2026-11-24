@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesCcm.RISCV64.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.RISCV64.Print
+public import VerifiedGarbage.TCB.RISCV64.Target
 
 /-! # AES-CCM (NIST SP 800-38C) on RISC-V -/
 
@@ -10,7 +10,7 @@ public import VerifiedGarbage.TCB.RISCV64.Print
 
 namespace VG.Artifacts.AesCcm.RISCV64
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact RISCV64.target) := [
   Spec.Ccm.sealApi.artifact RISCV64.target {
     code := Impl.AesCcm.RISCV64.Fn.«seal»
     verified := Proof.AesCcm.RISCV64.Scrub.seal_scrubbed },

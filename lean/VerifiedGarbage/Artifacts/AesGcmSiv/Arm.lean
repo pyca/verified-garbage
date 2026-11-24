@@ -8,7 +8,7 @@ import Mathlib.Tactic.ContinuousFunctionalCalculus
 import Mathlib.Tactic.NormNum.GCD
 import Mathlib.Tactic.Positivity.Finset
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.Arm.Print
+public import VerifiedGarbage.TCB.Arm.Target
 
 /-! # AES-GCM-SIV (RFC 8452) on ARMv7 -/
 
@@ -16,7 +16,7 @@ public import VerifiedGarbage.TCB.Arm.Print
 
 namespace VG.Artifacts.AesGcmSiv.Arm
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact Arm.target) := [
   Spec.GcmSiv.sealApi.artifact Arm.target {
     code := Impl.AesGcmSiv.Arm.Fn.«seal»
     verified := Proof.AesGcmSiv.Arm.Fn.«seal» },

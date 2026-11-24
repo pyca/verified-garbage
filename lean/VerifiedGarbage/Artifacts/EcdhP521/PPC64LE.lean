@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ecdh.PPC64LE.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.PPC64LE.Print
+public import VerifiedGarbage.TCB.PPC64LE.Target
 public import VerifiedGarbage.Proof.P521.PPC64LE.Law
 
 /-! # ECDH over P-521 (SP 800-56A) on PPC64LE -/
@@ -13,7 +13,7 @@ namespace VG.Artifacts.EcdhP521.PPC64LE
 
 open VG.Proof.P521.PPC64LE (hasLaw)
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact PPC64LE.target) := [
   Spec.Ecdh.P521.exchangeApi.artifact PPC64LE.target {
     code := Impl.Ecdh.PPC64LE.Fn.p521Exchange
     verified := Proof.Ecdh.PPC64LE.Scrub.p521Exchange_scrubbed hasLaw.law }]

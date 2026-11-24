@@ -4,7 +4,7 @@ public import VerifiedGarbage.Impl.Cast5.AArch64.Fn
 public import VerifiedGarbage.Proof.Cast5.AArch64.Scrub
 public import VerifiedGarbage.Proof.Cast5.AArch64.Residue
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.AArch64.Print
+public import VerifiedGarbage.TCB.AArch64.Target
 import VerifiedGarbage.Proof.Cast5.AArch64.TblLit
 
 /-! # CAST5 (RFC 2144) on AArch64 -/
@@ -13,7 +13,7 @@ import VerifiedGarbage.Proof.Cast5.AArch64.TblLit
 
 namespace VG.Artifacts.Cast5.AArch64
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact AArch64.target) := [
   Spec.Cast5.expandKeyApi.artifact AArch64.target {
     code := Impl.Cast5.AArch64.Tbl.Fn.expandKey
     verified := Proof.Cast5.AArch64.Scrub.expandKey },

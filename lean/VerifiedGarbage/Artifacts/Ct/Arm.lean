@@ -8,8 +8,7 @@ public import VerifiedGarbage.Proof.Framework.Arm.RelCT
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
 public import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.TCB.Arm.Target
-public import VerifiedGarbage.TCB.Arm.Print
+public import VerifiedGarbage.TCB.Arm.Target
 
 /-! # Constant-time byte comparison on ARMv7 -/
 
@@ -18,7 +17,7 @@ public import VerifiedGarbage.TCB.Arm.Print
 namespace VG.Artifacts.Ct.Arm
 open VG.Arm
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact Arm.target) := [
   Spec.Ct.eqApi.artifact target {
     code := Impl.Ct.Arm.Fn.eq
     verified := Proof.Ct.Arm.Fn.eq }]

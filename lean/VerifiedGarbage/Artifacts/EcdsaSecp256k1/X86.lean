@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.TCB.X86.Target
-public import VerifiedGarbage.TCB.X86.Print
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Secp256k1.X86.Law
 public import VerifiedGarbage.Proof.Ecdsa.X86.Secp256k1.Scrub
@@ -24,7 +23,7 @@ open VG.Proof.Ecdsa.Rfc6979.X86 (OK)
 open VG.Proof.HmacTable.X86 (names tables fnsOf)
 open VG.Proof.Ecdsa.X86.Secp256k1.Scrub (vs sign_scrubbed)
 
-def artifacts : List Artifact :=
+def artifacts : List (Artifact X86.target) :=
   if hv : OK vs ∧ "VG_SECP256K1_COMB" ∉ names vs then [
     Spec.Ecdsa.Rfc6979.Curves.secp256k1SignApi.artifact X86.target {
       tables := [("hmac", tables vs)]
@@ -38,7 +37,7 @@ namespace VG.Artifacts.EcdsaSecp256k1.X86
 
 open VG.Proof.Secp256k1.X86 (hasLaw)
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact X86.target) := [
   Spec.Ecdsa.Secp256k1.verifyHashApi.artifact X86.target {
     code := Impl.Ecdsa.X86.Fn.verifySecp256k1
     verified := Proof.Ecdsa.X86.Secp256k1.Scrub.verify_scrubbed hasLaw.law hasLaw.inv }] ++

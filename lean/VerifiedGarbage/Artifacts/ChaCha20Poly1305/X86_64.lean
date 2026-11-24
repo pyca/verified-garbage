@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Instance
 import Mathlib.Tactic.NormNum.Inv
 import Mathlib.Tactic.NormNum.Pow
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.X86_64.Print
+public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Shared
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.OpenTo
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.ScrubFn
@@ -19,7 +19,7 @@ namespace VG.Artifacts.ChaCha20Poly1305.X86_64
 
 open VG.Proof.ChaCha20Poly1305.X86_64
 
-def artifacts : List Artifact :=
+def artifacts : List (Artifact X86_64.target) :=
   VG.Proof.Variants.ChaCha20Xor.X86_64.variants.flatMap fun (v : Proof.ChaCha20.X86_64.XorImpl) => [
     Spec.ChaCha20Poly1305.sealApi.artifact X86_64.target {
       suffix := v.suffix

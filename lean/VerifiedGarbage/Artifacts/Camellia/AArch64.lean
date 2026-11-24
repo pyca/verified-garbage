@@ -7,7 +7,7 @@ public import VerifiedGarbage.Proof.Camellia.AArch64.Serial.Verified
 public import VerifiedGarbage.Proof.Camellia.AArch64.Lit
 public import VerifiedGarbage.Proof.Camellia.AArch64.Residue
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.AArch64.Print
+public import VerifiedGarbage.TCB.AArch64.Target
 
 /-! # Camellia on AArch64 -/
 
@@ -15,7 +15,7 @@ public import VerifiedGarbage.TCB.AArch64.Print
 
 namespace VG.Artifacts.Camellia.AArch64
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact AArch64.target) := [
   Spec.Camellia.expandKeyApi.artifact AArch64.target {
     code := Impl.Camellia.AArch64.Fn.expandKey
     verified := Proof.Camellia.AArch64.Residue.expandKeyCode_scrubbed },

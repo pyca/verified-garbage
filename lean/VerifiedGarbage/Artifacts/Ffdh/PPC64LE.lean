@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Scrub
 public import VerifiedGarbage.Impl.Ffdh.PPC64LE.Fn
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.PPC64LE.Print
+public import VerifiedGarbage.TCB.PPC64LE.Target
 public import VerifiedGarbage.Proof.Variants.MillerRabin.PPC64LE
 
 /-! # Finite-field Diffie–Hellman (SP 800-56A) on PPC64LE -/
@@ -12,7 +12,7 @@ public import VerifiedGarbage.Proof.Variants.MillerRabin.PPC64LE
 
 namespace VG.Artifacts.Ffdh.PPC64LE
 
-def direct : List Artifact := [
+def direct : List (Artifact PPC64LE.target) := [
   Spec.Ffdh.parameterInitApi.artifact PPC64LE.target {
     code := Impl.Ffdh.PPC64LE.Generation.init
     verified := Proof.Ffdh.PPC64LE.Scrub.parameterInit_scrubbed },
@@ -41,7 +41,7 @@ def direct : List Artifact := [
     code := Impl.Ffdh.PPC64LE.Fn.cachedKeySearch
     verified := Proof.Ffdh.PPC64LE.Scrub.cachedKeySearch_scrubbed }]
 
-def artifacts : List Artifact :=
+def artifacts : List (Artifact PPC64LE.target) :=
   direct ++
   (VG.Proof.Variants.MillerRabin.PPC64LE.variants.attach.map
     fun (vh : {v // v ∈ VG.Proof.Variants.MillerRabin.PPC64LE.variants}) =>

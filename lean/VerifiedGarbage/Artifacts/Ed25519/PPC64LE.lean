@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Ed25519.PPC64LE.KeyPair
 public import VerifiedGarbage.Proof.Ed25519.PPC64LE.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.PPC64LE.Print
+public import VerifiedGarbage.TCB.PPC64LE.Target
 public import VerifiedGarbage.Proof.Ed25519.PPC64LE.Whole.SignVerified
 public import VerifiedGarbage.Proof.Ed25519.PPC64LE.Whole.VerifyMsgVerified
 
@@ -13,7 +13,7 @@ public import VerifiedGarbage.Proof.Ed25519.PPC64LE.Whole.VerifyMsgVerified
 
 namespace VG.Artifacts.Ed25519.PPC64LE
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact PPC64LE.target) := [
   Spec.Ed25519.keyPairApi.artifact PPC64LE.target {
     code := Impl.Ed25519.PPC64LE.Fn.keyPair
     verified := Proof.Ed25519.PPC64LE.Scrub.keyPair_scrubbed },

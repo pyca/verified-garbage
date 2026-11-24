@@ -26,7 +26,7 @@ public import VerifiedGarbage.Proof.Cmac.Spec
 public import VerifiedGarbage.Proof.Framework.X86.SseTaint
 public import VerifiedGarbage.Proof.Framework.X86.StackScratch
 public import VerifiedGarbage.Proof.Gcm.SealGather
-public import VerifiedGarbage.TCB.X86.Print
+public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Variants.AesCtr32.X86
 public import VerifiedGarbage.Proof.Variants.AesGcm.X86
 public import VerifiedGarbage.Proof.Aes.X86.VariantProof
@@ -41,7 +41,7 @@ namespace VG.Artifacts.AesGcm.X86.AesCtr32
 open VG.Proof.AesGcm.X86 VG.Proof.AesGcm.X86.Scrub
 
 /-- The artifacts calling the implementation `c` of `vg_aes_ctr32_to`, and no GHASH. -/
-def artifacts (c : Proof.Aes.X86.Ctr32Impl) : List Artifact :=
+def artifacts (c : Proof.Aes.X86.Ctr32Impl) : List (Artifact X86.target) :=
   let v : GcmImpl := { ctr := c, gh := GhashName.scalar.impl }
   [
   Spec.Gcm.initApi.artifact X86.target {
@@ -58,7 +58,7 @@ namespace VG.Artifacts.AesGcm.X86.AesGcm
 open VG.Proof.AesGcm.X86 VG.Proof.AesGcm.X86.Scrub
 
 /-- The artifacts calling the implementations `v`. -/
-def artifactsOf (v : GcmImpl) : List Artifact := [
+def artifactsOf (v : GcmImpl) : List (Artifact X86.target) := [
   Spec.Gcm.streamEncryptApi.artifact X86.target {
     suffix := v.suffix
     code := Impl.AesGcm.X86.Fn.streamEncrypt v.callees
@@ -103,7 +103,7 @@ def artifactsOf (v : GcmImpl) : List Artifact := [
         spSafe := Proof.AesGcm.X86.Scrub.open_spSafeF v })]
 
 /-- Gather seal reads plaintext descriptors directly into the ciphertext destination. -/
-def artifactsGather (v : GcmImpl) : List Artifact := [
+def artifactsGather (v : GcmImpl) : List (Artifact X86.target) := [
   (letI := Impl.AesGcm.X86.Contiguous.FrameSize.forScratch v.ctr.scr
    letI := Proof.AesGcm.X86.Contiguous.sizeFor v
    Spec.Gcm.sealContiguousApi.artifact X86.target {
@@ -124,7 +124,7 @@ def artifactsGather (v : GcmImpl) : List Artifact := [
         spSafe := Proof.AesGcm.X86.Scrub.sealGather_spSafeF v })]
 
 /-- `vg_aes_gcm_open_to`, calling `vg_aes_ctr32_to` of the implementations `v`. -/
-def artifactsOpenTo (v : GcmImpl) : List Artifact := [
+def artifactsOpenTo (v : GcmImpl) : List (Artifact X86.target) := [
   Spec.Gcm.openToApi.artifact X86.target {
     suffix := v.suffix
     code := Impl.AesGcm.X86.Fn.openTo v.callees (OpenTo.toFn v)
@@ -132,7 +132,7 @@ def artifactsOpenTo (v : GcmImpl) : List Artifact := [
     spSafe := Proof.AesGcm.X86.Scrub.openTo_spSafeF v }]
 
 /-- The artifacts of a variant, from the implementations it names. -/
-def artifacts (v : GcmVariant) : List Artifact :=
+def artifacts (v : GcmVariant) : List (Artifact X86.target) :=
   artifactsOf v.impl ++ artifactsGather v.impl ++ artifactsOpenTo v.impl
 
 end VG.Artifacts.AesGcm.X86.AesGcm
@@ -143,7 +143,7 @@ namespace VG.Artifacts.AesGcm.X86.Ghash
 open VG.Proof.AesGcm.X86 VG.Proof.AesGcm.X86.Scrub
 
 /-- The artifacts calling the implementation `n` of `vg_ghash`, and no AES. -/
-def artifacts (n : GhashName) : List Artifact :=
+def artifacts (n : GhashName) : List (Artifact X86.target) :=
   let v : GcmImpl := { ctr := Proof.Aes.X86.Ctr32Impl.scalar, gh := n.impl }
   [
   Spec.Gcm.streamAadApi.artifact X86.target {
@@ -161,7 +161,7 @@ end VG.Artifacts.AesGcm.X86.Ghash
 
 namespace VG.Artifacts.AesGcm.X86
 
-def artifacts : List Artifact :=
+def artifacts : List (Artifact X86.target) :=
   (VG.Proof.Variants.AesCtr32.X86.variants.flatMap fun v => AesCtr32.artifacts v) ++
   (VG.Proof.Variants.AesGcm.X86.variants.flatMap fun v => AesGcm.artifacts v) ++
   (VG.Proof.Variants.Ghash.X86.variants.flatMap fun v => Ghash.artifacts v)

@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.AesGcm.X86.Scrub
 public import VerifiedGarbage.Impl.Sm4Gcm.X86.Fn
 public import VerifiedGarbage.Impl.AesGcm.X86.Fn
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.X86.Print
+public import VerifiedGarbage.TCB.X86.Target
 import VerifiedGarbage.Proof.Sm4.X86.Ctr32Lit
 import VerifiedGarbage.Proof.Sm4.X86.Lit
 public import VerifiedGarbage.Proof.AesGcm.X86.GhashImpls
@@ -21,7 +21,7 @@ namespace VG.Artifacts.Sm4Gcm.X86
 
 /-- `vg_sm4_gcm_init`, with each implementation of the key schedule and the
 implementation of `vg_sm4_ctr32` chosen for it. -/
-def keyed : List Artifact :=
+def keyed : List (Artifact X86.target) :=
   VG.Proof.Variants.Sm4Ctr32.X86.withExpandKey.map
     fun ((k, c) : Proof.Sm4Gcm.X86.KeyImpl × Proof.Sm4Gcm.X86.CtrImpl) =>
     Spec.Sm4.Gcm.initApi.artifact X86.target {
@@ -39,7 +39,7 @@ open VG.Proof.AesGcm.X86 (GcmImpl)
 
 /-- The artifacts calling the implementation `v.gh` of `vg_ghash`, those
 that encrypt with each implementation of `vg_sm4_ctr32`. -/
-def artifactsOf (v : GcmImpl) : List Artifact := [
+def artifactsOf (v : GcmImpl) : List (Artifact X86.target) := [
   Spec.Sm4.Gcm.streamInitApi.artifact X86.target {
     suffix := v.gh.suffix
     code := Impl.AesGcm.X86.Fn.streamInit v.callees
@@ -83,14 +83,14 @@ def artifactsOf (v : GcmImpl) : List Artifact := [
       spSafe := Proof.Sm4Gcm.X86.Scrub.open_spSafeF v c }]
 
 /-- The artifacts of a variant, from the implementation of `vg_ghash` it names. -/
-def artifacts (v : Proof.AesGcm.X86.GhashName) : List Artifact :=
+def artifacts (v : Proof.AesGcm.X86.GhashName) : List (Artifact X86.target) :=
   artifactsOf (Proof.AesGcm.X86.GcmImpl.mk Proof.Aes.X86.Ctr32Impl.scalar v.impl)
 
 end VG.Artifacts.Sm4Gcm.X86.Ghash
 
 namespace VG.Artifacts.Sm4Gcm.X86
 
-def artifacts : List Artifact :=
+def artifacts : List (Artifact X86.target) :=
   keyed ++
   (VG.Proof.Variants.Ghash.X86.variants.flatMap fun v => Ghash.artifacts v)
 

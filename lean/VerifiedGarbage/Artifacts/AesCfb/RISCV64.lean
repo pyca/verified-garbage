@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Aes.RISCV64.Scrub
 public import VerifiedGarbage.Impl.Aes.RISCV64.Fn
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.RISCV64.Print
+public import VerifiedGarbage.TCB.RISCV64.Target
 
 /-! # AES-CFB128 (NIST SP 800-38A §6.3) on RISC-V -/
 
@@ -11,7 +11,7 @@ public import VerifiedGarbage.TCB.RISCV64.Print
 
 namespace VG.Artifacts.AesCfb.RISCV64
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact RISCV64.target) := [
   Spec.Cfb.aesEncryptApi.artifact RISCV64.target {
     code := Impl.Aes.RISCV64.Fn.cfbEncrypt
     verified := Proof.Aes.RISCV64.Scrub.cfbEncrypt_scrubbed },

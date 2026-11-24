@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Seed.PPC64LE.ModesVerified
 public import VerifiedGarbage.Proof.Seed.PPC64LE.ModesFrame
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Seed.PPC64LE.Scrub
-public import VerifiedGarbage.TCB.PPC64LE.Print
+public import VerifiedGarbage.TCB.PPC64LE.Target
 import VerifiedGarbage.Proof.Seed.PPC64LE.ModesLit
 
 /-! # SEED-CBC on PPC64LE -/
@@ -13,7 +13,7 @@ import VerifiedGarbage.Proof.Seed.PPC64LE.ModesLit
 
 namespace VG.Artifacts.SeedCbc.PPC64LE
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact PPC64LE.target) := [
   Spec.Seed.cbcEncryptChainedApi.artifact PPC64LE.target {
     code := Impl.Seed.PPC64LE.Fn.cbcEncryptChained
     verified := Proof.Seed.PPC64LE.Scrub.cbcEncryptChained_scrubbed },

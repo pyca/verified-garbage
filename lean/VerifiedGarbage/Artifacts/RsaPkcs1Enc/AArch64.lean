@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.Scrub
 public import VerifiedGarbage.Impl.RsaPkcs1Enc.AArch64.Front
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.FrontScrub
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.AArch64.Print
+public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Variants.Sha256Compress.AArch64
 public import VerifiedGarbage.Proof.Variants.RsaPrivateCrt.AArch64
 public import VerifiedGarbage.Proof.Variants.RsaPublicPrecomputed.AArch64
@@ -18,7 +18,7 @@ namespace VG.Artifacts.RsaPkcs1Enc.AArch64
 
 open VG.Proof.RsaPkcs1Enc.AArch64.Scrub
 
-def artifacts : List Artifact :=
+def artifacts : List (Artifact AArch64.target) :=
   (VG.Proof.Variants.Sha256Compress.AArch64.variants.flatMap fun (h : Proof.Sha256.AArch64.Compress) =>
     VG.Proof.Variants.RsaPrivateCrt.AArch64.variants.flatMap fun (c : Proof.Rsa.AArch64.CrtImpl) => [
       Spec.RsaPkcs1Enc.decryptPrecomputedApi.artifact AArch64.target {

@@ -20,7 +20,7 @@ class Registrations(unittest.TestCase):
     def test_bindings(self):
         with tree({"VerifiedGarbage/Artifacts/A/Generic.lean":
                     "module\n/-! # Proven by `lit_decide` -/\n-- by decide\n"
-                    "def artifacts : List Artifact := [\n"
+                    "def artifacts : List (Artifact T.target) := [\n"
                     "  api.artifact X86_64.target {\n"
                     "    suffix := \"_found by a mask\"\n"
                     "    verified := Proof.A.verified (.inl rfl) }]\n",
@@ -120,7 +120,7 @@ RV = "VerifiedGarbage/Artifacts/A/RISCV64.lean"
 
 
 def rv(body: str) -> str:
-    return "module\ndef artifacts : List Artifact := [\n" + body + "]\n"
+    return "module\ndef artifacts : List (Artifact RISCV64.target) := [\n" + body + "]\n"
 
 
 class Targets(unittest.TestCase):
@@ -251,13 +251,24 @@ class Targets(unittest.TestCase):
         self.assertIn(":3: a registration not given as a record", p)
 
     def test_by_hand(self):
-        [p] = self.problems(
-            "  { api with target := .of RISCV64.target, code := Impl.A.f, verified := Proof.A.f }")
+        ps = self.problems("  { api with code := Impl.A.f, verified := Proof.A.f }")
+        self.assertEqual(len(ps), 2)
+        for p in ps:
+            self.assertIn(":3: an `Artifact` built by hand", p)
+        [p] = self.problems("  { module := api.module\n    code := Impl.A.f\n"
+                            "    verified := Proof.A.f }")
+        self.assertIn(":5: an `Artifact` built by hand", p)
+        [p] = self.problems("  Artifact.mk api.module api.name")
+        self.assertIn(":3: an `Artifact` built by hand", p)
+
+    def test_updated(self):
+        # One made from its `Api`, then changed.
+        [p] = self.problems("  { Proof.A.RISCV64.made with name := api.name }")
         self.assertIn(":3: an `Artifact` built by hand", p)
 
     def test_selftest(self):
         with tree({"VerifiedGarbage/Artifacts/Selftest/X86_64.lean":
-                    rv("  { api with target := .of X86_64.target, verified := ⟨a, b⟩ }")}) as d:
+                    rv("  { api with verified := ⟨a, b⟩ }")}) as d:
             self.assertEqual(check_registrations.problems(pathlib.Path(d)), [])
 
     def test_streaming_functions(self):

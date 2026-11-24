@@ -6,7 +6,7 @@ public import VerifiedGarbage.Spec.Ecdsa.Verify.P384
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Ecdsa.Arm.P384.Scrub
 public import VerifiedGarbage.Impl.Ecdsa.Arm.VerifyHash
-public import VerifiedGarbage.TCB.Arm.Print
+public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Impl.Ecdsa.P384.ArmFn
 public import VerifiedGarbage.Proof.P384.Arm.Law
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.P384Comb
@@ -19,7 +19,7 @@ namespace VG.Artifacts.EcdsaP384.Arm
 
 open VG.Proof.P384.Arm (hasLaw)
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact Arm.target) := [
   Spec.Ecdsa.P384.verifyHashApi.artifact Arm.target {
     code := Impl.Ecdsa.Arm.Fn.verifyP384
     verified := Proof.Ecdsa.Arm.Fn.verifyP384 hasLaw.law },

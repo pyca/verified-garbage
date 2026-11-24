@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.MlKem.X86_64.CheckEkScrub
 public import VerifiedGarbage.Proof.MlKem.X86_64.KemScrub
 public import VerifiedGarbage.Proof.Variants.MlKemSample4.X86_64
 public import VerifiedGarbage.Proof.Variants.Zeroize.X86_64
-public import VerifiedGarbage.TCB.X86_64.Print
+public import VerifiedGarbage.TCB.X86_64.Target
 
 /-! # ML-KEM (FIPS 203) on x86-64 -/
 
@@ -13,7 +13,7 @@ public import VerifiedGarbage.TCB.X86_64.Print
 
 namespace VG.Artifacts.MlKem.X86_64
 
-def direct : List Artifact := [
+def direct : List (Artifact X86_64.target) := [
   Spec.MlKem.checkEkApi.artifact X86_64.target { code := Impl.MlKem.X86_64.Fn.checkEk, verified := Proof.MlKem.X86_64.Scrub.checkEk_scrubbed, spSafe := Proof.MlKem.X86_64.Scrub.checkEk_spSafe },
   Spec.MlKem.checkEkApi.artifact X86_64.target { suffix := "_avx2", code := Impl.MlKem.X86_64.Fn.checkEkAvx2, verified := Proof.MlKem.X86_64.Scrub.checkEkAvx2_scrubbed, spSafe := Proof.MlKem.X86_64.Scrub.checkEkAvx2_spSafe }]
 
@@ -29,7 +29,7 @@ open VG.Proof.Zeroize.X86_64 (ZeroizeImpl)
 /-- The functions over `v`, wiping with `z`: none where `Wipe.skip` (an
 implementation of `vg_mlkem_sample_ntt4` that needs CPU features is emitted
 only with an implementation of `vg_zeroize` that needs some of them). -/
-def artifacts (v : Sample4Impl) (z : ZeroizeImpl) : List Artifact :=
+def artifacts (v : Sample4Impl) (z : ZeroizeImpl) : List (Artifact X86_64.target) :=
   if Proof.MlKem.X86_64.Wipe.skip v z then [] else [
   Spec.MlKem.keyGenApi.artifact X86_64.target {
     suffix := Proof.MlKem.X86_64.Wipe.suffix v z
@@ -76,7 +76,7 @@ end VG.Artifacts.MlKem.X86_64.MlKemSample4Zeroize
 
 namespace VG.Artifacts.MlKem.X86_64
 
-def artifacts : List Artifact :=
+def artifacts : List (Artifact X86_64.target) :=
   direct ++
   (VG.Proof.Variants.MlKemSample4.X86_64.variants.flatMap fun v => VG.Proof.Variants.Zeroize.X86_64.variants.flatMap fun v2 => MlKemSample4Zeroize.artifacts v v2) ++
   [

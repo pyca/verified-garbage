@@ -9,7 +9,7 @@ public import VerifiedGarbage.Proof.AesGcm.RISCV64.OpenToBs
 public import VerifiedGarbage.Proof.AesGcm.RISCV64.DirectGather.Body
 public import VerifiedGarbage.Proof.AesGcm.RISCV64.Contiguous.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.RISCV64.Print
+public import VerifiedGarbage.TCB.RISCV64.Target
 
 public import VerifiedGarbage.Proof.AesGcm.RISCV64.Contiguous.PreparedLaw
 import VerifiedGarbage.Proof.Aes.RISCV64.CodeLit
@@ -21,7 +21,7 @@ import VerifiedGarbage.Proof.Gcm.RISCV64.Lit
 
 namespace VG.Artifacts.AesGcm.RISCV64
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact RISCV64.target) := [
   Spec.Gcm.initApi.artifact RISCV64.target {
     code := Impl.AesGcm.RISCV64.Fn.init
     verified := Proof.AesGcm.RISCV64.init_scrubbed },

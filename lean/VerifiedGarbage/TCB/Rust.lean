@@ -243,6 +243,29 @@ compiled only under it, `#[cfg(<predicate>)]`.
 
 @[expose] public section
 
+namespace VG
+
+/-- What an artifact is emitted for (`EmitArtifact`). -/
+structure EmitFor where
+  target : EmitTarget
+
+/-- An artifact with the target it is emitted for: the one its proof is on,
+with its `Emitter`. The emitter's driver makes every one it emits, of each
+registration file's artifacts, with `EmitArtifact.ofList` (`Emit.driver`). -/
+structure EmitArtifact extends EmitFor, Artifact target.toTarget
+
+/-- The artifact `a`, emitted with the emitter `e`. -/
+def EmitArtifact.of {T : Target} (e : Emitter T.isa) (a : Artifact T) : EmitArtifact where
+  target := .of T e
+  toArtifact := a
+
+/-- The artifacts `as` of the target `T`, emitted with the emitter `e`: both
+named where it is applied (`Emit.driver`), and `as` checked against `T`. -/
+def EmitArtifact.ofList (T : Target) (e : Emitter T.isa) (as : List (Artifact T)) : List EmitArtifact :=
+  as.map (.of e)
+
+end VG
+
 namespace VG.Rust
 
 universe u
@@ -550,7 +573,7 @@ def prependSafety (doc : String) : List String → String
 /-- The `# Safety` items of the tables of functions `a` takes: each parameter
 must hold the words of one of the tables of its interface (`Abi.withTables`),
 and the CPU must have the features its functions need. -/
-def fnTablesDoc (a : Artifact) : List String :=
+def fnTablesDoc (a : EmitArtifact) : List String :=
   a.tables.filterMap fun (x, ts) => ts.head?.map fun T =>
     s!"`{x}` must be the `as_ptr()` of one of the `{T.iface}` tables of functions of this crate \
       (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` \
@@ -558,7 +581,7 @@ def fnTablesDoc (a : Artifact) : List String :=
 
 /-- The note that a function returns without secret residue, if it runs one
 of `as`: each proves it (`Artifact.verified`). -/
-def residueDoc (as : List Artifact) : List String :=
+def residueDoc (as : List EmitArtifact) : List String :=
   if !as.isEmpty then
     ["It returns without secret residue: what it leaves in the registers, the flags and the \
       stack below the caller's stack pointer is determined by what its caller left there and \
@@ -571,7 +594,7 @@ buffers are (`Sig.layoutNote` before its `# Safety` section, `Sig.validDoc`
 first in it and `Sig.layoutDoc` at the end), and the CPU features it needs
 (`featureDoc`), what the tables of functions it takes must be
 (`fnTablesDoc`), and that it returns without secret residue (`residueDoc`). -/
-def fullDoc (a : Artifact) : String :=
+def fullDoc (a : EmitArtifact) : String :=
   fullDocWith a a.name a.stack a.written a.features (residueDoc [a])
 where
   /-- `fullDoc a`, for a function named `name` whose calls and frames use
@@ -579,7 +602,7 @@ where
   needs the CPU features `features`, with the paragraphs `notes` first
   among those before its `# Safety` section: what a dispatcher of `a`'s
   implementations documents (`dispatcher`). -/
-  fullDocWith (a : Artifact) (name : String) (stack : Nat) (written : List (String × Nat))
+  fullDocWith (a : EmitArtifact) (name : String) (stack : Nat) (written : List (String × Nat))
       (features notes : List String) : String :=
   let A := a.target.abi
   let items := Sig.layoutDoc a.target a.sig a.writeArgs stack ++ fnTablesDoc a
@@ -591,7 +614,7 @@ where
 signature (`fullDoc`), `doc` ends with its `# Safety` section, which starts
 with `"\n\n# Safety\n\n"`; and `doc` does not itself state what memory a
 buffer must be valid for, which the emitter generates (`Sig.validDoc`). -/
-def checkLayout (a : Artifact) : Except String Unit := do
+def checkLayout (a : EmitArtifact) : Except String Unit := do
   if (a.doc.splitOn "valid for").length > 1 then
     throw s!"{a.target.name}: {a.name}'s doc states what memory a buffer must be valid for, \
       which the emitter generates from its signature (`Sig.validDoc`)"
@@ -649,7 +672,7 @@ def funcOptions : String → List String × List String
 
 /-- The `cfg` attribute of `a`'s function and constants (`cfgGate` of
 `Printer.featureCfg` of its features). -/
-def gateOf (a : Artifact) : String := cfgGate (a.features.filterMap a.target.printer.featureCfg)
+def gateOf (a : EmitArtifact) : String := cfgGate (a.features.filterMap a.target.printer.featureCfg)
 
 /-- The lines of a function on the target `T`, given its printed code
 `lines`: the target's opening `funcOptions`, `lines`, the printer's
@@ -660,7 +683,7 @@ def bodyLines (T : EmitTarget) (lines : List Line) : List Line :=
 
 /-- The lines of `a`'s function, given its printed code `lines`
 (`bodyLines`). -/
-def bodyOf (a : Artifact) (lines : List Line) : List Line :=
+def bodyOf (a : EmitArtifact) (lines : List Line) : List Line :=
   bodyLines a.target lines
 
 /-- The `naked_asm!` of a function of the target `T` whose lines are `body`:
@@ -691,7 +714,7 @@ def asmOf (T : EmitTarget) (body : List Line) (moduleOf : String → String) (ro
 /-- The text of `a`'s function after its name, given `a`'s printed code
 `lines`: its signature and its body, the `naked_asm!` of its code
 (`function`, `asmOf`). -/
-def codeOf (a : Artifact) (lines : List Line) (moduleOf : String → String) : String :=
+def codeOf (a : EmitArtifact) (lines : List Line) (moduleOf : String → String) : String :=
   s!"{a.sig.rust} " ++ "{\n" ++ asmOf a.target (bodyOf a lines) moduleOf "super" ++ "}\n"
 
 /-- Clippy's `missing_safety_doc`, which asks every `pub unsafe fn` for a
@@ -706,16 +729,16 @@ each function it calls. The printer's `funcAlign` comes after the return
 (`Printer.function`) and any directives that follow it, and only the
 target's closing `funcOptions` after that, which close what its opening
 ones, the first lines, opened. -/
-def function (a : Artifact) (moduleOf : String → String) : String :=
+def function (a : EmitArtifact) (moduleOf : String → String) : String :=
   functionOf a (a.target.printer.function a.code) moduleOf
 where
   /-- `function a`, given `a`'s printed code `lines`
   (`a.target.printer.function a.code`). -/
-  functionOf (a : Artifact) (lines : List Line) (moduleOf : String → String) : String :=
+  functionOf (a : EmitArtifact) (lines : List Line) (moduleOf : String → String) : String :=
   withCode a (codeOf a lines moduleOf)
   /-- `function a`, given the text of its function after its name, `code`
   (`codeOf`). -/
-  withCode (a : Artifact) (code : String) (vis : String := "pub") : String :=
+  withCode (a : EmitArtifact) (code : String) (vis : String := "pub") : String :=
   let gate := gateOf a
   let doc := fullDoc a
   featuresConst a.name gate a.features ++
@@ -729,11 +752,11 @@ where
 /-- The tables of constants of `a`: those its contract gives it
 (`Artifact.consts`) and those its instructions carry (`Printer.codeTables`,
 x86-64's `aluTbl`). -/
-def tablesOf (a : Artifact) : List (String × List (BitVec 64)) :=
+def tablesOf (a : EmitArtifact) : List (String × List (BitVec 64)) :=
   a.consts ++ a.target.printer.codeTables a.code
 
 /-- The distinct values of `f` over `as`, in first-seen order. -/
-def distinct (as : List Artifact) (f : Artifact → String) : List String :=
+def distinct (as : List EmitArtifact) (f : EmitArtifact → String) : List String :=
   dedup (as.map f)
 
 /-- The names of the functions that `calls` (`Code.calls`) calls, each once,
@@ -792,13 +815,13 @@ def printsAs (f : Fn) (lines : List Line) : Bool :=
 its code calls (`firstCalls`), each as a `Fn`: what `files` shares before it
 prepares the artifacts (`Prepared`). -/
 structure Shared where
-  art : Artifact
+  art : EmitArtifact
   fn : Fn
   calls : List (String × Fn)
   fn_eq : fn = ⟨art.target, art.code⟩
   calls_eq : calls = (firstCalls art.code.calls).map fun (n, b) => (n, ⟨art.target, b⟩)
 
-def Shared.of (a : Artifact) : Shared := ⟨a, _, _, rfl, rfl⟩
+def Shared.of (a : EmitArtifact) : Shared := ⟨a, _, _, rfl, rfl⟩
 
 /-- An artifact with what the checks read of it more than once, each computed
 once: its code and its calls as `Fn`s (`Shared`), its printed code
@@ -815,7 +838,7 @@ def Prepared.of (s : Shared) : Prepared := ⟨s, _, _, rfl, rfl⟩
 
 /-- The functions of a module, the artifacts of `ps` in order: each with the
 text of its function after its name (`codeOf`). -/
-def moduleItems (moduleOf : Artifact → String → String) (ps : List Prepared) :
+def moduleItems (moduleOf : EmitArtifact → String → String) (ps : List Prepared) :
     List (Prepared × String) :=
   ps.map fun p => (p, codeOf p.art p.lines (moduleOf p.art))
 
@@ -860,7 +883,7 @@ def checkEncodable (p : Prepared) : Except String Unit :=
 /-- The artifact carries the contract of the `Api` it is made from
 (`Artifact.contracts`), which it is proven against (`Artifact.ofApi`): so its
 name, signature and documentation are those `Spec/` gives that contract. -/
-def checkApi (a : Artifact) : Except String Unit :=
+def checkApi (a : EmitArtifact) : Except String Unit :=
   unless a.contracts.isSome do
     throw s!"{a.target.name}: {a.name} is not made from an `Api` with a contract \
       (`Api.contracts`)"
@@ -869,7 +892,7 @@ def checkApi (a : Artifact) : Except String Unit :=
 signature, no parameter twice, and is at most the parameter's size in bytes:
 so the constant `writtenConsts` exports for it is a bound on the bytes of
 that buffer the function may change. -/
-def checkWritten (a : Artifact) : Except String Unit := do
+def checkWritten (a : EmitArtifact) : Except String Unit := do
   let names := a.written.map (·.1)
   for (p, n) in a.written do
     unless (names.filter (· == p)).length == 1 do
@@ -886,7 +909,7 @@ def checkWritten (a : Artifact) : Except String Unit := do
         one of its parameters"
 
 /-- No two artifacts of a target have the same name. -/
-def checkUnique (as : List Artifact) : Except String Unit :=
+def checkUnique (as : List EmitArtifact) : Except String Unit :=
   as.forM fun a =>
     unless (as.filter fun b => b.target.name == a.target.name && b.name == a.name).length == 1 do
       throw s!"{a.target.name}: {a.name} is defined more than once"
@@ -1164,7 +1187,7 @@ def checkCalls (ps : List Prepared) (hs : List Internal) (p : Prepared) : Except
 /-- The tables of functions the artifacts `as` take (`Artifact.tables`),
 each once, in the order they first list them: the order a table's
 dispatcher tries its implementations in (`tableDispatcher`). -/
-def fnTables (as : List Artifact) : List FnTable :=
+def fnTables (as : List EmitArtifact) : List FnTable :=
   let all := as.flatMap fun a => a.tables.flatMap (·.2)
   (dedup (all.map (·.name))).filterMap fun n => all.find? (·.name == n)
 
@@ -1340,7 +1363,7 @@ def symMacros : String :=
 /-- The tables of constants of the artifacts `arts`, and those the
 instructions of the internal functions `hs` carry (`Internal.tables`), by
 name, each once. -/
-def tables (arts : List Artifact) (hs : List Internal := []) : List (String × List (BitVec 64)) :=
+def tables (arts : List EmitArtifact) (hs : List Internal := []) : List (String × List (BitVec 64)) :=
   let all := arts.flatMap tablesOf ++ hs.flatMap (·.tables)
   ((dedup (all.map (·.1))).mergeSort (· ≤ ·)).filterMap fun n => all.find? (·.1 == n)
 
@@ -1418,7 +1441,7 @@ def prepareAll (ss : List Shared) : List Prepared :=
 
 /-- The targets of the artifacts `as`, each once, with its Rust `cfg`
 (`Emitter.rustCfg`), in first-seen order. -/
-def targetsOf (as : List Artifact) : List (String × String) :=
+def targetsOf (as : List EmitArtifact) : List (String × String) :=
   (distinct as (·.target.name)).map fun t =>
     (t, ((as.find? (·.target.name == t)).map (·.target.rustCfg)).getD "")
 
@@ -1699,15 +1722,15 @@ other implementation gets one, returning it. -/
 
 /-- The implementations of a function of a module: its base and each other. -/
 structure Group where
-  base : Artifact
-  members : List Artifact
+  base : EmitArtifact
+  members : List EmitArtifact
 
 /-- The functions of the artifacts `as` of one module and target, with their
 implementations: each artifact whose name is its `base` (`Artifact.base`,
 its `Api`'s name) is the base of a function, whose other implementations are
 the other artifacts of that `base`, in the order of `as`; an artifact whose
 base is not among `as` is the base of a function of its own. -/
-def groupsOf (as : List Artifact) : List Group :=
+def groupsOf (as : List EmitArtifact) : List Group :=
   let bases := as.filter fun a => a.name == a.base || !as.any (·.name == a.base)
   bases.map fun b =>
     ⟨b, if b.name == b.base then as.filter fun a => a.base == b.base && a.name != b.name else []⟩
@@ -1715,7 +1738,7 @@ def groupsOf (as : List Artifact) : List Group :=
 /-- Every implementation of a function of `as` (`groupsOf`) has its base's
 signature and documentation, which are what its dispatcher documents and
 calls them with: those of their `Api` (`Api.artifact`). -/
-def checkGroups (as : List Artifact) : Except String Unit :=
+def checkGroups (as : List EmitArtifact) : Except String Unit :=
   (groupsOf as).forM fun g => g.members.forM fun a => do
     unless a.sig == g.base.sig && a.doc == g.base.doc do
       throw s!"{a.target.name}: {a.name}, an implementation of {g.base.name}, has another \
@@ -1761,7 +1784,7 @@ def mcdtOpen {M : ISA} (P : Printer M) : Code M.Instr M.Cond → Bool
 that MXCSR-configuration-dependent timing affects (`Printer.mcdt`) that may
 run without its own code calling `vg_mcdt_enter` first (`mcdtOpen`):
 its dispatcher then runs `vg_mcdt_enter` first (see "Dispatchers"). -/
-def needsMcdt (a : Artifact) : Bool := mcdtOpen a.target.printer a.code
+def needsMcdt (a : EmitArtifact) : Bool := mcdtOpen a.target.printer a.code
 
 /-- `mcdtOpen P c`, with the answer for the code of each function gone
 through kept by the function's name: `seen` has those of the functions gone
@@ -1810,7 +1833,7 @@ def mcdtOpenSeen {M : ISA} (P : Printer M) :
 once for each, going through the code of each function of a target once
 (`mcdtOpenSeen`): `files` asks it of an artifact several times (`checkMcdt`,
 and its dispatcher), after `checkCalls`. -/
-def needsMcdtAll (as : List Artifact) : List ((String × String) × Bool) :=
+def needsMcdtAll (as : List EmitArtifact) : List ((String × String) × Bool) :=
   (targetsOf as).flatMap fun (t, _) =>
     ((as.filter (·.target.name == t)).foldl (init := ([], [])) fun (acc, seen) a =>
       let (r, seen) := mcdtOpenSeen a.target.printer a.code seen
@@ -1818,7 +1841,7 @@ def needsMcdtAll (as : List Artifact) : List ((String × String) × Bool) :=
 
 /-- `needsMcdt a`, as `known` (`needsMcdtAll`) has it, or computed if `known`
 does not list `a`. -/
-def needsMcdtIn (known : List ((String × String) × Bool)) (a : Artifact) : Bool :=
+def needsMcdtIn (known : List ((String × String) × Bool)) (a : EmitArtifact) : Bool :=
   (known.lookup (a.target.name, a.name)).getD (needsMcdt a)
 
 /-- The first lines of the dispatcher of a function some of whose
@@ -1849,7 +1872,7 @@ structure Impl where
   notWith : List String := []
 
 /-- The function `a`, as an implementation a dispatcher may call. -/
-def Impl.ofArtifact (a : Artifact) : Impl :=
+def Impl.ofArtifact (a : EmitArtifact) : Impl :=
   { name := a.name, module := a.module, features := a.features
     gate := a.features.filterMap a.target.printer.featureCfg, extra := a.extra
     vendor := a.vendor, notWith := a.notWith }
@@ -1965,7 +1988,7 @@ def dispatchNote (base : String) (arms : List Arm) : String :=
 /-- The body of a function returning the implementation, of the function
 whose base is `b`, that the first of `arms` that applies names, or else the
 base (see above), each line after `ind`. -/
-def choice (ind : String) (b : Artifact) (arms : List Arm) : String :=
+def choice (ind : String) (b : EmitArtifact) (arms : List Arm) : String :=
   (if arms.isEmpty then "" else s!"{ind}let cpu = verified_garbage_cpu::detected();\n") ++
   String.join (arms.map fun a =>
     String.join (a.impl.gate.map fun p => s!"{ind}#[cfg({p})]\n") ++
@@ -1977,7 +2000,7 @@ def choice (ind : String) (b : Artifact) (arms : List Arm) : String :=
 /-- The dispatcher of the function `g` of the module `m` (see above), given
 its implementations' `arms`, and whether each needs Intel's mitigation of
 MCDT (`needs`: `needsMcdt`, as `files` computed it). -/
-def dispatcher (needs : Artifact → Bool) (g : Group) (arms : List Arm) : String :=
+def dispatcher (needs : EmitArtifact → Bool) (g : Group) (arms : List Arm) : String :=
   let b := g.base
   let auto := autoName b.name
   let all := b :: g.members
@@ -2027,7 +2050,7 @@ def dispatcher (needs : Artifact → Bool) (g : Group) (arms : List Arm) : Strin
 /-- The dispatcher of the function `g` whose base is its only implementation:
 a function that takes the token (`ditSig`) and calls it; `needs` as
 `dispatcher`'s. -/
-def soleDispatcher (needs : Artifact → Bool) (g : Group) : String :=
+def soleDispatcher (needs : EmitArtifact → Bool) (g : Group) : String :=
   let b := g.base
   let auto := autoName b.name
   let note := s!"It runs `{b.name}`, the only implementation of it on this target, which needs \
@@ -2066,7 +2089,7 @@ named as `moduleName` requires. The emitter writes each into Rust code, in
 front of the code that `a`'s proof is of: so a registration's suffix
 (`Registration.suffix`), which `Api.artifact` appends to its `Api`'s name, can
 only add letters, digits and underscores to the name of the one function. -/
-def checkName (a : Artifact) : Except String Unit := do
+def checkName (a : EmitArtifact) : Except String Unit := do
   let t := a.target.name
   unless internalName a.name && internalName a.base && a.name.startsWith a.base do
     throw s!"{t}: the function {repr a.name} (of {repr a.base}) is not named as a Rust \
@@ -2078,7 +2101,7 @@ def checkName (a : Artifact) : Except String Unit := do
 
 /-- The artifact `a`'s vendor, if it names one, and each of its `extra` and
 `notWith` features are as `vendorOk` and `featureOk` require. -/
-def checkChoice (a : Artifact) : Except String Unit := do
+def checkChoice (a : EmitArtifact) : Except String Unit := do
   if let some v := a.vendor then
     unless vendorOk v do
       throw s!"{a.target.name}: {a.name} names the vendor `{v}`"
@@ -2091,7 +2114,7 @@ Intel's mitigation of MCDT (`needsMcdt`) has a dispatcher, which runs
 it: its base needs no CPU feature, and the target has `vg_mcdt_enter`, of
 the module `mcdt` (`names`: the names of the target's artifacts; `needs`:
 `needsMcdt`, as `files` computed it). -/
-def checkMcdt (needs : Artifact → Bool) (names : List String) (as : List Artifact) :
+def checkMcdt (needs : EmitArtifact → Bool) (names : List String) (as : List EmitArtifact) :
     Except String Unit :=
   (groupsOf as).forM fun g => do
     if let some a := (g.base :: g.members).find? needs then
@@ -2106,7 +2129,7 @@ def checkMcdt (needs : Artifact → Bool) (names : List String) (as : List Artif
 above), as the text that follows its functions in its file; `names` are the
 names of every artifact of the target, none of which may be a
 dispatcher's; `needs` is `needsMcdt`, as `files` computed it. -/
-def dispatchers (needs : Artifact → Bool) (names : List String) (as : List Artifact) :
+def dispatchers (needs : EmitArtifact → Bool) (names : List String) (as : List EmitArtifact) :
     Except String String := do
   if let some g := (groupsOf as).find? (!·.base.notWith.isEmpty) then
     throw s!"{g.base.target.name}: {g.base.name} is a base, which its dispatcher falls back on: \
@@ -2303,7 +2326,7 @@ every artifact runs on `tasks` tasks (`forMPar`), one check after the other,
 so the error is the
 one checking them in order would give; what they read of an artifact more
 than once is computed once, on `tasks` tasks (`Prepared`, `prepareAll`). -/
-def files (as : List Artifact) :
+def files (as : List EmitArtifact) :
     Except String (List (String × String)) := do
   -- The same artifacts, with equal parts the same value in memory
   -- (`ShareCommon.shareCommon'` returns its argument): the code of every call

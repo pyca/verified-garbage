@@ -4,7 +4,7 @@ public import VerifiedGarbage.Impl.Sha1.X86_64.Fn
 public import VerifiedGarbage.Proof.Sha1.X86_64.Shared
 public import VerifiedGarbage.Proof.Sha1.X86_64.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.X86_64.Print
+public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Blake2.X86_64.Backend
 public import VerifiedGarbage.Proof.Framework.X86_64.Registration
 public import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
@@ -31,7 +31,7 @@ public import VerifiedGarbage.Proof.Variants.MdHash.X86_64
 
 namespace VG.Artifacts.Sha1.X86_64
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact X86_64.target) := [
   Spec.Sha1.initApi.artifact X86_64.target { code := Impl.Sha1.X86_64.Fn.init, verified := Proof.Sha1.X86_64.init_scrubbed, spSafe := Proof.Sha1.X86_64.init_spSafe }] ++
   (VG.Proof.Variants.MdHash.X86_64.sha1Streams.flatMap
       fun (s : Proof.Pbkdf2.Md.X86_64.StreamFns Spec.Sha1.updateApi Spec.Sha1.finalizeApi Spec.Sha1.digestApi) => [

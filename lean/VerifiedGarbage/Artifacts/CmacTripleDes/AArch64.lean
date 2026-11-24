@@ -4,7 +4,7 @@ public import VerifiedGarbage.Impl.CmacTripleDes.Stream.AArch64
 public import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Spec.Cmac.TripleDesContract
-public import VerifiedGarbage.TCB.AArch64.Print
+public import VerifiedGarbage.TCB.AArch64.Target
 
 /-! # TDEA-CMAC (3DES-CMAC, NIST SP 800-38B) on AArch64 -/
 
@@ -12,7 +12,7 @@ public import VerifiedGarbage.TCB.AArch64.Print
 
 namespace VG.Artifacts.CmacTripleDes.AArch64
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact AArch64.target) := [
   Spec.Cmac.tdesStreamInitApi.artifact AArch64.target {
     code := Impl.CmacTripleDes.Stream.AArch64.Fn.init
     verified := Proof.CmacTripleDes.AArch64.Fn.init },

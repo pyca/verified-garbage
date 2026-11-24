@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Gcm.Arm.Law
 public import VerifiedGarbage.Proof.Sm4Gcm.Arm.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.Arm.Print
+public import VerifiedGarbage.TCB.Arm.Target
 
 import VerifiedGarbage.Proof.Gcm.Arm.Lit
 
@@ -13,7 +13,7 @@ import VerifiedGarbage.Proof.Gcm.Arm.Lit
 
 namespace VG.Artifacts.Sm4Gcm.Arm
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact Arm.target) := [
   Spec.Sm4.Gcm.initApi.artifact Arm.target {
     code := Impl.Sm4Gcm.Arm.Fn.init
     verified := Proof.Sm4Gcm.Arm.Fn.init },

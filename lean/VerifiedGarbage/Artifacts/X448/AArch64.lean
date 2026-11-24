@@ -14,7 +14,7 @@ public import VerifiedGarbage.Proof.X448.AArch64.Exchange
 public import VerifiedGarbage.Proof.X448.AArch64.ExchangeResidue
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.X448.AArch64.BaseScrub
-public import VerifiedGarbage.TCB.AArch64.Print
+public import VerifiedGarbage.TCB.AArch64.Target
 
 /-! # X448 (RFC 7748) on AArch64 -/
 
@@ -22,7 +22,7 @@ public import VerifiedGarbage.TCB.AArch64.Print
 
 namespace VG.Artifacts.X448.AArch64
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact AArch64.target) := [
   Spec.X448.exchangeApi.artifact AArch64.target {
     code := Impl.X448.AArch64.Fn.exchange
     verified := Proof.X448.AArch64.ExchangeResidue.exchangeCode_scrubbed },

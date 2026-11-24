@@ -213,12 +213,13 @@ def Printer.function (body : Code M.Instr M.Cond) : List Line :=
 /-- What the emitter needs of the target whose ISA is `M`, besides its model
 and calling convention (`Target`): the printer of its code, its Rust `cfg`
 and ABI string, and how documentation names its calling convention's
-argument area and reserved memory. Each target's printer module
-(`TCB/<ISA>/Print.lean`) declares the one instance for its ISA, and
-`Api.artifact` takes it with the target (`EmitTarget`). None of it is part of
-`Target`, which every proof imports, so that a change to it rebuilds only what
-emits code, not the proofs. -/
-class Emitter (M : ISA) where
+argument area and reserved memory. Each target's printer module declares its
+own, `VG.<T>.emitter` (`TCB/<T>/Print.lean`). It is not a class, whose instance
+any module could replace, and no artifact or registration has one: the emitter's
+driver names it (`Emit.driver`). None of it is part of `Target`, which every
+proof imports, so that a change to it rebuilds only what emits code, not the
+proofs or the registration files. -/
+structure Emitter (M : ISA) where
   printer : Printer M
   /-- The Rust `cfg` predicate under which the target's functions are
   compiled. It must exclude every configuration of the architecture that the

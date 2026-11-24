@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Scrypt.X86_64.Whole.Scrub
 public import VerifiedGarbage.Impl.Scrypt.X86_64.Fn
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.X86_64.Print
+public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Variants.Sha256Compress.X86_64
 public import VerifiedGarbage.Proof.Variants.ScryptRoMix.X86_64
 
@@ -15,7 +15,7 @@ namespace VG.Artifacts.Scrypt.X86_64
 
 open VG.Proof.Scrypt.X86_64.Whole (pbkName pbkOf scrypt_scrubbed scrypt_spSafeFn)
 
-def artifacts : List Artifact :=
+def artifacts : List (Artifact X86_64.target) :=
   VG.Proof.Variants.ScryptRoMix.X86_64.variants.flatMap fun (R : Proof.Scrypt.X86_64.Whole.RMImpl) =>
   VG.Proof.Variants.Sha256Compress.X86_64.variants.flatMap fun (c : Proof.Sha256.X86_64.Compress) => [
     Spec.Scrypt.scryptApi.artifact X86_64.target {

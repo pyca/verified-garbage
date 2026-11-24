@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Idea.PPC64LE.Invert
 public import VerifiedGarbage.Proof.Idea.PPC64LE.Key
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Idea.PPC64LE.Scrub
-public import VerifiedGarbage.TCB.PPC64LE.Print
+public import VerifiedGarbage.TCB.PPC64LE.Target
 import VerifiedGarbage.Proof.Idea.PPC64LE.Lit
 
 /-! # IDEA on PPC64LE -/
@@ -13,7 +13,7 @@ import VerifiedGarbage.Proof.Idea.PPC64LE.Lit
 
 namespace VG.Artifacts.Idea.PPC64LE
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact PPC64LE.target) := [
   Spec.Idea.expandKeyApi.artifact PPC64LE.target {
     code := Impl.Idea.PPC64LE.Fn.expandKey
     verified := Proof.Idea.PPC64LE.Scrub.expandKey_scrubbed },

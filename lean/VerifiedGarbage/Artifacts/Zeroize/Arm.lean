@@ -6,8 +6,7 @@ public import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
 public import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.TCB.Arm.Target
-public import VerifiedGarbage.TCB.Arm.Print
+public import VerifiedGarbage.TCB.Arm.Target
 
 /-! # Zeroization on ARMv7 -/
 
@@ -16,7 +15,7 @@ public import VerifiedGarbage.TCB.Arm.Print
 namespace VG.Artifacts.Zeroize.Arm
 open VG.Arm
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact Arm.target) := [
   Spec.Zeroize.zeroizeApi.artifact target {
     code := Impl.Zeroize.Arm.Fn.zeroize
     verified := Proof.Zeroize.Arm.Fn.zeroize }]

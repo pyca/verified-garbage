@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Sm4.Arm.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.Arm.Print
+public import VerifiedGarbage.TCB.Arm.Target
 
 /-! # SM4-CTR on ARMv7 -/
 
@@ -10,7 +10,7 @@ public import VerifiedGarbage.TCB.Arm.Print
 
 namespace VG.Artifacts.Sm4Ctr.Arm
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact Arm.target) := [
   Spec.Sm4.ctrApi.artifact Arm.target {
     code := Impl.Sm4.Arm.Fn.ctr
     verified := Proof.Sm4.Arm.Fn.ctr },

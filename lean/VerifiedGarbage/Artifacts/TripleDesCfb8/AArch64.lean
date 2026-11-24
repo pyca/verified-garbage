@@ -4,7 +4,7 @@ public import VerifiedGarbage.Impl.TripleDes.AArch64.Fn
 public import VerifiedGarbage.Proof.TripleDes.AArch64.FbVerified
 public import VerifiedGarbage.Proof.TripleDes.AArch64.ModesResidue
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.AArch64.Print
+public import VerifiedGarbage.TCB.AArch64.Target
 
 /-! # Triple DES-CFB8 on AArch64 -/
 
@@ -12,7 +12,7 @@ public import VerifiedGarbage.TCB.AArch64.Print
 
 namespace VG.Artifacts.TripleDesCfb8.AArch64
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact AArch64.target) := [
   Spec.TripleDes.cfb8EncryptApi.artifact AArch64.target {
     code := Impl.TripleDes.AArch64.Fn.cfb8Encrypt
     verified := Proof.TripleDes.AArch64.ModesResidue.cfb8EncryptCode_scrubbed },

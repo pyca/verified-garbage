@@ -1,7 +1,6 @@
 module
 import VerifiedGarbage.Proof.Ecdh.X86_64.BrainpoolP384r1.Lit
 
-import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvSpec
 public import VerifiedGarbage.Proof.Ecdh.X86_64.BrainpoolP384r1.Verified
 import Mathlib.Data.Finset.Card
@@ -46,7 +45,7 @@ public import VerifiedGarbage.Proof.Weierstrass.X86_64.SpillUnch
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.TComb
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombSelectY
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinLoop
-public import VerifiedGarbage.TCB.X86_64.Print
+public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.BrainpoolP384r1.X86_64.Law
 
 /-! # ECDH over brainpoolP384r1 (SP 800-56A) on x86-64 -/
@@ -57,7 +56,7 @@ namespace VG.Artifacts.EcdhBrainpoolP384r1.X86_64
 
 open VG.Proof.BrainpoolP384r1.X86_64 (hasLaw)
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact X86_64.target) := [
   Spec.Ecdh.BrainpoolP384r1.exchangeApi.artifact X86_64.target
     { code := Impl.Ecdh.X86_64.Fn.exchangeBrainpoolP384r1
       verified := Proof.Ecdh.X86_64.BrainpoolP384r1.exchange_scrubbed hasLaw.law hasLaw.inv

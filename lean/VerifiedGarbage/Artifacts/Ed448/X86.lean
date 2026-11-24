@@ -5,7 +5,7 @@ public import VerifiedGarbage.Impl.Ed448.X86.Fn
 public import VerifiedGarbage.Proof.Ed448.X86.ScalarBaseOk
 public import VerifiedGarbage.Proof.Ed448.X86.PublicKey.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.X86.Print
+public import VerifiedGarbage.TCB.X86.Target
 import VerifiedGarbage.Proof.Sha3.X86.Lit
 public import VerifiedGarbage.Proof.Ed448.X86.SignCached.Verified
 import VerifiedGarbage.Proof.Ed448.X86.ScalarLit
@@ -65,7 +65,7 @@ namespace VG.Artifacts.Ed448.X86
 
 open VG.X86
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact X86.target) := [
   Spec.Ed448.publicKeyApi.artifact X86.target {
     code := Impl.Ed448.X86.Fn.publicKey
     verified := Proof.Ed448.X86.Scrub.publicKey_scrubbed },

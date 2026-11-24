@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesOcb.Arm.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.Arm.Print
+public import VerifiedGarbage.TCB.Arm.Target
 
 /-! # AES-OCB (RFC 7253) on ARMv7 -/
 
@@ -10,7 +10,7 @@ public import VerifiedGarbage.TCB.Arm.Print
 
 namespace VG.Artifacts.AesOcb.Arm
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact Arm.target) := [
   Spec.Ocb.initApi.artifact Arm.target {
     code := Impl.AesOcb.Arm.Fn.init
     verified := Proof.AesOcb.Arm.Fn.init },

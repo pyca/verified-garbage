@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesCfb.AArch64.Final
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.AArch64.Print
+public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Variants.AesCfb.AArch64
 
 /-! # AES-CFB128 (NIST SP 800-38A §6.3) on AArch64 -/
@@ -13,7 +13,7 @@ namespace VG.Artifacts.AesCfb.AArch64
 
 open VG.Proof.AesCfb.AArch64
 
-def artifacts : List Artifact :=
+def artifacts : List (Artifact AArch64.target) :=
   VG.Proof.Variants.AesCfb.AArch64.variants.flatMap fun (v : CfbImpl) => [
     Spec.Cfb.aesEncryptApi.artifact AArch64.target {
       suffix := v.suffix

@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Sha1.AArch64.Shared
 public import VerifiedGarbage.Proof.Sha1.AArch64.Stream.Init
 public import VerifiedGarbage.Proof.Sha1.AArch64.Sha2.Compress
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.AArch64.Print
+public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Variants.Sha1Compress.AArch64
 
 /-! # SHA-1 (FIPS 180-4) on AArch64 -/
@@ -13,7 +13,7 @@ public import VerifiedGarbage.Proof.Variants.Sha1Compress.AArch64
 
 namespace VG.Artifacts.Sha1.AArch64
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact AArch64.target) := [
   Spec.Sha1.initApi.artifact AArch64.target {
     code := Impl.Sha1.AArch64.Stream.init
     verified := Proof.Sha1.AArch64.Stream.init_scrubbed }] ++

@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.Residue
 public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Inst
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Framework.QualifiedName
-public import VerifiedGarbage.TCB.AArch64.Print
+public import VerifiedGarbage.TCB.AArch64.Target
 
 /-! # ML-KEM (FIPS 203) on AArch64 -/
 
@@ -19,7 +19,7 @@ open VG.Proof.MlKem.AArch64.FixedHash.Inst (parts)
 (`FixedHash.Inst.variants`): paired sampling and fused arithmetic, calling
 the two- and three-state functions of `x2` and the single-state permutation
 of `v`. -/
-def artifacts : List Artifact :=
+def artifacts : List (Artifact AArch64.target) :=
   [Spec.MlKem.checkEkApi.artifact AArch64.target {
     code := Impl.MlKem.AArch64.Fn.checkEk
     verified := Proof.MlKem.AArch64.Residue.checkEk_scrubbed }] ++

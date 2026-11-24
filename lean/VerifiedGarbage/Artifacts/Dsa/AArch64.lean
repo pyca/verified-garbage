@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.ParameterSearchInit
 public import VerifiedGarbage.TCB.Registration
-public import VerifiedGarbage.TCB.AArch64.Print
+public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Dsa.AArch64.Scrub
 public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignVerified
@@ -19,7 +19,7 @@ public import VerifiedGarbage.Proof.Framework.QualifiedName
 
 namespace VG.Artifacts.Dsa.AArch64
 
-def direct : List Artifact := [
+def direct : List (Artifact AArch64.target) := [
   Spec.Dsa.parameterInitApi.artifact AArch64.target {
     code := Impl.Dsa.AArch64.ParameterSearch.init
     verified := Proof.Dsa.AArch64.ParameterSearchInit.init_scrubbed }]
@@ -30,7 +30,7 @@ namespace VG.Artifacts.Dsa.AArch64
 
 open VG.Proof.Dsa.AArch64
 
-def artifacts : List Artifact :=
+def artifacts : List (Artifact AArch64.target) :=
   direct ++
   (VG.Proof.Variants.DsaArithmetic.AArch64.variants.flatMap fun (v : Backend) => [
     Spec.Dsa.randomSignPrevalidatedApi.artifact AArch64.target {

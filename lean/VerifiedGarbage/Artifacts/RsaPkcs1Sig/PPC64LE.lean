@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.PPC64LE.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.PPC64LE.Print
+public import VerifiedGarbage.TCB.PPC64LE.Target
 
 /-! # RSASSA-PKCS1-v1_5 (RFC 8017) on PPC64LE -/
 
@@ -10,7 +10,7 @@ public import VerifiedGarbage.TCB.PPC64LE.Print
 
 namespace VG.Artifacts.RsaPkcs1Sig.PPC64LE
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact PPC64LE.target) := [
   Spec.RsaPkcs1Sig.verifyPrecomputedApi.artifact PPC64LE.target {
     code := Impl.RsaPkcs1Sig.PPC64LE.Fn.verifyPrecomputed
     verified := Proof.RsaPkcs1Sig.PPC64LE.Scrub.verifyPrecomputed_scrubbed },

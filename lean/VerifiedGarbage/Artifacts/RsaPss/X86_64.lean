@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.TCB.X86_64.Print
+public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Framework.QualifiedName
 public import VerifiedGarbage.Proof.RsaPss.X86_64.Scrub
@@ -17,7 +17,7 @@ open VG.Proof.RsaPss.X86_64 (OK)
 open VG.Proof.RsaPss.X86_64.Scrub (vs ts F G sign_scrubbed sign_spSafe)
 open VG.Proof.RsaPkcs1Enc.X86_64 (privNameP privCodeP)
 
-def artifacts (c : Proof.Rsa.X86_64.CrtImpl) : List Artifact :=
+def artifacts (c : Proof.Rsa.X86_64.CrtImpl) : List (Artifact X86_64.target) :=
   if h : OK vs then [
     Spec.RsaPss.signPrecomputedMdTableApi.artifact X86_64.target {
       suffix := qualifiedName "" [("crt", c.suffix)]
@@ -36,7 +36,7 @@ namespace VG.Artifacts.RsaPss.X86_64.RsaPublicPrecomputedAllMdHash
 open VG.Proof.RsaPss.X86_64 (OK)
 open VG.Proof.RsaPss.X86_64.Scrub (vs ts F G verify_scrubbed verify_spSafe)
 
-def artifacts (c : Proof.Rsa.X86_64.PublicImpl) : List Artifact :=
+def artifacts (c : Proof.Rsa.X86_64.PublicImpl) : List (Artifact X86_64.target) :=
   if h : OK vs then [
     Spec.RsaPss.verifyPrecomputedMdTableApi.artifact X86_64.target {
       suffix := qualifiedName "" [("rsa", c.suffix)]
@@ -50,7 +50,7 @@ end VG.Artifacts.RsaPss.X86_64.RsaPublicPrecomputedAllMdHash
 
 namespace VG.Artifacts.RsaPss.X86_64
 
-def artifacts : List Artifact :=
+def artifacts : List (Artifact X86_64.target) :=
   (VG.Proof.Variants.RsaPrivateCrt.X86_64.variants.flatMap RsaPrivateCrtAllMdHash.artifacts) ++
   (VG.Proof.Variants.RsaPublicPrecomputed.X86_64.variants.flatMap RsaPublicPrecomputedAllMdHash.artifacts)
 

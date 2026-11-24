@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.PPC64LE.Print
+public import VerifiedGarbage.TCB.PPC64LE.Target
 public import VerifiedGarbage.Proof.Variants.MillerRabin.PPC64LE
 
 /-! # DSA (FIPS 186-4) on PPC64LE -/
@@ -13,7 +13,7 @@ namespace VG.Artifacts.Dsa.PPC64LE
 
 open VG Proof.Dsa.PPC64LE.Scrub
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact PPC64LE.target) := [
   Spec.Dsa.deriveKeyApi.artifact PPC64LE.target {
     code := Impl.Dsa.PPC64LE.Fn.deriveKey
     verified := Proof.Dsa.PPC64LE.Scrub.deriveKey_scrubbed },

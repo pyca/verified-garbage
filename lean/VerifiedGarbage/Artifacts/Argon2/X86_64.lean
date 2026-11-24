@@ -42,7 +42,7 @@ public import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Framework.X86_64.Exec
 public import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 public import VerifiedGarbage.Proof.Sha256.Stream
-public import VerifiedGarbage.TCB.X86_64.Print
+public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Variants.Blake2b.X86_64
 public import VerifiedGarbage.Proof.Variants.Argon2Compress.X86_64
 public import VerifiedGarbage.Proof.Framework.QualifiedName
@@ -53,7 +53,7 @@ public import VerifiedGarbage.Proof.Framework.QualifiedName
 
 namespace VG.Artifacts.Argon2.X86_64
 
-def artifacts : List Artifact :=
+def artifacts : List (Artifact X86_64.target) :=
   VG.Proof.Variants.Argon2Compress.X86_64.withBlake2b.map
     fun ((v, c) : Proof.Blake2.X86_64.Backend × Proof.Argon2.X86_64.CompressImpl) =>
     letI : Proof.Argon2.X86_64.CompressImpl := c

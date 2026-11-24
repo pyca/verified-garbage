@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesSiv.AArch64.Frame
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.AArch64.Print
+public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Variants.AesCtr32.AArch64
 public import VerifiedGarbage.Proof.Variants.CmacAesUpdate.AArch64
 
@@ -14,7 +14,7 @@ namespace VG.Artifacts.AesSiv.AArch64
 
 open VG.Proof.AesSiv.AArch64
 
-def artifacts : List Artifact :=
+def artifacts : List (Artifact AArch64.target) :=
   (VG.Proof.Variants.AesCtr32.AArch64.variants.flatMap fun (v : Proof.Aes.AArch64.Ctr32Impl) => [
     Spec.Siv.initApi.artifact AArch64.target {
       suffix := v.suffix

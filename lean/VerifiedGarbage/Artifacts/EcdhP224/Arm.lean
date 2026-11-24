@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Impl.Ecdh.P224.ArmFn
 public import VerifiedGarbage.Proof.Ecdh.Arm.P224.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.Arm.Print
+public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.P224.Arm.Law
 public import VerifiedGarbage.Proof.Weierstrass.Law
 
@@ -15,7 +15,7 @@ namespace VG.Artifacts.EcdhP224.Arm
 
 open VG.Proof.P224.Arm (hasLaw)
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact Arm.target) := [
   Spec.Ecdh.P224.exchangeApi.artifact Arm.target {
     code := Impl.Ecdh.Arm.Fn.exchangeP224
     verified := Proof.Ecdh.Arm.Fn.exchangeP224 hasLaw.law },

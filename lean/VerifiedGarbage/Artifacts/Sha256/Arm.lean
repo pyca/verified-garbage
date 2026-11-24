@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MdStream.Arm.ShaScrub
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.Arm.Print
+public import VerifiedGarbage.TCB.Arm.Target
 
 /-! # SHA-256 (FIPS 180-4) on ARMv7 -/
 
@@ -10,7 +10,7 @@ public import VerifiedGarbage.TCB.Arm.Print
 
 namespace VG.Artifacts.Sha256.Arm
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact Arm.target) := [
   Spec.Sha256.init224Api.artifact Arm.target {
     code := Impl.Sha256.Arm.Fn.init224
     verified := Proof.Sha256.Arm.Fn.init224 },

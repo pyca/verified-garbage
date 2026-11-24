@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP320r1.Scrub -- shake: keep (proof binding in exposed artifacts)
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.Arm.Print
+public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Impl.Ecdsa.BrainpoolP320r1.ArmFn
 public import VerifiedGarbage.Proof.BrainpoolP320r1.Arm.Law
 public import VerifiedGarbage.Proof.Weierstrass.Law
@@ -15,7 +15,7 @@ namespace VG.Artifacts.EcdsaBrainpoolP320r1.Arm
 
 open VG.Proof.BrainpoolP320r1.Arm (hasLaw)
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact Arm.target) := [
   Spec.Ecdsa.BrainpoolP320r1.verifyHashApi.artifact Arm.target {
     code := Impl.Ecdsa.Arm.Fn.verifyBrainpoolP320r1
     verified := Proof.Ecdsa.Arm.Fn.verifyBrainpoolP320r1 hasLaw.law },

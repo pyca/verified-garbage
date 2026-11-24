@@ -53,7 +53,6 @@ public import VerifiedGarbage.Proof.X25519.Field
 public import VerifiedGarbage.Proof.X25519.X86.Arith
 public import VerifiedGarbage.Proof.X25519.X86.Fold
 import VerifiedGarbage.Proof.X25519.X86.Column
-public import VerifiedGarbage.TCB.X86.Print
 public import VerifiedGarbage.Proof.P384.X86.Law
 public import VerifiedGarbage.Proof.EcKey.Compressed.X86.P384
 public import VerifiedGarbage.Proof.EcKey.Compressed.X86.P384Decompress
@@ -67,7 +66,7 @@ namespace VG.Artifacts.EcP384.X86
 
 open VG.Proof.P384.X86 (hasLaw)
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact X86.target) := [
   Spec.EcKey.P384.inst.compressPublicKeyApi.artifact X86.target {
     code := Impl.EcKey.X86.Fn.compressP384
     verified := Proof.EcKey.X86.P384.Scrub.compress_scrubbed },

@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.TripleDes.AArch64.CbcTables
 public import VerifiedGarbage.Proof.TripleDes.AArch64.ModesResidue
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.TripleDes.AArch64.ShortCbc
-public import VerifiedGarbage.TCB.AArch64.Print
+public import VerifiedGarbage.TCB.AArch64.Target
 
 /-! # Triple DES-CBC on AArch64 -/
 
@@ -14,7 +14,7 @@ public import VerifiedGarbage.TCB.AArch64.Print
 
 namespace VG.Artifacts.TripleDesCbc.AArch64
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact AArch64.target) := [
   Spec.TripleDes.cbcEncryptChainedApi.artifact AArch64.target {
     code := Impl.TripleDes.AArch64.Fn.cbcEncryptChained
     verified := Proof.TripleDes.AArch64.ModesResidue.cbcEncryptChainedCode_scrubbed },

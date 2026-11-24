@@ -12,7 +12,6 @@ import Mathlib.Tactic.NormNum.GCD
 public import Mathlib.Tactic.NormNum.Prime
 import Mathlib.Tactic.Positivity.Finset
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.Arm.Print
 public import VerifiedGarbage.Proof.Variants.Curve448Field.Arm
 public import VerifiedGarbage.Proof.Ed448.Arm.SignCached.Verified
 public import VerifiedGarbage.TCB.Arm.Target
@@ -75,7 +74,7 @@ public import VerifiedGarbage.Proof.X448.Bytes
 
 namespace VG.Artifacts.Ed448.Arm
 
-def artifacts : List Artifact :=
+def artifacts : List (Artifact Arm.target) :=
   VG.Proof.Variants.Curve448Field.Arm.variants.flatMap fun (v : Proof.Variants.Curve448Field.Arm.Variant) => [
     Spec.Ed448.publicKeyApi.artifact Arm.target {
       suffix := v.suffix

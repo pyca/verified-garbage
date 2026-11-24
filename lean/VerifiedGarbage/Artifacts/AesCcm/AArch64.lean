@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesCcm.AArch64.Frame
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.AArch64.Print
+public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Variants.CmacAesUpdate.AArch64
 
 /-! # AES-CCM (NIST SP 800-38C) on AArch64 -/
@@ -13,7 +13,7 @@ namespace VG.Artifacts.AesCcm.AArch64
 
 open VG.Proof.AesCcm.AArch64
 
-def artifacts : List Artifact :=
+def artifacts : List (Artifact AArch64.target) :=
   VG.Proof.Variants.CmacAesUpdate.AArch64.variants.flatMap fun (v : Proof.CmacAes.AArch64.UpdateImpl) => [
     Spec.Ccm.sealApi.artifact AArch64.target {
       suffix := v.suffix
