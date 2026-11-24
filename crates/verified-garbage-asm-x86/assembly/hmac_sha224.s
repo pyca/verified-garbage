@@ -8,14 +8,14 @@ vg_hmac_sha224_init_shani:
 	mov eax, DWORD PTR [esp+16]
 	cmp eax, 65
 	jae 20f
-	lea esp, [esp-200]
-	mov eax, DWORD PTR [esp+204]
+	lea esp, [esp-216]
+	mov eax, DWORD PTR [esp+220]
 	mov DWORD PTR [esp+4], eax
-	mov eax, DWORD PTR [esp+208]
+	mov eax, DWORD PTR [esp+224]
 	mov DWORD PTR [esp+8], eax
-	mov eax, DWORD PTR [esp+212]
+	mov eax, DWORD PTR [esp+228]
 	mov DWORD PTR [esp+12], eax
-	mov eax, DWORD PTR [esp+216]
+	mov eax, DWORD PTR [esp+232]
 	mov DWORD PTR [esp+16], eax
 	mov eax, esp
 	add eax, 24
@@ -159,7 +159,8 @@ vg_hmac_sha224_init_shani:
 	movdqu XMMWORD PTR [esp+152], xmm0
 	movdqu XMMWORD PTR [esp+168], xmm0
 	movdqu XMMWORD PTR [esp+184], xmm0
-	lea esp, [esp+200]
+	movdqu XMMWORD PTR [esp+200], xmm0
+	lea esp, [esp+216]
 21:
 	lea esp, [esp-1700]
 	mov ecx, 0
@@ -181,6 +182,10 @@ vg_hmac_sha224_init_shani:
 	mov DWORD PTR [esp+88], ecx
 	mov DWORD PTR [esp+92], ecx
 	mov DWORD PTR [esp+96], ecx
+	mov DWORD PTR [esp+1464], ecx
+	mov DWORD PTR [esp+1468], ecx
+	mov DWORD PTR [esp+1472], ecx
+	mov DWORD PTR [esp+1476], ecx
 	mov DWORD PTR [esp+1480], ecx
 	mov DWORD PTR [esp+1484], ecx
 	mov DWORD PTR [esp+1488], ecx
@@ -188,10 +193,6 @@ vg_hmac_sha224_init_shani:
 	mov DWORD PTR [esp+1496], ecx
 	mov DWORD PTR [esp+1500], ecx
 	mov DWORD PTR [esp+1504], ecx
-	mov DWORD PTR [esp+1508], ecx
-	mov DWORD PTR [esp+1512], ecx
-	mov DWORD PTR [esp+1516], ecx
-	mov DWORD PTR [esp+1520], ecx
 	lea esp, [esp+1700]
 	mov eax, 0
 	mov edx, 0
@@ -396,16 +397,16 @@ vg_hmac_sha224_init_shani:
 	.p2align 6
 
 vg_hmac_sha224_finalize_shani:
-	lea esp, [esp-236]
-	mov eax, DWORD PTR [esp+240]
+	lea esp, [esp-284]
+	mov eax, DWORD PTR [esp+288]
 	mov DWORD PTR [esp+4], eax
-	mov eax, DWORD PTR [esp+244]
+	mov eax, DWORD PTR [esp+292]
 	mov DWORD PTR [esp+8], eax
-	mov eax, DWORD PTR [esp+248]
+	mov eax, DWORD PTR [esp+296]
 	mov DWORD PTR [esp+12], eax
-	mov eax, DWORD PTR [esp+252]
+	mov eax, DWORD PTR [esp+300]
 	mov DWORD PTR [esp+16], eax
-	mov eax, DWORD PTR [esp+256]
+	mov eax, DWORD PTR [esp+304]
 	mov DWORD PTR [esp+20], eax
 	mov eax, esp
 	add eax, 28
@@ -539,10 +540,10 @@ vg_hmac_sha224_finalize_shani:
 	mov esi, DWORD PTR [eax+164]
 	mov edi, DWORD PTR [eax+168]
 	mov ebp, DWORD PTR [eax+172]
-	lea esp, [esp+236]
+	lea esp, [esp+284]
 	pxor xmm0, xmm0
 	mov ecx, 0
-	lea esp, [esp-284]
+	lea esp, [esp-332]
 	movdqu XMMWORD PTR [esp], xmm0
 	movdqu XMMWORD PTR [esp+16], xmm0
 	movdqu XMMWORD PTR [esp+32], xmm0
@@ -560,10 +561,13 @@ vg_hmac_sha224_finalize_shani:
 	movdqu XMMWORD PTR [esp+224], xmm0
 	movdqu XMMWORD PTR [esp+240], xmm0
 	movdqu XMMWORD PTR [esp+256], xmm0
-	mov DWORD PTR [esp+272], ecx
-	mov DWORD PTR [esp+276], ecx
-	mov DWORD PTR [esp+280], ecx
-	lea esp, [esp+284]
+	movdqu XMMWORD PTR [esp+272], xmm0
+	movdqu XMMWORD PTR [esp+288], xmm0
+	movdqu XMMWORD PTR [esp+304], xmm0
+	mov DWORD PTR [esp+320], ecx
+	mov DWORD PTR [esp+324], ecx
+	mov DWORD PTR [esp+328], ecx
+	lea esp, [esp+332]
 	mov eax, 0
 	mov edx, 0
 	xor ecx, ecx
@@ -582,14 +586,14 @@ vg_hmac_sha224_init:
 	mov eax, DWORD PTR [esp+16]
 	cmp eax, 65
 	jae 20f
-	lea esp, [esp-200]
-	mov eax, DWORD PTR [esp+204]
+	lea esp, [esp-216]
+	mov eax, DWORD PTR [esp+220]
 	mov DWORD PTR [esp+4], eax
-	mov eax, DWORD PTR [esp+208]
+	mov eax, DWORD PTR [esp+224]
 	mov DWORD PTR [esp+8], eax
-	mov eax, DWORD PTR [esp+212]
+	mov eax, DWORD PTR [esp+228]
 	mov DWORD PTR [esp+12], eax
-	mov eax, DWORD PTR [esp+216]
+	mov eax, DWORD PTR [esp+232]
 	mov DWORD PTR [esp+16], eax
 	mov eax, esp
 	add eax, 24
@@ -733,7 +737,8 @@ vg_hmac_sha224_init:
 	movdqu XMMWORD PTR [esp+152], xmm0
 	movdqu XMMWORD PTR [esp+168], xmm0
 	movdqu XMMWORD PTR [esp+184], xmm0
-	lea esp, [esp+200]
+	movdqu XMMWORD PTR [esp+200], xmm0
+	lea esp, [esp+216]
 21:
 	lea esp, [esp-1700]
 	mov ecx, 0
@@ -755,6 +760,10 @@ vg_hmac_sha224_init:
 	mov DWORD PTR [esp+88], ecx
 	mov DWORD PTR [esp+92], ecx
 	mov DWORD PTR [esp+96], ecx
+	mov DWORD PTR [esp+1464], ecx
+	mov DWORD PTR [esp+1468], ecx
+	mov DWORD PTR [esp+1472], ecx
+	mov DWORD PTR [esp+1476], ecx
 	mov DWORD PTR [esp+1480], ecx
 	mov DWORD PTR [esp+1484], ecx
 	mov DWORD PTR [esp+1488], ecx
@@ -762,10 +771,6 @@ vg_hmac_sha224_init:
 	mov DWORD PTR [esp+1496], ecx
 	mov DWORD PTR [esp+1500], ecx
 	mov DWORD PTR [esp+1504], ecx
-	mov DWORD PTR [esp+1508], ecx
-	mov DWORD PTR [esp+1512], ecx
-	mov DWORD PTR [esp+1516], ecx
-	mov DWORD PTR [esp+1520], ecx
 	lea esp, [esp+1700]
 	mov eax, 0
 	mov edx, 0
@@ -970,16 +975,16 @@ vg_hmac_sha224_init:
 	.p2align 6
 
 vg_hmac_sha224_finalize:
-	lea esp, [esp-236]
-	mov eax, DWORD PTR [esp+240]
+	lea esp, [esp-284]
+	mov eax, DWORD PTR [esp+288]
 	mov DWORD PTR [esp+4], eax
-	mov eax, DWORD PTR [esp+244]
+	mov eax, DWORD PTR [esp+292]
 	mov DWORD PTR [esp+8], eax
-	mov eax, DWORD PTR [esp+248]
+	mov eax, DWORD PTR [esp+296]
 	mov DWORD PTR [esp+12], eax
-	mov eax, DWORD PTR [esp+252]
+	mov eax, DWORD PTR [esp+300]
 	mov DWORD PTR [esp+16], eax
-	mov eax, DWORD PTR [esp+256]
+	mov eax, DWORD PTR [esp+304]
 	mov DWORD PTR [esp+20], eax
 	mov eax, esp
 	add eax, 28
@@ -1113,10 +1118,10 @@ vg_hmac_sha224_finalize:
 	mov esi, DWORD PTR [eax+164]
 	mov edi, DWORD PTR [eax+168]
 	mov ebp, DWORD PTR [eax+172]
-	lea esp, [esp+236]
+	lea esp, [esp+284]
 	pxor xmm0, xmm0
 	mov ecx, 0
-	lea esp, [esp-284]
+	lea esp, [esp-332]
 	movdqu XMMWORD PTR [esp], xmm0
 	movdqu XMMWORD PTR [esp+16], xmm0
 	movdqu XMMWORD PTR [esp+32], xmm0
@@ -1134,10 +1139,13 @@ vg_hmac_sha224_finalize:
 	movdqu XMMWORD PTR [esp+224], xmm0
 	movdqu XMMWORD PTR [esp+240], xmm0
 	movdqu XMMWORD PTR [esp+256], xmm0
-	mov DWORD PTR [esp+272], ecx
-	mov DWORD PTR [esp+276], ecx
-	mov DWORD PTR [esp+280], ecx
-	lea esp, [esp+284]
+	movdqu XMMWORD PTR [esp+272], xmm0
+	movdqu XMMWORD PTR [esp+288], xmm0
+	movdqu XMMWORD PTR [esp+304], xmm0
+	mov DWORD PTR [esp+320], ecx
+	mov DWORD PTR [esp+324], ecx
+	mov DWORD PTR [esp+328], ecx
+	lea esp, [esp+332]
 	mov eax, 0
 	mov edx, 0
 	xor ecx, ecx

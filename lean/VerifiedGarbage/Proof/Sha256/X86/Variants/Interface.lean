@@ -383,37 +383,39 @@ theorem sha256_finalize (v : Sha256Stream) (cmpN : String) {cmpC : Prog isa}
   (HmacFin.verifiedW (sha256Ok v cmpN hc) (sha256_finChecks v cmpN cmpC)
     (show 8 * 20 + 16 + 32 ≤ 8 * 104 by decide) sha256_finImp.sat_left).of_implies sha256_finImp
 
-theorem sha256_initImpFit : (initW Spec.Hmac.sha256S 22).Implies (Proof.Hmac.initScratchContract Spec.Hmac.sha256S 22 X86.abi 48) := by
-  obtain ⟨a0, a1, a2, a3, a4, e, esp⟩ := initSat_args 96 22
+theorem sha256_initImpFit : (initW Spec.Hmac.sha256S 24).Implies (Proof.Hmac.initScratchContract Spec.Hmac.sha256S 24 X86.abi 48) := by
+  obtain ⟨a0, a1, a2, a3, a4, e, esp⟩ := initSat_args 96 24
   sig_implies [Proof.Hmac.initScratchContract, Proof.Hmac.initScratchSig, Spec.Hmac.initPre, Spec.Hmac.initPost,
     Spec.Hmac.sha256S, Spec.Hmac.sha256, initW, initG, X86.abi, X86.argSlots, X86.argVal,
     X86.argBytes]
-    [a0, a1, a2, a3, a4, e, esp, initSat] using initSat 96 22
+    [a0, a1, a2, a3, a4, e, esp, initSat] using initSat 96 24
 
-/-- HMAC's `init` for SHA-256 with any backend, with the 176 bytes of
-working space it uses (the compression function's and the saved registers)
-and no more: what the short key's frame of `vg_hmac_sha256_init` holds. -/
+/-- HMAC's `init` for SHA-256 with any backend, with 192 bytes of
+working space, the 176 it uses (the compression function's and the saved
+registers) and 16 that keep its frame a multiple of 64 bytes from the
+instance's: what the short key's frame of `vg_hmac_sha256_init` holds. -/
 theorem sha256_initFit (v : Sha256Stream) (cmpN : String) {cmpC : Prog isa}
     (hc : CompOk Proof.Sha256.md 112 cmpC) :
-    Verified X86.target (sha256M v cmpN cmpC).hmacInit (Proof.Hmac.initScratchContract Spec.Hmac.sha256S 22 X86.abi 48) :=
+    Verified X86.target (sha256M v cmpN cmpC).hmacInit (Proof.Hmac.initScratchContract Spec.Hmac.sha256S 24 X86.abi 48) :=
   (HmacInit.verifiedW (sha256Ok v cmpN hc) (sha256_initChecks v cmpN cmpC)
-    (show 8 * 20 + 16 ≤ 8 * 22 by decide) sha256_initImpFit.sat_left).of_implies sha256_initImpFit
+    (show 8 * 20 + 16 ≤ 8 * 24 by decide) sha256_initImpFit.sat_left).of_implies sha256_initImpFit
 
-theorem sha256_finImpFit : (finW Spec.Hmac.sha256S 26).Implies (Proof.Hmac.finalizeScratchContract Spec.Hmac.sha256S 26 X86.abi 48) := by
-  obtain ⟨a0, a1, a2, a3, a4, a5, e, esp⟩ := finSat_args 96 32 26
+theorem sha256_finImpFit : (finW Spec.Hmac.sha256S 32).Implies (Proof.Hmac.finalizeScratchContract Spec.Hmac.sha256S 32 X86.abi 48) := by
+  obtain ⟨a0, a1, a2, a3, a4, a5, e, esp⟩ := finSat_args 96 32 32
   sig_implies [Proof.Hmac.finalizeScratchContract, Proof.Hmac.finalizeScratchSig, Spec.Hmac.finalizePost,
     Spec.Hmac.sha256S, Spec.Hmac.sha256, finW, finG, countF, X86.abi, X86.argSlots,
     X86.argVal, X86.argBytes]
-    [a0, a1, a2, a3, a4, a5, e, esp, finSat] using finSat 96 32 26
+    [a0, a1, a2, a3, a4, a5, e, esp, finSat] using finSat 96 32 32
 
-/-- HMAC's `finalize` for SHA-256 with any backend, with the 208 bytes of
-working space it uses (the streaming `finalize`'s, the saved registers and
-the inner digest) and no more: what `vg_hmac_sha256_finalize`'s frame holds. -/
+/-- HMAC's `finalize` for SHA-256 with any backend, with 256 bytes of
+working space, the 208 it uses (the streaming `finalize`'s, the saved
+registers and the inner digest) and 48 that keep its frame a multiple of 64
+bytes from the instance's: what `vg_hmac_sha256_finalize`'s frame holds. -/
 theorem sha256_finalizeFit (v : Sha256Stream) (cmpN : String) {cmpC : Prog isa}
     (hc : CompOk Proof.Sha256.md 112 cmpC) :
-    Verified X86.target (sha256M v cmpN cmpC).hmacFin (Proof.Hmac.finalizeScratchContract Spec.Hmac.sha256S 26 X86.abi 48) :=
+    Verified X86.target (sha256M v cmpN cmpC).hmacFin (Proof.Hmac.finalizeScratchContract Spec.Hmac.sha256S 32 X86.abi 48) :=
   (HmacFin.verifiedW (sha256Ok v cmpN hc) (sha256_finChecks v cmpN cmpC)
-    (show 8 * 20 + 16 + 32 ≤ 8 * 26 by decide) sha256_finImpFit.sat_left).of_implies sha256_finImpFit
+    (show 8 * 20 + 16 + 32 ≤ 8 * 32 by decide) sha256_finImpFit.sat_left).of_implies sha256_finImpFit
 
 end VG.Proof.Pbkdf2.Md.X86.Instances
 
@@ -672,37 +674,39 @@ theorem sha224_finalize (v : Sha256Stream) (cmpN : String) {cmpC : Prog isa}
   (HmacFin.verifiedW (sha224Ok v cmpN hc) (sha224_finChecks v cmpN cmpC)
     (show 8 * 20 + 16 + 32 ≤ 8 * 104 by decide) sha224_finImp.sat_left).of_implies sha224_finImp
 
-theorem sha224_initImpFit : (initW Spec.Hmac.sha224S 22).Implies (Proof.Hmac.initScratchContract Spec.Hmac.sha224S 22 X86.abi 48) := by
-  obtain ⟨a0, a1, a2, a3, a4, e, esp⟩ := initSat_args 96 22
+theorem sha224_initImpFit : (initW Spec.Hmac.sha224S 24).Implies (Proof.Hmac.initScratchContract Spec.Hmac.sha224S 24 X86.abi 48) := by
+  obtain ⟨a0, a1, a2, a3, a4, e, esp⟩ := initSat_args 96 24
   sig_implies [Proof.Hmac.initScratchContract, Proof.Hmac.initScratchSig, Spec.Hmac.initPre, Spec.Hmac.initPost,
     Spec.Hmac.sha224S, Spec.Hmac.sha224, initW, initG, X86.abi, X86.argSlots, X86.argVal,
     X86.argBytes]
-    [a0, a1, a2, a3, a4, e, esp, initSat] using initSat 96 22
+    [a0, a1, a2, a3, a4, e, esp, initSat] using initSat 96 24
 
-/-- HMAC's `init` for SHA-224 with any backend, with the 176 bytes of
-working space it uses (the compression function's and the saved registers)
-and no more: what the short key's frame of `vg_hmac_sha224_init` holds. -/
+/-- HMAC's `init` for SHA-224 with any backend, with 192 bytes of
+working space, the 176 it uses (the compression function's and the saved
+registers) and 16 that keep its frame a multiple of 64 bytes from the
+instance's: what the short key's frame of `vg_hmac_sha224_init` holds. -/
 theorem sha224_initFit (v : Sha256Stream) (cmpN : String) {cmpC : Prog isa}
     (hc : CompOk Proof.Sha256.md 112 cmpC) :
-    Verified X86.target (sha224M v cmpN cmpC).hmacInit (Proof.Hmac.initScratchContract Spec.Hmac.sha224S 22 X86.abi 48) :=
+    Verified X86.target (sha224M v cmpN cmpC).hmacInit (Proof.Hmac.initScratchContract Spec.Hmac.sha224S 24 X86.abi 48) :=
   (HmacInit.verifiedW (sha224Ok v cmpN hc) (sha224_initChecks v cmpN cmpC)
-    (show 8 * 20 + 16 ≤ 8 * 22 by decide) sha224_initImpFit.sat_left).of_implies sha224_initImpFit
+    (show 8 * 20 + 16 ≤ 8 * 24 by decide) sha224_initImpFit.sat_left).of_implies sha224_initImpFit
 
-theorem sha224_finImpFit : (finW Spec.Hmac.sha224S 26).Implies (Proof.Hmac.finalizeScratchContract Spec.Hmac.sha224S 26 X86.abi 48) := by
-  obtain ⟨a0, a1, a2, a3, a4, a5, e, esp⟩ := finSat_args 96 28 26
+theorem sha224_finImpFit : (finW Spec.Hmac.sha224S 32).Implies (Proof.Hmac.finalizeScratchContract Spec.Hmac.sha224S 32 X86.abi 48) := by
+  obtain ⟨a0, a1, a2, a3, a4, a5, e, esp⟩ := finSat_args 96 28 32
   sig_implies [Proof.Hmac.finalizeScratchContract, Proof.Hmac.finalizeScratchSig, Spec.Hmac.finalizePost,
     Spec.Hmac.sha224S, Spec.Hmac.sha224, finW, finG, countF, X86.abi, X86.argSlots,
     X86.argVal, X86.argBytes]
-    [a0, a1, a2, a3, a4, a5, e, esp, finSat] using finSat 96 28 26
+    [a0, a1, a2, a3, a4, a5, e, esp, finSat] using finSat 96 28 32
 
-/-- HMAC's `finalize` for SHA-224 with any backend, with the 208 bytes of
-working space it uses (the streaming `finalize`'s, the saved registers and
-the inner digest) and no more: what `vg_hmac_sha224_finalize`'s frame holds. -/
+/-- HMAC's `finalize` for SHA-224 with any backend, with 256 bytes of
+working space, the 208 it uses (the streaming `finalize`'s, the saved
+registers and the inner digest) and 48 that keep its frame a multiple of 64
+bytes from the instance's: what `vg_hmac_sha224_finalize`'s frame holds. -/
 theorem sha224_finalizeFit (v : Sha256Stream) (cmpN : String) {cmpC : Prog isa}
     (hc : CompOk Proof.Sha256.md 112 cmpC) :
-    Verified X86.target (sha224M v cmpN cmpC).hmacFin (Proof.Hmac.finalizeScratchContract Spec.Hmac.sha224S 26 X86.abi 48) :=
+    Verified X86.target (sha224M v cmpN cmpC).hmacFin (Proof.Hmac.finalizeScratchContract Spec.Hmac.sha224S 32 X86.abi 48) :=
   (HmacFin.verifiedW (sha224Ok v cmpN hc) (sha224_finChecks v cmpN cmpC)
-    (show 8 * 20 + 16 + 32 ≤ 8 * 26 by decide) sha224_finImpFit.sat_left).of_implies sha224_finImpFit
+    (show 8 * 20 + 16 + 32 ≤ 8 * 32 by decide) sha224_finImpFit.sat_left).of_implies sha224_finImpFit
 
 /-- HMAC's `init` for SHA-224 with any backend. -/
 theorem sha224_init (v : Sha256Stream) (cmpN : String) {cmpC : Prog isa}
@@ -958,10 +962,10 @@ theorem hmacInit : Verified X86.target v.M.hmacInit (Proof.Hmac.Instance.initScr
 theorem hmacFin : Verified X86.target v.M.hmacFin (Proof.Hmac.Instance.finalizeScratchContract Spec.Hmac.sha256I X86.abi 48) :=
   Proof.Pbkdf2.Md.X86.Instances.sha256_finalize v.stream v.cmpN v.comp
 
-theorem hmacInitFit : Verified X86.target v.M.hmacInit (Proof.Hmac.initScratchContract Spec.Hmac.sha256S 22 X86.abi 48) :=
+theorem hmacInitFit : Verified X86.target v.M.hmacInit (Proof.Hmac.initScratchContract Spec.Hmac.sha256S 24 X86.abi 48) :=
   Proof.Pbkdf2.Md.X86.Instances.sha256_initFit v.stream v.cmpN v.comp
 
-theorem hmacFinFit : Verified X86.target v.M.hmacFin (Proof.Hmac.finalizeScratchContract Spec.Hmac.sha256S 26 X86.abi 48) :=
+theorem hmacFinFit : Verified X86.target v.M.hmacFin (Proof.Hmac.finalizeScratchContract Spec.Hmac.sha256S 32 X86.abi 48) :=
   Proof.Pbkdf2.Md.X86.Instances.sha256_finalizeFit v.stream v.cmpN v.comp
 
 theorem iterate : Verified X86.target v.M.iterate (Proof.Pbkdf2.Instance.iterateContract Spec.Hmac.sha256I X86.abi 48) :=
@@ -980,10 +984,10 @@ theorem hmacInit224 : Verified X86.target v.M224.hmacInit (Proof.Hmac.Instance.i
 theorem hmacFin224 : Verified X86.target v.M224.hmacFin (Proof.Hmac.Instance.finalizeScratchContract Spec.Hmac.sha224I X86.abi 48) :=
   Proof.Pbkdf2.Md.X86.Instances.sha224_finalize v.stream v.cmpN v.comp
 
-theorem hmacInit224Fit : Verified X86.target v.M224.hmacInit (Proof.Hmac.initScratchContract Spec.Hmac.sha224S 22 X86.abi 48) :=
+theorem hmacInit224Fit : Verified X86.target v.M224.hmacInit (Proof.Hmac.initScratchContract Spec.Hmac.sha224S 24 X86.abi 48) :=
   Proof.Pbkdf2.Md.X86.Instances.sha224_initFit v.stream v.cmpN v.comp
 
-theorem hmacFin224Fit : Verified X86.target v.M224.hmacFin (Proof.Hmac.finalizeScratchContract Spec.Hmac.sha224S 26 X86.abi 48) :=
+theorem hmacFin224Fit : Verified X86.target v.M224.hmacFin (Proof.Hmac.finalizeScratchContract Spec.Hmac.sha224S 32 X86.abi 48) :=
   Proof.Pbkdf2.Md.X86.Instances.sha224_finalizeFit v.stream v.cmpN v.comp
 
 theorem iterate224 : Verified X86.target v.M224.iterate (Proof.Pbkdf2.Instance.iterateContract Spec.Hmac.sha224I X86.abi 48) :=
