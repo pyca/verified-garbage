@@ -83,13 +83,13 @@ theorem finRestFrom_rel {ks : Prog isa} (hks : Short.KsOk ks) (hkr : Short.KsRel
 theorem finishVec_ct (prepared wide : Bool) {Ctx W SP S D : Addr} {R n r : Nat} (le : r≤n)
     (hR : R=10 ∨ R=12 ∨ R=14) (hr : r<2^64) {F : State → Prop}
     (start : ∀ s, F s → TailI Ctx W SP S D R n r s)
-    (power : ∀ s, F s → ∃ H, WP isa (.block (if prepared then VG.Impl.AesGcm.X86_64.Short.finPowP else
-      VG.Impl.AesGcm.X86_64.Short.finPow)) s (VecPowerPost Ctx W SP H s)) :
+    (power : ∀ s, F s → WP isa (.block (if prepared then VG.Impl.AesGcm.X86_64.Short.finPowP else
+      VG.Impl.AesGcm.X86_64.Short.finPow)) s fun t => Env Ctx (W+16#64) W SP t ∧ t.mem=s.mem ∧ t.rd=s.rd ∧ t.wr=s.wr) :
     RelCT isa (fun x y => F x ∧ F y) (Contiguous.finishVec prepared wide) (fun _ _ => True) := by
   let k := if wide then VG.Impl.AesGcm.X86_64.Short.finKs else VG.Impl.AesGcm.X86_64.Short.finKsA
   have wk : Short.KsOk k := by cases wide <;> first | exact Short.finKsA_ksOk | exact Short.finKs_ksOk
   have rk : Short.KsRel k := by cases wide <;> first | exact Short.finKsA_rel | exact Short.finKs_rel
-  have w (s) (hs : F s) := (power s hs).elim fun _ hw => hw.mono fun t ⟨_,_,_,_,env,m,rd,wr⟩ =>
+  have w (s) (hs : F s) := (power s hs).mono fun t ⟨env,m,rd,wr⟩ =>
     let h := start s hs
     show TailI Ctx W SP S D R n r t from ⟨⟨env,m ▸ h.rounds,m ▸ h.dat,m ▸ h.len⟩,by rw [rd,wr]; exact h.slot,
       m ▸ h.src,m ▸ h.total,h.apart⟩
