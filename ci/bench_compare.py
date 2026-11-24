@@ -843,4 +843,7 @@ def main():
 
 
 if __name__ == "__main__":
+    if "Intel" not in cpu_model():
+        print(f"Not measured: this comparison requires an Intel CPU; runner has {cpu_model()}")
+        sys.exit(0)
     sys.exit(main())
