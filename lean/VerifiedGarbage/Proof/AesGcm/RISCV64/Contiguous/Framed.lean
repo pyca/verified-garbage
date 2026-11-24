@@ -1,5 +1,7 @@
 module
 
+-- separate module: The complete functional and two-run framed body are shared premises for the outer scrubbing proof.
+
 public import VerifiedGarbage.Proof.AesGcm.RISCV64.Contiguous.Call
 import VerifiedGarbage.Proof.AesGcm.RISCV64.StreamCrypt
 import VerifiedGarbage.Proof.Framework.RISCV64.CallWipe

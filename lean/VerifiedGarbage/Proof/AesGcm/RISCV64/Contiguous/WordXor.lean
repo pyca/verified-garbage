@@ -1,5 +1,7 @@
 module
 
+-- separate module: Isolate the word-at-a-time load-before-store induction for both layouts from counter generation.
+
 public import VerifiedGarbage.Proof.AesGcm.RISCV64.Loops
 public import VerifiedGarbage.Impl.AesGcm.RISCV64.Contiguous
 import VerifiedGarbage.Proof.AesGcm.RISCV64.CryptOk

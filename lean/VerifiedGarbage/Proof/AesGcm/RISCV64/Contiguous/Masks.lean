@@ -1,5 +1,7 @@
 module
 
+-- separate module: The counter-block and tag-mask identity uses only the mathematical CTR specification.
+
 public import VerifiedGarbage.Proof.Gcm.Ctr
 
 /-! # Use one bitsliced CTR operation beginning at J₀ for both tag and payload -/

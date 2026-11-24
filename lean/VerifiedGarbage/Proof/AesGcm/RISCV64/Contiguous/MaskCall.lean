@@ -1,5 +1,7 @@
 module
 
+-- separate module: Keep bitsliced subroutine permissions and saved-register reasoning apart from byte-level payload composition.
+
 public import VerifiedGarbage.Proof.AesGcm.RISCV64.Contiguous.Masks
 public import VerifiedGarbage.Proof.AesGcm.RISCV64.Contiguous.MaskZero
 public import VerifiedGarbage.Proof.AesGcm.RISCV64.Tag

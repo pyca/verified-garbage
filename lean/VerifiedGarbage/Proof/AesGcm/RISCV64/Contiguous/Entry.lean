@@ -1,5 +1,7 @@
 module
 
+-- separate module: The concrete register permutation is checked independently of the two-run timing certificate.
+
 public import VerifiedGarbage.Impl.AesGcm.RISCV64.Contiguous
 public import VerifiedGarbage.Proof.AesGcm.RISCV64.OneEntry
 import VerifiedGarbage.Proof.Framework.RISCV64.Steps
