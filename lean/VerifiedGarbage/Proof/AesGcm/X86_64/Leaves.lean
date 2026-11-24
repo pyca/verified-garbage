@@ -1,4 +1,5 @@
 module
+import VerifiedGarbage.Proof.AesGcm.X86_64.GatherWipe
 import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.Short
 import VerifiedGarbage.Proof.AesGcm.X86_64.ContiguousMasks
 public import VerifiedGarbage.Proof.AesGcm.X86_64.ContiguousEntryCT
@@ -2541,11 +2542,18 @@ theorem boundedSelected (v : GcmVariant) (leaf : Option (BlocksTo.SealFn (VG.Pro
       have bs := X86_64.Scrub.calleeSide_mono (DirectGather.lvG_le_T v) (Nat.le_refl _) bt
       have ws := DirectGather.plain_safe v
       have rs := DirectGather.boundedSafe v.impl (DirectGather.ctrFn v) b.fn level (callees_sideT v) cs bs v.ctrTo.spSafe b.spAll
-      exact ⟨DirectGather.bounded_scrub v.lvT level (callees_sideT v) cs bs (DirectGather.prepared_public (.inr rfl)
+      have h := DirectGather.prepared_public (.inr rfl)
         (DirectGather.bounded_rounds Short.shortFacts b (DirectGather.readyProof v b) rs)
-        (DirectGather.plain_rounds (DirectGather.plainProof v) ws)) rs ws,
-        X86_64.Scrub.scrubKs_spSafe (X86_64.onFlag_spSafe (X86_64.withStackArgScratch_spSafe rs.sp)
-          (X86_64.withStackArgScratch_spSafe ws.sp))⟩
+        (DirectGather.plain_rounds (DirectGather.plainProof v) ws)
+      have basic := DirectGather.bounded_scrub v.lvT level (callees_sideT v) cs bs h rs ws
+      rw [eligible.2] at basic
+      have sp := X86_64.onFlag_spSafe (t := 48)
+        (c₁ := Impl.AesGcm.X86_64.DirectGather.preparedBounded v.impl.callees (DirectGather.ctrFn v) b.fn)
+        (c₂ := Impl.AesGcm.X86_64.DirectGather.plain v.impl.callees (DirectGather.ctrFn v))
+        (X86_64.withStackArgScratch_spSafe rs.sp)
+        (X86_64.withStackArgScratch_spSafe ws.sp)
+      exact ⟨X86_64.Scrub.GatherWipe.verified (X86_64.SpSafe.of_all sp)
+        (fun _ _ pub => pub.1.1.1) h.2.1 basic, X86_64.Scrub.GatherWipe.spSafe sp⟩
     · exact ⟨DirectGather.prepared_verified v 48 (.inr rfl) b bt,DirectGather.prepared_spSafe v 48 b bt⟩
 
 theorem bounded_selected_verified (v : GcmVariant) (leaf : Option (BlocksTo.SealFn (CtxMode.flaggedT 48)))
