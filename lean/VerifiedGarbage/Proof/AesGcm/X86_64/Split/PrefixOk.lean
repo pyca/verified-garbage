@@ -43,14 +43,15 @@ open VG.Spec.Gcm (Block blockAt blocksAt ctxCiph ctxH ctr32 ghashFrom inc32)
 
 /-- Environment and input/output regions for the fused
 out-of-place block call shared by split and gather sealing. -/
-structure CallRegions (M : CtxMode) (Ctx W SP D S : Addr) (R n sl : Nat) (s : State) : Prop where
+structure CallRegions (M : CtxMode) (Ctx W SP D S : Addr) (R n sl : Nat) (s : State)
+    (layout : Prop := (⟨S, sl⟩ : Region).Disjoint ⟨D, n⟩) : Prop where
   env : Env Ctx (W + BitVec.ofNat 64 16) W SP s
   lay : Lay Ctx (W + BitVec.ofNat 64 16) W SP
   rounds : RoundsAt s.mem W R
   data : DataW Ctx (W + BitVec.ofNat 64 16) W SP s D n
   srcCov : Covers [⟨S, sl⟩] (s.rd ++ s.wr)
   sW : (⟨S, sl⟩ : Region).Disjoint ⟨W, 2560⟩
-  sD : (⟨S, sl⟩ : Region).Disjoint ⟨D, n⟩
+  sD : layout
   sWrap : S.toNat + sl ≤ 2 ^ 64
   sl_le : sl ≤ n
   kw : (below SP 56).Disjoint ⟨W, 2560⟩
@@ -59,6 +60,16 @@ structure CallRegions (M : CtxMode) (Ctx W SP D S : Addr) (R n sl : Nat) (s : St
   kM : (below SP 56).Disjoint ⟨Ctx, M.len⟩
   sp56 : 56 ≤ SP.toNat
   ext : CtxExt M Ctx (W + BitVec.ofNat 64 16) W SP D n s
+
+/-- Register and region conditions of the compact seal call, common to both
+supported layouts. Its input and output start at the same address or occupy
+disjoint regions. -/
+abbrev SealRegions (M : CtxMode) (Ctx W SP D S : Addr) (R n sl : Nat) (s : State) :=
+  CallRegions M Ctx W SP D S R n sl s (S = D ∨ (⟨S, sl⟩ : Region).Disjoint ⟨D, n⟩)
+
+theorem CallRegions.forSeal {M : CtxMode} {Ctx W SP D S : Addr} {R n sl : Nat} {s : State}
+    (h : CallRegions M Ctx W SP D S R n sl s) : SealRegions M Ctx W SP D S R n sl s :=
+  { h with sD := Or.inr h.sD }
 
 /-- Environment, input and output regions, and argument slots for the fused
 out-of-place block call shared by split and gather sealing. -/

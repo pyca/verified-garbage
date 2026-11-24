@@ -47,7 +47,7 @@ abbrev compactReads (M : CtxMode) (Ctx SP S : Addr) (q : Nat) : List Region :=
   [⟨Ctx, M.len⟩, ⟨S, q * 16⟩, ⟨SP - BitVec.ofNat 64 8, 8⟩]
 
 section
-variable {M : CtxMode} {Ctx W SP D S : Addr} {R n sl : Nat} {s : State} (h : CallRegions M Ctx W SP D S R n sl s)
+variable {M : CtxMode} {Ctx W SP D S : Addr} {R n sl : Nat} {s : State} (h : SealRegions M Ctx W SP D S R n sl s)
 include h
 
 theorem compactPre {q : Nat} (hq : 16 * q ≤ sl) {u : State}
@@ -104,7 +104,7 @@ theorem compactPre {q : Nat} (hq : 16 * q ≤ sl) {u : State}
     (h.kw.sub_right cW).symm.sub_right tA,
     (dS.sub_right yW).symm, (dD.sub_right yW).symm, (L.sb.sub_left y_sub).sub_right sc_b,
     (h.kw.sub_right yW).symm.sub_right tA,
-    Or.inr ((h.sD.sub_left pr).sub_right ds), dS.sub_right sc_w, dD.sub_right sc_w,
+    h.sD.imp id (fun disj => (disj.sub_left pr).sub_right ds), dS.sub_right sc_w, dD.sub_right sc_w,
     (h.kd.sub_right ds).symm.sub_right tA, (h.kw.sub_right sc_w).symm.sub_right tA,
     (h.kw.sub_left tR').sub_right cW, (h.kw.sub_left tR').sub_right yW, (h.kd.sub_left tR').sub_right ds,
     (h.kw.sub_left tR').sub_right sc_w,
@@ -325,7 +325,7 @@ theorem mid2_call_wp (h : CallRegions M Ctx W SP D S R n sl σ) (T : BlocksTo.Se
   obtain ⟨he, di, si, dx, cx, r8, r9, r10, r11, ax, m, rd, wr⟩ := g
   apply WP.seq
   refine WP.of_runBlock ⟨s.setReg .r10 D, by xrun [r11], ?_⟩
-  refine WP.mono (compactCall_ok h T (st := s.setReg .r10 D) (q := sl / 16) (by omega_arith)
+  refine WP.mono (compactCall_ok h.forSeal T (st := s.setReg .r10 D) (q := sl / 16) (by omega_arith)
     (by simpa [gpr_setReg] using he.rsp) rd wr m (by simpa [gpr_setReg] using di)
     (by simpa [gpr_setReg] using si) (by simpa [gpr_setReg] using dx) (by simpa [gpr_setReg] using cx)
     (by simpa [gpr_setReg] using r8) (by simpa [gpr_setReg] using r9) (by simp [gpr_setReg])
@@ -358,7 +358,7 @@ theorem call_rel (h : CallRegions M Ctx W SP D S R n sl σ) (h' : CallRegions M 
   obtain ⟨_, _, ⟨_,⟨s₁,g₁,rfl⟩,⟨s₂,g₂,rfl⟩⟩, rfl, rfl⟩ := hab
   have one {σ x : State} (r : CallRegions M Ctx W SP D S R n sl σ) (z : G₂ Ctx W SP D S R sl σ x) := by
     obtain ⟨he,di,si,dx,cx,r8,r9,_,_,ax,m,rd,wr⟩ := z
-    exact compactInput r hq (st := x.setReg .r10 D) (by simpa [gpr_setReg] using he.rsp)
+    exact compactInput r.forSeal hq (st := x.setReg .r10 D) (by simpa [gpr_setReg] using he.rsp)
       rd wr m (by simpa [gpr_setReg] using di) (by simpa [gpr_setReg] using si)
       (by simpa [gpr_setReg] using dx) (by simpa [gpr_setReg] using cx)
       (by simpa [gpr_setReg] using r8) (by simpa [gpr_setReg] using r9)
