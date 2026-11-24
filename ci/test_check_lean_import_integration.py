@@ -127,6 +127,7 @@ class LeanImports(unittest.TestCase):
                                  library=["VerifiedGarbage.A"])
 
     def test_cross_target_repairs_are_deferred_without_blocking_independent_narrowing(self):
+        shutil.copyfile(REPO_LEAN / "lakefile.toml", self.root / "lakefile.toml")
         markers = ["VerifiedGarbage.TCB.Arm.Marker", "VerifiedGarbage.TCB.X86_64.Marker"]
         owner, bridge = "VerifiedGarbage.Proof.X86_64.C", "VerifiedGarbage.Proof.Bridge"
         boundary, consumer = "VerifiedGarbage.Proof.Boundary", "VerifiedGarbage.Proof.Arm.A"
