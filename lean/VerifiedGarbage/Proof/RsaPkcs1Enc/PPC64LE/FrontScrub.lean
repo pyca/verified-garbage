@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.Contract
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.PPC64LE.Front
 public import VerifiedGarbage.Proof.Framework.PPC64LE.ScrubProved
 import VerifiedGarbage.Proof.Framework.Lit
@@ -105,11 +106,10 @@ theorem writtenMsgFront_of {m₁ m₂ : Mem} {o l : Addr} {n : Nat} {r : BitVec 
 `msg_len`. -/
 theorem frontOut (stack : Nat) :
     PostOut (Spec.RsaPkcs1Enc.decryptPrecomputedFrontContract abi stack)
-      (Spec.RsaPkcs1Enc.decryptPrecomputedSig.retBits 64) :=
+      (Spec.RsaPkcs1Enc.decryptPrecomputedFrontSig.retBits 64) :=
   postOut_of_local_pre (leak := some _) ScrubAbi.plain fun
     | [out, outLen, ml, _, nLen, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _], m, m₁, m₂, r, _, hp, hb, h => by
-      simp only [Spec.RsaPkcs1Enc.decryptPrecomputedSig, Spec.RsaPkcs1Enc.decryptSig, List.cons_append,
-        List.nil_append, Sig.bufs, List.mem_cons, forall_eq_or_imp, Elem.size] at hb
+      simp only [Spec.RsaPkcs1Enc.decryptPrecomputedFrontSig, Sig.bufs, List.mem_cons, forall_eq_or_imp, Elem.size] at hb
       change @Curry.apply (Mem → Prop) [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _] _ _ m at hp
       change @Curry.apply (Mem → Mem → BitVec _ → Prop)
         [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _] _ _ _ m₁ r at h

@@ -21,12 +21,12 @@ pub const VG_CAMELLIA_CBC_ENCRYPT_CHAINED_AESNI_FEATURES: verified_garbage_cpu::
 /// * `data` must be valid for reads and writes of `16 * n` bytes.
 /// * `rounds` must be 18 (for a key of 16 bytes) or 24 (for one of 24 or 32).
 /// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
-/// * None of `schedule`, `iv` and `data` may overlap the arguments on the stack, overlap the return address on the stack or the 576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `schedule`, `iv` and `data` may overlap the arguments on the stack, overlap the return address on the stack or the 588 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `ssse3` and `aes` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_camellia_cbc_encrypt_chained_aesni(schedule: *const [u8; 272], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize) {
     core::arch::naked_asm!(
-        r#".base64 "jaQkxP3//4uEJEACAACJRCQEi4QkRAIAAIlEJAiLhCRIAgAAiUQkDIuEJEwCAACJRCQQi4QkUAIAAIlEJBSJ4IPAHIlEJBiLRCQYiZj4AQAAibD8AQAAibgAAgAAiagEAgAAiceLdCQMiwaJhxACAACLRgSJhxQCAACLRgiJhxgCAACLRgyJhxwCAAA="
+        r#".base64 "jaQkuP3//4uEJEwCAACJRCQEi4QkUAIAAIlEJAiLhCRUAgAAiUQkDIuEJFgCAACJRCQQi4QkXAIAAIlEJBSJ4IPAHIlEJBiLRCQYiZj4AQAAibD8AQAAibgAAgAAiagEAgAAiceLdCQMiwaJhxACAACLRgSJhxQCAACLRgiJhxgCAACLRgyJhxwCAAA="
 call 2f
 2:
 mov eax, DWORD PTR [esp]
@@ -58,7 +58,7 @@ jne 25b
 jmp 24f
 23:
 24:
-.base64 "i3QkDIuHEAIAAIkGi4cUAgAAiUYEi4cYAgAAiUYIi4ccAgAAiUYMi5/4AQAAi7f8AQAAi68EAgAAi78AAgAAZg/vwLkAAAAA8w9/RCQc8w9/RCQs8w9/RCQ88w9/RCRM8w9/RCRc8w9/RCRs8w9/RCR88w9/hCSMAAAA8w9/hCScAAAA8w9/hCSsAAAA8w9/hCS8AAAA8w9/hCTMAAAA8w9/hCTcAAAA8w9/hCTsAAAA8w9/hCT8AAAA8w9/hCQMAQAA8w9/hCQcAQAA8w9/hCQsAQAA8w9/hCQ8AQAA8w9/hCRMAQAA8w9/hCRcAQAA8w9/hCRsAQAA8w9/hCR8AQAA8w9/hCSMAQAA8w9/hCScAQAA8w9/hCSsAQAA8w9/hCS8AQAA8w9/hCTMAQAA8w9/hCTcAQAA8w9/hCTsAQAA8w9/hCT8AQAA8w9/hCQMAgAA8w9/hCQcAgAA8w9/hCQsAgAAjaQkPAIAAI2kJMD9//+5AAAAAIlMJASJTCQIiUwkDIlMJBCJTCQUiUwkGIlMJByNpCRAAgAAuAAAAAC6AAAAADHJZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7//D"
+.base64 "i3QkDIuHEAIAAIkGi4cUAgAAiUYEi4cYAgAAiUYIi4ccAgAAiUYMi5/4AQAAi7f8AQAAi68EAgAAi78AAgAAZg/vwLkAAAAA8w9/RCQc8w9/RCQs8w9/RCQ88w9/RCRM8w9/RCRc8w9/RCRs8w9/RCR88w9/hCSMAAAA8w9/hCScAAAA8w9/hCSsAAAA8w9/hCS8AAAA8w9/hCTMAAAA8w9/hCTcAAAA8w9/hCTsAAAA8w9/hCT8AAAA8w9/hCQMAQAA8w9/hCQcAQAA8w9/hCQsAQAA8w9/hCQ8AQAA8w9/hCRMAQAA8w9/hCRcAQAA8w9/hCRsAQAA8w9/hCR8AQAA8w9/hCSMAQAA8w9/hCScAQAA8w9/hCSsAQAA8w9/hCS8AQAA8w9/hCTMAQAA8w9/hCTcAQAA8w9/hCTsAQAA8w9/hCT8AQAA8w9/hCQMAgAA8w9/hCQcAgAA8w9/hCQsAgAAjaQkSAIAAI2kJLT9//+5AAAAAIlMJASJTCQIiUwkDIlMJBCJTCQUiUwkGIlMJByJjCRAAgAAiYwkRAIAAImMJEgCAACNpCRMAgAAuAAAAAC6AAAAADHJZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7//D"
 .p2align 6"#,
         VG_CAMELLIA_AESNI = sym super::consts::VG_CAMELLIA_AESNI,
     )
@@ -120,12 +120,12 @@ pub const VG_CAMELLIA_CBC_DECRYPT_CHAINED_AESNI_FEATURES: verified_garbage_cpu::
 /// * `data` must be valid for reads and writes of `16 * n` bytes.
 /// * `rounds` must be 18 (for a key of 16 bytes) or 24 (for one of 24 or 32).
 /// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
-/// * None of `schedule`, `iv` and `data` may overlap the arguments on the stack, overlap the return address on the stack or the 888 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `schedule`, `iv` and `data` may overlap the arguments on the stack, overlap the return address on the stack or the 892 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `ssse3` and `aes` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_camellia_cbc_decrypt_chained_aesni(schedule: *const [u8; 272], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize) {
     core::arch::naked_asm!(
-        r#".base64 "jaQkjPz//4uEJHgDAACJRCQEi4QkfAMAAIlEJAiLhCSAAwAAiUQkDIuEJIQDAACJRCQQi4QkiAMAAIlEJBSJ4IPAHIlEJBiLRCQYiZgwAwAAibA0AwAAibg4AwAAiag8AwAAiceLdCQMiwaJh0gDAACLRgSJh0wDAACLRgiJh1ADAACLRgyJh1QDAAA="
+        r#".base64 "jaQkiPz//4uEJHwDAACJRCQEi4QkgAMAAIlEJAiLhCSEAwAAiUQkDIuEJIgDAACJRCQQi4QkjAMAAIlEJBSJ4IPAHIlEJBiLRCQYiZgwAwAAibA0AwAAibg4AwAAiag8AwAAiceLdCQMiwaJh0gDAACLRgSJh0wDAACLRgiJh1ADAACLRgyJh1QDAAA="
 call 2f
 2:
 mov eax, DWORD PTR [esp]
@@ -204,7 +204,7 @@ jne 219b
 jmp 218f
 217:
 218:
-.base64 "i3QkDIuHSAMAAIkGi4dMAwAAiUYEi4dQAwAAiUYIi4dUAwAAiUYMi58wAwAAi7c0AwAAi688AwAAi784AwAAZg/vwLkAAAAA8w9/RCQc8w9/RCQs8w9/RCQ88w9/RCRM8w9/RCRc8w9/RCRs8w9/RCR88w9/hCSMAAAA8w9/hCScAAAA8w9/hCSsAAAA8w9/hCS8AAAA8w9/hCTMAAAA8w9/hCTcAAAA8w9/hCTsAAAA8w9/hCT8AAAA8w9/hCQMAQAA8w9/hCQcAQAA8w9/hCQsAQAA8w9/hCQ8AQAA8w9/hCRMAQAA8w9/hCRcAQAA8w9/hCRsAQAA8w9/hCR8AQAA8w9/hCSMAQAA8w9/hCScAQAA8w9/hCSsAQAA8w9/hCS8AQAA8w9/hCTMAQAA8w9/hCTcAQAA8w9/hCTsAQAA8w9/hCT8AQAA8w9/hCQMAgAA8w9/hCQcAgAA8w9/hCQsAgAA8w9/hCQ8AgAA8w9/hCRMAgAA8w9/hCRcAgAA8w9/hCRsAgAA8w9/hCR8AgAA8w9/hCSMAgAA8w9/hCScAgAA8w9/hCSsAgAA8w9/hCS8AgAA8w9/hCTMAgAA8w9/hCTcAgAA8w9/hCTsAgAA8w9/hCT8AgAA8w9/hCQMAwAA8w9/hCQcAwAA8w9/hCQsAwAA8w9/hCQ8AwAA8w9/hCRMAwAA8w9/hCRcAwAAiYwkbAMAAImMJHADAACNpCR0AwAAjaQkiPz//7kAAAAAiUwkBIlMJAiJTCQMiUwkEIlMJBSJTCQYiUwkHI2kJHgDAAC4AAAAALoAAAAAMclmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/8M="
+.base64 "i3QkDIuHSAMAAIkGi4dMAwAAiUYEi4dQAwAAiUYIi4dUAwAAiUYMi58wAwAAi7c0AwAAi688AwAAi784AwAAZg/vwLkAAAAA8w9/RCQc8w9/RCQs8w9/RCQ88w9/RCRM8w9/RCRc8w9/RCRs8w9/RCR88w9/hCSMAAAA8w9/hCScAAAA8w9/hCSsAAAA8w9/hCS8AAAA8w9/hCTMAAAA8w9/hCTcAAAA8w9/hCTsAAAA8w9/hCT8AAAA8w9/hCQMAQAA8w9/hCQcAQAA8w9/hCQsAQAA8w9/hCQ8AQAA8w9/hCRMAQAA8w9/hCRcAQAA8w9/hCRsAQAA8w9/hCR8AQAA8w9/hCSMAQAA8w9/hCScAQAA8w9/hCSsAQAA8w9/hCS8AQAA8w9/hCTMAQAA8w9/hCTcAQAA8w9/hCTsAQAA8w9/hCT8AQAA8w9/hCQMAgAA8w9/hCQcAgAA8w9/hCQsAgAA8w9/hCQ8AgAA8w9/hCRMAgAA8w9/hCRcAgAA8w9/hCRsAgAA8w9/hCR8AgAA8w9/hCSMAgAA8w9/hCScAgAA8w9/hCSsAgAA8w9/hCS8AgAA8w9/hCTMAgAA8w9/hCTcAgAA8w9/hCTsAgAA8w9/hCT8AgAA8w9/hCQMAwAA8w9/hCQcAwAA8w9/hCQsAwAA8w9/hCQ8AwAA8w9/hCRMAwAA8w9/hCRcAwAAiYwkbAMAAImMJHADAACNpCR4AwAAjaQkhPz//7kAAAAAiUwkBIlMJAiJTCQMiUwkEIlMJBSJTCQYiUwkHImMJHgDAACNpCR8AwAAuAAAAAC6AAAAADHJZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7//D"
 .p2align 6"#,
         VG_CAMELLIA_AESNI_WIDE = sym super::consts::VG_CAMELLIA_AESNI_WIDE,
         VG_CAMELLIA_AESNI = sym super::consts::VG_CAMELLIA_AESNI,

@@ -351,31 +351,31 @@ theorem cfbDecryptFinal_verified : Verified X86.target cfbDecryptFinal (Proof.Ca
 
 theorem frameSat_pre (post : Spec.Camellia.cfbFinalSig.Post X86.abi.ptrBits) :
     ∃ s, (Spec.Camellia.cfbFinalSig.contract X86.abi (pre := Spec.Camellia.cfbFinalPre X86.abi.ptrBits) (post := post)
-      (writeArgs := true) (stack := 576)).pre s := by
+      (writeArgs := true) (stack := 588)).pre s := by
   implies_sat [Spec.Camellia.cfbFinalSig, Spec.Camellia.cfbFinalPre, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     [frameSat, X86.arg, X86.argAddr, Mem.readW, Mem.read] using frameSat
 
 /-- The final CFB128 encryption with its working space on the stack. -/
 theorem cfbEncryptFinal_framed :
-    Verified X86.target (Impl.StackScratch.X86.withStackScratchWiped 572 5 136 cfbEncryptFinal)
-      (Spec.Camellia.cfbEncryptFinalContract X86.abi 576) :=
+    Verified X86.target (Impl.StackScratch.X86.withStackScratchWiped 584 5 136 cfbEncryptFinal)
+      (Spec.Camellia.cfbEncryptFinalContract X86.abi 588) :=
   Proof.Camellia.cfbEncryptFinal_of_sk <|
   X86.Verified.stackScratchWiped (sig := Spec.Camellia.cfbFinalSig) (nm := "scratch") (e := .u64)
     (n := 68) (pre := Spec.Camellia.cfbFinalPre X86.abi.ptrBits)
     (post := Proof.Camellia.cfbEncryptFinalPostSk X86.abi.ptrBits) (wa := true) (stack := 4)
-    (bytes := 572) cfbEncryptFinal_verified (by decide) (by lit_decide) (by lit_decide) (by decide)
+    (bytes := 584) cfbEncryptFinal_verified (by decide) (by lit_decide) (by lit_decide) (by decide)
     (Proof.Camellia.cfbFinalPre_local _)
     (Proof.Camellia.cfbEncryptFinalPost_local _) (Proof.Camellia.cfbEncryptFinalPostOut_local _) (frameSat_pre _)
 
 /-- The final CFB128 decryption with its working space on the stack. -/
 theorem cfbDecryptFinal_framed :
-    Verified X86.target (Impl.StackScratch.X86.withStackScratchWiped 572 5 136 cfbDecryptFinal)
-      (Spec.Camellia.cfbDecryptFinalContract X86.abi 576) :=
+    Verified X86.target (Impl.StackScratch.X86.withStackScratchWiped 584 5 136 cfbDecryptFinal)
+      (Spec.Camellia.cfbDecryptFinalContract X86.abi 588) :=
   Proof.Camellia.cfbDecryptFinal_of_sk <|
   X86.Verified.stackScratchWiped (sig := Spec.Camellia.cfbFinalSig) (nm := "scratch") (e := .u64)
     (n := 68) (pre := Spec.Camellia.cfbFinalPre X86.abi.ptrBits)
     (post := Proof.Camellia.cfbDecryptFinalPostSk X86.abi.ptrBits) (wa := true) (stack := 4)
-    (bytes := 572) cfbDecryptFinal_verified (by decide) (by lit_decide) (by lit_decide) (by decide)
+    (bytes := 584) cfbDecryptFinal_verified (by decide) (by lit_decide) (by lit_decide) (by decide)
     (Proof.Camellia.cfbFinalPre_local _)
     (Proof.Camellia.cfbDecryptFinalPost_local _) (Proof.Camellia.cfbDecryptFinalPostOut_local _) (frameSat_pre _)
 
@@ -424,19 +424,19 @@ theorem ofbFinal_verified : Verified X86.target ofbFinal (Proof.Camellia.ofbFina
 
 theorem ofbFrameSat_pre (post : Spec.Camellia.ofbFinalSig.Post X86.abi.ptrBits) :
     ∃ s, (Spec.Camellia.ofbFinalSig.contract X86.abi (pre := Spec.Camellia.ofbFinalPre X86.abi.ptrBits) (post := post)
-      (writeArgs := true) (stack := 576)).pre s := by
+      (writeArgs := true) (stack := 588)).pre s := by
   implies_sat [Spec.Camellia.ofbFinalSig, Spec.Camellia.ofbFinalPre, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     [frameSat, X86.arg, X86.argAddr, Mem.readW, Mem.read] using frameSat
 
 /-- The final OFB function with its working space on the stack. -/
 theorem ofbFinal_framed :
-    Verified X86.target (Impl.StackScratch.X86.withStackScratchWiped 572 5 136 ofbFinal)
-      (Spec.Camellia.ofbFinalContract X86.abi 576) :=
+    Verified X86.target (Impl.StackScratch.X86.withStackScratchWiped 584 5 136 ofbFinal)
+      (Spec.Camellia.ofbFinalContract X86.abi 588) :=
   Proof.Camellia.ofbFinal_of_sk <|
   X86.Verified.stackScratchWiped (sig := Spec.Camellia.ofbFinalSig) (nm := "scratch") (e := .u64)
     (n := 68) (pre := Spec.Camellia.ofbFinalPre X86.abi.ptrBits)
     (post := Proof.Camellia.ofbFinalPostSk X86.abi.ptrBits) (wa := true) (stack := 4)
-    (bytes := 572) ofbFinal_verified (by decide) (by lit_decide) (by lit_decide) (by decide)
+    (bytes := 584) ofbFinal_verified (by decide) (by lit_decide) (by lit_decide) (by decide)
     (Proof.Camellia.ofbFinalPre_local _)
     (Proof.Camellia.ofbFinalPost_local _) (Proof.Camellia.ofbFinalPostOut_local _) (ofbFrameSat_pre _)
 

@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Impl.RsaPkcs1Enc.RISCV64.Decrypt
 public import VerifiedGarbage.Impl.RsaPkcs1Enc.RISCV64.Random
 public import VerifiedGarbage.Impl.Scrub.RISCV64
 
@@ -18,9 +17,6 @@ namespace VG.Impl.RsaPkcs1Enc.RISCV64.Fn
 
 open VG.RISCV64
 open VG.Impl.Scrub.RISCV64 (scrubAll)
-
-/-- `vg_rsa_pkcs1_decrypt_precomputed`. -/
-def decryptPrecomputed : Prog isa := scrubAll 32 3456 Decrypt.codeP
 
 /-- `vg_rsa_pkcs1_encrypt_random`. -/
 def encryptRandom : Prog isa := scrubAll 32 4304 Random.code

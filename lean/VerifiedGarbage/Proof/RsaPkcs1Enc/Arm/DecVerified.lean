@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.Contract
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Rsa.Arm.PrivImpl
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.Arm.DecBase
@@ -25,6 +26,7 @@ meta import VerifiedGarbage.Impl.RsaPkcs1Enc.Arm.Decrypt
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
 meta import VerifiedGarbage.Proof.Framework.Mem
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.RsaPkcs1Enc.Contract
 
 /-! ### `RsaPkcs1Enc.Arm.DecTaint`, which only this module used -/
 
@@ -1747,7 +1749,7 @@ theorem selLoop_vp : VP (SL P 0) selLoop (SL P P.K) := by
 
 /-- What the shared contract states of the result `r` and the memory `m`. -/
 def Res (P : EP) (σ : State) (m : Mem) (r : BitVec 32) : Prop :=
-  Spec.RsaPkcs1Enc.writtenMsg m (State.addr P.out) (State.addr P.ml) P.K r
+  Proof.RsaPkcs1Enc.writtenMsg m (State.addr P.out) (State.addr P.ml) P.K r
     (Spec.RsaPkcs1Enc.decrypt P.nB P.eB (dB P σ) (pB P σ) (qB P σ) (dpB P σ) (dqB P σ) (qiB P σ) (cB P σ))
 
 /-- What `Res` states of the output and its length apart from a frame survives it. -/
@@ -1953,7 +1955,7 @@ theorem entered_state {s : State} (h : spec.pre s) :
   ⟨in_of_pre h, ⟨(in_of_pre h).ok, (in_of_pre h).ok.sp, rfl, rfl, Frame.refl _ _⟩⟩
 
 theorem spec_sp {s : State} (h : spec.pre s) : stackBytes ≤ s.sp.toNat := by
-  sig_pre [Spec.RsaPkcs1Enc.decryptContract, Spec.RsaPkcs1Enc.decryptSig, abi,
+  sig_pre [Proof.RsaPkcs1Enc.decryptContract, Proof.RsaPkcs1Enc.decryptSig, abi,
     argRegs, reduceClassify, Loc.val] at h
   exact h.1
 
@@ -1983,7 +1985,7 @@ theorem code_ok (v : Proof.Rsa.Arm.CrtImpl) {s : State} (h : spec.pre s) :
       (ro := [(ep s).N, (ep s).E, (ep s).D, (ep s).INP, (ep s).PP, (ep s).QQ, (ep s).DP, (ep s).DQ, (ep s).QI])
       (rw := [(ep s).OUT, (ep s).ML, (ep s).SCR]) hsp]
     exact hin.ok.push_apart r hr
-  · sig_post [Spec.RsaPkcs1Enc.decryptContract, Spec.RsaPkcs1Enc.decryptSig, abi,
+  · sig_post [Proof.RsaPkcs1Enc.decryptContract, Proof.RsaPkcs1Enc.decryptSig, abi,
       argRegs, reduceClassify, Loc.val]
     rw [BitVec.setWidth_append_eq_right]
     have ro := fun {R : Region} (hR : R ∈ [(ep s).N, (ep s).E, (ep s).D, (ep s).INP, (ep s).PP, (ep s).QQ,
@@ -2013,7 +2015,7 @@ theorem map_toNat_inj {w : Nat} {a b : List (BitVec w)} (h : a.map (·.toNat) = 
 
 /-- Two entry states with the same public data have the same public parameters. -/
 theorem ep_eq {s₁ s₂ : State} (hp : spec.pub s₁ s₂) : ep s₁ = ep s₂ := by
-  sig_pub [Spec.RsaPkcs1Enc.decryptContract, Spec.RsaPkcs1Enc.decryptSig, abi,
+  sig_pub [Proof.RsaPkcs1Enc.decryptContract, Proof.RsaPkcs1Enc.decryptSig, abi,
     argRegs, reduceClassify, Loc.val] at hp
   obtain ⟨hsp, hl, h0, h1, h2, h3, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17,
     a18⟩ := hp
@@ -2029,7 +2031,7 @@ theorem code_ct (v : Proof.Rsa.Arm.CrtImpl) : ConstantTime isa spec.pre spec.pub
   intro s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hp e₁ e₂
   have hep := ep_eq hp
   have hsp : s₁.sp = s₂.sp := by
-    sig_pub [Spec.RsaPkcs1Enc.decryptContract, Spec.RsaPkcs1Enc.decryptSig, abi,
+    sig_pub [Proof.RsaPkcs1Enc.decryptContract, Proof.RsaPkcs1Enc.decryptSig, abi,
       argRegs, reduceClassify, Loc.val] at hp
     exact hp.1
   refine (wrap_ct (F := frameBytes) (by decide) (P := fun a b => a = s₁ ∧ b = s₂)
@@ -2076,7 +2078,7 @@ def satState : State where
   wr := [⟨0x1000, 64⟩, ⟨0x6800, 8⟩, ⟨0x4000, 8448⟩]
 
 theorem sat : ∃ s, spec.pre s := by
-  sig_implies_sat [Spec.RsaPkcs1Enc.decryptContract, Spec.RsaPkcs1Enc.decryptSig, abi,
+  sig_implies_sat [Proof.RsaPkcs1Enc.decryptContract, Proof.RsaPkcs1Enc.decryptSig, abi,
     argRegs, reduceClassify, Loc.val, State.addr]
     [satState, stackArg, stackArgAddr, Mem.readW, Mem.read, Spec.Rsa.lenValid, Spec.Rsa.scratchWords] using satState
 

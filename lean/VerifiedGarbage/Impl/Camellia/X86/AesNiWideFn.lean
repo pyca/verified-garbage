@@ -26,10 +26,11 @@ def ctrFramed : Prog isa := Impl.StackScratch.X86.withStackScratchWiped 884 5 21
 
 namespace Fn
 
-/-- The doublewords of the 888 bytes of stack below `esp` that the residue
+/-- The doublewords of the 892 bytes of stack below `esp` that the residue
 analysis finds each function may leave different in two runs: the header
-of its working space's frame. -/
-def modeWords : List Nat := [1, 2, 3, 4, 5, 6, 7]
+of its working space's frame, and the frame's last doubleword, which
+nothing writes. -/
+def modeWords : List Nat := [1, 2, 3, 4, 5, 6, 7, 222]
 
 /-- And of the 2856 bytes of `vg_camellia_ctr_final` calling `ctrFramed`:
 the header of that call's frame, and what the baseline's leaves of its
@@ -39,18 +40,18 @@ def ctrFinalWords : List Nat :=
 
 /-- `Spec.Camellia.cbcDecryptChainedApi`'s function as emitted. -/
 def cbcDecryptChained : Prog isa :=
-  Impl.Scrub.X86.scrubSel 0 888 modeWords
-    (Impl.StackScratch.X86.withStackScratchWiped 884 5 214 Impl.Camellia.X86.AesNiWide.cbcDecryptChained)
+  Impl.Scrub.X86.scrubSel 0 892 modeWords
+    (Impl.StackScratch.X86.withStackScratchWiped 888 5 214 Impl.Camellia.X86.AesNiWide.cbcDecryptChained)
 
 /-- `Spec.Camellia.cfbDecryptApi`'s function as emitted. -/
 def cfbDecrypt : Prog isa :=
-  Impl.Scrub.X86.scrubSel 0 888 modeWords
-    (Impl.StackScratch.X86.withStackScratchWiped 884 5 214 Impl.Camellia.X86.AesNiWide.cfbDecrypt)
+  Impl.Scrub.X86.scrubSel 0 892 modeWords
+    (Impl.StackScratch.X86.withStackScratchWiped 888 5 214 Impl.Camellia.X86.AesNiWide.cfbDecrypt)
 
 /-- `Spec.Camellia.ctrApi`'s function as emitted. -/
 def ctr : Prog isa :=
-  Impl.Scrub.X86.scrubSel 0 888 modeWords
-    (Impl.StackScratch.X86.withStackScratchWiped 884 5 214 Impl.Camellia.X86.AesNiWide.ctr)
+  Impl.Scrub.X86.scrubSel 0 892 modeWords
+    (Impl.StackScratch.X86.withStackScratchWiped 888 5 214 Impl.Camellia.X86.AesNiWide.ctr)
 
 end Fn
 

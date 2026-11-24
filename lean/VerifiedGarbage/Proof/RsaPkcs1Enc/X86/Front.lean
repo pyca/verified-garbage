@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.Contract
 public import VerifiedGarbage.Impl.RsaPkcs1Enc.X86.Front
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86.DecP.Verified
 public import VerifiedGarbage.Proof.RsaPss.X86.VfPass
@@ -13,6 +14,7 @@ import VerifiedGarbage.Proof.RsaOaep.X86.Dec.Verified
 import VerifiedGarbage.Proof.Framework.ReadHalves
 meta import VerifiedGarbage.Impl.RsaPkcs1Enc.X86.Front
 meta import VerifiedGarbage.Proof.Framework.X86.RelCT
+meta import VerifiedGarbage.Proof.RsaPkcs1Enc.Contract
 
 /-!
 # `vg_rsa_pkcs1_decrypt_precomputed_front` on x86 (32-bit)
@@ -20,7 +22,7 @@ meta import VerifiedGarbage.Proof.Framework.X86.RelCT
 `Front.code` (`Impl/RsaPkcs1Enc/X86/Front.lean`) against
 `Spec.RsaPkcs1Enc.decryptPrecomputedFrontContract` with 3732 bytes of stack
 (`front_verified`), for any callee verified against
-`Spec.RsaPkcs1Enc.decryptPrecomputedContract` with 3568 (`specP`) that never
+`Proof.RsaPkcs1Enc.decryptPrecomputedContract` with 3568 (`specP`) that never
 writes `esp` and uses at most that stack: its proof is used only through
 that contract.
 
@@ -108,8 +110,8 @@ abbrev SF (P : EP) (pre : BitVec 32) (L : Nat) (σ s : State) : Prop := InF P pr
 
 theorem in_of_preF {s : State} (h : specF.pre s) :
     InF (fp s) (arg s 23) (arg s 24).toNat (entered frameBytes s) := by
-  sig_pre [Spec.RsaPkcs1Enc.decryptPrecomputedFrontContract, Spec.RsaPkcs1Enc.decryptPrecomputedSig,
-    Spec.RsaPkcs1Enc.decryptSig, abi, argSlots, argVal, argBytes, stackBelow] at h
+  sig_pre [Spec.RsaPkcs1Enc.decryptPrecomputedFrontContract, Spec.RsaPkcs1Enc.decryptPrecomputedFrontSig,
+    abi, argSlots, argVal, argBytes, stackBelow] at h
   obtain ⟨olk, ilk, dpl, qil, dql⟩ : (arg s 1).toNat = (arg s 4).toNat ∧ (arg s 10).toNat = (arg s 4).toNat ∧
       (arg s 16).toNat = (arg s 12).toNat ∧ (arg s 20).toNat = (arg s 12).toNat ∧
       (arg s 18).toNat = (arg s 14).toNat := by
@@ -381,8 +383,8 @@ theorem dec_pre {σ s : State} (h : R1 P pre L σ s) :
   have dWs := fun (w : Region) hw (r : Region) hr => (dW w hw r hr).symm
   have loR := fun (r : Region) hr => (dLow r hr).sub_left ret
   have loL := fun (r : Region) hr => (dLow r hr).sub_left low
-  sig_pre [Spec.RsaPkcs1Enc.decryptPrecomputedContract, Spec.RsaPkcs1Enc.decryptPrecomputedSig,
-    Spec.RsaPkcs1Enc.decryptSig, abi, argSlots, argVal, argBytes, stackBelow]
+  sig_pre [Proof.RsaPkcs1Enc.decryptPrecomputedContract, Proof.RsaPkcs1Enc.decryptPrecomputedSig,
+    Proof.RsaPkcs1Enc.decryptSig, abi, argSlots, argVal, argBytes, stackBelow]
   simp only [a (by decide : 0 < 25), a (by decide : 1 < 25), a (by decide : 2 < 25), a (by decide : 3 < 25),
     a (by decide : 4 < 25), a (by decide : 5 < 25), a (by decide : 6 < 25), a (by decide : 7 < 25),
     a (by decide : 8 < 25), a (by decide : 9 < 25), a (by decide : 10 < 25), a (by decide : 11 < 25),
@@ -450,8 +452,8 @@ theorem dec_pub {σ₁ σ₂ s₁ s₂ : State} (h₁ : R1 P pre L σ₁ s₁) (
     (h₁.1.callRo (R := P.E) (by simp)).trans hin₁.eB
   have he₂ : Spec.Rsa.bytesAt s₂.callEntry.mem (P.e.setWidth 64) P.el = P.eB :=
     (h₂.1.callRo (R := P.E) (by simp)).trans h₂.1.1.eB
-  sig_pub [Spec.RsaPkcs1Enc.decryptPrecomputedContract, Spec.RsaPkcs1Enc.decryptPrecomputedSig,
-    Spec.RsaPkcs1Enc.decryptSig, abi, argSlots, argVal, argBytes]
+  sig_pub [Proof.RsaPkcs1Enc.decryptPrecomputedContract, Proof.RsaPkcs1Enc.decryptPrecomputedSig,
+    Proof.RsaPkcs1Enc.decryptSig, abi, argSlots, argVal, argBytes]
   simp only [a₁ (by decide : 0 < 25), a₂ (by decide : 0 < 25), a₁ (by decide : 1 < 25), a₂ (by decide : 1 < 25),
     a₁ (by decide : 2 < 25), a₂ (by decide : 2 < 25), a₁ (by decide : 3 < 25), a₂ (by decide : 3 < 25),
     a₁ (by decide : 4 < 25), a₂ (by decide : 4 < 25), a₁ (by decide : 5 < 25), a₂ (by decide : 5 < 25),
@@ -477,8 +479,8 @@ theorem dec_post {σ s t : State} (h : R1 P pre L σ s) {rd wr : List Region}
   have hin := h.1.1
   have k32 : P.K < 2 ^ 32 := by have := hin.kv.2; omega_using [this]
   have a := fun {i} (hi : i < 25) => h.arg rd wr hi
-  sig_post [Spec.RsaPkcs1Enc.decryptPrecomputedContract, Spec.RsaPkcs1Enc.decryptPrecomputedSig,
-    Spec.RsaPkcs1Enc.decryptSig, abi, argSlots, argVal, argBytes] at hp
+  sig_post [Proof.RsaPkcs1Enc.decryptPrecomputedContract, Proof.RsaPkcs1Enc.decryptPrecomputedSig,
+    Proof.RsaPkcs1Enc.decryptSig, abi, argSlots, argVal, argBytes] at hp
   simp only [a (by decide : 0 < 25), a (by decide : 2 < 25), a (by decide : 3 < 25), a (by decide : 4 < 25),
     a (by decide : 5 < 25), a (by decide : 6 < 25), a (by decide : 7 < 25), a (by decide : 8 < 25),
     a (by decide : 9 < 25), a (by decide : 11 < 25), a (by decide : 12 < 25), a (by decide : 13 < 25),
@@ -586,10 +588,10 @@ abbrev outB (P : EP) (σ : State) : List Byte := List.replicate (aV P σ) 0 ++ m
 abbrev Bp (P : EP) (σ : State) (j : Nat) : Byte := if j < P.K then (outB P σ).getD j 0 else 0
 
 theorem writtenMsg_parts {m : Mem} {out ml : Addr} {K : Nat} {r : BitVec 32} {o : Spec.Rsa.Outcome}
-    (h : Spec.RsaPkcs1Enc.writtenMsg m out ml K r o) :
+    (h : Proof.RsaPkcs1Enc.writtenMsg m out ml K r o) :
     r = rOf o ∧ Spec.Rsa.bytesAt m out K = List.replicate (K - (msgOf o).length) 0 ++ msgOf o ∧
       Spec.Rsa.wordsAt m ml 1 = [BitVec.ofNat 64 (msgOf o).length] := by
-  cases o <;> simpa [Spec.RsaPkcs1Enc.writtenMsg, msgOf, rOf] using h
+  cases o <;> simpa [Proof.RsaPkcs1Enc.writtenMsg, msgOf, rOf] using h
 
 theorem writtenMsgFront_of {m : Mem} {out ml : Addr} {K : Nat} {r : BitVec 32} {o : Spec.Rsa.Outcome}
     (hr : r = rOf o) (hb : Spec.Rsa.bytesAt m out K = msgOf o ++ List.replicate (K - (msgOf o).length) 0)
@@ -1178,8 +1180,8 @@ theorem entered_stateF {s : State} (h : specF.pre s) :
 
 theorem specF_sp {s : State} (h : specF.pre s) :
     stackF ≤ (s.gpr .esp).toNat ∧ (s.gpr .esp).toNat + 4 ≤ 2 ^ 32 := by
-  sig_pre [Spec.RsaPkcs1Enc.decryptPrecomputedFrontContract, Spec.RsaPkcs1Enc.decryptPrecomputedSig,
-    Spec.RsaPkcs1Enc.decryptSig, abi, argSlots, argVal, argBytes, stackBelow] at h
+  sig_pre [Spec.RsaPkcs1Enc.decryptPrecomputedFrontContract, Spec.RsaPkcs1Enc.decryptPrecomputedFrontSig,
+    abi, argSlots, argVal, argBytes, stackBelow] at h
   obtain ⟨hsp, hsa, -⟩ := h
   exact ⟨hsp, by omega_using [hsa]⟩
 
@@ -1215,8 +1217,8 @@ theorem code_ok {name : String} {c : Prog isa} (hv : Verified target c specP) (h
     unfold FRes at hres ⊢
     exact key _ hres
   · have ro := fun {R : Region} (hR : R ∈ (fp s).roP (arg s 23) (arg s 24).toNat) => entered_ro hsp ok hR
-    sig_post [Spec.RsaPkcs1Enc.decryptPrecomputedFrontContract, Spec.RsaPkcs1Enc.decryptPrecomputedSig,
-      Spec.RsaPkcs1Enc.decryptSig, abi, argSlots, argVal, argBytes]
+    sig_post [Spec.RsaPkcs1Enc.decryptPrecomputedFrontContract, Spec.RsaPkcs1Enc.decryptPrecomputedFrontSig,
+      abi, argSlots, argVal, argBytes]
     unfold FRes oc at res
     rw [show dB (fp s) (entered frameBytes s) = _ from ro (R := (fp s).D) (by simp),
       show cB (fp s) (entered frameBytes s) = _ from ro (R := (fp s).INP) (by simp),
@@ -1234,8 +1236,8 @@ theorem code_ct {name : String} {c : Prog isa} (hv : Verified target c specP) (h
   intro s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hp e₁ e₂
   obtain ⟨hep, h23, h24⟩ := ep_eqP (s₁ := s₁) (s₂ := s₂) hp
   have hsp : s₁.gpr .esp = s₂.gpr .esp := by
-    sig_pub [Spec.RsaPkcs1Enc.decryptPrecomputedFrontContract, Spec.RsaPkcs1Enc.decryptPrecomputedSig,
-      Spec.RsaPkcs1Enc.decryptSig, abi, argSlots, argVal, argBytes] at hp
+    sig_pub [Spec.RsaPkcs1Enc.decryptPrecomputedFrontContract, Spec.RsaPkcs1Enc.decryptPrecomputedFrontSig,
+      abi, argSlots, argVal, argBytes] at hp
     exact hp.1
   have hfp : fp s₁ = fp s₂ := by simp only [fp]; rw [hep, hsp]
   refine (wrap_ct (F := frameBytes) (body_noSp hns) (P := fun a b => a = s₁ ∧ b = s₂)
@@ -1265,8 +1267,8 @@ theorem satisfiableF : ∃ s, specF.pre s := by
   have e : argAddr preState 0 = 0x20004 := by decide
   have esp : preState.gpr .esp = 0x20000 := rfl
   refine ⟨preState, ?_⟩
-  sig_pre [Spec.RsaPkcs1Enc.decryptPrecomputedFrontContract, Spec.RsaPkcs1Enc.decryptPrecomputedSig,
-    Spec.RsaPkcs1Enc.decryptSig, abi, argSlots, argVal, argBytes, stackBelow, e, esp,
+  sig_pre [Spec.RsaPkcs1Enc.decryptPrecomputedFrontContract, Spec.RsaPkcs1Enc.decryptPrecomputedFrontSig,
+    abi, argSlots, argVal, argBytes, stackBelow, e, esp,
     stackF, frameBytes, Spec.Rsa.lenValid, Spec.Rsa.scratchWords, Spec.Rsa.privatePrecomputedWords]
   sig_and_intros
   rotate_right

@@ -1,11 +1,13 @@
 module
 
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.Contract
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.RISCV64.Dec.Verified
 public import VerifiedGarbage.Proof.Rsa.PreKey
 import VerifiedGarbage.Proof.Rsa.PrivCheck
 import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RISCV64.RelCT
+meta import VerifiedGarbage.Proof.RsaPkcs1Enc.Contract
 
 /-! # `vg_rsa_pkcs1_decrypt_precomputed` on RISC-V
 
@@ -77,12 +79,12 @@ theorem preState_key : Spec.Rsa.privatePrecompute (Spec.Rsa.bytesAt preState.mem
     show (bif _ then _ else _) = _
     rw [hs, Bool.cond_false, ha, Bool.cond_true]
 
-theorem satisfiablePre : ∃ s, (Spec.RsaPkcs1Enc.decryptPrecomputedContract abi stackBytes).pre s := by
+theorem satisfiablePre : ∃ s, (Proof.RsaPkcs1Enc.decryptPrecomputedContract abi stackBytes).pre s := by
   refine ⟨preState, ?_⟩
   have e : stackBytes = 3455 + 1 := rfl
   rw [e]
-  sig_pre [Spec.RsaPkcs1Enc.decryptPrecomputedContract, Spec.RsaPkcs1Enc.decryptPrecomputedSig,
-    Spec.RsaPkcs1Enc.decryptSig, abi, argRegs, stackArgs_seventeen, List.append_eq, List.range,
+  sig_pre [Proof.RsaPkcs1Enc.decryptPrecomputedContract, Proof.RsaPkcs1Enc.decryptPrecomputedSig,
+    Proof.RsaPkcs1Enc.decryptSig, abi, argRegs, stackArgs_seventeen, List.append_eq, List.range,
     List.range.loop]
   obtain ⟨a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16⟩ := pre_args
   have ha : stackArgAddr preState 0 = 0x10000 := by decide
@@ -95,12 +97,12 @@ theorem satisfiablePre : ∃ s, (Spec.RsaPkcs1Enc.decryptPrecomputedContract abi
     | exact Region.disjoint_of_sep (by decide)
     | (unfold Spec.Rsa.lenValid; decide)
 
-theorem dPreP_of {s : State} (h : (Spec.RsaPkcs1Enc.decryptPrecomputedContract abi stackBytes).pre s) :
+theorem dPreP_of {s : State} (h : (Proof.RsaPkcs1Enc.decryptPrecomputedContract abi stackBytes).pre s) :
     DPre true s ∧ PreX s := by
   have e : stackBytes = 3455 + 1 := rfl
   rw [e] at h
-  sig_pre [Spec.RsaPkcs1Enc.decryptPrecomputedContract, Spec.RsaPkcs1Enc.decryptPrecomputedSig,
-    Spec.RsaPkcs1Enc.decryptSig, abi, argRegs, stackArgs_seventeen, List.append_eq, List.range,
+  sig_pre [Proof.RsaPkcs1Enc.decryptPrecomputedContract, Proof.RsaPkcs1Enc.decryptPrecomputedSig,
+    Proof.RsaPkcs1Enc.decryptSig, abi, argRegs, stackArgs_seventeen, List.append_eq, List.range,
     List.range.loop] at h
   sig_split h
   rename_i sp16 sp1 sp2 hrd hwr om on oe od oi op oq odp odq oqi os oP oa mn me md mi mp mq mdp mdq mqi ms mP ma
@@ -113,12 +115,12 @@ theorem dPreP_of {s : State} (h : (Spec.RsaPkcs1Enc.decryptPrecomputedContract a
     kd, ki, kp, kq, kdp, kdq, kqi, ks, ka, wo, wm, wn, we, wd, wi, wp, wq, wdp, wdq, wqi, ws, k1, k2, h1, hi, e1,
     e2, d1, d2, p1, p2, q1, q2, h8, h12, h10, hs, mal, al⟩, ⟨oP, mP, sP, kP, wP, hpl, alP, fun _ => hyp⟩⟩
 
-theorem same_ofP {s₁ s₂ : State} (h : (Spec.RsaPkcs1Enc.decryptPrecomputedContract abi stackBytes).pub s₁ s₂) :
+theorem same_ofP {s₁ s₂ : State} (h : (Proof.RsaPkcs1Enc.decryptPrecomputedContract abi stackBytes).pub s₁ s₂) :
     Same true s₁ s₂ := by
   have e : stackBytes = 3455 + 1 := rfl
   rw [e] at h
-  sig_pub [Spec.RsaPkcs1Enc.decryptPrecomputedContract, Spec.RsaPkcs1Enc.decryptPrecomputedSig,
-    Spec.RsaPkcs1Enc.decryptSig, abi, argRegs, stackArgs_seventeen, List.append_eq] at h
+  sig_pub [Proof.RsaPkcs1Enc.decryptPrecomputedContract, Proof.RsaPkcs1Enc.decryptPrecomputedSig,
+    Proof.RsaPkcs1Enc.decryptSig, abi, argRegs, stackArgs_seventeen, List.append_eq] at h
   simp only [List.getD_cons_succ, List.getD_cons_zero] at h
   obtain ⟨hsp, hl, h3, h4, h5, h6, h7, h8, h9, h10, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13,
     a14, a15, a16⟩ := h
@@ -138,13 +140,13 @@ theorem same_ofP {s₁ s₂ : State} (h : (Spec.RsaPkcs1Enc.decryptPrecomputedCo
       rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
     exacts [a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16]
 
-theorem codeP_correct (s : State) (hpre : (Spec.RsaPkcs1Enc.decryptPrecomputedContract abi stackBytes).pre s) :
+theorem codeP_correct (s : State) (hpre : (Proof.RsaPkcs1Enc.decryptPrecomputedContract abi stackBytes).pre s) :
     ∃ tr t, Exec isa codeP s tr t ∧ abiPreserved s t ∧ fnPost s t := by
   obtain ⟨h, X⟩ := dPreP_of hpre
   exact codeG_correct s h fun _ => X
 
-theorem codeP_ct : ConstantTime isa (Spec.RsaPkcs1Enc.decryptPrecomputedContract abi stackBytes).pre
-    (Spec.RsaPkcs1Enc.decryptPrecomputedContract abi stackBytes).pub codeP :=
+theorem codeP_ct : ConstantTime isa (Proof.RsaPkcs1Enc.decryptPrecomputedContract abi stackBytes).pre
+    (Proof.RsaPkcs1Enc.decryptPrecomputedContract abi stackBytes).pub codeP :=
   RelCT.constantTime ((codeG_rel (pc := true)).mono (fun s₁ s₂ ⟨h₁, h₂, hp⟩ =>
     ⟨⟨s₁, s₂, (dPreP_of h₁).1, (dPreP_of h₂).1, same_ofP hp, fun _ => (dPreP_of h₁).2, fun _ => (dPreP_of h₂).2⟩,
       rfl, rfl⟩)
@@ -152,22 +154,22 @@ theorem codeP_ct : ConstantTime isa (Spec.RsaPkcs1Enc.decryptPrecomputedContract
 
 /-- The precomputed contract, its postcondition on the registers and the stack. -/
 def fnContractP : Contract isa where
-  pre := (Spec.RsaPkcs1Enc.decryptPrecomputedContract abi stackBytes).pre
+  pre := (Proof.RsaPkcs1Enc.decryptPrecomputedContract abi stackBytes).pre
   post := fnPost
-  pub := (Spec.RsaPkcs1Enc.decryptPrecomputedContract abi stackBytes).pub
+  pub := (Proof.RsaPkcs1Enc.decryptPrecomputedContract abi stackBytes).pub
 
-theorem decP_implies : fnContractP.Implies (Spec.RsaPkcs1Enc.decryptPrecomputedContract abi stackBytes) where
+theorem decP_implies : fnContractP.Implies (Proof.RsaPkcs1Enc.decryptPrecomputedContract abi stackBytes) where
   pre := fun _ h => h
   post := by
-    sig_implies_post [Spec.RsaPkcs1Enc.decryptPrecomputedContract, Spec.RsaPkcs1Enc.decryptPrecomputedSig,
-      Spec.RsaPkcs1Enc.decryptSig, abi, argRegs, fnContractP, fnPost, stackArgs_seventeen, List.append_eq,
+    sig_implies_post [Proof.RsaPkcs1Enc.decryptPrecomputedContract, Proof.RsaPkcs1Enc.decryptPrecomputedSig,
+      Proof.RsaPkcs1Enc.decryptSig, abi, argRegs, fnContractP, fnPost, stackArgs_seventeen, List.append_eq,
       dBytes, cOf]
   pub := fun _ _ _ _ h => h
   sat := satisfiablePre
 
 /-- `vg_rsa_pkcs1_decrypt_precomputed`, calling `vg_rsa_private_checked_precomputed`. -/
 theorem codeP_verified :
-    Verified target codeP (Spec.RsaPkcs1Enc.decryptPrecomputedContract abi stackBytes) :=
+    Verified target codeP (Proof.RsaPkcs1Enc.decryptPrecomputedContract abi stackBytes) :=
   Verified.of_correct codeP_correct codeP_ct decP_implies
 
 end VG.Proof.RsaPkcs1Enc.RISCV64.Dec

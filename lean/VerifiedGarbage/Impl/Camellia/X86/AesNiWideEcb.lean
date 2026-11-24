@@ -29,18 +29,19 @@ def ecb (d : Dir) : Prog isa := (core d).ecbLevels levels
 
 namespace Fn
 
-/-- The doublewords of the 884 bytes of stack below `esp` that the residue
+/-- The doublewords of the 888 bytes of stack below `esp` that the residue
 analysis finds the ECB functions may leave different in two runs: the
-header of their working space's frame. -/
-def ecbWords : List Nat := [1, 2, 3, 4, 5, 6]
+header of their working space's frame, and the frame's last doubleword,
+which nothing writes. -/
+def ecbWords : List Nat := [1, 2, 3, 4, 5, 6, 221]
 
 /-- `Spec.Camellia.ecbEncryptApi`'s function as emitted. -/
 def ecbEncrypt : Prog isa :=
-  Impl.Scrub.X86.scrubSel 0 884 ecbWords (Impl.StackScratch.X86.withStackScratchWiped 880 4 214 (ecb .encrypt))
+  Impl.Scrub.X86.scrubSel 0 888 ecbWords (Impl.StackScratch.X86.withStackScratchWiped 884 4 214 (ecb .encrypt))
 
 /-- `Spec.Camellia.ecbDecryptApi`'s function as emitted. -/
 def ecbDecrypt : Prog isa :=
-  Impl.Scrub.X86.scrubSel 0 884 ecbWords (Impl.StackScratch.X86.withStackScratchWiped 880 4 214 (ecb .decrypt))
+  Impl.Scrub.X86.scrubSel 0 888 ecbWords (Impl.StackScratch.X86.withStackScratchWiped 884 4 214 (ecb .decrypt))
 
 end Fn
 

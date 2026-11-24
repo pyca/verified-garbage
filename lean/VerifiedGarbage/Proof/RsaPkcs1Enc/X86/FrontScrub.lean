@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.Contract
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86.Front
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86.Scrub
 public import VerifiedGarbage.Proof.Framework.QualifiedName
@@ -12,6 +13,7 @@ meta import VerifiedGarbage.Proof.Framework.QualifiedName
 meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.X86.Lit
 meta import VerifiedGarbage.Proof.Rsa.X86.PrivStackSafety
+meta import VerifiedGarbage.Proof.RsaPkcs1Enc.Contract
 
 /-!
 # `vg_rsa_pkcs1_decrypt_precomputed_front` on x86, without secret residue
@@ -98,11 +100,10 @@ theorem front_scrub (v : Backend) (c : CrtImpl) :
 /-- The postcondition reads the memory on return only in `out` and `msg_len`. -/
 theorem front_postOut (stack : Nat) :
     PostOut (Spec.RsaPkcs1Enc.decryptPrecomputedFrontContract abi stack)
-      (Spec.RsaPkcs1Enc.decryptPrecomputedSig.retBits 32) :=
+      (Spec.RsaPkcs1Enc.decryptPrecomputedFrontSig.retBits 32) :=
   postOut_of_local_pre (leak := some _) ScrubAbi.plain fun
     | [out, outLen, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _], m, m₁, m₂, r, _, hp, hb, h => by
-      simp only [Spec.RsaPkcs1Enc.decryptPrecomputedSig, Spec.RsaPkcs1Enc.decryptSig, List.cons_append,
-        List.nil_append, Sig.bufs, List.mem_cons, forall_eq_or_imp, Elem.size] at hb
+      simp only [Spec.RsaPkcs1Enc.decryptPrecomputedFrontSig, Sig.bufs, List.mem_cons, forall_eq_or_imp, Elem.size] at hb
       change @Curry.apply (Mem → Prop) [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _] _ _ m at hp
       change @Curry.apply (Mem → Mem → BitVec _ → Prop)
         [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _] _ _ _ m₁ r at h

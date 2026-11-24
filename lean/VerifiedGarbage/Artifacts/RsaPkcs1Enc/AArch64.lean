@@ -21,10 +21,6 @@ open VG.Proof.RsaPkcs1Enc.AArch64.Scrub
 def artifacts : List Artifact :=
   (VG.Proof.Variants.Sha256Compress.AArch64.variants.flatMap fun (h : Proof.Sha256.AArch64.Compress) =>
     VG.Proof.Variants.RsaPrivateCrt.AArch64.variants.flatMap fun (c : Proof.Rsa.AArch64.CrtImpl) => [
-      Spec.RsaPkcs1Enc.decryptPrecomputedApi.artifact AArch64.target {
-        suffix := qualifiedName "" [("sha256", h.suffix), ("crt", c.suffix)]
-        code := Impl.RsaPkcs1Enc.AArch64.Fn.decryptPrecomputed h.name h.suffix h.code c.toCrt
-        verified := Proof.RsaPkcs1Enc.AArch64.Scrub.decryptPrecomputed_scrubbed h c },
       Spec.RsaPkcs1Enc.decryptPrecomputedFrontApi.artifact AArch64.target {
         suffix := qualifiedName "" [("sha256", h.suffix), ("crt", c.suffix)]
         code := Impl.RsaPkcs1Enc.AArch64.Fn.decryptPrecomputedFront (Proof.RsaPkcs1Enc.AArch64.Front.bodyName h c)

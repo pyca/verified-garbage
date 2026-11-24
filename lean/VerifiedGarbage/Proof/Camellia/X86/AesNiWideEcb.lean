@@ -261,20 +261,20 @@ def frameSat : State where
   wr := [⟨0x2000, 0⟩]
 
 theorem frameSat_pre (d : Spec.Camellia.Direction) :
-    ∃ s, (Proof.Camellia.ecbContractSk X86.abi d 884).pre s := by
+    ∃ s, (Proof.Camellia.ecbContractSk X86.abi d 888).pre s := by
   implies_sat [Proof.Camellia.ecbContractSk, Spec.Camellia.ecbSig, Spec.Camellia.ecbPre, Proof.Camellia.ecbPostSk,
     X86.abi, X86.argSlots, X86.argVal, X86.argBytes] [frameSat, X86.arg, X86.argAddr, Mem.readW, Mem.read]
     using frameSat
 
 /-- ECB in the direction `d`, with its working space on the stack. -/
 theorem ecb_framed (d : Dir) :
-    Verified X86.target (Impl.StackScratch.X86.withStackScratchWiped 880 4 214 (ecb d))
-      (Spec.Camellia.ecbContract X86.abi (specDir d) 884) :=
+    Verified X86.target (Impl.StackScratch.X86.withStackScratchWiped 884 4 214 (ecb d))
+      (Spec.Camellia.ecbContract X86.abi (specDir d) 888) :=
   Proof.Camellia.ecb_of_sk <|
   X86.Verified.stackScratchWiped (sig := Spec.Camellia.ecbSig) (nm := "scratch") (e := .u64)
     (n := 107) (pre := Spec.Camellia.ecbPre X86.abi.ptrBits)
     (post := Proof.Camellia.ecbPostSk (specDir d) X86.abi.ptrBits) (wa := false) (stack := 4)
-    (bytes := 880) (by rw [← Proof.Camellia.ecbScratchContract_eq]; exact ecb_verified d)
+    (bytes := 884) (by rw [← Proof.Camellia.ecbScratchContract_eq]; exact ecb_verified d)
     (by decide) (by cases d <;> lit_decide) (by cases d <;> lit_decide) (by decide)
     (Proof.Camellia.ecbPre_local _) (Proof.Camellia.ecbPost_local _ _)
     (Proof.Camellia.ecbPostOut_local _ _) (frameSat_pre _)
@@ -286,9 +286,9 @@ open VG.X86.Scrub in
 its contract in constant time and returns without secret residue. -/
 theorem ecbEncrypt_scrubbed :
     VerifiedScrubbed X86.target Impl.Camellia.X86.AesNiWide.Fn.ecbEncrypt
-      (Spec.Camellia.ecbContract X86.abi .encrypt 884) 0 :=
-  verifiedScrubbedSel (api := Spec.Camellia.ecbEncryptApi) (W := 884)
-    { code := Impl.StackScratch.X86.withStackScratchWiped 880 4 214 (ecb .encrypt)
+      (Spec.Camellia.ecbContract X86.abi .encrypt 888) 0 :=
+  verifiedScrubbedSel (api := Spec.Camellia.ecbEncryptApi) (W := 888)
+    { code := Impl.StackScratch.X86.withStackScratchWiped 884 4 214 (ecb .encrypt)
       verified := ecb_framed .encrypt }
     Impl.Camellia.X86.AesNiWide.Fn.ecbWords (Proof.Camellia.X86.Scrub.ecbOut _ _) (by decide)
     ⟨_, by taint_decide_ct⟩
@@ -298,9 +298,9 @@ open VG.X86.Scrub in
 its contract in constant time and returns without secret residue. -/
 theorem ecbDecrypt_scrubbed :
     VerifiedScrubbed X86.target Impl.Camellia.X86.AesNiWide.Fn.ecbDecrypt
-      (Spec.Camellia.ecbContract X86.abi .decrypt 884) 0 :=
-  verifiedScrubbedSel (api := Spec.Camellia.ecbDecryptApi) (W := 884)
-    { code := Impl.StackScratch.X86.withStackScratchWiped 880 4 214 (ecb .decrypt)
+      (Spec.Camellia.ecbContract X86.abi .decrypt 888) 0 :=
+  verifiedScrubbedSel (api := Spec.Camellia.ecbDecryptApi) (W := 888)
+    { code := Impl.StackScratch.X86.withStackScratchWiped 884 4 214 (ecb .decrypt)
       verified := ecb_framed .decrypt }
     Impl.Camellia.X86.AesNiWide.Fn.ecbWords (Proof.Camellia.X86.Scrub.ecbOut _ _) (by decide)
     ⟨_, by taint_decide_ct⟩

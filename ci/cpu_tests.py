@@ -197,6 +197,10 @@ GROUPS = {
         "lib": [],
         "tests": ["cryptography_cast5::cast5_cfb"],
     },
+    "cast5_ecb": {
+        "lib": [],
+        "tests": ["rfc2144"],
+    },
     "cast5_ofb": {
         "lib": [],
         "tests": ["cryptography_cast5::cast5_ofb"],
@@ -365,10 +369,6 @@ GROUPS = {
             "wycheproof::chacha20::chacha20_poly1305_ciphertexts",
             "wycheproof::chacha20poly1305",
         ],
-    },
-    "rc4": {
-        "lib": [],
-        "tests": ["rfc6229"],
     },
     "rfc9106": {
         "lib": [],

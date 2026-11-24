@@ -56,6 +56,11 @@ results*.json -o report.html` builds them into one page to share; each
 starts with, of the groups (or `group/size`s) that its regular expressions
 match, e.g. `--chart 'ecdh_p(256|384|521) ecdsa_p(256_sha256|384_sha384|521_sha512)_sign/64'`.
 
+For numbers that compare this library with OpenSSL and aws-lc-rs (to
+publish, say), run the branch alone with `--reference-copies`, which runs
+theirs from the same copies as this library's rather than once:
+`python3 ci/bench_compare.py none . --reference-copies --json results.json`.
+
 For another architecture, or features this CPU lacks, run the Benchmarks
 workflow by hand: it never runs on its own (not on pull requests, not on
 `main`). Its runners are the ones CI waits for, so scope every run as

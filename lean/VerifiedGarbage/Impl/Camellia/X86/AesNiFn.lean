@@ -20,39 +20,40 @@ namespace VG.Impl.Camellia.X86.AesNi.Fn
 
 open VG.X86
 
-/-- The doublewords of the 576 bytes of stack below `esp` that the residue
+/-- The doublewords of the 588 bytes of stack below `esp` that the residue
 analysis finds each function may leave different in two runs: the header
-of its working space's frame. -/
-def modeWords : List Nat := [1, 2, 3, 4, 5, 6, 7]
+of its working space's frame, and the frame's last 3 doublewords, which
+nothing writes. -/
+def modeWords : List Nat := [1, 2, 3, 4, 5, 6, 7, 144, 145, 146]
 
 /-- `Spec.Camellia.cbcEncryptChainedApi`'s function as emitted. -/
 def cbcEncryptChained : Prog isa :=
-  Impl.Scrub.X86.scrubSel 0 576 modeWords
-    (Impl.StackScratch.X86.withStackScratchWiped 572 5 136 Impl.Camellia.X86.AesNi.cbcEncryptChained)
+  Impl.Scrub.X86.scrubSel 0 588 modeWords
+    (Impl.StackScratch.X86.withStackScratchWiped 584 5 136 Impl.Camellia.X86.AesNi.cbcEncryptChained)
 
 /-- `Spec.Camellia.ofbApi`'s function as emitted. -/
 def ofb : Prog isa :=
-  Impl.Scrub.X86.scrubSel 0 576 modeWords
-    (Impl.StackScratch.X86.withStackScratchWiped 572 5 136 Impl.Camellia.X86.AesNi.ofb)
+  Impl.Scrub.X86.scrubSel 0 588 modeWords
+    (Impl.StackScratch.X86.withStackScratchWiped 584 5 136 Impl.Camellia.X86.AesNi.ofb)
 
 /-- `Spec.Camellia.ofbFinalApi`'s function as emitted. -/
 def ofbFinal : Prog isa :=
-  Impl.Scrub.X86.scrubSel 0 576 modeWords
-    (Impl.StackScratch.X86.withStackScratchWiped 572 5 136 Impl.Camellia.X86.AesNi.ofbFinal)
+  Impl.Scrub.X86.scrubSel 0 588 modeWords
+    (Impl.StackScratch.X86.withStackScratchWiped 584 5 136 Impl.Camellia.X86.AesNi.ofbFinal)
 
 /-- `Spec.Camellia.cfbEncryptApi`'s function as emitted. -/
 def cfbEncrypt : Prog isa :=
-  Impl.Scrub.X86.scrubSel 0 576 modeWords
-    (Impl.StackScratch.X86.withStackScratchWiped 572 5 136 Impl.Camellia.X86.AesNi.cfbEncrypt)
+  Impl.Scrub.X86.scrubSel 0 588 modeWords
+    (Impl.StackScratch.X86.withStackScratchWiped 584 5 136 Impl.Camellia.X86.AesNi.cfbEncrypt)
 
 /-- `Spec.Camellia.cfbEncryptFinalApi`'s function as emitted. -/
 def cfbEncryptFinal : Prog isa :=
-  Impl.Scrub.X86.scrubSel 0 576 modeWords
-    (Impl.StackScratch.X86.withStackScratchWiped 572 5 136 Impl.Camellia.X86.AesNi.cfbEncryptFinal)
+  Impl.Scrub.X86.scrubSel 0 588 modeWords
+    (Impl.StackScratch.X86.withStackScratchWiped 584 5 136 Impl.Camellia.X86.AesNi.cfbEncryptFinal)
 
 /-- `Spec.Camellia.cfbDecryptFinalApi`'s function as emitted. -/
 def cfbDecryptFinal : Prog isa :=
-  Impl.Scrub.X86.scrubSel 0 576 modeWords
-    (Impl.StackScratch.X86.withStackScratchWiped 572 5 136 Impl.Camellia.X86.AesNi.cfbDecryptFinal)
+  Impl.Scrub.X86.scrubSel 0 588 modeWords
+    (Impl.StackScratch.X86.withStackScratchWiped 584 5 136 Impl.Camellia.X86.AesNi.cfbDecryptFinal)
 
 end VG.Impl.Camellia.X86.AesNi.Fn

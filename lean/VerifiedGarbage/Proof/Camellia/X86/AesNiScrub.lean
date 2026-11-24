@@ -26,7 +26,7 @@ meta import VerifiedGarbage.Proof.Framework.Lit
 
 The functions as emitted (`Impl.Camellia.X86.AesNi.Fn`): each runs with its
 working space in a frame on the stack, which it wipes, then zeroes, of the
-576 bytes of stack its contract reserves below `esp`, the seven doublewords
+588 bytes of stack its contract reserves below `esp`, the seven doublewords
 that the residue analysis (`X86.rtaint`) finds it may leave different in two
 runs, the header of that frame, clears the registers a callee may change,
 and returns without secret residue (`X86.Scrub.verifiedScrubbedSel`, the
@@ -46,27 +46,27 @@ open VG.Proof.Camellia.X86.Scrub (cbcEncryptOut cfbEncryptOut ofbOut cfbEncryptF
 contract in constant time and returns without secret residue. -/
 theorem cbcEncryptChained_scrubbed :
     VerifiedScrubbed X86.target Impl.Camellia.X86.AesNi.Fn.cbcEncryptChained
-      (Spec.Camellia.cbcEncryptChainedContract X86.abi 576) 0 :=
-  verifiedScrubbedSel (api := Spec.Camellia.cbcEncryptChainedApi) (W := 576)
-    { code := Impl.StackScratch.X86.withStackScratchWiped 572 5 136 Impl.Camellia.X86.AesNi.cbcEncryptChained
+      (Spec.Camellia.cbcEncryptChainedContract X86.abi 588) 0 :=
+  verifiedScrubbedSel (api := Spec.Camellia.cbcEncryptChainedApi) (W := 588)
+    { code := Impl.StackScratch.X86.withStackScratchWiped 584 5 136 Impl.Camellia.X86.AesNi.cbcEncryptChained
       verified := Proof.Camellia.X86.AesNi.Fb.cbcEncryptChained_framed }
     Impl.Camellia.X86.AesNi.Fn.modeWords (cbcEncryptOut _) (by decide) ⟨_, by taint_decide_ct⟩
 
 /-- `Spec.Camellia.ofbApi` as emitted (`Impl.Camellia.X86.AesNi.Fn.ofb`) meets its contract in constant time
 and returns without secret residue. -/
 theorem ofb_scrubbed :
-    VerifiedScrubbed X86.target Impl.Camellia.X86.AesNi.Fn.ofb (Spec.Camellia.ofbContract X86.abi 576) 0 :=
-  verifiedScrubbedSel (api := Spec.Camellia.ofbApi) (W := 576)
-    { code := Impl.StackScratch.X86.withStackScratchWiped 572 5 136 Impl.Camellia.X86.AesNi.ofb
+    VerifiedScrubbed X86.target Impl.Camellia.X86.AesNi.Fn.ofb (Spec.Camellia.ofbContract X86.abi 588) 0 :=
+  verifiedScrubbedSel (api := Spec.Camellia.ofbApi) (W := 588)
+    { code := Impl.StackScratch.X86.withStackScratchWiped 584 5 136 Impl.Camellia.X86.AesNi.ofb
       verified := Proof.Camellia.X86.AesNi.Fb.ofb_framed }
     Impl.Camellia.X86.AesNi.Fn.modeWords (ofbOut _) (by decide) ⟨_, by taint_decide_ct⟩
 
 /-- `Spec.Camellia.ofbFinalApi` as emitted (`Impl.Camellia.X86.AesNi.Fn.ofbFinal`) meets its contract in
 constant time and returns without secret residue. -/
 theorem ofbFinal_scrubbed :
-    VerifiedScrubbed X86.target Impl.Camellia.X86.AesNi.Fn.ofbFinal (Spec.Camellia.ofbFinalContract X86.abi 576) 0 :=
-  verifiedScrubbedSel (api := Spec.Camellia.ofbFinalApi) (W := 576)
-    { code := Impl.StackScratch.X86.withStackScratchWiped 572 5 136 Impl.Camellia.X86.AesNi.ofbFinal
+    VerifiedScrubbed X86.target Impl.Camellia.X86.AesNi.Fn.ofbFinal (Spec.Camellia.ofbFinalContract X86.abi 588) 0 :=
+  verifiedScrubbedSel (api := Spec.Camellia.ofbFinalApi) (W := 588)
+    { code := Impl.StackScratch.X86.withStackScratchWiped 584 5 136 Impl.Camellia.X86.AesNi.ofbFinal
       verified := Proof.Camellia.X86.AesNi.FbFinal.ofbFinal_framed }
     Impl.Camellia.X86.AesNi.Fn.modeWords (ofbFinalOut _) (by decide) ⟨_, by taint_decide_ct⟩
 
@@ -74,9 +74,9 @@ theorem ofbFinal_scrubbed :
 constant time and returns without secret residue. -/
 theorem cfbEncrypt_scrubbed :
     VerifiedScrubbed X86.target Impl.Camellia.X86.AesNi.Fn.cfbEncrypt
-      (Spec.Camellia.cfbEncryptContract X86.abi 576) 0 :=
-  verifiedScrubbedSel (api := Spec.Camellia.cfbEncryptApi) (W := 576)
-    { code := Impl.StackScratch.X86.withStackScratchWiped 572 5 136 Impl.Camellia.X86.AesNi.cfbEncrypt
+      (Spec.Camellia.cfbEncryptContract X86.abi 588) 0 :=
+  verifiedScrubbedSel (api := Spec.Camellia.cfbEncryptApi) (W := 588)
+    { code := Impl.StackScratch.X86.withStackScratchWiped 584 5 136 Impl.Camellia.X86.AesNi.cfbEncrypt
       verified := Proof.Camellia.X86.AesNi.Fb.cfbEncrypt_framed }
     Impl.Camellia.X86.AesNi.Fn.modeWords (cfbEncryptOut _) (by decide) ⟨_, by taint_decide_ct⟩
 
@@ -84,9 +84,9 @@ theorem cfbEncrypt_scrubbed :
 contract in constant time and returns without secret residue. -/
 theorem cfbEncryptFinal_scrubbed :
     VerifiedScrubbed X86.target Impl.Camellia.X86.AesNi.Fn.cfbEncryptFinal
-      (Spec.Camellia.cfbEncryptFinalContract X86.abi 576) 0 :=
-  verifiedScrubbedSel (api := Spec.Camellia.cfbEncryptFinalApi) (W := 576)
-    { code := Impl.StackScratch.X86.withStackScratchWiped 572 5 136 Impl.Camellia.X86.AesNi.cfbEncryptFinal
+      (Spec.Camellia.cfbEncryptFinalContract X86.abi 588) 0 :=
+  verifiedScrubbedSel (api := Spec.Camellia.cfbEncryptFinalApi) (W := 588)
+    { code := Impl.StackScratch.X86.withStackScratchWiped 584 5 136 Impl.Camellia.X86.AesNi.cfbEncryptFinal
       verified := Proof.Camellia.X86.AesNi.FbFinal.cfbEncryptFinal_framed }
     Impl.Camellia.X86.AesNi.Fn.modeWords (cfbEncryptFinalOut _) (by decide) ⟨_, by taint_decide_ct⟩
 
@@ -94,9 +94,9 @@ theorem cfbEncryptFinal_scrubbed :
 contract in constant time and returns without secret residue. -/
 theorem cfbDecryptFinal_scrubbed :
     VerifiedScrubbed X86.target Impl.Camellia.X86.AesNi.Fn.cfbDecryptFinal
-      (Spec.Camellia.cfbDecryptFinalContract X86.abi 576) 0 :=
-  verifiedScrubbedSel (api := Spec.Camellia.cfbDecryptFinalApi) (W := 576)
-    { code := Impl.StackScratch.X86.withStackScratchWiped 572 5 136 Impl.Camellia.X86.AesNi.cfbDecryptFinal
+      (Spec.Camellia.cfbDecryptFinalContract X86.abi 588) 0 :=
+  verifiedScrubbedSel (api := Spec.Camellia.cfbDecryptFinalApi) (W := 588)
+    { code := Impl.StackScratch.X86.withStackScratchWiped 584 5 136 Impl.Camellia.X86.AesNi.cfbDecryptFinal
       verified := Proof.Camellia.X86.AesNi.FbFinal.cfbDecryptFinal_framed }
     Impl.Camellia.X86.AesNi.Fn.modeWords (cfbDecryptFinalOut _) (by decide) ⟨_, by taint_decide_ct⟩
 
