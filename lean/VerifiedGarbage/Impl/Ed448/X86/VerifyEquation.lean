@@ -352,7 +352,7 @@ def vbits : Prog isa :=
 
 /-- After the bits: `BAD = 0`, the check of `S`, and the slots initialized as for base-point
 multiplication. -/
-def vinit : Prog isa := .seq (.block ([.mov .eax (.imm 0), st .eax BAD] ++ sCheck)) initSlots
+def vinit : Prog isa := .seq (.block ([.mov .eax (.imm 0), st .eax BAD] ++ sCheck)) (initSlots initVal)
 
 /-- The callee-saved registers saved, the bits of `S` and `k`, and `vinit`. -/
 def ventry : Prog isa := .seq (.block (save 16)) (.seq vbits vinit)

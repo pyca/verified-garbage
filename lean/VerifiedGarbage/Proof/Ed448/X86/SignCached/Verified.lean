@@ -9,6 +9,9 @@ public import VerifiedGarbage.Proof.Ed448.X86.SignCached.Layout
 import VerifiedGarbage.Proof.Ed25519.X86.Whole.Wipe
 import VerifiedGarbage.Proof.Ed448.X86.SignCached.Calls
 import VerifiedGarbage.Proof.Ed448.X86.ScalarVerified
+public import VerifiedGarbage.Proof.Ed448.X86.Shake.Tbl
+meta import VerifiedGarbage.Proof.Ed448.X86.Shake.Tbl
+import VerifiedGarbage.Proof.Framework.X86.Syms
 import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Ed448.X86.SignCached.Body
@@ -42,6 +45,7 @@ namespace VG.Proof.Ed448.X86.SignCached
 open VG VG.X86 VG.Impl.Ed448.X86.SignCached
 open VG.Impl.Ed448.X86.Shake (callWith hdrAt pruneAt)
 open VG.Proof.Ed448.X86.Shake
+open VG.Impl.Ed448.X86 (combSym combConsts)
 open VG.Proof.Ed25519.X86 (Whole.slots Whole.Ctx.zeroWords)
 
 variable {σ₁ σ₂ : State} {g₁ g₂ : Reg → BitVec 32}
@@ -50,20 +54,23 @@ theorem base_eq (hp : scLocal.pub σ₁ σ₂) : base σ₂ = base σ₁ := by
   simp only [base, hp.1]
 
 theorem rd_eq (hp : scLocal.pub σ₁ σ₂) : scRd σ₂ = scRd σ₁ := by
-  obtain ⟨e, _, a1, a2, a3, a4, a5, a6, _⟩ := hp
-  simp only [scRd, SEED, PK, CTX, MSG, argAddr, e, a1, a2, a3, a4, a5, a6]
+  obtain ⟨e, _, a1, a2, a3, a4, a5, a6, _, y⟩ := hp
+  simp only [scRd, SEED, PK, CTX, MSG, argAddr, e, a1, a2, a3, a4, a5, a6, y]
 
 theorem wr_eq (hp : scLocal.pub σ₁ σ₂) : scWr σ₂ = scWr σ₁ := by
-  obtain ⟨_, a0, _, _, _, _, _, _, a7⟩ := hp
+  obtain ⟨_, a0, _, _, _, _, _, _, a7, _⟩ := hp
   simp only [scWr, OUT, a0, a7]
 
 theorem args₂ (hp : scLocal.pub σ₁ σ₂) : Shake.Args (base σ₁) 8 (arg σ₁) σ₂.mem := by
-  obtain ⟨_, a0, a1, a2, a3, a4, a5, a6, a7⟩ := id hp
+  obtain ⟨_, a0, a1, a2, a3, a4, a5, a6, a7, _⟩ := id hp
   intro i hi
   rw [← base_eq hp, args_val σ₂ 8 i hi]
   rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7) with
     rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
   exacts [a0.symm, a1.symm, a2.symm, a3.symm, a4.symm, a5.symm, a6.symm, a7.symm]
+
+abbrev TwoT₁ (σ₁ σ₂ : State) (g₁ g₂ : Reg → BitVec 32) :=
+  TwoT (σ₁.syms combSym) (base σ₁) (scRd σ₁) (scWr σ₁) g₁ g₂ σ₁.mem σ₂.mem
 
 abbrev Two₁ (σ₁ σ₂ : State) (g₁ g₂ : Reg → BitVec 32) :=
   Two (base σ₁) (scRd σ₁) (scWr σ₁) g₁ g₂ σ₁.mem σ₂.mem
@@ -181,20 +188,24 @@ theorem r_ct :
       (fun _ hc hs => WP.mono (r_call h hc hs) fun _ hv => ⟨hv.1, trivial⟩))
 
 include hB h hp in
-theorem b_ct :
-    RelCT isa (Two₁ σ₁ σ₂ g₁ g₂ fun _ => True)
+theorem b_ct (ht₂ : TblIn (σ₁.syms combSym) (scRd σ₁) σ₂.mem) :
+    RelCT isa (TwoT₁ σ₁ σ₂ g₁ g₂ fun _ => True)
       (callWith baseArgs "vg_ed448_scalar_base" base') (Two₁ σ₁ σ₂ g₁ g₂ fun _ => True) :=
-  RelCT.seq (block_ct (Q := BSlots σ₁) (by taint_decide)
+  RelCT.seq (two_syms (block_ct (Q := BSlots σ₁) (by taint_decide)
       (fun _ hc _ => WP.mono (b_setup h hc (args_val σ₁ 8)) fun _ hu => ⟨hu.1, hu.2.2⟩)
-      (fun _ hc _ => WP.mono (b_setup h hc (args₂ hp)) fun _ hu => ⟨hu.1, hu.2.2⟩))
-    (call_ct hB.ok hB.ct (fun _ _ _ hc hs => b_ready h hc hs)
+      (fun _ hc _ => WP.mono (b_setup h hc (args₂ hp)) fun _ hu => ⟨hu.1, hu.2.2⟩)))
+    (RelCT.mono (call_ct (R := fun t => BSlots σ₁ t ∧ t.syms combSym = σ₁.syms combSym ∧
+        TblIn (σ₁.syms combSym) (scRd σ₁) t.mem) hB.ok hB.ct
+      (fun _ _ _ hc hs => b_ready h hc hs.1 hs.2.1 hs.2.2)
       (fun a b ea eb ha hb ar aw br bw => by
         have e := eq_args h ea eb (k := 3) (by decide) (fun i hi => by
           rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2) with rfl | rfl | rfl
-          exacts [ha.a0.trans hb.a0.symm, ha.a1.trans hb.a1.symm, ha.a2.trans hb.a2.symm]) ar aw br bw
-        exact ⟨entry_esp ea eb ar aw br bw, e 0 (by decide), e 1 (by decide), e 2 (by decide)⟩)
-      (fun _ hc hs => WP.mono (b_call h hB hc hs) fun _ hv => ⟨hv.1, trivial⟩)
-      (fun _ hc hs => WP.mono (b_call h hB hc hs) fun _ hv => ⟨hv.1, trivial⟩))
+          exacts [ha.1.a0.trans hb.1.a0.symm, ha.1.a1.trans hb.1.a1.symm, ha.1.a2.trans hb.1.a2.symm]) ar aw br bw
+        exact ⟨entry_esp ea eb ar aw br bw, e 0 (by decide), e 1 (by decide), e 2 (by decide),
+          ha.2.1.trans hb.2.1.symm⟩)
+      (fun _ hc hs => WP.mono (b_call h hB hc hs.1 hs.2.1 hs.2.2) fun _ hv => ⟨hv.1, trivial⟩)
+      (fun _ hc hs => WP.mono (b_call h hB hc hs.1 hs.2.1 hs.2.2) fun _ hv => ⟨hv.1, trivial⟩))
+      (fun _ _ hh => hh.two (kit h) (tblIn h) ht₂) fun _ _ q => q)
 
 include h hp in
 theorem k_ct :
@@ -233,8 +244,8 @@ theorem m_ct :
       (fun _ hc hs => WP.mono (m_call h hc hs) fun _ hv => ⟨hv.1, trivial⟩))
 
 include hB h hp in
-theorem body_ct :
-    RelCT isa (Two₁ σ₁ σ₂ g₁ g₂ fun _ => True) (body base') (Two₁ σ₁ σ₂ g₁ g₂ fun _ => True) := by
+theorem body_ct (ht₂ : TblIn (σ₁.syms combSym) (scRd σ₁) σ₂.mem) :
+    RelCT isa (TwoT₁ σ₁ σ₂ g₁ g₂ fun _ => True) (body base') (Two₁ σ₁ σ₂ g₁ g₂ fun _ => True) := by
   have hk := kit h
   have ha := args_val σ₁ 8
   have hb := args₂ hp
@@ -242,8 +253,8 @@ theorem body_ct :
   have hdr := hk.hdr_ct (g₁ := g₁) (g₂ := g₂) ha hb (j := 4) (off := HASH) (by decide) hcl (by decide)
     (by taint_decide)
   unfold body
-  exact (seed_ct h hp).seq ((hk.prune_ct (q := S) (by decide) (by taint_decide)).seq (hdr.seq
-    ((nonce_ct h hp).seq ((r_ct h hp).seq ((b_ct hB h hp).seq (hdr.seq ((chal_ct h hp).seq ((k_ct h hp).seq
+  exact (two_syms (seed_ct h hp)).seq ((two_syms (hk.prune_ct (q := S) (by decide) (by taint_decide))).seq ((two_syms hdr).seq
+    ((two_syms (nonce_ct h hp)).seq ((two_syms (r_ct h hp)).seq ((b_ct hB h hp ht₂).seq (hdr.seq ((chal_ct h hp).seq ((k_ct h hp).seq
     ((m_ct h hp).seq (block_ct (by taint_decide)
       (fun _ hc _ => WP.mono (Whole.Ctx.zeroWords hc (start := 6) (count := 58) hk.frame (by decide))
         fun _ hu => ⟨hu.1, trivial⟩)
@@ -259,8 +270,11 @@ theorem signCached_ct {base' : Prog isa} (hB : CalleeOk scalarBaseLocal base') :
   rintro a b ta tb a' b' ⟨s₁, s₂, ⟨p₁, p₂, hp⟩, rfl, rfl⟩ ea eb
   have c₂ := push_ctx p₂.1 p₂.2.1 (facts p₂).below
   rw [base_eq hp, rd_eq hp, wr_eq hp] at c₂
-  exact ⟨(body_ct hB (facts p₁) hp _ _ _ _ _ _
-    ⟨⟨push_ctx p₁.1 p₁.2.1 (facts p₁).below, trivial⟩, ⟨c₂, trivial⟩⟩ ea eb).1, trivial⟩
+  have t₂ := tblIn (facts p₂)
+  have hy : s₁.syms combSym = s₂.syms combSym := hp.2.2.2.2.2.2.2.2.2
+  rw [rd_eq hp, ← hy] at t₂
+  exact ⟨(body_ct hB (facts p₁) hp t₂ _ _ _ _ _ _
+    ⟨⟨⟨push_ctx p₁.1 p₁.2.1 (facts p₁).below, trivial⟩, ⟨c₂, trivial⟩⟩, rfl, hy.symm⟩ ea eb).1, trivial⟩
 
 /-! ## The shared contract -/
 
@@ -275,7 +289,7 @@ def scWide : Contract isa := { scLocal with
     let args : Region := ⟨argAddr s 0, 32⟩
     let ret : Region := ⟨(s.gpr .esp).setWidth 64, 4⟩
     let stk : Region := ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 280, 280⟩
-    s.rd = [seed, pk, ctx, msg] ∧ s.wr = [out, scr, args] ∧
+    s.rd = [seed, pk, ctx, msg, TblR ((s.syms combSym).setWidth 64)] ∧ s.wr = [out, scr, args] ∧
       out.Disjoint seed ∧ out.Disjoint pk ∧ out.Disjoint ctx ∧ out.Disjoint msg ∧ out.Disjoint args ∧
       out.Disjoint scr ∧ stk.Disjoint out ∧ ret.Disjoint out ∧
       seed.Disjoint scr ∧ pk.Disjoint scr ∧ ctx.Disjoint scr ∧ msg.Disjoint scr ∧ args.Disjoint scr ∧
@@ -286,17 +300,17 @@ def scWide : Contract isa := { scLocal with
       (arg s 7).toNat + 8192 ≤ 2 ^ 32 ∧ 280 ≤ (s.gpr .esp).toNat ∧ (s.gpr .esp).toNat + 36 ≤ 2 ^ 32 ∧
       Spec.Ed448.bytesAt s.mem ((arg s 2).setWidth 64) 57 =
         Spec.Ed448.publicKey (Spec.Ed448.bytesAt s.mem ((arg s 1).setWidth 64) 57) ∧
-      (arg s 4).toNat ≤ 255 }
+      (arg s 4).toNat ≤ 255 ∧ CombHeld s [out, scr, stk] }
 
 theorem scWide_pre (s : State) (h : scWide.pre s) :
     scLocal.pre (s.withRegions (scRd s) (scWr s)) := by
   obtain ⟨_, _, a1, a2, a3, a4, a5, a6, ko, a8, a9, a10, a11, a12, a13, a14, ks, kp, kx, km, kc,
-    b1, b2, b3, b4, b5, b6, nb, b8, b9, b10⟩ := h
+    b1, b2, b3, b4, b5, b6, nb, b8, b9, b10, held⟩ := h
   simp only [scLocal, scRd, scWr, SEED, PK, CTX, MSG, OUT, arg_withRegions, argAddr_withRegions,
-    State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr, State.withRegions_mem, below,
-    Taint.sub_setWidth nb]
+    State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr, State.withRegions_mem,
+    State.withRegions_syms, CombHeld, below, Taint.sub_setWidth nb]
   exact ⟨True.intro, True.intro, a1, a2, a3, a4, a5, a6, ko, a8, a9, a10, a11, a12, a13, a14, ks, kp, kx, km, kc,
-    b1, b2, b3, b4, b5, b6, nb, b8, b9, b10⟩
+    b1, b2, b3, b4, b5, b6, nb, b8, b9, b10, held⟩
 
 def satSeed : List Byte := Spec.Ed448.bytesAt (fun _ => 0) 0x2000 57
 def satKey : List Byte := Spec.Ed448.publicKey satSeed
@@ -345,44 +359,93 @@ def satState : State where
   zf := none
   sf := none
   of := none
-  mem := satMem
-  rd := [⟨0x2000, 57⟩, ⟨0x3000, 57⟩, ⟨0x4000, 0⟩, ⟨0x5000, 0⟩]
+  mem := satMemWith satMem
+  rd := [⟨0x2000, 57⟩, ⟨0x3000, 57⟩, ⟨0x4000, 0⟩, ⟨0x5000, 0⟩, ⟨0x100000, 51072⟩]
   wr := [⟨0x1000, 114⟩, ⟨0x10000, 8192⟩, ⟨0x9004, 32⟩]
+  syms _ := 0x100000
 
-theorem sat_pk : Spec.Ed448.bytesAt satMem ((arg satState 2).setWidth 64) 57 =
-    Spec.Ed448.publicKey (Spec.Ed448.bytesAt satMem ((arg satState 1).setWidth 64) 57) := by
-  have a1 : arg satState 1 = 0x2000 := by decide
-  have a2 : arg satState 2 = 0x3000 := by decide
-  rw [a1, a2]
-  exact sat_pk'
+theorem sat_arg (j : Nat) (hj : j < 8) : arg satState j = Mem.readW satMem (argAddr satState j) 32 := by
+  unfold arg
+  apply Mem.readW_congr
+  intro b hb
+  change satMemWith satMem _ = _
+  rw [satMemWith_out]
+  have : ∀ j < 8, ∀ b < 4, 8 * 57 * 112 ≤ (argAddr satState j + BitVec.ofNat 64 b - 0x100000).toNat := by
+    decide
+  exact this j hj b (by omega_using [hb])
 
-theorem sat : ∃ s, (Spec.Ed448.signCachedContract X86.abi 280).pre s := by
-  refine ⟨satState, ?_⟩
-  sig_apply_check
-  · decide +kernel
-  · sig_reduce [Spec.Ed448.signCachedContract, Spec.Ed448.signCachedSig,
-      Spec.Ed448.scratchWords, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, satState]
-    sig_and_intros
-    all_goals try exact sat_pk
-    all_goals decide +kernel
+theorem satWith_bytes {p : Addr} (h : ∀ i < 57, 8 * 57 * 112 ≤ (p + BitVec.ofNat 64 i - 0x100000).toNat) :
+    Spec.Ed448.bytesAt (satMemWith satMem) p 57 = Spec.Ed448.bytesAt satMem p 57 := by
+  unfold Spec.Ed448.bytesAt
+  exact List.map_congr_left fun i hi => satMemWith_out _ (h i (List.mem_range.mp hi))
 
-theorem scWide_implies : scWide.Implies (Spec.Ed448.signCachedContract X86.abi 280) where
-  pre := by
-    sig_implies_pre [Spec.Ed448.signCachedContract, Spec.Ed448.signCachedSig,
-      Spec.Ed448.scratchWords, scWide, scLocal,
-      X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
+theorem sat_pk : Spec.Ed448.bytesAt (satMemWith satMem) ((0x3000 : BitVec 32).setWidth 64) 57 =
+    Spec.Ed448.publicKey (Spec.Ed448.bytesAt (satMemWith satMem) ((0x2000 : BitVec 32).setWidth 64) 57) := by
+  have h2 : ∀ i < 57, 8 * 57 * 112 ≤ ((0x2000 : Addr) + BitVec.ofNat 64 i - 0x100000).toNat := by decide
+  have h3 : ∀ i < 57, 8 * 57 * 112 ≤ ((0x3000 : Addr) + BitVec.ofNat 64 i - 0x100000).toNat := by decide
+  exact (satWith_bytes h3).trans (sat_pk'.trans (congrArg Spec.Ed448.publicKey (satWith_bytes h2).symm))
+
+theorem sat : (Spec.Ed448.signCachedContract (X86.abi.withConsts combConsts) 280).pre satState := by
+  have hl := combWords_length
+  have a0 : arg satState 0 = 0x1000 := (sat_arg 0 (by decide)).trans (by decide)
+  have a1 : arg satState 1 = 0x2000 := (sat_arg 1 (by decide)).trans (by decide)
+  have a2 : arg satState 2 = 0x3000 := (sat_arg 2 (by decide)).trans (by decide)
+  have a3 : arg satState 3 = 0x4000 := (sat_arg 3 (by decide)).trans (by decide)
+  have a4 : arg satState 4 = 0 := (sat_arg 4 (by decide)).trans (by decide)
+  have a5 : arg satState 5 = 0x5000 := (sat_arg 5 (by decide)).trans (by decide)
+  have a6 : arg satState 6 = 0 := (sat_arg 6 (by decide)).trans (by decide)
+  have a7 : arg satState 7 = 0x10000 := (sat_arg 7 (by decide)).trans (by decide)
+  have held : TblWords ((satState.syms combSym).setWidth 64) satState.mem := satMemWith_held satMem
+  have key : Spec.Ed448.bytesAt satState.mem ((0x3000 : BitVec 32).setWidth 64) 57 =
+    Spec.Ed448.publicKey (Spec.Ed448.bytesAt satState.mem ((0x2000 : BitVec 32).setWidth 64) 57) := sat_pk
+  generalize e : satState = s
+  sig_pre [Spec.Ed448.signCachedContract, Spec.Ed448.signCachedSig,
+    Spec.Ed448.scratchWords, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, combConsts_eq,
+    Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow]
+  subst s
+  refine ⟨by decide, by decide, by rw [hl]; rfl, held, by rw [hl]; decide, ?_, ?_, ?_, by decide, ?_⟩
+  · rw [hl]
+    intro r hr
+    change r ∈ [⟨0x1000, 114⟩, ⟨0x10000, 8192⟩, ⟨0x9004, 32⟩] at hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl <;> exact Region.disjoint_of_sep (by decide)
+  · rw [hl]; exact Region.disjoint_of_sep (by decide)
+  · rw [hl]; exact Region.disjoint_of_sep (by decide)
+  · rw [a0, a1, a2, a3, a4, a5, a6, a7]
+    refine ⟨rfl, rfl, ?_⟩
+    repeat' apply And.intro
+    all_goals first | exact Region.disjoint_of_sep (by decide) | exact key | decide
+
+theorem scWide_implies : scWide.Implies (Spec.Ed448.signCachedContract (X86.abi.withConsts combConsts) 280) where
+  pre s h := by
+    sig_pre [Spec.Ed448.signCachedContract, Spec.Ed448.signCachedSig,
+      Spec.Ed448.scratchWords, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, combConsts_eq,
+      Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow] at h
+    obtain ⟨h280, hsp, hd, held, hfit, hdw, -, hstk, -, ht, hw, os, op, ox, om, oc, oa, sc, -, pc, -, xc, -, mc, -, ca,
+      ro, -, -, -, -, rc, -, ko, ks, kp, kx, km, kc, -, f0, f1, f2, f3, f4, f5, key, hctx⟩ := h
+    refine ⟨?_, hw, os, op, ox, om, oa, oc, ko, ro, sc, pc, xc, mc, ca.symm, rc, ks, kp, kx, km, kc,
+      f0, f1, f2, f3, f4, f5, h280, by omega_using [hsp], key, hctx, held, hfit, ?_⟩
+    · rw [← List.take_append_drop (s.rd.length - 1) s.rd, ht, hd]; rfl
+    · intro r hr
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl
+      · exact hdw _ (by rw [hw]; simp)
+      · exact hdw _ (by rw [hw]; simp)
+      · exact hstk
   post := by
-    sig_implies_post [Spec.Ed448.signCachedContract, Spec.Ed448.signCachedSig,
-      Spec.Ed448.scratchWords, scWide, scLocal,
-      X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
-  pub := by
-    sig_implies_pub [Spec.Ed448.signCachedContract, Spec.Ed448.signCachedSig,
-      Spec.Ed448.scratchWords, scWide, scLocal,
-      X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
-  sat := sat
+    intro s t _ h
+    sig_post [Spec.Ed448.signCachedContract, Spec.Ed448.signCachedSig, Spec.Ed448.scratchWords, X86.abi, X86.argSlots,
+      X86.argVal, X86.argBytes, combConsts_eq, Abi.withConsts]
+    exact h
+  pub s t _ _ h := by
+    sig_pub [Spec.Ed448.signCachedContract, Spec.Ed448.signCachedSig, Spec.Ed448.scratchWords, X86.abi, X86.argSlots,
+      X86.argVal, X86.argBytes, combConsts_eq, Abi.withConsts] at h
+    obtain ⟨hsp, hsy, h0, h1, h2, h3, h4, h5, h6, h7⟩ := h
+    exact ⟨hsp, h0, h1, h2, h3, h4, h5, h6, h7, hsy⟩
+  sat := ⟨satState, sat⟩
 
 theorem signCached_verified {base' : Prog isa} (hB : CalleeOk scalarBaseLocal base') :
-    Verified X86.target (code base') (Spec.Ed448.signCachedContract X86.abi 280) := by
+    Verified X86.target (code base') (Spec.Ed448.signCachedContract (X86.abi.withConsts combConsts) 280) := by
   have hsat := scWide_implies.sat_left
   have satLocal : ∃ s, scLocal.pre s := hsat.elim fun s h => ⟨_, scWide_pre s h⟩
   have verifiedLocal : Verified X86.target (code base') scLocal :=
@@ -394,7 +457,7 @@ theorem signCached_verified {base' : Prog isa} (hB : CalleeOk scalarBaseLocal ba
     refine ⟨r, ?_, hc⟩
     simp only [scRd, scWr, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false]
-    rcases hr with (rfl | rfl | rfl | rfl | rfl) | rfl | rfl <;> simp only [true_or, or_true]
+    rcases hr with (rfl | rfl | rfl | rfl | rfl | rfl) | rfl | rfl <;> simp only [true_or, or_true]
   · intro s h a n ⟨r, hr, hc⟩
     rw [h.2.1]
     refine ⟨r, ?_, hc⟩
@@ -403,6 +466,6 @@ theorem signCached_verified {base' : Prog isa} (hB : CalleeOk scalarBaseLocal ba
   · intro s t _ h
     exact h
   · intro s t _ _ h
-    simpa only [scWide, scLocal, arg_withRegions, State.withRegions_gpr] using h
+    simpa only [scWide, scLocal, arg_withRegions, State.withRegions_gpr, State.withRegions_syms] using h
 
 end VG.Proof.Ed448.X86.SignCached

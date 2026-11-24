@@ -6,7 +6,7 @@ public import VerifiedGarbage.Impl.X448.X86.Base
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.X448.X86.Exchange
 public import VerifiedGarbage.Proof.X448.X86.Base
-public import VerifiedGarbage.Proof.Ed448.CombFacts
+public import VerifiedGarbage.Proof.Ed448.SignedCombFacts
 import VerifiedGarbage.Proof.X448.X86.Lit
 import VerifiedGarbage.Proof.X448.X86.BaseLit
 import VerifiedGarbage.Proof.Framework.Offset
@@ -18,7 +18,7 @@ meta import VerifiedGarbage.Impl.X448.X86.Base
 meta import VerifiedGarbage.Proof.Framework.Registration
 meta import VerifiedGarbage.Proof.X448.X86.Exchange
 meta import VerifiedGarbage.Proof.X448.X86.Base
-meta import VerifiedGarbage.Proof.Ed448.CombFacts
+meta import VerifiedGarbage.Proof.Ed448.SignedCombFacts
 meta import VerifiedGarbage.Proof.X448.X86.Lit
 meta import VerifiedGarbage.Proof.X448.X86.BaseLit
 meta import VerifiedGarbage.Proof.Framework.Offset
@@ -101,10 +101,11 @@ theorem exchange_scrubbed :
 
 /-- `vg_x448_base`. -/
 theorem base_scrubbed :
-    VerifiedScrubbed target Impl.X448.X86.Fn.base (Spec.X448.x448BaseContract X86.abi 20) 0 :=
+    VerifiedScrubbed target Impl.X448.X86.Fn.base
+      (Spec.X448.x448BaseContract (X86.abi.withConsts Impl.Ed448.X86.combConsts) 20) 0 :=
   verifiedScrubbedAll (api := Spec.X448.x448BaseApi)
     { code := Impl.X448.X86.x448Base
-      verified := Proof.X448.X86.x448Base_verified Proof.Ed448.baseCombU_ok }
-    (baseOut [] _)
+      verified := Proof.X448.X86.x448Base_verified Proof.Ed448.signedBaseU_ok }
+    (baseOut Impl.Ed448.X86.combConsts 20)
 
 end VG.Proof.X448.X86.Scrub

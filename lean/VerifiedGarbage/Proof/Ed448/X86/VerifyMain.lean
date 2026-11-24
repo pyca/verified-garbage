@@ -1958,8 +1958,8 @@ theorem ventry_ok {s₀ : State} (h : VerifyPre s₀) {base : Addr} (hbase : (ar
   rw [bS, bad₄] at c₅
   obtain hs₅ := hs₄.of_keeps k₅ (by decide)
   -- The slots.
-  refine WP.mono (initSlots_ok hs₅) fun t ⟨lt, ot, kt⟩ => ?_
-  obtain e : ∀ i : Index, E t.mem base i = Proof.X448.toFe (initVal i.val) := initSlots_E lt
+  refine WP.mono (initSlots_ok hs₅ initVal) fun t ⟨lt, ot, kt⟩ => ?_
+  obtain e : ∀ i : Index, E t.mem base i = Proof.X448.toFe (initVal i.val) := initSlots_E initVal_lt lt
   refine ⟨hs₅.of_keeps kt (by decide), ?_, ?_, ?_, ?_, fun j hj => ⟨?_, ?_⟩, e⟩
   · exact ((((sv₁.outside oK (by decide)).outside oS (by decide)).outside o₄ (by decide)).outside o₅ (by decide)).outside ot (by decide)
   · exact (o04.trans (o₅.mono (by omega_arith) (by decide))).trans (ot.mono (by omega_arith) (by omega_arith))

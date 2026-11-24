@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.Ed448.X86.Shake.Prune
 import VerifiedGarbage.Proof.Ed448.Signing
 import VerifiedGarbage.Proof.Ed25519.X86.Whole.Wipe
 import VerifiedGarbage.Proof.Framework.X86.CallWith
+import VerifiedGarbage.Proof.Framework.X86.Syms
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 
@@ -30,6 +31,7 @@ namespace VG.Proof.Ed448.X86.SignCached
 open VG VG.X86 VG.Impl.Ed448.X86.SignCached
 open VG.Impl.Ed448.X86.Shake (callWith hdrAt pruneAt)
 open VG.Proof.Ed448.X86.Shake
+open VG.Impl.Ed448.X86 (combSym)
 open VG.Proof.Ed25519.X86 (Whole.Within Whole.FR Whole.Ctx.zeroWords)
 
 variable {s t : State} {g : Reg → BitVec 32} {m : Mem}
@@ -101,13 +103,14 @@ theorem r_step (hc : GCtx s g m t) (ha : Shake.Args (base s) 8 (arg s) m) :
       (by show 114 ≤ 2 ^ 64; decide)]
 
 theorem b_step {base' : Prog isa} (hB : CalleeOk scalarBaseLocal base') (hc : GCtx s g m t)
-    (ha : Shake.Args (base s) 8 (arg s) m) :
+    (ha : Shake.Args (base s) 8 (arg s) m) (hy : t.syms combSym = s.syms combSym)
+    (ht : TblIn (s.syms combSym) (scRd s) m) :
     WP isa (callWith baseArgs "vg_ed448_scalar_base" base') t fun u => GCtx s g m u ∧
       Frame [OUT1 s, SCR (arg s 7), Lo (base s)] t.mem u.mem ∧
       Spec.Ed448.bytesAt u.mem ((arg s 0).setWidth 64) 57 =
         Spec.Ed448.scalarBase (Spec.Ed448.bytesAt t.mem ((arg s 0).setWidth 64 + BitVec.ofNat 64 57) 57) := by
-  refine WP.seq (WP.mono (b_setup h hc ha) fun u ⟨hu, hm, hs⟩ => ?_)
-  refine WP.mono (b_call h hB hu hs) fun v ⟨hv, hf, ho⟩ => ⟨hv, ?_, ?_⟩
+  refine WP.seq (WP.mono_syms (b_setup h hc ha) fun u ⟨hu, hm, hs⟩ yu => ?_)
+  refine WP.mono (b_call h hB hu hs ((congrFun yu _).trans hy) (ht.keep (kit h) hu)) fun v ⟨hv, hf, ho⟩ => ⟨hv, ?_, ?_⟩
   · refine (hm.sub fun r hr => ⟨Lo (base s), by simp, ?_⟩).trans hf
     rw [List.mem_singleton.mp hr]; exact args_lo _ (by decide)
   · rw [ho, frame_bytes hm (D := OUT2 s) (d1 ((out2_lo h).sub_left (args_lo _ (by decide))).symm)
@@ -146,7 +149,8 @@ theorem m_step (hc : GCtx s g m t) (ha : Shake.Args (base s) 8 (arg s) m) :
 /-! ## The body -/
 
 theorem body_ok {base' : Prog isa} (hB : CalleeOk scalarBaseLocal base') (hc : GCtx s g m t)
-    (ha : Shake.Args (base s) 8 (arg s) m)
+    (ha : Shake.Args (base s) 8 (arg s) m) (hy : t.syms combSym = s.syms combSym)
+    (ht : TblIn (s.syms combSym) (scRd s) m)
     (hkey : Spec.Ed448.bytesAt m ((arg s 2).setWidth 64) 57 =
       Spec.Ed448.publicKey (Spec.Ed448.bytesAt m ((arg s 1).setWidth 64) 57)) :
     WP isa (body base') t fun u => GCtx s g m u ∧
@@ -168,11 +172,11 @@ theorem body_ok {base' : Prog isa} (hB : CalleeOk scalarBaseLocal base') (hc : G
   obtain n57 : (57 : Nat) ≤ 2 ^ 64 := by decide
   unfold body
   -- `SHAKE256(seed, 114)` at `S`.
-  refine WP.seq (WP.mono (seed_ok h hc ha) fun t1 ⟨hc1, _, hs1⟩ => ?_)
+  refine WP.seq (WP.mono_syms (seed_ok h hc ha) fun t1 ⟨hc1, _, hs1⟩ y1 => ?_)
   have hs1' : Spec.Ed448.bytesAt t1.mem ((base s).setWidth 64 + BitVec.ofNat 64 S) 114 =
       Spec.Sha3.shake256 (Spec.Ed448.bytesAt m ((arg s 1).setWidth 64) 57) 114 := hs1
   -- `s`, pruned in place; the prefix at `K`.
-  refine WP.seq (WP.mono (hk.prune_ok hc1 (q := S) (by decide)) fun t2 ⟨hc2, hf2, hp2, _⟩ => ?_)
+  refine WP.seq (WP.mono_syms (hk.prune_ok hc1 (q := S) (by decide)) fun t2 ⟨hc2, hf2, hp2, _⟩ y2 => ?_)
   rw [hs1'] at hp2
   obtain pf2 : Spec.Ed448.bytesAt t2.mem ((base s).setWidth 64 + BitVec.ofNat 64 K) 57 =
       (Spec.Sha3.shake256 (Spec.Ed448.bytesAt m ((arg s 1).setWidth 64) 57) 114).drop 57 := by
@@ -180,21 +184,22 @@ theorem body_ok {base' : Prog isa} (hB : CalleeOk scalarBaseLocal base') (hc : G
       ← hs1', drop57, Offset.add_add]
     rfl
   -- The header.
-  refine WP.seq (WP.mono (hk.hdr_ok hc2 ha (j := 4) (off := HASH) (by decide) hcl (by decide))
-    fun t3 ⟨hc3, hf3, hh3, _⟩ => ?_)
+  refine WP.seq (WP.mono_syms (hk.hdr_ok hc2 ha (j := 4) (off := HASH) (by decide) hcl (by decide))
+    fun t3 ⟨hc3, hf3, hh3, _⟩ y3 => ?_)
   obtain sp3 := (frame_bytes hf3 (D := fr (base s) S 57) (d1 (Offset.disjoint _ (by decide) (by decide) (by decide)))
     n57)
   obtain pf3 := (frame_bytes hf3 (D := fr (base s) K 57) (d1 (Offset.disjoint _ (by decide) (by decide) (by decide)))
     n57).trans pf2
   -- The nonce's hash at `HASH`.
-  refine WP.seq (WP.mono (nonce_ok h hc3 ha hh3 pf3) fun t4 ⟨hc4, hf4, hn4⟩ => ?_)
+  refine WP.seq (WP.mono_syms (nonce_ok h hc3 ha hh3 pf3) fun t4 ⟨hc4, hf4, hn4⟩ y4 => ?_)
   obtain sp4 := (frame_bytes hf4 (D := fr (base s) S 57)
     (dW h lS (Offset.disjoint _ (by decide) (by decide) (by decide)) sS) n57).trans sp3
   -- `r` into the second half of `out`.
-  refine WP.seq (WP.mono (r_step h hc4 ha) fun t5 ⟨hc5, hf5, hr5⟩ => ?_)
+  refine WP.seq (WP.mono_syms (r_step h hc4 ha) fun t5 ⟨hc5, hf5, hr5⟩ y5 => ?_)
   obtain sp5 := (frame_bytes hf5 (D := fr (base s) S 57) (d3 (fr_out2 h (by decide)) sS lS.symm) n57).trans sp4
   -- `R` into the first half.
-  refine WP.seq (WP.mono (b_step h hB hc5 ha) fun t6 ⟨hc6, hf6, hR6⟩ => ?_)
+  refine WP.seq (WP.mono (b_step h hB hc5 ha
+    ((congrFun (y5.trans (y4.trans (y3.trans (y2.trans y1)))) _).trans hy) ht) fun t6 ⟨hc6, hf6, hR6⟩ => ?_)
   obtain sp6 := (frame_bytes hf6 (D := fr (base s) S 57) (d3 (fr_out1 h (by decide)) sS lS.symm) n57).trans sp5
   obtain r6 := (frame_bytes hf6 (D := OUT2 s) (d3 (out12 s).symm (out2_scr h) (out2_lo h).symm) n57).trans hr5
   -- The header again.
@@ -279,7 +284,7 @@ theorem signCached_ok {base' : Prog isa} (hB : CalleeOk scalarBaseLocal base') {
   obtain h := facts hp
   refine WP.frame (rs := List.replicate 64 .eax) (by simp) (by simp) (by decide)
     (by simp only [List.length_replicate]; have := h.below; omega_using [this]) (body_nosp hB)
-    (WP.mono (body_ok h hB (push_ctx hp.1 hp.2.1 h.below) (args_val s 8) h.key) fun u ⟨hu, ho⟩ m v fl =>
+    (WP.mono (body_ok h hB (push_ctx hp.1 hp.2.1 h.below) (args_val s 8) rfl (tblIn h) h.key) fun u ⟨hu, ho⟩ m v fl =>
       ⟨pop_abi (by decide) h.below hu (ret_out h) fl v, ?_⟩)
   change Spec.Ed448.bytesAt m ((arg s 0).setWidth 64) 114 = _
   refine Eq.trans (List.map_congr_left fun _ hi => fl.bytes (R := OUT s) (fun r hr => by

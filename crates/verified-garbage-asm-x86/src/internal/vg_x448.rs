@@ -183,6 +183,6 @@ call {vg_gf448_r32_mul}
         vg_gf448_r32_sqr = sym crate::ed448::vg_gf448_r32_sqr::vg_gf448_r32_sqr,
         vg_gf448_r32_sub = sym crate::ed448::vg_gf448_r32_sub::vg_gf448_r32_sub,
         vg_gf448_r32_mul = sym crate::ed448::vg_gf448_r32_mul::vg_gf448_r32_mul,
-        vg_gf448_r32_mul_a24 = sym crate::x448::vg_gf448_r32_mul_a24::vg_gf448_r32_mul_a24,
+        vg_gf448_r32_mul_a24 = sym crate::ed448::vg_gf448_r32_mul_a24::vg_gf448_r32_mul_a24,
     )
 }

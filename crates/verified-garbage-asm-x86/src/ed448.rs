@@ -191,6 +191,10 @@ pub(crate) mod vg_gf448_r32_add;
 pub(crate) mod vg_gf448_r32_mul;
 
 #[rustfmt::skip]
+#[path = "internal/vg_gf448_r32_mul_a24.rs"]
+pub(crate) mod vg_gf448_r32_mul_a24;
+
+#[rustfmt::skip]
 #[path = "internal/vg_gf448_r32_sqr.rs"]
 pub(crate) mod vg_gf448_r32_sqr;
 
