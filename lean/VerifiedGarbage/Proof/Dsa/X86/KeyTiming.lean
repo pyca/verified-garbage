@@ -299,12 +299,15 @@ structure PowerReady (base : Addr) (size n : Nat) (s : State) : Prop where
   large : 1 < wordsVal s.mem base (slot n 0) n
   odd : wordsVal s.mem base (slot n 0) n % 2 = 1
 
-theorem powerHead_ok {base : Addr} {size len bl : Nat} {modulus : Field} {a b : Pointer} {s : State}
+/-- The operands loaded, and the modulus's value in its slot. -/
+theorem powerHead_value {base : Addr} {size len bl : Nat} {modulus : Field} {a b : Pointer} {s : State}
     (P : ArithmeticPre base size len bl modulus a b s) (room : Pow.Room (s.gpr .esp) base size)
     (hz : Layout.saved ≤ size) (h4 : 4 ≤ len) (hmax : len ≤ 384) (hb4 : 4 ≤ bl) (hb : bl ≤ len)
     (hw4 : len % 4 = 0) (hwb : bl % 4 = 0) :
     WP isa (powerHead len bl modulus a b) s fun t =>
-      PowerReady base size ((len + 7) / 8) t ∧ Keeps loadClob s t := by
+      (PowerReady base size ((len + 7) / 8) t ∧ Keeps loadClob s t) ∧
+      wordsVal t.mem base (slot ((len + 7) / 8) 0) ((len + 7) / 8) =
+        Spec.Dsa.decodeBE (Spec.Rsa.bytesAt s.mem ((pointerValue base s (.input modulus)).setWidth 64) len) := by
   let n := (len + 7) / 8
   have hn : n ≤ 48 := by dsimp only [n]; omega_using [hmax]
   have cb := VG.Proof.Dsa.X86.Layout.context_bound hn
@@ -330,8 +333,16 @@ theorem powerHead_ok {base : Addr} {size len bl : Nat} {modulus : Field} {a b : 
       Spec.Dsa.decodeBE (Spec.Rsa.bytesAt s.mem ((pointerValue base s (.input modulus)).setWidth 64) len) := by
     rw [slotOutside_val G (by decide) (by have H := bounds 0 (by decide); dsimp only [n] at H; omega_using [nw, H]),
       slotOutside_val F (by decide) (by have H := bounds 0 (by decide); dsimp only [n] at H; omega_using [nw, H]), M]
-  exact ⟨⟨P.scr.of_keeps allK (by decide), by rw [allK.1 _ (by decide)]; exact room,
-    mod ▸ P.large, mod ▸ P.odd⟩, allK⟩
+  exact ⟨⟨⟨P.scr.of_keeps allK (by decide), by rw [allK.1 _ (by decide)]; exact room,
+    mod ▸ P.large, mod ▸ P.odd⟩, allK⟩, mod⟩
+
+theorem powerHead_ok {base : Addr} {size len bl : Nat} {modulus : Field} {a b : Pointer} {s : State}
+    (P : ArithmeticPre base size len bl modulus a b s) (room : Pow.Room (s.gpr .esp) base size)
+    (hz : Layout.saved ≤ size) (h4 : 4 ≤ len) (hmax : len ≤ 384) (hb4 : 4 ≤ bl) (hb : bl ≤ len)
+    (hw4 : len % 4 = 0) (hwb : bl % 4 = 0) :
+    WP isa (powerHead len bl modulus a b) s fun t =>
+      PowerReady base size ((len + 7) / 8) t ∧ Keeps loadClob s t :=
+  WP.mono (powerHead_value P room hz h4 hmax hb4 hb hw4 hwb) fun _ h => h.1
 
 end VG.Proof.Dsa.X86
 end
@@ -378,16 +389,20 @@ theorem powerHead_relCT (base : Addr) (size len bl : Nat) (modulus : Field) (a b
 def PowerPair (base : Addr) (size n : Nat) (s t : State) : Prop :=
   PowerReady base size n s ∧ PowerReady base size n t ∧ s.gpr .esp = t.gpr .esp
 
-theorem powerTail_relCT (base : Addr) (size n len e output : Nat)
+/-- The two runs' modulus is one number `m`: it is public, and the
+exponentiation's context is set up from its top bit. -/
+theorem powerTail_relCT (base : Addr) (size n len e output m : Nat)
     (hz : contextBytes n ≤ size) (hu : usedBytes ≤ size)
     (hn : 2 ≤ n) (hn48 : n ≤ 48) (he : 1 < e) (hen : e ≤ 2 * n) :
-    RelCT isa (PowerPair base size n) (.seq (Pow.call n e) (Core.store len output))
+    RelCT isa (fun s t => PowerPair base size n s t ∧ wordsVal s.mem base (slot n 0) n = m ∧
+        wordsVal t.mem base (slot n 0) n = m) (.seq (Pow.call n e) (Core.store len output))
       (VG.X86.Taint.Agree (workspaceTaint true)) := by
   refine RelCT.seq ?_ (coreStore_workspace_relCT len output)
-  intro s t tr ur sf tf ⟨S, T, SP⟩ E F
+  intro s t tr ur sf tf ⟨⟨S, T, SP⟩, Ms, Mt⟩ E F
   have DI : s.gpr .edi = t.gpr .edi := BitVec.eq_of_toNat_eq (S.scr.edi_toNat.trans T.scr.edi_toNat.symm)
-  have CT := (Pow.call_relCT n e hn hn48 he hen) _ _ _ _ _ _
-    ⟨SP, DI, ⟨base, size, S.scr, S.room, hz, S.large, S.odd⟩, ⟨base, size, T.scr, T.room, hz, T.large, T.odd⟩⟩ E F
+  have CT := (Pow.call_relCT n e size m hn hn48 he hen) _ _ _ _ _ _
+    ⟨SP, DI, ⟨base, S.scr, S.room, hz, Ms, Ms ▸ S.large, Ms ▸ S.odd⟩,
+      ⟨base, T.scr, T.room, hz, Mt, Mt ▸ T.large, Mt ▸ T.odd⟩⟩ E F
   obtain ⟨_, _, K⟩ := wp_result (Pow.call_ok S.scr S.room hz hu hn hn48 he hen rfl S.large S.odd) E
   obtain ⟨_, _, L⟩ := wp_result (Pow.call_ok T.scr T.room hz hu hn hn48 he hen rfl T.large T.odd) F
   refine ⟨CT.1, agree_regs (rs := [.edi]) ?_⟩
@@ -399,10 +414,12 @@ def PowerAgree (base : Addr) (size len bl : Nat) (modulus : Field) (a b : Pointe
   ArithmeticAgree base size len bl modulus a b s t ∧ Pow.Room (s.gpr .esp) base size ∧
     Pow.Room (t.gpr .esp) base size ∧ s.gpr .esp = t.gpr .esp
 
-theorem corePower_relCT (base : Addr) (size len expLen output : Nat) (modulus : Field) (a b : Pointer)
+theorem corePower_relCT (base : Addr) (size len expLen output m : Nat) (modulus : Field) (a b : Pointer)
     (hz : Layout.saved ≤ size) (hu : usedBytes ≤ size) (h4 : 16 ≤ len) (hmax : len ≤ 384)
     (hw4 : len % 4 = 0) (he : 8 ≤ expLen) (hel : expLen ≤ len) (hew : expLen % 4 = 0) :
-    RelCT isa (PowerAgree base size len expLen modulus a b)
+    RelCT isa (fun s t => PowerAgree base size len expLen modulus a b s t ∧
+        Spec.Dsa.decodeBE (Spec.Rsa.bytesAt s.mem ((pointerValue base s (.input modulus)).setWidth 64) len) = m ∧
+        Spec.Dsa.decodeBE (Spec.Rsa.bytesAt t.mem ((pointerValue base t (.input modulus)).setWidth 64) len) = m)
       (Core.power len expLen modulus a b output) (VG.X86.Taint.Agree (workspaceTaint true)) := by
   have hn : (len + 7) / 8 ≤ 48 := by omega_using [hmax]
   have cb := VG.Proof.Dsa.X86.Layout.context_bound hn
@@ -410,14 +427,20 @@ theorem corePower_relCT (base : Addr) (size len expLen output : Nat) (modulus : 
   unfold Core.power
   dsimp only
   apply RelCT.assoc
-  refine RelCT.seq ?_ (powerTail_relCT base size _ len _ output (by omega_using [cb, sz]) hu (by omega_using [h4]) hn (by omega_using [he]) (by omega_using [hel]))
+  refine RelCT.seq ?_ (powerTail_relCT base size _ len _ output m (by omega_using [cb, sz]) hu (by omega_using [h4]) hn (by omega_using [he]) (by omega_using [hel]))
   have H := (powerHead_relCT base size len expLen modulus a b hz (by omega_using [h4]) hmax hw4).mono
-    (fun _ _ (P : PowerAgree base size len expLen modulus a b _ _) => P.1) (fun _ _ A => A)
-  refine (H.wpDep (F := fun s t => PowerReady base size ((len + 7) / 8) t ∧ Keeps loadClob s t)
-    (fun s t P => ⟨powerHead_ok P.1.1 P.2.1 hz (by omega_using [h4]) hmax (by omega_using [he]) hel hw4 hew,
-      powerHead_ok P.1.2.1 P.2.2.1 hz (by omega_using [h4]) hmax (by omega_using [he]) hel hw4 hew⟩)).mono (fun _ _ P => P) ?_
-  rintro s t ⟨_, a, b, P, ⟨S, K⟩, ⟨T, L⟩⟩
-  exact ⟨S, T, (K.1 .esp (by decide)).trans (P.2.2.2.trans (L.1 .esp (by decide)).symm)⟩
+    (P' := fun (s t : State) => PowerAgree base size len expLen modulus a b s t ∧
+        Spec.Dsa.decodeBE (Spec.Rsa.bytesAt s.mem ((pointerValue base s (.input modulus)).setWidth 64) len) = m ∧
+        Spec.Dsa.decodeBE (Spec.Rsa.bytesAt t.mem ((pointerValue base t (.input modulus)).setWidth 64) len) = m)
+    (fun _ _ P => P.1.1) (fun _ _ A => A)
+  refine (H.wpDep (F := fun (s t : State) => (PowerReady base size ((len + 7) / 8) t ∧ Keeps loadClob s t) ∧
+      wordsVal t.mem base (slot ((len + 7) / 8) 0) ((len + 7) / 8) =
+        Spec.Dsa.decodeBE (Spec.Rsa.bytesAt s.mem ((pointerValue base s (.input modulus)).setWidth 64) len))
+    (fun s t P => ⟨powerHead_value P.1.1.1 P.1.2.1 hz (by omega_using [h4]) hmax (by omega_using [he]) hel hw4 hew,
+      powerHead_value P.1.1.2.1 P.1.2.2.1 hz (by omega_using [h4]) hmax (by omega_using [he]) hel hw4 hew⟩)).mono (fun _ _ P => P) ?_
+  rintro s t ⟨_, a, b, P, ⟨⟨S, K⟩, Vs⟩, ⟨⟨T, L⟩, Vt⟩⟩
+  exact ⟨⟨S, T, (K.1 .esp (by decide)).trans (P.1.2.2.2.trans (L.1 .esp (by decide)).symm)⟩,
+    Vs.trans P.2.1, Vt.trans P.2.2⟩
 
 /-- What two runs of the product of two powers share: `PowerAgree`, and the
 second base and exponent at the same addresses. -/
@@ -576,11 +599,11 @@ theorem callPowerP_relCT (L : CallLayout) (a b : Pointer) (output : Nat)
     RelCT isa (CallPair L) (Core.power L.pLen L.qLen .p a b output) (CallPair L) := by
   have W := L.lengths
   refine call_stage (Q := VG.X86.Taint.Agree (workspaceTaint true)) ?_ ?_
-  · apply (corePower_relCT L.base L.size L.pLen L.qLen output .p a b L.saved L.extent
+  · apply (corePower_relCT L.base L.size L.pLen L.qLen output L.p .p a b L.saved L.extent
     (by omega_using [W]) (by omega_using [W]) L.aligned.1 (by omega_using [W]) (by omega_using [W]) L.aligned.2).mono ?_ (fun _ _ h => h)
     intro s t H
-    exact ⟨⟨H.1.arithmeticP A B (by omega_using [W]), H.2.arithmeticP A B (by omega_using [W]), H.pointer P, H.pointer A, H.pointer B⟩,
-      H.1.moduli.room, H.2.moduli.room, H.1.sp.trans H.2.sp.symm⟩
+    exact ⟨⟨⟨H.1.arithmeticP A B (by omega_using [W]), H.2.arithmeticP A B (by omega_using [W]), H.pointer P, H.pointer A, H.pointer B⟩,
+      H.1.moduli.room, H.2.moduli.room, H.1.sp.trans H.2.sp.symm⟩, H.1.moduli.pValue, H.2.moduli.pValue⟩
   · intro s R
     exact WP.mono (stagePowerP_ok R.moduli (R.operand A (by omega_using [W]) (by omega_using [W]))
       (R.operand B (by omega_using [W]) (by omega_using [W])) ho hb) fun _ H => H.2.toStageFrame.execution (.inl ⟨ho, hb⟩)
@@ -591,11 +614,11 @@ theorem callPowerQ_relCT (L : CallLayout) (a b : Pointer) (output : Nat)
     RelCT isa (CallPair L) (Core.power L.qLen L.qLen .q a b output) (CallPair L) := by
   have W := L.lengths
   refine call_stage (Q := VG.X86.Taint.Agree (workspaceTaint true)) ?_ ?_
-  · apply (corePower_relCT L.base L.size L.qLen L.qLen output .q a b L.saved L.extent
+  · apply (corePower_relCT L.base L.size L.qLen L.qLen output L.q .q a b L.saved L.extent
     (by omega_using [W]) (by omega_using [W]) L.aligned.2 (by omega_using [W]) (by omega_using []) L.aligned.2).mono ?_ (fun _ _ h => h)
     intro s t H
-    exact ⟨⟨H.1.arithmeticQ A B, H.2.arithmeticQ A B, H.pointer Q, H.pointer A, H.pointer B⟩,
-      H.1.moduli.room, H.2.moduli.room, H.1.sp.trans H.2.sp.symm⟩
+    exact ⟨⟨⟨H.1.arithmeticQ A B, H.2.arithmeticQ A B, H.pointer Q, H.pointer A, H.pointer B⟩,
+      H.1.moduli.room, H.2.moduli.room, H.1.sp.trans H.2.sp.symm⟩, H.1.moduli.qValue, H.2.moduli.qValue⟩
   · intro s R
     exact WP.mono (stagePowerQ_ok R.moduli (R.operand A (by omega_using [W]) (by omega_using [W]))
       (R.operand B (by omega_using [W]) (by omega_using [W])) ho hb) fun _ H => H.2.toStageFrame.execution (.inl ⟨ho, hb⟩)

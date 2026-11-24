@@ -49,11 +49,11 @@ theorem squarings_stackUse (n : Nat) : ∀ k, stackUse (squarings n k) ≤ 96
 
 theorem body_stackUse (n e : Nat) : stackUse (body n e) ≤ 96 := by
   have := squarings_stackUse n 6
-  have h₁ : stackUse (contextSeed n (65 * n)) = 0 := rfl
+  have h₁ : stackUse (VG.Impl.Dsa.X86.Comb.seed n) = 0 := rfl
   have h₂ : stackUse (one n (slot n 7)) = 0 := rfl
   have h₃ : stackUse (selectProduct (contextMod n) (slot n 6) (slot n 7) 4) = 0 := rfl
   have h₄ : stackUse (shiftDown e (slot n 8)) = 0 := rfl
-  simp only [body, core, setup, encode, step, finish, stackUse, mul_stackUse, h₁, h₂, h₃, h₄, Nat.max_le]
+  simp only [body, core, setup2, encode, step, finish, stackUse, mul_stackUse, h₁, h₂, h₃, h₄, Nat.max_le]
   omega_using [this]
 
 theorem zone_ofs {sp : BitVec 32} {base : Addr} {size : Nat}
