@@ -165,9 +165,6 @@ theorem prepMid_chk : check exprs cfg0 (fun _ => none) prepMid prepEnv (fun e =>
 
 /-! ## The layout -/
 
-/-- Slot `k` (16 bytes) of the scratch buffer at `B`. -/
-def W (m : Mem) (B : BitVec 32) (k : Nat) : BitVec 128 := m.readW (addr B (16 * k)) 128
-
 /-- The eight planes from slot `d` on hold the halves `x b` of sixteen blocks. -/
 def PAt (m : Mem) (B : BitVec 32) (d : Nat) (x : Nat → BitVec 64) : Prop :=
   ∀ b < 16, ∀ i < 8, ∀ j < 8, (W m B (d + j)).getLsbD (16 * i + b) = (byteOf (x b) i).getLsbD j
@@ -182,19 +179,6 @@ theorem spread_bit (k : BitVec 64) {i j : Nat} (hi : i < 8) (hj : j < 8) :
     decide_eq_true (show 16 * i + j < 128 by omega_arith), decide_eq_true hj]
   rfl
 
-/-- The `16 n` bytes of slots `[a, a + n)`. -/
-abbrev slotsR (B : BitVec 32) (a n : Nat) : Region := ⟨B.setWidth 64 + BitVec.ofNat 64 (16 * a), 16 * n⟩
-
-theorem addr16 {B : BitVec 32} {k : Nat} (h : B.toNat + 16 * k < 2 ^ 32) :
-    addr B (16 * k) = B.setWidth 64 + BitVec.ofNat 64 (16 * k) := addr_eq h
-
-/-- A slot outside the regions written keeps its value. -/
-theorem W_frame {m m' : Mem} {B : BitVec 32} {rs : List Region} (hf : Frame rs m m') {k : Nat}
-    (h : B.toNat + 16 * k < 2 ^ 32) (hd : ∀ r ∈ rs, Region.Disjoint (slotsR B k 1) r) : W m' B k = W m B k := by
-  unfold W
-  rw [addr16 h]
-  exact hf.readW (Region.contains_self _ _) hd (by decide)
-
 theorem PAt.frame {m m' : Mem} {B : BitVec 32} {d : Nat} {x : Nat → BitVec 64} (h : PAt m B d x)
     (e : ∀ j < 8, W m' B (d + j) = W m B (d + j)) : PAt m' B d x := fun b hb i hi j hj => by
   rw [e j hj]; exact h b hb i hi j hj
@@ -206,12 +190,7 @@ structure Scr (s : State) (B : BitVec 32) : Prop where
   wr : (⟨B.setWidth 64, 1544⟩ : Region) ∈ s.wr
   fit : B.toNat + 1544 ≤ 2 ^ 32
 
-/-- The `m` slots of 16 bytes at `B` are writable, and do not wrap around. -/
-structure Slots (m : Nat) (s : State) (B : BitVec 32) : Prop where
-  acc : ∀ k < m, InRegions s.wr (addr B (16 * k)) 16
-  fit : B.toNat + 16 * m ≤ 2 ^ 32
-
-theorem Scr.slots {s : State} {B : BitVec 32} (h : Scr s B) : Slots 94 s B where
+theorem Scr.slots {s : State} {B : BitVec 32} (h : Scr s B) : SlotsIn 94 s B where
   acc k hk := ⟨_, h.wr, by
     have := h.fit
     rw [addr16 (by omega_arith)]; exact Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
@@ -233,7 +212,7 @@ structure At (s₀ : State) (B : BitVec 32) (q : Nat) (s : State) : Prop where
 section
 variable {s₀ s : State} {B : BitVec 32} {q m : Nat}
 
-theorem At.ok (h : At s₀ B q s) (hs : Slots m s₀ B) (hq : 60 + q + 4 ≤ m) : Ok cfg s := by
+theorem At.ok (h : At s₀ B q s) (hs : SlotsIn m s₀ B) (hq : 60 + q + 4 ≤ m) : Ok cfg s := by
   have hf := hs.fit
   have hkr : (B + BitVec.ofNat 32 (16 * (60 + q))).toNat = B.toNat + 16 * (60 + q) :=
     Straight.toNat_add_off (by omega_arith)
@@ -278,7 +257,7 @@ theorem At.slot' (h : At s₀ B q s) (m : Mem) (k : Nat) :
   rw [h.base]; rfl
 
 /-- Subkey `k` is at slot `60 + k`, as the code keeps it. -/
-theorem At.key (h : At s₀ B q s) (hs : Slots m s₀ B) {k : Nat} (hk : 60 + k < m) : W s.mem B (60 + k) = W s₀.mem B (60 + k) := by
+theorem At.key (h : At s₀ B q s) (hs : SlotsIn m s₀ B) {k : Nat} (hk : 60 + k < m) : W s.mem B (60 + k) = W s₀.mem B (60 + k) := by
   have hf := hs.fit
   refine W_frame h.frame (by omega_arith) fun r hr => ?_
   rw [List.mem_singleton] at hr; subst hr
@@ -308,12 +287,6 @@ theorem At.runs {is : List Instr} {s' : State} (h : At s₀ B q s) (p : Runs cfg
 def inW (m : Mem) (B : BitVec 32) (src : Nat) (q : Nat) (v : BitVec 128) (i : Nat) : BitVec 128 :=
   if i < 8 then W m B (src + i) else W m B (60 + q + (i - 8)) ^^^ v
 
-theorem xor0 (x : BitVec 128) : x ^^^ 0 = x := BitVec.xor_zero
-
-theorem xorBits2 (V : Nat → BitVec 128) {i t i' t' : Nat} (ht : t < 128) (ht' : t' < 128) :
-    xorBits V [128 * i + t, 128 * i' + t'] = ((V i).getLsbD t ^^ (V i').getLsbD t') := by
-  simp [bitOf_word V i t ht, bitOf_word V i' t' ht']
-
 theorem mem_planesIn {d w j i : Nat} {v : BitVec 128} (h : (j, i, v) ∈ planesIn d w) :
     ∃ t < 8, j = d + t ∧ i = w + t ∧ v = 0 := by
   simp only [planesIn, List.mem_map, List.mem_range, Prod.mk.injEq] at h
@@ -324,7 +297,7 @@ theorem inS_lt {i j : Nat} (hj : j < 8) : inS i j < 8 := by unfold inS; split <;
 theorem outS_lt {i j : Nat} (hj : j < 8) : outS i j < 8 := by unfold outS; split <;> [skip; split] <;> omega_arith
 
 /-- The subkey XOR and input selection. -/
-theorem roundIn_ok (h : At s₀ B q s) (hs : Slots m s₀ B) (hq : 60 + q + 4 ≤ m) {r src : Nat} (hr : r < 4)
+theorem roundIn_ok (h : At s₀ B q s) (hs : SlotsIn m s₀ B) (hq : 60 + q + 4 ≤ m) {r src : Nat} (hr : r < 4)
     (hchk : roundInOk r src = true) :
     ∃ s', runBlock isa (roundIn src (16 * r)) s = some s' ∧ Runs cfg (roundIn src (16 * r)) s s' ∧
       ∀ j < 8, ∀ p < 128, (W s'.mem B j).getLsbD p =
@@ -347,7 +320,7 @@ theorem roundIn_ok (h : At s₀ B q s) (hs : Slots m s₀ B) (hq : 60 + q + 4 �
 
 /-- The S-box of every byte, of planes XORed with `0xc5`, to planes XORed
 with `0x6e`. -/
-theorem sbox_ok (h : At s₀ B q s) (hs : Slots m s₀ B) (hq : 60 + q + 4 ≤ m) :
+theorem sbox_ok (h : At s₀ B q s) (hs : SlotsIn m s₀ B) (hq : 60 + q + 4 ≤ m) :
     ∃ s', runBlock isa sboxCode s = some s' ∧ Runs cfg sboxCode s s' ∧
       ∀ j < 8, ∀ p < 128, (W s'.mem B j).getLsbD p =
         (sbox1 (ofBits 8 (fun k => (W s.mem B k).getLsbD p) ^^^ 0xc5#8) ^^^ 0x6e#8).getLsbD j := by
@@ -380,20 +353,12 @@ theorem sbox_ok (h : At s₀ B q s) (hs : Slots m s₀ B) (hq : 60 + q + 4 ≤ m
   cases hs''
   exact hv j hj
 
-theorem xorBits_map (V : Nat → BitVec 128) (f t : Nat → Nat) (l : List Nat) (ht : ∀ i ∈ l, t i < 128) :
-    xorBits V (l.map fun i => 128 * f i + t i) = l.foldr (fun i acc => (V (f i)).getLsbD (t i) ^^ acc) false := by
-  induction l with
-  | nil => rfl
-  | cons i l ih =>
-    rw [List.map_cons, xorBits_cons, List.foldr_cons, bitOf_word V _ _ (ht i List.mem_cons_self),
-      ih fun i hi => ht i (List.mem_cons_of_mem _ hi)]
-
 /-- The words of the output layer. -/
 def outW (m : Mem) (B : BitVec 32) (dst : Nat) (i : Nat) : BitVec 128 :=
   if i < 8 then W m B i ^^^ c6e i else W m B (dst + (i - 8))
 
 /-- The output selection and the P-function, into the other half. -/
-theorem roundOut_ok (h : At s₀ B q s) (hs : Slots m s₀ B) (hq : 60 + q + 4 ≤ m) {dst : Nat}
+theorem roundOut_ok (h : At s₀ B q s) (hs : SlotsIn m s₀ B) (hq : 60 + q + 4 ≤ m) {dst : Nat}
     (hchk : roundOutOk dst = true) :
     ∃ s', runBlock isa (roundOut dst) s = some s' ∧ Runs cfg (roundOut dst) s s' ∧
       ∀ j < 8, ∀ p < 128, (W s'.mem B (dst + j)).getLsbD p =
@@ -443,7 +408,7 @@ theorem c6e_bit (j : Nat) (hj : j < 8) (p : Nat) (hp : p < 128) : (c6e j).getLsb
   · rw [ite_eq_left rfl, BitVec.getLsbD_allOnes, decide_eq_true hp]
 
 /-- A round: the half in the planes `dst` is XORed with `f` of the other. -/
-theorem round_ok (h : At s₀ B q s) (hs : Slots m s₀ B) (hq : 60 + q + 4 ≤ m) {r src dst : Nat} (hr : r < 4)
+theorem round_ok (h : At s₀ B q s) (hs : SlotsIn m s₀ B) (hq : 60 + q + 4 ≤ m) {r src dst : Nat} (hr : r < 4)
     (hin : roundInOk r src = true) (hout : roundOutOk dst = true)
     (st1 : storesOk (roundIn src (16 * r)) (· < 8) = true) (st3 : storesOk (roundOut dst) (fun k => dst ≤ k && k < dst + 8) = true)
     (hsrc : 26 ≤ src) (hsrc' : src + 8 ≤ 44) (hdst : 28 ≤ dst) (hdst' : dst + 8 ≤ 44)
@@ -512,7 +477,7 @@ theorem spread_xor_bit (k : BitVec 64) (i j : Nat) (hi : i < 8) (hj : j < 8) :
   rw [BitVec.xor_assoc, BitVec.xor_self]
   exact (congrArg (fun v : BitVec 128 => v.getLsbD (16 * i + j)) (xor0 _)).trans (spread_bit k hi hj)
 
-theorem whiten_ok (h : At s₀ B q s) (hs : Slots m s₀ B) (hq : 60 + q + 4 ≤ m) {r d : Nat} (hr : r < 4)
+theorem whiten_ok (h : At s₀ B q s) (hs : SlotsIn m s₀ B) (hq : 60 + q + 4 ≤ m) {r d : Nat} (hr : r < 4)
     (hchk : whitenOk r d = true) (hst : storesOk (whiten (16 * r) d) (fun k => d ≤ k && k < d + 8) = true)
     (hd : 28 ≤ d) (hd' : d + 8 ≤ 44) {x : Nat → BitVec 64} {k : BitVec 64} (hx : PAt s.mem B d x)
     (hk : W s.mem B (60 + q + r) = spread k ^^^ uW) :
@@ -682,7 +647,7 @@ theorem or_step {V : Nat → BitVec 128} {k : BitVec 64} (hk : V 8 = spread k) {
     rw [e2, e3]
 
 /-- A step of `fl` or `flinv`, under the subkey in `xmm6`. -/
-theorem flStep_ok (h : At s₀ B q s) (hs : Slots m s₀ B) (hq : 60 + q + 4 ≤ m) {is : List Instr} {d : Nat} {E : Nat → XE}
+theorem flStep_ok (h : At s₀ B q s) (hs : SlotsIn m s₀ B) (hq : 60 + q + 4 ≤ m) {is : List Instr} {d : Nat} {E : Nat → XE}
     (hchk : flOk is d E = true) (hd : d + 8 ≤ 60) (h6 : (is.all fun i => xdst i != some .xmm6) = true) :
     ∃ s', runBlock isa is s = some s' ∧ Runs cfg is s s' ∧ s'.xmm .xmm6 = s.xmm .xmm6 ∧
       ∀ j < 8, W s'.mem B (d + j) = (E j).eval fun n => if n < 8 then W s.mem B (d + n) else s.xmm .xmm6 := by
@@ -708,7 +673,7 @@ theorem flStep_ok (h : At s₀ B q s) (hs : Slots m s₀ B) (hq : 60 + q + 4 ≤
   rw [p'.gpr, h.slot'] at this
   exact this
 
-theorem ldK_ok (h : At s₀ B q s) (hs : Slots m s₀ B) (hq : 60 + q + 4 ≤ m) {r : Nat} (hchk : ldKOk r = true)
+theorem ldK_ok (h : At s₀ B q s) (hs : SlotsIn m s₀ B) (hq : 60 + q + 4 ≤ m) {r : Nat} (hchk : ldKOk r = true)
     {k : BitVec 64} (hk : W s.mem B (60 + q + r) = spread k ^^^ uW) :
     ∃ s', runBlock isa (ldK (16 * r)) s = some s' ∧ Runs cfg (ldK (16 * r)) s s' ∧ s'.mem = s.mem ∧
       s'.xmm .xmm6 = spread k := by
@@ -726,7 +691,7 @@ theorem ldK_ok (h : At s₀ B q s) (hs : Slots m s₀ B) (hq : 60 + q + 4 ≤ m)
     exact xor0 _
 
 /-- Two steps of `fl` or `flinv` under a subkey. -/
-theorem fl2_ok (h : At s₀ B q s) (hs : Slots m s₀ B) (hq : 60 + q + 4 ≤ m) {r d : Nat} (hl : ldKOk r = true)
+theorem fl2_ok (h : At s₀ B q s) (hs : SlotsIn m s₀ B) (hq : 60 + q + 4 ≤ m) {r d : Nat} (hl : ldKOk r = true)
     {i₁ i₂ : List Instr} {E₁ E₂ : Nat → XE} (hd : 28 ≤ d) (hd' : d + 8 ≤ 44)
     (c₁ : flOk i₁ d E₁ = true) (c₂ : flOk i₂ d E₂ = true)
     (x₁ : (i₁.all fun i => xdst i != some .xmm6) = true) (x₂ : (i₂.all fun i => xdst i != some .xmm6) = true)
@@ -764,7 +729,7 @@ theorem proj_eq {V V' : Nat → BitVec 128} {E : Nat → XE} (e : ∀ j < 8, V' 
   dsimp only
   rw [e j hj]
 
-theorem fl_ok (h : At s₀ B q s) (hs : Slots m s₀ B) (hq : 60 + q + 4 ≤ m) {x : Nat → BitVec 64} {k : BitVec 64}
+theorem fl_ok (h : At s₀ B q s) (hs : SlotsIn m s₀ B) (hq : 60 + q + 4 ≤ m) {x : Nat → BitVec 64} {k : BitVec 64}
     (hx : PAt s.mem B d1 x) (hk : W s.mem B (60 + q + 2) = spread k ^^^ uW) :
     ∃ s', runBlock isa (fl 32 d1) s = some s' ∧ At s₀ B q s' ∧ PAt s'.mem B d1 (fun b => Spec.Camellia.fl (x b) k) ∧
       s'.gpr = s.gpr ∧ ∀ e, e + 8 ≤ 60 → (e + 8 ≤ d1 ∨ d1 + 8 ≤ e) → ∀ y, PAt s.mem B e y → PAt s'.mem B e y := by
@@ -781,7 +746,7 @@ theorem fl_ok (h : At s₀ B q s) (hs : Slots m s₀ B) (hq : 60 + q + 4 ≤ m) 
   rw [show e = fun b => x (8 * hh + b) from funext hx'] at this
   exact this
 
-theorem flinv_ok (h : At s₀ B q s) (hs : Slots m s₀ B) (hq : 60 + q + 4 ≤ m) {x : Nat → BitVec 64} {k : BitVec 64}
+theorem flinv_ok (h : At s₀ B q s) (hs : SlotsIn m s₀ B) (hq : 60 + q + 4 ≤ m) {x : Nat → BitVec 64} {k : BitVec 64}
     (hx : PAt s.mem B d2 x) (hk : W s.mem B (60 + q + 3) = spread k ^^^ uW) :
     ∃ s', runBlock isa (flinv 48 d2) s = some s' ∧ At s₀ B q s' ∧ PAt s'.mem B d2 (fun b => Spec.Camellia.flinv (x b) k) ∧
       s'.gpr = s.gpr ∧ ∀ e, e + 8 ≤ 60 → (e + 8 ≤ d2 ∨ d2 + 8 ≤ e) → ∀ y, PAt s.mem B e y → PAt s'.mem B e y := by
@@ -801,7 +766,7 @@ theorem flinv_ok (h : At s₀ B q s) (hs : Slots m s₀ B) (hq : 60 + q + 4 ≤ 
 /-! ## The transposes -/
 
 /-- The blocks of the buffer. -/
-theorem blocksIn_ok (h : At s₀ B q s) (hs : Slots m s₀ B) (hq : 60 + q + 4 ≤ m) :
+theorem blocksIn_ok (h : At s₀ B q s) (hs : SlotsIn m s₀ B) (hq : 60 + q + 4 ≤ m) :
     ∃ s', runBlock isa blocksIn s = some s' ∧ At s₀ B q s' ∧ s'.gpr = s.gpr ∧
       (∀ e, 44 ≤ e → e < 60 → W s'.mem B e = W s.mem B e) ∧
       ∀ b < 16, ∀ i < 8, ∀ j < 8,
@@ -823,7 +788,7 @@ theorem blocksIn_ok (h : At s₀ B q s) (hs : Slots m s₀ B) (hq : 60 + q + 4 �
   rw [g1, g2, Nat.mul_zero, Nat.zero_add, Nat.mul_one]
   exact ⟨rfl, rfl⟩
 
-theorem blocksOut_ok (h : At s₀ B q s) (hs : Slots m s₀ B) (hq : 60 + q + 4 ≤ m) :
+theorem blocksOut_ok (h : At s₀ B q s) (hs : SlotsIn m s₀ B) (hq : 60 + q + 4 ≤ m) :
     ∃ s', runBlock isa blocksOut s = some s' ∧ At s₀ B q s' ∧ s'.gpr = s.gpr ∧
       ∀ b < 16, ∀ i < 8, ∀ j < 8,
         (W s'.mem B (bufS + b)).getLsbD (8 * i + j) = (W s.mem B (d2 + j)).getLsbD (16 * i + b) ∧
@@ -863,7 +828,7 @@ def Keys (m : Mem) (B : BitVec 32) (n : Nat) (E : Nat → BitVec 64) : Prop :=
 def PP (m : Mem) (B : BitVec 32) (x : Nat → BitVec 64 × BitVec 64) : Prop :=
   PAt m B d1 (fun b => (x b).1) ∧ PAt m B d2 (fun b => (x b).2)
 
-theorem At.keyE (h : At s₀ B q s) (hs : Slots m s₀ B) {n : Nat} (hk : Keys s₀.mem B n E) (hn : 60 + n ≤ m) {r : Nat}
+theorem At.keyE (h : At s₀ B q s) (hs : SlotsIn m s₀ B) {n : Nat} (hk : Keys s₀.mem B n E) (hn : 60 + n ≤ m) {r : Nat}
     (hr : q + r < n) : W s.mem B (60 + q + r) = spread (E (q + r)) ^^^ uW := by
   rw [Nat.add_assoc, h.key hs (by omega_arith)]
   exact hk _ hr
@@ -884,7 +849,7 @@ theorem At.next {s' : State} (h : At s₀ B q s) (u : Wp.Upd s s' kr (s.gpr kr +
 theorem PP.mem {m m' : Mem} {x : Nat → BitVec 64 × BitVec 64} (h : PP m B x) (e : m' = m) : PP m' B x := e ▸ h
 
 /-- A pair of rounds. -/
-theorem pair_wp (hs : Slots m s₀ B) {n : Nat} (hk : Keys s₀.mem B n E) (hn : 60 + n ≤ m) (hq : q + 4 ≤ n) (h : At s₀ B q s)
+theorem pair_wp (hs : SlotsIn m s₀ B) {n : Nat} (hk : Keys s₀.mem B n E) (hn : 60 + n ≤ m) (hq : q + 4 ≤ n) (h : At s₀ B q s)
     {x : Nat → BitVec 64 × BitVec 64} (hx : PP s.mem B x) {c : Nat} (hc : s.gpr .edx = BitVec.ofNat 32 c) (hc1 : 1 ≤ c)
     (hc3 : c ≤ 3) {N : BitVec 32} (hN : s.gpr .ecx = N) :
     WP isa (.block pairB) s fun s' => At s₀ B (q + 2) s' ∧
@@ -925,7 +890,7 @@ theorem pairsE_tri (i : Nat) (d : BitVec 64 × BitVec 64) : pairsE E (8 * i) 3 d
     show 8 * i + 2 * 0 + 2 = 2 + 8 * i by omega_arith, show 8 * i + 2 * 0 + 3 = 2 + 8 * i + 1 by omega_arith]
 
 /-- The three pairs of a group. -/
-theorem pairs_wp (hs : Slots m s₀ B) {n : Nat} (hk : Keys s₀.mem B n E) (hn : 60 + n ≤ m) (hq : q + 8 ≤ n) (h : At s₀ B q s)
+theorem pairs_wp (hs : SlotsIn m s₀ B) {n : Nat} (hk : Keys s₀.mem B n E) (hn : 60 + n ≤ m) (hq : q + 8 ≤ n) (h : At s₀ B q s)
     {x : Nat → BitVec 64 × BitVec 64} (hx : PP s.mem B x) (hd : s.gpr .edx = BitVec.ofNat 32 3) {N : BitVec 32}
     (hc : s.gpr .ecx = N) :
     WP isa (.loop (.block pairB) .ne) s fun s' => At s₀ B (q + 6) s' ∧ PP s'.mem B (fun b => pairsE E q 3 (x b)) ∧
@@ -948,7 +913,7 @@ theorem pairs_wp (hs : Slots m s₀ B) {n : Nat} (hk : Keys s₀.mem B n E) (hn 
       by omega_arith, a', p', d', c'⟩
 
 /-- The six rounds of a group. -/
-theorem group_wp (hs : Slots m s₀ B) {n : Nat} (hk : Keys s₀.mem B n E) (hn : 60 + n ≤ m) (hq : q + 8 ≤ n) (h : At s₀ B q s)
+theorem group_wp (hs : SlotsIn m s₀ B) {n : Nat} (hk : Keys s₀.mem B n E) (hn : 60 + n ≤ m) (hq : q + 8 ≤ n) (h : At s₀ B q s)
     {x : Nat → BitVec 64 × BitVec 64} (hx : PP s.mem B x) {c : Nat} (hc : s.gpr .ecx = BitVec.ofNat 32 c) (hc1 : 1 ≤ c)
     (hc3 : c ≤ 4) :
     WP isa Impl.Camellia.X86.Sse.group s fun s' => At s₀ B (q + 6) s' ∧ PP s'.mem B (fun b => pairsE E q 3 (x b)) ∧
@@ -961,7 +926,7 @@ theorem group_wp (hs : Slots m s₀ B) {n : Nat} (hk : Keys s₀.mem B n E) (hn 
   · rw [z₃, c₂, show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl, Wp.sub_beq (by omega_arith) (by decide)]
 
 /-- FL and FL⁻¹ between groups. -/
-theorem layer_wp (hs : Slots m s₀ B) {n : Nat} (hk : Keys s₀.mem B n E) (hn : 60 + n ≤ m) (hq : q + 4 ≤ n) (h : At s₀ B q s)
+theorem layer_wp (hs : SlotsIn m s₀ B) {n : Nat} (hk : Keys s₀.mem B n E) (hn : 60 + n ≤ m) (hq : q + 4 ≤ n) (h : At s₀ B q s)
     {x : Nat → BitVec 64 × BitVec 64} (hx : PP s.mem B x) {c : Nat} (hc : s.gpr .ecx = BitVec.ofNat 32 c) (hc1 : 1 ≤ c)
     (hc3 : c ≤ 4) :
     WP isa (.block layer) s fun s' => At s₀ B (q + 2) s' ∧
@@ -1022,13 +987,6 @@ theorem loop_wp (hs : Scr s₀ B) (hg : g = 3 ∨ g = 4) (hk : Keys s₀.mem B (
           show 8 * (g - k) + 6 + 3 = 9 + 8 * (g - k) by omega_arith]
       rw [e]
       exact p₂
-
-/-- Byte `t` of slot `k`. -/
-theorem W_bit (m : Mem) {B : BitVec 32} {k t j : Nat} (h : B.toNat + 16 * k < 2 ^ 32) (ht : t < 16) (hj : j < 8) :
-    (W m B k).getLsbD (8 * t + j) = (m (B.setWidth 64 + BitVec.ofNat 64 (16 * k + t))).getLsbD j := by
-  have e := byte_readW m (addr B (16 * k)) (w := 128) (k := t) (by omega_arith)
-  rw [addr16 h, Offset.add_ofNat_add_ofNat] at e
-  rw [← e, BitVec.getLsbD_extractLsb', decide_eq_true hj, Bool.true_and, W, addr16 h]
 
 /-- The address of block `b` of the buffer. -/
 abbrev blk (B : BitVec 32) (b : Nat) : Addr := B.setWidth 64 + BitVec.ofNat 64 (16 * (bufS + b))

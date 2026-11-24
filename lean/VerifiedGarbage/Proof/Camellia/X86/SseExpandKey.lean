@@ -136,7 +136,7 @@ theorem VW_iff {s : State} {b : BitVec 32} (hb : s.gpr sb = b) {k : Nat} (hfit :
 section
 variable {s₀ s : State} {B : BitVec 32} {q m : Nat}
 
-theorem xorV_ok (h : At s₀ B q s) (hs : Sse.Slots m s₀ B) (hq : 60 + q + 4 ≤ m) {a b : Nat} (hchk : xorOk a b = true)
+theorem xorV_ok (h : At s₀ B q s) (hs : SlotsIn m s₀ B) (hq : 60 + q + 4 ≤ m) {a b : Nat} (hchk : xorOk a b = true)
     (hst : storesOk (xorV a b) (· == vS) = true) :
     ∃ s', runBlock isa (xorV a b) s = some s' ∧ At s₀ B q s' ∧ s'.gpr = s.gpr ∧
       W s'.mem B vS = W s.mem B a ^^^ W s.mem B b ∧ ∀ k < 60, k ≠ vS → W s'.mem B k = W s.mem B k := by
@@ -150,7 +150,7 @@ theorem xorV_ok (h : At s₀ B q s) (hs : Sse.Slots m s₀ B) (hq : 60 + q + 4 �
   exact this
 
 /-- The running value to the planes of its halves, in every block. -/
-theorem spread_ok (h : At s₀ B q s) (hs : Sse.Slots m s₀ B) (hq : 60 + q + 4 ≤ m) {v : BitVec 64 × BitVec 64}
+theorem spread_ok (h : At s₀ B q s) (hs : SlotsIn m s₀ B) (hq : 60 + q + 4 ≤ m) {v : BitVec 64 × BitVec 64}
     (hv : VB (W s.mem B vS) v) :
     ∃ s', runBlock isa spreadV s = some s' ∧ At s₀ B q s' ∧ s'.gpr = s.gpr ∧ PAt s'.mem B d1 (fun _ => v.1) ∧
       PAt s'.mem B d2 (fun _ => v.2) ∧ ∀ k, 44 ≤ k → k < 60 → W s'.mem B k = W s.mem B k := by
@@ -176,7 +176,7 @@ theorem spread_ok (h : At s₀ B q s) (hs : Sse.Slots m s₀ B) (hq : 60 + q + 4
       hv (8 + i) (by omega_arith) j hj, ite_eq_right (by omega_arith), show (8 + i) % 8 = i by omega_arith]
 
 /-- And back. -/
-theorem pack_ok (h : At s₀ B q s) (hs : Sse.Slots m s₀ B) (hq : 60 + q + 4 ≤ m) {dst : Nat} (hchk : packOk dst = true)
+theorem pack_ok (h : At s₀ B q s) (hs : SlotsIn m s₀ B) (hq : 60 + q + 4 ≤ m) {dst : Nat} (hchk : packOk dst = true)
     (hst : storesOk (packV dst) (· == dst) = true) (hd : 44 ≤ dst ∧ dst < 60) {v : BitVec 64 × BitVec 64}
     (h1 : PAt s.mem B d1 (fun _ => v.1)) (h2 : PAt s.mem B d2 (fun _ => v.2)) :
     ∃ s', runBlock isa (packV dst) s = some s' ∧ At s₀ B q s' ∧ s'.gpr = s.gpr ∧ VB (W s'.mem B dst) v ∧
@@ -205,7 +205,7 @@ theorem pack_ok (h : At s₀ B q s) (hs : Sse.Slots m s₀ B) (hq : 60 + q + 4 �
       h2 j (by omega_arith) (c % 8) (by omega_arith) j hj]
 
 /-- A pair of rounds on the running value. -/
-theorem pair_ok (h : At s₀ B q s) (hs : Sse.Slots m s₀ B) (hq : 60 + q + 4 ≤ m) {dst : Nat} (hchk : packOk dst = true)
+theorem pair_ok (h : At s₀ B q s) (hs : SlotsIn m s₀ B) (hq : 60 + q + 4 ≤ m) {dst : Nat} (hchk : packOk dst = true)
     (hst : storesOk (packV dst) (· == dst) = true) (hd : 44 ≤ dst ∧ dst < 60) {v : BitVec 64 × BitVec 64}
     (hv : VB (W s.mem B vS) v) {k₁ k₂ : BitVec 64} (h1 : W s₀.mem B (60 + q + 2) = spread k₁ ^^^ uW)
     (h2 : W s₀.mem B (60 + q + 3) = spread k₂ ^^^ uW) :
@@ -236,7 +236,7 @@ theorem next_wp {is : List Instr} {Q : State → Prop} (h : At s₀ B q s)
   Wp.wp_addi fun s' u => K s' (h.next u) u.mem
 
 /-- `KA` and `KB`, in the core's slots. -/
-theorem kaKb_wp (h : At s₀ B 0 s₀) (hs : Sse.Slots 68 s₀ B) (hk : Sigs s₀.mem B) {KL KR : BitVec 64 × BitVec 64}
+theorem kaKb_wp (h : At s₀ B 0 s₀) (hs : SlotsIn 68 s₀ B) (hk : Sigs s₀.mem B) {KL KR : BitVec 64 × BitVec 64}
     (hl : VB (W s₀.mem B klS) KL) (hr : VB (W s₀.mem B krS) KR) {is : List Instr} {Q : State → Prop}
     (K : ∀ s', At s₀ B 4 s' → VB (W s'.mem B kaS) (kaD2 KL KR) → VB (W s'.mem B kbS) (kaD3 KL KR) →
       WP isa (.block is) s' Q) :
@@ -391,7 +391,7 @@ theorem mid_ok : MidOk 368 tableName mid := by
   have rd₅ : s₅.rd = s.rd := by rw [u₅.rd, u₄.rd, u₃.rd, p₂.rd, u₁.rd]
   have sp₅ : s₅.gpr .esp = s.gpr .esp := by
     rw [u₅.other _ (by decide), u₄.other _ (by decide), u₃.other _ (by decide), p₂.gpr, u₁.other _ (by decide)]
-  have hsl : Sse.Slots 68 s₅ B := by
+  have hsl : SlotsIn 68 s₅ B := by
     refine ⟨fun k hk => ?_, by omega_arith⟩
     obtain ⟨n, hn, hf', hr⟩ := hw.mem
     refine ⟨_, by rw [wr₅]; exact hr, ?_⟩

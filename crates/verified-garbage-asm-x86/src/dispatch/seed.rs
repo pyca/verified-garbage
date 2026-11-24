@@ -15,7 +15,7 @@
 /// * `key` must be valid for reads of 16 bytes.
 /// * `schedule` must be valid for reads and writes of 128 bytes.
 /// * `schedule` must not overlap `key` or the arguments on the stack (distinct Rust objects never do).
-/// * Neither `key` nor `schedule` may overlap the return address on the stack or the 840 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * Neither `key` nor `schedule` may overlap the return address on the stack or the 768 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_seed_expand_key_auto(_dit: verified_garbage_cpu::Dit<'_>, key: *const [u8; 16], schedule: *mut [u8; 128]) {
@@ -38,7 +38,7 @@ pub unsafe fn vg_seed_expand_key_auto(_dit: verified_garbage_cpu::Dit<'_>, key: 
 /// * `schedule` must be valid for reads of 128 bytes.
 /// * `data` must be valid for reads and writes of `16 * n` bytes.
 /// * `data` must not overlap `schedule` (distinct Rust objects never do).
-/// * Neither `schedule` nor `data` may overlap the arguments on the stack, overlap the return address on the stack or the 1132 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * Neither `schedule` nor `data` may overlap the arguments on the stack, overlap the return address on the stack or the 1864 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_seed_ecb_encrypt_auto(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 128], data: *mut [u8; 16], n: usize) {
@@ -90,7 +90,7 @@ pub unsafe fn vg_seed_ecb_encrypt_auto(_dit: verified_garbage_cpu::Dit<'_>, sche
 /// * `schedule` must be valid for reads of 128 bytes.
 /// * `data` must be valid for reads and writes of `16 * n` bytes.
 /// * `data` must not overlap `schedule` (distinct Rust objects never do).
-/// * Neither `schedule` nor `data` may overlap the arguments on the stack, overlap the return address on the stack or the 1132 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * Neither `schedule` nor `data` may overlap the arguments on the stack, overlap the return address on the stack or the 1864 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_seed_ecb_decrypt_auto(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 128], data: *mut [u8; 16], n: usize) {

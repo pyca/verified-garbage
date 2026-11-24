@@ -41,7 +41,7 @@ and OFB over a message's last piece (`Proof.Modes.X86.cfbEncFinal_wp`,
 block at a time (`coreSpec`), with the working space as a sixth argument
 (`finalX86`), as the whole-block functions are (`SseModes.lean`), but the
 data `len` bytes. Each is correct and constant time, by the taint analysis
-from the same initial taint (`Fb.fbTaint`); the `_framed` theorems run them
+from the same initial taint (`Modes.fbTaint`); the `_framed` theorems run them
 with their working space on the stack, zeroed on return, on the subkeys at
 `schedule` (`Proof.Camellia.cfbEncFinalScratchContract`), which give the
 specification's contracts (`cfbEncryptFinal_of_sk`).
