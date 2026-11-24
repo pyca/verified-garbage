@@ -151,7 +151,7 @@ TARGET = pathlib.Path("bench-target").resolve()
 # the SHA-512 family's digests, HMAC's and PBKDF2's, ML-KEM's, and SHA-256's and
 # SHA-224's digests, HMACs and PBKDF2's.
 # They run from `--copies` copies of each binary.
-FRESH_COPIES = re.compile(
+FRESH_COPIES = re.compile(r"^(?:aes-ctr-|aes-ecb-)|"
     r"^(?:ec_p521_public_key|ecdsa_p521_|chacha20poly1305|aes-(?:128|256)-gcm-(?!siv)"
     r"|pbkdf2-hmac-sha(?:384|512)|sha(?:384|512)(?:-224|-256)?$|mlkem(?:768|1024)_"
     r"|ecdsa_brainpoolp(?:384|512)r1_.*_sign|hmac-sha(?:384|512)(?:-224|-256)?(?:-verify)?$"
@@ -161,7 +161,7 @@ FRESH_COPIES = re.compile(
 # whose benchmarks hold those groups. The binary sets up every selected
 # benchmark before criterion's filter applies (RSA keys of up to 4096 bits
 # among them), which took about 110 s of each copy's run with every module.
-FRESH_COPIES_MODULES = "ecdsa_p521 ecdsa_brainpoolp384r1 ecdsa_brainpoolp512r1 chacha20poly1305 aes_gcm sha512 mlkem sha256"
+FRESH_COPIES_MODULES = "aes_ctr aes_ecb ecdsa_p521 ecdsa_brainpoolp384r1 ecdsa_brainpoolp512r1 chacha20poly1305 aes_gcm sha512 mlkem sha256"
 
 # The seconds one run of one benchmark id takes, with the default 0.1 s
 # warm-up and 0.3 s measurement and Criterion's analysis: a shard of 48

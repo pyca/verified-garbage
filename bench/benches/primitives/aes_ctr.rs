@@ -25,7 +25,7 @@ pub fn bench(c: &mut Criterion) {
     use openssl::symm::{Cipher, Crypter, Mode};
     use verified_garbage::cipher::aes::AesCtr;
 
-    use crate::{AWS_LC, BenchDyn, OPENSSL, SIZES, VG};
+    use crate::{AWS_LC, BenchDyn, OPENSSL, VG};
 
     let key: Vec<_> = (0..32).map(|i| (17 * i + 3) as u8).collect();
     let iv = [0x3c; 16];
@@ -36,15 +36,23 @@ pub fn bench(c: &mut Criterion) {
     ] {
         let key = &key[..key_len];
         let mut group = c.benchmark_group(format!("aes-ctr-{}", 8 * key_len));
-        for size in SIZES {
+        for size in [16usize, 32, 240, 1024, 16384] {
             group.throughput(Throughput::Bytes(size as u64));
             let data = vec![0x5a; size];
             let mut buffer = crate::InPlace::new(size, &data);
+            let mut ctx = AesCtr::new(key, &iv).unwrap();
+            let mut check = data.clone();
+            AesCtr::new(key, &iv).unwrap().apply_keystream(&mut check).unwrap();
+            let mut expected = vec![0; size + 16];
+            let mut reference = Crypter::new(cipher, Mode::Encrypt, key, Some(&iv)).unwrap();
+            reference.pad(false);
+            let written = reference.update(&data, &mut expected).unwrap();
+            let final_len = reference.finalize(&mut expected[written..]).unwrap();
+            assert_eq!(size,written+final_len);
+            assert_eq!(&check[..],&expected[..size]);
             group.bench(BenchmarkId::new(VG, size), |b| {
                 b.iter(|| {
-                    let ctx = AesCtr::new(black_box(key), &black_box(iv)).unwrap();
-                    buffer.copy_from_slice(black_box(&data));
-                    ctx.apply_keystream_final(black_box(&mut buffer));
+                    ctx.apply_keystream(black_box(&mut buffer)).unwrap();
                     black_box(&buffer);
                 })
             });

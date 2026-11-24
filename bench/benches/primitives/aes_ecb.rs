@@ -24,7 +24,7 @@ pub fn bench(c: &mut Criterion) {
     use openssl::symm::{Cipher, Crypter, Mode};
     use verified_garbage::cipher::aes::AesEcb;
 
-    use crate::{AWS_LC, BenchDyn, OPENSSL, SIZES, VG};
+    use crate::{AWS_LC, BenchDyn, OPENSSL, VG};
 
     let key: Vec<_> = (0..32).map(|i| (17 * i + 3) as u8).collect();
     for (key_len, cipher, algorithm) in [
@@ -38,19 +38,23 @@ pub fn bench(c: &mut Criterion) {
             ("decrypt", false, Mode::Decrypt),
         ] {
             let mut group = c.benchmark_group(format!("aes-ecb-{operation}-{}", 8 * key_len));
-            for size in SIZES {
+            for size in [16usize, 32, 240, 1024, 16384] {
                 group.throughput(Throughput::Bytes(size as u64));
                 let data = vec![0x5a; size];
                 let mut buffer = crate::InPlace::new(size, &data);
+                let ctx = AesEcb::new(key).unwrap();
+                let mut check = data.clone();
+                if encrypt {ctx.encrypt(&mut check).unwrap();} else {ctx.decrypt(&mut check).unwrap();}
+                let mut expected = vec![0; size+16];
+                let mut reference = Crypter::new(cipher,mode,key,None).unwrap();
+                reference.pad(false);
+                let written=reference.update(&data,&mut expected).unwrap();
+                let final_len=reference.finalize(&mut expected[written..]).unwrap();
+                assert_eq!(size,written+final_len);
+                assert_eq!(&check[..],&expected[..size]);
                 group.bench(BenchmarkId::new(VG, size), |b| {
                     b.iter(|| {
-                        let ctx = AesEcb::new(black_box(key)).unwrap();
-                        buffer.copy_from_slice(black_box(&data));
-                        if encrypt {
-                            ctx.encrypt(black_box(&mut buffer)).unwrap();
-                        } else {
-                            ctx.decrypt(black_box(&mut buffer)).unwrap();
-                        }
+                        if encrypt {ctx.encrypt(black_box(&mut buffer)).unwrap();} else {ctx.decrypt(black_box(&mut buffer)).unwrap();}
                         black_box(&buffer);
                     })
                 });
