@@ -12,7 +12,7 @@ public import VerifiedGarbage.Impl.Scrub.X86.Sel
 `lookup`, the internal function `vg_cast5_lookup_ssse3`: the four look-ups
 of a round, `S4[Id], S3[Ic], S2[Ib], S1[Ia]` in the doublewords of `xmm1`
 for the bytes of `I` in the doublewords of `xmm0`, as the baseline's scan of
-`VG_CAST5_S1234` gives them (`Impl/Cast5/X86.lean`); the rounds, the blocks
+its tables gives them (`Impl/Cast5/X86.lean`); the rounds, the blocks
 and the modes' core are the baseline's over its call (`roundWith`,
 `Modes.coreWith`): `core`.
 

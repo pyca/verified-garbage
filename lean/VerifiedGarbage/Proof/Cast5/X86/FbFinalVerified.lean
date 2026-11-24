@@ -41,7 +41,7 @@ and OFB over a message's last piece (`Proof.Modes.X86.cfbEncFinal_wp`,
 `cfbDecFinal_wp`, `ofbFinal_wp`) over CAST5's
 encrypting core (`Mode.dirCoreSpec true`), with the working space as a sixth
 argument (`finalX`: `ModeFns.modeX true` but the data `len` bytes). The table
-of S-boxes is readable, where the static `VG_CAST5_S1234` puts it, and holds
+of S-boxes is readable, where the static `VG_CAST5_S1234_STEPS` puts it, and holds
 the S-boxes. Each is constant time from the modes' initial taint
 (`ModeFns.τFb`); the `_framed` theorems run them with their working space on
 the stack, zeroed on return. The three are instances of the same theorems
@@ -55,11 +55,11 @@ for any core that fits (`cfbEncryptFinal_wp_of`, `cfbDecryptFinal_wp_of`,
 namespace VG.Proof.Cast5.X86.FbFinal
 
 open VG VG.X86 VG.Impl.Cast5.X86.Modes VG.Impl.Modes
-open VG.Impl.Cast5 (s1234Sym s1234 ecbConsts)
+open VG.Impl.Cast5.X86 (x1234Sym x1234 xEcbConsts)
 open VG.Proof.Modes.X86 (SeqPre byteMode)
 open VG.Proof.Cast5.X86.Mode (dirCoreSpec KeyArgs)
 open VG.Proof.Cast5 (Held)
-open VG.Proof.Cast5.X86 (ecbConsts_eq s1234_length)
+open VG.Proof.Cast5.X86 (xEcbConsts_eq x1234_length)
 open VG.Proof.Cast5.X86.ModeFns (keyA ivA scrA argsA tabA retA stkA scr_eq τFb τG stkG_eq argBytes_agree ciph fbK
   satMem_held scrG stkG stkG_apart Fits dirFits keyFacts_of)
 
@@ -84,8 +84,8 @@ structure FPre (s : State) : Prop where
   fitV : (arg s 2).toNat + 8 ≤ 2 ^ 32
   fitD : (arg s 3).toNat + (arg s 4).toNat ≤ 2 ^ 32
   fitS : (arg s 5).toNat + 304 ≤ 2 ^ 32
-  fitT : (s.syms s1234Sym).toNat + 4096 ≤ 2 ^ 32
-  held : Held s.mem ((s.syms s1234Sym).setWidth 64) s1234
+  fitT : (s.syms x1234Sym).toNat + 4096 ≤ 2 ^ 32
+  held : Held s.mem ((s.syms x1234Sym).setWidth 64) x1234
   dDS : (dataF s).Disjoint (scrA s)
   dVS : (ivA s).Disjoint (scrA s)
   dVD : (ivA s).Disjoint (dataF s)
@@ -103,7 +103,7 @@ def finalX (post : State → State → Prop) : Contract isa where
   pre := FPre
   post := post
   pub s₁ s₂ := s₁.gpr .esp = s₂.gpr .esp ∧ (∀ i < 6, arg s₁ i = arg s₂ i) ∧
-    s₁.syms s1234Sym = s₂.syms s1234Sym
+    s₁.syms x1234Sym = s₂.syms x1234Sym
 
 /-! ## Any core that fits -/
 
@@ -128,8 +128,8 @@ structure GFPre (tab : Bool) (b n : Nat) (s : State) : Prop where
   fitV : (arg s 2).toNat + 8 ≤ 2 ^ 32
   fitD : (arg s 3).toNat + (arg s 4).toNat ≤ 2 ^ 32
   fitS : (arg s 5).toNat + b ≤ 2 ^ 32
-  tabOk : tab = true → (s.syms s1234Sym).toNat + 4096 ≤ 2 ^ 32 ∧
-    Held s.mem ((s.syms s1234Sym).setWidth 64) s1234 ∧ (∀ r ∈ s.wr, (tabA s).Disjoint r) ∧
+  tabOk : tab = true → (s.syms x1234Sym).toNat + 4096 ≤ 2 ^ 32 ∧
+    Held s.mem ((s.syms x1234Sym).setWidth 64) x1234 ∧ (∀ r ∈ s.wr, (tabA s).Disjoint r) ∧
     (tabA s).Disjoint (stkG n s)
   dDS : (dataF s).Disjoint (scrG b s)
   dVS : (ivA s).Disjoint (scrG b s)
@@ -325,18 +325,18 @@ theorem τG_agree {tab : Bool} {b n : Nat} {s₁ s₂ : State} (h₁ : GFPre tab
 
 theorem τFb_agree {post : State → State → Prop} {s₁ s₂ : State} (h₁ : (finalX post).pre s₁)
     (h₂ : (finalX post).pre s₂) (hp : (finalX post).pub s₁ s₂) :
-    VG.X86.Taint.AgreeS [s1234Sym] τFb s₁ s₂ := by
+    VG.X86.Taint.AgreeS [x1234Sym] τFb s₁ s₂ := by
   obtain ⟨sp, args, sy⟩ := hp
   refine ⟨τG_agree (FPre.gen h₁) (FPre.gen h₂) sp args, fun n hn => ?_⟩
   simp only [List.mem_singleton] at hn
   subst hn; exact sy
 
 theorem cfbEncryptFinal_ct : ConstantTime isa (finalX encPost).pre (finalX encPost).pub cfbEncryptFinal :=
-  VG.Taint.constantTime (A := taintSym [s1234Sym]) τFb (fun _ _ h₁ h₂ hp => τFb_agree h₁ h₂ hp)
+  VG.Taint.constantTime (A := taintSym [x1234Sym]) τFb (fun _ _ h₁ h₂ hp => τFb_agree h₁ h₂ hp)
     (by taint_decide)
 
 theorem cfbDecryptFinal_ct : ConstantTime isa (finalX decPost).pre (finalX decPost).pub cfbDecryptFinal :=
-  VG.Taint.constantTime (A := taintSym [s1234Sym]) τFb (fun _ _ h₁ h₂ hp => τFb_agree h₁ h₂ hp)
+  VG.Taint.constantTime (A := taintSym [x1234Sym]) τFb (fun _ _ h₁ h₂ hp => τFb_agree h₁ h₂ hp)
     (by taint_decide)
 
 /-! ## The contracts -/
@@ -346,8 +346,8 @@ theorem final_pre {post : Spec.Cast5.cfbFinalSig.Post X86.abi.ptrBits} (s : Stat
     FPre (s.withRegions (rdF s) (wrF s)) ∧ s.rd = [keyA s, tabA s] ∧
       s.wr = [ivA s, dataF s, scrA s, argsA s] := by
   sig_pre [Sig.scratchContract, Sig.withScratch, Spec.Cast5.cfbFinalSig, Spec.Cast5.cfbFinalPre, X86.abi, X86.argSlots,
-    X86.argVal, X86.argBytes, ecbConsts_eq, Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow,
-    s1234_length, Curry.withScratch] at h
+    X86.argVal, X86.argBytes, xEcbConsts_eq, Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow,
+    x1234_length, Curry.withScratch] at h
   obtain ⟨h4, hsp, hdrop, held, fitT, dTw, -, dTB, -, htake, hwr, dKV, dKD, dKS, -, dVD, dVS, dVA, dDS, dDA, dSA,
     -, dRV, dRD, dRS, -, dBK, dBV, dBD, dBS, -, fK, fV, fD, fS, nv⟩ := h
   have hrd : s.rd = [keyA s, tabA s] := by
@@ -359,7 +359,7 @@ theorem final_pre {post : Spec.Cast5.cfbFinalSig.Post X86.abi.ptrBits} (s : Stat
   have mS : scrA s ∈ s.wr := by
     rw [hwr]; exact List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self)
   refine ⟨⟨rfl, rfl, h4, (by show (s.gpr .esp).toNat + 28 ≤ 2 ^ 32; omega_using [hsp]), nv, fK, fV, fD, fS, fitT,
-    (fun i hi => held i (by rw [s1234_length] at hi; exact hi)), dDS, dVS, dVD,
+    (fun i hi => held i (by rw [x1234_length] at hi; exact hi)), dDS, dVS, dVD,
     (fun r hr => ?_), (fun r hr => ?_), (fun r hr => ?_), (fun r hr => ?_), (fun r hr => ?_),
     (by show Region.Disjoint _ (below (s.gpr .esp) 4); rw [be]; exact dBK.symm),
     (by show Region.Disjoint _ (below (s.gpr .esp) 4); rw [be]; exact dTB)⟩, hrd,
@@ -390,7 +390,7 @@ theorem final_pub {post : Spec.Cast5.cfbFinalSig.Post X86.abi.ptrBits} {postX : 
     (finalX postX).pub (s₁.withRegions (rdF s₁) (wrF s₁))
       (s₂.withRegions (rdF s₂) (wrF s₂)) := by
   sig_pub [Sig.scratchContract, Sig.withScratch, Spec.Cast5.cfbFinalSig, X86.abi, X86.argSlots, X86.argVal,
-    X86.argBytes, ecbConsts_eq, Abi.withConsts, Curry.withScratch] at h
+    X86.argBytes, xEcbConsts_eq, Abi.withConsts, Curry.withScratch] at h
   obtain ⟨hsp, hsy, h0, h1, h2, h3, h4, h5⟩ := h
   refine ⟨hsp, fun i hi => ?_, hsy⟩
   rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 by omega_using [hi]) with rfl | rfl | rfl | rfl | rfl | rfl
@@ -437,11 +437,11 @@ theorem final_sat {post : Spec.Cast5.cfbFinalSig.Post X86.abi.ptrBits} :
   have held := satMem_held
   generalize e : ModeFns.satState true = s
   sig_pre [Sig.scratchContract, Sig.withScratch, Spec.Cast5.cfbFinalSig, Spec.Cast5.cfbFinalPre, X86.abi, X86.argSlots,
-    X86.argVal, X86.argBytes, ecbConsts_eq, Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow,
-    s1234_length, Curry.withScratch]
+    X86.argVal, X86.argBytes, xEcbConsts_eq, Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow,
+    x1234_length, Curry.withScratch]
   subst s
   rw [a0, a1, a2, a3, a4, a5]
-  refine ⟨by decide, by decide, rfl, fun i hi => held i (by rw [s1234_length]; exact hi), by decide, ?_, ?_⟩
+  refine ⟨by decide, by decide, rfl, fun i hi => held i (by rw [x1234_length]; exact hi), by decide, ?_, ?_⟩
   · intro r hr
     change r ∈ [⟨0x2000, 8⟩, ⟨0x3000, 0⟩, ⟨0x4000, 304⟩, ⟨0x8004, 24⟩] at hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -450,7 +450,7 @@ theorem final_sat {post : Spec.Cast5.cfbFinalSig.Post X86.abi.ptrBits} :
     all_goals first | exact Region.disjoint_of_sep (by decide) | decide | rfl | exact Or.inr rfl
 
 theorem final_frameSat (post : Spec.Cast5.cfbFinalSig.Post X86.abi.ptrBits) :
-    ∃ s, (Spec.Cast5.cfbFinalSig.contract (X86.abi.withConsts ecbConsts) (Spec.Cast5.cfbFinalPre X86.abi.ptrBits) post true
+    ∃ s, (Spec.Cast5.cfbFinalSig.contract (X86.abi.withConsts xEcbConsts) (Spec.Cast5.cfbFinalPre X86.abi.ptrBits) post true
       336).pre s := by
   refine ⟨ModeFns.frameSat true, ?_⟩
   have a0 : arg (ModeFns.frameSat true) 0 = 0x1000 := (ModeFns.frameSat_arg true 0 (by decide)).trans (by decide)
@@ -460,11 +460,11 @@ theorem final_frameSat (post : Spec.Cast5.cfbFinalSig.Post X86.abi.ptrBits) :
   have a4 : arg (ModeFns.frameSat true) 4 = 0 := (ModeFns.frameSat_arg true 4 (by decide)).trans (by decide)
   have held := satMem_held
   generalize e : ModeFns.frameSat true = s
-  sig_pre [Spec.Cast5.cfbFinalSig, Spec.Cast5.cfbFinalPre, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, ecbConsts_eq,
-    Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow, s1234_length]
+  sig_pre [Spec.Cast5.cfbFinalSig, Spec.Cast5.cfbFinalPre, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, xEcbConsts_eq,
+    Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow, x1234_length]
   subst s
   rw [a0, a1, a2, a3, a4]
-  refine ⟨by decide, by decide, rfl, fun i hi => held i (by rw [s1234_length]; exact hi), by decide, ?_, ?_⟩
+  refine ⟨by decide, by decide, rfl, fun i hi => held i (by rw [x1234_length]; exact hi), by decide, ?_, ?_⟩
   · intro r hr
     change r ∈ [⟨0x2000, 8⟩, ⟨0x3000, 0⟩, ⟨0x8004, 20⟩] at hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -478,14 +478,14 @@ theorem cfbEncryptFinal_verified :
       (fbK Spec.Cast5.cfbFinalSig (Spec.Cast5.cfbFinalPre X86.abi.ptrBits) (Proof.Cast5.cfbEncFinalPost X86.abi.ptrBits)) :=
   finalK_verified (fun _ hs => cfbEncryptFinal_wp hs) cfbEncryptFinal_ct (fun s s' _ h => by
       sig_post [Sig.scratchContract, Sig.withScratch, Spec.Cast5.cfbFinalSig, Proof.Cast5.cfbEncFinalPost, X86.abi,
-        X86.argSlots, X86.argVal, X86.argBytes, ecbConsts_eq, Abi.withConsts, Curry.withScratch]
+        X86.argSlots, X86.argVal, X86.argBytes, xEcbConsts_eq, Abi.withConsts, Curry.withScratch]
       exact h) ⟨_, final_sat⟩
 
 /-- The final CFB64 encryption with its working space on the stack. -/
 theorem cfbEncryptFinal_framed :
     Verified X86.target (Impl.StackScratch.X86.withStackScratchWiped 332 5 76 cfbEncryptFinal)
-      (Proof.Cast5.cfbEncryptFinalRoundsContract (X86.abi.withConsts ecbConsts) 336) :=
-  X86.Verified.stackScratchWipedC (c₀ := (s1234Sym, s1234)) (cs := []) (sig := Spec.Cast5.cfbFinalSig)
+      (Proof.Cast5.cfbEncryptFinalRoundsContract (X86.abi.withConsts xEcbConsts) 336) :=
+  X86.Verified.stackScratchWipedC (c₀ := (x1234Sym, x1234)) (cs := []) (sig := Spec.Cast5.cfbFinalSig)
     (nm := "scratch") (e := .u64) (n := 38) (pre := Spec.Cast5.cfbFinalPre X86.abi.ptrBits)
     (post := Proof.Cast5.cfbEncFinalPost X86.abi.ptrBits) (wa := true) (stack := 4) (bytes := 332)
     cfbEncryptFinal_verified (by decide) (by lit_decide) (by lit_decide) (by decide)
@@ -497,14 +497,14 @@ theorem cfbDecryptFinal_verified :
       (fbK Spec.Cast5.cfbFinalSig (Spec.Cast5.cfbFinalPre X86.abi.ptrBits) (Proof.Cast5.cfbDecFinalPost X86.abi.ptrBits)) :=
   finalK_verified (fun _ hs => cfbDecryptFinal_wp hs) cfbDecryptFinal_ct (fun s s' _ h => by
       sig_post [Sig.scratchContract, Sig.withScratch, Spec.Cast5.cfbFinalSig, Proof.Cast5.cfbDecFinalPost, X86.abi,
-        X86.argSlots, X86.argVal, X86.argBytes, ecbConsts_eq, Abi.withConsts, Curry.withScratch]
+        X86.argSlots, X86.argVal, X86.argBytes, xEcbConsts_eq, Abi.withConsts, Curry.withScratch]
       exact h) ⟨_, final_sat⟩
 
 /-- The final CFB64 decryption with its working space on the stack. -/
 theorem cfbDecryptFinal_framed :
     Verified X86.target (Impl.StackScratch.X86.withStackScratchWiped 332 5 76 cfbDecryptFinal)
-      (Proof.Cast5.cfbDecryptFinalRoundsContract (X86.abi.withConsts ecbConsts) 336) :=
-  X86.Verified.stackScratchWipedC (c₀ := (s1234Sym, s1234)) (cs := []) (sig := Spec.Cast5.cfbFinalSig)
+      (Proof.Cast5.cfbDecryptFinalRoundsContract (X86.abi.withConsts xEcbConsts) 336) :=
+  X86.Verified.stackScratchWipedC (c₀ := (x1234Sym, x1234)) (cs := []) (sig := Spec.Cast5.cfbFinalSig)
     (nm := "scratch") (e := .u64) (n := 38) (pre := Spec.Cast5.cfbFinalPre X86.abi.ptrBits)
     (post := Proof.Cast5.cfbDecFinalPost X86.abi.ptrBits) (wa := true) (stack := 4) (bytes := 332)
     cfbDecryptFinal_verified (by decide) (by lit_decide) (by lit_decide) (by decide)
@@ -533,7 +533,7 @@ theorem ofbFinal_wp {s₀ : State} (hp : (finalX ofbPost).pre s₀) :
   ofbFinal_wp_of (dirFits true) (fun _ _ => rfl) (FPre.gen hp)
 
 theorem ofbFinal_ct : ConstantTime isa (finalX ofbPost).pre (finalX ofbPost).pub ofbFinal :=
-  VG.Taint.constantTime (A := taintSym [s1234Sym]) τFb (fun _ _ h₁ h₂ hp => τFb_agree h₁ h₂ hp)
+  VG.Taint.constantTime (A := taintSym [x1234Sym]) τFb (fun _ _ h₁ h₂ hp => τFb_agree h₁ h₂ hp)
     (by taint_decide)
 
 theorem ofbFinal_verified :
@@ -541,14 +541,14 @@ theorem ofbFinal_verified :
       (fbK Spec.Cast5.ofbFinalSig (Spec.Cast5.ofbFinalPre X86.abi.ptrBits) (Proof.Cast5.ofbFinalPost X86.abi.ptrBits)) :=
   finalK_verified (fun _ hs => ofbFinal_wp hs) ofbFinal_ct (fun s s' _ h => by
       sig_post [Sig.scratchContract, Sig.withScratch, Spec.Cast5.ofbFinalSig, Proof.Cast5.ofbFinalPost, X86.abi,
-        X86.argSlots, X86.argVal, X86.argBytes, ecbConsts_eq, Abi.withConsts, Curry.withScratch]
+        X86.argSlots, X86.argVal, X86.argBytes, xEcbConsts_eq, Abi.withConsts, Curry.withScratch]
       exact h) ⟨_, final_sat⟩
 
 /-- The final OFB function with its working space on the stack. -/
 theorem ofbFinal_framed :
     Verified X86.target (Impl.StackScratch.X86.withStackScratchWiped 332 5 76 ofbFinal)
-      (Proof.Cast5.ofbFinalRoundsContract (X86.abi.withConsts ecbConsts) 336) :=
-  X86.Verified.stackScratchWipedC (c₀ := (s1234Sym, s1234)) (cs := []) (sig := Spec.Cast5.ofbFinalSig)
+      (Proof.Cast5.ofbFinalRoundsContract (X86.abi.withConsts xEcbConsts) 336) :=
+  X86.Verified.stackScratchWipedC (c₀ := (x1234Sym, x1234)) (cs := []) (sig := Spec.Cast5.ofbFinalSig)
     (nm := "scratch") (e := .u64) (n := 38) (pre := Spec.Cast5.ofbFinalPre X86.abi.ptrBits)
     (post := Proof.Cast5.ofbFinalPost X86.abi.ptrBits) (wa := true) (stack := 4) (bytes := 332)
     ofbFinal_verified (by decide) (by lit_decide) (by lit_decide) (by decide)

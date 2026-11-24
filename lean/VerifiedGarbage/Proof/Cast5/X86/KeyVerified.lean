@@ -53,7 +53,7 @@ space, the subkeys so far), with the word below `esp` that the scans' frames
 write also allowed to change.
 
 `line l` gathers the line's four main bytes from the working space into the
-lanes of `xmm0` (`gather_ok`), scans `VG_CAST5_S5678`, and XORs the four
+lanes of `xmm0` (`gather_ok`), scans `VG_CAST5_S5678_STEPS`, and XORs the four
 values, the group's extra lookup and the quadruple, if any (`line_ok`).
 -/
 
@@ -205,10 +205,10 @@ structure LPre (s : State) (S : BitVec 32) (st : XZ) : Prop where
   xz : HoldsXZ s.mem (S.setWidth 64) st
   sp : 4 ≤ (s.gpr .esp).toNat
   dS : Region.Disjoint ⟨S.setWidth 64, 256⟩ (below (s.gpr .esp) 4)
-  fitT : (s.syms Impl.Cast5.s5678Sym).toNat + 4096 ≤ 2 ^ 32
-  inT : InRegions (s.rd ++ s.wr) ((s.syms Impl.Cast5.s5678Sym).setWidth 64) 4096
-  dT : Region.Disjoint ⟨(s.syms Impl.Cast5.s5678Sym).setWidth 64, 4096⟩ (below (s.gpr .esp) 4)
-  tab : TabAt s.mem (s.syms Impl.Cast5.s5678Sym) tab5678
+  fitT : (s.syms Impl.Cast5.X86.x5678Sym).toNat + 4096 ≤ 2 ^ 32
+  inT : InRegions (s.rd ++ s.wr) ((s.syms Impl.Cast5.X86.x5678Sym).setWidth 64) 4096
+  dT : Region.Disjoint ⟨(s.syms Impl.Cast5.X86.x5678Sym).setWidth 64, 4096⟩ (below (s.gpr .esp) 4)
+  tab : TabAt s.mem (s.syms Impl.Cast5.X86.x5678Sym) tab5678
 
 /-- The registers a line writes. -/
 def lineRegs : List Reg := [.eax, .ecx, .edx, .ebp]
@@ -231,7 +231,7 @@ theorem line_ok (s : State) {S : BitVec 32} {st : XZ} (h : LPre s S st) (l : Imp
   refine WP.seq (WP.mono_syms (WP.keep lineRegs (gather_ok s h.si h.fitS h.wS ha hb hc hd) gw)
     fun u ⟨⟨u0, um⟩, uk⟩ usy => ?_)
   have usp : u.gpr .esp = s.gpr .esp := uk.gpr .esp (by decide)
-  refine WP.seq (WP.mono (scan_ok u Impl.Cast5.s5678Sym (tab := tab5678) u0
+  refine WP.seq (WP.mono (scan_ok u Impl.Cast5.X86.x5678Sym (tab := tab5678) u0
     (fun k hk => gIdx_lt _ _ _ _ _ _ hk) (by rw [usp]; exact h.sp) (by rw [usy]; exact h.fitT)
     (by rw [uk.rd, uk.wr, usy]; exact h.inT) (by rw [usy, usp]; exact h.dT) (by rw [um, usy]; exact h.tab))
     fun v ⟨v1, vk⟩ => ?_)
@@ -330,16 +330,16 @@ structure KS (m0 : Mem) (S : BitVec 32) (K : Addr) (s : State) (st : XZ) (ws : L
   sp : 4 ≤ (s.gpr .esp).toNat
   dS : Region.Disjoint ⟨S.setWidth 64, 256⟩ (below (s.gpr .esp) 4)
   dK : Region.Disjoint ⟨K, 128⟩ (below (s.gpr .esp) 4)
-  fitT : (s.syms s5678Sym).toNat + 4096 ≤ 2 ^ 32
-  inT : InRegions (s.rd ++ s.wr) ((s.syms s5678Sym).setWidth 64) 4096
+  fitT : (s.syms x5678Sym).toNat + 4096 ≤ 2 ^ 32
+  inT : InRegions (s.rd ++ s.wr) ((s.syms x5678Sym).setWidth 64) 4096
   dT : ∀ r ∈ ([⟨S.setWidth 64, 256⟩, ⟨K, 128⟩, below (s.gpr .esp) 4] : List Region),
-    Region.Disjoint ⟨(s.syms s5678Sym).setWidth 64, 4096⟩ r
-  held : Held m0 ((s.syms s5678Sym).setWidth 64) Impl.Cast5.s5678
+    Region.Disjoint ⟨(s.syms x5678Sym).setWidth 64, 4096⟩ r
+  held : Held m0 ((s.syms x5678Sym).setWidth 64) Impl.Cast5.X86.x5678
 
 theorem addr_zero {S : BitVec 32} (h : S.toNat + 256 ≤ 2 ^ 32) : addr S 0 = S.setWidth 64 := by
   rw [addr_off h 0 (by decide)]; exact BitVec.add_zero _
 
-theorem s5678_length : Impl.Cast5.s5678.length = 512 := Proof.Cast5.table_length _ _ _ _
+theorem x5678_length : Impl.Cast5.X86.x5678.length = 512 := Proof.Cast5.table_length _ _ _ _
 
 theorem sub64 (c : Addr) : Region.Sub ⟨c, 64⟩ ⟨c, 256⟩ := Region.sub_prefix (by decide)
 
@@ -348,18 +348,18 @@ theorem KS.dKS64 {m0 : Mem} {S : BitVec 32} {K : Addr} {s : State} {st : XZ} {ws
 
 /-- The table's entries, now. -/
 theorem KS.tab {m0 : Mem} {S : BitVec 32} {K : Addr} {s : State} {st : XZ} {ws : List Spec.Cast5.Word}
-    (h : KS m0 S K s st ws) : TabAt s.mem (s.syms s5678Sym) tab5678 := by
-  have hheld : Held s.mem ((s.syms s5678Sym).setWidth 64) Impl.Cast5.s5678 := fun i hi => by
-    rw [s5678_length] at hi
-    rw [h.mem.fr.readW (r := ⟨(s.syms s5678Sym).setWidth 64, 4096⟩)
+    (h : KS m0 S K s st ws) : TabAt s.mem (s.syms x5678Sym) tab5678 := by
+  have hheld : Held s.mem ((s.syms x5678Sym).setWidth 64) Impl.Cast5.X86.x5678 := fun i hi => by
+    rw [x5678_length] at hi
+    rw [h.mem.fr.readW (r := ⟨(s.syms x5678Sym).setWidth 64, 4096⟩)
       (Offset.contains_base _ (by omega_arith) (by have := h.fitT; omega_arith)) (fun r hr => ?_) (by decide)]
-    · exact h.held i (by rw [s5678_length]; exact hi)
+    · exact h.held i (by rw [x5678_length]; exact hi)
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
       · exact (h.dT ⟨S.setWidth 64, 256⟩ (by simp)).sub_right (sub64 _)
       · exact h.dT ⟨K, 128⟩ (by simp)
       · exact h.dT (below (s.gpr .esp) 4) (by simp)
-  exact fun j hj k hk => Proof.Cast5.ent_table hheld hj hk
+  exact tabAt_steps hheld
 
 /-- What a line needs, from a state of key expansion. -/
 theorem KS.lpre {m0 : Mem} {S : BitVec 32} {K : Addr} {s : State} {st : XZ} {ws : List Spec.Cast5.Word}
@@ -413,7 +413,7 @@ theorem extras_ok {m0 : Mem} {S : BitVec 32} {K : Addr} {s : State} {st : XZ} {w
   refine WP.seq (WP.mono_syms (WP.keep lineRegs (gather_ok s h.si h.fitS h.wS ha hb hc hd) gw)
     fun u ⟨⟨u0, um⟩, uk⟩ usy => ?_)
   have usp : u.gpr .esp = s.gpr .esp := uk.gpr .esp (by decide)
-  refine WP.seq (WP.mono (scan_ok u s5678Sym (tab := tab5678) u0
+  refine WP.seq (WP.mono (scan_ok u x5678Sym (tab := tab5678) u0
     (fun k hk => gIdx_lt _ _ _ _ _ _ hk) (by rw [usp]; exact h.sp) (by rw [usy]; exact h.fitT)
     (by rw [uk.rd, uk.wr, usy]; exact h.inT) (by rw [usy, usp]; exact h.dT _ (by simp))
     (by rw [um, usy]; exact h.tab)) fun v ⟨v1, vk⟩ => ?_)
@@ -770,31 +770,31 @@ theorem copyStep_ok (u : State) {m0 : Mem} {key c : Addr} {k32 x32 : BitVec 32} 
   · simp only [h1, h2, h3, h4, ite_false]
 
 /-- The facts of key expansion's precondition on this target (the shared
-contract's, `Spec.Cast5.expandKeyContract`, with the table `VG_CAST5_S5678`):
+contract's, `Spec.Cast5.expandKeyContract`, with the table `VG_CAST5_S5678_STEPS`):
 the arguments (`key`, `key_len`, `schedule`, `scratch`) on the stack. -/
 structure KPre (s : State) : Prop where
   rdEq : s.rd = [⟨(arg s 0).setWidth 64, (arg s 1).toNat⟩, ⟨argAddr s 0, 16⟩,
-    ⟨(s.syms s5678Sym).setWidth 64, 4096⟩]
+    ⟨(s.syms x5678Sym).setWidth 64, 4096⟩]
   wrEq : s.wr = [⟨(arg s 2).setWidth 64, 128⟩, ⟨(arg s 3).setWidth 64, 256⟩]
   sp : 4 ≤ (s.gpr .esp).toNat
   spfit : (s.gpr .esp).toNat + 20 ≤ 2 ^ 32
   fitk : (arg s 0).toNat + (arg s 1).toNat ≤ 2 ^ 32
   fitK : (arg s 2).toNat + 128 ≤ 2 ^ 32
   fitS : (arg s 3).toNat + 256 ≤ 2 ^ 32
-  fitT : (s.syms s5678Sym).toNat + 4096 ≤ 2 ^ 32
-  held : Held s.mem ((s.syms s5678Sym).setWidth 64) s5678
+  fitT : (s.syms x5678Sym).toNat + 4096 ≤ 2 ^ 32
+  held : Held s.mem ((s.syms x5678Sym).setWidth 64) x5678
   dkK : Region.Disjoint ⟨(arg s 0).setWidth 64, (arg s 1).toNat⟩ ⟨(arg s 2).setWidth 64, 128⟩
   dkS : Region.Disjoint ⟨(arg s 0).setWidth 64, (arg s 1).toNat⟩ ⟨(arg s 3).setWidth 64, 256⟩
   dKS : Region.Disjoint ⟨(arg s 2).setWidth 64, 128⟩ ⟨(arg s 3).setWidth 64, 256⟩
-  dTK : Region.Disjoint ⟨(s.syms s5678Sym).setWidth 64, 4096⟩ ⟨(arg s 2).setWidth 64, 128⟩
-  dTS : Region.Disjoint ⟨(s.syms s5678Sym).setWidth 64, 4096⟩ ⟨(arg s 3).setWidth 64, 256⟩
+  dTK : Region.Disjoint ⟨(s.syms x5678Sym).setWidth 64, 4096⟩ ⟨(arg s 2).setWidth 64, 128⟩
+  dTS : Region.Disjoint ⟨(s.syms x5678Sym).setWidth 64, 4096⟩ ⟨(arg s 3).setWidth 64, 256⟩
   dAK : Region.Disjoint ⟨argAddr s 0, 16⟩ ⟨(arg s 2).setWidth 64, 128⟩
   dAS : Region.Disjoint ⟨argAddr s 0, 16⟩ ⟨(arg s 3).setWidth 64, 256⟩
   dRK : Region.Disjoint ⟨(s.gpr .esp).setWidth 64, 4⟩ ⟨(arg s 2).setWidth 64, 128⟩
   dRS : Region.Disjoint ⟨(s.gpr .esp).setWidth 64, 4⟩ ⟨(arg s 3).setWidth 64, 256⟩
   dK : Region.Disjoint ⟨(arg s 2).setWidth 64, 128⟩ (below (s.gpr .esp) 4)
   dS : Region.Disjoint ⟨(arg s 3).setWidth 64, 256⟩ (below (s.gpr .esp) 4)
-  dT : Region.Disjoint ⟨(s.syms s5678Sym).setWidth 64, 4096⟩ (below (s.gpr .esp) 4)
+  dT : Region.Disjoint ⟨(s.syms x5678Sym).setWidth 64, 4096⟩ (below (s.gpr .esp) 4)
   len : 5 ≤ (arg s 1).toNat ∧ (arg s 1).toNat ≤ 16
 
 /-- Key expansion's contract on x86, as its proof states it. -/
@@ -802,7 +802,7 @@ def keyX : Contract isa where
   pre s := KPre s
   post s s' := Spec.Cast5.scheduleAt s'.mem ((arg s 2).setWidth 64) =
     Spec.Cast5.expandKey (Spec.Cast5.bytesAt s.mem ((arg s 0).setWidth 64) (arg s 1).toNat)
-  pub s₁ s₂ := s₁.gpr .esp = s₂.gpr .esp ∧ (∀ i < 4, arg s₁ i = arg s₂ i) ∧ s₁.syms s5678Sym = s₂.syms s5678Sym
+  pub s₁ s₂ := s₁.gpr .esp = s₂.gpr .esp ∧ (∀ i < 4, arg s₁ i = arg s₂ i) ∧ s₁.syms x5678Sym = s₂.syms x5678Sym
 
 /-- The registers key expansion saves. -/
 def keySavedL : List (Reg × Nat) := [(.ebx, keySavedOff), (.edi, keySavedOff + 8), (.ebp, keySavedOff + 12)]
@@ -954,7 +954,7 @@ theorem key_correct (s : State) (h : KPre s) :
         rw [List.mem_singleton] at hr; subst hr
         exact ⟨_, List.mem_cons_self, Region.sub_prefix (by decide)⟩)
     obtain dSK : Region.Disjoint ⟨K32.setWidth 64, 128⟩ ⟨S.setWidth 64, 256⟩ := by rw [← hK32, ← hS]; exact h.dKS
-    obtain dTS : Region.Disjoint ⟨(s.syms s5678Sym).setWidth 64, 4096⟩ ⟨S.setWidth 64, 256⟩ := by
+    obtain dTS : Region.Disjoint ⟨(s.syms x5678Sym).setWidth 64, 4096⟩ ⟨S.setWidth 64, 256⟩ := by
       rw [← hS]; exact h.dTS
     -- The arrays after the copy.
     let st0 : XZ := ⟨fun j => (Spec.Cast5.bytesAt s.mem (kk.setWidth 64) L.toNat).getD j 0,
@@ -972,13 +972,13 @@ theorem key_correct (s : State) (h : KPre s) :
             (by show L.toNat ≤ 2 ^ 64; omega_arith) (by assumption)]
         · rfl
       | z => rfl
-    obtain held0 : Held u1.mem ((s.syms s5678Sym).setWidth 64) s5678 := by
+    obtain held0 : Held u1.mem ((s.syms x5678Sym).setWidth 64) x5678 := by
       intro i hi
-      rw [s5678_length] at hi
-      rw [fU.readW (r := ⟨(s.syms s5678Sym).setWidth 64, 4096⟩)
+      rw [x5678_length] at hi
+      rw [fU.readW (r := ⟨(s.syms x5678Sym).setWidth 64, 4096⟩)
         (Offset.contains_base _ (by omega_arith) (by have := h.fitT; omega_arith))
         (fun r hr => by rw [List.mem_singleton] at hr; subst hr; exact dTS) (by decide)]
-      exact h.held i (by rw [s5678_length]; exact hi)
+      exact h.held i (by rw [x5678_length]; exact hi)
     obtain ks0 : KS u1.mem S (K32.setWidth 64) u1 st0 [] := by
       refine ⟨si1, fitS, by rw [wr1']; exact wS, ⟨xz0, fun i hi => absurd hi (Nat.not_lt_zero _), Frame.refl _ _⟩,
         Nat.zero_le _, by rw [wr1']; exact wK, dSK, by rw [sp1]; exact h.sp, by rw [sp1, ← hS]; exact h.dS,
@@ -1068,7 +1068,7 @@ key's length decides the number of bytes copied.
 namespace VG.Proof.Cast5.X86
 
 open VG VG.X86 VG.Impl.Cast5.X86
-open VG.Impl.Cast5 (s5678Sym s5678 keyConsts)
+open VG.Impl.Cast5.X86 (x5678Sym x5678 xKeyConsts)
 
 /-- The initial taint: `esp`, the 16 bytes of arguments (the fourth, the base
 of writable region 1, the working space) and the 4 bytes of stack below `esp`
@@ -1114,7 +1114,7 @@ theorem τKey_wf {s : State} (h : keyX.pre s) : VG.X86.Taint.Wf τKey s := by
     · exact h.dS.symm
 
 theorem τKey_agree {s₁ s₂ : State} (h₁ : keyX.pre s₁) (h₂ : keyX.pre s₂) (hp : keyX.pub s₁ s₂) :
-    VG.X86.Taint.AgreeS [s5678Sym] τKey s₁ s₂ := by
+    VG.X86.Taint.AgreeS [x5678Sym] τKey s₁ s₂ := by
   obtain ⟨sp, args, sy⟩ := hp
   refine ⟨⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun _ => ?_, τKey_wf h₁, τKey_wf h₂, VG.X86.Taint.slotsOk_empty,
     VG.X86.Taint.slotsAgree_empty, fun _ => sp, fun k h4 hk => ?_⟩, fun n hn => ?_⟩
@@ -1132,22 +1132,22 @@ theorem τKey_agree {s₁ s₂ : State} (h₁ : keyX.pre s₁) (h₂ : keyX.pre 
     exact sy
 
 theorem expandKey_ct : ConstantTime isa keyX.pre keyX.pub expandKey :=
-  VG.Taint.constantTime (A := taintSym [s5678Sym]) τKey (fun _ _ h₁ h₂ hp => τKey_agree h₁ h₂ hp)
+  VG.Taint.constantTime (A := taintSym [x5678Sym]) τKey (fun _ _ h₁ h₂ hp => τKey_agree h₁ h₂ hp)
     (by taint_decide)
 
-theorem keyConsts_eq : keyConsts = [(s5678Sym, s5678)] := rfl
+theorem xKeyConsts_eq : xKeyConsts = [(x5678Sym, x5678)] := rfl
 
 theorem key_implies_pre (s : State)
-    (h : (Spec.Cast5.expandKeyContract (X86.abi.withConsts keyConsts) 4).pre s) : keyX.pre s := by
+    (h : (Spec.Cast5.expandKeyContract (X86.abi.withConsts xKeyConsts) 4).pre s) : keyX.pre s := by
   sig_pre [Spec.Cast5.expandKeyContract, Spec.Cast5.expandKeySig, Spec.Cast5.expandKeyPre, X86.abi, X86.argSlots,
-    X86.argVal, X86.argBytes, keyConsts_eq, Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow,
-    s5678_length] at h
+    X86.argVal, X86.argBytes, xKeyConsts_eq, Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow,
+    x5678_length] at h
   obtain ⟨h4, hsp, hdrop, held, fitT, dTw, -, dTB, -, htake, hwr, dkK, dkS, dKS, dKA, dSA, -, dRK, dRS, -, -, dBK,
     dBS, -, fk, fK, fS, hv⟩ := h
   have be : below (s.gpr .esp) 4 = ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 4, 4⟩ := by
     simp only [below, Taint.sub_setWidth h4]
   have hrd : s.rd = [⟨(arg s 0).setWidth 64, (arg s 1).toNat⟩, ⟨argAddr s 0, 16⟩,
-      ⟨(s.syms s5678Sym).setWidth 64, 4096⟩] := by
+      ⟨(s.syms x5678Sym).setWidth 64, 4096⟩] := by
     rw [← List.take_append_drop (s.rd.length - 1) s.rd, htake, hdrop]; rfl
   have mK : (⟨(arg s 2).setWidth 64, 128⟩ : Region) ∈ s.wr := by rw [hwr]; exact List.mem_cons_self
   have mS : (⟨(arg s 3).setWidth 64, 256⟩ : Region) ∈ s.wr := by
@@ -1161,7 +1161,7 @@ theorem key_implies_pre (s : State)
   · exact fK
   · exact fS
   · exact fitT
-  · exact fun i hi => held i (by rw [s5678_length] at hi; exact hi)
+  · exact fun i hi => held i (by rw [x5678_length] at hi; exact hi)
   · exact dkK
   · exact dkS
   · exact dKS
@@ -1186,21 +1186,21 @@ def keyArgs : Mem := fun a =>
 arguments elsewhere (irreducible: unfolding it in a definitional check would
 evaluate the table). -/
 @[irreducible] def keySatMem : Mem := fun a =>
-  if (a - 0x100000).toNat < 4096 then constMem 0x100000 s5678 a else keyArgs a
+  if (a - 0x100000).toNat < 4096 then constMem 0x100000 x5678 a else keyArgs a
 
-theorem keySatMem_held : ∀ i < s5678.length,
-    keySatMem.readW (0x100000 + BitVec.ofNat 64 (8 * i)) 64 = s5678.getD i 0 := by
+theorem keySatMem_held : ∀ i < x5678.length,
+    keySatMem.readW (0x100000 + BitVec.ofNat 64 (8 * i)) 64 = x5678.getD i 0 := by
   intro i hi
-  rw [s5678_length] at hi
+  rw [x5678_length] at hi
   have hm : keySatMem.readW (0x100000 + BitVec.ofNat 64 (8 * i)) 64 =
-      (constMem 0x100000 s5678).readW (0x100000 + BitVec.ofNat 64 (8 * i)) 64 := by
+      (constMem 0x100000 x5678).readW (0x100000 + BitVec.ofNat 64 (8 * i)) 64 := by
     apply Mem.readW_congr
     intro j hj
     have e : ((0x100000 : Addr) + BitVec.ofNat 64 (8 * i) + BitVec.ofNat 64 j - 0x100000).toNat = 8 * i + j := by
       rw [Offset.add_add, Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hi, hj])]
     unfold keySatMem
     rw [e, ite_eq_left (show 8 * i + j < 4096 by omega_using [hi, hj])]
-  exact hm.trans (constMem_held 0x100000 s5678 (by rw [s5678_length]; decide) i (by rw [s5678_length]; exact hi))
+  exact hm.trans (constMem_held 0x100000 x5678 (by rw [x5678_length]; decide) i (by rw [x5678_length]; exact hi))
 
 /-- A state satisfying key expansion's precondition. -/
 def keySat : State where
@@ -1223,7 +1223,7 @@ theorem keySat_arg (j : Nat) (hj : j < 4) : arg keySat j = keyArgs.readW (argAdd
   have : ∀ j < 4, ∀ b < 4, ¬ (argAddr keySat j + BitVec.ofNat 64 b - 0x100000).toNat < 4096 := by decide
   rw [ite_eq_right (this j hj b (by omega_using [hb]))]
 
-theorem key_sat : (Spec.Cast5.expandKeyContract (X86.abi.withConsts keyConsts) 4).pre keySat := by
+theorem key_sat : (Spec.Cast5.expandKeyContract (X86.abi.withConsts xKeyConsts) 4).pre keySat := by
   have a0 : arg keySat 0 = 0x1000 := (keySat_arg 0 (by decide)).trans (by decide)
   have a1 : arg keySat 1 = 16 := (keySat_arg 1 (by decide)).trans (by decide)
   have a2 : arg keySat 2 = 0x2000 := (keySat_arg 2 (by decide)).trans (by decide)
@@ -1231,11 +1231,11 @@ theorem key_sat : (Spec.Cast5.expandKeyContract (X86.abi.withConsts keyConsts) 4
   have held := keySatMem_held
   generalize e : keySat = s
   sig_pre [Spec.Cast5.expandKeyContract, Spec.Cast5.expandKeySig, Spec.Cast5.expandKeyPre, X86.abi, X86.argSlots,
-    X86.argVal, X86.argBytes, keyConsts_eq, Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow,
-    s5678_length]
+    X86.argVal, X86.argBytes, xKeyConsts_eq, Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow,
+    x5678_length]
   subst s
   rw [a0, a1, a2, a3]
-  refine ⟨by decide, by decide, rfl, fun i hi => held i (by rw [s5678_length]; exact hi), by decide, ?_, ?_⟩
+  refine ⟨by decide, by decide, rfl, fun i hi => held i (by rw [x5678_length]; exact hi), by decide, ?_, ?_⟩
   · intro r hr
     change r ∈ [⟨0x2000, 128⟩, ⟨0x3000, 256⟩] at hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -1243,16 +1243,16 @@ theorem key_sat : (Spec.Cast5.expandKeyContract (X86.abi.withConsts keyConsts) 4
   · repeat' apply And.intro
     all_goals first | exact Region.disjoint_of_sep (by decide) | decide | rfl
 
-theorem key_implies : keyX.Implies (Spec.Cast5.expandKeyContract (X86.abi.withConsts keyConsts) 4) where
+theorem key_implies : keyX.Implies (Spec.Cast5.expandKeyContract (X86.abi.withConsts xKeyConsts) 4) where
   pre := key_implies_pre
   post := by
     intro s t _ h
     sig_post [Spec.Cast5.expandKeyContract, Spec.Cast5.expandKeySig, Spec.Cast5.expandKeyPost, X86.abi,
-      X86.argSlots, X86.argVal, X86.argBytes, keyConsts_eq, Abi.withConsts]
+      X86.argSlots, X86.argVal, X86.argBytes, xKeyConsts_eq, Abi.withConsts]
     exact h
   pub s t _ _ h := by
     sig_pub [Spec.Cast5.expandKeyContract, Spec.Cast5.expandKeySig, X86.abi, X86.argSlots, X86.argVal,
-      X86.argBytes, keyConsts_eq, Abi.withConsts] at h
+      X86.argBytes, xKeyConsts_eq, Abi.withConsts] at h
     obtain ⟨hsp, hsy, h0, h1, h2, h3⟩ := h
     refine ⟨hsp, fun i hi => ?_, hsy⟩
     rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 by omega_using [hi]) with rfl | rfl | rfl | rfl
@@ -1268,7 +1268,7 @@ theorem keyX_correct (s : State) (hs : keyX.pre s) :
   exact ⟨t, s', he, ha, hp⟩
 
 theorem expandKey_verified :
-    Verified X86.target expandKey (Spec.Cast5.expandKeyContract (X86.abi.withConsts keyConsts) 4) :=
+    Verified X86.target expandKey (Spec.Cast5.expandKeyContract (X86.abi.withConsts xKeyConsts) 4) :=
   Verified.of_correct keyX_correct expandKey_ct key_implies
 
 end VG.Proof.Cast5.X86
