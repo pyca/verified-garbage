@@ -1053,6 +1053,7 @@ pub fn bench(_: &mut Criterion) {}
 /// followed by one AES-192 measurement outside the AES-128/256 subset.
 #[cfg(target_arch="x86_64")]
 fn check_contiguous(c: &mut Criterion) {
+    use crate::BenchDyn;
     use verified_garbage::aead::aes_gcm::AesGcm;
     use openssl::symm::{Cipher, encrypt_aead};
     use std::hint::black_box;
