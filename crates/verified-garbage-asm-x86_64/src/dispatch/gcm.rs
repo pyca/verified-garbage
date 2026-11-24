@@ -214,62 +214,7 @@ pub unsafe fn vg_aes_gcm_init_auto(_dit: verified_garbage_cpu::Dit<'_>, key: *co
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_aes_gcm_seal_prepared_auto(_dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
-    /// The type of the implementations.
-    type Impl = unsafe extern "sysv64" fn(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]);
-    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
-    /// features the CPU has.
-    #[cold]
-    fn select() -> Impl {
-        let cpu = verified_garbage_cpu::detected();
-        if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_SEAL_PREPARED_VAES_VPCLMUL_AVX512_FEATURES) }
-            || cpu.contains(crate::gcm::VG_AES_GCM_SEAL_PREPARED_VAES_VPCLMUL_AVX512_FEATURES)
-        {
-            return crate::gcm::vg_aes_gcm_seal_prepared_vaes_vpclmul_avx512;
-        }
-        if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_SEAL_PREPARED_VAES_VPCLMUL_FEATURES) }
-            || cpu.contains(crate::gcm::VG_AES_GCM_SEAL_PREPARED_VAES_VPCLMUL_FEATURES)
-        {
-            return crate::gcm::vg_aes_gcm_seal_prepared_vaes_vpclmul;
-        }
-        if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_SEAL_PREPARED_AESNI_PCLMUL_AVX_FEATURES) }
-            || cpu.contains(crate::gcm::VG_AES_GCM_SEAL_PREPARED_AESNI_PCLMUL_AVX_FEATURES)
-        {
-            return crate::gcm::vg_aes_gcm_seal_prepared_aesni_pclmul_avx;
-        }
-        if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_SEAL_PREPARED_AESNI_PCLMUL_FEATURES) }
-            || cpu.contains(crate::gcm::VG_AES_GCM_SEAL_PREPARED_AESNI_PCLMUL_FEATURES)
-        {
-            return crate::gcm::vg_aes_gcm_seal_prepared_aesni_pclmul;
-        }
-        if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_SEAL_PREPARED_AESNI_FEATURES) }
-            || cpu.contains(crate::gcm::VG_AES_GCM_SEAL_PREPARED_AESNI_FEATURES)
-        {
-            return crate::gcm::vg_aes_gcm_seal_prepared_aesni;
-        }
-        if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_SEAL_PREPARED_PCLMUL_FEATURES) }
-            || cpu.contains(crate::gcm::VG_AES_GCM_SEAL_PREPARED_PCLMUL_FEATURES)
-        {
-            return crate::gcm::vg_aes_gcm_seal_prepared_pclmul;
-        }
-        crate::gcm::vg_aes_gcm_seal_prepared
-    }
-    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
-    /// after it, and runs it.
-    #[cold]
-    unsafe extern "sysv64" fn first(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
-        let f = select();
-        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
-        // SAFETY: the caller's obligations, which are those of every implementation, `f`
-        // among them, and the CPU has the features `f` needs.
-        unsafe { f(ctx, rounds, nonce, nonce_len, aad, aad_len, data, len, tag) }
-    }
-    /// The function to call: `first`, until it records the implementation it chose.
-    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
-        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
-    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
-    // or an implementation `select` returned, which needs only features the CPU has. Calling
-    // either carries the caller's obligations, which are those of every implementation.
-    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(ctx, rounds, nonce, nonce_len, aad, aad_len, data, len, tag) }
+    unsafe { vg_aes_gcm_seal_contiguous_prepared_auto(_dit, ctx, rounds, nonce, nonce_len, aad, aad_len, data, data, len, tag) }
 }
 
 /// `vg_aes_gcm_open` with a 1032-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the prepared powers its count says are present. The powers remain secret; how many are present may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openPreparedContract`.
@@ -604,6 +549,14 @@ pub unsafe fn vg_aes_gcm_stream_decrypt_prepared_auto(_dit: verified_garbage_cpu
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_aes_gcm_seal_gather_prepared_auto(_dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+    if src_count == 1 {
+        let piece = unsafe { *src };
+        if piece[1] == len {
+            unsafe { vg_aes_gcm_seal_contiguous_prepared_auto(_dit, ctx, rounds, nonce, nonce_len, aad, aad_len, piece[0] as *const u8, dst, len, tag) };
+            return
+        }
+    }
+
     /// The type of the implementations.
     type Impl = unsafe extern "sysv64" fn(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]);
     /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
@@ -876,4 +829,64 @@ pub unsafe fn vg_aes_gcm_wipe_prepared_auto(_dit: verified_garbage_cpu::Dit<'_>,
     // or an implementation `select` returned, which needs only features the CPU has. Calling
     // either carries the caller's obligations, which are those of every implementation.
     unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(ctx) }
+}
+
+#[inline]
+pub unsafe fn vg_aes_gcm_seal_contiguous_prepared_auto(_dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+    /// The type of the implementations.
+    type Impl = unsafe extern "sysv64" fn(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, dst: *mut u8, len: usize, tag: *mut [u8; 16]);
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_SEAL_PREPARED_VAES_VPCLMUL_AVX512_FEATURES) }
+            || cpu.contains(crate::gcm::VG_AES_GCM_SEAL_PREPARED_VAES_VPCLMUL_AVX512_FEATURES)
+        {
+            return crate::gcm::vg_aes_gcm_seal_contiguous_prepared_vaes_vpclmul_avx512;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_SEAL_PREPARED_VAES_VPCLMUL_FEATURES) }
+            || cpu.contains(crate::gcm::VG_AES_GCM_SEAL_PREPARED_VAES_VPCLMUL_FEATURES)
+        {
+            return crate::gcm::vg_aes_gcm_seal_contiguous_prepared_vaes_vpclmul;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_SEAL_PREPARED_AESNI_PCLMUL_AVX_FEATURES) }
+            || cpu.contains(crate::gcm::VG_AES_GCM_SEAL_PREPARED_AESNI_PCLMUL_AVX_FEATURES)
+        {
+            return crate::gcm::vg_aes_gcm_seal_contiguous_prepared_aesni_pclmul_avx;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_SEAL_PREPARED_AESNI_PCLMUL_FEATURES) }
+            || cpu.contains(crate::gcm::VG_AES_GCM_SEAL_PREPARED_AESNI_PCLMUL_FEATURES)
+        {
+            return crate::gcm::vg_aes_gcm_seal_contiguous_prepared_aesni_pclmul;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_SEAL_PREPARED_AESNI_FEATURES) }
+            || cpu.contains(crate::gcm::VG_AES_GCM_SEAL_PREPARED_AESNI_FEATURES)
+        {
+            return crate::gcm::vg_aes_gcm_seal_contiguous_prepared_aesni;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_SEAL_PREPARED_PCLMUL_FEATURES) }
+            || cpu.contains(crate::gcm::VG_AES_GCM_SEAL_PREPARED_PCLMUL_FEATURES)
+        {
+            return crate::gcm::vg_aes_gcm_seal_contiguous_prepared_pclmul;
+        }
+        crate::gcm::vg_aes_gcm_seal_contiguous_prepared
+    }
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "sysv64" fn first(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(ctx, rounds, nonce, nonce_len, aad, aad_len, src, dst, len, tag) }
+    }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(ctx, rounds, nonce, nonce_len, aad, aad_len, src, dst, len, tag) }
 }
