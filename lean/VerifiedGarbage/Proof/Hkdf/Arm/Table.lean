@@ -445,10 +445,9 @@ def ExpandW (vs : List HVar) (w : HVar) (s : State) : Prop :=
 stack argument, is. -/
 def expandTab (vs : List HVar) : Contract isa where
   pre s := ∃ w ∈ vs, ExpandW vs w s
-  post s s' := ∀ H S prk, Spec.HmacTable.hashAt 32 s.mem (State.addr (stackArg s 1)) = some H →
-    Spec.Hkdf.streamingOf H = some S → Spec.Hkdf.Keyed S s.mem (State.addr (s.gpr .r0)) prk →
-    Spec.Hkdf.expand S.H H.len prk (Spec.Sha256.bytesAt s.mem (State.addr (s.gpr .r1)) (s.gpr .r2).toNat)
-      (stackArg s 0).toNat = some (Spec.Sha256.bytesAt s'.mem (State.addr (s.gpr .r3)) (stackArg s 0).toNat)
+  post s s' := Spec.Hkdf.expandPost 32 (State.addr (s.gpr .r0)) (State.addr (s.gpr .r1)) (s.gpr .r2)
+    (State.addr (s.gpr .r3)) (stackArg s 0) (State.addr (stackArg s 1))
+    s.mem s'.mem 0
   pub s₁ s₂ := ∃ w ∈ vs, ExpandW vs w s₁ ∧ ExpandW vs w s₂ ∧ (expandR w (fnsOf vs) (names vs) eStack).pub s₁ s₂
 
 section
@@ -459,9 +458,7 @@ theorem expandT_ok (hO : OK vs) (hS : Streams vs) {s : State} (h : (expandTab vs
   obtain ⟨w, hv, hp, hix⟩ := h
   have nt := (ep_of hp).nt
   obtain ⟨t, s', he, hg, hpost⟩ := Expand.expand_correct (hO.2.2.2 w hv) hp
-  refine ⟨t, s', he, hg, fun H S prk hH hSt hK => ?_⟩
-  obtain rfl := streams_of hS hv nt hix hH hSt
-  obtain rfl := Option.some.inj (hH.symm.trans (hashAt_tableOf nt hix))
+  refine ⟨t, s', he, hg, _, _, hashAt_tableOf nt hix, hS w hv, fun prk hK => ?_⟩
   rw [w.glen]
   exact hpost prk hK
 
@@ -493,7 +490,7 @@ theorem expand_pre (hO : OK vs) {s : State} (h : (specExpand vs).pre s) : Expand
   have hG : Spec.HmacTable.hashAt 32 s.mem (State.addr (stackArg s 1)) = some w.G := hashAt_tableOf n4 hh.2.1
   rw [List.append_eq, List.append_nil] at hpw
   exact ⟨⟨hsp, h8, hrd, hwr, d1, d2, d3, d4, k1, k2, k3, k4, k5, n1, n2, n3, n4,
-    by rw [← w.glen]; exact (hP _ hG).1, hh.1, hh.2.2.1, hh.2.2.2, tabOK_of hO.1 hpw hv⟩, hh.2.1⟩
+    by rw [← w.glen]; exact hP _ hG, hh.1, hh.2.2.1, hh.2.2.2, tabOK_of hO.1 hpw hv⟩, hh.2.1⟩
 
 theorem expand_pub {s₁ s₂ : State} (h₁ : ExpandFacts vs s₁) (h₂ : ExpandFacts vs s₂)
     (h : (specExpand vs).pub s₁ s₂) : (expandTab vs).pub s₁ s₂ := by
@@ -520,7 +517,7 @@ theorem expand_implies (hO : OK vs) (hsat : ∃ s, (specExpand vs).pre s) :
       Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, stackBelow, eStack, String.reduceEq,
       Option.map_some, List.getD_cons_succ, List.getD_cons_zero, Option.some.injEq, exists_eq_left',
       List.append_nil, tableRegion_eq, names_eq, argAddr0]
-    exact fun H S prk a b c => hp H S prk a b c
+    exact hp
 
 /-- `expand`'s arguments: the states at `0x1000`, `info` (16 bytes) at
 `0x2000`, `out` at `0x3000`. -/
@@ -537,7 +534,7 @@ def expandSat (vs : List HVar) (w : HVar) : State :=
   satS vs w expandG (put2w (fun _ => 0) 16 0x300000)
     [⟨0x1000, 384⟩, ⟨0x2000, 16⟩, ⟨0x300000, 24⟩, ⟨0x9000, 8⟩] [⟨0x3000, 16⟩]
 
-theorem expand_sat (hO : OK vs) (hS : Streams vs) : ∃ s, (specExpand vs).pre s := by
+theorem expand_sat (hO : OK vs) : ∃ s, (specExpand vs).pre s := by
   obtain ⟨w, hv⟩ := List.exists_mem_of_ne_nil vs hO.2.2.1
   have hD0 := w.ok.hH.hD0
   refine ⟨expandSat vs w, ?_⟩
@@ -573,11 +570,12 @@ theorem expand_sat (hO : OK vs) (hS : Streams vs) : ∃ s, (specExpand vs).pre s
     | (intro H hH
        obtain rfl := Option.some.inj (hH.symm.trans hG)
        have h16 : (16 : BitVec 32).toNat = 16 := rfl
-       exact ⟨by rw [h16, w.glen]; omega_using [hD0], by rw [hS w hv]; rfl⟩)
+       rw [h16, w.glen]
+       omega_using [hD0])
 
 /-- `vg_hkdf_expand`, with the tables of `vs`, meets `Spec.Hkdf.expandContract`. -/
 theorem expand_spec (hO : OK vs) (hS : Streams vs) : Verified Arm.target (expand (fnsOf vs)) (specExpand vs) :=
-  Verified.of_correct (fun _ h => expandT_ok hO hS h) (expandT_ct hO) (expand_implies hO (expand_sat hO hS))
+  Verified.of_correct (fun _ h => expandT_ok hO hS h) (expandT_ct hO) (expand_implies hO (expand_sat hO))
 
 end
 

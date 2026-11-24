@@ -127,8 +127,9 @@ theorem expandLocal :
   match vs, hlen with
   | [key, info, il, out, ol, hm], _ =>
     simp only [Spec.Hkdf.expandSig, Sig.bufs, List.mem_cons, forall_eq_or_imp, Elem.size, Nat.mul_one] at hb
-    intro H S prk hH hSt hK
-    rw [h H S prk hH hSt hK]
+    obtain ⟨H, S, hH, hSt, result⟩ := h
+    refine ⟨H, S, hH, hSt, fun prk hK => ?_⟩
+    rw [result prk hK]
     exact congrArg some (Proof.Sha256.Stream.bytesAt_congr fun i hi => by
       have hi' : i < ol.toNat := hi
       exact hb.2.2.1 _ (Offset.contains_base _ (by omega_using [hi']) (by have := ol.isLt; omega_using [hi', this])))

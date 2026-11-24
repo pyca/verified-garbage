@@ -128,4 +128,29 @@ run_cmd do
     unless Spec.Hkdf.expand S.H H.len c.prk c.info (255 * H.len + 1) == none do
       throwError "HKDF-Expand of the {c.hash} case accepts more than 255 blocks"
 
+/-- The one-byte request with an unknown hash index passes the length check,
+but no final output can satisfy the contract. -/
+example (after : Mem) :
+    let before : Mem := fun _ => 0xff
+    Spec.Hkdf.expandPre 64 128 768 0 1024 1 0 before ∧
+      ¬ Spec.Hkdf.expandPost 64 128 768 0 1024 1 0 before after 0 := by
+  dsimp only
+  have missing : Spec.HmacTable.hashAt 64 (fun _ => 0xff) 0 = none := by decide
+  constructor
+  · intro H found
+    cases missing.symm.trans found
+  · rintro ⟨H, _, found, _⟩
+    cases missing.symm.trans found
+
+/-- Even a zero-byte request must identify a hash with a streaming implementation. -/
+example (m after : Mem) (table : Addr) (H : Hash)
+    (found : Spec.HmacTable.hashAt 64 m table = some H) (unsupported : Spec.Hkdf.streamingOf H = none) :
+    Spec.Hkdf.expandPre 64 128 768 0 1024 0 table m ∧
+      ¬ Spec.Hkdf.expandPost 64 128 768 0 1024 0 table m after 0 := by
+  constructor
+  · exact fun _ _ => Nat.zero_le _
+  · rintro ⟨H', _, found', stream, _⟩
+    obtain rfl := Option.some.inj (found.symm.trans found')
+    cases unsupported.symm.trans stream
+
 end VG.Test.Hkdf

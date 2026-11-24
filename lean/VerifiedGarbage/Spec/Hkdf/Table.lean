@@ -153,27 +153,27 @@ def expandSig : Sig where
   params := [("key", .array false .u8 384), ("info", .slice false .u8 "info_len"),
     ("out", .slice true .u8 "out_len"), ("hmac", HmacTable.param)]
 
-/-- `vg_hkdf_expand`'s precondition: the table names a hash function with a
-streaming form (`streamingOf`), and `out_len` is at most 255 of its digest
-lengths (so that HKDF-Expand accepts it). -/
+/-- The caller requests at most 255 digest lengths for the hash the table
+names. The implementation establishes that its table names a supported hash
+in `expandPost`. -/
 def expandPre (pb : Nat) : Curry (expandSig.words pb) (Mem → Prop) :=
   fun _key _info _infoLen _out outLen hmac m =>
     ∀ H, HmacTable.hashAt pb m hmac = some H →
-      outLen.toNat ≤ 255 * H.len ∧ (streamingOf H).isSome
+      outLen.toNat ≤ 255 * H.len
 
-/-- For the hash function `H` the table at `hmac` names, if the 384 bytes at
-`key` hold HMAC's streaming states keyed with a pseudorandom key `PRK`
+/-- The table at `hmac` names a hash function `H` with a streaming form.
+If the 384 bytes at `key` hold its HMAC states keyed with a pseudorandom key `PRK`
 (`Keyed`, as `vg_hkdf_key` writes them), writes `HKDF-Expand(PRK, info, L)`
 with HMAC over `H`, of the `info_len` bytes at `info`, with `L = out_len`, to
 the `out_len` bytes at `out`. -/
 def expandPost (pb : Nat) : expandSig.Post pb :=
   fun key info infoLen out outLen hmac m m' _ =>
-    ∀ H S prk, HmacTable.hashAt pb m hmac = some H → streamingOf H = some S → Keyed S m key prk →
-      expand S.H H.len prk (bytesAt m info infoLen.toNat) outLen.toNat =
-        some (bytesAt m' out outLen.toNat)
+    ∃ H S, HmacTable.hashAt pb m hmac = some H ∧ streamingOf H = some S ∧
+      ∀ prk, Keyed S m key prk →
+        expand S.H H.len prk (bytesAt m info infoLen.toNat) outLen.toNat =
+          some (bytesAt m' out outLen.toNat)
 
-/-- If the table names a hash function with a streaming form and `out_len`
-is at most 255 of its digest lengths (`expandPre`): `expandPost`. The
+/-- For output lengths allowed by `expandPre`, HKDF-Expand satisfies `expandPost`. The
 states, the context information and the output keying material are secret. -/
 def expandContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   expandSig.contract A (pre := expandPre A.ptrBits) (post := expandPost A.ptrBits)
