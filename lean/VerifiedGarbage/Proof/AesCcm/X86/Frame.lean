@@ -91,38 +91,17 @@ theorem open_wp' (v : Ctr32Impl) {s : State} {K W SP N A D T : BitVec 32} {R nl 
   have ht16 := Ar.t16
   have ht4 := Ar.t4
   refine seq_assoc (WP.seq (WP.mono (start_ok Ar hsp a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10) fun s₂ St => ?_))
-  -- Counter mode: the plaintext.
-  obtain C₂ : CtrCtx K W SP s₂ R (bytesAt s.mem (w64 N) nl) D n :=
-    ⟨L, Ar.rounds, h7', h13', by rw [hnl]; exact Ar.hn, Ar.n32, St.c0, Ar.data.of_eq St.rd St.wr,
-      by rw [St.wr]; exact Ar.dw, Ar.dk⟩
-  refine WP.seq (WP.mono (ctr_ok v C₂ St.env St.slots.ctx St.slots.rounds St.slots.data St.slots.len)
-    fun s₃ ⟨E₃, rd₃, wr₃, f₃, h₃⟩ => ?_)
-  obtain f₂₃ : Frame (mutR W SP D n) s₂.mem s₃.mem := frame_toMut f₃ (inMut_ctrR W SP D n)
-  obtain ⟨S₃, -, -, -, -⟩ := St.mut Ar f₂₃
-  obtain hc₃ : bytesAt s₃.mem (w64 W + BitVec.ofNat 64 48) 16 = Spec.Ccm.ctrBlock (bytesAt s.mem (w64 N) nl) 0 :=
-    C₂.c0_kept f₃
-  obtain rd₃' : s₃.rd = s.rd := by rw [rd₃, St.rd]
-  obtain wr₃' : s₃.wr = s.wr := by rw [wr₃, St.wr]
-  -- The MAC of the plaintext.
-  refine WP.seq (WP.mono (mac_ok v L E₃ Ar.rounds S₃ hnl Ar.h7 Ar.h13 Ar.t4 Ar.t16 Ar.te Ar.al32 Ar.hn
-    Ar.n32 hc₃ (y := 96) (.inr rfl) (Ar.aad.of_eq rd₃' wr₃') (Ar.data.of_eq rd₃' wr₃')) fun s₄ A₄ => ?_)
-  obtain f₂₄ : Frame (mutR W SP D n) s₂.mem s₄.mem := f₂₃.trans (frame_toMut A₄.frame (inMut_macR W SP D n (.inr rfl)))
+  -- The plaintext and its MAC.
+  refine seq_assoc (WP.seq (WP.mono (macData_ok v Ar St (y := 96) (.inr rfl) false) fun s₄ M₄ => ?_))
+  obtain f₂₄ := M₄.frame
   obtain ⟨S₄, -, -, -, -⟩ := St.mut Ar f₂₄
-  obtain hc₄ : bytesAt s₄.mem (w64 W + BitVec.ofNat 64 48) 16 = Spec.Ccm.ctrBlock (bytesAt s.mem (w64 N) nl) 0 := by
-    rw [c0_kept (fun r hr => by
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl
-      · exact Lay.w_w (.inl (by decide)) (by decide) (by decide)
-      · exact Lay.w_w (.inr (by decide)) (by decide) (by decide)
-      · exact Lay.w_w (.inl (by decide)) (by decide) (by decide)
-      · exact (L.stk_w' (by decide)).symm) A₄.frame, hc₃]
   -- The tag of the plaintext.
-  refine WP.seq (WP.mono (tag_ok v L A₄.env Ar.rounds S₄.ctx S₄.rounds h7' h13' hc₄ (y := 96) (.inr rfl))
+  refine WP.seq (WP.mono (tag_ok v L M₄.env Ar.rounds S₄.ctx S₄.rounds h7' h13' M₄.c0 (y := 96) (.inr rfl))
     fun s₅ ⟨E₅, rd₅, wr₅, f₅, h₅⟩ => ?_)
   obtain f₂₅ : Frame (mutR W SP D n) s₂.mem s₅.mem := f₂₄.trans (frame_toMut f₅ (inMut_tag W SP D n (.inr rfl)))
   obtain ⟨S₅, -, -, -, -⟩ := St.mut Ar f₂₅
-  obtain rd₅' : s₅.rd = s.rd := by rw [rd₅, A₄.rd, rd₃']
-  obtain wr₅' : s₅.wr = s.wr := by rw [wr₅, A₄.wr, wr₃']
+  obtain rd₅' : s₅.rd = s.rd := by rw [rd₅, M₄.rd]
+  obtain wr₅' : s₅.wr = s.wr := by rw [wr₅, M₄.wr]
   -- The received tag.
   obtain Tb₅ := Ar.tag.of_eq rd₅' wr₅'
   refine WP.seq (WP.mono (Proof.AesGcm.X86.recv_ok ⟨E₅.ebp, E₅.perm.w, L.fw, by decide⟩ S₅.tl S₅.tp Tb₅.rd Tb₅.wrap Tb₅.w
@@ -197,15 +176,13 @@ theorem open_wp' (v : Ctr32Impl) {s : State} {K W SP N A D T : BitVec 32} {R nl 
     (by rw [hm₁₀, hsp]; exact rt₉)) fun s' ⟨abi, m', ax', _, _⟩ => ⟨abi, ?_⟩
   -- The plaintext, the tags and the comparison.
   obtain hBC : ∀ m : Mem, BlockCipher (Spec.Ccm.ctxCiph m (w64 K) R) := fun _ x => Proof.Cmac.aesWith_length _ _ x
-  obtain ci₃ := (St.mut Ar f₂₃).2.2.1
   obtain ci₄ := (St.mut Ar f₂₄).2.2.1
-  obtain aa₃ := (St.mut Ar f₂₃).2.2.2.1
   obtain dW : ∀ (r : Region), Region.Sub r ⟨w64 W, 2560⟩ ∨ r = below SP 60 → (⟨w64 D, n⟩ : Region).Disjoint r :=
     fun r h => by rcases h with h | rfl; exact Ar.data.w.sub_right h; exact Ar.data.stk.symm
-  obtain pt₃ : bytesAt s₃.mem (w64 D) n =
+  obtain pt₄ : bytesAt s₄.mem (w64 D) n =
       Spec.Ccm.crypt (Spec.Ccm.ctxCiph s.mem (w64 K) R) (bytesAt s.mem (w64 N) nl) (bytesAt s.mem (w64 D) n) := by
-    rw [h₃, St.ciph, St.dataB, crypt_eq (hBC _)]
-  obtain pt₈ : bytesAt s₈.mem (w64 D) n = bytesAt s₃.mem (w64 D) n := by
+    rw [M₄.out, crypt_eq (hBC _)]
+  obtain pt₈ : bytesAt s₈.mem (w64 D) n = bytesAt s₄.mem (w64 D) n := by
     rw [hm₈, bytesAt_writeW_sep _ _ (Ar.data.w.sub_right (Lay.wSub (by decide))) (by have := Ar.data.lt; omega_arith),
       Proof.AesGcm.X86.bytesAt_frame f₇ (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact Ar.data.w.sub_right (Lay.wSub (by decide)))
@@ -219,13 +196,13 @@ theorem open_wp' (v : Ctr32Impl) {s : State} {K W SP N A D T : BitVec 32} {R nl 
         · exact .inl (Lay.wSub (by decide))
         · exact .inl (Lay.wSub (by decide))
         · exact .inl (Lay.wSub (by decide))
-        · exact .inr rfl) f₅,
-      buf_kept Ar.data (y := 96) (by decide) A₄.frame]
+        · exact .inr rfl) f₅]
   obtain tg₅ : bytesAt s₅.mem (w64 T) tl = bytesAt s.mem (w64 T) tl := by
     rw [buf_mut Ar.tag Ar.td f₂₅, St.tagB]
   obtain hl : (bytesAt s.mem (w64 N) nl).length ≤ 15 := by rw [hnl]; have := Ar.h13; omega_arith
-  have o₄ := A₄.out
-  rw [ci₃, aa₃, pt₃] at o₄
+  have o₄ := M₄.mac
+  simp only [Bool.false_eq_true, ↓reduceIte] at o₄
+  rw [← crypt_eq (hBC _)] at o₄
   obtain hY := congrArg List.length o₄
   rw [length_bytesAt] at hY
   obtain hV : bytesAt s₆.mem (w64 W + BitVec.ofNat 64 uO) tl =
@@ -254,7 +231,7 @@ theorem open_wp' (v : Ctr32Impl) {s : State} {K W SP N A D T : BitVec 32} {R nl 
   by_cases hk : c = true
   · have hk' := key.mp hk
     simp only [hk', ↓reduceIte]
-    refine ⟨by rw [ax', ax₁₀, hk]; rfl, by rw [hD₉, hk]; simp only [↓reduceIte]; rw [pt₈, pt₃]⟩
+    refine ⟨by rw [ax', ax₁₀, hk]; rfl, by rw [hD₉, hk]; simp only [↓reduceIte]; rw [pt₈, pt₄]⟩
   · have hk' : ¬ _ := fun e => hk (key.mpr e)
     simp only [hk', ↓reduceIte]
     obtain hf : c = false := by simpa using hk
@@ -344,7 +321,7 @@ theorem mask_ct {K W SP : BitVec 32} (L : Lay K W SP) {D : BitVec 32} {n : Nat} 
   refine CT.block_seq [.ebp] (pin_ebp fun _ ⟨_, _, _, _, _, hbp, _⟩ => hbp) (by taint_decide)
     (fun s₁ ⟨s, hs, m₁, cx₁, _, bp₁, sp₁, rd₁, wr₁⟩ => maskArgs_ok L
       ⟨bp₁, sp₁, (h s hs).1.perm.of_eq rd₁ wr₁⟩ (by rw [m₁]; exact (h s hs).2.1) cx₁) ?_
-  exact CT.taint [.edi, .ecx] (pin2 fun _ ⟨_, _, hdi, hcx⟩ => ⟨hdi, hcx⟩) (by taint_decide)
+  exact CT.taintS [.edi, .ecx] (pin2 fun _ ⟨_, _, hdi, hcx⟩ => ⟨hdi, hcx⟩) (by taint_decide)
 
 /-! ## `open` -/
 
@@ -368,19 +345,14 @@ theorem open_top_ct (v : Ctr32Impl) {K W SP N A D T : BitVec 32} {R nl al n tl :
   refine RelCT.assoc (CT.seq (J := fun s => ∃ s₀, Top K W SP N A D T R nl al n tl s₀ ∧ Run s₀ K W SP N A D T R nl al n tl s)
     (start_ct L Ar.h13) (fun s hs => WP.mono (start_ok hs.args hs.sp hs.a0 hs.a1 hs.a2 hs.a3 hs.a4 hs.a5 hs.a6 hs.a7
       hs.a8 hs.a9 hs.a10) fun _ St => ⟨s, hs, Run.of_started St⟩) ?_)
-  -- Counter mode.
+  -- The MAC of the nonce and the associated data, and the data.
   refine CT.seq (J := fun s => ∃ s₀, Top K W SP N A D T R nl al n tl s₀ ∧ Run s₀ K W SP N A D T R nl al n tl s)
-    ((ctr_ct v L Ar.rounds Ar.n32).mono fun s ⟨_, Tp, h⟩ => h.ctr_pre Tp.args)
-    (fun s ⟨s₀, Tp, h⟩ => by
-      obtain ⟨E, hK, hRo, hDp, hlen, nonce, C⟩ := h.ctr_pre Tp.args
-      exact WP.mono (ctr_ok v C E hK hRo hDp hlen) fun _ ⟨E', rd, wr, f, _⟩ => ⟨s₀, Tp, h.ctr Tp.args E' rd wr f⟩) ?_
-  -- The MAC.
-  refine CT.seq (J := fun s => ∃ s₀, Top K W SP N A D T R nl al n tl s₀ ∧ Run s₀ K W SP N A D T R nl al n tl s)
-    ((mac_ct v L Ar.rounds Ar.h7 Ar.h13 Ar.t4 Ar.t16 Ar.te Ar.al32 Ar.hn Ar.n32 (.inr rfl)).mono
+    ((macPre_ct v L Ar.rounds Ar.h7 Ar.h13 Ar.t4 Ar.t16 Ar.te Ar.al32 Ar.hn Ar.n32 (.inr rfl)).mono
       fun s ⟨_, Tp, h⟩ => h.mac_pre Tp.args)
-    (fun s ⟨s₀, Tp, h⟩ => WP.mono (mac_ok v L h.env Ar.rounds (h.slots Tp.args) (length_bytesAt _ _ _) Ar.h7 Ar.h13
-      Ar.t4 Ar.t16 Ar.te Ar.al32 Ar.hn Ar.n32 h.c0 (.inr rfl) (Tp.args.aad.of_eq h.rd h.wr)
-      (Tp.args.data.of_eq h.rd h.wr)) fun _ A' => ⟨s₀, Tp, h.mac Tp.args (.inr rfl) A'⟩) ?_
+    (fun s ⟨s₀, Tp, h⟩ => WP.mono (h.macData v Tp.args (.inr rfl) false).1 fun _ h' => ⟨s₀, Tp, h'⟩) ?_
+  refine CT.seq (J := fun s => ∃ s₀, Top K W SP N A D T R nl al n tl s₀ ∧ Run s₀ K W SP N A D T R nl al n tl s)
+    ((data_ct v L Ar.rounds (.inr rfl) Ar.n32 false).mono fun s ⟨_, Tp, h⟩ => h.data_pre Tp.args (.inr rfl))
+    (fun s ⟨s₀, Tp, h⟩ => WP.mono (h.macData v Tp.args (.inr rfl) false).2 fun _ h' => ⟨s₀, Tp, h'⟩) ?_
   -- The tag.
   refine CT.seq (J := fun s => ∃ s₀, Top K W SP N A D T R nl al n tl s₀ ∧ Run s₀ K W SP N A D T R nl al n tl s)
     ((tag_ct v L Ar.rounds (.inr rfl)).mono fun s ⟨_, Tp, h⟩ => h.tag_pre Tp.args)
@@ -497,16 +469,29 @@ theorem open_correct (v : Ctr32Impl) (s : State) (hs : openX86.pre s) :
   simp only [openX86, setWidth_ret]
   exact h
 
+theorem pick_spSafe (c : Impl.Aes.X86.Ctr32) : (pick c).all (fun i => !isa.writesSp i) = true := by
+  unfold pick; split <;> decide
+
+theorem pick_noEsp (c : Impl.Aes.X86.Ctr32) : (pick c).allInstrs (fun i => !Taint.clobbers i .esp) = true := by
+  unfold pick; split <;> decide
+
+theorem pick_stackUse (c : Impl.Aes.X86.Ctr32) : stackUse (pick c) = 0 := by
+  unfold pick; split <;> rfl
+
 theorem seal_spSafe (v : Ctr32Impl) : («seal» v.callee v.suffix).all (fun i => !isa.writesSp i) = true := by
-  simp only [«seal», ccmEntry, Impl.AesGcm.X86.entry, ctrs, mac, b0, aad, aadHead, header, absorbPad, updBlock,
-    updCall, Impl.CmacAes.Stream.X86.call6, tag, ctr, ctrCall, tagOut, Code.all, Proof.CmacAes.X86.update_spSafe v,
+  simp only [«seal», ccmEntry, Impl.AesGcm.X86.entry, ctrs, macPre, b0, aad, aadHead, header, absorbPad,
+    absorbTail, updBlock, updCall, Impl.CmacAes.Stream.X86.call6, tag, data, dataWhole, chunk, updStep, ctrStep, ctrTail, ctrCall,
+    ↓reduceIte, tagOut, Code.all, Proof.CmacAes.X86.update_spSafe v,
     v.spSafe, Bool.and_true]
+  rw [pick_spSafe]
   decide +kernel
 
 theorem open_spSafe (v : Ctr32Impl) : («open» v.callee v.suffix).all (fun i => !isa.writesSp i) = true := by
-  simp only [«open», ccmEntry, Impl.AesGcm.X86.entry, ctrs, mac, b0, aad, aadHead, header, absorbPad, updBlock,
-    updCall, Impl.CmacAes.Stream.X86.call6, tag, ctr, ctrCall, mask, Impl.AesGcm.X86.recv, Impl.AesGcm.X86.cmp,
+  simp only [«open», ccmEntry, Impl.AesGcm.X86.entry, ctrs, macPre, b0, aad, aadHead, header, absorbPad,
+    absorbTail, updBlock, updCall, Impl.CmacAes.Stream.X86.call6, tag, data, dataWhole, chunk, updStep, ctrStep, ctrTail, ctrCall,
+    ↓reduceIte, Bool.false_eq_true, mask, Impl.AesGcm.X86.recv, Impl.AesGcm.X86.cmp,
     Code.all, Proof.CmacAes.X86.update_spSafe v, v.spSafe, Bool.and_true]
+  rw [pick_spSafe]
   decide +kernel
 
 /-- A state satisfying the precondition of `vg_aes_ccm_seal`: the key
@@ -618,30 +603,38 @@ theorem noEsp_of {c : Prog isa} (h : NoSp c) :
 variable (v : Proof.Aes.X86.Ctr32Impl)
 
 theorem seal_noEsp : («seal» v.callee v.suffix).allInstrs (fun i => !Taint.clobbers i .esp) = true := by
-  simp only [«seal», ccmEntry, Impl.AesGcm.X86.entry, ctrs, mac, b0, aad, aadHead, header, absorbPad, updBlock,
-    updCall, Impl.CmacAes.Stream.X86.call6, tag, ctr, ctrCall, tagOut, Code.allInstrs,
+  simp only [«seal», ccmEntry, Impl.AesGcm.X86.entry, ctrs, macPre, b0, aad, aadHead, header, absorbPad,
+    absorbTail, updBlock, updCall, Impl.CmacAes.Stream.X86.call6, tag, data, dataWhole, chunk, updStep, ctrStep, ctrTail, ctrCall,
+    ↓reduceIte, tagOut, Code.allInstrs,
     noEsp_of (Proof.CmacAes.X86.update_nosp v), noEsp_of v.nosp]
+  rw [pick_noEsp]
   decide +kernel
 
 theorem open_noEsp : («open» v.callee v.suffix).allInstrs (fun i => !Taint.clobbers i .esp) = true := by
-  simp only [«open», ccmEntry, Impl.AesGcm.X86.entry, ctrs, mac, b0, aad, aadHead, header, absorbPad, updBlock,
-    updCall, Impl.CmacAes.Stream.X86.call6, tag, ctr, ctrCall, mask, Impl.AesGcm.X86.recv, Impl.AesGcm.X86.cmp,
+  simp only [«open», ccmEntry, Impl.AesGcm.X86.entry, ctrs, macPre, b0, aad, aadHead, header, absorbPad,
+    absorbTail, updBlock, updCall, Impl.CmacAes.Stream.X86.call6, tag, data, dataWhole, chunk, updStep, ctrStep, ctrTail, ctrCall,
+    ↓reduceIte, Bool.false_eq_true, mask, Impl.AesGcm.X86.recv, Impl.AesGcm.X86.cmp,
     Code.allInstrs, noEsp_of (Proof.CmacAes.X86.update_nosp v), noEsp_of v.nosp]
+  rw [pick_noEsp]
   decide +kernel
 
 theorem seal_stackUse : stackUse («seal» v.callee v.suffix) ≤ 60 := by
   have h := Proof.CmacAes.X86.update_stack v
-  simp only [«seal», ccmEntry, Impl.AesGcm.X86.entry, ctrs, mac, b0, aad, aadHead, header, absorbPad, updBlock,
-    updCall, Impl.CmacAes.Stream.X86.call6, tag, ctr, ctrCall, tagOut, stackUse, v.stack]
+  simp only [«seal», ccmEntry, Impl.AesGcm.X86.entry, ctrs, macPre, b0, aad, aadHead, header, absorbPad,
+    absorbTail, updBlock, updCall, Impl.CmacAes.Stream.X86.call6, tag, data, dataWhole, chunk, updStep, ctrStep, ctrTail, ctrCall,
+    ↓reduceIte, tagOut, stackUse, v.stack]
+  rw [pick_stackUse]
   generalize stackUse (Impl.CmacAes.X86.update v.callee) = x at h ⊢
   revert x
   decide +kernel
 
 theorem open_stackUse : stackUse («open» v.callee v.suffix) ≤ 60 := by
   have h := Proof.CmacAes.X86.update_stack v
-  simp only [«open», ccmEntry, Impl.AesGcm.X86.entry, ctrs, mac, b0, aad, aadHead, header, absorbPad, updBlock,
-    updCall, Impl.CmacAes.Stream.X86.call6, tag, ctr, ctrCall, mask, Impl.AesGcm.X86.recv, Impl.AesGcm.X86.cmp,
+  simp only [«open», ccmEntry, Impl.AesGcm.X86.entry, ctrs, macPre, b0, aad, aadHead, header, absorbPad,
+    absorbTail, updBlock, updCall, Impl.CmacAes.Stream.X86.call6, tag, data, dataWhole, chunk, updStep, ctrStep, ctrTail, ctrCall,
+    ↓reduceIte, Bool.false_eq_true, mask, Impl.AesGcm.X86.recv, Impl.AesGcm.X86.cmp,
     stackUse, v.stack]
+  rw [pick_stackUse]
   generalize stackUse (Impl.CmacAes.X86.update v.callee) = x at h ⊢
   revert x
   decide +kernel

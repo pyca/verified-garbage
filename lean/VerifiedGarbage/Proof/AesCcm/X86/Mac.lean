@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.AesCcm.Mac
 import VerifiedGarbage.Proof.AesCcm.X86.Aad
 public import VerifiedGarbage.Proof.AesCcm.Ctr
 public import VerifiedGarbage.Proof.AesCcm.X86.Absorb
@@ -36,6 +37,7 @@ open VG VG.X86 VG.X86.RegUpd VG.Impl.AesCcm.X86 VG.WriteBytes
 open VG.Spec.Aes (bytesAt)
 open VG.Proof.Cmac (le4)
 open VG.Proof.Aes.X86 (Ctr32Impl)
+open VG.Proof.AesCcm (adataBlocks)
 open VG.Impl.AesGcm.X86 (at_ imm slot zero4 tglO dO nO)
 open VG.Proof.AesGcm.X86 (w64 toNat_ofNat32 slotv zero4_fold zero4_bytes' length_bytesAt and_self_beq32)
 
@@ -244,70 +246,24 @@ theorem b0_ok (v : Ctr32Impl) {K W SP : BitVec 32} {s : State} (L : Lay K W SP) 
 
 /-! ## The CBC-MAC -/
 
-/-- The data, as the string to chain: its address and length at `dO`, `nO`. -/
-theorem dataArgs_ok {K W SP : BitVec 32} {s₂ : State} (L : Lay K W SP) (E₂ : Env K W SP s₂) {D : BitVec 32} {n : Nat}
-    (hD : slotv s₂.mem W dataO = D) (hn : slotv s₂.mem W lenO = BitVec.ofNat 32 n) :
-    ∃ s₃, runBlock isa
-      [.mov .eax (slot dataO), .store (at_ .ebp dO) .eax, .mov .eax (slot lenO), .store (at_ .ebp nO) .eax] s₂ =
-        some s₃ ∧
-      s₃.mem = (s₂.mem.writeW (w64 W + BitVec.ofNat 64 dO) D).writeW (w64 W + BitVec.ofNat 64 nO) (BitVec.ofNat 32 n) ∧
-      s₃.gpr .ebp = W ∧ s₃.gpr .esp = SP ∧ s₃.rd = s₂.rd ∧ s₃.wr = s₂.wr := by
-  refine ⟨_, by crun [E₂.ebp, L.aW, E₂.perm.wW, E₂.perm.wR, hD, hn], ?_, ?_, ?_, ?_, ?_⟩
-  · cmems [hD, hn]
-  · cregs [E₂.ebp]
-  · cregs [E₂.esp]
-  all_goals cmems []
-
-
-/-- CBC-MAC of the formatted nonce, associated data and payload into `W + y`. -/
-theorem mac_ok (v : Ctr32Impl) {K W SP : BitVec 32} {s : State} (L : Lay K W SP) (E : Env K W SP s) {R : Nat}
+/-- CBC-MAC of the formatted nonce and associated data into `W + y`. -/
+theorem macPre_ok (v : Ctr32Impl) {K W SP : BitVec 32} {s : State} (L : Lay K W SP) (E : Env K W SP s) {R : Nat}
     (hR : R = 10 ∨ R = 12 ∨ R = 14) {N A D T : BitVec 32} {nl al n tl : Nat} (S : Slots W K R N A D T nl al n tl s.mem)
     {nonce : List Byte} (hnl : nonce.length = nl) (h7 : 7 ≤ nl) (h13 : nl ≤ 13) (ht4 : 4 ≤ tl) (ht16 : tl ≤ 16)
     (hte : tl % 2 = 0) (hal : al < 2 ^ 32) (hn : n < 256 ^ (15 - nl)) (hn32 : n < 2 ^ 32)
     (hc0 : bytesAt s.mem (w64 W + BitVec.ofNat 64 48) 16 = Spec.Ccm.ctrBlock nonce 0) {y : Nat} (hy : y = 0 ∨ y = 96)
-    (hA : Buf W SP s A al) (hD : Buf W SP s D n) :
-    WP isa (mac v.callee v.suffix y) s (Absorbed K W SP s y
+    (hA : Buf W SP s A al) :
+    WP isa (macPre v.callee v.suffix y) s (Absorbed K W SP s y
       (Spec.Cmac.chain (Spec.Ccm.ctxCiph s.mem (w64 K) R) (Spec.Cmac.zeros 16)
-        (Spec.Ccm.format tl nonce (bytesAt s.mem (w64 A) al) (bytesAt s.mem (w64 D) n)))) := by
+        ([Spec.Ccm.b0 tl nonce al n] ++ adataBlocks (bytesAt s.mem (w64 A) al)))) := by
   obtain hRb : 16 * (R + 1) ≤ 240 := by rcases hR with rfl | rfl | rfl <;> decide
   obtain hy16 : y + 16 ≤ 2560 := by omega_arith
   refine WP.seq (WP.mono (b0_ok v L E hR S hnl h7 h13 ht4 ht16 hte hal hn hn32 hc0 hy)
     fun s₁ ⟨E₁, f₁, h₁, hrd₁, hwr₁⟩ => ?_)
   obtain S₁ := S.macR L hy f₁
-  refine WP.seq (WP.mono (aad_ok v L E₁ hR S₁.ctx S₁.rounds hy S₁.aad S₁.alen (hA.of_eq hrd₁ hwr₁) hal)
-    fun s₂ M₂ => ?_)
-  obtain S₂ := S₁.macR L hy M₂.frame
-  have E₂ := M₂.env
-  obtain ⟨s₃, run₃, hm₃, hbp, hsp, hrd₃, hwr₃⟩ := dataArgs_ok L E₂ S₂.data S₂.len
-  refine WP.seq (WP.of_runBlock ⟨s₃, run₃, ?_⟩)
-  obtain E₃ : Env K W SP s₃ := E₂.keep (by rw [hbp, E₂.ebp]) (by rw [hsp, E₂.esp]) hrd₃ hwr₃
-  obtain f₃ : Frame [wC W] s₂.mem s₃.mem := by
-    rw [hm₃]
-    exact ((Frame.refl _ _).writeW (List.mem_singleton_self _) _
-      (Offset.contains (w64 W) (d := 272) (n := 4) (e := 240) (k := 2320) (by decide) (by decide) (by decide))).writeW
-      (List.mem_singleton_self _) _
-      (Offset.contains (w64 W) (d := 276) (n := 4) (e := 240) (k := 2320) (by decide) (by decide) (by decide))
-  obtain fm₃ : Frame (macR W SP y) s₂.mem s₃.mem := f₃.sub fun r hr => by
-    simp only [List.mem_singleton] at hr; subst hr; exact sub_mac (by simp)
-  obtain S₃ := S₂.macR L hy fm₃
-  obtain rd₃ : s₃.rd = s.rd := by rw [hrd₃, M₂.rd, hrd₁]
-  obtain wr₃ : s₃.wr = s.wr := by rw [hwr₃, M₂.wr, hwr₁]
-  obtain hd₃ : slotv s₃.mem W dO = D := by
-    rw [hm₃, slotv, Proof.AesGcm.X86.readW_writeW_off _ _ _ (by decide) (by decide) (by decide)]
-    exact Mem.readW_writeW_self32 _ _ _
-  obtain hn₃ : slotv s₃.mem W nO = BitVec.ofNat 32 n := by rw [hm₃]; exact Mem.readW_writeW_self32 _ _ _
-  refine WP.mono (absorbPad_ok v L E₃ hR S₃.ctx S₃.rounds hy (fun _ => hD.of_eq rd₃ wr₃) hn32 hd₃ hn₃) fun s₄ A₄ => ?_
-  obtain f₂ : Frame (macR W SP y) s.mem s₂.mem := f₁.trans M₂.frame
-  obtain hk := k_macR L hy16
-  obtain hY₃ : bytesAt s₃.mem (w64 W + BitVec.ofNat 64 y) 16 = bytesAt s₂.mem (w64 W + BitVec.ofNat 64 y) 16 :=
-    Proof.AesGcm.X86.bytesAt_frame f₃ (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr
-      rcases hy with rfl | rfl <;> exact Lay.w_w (.inl (by decide)) (by decide) (by decide)) (by decide)
-  refine ⟨A₄.env, (f₂.trans fm₃).trans A₄.frame, ?_, by rw [A₄.rd, rd₃], by rw [A₄.wr, wr₃]⟩
-  obtain hl : nonce.length ≤ 15 := by omega_arith
-  rw [A₄.out, hY₃, M₂.out, h₁, ctxCiph_frame (f₂.trans fm₃) hk hRb, ctxCiph_frame f₁ hk hRb,
-    buf_kept hD hy16 (f₂.trans fm₃), buf_kept hA hy16 f₁, Proof.AesCcm.format_eq tl hl, length_bytesAt,
-    length_bytesAt, Proof.Cmac.chain_append, Proof.Cmac.chain_append]
+  refine WP.mono (aad_ok v L E₁ hR S₁.ctx S₁.rounds hy S₁.aad S₁.alen (hA.of_eq hrd₁ hwr₁) hal) fun s₂ M₂ => ?_
+  refine ⟨M₂.env, f₁.trans M₂.frame, ?_, by rw [M₂.rd, hrd₁], by rw [M₂.wr, hwr₁]⟩
+  rw [M₂.out, h₁, ctxCiph_frame f₁ (k_macR L hy16) hRb, buf_kept hA hy16 f₁, Proof.Cmac.chain_append]
 
 /-! ## The tag -/
 
@@ -398,7 +354,7 @@ theorem tag_ok (v : Ctr32Impl) {K W SP : BitVec 32} {s : State} (L : Lay K W SP)
   obtain aY : w64 (W + BitVec.ofNat 32 y) = w64 W + BitVec.ofNat 64 y := L.aW (by omega_arith)
   obtain ⟨hq, hqw, hqc, hqk⟩ := tagCall_pre L E₃ hy
   refine WP.mono (ctrCall_ok v L E₃ hR (c := 64) (by decide) hq hqc hqk hqw hax hcx hdx hbx hdi)
-    fun s₄ ⟨E₄, rd₄, wr₄, _, f₄, o₄⟩ => ⟨E₄, by rw [rd₄, hrd₃], by rw [wr₄, hwr₃], ?_, ?_⟩
+    fun s₄ ⟨E₄, rd₄, wr₄, _, f₄, o₄, _⟩ => ⟨E₄, by rw [rd₄, hrd₃], by rw [wr₄, hwr₃], ?_, ?_⟩
   · have f₄' := f₄
     rw [aY] at f₄'
     refine (f₃.sub fun r hr => ?_).trans (f₄'.sub fun r hr => ?_)

@@ -174,10 +174,25 @@ def maskWord : List Instr :=
   [.mov .edx (.mem (at_ .edi 0)), .alu .and .edx (.reg .ebx), .store (at_ .edi 0) .edx, .alu .add .edi (imm 4),
    .alu .sub .ecx (imm 4), .alu .cmp .ecx (imm 4)]
 
-/-- ANDs the `ecx` bytes at `edi` with `ebx`, 4 at a time while 4 are left,
-advancing `edi`; `ecx` is then the number of bytes left, at most 3. -/
+/-- The 16 bytes at `edi` ANDed with `xmm0`, and on to the next 16 of the
+`ecx`; CF is set when fewer than 16 are left. -/
+def maskBlock : List Instr :=
+  [.movdquLoad .xmm1 (at_ .edi 0), .xop (.bin .pand .xmm1 .xmm0), .movdquStore (at_ .edi 0) .xmm1,
+   .alu .add .edi (imm 16), .alu .sub .ecx (imm 16), .alu .cmp .ecx (imm 16)]
+
+/-- ANDs the `ecx` bytes at `edi` with `ebx`, 16 at a time while 16 are left,
+advancing `edi`; `ecx` is then the number of bytes left, at most 15. -/
+def maskBlocks : Prog isa :=
+  .seq (.block [.alu .cmp .ecx (imm 16)])
+    (.ite .b (.block [])
+      (.seq (.block [.xop (.movd .xmm0 .ebx), .xop (.pshufd .xmm0 .xmm0 0)])
+        (.seq (.loop (.block maskBlock) .ae) (.block [.xop (.bin .pxor .xmm1 .xmm1)]))))
+
+/-- ANDs the `ecx` bytes at `edi` with `ebx`, 16 at a time while 16 are left,
+then 4 at a time while 4 are left, advancing `edi`; `ecx` is then the number
+of bytes left, at most 3. -/
 def maskWords : Prog isa :=
-  .seq (.block [.alu .cmp .ecx (imm 4)]) (.ite .b (.block []) (.loop (.block maskWord) .ae))
+  .seq maskBlocks (.seq (.block [.alu .cmp .ecx (imm 4)]) (.ite .b (.block []) (.loop (.block maskWord) .ae)))
 
 /-- The register holding the bytes XORed with the keystream: the destination
 `edi` in place, `esi` out of place. -/

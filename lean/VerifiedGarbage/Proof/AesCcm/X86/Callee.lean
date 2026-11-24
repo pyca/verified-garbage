@@ -152,7 +152,9 @@ theorem ctrCall_ok (v : Ctr32Impl) {K W SP : BitVec 32} {s : State} (L : Lay K W
       Frame [⟨w64 W + BitVec.ofNat 64 c, 16⟩, ⟨w64 Q, 16 * n⟩, ⟨w64 W + BitVec.ofNat 64 384, 2048⟩, below SP 60]
         s.mem s'.mem ∧
       blocksAt s'.mem (w64 Q) n = ctr32 (aesWith R (bytesAt s.mem (w64 K) (16 * (R + 1))))
-        (blockAt s.mem (w64 W + BitVec.ofNat 64 c)) (blocksAt s.mem (w64 Q) n) := by
+        (blockAt s.mem (w64 W + BitVec.ofNat 64 c)) (blocksAt s.mem (w64 Q) n) ∧
+      blockAt s'.mem (w64 W + BitVec.ofNat 64 c) =
+        Nat.repeat Spec.Gcm.inc32 n (blockAt s.mem (w64 W + BitVec.ofNat 64 c)) := by
   have hsp := L.sp
   have b32 : Region.Sub (below SP 32) (below SP 60) := below_sub60 (by decide) hsp
   -- `ebp := W + 384`.
@@ -187,7 +189,7 @@ theorem ctrCall_ok (v : Ctr32Impl) {K W SP : BitVec 32} {s : State} (L : Lay K W
   have hsp₂ : s₂.gpr .esp = SP := by rw [P.saved _ (by decide)]; cregs [E.esp]
   refine WP.of_runBlock ⟨_, by crun [hbp₂], ?_⟩
   refine ⟨⟨by cregs [hbp₂]; exact BitVec.add_sub_cancel _ _, by cregs [hsp₂],
-    E.perm.of_eq (by cmems [P.rd]) (by cmems [P.wr])⟩, by cmems [P.rd], by cmems [P.wr], ?_, ?_, ?_⟩
+    E.perm.of_eq (by cmems [P.rd]) (by cmems [P.wr])⟩, by cmems [P.rd], by cmems [P.wr], ?_, ?_, ?_, ?_⟩
   · intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl <;> (cregs []; rw [P.saved _ (by decide)]; cregs [])
@@ -204,6 +206,10 @@ theorem ctrCall_ok (v : Ctr32Impl) {K W SP : BitVec 32} {s : State} (L : Lay K W
       have : (s.gpr .ebp + BitVec.ofNat 32 384).setWidth 64 = (W + BitVec.ofNat 32 384).setWidth 64 := by rw [E.ebp]
       simpa [gpr_setReg_of_ne, E.esp] using b32
   · have o := P.out
+    rw [L.aW (o := c) (by omega_arith)] at o
+    cmems []
+    exact o
+  · have o := P.ctr
     rw [L.aW (o := c) (by omega_arith)] at o
     cmems []
     exact o

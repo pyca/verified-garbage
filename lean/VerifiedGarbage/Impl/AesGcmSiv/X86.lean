@@ -434,8 +434,8 @@ def cmp : List Instr :=
    .alu .or .eax (.reg .ecx), .mov .ecx (slot (tagO + 12)), .alu .xor .ecx (slot (t2O + 12)),
    .alu .or .eax (.reg .ecx), .alu .cmp .eax (imm 1), .mov .eax (imm 0), .alu .adc .eax (imm 0)]
 
-/-- Every byte of the data ANDed with `0 − eax`, with `eax` kept: four at a
-time while four are left (`maskWords`), then one at a time. -/
+/-- Every byte of the data ANDed with `0 − eax`, with `eax` kept: 16 at a
+time, then four at a time (`maskWords`), then one at a time. -/
 def mask : Prog isa :=
   .seq (.block [.mov .ebx (imm 0), .alu .sub .ebx (.reg .eax), .mov .ecx (slot lenO), .alu .test .ecx (.reg .ecx)])
     (.ite .e (.block [])

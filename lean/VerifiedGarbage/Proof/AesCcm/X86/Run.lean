@@ -269,7 +269,7 @@ tactic_template "crun" "[" ts:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(t
                    simp (disch := first | decide | omega) only [runBlock_cons, runStep_some,
                      runBlock_nil, exec, readSrc, execAlu, execShift, State.load32, store32_eq, State.load8, store8_eq,
                      State.ea, at_, imm, slot, argOp, blkO, c0O, c1O, ksO, uO, ctxO, roundsO, nonceO, nlenO, aadO, alenO, dataO,
-                     lenO, okO, scrO, tglO, rO, vO, tpO, dO, nO, bO, List.cons_append, List.nil_append, List.append_assoc,
+                     lenO, okO, scrO, qO, mO, kO, tglO, rO, vO, tpO, dO, nO, bO, List.cons_append, List.nil_append, List.append_assoc,
                      Option.bind_some, Option.map_some, readW_writeW_off, readW_writeB_off, gpr_setReg_self, gpr_setReg_of_ne, gpr_arithFlags, gpr_setFlags, mem_setReg,
                      mem_arithFlags, mem_setFlags, rd_setReg, rd_arithFlags, rd_setFlags, wr_setReg, wr_arithFlags,
                      wr_setFlags, cf_setReg, cf_arithFlags, zf_setReg, zf_arithFlags, gpr_setMem, mem_setMem, rd_setMem,
@@ -289,7 +289,7 @@ tactic_template "cmems" "[" ts:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(
                      rd_setMem, rd_setReg, rd_arithFlags, rd_setFlags, wr_setMem, wr_setReg, wr_arithFlags, wr_setFlags,
                      zf_setMem, zf_setReg, zf_arithFlags, cf_setMem, cf_setReg, cf_arithFlags, gpr_setMem, gpr_setReg_self,
                      gpr_setReg_of_ne, gpr_arithFlags, gpr_setFlags, Mem.readW_writeW_self32, readW_writeW_off, readW_writeB_off, blkO, c0O, c1O,
-                     ksO, uO, ctxO, roundsO, nonceO, nlenO, aadO, alenO, dataO, lenO, okO, scrO, tglO, rO, vO, tpO, dO, nO, bO,
+                     ksO, uO, ctxO, roundsO, nonceO, nlenO, aadO, alenO, dataO, lenO, okO, scrO, qO, mO, kO, tglO, rO, vO, tpO, dO, nO, bO,
                      Nat.reduceAdd, Reg8.reg, eq_self_iff_true, and_self, $ts,*]))
 
 theorem eval_e {s : State} {b : Bool} (h : s.zf = some b) : isa.eval .e s = some b := h

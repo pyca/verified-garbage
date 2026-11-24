@@ -285,26 +285,36 @@ theorem tailArgs_ok {K W SP : BitVec 32} {s₁ : State} (L : Lay K W SP) (E₁ :
 
 /-! ## The last bytes -/
 
+/-- What `absorbTail` writes. -/
+abbrev tailR (W SP : BitVec 32) (y : Nat) : List Region :=
+  [⟨w64 W + BitVec.ofNat 64 y, 16⟩, ⟨w64 W + BitVec.ofNat 64 32, 16⟩, ⟨w64 W + BitVec.ofNat 64 384, 2176⟩, below SP 60]
+
+theorem tailR_mac {W SP : BitVec 32} {y : Nat} {m m' : Mem} (h : Frame (tailR W SP y) m m') :
+    Frame (macR W SP y) m m' := h.sub fun r hr => by
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl
+  · exact sub_mac (by simp)
+  · exact sub_mac (by simp)
+  · exact ⟨wC W, by simp, Offset.sub _ (by decide) (by decide)⟩
+  · exact sub_mac (by simp)
+
 /-- The last `t < 16` bytes, at `Q` (kept at `W + dO`, `t` at `W + nO`),
 padded with zeros in `B` and chained into `W + y`, if there are any. -/
 theorem absorbTail_ok (v : Ctr32Impl) {K W SP : BitVec 32} {s : State} (L : Lay K W SP) (E : Env K W SP s) {R : Nat}
     (hR : R = 10 ∨ R = 12 ∨ R = 14) (hK : slotv s.mem W ctxO = K) (hRo : slotv s.mem W roundsO = BitVec.ofNat 32 R)
     {y : Nat} (hy : y = 0 ∨ y = 96) {Q : BitVec 32} {t : Nat} (ht : t < 16) (hd : slotv s.mem W dO = Q)
     (hn : slotv s.mem W nO = BitVec.ofNat 32 t) (hQ : 0 < t → Buf W SP s Q t) :
-    WP isa (.seq (.block [.mov .ecx (slot nO), .alu .test .ecx (.reg .ecx)])
-        (.ite .e (.block [])
-          (.seq (.block (zero4 blkO ++ ([.mov .edi (slot dO), .mov .edx (.reg .ebp), .alu .add .edx (imm blkO),
-              .mov .ecx (slot nO)] : List Instr)))
-            (.seq copyLoop (updBlock v.callee v.suffix y)))))
-      s (Absorbed K W SP s y
+    WP isa (absorbTail v.callee v.suffix y) s fun s' => Absorbed K W SP s y
         (Spec.Cmac.chain (Spec.Ccm.ctxCiph s.mem (w64 K) R) (bytesAt s.mem (w64 W + BitVec.ofNat 64 y) 16)
-          (if t = 0 then [] else [bytesAt s.mem (w64 Q) t ++ Spec.Ccm.zeros (16 - t)]))) := by
+          (if t = 0 then [] else [bytesAt s.mem (w64 Q) t ++ Spec.Ccm.zeros (16 - t)])) s' ∧
+      Frame (tailR W SP y) s.mem s'.mem := by
   obtain ⟨s₁, run₁, hm₁, hzf, hbp, hsp, hrd₁, hwr₁⟩ := testN_ok L E (r := t) (by omega_arith) hn
   refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
   obtain E₁ : Env K W SP s₁ := E.keep (by rw [hbp, E.ebp]) (by rw [hsp, E.esp]) hrd₁ hwr₁
   refine WP.ite (decide (t = 0)) (eval_e hzf) (fun h => ?_) (fun h => ?_)
   · have h0 : t = 0 := of_decide_eq_true h
-    refine WP.of_runBlock ⟨s₁, rfl, E₁, by rw [hm₁]; exact Frame.refl _ _, ?_, hrd₁, hwr₁⟩
+    refine WP.of_runBlock ⟨s₁, rfl, ⟨E₁, by rw [hm₁]; exact Frame.refl _ _, ?_, hrd₁, hwr₁⟩,
+      by rw [hm₁]; exact Frame.refl _ _⟩
     simp only [hm₁, h0, ↓reduceIte]; rfl
   · have h0 : t ≠ 0 := of_decide_eq_false h
     obtain hB := hQ (by omega_arith)
@@ -327,14 +337,9 @@ theorem absorbTail_ok (v : Ctr32Impl) {K W SP : BitVec 32} {s : State} (L : Lay 
     obtain hRb : 16 * (R + 1) ≤ 240 := by rcases hR with rfl | rfl | rfl <;> decide
     refine WP.mono (updBlock_ok v L E₃ hR (by rw [k₃ _ (by decide) (by decide)]; exact hK)
       (by rw [k₃ _ (by decide) (by decide)]; exact hRo) hy)
-      fun s₄ ⟨E₄, rd₄, wr₄, f₄, o₄⟩ => ⟨E₄, ?_, ?_, by rw [rd₄, rd₃, hrd₂, hrd₁], by rw [wr₄, wr₃, hwr₂, hwr₁]⟩
-    · refine (f₃.sub fun r hr => ?_).trans (f₄.sub fun r hr => ?_)
-      · simp only [List.mem_singleton] at hr; subst hr; exact sub_mac (by simp)
-      · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-        rcases hr with rfl | rfl | rfl
-        · exact sub_mac (by simp)
-        · exact ⟨wC W, by simp, Offset.sub _ (by decide) (by decide)⟩
-        · exact sub_mac (by simp)
+      fun s₄ ⟨E₄, rd₄, wr₄, f₄, o₄⟩ => ?_
+    have fT : Frame (tailR W SP y) s.mem s₄.mem := (f₃.mono (by simp)).trans (f₄.mono (by simp))
+    refine ⟨⟨E₄, tailR_mac fT, ?_, by rw [rd₄, rd₃, hrd₂, hrd₁], by rw [wr₄, wr₃, hwr₂, hwr₁]⟩, fT⟩
     · have hY₃ : bytesAt s₃.mem (w64 W + BitVec.ofNat 64 y) 16 = bytesAt s.mem (w64 W + BitVec.ofNat 64 y) 16 :=
         Proof.AesGcm.X86.bytesAt_frame f₃ (fun r hr => by
           simp only [List.mem_singleton] at hr; subst hr
@@ -366,7 +371,7 @@ theorem absorbPad_ok (v : Ctr32Impl) {K W SP : BitVec 32} {s : State} (L : Lay K
     rwa [show len - 16 * (len / 16) = len % 16 by omega_arith] at this
   refine WP.mono (absorbTail_ok v L A₁.env hR (by rw [slot_kept L hy A₁.frame (by decide) (by decide)]; exact hK)
     (by rw [slot_kept L hy A₁.frame (by decide) (by decide)]; exact hRo) hy (Nat.mod_lt _ (by decide)) hd₁ hn₁ hQ)
-    fun s₂ A₂ => ⟨A₂.env, A₁.frame.trans A₂.frame, ?_, A₂.rd.trans A₁.rd, A₂.wr.trans A₁.wr⟩
+    fun s₂ ⟨A₂, _⟩ => ⟨A₂.env, A₁.frame.trans A₂.frame, ?_, A₂.rd.trans A₁.rd, A₂.wr.trans A₁.wr⟩
   rw [A₂.out, A₁.out, ctxCiph_frame A₁.frame (k_macR L (by omega_arith)) hRb, ← Proof.Cmac.chain_append,
     Proof.AesCcm.blocks_pad16, length_bytesAt]
   congr 2

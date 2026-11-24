@@ -1,6 +1,8 @@
 module
 public import VerifiedGarbage.Proof.AesGcm.X86.Callee
 public import VerifiedGarbage.Proof.Framework.WriteBytes
+public import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
+public import VerifiedGarbage.Proof.Framework.X86.SseTaint
 
 import VerifiedGarbage.Proof.AesGcm.X86.Env
 import VerifiedGarbage.Proof.Framework.X86.SseDword
@@ -16,6 +18,7 @@ meta import VerifiedGarbage.Impl.AesGcm.X86
 meta import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
+meta import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
 meta import VerifiedGarbage.TCB.X86.Isa
 meta import VerifiedGarbage.TCB.X86.State
 
@@ -26,7 +29,9 @@ Untrusted: everything here is checked by Lean. `copyLoop` copies `ecx` bytes
 from `edi` to `edx`, and `xorLoop` XORs the `ecx` bytes at `edx` into those
 at `edi`, a byte at a time, advancing both pointers (`copyLoop_ok`,
 `xorLoop_ok`); the buffers do not overlap. Both are constant time from the
-pointers and the count (`copyLoop_ct`, `xorLoop_ct`).
+pointers and the count (`copyLoop_ct`, `xorLoop_ct`). `maskWords` ANDs the
+`ecx` bytes at `edi` with `ebx`, all ones or zero, but the last three at most
+(`maskWords_ok`); it is constant time by `CT.taintS`.
 -/
 
 @[expose] public section
@@ -358,6 +363,15 @@ theorem xorLoop_ct {I : State → Prop} (hr : ∀ s₁ s₂, I s₁ → I s₂ �
 
 /-! ## `maskWords` -/
 
+/-- `CT.taint`, for code with SSE instructions: constant time by the taint
+analysis that follows them (`sseTaint`), from the registers `rs`, on which
+any two states satisfying `I` agree. -/
+theorem CT.taintS {I : State → Prop} {c : Prog isa} (rs : List Reg)
+    (hr : ∀ s₁ s₂, I s₁ → I s₂ → ∀ r ∈ rs, s₁.gpr r = s₂.gpr r) {hc : Taint.Hint VG.X86.sseTaint.T}
+    (h : (VG.X86.sseTaint.check (τr rs) c hc).isSome = true) : CT I c :=
+  RelCT.taint (A := VG.X86.sseTaint) (τr rs)
+    (fun _ _ hp => agree_regs (hr _ _ hp.1 hp.2)) h
+
 theorem mask_word32 (w : BitVec 32) (c : Bool) :
     (w &&& ((0 : BitVec 32) - (if c then 1 else 0))) = if c then w else 0 := by
   cases c
@@ -372,6 +386,10 @@ theorem add4_ofNat32 (x : BitVec 32) (i : Nat) :
 
 theorem in4_of_covers {rs : List Region} {p : Addr} {n i : Nat} (h : Covers [⟨p, n⟩] rs) (hi : i + 4 ≤ n)
     (hn : n < 2 ^ 64) : InRegions rs (p + BitVec.ofNat 64 i) 4 :=
+  h _ _ ⟨_, List.mem_singleton_self _, Offset.contains_base p hi (by omega_using [hi, hn])⟩
+
+theorem in16_of_covers {rs : List Region} {p : Addr} {n i : Nat} (h : Covers [⟨p, n⟩] rs) (hi : i + 16 ≤ n)
+    (hn : n < 2 ^ 64) : InRegions rs (p + BitVec.ofNat 64 i) 16 :=
   h _ _ ⟨_, List.mem_singleton_self _, Offset.contains_base p hi (by omega_using [hi, hn])⟩
 
 /-- The first `j` bytes of the data at `P`, kept (`c`) or zeroed. -/
@@ -438,16 +456,121 @@ theorem maskWord_ok (s : State) {P : BitVec 32} {i n : Nat} {c : Bool} (hs : s.g
   · intro r h₁ h₂ h₃; simp [gpr_setMem, gpr_setReg, h₁, h₂, h₃]
   all_goals rfl
 
-/-- What `maskWords` leaves of `n` bytes at `D`: the first `j` masked, with
-fewer than 4 left. -/
-theorem maskWords_ok (s : State) {D : BitVec 32} {n : Nat} {c : Bool} (hn : n < 2 ^ 32) (hfit : D.toNat + n ≤ 2 ^ 32)
-    (hdi : s.gpr .edi = D) (hcx : s.gpr .ecx = BitVec.ofNat 32 n) (hbx : s.gpr .ebx = 0 - (if c then 1 else 0))
-    (hrd : Covers [⟨w64 D, n⟩] (s.rd ++ s.wr)) (hwr : Covers [⟨w64 D, n⟩] s.wr) :
-    WP isa maskWords s fun t => ∃ j, j ≤ n ∧ n - j < 4 ∧ t.gpr .edi = D + BitVec.ofNat 32 j ∧
-      t.gpr .ecx = BitVec.ofNat 32 (n - j) ∧ t.mem = writeBytes s.mem (w64 D) (masked s.mem (w64 D) c j) ∧
-      (∀ r, r ≠ .edx → r ≠ .edi → r ≠ .ecx → t.gpr r = s.gpr r) ∧ t.rd = s.rd ∧ t.wr = s.wr := by
-  obtain ⟨s₁, run₁, g₁, m₁, cf₁, rd₁, wr₁⟩ : ∃ s₁, runBlock isa [.alu .cmp .ecx (imm 4)] s = some s₁ ∧
-      s₁.gpr = s.gpr ∧ s₁.mem = s.mem ∧ s₁.cf = some (decide (n < 4)) ∧ s₁.rd = s.rd ∧ s₁.wr = s.wr := by
+/-- A block of the data, kept or zeroed after the `j` bytes before it. -/
+theorem masked_block (m : Mem) (P : Addr) (c : Bool) (j : Nat) (hj : j + 16 < 2 ^ 64) :
+    (writeBytes m P (masked m P c j)).writeW (P + BitVec.ofNat 64 j)
+      (if c then (writeBytes m P (masked m P c j)).readW (P + BitVec.ofNat 64 j) 128 else 0 : BitVec 128) =
+      writeBytes m P (masked m P c (j + 16)) := by
+  obtain hl := length_masked m P c j
+  obtain hk : ∀ k < 16, writeBytes m P (masked m P c j) (P + BitVec.ofNat 64 j + BitVec.ofNat 64 k) =
+      m (P + BitVec.ofNat 64 (j + k)) := fun k hk => by
+    rw [BitVec.add_assoc, ← BitVec.ofNat_add]
+    simp only [writeBytes, hl]
+    rw [Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hj, hk]),
+      ite_eq_right (by omega_using [])]
+  show Mem.write _ _ 16 _ = _
+  rw [write_eq_writeBytes]
+  obtain ha := writeBytes_append m P (masked m P c j)
+    ((List.range 16).map fun k => (BitVec.setWidth (8 * 16)
+      (if c then (writeBytes m P (masked m P c j)).readW (P + BitVec.ofNat 64 j) 128 else 0 : BitVec 128)).extractLsb'
+        (8 * k) 8) (by rw [hl]; simp only [List.length_map, List.length_range]; omega_using [hj])
+  rw [hl] at ha
+  rw [ha]
+  refine congrArg (writeBytes m P) ?_
+  cases c
+  · show List.replicate j 0 ++ _ = List.replicate (j + 16) 0
+    rw [← List.replicate_append_replicate]
+    simp only [Bool.false_eq_true, ↓reduceIte]
+    rfl
+  · obtain e : bytesAt m P (j + 16) =
+        bytesAt m P j ++ (List.range 16).map fun k => m (P + BitVec.ofNat 64 (j + k)) := by
+      simp only [bytesAt, List.range_add, List.map_append, List.map_map]
+      rfl
+    show bytesAt m P j ++ _ = bytesAt m P (j + 16)
+    rw [e]
+    refine congrArg _ (List.map_congr_left fun k hk' => ?_)
+    obtain hk16 := List.mem_range.mp hk'
+    show BitVec.extractLsb' (8 * k) 8 (BitVec.setWidth 128 ((writeBytes m P (masked m P true j)).readW _ 128)) = _
+    rw [BitVec.setWidth_eq, ← hk k hk16]
+    exact Mem.extractLsb'_read _ _ (n := 16) hk16
+
+/-- `0 − ok` in every word of an SSE register. -/
+def maskX (c : Bool) : BitVec 128 := if c then BitVec.allOnes 128 else 0
+
+theorem mask_xmm (c : Bool) :
+    shufDwords ((0 : BitVec 96) ++ ((0 : BitVec 32) - (if c then 1 else 0))) 0 = maskX c := by
+  cases c <;> decide
+
+theorem mask_block (v : BitVec 128) (c : Bool) : v &&& maskX c = if c then v else 0 := by
+  cases c
+  · simp [maskX]
+  · simp only [maskX, ite_true, BitVec.and_allOnes]
+
+private theorem store128_eq (s : State) (a : Addr) (v : BitVec 128) :
+    s.store128 a v = if InRegions s.wr a 16 then some (setMem s (s.mem.writeW a v)) else none := rfl
+
+private theorem xmm_setMem (s : State) (m : Mem) : (setMem s m).xmm = s.xmm := rfl
+
+private theorem exec_bin (op : XBinOp) (d r : XReg) (s : State) :
+    XOp.exec (.bin op d r) s = s.setXmm d (op.eval (s.xmm d) (s.xmm r)) := rfl
+
+private theorem exec_movd (d : XReg) (r : Reg) (s : State) :
+    XOp.exec (.movd d r) s = s.setXmm d ((0 : BitVec 96) ++ s.gpr r) := rfl
+
+private theorem exec_pshufd (d r : XReg) (o : BitVec 8) (s : State) :
+    XOp.exec (.pshufd d r o) s = s.setXmm d (shufDwords (s.xmm r) o) := rfl
+
+private theorem eval_pand (a b : BitVec 128) : XBinOp.eval .pand a b = a &&& b := rfl
+
+theorem add16_ofNat32 (x : BitVec 32) (i : Nat) :
+    x + BitVec.ofNat 32 i + BitVec.ofNat 32 16 = x + BitVec.ofNat 32 (i + 16) := by
+  rw [BitVec.add_assoc, ← BitVec.ofNat_add]
+
+theorem maskBlock_ok (s : State) {P : BitVec 32} {i n : Nat} {c : Bool} (hs : s.gpr .edi = P + BitVec.ofNat 32 i)
+    (hc : s.gpr .ecx = BitVec.ofNat 32 (n - i)) (hx : s.xmm .xmm0 = maskX c)
+    (eP : w64 (P + BitVec.ofNat 32 i) = w64 P + BitVec.ofNat 64 i)
+    (r : InRegions (s.rd ++ s.wr) (w64 P + BitVec.ofNat 64 i) 16) (w : InRegions s.wr (w64 P + BitVec.ofNat 64 i) 16) :
+    ∃ s', runBlock isa maskBlock s = some s' ∧
+      s'.mem = s.mem.writeW (w64 P + BitVec.ofNat 64 i)
+        (if c then s.mem.readW (w64 P + BitVec.ofNat 64 i) 128 else 0 : BitVec 128) ∧
+      s'.gpr .edi = P + BitVec.ofNat 32 (i + 16) ∧ s'.gpr .ecx = BitVec.ofNat 32 (n - i) - BitVec.ofNat 32 16 ∧
+      s'.cf = some (decide ((BitVec.ofNat 32 (n - i) - BitVec.ofNat 32 16).toNat < (BitVec.ofNat 32 16).toNat)) ∧
+      s'.xmm .xmm0 = s.xmm .xmm0 ∧
+      (∀ r, r ≠ .edx → r ≠ .edi → r ≠ .ecx → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
+  refine ⟨_, by xrun [maskBlock, State.load128, store128_eq, exec_bin, gpr_setXmm, mem_setXmm, rd_setXmm, wr_setXmm,
+    add_zero32, hs, eP, r, w], ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · simp only [mem_setMem, gpr_setMem, mem_setReg, mem_arithFlags, gpr_setReg, gpr_arithFlags, gpr_setXmm, mem_setXmm,
+      xmm_setXmm_self, xmm_setXmm_of_ne, ne_eq, not_false_eq_true, ite_true, ite_false, reduceCtorEq, hx, eval_pand,
+      mask_block]
+  · simp only [gpr_setMem, gpr_setXmm, gpr_setReg, gpr_arithFlags, ite_true, ite_false, reduceCtorEq, hs,
+      add16_ofNat32]
+  · simp only [gpr_setMem, gpr_setXmm, gpr_setReg, gpr_arithFlags, ite_true, ite_false, reduceCtorEq, hc]
+  · simp only [cf_setMem, cf_setReg, cf_arithFlags, gpr_setMem, gpr_setXmm, gpr_setReg, gpr_arithFlags, ite_true,
+      ite_false, reduceCtorEq, hc]
+  · simp only [xmm_setMem, xmm_setReg, xmm_arithFlags, xmm_setXmm_of_ne, ne_eq, reduceCtorEq, not_false_eq_true]
+  · intro r h₁ h₂ h₃; simp [gpr_setMem, gpr_setXmm, gpr_setReg, h₁, h₂, h₃]
+  · simp only [rd_setReg, rd_arithFlags, rd_setMem, rd_setXmm]
+  · simp only [wr_setReg, wr_arithFlags, wr_setMem, wr_setXmm]
+
+/-- What `maskBlocks` and `maskWords` have done of `n` bytes at `D`: the
+first `j` masked. -/
+structure Masked (s : State) (D : BitVec 32) (n : Nat) (c : Bool) (j : Nat) (t : State) : Prop where
+  le : j ≤ n
+  edi : t.gpr .edi = D + BitVec.ofNat 32 j
+  ecx : t.gpr .ecx = BitVec.ofNat 32 (n - j)
+  mem : t.mem = writeBytes s.mem (w64 D) (masked s.mem (w64 D) c j)
+  gpr : ∀ r, r ≠ .edx → r ≠ .edi → r ≠ .ecx → t.gpr r = s.gpr r
+  rd : t.rd = s.rd
+  wr : t.wr = s.wr
+
+/-- `maskBlocks` leaves fewer than 16 of the bytes. -/
+theorem maskBlocks_ok (s : State) {D : BitVec 32} {n : Nat} {c : Bool} (hn : n < 2 ^ 32)
+    (hfit : D.toNat + n ≤ 2 ^ 32) (hdi : s.gpr .edi = D) (hcx : s.gpr .ecx = BitVec.ofNat 32 n)
+    (hbx : s.gpr .ebx = 0 - (if c then 1 else 0)) (hrd : Covers [⟨w64 D, n⟩] (s.rd ++ s.wr))
+    (hwr : Covers [⟨w64 D, n⟩] s.wr) :
+    WP isa maskBlocks s fun t => ∃ j, Masked s D n c j t := by
+  obtain ⟨s₁, run₁, g₁, m₁, cf₁, rd₁, wr₁⟩ : ∃ s₁, runBlock isa [.alu .cmp .ecx (imm 16)] s = some s₁ ∧
+      s₁.gpr = s.gpr ∧ s₁.mem = s.mem ∧ s₁.cf = some (decide (n < 16)) ∧ s₁.rd = s.rd ∧ s₁.wr = s.wr := by
     refine ⟨_, by xrun [], ?_, ?_, ?_, ?_, ?_⟩
     · rfl
     · rfl
@@ -457,17 +580,79 @@ theorem maskWords_ok (s : State) {D : BitVec 32} {n : Nat} {c : Bool} (hn : n < 
     · rfl
     · rfl
   refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
-  refine WP.ite (decide (n < 4)) (show isa.eval .b s₁ = _ from cf₁) (fun hb => WP.block_nil ?_) (fun hb => ?_)
-  · exact ⟨0, Nat.zero_le _, by simpa using of_decide_eq_true hb, by rw [g₁, hdi, add_zero32],
-      by rw [g₁, hcx, Nat.sub_zero], by rw [m₁]; cases c <;> simp [masked, bytesAt, writeBytes_nil],
-      fun r _ _ _ => by rw [g₁], rd₁, wr₁⟩
-  obtain h4 : 4 ≤ n := Nat.le_of_not_lt (of_decide_eq_false hb)
+  refine WP.ite (decide (n < 16)) (show isa.eval .b s₁ = _ from cf₁) (fun hb => WP.block_nil ?_) (fun hb => ?_)
+  · exact ⟨0, Nat.zero_le _, by rw [g₁, hdi, add_zero32], by rw [g₁, hcx, Nat.sub_zero],
+      by rw [m₁]; cases c <;> simp [masked, bytesAt, writeBytes_nil], fun r _ _ _ => by rw [g₁], rd₁, wr₁⟩
+  obtain h16 : 16 ≤ n := Nat.le_of_not_lt (of_decide_eq_false hb)
+  obtain ⟨s₂, run₂, g₂, m₂, x₂, rd₂, wr₂⟩ : ∃ s₂, runBlock isa [.xop (.movd .xmm0 .ebx), .xop (.pshufd .xmm0 .xmm0 0)] s₁ =
+      some s₂ ∧ s₂.gpr = s.gpr ∧ s₂.mem = s.mem ∧ s₂.xmm .xmm0 = maskX c ∧ s₂.rd = s.rd ∧ s₂.wr = s.wr := by
+    refine ⟨_, by xrun [exec_movd, exec_pshufd], ?_, ?_, ?_, ?_, ?_⟩
+    · simp only [gpr_setXmm, g₁]
+    · simp only [mem_setXmm, m₁]
+    · simp only [xmm_setXmm_self, g₁, hbx, mask_xmm]
+    · simp only [rd_setXmm, rd₁]
+    · simp only [wr_setXmm, wr₁]
+  refine WP.seq (WP.of_runBlock ⟨s₂, run₂, ?_⟩)
+  refine WP.seq (WP.loop (M := isa) (body := .block maskBlock) (c := .ae)
+    (fun (k : Nat) (t : State) => ∃ j, k = n - j ∧ j + 16 ≤ n ∧ t.xmm .xmm0 = maskX c ∧ Masked s D n c j t) ?_
+    (n - 0) _ ⟨0, rfl, h16, x₂, Nat.zero_le _, by rw [g₂, hdi, add_zero32], by rw [g₂, hcx, Nat.sub_zero],
+      by rw [m₂]; cases c <;> simp [masked, bytesAt, writeBytes_nil], fun r _ _ _ => by rw [g₂], rd₂, wr₂⟩)
+  rintro k t ⟨j, rfl, hj, hx, M⟩
+  obtain ⟨t', run', mem', di', cx', cf', x', g', rd', wr'⟩ := maskBlock_ok t (P := D) (i := j) (n := n) (c := c) M.edi
+    M.ecx hx (w64_add (by omega_using [hj, hfit]))
+    (by rw [M.rd, M.wr]; exact in16_of_covers hrd hj (by omega_using [hn]))
+    (by rw [M.wr]; exact in16_of_covers hwr hj (by omega_using [hn]))
+  refine WP.of_runBlock ⟨t', run', ?_⟩
+  obtain cxn : BitVec.ofNat 32 (n - j) - BitVec.ofNat 32 16 = BitVec.ofNat 32 (n - (j + 16)) := by
+    rw [ofNat_sub32 (by omega_using [hj]) (by omega_using [hn])]; congr 1
+  obtain hcf : t'.cf = some (decide (n - (j + 16) < 16)) := by
+    rw [cf', cxn, toNat_ofNat32 (by omega_using [hn])]; rfl
+  obtain M' : Masked s D n c (j + 16) t' := ⟨hj, di', by rw [cx', cxn],
+    by rw [mem', M.mem, masked_block _ _ _ _ (by omega_using [hj, hn])],
+    fun r h₁ h₂ h₃ => by rw [g' r h₁ h₂ h₃, M.gpr r h₁ h₂ h₃], by rw [rd', M.rd], by rw [wr', M.wr]⟩
+  by_cases he : n - (j + 16) < 16
+  · left
+    refine ⟨by simp [eval, hcf, he], WP.of_runBlock ⟨_, by xrun [exec_bin], j + 16, ?_⟩⟩
+    exact ⟨M'.le, by simp only [gpr_setXmm]; exact M'.edi, by simp only [gpr_setXmm]; exact M'.ecx,
+      by simp only [mem_setXmm]; exact M'.mem, fun r h₁ h₂ h₃ => by simp only [gpr_setXmm]; exact M'.gpr r h₁ h₂ h₃,
+      by simp only [rd_setXmm]; exact M'.rd, by simp only [wr_setXmm]; exact M'.wr⟩
+  · right
+    exact ⟨by simp [eval, hcf, he], n - (j + 16), by omega_using [hj], j + 16, rfl, by omega_using [he],
+      by rw [x', hx], M'⟩
+
+/-- What `maskWords` leaves of `n` bytes at `D`: the first `j` masked, with
+fewer than 4 left. -/
+theorem maskWords_ok (s : State) {D : BitVec 32} {n : Nat} {c : Bool} (hn : n < 2 ^ 32) (hfit : D.toNat + n ≤ 2 ^ 32)
+    (hdi : s.gpr .edi = D) (hcx : s.gpr .ecx = BitVec.ofNat 32 n) (hbx : s.gpr .ebx = 0 - (if c then 1 else 0))
+    (hrd : Covers [⟨w64 D, n⟩] (s.rd ++ s.wr)) (hwr : Covers [⟨w64 D, n⟩] s.wr) :
+    WP isa maskWords s fun t => ∃ j, j ≤ n ∧ n - j < 4 ∧ t.gpr .edi = D + BitVec.ofNat 32 j ∧
+      t.gpr .ecx = BitVec.ofNat 32 (n - j) ∧ t.mem = writeBytes s.mem (w64 D) (masked s.mem (w64 D) c j) ∧
+      (∀ r, r ≠ .edx → r ≠ .edi → r ≠ .ecx → t.gpr r = s.gpr r) ∧ t.rd = s.rd ∧ t.wr = s.wr := by
+  refine WP.seq (WP.mono (maskBlocks_ok s hn hfit hdi hcx hbx hrd hwr) fun s₀ ⟨j₀, M₀⟩ => ?_)
+  obtain ⟨s₁, run₁, g₁, m₁, cf₁, rd₁, wr₁⟩ : ∃ s₁, runBlock isa [.alu .cmp .ecx (imm 4)] s₀ = some s₁ ∧
+      s₁.gpr = s₀.gpr ∧ s₁.mem = s₀.mem ∧ s₁.cf = some (decide (n - j₀ < 4)) ∧ s₁.rd = s₀.rd ∧ s₁.wr = s₀.wr := by
+    refine ⟨_, by xrun [], ?_, ?_, ?_, ?_, ?_⟩
+    · rfl
+    · rfl
+    · simp only [cf_arithFlags, M₀.ecx]
+      rw [toNat_ofNat32 (Nat.lt_of_le_of_lt (Nat.sub_le _ _) hn)]
+      rfl
+    · rfl
+    · rfl
+  obtain hjn := M₀.le
+  obtain gg₁ : ∀ r, r ≠ .edx → r ≠ .edi → r ≠ .ecx → s₁.gpr r = s.gpr r := fun r h₁ h₂ h₃ => by
+    rw [g₁, M₀.gpr r h₁ h₂ h₃]
+  refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
+  refine WP.ite (decide (n - j₀ < 4)) (show isa.eval .b s₁ = _ from cf₁) (fun hb => WP.block_nil ?_) (fun hb => ?_)
+  · exact ⟨j₀, hjn, of_decide_eq_true hb, by rw [g₁, M₀.edi], by rw [g₁, M₀.ecx], by rw [m₁, M₀.mem], gg₁,
+      by rw [rd₁, M₀.rd], by rw [wr₁, M₀.wr]⟩
+  obtain h4 : 4 ≤ n - j₀ := Nat.le_of_not_lt (of_decide_eq_false hb)
   refine WP.loop (M := isa) (body := .block maskWord) (c := .ae)
     (fun (k : Nat) (t : State) => ∃ j, k = n - j ∧ j + 4 ≤ n ∧ t.gpr .edi = D + BitVec.ofNat 32 j ∧
       t.gpr .ecx = BitVec.ofNat 32 (n - j) ∧ t.mem = writeBytes s.mem (w64 D) (masked s.mem (w64 D) c j) ∧
-      (∀ r, r ≠ .edx → r ≠ .edi → r ≠ .ecx → t.gpr r = s.gpr r) ∧ t.rd = s.rd ∧ t.wr = s.wr) ?_ (n - 0) _
-    ⟨0, rfl, h4, by rw [g₁, hdi, add_zero32], by rw [g₁, hcx, Nat.sub_zero],
-      by rw [m₁]; cases c <;> simp [masked, bytesAt, writeBytes_nil], fun r _ _ _ => by rw [g₁], rd₁, wr₁⟩
+      (∀ r, r ≠ .edx → r ≠ .edi → r ≠ .ecx → t.gpr r = s.gpr r) ∧ t.rd = s.rd ∧ t.wr = s.wr) ?_ (n - j₀) _
+    ⟨j₀, rfl, by omega_using [h4, hjn], by rw [g₁, M₀.edi], by rw [g₁, M₀.ecx], by rw [m₁, M₀.mem], gg₁,
+      by rw [rd₁, M₀.rd], by rw [wr₁, M₀.wr]⟩
   rintro k t ⟨j, rfl, hj, di, cx, mem, g, rd, wr⟩
   obtain ⟨t', run', mem', di', cx', cf', g', rd', wr'⟩ := maskWord_ok t (P := D) (i := j) (n := n) (c := c) di cx
     (by rw [g _ (by decide) (by decide) (by decide), hbx]) (w64_add (by omega_using [hj, hfit]))

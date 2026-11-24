@@ -370,8 +370,8 @@ def compare : List Instr :=
    .mov .ecx (slot 12), .alu .xor .ecx (slot (tOff + 12)), .alu .or .eax (.reg .ecx),
    .alu .cmp .eax (imm 1), .mov .eax (imm 0), .alu .adc .eax (imm 0), .store (at_ .ebp okO) .eax]
 
-/-- Every byte of the data ANDed with `0 − ok`: four at a time while four
-are left (`maskWords`), then one at a time. -/
+/-- Every byte of the data ANDed with `0 − ok`: 16 at a time, then four at
+a time (`maskWords`), then one at a time. -/
 def mask : Prog isa :=
   .seq (.block [.mov .ecx (slot lenO), .alu .test .ecx (.reg .ecx)])
     (.ite .e (.block [])

@@ -746,7 +746,7 @@ theorem mask_ct {p : Prm} (L : Lay p) : CT (Env p) mask := by
     (pin_ebp fun _ ⟨_, _, _, E, _⟩ => E.ebp) (by taint_decide)
     (fun s₁ ⟨_, _, _, E₁, cx⟩ => let ⟨s₂, run, _, di, g, _⟩ := maskArgs_ok L E₁;
       ⟨s₂, run, di, by rw [g _ (by decide), cx]⟩) ?_
-  exact CT.taint [.edi, .ecx] (pin2 fun _ ⟨_, _, di, cx⟩ => ⟨di, cx⟩) (by taint_decide)
+  exact CT.taintS [.edi, .ecx] (pin2 fun _ ⟨_, _, di, cx⟩ => ⟨di, cx⟩) (by taint_decide)
 
 /-! ## `seal` -/
 

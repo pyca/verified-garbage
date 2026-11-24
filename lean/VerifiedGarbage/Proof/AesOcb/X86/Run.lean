@@ -115,15 +115,6 @@ tactic_template "smems" "[" ts:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(
   gmems [gpr_setXmm, mem_setXmm, rd_setXmm, wr_setXmm, zf_setXmm, cf_setXmm, xmm_setMem, xmm_setReg,
     xmm_arithFlags, xmm_setFlags, xmm_setXmm_self, xmm_setXmm_of_ne, reduceCtorEq, not_false_eq_true, $ts,*])
 
-/-- `CT.taint`, for code with SSE instructions: constant time by the taint
-analysis that follows them (`sseTaint`), from the registers `rs`, on which
-any two states satisfying `I` agree. -/
-theorem CT.taintS {I : State → Prop} {c : Prog isa} (rs : List Reg)
-    (hr : ∀ s₁ s₂, I s₁ → I s₂ → ∀ r ∈ rs, s₁.gpr r = s₂.gpr r) {hc : Taint.Hint VG.X86.sseTaint.T}
-    (h : (VG.X86.sseTaint.check (τr rs) c hc).isSome = true) : CT I c :=
-  RelCT.taint (A := VG.X86.sseTaint) (τr rs)
-    (fun _ _ hp => agree_regs (hr _ _ hp.1 hp.2)) h
-
 theorem eval_e {s : State} {b : Bool} (h : s.zf = some b) : isa.eval .e s = some b := h
 
 theorem eval_ne {s : State} {b : Bool} (h : s.zf = some b) : isa.eval .ne s = some !b := by

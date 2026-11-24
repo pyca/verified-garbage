@@ -1582,31 +1582,47 @@ vg_aes_siv_decrypt_aesni:
 	mov ebx, 0
 	sub ebx, DWORD PTR [ebp+216]
 	mov edi, DWORD PTR [ebp+192]
-	cmp ecx, 4
+	cmp ecx, 16
 	jb 222f
+	movd xmm0, ebx
+	pshufd xmm0, xmm0, 0
 224:
+	movdqu xmm1, XMMWORD PTR [edi]
+	pand xmm1, xmm0
+	movdqu XMMWORD PTR [edi], xmm1
+	add edi, 16
+	sub ecx, 16
+	cmp ecx, 16
+	jae 224b
+	pxor xmm1, xmm1
+	jmp 223f
+222:
+223:
+	cmp ecx, 4
+	jb 225f
+227:
 	mov edx, DWORD PTR [edi]
 	and edx, ebx
 	mov DWORD PTR [edi], edx
 	add edi, 4
 	sub ecx, 4
 	cmp ecx, 4
-	jae 224b
-	jmp 223f
-222:
-223:
+	jae 227b
+	jmp 226f
+225:
+226:
 	test ecx, ecx
-	je 225f
-227:
+	je 228f
+230:
 	movzx edx, BYTE PTR [edi]
 	and edx, ebx
 	mov BYTE PTR [edi], dl
 	add edi, 1
 	sub ecx, 1
-	jne 227b
-	jmp 226f
-225:
-226:
+	jne 230b
+	jmp 229f
+228:
+229:
 	jmp 221f
 220:
 221:
@@ -3377,31 +3393,47 @@ vg_aes_siv_decrypt_ssse3:
 	mov ebx, 0
 	sub ebx, DWORD PTR [ebp+216]
 	mov edi, DWORD PTR [ebp+192]
-	cmp ecx, 4
+	cmp ecx, 16
 	jb 222f
+	movd xmm0, ebx
+	pshufd xmm0, xmm0, 0
 224:
+	movdqu xmm1, XMMWORD PTR [edi]
+	pand xmm1, xmm0
+	movdqu XMMWORD PTR [edi], xmm1
+	add edi, 16
+	sub ecx, 16
+	cmp ecx, 16
+	jae 224b
+	pxor xmm1, xmm1
+	jmp 223f
+222:
+223:
+	cmp ecx, 4
+	jb 225f
+227:
 	mov edx, DWORD PTR [edi]
 	and edx, ebx
 	mov DWORD PTR [edi], edx
 	add edi, 4
 	sub ecx, 4
 	cmp ecx, 4
-	jae 224b
-	jmp 223f
-222:
-223:
+	jae 227b
+	jmp 226f
+225:
+226:
 	test ecx, ecx
-	je 225f
-227:
+	je 228f
+230:
 	movzx edx, BYTE PTR [edi]
 	and edx, ebx
 	mov BYTE PTR [edi], dl
 	add edi, 1
 	sub ecx, 1
-	jne 227b
-	jmp 226f
-225:
-226:
+	jne 230b
+	jmp 229f
+228:
+229:
 	jmp 221f
 220:
 221:
@@ -5172,31 +5204,47 @@ vg_aes_siv_decrypt:
 	mov ebx, 0
 	sub ebx, DWORD PTR [ebp+216]
 	mov edi, DWORD PTR [ebp+192]
-	cmp ecx, 4
+	cmp ecx, 16
 	jb 222f
+	movd xmm0, ebx
+	pshufd xmm0, xmm0, 0
 224:
+	movdqu xmm1, XMMWORD PTR [edi]
+	pand xmm1, xmm0
+	movdqu XMMWORD PTR [edi], xmm1
+	add edi, 16
+	sub ecx, 16
+	cmp ecx, 16
+	jae 224b
+	pxor xmm1, xmm1
+	jmp 223f
+222:
+223:
+	cmp ecx, 4
+	jb 225f
+227:
 	mov edx, DWORD PTR [edi]
 	and edx, ebx
 	mov DWORD PTR [edi], edx
 	add edi, 4
 	sub ecx, 4
 	cmp ecx, 4
-	jae 224b
-	jmp 223f
-222:
-223:
+	jae 227b
+	jmp 226f
+225:
+226:
 	test ecx, ecx
-	je 225f
-227:
+	je 228f
+230:
 	movzx edx, BYTE PTR [edi]
 	and edx, ebx
 	mov BYTE PTR [edi], dl
 	add edi, 1
 	sub ecx, 1
-	jne 227b
-	jmp 226f
-225:
-226:
+	jne 230b
+	jmp 229f
+228:
+229:
 	jmp 221f
 220:
 221:

@@ -252,22 +252,32 @@ call {vg_cmac_aes_finalize_aesni}
 211:
 .base64 "i0UAM0Vwi00EM010CciLTQgzTXgJyItNDDNNfAnIg/gBuAAAAACD0ACJhdgAAACLjcQAAACFyQ=="
 je 220f
-.base64 "uwAAAAArndgAAACLvcAAAACD+QQ="
+.base64 "uwAAAAArndgAAACLvcAAAACD+RA="
 jb 222f
+.base64 "Zg9uw2YPcMAA"
 224:
-.base64 "ixch2okXg8cEg+kEg/kE"
+.base64 "8w9vD2YP28jzD38Pg8cQg+kQg/kQ"
 jae 224b
+.base64 "Zg/vyQ=="
 jmp 223f
 222:
 223:
-.base64 "hck="
-je 225f
+.base64 "g/kE"
+jb 225f
 227:
-.base64 "D7YXIdqIF4PHAYPpAQ=="
-jne 227b
+.base64 "ixch2okXg8cEg+kEg/kE"
+jae 227b
 jmp 226f
 225:
 226:
+.base64 "hck="
+je 228f
+230:
+.base64 "D7YXIdqIF4PHAYPpAQ=="
+jne 230b
+jmp 229f
+228:
+229:
 jmp 221f
 220:
 221:
@@ -528,22 +538,32 @@ call {vg_cmac_aes_finalize_ssse3}
 211:
 .base64 "i0UAM0Vwi00EM010CciLTQgzTXgJyItNDDNNfAnIg/gBuAAAAACD0ACJhdgAAACLjcQAAACFyQ=="
 je 220f
-.base64 "uwAAAAArndgAAACLvcAAAACD+QQ="
+.base64 "uwAAAAArndgAAACLvcAAAACD+RA="
 jb 222f
+.base64 "Zg9uw2YPcMAA"
 224:
-.base64 "ixch2okXg8cEg+kEg/kE"
+.base64 "8w9vD2YP28jzD38Pg8cQg+kQg/kQ"
 jae 224b
+.base64 "Zg/vyQ=="
 jmp 223f
 222:
 223:
-.base64 "hck="
-je 225f
+.base64 "g/kE"
+jb 225f
 227:
-.base64 "D7YXIdqIF4PHAYPpAQ=="
-jne 227b
+.base64 "ixch2okXg8cEg+kEg/kE"
+jae 227b
 jmp 226f
 225:
 226:
+.base64 "hck="
+je 228f
+230:
+.base64 "D7YXIdqIF4PHAYPpAQ=="
+jne 230b
+jmp 229f
+228:
+229:
 jmp 221f
 220:
 221:
@@ -792,22 +812,32 @@ call {vg_cmac_aes_finalize}
 211:
 .base64 "i0UAM0Vwi00EM010CciLTQgzTXgJyItNDDNNfAnIg/gBuAAAAACD0ACJhdgAAACLjcQAAACFyQ=="
 je 220f
-.base64 "uwAAAAArndgAAACLvcAAAACD+QQ="
+.base64 "uwAAAAArndgAAACLvcAAAACD+RA="
 jb 222f
+.base64 "Zg9uw2YPcMAA"
 224:
-.base64 "ixch2okXg8cEg+kEg/kE"
+.base64 "8w9vD2YP28jzD38Pg8cQg+kQg/kQ"
 jae 224b
+.base64 "Zg/vyQ=="
 jmp 223f
 222:
 223:
-.base64 "hck="
-je 225f
+.base64 "g/kE"
+jb 225f
 227:
-.base64 "D7YXIdqIF4PHAYPpAQ=="
-jne 227b
+.base64 "ixch2okXg8cEg+kEg/kE"
+jae 227b
 jmp 226f
 225:
 226:
+.base64 "hck="
+je 228f
+230:
+.base64 "D7YXIdqIF4PHAYPpAQ=="
+jne 230b
+jmp 229f
+228:
+229:
 jmp 221f
 220:
 221:
