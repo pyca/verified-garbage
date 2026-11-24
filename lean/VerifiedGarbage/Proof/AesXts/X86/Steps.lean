@@ -14,6 +14,7 @@ import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.X86.Sse
 import VerifiedGarbage.Proof.Framework.X86.SseDword
+import VerifiedGarbage.Proof.Framework.X86.SseWord
 
 /-!
 # XTS-AES on x86: multiplication by `α`
@@ -328,5 +329,156 @@ theorem mul8_val (x : BitVec 128) :
 /-- The bytes of `x ⊗ α⁸`. -/
 theorem bx_iter8 (x : BitVec 128) : bx (Nat.repeat alphaX 8 x) = Nat.repeat mulAlpha 8 (bx x) := by
   simp only [Nat.repeat, bx_alphaX]
+
+/-! ## The carries ahead
+
+`Impl.AesXts.X86AesNi.step` multiplies a tweak by `α` with the two carries of
+its quadwords made from `Signs`: the top bits of the first tweak's quadwords,
+one after the other, as the bits that the reductions change are far below
+them (`jump_msb`, `jump_bit63`). -/
+
+/-- `0x87` in the low quadword if `b`, and `1` in the high one if `c`. -/
+def redBC (b c : Bool) : BitVec 128 := (if c then (1 : BitVec 64) else 0) ++ (if b then (0x87 : BitVec 64) else 0)
+
+/-- The carries of the quadwords of `x ⊗ αᵏ`. -/
+def carryOf (x : BitVec 128) (k : Nat) : BitVec 128 := redBC (x.getLsbD (127 - k)) (x.getLsbD (63 - k))
+
+/-- The constant of the sign steps: `0x87` and `1` in the quadwords. -/
+def signC : BitVec 128 := (1 : BitVec 64) ++ (0x87 : BitVec 64)
+
+/-- `t`'s words 0 and 4 hold, from the sign bit down, the bits `127 - k` and
+`63 - k` of `x` and those below them. -/
+def Signs (x : BitVec 128) (k : Nat) (t : BitVec 128) : Prop :=
+  word t 0 = word x 7 <<< k ∧ word t 4 = word x 3 <<< k
+
+theorem wbit (x : BitVec 128) (i : Nat) {j : Nat} (hj : j < 16) : (word x i).getLsbD j = x.getLsbD (16 * i + j) := by
+  simp [word, hj]
+
+theorem sraw15 (w : BitVec 16) : w.sshiftRight 15 = if w.msb then BitVec.allOnes 16 else 0 := by
+  apply BitVec.eq_of_getLsbD_eq; intro i hi
+  have hl : (w.sshiftRight 15).getLsbD i = w.msb := by
+    rw [BitVec.getLsbD_sshiftRight, BitVec.msb_eq_getLsbD_last]
+    by_cases h0 : i = 0
+    · subst h0; simp
+    · simp [show ¬ 16 ≤ i by omega_arith, show ¬ 15 + i < 16 by omega_arith]
+  rw [hl]
+  cases w.msb
+  · simp
+  · rw [ite_eq_left rfl, BitVec.getLsbD_allOnes]; simp [hi]
+
+theorem wadd (w : BitVec 16) : w + w = w <<< 1 := by
+  apply BitVec.eq_of_toNat_eq
+  rw [BitVec.toNat_add, BitVec.toNat_shiftLeft, Nat.shiftLeft_eq]
+  omega_using []
+
+theorem Signs.step {x t : BitVec 128} {k : Nat} (h : Signs x k t) : Signs x (k + 1) (XBinOp.eval .paddw t t) := by
+  constructor
+  · rw [word_paddw _ _ (by decide), h.1, wadd, ← BitVec.shiftLeft_add]
+  · rw [word_paddw _ _ (by decide), h.2, wadd, ← BitVec.shiftLeft_add]
+
+theorem hi16 (x : BitVec 128) (k : Nat) :
+    (dword x k >>> (16 : BitVec 8).toNat).extractLsb' (16 * 0) 16 = word x (2 * k + 1) := by
+  apply BitVec.eq_of_getLsbD_eq; intro i hi
+  rw [wbit x _ hi, BitVec.getLsbD_extractLsb', BitVec.getLsbD_ushiftRight, getLsbD_dword]
+  have e : 32 * k + ((16 : BitVec 8).toNat + (16 * 0 + i)) = 16 * (2 * k + 1) + i := by
+    show 32 * k + (16 + (16 * 0 + i)) = _; omega_arith
+  have l : (16 : BitVec 8).toNat + (16 * 0 + i) < 32 := by show 16 + (16 * 0 + i) < 32; omega_arith
+  rw [e, decide_eq_true hi, decide_eq_true l, Bool.true_and, Bool.true_and]
+
+theorem Signs.start (x : BitVec 128) : Signs x 0 (XShiftOp.eval .psrld (shufDwords x 0x5f) 16) := by
+  have s0 : ((0x5f : BitVec 8).extractLsb' (2 * 0) 2).toNat = 3 := rfl
+  have s2 : ((0x5f : BitVec 8).extractLsb' (2 * 2) 2).toNat = 1 := rfl
+  constructor
+  · rw [word_dword _ 0 0 (by decide), dword_psrld _ _ (by decide) (by decide), dword_shufDwords _ _ (by decide), s0,
+      BitVec.shiftLeft_zero]
+    exact hi16 x 3
+  · rw [word_dword _ 2 0 (by decide), dword_psrld _ _ (by decide) (by decide), dword_shufDwords _ _ (by decide), s2,
+      BitVec.shiftLeft_zero]
+    exact hi16 x 1
+
+theorem mask_words (b : BitVec 16) (c : BitVec 16) : (b.sshiftRight 15) &&& c = if b.msb then c else 0 := by
+  rw [sraw15]; split
+  · exact BitVec.allOnes_and
+  · exact BitVec.zero_and
+
+theorem word_signC : word signC 0 = 0x87 ∧ word signC 4 = 1 ∧
+    ∀ i < 8, i ≠ 0 → i ≠ 4 → word signC i = 0 := by decide
+
+theorem word_redBC : ∀ b c : Bool, word (redBC b c) 0 = (if b then 0x87 else 0) ∧ word (redBC b c) 4 = (if c then 1 else 0) ∧
+    ∀ i < 8, i ≠ 0 → i ≠ 4 → word (redBC b c) i = 0 := by decide
+
+theorem Signs.msb {x t : BitVec 128} {k : Nat} (h : Signs x k t) (hk : k < 16) :
+    (word t 0).msb = x.getLsbD (127 - k) ∧ (word t 4).msb = x.getLsbD (63 - k) := by
+  rw [h.1, h.2, BitVec.msb_eq_getLsbD_last, BitVec.msb_eq_getLsbD_last, BitVec.getLsbD_shiftLeft,
+    BitVec.getLsbD_shiftLeft]
+  have h1 : ¬ 15 < k := by omega_arith
+  have e (i : Nat) : (word x i).getLsbD (16 - 1 - k) = x.getLsbD (16 * i + (15 - k)) := wbit x i (by omega_arith)
+  rw [e, e, show 16 * 7 + (15 - k) = 127 - k by omega_arith, show 16 * 3 + (15 - k) = 63 - k by omega_arith]
+  simp [h1]
+
+theorem Signs.red {x t : BitVec 128} {k : Nat} (h : Signs x k t) (hk : k < 16) :
+    XBinOp.eval .pand (XShiftOp.eval .psraw t 15) signC = carryOf x k := by
+  have n15 : min (15 : BitVec 8).toNat 16 = 15 := rfl
+  obtain ⟨m0, m4⟩ := h.msb hk
+  obtain ⟨c0, c4, cz⟩ := word_signC
+  rw [carryOf]
+  obtain ⟨r0, r4, rz⟩ := word_redBC (x.getLsbD (127 - k)) (x.getLsbD (63 - k))
+  apply ext_word; intro i hi
+  rw [word_pand, word_psraw _ _ hi, n15]
+  by_cases h0 : i = 0
+  · subst h0; rw [c0, r0, mask_words, m0]
+  by_cases h4 : i = 4
+  · subst h4; rw [c4, r4, mask_words, m4]
+  · rw [cz i hi h0 h4, rz i hi h0 h4]; exact BitVec.and_zero
+
+theorem qadd (w : BitVec 64) : w + w = w <<< 1 := by
+  apply BitVec.eq_of_toNat_eq
+  rw [BitVec.toNat_add, BitVec.toNat_shiftLeft, Nat.shiftLeft_eq]
+  omega_using []
+
+theorem paddq_red (x : BitVec 128) :
+    XBinOp.eval .pxor (XBinOp.eval .paddq x x) (redBC x.msb (x.getLsbD 63)) = alphaX x := by
+  show ((qword x 1 + qword x 1) ++ (qword x 0 + qword x 0)) ^^^ redBC x.msb (x.getLsbD 63) = _
+  rw [qadd, qadd, alphaX, redBC]
+  apply BitVec.eq_of_getLsbD_eq; intro i hi
+  rw [BitVec.getLsbD_xor, BitVec.getLsbD_xor, BitVec.getLsbD_append, BitVec.getLsbD_append, BitVec.getLsbD_shiftLeft,
+    BitVec.getLsbD_shiftLeft, BitVec.getLsbD_shiftLeft, qword, qword, BitVec.getLsbD_extractLsb',
+    BitVec.getLsbD_extractLsb']
+  have kb : ∀ (b : Bool) i, (if b = true then (135 : BitVec 128) else 0).getLsbD i =
+      (if b = true then (135 : BitVec 64) else 0).getLsbD i := fun b i => by
+    cases b
+    · simp
+    · exact rfl
+  rw [kb]
+  by_cases h : i < 64
+  · have h1 : i - 1 < 64 := by omega_arith
+    have h2 : 64 * 0 + (i - 1) = i - 1 := by omega_arith
+    simp only [h, hi, h1, h2, ite_true, decide_true, Bool.true_and]
+  · have z : (if x.msb = true then (135 : BitVec 64) else 0).getLsbD i = false := BitVec.getLsbD_of_ge _ _ (by omega_arith)
+    have h1 : i - 64 < 64 := by omega_arith
+    have h3 : i - 64 - 1 < 64 := by omega_arith
+    rw [z]
+    by_cases h0 : i = 64
+    · subst h0; cases x.getLsbD 63 <;> simp
+    · have e : 64 * 1 + (i - 64 - 1) = i - 1 := by omega_arith
+      have l : ¬ i < 1 := by omega_arith
+      have l' : ¬ i - 64 < 1 := by omega_arith
+      have b1 : (if x.getLsbD 63 = true then (1 : BitVec 64) else 0).getLsbD (i - 64) = false := by
+        cases x.getLsbD 63
+        · simp
+        · simp [show ¬ i - 64 = 0 by omega_arith]
+      simp only [h, hi, h1, h3, e, l, l', b1, ite_false, decide_true, decide_false, Bool.true_and, Bool.not_false]
+
+theorem jump_bit63 (x : BitVec 128) {k : Nat} (hk : k < 8) : (jumpX k x).getLsbD 63 = x.getLsbD (63 - k) := by
+  simp only [jumpX, redX, BitVec.getLsbD_xor, BitVec.getLsbD_shiftLeft, BitVec.getLsbD_ushiftRight]
+  have o (m : Nat) (hm : 56 ≤ m) : x.getLsbD (128 - k + m) = false := BitVec.getLsbD_of_ge _ _ (by omega_arith)
+  simp [o, show ¬ 63 < k by omega_arith]
+
+/-- The tweak after `k` steps, doubled with its carries. -/
+theorem dbl_carry (x : BitVec 128) {k : Nat} (hk : k < 8) :
+    XBinOp.eval .pxor (XBinOp.eval .paddq (Nat.repeat alphaX k x) (Nat.repeat alphaX k x)) (carryOf x k) =
+      Nat.repeat alphaX (k + 1) x := by
+  show _ = alphaX (Nat.repeat alphaX k x)
+  rw [← paddq_red, alphaX_iter x k (by omega_arith), jump_msb x hk, jump_bit63 x hk, carryOf]
 
 end VG.Proof.AesXts.X86
