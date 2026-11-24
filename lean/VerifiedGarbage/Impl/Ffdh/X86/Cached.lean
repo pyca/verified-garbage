@@ -200,9 +200,11 @@ def step : Prog isa :=
     (.block [.mov .eax (.mem (sc iOff)), .alu .sub .eax (.imm 1), .store (sc iOff) .eax])
 
 /-- Slot 6 `g^x mod p` by the context's comb over its rows: Montgomery one, the rows from the
-top, and the product with one. -/
+top, and the product with one. The comb multiplies and squares only, so of p's context it needs p
+(slot 0), one (slot 3) and the inverse, which `prepBasePre` leaves, and not `R² mod p`; Montgomery one
+is the context's entry 0. -/
 def combHead : Prog isa :=
-  .seq ctxP <| .seq (mul .wide 6 4 3) <|
+  .seq (copy (sl 9) (sl 0) n1) <| .seq (prepBasePre .wide) <| .seq (loadRow (rowImm 2) 6) <|
   .block [.mov .ecx (.mem (argAt 0 ctxArg)), .mov .eax (.mem (at_ .ecx 16)), .store (sc rowsOff) .eax,
     .store (sc iOff) .eax]
 
