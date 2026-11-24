@@ -155,37 +155,6 @@ def linear (o : Nat) (ts : Nat → List Term) : List Instr :=
 
 /-! ## Field arithmetic -/
 
-/-- The products `a_i b_j` with `i + j = k`. -/
-def prodTerms (a b k : Nat) : List Term :=
-  ((List.range 8).filter fun i => i ≤ k && k - i < 8).map fun i => .mulM (a + 4 * i) (b + 4 * (k - i))
-
-/-- The terms of column `k` of `a²`: the products `a_i a_j` with `i < j` and
-`i + j = k`, doubled, and `a_{k/2}²` for an even `k`. -/
-def sqrTerms (a k : Nat) : List Term :=
-  ((List.range 8).filter fun i => 2 * i < k && k - i < 8).map
-      (fun i => .mulM2 (a + 4 * i) (a + 4 * (k - i))) ++
-    if k % 2 == 0 && k < 16 then [.mulM (a + 4 * (k / 2)) (a + 4 * (k / 2))] else []
-
-/-- The product of 16 columns in `T`, reduced to `[o]`. -/
-def mulCols (o : Nat) (ts : Nat → List Term) : List Instr :=
-  zeroAcc ++ cols T 16 ts ++ linear o (fun k => [.mulI (T + 32 + 4 * k) 38, .addM (T + 4 * k)])
-
-/-- `[o] = [a]²` (`o` may be `a`). -/
-def mulSq (o a : Nat) : List Instr := mulCols o (sqrTerms a)
-
-/-- `[o] = [a] · [b]` by the products' columns. -/
-def mulPr (o a b : Nat) : List Instr := mulCols o (prodTerms a b)
-
-/-- `[o] = [a] · [b]` (`o` may be `a` or `b`), by `a²`'s columns if `a = b`.
-The two cases are named so that each is a template of the code's literal
-(`Proof/X25519/X86/Lit.lean`). -/
-def mul (o a b : Nat) : List Instr :=
-  if a = b then mulSq o a else mulPr o a b
-
-/-- `[o] = 121665 · [a]`. -/
-def mulSmall (o a : Nat) : List Instr :=
-  linear o (fun k => [.mulI (a + 4 * k) 121665])
-
 /-- The carry flag cleared (and `ecx`). -/
 def clearCarry : List Instr := [.alu .xor .ecx (.reg .ecx)]
 
@@ -216,6 +185,52 @@ def add (o a b : Nat) : List Instr := addSub .adc o a b
 
 /-- `[o] = [a] - [b]`. -/
 def sub (o a b : Nat) : List Instr := addSub .sbb o a b
+
+/-- The products `a_i b_j` with `i + j = k`. -/
+def prodTerms (a b k : Nat) : List Term :=
+  ((List.range 8).filter fun i => i ≤ k && k - i < 8).map fun i => .mulM (a + 4 * i) (b + 4 * (k - i))
+
+/-- The terms of column `k` of `a²`: the products `a_i a_j` with `i < j` and
+`i + j = k`, doubled, and `a_{k/2}²` for an even `k`. -/
+def sqrTerms (a k : Nat) : List Term :=
+  ((List.range 8).filter fun i => 2 * i < k && k - i < 8).map
+      (fun i => .mulM2 (a + 4 * i) (a + 4 * (k - i))) ++
+    if k % 2 == 0 && k < 16 then [.mulM (a + 4 * (k / 2)) (a + 4 * (k / 2))] else []
+
+/-- Word `k` of `T`'s low half plus 38 times its high half's and the carry word `ebx`, into `[o]`,
+with 38 in `ecx`: the next carry word is below 39. -/
+def redStep (o k : Nat) : List Instr :=
+  [.mov .eax (.mem (sc (T + 32 + 4 * k))), .mul .ecx, .alu .add .eax (.reg .ebx), .alu .adc .edx (.imm 0),
+    .alu .add .eax (.mem (sc (T + 4 * k))), .alu .adc .edx (.imm 0), .store (sc (o + 4 * k)) .eax,
+    .mov .ebx (.reg .edx)]
+
+/-- `[o]` = the 512 bits of `T` modulo `p`: `lo + 38 hi` with a carry word, then 38 times the
+carry out added through the eight words (`test` clears the carry flag), and 38 into word 0 for a
+carry out of that, as `addSub`'s. -/
+def reduceT (o : Nat) : List Instr :=
+  [.mov .ebx (.imm 0), .mov .ecx (.imm 38)] ++ (List.range 8).flatMap (redStep o) ++
+    [.mov .eax (.imm 38), .mul .ebx, .mov .ecx (.reg .eax), .alu .test .ecx (.reg .ecx)] ++
+    carryPass .adc o o foldSrc ++ carry38 ++ carryStep .adc o o 0 (.reg .ecx)
+
+/-- The product of 16 columns in `T`, reduced to `[o]`. -/
+def mulCols (o : Nat) (ts : Nat → List Term) : List Instr :=
+  zeroAcc ++ cols T 16 ts ++ reduceT o
+
+/-- `[o] = [a]²` (`o` may be `a`). -/
+def mulSq (o a : Nat) : List Instr := mulCols o (sqrTerms a)
+
+/-- `[o] = [a] · [b]` by the products' columns. -/
+def mulPr (o a b : Nat) : List Instr := mulCols o (prodTerms a b)
+
+/-- `[o] = [a] · [b]` (`o` may be `a` or `b`), by `a²`'s columns if `a = b`.
+The two cases are named so that each is a template of the code's literal
+(`Proof/X25519/X86/Lit.lean`). -/
+def mul (o a b : Nat) : List Instr :=
+  if a = b then mulSq o a else mulPr o a b
+
+/-- `[o] = 121665 · [a]`. -/
+def mulSmall (o a : Nat) : List Instr :=
+  linear o (fun k => [.mulI (a + 4 * k) 121665])
 
 /-- `[o] = [a]`. -/
 def copy (o a : Nat) : List Instr :=

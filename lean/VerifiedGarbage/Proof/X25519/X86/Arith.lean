@@ -119,139 +119,6 @@ theorem sqr_identity (fa : Nat → Nat) :
     List.sum_cons, List.sum_nil, List.nil_append, List.cons_append]
   grind
 
-/-- 16 columns summed into `T`, then reduced to `[o]`: the value of the columns modulo `p`, when
-they read only below `T` and each is below `2⁶⁸`. -/
-theorem mulCols_ok {x : BitVec 32} {s : State} (hc : Ctx W x s c) {o : Nat} (ho : Below o)
-    (ts : Nat → List Term) (hr : ∀ k < 16, ∀ t ∈ ts k, ∀ d ∈ treads t, d + 4 ≤ T)
-    (hb : ∀ k < 16, colv s.mem x (ts k) < 2 ^ 68) {V : Nat} (hV : V < 2 ^ 256 * 2 ^ 256)
-    (hv : num (fun k => colv s.mem x (ts k)) 16 = V) :
-    WP isa (.block (mulCols o ts)) s fun s' => Keep s s' ∧ Frame [sub x o 32, sub x T 64] s.mem s'.mem ∧
-      fe s'.mem x o % P = V % P := by
-  simp only [Below, T] at ho
-  have hfit := hc.fit4
-  refine WP.block_append (WP.block_append (WP.mono zeroAcc_ok fun s₁ ⟨k₁, m₁, a₁⟩ => ?_))
-  have c₁ := k₁.ctx hc
-  refine WP.mono (cols_ok c₁ ts 16 (by simp only [T]; decide) (fun k hk t ht d hd => ?_)
-    (fun k hk => ?_) (by rw [a₁]; decide)) fun s₂ ⟨k₂, f₂, e₂, _⟩ => ?_
-  · have := hr k hk t ht d hd
-    simp only [T] at this ⊢
-    exact ⟨by omega_using [this], .inl this⟩
-  · rw [m₁]; exact hb k hk
-  · -- The product, in `T`.
-    rw [a₁, Nat.zero_add, m₁, hv] at e₂
-    have e₃ : num (fun k => wv s₂.mem x (T + 4 * k)) 16 = V := by
-      have hQ : ((2 : Nat) ^ 32) ^ 16 = 2 ^ 256 * 2 ^ 256 := by decide
-      rw [hQ] at e₂
-      have : acc s₂ = 0 := by
-        rcases Nat.eq_zero_or_pos (acc s₂) with h | h
-        · exact h
-        · have := Nat.mul_le_mul_left (2 ^ 256 * 2 ^ 256) h
-          omega_using [this, e₂, hV]
-      rw [this, Nat.mul_zero, Nat.add_zero] at e₂
-      exact e₂
-    rw [num_16] at e₃
-    have c₂ := k₂.ctx c₁
-    have hs : num (fun k => colv s₂.mem x [.mulI (T + 32 + 4 * k) 38, .addM (T + 4 * k)]) 8 =
-        num (fun k => wv s₂.mem x (T + 4 * k)) 8 + 38 * num (fun k => wv s₂.mem x (T + 4 * (8 + k))) 8 := by
-      rw [← num_mul, ← num_add]
-      refine num_congr fun k _ => ?_
-      show colv s₂.mem x _ = wv s₂.mem x (T + 4 * k) + 38 * wv s₂.mem x (T + 4 * (8 + k))
-      rw [show T + 4 * (8 + k) = T + 32 + 4 * k by omega_using []]
-      simp only [colv, tval, List.map_cons, List.map_nil, List.sum_cons, List.sum_nil, Nat.add_zero,
-        toNat_38]
-      omega_using []
-    refine WP.mono (linear_ok c₂ o (fun k => [.mulI (T + 32 + 4 * k) 38, .addM (T + 4 * k)])
-      (by omega_using [ho]) (fun k hk t ht d hd => ?_) (fun k hk => ?_) ?_) fun s₃ ⟨k₃, f₃, e₄⟩ =>
-        ⟨k₁.trans (k₂.trans k₃), ?_, ?_⟩
-    · simp only [List.mem_cons, List.not_mem_nil, or_false] at ht
-      rcases ht with rfl | rfl <;> simp only [treads, List.mem_singleton] at hd <;> subst hd <;>
-        simp only [T] <;> exact ⟨by omega_using [hk], .inr (by omega_using [ho, hk])⟩
-    · simp only [colv, tval, List.map_cons, List.map_nil, List.sum_cons, List.sum_nil, Nat.add_zero, toNat_38]
-      have h1 := wv_lt s₂.mem x (T + 32 + 4 * k); have h2 := wv_lt s₂.mem x (T + 4 * k)
-      omega_using [h1, h2]
-    · have hl := num_lt (f := fun k => wv s₂.mem x (T + 4 * k)) (n := 8) fun _ _ => wv_lt _ _ _
-      have hh := num_lt (f := fun k => wv s₂.mem x (T + 4 * (8 + k))) (n := 8) fun _ _ => wv_lt _ _ _
-      rw [hs]
-      omega_using [hl, hh]
-    · rw [m₁] at f₂
-      exact (f₂.mono fun r hr => by simp only [List.mem_singleton] at hr; simp [hr]).trans
-        (f₃.mono fun r hr => by simp only [List.mem_singleton] at hr; simp [hr])
-    · rw [e₄, hs, ← fold256, ← e₃]
-
-theorem mul_ok {x : BitVec 32} {s : State} (hc : Ctx W x s c) {o a b : Nat} (ho : Below o) (ha : Below a)
-    (hb : Below b) :
-    WP isa (.block (mul o a b)) s fun s' => Keep s s' ∧ Frame [sub x o 32, sub x T 64] s.mem s'.mem ∧
-      fe s'.mem x o % P = fe s.mem x a * fe s.mem x b % P := by
-  simp only [Below, T] at ha hb
-  have hA := fe_lt s.mem x a; have hB := fe_lt s.mem x b
-  have hAB : fe s.mem x a * fe s.mem x b < 2 ^ 256 * 2 ^ 256 := Nat.mul_lt_mul_of_lt_of_lt hA hB
-  unfold mul mulSq mulPr
-  split
-  · subst b
-    refine mulCols_ok hc ho _ (fun k hk t ht d hd => ?_) (fun k hk => ?_) hAB ?_
-    · simp only [sqrTerms, List.mem_append, List.mem_map, List.mem_filter, List.mem_range,
-        Bool.and_eq_true, decide_eq_true_eq] at ht
-      rcases ht with ⟨i, ⟨hi, -, hki⟩, rfl⟩ | ht
-      · simp only [treads, List.mem_cons, List.not_mem_nil, or_false] at hd
-        simp only [T]
-        rcases hd with rfl | rfl <;> omega_using [ha, hi, hki]
-      · split at ht
-        · rename_i hk2
-          simp only [beq_iff_eq] at hk2
-          simp only [List.mem_singleton] at ht
-          subst ht
-          simp only [treads, List.mem_cons, List.not_mem_nil, or_false] at hd
-          simp only [T]
-          rcases hd with rfl | rfl <;> omega_using [ha, hk2]
-        · exact absurd ht List.not_mem_nil
-    · have hl : (sqrTerms a k).length ≤ 5 := by
-        simp only [sqrTerms, List.length_append, List.length_map]
-        have := (by decide : ∀ k < 16, ((List.range 8).filter fun i => 2 * i < k && k - i < 8).length ≤ 4) k hk
-        split <;> simp only [List.length_cons, List.length_nil] <;> omega_using [this]
-      have h1 := colv_le_len (m := s.mem) (x := x) (B := 2 ^ 65) (ts := sqrTerms a k) fun t ht => by
-        simp only [sqrTerms, List.mem_append, List.mem_map] at ht
-        rcases ht with ⟨i, -, rfl⟩ | ht
-        · have := wv_mul_le s.mem x (a + 4 * i) (a + 4 * (k - i))
-          simp only [tval]; omega_using [this]
-        · split at ht
-          · simp only [List.mem_singleton] at ht
-            subst ht
-            have := wv_mul_le s.mem x (a + 4 * (k / 2)) (a + 4 * (k / 2))
-            simp only [tval]; omega_using [this]
-          · exact absurd ht List.not_mem_nil
-      have h2 := Nat.mul_le_mul_right (2 ^ 65) hl
-      omega_using [h1, h2]
-    · have hcol : ∀ k, colv s.mem x (sqrTerms a k) = ((((List.range 8).filter fun i => 2 * i < k && k - i < 8).map
-          fun i => 2 * (wv s.mem x (a + 4 * i) * wv s.mem x (a + 4 * (k - i)))) ++
-          if k % 2 == 0 && k < 16 then [wv s.mem x (a + 4 * (k / 2)) * wv s.mem x (a + 4 * (k / 2))]
-          else []).sum := fun k => by
-        unfold colv sqrTerms
-        rw [List.map_append, List.map_map]
-        split <;> rfl
-      simp only [hcol]
-      exact sqr_identity (fun i => wv s.mem x (a + 4 * i))
-  · refine mulCols_ok hc ho _ (fun k hk t ht d hd => ?_) (fun k hk => ?_) hAB ?_
-    · simp only [prodTerms, List.mem_map, List.mem_filter, List.mem_range, Bool.and_eq_true,
-        decide_eq_true_eq] at ht
-      obtain ⟨i, ⟨hi, -, hki⟩, rfl⟩ := ht
-      simp only [treads, List.mem_cons, List.not_mem_nil, or_false] at hd
-      simp only [T]
-      rcases hd with rfl | rfl <;> omega_using [ha, hb, hi, hki]
-    · have hl : (prodTerms a b k).length ≤ 8 := by
-        simp only [prodTerms, List.length_map]
-        exact Nat.le_trans (List.length_filter_le _ _) (by simp)
-      have h1 := colv_le_len (m := s.mem) (x := x) (B := 2 ^ 64) (ts := prodTerms a b k) fun t ht => by
-        simp only [prodTerms, List.mem_map] at ht
-        obtain ⟨i, -, rfl⟩ := ht
-        exact wv_mul_le _ _ _ _
-      have h2 := Nat.mul_le_mul_right (2 ^ 64) hl
-      omega_using [h1, h2]
-    · have hcol : ∀ k, colv s.mem x (prodTerms a b k) = (((List.range 8).filter fun i => i ≤ k && k - i < 8).map
-          fun i => wv s.mem x (a + 4 * i) * wv s.mem x (b + 4 * (k - i))).sum := fun k => by
-        simp only [colv, prodTerms, List.map_map]; rfl
-      simp only [hcol]
-      exact prod_identity (fun i => wv s.mem x (a + 4 * i)) (fun j => wv s.mem x (b + 4 * j))
-
 /-- The reads of a column `k` of an output at `o` from `[a + 4k]`. -/
 theorem read_ok {o a k : Nat} (h : Apart o a) (ha : Below a) (hk : k < 8) :
     a + 4 * k + 4 ≤ 4096 ∧ (a + 4 * k + 4 ≤ o ∨ o + 4 * k ≤ a + 4 * k) :=
@@ -307,6 +174,13 @@ theorem wp_adcC {d : Reg} {src : Src} {y : BitVec 32} {c : Bool} (h : readSrc s 
     WP isa (.block (.alu .adc d src :: is)) s Q :=
   cons (by simp only [reduceExec, execAlu, h, Option.bind_some, hc, Option.map_some]; rfl)
     (k _ (Upd.flags _ _ _ _ _ _) rfl)
+
+/-- `add d, src`, and the carry out. -/
+theorem wp_addC {d : Reg} {src : Src} {y : BitVec 32} (h : readSrc s src = some y)
+    (k : ∀ t, Upd s t d (s.gpr d + y) → t.cf = some (decide (2 ^ 32 ≤ (s.gpr d).toNat + y.toNat)) →
+      WP isa (.block is) t Q) :
+    WP isa (.block (.alu .add d src :: is)) s Q :=
+  cons (by simp only [reduceExec, execAlu, h, Option.bind_some]; rfl) (k _ (Upd.flags _ _ _ _ _ _) rfl)
 
 /-- `sbb d, src`, with the borrow `c`, and the borrow out. -/
 theorem wp_sbbC {d : Reg} {src : Src} {y : BitVec 32} {c : Bool} (h : readSrc s src = some y)
@@ -451,6 +325,59 @@ theorem num_low (f : Nat → Nat) (n : Nat) : num f (n + 1) = f 0 + 2 ^ 32 * num
       Nat.mul_assoc]
     omega_using []
 
+theorem num_first (E : BitVec 32) :
+    num (fun k => (if k = 0 then E else (0 : BitVec 32)).toNat) 8 = E.toNat := by
+  rw [num_low]
+  have z : num (fun k => (if k + 1 = 0 then E else (0 : BitVec 32)).toNat) 7 = 0 := by
+    rw [num_congr (g := fun _ => 0) fun k _ => by rw [ite_eq_right (Nat.succ_ne_zero k)]; rfl]
+    rfl
+  rw [z, Nat.mul_zero, Nat.add_zero]
+  rfl
+
+/-- The end of `addSub` and of `reduceT`: the number in `ecx` added to (or subtracted from) `[o]`
+through the eight words, then 38 into word 0 for a carry out. `R₂` is the number after the pass,
+of which word 0 is `w` and the rest `hi`, and `r` is word 0 at the end. -/
+theorem foldTail_ok {op : AluOp} (hop : op = .adc ∨ op = .sbb) {x : BitVec 32} {s : State}
+    (hc : Ctx W x s c) {o : Nat} (ho : Below o) (hcf : s.cf = some false) :
+    WP isa (.block (carryPass op o o foldSrc ++ (carry38 ++ carryStep op o o 0 (.reg .ecx)))) s fun t =>
+      Keep s t ∧ Frame [sub x o 32] s.mem t.mem ∧
+      ∃ R₂ w r hi : Nat, ∃ c₂ c₃ : Bool,
+        PassRel op (fe s.mem x o) (s.gpr .ecx).toNat 0 R₂ c₂.toNat (2 ^ 256) ∧
+        PassRel op w (38 * c₂.toNat) 0 r c₃.toNat (2 ^ 32) ∧ R₂ = w + 2 ^ 32 * hi ∧
+        fe t.mem x o = r + 2 ^ 32 * hi ∧ w < 2 ^ 32 ∧ r < 2 ^ 32 ∧ hi < 2 ^ 224 := by
+  have hfit := hc.fit4
+  have ho' : o + 32 ≤ 864 := ho
+  refine WP.block_append (WP.mono (carryPass_ok hop hc ho ho (.inl rfl)
+    (y := fun k => if k = 0 then s.gpr .ecx else 0) hcf (fun k hk t kt et _ => ?_))
+    fun u₃ ⟨k₃, _, f₃, c₂, cf₃, r₃⟩ => ?_)
+  · unfold foldSrc
+    split
+    · show some (t.gpr .ecx) = _; rw [et]
+    · rfl
+  rw [num_first] at r₃
+  refine WP.block_append (WP.mono (carry38_ok cf₃) fun u₄ ⟨k₄, m₄, f₄, e₄⟩ => ?_)
+  have c₄ := k₄.ctx (k₃.ctx hc)
+  refine WP.mono (carryStep_ok hop c₄ (o := o) (a := o) (k := 0) (by omega_using [ho']) (by omega_using [ho']) f₄
+    (y := BitVec.ofNat 32 (38 * c₂.toNat)) fun t _ et _ => by show some (t.gpr .ecx) = _; rw [et, e₄])
+    fun t ⟨k₅, _, r, c₃, m₅, _, r₅⟩ => ?_
+  rw [m₄, ofNat38_toNat, Nat.mul_zero, Nat.add_zero] at r₅
+  rw [m₄, Nat.mul_zero, Nat.add_zero] at m₅
+  refine ⟨k₃.trans (k₄.trans k₅), ?_, fe u₃.mem x o, wv u₃.mem x o, r.toNat,
+    num (fun k => wv u₃.mem x (o + 4 * (k + 1))) 7, c₂, c₃, r₃, r₅, ?_, ?_, wv_lt _ _ _, r.isLt,
+    num_lt fun _ _ => wv_lt _ _ _⟩
+  · rw [m₅]
+    exact frame_write1 f₃ hfit (by omega_using [ho']) (Nat.le_refl _) (by omega_using []) _
+  · rw [fe, num_low]; rfl
+  · rw [fe, num_low, m₅]
+    have e0 : wv (u₃.mem.writeW (addr x o) r) x (o + 4 * 0) = r.toNat := by
+      show (wd _ x (o + 4 * 0)).toNat = _
+      rw [Nat.mul_zero, Nat.add_zero, wd_write_self]
+    have eh : num (fun k => wv (u₃.mem.writeW (addr x o) r) x (o + 4 * (k + 1))) 7 =
+        num (fun k => wv u₃.mem x (o + 4 * (k + 1))) 7 := num_congr fun k hk => by
+      show (wd _ x (o + 4 * (k + 1))).toNat = (wd _ x (o + 4 * (k + 1))).toNat
+      rw [wd_write_ne _ _ (by omega_using [hfit, ho', hk]) (by omega_using [hfit, ho']) (Or.inr (by omega_using []))]
+    rw [e0, eh]
+
 /-- The three passes of `addSub`: `R₁` after the first, `R₂` after the second, of which word 0 is
 `w` and the rest `hi`, and `r` for `w` after the third. -/
 theorem addSub_ok {op : AluOp} (hop : op = .adc ∨ op = .sbb) {x : BitVec 32} {s : State}
@@ -475,43 +402,14 @@ theorem addSub_ok {op : AluOp} (hop : op = .adc ∨ op = .sbb) {x : BitVec 32} {
     exact congrArg some ((wd_frame1 ft hfit (by omega_using [ho', hk]) (by omega_using [hb', hk])
       (apart_read hob (Nat.le_refl k) hk)).trans (by rw [m₀]))
   rw [m₀] at r₁ f₁
-  -- 38 for the carry out, and the carries it starts.
+  -- 38 for the carry out and the carries it starts, and 38 for a carry out of that.
   refine WP.block_append (WP.mono (carry38_ok cf₁) fun u₂ ⟨k₂, m₂, f₂, e₂⟩ => ?_)
-  have c₂' := k₂.ctx (k₁.ctx (k₀.ctx hc))
-  refine WP.block_append (WP.mono (carryPass_ok hop c₂' ho ho (.inl rfl)
-    (y := fun k => if k = 0 then BitVec.ofNat 32 (38 * c₁.toNat) else 0) f₂ (fun k hk t kt et _ => ?_))
-    fun u₃ ⟨k₃, _, f₃, c₂, cf₃, r₃⟩ => ?_)
-  · unfold foldSrc
-    split
-    · show some (t.gpr .ecx) = _; rw [et, e₂]
-    · rfl
-  rw [m₂] at r₃ f₃
-  have y₂ : num (fun k => (if k = 0 then BitVec.ofNat 32 (38 * c₁.toNat) else (0 : BitVec 32)).toNat) 8 =
-      38 * c₁.toNat := by cases c₁ <;> decide
-  rw [y₂] at r₃
-  -- 38 into word 0 for a carry out of that.
-  refine WP.block_append (WP.mono (carry38_ok cf₃) fun u₄ ⟨k₄, m₄, f₄, e₄⟩ => ?_)
-  have c₄ := k₄.ctx (k₃.ctx c₂')
-  refine WP.mono (carryStep_ok hop c₄ (o := o) (a := o) (k := 0) (by omega_using [ho']) (by omega_using [ho']) f₄
-    (y := BitVec.ofNat 32 (38 * c₂.toNat)) fun t _ et _ => by show some (t.gpr .ecx) = _; rw [et, e₄])
-    fun t ⟨k₅, _, r, c₃, m₅, _, r₅⟩ => ?_
-  rw [m₄, ofNat38_toNat, Nat.mul_zero, Nat.add_zero] at r₅
-  rw [m₄, Nat.mul_zero, Nat.add_zero] at m₅
-  refine ⟨k₀.trans (k₁.trans (k₂.trans (k₃.trans (k₄.trans k₅)))), ?_, fe u₁.mem x o, fe u₃.mem x o,
-    wv u₃.mem x o, r.toNat, num (fun k => wv u₃.mem x (o + 4 * (k + 1))) 7, c₁, c₂, c₃, r₁, r₃, r₅, ?_, ?_,
-    fe_lt _ _ _, wv_lt _ _ _, r.isLt, num_lt fun _ _ => wv_lt _ _ _⟩
-  · rw [m₅]
-    exact frame_write1 (f₁.trans f₃) hfit (by omega_using [ho']) (Nat.le_refl _) (by omega_using []) _
-  · rw [fe, num_low]; rfl
-  · rw [fe, num_low, m₅]
-    have e0 : wv (u₃.mem.writeW (addr x o) r) x (o + 4 * 0) = r.toNat := by
-      show (wd _ x (o + 4 * 0)).toNat = _
-      rw [Nat.mul_zero, Nat.add_zero, wd_write_self]
-    have eh : num (fun k => wv (u₃.mem.writeW (addr x o) r) x (o + 4 * (k + 1))) 7 =
-        num (fun k => wv u₃.mem x (o + 4 * (k + 1))) 7 := num_congr fun k hk => by
-      show (wd _ x (o + 4 * (k + 1))).toNat = (wd _ x (o + 4 * (k + 1))).toNat
-      rw [wd_write_ne _ _ (by omega_using [hfit, ho', hk]) (by omega_using [hfit, ho']) (Or.inr (by omega_using []))]
-    rw [e0, eh]
+  refine WP.mono (foldTail_ok hop (k₂.ctx (k₁.ctx (k₀.ctx hc))) ho f₂)
+    fun t ⟨k₃, f₃, R₂, w, r, hi, c₂, c₃, r₃, r₅, eR, eF, lw, lr, lh⟩ => ?_
+  rw [m₂, e₂, ofNat38_toNat] at r₃
+  rw [m₂] at f₃
+  exact ⟨k₀.trans (k₁.trans (k₂.trans k₃)), f₁.trans f₃, fe u₁.mem x o, R₂, w, r, hi, c₁, c₂, c₃, r₁, r₃, r₅,
+    eR, eF, fe_lt _ _ _, lw, lr, lh⟩
 
 theorem add_ok {x : BitVec 32} {s : State} (hc : Ctx W x s c) {o a b : Nat} (ho : Below o) (ha : Below a)
     (hb : Below b) (hoa : Apart o a) (hob : Apart o b) :
@@ -556,6 +454,290 @@ theorem sub_ok {x : BitVec 32} {s : State} (hc : Ctx W x s c) {o a b : Nat} (ho 
   rw [e]
   simp only [P]
   omega_using [b₁, b₂]
+
+/-! ## The reduction of a product
+
+`reduceT o` takes the 16 words of `T` to `[o]`: a pass with a carry word, `lo + 38 hi` word by word
+(`redStep_ok`, `redPass_ok`), then 38 times the carry word out added by `addSub`'s end
+(`foldTail_ok`). -/
+
+/-- A word of the reduction: `38 hi + lo` and the carry word, into `[o]`, and the next carry word. -/
+theorem redStep_ok {x : BitVec 32} {s : State} (hc : Ctx W x s c) {o k : Nat} (ho : o + 4 * k + 4 ≤ 4096)
+    (hk : k < 8) (hcx : s.gpr .ecx = 38) {b : Nat} (hb : v s .ebx = b) (hb' : b < 39) :
+    WP isa (.block (redStep o k)) s fun t => Keep s t ∧ t.gpr .ecx = 38 ∧
+      ∃ r : BitVec 32, ∃ b' : Nat, t.mem = s.mem.writeW (addr x (o + 4 * k)) r ∧ v t .ebx = b' ∧ b' < 39 ∧
+        38 * wv s.mem x (T + 32 + 4 * k) + b + wv s.mem x (T + 4 * k) = r.toNat + 2 ^ 32 * b' := by
+  have hT : T = 864 := rfl
+  unfold redStep
+  refine Wp.wp_ldm hc.edi (hc.inRW4 (by omega_using [hT, hk]) (by decide)) fun s₁ u₁ => ?_
+  refine wp_mul fun s₂ u₂ => ?_
+  refine Wp.wp_add fun s₃ u₃ f₃ => ?_
+  refine wp_adcC rfl f₃ fun s₄ u₄ _ => ?_
+  have k₄ : Keep s s₄ := (updKeep u₁).trans (u₂.keep.trans ((updKeep u₃).trans (updKeep u₄)))
+  have m₄ : s₄.mem = s.mem := by rw [u₄.mem, u₃.mem, u₂.mem, u₁.mem]
+  refine wp_addC (readSrc_sc (k₄.ctx hc) (by omega_using [hT, hk])) fun s₅ u₅ f₅ => ?_
+  refine wp_adcC rfl f₅ fun s₆ u₆ _ => ?_
+  have k₆ : Keep s s₆ := k₄.trans ((updKeep u₅).trans (updKeep u₆))
+  refine Wp.wp_stm (k₆.edi.trans hc.edi) (by rw [k₆.wr]; exact hc.inW4 ho (by decide)) fun s₇ m₇ => ?_
+  refine Wp.wp_mov fun t u₈ => WP.block_nil ?_
+  -- The words.
+  have hh : (s₁.gpr .eax).toNat = wv s.mem x (T + 32 + 4 * k) := by rw [u₁.gpr]
+  have e38 : (s₁.gpr .ecx).toNat = 38 := by rw [u₁.other _ (by decide), hcx]; rfl
+  have hw := wv_lt s.mem x (T + 32 + 4 * k)
+  have hl := wv_lt s.mem x (T + 4 * k)
+  have a₂ : (s₂.gpr .eax).toNat = wv s.mem x (T + 32 + 4 * k) * 38 % 2 ^ 32 := by
+    have := u₂.eax; simp only [v] at this; rw [this, hh, e38]
+  have d₂ : (s₂.gpr .edx).toNat = wv s.mem x (T + 32 + 4 * k) * 38 / 2 ^ 32 := by
+    have := u₂.edx; simp only [v] at this; rw [this, hh, e38]
+  have b₂ : (s₂.gpr .ebx).toNat = b := by
+    rw [u₂.other _ (by decide) (by decide), u₁.other _ (by decide)]; exact hb
+  have a₃ : (s₃.gpr .eax).toNat = ((s₂.gpr .eax).toNat + b) % 2 ^ 32 := by
+    rw [u₃.gpr, BitVec.toNat_add, b₂]
+  have hA := (s₂.gpr .eax).isLt
+  have hD : (s₂.gpr .edx).toNat ≤ 37 := by rw [d₂]; omega_using [hw]
+  have d₄ : (s₄.gpr .edx).toNat = (s₂.gpr .edx).toNat + ((s₂.gpr .eax).toNat + b) / 2 ^ 32 := by
+    rw [u₄.gpr, add3_toNat, u₃.other _ (by decide), toNat_zero32, Nat.add_zero, b₂,
+      carry_toNat (by omega_using [hA, hb'])]
+    exact Nat.mod_eq_of_lt (by omega_using [hA, hD, hb'])
+  have l₄ : (wd s₄.mem x (T + 4 * k)).toNat = wv s.mem x (T + 4 * k) := by rw [m₄]
+  have a₅ : (s₅.gpr .eax).toNat = ((s₃.gpr .eax).toNat + wv s.mem x (T + 4 * k)) % 2 ^ 32 := by
+    rw [u₅.gpr, BitVec.toNat_add, u₄.other .eax (by decide), l₄]
+  have hA₃ := (s₃.gpr .eax).isLt
+  have d₆ : (s₆.gpr .edx).toNat =
+      (s₄.gpr .edx).toNat + ((s₃.gpr .eax).toNat + wv s.mem x (T + 4 * k)) / 2 ^ 32 := by
+    rw [u₆.gpr, add3_toNat, u₅.other .edx (by decide), toNat_zero32, Nat.add_zero, u₄.other .eax (by decide), l₄,
+      carry_toNat (by omega_using [hA₃, hl])]
+    exact Nat.mod_eq_of_lt (by rw [d₄]; omega_using [hA, hA₃, hD, hb', hl])
+  have value : 38 * wv s.mem x (T + 32 + 4 * k) + b + wv s.mem x (T + 4 * k) =
+      (s₅.gpr .eax).toNat + 2 ^ 32 * (s₆.gpr .edx).toNat := by
+    rw [a₅, d₆, d₄, a₃, a₂, d₂]; omega_using []
+  have k₇ : Keep s₆ s₇ := ⟨by rw [m₇.gpr], by rw [m₇.gpr], by rw [m₇.gpr], m₇.rd, m₇.wr⟩
+  refine ⟨k₆.trans (k₇.trans (updKeep u₈)), ?_, s₆.gpr .eax, (s₆.gpr .edx).toNat, ?_, ?_, ?_, ?_⟩
+  · rw [u₈.other _ (by decide), m₇.gpr, u₆.other _ (by decide), u₅.other _ (by decide), u₄.other _ (by decide),
+      u₃.other _ (by decide), u₂.other _ (by decide) (by decide), u₁.other _ (by decide), hcx]
+  · rw [u₈.mem, m₇.mem, u₆.mem, u₅.mem, m₄]
+  · show (t.gpr .ebx).toNat = _; rw [u₈.gpr, m₇.gpr]
+  · have := (s₅.gpr .eax).isLt; omega_using [value, hw, hl, hb', this]
+  · rw [u₆.other _ (by decide)]; exact value
+
+/-- A word more of the pass, in numbers. -/
+theorem red_succ {N Lo Hi b h l r b' P : Nat} (hv : N + P * b = Lo + 38 * Hi)
+    (hs : 38 * h + b + l = r + 2 ^ 32 * b') :
+    N + P * r + P * 2 ^ 32 * b' = Lo + P * l + 38 * (Hi + P * h) := by
+  have e := congrArg (P * ·) hs
+  simp only [Nat.mul_add] at e
+  rw [← Nat.mul_assoc P (2 ^ 32) b', Nat.mul_left_comm P 38 h] at e
+  omega_using [hv, e]
+
+theorem redPass_succ (o n : Nat) :
+    (List.range (n + 1)).flatMap (redStep o) = (List.range n).flatMap (redStep o) ++ redStep o n := by
+  simp only [List.range_succ, List.flatMap_append, List.flatMap_singleton]
+
+/-- The first `n` words of the reduction's pass. -/
+theorem redPass_ok {x : BitVec 32} {s : State} (hc : Ctx W x s c) {o : Nat} (ho : Below o)
+    (hcx : s.gpr .ecx = 38) (hbx : v s .ebx = 0) :
+    ∀ n ≤ 8, WP isa (.block ((List.range n).flatMap (redStep o))) s fun t => Keep s t ∧ t.gpr .ecx = 38 ∧
+      Frame [sub x o (4 * n)] s.mem t.mem ∧ ∃ b : Nat, v t .ebx = b ∧ b < 39 ∧
+        num (fun k => wv t.mem x (o + 4 * k)) n + (2 ^ 32) ^ n * b =
+          num (fun k => wv s.mem x (T + 4 * k)) n + 38 * num (fun k => wv s.mem x (T + 32 + 4 * k)) n
+  | 0, _ => WP.block_nil ⟨Keep.refl _, hcx, Frame.refl _ _, 0, hbx, by decide, by simp [num]⟩
+  | n + 1, hn => by
+    have ho' : o + 32 ≤ 864 := ho
+    have hT : T = 864 := rfl
+    have hfit := hc.fit4
+    rw [redPass_succ]
+    refine WP.block_append (WP.mono (redPass_ok hc ho hcx hbx n (by omega_using [hn]))
+      fun t ⟨kt, et, ft, b, hb, lb, vt⟩ => ?_)
+    have wT : ∀ d, T ≤ d → d + 4 ≤ 4096 → wd t.mem x d = wd s.mem x d := fun d h1 h2 =>
+      wd_frame1 ft hfit (by omega_using [ho', hn]) h2 (Or.inr (by omega_using [ho', hn, hT, h1]))
+    refine WP.mono (redStep_ok (kt.ctx hc) (k := n) (by omega_using [ho', hn]) (by omega_using [hn]) et hb lb)
+      fun u ⟨ku, eu, r, b', mu, hb', lb', vu⟩ => ⟨kt.trans ku, eu, ?_, b', hb', lb', ?_⟩
+    · rw [mu]
+      exact frame_write1 (frameWiden ft hfit (Nat.le_refl _) (by omega_using []) (by omega_using [ho', hn])) hfit
+        (by omega_using [ho', hn]) (by omega_using []) (by omega_using []) _
+    · have lowO : num (fun k => wv u.mem x (o + 4 * k)) n = num (fun k => wv t.mem x (o + 4 * k)) n :=
+        num_congr fun k hk => by
+          show (wd u.mem x (o + 4 * k)).toNat = (wd t.mem x (o + 4 * k)).toNat
+          rw [mu, wd_write_ne _ _ (by omega_using [hfit, ho', hk, hn]) (by omega_using [hfit, ho', hn])
+            (Or.inl (by omega_using [hk]))]
+      have topO : wv u.mem x (o + 4 * n) = r.toNat := by
+        show (wd u.mem x (o + 4 * n)).toNat = _
+        rw [mu, wd_write_self]
+      have eh : wv t.mem x (T + 32 + 4 * n) = wv s.mem x (T + 32 + 4 * n) :=
+        congrArg BitVec.toNat (wT _ (by omega_using []) (by omega_using [hT, hn]))
+      have el : wv t.mem x (T + 4 * n) = wv s.mem x (T + 4 * n) :=
+        congrArg BitVec.toNat (wT _ (by omega_using []) (by omega_using [hT, hn]))
+      rw [eh, el] at vu
+      rw [num_succ, num_succ, num_succ, lowO, topO, Nat.pow_succ]
+      exact red_succ vt vu
+
+/-- `reduceT`: the 512 bits of `T`, as `lo + 38 hi`, modulo `p`. -/
+theorem reduceT_ok {x : BitVec 32} {s : State} (hc : Ctx W x s c) {o : Nat} (ho : Below o) :
+    WP isa (.block (reduceT o)) s fun t => Keep s t ∧ Frame [sub x o 32] s.mem t.mem ∧
+      fe t.mem x o % P = (num (fun k => wv s.mem x (T + 4 * k)) 8 +
+        38 * num (fun k => wv s.mem x (T + 32 + 4 * k)) 8) % P := by
+  have ho' : o + 32 ≤ 864 := ho
+  have hfit := hc.fit4
+  unfold reduceT
+  simp only [List.append_assoc, List.cons_append, List.nil_append]
+  refine Wp.wp_movi fun s₁ u₁ => Wp.wp_movi fun s₂ u₂ => ?_
+  have k₂ : Keep s s₂ := (updKeep u₁).trans (updKeep u₂)
+  have m₂ : s₂.mem = s.mem := by rw [u₂.mem, u₁.mem]
+  refine WP.block_append (WP.mono (redPass_ok (k₂.ctx hc) ho u₂.gpr
+    (by show (s₂.gpr .ebx).toNat = 0; rw [u₂.other _ (by decide), u₁.gpr]; rfl) 8 (Nat.le_refl _))
+    fun s₃ ⟨k₃, _, f₃, b, hb, lb, v₃⟩ => ?_)
+  rw [m₂] at v₃ f₃
+  -- 38 times the carry word, and the carry flag cleared.
+  refine Wp.wp_movi fun s₄ u₄ => wp_mul fun s₅ u₅ => Wp.wp_mov fun s₆ u₆ => ?_
+  refine Wp.cons (s' := arithFlags s₆ (s₆.gpr .ecx &&& s₆.gpr .ecx) false false) rfl ?_
+  have k₆ : Keep s₃ s₆ := (updKeep u₄).trans (u₅.keep.trans (updKeep u₆))
+  have m₆ : s₆.mem = s₃.mem := by rw [u₆.mem, u₅.mem, u₄.mem]
+  have e₆ : (s₆.gpr .ecx).toNat = 38 * b := by
+    have h := u₅.eax
+    simp only [v] at h hb
+    rw [u₆.gpr, h, u₄.gpr, u₄.other _ (by decide), hb, toNat_38]
+    exact Nat.mod_eq_of_lt (by omega_using [lb])
+  have c₇ : Ctx W x (arithFlags s₆ (s₆.gpr .ecx &&& s₆.gpr .ecx) false false) c :=
+    (k₆.ctx (k₃.ctx (k₂.ctx hc))).keep rfl rfl rfl
+  refine WP.mono (foldTail_ok (.inl rfl) c₇ ho rfl)
+    fun t ⟨k₈, f₈, R₂, w, r, hi, c₂, c₃, r₈, r₉, eR, eF, lw, lr, _⟩ => ?_
+  have k₇ : Keep s₆ (arithFlags s₆ (s₆.gpr .ecx &&& s₆.gpr .ecx) false false) := ⟨rfl, rfl, rfl, rfl, rfl⟩
+  refine ⟨k₂.trans (k₃.trans (k₆.trans (k₇.trans k₈))), ?_, ?_⟩
+  · have f₈' : Frame [sub x o 32] s₃.mem t.mem := by rw [← m₆]; exact f₈
+    exact f₃.trans f₈'
+  · have r₈' : PassRel .adc (fe s₃.mem x o) (38 * b) 0 R₂ c₂.toNat (2 ^ 256) := by
+      rw [← m₆, ← e₆]; exact r₈
+    simp only [PassRel, ↓reduceIte, Nat.add_zero] at r₈' r₉
+    have b₂ : c₂.toNat ≤ 1 := by cases c₂ <;> decide
+    have b₃ : c₃.toNat ≤ 1 := by cases c₃ <;> decide
+    have hR := fe_lt s₃.mem x o
+    rw [show ((2 : Nat) ^ 32) ^ 8 = 2 ^ 256 by decide] at v₃
+    have v₃' : fe s₃.mem x o + 2 ^ 256 * b = _ := v₃
+    rw [← v₃']
+    generalize fe s₃.mem x o = R₁ at r₈' hR ⊢
+    generalize c₂.toNat = d₂ at r₈' r₉ b₂
+    generalize c₃.toNat = d₃ at r₉ b₃
+    have z₃ : d₃ = 0 := by omega_using [r₈', r₉, eR, lw, lr, lb, b₂, b₃, hR]
+    have e : fe t.mem x o + (2 ^ 256 - 38) * (d₂ + b) = R₁ + 2 ^ 256 * b := by
+      omega_using [r₈', r₉, eR, eF, z₃]
+    rw [← e]
+    simp only [P]
+    omega_using [b₂, lb]
+
+/-- 16 columns summed into `T`, then reduced to `[o]`: the value of the columns modulo `p`, when
+they read only below `T` and each is below `2⁶⁸`. -/
+theorem mulCols_ok {x : BitVec 32} {s : State} (hc : Ctx W x s c) {o : Nat} (ho : Below o)
+    (ts : Nat → List Term) (hr : ∀ k < 16, ∀ t ∈ ts k, ∀ d ∈ treads t, d + 4 ≤ T)
+    (hb : ∀ k < 16, colv s.mem x (ts k) < 2 ^ 68) {V : Nat} (hV : V < 2 ^ 256 * 2 ^ 256)
+    (hv : num (fun k => colv s.mem x (ts k)) 16 = V) :
+    WP isa (.block (mulCols o ts)) s fun s' => Keep s s' ∧ Frame [sub x o 32, sub x T 64] s.mem s'.mem ∧
+      fe s'.mem x o % P = V % P := by
+  have hoB : Below o := ho
+  simp only [Below, T] at ho
+  have hfit := hc.fit4
+  refine WP.block_append (WP.block_append (WP.mono zeroAcc_ok fun s₁ ⟨k₁, m₁, a₁⟩ => ?_))
+  have c₁ := k₁.ctx hc
+  refine WP.mono (cols_ok c₁ ts 16 (by simp only [T]; decide) (fun k hk t ht d hd => ?_)
+    (fun k hk => ?_) (by rw [a₁]; decide)) fun s₂ ⟨k₂, f₂, e₂, _⟩ => ?_
+  · have := hr k hk t ht d hd
+    simp only [T] at this ⊢
+    exact ⟨by omega_using [this], .inl this⟩
+  · rw [m₁]; exact hb k hk
+  · -- The product, in `T`.
+    rw [a₁, Nat.zero_add, m₁, hv] at e₂
+    have e₃ : num (fun k => wv s₂.mem x (T + 4 * k)) 16 = V := by
+      have hQ : ((2 : Nat) ^ 32) ^ 16 = 2 ^ 256 * 2 ^ 256 := by decide
+      rw [hQ] at e₂
+      have : acc s₂ = 0 := by
+        rcases Nat.eq_zero_or_pos (acc s₂) with h | h
+        · exact h
+        · have := Nat.mul_le_mul_left (2 ^ 256 * 2 ^ 256) h
+          omega_using [this, e₂, hV]
+      rw [this, Nat.mul_zero, Nat.add_zero] at e₂
+      exact e₂
+    rw [num_16] at e₃
+    have c₂ := k₂.ctx c₁
+    refine WP.mono (reduceT_ok c₂ hoB) fun s₃ ⟨k₃, f₃, e₄⟩ => ⟨k₁.trans (k₂.trans k₃), ?_, ?_⟩
+    · rw [m₁] at f₂
+      exact (f₂.mono fun r hr => by simp only [List.mem_singleton] at hr; simp [hr]).trans
+        (f₃.mono fun r hr => by simp only [List.mem_singleton] at hr; simp [hr])
+    · have eh : num (fun k => wv s₂.mem x (T + 4 * (8 + k))) 8 = num (fun k => wv s₂.mem x (T + 32 + 4 * k)) 8 :=
+        num_congr fun k _ => by rw [show T + 4 * (8 + k) = T + 32 + 4 * k by omega_using []]
+      rw [e₄, ← eh, ← fold256, ← e₃]
+
+theorem mul_ok {x : BitVec 32} {s : State} (hc : Ctx W x s c) {o a b : Nat} (ho : Below o) (ha : Below a)
+    (hb : Below b) :
+    WP isa (.block (mul o a b)) s fun s' => Keep s s' ∧ Frame [sub x o 32, sub x T 64] s.mem s'.mem ∧
+      fe s'.mem x o % P = fe s.mem x a * fe s.mem x b % P := by
+  simp only [Below, T] at ha hb
+  have hA := fe_lt s.mem x a; have hB := fe_lt s.mem x b
+  have hAB : fe s.mem x a * fe s.mem x b < 2 ^ 256 * 2 ^ 256 := Nat.mul_lt_mul_of_lt_of_lt hA hB
+  unfold mul mulSq mulPr
+  split
+  · subst b
+    refine mulCols_ok hc ho _ (fun k hk t ht d hd => ?_) (fun k hk => ?_) hAB ?_
+    · simp only [sqrTerms, List.mem_append, List.mem_map, List.mem_filter, List.mem_range,
+        Bool.and_eq_true, decide_eq_true_eq] at ht
+      rcases ht with ⟨i, ⟨hi, -, hki⟩, rfl⟩ | ht
+      · simp only [treads, List.mem_cons, List.not_mem_nil, or_false] at hd
+        simp only [T]
+        rcases hd with rfl | rfl <;> omega_using [ha, hi, hki]
+      · split at ht
+        · rename_i hk2
+          simp only [beq_iff_eq] at hk2
+          simp only [List.mem_singleton] at ht
+          subst ht
+          simp only [treads, List.mem_cons, List.not_mem_nil, or_false] at hd
+          simp only [T]
+          rcases hd with rfl | rfl <;> omega_using [ha, hk2]
+        · exact absurd ht List.not_mem_nil
+    · have hl : (sqrTerms a k).length ≤ 5 := by
+        simp only [sqrTerms, List.length_append, List.length_map]
+        have := (by decide : ∀ k < 16, ((List.range 8).filter fun i => 2 * i < k && k - i < 8).length ≤ 4) k hk
+        split <;> simp only [List.length_cons, List.length_nil] <;> omega_using [this]
+      have h1 := colv_le_len (m := s.mem) (x := x) (B := 2 ^ 65) (ts := sqrTerms a k) fun t ht => by
+        simp only [sqrTerms, List.mem_append, List.mem_map] at ht
+        rcases ht with ⟨i, -, rfl⟩ | ht
+        · have := wv_mul_le s.mem x (a + 4 * i) (a + 4 * (k - i))
+          simp only [tval]; omega_using [this]
+        · split at ht
+          · simp only [List.mem_singleton] at ht
+            subst ht
+            have := wv_mul_le s.mem x (a + 4 * (k / 2)) (a + 4 * (k / 2))
+            simp only [tval]; omega_using [this]
+          · exact absurd ht List.not_mem_nil
+      have h2 := Nat.mul_le_mul_right (2 ^ 65) hl
+      omega_using [h1, h2]
+    · have hcol : ∀ k, colv s.mem x (sqrTerms a k) = ((((List.range 8).filter fun i => 2 * i < k && k - i < 8).map
+          fun i => 2 * (wv s.mem x (a + 4 * i) * wv s.mem x (a + 4 * (k - i)))) ++
+          if k % 2 == 0 && k < 16 then [wv s.mem x (a + 4 * (k / 2)) * wv s.mem x (a + 4 * (k / 2))]
+          else []).sum := fun k => by
+        unfold colv sqrTerms
+        rw [List.map_append, List.map_map]
+        split <;> rfl
+      simp only [hcol]
+      exact sqr_identity (fun i => wv s.mem x (a + 4 * i))
+  · refine mulCols_ok hc ho _ (fun k hk t ht d hd => ?_) (fun k hk => ?_) hAB ?_
+    · simp only [prodTerms, List.mem_map, List.mem_filter, List.mem_range, Bool.and_eq_true,
+        decide_eq_true_eq] at ht
+      obtain ⟨i, ⟨hi, -, hki⟩, rfl⟩ := ht
+      simp only [treads, List.mem_cons, List.not_mem_nil, or_false] at hd
+      simp only [T]
+      rcases hd with rfl | rfl <;> omega_using [ha, hb, hi, hki]
+    · have hl : (prodTerms a b k).length ≤ 8 := by
+        simp only [prodTerms, List.length_map]
+        exact Nat.le_trans (List.length_filter_le _ _) (by simp)
+      have h1 := colv_le_len (m := s.mem) (x := x) (B := 2 ^ 64) (ts := prodTerms a b k) fun t ht => by
+        simp only [prodTerms, List.mem_map] at ht
+        obtain ⟨i, -, rfl⟩ := ht
+        exact wv_mul_le _ _ _ _
+      have h2 := Nat.mul_le_mul_right (2 ^ 64) hl
+      omega_using [h1, h2]
+    · have hcol : ∀ k, colv s.mem x (prodTerms a b k) = (((List.range 8).filter fun i => i ≤ k && k - i < 8).map
+          fun i => wv s.mem x (a + 4 * i) * wv s.mem x (b + 4 * (k - i))).sum := fun k => by
+        simp only [colv, prodTerms, List.map_map]; rfl
+      simp only [hcol]
+      exact prod_identity (fun i => wv s.mem x (a + 4 * i)) (fun j => wv s.mem x (b + 4 * j))
 
 theorem mulSmall_ok {x : BitVec 32} {s : State} (hc : Ctx W x s c) {o a : Nat} (ho : Below o) (ha : Below a)
     (hoa : Apart o a) :
