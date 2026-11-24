@@ -1,5 +1,6 @@
 module
 
+import VerifiedGarbage.Proof.Framework.X86.SseTaint
 public import VerifiedGarbage.Proof.Blowfish.X86.FbVerified
 public import VerifiedGarbage.Impl.Blowfish.X86.FbFinal
 public import VerifiedGarbage.Spec.Blowfish.CfbFinal
@@ -11,6 +12,7 @@ import VerifiedGarbage.Proof.Blowfish.X86.FbFinalLit
 import VerifiedGarbage.Proof.Blowfish.Schedule
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
+meta import VerifiedGarbage.Proof.Framework.X86.SseTaint
 meta import VerifiedGarbage.Proof.Blowfish.X86.FbVerified
 meta import VerifiedGarbage.Impl.Blowfish.X86.FbFinal
 meta import VerifiedGarbage.Spec.Blowfish.CfbFinal
@@ -251,11 +253,11 @@ theorem fbTaint_agree {w n : Nat} {post : State → State → Prop} {s₁ s₂ :
     exact congrArg _ (ha _ (by omega_arith))
 
 theorem cfbEncryptFinal_ct : ConstantTime isa (finalX86 11 0 encPost).pre (finalX86 11 0 encPost).pub cfbEncryptFinal :=
-  VG.Taint.constantTime (A := VG.X86.taint) (fbTaint 11 0) (fun _ _ h₁ h₂ hp => fbTaint_agree h₁ h₂ hp)
+  VG.Taint.constantTime (A := VG.X86.sseTaint) (fbTaint 11 0) (fun _ _ h₁ h₂ hp => fbTaint_agree h₁ h₂ hp)
     (by taint_decide)
 
 theorem cfbDecryptFinal_ct : ConstantTime isa (finalX86 11 0 decPost).pre (finalX86 11 0 decPost).pub cfbDecryptFinal :=
-  VG.Taint.constantTime (A := VG.X86.taint) (fbTaint 11 0) (fun _ _ h₁ h₂ hp => fbTaint_agree h₁ h₂ hp)
+  VG.Taint.constantTime (A := VG.X86.sseTaint) (fbTaint 11 0) (fun _ _ h₁ h₂ hp => fbTaint_agree h₁ h₂ hp)
     (by taint_decide)
 
 /-! ## The contracts -/
@@ -464,7 +466,7 @@ theorem ofbFinal_wp {s₀ : State} (hp : (finalX86 11 0 ofbPost).pre s₀) :
   ofbFinal_wp_of (dirFits true) (fun _ => rfl) hp
 
 theorem ofbFinal_ct : ConstantTime isa (finalX86 11 0 ofbPost).pre (finalX86 11 0 ofbPost).pub ofbFinal :=
-  VG.Taint.constantTime (A := VG.X86.taint) (fbTaint 11 0) (fun _ _ h₁ h₂ hp => fbTaint_agree h₁ h₂ hp)
+  VG.Taint.constantTime (A := VG.X86.sseTaint) (fbTaint 11 0) (fun _ _ h₁ h₂ hp => fbTaint_agree h₁ h₂ hp)
     (by taint_decide)
 
 /-- The final OFB function's contract with the working space as an argument. -/

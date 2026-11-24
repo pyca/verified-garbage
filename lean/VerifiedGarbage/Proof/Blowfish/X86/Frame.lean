@@ -38,12 +38,14 @@ public import VerifiedGarbage.Proof.Blowfish.Scratch
 public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.TCB.X86.Target
 import VerifiedGarbage.Proof.Framework.X86.Taint
+import VerifiedGarbage.Proof.Framework.X86.SseTaint
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.SigEval
 meta import VerifiedGarbage.Proof.Blowfish.Scratch
 meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.TCB.X86.Target
 meta import VerifiedGarbage.Proof.Framework.X86.Taint
+meta import VerifiedGarbage.Proof.Framework.X86.SseTaint
 
 /-! ### `Blowfish.X86.Verified`, which only this module used -/
 
@@ -273,9 +275,9 @@ theorem ecb_agree {up : Bool} {s t : State} (hs : (ecbC up).pre s) (ht : (ecbC u
 
 theorem ecb_ct (up : Bool) : ConstantTime isa (ecbC up).pre (ecbC up).pub (Impl.Blowfish.X86.ecb up) := by
   cases up
-  · exact VG.Taint.constantTime (A := taint) τE (fun _ _ h₁ h₂ hp => ecb_agree h₁ h₂ hp)
+  · exact VG.Taint.constantTime (A := VG.X86.sseTaint) τE (fun _ _ h₁ h₂ hp => ecb_agree h₁ h₂ hp)
       (by taint_decide)
-  · exact VG.Taint.constantTime (A := taint) τE (fun _ _ h₁ h₂ hp => ecb_agree h₁ h₂ hp)
+  · exact VG.Taint.constantTime (A := VG.X86.sseTaint) τE (fun _ _ h₁ h₂ hp => ecb_agree h₁ h₂ hp)
       (by taint_decide)
 
 def ecbRd (s : State) : List Region := [⟨(arg s 0).setWidth 64, 4168⟩, ⟨argAddr s 0, 16⟩]
@@ -383,7 +385,7 @@ theorem expandKey_agree {s t : State} (hs : keyC.pre s) (ht : keyC.pre t) (hp : 
     exact congrArg _ (args ((k - 4) / 4) (by omega_using [hk]))
 
 theorem expandKey_ct : ConstantTime isa keyC.pre keyC.pub Impl.Blowfish.X86.expandKey :=
-  VG.Taint.constantTime (A := taint) τK (fun _ _ h₁ h₂ hp => expandKey_agree h₁ h₂ hp) (by taint_decide)
+  VG.Taint.constantTime (A := VG.X86.sseTaint) τK (fun _ _ h₁ h₂ hp => expandKey_agree h₁ h₂ hp) (by taint_decide)
 
 theorem expandKey_verified : Verified target Impl.Blowfish.X86.expandKey (expandKeyScratch8Contract abi) :=
   Verified.of_correct expandKey_ok expandKey_ct key_implies

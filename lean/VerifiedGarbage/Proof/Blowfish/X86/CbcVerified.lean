@@ -1,10 +1,12 @@
 module
 
+import VerifiedGarbage.Proof.Framework.X86.SseTaint
 public import VerifiedGarbage.Proof.Blowfish.X86.FbVerified
 import VerifiedGarbage.Proof.Modes.X86.CbcChained
 public import VerifiedGarbage.Proof.Blowfish.CbcScratch
 import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
 import VerifiedGarbage.Proof.Blowfish.X86.ModesLit
+meta import VerifiedGarbage.Proof.Framework.X86.SseTaint
 meta import VerifiedGarbage.Proof.Blowfish.X86.FbVerified
 meta import VerifiedGarbage.Proof.Modes.X86.CbcChained
 meta import VerifiedGarbage.Proof.Blowfish.CbcScratch
@@ -77,11 +79,11 @@ theorem cbcDecryptChained_wp {s₀ : State} (hp : (fbX86 11 0 decPost).pre s₀)
 /-! ## Constant time -/
 
 theorem cbcEncryptChained_ct : ConstantTime isa (fbX86 11 0 encPost).pre (fbX86 11 0 encPost).pub cbcEncryptChained :=
-  VG.Taint.constantTime (A := VG.X86.taint) (fbTaint 11 0) (fun _ _ h₁ h₂ hp => fbTaint_agree h₁ h₂ hp)
+  VG.Taint.constantTime (A := VG.X86.sseTaint) (fbTaint 11 0) (fun _ _ h₁ h₂ hp => fbTaint_agree h₁ h₂ hp)
     (by taint_decide)
 
 theorem cbcDecryptChained_ct : ConstantTime isa (fbX86 11 0 decPost).pre (fbX86 11 0 decPost).pub cbcDecryptChained :=
-  VG.Taint.constantTime (A := VG.X86.taint) (fbTaint 11 0) (fun _ _ h₁ h₂ hp => fbTaint_agree h₁ h₂ hp)
+  VG.Taint.constantTime (A := VG.X86.sseTaint) (fbTaint 11 0) (fun _ _ h₁ h₂ hp => fbTaint_agree h₁ h₂ hp)
     (by taint_decide)
 
 /-! ## The contracts -/

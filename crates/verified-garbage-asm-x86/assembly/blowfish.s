@@ -4488,280 +4488,395 @@ vg_blowfish_expand_key:
 	mov esi, DWORD PTR [ebp+16]
 	shr esi, 24
 	and esi, 255
-	mov eax, 255
-	mov edx, esi
-	and edx, 1
-	cmp edx, 1
-	sbb edx, edx
-	mov ecx, eax
-	ror ecx, 24
-	xor eax, ecx
-	and eax, edx
-	xor eax, ecx
-	mov edx, esi
-	and edx, 2
-	cmp edx, 1
-	sbb edx, edx
-	mov ecx, eax
-	ror ecx, 16
-	xor eax, ecx
-	and eax, edx
-	xor eax, ecx
-	mov edi, 0
+	mov edi, esi
+	pxor xmm0, xmm0
+	pxor xmm1, xmm1
+	pxor xmm2, xmm2
+	pxor xmm3, xmm3
 	mov ebx, DWORD PTR [esp+12]
 211:
-	cmp esi, 4
+	cmp edi, 16
 	sbb edx, edx
-	and edx, eax
-	sub esi, 4
-	mov ecx, DWORD PTR [ebx]
-	and ecx, edx
-	or edi, ecx
-	mov ecx, DWORD PTR [ebx+256]
-	and ecx, edx
-	ror ecx, 24
-	or edi, ecx
-	mov ecx, DWORD PTR [ebx+512]
-	and ecx, edx
-	ror ecx, 16
-	or edi, ecx
-	mov ecx, DWORD PTR [ebx+768]
-	and ecx, edx
-	ror ecx, 8
-	or edi, ecx
-	add ebx, 4
+	movd xmm6, edx
+	pshufd xmm6, xmm6, 0
+	sub edi, 16
+	movdqu xmm7, XMMWORD PTR [ebx]
+	pand xmm7, xmm6
+	por xmm0, xmm7
+	movdqu xmm7, XMMWORD PTR [ebx+256]
+	pand xmm7, xmm6
+	por xmm1, xmm7
+	movdqu xmm7, XMMWORD PTR [ebx+512]
+	pand xmm7, xmm6
+	por xmm2, xmm7
+	movdqu xmm7, XMMWORD PTR [ebx+768]
+	pand xmm7, xmm6
+	por xmm3, xmm7
+	add ebx, 16
 	mov ecx, DWORD PTR [esp+12]
 	sub ecx, ebx
 	cmp ecx, -256
 	jne 211b
+	movdqa xmm4, xmm0
+	punpckldq xmm4, xmm1
+	punpckhdq xmm0, xmm1
+	movdqa xmm5, xmm2
+	punpckldq xmm5, xmm3
+	punpckhdq xmm2, xmm3
 	mov edx, esi
-	and edx, 1
+	and edx, 8
 	cmp edx, 1
 	sbb edx, edx
-	mov ecx, edi
-	ror ecx, 8
-	xor edi, ecx
-	and edi, edx
-	xor edi, ecx
+	movd xmm6, edx
+	pshufd xmm6, xmm6, 0
+	pxor xmm4, xmm0
+	pand xmm4, xmm6
+	pxor xmm4, xmm0
+	pxor xmm5, xmm2
+	pand xmm5, xmm6
+	pxor xmm5, xmm2
+	movdqa xmm1, xmm4
+	punpcklqdq xmm4, xmm5
+	punpckhqdq xmm1, xmm5
+	mov edx, esi
+	and edx, 4
+	cmp edx, 1
+	sbb edx, edx
+	movd xmm6, edx
+	pshufd xmm6, xmm6, 0
+	pxor xmm4, xmm1
+	pand xmm4, xmm6
+	pxor xmm4, xmm1
 	mov edx, esi
 	and edx, 2
 	cmp edx, 1
 	sbb edx, edx
-	mov ecx, edi
-	ror ecx, 16
-	xor edi, ecx
-	and edi, edx
-	xor edi, ecx
-	mov DWORD PTR [ebp+24], edi
+	movd xmm6, edx
+	pshufd xmm6, xmm6, 0
+	movdqa xmm0, xmm4
+	psrld xmm0, 16
+	pxor xmm4, xmm0
+	pand xmm4, xmm6
+	pxor xmm4, xmm0
+	mov edx, esi
+	and edx, 1
+	cmp edx, 1
+	sbb edx, edx
+	movd xmm6, edx
+	pshufd xmm6, xmm6, 0
+	movdqa xmm0, xmm4
+	psrld xmm0, 8
+	pxor xmm4, xmm0
+	pand xmm4, xmm6
+	pxor xmm4, xmm0
+	pslld xmm4, 24
+	psrld xmm4, 24
+	pshufd xmm0, xmm4, 245
+	pslld xmm0, 8
+	por xmm4, xmm0
+	pshufd xmm0, xmm4, 2
+	pslld xmm0, 16
+	por xmm4, xmm0
+	mov ecx, DWORD PTR [ebp+20]
+	movd xmm0, ecx
+	punpckldq xmm0, xmm4
+	movq QWORD PTR [ebp+20], xmm0
 	mov esi, DWORD PTR [ebp+16]
 	shr esi, 16
 	and esi, 255
-	mov eax, 255
-	mov edx, esi
-	and edx, 1
-	cmp edx, 1
-	sbb edx, edx
-	mov ecx, eax
-	ror ecx, 24
-	xor eax, ecx
-	and eax, edx
-	xor eax, ecx
-	mov edx, esi
-	and edx, 2
-	cmp edx, 1
-	sbb edx, edx
-	mov ecx, eax
-	ror ecx, 16
-	xor eax, ecx
-	and eax, edx
-	xor eax, ecx
-	mov edi, 0
+	mov edi, esi
+	pxor xmm0, xmm0
+	pxor xmm1, xmm1
+	pxor xmm2, xmm2
+	pxor xmm3, xmm3
 	mov ebx, DWORD PTR [esp+12]
 212:
-	cmp esi, 4
+	cmp edi, 16
 	sbb edx, edx
-	and edx, eax
-	sub esi, 4
-	mov ecx, DWORD PTR [ebx+1024]
-	and ecx, edx
-	or edi, ecx
-	mov ecx, DWORD PTR [ebx+1280]
-	and ecx, edx
-	ror ecx, 24
-	or edi, ecx
-	mov ecx, DWORD PTR [ebx+1536]
-	and ecx, edx
-	ror ecx, 16
-	or edi, ecx
-	mov ecx, DWORD PTR [ebx+1792]
-	and ecx, edx
-	ror ecx, 8
-	or edi, ecx
-	add ebx, 4
+	movd xmm6, edx
+	pshufd xmm6, xmm6, 0
+	sub edi, 16
+	movdqu xmm7, XMMWORD PTR [ebx+1024]
+	pand xmm7, xmm6
+	por xmm0, xmm7
+	movdqu xmm7, XMMWORD PTR [ebx+1280]
+	pand xmm7, xmm6
+	por xmm1, xmm7
+	movdqu xmm7, XMMWORD PTR [ebx+1536]
+	pand xmm7, xmm6
+	por xmm2, xmm7
+	movdqu xmm7, XMMWORD PTR [ebx+1792]
+	pand xmm7, xmm6
+	por xmm3, xmm7
+	add ebx, 16
 	mov ecx, DWORD PTR [esp+12]
 	sub ecx, ebx
 	cmp ecx, -256
 	jne 212b
+	movdqa xmm4, xmm0
+	punpckldq xmm4, xmm1
+	punpckhdq xmm0, xmm1
+	movdqa xmm5, xmm2
+	punpckldq xmm5, xmm3
+	punpckhdq xmm2, xmm3
 	mov edx, esi
-	and edx, 1
+	and edx, 8
 	cmp edx, 1
 	sbb edx, edx
-	mov ecx, edi
-	ror ecx, 8
-	xor edi, ecx
-	and edi, edx
-	xor edi, ecx
+	movd xmm6, edx
+	pshufd xmm6, xmm6, 0
+	pxor xmm4, xmm0
+	pand xmm4, xmm6
+	pxor xmm4, xmm0
+	pxor xmm5, xmm2
+	pand xmm5, xmm6
+	pxor xmm5, xmm2
+	movdqa xmm1, xmm4
+	punpcklqdq xmm4, xmm5
+	punpckhqdq xmm1, xmm5
+	mov edx, esi
+	and edx, 4
+	cmp edx, 1
+	sbb edx, edx
+	movd xmm6, edx
+	pshufd xmm6, xmm6, 0
+	pxor xmm4, xmm1
+	pand xmm4, xmm6
+	pxor xmm4, xmm1
 	mov edx, esi
 	and edx, 2
 	cmp edx, 1
 	sbb edx, edx
-	mov ecx, edi
-	ror ecx, 16
-	xor edi, ecx
-	and edi, edx
-	xor edi, ecx
+	movd xmm6, edx
+	pshufd xmm6, xmm6, 0
+	movdqa xmm0, xmm4
+	psrld xmm0, 16
+	pxor xmm4, xmm0
+	pand xmm4, xmm6
+	pxor xmm4, xmm0
+	mov edx, esi
+	and edx, 1
+	cmp edx, 1
+	sbb edx, edx
+	movd xmm6, edx
+	pshufd xmm6, xmm6, 0
+	movdqa xmm0, xmm4
+	psrld xmm0, 8
+	pxor xmm4, xmm0
+	pand xmm4, xmm6
+	pxor xmm4, xmm0
+	pslld xmm4, 24
+	psrld xmm4, 24
+	pshufd xmm0, xmm4, 245
+	pslld xmm0, 8
+	por xmm4, xmm0
+	pshufd xmm0, xmm4, 2
+	pslld xmm0, 16
+	por xmm4, xmm0
 	mov ecx, DWORD PTR [ebp+24]
-	add ecx, edi
-	mov DWORD PTR [ebp+24], ecx
+	movd xmm0, ecx
+	paddd xmm4, xmm0
+	mov ecx, DWORD PTR [ebp+20]
+	movd xmm0, ecx
+	punpckldq xmm0, xmm4
+	movq QWORD PTR [ebp+20], xmm0
 	mov esi, DWORD PTR [ebp+16]
 	shr esi, 8
 	and esi, 255
-	mov eax, 255
-	mov edx, esi
-	and edx, 1
-	cmp edx, 1
-	sbb edx, edx
-	mov ecx, eax
-	ror ecx, 24
-	xor eax, ecx
-	and eax, edx
-	xor eax, ecx
-	mov edx, esi
-	and edx, 2
-	cmp edx, 1
-	sbb edx, edx
-	mov ecx, eax
-	ror ecx, 16
-	xor eax, ecx
-	and eax, edx
-	xor eax, ecx
-	mov edi, 0
+	mov edi, esi
+	pxor xmm0, xmm0
+	pxor xmm1, xmm1
+	pxor xmm2, xmm2
+	pxor xmm3, xmm3
 	mov ebx, DWORD PTR [esp+12]
 213:
-	cmp esi, 4
+	cmp edi, 16
 	sbb edx, edx
-	and edx, eax
-	sub esi, 4
-	mov ecx, DWORD PTR [ebx+2048]
-	and ecx, edx
-	or edi, ecx
-	mov ecx, DWORD PTR [ebx+2304]
-	and ecx, edx
-	ror ecx, 24
-	or edi, ecx
-	mov ecx, DWORD PTR [ebx+2560]
-	and ecx, edx
-	ror ecx, 16
-	or edi, ecx
-	mov ecx, DWORD PTR [ebx+2816]
-	and ecx, edx
-	ror ecx, 8
-	or edi, ecx
-	add ebx, 4
+	movd xmm6, edx
+	pshufd xmm6, xmm6, 0
+	sub edi, 16
+	movdqu xmm7, XMMWORD PTR [ebx+2048]
+	pand xmm7, xmm6
+	por xmm0, xmm7
+	movdqu xmm7, XMMWORD PTR [ebx+2304]
+	pand xmm7, xmm6
+	por xmm1, xmm7
+	movdqu xmm7, XMMWORD PTR [ebx+2560]
+	pand xmm7, xmm6
+	por xmm2, xmm7
+	movdqu xmm7, XMMWORD PTR [ebx+2816]
+	pand xmm7, xmm6
+	por xmm3, xmm7
+	add ebx, 16
 	mov ecx, DWORD PTR [esp+12]
 	sub ecx, ebx
 	cmp ecx, -256
 	jne 213b
+	movdqa xmm4, xmm0
+	punpckldq xmm4, xmm1
+	punpckhdq xmm0, xmm1
+	movdqa xmm5, xmm2
+	punpckldq xmm5, xmm3
+	punpckhdq xmm2, xmm3
 	mov edx, esi
-	and edx, 1
+	and edx, 8
 	cmp edx, 1
 	sbb edx, edx
-	mov ecx, edi
-	ror ecx, 8
-	xor edi, ecx
-	and edi, edx
-	xor edi, ecx
+	movd xmm6, edx
+	pshufd xmm6, xmm6, 0
+	pxor xmm4, xmm0
+	pand xmm4, xmm6
+	pxor xmm4, xmm0
+	pxor xmm5, xmm2
+	pand xmm5, xmm6
+	pxor xmm5, xmm2
+	movdqa xmm1, xmm4
+	punpcklqdq xmm4, xmm5
+	punpckhqdq xmm1, xmm5
+	mov edx, esi
+	and edx, 4
+	cmp edx, 1
+	sbb edx, edx
+	movd xmm6, edx
+	pshufd xmm6, xmm6, 0
+	pxor xmm4, xmm1
+	pand xmm4, xmm6
+	pxor xmm4, xmm1
 	mov edx, esi
 	and edx, 2
 	cmp edx, 1
 	sbb edx, edx
-	mov ecx, edi
-	ror ecx, 16
-	xor edi, ecx
-	and edi, edx
-	xor edi, ecx
+	movd xmm6, edx
+	pshufd xmm6, xmm6, 0
+	movdqa xmm0, xmm4
+	psrld xmm0, 16
+	pxor xmm4, xmm0
+	pand xmm4, xmm6
+	pxor xmm4, xmm0
+	mov edx, esi
+	and edx, 1
+	cmp edx, 1
+	sbb edx, edx
+	movd xmm6, edx
+	pshufd xmm6, xmm6, 0
+	movdqa xmm0, xmm4
+	psrld xmm0, 8
+	pxor xmm4, xmm0
+	pand xmm4, xmm6
+	pxor xmm4, xmm0
+	pslld xmm4, 24
+	psrld xmm4, 24
+	pshufd xmm0, xmm4, 245
+	pslld xmm0, 8
+	por xmm4, xmm0
+	pshufd xmm0, xmm4, 2
+	pslld xmm0, 16
+	por xmm4, xmm0
 	mov ecx, DWORD PTR [ebp+24]
-	xor ecx, edi
-	mov DWORD PTR [ebp+24], ecx
+	movd xmm0, ecx
+	pxor xmm4, xmm0
+	mov ecx, DWORD PTR [ebp+20]
+	movd xmm0, ecx
+	punpckldq xmm0, xmm4
+	movq QWORD PTR [ebp+20], xmm0
 	mov esi, DWORD PTR [ebp+16]
 	and esi, 255
-	mov eax, 255
-	mov edx, esi
-	and edx, 1
-	cmp edx, 1
-	sbb edx, edx
-	mov ecx, eax
-	ror ecx, 24
-	xor eax, ecx
-	and eax, edx
-	xor eax, ecx
-	mov edx, esi
-	and edx, 2
-	cmp edx, 1
-	sbb edx, edx
-	mov ecx, eax
-	ror ecx, 16
-	xor eax, ecx
-	and eax, edx
-	xor eax, ecx
-	mov edi, 0
+	mov edi, esi
+	pxor xmm0, xmm0
+	pxor xmm1, xmm1
+	pxor xmm2, xmm2
+	pxor xmm3, xmm3
 	mov ebx, DWORD PTR [esp+12]
 214:
-	cmp esi, 4
+	cmp edi, 16
 	sbb edx, edx
-	and edx, eax
-	sub esi, 4
-	mov ecx, DWORD PTR [ebx+3072]
-	and ecx, edx
-	or edi, ecx
-	mov ecx, DWORD PTR [ebx+3328]
-	and ecx, edx
-	ror ecx, 24
-	or edi, ecx
-	mov ecx, DWORD PTR [ebx+3584]
-	and ecx, edx
-	ror ecx, 16
-	or edi, ecx
-	mov ecx, DWORD PTR [ebx+3840]
-	and ecx, edx
-	ror ecx, 8
-	or edi, ecx
-	add ebx, 4
+	movd xmm6, edx
+	pshufd xmm6, xmm6, 0
+	sub edi, 16
+	movdqu xmm7, XMMWORD PTR [ebx+3072]
+	pand xmm7, xmm6
+	por xmm0, xmm7
+	movdqu xmm7, XMMWORD PTR [ebx+3328]
+	pand xmm7, xmm6
+	por xmm1, xmm7
+	movdqu xmm7, XMMWORD PTR [ebx+3584]
+	pand xmm7, xmm6
+	por xmm2, xmm7
+	movdqu xmm7, XMMWORD PTR [ebx+3840]
+	pand xmm7, xmm6
+	por xmm3, xmm7
+	add ebx, 16
 	mov ecx, DWORD PTR [esp+12]
 	sub ecx, ebx
 	cmp ecx, -256
 	jne 214b
+	movdqa xmm4, xmm0
+	punpckldq xmm4, xmm1
+	punpckhdq xmm0, xmm1
+	movdqa xmm5, xmm2
+	punpckldq xmm5, xmm3
+	punpckhdq xmm2, xmm3
 	mov edx, esi
-	and edx, 1
+	and edx, 8
 	cmp edx, 1
 	sbb edx, edx
-	mov ecx, edi
-	ror ecx, 8
-	xor edi, ecx
-	and edi, edx
-	xor edi, ecx
+	movd xmm6, edx
+	pshufd xmm6, xmm6, 0
+	pxor xmm4, xmm0
+	pand xmm4, xmm6
+	pxor xmm4, xmm0
+	pxor xmm5, xmm2
+	pand xmm5, xmm6
+	pxor xmm5, xmm2
+	movdqa xmm1, xmm4
+	punpcklqdq xmm4, xmm5
+	punpckhqdq xmm1, xmm5
+	mov edx, esi
+	and edx, 4
+	cmp edx, 1
+	sbb edx, edx
+	movd xmm6, edx
+	pshufd xmm6, xmm6, 0
+	pxor xmm4, xmm1
+	pand xmm4, xmm6
+	pxor xmm4, xmm1
 	mov edx, esi
 	and edx, 2
 	cmp edx, 1
 	sbb edx, edx
-	mov ecx, edi
-	ror ecx, 16
-	xor edi, ecx
-	and edi, edx
-	xor edi, ecx
+	movd xmm6, edx
+	pshufd xmm6, xmm6, 0
+	movdqa xmm0, xmm4
+	psrld xmm0, 16
+	pxor xmm4, xmm0
+	pand xmm4, xmm6
+	pxor xmm4, xmm0
+	mov edx, esi
+	and edx, 1
+	cmp edx, 1
+	sbb edx, edx
+	movd xmm6, edx
+	pshufd xmm6, xmm6, 0
+	movdqa xmm0, xmm4
+	psrld xmm0, 8
+	pxor xmm4, xmm0
+	pand xmm4, xmm6
+	pxor xmm4, xmm0
+	pslld xmm4, 24
+	psrld xmm4, 24
+	pshufd xmm0, xmm4, 245
+	pslld xmm0, 8
+	por xmm4, xmm0
+	pshufd xmm0, xmm4, 2
+	pslld xmm0, 16
+	por xmm4, xmm0
 	mov ecx, DWORD PTR [ebp+24]
-	add ecx, edi
-	mov DWORD PTR [ebp+24], ecx
+	movd xmm0, ecx
+	paddd xmm4, xmm0
+	mov ecx, DWORD PTR [ebp+20]
+	movd xmm0, ecx
+	punpckldq xmm0, xmm4
+	movq QWORD PTR [ebp+20], xmm0
 	mov eax, DWORD PTR [ebp+20]
 	xor eax, DWORD PTR [ebp+24]
 	mov ecx, DWORD PTR [ebp+16]
@@ -4809,280 +4924,395 @@ vg_blowfish_expand_key:
 	mov esi, DWORD PTR [ebp+16]
 	shr esi, 24
 	and esi, 255
-	mov eax, 255
-	mov edx, esi
-	and edx, 1
-	cmp edx, 1
-	sbb edx, edx
-	mov ecx, eax
-	ror ecx, 24
-	xor eax, ecx
-	and eax, edx
-	xor eax, ecx
-	mov edx, esi
-	and edx, 2
-	cmp edx, 1
-	sbb edx, edx
-	mov ecx, eax
-	ror ecx, 16
-	xor eax, ecx
-	and eax, edx
-	xor eax, ecx
-	mov edi, 0
+	mov edi, esi
+	pxor xmm0, xmm0
+	pxor xmm1, xmm1
+	pxor xmm2, xmm2
+	pxor xmm3, xmm3
 	mov ebx, DWORD PTR [esp+12]
 217:
-	cmp esi, 4
+	cmp edi, 16
 	sbb edx, edx
-	and edx, eax
-	sub esi, 4
-	mov ecx, DWORD PTR [ebx]
-	and ecx, edx
-	or edi, ecx
-	mov ecx, DWORD PTR [ebx+256]
-	and ecx, edx
-	ror ecx, 24
-	or edi, ecx
-	mov ecx, DWORD PTR [ebx+512]
-	and ecx, edx
-	ror ecx, 16
-	or edi, ecx
-	mov ecx, DWORD PTR [ebx+768]
-	and ecx, edx
-	ror ecx, 8
-	or edi, ecx
-	add ebx, 4
+	movd xmm6, edx
+	pshufd xmm6, xmm6, 0
+	sub edi, 16
+	movdqu xmm7, XMMWORD PTR [ebx]
+	pand xmm7, xmm6
+	por xmm0, xmm7
+	movdqu xmm7, XMMWORD PTR [ebx+256]
+	pand xmm7, xmm6
+	por xmm1, xmm7
+	movdqu xmm7, XMMWORD PTR [ebx+512]
+	pand xmm7, xmm6
+	por xmm2, xmm7
+	movdqu xmm7, XMMWORD PTR [ebx+768]
+	pand xmm7, xmm6
+	por xmm3, xmm7
+	add ebx, 16
 	mov ecx, DWORD PTR [esp+12]
 	sub ecx, ebx
 	cmp ecx, -256
 	jne 217b
+	movdqa xmm4, xmm0
+	punpckldq xmm4, xmm1
+	punpckhdq xmm0, xmm1
+	movdqa xmm5, xmm2
+	punpckldq xmm5, xmm3
+	punpckhdq xmm2, xmm3
 	mov edx, esi
-	and edx, 1
+	and edx, 8
 	cmp edx, 1
 	sbb edx, edx
-	mov ecx, edi
-	ror ecx, 8
-	xor edi, ecx
-	and edi, edx
-	xor edi, ecx
+	movd xmm6, edx
+	pshufd xmm6, xmm6, 0
+	pxor xmm4, xmm0
+	pand xmm4, xmm6
+	pxor xmm4, xmm0
+	pxor xmm5, xmm2
+	pand xmm5, xmm6
+	pxor xmm5, xmm2
+	movdqa xmm1, xmm4
+	punpcklqdq xmm4, xmm5
+	punpckhqdq xmm1, xmm5
+	mov edx, esi
+	and edx, 4
+	cmp edx, 1
+	sbb edx, edx
+	movd xmm6, edx
+	pshufd xmm6, xmm6, 0
+	pxor xmm4, xmm1
+	pand xmm4, xmm6
+	pxor xmm4, xmm1
 	mov edx, esi
 	and edx, 2
 	cmp edx, 1
 	sbb edx, edx
-	mov ecx, edi
-	ror ecx, 16
-	xor edi, ecx
-	and edi, edx
-	xor edi, ecx
-	mov DWORD PTR [ebp+24], edi
+	movd xmm6, edx
+	pshufd xmm6, xmm6, 0
+	movdqa xmm0, xmm4
+	psrld xmm0, 16
+	pxor xmm4, xmm0
+	pand xmm4, xmm6
+	pxor xmm4, xmm0
+	mov edx, esi
+	and edx, 1
+	cmp edx, 1
+	sbb edx, edx
+	movd xmm6, edx
+	pshufd xmm6, xmm6, 0
+	movdqa xmm0, xmm4
+	psrld xmm0, 8
+	pxor xmm4, xmm0
+	pand xmm4, xmm6
+	pxor xmm4, xmm0
+	pslld xmm4, 24
+	psrld xmm4, 24
+	pshufd xmm0, xmm4, 245
+	pslld xmm0, 8
+	por xmm4, xmm0
+	pshufd xmm0, xmm4, 2
+	pslld xmm0, 16
+	por xmm4, xmm0
+	mov ecx, DWORD PTR [ebp+20]
+	movd xmm0, ecx
+	punpckldq xmm0, xmm4
+	movq QWORD PTR [ebp+20], xmm0
 	mov esi, DWORD PTR [ebp+16]
 	shr esi, 16
 	and esi, 255
-	mov eax, 255
-	mov edx, esi
-	and edx, 1
-	cmp edx, 1
-	sbb edx, edx
-	mov ecx, eax
-	ror ecx, 24
-	xor eax, ecx
-	and eax, edx
-	xor eax, ecx
-	mov edx, esi
-	and edx, 2
-	cmp edx, 1
-	sbb edx, edx
-	mov ecx, eax
-	ror ecx, 16
-	xor eax, ecx
-	and eax, edx
-	xor eax, ecx
-	mov edi, 0
+	mov edi, esi
+	pxor xmm0, xmm0
+	pxor xmm1, xmm1
+	pxor xmm2, xmm2
+	pxor xmm3, xmm3
 	mov ebx, DWORD PTR [esp+12]
 218:
-	cmp esi, 4
+	cmp edi, 16
 	sbb edx, edx
-	and edx, eax
-	sub esi, 4
-	mov ecx, DWORD PTR [ebx+1024]
-	and ecx, edx
-	or edi, ecx
-	mov ecx, DWORD PTR [ebx+1280]
-	and ecx, edx
-	ror ecx, 24
-	or edi, ecx
-	mov ecx, DWORD PTR [ebx+1536]
-	and ecx, edx
-	ror ecx, 16
-	or edi, ecx
-	mov ecx, DWORD PTR [ebx+1792]
-	and ecx, edx
-	ror ecx, 8
-	or edi, ecx
-	add ebx, 4
+	movd xmm6, edx
+	pshufd xmm6, xmm6, 0
+	sub edi, 16
+	movdqu xmm7, XMMWORD PTR [ebx+1024]
+	pand xmm7, xmm6
+	por xmm0, xmm7
+	movdqu xmm7, XMMWORD PTR [ebx+1280]
+	pand xmm7, xmm6
+	por xmm1, xmm7
+	movdqu xmm7, XMMWORD PTR [ebx+1536]
+	pand xmm7, xmm6
+	por xmm2, xmm7
+	movdqu xmm7, XMMWORD PTR [ebx+1792]
+	pand xmm7, xmm6
+	por xmm3, xmm7
+	add ebx, 16
 	mov ecx, DWORD PTR [esp+12]
 	sub ecx, ebx
 	cmp ecx, -256
 	jne 218b
+	movdqa xmm4, xmm0
+	punpckldq xmm4, xmm1
+	punpckhdq xmm0, xmm1
+	movdqa xmm5, xmm2
+	punpckldq xmm5, xmm3
+	punpckhdq xmm2, xmm3
 	mov edx, esi
-	and edx, 1
+	and edx, 8
 	cmp edx, 1
 	sbb edx, edx
-	mov ecx, edi
-	ror ecx, 8
-	xor edi, ecx
-	and edi, edx
-	xor edi, ecx
+	movd xmm6, edx
+	pshufd xmm6, xmm6, 0
+	pxor xmm4, xmm0
+	pand xmm4, xmm6
+	pxor xmm4, xmm0
+	pxor xmm5, xmm2
+	pand xmm5, xmm6
+	pxor xmm5, xmm2
+	movdqa xmm1, xmm4
+	punpcklqdq xmm4, xmm5
+	punpckhqdq xmm1, xmm5
+	mov edx, esi
+	and edx, 4
+	cmp edx, 1
+	sbb edx, edx
+	movd xmm6, edx
+	pshufd xmm6, xmm6, 0
+	pxor xmm4, xmm1
+	pand xmm4, xmm6
+	pxor xmm4, xmm1
 	mov edx, esi
 	and edx, 2
 	cmp edx, 1
 	sbb edx, edx
-	mov ecx, edi
-	ror ecx, 16
-	xor edi, ecx
-	and edi, edx
-	xor edi, ecx
+	movd xmm6, edx
+	pshufd xmm6, xmm6, 0
+	movdqa xmm0, xmm4
+	psrld xmm0, 16
+	pxor xmm4, xmm0
+	pand xmm4, xmm6
+	pxor xmm4, xmm0
+	mov edx, esi
+	and edx, 1
+	cmp edx, 1
+	sbb edx, edx
+	movd xmm6, edx
+	pshufd xmm6, xmm6, 0
+	movdqa xmm0, xmm4
+	psrld xmm0, 8
+	pxor xmm4, xmm0
+	pand xmm4, xmm6
+	pxor xmm4, xmm0
+	pslld xmm4, 24
+	psrld xmm4, 24
+	pshufd xmm0, xmm4, 245
+	pslld xmm0, 8
+	por xmm4, xmm0
+	pshufd xmm0, xmm4, 2
+	pslld xmm0, 16
+	por xmm4, xmm0
 	mov ecx, DWORD PTR [ebp+24]
-	add ecx, edi
-	mov DWORD PTR [ebp+24], ecx
+	movd xmm0, ecx
+	paddd xmm4, xmm0
+	mov ecx, DWORD PTR [ebp+20]
+	movd xmm0, ecx
+	punpckldq xmm0, xmm4
+	movq QWORD PTR [ebp+20], xmm0
 	mov esi, DWORD PTR [ebp+16]
 	shr esi, 8
 	and esi, 255
-	mov eax, 255
-	mov edx, esi
-	and edx, 1
-	cmp edx, 1
-	sbb edx, edx
-	mov ecx, eax
-	ror ecx, 24
-	xor eax, ecx
-	and eax, edx
-	xor eax, ecx
-	mov edx, esi
-	and edx, 2
-	cmp edx, 1
-	sbb edx, edx
-	mov ecx, eax
-	ror ecx, 16
-	xor eax, ecx
-	and eax, edx
-	xor eax, ecx
-	mov edi, 0
+	mov edi, esi
+	pxor xmm0, xmm0
+	pxor xmm1, xmm1
+	pxor xmm2, xmm2
+	pxor xmm3, xmm3
 	mov ebx, DWORD PTR [esp+12]
 219:
-	cmp esi, 4
+	cmp edi, 16
 	sbb edx, edx
-	and edx, eax
-	sub esi, 4
-	mov ecx, DWORD PTR [ebx+2048]
-	and ecx, edx
-	or edi, ecx
-	mov ecx, DWORD PTR [ebx+2304]
-	and ecx, edx
-	ror ecx, 24
-	or edi, ecx
-	mov ecx, DWORD PTR [ebx+2560]
-	and ecx, edx
-	ror ecx, 16
-	or edi, ecx
-	mov ecx, DWORD PTR [ebx+2816]
-	and ecx, edx
-	ror ecx, 8
-	or edi, ecx
-	add ebx, 4
+	movd xmm6, edx
+	pshufd xmm6, xmm6, 0
+	sub edi, 16
+	movdqu xmm7, XMMWORD PTR [ebx+2048]
+	pand xmm7, xmm6
+	por xmm0, xmm7
+	movdqu xmm7, XMMWORD PTR [ebx+2304]
+	pand xmm7, xmm6
+	por xmm1, xmm7
+	movdqu xmm7, XMMWORD PTR [ebx+2560]
+	pand xmm7, xmm6
+	por xmm2, xmm7
+	movdqu xmm7, XMMWORD PTR [ebx+2816]
+	pand xmm7, xmm6
+	por xmm3, xmm7
+	add ebx, 16
 	mov ecx, DWORD PTR [esp+12]
 	sub ecx, ebx
 	cmp ecx, -256
 	jne 219b
+	movdqa xmm4, xmm0
+	punpckldq xmm4, xmm1
+	punpckhdq xmm0, xmm1
+	movdqa xmm5, xmm2
+	punpckldq xmm5, xmm3
+	punpckhdq xmm2, xmm3
 	mov edx, esi
-	and edx, 1
+	and edx, 8
 	cmp edx, 1
 	sbb edx, edx
-	mov ecx, edi
-	ror ecx, 8
-	xor edi, ecx
-	and edi, edx
-	xor edi, ecx
+	movd xmm6, edx
+	pshufd xmm6, xmm6, 0
+	pxor xmm4, xmm0
+	pand xmm4, xmm6
+	pxor xmm4, xmm0
+	pxor xmm5, xmm2
+	pand xmm5, xmm6
+	pxor xmm5, xmm2
+	movdqa xmm1, xmm4
+	punpcklqdq xmm4, xmm5
+	punpckhqdq xmm1, xmm5
+	mov edx, esi
+	and edx, 4
+	cmp edx, 1
+	sbb edx, edx
+	movd xmm6, edx
+	pshufd xmm6, xmm6, 0
+	pxor xmm4, xmm1
+	pand xmm4, xmm6
+	pxor xmm4, xmm1
 	mov edx, esi
 	and edx, 2
 	cmp edx, 1
 	sbb edx, edx
-	mov ecx, edi
-	ror ecx, 16
-	xor edi, ecx
-	and edi, edx
-	xor edi, ecx
+	movd xmm6, edx
+	pshufd xmm6, xmm6, 0
+	movdqa xmm0, xmm4
+	psrld xmm0, 16
+	pxor xmm4, xmm0
+	pand xmm4, xmm6
+	pxor xmm4, xmm0
+	mov edx, esi
+	and edx, 1
+	cmp edx, 1
+	sbb edx, edx
+	movd xmm6, edx
+	pshufd xmm6, xmm6, 0
+	movdqa xmm0, xmm4
+	psrld xmm0, 8
+	pxor xmm4, xmm0
+	pand xmm4, xmm6
+	pxor xmm4, xmm0
+	pslld xmm4, 24
+	psrld xmm4, 24
+	pshufd xmm0, xmm4, 245
+	pslld xmm0, 8
+	por xmm4, xmm0
+	pshufd xmm0, xmm4, 2
+	pslld xmm0, 16
+	por xmm4, xmm0
 	mov ecx, DWORD PTR [ebp+24]
-	xor ecx, edi
-	mov DWORD PTR [ebp+24], ecx
+	movd xmm0, ecx
+	pxor xmm4, xmm0
+	mov ecx, DWORD PTR [ebp+20]
+	movd xmm0, ecx
+	punpckldq xmm0, xmm4
+	movq QWORD PTR [ebp+20], xmm0
 	mov esi, DWORD PTR [ebp+16]
 	and esi, 255
-	mov eax, 255
-	mov edx, esi
-	and edx, 1
-	cmp edx, 1
-	sbb edx, edx
-	mov ecx, eax
-	ror ecx, 24
-	xor eax, ecx
-	and eax, edx
-	xor eax, ecx
-	mov edx, esi
-	and edx, 2
-	cmp edx, 1
-	sbb edx, edx
-	mov ecx, eax
-	ror ecx, 16
-	xor eax, ecx
-	and eax, edx
-	xor eax, ecx
-	mov edi, 0
+	mov edi, esi
+	pxor xmm0, xmm0
+	pxor xmm1, xmm1
+	pxor xmm2, xmm2
+	pxor xmm3, xmm3
 	mov ebx, DWORD PTR [esp+12]
 220:
-	cmp esi, 4
+	cmp edi, 16
 	sbb edx, edx
-	and edx, eax
-	sub esi, 4
-	mov ecx, DWORD PTR [ebx+3072]
-	and ecx, edx
-	or edi, ecx
-	mov ecx, DWORD PTR [ebx+3328]
-	and ecx, edx
-	ror ecx, 24
-	or edi, ecx
-	mov ecx, DWORD PTR [ebx+3584]
-	and ecx, edx
-	ror ecx, 16
-	or edi, ecx
-	mov ecx, DWORD PTR [ebx+3840]
-	and ecx, edx
-	ror ecx, 8
-	or edi, ecx
-	add ebx, 4
+	movd xmm6, edx
+	pshufd xmm6, xmm6, 0
+	sub edi, 16
+	movdqu xmm7, XMMWORD PTR [ebx+3072]
+	pand xmm7, xmm6
+	por xmm0, xmm7
+	movdqu xmm7, XMMWORD PTR [ebx+3328]
+	pand xmm7, xmm6
+	por xmm1, xmm7
+	movdqu xmm7, XMMWORD PTR [ebx+3584]
+	pand xmm7, xmm6
+	por xmm2, xmm7
+	movdqu xmm7, XMMWORD PTR [ebx+3840]
+	pand xmm7, xmm6
+	por xmm3, xmm7
+	add ebx, 16
 	mov ecx, DWORD PTR [esp+12]
 	sub ecx, ebx
 	cmp ecx, -256
 	jne 220b
+	movdqa xmm4, xmm0
+	punpckldq xmm4, xmm1
+	punpckhdq xmm0, xmm1
+	movdqa xmm5, xmm2
+	punpckldq xmm5, xmm3
+	punpckhdq xmm2, xmm3
 	mov edx, esi
-	and edx, 1
+	and edx, 8
 	cmp edx, 1
 	sbb edx, edx
-	mov ecx, edi
-	ror ecx, 8
-	xor edi, ecx
-	and edi, edx
-	xor edi, ecx
+	movd xmm6, edx
+	pshufd xmm6, xmm6, 0
+	pxor xmm4, xmm0
+	pand xmm4, xmm6
+	pxor xmm4, xmm0
+	pxor xmm5, xmm2
+	pand xmm5, xmm6
+	pxor xmm5, xmm2
+	movdqa xmm1, xmm4
+	punpcklqdq xmm4, xmm5
+	punpckhqdq xmm1, xmm5
+	mov edx, esi
+	and edx, 4
+	cmp edx, 1
+	sbb edx, edx
+	movd xmm6, edx
+	pshufd xmm6, xmm6, 0
+	pxor xmm4, xmm1
+	pand xmm4, xmm6
+	pxor xmm4, xmm1
 	mov edx, esi
 	and edx, 2
 	cmp edx, 1
 	sbb edx, edx
-	mov ecx, edi
-	ror ecx, 16
-	xor edi, ecx
-	and edi, edx
-	xor edi, ecx
+	movd xmm6, edx
+	pshufd xmm6, xmm6, 0
+	movdqa xmm0, xmm4
+	psrld xmm0, 16
+	pxor xmm4, xmm0
+	pand xmm4, xmm6
+	pxor xmm4, xmm0
+	mov edx, esi
+	and edx, 1
+	cmp edx, 1
+	sbb edx, edx
+	movd xmm6, edx
+	pshufd xmm6, xmm6, 0
+	movdqa xmm0, xmm4
+	psrld xmm0, 8
+	pxor xmm4, xmm0
+	pand xmm4, xmm6
+	pxor xmm4, xmm0
+	pslld xmm4, 24
+	psrld xmm4, 24
+	pshufd xmm0, xmm4, 245
+	pslld xmm0, 8
+	por xmm4, xmm0
+	pshufd xmm0, xmm4, 2
+	pslld xmm0, 16
+	por xmm4, xmm0
 	mov ecx, DWORD PTR [ebp+24]
-	add ecx, edi
-	mov DWORD PTR [ebp+24], ecx
+	movd xmm0, ecx
+	paddd xmm4, xmm0
+	mov ecx, DWORD PTR [ebp+20]
+	movd xmm0, ecx
+	punpckldq xmm0, xmm4
+	movq QWORD PTR [ebp+20], xmm0
 	mov eax, DWORD PTR [ebp+20]
 	xor eax, DWORD PTR [ebp+24]
 	mov ecx, DWORD PTR [ebp+16]
@@ -5672,280 +5902,395 @@ vg_blowfish_ecb_encrypt:
 	mov esi, DWORD PTR [ebp+16]
 	shr esi, 24
 	and esi, 255
-	mov eax, 255
-	mov edx, esi
-	and edx, 1
-	cmp edx, 1
-	sbb edx, edx
-	mov ecx, eax
-	ror ecx, 24
-	xor eax, ecx
-	and eax, edx
-	xor eax, ecx
-	mov edx, esi
-	and edx, 2
-	cmp edx, 1
-	sbb edx, edx
-	mov ecx, eax
-	ror ecx, 16
-	xor eax, ecx
-	and eax, edx
-	xor eax, ecx
-	mov edi, 0
+	mov edi, esi
+	pxor xmm0, xmm0
+	pxor xmm1, xmm1
+	pxor xmm2, xmm2
+	pxor xmm3, xmm3
 	mov ebx, DWORD PTR [esp+4]
 24:
-	cmp esi, 4
+	cmp edi, 16
 	sbb edx, edx
-	and edx, eax
-	sub esi, 4
-	mov ecx, DWORD PTR [ebx]
-	and ecx, edx
-	or edi, ecx
-	mov ecx, DWORD PTR [ebx+256]
-	and ecx, edx
-	ror ecx, 24
-	or edi, ecx
-	mov ecx, DWORD PTR [ebx+512]
-	and ecx, edx
-	ror ecx, 16
-	or edi, ecx
-	mov ecx, DWORD PTR [ebx+768]
-	and ecx, edx
-	ror ecx, 8
-	or edi, ecx
-	add ebx, 4
+	movd xmm6, edx
+	pshufd xmm6, xmm6, 0
+	sub edi, 16
+	movdqu xmm7, XMMWORD PTR [ebx]
+	pand xmm7, xmm6
+	por xmm0, xmm7
+	movdqu xmm7, XMMWORD PTR [ebx+256]
+	pand xmm7, xmm6
+	por xmm1, xmm7
+	movdqu xmm7, XMMWORD PTR [ebx+512]
+	pand xmm7, xmm6
+	por xmm2, xmm7
+	movdqu xmm7, XMMWORD PTR [ebx+768]
+	pand xmm7, xmm6
+	por xmm3, xmm7
+	add ebx, 16
 	mov ecx, DWORD PTR [esp+4]
 	sub ecx, ebx
 	cmp ecx, -256
 	jne 24b
+	movdqa xmm4, xmm0
+	punpckldq xmm4, xmm1
+	punpckhdq xmm0, xmm1
+	movdqa xmm5, xmm2
+	punpckldq xmm5, xmm3
+	punpckhdq xmm2, xmm3
 	mov edx, esi
-	and edx, 1
+	and edx, 8
 	cmp edx, 1
 	sbb edx, edx
-	mov ecx, edi
-	ror ecx, 8
-	xor edi, ecx
-	and edi, edx
-	xor edi, ecx
+	movd xmm6, edx
+	pshufd xmm6, xmm6, 0
+	pxor xmm4, xmm0
+	pand xmm4, xmm6
+	pxor xmm4, xmm0
+	pxor xmm5, xmm2
+	pand xmm5, xmm6
+	pxor xmm5, xmm2
+	movdqa xmm1, xmm4
+	punpcklqdq xmm4, xmm5
+	punpckhqdq xmm1, xmm5
+	mov edx, esi
+	and edx, 4
+	cmp edx, 1
+	sbb edx, edx
+	movd xmm6, edx
+	pshufd xmm6, xmm6, 0
+	pxor xmm4, xmm1
+	pand xmm4, xmm6
+	pxor xmm4, xmm1
 	mov edx, esi
 	and edx, 2
 	cmp edx, 1
 	sbb edx, edx
-	mov ecx, edi
-	ror ecx, 16
-	xor edi, ecx
-	and edi, edx
-	xor edi, ecx
-	mov DWORD PTR [ebp+24], edi
+	movd xmm6, edx
+	pshufd xmm6, xmm6, 0
+	movdqa xmm0, xmm4
+	psrld xmm0, 16
+	pxor xmm4, xmm0
+	pand xmm4, xmm6
+	pxor xmm4, xmm0
+	mov edx, esi
+	and edx, 1
+	cmp edx, 1
+	sbb edx, edx
+	movd xmm6, edx
+	pshufd xmm6, xmm6, 0
+	movdqa xmm0, xmm4
+	psrld xmm0, 8
+	pxor xmm4, xmm0
+	pand xmm4, xmm6
+	pxor xmm4, xmm0
+	pslld xmm4, 24
+	psrld xmm4, 24
+	pshufd xmm0, xmm4, 245
+	pslld xmm0, 8
+	por xmm4, xmm0
+	pshufd xmm0, xmm4, 2
+	pslld xmm0, 16
+	por xmm4, xmm0
+	mov ecx, DWORD PTR [ebp+20]
+	movd xmm0, ecx
+	punpckldq xmm0, xmm4
+	movq QWORD PTR [ebp+20], xmm0
 	mov esi, DWORD PTR [ebp+16]
 	shr esi, 16
 	and esi, 255
-	mov eax, 255
-	mov edx, esi
-	and edx, 1
-	cmp edx, 1
-	sbb edx, edx
-	mov ecx, eax
-	ror ecx, 24
-	xor eax, ecx
-	and eax, edx
-	xor eax, ecx
-	mov edx, esi
-	and edx, 2
-	cmp edx, 1
-	sbb edx, edx
-	mov ecx, eax
-	ror ecx, 16
-	xor eax, ecx
-	and eax, edx
-	xor eax, ecx
-	mov edi, 0
+	mov edi, esi
+	pxor xmm0, xmm0
+	pxor xmm1, xmm1
+	pxor xmm2, xmm2
+	pxor xmm3, xmm3
 	mov ebx, DWORD PTR [esp+4]
 25:
-	cmp esi, 4
+	cmp edi, 16
 	sbb edx, edx
-	and edx, eax
-	sub esi, 4
-	mov ecx, DWORD PTR [ebx+1024]
-	and ecx, edx
-	or edi, ecx
-	mov ecx, DWORD PTR [ebx+1280]
-	and ecx, edx
-	ror ecx, 24
-	or edi, ecx
-	mov ecx, DWORD PTR [ebx+1536]
-	and ecx, edx
-	ror ecx, 16
-	or edi, ecx
-	mov ecx, DWORD PTR [ebx+1792]
-	and ecx, edx
-	ror ecx, 8
-	or edi, ecx
-	add ebx, 4
+	movd xmm6, edx
+	pshufd xmm6, xmm6, 0
+	sub edi, 16
+	movdqu xmm7, XMMWORD PTR [ebx+1024]
+	pand xmm7, xmm6
+	por xmm0, xmm7
+	movdqu xmm7, XMMWORD PTR [ebx+1280]
+	pand xmm7, xmm6
+	por xmm1, xmm7
+	movdqu xmm7, XMMWORD PTR [ebx+1536]
+	pand xmm7, xmm6
+	por xmm2, xmm7
+	movdqu xmm7, XMMWORD PTR [ebx+1792]
+	pand xmm7, xmm6
+	por xmm3, xmm7
+	add ebx, 16
 	mov ecx, DWORD PTR [esp+4]
 	sub ecx, ebx
 	cmp ecx, -256
 	jne 25b
+	movdqa xmm4, xmm0
+	punpckldq xmm4, xmm1
+	punpckhdq xmm0, xmm1
+	movdqa xmm5, xmm2
+	punpckldq xmm5, xmm3
+	punpckhdq xmm2, xmm3
 	mov edx, esi
-	and edx, 1
+	and edx, 8
 	cmp edx, 1
 	sbb edx, edx
-	mov ecx, edi
-	ror ecx, 8
-	xor edi, ecx
-	and edi, edx
-	xor edi, ecx
+	movd xmm6, edx
+	pshufd xmm6, xmm6, 0
+	pxor xmm4, xmm0
+	pand xmm4, xmm6
+	pxor xmm4, xmm0
+	pxor xmm5, xmm2
+	pand xmm5, xmm6
+	pxor xmm5, xmm2
+	movdqa xmm1, xmm4
+	punpcklqdq xmm4, xmm5
+	punpckhqdq xmm1, xmm5
+	mov edx, esi
+	and edx, 4
+	cmp edx, 1
+	sbb edx, edx
+	movd xmm6, edx
+	pshufd xmm6, xmm6, 0
+	pxor xmm4, xmm1
+	pand xmm4, xmm6
+	pxor xmm4, xmm1
 	mov edx, esi
 	and edx, 2
 	cmp edx, 1
 	sbb edx, edx
-	mov ecx, edi
-	ror ecx, 16
-	xor edi, ecx
-	and edi, edx
-	xor edi, ecx
+	movd xmm6, edx
+	pshufd xmm6, xmm6, 0
+	movdqa xmm0, xmm4
+	psrld xmm0, 16
+	pxor xmm4, xmm0
+	pand xmm4, xmm6
+	pxor xmm4, xmm0
+	mov edx, esi
+	and edx, 1
+	cmp edx, 1
+	sbb edx, edx
+	movd xmm6, edx
+	pshufd xmm6, xmm6, 0
+	movdqa xmm0, xmm4
+	psrld xmm0, 8
+	pxor xmm4, xmm0
+	pand xmm4, xmm6
+	pxor xmm4, xmm0
+	pslld xmm4, 24
+	psrld xmm4, 24
+	pshufd xmm0, xmm4, 245
+	pslld xmm0, 8
+	por xmm4, xmm0
+	pshufd xmm0, xmm4, 2
+	pslld xmm0, 16
+	por xmm4, xmm0
 	mov ecx, DWORD PTR [ebp+24]
-	add ecx, edi
-	mov DWORD PTR [ebp+24], ecx
+	movd xmm0, ecx
+	paddd xmm4, xmm0
+	mov ecx, DWORD PTR [ebp+20]
+	movd xmm0, ecx
+	punpckldq xmm0, xmm4
+	movq QWORD PTR [ebp+20], xmm0
 	mov esi, DWORD PTR [ebp+16]
 	shr esi, 8
 	and esi, 255
-	mov eax, 255
-	mov edx, esi
-	and edx, 1
-	cmp edx, 1
-	sbb edx, edx
-	mov ecx, eax
-	ror ecx, 24
-	xor eax, ecx
-	and eax, edx
-	xor eax, ecx
-	mov edx, esi
-	and edx, 2
-	cmp edx, 1
-	sbb edx, edx
-	mov ecx, eax
-	ror ecx, 16
-	xor eax, ecx
-	and eax, edx
-	xor eax, ecx
-	mov edi, 0
+	mov edi, esi
+	pxor xmm0, xmm0
+	pxor xmm1, xmm1
+	pxor xmm2, xmm2
+	pxor xmm3, xmm3
 	mov ebx, DWORD PTR [esp+4]
 26:
-	cmp esi, 4
+	cmp edi, 16
 	sbb edx, edx
-	and edx, eax
-	sub esi, 4
-	mov ecx, DWORD PTR [ebx+2048]
-	and ecx, edx
-	or edi, ecx
-	mov ecx, DWORD PTR [ebx+2304]
-	and ecx, edx
-	ror ecx, 24
-	or edi, ecx
-	mov ecx, DWORD PTR [ebx+2560]
-	and ecx, edx
-	ror ecx, 16
-	or edi, ecx
-	mov ecx, DWORD PTR [ebx+2816]
-	and ecx, edx
-	ror ecx, 8
-	or edi, ecx
-	add ebx, 4
+	movd xmm6, edx
+	pshufd xmm6, xmm6, 0
+	sub edi, 16
+	movdqu xmm7, XMMWORD PTR [ebx+2048]
+	pand xmm7, xmm6
+	por xmm0, xmm7
+	movdqu xmm7, XMMWORD PTR [ebx+2304]
+	pand xmm7, xmm6
+	por xmm1, xmm7
+	movdqu xmm7, XMMWORD PTR [ebx+2560]
+	pand xmm7, xmm6
+	por xmm2, xmm7
+	movdqu xmm7, XMMWORD PTR [ebx+2816]
+	pand xmm7, xmm6
+	por xmm3, xmm7
+	add ebx, 16
 	mov ecx, DWORD PTR [esp+4]
 	sub ecx, ebx
 	cmp ecx, -256
 	jne 26b
+	movdqa xmm4, xmm0
+	punpckldq xmm4, xmm1
+	punpckhdq xmm0, xmm1
+	movdqa xmm5, xmm2
+	punpckldq xmm5, xmm3
+	punpckhdq xmm2, xmm3
 	mov edx, esi
-	and edx, 1
+	and edx, 8
 	cmp edx, 1
 	sbb edx, edx
-	mov ecx, edi
-	ror ecx, 8
-	xor edi, ecx
-	and edi, edx
-	xor edi, ecx
+	movd xmm6, edx
+	pshufd xmm6, xmm6, 0
+	pxor xmm4, xmm0
+	pand xmm4, xmm6
+	pxor xmm4, xmm0
+	pxor xmm5, xmm2
+	pand xmm5, xmm6
+	pxor xmm5, xmm2
+	movdqa xmm1, xmm4
+	punpcklqdq xmm4, xmm5
+	punpckhqdq xmm1, xmm5
+	mov edx, esi
+	and edx, 4
+	cmp edx, 1
+	sbb edx, edx
+	movd xmm6, edx
+	pshufd xmm6, xmm6, 0
+	pxor xmm4, xmm1
+	pand xmm4, xmm6
+	pxor xmm4, xmm1
 	mov edx, esi
 	and edx, 2
 	cmp edx, 1
 	sbb edx, edx
-	mov ecx, edi
-	ror ecx, 16
-	xor edi, ecx
-	and edi, edx
-	xor edi, ecx
+	movd xmm6, edx
+	pshufd xmm6, xmm6, 0
+	movdqa xmm0, xmm4
+	psrld xmm0, 16
+	pxor xmm4, xmm0
+	pand xmm4, xmm6
+	pxor xmm4, xmm0
+	mov edx, esi
+	and edx, 1
+	cmp edx, 1
+	sbb edx, edx
+	movd xmm6, edx
+	pshufd xmm6, xmm6, 0
+	movdqa xmm0, xmm4
+	psrld xmm0, 8
+	pxor xmm4, xmm0
+	pand xmm4, xmm6
+	pxor xmm4, xmm0
+	pslld xmm4, 24
+	psrld xmm4, 24
+	pshufd xmm0, xmm4, 245
+	pslld xmm0, 8
+	por xmm4, xmm0
+	pshufd xmm0, xmm4, 2
+	pslld xmm0, 16
+	por xmm4, xmm0
 	mov ecx, DWORD PTR [ebp+24]
-	xor ecx, edi
-	mov DWORD PTR [ebp+24], ecx
+	movd xmm0, ecx
+	pxor xmm4, xmm0
+	mov ecx, DWORD PTR [ebp+20]
+	movd xmm0, ecx
+	punpckldq xmm0, xmm4
+	movq QWORD PTR [ebp+20], xmm0
 	mov esi, DWORD PTR [ebp+16]
 	and esi, 255
-	mov eax, 255
-	mov edx, esi
-	and edx, 1
-	cmp edx, 1
-	sbb edx, edx
-	mov ecx, eax
-	ror ecx, 24
-	xor eax, ecx
-	and eax, edx
-	xor eax, ecx
-	mov edx, esi
-	and edx, 2
-	cmp edx, 1
-	sbb edx, edx
-	mov ecx, eax
-	ror ecx, 16
-	xor eax, ecx
-	and eax, edx
-	xor eax, ecx
-	mov edi, 0
+	mov edi, esi
+	pxor xmm0, xmm0
+	pxor xmm1, xmm1
+	pxor xmm2, xmm2
+	pxor xmm3, xmm3
 	mov ebx, DWORD PTR [esp+4]
 27:
-	cmp esi, 4
+	cmp edi, 16
 	sbb edx, edx
-	and edx, eax
-	sub esi, 4
-	mov ecx, DWORD PTR [ebx+3072]
-	and ecx, edx
-	or edi, ecx
-	mov ecx, DWORD PTR [ebx+3328]
-	and ecx, edx
-	ror ecx, 24
-	or edi, ecx
-	mov ecx, DWORD PTR [ebx+3584]
-	and ecx, edx
-	ror ecx, 16
-	or edi, ecx
-	mov ecx, DWORD PTR [ebx+3840]
-	and ecx, edx
-	ror ecx, 8
-	or edi, ecx
-	add ebx, 4
+	movd xmm6, edx
+	pshufd xmm6, xmm6, 0
+	sub edi, 16
+	movdqu xmm7, XMMWORD PTR [ebx+3072]
+	pand xmm7, xmm6
+	por xmm0, xmm7
+	movdqu xmm7, XMMWORD PTR [ebx+3328]
+	pand xmm7, xmm6
+	por xmm1, xmm7
+	movdqu xmm7, XMMWORD PTR [ebx+3584]
+	pand xmm7, xmm6
+	por xmm2, xmm7
+	movdqu xmm7, XMMWORD PTR [ebx+3840]
+	pand xmm7, xmm6
+	por xmm3, xmm7
+	add ebx, 16
 	mov ecx, DWORD PTR [esp+4]
 	sub ecx, ebx
 	cmp ecx, -256
 	jne 27b
+	movdqa xmm4, xmm0
+	punpckldq xmm4, xmm1
+	punpckhdq xmm0, xmm1
+	movdqa xmm5, xmm2
+	punpckldq xmm5, xmm3
+	punpckhdq xmm2, xmm3
 	mov edx, esi
-	and edx, 1
+	and edx, 8
 	cmp edx, 1
 	sbb edx, edx
-	mov ecx, edi
-	ror ecx, 8
-	xor edi, ecx
-	and edi, edx
-	xor edi, ecx
+	movd xmm6, edx
+	pshufd xmm6, xmm6, 0
+	pxor xmm4, xmm0
+	pand xmm4, xmm6
+	pxor xmm4, xmm0
+	pxor xmm5, xmm2
+	pand xmm5, xmm6
+	pxor xmm5, xmm2
+	movdqa xmm1, xmm4
+	punpcklqdq xmm4, xmm5
+	punpckhqdq xmm1, xmm5
+	mov edx, esi
+	and edx, 4
+	cmp edx, 1
+	sbb edx, edx
+	movd xmm6, edx
+	pshufd xmm6, xmm6, 0
+	pxor xmm4, xmm1
+	pand xmm4, xmm6
+	pxor xmm4, xmm1
 	mov edx, esi
 	and edx, 2
 	cmp edx, 1
 	sbb edx, edx
-	mov ecx, edi
-	ror ecx, 16
-	xor edi, ecx
-	and edi, edx
-	xor edi, ecx
+	movd xmm6, edx
+	pshufd xmm6, xmm6, 0
+	movdqa xmm0, xmm4
+	psrld xmm0, 16
+	pxor xmm4, xmm0
+	pand xmm4, xmm6
+	pxor xmm4, xmm0
+	mov edx, esi
+	and edx, 1
+	cmp edx, 1
+	sbb edx, edx
+	movd xmm6, edx
+	pshufd xmm6, xmm6, 0
+	movdqa xmm0, xmm4
+	psrld xmm0, 8
+	pxor xmm4, xmm0
+	pand xmm4, xmm6
+	pxor xmm4, xmm0
+	pslld xmm4, 24
+	psrld xmm4, 24
+	pshufd xmm0, xmm4, 245
+	pslld xmm0, 8
+	por xmm4, xmm0
+	pshufd xmm0, xmm4, 2
+	pslld xmm0, 16
+	por xmm4, xmm0
 	mov ecx, DWORD PTR [ebp+24]
-	add ecx, edi
-	mov DWORD PTR [ebp+24], ecx
+	movd xmm0, ecx
+	paddd xmm4, xmm0
+	mov ecx, DWORD PTR [ebp+20]
+	movd xmm0, ecx
+	punpckldq xmm0, xmm4
+	movq QWORD PTR [ebp+20], xmm0
 	mov eax, DWORD PTR [ebp+20]
 	xor eax, DWORD PTR [ebp+24]
 	mov ecx, DWORD PTR [ebp+16]
@@ -6712,280 +7057,395 @@ vg_blowfish_ecb_decrypt:
 	mov esi, DWORD PTR [ebp+16]
 	shr esi, 24
 	and esi, 255
-	mov eax, 255
-	mov edx, esi
-	and edx, 1
-	cmp edx, 1
-	sbb edx, edx
-	mov ecx, eax
-	ror ecx, 24
-	xor eax, ecx
-	and eax, edx
-	xor eax, ecx
-	mov edx, esi
-	and edx, 2
-	cmp edx, 1
-	sbb edx, edx
-	mov ecx, eax
-	ror ecx, 16
-	xor eax, ecx
-	and eax, edx
-	xor eax, ecx
-	mov edi, 0
+	mov edi, esi
+	pxor xmm0, xmm0
+	pxor xmm1, xmm1
+	pxor xmm2, xmm2
+	pxor xmm3, xmm3
 	mov ebx, DWORD PTR [esp+4]
 24:
-	cmp esi, 4
+	cmp edi, 16
 	sbb edx, edx
-	and edx, eax
-	sub esi, 4
-	mov ecx, DWORD PTR [ebx]
-	and ecx, edx
-	or edi, ecx
-	mov ecx, DWORD PTR [ebx+256]
-	and ecx, edx
-	ror ecx, 24
-	or edi, ecx
-	mov ecx, DWORD PTR [ebx+512]
-	and ecx, edx
-	ror ecx, 16
-	or edi, ecx
-	mov ecx, DWORD PTR [ebx+768]
-	and ecx, edx
-	ror ecx, 8
-	or edi, ecx
-	add ebx, 4
+	movd xmm6, edx
+	pshufd xmm6, xmm6, 0
+	sub edi, 16
+	movdqu xmm7, XMMWORD PTR [ebx]
+	pand xmm7, xmm6
+	por xmm0, xmm7
+	movdqu xmm7, XMMWORD PTR [ebx+256]
+	pand xmm7, xmm6
+	por xmm1, xmm7
+	movdqu xmm7, XMMWORD PTR [ebx+512]
+	pand xmm7, xmm6
+	por xmm2, xmm7
+	movdqu xmm7, XMMWORD PTR [ebx+768]
+	pand xmm7, xmm6
+	por xmm3, xmm7
+	add ebx, 16
 	mov ecx, DWORD PTR [esp+4]
 	sub ecx, ebx
 	cmp ecx, -256
 	jne 24b
+	movdqa xmm4, xmm0
+	punpckldq xmm4, xmm1
+	punpckhdq xmm0, xmm1
+	movdqa xmm5, xmm2
+	punpckldq xmm5, xmm3
+	punpckhdq xmm2, xmm3
 	mov edx, esi
-	and edx, 1
+	and edx, 8
 	cmp edx, 1
 	sbb edx, edx
-	mov ecx, edi
-	ror ecx, 8
-	xor edi, ecx
-	and edi, edx
-	xor edi, ecx
+	movd xmm6, edx
+	pshufd xmm6, xmm6, 0
+	pxor xmm4, xmm0
+	pand xmm4, xmm6
+	pxor xmm4, xmm0
+	pxor xmm5, xmm2
+	pand xmm5, xmm6
+	pxor xmm5, xmm2
+	movdqa xmm1, xmm4
+	punpcklqdq xmm4, xmm5
+	punpckhqdq xmm1, xmm5
+	mov edx, esi
+	and edx, 4
+	cmp edx, 1
+	sbb edx, edx
+	movd xmm6, edx
+	pshufd xmm6, xmm6, 0
+	pxor xmm4, xmm1
+	pand xmm4, xmm6
+	pxor xmm4, xmm1
 	mov edx, esi
 	and edx, 2
 	cmp edx, 1
 	sbb edx, edx
-	mov ecx, edi
-	ror ecx, 16
-	xor edi, ecx
-	and edi, edx
-	xor edi, ecx
-	mov DWORD PTR [ebp+24], edi
+	movd xmm6, edx
+	pshufd xmm6, xmm6, 0
+	movdqa xmm0, xmm4
+	psrld xmm0, 16
+	pxor xmm4, xmm0
+	pand xmm4, xmm6
+	pxor xmm4, xmm0
+	mov edx, esi
+	and edx, 1
+	cmp edx, 1
+	sbb edx, edx
+	movd xmm6, edx
+	pshufd xmm6, xmm6, 0
+	movdqa xmm0, xmm4
+	psrld xmm0, 8
+	pxor xmm4, xmm0
+	pand xmm4, xmm6
+	pxor xmm4, xmm0
+	pslld xmm4, 24
+	psrld xmm4, 24
+	pshufd xmm0, xmm4, 245
+	pslld xmm0, 8
+	por xmm4, xmm0
+	pshufd xmm0, xmm4, 2
+	pslld xmm0, 16
+	por xmm4, xmm0
+	mov ecx, DWORD PTR [ebp+20]
+	movd xmm0, ecx
+	punpckldq xmm0, xmm4
+	movq QWORD PTR [ebp+20], xmm0
 	mov esi, DWORD PTR [ebp+16]
 	shr esi, 16
 	and esi, 255
-	mov eax, 255
-	mov edx, esi
-	and edx, 1
-	cmp edx, 1
-	sbb edx, edx
-	mov ecx, eax
-	ror ecx, 24
-	xor eax, ecx
-	and eax, edx
-	xor eax, ecx
-	mov edx, esi
-	and edx, 2
-	cmp edx, 1
-	sbb edx, edx
-	mov ecx, eax
-	ror ecx, 16
-	xor eax, ecx
-	and eax, edx
-	xor eax, ecx
-	mov edi, 0
+	mov edi, esi
+	pxor xmm0, xmm0
+	pxor xmm1, xmm1
+	pxor xmm2, xmm2
+	pxor xmm3, xmm3
 	mov ebx, DWORD PTR [esp+4]
 25:
-	cmp esi, 4
+	cmp edi, 16
 	sbb edx, edx
-	and edx, eax
-	sub esi, 4
-	mov ecx, DWORD PTR [ebx+1024]
-	and ecx, edx
-	or edi, ecx
-	mov ecx, DWORD PTR [ebx+1280]
-	and ecx, edx
-	ror ecx, 24
-	or edi, ecx
-	mov ecx, DWORD PTR [ebx+1536]
-	and ecx, edx
-	ror ecx, 16
-	or edi, ecx
-	mov ecx, DWORD PTR [ebx+1792]
-	and ecx, edx
-	ror ecx, 8
-	or edi, ecx
-	add ebx, 4
+	movd xmm6, edx
+	pshufd xmm6, xmm6, 0
+	sub edi, 16
+	movdqu xmm7, XMMWORD PTR [ebx+1024]
+	pand xmm7, xmm6
+	por xmm0, xmm7
+	movdqu xmm7, XMMWORD PTR [ebx+1280]
+	pand xmm7, xmm6
+	por xmm1, xmm7
+	movdqu xmm7, XMMWORD PTR [ebx+1536]
+	pand xmm7, xmm6
+	por xmm2, xmm7
+	movdqu xmm7, XMMWORD PTR [ebx+1792]
+	pand xmm7, xmm6
+	por xmm3, xmm7
+	add ebx, 16
 	mov ecx, DWORD PTR [esp+4]
 	sub ecx, ebx
 	cmp ecx, -256
 	jne 25b
+	movdqa xmm4, xmm0
+	punpckldq xmm4, xmm1
+	punpckhdq xmm0, xmm1
+	movdqa xmm5, xmm2
+	punpckldq xmm5, xmm3
+	punpckhdq xmm2, xmm3
 	mov edx, esi
-	and edx, 1
+	and edx, 8
 	cmp edx, 1
 	sbb edx, edx
-	mov ecx, edi
-	ror ecx, 8
-	xor edi, ecx
-	and edi, edx
-	xor edi, ecx
+	movd xmm6, edx
+	pshufd xmm6, xmm6, 0
+	pxor xmm4, xmm0
+	pand xmm4, xmm6
+	pxor xmm4, xmm0
+	pxor xmm5, xmm2
+	pand xmm5, xmm6
+	pxor xmm5, xmm2
+	movdqa xmm1, xmm4
+	punpcklqdq xmm4, xmm5
+	punpckhqdq xmm1, xmm5
+	mov edx, esi
+	and edx, 4
+	cmp edx, 1
+	sbb edx, edx
+	movd xmm6, edx
+	pshufd xmm6, xmm6, 0
+	pxor xmm4, xmm1
+	pand xmm4, xmm6
+	pxor xmm4, xmm1
 	mov edx, esi
 	and edx, 2
 	cmp edx, 1
 	sbb edx, edx
-	mov ecx, edi
-	ror ecx, 16
-	xor edi, ecx
-	and edi, edx
-	xor edi, ecx
+	movd xmm6, edx
+	pshufd xmm6, xmm6, 0
+	movdqa xmm0, xmm4
+	psrld xmm0, 16
+	pxor xmm4, xmm0
+	pand xmm4, xmm6
+	pxor xmm4, xmm0
+	mov edx, esi
+	and edx, 1
+	cmp edx, 1
+	sbb edx, edx
+	movd xmm6, edx
+	pshufd xmm6, xmm6, 0
+	movdqa xmm0, xmm4
+	psrld xmm0, 8
+	pxor xmm4, xmm0
+	pand xmm4, xmm6
+	pxor xmm4, xmm0
+	pslld xmm4, 24
+	psrld xmm4, 24
+	pshufd xmm0, xmm4, 245
+	pslld xmm0, 8
+	por xmm4, xmm0
+	pshufd xmm0, xmm4, 2
+	pslld xmm0, 16
+	por xmm4, xmm0
 	mov ecx, DWORD PTR [ebp+24]
-	add ecx, edi
-	mov DWORD PTR [ebp+24], ecx
+	movd xmm0, ecx
+	paddd xmm4, xmm0
+	mov ecx, DWORD PTR [ebp+20]
+	movd xmm0, ecx
+	punpckldq xmm0, xmm4
+	movq QWORD PTR [ebp+20], xmm0
 	mov esi, DWORD PTR [ebp+16]
 	shr esi, 8
 	and esi, 255
-	mov eax, 255
-	mov edx, esi
-	and edx, 1
-	cmp edx, 1
-	sbb edx, edx
-	mov ecx, eax
-	ror ecx, 24
-	xor eax, ecx
-	and eax, edx
-	xor eax, ecx
-	mov edx, esi
-	and edx, 2
-	cmp edx, 1
-	sbb edx, edx
-	mov ecx, eax
-	ror ecx, 16
-	xor eax, ecx
-	and eax, edx
-	xor eax, ecx
-	mov edi, 0
+	mov edi, esi
+	pxor xmm0, xmm0
+	pxor xmm1, xmm1
+	pxor xmm2, xmm2
+	pxor xmm3, xmm3
 	mov ebx, DWORD PTR [esp+4]
 26:
-	cmp esi, 4
+	cmp edi, 16
 	sbb edx, edx
-	and edx, eax
-	sub esi, 4
-	mov ecx, DWORD PTR [ebx+2048]
-	and ecx, edx
-	or edi, ecx
-	mov ecx, DWORD PTR [ebx+2304]
-	and ecx, edx
-	ror ecx, 24
-	or edi, ecx
-	mov ecx, DWORD PTR [ebx+2560]
-	and ecx, edx
-	ror ecx, 16
-	or edi, ecx
-	mov ecx, DWORD PTR [ebx+2816]
-	and ecx, edx
-	ror ecx, 8
-	or edi, ecx
-	add ebx, 4
+	movd xmm6, edx
+	pshufd xmm6, xmm6, 0
+	sub edi, 16
+	movdqu xmm7, XMMWORD PTR [ebx+2048]
+	pand xmm7, xmm6
+	por xmm0, xmm7
+	movdqu xmm7, XMMWORD PTR [ebx+2304]
+	pand xmm7, xmm6
+	por xmm1, xmm7
+	movdqu xmm7, XMMWORD PTR [ebx+2560]
+	pand xmm7, xmm6
+	por xmm2, xmm7
+	movdqu xmm7, XMMWORD PTR [ebx+2816]
+	pand xmm7, xmm6
+	por xmm3, xmm7
+	add ebx, 16
 	mov ecx, DWORD PTR [esp+4]
 	sub ecx, ebx
 	cmp ecx, -256
 	jne 26b
+	movdqa xmm4, xmm0
+	punpckldq xmm4, xmm1
+	punpckhdq xmm0, xmm1
+	movdqa xmm5, xmm2
+	punpckldq xmm5, xmm3
+	punpckhdq xmm2, xmm3
 	mov edx, esi
-	and edx, 1
+	and edx, 8
 	cmp edx, 1
 	sbb edx, edx
-	mov ecx, edi
-	ror ecx, 8
-	xor edi, ecx
-	and edi, edx
-	xor edi, ecx
+	movd xmm6, edx
+	pshufd xmm6, xmm6, 0
+	pxor xmm4, xmm0
+	pand xmm4, xmm6
+	pxor xmm4, xmm0
+	pxor xmm5, xmm2
+	pand xmm5, xmm6
+	pxor xmm5, xmm2
+	movdqa xmm1, xmm4
+	punpcklqdq xmm4, xmm5
+	punpckhqdq xmm1, xmm5
+	mov edx, esi
+	and edx, 4
+	cmp edx, 1
+	sbb edx, edx
+	movd xmm6, edx
+	pshufd xmm6, xmm6, 0
+	pxor xmm4, xmm1
+	pand xmm4, xmm6
+	pxor xmm4, xmm1
 	mov edx, esi
 	and edx, 2
 	cmp edx, 1
 	sbb edx, edx
-	mov ecx, edi
-	ror ecx, 16
-	xor edi, ecx
-	and edi, edx
-	xor edi, ecx
+	movd xmm6, edx
+	pshufd xmm6, xmm6, 0
+	movdqa xmm0, xmm4
+	psrld xmm0, 16
+	pxor xmm4, xmm0
+	pand xmm4, xmm6
+	pxor xmm4, xmm0
+	mov edx, esi
+	and edx, 1
+	cmp edx, 1
+	sbb edx, edx
+	movd xmm6, edx
+	pshufd xmm6, xmm6, 0
+	movdqa xmm0, xmm4
+	psrld xmm0, 8
+	pxor xmm4, xmm0
+	pand xmm4, xmm6
+	pxor xmm4, xmm0
+	pslld xmm4, 24
+	psrld xmm4, 24
+	pshufd xmm0, xmm4, 245
+	pslld xmm0, 8
+	por xmm4, xmm0
+	pshufd xmm0, xmm4, 2
+	pslld xmm0, 16
+	por xmm4, xmm0
 	mov ecx, DWORD PTR [ebp+24]
-	xor ecx, edi
-	mov DWORD PTR [ebp+24], ecx
+	movd xmm0, ecx
+	pxor xmm4, xmm0
+	mov ecx, DWORD PTR [ebp+20]
+	movd xmm0, ecx
+	punpckldq xmm0, xmm4
+	movq QWORD PTR [ebp+20], xmm0
 	mov esi, DWORD PTR [ebp+16]
 	and esi, 255
-	mov eax, 255
-	mov edx, esi
-	and edx, 1
-	cmp edx, 1
-	sbb edx, edx
-	mov ecx, eax
-	ror ecx, 24
-	xor eax, ecx
-	and eax, edx
-	xor eax, ecx
-	mov edx, esi
-	and edx, 2
-	cmp edx, 1
-	sbb edx, edx
-	mov ecx, eax
-	ror ecx, 16
-	xor eax, ecx
-	and eax, edx
-	xor eax, ecx
-	mov edi, 0
+	mov edi, esi
+	pxor xmm0, xmm0
+	pxor xmm1, xmm1
+	pxor xmm2, xmm2
+	pxor xmm3, xmm3
 	mov ebx, DWORD PTR [esp+4]
 27:
-	cmp esi, 4
+	cmp edi, 16
 	sbb edx, edx
-	and edx, eax
-	sub esi, 4
-	mov ecx, DWORD PTR [ebx+3072]
-	and ecx, edx
-	or edi, ecx
-	mov ecx, DWORD PTR [ebx+3328]
-	and ecx, edx
-	ror ecx, 24
-	or edi, ecx
-	mov ecx, DWORD PTR [ebx+3584]
-	and ecx, edx
-	ror ecx, 16
-	or edi, ecx
-	mov ecx, DWORD PTR [ebx+3840]
-	and ecx, edx
-	ror ecx, 8
-	or edi, ecx
-	add ebx, 4
+	movd xmm6, edx
+	pshufd xmm6, xmm6, 0
+	sub edi, 16
+	movdqu xmm7, XMMWORD PTR [ebx+3072]
+	pand xmm7, xmm6
+	por xmm0, xmm7
+	movdqu xmm7, XMMWORD PTR [ebx+3328]
+	pand xmm7, xmm6
+	por xmm1, xmm7
+	movdqu xmm7, XMMWORD PTR [ebx+3584]
+	pand xmm7, xmm6
+	por xmm2, xmm7
+	movdqu xmm7, XMMWORD PTR [ebx+3840]
+	pand xmm7, xmm6
+	por xmm3, xmm7
+	add ebx, 16
 	mov ecx, DWORD PTR [esp+4]
 	sub ecx, ebx
 	cmp ecx, -256
 	jne 27b
+	movdqa xmm4, xmm0
+	punpckldq xmm4, xmm1
+	punpckhdq xmm0, xmm1
+	movdqa xmm5, xmm2
+	punpckldq xmm5, xmm3
+	punpckhdq xmm2, xmm3
 	mov edx, esi
-	and edx, 1
+	and edx, 8
 	cmp edx, 1
 	sbb edx, edx
-	mov ecx, edi
-	ror ecx, 8
-	xor edi, ecx
-	and edi, edx
-	xor edi, ecx
+	movd xmm6, edx
+	pshufd xmm6, xmm6, 0
+	pxor xmm4, xmm0
+	pand xmm4, xmm6
+	pxor xmm4, xmm0
+	pxor xmm5, xmm2
+	pand xmm5, xmm6
+	pxor xmm5, xmm2
+	movdqa xmm1, xmm4
+	punpcklqdq xmm4, xmm5
+	punpckhqdq xmm1, xmm5
+	mov edx, esi
+	and edx, 4
+	cmp edx, 1
+	sbb edx, edx
+	movd xmm6, edx
+	pshufd xmm6, xmm6, 0
+	pxor xmm4, xmm1
+	pand xmm4, xmm6
+	pxor xmm4, xmm1
 	mov edx, esi
 	and edx, 2
 	cmp edx, 1
 	sbb edx, edx
-	mov ecx, edi
-	ror ecx, 16
-	xor edi, ecx
-	and edi, edx
-	xor edi, ecx
+	movd xmm6, edx
+	pshufd xmm6, xmm6, 0
+	movdqa xmm0, xmm4
+	psrld xmm0, 16
+	pxor xmm4, xmm0
+	pand xmm4, xmm6
+	pxor xmm4, xmm0
+	mov edx, esi
+	and edx, 1
+	cmp edx, 1
+	sbb edx, edx
+	movd xmm6, edx
+	pshufd xmm6, xmm6, 0
+	movdqa xmm0, xmm4
+	psrld xmm0, 8
+	pxor xmm4, xmm0
+	pand xmm4, xmm6
+	pxor xmm4, xmm0
+	pslld xmm4, 24
+	psrld xmm4, 24
+	pshufd xmm0, xmm4, 245
+	pslld xmm0, 8
+	por xmm4, xmm0
+	pshufd xmm0, xmm4, 2
+	pslld xmm0, 16
+	por xmm4, xmm0
 	mov ecx, DWORD PTR [ebp+24]
-	add ecx, edi
-	mov DWORD PTR [ebp+24], ecx
+	movd xmm0, ecx
+	paddd xmm4, xmm0
+	mov ecx, DWORD PTR [ebp+20]
+	movd xmm0, ecx
+	punpckldq xmm0, xmm4
+	movq QWORD PTR [ebp+20], xmm0
 	mov eax, DWORD PTR [ebp+20]
 	xor eax, DWORD PTR [ebp+24]
 	mov ecx, DWORD PTR [ebp+16]

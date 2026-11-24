@@ -6,28 +6,29 @@ public import VerifiedGarbage.Impl.Blowfish.Table
 /-!
 # Blowfish on baseline x86 (32-bit)
 
-As on ARMv7 (`Impl/Blowfish/Arm.lean`): one block at a time, and an S-box
-lookup reads every entry of the S-box's four byte planes, a row of four
-entries (a word of each plane) at a time, keeping the index's byte lane of
-the row that holds it under a mask made by `cmp` and `sbb`, and ORs the
-masked words into one accumulator, plane `b`'s rotated left by `8b`; two
-rotations selected by masks of the index's lane then give the entry. Every
-address and branch is a public counter or pointer; the index is only ever an
-operand of the masks' arithmetic.
+One block at a time, and an S-box lookup reads every entry of the S-box's
+four byte planes, a row of sixteen entries (16 bytes of each plane) at a time,
+in SSE2 registers: the row that holds the index is kept under a mask made by
+`cmp` and `sbb` and ORed into a register for each plane, and the index's low
+four bits then choose its byte of each (`lookupEnd`). Every address and branch
+is a public counter or pointer; the index is only ever an operand of the
+masks' arithmetic.
 
 Every argument is on the stack (cdecl): the schedule's address is read from
 it where needed (at `esp + sch`, 4 for ECB and 12 for key expansion). The
 working space `scratch` is at `ebp` throughout: our caller's `ebx`, `esi`,
 `edi` and `ebp` at 0–15, the halves xL and xR at 16 and 20, F at 24, the
 P-array pointer at 28, and the functions' own pointer and counter at 32 and
-36. During a lookup, `esi` holds the index less four times the rows read so
-far, `edi` the accumulator, `edx` the row's mask, `eax` the index's lane
-mask, `ebx` the row's address and `ecx` a temporary.
+36. During a lookup, `esi` holds the index, `edi` the index less sixteen times
+the rows read so far, `edx` the row's mask, `ebx` the row's address, `ecx` is a
+temporary, `xmm0`–`xmm3` hold the planes' rows found, and `xmm6` and `xmm7`
+the mask and a row. F is written with xR, unchanged, below it, as no
+instruction stores four bytes of an XMM register.
 
 `cipher sch up` is the block function: the halves at `ebp + 16` and
 `ebp + 20` become their encryption (`up`) or decryption under the schedule
 whose address is at `esp + sch`, changing only `eax`–`edi` but `ebp`, the
-flags and the working space's bytes 16–31.
+XMM registers, the flags and the working space's bytes 16–31.
 
 The pointer and counter stay public for the taint analysis that proves
 constant time as long as nothing secret is stored at an address it cannot
@@ -68,47 +69,77 @@ def index (j : Nat) : List Instr :=
   [.mov .esi (.mem (at_ .ebp xlOff))] ++
     (if j < 3 then [.shift .shr .esi (8 * (3 - j))] else []) ++ [.alu .and .esi (imm 255)]
 
-/-- `x` rotated right by `a` if bit `c` (1 or 2) of `esi` is set: `edx` is all
-ones if it is clear, and `x := ((x XOR r) AND edx) XOR r` for the rotation
-`r`. -/
-def condRot (x : Reg) (c a : Nat) : List Instr :=
+/-- An XMM operation `d := d op r`. -/
+def xb (op : XBinOp) (d r : XReg) : Instr := .xop (.bin op d r)
+
+/-- `xmm6 := ` all ones if the bit `c` of `esi` is clear, nothing if it is set. -/
+def bitMask (c : Nat) : List Instr :=
   [.mov .edx (.reg .esi), .alu .and .edx (imm c), .alu .cmp .edx (imm 1), .alu .sbb .edx (.reg .edx),
-   .mov .ecx (.reg x), .shift .ror .ecx a, .alu .xor x (.reg .ecx), .alu .and x (.reg .edx),
-   .alu .xor x (.reg .ecx)]
+   .xop (.movd .xmm6 .edx), .xop (.pshufd .xmm6 .xmm6 0)]
 
-/-- The lane mask `0xFF <<< 8L` for the index's lane `L`, the accumulator
-and the row pointer. -/
+/-- `x := y` where `xmm6` is nothing; `x` where it is all ones. -/
+def orElse (x y : XReg) : List Instr := [xb .pxor x y, xb .pand x .xmm6, xb .pxor x y]
+
+/-- The index's row count, the planes' registers and the row pointer. -/
 def lookupStart (sch : Nat) : List Instr :=
-  [.mov .eax (imm 255)] ++ condRot .eax 1 24 ++ condRot .eax 2 16 ++
-    [.mov .edi (imm 0), .mov .ebx (.mem (at_ .esp sch))]
+  [.mov .edi (.reg .esi), xb .pxor .xmm0 .xmm0, xb .pxor .xmm1 .xmm1, xb .pxor .xmm2 .xmm2,
+   xb .pxor .xmm3 .xmm3, .mov .ebx (.mem (at_ .esp sch))]
 
-/-- Plane `b`'s word of the row, masked, into the accumulator, rotated left
-by `8b`. -/
-def plane (j b : Nat) : List Instr :=
-  [.mov .ecx (.mem (at_ .ebx (planeOff j b))), .alu .and .ecx (.reg .edx)] ++
-    (if b = 0 then [] else [.shift .ror .ecx (32 - 8 * b)]) ++ [.alu .or .edi (.reg .ecx)]
+/-- Plane `b`'s 16 bytes of the row, masked, into its register. -/
+def plane (j b : Nat) (x : XReg) : List Instr :=
+  [.movdquLoad .xmm7 (at_ .ebx (planeOff j b)), xb .pand .xmm7 .xmm6, xb .por x .xmm7]
 
-/-- One row of S-box `j`: the mask (all ones in the index's lane if
-`esi < 4`), the four planes, and the next row; the flags say whether it was
-the last (the schedule's address less the row's is `-256`). -/
+/-- One row of S-box `j`: the mask (all ones if `edi < 16`), the four planes,
+and the next row; the flags say whether it was the last (the schedule's
+address less the row's is `-256`). -/
 def row (sch j : Nat) : List Instr :=
-  [.alu .cmp .esi (imm 4), .alu .sbb .edx (.reg .edx), .alu .and .edx (.reg .eax), .alu .sub .esi (imm 4)] ++
-    plane j 0 ++ plane j 1 ++ plane j 2 ++ plane j 3 ++
-    [.alu .add .ebx (imm 4), .mov .ecx (.mem (at_ .esp sch)), .alu .sub .ecx (.reg .ebx),
+  [.alu .cmp .edi (imm 16), .alu .sbb .edx (.reg .edx), .xop (.movd .xmm6 .edx),
+   .xop (.pshufd .xmm6 .xmm6 0), .alu .sub .edi (imm 16)] ++
+    plane j 0 .xmm0 ++ plane j 1 .xmm1 ++ plane j 2 .xmm2 ++ plane j 3 .xmm3 ++
+    [.alu .add .ebx (imm 16), .mov .ecx (.mem (at_ .esp sch)), .alu .sub .ecx (.reg .ebx),
      .alu .cmp .ecx (imm (2 ^ 32 - 256))]
 
-/-- The accumulator rotated right by `8L`. -/
-def lookupEnd : List Instr := condRot .edi 1 8 ++ condRot .edi 2 16
+/-- The planes' rows in `xmm0`–`xmm3` transposed by doublewords: those of
+doublewords 0 and 1 in `xmm4` and `xmm5` (planes 0 and 1, planes 2 and 3), of
+2 and 3 in `xmm0` and `xmm2`. -/
+def pairs : List Instr :=
+  [xb .movdqa .xmm4 .xmm0, xb .punpckldq .xmm4 .xmm1, xb .punpckhdq .xmm0 .xmm1,
+   xb .movdqa .xmm5 .xmm2, xb .punpckldq .xmm5 .xmm3, xb .punpckhdq .xmm2 .xmm3]
 
-/-- S-box `j` of xL's byte `3 - j`, into the accumulator. -/
+/-- The first doubleword of each of the four planes' pairs in `xmm4`, the
+second in `xmm1`. -/
+def quads : List Instr :=
+  [xb .movdqa .xmm1 .xmm4, xb .punpcklqdq .xmm4 .xmm5, xb .punpckhqdq .xmm1 .xmm5]
+
+/-- `xmm4`'s doublewords shifted right by `n` if the bit `c` of `esi` is set. -/
+def shiftIf (c n : Nat) : List Instr :=
+  bitMask c ++ ([xb .movdqa .xmm0 .xmm4, .xop (.shift .psrld .xmm0 (BitVec.ofNat 8 n))] : List Instr) ++
+    orElse .xmm4 .xmm0
+
+/-- The low bytes of `xmm4`'s doublewords 0 to 3 as bytes 0 to 3 of its
+doubleword 0. -/
+def joinBytes : List Instr :=
+  [.xop (.shift .pslld .xmm4 24), .xop (.shift .psrld .xmm4 24),
+   .xop (.pshufd .xmm0 .xmm4 0xF5), .xop (.shift .pslld .xmm0 8), xb .por .xmm4 .xmm0,
+   .xop (.pshufd .xmm0 .xmm4 0x02), .xop (.shift .pslld .xmm0 16), xb .por .xmm4 .xmm0]
+
+/-- The byte of each plane's row at the index's low four bits, plane `b`'s in
+byte `b` of `xmm4`. -/
+def lookupEnd : List Instr :=
+  pairs ++ (bitMask 8 ++ (orElse .xmm4 .xmm0 ++ (orElse .xmm5 .xmm2 ++ (quads ++ (bitMask 4 ++
+    (orElse .xmm4 .xmm1 ++ (shiftIf 2 16 ++ (shiftIf 1 8 ++ joinBytes))))))))
+
+/-- S-box `j` of xL's byte `3 - j`, into `xmm4`'s low doubleword. -/
 def lookup (sch j : Nat) : Prog isa :=
   .seq (.block (index j ++ lookupStart sch)) (.seq (.loop (.block (row sch j)) .ne) (.block lookupEnd))
 
-/-- F's accumulation of S-box `j`: S₁, then + S₂, XOR S₃, + S₄. -/
+/-- F's accumulation of S-box `j`: S₁, then + S₂, XOR S₃, + S₄; xR, below it,
+is stored with it. -/
 def combine (j : Nat) : List Instr :=
-  if j = 0 then [.store (at_ .ebp fOff) .edi]
-  else [.mov .ecx (.mem (at_ .ebp fOff)), .alu (if j = 2 then .xor else .add) .ecx (.reg .edi),
-    .store (at_ .ebp fOff) .ecx]
+  (if j = 0 then [] else [.mov .ecx (.mem (at_ .ebp fOff)), .xop (.movd .xmm0 .ecx),
+    xb (if j = 2 then .pxor else .paddd) .xmm4 .xmm0]) ++
+  [.mov .ecx (.mem (at_ .ebp xrOff)), .xop (.movd .xmm0 .ecx), xb .punpckldq .xmm0 .xmm4,
+   .movqStore (at_ .ebp xrOff) .xmm0]
 
 /-- F of xL into `ebp + 24`. -/
 def f (sch : Nat) : Prog isa :=
