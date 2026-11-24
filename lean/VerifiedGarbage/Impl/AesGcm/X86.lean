@@ -190,6 +190,19 @@ def xorLoopG (to : Bool) : Prog isa :=
     .store8 (at_ .edi 0) .al, .alu .add .edi (imm 1)] ++ (if to then [.alu .add .esi (imm 1)] else []) ++
     [.alu .add .edx (imm 1), .alu .sub .ecx (imm 1)])) .ne
 
+def xorWordStep : List Instr :=
+  [.mov .eax (.mem (at_ .edx 0)), .alu .xor .eax (.mem (at_ .esi 0)), .store (at_ .edi 0) .eax,
+   .alu .add .edx (imm 4), .alu .add .esi (imm 4), .alu .add .edi (imm 4),
+   .alu .sub .ecx (imm 4), .alu .cmp .ecx (imm 4)]
+
+/-- Consume four bytes per iteration, then any remaining bytes. -/
+def wordXor : Prog isa :=
+  .seq (.block [.alu .cmp .ecx (imm 4)]) (.seq
+    (.ite .b (.block []) (.loop (.block xorWordStep) .ae))
+    (.seq (.block [.alu .test .ecx (.reg .ecx)]) (.ite .e (.block []) (xorLoopG true))))
+
+def xorTailCode (words : Bool) : Prog isa := if words then wordXor else xorLoopG true
+
 /-- XORs the `ecx` (at least 1) bytes at `edx` into those at `edi`, advancing both. -/
 abbrev xorLoop : Prog isa := xorLoopG false
 
@@ -578,10 +591,10 @@ variable (c : Callees)
 blocks by `vg_aes_ctr32_to`, and the last bytes, if any, XORed from the data
 into `dst` with a keystream block (`xorLoopG`, as `cryptTail` does in place);
 `esi` is then the state again. -/
-def decTo (f : Fn) : Prog isa :=
+def decTo (f : Fn) (words : Bool := false) : Prog isa :=
   .seq (wholeTo f) (.seq (.block tailLen) (.ite .e (.block [])
     (.seq (.seq (.block ksArgs) (.seq (ctrCall c) (.block unscr))) (.seq (.block tailRegs)
-      (.seq (xorLoopG true) (.block [.mov .esi (.reg .ebp), .alu .add .esi (imm stO)]))))))
+      (.seq (xorTailCode words) (.block [.mov .esi (.reg .ebp), .alu .add .esi (imm stO)]))))))
 
 /-- `dst` (the word at `esp`) in `edx`, `len` in `ecx`, and zero in `eax`. -/
 def wipeArgs : List Instr := [.mov .edx (.mem (at_ .esp 0)), .mov .ecx (slot lenO), .mov .eax (imm 0)]
