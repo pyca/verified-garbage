@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.Aes.X86.AesNiBlocks
 public import VerifiedGarbage.Impl.AesGcm.X86
 public import VerifiedGarbage.Impl.Scrub.X86
 public import VerifiedGarbage.Impl.StackScratch.X86
@@ -32,6 +33,16 @@ x86's AES-GCM's (`Impl/AesGcm/X86.lean`):
   takes four blocks at a time while it can (`quad`): the first three of
   them have `ntz(i)` 0, 1 and 0, so their `L_{ntz(i)}` are the table's
   first two entries, read where they are.
+* With AES-NI (`hardware`), the whole blocks are processed in one pass
+  instead, which calls no function (`wholeNi`): six blocks at a time while
+  six are left, then one at a time (`groupNi`). A group's offsets are stored
+  in the working space of the functions called (`ofsNi`); each block is
+  loaded with its offset XORed in (`inNi`), AES runs on all of them
+  (`Impl.Aes.X86.AesNi.aes`, `aesDec`, with the round keys through `aesimc`
+  at `W + scrO`), and each is XORed with its offset again and stored
+  (`outNi`). The offset and the checksum are in `xmm0` and `xmm1` between
+  the groups. A group's first block is in `xmm0`, so the offset is loaded
+  again after it.
 * `L_$` and `L_0` are `L_*` doubled once and twice. A doubling reads the
   four big-endian words of a block, shifts each left by one bit with the
   top bit of the next, and reduces the last by `{87}` through a mask from
@@ -433,6 +444,85 @@ def pass (body : List Instr) : Prog isa :=
 /-- The start of a pass: `esi` the data, `ebx` its whole blocks, `i = 1`. -/
 def passStart : List Instr := [.mov .esi (slot dataO), .mov .ebx (slot nbO), .mov .edi (imm 1)]
 
+/-! ## The whole blocks with AES-NI -/
+
+/-- `c` are the AES-NI implementations, whose whole blocks take one pass. -/
+def hardware (c : Callees) : Bool := c.enc.name == "vg_aes_encrypt_blocks_aesni"
+
+/-- The offsets of a group. -/
+abbrev ofO : Nat := scrO + 256
+
+/-- The registers of six blocks. -/
+def lanes6 : List XReg := [.xmm0, .xmm2, .xmm3, .xmm4, .xmm5, .xmm7]
+
+/-- The offsets of `n` blocks from block `i` on, `i` in `edi`, from the one
+before them in `xmm0`, through `xmm6`, stored as those of a group's blocks
+from block `j` on. -/
+def ofsNi : Nat → Nat → Prog isa
+  | 0, _ => .block []
+  | n + 1, j =>
+    .seq lAddr (.seq (.block [.movdquLoad .xmm6 (at_ .edx 0), .xop (.bin .pxor .xmm0 .xmm6),
+      .movdquStore (at_ .ebp (ofO + 16 * j)) .xmm0, .alu .add .edi (imm 1)]) (ofsNi n (j + 1)))
+
+/-- Block `j` of a group loaded into `b` with its offset XORed in, through
+`xmm6`, and for `seal` (`enc`) added to the checksum. -/
+def laneIn (enc : Bool) (b : XReg) (j : Nat) : List Instr :=
+  ([.movdquLoad b (at_ .esi (16 * j))] : List Instr) ++ (if enc then [.xop (.bin .pxor .xmm1 b)] else []) ++
+  ([.movdquLoad .xmm6 (at_ .ebp (ofO + 16 * j)), .xop (.bin .pxor b .xmm6)] : List Instr)
+
+/-- Block `j` of a group, in `b`, XORed with its offset again, and for `open`
+added to the checksum, and stored. -/
+def laneOut (enc : Bool) (b : XReg) (j : Nat) : List Instr :=
+  ([.movdquLoad .xmm6 (at_ .ebp (ofO + 16 * j)), .xop (.bin .pxor b .xmm6)] : List Instr) ++
+  (if enc then [] else [.xop (.bin .pxor .xmm1 b)]) ++ ([.movdquStore (at_ .esi (16 * j)) b] : List Instr)
+
+/-- `laneIn` for each register, from block `j` on. -/
+def inNi (enc : Bool) : List XReg → Nat → List Instr
+  | [], _ => []
+  | b :: bs, j => laneIn enc b j ++ inNi enc bs (j + 1)
+
+/-- `laneOut` for each register, from block `j` on. -/
+def outNi (enc : Bool) : List XReg → Nat → List Instr
+  | [], _ => []
+  | b :: bs, j => laneOut enc b j ++ outNi enc bs (j + 1)
+
+/-- The key schedule, the rounds, and where the round keys through `aesimc` are. -/
+def keysNi : List Instr :=
+  [.mov .eax (slot ctxO), .mov .ecx (slot rndO), .mov .edx (.reg .ebp), .alu .add .edx (imm scrO)]
+
+/-- AES on the registers. -/
+def aesNi (enc : Bool) (rs : List XReg) : Prog isa :=
+  if enc then Impl.Aes.X86.AesNi.aes rs else Impl.Aes.X86.AesNi.aesDec rs
+
+/-- The blocks at `esi`, as many as registers, through OCB; the offset of the
+last in `xmm0`, and on to the blocks after them. -/
+def groupNi (enc : Bool) (rs : List XReg) (rest : List Instr) : Prog isa :=
+  .seq (ofsNi rs.length 0)
+    (.seq (.block keysNi)
+      (.seq (.block (inNi enc rs 0))
+        (.seq (aesNi enc rs)
+          (.block (outNi enc rs 0 ++ (.movdquLoad .xmm0 (at_ .ebp (ofO + 16 * (rs.length - 1))) ::
+            .alu .add .esi (imm (16 * rs.length)) :: .alu .sub .ebx (imm rs.length) :: rest))))))
+
+/-- The blocks, six and then one at a time, after `cmp ebx, 6`. -/
+def blocksNi (enc : Bool) : Prog isa :=
+  .seq (.ite .b (.block []) (.loop (groupNi enc lanes6 [.alu .cmp .ebx (imm 6)]) .ae))
+    (.seq (.block [.alu .test .ebx (.reg .ebx)]) (.ite .e (.block []) (.loop (groupNi enc [.xmm0] []) .ne)))
+
+/-- The round keys `open` needs, through `aesimc`. -/
+def imcNi (enc : Bool) : Prog isa :=
+  if enc then .block [] else .seq (.block keysNi) Impl.Aes.X86.AesNi.imcKeys
+
+/-- The whole blocks in one pass: the table, the round keys, and the blocks,
+the offset and the checksum from `W` and back. -/
+def wholeNi (enc : Bool) : Prog isa :=
+  .seq ltable
+    (.seq (imcNi enc)
+      (.seq (.block (passStart ++ [.movdquLoad .xmm0 (at_ .ebp ofsO), .movdquLoad .xmm1 (at_ .ebp ckO),
+          .alu .cmp .ebx (imm 6)]))
+        (.seq (blocksNi enc)
+          (.block [.movdquStore (at_ .ebp ofsO) .xmm0, .movdquStore (at_ .ebp ckO) .xmm1]))))
+
 section
 variable (c : Callees)
 
@@ -446,6 +536,12 @@ def wholeIn (f : Fn) (pre post : List Instr) : Prog isa :=
 
 /-- The whole blocks: the table, then the passes around `f`. -/
 def whole (f : Fn) (pre post : List Instr) : Prog isa := .seq ltable (wholeIn f pre post)
+
+/-- The whole blocks: in one pass with AES-NI, otherwise in passes around a
+call. -/
+def wholes (enc : Bool) : Prog isa :=
+  if hardware c then wholeNi enc
+  else if enc then whole c.enc (addCk ++ xorOfs) xorOfs else whole c.dec xorOfs (xorOfs ++ addCk)
 
 /-! ## The rest of the data and the tag -/
 
@@ -487,8 +583,7 @@ def setup : List Instr := lsetup ++ zero4 ckO
 /-- The data: whole blocks, then the rest. -/
 def body (enc : Bool) : Prog isa :=
   .seq (.block [.mov .ebx (slot lenO), .shift .shr .ebx 4, .store (at_ .ebp nbO) .ebx, .alu .test .ebx (.reg .ebx)])
-    (.seq (.ite .e (.block [])
-        (if enc then whole c.enc (addCk ++ xorOfs) xorOfs else whole c.dec xorOfs (xorOfs ++ addCk)))
+    (.seq (.ite .e (.block []) (wholes c enc))
       (.seq (.block [.mov .esi (slot dataO), .mov .eax (slot lenO), .mov .ecx (.reg .eax), .alu .and .ecx (imm 15),
           .store (at_ .ebp restO) .ecx, .alu .sub .eax (.reg .ecx), .alu .add .esi (.reg .eax),
           .alu .test .ecx (.reg .ecx)])
