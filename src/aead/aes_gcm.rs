@@ -2078,3 +2078,278 @@ impl AesGcm {
         tag
     }
 }
+
+#[cfg(target_arch="arm")]
+impl AesGcm {
+    /// Benchmark the normalized shared entry.
+    pub fn bench_norm_encrypt_in_place(
+        &self,
+        nonce: &[u8],
+        aad: &[u8],
+        data: &mut [u8],
+    ) -> Result<Block, Error> {
+        crate::dit::enter!(dit);
+        // Check the lengths before encrypting anything.
+        check_nonce(nonce)?;
+        add_len(0, data.len(), MAX_TEXT).map_err(|()| Error::InvalidTextLength)?;
+        add_len(0, aad.len(), MAX_AAD).map_err(|()| Error::InvalidAadLength)?;
+        Ok(self.bench_norm_seal(dit, nonce, aad, data))
+    }
+
+    #[inline(always)]
+    fn bench_norm_seal(&self, dit: crate::dit::Dit<'_>, nonce: &[u8], aad: &[u8], data: &mut [u8]) -> Block {
+        #[cfg(target_arch = "aarch64")]
+        if data.len() <= 96 && nonce.len() == 12 && aad.len() <= 16 {
+            let dst = data.as_mut_ptr();
+            // SAFETY: both pointers address the same exclusive, initialized bytes.
+            return unsafe {
+                self.bench_norm_seal_contiguous(dit, nonce, aad, dst.cast_const(), dst, data.len())
+            };
+        }
+        #[cfg(target_arch = "arm")]
+        let tag;
+        #[cfg(not(target_arch = "arm"))]
+        let mut tag: Block = [0; 16];
+        // SAFETY: `self.ctx` is the key context `vg_aes_gcm_init` wrote for
+        // `self.rounds` (10, 12 or 14) rounds, valid for reads of 256 bytes,
+        // followed on x86-64 by the powers `vg_aes_gcm_prepare` wrote for the
+        // same key (`AesGcm::new`), valid for reads of 1032 bytes in all,
+        // and on AArch64 next to the powers `vg_aes_gcm_store_powers` wrote
+        // (`self.powers`, 128 bytes), and on RISC-V next to its bitsliced
+        // form `vg_aes_gcm_bitslice` wrote (`self.bk`, 1248 bytes, read
+        // only); `nonce` and `aad` are valid for reads
+        // and `data` for reads and writes of their lengths, and `tag` (a
+        // local) for reads and writes of 16 bytes. They are distinct objects
+        // (`data` a unique borrow), so the writable ones overlap nothing
+        // else, nor anything on the stack, and none wraps around the end of
+        // the address space.
+        unsafe {
+            #[cfg(target_arch = "x86_64")]
+            vg_aes_gcm_seal_prepared_auto(
+                dit,
+                self.ctx.0.as_ptr(),
+                self.rounds,
+                nonce.as_ptr(),
+                nonce.len(),
+                aad.as_ptr(),
+                aad.len(),
+                data.as_mut_ptr(),
+                data.len(),
+                &mut tag,
+            );
+            #[cfg(target_arch = "aarch64")]
+            vg_aes_gcm_seal_with_powers_auto(
+                dit,
+                self.key(),
+                self.rounds,
+                nonce.as_ptr(),
+                nonce.len(),
+                aad.as_ptr(),
+                aad.len(),
+                data.as_mut_ptr(),
+                data.len(),
+                &mut tag,
+                &self.powers.0,
+            );
+            #[cfg(target_arch = "riscv64")]
+            vg_aes_gcm_seal_bitsliced_auto(
+                dit,
+                self.key(),
+                self.rounds,
+                nonce.as_ptr(),
+                nonce.len(),
+                aad.as_ptr(),
+                aad.len(),
+                data.as_mut_ptr(),
+                data.len(),
+                &mut tag,
+                &self.bk.0,
+            );
+            #[cfg(target_arch = "arm")]
+            {
+                let dst = data.as_mut_ptr();
+                tag = self.bench_norm_seal_contiguous(dit, nonce, aad, dst.cast_const(), dst, data.len());
+            }
+            #[cfg(any(target_arch = "x86", target_arch = "powerpc64"))]
+            vg_aes_gcm_seal_auto(
+                dit,
+                self.key(),
+                self.rounds,
+                nonce.as_ptr(),
+                nonce.len(),
+                aad.as_ptr(),
+                aad.len(),
+                data.as_mut_ptr(),
+                data.len(),
+                &mut tag,
+            );
+        }
+        tag
+    }
+
+    /// Benchmark the normalized shared entry.
+    pub fn bench_norm_encrypt(
+        &self,
+        nonce: &[u8],
+        aad: &[u8],
+        plaintext: &[&[u8]],
+        out: &mut [u8],
+    ) -> Result<Block, Error> {
+        // SAFETY: MaybeUninit<u8> has the layout of u8. encrypt_uninit
+        // writes only initialized bytes and leaves the slice alone on error.
+        let dst = unsafe { core::slice::from_raw_parts_mut(out.as_mut_ptr().cast(), out.len()) };
+        self.bench_norm_encrypt_uninit(nonce, aad, plaintext, dst)
+            .map(|(_, tag)| tag)
+    }
+
+    /// Benchmark the normalized shared entry.
+    pub fn bench_norm_encrypt_uninit<'out>(
+        &self,
+        nonce: &[u8],
+        aad: &[u8],
+        plaintext: &[&[u8]],
+        out: &'out mut [MaybeUninit<u8>],
+    ) -> Result<(&'out mut [u8], Block), Error> {
+        crate::dit::enter!(dit);
+        if plaintext.len() > Self::MAX_PIECES {
+            return Err(Error::TooManyPieces);
+        }
+        check_nonce(nonce)?;
+        let mut len = 0;
+        for p in plaintext {
+            len = add_len(len, p.len(), MAX_TEXT).map_err(|()| Error::InvalidTextLength)?;
+        }
+        if len != out.len() as u64 {
+            return Err(Error::InvalidOutputLength);
+        }
+        add_len(0, aad.len(), MAX_AAD).map_err(|()| Error::InvalidAadLength)?;
+        let tag = self.bench_norm_seal_pieces(dit, nonce, aad, plaintext, out);
+        // SAFETY: both seal contracts specify every byte of the ciphertext
+        // for arbitrary prior destination contents, including an empty output.
+        Ok((unsafe { out.assume_init_mut() }, tag))
+    }
+
+    #[inline(always)]
+    fn bench_norm_seal_pieces(
+        &self,
+        dit: crate::dit::Dit<'_>,
+        nonce: &[u8],
+        aad: &[u8],
+        plaintext: &[&[u8]],
+        out: &mut [MaybeUninit<u8>],
+    ) -> Block {
+        let dst = out.as_mut_ptr().cast();
+        let len = out.len();
+        #[cfg(target_arch = "arm")]
+        if let [input] = plaintext {
+            // SAFETY: the checked lengths agree, and the exclusive destination
+            // is disjoint from the input slice and the detached tag.
+            return unsafe { self.bench_norm_seal_contiguous(dit, nonce, aad, input.as_ptr(), dst, len) };
+        }
+        #[cfg(target_arch = "aarch64")]
+        if len <= 96
+            && nonce.len() == 12
+            && aad.len() <= 16
+            && let [input] = plaintext
+        {
+            // SAFETY: the validated single input and exclusive output are disjoint and have equal lengths.
+            return unsafe { self.bench_norm_seal_contiguous(dit, nonce, aad, input.as_ptr(), dst, len) };
+        }
+        // The descriptors of the pieces, as `vg_aes_gcm_seal_gather` takes
+        // them: each its address and its length. Only the first
+        // `plaintext.len()` are written, and the function reads only those.
+        let mut descs = [const { MaybeUninit::<[usize; 2]>::uninit() }; Self::MAX_PIECES];
+        for (d, p) in descs.iter_mut().zip(plaintext) {
+            d.write([p.as_ptr() as usize, p.len()]);
+        }
+        let src: *const [usize; 2] = descs.as_ptr().cast();
+        let mut tag: Block = [0; 16];
+        // SAFETY: as in `seal`, with `dst` writable for
+        // `len` bytes; `src` points to `plaintext.len()` initialized
+        // descriptors (in `descs`, a local), each the address and the length
+        // of a piece valid for reads, which are `len` bytes in all.
+        // The pieces and the descriptors are read only, and overlap neither
+        // the exclusive destination nor `tag`, nor anything on the stack the
+        // function uses.
+        unsafe {
+            #[cfg(target_arch = "x86_64")]
+            vg_aes_gcm_seal_gather_prepared_auto(
+                dit,
+                self.ctx.0.as_ptr(),
+                self.rounds,
+                nonce.as_ptr(),
+                nonce.len(),
+                aad.as_ptr(),
+                aad.len(),
+                src,
+                plaintext.len(),
+                dst,
+                len,
+                &mut tag,
+            );
+            #[cfg(target_arch = "riscv64")]
+            vg_aes_gcm_seal_gather_bitsliced_auto(
+                dit,
+                self.key(),
+                self.rounds,
+                nonce.as_ptr(),
+                nonce.len(),
+                aad.as_ptr(),
+                aad.len(),
+                src,
+                plaintext.len(),
+                dst,
+                len,
+                &mut tag,
+                &self.bk.0,
+            );
+            #[cfg(not(any(target_arch = "x86_64", target_arch = "riscv64")))]
+            vg_aes_gcm_seal_gather_auto(
+                dit,
+                self.key(),
+                self.rounds,
+                nonce.as_ptr(),
+                nonce.len(),
+                aad.as_ptr(),
+                aad.len(),
+                src,
+                plaintext.len(),
+                dst,
+                len,
+                &mut tag,
+            );
+        }
+        tag
+    }
+
+    #[inline(always)]
+    unsafe fn bench_norm_seal_contiguous(
+        &self,
+        dit: crate::dit::Dit<'_>,
+        nonce: &[u8],
+        aad: &[u8],
+        src: *const u8,
+        dst: *mut u8,
+        len: usize,
+    ) -> Block {
+        let mut tag = [0; 16];
+        // SAFETY: the caller provides the paired buffers; the constructor
+        // established the key schedule for this round count.
+        unsafe {
+            crate::arch::dispatch::gcm::bench_normalized_auto(
+                dit,
+                self.key(),
+                self.rounds,
+                nonce.as_ptr(),
+                nonce.len(),
+                aad.as_ptr(),
+                aad.len(),
+                src,
+                dst,
+                len,
+                &mut tag,
+            );
+        }
+        tag
+    }
+}

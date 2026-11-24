@@ -590,7 +590,7 @@ def main():
     if modules["head"] is None or (args.modules and set(modules["head"].split()) != set(args.modules.split())):
         p.error("head's benchmark registry does not use the selected modules")
     control = TARGET / "exact-same-control"
-    if os.environ.get("VG_BENCH_PLACEMENT_CONTROL") == "1":
+    if os.environ.get("VG_BENCH_PLACEMENT_CONTROL") == "1" or os.environ.get("VG_PAIR_NORMALIZED") == "1":
         import hashlib
         peer = fresh_copy(control, 1024)
         assert hashlib.sha256(peer.read_bytes()).digest() == hashlib.sha256(control.read_bytes()).digest()
@@ -653,6 +653,10 @@ def main():
                 os.environ["VG_BENCH_OLD_ROUTE"] = "1"
             else:
                 os.environ.pop("VG_BENCH_OLD_ROUTE",None)
+            if side == "base" and os.environ.get("VG_PAIR_NORMALIZED") == "1":
+                os.environ["VG_BENCH_NORM"] = "1"
+            else:
+                os.environ.pop("VG_BENCH_NORM", None)
             checkout = base if side == "base" else head
             times = run(binary_of(side), work / home(side) / (bench or "all"), VG, args, checkout,
                         modules_of(side, bench), unit, bench)
@@ -860,6 +864,13 @@ if __name__ == "__main__":
     status = main()
     result = pathlib.Path(sys.argv[sys.argv.index("--json")+1])
     sets = json.loads(result.read_text())
+    os.environ["VG_PAIR_NORMALIZED"] = "1"
+    matched = result.with_name("normalized-comparison.json")
+    sys.argv[sys.argv.index("--json")+1] = str(matched)
+    sys.argv.extend(["--work-dir","normalized-measures"])
+    status = max(status,main())
+    sets["normalized_comparison"] = json.loads(matched.read_text())
+    os.environ.pop("VG_PAIR_NORMALIZED")
     os.environ["VG_BENCH_PLACEMENT_CONTROL"] = "1"
     saved = result.with_name("placement-control.json")
     sys.argv[sys.argv.index("--json")+1] = str(saved)
