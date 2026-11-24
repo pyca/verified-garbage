@@ -103,6 +103,46 @@ def maskFinish (c : Callees) (enc : Fn) : Prog isa :=
 def masksBody (c : Callees) (ctr enc : Fn) : Prog isa :=
   .seq (oneAad c) (.seq (bulk (separate ctr c.gh)) (maskFinish c enc))
 
+def maskIndex (base index : Reg) (disp : Nat := 0) : MemOp :=
+  {base, index := some index, disp := Int.ofNat disp}
+
+def startMasks : List Instr :=
+  [.movdquLoad .xmm0 (at_ .r14 0), .movdquStore (at_ .r15 256) .xmm0,
+   .mov32 .r11 (.mem (at_ .r14 12)), .bswap32 .r11, .mov32 .r10 (imm 0),
+   .mov .rbp (.mem (at_ .r15 lenO)), .store (at_ .r15 tlenO) .rbp]
+
+def packOne : List Instr :=
+  [.movdquStore (maskIndex .r15 .r10 272) .xmm0, .alu32 .add .r11 (imm 1),
+   .mov32 .rax (.reg .r11), .bswap32 .rax, .store32 (maskIndex .r15 .r10 284) .rax]
+
+def bumpMask : List Instr := [.alu .add .r10 (imm 16), .alu .cmp .r10 (.reg .rbp)]
+
+def batchAESArgs : List Instr :=
+  ([.mov .rdi (.reg .r13), .mov .rsi (.mem (at_ .r15 roundsO))] : List Instr) ++
+  ptr .rdx .r15 256 ++ [.mov .rcx (.reg .rbp),.shift .shr .rcx 4,.alu .add .rcx (imm 1)] ++ ptr .r8 .r15 scrO
+
+def maskPtrs : List Instr :=
+  [.mov .rdi (.mem (at_ .rsp 8)), .mov .rsi (.mem (at_ .r15 dataO)), .mov32 .r10 (imm 0)]
+
+def xorOne : List Instr :=
+  [.movdquLoad .xmm0 (maskIndex .rdi .r10), .movdquLoad .xmm1 (maskIndex .r15 .r10 272),
+   .xop (.bin .pxor .xmm0 .xmm1), .movdquStore (maskIndex .rsi .r10) .xmm0]
+
+def batchMasks (c : Callees) (enc : Fn) : Prog isa :=
+  .seq (.block startMasks) (.seq (.loop (.block (packOne++bumpMask)) .ne) (.seq (.block batchAESArgs)
+    (.seq (call enc) (.seq (.block maskPtrs) (.seq (.loop (.block (xorOne++bumpMask)) .ne)
+    (.seq (.block hashArgs) (.seq (call c.gh)
+    (.seq (.block authLens) (.seq (lens c 16) (.block mixMasks))))))))))
+
+/-- Rotating the byte count minus one block moves any partial byte count above
+the bound. The mask workspace can hold J0 and one to fifteen payload counters. -/
+def chooseBatch (bounded ordinary : Prog isa) : Prog isa :=
+  .seq (.block [.mov .rax (.mem (at_ .r15 lenO)), .alu .sub .rax (imm 16), .shift .ror .rax 4,
+    .alu .cmp .rax (imm 15)]) (.ite .b bounded ordinary)
+
+def softwareBody (c : Callees) (ctr enc : Fn) : Prog isa :=
+  .seq (oneAad c) (chooseBatch (batchMasks c enc) (.seq (bulk (separate ctr c.gh)) (maskFinish c enc)))
+
 /-- The AES-NI/PCLMUL profile hashes the complete ciphertext once both the
 whole and partial blocks have reached their destination. -/
 def deferredBody (c : Callees) (ctr : Fn) : Prog isa :=
