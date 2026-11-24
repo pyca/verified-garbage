@@ -12293,7 +12293,7 @@ vg_aes_gcm_seal_gather_prepared_vaes_vpclmul_avx512:
 	add rdx, 15
 	shr rdx, 4
 	add rcx, rdx
-	cmp rcx, 32
+	cmp rcx, 24
 	jae 240f
 	mov rdx, QWORD PTR [r15+208]
 	mov rcx, rdx
@@ -12317,13 +12317,14 @@ vg_aes_gcm_seal_gather_prepared_vaes_vpclmul_avx512:
 237:
 	test rax, rax
 	je 244f
+	mov rax, QWORD PTR [r15+208]
+	cmp rax, 17
+	mov ecx, 2
+	sbb rcx, 0
 	mov rax, QWORD PTR [rsp+16]
 	sub rax, 1
-	cmp rax, 2
-	mov eax, 0
-	mov ecx, 1
-	cmovb rax, rcx
-	test rax, rax
+	cmp rax, rcx
+	sbb rax, rax
 	jmp 245f
 244:
 245:
@@ -12775,7 +12776,7 @@ vg_aes_gcm_seal_gather_prepared_vaes_vpclmul_avx512:
 	add rdx, 15
 	shr rdx, 4
 	add rcx, rdx
-	cmp rcx, 32
+	cmp rcx, 24
 	jae 286f
 	mov rdx, QWORD PTR [r15+208]
 	mov rcx, rdx
@@ -12799,13 +12800,14 @@ vg_aes_gcm_seal_gather_prepared_vaes_vpclmul_avx512:
 283:
 	test rax, rax
 	je 290f
+	mov rax, QWORD PTR [r15+208]
+	cmp rax, 17
+	mov ecx, 2
+	sbb rcx, 0
 	mov rax, QWORD PTR [rsp+16]
 	sub rax, 1
-	cmp rax, 2
-	mov eax, 0
-	mov ecx, 1
-	cmovb rax, rcx
-	test rax, rax
+	cmp rax, rcx
+	sbb rax, rax
 	jmp 291f
 290:
 291:

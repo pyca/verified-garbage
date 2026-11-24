@@ -65,14 +65,17 @@ def tbO : Nat := 1536
 
 /-! ## The condition -/
 
-/-- `rax = 1` if the short path applies (a 12-byte nonce in `rbp`, at most 32
+/-- Maximum number of GHASH blocks, including the final length block. -/
+abbrev blockLimit (sixBatches : Bool) : Nat := if sixBatches then 24 else 32
+
+/-- `rax = 1` if the short path applies (a 12-byte nonce in `rbp`, at most the configured number of
 blocks to hash, and some text or more than 16 bytes of additional data),
 `0` otherwise; then `test rax, rax`. The lengths are first checked to be below
 512, so that the blocks' count does not wrap. With neither text nor more
 than 16 bytes of additional data, the other instances' body is faster:
 `al + 17 n` is at least 17 when there is either. Each branch falls through
 while the short path may still apply, and jumps to the end once it cannot. -/
-def cond : Prog isa :=
+def condWith (sixBatches : Bool) : Prog isa :=
   .seq (.block [.mov32 .rax (imm 0), .alu .cmp .rbp (imm 12)])
   (.seq (.ite .ne (.block [])
       (.seq (.block [.mov .rcx (.mem (at_ .r15 alenO)), .alu .or .rcx (.mem (at_ .r15 lenO)),
@@ -80,12 +83,15 @@ def cond : Prog isa :=
         (.ite .ae (.block [])
           (.seq (.block [.mov .rcx (.mem (at_ .r15 alenO)), .alu .add .rcx (imm 15), .shift .shr .rcx 4,
               .mov .rdx (.mem (at_ .r15 lenO)), .alu .add .rdx (imm 15), .shift .shr .rdx 4,
-              .alu .add .rcx (.reg .rdx), .alu .cmp .rcx (imm 32)])
+              .alu .add .rcx (.reg .rdx), .alu .cmp .rcx (imm (blockLimit sixBatches))])
             (.ite .ae (.block [])
               (.seq (.block [.mov .rdx (.mem (at_ .r15 lenO)), .mov .rcx (.reg .rdx), .shift .shl .rcx 4,
                   .alu .add .rcx (.reg .rdx), .alu .add .rcx (.mem (at_ .r15 alenO)), .alu .cmp .rcx (imm 17)])
                 (.ite .b (.block []) (.block [.mov32 .rax (imm 1)]))))))))
     (.block [.alu .test .rax (.reg .rax)]))
+
+/-- The legacy guard, also used by open. -/
+abbrev cond := condWith false
 
 /-! ## The pieces -/
 

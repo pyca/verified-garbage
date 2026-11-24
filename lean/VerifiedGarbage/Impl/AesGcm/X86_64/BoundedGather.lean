@@ -17,12 +17,16 @@ def gatherArgs : Prog isa := .seq (.block descriptorHead) (.seq (.block descript
 
 def boundedGather : Prog isa := .seq gatherArgs (.call Short.bounded.name Short.bounded.code)
 
-def countTest : List Instr := [.mov .rax (.mem (at_ .rsp 16)),.alu .sub .rax (imm 1),
-  .alu .cmp .rax (imm 2),.mov32 .rax (imm 0),.mov32 .rcx (imm 1),.cmov .b .rax (.reg .rcx),
-  .alu .test .rax (.reg .rax)]
+/-- One descriptor is eligible at any supported length. Two descriptors use the
+bounded kernel from 17 bytes, when the streaming setup stops winning. -/
+def countTest : List Instr :=
+  [.mov .rax (.mem (at_ .r15 lenO)), .alu .cmp .rax (imm 17),
+   .mov32 .rcx (imm 2), .alu .sbb .rcx (imm 0),
+   .mov .rax (.mem (at_ .rsp 16)), .alu .sub .rax (imm 1),
+   .alu .cmp .rax (.reg .rcx), .alu .sbb .rax (.reg .rax)]
 
 def withBounded (fallback : Prog isa) : Prog isa :=
-  .seq (.seq Short.cond (.ite .e (.block []) (.block countTest))) (.ite .e fallback boundedGather)
+  .seq (.seq (Short.condWith true) (.ite .e (.block []) (.block countTest))) (.ite .e fallback boundedGather)
 
 def preparedBounded (c : Callees) (ctr toFn : Fn) : Prog isa :=
   framed (dispatch (withBounded (quick toFn)) (withBounded (general c ctr (some toFn))))

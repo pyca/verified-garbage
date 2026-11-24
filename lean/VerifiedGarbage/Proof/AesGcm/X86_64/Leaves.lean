@@ -2409,7 +2409,7 @@ theorem Layout.withBounded_wp (p : Layout (CtxMode.flaggedT 48) s) (hf : ShortFa
   refine WP.seq (WP.mono (p.testBoth e) fun w h => WP.ite (decide ¬Eligible s) (by simp only [eval,h.2])
     (fun _ => next _ h.1) (fun ok => ?_))
   have good := Classical.not_not.mp (of_decide_eq_false ok)
-  exact p.gather_wp hf good.2 good.1 h.1
+  exact p.gather_wp hf (FitsCount.hasPair good.2) (IsShortAt.full good.1) h.1
 
 theorem Layout.withBounded_rel (p : Layout (CtxMode.flaggedT 48) s) (q : Layout (CtxMode.flaggedT 48) t)
     (hf : ShortFacts) (pb : Pub s t) (e : Initial s u) (f : Initial t v)
@@ -2422,7 +2422,7 @@ theorem Layout.withBounded_rel (p : Layout (CtxMode.flaggedT 48) s) (q : Layout 
     exact next x y h.1.1.1 h.1.2.1 x y a b x' y' ⟨rfl,rfl⟩ ex ey
   · intro x y a b x' y' h ex ey
     have sh := Classical.not_not.mp (of_decide_eq_false (Option.some.inj (h.1.1.2.symm.trans h.2)))
-    exact p.gather_rel q hf pb sh.2 sh.1 x y a b x' y' ⟨h.1.1.1,h.1.2.1⟩ ex ey
+    exact p.gather_rel q hf pb (FitsCount.hasPair sh.2) (IsShortAt.full sh.1) x y a b x' y' ⟨h.1.1.1,h.1.2.1⟩ ex ey
 
 theorem bounded_rounds (hf : ShortFacts) {c : Callees} {ctr : Fn} (T : BlocksTo.SealFn (CtxMode.flaggedT 48))
     (h : InitializedProof (CtxMode.flaggedT 48) (general c ctr (some T.fn)))
