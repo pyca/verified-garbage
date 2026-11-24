@@ -202,8 +202,8 @@ theorem p521_minv {x : Nat} (hx : (p521Prime * x + 1) % 2 ^ 32 = 0) (hx32 : x < 
   generalize a * x = y at hx
   omega_arith
 
-/-- The window `+= q m`, `q` in `ecx`, for `q = t₀ m'` (which P-256's sparse
-reduction and P-521's need). -/
+/-- The window `+= q m`, `q` in `ecx`, for `q = t₀ m'` (which P-521's sparse
+reduction needs). -/
 theorem redRowI_ok (hb : Bx s base size) {k m acc : Nat} (hM : MulOk k m)
     (hacc : acc + 4 * (2 * k) + 8 ≤ size)
     (hq : minv32 (mod k m) = 1 → (s.gpr .ecx).toNat = w32 s.mem base acc)
