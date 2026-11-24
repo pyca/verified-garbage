@@ -1,5 +1,7 @@
 module
 
+-- separate module: Keep the public parameter and memory layout adaptation independent of the scrubbed return proof.
+
 public import VerifiedGarbage.Proof.AesGcm.RISCV64.Contiguous.Framed
 public import VerifiedGarbage.Spec.Gcm.Contiguous
 import VerifiedGarbage.Proof.Framework.Sig

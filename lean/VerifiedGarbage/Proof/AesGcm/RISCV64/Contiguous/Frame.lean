@@ -1,5 +1,7 @@
 module
 
+-- separate module: Stack address arithmetic and caller stack argument copying are independent of AES-GCM semantics.
+
 public import VerifiedGarbage.Proof.AesGcm.RISCV64.Contiguous.BodyCT
 public import VerifiedGarbage.Proof.Framework.RISCV64.StackScratchArgs
 import VerifiedGarbage.Proof.AesGcm.RISCV64.StreamCrypt

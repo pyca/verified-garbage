@@ -1,5 +1,7 @@
 module
 
+-- separate module: The GHASH tag and final mask proof does not depend on the plaintext XOR loop.
+
 public import VerifiedGarbage.Impl.AesGcm.RISCV64.Contiguous
 public import VerifiedGarbage.Proof.AesGcm.RISCV64.Seal
 import VerifiedGarbage.Proof.AesGcm.RISCV64.Tag

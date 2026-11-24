@@ -1,5 +1,7 @@
 module
 
+-- separate module: Keep the functional short/long composition independent of its trace proof.
+
 public import VerifiedGarbage.Proof.AesGcm.RISCV64.Contiguous.MaskPayload
 import VerifiedGarbage.Proof.AesGcm.RISCV64.CryptOk
 import VerifiedGarbage.Proof.AesGcm.RISCV64.Flush

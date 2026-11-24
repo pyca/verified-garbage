@@ -1,5 +1,7 @@
 module
 
+-- separate module: Isolate instruction-level initialization of the sixteen mask slots from the AES subroutine proof.
+
 public import VerifiedGarbage.Spec.Gcm
 public import VerifiedGarbage.Impl.AesGcm.RISCV64.Contiguous
 public import VerifiedGarbage.Proof.AesGcm.RISCV64.Env

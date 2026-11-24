@@ -1,5 +1,7 @@
 module
 
+-- separate module: Isolate argument decoding from execution of the 4,656-byte allocated frame.
+
 public import VerifiedGarbage.Proof.AesGcm.RISCV64.Contiguous.Frame
 import VerifiedGarbage.Proof.AesGcm.RISCV64.StreamCrypt
 import VerifiedGarbage.Proof.AesGcm.RISCV64.Seal
