@@ -400,7 +400,7 @@ theorem public_layout {s : State} (h : publicContract.pre s) : Layout s := by
   all_goals
     sig_pre [publicContract, Spec.Gcm.sealContiguousContract, Spec.Gcm.sealContiguousSig,
       Spec.Gcm.sealPre, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, List.append_eq,
-      Sig.bufs, Sig.lists] at h
+      Sig.bufs, Sig.lists, Sig.alignedBufs, Sig.descs] at h
     simp [widen, small, eq, Sig.pairFacts, Sig.conj, List.filterMap_cons, and_assoc] at h
   case pos =>
     obtain ⟨down, up, rd, wr, kd, _, nd, _, ad, _, dt, _, _, sk, sn, sa, sd, st, _, kf, nf, af, df, tf, rounds⟩ := h
@@ -442,7 +442,7 @@ def witness (same : Bool) : State :=
 theorem witness_pre (same : Bool) : publicContract.pre (witness same) := by
   cases same <;>
     sig_pre [publicContract, Spec.Gcm.sealContiguousContract, Spec.Gcm.sealContiguousSig, Spec.Gcm.sealPre,
-      Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Sig.bufs, Sig.lists, List.append_eq]
+      Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Sig.bufs, Sig.lists, Sig.alignedBufs, Sig.descs, List.append_eq]
   all_goals
     simp [witness, mkSat, Arm.stackArg, Arm.stackArgAddr, Arm.State.addr, Mem.readW, Mem.read]
     repeat' apply And.intro
