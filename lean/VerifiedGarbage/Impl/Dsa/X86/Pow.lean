@@ -85,13 +85,11 @@ def step (n e : Nat) : Prog isa :=
 /-- The result decoded: its product with one. -/
 def finish (n : Nat) : Prog isa := .seq (one n (slot n 7)) (mul n 6 6 7)
 
-def core (n e : Nat) : Prog isa :=
+/-- The power a bit of the exponent at a time, from its low bit. -/
+def coreBits (n e : Nat) : Prog isa :=
   .seq (setup2 n) <| .seq (encode n) <|
   .seq (.block [.mov .esi (.imm (BitVec.ofNat 32 (32 * e)))]) <|
   .seq (.loop (step n e) .ne) (finish n)
-
-def body (n e : Nat) : Prog isa :=
-  .seq (.block save) (.seq (core n e) (.block restore))
 
 /-! ## The product of two powers
 
@@ -153,6 +151,50 @@ def core2 (n e : Nat) : Prog isa :=
   .seq (setup2 n) <| .seq (table2 n) <|
   .seq (.block [.mov .esi (.imm (BitVec.ofNat 32 (32 * e)))]) <|
   .seq (.loop (step2 n e) .ne) (finish n)
+
+/-! ## The power by a window of two bits
+
+`coreW` computes `g^x mod m` from the exponent's top bits down, two at a
+time: each iteration squares the result twice and multiplies it by one of
+`1`, `g`, `g²` and `g³`, read by `core2`'s masked selections of every entry
+(`select2`): `32 e` squarings and `16 e` multiplications, where `coreBits`
+takes `32 e` of each. The entries are `core2`'s for `y = g²` (`tableW`): the
+window `d` is `d mod 2 + 2 (d / 2)`, and its entry `g^(d mod 2) y^(d / 2)`.
+The entries' cells in slot 3 are free of the multiplication's range only
+from 6 words, so the narrower moduli (q's) keep `coreBits`.
+-/
+
+/-- The entries `R`, `g R`, `g² R` and `g³ R`: `table2`'s for `y = g`, whose
+`y R` is `g R`, then `g² R` into slot 4 and `g³ R` into `cellGY`, each
+through slot 7. -/
+def tableW (n : Nat) : Prog isa :=
+  .seq (copyWords n (slot n 5) (slot n 7)) <| .seq (table2 n) <|
+  .seq (mul n 7 4 5) <| .seq (copyWords n (slot n 7) (slot n 4)) <|
+  .seq (mul n 7 7 5) (copyWords n (slot n 7) (cellGY n))
+
+/-- The window: the exponent's top two bits. -/
+def digitW (n e : Nat) : List Instr :=
+  [.mov .eax (.mem (sc (slot n 8 + 4 * (e - 1)))), .shift .shr .eax 30, .store (sc windowOffset) .eax]
+
+/-- An iteration: the result squared twice, times the entry of the
+exponent's top two bits; the exponent shifted up by them, the count
+decremented. -/
+def stepW (n e : Nat) : Prog isa :=
+  .seq (mul n 6 6 6) <| .seq (mul n 6 6 6) <| .seq (.block (digitW n e)) <| .seq (select2 n) <|
+  .seq (mul n 6 6 7) <| .seq (Comb.shiftOne e (slot n 8)) <| .seq (Comb.shiftOne e (slot n 8))
+    (.block [.alu .sub .esi (.imm 1), .alu .cmp .esi (.imm 0)])
+
+def coreW (n e : Nat) : Prog isa :=
+  .seq (setup2 n) <| .seq (tableW n) <|
+  .seq (.block [.mov .esi (.imm (BitVec.ofNat 32 (16 * e)))]) <|
+  .seq (.loop (stepW n e) .ne) (finish n)
+
+/-- `[slot 6] = [slot 5]^[slot 8] mod [slot 0]`, the exponent of `e` 32-bit
+words: by the window from 6 words of modulus. -/
+def core (n e : Nat) : Prog isa := if 6 ≤ n then coreW n e else coreBits n e
+
+def body (n e : Nat) : Prog isa :=
+  .seq (.block save) (.seq (core n e) (.block restore))
 
 def scratch (n : Nat) : List (Nat × Nat) := [(0, 64), (slot n 1, contextBytes n - slot n 1)]
 

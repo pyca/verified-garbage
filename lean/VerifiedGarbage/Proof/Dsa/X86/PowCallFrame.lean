@@ -30,15 +30,37 @@ theorem squarings_noSp (n : Nat) : ∀ k, NoSp (squarings n k)
   | 0 => NoSp.of_all rfl
   | k + 1 => nosp_seq (squarings_noSp n k) (mul_noSp n 4 4 4)
 
-theorem body_noSp (n e : Nat) : NoSp (body n e) :=
-  nosp_seq (NoSp.of_all rfl) <|
-  nosp_seq (nosp_seq (nosp_seq (NoSp.of_all rfl) (squarings_noSp n 6)) <|
+theorem coreBits_noSp (n e : Nat) : NoSp (coreBits n e) :=
+  nosp_seq (nosp_seq (NoSp.of_all rfl) (squarings_noSp n 6)) <|
     nosp_seq (nosp_seq (NoSp.of_all rfl) (nosp_seq (mul_noSp n 6 4 7) (mul_noSp n 5 5 4))) <|
     nosp_seq (NoSp.of_all rfl) <|
     nosp_seq (nosp_seq (NoSp.of_all rfl) <| nosp_seq (mul_noSp n 7 6 5) <| nosp_seq (NoSp.of_all rfl) <|
       nosp_seq (mul_noSp n 5 5 5) <| nosp_seq (NoSp.of_all rfl) (NoSp.of_all rfl)) <|
-    nosp_seq (NoSp.of_all rfl) (mul_noSp n 6 6 7)) <|
-  NoSp.of_all rfl
+    nosp_seq (NoSp.of_all rfl) (mul_noSp n 6 6 7)
+
+theorem table2_noSp (n : Nat) : NoSp (table2 n) :=
+  nosp_seq (mul_noSp n 5 5 4) <| nosp_seq (mul_noSp n 7 7 4) <| nosp_seq (NoSp.of_all rfl) <|
+  nosp_seq (mul_noSp n 6 4 6) <| nosp_seq (NoSp.of_all rfl) <| nosp_seq (mul_noSp n 4 5 7) <|
+  nosp_seq (NoSp.of_all rfl) (NoSp.of_all rfl)
+
+theorem coreW_noSp (n e : Nat) : NoSp (coreW n e) :=
+  nosp_seq (nosp_seq (NoSp.of_all rfl) (squarings_noSp n 6)) <|
+  nosp_seq (nosp_seq (NoSp.of_all rfl) <| nosp_seq (table2_noSp n) <| nosp_seq (mul_noSp n 7 4 5) <|
+    nosp_seq (NoSp.of_all rfl) <| nosp_seq (mul_noSp n 7 7 5) (NoSp.of_all rfl)) <|
+  nosp_seq (NoSp.of_all rfl) <|
+  nosp_seq (nosp_seq (mul_noSp n 6 6 6) <| nosp_seq (mul_noSp n 6 6 6) <| nosp_seq (NoSp.of_all rfl) <|
+    nosp_seq (NoSp.of_all rfl) <| nosp_seq (mul_noSp n 6 6 7) <| nosp_seq (NoSp.of_all rfl) <|
+    nosp_seq (NoSp.of_all rfl) (NoSp.of_all rfl)) <|
+  nosp_seq (NoSp.of_all rfl) (mul_noSp n 6 6 7)
+
+theorem core_noSp (n e : Nat) : NoSp (core n e) := by
+  unfold core
+  split
+  · exact coreW_noSp n e
+  · exact coreBits_noSp n e
+
+theorem body_noSp (n e : Nat) : NoSp (body n e) :=
+  nosp_seq (NoSp.of_all rfl) <| nosp_seq (core_noSp n e) (NoSp.of_all rfl)
 
 theorem squarings_stackUse (n : Nat) : ∀ k, stackUse (squarings n k) ≤ 96
   | 0 => by simp [squarings, stackUse]
@@ -47,13 +69,26 @@ theorem squarings_stackUse (n : Nat) : ∀ k, stackUse (squarings n k) ≤ 96
     simp only [stackUse, mul_stackUse, Nat.max_le]
     exact ⟨squarings_stackUse n k, Nat.le_refl _⟩
 
-theorem body_stackUse (n e : Nat) : stackUse (body n e) ≤ 96 := by
+theorem core_stackUse (n e : Nat) : stackUse (core n e) ≤ 96 := by
   have := squarings_stackUse n 6
   have h₁ : stackUse (VG.Impl.Dsa.X86.Comb.seed n) = 0 := rfl
-  have h₂ : stackUse (one n (slot n 7)) = 0 := rfl
+  have h₂ : ∀ o, stackUse (one n o) = 0 := fun _ => rfl
   have h₃ : stackUse (selectProduct (contextMod n) (slot n 6) (slot n 7) 4) = 0 := rfl
   have h₄ : stackUse (shiftDown e (slot n 8)) = 0 := rfl
-  simp only [body, core, setup2, encode, step, finish, stackUse, mul_stackUse, h₁, h₂, h₃, h₄, Nat.max_le]
+  have h₅ : ∀ a b, stackUse (copyWords n a b) = 0 := fun _ _ => rfl
+  have h₆ : stackUse (select2 n) = 0 := rfl
+  have h₇ : stackUse (VG.Impl.Mont.X86.Comb.shiftOne e (slot n 8)) = 0 := rfl
+  unfold core
+  split
+  · simp only [coreW, setup2, tableW, table2, stepW, finish, stackUse, mul_stackUse, h₁, h₂, h₅, h₆, h₇,
+      Nat.max_le]
+    omega_using [this]
+  · simp only [coreBits, setup2, encode, step, finish, stackUse, mul_stackUse, h₁, h₂, h₃, h₄, Nat.max_le]
+    omega_using [this]
+
+theorem body_stackUse (n e : Nat) : stackUse (body n e) ≤ 96 := by
+  have := core_stackUse n e
+  simp only [body, stackUse, Nat.max_le]
   omega_using [this]
 
 theorem zone_ofs {sp : BitVec 32} {base : Addr} {size : Nat}
