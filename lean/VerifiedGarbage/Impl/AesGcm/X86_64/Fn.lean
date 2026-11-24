@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Impl.AesGcm.X86_64.BoundedSeal
+
 public import VerifiedGarbage.Impl.AesGcm.X86_64
 public import VerifiedGarbage.Impl.AesGcm.X86_64.Short
 public import VerifiedGarbage.Impl.AesGcm.X86_64.SealFin
@@ -68,7 +70,7 @@ def openCode (short : Bool) (c : Callees) : Prog isa :=
 def sealCodeP (short fin : Bool) (c : Callees) : Prog isa :=
   if short then
     Impl.AesGcm.X86_64.Short.«seal» c Impl.AesGcm.X86_64.Short.powersP Impl.AesGcm.X86_64.Short.ghashP
-      (Impl.AesGcm.X86_64.FastSeal.sel c (Impl.AesGcm.X86_64.Short.sealLong c))
+      (Impl.AesGcm.X86_64.FastSeal.sel c (Impl.AesGcm.X86_64.Short.sealLong c)) Impl.AesGcm.X86_64.Short.boundedSame
   else if fin then
     Impl.AesGcm.X86_64.SealFin.«seal» c
       (Impl.AesGcm.X86_64.FastSeal.sel c (Impl.AesGcm.X86_64.SealFin.mid c) Impl.AesGcm.X86_64.Short.finKsA true)

@@ -17,19 +17,19 @@ open VG.Spec.Gcm (Block)
 open VG.Proof.Gcm (Ctr)
 variable {Ctx St W SP Q D : Addr} {R n : Nat} {s : State}
 
-private theorem callArgs (L : Lay Ctx St W SP) (e : Env Ctx St W SP s)
+theorem ctrCallArgs {offset : Nat} (fits : 96 ≤ offset ∧ offset+2048 ≤ 2560) (L : Lay Ctx St W SP) (e : Env Ctx St W SP s)
     (q : DataOk St W SP s Q (16*n)) (d : DataW Ctx St W SP s D (16*n))
-    (apart : (⟨Q,16*n⟩ : Region).Disjoint ⟨D,16*n⟩) (rounds : R = 10 ∨ R = 12 ∨ R = 14)
+    (layout : Q = D ∨ (⟨Q,16*n⟩ : Region).Disjoint ⟨D,16*n⟩) (rounds : R = 10 ∨ R = 12 ∨ R = 14)
     (di : s.gpr .rdi = Ctx) (si : s.gpr .rsi = BitVec.ofNat 64 R)
     (dx : s.gpr .rdx = St+48#64) (cx : s.gpr .rcx = Q) (o : s.gpr .r11 = D)
-    (nb : s.gpr .r8 = BitVec.ofNat 64 n) (scr : s.gpr .r9 = W+512#64) :
-    CtrToCall s Ctx (St+48#64) Q D (W+512#64) R n := by
+    (nb : s.gpr .r8 = BitVec.ofNat 64 n) (scr : s.gpr .r9 = W+BitVec.ofNat 64 offset) :
+    CtrToCall s Ctx (St+48#64) Q D (W+BitVec.ofNat 64 offset) R n := by
   have ks : Region.Sub ⟨Ctx,240⟩ ⟨Ctx,256⟩ := Region.sub_prefix (by decide)
   have cs : Region.Sub ⟨St+48#64,16⟩ ⟨St,80⟩ := Lay.stSub (by decide)
-  have ws : Region.Sub ⟨W+512#64,2048⟩ ⟨W,2560⟩ := Lay.wSub (by decide)
+  have ws : Region.Sub ⟨W+BitVec.ofNat 64 offset,2048⟩ ⟨W,2560⟩ := Lay.wSub fits.2
   refine ⟨di, si, dx, cx, nb, scr, o, rounds, q.wrap, d.ok.wrap, (L.cs.sub_left ks).sub_right cs,
     d.ctx.sub_left ks, (L.cw'.sub_left ks).sub_right ws, (q.st.sub_right cs).symm,
-    (d.ok.st.sub_right cs).symm, L.st_w (by decide) (.inr ⟨by decide, by decide⟩), Or.inr apart,
+    (d.ok.st.sub_right cs).symm, L.st_w (by decide) (.inr fits), layout,
     q.w.sub_right ws, d.ok.w.sub_right ws, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [e.rsp]; exact L.kc.sub_right ks
   · rw [e.rsp]; exact L.ks.sub_right cs
@@ -37,13 +37,13 @@ private theorem callArgs (L : Lay Ctx St W SP) (e : Env Ctx St W SP s)
   · rw [e.rsp]; exact d.ok.stk
   · rw [e.rsp]; exact L.kw.sub_right ws
   · refine covers_cons ?_ (covers_cons q.rd (covers_cons (covers_left (e.perm.stC (by decide)))
-      (covers_cons (covers_left d.wr) (covers_left (e.perm.wC (by decide))))))
+      (covers_cons (covers_left d.wr) (covers_left (e.perm.wC fits.2)))))
     exact fun a m ⟨_, hr, hc⟩ => by
       simp only [List.mem_singleton] at hr
       subst hr
       exact e.perm.ctx a m ⟨_, List.mem_singleton_self _, by
         simp only [Region.Contains] at hc ⊢; omega⟩
-  · exact covers_cons (e.perm.stC (by decide)) (covers_cons d.wr (e.perm.wC (by decide)))
+  · exact covers_cons (e.perm.stC (by decide)) (covers_cons d.wr (e.perm.wC fits.2))
 
 abbrev wholeArgs : List Instr :=
   ([.mov .rcx (.reg .rbx),.mov .r11 (.reg .r12),.mov .rax (.reg .rbp),.alu .and .rbp (imm 15),
@@ -90,8 +90,8 @@ theorem whole_args (L : Lay Ctx St W SP) (p : PieceInput Ctx St W SP R Q D n s)
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl <;> simp [gpr_setReg, gpr_arithFlags]) rfl rfl
   subst t
-  refine ⟨env', ?_, ?_, ?_, callArgs L env' ((p.src.take bound).of_eq rfl rfl)
-    ((p.dst.take bound).of_eq rfl rfl) ((p.apart.sub_left pre).sub_right (Region.sub_prefix bound)) p.rounds.2
+  refine ⟨env', ?_, ?_, ?_, ctrCallArgs (offset:=512) (by decide) L env' ((p.src.take bound).of_eq rfl rfl)
+    ((p.dst.take bound).of_eq rfl rfl) (.inr ((p.apart.sub_left pre).sub_right (Region.sub_prefix bound))) p.rounds.2
     ?_ ?_ ?_ ?_ ?_ ?_ ?_, rfl, rfl, rfl⟩
   all_goals simp [gpr_setReg, gpr_arithFlags, bp, bx, d, h13, h14, h15, rr, mask, span, nb]
 

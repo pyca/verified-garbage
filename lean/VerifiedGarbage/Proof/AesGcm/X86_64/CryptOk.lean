@@ -563,7 +563,7 @@ theorem cryptTailG_okP (to : Bool) {sc : Nat} (C : CrCallP v sc) {R : Nat} {icb 
           · rw [hk]; exact hdj.ok.stk.symm
       · simp only [TailSrc, ↓reduceIte] at hq
         obtain ⟨-, hQd, hQD, hQm⟩ := hq
-        refine ⟨hQd.rd, .inr hQD, ?_⟩
+        refine ⟨hQd.rd, hQD, ?_⟩
         rw [← hQm, bytesAt_frame gframe (fun r hr => ?_) (by omega_arith), bytesAt_frame fz (fun r hr => ?_) (by omega_arith)]
         · simp only [List.mem_singleton] at hr; subst hr; exact hQd.st.sub_right (Lay.stSub (by decide))
         · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -912,7 +912,7 @@ theorem cryptTailG_okZ (to : Bool) {sc : Nat} {z : Nat → Bool} (C : CrCallZ v 
           · rw [hk]; exact hdj.ok.stk.symm
       · simp only [TailSrc, ↓reduceIte] at hq
         obtain ⟨-, hQd, hQD, hQm⟩ := hq
-        refine ⟨hQd.rd, .inr hQD, ?_⟩
+        refine ⟨hQd.rd, hQD, ?_⟩
         rw [← hQm, bytesAt_frame gframe (fun r hr => ?_) (by omega_arith), bytesAt_frame fz (fun r hr => ?_) (by omega_arith)]
         · simp only [List.mem_singleton] at hr; subst hr; exact hQd.st.sub_right (Lay.stSub (by decide))
         · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr

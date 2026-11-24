@@ -59,7 +59,7 @@ use crate::arch::dispatch::gcm::vg_aes_gcm_seal_gather_auto;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::dispatch::gcm::{
     vg_aes_gcm_open_prepared_auto, vg_aes_gcm_open_to_prepared_auto, vg_aes_gcm_prepare_auto,
-    vg_aes_gcm_seal_gather_prepared_auto, vg_aes_gcm_seal_prepared_auto,
+    vg_aes_gcm_seal_contiguous_prepared_auto, vg_aes_gcm_seal_gather_prepared_auto,
     vg_aes_gcm_stream_decrypt_prepared_auto, vg_aes_gcm_stream_encrypt_prepared_auto,
     vg_aes_gcm_wipe_prepared_auto,
 };
@@ -312,6 +312,7 @@ impl AesGcm {
     ///
     /// The nonce may have any nonzero length; 12 bytes is the recommended
     /// (and fastest) one. A nonce must never be used twice with the same key.
+    #[cfg_attr(target_arch = "x86_64", inline)]
     pub fn encrypt_in_place(
         &self,
         nonce: &[u8],
@@ -326,13 +327,49 @@ impl AesGcm {
         Ok(self.seal(dit, nonce, aad, data))
     }
 
-    #[cfg(target_arch = "aarch64")]
+    #[cfg(any(target_arch = "aarch64", target_arch = "x86_64"))]
     #[inline(always)]
     fn seal(&self, dit: crate::dit::Dit<'_>, nonce: &[u8], aad: &[u8], data: &mut [u8]) -> Block {
         let len = data.len();
         let dst = data.as_mut_ptr();
         // SAFETY: both pointers refer to the same exclusive, initialized slice.
         unsafe { self.seal_contiguous(dit, nonce, aad, dst.cast_const(), dst, len) }
+    }
+
+    /// Seal a checked contiguous record. The source and destination must be
+    /// identical or disjoint and valid for reads and writes of `len` bytes,
+    /// respectively. The destination must be disjoint from the other inputs.
+    #[cfg(target_arch = "x86_64")]
+    #[inline(always)]
+    unsafe fn seal_contiguous(
+        &self,
+        dit: crate::dit::Dit<'_>,
+        nonce: &[u8],
+        aad: &[u8],
+        src: *const u8,
+        dst: *mut u8,
+        len: usize,
+    ) -> Block {
+        let mut tag = [0; 16];
+        // SAFETY: the caller supplies the plaintext and destination. The
+        // constructor prepared the 1032-byte key for the chosen round count.
+        // The nonce and AAD are readable slices and the tag is local.
+        unsafe {
+            vg_aes_gcm_seal_contiguous_prepared_auto(
+                dit,
+                self.ctx.0.as_ptr(),
+                self.rounds,
+                nonce.as_ptr(),
+                nonce.len(),
+                aad.as_ptr(),
+                aad.len(),
+                src,
+                dst,
+                len,
+                &mut tag,
+            )
+        }
+        tag
     }
 
     /// Seal the plaintext at `src` into `dst` and return its detached tag.
@@ -376,15 +413,13 @@ impl AesGcm {
     }
 
     /// Encrypt the checked record in place with the platform's seal entry.
-    #[cfg(not(target_arch = "aarch64"))]
+    #[cfg(not(any(target_arch = "aarch64", target_arch = "x86_64")))]
     #[inline(always)]
     fn seal(&self, dit: crate::dit::Dit<'_>, nonce: &[u8], aad: &[u8], data: &mut [u8]) -> Block {
         let mut tag: Block = [0; 16];
         // SAFETY: `self.ctx` is the key context `vg_aes_gcm_init` wrote for
         // `self.rounds` (10, 12 or 14) rounds, valid for reads of 256 bytes,
-        // followed on x86-64 by the powers `vg_aes_gcm_prepare` wrote for the
-        // same key (`AesGcm::new`), valid for reads of 1032 bytes in all,
-        // and on RISC-V next to its bitsliced
+        // on RISC-V next to its bitsliced
         // form `vg_aes_gcm_bitslice` wrote (`self.bk`, 1248 bytes, read
         // only); `nonce` and `aad` are valid for reads
         // and `data` for reads and writes of their lengths, and `tag` (a
@@ -393,19 +428,6 @@ impl AesGcm {
         // else, nor anything on the stack, and none wraps around the end of
         // the address space.
         unsafe {
-            #[cfg(target_arch = "x86_64")]
-            vg_aes_gcm_seal_prepared_auto(
-                dit,
-                self.ctx.0.as_ptr(),
-                self.rounds,
-                nonce.as_ptr(),
-                nonce.len(),
-                aad.as_ptr(),
-                aad.len(),
-                data.as_mut_ptr(),
-                data.len(),
-                &mut tag,
-            );
             #[cfg(target_arch = "riscv64")]
             vg_aes_gcm_seal_bitsliced_auto(
                 dit,
@@ -720,8 +742,7 @@ impl AesGcm {
         // SAFETY: MaybeUninit<u8> has the layout of u8. encrypt_uninit
         // writes only initialized bytes and leaves the slice alone on error.
         let dst = unsafe { core::slice::from_raw_parts_mut(out.as_mut_ptr().cast(), out.len()) };
-        self.encrypt_uninit(nonce, aad, plaintext, dst)
-            .map(|(_, tag)| tag)
+        self.encrypt_checked(nonce, aad, plaintext, dst)
     }
 
     /// Like [`encrypt`](Self::encrypt), with output storage that may be
@@ -735,23 +756,43 @@ impl AesGcm {
         plaintext: &[&[u8]],
         out: &'out mut [MaybeUninit<u8>],
     ) -> Result<(&'out mut [u8], Block), Error> {
+        let tag = self.encrypt_checked(nonce, aad, plaintext, out)?;
+        // SAFETY: both seal contracts initialize the entire destination on success.
+        Ok((unsafe { out.assume_init_mut() }, tag))
+    }
+
+    // Return the tag directly so encrypt can use the caller's return slot.
+    #[inline(always)]
+    fn encrypt_checked(
+        &self,
+        nonce: &[u8],
+        aad: &[u8],
+        plaintext: &[&[u8]],
+        out: &mut [MaybeUninit<u8>],
+    ) -> Result<Block, Error> {
         crate::dit::enter!(dit);
         if plaintext.len() > Self::MAX_PIECES {
             return Err(Error::TooManyPieces);
         }
         check_nonce(nonce)?;
-        let mut len = 0;
-        for p in plaintext {
-            len = add_len(len, p.len(), MAX_TEXT).map_err(|()| Error::InvalidTextLength)?;
-        }
+        let len = match plaintext {
+            // TLS 1.3 supplies its record and content type as two pieces.
+            #[cfg(target_arch = "x86_64")]
+            [first, second] => add_len(first.len() as u64, second.len(), MAX_TEXT)
+                .map_err(|()| Error::InvalidTextLength)?,
+            _ => {
+                let mut len = 0;
+                for p in plaintext {
+                    len = add_len(len, p.len(), MAX_TEXT).map_err(|()| Error::InvalidTextLength)?;
+                }
+                len
+            }
+        };
         if len != out.len() as u64 {
             return Err(Error::InvalidOutputLength);
         }
         add_len(0, aad.len(), MAX_AAD).map_err(|()| Error::InvalidAadLength)?;
-        let tag = self.seal_pieces(dit, nonce, aad, plaintext, out);
-        // SAFETY: the seal contracts specify every byte of the ciphertext
-        // for arbitrary prior destination contents, including an empty output.
-        Ok((unsafe { out.assume_init_mut() }, tag))
+        Ok(self.seal_pieces(dit, nonce, aad, plaintext, out))
     }
 
     /// Seal the caller's checked plaintext pieces into their exact-size destination.
@@ -766,7 +807,7 @@ impl AesGcm {
     ) -> Block {
         let dst = out.as_mut_ptr().cast();
         let len = out.len();
-        #[cfg(target_arch = "aarch64")]
+        #[cfg(any(target_arch = "aarch64", target_arch = "x86_64"))]
         if let [input] = plaintext {
             // SAFETY: the checked length equals input.len(). The exclusive
             // destination is disjoint from the borrowed input and metadata.
@@ -1651,8 +1692,10 @@ mod tests {
                 let (h, q) = (len / 2, (len / 2 + 16).min(len));
                 let one: [&[u8]; 1] = [m];
                 let two: [&[u8]; 2] = [&m[..h], &m[h..]];
+                let empty_first: [&[u8]; 2] = [&[], m];
+                let empty_last: [&[u8]; 2] = [m, &[]];
                 let five: [&[u8]; 5] = [&[], &m[..h], &m[h..h], &m[h..q], &m[q..]];
-                for pieces in [&one[..], &two, &five] {
+                for pieces in [&one[..], &two, &empty_first, &empty_last, &five] {
                     let mut out = [0u8; 300];
                     let tag = k.encrypt(&nonce, aad, pieces, &mut out[..len]);
                     assert_eq!((&out[..len], tag), (&want[..len], Ok(want_tag)));

@@ -354,9 +354,11 @@ theorem bulk_rel {M : CtxMode} (T : BlocksTo.SealFn M) {s t : State} (h : Layout
       · rw [pu.r10,pz.r10,dp,dp,pub.src]
       · rw [pu.env.r14,pz.env.r14,pub.w]
       · rw [pu.env.r15,pz.env.r15,pub.w]) ⟨_,by taint_decide⟩
-    have reg := bulk_regs j pz.toLoopAt nt
-    change Split.CallRegions M (K t) (W t) (SP t) (Dst t) (sb t 0) (R t) (L t) (preBytes t) d at reg
-    simp only [K,SP,R,preBytes,pub.rdi,pub.rsp,pub.rsi,pub.w,pub.dst,pub.sb n,pub.eL,len] at reg
+    have reg : Split.CallRegions M (K s) (W s) (SP s) (Dst s) (sb s 0) (R s) (L s) (preBytes s) d := by
+      have keys : (K t, W t, SP t, Dst t, sb t 0, R t, L t, preBytes t) =
+          (K s, W s, SP s, Dst s, sb s 0, R s, L s, preBytes s) := by
+        simp only [K,SP,R,preBytes,pub.rdi,pub.rsp,pub.rsi,pub.w,pub.dst,pub.sb n,pub.eL,len]
+      exact Eq.mp (congrArg (fun (k,w,sp,dst,src,r,n,l) => Split.CallRegions M k w sp dst src r n l d) keys) (bulk_regs j pz.toLoopAt nt)
     have call := Split.Compact.call_rel (bulk_regs h pu.toLoopAt n) reg T
     apply RelCT.seq (args.wp (F₁:=Split.G₂ (K s) (W s) (SP s) (Dst s) (sb s 0) (R s) (preBytes s) c)
       (F₂:=Split.G₂ (K s) (W s) (SP s) (Dst s) (sb s 0) (R s) (preBytes s) d) (by

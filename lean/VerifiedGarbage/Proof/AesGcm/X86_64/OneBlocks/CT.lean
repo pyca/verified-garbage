@@ -809,31 +809,26 @@ theorem load2T_ok {R al : Nat} {D : Addr} {n N : Nat} {s : State}
 /-- The tag of the data (as ciphertext) into `W + o`, in two runs in `OneT`
 for the same parameters: the data only read, wherever it is (in place, or
 out of place at `src`). -/
-theorem oneTag_relT {R al : Nat} {D : Addr} {n N : Nat} {o : Nat} (ho : o = 0 ∨ o = 112)
-    (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 2560⟩) :
-    RelCT isa (fun s₁ s₂ => OneT Ctx W SP R al D n N s₁ ∧ OneT Ctx W SP R al D n N s₂) (oneTag v.callees o)
-      fun _ _ => True := by
-  have hL : ∀ s, OneT Ctx W SP R al D n N s → WP isa (.block [.mov .r12 (.mem (at_ .r15 dataO)),
-      .mov .rbp (.mem (at_ .r15 lenO)), .mov32 .rbx (imm 0)]) s fun s₁ => OneT Ctx W SP R al D n N s₁ ∧
-      s₁.gpr .r12 = D ∧ s₁.gpr .rbp = BitVec.ofNat 64 n ∧ s₁.gpr .rbx = BitVec.ofNat 64 0 := fun s h =>
-    load2T_ok h h.dat h.len (h.env.perm.wR (show 200 + 8 ≤ 2560 by decide)) (h.env.perm.wR (show 208 + 8 ≤ 2560 by decide))
-  have a := rel_wp (rel_taint [.r13, .r14, .r15, .rsp] (fun _ _ h => env_agree h.1.env h.2.env) ⟨_, by taint_decide⟩)
-    (fun _ _ h => h) hL hL
-  let AI : State → Prop := fun s => OneT Ctx W SP R al D n N s ∧ s.gpr .r12 = D ∧
-    s.gpr .rbp = BitVec.ofNat 64 n ∧ s.gpr .rbx = BitVec.ofNat 64 0
+theorem tagCiphertext_rel {R al : Nat} {D E : Addr} {n e N : Nat} {o : Nat} (ho : o=0 ∨ o=112)
+    (hDW : (⟨E,e⟩ : Region).Disjoint ⟨W,2560⟩) :
+    let AI := fun s : State => OneT Ctx W SP R al E e N s ∧ s.gpr .r12=D ∧ s.gpr .rbp=BitVec.ofNat 64 n ∧
+      s.gpr .rbx=0 ∧ DataOk (W+16#64) W SP s D n
+    RelCT isa (fun a b => AI a ∧ AI b) (tagCiphertext v.callees o) (fun _ _ => True) := by
+  let AI (s : State) := OneT Ctx W SP R al E e N s ∧ s.gpr .r12=D ∧ s.gpr .rbp=BitVec.ofNat 64 n ∧
+      s.gpr .rbx=0 ∧ DataOk (W+16#64) W SP s D n
   have ai : ∀ s, AI s → AbsIn Ctx (W + BitVec.ofNat 64 16) W SP 16 (blockAt s.mem (Ctx + BitVec.ofNat 64 240)) [] D n s :=
-    fun s h => ⟨h.1.env, h.2.1, h.2.2.1, h.2.2.2, h.1.dD, rfl⟩
-  have hA : ∀ s, AI s → WP isa (absorbPad v.callees 16) s (OneT Ctx W SP R al D n N) := fun s h =>
+    fun s h => ⟨h.1.env, h.2.1, h.2.2.1, h.2.2.2.1, h.2.2.2.2, rfl⟩
+  have hA : ∀ s, AI s → WP isa (absorbPad v.callees 16) s (OneT Ctx W SP R al E e N) := fun s h =>
     WP.mono (WP.with_rdwr (absorbPad_ok v L (.inr rfl) (ai s h) rfl)) fun _ ⟨o, hrd, hwr⟩ => by
       obtain ⟨m, fa, ft⟩ := o.frame
       exact h.1.frame L o.env hrd hwr hDW (w_one ((absFrame_one fa).trans (tFrame_one ft)))
   have b := rel_wp ((RelCT.exists_ fun H₁ => RelCT.exists_ fun H₂ =>
       absorbPad_rel v L (.inr rfl) (H₁ := H₁) (H₂ := H₂) (x₁ := []) (x₂ := []) (D := D) (n := n) rfl rfl).mono
-      (P' := fun s₁ s₂ => True ∧ AI s₁ ∧ AI s₂) (fun _ _ h => ⟨_, _, ai _ h.2.1, ai _ h.2.2⟩) fun _ _ h => h)
-    (fun _ _ h => h.2) hA hA
+      (P' := fun s₁ s₂ => AI s₁ ∧ AI s₂) (fun _ _ h => ⟨_, _, ai _ h.1, ai _ h.2⟩) fun _ _ h => h)
+    (fun _ _ h => h) hA hA
   -- The lengths, for `tag`.
-  have hT : ∀ s, OneT Ctx W SP R al D n N s → WP isa (.block [.mov .rbx (.mem (at_ .r15 alenO)),
-      .mov .rbp (.mem (at_ .r15 tlenO))]) s fun s₁ => OneT Ctx W SP R al D n N s₁ ∧
+  have hT : ∀ s, OneT Ctx W SP R al E e N s → WP isa (.block [.mov .rbx (.mem (at_ .r15 alenO)),
+      .mov .rbp (.mem (at_ .r15 tlenO))]) s fun s₁ => OneT Ctx W SP R al E e N s₁ ∧
       s₁.gpr .rbx = BitVec.ofNat 64 al ∧ s₁.gpr .rbp = BitVec.ofNat 64 N := fun s h => by
     have q₁ := h.env.perm.wR (show 184 + 8 ≤ 2560 by decide)
     have q₂ := h.env.perm.wR (show 192 + 8 ≤ 2560 by decide)
@@ -850,17 +845,31 @@ theorem oneTag_relT {R al : Nat} {D : Addr} {n N : Nat} {o : Nat} (ho : o = 0 �
     refine WP.of_runBlock ⟨s₁, run₁, h.keep (fun r hr => ?_) hm₁ hrd₁ hwr₁, hbx, hbp⟩
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl <;> exact hg₁ _ (by decide) (by decide)
-  have e := rel_wp (rel_taint (P := fun s₁ s₂ => True ∧ (OneT Ctx W SP R al D n N s₁ ∧ OneT Ctx W SP R al D n N s₂)) [.r13, .r14, .r15, .rsp]
+  have lens := rel_wp (rel_taint (P := fun s₁ s₂ => True ∧ (OneT Ctx W SP R al E e N s₁ ∧ OneT Ctx W SP R al E e N s₂)) [.r13, .r14, .r15, .rsp]
       (fun _ _ h => env_agree h.2.1.env h.2.2.env) ⟨_, by taint_decide⟩) (fun _ _ h => h.2) hT hT
   have t := (tag_rel v L (by decide) (TagCall.base v) (R := R) ho).mono (P' := fun (s₁ s₂ : State) => True ∧
-      (OneT Ctx W SP R al D n N s₁ ∧ s₁.gpr .rbx = BitVec.ofNat 64 al ∧ s₁.gpr .rbp = BitVec.ofNat 64 N) ∧
-      (OneT Ctx W SP R al D n N s₂ ∧ s₂.gpr .rbx = BitVec.ofNat 64 al ∧ s₂.gpr .rbp = BitVec.ofNat 64 N))
+      (OneT Ctx W SP R al E e N s₁ ∧ s₁.gpr .rbx = BitVec.ofNat 64 al ∧ s₁.gpr .rbp = BitVec.ofNat 64 N) ∧
+      (OneT Ctx W SP R al E e N s₂ ∧ s₂.gpr .rbx = BitVec.ofNat 64 al ∧ s₂.gpr .rbp = BitVec.ofNat 64 N))
     (fun _ _ h => ⟨⟨h.2.1.1.env, h.2.2.1.env, fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · rw [h.2.1.2.1, h.2.2.2.1]
       · rw [h.2.1.2.2, h.2.2.2.2]⟩, h.2.1.1.rounds, h.2.2.1.rounds⟩) fun _ _ h => h
-  exact RelCT.seq a (RelCT.seq b (RelCT.seq e t))
+  exact RelCT.seq b (RelCT.seq lens t)
+
+theorem oneTag_relT {R al : Nat} {D : Addr} {n N : Nat} {o : Nat} (ho : o = 0 ∨ o = 112)
+    (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 2560⟩) :
+    RelCT isa (fun s₁ s₂ => OneT Ctx W SP R al D n N s₁ ∧ OneT Ctx W SP R al D n N s₂) (oneTag v.callees o)
+      fun _ _ => True := by
+  have hL : ∀ s, OneT Ctx W SP R al D n N s → WP isa (.block [.mov .r12 (.mem (at_ .r15 dataO)),
+      .mov .rbp (.mem (at_ .r15 lenO)), .mov32 .rbx (imm 0)]) s fun s₁ => OneT Ctx W SP R al D n N s₁ ∧
+      s₁.gpr .r12 = D ∧ s₁.gpr .rbp = BitVec.ofNat 64 n ∧ s₁.gpr .rbx = BitVec.ofNat 64 0 := fun s h =>
+    load2T_ok h h.dat h.len (h.env.perm.wR (show 200 + 8 ≤ 2560 by decide)) (h.env.perm.wR (show 208 + 8 ≤ 2560 by decide))
+  have a := rel_wp (rel_taint [.r13, .r14, .r15, .rsp] (fun _ _ h => env_agree h.1.env h.2.env) ⟨_, by taint_decide⟩)
+    (fun _ _ h => h) hL hL
+  exact RelCT.seq a ((tagCiphertext_rel v L (D:=D) (n:=n) (N:=N) (R:=R) ho hDW).mono
+    (fun _ _ h => ⟨⟨h.2.1.1,h.2.1.2.1,h.2.1.2.2.1,h.2.1.2.2.2,h.2.1.1.dD⟩,h.2.2.1,h.2.2.2.1,h.2.2.2.2.1,h.2.2.2.2.2,h.2.2.1.dD⟩)
+    fun _ _ h => h)
 
 /-- The tag of the data (as ciphertext) into `W + o`, in two runs in `OneS`. -/
 theorem oneTag_rel {R : Nat} {A : Addr} {al : Nat} {D : Addr} {n : Nat} {N : Nat} {o : Nat} (ho : o = 0 ∨ o = 112)
