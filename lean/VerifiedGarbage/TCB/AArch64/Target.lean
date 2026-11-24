@@ -130,6 +130,8 @@ def abi : Abi isa where
       | 0 => True
       | n => n ≤ s.sp.toNat) ∧ s.sp.toNat + 8 * (ws.length - argRegs.length) ≤ 2 ^ 64
   pub s₁ s₂ := s₁.sp = s₂.sp ∧ s₁.dit = s₂.dit
+  -- PSTATE.DIT.
+  mode s := if s.dit then 1 else 0
   mem s := s.mem
   rd s := s.rd
   wr s := s.wr

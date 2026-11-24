@@ -36,7 +36,7 @@ named code and a theorem about it and nothing else (`target_problems`):
   * a record's `code :=` is a definition of `Impl/` (`Impl.…`, applied to
     what it takes) but a cleanup form (`Impl.Scrub.…`): the function as
     emitted, cleanup included, is a definition of its own; and its
-    `verified :=`, `spSafe :=` and `writtenOk :=` are theorems of `Proof/`
+    `verified :=`, `spSafe :=`, `writtenOk :=` and `modeOk :=` are theorems of `Proof/`
     (`Proof.…`, applied to what they take), named in full, not through an
     `open`;
   * it has no other fields than those and the choices `CHOICES` names, which
@@ -101,6 +101,7 @@ BOUND = {
     "verified": (re.compile(r"\(?\s*Proof\."), "a theorem of `Proof/`; bind `Proof.…`"),
     "spSafe": (re.compile(r"\(?\s*Proof\."), "a theorem of `Proof/`; bind `Proof.…`"),
     "writtenOk": (re.compile(r"\(?\s*Proof\."), "a theorem of `Proof/`; bind `Proof.…`"),
+    "modeOk": (re.compile(r"\(?\s*Proof\."), "a theorem of `Proof/`; bind `Proof.…`"),
 }
 SCRUB_FORM = re.compile(r"\(?\s*Impl\.Scrub\.")
 # x86-64's streaming functions (`StreamFnS`), whose code the hash function's

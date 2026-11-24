@@ -12,8 +12,9 @@ target, the code and its proof, the stack it uses, the constant tables it
 reads and the functions whose addresses its contract makes public
 (`Abi.withFns`) (which `stack_of`, `consts_of` and `fns_of` find in the
 contract the proof is of), the tables of functions it takes, how much
-of its writable arrays it writes (`written`, with its proof), and the suffix
-of its name. The proof is also that the code returns without secret residue
+of its writable arrays it writes (`written`, with its proof), the proof of
+what its `Api` says it does to the mode its target's timing rests on
+(`Api.mode`), if that is what it is for, and the suffix of its name. The proof is also that the code returns without secret residue
 (`VerifiedScrubbed`): the cleanup is part of the code it is of, like
 everything else the function does. Everything else
 comes from the `Api` (`Spec/`): the Rust module, name, signature and
@@ -317,6 +318,16 @@ structure Artifact (target : Target) where
   writtenOk : ∀ s t s', contract.pre s → Exec target.isa code s t s' →
       Sig.writtenWithin target.abi sig written s s' := by
     exact fun _ _ _ _ _ => True.intro
+  /-- What the function does to the mode its target's timing rests on, if it
+  is for that: its `Api`'s (`Api.mode`). -/
+  mode : Option (BitVec 64 → BitVec 64 → BitVec 64 → Prop) := none
+  /-- Every run from a state satisfying `contract.pre` does that. The tables
+  of constants (`Abi.withConsts`) and of functions (`Abi.withTables`), and the
+  functions of public addresses (`Abi.withFns`), leave `Abi.mode` and
+  `Abi.ret` as they are. -/
+  modeOk : ∀ q, mode = some q → ∀ s t s', contract.pre s → Exec target.isa code s t s' →
+      q (target.abi.mode s) (target.abi.mode s') (target.abi.ret s') := by
+    exact fun _ h => nomatch h
   /-- CPU features beyond `features`, by their Rust `target_feature` names,
   without which its function's dispatcher does not choose it: those of the
   CPUs it is faster on. -/
@@ -496,6 +507,10 @@ structure Registration (api : Api) (target : Target) where
   writtenOk : ∀ s t s', contract.pre s → Exec target.isa code s t s' →
       Sig.writtenWithin target.abi api.sig written s s' := by
     exact fun _ _ _ _ _ => True.intro
+  /-- `Artifact.modeOk`, for `api`'s `mode`. -/
+  modeOk : ∀ q, api.mode = some q → ∀ s t s', contract.pre s → Exec target.isa code s t s' →
+      q (target.abi.mode s) (target.abi.mode s') (target.abi.ret s') := by
+    exact fun _ h => nomatch h
   /-- `Artifact.extra`. -/
   extra : List String := []
   /-- `Artifact.vendor`. -/
@@ -534,6 +549,8 @@ def Api.artifact (api : Api) (target : Target) (r : Registration api target) :
   features := Code.requiresDedup target.isa r.code (FnTable.tablesFns r.tables).contains
   written := r.written
   writtenOk := r.writtenOk
+  mode := api.mode
+  modeOk := r.modeOk
   extra := r.extra
   vendor := r.vendor
   notWith := r.notWith

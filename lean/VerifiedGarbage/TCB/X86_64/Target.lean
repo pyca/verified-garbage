@@ -110,6 +110,8 @@ def abi : Abi isa where
       | n => n ≤ (s.gpr .rsp).toNat) ∧
       (s.gpr .rsp).toNat + 8 * (ws.length - argRegs.length + 1) ≤ 2 ^ 64
   pub s₁ s₂ := s₁.gpr .rsp = s₂.gpr .rsp ∧ s₁.mxcsr = s₂.mxcsr
+  -- MXCSR.
+  mode s := s.mxcsr.setWidth 64
   mem s := s.mem
   rd s := s.rd
   wr s := s.wr
