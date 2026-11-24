@@ -230,7 +230,7 @@ theorem start_wp {s t : State} (h : GatherBs.Lay s) (ht : Prepared s t) :
   unfold entry
   rw [WP.block_append_iff]
   refine WP.mono (one1At_args_wp (off := 32) (tagO := 16) (W := w) (T := Tg s) (by decide)
-    (.inr rfl) WC wa (ht.sp ▸ sa) (ht.sp ▸ slots 4 (by decide)) (ht.sp ▸ ht.workArg)
+    (by decide) WC wa (ht.sp ▸ sa) (ht.sp ▸ slots 4 (by decide)) (ht.sp ▸ ht.workArg)
     (ht.sp ▸ slots 2 (by decide)) (ht.sp ▸ ht.args 2 (by decide)) ?_) fun u ⟨hu, a6, a7⟩ => ?_
   · rw [ht.sp]
     exact (dis.sub_left (Offset.sub_base p (by decide : 16+8 ≤ 40))).sub_right

@@ -155,7 +155,7 @@ theorem openToBsPreR.opre {s₀ : State} (h : openToBsPreR s₀) :
   exact ⟨mr (by rw [hrd]; simp), mr (by rw [hrd]; simp), mr (by rw [hrd]; simp), mr (by rw [hrd]; simp),
     mr (by rw [hrd]; simp), by rw [hwr]; exact covers_mem (by simp), hD, dcW, dnW, daW, dsW, dtW, dDW, dcD, fc,
     fn, fa, fs, fD, fW, (stackArg s₀ 3).isLt, hb, hstk.1, hstk.2.1,
-    hR, ca, wa, dsD⟩
+    hR, ca, wa, .inr dsD⟩
 
 
 /-- What `vg_aes_gcm_open_to_bitsliced`'s precondition says of `bk`. -/

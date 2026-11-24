@@ -98,8 +98,71 @@ theorem ghCall_mk {V : Reg → BitVec 64} {sp : Addr} (L : Lay (V .s2) (V .s1) (
       (Covers.cons (covers_left (he.perm.stC (by omega_using [hyo]))) (covers_left (he.perm.wC (by decide)))))
   · exact Covers.cons (he.perm.stC (by omega_using [hyo])) (he.perm.wC (by decide))
 
+/-- Code never changes the permissions or the stack pointer. -/
+theorem WP.with_rdwr {c : Prog isa} {s : State} {Q : State → Prop} (h : WP isa c s Q) :
+    WP isa c s fun s' => Q s' ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp := by
+  obtain ⟨t, s', e, q⟩ := h
+  exact ⟨t, s', e, q, Exec.rdwr e⟩
+
+/-- A GHASH entry satisfying the common call result after its argument registers
+have been set. Memory and permissions still match the state before setup. -/
+abbrev HashAction (invoke : Prog isa) (K : Addr) (s : State) : Prop :=
+  ∀ {t : State}, Keeps s t → ∀ {Y D S : Addr} {n : Nat},
+    GhCall t K Y D S n → WP isa invoke t (GhPost t K Y D S n)
+
+theorem ordinaryHashAction [VG.Proof.Gcm.RISCV64.GhashLaw] (K : Addr) (s : State) :
+    HashAction ghCall K s := by
+  intro t kept Y D S n h
+  exact gh_call h
+
+/-- A hash invocation remains available after writes to the specified frame. -/
+abbrev FramedHashAction (invoke : Prog isa) (K : Addr) (rs : List Region) (s : State) : Prop :=
+  ∀ {t : State}, Keeps' s t → Frame rs s.mem t.mem → HashAction invoke K t
+
+theorem ordinaryFramedHashAction [VG.Proof.Gcm.RISCV64.GhashLaw] (K : Addr) (rs : List Region) (s : State) :
+    FramedHashAction ghCall K rs s := by
+  intro t _ _
+  exact ordinaryHashAction K t
+
+theorem FramedHashAction.after {invoke : Prog isa} {K : Addr} {rs : List Region} {s t : State}
+    (h : FramedHashAction invoke K rs s) (keep : Keeps' s t) (frame : Frame rs s.mem t.mem) :
+    FramedHashAction invoke K rs t := by
+  intro u k f
+  exact h ⟨k.rd.trans keep.rd,k.wr.trans keep.wr,k.sp.trans keep.sp⟩ (frame.trans f)
+
+theorem FramedHashAction.kept {invoke : Prog isa} {K : Addr} {rs : List Region} {s t : State}
+    (h : FramedHashAction invoke K rs s) (k : Keeps s t) : FramedHashAction invoke K rs t :=
+  h.after ⟨k.rd,k.wr,k.sp⟩ (k.mem ▸ Frame.refl _ _)
+
+theorem FramedHashAction.now {invoke : Prog isa} {K : Addr} {rs : List Region} {s : State}
+    (h : FramedHashAction invoke K rs s) : HashAction invoke K s :=
+  h ⟨rfl,rfl,rfl⟩ (Frame.refl _ _)
+
+theorem FramedHashAction.narrow {invoke : Prog isa} {K : Addr} {rs rs' : List Region} {s : State}
+    (h : FramedHashAction invoke K rs s) (sub : ∀ r∈rs',∃ r'∈rs,r.Sub r') :
+    FramedHashAction invoke K rs' s := by
+  intro t k f
+  exact h k (f.sub sub)
+
 /-- The call itself, from a state whose registers are its arguments, for `n`
 blocks at `P`. -/
+theorem ghCall_ok_with {invoke : Prog isa} {V : Reg → BitVec 64} {sp : Addr} (L : Lay (V .s2) (V .s1) (V .s0)) {yo : Nat}
+    (hyo : yo = 0 ∨ yo = 16) {s : State} (he : Env V sp s) {P : Addr} {n : Nat}
+    (h3 : s.gpr .a0 = V .s2 + BitVec.ofNat 64 240) (h4 : s.gpr .a1 = V .s1 + BitVec.ofNat 64 yo)
+    (h5 : s.gpr .a2 = P) (h6 : s.gpr .a3 = BitVec.ofNat 64 n) (h7 : s.gpr .a4 = V .s0 + BitVec.ofNat 64 512)
+    (hn : n < 2 ^ 64)
+    (hpy : (⟨V .s1 + BitVec.ofNat 64 yo, 16⟩ : Region).Disjoint ⟨P, 16 * n⟩)
+    (hpw : (⟨P, 16 * n⟩ : Region).Disjoint ⟨V .s0 + BitVec.ofNat 64 512, 256⟩)
+    (hpk : (⟨P, 16 * n⟩ : Region).Disjoint (below s.sp 2048)) (hpf : P.toNat + 16 * n ≤ 2 ^ 64)
+    (hpr : Covers [⟨P, 16 * n⟩] (s.rd ++ s.wr))
+    (exec : GhCall s (V .s2 + BitVec.ofNat 64 240) (V .s1 + BitVec.ofNat 64 yo) P
+       (V .s0 + BitVec.ofNat 64 512) n → WP isa invoke s
+       (GhPost s (V .s2 + BitVec.ofNat 64 240) (V .s1 + BitVec.ofNat 64 yo) P
+          (V .s0 + BitVec.ofNat 64 512) n)) :
+    WP isa invoke s (GhOut s (V .s2) (V .s0) (V .s1 + BitVec.ofNat 64 yo) (blocksAt s.mem P n)) :=
+  WP.mono (exec (ghCall_mk L hyo he h3 h4 h5 h6 h7 hn hpy hpw hpk hpf hpr)) fun _ h =>
+    ⟨h.rd, h.wr, h.sp, h.saved, h.frame, h.out⟩
+
 theorem ghCall_ok [VG.Proof.Gcm.RISCV64.GhashLaw] {V : Reg → BitVec 64} {sp : Addr} (L : Lay (V .s2) (V .s1) (V .s0)) {yo : Nat}
     (hyo : yo = 0 ∨ yo = 16) {s : State} (he : Env V sp s) {P : Addr} {n : Nat}
     (h3 : s.gpr .a0 = V .s2 + BitVec.ofNat 64 240) (h4 : s.gpr .a1 = V .s1 + BitVec.ofNat 64 yo)
@@ -110,8 +173,7 @@ theorem ghCall_ok [VG.Proof.Gcm.RISCV64.GhashLaw] {V : Reg → BitVec 64} {sp : 
     (hpk : (⟨P, 16 * n⟩ : Region).Disjoint (below s.sp 2048)) (hpf : P.toNat + 16 * n ≤ 2 ^ 64)
     (hpr : Covers [⟨P, 16 * n⟩] (s.rd ++ s.wr)) :
     WP isa ghCall s (GhOut s (V .s2) (V .s0) (V .s1 + BitVec.ofNat 64 yo) (blocksAt s.mem P n)) :=
-  WP.mono (gh_call (ghCall_mk L hyo he h3 h4 h5 h6 h7 hn hpy hpw hpk hpf hpr)) fun _ h =>
-    ⟨h.rd, h.wr, h.sp, h.saved, h.frame, h.out⟩
+  ghCall_ok_with L hyo he h3 h4 h5 h6 h7 hn hpy hpw hpk hpf hpr gh_call
 
 /-- `ghash1`'s arguments, for the block at `P = b + o`. -/
 theorem ghArgs_ok {V : Reg → BitVec 64} {sp : Addr} {yo : Nat}
@@ -144,6 +206,29 @@ theorem ghArgs_ok {V : Reg → BitVec 64} {sp : Addr} {yo : Nat}
   · rw [u₅.sp, u₄.sp, u₃.sp, u₂.sp, u₁.sp]
 
 /-- `ghash1 yo b o`, for the block at `P = b + o`. -/
+theorem ghash1_ok_with {invoke : Prog isa} {V : Reg → BitVec 64} {sp : Addr} (L : Lay (V .s2) (V .s1) (V .s0)) {yo : Nat}
+    (hyo : yo = 0 ∨ yo = 16) {s : State} (he : Env V sp s) (b : Reg) (o : Nat)
+    (hb : b = .s1 ∨ b = .s0) (ho : o < 2048) {P : Addr} (hP : s.gpr b + BitVec.ofNat 64 o = P)
+    (hpy : (⟨V .s1 + BitVec.ofNat 64 yo, 16⟩ : Region).Disjoint ⟨P, 16⟩)
+    (hpw : (⟨P, 16⟩ : Region).Disjoint ⟨V .s0 + BitVec.ofNat 64 512, 256⟩)
+    (hpk : (⟨P, 16⟩ : Region).Disjoint (below sp 2048)) (hpf : P.toNat + 16 ≤ 2 ^ 64)
+    (hpr : Covers [⟨P, 16⟩] (s.rd ++ s.wr))
+    (exec : HashAction invoke (V .s2+BitVec.ofNat 64 240) s) :
+    WP isa (ghash1With invoke yo b o) s (GhOut s (V .s2) (V .s0) (V .s1 + BitVec.ofNat 64 yo) [blockAt s.mem P]) := by
+  have hargs := ghArgs_ok hyo he b o hb ho hP
+  refine WP.seq (WP.mono hargs fun s₁ ⟨h3, h4, h5, h6, h7, hkeep, hk⟩ => ?_)
+  have he₁ : Env V sp s₁ := he.keep (fun r hr => hkeep r (by revert r; decide) (by revert r; decide)
+    (by revert r; decide) (by revert r; decide) (by revert r; decide)) hk.sp hk.rd hk.wr
+  refine WP.mono (ghCall_ok_with L hyo he₁ (P := P) (n := 1) h3 h4 h5 h6 h7 (by decide)
+    (by simpa using hpy) (by simpa using hpw) (by rw [he₁.sp]; simpa using hpk) (by simpa using hpf)
+    (by rw [hk.rd, hk.wr]; simpa using hpr) (exec hk)) fun s' h => ?_
+  exact ⟨h.rd.trans hk.rd, h.wr.trans hk.wr, h.spk.trans hk.sp,
+    fun r hr => by
+      rw [h.saved r hr]
+      exact hkeep r (by revert r; decide) (by revert r; decide) (by revert r; decide)
+        (by revert r; decide) (by revert r; decide),
+    by rw [← hk.sp, ← hk.mem]; exact h.frame, by rw [h.out, blocksAt_one, hk.mem]⟩
+
 theorem ghash1_ok [VG.Proof.Gcm.RISCV64.GhashLaw] {V : Reg → BitVec 64} {sp : Addr} (L : Lay (V .s2) (V .s1) (V .s0)) {yo : Nat}
     (hyo : yo = 0 ∨ yo = 16) {s : State} (he : Env V sp s) (b : Reg) (o : Nat)
     (hb : b = .s1 ∨ b = .s0) (ho : o < 2048) {P : Addr} (hP : s.gpr b + BitVec.ofNat 64 o = P)
@@ -151,20 +236,8 @@ theorem ghash1_ok [VG.Proof.Gcm.RISCV64.GhashLaw] {V : Reg → BitVec 64} {sp : 
     (hpw : (⟨P, 16⟩ : Region).Disjoint ⟨V .s0 + BitVec.ofNat 64 512, 256⟩)
     (hpk : (⟨P, 16⟩ : Region).Disjoint (below sp 2048)) (hpf : P.toNat + 16 ≤ 2 ^ 64)
     (hpr : Covers [⟨P, 16⟩] (s.rd ++ s.wr)) :
-    WP isa (ghash1 yo b o) s (GhOut s (V .s2) (V .s0) (V .s1 + BitVec.ofNat 64 yo) [blockAt s.mem P]) := by
-  have hargs := ghArgs_ok hyo he b o hb ho hP
-  refine WP.seq (WP.mono hargs fun s₁ ⟨h3, h4, h5, h6, h7, hkeep, hk⟩ => ?_)
-  have he₁ : Env V sp s₁ := he.keep (fun r hr => hkeep r (by revert r; decide) (by revert r; decide)
-    (by revert r; decide) (by revert r; decide) (by revert r; decide)) hk.sp hk.rd hk.wr
-  refine WP.mono (ghCall_ok L hyo he₁ (P := P) (n := 1) h3 h4 h5 h6 h7 (by decide)
-    (by simpa using hpy) (by simpa using hpw) (by rw [he₁.sp]; simpa using hpk) (by simpa using hpf)
-    (by rw [hk.rd, hk.wr]; simpa using hpr)) fun s' h => ?_
-  exact ⟨h.rd.trans hk.rd, h.wr.trans hk.wr, h.spk.trans hk.sp,
-    fun r hr => by
-      rw [h.saved r hr]
-      exact hkeep r (by revert r; decide) (by revert r; decide) (by revert r; decide)
-        (by revert r; decide) (by revert r; decide),
-    by rw [← hk.sp, ← hk.mem]; exact h.frame, by rw [h.out, blocksAt_one, hk.mem]⟩
+    WP isa (ghash1 yo b o) s (GhOut s (V .s2) (V .s0) (V .s1 + BitVec.ofNat 64 yo) [blockAt s.mem P]) :=
+  ghash1_ok_with L hyo he b o hb ho hP hpy hpw hpk hpf hpr (ordinaryHashAction _ _)
 
 end VG.Proof.AesGcm.RISCV64
 
@@ -477,9 +550,10 @@ theorem split_ok {s : State} {D : Addr} {n j : Nat} (hj : j ≤ n) (hn : n < 2 ^
     ⟨rfl, rfl, rfl, rfl⟩⟩
 
 /-- The whole blocks. -/
-theorem whole_ok [VG.Proof.Gcm.RISCV64.GhashLaw] {H : Block} {x : List Byte} {D : Addr} {n : Nat} {m₀ : Mem} {j : Nat} {s : State}
-    (h : AbsMid V sp yo H x D n m₀ j s) (hm₀ : bytesAt s.mem D n = bytesAt m₀ D n) :
-    WP isa (absorbWhole yo) s (fun s' => ∃ j', j' = j + 16 * ((n - j) / 16) ∧
+theorem whole_ok_with {invoke : Prog isa} {H : Block} {x : List Byte} {D : Addr} {n : Nat} {m₀ : Mem} {j : Nat} {s : State}
+    (h : AbsMid V sp yo H x D n m₀ j s) (hm₀ : bytesAt s.mem D n = bytesAt m₀ D n)
+    (exec : HashAction invoke (V .s2+BitVec.ofNat 64 240) s) :
+    WP isa (absorbWholeWith invoke yo) s (fun s' => ∃ j', j' = j + 16 * ((n - j) / 16) ∧
       AbsMid V sp yo H x D n m₀ j' s' ∧ n - j' < 16) := by
   have hn' := h.data.lt
   have he := h.env
@@ -519,12 +593,12 @@ theorem whole_ok [VG.Proof.Gcm.RISCV64.GhashLaw] {H : Block} {x : List Byte} {D 
     refine WP.seq (WP.mono h₂ fun s₂ ⟨h3', h4', h7', hg₂, hk₂⟩ => ?_)
     obtain he₂ : Env V sp s₂ := he₁.keep (fun r hr => hg₂ r (by revert r; decide) (by revert r; decide)
       (by revert r; decide)) hk₂.sp hk₂.rd hk₂.wr
-    refine WP.mono (ghCall_ok L hyo he₂ (P := D + BitVec.ofNat 64 j) (n := nb) h3' h4'
+    refine WP.mono (ghCall_ok_with L hyo he₂ (P := D + BitVec.ofNat 64 j) (n := nb) h3' h4'
       (by rw [hg₂ _ (by decide) (by decide) (by decide), h5])
       (by rw [hg₂ _ (by decide) (by decide) (by decide), h6]) h7' (by omega_arith)
       (hdj.st.sub_right (Lay.stSub (by omega_arith))).symm (hdj.w.sub_right (Lay.wSub (by decide)))
       (by rw [hk₂.sp, hk₁.sp]; exact hdj.sk) hdj.fit
-      (by rw [hk₂.rd, hk₂.wr, hk₁.rd, hk₁.wr]; exact hdj.rd)) fun s₃ g => ?_
+      (by rw [hk₂.rd, hk₂.wr, hk₁.rd, hk₁.wr]; exact hdj.rd) (exec (hk₁.trans hk₂))) fun s₃ g => ?_
     refine ⟨j + 16 * nb, by omega_arith, ⟨g.env he₂, by omega_arith, ?_, ?_,
       hd₁.of_eq (g.rd.trans hk₂.rd) (g.wr.trans hk₂.wr) (g.spk.trans hk₂.sp), ?_, ?_, .inr (by omega_arith),
       ?_⟩, by omega_arith⟩
@@ -555,6 +629,12 @@ theorem whole_ok [VG.Proof.Gcm.RISCV64.GhashLaw] {H : Block} {x : List Byte} {D 
       simp only [e₄] at e₃
       exact e₃
     · have := g.frame; rw [hk₂.mem, hk₁.mem, he₂.sp] at this; exact h.frame.trans (gh_absFrame this)
+
+theorem whole_ok [VG.Proof.Gcm.RISCV64.GhashLaw] {H : Block} {x : List Byte} {D : Addr} {n : Nat} {m₀ : Mem} {j : Nat} {s : State}
+    (h : AbsMid V sp yo H x D n m₀ j s) (hm₀ : bytesAt s.mem D n = bytesAt m₀ D n) :
+    WP isa (absorbWhole yo) s (fun s' => ∃ j', j' = j + 16 * ((n - j) / 16) ∧
+      AbsMid V sp yo H x D n m₀ j' s' ∧ n - j' < 16) :=
+  whole_ok_with L hyo h hm₀ (ordinaryHashAction _ _)
 
 omit L in
 /-- The last bytes, buffered. -/
@@ -646,6 +726,24 @@ theorem absorb_ok [VG.Proof.Gcm.RISCV64.GhashLaw] {H : Block} {x : List Byte} {D
     refine WP.seq (WP.mono (absorbFill_ok L hyo h h0) fun s' ⟨j, _, hj⟩ => ?_)
     refine WP.seq (WP.mono (whole_ok L hyo hj (hj.data_eq hyo)) fun s'' ⟨j', _, hj', hlt⟩ => ?_)
     exact tail_ok hyo hj' hlt (hj'.data_eq hyo)
+
+/-- At one-shot boundaries the partial block is empty. The streaming head branch
+is unreachable; the whole-block phase can use either certified GHASH entry. -/
+theorem absorbFresh_ok_with {invoke : Prog isa} {H : Block} {x : List Byte} {D : Addr} {n : Nat} {s : State}
+    (h : AbsIn V sp yo H x D n s) (empty : x.length%16=0)
+    (exec : HashAction invoke (V .s2+BitVec.ofNat 64 240) s) :
+    WP isa (absorbWith invoke yo) s (AbsOut V sp yo H x (x++bytesAt s.mem D n) s.mem) := by
+  refine WP.ite (decide (n=0)) (eval_zero h.s5 h.data.lt) (fun ht => ?_) (fun _ => ?_)
+  · have h0 : n=0 := by simpa using ht
+    subst n
+    exact WP.block_nil ⟨h.env,fun ha => by simpa [bytesAt] using ha,Frame.refl _ _⟩
+  · have mid : AbsMid V sp yo H x D n s.mem 0 s :=
+      ⟨h.env,by omega,by rw [h.s4,BitVec.add_zero],by rw [h.s5,Nat.sub_zero],h.data,h.hH,
+       fun ha => by simpa [bytesAt] using ha,.inr (by omega),Frame.refl _ _⟩
+    refine WP.seq (WP.ite true (by simpa [empty] using eval_zero h.s6 (by omega_arith))
+      (fun _ => WP.block_nil ?_) (fun no => by contradiction))
+    refine WP.seq (WP.mono (whole_ok_with L hyo mid rfl exec) (fun t ⟨_,_,hm,hlt⟩ => ?_))
+    exact tail_ok hyo hm hlt (hm.data_eq hyo)
 
 end
 
@@ -804,15 +902,16 @@ theorem flushCopy_ok {H : Block} {o : Nat} {s : State} (h : FlIn V sp H s)
       simp only [List.mem_singleton] at hr; subst hr; exact L.st_w (by omega_arith) (.inr ⟨by decide, by decide⟩)
 
 /-- The padded buffer absorbed. -/
-theorem flushGh_ok [VG.Proof.Gcm.RISCV64.GhashLaw] {H : Block} {x : List Byte} {m₀ : Mem} {s : State}
-    (h : FlMid V sp yo H (x.length % 16) m₀ s) (h0 : x.length % 16 ≠ 0) :
-    WP isa (ghash1 yo .s0 tO) s (FlOut V sp yo H x (x ++ zeros (padLen x.length)) m₀) := by
+theorem flushGh_ok_with {invoke : Prog isa} {H : Block} {x : List Byte} {m₀ : Mem} {s : State}
+    (h : FlMid V sp yo H (x.length % 16) m₀ s) (h0 : x.length % 16 ≠ 0)
+    (exec : HashAction invoke (V .s2+BitVec.ofNat 64 240) s) :
+    WP isa (ghash1With invoke yo .s0 tO) s (FlOut V sp yo H x (x ++ zeros (padLen x.length)) m₀) := by
   have he := h.env
-  refine WP.mono (ghash1_ok L hyo he .s0 96 (.inr rfl) (by decide) (P := V .s0 + BitVec.ofNat 64 96)
+  refine WP.mono (ghash1_ok_with L hyo he .s0 96 (.inr rfl) (by decide) (P := V .s0 + BitVec.ofNat 64 96)
     (by rw [he.s0]) (L.st_w (by omega_arith) (.inr ⟨by decide, by decide⟩))
     (Lay.w_w (.inl (by decide)) (by decide) (by decide))
     (he.stk'.w.sub_left (Lay.wSub (d := 96) (n := 16) (by decide))) (L.w_fit (by decide) (by decide))
-    (covers_left (he.perm.wC (by decide))))
+    (covers_left (he.perm.wC (by decide))) exec)
     fun s₄ g => ?_
   refine ⟨g.env he, ?_, ?_, ?_⟩
   · rw [blockAt_frame (he.sp ▸ g.frame) (ctx_ghFrame L hyo he.stk'), h.hH]
@@ -821,18 +920,29 @@ theorem flushGh_ok [VG.Proof.Gcm.RISCV64.GhashLaw] {H : Block} {x : List Byte} {
     rw [g.out, h.hY, h.hH]; rfl
   · exact (tFrame_T h.frame).trans (gh_tFrame (he.sp ▸ g.frame))
 
+theorem flushGh_ok [VG.Proof.Gcm.RISCV64.GhashLaw] {H : Block} {x : List Byte} {m₀ : Mem} {s : State}
+    (h : FlMid V sp yo H (x.length % 16) m₀ s) (h0 : x.length % 16 ≠ 0) :
+    WP isa (ghash1 yo .s0 tO) s (FlOut V sp yo H x (x ++ zeros (padLen x.length)) m₀) :=
+  flushGh_ok_with L hyo h h0 (ordinaryHashAction _ _)
+
 /-- `flush yo`. -/
-theorem flush_ok [VG.Proof.Gcm.RISCV64.GhashLaw] {H : Block} {x : List Byte} {s : State} (h : FlIn V sp H s)
-    (h26 : s.gpr .s6 = BitVec.ofNat 64 (x.length % 16)) :
-    WP isa (flush yo) s (FlOut V sp yo H x (x ++ zeros (padLen x.length)) s.mem) := by
+theorem flush_ok_with {invoke : Prog isa} {H : Block} {x : List Byte} {s : State} (h : FlIn V sp H s)
+    (h26 : s.gpr .s6 = BitVec.ofNat 64 (x.length % 16))
+    (exec : FramedHashAction invoke (V .s2+BitVec.ofNat 64 240) [⟨V .s0+BitVec.ofNat 64 96,16⟩] s) :
+    WP isa (flushWith invoke yo) s (FlOut V sp yo H x (x ++ zeros (padLen x.length)) s.mem) := by
   have hlt := Nat.mod_lt x.length (show 16 > 0 by decide)
   refine WP.ite (decide (x.length % 16 = 0)) (eval_zero h26 (by omega_arith)) (fun ht => ?_) (fun hf => ?_)
   · have h0 : x.length % 16 = 0 := by simpa using ht
     rw [Proof.Gcm.padLen_of_mod h0]
     exact WP.block_nil ⟨h.env, h.hH, fun ha => by simpa [zeros] using ha, Frame.refl _ _⟩
   · have h0 : x.length % 16 ≠ 0 := by simpa using hf
-    exact WP.seq (WP.mono (flushCopy_ok L hyo (o := x.length % 16) h h26 hlt h0) fun s₃ hm =>
-      flushGh_ok L hyo hm h0)
+    exact WP.seq (WP.mono (WP.with_rdwr (flushCopy_ok L hyo (o := x.length % 16) h h26 hlt h0)) fun s₃ ⟨hm,rd,wr,sp⟩ =>
+      flushGh_ok_with L hyo hm h0 (exec ⟨rd,wr,sp⟩ hm.frame))
+
+theorem flush_ok [VG.Proof.Gcm.RISCV64.GhashLaw] {H : Block} {x : List Byte} {s : State} (h : FlIn V sp H s)
+    (h26 : s.gpr .s6 = BitVec.ofNat 64 (x.length % 16)) :
+    WP isa (flush yo) s (FlOut V sp yo H x (x ++ zeros (padLen x.length)) s.mem) :=
+  flush_ok_with L hyo h h26 (ordinaryFramedHashAction _ _ _)
 
 end
 
@@ -893,9 +1003,10 @@ variable {V : Reg → BitVec 64} {sp : Addr} (L : Lay (V .s2) (V .s1) (V .s0)) {
 include L hyo
 
 /-- The lengths block of `s4` and `s6` bytes, absorbed. -/
-theorem lens_ok [VG.Proof.Gcm.RISCV64.GhashLaw] {H : Block} {s : State} (he : Env V sp s)
-    (hH : blockAt s.mem (V .s2 + BitVec.ofNat 64 240) = H) :
-    WP isa (lens yo) s fun s' => Env V sp s' ∧
+theorem lens_ok_with {invoke : Prog isa} {H : Block} {s : State} (he : Env V sp s)
+    (hH : blockAt s.mem (V .s2 + BitVec.ofNat 64 240) = H)
+    (exec : FramedHashAction invoke (V .s2+BitVec.ofNat 64 240) [⟨V .s0+BitVec.ofNat 64 96,16⟩] s) :
+    WP isa (lensWith invoke yo) s fun s' => Env V sp s' ∧
       blockAt s'.mem (V .s2 + BitVec.ofNat 64 240) = H ∧
       blockAt s'.mem (V .s1 + BitVec.ofNat 64 yo) = ghashFrom H (blockAt s.mem (V .s1 + BitVec.ofNat 64 yo))
         [Spec.Gcm.ofBytes (lensBlock (s.gpr .s4).toNat (s.gpr .s6).toNat)] ∧
@@ -921,11 +1032,11 @@ theorem lens_ok [VG.Proof.Gcm.RISCV64.GhashLaw] {H : Block} {s : State} (he : En
   have hH₂ : blockAt s₂.mem (V .s2 + BitVec.ofNat 64 240) = H := by
     rw [blockAt_frame fT fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact L.ctx_w (by decide) (by decide), hH]
-  refine WP.mono (ghash1_ok L hyo he₂ .s0 96 (.inr rfl) (by decide) (P := V .s0 + BitVec.ofNat 64 96)
+  refine WP.mono (ghash1_ok_with L hyo he₂ .s0 96 (.inr rfl) (by decide) (P := V .s0 + BitVec.ofNat 64 96)
     (by rw [he₂.s0]) (L.st_w (by omega_arith) (.inr ⟨by decide, by decide⟩))
     (Lay.w_w (.inl (by decide)) (by decide) (by decide))
     (he₂.stk'.w.sub_left (Lay.wSub (d := 96) (n := 16) (by decide))) (L.w_fit (by decide) (by decide))
-    (covers_left (he₂.perm.wC (by decide))))
+    (covers_left (he₂.perm.wC (by decide))) (exec hk₂ fT))
     fun s₃ g => ?_
   refine ⟨g.env he₂, ?_, ?_, fun r hr => by
       rw [g.saved r hr]; exact hg₂ r (by revert r; decide) (by revert r; decide) (by revert r; decide)
@@ -936,6 +1047,16 @@ theorem lens_ok [VG.Proof.Gcm.RISCV64.GhashLaw] {H : Block} {s : State} (he : En
       rw [blockAt, hT]
     rw [g.out, hY₂, hH₂, hb]
   · have := g.frame; rw [he₂.sp] at this; exact (tFrame_T fT).trans (gh_tFrame this)
+
+theorem lens_ok [VG.Proof.Gcm.RISCV64.GhashLaw] {H : Block} {s : State} (he : Env V sp s)
+    (hH : blockAt s.mem (V .s2 + BitVec.ofNat 64 240) = H) :
+    WP isa (lens yo) s fun s' => Env V sp s' ∧
+      blockAt s'.mem (V .s2 + BitVec.ofNat 64 240) = H ∧
+      blockAt s'.mem (V .s1 + BitVec.ofNat 64 yo) = ghashFrom H (blockAt s.mem (V .s1 + BitVec.ofNat 64 yo))
+        [Spec.Gcm.ofBytes (lensBlock (s.gpr .s4).toNat (s.gpr .s6).toNat)] ∧
+      (∀ r, r ∈ preserved → s'.gpr r = s.gpr r) ∧
+      Frame (tFrame (V .s1) (V .s0) yo sp) s.mem s'.mem :=
+  lens_ok_with L hyo he hH (ordinaryFramedHashAction _ _ _)
 
 end
 
