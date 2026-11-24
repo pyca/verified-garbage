@@ -12,6 +12,7 @@ vg_p256_sub_mod_p:
 	add ecx, ebp
 	mov edx, DWORD PTR [esp+16]
 	add edx, ebp
+	mov DWORD PTR [ebp+3940], ebx
 	mov eax, DWORD PTR [ecx]
 	sub eax, DWORD PTR [edx]
 	mov DWORD PTR [ebp+3840], eax
@@ -37,56 +38,35 @@ vg_p256_sub_mod_p:
 	sbb eax, DWORD PTR [edx+28]
 	mov DWORD PTR [ebp+3868], eax
 	sbb eax, eax
-	mov edx, -1
-	and edx, eax
-	mov DWORD PTR [ebp+3908], edx
-	mov edx, -1
-	and edx, eax
-	mov DWORD PTR [ebp+3912], edx
-	mov edx, -1
-	and edx, eax
-	mov DWORD PTR [ebp+3916], edx
-	mov edx, 0
-	and edx, eax
-	mov DWORD PTR [ebp+3920], edx
-	mov edx, 0
-	and edx, eax
-	mov DWORD PTR [ebp+3924], edx
-	mov edx, 0
-	and edx, eax
-	mov DWORD PTR [ebp+3928], edx
-	mov edx, 1
-	and edx, eax
-	mov DWORD PTR [ebp+3932], edx
-	mov edx, -1
-	and edx, eax
-	mov DWORD PTR [ebp+3936], edx
 	mov ecx, DWORD PTR [esp+8]
 	add ecx, ebp
+	mov ebx, eax
+	and ebx, 1
 	mov edx, DWORD PTR [ebp+3840]
-	add edx, DWORD PTR [ebp+3908]
+	add edx, eax
 	mov DWORD PTR [ecx], edx
 	mov edx, DWORD PTR [ebp+3844]
-	adc edx, DWORD PTR [ebp+3912]
+	adc edx, eax
 	mov DWORD PTR [ecx+4], edx
 	mov edx, DWORD PTR [ebp+3848]
-	adc edx, DWORD PTR [ebp+3916]
+	adc edx, eax
 	mov DWORD PTR [ecx+8], edx
 	mov edx, DWORD PTR [ebp+3852]
-	adc edx, DWORD PTR [ebp+3920]
+	adc edx, 0
 	mov DWORD PTR [ecx+12], edx
 	mov edx, DWORD PTR [ebp+3856]
-	adc edx, DWORD PTR [ebp+3924]
+	adc edx, 0
 	mov DWORD PTR [ecx+16], edx
 	mov edx, DWORD PTR [ebp+3860]
-	adc edx, DWORD PTR [ebp+3928]
+	adc edx, 0
 	mov DWORD PTR [ecx+20], edx
 	mov edx, DWORD PTR [ebp+3864]
-	adc edx, DWORD PTR [ebp+3932]
+	adc edx, ebx
 	mov DWORD PTR [ecx+24], edx
 	mov edx, DWORD PTR [ebp+3868]
-	adc edx, DWORD PTR [ebp+3936]
+	adc edx, eax
 	mov DWORD PTR [ecx+28], edx
+	mov ebx, DWORD PTR [ebp+3940]
 	mov ebp, DWORD PTR [ebp+3952]
 	ret
 	.p2align 6
