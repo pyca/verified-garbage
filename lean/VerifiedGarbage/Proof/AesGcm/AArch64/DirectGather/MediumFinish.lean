@@ -37,6 +37,36 @@ open VG VG.AArch64 VG.AArch64.RegUpd VG.Impl.AesGcm.AArch64.DirectGather VG.Proo
 open VG.Spec.Aes (bytesAt)
 open VG.Spec.Gcm (ctxH ctxCiph inc32 j0 gctr blockAt blocksAt ghashFrom padLen zeros toBytes)
 
+theorem writeFlag_twice (s : State) (a b : Addr) :
+    (s.write .x .x11 a).write .x .x11 b = s.write .x .x11 b := by
+  simp [State.write]
+  funext r
+  by_cases eq : r = .x11 <;> simp [eq]
+
+abbrev groupFlag (s : State) (n : Nat) := (s.gpr .x26 - BitVec.ofNat 64 n) >>> 63
+
+/-- Both the CTR lane count and the initial GHASH group are selected by the
+same public-length test. Only x11 changes before entering the selected arm. -/
+theorem chooseGroup_ok {s : State} {n : Nat} (cut : n=113 ∨ n=129 ∨ n=161)
+    {yes no : Prog isa} {Q : State → Prop}
+    (yesOk : groupFlag s n ≠ 0 → WP isa yes (s.write .x .x11 (groupFlag s n)) Q)
+    (noOk : ¬ groupFlag s n ≠ 0 → WP isa no (s.write .x .x11 (groupFlag s n)) Q) :
+    WP isa (Medium.chooseGroup n yes no) s Q := by
+  let d := s.gpr .x26 - BitVec.ofNat 64 n
+  let u := (s.write .x .x11 d).write .x .x11 (groupFlag s n)
+  apply WP.seq
+  refine WP.of_runBlock ⟨u,?_,?_⟩
+  · rcases cut with rfl|rfl|rfl <;> arun []
+  · by_cases hit : groupFlag s n ≠ 0
+    · apply WP.ite _ (show isa.eval (.nonzero .x .x11) u = some true from by
+        change some (!(groupFlag s n == (0:Addr))) = _; simpa using hit)
+      · intro _; simpa only [u,writeFlag_twice] using yesOk hit
+      · intro e; cases e
+    · apply WP.ite _ (show isa.eval (.nonzero .x .x11) u = some false from by
+        change some (!(groupFlag s n == (0:Addr))) = _; simp; exact Classical.byContradiction hit)
+      · intro e; cases e
+      · intro _; simpa only [u,writeFlag_twice] using noOk hit
+
 theorem mediumLengths_ok {W : Addr} {al n : Nat} (s : State) (h19 : s.gpr .x19 = W) (hr : Covers [⟨W, 752⟩] s.wr)
     (h24 : s.gpr .x24 = BitVec.ofNat 64 al) (h26 : s.gpr .x26 = BitVec.ofNat 64 n)
     (hal' : al < 2 ^ 64) (hn : n < 2 ^ 64) :

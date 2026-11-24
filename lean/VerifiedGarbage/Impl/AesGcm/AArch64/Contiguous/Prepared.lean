@@ -93,7 +93,7 @@ def select (v : Calls) (gh : Fn) : Prog isa :=
     (.ite (.zero .x .x11) (hardware false) (hardware true))
   let overShort := if v.ctr.scratch = 0 then
     .seq (.block [.lsr .x .x11 .x10 8])
-      (.ite (.zero .x .x11) (clear 752 (MediumDirect.frame v.callees)) large)
+      (.ite (.zero .x .x11) (clear 752 MediumDirect.frame) large)
     else large
   if !v.pmull then fallback else
     .seq (.block standardGuard) <| .ite (.zero .x .x10)

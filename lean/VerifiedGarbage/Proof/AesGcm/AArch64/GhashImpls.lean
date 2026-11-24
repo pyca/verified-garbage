@@ -2596,33 +2596,14 @@ open VG.Proof.Gcm.Clmul
 open VG.Impl.Gcm.AArch64.Pmull (prologueW body advance)
 open VG.Impl.AesGcm.AArch64.DirectGather.Medium (chooseGroup firstHashGroup hashTrimmed)
 
-private theorem trimTest {n : Nat} (bound : n=113 ∨ n=129 ∨ n=161) {base s : State} (inv : Inv base 8 0 s) :
-    WP isa (.block [.subImm .x .x11 .x26 n,.lsr .x .x11 .x11 63]) s fun t =>
-      (t.gpr .x11 ≠ 0 ↔ ((s.gpr .x26 - BitVec.ofNat 64 n) >>> 63) ≠ 0) ∧
-      t.gpr .x26 = s.gpr .x26 ∧ t.gpr .x24 = s.gpr .x24 ∧ Inv base 8 0 t := by
-  rcases bound with rfl|rfl|rfl <;>
-    refine WP.of_runBlock ⟨(s.write .x .x11 (s.gpr .x26 - _)).write .x .x11 ((s.gpr .x26 - _) >>> 63),by arun [],?_,?_,?_,?_⟩ <;> first | rfl | skip <;>
-    exact ⟨inv.le,inv.c,inv.t,inv.sw,inv.y,inv.x0,inv.x1,inv.x2,inv.x3,inv.x5,inv.mem,inv.rd,inv.wr⟩
-
 private theorem runChoice {n : Nat} (bound : n=113 ∨ n=129 ∨ n=161) {yes no : Prog isa} {base s : State}
     (inv : Inv base 8 0 s) (Q : State → Prop)
     (left : ∀ t, ((s.gpr .x26 - BitVec.ofNat 64 n) >>> 63) ≠ 0 → t.gpr .x26=s.gpr .x26 → t.gpr .x24=s.gpr .x24 → Inv base 8 0 t → WP isa yes t Q)
     (right : ∀ t, ¬ ((s.gpr .x26 - BitVec.ofNat 64 n) >>> 63) ≠ 0 → t.gpr .x26=s.gpr .x26 → t.gpr .x24=s.gpr .x24 → Inv base 8 0 t → WP isa no t Q) :
     WP isa (chooseGroup n yes no) s Q := by
-  apply WP.seq
-  refine (trimTest bound inv).mono ?_; rintro t ⟨hit,len,alen,i⟩
-  by_cases h : ((s.gpr .x26 - BitVec.ofNat 64 n) >>> 63) ≠ 0
-  · have e : isa.eval (.nonzero .x .x11) t = some true := by
-      change some (!(t.gpr .x11 == (0 : Addr))) = _; simp; exact hit.mpr h
-    apply WP.ite _ e
-    · exact fun _ => left t h len alen i
-    · intro bad; contradiction
-  · have z : t.gpr .x11=0 := by by_contra hn; exact h (hit.mp hn)
-    have e : isa.eval (.nonzero .x .x11) t = some false := by
-      change some (!(t.gpr .x11 == (0 : Addr))) = _; simp [z]
-    apply WP.ite _ e
-    · intro bad; contradiction
-    · exact fun _ => right t h len alen i
+  have keep : Inv base 8 0 (s.write .x .x11 (groupFlag s n)) :=
+    ⟨inv.le,inv.c,inv.t,inv.sw,inv.y,inv.x0,inv.x1,inv.x2,inv.x3,inv.x5,inv.mem,inv.rd,inv.wr⟩
+  exact chooseGroup_ok bound (fun hit => left _ hit rfl rfl keep) (fun hit => right _ hit rfl rfl keep)
 
 private theorem shortGroup {k : Nat} (hk : k=1 ∨ k=2 ∨ k=4) {u t : State} (hp : Pm u) (N : nb u=16)
     (zero : Ys u 0 = Ys u (8-k)) (inv : Inv u 8 0 t) :
@@ -2816,7 +2797,6 @@ theorem backendFacts (v : GcmImpl) (g : GhashWithImpl) : BackendFacts v g :=
     Standalone.body_ok v Proof.Gcm.AArch64.Pmull.mulV_keyV (fun _ => Proof.Gcm.AArch64.Stitch.gatherLaws) (scratch_le v),
     Standalone.body_rel v (fun _ => Proof.Gcm.AArch64.Stitch.gatherLaws) (scratch_le v),
     standaloneSide v,DirectGather.keepsV_of_gatherSide (standaloneReferenceSide v),preparedSide v g,fun f => DirectGather.keepsV_of_gatherSide (referenceSide v g f),
-    side_of_holes v.callsOk fnOk_nil (Impl.AesGcm.AArch64.Contiguous.MediumDirect.frame holes),
     (fun s hn z init => DirectGather.trimmedHash_at s hn
       (fun h => DirectGather.zeroFold init (z _ (.inl ⟨rfl,h⟩)))
       (fun ha h => DirectGather.zeroFold init (z _ (.inr (.inr ⟨ha,.inl ⟨rfl,h⟩⟩))))

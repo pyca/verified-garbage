@@ -80,23 +80,56 @@ def pieces (c : Callees) (stitch : Bool) : Prog isa :=
       .seq (.ite (.zero .x .x24) (.block []) (aligned c)) <|
         .block [.subImm .x .x28 .x28 1]) (.nonzero .x .x28)
 
+namespace CounterBatch
+
+
+/-- Caller-saved SIMD lanes. The round key and nonce occupy v30 and v31. -/
+def lane : Nat → VReg
+  | 0 => .v0 | 1 => .v1 | 2 => .v2 | 3 => .v3 | 4 => .v4 | 5 => .v5 | 6 => .v6 | 7 => .v7
+  | 8 => .v16 | 9 => .v17 | 10 => .v18 | 11 => .v19 | 12 => .v20 | 13 => .v21 | _ => .v22
+
+abbrev lanes (n : Nat) := (List.range n).map lane
+
+def storeLane (base i : Nat) : List Instr :=
+  let r := lane i
+  [.vop (.logic .eor r r .v30), .strq r .x19 (base + 16 * i)]
+
+def countCode (i : Nat) : List Instr :=
+  let r := lane i
+  [.vop (.logic .orr r .v31 .v31), .movz .w .x12 (BitVec.ofNat 16 (256*(i+1))) 1,
+   .vop (.ins .s4 r 3 .x12)]
+
+/-- Apply one round key to every active counter before loading the next key. -/
+def step (n : Nat) : List Instr :=
+  [.ldrq .v30 .x9 0] ++ (lanes n).flatMap (fun r => [Instr.vop (.aese r .v30),.vop (.aesmc r r)]) ++
+    [.addImm .x .x9 .x9 16,.subImm .x .x10 .x10 1]
+
+def finish (n base : Nat) : List Instr :=
+  [.ldrq .v30 .x9 0] ++ (lanes n).map (fun r => Instr.vop (.aese r .v30)) ++
+    [.ldrq .v30 .x9 16] ++ (List.range n).flatMap (storeLane base)
+
+def seedCode : List Instr := [.ldr .x .x9 .x23 0,.ldr .w .x10 .x23 8,
+  .vop (.ins .d2 .v31 0 .x9),.vop (.ins .s4 .v31 2 .x10)]
+
+
+/-- Compute the tag mask and the payload keystream together. The loop count
+depends only on the public AES key size. -/
+def kernel (n base : Nat) : Prog isa :=
+  .seq (.block (seedCode ++ (List.range n).flatMap countCode ++ [mov .x9 .x21,.subImm .x .x10 .x22 1]))
+    (.seq (.loop (.block (step n)) (.nonzero .x .x10)) (.block (finish n base)))
+
+end CounterBatch
+
 /-- Generate seven AES counter blocks for a short record. One supplies the
 tag mask and the remaining blocks supply the keystream. -/
 def shortKeys (base nr : Nat) : Prog isa := Id.run do
-  let lanes := (List.range 7).map Gcm.AArch64.Stitch.breg
-  let seed : List Instr := [.ldr .x .x9 .x23 0, .ldr .w .x10 .x23 8,
-    .vop (.ins .d2 .v31 0 .x9), .vop (.ins .s4 .v31 2 .x10)]
-  let counters := (List.range 7).flatMap fun i =>
-    let r := Gcm.AArch64.Stitch.breg i
-    ([.vop (.logic .orr r .v31 .v31), .movz .w .x12 (BitVec.ofNat 16 (256 * (i+1))) 1,
-      .vop (.ins .s4 r 3 .x12)] : List Instr)
+  let lanes := CounterBatch.lanes 7
+  let counters := (List.range 7).flatMap CounterBatch.countCode
   let rounds := (List.range (nr - 1)).flatMap fun i =>
     .ldrq .v30 .x21 (16 * i) :: lanes.flatMap fun r => [Instr.vop (.aese r .v30), .vop (.aesmc r r)]
   let last := [.ldrq .v30 .x21 (16 * (nr - 1))] ++ lanes.map (fun r => Instr.vop (.aese r .v30)) ++
-    [.ldrq .v30 .x21 (16 * nr)] ++ (List.range 7).flatMap (fun i =>
-      let r := Gcm.AArch64.Stitch.breg i
-      ([.vop (.logic .eor r r .v30), .strq r .x19 (base + 16*i)] : List Instr))
-  return .block (seed ++ counters ++ rounds ++ last)
+    [.ldrq .v30 .x21 (16 * nr)] ++ (List.range 7).flatMap (CounterBatch.storeLane base)
+  return .block (CounterBatch.seedCode ++ counters ++ rounds ++ last)
 
 /-- Load both ends before storing either one, since the two words may
 overlap when the whole fragment is shorter than twice the word width. -/

@@ -681,37 +681,55 @@ theorem aese7_ok (s : State) : WP isa (.block aese7) s fun t =>
   each_ok (fun b => [.vop (.aese b .v30)]) (fun v k => aesMapBytes aesSbox (aesShiftRows (v ^^^ k)))
     .v30 (fun _ _ _ => rfl) lanes s (by decide) (by decide)
 
-def storeLane (base i : Nat) : List Instr :=
-  let r := breg i
-  [.vop (.logic .eor r r .v30), .strq r .x19 (base + 16 * i)]
-
 def blockAddr (s : State) (base i : Nat) : Addr := s.gpr .x19 + BitVec.ofNat 64 (base + 16*i)
 
-structure Stored (base i : Nat) (s t : State) : Prop where
+abbrev seedRegs : List Reg := [.x9,.x10,.x12]
+
+def countWord (i : Nat) : BitVec 32 :=
+  (BitVec.ofNat 16 (256*(i+1))).setWidth 32 <<< 16
+end VG.Proof.AesGcm.AArch64.DirectGather.Counters
+namespace VG.Proof.AesGcm.AArch64.DirectGather.CounterBatch
+open VG VG.AArch64
+open VG.Proof.Aes.AArch64.Aese
+open VG.Impl.AesGcm.AArch64.DirectGather.CounterBatch (lane lanes storeLane countCode)
+open VG.Proof.AesGcm.AArch64.DirectGather.Counters (blockAddr seedRegs countWord)
+
+theorem lane_inj : ∀ i < 15, ∀ j < 15, lane i = lane j → i = j := by decide
+theorem lane_mem {i n : Nat} (hi : i < n) : lane i ∈ lanes n :=
+  List.mem_map.mpr ⟨i,List.mem_range.mpr hi,rfl⟩
+theorem ne_round (n : Nat) : VReg.v30 ∉ lanes n := by
+  intro h; obtain ⟨i,_,e⟩ := List.mem_map.mp h
+  exact (show lane i ≠ .v30 by unfold lane; split <;> decide) e
+theorem ne_nonce (n : Nat) : VReg.v31 ∉ lanes n := by
+  intro h; obtain ⟨i,_,e⟩ := List.mem_map.mp h
+  exact (show lane i ≠ .v31 by unfold lane; split <;> decide) e
+
+
+structure Stored (n base i : Nat) (s t : State) : Prop where
   bytes : ∀ j < i, ∀ k < 16, t.mem (blockAddr s base j + BitVec.ofNat 64 k) =
-    vbyte (s.v (breg j) ^^^ s.v .v30) k
-  frame : Frame [⟨blockAddr s base 0,112⟩] s.mem t.mem
-  pending : ∀ j, i ≤ j → j < 7 → t.v (breg j) = s.v (breg j)
-  vecs : ∀ r ∉ lanes, t.v r = s.v r
+    vbyte (s.v (lane j) ^^^ s.v .v30) k
+  frame : Frame [⟨blockAddr s base 0,16*n⟩] s.mem t.mem
+  pending : ∀ j, i ≤ j → j < n → t.v (lane j) = s.v (lane j)
+  vecs : ∀ r ∉ lanes n, t.v r = s.v r
   gpr : t.gpr = s.gpr
   sp : t.sp = s.sp
   rd : t.rd = s.rd
   wr : t.wr = s.wr
 
-theorem stores_ok {base : Nat} (s : State) (hb : base % 16 = 0) (hm : base + 112 ≤ 65536)
-    (hw : ∀ i < 7, InRegions s.wr (blockAddr s base i) 16) :
-    WP isa (.block ((List.range 7).flatMap (storeLane base))) s (Stored base 7 s) := by
-  refine wp_range_flatMap (M := isa) (Stored base · s) (fun i u hi h => ?_) 7 (Nat.le_refl _) s
+theorem stores_ok {n base : Nat} (hn : n ≤ 15) (s : State) (hb : base % 16 = 0) (hm : base + 16*n ≤ 65536)
+    (hw : ∀ i < n, InRegions s.wr (blockAddr s base i) 16) :
+    WP isa (.block ((List.range n).flatMap (storeLane base))) s (Stored n base n s) := by
+  refine wp_range_flatMap (M := isa) (Stored n base · s) (fun i u hi h => ?_) n (Nat.le_refl _) s
     ⟨fun _ h => absurd h (Nat.not_lt_zero _), Frame.refl _ _, fun _ _ _ => rfl, fun _ _ => rfl,
       rfl,rfl,rfl,rfl⟩
   have hin : InRegions u.wr (u.gpr .x19 + BitVec.ofNat 64 (base + 16*i)) 16 := by rw [h.wr,h.gpr]; exact hw i hi
   rw [storeLane, WP.block_cons_iff]
-  refine ⟨_, (rfl : exec (.vop (.logic .eor (breg i) (breg i) .v30)) u =
-    some (u.setV (breg i) (u.v (breg i) ^^^ u.v .v30))), ?_⟩
+  refine ⟨_, (rfl : exec (.vop (.logic .eor (lane i) (lane i) .v30)) u =
+    some (u.setV (lane i) (u.v (lane i) ^^^ u.v .v30))), ?_⟩
   rw [WP.block_cons_iff]
   refine ⟨_, exec_strq (by constructor <;> omega) hin, WP.block_nil ?_⟩
   have addrEq : u.gpr .x19 + BitVec.ofNat 64 (base+16*i) = blockAddr s base i := by rw [h.gpr]; rfl
-  have key := h.vecs .v30 (by decide)
+  have key := h.vecs .v30 (ne_round n)
   refine ⟨fun j hj k hk => ?_, ?_, fun j hj hj' => ?_, fun r hr => ?_, h.gpr,h.sp,h.rd,h.wr⟩
   · dsimp only
     rw [RegUpd.gpr_setV, RegUpd.mem_setV, addrEq, setV_v_self, key, h.pending _ (Nat.le_refl _) hi]
@@ -729,10 +747,52 @@ theorem stores_ok {base : Nat} (s : State) (hb : base % 16 = 0) (hm : base + 112
     rw [← Offset.add_add]
     exact Offset.contains_base _ (by omega) (by omega)
   · dsimp only
-    rw [setV_v_of_ne _ _ (fun e => by have := breg_inj j (by omega) i (by omega) e; omega)]
+    rw [setV_v_of_ne _ _ (fun e => by have := lane_inj j (by omega) i (by omega) e; omega)]
     exact h.pending _ (by omega) hj'
-  · dsimp only; rw [setV_v_of_ne _ _ (show r ≠ breg i from fun e => hr (e.symm ▸ lane_mem hi)),h.vecs r hr]
+  · dsimp only; rw [setV_v_of_ne _ _ (show r ≠ lane i from fun e => hr (e.symm ▸ lane_mem hi)),h.vecs r hr]
 
+
+
+
+
+theorem count_ok (s : State) (i : Nat) :
+    WP isa (.block (countCode i)) s fun t =>
+      t.v (lane i) = setLane (s.v .v31) 32 3 (countWord i) ∧ Fr [.x12] [lane i] s t := by
+  rw [countCode, WP.block_cons_iff]; refine ⟨_,rfl,?_⟩
+  rw [WP.block_cons_iff]; refine ⟨_,rfl,?_⟩
+  rw [WP.block_cons_iff]; refine ⟨_,rfl,WP.block_nil ?_⟩
+  refine ⟨?_, ⟨fun r hr => ?_, fun r hr => ?_,rfl,rfl,rfl,rfl⟩⟩
+  · simp [State.setV,State.write,countWord]
+  · simp only [List.mem_singleton] at hr
+    simp [State.setV,State.write,hr]
+  · simp only [List.mem_singleton] at hr
+    simp [State.setV,State.write,hr]
+
+theorem counts_ok {n : Nat} (hn : n ≤ 15) (s : State) :
+    WP isa (.block ((List.range n).flatMap countCode)) s fun t =>
+      (∀ j < n, t.v (lane j) = setLane (s.v .v31) 32 3 (countWord j)) ∧ Fr seedRegs (lanes n) s t := by
+  refine wp_range_flatMap (M := isa) (fun i t =>
+    (∀ j < i, t.v (lane j) = setLane (s.v .v31) 32 3 (countWord j)) ∧ Fr seedRegs (lanes n) s t)
+    (fun i u hi ⟨he,hf⟩ => ?_) n (Nat.le_refl _) s ⟨fun _ h => absurd h (Nat.not_lt_zero _), Fr.refl _ _ _⟩
+  refine (count_ok u i).mono fun t ⟨ht,ft⟩ => ⟨fun j hj => ?_, hf.trans (ft.mono ?_ ?_)⟩
+  · by_cases e : j = i
+    · subst j; rw [ht,hf.v .v31 (ne_nonce n)]
+    · rw [ft.v _ (by simpa using (fun h => e (lane_inj j (by omega) i (by omega) h) : lane j ≠ lane i))]
+      exact he _ (by omega)
+  · intro r hr; obtain rfl := List.mem_singleton.mp hr; decide
+  · intro r hr; obtain rfl := List.mem_singleton.mp hr; exact lane_mem hi
+
+theorem lane_seven : ∀ i < 7, lane i = VG.Impl.Gcm.AArch64.Stitch.breg i := by decide
+
+end VG.Proof.AesGcm.AArch64.DirectGather.CounterBatch
+namespace VG.Proof.AesGcm.AArch64.DirectGather.Counters
+open VG VG.AArch64
+open VG.Impl.Gcm.AArch64.Stitch (breg)
+open VG.Proof.Aes.AArch64.Aese
+open VG.Proof.Gcm.AArch64.Stitch (breg_inj breg_ne_K kp sch)
+open VG.Spec.Aes (addRoundKey roundKey cipher)
+
+abbrev storeLane := VG.Impl.AesGcm.AArch64.DirectGather.CounterBatch.storeLane
 
 def lastCode (base nr : Nat) : List Instr :=
   [.ldrq .v30 .x21 (16*(nr-1))] ++ aese7 ++ [.ldrq .v30 .x21 (16*nr)] ++
@@ -772,34 +832,33 @@ theorem lastCode_ok {base nr : Nat} (hn : nr ≤ 14) {s₀ s : State} (hk : CanL
   have key₂ : KeyIs K₂ (roundKey (sch nr s₀) nr) := by
     dsimp [K₂]; rw [fu.gpr,fu.mem]; exact keyIs_readW _ _ (by omega)
   have ff := fu.trans (load_frame u K₂)
-  refine (stores_ok (u.setV .v30 K₂) hb hm (fun i hi => by
+  refine (CounterBatch.stores_ok (n:=7) (by decide) (u.setV .v30 K₂) hb hm (fun i hi => by
     unfold blockAddr; rw [ff.wr,ff.gpr]; exact hw i hi)).mono fun t h => ?_
   have ba : blockAddr (u.setV .v30 K₂) base = blockAddr s₀ base := by unfold blockAddr; rw [ff.gpr]
   refine ⟨fun j hj k hkt => ?_, by rw [← ba,← ff.mem]; exact h.frame,
     fun r hr => (h.vecs r (fun hm => hr (List.mem_cons_of_mem _ hm))).trans (ff.v _ hr),
     h.gpr.trans ff.gpr,h.sp.trans ff.sp,h.rd.trans ff.rd,h.wr.trans ff.wr⟩
   have hh := h.bytes j hj k hkt
+  rw [CounterBatch.lane_seven j hj] at hh
   rw [ba, setV_v_self, setV_v_of_ne _ _ (breg_ne_K j), ea _ (lane_mem hj),
     setV_v_self, setV_v_of_ne _ _ (breg_ne_K j), ← getD_st _ hkt,
     last_st key₁ key₂ (hI _ (lane_mem hj))] at hh
   exact hh
 
 
-def seedCode : List Instr := [.ldr .x .x9 .x23 0, .ldr .w .x10 .x23 8,
-  .vop (.ins .d2 .v31 0 .x9), .vop (.ins .s4 .v31 2 .x10)]
+abbrev seedCode := VG.Impl.AesGcm.AArch64.DirectGather.CounterBatch.seedCode
 
 def seedVec (s : State) : BitVec 128 :=
   setLane (setLane (s.v .v31) 64 0 (s.mem.readW (s.gpr .x23) 64)) 32 2
     (s.mem.readW (s.gpr .x23 + BitVec.ofNat 64 8) 32)
 
-abbrev seedRegs : List Reg := [.x9,.x10,.x12]
 abbrev seedVecs := VReg.v31 :: lanes
 
 theorem seed_ok (s : State)
     (h₀ : InRegions (s.rd ++ s.wr) (s.gpr .x23 + BitVec.ofNat 64 0) 8)
     (h₈ : InRegions (s.rd ++ s.wr) (s.gpr .x23 + BitVec.ofNat 64 8) 4) :
     WP isa (.block seedCode) s fun t => t.v .v31 = seedVec s ∧ Fr seedRegs seedVecs s t := by
-  rw [seedCode, WP.block_cons_iff]
+  rw [seedCode,VG.Impl.AesGcm.AArch64.DirectGather.CounterBatch.seedCode,WP.block_cons_iff]
   refine ⟨_, exec_ldr_x (by decide) h₀, ?_⟩
   rw [WP.block_cons_iff]
   refine ⟨_, exec_ldr_w (n := .x23) (t := .x10) (off := 8) (s := s.write .x .x9 (s.mem.readW (s.gpr .x23 + BitVec.ofNat 64 0) 64)) (by decide) (by simpa only [RegUpd.rd_write, RegUpd.wr_write, RegUpd.gpr_write, reduceCtorEq, ite_false] using h₈), ?_⟩
@@ -813,41 +872,13 @@ theorem seed_ok (s : State)
   · have h31 : r ≠ .v31 := fun e => hr (e ▸ List.mem_cons_self)
     simp [State.setV,State.write,h31]
 
-def countCode (i : Nat) : List Instr :=
-  let r := breg i
-  [.vop (.logic .orr r .v31 .v31), .movz .w .x12 (BitVec.ofNat 16 (256*(i+1))) 1,
-   .vop (.ins .s4 r 3 .x12)]
-
-def countWord (i : Nat) : BitVec 32 :=
-  (BitVec.ofNat 16 (256*(i+1))).setWidth 32 <<< 16
-
-theorem count_ok (s : State) (i : Nat) :
-    WP isa (.block (countCode i)) s fun t =>
-      t.v (breg i) = setLane (s.v .v31) 32 3 (countWord i) ∧ Fr [.x12] [breg i] s t := by
-  rw [countCode, WP.block_cons_iff]; refine ⟨_,rfl,?_⟩
-  rw [WP.block_cons_iff]; refine ⟨_,rfl,?_⟩
-  rw [WP.block_cons_iff]; refine ⟨_,rfl,WP.block_nil ?_⟩
-  refine ⟨?_, ⟨fun r hr => ?_, fun r hr => ?_,rfl,rfl,rfl,rfl⟩⟩
-  · simp [State.setV,State.write,countWord]
-  · simp only [List.mem_singleton] at hr
-    simp [State.setV,State.write,hr]
-  · simp only [List.mem_singleton] at hr
-    simp [State.setV,State.write,hr]
+abbrev countCode := VG.Impl.AesGcm.AArch64.DirectGather.CounterBatch.countCode
 
 theorem counts_ok (s : State) :
     WP isa (.block ((List.range 7).flatMap countCode)) s fun t =>
-      (∀ j < 7, t.v (breg j) = setLane (s.v .v31) 32 3 (countWord j)) ∧ Fr seedRegs lanes s t := by
-  refine wp_range_flatMap (M := isa) (fun i t =>
-    (∀ j < i, t.v (breg j) = setLane (s.v .v31) 32 3 (countWord j)) ∧ Fr seedRegs lanes s t)
-    (fun i u hi ⟨he,hf⟩ => ?_) 7 (Nat.le_refl _) s ⟨fun _ h => absurd h (Nat.not_lt_zero _), Fr.refl _ _ _⟩
-  refine (count_ok u i).mono fun t ⟨ht,ft⟩ => ⟨fun j hj => ?_, hf.trans (ft.mono ?_ ?_)⟩
-  · by_cases e : j = i
-    · subst j; rw [ht,hf.v .v31 (by decide)]
-    · rw [ft.v _ (by simpa using (fun h => e (breg_inj j (by omega) i (by omega) h) : breg j ≠ breg i))]
-      exact he _ (by omega)
-  · intro r hr; obtain rfl := List.mem_singleton.mp hr; decide
-  · intro r hr; obtain rfl := List.mem_singleton.mp hr; exact lane_mem hi
-
+      (∀ j < 7, t.v (breg j) = setLane (s.v .v31) 32 3 (countWord j)) ∧ Fr seedRegs lanes s t :=
+  (CounterBatch.counts_ok (n:=7) (by decide) s).mono fun _ ⟨h,f⟩ =>
+    ⟨fun j hj => (CounterBatch.lane_seven j hj) ▸ h j hj, f⟩
 
 abbrev nonce (s : State) : List Byte := Spec.Aes.bytesAt s.mem (s.gpr .x23) 12
 abbrev jZero (s : State) := Spec.Gcm.ofBytes (nonce s ++ [0,0,0,1])
@@ -887,7 +918,7 @@ theorem seed_byte (s : State) {k : Nat} (hk : k < 12) :
     congr 1
     omega
 
-theorem count_state (s : State) {i : Nat} (hi : i < 7) :
+theorem count_state (s : State) {i : Nat} (hi : i < 15) :
     st (setLane (seedVec s) 32 3 (countWord i)) = Proof.Aes.ctrState (jZero s) i := by
   apply st_ext; intro k hk
   rw [getD_st _ hk, Proof.Aes.ctrState, getD_ofFn hk, Proof.Aes.ctrBlock_byte _ _ hk, vbyte_setLane _ _ hk]
@@ -897,7 +928,7 @@ theorem count_state (s : State) {i : Nat} (hi : i < 7) :
     rw [List.getD_eq_getElem?_getD, List.getElem?_append_left h', ← List.getD_eq_getElem?_getD]
     exact (Proof.Gcm.getD_bytesAt' _ _ h).symm
   · rw [ite_eq_right h, ite_eq_right h, jZero_low, show countWord i = rev32 (1 + BitVec.ofNat 32 i) from
-        (by decide : ∀ j < 7, countWord j = rev32 (1 + BitVec.ofNat 32 j)) i hi,
+        (by decide : ∀ j < 15, countWord j = rev32 (1 + BitVec.ofNat 32 j)) i hi,
       rev32_byte _ (by omega)]
     congr 2
     omega
@@ -933,7 +964,7 @@ theorem shortKeys_ok {base nr : Nat} (s : State) (hn : nr ≤ 14)
   have hx : ∀ j < 7, x (breg j) = Proof.Aes.ctrState (jZero s) j := by
     intro j hj
     dsimp [x]
-    rw [lanesReady _ hj, seed, count_state _ hj]
+    rw [lanesReady _ hj, seed, count_state _ (by omega : j < 15)]
   have keys : CanLoadKeys nr v := fun i hi => by
     rw [f.rd,f.wr,f.gpr _ (by decide : Reg.x21 ∉ seedRegs)]; exact hk _ hi
   have hsch : sch nr v = sch nr s := by unfold Proof.Gcm.AArch64.Stitch.sch Proof.Gcm.AArch64.Stitch.kp; rw [f.mem, f.gpr _ (by decide)]

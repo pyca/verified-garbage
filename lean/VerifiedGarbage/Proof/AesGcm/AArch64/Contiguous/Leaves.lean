@@ -1,5 +1,7 @@
 module
 
+import VerifiedGarbage.Proof.Framework.KernelRfl
+
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Contiguous.LeafContract
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Contiguous.PreparedFrame
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Contiguous.Medium
@@ -37,7 +39,6 @@ structure BackendFacts (v : GcmImpl) (g : GhashWithImpl) : Prop where
     (Impl.AesGcm.AArch64.Contiguous.Standalone.bodyWith v.calls false)).allInstrs keepsV = true
   prepared (f : Bool) : scrubSide (preparedFrame v.calls g.fn f) (v.calls.pwWn+32) 0 (preparedClear f (!v.calls.stitch)) [] = true
   vectors (f : Bool) : (withStackArgScratch (v.calls.pwWn+32) 3 (preparedBody v.callees g.fn f false)).allInstrs keepsV = true
-  mediumSide : scrubSide (Impl.AesGcm.AArch64.Contiguous.MediumDirect.frame v.callees) 752 0 own [] = true
   hash16 : DirectGather.Hash16WithOk
   hash : DirectGather.HashEightWithOk
   stitch : VG.Proof.Gcm.AArch64.Stitch.Gh8Ok
@@ -90,15 +91,15 @@ end VG.Proof.AesGcm.AArch64.Contiguous
 namespace VG.Proof.AesGcm.AArch64.Contiguous
 open VG VG.AArch64 VG.AArch64.Scrub VG.Impl.Scrub.AArch64 VG.Impl.AesGcm.AArch64.Contiguous
 open VG.Impl.AesGcm.AArch64.Fn (own)
-theorem boundedLeaf {v : GcmImpl} {g : GhashWithImpl} (facts : BackendFacts v g) (z : v.calls.ctr.scratch=0)
+theorem boundedLeaf (hash : DirectGather.Hash16WithOk)
     (sat : ∃ s, (leafContract bounded).pre s) :
-    VerifiedScrubbed target (scrubAll 752 0 own (Impl.AesGcm.AArch64.Contiguous.MediumDirect.frame v.calls.callees)) (leafContract bounded) 0 := by
-  have zero : v.ctr.scratch=0 := v.ctr.scratch_eq.symm.trans z
-  apply scrubLeaf (by decide) facts.mediumSide
-  refine ⟨fun _ h => MediumDirect.frame_ok v zero facts.hash16 h.1 h.2.1 h.2.2.1.1 h.2.2.1.2 h.2.2.2
-    (DirectGather.keepsV_of_gatherSide facts.mediumSide),ct_of ?_,sat⟩
+    VerifiedScrubbed target (scrubAll 752 0 own Impl.AesGcm.AArch64.Contiguous.MediumDirect.frame) (leafContract bounded) 0 := by
+  have side : scrubSide Impl.AesGcm.AArch64.Contiguous.MediumDirect.frame 752 0 own [] = true := by kernel_rfl
+  apply scrubLeaf (by decide) side
+  refine ⟨fun _ h => MediumDirect.frame_ok hash h.1 h.2.1 h.2.2.1.1 h.2.2.1.2 h.2.2.2
+    (DirectGather.keepsV_of_gatherSide side),ct_of ?_,sat⟩
   intro a b pa pb pub
-  exact MediumDirect.frame_rel v zero facts.hash16 pa.1 pb.1 pa.2.1 pb.2.1 pa.2.2.1.1 pb.2.2.1.1
+  exact MediumDirect.frame_rel hash pa.1 pb.1 pa.2.1 pb.2.1 pa.2.2.1.1 pb.2.2.1.1
     pa.2.2.1.2 pb.2.2.1.2 pa.2.2.2 pb.2.2.2 pub.1
 
 end VG.Proof.AesGcm.AArch64.Contiguous

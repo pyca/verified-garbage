@@ -301,7 +301,7 @@ theorem selected {v : GcmImpl} {g : GhashWithImpl} (facts : BackendFacts v g) : 
   · by_cases zero : v.calls.ctr.scratch=0
     · simp only [select,portable,zero,ite_true]
       exact (nonceBranch standard id).checked ((shortBranch intermediate id).checked (shortLeaf facts.hash)
-        ((boundedBranch intermediate id).checked (boundedLeaf facts zero)
+        ((boundedBranch intermediate id).checked (boundedLeaf facts.hash16)
           (mediumBranch.checked (preparedLeaf facts false) (preparedLeaf facts true)))) (generalLeaf facts)
     · simp only [select,portable,zero,ite_false]
       exact (nonceBranch standard id).checked ((shortBranch intermediate id).checked (shortLeaf facts.hash)

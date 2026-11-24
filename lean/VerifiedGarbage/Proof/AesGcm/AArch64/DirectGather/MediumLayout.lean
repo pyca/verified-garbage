@@ -107,6 +107,34 @@ theorem Header.advance {s t u : State} {len : Nat} (h : Header s t len) {d n : N
   intro r hr; obtain rfl := List.mem_singleton.mp hr
   exact Offset.disjoint _ (.inl low) (by decide) (by change d+n ≤ 752 at high; omega)
 
+theorem fillAad (early : Bool) {s z : State} {len : Nat} (hn : len ≤ 224) (hal : AL s ≤ 16)
+    (ba : (scratch s).Disjoint (aR s)) (ar : Covers [aR s] (s.rd ++ s.wr))
+    (hz : Header s z len) (z4 : z.gpr .x4 = Ad s)
+    (z0 : bytesAt z.mem (ghBase s) 256 = zeros 256) :
+    WP isa (Medium.aadWith early) z fun t =>
+      Header s t len ∧ bytesAt t.mem (ghBase s) 256 = aadLayout s len ∧
+        Frame [⟨base s+BitVec.ofNat 64 (Medium.authO+224-16*((len+15)/16)),AL s⟩] z.mem t.mem := by
+  have al : (aadBytes s).length = AL s := Proof.AesCcm.length_bytesAt _ _ _
+  have b6 : ((len+15)/16) ≤ 14 := by omega
+  have asub : (⟨base s + BitVec.ofNat 64 (Medium.authO+224-16*((len+15)/16)), AL s⟩ : Region).Sub (scratch s) :=
+    Offset.sub_base _ (by change 480+224-16*((len+15)/16)+AL s ≤ 752; omega)
+  have ad : bytesAt z.mem (z.gpr .x4) (AL s) = aadBytes s := by
+    rw [z4]; exact bytesAt_frame hz.frame (by simpa only [List.mem_singleton,forall_eq] using
+      ba.symm) (by omega)
+  refine (aadWith_ok early b6 z hz.x19 hz.x25 hz.x24 ?_).mono ?_
+  · rw [z4]
+    exact ⟨by omega,ar.trans hz.toLocalMem.read,
+      covers_off hz.scratchWr (by change 480+224-16*((len+15)/16)+AL s ≤ 752; omega) (by decide),
+      (ba.sub_left asub).symm⟩
+  · intro t ⟨tm,tg,tsp,trd,twr⟩
+    rw [ad] at tm
+    have f : Frame [⟨base s+BitVec.ofNat 64 (Medium.authO+224-16*((len+15)/16)),AL s⟩] z.mem t.mem := by
+      rw [tm]; apply writeBytes_frame
+      rw [al]; exact Region.contains_self _ _
+    refine ⟨hz.advance f (by change 216 ≤ 480+224-16*((len+15)/16); omega)
+      (by change 480+224-16*((len+15)/16)+AL s ≤ 752; omega) tg tsp trd twr,?_,f⟩
+    · rw [tm]; exact zeroAad_layoutAt hn hal z0
+
 theorem fillMedium (early : Bool) {s a : State} {len : Nat} (hn : len ≤ 224) (hal : AL s ≤ 16)
     (ba : (scratch s).Disjoint (aR s)) (ar : Covers [aR s] (s.rd ++ s.wr))
     (ha : Header s a len) (a4 : a.gpr .x4 = Ad s) :
@@ -128,36 +156,19 @@ theorem fillMedium (early : Bool) {s a : State} {len : Nat} (hn : len ≤ 224) (
   have z0 : bytesAt z.mem (ghBase s) 256 = zeros 256 := by
     simpa only [ghBase,Medium.authO,BitVec.add_assoc,show (224:Addr)+256#64=480#64 by decide] using slice 256 256 (by decide)
   have z4 := (congrFun zg .x4).trans a4
-  have al : (aadBytes s).length = AL s := Proof.AesCcm.length_bytesAt _ _ _
-  have b6 : ((len+15)/16) ≤ 14 := by omega
-  have asub : (⟨base s + BitVec.ofNat 64 (Medium.authO+224-16*((len+15)/16)), AL s⟩ : Region).Sub (scratch s) :=
-    Offset.sub_base _ (by change 480+224-16*((len+15)/16)+AL s ≤ 752; omega)
-  have ad : bytesAt z.mem (z.gpr .x4) (AL s) = aadBytes s := by
-    rw [z4]; exact bytesAt_frame hz.frame (by simpa only [List.mem_singleton,forall_eq] using
-      ba.symm) (by omega)
-  refine (aadWith_ok early b6 z hz.x19 hz.x25 hz.x24 ?_).mono ?_
-  · rw [z4]
-    exact ⟨by omega,ar.trans hz.toLocalMem.read,
-      covers_off hz.scratchWr (by change 480+224-16*((len+15)/16)+AL s ≤ 752; omega) (by decide),
-      (ba.sub_left asub).symm⟩
-  · intro t ⟨tm,tg,tsp,trd,twr⟩
-    rw [ad] at tm
-    have f : Frame [⟨base s+BitVec.ofNat 64 (Medium.authO+224-16*((len+15)/16)),AL s⟩] z.mem t.mem := by
-      rw [tm]; apply writeBytes_frame
-      rw [al]; exact Region.contains_self _ _
-    refine ⟨hz.advance f (by change 216 ≤ 480+224-16*((len+15)/16); omega)
-      (by change 480+224-16*((len+15)/16)+AL s ≤ 752; omega) tg tsp trd twr,?_,?_,?_⟩
-    · rw [tm]; exact zeroAad_layoutAt hn hal z0
-    · rw [bytesAt_frame f (by
+  refine (fillAad early hn hal ba ar hz z4 z0).mono ?_
+  rintro t ⟨h,auth,f⟩
+  refine ⟨h,auth,?_,?_⟩
+  · rw [bytesAt_frame f (by
         intro q hq; obtain rfl := List.mem_singleton.mp hq
         exact Offset.disjoint _ (.inl (by change 224+256 ≤ 480+224-16*((len+15)/16); omega))
           (by decide) (by change 480+224-16*((len+15)/16)+AL s ≤ 2^64; omega)) (by decide)]
-      simpa only [BitVec.add_zero] using slice 0 256 (by decide)
-    · rw [bytesAt_frame f (by
+    simpa only [BitVec.add_zero] using slice 0 256 (by decide)
+  · rw [bytesAt_frame f (by
         intro q hq; obtain rfl := List.mem_singleton.mp hq
         exact Offset.disjoint _ (.inr (by change 480+224-16*((len+15)/16)+AL s ≤ 736; omega))
           (by decide) (by change 480+224-16*((len+15)/16)+AL s ≤ 2^64; omega)) (by decide)]
-      simpa only [BitVec.add_assoc,show (224:Addr)+512#64=736 by decide] using slice 512 16 (by decide)
+    simpa only [BitVec.add_assoc,show (224:Addr)+512#64=736 by decide] using slice 512 16 (by decide)
 
 /-- After setup and AAD absorption, only the short frame has changed. -/
 theorem prefix_ok {s : State} {extra : List Region} (l : BoundedLay s extra) (hn : L s ≤ 224) (hal : AL s ≤ 16) :
