@@ -1073,7 +1073,7 @@ theorem body_rel (v : Ctr32Impl) (hp : XPre s₀) (hp' : XPre s₀') {k : Nat} (
   -- The call, with the same arguments in both runs.
   have c2 : RelCT isa (fun a b => (∃ s, LInv32 s₀ k s ∧ Pre32 s₀ k s a) ∧ (∃ s, LInv32 s₀' k s ∧ Pre32 s₀' k s b))
       (ctrCall v.callee) fun _ _ => True :=
-    RelCT.mono (Proof.AesGcm.X86.ctr_ct2048 ⟨v, .scalar⟩
+    RelCT.mono (Proof.AesGcm.X86.ctrOnly_ct2048 v
       (I := fun s => CtrCall 2048 s (W s₀) (Iv s₀) (D32 s₀ k) (S s₀) (R s₀) (mOf s₀ k) ∧ s.gpr .esp = E s₀)
       fun _ h => h)
       (fun a b h => by

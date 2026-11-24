@@ -422,15 +422,66 @@ vg_ghash_pclmul:
 	sub eax, 8
 	cmp eax, 8
 	jae 22b
-	movdqa xmm2, xmm6
-	movdqu xmm3, XMMWORD PTR [ecx]
-	mov ecx, DWORD PTR [esp+8]
-	jmp 21f
-20:
-21:
 	test eax, eax
 	je 23f
+	movdqa xmm1, xmm6
+	pxor xmm4, xmm4
+	pxor xmm5, xmm5
+	pxor xmm6, xmm6
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	mov ecx, DWORD PTR [esp+20]
+	add ecx, eax
 25:
+	sub ecx, 16
+	movdqu xmm2, XMMWORD PTR [edx]
+	pshufb xmm2, xmm0
+	pxor xmm2, xmm1
+	pxor xmm1, xmm1
+	movdqu xmm3, XMMWORD PTR [ecx]
+	movdqa xmm7, xmm2
+	pclmulqdq xmm7, xmm3, 0
+	pxor xmm4, xmm7
+	movdqa xmm7, xmm2
+	pclmulqdq xmm7, xmm3, 17
+	pxor xmm6, xmm7
+	movdqa xmm7, xmm2
+	pclmulqdq xmm7, xmm3, 1
+	pxor xmm5, xmm7
+	pclmulqdq xmm2, xmm3, 16
+	pxor xmm5, xmm2
+	add edx, 16
+	sub eax, 16
+	jne 25b
+	movdqu xmm1, XMMWORD PTR [ecx+144]
+	movdqa xmm7, xmm5
+	psrldq xmm7, 8
+	pxor xmm6, xmm7
+	pslldq xmm5, 8
+	pxor xmm4, xmm5
+	movdqa xmm7, xmm4
+	pclmulqdq xmm7, xmm1, 16
+	pshufd xmm4, xmm4, 78
+	pxor xmm4, xmm7
+	movdqa xmm7, xmm4
+	pclmulqdq xmm7, xmm1, 16
+	pshufd xmm4, xmm4, 78
+	pxor xmm4, xmm7
+	movdqa xmm2, xmm6
+	pxor xmm2, xmm4
+	mov ecx, DWORD PTR [esp+8]
+	jmp 24f
+23:
+	movdqa xmm2, xmm6
+	mov ecx, DWORD PTR [esp+8]
+24:
+	jmp 21f
+20:
+	test eax, eax
+	je 26f
+28:
 	movdqu xmm7, XMMWORD PTR [edx]
 	pshufb xmm7, xmm0
 	pxor xmm2, xmm7
@@ -459,10 +510,11 @@ vg_ghash_pclmul:
 	pxor xmm2, xmm4
 	add edx, 16
 	sub eax, 1
-	jne 25b
-	jmp 24f
-23:
-24:
+	jne 28b
+	jmp 27f
+26:
+27:
+21:
 	pshufb xmm2, xmm0
 	movdqu XMMWORD PTR [ecx], xmm2
 	ret

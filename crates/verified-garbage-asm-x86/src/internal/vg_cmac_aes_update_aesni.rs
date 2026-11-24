@@ -13,9 +13,9 @@ pub(crate) unsafe extern "C" fn vg_cmac_aes_update_aesni() {
     core::arch::naked_asm!(
         r#".base64 "i0QkGImYEAgAAImwFAgAAIm4GAgAAImoHAgAAIt0JBCLRCQUhcA="
 je 20f
-.base64 "i3wkFItEJASLTCQIi1QkDPMPbwI="
+.base64 "i0QkBItMJAiLdCQQi2wkFItUJAzzD28C"
 22:
-.base64 "8w9vPmYP78fzD28wZg/vxvMPb3AQZg843MbzD29wIGYPONzG8w9vcDBmDzjcxvMPb3BAZg843MbzD29wUGYPONzG8w9vcGBmDzjcxvMPb3BwZg843MbzD2+wgAAAAGYPONzG8w9vsJAAAABmDzjcxoP5Cg=="
+.base64 "8w9vDmYP78HzD28wZg/vxvMPb3AQZg843MbzD29wIGYPONzG8w9vcDBmDzjcxvMPb3BAZg843MbzD29wUGYPONzG8w9vcGBmDzjcxvMPb3BwZg843MbzD2+wgAAAAGYPONzG8w9vsJAAAABmDzjcxoP5Cg=="
 je 23f
 .base64 "8w9vsKAAAABmDzjcxvMPb7CwAAAAZg843MaD+Qw="
 je 25f
@@ -28,9 +28,9 @@ jmp 24f
 23:
 .base64 "8w9vsKAAAABmDzjdxg=="
 24:
-.base64 "g8YQg+8B"
+.base64 "g8YQg+0B"
 jne 22b
-.base64 "8w9/Ag=="
+.base64 "i1QkDPMPfwI="
 jmp 21f
 20:
 21:

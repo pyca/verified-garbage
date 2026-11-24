@@ -1209,17 +1209,15 @@ theorem decrypt_stack (v : BlocksImpl) : stackUse (decrypt v.enc) = 24 := by
 /-- The whole-block code of encryption of `v` writes `esp` only in its
 frames and calls. -/
 theorem encryptCode_noSp (v : BlocksImpl) : NoSp (encryptCode v) := by
-  unfold encryptCode
-  split
-  · exact Ni.noSp
+  rcases encryptCode_cases v with ⟨c, h, e⟩ | e <;> rw [e]
+  · exact Chained.noSp h
   · exact encrypt_noSp v
 
 /-- It uses at most the 24 bytes of stack of a call of a block function:
-with AES-NI, none. -/
+around a chain, none. -/
 theorem encryptCode_stack (v : BlocksImpl) : stackUse (encryptCode v) ≤ 24 := by
-  unfold encryptCode
-  split
-  · rw [Ni.stack]; decide
+  rcases encryptCode_cases v with ⟨c, h, e⟩ | e <;> rw [e]
+  · rw [Chained.stack h]; decide
   · exact Nat.le_of_eq (encrypt_stack v)
 
 theorem encryptFinal_noSp (v : BlocksImpl) :

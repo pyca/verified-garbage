@@ -43,22 +43,39 @@ open VG.Spec.Gcm (Block blockAt blocksAt ctxCiph ctxH ctr32 ghashFrom inc32)
 
 /-- Environment and input/output regions for the fused
 out-of-place block call shared by split and gather sealing. -/
-structure CallRegions (M : CtxMode) (Ctx W SP D S : Addr) (R n sl : Nat) (s : State) : Prop where
+structure CallRegions (M : CtxMode) (Ctx W SP D S : Addr) (R n sl : Nat) (s : State)
+    (layout : Prop := (⟨S, sl⟩ : Region).Disjoint ⟨D, n⟩) (depth : Nat := 56) : Prop where
   env : Env Ctx (W + BitVec.ofNat 64 16) W SP s
   lay : Lay Ctx (W + BitVec.ofNat 64 16) W SP
   rounds : RoundsAt s.mem W R
   data : DataW Ctx (W + BitVec.ofNat 64 16) W SP s D n
   srcCov : Covers [⟨S, sl⟩] (s.rd ++ s.wr)
   sW : (⟨S, sl⟩ : Region).Disjoint ⟨W, 2560⟩
-  sD : (⟨S, sl⟩ : Region).Disjoint ⟨D, n⟩
+  sD : layout
   sWrap : S.toNat + sl ≤ 2 ^ 64
   sl_le : sl ≤ n
-  kw : (below SP 56).Disjoint ⟨W, 2560⟩
-  kd : (below SP 56).Disjoint ⟨D, n⟩
-  ks : (below SP 56).Disjoint ⟨S, sl⟩
-  kM : (below SP 56).Disjoint ⟨Ctx, M.len⟩
-  sp56 : 56 ≤ SP.toNat
+  kw : (below SP depth).Disjoint ⟨W, 2560⟩
+  kd : (below SP depth).Disjoint ⟨D, n⟩
+  ks : (below SP depth).Disjoint ⟨S, sl⟩
+  kM : (below SP depth).Disjoint ⟨Ctx, M.len⟩
+  stackSpace : depth ≤ SP.toNat
   ext : CtxExt M Ctx (W + BitVec.ofNat 64 16) W SP D n s
+
+/-- Register and region conditions of the compact seal call, common to both
+supported layouts. Its input and output start at the same address or occupy
+disjoint regions. -/
+abbrev SealRegions (M : CtxMode) (Ctx W SP D S : Addr) (R n sl : Nat) (s : State) :=
+  CallRegions M Ctx W SP D S R n sl s (S = D ∨ (⟨S, sl⟩ : Region).Disjoint ⟨D, n⟩) 24
+
+theorem CallRegions.forSeal {M : CtxMode} {Ctx W SP D S : Addr} {R n sl : Nat} {s : State}
+    (h : CallRegions M Ctx W SP D S R n sl s) : SealRegions M Ctx W SP D S R n sl s :=
+  { h with
+    sD := Or.inr h.sD
+    kw := h.kw.sub_left (below_sub (by decide) (by decide))
+    kd := h.kd.sub_left (below_sub (by decide) (by decide))
+    ks := h.ks.sub_left (below_sub (by decide) (by decide))
+    kM := h.kM.sub_left (below_sub (by decide) (by decide))
+    stackSpace := Nat.le_trans (by decide) h.stackSpace }
 
 /-- Environment, input and output regions, and argument slots for the fused
 out-of-place block call shared by split and gather sealing. -/
@@ -169,7 +186,7 @@ theorem callPre {q : Nat} (hq : 16 * q ≤ sl) {u : State}
   obtain hqn : (BitVec.ofNat 64 q).toNat = q := by rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by omega_arith)
   obtain hRn : (BitVec.ofNat 64 R).toNat = R := by
     rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by rcases h.rounds.2 with h | h | h <;> subst h <;> decide)
-  have sp := h.sp56
+  have sp : 56 ≤ SP.toNat := h.stackSpace
   obtain hargs : (Proof.AesGcm.args u 3) = ⟨SP - BitVec.ofNat 64 24, 24⟩ := by
     simp only [Proof.AesGcm.args, stackArgAddr, hrsp]
     rw [sub_add_ofNat _ (by decide)]
@@ -240,7 +257,7 @@ theorem callIn {q : Nat} (hq : 16 * q ≤ sl) {st : State}
       stackArg (callU M Ctx W SP D S q st) 0 = D ∧ stackArg (callU M Ctx W SP D S q st) 1 = BitVec.ofNat 64 q ∧
       stackArg (callU M Ctx W SP D S q st) 2 = W + BitVec.ofNat 64 448 := by
   have L := h.lay
-  have sp := h.sp56
+  have sp : 56 ≤ SP.toNat := h.stackSpace
   have hn := h.data.ok.lt
   obtain hqs : q * 16 ≤ sl := by omega_arith
   obtain hn8 : 8 * [Reg.rax, .r10, .r11].length ≤ (st.gpr .rsp).toNat := by rw [hsp]; simp; omega_arith
@@ -332,7 +349,7 @@ theorem preCall_ok (T : BlkToFn M) {q : Nat} (hq : 16 * q ≤ sl) {st : State}
       blockAt st'.mem (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 16) =
         ghashFrom (ctxH s.mem Ctx) (blockAt s.mem (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 16)) (blocksAt st'.mem D q) := by
   have L := h.lay
-  have sp := h.sp56
+  have sp : 56 ≤ SP.toNat := h.stackSpace
   have hn := h.data.ok.lt
   obtain hqs : q * 16 ≤ sl := by omega_arith
   obtain hn8 : 8 * [Reg.rax, .r10, .r11].length ≤ (st.gpr .rsp).toNat := by rw [hsp]; simp; omega_arith

@@ -13,8 +13,8 @@ every argument on the stack): the code of `vg_aes_ofb_final`, whose
 registration frames it with a buffer of its own on the stack, `save`, the
 seventh argument, where the code keeps its caller's callee-saved registers.
 It is AES-CFB's final function (`Impl.AesCfb.X86.final`) around a call of
-the whole-block AES-OFB function (`whole`: `crypt b`, or `cryptNi` with
-AES-NI) of the same implementation of the block functions (`b`, whose
+the whole-block AES-OFB function (`whole`: `crypt b`, or `cryptChain`)
+of the same implementation of the block functions (`b`, whose
 callers' names end in `sfx`, e.g. `_aesni`):
 
 1. our caller's `ebx`, `esi`, `edi` and `ebp` saved in `save`;
@@ -60,7 +60,7 @@ open VG.Impl.Aes.X86 (Blocks)
 open Impl.StackScratch.X86 (withStackScratchWiped)
 
 /-- `vg_aes_ofb` with the whole-block code `whole` (`crypt` around a block
-function, or `cryptNi`), as emitted. -/
+function, or `cryptChain`), as emitted. -/
 def crypt (whole : Prog isa) : Prog isa := Impl.Scrub.X86.scrubAll 0 24 whole
 
 /-- `vg_aes_ofb_final` with the whole-block code `whole` and the block

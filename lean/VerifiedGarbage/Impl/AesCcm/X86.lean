@@ -245,7 +245,7 @@ def tag (y : Nat) : Prog isa :=
 /-- The blocks of a chunk of the data, of the `W + mO` left (not 0): with
 AES-NI six while six are left, otherwise all of them; in `esi`. -/
 def pick : Prog isa :=
-  if Impl.CmacAes.X86.hardware c then
+  if Impl.Aes.X86.Chain.isAesNi c.name then
     .seq (.block [.mov .esi (slot mO), .alu .cmp .esi (imm 6)]) (.ite .b (.block []) (.block [.mov .esi (imm 6)]))
   else .block [.mov .esi (slot mO)]
 

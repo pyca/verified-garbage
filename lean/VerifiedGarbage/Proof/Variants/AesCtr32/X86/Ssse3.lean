@@ -247,7 +247,7 @@ theorem ctrArgs_ok (hp : GPre true s₀ B) (hB : 496 ≤ B) {sk : Nat → BitVec
     · rw [w.gpr, v₉.gpr, v₈.mem, v₇.mem, b4']
     · rw [z, v₉.gpr, v₈.mem, v₇.mem, b4']
   · obtain ⟨⟨m, rd, wr, e, p, dx, si, ax, bp, z⟩, x⟩ := hh
-    have hl := Enc.setupOk.len
+    have hl := (Enc.setupOk (b := true)).len
     have hC : Frame [ctrR s₀] s₂.mem s'.mem := by
       rw [m]
       exact (Frame.refl _ _).writeW List.mem_cons_self _ (reg_contains fC (by decide) (by decide))
@@ -279,8 +279,7 @@ theorem ctrArgs_ok (hp : GPre true s₀ B) (hB : 496 ≤ B) {sk : Nat → BitVec
       rcases hr with rfl | rfl
       · exact hp.aC.sub_left hA
       · exact (hp.aB.sub_left hA).sub_right hPB
-    · simp only [Dir.savedRegs, List.mem_cons, List.not_mem_nil, or_false] at hq
-      rcases hq with rfl | rfl | rfl | rfl <;>
+    · rcases savedRegs_mem hq with rfl | rfl | rfl | rfl <;>
         exact part_contains fB (by omega_using [hB]) (by decide) (by decide) (by decide)
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
@@ -401,7 +400,7 @@ theorem body_ok (hp : GPre true s₀ B) (hB : 496 ≤ B) {sk : Nat → BitVec 12
   have fS := hp.fSrc
   have fD := hp.fD
   have fB := hp.fB
-  have hl := Enc.setupOk.len
+  have hl := (Enc.setupOk (b := true)).len
   refine WP.seq (WP.mono (counter_ok hp hB h) fun s₁ ⟨m₁, rd₁, wr₁, g₁, dx₁, x6₁, x7₁, st₁⟩ => ?_)
   have hc₁ : CoreIn enc Enc.all B (scrP s₀) (nRounds s₀) sk s₁ :=
     h.core.of_frame (rs := []) (g₁ _ (by decide) (by decide)) (g₁ _ (by decide) (by decide)) rd₁ wr₁ x6₁ x7₁
@@ -495,8 +494,7 @@ theorem body_ok (hp : GPre true s₀ B) (hB : 496 ≤ B) {sk : Nat → BitVec 12
       rw [h.esp]
       exact (hp.aD.sub_left (hp.argSub (i := 1) (.inl (by decide)))).sub_right hsub
     · rw [g _ (by decide) (by decide) (by decide), gi _ (by decide) (by decide) (by decide), h.esp]
-    · simp only [Dir.savedRegs, List.mem_cons, List.not_mem_nil, or_false] at hq
-      rcases hq with rfl | rfl | rfl | rfl <;>
+    · rcases savedRegs_mem hq with rfl | rfl | rfl | rfl <;>
         exact part_contains fB (by omega_using [hB]) (by decide) (by decide) (by decide)
     · simp only [List.mem_singleton] at hr; subst hr
       exact hp.dCD.sub_right hsub
@@ -537,7 +535,7 @@ theorem correct (hp : GPre true s₀ B) (hB : 496 ≤ B) :
       · exact .inl ⟨by simp [eval, z, e], by rw [e]; exact i'⟩
       · exact .inr ⟨by simp [eval, z, e], nBlk s₀ - (c + 1), by omega_using [hn, hc], c + 1, rfl,
           by omega_using [hc, e], i'⟩
-  · refine WP.mono (restore_ok h₄.core.edi h₄.esp hp.fB hN (by rw [h₄.wr]; exact hp.wB) h₄.saved)
+  · refine WP.mono (restore_ok h₄.core.edi h₄.esp hp.fB hN (by rw [h₄.wr]; exact hp.wB) rfl h₄.saved)
       fun s' ⟨m, g⟩ => ⟨⟨g, ?_⟩, ?_, by rw [m]; exact h₄.ctr⟩
     · rw [m]
       refine h₄.frame.readW (Region.contains_self _ _) (fun r hr => ?_) (by decide)

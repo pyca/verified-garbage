@@ -26,6 +26,26 @@ namespace VG.Proof.Gcm
 open VG VG.Spec.Gcm
 open VG.Spec.Aes (bytesAt)
 
+/-- Read the byte result of a whole-block CTR operation, including one whose
+counter is kept directly in registers. -/
+theorem ctr_wholeTo_bytes {m m' : Mem} {sp dp : Addr} {ciph : Block → Block} {icb : Block} {n nb : Nat}
+    (h0 : n % 16 = 0)
+    (hd : blocksAt m' dp nb = ctr32 ciph (Nat.repeat inc32 (n/16) icb) (blocksAt m sp nb)) :
+    bytesAt m' dp (16*nb) = xorKs ciph icb n (bytesAt m sp (16*nb)) := by
+  refine list_ext (by simp [length_xorKs, Cmac.bytesAt_length]) fun k hk => ?_
+  simp only [Cmac.bytesAt_length] at hk
+  rw [getD_xorKs _ _ _ _ (by rw [Cmac.bytesAt_length]; exact hk), getD_bytesAt' _ _ hk,
+    getD_bytesAt' _ _ hk]
+  have hq : k / 16 < nb := by omega_using [hk]
+  have e₁ := congrArg (fun L => L.getD (k / 16) 0) hd
+  rw [ctr32_getD _ _ _ (by rw [length_blocksAt]; exact hq), blocksAt_getD _ _ _ hq,
+    blocksAt_getD _ _ _ hq] at e₁
+  have ea : ∀ p : Addr, p + BitVec.ofNat 64 k = p + BitVec.ofNat 64 (16 * (k / 16)) + BitVec.ofNat 64 (k % 16) :=
+    fun p => by rw [BitVec.add_assoc, ← BitVec.ofNat_add]; congr 2; omega_using []
+  rw [ea dp, ea sp, bytes_toBytes_blockAt m' _ (by omega_using []), bytes_toBytes_blockAt m _ (by omega_using []), e₁,
+    Proof.Aes.toBytes_xor _ _ (by omega_using []), ksByte, ← repeat_add,
+    show (n + k) / 16 = k / 16 + n / 16 by omega_using [h0], show (n + k) % 16 = k % 16 by omega_using [h0]]
+
 /-- `ctr_whole`, out of place: the plaintext at `sp`, the ciphertext written
 to `dp`. -/
 theorem ctr_wholeTo {m m' : Mem} {cb ks sp dp : Addr} {ciph : Block → Block} {icb : Block} {n nb : Nat}
@@ -35,19 +55,7 @@ theorem ctr_wholeTo {m m' : Mem} {cb ks sp dp : Addr} {ciph : Block → Block} {
     bytesAt m' dp (16 * nb) = xorKs ciph icb n (bytesAt m sp (16 * nb)) ∧ Ctr m' cb ks ciph icb (n + 16 * nb) := by
   have hcb : blockAt m cb = Nat.repeat inc32 (n / 16) icb := by rw [h.1]; congr 1; omega_using [h0]
   refine ⟨?_, ?_, fun h1 => absurd (by omega_using [h0]) h1⟩
-  · refine list_ext (by simp [length_xorKs, Cmac.bytesAt_length]) fun k hk => ?_
-    simp only [Cmac.bytesAt_length] at hk
-    rw [getD_xorKs _ _ _ _ (by rw [Cmac.bytesAt_length]; exact hk), getD_bytesAt' _ _ hk,
-      getD_bytesAt' _ _ hk]
-    have hq : k / 16 < nb := by omega_using [hk]
-    have e₁ := congrArg (fun L => L.getD (k / 16) 0) hd
-    rw [ctr32_getD _ _ _ (by rw [length_blocksAt]; exact hq), blocksAt_getD _ _ _ hq,
-      blocksAt_getD _ _ _ hq] at e₁
-    have ea : ∀ p : Addr, p + BitVec.ofNat 64 k = p + BitVec.ofNat 64 (16 * (k / 16)) + BitVec.ofNat 64 (k % 16) :=
-      fun p => by rw [BitVec.add_assoc, ← BitVec.ofNat_add]; congr 2; omega_using []
-    rw [ea dp, ea sp, bytes_toBytes_blockAt m' _ (by omega_using []), bytes_toBytes_blockAt m _ (by omega_using []), e₁,
-      Proof.Aes.toBytes_xor _ _ (by omega_using []), ksByte, hcb, ← repeat_add,
-      show (n + k) / 16 = k / 16 + n / 16 by omega_using [h0], show (n + k) % 16 = k % 16 by omega_using [h0]]
+  · exact ctr_wholeTo_bytes h0 (hcb ▸ hd)
   · rw [hc, hcb, ← repeat_add]; congr 1; omega_using [h0]
 
 theorem length_ghashInput_mod {a c : List Byte} (hc : c ≠ [] ∨ a.length % 16 = 0) (h0 : c.length % 16 = 0) :

@@ -15,7 +15,7 @@ public import VerifiedGarbage.Proof.Cmac.Mem32
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Gcm.Stream
 import VerifiedGarbage.Proof.AesGcmSiv.X86.Derive
-import VerifiedGarbage.Proof.Gcm.X86.Pclmul.Ghash
+import VerifiedGarbage.Proof.Gcm.X86.Pclmul.Load
 import VerifiedGarbage.Proof.Gcm.X86.Rev
 import VerifiedGarbage.Proof.GcmSiv.Spec
 import VerifiedGarbage.Proof.Framework.X86.SseDword

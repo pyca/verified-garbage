@@ -20,8 +20,8 @@ They are generic over the implementation of the block functions they call
 2. a call of the whole-block function of the same direction and
    implementation (`vg_aes_cfb128_encrypt`'s code,
    `vg_aes_cfb128_encrypt_core`, and its variants, `Impl/AesCfb/X86.lean`:
-   `whole`, which is `encrypt b` or `decrypt b`, or `encryptNi` or
-   `decryptNi` with AES-NI) on the `len / 16` whole blocks, its six
+   `whole`, which is `encrypt b` or `decrypt b`, or `encryptChain` or, with
+   AES-NI, `decryptNi`) on the `len / 16` whole blocks, its six
    arguments pushed in a frame of their own, which leaves the last
    ciphertext block `Cₙ₋₁` in `iv`;
 3. if `u = len mod 16` bytes are left, a call of the block function on the
@@ -115,7 +115,7 @@ open VG.Impl.Aes.X86 (Blocks)
 open Impl.StackScratch.X86 (withStackScratchWiped)
 
 /-- `vg_aes_cfb128_encrypt` with the whole-block code `whole` (`encrypt`
-around a block function, or `encryptNi`), as emitted. -/
+around a block function, or `encryptChain`), as emitted. -/
 def encrypt (whole : Prog isa) : Prog isa := Impl.Scrub.X86.scrubAll 0 24 whole
 
 /-- `vg_aes_cfb128_decrypt` with the whole-block code `whole` (`decrypt`

@@ -19,23 +19,24 @@ open VG.Spec.Gcm (Block)
 variable {N : Nat}
 
 theorem xorTo_ct {K D T : BitVec 32} {n : Nat} {I : State → Prop}
-    (req : ∀ s, I s → s.gpr .edx=K ∧ s.gpr .esi=D ∧ s.gpr .edi=T ∧ s.gpr .ecx=BitVec.ofNat 32 n) :
-    CT I (xorLoopG true) := by
-  refine CT.taint [.edx,.esi,.edi,.ecx] ?_ (by taint_decide)
-  intro a b a₀ b₀ r hr
-  obtain ⟨a₁,a₂,a₃,a₄⟩ := req a a₀
-  obtain ⟨b₁,b₂,b₃,b₄⟩ := req b b₀
-  simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl
-  exacts [a₁.trans b₁.symm,a₂.trans b₂.symm,a₃.trans b₃.symm,a₄.trans b₄.symm]
+    (req : ∀ s, I s → s.gpr .edx=K ∧ s.gpr .esi=D ∧ s.gpr .edi=T ∧ s.gpr .ecx=BitVec.ofNat 32 n) (words : Bool := false) :
+    CT I (xorTailCode words) := by
+  have pub : ∀ a b, I a → I b → ∀ r ∈ [Reg.edx,.esi,.edi,.ecx], a.gpr r = b.gpr r := by
+    intro a b a₀ b₀ r hr
+    obtain ⟨a₁,a₂,a₃,a₄⟩ := req a a₀
+    obtain ⟨b₁,b₂,b₃,b₄⟩ := req b b₀
+    simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl
+    exacts [a₁.trans b₁.symm,a₂.trans b₂.symm,a₃.trans b₃.symm,a₄.trans b₄.symm]
+  cases words <;> exact CT.taint _ pub (by taint_decide)
 
 private structure XorAt (W K D T : BitVec 32) (n : Nat) (s : State) : Prop where
   wp : XorPreG true s K D T n
   bp : s.gpr .ebp=W
 
 theorem xorTail_ct {C St W SP D T : BitVec 32} {n R : Nat} (L : Lay N C St W SP 32) (st : St=W+16#32)
-    (P : PieceRegions N C W SP D T n) (hlt : n<2^32) (nz : n%16 ≠ 0) :
-    CT (WholePre N C St W SP D T n R) (.seq (.block Open.tailRegs) (.seq (xorLoopG true)
+    (P : PieceRegions N C W SP D T n) (hlt : n<2^32) (nz : n%16 ≠ 0) (words : Bool := false) :
+    CT (WholePre N C St W SP D T n R) (.seq (.block Open.tailRegs) (.seq (xorTailCode words)
       (.block [.mov .esi (.reg .ebp),.alu .add .esi (imm stO)]))) := by
   refine CT.seq (J:=XorAt W (St+64#32) (tailPtr D n) (tailPtr T n) (n%16)) (CT.taint [.esp,.ebp,.esi]
     (fun _ _ a b r hr => by
@@ -61,9 +62,9 @@ theorem xorTail_ct {C St W SP D T : BitVec 32} {n R : Nat} (L : Lay N C St W SP 
       by rw [rd,wr,L.aS (by decide)]; exact covers_left (h.env.stC (by omega_using [])),
       by rw [rd,wr,d]; exact covers_off h.access.rd (by omega_using []) (by omega_using [hlt]),
       by rw [wr,t]; exact covers_off h.access.wr (by omega_using []) (by omega_using [hlt]),
-      ((P.dstWork.sub_left ts).sub_right ks).symm,.inr ((P.srcDst.sub_left ds).sub_right ts)⟩,bp⟩
-  refine CT.seq (J:=fun s => s.gpr .ebp=W) (xorTo_ct (fun _ h => ⟨h.wp.edx,h.wp.src,h.wp.edi,h.wp.ecx⟩))
-    (fun s h => WP.mono (xorLoopG_ok true s h.wp) fun t a => (a.other _ (by decide) (by decide) (by decide) (by decide)
+      ((P.dstWork.sub_left ts).sub_right ks).symm,P.srcDst.imp (congrArg (fun p => tailPtr p n)) (fun hd => (hd.sub_left ds).sub_right ts)⟩,bp⟩
+  refine CT.seq (J:=fun s => s.gpr .ebp=W) (xorTo_ct (fun _ h => ⟨h.wp.edx,h.wp.src,h.wp.edi,h.wp.ecx⟩) words)
+    (fun s h => WP.mono (xorTailCode_ok words h.wp) fun t a => (a.other _ (by decide) (by decide) (by decide) (by decide)
       (by decide) (by decide)).trans h.bp) ?_
   exact CT.taint [.ebp] (fun _ _ a b r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact a.trans b.symm) (by taint_decide)
@@ -86,8 +87,8 @@ private theorem afterWhole {C St W SP D T : BitVec 32} {n R off : Nat} {s t : St
 
 theorem decTo_ct (v : GcmImpl) [WSize N v.ctr.scr] {C St W SP D T : BitVec 32} {n R off : Nat}
     (L : Lay N C St W SP 32) (st : St=W+16#32) (P : PieceRegions N C W SP D T n) (hlt : n<2^32)
-    (aligned : n≠0 → off%16=0) :
-    CT (AlignedPre N C St W SP D T n R off) (Open.decTo v.callees v.callees.ctr) := by
+    (aligned : n≠0 → off%16=0) (words : Bool := false) :
+    CT (AlignedPre N C St W SP D T n R off) (Open.decTo v.callees v.callees.ctr words) := by
   let J := AlignedPre N C St W SP D T n R (off+16*(n/16))
   refine CT.seq (J:=J) ((wholeTo_ct v L st P hlt).mono fun _ h => h.toWholePre) ?_ ?_
   · intro s h
@@ -104,7 +105,7 @@ theorem decTo_ct (v : GcmImpl) [WSize N v.ctr.scr] {C St W SP D T : BitVec 32} {
       by rw [m]; exact h.src,by rw [m]; exact h.len⟩,by rw [m]; exact h.stream⟩,z⟩
   refine CT.ite (decide (n%16=0)) (fun _ h => h.2) (fun _ => CT.nil) (fun h₀ => ?_)
   have nz : n%16 ≠ 0 := by simpa using h₀
-  refine CT.seq (J:=WholePre N C St W SP D T n R) ?_ ?_ (xorTail_ct L st P hlt nz)
+  refine CT.seq (J:=WholePre N C St W SP D T n R) ?_ ?_ (xorTail_ct L st P hlt nz words)
   · refine CT.seq (J:=CtrReady N C St W SP R (St+48#32) (St+64#32) 1)
       (CT.taint [.ebp,.esi] (fun _ _ a b r hr => by
         simp only [List.mem_cons,List.not_mem_nil,or_false] at hr; rcases hr with rfl | rfl

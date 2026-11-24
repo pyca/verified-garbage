@@ -39,7 +39,7 @@ implementations, whose code is `.block []`, which the kernel evaluates once
 (`init_side`, …), the implementation's own facts (`Ctr32Impl.scrub`,
 `expandScrub`, their stacks), and `Fill`, which `fill_calls` proves by
 walking only SIV's code. `vg_cmac_aes_update` chains in a register with
-AES-NI and by calls otherwise (`Impl.CmacAes.X86.hardware`), so `encrypt`
+AES-NI and SSSE3 and by calls otherwise (`Impl.Aes.X86.Chain.choose`), so `encrypt`
 and `decrypt` have a stub of each.
 -/
 
@@ -99,11 +99,14 @@ open Impl.StackScratch.X86 (withStackScratch)
 open Proof.Aes.X86 (Ctr32Impl)
 
 /-- AES in counter mode with no code, by the name that chooses the
-chaining by calls (`Impl.CmacAes.X86.hardware`). -/
+chaining by calls (`Impl.Aes.X86.Chain.choose`). -/
 def stubCtr : Impl.Aes.X86.Ctr32 := ⟨"", .block []⟩
 
 /-- `stubCtr` by the name that chooses the chaining with AES-NI. -/
 def stubCtrNi : Impl.Aes.X86.Ctr32 := ⟨"vg_aes_ctr32_to_aesni", .block []⟩
+
+/-- `stubCtr` by the name that chooses the chaining with SSSE3. -/
+def stubCtrSsse3 : Impl.Aes.X86.Ctr32 := ⟨"vg_aes_ctr32_to_ssse3", .block []⟩
 
 /-- AES's key expansion with no code. -/
 def stubExpand : Impl.Aes.X86.ExpandKey := ⟨"", .block []⟩
@@ -112,8 +115,10 @@ def stubExpand : Impl.Aes.X86.ExpandKey := ⟨"", .block []⟩
 materialize_code initStub := withStackScratch 2580 3 (Impl.AesSiv.X86.initCore stubExpand stubCtr "")
 materialize_code encryptStub := withStackScratch 2612 7 (Impl.AesSiv.X86.encrypt stubCtr "")
 materialize_code encryptStubNi := withStackScratch 2612 7 (Impl.AesSiv.X86.encrypt stubCtrNi "")
+materialize_code encryptStubSsse3 := withStackScratch 2612 7 (Impl.AesSiv.X86.encrypt stubCtrSsse3 "")
 materialize_code decryptStub := withStackScratch 2612 7 (Impl.AesSiv.X86.decrypt stubCtr "")
 materialize_code decryptStubNi := withStackScratch 2612 7 (Impl.AesSiv.X86.decrypt stubCtrNi "")
+materialize_code decryptStubSsse3 := withStackScratch 2612 7 (Impl.AesSiv.X86.decrypt stubCtrSsse3 "")
 
 theorem init_side :
     scrubFSide (withStackScratch 2580 3 (Impl.AesSiv.X86.initCore stubExpand stubCtr "")) [] 2632 = true := by
@@ -126,11 +131,19 @@ theorem encryptNi_side :
     scrubFSide (withStackScratch 2612 7 (Impl.AesSiv.X86.encrypt stubCtrNi "")) [] 2672 = true := by
   lit_decide
 
+theorem encryptSsse3_side :
+    scrubFSide (withStackScratch 2612 7 (Impl.AesSiv.X86.encrypt stubCtrSsse3 "")) [] 2672 = true := by
+  lit_decide
+
 theorem decrypt_side : scrubFSide (withStackScratch 2612 7 (Impl.AesSiv.X86.decrypt stubCtr "")) [] 2672 = true := by
   lit_decide
 
 theorem decryptNi_side :
     scrubFSide (withStackScratch 2612 7 (Impl.AesSiv.X86.decrypt stubCtrNi "")) [] 2672 = true := by
+  lit_decide
+
+theorem decryptSsse3_side :
+    scrubFSide (withStackScratch 2612 7 (Impl.AesSiv.X86.decrypt stubCtrSsse3 "")) [] 2672 = true := by
   lit_decide
 
 theorem init_fill (e : Impl.Aes.X86.ExpandKey) (c : Impl.Aes.X86.Ctr32) (sfx : String)
@@ -140,26 +153,42 @@ theorem init_fill (e : Impl.Aes.X86.ExpandKey) (c : Impl.Aes.X86.Ctr32) (sfx : S
   fill_calls
 
 theorem encrypt_fill (c : Impl.Aes.X86.Ctr32) (sfx : String) (hc : calleeSide c.code 0 = true)
-    (h : ¬Impl.CmacAes.X86.hardware c = true) :
+    (h : ¬Impl.Aes.X86.Chain.isAesNi c.name = true)
+    (h' : ¬Impl.Aes.X86.Chain.isSsse3 c.name = true) :
     Fill 0 (withStackScratch 2612 7 (Impl.AesSiv.X86.encrypt stubCtr ""))
       (withStackScratch 2612 7 (Impl.AesSiv.X86.encrypt c sfx)) := by
   fill_calls
 
 theorem encryptNi_fill (c : Impl.Aes.X86.Ctr32) (sfx : String) (hc : calleeSide c.code 0 = true)
-    (h : Impl.CmacAes.X86.hardware c = true) :
+    (h : Impl.Aes.X86.Chain.isAesNi c.name = true) :
     Fill 0 (withStackScratch 2612 7 (Impl.AesSiv.X86.encrypt stubCtrNi ""))
       (withStackScratch 2612 7 (Impl.AesSiv.X86.encrypt c sfx)) := by
   fill_calls
 
+theorem encryptSsse3_fill (c : Impl.Aes.X86.Ctr32) (sfx : String) (hc : calleeSide c.code 0 = true)
+    (h : ¬Impl.Aes.X86.Chain.isAesNi c.name = true)
+    (h' : Impl.Aes.X86.Chain.isSsse3 c.name = true) :
+    Fill 0 (withStackScratch 2612 7 (Impl.AesSiv.X86.encrypt stubCtrSsse3 ""))
+      (withStackScratch 2612 7 (Impl.AesSiv.X86.encrypt c sfx)) := by
+  fill_calls
+
 theorem decrypt_fill (c : Impl.Aes.X86.Ctr32) (sfx : String) (hc : calleeSide c.code 0 = true)
-    (h : ¬Impl.CmacAes.X86.hardware c = true) :
+    (h : ¬Impl.Aes.X86.Chain.isAesNi c.name = true)
+    (h' : ¬Impl.Aes.X86.Chain.isSsse3 c.name = true) :
     Fill 0 (withStackScratch 2612 7 (Impl.AesSiv.X86.decrypt stubCtr ""))
       (withStackScratch 2612 7 (Impl.AesSiv.X86.decrypt c sfx)) := by
   fill_calls
 
 theorem decryptNi_fill (c : Impl.Aes.X86.Ctr32) (sfx : String) (hc : calleeSide c.code 0 = true)
-    (h : Impl.CmacAes.X86.hardware c = true) :
+    (h : Impl.Aes.X86.Chain.isAesNi c.name = true) :
     Fill 0 (withStackScratch 2612 7 (Impl.AesSiv.X86.decrypt stubCtrNi ""))
+      (withStackScratch 2612 7 (Impl.AesSiv.X86.decrypt c sfx)) := by
+  fill_calls
+
+theorem decryptSsse3_fill (c : Impl.Aes.X86.Ctr32) (sfx : String) (hc : calleeSide c.code 0 = true)
+    (h : ¬Impl.Aes.X86.Chain.isAesNi c.name = true)
+    (h' : Impl.Aes.X86.Chain.isSsse3 c.name = true) :
+    Fill 0 (withStackScratch 2612 7 (Impl.AesSiv.X86.decrypt stubCtrSsse3 ""))
       (withStackScratch 2612 7 (Impl.AesSiv.X86.decrypt c sfx)) := by
   fill_calls
 
@@ -172,16 +201,20 @@ theorem init_scrub (v : Ctr32Impl) :
 /-- `scrubFSide` of `vg_aes_siv_encrypt`, whatever the implementation. -/
 theorem encrypt_scrub (v : Ctr32Impl) :
     scrubFSide (withStackScratch 2612 7 (Impl.AesSiv.X86.encrypt v.callee v.suffix)) [] 2672 = true := by
-  by_cases h : Impl.CmacAes.X86.hardware v.callee = true
+  by_cases h : Impl.Aes.X86.Chain.isAesNi v.callee.name = true
   · exact scrubFSide_of_fill (encryptNi_fill _ _ (calleeSide_of_eq v.stack v.scrub) h) encryptNi_side
-  · exact scrubFSide_of_fill (encrypt_fill _ _ (calleeSide_of_eq v.stack v.scrub) h) encrypt_side
+  by_cases h' : Impl.Aes.X86.Chain.isSsse3 v.callee.name = true
+  · exact scrubFSide_of_fill (encryptSsse3_fill _ _ (calleeSide_of_eq v.stack v.scrub) h h') encryptSsse3_side
+  · exact scrubFSide_of_fill (encrypt_fill _ _ (calleeSide_of_eq v.stack v.scrub) h h') encrypt_side
 
 /-- `scrubFSide` of `vg_aes_siv_decrypt`, whatever the implementation. -/
 theorem decrypt_scrub (v : Ctr32Impl) :
     scrubFSide (withStackScratch 2612 7 (Impl.AesSiv.X86.decrypt v.callee v.suffix)) [] 2672 = true := by
-  by_cases h : Impl.CmacAes.X86.hardware v.callee = true
+  by_cases h : Impl.Aes.X86.Chain.isAesNi v.callee.name = true
   · exact scrubFSide_of_fill (decryptNi_fill _ _ (calleeSide_of_eq v.stack v.scrub) h) decryptNi_side
-  · exact scrubFSide_of_fill (decrypt_fill _ _ (calleeSide_of_eq v.stack v.scrub) h) decrypt_side
+  by_cases h' : Impl.Aes.X86.Chain.isSsse3 v.callee.name = true
+  · exact scrubFSide_of_fill (decryptSsse3_fill _ _ (calleeSide_of_eq v.stack v.scrub) h h') decryptSsse3_side
+  · exact scrubFSide_of_fill (decrypt_fill _ _ (calleeSide_of_eq v.stack v.scrub) h h') decrypt_side
 
 /-! ## The functions as emitted -/
 

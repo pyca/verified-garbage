@@ -119,6 +119,11 @@ theorem inc32_bytes {t : List Byte} (ht : t.length = 16) {w : BitVec 32}
 abbrev j0Frame (st w sp : Addr) : List Region :=
   [⟨st, 80⟩, ⟨w + BitVec.ofNat 64 96, 16⟩, ⟨w + BitVec.ofNat 64 512, 256⟩, below sp 2048]
 
+theorem FramedHashAction.temp_j0 {invoke : Prog isa} {K st w sp : Addr} {s : State}
+    (h : FramedHashAction invoke K (j0Frame st w sp) s) :
+    FramedHashAction invoke K [⟨w+BitVec.ofNat 64 96,16⟩] s :=
+  FramedHashAction.narrow h fun r hr => ⟨r,by obtain rfl := List.mem_singleton.mp hr; simp [j0Frame],fun _ a => a⟩
+
 /-- Before `j0`: the `n`-byte nonce at `Np`, its length also in `s7`. -/
 structure J0In (V : Reg → BitVec 64) (sp : Addr) (H : Block) (Np : Addr) (n : Nat) (s : State) : Prop where
   env : Env V sp s
@@ -402,12 +407,20 @@ theorem j0zero_ok {H : Block} {Np : Addr} {n : Nat} {s : State} (h : J0In V sp H
 
 /-- `J₀` of a nonce of any length but 12: GHASH of the nonce padded and of
 the lengths block. -/
-theorem j0hash_ok [VG.Proof.Gcm.RISCV64.GhashLaw] {H : Block} {Np : Addr} {n : Nat} {s : State} (h : J0In V sp H Np n s) (hn : n ≠ 12) :
-    WP isa j0hash s (J0Mid V sp H (bytesAt s.mem Np n) s.mem) := by
+theorem j0hash_ok_with {invoke : Prog isa} {H : Block} {Np : Addr} {n : Nat} {s : State} (h : J0In V sp H Np n s) (hn : n ≠ 12)
+    (exec : FramedHashAction invoke (V .s2+BitVec.ofNat 64 240) (j0Frame (V .s1) (V .s0) sp) s) :
+    WP isa (j0hashWith invoke) s (J0Mid V sp H (bytesAt s.mem Np n) s.mem) := by
   have hd := h.data
   have hlt := hd.lt
-  refine WP.seq (WP.mono (j0zero_ok L h) fun s₁ ⟨hai, hY₁, hiv, f₁⟩ => ?_)
-  refine WP.seq (WP.mono (absorb_ok L (yo := 0) (.inl rfl) hai) fun s₂ ho => ?_)
+  refine WP.seq (WP.mono (WP.with_rdwr (j0zero_ok L h)) fun s₁ ⟨⟨hai,hY₁,hiv,f₁⟩,rd₁,wr₁,sp₁⟩ => ?_)
+  have g₁ : Frame (j0Frame (V .s1) (V .s0) sp) s.mem s₁.mem := f₁.sub fun r hr => by
+    simp only [List.mem_singleton] at hr
+    subst r
+    exact ⟨_,List.mem_cons_self ..,Lay.stSub (by decide)⟩
+  have ex₁ : FramedHashAction invoke (V .s2+BitVec.ofNat 64 240) (j0Frame (V .s1) (V .s0) sp) s₁ := FramedHashAction.after exec ⟨rd₁,wr₁,sp₁⟩ g₁
+  refine WP.seq (WP.mono (WP.with_rdwr (absorbFresh_ok_with L (yo:=0) (.inl rfl) hai rfl (FramedHashAction.now ex₁)))
+    fun s₂ ⟨ho,rd₂,wr₂,sp₂⟩ => ?_)
+  have ex₂ : FramedHashAction invoke (V .s2+BitVec.ofNat 64 240) (j0Frame (V .s1) (V .s0) sp) s₂ := FramedHashAction.after ex₁ ⟨rd₂,wr₂,sp₂⟩ (abs_j0Frame ho.frame)
   rw [List.nil_append, hiv] at ho
   obtain hab₂ := ho.abs (Proof.Gcm.absorbed_nil H hY₁)
   have he₂ := ho.env
@@ -423,8 +436,10 @@ theorem j0hash_ok [VG.Proof.Gcm.RISCV64.GhashLaw] {H : Block} {Np : Addr} {n : N
     exact ⟨fun r a => by simp [a], ⟨rfl, rfl, rfl, rfl⟩⟩
   refine WP.seq (WP.mono h₃ fun s₃ ⟨h26₃, hg₃, hk₃⟩ => ?_)
   obtain he₃ := he₂.keep (fun r hr => hg₃ r (by revert r; decide)) hk₃.sp hk₃.rd hk₃.wr
-  refine WP.seq (WP.mono (flush_ok L (yo := 0) (.inl rfl) (x := bytesAt s.mem Np n) ⟨he₃, by
-    rw [hk₃.mem, hH₂]⟩ (by rw [h26₃, length_bytesAt])) fun s₄ hf => ?_)
+  refine WP.seq (WP.mono (WP.with_rdwr (flush_ok_with L (H := H) (yo := 0) (.inl rfl) (x := bytesAt s.mem Np n) ⟨he₃, by
+    rw [hk₃.mem, hH₂]⟩ (by rw [h26₃, length_bytesAt])
+    (FramedHashAction.temp_j0 (FramedHashAction.kept ex₂ hk₃)))) fun s₄ ⟨hf,rd₄,wr₄,sp₄⟩ => ?_)
+  have ex₄ : FramedHashAction invoke (V .s2+BitVec.ofNat 64 240) (j0Frame (V .s1) (V .s0) sp) s₄ := FramedHashAction.after (FramedHashAction.kept ex₂ hk₃) ⟨rd₄,wr₄,sp₄⟩ (t_j0Frame hf.frame)
   have he₄ := hf.env
   obtain h18₄ : s₄.gpr .s7 = BitVec.ofNat 64 n := he₄.fr _ (by decide) |>.trans h.s7
   obtain h₅ : WP isa (.block [.li .s4 0, mov .s6 .s7]) s₄ fun s₅ =>
@@ -434,7 +449,7 @@ theorem j0hash_ok [VG.Proof.Gcm.RISCV64.GhashLaw] {H : Block} {Np : Addr} {n : N
     exact ⟨fun r a b => by simp [a, b], ⟨rfl, rfl, rfl, rfl⟩⟩
   refine WP.seq (WP.mono h₅ fun s₅ ⟨h24₅, h26₅, hg₅, hk₅⟩ => ?_)
   obtain he₅ := he₄.keep (fun r hr => hg₅ r (by revert r; decide) (by revert r; decide)) hk₅.sp hk₅.rd hk₅.wr
-  refine WP.mono (lens_ok L (yo := 0) (.inl rfl) (H := H) he₅ (by rw [hk₅.mem]; exact hf.hH))
+  refine WP.mono (lens_ok_with L (yo := 0) (.inl rfl) (H := H) he₅ (by rw [hk₅.mem]; exact hf.hH) (FramedHashAction.temp_j0 (FramedHashAction.kept ex₄ hk₅)))
     fun s₆ ⟨he₆, hH₆, hY₆, _, f₆⟩ => ?_
   refine ⟨he₆, hH₆, ?_, ?_⟩
   · have hw := (hf.abs (by rw [hk₃.mem]; exact hab₂)).whole_eq (by
@@ -442,14 +457,15 @@ theorem j0hash_ok [VG.Proof.Gcm.RISCV64.GhashLaw] {H : Block} {Np : Addr} {n : N
     rw [length_bytesAt, add_ofNat_zero] at hw
     rw [h24₅, h26₅, toNat64 (by decide), toNat64 hlt, hk₅.mem, add_ofNat_zero, hw] at hY₆
     rw [Proof.Gcm.j0_eq H (by rw [length_bytesAt]; exact hn), length_bytesAt, ← hY₆]
-  · have g₁ : Frame (j0Frame (V .s1) (V .s0) sp) s.mem s₁.mem := f₁.sub fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr
-      exact ⟨_, List.mem_cons_self .., Lay.stSub (by decide)⟩
-    obtain g₄ := t_j0Frame hf.frame
+  · obtain g₄ := t_j0Frame hf.frame
     obtain g₆ := t_j0Frame f₆
     rw [hk₃.mem] at g₄
     rw [hk₅.mem] at g₆
     exact ((g₁.trans (abs_j0Frame ho.frame)).trans g₄).trans g₆
+
+theorem j0hash_ok [VG.Proof.Gcm.RISCV64.GhashLaw] {H : Block} {Np : Addr} {n : Nat} {s : State} (h : J0In V sp H Np n s) (hn : n ≠ 12) :
+    WP isa j0hash s (J0Mid V sp H (bytesAt s.mem Np n) s.mem) :=
+  j0hash_ok_with L h hn (ordinaryFramedHashAction _ _ _)
 
 omit L in
 /-- Branching on `r - k`, for `r` holding `a`. -/
@@ -468,8 +484,9 @@ theorem eval_subk {s : State} {r : Reg} {a k : Nat}
     simp only [hak, decide_false, beq_eq_false_iff_ne.mpr this]
 
 /-- `j0`: the streaming state's `J₀`, accumulator and first counter block. -/
-theorem j0_ok [VG.Proof.Gcm.RISCV64.GhashLaw] {H : Block} {Np : Addr} {n : Nat} {s : State} (h : J0In V sp H Np n s) :
-    WP isa j0 s (J0Out V sp H (bytesAt s.mem Np n) s.mem) := by
+theorem j0_ok_with {invoke : Prog isa} {H : Block} {Np : Addr} {n : Nat} {s : State} (h : J0In V sp H Np n s)
+    (exec : FramedHashAction invoke (V .s2+BitVec.ofNat 64 240) (j0Frame (V .s1) (V .s0) sp) s) :
+    WP isa (j0With invoke) s (J0Out V sp H (bytesAt s.mem Np n) s.mem) := by
   have hlt := h.data.lt
   obtain h₁ : WP isa (.block [.addi .a2 .s5 (-12)]) s fun s₁ =>
       s₁.gpr .a2 = BitVec.ofNat 64 n - BitVec.ofNat 64 12 ∧ (∀ r, r ≠ .a2 → s₁.gpr r = s.gpr r) ∧
@@ -486,7 +503,11 @@ theorem j0_ok [VG.Proof.Gcm.RISCV64.GhashLaw] {H : Block} {Np : Addr} {n : Nat} 
   · have h12 : n = 12 := by simpa using ht
     subst h12
     exact WP.mono (j012_ok L hi) fun _ hm => initState_ok L hm
-  · exact WP.mono (j0hash_ok L hi (by simpa using hf)) fun _ hm => initState_ok L hm
+  · exact WP.mono (j0hash_ok_with L hi (by simpa using hf) (FramedHashAction.kept exec hk₁)) fun _ hm => initState_ok L hm
+
+theorem j0_ok [VG.Proof.Gcm.RISCV64.GhashLaw] {H : Block} {Np : Addr} {n : Nat} {s : State} (h : J0In V sp H Np n s) :
+    WP isa j0 s (J0Out V sp H (bytesAt s.mem Np n) s.mem) :=
+  j0_ok_with L h (ordinaryFramedHashAction _ _ _)
 
 end
 

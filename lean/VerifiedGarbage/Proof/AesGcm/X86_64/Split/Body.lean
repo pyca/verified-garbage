@@ -65,18 +65,39 @@ theorem finOk_finishWith {M : CtxMode} (hF : ShortFacts) {ks : Prog isa} (hks : 
   exact finishF_ok L hF hks h he₃ rd₃ wr₃ fr₃ tl₃ dat₃ len₃ o hH hcb hal habs
 
 /-- The end with calls: `oneCrypt` and `oneTag 0`. -/
-theorem finCalls_ok (v : GcmImpl) {M : CtxMode} : FinOk M (SealSplit.finCalls v.callees) := by
-  intro Ctx W SP L R D n al N H icb a s s₃ h he₃ rd₃ wr₃ fr₃ tl₃ hN dat₃ len₃ o hH hcb hal habs
+theorem finCallsFrom_ok (v : GcmImpl) {M : CtxMode} {Ctx W SP S D : Addr} (L : Lay Ctx (W+16#64) W SP)
+    {R n al N : Nat} {H icb : Block} {a : List Byte} {s s₃ : State} {cipher : Prog isa}
+    (h : ObPre M Ctx W SP R D n s) (rd₃ : s₃.rd=s.rd) (wr₃ : s₃.wr=s.wr)
+    (sw : (⟨S,n⟩ : Region).Disjoint ⟨W,2560⟩) (st : (below SP 24).Disjoint ⟨S,n⟩)
+    (alias : S=D ∨ (⟨S,n⟩ : Region).Disjoint ⟨D,n⟩)
+    (fr₃ : Frame (⟨W+192#64,24⟩ :: obFrame (W+16#64) W SP D (n/16)) s.mem s₃.mem)
+    (tl₃ : s₃.mem.readW (W+192#64) 64=BitVec.ofNat 64 N) (hN : N<2^64)
+    (dat₃ : s₃.mem.readW (W+200#64) 64=D+BitVec.ofNat 64 (16*(n/16)))
+    (len₃ : s₃.mem.readW (W+208#64) 64=BitVec.ofNat 64 (n%16))
+    (o₁ : blocksAt s₃.mem D (n/16)=Spec.Gcm.ctr32 (ciphOf s.mem Ctx R) (blockAt s.mem (cbA W)) (blocksAt s.mem S (n/16)))
+    (o₂ : blockAt s₃.mem (cbA W) = Nat.repeat inc32 (n/16) (blockAt s.mem (cbA W)))
+    (o₃ : blockAt s₃.mem (yA W) = ghashFrom (Spec.Gcm.ctxH s.mem Ctx) (blockAt s.mem (yA W)) (blocksAt s₃.mem D (n/16)))
+    (hH : blockAt s.mem (Ctx+240#64)=H) (hcb : blockAt s.mem (cbA W)=icb)
+    (hal : s.mem.readW (W+184#64) 64=BitVec.ofNat 64 al)
+    (habs : Absorbed s.mem (yA W) (W+16#64+32#64) H (a++zeros (padLen a.length)))
+    (crypt : RoundsAt s₃.mem W R → s₃.mem.readW (W+208#64) 64=BitVec.ofNat 64 (n-16*(n/16)) →
+      DataW Ctx (W+16#64) W SP s₃ (D+BitVec.ofNat 64 (16*(n/16))) (n-16*(n/16)) →
+      WP isa cipher s₃ fun t => CrOutQ Ctx (W+16#64) W SP R icb (16*(n/16)) (D+BitVec.ofNat 64 (16*(n/16)))
+        (n-16*(n/16)) s₃.mem (S+BitVec.ofNat 64 (16*(n/16))) 0 t ∧ t.rd=s₃.rd ∧ t.wr=s₃.wr) :
+    WP isa (.seq cipher (oneTag v.callees 0)) s₃ fun t =>
+      Env Ctx (W+16#64) W SP t ∧ t.rd=s.rd ∧ t.wr=s.wr ∧ Frame (oneFrameB W D SP n) s.mem t.mem ∧
+      bytesAt t.mem D n=xorKs (ciphOf s.mem Ctx R) icb 0 (bytesAt s.mem S n) ∧
+      bytesAt t.mem W 16=toBytes (ghashFrom H (ghash H (blocks (padded a (bytesAt t.mem D n))))
+        [ofBytes (lensBlock al N)] ^^^ ciphOf s.mem Ctx R (blockAt s.mem (W+16#64))) := by
   have hD := h.data.ok.w
   have hlt := h.data.ok.lt
   have hR := h.rounds.2
   have hxa : (a ++ zeros (padLen a.length)).length % 16 = 0 := by
     simp only [List.length_append, Proof.Gcm.length_zeros]; exact Proof.Gcm.length_pad_mod _
-  obtain ⟨o₁, o₂, o₃⟩ := o
-  obtain ⟨f₃, hR₃, hH₃, hc₃, hJ₃, hw₃, ct₃, ab₃, ht₃⟩ := ob_facts L h fr₃ hH hcb habs hxa o₁ o₂
+
+  obtain ⟨f₃, hR₃, hH₃, hc₃, hJ₃, hw₃, ct₃, ab₃, ht₃⟩ := ob_factsFrom L h sw st alias fr₃ hH hcb habs hxa o₁ o₂
     (Z := bytesAt s₃.mem D (16 * (n / 16))) (by rw [length_bytesAt]; omega_using [])
-    (by rw [o₃, show (Ctx + 240 : Addr) = Ctx + BitVec.ofNat 64 240 from rfl, hH, Proof.Gcm.blocksAt_eq])
-  have hP : 16 * (n / 16) % 16 = 0 := by omega_using []
+    (by rw [o₃]; change ghashFrom (blockAt s.mem (Ctx+240#64)) _ _ = _; rw [hH,Proof.Gcm.blocksAt_eq])
   have hdw : DataW Ctx (W + BitVec.ofNat 64 16) W SP s₃ (D + BitVec.ofNat 64 (16 * (n / 16))) (n - 16 * (n / 16)) :=
     (h.data.of_eq rd₃ wr₃).drop (by omega_using [])
   have hlen₃ : s₃.mem.readW (W + BitVec.ofNat 64 208) 64 = BitVec.ofNat 64 (n - 16 * (n / 16)) := by
@@ -84,9 +105,9 @@ theorem finCalls_ok (v : GcmImpl) {M : CtxMode} : FinOk M (SealSplit.finCalls v.
   have hal₃ : s₃.mem.readW (W + BitVec.ofNat 64 184) 64 = BitVec.ofNat 64 al := by
     rw [f₃.readW (r := ⟨W + BitVec.ofNat 64 184, 8⟩) (Region.contains_self _ _)
       (kept_oneFrameB L hD h.t_w (.inl ⟨by decide, by decide⟩)) (by decide), hal]
-  unfold SealSplit.finCalls
-  refine WP.seq (WP.mono (oneCrypt_ok v L (icb := icb) hP he₃ hR₃ dat₃ hlen₃ hdw) fun s₄ ⟨co, rd₄, wr₄⟩ => ?_)
+  refine WP.seq (WP.mono (crypt hR₃ hlen₃ hdw) fun s₄ ⟨co, rd₄, wr₄⟩ => ?_)
   have out₄ := co.out ct₃
+  simp only [Nat.sub_zero, show bytesAt s₃.mem (D+BitVec.ofNat 64 (16*(n/16))) 0 = [] from rfl, List.nil_append] at out₄
   have g₄ := crFrame_one co.frame
   have hDW' := hdw.ok.w
   have kp : ∀ d, (128 ≤ d ∧ d + 8 ≤ 216) ∨ (224 ≤ d ∧ d + 8 ≤ 240) →
@@ -128,8 +149,10 @@ theorem finCalls_ok (v : GcmImpl) {M : CtxMode} : FinOk M (SealSplit.finCalls v.
   have hc₄ : ciphOf s₄.mem Ctx R = ciphOf s.mem Ctx R := by rw [ciph_frame co.frame (ctx_crFrame L hdw) hR, hc₃]
   have hJ₄ : blockAt s₄.mem (W + BitVec.ofNat 64 16) = blockAt s.mem (W + BitVec.ofNat 64 16) := by
     rw [← hJ₃]; simpa using blockAt_frame co.frame (st_crFrame L hdw.ok (d := 0) (k := 16) (by decide))
-  have hC : bytesAt s₅.mem D n = xorKs (ciphOf s.mem Ctx R) icb 0 (bytesAt s.mem D n) := by
-    rw [hd₅, split, split s.mem, hp₄, out₄, hw₃, hc₃, ht₃, Proof.Gcm.xorKs_append, length_bytesAt, Nat.zero_add]
+  have splitS : bytesAt s.mem S n = bytesAt s.mem S (16*(n/16)) ++ bytesAt s.mem (S+BitVec.ofNat 64 (16*(n/16))) (n-16*(n/16)) := by
+    rw [← bytesAt_add, Nat.add_sub_cancel' (by omega_using [])]
+  have hC : bytesAt s₅.mem D n = xorKs (ciphOf s.mem Ctx R) icb 0 (bytesAt s.mem S n) := by
+    rw [hd₅, split, splitS, hp₄, out₄, hw₃, hc₃, ht₃, Proof.Gcm.xorKs_append, length_bytesAt, Nat.zero_add]
   have eX : a ++ zeros (padLen a.length) ++ bytesAt s₃.mem D (16 * (n / 16)) ++
       bytesAt s₄.mem (D + BitVec.ofNat 64 (16 * (n / 16))) (n - 16 * (n / 16)) =
       a ++ zeros (padLen a.length) ++ bytesAt s₅.mem D n := by
@@ -138,6 +161,12 @@ theorem finCalls_ok (v : GcmImpl) {M : CtxMode} : FinOk M (SealSplit.finCalls v.
   exact ⟨he₅, rd₅.trans (rd₄.trans rd₃), wr₅.trans (wr₄.trans wr₃),
     oneB_trans f₃ (oneB_trans (oneFrame_B (by omega_using []) g₄)
       (oneFrame_B (k := 16 * (n / 16)) (by omega_using []) (wFrame_one (o := 0) (.inl rfl) f₅))), hC, T⟩
+
+theorem finCalls_ok (v : GcmImpl) {M : CtxMode} : FinOk M (SealSplit.finCalls v.callees) := by
+  intro Ctx W SP L R D n al N H icb a s s₃ h he₃ rd₃ wr₃ fr₃ tl₃ hN dat₃ len₃ o hH hcb hal habs
+  obtain ⟨ct,cb,y⟩ := o
+  exact finCallsFrom_ok v L h rd₃ wr₃ h.data.ok.w h.t_d (.inl rfl) fr₃ tl₃ hN dat₃ len₃ ct cb y hH hcb hal habs
+    (fun hr hl hd => oneCryptG_ok v L false (by omega_arith) he₃ hr dat₃ hl hd (by simp [CryptSrc]))
 
 end VG.Proof.AesGcm.X86_64.Split
 

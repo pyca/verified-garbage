@@ -64,20 +64,12 @@ def ortho : List Instr :=
 
 /-! ## The round transformations -/
 
-/-- ShiftRows of one word (BearSSL's `shift_rows`): row `r` (bits `8r …
-8r + 7`) rotates right by `2r` bits within its byte, keeping the part of
-each row that moves down and the part that wraps around separately. -/
-def srWord (x : Reg) : List Instr :=
-  [.dp .and t0 x (.imm 0x000000FF),
-   .dp .and t1 x (.imm 0x0000FC00), .dp .eor t0 t0 (rorOp t1 2),
-   .dp .and t1 x (.imm 0x00000300), .dp .eor t0 t0 (rorOp t1 26),
-   .dp .and t1 x (.imm 0x00F00000), .dp .eor t0 t0 (rorOp t1 4),
-   .dp .and t1 x (.imm 0x000F0000), .dp .eor t0 t0 (rorOp t1 28),
-   .dp .and t1 x (.imm 0xC0000000), .dp .eor t0 t0 (rorOp t1 6),
-   .dp .and t1 x (.imm 0x3F000000), .dp .eor t0 t0 (rorOp t1 30),
-   movR x t0]
-
-def shiftRows : List Instr := (List.range 8).flatMap fun j => srWord (q j)
+/-- Rotate the four two-bit columns of row `r` right by `r`, for both blocks.
+The first stage exchanges neighbouring columns in odd rows. The second
+exchanges opposite columns at the positions that crossed a pair boundary. -/
+def shiftRows : List Instr :=
+  imm32 t1 0x33003300 ++ ((List.range 8).flatMap fun i => swapBetween (q i) (q i) 2) ++
+  imm32 t1 0x030F0C00 ++ ((List.range 8).flatMap fun i => swapBetween (q i) (q i) 4)
 
 /-- The register that output word `j` of MixColumns is computed in. -/
 def mcOut (j : Nat) : Reg := if j = 0 then t0 else if j = 1 then t1 else q (j - 2)

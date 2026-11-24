@@ -5,6 +5,9 @@ public import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
 public import VerifiedGarbage.Proof.Framework.X86.SseTaint
 
 import VerifiedGarbage.Proof.AesGcm.X86.Env
+import VerifiedGarbage.Proof.Framework.X86.SseDword
+import VerifiedGarbage.Proof.Cmac.Stream
+import VerifiedGarbage.Proof.Cmac.Frame
 meta import VerifiedGarbage.Proof.AesGcm.X86.Callee
 meta import VerifiedGarbage.Proof.Framework.WriteBytes
 meta import VerifiedGarbage.Proof.AesGcm.X86.Env
@@ -671,5 +674,162 @@ theorem maskWords_ok (s : State) {D : BitVec 32} {n : Nat} {c : Bool} (hn : n < 
   · right
     exact ⟨by simp [eval, hcf, he], n - (j + 4), by omega_using [hj], j + 4, rfl, by omega_using [he], di',
       by rw [cx', cxn], hmem, gg, by rw [rd', rd], by rw [wr', wr]⟩
+
+/-! ## Direct word and byte XOR -/
+
+private theorem writeXorWord (m : Mem) (a b dst : Addr) :
+    m.writeW dst (m.readW a 32 ^^^ m.readW b 32) = writeBytes m dst (xorBytes m a b 4) := by
+  rw [Mem.writeW, write_eq_writeBytes]
+  congr 1
+  apply List.ext_getElem
+  · simp [xorBytes, bytesAt]
+  · intro j h _
+    have hj : j < 4 := by simpa using h
+    simp [xorBytes, bytesAt, BitVec.extractLsb'_xor, X86.byte_readW _ _ (by omega : 8 * (j+1) ≤ 32)]
+
+private theorem xorChunk {m : Mem} {K S D : Addr} {i k n : Nat} (h : i+k≤n) (lt : n<2^64)
+    (hk : (⟨K,n⟩ : Region).Disjoint ⟨D,n⟩) (hs : S=D ∨ (⟨S,n⟩ : Region).Disjoint ⟨D,n⟩) :
+    let m' := writeBytes m D (xorBytes m S K i)
+    writeBytes m' (D + BitVec.ofNat 64 i) (xorBytes m' (S + BitVec.ofNat 64 i) (K + BitVec.ofNat 64 i) k) =
+      writeBytes m D (xorBytes m S K (i+k)) := by
+  dsimp only
+  have frame := writeBytes_frame m D (xorBytes m S K i)
+    (R:=⟨D,i⟩) (by rw [length_xorBytes]; exact Region.contains_self _ _)
+  have one {p : Addr} (hd : (⟨p,k⟩ : Region).Disjoint ⟨D,i⟩) :
+      bytesAt (writeBytes m D (xorBytes m S K i)) p k = bytesAt m p k :=
+    Proof.Cmac.bytesAt_frame frame (by intro r hr; obtain rfl := List.mem_singleton.mp hr; exact hd) (by omega)
+  have source : (⟨S+BitVec.ofNat 64 i,k⟩ : Region).Disjoint ⟨D,i⟩ := by
+    rcases hs with same | apart
+    · rw [same]
+      exact Offset.disjoint_base D (Nat.le_refl _) (by omega)
+    · exact (apart.sub_left (Offset.sub_base S h)).sub_right (Region.sub_prefix (by omega))
+  have key := (hk.sub_left (Offset.sub_base K h)).sub_right (Region.sub_prefix (show i≤n by omega))
+  have suffix :
+      xorBytes (writeBytes m D (xorBytes m S K i)) (S + BitVec.ofNat 64 i) (K + BitVec.ofNat 64 i) k =
+        xorBytes m (S + BitVec.ofNat 64 i) (K + BitVec.ofNat 64 i) k := by
+    change List.zipWith _ (bytesAt _ _ _) (bytesAt _ _ _) = _
+    rw [one source, one key]
+    rfl
+  rw [suffix]
+  have app := writeBytes_append m D (xorBytes m S K i) (xorBytes m (S+BitVec.ofNat 64 i) (K+BitVec.ofNat 64 i) k)
+    (by simp only [length_xorBytes]; omega)
+  rw [length_xorBytes] at app
+  rw [app]
+  congr 1
+  simp only [xorBytes, Proof.Cmac.Stream.bytesAt_append]
+  rw [List.zipWith_append (by simp only [length_bytesAt])]
+
+private structure Cursors (s : State) (K S D : BitVec 32) (n i : Nat) (t : State) : Prop where
+  key : t.gpr .edx = K + BitVec.ofNat 32 i
+  src : t.gpr .esi = S + BitVec.ofNat 32 i
+  dst : t.gpr .edi = D + BitVec.ofNat 32 i
+  len : t.gpr .ecx = BitVec.ofNat 32 (n-i)
+  mem : t.mem = writeBytes s.mem (w64 D) (xorBytes s.mem (w64 S) (w64 K) i)
+  other : ∀ r, r ≠ .eax → r ≠ .ebx → r ≠ .edi → r ≠ .edx → r ≠ .ecx → r ≠ .esi → t.gpr r = s.gpr r
+  rd : t.rd = s.rd
+  wr : t.wr = s.wr
+
+private theorem cursorWord {s t : State} {K S D : BitVec 32} {n i : Nat} (h : XorPreG true s K S D n)
+    (cur : Cursors s K S D n i t) (hi : i+4 ≤ n) :
+    ∃ u, runBlock isa xorWordStep t = some u ∧ Cursors s K S D n (i+4) u ∧
+      u.cf = some (decide (n-(i+4) < 4)) := by
+  have lt := h.lt
+  have k := w64_add (x:=K) (k:=i) (by have f:=h.fK; omega)
+  have src := w64_add (x:=S) (k:=i) (by have f:=h.fS; omega)
+  have dst := w64_add (x:=D) (k:=i) (by have f:=h.fD; omega)
+  have rk : InRegions (t.rd++t.wr) (w64 K+BitVec.ofNat 64 i) 4 := by
+    rw [cur.rd,cur.wr]; exact h.rd _ _ ⟨_,List.mem_singleton_self _,Offset.contains_base _ hi (by omega)⟩
+  have rs : InRegions (t.rd++t.wr) (w64 S+BitVec.ofNat 64 i) 4 := by
+    rw [cur.rd,cur.wr]; exact h.rdS _ _ ⟨_,List.mem_singleton_self _,Offset.contains_base _ hi (by omega)⟩
+  have wd : InRegions t.wr (w64 D+BitVec.ofNat 64 i) 4 := by
+    rw [cur.wr]; exact h.wr _ _ ⟨_,List.mem_singleton_self _,Offset.contains_base _ hi (by omega)⟩
+  have rem : BitVec.ofNat 32 (n-i) - 4#32 = BitVec.ofNat 32 (n-(i+4)) := by
+    rw [show 4#32=BitVec.ofNat 32 4 from rfl, Offset.ofNat_sub_ofNat (by omega),Nat.sub_add_eq]
+  refine ⟨_,by xrun [xorWordStep,add_zero32,cur.key,cur.src,cur.dst,k,src,dst,rk,rs,wd],?_,?_⟩
+  · refine ⟨?_,?_,?_,?_,?_,?_,cur.rd,cur.wr⟩
+    · simp [gpr_setReg,add4_ofNat32]
+    · simp [gpr_setReg,add4_ofNat32]
+    · simp [gpr_setReg,add4_ofNat32]
+    · simp [gpr_setReg,cur.len,rem]
+    · simp only [mem_arithFlags,mem_setReg,mem_setMem]
+      rw [BitVec.xor_comm, writeXorWord,cur.mem]
+      exact xorChunk hi (by omega) h.disj (h.sd.imp (congrArg w64) id)
+    · intro r a b c d e f
+      simpa [gpr_setMem,gpr_setReg,a,c,d,e,f] using cur.other r a b c d e f
+  · simp [cur.len,rem,toNat_ofNat32 (show n-(i+4)<2^32 by omega)]
+
+private theorem words_ok {s t : State} {K S D : BitVec 32} {n : Nat} (h : XorPreG true s K S D n)
+    (init : Cursors s K S D n 0 t) (flag : t.cf = some (decide (n<4))) :
+    WP isa (.ite .b (.block []) (.loop (.block xorWordStep) .ae)) t fun u =>
+      ∃ j, j≤n ∧ n-j<4 ∧ Cursors s K S D n j u := by
+  refine WP.ite (decide (n<4)) (show isa.eval .b t = _ from flag) (fun hb => WP.block_nil ?_) (fun hb => ?_)
+  · exact ⟨0,Nat.zero_le _,by simpa using of_decide_eq_true hb,init⟩
+  have h4 : 4≤n := Nat.le_of_not_lt (of_decide_eq_false hb)
+  refine WP.loop (M:=isa) (body:=.block xorWordStep) (c:=.ae)
+    (fun k v => ∃ i, k=n-i ∧ i+4≤n ∧ Cursors s K S D n i v) ?_ (n-0) _
+    ⟨0,rfl,h4,init⟩
+  rintro k v ⟨i,rfl,room,cur⟩
+  obtain ⟨u,run,cur',flag'⟩ := cursorWord h cur room
+  refine WP.of_runBlock ⟨u,run,?_⟩
+  by_cases done : n-(i+4)<4
+  · exact Or.inl ⟨by simp [eval,flag',done],i+4,room,done,cur'⟩
+  · exact Or.inr ⟨by simp [eval,flag',done],n-(i+4),by omega,i+4,rfl,by omega,cur'⟩
+
+private theorem suffix_ok {s t : State} {K S D : BitVec 32} {n i : Nat} (h : XorPreG true s K S D n)
+    (hi : i≤n) (nz : i<n) (cur : Cursors s K S D n i t) :
+    WP isa (xorLoopG true) t (XorPostG true s K S D n) := by
+  let atI := fun (p : BitVec 32) => p + BitVec.ofNat 32 i
+  have lt := h.lt
+  have add {p : BitVec 32} (hp : p.toNat+n≤2^32) : w64 (atI p) = w64 p+BitVec.ofNat 64 i :=
+    w64_add (by omega)
+  have fit {p : BitVec 32} (hp : p.toNat+n≤2^32) : (atI p).toNat+(n-i)≤2^32 := by
+    rw [show (atI p).toNat = p.toNat+i from toNat_add32 (by omega)]; omega
+  have sub {p : BitVec 32} (hp : p.toNat+n≤2^32) :
+      Region.Sub ⟨w64 (atI p),n-i⟩ ⟨w64 p,n⟩ := by rw [add hp]; exact Offset.sub_base _ (by omega)
+  have tail : XorPreG true t (atI K) (atI S) (atI D) (n-i) :=
+    ⟨cur.key,cur.dst,cur.src,(fun ht => nomatch ht),cur.len,by omega,by omega,fit h.fK,fit h.fS,fit h.fD,
+      by rw [cur.rd,cur.wr,add h.fK]; exact covers_off h.rd (by omega) (by omega),
+      by rw [cur.rd,cur.wr,add h.fS]; exact covers_off h.rdS (by omega) (by omega),
+      by rw [cur.wr,add h.fD]; exact covers_off h.wr (by omega) (by omega),
+      (h.disj.sub_left (sub h.fK)).sub_right (sub h.fD),
+      h.sd.imp (congrArg atI) (fun q => (q.sub_left (sub h.fS)).sub_right (sub h.fD))⟩
+  refine WP.mono (xorLoopG_ok true t tail) fun u z => ?_
+  have join (p : BitVec 32) : atI p+BitVec.ofNat 32 (n-i) = p+BitVec.ofNat 32 n := by
+    unfold atI; rw [BitVec.add_assoc,← BitVec.ofNat_add,Nat.add_sub_of_le hi]
+  refine ⟨?_,z.edx.trans (join K),z.edi.trans (join D),fun _ => (z.esi rfl).trans (join S),?_,z.rd.trans cur.rd,z.wr.trans cur.wr⟩
+  · rw [z.mem,cur.mem,add h.fD,add h.fS,add h.fK]
+    have same := xorChunk (K:=w64 K) (S:=w64 S) (D:=w64 D) (m:=s.mem) (i:=i) (k:=n-i)
+      (by omega : i+(n-i)≤n) (by omega) h.disj (h.sd.imp (congrArg w64) id)
+    simpa only [Nat.add_sub_of_le hi] using same
+  · intro r a b c d e f
+    exact (z.other r a b c d e f).trans (cur.other r a b c d e (f rfl))
+
+private theorem wordXor_ok {s : State} {K S D : BitVec 32} {n : Nat} (h : XorPreG true s K S D n) :
+    WP isa wordXor s (XorPostG true s K S D n) := by
+  have lt := h.lt
+  obtain ⟨a,run,cur,flag⟩ : ∃ a, runBlock isa [.alu .cmp .ecx (imm 4)] s = some a ∧
+      Cursors s K S D n 0 a ∧ a.cf=some (decide (n<4)) := by
+    refine ⟨_,by xrun [],?_,?_⟩
+    · refine ⟨by simpa using h.edx,by simpa [xorSrc] using h.src,by simpa using h.edi,
+        by simpa using h.ecx,by simp [xorBytes,bytesAt,writeBytes_nil],fun _ _ _ _ _ _ _ => rfl,rfl,rfl⟩
+    · simp [h.ecx,toNat_ofNat32 lt]
+  refine WP.seq (WP.of_runBlock ⟨a,run,WP.seq (WP.mono (words_ok h cur flag) ?_)⟩)
+  rintro b ⟨i,le,_,c⟩
+  obtain ⟨v,run',d,zf⟩ : ∃ v, runBlock isa [.alu .test .ecx (.reg .ecx)] b = some v ∧
+      Cursors s K S D n i v ∧ v.zf=some (decide (n-i=0)) := by
+    refine ⟨_,by xrun [],?_,?_⟩
+    · exact ⟨c.key,c.src,c.dst,c.len,c.mem,c.other,c.rd,c.wr⟩
+    · simp [c.len]
+      exact VG.X86.Wp.ofNat_beq_zero (by omega)
+  refine WP.seq (WP.of_runBlock ⟨v,run',WP.ite (decide (n-i=0)) (show isa.eval .e v = _ from zf)
+    (fun yes => WP.block_nil ?_) (fun no => suffix_ok h le (by have := of_decide_eq_false no; omega) d)⟩)
+  have eq : i=n := by have := of_decide_eq_true yes; omega
+  subst i
+  exact ⟨d.mem,d.key,d.dst,fun _ => d.src,fun r a b c e f g => d.other r a b c e f (g rfl),d.rd,d.wr⟩
+theorem xorTailCode_ok (words : Bool) {s : State} {K S D : BitVec 32} {n : Nat}
+    (h : XorPreG true s K S D n) : WP isa (xorTailCode words) s (XorPostG true s K S D n) := by
+  cases words
+  · exact xorLoopG_ok true s h
+  · exact wordXor_ok h
 
 end VG.Proof.AesGcm.X86

@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.AesGcm.Arm.Contiguous
 public import VerifiedGarbage.Impl.AesGcm.Arm
 public import VerifiedGarbage.Impl.AesGcm.Arm.DirectGather
 public import VerifiedGarbage.Impl.StackScratch.Arm
@@ -46,6 +47,9 @@ def «seal» : Prog isa := scrubAll 0 2608 (Impl.StackScratch.Arm.withStackScrat
 
 /-- `vg_aes_gcm_open`. -/
 def «open» : Prog isa := scrubAll 32 2608 (Impl.StackScratch.Arm.withStackScratch 2592 6 Impl.AesGcm.Arm.«open»)
+
+/-- Seal a contiguous source into an identical or disjoint destination. -/
+def sealContiguous : Prog isa := scrubAll 0 2608 Contiguous.sealContiguous
 
 /-- Direct encryption from the gather descriptors, with its caller-visible cleanup. -/
 def sealGather : Prog isa := scrubAll 0 2640 DirectGather.sealGather

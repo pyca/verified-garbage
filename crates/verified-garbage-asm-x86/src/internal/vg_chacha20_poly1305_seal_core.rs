@@ -11,50 +11,83 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_chacha20_poly1305_seal_core() {
     core::arch::naked_asm!(
-        r#".base64 "jaQkHP3//4uEJOgCAACJRCQEi4Qk7AIAAIlEJAiLhCTwAgAAiUQkDIuEJPQCAACJRCQQi4Qk+AIAAIlEJBSLhCT8AgAAiUQkGIuEJAADAACJRCQcieCDwCSJRCQgi0QkIItMJBSJTCQgiRiJcASJeAiJaAyJx4tMJASLVCQIuGV4cGGJR0C4bmQgM4lHRLgyLWJ5iUdIuHRlIGuJR0yLAYlHUItBBIlHVItBCIlHWItBDIlHXItBEIlHYItBFIlHZItBGIlHaItBHIlHbLgAAAAAiUdwiwKJR3SLQgSJR3iLQgiJR3yJ+YPBQIn6gcKAAAAAUlE="
+        r#".base64 "jaQkjPz//4uEJHgDAACJRCQEi4QkfAMAAIlEJAiLhCSAAwAAiUQkDIuEJIQDAACJRCQQi4QkiAMAAIlEJBSLhCSMAwAAiUQkGIuEJJADAACJRCQcieCDwCSJRCQgi0QkIItMJBSJTCQgiRiJcASJeAiJaAyJx4tMJASLVCQIuGV4cGGJR0C4bmQgM4lHRLgyLWJ5iUdIuHRlIGuJR0yLAYlHUItBBIlHVItBCIlHWItBDIlHXItBEIlHYItBFIlHZItBGIlHaItBHIlHbLgAAAAAiUdwiwKJR3SLQgSJR3iLQgiJR3yJ+YPBQIn6gcKAAAAAi0QkGIPoAT3AAAAA"
+jb 20f
+.base64 "UlE="
 call {vg_chacha20_block}
 .base64 "WFiJ+YHBgAAAAIn6gcLAAQAAUVI="
 call {vg_poly1305_init_core}
-.base64 "WFiLXCQMi2wkEInowegEifmBwcABAABQU1E="
-call {vg_poly1305_blocks}
-.base64 "WFhYieqD4g8="
-je 20f
-.base64 "ie4p1gHeuAAAAACJRzCJRzSJRziJRzyJ+YPBMA=="
-22:
-.base64 "D7YGiAGDxgGDwQGD6gE="
-jne 22b
-.base64 "uAEAAACJ+YPBMIn6gcLAAQAAUFFS"
-call {vg_poly1305_blocks}
-.base64 "WFhY"
+.base64 "WFg="
 jmp 21f
 20:
-21:
-.base64 "i0QkEIlHIItEJBiJRyi4AAAAAIlHJIlHLLgBAAAAiUdwifiDwECLTCQUi1QkGIn7gcOAAAAAi3QkIFNSUVA="
+.base64 "Zg/vwPMPf4dAAgAA8w9/h1ACAADzD3+HYAIAAPMPf4dwAgAA8w9/h4ACAADzD3+HkAIAAPMPf4egAgAA8w9/h7ACAADzD3+HwAIAAPMPf4fQAgAA8w9/h+ACAADzD3+H8AIAAPMPf4cAAwAA8w9/hxADAADzD3+HIAMAAPMPf4cwAwAAifiDwECJ+YHBQAIAALoAAQAAifuBw4AAAACJzlNSUVA="
 call {vg_chacha20_xor}
-.base64 "WFhYWItcJBSLbCQYiejB6ASJ+YHBwAEAAFBTUQ=="
+.base64 "WFhYWIn5gcFAAgAAifqBwsABAABRUg=="
+call {vg_poly1305_init_core}
+.base64 "WFg="
+21:
+.base64 "i1wkDItsJBCJ6MHoBIn5gcHAAQAAUFNR"
 call {vg_poly1305_blocks}
 .base64 "WFhYieqD4g8="
-je 23f
+je 22f
 .base64 "ie4p1gHeuAAAAACJRzCJRzSJRziJRzyJ+YPBMA=="
-25:
+24:
 .base64 "D7YGiAGDxgGDwQGD6gE="
-jne 25b
+jne 24b
 .base64 "uAEAAACJ+YPBMIn6gcLAAQAAUFFS"
 call {vg_poly1305_blocks}
 .base64 "WFhY"
-jmp 24f
+jmp 23f
+22:
 23:
-24:
+.base64 "i0QkEIlHIItEJBiJRyi4AAAAAIlHJIlHLItEJBiD6AE9wAAAAA=="
+jb 25f
+.base64 "uAEAAACJR3CJ+IPAQItMJBSLVCQYifuBw4AAAACLdCQgU1JRUA=="
+call {vg_chacha20_xor}
+.base64 "WFhYWA=="
+jmp 26f
+25:
+.base64 "i3QkFItUJCCLTCQYif2BxYACAACD+RA="
+jb 27f
+29:
+.base64 "8w9vJvMPb20AZg/v5fMPfyKDxhCDwhCDxRCD6RCD+RA="
+jae 29b
+jmp 28f
+27:
+28:
+.base64 "hck="
+je 210f
+212:
+.base64 "D7YGM0UAiAKDxgGDwgGDxQGD6QE="
+jne 212b
+jmp 211f
+210:
+211:
+26:
+.base64 "i1wkFItsJBiJ6MHoBIn5gcHAAQAAUFNR"
+call {vg_poly1305_blocks}
+.base64 "WFhYieqD4g8="
+je 213f
+.base64 "ie4p1gHeuAAAAACJRzCJRzSJRziJRzyJ+YPBMA=="
+215:
+.base64 "D7YGiAGDxgGDwQGD6gE="
+jne 215b
+.base64 "uAEAAACJ+YPBMIn6gcLAAQAAUFFS"
+call {vg_poly1305_blocks}
+.base64 "WFhY"
+jmp 214f
+213:
+214:
 .base64 "uAEAAACJ+YPBIIn6gcLAAQAAUFFS"
 call {vg_poly1305_blocks}
 .base64 "WFhYifuBw0ACAACLTCQcuAAAAACJ/oHGwAEAAFNRUFBW"
 call {vg_poly1305_finalize_scratch}
-.base64 "WFhYWFiLH4t3BItvDIt/CI2kJOQCAADD"
+.base64 "WFhYWFiLH4t3BItvDIt/CI2kJHQDAADD"
 .p2align 6"#,
         vg_chacha20_block = sym crate::chacha20::vg_chacha20_block::vg_chacha20_block,
         vg_poly1305_init_core = sym crate::poly1305::vg_poly1305_init_core::vg_poly1305_init_core,
-        vg_poly1305_blocks = sym crate::poly1305::vg_poly1305_blocks::vg_poly1305_blocks,
         vg_chacha20_xor = sym crate::chacha20::vg_chacha20_xor::vg_chacha20_xor,
+        vg_poly1305_blocks = sym crate::poly1305::vg_poly1305_blocks::vg_poly1305_blocks,
         vg_poly1305_finalize_scratch = sym crate::poly1305::vg_poly1305_finalize_scratch::vg_poly1305_finalize_scratch,
     )
 }

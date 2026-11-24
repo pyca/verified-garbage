@@ -33,8 +33,8 @@ code over the stack of their contracts (`X86.Scrub.scrubFSide`, for
 evaluates once here (`init_side`, …), the implementation's own facts
 (`Ctr32Impl.scrub`, `expandScrub`, its stack), and `Fill`, which `fill_calls`
 proves of any implementation by walking only CMAC's code. `vg_cmac_aes_update`
-chains in a register with AES-NI and by calls otherwise
-(`Impl.CmacAes.X86.hardware`), so `absorb` has a stub of each.
+chains in a register with AES-NI and SSSE3 and by calls otherwise
+(`Impl.Aes.X86.Chain.choose`), so `absorb` has a stub of each.
 
 The functions as emitted (`Impl.CmacAes.Stream.X86.Fn`) return without
 secret residue for each variant (`init_scrubbed`, `absorb_scrubbed`,
@@ -52,11 +52,14 @@ open VG.X86 VG.X86.Scrub VG.Impl.CmacAes.Stream.X86
 open Impl.StackScratch.X86 (withStackScratch)
 
 /-- AES in counter mode with no code, by the name that chooses the
-chaining by calls (`Impl.CmacAes.X86.hardware`). -/
+chaining by calls (`Impl.Aes.X86.Chain.choose`). -/
 def stubCtr : Impl.Aes.X86.Ctr32 := ⟨"", .block []⟩
 
 /-- `stubCtr` by the name that chooses the chaining with AES-NI. -/
 def stubCtrNi : Impl.Aes.X86.Ctr32 := ⟨"vg_aes_ctr32_to_aesni", .block []⟩
+
+/-- `stubCtr` by the name that chooses the chaining with SSSE3. -/
+def stubCtrSsse3 : Impl.Aes.X86.Ctr32 := ⟨"vg_aes_ctr32_to_ssse3", .block []⟩
 
 /-- AES's key expansion with no code. -/
 def stubExpand : Impl.Aes.X86.ExpandKey := ⟨"", .block []⟩
@@ -65,6 +68,7 @@ def stubExpand : Impl.Aes.X86.ExpandKey := ⟨"", .block []⟩
 materialize_code initStub := withStackScratch 2324 3 (init stubExpand stubCtr "")
 materialize_code absorbStub := withStackScratch 2336 6 (absorb stubCtr "")
 materialize_code absorbStubNi := withStackScratch 2336 6 (absorb stubCtrNi "")
+materialize_code absorbStubSsse3 := withStackScratch 2336 6 (absorb stubCtrSsse3 "")
 materialize_code finishStub := withStackScratch 2332 5 (finish stubCtr "")
 
 theorem init_side : scrubFSide (withStackScratch 2324 3 (init stubExpand stubCtr "")) [] 2376 = true := by
@@ -74,6 +78,9 @@ theorem absorb_side : scrubFSide (withStackScratch 2336 6 (absorb stubCtr "")) [
   lit_decide
 
 theorem absorbNi_side : scrubFSide (withStackScratch 2336 6 (absorb stubCtrNi "")) [] 2396 = true := by
+  lit_decide
+
+theorem absorbSsse3_side : scrubFSide (withStackScratch 2336 6 (absorb stubCtrSsse3 "")) [] 2396 = true := by
   lit_decide
 
 theorem finish_side : scrubFSide (withStackScratch 2332 5 (finish stubCtr "")) [] 2392 = true := by
@@ -86,13 +93,20 @@ theorem init_fill (e : Impl.Aes.X86.ExpandKey) (c : Impl.Aes.X86.Ctr32) (sfx : S
   fill_calls
 
 theorem absorb_fill (c : Impl.Aes.X86.Ctr32) (sfx : String) (hc : calleeSide c.code 0 = true)
-    (h : ¬Impl.CmacAes.X86.hardware c = true) :
+    (h : ¬Impl.Aes.X86.Chain.isAesNi c.name = true)
+    (h' : ¬Impl.Aes.X86.Chain.isSsse3 c.name = true) :
     Fill 0 (withStackScratch 2336 6 (absorb stubCtr "")) (withStackScratch 2336 6 (absorb c sfx)) := by
   fill_calls
 
 /-- With AES-NI, `vg_cmac_aes_update` chains in a register and calls nothing. -/
-theorem absorbNi_fill (c : Impl.Aes.X86.Ctr32) (sfx : String) (h : Impl.CmacAes.X86.hardware c = true) :
+theorem absorbNi_fill (c : Impl.Aes.X86.Ctr32) (sfx : String) (h : Impl.Aes.X86.Chain.isAesNi c.name = true) :
     Fill 0 (withStackScratch 2336 6 (absorb stubCtrNi "")) (withStackScratch 2336 6 (absorb c sfx)) := by
+  fill_calls
+
+/-- With SSSE3, `vg_cmac_aes_update` chains in a register and calls nothing. -/
+theorem absorbSsse3_fill (c : Impl.Aes.X86.Ctr32) (sfx : String) (h : ¬Impl.Aes.X86.Chain.isAesNi c.name = true)
+    (h' : Impl.Aes.X86.Chain.isSsse3 c.name = true) :
+    Fill 0 (withStackScratch 2336 6 (absorb stubCtrSsse3 "")) (withStackScratch 2336 6 (absorb c sfx)) := by
   fill_calls
 
 theorem finish_fill (c : Impl.Aes.X86.Ctr32) (sfx : String) (hc : calleeSide c.code 0 = true) :
@@ -110,9 +124,11 @@ theorem init_scrub (v : Ctr32Impl) :
 /-- `scrubFSide` of `vg_cmac_aes_absorb`, whatever the implementation of AES. -/
 theorem absorb_scrub (v : Ctr32Impl) :
     scrubFSide (withStackScratch 2336 6 (absorb v.callee v.suffix)) [] 2396 = true := by
-  by_cases h : Impl.CmacAes.X86.hardware v.callee = true
+  by_cases h : Impl.Aes.X86.Chain.isAesNi v.callee.name = true
   · exact scrubFSide_of_fill (absorbNi_fill _ _ h) absorbNi_side
-  · exact scrubFSide_of_fill (absorb_fill _ _ (calleeSide_of_eq v.stack v.scrub) h) absorb_side
+  by_cases h' : Impl.Aes.X86.Chain.isSsse3 v.callee.name = true
+  · exact scrubFSide_of_fill (absorbSsse3_fill _ _ h h') absorbSsse3_side
+  · exact scrubFSide_of_fill (absorb_fill _ _ (calleeSide_of_eq v.stack v.scrub) h h') absorb_side
 
 /-- `scrubFSide` of `vg_cmac_aes_finish`, whatever the implementation of AES. -/
 theorem finish_scrub (v : Ctr32Impl) :

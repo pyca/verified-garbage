@@ -115,30 +115,28 @@ namespace VG.Proof.Weierstrass.X86.Mont
 open VG VG.X86 VG.X86.Wp VG.Impl.Mont.X86 VG.Impl.Weierstrass.X86.Mont
 open VG.Proof.Mont VG.Proof.Mont.X86
 
-variable {s : State} {base : Addr}
+variable {s : State} {base : Addr} {size : Nat}
 
-theorem squareCopy_ok (hb : Bx s base 8192) {a : Nat} (hp : Ptr s .esi a)
-    (ha : a + 32 ≤ own 4) : ∀ j, j ≤ 8 →
-    WP isa (.block (squareCopy j)) s fun u =>
-      Outside base (tmpAt 4) (4 * j) s.mem u.mem ∧ Keeps [.eax] s u ∧
-      ∀ i < j, w32 u.mem base (tmpAt 4 + 4 * i) = w32 s.mem base (a + 4 * i)
+theorem copyWords_ok (hb : Bx s base size) {r : Reg} {a d : Nat} (hp : Ptr s r a) (hr : r ≠ .eax)
+    {N : Nat} (ha : a + 4 * N ≤ d) (hd : d + 4 * N ≤ size) : ∀ j, j ≤ N →
+    WP isa (.block (copyWords r d j)) s fun u =>
+      Outside base d (4 * j) s.mem u.mem ∧ Keeps [.eax] s u ∧
+      ∀ i < j, w32 u.mem base (d + 4 * i) = w32 s.mem base (a + 4 * i)
   | 0, _ => WP.block_nil ⟨Outside.refl _ _ _ _, Keeps.refl _ _, by omega_using []⟩
   | j + 1, hj => by
     have hn := hb.nowrap
-    have htmp : tmpAt 4 = 3908 := rfl
-    have hown : own 4 = 3840 := rfl
-    rw [squareCopy]
-    refine WP.block_append (WP.mono (squareCopy_ok hb hp ha j (by omega_using [hj])) fun t ⟨O, K, V⟩ => ?_)
+    rw [copyWords]
+    refine WP.block_append (WP.mono (copyWords_ok hb hp hr ha hd j (by omega_using [hj])) fun t ⟨O, K, V⟩ => ?_)
     have hbt := hb.of_keeps K (by decide)
-    have hpt := hp.of_keeps K (by decide) (by decide)
-    refine wp_movS (readSrc_ptr hbt hpt (d := 4 * j) (by omega_using [ha, hj, hown])) fun v R _ => ?_
+    have hpt := hp.of_keeps K (by simp only [List.mem_singleton]; exact hr) (by decide)
+    refine wp_movS (readSrc_ptr hbt hpt (d := 4 * j) (by omega_using [ha, hj, hd])) fun v R _ => ?_
     have hbv := hbt.of_keeps R.keeps (by decide)
-    refine wp_storeS (hbv.ea (d := tmpAt 4 + 4 * j) (by omega_using [hj, htmp])) (hbv.write (n := 4) (by omega_using [hj, htmp]))
+    refine wp_storeS (hbv.ea (d := d + 4 * j) (by omega_using [hj, hd])) (hbv.write (n := 4) (by omega_using [hj, hd]))
       fun u M => WP.block_nil ?_
-    have hm : u.mem = t.mem.writeW (off base (tmpAt 4 + 4 * j))
+    have hm : u.mem = t.mem.writeW (off base (d + 4 * j))
         (t.mem.readW (off base (a + 4 * j)) 32) := by rw [M.mem, R.mem, R.gpr]
-    have U := writeW32_outside t.mem base (d := tmpAt 4 + 4 * j)
-      (t.mem.readW (off base (a + 4 * j)) 32) (by omega_using [hj, htmp])
+    have U := writeW32_outside t.mem base (d := d + 4 * j)
+      (t.mem.readW (off base (a + 4 * j)) 32) (by omega_using [hj, hd, hn])
     rw [← hm] at U
     refine ⟨(O.mono (Nat.le_refl _) (by omega_using [])).trans (U.mono (by omega_using []) (by omega_using [])),
       (K.trans R.keeps).trans (M.keeps _), ?_⟩
@@ -146,8 +144,8 @@ theorem squareCopy_ok (hb : Bx s base 8192) {a : Nat} (hp : Ptr s .esi a)
     by_cases hij : i = j
     · subst i
       rw [hm, w32_write_self]
-      exact O.w32 (by omega_using [ha, hj, htmp, hown]) (by omega_using [ha, hj, hown])
-    · rw [U.w32 (by omega_using [hij]) (by omega_using [hj, htmp, hi])]
+      exact O.w32 (by omega_using [ha, hj, hd, hn]) (by omega_using [ha, hj, hd, hn])
+    · rw [U.w32 (by omega_using [hij]) (by omega_using [hj, hd, hi, hn])]
       exact V i (by omega_using [hi, hij])
 
 end VG.Proof.Weierstrass.X86.Mont
@@ -258,7 +256,8 @@ theorem squareInit_ok {s : State} {base : Addr} {a : Nat} (hb : Bx s base 8192)
   have hown : own 4 = 3840 := rfl
   have htmp : tmpAt 4 = 3908 := rfl
   simp only [squareInit, List.append_assoc]
-  refine WP.block_append (WP.mono (squareCopy_ok hb hp ha 8 (by decide)) fun t ⟨O, K, V⟩ => ?_)
+  refine WP.block_append (WP.mono (copyWords_ok hb hp (by decide) (N := 8) (d := tmpAt 4)
+    (by omega_using [ha, hown, htmp]) (by decide) 8 (by decide)) fun t ⟨O, K, V⟩ => ?_)
   have V' := square_val_congr 8 V
   simp only [List.cons_append, List.nil_append]
   refine wp_movS rfl fun v R _ => ?_
@@ -1349,6 +1348,637 @@ theorem square_pointer_eq {s : State} {a b : Nat} (ha : a < 2 ^ 32) (hb : b < 2 
   have hnat := congrArg BitVec.toNat h''
   simpa only [BitVec.toNat_ofNat, Nat.mod_eq_of_lt ha, Nat.mod_eq_of_lt hb] using hnat
 
+/-! ## The product by columns
+
+The columns of the product and of the reduction as sums (`colAt`), their
+values put together (`num_colAt`), and the code's columns: `lowCols_ok`,
+`cols_ok70` for the rest, and the product and the square (`colsMul_ok`,
+`colsSquare_ok`). -/
+
+section
+
+open VG.Impl.X25519.X86 (Term)
+open VG.Proof.X25519.X86 (v wv wd acc colv tval treads num num_succ num_congr num_add sub Keep Ctx)
+
+/-- `h 0 + … + h (n - 1)`. -/
+def sumTo (h : Nat → Nat) : Nat → Nat
+  | 0 => 0
+  | n + 1 => sumTo h n + h n
+
+theorem sumTo_congr {f g : Nat → Nat} : ∀ {n : Nat}, (∀ i < n, f i = g i) → sumTo f n = sumTo g n
+  | 0, _ => rfl
+  | n + 1, h => by
+    rw [sumTo, sumTo, sumTo_congr fun i hi => h i (by omega_using [hi]), h n (by omega_using [])]
+
+theorem sumTo_zero {f : Nat → Nat} {n : Nat} : ∀ m, (∀ i, n ≤ i → f i = 0) → sumTo f (n + m) = sumTo f n
+  | 0, _ => rfl
+  | m + 1, h => by
+    rw [← Nat.add_assoc, sumTo, sumTo_zero m h, h _ (by omega_using []), Nat.add_zero]
+
+theorem sumTo_add (f g : Nat → Nat) : ∀ n, sumTo (fun i => f i + g i) n = sumTo f n + sumTo g n
+  | 0 => rfl
+  | n + 1 => by rw [sumTo, sumTo, sumTo, sumTo_add f g n]; omega_using []
+
+theorem sumTo_low (h : Nat → Nat) : ∀ n, sumTo h (n + 1) = h 0 + sumTo (fun i => h (i + 1)) n
+  | 0 => by simp only [sumTo]; omega_using []
+  | n + 1 => by rw [sumTo, sumTo_low h n, sumTo]; omega_using []
+
+theorem sumTo_rev (h : Nat → Nat) : ∀ n, sumTo h (n + 1) = sumTo (fun i => h (n - i)) (n + 1)
+  | 0 => rfl
+  | n + 1 => by
+    rw [sumTo, sumTo_rev h n, sumTo_low (fun i => h (n + 1 - i)), Nat.sub_zero, Nat.add_comm]
+    refine congrArg (h (n + 1) + ·) (sumTo_congr fun i _ => ?_)
+    rw [Nat.add_sub_add_right]
+
+theorem sumTo_le {h : Nat → Nat} {B : Nat} : ∀ n, (∀ i, h i ≤ B) → sumTo h n ≤ n * B
+  | 0, _ => Nat.zero_le _
+  | n + 1, hB => by
+    have h1 := sumTo_le n hB; have h2 := hB n
+    rw [sumTo, Nat.succ_mul]; omega_using [h1, h2]
+
+/-- Column `c` of the product of the numbers of `N` words `f` and `g`. -/
+def colAt (f g : Nat → Nat) (N c : Nat) : Nat :=
+  sumTo (fun i => if i < N ∧ c - i < N then f i * g (c - i) else 0) (c + 1)
+
+/-- The columns, summed by rows instead. -/
+theorem colAt_rows (f g : Nat → Nat) (N c : Nat) :
+    colAt f g N c = sumTo (fun i => if i ≤ c ∧ c - i < N then f i * g (c - i) else 0) N := by
+  have e1 := sumTo_zero (f := fun i => if i < N ∧ i ≤ c ∧ c - i < N then f i * g (c - i) else 0) (n := c + 1) N
+    fun i hi => ite_eq_right (by omega_using [hi])
+  have e2 := sumTo_zero (f := fun i => if i < N ∧ i ≤ c ∧ c - i < N then f i * g (c - i) else 0) (n := N) (c + 1)
+    fun i hi => ite_eq_right (by omega_using [hi])
+  rw [Nat.add_comm] at e2
+  rw [e1] at e2
+  rw [colAt]
+  refine Eq.trans (sumTo_congr fun i hi => ?_) (e2.trans (sumTo_congr fun i hi => ?_))
+  · simp only [Nat.lt_succ_iff.mp hi, true_and]
+  · simp only [hi, true_and]
+
+theorem colAt_le {f g : Nat → Nat} (hf : ∀ i, f i < 2 ^ 32) (hg : ∀ i, g i < 2 ^ 32) (N c : Nat) :
+    colAt f g N c ≤ N * 2 ^ 64 := by
+  rw [colAt_rows]
+  refine sumTo_le N fun i => ?_
+  split
+  · have h := Nat.mul_le_mul (Nat.le_of_lt (hf i)) (Nat.le_of_lt (hg (c - i)))
+    rw [← Nat.pow_add] at h
+    exact h
+  · exact Nat.zero_le _
+
+/-- A window of a number's words: `g` from word `n`. -/
+theorem num_window (g : Nat → Nat) (N n : Nat) : ∀ M,
+    num (fun c => if n ≤ c ∧ c - n < N then g (c - n) else 0) M = (2 ^ 32) ^ n * num g (min N (M - n))
+  | 0 => by simp [num]
+  | M + 1 => by
+    rw [num_succ, num_window g N n M]
+    by_cases h : n ≤ M ∧ M - n < N
+    · have e1 : min N (M - n) = M - n := by omega_using [h]
+      have e2 : min N (M + 1 - n) = (M - n) + 1 := by omega_using [h]
+      rw [ite_eq_left h, e1, e2, num_succ, Nat.mul_add, ← Nat.mul_assoc, ← Nat.pow_add,
+        Nat.add_sub_cancel' h.1]
+    · have e : min N (M - n) = min N (M + 1 - n) := by omega_using [h]
+      rw [ite_eq_right h, e, Nat.mul_zero, Nat.add_zero]
+
+/-- The columns of a product, put together. -/
+theorem num_colAt (f g : Nat → Nat) (N : Nat) :
+    num (colAt f g N) (2 * N) = num f N * num g N := by
+  have row : ∀ n ≤ N, num (fun c => sumTo (fun i => if i ≤ c ∧ c - i < N then f i * g (c - i) else 0) n) (2 * N) =
+      num f n * num g N := by
+    intro n
+    induction n with
+    | zero =>
+      intro _
+      simp only [sumTo, num, Nat.zero_mul]
+      generalize 2 * N = M
+      induction M with
+      | zero => rfl
+      | succ M ih => rw [num_succ, ih]; rfl
+    | succ n ih =>
+      intro hn
+      have e : ∀ c, (if n ≤ c ∧ c - n < N then f n * g (c - n) else 0) =
+          f n * (if n ≤ c ∧ c - n < N then g (c - n) else 0) := fun c => by
+        split
+        · rfl
+        · rw [Nat.mul_zero]
+      have hm : min N (2 * N - n) = N := by omega_using [hn]
+      simp only [sumTo, e]
+      rw [num_add, ih (by omega_using [hn]), VG.Proof.X25519.X86.num_mul, num_window, hm, num_succ, Nat.add_mul,
+        Nat.mul_left_comm, Nat.mul_assoc, Nat.mul_left_comm]
+  rw [← row N (Nat.le_refl _)]
+  exact num_congr fun c _ => colAt_rows f g N c
+
+theorem num_split (f : Nat → Nat) (n : Nat) : ∀ k,
+    num f (n + k) = num f n + (2 ^ 32) ^ n * num (fun j => f (n + j)) k
+  | 0 => by simp [num]
+  | k + 1 => by
+    rw [← Nat.add_assoc, num_succ, num_split f n k, num_succ, Nat.mul_add, ← Nat.mul_assoc, ← Nat.pow_add,
+      Nat.add_assoc]
+
+theorem colv_append (m : Mem) (x : BitVec 32) (as bs : List Term) :
+    colv m x (as ++ bs) = colv m x as + colv m x bs := by
+  simp only [colv, List.map_append, List.sum_append_nat]
+
+theorem colv_filterMap (m : Mem) (x : BitVec 32) (f : Nat → Option Term) : ∀ n,
+    colv m x ((List.range n).filterMap f) = sumTo (fun i => ((f i).map (tval m x)).getD 0) n
+  | 0 => rfl
+  | n + 1 => by
+    rw [List.range_succ, List.filterMap_append, colv_append, colv_filterMap m x f n, sumTo]
+    refine congrArg _ ?_
+    cases h : f n with
+    | none => simp [h, colv]
+    | some t => simp [h, colv]
+
+theorem mulTerms_colv (m : Mem) (x : BitVec 32) (A B N c : Nat) :
+    colv m x (mulTerms A B N c) = colAt (fun i => wv m x (A + 4 * i)) (fun i => wv m x (B + 4 * i)) N c := by
+  rw [mulTerms, colv_filterMap, colAt]
+  refine sumTo_congr fun i _ => ?_
+  split <;> rfl
+
+theorem sqTerms_colv (m : Mem) (x : BitVec 32) (A N c : Nat) :
+    colv m x (sqTerms A N c) = colAt (fun i => wv m x (A + 4 * i)) (fun i => wv m x (A + 4 * i)) N c := by
+  have hf : ∀ i, ((if c - i < N ∧ 2 * i ≤ c then
+        some (if 2 * i = c then Term.mulM (A + 4 * i) (A + 4 * i) else .mulM2 (A + 4 * i) (A + 4 * (c - i)))
+      else none).map (tval m x)).getD 0 =
+      if c - i < N ∧ 2 * i ≤ c then (if 2 * i = c then 1 else 2) * (wv m x (A + 4 * i) * wv m x (A + 4 * (c - i)))
+      else 0 := by
+    intro i
+    by_cases h1 : c - i < N ∧ 2 * i ≤ c
+    · rw [ite_eq_left h1, ite_eq_left h1]
+      by_cases h2 : 2 * i = c
+      · have : c - i = i := by omega_using [h2]
+        rw [ite_eq_left h2, ite_eq_left h2, this, Nat.one_mul]; rfl
+      · rw [ite_eq_right h2, ite_eq_right h2]; rfl
+    · rw [ite_eq_right h1, ite_eq_right h1]; rfl
+  rw [sqTerms, colv_filterMap, colAt, sumTo_congr fun i _ => hf i]
+  generalize wv m x = w
+  generalize hF : (fun i => _) = f
+  generalize hG : (fun i => _) = g
+  have key : ∀ i, i < c + 1 → f i + f (c - i) = g i + g (c - i) := by
+    intro i hi
+    have hi' : i ≤ c := by omega_using [hi]
+    subst hF hG
+    simp only [Nat.sub_sub_self hi', Nat.mul_comm (w (A + 4 * (c - i)))]
+    generalize w (A + 4 * i) * w (A + 4 * (c - i)) = P
+    by_cases hN : i < N ∧ c - i < N
+    · rw [ite_eq_left hN, ite_eq_left hN.symm]
+      simp only [hN, true_and]
+      rcases Nat.lt_trichotomy (2 * i) c with h | h | h
+      · rw [ite_eq_left (Nat.le_of_lt h), ite_eq_right (Nat.ne_of_lt h), ite_eq_right (by omega_using [h, hi'])]
+        omega_using []
+      · rw [ite_eq_left (Nat.le_of_eq h), ite_eq_left h, ite_eq_left (by omega_using [h]), ite_eq_left (by omega_using [h])]
+        omega_using []
+      · rw [ite_eq_right (by omega_using [h]), ite_eq_left (by omega_using [h]), ite_eq_right (by omega_using [h, hi'])]
+        omega_using []
+    · rw [ite_eq_right (fun h => hN (by omega_using [h, hi'])), ite_eq_right (fun h => hN (by omega_using [h, hi'])),
+        ite_eq_right hN, ite_eq_right (fun h => hN h.symm)]
+  have e1 := sumTo_rev f c
+  have e2 := sumTo_rev g c
+  have e3 := sumTo_add f (fun i => f (c - i)) (c + 1)
+  have e4 := sumTo_add g (fun i => g (c - i)) (c + 1)
+  have e5 := sumTo_congr key
+  omega_using [e1, e2, e3, e4, e5]
+
+theorem redTerms_colv (m : Mem) (x : BitVec 32) (Q M N c : Nat) :
+    colv m x (redTerms Q M N c) +
+        (if c < N then wv m x (Q + 4 * c) * (mw M 0).toNat else 0) =
+      colAt (fun i => wv m x (Q + 4 * i)) (fun i => (mw M i).toNat) N c := by
+  rw [redTerms, colv_filterMap, colAt, sumTo, Nat.sub_self]
+  congr 1
+  · refine sumTo_congr fun i _ => ?_
+    by_cases h : i < N ∧ c - i < N
+    · by_cases hz : mw M (c - i) = 0
+      · simp only [h, hz, ne_eq, not_true_eq_false, and_false, ite_false, ite_true, Option.map_none, Option.getD_none,
+          and_self]
+        rfl
+      · simp only [h, hz, ne_eq, not_false_eq_true, ite_true, Option.map_some, Option.getD_some,
+          and_self, tval]
+    · rw [ite_eq_right h, ite_eq_right (fun h' => h ⟨h'.1, h'.2.1⟩)]
+      rfl
+  · by_cases h : c < N
+    · rw [ite_eq_left h, ite_eq_left ⟨h, by omega_using [h]⟩]
+    · rw [ite_eq_right h, ite_eq_right (fun h' => h h'.1)]
+
+/-- The digit `b m'` of the low word `b` clears it. -/
+theorem digit_zero {R A b i m : Nat} (hs : A % R = b % R) (hm : (m * i + 1) % R = 0) :
+    (A + b * i % R * (m % R)) % R = 0 := by
+  have h : (b + b * i % R * (m % R)) % R = (b * (m * i + 1)) % R := by
+    rw [Nat.add_mod, ← Nat.mul_mod, ← Nat.add_mod]
+    refine congrArg (· % R) ?_
+    rw [Nat.mul_add, Nat.mul_one, Nat.mul_assoc, Nat.mul_comm i m, Nat.add_comm]
+  rw [Nat.add_mod, hs, ← Nat.add_mod, h, Nat.mul_mod, hm, Nat.mul_zero, Nat.zero_mod]
+
+theorem mw_zero (m : Nat) : (mw m 0).toNat = m % 2 ^ 32 := by
+  simp only [mw, Nat.mul_zero, Nat.shiftRight_zero, BitVec.toNat_ofNat]
+
+theorem mul_le32 (a b : BitVec 32) : a.toNat * b.toNat ≤ 2 ^ 64 := by
+  have h := Nat.mul_le_mul (Nat.le_of_lt a.isLt) (Nat.le_of_lt b.isLt)
+  rw [← Nat.pow_add] at h
+  exact h
+
+/-- The digit's store, its product by `m_0`, and the shift. -/
+theorem colShift_ok {W : Nat} {cl : Bool} {x : BitVec 32} {s : State} (hc : Ctx W x s cl) {m o : Nat}
+    {q : BitVec 32} (hq : s.gpr .eax = q) (ho : o + 4 ≤ 4096) (ha : acc s < 2 ^ 72)
+    (hz : (acc s + q.toNat * (mw m 0).toNat) % 2 ^ 32 = 0) :
+    WP isa (.block (.store (Impl.X25519.X86.sc o) .eax :: (Impl.X25519.X86.accMul (.imm (mw m 0)) ++
+        ([.mov .ebx (.reg .ecx), .mov .ecx (.reg .ebp), .mov .ebp (.imm 0)] : List Instr)))) s
+      fun u => Keep s u ∧ Frame [sub x o 4] s.mem u.mem ∧
+        2 ^ 32 * acc u = acc s + wv u.mem x o * (mw m 0).toNat := by
+  refine wp_stm hc.edi (hc.inW4 ho (by decide)) fun s₁ u₁ => ?_
+  refine WP.block_append (WP.mono (VG.Proof.X25519.X86.accMul_ok (s := s₁) (src := .imm (mw m 0)) rfl)
+    fun s₂ ⟨a₂, k₂, m₂⟩ => ?_)
+  refine wp_mov fun s₃ u₃ => wp_mov fun s₄ u₄ => wp_movi fun s₅ u₅ => WP.block_nil ?_
+  have k₁ : Keep s s₁ := ⟨by rw [u₁.gpr], by rw [u₁.gpr], by rw [u₁.gpr], u₁.rd, u₁.wr⟩
+  have acc₁ : acc s₁ = acc s := by simp only [acc, v, u₁.gpr]
+  have eax₁ : v s₁ .eax = q.toNat := by simp only [v, u₁.gpr, hq]
+  have hmul := mul_le32 q (mw m 0)
+  have acc₂ : acc s₂ = acc s + q.toNat * (mw m 0).toNat := by
+    rw [a₂ (by rw [acc₁, eax₁]; omega_using [hmul, ha]), acc₁, eax₁]
+  have memu : s₅.mem = s.mem.writeW (addr x o) q := by rw [u₅.mem, u₄.mem, u₃.mem, m₂, u₁.mem, hq]
+  have wq : wv s₅.mem x o = q.toNat := by rw [memu, wv, VG.Proof.X25519.X86.wd_write_self]
+  refine ⟨k₁.trans (k₂.trans ((VG.Proof.X25519.X86.updKeep u₃).trans
+    ((VG.Proof.X25519.X86.updKeep u₄).trans (VG.Proof.X25519.X86.updKeep u₅)))), ?_, ?_⟩
+  · rw [memu]
+    exact VG.Proof.X25519.X86.frame_write1 (Frame.refl _ _) hc.fit4 ho (Nat.le_refl _) (Nat.le_refl _) _
+  · rw [wq, ← acc₂]
+    rw [← acc₂] at hz
+    have h2 : acc s₅ = acc s₂ / 2 ^ 32 := by
+      simp only [acc, v, u₅.gpr, u₅.other .ebx (by decide), u₅.other .ecx (by decide), u₄.gpr,
+        u₄.other .ebx (by decide), u₃.gpr, u₃.other .ebp (by decide), VG.Proof.X25519.X86.toNat_zero32]
+      have := (s₂.gpr .ebx).isLt
+      omega_using [this]
+    rw [h2]
+    exact Nat.mul_div_cancel' (Nat.dvd_of_mod_eq_zero hz)
+
+theorem colDigit_ok {W : Nat} {cl : Bool} {x : BitVec 32} {s : State} (hc : Ctx W x s cl) {k m o : Nat}
+    (hM : MulOk k m) (ho : o + 4 ≤ 4096) (ha : acc s < 2 ^ 72) :
+    WP isa (.block (colDigit k m o)) s fun u => Keep s u ∧ Frame [sub x o 4] s.mem u.mem ∧
+      2 ^ 32 * acc u = acc s + wv u.mem x o * (mw m 0).toNat := by
+  have hs : acc s % 2 ^ 32 = v s .ebx % 2 ^ 32 := by
+    simp only [acc, Nat.add_assoc]
+    rw [show (2 : Nat) ^ 64 = 2 ^ 32 * 2 ^ 32 from rfl, Nat.mul_assoc, ← Nat.mul_add, Nat.add_mul_mod_self_left]
+  have hz := digit_zero hs (minv32_mod hM)
+  rw [← mw_zero] at hz
+  have tail : ∀ {t : State} {q : BitVec 32}, t.gpr .eax = q → Keep s t → t.mem = s.mem → acc t = acc s →
+      q.toNat = v s .ebx * (minv32 (mod k m)).toNat % 2 ^ 32 →
+      WP isa (.block (.store (Impl.X25519.X86.sc o) .eax :: (Impl.X25519.X86.accMul (.imm (mw m 0)) ++
+        ([.mov .ebx (.reg .ecx), .mov .ecx (.reg .ebp), .mov .ebp (.imm 0)] : List Instr)))) t
+        fun u => Keep s u ∧ Frame [sub x o 4] s.mem u.mem ∧
+          2 ^ 32 * acc u = acc s + wv u.mem x o * (mw m 0).toNat := by
+    intro t q hq kt mt at_ hv
+    refine WP.mono (colShift_ok (kt.ctx hc) hq ho (by rw [at_]; exact ha) (by rw [at_, hv]; exact hz))
+      fun u ⟨K, F, E⟩ => ⟨kt.trans K, ?_, ?_⟩
+    · rw [← mt]; exact F
+    · rw [← at_]; exact E
+  unfold colDigit
+  refine wp_mov fun t₁ r₁ => ?_
+  split
+  next h =>
+    rw [List.nil_append]
+    refine tail r₁.gpr (VG.Proof.X25519.X86.updKeep r₁) r₁.mem (VG.Proof.X25519.X86.updAcc r₁) ?_
+    rw [h]
+    change _ = v s .ebx * 1 % 2 ^ 32
+    rw [Nat.mul_one, Nat.mod_eq_of_lt (s.gpr .ebx).isLt]
+  next _ =>
+    simp only [List.cons_append, List.nil_append]
+    refine wp_movi fun t₂ r₂ => wp_mul fun t₃ m₃ => ?_
+    have k₃ : Keep t₂ t₃ := ⟨m₃.other _ (by decide) (by decide), m₃.other _ (by decide) (by decide),
+      m₃.other _ (by decide) (by decide), m₃.rd, m₃.wr⟩
+    refine tail m₃.eax ((VG.Proof.X25519.X86.updKeep r₁).trans ((VG.Proof.X25519.X86.updKeep r₂).trans k₃))
+      (by rw [m₃.mem, r₂.mem, r₁.mem]) ?_ ?_
+    · rw [← VG.Proof.X25519.X86.updAcc r₁]
+      simp only [acc, v, m₃.other .ebx (by decide) (by decide), m₃.other .ecx (by decide) (by decide),
+        m₃.other .ebp (by decide) (by decide), r₂.other .ebx (by decide), r₂.other .ecx (by decide),
+        r₂.other .ebp (by decide)]
+    · rw [BitVec.toNat_ofNat, r₂.other .eax (by decide), r₁.gpr, r₂.gpr]
+
+theorem colAt_congr {f f' g : Nat → Nat} {N c : Nat} (h : ∀ i ≤ c, f i = f' i) : colAt f g N c = colAt f' g N c :=
+  sumTo_congr fun i hi => by rw [h i (Nat.lt_succ_iff.mp hi)]
+
+theorem redTerms_reads {Q m N c : Nat} {t : Term} (ht : t ∈ redTerms Q m N c) {d : Nat} (hd : d ∈ treads t) :
+    ∃ i, i < c ∧ i < N ∧ c - i < N ∧ d = Q + 4 * i := by
+  simp only [redTerms, List.mem_filterMap, List.mem_range] at ht
+  obtain ⟨i, hi, h⟩ := ht
+  split at h
+  next hc =>
+    cases h
+    simp only [treads, List.mem_singleton] at hd
+    exact ⟨i, hi, hc.1, hc.2.1, hd⟩
+  next => cases h
+
+theorem wv_lt32 (m : Mem) (x : BitVec 32) (d : Nat) : wv m x d < 2 ^ 32 := (wd m x d).isLt
+
+/-- What the columns need of the product's terms: their reads, away from the
+digits at `Q`, and their values, the columns of the product of `f` and `g`. -/
+structure TermsOk (mem : Mem) (x : BitVec 32) (Q N : Nat) (ts : Nat → List Term) (f g : Nat → Nat) : Prop where
+  reads : ∀ c, ∀ t ∈ ts c, ∀ d ∈ treads t, d + 4 ≤ 4096 ∧ (d + 4 ≤ Q ∨ Q + 4 * N ≤ d)
+  val : ∀ c, colv mem x (ts c) = colAt f g N c
+  hf : ∀ i, f i < 2 ^ 32
+  hg : ∀ i, g i < 2 ^ 32
+
+/-- The word at `[Q + 4 i]` of `mem`, and the modulus's words. -/
+abbrev qw (mem : Mem) (x : BitVec 32) (Q i : Nat) : Nat := wv mem x (Q + 4 * i)
+abbrev mn (m i : Nat) : Nat := (mw m i).toNat
+
+theorem colAt_red_le (mem : Mem) (x : BitVec 32) (Q m N c : Nat) :
+    colAt (qw mem x Q) (mn m) N c ≤ N * 2 ^ 64 :=
+  colAt_le (fun _ => wv_lt32 _ _ _) (fun i => (mw m i).isLt) N c
+
+theorem low_arith {P A₁ A₂ A₃ q V C R S : Nat} (h3 : 2 ^ 32 * A₃ = A₂ + q) (h2 : A₂ = A₁ + (V + R))
+    (hC : R + q = C) (h1 : P * A₁ = S) : P * 2 ^ 32 * A₃ = S + P * (V + C) := by
+  rw [Nat.mul_assoc, h3, h2, ← hC, ← h1, ← Nat.mul_add]
+  congr 1
+  omega_using []
+
+theorem lowCols_ok {W : Nat} {cl : Bool} {x : BitVec 32} {s : State} (hc : Ctx W x s cl) {k m Q : Nat}
+    (hM : MulOk k m) (hk : k ≤ 9) (hQ : Q + 4 * (2 * k) ≤ 4096) {ts : Nat → List Term} {f g : Nat → Nat}
+    (hT : TermsOk s.mem x Q (2 * k) ts f g) (h0 : acc s = 0) : ∀ n, n ≤ 2 * k →
+    WP isa (.block (lowCols k m Q ts n)) s fun u => Keep s u ∧ Frame [sub x Q (4 * n)] s.mem u.mem ∧
+      acc u < 2 ^ 40 ∧
+      (2 ^ 32) ^ n * acc u = num (fun c => colAt f g (2 * k) c + colAt (qw u.mem x Q) (mn m) (2 * k) c) n
+  | 0, _ => WP.block_nil ⟨Keep.refl _, Frame.refl _ _, by rw [h0]; decide, by rw [h0]; rfl⟩
+  | n + 1, hn => by
+    have hfit := hc.fit4
+    rw [lowCols]
+    refine WP.block_append (WP.mono (lowCols_ok hc hM hk hQ hT h0 n (by omega_using [hn]))
+      fun s₁ ⟨k₁, f₁, b₁, e₁⟩ => ?_)
+    have hV : colv s₁.mem x (ts n) = colAt f g (2 * k) n := by
+      rw [← hT.val n]
+      exact VG.Proof.X25519.X86.colv_congr fun t ht d hd => by
+        have h := hT.reads n t ht d hd
+        exact VG.Proof.X25519.X86.wd_frame1 f₁ hfit (by omega_using [hQ, hn]) h.1 (by omega_using [h, hn])
+    have hr : ∀ t ∈ ts n ++ redTerms Q m (2 * k) n, ∀ d ∈ treads t, d + 4 ≤ 4096 := by
+      intro t ht d hd
+      rcases List.mem_append.mp ht with ht | ht
+      · exact (hT.reads n t ht d hd).1
+      · obtain ⟨i, _, hi, _, rfl⟩ := redTerms_reads ht hd
+        omega_using [hi, hQ]
+    refine WP.block_append (WP.mono (VG.Proof.X25519.X86.terms_ok (k₁.ctx hc) _ hr) fun s₂ ⟨a₂, k₂, m₂⟩ => ?_)
+    have hVle := colAt_le hT.hf hT.hg (2 * k) n
+    have hRle : colv s₁.mem x (redTerms Q m (2 * k) n) ≤ 2 * k * 2 ^ 64 :=
+      Nat.le_trans (Nat.le_add_right _ _) (Nat.le_trans (Nat.le_of_eq (redTerms_colv s₁.mem x Q m (2 * k) n))
+        (colAt_red_le s₁.mem x Q m (2 * k) n))
+    rw [colv_append, hV] at a₂
+    have e₂ := a₂ (by omega_using [hVle, hRle, b₁, hk])
+    refine WP.mono (colDigit_ok (k₂.ctx (k₁.ctx hc)) hM (o := Q + 4 * n) (by omega_using [hQ, hn])
+      (by rw [e₂]; omega_using [hVle, hRle, b₁, hk])) fun s₃ ⟨k₃, f₃, e₃⟩ => ?_
+    rw [m₂] at f₃
+    have hq : ∀ i < n, qw s₃.mem x Q i = qw s₁.mem x Q i := fun i hi => congrArg BitVec.toNat
+      (VG.Proof.X25519.X86.wd_frame1 f₃ hfit (by omega_using [hQ, hn]) (by omega_using [hQ, hn, hi]) (by omega_using [hi]))
+    have hR : colv s₃.mem x (redTerms Q m (2 * k) n) = colv s₁.mem x (redTerms Q m (2 * k) n) :=
+      VG.Proof.X25519.X86.colv_congr fun t ht d hd => by
+        obtain ⟨i, hi, hi', _, rfl⟩ := redTerms_reads ht hd
+        exact VG.Proof.X25519.X86.wd_frame1 f₃ hfit (by omega_using [hQ, hn]) (by omega_using [hQ, hi'])
+          (by omega_using [hi])
+    have hC := redTerms_colv s₃.mem x Q m (2 * k) n
+    rw [ite_eq_left (show n < 2 * k by omega_using [hn]), hR] at hC
+    have hCle := colAt_red_le s₃.mem x Q m (2 * k) n
+    refine ⟨k₁.trans (k₂.trans k₃), ?_, ?_, ?_⟩
+    · exact (VG.Proof.X25519.X86.frameWiden f₁ hfit (Nat.le_refl _) (by omega_using []) (by omega_using [hQ, hn])).trans
+        (VG.Proof.X25519.X86.frameWiden f₃ hfit (by omega_using []) (by omega_using []) (by omega_using [hQ, hn]))
+    · rw [e₂] at e₃
+      change _ + wv s₃.mem x (Q + 4 * n) * _ = colAt (qw s₃.mem x Q) (mn m) (2 * k) n at hC
+      omega_using [e₃, hC, hCle, hVle, b₁, hk]
+    · rw [num_succ, Nat.pow_succ (2 ^ 32) n]
+      have hnum : num (fun c => colAt f g (2 * k) c + colAt (qw s₃.mem x Q) (mn m) (2 * k) c) n =
+          num (fun c => colAt f g (2 * k) c + colAt (qw s₁.mem x Q) (mn m) (2 * k) c) n :=
+        num_congr fun c hc' => congrArg _ (colAt_congr fun i hi => hq i (by omega_using [hi, hc']))
+      rw [hnum]
+      exact low_arith e₃ e₂ hC e₁
+
+theorem highCols_ok {W : Nat} {cl : Bool} {x : BitVec 32} {s : State} (hc : Ctx W x s cl) {k m Q : Nat}
+    (hk : k ≤ 9) (hQ : Q + 4 * (2 * k) ≤ 4096) {ts : Nat → List Term} {f g : Nat → Nat}
+    (hT : TermsOk s.mem x Q (2 * k) ts f g) (ha : acc s < 2 ^ 40) :
+    WP isa (.block (highCols k m Q ts)) s fun u => Keep s u ∧ Frame [sub x Q (4 * (2 * k))] s.mem u.mem ∧
+      num (qw u.mem x Q) (2 * k) + (2 ^ 32) ^ (2 * k) * acc u =
+        acc s + num (fun j => colAt f g (2 * k) (2 * k + j) + colAt (qw s.mem x Q) (mn m) (2 * k) (2 * k + j)) (2 * k) := by
+  have hV : ∀ j, colv s.mem x (ts (2 * k + j) ++ redTerms Q m (2 * k) (2 * k + j)) =
+      colAt f g (2 * k) (2 * k + j) + colAt (qw s.mem x Q) (mn m) (2 * k) (2 * k + j) := fun j => by
+    have h := redTerms_colv s.mem x Q m (2 * k) (2 * k + j)
+    rw [ite_eq_right (by omega_using []), Nat.add_zero] at h
+    rw [colv_append, hT.val, h]
+  unfold highCols
+  refine WP.mono (VG.Proof.X25519.X86.cols_ok70 hc _ (2 * k) hQ ?_ ?_ ha) fun u ⟨K, F, E, _⟩ => ⟨K, F, ?_⟩
+  · intro j hj t ht d hd
+    rcases List.mem_append.mp ht with ht | ht
+    · have h := hT.reads _ t ht d hd
+      exact ⟨h.1, by omega_using [h, hj]⟩
+    · obtain ⟨i, _, hi, hi', rfl⟩ := redTerms_reads ht hd
+      exact ⟨by omega_using [hi, hQ], by omega_using [hi']⟩
+  · intro j _
+    rw [hV]
+    have h1 := colAt_le hT.hf hT.hg (2 * k) (2 * k + j)
+    have h2 := colAt_red_le s.mem x Q m (2 * k) (2 * k + j)
+    omega_using [h1, h2, hk]
+  · simp only [hV] at E
+    exact E
+
+theorem num_mn (m : Nat) : ∀ n, num (mn m) n = m % 2 ^ (32 * n)
+  | 0 => by simp only [num, Nat.mul_zero, Nat.pow_zero, Nat.mod_one]
+  | n + 1 => by
+    have h := yVal_mw m (n + 1)
+    rw [yVal, yVal_mw m n] at h
+    rw [num_succ, num_mn m n, ← Nat.pow_mul]
+    exact h
+
+theorem cols_arith {P A₁ R A₂ L H FG QM : Nat} (h1 : P * A₁ = L) (h2 : R + P * A₂ = A₁ + H)
+    (hs : L + P * H = FG + QM) : P * (R + P * A₂) = FG + QM := by
+  rw [h2, Nat.mul_add, h1, hs]
+
+theorem cols_lt {P F G U m X : Nat} (h : P * X = F * G + U * m) (hF : F < P) (hG : G < m) (hU : U < P) :
+    X < 2 * m := by
+  have hP : 0 < P := Nat.lt_of_le_of_lt (Nat.zero_le _) hF
+  have h1 : F * G ≤ P * G := Nat.mul_le_mul_right _ (Nat.le_of_lt hF)
+  have h2 : U * m ≤ P * m := Nat.mul_le_mul_right _ (Nat.le_of_lt hU)
+  have h3 : P * G < P * m := Nat.mul_lt_mul_of_pos_left hG hP
+  refine Nat.lt_of_mul_lt_mul_left (a := P) ?_
+  rw [h, Nat.mul_left_comm]
+  omega_using [h1, h2, h3]
+
+theorem own_le {k : Nat} (hk : k ≤ 9) : own k + 64 * k = 4096 := by
+  simp only [own, Impl.Weierstrass.Mont.ownAt, Impl.Weierstrass.Mont.ownBytes]; omega_using [hk]
+
+theorem montCols_ok {s : State} {base : Addr} (hb : Bx s base 8192) {k m : Nat} (hM : MulOk k m) (hk : k ≤ 9)
+    {ts : Nat → List Term} {f g : Nat → Nat}
+    (hT : TermsOk s.mem (s.gpr .ebp) (own k + 4 * (2 * k)) (2 * k) ts f g) (hg : num g (2 * k) < m) :
+    WP isa (.block (montCols k m ts)) s fun u =>
+      Outside base (own k + 4 * (2 * k)) (8 * k + 4) s.mem u.mem ∧ Keeps [.eax, .ebx, .ecx, .edx, .edi] s u ∧
+      val32 u.mem base (own k + 4 * (2 * k)) (2 * k + 1) < 2 * m ∧
+      ∃ U, 2 ^ (32 * (2 * k)) * val32 u.mem base (own k + 4 * (2 * k)) (2 * k + 1) =
+        num f (2 * k) * num g (2 * k) + U * m := by
+  have hn := hb.nowrap
+  have hown := own_le hk
+  have hk0 := hM.k0
+  have hx := hb.ebp_toNat
+  generalize hQ : own k + 4 * (2 * k) = Q at hT ⊢
+  have hQ' : Q + 4 * (2 * k) + 4 ≤ 4096 := by omega_using [hQ, hown, hk0]
+  unfold montCols
+  rw [hQ]
+  refine wp_mov fun s₁ u₁ => ?_
+  have hc₁ : Ctx 8192 (s.gpr .ebp) s₁ false :=
+    ⟨u₁.gpr, by rw [hx]; exact hn, by
+      change (⟨(s.gpr .ebp).setWidth 64, 8192⟩ : Region) ∈ s₁.wr
+      rw [u₁.wr, hb.ebp]; exact hb.wr, by decide, nofun⟩
+  refine WP.block_append (WP.mono VG.Proof.X25519.X86.zeroAcc_ok fun s₂ ⟨k₂, m₂, a₂⟩ => ?_)
+  have mem₂ : s₂.mem = s.mem := m₂.trans u₁.mem
+  refine WP.block_append (WP.mono (lowCols_ok (f := f) (g := g) (k₂.ctx hc₁) hM hk (by omega_using [hQ']) (by rw [mem₂]; exact hT) a₂
+    (2 * k) (Nat.le_refl _)) fun s₃ ⟨k₃, f₃, b₃, e₃⟩ => ?_)
+  have hc₃ := k₃.ctx (k₂.ctx hc₁)
+  have hfit := hc₁.fit4
+  have hT₃ : TermsOk s₃.mem (s.gpr .ebp) Q (2 * k) ts f g :=
+    ⟨hT.reads, fun c => by
+      rw [← hT.val c, ← mem₂]
+      exact VG.Proof.X25519.X86.colv_congr fun t ht d hd =>
+        VG.Proof.X25519.X86.wd_frame1 f₃ hfit (by omega_using [hQ']) (hT.reads c t ht d hd).1 (hT.reads c t ht d hd).2,
+      hT.hf, hT.hg⟩
+  refine WP.block_append (WP.mono (highCols_ok hc₃ (m := m) hk (by omega_using [hQ']) hT₃ b₃)
+    fun s₄ ⟨k₄, f₄, e₄⟩ => ?_)
+  have hc₄ := k₄.ctx hc₃
+  refine wp_stm hc₄.edi (hc₄.inW4 (d := own k + 16 * k) (by omega_using [hQ, hQ']) (by decide)) fun s₅ u₅ => ?_
+  refine wp_mov fun u u₆ => WP.block_nil ?_
+  have hsum : num (fun c => colAt f g (2 * k) c + colAt (qw s₃.mem (s.gpr .ebp) Q) (mn m) (2 * k) c) (2 * (2 * k)) =
+      num f (2 * k) * num g (2 * k) + num (qw s₃.mem (s.gpr .ebp) Q) (2 * k) * m := by
+    rw [num_add, num_colAt, num_colAt, num_mn, Nat.mod_eq_of_lt (by rw [← Nat.mul_assoc]; exact hM.m_lt)]
+  rw [Nat.two_mul (2 * k), num_split] at hsum
+  have hres := cols_arith e₃ e₄ hsum
+  have hFlt := VG.Proof.X25519.X86.num_lt (n := 2 * k) fun i _ => hT.hf i
+  have hUlt := VG.Proof.X25519.X86.num_lt (f := qw s₃.mem (s.gpr .ebp) Q) (n := 2 * k) fun i _ => wv_lt32 _ _ _
+  have hlt := cols_lt hres hFlt hg hUlt
+  have hm2 : m < (2 ^ 32) ^ (2 * k) := by rw [← Nat.pow_mul, ← Nat.mul_assoc]; exact hM.m_lt
+  -- The carry is the accumulator's low word.
+  have hacc : acc s₄ = v s₄ .ebx := by
+    have h2 : acc s₄ < 2 := by
+      refine Nat.lt_of_mul_lt_mul_left (a := (2 ^ 32) ^ (2 * k)) ?_
+      generalize (2 ^ 32) ^ (2 * k) = P at hlt hm2 ⊢
+      omega_using [hlt, hm2]
+    simp only [acc] at h2 ⊢
+    omega_using [h2]
+  rw [hacc] at hres hlt
+  have hQk : own k + 16 * k = Q + 4 * (2 * k) := by omega_using [hQ]
+  rw [hQk] at u₅
+  have f₅ : Frame [sub (s.gpr .ebp) (Q + 4 * (2 * k)) 4] s₄.mem s₅.mem := by
+    rw [u₅.mem]
+    exact VG.Proof.X25519.X86.frame_write1 (Frame.refl _ _) hfit (by omega_using [hQ']) (Nat.le_refl _) (Nat.le_refl _) _
+  have hF : Frame [sub (s.gpr .ebp) Q (8 * k + 4)] s.mem s₅.mem := by
+    rw [← mem₂]
+    exact ((VG.Proof.X25519.X86.frameWiden f₃ hfit (Nat.le_refl _) (by omega_using []) (by omega_using [hQ'])).trans
+      (VG.Proof.X25519.X86.frameWiden f₄ hfit (Nat.le_refl _) (by omega_using []) (by omega_using [hQ']))).trans
+      (VG.Proof.X25519.X86.frameWiden f₅ hfit (by omega_using []) (by omega_using []) (by omega_using [hQ']))
+  have hval : val32 u.mem base Q (2 * k + 1) =
+      num (qw s₄.mem (s.gpr .ebp) Q) (2 * k) + (2 ^ 32) ^ (2 * k) * v s₄ .ebx := by
+    have h := square_num_eq u.mem (x := s.gpr .ebp) (o := Q) (2 * k + 1) (by omega_using [hx, hn, hQ'])
+    rw [hb.ebp] at h
+    rw [← h, num_succ, u₆.mem]
+    refine congr (congrArg _ (num_congr fun i hi => ?_)) ?_
+    · exact congrArg BitVec.toNat (VG.Proof.X25519.X86.wd_frame1 f₅ hfit (by omega_using [hQ'])
+        (by omega_using [hQ', hi]) (by omega_using [hi]))
+    · rw [u₅.mem, wv, VG.Proof.X25519.X86.wd_write_self]
+  have K₁₄ : Keep s₁ s₄ := k₂.trans (k₃.trans k₄)
+  have edi₅ : s₅.gpr .edi = s.gpr .ebp := by rw [u₅.gpr, K₁₄.edi, u₁.gpr]
+  refine ⟨?_, ⟨?_, ?_, ?_⟩, ?_, num (qw s₃.mem (s.gpr .ebp) Q) (2 * k), ?_⟩
+  · rw [u₆.mem, ← hb.ebp]
+    exact square_frame_outside (by omega_using [hx, hn, hQ']) (by omega_using []) hF
+  · intro r hr
+    cases r <;> simp at hr
+    · rw [u₆.other _ (by decide), u₅.gpr, K₁₄.esp, u₁.other _ (by decide)]
+    · rw [u₆.gpr, edi₅]
+    · rw [u₆.other _ (by decide), u₅.gpr, K₁₄.esi, u₁.other _ (by decide)]
+  · rw [u₆.rd, u₅.rd, K₁₄.rd, u₁.rd]
+  · rw [u₆.wr, u₅.wr, K₁₄.wr, u₁.wr]
+  · rw [hval]; exact hlt
+  · rw [hval, Nat.pow_mul]; exact hres
+
+theorem mulTerms_ok {mem : Mem} {x : BitVec 32} {A B N Q : Nat} (hA : A + 4 * N ≤ Q) (hB : Q + 4 * N ≤ B)
+    (hB' : B + 4 * N ≤ 4096) : TermsOk mem x Q N (mulTerms A B N) (qw mem x A) (qw mem x B) := by
+  refine ⟨fun c t ht d hd => ?_, fun c => mulTerms_colv _ _ _ _ _ _, fun _ => wv_lt32 _ _ _, fun _ => wv_lt32 _ _ _⟩
+  simp only [mulTerms, List.mem_filterMap] at ht
+  obtain ⟨i, -, h⟩ := ht
+  split at h
+  next hc =>
+    cases h
+    simp only [treads, List.mem_cons, List.not_mem_nil, or_false] at hd
+    rcases hd with rfl | rfl <;> constructor <;> omega_using [hc, hA, hB, hB']
+  next => cases h
+
+theorem sqTerms_ok {mem : Mem} {x : BitVec 32} {A N Q : Nat} (hA : A + 4 * N ≤ Q) (hQ : Q ≤ 4096) :
+    TermsOk mem x Q N (sqTerms A N) (qw mem x A) (qw mem x A) := by
+  refine ⟨fun c t ht d hd => ?_, fun c => sqTerms_colv _ _ _ _ _, fun _ => wv_lt32 _ _ _, fun _ => wv_lt32 _ _ _⟩
+  simp only [sqTerms, List.mem_filterMap] at ht
+  obtain ⟨i, -, h⟩ := ht
+  split at h
+  next hc =>
+    cases h
+    have hd' : d = A + 4 * i ∨ d = A + 4 * (c - i) := by
+      split at hd <;> simp only [treads, List.mem_cons, List.not_mem_nil, or_false] at hd <;> omega_using [hd]
+    rcases hd' with rfl | rfl <;> constructor <;> omega_using [hc, hA, hQ]
+  next => cases h
+
+theorem colsMul_ok {s : State} {base : Addr} {k m pa pb : Nat} (hb : Bx s base 8192)
+    (hM : MulOk k m) (hk : k ≤ 9) (hpa : Ptr s .edi pa) (hpb : Ptr s .esi pb)
+    (hL : MulLayB k 8192 pa pb (own k)) (hB : val32 s.mem base pb (2 * k) < m) :
+    WP isa (.block (colsMul k m)) s fun u =>
+      Outside base (own k) (24 * k + 4) s.mem u.mem ∧ Keeps [.eax, .ebx, .ecx, .edx, .edi] s u ∧
+      val32 u.mem base (own k + 4 * (2 * k)) (2 * k + 1) < 2 * m ∧
+      ∃ U, 2 ^ (32 * (2 * k)) * val32 u.mem base (own k + 4 * (2 * k)) (2 * k + 1) =
+        val32 s.mem base pa (2 * k) * val32 s.mem base pb (2 * k) + U * m := by
+  have hn := hb.nowrap
+  have hown := own_le hk
+  have hk0 := hM.k0
+  have hLa := hL.pa; have hLb := hL.pb
+  have htmp : tmpAt k = own k + 16 * k + 4 := by simp only [tmpAt]; omega_using []
+  unfold colsMul
+  refine WP.block_append (WP.mono (copyWords_ok hb hpa (by decide) (N := 2 * k) (d := own k) hLa (by omega_using [hown])
+    (2 * k) (Nat.le_refl _)) fun s₁ ⟨O₁, K₁, V₁⟩ => ?_)
+  have hb₁ := hb.of_keeps K₁ (by decide)
+  refine WP.block_append (WP.mono (copyWords_ok hb₁ (hpb.of_keeps K₁ (by decide) (by decide)) (by decide) (N := 2 * k)
+    (d := tmpAt k) (by omega_using [hLb, htmp]) (by omega_using [hown, htmp]) (2 * k) (Nat.le_refl _))
+    fun s₂ ⟨O₂, K₂, V₂⟩ => ?_)
+  have hb₂ := hb₁.of_keeps K₂ (by decide)
+  have ex := hb₂.ebp_toNat
+  have hval : ∀ o, o + 4 * (2 * k) ≤ 4096 → num (qw s₂.mem (s₂.gpr .ebp) o) (2 * k) = val32 s₂.mem base o (2 * k) :=
+    fun o ho => by rw [← hb₂.ebp]; exact square_num_eq _ _ (by omega_using [ex, hn, ho])
+  have hA₂ : val32 s₂.mem base (own k) (2 * k) = val32 s.mem base pa (2 * k) := by
+    rw [O₂.val32 (by omega_using [htmp]) (by omega_using [hown, hn]), square_val_congr _ V₁]
+  have hB₂ : val32 s₂.mem base (tmpAt k) (2 * k) = val32 s.mem base pb (2 * k) := by
+    rw [square_val_congr _ V₂, O₁.val32 (by omega_using [hLb]) (by omega_using [hown, hn, hLb])]
+  have hT : TermsOk s₂.mem (s₂.gpr .ebp) (own k + 4 * (2 * k)) (2 * k) (mulTerms (own k) (tmpAt k) (2 * k))
+      (qw s₂.mem (s₂.gpr .ebp) (own k)) (qw s₂.mem (s₂.gpr .ebp) (tmpAt k)) :=
+    mulTerms_ok (Nat.le_refl _) (by omega_using [htmp]) (by omega_using [htmp, hown, hk0])
+  refine WP.mono (montCols_ok hb₂ hM hk hT (by rw [hval (tmpAt k) (by omega_using [htmp, hown, hk0]), hB₂]; exact hB))
+    fun u ⟨O, K, H, U, E⟩ => ⟨?_, ?_, H, U, ?_⟩
+  · have o₁ : Outside base (own k) (24 * k + 4) s.mem s₁.mem := O₁.mono (Nat.le_refl _) (by omega_using [])
+    have o₂ : Outside base (own k) (24 * k + 4) s₁.mem s₂.mem := O₂.mono (by omega_using [htmp]) (by omega_using [htmp])
+    exact (o₁.trans o₂).trans (O.mono (by omega_using []) (by omega_using []))
+  · exact ((K₁.trans K₂).mono (by decide)).trans K
+  · rw [E, hval (own k) (by omega_using [hown]), hval (tmpAt k) (by omega_using [htmp, hown, hk0]), hA₂, hB₂]
+
+theorem colsSquare_ok {s : State} {base : Addr} {k m pa : Nat} (hb : Bx s base 8192)
+    (hM : MulOk k m) (hk : k ≤ 9) (hpa : Ptr s .edi pa) (hLa : pa + 4 * (2 * k) ≤ own k)
+    (hB : val32 s.mem base pa (2 * k) < m) :
+    WP isa (.block (colsSquare k m)) s fun u =>
+      Outside base (own k) (24 * k + 4) s.mem u.mem ∧ Keeps [.eax, .ebx, .ecx, .edx, .edi] s u ∧
+      val32 u.mem base (own k + 4 * (2 * k)) (2 * k + 1) < 2 * m ∧
+      ∃ U, 2 ^ (32 * (2 * k)) * val32 u.mem base (own k + 4 * (2 * k)) (2 * k + 1) =
+        val32 s.mem base pa (2 * k) * val32 s.mem base pa (2 * k) + U * m := by
+  have hn := hb.nowrap
+  have hown := own_le hk
+  unfold colsSquare
+  refine WP.block_append (WP.mono (copyWords_ok hb hpa (by decide) (N := 2 * k) (d := own k) hLa (by omega_using [hown])
+    (2 * k) (Nat.le_refl _)) fun s₁ ⟨O₁, K₁, V₁⟩ => ?_)
+  have hb₁ := hb.of_keeps K₁ (by decide)
+  have ex := hb₁.ebp_toNat
+  have hval : num (qw s₁.mem (s₁.gpr .ebp) (own k)) (2 * k) = val32 s.mem base pa (2 * k) := by
+    rw [← square_val_congr _ V₁, ← hb₁.ebp]
+    exact square_num_eq _ _ (by omega_using [ex, hn, hown])
+  have hT : TermsOk s₁.mem (s₁.gpr .ebp) (own k + 4 * (2 * k)) (2 * k) (sqTerms (own k) (2 * k))
+      (qw s₁.mem (s₁.gpr .ebp) (own k)) (qw s₁.mem (s₁.gpr .ebp) (own k)) :=
+    sqTerms_ok (Nat.le_refl _) (by omega_using [hown])
+  refine WP.mono (montCols_ok hb₁ hM hk hT (by rw [hval]; exact hB)) fun u ⟨O, K, H, U, E⟩ => ⟨?_, ?_, H, U, ?_⟩
+  · have o₁ : Outside base (own k) (24 * k + 4) s.mem s₁.mem := O₁.mono (Nat.le_refl _) (by omega_using [])
+    exact o₁.trans (O.mono (by omega_using []) (by omega_using []))
+  · exact (K₁.mono (by decide)).trans K
+  · rw [E, hval]
+
+end
+
 theorem mulBody_ok {s : State} {base : Addr} {k m pa pb : Nat} (hb : Bx s base 8192)
     (hM : MulOk k m) (hpa : Ptr s .edi pa) (hpb : Ptr s .esi pb)
     (hL : MulLayB k 8192 pa pb (own k)) (hB : val32 s.mem base pb (2 * k) < m) :
@@ -1413,6 +2043,28 @@ theorem mulBody_ok {s : State} {base : Addr} {k m pa pb : Nat} (hb : Bx s base 8
           (by rw [R.mem]; exact hB) (2 * 9) (by decide) (by decide)) fun u ⟨O, K', H, E⟩ => ?_
         rewrite [R.mem] at O E
         exact ⟨O.mono (by omega_using []) (by omega_using []), (K.mono (by decide)).widen K' (by decide), H, E⟩
-    next _ => exact general
+    next _ =>
+      split
+      next hk9 =>
+        refine WP.seq (wp_cmp fun t R _ Z => ?_)
+        apply WP.block_nil
+        have K := R.keeps []
+        have hbt := hb.of_keeps K (by decide)
+        have hpat : Ptr t .edi pa := hpa.of_keeps K (by decide) (by decide)
+        refine WP.ite (s.gpr .edi - s.gpr .esi == 0) Z (fun h => ?_) (fun _ => ?_)
+        · have hpaFit := hL.pa; have hpbFit := hL.pb
+          have ho := own_le hk9.2
+          have hab := square_pointer_eq (by omega_using [hpaFit, ho] : pa < 2 ^ 32)
+            (by omega_using [hpbFit, ho] : pb < 2 ^ 32) hpa hpb h
+          subst pa
+          refine WP.mono (colsSquare_ok hbt hM hk9.2 hpat hpbFit (by rw [R.mem]; exact hB))
+            fun u ⟨O, K', H, E⟩ => ?_
+          rw [R.mem] at O E
+          exact ⟨O, (K.mono (by decide)).trans K', H, E⟩
+        · refine WP.mono (colsMul_ok hbt hM hk9.2 hpat (hpb.of_keeps K (by decide) (by decide)) hL
+            (by rw [R.mem]; exact hB)) fun u ⟨O, K', H, E⟩ => ?_
+          rw [R.mem] at O E
+          exact ⟨O, (K.mono (by decide)).trans K', H, E⟩
+      next _ => exact general
 
 end VG.Proof.Weierstrass.X86.Mont

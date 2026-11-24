@@ -480,7 +480,7 @@ theorem chunkCalls_ok (v : Ctr32Impl) {K W SP : BitVec 32} {u : State} {R : Nat}
 
 /-- The blocks of the chunk `pick` chooses of the `m` left. -/
 def pickLen (c : Impl.Aes.X86.Ctr32) (m : Nat) : Nat :=
-  if Impl.CmacAes.X86.hardware c then if m < 6 then m else 6 else m
+  if Impl.Aes.X86.Chain.isAesNi c.name then if m < 6 then m else 6 else m
 
 theorem pickLen_pos (c : Impl.Aes.X86.Ctr32) {m : Nat} (h : 0 < m) : 0 < pickLen c m := by
   unfold pickLen; split
@@ -497,7 +497,7 @@ theorem pick_ok (c : Impl.Aes.X86.Ctr32) {K W SP : BitVec 32} {u : State} (L : L
     WP isa (pick c) u fun u' => u'.gpr .esi = BitVec.ofNat 32 (pickLen c m) ∧ u'.gpr .ebp = W ∧ u'.gpr .esp = SP ∧
       u'.mem = u.mem ∧ u'.rd = u.rd ∧ u'.wr = u.wr := by
   unfold pick pickLen
-  by_cases h : Impl.CmacAes.X86.hardware c = true
+  by_cases h : Impl.Aes.X86.Chain.isAesNi c.name = true
   · rw [ite_eq_left h, ite_eq_left h]
     obtain ⟨u₁, run₁, si₁, cf₁, bp₁, sp₁, m₁, rd₁, wr₁⟩ : ∃ u₁, runBlock isa
         [.mov .esi (slot mO), .alu .cmp .esi (imm 6)] u = some u₁ ∧ u₁.gpr .esi = BitVec.ofNat 32 m ∧
@@ -2274,7 +2274,7 @@ theorem ctrStep_ct (v : Ctr32Impl) {K W SP : BitVec 32} (L : Lay K W SP) {R : Na
 theorem pick_ct (c : Impl.Aes.X86.Ctr32) {K W SP : BitVec 32} (L : Lay K W SP) {m : Nat} (hm32 : m < 2 ^ 32)
     {I : State → Prop} (hI : ∀ u, I u → Env K W SP u ∧ slotv u.mem W mO = BitVec.ofNat 32 m) : CT I (pick c) := by
   unfold pick
-  by_cases h : Impl.CmacAes.X86.hardware c = true
+  by_cases h : Impl.Aes.X86.Chain.isAesNi c.name = true
   · rw [ite_eq_left h]
     refine CT.seq (J := fun u => u.cf = some (decide (m < 6)))
       (CT.taint [.ebp] (pin_ebp fun u hu => (hI u hu).1.ebp) (by taint_decide)) (fun u hu => ?_)
