@@ -11548,8 +11548,6 @@ jmp 210f
 je 212f
 .base64 "TInvSYu3sAAAAEyJ8kiDwjBIi0wkCEmJwE2Ln8gAAABNiflJgcHAAQAA"
 call {vg_aes_ctr32_to_aesni}
-.base64 "TInvSIHH8AAAAEyJ9kiDxhBJi5fIAAAASYuP0AAAAEjB6QRNifhJgcDAAQAA"
-call {vg_ghash_pclmul}
 .base64 "SYuH0AAAAEiJwUiD4Q9JiY/QAAAASCnISQOHyAAAAEmJh8gAAAA="
 jmp 213f
 212:
@@ -11565,7 +11563,7 @@ jne 216b
 jmp 215f
 214:
 215:
-.base64 "TYunyAAAAEmLr9AAAAC7AAAAAEyJ4kiJ6UjB6QRIiehIg+UPSCnoSQHESIXJ"
+.base64 "TItkJBBJi6/AAAAAuwAAAABMieJIielIwekESInoSIPlD0gp6EkBxEiFyQ=="
 je 217f
 .base64 "TInvSIHH8AAAAEyJ9kiDxhBNifhJgcAAAgAA"
 call {vg_ghash_pclmul}
