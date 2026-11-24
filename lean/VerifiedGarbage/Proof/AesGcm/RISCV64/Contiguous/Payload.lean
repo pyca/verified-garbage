@@ -60,9 +60,10 @@ theorem PayloadIn.crypt {V : Reg → BitVec 64} {sp X D : Addr} {R : Nat} {H : B
   refine WP.mono (WP.with_rdwr' (cryptTailB_ok (bs := true) L mt lt (mt.ciph L) (fun _ => p.keys.of_eq rd wr))) fun _ ⟨out,rd',wr'⟩ =>
     ⟨out,rd'.trans rd,wr'.trans wr⟩
 
-private theorem long_wp [VG.Proof.Gcm.RISCV64.GhashLaw] {V : Reg → BitVec 64} {sp X D : Addr} {R : Nat} {H : Block}
-    {a : List Byte} {s : State} (L : Lay (V .s2) (V .s1) (V .s0)) (p : PayloadIn V sp X D R H a s) :
-    WP isa VG.Impl.AesGcm.RISCV64.Contiguous.longPayload s (PayloadOut V sp X D R H a s) := by
+private theorem long_wp {invoke : Prog isa} {V : Reg → BitVec 64} {sp X D : Addr} {R : Nat} {H : Block}
+    {a : List Byte} {s : State} (L : Lay (V .s2) (V .s1) (V .s0)) (p : PayloadIn V sp X D R H a s)
+    (exec : FramedHashAction invoke (V .s2+BitVec.ofNat 64 240) (sealWrites (V .s1) (V .s0) D sp (V .s11).toNat) s) :
+    WP isa (VG.Impl.AesGcm.RISCV64.Contiguous.longPayloadWith invoke) s (PayloadOut V sp X D R H a s) := by
   let j := blockAt s.mem (V .s1)
   apply WP.seq
   refine WP.mono (WP.seq_iff.mp (p.crypt L)) fun _ run => WP.seq (WP.mono run fun u ⟨out,ru,wu⟩ => ?_)
@@ -75,8 +76,9 @@ private theorem long_wp [VG.Proof.Gcm.RISCV64.GhashLaw] {V : Reg → BitVec 64} 
     (bytesAt_frame out.frame (stp_crFrame L p.write (by omega)) (by omega))
   have sl := (slot_keep out.frame (slot_crFrame L p.write (d := dataO) (by decide))).trans p.slot
   have bk := p.keys.frame p.rounds out.frame p.keys.crFrame ctx ru wu
-  refine WP.mono (oneTagB_ok (bs := true) (o := 0) L (.inl rfl) out.env p.roundsReg p.rounds hh p.aadLen ab
-    (p.write.ok.of_eq ru wu su) sl (fun _ => bk)) fun v ot => ?_
+  refine WP.mono (oneTagB_ok_with (bs := true) (o := 0) L (.inl rfl) out.env p.roundsReg p.rounds hh p.aadLen ab
+    (p.write.ok.of_eq ru wu su) sl (fun _ => bk) (FramedHashAction.narrow
+      (FramedHashAction.after exec ⟨ru,wu,su⟩ (out.frame.sub crypt_sealSub)) j0_sealSub)) fun v ot => ?_
   have data : bytesAt v.mem D (V .s11).toNat=bytesAt u.mem D (V .s11).toNat := bytesAt_frame ot.frame (fun r hr => by
     simp only [otFrame,List.mem_cons,List.not_mem_nil,or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl
@@ -93,9 +95,10 @@ private theorem long_wp [VG.Proof.Gcm.RISCV64.GhashLaw] {V : Reg → BitVec 64} 
   · exact (out.frame.mono (fun r hr => List.mem_append_left _ (List.mem_append_right _ hr))).trans
       (ot.frame.mono (fun r hr => List.mem_append_right _ hr))
 
-theorem payload_wp [VG.Proof.Gcm.RISCV64.GhashLaw] {V : Reg → BitVec 64} {sp X D : Addr} {R : Nat} {H : Block}
-    {a : List Byte} {s : State} (L : Lay (V .s2) (V .s1) (V .s0)) (p : PayloadIn V sp X D R H a s) (cut : s.gpr .t0=241) :
-    WP isa (.ite (.ltu .s5 .t0) VG.Impl.AesGcm.RISCV64.Contiguous.shortPayload VG.Impl.AesGcm.RISCV64.Contiguous.longPayload)
+theorem payload_wp {invoke : Prog isa} {V : Reg → BitVec 64} {sp X D : Addr} {R : Nat} {H : Block}
+    {a : List Byte} {s : State} (L : Lay (V .s2) (V .s1) (V .s0)) (p : PayloadIn V sp X D R H a s) (cut : s.gpr .t0=241)
+    (exec : FramedHashAction invoke (V .s2+BitVec.ofNat 64 240) (sealWrites (V .s1) (V .s0) D sp (V .s11).toNat) s) :
+    WP isa (.ite (.ltu .s5 .t0) (VG.Impl.AesGcm.RISCV64.Contiguous.shortPayloadWith invoke) (VG.Impl.AesGcm.RISCV64.Contiguous.longPayloadWith invoke))
       s (PayloadOut V sp X D R H a s) := by
   have ev : isa.eval (.ltu .s5 .t0) s=some (decide ((V .s11).toNat<241)) := by
     change some (decide (s.gpr .s5 < s.gpr .t0))=_
@@ -104,9 +107,9 @@ theorem payload_wp [VG.Proof.Gcm.RISCV64.GhashLaw] {V : Reg → BitVec 64} {sp X
   · intro h
     have small : (V .s11).toNat≤240 := by have := of_decide_eq_true h; omega
     refine WP.mono (shortPayload_wp p.env L p.src p.dst p.len small p.read p.write p.buffers p.roundsReg p.rounds p.keys
-      p.h p.aadLen p.aad p.slot) fun t ⟨et,ct,tag,f⟩ => ⟨et,ct,by rw [ct];exact tag,?_⟩
+      p.h p.aadLen p.aad p.slot exec) fun t ⟨et,ct,tag,f⟩ => ⟨et,ct,by rw [ct];exact tag,?_⟩
     exact f.mono (fun r hr => (List.mem_append.mp hr).elim
       (fun x => List.mem_append_left _ (List.mem_append_left _ x)) (List.mem_append_right _))
-  · intro _; exact long_wp L p
+  · intro _; exact long_wp L p exec
 
 end VG.Proof.AesGcm.RISCV64.Contiguous

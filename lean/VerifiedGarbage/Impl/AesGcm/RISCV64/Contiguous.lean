@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.AesGcm.RISCV64
+public import VerifiedGarbage.Impl.Gcm.RISCV64.Prepared
 public import VerifiedGarbage.Impl.Scrub.RISCV64
 public import VerifiedGarbage.Impl.StackScratch.RISCV64.Args
 
@@ -24,8 +25,9 @@ def exitHead : List Instr := [.addSp .t1 0, .load .d .s9 .t1 8]
 
 def exitCode : List Instr := exitHead ++ tagOut ++ restore
 
-def longPayload : Prog isa :=
-  .seq (cryptWholeB true true) (.seq (cryptTailB true true) (oneTagB true 0))
+def longPayloadWith (invoke : Prog isa) : Prog isa :=
+  .seq (cryptWholeB true true) (.seq (cryptTailB true true) (oneTagBWith invoke true 0))
+
 /-- Generate the tag mask first and the payload keystream directly after it.
 The 256-byte workspace covers up to 240 bytes of payload. -/
 def maskZero (n : Nat) : List Instr :=
@@ -35,10 +37,11 @@ def maskArgs : List Instr :=
    .addi .a4 .s5 15,.shift .srl .d .a4 .a4 4,.addi .a4 .a4 1,.addi .a5 .s0 scrO]
 def masks : Prog isa :=
   .seq (.block ([.li .t0 0] ++ maskZero 16 ++ maskArgs)) (ctrCallB true)
-def maskTag : Prog isa :=
-  .seq (.block [mov .s4 .s10, mov .s6 .s11]) (.seq (lens 16)
+def maskTagWith (invoke : Prog isa) : Prog isa :=
+  .seq (.block [mov .s4 .s10, mov .s6 .s11]) (.seq (lensWith invoke 16)
     (.block [.load .d .t0 .s1 16, .load .d .t1 .s0 256, .logic .xor .t0 .t0 .t1, .store .d .t0 .s0 0,
        .load .d .t0 .s1 24, .load .d .t1 .s0 264, .logic .xor .t0 .t0 .t1, .store .d .t0 .s0 8]))
+
 def xorRemainder : Prog isa := .ite (.zero .a2) (.block []) (xorLoopWith true)
 def xorQwords : Prog isa :=
   .seq (.block [.shift .srl .d .a5 .a2 3,.logicImm .and .a2 .a2 7])
@@ -48,16 +51,20 @@ def xorQwords : Prog isa :=
        .addi .a5 .a5 (-1)]) (.nonzero .a5))) xorRemainder)
 def xorText : Prog isa := .seq (.block [.logic .or .t0 .a1 .a4,.logicImm .and .t0 .t0 7])
   (.ite (.zero .t0) xorQwords (xorLoopWith true))
-def shortPayload : Prog isa :=
+def shortPayloadWith (invoke : Prog isa) : Prog isa :=
   .seq masks (.seq (.ite (.zero .s5) (.block []) (.seq (.block
       [.addi .a0 .s0 272, mov .a1 .s4, mov .a4 .s8, mov .a2 .s5]) xorText))
-    (.seq (.block dataArgs) (.seq (absorb 16) (.seq (.block [.logicImm .and .s6 .s11 15]) (.seq (flush 16) maskTag)))))
-def body : Prog isa :=
-  .seq (.block entry) (.seq oneAad (.seq (.block (payloadArgs ++ [.li .t0 241]))
-    (.seq (.ite (.ltu .s5 .t0) shortPayload longPayload) (.block exitCode))))
+    (.seq (.block dataArgs) (.seq (absorbWith invoke 16) (.seq (.block [.logicImm .and .s6 .s11 15]) (.seq (flushWith invoke 16) (maskTagWith invoke))))))
 
+def bodyWith (invoke : Prog isa) : Prog isa :=
+  .seq (.block entry) (.seq (oneAadWith invoke) (.seq (.block (payloadArgs ++ [.li .t0 241]))
+    (.seq (.ite (.ltu .s5 .t0) (shortPayloadWith invoke) (longPayloadWith invoke)) (.block exitCode))))
+
+/-- The prepared GHASH helper uses 112 frame bytes. This erases its spills
+and both the contiguous body's local region and the called AES scratch. -/
 def code : Prog isa :=
-  scrubSel 0 [(2048, [(0, 256)]), (2048, [(0, 256)]), (160, [(0, 20)])]
-    (.frame (.alloc 2608) (.seq (.block (setArgsAt 2608 3 40)) body) (.free 2608))
+  scrubSel 0 [(2048,[(0,256)]),(560,[(0,70)])]
+    (.frame (.alloc 2608) (.seq (.block (setArgsAt 2608 3 40))
+      (bodyWith VG.Impl.Gcm.RISCV64.Prepared.preparedInvocation)) (.free 2608))
 
 end VG.Impl.AesGcm.RISCV64.Contiguous

@@ -73,9 +73,10 @@ private theorem tagWords_wp {V : Reg → BitVec 64} {sp : Addr} {s : State}
     simpa only [add_ofNat_assoc,Nat.reduceAdd] using Cmac.xor_words s.mem (V .s1+BitVec.ofNat 64 16) (V .s0+BitVec.ofNat 64 256)
   · rw [mt,mu];exact Cmac.frame_store2 _ _ _
 
-theorem maskTag_wp [VG.Proof.Gcm.RISCV64.GhashLaw] {V : Reg → BitVec 64} {sp : Addr} {s : State}
-    (L : Lay (V .s2) (V .s1) (V .s0)) (he : Env V sp s) :
-    WP isa VG.Impl.AesGcm.RISCV64.Contiguous.maskTag s fun t =>
+theorem maskTag_wp {invoke : Prog isa} {V : Reg → BitVec 64} {sp : Addr} {s : State}
+    (L : Lay (V .s2) (V .s1) (V .s0)) (he : Env V sp s)
+    (exec : FramedHashAction invoke (V .s2+BitVec.ofNat 64 240) [⟨V .s0+BitVec.ofNat 64 96,16⟩] s) :
+    WP isa (VG.Impl.AesGcm.RISCV64.Contiguous.maskTagWith invoke) s fun t =>
       Env V sp t ∧ bytesAt t.mem (V .s0) 16 =
         toBytes (ghashFrom (blockAt s.mem (V .s2+BitVec.ofNat 64 240)) (blockAt s.mem (V .s1+BitVec.ofNat 64 16))
           [ofBytes (VG.Proof.Gcm.lensBlock (V .s10).toNat (V .s11).toNat)] ^^^ blockAt s.mem (V .s0+BitVec.ofNat 64 256)) ∧
@@ -89,7 +90,7 @@ theorem maskTag_wp [VG.Proof.Gcm.RISCV64.GhashLaw] {V : Reg → BitVec 64} {sp :
   have lenA : u.gpr .s4=V .s10 := (b.other _ (by decide)).trans (a.gpr.trans (he.fr _ (by decide)))
   have lenC : u.gpr .s6=V .s11 := b.gpr.trans ((a.other _ (by decide)).trans (he.fr _ (by decide)))
   apply WP.seq
-  refine WP.mono (lens_ok L (.inr (by rfl)) eu rfl) fun z ⟨ez,_,hash,_,frame⟩ =>
+  refine WP.mono (lens_ok_with L (.inr (by rfl)) eu rfl (FramedHashAction.kept exec ⟨um,b.rd.trans a.rd,b.wr.trans a.wr,b.sp.trans a.sp⟩)) fun z ⟨ez,_,hash,_,frame⟩ =>
     WP.mono (tagWords_wp L ez) fun t ⟨et,tag,ft⟩ => ⟨et,?_,?_⟩
   · rw [tag,hash,lenA,lenC,blockAt_frame frame (fun r hr => by
       simp only [tFrame,List.mem_cons,List.not_mem_nil,or_false] at hr
@@ -103,21 +104,25 @@ theorem maskTag_wp [VG.Proof.Gcm.RISCV64.GhashLaw] {V : Reg → BitVec 64} {sp :
       (ft.sub (fun r hr => ⟨r,Or.inl (List.mem_singleton.mp hr) |> List.mem_cons.mpr,fun _ hx => hx⟩))
 
 /-- Authenticate the ciphertext in its final destination with the precomputed mask. -/
-theorem authenticate_wp [VG.Proof.Gcm.RISCV64.GhashLaw] {V : Reg → BitVec 64} {sp : Addr} {s : State}
+theorem authenticate_wp {invoke : Prog isa} {V : Reg → BitVec 64} {sp : Addr} {s : State}
     {D : Addr} {a : List Byte} {H : Block}
     (L : Lay (V .s2) (V .s1) (V .s0)) (he : Env V sp s) (hH : blockAt s.mem (V .s2+BitVec.ofNat 64 240)=H)
     (hl : (V .s10).toNat=a.length)
     (hab : VG.Proof.Gcm.Absorbed s.mem (V .s1+BitVec.ofNat 64 16) (V .s1+BitVec.ofNat 64 32) H
       (a++VG.Spec.Gcm.zeros (VG.Spec.Gcm.padLen a.length)))
-    (hd : DataOk (V .s1) (V .s0) s D (V .s11).toNat) (slot : s.mem.readW (V .s0+BitVec.ofNat 64 dataO) 64=D) :
-    WP isa (.seq (.block dataArgs) (.seq (absorb 16) (.seq (.block [.logicImm .and .s6 .s11 15])
-      (.seq (flush 16) VG.Impl.AesGcm.RISCV64.Contiguous.maskTag)))) s fun t => Env V sp t ∧
+    (hd : DataOk (V .s1) (V .s0) s D (V .s11).toNat) (slot : s.mem.readW (V .s0+BitVec.ofNat 64 dataO) 64=D)
+    (exec : FramedHashAction invoke (V .s2+BitVec.ofNat 64 240) (j0Frame (V .s1) (V .s0) sp) s) :
+    WP isa (.seq (.block dataArgs) (.seq (absorbWith invoke 16) (.seq (.block [.logicImm .and .s6 .s11 15])
+      (.seq (flushWith invoke 16) (VG.Impl.AesGcm.RISCV64.Contiguous.maskTagWith invoke))))) s fun t => Env V sp t ∧
       bytesAt t.mem (V .s0) 16 = toBytes (ghashFrom H
         (VG.Spec.Gcm.ghash H (VG.Spec.Gcm.blocks (VG.Proof.Gcm.padded a (bytesAt s.mem D (V .s11).toNat))))
         [ofBytes (VG.Proof.Gcm.lensBlock a.length (V .s11).toNat)] ^^^ blockAt s.mem (V .s0+BitVec.ofNat 64 256)) ∧
       Frame (otFrame (V .s1) (V .s0) 0 sp) s.mem t.mem := by
-  refine oneTagAbsorb_ok L he hH hab hd slot fun u eu hk hy _ _ fr =>
-    WP.mono (maskTag_wp L eu) fun t ⟨et,tag,ft⟩ => ⟨et,?_,?_⟩
+  refine oneTagAbsorb_ok_with L he hH hab hd slot (fun u eu hk hy rd wr fr => ?_) exec
+  have ju : Frame (j0Frame (V .s1) (V .s0) sp) s.mem u.mem := fr.sub fun r hr =>
+    (List.mem_append.mp hr).elim (abs16_j0 r) (t16_j0 r)
+  refine WP.mono (maskTag_wp L eu (FramedHashAction.temp_j0
+    (FramedHashAction.after exec ⟨rd,wr,eu.sp.trans he.sp.symm⟩ ju))) fun t ⟨et,tag,ft⟩ => ⟨et,?_,?_⟩
   · have hm : blockAt u.mem (V .s0+BitVec.ofNat 64 256)=blockAt s.mem (V .s0+BitVec.ofNat 64 256) := by
       apply blockAt_frame fr
       intro r hr

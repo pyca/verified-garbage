@@ -388,7 +388,7 @@ def bXor : List Instr := [.logic .xor Y0 Y0 .t0, .logic .xor Y1 Y1 .t1]
 theorem blockCode_eq : blockCode = Impl.Words.RISCV64.loadBE64 .t0 .t2 DP 0 ++
     Impl.Words.RISCV64.loadBE64 .t1 .t2 DP 8 ++ (bXor ++ (pmCode Y0 (slot 0) ++ (st2 36 ++
     (pmCode Y1 (slot 12) ++ (st2 38 ++ (([.logic .xor Y0 Y0 Y1] : List Instr) ++ (pmCode Y0 (slot 24) ++ bTail))))))) := by
-  simp only [blockCode, bXor, st2, bTail, List.append_assoc, List.cons_append, List.nil_append]
+  simp only [blockCode, blockCodeWith, bXor, st2, bTail, List.append_assoc, List.cons_append, List.nil_append]
 
 /-- The registers `bTail` writes. -/
 def tailRegs : List Reg := [.t0, .t1, .t2, .t3, .t4, .a6, .a7, .a4, .a5, .a2, .a3]

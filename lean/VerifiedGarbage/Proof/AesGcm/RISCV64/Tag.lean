@@ -79,11 +79,12 @@ theorem j_tFrame (hk : StkOk (V .s2) (V .s1) (V .s0) sp) :
   · exact hk.st.sub_left (Region.sub_prefix (by decide))
 
 /-- The lengths block absorbed, before the copy. -/
-theorem tagLens_ok [VG.Proof.Gcm.RISCV64.GhashLaw] {R : Nat} {H J : Block} {s : State} (he : Env V sp s) (hR : R = 10 ∨ R = 12 ∨ R = 14)
-    (hH : blockAt s.mem (V .s2 + BitVec.ofNat 64 240) = H) (hJ : blockAt s.mem (V .s1) = J) :
-    WP isa (lens 16) s (TagMid V sp R H (blockAt s.mem (V .s1 + BitVec.ofNat 64 16)) J
+theorem tagLens_ok_with {invoke : Prog isa} {R : Nat} {H J : Block} {s : State} (he : Env V sp s) (hR : R = 10 ∨ R = 12 ∨ R = 14)
+    (hH : blockAt s.mem (V .s2 + BitVec.ofNat 64 240) = H) (hJ : blockAt s.mem (V .s1) = J)
+    (exec : FramedHashAction invoke (V .s2+BitVec.ofNat 64 240) [⟨V .s0+BitVec.ofNat 64 96,16⟩] s) :
+    WP isa (lensWith invoke 16) s (TagMid V sp R H (blockAt s.mem (V .s1 + BitVec.ofNat 64 16)) J
       (s.gpr .s4).toNat (s.gpr .s6).toNat s.mem) := by
-  refine WP.mono (lens_ok L (.inr rfl) he hH) fun s₁ ⟨he₁, _, hY₁, _, f₁⟩ => ?_
+  refine WP.mono (lens_ok_with L (.inr rfl) he hH exec) fun s₁ ⟨he₁, _, hY₁, _, f₁⟩ => ?_
   exact ⟨he₁, hY₁, by rw [blockAt_frame f₁ (j_tFrame L he.stk'), hJ], ciph_frame f₁ (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
@@ -91,6 +92,12 @@ theorem tagLens_ok [VG.Proof.Gcm.RISCV64.GhashLaw] {R : Nat} {H J : Block} {s : 
     · exact L.cw'.sub_right (Lay.wSub (by decide))
     · exact L.cw'.sub_right (Lay.wSub (by decide))
     · exact he.stk'.c) hR, f₁⟩
+
+theorem tagLens_ok [VG.Proof.Gcm.RISCV64.GhashLaw] {R : Nat} {H J : Block} {s : State} (he : Env V sp s) (hR : R = 10 ∨ R = 12 ∨ R = 14)
+    (hH : blockAt s.mem (V .s2 + BitVec.ofNat 64 240) = H) (hJ : blockAt s.mem (V .s1) = J) :
+    WP isa (lens 16) s (TagMid V sp R H (blockAt s.mem (V .s1 + BitVec.ofNat 64 16)) J
+      (s.gpr .s4).toNat (s.gpr .s6).toNat s.mem) :=
+  tagLens_ok_with L he hR hH hJ (ordinaryFramedHashAction _ _ _)
 
 /-- The accumulator copied to `W + o`, and the arguments of `vg_aes_ctr32` (or `vg_aes_ctr32_bs`). -/
 theorem tagArgsB_ok {bs : Bool} {o : Nat} (ho : o = 0 ∨ o = 112) {s : State} (he : Env V sp s) :
@@ -360,6 +367,17 @@ theorem tagCallB_ok {bs : Bool} {o R : Nat} (ho : o = 0 ∨ o = 112) {H Y J : Bl
       · exact ⟨_, by simp, fun _ h => h⟩
 
 /-- `tagB bs o`, for `o` of 0 or 112: with the round keys bitsliced (`bs`), from the buffer at `V s7`. -/
+theorem tagB_ok_with {invoke : Prog isa} {bs : Bool} {o R : Nat} (ho : o = 0 ∨ o = 112) {H J : Block}
+    {s : State} (he : Env V sp s)
+    (h28 : V .s3 = BitVec.ofNat 64 R) (hR : R = 10 ∨ R = 12 ∨ R = 14)
+    (hH : blockAt s.mem (V .s2 + BitVec.ofNat 64 240) = H) (hJ : blockAt s.mem (V .s1) = J) {S D : Addr} {n : Nat}
+    (hb : bs = true → BkIn (V .s7) (V .s2) (V .s1) (V .s0) sp R s.mem S D n s)
+    (exec : FramedHashAction invoke (V .s2+BitVec.ofNat 64 240) [⟨V .s0+BitVec.ofNat 64 96,16⟩] s) :
+    WP isa (tagBWith invoke bs o) s (TagOut V sp o R H (blockAt s.mem (V .s1 + BitVec.ofNat 64 16)) J
+      (s.gpr .s4).toNat (s.gpr .s6).toNat s.mem) :=
+  WP.seq (WP.mono (WP.with_rdwr' (tagLens_ok_with L he hR hH hJ exec)) fun _ ⟨hm, rd, wr⟩ =>
+    tagCallB_ok L ho hm h28 hR fun hbs => (hb hbs).of_eq rd wr)
+
 theorem tagB_ok [VG.Proof.Gcm.RISCV64.GhashLaw] {bs : Bool} {o R : Nat} (ho : o = 0 ∨ o = 112) {H J : Block}
     {s : State} (he : Env V sp s)
     (h28 : V .s3 = BitVec.ofNat 64 R) (hR : R = 10 ∨ R = 12 ∨ R = 14)
@@ -367,8 +385,7 @@ theorem tagB_ok [VG.Proof.Gcm.RISCV64.GhashLaw] {bs : Bool} {o R : Nat} (ho : o 
     (hb : bs = true → BkIn (V .s7) (V .s2) (V .s1) (V .s0) sp R s.mem S D n s) :
     WP isa (tagB bs o) s (TagOut V sp o R H (blockAt s.mem (V .s1 + BitVec.ofNat 64 16)) J
       (s.gpr .s4).toNat (s.gpr .s6).toNat s.mem) :=
-  WP.seq (WP.mono (WP.with_rdwr' (tagLens_ok L he hR hH hJ)) fun _ ⟨hm, rd, wr⟩ =>
-    tagCallB_ok L ho hm h28 hR fun hbs => (hb hbs).of_eq rd wr)
+  tagB_ok_with L ho he h28 hR hH hJ hb (ordinaryFramedHashAction _ _ _)
 
 end
 

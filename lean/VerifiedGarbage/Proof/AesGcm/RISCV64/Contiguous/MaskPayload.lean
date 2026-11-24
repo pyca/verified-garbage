@@ -104,8 +104,42 @@ theorem data_slot {V : Reg → BitVec 64} {s u : State} {D : Addr} {n : Nat}
     (by simpa using (L.st_w (a := 0) (n := 16) (d := dataO) (k := 8) (by decide) (.inr ⟨by decide,by decide⟩)).symm)
     (Lay.w_w (.inl (by decide)) (by decide) (by decide)))
 
+/-- All phases of one seal may update the destination, streaming state, workspace,
+and private stack. None of these regions holds the key or the copied key pointer. -/
+abbrev sealWrites (st w D sp : Addr) (n : Nat) : List Region :=
+  [⟨D,n⟩,⟨w,2560⟩,⟨st,80⟩,below sp 2048]
+
+theorem j0_sealSub {D st w sp : Addr} {n : Nat} :
+    ∀ r∈j0Frame st w sp,∃ q∈sealWrites st w D sp n,r.Sub q := by
+  intro r hr
+  simp only [j0Frame,List.mem_cons,List.not_mem_nil,or_false] at hr
+  rcases hr with rfl|rfl|rfl|rfl
+  · exact ⟨_,by simp [sealWrites],fun _ a => a⟩
+  · exact ⟨⟨w,2560⟩,by simp [sealWrites],Lay.wSub (by decide)⟩
+  · exact ⟨⟨w,2560⟩,by simp [sealWrites],Lay.wSub (by decide)⟩
+  · exact ⟨_,by simp [sealWrites],fun _ a => a⟩
+
+theorem data_sealSub {D st w sp : Addr} {n : Nat} :
+    ∀ r∈dataFrame st w D n,∃ q∈sealWrites st w D sp n,r.Sub q := by
+  intro r hr
+  simp only [dataFrame,maskFrame,List.mem_cons,List.not_mem_nil,or_false] at hr
+  rcases hr with rfl|rfl|rfl|rfl
+  · exact ⟨⟨D,n⟩,by simp [sealWrites],fun _ a => a⟩
+  · exact ⟨⟨w,2560⟩,by simp [sealWrites],Lay.wSub (by decide)⟩
+  · exact ⟨⟨st,80⟩,by simp [sealWrites],Region.sub_prefix (by decide)⟩
+  · exact ⟨⟨w,2560⟩,by simp [sealWrites],Lay.wSub (by decide)⟩
+
+theorem crypt_sealSub {D st w sp : Addr} {n : Nat} :
+    ∀ r∈crFrame st w D n,∃ q∈sealWrites st w D sp n,r.Sub q := by
+  intro r hr
+  simp only [crFrame,List.mem_cons,List.not_mem_nil,or_false] at hr
+  rcases hr with rfl|rfl|rfl
+  · exact ⟨⟨D,n⟩,by simp [sealWrites],fun _ a => a⟩
+  · exact ⟨⟨st,80⟩,by simp [sealWrites],Lay.stSub (by decide)⟩
+  · exact ⟨⟨w,2560⟩,by simp [sealWrites],Lay.wSub (by decide)⟩
+
 /-- Authenticate the ciphertext produced by the XOR loop in its final destination, and leave the tag in scratch. -/
-theorem shortPayload_wp [VG.Proof.Gcm.RISCV64.GhashLaw] {V : Reg → BitVec 64} {sp : Addr} {s : State} {X D : Addr}
+theorem shortPayload_wp {invoke : Prog isa} {V : Reg → BitVec 64} {sp : Addr} {s : State} {X D : Addr}
     {R : Nat} {a : List Byte} {H : Block}
     (he : Env V sp s) (L : Lay (V .s2) (V .s1) (V .s0)) (src : s.gpr .s4=X) (dst : s.gpr .s8=D)
     (len : s.gpr .s5=V .s11) (small : (V .s11).toNat≤240)
@@ -114,12 +148,13 @@ theorem shortPayload_wp [VG.Proof.Gcm.RISCV64.GhashLaw] {V : Reg → BitVec 64} 
     (hb : BkIn (V .s7) (V .s2) (V .s1) (V .s0) sp R s.mem X D (V .s11).toNat s)
     (hH : blockAt s.mem (V .s2+BitVec.ofNat 64 240)=H) (hl : (V .s10).toNat=a.length)
     (hab : Absorbed s.mem (V .s1+BitVec.ofNat 64 16) (V .s1+BitVec.ofNat 64 32) H (a++zeros (padLen a.length)))
-    (slot : s.mem.readW (V .s0+BitVec.ofNat 64 dataO) 64=D) :
+    (slot : s.mem.readW (V .s0+BitVec.ofNat 64 dataO) 64=D)
+    (exec : FramedHashAction invoke (V .s2+BitVec.ofNat 64 240) (sealWrites (V .s1) (V .s0) D sp (V .s11).toNat) s) :
     let n := (V .s11).toNat
     let ciph := ciphOf s.mem (V .s2) R
     let j := blockAt s.mem (V .s1)
     let ct := gctr ciph (inc32 j) (bytesAt s.mem X n)
-    WP isa VG.Impl.AesGcm.RISCV64.Contiguous.shortPayload s fun t =>
+    WP isa (VG.Impl.AesGcm.RISCV64.Contiguous.shortPayloadWith invoke) s fun t =>
       Env V sp t ∧ bytesAt t.mem D n=ct ∧
       bytesAt t.mem (V .s0) 16=toBytes (ghashFrom H (ghash H (blocks (padded a ct)))
         [ofBytes (lensBlock a.length n)] ^^^ ciph j) ∧
@@ -141,7 +176,8 @@ theorem shortPayload_wp [VG.Proof.Gcm.RISCV64.GhashLaw] {V : Reg → BitVec 64} 
     ⟨(blockAt_frame fr (hashKeep 16 (.inl rfl))).trans hab.1,
       (bytesAt_frame fr (fun r hr => (hashKeep 32 (.inr rfl) r hr).sub_left (Region.sub_prefix (by omega))) (by omega)).trans hab.2⟩
   have sl := (data_slot L dd fr).trans slot
-  refine WP.mono (authenticate_wp L eu H' hl ab (dd.ok.of_eq ku.rd ku.wr ku.sp) sl) fun t ⟨et,tag,ft⟩ =>
+  refine WP.mono (authenticate_wp L eu H' hl ab (dd.ok.of_eq ku.rd ku.wr ku.sp) sl
+    (FramedHashAction.narrow (FramedHashAction.after exec ku (fr.sub data_sealSub)) j0_sealSub)) fun t ⟨et,tag,ft⟩ =>
     ⟨et,?_,by rw [tag,ct,mask],?_⟩
   · rw [bytesAt_frame ft (fun r hr => by
       simp only [otFrame,List.mem_cons,List.not_mem_nil,or_false] at hr

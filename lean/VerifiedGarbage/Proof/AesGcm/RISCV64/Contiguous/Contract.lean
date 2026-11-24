@@ -5,6 +5,9 @@ module
 public import VerifiedGarbage.Proof.AesGcm.RISCV64.Contiguous.Framed
 public import VerifiedGarbage.Spec.Gcm.Contiguous
 import VerifiedGarbage.Proof.Framework.Sig
+import VerifiedGarbage.Proof.Framework.RISCV64.Spill
+import VerifiedGarbage.Proof.AesGcm.RISCV64.Env
+import VerifiedGarbage.Proof.Framework.RISCV64.StackScratch
 import VerifiedGarbage.Proof.AesGcm.RISCV64.Crypt
 import VerifiedGarbage.Proof.AesGcm.Rounds
 
@@ -115,6 +118,17 @@ private theorem fields_of_pre {s : State} (h : contract.pre s) : preFields s := 
 theorem caller_of_pre {s : State} (h : contract.pre s) : Caller s := by
   obtain ⟨p,al,space,ca,ba,nr,keys⟩ := fields_of_pre h
   exact buffers_caller p al space ca ba nr keys
+
+theorem prepared_of_pre {s : State} (h : contract.pre s) : PreparedCaller s := by
+  obtain ⟨q,_,_,_,al,_,ks⟩ := fields_of_pre h
+  let p := callArgs s
+  let T := p.keys+BitVec.ofNat 64 960
+  have sub : (⟨T,288⟩ : Region).Sub (K p) := Offset.sub_base p.keys (by decide)
+  have read : Covers [K p] (s.rd++s.wr) := covers_mem (List.mem_append_left _ (q.rd ▸ List.mem_append_right _ (.head _)))
+  have alt : T.toNat%8=0 := Spill.al8 al (by decide)
+  have apart := (q.stack (K p) (by simp [p])).sub_right sub
+  refine ⟨TableAt.of_sliced ks alt ?_ (covers_off read (by decide) (by decide)),apart.symm,(q.dst.2.2.sub_right sub).symm⟩
+  exact apart.sub_left (VG.RISCV64.below_sub (by decide) (by decide))
 
 theorem args_of_pub {s t : State} (hp : contract.pub s t) : callArgs s=callArgs t := by
   sig_pub [contract,sealContiguousBitslicedContract,sealContiguousAuxSig,sealContiguousSig,bitslicedParam,

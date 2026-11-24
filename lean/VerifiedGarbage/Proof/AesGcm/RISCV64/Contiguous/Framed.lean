@@ -3,6 +3,7 @@ module
 -- separate module: The complete functional and two-run framed body are shared premises for the outer scrubbing proof.
 
 public import VerifiedGarbage.Proof.AesGcm.RISCV64.Contiguous.Call
+public import VerifiedGarbage.Proof.AesGcm.RISCV64.Contiguous.PreparedBody
 import VerifiedGarbage.Proof.AesGcm.RISCV64.StreamCrypt
 import VerifiedGarbage.Proof.Framework.RISCV64.CallWipe
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
@@ -17,19 +18,20 @@ open VG.Spec.Aes (bytesAt)
 open VG.Spec.Gcm (ctxH encryptWith)
 open VG.Proof.Gather.RISCV64 (Eq2 TT rel_seq)
 
-abbrev framed : Prog isa := .frame (.alloc 2608) (.seq (.block (setArgsAt 2608 3 40)) VG.Impl.AesGcm.RISCV64.Contiguous.body) (.free 2608)
+abbrev framedWith (invoke : Prog isa) : Prog isa := .frame (.alloc 2608) (.seq (.block (setArgsAt 2608 3 40)) (VG.Impl.AesGcm.RISCV64.Contiguous.bodyWith invoke)) (.free 2608)
 abbrev sealed (s t : State) := let p := callArgs s
   (bytesAt t.mem p.dst p.len.toNat,bytesAt t.mem p.tag 16) =
     encryptWith (ciphOf s.mem p.ctx p.rounds) (ctxH s.mem p.ctx) 16 (bytesAt s.mem p.iv p.ivLen.toNat)
       (bytesAt s.mem p.src p.len.toNat) (bytesAt s.mem p.aad p.aadLen.toNat)
 
-theorem framed_wp [VG.Proof.Gcm.RISCV64.GhashLaw] {s : State} (h : Caller s) :
-    WP isa framed s fun t => abiPreserved s t ∧ sealed s t := by
+theorem framed_wp_with {invoke : Prog isa} {s : State} (h : Caller s)
+    (action : ∀ {t}, Copied s t → sealAction invoke (callArgs s) t) :
+    WP isa (framedWith invoke) s fun t => abiPreserved s t ∧ sealed s t := by
   let p := callArgs s
   obtain ⟨run,z⟩ := copied_run h
   refine WP.allocLe (by decide) (by have := h.space;omega : 2608≤s.sp.toNat) ?_
   refine WP.seq ⟨_,_,Exec.block_iff.mpr run,?_⟩
-  refine WP.mono (body_wp (z.satisfies h)) fun u ⟨abi,_,_,out,_⟩ m _ fm => ?_
+  refine WP.mono (body_wp_with (z.satisfies h) (action z)) fun u ⟨abi,_,_,out,_⟩ m _ fm => ?_
   have sep (r : Region) (hr : r∈p.regions) : r.Disjoint (frameR s) :=
     (h.apart r hr).sub_right (frame_sub s)
   have old (r : Region) (hr : r∈p.regions) : ∀ q∈[⟨(allocated s).sp,32⟩],r.Disjoint q := by
@@ -58,8 +60,14 @@ theorem framed_wp [VG.Proof.Gcm.RISCV64.GhashLaw] {s : State} (h : Caller s) :
       bytesAt_frame fm (dec ⟨p.tag,16⟩ (by simp [Args.regions])) (by decide)]
     exact out
 
-theorem framed_rel [VG.Proof.Gcm.RISCV64.GhashLaw] {s t : State} (a : Caller s) (b : Caller t)
-    (pub : callArgs s=callArgs t) : RelCT isa (Eq2 s t) framed TT := by
+theorem framed_prepared_wp {s : State} (h : Caller s) (extra : PreparedCaller s) :
+    WP isa (framedWith VG.Impl.Gcm.RISCV64.Prepared.preparedInvocation) s
+      fun t => abiPreserved s t ∧ sealed s t :=
+  framed_wp_with h (fun z => z.hashAction h extra)
+
+theorem framed_prepared_rel {s t : State} (a : Caller s) (b : Caller t) (pa : PreparedCaller s) (pb : PreparedCaller t)
+    (pub : callArgs s=callArgs t) :
+    RelCT isa (Eq2 s t) (framedWith VG.Impl.Gcm.RISCV64.Prepared.preparedInvocation) TT := by
   have shared := congrArg Args.sp pub
   obtain ⟨rs,es⟩ := copied_run a
   obtain ⟨rt,et⟩ := copied_run b
@@ -76,6 +84,7 @@ theorem framed_rel [VG.Proof.Gcm.RISCV64.GhashLaw] {s t : State} (a : Caller s) 
     obtain ⟨_,rfl⟩ := Prod.mk.inj (Option.some.inj hx)
     obtain ⟨_,rfl⟩ := Prod.mk.inj (Option.some.inj hy)
     exact ⟨congrArg (fun u => setArgsTrace 2608 u 3) shared,trivial⟩
-  · rw [ex,ey];exact body_rel (es.satisfies a) (pub ▸ et.satisfies b)
+  · rw [ex,ey]
+    exact preparedBody_rel (es.satisfies a) (pub ▸ et.satisfies b) (es.hashScope a pa) (pub ▸ et.hashScope b pb)
 
 end VG.Proof.AesGcm.RISCV64.Contiguous

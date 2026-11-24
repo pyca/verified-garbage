@@ -68,4 +68,58 @@ theorem Copied.satisfies {s t : State} (v : Copied s t) (h : Caller s) : ArgsAt 
   · rw [sr]; exact (((h.apart _ d).sub_right (frame_sub s)).sub_right (Offset.sub_base _ (by decide))).symm
   · rw [sr]; exact Offset.disjoint_below _ (by decide)
 
+/-- Copying the public arguments into the new frame preserves the prepared table
+and makes its pointer available at stack slot two throughout the operation. -/
+theorem Copied.hashScope {s t : State} (v : Copied s t) (h : Caller s) (extra : PreparedCaller s) :
+    HashScope ((callArgs s).ctx+BitVec.ofNat 64 240) (callArgs s).keys
+      (sealWrites (callArgs s).st (callArgs s).work (callArgs s).dst (callArgs s).sp (callArgs s).len.toNat) t := by
+  let p := callArgs s
+  let T := p.keys+BitVec.ofNat 64 960
+  let a := v.satisfies h
+  have ptr : t.mem.readW (t.sp+BitVec.ofNat 64 16) 64=p.keys := v.args 2 (by decide)
+  have tableWork := (extra.apart.sub_right (frame_sub s)).sub_right (Offset.sub_base p.sp (d:=40) (n:=2560) (by decide))
+  have tableBelow := extra.apart.sub_right (below_sub s)
+  have rd : Covers [⟨T,288⟩] (t.rd++t.wr) := by rw [v.rd,v.wr];exact extended_read extra.table.read
+  have kept : ∀ q∈[⟨(allocated s).sp,32⟩],(⟨T,288⟩ : Region).Disjoint q := by
+    intro q hq
+    obtain rfl := List.mem_singleton.mp hq
+    exact (extra.apart.sub_right (frame_sub s)).sub_right (Region.sub_prefix (by decide))
+  have hf := extra.table.transfer v.frame kept (v.sp ▸ tableBelow.symm) rd
+  have hc : Spec.Gcm.ctxH t.mem p.ctx=Spec.Gcm.ctxH s.mem p.ctx := ctxH_keep v.frame fun q hq => by
+    obtain rfl := List.mem_singleton.mp hq
+    exact ((h.apart ⟨p.ctx,256⟩ (by simp [Args.regions,p])).sub_right (frame_sub s)).sub_right (Region.sub_prefix (by decide))
+  have input : HashInput t (Spec.Gcm.ctxH t.mem p.ctx) := by
+    refine ⟨Spill.al8 (by omega_using [a.shape.spAlign]) (by decide),a.shape.slot 2 (by decide),?_⟩
+    rw [ptr,hc]
+    exact hf
+  rw [← ptr]
+  apply preparedHashScope input
+  · have sl : (⟨t.sp+BitVec.ofNat 64 16,8⟩ : Region).Sub (VG.Proof.AesGcm.RISCV64.args t 4) := Offset.sub t.sp (d:=16) (n:=8) (e:=0) (k:=32) (by decide) (by decide)
+    intro r hr
+    simp only [sealWrites,List.mem_cons,List.not_mem_nil,or_false] at hr
+    rcases hr with rfl|rfl|rfl|rfl
+    · exact a.stackData.sub_left sl
+    · exact a.stackWork.sub_left sl
+    · exact (a.stackWork.sub_left sl).sub_right (Offset.sub_base _ (by decide))
+    · exact a.stackBelow.sub_left sl
+  · rw [ptr]
+    intro r hr
+    simp only [sealWrites,List.mem_cons,List.not_mem_nil,or_false] at hr
+    rcases hr with rfl|rfl|rfl|rfl
+    · exact extra.dst
+    · exact tableWork
+    · exact tableWork.sub_right (Offset.sub_base _ (by decide))
+    · exact tableBelow
+  · intro r hr
+    simp only [sealWrites,List.mem_cons,List.not_mem_nil,or_false] at hr
+    rcases hr with rfl|rfl|rfl|rfl
+    · exact h.ctxData.sub_left (Lay.ctxSub (by decide))
+    · exact a.lay.cw'.sub_left (Lay.ctxSub (by decide))
+    · exact a.lay.cs.sub_left (Lay.ctxSub (by decide))
+    · exact a.stk.c.sub_left (Lay.ctxSub (by decide))
+
+theorem Copied.hashAction {s t : State} (v : Copied s t) (h : Caller s) (extra : PreparedCaller s) :
+    sealAction VG.Impl.Gcm.RISCV64.Prepared.preparedInvocation (callArgs s) t :=
+  (v.hashScope h extra).action
+
 end VG.Proof.AesGcm.RISCV64.Contiguous

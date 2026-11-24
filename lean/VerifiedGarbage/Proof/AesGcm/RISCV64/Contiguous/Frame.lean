@@ -2,7 +2,8 @@ module
 
 -- separate module: Stack address arithmetic and caller stack argument copying are independent of AES-GCM semantics.
 
-public import VerifiedGarbage.Proof.AesGcm.RISCV64.Contiguous.BodyCT
+public import VerifiedGarbage.Proof.AesGcm.RISCV64.Contiguous.BodyResult
+public import VerifiedGarbage.Proof.AesGcm.RISCV64.Contiguous.HashInput
 public import VerifiedGarbage.Proof.Framework.RISCV64.StackScratchArgs
 import VerifiedGarbage.Proof.AesGcm.RISCV64.StreamCrypt
 import VerifiedGarbage.Proof.AesGcm.RISCV64.Verified
@@ -43,6 +44,12 @@ structure Caller (s : State) : Prop where
   keyAlign : (callArgs s).keys.toNat%8=0
   rounds : (callArgs s).rounds=10 ∨ (callArgs s).rounds=12 ∨ (callArgs s).rounds=14
   keys : Proof.Aes.RISCV64.KeysAt s.mem (callArgs s).keys (callArgs s).rounds (bytesAt s.mem (callArgs s).ctx (16*((callArgs s).rounds+1)))
+
+/-- Additional properties already provided by the public bitsliced contract. -/
+structure PreparedCaller (s : State) : Prop where
+  table : TableAt s ((callArgs s).keys+BitVec.ofNat 64 960) (Spec.Gcm.ctxH s.mem (callArgs s).ctx)
+  apart : (⟨(callArgs s).keys+BitVec.ofNat 64 960,288⟩ : Region).Disjoint (below s.sp 4656)
+  dst : (⟨(callArgs s).keys+BitVec.ofNat 64 960,288⟩ : Region).Disjoint ⟨(callArgs s).dst,(callArgs s).len.toNat⟩
 
 abbrev frameR (s : State) : Region := ⟨(allocated s).sp,2608⟩
 

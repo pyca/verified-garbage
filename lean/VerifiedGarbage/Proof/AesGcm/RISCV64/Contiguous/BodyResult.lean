@@ -75,12 +75,12 @@ abbrev BodyOut (p : Args) (s t : State) := abiPreserved s t ∧ t.rd=s.rd ∧ t.
       (bytesAt s.mem p.src p.len.toNat) (bytesAt s.mem p.aad p.aadLen.toNat) ∧
   Frame (beforeFrame p ++ payloadFrame p.st p.work p.dst p.sp p.len.toNat ++ [⟨p.tag,16⟩]) s.mem t.mem
 
-theorem body_wp [VG.Proof.Gcm.RISCV64.GhashLaw] {p : Args} {s : State} (h : ArgsAt p s) :
-    WP isa VG.Impl.AesGcm.RISCV64.Contiguous.body s (BodyOut p s) := by
+theorem body_wp_with {invoke : Prog isa} {p : Args} {s : State} (h : ArgsAt p s) (exec : sealAction invoke p s) :
+    WP isa (VG.Impl.AesGcm.RISCV64.Contiguous.bodyWith invoke) s (BodyOut p s) := by
   apply WP.seq
-  refine WP.mono (begin_wp h) fun t a => WP.seq (WP.mono (aad_wp h a) fun v b => ?_)
+  refine WP.mono (begin_wp h) fun t a => WP.seq (WP.mono (aad_wp h a exec) fun v b => ?_)
   apply WP.seq
-  refine WP.mono (prepare_wp h b) fun u prep => WP.seq (WP.mono (WP.with_rdwr' (payload_wp h.lay prep.payload prep.cut))
+  refine WP.mono (prepare_wp h b) fun u prep => WP.seq (WP.mono (WP.with_rdwr' (payload_wp h.lay prep.payload prep.cut (FramedHashAction.after exec prep.keeps (prep.frame.sub before_sealSub))))
     fun x ⟨out,rd,wr⟩ => WP.mono (exit_wp (exitArgs h prep out rd wr)) fun y ⟨abi,tag,fr,r,w⟩ => ?_)
   have ct : bytesAt y.mem p.dst p.len.toNat=bytesAt x.mem p.dst p.len.toNat := bytesAt_frame fr (fun q hq => by
     obtain rfl := List.mem_singleton.mp hq;exact h.tagData.symm) (Nat.le_of_lt p.len.isLt)

@@ -129,14 +129,25 @@ theorem before_apart {p : Args} {r : Region} (w : r.Disjoint ⟨p.work,2560⟩) 
   · exact w.sub_right (Lay.wSub (by decide))
   · exact b
 
-theorem aad_wp [VG.Proof.Gcm.RISCV64.GhashLaw] {p : Args} {s v : State} (h : ArgsAt p s) (e : BeforeAad p s v) :
-    WP isa oneAad v (AfterAad p s) := by
+abbrev sealAction (invoke : Prog isa) (p : Args) (s : State) :=
+  FramedHashAction invoke (p.ctx+BitVec.ofNat 64 240) (sealWrites p.st p.work p.dst p.sp p.len.toNat) s
+
+theorem before_sealSub {p : Args} : ∀ r∈beforeFrame p,∃ q∈sealWrites p.st p.work p.dst p.sp p.len.toNat,r.Sub q := by
+  intro r hr
+  rcases List.mem_cons.mp hr with rfl|other
+  · exact ⟨⟨p.work,2560⟩,by simp [sealWrites],Lay.wSub (by decide)⟩
+  · exact j0_sealSub _ other
+
+theorem aad_wp {invoke : Prog isa} {p : Args} {s v : State} (h : ArgsAt p s) (e : BeforeAad p s v) (exec : sealAction invoke p s) :
+    WP isa (oneAadWith invoke) v (AfterAad p s) := by
   have cx : blockAt v.mem (p.ctx+BitVec.ofNat 64 240)=ctxH s.mem p.ctx := ctxH_keep e.frame (fun r hr => by obtain rfl := List.mem_singleton.mp hr;exact h.lay.cw'.sub_right (Lay.wSub (by decide)))
   have iv : bytesAt v.mem p.iv p.ivLen.toNat=bytesAt s.mem p.iv p.ivLen.toNat := bytesAt_frame e.frame (fun r hr => by obtain rfl := List.mem_singleton.mp hr;exact h.ivRead.w.sub_right (Lay.wSub (by decide))) (by exact Nat.le_of_lt p.ivLen.isLt)
   have ad : bytesAt v.mem p.aad p.aadLen.toNat=bytesAt s.mem p.aad p.aadLen.toNat := bytesAt_frame e.frame (fun r hr => by obtain rfl := List.mem_singleton.mp hr;exact h.aadRead.w.sub_right (Lay.wSub (by decide))) (by exact Nat.le_of_lt p.aadLen.isLt)
-  refine WP.mono (WP.with_rdwr (oneAad_ok (V := p.regs false) h.lay e.env cx e.nonce
+  have fr₀ : Frame (sealWrites p.st p.work p.dst p.sp p.len.toNat) s.mem v.mem := e.frame.sub fun r hr =>
+    before_sealSub r (List.mem_cons.mpr (.inl (List.mem_singleton.mp hr)))
+  refine WP.mono (WP.with_rdwr (oneAad_ok_with (V := p.regs false) h.lay e.env cx e.nonce
     (n := p.ivLen.toNat) (by simpa using e.nonceLen) (by simp [Args.regs])
-    (h.ivRead.of_eq e.keeps.rd e.keeps.wr e.keeps.sp) (h.aadRead.of_eq e.keeps.rd e.keeps.wr e.keeps.sp) e.aad))
+    (h.ivRead.of_eq e.keeps.rd e.keeps.wr e.keeps.sp) (h.aadRead.of_eq e.keeps.rd e.keeps.wr e.keeps.sp) e.aad (FramedHashAction.narrow (FramedHashAction.after exec e.keeps fr₀) j0_sealSub)))
     fun t ⟨oa,rd,wr,sp⟩ => ?_
   change OA _ _ _ (bytesAt v.mem p.iv p.ivLen.toNat) (bytesAt v.mem p.aad p.aadLen.toNat) _ _ at oa
   rw [iv,ad] at oa
