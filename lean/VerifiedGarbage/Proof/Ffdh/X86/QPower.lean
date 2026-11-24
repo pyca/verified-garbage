@@ -145,11 +145,66 @@ theorem qScanStep_ok (G : DomGeo args base bytes len (3 * len) s.rd s.wr) {i : N
         BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by show 1 ≤ len - i; omega_arith)]
       congr 1
     · rw [decide_eq_false h, ite_eq_right h]
-      show BitVec.ofNat 32 (len - i) - 0 = _
-      rw [BitVec.sub_zero]
+      exact BitVec.sub_zero _
   · rw [z, eax11, cl]
     by_cases h : i < lead bs
-    · rw [decide_eq_true h, decide_eq_false (not_not.mpr h)]; rfl
+    · rw [decide_eq_true h, decide_eq_false (fun n => n h)]; rfl
     · rw [decide_eq_false h, decide_eq_true h]; rfl
+
+/-- What `qScan` leaves in the header, for q's bytes `bs`: the address of the first byte that counts,
+and the bytes from it on. -/
+structure QAt (base : Addr) (len : Nat) (args : Nat → BitVec 32) (bs : List Byte) (m : Mem) : Prop where
+  ptr : m.readW (off base qpOff) 32 = args 6 + BitVec.ofNat 32 (lead bs)
+  cnt : m.readW (off base qlOff) 32 = BitVec.ofNat 32 (len - lead bs)
+
+/-- The scan: the header's two words, and nothing else of the memory. -/
+theorem qScan_ok (h : In Ex base bytes len args s) (G : DomGeo args base bytes len (3 * len) s.rd s.wr) :
+    WP isa qScan s fun u => Step Ex base bytes len args s u ∧
+      QAt base len args (qBytes s.mem args len) u.mem ∧ Kept base len [] [qpOff, qlOff] s.mem u.mem := by
+  have lw := G.lower
+  obtain r1 := word_room h (d := qpOff) (by decide)
+  obtain r2 := word_room h (d := qlOff) (by decide)
+  generalize hbs : qBytes s.mem args len = bs
+  unfold qScan qScanInit
+  refine WP.seq (wp_movS (h.arg (i := 6) (by decide)) fun u1 a1 _ => ?_)
+  obtain h1 := h.regs a1.keeps a1.mem
+  refine wp_movS (h1.arg (i := 7) (by decide)) fun u2 a2 _ => WP.block_nil ?_
+  obtain I0 : ScanAt s len 0 args u2 :=
+    ⟨by rw [a2.other _ (by decide), a1.gpr]; exact (BitVec.add_zero _).symm, by rw [a2.gpr, G.e7]; rfl,
+      by rw [a2.mem, a1.mem], (a1.keeps.mono (by decide) : Keeps [.eax, .ecx, .edx, .esi] s u1).widen a2.keeps⟩
+  refine WP.seq (WP.mono (WP.loop (M := isa) (Q := ScanAt s len (lead bs) args)
+    (fun n u => ∃ i, n = lead bs - i ∧ i ≤ lead bs ∧ ScanAt s len i args u) ?_ (lead bs) u2
+    ⟨0, rfl, Nat.zero_le _, I0⟩) fun u3 I3 => ?_)
+  · rintro n u ⟨i, rfl, hi, I⟩
+    refine WP.mono (qScanStep_ok G (by rw [hbs]; exact hi) I) fun v ⟨Iv, z⟩ => ?_
+    rw [hbs] at Iv z
+    obtain he : isa.eval .ne v = some (!decide (¬ i < lead bs)) := by
+      show v.zf.map (!·) = _; rw [z]; rfl
+    by_cases hl : i < lead bs
+    · rw [ite_eq_left hl] at Iv
+      exact .inr ⟨by rw [he, decide_eq_false (fun n => n hl)]; rfl, lead bs - (i + 1), by omega_arith, i + 1, rfl,
+        by omega_arith, Iv⟩
+    · rw [ite_eq_right hl] at Iv
+      obtain e : i = lead bs := by omega_arith
+      exact .inl ⟨by rw [he, decide_eq_true hl]; rfl, e ▸ Iv⟩
+  -- The two words.
+  obtain S₃ : Step Ex base bytes len args s u3 := Step.regs h I3.mem I3.keeps
+  obtain s3 : Scr u3 base bytes := h.scratch.of_keeps I3.keeps (by decide)
+  unfold qScanEnd
+  refine wp_storeS (s3.ea (d := qpOff) (by omega_arith)) (s3.write (d := qpOff) (n := 4) r1) fun u4 m4 => ?_
+  obtain s4 : Scr u4 base bytes := s3.of_keeps (m4.keeps []) (by decide)
+  refine wp_storeS (s4.ea (d := qlOff) (by omega_arith)) (s4.write (d := qlOff) (n := 4) r2) fun u5 m5 =>
+    WP.block_nil ?_
+  obtain O4 : Outside base qpOff 4 u3.mem u4.mem := by rw [m4.mem]; exact writeW32_outside _ _ _ (by omega_arith)
+  obtain S₄ : Step Ex base bytes len args u3 u4 := Step.word S₃.inp (by decide) O4 (m4.keeps [])
+  obtain O5 : Outside base qlOff 4 u4.mem u5.mem := by rw [m5.mem]; exact writeW32_outside _ _ _ (by omega_arith)
+  obtain S₅ : Step Ex base bytes len args u4 u5 := Step.word S₄.inp (by decide) O5 (m5.keeps [])
+  refine ⟨(S₃.trans S₄).trans S₅, ⟨?_, ?_⟩, ?_⟩
+  · rw [m5.mem, Mem.readW_writeW_sep (Offset.sep base (by decide) (by decide) (by decide)) (by decide), m4.mem,
+      Mem.readW_writeW_self32, I3.esi]
+  · rw [m5.mem, Mem.readW_writeW_self32, congrFun m4.gpr .ecx, I3.ecx]
+  · rw [← I3.mem]
+    exact ((kept_word S₃.inp (d := qpOff) (by decide) (by decide) O4).mono (by decide) (by decide)).trans
+      ((kept_word S₄.inp (d := qlOff) (by decide) (by decide) O5).mono (by decide) (by decide))
 
 end VG.Proof.Ffdh.X86.QPower
