@@ -129,4 +129,60 @@ theorem separate_ct {M : CtxMode} (ctr : Proof.Aes.X86_64.Ctr32ToImpl) (gh : Gha
       ⟨_,by taint_decide⟩) (fun _ h => by subst h; exact prepH hu) (fun _ h => by subst h; exact prepH hz))
     (gh_rel gh (fun _ _ h => ⟨_,_,_,_,_,h.1.1,h.2.1,h.1.2.trans h.2.2.symm⟩))
 
+structure BulkIn (M : CtxMode) (Ctx W SP S D : Addr) (R n : Nat) (s : State) : Prop where
+  reg : SealRegions M Ctx W SP D S R n n s
+  ob : ObPre M Ctx W SP R D n s
+  read : InRegions (s.rd++s.wr) (SP+8#64) 8
+  src : s.mem.readW (SP+8#64) 64=S
+  apart : (⟨SP+8#64,8⟩ : Region).Disjoint ⟨W,2560⟩
+
+def KernelKeeps (M : CtxMode) (kernel : Prog isa) : Prop :=
+  ∀ {Ctx W SP S D : Addr} {R n : Nat} {s : State}, KernelIn M Ctx W SP S D R n s →
+    WP isa kernel s fun t => Env Ctx (W+16#64) W SP t
+
+theorem fused_keeps {M : CtxMode} (T : BlocksTo.SealFn M) : KernelKeeps M (Contiguous.fused T.fn) := by
+  intro Ctx W SP S D R n s h
+  exact (fused_ok T h.reg (Nat.mul_div_le n 16) h.count h.read h.src h.dst).mono
+    fun _ ⟨saved,rd,wr,_⟩ => h.reg.env.of_saved saved rd wr
+
+theorem separate_keeps {M : CtxMode} (ctr : Proof.Aes.X86_64.Ctr32ToImpl) (gh : GhashImpl) :
+    KernelKeeps M (Contiguous.separate ⟨ctr.callee.name,ctr.callee.code⟩ gh.fn) := by
+  intro Ctx W SP S D R n s h
+  exact (separate_ok ctr gh h.reg h.count h.read h.src h.dst h.len).mono
+    fun _ ⟨saved,rd,wr,_⟩ => h.reg.env.of_saved saved rd wr
+
+theorem bulk_ct {M : CtxMode} {k : Prog isa} (ct : KernelCT M k) (kw : KernelKeeps M k)
+    {Ctx W SP S D : Addr} {R n : Nat} :
+    RelCT isa (fun a b => BulkIn M Ctx W SP S D R n a ∧ BulkIn M Ctx W SP S D R n b) (Contiguous.bulk k)
+      (fun _ _ => True) := by
+  let F (s : State) := s.zf=some (decide (n/16=0)) ∧ KernelIn M Ctx W SP S D R n s
+  have pre {s : State} (b : BulkIn M Ctx W SP S D R n s) :
+      WP isa (.block [.mov .rax (.mem (at_ .r15 lenO)), .store (at_ .r15 tlenO) .rax,
+        .shift .shr .rax 4,.alu .test .rax (.reg .rax)]) s F := by
+    have h := b.reg
+    obtain ⟨e176,e200,e208,_,_,_,_,_,f⟩ := w192_eqs h.lay b.ob (BitVec.ofNat 64 n)
+    refine (ob1_ok h.data.ok.lt h.env b.ob.len).mono fun u ⟨q,z,g,m,rd,wr⟩ => ?_
+    have reg : SealRegions M Ctx W SP D S R n n u :=
+      { h with
+        env := h.env.keep (fun r hr => g _ (by simp only [List.mem_cons,List.not_mem_nil,or_false] at hr; rcases hr with rfl|rfl|rfl|rfl <;> decide)) rd wr
+        rounds := ⟨by rw [m,e176]; exact h.rounds.1,h.rounds.2⟩
+        data := h.data.of_eq rd wr
+        srcCov := by rw [rd,wr]; exact h.srcCov
+        ext := h.ext.keep rd wr (m ▸ f) (fun r hr => by
+          obtain rfl := List.mem_singleton.mp hr; exact h.ext.cw.sub_right (Lay.wSub (by decide))) }
+    exact ⟨z,reg,q,by rw [rd,wr]; exact b.read,by
+      rw [m,f.readW (r:=⟨SP+8#64,8⟩) (Region.contains_self _ _) (fun r hr => by
+        obtain rfl := List.mem_singleton.mp hr; exact b.apart.sub_right (Lay.wSub (by decide))) (by decide),b.src],
+      by rw [m,e200,b.ob.dat],by rw [m,e208,b.ob.len]⟩
+  unfold Contiguous.bulk
+  refine RelCT.seq (rel_next (rel_taint [.r15] (fun _ _ h r hr => by
+    obtain rfl := List.mem_singleton.mp hr; exact h.1.reg.env.r15.trans h.2.reg.env.r15.symm)
+    ⟨_,by taint_decide⟩) (fun _ => pre) (fun _ => pre)) ?_
+  refine rel_ite_e (fun _ _ h => h.1.1.trans h.2.1.symm)
+    (rel_taint [] (fun _ _ _ _ hr => by cases hr) ⟨_,by taint_decide⟩) ?_
+  apply RelCT.mono (P:=fun x y => KernelIn M Ctx W SP S D R n x ∧ KernelIn M Ctx W SP S D R n y) _ (fun _ _ h => ⟨h.1.1.2,h.1.2.2⟩) (fun _ _ h => h)
+  refine RelCT.seq (rel_next ct (fun _ => kw) (fun _ => kw)) ?_
+  exact rel_taint [.r15] (fun _ _ h r hr => by
+    obtain rfl := List.mem_singleton.mp hr; exact h.1.r15.trans h.2.r15.symm) ⟨_,by taint_decide⟩
+
 end VG.Proof.AesGcm.X86_64.ContiguousSeal
