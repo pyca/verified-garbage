@@ -210,7 +210,7 @@ theorem compactCall_ok (T : BlocksTo.SealFn M) {q : Nat} (hq : 16 * q ≤ sl) {s
     (h_ax : st.gpr .rax = W + BitVec.ofNat 64 448) :
     WP isa (.frame (.push [.rax]) (.call T.fn.name T.fn.code) (.pop .rax 1)) st fun st' =>
       (∀ r ∈ calleeSaved, st'.gpr r = st.gpr r) ∧ st'.rd = st.rd ∧ st'.wr = st.wr ∧
-      Frame (callWr W D q ++ [below SP 56]) st.mem st'.mem ∧
+      Frame (callWr W D q ++ [below SP 24]) st.mem st'.mem ∧
       blocksAt st'.mem D q = ctr32 (ctxCiph s.mem Ctx R) (blockAt s.mem (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 48))
         (blocksAt s.mem S q) ∧
       blockAt st'.mem (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 48) =
@@ -236,6 +236,8 @@ theorem compactCall_ok (T : BlocksTo.SealFn M) {q : Nat} (hq : 16 * q ≤ sl) {s
   obtain fS : Frame [below SP 56] st.mem (pushed [.rax] st).callEntry.mem :=
     (hpf'.sub fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact b56 (by decide) (by decide)).trans
       (hE.sub fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact b56 (by decide) (by decide))
+  have b24 {a k : Nat} (ha : a ≤ 24) (hk : k ≤ a) : Region.Sub ⟨SP - BitVec.ofNat 64 a, k⟩ (below SP 24) :=
+    Offset.sub_below _ ha (by omega_arith)
   have kM := h.kM
   obtain ⟨hpre, cr, cw, gU, -, a0⟩ := compactInput h hq hsp hrd hwr hm h_di h_si h_dx h_cx h_8 h_9 h_10 h_ax
   -- What the push and the return address leave as it was.
@@ -294,23 +296,24 @@ theorem compactCall_ok (T : BlocksTo.SealFn M) {q : Nat} (hq : 16 * q ≤ sl) {s
       show SP - BitVec.ofNat 64 8 + BitVec.ofNat 64 8 = SP
       exact BitVec.sub_add_cancel _ _
     · rw [popped_gpr _ _ _ hr' (fun e => by subst e; simp [calleeSaved] at hr), hcs r hr, pushed_gpr _ _ hr']
-  · refine Frame.trans ?_ (fm'.sub fun r hr => ⟨below SP 56, by simp, by
-      simp only [List.mem_singleton] at hr; subst hr; exact fun _ h => h⟩)
-    obtain bT : Region.Sub (below ((pushed [.rax] st).gpr .rsp) (T.fn.code.x86_64Depth + 8)) (below SP 56) := by
+  · rw [hsp] at fm
+    refine Frame.trans ?_ (fm.sub fun r hr => ⟨below SP 24, by simp, by
+      simp only [List.mem_singleton] at hr; subst hr; exact b24 (by decide) (by decide)⟩)
+    obtain bT : Region.Sub (below ((pushed [.rax] st).gpr .rsp) (T.fn.code.x86_64Depth + 8)) (below SP 24) := by
       obtain h₁ := below_sub (sp := (pushed [.rax] st).gpr .rsp) (a := T.fn.code.x86_64Depth + 8) (b := 16)
         (by have := T.xd; omega_arith) (by decide)
       obtain e : below (SP - BitVec.ofNat 64 8) 16 = ⟨SP - BitVec.ofNat 64 24, 16⟩ := by
         simp only [below, ← Offset.sub_add_eq, ← BitVec.ofNat_add]
       rw [hP] at h₁ ⊢
       rw [e] at h₁
-      exact fun a h' => stk56_sub (by decide) (by decide) a (h₁ a h')
+      exact fun a h' => b24 (by decide) (by decide) a (h₁ a h')
     refine (hpf'.sub fun r hr => ?_).trans (hfr.sub fun r hr => ?_)
     · simp only [List.mem_singleton] at hr; subst hr
-      exact ⟨below SP 56, by simp, stk56_sub (by decide) (by decide)⟩
+      exact ⟨below SP 24, by simp, b24 (by decide) (by decide)⟩
     · rcases List.mem_append.mp hr with hr | hr
       · exact ⟨r, List.mem_append_left _ hr, fun _ h => h⟩
       · simp only [List.mem_singleton] at hr; subst hr
-        exact ⟨below SP 56, by simp, bT⟩
+        exact ⟨below SP 24, by simp, bT⟩
   · rw [kD]; exact o₁
   · rw [kC]; exact o₂
   · rw [kY, kD, o₁]; exact o₃
@@ -335,7 +338,14 @@ theorem mid2_call_wp (h : CallRegions M Ctx W SP D S R n sl σ) (T : BlocksTo.Se
       rcases hr with rfl | rfl | rfl | rfl <;> simp [calleeSaved])).trans (by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl | rfl <;> simp [gpr_setReg])) rd₃ wr₃,
-      rd₃.trans rd, wr₃.trans wr, by rw [← m]; exact fr₃, bl₃, ct₃, y₃⟩
+      rd₃.trans rd, wr₃.trans wr, by
+        rw [← m]
+        exact fr₃.sub fun r hr => by
+          rcases List.mem_append.mp hr with hw | hk
+          · exact ⟨r, List.mem_append_left _ hw, fun _ hc => hc⟩
+          · obtain rfl := List.mem_singleton.mp hk
+            exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _), below_sub (by decide) (by decide)⟩,
+      bl₃, ct₃, y₃⟩
 
 private def moved (Ctx W SP D S : Addr) (R sl : Nat) (σ t : State) : Prop :=
   ∃ x, G₂ Ctx W SP D S R sl σ x ∧ t = x.setReg .r10 D
