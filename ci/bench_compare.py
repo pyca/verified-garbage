@@ -430,6 +430,7 @@ def run(binary, home, library, args, checkout, modules, groups=None, bench=None)
     pattern = f"/{library}/"
     if groups is not None:
         pattern = f"^(?:{'|'.join(map(re.escape, groups))})/{library}/"
+    pattern += "(?:111|127|143|175|191|207|223|239|255)$"
     proc = subprocess.run(
         [
             binary,
