@@ -77,12 +77,12 @@ pub const VG_SM4_ECB_ENCRYPT_AESNI_FEATURES: verified_garbage_cpu::Features = ve
 /// * `schedule` must be valid for reads of 128 bytes.
 /// * `data` must be valid for reads and writes of `16 * n` bytes.
 /// * `data` must not overlap `schedule` (distinct Rust objects never do).
-/// * Neither `schedule` nor `data` may overlap the arguments on the stack, overlap the return address on the stack or the 752 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * Neither `schedule` nor `data` may overlap the arguments on the stack, overlap the return address on the stack or the 756 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `ssse3` and `aes` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sm4_ecb_encrypt_aesni(schedule: *const [u8; 128], data: *mut [u8; 16], n: usize) {
     core::arch::naked_asm!(
-        r#".base64 "jaQkFP3//4uEJPACAACJRCQEi4Qk9AIAAIlEJAiLhCT4AgAAiUQkDIngg8AUiUQkEItEJBCJmLACAACJsLQCAACJuLgCAACJqLwCAACJxw=="
+        r#".base64 "jaQkEP3//4uEJPQCAACJRCQEi4Qk+AIAAIlEJAiLhCT8AgAAiUQkDIngg8AUiUQkEItEJBCJmLACAACJsLQCAACJuLgCAACJqLwCAACJxw=="
 call 2f
 2:
 mov eax, DWORD PTR [esp]
@@ -128,7 +128,7 @@ jne 211b
 jmp 210f
 29:
 210:
-.base64 "i5+wAgAAi7e0AgAAi6+8AgAAi7+4AgAAZg/vwLkAAAAA8w9/RCQU8w9/RCQk8w9/RCQ08w9/RCRE8w9/RCRU8w9/RCRk8w9/RCR08w9/hCSEAAAA8w9/hCSUAAAA8w9/hCSkAAAA8w9/hCS0AAAA8w9/hCTEAAAA8w9/hCTUAAAA8w9/hCTkAAAA8w9/hCT0AAAA8w9/hCQEAQAA8w9/hCQUAQAA8w9/hCQkAQAA8w9/hCQ0AQAA8w9/hCREAQAA8w9/hCRUAQAA8w9/hCRkAQAA8w9/hCR0AQAA8w9/hCSEAQAA8w9/hCSUAQAA8w9/hCSkAQAA8w9/hCS0AQAA8w9/hCTEAQAA8w9/hCTUAQAA8w9/hCTkAQAA8w9/hCT0AQAA8w9/hCQEAgAA8w9/hCQUAgAA8w9/hCQkAgAA8w9/hCQ0AgAA8w9/hCREAgAA8w9/hCRUAgAA8w9/hCRkAgAA8w9/hCR0AgAA8w9/hCSEAgAA8w9/hCSUAgAA8w9/hCSkAgAA8w9/hCS0AgAA8w9/hCTEAgAA8w9/hCTUAgAAiYwk5AIAAImMJOgCAACNpCTsAgAAjaQkEP3//7kAAAAAiUwkBIlMJAiJTCQMiUwkEIlMJBSNpCTwAgAAuAAAAAC6AAAAADHJZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7//D"
+.base64 "i5+wAgAAi7e0AgAAi6+8AgAAi7+4AgAAZg/vwLkAAAAA8w9/RCQU8w9/RCQk8w9/RCQ08w9/RCRE8w9/RCRU8w9/RCRk8w9/RCR08w9/hCSEAAAA8w9/hCSUAAAA8w9/hCSkAAAA8w9/hCS0AAAA8w9/hCTEAAAA8w9/hCTUAAAA8w9/hCTkAAAA8w9/hCT0AAAA8w9/hCQEAQAA8w9/hCQUAQAA8w9/hCQkAQAA8w9/hCQ0AQAA8w9/hCREAQAA8w9/hCRUAQAA8w9/hCRkAQAA8w9/hCR0AQAA8w9/hCSEAQAA8w9/hCSUAQAA8w9/hCSkAQAA8w9/hCS0AQAA8w9/hCTEAQAA8w9/hCTUAQAA8w9/hCTkAQAA8w9/hCT0AQAA8w9/hCQEAgAA8w9/hCQUAgAA8w9/hCQkAgAA8w9/hCQ0AgAA8w9/hCREAgAA8w9/hCRUAgAA8w9/hCRkAgAA8w9/hCR0AgAA8w9/hCSEAgAA8w9/hCSUAgAA8w9/hCSkAgAA8w9/hCS0AgAA8w9/hCTEAgAA8w9/hCTUAgAAiYwk5AIAAImMJOgCAACNpCTwAgAAjaQkDP3//7kAAAAAiUwkBIlMJAiJTCQMiUwkEIlMJBSJjCTwAgAAjaQk9AIAALgAAAAAugAAAAAxyWYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ww=="
 .p2align 6"#,
         VG_SM4_AESNI_WIDE = sym super::consts::VG_SM4_AESNI_WIDE,
     )
@@ -213,12 +213,12 @@ pub const VG_SM4_ECB_DECRYPT_AESNI_FEATURES: verified_garbage_cpu::Features = ve
 /// * `schedule` must be valid for reads of 128 bytes.
 /// * `data` must be valid for reads and writes of `16 * n` bytes.
 /// * `data` must not overlap `schedule` (distinct Rust objects never do).
-/// * Neither `schedule` nor `data` may overlap the arguments on the stack, overlap the return address on the stack or the 752 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * Neither `schedule` nor `data` may overlap the arguments on the stack, overlap the return address on the stack or the 756 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `ssse3` and `aes` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sm4_ecb_decrypt_aesni(schedule: *const [u8; 128], data: *mut [u8; 16], n: usize) {
     core::arch::naked_asm!(
-        r#".base64 "jaQkFP3//4uEJPACAACJRCQEi4Qk9AIAAIlEJAiLhCT4AgAAiUQkDIngg8AUiUQkEItEJBCJmLACAACJsLQCAACJuLgCAACJqLwCAACJxw=="
+        r#".base64 "jaQkEP3//4uEJPQCAACJRCQEi4Qk+AIAAIlEJAiLhCT8AgAAiUQkDIngg8AUiUQkEItEJBCJmLACAACJsLQCAACJuLgCAACJqLwCAACJxw=="
 call 2f
 2:
 mov eax, DWORD PTR [esp]
@@ -264,7 +264,7 @@ jne 211b
 jmp 210f
 29:
 210:
-.base64 "i5+wAgAAi7e0AgAAi6+8AgAAi7+4AgAAZg/vwLkAAAAA8w9/RCQU8w9/RCQk8w9/RCQ08w9/RCRE8w9/RCRU8w9/RCRk8w9/RCR08w9/hCSEAAAA8w9/hCSUAAAA8w9/hCSkAAAA8w9/hCS0AAAA8w9/hCTEAAAA8w9/hCTUAAAA8w9/hCTkAAAA8w9/hCT0AAAA8w9/hCQEAQAA8w9/hCQUAQAA8w9/hCQkAQAA8w9/hCQ0AQAA8w9/hCREAQAA8w9/hCRUAQAA8w9/hCRkAQAA8w9/hCR0AQAA8w9/hCSEAQAA8w9/hCSUAQAA8w9/hCSkAQAA8w9/hCS0AQAA8w9/hCTEAQAA8w9/hCTUAQAA8w9/hCTkAQAA8w9/hCT0AQAA8w9/hCQEAgAA8w9/hCQUAgAA8w9/hCQkAgAA8w9/hCQ0AgAA8w9/hCREAgAA8w9/hCRUAgAA8w9/hCRkAgAA8w9/hCR0AgAA8w9/hCSEAgAA8w9/hCSUAgAA8w9/hCSkAgAA8w9/hCS0AgAA8w9/hCTEAgAA8w9/hCTUAgAAiYwk5AIAAImMJOgCAACNpCTsAgAAjaQkEP3//7kAAAAAiUwkBIlMJAiJTCQMiUwkEIlMJBSNpCTwAgAAuAAAAAC6AAAAADHJZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7//D"
+.base64 "i5+wAgAAi7e0AgAAi6+8AgAAi7+4AgAAZg/vwLkAAAAA8w9/RCQU8w9/RCQk8w9/RCQ08w9/RCRE8w9/RCRU8w9/RCRk8w9/RCR08w9/hCSEAAAA8w9/hCSUAAAA8w9/hCSkAAAA8w9/hCS0AAAA8w9/hCTEAAAA8w9/hCTUAAAA8w9/hCTkAAAA8w9/hCT0AAAA8w9/hCQEAQAA8w9/hCQUAQAA8w9/hCQkAQAA8w9/hCQ0AQAA8w9/hCREAQAA8w9/hCRUAQAA8w9/hCRkAQAA8w9/hCR0AQAA8w9/hCSEAQAA8w9/hCSUAQAA8w9/hCSkAQAA8w9/hCS0AQAA8w9/hCTEAQAA8w9/hCTUAQAA8w9/hCTkAQAA8w9/hCT0AQAA8w9/hCQEAgAA8w9/hCQUAgAA8w9/hCQkAgAA8w9/hCQ0AgAA8w9/hCREAgAA8w9/hCRUAgAA8w9/hCRkAgAA8w9/hCR0AgAA8w9/hCSEAgAA8w9/hCSUAgAA8w9/hCSkAgAA8w9/hCS0AgAA8w9/hCTEAgAA8w9/hCTUAgAAiYwk5AIAAImMJOgCAACNpCTwAgAAjaQkDP3//7kAAAAAiUwkBIlMJAiJTCQMiUwkEIlMJBSJjCTwAgAAjaQk9AIAALgAAAAAugAAAAAxyWYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ww=="
 .p2align 6"#,
         VG_SM4_AESNI_WIDE = sym super::consts::VG_SM4_AESNI_WIDE,
     )

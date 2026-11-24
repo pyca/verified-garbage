@@ -389,12 +389,12 @@ def frameSat : State where
   wr := [⟨0x2000, 16⟩, ⟨0x3000, 0⟩, ⟨0x8004, 16⟩]
 
 theorem frameSat_fb (post : Spec.Sm4.ofbSig.Post X86.abi.ptrBits) :
-    ∃ s, (Spec.Sm4.ofbSig.contract X86.abi (post := post) (writeArgs := true) (stack := 692)).pre s := by
+    ∃ s, (Spec.Sm4.ofbSig.contract X86.abi (post := post) (writeArgs := true) (stack := 696)).pre s := by
   implies_sat [Spec.Sm4.ofbSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     [frameSat, X86.arg, X86.argAddr, Mem.readW, Mem.read] using frameSat
 
 theorem frameSat_cbc (post : Spec.Sm4.cbcChainedSig.Post X86.abi.ptrBits) :
-    ∃ s, (Spec.Sm4.cbcChainedSig.contract X86.abi (post := post) (writeArgs := true) (stack := 692)).pre s := by
+    ∃ s, (Spec.Sm4.cbcChainedSig.contract X86.abi (post := post) (writeArgs := true) (stack := 696)).pre s := by
   implies_sat [Spec.Sm4.cbcChainedSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     [frameSat, X86.arg, X86.argAddr, Mem.readW, Mem.read] using frameSat
 
@@ -444,31 +444,31 @@ theorem cbcEncryptChained_verified :
 
 /-- `ofb` with its working space on the stack. -/
 theorem ofb_framed :
-    Verified X86.target (Impl.StackScratch.X86.withStackScratchWiped 688 4 166 ofb)
-      (Spec.Sm4.ofbContract X86.abi 692) :=
+    Verified X86.target (Impl.StackScratch.X86.withStackScratchWiped 692 4 166 ofb)
+      (Spec.Sm4.ofbContract X86.abi 696) :=
   X86.Verified.stackScratchWiped (sig := Spec.Sm4.ofbSig) (nm := "scratch") (e := .u64)
     (n := 83) (post := Proof.Sm4.ofbPost X86.abi.ptrBits) (wa := true) (stack := 4)
-    (bytes := 688) ofb_verified (by decide) (by lit_decide) (by lit_decide) (by decide)
+    (bytes := 692) ofb_verified (by decide) (by lit_decide) (by lit_decide) (by decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial)
     (Proof.Sm4.ofbPost_local _) (Proof.Sm4.ofbPostOut_local _) (frameSat_fb _)
 
 /-- `cfbEncrypt` with its working space on the stack. -/
 theorem cfbEncrypt_framed :
-    Verified X86.target (Impl.StackScratch.X86.withStackScratchWiped 688 4 166 cfbEncrypt)
-      (Spec.Sm4.cfbEncryptContract X86.abi 692) :=
+    Verified X86.target (Impl.StackScratch.X86.withStackScratchWiped 692 4 166 cfbEncrypt)
+      (Spec.Sm4.cfbEncryptContract X86.abi 696) :=
   X86.Verified.stackScratchWiped (sig := Spec.Sm4.cfbSig) (nm := "scratch") (e := .u64)
     (n := 83) (post := Proof.Sm4.cfbEncPost X86.abi.ptrBits) (wa := true) (stack := 4)
-    (bytes := 688) cfbEncrypt_verified (by decide) (by lit_decide) (by lit_decide) (by decide)
+    (bytes := 692) cfbEncrypt_verified (by decide) (by lit_decide) (by lit_decide) (by decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial)
     (Proof.Sm4.cfbEncPost_local _) (Proof.Sm4.cfbEncPostOut_local _) (frameSat_fb _)
 
 /-- `cbcEncryptChained` with its working space on the stack. -/
 theorem cbcEncryptChained_framed :
-    Verified X86.target (Impl.StackScratch.X86.withStackScratchWiped 688 4 166 cbcEncryptChained)
-      (Spec.Sm4.cbcEncryptChainedContract X86.abi 692) :=
+    Verified X86.target (Impl.StackScratch.X86.withStackScratchWiped 692 4 166 cbcEncryptChained)
+      (Spec.Sm4.cbcEncryptChainedContract X86.abi 696) :=
   X86.Verified.stackScratchWiped (sig := Spec.Sm4.cbcChainedSig) (nm := "scratch") (e := .u64)
     (n := 83) (post := Proof.Sm4.cbcEncChainedPost X86.abi.ptrBits) (wa := true) (stack := 4)
-    (bytes := 688) cbcEncryptChained_verified (by decide) (by lit_decide) (by lit_decide) (by decide)
+    (bytes := 692) cbcEncryptChained_verified (by decide) (by lit_decide) (by lit_decide) (by decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial)
     (Proof.Sm4.cbcEncChainedPost_local _) (Proof.Sm4.cbcEncChainedPostOut_local _) (frameSat_cbc _)
 
