@@ -246,12 +246,12 @@ theorem prepared_ok (facts : ShortFacts) (v : GcmImpl) (wide : Bool) {np : Nat} 
       simpa only [keep.mem] using Fast.aad_mid facts C X f hp hl ha (by omega)
   cases wide
   · exact long E
-  · refine WP.seq ((Short.condE_ok C E hl ha).mono fun t ⟨cond,f,keep⟩ => ?_)
-    refine WP.ite (decide ¬Short.IsShort nl al n) (eval_e cond) (fun _ => long f) (fun hh => ?_)
+  · refine WP.seq ((Short.condE_ok C E hl ha true).mono fun t ⟨cond,f,keep⟩ => ?_)
+    refine WP.ite (decide ¬Short.IsShortAt true nl al n) (eval_e cond) (fun _ => long f) (fun hh => ?_)
     have orig := E.frame.readW (w:=64) (r:=⟨SP+8#64,8⟩) (Region.contains_self _ _) (fun b hb => by
       obtain rfl := List.mem_singleton.mp hb
       exact (C.dA.sub_left (Region.sub_prefix (show 8≤8*5 by decide))).sub_right (Lay.wSub (by decide))) (by decide)
     exact bounded_ok facts C X (pow rfl) geo (by decide) (by rw [keep.mem,orig,src]) f hp hl ha
-      (Decidable.not_not.mp (of_decide_eq_false hh))
+      (Decidable.not_not.mp (of_decide_eq_false hh)).full
 
 end VG.Proof.AesGcm.X86_64.ContiguousSeal

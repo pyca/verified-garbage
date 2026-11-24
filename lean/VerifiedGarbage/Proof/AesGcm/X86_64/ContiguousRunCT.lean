@@ -175,15 +175,15 @@ theorem prepared_ct (facts : ShortFacts) (v : GcmImpl) (wide : Bool) {np : Nat} 
   cases wide
   · exact long
   · have w {p : State} (h : RecordInput (CtxMode.preparedN np hn) p Ctx W SP Np A S D nl al n R) (s) (e : OneEntry p Ctx W SP A D n s) :=
-      (Short.condE_ok h.ctx e h.nlEq h.alEq).mono fun _ ⟨z,f,_⟩ => And.intro z f
+      (Short.condE_ok h.ctx e h.nlEq h.alEq true).mono fun _ ⟨z,f,_⟩ => And.intro z f
     have pre := rel_next (Short.cond_rel (F₁:=OneEntry o Ctx W SP A D n) (F₂:=OneEntry p Ctx W SP A D n)
       (fun _ e => Short.condS_of e a.nlEq a.alEq) (fun _ e => Short.condS_of e b.nlEq b.alEq)
-      (by rw [← a.nlEq]; exact BitVec.isLt _) (by rw [← a.alEq]; exact BitVec.isLt _) a.ctx.data.ok.lt) (w a) (w b)
+      (by rw [← a.nlEq]; exact BitVec.isLt _) (by rw [← a.alEq]; exact BitVec.isLt _) a.ctx.data.ok.lt true) (w a) (w b)
     refine RelCT.seq pre (rel_ite_e (fun _ _ h => by rw [h.1.1,h.2.1]) (long.mono
       (fun _ _ h => ⟨h.1.1.2,h.1.2.2⟩) (fun _ _ h => h)) ?_)
-    by_cases hs : Short.IsShort nl al n
+    by_cases hs : Short.IsShortAt true nl al n
     · exact (bounded_relational facts (pc rfl) a.ctx b.ctx a.ext b.ext (pow rfl) a.geom b.geom (by decide)
-        a.nonce a.nlEq a.alEq a.rounds b.nonce b.nlEq b.alEq b.rounds hs).mono (fun _ _ h =>
+        a.nonce a.nlEq a.alEq a.rounds b.nonce b.nlEq b.alEq b.rounds hs.full).mono (fun _ _ h =>
         ⟨⟨h.1.1.2,a.slot h.1.1.2⟩,h.1.2.2,b.slot h.1.2.2⟩) fun _ _ h => h
     · exact RelCT.of_false fun _ _ h => by have := h.1.1.1.symm.trans h.2; simp [hs] at this
 

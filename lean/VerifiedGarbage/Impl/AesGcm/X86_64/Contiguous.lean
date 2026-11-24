@@ -166,7 +166,7 @@ def aad (c : Callees) (vec wide prepared : Bool) : Prog isa :=
 
 def body (c : Callees) (vec wide prepared : Bool) (kernel : Prog isa) : Prog isa :=
   let long := .seq (aad c vec wide prepared) (.seq (bulk kernel) (if vec then finishVec prepared wide else finishScalar c))
-  if prepared && wide then .seq Short.cond (.ite .e long bounded) else long
+  if prepared && wide then .seq (Short.condWith true) (.ite .e long bounded) else long
 
 def core (record : Prog isa) : Prog isa :=
   .seq (.block (oneEntry 40 16 24)) (.seq record (.seq (.block (tagOut (at_ .rsp 32))) (.block restore)))
