@@ -1230,6 +1230,325 @@ b 27f
     )
 }
 
+/// AES-GCM authenticated encryption (NIST SP 800-38D §7.1), with the key context, public rounds, IV and additional data of `vg_aes_gcm_seal`. Encrypts the initial `len` bytes at `src` into `dst` and writes the 16-byte tag to `tag`. As for `vg_aes_gcm_seal`, callers must use a fresh nonce for each encryption under a key and enforce the GCM input length limits (§5.2.1.1). Only pointers, lengths and the round count may affect timing. Contract: `VG.Spec.Gcm.sealContiguousContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `src` must be valid for reads of `len` bytes, and `dst` for reads and writes of `len` bytes. The two pointers must be identical or their regions disjoint.
+/// * `tag` must be valid for reads and writes of 16 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `dst` and `tag` must not overlap each other, `ctx`, `nonce`, `aad`, `src` when distinct from `dst` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `src` when distinct from `dst`, `dst` and `tag` may overlap the 1552 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_aes_gcm_seal_contiguous(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+    core::arch::naked_asm!(
+        r#".base64 "Afsh+AAAgTlgBQzoYAAM+GgFDOhoAAz4gAAMOHAADPgAAIE5cACM6YAATPqIAGz6kACM+pgArPqgAMz6qADs+rAADPu4ACz7wABM+8gAbPvQAIz72ACs++AAzPvoAOz7pgIIfPAADPh4Y599eBt9fHgjnHwQAN87eCu4fHgz2Xx4M9J8eDv1fHhDFn14SzN9eFNbfQAAgTlgAOzqaACM6vT/2TgAACYo"
+beq %cr0, 20f
+.base64 "AAAAOAAAHvgIAB74AABAOwAAOSg="
+beq %cr0, 22f
+.base64 "AAA6KA=="
+beq %cr0, 24f
+.base64 "EACgOFAounwC4SZ7AAAmKA=="
+bne %cr0, 26f
+.base64 "UMjFfOAPxngAACYo"
+bne %cr0, 28f
+b 29f
+28:
+.base64 "eMslfw=="
+29:
+b 27f
+26:
+27:
+.base64 "IACeOBTShHx4wwN/FCoYf1DIJX8UKlp/"
+210:
+.base64 "AAADiAAABJgBAGM4AQCEOP//pTgAACUo"
+bne %cr0, 210b
+.base64 "8P/aOAAAJig="
+beq %cr0, 211f
+b 212f
+211:
+.base64 "8AB9OAAAnjggAL44AQDAOA=="
+bl {vg_ghash}
+212:
+b 25f
+24:
+25:
+.base64 "eMMFfwLhJnsPAAA4OAAof1DIKH0UShh/eEMZfQAAJig="
+beq %cr0, 213f
+.base64 "8AB9OAAAnjg="
+bl {vg_ghash}
+b 214f
+213:
+214:
+.base64 "AAA5KA=="
+beq %cr0, 215f
+.base64 "eMMDfyAAnjh4yyV/"
+217:
+.base64 "AAADiAAABJgBAGM4AQCEOP//pTgAACUo"
+bne %cr0, 217b
+b 216f
+215:
+216:
+b 23f
+22:
+23:
+.base64 "DwAAODgAWn4AADoo"
+beq %cr0, 218f
+.base64 "AAAAOGAAH/hoAB/4IAB+OGAAnzh400V/"
+220:
+.base64 "AAADiAAABJgBAGM4AQCEOP//pTgAACUo"
+bne %cr0, 220b
+.base64 "8AB9OAAAnjhgAL84AQDAOA=="
+bl {vg_ghash}
+b 219f
+218:
+219:
+.base64 "AAAAO3iTWn4kHwN7JB9Ee2AAvzgAAMA4KDVlfAgAwDgoNYV88AB9OAAAnjhgAL84AQDAOA=="
+bl {vg_ghash}
+.base64 "AAB+gAQAnoAIAL6ADAD+OAAAADksRMd8AQDGODAAfpA0AJ6QOAC+kDwA/jgsRcd8EAAe+RgAHvk="
+b 21f
+20:
+.base64 "AAB4gAQAmIAIALiAAAHAPAAAfpAEAJ6QCAC+kAwA3pAwAH6QNACekDgAvpAAAsA8PADekAAAADkQAB75GAAe+Q=="
+21:
+.base64 "AuHLegAAKyg="
+beq %cr0, 221f
+.base64 "eKu4fniz2X4AAEA7AAA5KA=="
+beq %cr0, 223f
+.base64 "AAA6KA=="
+beq %cr0, 225f
+.base64 "EACgOFAounwC4SZ7AAAmKA=="
+bne %cr0, 227f
+.base64 "UMjFfOAPxngAACYo"
+bne %cr0, 229f
+b 230f
+229:
+.base64 "eMslfw=="
+230:
+b 228f
+227:
+228:
+.base64 "IACeOBTShHx4wwN/FCoYf1DIJX8UKlp/"
+231:
+.base64 "AAADiAAABJgBAGM4AQCEOP//pTgAACUo"
+bne %cr0, 231b
+.base64 "8P/aOAAAJig="
+beq %cr0, 232f
+b 233f
+232:
+.base64 "8AB9OBAAnjggAL44AQDAOA=="
+bl {vg_ghash}
+233:
+b 226f
+225:
+226:
+.base64 "eMMFfwLhJnsPAAA4OAAof1DIKH0UShh/eEMZfQAAJig="
+beq %cr0, 234f
+.base64 "8AB9OBAAnjg="
+bl {vg_ghash}
+b 235f
+234:
+235:
+.base64 "AAA5KA=="
+beq %cr0, 236f
+.base64 "eMMDfyAAnjh4yyV/"
+238:
+.base64 "AAADiAAABJgBAGM4AQCEOP//pTgAACUo"
+bne %cr0, 238b
+b 237f
+236:
+237:
+b 224f
+223:
+224:
+.base64 "DwAAODgA2n4AADoo"
+beq %cr0, 239f
+.base64 "AAAAOGAAH/hoAB/4IAB+OGAAnzh400V/"
+241:
+.base64 "AAADiAAABJgBAGM4AQCEOP//pTgAACUo"
+bne %cr0, 241b
+.base64 "8AB9OBAAnjhgAL84AQDAOA=="
+bl {vg_ghash}
+b 240f
+239:
+240:
+b 222f
+221:
+.base64 "AAA2KA=="
+beq %cr0, 242f
+.base64 "AAAAOGAAH/hoAB/4eKujfmAAnzh4s8V+wuireAAAKyg="
+beq %cr0, 244f
+.base64 "AADj6AAA5PgIAGM4CACEOPj/pTg="
+b 245f
+244:
+245:
+.base64 "gvCreAAAKyg="
+beq %cr0, 246f
+.base64 "AADjgAAA5JAEAGM4BACEOPz/pTg="
+b 247f
+246:
+247:
+.base64 "AAAlKA=="
+beq %cr0, 248f
+250:
+.base64 "AAADiAAABJgBAGM4AQCEOP//pTgAACUo"
+bne %cr0, 250b
+b 249f
+248:
+249:
+.base64 "8AB9OBAAnjhgAL84AQDAOA=="
+bl {vg_ghash}
+b 243f
+242:
+243:
+222:
+.base64 "QrrsegAALCg="
+beq %cr0, 251f
+.base64 "eOujf3jjhH8wAL44EADeOHibZ37Cyeh6JB8IeXjbaX/AAV85"
+bl {vg_aes_gcm_encrypt_blocks_buffers}
+.base64 "fwAAODgA+X5QuHl9FFoTfxRaW34="
+b 252f
+251:
+.base64 "eJt4fnjbcn94u/l+"
+252:
+.base64 "AAA5KA=="
+beq %cr0, 253f
+.base64 "eJNVfnjLM38C4Sd7AAAnKA=="
+beq %cr0, 255f
+.base64 "eMMGf1CoWH/kJut4FFq1fhRaGH9QyCt/eOujf3jjhH8wAL44AAAAOMQEABAGB2A9BAVrYcYHa3kCA2tlAAFrYQ4PgD0MDYxhxgeMeQoLjGUICYxhZwFrfmcBLHwsmmASLApzEgAAYD0AAGthxgdreQAAa2UAAGthAACAPQAAjGHGB4x5AACMZQEAjGFnAWt9ZwEsfCxaYBEsCmsRmQZFfetUShHC6Ox4AAAsKA=="
+beq %cr0, 257f
+259:
+.base64 "hFQKEIBYShGEVCoQgFhKEYRUShCAWEoRhFRqEIBYShGEVIoQgFhKEYRUqhCAWEoRhFTKEIBYShGEVOoQgFhKEXgbaXyZBgl960QIEcREABDERCEQxERCEMREYxDERIQQxESlEMRExhDEROcQEAApOf//RDk="
+260:
+.base64 "mQYJfetECBEIRQAQCEUhEAhFQhAIRWMQCEWEEAhFpRAIRcYQCEXnEBAAKTn//0o5AAAqKA=="
+bne %cr0, 260b
+.base64 "mQYJfetECBEJRQAQCUUhEAlFQhAJRWMQCUWEEAlFpRAJRcYQCUXnEJkGJn3rBAAQxEwAEJnXBnwQAMY4mQYmfesMIRDETCEQmdcmfBAAxjiZBiZ96xRCEMRMQhCZ10Z8EADGOJkGJn3rHGMQxExjEJnXZnwQAMY4mQYmfeskhBDETIQQmdeGfBAAxjiZBiZ96yylEMRMpRCZ16Z8EADGOJkGJn3rNMYQxEzGEJnXxnwQAMY4mQYmfes85xDETOcQmdfmfBAAxjj4/+c4wujseAAALCg="
+bne %cr0, 259b
+b 258f
+257:
+258:
+.base64 "BACAOThg7HwAACwo"
+beq %cr0, 261f
+.base64 "hFQKEIBYShGEVCoQgFhKEYRUShCAWEoRhFRqEIBYShF4G2l8mQYJfetECBHERAAQxEQhEMREQhDERGMQEAApOf//RDk="
+263:
+.base64 "mQYJfetECBEIRQAQCEUhEAhFQhAIRWMQEAApOf//SjkAACoo"
+bne %cr0, 263b
+.base64 "mQYJfetECBEJRQAQCUUhEAlFQhAJRWMQmQYmfesEABDETAAQmdcGfBAAxjiZBiZ96wwhEMRMIRCZ1yZ8EADGOJkGJn3rFEIQxExCEJnXRnwQAMY4mQYmfescYxDETGMQmddmfBAAxjj8/+c4"
+b 262f
+261:
+262:
+.base64 "AgCAOThg7HwAACwo"
+beq %cr0, 264f
+.base64 "hFQKEIBYShGEVCoQgFhKEXgbaXyZBgl960QIEcREABDERCEQEAApOf//RDk="
+266:
+.base64 "mQYJfetECBEIRQAQCEUhEBAAKTn//0o5AAAqKA=="
+bne %cr0, 266b
+.base64 "mQYJfetECBEJRQAQCUUhEJkGJn3rBAAQxEwAEJnXBnwQAMY4mQYmfesMIRDETCEQmdcmfBAAxjj+/+c4"
+b 265f
+264:
+265:
+.base64 "AQCAOThg7HwAACwo"
+beq %cr0, 267f
+.base64 "hFQKEIBYShF4G2l8mQYJfetECBHERAAQEAApOf//RDk="
+269:
+.base64 "mQYJfetECBEIRQAQEAApOf//SjkAACoo"
+bne %cr0, 269b
+.base64 "mQYJfetECBEJRQAQmQYmfesEABDETAAQmdcGfBAAxjj//+c4"
+b 268f
+267:
+268:
+.base64 "61RKEZkHRX0="
+b 256f
+255:
+256:
+.base64 "eKu6fgAAOSg="
+beq %cr0, 270f
+.base64 "AAAAOEAAHvhIAB74QADeOAEA4Dh466N/eOOEfzAAvjg="
+bl {vg_aes_ctr32}
+.base64 "QAB+OHjDBH94yyV/eNNHfw=="
+272:
+.base64 "AAAEiAAAw4h4MgB8AAAHmAEAYzgBAIQ4AQDnOP//pTgAACUo"
+bne %cr0, 272b
+b 271f
+270:
+271:
+.base64 "eJNYfnibeX4AAEA7AAA5KA=="
+beq %cr0, 273f
+.base64 "AAA6KA=="
+beq %cr0, 275f
+.base64 "EACgOFAounwC4SZ7AAAmKA=="
+bne %cr0, 277f
+.base64 "UMjFfOAPxngAACYo"
+bne %cr0, 279f
+b 280f
+279:
+.base64 "eMslfw=="
+280:
+b 278f
+277:
+278:
+.base64 "IACeOBTShHx4wwN/FCoYf1DIJX8UKlp/"
+281:
+.base64 "AAADiAAABJgBAGM4AQCEOP//pTgAACUo"
+bne %cr0, 281b
+.base64 "8P/aOAAAJig="
+beq %cr0, 282f
+b 283f
+282:
+.base64 "8AB9OBAAnjggAL44AQDAOA=="
+bl {vg_ghash}
+283:
+b 276f
+275:
+276:
+.base64 "eMMFfwLhJnsPAAA4OAAof1DIKH0UShh/eEMZfQAAJig="
+beq %cr0, 284f
+.base64 "8AB9OBAAnjg="
+bl {vg_ghash}
+b 285f
+284:
+285:
+.base64 "AAA5KA=="
+beq %cr0, 286f
+.base64 "eMMDfyAAnjh4yyV/"
+288:
+.base64 "AAADiAAABJgBAGM4AQCEOP//pTgAACUo"
+bne %cr0, 288b
+b 287f
+286:
+287:
+b 274f
+273:
+274:
+.base64 "DwAAODgAen4AADoo"
+beq %cr0, 289f
+.base64 "AAAAOGAAH/hoAB/4IAB+OGAAnzh400V/"
+291:
+.base64 "AAADiAAABJgBAGM4AQCEOP//pTgAACUo"
+bne %cr0, 291b
+.base64 "8AB9OBAAnjhgAL84AQDAOA=="
+bl {vg_ghash}
+b 290f
+289:
+290:
+b 254f
+253:
+254:
+.base64 "eLPYfni7+n4kHwN7JB9Ee2AAvzgAAMA4KDVlfAgAwDgoNYV88AB9OBAAnjhgAL84AQDAOA=="
+bl {vg_ghash}
+.base64 "EAB+6AAAf/gYAH7oCAB/+Hjro39444R/ePPFfwAA3zgBAOA4"
+bl {vg_aes_ctr32}
+.base64 "AAB/6AAAdPgIAH/oCAB0+Hj77H/wAAzopgMIfIAATOqIAGzqkACM6pgArOqgAMzqqADs6rAADOu4ACzrwABM68gAbOvQAIzr2ACs6+AAzOvoAOzrAAUhOAAAADgB+yH4IACBOQAADPgIAAz4EAAM+BgADPggAAz4KAAM+DAADPg4AAz4QAAM+EgADPhQAAz4WAAM+GAADPhoAAz4cAAM+HgADPiAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8AAAM+AgADPgQAAz4GAAM+CAADPgoAAz4MAAM+DgADPhAAAz4SAAM+FAADPhYAAz4YAAM+GgADPhwAAz4eAAM+IAADPiIAAz4kAAM+JgADPigAAz4qAAM+LAADPi4AAz4wAAM+MgADPjQAAz42AAM+AAFITgAAGA4AACAOAAAoDgAAMA4AADgOAAAADkAACA5AABAOQAAYDkAAIA5xAQAEMQMIRDEFEIQxBxjEMQkhBDELKUQxDTGEMQ85xDERAgRxEwpEcRUShHEXGsRxGSMEcRsrRHEdM4RxHzvEcSEEBLEjDESxJRSEsSccxIgAIBO""#,
+        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
+        vg_aes_gcm_encrypt_blocks_buffers = sym super::aes::vg_aes_gcm_encrypt_blocks_buffers::vg_aes_gcm_encrypt_blocks_buffers,
+        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
+    )
+}
+
 /// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag), out of place, of a plaintext in pieces: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the concatenation of the `src_count` slices that `src` lists (each an address and a length, in bytes), under the IV the `nonce_len` bytes at `nonce`, writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_aes_gcm_seal` with the plaintext gathered from `src`. A shorter tag is the first bytes of this one.
 ///
 /// The function checks no length. GCM is secure only for a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of data and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must ensure; and a nonce must never be used twice with the same key.

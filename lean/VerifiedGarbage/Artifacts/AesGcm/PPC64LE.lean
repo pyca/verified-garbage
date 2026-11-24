@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Gcm.PPC64LE.Vpmsum.Law
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Scrub
+public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Contiguous.Verified
 public import VerifiedGarbage.TCB.PPC64LE.Print
 
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.Blocks.Lit
@@ -43,6 +44,9 @@ def artifacts : List Artifact := [
   Spec.Gcm.openApi.artifact PPC64LE.target {
     code := Impl.AesGcm.PPC64LE.Fn.open
     verified := Proof.AesGcm.PPC64LE.Scrub.open_scrubbed },
+  Spec.Gcm.sealContiguousApi.artifact PPC64LE.target {
+    code := Impl.AesGcm.PPC64LE.Contiguous.code
+    verified := Proof.AesGcm.PPC64LE.Contiguous.scrubbed },
   Spec.Gcm.sealGatherApi.artifact PPC64LE.target {
     code := Impl.AesGcm.PPC64LE.Fn.sealGather
     verified := Proof.AesGcm.PPC64LE.Scrub.sealGather_scrubbed },

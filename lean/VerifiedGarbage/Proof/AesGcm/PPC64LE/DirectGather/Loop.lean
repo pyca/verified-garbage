@@ -79,8 +79,7 @@ theorem firstPiece_wp [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpms
   have ct := Proof.Gcm.ctr_wholeTo (nb := b) ctr (by decide) q.cipher q.counter
   rw [kb,Nat.zero_add] at ct
   have rem : Range V u (S+BitVec.ofNat 64 k) (E+BitVec.ofNat 64 k) (n-k) :=
-    ⟨(a.src.drop hk).of_eq q.rd q.wr,(a.dst.drop hk).of_eq q.rd q.wr,
-     (a.sep.sub_left (Offset.sub_base _ (Nat.le_of_eq (Nat.add_sub_of_le hk)))).sub_right (Offset.sub_base _ (Nat.le_of_eq (Nat.add_sub_of_le hk)))⟩
+    a.drop hk q.rd q.wr
   have cr : Ctr u.mem (V .r30+BitVec.ofNat 64 48) (V .r30+BitVec.ofNat 64 64) (ciphOf u.mem (V .r29) R)
       icb k := by rw [cb,ks,cph]; exact ct.2
   have rc : V .r28=BitVec.ofNat 64 R := by rw [←hR,BitVec.ofNat_toNat,BitVec.setWidth_eq]
@@ -243,7 +242,7 @@ theorem LoopAt.range (h : LoopInput a entry) (v : LoopAt a entry i b s) (hi : i<
   have dfit : (a.O+BitVec.ofNat 64 p).toNat+n ≤ 2^64 := SealFused.fit_offset _ h.dstFit h.totalFit bd
   refine ⟨⟨by rw [v.rd,v.wr]; exact h.srcRead i hi,fit,h.srcFit i hi,hs.symm.sub_right st,hs.symm.sub_right w⟩,
     ⟨⟨covers_left wr,fit,dfit,(h.stackDst.symm.sub_left ds).sub_right st,(h.stackDst.symm.sub_left ds).sub_right w⟩,
-     wr,h.ctxDst.sub_right ds⟩,(h.srcDst i hi).sub_right ds⟩
+     wr,h.ctxDst.sub_right ds⟩,.inr ((h.srcDst i hi).sub_right ds)⟩
 
 theorem LoopAt.space (h : LoopInput a entry) (v : LoopAt a entry i b s) (hi : i<a.count)
     (start : a.pos entry i=0) : BulkSpace a.sp a.C (a.base entry i) a.O (a.len entry i) s := by
@@ -369,7 +368,7 @@ theorem regularStep (h : LoopInput a entry) (v : LoopAt a entry i b s) (opened :
       (ciphOf u.mem a.C a.rounds) a.icb P := by rw [old,opened.keeps.mem,cb,ks]; exact v.ctr
   have ra := v.range h hi
   have data : Range (a.regs (i+1)) u S E n :=
-    ⟨ra.src.of_eq opened.keeps.rd opened.keeps.wr,ra.dst.of_eq opened.keeps.rd opened.keeps.wr,ra.sep⟩
+    ⟨ra.src.of_eq opened.keeps.rd opened.keeps.wr,ra.dst.of_eq opened.keeps.rd opened.keeps.wr,ra.buffers⟩
   have hR : (a.regs (i+1)) .r28=BitVec.ofNat 64 a.rounds := by
     change a.V .r28=_; rw [←h.roundReg,BitVec.ofNat_toNat,BitVec.setWidth_eq]
   refine WP.mono (piece_wp opened.env opened.ptr opened.left rfl (Nat.lt_of_le_of_lt pLe total)
@@ -431,7 +430,7 @@ theorem firstStep [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.F
   have ra := v.range h hi
   rw [start,add_ofNat_zero] at ra
   have range : Range (a.regs (i+1)) u (a.base entry i) a.O n :=
-    ⟨ra.src.of_eq opened.keeps.rd opened.keeps.wr,ra.dst.of_eq opened.keeps.rd opened.keeps.wr,ra.sep⟩
+    ⟨ra.src.of_eq opened.keeps.rd opened.keeps.wr,ra.dst.of_eq opened.keeps.rd opened.keeps.wr,ra.buffers⟩
   have space := v.space h hi start
   have old : ciphOf u.mem a.C a.rounds=ciphOf entry.mem a.C a.rounds := by rw [opened.keeps.mem]; exact v.cipher h
   have ct := v.ctr

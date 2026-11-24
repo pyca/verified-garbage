@@ -30,11 +30,14 @@ of the caller's stack arguments into the frame, whose stack pointer is in
 def copyArg (bytes j : Nat) : List Instr :=
   [.load .d .r0 .r12 (bytes + 96 + 8 * j), .store .d .r0 .r12 (96 + 8 * j)]
 
-/-- Copy the `m` doublewords of stack arguments, and pass the buffer, at
-`r1 + 104 + 8m`, as the next. -/
-def setArgs (bytes m : Nat) : List Instr :=
+/-- Pass a scratch pointer beyond the copied arguments. A caller may pad the
+workspace to align the vector loads in its callee. -/
+def setArgsAt (bytes m workOff : Nat) : List Instr :=
   [.addSp .r12 0] ++ (List.range m).flatMap (copyArg bytes) ++
-    [.addi .r0 .r12 (104 + 8 * m), .store .d .r0 .r12 (96 + 8 * m)]
+    [.addi .r0 .r12 workOff, .store .d .r0 .r12 (96 + 8 * m)]
+
+/-- By default the workspace follows the pointer directly. -/
+abbrev setArgs (bytes m : Nat) : List Instr := setArgsAt bytes m (104 + 8 * m)
 
 /-- `c`, whose scratch buffer is the stack argument after `m` doublewords of
 others, with the buffer in a frame of `bytes` bytes on the stack, at

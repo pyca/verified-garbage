@@ -51,9 +51,12 @@ use crate::arch::dispatch::gcm::vg_aes_gcm_open_to_auto;
 #[cfg(not(any(
     target_arch = "x86_64",
     target_arch = "aarch64",
-    target_arch = "riscv64"
+    target_arch = "riscv64",
+    all(target_arch = "powerpc64", target_endian = "little")
 )))]
 use crate::arch::dispatch::gcm::vg_aes_gcm_seal_auto;
+#[cfg(all(target_arch = "powerpc64", target_endian = "little"))]
+use crate::arch::dispatch::gcm::vg_aes_gcm_seal_contiguous_auto as seal_contiguous_kernel;
 #[cfg(not(any(target_arch = "x86_64", target_arch = "riscv64")))]
 use crate::arch::dispatch::gcm::vg_aes_gcm_seal_gather_auto;
 #[cfg(target_arch = "x86_64")]
@@ -66,8 +69,8 @@ use crate::arch::dispatch::gcm::{
 #[cfg(target_arch = "aarch64")]
 use crate::arch::dispatch::gcm::{
     vg_aes_gcm_open_to_with_powers_auto, vg_aes_gcm_open_with_powers_auto,
-    vg_aes_gcm_seal_contiguous_with_powers_auto, vg_aes_gcm_seal_with_powers_auto,
-    vg_aes_gcm_store_powers_auto,
+    vg_aes_gcm_seal_contiguous_with_powers_auto as seal_contiguous_kernel,
+    vg_aes_gcm_seal_with_powers_auto, vg_aes_gcm_store_powers_auto,
 };
 #[cfg(not(any(target_arch = "x86_64", target_arch = "riscv64")))]
 use crate::arch::dispatch::gcm::{vg_aes_gcm_stream_decrypt_auto, vg_aes_gcm_stream_encrypt_auto};
@@ -327,13 +330,16 @@ impl AesGcm {
         Ok(self.seal(dit, nonce, aad, data))
     }
 
-    /// Seal a bounded contiguous plaintext at `src` into `dst` and return its detached tag.
+    /// Seal a contiguous plaintext at `src` into `dst` and return its detached tag.
     ///
     /// # Safety
     /// The caller checked the record lengths. The source is readable and the
     /// destination writable for `len` bytes. They are identical or disjoint.
     /// The writable range is exclusive and disjoint from the context, nonce and AAD.
-    #[cfg(target_arch = "aarch64")]
+    #[cfg(any(
+        target_arch = "aarch64",
+        all(target_arch = "powerpc64", target_endian = "little")
+    ))]
     #[inline(always)]
     unsafe fn seal_contiguous(
         &self,
@@ -346,10 +352,10 @@ impl AesGcm {
     ) -> Block {
         let mut tag = [0; 16];
         // SAFETY: the caller supplies the input and output. The constructor
-        // initialized the context and cached GHASH powers for this round count.
+        // initialized the AES context and any target-specific prepared key data.
         // The tag is a separate writable local.
         unsafe {
-            vg_aes_gcm_seal_contiguous_with_powers_auto(
+            seal_contiguous_kernel(
                 dit,
                 self.key(),
                 self.rounds,
@@ -361,16 +367,14 @@ impl AesGcm {
                 dst,
                 len,
                 &mut tag,
+                #[cfg(target_arch = "aarch64")]
                 &self.powers.0,
             );
         }
         tag
     }
 
-    /// `vg_aes_gcm_seal` (on x86-64, `vg_aes_gcm_seal_prepared`; on
-    /// AArch64, `vg_aes_gcm_seal_with_powers`; on RISC-V,
-    /// `vg_aes_gcm_seal_bitsliced`) of `data` in place, whose lengths the
-    /// caller checked.
+    /// Seal `data` in place with lengths already checked by the caller.
     #[inline(always)]
     fn seal(&self, dit: crate::dit::Dit<'_>, nonce: &[u8], aad: &[u8], data: &mut [u8]) -> Block {
         #[cfg(target_arch = "aarch64")]
@@ -381,6 +385,9 @@ impl AesGcm {
                 self.seal_contiguous(dit, nonce, aad, dst.cast_const(), dst, data.len())
             };
         }
+        #[cfg(all(target_arch = "powerpc64", target_endian = "little"))]
+        let tag;
+        #[cfg(not(all(target_arch = "powerpc64", target_endian = "little")))]
         let mut tag: Block = [0; 16];
         // SAFETY: `self.ctx` is the key context `vg_aes_gcm_init` wrote for
         // `self.rounds` (10, 12 or 14) rounds, valid for reads of 256 bytes,
@@ -437,10 +444,17 @@ impl AesGcm {
                 &mut tag,
                 &self.bk.0,
             );
+            #[cfg(all(target_arch = "powerpc64", target_endian = "little"))]
+            {
+                let len = data.len();
+                let dst = data.as_mut_ptr();
+                tag = self.seal_contiguous(dit, nonce, aad, dst.cast_const(), dst, len);
+            }
             #[cfg(not(any(
                 target_arch = "x86_64",
                 target_arch = "aarch64",
-                target_arch = "riscv64"
+                target_arch = "riscv64",
+                all(target_arch = "powerpc64", target_endian = "little")
             )))]
             vg_aes_gcm_seal_auto(
                 dit,
@@ -766,8 +780,8 @@ impl AesGcm {
         }
         add_len(0, aad.len(), MAX_AAD).map_err(|()| Error::InvalidAadLength)?;
         let tag = self.seal_pieces(dit, nonce, aad, plaintext, out);
-        // SAFETY: the gather contract specifies every byte of the ciphertext
-        // for arbitrary prior destination contents, including an empty output.
+        // SAFETY: sealing specifies every ciphertext byte for arbitrary prior
+        // destination contents, including an empty output.
         Ok((unsafe { out.assume_init_mut() }, tag))
     }
 
@@ -783,13 +797,15 @@ impl AesGcm {
     ) -> Block {
         let dst = out.as_mut_ptr().cast();
         let len = out.len();
-        #[cfg(target_arch = "aarch64")]
-        if len <= 96
-            && nonce.len() == 12
-            && aad.len() <= 16
-            && let [input] = plaintext
+        #[cfg(any(
+            target_arch = "aarch64",
+            all(target_arch = "powerpc64", target_endian = "little")
+        ))]
+        if let [input] = plaintext
+            && (!cfg!(target_arch = "aarch64")
+                || (len <= 96 && nonce.len() == 12 && aad.len() <= 16))
         {
-            // SAFETY: the validated single input and exclusive output are disjoint and have equal lengths.
+            // SAFETY: the validated input and exclusive output are disjoint and have equal lengths.
             return unsafe { self.seal_contiguous(dit, nonce, aad, input.as_ptr(), dst, len) };
         }
         // The descriptors of the pieces, as `vg_aes_gcm_seal_gather` takes
