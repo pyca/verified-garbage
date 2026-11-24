@@ -762,24 +762,6 @@ private theorem choiceCT {M : CtxMode} {f g : Prog isa} (a : FinishCT M f) (b : 
     ((a L hR dw).mono (fun _ _ h => ⟨h.1.1.2,h.1.2.2⟩) (fun _ _ h => h))
     ((b L hR dw).mono (fun _ _ h => ⟨h.1.1.2,h.1.2.2⟩) (fun _ _ h => h))
 
-theorem masksRecord_ok (v : GcmImpl) (ctr : Proof.Aes.X86_64.Ctr32ToImpl) {M : CtxMode} :
-    RecordOk M (Contiguous.masksBody v.callees ⟨ctr.callee.name,ctr.callee.code⟩ Contiguous.maskAES) := by
-  intro o u Ctx W SP Np A S D nl al n C X geo wrap src dst E hp hl ha
-  have bulk : BulkOk M (Contiguous.bulk (Contiguous.separate ⟨ctr.callee.name,ctr.callee.code⟩ v.callees.gh)) :=
-    fun h ob a b c => separate_bulk_ok ctr v.gh h ob a b c
-  have fin : FinishOk M (Contiguous.maskFinish v.callees Contiguous.maskAES) := choiceOk v (scalarMasks_ok v)
-  exact body_ok bulk fin C X geo wrap ha src dst (oneMid_ok v C E hp hl ha)
-
-theorem masksRecord_ct (v : GcmImpl) (ctr : Proof.Aes.X86_64.Ctr32ToImpl) {M : CtxMode} :
-    RecordCT M (Contiguous.masksBody v.callees ⟨ctr.callee.name,ctr.callee.code⟩ Contiguous.maskAES) := by
-  intro o p Ctx W SP Np A S D nl al n R a b
-  have bulk : BulkOk M (Contiguous.bulk (Contiguous.separate ⟨ctr.callee.name,ctr.callee.code⟩ v.callees.gh)) :=
-    fun h ob a b c => separate_bulk_ok ctr v.gh h ob a b c
-  have fin : FinishCT M (Contiguous.maskFinish v.callees Contiguous.maskAES) :=
-    choiceCT (alignedTag_ct v) (scalarMasks_ct v)
-  exact RelCT.seq (ordinaryAad_ct v a b) (run_ct bulk (separate_ct ctr v.gh) (separate_keeps ctr v.gh)
-    fin a.ctx.lay (a.rounds ▸ a.ctx.rounds) a.ctx.dE)
-
 /- In a bounded whole-block record the same bitsliced AES call encrypts J0 and all counters.
 Each output load happens before its store even when the input and output are identical. -/
 open VG.Impl.AesGcm.X86_64.Contiguous (maskIndex xorOne packOne bumpMask batchAESArgs startMasks maskPtrs)
@@ -1038,5 +1020,506 @@ private theorem batch_guard (x : BitVec 64) (h : ((x-16#64).rotateRight 4).toNat
       rw [hmul,Nat.add_mod_right,Nat.mod_eq_of_lt (by omega)] at he
       omega
   exact ⟨t/16,a,by omega⟩
+
+private abbrev preparedFrame (W SP : Addr) : List Region := [⟨W+192#64,8⟩,⟨W+256#64,2304⟩,below SP 8]
+private theorem preparedLow {Ctx W SP : Addr} (L : Lay Ctx (W+16#64) W SP) {d n : Nat}
+    (lo : d+n≤192 ∨ (200≤d ∧ d+n≤256)) : ∀ r ∈ preparedFrame W SP,(⟨W+BitVec.ofNat 64 d,n⟩ : Region).Disjoint r := by
+  intro r hr;simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
+  rcases hr with rfl|rfl|rfl
+  · exact Offset.disjoint W (by omega) (by omega) (by decide)
+  · exact Offset.disjoint W (.inl (by omega)) (by omega) (by decide)
+  · exact (L.stk_w (by omega)).symm
+private theorem preparedFar {W SP P : Addr} {N : Nat} (w : (⟨P,N⟩ : Region).Disjoint ⟨W,2560⟩)
+    (stk : (⟨P,N⟩ : Region).Disjoint (below SP 8)) : ∀ r ∈ preparedFrame W SP,(⟨P,N⟩ : Region).Disjoint r := by
+  intro r hr;simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
+  rcases hr with rfl|rfl|rfl
+  · exact w.sub_right (Lay.wSub (by decide))
+  · exact w.sub_right (Lay.wSub (by decide))
+  · exact stk
+private theorem startMasks_ok {s : State} {Ctx W SP : Addr} {n : Nat}
+    (e : Env Ctx (W+16#64) W SP s) (len : s.mem.readW (W+208#64) 64=BitVec.ofNat 64 (16*n)) :
+    let J := blockAt s.mem (W+16#64)
+    WP isa (.block startMasks) s fun t => Env Ctx (W+16#64) W SP t ∧ t.rd=s.rd ∧ t.wr=s.wr ∧
+      t.gpr .rbp=BitVec.ofNat 64 (16*n) ∧ t.gpr .r10=0 ∧
+      (t.gpr .r11).setWidth 32=J.extractLsb' 0 32 ∧ VG.X86_64.XBinOp.eval .pshufb (t.xmm .xmm0) VG.Proof.Gcm.X86_64.revMask=J ∧
+      Frame (preparedFrame W SP) s.mem t.mem ∧ blockAt t.mem (W+256#64)=J ∧ t.mem.readW (W+192#64) 64=BitVec.ofNat 64 (16*n) := by
+  let Jp := W+16#64
+  let Mp := W+256#64
+  let Lp := W+192#64
+  let j := s.mem.readW Jp 128
+  let m := s.mem.writeW Mp j
+  have fr : Frame [⟨Mp,16⟩] s.mem m := (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
+  have jc : m.readW (Jp+12#64) 32=s.mem.readW (Jp+12#64) 32 := by
+    rw [show Jp+12#64=W+28#64 by dsimp [Jp];rw [BitVec.add_assoc];rfl]
+    exact fr.readW (Region.contains_self _ _) (by intro z hz;obtain rfl := List.mem_singleton.mp hz;exact Offset.disjoint W (.inl (by decide)) (by decide) (by decide)) (by decide)
+  have ln : m.readW (W+208#64) 64=BitVec.ofNat 64 (16*n) := (fr.readW (Region.contains_self _ _) (by
+    intro z hz;obtain rfl := List.mem_singleton.mp hz;exact Offset.disjoint W (.inl (by decide)) (by decide) (by decide)) (by decide)).trans len
+  let o := m.writeW Lp (BitVec.ofNat 64 (16*n))
+  have f' : Frame [⟨Lp,8⟩] m o := (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
+  have fm : Frame (preparedFrame W SP) s.mem o := (fr.sub (fun r hr => by
+    obtain rfl := List.mem_singleton.mp hr;exact ⟨_,List.mem_cons_of_mem _ (List.mem_cons_self ..),Region.sub_prefix (by decide)⟩)).trans
+    (f'.mono (fun r hr => by obtain rfl := List.mem_singleton.mp hr;exact List.mem_cons_self ..))
+  have first : blockAt o Mp=blockAt s.mem Jp := by
+    rw [blockAt_frame f' (fun r hr => ?_),blockAt_eq,Mem.readW_writeW_self _ _ 16 _ (by decide),blockAt_eq]
+    obtain rfl := List.mem_singleton.mp hr;exact Offset.disjoint W (.inr (by decide)) (by decide) (by decide)
+  have saved : o.readW Lp 64=BitVec.ofNat 64 (16*n) := Mem.readW_writeW_self64 ..
+  have rd := e.perm.wR (show 208+8≤2560 by decide)
+  have rj : InRegions (s.rd++s.wr) Jp 16 := by simpa only [BitVec.add_zero] using e.perm.stR (d:=0) (n:=16) (by decide)
+  have rc := e.perm.stR (show 12+4≤80 by decide)
+  have wr := e.perm.wW (show 256+16≤2560 by decide)
+  have wl := e.perm.wW (show 192+8≤2560 by decide)
+  change InRegions (s.rd++s.wr) (Jp+12#64) 4 at rc
+  change InRegions s.wr Mp 16 at wr
+  change InRegions s.wr Lp 8 at wl
+  have js : s.gpr .r14=Jp := e.r14
+  have narrow (x : BitVec 32) : (x.setWidth 64).setWidth 32=x := by simp
+  unfold startMasks
+  apply WP.of_runBlock
+  refine ⟨_,by xrun [js,e.r15,Jp,Mp,Lp,j,m,rd,rj,rc,wr,wl,ln,jc,narrow,BitVec.add_zero,
+    State.load128,State.store128_eq,State.setMem,State.setXmm,tlenO,lenO],?_,?_,?_,?_,?_,?_,?_,?_,?_,?_⟩
+  · exact e.keep (fun r hr => by simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
+                                 rcases hr with rfl|rfl|rfl|rfl <;> rfl) rfl rfl
+  · rfl
+  · rfl
+  · rfl
+  · rfl
+  · change ((bswap32 (s.mem.readW (Jp+12#64) 32)).setWidth 64).setWidth 32=_
+    rw [narrow];exact VG.Proof.Aes.X86_64.icb_lo ..
+  · rw [blockAt_eq];rfl
+  · exact fm
+  · exact first
+  · exact saved
+
+private structure Masked (Ctx W SP : Addr) (R n : Nat) (s t : State) : Prop where
+  env : Env Ctx (W+16#64) W SP t
+  rd : t.rd=s.rd
+  wr : t.wr=s.wr
+  frame : Frame (preparedFrame W SP) s.mem t.mem
+  rbp : t.gpr .rbp=BitVec.ofNat 64 (16*n)
+  len : t.mem.readW (W+192#64) 64=BitVec.ofNat 64 (16*n)
+  tag : blockAt t.mem (W+256#64)=ciphOf s.mem Ctx R (blockAt s.mem (W+16#64))
+  counters : ∀ i<n,blockAt t.mem (maskAt W i)=ciphOf s.mem Ctx R (Nat.repeat Spec.Gcm.inc32 (i+1) (blockAt s.mem (W+16#64)))
+
+private theorem batchKeys_ok {s : State} {Ctx W SP : Addr} {R n : Nat} (hn : 0<n) (hn' : n≤15)
+    (L : Lay Ctx (W+16#64) W SP) (e : Env Ctx (W+16#64) W SP s) (rr : RoundsAt s.mem W R)
+    (len : s.mem.readW (W+208#64) 64=BitVec.ofNat 64 (16*n)) :
+    WP isa (Contiguous.batchKeys Contiguous.maskAES) s (Masked Ctx W SP R n s) := by
+  let J := blockAt s.mem (W+16#64)
+  unfold Contiguous.batchKeys
+  refine WP.seq ((startMasks_ok e len).mono fun a ⟨ea,ra,wa,al,a0,an,ax,fa,aj,atlen⟩ => ?_)
+  refine WP.seq ((packLoop_ok hn hn' ea.r15 al a0 ea.perm.w J ax an).mono fun b ⟨gb,rb,wb,fb,cs⟩ => ?_)
+  have eb := ea.keep (fun r hr => by
+    simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
+    rcases hr with rfl|rfl|rfl|rfl <;> exact gb _ (by decide) (by decide) (by decide)) rb wb
+  have bl := (gb _ (by decide) (by decide) (by decide)).trans al
+  have sm : Region.Sub (packRegion W n) ⟨W+256#64,2304⟩ := Offset.sub W (by decide) (by omega)
+  have f : Frame (preparedFrame W SP) s.mem b.mem := fa.trans (fb.sub fun z hz => by
+    obtain rfl := List.mem_singleton.mp hz; exact ⟨_,List.mem_cons_of_mem _ (List.mem_cons_self ..),sm⟩)
+  have br := rounds_frame f (preparedLow L (.inl (by decide))) rr
+  have bk := ciph_frame f (preparedFar L.cw' L.kc.symm) rr.2
+  have bt : blockAt b.mem (W+256#64)=J := by
+    rw [blockAt_frame fb (fun z hz => ?_),aj];obtain rfl := List.mem_singleton.mp hz
+    exact Offset.disjoint W (.inl (by decide)) (by decide) (by omega)
+  have tl : b.mem.readW (W+192#64) 64=BitVec.ofNat 64 (16*n) := (fb.readW (Region.contains_self _ _) (by
+    intro z hz;obtain rfl := List.mem_singleton.mp hz;exact Offset.disjoint W (.inl (by decide)) (by decide) (by omega)) (by decide)).trans atlen
+  refine WP.seq ((batchArgs_ok hn' L eb br bl).mono fun c ⟨ac,mc,rc,wc,gc⟩ => ?_)
+  let aes := Proof.Aes.X86_64.BlocksImpl.scalar
+  refine (blk_call (name:=aes.enc.name) aes.encOk aes.encNosp aes.encDepth ac).mono fun t post => ?_
+  let ec := eb.of_saved gc rc wc
+  have ff := post.frame
+  rw [mc,ec.rsp] at ff
+  have ff' : Frame (preparedFrame W SP) b.mem t.mem := ff.sub fun z hz => by
+    simp only [List.mem_cons,List.not_mem_nil,or_false] at hz;rcases hz with rfl|rfl|rfl
+    · exact ⟨_,List.mem_cons_of_mem _ (List.mem_cons_self ..),Region.sub_prefix (by omega)⟩
+    · exact ⟨_,List.mem_cons_of_mem _ (List.mem_cons_self ..),Offset.sub W (by decide) (by decide)⟩
+    · exact ⟨_,by simp,fun _ h => h⟩
+  have le : t.mem.readW (W+192#64) 64=BitVec.ofNat 64 (16*n) := (ff.readW (Region.contains_self _ _) (by
+    intro z hz;simp only [List.mem_cons,List.not_mem_nil,or_false] at hz;rcases hz with rfl|rfl|rfl
+    · exact Offset.disjoint W (.inl (by decide)) (by decide) (by omega)
+    · exact Offset.disjoint W (.inl (by decide)) (by decide) (by decide)
+    · exact (L.stk_w (by decide)).symm) (by decide)).trans tl
+  refine ⟨ec.of_saved post.saved post.rd post.wr,post.rd.trans (rc.trans (rb.trans ra)),post.wr.trans (wc.trans (wb.trans wa)),f.trans ff',
+    (post.saved _ (by decide)).trans ((gc _ (by decide)).trans bl),le,?_,?_⟩
+  · have v := post.enc (i:=0) (by omega)
+    change blockAt t.mem ((W+256#64)+0#64)=ciphOf c.mem Ctx R (blockAt c.mem ((W+256#64)+0#64)) at v
+    simpa only [BitVec.add_zero,mc,bk,bt] using v
+  · intro i hi
+    have v := post.enc (i:=i+1) (by omega)
+    have p : (W+256#64)+BitVec.ofNat 64 (16*(i+1))=maskAt W i := by
+      rw [maskAt_off,add_ofNat_assoc];congr 2;omega
+    change blockAt t.mem ((W+256#64)+BitVec.ofNat 64 (16*(i+1)))=ciphOf c.mem Ctx R (blockAt c.mem ((W+256#64)+BitVec.ofNat 64 (16*(i+1)))) at v
+    simpa only [p,mc,bk,cs i hi] using v
+
+private theorem ptrs_ok {s : State} {Ctx W SP S D : Addr} (e : Env Ctx (W+16#64) W SP s)
+    (r : InRegions (s.rd++s.wr) (SP+8#64) 8) (src : s.mem.readW (SP+8#64) 64=S) (dst : s.mem.readW (W+200#64) 64=D) :
+    WP isa (.block maskPtrs) s fun t => t.gpr .rdi=S ∧ t.gpr .rsi=D ∧ t.gpr .r10=0 ∧ t.gpr .rbp=s.gpr .rbp ∧
+      Env Ctx (W+16#64) W SP t ∧ t.mem=s.mem ∧ t.rd=s.rd ∧ t.wr=s.wr := by
+  have rd := e.perm.wR (show 200+8≤2560 by decide)
+  unfold maskPtrs
+  apply WP.of_runBlock
+  refine ⟨_,by xrun [e.rsp,e.r15,dataO,rd,r,src,dst],?_,?_,?_,?_,?_,?_,?_,?_⟩
+  all_goals try rfl
+  exact e.keep (fun r h => by simp only [List.mem_cons,List.not_mem_nil,or_false] at h
+                              rcases h with rfl|rfl|rfl|rfl <;> rfl) rfl rfl
+
+private structure Ciphered (Ctx W SP S D : Addr) (R n : Nat) (s t : State) : Prop where
+  env : Env Ctx (W+16#64) W SP t
+  rd : t.rd=s.rd
+  wr : t.wr=s.wr
+  frame : Frame (⟨D,16*n⟩::preparedFrame W SP) s.mem t.mem
+  tag : blockAt t.mem (W+256#64)=ciphOf s.mem Ctx R (blockAt s.mem (W+16#64))
+  len : t.mem.readW (W+192#64) 64=BitVec.ofNat 64 (16*n)
+  text : bytesAt t.mem D (16*n)=xorKs (ciphOf s.mem Ctx R) (Spec.Gcm.inc32 (blockAt s.mem (W+16#64))) 0 (bytesAt s.mem S (16*n))
+
+private theorem batchText_ok {s u : State} {Ctx W SP S D : Addr} {R n al : Nat} {M : CtxMode}
+    (hn : 0<n) (hn' : n≤15) (aa : AfterAad M Ctx W SP S D R (16*n) al s) (m : Masked Ctx W SP R n s u) :
+    WP isa Contiguous.batchText u (Ciphered Ctx W SP S D R n s) := by
+  have L := aa.reg.lay
+  have read : InRegions (u.rd++u.wr) (SP+8#64) 8 := by rw [m.rd,m.wr];exact aa.read
+  have src : u.mem.readW (SP+8#64) 64=S := (m.frame.readW (Region.contains_self _ _)
+    (preparedFar aa.apart (Offset.disjoint_below SP (by decide))) (by decide)).trans aa.src
+  have dst : u.mem.readW (W+200#64) 64=D := (m.frame.readW (Region.contains_self _ _) (preparedLow L (.inr ⟨by decide,by decide⟩)) (by decide)).trans aa.ob.dat
+  unfold Contiguous.batchText
+  refine WP.seq ((ptrs_ok m.env read src dst).mono fun v ⟨vs,vd,zf,bp,ev,mv,rv,wv⟩ => ?_)
+  have rd := rv.trans m.rd
+  have wr := wv.trans m.wr
+  have ks := (aa.reg.ks.sub_left (below_sub (sp:=SP) (a:=8) (b:=24) (by decide) (by decide))).symm
+  have pre : bytesAt v.mem S (16*n)=bytesAt s.mem S (16*n) := by rw [mv];exact bytesAt_frame m.frame (preparedFar aa.reg.sW ks) (by omega)
+  let J := blockAt s.mem (W+16#64)
+  let enc := ciphOf s.mem Ctx R
+  refine (xorBlocks_ok (J:=J) (enc:=enc) hn hn' ev.r15 vd vs (bp.trans m.rbp) zf ev.perm.w
+    (by rw [wr];exact aa.ob.data.wr) (by rw [rd,wr];exact aa.reg.srcCov) aa.reg.sD aa.ob.data.ok.w.symm (mv ▸ m.counters)).mono
+    fun t ⟨g,rt,wt,fr,blocks⟩ => ?_
+  have eq : Spec.Gcm.blocksAt t.mem D n=Spec.Gcm.ctr32 enc (Spec.Gcm.inc32 J) (Spec.Gcm.blocksAt v.mem S n) := by
+    apply List.ext_getElem
+    · simp [Spec.Gcm.blocksAt,Spec.Gcm.ctr32,Spec.Gcm.keystream]
+    · intro i h₁ h₂
+      have hi : i<n := by simpa [Spec.Gcm.blocksAt] using h₁
+      simp only [Spec.Gcm.blocksAt,Spec.Gcm.ctr32,Spec.Gcm.keystream,List.getElem_map,List.getElem_range,List.getElem_zipWith,List.length_map,List.length_range]
+      have bi := blocks i hi
+      rw [Proof.Gcm.repeat_add,show Nat.repeat inc32 1 J=inc32 J by simp [Nat.repeat]] at bi
+      exact bi
+  have cipher := Proof.Gcm.ctr_wholeTo_bytes (n:=0) (icb:=Spec.Gcm.inc32 J) rfl (by simpa only [Nat.zero_div,Nat.repeat] using eq)
+  have tw (d k : Nat) (h : d+k≤2560) : ∀ q ∈ [(⟨D,16*n⟩ : Region)],(⟨W+BitVec.ofNat 64 d,k⟩ : Region).Disjoint q := by
+    intro q hq;obtain rfl := List.mem_singleton.mp hq;exact aa.ob.data.ok.w.symm.sub_left (Lay.wSub h)
+  refine ⟨ev.keep (fun r hr => g r (by simp only [List.mem_cons,List.not_mem_nil,or_false] at hr;rcases hr with rfl|rfl|rfl|rfl <;> decide)) rt wt,
+    rt.trans rd,wt.trans wr,?_,?_,?_,?_⟩
+  · rw [mv] at fr
+    exact (m.frame.mono fun _ h => List.mem_cons_of_mem _ h).trans (fr.mono fun q h => by obtain rfl := List.mem_singleton.mp h;exact List.mem_cons_self ..)
+  · rw [blockAt_frame fr (tw 256 16 (by decide)),mv,m.tag]
+  · rw [fr.readW (r:=⟨W+192#64,8⟩) (Region.contains_self _ _) (tw 192 8 (by decide)) (by decide),mv,m.len]
+  · rw [cipher,pre]
+
+private theorem batchPost_ok (v : GcmImpl) {Ctx W SP S D : Addr} {R n al : Nat} {H : Block} {a : List Byte} {M : CtxMode}
+    {s t : State} (aa : AfterAad M Ctx W SP S D R (16*n) al s) (t' : Ciphered Ctx W SP S D R n s t)
+    (hH : blockAt s.mem (Ctx+240#64)=H) (habs : Absorbed s.mem (yA W) (W+16#64+32#64) H (a++zeros (padLen a.length))) :
+    WP isa (Contiguous.batchAuth v.callees) t (BodyPost Ctx W SP S D R (16*n) al H (inc32 (blockAt s.mem (W+16#64))) a s) := by
+  let L := aa.reg.lay
+  have d := aa.ob.data.of_eq t'.rd t'.wr
+  have low (p k : Nat) (lo : p+k≤192 ∨ (200≤p ∧ p+k≤256)) :
+      ∀ r ∈ (⟨D,16*n⟩::preparedFrame W SP),(⟨W+BitVec.ofNat 64 p,k⟩ : Region).Disjoint r := by
+    intro r hr;rcases List.mem_cons.mp hr with rfl|h
+    · exact d.ok.w.symm.sub_left (Lay.wSub (by rcases lo with h|h <;> omega))
+    · exact preparedLow L lo r h
+  have kp (p : Nat) (ok : p+8≤192 ∨ (200≤p ∧ p+8≤256)) :=
+    t'.frame.readW (w:=64) (r:=⟨W+BitVec.ofNat 64 p,8⟩) (Region.contains_self _ _) (low p 8 ok) (by decide)
+  have dst := (kp 200 (.inr ⟨by decide,by decide⟩)).trans aa.ob.dat
+  have len := (kp 208 (.inr ⟨by decide,by decide⟩)).trans aa.ob.len
+  have alen := (kp 184 (.inl (by decide))).trans aa.alen
+  have hkey : blockAt t.mem (Ctx+240#64)=H := (blockAt_frame t'.frame (by
+    intro r hr;rcases List.mem_cons.mp hr with rfl|h
+    · exact d.ctx.sub_left (Lay.ctxSub (by decide))
+    · exact preparedFar (L.cw'.sub_left (Lay.ctxSub (by decide))) (L.kc.symm.sub_left (Lay.ctxSub (by decide))) r h)).trans hH
+  have yc : blockAt t.mem (yA W)=blockAt s.mem (yA W) := by
+    change blockAt t.mem (W+16#64+16#64)=blockAt s.mem (W+16#64+16#64)
+    rw [show W+16#64+16#64=W+32#64 by rw [BitVec.add_assoc];rfl];exact blockAt_frame t'.frame (low 32 16 (.inl (by decide)))
+  let F : List Region := [⟨yA W,16⟩,⟨W+448#64,256⟩,below SP 8]
+  have apart (p k : Nat) (hp : 48≤p) (hp' : p+k≤448) : ∀ r ∈ F,(⟨W+BitVec.ofNat 64 p,k⟩ : Region).Disjoint r := by
+    intro r hr;simp only [F,List.mem_cons,List.not_mem_nil,or_false] at hr;rcases hr with rfl|rfl|rfl
+    · change (⟨W+BitVec.ofNat 64 p,k⟩ : Region).Disjoint ⟨W+16#64+16#64,16⟩
+      rw [show W+16#64+16#64=W+32#64 by rw [BitVec.add_assoc];rfl]
+      exact Offset.disjoint W (.inr (by omega)) (by omega) (by decide)
+    · exact Offset.disjoint W (.inl hp') (by omega) (by decide)
+    · exact (L.stk_w (by omega)).symm
+  have dataF : ∀ r ∈ F,(⟨D,16*n⟩ : Region).Disjoint r := by
+    intro r hr;simp only [F,List.mem_cons,List.not_mem_nil,or_false] at hr;rcases hr with rfl|rfl|rfl
+    · exact d.ok.st.sub_right (Lay.stSub (by decide))
+    · exact d.ok.w.sub_right (Lay.wSub (by decide))
+    · exact d.ok.stk.symm
+  unfold Contiguous.batchAuth
+  refine WP.seq ((hashArgs_ok L t'.env d dst len).mono fun u ⟨gu,ru,wu,mu,call⟩ => ?_)
+  refine WP.seq ((gh_call v.gh call).mono fun b out => ?_)
+  let eu := t'.env.of_saved gu ru wu
+  let eb := eu.of_saved out.saved out.rd out.wr
+  have f : Frame F t.mem b.mem := by simpa only [eu.rsp,mu] using out.frame
+  have key : blockAt b.mem (Ctx+240#64)=H := (blockAt_frame f (by
+    intro r hr;simp only [F,List.mem_cons,List.not_mem_nil,or_false] at hr;rcases hr with rfl|rfl|rfl
+    · exact L.ctx_st (by decide) (by decide)
+    · exact L.ctx_w (by decide) (by decide)
+    · exact (L.stk_ctx (by decide)).symm)).trans hkey
+  have y := out.out
+  rw [mu,hkey,yc,Proof.Gcm.blocksAt_eq,Nat.mul_div_cancel_left _ (by decide : 0<16)] at y
+  have ha : (a++zeros (padLen a.length)).length%16=0 := by simp only [List.length_append,Proof.Gcm.length_zeros];exact Proof.Gcm.length_pad_mod _
+  have hc : (bytesAt t.mem D (16*n)).length%16=0 := by rw [length_bytesAt];omega
+  have hx : (a++zeros (padLen a.length)++bytesAt t.mem D (16*n)).length%16=0 := by rw [List.length_append];omega
+  have dataY := (Proof.Gcm.absorb_whole habs ha hc y).whole_eq hx
+  have pad := padded_eq a (bytesAt t.mem D (16*n))
+  rw [Proof.Gcm.padLen_of_mod hx,show zeros 0=[] from rfl,List.append_nil] at pad
+  rw [pad] at dataY
+  obtain ⟨x,run,ex,bx,bp,mx,rx,wx⟩ := tagArgs eb ((f.readW (Region.contains_self _ _) (apart 184 8 (by decide) (by decide)) (by decide)).trans alen)
+    ((f.readW (Region.contains_self _ _) (apart 192 8 (by decide) (by decide)) (by decide)).trans t'.len)
+  refine WP.seq (WP.of_runBlock ⟨x,run,?_⟩)
+  refine WP.seq ((WP.with_rdwr (lens_ok v L (.inr rfl) ex (mx ▸ key))).mono fun q ⟨⟨eq,_,yl,fq⟩,rq,wq⟩ => ?_)
+  refine (mixMasks_ok eq).mono fun z ⟨ez,rz,wz,fz,mix⟩ => ?_
+  rw [mx] at fq yl
+  have tt : ∀ r ∈ tFrame (W+16#64) W SP 16,(⟨W+256#64,16⟩ : Region).Disjoint r := by
+    intro r hr;simp only [List.mem_cons,List.not_mem_nil,or_false] at hr;rcases hr with rfl|rfl|rfl|rfl
+    · exact (L.st_w (by decide) (.inr ⟨by decide,by decide⟩)).symm
+    · exact Offset.disjoint W (.inr (by decide)) (by decide) (by decide)
+    · exact Offset.disjoint W (.inl (by decide)) (by decide) (by decide)
+    · exact (L.stk_w (by decide)).symm
+  rw [bx,bp,toNat_ofNat_of_lt d.ok.lt,BitVec.toNat_ofNat,lensBlock_mod_left,dataY] at yl
+  rw [yl,blockAt_frame fq tt,blockAt_frame f (apart 256 16 (by decide) (by decide)),t'.tag] at mix
+  have tail : Frame (⟨W,16⟩ :: wFrame W SP) b.mem z.mem :=
+    ((tFrame_one fq).mono fun _ h => List.mem_cons_of_mem _ h).trans (fz.mono fun r h => by obtain rfl := List.mem_singleton.mp h;exact List.mem_cons_self ..)
+  have same : bytesAt z.mem D (16*n)=bytesAt t.mem D (16*n) := by
+    rw [bytesAt_frame tail (fun r hr => ?_) (Nat.le_of_lt d.ok.lt),bytesAt_frame f dataF (Nat.le_of_lt d.ok.lt)]
+    simp only [List.mem_cons,List.not_mem_nil,or_false] at hr;rcases hr with rfl|rfl|rfl|rfl|rfl
+    · exact d.ok.w.sub_right (Region.sub_prefix (by decide))
+    · exact d.ok.w.sub_right (Lay.wSub (by decide))
+    · exact d.ok.w.sub_right (Lay.wSub (by decide))
+    · exact d.ok.w.sub_right (Lay.wSub (by decide))
+    · exact d.ok.stk.symm
+  refine ⟨ez,rz.trans (rq.trans (rx.trans (out.rd.trans (ru.trans t'.rd)))),wz.trans (wq.trans (wx.trans (out.wr.trans (wu.trans t'.wr)))),?_,same.trans t'.text,?_⟩
+  · refine (t'.frame.sub ?_).trans ((f.sub ?_).trans (oneFrame_B (n:=16*n) (k:=0) (Nat.zero_le _) (by
+      simpa using wFrame_one (W:=W) (D:=D) (n:=16*n) (o:=0) (.inl rfl) (by simpa only [BitVec.add_zero] using tail))))
+    · intro r hr;simp only [preparedFrame,List.mem_cons,List.not_mem_nil,or_false] at hr;rcases hr with rfl|rfl|rfl|rfl
+      · exact ⟨_,by simp,fun _ h => h⟩
+      · exact ⟨⟨W+192#64,32⟩,by simp,Region.sub_prefix (by decide)⟩
+      · exact ⟨⟨W+240#64,2320⟩,by simp,Offset.sub W (by decide) (by decide)⟩
+      · exact ⟨below SP 24,by simp,below_sub (by decide) (by decide)⟩
+    · intro r hr;simp only [F,List.mem_cons,List.not_mem_nil,or_false] at hr;rcases hr with rfl|rfl|rfl
+      · exact ⟨⟨W,128⟩,by simp,by change Region.Sub ⟨W+16#64+16#64,16⟩ _;rw [BitVec.add_assoc];exact Offset.sub_base W (d:=32) (by decide)⟩
+      · exact ⟨⟨W+240#64,2320⟩,by simp,Offset.sub W (by decide) (by decide)⟩
+      · exact ⟨below SP 24,by simp,below_sub (by decide) (by decide)⟩
+  · rw [Short.bytesAt_toBytes',mix,same]
+
+private theorem batchChoice_step {s : State} {Ctx W SP : Addr} {n : Nat} (e : Env Ctx (W+16#64) W SP s)
+    (len : s.mem.readW (W+208#64) 64=BitVec.ofNat 64 n) :
+    ∃ t, runBlock isa [.mov .rax (.mem (at_ .r15 lenO)),.alu .sub .rax (imm 16),.shift .ror .rax 4,
+      .alu .cmp .rax (imm 15)] s=some t ∧ t.cf=some (decide (((BitVec.ofNat 64 n-16#64).rotateRight 4).toNat<15)) ∧
+      Env Ctx (W+16#64) W SP t ∧ t.mem=s.mem ∧ t.rd=s.rd ∧ t.wr=s.wr := by
+  have read := e.perm.wR (show 208+8≤2560 by decide)
+  refine ⟨_,by xrun [e.r15,read,len],?_,?_,?_,?_,?_⟩
+  · rfl
+  · exact e.keep (fun r h => by
+      simp only [List.mem_cons,List.not_mem_nil,or_false] at h
+      rcases h with rfl|rfl|rfl|rfl <;> rfl) rfl rfl
+  all_goals rfl
+
+theorem softwareRecord_ok (v : GcmImpl) (ctr : Proof.Aes.X86_64.Ctr32ToImpl) {M : CtxMode} :
+    RecordOk M (Contiguous.softwareBody v.callees ⟨ctr.callee.name,ctr.callee.code⟩ Contiguous.maskAES) := by
+  intro o u Ctx W SP Np A S D nl al n C X geo wrap src dst E hp hl ha
+  unfold Contiguous.softwareBody Contiguous.chooseBatch
+  refine WP.seq ((oneMid_ok v C E hp hl ha).mono fun s m => ?_)
+  obtain ⟨t,run,cf,et,mt,rt,wt⟩ := batchChoice_step m.env m.len
+  have m' : OneMid o Ctx W SP D n (Spec.Gcm.ctxH o.mem Ctx) (bytesAt o.mem Np nl) (bytesAt o.mem A al) u.mem t :=
+    ⟨et,mt ▸ m.hH,mt ▸ m.rounds,mt ▸ m.dat,mt ▸ m.len,mt ▸ m.alen,mt ▸ m.j0,
+      mt ▸ m.abs,mt ▸ m.cb,mt ▸ m.saved,mt ▸ m.frame,mt ▸ m.fr,rt.trans m.rd,wt.trans m.wr⟩
+  have aa := afterAad_ok C X geo wrap ha src dst m'
+  refine WP.seq (WP.of_runBlock ⟨t,run,?_⟩)
+  refine WP.ite _ cf (fun yes => ?_) (fun _ => ?_)
+  · obtain ⟨k,hk,hn⟩ := batch_guard (BitVec.ofNat 64 n) (of_decide_eq_true yes)
+    rw [toNat_ofNat_of_lt C.data.ok.lt] at hn
+    subst n
+    unfold Contiguous.batchMasks
+    refine WP.seq ((batchKeys_ok (n:=k+1) (by omega) (by omega) C.lay et m'.rounds m'.len).mono fun a masks => ?_)
+    refine WP.seq ((batchText_ok (by omega) (by omega) aa masks).mono fun b ct => ?_)
+    refine (batchPost_ok v aa ct m'.hH m'.abs).mono fun z post => ?_
+    rw [m'.j0] at post
+    exact afterAad_to_seal C geo m' post
+  · have bulk : BulkOk M (Contiguous.bulk (Contiguous.separate ⟨ctr.callee.name,ctr.callee.code⟩ v.callees.gh)) :=
+      fun h ob a b c => separate_bulk_ok ctr v.gh h ob a b c
+    have fin : FinishOk M (Contiguous.maskFinish v.callees Contiguous.maskAES) := choiceOk v (scalarMasks_ok v)
+    exact (bulkFinish_ok bulk fin aa m'.hH m'.cb m'.abs).mono fun _ post => afterAad_to_seal C geo m' post
+
+private theorem batchKeys_rel {Ctx W SP : Addr} {R n : Nat} (hn : 0<n) (hn' : n≤15)
+    (L : Lay Ctx (W+16#64) W SP) :
+    let F (s : State) := Env Ctx (W+16#64) W SP s ∧ RoundsAt s.mem W R ∧ s.mem.readW (W+208#64) 64=BitVec.ofNat 64 (16*n)
+    RelCT isa (fun s t => F s ∧ F t) (Contiguous.batchKeys Contiguous.maskAES) (fun _ _ => True) := by
+  let F (s : State) := Env Ctx (W+16#64) W SP s ∧ RoundsAt s.mem W R ∧ s.mem.readW (W+208#64) 64=BitVec.ofNat 64 (16*n)
+  let G (s : State) := Env Ctx (W+16#64) W SP s ∧ RoundsAt s.mem W R ∧ s.gpr .rbp=BitVec.ofNat 64 (16*n)
+  let P (s : State) := G s ∧ s.gpr .r10=0 ∧ ∃ J : Block, (s.gpr .r11).setWidth 32=J.extractLsb' 0 32 ∧
+    VG.X86_64.XBinOp.eval .pshufb (s.xmm .xmm0) VG.Proof.Gcm.X86_64.revMask=J
+  let B (s : State) := BCall s Ctx (W+256#64) (W+512#64) R (n+1) ∧ s.gpr .rsp=SP
+  have prep s (f : F s) : WP isa (.block startMasks) s P :=
+    (startMasks_ok f.1 f.2.2).mono fun a ⟨ea,_,_,al,zero,num,ax,fr,_,_⟩ =>
+      ⟨⟨ea,rounds_frame fr (preparedLow L (.inl (by decide))) f.2.1,al⟩,zero,_,num,ax⟩
+  have loop s (p : P s) : WP isa (.loop (.block (packOne++bumpMask)) .ne) s G := by
+    obtain ⟨⟨e,rr,len⟩,zero,J,num,ax⟩ := p
+    refine (packLoop_ok hn hn' e.r15 len zero e.perm.w J ax num).mono fun t ⟨g,rd,wr,fr,_⟩ => ?_
+    refine ⟨e.keep (fun r h => by simp only [List.mem_cons,List.not_mem_nil,or_false] at h
+                                  rcases h with rfl|rfl|rfl|rfl <;> exact g _ (by decide) (by decide) (by decide)) rd wr,
+      ⟨?_,rr.2⟩,(g _ (by decide) (by decide) (by decide)).trans len⟩
+    exact (fr.readW (r:=⟨W+176#64,8⟩) (Region.contains_self _ _) (by
+      intro z hz
+      obtain rfl := List.mem_singleton.mp hz
+      exact Offset.disjoint W (.inl (by decide)) (by decide) (by omega)) (by decide)).trans rr.1
+  have arg s (g : G s) : WP isa (.block batchAESArgs) s B :=
+    (batchArgs_ok hn' L g.1 g.2.1 g.2.2).mono fun _ ⟨ac,_,_,_,saved⟩ => ⟨ac,(saved _ (by decide)).trans g.1.rsp⟩
+  unfold Contiguous.batchKeys
+  refine RelCT.seq (rel_next (rel_env_regs [] (fun _ (h : F _) => h.1) (fun _ (h : F _) => h.1)
+    (fun _ _ _ _ _ h => by cases h) ⟨_,by taint_decide⟩) prep prep) ?_
+  refine RelCT.seq (rel_next (rel_env_regs [.r10,.rbp] (fun _ (h : P _) => h.1.1) (fun _ (h : P _) => h.1.1)
+    (fun _ _ a b r h => by
+      simp only [List.mem_cons,List.not_mem_nil,or_false] at h
+      rcases h with rfl|rfl
+      · rw [a.2.1,b.2.1]
+      · rw [a.1.2.2,b.1.2.2]) ⟨_,by taint_decide⟩) loop loop) ?_
+  refine RelCT.seq (rel_next (rel_env_regs [] (fun _ (h : G _) => h.1) (fun _ (h : G _) => h.1)
+    (fun _ _ _ _ _ h => by cases h) ⟨_,by taint_decide⟩) arg arg) ?_
+  let aes := Proof.Aes.X86_64.BlocksImpl.scalar
+  exact blk_rel aes.encOk aes.encCt (fun _ _ h => ⟨_,_,_,_,_,h.1.1,h.2.1,h.1.2.trans h.2.2.symm⟩)
+
+private theorem batchText_rel {Ctx W SP S D : Addr} {n : Nat} :
+    let F (s : State) := Env Ctx (W+16#64) W SP s ∧ InRegions (s.rd++s.wr) (SP+8#64) 8 ∧
+      s.mem.readW (SP+8#64) 64=S ∧ s.mem.readW (W+200#64) 64=D ∧ s.gpr .rbp=BitVec.ofNat 64 (16*n)
+    RelCT isa (fun s t => F s ∧ F t) Contiguous.batchText (fun _ _ => True) := by
+  let F (s : State) := Env Ctx (W+16#64) W SP s ∧ InRegions (s.rd++s.wr) (SP+8#64) 8 ∧
+    s.mem.readW (SP+8#64) 64=S ∧ s.mem.readW (W+200#64) 64=D ∧ s.gpr .rbp=BitVec.ofNat 64 (16*n)
+  let G (s : State) := Env Ctx (W+16#64) W SP s ∧ s.gpr .rdi=S ∧ s.gpr .rsi=D ∧ s.gpr .r10=0 ∧ s.gpr .rbp=BitVec.ofNat 64 (16*n)
+  have prep s (f : F s) : WP isa (.block maskPtrs) s G :=
+    (ptrs_ok f.1 f.2.1 f.2.2.1 f.2.2.2.1).mono fun _ ⟨di,si,z,l,e,_,_,_⟩ => ⟨e,di,si,z,l.trans f.2.2.2.2⟩
+  refine RelCT.seq (rel_next (rel_env_regs [] (fun _ (h : F _) => h.1) (fun _ (h : F _) => h.1)
+    (fun _ _ _ _ _ h => by cases h) ⟨_,by taint_decide⟩) prep prep) ?_
+  exact rel_env_regs [.rdi,.rsi,.r10,.rbp] (fun _ (h : G _) => h.1) (fun _ (h : G _) => h.1)
+    (fun _ _ a b r h => by
+      simp only [List.mem_cons,List.not_mem_nil,or_false] at h
+      rcases h with rfl|rfl|rfl|rfl
+      · rw [a.2.1,b.2.1]
+      · rw [a.2.2.1,b.2.2.1]
+      · rw [a.2.2.2.1,b.2.2.2.1]
+      · rw [a.2.2.2.2,b.2.2.2.2]) ⟨_,by taint_decide⟩
+
+private theorem batchAuth_rel (v : GcmImpl) {Ctx W SP D : Addr} {n al : Nat} (L : Lay Ctx (W+16#64) W SP) :
+    let T (s : State) := Env Ctx (W+16#64) W SP s ∧ s.mem.readW (W+184#64) 64=BitVec.ofNat 64 al ∧ s.mem.readW (W+192#64) 64=BitVec.ofNat 64 n
+    let F (s : State) := T s ∧ DataW Ctx (W+16#64) W SP s D n ∧ s.mem.readW (W+200#64) 64=D ∧ s.mem.readW (W+208#64) 64=BitVec.ofNat 64 n
+    RelCT isa (fun s t => F s ∧ F t) (Contiguous.batchAuth v.callees) (fun _ _ => True) := by
+  let E := Env Ctx (W+16#64) W SP
+  let T (s : State) := E s ∧ s.mem.readW (W+184#64) 64=BitVec.ofNat 64 al ∧ s.mem.readW (W+192#64) 64=BitVec.ofNat 64 n
+  let F (s : State) := T s ∧ DataW Ctx (W+16#64) W SP s D n ∧ s.mem.readW (W+200#64) 64=D ∧ s.mem.readW (W+208#64) 64=BitVec.ofNat 64 n
+  let H (s : State) := T s ∧ GhCall s (Ctx+240#64) (yA W) D (W+448#64) (n/16)
+  let A (s : State) := E s ∧ s.gpr .rbx=BitVec.ofNat 64 al ∧ s.gpr .rbp=BitVec.ofNat 64 n
+  have arg s (f : F s) : WP isa (.block Contiguous.hashArgs) s H :=
+    (hashArgs_ok L f.1.1 f.2.1 f.2.2.1 f.2.2.2).mono fun _ ⟨g,r,w,m,c⟩ => ⟨⟨f.1.1.of_saved g r w,m ▸ f.1.2⟩,c⟩
+  have gh s (h : H s) : WP isa (Contiguous.call v.callees.gh) s T := by
+    refine (gh_call v.gh h.2).mono fun t o => ?_
+    have f := o.frame
+    rw [h.1.1.rsp] at f
+    have keep (p : Nat) (lo : 48≤p) (hi : p+8≤448) : t.mem.readW (W+BitVec.ofNat 64 p) 64=s.mem.readW (W+BitVec.ofNat 64 p) 64 := by
+      apply f.readW (r:=⟨W+BitVec.ofNat 64 p,8⟩) (Region.contains_self _ _) _ (by decide)
+      intro r hr;simp only [List.mem_cons,List.not_mem_nil,or_false] at hr;rcases hr with rfl|rfl|rfl
+      · change (⟨W+BitVec.ofNat 64 p,8⟩ : Region).Disjoint ⟨W+16#64+16#64,16⟩
+        rw [show W+16#64+16#64=W+32#64 by rw [BitVec.add_assoc];rfl]
+        exact Offset.disjoint W (.inr (by omega)) (by omega) (by decide)
+      · exact Offset.disjoint W (.inl hi) (by omega) (by decide)
+      · exact (L.stk_w (by omega)).symm
+    exact ⟨h.1.1.of_saved o.saved o.rd o.wr,(keep 184 (by decide) (by decide)).trans h.1.2.1,
+      (keep 192 (by decide) (by decide)).trans h.1.2.2⟩
+  have argL s (h : T s) : WP isa (.block authLens) s A := by
+    obtain ⟨t,run,et,bx,bp,_,_,_⟩ := tagArgs h.1 h.2.1 h.2.2
+    exact WP.of_runBlock ⟨t,run,et,bx,bp⟩
+  have ln s (h : A s) : WP isa (lens v.callees 16) s E := (lens_ok v L (.inr rfl) h.1 rfl).mono fun _ out => out.1
+  unfold Contiguous.batchAuth
+  refine RelCT.seq (rel_next (rel_env_regs [] (fun _ (h : F _) => h.1.1) (fun _ (h : F _) => h.1.1)
+    (fun _ _ _ _ _ h => by cases h) ⟨_,by taint_decide⟩) arg arg) ?_
+  refine RelCT.seq (rel_next (gh_rel v.gh (fun _ _ h => ⟨_,_,_,_,_,h.1.2,h.2.2,h.1.1.1.rsp.trans h.2.1.1.rsp.symm⟩)) gh gh) ?_
+  refine RelCT.seq (rel_next (rel_env_regs [] (fun _ (h : T _) => h.1) (fun _ (h : T _) => h.1)
+    (fun _ _ _ _ _ h => by cases h) ⟨_,by taint_decide⟩) argL argL) ?_
+  refine RelCT.seq (rel_next ((lens_rel v L (.inr rfl)).mono ?_ (fun _ _ h => h)) ln ln) ?_
+  · intro a b h
+    refine ⟨h.1.1,h.2.1,?_⟩
+    intro r hr;simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
+    rcases hr with rfl|rfl
+    · rw [h.1.2.1,h.2.2.1]
+    · rw [h.1.2.2,h.2.2.2]
+  · exact rel_env_regs [] (fun _ (h : E _) => h) (fun _ h => h) (fun _ _ _ _ _ h => by cases h) ⟨_,by taint_decide⟩
+
+private theorem batch_rel (v : GcmImpl) {Ctx W SP S D : Addr} {M : CtxMode} {n R al : Nat}
+    (hn : 0<n) (hn' : n≤15) (L : Lay Ctx (W+16#64) W SP) :
+    let F := AfterAad M Ctx W SP S D R (16*n) al
+    RelCT isa (fun s t => F s ∧ F t) (Contiguous.batchMasks v.callees Contiguous.maskAES) (fun _ _ => True) := by
+  let F := AfterAad M Ctx W SP S D R (16*n) al
+  let G (s : State) := ∃ o, F o ∧ Masked Ctx W SP R n o s
+  let T (s : State) := ∃ o, F o ∧ Ciphered Ctx W SP S D R n o s
+  have keys s (aa : F s) : WP isa (Contiguous.batchKeys Contiguous.maskAES) s G :=
+    (batchKeys_ok hn hn' L aa.ob.env aa.ob.rounds aa.ob.len).mono fun _ m => ⟨s,aa,m⟩
+  have text s (g : G s) : WP isa Contiguous.batchText s T := by
+    obtain ⟨o,aa,m⟩ := g
+    exact (batchText_ok hn hn' aa m).mono fun _ t => ⟨o,aa,t⟩
+  have ptrs s (g : G s) : Env Ctx (W+16#64) W SP s ∧ InRegions (s.rd++s.wr) (SP+8#64) 8 ∧
+      s.mem.readW (SP+8#64) 64=S ∧ s.mem.readW (W+200#64) 64=D ∧ s.gpr .rbp=BitVec.ofNat 64 (16*n) := by
+    obtain ⟨o,aa,m⟩ := g
+    exact ⟨m.env,by rw [m.rd,m.wr];exact aa.read,(m.frame.readW (Region.contains_self _ _)
+      (preparedFar aa.apart (Offset.disjoint_below SP (by decide))) (by decide)).trans aa.src,
+      (m.frame.readW (Region.contains_self _ _) (preparedLow L (.inr ⟨by decide,by decide⟩)) (by decide)).trans aa.ob.dat,m.rbp⟩
+  have auth s (t : T s) : (Env Ctx (W+16#64) W SP s ∧ s.mem.readW (W+184#64) 64=BitVec.ofNat 64 al ∧
+      s.mem.readW (W+192#64) 64=BitVec.ofNat 64 (16*n)) ∧ DataW Ctx (W+16#64) W SP s D (16*n) ∧
+      s.mem.readW (W+200#64) 64=D ∧ s.mem.readW (W+208#64) 64=BitVec.ofNat 64 (16*n) := by
+    obtain ⟨o,aa,m⟩ := t
+    have saved (p : Nat) (lo : p+8≤192 ∨ (200≤p ∧ p+8≤256)) :
+        s.mem.readW (W+BitVec.ofNat 64 p) 64=o.mem.readW (W+BitVec.ofNat 64 p) 64 :=
+      m.frame.readW (Region.contains_self _ _) (fun r hr => by
+        rcases List.mem_cons.mp hr with rfl|h
+        · exact aa.ob.data.ok.w.symm.sub_left (Lay.wSub (by rcases lo with h|h <;> omega))
+        · exact preparedLow L lo r h) (by decide)
+    exact ⟨⟨m.env,(saved 184 (.inl (by decide))).trans aa.alen,m.len⟩,aa.ob.data.of_eq m.rd m.wr,
+      (saved 200 (.inr ⟨by decide,by decide⟩)).trans aa.ob.dat,(saved 208 (.inr ⟨by decide,by decide⟩)).trans aa.ob.len⟩
+  unfold Contiguous.batchMasks
+  refine RelCT.seq (rel_next ((batchKeys_rel hn hn' L).mono (fun _ _ (h : F _ ∧ F _) =>
+    ⟨⟨h.1.ob.env,h.1.ob.rounds,h.1.ob.len⟩,⟨h.2.ob.env,h.2.ob.rounds,h.2.ob.len⟩⟩) (fun _ _ h => h)) keys keys) ?_
+  exact RelCT.seq (rel_next (batchText_rel.mono (fun _ _ h => ⟨ptrs _ h.1,ptrs _ h.2⟩) (fun _ _ h => h)) text text)
+    ((batchAuth_rel v L).mono (fun _ _ h => ⟨auth _ h.1,auth _ h.2⟩) (fun _ _ h => h))
+
+theorem softwareRecord_ct (v : GcmImpl) (ctr : Proof.Aes.X86_64.Ctr32ToImpl) {M : CtxMode} :
+    RecordCT M (Contiguous.softwareBody v.callees ⟨ctr.callee.name,ctr.callee.code⟩ Contiguous.maskAES) := by
+  intro o p Ctx W SP Np A S D nl al n R a b
+  let F := AfterAad M Ctx W SP S D R n al
+  let flag := decide (((BitVec.ofNat 64 n-16#64).rotateRight 4).toNat<15)
+  let G (s : State) := F s ∧ s.cf=some flag
+  have guard s (aa : F s) : WP isa (.block [.mov .rax (.mem (at_ .r15 lenO)),.alu .sub .rax (imm 16),.shift .ror .rax 4,
+      .alu .cmp .rax (imm 15)]) s G := by
+    obtain ⟨t,run,cf,et,mt,rt,wt⟩ := batchChoice_step aa.reg.env aa.ob.len
+    refine WP.of_runBlock ⟨t,run,?_,cf⟩
+    let ext : CtxExt M Ctx (W+16#64) W SP D n t := { aa.reg.ext with
+      cov := by rw [rt,wt];exact aa.reg.ext.cov
+      ok := mt ▸ aa.reg.ext.ok }
+    let reg : Split.SealRegions M Ctx W SP D S R n n t := { aa.reg with
+      env := et, rounds := mt ▸ aa.reg.rounds, data := aa.reg.data.of_eq rt wt, ext := ext
+      srcCov := by rw [rt,wt];exact aa.reg.srcCov }
+    let ob : ObPre M Ctx W SP R D n t := { aa.ob with
+      env := et, rounds := mt ▸ aa.ob.rounds, data := aa.ob.data.of_eq rt wt,
+      dat := mt ▸ aa.ob.dat, len := mt ▸ aa.ob.len, ext := ext }
+    exact ⟨⟨reg,ob,by rw [rt,wt];exact aa.read,mt ▸ aa.src,aa.apart⟩,mt ▸ aa.alen,mt ▸ aa.dst,
+      by rw [rt,wt];exact aa.slotRead,aa.dstWork,aa.dstOut,aa.slotDst⟩
+  unfold Contiguous.softwareBody Contiguous.chooseBatch
+  refine RelCT.seq (ordinaryAad_ct v a b) (RelCT.seq (rel_next (rel_env_regs [] (fun _ (h : F _) => h.ob.env)
+    (fun _ (h : F _) => h.ob.env) (fun _ _ _ _ _ h => by cases h) ⟨_,by taint_decide⟩) guard guard) ?_)
+  refine RelCT.ite (fun _ _ h => h.1.2.trans h.2.2.symm) ?_ ?_
+  · apply Split.rel_each
+    intro x y ⟨⟨hx,hy⟩,take⟩
+    have eq : flag=true := Option.some.inj (hx.2.symm.trans take)
+    obtain ⟨k,hk,hn⟩ := batch_guard _ (of_decide_eq_true eq)
+    rw [toNat_ofNat_of_lt a.ctx.data.ok.lt] at hn
+    subst n
+    refine (batch_rel v (M:=M) (S:=S) (D:=D) (R:=R) (al:=al) (n:=k+1) (by omega) (by omega) a.ctx.lay).mono ?_ (fun _ _ h => h)
+    intro u w hu
+    rw [hu.1,hu.2]
+    exact ⟨hx.1,hy.1⟩
+  · have bulk : BulkOk M (Contiguous.bulk (Contiguous.separate ⟨ctr.callee.name,ctr.callee.code⟩ v.callees.gh)) :=
+      fun h ob x y z => separate_bulk_ok ctr v.gh h ob x y z
+    have fin : FinishCT M (Contiguous.maskFinish v.callees Contiguous.maskAES) := choiceCT (alignedTag_ct v) (scalarMasks_ct v)
+    exact (run_ct bulk (separate_ct ctr v.gh) (separate_keeps ctr v.gh) fin a.ctx.lay (a.rounds ▸ a.ctx.rounds) a.ctx.dE).mono
+      (fun _ _ h => ⟨h.1.1.1,h.1.2.1⟩) (fun _ _ h => h)
 
 end VG.Proof.AesGcm.X86_64.ContiguousSeal

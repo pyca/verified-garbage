@@ -2773,7 +2773,7 @@ theorem unstitched (v : GcmVariant) (defer : Bool) : Certificate
 
 private theorem masksFill {k : Nat} {c : Callees} {ctr enc : Fn} (hs : CalleesSide k c)
     (ct : calleeSide ctr.code k 8=true) (aes : calleeSide enc.code k 8=true) :
-    Fill k allowance (core (masksBody stub5 ctrToStub (fnStub "aes"))) (core (masksBody c ctr enc)) := by
+    Fill k allowance (core (softwareBody stub5 ctrToStub (fnStub "aes"))) (core (softwareBody c ctr enc)) := by
   let gh (o : Nat) : Fill k allowance (Impl.AesGcm.X86_64.ghash1 stub5 o .r15 96) (Impl.AesGcm.X86_64.ghash1 c o .r15 96) :=
     .seq (.block _) (.hole _ _ hs.gh)
   let len (o : Nat) : Fill k allowance (Impl.AesGcm.X86_64.lens stub5 o) (Impl.AesGcm.X86_64.lens c o) :=
@@ -2785,7 +2785,11 @@ private theorem masksFill {k : Nat} {c : Callees} {ctr enc : Fn} (hs : CalleesSi
     .seq (.block _) (.seq (.ite _ (.block _) (.seq (.block _) (.seq (pad 0) (.seq (.block _) (len 0))))) (.block _))
   have kernel := fillSeparate ct hs.gh
   refine Fill.seq (.block _) (.seq ?_ (.refl _))
-  refine Fill.seq (.seq nonce (.seq (.block _) (pad 16))) (.seq (.seq (.block _) (.ite _ (.block _) (.seq kernel (.block _)))) ?_)
+  have batch : Fill k allowance (batchMasks stub5 (fnStub "aes")) (batchMasks c enc) :=
+    .seq (.seq (.block _) (.seq (.refl _) (.seq (.block _) (.hole _ _ aes)))) (.seq (.refl _)
+      (.seq (.block _) (.seq (.hole _ _ hs.gh) (.seq (.block _) (.seq (len 16) (.block _))))))
+  refine Fill.seq (.seq nonce (.seq (.block _) (pad 16))) (.seq (.block _) (.ite _ batch
+    (.seq (.seq (.block _) (.ite _ (.block _) (.seq kernel (.block _)))) ?_)))
   have masks : Fill k allowance (finishMasks stub5 (fnStub "aes")) (finishMasks c enc) :=
     .seq (.block _) (.seq (.seq (.block _) (.hole _ _ aes)) (.seq (.refl _)
     (.seq (.block _) (.seq (pad 16) (.seq (.block _) (.seq (len 16) (.block _)))))))
@@ -2794,24 +2798,25 @@ private theorem masksFill {k : Nat} {c : Callees} {ctr enc : Fn} (hs : CalleesSi
   exact .seq (.block _) (.ite _ one masks)
 
 private theorem masksCoreSide :
-    stubCallee (core (masksBody stub5 ctrToStub (fnStub "aes"))) 0 allowance 24=true := by lit_decide
+    stubCallee (core (softwareBody stub5 ctrToStub (fnStub "aes"))) 0 allowance 24=true := by lit_decide
 
 private theorem masksSide :
-    stubSide (framed (masksBody stub5 ctrToStub (fnStub "aes"))) 0 allowance 2640 []=true := by lit_decide
+    stubSide (framed (softwareBody stub5 ctrToStub (fnStub "aes"))) 0 allowance 2640 []=true := by lit_decide
 
-private theorem spMasks (v : GcmImpl) {ctr : Fn} (ct : Sp ctr.code) : Sp (core (masksBody v.callees ctr maskAES)) := by
+private theorem spMasks (v : GcmImpl) {ctr : Fn} (ct : Sp ctr.code) : Sp (core (softwareBody v.callees ctr maskAES)) := by
   obtain ⟨aa,_,tag⟩ := spParts v
   have sep := separateSp (ctr:=ctr) v ct
   have enc : Sp maskAES.code := Proof.Aes.X86_64.BlocksImpl.scalar.encSpSafe
+  have gh : Sp v.callees.gh.code := v.gh.spSafe
   unfold Sp at *
   simp only [Impl.AesGcm.X86_64.oneTag,Impl.AesGcm.X86_64.tag,Code.all,Bool.and_eq_true] at tag
   have pad := tag.2.1
   have lens := tag.2.2.2.1
-  simp only [core,masksBody,maskFinish,maskChoice,alignedTag,directEcbTag,VG.Impl.AesGcm.X86_64.Contiguous.oneMask,bulk,finishMasks,VG.Impl.AesGcm.X86_64.Contiguous.makeMasks,VG.Impl.AesGcm.X86_64.Contiguous.call,
+  simp only [core,softwareBody,chooseBatch,batchMasks,batchKeys,batchText,batchAuth,gh,maskFinish,maskChoice,alignedTag,directEcbTag,VG.Impl.AesGcm.X86_64.Contiguous.oneMask,bulk,finishMasks,VG.Impl.AesGcm.X86_64.Contiguous.makeMasks,VG.Impl.AesGcm.X86_64.Contiguous.call,
     VG.Impl.AesGcm.X86_64.Contiguous.maskXor,maskAuth,Code.all,aa,sep,enc,pad,lens,Bool.true_and,Bool.and_true]
   decide +kernel
 
-/-- The software AES backends compute the two final counter masks together. -/
+/-- The software AES backends share one bounded counter batch for both layouts. -/
 theorem masks (v : GcmVariant) : Certificate (preparedMasks v.lvTW v.impl.callees (ctrFn v)) := by
   let ctr := ctrFn v
   have hc : calleeSide ctr.code v.lvTW.level 8=true :=
@@ -2821,10 +2826,10 @@ theorem masks (v : GcmVariant) : Certificate (preparedMasks v.lvTW v.impl.callee
   have fill := masksFill (callees_sideTW v) hc enc
   have sp := spMasks (ctr:=ctr) v.impl v.ctrTo.spSafe
   have safe := rawSafe sp (calleeSide_of_fill fill (Nat.zero_le _) masksCoreSide)
-  have p : RecordProof CtxMode.base (masksBody v.impl.callees ctr maskAES) :=
-    ⟨masksRecord_ok v.impl v.ctrTo,masksRecord_ct v.impl v.ctrTo,safe⟩
+  have p : RecordProof CtxMode.base (softwareBody v.impl.callees ctr maskAES) :=
+    ⟨softwareRecord_ok v.impl v.ctrTo,softwareRecord_ct v.impl v.ctrTo,safe⟩
   have raw := plainPublic (framedVerified (P:=preparedP) p preparedLocal (fun h => ⟨h.1,trivial⟩) prepInhabited)
-  have wrapper : Sp (framed (masksBody v.impl.callees ctr maskAES)) := withStackArgScratch_spSafe sp
+  have wrapper : Sp (framed (softwareBody v.impl.callees ctr maskAES)) := withStackArgScratch_spSafe sp
   exact ⟨verifiedScrubbedAllFill (api:=sealContiguousPreparedApi)
     {suffix:="",code:=_,stack:=2640,verified:=raw,spSafe:=wrapper} v.lvTW outputLocal (frameFill fill)
     (Nat.zero_le _) (Nat.le_refl _) (ha:=masksSide),scrubKs_spSafe wrapper⟩

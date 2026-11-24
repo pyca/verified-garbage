@@ -102,24 +102,15 @@ theorem bulkSlot {Ctx W SP D : Addr} {n off : Nat} {s u : State} (p : ObPost Ctx
   · exact work.sub_right (Lay.wSub (by decide))
   · exact Offset.disjoint_below SP (by omega_arith)
 
-theorem body_ok {M : CtxMode} {aad bulk fin : Prog isa} {hash : Bool} (hb : BulkOk M bulk hash) (hf : FinishOk M fin hash)
-    {s₀ s₁ : State} {Ctx W SP Np A S D : Addr} {nl al n : Nat}
-    (C : OneCtx s₀ 5 Ctx W SP Np A D nl al n) (X : CtxExt M Ctx (W+16#64) W SP D n s₀)
-    (geo : SpanLayout s₀ S S D W SP n n) (nowrap : S.toNat+n≤2^64)
-    (ha : (s₀.gpr .r9).toNat=al) (src : s₀.mem.readW (SP+8#64) 64=S)
-    (dst : s₀.mem.readW (SP+16#64) 64=D)
-    (aad_ok : WP isa aad s₁ (OneMid s₀ Ctx W SP D n (ctxH s₀.mem Ctx)
-      (bytesAt s₀.mem Np nl) (bytesAt s₀.mem A al) s₁.mem)) :
-    WP isa (.seq aad (.seq bulk fin)) s₁ (SealPostFrom s₀ Ctx W SP D n (s₀.gpr .rsi).toNat al (ctxH s₀.mem Ctx)
-      (Spec.Gcm.j0 (ctxH s₀.mem Ctx) (bytesAt s₀.mem Np nl)) (bytesAt s₀.mem A al) (bytesAt s₀.mem S n)) := by
-  refine WP.seq (aad_ok.mono fun s₂ m => ?_)
-  have a := afterAad_ok C X geo nowrap ha src dst m
+theorem afterAad_to_seal {s₀ s₁ s₂ s₄ : State} {Ctx W SP Np A S D : Addr} {nl al n : Nat}
+    (C : OneCtx s₀ 5 Ctx W SP Np A D nl al n) (geo : SpanLayout s₀ S S D W SP n n)
+    (m : OneMid s₀ Ctx W SP D n (ctxH s₀.mem Ctx) (bytesAt s₀.mem Np nl) (bytesAt s₀.mem A al) s₁.mem s₂)
+    (post : BodyPost Ctx W SP S D (s₀.gpr .rsi).toNat n al (ctxH s₀.mem Ctx)
+      (inc32 (Spec.Gcm.j0 (ctxH s₀.mem Ctx) (bytesAt s₀.mem Np nl))) (bytesAt s₀.mem A al) s₂ s₄) :
+    SealPostFrom s₀ Ctx W SP D n (s₀.gpr .rsi).toNat al (ctxH s₀.mem Ctx)
+      (Spec.Gcm.j0 (ctxH s₀.mem Ctx) (bytesAt s₀.mem Np nl)) (bytesAt s₀.mem A al) (bytesAt s₀.mem S n) s₄ := by
+  obtain ⟨env,rd,wr,fr,ct,tag⟩ := post
   have b8 := below_sub (sp:=SP) (a:=8) (b:=24) (by decide) (by decide)
-  refine WP.seq ((hb a.reg a.ob a.src a.read a.apart).mono fun s₃ ⟨post,blocks⟩ => ?_)
-  have orig := (bulkSlot post a.apart a.slotDst (by decide)).trans a.src
-  have dest := (bulkSlot post a.dstWork a.dstOut (by decide)).trans a.dst
-  refine (hf a.reg a.ob post blocks m.hH m.cb a.alen m.abs a.read orig a.apart a.slotRead dest a.dstOut a.dstWork).mono
-    fun s₄ ⟨env,rd,wr,fr,ct,tag⟩ => ?_
   have kc : ciphOf s₂.mem Ctx (s₀.gpr .rsi).toNat = ctxCiph s₀.mem Ctx (s₀.gpr .rsi).toNat :=
     ciph_frame m.frame (aadFrameApart C.lay.cw' C.lay.kc.symm) C.rounds
   have pt := bytesAt_frame m.frame (aadFrameApart geo.leftWork (geo.leftStack.sub_right b8)) (by have := C.data.ok.lt; omega_arith)
@@ -138,6 +129,32 @@ theorem body_ok {M : CtxMode} {aad bulk fin : Prog isa} {hash : Bool} (hb : Bulk
     · exact ⟨_,List.mem_cons_self ..,Lay.wSub (by decide)⟩
     · exact ⟨⟨D,n⟩,by simp,fun _ h => h⟩
     · exact ⟨below SP 24,by simp,fun _ h => h⟩
+
+theorem bulkFinish_ok {M : CtxMode} {bulk fin : Prog isa} {hash : Bool}
+    (hb : BulkOk M bulk hash) (hf : FinishOk M fin hash)
+    {Ctx W SP S D : Addr} {R n al : Nat} {s₂ : State} {H icb : Block} {ad : List Byte}
+    (a : AfterAad M Ctx W SP S D R n al s₂) (hH : blockAt s₂.mem (Ctx+240#64)=H)
+    (cb : blockAt s₂.mem (cbA W)=icb)
+    (abs : Proof.Gcm.Absorbed s₂.mem (yA W) (W+16#64+32#64) H (ad++zeros (padLen ad.length))) :
+    WP isa (.seq bulk fin) s₂ (BodyPost Ctx W SP S D R n al H icb ad s₂) := by
+  refine WP.seq ((hb a.reg a.ob a.src a.read a.apart).mono fun s₃ ⟨post,blocks⟩ => ?_)
+  have orig := (bulkSlot post a.apart a.slotDst (by decide)).trans a.src
+  have dest := (bulkSlot post a.dstWork a.dstOut (by decide)).trans a.dst
+  exact hf a.reg a.ob post blocks hH cb a.alen abs a.read orig a.apart a.slotRead dest a.dstOut a.dstWork
+
+theorem body_ok {M : CtxMode} {aad bulk fin : Prog isa} {hash : Bool} (hb : BulkOk M bulk hash) (hf : FinishOk M fin hash)
+    {s₀ s₁ : State} {Ctx W SP Np A S D : Addr} {nl al n : Nat}
+    (C : OneCtx s₀ 5 Ctx W SP Np A D nl al n) (X : CtxExt M Ctx (W+16#64) W SP D n s₀)
+    (geo : SpanLayout s₀ S S D W SP n n) (nowrap : S.toNat+n≤2^64)
+    (ha : (s₀.gpr .r9).toNat=al) (src : s₀.mem.readW (SP+8#64) 64=S)
+    (dst : s₀.mem.readW (SP+16#64) 64=D)
+    (aad_ok : WP isa aad s₁ (OneMid s₀ Ctx W SP D n (ctxH s₀.mem Ctx)
+      (bytesAt s₀.mem Np nl) (bytesAt s₀.mem A al) s₁.mem)) :
+    WP isa (.seq aad (.seq bulk fin)) s₁ (SealPostFrom s₀ Ctx W SP D n (s₀.gpr .rsi).toNat al (ctxH s₀.mem Ctx)
+      (Spec.Gcm.j0 (ctxH s₀.mem Ctx) (bytesAt s₀.mem Np nl)) (bytesAt s₀.mem A al) (bytesAt s₀.mem S n)) := by
+  refine WP.seq (aad_ok.mono fun s₂ m => ?_)
+  have a := afterAad_ok C X geo nowrap ha src dst m
+  exact (bulkFinish_ok hb hf a m.hH m.cb m.abs).mono fun _ p => afterAad_to_seal C geo m p
 
 end VG.Proof.AesGcm.X86_64.ContiguousSeal
 

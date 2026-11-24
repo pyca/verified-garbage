@@ -100,9 +100,6 @@ def alignedTag (c : Callees) (enc : Fn) : Prog isa := .seq (.block authLens) (di
 def maskFinish (c : Callees) (enc : Fn) : Prog isa :=
   maskChoice (alignedTag c enc) (finishMasks c enc)
 
-def masksBody (c : Callees) (ctr enc : Fn) : Prog isa :=
-  .seq (oneAad c) (.seq (bulk (separate ctr c.gh)) (maskFinish c enc))
-
 def maskIndex (base index : Reg) (disp : Nat := 0) : MemOp :=
   {base, index := some index, disp := Int.ofNat disp}
 
@@ -179,9 +176,9 @@ def framed (record : Prog isa) : Prog isa :=
 def one (c : Callees) (vec wide prepared : Bool) (kernel : Prog isa) : Prog isa :=
   framed (body c vec wide prepared kernel)
 
-/-- A preallocated record sealed using the bitsliced two-mask completion. -/
+/-- A preallocated record using bitsliced AES for both payload and tag masks. -/
 def preparedMasks (level : Impl.Scrub.X86_64.VecLevel) (c : Callees) (ctr : Fn) : Prog isa :=
-  Impl.Scrub.X86_64.scrubAll level 0 2640 (framed (masksBody c ctr maskAES))
+  Impl.Scrub.X86_64.scrubAll level 0 2640 (framed (softwareBody c ctr maskAES))
 
 /-- One entry per CPU variant. The prepared flag selects whether the key
 already holds enough powers of the hash subkey. Buffer layout has no effect
