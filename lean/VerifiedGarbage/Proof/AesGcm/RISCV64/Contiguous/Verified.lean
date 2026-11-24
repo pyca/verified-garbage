@@ -59,7 +59,7 @@ private theorem post_out : PostOut contract 0 := by
 theorem scrubbed :
     VerifiedScrubbed target VG.Impl.AesGcm.RISCV64.Contiguous.code contract 0 :=
   verifiedScrubbedSel (api := sealContiguousBitslicedApi) (W := 4656)
-    {code := framedWith VG.Impl.Gcm.RISCV64.Prepared.preparedInvocation,verified := correct} [(2048,[(0,256)]),(560,[(0,70)])] []
+    {code := framedWith VG.Impl.Gcm.RISCV64.Prepared.preparedInvocation,verified := correct} VG.Impl.AesGcm.RISCV64.Contiguous.scrubFrames []
     post_out (by lit_decide) (hbp_nil _) residue
 
 end VG.Proof.AesGcm.RISCV64.Contiguous

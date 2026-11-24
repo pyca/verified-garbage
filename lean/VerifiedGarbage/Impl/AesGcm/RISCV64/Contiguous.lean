@@ -60,11 +60,14 @@ def bodyWith (invoke : Prog isa) : Prog isa :=
   .seq (.block entry) (.seq (oneAadWith invoke) (.seq (.block (payloadArgs ++ [.li .t0 241]))
     (.seq (.ite (.ltu .s5 .t0) (shortPayloadWith invoke) (longPayloadWith invoke)) (.block exitCode))))
 
-/-- The prepared GHASH helper uses 112 frame bytes. This erases its spills
-and both the contiguous body's local region and the called AES scratch. -/
-def code : Prog isa :=
-  scrubSel 0 [(2048,[(0,256)]),(560,[(0,70)])]
-    (.frame (.alloc 2608) (.seq (.block (setArgsAt 2608 3 40))
-      (bodyWith VG.Impl.Gcm.RISCV64.Prepared.preparedInvocation)) (.free 2608))
+def preparedFrame : Prog isa :=
+  .frame (.alloc 2608) (.seq (.block (setArgsAt 2608 3 40))
+    (bodyWith VG.Impl.Gcm.RISCV64.Prepared.preparedInvocation)) (.free 2608)
+
+/-- The prepared GHASH helper uses 112 frame bytes. Erase its spills,
+the contiguous body's local region and the called AES scratch. -/
+def scrubFrames : List (Nat × List (Nat × Nat)) := [(2048,[(0,256)]),(560,[(0,70)])]
+
+def code : Prog isa := scrubSel 0 scrubFrames preparedFrame
 
 end VG.Impl.AesGcm.RISCV64.Contiguous

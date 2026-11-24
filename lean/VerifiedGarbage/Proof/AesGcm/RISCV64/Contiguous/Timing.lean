@@ -42,7 +42,8 @@ theorem payloadArgs_rel {s t : State} (sp : s.sp = t.sp) (work : s.gpr .s0 = t.g
   exact work
 
 /-- All saved bytes, register spills and temporaries are public after the scrub. -/
-theorem residue : ∃ hc, (rtaint.check (RTaint.init 4656 []) code hc).any (RTaint.done 0) = true :=
+theorem residue : ∃ hc, (rtaint.check (RTaint.init 4656 [])
+    (VG.Impl.Scrub.RISCV64.scrubSelBody scrubFrames preparedFrame) hc).any (RTaint.done 64) = true :=
   ⟨_, by taint_decide_ct⟩
 
 end VG.Proof.AesGcm.RISCV64.Contiguous
