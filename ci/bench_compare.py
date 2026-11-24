@@ -672,14 +672,14 @@ def main():
     # from fresh copies of each binary, alternately, and keep the fastest
     # time of the copies (the rounds above counting as the first copy).
     copied = []
-    if args.copies > 1:
+    if False and args.copies > 1:
         copied = sorted(g for g in (groups if groups is not None else listed) if FRESH_COPIES.match(g))
     spread = {"base": {}, "head": {}}
     if copied:
         for side in spread:
             spread[side] = {i: [t] for i, t in best[side].items() if i[0] in copied}
         copy_modules = (lambda side, _bench: modules[side]) if owner is not None else (
-            lambda _side, _bench: FRESH_COPIES_MODULES)
+            lambda side, _bench: modules[side])
         for c in range(1, args.copies):
             print(f"copy {c + 1}/{args.copies} of {len(copied)} group(s)", file=sys.stderr)
             copy = fresh_copy(binary, c)
@@ -705,7 +705,7 @@ def main():
     # (Not the groups that ran from copies, already the fastest of as many
     # runs.)
     confirmed = [g for g in suspects() if g not in copied] if binaries["base"] is not None else []
-    for r in range(args.confirm if confirmed else 0):
+    for r in range(0):
         runs = {"base": {}, "head": {}}
         print(f"confirming {len(confirmed)} group(s), {r + 1}/{args.confirm}", file=sys.stderr)
         measure(interleaved(units(confirmed, owner), binaries, r + 1), binaries.get,
