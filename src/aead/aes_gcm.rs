@@ -326,10 +326,7 @@ impl AesGcm {
         Ok(self.seal(dit, nonce, aad, data))
     }
 
-    /// `vg_aes_gcm_seal` (on x86-64, `vg_aes_gcm_seal_prepared`; on
-    /// AArch64, `vg_aes_gcm_seal_with_powers`; on RISC-V,
-    /// `vg_aes_gcm_seal_contiguous_bitsliced`) of `data` in place, whose lengths the
-    /// caller checked.
+    /// Seal `data` in place with lengths already checked by the caller.
     #[inline(always)]
     fn seal(&self, dit: crate::dit::Dit<'_>, nonce: &[u8], aad: &[u8], data: &mut [u8]) -> Block {
         #[cfg(target_arch = "riscv64")]
@@ -751,8 +748,8 @@ impl AesGcm {
         }
         add_len(0, aad.len(), MAX_AAD).map_err(|()| Error::InvalidAadLength)?;
         let tag = self.seal_pieces(dit, nonce, aad, plaintext, out);
-        // SAFETY: the gather contract specifies every byte of the ciphertext
-        // for arbitrary prior destination contents, including an empty output.
+        // SAFETY: sealing specifies every ciphertext byte for arbitrary prior
+        // destination contents, including an empty output.
         Ok((unsafe { out.assume_init_mut() }, tag))
     }
 
