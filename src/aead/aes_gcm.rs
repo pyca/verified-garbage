@@ -237,6 +237,14 @@ impl Drop for AesGcm {
     }
 }
 
+#[cfg(target_arch = "riscv64")]
+#[unsafe(no_mangle)]
+pub static VG_BENCH_SEAL_ENTRY: core::sync::atomic::AtomicU8 = core::sync::atomic::AtomicU8::new(1);
+#[cfg(target_arch = "riscv64")]
+fn bench_new_seal() -> bool {
+    VG_BENCH_SEAL_ENTRY.load(core::sync::atomic::Ordering::Relaxed) != 0
+}
+
 impl AesGcm {
     /// The size of a full tag, in bytes.
     pub const TAG_SIZE: usize = 16;
@@ -381,7 +389,11 @@ impl AesGcm {
             {
                 let len = data.len();
                 let dst = data.as_mut_ptr();
-                tag = self.seal_contiguous(dit, nonce, aad, dst.cast_const(), dst, len);
+                tag = if bench_new_seal() { self.seal_contiguous(dit, nonce, aad, dst.cast_const(), dst, len) } else {
+                    let mut old = [0; 16];
+                    crate::arch::dispatch::gcm::vg_aes_gcm_seal_bitsliced_auto(dit, self.key(), self.rounds, nonce.as_ptr(), nonce.len(), aad.as_ptr(), aad.len(), dst, len, &mut old, &self.bk.0);
+                    old
+                };
             }
             #[cfg(not(any(
                 target_arch = "x86_64",
@@ -769,7 +781,7 @@ impl AesGcm {
         let dst = out.as_mut_ptr().cast();
         let len = out.len();
         #[cfg(target_arch = "riscv64")]
-        if let [piece] = plaintext {
+        if let [piece] = plaintext && bench_new_seal() {
             // SAFETY: the shared plaintext slice and exclusive destination are
             // disjoint. The caller checked their lengths.
             return unsafe { self.seal_contiguous(dit, nonce, aad, piece.as_ptr(), dst, len) };
