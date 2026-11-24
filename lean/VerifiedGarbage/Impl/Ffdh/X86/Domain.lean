@@ -26,7 +26,8 @@ eighteen such arguments (`fill`), computed from its own: the length `p_len`
 rest zero. All of them are public.
 
 The wide slots used: p (9), g (10), q (11), y (12), x (13), one (14),
-`p − 1` (15), the scalar's bound (16), zero (17) and the result (19). Only
+`p − 1` (15), the scalar's bound (16), zero, then two for the generator's
+test (17), and the result (19). Only
 public values (the domain, a public value, the statuses the contracts
 release) choose branches.
 -/
@@ -149,6 +150,48 @@ loaded at the top of slot 8 and raised over its `x_len` public bytes only. -/
 def powTop (b : Nat) : Prog isa :=
   .seq ctxP (.seq (copy (sl b) (sl 5) n1) (.seq (loadTop (sl 8) n1 10 11) winTopCall))
 
+/-! ### Powers of two
+
+Where the generator is two, which the domain makes public, `g^x mod p` needs no table of g's powers:
+a bit of x at a time from the top, the accumulator is squared, doubled modulo p, and the doubled one
+kept under the bit's mask (`ladderStep`). The bit's index is public; the bit and the accumulator are
+not, and neither an address nor a branch depends on them. -/
+
+/-- `eax :=` bit `esi` (public) of x (slot 13): 0 past the slot's words. -/
+def scalarBit : Prog isa :=
+  .seq (.block ([.mov .ecx (.reg .esi), .shift .shr .ecx 5, .alu .add .ecx (.reg .ecx), .alu .add .ecx (.reg .ecx)] ++
+      widthC 0 .wide .edx ++ [.alu .cmp .ecx (.reg .edx)]))
+    (.ite .b
+      (.seq (.block (ptrTo (sl 13) .ebp .edx ++ [.alu .add .ebp (.reg .ecx), .mov .eax (.mem (at_ .ebp 0)),
+          .mov .ecx (.reg .esi), .alu .and .ecx (.imm 31)]))
+        (([16, 8, 4, 2, 1].map fun b => (.seq (.block [.alu .test .ecx (.imm (BitVec.ofNat 32 b))])
+          (.ite .ne (.block [.shift .shr .eax b]) (.block [])) : Prog isa)).foldr .seq (.block [])))
+      (.block [.mov .eax (.imm 0)]))
+
+/-- The bit `eax` as a mask, all ones or zero, into the window word. -/
+def bitMask : List Instr :=
+  [.alu .and .eax (.imm 1), .mov .ecx (.imm 0), .alu .sub .ecx (.reg .eax), .store (sc winOff) .ecx]
+
+/-- One bit of x, `esi − 1`: the accumulator (slot 6) squared; twice that modulo p (slot 7), which
+replaces it where the bit is set; `esi` down one, ZF at bit 0. -/
+def ladderStep : Prog isa :=
+  .seq (square .wide) <| .seq (.block [.alu .sub .esi (.imm 1)]) <| .seq scalarBit <| .seq (.block bitMask) <|
+  .seq (addMod .wide 7 6 6) <| .seq (.block [.mov .ecx (.mem (sc winOff))]) <|
+  .seq (select (sl 7) (sl 6) n1) (.block [.alu .test .esi (.reg .esi)])
+
+/-- The bits of a number of the public length in argument `l`: `8 l`. -/
+def bitCount (l : Nat) : List Instr :=
+  [.mov .esi (.mem (argAt 0 l)), .alu .add .esi (.reg .esi), .alu .add .esi (.reg .esi), .alu .add .esi (.reg .esi)]
+
+/-- Two to the power of x (slot 13, of the public length in argument 11) modulo `M` into slot 6, with
+`R² mod M` in slot 4 and one in slot 3: Montgomery one, a `ladderStep` for each bit of x's bytes
+from the top, and the product with one. -/
+def ladderPower : Prog isa :=
+  .seq (mul .wide 6 4 3) <| .seq (.block (bitCount 11)) <| .seq (.loop ladderStep .ne) (mul .wide 6 6 3)
+
+/-- `ladderPower`, called. -/
+def ladderCall : Prog isa := argCall "vg_ffdh_ladder_two_wide" ladderPower
+
 /-! ### Powers to q, over its bytes from the first nonzero one
 
 q is `p_len` bytes of the domain, which the contracts of the functions that raise to it make public:
@@ -212,6 +255,13 @@ def qTest : List Instr :=
 
 /-- `ecx` all ones if `[a] = [b]`, and the status of it. -/
 def eqStatus (a b : Nat) : Prog isa := .seq (equal (sl a) (sl b) n1) retMask
+
+/-- ZF clear exactly when g (slot 10) is two; slot 17 is two. -/
+def twoTest : Prog isa := .seq (setSmall (sl 17) n1 2) (.seq (equal (sl 10) (sl 17) n1) testMask)
+
+/-- Slot 6 `g^x mod p` for g in slot 10 and x both in slot 13 and at synthetic arguments 10 and 11: by
+`ladderCall` where g is two, else by `powTop`. -/
+def powTopG : Prog isa := .seq twoTest (.ite .e (powTop 10) (.seq ctxP ladderCall))
 
 /-! ## `vg_ffdh_check_domain` -/
 
@@ -294,7 +344,7 @@ def scalarMask : Prog isa :=
 /-- `1 < y < p − 1` and `g^x mod p = y`, x raised over its `x_len` bytes; a power of the checked
 generator is in its subgroup. -/
 def pair : Prog isa :=
-  .seq (rangeMask 12) <| .seq (.block [.store (sc accOff) .ecx]) <| .seq (powTop 10) <|
+  .seq (rangeMask 12) <| .seq (.block [.store (sc accOff) .ecx]) <| .seq powTopG <|
   .seq (equal (sl 6) (sl 12) n1) (.seq (.block [.alu .and .ecx (.mem (sc accOff))]) retMask)
 
 def body : Prog isa :=

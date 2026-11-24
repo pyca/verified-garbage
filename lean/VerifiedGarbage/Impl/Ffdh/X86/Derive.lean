@@ -8,7 +8,7 @@ public import VerifiedGarbage.Impl.Ffdh.X86.KeyGen
 `vg_ffdh_derive_public`, on the operations of `Domain.lean`: x checked as a
 scalar as `vg_ffdh_check_private` checks it (2 returned and zeros written
 otherwise, the one branch on x); then `y = g^x mod p` over x's `x_len` bytes
-(`powTop`), its range as the acceptance mask (a power of the checked
+(`powTopG`), its range as the acceptance mask (a power of the checked
 generator is in its subgroup), y written (zeros unless accepted) and
 `3 − 2 flag` returned, without a branch.
 -/
@@ -34,7 +34,7 @@ def fail : Prog isa :=
 
 /-- `y = g^x mod p` (slot 6), its range as the acceptance; y written, and `3 − 2 flag` returned. -/
 def tail : Prog isa :=
-  .seq (powTop 10) <| .seq (rangeMask 6) <| .seq (.block [.store (sc accOff) .ecx]) <|
+  .seq powTopG <| .seq (rangeMask 6) <| .seq (.block [.store (sc accOff) .ecx]) <|
   .seq (copy (sl 6) (sl 19) n1) <| .seq (exportTo 0 1)
     (.block [.alu .add .eax (.reg .eax), .mov .ecx (.imm 3), .alu .sub .ecx (.reg .eax), .mov .eax (.reg .ecx)])
 
