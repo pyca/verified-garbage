@@ -430,6 +430,7 @@ def run(binary, home, library, args, checkout, modules, groups=None, bench=None)
     pattern = f"/{library}/"
     if groups is not None:
         pattern = f"^(?:{'|'.join(map(re.escape, groups))})/{library}/"
+    pattern += "(?:63|240|447|4095)$"
     proc = subprocess.run(
         [
             binary,
@@ -589,14 +590,24 @@ def main():
     modules = {"head": selected_modules(head, args.modules), "base": selected_modules(base, args.modules)}
     if modules["head"] is None or (args.modules and set(modules["head"].split()) != set(args.modules.split())):
         p.error("head's benchmark registry does not use the selected modules")
-    binaries = {"head": build(head), "base": None}
-    note = "Base has no selected benchmarks; head's and the references' results are new."
-    if not base.is_dir():
-        note = "No base to compare with, so head ran alone."
-    elif modules["base"] is not None:
-        binaries["base"], note, source = build_base(base, head)
-        if binaries["base"] is not None:
-            modules["base"] = selected_modules(source, args.modules)
+    control = TARGET / "exact-same-control"
+    if os.environ.get("VG_BENCH_PLACEMENT_CONTROL") == "1":
+        import hashlib
+        peer = fresh_copy(control, 1024)
+        assert hashlib.sha256(peer.read_bytes()).digest() == hashlib.sha256(control.read_bytes()).digest()
+        binaries = {"head": str(peer), "base": str(control)}
+        note = None
+    else:
+        binaries = {"head": build(head), "base": None}
+        note = "Base has no selected benchmarks; head's and the references' results are new."
+        if not base.is_dir():
+            note = "No base to compare with, so head ran alone."
+        elif modules["base"] is not None:
+            binaries["base"], note, source = build_base(base, head)
+            if binaries["base"] is not None:
+                modules["base"] = selected_modules(source, args.modules)
+        shutil.copy2(binaries["base"], control)
+    os.sched_setaffinity(0, {min(os.sched_getaffinity(0))})
     if args.arch:
         for binary in filter(None, binaries.values()):
             check_arch(binary, args.arch)
@@ -843,4 +854,14 @@ def main():
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    status = main()
+    result = pathlib.Path(sys.argv[sys.argv.index("--json")+1])
+    sets = json.loads(result.read_text())
+    os.environ["VG_BENCH_PLACEMENT_CONTROL"] = "1"
+    saved = result.with_name("placement-control.json")
+    sys.argv[sys.argv.index("--json")+1] = str(saved)
+    sys.argv.extend(["--work-dir", "control-measures"])
+    status = max(status, main())
+    sets["placement_control"] = json.loads(saved.read_text())
+    result.write_text(json.dumps(sets,indent=2))
+    sys.exit(status)
