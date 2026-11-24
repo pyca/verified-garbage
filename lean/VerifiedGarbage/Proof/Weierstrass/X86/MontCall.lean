@@ -186,6 +186,10 @@ structure FnOk (S : Impl.Weierstrass.Mont.Modulus) : Prop where
   nsAdd : NoSp (addFn S.k S.m)
   nsSub : NoSp (subFn S.k S.m)
 
+theorem mulFn_stackUse (k m : Nat) : stackUse (mulFn k m) = 0 := by
+  unfold mulFn mulBody
+  split <;> [rfl; (split <;> [rfl; (split <;> rfl)])]
+
 /-- `[o] = [a] [b] R⁻¹ mod m` by a call of `vg_<curve>_mul_mod_<p|n>`. -/
 theorem mulCall_ok {S : Impl.Weierstrass.Mont.Modulus} (hF : FnOk S) (hs : Scr s base 8192) {o a b : Nat}
     (ho : o + 8 * S.k ≤ own S.k) (ha : a + 8 * S.k ≤ own S.k) (hb : b + 8 * S.k ≤ own S.k)
@@ -195,9 +199,7 @@ theorem mulCall_ok {S : Impl.Weierstrass.Mont.Modulus} (hF : FnOk S) (hs : Scr s
       wordsVal s'.mem base o S.k * 2 ^ (64 * S.k) % S.m =
         wordsVal s.mem base a S.k * wordsVal s.mem base b S.k % S.m := by
   obtain hown := (saveAt_le hF.mul.k0 hF.k9).2
-  refine WP.mono (callOp_ok hF.nsMul (by
-    unfold mulFn mulBody
-    split <;> [rfl; (split <;> rfl)]) hF.mul.k0 hF.k9 hs ho ha hb
+  refine WP.mono (callOp_ok hF.nsMul (mulFn_stackUse _ _) hF.mul.k0 hF.k9 hs ho ha hb
     (V := fun m m' => val32 m' base o (2 * S.k) < S.m ∧
       val32 m' base o (2 * S.k) * 2 ^ (64 * S.k) % S.m =
         val32 m base a (2 * S.k) * val32 m base b (2 * S.k) % S.m)
