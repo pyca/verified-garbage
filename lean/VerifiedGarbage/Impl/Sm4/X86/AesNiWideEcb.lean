@@ -14,7 +14,12 @@ core for four blocks in the direction `d` (`AesNiWide.lean`), by groups of
 four and of two blocks, then one block at a time, with its scratch buffer as
 the fourth argument. `Fn.ecbEncrypt` and `Fn.ecbDecrypt` are the functions
 as emitted: with that working space in a frame on the stack, which they
-wipe, then their cleanup (`Impl.Scrub.X86.scrubSel`).
+wipe, then their cleanup (`Impl.Scrub.X86.scrubSel`). The frame is larger
+than the working space and its header need (752 bytes for 748), so that
+the working space, which `withStackScratchWiped` puts 20 bytes above the
+frame's base for three arguments, is at a multiple of 16 when `esp` is one
+at the call: the core's 16-byte loads and stores then cross no page, or
+line of the cache.
 -/
 
 @[expose] public section
@@ -29,18 +34,19 @@ def ecb (d : Dir) : Prog isa := (core d).ecbLevels levels
 
 namespace Fn
 
-/-- The doublewords of the 752 bytes of stack below `esp` that the residue
+/-- The doublewords of the 756 bytes of stack below `esp` that the residue
 analysis finds the ECB functions may leave different in two runs: the
-header of their working space's frame. -/
-def ecbWords : List Nat := [1, 2, 3, 4, 5]
+header of their working space's frame, and the frame's last doubleword,
+which nothing writes. -/
+def ecbWords : List Nat := [1, 2, 3, 4, 5, 188]
 
 /-- `Spec.Sm4.ecbEncryptApi`'s function as emitted. -/
 def ecbEncrypt : Prog isa :=
-  Impl.Scrub.X86.scrubSel 0 752 ecbWords (Impl.StackScratch.X86.withStackScratchWiped 748 3 182 (ecb .encrypt))
+  Impl.Scrub.X86.scrubSel 0 756 ecbWords (Impl.StackScratch.X86.withStackScratchWiped 752 3 182 (ecb .encrypt))
 
 /-- `Spec.Sm4.ecbDecryptApi`'s function as emitted. -/
 def ecbDecrypt : Prog isa :=
-  Impl.Scrub.X86.scrubSel 0 752 ecbWords (Impl.StackScratch.X86.withStackScratchWiped 748 3 182 (ecb .decrypt))
+  Impl.Scrub.X86.scrubSel 0 756 ecbWords (Impl.StackScratch.X86.withStackScratchWiped 752 3 182 (ecb .decrypt))
 
 end Fn
 

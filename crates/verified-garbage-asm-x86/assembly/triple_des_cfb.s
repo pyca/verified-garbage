@@ -5,14 +5,14 @@
 // gives.
 
 vg_triple_des_cfb64_encrypt_ssse3:
-	lea esp, [esp-980]
-	mov eax, DWORD PTR [esp+984]
+	lea esp, [esp-968]
+	mov eax, DWORD PTR [esp+972]
 	mov DWORD PTR [esp+4], eax
-	mov eax, DWORD PTR [esp+988]
+	mov eax, DWORD PTR [esp+976]
 	mov DWORD PTR [esp+8], eax
-	mov eax, DWORD PTR [esp+992]
+	mov eax, DWORD PTR [esp+980]
 	mov DWORD PTR [esp+12], eax
-	mov eax, DWORD PTR [esp+996]
+	mov eax, DWORD PTR [esp+984]
 	mov DWORD PTR [esp+16], eax
 	mov eax, esp
 	add eax, 24
@@ -570,8 +570,8 @@ vg_triple_des_cfb64_encrypt_ssse3:
 	movdqu XMMWORD PTR [esp+920], xmm0
 	movdqu XMMWORD PTR [esp+936], xmm0
 	movdqu XMMWORD PTR [esp+952], xmm0
-	lea esp, [esp+980]
-	lea esp, [esp-996]
+	lea esp, [esp+968]
+	lea esp, [esp-984]
 	mov ecx, 0
 	mov DWORD PTR [esp+16], ecx
 	mov DWORD PTR [esp+20], ecx
@@ -579,10 +579,7 @@ vg_triple_des_cfb64_encrypt_ssse3:
 	mov DWORD PTR [esp+28], ecx
 	mov DWORD PTR [esp+32], ecx
 	mov DWORD PTR [esp+36], ecx
-	mov DWORD PTR [esp+984], ecx
-	mov DWORD PTR [esp+988], ecx
-	mov DWORD PTR [esp+992], ecx
-	lea esp, [esp+996]
+	lea esp, [esp+984]
 	mov eax, 0
 	mov edx, 0
 	xor ecx, ecx
@@ -2325,14 +2322,14 @@ vg_triple_des_cfb64_decrypt:
 	.p2align 6
 
 vg_triple_des_cfb64_encrypt_final_ssse3:
-	lea esp, [esp-980]
-	mov eax, DWORD PTR [esp+984]
+	lea esp, [esp-968]
+	mov eax, DWORD PTR [esp+972]
 	mov DWORD PTR [esp+4], eax
-	mov eax, DWORD PTR [esp+988]
+	mov eax, DWORD PTR [esp+976]
 	mov DWORD PTR [esp+8], eax
-	mov eax, DWORD PTR [esp+992]
+	mov eax, DWORD PTR [esp+980]
 	mov DWORD PTR [esp+12], eax
-	mov eax, DWORD PTR [esp+996]
+	mov eax, DWORD PTR [esp+984]
 	mov DWORD PTR [esp+16], eax
 	mov eax, esp
 	add eax, 24
@@ -2912,8 +2909,8 @@ vg_triple_des_cfb64_encrypt_final_ssse3:
 	movdqu XMMWORD PTR [esp+920], xmm0
 	movdqu XMMWORD PTR [esp+936], xmm0
 	movdqu XMMWORD PTR [esp+952], xmm0
-	lea esp, [esp+980]
-	lea esp, [esp-996]
+	lea esp, [esp+968]
+	lea esp, [esp-984]
 	mov ecx, 0
 	mov DWORD PTR [esp+16], ecx
 	mov DWORD PTR [esp+20], ecx
@@ -2921,10 +2918,7 @@ vg_triple_des_cfb64_encrypt_final_ssse3:
 	mov DWORD PTR [esp+28], ecx
 	mov DWORD PTR [esp+32], ecx
 	mov DWORD PTR [esp+36], ecx
-	mov DWORD PTR [esp+984], ecx
-	mov DWORD PTR [esp+988], ecx
-	mov DWORD PTR [esp+992], ecx
-	lea esp, [esp+996]
+	lea esp, [esp+984]
 	mov eax, 0
 	mov edx, 0
 	xor ecx, ecx
@@ -3326,14 +3320,14 @@ vg_triple_des_cfb64_encrypt_final:
 	.p2align 6
 
 vg_triple_des_cfb64_decrypt_final_ssse3:
-	lea esp, [esp-980]
-	mov eax, DWORD PTR [esp+984]
+	lea esp, [esp-968]
+	mov eax, DWORD PTR [esp+972]
 	mov DWORD PTR [esp+4], eax
-	mov eax, DWORD PTR [esp+988]
+	mov eax, DWORD PTR [esp+976]
 	mov DWORD PTR [esp+8], eax
-	mov eax, DWORD PTR [esp+992]
+	mov eax, DWORD PTR [esp+980]
 	mov DWORD PTR [esp+12], eax
-	mov eax, DWORD PTR [esp+996]
+	mov eax, DWORD PTR [esp+984]
 	mov DWORD PTR [esp+16], eax
 	mov eax, esp
 	add eax, 24
@@ -3913,8 +3907,8 @@ vg_triple_des_cfb64_decrypt_final_ssse3:
 	movdqu XMMWORD PTR [esp+920], xmm0
 	movdqu XMMWORD PTR [esp+936], xmm0
 	movdqu XMMWORD PTR [esp+952], xmm0
-	lea esp, [esp+980]
-	lea esp, [esp-996]
+	lea esp, [esp+968]
+	lea esp, [esp-984]
 	mov ecx, 0
 	mov DWORD PTR [esp+16], ecx
 	mov DWORD PTR [esp+20], ecx
@@ -3922,10 +3916,7 @@ vg_triple_des_cfb64_decrypt_final_ssse3:
 	mov DWORD PTR [esp+28], ecx
 	mov DWORD PTR [esp+32], ecx
 	mov DWORD PTR [esp+36], ecx
-	mov DWORD PTR [esp+984], ecx
-	mov DWORD PTR [esp+988], ecx
-	mov DWORD PTR [esp+992], ecx
-	lea esp, [esp+996]
+	lea esp, [esp+984]
 	mov eax, 0
 	mov edx, 0
 	xor ecx, ecx

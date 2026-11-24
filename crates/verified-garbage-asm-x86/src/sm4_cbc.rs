@@ -20,12 +20,12 @@ pub const VG_SM4_CBC_ENCRYPT_CHAINED_AESNI_FEATURES: verified_garbage_cpu::Featu
 /// * `iv` must be valid for reads and writes of 16 bytes.
 /// * `data` must be valid for reads and writes of `16 * n` bytes.
 /// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
-/// * None of `schedule`, `iv` and `data` may overlap the arguments on the stack, overlap the return address on the stack or the 692 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `schedule`, `iv` and `data` may overlap the arguments on the stack, overlap the return address on the stack or the 696 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `ssse3` and `aes` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sm4_cbc_encrypt_chained_aesni(schedule: *const [u8; 128], iv: *mut [u8; 16], data: *mut [u8; 16], n: usize) {
     core::arch::naked_asm!(
-        r#".base64 "jaQkUP3//4uEJLQCAACJRCQEi4QkuAIAAIlEJAiLhCS8AgAAiUQkDIuEJMACAACJRCQQieCDwBiJRCQUi0QkFImYcAIAAImwdAIAAIm4eAIAAImofAIAAInHi3QkCIsGiYeIAgAAi0YEiYeMAgAAi0YIiYeQAgAAi0YMiYeUAgAA"
+        r#".base64 "jaQkTP3//4uEJLgCAACJRCQEi4QkvAIAAIlEJAiLhCTAAgAAiUQkDIuEJMQCAACJRCQQieCDwBiJRCQUi0QkFImYcAIAAImwdAIAAIm4eAIAAImofAIAAInHi3QkCIsGiYeIAgAAi0YEiYeMAgAAi0YIiYeQAgAAi0YMiYeUAgAA"
 call 2f
 2:
 mov eax, DWORD PTR [esp]
@@ -38,16 +38,16 @@ jne 20b
 .base64 "i0QkDImHgAIAAItEJBCJh4QCAACFwA=="
 je 21f
 23:
-.base64 "i7eAAgAAi6+EAgAAiwYzh4gCAACJRwiLRgQzh4wCAACJRwyLRggzh5ACAACJRxCLRgwzh5QCAACJRxSLH4n+g8ZguAgAAADzD29HCPMPbztmD2/IZg9y0QRmD9vPZg/bx/MPb5OAAAAAZg84ANDzD2+bkAAAAGYPOADZZg/v02YPcNoA8w9/XyBmD3DCVfMPf0cwZg9w2qrzD39fQGYPcMr/8w9/T1BmD+/DZg/vwfMPbx5mD+/D"
+.base64 "i7eAAgAAi6+EAgAAiwYzh4gCAACJRxCLRgQzh4wCAACJRxSLRggzh5ACAACJRxiLRgwzh5QCAACJRxyLH4n+g8ZguAgAAADzD29HEPMPbztmD2/IZg9y0QRmD9vPZg/bx/MPb5OAAAAAZg84ANDzD2+bkAAAAGYPOADZZg/v02YPcNoA8w9/XyBmD3DCVfMPf0cwZg9w2qrzD39fQGYPcMr/8w9/T1BmD+/DZg/vwfMPbx5mD+/D"
 24:
 .base64 "8w9vVhDzD293QGYP79ZmD+/R8w9vXyBmD+/aZg843cdmD2/IZg/bz2YPctAEZg/bx/MPb2MQZg84AOHzD29rMGYPOADpZg9vzPMPb3MgZg84APBmD+/mZg/vzvMPb3NAZg84APBmD+/uZg/v3GYP793zD29zUGYPOADm8w9vQ2BmDzgAyGYP7+HzD29zcGYPOADuZg/v3WYP7+NmD+/U8w9/VyDzD29OIPMPb3dQZg/vzmYP78rzD29fMGYP79lmDzjd52YPb9RmD9vXZg9y1ARmD9vn8w9vQxBmDzgAwvMPb2swZg84AOpmD2/Q8w9vcyBmDzgA9GYP78ZmD+/W8w9vc0BmDzgA9GYP7+5mD+/YZg/v3fMPb3NQZg84AMbzD29jYGYPOADUZg/vwvMPb3NwZg84AO5mD+/dZg/vw2YP78jzD39PMPMPb1Yw8w9vdyBmD+/WZg/v0fMPb19AZg/v2mYPON3HZg9vyGYP289mD3LQBGYP28fzD29jEGYPOADh8w9vazBmDzgA6WYPb8zzD29zIGYPOADwZg/v5mYP787zD29zQGYPOADwZg/v7mYP79xmD+/d8w9vc1BmDzgA5vMPb0NgZg84AMhmD+/h8w9vc3BmDzgA7mYP791mD+/jZg/v1PMPf1dA8w9vTkDzD293MGYP785mD+/K8w9vX1BmD+/ZZg843edmD2/UZg/b12YPctQEZg/b5/MPb0MQZg84AMLzD29rMGYPOADqZg9v0PMPb3MgZg84APRmD+/GZg/v1vMPb3NAZg84APRmD+/uZg/v2GYP793zD29zUGYPOADG8w9vY2BmDzgA1GYP78LzD29zcGYPOADuZg/v3WYP78NmD+/I8w9/T1CDxkCD6AE="
 jne 24b
-.base64 "8w9vR1DzD29PQGYPbMFmD3DAiPMPb08w8w9vVyBmD2zKZg9wyYhmD2zBZg9vyGYPctEEZg/bz2YP28fzD2+ToAAAAGYPOADQ8w9vm7AAAABmDzgA2WYP79PzD39XCIu3gAIAAIuvhAIAAItHCImHiAIAAItHDImHjAIAAItHEImHkAIAAItHFImHlAIAAItHCIkGi0cMiUYEi0cQiUYIi0cUiUYMg8YQg+0BibeAAgAAia+EAgAA"
+.base64 "8w9vR1DzD29PQGYPbMFmD3DAiPMPb08w8w9vVyBmD2zKZg9wyYhmD2zBZg9vyGYPctEEZg/bz2YP28fzD2+ToAAAAGYPOADQ8w9vm7AAAABmDzgA2WYP79PzD39XEIu3gAIAAIuvhAIAAItHEImHiAIAAItHFImHjAIAAItHGImHkAIAAItHHImHlAIAAItHEIkGi0cUiUYEi0cYiUYIi0cciUYMg8YQg+0BibeAAgAAia+EAgAA"
 jne 23b
 jmp 22f
 21:
 22:
-.base64 "i3QkCIuHiAIAAIkGi4eMAgAAiUYEi4eQAgAAiUYIi4eUAgAAiUYMi59wAgAAi7d0AgAAi698AgAAi794AgAAZg/vwLkAAAAA8w9/RCQY8w9/RCQo8w9/RCQ48w9/RCRI8w9/RCRY8w9/RCRo8w9/RCR48w9/hCSIAAAA8w9/hCSYAAAA8w9/hCSoAAAA8w9/hCS4AAAA8w9/hCTIAAAA8w9/hCTYAAAA8w9/hCToAAAA8w9/hCT4AAAA8w9/hCQIAQAA8w9/hCQYAQAA8w9/hCQoAQAA8w9/hCQ4AQAA8w9/hCRIAQAA8w9/hCRYAQAA8w9/hCRoAQAA8w9/hCR4AQAA8w9/hCSIAQAA8w9/hCSYAQAA8w9/hCSoAQAA8w9/hCS4AQAA8w9/hCTIAQAA8w9/hCTYAQAA8w9/hCToAQAA8w9/hCT4AQAA8w9/hCQIAgAA8w9/hCQYAgAA8w9/hCQoAgAA8w9/hCQ4AgAA8w9/hCRIAgAA8w9/hCRYAgAA8w9/hCRoAgAA8w9/hCR4AgAA8w9/hCSIAgAA8w9/hCSYAgAAiYwkqAIAAImMJKwCAACNpCSwAgAAjaQkTP3//7kAAAAAiUwkBIlMJAiJTCQMiUwkEIlMJBSJTCQYjaQktAIAALgAAAAAugAAAAAxyWYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ww=="
+.base64 "i3QkCIuHiAIAAIkGi4eMAgAAiUYEi4eQAgAAiUYIi4eUAgAAiUYMi59wAgAAi7d0AgAAi698AgAAi794AgAAZg/vwLkAAAAA8w9/RCQY8w9/RCQo8w9/RCQ48w9/RCRI8w9/RCRY8w9/RCRo8w9/RCR48w9/hCSIAAAA8w9/hCSYAAAA8w9/hCSoAAAA8w9/hCS4AAAA8w9/hCTIAAAA8w9/hCTYAAAA8w9/hCToAAAA8w9/hCT4AAAA8w9/hCQIAQAA8w9/hCQYAQAA8w9/hCQoAQAA8w9/hCQ4AQAA8w9/hCRIAQAA8w9/hCRYAQAA8w9/hCRoAQAA8w9/hCR4AQAA8w9/hCSIAQAA8w9/hCSYAQAA8w9/hCSoAQAA8w9/hCS4AQAA8w9/hCTIAQAA8w9/hCTYAQAA8w9/hCToAQAA8w9/hCT4AQAA8w9/hCQIAgAA8w9/hCQYAgAA8w9/hCQoAgAA8w9/hCQ4AgAA8w9/hCRIAgAA8w9/hCRYAgAA8w9/hCRoAgAA8w9/hCR4AgAA8w9/hCSIAgAA8w9/hCSYAgAAiYwkqAIAAImMJKwCAACNpCS0AgAAjaQkSP3//7kAAAAAiUwkBIlMJAiJTCQMiUwkEIlMJBSJTCQYiYwktAIAAI2kJLgCAAC4AAAAALoAAAAAMclmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/8M="
 .p2align 6"#,
         VG_SM4_AESNI = sym super::consts::VG_SM4_AESNI,
     )
@@ -107,12 +107,12 @@ pub const VG_SM4_CBC_DECRYPT_CHAINED_AESNI_FEATURES: verified_garbage_cpu::Featu
 /// * `iv` must be valid for reads and writes of 16 bytes.
 /// * `data` must be valid for reads and writes of `16 * n` bytes.
 /// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
-/// * None of `schedule`, `iv` and `data` may overlap the arguments on the stack, overlap the return address on the stack or the 756 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `schedule`, `iv` and `data` may overlap the arguments on the stack, overlap the return address on the stack or the 760 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `ssse3` and `aes` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sm4_cbc_decrypt_chained_aesni(schedule: *const [u8; 128], iv: *mut [u8; 16], data: *mut [u8; 16], n: usize) {
     core::arch::naked_asm!(
-        r#".base64 "jaQkEP3//4uEJPQCAACJRCQEi4Qk+AIAAIlEJAiLhCT8AgAAiUQkDIuEJAADAACJRCQQieCDwBiJRCQUi0QkFImYsAIAAImwtAIAAIm4uAIAAImovAIAAInHi3QkCIsGiYfIAgAAi0YEiYfMAgAAi0YIiYfQAgAAi0YMiYfUAgAA"
+        r#".base64 "jaQkDP3//4uEJPgCAACJRCQEi4Qk/AIAAIlEJAiLhCQAAwAAiUQkDIuEJAQDAACJRCQQieCDwBiJRCQUi0QkFImYsAIAAImwtAIAAIm4uAIAAImovAIAAInHi3QkCIsGiYfIAgAAi0YEiYfMAgAAi0YIiYfQAgAAi0YMiYfUAgAA"
 call 2f
 2:
 mov eax, DWORD PTR [esp]
@@ -158,7 +158,7 @@ jne 211b
 jmp 210f
 29:
 210:
-.base64 "i3QkCIuHyAIAAIkGi4fMAgAAiUYEi4fQAgAAiUYIi4fUAgAAiUYMi5+wAgAAi7e0AgAAi6+8AgAAi7+4AgAAZg/vwLkAAAAA8w9/RCQY8w9/RCQo8w9/RCQ48w9/RCRI8w9/RCRY8w9/RCRo8w9/RCR48w9/hCSIAAAA8w9/hCSYAAAA8w9/hCSoAAAA8w9/hCS4AAAA8w9/hCTIAAAA8w9/hCTYAAAA8w9/hCToAAAA8w9/hCT4AAAA8w9/hCQIAQAA8w9/hCQYAQAA8w9/hCQoAQAA8w9/hCQ4AQAA8w9/hCRIAQAA8w9/hCRYAQAA8w9/hCRoAQAA8w9/hCR4AQAA8w9/hCSIAQAA8w9/hCSYAQAA8w9/hCSoAQAA8w9/hCS4AQAA8w9/hCTIAQAA8w9/hCTYAQAA8w9/hCToAQAA8w9/hCT4AQAA8w9/hCQIAgAA8w9/hCQYAgAA8w9/hCQoAgAA8w9/hCQ4AgAA8w9/hCRIAgAA8w9/hCRYAgAA8w9/hCRoAgAA8w9/hCR4AgAA8w9/hCSIAgAA8w9/hCSYAgAA8w9/hCSoAgAA8w9/hCS4AgAA8w9/hCTIAgAA8w9/hCTYAgAAiYwk6AIAAImMJOwCAACNpCTwAgAAjaQkDP3//7kAAAAAiUwkBIlMJAiJTCQMiUwkEIlMJBSJTCQYjaQk9AIAALgAAAAAugAAAAAxyWYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ww=="
+.base64 "i3QkCIuHyAIAAIkGi4fMAgAAiUYEi4fQAgAAiUYIi4fUAgAAiUYMi5+wAgAAi7e0AgAAi6+8AgAAi7+4AgAAZg/vwLkAAAAA8w9/RCQY8w9/RCQo8w9/RCQ48w9/RCRI8w9/RCRY8w9/RCRo8w9/RCR48w9/hCSIAAAA8w9/hCSYAAAA8w9/hCSoAAAA8w9/hCS4AAAA8w9/hCTIAAAA8w9/hCTYAAAA8w9/hCToAAAA8w9/hCT4AAAA8w9/hCQIAQAA8w9/hCQYAQAA8w9/hCQoAQAA8w9/hCQ4AQAA8w9/hCRIAQAA8w9/hCRYAQAA8w9/hCRoAQAA8w9/hCR4AQAA8w9/hCSIAQAA8w9/hCSYAQAA8w9/hCSoAQAA8w9/hCS4AQAA8w9/hCTIAQAA8w9/hCTYAQAA8w9/hCToAQAA8w9/hCT4AQAA8w9/hCQIAgAA8w9/hCQYAgAA8w9/hCQoAgAA8w9/hCQ4AgAA8w9/hCRIAgAA8w9/hCRYAgAA8w9/hCRoAgAA8w9/hCR4AgAA8w9/hCSIAgAA8w9/hCSYAgAA8w9/hCSoAgAA8w9/hCS4AgAA8w9/hCTIAgAA8w9/hCTYAgAAiYwk6AIAAImMJOwCAACNpCT0AgAAjaQkCP3//7kAAAAAiUwkBIlMJAiJTCQMiUwkEIlMJBSJTCQYiYwk9AIAAI2kJPgCAAC4AAAAALoAAAAAMclmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/8M="
 .p2align 6"#,
         VG_SM4_AESNI_WIDE = sym super::consts::VG_SM4_AESNI_WIDE,
     )

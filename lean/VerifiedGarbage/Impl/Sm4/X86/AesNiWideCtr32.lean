@@ -16,7 +16,12 @@ block's last 32 bits, with its scratch buffer as the fifth argument. -/
 def ctr32 : Prog isa := (core .encrypt).seqLevels Modes.Mode.ctr32Wide levels Modes.Mode.ctr32Early
 
 /-- `ctr32` with its working space on the stack: the internal function
-`vg_sm4_ctr32_aesni`, which SM4-GCM's functions call. -/
-def ctr32Framed : Prog isa := Impl.StackScratch.X86.withStackScratchWiped 752 4 182 ctr32
+`vg_sm4_ctr32_aesni`, which SM4-GCM's functions call. Its frame is larger
+than the working space and its header need (760 bytes for 752), so that the
+working space is at a multiple of 16 where SM4-GCM's functions that
+encrypt more than a block call it: with `esp` a multiple of 16 on its
+entry, which their frames of 2600 and 2616 bytes and four pushed arguments
+give when `esp` is one at their own call. -/
+def ctr32Framed : Prog isa := Impl.StackScratch.X86.withStackScratchWiped 760 4 182 ctr32
 
 end VG.Impl.Sm4.X86.AesNiWide

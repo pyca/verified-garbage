@@ -5,14 +5,14 @@
 // gives.
 
 vg_sm4_cbc_encrypt_chained_aesni:
-	lea esp, [esp-688]
-	mov eax, DWORD PTR [esp+692]
-	mov DWORD PTR [esp+4], eax
+	lea esp, [esp-692]
 	mov eax, DWORD PTR [esp+696]
-	mov DWORD PTR [esp+8], eax
+	mov DWORD PTR [esp+4], eax
 	mov eax, DWORD PTR [esp+700]
-	mov DWORD PTR [esp+12], eax
+	mov DWORD PTR [esp+8], eax
 	mov eax, DWORD PTR [esp+704]
+	mov DWORD PTR [esp+12], eax
+	mov eax, DWORD PTR [esp+708]
 	mov DWORD PTR [esp+16], eax
 	mov eax, esp
 	add eax, 24
@@ -81,21 +81,21 @@ vg_sm4_cbc_encrypt_chained_aesni:
 	mov ebp, DWORD PTR [edi+644]
 	mov eax, DWORD PTR [esi]
 	xor eax, DWORD PTR [edi+648]
-	mov DWORD PTR [edi+8], eax
+	mov DWORD PTR [edi+16], eax
 	mov eax, DWORD PTR [esi+4]
 	xor eax, DWORD PTR [edi+652]
-	mov DWORD PTR [edi+12], eax
+	mov DWORD PTR [edi+20], eax
 	mov eax, DWORD PTR [esi+8]
 	xor eax, DWORD PTR [edi+656]
-	mov DWORD PTR [edi+16], eax
+	mov DWORD PTR [edi+24], eax
 	mov eax, DWORD PTR [esi+12]
 	xor eax, DWORD PTR [edi+660]
-	mov DWORD PTR [edi+20], eax
+	mov DWORD PTR [edi+28], eax
 	mov ebx, DWORD PTR [edi]
 	mov esi, edi
 	add esi, 96
 	mov eax, 8
-	movdqu xmm0, XMMWORD PTR [edi+8]
+	movdqu xmm0, XMMWORD PTR [edi+16]
 	movdqu xmm7, XMMWORD PTR [ebx]
 	movdqa xmm1, xmm0
 	psrld xmm1, 4
@@ -284,24 +284,24 @@ vg_sm4_cbc_encrypt_chained_aesni:
 	movdqu xmm3, XMMWORD PTR [ebx+176]
 	pshufb xmm3, xmm1
 	pxor xmm2, xmm3
-	movdqu XMMWORD PTR [edi+8], xmm2
+	movdqu XMMWORD PTR [edi+16], xmm2
 	mov esi, DWORD PTR [edi+640]
 	mov ebp, DWORD PTR [edi+644]
-	mov eax, DWORD PTR [edi+8]
+	mov eax, DWORD PTR [edi+16]
 	mov DWORD PTR [edi+648], eax
-	mov eax, DWORD PTR [edi+12]
+	mov eax, DWORD PTR [edi+20]
 	mov DWORD PTR [edi+652], eax
-	mov eax, DWORD PTR [edi+16]
+	mov eax, DWORD PTR [edi+24]
 	mov DWORD PTR [edi+656], eax
-	mov eax, DWORD PTR [edi+20]
+	mov eax, DWORD PTR [edi+28]
 	mov DWORD PTR [edi+660], eax
-	mov eax, DWORD PTR [edi+8]
-	mov DWORD PTR [esi], eax
-	mov eax, DWORD PTR [edi+12]
-	mov DWORD PTR [esi+4], eax
 	mov eax, DWORD PTR [edi+16]
-	mov DWORD PTR [esi+8], eax
+	mov DWORD PTR [esi], eax
 	mov eax, DWORD PTR [edi+20]
+	mov DWORD PTR [esi+4], eax
+	mov eax, DWORD PTR [edi+24]
+	mov DWORD PTR [esi+8], eax
+	mov eax, DWORD PTR [edi+28]
 	mov DWORD PTR [esi+12], eax
 	add esi, 16
 	sub ebp, 1
@@ -369,8 +369,8 @@ vg_sm4_cbc_encrypt_chained_aesni:
 	movdqu XMMWORD PTR [esp+664], xmm0
 	mov DWORD PTR [esp+680], ecx
 	mov DWORD PTR [esp+684], ecx
-	lea esp, [esp+688]
-	lea esp, [esp-692]
+	lea esp, [esp+692]
+	lea esp, [esp-696]
 	mov ecx, 0
 	mov DWORD PTR [esp+4], ecx
 	mov DWORD PTR [esp+8], ecx
@@ -378,7 +378,8 @@ vg_sm4_cbc_encrypt_chained_aesni:
 	mov DWORD PTR [esp+16], ecx
 	mov DWORD PTR [esp+20], ecx
 	mov DWORD PTR [esp+24], ecx
-	lea esp, [esp+692]
+	mov DWORD PTR [esp+692], ecx
+	lea esp, [esp+696]
 	mov eax, 0
 	mov edx, 0
 	xor ecx, ecx
@@ -628,14 +629,14 @@ vg_sm4_cbc_encrypt_chained:
 	.p2align 6
 
 vg_sm4_cbc_decrypt_chained_aesni:
-	lea esp, [esp-752]
-	mov eax, DWORD PTR [esp+756]
-	mov DWORD PTR [esp+4], eax
+	lea esp, [esp-756]
 	mov eax, DWORD PTR [esp+760]
-	mov DWORD PTR [esp+8], eax
+	mov DWORD PTR [esp+4], eax
 	mov eax, DWORD PTR [esp+764]
-	mov DWORD PTR [esp+12], eax
+	mov DWORD PTR [esp+8], eax
 	mov eax, DWORD PTR [esp+768]
+	mov DWORD PTR [esp+12], eax
+	mov eax, DWORD PTR [esp+772]
 	mov DWORD PTR [esp+16], eax
 	mov eax, esp
 	add eax, 24
@@ -1920,8 +1921,8 @@ vg_sm4_cbc_decrypt_chained_aesni:
 	movdqu XMMWORD PTR [esp+728], xmm0
 	mov DWORD PTR [esp+744], ecx
 	mov DWORD PTR [esp+748], ecx
-	lea esp, [esp+752]
-	lea esp, [esp-756]
+	lea esp, [esp+756]
+	lea esp, [esp-760]
 	mov ecx, 0
 	mov DWORD PTR [esp+4], ecx
 	mov DWORD PTR [esp+8], ecx
@@ -1929,7 +1930,8 @@ vg_sm4_cbc_decrypt_chained_aesni:
 	mov DWORD PTR [esp+16], ecx
 	mov DWORD PTR [esp+20], ecx
 	mov DWORD PTR [esp+24], ecx
-	lea esp, [esp+756]
+	mov DWORD PTR [esp+756], ecx
+	lea esp, [esp+760]
 	mov eax, 0
 	mov edx, 0
 	xor ecx, ecx
