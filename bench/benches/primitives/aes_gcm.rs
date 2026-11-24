@@ -801,6 +801,9 @@ fn tls_record_rows(c: &mut Criterion, sizes: &[usize], offsets: Offsets, label: 
             g.finish();
 
             let contiguous = Aligned::new(&[&data[..], &ty].concat(), offsets.input);
+            let mut identical = contiguous.to_vec();
+            let identical_tag = vg_key.encrypt_in_place(&nonce, &aad, &mut identical).unwrap();
+            assert_eq!((&identical[..], identical_tag), (&ct[..], tag));
             let one_tag = vg_key
                 .encrypt(&nonce, &aad, &[&contiguous], &mut out)
                 .unwrap();

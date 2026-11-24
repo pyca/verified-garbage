@@ -48,11 +48,7 @@ use crate::arch::dispatch::gcm::vg_aes_gcm_open_auto;
     target_arch = "riscv64"
 )))]
 use crate::arch::dispatch::gcm::vg_aes_gcm_open_to_auto;
-#[cfg(not(any(
-    target_arch = "x86_64",
-    target_arch = "aarch64",
-    target_arch = "riscv64"
-)))]
+#[cfg(target_arch = "powerpc64")]
 use crate::arch::dispatch::gcm::vg_aes_gcm_seal_auto;
 #[cfg(not(any(target_arch = "x86_64", target_arch = "riscv64")))]
 use crate::arch::dispatch::gcm::vg_aes_gcm_seal_gather_auto;
@@ -388,11 +384,15 @@ impl AesGcm {
                 &mut tag,
                 &self.bk.0,
             );
-            #[cfg(not(any(
-                target_arch = "x86_64",
-                target_arch = "aarch64",
-                target_arch = "riscv64"
-            )))]
+            #[cfg(any(target_arch = "arm", target_arch = "x86"))]
+            {
+                let dst = data.as_mut_ptr();
+                crate::arch::dispatch::gcm::vg_aes_gcm_seal_contiguous_auto(
+                    dit, self.key(), self.rounds, nonce.as_ptr(), nonce.len(), aad.as_ptr(),
+                    aad.len(), dst.cast_const(), dst, data.len(), &mut tag,
+                );
+            }
+            #[cfg(target_arch = "powerpc64")]
             vg_aes_gcm_seal_auto(
                 dit,
                 self.key(),
@@ -711,6 +711,17 @@ impl AesGcm {
         plaintext: &[&[u8]],
         out: &mut [u8],
     ) -> Block {
+        #[cfg(any(target_arch = "arm", target_arch = "x86"))]
+        if let [input] = plaintext {
+            let mut tag = [0; 16];
+            unsafe {
+                crate::arch::dispatch::gcm::vg_aes_gcm_seal_contiguous_auto(
+                    dit, self.key(), self.rounds, nonce.as_ptr(), nonce.len(), aad.as_ptr(),
+                    aad.len(), input.as_ptr(), out.as_mut_ptr(), out.len(), &mut tag,
+                );
+            }
+            return tag;
+        }
         // The descriptors of the pieces, as `vg_aes_gcm_seal_gather` takes
         // them: each its address and its length. Only the first
         // `plaintext.len()` are written, and the function reads only those.

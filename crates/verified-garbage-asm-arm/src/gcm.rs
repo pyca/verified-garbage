@@ -4225,3 +4225,598 @@ bx lr",
         vg_aes_ctr32_to = sym super::aes::vg_aes_ctr32_to::vg_aes_ctr32_to,
     )
 }
+
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_aes_gcm_seal_contiguous(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+    core::arch::naked_asm!(
+        r"sub sp, sp, #2624
+add r12, sp, #0
+str lr, [r12, #28]
+ldr lr, [sp, #2624]
+str lr, [r12, #0]
+ldr lr, [sp, #2628]
+str lr, [r12, #4]
+ldr lr, [sp, #2632]
+str lr, [r12, #8]
+ldr lr, [sp, #2636]
+str lr, [r12, #12]
+ldr lr, [sp, #2640]
+str lr, [r12, #16]
+ldr lr, [sp, #2644]
+str lr, [r12, #20]
+add lr, sp, #32
+str lr, [r12, #24]
+ldr lr, [sp, #28]
+ldr r12, [sp, #24]
+str r4, [r12, #128]
+str r5, [r12, #132]
+str r6, [r12, #136]
+str r7, [r12, #140]
+str r8, [r12, #144]
+str r9, [r12, #148]
+str r10, [r12, #152]
+str r11, [r12, #156]
+str lr, [r12, #160]
+mov r11, r12
+add r10, r11, #16
+mov r9, r0
+mov r8, r1
+mov r4, r2
+mov r5, r3
+cmp r5, #12
+beq 20f
+mov r0, #0
+str r0, [r10, #0]
+str r0, [r10, #4]
+str r0, [r10, #8]
+str r0, [r10, #12]
+mov r7, r5
+mov r6, #0
+cmp r5, #0
+beq 22f
+cmp r6, #0
+beq 24f
+mov r3, #16
+sub r3, r3, r6
+cmp r5, r3
+mov r12, #0
+adc r12, r12, #0
+cmp r12, #0
+beq 26f
+b 27f
+26:
+mov r3, r5
+27:
+add r2, r10, #32
+add r2, r2, r6
+mov r1, r4
+add r4, r4, r3
+sub r5, r5, r3
+add r6, r6, r3
+28:
+ldrb r12, [r1, #0]
+strb r12, [r2, #0]
+add r1, r1, #1
+add r2, r2, #1
+subs r3, r3, #1
+bne 28b
+cmp r6, #16
+beq 29f
+b 210f
+29:
+add r0, r9, #240
+add r1, r10, #0
+add r2, r10, #32
+mov r3, #1
+add r12, r11, #512
+push {{r12, lr}}
+bl {vg_ghash}
+ldr r12, [sp], #8
+210:
+b 25f
+24:
+25:
+mov r2, r4
+lsr r3, r5, #4
+and r12, r5, #15
+sub r0, r5, r12
+add r4, r4, r0
+mov r5, r12
+cmp r3, #0
+beq 211f
+add r0, r9, #240
+add r1, r10, #0
+add r12, r11, #512
+push {{r12, lr}}
+bl {vg_ghash}
+ldr r12, [sp], #8
+b 212f
+211:
+212:
+cmp r5, #0
+beq 213f
+mov r1, r4
+add r2, r10, #32
+mov r3, r5
+215:
+ldrb r12, [r1, #0]
+strb r12, [r2, #0]
+add r1, r1, #1
+add r2, r2, #1
+subs r3, r3, #1
+bne 215b
+b 214f
+213:
+214:
+b 23f
+22:
+23:
+and r6, r7, #15
+cmp r6, #0
+beq 216f
+mov r12, #0
+str r12, [r11, #96]
+str r12, [r11, #100]
+str r12, [r11, #104]
+str r12, [r11, #108]
+add r1, r10, #32
+add r2, r11, #96
+mov r3, r6
+218:
+ldrb r12, [r1, #0]
+strb r12, [r2, #0]
+add r1, r1, #1
+add r2, r2, #1
+subs r3, r3, #1
+bne 218b
+add r0, r9, #240
+add r1, r10, #0
+add r2, r11, #96
+mov r3, #1
+add r12, r11, #512
+push {{r12, lr}}
+bl {vg_ghash}
+ldr r12, [sp], #8
+b 217f
+216:
+217:
+mov r4, #0
+mov r5, #0
+mov r6, r7
+mov r7, #0
+lsl r0, r5, #3
+orr r0, r0, r4, lsr #29
+rev r0, r0
+str r0, [r11, #96]
+lsl r0, r4, #3
+rev r0, r0
+str r0, [r11, #100]
+lsl r0, r7, #3
+orr r0, r0, r6, lsr #29
+rev r0, r0
+str r0, [r11, #104]
+lsl r0, r6, #3
+rev r0, r0
+str r0, [r11, #108]
+add r0, r9, #240
+add r1, r10, #0
+add r2, r11, #96
+mov r3, #1
+add r12, r11, #512
+push {{r12, lr}}
+bl {vg_ghash}
+ldr r12, [sp], #8
+b 21f
+20:
+ldr r0, [r4, #0]
+ldr r1, [r4, #4]
+ldr r2, [r4, #8]
+mov r3, #16777216
+str r0, [r10, #0]
+str r1, [r10, #4]
+str r2, [r10, #8]
+str r3, [r10, #12]
+21:
+ldr r0, [r10, #0]
+ldr r1, [r10, #4]
+ldr r2, [r10, #8]
+ldr r3, [r10, #12]
+rev r3, r3
+add r3, r3, #1
+rev r3, r3
+str r0, [r10, #48]
+str r1, [r10, #52]
+str r2, [r10, #56]
+str r3, [r10, #60]
+mov r0, #0
+str r0, [r10, #16]
+str r0, [r10, #20]
+str r0, [r10, #24]
+str r0, [r10, #28]
+ldr r4, [sp, #0]
+ldr r5, [sp, #4]
+mov r6, #0
+cmp r5, #0
+beq 219f
+cmp r6, #0
+beq 221f
+mov r3, #16
+sub r3, r3, r6
+cmp r5, r3
+mov r12, #0
+adc r12, r12, #0
+cmp r12, #0
+beq 223f
+b 224f
+223:
+mov r3, r5
+224:
+add r2, r10, #32
+add r2, r2, r6
+mov r1, r4
+add r4, r4, r3
+sub r5, r5, r3
+add r6, r6, r3
+225:
+ldrb r12, [r1, #0]
+strb r12, [r2, #0]
+add r1, r1, #1
+add r2, r2, #1
+subs r3, r3, #1
+bne 225b
+cmp r6, #16
+beq 226f
+b 227f
+226:
+add r0, r9, #240
+add r1, r10, #16
+add r2, r10, #32
+mov r3, #1
+add r12, r11, #512
+push {{r12, lr}}
+bl {vg_ghash}
+ldr r12, [sp], #8
+227:
+b 222f
+221:
+222:
+mov r2, r4
+lsr r3, r5, #4
+and r12, r5, #15
+sub r0, r5, r12
+add r4, r4, r0
+mov r5, r12
+cmp r3, #0
+beq 228f
+add r0, r9, #240
+add r1, r10, #16
+add r12, r11, #512
+push {{r12, lr}}
+bl {vg_ghash}
+ldr r12, [sp], #8
+b 229f
+228:
+229:
+cmp r5, #0
+beq 230f
+mov r1, r4
+add r2, r10, #32
+mov r3, r5
+232:
+ldrb r12, [r1, #0]
+strb r12, [r2, #0]
+add r1, r1, #1
+add r2, r2, #1
+subs r3, r3, #1
+bne 232b
+b 231f
+230:
+231:
+b 220f
+219:
+220:
+ldr r6, [sp, #4]
+and r6, r6, #15
+cmp r6, #0
+beq 233f
+mov r12, #0
+str r12, [r11, #96]
+str r12, [r11, #100]
+str r12, [r11, #104]
+str r12, [r11, #108]
+add r1, r10, #32
+add r2, r11, #96
+mov r3, r6
+235:
+ldrb r12, [r1, #0]
+strb r12, [r2, #0]
+add r1, r1, #1
+add r2, r2, #1
+subs r3, r3, #1
+bne 235b
+add r0, r9, #240
+add r1, r10, #16
+add r2, r11, #96
+mov r3, #1
+add r12, r11, #512
+push {{r12, lr}}
+bl {vg_ghash}
+ldr r12, [sp], #8
+b 234f
+233:
+234:
+ldr r4, [sp, #8]
+ldr r6, [sp, #12]
+ldr r5, [sp, #16]
+cmp r5, #0
+beq 236f
+mov r3, r4
+lsr r12, r5, #4
+and r0, r5, #15
+sub r1, r5, r0
+add r4, r4, r1
+mov r5, r0
+cmp r12, #0
+beq 238f
+mov r2, r6
+mov r0, r12
+add r1, r11, #512
+push {{r0, r1, r2}}
+mov r0, r9
+mov r1, r8
+add r2, r10, #48
+bl {vg_aes_ctr32_to}
+ldr r12, [sp], #12
+add r6, r6, r12, lsl #4
+b 239f
+238:
+239:
+cmp r5, #0
+beq 240f
+mov r12, #0
+str r12, [r10, #64]
+str r12, [r10, #68]
+str r12, [r10, #72]
+str r12, [r10, #76]
+mov r0, r9
+mov r1, r8
+add r2, r10, #48
+add r3, r10, #64
+mov r12, #1
+add lr, r11, #512
+push {{r12, lr}}
+bl {vg_aes_ctr32}
+ldr r12, [sp], #8
+add r1, r10, #64
+mov r2, r6
+mov r3, r5
+242:
+ldrb r12, [r4, #0]
+ldrb r0, [r1, #0]
+eor r12, r12, r0
+strb r12, [r2, #0]
+add r1, r1, #1
+add r2, r2, #1
+add r4, r4, #1
+subs r3, r3, #1
+bne 242b
+b 241f
+240:
+241:
+b 237f
+236:
+237:
+ldr r0, [sp, #12]
+ldr r1, [sp, #16]
+ldr r2, [sp, #20]
+add r12, sp, #0
+str r0, [r12, #8]
+str r1, [r12, #12]
+str r2, [r12, #16]
+ldr r4, [sp, #8]
+ldr r5, [sp, #12]
+mov r6, #0
+cmp r5, #0
+beq 243f
+cmp r6, #0
+beq 245f
+mov r3, #16
+sub r3, r3, r6
+cmp r5, r3
+mov r12, #0
+adc r12, r12, #0
+cmp r12, #0
+beq 247f
+b 248f
+247:
+mov r3, r5
+248:
+add r2, r10, #32
+add r2, r2, r6
+mov r1, r4
+add r4, r4, r3
+sub r5, r5, r3
+add r6, r6, r3
+249:
+ldrb r12, [r1, #0]
+strb r12, [r2, #0]
+add r1, r1, #1
+add r2, r2, #1
+subs r3, r3, #1
+bne 249b
+cmp r6, #16
+beq 250f
+b 251f
+250:
+add r0, r9, #240
+add r1, r10, #16
+add r2, r10, #32
+mov r3, #1
+add r12, r11, #512
+push {{r12, lr}}
+bl {vg_ghash}
+ldr r12, [sp], #8
+251:
+b 246f
+245:
+246:
+mov r2, r4
+lsr r3, r5, #4
+and r12, r5, #15
+sub r0, r5, r12
+add r4, r4, r0
+mov r5, r12
+cmp r3, #0
+beq 252f
+add r0, r9, #240
+add r1, r10, #16
+add r12, r11, #512
+push {{r12, lr}}
+bl {vg_ghash}
+ldr r12, [sp], #8
+b 253f
+252:
+253:
+cmp r5, #0
+beq 254f
+mov r1, r4
+add r2, r10, #32
+mov r3, r5
+256:
+ldrb r12, [r1, #0]
+strb r12, [r2, #0]
+add r1, r1, #1
+add r2, r2, #1
+subs r3, r3, #1
+bne 256b
+b 255f
+254:
+255:
+b 244f
+243:
+244:
+ldr r6, [sp, #12]
+and r6, r6, #15
+cmp r6, #0
+beq 257f
+mov r12, #0
+str r12, [r11, #96]
+str r12, [r11, #100]
+str r12, [r11, #104]
+str r12, [r11, #108]
+add r1, r10, #32
+add r2, r11, #96
+mov r3, r6
+259:
+ldrb r12, [r1, #0]
+strb r12, [r2, #0]
+add r1, r1, #1
+add r2, r2, #1
+subs r3, r3, #1
+bne 259b
+add r0, r9, #240
+add r1, r10, #16
+add r2, r11, #96
+mov r3, #1
+add r12, r11, #512
+push {{r12, lr}}
+bl {vg_ghash}
+ldr r12, [sp], #8
+b 258f
+257:
+258:
+ldr r4, [sp, #4]
+mov r5, #0
+ldr r6, [sp, #12]
+mov r7, #0
+lsl r0, r5, #3
+orr r0, r0, r4, lsr #29
+rev r0, r0
+str r0, [r11, #96]
+lsl r0, r4, #3
+rev r0, r0
+str r0, [r11, #100]
+lsl r0, r7, #3
+orr r0, r0, r6, lsr #29
+rev r0, r0
+str r0, [r11, #104]
+lsl r0, r6, #3
+rev r0, r0
+str r0, [r11, #108]
+add r0, r9, #240
+add r1, r10, #16
+add r2, r11, #96
+mov r3, #1
+add r12, r11, #512
+push {{r12, lr}}
+bl {vg_ghash}
+ldr r12, [sp], #8
+ldr r0, [r10, #16]
+str r0, [r11, #0]
+ldr r0, [r10, #20]
+str r0, [r11, #4]
+ldr r0, [r10, #24]
+str r0, [r11, #8]
+ldr r0, [r10, #28]
+str r0, [r11, #12]
+mov r0, r9
+mov r1, r8
+mov r2, r10
+add r3, r11, #0
+mov r12, #1
+add lr, r11, #512
+push {{r12, lr}}
+bl {vg_aes_ctr32}
+ldr r12, [sp], #8
+ldr r1, [sp, #16]
+ldr r0, [r11, #0]
+str r0, [r1, #0]
+ldr r0, [r11, #4]
+str r0, [r1, #4]
+ldr r0, [r11, #8]
+str r0, [r1, #8]
+ldr r0, [r11, #12]
+str r0, [r1, #12]
+ldr r4, [r11, #128]
+ldr r5, [r11, #132]
+ldr r6, [r11, #136]
+ldr r7, [r11, #140]
+ldr r8, [r11, #144]
+ldr r9, [r11, #148]
+ldr r10, [r11, #152]
+ldr lr, [r11, #160]
+ldr r11, [r11, #156]
+add sp, sp, #2624
+sub sp, sp, #2672
+add r12, sp, #0
+mov r2, #0
+mov r3, #83
+260:
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+add r12, r12, #32
+subs r3, r3, #1
+bne 260b
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+add sp, sp, #2672
+mov r0, #0
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
+bx lr",
+        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
+        vg_aes_ctr32_to = sym super::aes::vg_aes_ctr32_to::vg_aes_ctr32_to,
+        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
+    )
+}
