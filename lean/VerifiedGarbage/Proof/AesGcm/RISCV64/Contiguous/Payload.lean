@@ -42,20 +42,28 @@ structure PayloadOut (V : Reg → BitVec 64) (sp X D : Addr) (R : Nat) (H : Bloc
       [ofBytes (lensBlock a.length (V .s11).toNat)] ^^^ ciphOf s.mem (V .s2) R (blockAt s.mem (V .s1)))
   frame : Frame (payloadFrame (V .s1) (V .s0) D sp (V .s11).toNat) s.mem t.mem
 
+theorem PayloadIn.start {V : Reg → BitVec 64} {sp X D : Addr} {R : Nat} {H : Block} {a : List Byte} {s : State}
+    (p : PayloadIn V sp X D R H a s) :
+    CrMid true V sp R (inc32 (blockAt s.mem (V .s1))) 0 X D (V .s11).toNat s.mem 0 s := by
+  refine ⟨p.env,by omega,by simpa using p.src,by simpa using p.len,p.roundsReg,p.rounds,p.write,p.read,p.buffers,
+      fun _ => p.delta,fun e => e,fun _ => ?_,rfl,.inr rfl,Frame.refl _ _⟩
+  simp [bytesAt,Proof.Gcm.xorKs]
+
+theorem PayloadIn.crypt {V : Reg → BitVec 64} {sp X D : Addr} {R : Nat} {H : Block} {a : List Byte} {s : State}
+    (p : PayloadIn V sp X D R H a s) (L : Lay (V .s2) (V .s1) (V .s0)) :
+    WP isa (.seq (cryptWholeB true true) (cryptTailB true true)) s fun u =>
+      CrOut true V sp R (inc32 (blockAt s.mem (V .s1))) 0 X D (V .s11).toNat s.mem u ∧ u.rd=s.rd ∧ u.wr=s.wr := by
+  apply WP.seq
+  refine WP.mono (WP.with_rdwr' (cryptWholeB_ok L p.start rfl fun _ => p.keys)) fun t ⟨⟨_,_,mt,lt⟩,rd,wr⟩ => ?_
+  refine WP.mono (WP.with_rdwr' (cryptTailB_ok (bs := true) L mt lt (mt.ciph L) (fun _ => p.keys.of_eq rd wr))) fun _ ⟨out,rd',wr'⟩ =>
+    ⟨out,rd'.trans rd,wr'.trans wr⟩
+
 private theorem long_wp [VG.Proof.Gcm.RISCV64.GhashLaw] {V : Reg → BitVec 64} {sp X D : Addr} {R : Nat} {H : Block}
     {a : List Byte} {s : State} (L : Lay (V .s2) (V .s1) (V .s0)) (p : PayloadIn V sp X D R H a s) :
     WP isa VG.Impl.AesGcm.RISCV64.Contiguous.longPayload s (PayloadOut V sp X D R H a s) := by
   let j := blockAt s.mem (V .s1)
-  have mid : CrMid true V sp R (inc32 j) 0 X D (V .s11).toNat s.mem 0 s := by
-    refine ⟨p.env,by omega,by simpa using p.src,by simpa using p.len,p.roundsReg,p.rounds,p.write,p.read,p.buffers,
-      fun _ => p.delta,fun e => e,fun _ => ?_,rfl,.inr rfl,Frame.refl _ _⟩
-    simp [bytesAt,Proof.Gcm.xorKs]
   apply WP.seq
-  refine WP.mono (WP.with_rdwr' (cryptWholeB_ok L mid rfl (fun _ => p.keys))) fun t ⟨⟨_,_,mt,lt⟩,rd,wr⟩ => ?_
-  apply WP.seq
-  refine WP.mono (WP.with_rdwr' (cryptTailB_ok (bs := true) L mt lt (mt.ciph L) (fun _ => p.keys.of_eq rd wr))) fun u ⟨out,rd',wr'⟩ => ?_
-  have ru := rd'.trans rd
-  have wu := wr'.trans wr
+  refine WP.mono (WP.seq_iff.mp (p.crypt L)) fun _ run => WP.seq (WP.mono run fun u ⟨out,ru,wu⟩ => ?_)
   have su := out.env.sp.trans p.env.sp.symm
   have ct := out.out (Proof.Gcm.ctr_zero s.mem _ (V .s1+BitVec.ofNat 64 64) (ciphOf s.mem (V .s2) R) p.counter)
   rw [← Proof.Gcm.gctr_eq] at ct
