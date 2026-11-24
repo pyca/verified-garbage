@@ -16,6 +16,8 @@ namespace VG.Proof.AesGcm.X86.DirectGather
 open VG VG.X86 VG.X86.RegUpd VG.Impl.AesGcm.X86
 open VG.Spec.Gcm (Block)
 
+variable {N : Nat}
+
 theorem xorTo_ct {K D T : BitVec 32} {n : Nat} {I : State → Prop}
     (req : ∀ s, I s → s.gpr .edx=K ∧ s.gpr .esi=D ∧ s.gpr .edi=T ∧ s.gpr .ecx=BitVec.ofNat 32 n) :
     CT I (xorLoopG true) := by
@@ -31,9 +33,9 @@ private structure XorAt (W K D T : BitVec 32) (n : Nat) (s : State) : Prop where
   wp : XorPreG true s K D T n
   bp : s.gpr .ebp=W
 
-theorem xorTail_ct {C St W SP D T : BitVec 32} {n R : Nat} (L : Lay C St W SP 32) (st : St=W+16#32)
-    (P : PieceRegions C W SP D T n) (hlt : n<2^32) (nz : n%16 ≠ 0) :
-    CT (WholePre C St W SP D T n R) (.seq (.block Open.tailRegs) (.seq (xorLoopG true)
+theorem xorTail_ct {C St W SP D T : BitVec 32} {n R : Nat} (L : Lay N C St W SP 32) (st : St=W+16#32)
+    (P : PieceRegions N C W SP D T n) (hlt : n<2^32) (nz : n%16 ≠ 0) :
+    CT (WholePre N C St W SP D T n R) (.seq (.block Open.tailRegs) (.seq (xorLoopG true)
       (.block [.mov .esi (.reg .ebp),.alu .add .esi (imm stO)]))) := by
   refine CT.seq (J:=XorAt W (St+64#32) (tailPtr D n) (tailPtr T n) (n%16)) (CT.taint [.esp,.ebp,.esi]
     (fun _ _ a b r hr => by
@@ -50,7 +52,7 @@ theorem xorTail_ct {C St W SP D T : BitVec 32} {n R : Nat} (L : Lay C St W SP 32
     have t : w64 (tailPtr T n) = w64 T+BitVec.ofNat 64 (16*(n/16)) := w64_add (by omega_using [ft,nz])
     have ds : Region.Sub ⟨w64 (tailPtr D n),n%16⟩ ⟨w64 D,n⟩ := by rw [d]; exact Offset.sub_base _ (by omega_using [])
     have ts : Region.Sub ⟨w64 (tailPtr T n),n%16⟩ ⟨w64 T,n⟩ := by rw [t]; exact Offset.sub_base _ (by omega_using [])
-    have ks : Region.Sub ⟨w64 (St+64#32),n%16⟩ ⟨w64 W,2560⟩ := by
+    have ks : Region.Sub ⟨w64 (St+64#32),n%16⟩ ⟨w64 W,N⟩ := by
       rw [L.aS (by decide)]; exact fun _ q => stSub L st _ (Lay.stSub (by omega_using []) _ q)
     exact ⟨⟨dx,di,si,(fun e => nomatch e),cx,by omega_using [nz],by omega_using [],
       by rw [L.nS (by decide)]; have f:=L.fs; omega_using [f],
@@ -66,13 +68,13 @@ theorem xorTail_ct {C St W SP D T : BitVec 32} {n R : Nat} (L : Lay C St W SP 32
   exact CT.taint [.ebp] (fun _ _ a b r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact a.trans b.symm) (by taint_decide)
 
-structure AlignedPre (C St W SP D T : BitVec 32) (n R off : Nat) (s : State) : Prop extends WholePre C St W SP D T n R s where
+structure AlignedPre (N : Nat) (C St W SP D T : BitVec 32) (n R off : Nat) (s : State) : Prop extends WholePre N C St W SP D T n R s where
   stream : ∃ icb : Block, CtrS s.mem St (ciphOf s.mem C R) icb off
 
 private theorem afterWhole {C St W SP D T : BitVec 32} {n R off : Nat} {s t : State} {icb : Block}
-    (L : Lay C St W SP 32) (st : St=W+16#32) (P : PieceRegions C W SP D T n)
-    (h : WholePre C St W SP D T n R s) (done : WholePost s St W SP D T (ciphOf s.mem C R) icb off (n/16) t) :
-    AlignedPre C St W SP D T n R (off+16*(n/16)) t := by
+    (L : Lay N C St W SP 32) (st : St=W+16#32) (P : PieceRegions N C W SP D T n)
+    (h : WholePre N C St W SP D T n R s) (done : WholePost N s St W SP D T (ciphOf s.mem C R) icb off (n/16) t) :
+    AlignedPre N C St W SP D T n R (off+16*(n/16)) t := by
   have dw := h.access.dataW L st P
   have f := whole_crFrame L done.frame
   have rounds := rounds_frame f (kept_crFrame L dw) h.rounds
@@ -82,11 +84,11 @@ private theorem afterWhole {C St W SP D T : BitVec 32} {n R off : Nat} {s t : St
     rounds,(keptSlot L st P h.access f (by decide) (by decide)).trans h.src,
     (keptSlot L st P h.access f (by decide) (by decide)).trans h.len⟩,icb,by rw [c]; exact done.ctr⟩
 
-theorem decTo_ct (v : GcmImpl) {C St W SP D T : BitVec 32} {n R off : Nat}
-    (L : Lay C St W SP 32) (st : St=W+16#32) (P : PieceRegions C W SP D T n) (hlt : n<2^32)
+theorem decTo_ct (v : GcmImpl) [WSize N v.ctr.scr] {C St W SP D T : BitVec 32} {n R off : Nat}
+    (L : Lay N C St W SP 32) (st : St=W+16#32) (P : PieceRegions N C W SP D T n) (hlt : n<2^32)
     (aligned : n≠0 → off%16=0) :
-    CT (AlignedPre C St W SP D T n R off) (Open.decTo v.callees v.callees.ctr) := by
-  let J := AlignedPre C St W SP D T n R (off+16*(n/16))
+    CT (AlignedPre N C St W SP D T n R off) (Open.decTo v.callees v.callees.ctr) := by
+  let J := AlignedPre N C St W SP D T n R (off+16*(n/16))
   refine CT.seq (J:=J) ((wholeTo_ct v L st P hlt).mono fun _ h => h.toWholePre) ?_ ?_
   · intro s h
     obtain ⟨icb,ctr⟩ := h.stream
@@ -102,8 +104,8 @@ theorem decTo_ct (v : GcmImpl) {C St W SP D T : BitVec 32} {n R off : Nat}
       by rw [m]; exact h.src,by rw [m]; exact h.len⟩,by rw [m]; exact h.stream⟩,z⟩
   refine CT.ite (decide (n%16=0)) (fun _ h => h.2) (fun _ => CT.nil) (fun h₀ => ?_)
   have nz : n%16 ≠ 0 := by simpa using h₀
-  refine CT.seq (J:=WholePre C St W SP D T n R) ?_ ?_ (xorTail_ct L st P hlt nz)
-  · refine CT.seq (J:=CtrReady C St W SP R (St+48#32) (St+64#32) 1)
+  refine CT.seq (J:=WholePre N C St W SP D T n R) ?_ ?_ (xorTail_ct L st P hlt nz)
+  · refine CT.seq (J:=CtrReady N C St W SP R (St+48#32) (St+64#32) 1)
       (CT.taint [.ebp,.esi] (fun _ _ a b r hr => by
         simp only [List.mem_cons,List.not_mem_nil,or_false] at hr; rcases hr with rfl | rfl
         · exact a.1.env.ebp.trans b.1.env.ebp.symm

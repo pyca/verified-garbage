@@ -35,6 +35,8 @@ set_option linter.unusedSimpArgs false
 
 namespace VG.Proof.AesGcm.X86
 
+variable {N : Nat}
+
 variable {vg : GcmImpl}
 
 open VG VG.X86 VG.X86.RegUpd VG.Impl.AesGcm.X86 VG.WriteBytes
@@ -64,64 +66,64 @@ theorem ofBytes_le4 (a b c d : BitVec 32) :
   rw [h, Cmac.ofBytes_toBytes]
 
 /-- The regions `j0` writes. -/
-abbrev j0Frame (St W SP : BitVec 32) (K : Nat) : List Region :=
-  [⟨w64 St, 80⟩, ⟨w64 W + BitVec.ofNat 64 96, 16⟩, wsR W, below SP K]
+abbrev j0Frame (N : Nat) (St W SP : BitVec 32) (K : Nat) : List Region :=
+  [⟨w64 St, 80⟩, ⟨w64 W + BitVec.ofNat 64 96, 16⟩, wsR N W, below SP K]
 
 /-- Before `j0`: the `n`-byte nonce at `D`. -/
-structure J0In (Ctx St W SP : BitVec 32) (K : Nat) (D : BitVec 32) (n : Nat) (s : State) : Prop where
-  env : Env Ctx St W SP s
+structure J0In (N : Nat) (Ctx St W SP : BitVec 32) (K : Nat) (D : BitVec 32) (n : Nat) (s : State) : Prop where
+  env : Env N Ctx St W SP s
   dO : slotv s.mem W dO = D
   nO : slotv s.mem W nO = BitVec.ofNat 32 n
   nl : slotv s.mem W nlO = BitVec.ofNat 32 n
   z : slotv s.mem W zO = 0
   nlt : n < 2 ^ 32
-  data : DataOk St W SP K s D n
+  data : DataOk N St W SP K s D n
 
 /-- `J₀` written, from `m₀`. -/
-structure J0Mid (Ctx St W SP : BitVec 32) (K : Nat) (D : BitVec 32) (n : Nat) (m₀ : Mem) (s : State) : Prop where
-  env : Env Ctx St W SP s
+structure J0Mid (N : Nat) (Ctx St W SP : BitVec 32) (K : Nat) (D : BitVec 32) (n : Nat) (m₀ : Mem) (s : State) : Prop where
+  env : Env N Ctx St W SP s
   j0 : blockAt s.mem (w64 St) = Spec.Gcm.j0 (Hk m₀ Ctx) (bytesAt m₀ (w64 D) n)
-  frame : Frame (j0Frame St W SP K) m₀ s.mem
+  frame : Frame (j0Frame N St W SP K) m₀ s.mem
 
 /-- After `j0`: `J₀`, the accumulator zeroed and the first counter block. -/
-structure J0Out (Ctx St W SP : BitVec 32) (K : Nat) (D : BitVec 32) (n : Nat) (m₀ : Mem) (s : State) : Prop where
-  env : Env Ctx St W SP s
+structure J0Out (N : Nat) (Ctx St W SP : BitVec 32) (K : Nat) (D : BitVec 32) (n : Nat) (m₀ : Mem) (s : State) : Prop where
+  env : Env N Ctx St W SP s
   j0 : blockAt s.mem (w64 St) = Spec.Gcm.j0 (Hk m₀ Ctx) (bytesAt m₀ (w64 D) n)
   y : blockAt s.mem (w64 St + BitVec.ofNat 64 16) = 0
   cb : blockAt s.mem (w64 St + BitVec.ofNat 64 48) = inc32 (Spec.Gcm.j0 (Hk m₀ Ctx) (bytesAt m₀ (w64 D) n))
-  frame : Frame (j0Frame St W SP K) m₀ s.mem
+  frame : Frame (j0Frame N St W SP K) m₀ s.mem
 
 section
-variable {Ctx St W SP : BitVec 32} {K : Nat} (L : Lay Ctx St W SP K)
+variable {Ctx St W SP : BitVec 32} {K : Nat} (L : Lay N Ctx St W SP K)
 include L
 
-theorem ctx_j0Frame : ∀ r ∈ j0Frame St W SP K, (⟨w64 Ctx + BitVec.ofNat 64 240, 16⟩ : Region).Disjoint r := by
+theorem ctx_j0Frame : ∀ r ∈ j0Frame N St W SP K, (⟨w64 Ctx + BitVec.ofNat 64 240, 16⟩ : Region).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
   · exact L.cs.sub_left (Lay.ctxSub (by decide))
   · exact L.ctx_w (by decide) (by decide)
-  · exact L.ctx_w (by decide) (by decide)
+  · exact L.ctx_ws (by decide)
   · exact (L.stk_ctx (by decide)).symm
 
-theorem kept_j0Frame : ∀ r ∈ j0Frame St W SP K, (keptR W).Disjoint r := by
+theorem kept_j0Frame : ∀ r ∈ j0Frame N St W SP K, (keptR W).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
   · simpa using (L.st_w (a := 0) (n := 80) (by decide) (.inr ⟨by decide, by decide⟩)).symm
   · exact Lay.w_w (.inr (by decide)) (by decide) (by decide)
-  · exact Lay.w_w (.inl (by decide)) (by decide) (by decide)
+  · exact Lay.w_ws (by decide)
   · exact (L.stk_w (by decide)).symm
 
 omit L in
 theorem st_j0Frame {m m' : Mem} {d k : Nat} (h : Frame [⟨w64 St + BitVec.ofNat 64 d, k⟩] m m') (hk : d + k ≤ 80) :
-    Frame (j0Frame St W SP K) m m' :=
+    Frame (j0Frame N St W SP K) m m' :=
   h.sub fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
     exact ⟨_, List.mem_cons_self .., by simpa using Lay.stSub (St := w64 St) hk⟩
 
 /-- `J₀` of a 12-byte nonce, after `edi := D`. -/
-theorem j012b_ok {D : BitVec 32} {s : State} (he : Env Ctx St W SP s) (hd : DataOk St W SP K s D 12)
+theorem j012b_ok {D : BitVec 32} {s : State} (he : Env N Ctx St W SP s) (hd : DataOk N St W SP K s D 12)
     (hdi : s.gpr .edi = D) :
     ∃ s', runBlock isa [.mov .eax (.mem (at_ .edi 0)), .mov .ecx (.mem (at_ .edi 4)), .mov .edx (.mem (at_ .edi 8)),
         .store (at_ .esi 0) .eax, .store (at_ .esi 4) .ecx, .store (at_ .esi 8) .edx,
@@ -144,8 +146,8 @@ theorem j012b_ok {D : BitVec 32} {s : State} (he : Env Ctx St W SP s) (hd : Data
   all_goals rfl
 
 theorem j012_pc {D : BitVec 32} :
-    Pc (fun (m₀ : Mem) s => J0In Ctx St W SP K D 12 s ∧ s.mem = m₀) j012 (J0Mid Ctx St W SP K D 12 ·) := by
-  refine Pc.seq (Q := fun m₀ s => (J0In Ctx St W SP K D 12 s ∧ s.mem = m₀) ∧ s.gpr .edi = D)
+    Pc (fun (m₀ : Mem) s => J0In N Ctx St W SP K D 12 s ∧ s.mem = m₀) j012 (J0Mid N Ctx St W SP K D 12 ·) := by
+  refine Pc.seq (Q := fun m₀ s => (J0In N Ctx St W SP K D 12 s ∧ s.mem = m₀) ∧ s.gpr .edi = D)
     (Pc.taint [.ebp] (fun m₀ s ⟨h, hm⟩ => ?_) (fun _ _ s₁ s₂ h₁ h₂ r hr => by
       simp only [List.mem_singleton] at hr; subst hr; rw [h₁.1.env.ebp, h₂.1.env.ebp]) (by taint_decide)) ?_
   · have he := h.env
@@ -180,8 +182,8 @@ theorem j012_pc {D : BitVec 32} :
     rw [← hm, Proof.Gcm.j0_12 _ (length_bytesAt _ _ _), blockAt, m', Cmac.bytesAt_store4, Cmac.le4_readW,
       Cmac.le4_readW, Cmac.le4_readW, le4_one, hb]
 
-theorem initState_ok {D : BitVec 32} {n : Nat} {m₀ : Mem} {s : State} (h : J0Mid Ctx St W SP K D n m₀ s) :
-    WP isa (.block initState) s (J0Out Ctx St W SP K D n m₀) := by
+theorem initState_ok {D : BitVec 32} {n : Nat} {m₀ : Mem} {s : State} (h : J0Mid N Ctx St W SP K D n m₀ s) :
+    WP isa (.block initState) s (J0Out N Ctx St W SP K D n m₀) := by
   have he := h.env
   have e0 : w64 St + BitVec.ofNat 64 0 = w64 St := BitVec.add_zero _
   have i0 : InRegions s.wr (w64 St) 4 := by have := he.stIn (d := 0) (n := 4) (by decide); rwa [e0] at this
@@ -209,7 +211,7 @@ theorem initState_ok {D : BitVec 32} {n : Nat} {m₀ : Mem} {s : State} (h : J0M
   have fz := Cmac.frame_store4 (m := store4 s.mem (w64 St + BitVec.ofNat 64 48) w0 w1 w2
     (byteRev32 (byteRev32 w3 + 1))) (w64 St + BitVec.ofNat 64 16) 0 0 0 0
   rw [← m'] at fz
-  have ff : Frame (j0Frame St W SP K) s.mem s'.mem :=
+  have ff : Frame (j0Frame N St W SP K) s.mem s'.mem :=
     (st_j0Frame f₄ (by decide)).trans (st_j0Frame fz (by decide))
   have d16 : ∀ r ∈ [(⟨w64 St + BitVec.ofNat 64 16, 16⟩ : Region)], (⟨w64 St + BitVec.ofNat 64 0, 16⟩ : Region).Disjoint r :=
     fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact Lay.st_st (.inl (by decide)) (by decide) (by decide)
@@ -230,30 +232,30 @@ theorem initState_ok {D : BitVec 32} {n : Nat} {m₀ : Mem} {s : State} (h : J0M
       hw0, hw1, hw2, hw3, inc32_words]
 
 omit L in
-theorem abs_j0Frame {m m' : Mem} (h : Frame (absFrame St W SP K 0) m m') : Frame (j0Frame St W SP K) m m' :=
+theorem abs_j0Frame {m m' : Mem} (h : Frame (absFrame N St W SP K 0) m m') : Frame (j0Frame N St W SP K) m m' :=
   h.sub fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
     · exact ⟨_, List.mem_cons_self .., by simpa using Lay.stSub (St := w64 St) (d := 0) (n := 16) (by decide)⟩
     · exact ⟨_, List.mem_cons_self .., by simpa using Lay.stSub (St := w64 St) (d := 32) (n := 16) (by decide)⟩
-    · exact ⟨wsR W, by simp, fun _ h => h⟩
+    · exact ⟨wsR N W, by simp, fun _ h => h⟩
     · exact ⟨below SP K, by simp, fun _ h => h⟩
 
 omit L in
-theorem t_j0Frame {m m' : Mem} (h : Frame (tFrame St W SP K 0) m m') : Frame (j0Frame St W SP K) m m' :=
+theorem t_j0Frame {m m' : Mem} (h : Frame (tFrame N St W SP K 0) m m') : Frame (j0Frame N St W SP K) m m' :=
   h.sub fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
     · exact ⟨_, List.mem_cons_self .., by simpa using Lay.stSub (St := w64 St) (d := 0) (n := 16) (by decide)⟩
     · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), fun _ h => h⟩
-    · exact ⟨wsR W, by simp, fun _ h => h⟩
+    · exact ⟨wsR N W, by simp, fun _ h => h⟩
     · exact ⟨below SP K, by simp, fun _ h => h⟩
 
 omit L in
-theorem pslot_j0Frame {m m' : Mem} (h : Frame [pslotR W] m m') : Frame (j0Frame St W SP K) m m' :=
+theorem pslot_j0Frame {m m' : Mem} (h : Frame [pslotR W] m m') (hN : 768 ≤ N := by wbig) : Frame (j0Frame N St W SP K) m m' :=
   h.sub fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
-    exact ⟨wsR W, by simp, pslot_ws W⟩
+    exact ⟨wsR N W, by simp, pslot_ws W⟩
 
 /-- The kept slots `j0hash` reads. -/
 abbrev J0Slots (W : BitVec 32) (n : Nat) (m : Mem) : Prop :=
@@ -261,17 +263,17 @@ abbrev J0Slots (W : BitVec 32) (n : Nat) (m : Mem) : Prop :=
 
 /-- Part of the way through `j0hash`: `x` absorbed into the accumulator at the
 state's first block. -/
-structure J0H (Ctx St W SP : BitVec 32) (K : Nat) (n : Nat) (x : List Byte) (m₀ : Mem) (s : State) : Prop where
-  env : Env Ctx St W SP s
+structure J0H (N : Nat) (Ctx St W SP : BitVec 32) (K : Nat) (n : Nat) (x : List Byte) (m₀ : Mem) (s : State) : Prop where
+  env : Env N Ctx St W SP s
   sl : J0Slots W n s.mem
   abs : Absorbed s.mem (w64 St + BitVec.ofNat 64 0) (w64 St + BitVec.ofNat 64 32) (Hk m₀ Ctx) x
   hk : Hk s.mem Ctx = Hk m₀ Ctx
-  frame : Frame (j0Frame St W SP K) m₀ s.mem
+  frame : Frame (j0Frame N St W SP K) m₀ s.mem
 
-theorem j0z_ok {D : BitVec 32} {n : Nat} {m₀ : Mem} {s : State} (h : J0In Ctx St W SP K D n s) (hm : s.mem = m₀) :
+theorem j0z_ok {D : BitVec 32} {n : Nat} {m₀ : Mem} {s : State} (h : J0In N Ctx St W SP K D n s) (hm : s.mem = m₀) :
     WP isa (.block [.mov .eax (imm 0), .store (at_ .esi 0) .eax, .store (at_ .esi 4) .eax, .store (at_ .esi 8) .eax,
       .store (at_ .esi 12) .eax, .store (at_ .ebp bO) .eax]) s fun s' =>
-      AbsIn Ctx St W SP K D n 0 s' ∧ J0H Ctx St W SP K n [] m₀ s' ∧ bytesAt s'.mem (w64 D) n = bytesAt m₀ (w64 D) n := by
+      AbsIn N Ctx St W SP K D n 0 s' ∧ J0H N Ctx St W SP K n [] m₀ s' ∧ bytesAt s'.mem (w64 D) n = bytesAt m₀ (w64 D) n := by
   have he := h.env
   subst hm
   have hz : Cmac.zero4 s.mem (w64 St + BitVec.ofNat 64 0) = (((s.mem.writeW (w64 St + BitVec.ofNat 64 0)
@@ -288,23 +290,23 @@ theorem j0z_ok {D : BitVec 32} {n : Nat} {m₀ : Mem} {s : State} (h : J0In Ctx 
     fb.sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact ⟨_, List.mem_singleton_self _, Offset.sub _ (by decide) (by decide)⟩
-  have hf : Frame (j0Frame St W SP K) s.mem (Z.writeW (w64 W + BitVec.ofNat 64 bO) (BitVec.ofNat 32 0)) :=
+  have hf : Frame (j0Frame N St W SP K) s.mem (Z.writeW (w64 W + BitVec.ofNat 64 bO) (BitVec.ofNat 32 0)) :=
     (st_j0Frame fz (by decide)).trans (pslot_j0Frame fb')
-  have sl : ∀ {o}, 96 ≤ o → o + 4 ≤ 2560 → (o + 4 ≤ bO ∨ bO + 4 ≤ o) →
+  have sl : ∀ {o}, 96 ≤ o → o + 4 ≤ 768 → (o + 4 ≤ bO ∨ bO + 4 ≤ o) →
       slotv (Z.writeW (w64 W + BitVec.ofNat 64 bO) (BitVec.ofNat 32 0)) W o = slotv s.mem W o := fun h₁ h₂ h₃ => by
     rw [slotv_eq, slot_frame fb fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact Lay.w_w h₃ (by omega_using [h₂]) (by decide)]
     exact slot_frame fz fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact (L.st_w (by decide) (.inr ⟨h₁, h₂⟩)).symm
-  have dZ : ∀ r ∈ j0Frame St W SP K, (⟨w64 D, n⟩ : Region).Disjoint r := fun r hr => by
+  have dZ : ∀ r ∈ j0Frame N St W SP K, (⟨w64 D, n⟩ : Region).Disjoint r := fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
     · exact h.data.st
     · exact h.data.w.sub_right (Lay.wSub (by decide))
-    · exact h.data.w.sub_right (Lay.wSub (by decide))
+    · exact h.data.w.sub_right (Lay.wsSub)
     · exact h.data.stk.symm
   have hD := bytesAt_frame hf dZ (by have := h.data.fit; omega_using [this])
-  have he' : Env Ctx St W SP (setMem ((s.setReg .eax (BitVec.ofNat 32 0)))
+  have he' : Env N Ctx St W SP (setMem ((s.setReg .eax (BitVec.ofNat 32 0)))
       (Z.writeW (w64 W + BitVec.ofNat 64 bO) (BitVec.ofNat 32 0))) :=
     he.keep (by regs []) (by regs []) (by regs []) rfl rfl (by
       simp only [mem_setMem]; exact slot_frame hf fun r hr =>
@@ -322,9 +324,9 @@ theorem j0z_ok {D : BitVec 32} {n : Nat} {m₀ : Mem} {s : State} (h : J0In Ctx 
   · exact blockAt_frame hf (ctx_j0Frame L)
 
 theorem j0a_pc {D : BitVec 32} {n : Nat} (hnlt : n < 2 ^ 32) :
-    Pc (fun (m₀ : Mem) s => AbsIn Ctx St W SP K D n 0 s ∧ J0H Ctx St W SP K n [] m₀ s ∧
+    Pc (fun (m₀ : Mem) s => AbsIn N Ctx St W SP K D n 0 s ∧ J0H N Ctx St W SP K n [] m₀ s ∧
         bytesAt s.mem (w64 D) n = bytesAt m₀ (w64 D) n) (absorb vg.callees 0)
-      (fun m₀ s => J0H Ctx St W SP K n (bytesAt m₀ (w64 D) n) m₀ s) := by
+      (fun m₀ s => J0H N Ctx St W SP K n (bytesAt m₀ (w64 D) n) m₀ s) := by
   refine Pc.mono (Pc.lift (absorb_pc L (yo := 0) (.inl rfl) (by decide) hnlt) (fun _ s => s.mem)
     fun m₀ s h => ⟨h.1, rfl⟩) (fun _ _ h => h) fun m₀ s' ⟨s, ⟨_, hh, hD⟩, ho, _, _⟩ => ?_
   have hk := hk_frame L (.inl rfl) ho.frame
@@ -334,16 +336,16 @@ theorem j0a_pc {D : BitVec 32} {n : Nat} (hnlt : n < 2 ^ 32) :
   · have := ho.abs [] rfl (by rw [hh.hk]; exact hh.abs)
     rwa [List.nil_append, hD, hh.hk] at this
 
-theorem J0H.wslot {n : Nat} {x : List Byte} {m₀ : Mem} {s s' : State} (h : J0H Ctx St W SP K n x m₀ s) {o : Nat}
-    (ho₁ : 240 ≤ o) (ho₂ : o + 4 ≤ 2560) {v : BitVec 32}
+theorem J0H.wslot {n : Nat} {x : List Byte} {m₀ : Mem} {s s' : State} (h : J0H N Ctx St W SP K n x m₀ s) {o : Nat}
+    (ho₁ : 240 ≤ o) (ho₂ : o + 4 ≤ 768) {v : BitVec 32}
     (hm : s'.mem = s.mem.writeW (w64 W + BitVec.ofNat 64 o) v)
     (hbp : s'.gpr .ebp = s.gpr .ebp) (hsi : s'.gpr .esi = s.gpr .esi) (hsp : s'.gpr .esp = s.gpr .esp)
-    (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) : J0H Ctx St W SP K n x m₀ s' := by
+    (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) : J0H N Ctx St W SP K n x m₀ s' := by
   have fb : Frame [⟨w64 W + BitVec.ofNat 64 o, 4⟩] s.mem s'.mem := by
     rw [hm]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
-  have hf : Frame (j0Frame St W SP K) s.mem s'.mem := fb.sub fun r hr => by
+  have hf : Frame (j0Frame N St W SP K) s.mem s'.mem := fb.sub fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
-    exact ⟨wsR W, by simp, Offset.sub _ (by omega_using [ho₁]) (by omega_using [ho₂])⟩
+    exact ⟨wsR N W, by simp, Lay.wsIn (by omega_using [ho₁]) (by omega_using [ho₂])⟩
   have dS : ∀ {a k : Nat}, a + k ≤ 80 → ∀ r ∈ [(⟨w64 W + BitVec.ofNat 64 o, 4⟩ : Region)],
       (⟨w64 St + BitVec.ofNat 64 a, k⟩ : Region).Disjoint r := fun hak r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact L.st_w hak (.inr ⟨by omega_using [ho₁], ho₂⟩)
@@ -358,9 +360,9 @@ theorem J0H.wslot {n : Nat} {x : List Byte} {m₀ : Mem} {s s' : State} (h : J0H
     by rw [hk, h.hk], h.frame.trans hf⟩
 
 theorem j0b_pc {n : Nat} (hnlt : n < 2 ^ 32) {x : Mem → List Byte} :
-    Pc (fun (m₀ : Mem) s => J0H Ctx St W SP K n (x m₀) m₀ s)
+    Pc (fun (m₀ : Mem) s => J0H N Ctx St W SP K n (x m₀) m₀ s)
       (.block [.mov .eax (slot nlO), .alu .and .eax (imm 15), .store (at_ .ebp bO) .eax])
-      (fun m₀ s => J0H Ctx St W SP K n (x m₀) m₀ s ∧ slotv s.mem W bO = BitVec.ofNat 32 (n % 16)) := by
+      (fun m₀ s => J0H N Ctx St W SP K n (x m₀) m₀ s ∧ slotv s.mem W bO = BitVec.ofNat 32 (n % 16)) := by
   refine Pc.taint [.ebp] (fun m₀ s h => ?_) (fun _ _ s₁ s₂ h₁ h₂ r hr => by
     simp only [List.mem_singleton] at hr; subst hr; rw [h₁.env.ebp, h₂.env.ebp]) (by taint_decide)
   have he := h.env
@@ -373,9 +375,9 @@ theorem j0b_pc {n : Nat} (hnlt : n < 2 ^ 32) {x : Mem → List Byte} :
   · mems [slotv_eq, hand]
 
 theorem j0c_pc {D : BitVec 32} {n : Nat} :
-    Pc (fun (m₀ : Mem) s => J0H Ctx St W SP K n (bytesAt m₀ (w64 D) n) m₀ s ∧
+    Pc (fun (m₀ : Mem) s => J0H N Ctx St W SP K n (bytesAt m₀ (w64 D) n) m₀ s ∧
         slotv s.mem W bO = BitVec.ofNat 32 (n % 16)) (flush vg.callees 0)
-      (fun m₀ s => J0H Ctx St W SP K n (bytesAt m₀ (w64 D) n ++ zeros (padLen n)) m₀ s) := by
+      (fun m₀ s => J0H N Ctx St W SP K n (bytesAt m₀ (w64 D) n ++ zeros (padLen n)) m₀ s) := by
   refine Pc.mono (Pc.lift (flush_pc L (yo := 0) (.inl rfl) (b := n % 16) (Nat.mod_lt _ (by decide)))
     (fun _ s => s.mem) fun m₀ s h => ⟨⟨h.1.env, h.2⟩, rfl⟩) (fun _ _ h => h) fun m₀ s' ⟨s, ⟨hh, _⟩, ho, _, _⟩ => ?_
   have hk : Hk s'.mem Ctx = Hk s.mem Ctx := blockAt_frame ho.frame (ctx_tFrame L (.inl rfl))
@@ -386,8 +388,8 @@ theorem j0c_pc {D : BitVec 32} {n : Nat} :
     rwa [length_bytesAt, hh.hk] at this
 
 theorem j0d_pc {D : BitVec 32} {n : Nat} (hnlt : n < 2 ^ 32) (hn : n ≠ 12) :
-    Pc (fun (m₀ : Mem) s => J0H Ctx St W SP K n (bytesAt m₀ (w64 D) n ++ zeros (padLen n)) m₀ s)
-      (lens vg.callees 0 zO zO nlO zO) (J0Mid Ctx St W SP K D n ·) := by
+    Pc (fun (m₀ : Mem) s => J0H N Ctx St W SP K n (bytesAt m₀ (w64 D) n ++ zeros (padLen n)) m₀ s)
+      (lens vg.callees 0 zO zO nlO zO) (J0Mid N Ctx St W SP K D n ·) := by
   refine Pc.mono (Pc.lift (lens_pc L (yo := 0) (al := zO) (ah := zO) (tl := nlO) (th := zO)
     (.inl ⟨rfl, rfl, rfl, rfl, rfl⟩) (alo := 0) (ahi := 0) (tlo := BitVec.ofNat 32 n) (thi := 0))
     (fun _ s => s.mem) fun m₀ s h => ⟨⟨h.env, h.sl.2, h.sl.2, h.sl.1, h.sl.2⟩, rfl⟩) (fun _ _ h => h)
@@ -406,7 +408,7 @@ theorem j0d_pc {D : BitVec 32} {n : Nat} (hnlt : n < 2 ^ 32) (hn : n ≠ 12) :
   rw [this, Proof.Gcm.j0_eq _ (by rw [length_bytesAt]; exact hn), length_bytesAt]
 
 theorem j0hash_pc {D : BitVec 32} {n : Nat} (hnlt : n < 2 ^ 32) (hn : n ≠ 12) :
-    Pc (fun (m₀ : Mem) s => J0In Ctx St W SP K D n s ∧ s.mem = m₀) (j0hash vg.callees) (J0Mid Ctx St W SP K D n ·) := by
+    Pc (fun (m₀ : Mem) s => J0In N Ctx St W SP K D n s ∧ s.mem = m₀) (j0hash vg.callees) (J0Mid N Ctx St W SP K D n ·) := by
   refine Pc.seq (Pc.taint [.ebp, .esi] (fun m₀ s ⟨h, hm⟩ => j0z_ok L h hm) (fun _ _ s₁ s₂ h₁ h₂ r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
@@ -416,8 +418,8 @@ theorem j0hash_pc {D : BitVec 32} {n : Nat} (hnlt : n < 2 ^ 32) (hn : n ≠ 12) 
     (Pc.seq (j0c_pc L) (j0d_pc L hnlt hn)))
 
 theorem j0_pc {D : BitVec 32} {n : Nat} :
-    Pc (fun (m₀ : Mem) s => J0In Ctx St W SP K D n s ∧ s.mem = m₀) (j0 vg.callees) (J0Out Ctx St W SP K D n ·) := by
-  refine Pc.seq (Q := fun m₀ s => (J0In Ctx St W SP K D n s ∧ s.mem = m₀) ∧ s.zf = some (decide (n = 12)))
+    Pc (fun (m₀ : Mem) s => J0In N Ctx St W SP K D n s ∧ s.mem = m₀) (j0 vg.callees) (J0Out N Ctx St W SP K D n ·) := by
+  refine Pc.seq (Q := fun m₀ s => (J0In N Ctx St W SP K D n s ∧ s.mem = m₀) ∧ s.zf = some (decide (n = 12)))
     (Pc.taint [.ebp] (fun m₀ s ⟨h, hm⟩ => ?_) (fun _ _ s₁ s₂ h₁ h₂ r hr => by
       simp only [List.mem_singleton] at hr; subst hr; rw [h₁.1.env.ebp, h₂.1.env.ebp]) (by taint_decide)) ?_
   · have he := h.env
@@ -431,7 +433,7 @@ theorem j0_pc {D : BitVec 32} {n : Nat} :
     · exact h.data.of_eq (by mems []) (by mems [])
     · mems []; exact hm
     · mems []; rw [sub_beq32 h.nlt (by decide)]
-  refine Pc.seq (Q := fun m₀ s => J0Mid Ctx St W SP K D n m₀ s) ?_
+  refine Pc.seq (Q := fun m₀ s => J0Mid N Ctx St W SP K D n m₀ s) ?_
     (Pc.taint [.esi] (fun m₀ s h => initState_ok L h) (fun _ _ s₁ s₂ h₁ h₂ r hr => by
       simp only [List.mem_singleton] at hr; subst hr; rw [h₁.env.esi, h₂.env.esi]) (by taint_decide))
   refine Pc.ite (decide (n = 12)) (fun _ _ h => h.2) (fun ht => ?_) (fun hf => ?_)

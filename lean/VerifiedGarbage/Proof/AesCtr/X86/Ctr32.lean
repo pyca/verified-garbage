@@ -433,7 +433,7 @@ theorem XPre.ctrCall {k : Nat} (hk : k < N s₀) {s : State}
     (eax : s.gpr .eax = W s₀) (ecx : s.gpr .ecx = arg s₀ 1) (edx : s.gpr .edx = Iv s₀)
     (ebx : s.gpr .ebx = D32 s₀ k) (edi : s.gpr .edi = BitVec.ofNat 32 (mOf s₀ k)) (ebp : s.gpr .ebp = S s₀)
     (esp : s.gpr .esp = E s₀) (hrd : s.rd = s₀.rd) (hwr : s.wr = s₀.wr) :
-    CtrCall s (W s₀) (Iv s₀) (D32 s₀ k) (S s₀) (R s₀) (mOf s₀ k) := by
+    CtrCall 2048 s (W s₀) (Iv s₀) (D32 s₀ k) (S s₀) (R s₀) (mOf s₀ k) := by
   have hle := mOf_le s₀ k
   have hkm : k + mOf s₀ k ≤ N s₀ := by omega_using [hk, hle]
   obtain hb : below (s.gpr .esp) 32 = stk32 s₀ := by rw [esp]; exact hp.below_eq
@@ -464,7 +464,7 @@ theorem XPre.ctrCall {k : Nat} (hk : k < N s₀) {s : State}
 
 /-- What the code before the call leaves. -/
 structure Pre32 (s₀ : State) (k : Nat) (s s₁ : State) : Prop where
-  call : CtrCall s₁ (W s₀) (Iv s₀) (D32 s₀ k) (S s₀) (R s₀) (mOf s₀ k)
+  call : CtrCall 2048 s₁ (W s₀) (Iv s₀) (D32 s₀ k) (S s₀) (R s₀) (mOf s₀ k)
   esi : s₁.gpr .esi = s.gpr .esi
   esp : s₁.gpr .esp = s.gpr .esp
   mem : s₁.mem = s.mem
@@ -1073,8 +1073,8 @@ theorem body_rel (v : Ctr32Impl) (hp : XPre s₀) (hp' : XPre s₀') {k : Nat} (
   -- The call, with the same arguments in both runs.
   have c2 : RelCT isa (fun a b => (∃ s, LInv32 s₀ k s ∧ Pre32 s₀ k s a) ∧ (∃ s, LInv32 s₀' k s ∧ Pre32 s₀' k s b))
       (ctrCall v.callee) fun _ _ => True :=
-    RelCT.mono (Proof.AesGcm.X86.ctr_ct ⟨v, .scalar⟩
-      (I := fun s => CtrCall s (W s₀) (Iv s₀) (D32 s₀ k) (S s₀) (R s₀) (mOf s₀ k) ∧ s.gpr .esp = E s₀)
+    RelCT.mono (Proof.AesGcm.X86.ctr_ct2048 ⟨v, .scalar⟩
+      (I := fun s => CtrCall 2048 s (W s₀) (Iv s₀) (D32 s₀ k) (S s₀) (R s₀) (mOf s₀ k) ∧ s.gpr .esp = E s₀)
       fun _ h => h)
       (fun a b h => by
         obtain ⟨⟨s, hs, pa⟩, ⟨t, ht, pb⟩⟩ := h

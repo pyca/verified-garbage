@@ -384,7 +384,7 @@ theorem callPre : CallPre Proof.Aes.ctr32X86 ctrRegs (ctrRd (s.gpr .esp) W) (ctr
   have eSp : (pushed ctrRegs s).callEntry.gpr .esp = s.gpr .esp - BitVec.ofNat 32 32 := by
     rw [callEntry_esp']; rfl
   refine ⟨?_, ?_, ?_⟩
-  · simp only [Proof.Aes.ctr32X86, State.withRegions_rd, State.withRegions_wr, State.withRegions_gpr,
+  · simp only [Proof.Aes.ctr32X86, Proof.Aes.ctr32X86N, State.withRegions_rd, State.withRegions_wr, State.withRegions_gpr,
       arg_withRegions, argAddr_withRegions, a0, a1, a2, a3, a4, a5, a6, eA, eSp, hR,
       show (1 : BitVec 32).toNat = 1 from rfl, Nat.mul_one]
     refine ⟨trivial, trivial, h.wc, h.wd, h.ws, h.cd, h.cs, h.ds, h.bc.sub_left h.sub28,

@@ -27,6 +27,8 @@ namespace VG.Proof.AesGcm.X86
 open VG VG.X86 VG.X86.RegUpd VG.Impl.AesGcm.X86 VG.WriteBytes
 open VG.Spec.Aes (bytesAt)
 
+variable {N : Nat}
+
 /-- The address of the stack argument `i` on entry, with `esp = SP`. -/
 abbrev argA (SP : BitVec 32) (i : Nat) : Addr := w64 (SP + BitVec.ofNat 32 (4 + 4 * i))
 
@@ -66,15 +68,15 @@ theorem SavedAt.frameK {m m' : Mem} {W : BitVec 32} {s₀ : State} (h : SavedAt 
   h.frame hf fun r hr => (hd r hr).sub_left (Offset.sub _ (by decide) (by decide))
 
 /-- The registers saved, and `ebp := W`. -/
-theorem save_ok (s : State) {W : BitVec 32} (ha : s.gpr .eax = W) (hw : Covers [⟨w64 W, 2560⟩] s.wr)
-    (fw : W.toNat + 2560 ≤ 2 ^ 32) :
+theorem save_ok (s : State) {W : BitVec 32} (ha : s.gpr .eax = W) (hw : Covers [⟨w64 W, N⟩] s.wr)
+    (fw : W.toNat + N ≤ 2 ^ 32) (hN : 768 ≤ N := by wbig) :
     ∃ s', runBlock isa saveAt s = some s' ∧ s'.gpr .ebp = W ∧ (∀ r, r ≠ .ebp → s'.gpr r = s.gpr r) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ SavedAt s'.mem W s ∧
       Frame [⟨w64 W + BitVec.ofNat 64 128, 16⟩] s.mem s'.mem := by
-  have aW : ∀ {o}, o < 2560 → w64 (W + BitVec.ofNat 32 o) = w64 W + BitVec.ofNat 64 o :=
-    fun ho => w64_add (by omega_using [fw, ho])
-  have wIn : ∀ {o}, o + 4 ≤ 2560 → InRegions s.wr (w64 W + BitVec.ofNat 64 o) 4 :=
-    fun ho => in_off hw ho (by decide)
+  have aW : ∀ {o}, o < 768 → w64 (W + BitVec.ofNat 32 o) = w64 W + BitVec.ofNat 64 o :=
+    fun ho => w64_add (by omega_using [fw, ho, hN])
+  have wIn : ∀ {o}, o + 4 ≤ 768 → InRegions s.wr (w64 W + BitVec.ofNat 64 o) 4 :=
+    fun ho => in_off hw (Nat.le_trans ho hN) (by omega_using [fw])
   refine ⟨_, by xrun [saveAt, ha, aW, wIn], ?_, ?_, ?_, ?_, ?_, ?_⟩
   · regs [ha]
   · intro r hr; simp only [gpr_setMem, gpr_setReg_of_ne _ _ hr]
@@ -91,36 +93,41 @@ theorem save_ok (s : State) {W : BitVec 32} (ha : s.gpr .eax = W) (hw : Covers [
       (List.mem_singleton_self _) _ (c 140 (by decide) (by decide))
 
 /-- What the copies of stack arguments into `W` need. -/
-structure KeepEnv (W SP : BitVec 32) (n : Nat) (s : State) : Prop where
+structure KeepEnv (N : Nat) (W SP : BitVec 32) (n : Nat) (s : State) : Prop where
   ebp : s.gpr .ebp = W
   esp : s.gpr .esp = SP
-  wW : Covers [⟨w64 W, 2560⟩] s.wr
+  wW : Covers [⟨w64 W, N⟩] s.wr
   rA : Covers [argsR SP n] (s.rd ++ s.wr)
-  aw : (argsR SP n).Disjoint ⟨w64 W, 2560⟩
+  aw : (argsR SP n).Disjoint ⟨w64 W, N⟩
   fa : SP.toNat + 4 + 4 * n ≤ 2 ^ 32
-  fw : W.toNat + 2560 ≤ 2 ^ 32
+  fw : W.toNat + N ≤ 2 ^ 32
+  big : 768 ≤ N
 
-theorem KeepEnv.keep {W SP : BitVec 32} {n : Nat} {s s' : State} (h : KeepEnv W SP n s)
+macro_rules | `(tactic| wbig) => `(tactic| exact KeepEnv.big (by assumption))
+macro_rules | `(tactic| wlt) => `(tactic| exact lt_of_fw (KeepEnv.fw (by assumption)))
+
+theorem KeepEnv.keep {W SP : BitVec 32} {n : Nat} {s s' : State} (h : KeepEnv N W SP n s)
     (hbp : s'.gpr .ebp = s.gpr .ebp) (hsp : s'.gpr .esp = s.gpr .esp) (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) :
-    KeepEnv W SP n s' :=
-  ⟨by rw [hbp, h.ebp], by rw [hsp, h.esp], by rw [hwr]; exact h.wW, by rw [hrd, hwr]; exact h.rA, h.aw, h.fa, h.fw⟩
+    KeepEnv N W SP n s' :=
+  ⟨by rw [hbp, h.ebp], by rw [hsp, h.esp], by rw [hwr]; exact h.wW, by rw [hrd, hwr]; exact h.rA, h.aw, h.fa, h.fw, h.big⟩
 
-theorem KeepEnv.argIn {W SP : BitVec 32} {n : Nat} {s : State} (h : KeepEnv W SP n s) {i : Nat} (hi : i < n) :
+theorem KeepEnv.argIn {W SP : BitVec 32} {n : Nat} {s : State} (h : KeepEnv N W SP n s) {i : Nat} (hi : i < n) :
     InRegions (s.rd ++ s.wr) (argA SP i) 4 :=
   h.rA _ _ ⟨_, List.mem_singleton_self _, argA_contains hi h.fa⟩
 
-theorem KeepEnv.argW {W SP : BitVec 32} {n : Nat} {s : State} (h : KeepEnv W SP n s) {i : Nat} (hi : i < n)
-    {o : Nat} (ho : o + 4 ≤ 2560) : (⟨argA SP i, 4⟩ : Region).Disjoint ⟨w64 W + BitVec.ofNat 64 o, 4⟩ :=
-  (h.aw.sub_left (argA_sub hi h.fa)).sub_right (Lay.wSub ho)
+theorem KeepEnv.argW {W SP : BitVec 32} {n : Nat} {s : State} (h : KeepEnv N W SP n s) {i : Nat} (hi : i < n)
+    {o : Nat} (ho : o + 4 ≤ 768) : (⟨argA SP i, 4⟩ : Region).Disjoint ⟨w64 W + BitVec.ofNat 64 o, 4⟩ :=
+  (h.aw.sub_left (argA_sub hi h.fa)).sub_right (Lay.wSub ho h.big)
 
 /-- `keep i o`. -/
-theorem keep_ok {W SP : BitVec 32} {n : Nat} {s : State} (h : KeepEnv W SP n s) {i o : Nat} (hi : i < n)
-    (ho : o + 4 ≤ 2560) :
+theorem keep_ok {W SP : BitVec 32} {n : Nat} {s : State} (h : KeepEnv N W SP n s) {i o : Nat} (hi : i < n)
+    (ho : o + 4 ≤ 768) :
     ∃ s', runBlock isa (keep i o) s = some s' ∧
       s'.mem = s.mem.writeW (w64 W + BitVec.ofNat 64 o) (s.mem.readW (argA SP i) 32) ∧
       (∀ r, r ≠ .eax → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
-  have aW : w64 (W + BitVec.ofNat 32 o) = w64 W + BitVec.ofNat 64 o := w64_add (by have := h.fw; omega_using [ho, this])
-  have wIn : InRegions s.wr (w64 W + BitVec.ofNat 64 o) 4 := in_off h.wW ho (by decide)
+  have aW : w64 (W + BitVec.ofNat 32 o) = w64 W + BitVec.ofNat 64 o := w64_add (by have hfw := h.fw; have hbig := h.big; omega_using [ho, hfw, hbig])
+  have wIn : InRegions s.wr (w64 W + BitVec.ofNat 64 o) 4 :=
+    in_off h.wW (Nat.le_trans ho h.big) (by have hfw := h.fw; omega_using [hfw])
   have rIn := h.argIn hi
   refine ⟨_, by xrun [keep, h.esp, h.ebp, aW, wIn, rIn], ?_, ?_, ?_, ?_⟩
   · mems []
@@ -132,8 +139,8 @@ abbrev keepR (W : BitVec 32) (p : Nat × Nat) : Region := ⟨w64 W + BitVec.ofNa
 
 /-- The copies of the arguments `ps` (argument, offset): each slot holds its argument. -/
 theorem keeps_ok {W SP : BitVec 32} {n : Nat} (ps : List (Nat × Nat))
-    (hps : ∀ p ∈ ps, p.1 < n ∧ p.2 + 4 ≤ 2560 ∧ p.2 % 4 = 0) (hnd : (ps.map (·.2)).Nodup)
-    {s : State} (h : KeepEnv W SP n s) :
+    (hps : ∀ p ∈ ps, p.1 < n ∧ p.2 + 4 ≤ 768 ∧ p.2 % 4 = 0) (hnd : (ps.map (·.2)).Nodup)
+    {s : State} (h : KeepEnv N W SP n s) :
     ∃ s', runBlock isa (ps.flatMap fun p => keep p.1 p.2) s = some s' ∧
       (∀ p ∈ ps, slotv s'.mem W p.2 = s.mem.readW (argA SP p.1) 32) ∧
       Frame (ps.map (keepR W)) s.mem s'.mem ∧
@@ -143,7 +150,7 @@ theorem keeps_ok {W SP : BitVec 32} {n : Nat} (ps : List (Nat × Nat))
   | cons p ps ih =>
     obtain ⟨hp1, hp2, hp4⟩ := hps p (List.mem_cons_self ..)
     obtain ⟨s₁, run₁, m₁, g₁, rd₁, wr₁⟩ := keep_ok h hp1 hp2
-    have h₁ : KeepEnv W SP n s₁ := h.keep (g₁ _ (by decide)) (g₁ _ (by decide)) rd₁ wr₁
+    have h₁ : KeepEnv N W SP n s₁ := h.keep (g₁ _ (by decide)) (g₁ _ (by decide)) rd₁ wr₁
     have hnd' := List.nodup_cons.mp hnd
     obtain ⟨s', run', sl, fr, g', rd', wr'⟩ :=
       ih (fun q hq => hps q (List.mem_cons_of_mem _ hq)) hnd'.2 h₁
@@ -168,14 +175,15 @@ theorem keeps_ok {W SP : BitVec 32} {n : Nat} (ps : List (Nat × Nat))
 
 /-- The end of every function: our caller's registers restored. -/
 theorem exit_ok {s s₀ : State} {W : BitVec 32} (hbp : s.gpr .ebp = W) (hsp : s.gpr .esp = s₀.gpr .esp)
-    (hr : Covers [⟨w64 W, 2560⟩] (s.rd ++ s.wr)) (fw : W.toNat + 2560 ≤ 2 ^ 32) (hs : SavedAt s.mem W s₀)
-    (hret : s.mem.readW (w64 (s₀.gpr .esp)) 32 = s₀.mem.readW (w64 (s₀.gpr .esp)) 32) :
+    (hr : Covers [⟨w64 W, N⟩] (s.rd ++ s.wr)) (fw : W.toNat + N ≤ 2 ^ 32) (hs : SavedAt s.mem W s₀)
+    (hret : s.mem.readW (w64 (s₀.gpr .esp)) 32 = s₀.mem.readW (w64 (s₀.gpr .esp)) 32)
+    (hN : 768 ≤ N := by wbig) :
     WP isa (.block restore) s fun s' => abiPreserved s₀ s' ∧ s'.mem = s.mem ∧ s'.gpr .eax = s.gpr .eax ∧
       s'.rd = s.rd ∧ s'.wr = s.wr := by
-  have aW : ∀ {o}, o < 2560 → w64 (W + BitVec.ofNat 32 o) = w64 W + BitVec.ofNat 64 o :=
-    fun ho => w64_add (by omega_using [fw, ho])
-  have rIn : ∀ {o}, o + 4 ≤ 2560 → InRegions (s.rd ++ s.wr) (w64 W + BitVec.ofNat 64 o) 4 :=
-    fun ho => in_off hr ho (by decide)
+  have aW : ∀ {o}, o < 768 → w64 (W + BitVec.ofNat 32 o) = w64 W + BitVec.ofNat 64 o :=
+    fun ho => w64_add (by omega_using [fw, ho, hN])
+  have rIn : ∀ {o}, o + 4 ≤ 768 → InRegions (s.rd ++ s.wr) (w64 W + BitVec.ofNat 64 o) 4 :=
+    fun ho => in_off hr (Nat.le_trans ho hN) (by omega_using [fw])
   obtain ⟨e₁, e₂, e₃, e₄⟩ := hs
   simp only [slotv_eq] at e₁ e₂ e₃ e₄
   refine WP.of_runBlock ⟨_, by xrun [restore, hbp, aW, rIn], ⟨fun r hr => ?_, ?_⟩, ?_, ?_, ?_, ?_⟩
@@ -193,7 +201,7 @@ theorem exit_ok {s s₀ : State} {W : BitVec 32} (hbp : s.gpr .ebp = W) (hsp : s
   · mems []
 
 /-- After the entry's copies: what the rest of the entry block starts from. -/
-structure Entered (s : State) (W St : BitVec 32) (nA : Nat) (ps : List (Nat × Nat)) (s₂ : State) : Prop where
+structure Entered (N : Nat) (s : State) (W St : BitVec 32) (nA : Nat) (ps : List (Nat × Nat)) (s₂ : State) : Prop where
   ebp : s₂.gpr .ebp = W
   esi : s₂.gpr .esi = St
   esp : s₂.gpr .esp = s.gpr .esp
@@ -204,27 +212,28 @@ structure Entered (s : State) (W St : BitVec 32) (nA : Nat) (ps : List (Nat × N
   saved : SavedAt s₂.mem W s
   slots : ∀ p ∈ ps, slotv s₂.mem W p.2 = arg s p.1
   args : ∀ i < nA, s₂.mem.readW (argA (s.gpr .esp) i) 32 = arg s i
-  frame : Frame [⟨w64 W + BitVec.ofNat 64 128, 2432⟩] s.mem s₂.mem
+  frame : Frame [⟨w64 W + BitVec.ofNat 64 128, N - 128⟩] s.mem s₂.mem
 
 /-- The entry: `W` from the stack argument `w`, the registers saved, the
 state pointer into `esi` (by `pre`), the arguments `ps` copied, then `tail`. -/
 theorem entry_gen {s : State} {w nA : Nat} (pre : List Instr) (ps : List (Nat × Nat)) (tail : List Instr)
     {W St : BitVec 32} (hw : w < nA)
-    (hps : ∀ p ∈ ps, p.1 < nA ∧ 144 ≤ p.2 ∧ p.2 + 4 ≤ 2560 ∧ p.2 % 4 = 0) (hnd : (ps.map (·.2)).Nodup)
-    (hW : arg s w = W) (wW : Covers [⟨w64 W, 2560⟩] s.wr)
-    (rA : Covers [argsR (s.gpr .esp) nA] (s.rd ++ s.wr)) (aw : (argsR (s.gpr .esp) nA).Disjoint ⟨w64 W, 2560⟩)
-    (fa : (s.gpr .esp).toNat + 4 + 4 * nA ≤ 2 ^ 32) (fw : W.toNat + 2560 ≤ 2 ^ 32)
+    (hps : ∀ p ∈ ps, p.1 < nA ∧ 144 ≤ p.2 ∧ p.2 + 4 ≤ 768 ∧ p.2 % 4 = 0) (hnd : (ps.map (·.2)).Nodup)
+    (hW : arg s w = W) (wW : Covers [⟨w64 W, N⟩] s.wr)
+    (rA : Covers [argsR (s.gpr .esp) nA] (s.rd ++ s.wr)) (aw : (argsR (s.gpr .esp) nA).Disjoint ⟨w64 W, N⟩)
+    (fa : (s.gpr .esp).toNat + 4 + 4 * nA ≤ 2 ^ 32) (fw : W.toNat + N ≤ 2 ^ 32)
     (hpre : ∀ s₁ : State, s₁.gpr .ebp = W → s₁.gpr .esp = s.gpr .esp → s₁.rd = s.rd → s₁.wr = s.wr →
       (∀ i < nA, s₁.mem.readW (argA (s.gpr .esp) i) 32 = arg s i) →
       ∃ s₂, runBlock isa pre s₁ = some s₂ ∧ s₂.gpr .esi = St ∧ (∀ r, r ≠ .esi → s₂.gpr r = s₁.gpr r) ∧
         s₂.mem = s₁.mem ∧ s₂.rd = s₁.rd ∧ s₂.wr = s₁.wr)
-    {Q : State → Prop} (ht : ∀ s₂, Entered s W St nA ps s₂ → ∃ s₃, runBlock isa tail s₂ = some s₃ ∧ Q s₃) :
+    {Q : State → Prop} (ht : ∀ s₂, Entered N s W St nA ps s₂ → ∃ s₃, runBlock isa tail s₂ = some s₃ ∧ Q s₃)
+    (hN : 768 ≤ N := by wbig) :
     WP isa (entry w (pre ++ (ps.flatMap (fun p => keep p.1 p.2) ++ tail))) s Q := by
   generalize hSP : s.gpr .esp = SP at rA aw fa hpre
   have argIn : ∀ {t : State}, t.rd = s.rd → t.wr = s.wr → ∀ {i}, i < nA → InRegions (t.rd ++ t.wr) (argA SP i) 4 :=
     fun hrd hwr _ hi => by rw [hrd, hwr]; exact rA _ _ ⟨_, List.mem_singleton_self _, argA_contains hi fa⟩
   have i₀ := argIn rfl rfl hw
-  have aW : (argsR SP nA).Disjoint ⟨w64 W, 2560⟩ := aw
+  have aW : (argsR SP nA).Disjoint ⟨w64 W, N⟩ := aw
   refine WP.seq (WP.of_runBlock ⟨_, by xrun [hSP, i₀], ?_⟩)
   have hax : (s.setReg .eax (s.mem.readW (argA SP w) 32)).gpr .eax = W := by
     rw [gpr_setReg_self, ← hSP]; exact hW
@@ -240,22 +249,22 @@ theorem entry_gen {s : State} {w nA : Nat} (pre : List Instr) (ps : List (Nat ×
       exact (aW.sub_left (argA_sub hi fa)).sub_right (Lay.wSub (by decide))) (by decide)]
     rw [arg, argAddr, hSP]
   obtain ⟨s₂, run₂, si₂, g₂, m₂, rd₂, wr₂⟩ := hpre s₁ bp₁ sp₁ rd₁ wr₁ hA₁
-  have ke : KeepEnv W SP nA s₂ := ⟨by rw [g₂ _ (by decide), bp₁], by rw [g₂ _ (by decide), sp₁],
-    by rw [wr₂, wr₁]; exact wW, by rw [rd₂, wr₂, rd₁, wr₁]; exact rA, aW, fa, fw⟩
+  have ke : KeepEnv N W SP nA s₂ := ⟨by rw [g₂ _ (by decide), bp₁], by rw [g₂ _ (by decide), sp₁],
+    by rw [wr₂, wr₁]; exact wW, by rw [rd₂, wr₂, rd₁, wr₁]; exact rA, aW, fa, fw, hN⟩
   obtain ⟨s₃, run₃, sl₃, f₃, g₃, rd₃, wr₃⟩ := keeps_ok ps (fun p hp => ⟨(hps p hp).1, (hps p hp).2.2⟩) hnd ke
   -- The arguments are apart from `W`, so the stores keep them.
-  have argW : ∀ {i}, i < nA → ∀ r ∈ [(⟨w64 W + BitVec.ofNat 64 128, 2432⟩ : Region)],
+  have argW : ∀ {i}, i < nA → ∀ r ∈ [(⟨w64 W + BitVec.ofNat 64 128, N - 128⟩ : Region)],
       (⟨argA SP i, 4⟩ : Region).Disjoint r := fun hi r hr => by
     simp only [List.mem_singleton] at hr; subst hr
-    exact (aW.sub_left (argA_sub hi fa)).sub_right (Lay.wSub (by decide))
-  have f₃' : Frame [⟨w64 W + BitVec.ofNat 64 128, 2432⟩] s.mem s₃.mem := by
+    exact (aW.sub_left (argA_sub hi fa)).sub_right Lay.loSub
+  have f₃' : Frame [⟨w64 W + BitVec.ofNat 64 128, N - 128⟩] s.mem s₃.mem := by
     refine (f₁'.sub fun r hr => ?_).trans ((m₂ ▸ f₃).sub fun r hr => ?_)
     · simp only [List.mem_singleton] at hr; subst hr
-      exact ⟨_, List.mem_singleton_self _, Offset.sub _ (by decide) (by decide)⟩
+      exact ⟨_, List.mem_singleton_self _, Lay.loIn (by decide) (by decide)⟩
     · simp only [List.mem_map] at hr
       obtain ⟨p, hp, rfl⟩ := hr
       have := hps p hp
-      exact ⟨_, List.mem_singleton_self _, Offset.sub _ (by omega_using [this]) (by omega_using [this])⟩
+      exact ⟨_, List.mem_singleton_self _, Lay.loIn (by omega_using [this]) (by omega_using [this])⟩
   have hargs : ∀ i < nA, s₃.mem.readW (argA SP i) 32 = arg s i := fun i hi =>
     (f₃'.readW (r := ⟨argA SP i, 4⟩) (Region.contains_self _ _) (argW hi) (by decide)).trans (by
       rw [arg, argAddr, hSP])
@@ -281,11 +290,11 @@ theorem entry_gen {s : State} {w nA : Nat} (pre : List Instr) (ps : List (Nat ×
 /-- The entry with the state pointer the stack argument `k`. -/
 theorem entry_ok {s : State} {w k nA : Nat} (ps : List (Nat × Nat)) (tail : List Instr) {W St : BitVec 32}
     (hw : w < nA) (hk : k < nA)
-    (hps : ∀ p ∈ ps, p.1 < nA ∧ 144 ≤ p.2 ∧ p.2 + 4 ≤ 2560 ∧ p.2 % 4 = 0) (hnd : (ps.map (·.2)).Nodup)
-    (hW : arg s w = W) (hSt : arg s k = St) (wW : Covers [⟨w64 W, 2560⟩] s.wr)
-    (rA : Covers [argsR (s.gpr .esp) nA] (s.rd ++ s.wr)) (aw : (argsR (s.gpr .esp) nA).Disjoint ⟨w64 W, 2560⟩)
-    (fa : (s.gpr .esp).toNat + 4 + 4 * nA ≤ 2 ^ 32) (fw : W.toNat + 2560 ≤ 2 ^ 32) {Q : State → Prop}
-    (ht : ∀ s₂, Entered s W St nA ps s₂ → ∃ s₃, runBlock isa tail s₂ = some s₃ ∧ Q s₃) :
+    (hps : ∀ p ∈ ps, p.1 < nA ∧ 144 ≤ p.2 ∧ p.2 + 4 ≤ 768 ∧ p.2 % 4 = 0) (hnd : (ps.map (·.2)).Nodup)
+    (hW : arg s w = W) (hSt : arg s k = St) (wW : Covers [⟨w64 W, N⟩] s.wr)
+    (rA : Covers [argsR (s.gpr .esp) nA] (s.rd ++ s.wr)) (aw : (argsR (s.gpr .esp) nA).Disjoint ⟨w64 W, N⟩)
+    (fa : (s.gpr .esp).toNat + 4 + 4 * nA ≤ 2 ^ 32) (fw : W.toNat + N ≤ 2 ^ 32) {Q : State → Prop}
+    (ht : ∀ s₂, Entered N s W St nA ps s₂ → ∃ s₃, runBlock isa tail s₂ = some s₃ ∧ Q s₃) (hN : 768 ≤ N := by wbig) :
     WP isa (entry w (([.mov .esi (argOp k)] : List Instr) ++ (ps.flatMap (fun p => keep p.1 p.2) ++ tail))) s Q := by
   refine entry_gen _ ps tail hw hps hnd hW wW rA aw fa fw (fun s₁ bp sp rd wr ha => ?_) ht
   have i₁ : InRegions (s₁.rd ++ s₁.wr) (argA (s.gpr .esp) k) 4 := by

@@ -36,6 +36,8 @@ open VG VG.X86
 open VG.Spec.Aes (bytesAt)
 open VG.Spec.Gcm (StreamRepr KeyRepr ctxCiph ctxH gctr inc32 j0 fullTag tagLenOk zeros encryptWith openResult)
 
+variable {N : Nat}
+
 /-- Whether the stack argument `i` holds 10, 12 or 14. -/
 abbrev roundsOk (s : State) (i : Nat) : Prop :=
   (arg s i).toNat = 10 ∨ (arg s i).toNat = 12 ∨ (arg s i).toNat = 14
@@ -44,10 +46,10 @@ abbrev roundsOk (s : State) (i : Nat) : Prop :=
 def pubN (n : Nat) (s₁ s₂ : State) : Prop := s₁.gpr .esp = s₂.gpr .esp ∧ ∀ i < n, arg s₁ i = arg s₂ i
 
 /-- `vg_aes_gcm_init(key, key_len, ctx, scratch)`. -/
-def initPre (s : State) : Prop :=
+def initPre (N : Nat) (s : State) : Prop :=
   let key : Region := ⟨(arg s 0).setWidth 64, (arg s 1).toNat⟩
   let ctx : Region := ⟨(arg s 2).setWidth 64, 256⟩
-  let scr : Region := ⟨(arg s 3).setWidth 64, 2560⟩
+  let scr : Region := ⟨(arg s 3).setWidth 64, N⟩
   let args : Region := ⟨argAddr s 0, 16⟩
   let ret : Region := ⟨(s.gpr .esp).setWidth 64, 4⟩
   let stack : Region := ⟨(s.gpr .esp).setWidth 64 - 32, 32⟩
@@ -57,20 +59,20 @@ def initPre (s : State) : Prop :=
   ret.Disjoint key ∧ ret.Disjoint ctx ∧ ret.Disjoint scr ∧ ret.Disjoint args ∧
   stack.Disjoint key ∧ stack.Disjoint ctx ∧ stack.Disjoint scr ∧ stack.Disjoint args ∧
   (arg s 0).toNat + (arg s 1).toNat ≤ 2 ^ 32 ∧ (arg s 2).toNat + 256 ≤ 2 ^ 32 ∧
-  (arg s 3).toNat + 2560 ≤ 2 ^ 32 ∧ 32 ≤ (s.gpr .esp).toNat ∧ (s.gpr .esp).toNat + 20 ≤ 2 ^ 32 ∧
+  (arg s 3).toNat + N ≤ 2 ^ 32 ∧ 32 ≤ (s.gpr .esp).toNat ∧ (s.gpr .esp).toNat + 20 ≤ 2 ^ 32 ∧
   ((arg s 1).toNat = 16 ∨ (arg s 1).toNat = 24 ∨ (arg s 1).toNat = 32)
 
-def initX86 : Contract isa where
-  pre := initPre
+def initX86 (N : Nat) : Contract isa where
+  pre := initPre N
   post s s' := KeyRepr s'.mem ((arg s 2).setWidth 64) (bytesAt s.mem ((arg s 0).setWidth 64) (arg s 1).toNat)
   pub := pubN 4
 
 /-- `vg_aes_gcm_stream_init(ctx, nonce, nonce_len, state, scratch)`. -/
-def streamInitPre (s : State) : Prop :=
+def streamInitPre (N : Nat) (s : State) : Prop :=
   let ctx : Region := ⟨(arg s 0).setWidth 64, 256⟩
   let nonce : Region := ⟨(arg s 1).setWidth 64, (arg s 2).toNat⟩
   let st : Region := ⟨(arg s 3).setWidth 64, 80⟩
-  let scr : Region := ⟨(arg s 4).setWidth 64, 2560⟩
+  let scr : Region := ⟨(arg s 4).setWidth 64, N⟩
   let args : Region := ⟨argAddr s 0, 20⟩
   let ret : Region := ⟨(s.gpr .esp).setWidth 64, 4⟩
   let stack : Region := ⟨(s.gpr .esp).setWidth 64 - 24, 24⟩
@@ -80,21 +82,21 @@ def streamInitPre (s : State) : Prop :=
   ret.Disjoint ctx ∧ ret.Disjoint nonce ∧ ret.Disjoint st ∧ ret.Disjoint scr ∧ ret.Disjoint args ∧
   stack.Disjoint ctx ∧ stack.Disjoint nonce ∧ stack.Disjoint st ∧ stack.Disjoint scr ∧ stack.Disjoint args ∧
   (arg s 0).toNat + 256 ≤ 2 ^ 32 ∧ (arg s 1).toNat + (arg s 2).toNat ≤ 2 ^ 32 ∧
-  (arg s 3).toNat + 80 ≤ 2 ^ 32 ∧ (arg s 4).toNat + 2560 ≤ 2 ^ 32 ∧ 24 ≤ (s.gpr .esp).toNat ∧
+  (arg s 3).toNat + 80 ≤ 2 ^ 32 ∧ (arg s 4).toNat + N ≤ 2 ^ 32 ∧ 24 ≤ (s.gpr .esp).toNat ∧
   (s.gpr .esp).toNat + 24 ≤ 2 ^ 32
 
-def streamInitX86 : Contract isa where
-  pre := streamInitPre
+def streamInitX86 (N : Nat) : Contract isa where
+  pre := streamInitPre N
   post s s' := ∀ ciph, StreamRepr s'.mem ((arg s 3).setWidth 64) ciph (ctxH s.mem ((arg s 0).setWidth 64))
     (bytesAt s.mem ((arg s 1).setWidth 64) (arg s 2).toNat) [] []
   pub := pubN 5
 
 /-- `vg_aes_gcm_stream_aad(ctx, state, aad_len (2 words), data, len, scratch)`. -/
-def streamAadPre (s : State) : Prop :=
+def streamAadPre (N : Nat) (s : State) : Prop :=
   let ctx : Region := ⟨(arg s 0).setWidth 64, 256⟩
   let st : Region := ⟨(arg s 1).setWidth 64, 80⟩
   let data : Region := ⟨(arg s 4).setWidth 64, (arg s 5).toNat⟩
-  let scr : Region := ⟨(arg s 6).setWidth 64, 2560⟩
+  let scr : Region := ⟨(arg s 6).setWidth 64, N⟩
   let args : Region := ⟨argAddr s 0, 28⟩
   let ret : Region := ⟨(s.gpr .esp).setWidth 64, 4⟩
   let stack : Region := ⟨(s.gpr .esp).setWidth 64 - 24, 24⟩
@@ -104,11 +106,11 @@ def streamAadPre (s : State) : Prop :=
   ret.Disjoint ctx ∧ ret.Disjoint st ∧ ret.Disjoint data ∧ ret.Disjoint scr ∧ ret.Disjoint args ∧
   stack.Disjoint ctx ∧ stack.Disjoint st ∧ stack.Disjoint data ∧ stack.Disjoint scr ∧ stack.Disjoint args ∧
   (arg s 0).toNat + 256 ≤ 2 ^ 32 ∧ (arg s 1).toNat + 80 ≤ 2 ^ 32 ∧
-  (arg s 4).toNat + (arg s 5).toNat ≤ 2 ^ 32 ∧ (arg s 6).toNat + 2560 ≤ 2 ^ 32 ∧ 24 ≤ (s.gpr .esp).toNat ∧
+  (arg s 4).toNat + (arg s 5).toNat ≤ 2 ^ 32 ∧ (arg s 6).toNat + N ≤ 2 ^ 32 ∧ 24 ≤ (s.gpr .esp).toNat ∧
   (s.gpr .esp).toNat + 32 ≤ 2 ^ 32
 
-def streamAadX86 : Contract isa where
-  pre := streamAadPre
+def streamAadX86 (N : Nat) : Contract isa where
+  pre := streamAadPre N
   post s s' := ∀ ciph iv a, StreamRepr s.mem ((arg s 1).setWidth 64) ciph (ctxH s.mem ((arg s 0).setWidth 64)) iv a [] →
     arg s 3 ++ arg s 2 = BitVec.ofNat 64 a.length →
     StreamRepr s'.mem ((arg s 1).setWidth 64) ciph (ctxH s.mem ((arg s 0).setWidth 64)) iv
@@ -116,11 +118,11 @@ def streamAadX86 : Contract isa where
   pub := pubN 7
 
 /-- `vg_aes_gcm_stream_encrypt` and `_decrypt(ctx, rounds, state, aad_len, text_len, data, len, scratch)`. -/
-def streamCryptPre (s : State) : Prop :=
+def streamCryptPre (N : Nat) (s : State) : Prop :=
   let ctx : Region := ⟨(arg s 0).setWidth 64, 256⟩
   let st : Region := ⟨(arg s 2).setWidth 64, 80⟩
   let data : Region := ⟨(arg s 7).setWidth 64, (arg s 8).toNat⟩
-  let scr : Region := ⟨(arg s 9).setWidth 64, 2560⟩
+  let scr : Region := ⟨(arg s 9).setWidth 64, N⟩
   let args : Region := ⟨argAddr s 0, 40⟩
   let ret : Region := ⟨(s.gpr .esp).setWidth 64, 4⟩
   let stack : Region := ⟨(s.gpr .esp).setWidth 64 - 32, 32⟩
@@ -130,11 +132,11 @@ def streamCryptPre (s : State) : Prop :=
   ret.Disjoint ctx ∧ ret.Disjoint st ∧ ret.Disjoint data ∧ ret.Disjoint scr ∧ ret.Disjoint args ∧
   stack.Disjoint ctx ∧ stack.Disjoint st ∧ stack.Disjoint data ∧ stack.Disjoint scr ∧ stack.Disjoint args ∧
   (arg s 0).toNat + 256 ≤ 2 ^ 32 ∧ (arg s 2).toNat + 80 ≤ 2 ^ 32 ∧
-  (arg s 7).toNat + (arg s 8).toNat ≤ 2 ^ 32 ∧ (arg s 9).toNat + 2560 ≤ 2 ^ 32 ∧ 32 ≤ (s.gpr .esp).toNat ∧
+  (arg s 7).toNat + (arg s 8).toNat ≤ 2 ^ 32 ∧ (arg s 9).toNat + N ≤ 2 ^ 32 ∧ 32 ≤ (s.gpr .esp).toNat ∧
   (s.gpr .esp).toNat + 44 ≤ 2 ^ 32 ∧ roundsOk s 1
 
-def streamEncryptX86 : Contract isa where
-  pre := streamCryptPre
+def streamEncryptX86 (N : Nat) : Contract isa where
+  pre := streamCryptPre N
   post s s' :=
     let ciph := ctxCiph s.mem ((arg s 0).setWidth 64) (arg s 1).toNat
     let h := ctxH s.mem ((arg s 0).setWidth 64)
@@ -145,8 +147,8 @@ def streamEncryptX86 : Contract isa where
         bytesAt s'.mem ((arg s 7).setWidth 64) (arg s 8).toNat = c.drop p.length
   pub := pubN 10
 
-def streamDecryptX86 : Contract isa where
-  pre := streamCryptPre
+def streamDecryptX86 (N : Nat) : Contract isa where
+  pre := streamCryptPre N
   post s s' :=
     let ciph := ctxCiph s.mem ((arg s 0).setWidth 64) (arg s 1).toNat
     let h := ctxH s.mem ((arg s 0).setWidth 64)
@@ -158,11 +160,11 @@ def streamDecryptX86 : Contract isa where
   pub := pubN 10
 
 /-- `vg_aes_gcm_stream_finish(ctx, rounds, state, aad_len, text_len, tag, work)`. -/
-def finPre (s : State) : Prop :=
+def finPre (N : Nat) (s : State) : Prop :=
   let ctx : Region := ⟨(arg s 0).setWidth 64, 256⟩
   let st : Region := ⟨(arg s 2).setWidth 64, 80⟩
   let tag : Region := ⟨(arg s 7).setWidth 64, 16⟩
-  let scr : Region := ⟨(arg s 8).setWidth 64, 2560⟩
+  let scr : Region := ⟨(arg s 8).setWidth 64, N⟩
   let args : Region := ⟨argAddr s 0, 36⟩
   let ret : Region := ⟨(s.gpr .esp).setWidth 64, 4⟩
   let stack : Region := ⟨(s.gpr .esp).setWidth 64 - 32, 32⟩
@@ -172,10 +174,10 @@ def finPre (s : State) : Prop :=
   ret.Disjoint ctx ∧ ret.Disjoint st ∧ ret.Disjoint tag ∧ ret.Disjoint scr ∧ ret.Disjoint args ∧
   stack.Disjoint ctx ∧ stack.Disjoint st ∧ stack.Disjoint tag ∧ stack.Disjoint scr ∧ stack.Disjoint args ∧
   (arg s 0).toNat + 256 ≤ 2 ^ 32 ∧ (arg s 2).toNat + 80 ≤ 2 ^ 32 ∧ (arg s 7).toNat + 16 ≤ 2 ^ 32 ∧
-  (arg s 8).toNat + 2560 ≤ 2 ^ 32 ∧ 32 ≤ (s.gpr .esp).toNat ∧ (s.gpr .esp).toNat + 40 ≤ 2 ^ 32 ∧ roundsOk s 1
+  (arg s 8).toNat + N ≤ 2 ^ 32 ∧ 32 ≤ (s.gpr .esp).toNat ∧ (s.gpr .esp).toNat + 40 ≤ 2 ^ 32 ∧ roundsOk s 1
 
-def streamFinishX86 : Contract isa where
-  pre := finPre
+def streamFinishX86 (N : Nat) : Contract isa where
+  pre := finPre N
   post s s' :=
     let ciph := ctxCiph s.mem ((arg s 0).setWidth 64) (arg s 1).toNat
     let h := ctxH s.mem ((arg s 0).setWidth 64)
@@ -185,11 +187,11 @@ def streamFinishX86 : Contract isa where
   pub := pubN 9
 
 /-- `vg_aes_gcm_stream_verify(ctx, rounds, state, aad_len, text_len, tag, tag_len, work)`. -/
-def verifyPre (s : State) : Prop :=
+def verifyPre (N : Nat) (s : State) : Prop :=
   let ctx : Region := ⟨(arg s 0).setWidth 64, 256⟩
   let st : Region := ⟨(arg s 2).setWidth 64, 80⟩
   let tag : Region := ⟨(arg s 7).setWidth 64, (arg s 8).toNat⟩
-  let scr : Region := ⟨(arg s 9).setWidth 64, 2560⟩
+  let scr : Region := ⟨(arg s 9).setWidth 64, N⟩
   let args : Region := ⟨argAddr s 0, 40⟩
   let ret : Region := ⟨(s.gpr .esp).setWidth 64, 4⟩
   let stack : Region := ⟨(s.gpr .esp).setWidth 64 - 32, 32⟩
@@ -199,10 +201,10 @@ def verifyPre (s : State) : Prop :=
   ret.Disjoint ctx ∧ ret.Disjoint st ∧ ret.Disjoint tag ∧ ret.Disjoint scr ∧ ret.Disjoint args ∧
   stack.Disjoint ctx ∧ stack.Disjoint st ∧ stack.Disjoint tag ∧ stack.Disjoint scr ∧ stack.Disjoint args ∧
   (arg s 0).toNat + 256 ≤ 2 ^ 32 ∧ (arg s 2).toNat + 80 ≤ 2 ^ 32 ∧ (arg s 7).toNat + (arg s 8).toNat ≤ 2 ^ 32 ∧
-  (arg s 9).toNat + 2560 ≤ 2 ^ 32 ∧ 32 ≤ (s.gpr .esp).toNat ∧ (s.gpr .esp).toNat + 44 ≤ 2 ^ 32 ∧ roundsOk s 1
+  (arg s 9).toNat + N ≤ 2 ^ 32 ∧ 32 ≤ (s.gpr .esp).toNat ∧ (s.gpr .esp).toNat + 44 ≤ 2 ^ 32 ∧ roundsOk s 1
 
-def streamVerifyX86 : Contract isa where
-  pre := verifyPre
+def streamVerifyX86 (N : Nat) : Contract isa where
+  pre := verifyPre N
   post s s' :=
     let ciph := ctxCiph s.mem ((arg s 0).setWidth 64) (arg s 1).toNat
     let h := ctxH s.mem ((arg s 0).setWidth 64)
@@ -215,13 +217,13 @@ def streamVerifyX86 : Contract isa where
   pub := pubN 10
 
 /-- `vg_aes_gcm_seal(ctx, rounds, nonce, nonce_len, aad, aad_len, data, len, tag, work)`. -/
-def sealPre (s : State) : Prop :=
+def sealPre (N : Nat) (s : State) : Prop :=
   let ctx : Region := ⟨(arg s 0).setWidth 64, 256⟩
   let nonce : Region := ⟨(arg s 2).setWidth 64, (arg s 3).toNat⟩
   let aad : Region := ⟨(arg s 4).setWidth 64, (arg s 5).toNat⟩
   let data : Region := ⟨(arg s 6).setWidth 64, (arg s 7).toNat⟩
   let tag : Region := ⟨(arg s 8).setWidth 64, 16⟩
-  let scr : Region := ⟨(arg s 9).setWidth 64, 2560⟩
+  let scr : Region := ⟨(arg s 9).setWidth 64, N⟩
   let args : Region := ⟨argAddr s 0, 40⟩
   let ret : Region := ⟨(s.gpr .esp).setWidth 64, 4⟩
   let stack : Region := ⟨(s.gpr .esp).setWidth 64 - 32, 32⟩
@@ -236,11 +238,11 @@ def sealPre (s : State) : Prop :=
   stack.Disjoint tag ∧ stack.Disjoint scr ∧ stack.Disjoint args ∧
   (arg s 0).toNat + 256 ≤ 2 ^ 32 ∧ (arg s 2).toNat + (arg s 3).toNat ≤ 2 ^ 32 ∧
   (arg s 4).toNat + (arg s 5).toNat ≤ 2 ^ 32 ∧ (arg s 6).toNat + (arg s 7).toNat ≤ 2 ^ 32 ∧
-  (arg s 8).toNat + 16 ≤ 2 ^ 32 ∧ (arg s 9).toNat + 2560 ≤ 2 ^ 32 ∧ 32 ≤ (s.gpr .esp).toNat ∧
+  (arg s 8).toNat + 16 ≤ 2 ^ 32 ∧ (arg s 9).toNat + N ≤ 2 ^ 32 ∧ 32 ≤ (s.gpr .esp).toNat ∧
   (s.gpr .esp).toNat + 44 ≤ 2 ^ 32 ∧ roundsOk s 1
 
-def sealX86 : Contract isa where
-  pre := sealPre
+def sealX86 (N : Nat) : Contract isa where
+  pre := sealPre N
   post s s' :=
     encryptWith (ctxCiph s.mem ((arg s 0).setWidth 64) (arg s 1).toNat) (ctxH s.mem ((arg s 0).setWidth 64)) 16
         (bytesAt s.mem ((arg s 2).setWidth 64) (arg s 3).toNat) (bytesAt s.mem ((arg s 6).setWidth 64) (arg s 7).toNat)
@@ -249,13 +251,13 @@ def sealX86 : Contract isa where
   pub := pubN 10
 
 /-- `vg_aes_gcm_open(ctx, rounds, nonce, nonce_len, aad, aad_len, data, len, tag, tag_len, work)`. -/
-def openPre (s : State) : Prop :=
+def openPre (N : Nat) (s : State) : Prop :=
   let ctx : Region := ⟨(arg s 0).setWidth 64, 256⟩
   let nonce : Region := ⟨(arg s 2).setWidth 64, (arg s 3).toNat⟩
   let aad : Region := ⟨(arg s 4).setWidth 64, (arg s 5).toNat⟩
   let data : Region := ⟨(arg s 6).setWidth 64, (arg s 7).toNat⟩
   let tag : Region := ⟨(arg s 8).setWidth 64, (arg s 9).toNat⟩
-  let scr : Region := ⟨(arg s 10).setWidth 64, 2560⟩
+  let scr : Region := ⟨(arg s 10).setWidth 64, N⟩
   let args : Region := ⟨argAddr s 0, 44⟩
   let ret : Region := ⟨(s.gpr .esp).setWidth 64, 4⟩
   let stack : Region := ⟨(s.gpr .esp).setWidth 64 - 32, 32⟩
@@ -269,7 +271,7 @@ def openPre (s : State) : Prop :=
   stack.Disjoint tag ∧ stack.Disjoint scr ∧ stack.Disjoint args ∧
   (arg s 0).toNat + 256 ≤ 2 ^ 32 ∧ (arg s 2).toNat + (arg s 3).toNat ≤ 2 ^ 32 ∧
   (arg s 4).toNat + (arg s 5).toNat ≤ 2 ^ 32 ∧ (arg s 6).toNat + (arg s 7).toNat ≤ 2 ^ 32 ∧
-  (arg s 8).toNat + (arg s 9).toNat ≤ 2 ^ 32 ∧ (arg s 10).toNat + 2560 ≤ 2 ^ 32 ∧ 32 ≤ (s.gpr .esp).toNat ∧
+  (arg s 8).toNat + (arg s 9).toNat ≤ 2 ^ 32 ∧ (arg s 10).toNat + N ≤ 2 ^ 32 ∧ 32 ≤ (s.gpr .esp).toNat ∧
   (s.gpr .esp).toNat + 48 ≤ 2 ^ 32 ∧ roundsOk s 1
 
 /-- What `open` computes. -/
@@ -279,8 +281,8 @@ abbrev openRes (s : State) : Option (List Byte) :=
     (bytesAt s.mem ((arg s 6).setWidth 64) (arg s 7).toNat) (bytesAt s.mem ((arg s 4).setWidth 64) (arg s 5).toNat)
     (bytesAt s.mem ((arg s 8).setWidth 64) (arg s 9).toNat)
 
-def openX86 : Contract isa where
-  pre := openPre
+def openX86 (N : Nat) : Contract isa where
+  pre := openPre N
   post s s' :=
     match openRes s with
     | some pt => (s'.gpr .edx ++ s'.gpr .eax).setWidth 32 = 1 ∧ bytesAt s'.mem ((arg s 6).setWidth 64) (arg s 7).toNat = pt
@@ -317,6 +319,8 @@ set_option linter.unusedSimpArgs false
 namespace VG.Proof.AesGcm.X86
 
 open VG VG.X86
+
+variable {N : Nat}
 
 theorem covers_of_mem {r : Region} {ts : List Region} (h : r ∈ ts) : Covers [r] ts := by
   intro a n ⟨x, hx, hc⟩
@@ -416,6 +420,8 @@ namespace VG.Proof.AesGcm.X86
 
 open VG VG.X86 VG.X86.RegUpd VG.Impl.AesGcm.X86
 
+variable {N : Nat}
+
 theorem argsR_eq (s : State) (n : Nat) : argsR (s.gpr .esp) n = ⟨argAddr s 0, 4 * n⟩ := rfl
 
 /-- The entry's first block: `W`, from the stack argument `w`, into `eax`. -/
@@ -438,6 +444,8 @@ namespace VG.Proof.AesGcm.X86
 open VG VG.X86
 open VG.Spec.Gcm (StreamRepr)
 
+variable {N : Nat}
+
 /-- A streaming state is what it is outside a frame. -/
 theorem streamRepr_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {p : Addr}
     (hd : ∀ r ∈ rs, (⟨p, 80⟩ : Region).Disjoint r) {ciph : Spec.Gcm.Block → Spec.Gcm.Block} {h : Spec.Gcm.Block}
@@ -457,6 +465,8 @@ end VG.Proof.AesGcm.X86
 namespace VG.Proof.AesGcm.X86
 
 open VG VG.X86
+
+variable {N : Nat}
 
 /-- A piece proven for each `i`, of code that does not depend on it: its
 postcondition for all of them. -/

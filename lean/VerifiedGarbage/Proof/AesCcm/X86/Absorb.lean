@@ -312,7 +312,7 @@ theorem absorbTail_ok (v : Ctr32Impl) {K W SP : BitVec 32} {s : State} (L : Lay 
       tailArgs_ok L E₁ (Q := Q) (t := t) (by rw [hm₁]; exact hd) (by rw [hm₁]; exact hn)
     rw [hm₁] at hm₂
     refine WP.seq (WP.of_runBlock ⟨s₂, run₂, ?_⟩)
-    obtain he : WEnv W s₂ := ⟨hbp₂, by rw [hwr₂, hwr₁]; exact E.perm.w, L.fw⟩
+    obtain he : WEnv 2560 W s₂ := ⟨hbp₂, by rw [hwr₂, hwr₁]; exact E.perm.w, L.fw, by decide⟩
     obtain sd : (⟨w64 Q, t⟩ : Region).Disjoint ⟨w64 W + BitVec.ofNat 64 32, 16⟩ := hB.w.sub_right (Lay.wSub (by decide))
     refine WP.seq (WP.mono (padLoop_ok (S := Q) (d := 32) (t := t) (m := s.mem) he hm₂ hdi hdx hcx (by omega_arith)
       (by omega_arith) (by rw [hrd₂, hwr₂, hrd₁, hwr₁]; exact hB.rd) hB.wrap sd (by decide))

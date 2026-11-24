@@ -11,6 +11,8 @@ import VerifiedGarbage.Proof.Framework.Offset
 namespace VG.Proof.Aes.X86.AesNi
 open VG VG.X86 VG.X86.RegUpd
 open VG.Proof.Aes.X86 (GPre argRg schP nRounds ctrP datP nBlk scrP scrR ctrR)
+
+variable {B : Nat}
 open VG.Impl.Aes.X86.AesNi (at_ argOp savedRegs)
 
 /-- The callee-saved registers are saved in the scratch buffer. -/
@@ -18,13 +20,13 @@ abbrev Saved (s₀ : State) (m : Mem) : Prop := Spill.Saved m (addr (scrP s₀))
 
 theorem savedRegs_bound : ∀ p ∈ savedRegs, p.2 + 4 ≤ 16 := by decide
 
-structure Setup (s₀ s : State) : Prop where
+structure Setup (B : Nat) (s₀ s : State) : Prop where
   esp : s.gpr .esp = s₀.gpr .esp
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
-  frame : Frame [scrR s₀] s₀.mem s.mem
+  frame : Frame [scrR s₀ B] s₀.mem s.mem
 
-structure Start (s₀ s : State) : Prop extends Setup s₀ s where
+structure Start (B : Nat) (s₀ s : State) : Prop extends Setup B s₀ s where
   eax : s.gpr .eax = schP s₀
   ecx : s.gpr .ecx = arg s₀ 1
   edx : s.gpr .edx = ctrP s₀
@@ -38,28 +40,30 @@ structure Start (s₀ s : State) : Prop extends Setup s₀ s where
   cf : s.cf = some (decide (nBlk s₀ < 6))
   zf : s.zf = some (decide (nBlk s₀ = 6))
 
-theorem scratch_contains {to : Bool} {s : State} (hp : GPre to s) {d n : Nat} (h : d + n ≤ 2048) (hn : 0 < n := by decide) :
-    (scrR s).Contains (addr (scrP s) d) n := by
-  rw [addr_eq (by have hf := hp.fB; omega_using [h, hn, hf])]
-  exact Offset.contains_base _ h (by omega_using [h])
+theorem scratch_contains {to : Bool} {s : State} (hp : GPre to s B) {d n : Nat} (h : d + n ≤ 32) (hn : 0 < n := by decide) :
+    (scrR s B).Contains (addr (scrP s) d) n := by
+  have hB := hp.hB
+  have hf := hp.fB
+  rw [addr_eq (by omega_using [h, hn, hf, hB])]
+  exact Offset.contains_base _ (Nat.le_trans h hB) (by omega_using [h, hf, hB])
 
-theorem scratch_in {to : Bool} {s : State} (hp : GPre to s) {d n : Nat} (h : d + n ≤ 2048)
+theorem scratch_in {to : Bool} {s : State} (hp : GPre to s B) {d n : Nat} (h : d + n ≤ 32)
     (hn : 0 < n := by decide) : InRegions s.wr (addr (scrP s) d) n :=
-  ⟨scrR s, hp.wB, scratch_contains hp h hn⟩
+  ⟨scrR s B, hp.wB, scratch_contains hp h hn⟩
 
-theorem arg_contains {to : Bool} {s : State} (hp : GPre to s) {i : Nat} (hi : i < 6 ∨ (to = true ∧ i = 6)) :
+theorem arg_contains {to : Bool} {s : State} (hp : GPre to s B) {i : Nat} (hi : i < 6 ∨ (to = true ∧ i = 6)) :
     (argRg to s).Contains (argAddr s i) 4 :=
   hp.argC hi
 
 
-theorem Setup.setReg {s₀ s : State} (h : Setup s₀ s) (d : Reg) (v : BitVec 32)
-    (hd : .esp ≠ d) : Setup s₀ (s.setReg d v) :=
+theorem Setup.setReg {s₀ s : State} (h : Setup B s₀ s) (d : Reg) (v : BitVec 32)
+    (hd : .esp ≠ d) : Setup B s₀ (s.setReg d v) :=
   ⟨by rw [gpr_setReg_of_ne _ _ hd]; exact h.esp,
     (rd_setReg _ _ _).trans h.rd, (wr_setReg _ _ _).trans h.wr,
     by rw [mem_setReg]; exact h.frame⟩
 
 
-theorem ctr_contains {to : Bool} {s : State} (hp : GPre to s) {d n : Nat} (h : d + n ≤ 16)
+theorem ctr_contains {to : Bool} {s : State} (hp : GPre to s B) {d n : Nat} (h : d + n ≤ 16)
     (hn : 0 < n := by decide) : (ctrR s).Contains (addr (ctrP s) d) n := by
   rw [addr_eq (by have hf := hp.fC; omega_using [h, hn, hf])]
   exact Offset.contains_base _ h (by omega_using [h])

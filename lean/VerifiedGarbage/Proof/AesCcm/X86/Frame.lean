@@ -125,7 +125,7 @@ theorem open_wp' (v : Ctr32Impl) {s : State} {K W SP N A D T : BitVec 32} {R nl 
   obtain wr₅' : s₅.wr = s.wr := by rw [wr₅, A₄.wr, wr₃']
   -- The received tag.
   obtain Tb₅ := Ar.tag.of_eq rd₅' wr₅'
-  refine WP.seq (WP.mono (Proof.AesGcm.X86.recv_ok ⟨E₅.ebp, E₅.perm.w, L.fw⟩ S₅.tl S₅.tp Tb₅.rd Tb₅.wrap Tb₅.w
+  refine WP.seq (WP.mono (Proof.AesGcm.X86.recv_ok ⟨E₅.ebp, E₅.perm.w, L.fw, by decide⟩ S₅.tl S₅.tp Tb₅.rd Tb₅.wrap Tb₅.w
     (by omega_arith) ht16) fun s₆ ⟨b₆, f₆, bp₆, _, sp₆, rd₆, wr₆⟩ => ?_)
   obtain E₆ : Env K W SP s₆ := ⟨by rw [bp₆, E₅.ebp], by rw [sp₆, E₅.esp], E₅.perm.of_eq rd₆ wr₆⟩
   -- The comparison.
@@ -135,7 +135,7 @@ theorem open_wp' (v : Ctr32Impl) {s : State} {K W SP N A D T : BitVec 32} {R nl 
       simp only [List.mem_singleton] at hr; subst hr; exact Lay.w_w (.inl (by decide)) (by decide) (by decide))
       (by decide)]
     exact S₅.tl
-  refine WP.seq (WP.mono (Proof.AesGcm.X86.cmp_ok (o := uO) ⟨E₆.ebp, E₆.perm.w, L.fw⟩ hv₆ (by omega_arith) ht16 (by decide))
+  refine WP.seq (WP.mono (Proof.AesGcm.X86.cmp_ok (o := uO) ⟨E₆.ebp, E₆.perm.w, L.fw, by decide⟩ hv₆ (by omega_arith) ht16 (by decide))
     fun s₇ ⟨ax₇, f₇, bp₇, _, sp₇, rd₇, wr₇⟩ => ?_)
   rw [ofNat_ite] at ax₇
   generalize hc : decide (bytesAt s₆.mem (w64 W + BitVec.ofNat 64 uO) tl ++ Spec.Gcm.zeros (16 - tl) =
@@ -289,7 +289,7 @@ open VG.Proof.AesGcm.X86 (CT w64 slotv slotv_eq WEnv cmp_ok recv_ct recv_ok leng
 
 /-- `cmp 96` (AES-GCM's `cmp_ct`, for CCM's offset of the computed tag). -/
 theorem cmp96_ct {I : State → Prop} {W : BitVec 32} {t : Nat}
-    (h : ∀ s, I s → WEnv W s ∧ slotv s.mem W tglO = BitVec.ofNat 32 t) : CT I (cmp uO) := by
+    (h : ∀ s, I s → WEnv 2560 W s ∧ slotv s.mem W tglO = BitVec.ofNat 32 t) : CT I (cmp uO) := by
   have hb : CT I (.block (zero4 vO ++ [.mov .edi (.reg .ebp), .alu .add .edi (imm uO), .mov .edx (.reg .ebp),
       .alu .add .edx (imm vO), .mov .ecx (slot tglO)])) :=
     CT.taint [.ebp] (pin1 fun s hs => (h s hs).1.ebp) (by taint_decide)
@@ -303,9 +303,9 @@ theorem cmp96_ct {I : State → Prop} {W : BitVec 32} {t : Nat}
       · rw [h₁.2.2.1, h₂.2.2.1]
       · rw [h₁.2.2.2, h₂.2.2.2]) (by taint_decide))
   obtain ⟨he, hv⟩ := h s hs
-  have aW : ∀ {o}, o < 2560 → w64 (W + BitVec.ofNat 32 o) = w64 W + BitVec.ofNat 64 o := fun ho => he.aW ho
-  have wIn : ∀ {o}, o + 4 ≤ 2560 → InRegions s.wr (w64 W + BitVec.ofNat 64 o) 4 := fun ho => he.wIn ho
-  have rIn : ∀ {o}, o + 4 ≤ 2560 → InRegions (s.rd ++ s.wr) (w64 W + BitVec.ofNat 64 o) 4 := fun ho => he.wIn' ho
+  have aW : ∀ {o}, o < 768 → w64 (W + BitVec.ofNat 32 o) = w64 W + BitVec.ofNat 64 o := fun ho => he.aW ho
+  have wIn : ∀ {o}, o + 4 ≤ 768 → InRegions s.wr (w64 W + BitVec.ofNat 64 o) 4 := fun ho => he.wIn ho
+  have rIn : ∀ {o}, o + 4 ≤ 768 → InRegions (s.rd ++ s.wr) (w64 W + BitVec.ofNat 64 o) 4 := fun ho => he.wIn' ho
   rw [slotv_eq] at hv
   simp only [tglO] at hv
   exact WP.of_runBlock ⟨_, by xrun [zero4, he.ebp, aW, wIn, rIn, readW_writeW_off, hv], by regs [he.ebp],
@@ -389,8 +389,8 @@ theorem open_top_ct (v : Ctr32Impl) {K W SP N A D T : BitVec 32} {R nl al n tl :
   -- The received tag.
   refine CT.seq (J := fun s => ∃ s₀, Top K W SP N A D T R nl al n tl s₀ ∧ Run s₀ K W SP N A D T R nl al n tl s)
     (recv_ct (W := W) (T := T) (t := tl) fun s ⟨_, Tp, h⟩ =>
-      ⟨⟨h.env.ebp, h.env.perm.w, L.fw⟩, (h.slots Tp.args).tl, (h.slots Tp.args).tp⟩)
-    (fun s ⟨s₀, Tp, h⟩ => WP.mono (recv_ok ⟨h.env.ebp, h.env.perm.w, L.fw⟩ (h.slots Tp.args).tl (h.slots Tp.args).tp
+      ⟨⟨h.env.ebp, h.env.perm.w, L.fw, by decide⟩, (h.slots Tp.args).tl, (h.slots Tp.args).tp⟩)
+    (fun s ⟨s₀, Tp, h⟩ => WP.mono (recv_ok ⟨h.env.ebp, h.env.perm.w, L.fw, by decide⟩ (h.slots Tp.args).tl (h.slots Tp.args).tp
       (Tp.args.tag.of_eq h.rd h.wr).rd (Tp.args.tag.of_eq h.rd h.wr).wrap (Tp.args.tag.of_eq h.rd h.wr).w
       (by have := Ar.t4; omega_using [this]) Ar.t16) fun _ ⟨_, f, bp, _, sp, rd, wr⟩ => ⟨s₀, Tp,
         h.step ⟨by rw [bp, h.env.ebp], by rw [sp, h.env.esp], h.env.perm.of_eq rd wr⟩ rd wr f
@@ -399,8 +399,8 @@ theorem open_top_ct (v : Ctr32Impl) {K W SP N A D T : BitVec 32} {R nl al n tl :
   -- The comparison.
   refine CT.seq (J := fun s => (∃ s₀, Top K W SP N A D T R nl al n tl s₀ ∧ Run s₀ K W SP N A D T R nl al n tl s) ∧
       ∃ c : Bool, s.gpr .eax = if c then 1 else 0)
-    (cmp96_ct (W := W) (t := tl) fun s ⟨_, Tp, h⟩ => ⟨⟨h.env.ebp, h.env.perm.w, L.fw⟩, (h.slots Tp.args).tl⟩)
-    (fun s ⟨s₀, Tp, h⟩ => WP.mono (cmp_ok (o := uO) ⟨h.env.ebp, h.env.perm.w, L.fw⟩ (h.slots Tp.args).tl
+    (cmp96_ct (W := W) (t := tl) fun s ⟨_, Tp, h⟩ => ⟨⟨h.env.ebp, h.env.perm.w, L.fw, by decide⟩, (h.slots Tp.args).tl⟩)
+    (fun s ⟨s₀, Tp, h⟩ => WP.mono (cmp_ok (o := uO) ⟨h.env.ebp, h.env.perm.w, L.fw, by decide⟩ (h.slots Tp.args).tl
       (by have := Ar.t4; omega_using [this]) Ar.t16 (by decide)) fun s' ⟨ax, f, bp, _, sp, rd, wr⟩ =>
         ⟨⟨s₀, Tp, h.step ⟨by rw [bp, h.env.ebp], by rw [sp, h.env.esp], h.env.perm.of_eq rd wr⟩ rd wr f
           (fun r hr => by

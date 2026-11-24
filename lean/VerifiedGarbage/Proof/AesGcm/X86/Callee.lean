@@ -435,8 +435,9 @@ theorem toNat_rounds {R : Nat} (hR : R = 10 ∨ R = 12 ∨ R = 14) : (BitVec.ofN
   toNat_ofNat32 (by omega_using [hR])
 
 /-- What a call of `vg_aes_ctr32_to` in place needs: the key schedule at `K` for `R`
-rounds, the counter block at `C`, `n` blocks at `D` and working space at `S`. -/
-structure CtrCall (s : State) (K C D S : BitVec 32) (R n : Nat) : Prop where
+rounds, the counter block at `C`, `n` blocks at `D` and working space at `S`,
+of the `B` bytes the implementation uses (`Ctr32Impl.scr`). -/
+structure CtrCall (B : Nat) (s : State) (K C D S : BitVec 32) (R n : Nat) : Prop where
   eax : s.gpr .eax = K
   ecx : s.gpr .ecx = BitVec.ofNat 32 R
   edx : s.gpr .edx = C
@@ -447,37 +448,37 @@ structure CtrCall (s : State) (K C D S : BitVec 32) (R n : Nat) : Prop where
   esp : 32 ≤ (s.gpr .esp).toNat
   kc : (⟨w64 K, 240⟩ : Region).Disjoint ⟨w64 C, 16⟩
   kd : (⟨w64 K, 240⟩ : Region).Disjoint ⟨w64 D, 16 * n⟩
-  ks : (⟨w64 K, 240⟩ : Region).Disjoint ⟨w64 S, 2048⟩
+  ks : (⟨w64 K, 240⟩ : Region).Disjoint ⟨w64 S, B⟩
   cd : (⟨w64 C, 16⟩ : Region).Disjoint ⟨w64 D, 16 * n⟩
-  cs : (⟨w64 C, 16⟩ : Region).Disjoint ⟨w64 S, 2048⟩
-  ds : (⟨w64 D, 16 * n⟩ : Region).Disjoint ⟨w64 S, 2048⟩
+  cs : (⟨w64 C, 16⟩ : Region).Disjoint ⟨w64 S, B⟩
+  ds : (⟨w64 D, 16 * n⟩ : Region).Disjoint ⟨w64 S, B⟩
   bk : (below (s.gpr .esp) 32).Disjoint ⟨w64 K, 240⟩
   bc : (below (s.gpr .esp) 32).Disjoint ⟨w64 C, 16⟩
   bd : (below (s.gpr .esp) 32).Disjoint ⟨w64 D, 16 * n⟩
-  bs : (below (s.gpr .esp) 32).Disjoint ⟨w64 S, 2048⟩
+  bs : (below (s.gpr .esp) 32).Disjoint ⟨w64 S, B⟩
   fK : K.toNat + 240 ≤ 2 ^ 32
   fC : C.toNat + 16 ≤ 2 ^ 32
   fD : D.toNat + 16 * n ≤ 2 ^ 32
-  fS : S.toNat + 2048 ≤ 2 ^ 32
+  fS : S.toNat + B ≤ 2 ^ 32
   reads : Covers [⟨w64 K, 240⟩] (s.rd ++ s.wr)
-  writes : Covers [⟨w64 C, 16⟩, ⟨w64 D, 16 * n⟩, ⟨w64 S, 2048⟩] s.wr
+  writes : Covers [⟨w64 C, 16⟩, ⟨w64 D, 16 * n⟩, ⟨w64 S, B⟩] s.wr
 
 /-- What it leaves. -/
-structure CtrPost (s : State) (K C D S : BitVec 32) (R n : Nat) (s' : State) : Prop where
+structure CtrPost (B : Nat) (s : State) (K C D S : BitVec 32) (R n : Nat) (s' : State) : Prop where
   rd : s'.rd = s.rd
   wr : s'.wr = s.wr
   saved : ∀ r ∈ calleeSaved, s'.gpr r = s.gpr r
-  frame : Frame [⟨w64 C, 16⟩, ⟨w64 D, 16 * n⟩, ⟨w64 S, 2048⟩, below (s.gpr .esp) 32] s.mem s'.mem
+  frame : Frame [⟨w64 C, 16⟩, ⟨w64 D, 16 * n⟩, ⟨w64 S, B⟩, below (s.gpr .esp) 32] s.mem s'.mem
   out : blocksAt s'.mem (w64 D) n = ctr32 (aesWith R (bytesAt s.mem (w64 K) (16 * (R + 1))))
     (blockAt s.mem (w64 C)) (blocksAt s.mem (w64 D) n)
   ctr : blockAt s'.mem (w64 C) = Nat.repeat Spec.Gcm.inc32 n (blockAt s.mem (w64 C))
 
 abbrev ctrRd (E K : BitVec 32) : List Region := [⟨w64 K, 240⟩, below E 28]
-abbrev ctrWr (C D S : BitVec 32) (n : Nat) : List Region :=
-  [⟨w64 C, 16⟩, ⟨w64 D, 16 * n⟩, ⟨w64 S, 2048⟩]
+abbrev ctrWr (B : Nat) (C D S : BitVec 32) (n : Nat) : List Region :=
+  [⟨w64 C, 16⟩, ⟨w64 D, 16 * n⟩, ⟨w64 S, B⟩]
 
 namespace CtrCall
-variable {s : State} {K C D S : BitVec 32} {R n : Nat} (h : CtrCall s K C D S R n)
+variable {B : Nat} {s : State} {K C D S : BitVec 32} {R n : Nat} (h : CtrCall B s K C D S R n)
 include h
 
 theorem fit : 4 * ctrRegs.length + 4 ≤ (s.gpr .esp).toNat := by
@@ -500,7 +501,7 @@ theorem sub4 : Region.Sub ⟨(s.gpr .esp - BitVec.ofNat 32 32).setWidth 64, 4⟩
     rw [← VG.Offset.sub_add_eq]; rfl]
   exact this
 
-theorem callPre : CallPre Proof.Aes.ctr32X86 ctrRegs (ctrRd (s.gpr .esp) K) (ctrWr C D S n) s := by
+theorem callPre : CallPre (Proof.Aes.ctr32X86N B) ctrRegs (ctrRd (s.gpr .esp) K) (ctrWr B C D S n) s := by
   obtain ⟨a0, a1, a2, a3, a4, a5, a6⟩ := h.args
   have hR := toNat_rounds h.rounds
   have hn := toNat_ofNat32 h.n_lt
@@ -509,7 +510,7 @@ theorem callPre : CallPre Proof.Aes.ctr32X86 ctrRegs (ctrRd (s.gpr .esp) K) (ctr
   have eSp : (pushed ctrRegs s).callEntry.gpr .esp = s.gpr .esp - BitVec.ofNat 32 32 := by
     rw [callEntry_esp']; rfl
   refine ⟨?_, ?_, ?_⟩
-  · simp only [Proof.Aes.ctr32X86, State.withRegions_rd, State.withRegions_wr, State.withRegions_gpr,
+  · simp only [Proof.Aes.ctr32X86N, State.withRegions_rd, State.withRegions_wr, State.withRegions_gpr,
       arg_withRegions, argAddr_withRegions, a0, a1, a2, a3, a4, a5, a6, eA, eSp, hR, hn]
     refine ⟨trivial, trivial, h.kc, h.kd, h.ks, h.cd, h.cs, h.ds, h.bc.sub_left h.sub28,
       h.bd.sub_left h.sub28, h.bs.sub_left h.sub28, h.bc.sub_left h.sub4, h.bd.sub_left h.sub4,
@@ -530,13 +531,13 @@ theorem callPre : CallPre Proof.Aes.ctr32X86 ctrRegs (ctrRd (s.gpr .esp) K) (ctr
 
 end CtrCall
 
-theorem ctr_call (v : GcmImpl) {s : State} {K C D S : BitVec 32} {R n : Nat} (h : CtrCall s K C D S R n) :
-    WP isa (ctrCall v.callees) s (CtrPost s K C D S R n) := by
+theorem ctr_call (v : GcmImpl) {s : State} {K C D S : BitVec 32} {R n : Nat} (h : CtrCall v.ctr.scr s K C D S R n) :
+    WP isa (ctrCall v.callees) s (CtrPost v.ctr.scr s K C D S R n) := by
   have hR := toNat_rounds h.rounds
   have hn := toNat_ofNat32 h.n_lt
   have hR' : 16 * (R + 1) ≤ 240 := by rcases h.rounds with h' | h' | h' <;> omega_using [h']
   unfold ctrCall
-  refine WP.callWith (rs := ctrRegs) (k := Proof.Aes.ctr32X86) v.ctr.ok v.ctr.nosp (by simp)
+  refine WP.callWith (rs := ctrRegs) (k := Proof.Aes.ctr32X86N v.ctr.scr) v.ctr.small.ok v.ctr.nosp (by simp)
     ctrRegs_esp (by rw [v.ctr.stack]; have := h.esp; simp only [List.length_cons, List.length_nil]; omega_using [this])
     h.callPre fun s' rd' wr' cs' f' ⟨s₂, m₂, post⟩ => ?_
   obtain ⟨a0, a1, a2, a3, a4, -, -⟩ := h.args
@@ -562,8 +563,8 @@ theorem ctr_call (v : GcmImpl) {s : State} {K C D S : BitVec 32} {R n : Nat} (h 
 /-- Calls of `vg_aes_ctr32_to` in place with the same arguments and stack pointer in
 both runs are constant time. -/
 theorem ctr_ct (v : GcmImpl) {I : State → Prop} {K C D S E : BitVec 32} {R n : Nat}
-    (h : ∀ s, I s → CtrCall s K C D S R n ∧ s.gpr .esp = E) : CT I (ctrCall v.callees) := by
-  refine CT.callWith v.ctr.ok v.ctr.ct (ctrRd E K) (ctrWr C D S n)
+    (h : ∀ s, I s → CtrCall v.ctr.scr s K C D S R n ∧ s.gpr .esp = E) : CT I (ctrCall v.callees) := by
+  refine CT.callWith v.ctr.small.ok v.ctr.small.ct (ctrRd E K) (ctrWr v.ctr.scr C D S n)
     fun s₁ s₂ i₁ i₂ => ?_
   obtain ⟨h₁, e₁⟩ := h s₁ i₁
   obtain ⟨h₂, e₂⟩ := h s₂ i₂
@@ -585,6 +586,44 @@ theorem ctr_ct (v : GcmImpl) {I : State → Prop} {K C D S E : BitVec 32} {R n :
   · rw [a4, b4]
   · rw [a5, b5]
   · rw [a6, b6]
+
+/-- A call with 2048 bytes of working space is one with the `B` first of them. -/
+theorem CtrCall.small {s : State} {K C D S : BitVec 32} {R n : Nat} (h : CtrCall 2048 s K C D S R n) {B : Nat}
+    (hB : B ≤ 2048) : CtrCall B s K C D S R n :=
+  have hs : Region.Sub ⟨w64 S, B⟩ ⟨w64 S, 2048⟩ := Region.sub_prefix hB
+  { eax := h.eax, ecx := h.ecx, edx := h.edx, ebx := h.ebx, edi := h.edi, ebp := h.ebp, rounds := h.rounds,
+    esp := h.esp, kc := h.kc, kd := h.kd, ks := h.ks.sub_right hs, cd := h.cd, cs := h.cs.sub_right hs,
+    ds := h.ds.sub_right hs, bk := h.bk, bc := h.bc, bd := h.bd, bs := h.bs.sub_right hs, fK := h.fK, fC := h.fC,
+    fD := h.fD, fS := by have := h.fS; omega_using [this, hB], reads := h.reads,
+    writes := fun a m ⟨r, hr, hc⟩ => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl
+      · exact h.writes a m ⟨_, List.mem_cons_self .., hc⟩
+      · exact h.writes a m ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), hc⟩
+      · refine h.writes a m ⟨⟨w64 S, 2048⟩, List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_singleton_self _)), ?_⟩
+        simp only [Region.Contains] at hc ⊢
+        omega_using [hc, hB] }
+
+/-- What it leaves, in terms of the 2048 bytes. -/
+theorem CtrPost.big {B : Nat} {s s' : State} {K C D S : BitVec 32} {R n : Nat} (g : CtrPost B s K C D S R n s')
+    (hB : B ≤ 2048) : CtrPost 2048 s K C D S R n s' :=
+  { rd := g.rd, wr := g.wr, saved := g.saved, out := g.out, ctr := g.ctr,
+    frame := g.frame.sub fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl
+      · exact ⟨_, List.mem_cons_self .., fun _ h => h⟩
+      · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), fun _ h => h⟩
+      · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self ..)), Region.sub_prefix hB⟩
+      · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_singleton_self _))),
+          fun _ h => h⟩ }
+
+theorem ctr_call2048 (v : GcmImpl) {s : State} {K C D S : BitVec 32} {R n : Nat} (h : CtrCall 2048 s K C D S R n) :
+    WP isa (ctrCall v.callees) s (CtrPost 2048 s K C D S R n) :=
+  WP.mono (ctr_call v (h.small v.ctr.scr_le)) fun _ g => g.big v.ctr.scr_le
+
+theorem ctr_ct2048 (v : GcmImpl) {I : State → Prop} {K C D S E : BitVec 32} {R n : Nat}
+    (h : ∀ s, I s → CtrCall 2048 s K C D S R n ∧ s.gpr .esp = E) : CT I (ctrCall v.callees) :=
+  ctr_ct v fun s hs => ⟨(h s hs).1.small v.ctr.scr_le, (h s hs).2⟩
 
 /-! ## `vg_aes_expand_key_scratch` -/
 

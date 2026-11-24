@@ -58,7 +58,7 @@ abbrev CtrS (m : Mem) (St : BitVec 32) (ciph : Block → Block) (icb : Block) (P
 /-- A buffer of `n` bytes at `D` that the code may read and write, apart from
 the context, the state, `W` and the stack below `SP`. -/
 structure DataW (Ctx St W SP : BitVec 32) (K : Nat) (s : State) (D : BitVec 32) (n : Nat) : Prop where
-  ok : DataOk St W SP K s D n
+  ok : DataOk 2560 St W SP K s D n
   wr : Covers [⟨w64 D, n⟩] s.wr
   ctx : (⟨w64 Ctx, 256⟩ : Region).Disjoint ⟨w64 D, n⟩
 
@@ -97,11 +97,11 @@ theorem ofBytes_zeros : Spec.Gcm.ofBytes (Spec.Gcm.zeros 16) = 0 := by decide
 
 /-- The regions `crypt` writes. -/
 abbrev crFrame (St W SP : BitVec 32) (K : Nat) (D : BitVec 32) (n : Nat) : List Region :=
-  [⟨w64 D, n⟩, ⟨w64 St + BitVec.ofNat 64 48, 32⟩, wsR W, below SP K]
+  [⟨w64 D, n⟩, ⟨w64 St + BitVec.ofNat 64 48, 32⟩, wsR 2560 W, below SP K]
 
 /-- Before `crypt`: `P` bytes of text so far, `n` bytes at `D` to go. -/
 structure CrIn (Ctx St W SP : BitVec 32) (K : Nat) (D : BitVec 32) (n P : Nat) (s : State) : Prop where
-  env : Env Ctx St W SP s
+  env : Env 2560 Ctx St W SP s
   dO : slotv s.mem W dO = D
   nO : slotv s.mem W nO = BitVec.ofNat 32 n
   bO : slotv s.mem W bO = BitVec.ofNat 32 (P % 16)
@@ -111,7 +111,7 @@ structure CrIn (Ctx St W SP : BitVec 32) (K : Nat) (D : BitVec 32) (n P : Nat) (
 /-- What holds part of the way, `j` bytes done, from `m₀`, but the slots. -/
 structure CrAt (Ctx St W SP : BitVec 32) (K : Nat) (icb : Block) (D : BitVec 32) (n P : Nat) (m₀ : Mem)
     (j : Nat) (s : State) : Prop where
-  env : Env Ctx St W SP s
+  env : Env 2560 Ctx St W SP s
   le : j ≤ n
   nlt : n < 2 ^ 32
   data : DataW Ctx St W SP K s D n
@@ -132,7 +132,7 @@ structure CrMid (Ctx St W SP : BitVec 32) (K : Nat) (icb : Block) (D : BitVec 32
 /-- After `crypt`. -/
 structure CrOut (Ctx St W SP : BitVec 32) (K : Nat) (icb : Block) (D : BitVec 32) (n P : Nat) (m₀ : Mem)
     (s : State) : Prop where
-  env : Env Ctx St W SP s
+  env : Env 2560 Ctx St W SP s
   ctr : CtrS m₀ St (ciphOf m₀ Ctx) icb P → CtrS s.mem St (ciphOf m₀ Ctx) icb (P + n)
   out : CtrS m₀ St (ciphOf m₀ Ctx) icb P →
     bytesAt s.mem (w64 D) n = xorKs (ciphOf m₀ Ctx) icb P (bytesAt m₀ (w64 D) n)
@@ -149,7 +149,7 @@ theorem ctx_crFrame {s : State} {D : BitVec 32} {n : Nat} (hd : DataW Ctx St W S
   rcases hr with rfl | rfl | rfl | rfl
   · exact hd.ctx
   · exact L.cs.sub_right (Lay.stSub (by decide))
-  · exact L.cw.sub_right (Lay.wSub (by decide))
+  · exact L.cw.sub_right (Lay.wSubN (by decide))
   · exact L.kc.symm
 
 theorem kept_crFrame {s : State} {D : BitVec 32} {n : Nat} (hd : DataW Ctx St W SP K s D n) :
@@ -157,9 +157,9 @@ theorem kept_crFrame {s : State} {D : BitVec 32} {n : Nat} (hd : DataW Ctx St W 
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
-  · exact (hd.ok.w.sub_right (Lay.wSub (by decide))).symm
+  · exact (hd.ok.w.sub_right (Lay.wSubN (by decide))).symm
   · exact (L.st_w (by decide) (.inr ⟨by decide, by decide⟩)).symm
-  · exact Lay.w_w (.inl (by decide)) (by decide) (by decide)
+  · exact Lay.w_wN (.inl (by decide)) (by decide) (by decide)
   · exact (L.stk_w (by decide)).symm
 
 /-- The context's slot is apart from `crFrame`. -/
@@ -168,9 +168,9 @@ theorem ctxSlot_crFrame {s : State} {D : BitVec 32} {n : Nat} (hd : DataW Ctx St
   fun r hr => (kept_crFrame L hd r hr).sub_left (Offset.sub _ (by decide) (by decide))
 
 theorem env_crFrame {s s' : State} {D : BitVec 32} {n : Nat} (hd : DataW Ctx St W SP K s D n)
-    (he : Env Ctx St W SP s) (hf : Frame (crFrame St W SP K D n) s.mem s'.mem)
+    (he : Env 2560 Ctx St W SP s) (hf : Frame (crFrame St W SP K D n) s.mem s'.mem)
     (hbp : s'.gpr .ebp = s.gpr .ebp) (hsi : s'.gpr .esi = s.gpr .esi) (hsp : s'.gpr .esp = s.gpr .esp)
-    (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) : Env Ctx St W SP s' :=
+    (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) : Env 2560 Ctx St W SP s' :=
   he.keep hbp hsi hsp hrd hwr (slot_frame hf (ctxSlot_crFrame L hd))
 
 theorem ciph_crFrame {s : State} {D : BitVec 32} {n : Nat} (hd : DataW Ctx St W SP K s D n) {m m' : Mem}
@@ -184,7 +184,7 @@ theorem pslot_crFrame {D : BitVec 32} {n : Nat} {m m' : Mem} (h : Frame [pslotR 
     Frame (crFrame St W SP K D n) m m' :=
   h.sub fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
-    exact ⟨_, by simp, pslot_ws W⟩
+    exact ⟨_, by simp, pslot_ws (N := 2560) W (by decide)⟩
 
 omit L in
 /-- `[D + j, D + j + k)` is within `crFrame`. -/
@@ -206,7 +206,7 @@ theorem CrAt.pslot {icb : Block} {D : BitVec 32} {n P : Nat} {m₀ : Mem} {j : N
   have pD : ∀ {a k : Nat}, a + k ≤ n → ∀ r ∈ [pslotR W], (⟨w64 D + BitVec.ofNat 64 a, k⟩ : Region).Disjoint r :=
     fun hak r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact (h.data.ok.w.sub_left (Offset.sub_base _ hak)).sub_right (Lay.wSub (by decide))
+      exact (h.data.ok.w.sub_left (Offset.sub_base _ hak)).sub_right (Lay.wSubN (by decide))
   refine ⟨env_crFrame L h.data h.env (pslot_crFrame hf) hbp hsi hsp hrd hwr, h.le, h.nlt, h.data.of_eq hrd hwr,
     fun hc => (h.ctr hc).congr (blockAt_frame hf (pS (by decide))) (blockAt_frame hf (pS (by decide))),
     fun hc => ?_, ?_, h.whole, h.frame.trans (pslot_crFrame hf)⟩
@@ -254,7 +254,7 @@ variable {Ctx St W SP : BitVec 32} {K : Nat} (L : Lay4 Ctx St W SP K) {ci : CtrI
 include L
 
 /-- `ctrArgs`: the context and the counter block. -/
-theorem ctrArgs_ok {s : State} (he : Env Ctx St W SP s) :
+theorem ctrArgs_ok {s : State} (he : Env 2560 Ctx St W SP s) :
     ∃ s', runBlock isa ctrArgs s = some s' ∧ s'.gpr .eax = Ctx ∧ s'.gpr .edx = St + BitVec.ofNat 32 48 ∧
       (∀ r, r ≠ .eax → r ≠ .edx → s'.gpr r = s.gpr r) ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧
       s'.wr = s.wr := by
@@ -317,7 +317,7 @@ theorem cArgs_ok (hK : K = 1536) {j nb : Nat} (hnb : nb ≠ 0) (hj : j + 16 * nb
     by rw [eC]; exact L.cs.sub_right (Lay.stSub (by decide)), by rw [eP]; exact dctx,
     by rw [eC]; exact L.stk_st (by decide), by rw [eP]; exact dk,
     by rw [eC]; exact (L.st_w (by decide) (.inr ⟨by decide, by decide⟩)).symm,
-    by rw [eP]; exact (dw.sub_right (Lay.wSub (by decide))).symm⟩
+    by rw [eP]; exact (dw.sub_right (Lay.wSubN (by decide))).symm⟩
 
 theorem cArgs_pc (hK : K = 1536) {j nb : Nat} (hnb : nb ≠ 0) (hj : j + 16 * nb ≤ n) :
     Pc (CWhole1 (Ctx := Ctx) (St := St) (W := W) (SP := SP) (K := K) (icb := icb) (D := D) (n := n)
@@ -359,7 +359,7 @@ theorem ctrFr_slot (hK : K = 1536) {s : State} (hd : DataW Ctx St W SP K s D n) 
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
   · exact (L.st_w (by decide) (.inr ⟨by omega_using [h₁], by omega_using [h₂]⟩)).symm
-  · exact ((hd.ok.w.sub_left (Offset.sub_base _ hj)).sub_right (Lay.wSub (by omega_using [h₂]))).symm
+  · exact ((hd.ok.w.sub_left (Offset.sub_base _ hj)).sub_right (Lay.wSubN (by omega_using [h₂]))).symm
   · exact (L.stk_w (by omega_using [h₂])).symm
 
 theorem ctrFr_crFrame (hK : K = 1536) {j nb : Nat} (hj : j + 16 * nb ≤ n) {m m' : Mem}
@@ -481,7 +481,7 @@ include L
 
 /-- After the block that sets up the XOR. -/
 structure CHead2 (k : Nat) (m₀ : Mem) (s : State) : Prop where
-  env : Env Ctx St W SP s
+  env : Env 2560 Ctx St W SP s
   edi : s.gpr .edi = D
   edx : s.gpr .edx = St + BitVec.ofNat 32 (64 + P % 16)
   ecx : s.gpr .ecx = BitVec.ofNat 32 k
@@ -498,7 +498,7 @@ theorem cHead2_ok (k : Nat) (hk : k ≤ n) (m₀ : Mem) {s : State} (h : CrIn Ct
       .mov .eax (.reg .edi), .alu .add .eax (.reg .ecx), .store (at_ .ebp dO) .eax]) s₁
       (CHead2 (Ctx := Ctx) (St := St) (W := W) (SP := SP) (K := K) (D := D) (n := n) (P := P) k m₀) := by
   have he := h.env
-  have he₁ : Env Ctx St W SP s₁ := he.keep (hs₁.other _ (by decide) (by decide))
+  have he₁ : Env 2560 Ctx St W SP s₁ := he.keep (hs₁.other _ (by decide) (by decide))
     (hs₁.other _ (by decide) (by decide)) (hs₁.other _ (by decide) (by decide)) hs₁.rd hs₁.wr (by rw [hs₁.mem])
   have hd : slotv s₁.mem W dO = D := by rw [hs₁.mem]; exact h.dO
   have hn : slotv s₁.mem W nO = BitVec.ofNat 32 n := by rw [hs₁.mem]; exact h.nO
@@ -547,7 +547,7 @@ theorem cHead3_ok (k : Nat) (hkn : k ≤ n) (hk1 : 1 ≤ k) (hbk : P % 16 + k �
   have dW : ∀ {o : Nat}, o + 4 ≤ 2560 → ∀ r ∈ [(⟨w64 D, k⟩ : Region)], (⟨w64 W + BitVec.ofNat 64 o, 4⟩ : Region).Disjoint r :=
     fun ho r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact (dk.ok.w.sub_right (Lay.wSub ho)).symm
+      exact (dk.ok.w.sub_right (Lay.wSubN ho)).symm
   have pS : ∀ {a l : Nat}, a + l ≤ 80 → ∀ r ∈ [pslotR W], (⟨w64 St + BitVec.ofNat 64 a, l⟩ : Region).Disjoint r :=
     fun hal r hr => by
       simp only [List.mem_singleton] at hr; subst hr
@@ -555,7 +555,7 @@ theorem cHead3_ok (k : Nat) (hkn : k ≤ n) (hk1 : 1 ≤ k) (hbk : P % 16 + k �
   have pD : ∀ {a l : Nat}, a + l ≤ n → ∀ r ∈ [pslotR W], (⟨w64 D + BitVec.ofNat 64 a, l⟩ : Region).Disjoint r :=
     fun hal r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact (h.data.ok.w.sub_left (Offset.sub_base _ hal)).sub_right (Lay.wSub (by decide))
+      exact (h.data.ok.w.sub_left (Offset.sub_base _ hal)).sub_right (Lay.wSubN (by decide))
   have pD0 : ∀ r ∈ [pslotR W], (⟨w64 D, k⟩ : Region).Disjoint r := by
     have := pD (a := 0) (l := k) (by omega_using [hkn]); simpa using this
   refine ⟨⟨env_crFrame L h.data he hf₁ (c.other _ (by decide) (by decide) (by decide) (by decide) (by decide))
@@ -694,7 +694,7 @@ theorem slot_ksFrame (hK : K = 1536) {o : Nat} (h₁ : 240 ≤ o) (h₂ : o + 4 
 variable {icb : Block} {D : BitVec 32} {n P : Nat}
 
 /-- The keystream block zeroed, and the arguments of `vg_sm4_ctr32` for it. -/
-theorem tail1_ok {s : State} (he : Env Ctx St W SP s) :
+theorem tail1_ok {s : State} (he : Env 2560 Ctx St W SP s) :
     WP isa (.block (([.mov .eax (imm 0), .store (at_ .esi 64) .eax, .store (at_ .esi 68) .eax,
           .store (at_ .esi 72) .eax, .store (at_ .esi 76) .eax, .mov .ebx (.reg .esi), .alu .add .ebx (imm 64),
           .mov .edi (imm 1)] : List Instr) ++ ctrArgs)) s fun s' =>
@@ -717,7 +717,7 @@ theorem tail1_ok {s : State} (he : Env Ctx St W SP s) :
         gpr_setReg_of_ne _ _ h₃]
     all_goals rfl
   obtain fz : Frame [⟨w64 St + BitVec.ofNat 64 64, 16⟩] s.mem s₁.mem := by rw [m₁]; exact Cmac.frame_store4 _ _ _ _ _
-  obtain he₁ : Env Ctx St W SP s₁ := he.keep (g₁ _ (by decide) (by decide) (by decide))
+  obtain he₁ : Env 2560 Ctx St W SP s₁ := he.keep (g₁ _ (by decide) (by decide) (by decide))
     (g₁ _ (by decide) (by decide) (by decide)) (g₁ _ (by decide) (by decide) (by decide)) rd₁ wr₁
     (slot_frame fz fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact (L.st_w (by decide) (.inr ⟨by decide, by decide⟩)).symm)
@@ -731,7 +731,7 @@ theorem tail1_ok {s : State} (he : Env Ctx St W SP s) :
 
 /-- After the call: the keystream block for the last bytes, and the counter block after it. -/
 structure CTail (j : Nat) (m₀ : Mem) (s : State) : Prop where
-  env : Env Ctx St W SP s
+  env : Env 2560 Ctx St W SP s
   le : j ≤ n
   nlt : n < 2 ^ 32
   hlt : n - j < 16

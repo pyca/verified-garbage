@@ -61,17 +61,17 @@ theorem bytesAt16 (m : Mem) (p : Addr) : bytesAt m p 16 = bytesAt m p 4 ++ bytes
 
 /-- The regions `tag o` writes. -/
 abbrev tagFrame (St W SP : BitVec 32) (o : Nat) : List Region :=
-  [⟨w64 St, 32⟩, ⟨w64 W + BitVec.ofNat 64 96, 16⟩, ⟨w64 W + BitVec.ofNat 64 o, 16⟩, wsR W, below SP 1536]
+  [⟨w64 St, 32⟩, ⟨w64 W + BitVec.ofNat 64 96, 16⟩, ⟨w64 W + BitVec.ofNat 64 o, 16⟩, wsR 2560 W, below SP 1536]
 
 /-- Before `tag o al ah tl th`. -/
 structure TagIn (Ctx St W SP : BitVec 32) (al ah tl th : Nat) (alo ahi tlo thi : BitVec 32) (s : State) :
     Prop where
-  env : Env Ctx St W SP s
+  env : Env 2560 Ctx St W SP s
   sl : LensSlots W al ah tl th alo ahi tlo thi s.mem
 
 /-- After: the tag at `W + o`, from `m₀`. -/
 structure TagOut (Ctx St W SP : BitVec 32) (o aN tN : Nat) (m₀ : Mem) (s : State) : Prop where
-  env : Env Ctx St W SP s
+  env : Env 2560 Ctx St W SP s
   out : bytesAt s.mem (w64 W + BitVec.ofNat 64 o) 16 =
     toBytes (ghashFrom (Hk m₀ Ctx) (blockAt m₀ (w64 St + BitVec.ofNat 64 16)) [ofBytes (lensBlock aN tN)] ^^^
       ciphOf m₀ Ctx (blockAt m₀ (w64 St)))
@@ -90,19 +90,19 @@ section
 variable {Ctx St W SP : BitVec 32} (L : Lay4 Ctx St W SP 1536)
 include L
 
-theorem t_tagFrame {o : Nat} {m m' : Mem} (h : Frame (tFrame St W SP 28 16) m m') :
+theorem t_tagFrame {o : Nat} {m m' : Mem} (h : Frame (tFrame 2560 St W SP 28 16) m m') :
     Frame (tagFrame St W SP o) m m' :=
   h.sub fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
     · exact ⟨_, List.mem_cons_self .., Offset.sub_base (w64 St) (show 16 + 16 ≤ 32 by decide)⟩
     · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), fun _ h => h⟩
-    · exact ⟨wsR W, by simp, fun _ h => h⟩
+    · exact ⟨wsR 2560 W, by simp, fun _ h => h⟩
     · exact ⟨below SP 1536, by simp, L.below28⟩
 
 /-- The copy of the accumulator to `W + o`, and the arguments of `vg_sm4_ctr32`. -/
 theorem tagCopy_ok {o aN tN : Nat} (ho : o = 0 ∨ o = 112) {m₀ : Mem} {s : State}
-    (he : Env Ctx St W SP s)
+    (he : Env 2560 Ctx St W SP s)
     (hacc : blockAt s.mem (w64 St + BitVec.ofNat 64 16) =
       ghashFrom (Hk m₀ Ctx) (blockAt m₀ (w64 St + BitVec.ofNat 64 16)) [ofBytes (lensBlock aN tN)])
     (hj : blockAt s.mem (w64 St) = blockAt m₀ (w64 St)) (hc : ciphOf s.mem Ctx = ciphOf m₀ Ctx)
@@ -127,7 +127,7 @@ theorem tagCopy_ok {o aN tN : Nat} (ho : o = 0 ∨ o = 112) {m₀ : Mem} {s : St
   have f₄ : Frame [⟨w64 W + BitVec.ofNat 64 o, 16⟩] s.mem M := by rw [← hM]; exact Cmac.frame_store4 _ _ _ _ _
   have sK : ∀ {q}, 128 ≤ q → q + 4 ≤ 2560 → slotv M W q = slotv s.mem W q := fun h₁ h₂ =>
     slot_frame f₄ fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact Lay.w_w (.inr (by omega_using [ho, h₁])) (by omega_using [h₂]) (by omega_using [ho])
+      simp only [List.mem_singleton] at hr; subst hr; exact Lay.w_wN (.inr (by omega_using [ho, h₁])) (by omega_using [h₂]) (by omega_using [ho])
   have dS : ∀ {a k : Nat}, a + k ≤ 80 → ∀ r ∈ [(⟨w64 W + BitVec.ofNat 64 o, 16⟩ : Region)],
       (⟨w64 St + BitVec.ofNat 64 a, k⟩ : Region).Disjoint r := fun hak r hr => by
     simp only [List.mem_singleton] at hr; subst hr
@@ -149,7 +149,7 @@ theorem tagCopy_ok {o aN tN : Nat} (ho : o = 0 ∨ o = 112) {m₀ : Mem} {s : St
   · simpa using L.stk_st (a := 0) (n := 16) (by decide)
   · rw [eW]; exact L.stk_w (by omega_using [ho])
   · simpa using (L.st_w (a := 0) (n := 16) (by decide) (.inr ⟨by decide, by decide⟩)).symm
-  · rw [eW]; exact Lay.w_w (.inr (by omega_using [ho])) (by decide) (by omega_using [ho])
+  · rw [eW]; exact Lay.w_wN (.inr (by omega_using [ho])) (by decide) (by omega_using [ho])
   · simp only [mem_setReg, mem_arithFlags, mem_setMem]
     rw [← hM, blockAt, Cmac.bytesAt_store4, ← hw0, ← hw1, ← hw2, ← hw3, Cmac.le4_readW, Cmac.le4_readW,
       Cmac.le4_readW, Cmac.le4_readW, ← hacc, blockAt]
@@ -169,13 +169,13 @@ theorem tagCopy_ok {o aN tN : Nat} (ho : o = 0 ∨ o = 112) {m₀ : Mem} {s : St
       simp only [List.mem_singleton] at hr; subst hr
       exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self ..)), fun _ h => h⟩)
 
-theorem ctx_tFrame' : ∀ r ∈ tFrame St W SP 28 16, (⟨w64 Ctx, 256⟩ : Region).Disjoint r := by
+theorem ctx_tFrame' : ∀ r ∈ tFrame 2560 St W SP 28 16, (⟨w64 Ctx, 256⟩ : Region).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
   · exact L.cs.sub_right (Lay.stSub (by decide))
-  · exact L.cw.sub_right (Lay.wSub (by decide))
-  · exact L.cw.sub_right (Lay.wSub (by decide))
+  · exact L.cw.sub_right (Lay.wSubN (by decide))
+  · exact L.cw.sub_right (Lay.wSubN (by decide))
   · exact L.lay.kc.symm
 
 theorem tag_pc {o al ah tl th : Nat} (ho : o = 0 ∨ o = 112) (hc : LensAt 16 al ah tl th)
@@ -184,7 +184,7 @@ theorem tag_pc {o al ah tl th : Nat} (ho : o = 0 ∨ o = 112) (hc : LensAt 16 al
       (TagOut Ctx St W SP o (val64 alo ahi) (val64 tlo thi) ·) := by
   refine Pc.seq (Pc.lift (lens_pc L.lay hc) (fun m₀ _ => m₀) fun m₀ s ⟨h, hm⟩ => ⟨⟨h.env, h.sl⟩, hm⟩) ?_
   have hw : ∀ (m₀ : Mem) s', (∃ s, (TagIn Ctx St W SP al ah tl th alo ahi tlo thi s ∧ s.mem = m₀) ∧
-      LensOut Ctx St W SP 28 16 (val64 alo ahi) (val64 tlo thi) m₀ s' ∧ s'.rd = s.rd ∧ s'.wr = s.wr) →
+      LensOut 2560 Ctx St W SP 28 16 (val64 alo ahi) (val64 tlo thi) m₀ s' ∧ s'.rd = s.rd ∧ s'.wr = s.wr) →
       WP isa (.block [.mov .eax (.mem (at_ .esi 16)), .mov .ecx (.mem (at_ .esi 20)), .mov .edx (.mem (at_ .esi 24)),
         .mov .ebx (.mem (at_ .esi 28)), .store (at_ .ebp o) .eax, .store (at_ .ebp (o + 4)) .ecx,
         .store (at_ .ebp (o + 8)) .edx, .store (at_ .ebp (o + 12)) .ebx, .mov .ebx (.reg .ebp),
@@ -203,9 +203,9 @@ theorem tag_pc {o al ah tl th : Nat} (ho : o = 0 ∨ o = 112) (hc : LensAt 16 al
       exact tagCopy_ok L ho lo.env lo.out hj
         (ciph_frame lo.frame (ctx_tFrame' L)) (t_tagFrame L lo.frame)
   have hr : ∀ (m₀ m₁ : Mem) s₁ s₂, (∃ s, (TagIn Ctx St W SP al ah tl th alo ahi tlo thi s ∧ s.mem = m₀) ∧
-      LensOut Ctx St W SP 28 16 (val64 alo ahi) (val64 tlo thi) m₀ s₁ ∧ s₁.rd = s.rd ∧ s₁.wr = s.wr) →
+      LensOut 2560 Ctx St W SP 28 16 (val64 alo ahi) (val64 tlo thi) m₀ s₁ ∧ s₁.rd = s.rd ∧ s₁.wr = s.wr) →
       (∃ s, (TagIn Ctx St W SP al ah tl th alo ahi tlo thi s ∧ s.mem = m₁) ∧
-      LensOut Ctx St W SP 28 16 (val64 alo ahi) (val64 tlo thi) m₁ s₂ ∧ s₂.rd = s.rd ∧ s₂.wr = s.wr) →
+      LensOut 2560 Ctx St W SP 28 16 (val64 alo ahi) (val64 tlo thi) m₁ s₂ ∧ s₂.rd = s.rd ∧ s₂.wr = s.wr) →
       ∀ r ∈ [Reg.esi, .ebp], s₁.gpr r = s₂.gpr r := fun _ _ s₁ s₂ ⟨_, _, h₁, _⟩ ⟨_, _, h₂, _⟩ r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl

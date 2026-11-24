@@ -144,7 +144,7 @@ theorem iEntry_pc (p : BitVec 32 × (Nat → BitVec 32)) :
         exact (aw.sub_left (argA_sub hi fa')).sub_right (Lay.wSub (by decide))) (by decide)]
       rw [arg, argAddr, hSP]
       exact rfl
-    obtain ke : KeepEnv (arg s₀ 3) SP 4 s₁ := ⟨bp₁, sp₁, by rw [wr₁]; exact wW, by rw [rd₁, wr₁]; exact rA, aw, fa', fw⟩
+    obtain ke : KeepEnv 2560 (arg s₀ 3) SP 4 s₁ := ⟨bp₁, sp₁, by rw [wr₁]; exact wW, by rw [rd₁, wr₁]; exact rA, aw, fa', fw, by decide⟩
     obtain ⟨s₃, run₃, sl₃, f₃, g₃, rd₃, wr₃⟩ := keeps_ok initPs (fun q hq => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
       rcases hq with rfl | rfl | rfl <;> decide) (by decide) ke

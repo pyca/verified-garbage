@@ -343,6 +343,23 @@ theorem seal_framed :
     (bytes := 2604) (seal_verified (vg := vg)) (by decide) (seal_noEsp vg)
     (seal_stackUse vg) (sealPre_local _) (sealPost_local _) (fun vs m m₁ m₂ r hl _ => sealPostOut_local _ vs m m₁ m₂ r hl) sealFrameSat_pre
 
+/-! `seal` and `open` in a frame of 768 bytes of working space, for an implementation of CTR
+that needs no more (`WSize`). -/
+
+theorem sealFrameSat_preS : ∃ s, (Proof.AesGcm.sealRoundsContract X86.abi 844).pre s := by
+  implies_sat [Proof.AesGcm.sealRoundsContract, Spec.Gcm.sealSig, Spec.Gcm.sealPre, Proof.AesGcm.sealRoundsPost,
+    X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
+    [sealFrameSat, sealSat, X86.arg, X86.argAddr, Mem.readW, Mem.read] using sealFrameSat
+
+theorem seal_framedS [WSize 768 vg.ctr.scr] :
+    Verified X86.target (Impl.StackScratch.X86.withStackScratch 812 9 («seal» vg.callees))
+      (Proof.AesGcm.sealRoundsContract X86.abi 844) :=
+  X86.Verified.stackScratch (sig := Spec.Gcm.sealSig) (nm := "work") (e := .u64)
+    (n := 96) (pre := Spec.Gcm.sealPre X86.abi.ptrBits)
+    (post := Proof.AesGcm.sealRoundsPost X86.abi.ptrBits) (wa := true) (stack := 32)
+    (bytes := 812) (seal_verifiedS (vg := vg)) (by decide) (seal_noEsp vg)
+    (seal_stackUse vg) (sealPre_local _) (sealPost_local _) (fun vs m m₁ m₂ r hl _ => sealPostOut_local _ vs m m₁ m₂ r hl) sealFrameSat_preS
+
 /-- A state satisfying `vg_aes_gcm_open`'s precondition, without the working
 space: its ten argument slots at `0x8004`. -/
 def openFrameSat : State :=
@@ -362,6 +379,22 @@ theorem open_framed :
     (leak := some (Spec.Gcm.openLeak X86.abi.ptrBits))
     (bytes := 2608) (open_verified (vg := vg)) (by decide) (open_noEsp vg)
     (open_stackUse vg) (openPre_local _) (openPost_local _) (fun vs m m₁ m₂ r hl _ => openPostOut_local _ vs m m₁ m₂ r hl) openFrameSat_pre
+    (hleak := openLeak_local _)
+
+theorem openFrameSat_preS : ∃ s, (Proof.AesGcm.openRoundsContract X86.abi 848).pre s := by
+  implies_sat [Proof.AesGcm.openRoundsContract, Spec.Gcm.openSig, Spec.Gcm.openPre, Proof.AesGcm.openRoundsPost,
+    Spec.Gcm.openLeak, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
+    [openFrameSat, openSat, X86.arg, X86.argAddr, Mem.readW, Mem.read] using openFrameSat
+
+theorem open_framedS [WSize 768 vg.ctr.scr] :
+    Verified X86.target (Impl.StackScratch.X86.withStackScratch 816 10 («open» vg.callees))
+      (Proof.AesGcm.openRoundsContract X86.abi 848) :=
+  X86.Verified.stackScratch (sig := Spec.Gcm.openSig) (nm := "work") (e := .u64)
+    (n := 96) (pre := Spec.Gcm.openPre X86.abi.ptrBits)
+    (post := Proof.AesGcm.openRoundsPost X86.abi.ptrBits) (wa := true) (stack := 32)
+    (leak := some (Spec.Gcm.openLeak X86.abi.ptrBits))
+    (bytes := 816) (open_verifiedS (vg := vg)) (by decide) (open_noEsp vg)
+    (open_stackUse vg) (openPre_local _) (openPost_local _) (fun vs m m₁ m₂ r hl _ => openPostOut_local _ vs m m₁ m₂ r hl) openFrameSat_preS
     (hleak := openLeak_local _)
 
 end VG.Proof.AesGcm.X86

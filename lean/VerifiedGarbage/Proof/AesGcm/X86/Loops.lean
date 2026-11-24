@@ -35,6 +35,8 @@ namespace VG.Proof.AesGcm.X86
 open VG VG.X86 VG.X86.RegUpd VG.Impl.AesGcm.X86 VG.WriteBytes
 open VG.Spec.Aes (bytesAt)
 
+variable {N : Nat}
+
 theorem bytesAt_succ (m : Mem) (p : Addr) (i : Nat) :
     bytesAt m p (i + 1) = bytesAt m p i ++ [m (p + BitVec.ofNat 64 i)] := by
   simp [bytesAt, List.range_succ]

@@ -60,6 +60,8 @@ section
 namespace VG.Proof.Aes.X86.AesNi
 open VG VG.X86 VG.X86.RegUpd
 open VG.Proof.Aes.X86 (GPre argRg dstP dstR srcR schP nRounds ctrP datP nBlk scrP scrR)
+
+variable {B : Nat}
 open VG.Impl.Aes.X86.AesNi (at_ argOp ctrLoad aes xorData regs6 dstReg)
 open VG.Spec.Gcm (blockAt inc32)
 open VG.Proof.Gcm.X86 (revMask)
@@ -69,7 +71,7 @@ theorem regs_shape (rs : List XReg) (h : rs = regs6 ∨ rs = [.xmm0]) :
     rs.Nodup ∧ .xmm6 ∉ rs ∧ .xmm7 ∉ rs ∧ 0 < rs.length := by
   rcases h with rfl | rfl <;> decide
 
-theorem Saved.of_data_frame {to : Bool} {s₀ : State} (hp : GPre to s₀) {m m' : Mem}
+theorem Saved.of_data_frame {to : Bool} {s₀ : State} (hp : GPre to s₀ B) {m m' : Mem}
     (hs : Saved s₀ m) (hf : Frame [dstR to s₀] m m') : Saved s₀ m' :=
   hs.of_frame hf (fun p h => scratch_contains hp (by have := savedRegs_bound p h; omega_using [this]))
     (by simp only [List.mem_singleton, forall_eq]; exact hp.dDB.symm)
@@ -83,9 +85,9 @@ structure Ready (s₀ s : State) (c : Nat) (rs : List XReg) (s' : State) : Prop 
   rd : s'.rd = s.rd
   wr : s'.wr = s.wr
 
-theorem encrypt_ok {to : Bool} {s₀ : State} (hp : GPre to s₀) (rs : List XReg)
+theorem encrypt_ok {to : Bool} {s₀ : State} (hp : GPre to s₀ B) (rs : List XReg)
     (hrs : rs = regs6 ∨ rs = [.xmm0]) {c : Nat} (_hc : c + rs.length ≤ nBlk s₀)
-    {s : State} (hI : Inv to s₀ c c s) :
+    {s : State} (hI : Inv B to s₀ c c s) :
     WP isa (.seq (.block (ctrLoad rs)) (aes rs)) s (Ready s₀ s c rs) := by
 
   obtain ⟨hnd, h6, h7, hlen⟩ := regs_shape rs hrs
@@ -135,10 +137,10 @@ theorem encrypt_ok {to : Bool} {s₀ : State} (hp : GPre to s₀) (rs : List XRe
 /-- Any supported lane group produces the next keystream blocks and XORs
 them into the next blocks of the data, stored where the result goes; a
 public register-update tail follows. -/
-theorem blocks_ok {to : Bool} {s₀ : State} (hp : GPre to s₀) (rs : List XReg)
+theorem blocks_ok {to : Bool} {s₀ : State} (hp : GPre to s₀ B) (rs : List XReg)
     (hrs : rs = regs6 ∨ rs = [.xmm0]) (tail : List Instr) {Q : State → Prop}
-    {c : Nat} (hc : c + rs.length ≤ nBlk s₀) {s : State} (hI : Inv to s₀ c c s)
-    (hQ : ∀ s', Inv to s₀ (c + rs.length) c s' → WP isa (.block tail) s' Q) :
+    {c : Nat} (hc : c + rs.length ≤ nBlk s₀) {s : State} (hI : Inv B to s₀ c c s)
+    (hQ : ∀ s', Inv B to s₀ (c + rs.length) c s' → WP isa (.block tail) s' Q) :
     WP isa (.seq (.block (ctrLoad rs)) (.seq (aes rs) (.block (xorData (dstReg to) rs 0 ++ tail)))) s Q := by
   obtain ⟨hnd, _, h7, hlen⟩ := regs_shape rs hrs
   have hwS := hp.fSrc
@@ -251,13 +253,15 @@ end
 namespace VG.Proof.Aes.X86.AesNi
 open VG VG.X86
 open VG.Proof.Aes.X86 (GPre nBlk)
+
+variable {B : Nat}
 open VG.Impl.Aes.X86.AesNi (body6 body1)
 
 /-- The six-lane body advances the public loop state by six blocks. -/
-theorem body6_ok {to : Bool} {s₀ : State} (hp : GPre to s₀) {c : Nat} (hc : c + 6 ≤ nBlk s₀)
-    {s : State} (hI : Inv to s₀ c c s) :
+theorem body6_ok {to : Bool} {s₀ : State} (hp : GPre to s₀ B) {c : Nat} (hc : c + 6 ≤ nBlk s₀)
+    {s : State} (hI : Inv B to s₀ c c s) :
     WP isa (Impl.Aes.X86.AesNi.body6 to) s fun s' =>
-      Inv to s₀ (c + 6) (c + 6) s' ∧ s'.cf = some (decide (nBlk s₀ - (c + 6) < 6)) := by
+      Inv B to s₀ (c + 6) (c + 6) s' ∧ s'.cf = some (decide (nBlk s₀ - (c + 6) < 6)) := by
   refine blocks_ok hp Impl.Aes.X86.AesNi.regs6 (.inl rfl) _ hc hI fun s₁ hI₁ => ?_
   change WP isa (.block ((([.alu .add .esi (.imm 96)] : List Instr) ++
     Impl.Aes.X86.AesNi.advTo to 96) ++ (([.alu .sub .edi (.imm 6)] : List Instr) ++
@@ -268,27 +272,27 @@ theorem body6_ok {to : Bool} {s₀ : State} (hp : GPre to s₀) {c : Nat} (hc : 
     cmpEdi_ok (by decide) (by omega_using [hc]) hI₂
 
 /-- The tail body advances one block and exposes its public zero flag. -/
-theorem body1_ok {to : Bool} {s₀ : State} (hp : GPre to s₀) {c : Nat} (hc : c < nBlk s₀)
-    {s : State} (hI : Inv to s₀ c c s) :
+theorem body1_ok {to : Bool} {s₀ : State} (hp : GPre to s₀ B) {c : Nat} (hc : c < nBlk s₀)
+    {s : State} (hI : Inv B to s₀ c c s) :
     WP isa (Impl.Aes.X86.AesNi.body1 to) s fun s' =>
-      Inv to s₀ (c + 1) (c + 1) s' ∧ s'.zf = some (decide (nBlk s₀ - (c + 1) = 0)) := by
+      Inv B to s₀ (c + 1) (c + 1) s' ∧ s'.zf = some (decide (nBlk s₀ - (c + 1) = 0)) := by
   refine blocks_ok hp [.xmm0] (.inr rfl) _ hc hI fun s₁ hI₁ => ?_
   exact advance_ok (n := 1) hp (by omega_using [hc]) hI₁
 
 
 /-- Both public count loops terminate and encrypt every requested block. -/
-theorem loops_ok {to : Bool} {s₀ : State} (hp : GPre to s₀) {s : State} (hI : Inv to s₀ 0 0 s)
+theorem loops_ok {to : Bool} {s₀ : State} (hp : GPre to s₀ B) {s : State} (hI : Inv B to s₀ 0 0 s)
     (hcf : s.cf = some (decide (nBlk s₀ < 6))) (finish : Prog isa) {Q : State → Prop}
-    (hQ : ∀ s', Inv to s₀ (nBlk s₀) (nBlk s₀) s' → WP isa finish s' Q) :
+    (hQ : ∀ s', Inv B to s₀ (nBlk s₀) (nBlk s₀) s' → WP isa finish s' Q) :
     WP isa (.seq (.ite .b (.block []) (.loop (body6 to) .ae))
       (.seq (.block [.alu .test .edi (.reg .edi)])
         (.seq (.ite .e (.block []) (.loop (body1 to) .ne)) finish))) s Q := by
-  refine WP.seq (WP.mono (Q := fun s => ∃ c, nBlk s₀ - c < 6 ∧ Inv to s₀ c c s) ?_ fun s₂ ⟨c, hc, hI₂⟩ => ?_)
+  refine WP.seq (WP.mono (Q := fun s => ∃ c, nBlk s₀ - c < 6 ∧ Inv B to s₀ c c s) ?_ fun s₂ ⟨c, hc, hI₂⟩ => ?_)
   · refine WP.ite (decide (nBlk s₀ < 6)) (by simp [eval, hcf]) (fun h => ?_) (fun h => ?_)
     · exact WP.block_nil ⟨0, by simpa using h, hI⟩
-    · let I6 : Nat → State → Prop := fun m s => ∃ c, m = nBlk s₀ - c ∧ c + 6 ≤ nBlk s₀ ∧ Inv to s₀ c c s
+    · let I6 : Nat → State → Prop := fun m s => ∃ c, m = nBlk s₀ - c ∧ c + 6 ≤ nBlk s₀ ∧ Inv B to s₀ c c s
       have hstep : ∀ m s, I6 m s → WP isa (body6 to) s (fun s' =>
-          (eval .ae s' = some false ∧ ∃ c, nBlk s₀ - c < 6 ∧ Inv to s₀ c c s') ∨
+          (eval .ae s' = some false ∧ ∃ c, nBlk s₀ - c < 6 ∧ Inv B to s₀ c c s') ∨
           (eval .ae s' = some true ∧ ∃ m' < m, I6 m' s')) := by
         rintro m s ⟨c, rfl, hc, hI⟩
         refine WP.mono (body6_ok hp hc hI) fun s' ⟨hI', hcf'⟩ => ?_
@@ -297,13 +301,13 @@ theorem loops_ok {to : Bool} {s₀ : State} (hp : GPre to s₀) {s : State} (hI 
         · exact .inr ⟨by simp [eval, hcf', hlt], nBlk s₀ - (c + 6), by omega_using [hc], c + 6, rfl, by omega_using [hlt], hI'⟩
       exact WP.loop (M := isa) I6 hstep (nBlk s₀) s ⟨0, rfl, by simpa using h, hI⟩
   refine WP.seq (WP.mono (testEdi_ok hI₂) fun s₃ ⟨hI₃, hzf⟩ => ?_)
-  refine WP.seq (WP.mono (Q := Inv to s₀ (nBlk s₀) (nBlk s₀)) ?_ fun s₄ hI₄ => hQ _ hI₄)
+  refine WP.seq (WP.mono (Q := Inv B to s₀ (nBlk s₀) (nBlk s₀)) ?_ fun s₄ hI₄ => hQ _ hI₄)
   refine WP.ite (decide (nBlk s₀ - c = 0)) (by simp [eval, hzf]) (fun h => ?_) (fun h => ?_)
   · have : c = nBlk s₀ := by have := hI₃.le; simp at h; omega_using [this, h]
     exact WP.block_nil (this ▸ hI₃)
-  · let I1 : Nat → State → Prop := fun m s => ∃ c, m = nBlk s₀ - c ∧ c < nBlk s₀ ∧ Inv to s₀ c c s
+  · let I1 : Nat → State → Prop := fun m s => ∃ c, m = nBlk s₀ - c ∧ c < nBlk s₀ ∧ Inv B to s₀ c c s
     have hstep : ∀ m s, I1 m s → WP isa (body1 to) s (fun s' =>
-        (eval .ne s' = some false ∧ Inv to s₀ (nBlk s₀) (nBlk s₀) s') ∨
+        (eval .ne s' = some false ∧ Inv B to s₀ (nBlk s₀) (nBlk s₀) s') ∨
         (eval .ne s' = some true ∧ ∃ m' < m, I1 m' s')) := by
       rintro m s ⟨c, rfl, hc, hI⟩
       refine WP.mono (body1_ok hp hc hI) fun s' ⟨hI', hzf'⟩ => ?_
@@ -327,11 +331,13 @@ end
 namespace VG.Proof.Aes.X86.AesNi
 open VG VG.X86
 open VG.Proof.Aes.X86 (CPre GPre dstP ctrPost schP nRounds ctrP datP nBlk ctrSat)
+
+variable {B : Nat}
 open VG.Spec.Gcm (blockAt blocksAt)
 
 /-- The invariant at exit is exactly the standard's CTR block list, from the
 source to the destination. -/
-theorem Inv.blocks_end {to : Bool} {s₀ s : State} (hI : Inv to s₀ (nBlk s₀) (nBlk s₀) s) :
+theorem Inv.blocks_end {to : Bool} {s₀ s : State} (hI : Inv B to s₀ (nBlk s₀) (nBlk s₀) s) :
     blocksAt s.mem ((dstP to s₀).setWidth 64) (nBlk s₀) =
       Spec.Gcm.ctr32 (ciph s₀) (cb s₀)
         (blocksAt s₀.mem ((datP s₀).setWidth 64) (nBlk s₀)) := by
@@ -346,9 +352,9 @@ theorem Inv.blocks_end {to : Bool} {s₀ s : State} (hI : Inv to s₀ (nBlk s₀
     exact hb
 
 /-- `edx` set for the loops: out of place, to the destination. -/
-theorem setDst_ok {to : Bool} {s₀ s₁ : State} (hp : GPre to s₀) (hs : Start s₀ s₁) :
+theorem setDst_ok {to : Bool} {s₀ s₁ : State} (hp : GPre to s₀ B) (hs : Start B s₀ s₁) :
     WP isa (.block (Impl.Aes.X86.AesNi.setDst to)) s₁ fun s =>
-      Inv to s₀ 0 0 s ∧ s.cf = some (decide (nBlk s₀ < 6)) := by
+      Inv B to s₀ 0 0 s ∧ s.cf = some (decide (nBlk s₀ < 6)) := by
   cases to
   · exact WP.block_nil ⟨Inv.of_start hp hs (fun _ _ => rfl) hs.edx rfl rfl rfl, hs.cf⟩
   · refine Wp.cons (arg_exec hp hs.toSetup (i := 6) (.inr ⟨rfl, rfl⟩) .edx) (WP.block_nil ⟨?_, ?_⟩)
@@ -358,7 +364,7 @@ theorem setDst_ok {to : Bool} {s₀ s₁ : State} (hp : GPre to s₀) (hs : Star
     · rw [RegUpd.cf_setReg]; exact hs.cf
 
 /-- The counter pointer back in `edx` for `restore`. -/
-theorem setCtr_ok {to : Bool} {s₀ s : State} (hp : GPre to s₀) {c p : Nat} (hI : Inv to s₀ c p s) :
+theorem setCtr_ok {to : Bool} {s₀ s : State} (hp : GPre to s₀ B) {c p : Nat} (hI : Inv B to s₀ c p s) :
     WP isa (.block (Impl.Aes.X86.AesNi.setCtr to)) s fun s' =>
       s'.gpr .edx = ctrP s₀ ∧ (∀ r, r ≠ .edx → s'.gpr r = s.gpr r) ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧
         s'.wr = s.wr := by
@@ -373,7 +379,7 @@ theorem setCtr_ok {to : Bool} {s₀ s : State} (hp : GPre to s₀) {c p : Nat} (
 
 /-- Complete functional correctness and cdecl ABI preservation, in place
 and out of place. -/
-theorem correct {to : Bool} {s₀ : State} (hp : GPre to s₀) :
+theorem correct {to : Bool} {s₀ : State} (hp : GPre to s₀ B) :
     WP isa (Impl.Aes.X86.AesNi.ctr32With to) s₀ fun s' =>
       abiPreserved s₀ s' ∧ ctrPost to s₀ s' := by
   unfold Impl.Aes.X86.AesNi.ctr32With
@@ -401,6 +407,21 @@ theorem ctr32To_correct (s : State) (hs : Proof.Aes.ctr32ToX86.pre s) :
     ∃ t s', Exec isa Impl.Aes.X86.AesNi.ctr32To s t s' ∧ abiPreserved s s' ∧
       Proof.Aes.ctr32ToX86.post s s' :=
   (correct (GPre.ofTo hs)).imp fun _ ⟨s', he, h⟩ => ⟨s', he, h⟩
+
+/-- `vg_aes_ctr32_to_aesni` in place, with a scratch buffer of only the 32
+bytes it uses (the saved registers and the counter block's prefix). -/
+theorem ctr32N_correct (hB : 32 ≤ B) (s : State) (hs : (Proof.Aes.ctr32X86N B).pre s) :
+    ∃ t s', Exec isa Impl.Aes.X86.AesNi.ctr32To s t s' ∧ abiPreserved s s' ∧
+      (Proof.Aes.ctr32X86N B).post s s' :=
+  have hp := CPre.ofN hs
+  (correct (hp.gpre hB)).imp fun _ ⟨s', he, h, h₂, h₃⟩ =>
+    ⟨s', he, h, by simpa only [ctrPost, dstP, ↓reduceIte, hp.same] using h₂, h₃⟩
+
+/-- `ctr32N_correct` out of place. -/
+theorem ctr32ToN_correct (hB : 32 ≤ B) (s : State) (hs : (Proof.Aes.ctr32ToX86N B).pre s) :
+    ∃ t s', Exec isa Impl.Aes.X86.AesNi.ctr32To s t s' ∧ abiPreserved s s' ∧
+      (Proof.Aes.ctr32ToX86N B).post s s' :=
+  (correct (GPre.ofToN hs hB)).imp fun _ ⟨s', he, h⟩ => ⟨s', he, h⟩
 
 end VG.Proof.Aes.X86.AesNi
 
@@ -431,6 +452,7 @@ def scalar : Ctr32Impl where
   features := []
   okTo := ctr32To_correct
   ctTo := ctr32To_ct
+  small := ⟨ctr32_correct, ctr32_ct, ctr32To_correct, ctr32To_ct⟩
   expand := .scalar
   expandDepth := by lit_decide
   expandStack := by lit_decide
@@ -453,6 +475,9 @@ def aesni : Ctr32Impl where
   features := ["aes"]
   okTo := AesNi.ctr32To_correct
   ctTo := AesNi.ctr32To_ct
+  scr := 32
+  small := ⟨AesNi.ctr32N_correct (Nat.le_refl _), AesNi.ctr32S_ct, AesNi.ctr32ToN_correct (Nat.le_refl _),
+    AesNi.ctr32ToS_ct⟩
   expand := .aesni
   expandDepth := by lit_decide
   expandStack := by lit_decide

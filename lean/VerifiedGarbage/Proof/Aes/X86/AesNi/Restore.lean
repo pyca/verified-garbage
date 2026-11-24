@@ -13,11 +13,13 @@ import VerifiedGarbage.Proof.Framework.X86.RegUpd
 namespace VG.Proof.Aes.X86.AesNi
 open VG VG.X86 VG.X86.RegUpd
 open VG.Proof.Aes.X86 (GPre dstP dstR ctrP datP nBlk scrP ctrR scrR retR)
+
+variable {B : Nat}
 open VG.Impl.Aes.X86.AesNi (at_)
 
 /-- Restoring the saved GPRs does not write memory; only the final numeric
 counter word is written, in big-endian byte order. -/
-theorem restoreCore_ok {to : Bool} {s₀ s : State} (hp : GPre to s₀) (saved : Saved s₀ s.mem)
+theorem restoreCore_ok {to : Bool} {s₀ s : State} (hp : GPre to s₀ B) (saved : Saved s₀ s.mem)
     (edx : s.gpr .edx = ctrP s₀) (ebp : s.gpr .ebp = scrP s₀)
     (esp : s.gpr .esp = s₀.gpr .esp) (_rd : s.rd = s₀.rd) (wr : s.wr = s₀.wr) :
     WP isa (.block Impl.Aes.X86.AesNi.restore) s fun s' =>
@@ -46,10 +48,10 @@ theorem restoreCore_ok {to : Bool} {s₀ s : State} (hp : GPre to s₀) (saved :
 
 /-- The complete restore preserves the encrypted data and the return slot,
 and advances only the low 32 counter bits. -/
-theorem restore_ok {to : Bool} {s₀ s : State} (hp : GPre to s₀) (i : Nat)
+theorem restore_ok {to : Bool} {s₀ s : State} (hp : GPre to s₀ B) (i : Nat)
     (saved : Saved s₀ s.mem) (edx : s.gpr .edx = ctrP s₀) (ebp : s.gpr .ebp = scrP s₀)
     (esp : s.gpr .esp = s₀.gpr .esp) (rd : s.rd = s₀.rd) (wr : s.wr = s₀.wr)
-    (frame : Frame [dstR to s₀, scrR s₀] s₀.mem s.mem)
+    (frame : Frame [dstR to s₀, scrR s₀ B] s₀.mem s.mem)
     (low : s.gpr .ebx = (Spec.Gcm.blockAt s₀.mem ((ctrP s₀).setWidth 64)).extractLsb' 0 32 +
       BitVec.ofNat 32 i) :
     WP isa (.block Impl.Aes.X86.AesNi.restore) s fun s' =>
@@ -58,10 +60,10 @@ theorem restore_ok {to : Bool} {s₀ s : State} (hp : GPre to s₀) (i : Nat)
         Nat.repeat Spec.Gcm.inc32 i (Spec.Gcm.blockAt s₀.mem ((ctrP s₀).setWidth 64)) ∧
       Spec.Gcm.blocksAt s'.mem ((dstP to s₀).setWidth 64) (nBlk s₀) =
         Spec.Gcm.blocksAt s.mem ((dstP to s₀).setWidth 64) (nBlk s₀) ∧
-      Frame [ctrR s₀, dstR to s₀, scrR s₀] s₀.mem s'.mem ∧
+      Frame [ctrR s₀, dstR to s₀, scrR s₀ B] s₀.mem s'.mem ∧
       Frame [ctrR s₀] s.mem s'.mem := by
   refine WP.mono (restoreCore_ok hp saved edx ebp esp rd wr) fun s' ⟨mem, regs⟩ => ?_
-  have f : Frame [ctrR s₀, dstR to s₀, scrR s₀] s₀.mem s'.mem := by
+  have f : Frame [ctrR s₀, dstR to s₀, scrR s₀ B] s₀.mem s'.mem := by
     rw [mem]
     exact (frame.mono (fun r hr => List.mem_cons_of_mem _ hr)).writeW
       List.mem_cons_self _ (ctr_contains hp (by decide))

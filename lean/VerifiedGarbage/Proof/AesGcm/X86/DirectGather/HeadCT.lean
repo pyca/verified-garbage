@@ -15,8 +15,10 @@ open VG VG.X86 VG.X86.RegUpd VG.Impl.AesGcm.X86
 open VG.Impl.AesGcm.X86.DirectGather (partialHead headArgs headDone)
 open VG.Spec.Gcm (Block)
 
-private structure MinState (C St W SP D T : BitVec 32) (n off : Nat) (s : State) : Prop where
-  env : Env C St W SP s
+variable {N : Nat}
+
+private structure MinState (N : Nat) (C St W SP D T : BitVec 32) (n off : Nat) (s : State) : Prop where
+  env : Env N C St W SP s
   bO : slotv s.mem W bO = BitVec.ofNat 32 (off%16)
   len : slotv s.mem W lenO = BitVec.ofNat 32 n
   src : slotv s.mem W dataO = D
@@ -30,14 +32,14 @@ private structure PendingXor (St W SP D T : BitVec 32) (b k : Nat) (s : State) :
   sp : s.gpr .esp=SP
 
 theorem headPart_ct {I : State → Prop} {C St W SP D T : BitVec 32} {n off : Nat}
-    (L : Lay C St W SP 32) (hlt : n<2^32) (args : ∀ s, I s → PieceArgs C St W SP D T s n off)
+    (L : Lay N C St W SP 32) (hlt : n<2^32) (args : ∀ s, I s → PieceArgs N C St W SP D T s n off)
     (access : ∀ s, I s → min (16-off%16) n ≠ 0 → HeadAccess s St SP D T (off%16) (min (16-off%16) n)) :
     CT I (.ite .e (.block []) partialHead) := by
   refine CT.ite (decide (off%16=0)) (fun s h => (args s h).zf) (fun _ => CT.nil) (fun _ => ?_)
   let k := min (16-off%16) n
   have kn : k ≤ n := Nat.min_le_right _ _
   have klim : k<2^32 := Nat.lt_of_le_of_lt kn hlt
-  refine CT.seq (J:=MinState C St W SP D T n off) (minLen_ct (n:=n) (b:=off%16) (W:=W) (fun s h => ?_)) ?_ ?_
+  refine CT.seq (J:=MinState N C St W SP D T n off) (minLen_ct (N:=N) (n:=n) (b:=off%16) (W:=W) (fun s h => ?_)) ?_ ?_
   · have x := args s h
     exact ⟨x.env.ebp,C,St,SP,32,L,x.env,x.nO,x.bO,by omega_using [],hlt⟩
   · intro s h
@@ -52,7 +54,7 @@ theorem headPart_ct {I : State → Prop} {C St W SP D T : BitVec 32} {n off : Na
     have a := access s h nz
     exact ⟨a.fK,a.fS,a.fD,by rw [done.rd,done.wr]; exact a.rd,by rw [done.rd,done.wr]; exact a.rdS,
       by rw [done.wr]; exact a.wr,by rw [done.wr]; exact a.stack,a.disj,a.sd⟩
-  refine CT.seq (J:=fun s => MinState C St W SP D T n off s ∧ s.zf=some (decide (k=0)))
+  refine CT.seq (J:=fun s => MinState N C St W SP D T n off s ∧ s.zf=some (decide (k=0)))
     (CT.taint [] (fun _ _ _ _ r hr => nomatch hr) (by taint_decide)) ?_ ?_
   · intro s h
     refine WP.of_runBlock ⟨_,by xrun [h.cx],?_⟩
@@ -80,9 +82,9 @@ theorem headPart_ct {I : State → Prop} {C St W SP D T : BitVec 32} {n off : Na
       simp only [List.mem_cons,List.not_mem_nil,or_false] at hr; rcases hr with rfl | rfl
       exacts [a.1.trans b.1.symm,a.2.trans b.2.symm]) (by taint_decide)
 
-theorem empty_ct (v : GcmImpl) {C St W SP : BitVec 32} (L : Lay C St W SP 32) :
-    CT (fun s => Env C St W SP s ∧ slotv s.mem W lenO=0#32) (Open.decTo v.callees v.callees.ctr) := by
-  let I := fun s => Env C St W SP s ∧ slotv s.mem W lenO=0#32
+theorem empty_ct (v : GcmImpl) {C St W SP : BitVec 32} (L : Lay N C St W SP 32) :
+    CT (fun s => Env N C St W SP s ∧ slotv s.mem W lenO=0#32) (Open.decTo v.callees v.callees.ctr) := by
+  let I := fun s => Env N C St W SP s ∧ slotv s.mem W lenO=0#32
   let J := fun s => I s ∧ s.zf=some true
   have b : ∀ s, J s → isa.eval .e s=some true := fun _ h => h.2
   refine CT.seq (J:=I) ?_ ?_ ?_
@@ -102,27 +104,27 @@ theorem empty_ct (v : GcmImpl) {C St W SP : BitVec 32} (L : Lay C St W SP 32) :
     refine WP.of_runBlock ⟨_,by xrun [Open.tailLen,e.ebp,L.aW,e.wIn',len],?_⟩
     exact ⟨⟨⟨e.ebp,e.esi,e.esp,e.ctxR,e.stW,e.wW,e.ctx⟩,len⟩,rfl⟩
 
-theorem emptyPiece_ct (v : GcmImpl) {C St W SP D T : BitVec 32} {off : Nat} (L : Lay C St W SP 32) :
-    CT (fun s => PieceArgs C St W SP D T s 0 off)
+theorem emptyPiece_ct (v : GcmImpl) {C St W SP D T : BitVec 32} {off : Nat} (L : Lay N C St W SP 32) :
+    CT (fun s => PieceArgs N C St W SP D T s 0 off)
       (.seq (.ite .e (.block []) partialHead) (Open.decTo v.callees v.callees.ctr)) := by
   refine CT.seq (headPart_ct L (by decide) (fun _ h => h) (fun _ _ nz => False.elim (nz (Nat.min_zero _)))) ?_
     (empty_ct v L)
   exact fun _ h => WP.mono (headEmpty_ok L h) fun _ ⟨m,e,_,_⟩ => ⟨e,by rw [m,h.len]⟩
 
-structure StreamPiecePre (C St W SP D T : BitVec 32) (n R off : Nat) (s : State) : Prop where
-  args : PieceArgs C St W SP D T s n off
+structure StreamPiecePre (N : Nat) (C St W SP D T : BitVec 32) (n R off : Nat) (s : State) : Prop where
+  args : PieceArgs N C St W SP D T s n off
   access : PieceAccess s SP D T n
   rounds : RoundsAt s.mem W R
   argW : InRegions s.wr (w64 SP) 4
   stream : ∃ icb : Block, CtrS s.mem St (ciphOf s.mem C R) icb off
 
-theorem processPiece_ct (v : GcmImpl) {C St W SP D T : BitVec 32} {n R off : Nat}
-    (L : Lay C St W SP 32) (st : St=W+16#32) (P : PieceRegions C W SP D T n) (lt : n<2^32)
+theorem processPiece_ct (v : GcmImpl) [WSize N v.ctr.scr] {C St W SP D T : BitVec 32} {n R off : Nat}
+    (L : Lay N C St W SP 32) (st : St=W+16#32) (P : PieceRegions N C W SP D T n) (lt : n<2^32)
     (argCtx : (⟨w64 C,256⟩ : Region).Disjoint ⟨w64 SP,4⟩) :
-    CT (StreamPiecePre C St W SP D T n R off) (.seq (.ite .e (.block []) partialHead) (Open.decTo v.callees v.callees.ctr)) := by
+    CT (StreamPiecePre N C St W SP D T n R off) (.seq (.ite .e (.block []) partialHead) (Open.decTo v.callees v.callees.ctr)) := by
   let k := headCount off n
   have kn : k≤n := by unfold k headCount; split <;> first | exact Nat.zero_le _ | exact Nat.min_le_right _ _
-  let I := StreamPiecePre C St W SP D T n R off
+  let I := StreamPiecePre N C St W SP D T n R off
   have head : CT I (.ite .e (.block []) partialHead) := headPart_ct L lt (fun _ h => h.args) fun _ h _ =>
     makeHeadAccess L st P h.access h.args.env h.argW (by omega_using []) (by omega_using []) (Nat.min_le_right _ _)
   by_cases eq : k=n

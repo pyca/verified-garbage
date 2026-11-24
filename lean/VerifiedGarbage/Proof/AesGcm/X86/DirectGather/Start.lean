@@ -15,13 +15,14 @@ public section
 namespace VG.Proof.AesGcm.X86.DirectGather
 open VG VG.X86 VG.Impl.AesGcm.X86.DirectGather
 
+
 theorem Prepared.arg_eq {s t : State} (p : Prepared s t) (i : Nat) (hi : i<11) :
     arg t i = arg s (sourceSlot i) := by
   change t.mem.readW (addr (t.gpr .esp) (4+4*i)) 32 = _
   rw [show t.gpr .esp=SP s from p.regs .esp (by decide)]
   exact p.slots i hi
 
-theorem Prepared.op {s t : State} (h : Gather.Lay s) (p : Prepared s t) : OP 12 11 t := by
+theorem Prepared.op {s t : State} (h : Gather.Lay s) (p : Prepared s t) : OP 2560 12 11 t := by
   have sp : t.gpr .esp=SP s := p.regs .esp (by decide)
   have b : w64 (SP s) = Gather.Bs s + BitVec.ofNat 64 76 := by
     change w64 (s.gpr .esp - BitVec.ofNat 32 2612) = _
@@ -91,6 +92,7 @@ public section
 namespace VG.Proof.AesGcm.X86.DirectGather
 open VG VG.X86 VG.Impl.AesGcm.X86
 
+
 @[expose] def text (s : State) : Text :=
   ⟨Gather.K s, work s, SP s, Gather.Src s, Gather.Dst s, Gather.Cnt s, Gather.L s, (arg s 1).toNat⟩
 
@@ -101,7 +103,7 @@ structure Zones (s : State) : Prop where
   ret : (⟨w64 (SP s),4⟩ : Region).Sub (Gather.stkR s)
   lower : (below (SP s) 32).Sub (Gather.stkR s)
   arg : (ArgR s).Sub (Gather.stkR s)
-  argOutside : (text s).Outside (ArgR s)
+  argOutside : Text.Outside 2560 (text s) (ArgR s)
   argFit : (ArgR s).base.toNat+4 ≤ 2^32
 
 theorem zones {s : State} (h : Gather.Lay s) : Zones s := by
@@ -130,18 +132,18 @@ theorem zones {s : State} (h : Gather.Lay s) : Zones s := by
     omega_using [spFit h,show (28#32).toNat=28 by decide]
 
 theorem Zones.outside {s : State} (z : Zones s) {r : Region} (hr : (Gather.stkR s).Disjoint r) :
-    (text s).Outside r := ⟨(hr.sub_left z.workspace).symm,(hr.sub_left z.ret).symm,(hr.sub_left z.lower).symm⟩
+    Text.Outside 2560 (text s) r := ⟨(hr.sub_left z.workspace).symm,(hr.sub_left z.ret).symm,(hr.sub_left z.lower).symm⟩
 
 theorem input_of {s t u : State} (h : Gather.Lay s) (p : Prepared s t)
-    (env : Env (text s).C (text s).st (text s).W (text s).SP u)
+    (env : Env 2560 (text s).C (text s).st (text s).W (text s).SP u)
     (rounds : RoundsAt u.mem (work s) (arg s 1).toNat)
     (rd : u.rd=t.rd) (wr : u.wr=t.wr) (fr : Frame [Gather.stkR s] s.mem u.mem)
-    (dst : u.mem.readW (text s).dstArg 32=Gather.Dst s) : TextInput (text s) u := by
+    (dst : u.mem.readW (text s).dstArg 32=Gather.Dst s) : TextInput 2560 (text s) u := by
   have z := zones h
   have op := p.op h
   have ol := op.ol rfl (by decide) rfl
   have lay := ol.L
-  change Lay (arg t 0) (stOf (arg t 11)) (arg t 11) (t.gpr .esp) 32 at lay
+  change Lay 2560 (arg t 0) (stOf (arg t 11)) (arg t 11) (t.gpr .esp) 32 at lay
   rw [p.arg_eq _ (by decide),p.scratch,show t.gpr .esp=SP s from p.regs _ (by decide)] at lay
   have orig : ∀ r ∈ Sig.descRegion 32 (w64 (Gather.Src s)) (Gather.Cnt s) :: Gather.lsR s,
       ∀ x, r.Contains x 1 → s.mem x = u.mem x := by
@@ -186,6 +188,7 @@ public section
 namespace VG.Proof.AesGcm.X86.DirectGather
 open VG VG.X86 VG.Impl.AesGcm.X86 VG.Spec.Gcm
 
+
 abbrev pub (t : State) := pubSw 12 8 t
 abbrev scratchAreas (s : State) : List Region := [⟨w64 (work s),2560⟩,below (SP s) 32]
 
@@ -201,20 +204,20 @@ theorem Prepared.params {s t : State} (p : Prepared s t) : Params s t :=
   ⟨p.regs _ (by decide),p.scratch,p.arg_eq 0 (by decide),p.arg_eq 1 (by decide),
     p.arg_eq 6 (by decide),p.arg_eq 7 (by decide)⟩
 
-theorem aad_frame {s t e u : State} (p : Prepared s t) (en : OEnt (pub t) t e)
-    (aad : Frame (oF (pub t)) e.mem u.mem) : Frame (scratchAreas s) t.mem u.mem := by
+theorem aad_frame {s t e u : State} (p : Prepared s t) (en : OEnt 2560 (pub t) t e)
+    (aad : Frame (oF 2560 (pub t)) e.mem u.mem) : Frame (scratchAreas s) t.mem u.mem := by
   have a := p.params
   have fe := en.frame
   rw [a.w] at fe
   apply Frame.trans (fe.sub ?_) (aad.sub ?_)
   · intro r hr; obtain rfl := List.mem_singleton.mp hr
-    exact ⟨_,List.mem_cons_self ..,Lay.wSub (by decide)⟩
+    exact ⟨_,List.mem_cons_self ..,Lay.wSubN (by decide)⟩
   · intro r hr; simp only [oF,a.w,a.sp,List.mem_cons,List.not_mem_nil,or_false] at hr
     rcases hr with rfl|rfl|rfl|rfl|rfl
     · exact ⟨_,List.mem_cons_self ..,Lay.wSub (by decide)⟩
     · exact ⟨_,List.mem_cons_self ..,Lay.wSub (by decide)⟩
     · exact ⟨_,List.mem_cons_self ..,Lay.wSub (by decide)⟩
-    · exact ⟨_,List.mem_cons_self ..,Lay.wSub (by decide)⟩
+    · exact ⟨_,List.mem_cons_self ..,Lay.wSubN (by decide)⟩
     · exact ⟨_,by simp [scratchAreas],fun _ hx => hx⟩
 
 theorem private_arg_kept {s t u : State} (h : Gather.Lay s) (p : Prepared s t)
@@ -264,7 +267,7 @@ theorem loop_setup_frame {s u x : State}
 
 theorem setup_disjoint {W : BitVec 32} {o n : Nat}
     (h₁ : o+n≤rO ∨ rO+4≤o) (h₂ : o+n≤tglO ∨ tglO+4≤o) (h₃ : o+n≤xlO ∨ xlO+4≤o)
-    (fit : o+n≤2560) : ∀ r ∈ slotSetupFrame W rO tglO (w64 W+BitVec.ofNat 64 xlO),
+    (fit : o+n≤768) : ∀ r ∈ slotSetupFrame W rO tglO (w64 W+BitVec.ofNat 64 xlO),
       (⟨w64 W+BitVec.ofNat 64 o,n⟩ : Region).Disjoint r := by
   intro r hr; simp only [slotSetupFrame,List.mem_cons,List.not_mem_nil,or_false] at hr
   rcases hr with rfl|rfl|rfl
@@ -273,7 +276,7 @@ theorem setup_disjoint {W : BitVec 32} {o n : Nat}
   · exact Offset.disjoint _ h₃ (by omega) (by decide)
 
 structure Begun (s t x : State) : Prop where
-  input : TextInput (text s) x
+  input : TextInput 2560 (text s) x
   ptr : slotv x.mem (work s) rO = Gather.Src s
   count : slotv x.mem (work s) tglO = BitVec.ofNat 32 (Gather.Cnt s)
   off : slotv x.mem (work s) xlO=0
@@ -281,7 +284,7 @@ structure Begun (s t x : State) : Prop where
   frame : Frame (scratchAreas s) t.mem x.mem
 
 theorem begun {s t e u x : State} (h : Gather.Lay s) (p : Prepared s t)
-    (en : OEnt (pub t) t e) (aa : OAad (pub t) t u) (f : Frame (oF (pub t)) e.mem u.mem)
+    (en : OEnt 2560 (pub t) t e) (aa : OAad 2560 (pub t) t u) (f : Frame (oF 2560 (pub t)) e.mem u.mem)
     (hs : SetupPost u (work s) (SP s) 9 10 rO tglO (w64 (work s)+BitVec.ofNat 64 xlO) x) :
     Begun s t x := by
   have fr := aad_frame p en f
@@ -293,9 +296,9 @@ theorem begun {s t e u x : State} (h : Gather.Lay s) (p : Prepared s t)
   have rr := o.rounds
   rw [z.w,z.r] at rr
   have perm {W : BitVec 32} {n : Nat} (f : Frame (slotSetupFrame W rO tglO (w64 W+BitVec.ofNat 64 xlO)) u.mem x.mem)
-      (d₁ : n+4≤rO ∨ rO+4≤n) (d₂ : n+4≤tglO ∨ tglO+4≤n) (d₃ : n+4≤xlO ∨ xlO+4≤n) (fit : n+4≤2560) :
+      (d₁ : n+4≤rO ∨ rO+4≤n) (d₂ : n+4≤tglO ∨ tglO+4≤n) (d₃ : n+4≤xlO ∨ xlO+4≤n) (fit : n+4≤768) :
       slotv x.mem W n=slotv u.mem W n := slot_frame f (setup_disjoint d₁ d₂ d₃ fit)
-  have ex : Env (text s).C (text s).st (text s).W (text s).SP x :=
+  have ex : Env 2560 (text s).C (text s).st (text s).W (text s).SP x :=
     ⟨(hs.regs _ (by decide)).trans eu.ebp,(hs.regs _ (by decide)).trans eu.esi,
      (hs.regs _ (by decide)).trans eu.esp,by rw [hs.rd,hs.wr]; exact eu.ctxR,
      hs.wr ▸ eu.stW,hs.wr ▸ eu.wW,(perm hs.frame (n := ctxO) (by decide) (by decide) (by decide) (by decide)).trans eu.ctx⟩

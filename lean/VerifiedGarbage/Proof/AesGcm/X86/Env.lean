@@ -11,8 +11,8 @@ import VerifiedGarbage.Proof.Framework.X86.RegUpd
 # AES-GCM on x86: where everything is
 
 Untrusted: everything here is checked by Lean. The key context (256 bytes at
-`Ctx`), the streaming state (80 bytes at `St`), the working space (2560
-bytes at `W`) and the `K` bytes of stack below `SP` used by the calls
+`Ctx`), the streaming state (80 bytes at `St`), the working space (`N`
+bytes at `W`, 2560 unless `vg_aes_ctr32_to` needs fewer than 2048) and the `K` bytes of stack below `SP` used by the calls
 (`Lay`): the state is disjoint from the parts of `W` other than `[16, 96)`
 (where `seal` and `open` keep it), and the context from both. `Env` says
 which registers hold `W`, the state and `SP`, that the context may be read
@@ -65,33 +65,79 @@ theorem covers_nil {ts : List Region} : Covers [] ts := fun _ _ ⟨_, h, _⟩ =>
 
 /-! ## The layout -/
 
-/-- The regions: the context, the state and `W`, and the `K` bytes of stack
-below `SP` that the calls use (24 for `vg_ghash`, 32 for `vg_aes_ctr32_to`). -/
-structure Lay (Ctx St W SP : BitVec 32) (K : Nat) : Prop where
+/-- The regions: the context, the state and `W`, of `N` bytes, and the `K`
+bytes of stack below `SP` that the calls use (24 for `vg_ghash`, 32 for
+`vg_aes_ctr32_to`). `W` holds at least the 512 bytes the functions use
+themselves and the 256 of `vg_ghash` after them (`big`): it is of 2560 bytes,
+2048 of them for `vg_aes_ctr32_to`, but over an implementation of it that
+uses fewer (`Ctr32Impl.scr`, `WSize`), whose callers then have a smaller
+frame to wipe. -/
+structure Lay (N : Nat) (Ctx St W SP : BitVec 32) (K : Nat) : Prop where
   fc : Ctx.toNat + 256 ≤ 2 ^ 32
   fs : St.toNat + 80 ≤ 2 ^ 32
-  fw : W.toNat + 2560 ≤ 2 ^ 32
+  fw : W.toNat + N ≤ 2 ^ 32
   k24 : 24 ≤ K
   k32 : K ≤ 32
   sp : K ≤ SP.toNat
   cs : (⟨w64 Ctx, 256⟩ : Region).Disjoint ⟨w64 St, 80⟩
-  cw : (⟨w64 Ctx, 256⟩ : Region).Disjoint ⟨w64 W, 2560⟩
+  cw : (⟨w64 Ctx, 256⟩ : Region).Disjoint ⟨w64 W, N⟩
   sa : (⟨w64 St, 80⟩ : Region).Disjoint ⟨w64 W, 16⟩
-  sb : (⟨w64 St, 80⟩ : Region).Disjoint ⟨w64 W + BitVec.ofNat 64 96, 2464⟩
+  sb : (⟨w64 St, 80⟩ : Region).Disjoint ⟨w64 W + BitVec.ofNat 64 96, N - 96⟩
   kc : (below SP K).Disjoint ⟨w64 Ctx, 256⟩
   ks : (below SP K).Disjoint ⟨w64 St, 80⟩
-  kw : (below SP K).Disjoint ⟨w64 W, 2560⟩
+  kw : (below SP K).Disjoint ⟨w64 W, N⟩
+  big : 768 ≤ N
 
 /-- The registers holding `W`, the state and the stack pointer, what may be
 accessed, and the context kept at `W + ctxO`. -/
-structure Env (Ctx St W SP : BitVec 32) (s : State) : Prop where
+structure Env (N : Nat) (Ctx St W SP : BitVec 32) (s : State) : Prop where
   ebp : s.gpr .ebp = W
   esi : s.gpr .esi = St
   esp : s.gpr .esp = SP
   ctxR : Covers [⟨w64 Ctx, 256⟩] (s.rd ++ s.wr)
   stW : Covers [⟨w64 St, 80⟩] s.wr
-  wW : Covers [⟨w64 W, 2560⟩] s.wr
+  wW : Covers [⟨w64 W, N⟩] s.wr
   ctx : s.mem.readW (w64 W + BitVec.ofNat 64 ctxO) 32 = Ctx
+
+/-- The working space, of `N` bytes, of the functions over an implementation
+of `vg_aes_ctr32_to` that uses `B` bytes of its own (`Ctr32Impl.scr`) is big
+enough: for the layout (`Lay.big`), and for those `B` bytes after the 512 the
+functions use themselves (`hB`). It is a fact of the function (its frame's
+size, and the implementation it calls), not of a state: the pieces that call
+`vg_aes_ctr32_to` take it as an instance, and the others need not carry it. -/
+class WSize (N B : Nat) : Prop where
+  big : 768 ≤ N
+  hB : 512 + B ≤ N
+
+/-- The 2560 bytes are enough for every implementation. -/
+instance WSize.full (c : Proof.Aes.X86.Ctr32Impl) : WSize 2560 c.scr :=
+  ⟨by decide, by have := c.scr_le; omega_using [this]⟩
+
+/-- 768 bytes are enough for an implementation that uses 256 of its own or fewer. -/
+theorem WSize.small {B : Nat} (h : B ≤ 256) : WSize 768 B :=
+  ⟨Nat.le_refl _, by omega_using [h]⟩
+
+/-- `N` fits the address space. -/
+theorem Lay.nlt {N : Nat} {Ctx St W SP : BitVec 32} {K : Nat} (L : Lay N Ctx St W SP K) : N < 2 ^ 64 := by
+  have := L.fw; omega_using [this]
+
+/-- `768 ≤ N`, for the size `N` of the working space: from the layout at hand
+(`Lay.big`), from the function's (`WSize.big`), or decided for a literal size. The lemmas about offsets into
+`W` take it so, and their offsets below 768, which are literals. -/
+macro "wbig" : tactic =>
+  `(tactic| first | with_reducible assumption | exact Lay.big (by with_reducible assumption) |
+    exact @WSize.big _ _ (by with_reducible assumption) | decide)
+
+/-- `k ≤ N` for a literal `k`, at most 768. -/
+macro "wle" : tactic => `(tactic| exact Nat.le_trans (by decide) (show 768 ≤ _ by wbig))
+
+/-- A working space that fits the address space is shorter than it. -/
+theorem lt_of_fw {N : Nat} {W : BitVec 32} (h : W.toNat + N ≤ 2 ^ 32) : N < 2 ^ 64 := by omega_using [h]
+
+/-- `N < 2 ^ 64`, likewise (`Lay.nlt`, or `lt_of_fw` of a hypothesis at hand). -/
+macro "wlt" : tactic =>
+  `(tactic| first | with_reducible assumption | exact Lay.nlt (by with_reducible assumption) |
+    exact lt_of_fw (by with_reducible assumption) | decide)
 
 namespace Lay
 
@@ -101,32 +147,85 @@ theorem ctxSub {Ctx : Addr} {d n : Nat} (h : d + n ≤ 256) : Region.Sub ⟨Ctx 
 theorem stSub {St : Addr} {d n : Nat} (h : d + n ≤ 80) : Region.Sub ⟨St + BitVec.ofNat 64 d, n⟩ ⟨St, 80⟩ :=
   Offset.sub_base _ h
 
-theorem wSub {W : Addr} {d n : Nat} (h : d + n ≤ 2560) : Region.Sub ⟨W + BitVec.ofNat 64 d, n⟩ ⟨W, 2560⟩ :=
+theorem wSub {W : Addr} {N d n : Nat} (h : d + n ≤ 768) (hN : 768 ≤ N := by wbig) :
+    Region.Sub ⟨W + BitVec.ofNat 64 d, n⟩ ⟨W, N⟩ :=
+  Offset.sub_base _ (Nat.le_trans h hN)
+
+/-- The bytes of `W` from `d` on. -/
+theorem aboveSub {W : Addr} {N d : Nat} (hd : d ≤ 768) (hN : 768 ≤ N := by wbig) :
+    Region.Sub ⟨W + BitVec.ofNat 64 d, N - d⟩ ⟨W, N⟩ :=
+  Offset.sub_base _ (by omega_using [hd, hN])
+
+/-- `[W + a, W + a + n)` is within the bytes of `W` from `d` on. -/
+theorem aboveIn {W : Addr} {N a n d : Nat} (h₁ : d ≤ a) (h₂ : a + n ≤ 768) (hN : 768 ≤ N := by wbig) :
+    Region.Sub ⟨W + BitVec.ofNat 64 a, n⟩ ⟨W + BitVec.ofNat 64 d, N - d⟩ :=
+  Offset.sub _ h₁ (by omega_using [h₁, h₂, hN])
+
+/-- The bytes of `W` from `a` on are within those from `d` on, before it. -/
+theorem above_above {W : Addr} {N a d : Nat} (h : d ≤ a) (ha : a ≤ 768) (hN : 768 ≤ N := by wbig) :
+    Region.Sub ⟨W + BitVec.ofNat 64 a, N - a⟩ ⟨W + BitVec.ofNat 64 d, N - d⟩ :=
+  Offset.sub _ h (by omega_using [h, ha, hN])
+
+/-- `wSub` for any offset, for a function whose working space is of a literal size. -/
+theorem wSubN {W : Addr} {N d n : Nat} (h : d + n ≤ N) : Region.Sub ⟨W + BitVec.ofNat 64 d, n⟩ ⟨W, N⟩ :=
   Offset.sub_base _ h
 
-theorem bSub {W : Addr} {d n : Nat} (h₁ : 96 ≤ d) (h₂ : d + n ≤ 2560) :
-    Region.Sub ⟨W + BitVec.ofNat 64 d, n⟩ ⟨W + BitVec.ofNat 64 96, 2464⟩ :=
-  Offset.sub _ h₁ (by omega_using [h₂])
+/-- The working space of the functions called, the bytes of `W` from 512 on. -/
+theorem hiSub {W : Addr} {N : Nat} (hN : 768 ≤ N := by wbig) :
+    Region.Sub ⟨W + BitVec.ofNat 64 512, N - 512⟩ ⟨W, N⟩ :=
+  Offset.sub_base _ (by omega_using [hN])
+
+/-- The `g` first bytes of it. -/
+theorem hiPre {W : Addr} {N g : Nat} (hg : 512 + g ≤ N) :
+    Region.Sub ⟨W + BitVec.ofNat 64 512, g⟩ ⟨W + BitVec.ofNat 64 512, N - 512⟩ :=
+  Region.sub_prefix (by omega_using [hg])
+
+/-- The `g` first bytes of it, within `W`. -/
+theorem scrSub {W : Addr} {N g : Nat} (hg : 512 + g ≤ N) :
+    Region.Sub ⟨W + BitVec.ofNat 64 512, g⟩ ⟨W, N⟩ :=
+  Offset.sub_base _ hg
+
+theorem bSub {W : Addr} {N d n : Nat} (h₁ : 96 ≤ d) (h₂ : d + n ≤ 768) (hN : 768 ≤ N := by wbig) :
+    Region.Sub ⟨W + BitVec.ofNat 64 d, n⟩ ⟨W + BitVec.ofNat 64 96, N - 96⟩ :=
+  Offset.sub _ h₁ (by omega_using [h₂, hN])
+
+/-- The bytes of `W` from 128 on: what the pieces write. -/
+theorem loSub {W : Addr} {N : Nat} (hN : 768 ≤ N := by wbig) :
+    Region.Sub ⟨W + BitVec.ofNat 64 128, N - 128⟩ ⟨W, N⟩ :=
+  Offset.sub_base _ (by omega_using [hN])
+
+theorem loIn {W : Addr} {N d n : Nat} (h₁ : 128 ≤ d) (h₂ : d + n ≤ 768) (hN : 768 ≤ N := by wbig) :
+    Region.Sub ⟨W + BitVec.ofNat 64 d, n⟩ ⟨W + BitVec.ofNat 64 128, N - 128⟩ :=
+  Offset.sub _ h₁ (by omega_using [h₂, hN])
 
 theorem aSub {W : Addr} {d n : Nat} (h : d + n ≤ 16) : Region.Sub ⟨W + BitVec.ofNat 64 d, n⟩ ⟨W, 16⟩ :=
   Offset.sub_base _ h
 
-variable {Ctx St W SP : BitVec 32} {K : Nat} (L : Lay Ctx St W SP K)
+variable {N : Nat} {Ctx St W SP : BitVec 32} {K : Nat} (L : Lay N Ctx St W SP K)
 include L
 
-theorem st_w {a n d k : Nat} (ha : a + n ≤ 80) (hd : (d + k ≤ 16) ∨ (96 ≤ d ∧ d + k ≤ 2560)) :
+theorem st_w {a n d k : Nat} (ha : a + n ≤ 80) (hd : (d + k ≤ 16) ∨ (96 ≤ d ∧ d + k ≤ 768)) :
     (⟨w64 St + BitVec.ofNat 64 a, n⟩ : Region).Disjoint ⟨w64 W + BitVec.ofNat 64 d, k⟩ := by
   rcases hd with hd | ⟨h₁, h₂⟩
   · exact (L.sa.sub_left (stSub ha)).sub_right (aSub hd)
-  · exact (L.sb.sub_left (stSub ha)).sub_right (bSub h₁ h₂)
+  · exact (L.sb.sub_left (stSub ha)).sub_right (bSub h₁ h₂ L.big)
+
+/-- The state and the working space of the functions called. -/
+theorem st_hi {a n : Nat} (ha : a + n ≤ 80) :
+    (⟨w64 St + BitVec.ofNat 64 a, n⟩ : Region).Disjoint ⟨w64 W + BitVec.ofNat 64 512, N - 512⟩ :=
+  (L.sb.sub_left (stSub ha)).sub_right (Offset.sub _ (by decide) (by have h₁ := L.big; omega_using [h₁]))
 
 theorem ctx_st {a n d k : Nat} (ha : a + n ≤ 256) (hd : d + k ≤ 80) :
     (⟨w64 Ctx + BitVec.ofNat 64 a, n⟩ : Region).Disjoint ⟨w64 St + BitVec.ofNat 64 d, k⟩ :=
   (L.cs.sub_left (ctxSub ha)).sub_right (stSub hd)
 
-theorem ctx_w {a n d k : Nat} (ha : a + n ≤ 256) (hd : d + k ≤ 2560) :
+theorem ctx_w {a n d k : Nat} (ha : a + n ≤ 256) (hd : d + k ≤ 768) :
     (⟨w64 Ctx + BitVec.ofNat 64 a, n⟩ : Region).Disjoint ⟨w64 W + BitVec.ofNat 64 d, k⟩ :=
-  (L.cw.sub_left (ctxSub ha)).sub_right (wSub hd)
+  (L.cw.sub_left (ctxSub ha)).sub_right (wSub hd L.big)
+
+theorem ctx_hi {a n : Nat} (ha : a + n ≤ 256) :
+    (⟨w64 Ctx + BitVec.ofNat 64 a, n⟩ : Region).Disjoint ⟨w64 W + BitVec.ofNat 64 512, N - 512⟩ :=
+  (L.cw.sub_left (ctxSub ha)).sub_right (hiSub L.big)
 
 theorem stk_ctx {a n : Nat} (ha : a + n ≤ 256) :
     (below SP K).Disjoint ⟨w64 Ctx + BitVec.ofNat 64 a, n⟩ := L.kc.sub_right (ctxSub ha)
@@ -134,8 +233,10 @@ theorem stk_ctx {a n : Nat} (ha : a + n ≤ 256) :
 theorem stk_st {a n : Nat} (ha : a + n ≤ 80) :
     (below SP K).Disjoint ⟨w64 St + BitVec.ofNat 64 a, n⟩ := L.ks.sub_right (stSub ha)
 
-theorem stk_w {a n : Nat} (ha : a + n ≤ 2560) :
-    (below SP K).Disjoint ⟨w64 W + BitVec.ofNat 64 a, n⟩ := L.kw.sub_right (wSub ha)
+theorem stk_w {a n : Nat} (ha : a + n ≤ 768) :
+    (below SP K).Disjoint ⟨w64 W + BitVec.ofNat 64 a, n⟩ := L.kw.sub_right (wSub ha L.big)
+
+theorem stk_hi : (below SP K).Disjoint ⟨w64 W + BitVec.ofNat 64 512, N - 512⟩ := L.kw.sub_right (hiSub L.big)
 
 omit L in
 theorem st_st {a n d k : Nat} (h : a + n ≤ d ∨ d + k ≤ a) (ha : a + n ≤ 80) (hd : d + k ≤ 80) :
@@ -143,9 +244,55 @@ theorem st_st {a n d k : Nat} (h : a + n ≤ d ∨ d + k ≤ a) (ha : a + n ≤ 
   Offset.disjoint _ h (by omega_using [ha]) (by omega_using [hd])
 
 omit L in
-theorem w_w {a n d k : Nat} (h : a + n ≤ d ∨ d + k ≤ a) (ha : a + n ≤ 2560) (hd : d + k ≤ 2560) :
+theorem w_w {a n d k : Nat} (h : a + n ≤ d ∨ d + k ≤ a) (ha : a + n ≤ 768) (hd : d + k ≤ 768) :
     (⟨w64 W + BitVec.ofNat 64 a, n⟩ : Region).Disjoint ⟨w64 W + BitVec.ofNat 64 d, k⟩ :=
   Offset.disjoint _ h (by omega_using [ha]) (by omega_using [hd])
+
+omit L in
+/-- `w_w` for any offsets into a working space of 2560 bytes. -/
+theorem w_wN {a n d k : Nat} (h : a + n ≤ d ∨ d + k ≤ a) (ha : a + n ≤ 2560) (hd : d + k ≤ 2560) :
+    (⟨w64 W + BitVec.ofNat 64 a, n⟩ : Region).Disjoint ⟨w64 W + BitVec.ofNat 64 d, k⟩ :=
+  Offset.disjoint _ h (by omega_using [ha]) (by omega_using [hd])
+
+omit L in
+/-- What is below `d` in `W` is apart from the bytes of `W` from `d` on. -/
+theorem w_above {a n d : Nat} (h : a + n ≤ d) (hd : d ≤ 768) (hN : 768 ≤ N := by wbig)
+    (hk : N < 2 ^ 64 := by wlt) :
+    (⟨w64 W + BitVec.ofNat 64 a, n⟩ : Region).Disjoint ⟨w64 W + BitVec.ofNat 64 d, N - d⟩ :=
+  Offset.disjoint _ (.inl h) (by omega_using [h, hd]) (by omega_using [hd, hN, hk])
+
+theorem ctx_above {a n d : Nat} (ha : a + n ≤ 256) (hd : d ≤ 768) :
+    (⟨w64 Ctx + BitVec.ofNat 64 a, n⟩ : Region).Disjoint ⟨w64 W + BitVec.ofNat 64 d, N - d⟩ :=
+  (L.cw.sub_left (ctxSub ha)).sub_right (aboveSub hd L.big)
+
+theorem st_above {a n d : Nat} (ha : a + n ≤ 80) (h₁ : 96 ≤ d) (hd : d ≤ 768) :
+    (⟨w64 St + BitVec.ofNat 64 a, n⟩ : Region).Disjoint ⟨w64 W + BitVec.ofNat 64 d, N - d⟩ :=
+  (L.sb.sub_left (stSub ha)).sub_right (Offset.sub _ h₁ (by have h₂ := L.big; omega_using [h₁, hd, h₂]))
+
+theorem stk_above {d : Nat} (hd : d ≤ 768) : (below SP K).Disjoint ⟨w64 W + BitVec.ofNat 64 d, N - d⟩ :=
+  L.kw.sub_right (aboveSub hd L.big)
+
+/-- What the functions keep in their own 512 bytes of `W`, and the working
+space of the functions called. -/
+theorem w_hi {a n : Nat} (ha : a + n ≤ 512) :
+    (⟨w64 W + BitVec.ofNat 64 a, n⟩ : Region).Disjoint ⟨w64 W + BitVec.ofNat 64 512, N - 512⟩ :=
+  Offset.disjoint _ (.inl ha) (by omega_using [ha]) (by have h₁ := L.big; have h₂ := L.fw; omega_using [h₁, h₂])
+
+/-! The same for any offsets into a working space of a literal size (`init`,
+`open_to`, whose `vg_aes_ctr32_to` takes 2048 bytes whatever the implementation). -/
+
+theorem st_wN {a n d k : Nat} (ha : a + n ≤ 80) (hd : (d + k ≤ 16) ∨ (96 ≤ d ∧ d + k ≤ N)) :
+    (⟨w64 St + BitVec.ofNat 64 a, n⟩ : Region).Disjoint ⟨w64 W + BitVec.ofNat 64 d, k⟩ := by
+  rcases hd with hd | ⟨h₁, h₂⟩
+  · exact (L.sa.sub_left (stSub ha)).sub_right (aSub hd)
+  · exact (L.sb.sub_left (stSub ha)).sub_right (Offset.sub _ h₁ (by omega_using [h₁, h₂]))
+
+theorem ctx_wN {a n d k : Nat} (ha : a + n ≤ 256) (hd : d + k ≤ N) :
+    (⟨w64 Ctx + BitVec.ofNat 64 a, n⟩ : Region).Disjoint ⟨w64 W + BitVec.ofNat 64 d, k⟩ :=
+  (L.cw.sub_left (ctxSub ha)).sub_right (wSubN hd)
+
+theorem stk_wN {a n : Nat} (ha : a + n ≤ N) :
+    (below SP K).Disjoint ⟨w64 W + BitVec.ofNat 64 a, n⟩ := L.kw.sub_right (wSubN ha)
 
 /-- The stack the calls use, at `esp = SP`. -/
 theorem below_sub {k : Nat} (hk : k ≤ K) : Region.Sub (below SP k) (below SP K) :=
@@ -153,8 +300,14 @@ theorem below_sub {k : Nat} (hk : k ≤ K) : Region.Sub (below SP k) (below SP K
 
 /-! ### Pointers into the regions, as the code computes them -/
 
-theorem aW {o : Nat} (ho : o < 2560) : w64 (W + BitVec.ofNat 32 o) = w64 W + BitVec.ofNat 64 o :=
-  w64_add (by have := L.fw; omega_using [ho, this])
+theorem aW {o : Nat} (ho : o < 768) : w64 (W + BitVec.ofNat 32 o) = w64 W + BitVec.ofNat 64 o :=
+  w64_add (by have h₁ := L.fw; have h₂ := L.big; omega_using [ho, h₁, h₂])
+
+theorem aWN {o : Nat} (ho : o < N) : w64 (W + BitVec.ofNat 32 o) = w64 W + BitVec.ofNat 64 o :=
+  w64_add (by have h₁ := L.fw; omega_using [ho, h₁])
+
+theorem nWN {o : Nat} (ho : o < N) : (W + BitVec.ofNat 32 o).toNat = W.toNat + o :=
+  toNat_add32 (by have h₁ := L.fw; omega_using [ho, h₁])
 
 theorem aS {o : Nat} (ho : o < 80) : w64 (St + BitVec.ofNat 32 o) = w64 St + BitVec.ofNat 64 o :=
   w64_add (by have := L.fs; omega_using [ho, this])
@@ -162,8 +315,8 @@ theorem aS {o : Nat} (ho : o < 80) : w64 (St + BitVec.ofNat 32 o) = w64 St + Bit
 theorem aC {o : Nat} (ho : o < 256) : w64 (Ctx + BitVec.ofNat 32 o) = w64 Ctx + BitVec.ofNat 64 o :=
   w64_add (by have := L.fc; omega_using [ho, this])
 
-theorem nW {o : Nat} (ho : o < 2560) : (W + BitVec.ofNat 32 o).toNat = W.toNat + o :=
-  toNat_add32 (by have := L.fw; omega_using [ho, this])
+theorem nW {o : Nat} (ho : o < 768) : (W + BitVec.ofNat 32 o).toNat = W.toNat + o :=
+  toNat_add32 (by have h₁ := L.fw; have h₂ := L.big; omega_using [ho, h₁, h₂])
 
 theorem nS {o : Nat} (ho : o < 80) : (St + BitVec.ofNat 32 o).toNat = St.toNat + o :=
   toNat_add32 (by have := L.fs; omega_using [ho, this])
@@ -175,7 +328,7 @@ end Lay
 
 namespace Env
 
-variable {Ctx St W SP : BitVec 32} {s : State} (E : Env Ctx St W SP s)
+variable {N : Nat} {Ctx St W SP : BitVec 32} {s : State} (E : Env N Ctx St W SP s)
 include E
 
 theorem stIn {d n : Nat} (h : d + n ≤ 80) : InRegions s.wr (w64 St + BitVec.ofNat 64 d) n :=
@@ -184,27 +337,38 @@ theorem stIn {d n : Nat} (h : d + n ≤ 80) : InRegions s.wr (w64 St + BitVec.of
 theorem stIn' {d n : Nat} (h : d + n ≤ 80) : InRegions (s.rd ++ s.wr) (w64 St + BitVec.ofNat 64 d) n :=
   in_left (E.stIn h)
 
-theorem wIn {d n : Nat} (h : d + n ≤ 2560) : InRegions s.wr (w64 W + BitVec.ofNat 64 d) n :=
-  in_off E.wW h (by decide)
+theorem wIn {d n : Nat} (h : d + n ≤ 768) (hN : 768 ≤ N := by wbig) (hk : N < 2 ^ 64 := by wlt) :
+    InRegions s.wr (w64 W + BitVec.ofNat 64 d) n :=
+  in_off E.wW (Nat.le_trans h hN) hk
 
-theorem wIn' {d n : Nat} (h : d + n ≤ 2560) : InRegions (s.rd ++ s.wr) (w64 W + BitVec.ofNat 64 d) n :=
-  in_left (E.wIn h)
+theorem wIn' {d n : Nat} (h : d + n ≤ 768) (hN : 768 ≤ N := by wbig) (hk : N < 2 ^ 64 := by wlt) :
+    InRegions (s.rd ++ s.wr) (w64 W + BitVec.ofNat 64 d) n :=
+  in_left (E.wIn h hN hk)
+
+theorem wInN {d n : Nat} (h : d + n ≤ N) (hk : N < 2 ^ 64 := by wlt) :
+    InRegions s.wr (w64 W + BitVec.ofNat 64 d) n :=
+  in_off E.wW h hk
+
+theorem wCN {d n : Nat} (h : d + n ≤ N) (hk : N < 2 ^ 64 := by wlt) :
+    Covers [⟨w64 W + BitVec.ofNat 64 d, n⟩] s.wr :=
+  covers_off E.wW h hk
 
 theorem stC {d n : Nat} (h : d + n ≤ 80) : Covers [⟨w64 St + BitVec.ofNat 64 d, n⟩] s.wr :=
   covers_off E.stW h (by decide)
 
-theorem wC {d n : Nat} (h : d + n ≤ 2560) : Covers [⟨w64 W + BitVec.ofNat 64 d, n⟩] s.wr :=
-  covers_off E.wW h (by decide)
+theorem wC {d n : Nat} (h : d + n ≤ 768) (hN : 768 ≤ N := by wbig) (hk : N < 2 ^ 64 := by wlt) :
+    Covers [⟨w64 W + BitVec.ofNat 64 d, n⟩] s.wr :=
+  covers_off E.wW (Nat.le_trans h hN) hk
 
 end Env
 
 /-- An environment, after code that keeps `ebp`, `esi`, `esp`, the
 permissions and the context's slot. -/
-theorem Env.keep {Ctx St W SP : BitVec 32} {s s' : State} (h : Env Ctx St W SP s)
+theorem Env.keep {N : Nat} {Ctx St W SP : BitVec 32} {s s' : State} (h : Env N Ctx St W SP s)
     (hbp : s'.gpr .ebp = s.gpr .ebp) (hsi : s'.gpr .esi = s.gpr .esi) (hsp : s'.gpr .esp = s.gpr .esp)
     (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr)
     (hc : s'.mem.readW (w64 W + BitVec.ofNat 64 ctxO) 32 = s.mem.readW (w64 W + BitVec.ofNat 64 ctxO) 32) :
-    Env Ctx St W SP s' :=
+    Env N Ctx St W SP s' :=
   ⟨by rw [hbp, h.ebp], by rw [hsi, h.esi], by rw [hsp, h.esp], by rw [hrd, hwr]; exact h.ctxR,
     by rw [hwr]; exact h.stW, by rw [hwr]; exact h.wW, by rw [hc, h.ctx]⟩
 

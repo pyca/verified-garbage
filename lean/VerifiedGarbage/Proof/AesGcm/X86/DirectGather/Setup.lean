@@ -10,6 +10,7 @@ namespace VG.Proof.AesGcm.X86.DirectGather
 open VG VG.X86 VG.X86.RegUpd VG.Impl.AesGcm.X86
 open VG.Impl.AesGcm.X86.DirectGather (loopSetup tagSetup)
 
+
 abbrev slotSetupFrame (W : BitVec 32) (o q : Nat) (Z : Addr) : List Region :=
   [⟨w64 W+BitVec.ofNat 64 o,4⟩,⟨w64 W+BitVec.ofNat 64 q,4⟩,⟨Z,4⟩]
 
@@ -22,9 +23,9 @@ structure SetupPost (s : State) (W sp : BitVec 32) (i j o q : Nat) (Z : Addr) (t
   rd : t.rd = s.rd
   wr : t.wr = s.wr
 
-private theorem setup_ok {s : State} {W sp : BitVec 32} (h : KeepEnv W sp 12 s)
+private theorem setup_ok {s : State} {W sp : BitVec 32} (h : KeepEnv 2560 W sp 12 s)
     (i j o q : Nat) (r : Reg) (d : Nat) (Z : Addr)
-    (hi : i<12) (hj : j<12) (ho : o+4≤2560) (hq : q+4≤2560)
+    (hi : i<12) (hj : j<12) (ho : o+4≤768) (hq : q+4≤768)
     (mo : o%4=0) (mq : q%4=0) (ne : o ≠ q) (hr : r ≠ .eax)
     (hz : addr (s.gpr r) d = Z) (perm : InRegions s.wr Z 4)
     (sep1 : Mem.Sep (w64 W+BitVec.ofNat 64 o) 4 Z 4)
@@ -55,7 +56,7 @@ private theorem setup_ok {s : State} {W sp : BitVec 32} (h : KeepEnv W sp 12 s)
     apply Frame.writeW _ (by simp [slotSetupFrame]) _ (Region.contains_self Z 4)
     exact fr.mono (by simp [ps,slotSetupFrame,keepR])
 
-theorem loopSetup_ok {s : State} {W sp : BitVec 32} (h : KeepEnv W sp 12 s) :
+theorem loopSetup_ok {s : State} {W sp : BitVec 32} (h : KeepEnv 2560 W sp 12 s) :
     WP isa (.block loopSetup) s (SetupPost s W sp 9 10 rO tglO (w64 W+BitVec.ofNat 64 xlO)) :=
   setup_ok h 9 10 rO tglO .ebp xlO _ (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) (by decide)
@@ -63,7 +64,7 @@ theorem loopSetup_ok {s : State} {W sp : BitVec 32} (h : KeepEnv W sp 12 s) :
     (in_off h.wW (by decide) (by decide))
     (Offset.sep _ (by decide) (by decide) (by decide)) (Offset.sep _ (by decide) (by decide) (by decide))
 
-theorem tagSetup_ok {s : State} {W sp : BitVec 32} (h : KeepEnv W sp 12 s)
+theorem tagSetup_ok {s : State} {W sp : BitVec 32} (h : KeepEnv 2560 W sp 12 s)
     (perm : InRegions s.wr (w64 sp) 4) (sep : (⟨w64 sp,4⟩ : Region).Disjoint ⟨w64 W,2560⟩) :
     WP isa (.block tagSetup) s (SetupPost s W sp 6 7 dataO lenO (w64 sp)) :=
   setup_ok h 6 7 dataO lenO .esp 0 _ (by decide) (by decide) (by decide) (by decide)

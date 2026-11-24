@@ -20,6 +20,7 @@ namespace VG.Proof.AesGcm.X86.DirectGather
 open VG VG.X86 VG.Impl.AesGcm.X86
 open VG.Impl.AesGcm.X86.DirectGather (body frameArgs sourceSlot)
 
+
 theorem Prepared.publicArgs {s t e f : State} (h : Prepared s e) (k : Prepared t f)
     (hp : Gather.gatherPub s t) : pubN 12 e f := by
   have sp : SP s = SP t := congrArg (· - 2612#32) hp.1
@@ -63,8 +64,8 @@ private theorem fixedCT {P : State → Prop} {c : Prog isa} {s t : State}
     (ct : CT P c) (hs : P s) (ht : P t) : RelCT isa (Eq2 s t) c TT :=
   RelCT.mono ct (fun _ _ ⟨rfl,rfl⟩ => ⟨hs,ht⟩) fun _ _ _ => trivial
 
-theorem tagSuffix_rel (v : GcmImpl) {p : BitVec 32 × (Nat → BitVec 32)} (G : OL p)
-    {e f x y : State} {T : BitVec 32} (a : OTIn p e x) (b : OTIn p f y)
+theorem tagSuffix_rel (v : GcmImpl) {p : BitVec 32 × (Nat → BitVec 32)} (G : OL 2560 p)
+    {e f x y : State} {T : BitVec 32} (a : OTIn 2560 p e x) (b : OTIn 2560 p f y)
     (tx : arg e 8 = T) (ty : arg f 8 = T) (fx : T.toNat + 16 ≤ 2^32)
     (wx : Covers [⟨w64 T,16⟩] e.wr) (wy : Covers [⟨w64 T,16⟩] f.wr) :
     RelCT isa (Eq2 x y) (.seq (oneTag v.callees 0) (.seq (tagOut 0) (.block restore))) TT := by
@@ -72,9 +73,9 @@ theorem tagSuffix_rel (v : GcmImpl) {p : BitVec 32 × (Nat → BitVec 32)} (G : 
   refine rel_seq (fixedCT tag.ct ⟨(e,x),a,rfl⟩ ⟨(f,y),b,rfl⟩)
     (tag.wp (e,x) x ⟨a,rfl⟩) (tag.wp (f,y) y ⟨b,rfl⟩) ?_
   intro u w hu hw
-  let P := fun s => WEnv (p.2 8) s ∧ slotv s.mem (p.2 8) tpO = T
-  have ux : P u := ⟨⟨hu.1.env.ebp,hu.1.env.wW,G.L.fw⟩,hu.1.tp.trans tx⟩
-  have uy : P w := ⟨⟨hw.1.env.ebp,hw.1.env.wW,G.L.fw⟩,hw.1.tp.trans ty⟩
+  let P := fun s => WEnv 2560 (p.2 8) s ∧ slotv s.mem (p.2 8) tpO = T
+  have ux : P u := ⟨⟨hu.1.env.ebp,hu.1.env.wW,G.L.fw,by decide⟩,hu.1.tp.trans tx⟩
+  have uy : P w := ⟨⟨hw.1.env.ebp,hw.1.env.wW,G.L.fw,by decide⟩,hw.1.tp.trans ty⟩
   refine rel_seq (fixedCT (tagOut_ct (I := P) rfl (fun _ h => h)) ux uy)
     (tagOut_ok ux.1 (by decide) ux.2 (hu.1.wr ▸ wx) fx)
     (tagOut_ok uy.1 (by decide) uy.2 (hw.1.wr ▸ wy) fx) ?_
@@ -84,16 +85,16 @@ theorem tagSuffix_rel (v : GcmImpl) {p : BitVec 32 × (Nat → BitVec 32)} (G : 
   obtain rfl := List.mem_singleton.mp hr
   rw [hu'.2.2.1,hw'.2.2.1,ux.1.ebp,uy.1.ebp]
 
-theorem entry_pc {p : BitVec 32 × (Nat → BitVec 32)} (G : OL p) :
-    Pc (fun (e : State) s => OP 12 11 e ∧ pubSw 12 8 e=p ∧ s=e)
-      (oneEntry 11 (keep 8 tpO)) (OEnt p) := by
+theorem entry_pc {p : BitVec 32 × (Nat → BitVec 32)} (G : OL 2560 p) :
+    Pc (fun (e : State) s => OP 2560 12 11 e ∧ pubSw 12 8 e=p ∧ s=e)
+      (oneEntry 11 (keep 8 tpO)) (OEnt 2560 p) := by
   have pc := oneEntry_pc 12 11 rfl (by decide) [(8,tpO)] (by decide) (by decide) (by simp)
-    (OP 12 11) (fun _ h => h) p G (by taint_decide) (by taint_decide)
+    (OP 2560 12 11) (fun _ h => h) p G (by taint_decide) (by taint_decide)
   simpa using pc.mono (fun _ _ h => h) (fun _ _ h => h.1)
 
 theorem setupEnv {s e u : State} {p : BitVec 32 × (Nat → BitVec 32)} (l : Gather.Lay s)
     (hp : Prepared s e) (eq : pubSw 12 8 e=p) (bp : u.gpr .ebp=p.2 8)
-    (sp : u.gpr .esp=p.1) (rd : u.rd=e.rd) (wr : u.wr=e.wr) : KeepEnv (work s) (SP s) 12 u := by
+    (sp : u.gpr .esp=p.1) (rd : u.rd=e.rd) (wr : u.wr=e.wr) : KeepEnv 2560 (work s) (SP s) 12 u := by
   have op := hp.op l
   have w : arg e 11 = work s := hp.scratch
   have k : e.gpr .esp=SP s := hp.regs _ (by decide)
@@ -101,7 +102,7 @@ theorem setupEnv {s e u : State} {p : BitVec 32 × (Nat → BitVec 32)} (l : Gat
   have ps := pubSw_esp eq
   rw [←w,←k]
   exact ⟨bp.trans pW.symm,sp.trans ps.symm,wr ▸ op.wW,by rw [rd,wr]; exact op.argR,
-    op.w_a.symm,op.fg,op.fw⟩
+    op.w_a.symm,op.fg,op.fw,by decide⟩
 
 theorem text_eq {s t : State} (h : Gather.gatherPub s t) : text s=text t := by
   simp only [text,Gather.K,work,SP,Gather.Src,Gather.Dst,Gather.Cnt,Gather.L,
@@ -109,12 +110,12 @@ theorem text_eq {s t : State} (h : Gather.gatherPub s t) : text s=text t := by
     h.2.1 8 (by decide),h.2.1 9 (by decide)]
 
 theorem pieces_from_start (v : GcmImpl) {a : Text} {u : State} {icb : Spec.Gcm.Block}
-    (p : TextInput a u) (at0 : TextAt a u icb 0 u) :
-    WP isa (Impl.AesGcm.X86.DirectGather.pieces v.callees) u (TextAt a u icb a.count) :=
+    (p : TextInput 2560 a u) (at0 : TextAt 2560 a u icb 0 u) :
+    WP isa (Impl.AesGcm.X86.DirectGather.pieces v.callees) u (TextAt 2560 a u icb a.count) :=
   p.pieces_ok v (by simpa [Text.desc,atByte] using at0.ptr) at0.count at0.off at0.ctr
 
 private theorem setup_rel {c : List Instr} {x y : State} {W S : BitVec 32}
-    (h : KeepEnv W S 12 x) (k : KeepEnv W S 12 y)
+    (h : KeepEnv 2560 W S 12 x) (k : KeepEnv 2560 W S 12 y)
     (code : c=Impl.AesGcm.X86.DirectGather.loopSetup ∨ c=Impl.AesGcm.X86.DirectGather.tagSetup) :
     RelCT isa (Eq2 x y) (.block c) TT := by
   have regs : ∀ r ∈ [Reg.ebp,.esp], x.gpr r=y.gpr r := by
@@ -134,8 +135,8 @@ private theorem descriptors {s u : State} (l : Gather.Lay s) (fr : Frame [Gather
   exact l.bds _ hx (Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj,l.ods]))
 
 private theorem finishKeep {s u y : State} {icb : Spec.Gcm.Block}
-    (k : KeepEnv (work s) (SP s) 12 u) (a : TextAt (text s) u icb (text s).count y) :
-    KeepEnv (work s) (SP s) 12 y :=
+    (k : KeepEnv 2560 (work s) (SP s) 12 u) (a : TextAt 2560 (text s) u icb (text s).count y) :
+    KeepEnv 2560 (work s) (SP s) 12 y :=
   k.keep (a.env.ebp.trans k.ebp.symm) (a.env.esp.trans k.esp.symm) a.rd a.wr
 
 private theorem tagWritable {s e : State} (l : Gather.Lay s) (p : Prepared s e) :

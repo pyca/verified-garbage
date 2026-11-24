@@ -11,6 +11,7 @@ public section
 namespace VG.Proof.AesGcm.X86.DirectGather
 open VG VG.X86 VG.Impl.AesGcm.X86 VG.Impl.AesGcm.X86.DirectGather
 
+
 abbrev SP (s : State) := s.gpr .esp - 2612#32
 abbrev work (s : State) := SP s + 52#32
 abbrev allocated (s : State) := allocState 2612 s

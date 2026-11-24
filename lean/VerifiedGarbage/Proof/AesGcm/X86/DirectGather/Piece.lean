@@ -14,6 +14,8 @@ namespace VG.Proof.AesGcm.X86.DirectGather
 
 open VG VG.X86 VG.X86.RegUpd VG.Impl.AesGcm.X86
 
+variable {N : Nat}
+
 open VG.Impl.AesGcm.X86.DirectGather (descriptor setCursors nextPiece headArgs headDone partialHead)
 
 def afterDescriptor (m : Mem) (W S D : BitVec 32) (n : BitVec 32) : Mem :=
@@ -21,8 +23,8 @@ def afterDescriptor (m : Mem) (W S D : BitVec 32) (n : BitVec 32) : Mem :=
     (w64 W+276#64) n).writeW (w64 W+196#64) (S+8#32)
 
 /-- Read one eight-byte IA-32 descriptor and advance the next-descriptor slot. -/
-theorem descriptor_ok {C St W SP S D n : BitVec 32} {K : Nat} {s : State} (L : Lay C St W SP K)
-    (e : Env C St W SP s) (ptr : slotv s.mem W rO = S) (src : s.mem.readW (w64 S) 32 = D)
+theorem descriptor_ok {C St W SP S D n : BitVec 32} {K : Nat} {s : State} (L : Lay N C St W SP K)
+    (e : Env N C St W SP s) (ptr : slotv s.mem W rO = S) (src : s.mem.readW (w64 S) 32 = D)
     (size : s.mem.readW (w64 (S+4#32)) 32 = n) (r₀ : InRegions (s.rd++s.wr) (w64 S) 4)
     (r₄ : InRegions (s.rd++s.wr) (w64 (S+4#32)) 4)
     (apart : Mem.Sep (w64 (S+4#32)) 4 (w64 W+168#64) 4) :
@@ -41,8 +43,8 @@ def afterCursors (m : Mem) (W SP D off n : BitVec 32) : Mem :=
 
 /-- The destination address is the start of the output plus all prior piece lengths.
 The saved counter offset and the condition flag come from that same public sum. -/
-theorem setCursors_ok {C St W SP D off n : BitVec 32} {K : Nat} {s : State} (L : Lay C St W SP K)
-    (e : Env C St W SP s) (total : slotv s.mem W xlO = off) (count : s.gpr .ecx = n)
+theorem setCursors_ok {C St W SP D off n : BitVec 32} {K : Nat} {s : State} (L : Lay N C St W SP K)
+    (e : Env N C St W SP s) (total : slotv s.mem W xlO = off) (count : s.gpr .ecx = n)
     (ar : InRegions (s.rd++s.wr) (w64 (SP+28#32)) 4) (arg : s.mem.readW (w64 (SP+28#32)) 32 = D)
     (wr : InRegions s.wr (w64 SP) 4) :
     WP isa (.block setCursors) s fun t =>
@@ -59,9 +61,9 @@ theorem setCursors_ok {C St W SP D off n : BitVec 32} {K : Nat} {s : State} (L :
 
 /-- An argument outside the scratch workspace survives the descriptor loads. -/
 private theorem descriptor_arg {m : Mem} {W S D n : BitVec 32} {A : Addr}
-    (apart : (⟨A,4⟩ : Region).Disjoint ⟨w64 W,2560⟩) :
+    (apart : (⟨A,4⟩ : Region).Disjoint ⟨w64 W,N⟩) (hN : 768 ≤ N := by wbig) :
     (afterDescriptor m W S D n).readW A 32 = m.readW A 32 := by
-  have sep (d : Nat) (hd : d + 4 ≤ 2560) : Mem.Sep A 4 (w64 W + BitVec.ofNat 64 d) 4 :=
+  have sep (d : Nat) (hd : d + 4 ≤ 768) : Mem.Sep A 4 (w64 W + BitVec.ofNat 64 d) 4 :=
     (apart.sub_right (Lay.wSub hd)).sep (Region.contains_self _ _) (Region.contains_self _ _)
   simp only [afterDescriptor,Mem.readW_writeW_sep (w:=32) (w':=32) (sep 196 (by decide)) (by decide),
     Mem.readW_writeW_sep (w:=32) (w':=32) (sep 276 (by decide)) (by decide),
@@ -69,13 +71,13 @@ private theorem descriptor_arg {m : Mem} {W S D n : BitVec 32} {A : Addr}
     Mem.readW_writeW_sep (w:=32) (w':=32) (sep 168 (by decide)) (by decide)]
 
 theorem nextPiece_ok {C St W SP S D O off n : BitVec 32} {K : Nat} {s : State}
-    (L : Lay C St W SP K) (e : Env C St W SP s) (ptr : slotv s.mem W rO = S)
+    (L : Lay N C St W SP K) (e : Env N C St W SP s) (ptr : slotv s.mem W rO = S)
     (src : s.mem.readW (w64 S) 32 = D) (size : s.mem.readW (w64 (S+4#32)) 32 = n)
     (r₀ : InRegions (s.rd++s.wr) (w64 S) 4) (r₄ : InRegions (s.rd++s.wr) (w64 (S+4#32)) 4)
     (apart : Mem.Sep (w64 (S+4#32)) 4 (w64 W+168#64) 4)
     (total : slotv s.mem W xlO = off) (ar : InRegions (s.rd++s.wr) (w64 (SP+28#32)) 4)
     (arg : s.mem.readW (w64 (SP+28#32)) 32 = O) (wr : InRegions s.wr (w64 SP) 4)
-    (aw : (⟨w64 (SP+28#32),4⟩ : Region).Disjoint ⟨w64 W,2560⟩) :
+    (aw : (⟨w64 (SP+28#32),4⟩ : Region).Disjoint ⟨w64 W,N⟩) :
     WP isa (.block nextPiece) s fun t =>
       t.mem = afterCursors (afterDescriptor s.mem W S D n) W SP O off n ∧ t.gpr .edi = O+off ∧
       t.zf = some (off &&& 15#32 == 0) ∧
@@ -101,8 +103,8 @@ theorem nextPiece_ok {C St W SP S D O off n : BitVec 32} {K : Nat} {s : State}
 
 /-- Prepare the source, destination, and keystream pointers for a piece starting
 within a counter block, and save the number of bytes still to encrypt. -/
-theorem headArgs_ok {C St W SP D T : BitVec 32} {K n b k : Nat} {s : State} (L : Lay C St W SP K)
-    (e : Env C St W SP s) (hb : slotv s.mem W bO = BitVec.ofNat 32 b)
+theorem headArgs_ok {C St W SP D T : BitVec 32} {K n b k : Nat} {s : State} (L : Lay N C St W SP K)
+    (e : Env N C St W SP s) (hb : slotv s.mem W bO = BitVec.ofNat 32 b)
     (hn : slotv s.mem W lenO = BitVec.ofNat 32 n) (hd : slotv s.mem W dataO = D)
     (cx : s.gpr .ecx = BitVec.ofNat 32 k) (di : s.gpr .edi = T) (hk : k ≤ n) (hlt : n < 2^32) :
     WP isa (.block headArgs) s fun t => t.mem = s.mem.writeW (w64 W+172#64) (BitVec.ofNat 32 (n-k)) ∧
@@ -113,11 +115,11 @@ theorem headArgs_ok {C St W SP D T : BitVec 32} {K n b k : Nat} {s : State} (L :
   exact congrArg (fun x => s.mem.writeW (w64 W+172#64) x) (ofNat_sub32 hk hlt)
 
 theorem headDone_ok {s : State} {W SP D T : BitVec 32} (bp : s.gpr .ebp = W) (sp : s.gpr .esp = SP)
-    (si : s.gpr .esi = D) (di : s.gpr .edi = T) (fit : W.toNat+2560 ≤ 2^32)
-    (wD : InRegions s.wr (w64 W+168#64) 4) (wT : InRegions s.wr (w64 SP) 4) :
+    (si : s.gpr .esi = D) (di : s.gpr .edi = T) (fit : W.toNat+N ≤ 2^32)
+    (wD : InRegions s.wr (w64 W+168#64) 4) (wT : InRegions s.wr (w64 SP) 4) (hN : 768 ≤ N := by wbig) :
     WP isa (.block headDone) s fun t => t.mem = (s.mem.writeW (w64 W+168#64) D).writeW (w64 SP) T ∧
       t.gpr .esi = W+16#32 ∧ (∀ r, r ≠ .esi → t.gpr r = s.gpr r) ∧ t.rd = s.rd ∧ t.wr = s.wr := by
-  have a : w64 (W+168#32) = w64 W+168#64 := w64_add (by omega_using [fit])
+  have a : w64 (W+168#32) = w64 W+168#64 := w64_add (by omega_using [fit, (by wbig : 768 ≤ N)])
   refine WP.of_runBlock ⟨_,by xrun [headDone,bp,sp,si,di,a,wD,wT,add_zero32],?_⟩
   refine ⟨rfl,rfl,?_,rfl,rfl⟩
   intro r h
@@ -143,7 +145,7 @@ structure HeadAccess (s : State) (St SP D T : BitVec 32) (b k : Nat) : Prop wher
   sd : (⟨w64 D,k⟩ : Region).Disjoint ⟨w64 T,k⟩
 
 theorem partialHead_ok {C St W SP D T : BitVec 32} {K n b : Nat} {s : State}
-    (L : Lay C St W SP K) (e : Env C St W SP s) (hs : W+16#32 = St)
+    (L : Lay N C St W SP K) (e : Env N C St W SP s) (hs : W+16#32 = St)
     (hn : slotv s.mem W nO = BitVec.ofNat 32 n) (hb : slotv s.mem W bO = BitVec.ofNat 32 b)
     (len : slotv s.mem W lenO = BitVec.ofNat 32 n) (src : slotv s.mem W dataO = D)
     (di : s.gpr .edi = T) (hb16 : b < 16) (hlt : n < 2^32)
@@ -193,8 +195,8 @@ theorem partialHead_ok {C St W SP D T : BitVec 32} {K n b : Nat} {s : State}
     rw [← hu.mem]
     rfl
 
-theorem decrement_ok {C St W SP : BitVec 32} {K n : Nat} {s : State} (L : Lay C St W SP K)
-    (e : Env C St W SP s) (hn : 0 < n) (lt : n < 2^32)
+theorem decrement_ok {C St W SP : BitVec 32} {K n : Nat} {s : State} (L : Lay N C St W SP K)
+    (e : Env N C St W SP s) (hn : 0 < n) (lt : n < 2^32)
     (v : slotv s.mem W tglO = BitVec.ofNat 32 n) :
     WP isa (.block [.mov .ecx (slot tglO),.alu .sub .ecx (imm 1),.store (at_ .ebp tglO) .ecx]) s fun t =>
       t.mem = s.mem.writeW (w64 W + BitVec.ofNat 64 tglO) (BitVec.ofNat 32 (n-1)) ∧
@@ -221,6 +223,8 @@ open VG.Spec.Aes (bytesAt)
 open VG.Spec.Gcm (Block)
 open VG.Proof.Gcm (xorKs)
 
+variable {N : Nat}
+
 abbrev atByte (p : BitVec 32) (i : Nat) := p+BitVec.ofNat 32 i
 abbrev headFrame (W SP T : BitVec 32) (k : Nat) : List Region :=
   [⟨w64 T,k⟩,⟨w64 W+168#64,8⟩,⟨w64 SP,4⟩]
@@ -235,7 +239,7 @@ structure HeadPost (m u : Mem) (St W SP D T : BitVec 32) (ciph : Block → Block
   dest : u.readW (w64 SP) 32 = atByte T k
 
 theorem afterHead_ok {C St W SP D T : BitVec 32} {m : Mem} {ciph : Block → Block} {icb : Block}
-    {off n k : Nat} (L : Lay C St W SP 32) (st : St = W+16#32) (P : PieceRegions C W SP D T n)
+    {off n k : Nat} (L : Lay N C St W SP 32) (st : St = W+16#32) (P : PieceRegions N C W SP D T n)
     (ctr : CtrS m St ciph icb off) (b0 : off%16 ≠ 0) (kb : off%16+k ≤ 16) (kn : k ≤ n) :
     HeadPost m (afterHead m W SP St D T n (off%16) k) St W SP D T ciph icb off n k := by
   let b := off%16
@@ -309,8 +313,8 @@ theorem afterHead_ok {C St W SP D T : BitVec 32} {m : Mem} {ciph : Block → Blo
 
 def headCount (off n : Nat) := if off%16=0 then 0 else min (16-off%16) n
 
-structure PieceArgs (C St W SP D T : BitVec 32) (s : State) (n off : Nat) : Prop where
-  env : Env C St W SP s
+structure PieceArgs (N : Nat) (C St W SP D T : BitVec 32) (s : State) (n off : Nat) : Prop where
+  env : Env N C St W SP s
   nO : slotv s.mem W nO = BitVec.ofNat 32 n
   bO : slotv s.mem W bO = BitVec.ofNat 32 (off%16)
   len : slotv s.mem W lenO = BitVec.ofNat 32 n
@@ -319,13 +323,13 @@ structure PieceArgs (C St W SP D T : BitVec 32) (s : State) (n off : Nat) : Prop
   zf : s.zf = some (decide (off%16=0))
 
 theorem noHead {s : State} {C St W SP D T : BitVec 32} {n off : Nat} {ciph : Block → Block} {icb : Block}
-    (h : PieceArgs C St W SP D T s n off) (A : PieceAccess s SP D T n) (ctr : CtrS s.mem St ciph icb off) :
+    (h : PieceArgs N C St W SP D T s n off) (A : PieceAccess s SP D T n) (ctr : CtrS s.mem St ciph icb off) :
     HeadPost s.mem s.mem St W SP D T ciph icb off n 0 := by
   exact ⟨Frame.refl _ _,rfl,ctr,by simpa [atByte] using h.src,h.len,by simpa [atByte] using A.dstArg⟩
 
-theorem makeHeadAccess {C St W SP D T : BitVec 32} {n b k : Nat} {s : State} (L : Lay C St W SP 32)
-    (st : St = W+16#32) (P : PieceRegions C W SP D T n) (A : PieceAccess s SP D T n)
-    (E : Env C St W SP s) (wsp : InRegions s.wr (w64 SP) 4) (bl : b < 16) (hb : b+k ≤ 16) (kn : k ≤ n) :
+theorem makeHeadAccess {C St W SP D T : BitVec 32} {n b k : Nat} {s : State} (L : Lay N C St W SP 32)
+    (st : St = W+16#32) (P : PieceRegions N C W SP D T n) (A : PieceAccess s SP D T n)
+    (E : Env N C St W SP s) (wsp : InRegions s.wr (w64 SP) 4) (bl : b < 16) (hb : b+k ≤ 16) (kn : k ≤ n) :
     HeadAccess s St SP D T b k := by
   have fw := L.fs
   have fd := P.fD
@@ -333,7 +337,7 @@ theorem makeHeadAccess {C St W SP D T : BitVec 32} {n b k : Nat} {s : State} (L 
   have key : w64 (headKey St b) = w64 St+BitVec.ofNat 64 (64+b) := by
     unfold headKey
     rw [BitVec.add_assoc,←BitVec.ofNat_add,w64_add (by omega_using [bl,fw])]
-  have sk : Region.Sub ⟨w64 (headKey St b),k⟩ ⟨w64 W,2560⟩ := by
+  have sk : Region.Sub ⟨w64 (headKey St b),k⟩ ⟨w64 W,N⟩ := by
     rw [key]; exact fun _ hx => stSub L st _ (Lay.stSub (by omega_using [hb]) _ hx)
   refine ⟨?_,by omega_using [fd,kn],by omega_using [ft,kn],?_,covers_pre A.rd kn (by omega_using [fd]),
     covers_pre A.wr kn (by omega_using [ft]),wsp,((P.dstWork.sub_left (Region.sub_prefix kn)).sub_right sk).symm,
@@ -343,8 +347,8 @@ theorem makeHeadAccess {C St W SP D T : BitVec 32} {n b k : Nat} {s : State} (L 
   · rw [key]; exact covers_left (E.stC (by omega_using [hb]))
 
 theorem headPart_ok {C St W SP D T : BitVec 32} {s : State} {n off : Nat} {ciph : Block → Block} {icb : Block}
-    (L : Lay C St W SP 32) (st : St = W+16#32) (P : PieceRegions C W SP D T n) (A : PieceAccess s SP D T n)
-    (h : PieceArgs C St W SP D T s n off) (wr : InRegions s.wr (w64 SP) 4) (lt : n < 2^32)
+    (L : Lay N C St W SP 32) (st : St = W+16#32) (P : PieceRegions N C W SP D T n) (A : PieceAccess s SP D T n)
+    (h : PieceArgs N C St W SP D T s n off) (wr : InRegions s.wr (w64 SP) 4) (lt : n < 2^32)
     (ctr : CtrS s.mem St ciph icb off) :
     WP isa (.ite .e (.block []) Impl.AesGcm.X86.DirectGather.partialHead) s fun t =>
       HeadPost s.mem t.mem St W SP D T ciph icb off n (headCount off n) ∧
@@ -384,25 +388,27 @@ open VG.Spec.Gcm (Block)
 open VG.Spec.Aes (bytesAt)
 open VG.Proof.Gcm (xorKs)
 
-abbrev pieceFrame (St W SP T : BitVec 32) (n : Nat) : List Region :=
-  crFrame St W SP 32 T n ++ [⟨w64 W+168#64,8⟩,⟨w64 SP,4⟩]
+variable {N : Nat}
 
-structure Processed (C St W SP D T : BitVec 32) (s : State) (off n : Nat) (ciph : Block → Block) (icb : Block)
+abbrev pieceFrame (N : Nat) (St W SP T : BitVec 32) (n : Nat) : List Region :=
+  crFrame N St W SP 32 T n ++ [⟨w64 W+168#64,8⟩,⟨w64 SP,4⟩]
+
+structure Processed (N : Nat) (C St W SP D T : BitVec 32) (s : State) (off n : Nat) (ciph : Block → Block) (icb : Block)
     (t : State) : Prop where
-  env : Env C St W SP t
+  env : Env N C St W SP t
   rd : t.rd = s.rd
   wr : t.wr = s.wr
-  frame : Frame (pieceFrame St W SP T n) s.mem t.mem
+  frame : Frame (pieceFrame N St W SP T n) s.mem t.mem
   ctr : CtrS t.mem St ciph icb (off+n)
   out : bytesAt t.mem (w64 T) n = xorKs ciph icb off (bytesAt s.mem (w64 D) n)
 
 section
 variable {C St W SP D T : BitVec 32} {n off k : Nat} {s u t : State} {ciph : Block → Block} {icb : Block}
-  (L : Lay C St W SP 32) (st : St = W+16#32) (P : PieceRegions C W SP D T n)
+  (L : Lay N C St W SP 32) (st : St = W+16#32) (P : PieceRegions N C W SP D T n)
   (A : PieceAccess s SP D T n) (h : HeadPost s.mem u.mem St W SP D T ciph icb off n k)
 
 include P in
-theorem restRegions (hk : k<n) : PieceRegions C W SP (atByte D k) (atByte T k) (n-k) := by
+theorem restRegions (hk : k<n) : PieceRegions N C W SP (atByte D k) (atByte T k) (n-k) := by
   have fd := P.fD
   have ft := P.fT
   have d : w64 (atByte D k) = w64 D+BitVec.ofNat 64 k := w64_add (by omega_using [fd,hk])
@@ -424,7 +430,7 @@ theorem restAccess (hk : k<n) (rd : u.rd=s.rd) (wr : u.wr=s.wr) :
     by rw [wr,w64_add (x:=T) (by omega_using [ft,hk])]; exact covers_off A.wr (by omega_using [hk]) (by omega_using [ft])⟩
 
 include P in
-theorem slotHead {o : Nat} (ho : o+4 ≤ 168 ∨ 176 ≤ o) (fit : o+4 ≤ 2560) (kn : k≤n) :
+theorem slotHead {o : Nat} (ho : o+4 ≤ 168 ∨ 176 ≤ o) (fit : o+4 ≤ 768) (kn : k≤n) (hN : 768 ≤ N := by wbig) :
     ∀ r ∈ headFrame W SP T k, (⟨w64 W+BitVec.ofNat 64 o,4⟩ : Region).Disjoint r := by
   intro r hr
   simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
@@ -434,7 +440,7 @@ theorem slotHead {o : Nat} (ho : o+4 ≤ 168 ∨ 176 ≤ o) (fit : o+4 ≤ 2560)
   · exact (P.argWork.sub_right (Lay.wSub fit)).symm
 
 include h in
-theorem pieceFrameHead (kn : k ≤ n) : Frame (pieceFrame St W SP T n) s.mem u.mem := by
+theorem pieceFrameHead (kn : k ≤ n) : Frame (pieceFrame N St W SP T n) s.mem u.mem := by
   refine h.frame.sub ?_
   intro r hr
   simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
@@ -444,8 +450,8 @@ theorem pieceFrameHead (kn : k ≤ n) : Frame (pieceFrame St W SP T n) s.mem u.m
   · exact ⟨_,by simp [pieceFrame],fun _ q => q⟩
 
 include P in
-theorem pieceFrameRest (hk : k<n) {m m' : Mem} (f : Frame (crFrame St W SP 32 (atByte T k) (n-k)) m m') :
-    Frame (pieceFrame St W SP T n) m m' := by
+theorem pieceFrameRest (hk : k<n) {m m' : Mem} (f : Frame (crFrame N St W SP 32 (atByte T k) (n-k)) m m') :
+    Frame (pieceFrame N St W SP T n) m m' := by
   refine f.sub ?_
   intro r hr
   simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
@@ -458,8 +464,8 @@ theorem pieceFrameRest (hk : k<n) {m m' : Mem} (f : Frame (crFrame St W SP 32 (a
 include L st P A h in
 theorem restDone (hk : k<n) (rd : u.rd=s.rd) (wr : u.wr=s.wr)
     (hstk : (⟨w64 D,n⟩ : Region).Disjoint ⟨w64 SP,4⟩)
-    (done : PiecePost u C St W SP (atByte D k) (atByte T k) ciph icb (off+k) (n-k) t) :
-    Processed C St W SP D T s off n ciph icb t := by
+    (done : PiecePost N u C St W SP (atByte D k) (atByte T k) ciph icb (off+k) (n-k) t) :
+    Processed N C St W SP D T s off n ciph icb t := by
   have fd := P.fD
   have ft := P.fT
   have diff : k+(n-k)=n := by omega_using [hk]
@@ -472,7 +478,7 @@ theorem restDone (hk : k<n) (rd : u.rd=s.rd) (wr : u.wr=s.wr)
     rcases hr with rfl | rfl | rfl | rfl
     · rw [ta]; exact split_disj (by omega_using [hk,ft])
     · exact ((A.dataW L st P).ok.st.sub_left (Region.sub_prefix (Nat.le_of_lt hk))).sub_right (Lay.stSub (by decide))
-    · exact (P.dstWork.sub_left (Region.sub_prefix (Nat.le_of_lt hk))).sub_right (Lay.wSub (by decide))
+    · exact (P.dstWork.sub_left (Region.sub_prefix (Nat.le_of_lt hk))).sub_right (Lay.wsSub)
     · exact (P.stackDst.sub_right (Region.sub_prefix (Nat.le_of_lt hk))).symm
   have source : bytesAt u.mem (w64 (atByte D k)) (n-k) = bytesAt s.mem (w64 (atByte D k)) (n-k) := by
     have sub : Region.Sub ⟨w64 (atByte D k),n-k⟩ ⟨w64 D,n⟩ := by rw [da]; exact Offset.sub_base _ (by omega_using [hk])
@@ -495,19 +501,19 @@ end
 
 /-- Encrypt the piece from the current byte offset. Readable inputs and
 writable outputs have distinct addresses throughout both stages. -/
-theorem processPiece_ok (v : GcmImpl) {C St W SP D T : BitVec 32} {n off R : Nat} {s : State}
-    {ciph : Block → Block} {icb : Block} (L : Lay C St W SP 32) (st : St = W+16#32)
-    (P : PieceRegions C W SP D T n) (A : PieceAccess s SP D T n) (args : PieceArgs C St W SP D T s n off)
+theorem processPiece_ok (v : GcmImpl) [WSize N v.ctr.scr] {C St W SP D T : BitVec 32} {n off R : Nat} {s : State}
+    {ciph : Block → Block} {icb : Block} (L : Lay N C St W SP 32) (st : St = W+16#32)
+    (P : PieceRegions N C W SP D T n) (A : PieceAccess s SP D T n) (args : PieceArgs N C St W SP D T s n off)
     (argCtx : (⟨w64 C,256⟩ : Region).Disjoint ⟨w64 SP,4⟩)
     (argWr : InRegions s.wr (w64 SP) 4) (hstk : (⟨w64 D,n⟩ : Region).Disjoint ⟨w64 SP,4⟩) (lt : n < 2^32)
     (rounds : RoundsAt s.mem W R) (cipher : ciphOf s.mem C R = ciph) (ctr : CtrS s.mem St ciph icb off) :
     WP isa (.seq (.ite .e (.block []) Impl.AesGcm.X86.DirectGather.partialHead) (Open.decTo v.callees v.callees.ctr))
-      s (Processed C St W SP D T s off n ciph icb) := by
+      s (Processed N C St W SP D T s off n ciph icb) := by
   let k := headCount off n
   have kn : k ≤ n := by unfold k headCount; split <;> first | exact Nat.zero_le _ | exact Nat.min_le_right _ _
   refine WP.seq (WP.mono (headPart_ok L st P A args argWr lt ctr) ?_)
   rintro u ⟨h,bp,si,sp,rd,wr⟩
-  have slot (o : Nat) (sep : o+4 ≤ 168 ∨ 176 ≤ o) (bound : o+4 ≤ 2560) :
+  have slot (o : Nat) (sep : o+4 ≤ 168 ∨ 176 ≤ o) (bound : o+4 ≤ 768) :
       slotv u.mem W o = slotv s.mem W o := slot_frame h.frame (slotHead P sep bound kn)
   have e := args.env.keep (bp.trans args.env.ebp.symm) (si.trans args.env.esi.symm) (sp.trans args.env.esp.symm)
     rd wr (slot ctxO (by decide) (by decide))
@@ -546,9 +552,9 @@ theorem processPiece_ok (v : GcmImpl) {C St W SP D T : BitVec 32} {n off R : Nat
 /-- A zero-length listed slice can contain any pointer, including when prior
 pieces end exactly at the end of the IA-32 address space. -/
 theorem headEmpty_ok {C St W SP D T : BitVec 32} {off : Nat} {s : State}
-    (L : Lay C St W SP 32) (args : PieceArgs C St W SP D T s 0 off) :
+    (L : Lay N C St W SP 32) (args : PieceArgs N C St W SP D T s 0 off) :
     WP isa (.ite .e (.block []) Impl.AesGcm.X86.DirectGather.partialHead) s fun t =>
-      t.mem = s.mem ∧ Env C St W SP t ∧ t.rd=s.rd ∧ t.wr=s.wr := by
+      t.mem = s.mem ∧ Env N C St W SP t ∧ t.rd=s.rd ∧ t.wr=s.wr := by
   refine WP.ite (decide (off%16=0)) args.zf (fun _ => WP.block_nil ⟨rfl,args.env,rfl,rfl⟩) ?_
   intro _
   refine WP.seq (WP.mono (minLen_ok L args.env args.nO args.bO (by omega_using []) (by decide)) ?_)
@@ -560,9 +566,9 @@ theorem headEmpty_ok {C St W SP D T : BitVec 32} {off : Nat} {s : State}
   exact WP.ite true rfl (fun _ => WP.block_nil ⟨h.mem,⟨e.ebp,e.esi,e.esp,e.ctxR,e.stW,e.wW,e.ctx⟩,h.rd,h.wr⟩) (fun h => nomatch h)
 
 theorem processPiece_empty (v : GcmImpl) {C St W SP D T : BitVec 32} {off : Nat} {s : State}
-    (L : Lay C St W SP 32) (args : PieceArgs C St W SP D T s 0 off) :
+    (L : Lay N C St W SP 32) (args : PieceArgs N C St W SP D T s 0 off) :
     WP isa (.seq (.ite .e (.block []) Impl.AesGcm.X86.DirectGather.partialHead) (Open.decTo v.callees v.callees.ctr))
-      s fun t => t.mem = s.mem ∧ Env C St W SP t ∧ t.rd=s.rd ∧ t.wr=s.wr := by
+      s fun t => t.mem = s.mem ∧ Env N C St W SP t ∧ t.rd=s.rd ∧ t.wr=s.wr := by
   refine WP.seq (WP.mono (headEmpty_ok L args) ?_)
   rintro u ⟨m,e,rd,wr⟩
   refine WP.mono (decTo_empty L v e (by rw [m,args.len]; rfl)) ?_
