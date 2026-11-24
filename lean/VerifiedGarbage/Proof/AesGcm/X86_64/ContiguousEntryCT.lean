@@ -1,7 +1,7 @@
 module
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Sig
-import VerifiedGarbage.Proof.AesGcm.Flag
+public import VerifiedGarbage.Proof.AesGcm.Flag
 import VerifiedGarbage.Proof.AesGcm.Scratch
 import VerifiedGarbage.Proof.Framework.X86_64.FlagBranch
 import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
