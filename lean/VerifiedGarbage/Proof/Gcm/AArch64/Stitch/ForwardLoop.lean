@@ -17,7 +17,7 @@ private theorem of_equal_run {x y : List Instr} {s : State} {Q : State → Prop}
 
 private theorem parts_forward_run {s₀ s : State} (hp : SealToPre s₀) {h : Nat} (hh : h+1 < nb s₀)
     (hi : SealInv s₀ (h+1) h s) (cache : CipherBatch s) :
-    runBlock isa (forwardParts (rounds s₀)) s = runBlock isa (parts (rounds s₀) 128 .x15) s := by
+    runBlock isa (residentParts (rounds s₀)) s = runBlock isa (parts (rounds s₀) 128 .x15) s := by
   have hm := VG.Interleave.weaveG_merge (fuse (aesPart (rounds s₀) 128 .x15)) (ghPart.map fun i => [i])
   rw [fuse_flatten, flatten_singles] at hm
   have ho := VG.Interleave.run_merge hm (partsTo_indeps hp.rounds (.inr rfl)) (s := s) trivial
@@ -41,7 +41,7 @@ private theorem advance_eq (xs : List Instr) : xs ++ [.addImm .x .x15 .x15 128, 
 
 private theorem stepForward {s₀ s : State} (hp : SealToPre s₀) (gh : Gh8Ok) {h : Nat}
     (hh : h+1 < nb s₀) (hi : SealInv s₀ (h+1) h s) (cache : CipherBatch s) :
-    WP isa (.block (forwardParts (rounds s₀) ++ stores 128 ++ adv true ++ capture)) s
+    WP isa (.block (residentParts (rounds s₀) ++ stores 128 ++ adv true ++ capture)) s
       fun t => SealInv s₀ (h+1+1) (h+1) t ∧ CipherBatch t := by
   rw [WP.block_append_iff]
   refine WP.mono (Q := fun t => SealInv s₀ (h+1+1) (h+1) t ∧ EncValues s₀ (h+1) t)
@@ -62,14 +62,14 @@ private theorem firstForward {s₀ s : State} (hp : SealToPre s₀) (hi : SealIn
 
 private theorem lastForward {s₀ s : State} (hp : SealToPre s₀) (gh : Gh8Ok)
     (hi : SealInv s₀ (nb s₀) (nb s₀-1) s) (hc : CipherBatch s) :
-    WP isa (.block ((ghWith forwardLd).flatMap lowerXor3 ++ [.addImm .x .x15 .x15 128, .addImm .x .x9 .x9 128]))
+    WP isa (.block (residentHash.flatMap lowerXor3 ++ [.addImm .x .x15 .x15 128, .addImm .x .x9 .x9 128]))
       s (SealInv s₀ (nb s₀) (nb s₀)) := by
   refine of_equal_run ?_ (lastTo_ok hp gh hi)
   have h1 := hp.nb1
   have hgin := ghIn_at hp.toKPre.toM hi.x9 (by omega) (hi.gpr _ (notMem_kRegsT _ (by decide)))
     (by rw [hi.rd, hi.wr])
   simp only [VG.AArch64.Interleave.runBlock_append]
-  rw [run_lowerXor3_block (ghWith forwardLd) s, run_forwardGh hc hgin]
+  rw [run_lowerXor3_block residentHash s, run_forwardGh hc hgin]
 
 private def retained (s₀ : State) (c h : Nat) (s : State) : Prop := SealInv s₀ c h s ∧ CipherBatch s
 

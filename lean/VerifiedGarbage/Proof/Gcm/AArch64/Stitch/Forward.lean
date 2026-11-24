@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Gcm.AArch64.Forward
-public import VerifiedGarbage.Proof.Gcm.AArch64.Stitch.Steps
+public import VerifiedGarbage.Proof.Gcm.AArch64.Stitch.Resident
 public import VerifiedGarbage.Proof.Gcm.AArch64.Stitch.Xor3
 public import VerifiedGarbage.Proof.Gcm.AArch64.Stitch.Weave
 import VerifiedGarbage.Proof.Framework.AArch64.Interleave
@@ -59,12 +59,12 @@ private def group (load : VReg → Nat → List Instr) (p : Nat) :=
 private theorem group_cons {s : State} {p : Nat} {f g : List Instr}
     (hp : p < 4) (hc : CipherBatch s) (hi : GhIn s)
     (h : ∀ t, CipherBatch t → GhIn t → runBlock isa f t = runBlock isa g t) :
-    runBlock isa (group forwardLd p ++ f) s = runBlock isa (group ld p ++ g) s := by
+    runBlock isa (residentGroup p ++ f) s = runBlock isa (group ld p ++ g) s := by
   have ha : pa p < 8 := by unfold pa; split <;> decide
   have hb : pb p < 8 := by unfold pb; split <;> decide
-  have same : runBlock isa (group forwardLd p) s = runBlock isa (group ld p) s := by
-    unfold group
-    rw [VG.AArch64.Interleave.runBlock_append, VG.AArch64.Interleave.runBlock_append,
+  have same : runBlock isa (residentGroup p) s = runBlock isa (group ld p) s := by
+    unfold group residentGroup
+    rw [VG.AArch64.Interleave.runBlock_append, VG.AArch64.Interleave.runBlock_append, residentPair_eq p hp s hi,
       run_forwardPair _ _ _ _ _ _ ha hb hc hi]
   obtain ⟨t, hr, _, fr⟩ := VG.AArch64.Interleave.runBlock_of_WP
     (pairAdd_ok p hp (decide (p = 0)) s s hi rfl rfl rfl rfl rfl)
@@ -84,54 +84,26 @@ private theorem ghWith_groups (load : VReg → Nat → List Instr) :
 
 /-- Forwarded GHASH gives the same state as hashing the output buffer. -/
 theorem run_forwardGh {s : State} (hc : CipherBatch s) (hi : GhIn s) :
-    runBlock isa (ghWith forwardLd) s = runBlock isa ghPart s := by
-  rw [ghWith_groups, ghPart, ghWith_groups]
+    runBlock isa residentHash s = runBlock isa ghPart s := by
+  rw [residentHash, ghPart, ghWith_groups]
   exact group_cons (by decide) hc hi fun _ h₁ i₁ =>
     group_cons (by decide) h₁ i₁ fun _ h₂ i₂ =>
     group_cons (by decide) h₂ i₂ fun _ h₃ i₃ =>
     group_cons (by decide) h₃ i₃ fun _ _ _ => rfl
 
-private theorem forwardGroups_flatten (xs : List Instr) : (xs.flatMap forwardGroup).flatten = xs := by
-  induction xs with
-  | nil => rfl
-  | cons i xs ih =>
-    simp only [List.flatMap_cons, List.flatten_append, ih]
-    unfold forwardGroup
-    split <;> rfl
+private theorem residentFlatten : residentSlots.flatten = residentHash := by decide +kernel
 
 private theorem forward_check : ∀ nr ∈ [10, 12, 14],
     ((fps.blockFp (aesPart nr 128 .x15)).bind fun A =>
-      (fps.blockFp (ghWith forwardLd)).map fun B => fps.indep A B) = some true := by
+      (fps.blockFp residentHash).map fun B => fps.indep A B) = some true := by
   decide +kernel
 
-theorem wp_lowerXor3 {code : List Instr} {s : State} {Q : State → Prop}
-    (h : WP isa (.block code) s Q) :
-    WP isa (.block (code.flatMap lowerXor3)) s Q := by
-  apply WP.of_runBlock
-  rw [run_lowerXor3_block]
-  exact VG.AArch64.Interleave.runBlock_of_WP h
-
-/-- AES on the next batch and GHASH on the retained ciphertext may be woven
-while retaining all register, memory and permission obligations. -/
-theorem forwardParts_ok {nr : Nat} (hnr : nr = 10 ∨ nr = 12 ∨ nr = 14) {s : State} {Q : State → Prop}
-    (h : WP isa (.block (aesPart nr 128 .x15)) s fun t => CipherBatch t ∧ GhIn t ∧ WP isa (.block ghPart) t Q) :
-    WP isa (.block (forwardParts nr)) s Q := by
-  apply wp_lowerXor3
-  refine VG.Interleave.WP.weaveG (P := fps.Inv) ?_ trivial ?_
-  · rw [fuse_flatten, forwardGroups_flatten]
-    exact fps.indeps_of_check (forward_check nr (by rcases hnr with rfl | rfl | rfl <;> decide))
-  · rw [fuse_flatten, forwardGroups_flatten]
-    refine WP.mono h fun t ⟨hc, hi, hg⟩ => ?_
-    apply WP.of_runBlock
-    rw [run_forwardGh hc hi]
-    exact VG.AArch64.Interleave.runBlock_of_WP hg
-
 theorem run_forwardParts_eq_seq {nr : Nat} (hn : nr = 10 ∨ nr = 12 ∨ nr = 14) (s : State) :
-    runBlock isa (forwardParts nr) s = runBlock isa (aesPart nr 128 .x15 ++ ghWith forwardLd) s := by
-  unfold forwardParts
+    runBlock isa (residentParts nr) s = runBlock isa (aesPart nr 128 .x15 ++ residentHash) s := by
+  unfold residentParts
   rw [run_lowerXor3_block]
-  have hm := VG.Interleave.weaveG_merge (fuse (aesPart nr 128 .x15)) ((ghWith forwardLd).flatMap forwardGroup)
-  rw [fuse_flatten, forwardGroups_flatten] at hm
+  have hm := VG.Interleave.weaveG_merge (fuse (aesPart nr 128 .x15)) residentSlots
+  rw [fuse_flatten, residentFlatten] at hm
   exact VG.Interleave.run_merge hm
     (fps.indeps_of_check (forward_check nr (by rcases hn with rfl | rfl | rfl <;> decide))) trivial
 
