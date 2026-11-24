@@ -44,7 +44,9 @@ def sealContiguousApi : Api where
   contracts := some fun A stack => sealContiguousContract A stack
   summary := "AES-GCM authenticated encryption (NIST SP 800-38D §7.1), with the key context, \
     public rounds, IV and additional data of `vg_aes_gcm_seal`. Encrypts the initial `len` bytes \
-    at `src` into `dst` and writes the 16-byte tag to `tag`. Only pointers, lengths and the \
+    at `src` into `dst` and writes the 16-byte tag to `tag`. As for `vg_aes_gcm_seal`, callers \
+    must use a fresh nonce for each encryption under a key and enforce the GCM input length \
+    limits (§5.2.1.1). Only pointers, lengths and the \
     round count may affect timing. Contract: `VG.Spec.Gcm.sealContiguousContract`."
   safety := sealApi.safety
 
