@@ -1,5 +1,7 @@
 module
 
+-- separate module: The final GHASH lengths block and counter mask depend only on the joined ciphertext.
+
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Contiguous.Joined
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.DirectGather.Finish
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.StreamCrypt

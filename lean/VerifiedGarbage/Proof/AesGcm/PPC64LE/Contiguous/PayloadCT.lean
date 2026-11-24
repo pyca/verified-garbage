@@ -1,5 +1,7 @@
 module
 
+-- separate module: Cache the vector taint certificates for the fused and residual payload separately from their caller.
+
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Contiguous.Prefix
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Contiguous.Timing
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Vector

@@ -1,5 +1,7 @@
 module
 
+-- separate module: Keep the three AAD length cases and their GHASH agreement separate from ABI argument decoding.
+
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Contiguous.Nonce
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.OneShot
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.Contiguous.AadCopy
@@ -35,7 +37,7 @@ private theorem nonempty_wp [VG.Proof.Gcm.PPC64LE.GhashLaw] (L : Lay (V .r29) (V
     {H : Block} {iv : List Byte} {m : Mem} {s : State} (jo : J0Out V sp H iv m s)
     (hA : DataOk (V .r30) (V .r31) s (V .r21) (V .r22).toNat)
     (small : (V .r22).toNat<16) (pos : (V .r22).toNat ≠ 0) :
-    WP isa (.seq (.block ([.li .r0 0,.store .d .r0 .r31 tO,.store .d .r0 .r31 (tO+8)] ++ aadCopyArgs))
+    WP isa (.seq (.block (([.li .r0 0,.store .d .r0 .r31 tO,.store .d .r0 .r31 (tO+8)] : List Instr) ++ aadCopyArgs))
       (.seq aadCopy (ghash1 16 .r31 tO))) s
       (OA V sp H iv (bytesAt m (V .r21) (V .r22).toNat) m) := by
   let n := (V .r22).toNat

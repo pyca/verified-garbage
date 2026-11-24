@@ -51,9 +51,12 @@ use crate::arch::dispatch::gcm::vg_aes_gcm_open_to_auto;
 #[cfg(not(any(
     target_arch = "x86_64",
     target_arch = "aarch64",
-    target_arch = "riscv64"
+    target_arch = "riscv64",
+    all(target_arch = "powerpc64", target_endian = "little")
 )))]
 use crate::arch::dispatch::gcm::vg_aes_gcm_seal_auto;
+#[cfg(all(target_arch = "powerpc64", target_endian = "little"))]
+use crate::arch::dispatch::gcm::vg_aes_gcm_seal_contiguous_auto;
 #[cfg(not(any(target_arch = "x86_64", target_arch = "riscv64")))]
 use crate::arch::dispatch::gcm::vg_aes_gcm_seal_gather_auto;
 #[cfg(target_arch = "x86_64")]
@@ -326,12 +329,15 @@ impl AesGcm {
         Ok(self.seal(dit, nonce, aad, data))
     }
 
-    /// `vg_aes_gcm_seal` (on x86-64, `vg_aes_gcm_seal_prepared`; on
+    /// `vg_aes_gcm_seal` (on little-endian POWER, `vg_aes_gcm_seal_contiguous`; on x86-64, `vg_aes_gcm_seal_prepared`; on
     /// AArch64, `vg_aes_gcm_seal_with_powers`; on RISC-V,
     /// `vg_aes_gcm_seal_bitsliced`) of `data` in place, whose lengths the
     /// caller checked.
     #[inline(always)]
     fn seal(&self, dit: crate::dit::Dit<'_>, nonce: &[u8], aad: &[u8], data: &mut [u8]) -> Block {
+        #[cfg(all(target_arch = "powerpc64", target_endian = "little"))]
+        let tag;
+        #[cfg(not(all(target_arch = "powerpc64", target_endian = "little")))]
         let mut tag: Block = [0; 16];
         // SAFETY: `self.ctx` is the key context `vg_aes_gcm_init` wrote for
         // `self.rounds` (10, 12 or 14) rounds, valid for reads of 256 bytes,
@@ -388,10 +394,17 @@ impl AesGcm {
                 &mut tag,
                 &self.bk.0,
             );
+            #[cfg(all(target_arch = "powerpc64", target_endian = "little"))]
+            {
+                let len = data.len();
+                let dst = data.as_mut_ptr();
+                tag = self.seal_contiguous(dit, nonce, aad, dst.cast_const(), dst, len);
+            }
             #[cfg(not(any(
                 target_arch = "x86_64",
                 target_arch = "aarch64",
-                target_arch = "riscv64"
+                target_arch = "riscv64",
+                all(target_arch = "powerpc64", target_endian = "little")
             )))]
             vg_aes_gcm_seal_auto(
                 dit,
@@ -405,6 +418,44 @@ impl AesGcm {
                 data.len(),
                 &mut tag,
             );
+        }
+        tag
+    }
+
+    /// Seal from `src` to `dst` with checked lengths.
+    ///
+    /// # Safety
+    /// `src` must be readable and `dst` writable for `len` bytes. These
+    /// ranges must be identical or disjoint. The writable range must also
+    /// be disjoint from the key, nonce, AAD and tag.
+    #[cfg(all(target_arch = "powerpc64", target_endian = "little"))]
+    #[inline(always)]
+    unsafe fn seal_contiguous(
+        &self,
+        dit: crate::dit::Dit<'_>,
+        nonce: &[u8],
+        aad: &[u8],
+        src: *const u8,
+        dst: *mut u8,
+        len: usize,
+    ) -> Block {
+        let mut tag = [0; 16];
+        // SAFETY: the caller supplies the input and output range permissions.
+        // The constructor initialized the AES context for this round count.
+        unsafe {
+            vg_aes_gcm_seal_contiguous_auto(
+                dit,
+                self.key(),
+                self.rounds,
+                nonce.as_ptr(),
+                nonce.len(),
+                aad.as_ptr(),
+                aad.len(),
+                src,
+                dst,
+                len,
+                &mut tag,
+            )
         }
         tag
     }
@@ -734,6 +785,12 @@ impl AesGcm {
     ) -> Block {
         let dst = out.as_mut_ptr().cast();
         let len = out.len();
+        #[cfg(all(target_arch = "powerpc64", target_endian = "little"))]
+        if let [piece] = plaintext {
+            // SAFETY: the shared plaintext slice and exclusive destination are
+            // disjoint. The caller checked their lengths.
+            return unsafe { self.seal_contiguous(dit, nonce, aad, piece.as_ptr(), dst, len) };
+        }
         // The descriptors of the pieces, as `vg_aes_gcm_seal_gather` takes
         // them: each its address and its length. Only the first
         // `plaintext.len()` are written, and the function reads only those.

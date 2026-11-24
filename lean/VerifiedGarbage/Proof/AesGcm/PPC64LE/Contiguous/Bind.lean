@@ -1,5 +1,7 @@
 module
 
+-- separate module: The AES-GCM output equations transport the source across initialization independently of register restoration.
+
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Contiguous.Buffers
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Contiguous.Tag
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.SealFused

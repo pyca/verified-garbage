@@ -1,5 +1,7 @@
 module
 
+-- separate module: The short AAD copy uses independent aligned and byte-remainder loops.
+
 public import VerifiedGarbage.Impl.AesGcm.PPC64LE.Contiguous
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Loops
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Keep

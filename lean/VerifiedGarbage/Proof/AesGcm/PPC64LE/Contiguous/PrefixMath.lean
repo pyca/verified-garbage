@@ -1,5 +1,7 @@
 module
 
+-- separate module: The CTR and GHASH prefix equations are independent of the final tag.
+
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Contiguous.Prefix
 public import VerifiedGarbage.Proof.Gcm.StreamTo
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.StreamCrypt

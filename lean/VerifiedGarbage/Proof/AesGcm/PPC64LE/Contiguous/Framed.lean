@@ -1,5 +1,7 @@
 module
 
+-- separate module: The functional stack-frame theorem is compiled before the separate timing certificate.
+
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Contiguous.Return
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Alloc
 import VerifiedGarbage.Proof.Framework.PPC64LE.Inline

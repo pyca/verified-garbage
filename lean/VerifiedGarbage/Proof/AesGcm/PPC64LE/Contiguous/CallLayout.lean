@@ -1,5 +1,7 @@
 module
 
+-- separate module: Decode the generated public signature once for the frame and payload bounds.
+
 public import VerifiedGarbage.Spec.Gcm.Contiguous
 public import VerifiedGarbage.Proof.Framework.PPC64LE.StackScratchArgs
 import VerifiedGarbage.Proof.Framework.Sig

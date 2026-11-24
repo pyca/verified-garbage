@@ -1,7 +1,10 @@
 module
 
+-- separate module: Keep the two-run timing certificates separate from the functional correctness and scrub proofs.
+
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Contiguous.Framed
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Contiguous.PayloadCT
+import VerifiedGarbage.Proof.Framework.PPC64LE.Alloc
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.Contiguous.Framed
@@ -42,7 +45,7 @@ structure CallPublic (s d : State) : Prop where
 
 theorem public_args {s d : State} (h : contract.pub s d) : CallPublic s d := by
   sig_pub [contract,Spec.Gcm.sealContiguousContract,Spec.Gcm.sealContiguousSig,VG.PPC64LE.abi,VG.PPC64LE.argRegs,List.getD,List.range,List.range.loop] at h
-  obtain ⟨c,r,n,nl,a,al,src,dst,len,tag,sp,_⟩ := h
+  obtain ⟨sp,c,r,n,nl,a,al,src,dst,len,tag⟩ := h
   exact ⟨sp,c,r,n,nl,a,al,src,dst,len,tag⟩
 
 private theorem work_eq {s d : State} (pub : CallPublic s d) : work s=work d :=
@@ -71,5 +74,56 @@ theorem payload_agree {s d u v : State} (pub : CallPublic s d) (a : Positions s 
     a.len.trans (pub.len.trans b.len.symm),a.dst.trans (pub.dst.trans b.dst.symm),a.rounds.trans (pub.rounds.trans b.rounds.symm),
     a.key.trans (pub.key.trans b.key.symm),a.stream.trans ((congrArg (·+16) wk).trans b.stream.symm),
     a.work.trans (wk.trans b.work.symm),List.forall_mem_nil _⟩
+
+theorem fromReady_rel [Proof.Gcm.PPC64LE.GhashLaw] [Proof.Gcm.PPC64LE.Vpmsum.FoldLaw]
+    {s d e f ta tb u v : State} (pub : CallPublic s d) (h : CallLayout s) (k : CallLayout d)
+    (p : Args s e) (q : Args d f) (a : Positions s u) (b : Positions d v)
+    (oa : ReadyData s e ta u) (ob : ReadyData d f tb v) :
+    RelCT isa (Eq2 u v) (.seq VG.Impl.AesGcm.PPC64LE.Contiguous.payload (.seq (.block tagOut) (.block restore))) TT := by
+  have sp : u.sp=v.sp := oa.env.sp.trans (p.sp.trans ((congrArg (·-1280) pub.sp).trans (q.sp.symm.trans ob.env.sp.symm)))
+  have pa := a.space h (by rw [oa.env.r29,oa.env.r30,oa.env.r31];exact oa.env.perm)
+  have pb := b.space k (by rw [ob.env.r29,ob.env.r30,ob.env.r31];exact ob.env.perm)
+  have ca := pa.core (by rw [roundsOf,a.rounds];exact h.rounds)
+  have cb := pb.core (by rw [roundsOf,b.rounds];exact k.rounds)
+  refine rel_seq (payload_rel sp (payload_agree pub a b) ca.access ca.read ca.write cb.access cb.read cb.write)
+    (bound_wp h a oa) (bound_wp k b ob) fun x y z w => ?_
+  refine close_rel (z.sp.trans (sp.trans w.sp.symm)) ?_
+  simp only [closeRegs,List.forall_mem_cons]
+  exact ⟨(z.regs .r20 (by decide)).trans (a.tag.trans (pub.tag.trans (b.tag.symm.trans (w.regs .r20 (by decide)).symm))),
+    (z.regs .r31 (by decide)).trans (a.work.trans ((work_eq pub).trans (b.work.symm.trans (w.regs .r31 (by decide)).symm))),List.forall_mem_nil _⟩
+
+theorem body_rel [Proof.Gcm.PPC64LE.GhashLaw] [Proof.Gcm.PPC64LE.Vpmsum.FoldLaw] {s d e f : State}
+    (pub : CallPublic s d) (h : CallLayout s) (k : CallLayout d) (p : Args s e) (q : Args d f) :
+    RelCT isa (Eq2 e f) VG.Impl.AesGcm.PPC64LE.Contiguous.body TT := by
+  have sp := p.sp.trans ((congrArg (·-1280) pub.sp).trans q.sp.symm)
+  refine rel_seq (entry_rel p.arguments ((work_eq pub).symm ▸ q.arguments) sp) (entry_wp p.arguments) (entry_wp q.arguments) fun x y ax ay => ?_
+  apply RelCT.assoc
+  refine rel_seq (prepare_rel (ax.entered.keeps.sp.trans (sp.trans ay.entered.keeps.sp.symm)) (prep_agree pub p q ax ay))
+    (WP.with_rdwr (prepare_wp h p ax)) (WP.with_rdwr (prepare_wp k q ay)) fun u v ⟨oa,rd,wr,_⟩ ⟨ob,re,we,_⟩ => ?_
+  exact fromReady_rel pub h k p q (positions p ax oa rd wr) (positions q ay ob re we) oa ob
+
+open VG.Impl.StackScratch.PPC64LE
+
+theorem timing [Proof.Gcm.PPC64LE.GhashLaw] [Proof.Gcm.PPC64LE.Vpmsum.FoldLaw] :
+    ConstantTime isa contract.pre contract.pub framed := by
+  refine VG.Proof.Gather.PPC64LE.ct_of fun s d hs hd hp => ?_
+  have h := layout_of_pre hs
+  have k := layout_of_pre hd
+  have pub := public_args hp
+  have bs : base s=base d := congrArg (·-1280) pub.sp
+  refine (RelCT.alloc (bytes:=1280) (body:=.seq (.block (setArgsAt 1280 2 128)) VG.Impl.AesGcm.PPC64LE.Contiguous.body)
+    (P:=Eq2 s d) (R:=TT) (fun a b ⟨rfl,rfl⟩ => pub.sp)
+    ((?_ : RelCT isa (Eq2 (allocated 1280 s) (allocated 1280 d)) _ TT).mono
+      (fun a b ⟨s',d',⟨hs,hd⟩,ha,hb⟩ => by subst s' d'; exact ⟨ha,hb⟩) fun _ _ h => h)).mono
+    (fun _ _ h => h) fun _ _ _ => trivial
+  obtain ⟨one,ea⟩ := args_run h
+  obtain ⟨two,eb⟩ := args_run k
+  refine rel_seq ?_ (WP.block ⟨_,one,ea⟩) (WP.block ⟨_,two,eb⟩) (fun _ _ p q => body_rel pub h k p q)
+  rintro _ _ ta tb sa sb ⟨rfl,rfl⟩ ra rb
+  rw [Exec.block_iff,one] at ra
+  rw [Exec.block_iff,two] at rb
+  obtain ⟨rfl,rfl⟩ := Prod.mk.inj (Option.some.inj ra)
+  obtain ⟨rfl,rfl⟩ := Prod.mk.inj (Option.some.inj rb)
+  exact ⟨congrArg (fun ptr => setArgsTrace 1280 ptr 2) bs,trivial⟩
 
 end VG.Proof.AesGcm.PPC64LE.Contiguous

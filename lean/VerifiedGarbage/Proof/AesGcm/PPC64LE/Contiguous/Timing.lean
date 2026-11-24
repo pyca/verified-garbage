@@ -1,5 +1,7 @@
 module
 
+-- separate module: Isolate the concrete register trace at entry from the two-run payload proof.
+
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Contiguous.Entry
 public import VerifiedGarbage.Proof.Gather.PPC64LE.LoopCT
 import VerifiedGarbage.Proof.Framework.RelCTAssoc

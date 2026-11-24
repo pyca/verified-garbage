@@ -1,5 +1,7 @@
 module
 
+-- separate module: The 96-bit nonce path keeps the initialized counter words live in registers.
+
 public import VerifiedGarbage.Impl.AesGcm.PPC64LE.Contiguous
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.J0
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTOne

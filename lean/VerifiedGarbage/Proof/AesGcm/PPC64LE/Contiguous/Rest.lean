@@ -1,5 +1,7 @@
 module
 
+-- separate module: The residual ciphertext and its padded GHASH use a different workspace interval from the fused prefix.
+
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Contiguous.Payload
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.TextAbsorb
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.OneShot

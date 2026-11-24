@@ -1,5 +1,7 @@
 module
 
+-- separate module: Recover public pointers and region permissions across nonce and AAD without unfolding the AES payload.
+
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Contiguous.Access
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Contiguous.Prepare
 import VerifiedGarbage.Proof.Framework.Offset

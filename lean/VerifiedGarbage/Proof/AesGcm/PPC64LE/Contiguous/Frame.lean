@@ -1,5 +1,7 @@
 module
 
+-- separate module: The two stack arguments are copied independently of any cryptographic computation.
+
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Contiguous.CallLayout
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Contiguous.Entry
 import VerifiedGarbage.Proof.Framework.AddrArith

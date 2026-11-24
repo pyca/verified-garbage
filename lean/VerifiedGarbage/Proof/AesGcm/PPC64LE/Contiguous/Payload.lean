@@ -1,5 +1,7 @@
 module
 
+-- separate module: The residual encryption loop has its own load-before-store proof for both layouts.
+
 public import VerifiedGarbage.Impl.AesGcm.PPC64LE.Contiguous
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.DirectGather.Piece
 import VerifiedGarbage.Proof.Framework.PPC64LE.Run

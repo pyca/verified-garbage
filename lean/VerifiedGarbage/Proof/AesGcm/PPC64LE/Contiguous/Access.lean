@@ -1,5 +1,7 @@
 module
 
+-- separate module: The geometry of the fused helper is independent of how its arguments are passed in the outer ABI.
+
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Contiguous.Joined
 import VerifiedGarbage.Proof.Framework.Offset
 

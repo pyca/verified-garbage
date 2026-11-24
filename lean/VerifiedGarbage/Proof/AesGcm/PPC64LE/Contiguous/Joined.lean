@@ -1,5 +1,7 @@
 module
 
+-- separate module: The source suffix must survive prefix writes when plaintext and ciphertext share an address.
+
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Contiguous.PrefixMath
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Contiguous.Rest
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.StreamCrypt

@@ -1,5 +1,7 @@
 module
 
+-- separate module: The common restore sequence transports the ABI separately from framing and scrubbing.
+
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Contiguous.Bind
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.StreamFinish
 import VerifiedGarbage.Proof.Framework.Offset

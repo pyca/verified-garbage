@@ -1,5 +1,7 @@
 module
 
+-- separate module: The nonce and AAD proofs recover their inputs without unfolding the payload.
+
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Contiguous.Frame
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Contiguous.Aad
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.Seal
