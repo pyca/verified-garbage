@@ -5,20 +5,20 @@
 // gives.
 
 vg_chacha20_poly1305_seal_ssse3:
-	lea esp, [esp-740]
-	mov eax, DWORD PTR [esp+744]
+	lea esp, [esp-884]
+	mov eax, DWORD PTR [esp+888]
 	mov DWORD PTR [esp+4], eax
-	mov eax, DWORD PTR [esp+748]
+	mov eax, DWORD PTR [esp+892]
 	mov DWORD PTR [esp+8], eax
-	mov eax, DWORD PTR [esp+752]
+	mov eax, DWORD PTR [esp+896]
 	mov DWORD PTR [esp+12], eax
-	mov eax, DWORD PTR [esp+756]
+	mov eax, DWORD PTR [esp+900]
 	mov DWORD PTR [esp+16], eax
-	mov eax, DWORD PTR [esp+760]
+	mov eax, DWORD PTR [esp+904]
 	mov DWORD PTR [esp+20], eax
-	mov eax, DWORD PTR [esp+764]
+	mov eax, DWORD PTR [esp+908]
 	mov DWORD PTR [esp+24], eax
-	mov eax, DWORD PTR [esp+768]
+	mov eax, DWORD PTR [esp+912]
 	mov DWORD PTR [esp+28], eax
 	mov eax, esp
 	add eax, 36
@@ -69,6 +69,10 @@ vg_chacha20_poly1305_seal_ssse3:
 	add ecx, 64
 	mov edx, edi
 	add edx, 128
+	mov eax, DWORD PTR [esp+24]
+	sub eax, 1
+	cmp eax, 192
+	jb 20f
 	push edx
 	push ecx
 	call {vg_chacha20_block}
@@ -83,6 +87,52 @@ vg_chacha20_poly1305_seal_ssse3:
 	call {vg_poly1305_init_core}
 	pop eax
 	pop eax
+	jmp 21f
+20:
+	pxor xmm0, xmm0
+	movdqu XMMWORD PTR [edi+576], xmm0
+	movdqu XMMWORD PTR [edi+592], xmm0
+	movdqu XMMWORD PTR [edi+608], xmm0
+	movdqu XMMWORD PTR [edi+624], xmm0
+	movdqu XMMWORD PTR [edi+640], xmm0
+	movdqu XMMWORD PTR [edi+656], xmm0
+	movdqu XMMWORD PTR [edi+672], xmm0
+	movdqu XMMWORD PTR [edi+688], xmm0
+	movdqu XMMWORD PTR [edi+704], xmm0
+	movdqu XMMWORD PTR [edi+720], xmm0
+	movdqu XMMWORD PTR [edi+736], xmm0
+	movdqu XMMWORD PTR [edi+752], xmm0
+	movdqu XMMWORD PTR [edi+768], xmm0
+	movdqu XMMWORD PTR [edi+784], xmm0
+	movdqu XMMWORD PTR [edi+800], xmm0
+	movdqu XMMWORD PTR [edi+816], xmm0
+	mov eax, edi
+	add eax, 64
+	mov ecx, edi
+	add ecx, 576
+	mov edx, 256
+	mov ebx, edi
+	add ebx, 128
+	mov esi, ecx
+	push ebx
+	push edx
+	push ecx
+	push eax
+	call {vg_chacha20_xor_ssse3}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov ecx, edi
+	add ecx, 576
+	mov edx, edi
+	add edx, 448
+	push ecx
+	push edx
+	call {vg_poly1305_init_core}
+	pop eax
+	pop eax
+21:
 	mov ebx, DWORD PTR [esp+12]
 	mov ebp, DWORD PTR [esp+16]
 	mov eax, ebp
@@ -98,7 +148,7 @@ vg_chacha20_poly1305_seal_ssse3:
 	pop eax
 	mov edx, ebp
 	and edx, 15
-	je 20f
+	je 22f
 	mov esi, ebp
 	sub esi, edx
 	add esi, ebx
@@ -109,13 +159,13 @@ vg_chacha20_poly1305_seal_ssse3:
 	mov DWORD PTR [edi+60], eax
 	mov ecx, edi
 	add ecx, 48
-22:
+24:
 	movzx eax, BYTE PTR [esi]
 	mov BYTE PTR [ecx], al
 	add esi, 1
 	add ecx, 1
 	sub edx, 1
-	jne 22b
+	jne 24b
 	mov eax, 1
 	mov ecx, edi
 	add ecx, 48
@@ -128,9 +178,9 @@ vg_chacha20_poly1305_seal_ssse3:
 	pop eax
 	pop eax
 	pop eax
-	jmp 21f
-20:
-21:
+	jmp 23f
+22:
+23:
 	mov eax, DWORD PTR [esp+16]
 	mov DWORD PTR [edi+32], eax
 	mov eax, DWORD PTR [esp+24]
@@ -138,6 +188,10 @@ vg_chacha20_poly1305_seal_ssse3:
 	mov eax, 0
 	mov DWORD PTR [edi+36], eax
 	mov DWORD PTR [edi+44], eax
+	mov eax, DWORD PTR [esp+24]
+	sub eax, 1
+	cmp eax, 192
+	jb 25f
 	mov eax, 1
 	mov DWORD PTR [edi+112], eax
 	mov eax, edi
@@ -156,6 +210,44 @@ vg_chacha20_poly1305_seal_ssse3:
 	pop eax
 	pop eax
 	pop eax
+	jmp 26f
+25:
+	mov esi, DWORD PTR [esp+20]
+	mov edx, DWORD PTR [esp+32]
+	mov ecx, DWORD PTR [esp+24]
+	mov ebp, edi
+	add ebp, 640
+	cmp ecx, 16
+	jb 27f
+29:
+	movdqu xmm4, XMMWORD PTR [esi]
+	movdqu xmm5, XMMWORD PTR [ebp]
+	pxor xmm4, xmm5
+	movdqu XMMWORD PTR [edx], xmm4
+	add esi, 16
+	add edx, 16
+	add ebp, 16
+	sub ecx, 16
+	cmp ecx, 16
+	jae 29b
+	jmp 28f
+27:
+28:
+	test ecx, ecx
+	je 210f
+212:
+	movzx eax, BYTE PTR [esi]
+	xor eax, DWORD PTR [ebp]
+	mov BYTE PTR [edx], al
+	add esi, 1
+	add edx, 1
+	add ebp, 1
+	sub ecx, 1
+	jne 212b
+	jmp 211f
+210:
+211:
+26:
 	mov ebx, DWORD PTR [esp+20]
 	mov ebp, DWORD PTR [esp+24]
 	mov eax, ebp
@@ -171,7 +263,7 @@ vg_chacha20_poly1305_seal_ssse3:
 	pop eax
 	mov edx, ebp
 	and edx, 15
-	je 23f
+	je 213f
 	mov esi, ebp
 	sub esi, edx
 	add esi, ebx
@@ -182,13 +274,13 @@ vg_chacha20_poly1305_seal_ssse3:
 	mov DWORD PTR [edi+60], eax
 	mov ecx, edi
 	add ecx, 48
-25:
+215:
 	movzx eax, BYTE PTR [esi]
 	mov BYTE PTR [ecx], al
 	add esi, 1
 	add ecx, 1
 	sub edx, 1
-	jne 25b
+	jne 215b
 	mov eax, 1
 	mov ecx, edi
 	add ecx, 48
@@ -201,9 +293,9 @@ vg_chacha20_poly1305_seal_ssse3:
 	pop eax
 	pop eax
 	pop eax
-	jmp 24f
-23:
-24:
+	jmp 214f
+213:
+214:
 	mov eax, 1
 	mov ecx, edi
 	add ecx, 32
@@ -237,9 +329,9 @@ vg_chacha20_poly1305_seal_ssse3:
 	mov esi, DWORD PTR [edi+4]
 	mov ebp, DWORD PTR [edi+12]
 	mov edi, DWORD PTR [edi+8]
-	lea esp, [esp+740]
+	lea esp, [esp+884]
 	pxor xmm0, xmm0
-	lea esp, [esp-1280]
+	lea esp, [esp-1424]
 	movdqu XMMWORD PTR [esp], xmm0
 	movdqu XMMWORD PTR [esp+16], xmm0
 	movdqu XMMWORD PTR [esp+32], xmm0
@@ -320,7 +412,16 @@ vg_chacha20_poly1305_seal_ssse3:
 	movdqu XMMWORD PTR [esp+1232], xmm0
 	movdqu XMMWORD PTR [esp+1248], xmm0
 	movdqu XMMWORD PTR [esp+1264], xmm0
-	lea esp, [esp+1280]
+	movdqu XMMWORD PTR [esp+1280], xmm0
+	movdqu XMMWORD PTR [esp+1296], xmm0
+	movdqu XMMWORD PTR [esp+1312], xmm0
+	movdqu XMMWORD PTR [esp+1328], xmm0
+	movdqu XMMWORD PTR [esp+1344], xmm0
+	movdqu XMMWORD PTR [esp+1360], xmm0
+	movdqu XMMWORD PTR [esp+1376], xmm0
+	movdqu XMMWORD PTR [esp+1392], xmm0
+	movdqu XMMWORD PTR [esp+1408], xmm0
+	lea esp, [esp+1424]
 	mov eax, 0
 	mov edx, 0
 	xor ecx, ecx
@@ -336,20 +437,20 @@ vg_chacha20_poly1305_seal_ssse3:
 	.p2align 6
 
 vg_chacha20_poly1305_open_ssse3:
-	lea esp, [esp-740]
-	mov eax, DWORD PTR [esp+744]
+	lea esp, [esp-884]
+	mov eax, DWORD PTR [esp+888]
 	mov DWORD PTR [esp+4], eax
-	mov eax, DWORD PTR [esp+748]
+	mov eax, DWORD PTR [esp+892]
 	mov DWORD PTR [esp+8], eax
-	mov eax, DWORD PTR [esp+752]
+	mov eax, DWORD PTR [esp+896]
 	mov DWORD PTR [esp+12], eax
-	mov eax, DWORD PTR [esp+756]
+	mov eax, DWORD PTR [esp+900]
 	mov DWORD PTR [esp+16], eax
-	mov eax, DWORD PTR [esp+760]
+	mov eax, DWORD PTR [esp+904]
 	mov DWORD PTR [esp+20], eax
-	mov eax, DWORD PTR [esp+764]
+	mov eax, DWORD PTR [esp+908]
 	mov DWORD PTR [esp+24], eax
-	mov eax, DWORD PTR [esp+768]
+	mov eax, DWORD PTR [esp+912]
 	mov DWORD PTR [esp+28], eax
 	mov eax, esp
 	add eax, 36
@@ -400,6 +501,10 @@ vg_chacha20_poly1305_open_ssse3:
 	add ecx, 64
 	mov edx, edi
 	add edx, 128
+	mov eax, DWORD PTR [esp+24]
+	sub eax, 1
+	cmp eax, 192
+	jb 20f
 	push edx
 	push ecx
 	call {vg_chacha20_block}
@@ -414,6 +519,52 @@ vg_chacha20_poly1305_open_ssse3:
 	call {vg_poly1305_init_core}
 	pop eax
 	pop eax
+	jmp 21f
+20:
+	pxor xmm0, xmm0
+	movdqu XMMWORD PTR [edi+576], xmm0
+	movdqu XMMWORD PTR [edi+592], xmm0
+	movdqu XMMWORD PTR [edi+608], xmm0
+	movdqu XMMWORD PTR [edi+624], xmm0
+	movdqu XMMWORD PTR [edi+640], xmm0
+	movdqu XMMWORD PTR [edi+656], xmm0
+	movdqu XMMWORD PTR [edi+672], xmm0
+	movdqu XMMWORD PTR [edi+688], xmm0
+	movdqu XMMWORD PTR [edi+704], xmm0
+	movdqu XMMWORD PTR [edi+720], xmm0
+	movdqu XMMWORD PTR [edi+736], xmm0
+	movdqu XMMWORD PTR [edi+752], xmm0
+	movdqu XMMWORD PTR [edi+768], xmm0
+	movdqu XMMWORD PTR [edi+784], xmm0
+	movdqu XMMWORD PTR [edi+800], xmm0
+	movdqu XMMWORD PTR [edi+816], xmm0
+	mov eax, edi
+	add eax, 64
+	mov ecx, edi
+	add ecx, 576
+	mov edx, 256
+	mov ebx, edi
+	add ebx, 128
+	mov esi, ecx
+	push ebx
+	push edx
+	push ecx
+	push eax
+	call {vg_chacha20_xor_ssse3}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov ecx, edi
+	add ecx, 576
+	mov edx, edi
+	add edx, 448
+	push ecx
+	push edx
+	call {vg_poly1305_init_core}
+	pop eax
+	pop eax
+21:
 	mov ebx, DWORD PTR [esp+12]
 	mov ebp, DWORD PTR [esp+16]
 	mov eax, ebp
@@ -429,7 +580,7 @@ vg_chacha20_poly1305_open_ssse3:
 	pop eax
 	mov edx, ebp
 	and edx, 15
-	je 20f
+	je 22f
 	mov esi, ebp
 	sub esi, edx
 	add esi, ebx
@@ -440,13 +591,13 @@ vg_chacha20_poly1305_open_ssse3:
 	mov DWORD PTR [edi+60], eax
 	mov ecx, edi
 	add ecx, 48
-22:
+24:
 	movzx eax, BYTE PTR [esi]
 	mov BYTE PTR [ecx], al
 	add esi, 1
 	add ecx, 1
 	sub edx, 1
-	jne 22b
+	jne 24b
 	mov eax, 1
 	mov ecx, edi
 	add ecx, 48
@@ -459,9 +610,9 @@ vg_chacha20_poly1305_open_ssse3:
 	pop eax
 	pop eax
 	pop eax
-	jmp 21f
-20:
-21:
+	jmp 23f
+22:
+23:
 	mov ebx, DWORD PTR [esp+20]
 	mov ebp, DWORD PTR [esp+24]
 	mov eax, ebp
@@ -477,7 +628,7 @@ vg_chacha20_poly1305_open_ssse3:
 	pop eax
 	mov edx, ebp
 	and edx, 15
-	je 23f
+	je 25f
 	mov esi, ebp
 	sub esi, edx
 	add esi, ebx
@@ -488,13 +639,13 @@ vg_chacha20_poly1305_open_ssse3:
 	mov DWORD PTR [edi+60], eax
 	mov ecx, edi
 	add ecx, 48
-25:
+27:
 	movzx eax, BYTE PTR [esi]
 	mov BYTE PTR [ecx], al
 	add esi, 1
 	add ecx, 1
 	sub edx, 1
-	jne 25b
+	jne 27b
 	mov eax, 1
 	mov ecx, edi
 	add ecx, 48
@@ -507,9 +658,9 @@ vg_chacha20_poly1305_open_ssse3:
 	pop eax
 	pop eax
 	pop eax
-	jmp 24f
-23:
-24:
+	jmp 26f
+25:
+26:
 	mov eax, DWORD PTR [esp+16]
 	mov DWORD PTR [edi+32], eax
 	mov eax, DWORD PTR [esp+24]
@@ -529,6 +680,10 @@ vg_chacha20_poly1305_open_ssse3:
 	pop eax
 	pop eax
 	pop eax
+	mov eax, DWORD PTR [esp+24]
+	sub eax, 1
+	cmp eax, 192
+	jb 28f
 	mov eax, 1
 	mov DWORD PTR [edi+112], eax
 	mov eax, edi
@@ -547,6 +702,44 @@ vg_chacha20_poly1305_open_ssse3:
 	pop eax
 	pop eax
 	pop eax
+	jmp 29f
+28:
+	mov esi, DWORD PTR [esp+20]
+	mov edx, DWORD PTR [esp+32]
+	mov ecx, DWORD PTR [esp+24]
+	mov ebp, edi
+	add ebp, 640
+	cmp ecx, 16
+	jb 210f
+212:
+	movdqu xmm4, XMMWORD PTR [esi]
+	movdqu xmm5, XMMWORD PTR [ebp]
+	pxor xmm4, xmm5
+	movdqu XMMWORD PTR [edx], xmm4
+	add esi, 16
+	add edx, 16
+	add ebp, 16
+	sub ecx, 16
+	cmp ecx, 16
+	jae 212b
+	jmp 211f
+210:
+211:
+	test ecx, ecx
+	je 213f
+215:
+	movzx eax, BYTE PTR [esi]
+	xor eax, DWORD PTR [ebp]
+	mov BYTE PTR [edx], al
+	add esi, 1
+	add edx, 1
+	add ebp, 1
+	sub ecx, 1
+	jne 215b
+	jmp 214f
+213:
+214:
+29:
 	mov ebx, edi
 	add ebx, 576
 	mov ecx, edi
@@ -581,29 +774,29 @@ vg_chacha20_poly1305_open_ssse3:
 	mov eax, 0
 	adc eax, 0
 	cmp eax, 0
-	je 26f
-	jmp 27f
-26:
+	je 216f
+	jmp 217f
+216:
 	mov ecx, DWORD PTR [esp+32]
 	mov edx, DWORD PTR [esp+24]
 	cmp edx, 0
-	je 28f
-210:
+	je 218f
+220:
 	mov BYTE PTR [ecx], al
 	add ecx, 1
 	sub edx, 1
-	jne 210b
-	jmp 29f
-28:
-29:
-27:
+	jne 220b
+	jmp 219f
+218:
+219:
+217:
 	mov ebx, DWORD PTR [edi]
 	mov esi, DWORD PTR [edi+4]
 	mov ebp, DWORD PTR [edi+12]
 	mov edi, DWORD PTR [edi+8]
-	lea esp, [esp+740]
+	lea esp, [esp+884]
 	pxor xmm0, xmm0
-	lea esp, [esp-1280]
+	lea esp, [esp-1424]
 	movdqu XMMWORD PTR [esp], xmm0
 	movdqu XMMWORD PTR [esp+16], xmm0
 	movdqu XMMWORD PTR [esp+32], xmm0
@@ -684,7 +877,16 @@ vg_chacha20_poly1305_open_ssse3:
 	movdqu XMMWORD PTR [esp+1232], xmm0
 	movdqu XMMWORD PTR [esp+1248], xmm0
 	movdqu XMMWORD PTR [esp+1264], xmm0
-	lea esp, [esp+1280]
+	movdqu XMMWORD PTR [esp+1280], xmm0
+	movdqu XMMWORD PTR [esp+1296], xmm0
+	movdqu XMMWORD PTR [esp+1312], xmm0
+	movdqu XMMWORD PTR [esp+1328], xmm0
+	movdqu XMMWORD PTR [esp+1344], xmm0
+	movdqu XMMWORD PTR [esp+1360], xmm0
+	movdqu XMMWORD PTR [esp+1376], xmm0
+	movdqu XMMWORD PTR [esp+1392], xmm0
+	movdqu XMMWORD PTR [esp+1408], xmm0
+	lea esp, [esp+1424]
 	mov edx, 0
 	xor ecx, ecx
 	pxor xmm0, xmm0
@@ -699,24 +901,24 @@ vg_chacha20_poly1305_open_ssse3:
 	.p2align 6
 
 vg_chacha20_poly1305_open_to_ssse3:
-	lea esp, [esp-748]
-	mov eax, DWORD PTR [esp+752]
+	lea esp, [esp-892]
+	mov eax, DWORD PTR [esp+896]
 	mov DWORD PTR [esp+4], eax
-	mov eax, DWORD PTR [esp+756]
+	mov eax, DWORD PTR [esp+900]
 	mov DWORD PTR [esp+8], eax
-	mov eax, DWORD PTR [esp+760]
+	mov eax, DWORD PTR [esp+904]
 	mov DWORD PTR [esp+12], eax
-	mov eax, DWORD PTR [esp+764]
+	mov eax, DWORD PTR [esp+908]
 	mov DWORD PTR [esp+16], eax
-	mov eax, DWORD PTR [esp+768]
+	mov eax, DWORD PTR [esp+912]
 	mov DWORD PTR [esp+20], eax
-	mov eax, DWORD PTR [esp+772]
+	mov eax, DWORD PTR [esp+916]
 	mov DWORD PTR [esp+24], eax
-	mov eax, DWORD PTR [esp+776]
+	mov eax, DWORD PTR [esp+920]
 	mov DWORD PTR [esp+28], eax
-	mov eax, DWORD PTR [esp+780]
+	mov eax, DWORD PTR [esp+924]
 	mov DWORD PTR [esp+32], eax
-	mov eax, DWORD PTR [esp+784]
+	mov eax, DWORD PTR [esp+928]
 	mov DWORD PTR [esp+36], eax
 	mov eax, esp
 	add eax, 44
@@ -769,6 +971,10 @@ vg_chacha20_poly1305_open_to_ssse3:
 	add ecx, 64
 	mov edx, edi
 	add edx, 128
+	mov eax, DWORD PTR [esp+24]
+	sub eax, 1
+	cmp eax, 192
+	jb 20f
 	push edx
 	push ecx
 	call {vg_chacha20_block}
@@ -783,6 +989,52 @@ vg_chacha20_poly1305_open_to_ssse3:
 	call {vg_poly1305_init_core}
 	pop eax
 	pop eax
+	jmp 21f
+20:
+	pxor xmm0, xmm0
+	movdqu XMMWORD PTR [edi+576], xmm0
+	movdqu XMMWORD PTR [edi+592], xmm0
+	movdqu XMMWORD PTR [edi+608], xmm0
+	movdqu XMMWORD PTR [edi+624], xmm0
+	movdqu XMMWORD PTR [edi+640], xmm0
+	movdqu XMMWORD PTR [edi+656], xmm0
+	movdqu XMMWORD PTR [edi+672], xmm0
+	movdqu XMMWORD PTR [edi+688], xmm0
+	movdqu XMMWORD PTR [edi+704], xmm0
+	movdqu XMMWORD PTR [edi+720], xmm0
+	movdqu XMMWORD PTR [edi+736], xmm0
+	movdqu XMMWORD PTR [edi+752], xmm0
+	movdqu XMMWORD PTR [edi+768], xmm0
+	movdqu XMMWORD PTR [edi+784], xmm0
+	movdqu XMMWORD PTR [edi+800], xmm0
+	movdqu XMMWORD PTR [edi+816], xmm0
+	mov eax, edi
+	add eax, 64
+	mov ecx, edi
+	add ecx, 576
+	mov edx, 256
+	mov ebx, edi
+	add ebx, 128
+	mov esi, ecx
+	push ebx
+	push edx
+	push ecx
+	push eax
+	call {vg_chacha20_xor_ssse3}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov ecx, edi
+	add ecx, 576
+	mov edx, edi
+	add edx, 448
+	push ecx
+	push edx
+	call {vg_poly1305_init_core}
+	pop eax
+	pop eax
+21:
 	mov ebx, DWORD PTR [esp+12]
 	mov ebp, DWORD PTR [esp+16]
 	mov eax, ebp
@@ -798,7 +1050,7 @@ vg_chacha20_poly1305_open_to_ssse3:
 	pop eax
 	mov edx, ebp
 	and edx, 15
-	je 20f
+	je 22f
 	mov esi, ebp
 	sub esi, edx
 	add esi, ebx
@@ -809,13 +1061,13 @@ vg_chacha20_poly1305_open_to_ssse3:
 	mov DWORD PTR [edi+60], eax
 	mov ecx, edi
 	add ecx, 48
-22:
+24:
 	movzx eax, BYTE PTR [esi]
 	mov BYTE PTR [ecx], al
 	add esi, 1
 	add ecx, 1
 	sub edx, 1
-	jne 22b
+	jne 24b
 	mov eax, 1
 	mov ecx, edi
 	add ecx, 48
@@ -828,9 +1080,9 @@ vg_chacha20_poly1305_open_to_ssse3:
 	pop eax
 	pop eax
 	pop eax
-	jmp 21f
-20:
-21:
+	jmp 23f
+22:
+23:
 	mov ebx, DWORD PTR [esp+20]
 	mov ebp, DWORD PTR [esp+24]
 	mov eax, ebp
@@ -846,7 +1098,7 @@ vg_chacha20_poly1305_open_to_ssse3:
 	pop eax
 	mov edx, ebp
 	and edx, 15
-	je 23f
+	je 25f
 	mov esi, ebp
 	sub esi, edx
 	add esi, ebx
@@ -857,13 +1109,13 @@ vg_chacha20_poly1305_open_to_ssse3:
 	mov DWORD PTR [edi+60], eax
 	mov ecx, edi
 	add ecx, 48
-25:
+27:
 	movzx eax, BYTE PTR [esi]
 	mov BYTE PTR [ecx], al
 	add esi, 1
 	add ecx, 1
 	sub edx, 1
-	jne 25b
+	jne 27b
 	mov eax, 1
 	mov ecx, edi
 	add ecx, 48
@@ -876,9 +1128,9 @@ vg_chacha20_poly1305_open_to_ssse3:
 	pop eax
 	pop eax
 	pop eax
-	jmp 24f
-23:
-24:
+	jmp 26f
+25:
+26:
 	mov eax, DWORD PTR [esp+16]
 	mov DWORD PTR [edi+32], eax
 	mov eax, DWORD PTR [esp+24]
@@ -898,6 +1150,10 @@ vg_chacha20_poly1305_open_to_ssse3:
 	pop eax
 	pop eax
 	pop eax
+	mov eax, DWORD PTR [esp+24]
+	sub eax, 1
+	cmp eax, 192
+	jb 28f
 	mov eax, 1
 	mov DWORD PTR [edi+112], eax
 	mov eax, edi
@@ -916,6 +1172,44 @@ vg_chacha20_poly1305_open_to_ssse3:
 	pop eax
 	pop eax
 	pop eax
+	jmp 29f
+28:
+	mov esi, DWORD PTR [esp+20]
+	mov edx, DWORD PTR [esp+32]
+	mov ecx, DWORD PTR [esp+24]
+	mov ebp, edi
+	add ebp, 640
+	cmp ecx, 16
+	jb 210f
+212:
+	movdqu xmm4, XMMWORD PTR [esi]
+	movdqu xmm5, XMMWORD PTR [ebp]
+	pxor xmm4, xmm5
+	movdqu XMMWORD PTR [edx], xmm4
+	add esi, 16
+	add edx, 16
+	add ebp, 16
+	sub ecx, 16
+	cmp ecx, 16
+	jae 212b
+	jmp 211f
+210:
+211:
+	test ecx, ecx
+	je 213f
+215:
+	movzx eax, BYTE PTR [esi]
+	xor eax, DWORD PTR [ebp]
+	mov BYTE PTR [edx], al
+	add esi, 1
+	add edx, 1
+	add ebp, 1
+	sub ecx, 1
+	jne 215b
+	jmp 214f
+213:
+214:
+29:
 	mov ebx, edi
 	add ebx, 576
 	mov ecx, edi
@@ -950,30 +1244,30 @@ vg_chacha20_poly1305_open_to_ssse3:
 	mov eax, 0
 	adc eax, 0
 	cmp eax, 0
-	je 26f
-	jmp 27f
-26:
+	je 216f
+	jmp 217f
+216:
 	mov ecx, DWORD PTR [esp+32]
 	mov edx, DWORD PTR [esp+24]
 	cmp edx, 0
-	je 28f
-210:
+	je 218f
+220:
 	mov BYTE PTR [ecx], al
 	add ecx, 1
 	sub edx, 1
-	jne 210b
-	jmp 29f
-28:
-29:
-27:
+	jne 220b
+	jmp 219f
+218:
+219:
+217:
 	mov ebx, DWORD PTR [edi]
 	mov esi, DWORD PTR [edi+4]
 	mov ebp, DWORD PTR [edi+12]
 	mov edi, DWORD PTR [edi+8]
-	lea esp, [esp+748]
+	lea esp, [esp+892]
 	pxor xmm0, xmm0
 	mov ecx, 0
-	lea esp, [esp-1288]
+	lea esp, [esp-1432]
 	movdqu XMMWORD PTR [esp], xmm0
 	movdqu XMMWORD PTR [esp+16], xmm0
 	movdqu XMMWORD PTR [esp+32], xmm0
@@ -1054,9 +1348,18 @@ vg_chacha20_poly1305_open_to_ssse3:
 	movdqu XMMWORD PTR [esp+1232], xmm0
 	movdqu XMMWORD PTR [esp+1248], xmm0
 	movdqu XMMWORD PTR [esp+1264], xmm0
-	mov DWORD PTR [esp+1280], ecx
-	mov DWORD PTR [esp+1284], ecx
-	lea esp, [esp+1288]
+	movdqu XMMWORD PTR [esp+1280], xmm0
+	movdqu XMMWORD PTR [esp+1296], xmm0
+	movdqu XMMWORD PTR [esp+1312], xmm0
+	movdqu XMMWORD PTR [esp+1328], xmm0
+	movdqu XMMWORD PTR [esp+1344], xmm0
+	movdqu XMMWORD PTR [esp+1360], xmm0
+	movdqu XMMWORD PTR [esp+1376], xmm0
+	movdqu XMMWORD PTR [esp+1392], xmm0
+	movdqu XMMWORD PTR [esp+1408], xmm0
+	mov DWORD PTR [esp+1424], ecx
+	mov DWORD PTR [esp+1428], ecx
+	lea esp, [esp+1432]
 	mov edx, 0
 	xor ecx, ecx
 	pxor xmm0, xmm0
@@ -1150,7 +1453,7 @@ vg_chacha20_poly1305_seal_gather_ssse3:
 	lea esp, [esp+48]
 	pxor xmm0, xmm0
 	mov ecx, 0
-	lea esp, [esp-1332]
+	lea esp, [esp-1476]
 	movdqu XMMWORD PTR [esp], xmm0
 	movdqu XMMWORD PTR [esp+16], xmm0
 	movdqu XMMWORD PTR [esp+32], xmm0
@@ -1234,8 +1537,17 @@ vg_chacha20_poly1305_seal_gather_ssse3:
 	movdqu XMMWORD PTR [esp+1280], xmm0
 	movdqu XMMWORD PTR [esp+1296], xmm0
 	movdqu XMMWORD PTR [esp+1312], xmm0
-	mov DWORD PTR [esp+1328], ecx
-	lea esp, [esp+1332]
+	movdqu XMMWORD PTR [esp+1328], xmm0
+	movdqu XMMWORD PTR [esp+1344], xmm0
+	movdqu XMMWORD PTR [esp+1360], xmm0
+	movdqu XMMWORD PTR [esp+1376], xmm0
+	movdqu XMMWORD PTR [esp+1392], xmm0
+	movdqu XMMWORD PTR [esp+1408], xmm0
+	movdqu XMMWORD PTR [esp+1424], xmm0
+	movdqu XMMWORD PTR [esp+1440], xmm0
+	movdqu XMMWORD PTR [esp+1456], xmm0
+	mov DWORD PTR [esp+1472], ecx
+	lea esp, [esp+1476]
 	mov eax, 0
 	mov edx, 0
 	xor ecx, ecx
@@ -1251,20 +1563,20 @@ vg_chacha20_poly1305_seal_gather_ssse3:
 	.p2align 6
 
 vg_chacha20_poly1305_seal:
-	lea esp, [esp-740]
-	mov eax, DWORD PTR [esp+744]
+	lea esp, [esp-884]
+	mov eax, DWORD PTR [esp+888]
 	mov DWORD PTR [esp+4], eax
-	mov eax, DWORD PTR [esp+748]
+	mov eax, DWORD PTR [esp+892]
 	mov DWORD PTR [esp+8], eax
-	mov eax, DWORD PTR [esp+752]
+	mov eax, DWORD PTR [esp+896]
 	mov DWORD PTR [esp+12], eax
-	mov eax, DWORD PTR [esp+756]
+	mov eax, DWORD PTR [esp+900]
 	mov DWORD PTR [esp+16], eax
-	mov eax, DWORD PTR [esp+760]
+	mov eax, DWORD PTR [esp+904]
 	mov DWORD PTR [esp+20], eax
-	mov eax, DWORD PTR [esp+764]
+	mov eax, DWORD PTR [esp+908]
 	mov DWORD PTR [esp+24], eax
-	mov eax, DWORD PTR [esp+768]
+	mov eax, DWORD PTR [esp+912]
 	mov DWORD PTR [esp+28], eax
 	mov eax, esp
 	add eax, 36
@@ -1315,6 +1627,10 @@ vg_chacha20_poly1305_seal:
 	add ecx, 64
 	mov edx, edi
 	add edx, 128
+	mov eax, DWORD PTR [esp+24]
+	sub eax, 1
+	cmp eax, 192
+	jb 20f
 	push edx
 	push ecx
 	call {vg_chacha20_block}
@@ -1329,6 +1645,52 @@ vg_chacha20_poly1305_seal:
 	call {vg_poly1305_init_core}
 	pop eax
 	pop eax
+	jmp 21f
+20:
+	pxor xmm0, xmm0
+	movdqu XMMWORD PTR [edi+576], xmm0
+	movdqu XMMWORD PTR [edi+592], xmm0
+	movdqu XMMWORD PTR [edi+608], xmm0
+	movdqu XMMWORD PTR [edi+624], xmm0
+	movdqu XMMWORD PTR [edi+640], xmm0
+	movdqu XMMWORD PTR [edi+656], xmm0
+	movdqu XMMWORD PTR [edi+672], xmm0
+	movdqu XMMWORD PTR [edi+688], xmm0
+	movdqu XMMWORD PTR [edi+704], xmm0
+	movdqu XMMWORD PTR [edi+720], xmm0
+	movdqu XMMWORD PTR [edi+736], xmm0
+	movdqu XMMWORD PTR [edi+752], xmm0
+	movdqu XMMWORD PTR [edi+768], xmm0
+	movdqu XMMWORD PTR [edi+784], xmm0
+	movdqu XMMWORD PTR [edi+800], xmm0
+	movdqu XMMWORD PTR [edi+816], xmm0
+	mov eax, edi
+	add eax, 64
+	mov ecx, edi
+	add ecx, 576
+	mov edx, 256
+	mov ebx, edi
+	add ebx, 128
+	mov esi, ecx
+	push ebx
+	push edx
+	push ecx
+	push eax
+	call {vg_chacha20_xor}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov ecx, edi
+	add ecx, 576
+	mov edx, edi
+	add edx, 448
+	push ecx
+	push edx
+	call {vg_poly1305_init_core}
+	pop eax
+	pop eax
+21:
 	mov ebx, DWORD PTR [esp+12]
 	mov ebp, DWORD PTR [esp+16]
 	mov eax, ebp
@@ -1344,7 +1706,7 @@ vg_chacha20_poly1305_seal:
 	pop eax
 	mov edx, ebp
 	and edx, 15
-	je 20f
+	je 22f
 	mov esi, ebp
 	sub esi, edx
 	add esi, ebx
@@ -1355,13 +1717,13 @@ vg_chacha20_poly1305_seal:
 	mov DWORD PTR [edi+60], eax
 	mov ecx, edi
 	add ecx, 48
-22:
+24:
 	movzx eax, BYTE PTR [esi]
 	mov BYTE PTR [ecx], al
 	add esi, 1
 	add ecx, 1
 	sub edx, 1
-	jne 22b
+	jne 24b
 	mov eax, 1
 	mov ecx, edi
 	add ecx, 48
@@ -1374,9 +1736,9 @@ vg_chacha20_poly1305_seal:
 	pop eax
 	pop eax
 	pop eax
-	jmp 21f
-20:
-21:
+	jmp 23f
+22:
+23:
 	mov eax, DWORD PTR [esp+16]
 	mov DWORD PTR [edi+32], eax
 	mov eax, DWORD PTR [esp+24]
@@ -1384,6 +1746,10 @@ vg_chacha20_poly1305_seal:
 	mov eax, 0
 	mov DWORD PTR [edi+36], eax
 	mov DWORD PTR [edi+44], eax
+	mov eax, DWORD PTR [esp+24]
+	sub eax, 1
+	cmp eax, 192
+	jb 25f
 	mov eax, 1
 	mov DWORD PTR [edi+112], eax
 	mov eax, edi
@@ -1402,6 +1768,44 @@ vg_chacha20_poly1305_seal:
 	pop eax
 	pop eax
 	pop eax
+	jmp 26f
+25:
+	mov esi, DWORD PTR [esp+20]
+	mov edx, DWORD PTR [esp+32]
+	mov ecx, DWORD PTR [esp+24]
+	mov ebp, edi
+	add ebp, 640
+	cmp ecx, 16
+	jb 27f
+29:
+	movdqu xmm4, XMMWORD PTR [esi]
+	movdqu xmm5, XMMWORD PTR [ebp]
+	pxor xmm4, xmm5
+	movdqu XMMWORD PTR [edx], xmm4
+	add esi, 16
+	add edx, 16
+	add ebp, 16
+	sub ecx, 16
+	cmp ecx, 16
+	jae 29b
+	jmp 28f
+27:
+28:
+	test ecx, ecx
+	je 210f
+212:
+	movzx eax, BYTE PTR [esi]
+	xor eax, DWORD PTR [ebp]
+	mov BYTE PTR [edx], al
+	add esi, 1
+	add edx, 1
+	add ebp, 1
+	sub ecx, 1
+	jne 212b
+	jmp 211f
+210:
+211:
+26:
 	mov ebx, DWORD PTR [esp+20]
 	mov ebp, DWORD PTR [esp+24]
 	mov eax, ebp
@@ -1417,7 +1821,7 @@ vg_chacha20_poly1305_seal:
 	pop eax
 	mov edx, ebp
 	and edx, 15
-	je 23f
+	je 213f
 	mov esi, ebp
 	sub esi, edx
 	add esi, ebx
@@ -1428,13 +1832,13 @@ vg_chacha20_poly1305_seal:
 	mov DWORD PTR [edi+60], eax
 	mov ecx, edi
 	add ecx, 48
-25:
+215:
 	movzx eax, BYTE PTR [esi]
 	mov BYTE PTR [ecx], al
 	add esi, 1
 	add ecx, 1
 	sub edx, 1
-	jne 25b
+	jne 215b
 	mov eax, 1
 	mov ecx, edi
 	add ecx, 48
@@ -1447,9 +1851,9 @@ vg_chacha20_poly1305_seal:
 	pop eax
 	pop eax
 	pop eax
-	jmp 24f
-23:
-24:
+	jmp 214f
+213:
+214:
 	mov eax, 1
 	mov ecx, edi
 	add ecx, 32
@@ -1483,9 +1887,9 @@ vg_chacha20_poly1305_seal:
 	mov esi, DWORD PTR [edi+4]
 	mov ebp, DWORD PTR [edi+12]
 	mov edi, DWORD PTR [edi+8]
-	lea esp, [esp+740]
+	lea esp, [esp+884]
 	pxor xmm0, xmm0
-	lea esp, [esp-1280]
+	lea esp, [esp-1424]
 	movdqu XMMWORD PTR [esp], xmm0
 	movdqu XMMWORD PTR [esp+16], xmm0
 	movdqu XMMWORD PTR [esp+32], xmm0
@@ -1566,7 +1970,16 @@ vg_chacha20_poly1305_seal:
 	movdqu XMMWORD PTR [esp+1232], xmm0
 	movdqu XMMWORD PTR [esp+1248], xmm0
 	movdqu XMMWORD PTR [esp+1264], xmm0
-	lea esp, [esp+1280]
+	movdqu XMMWORD PTR [esp+1280], xmm0
+	movdqu XMMWORD PTR [esp+1296], xmm0
+	movdqu XMMWORD PTR [esp+1312], xmm0
+	movdqu XMMWORD PTR [esp+1328], xmm0
+	movdqu XMMWORD PTR [esp+1344], xmm0
+	movdqu XMMWORD PTR [esp+1360], xmm0
+	movdqu XMMWORD PTR [esp+1376], xmm0
+	movdqu XMMWORD PTR [esp+1392], xmm0
+	movdqu XMMWORD PTR [esp+1408], xmm0
+	lea esp, [esp+1424]
 	mov eax, 0
 	mov edx, 0
 	xor ecx, ecx
@@ -1582,20 +1995,20 @@ vg_chacha20_poly1305_seal:
 	.p2align 6
 
 vg_chacha20_poly1305_open:
-	lea esp, [esp-740]
-	mov eax, DWORD PTR [esp+744]
+	lea esp, [esp-884]
+	mov eax, DWORD PTR [esp+888]
 	mov DWORD PTR [esp+4], eax
-	mov eax, DWORD PTR [esp+748]
+	mov eax, DWORD PTR [esp+892]
 	mov DWORD PTR [esp+8], eax
-	mov eax, DWORD PTR [esp+752]
+	mov eax, DWORD PTR [esp+896]
 	mov DWORD PTR [esp+12], eax
-	mov eax, DWORD PTR [esp+756]
+	mov eax, DWORD PTR [esp+900]
 	mov DWORD PTR [esp+16], eax
-	mov eax, DWORD PTR [esp+760]
+	mov eax, DWORD PTR [esp+904]
 	mov DWORD PTR [esp+20], eax
-	mov eax, DWORD PTR [esp+764]
+	mov eax, DWORD PTR [esp+908]
 	mov DWORD PTR [esp+24], eax
-	mov eax, DWORD PTR [esp+768]
+	mov eax, DWORD PTR [esp+912]
 	mov DWORD PTR [esp+28], eax
 	mov eax, esp
 	add eax, 36
@@ -1646,6 +2059,10 @@ vg_chacha20_poly1305_open:
 	add ecx, 64
 	mov edx, edi
 	add edx, 128
+	mov eax, DWORD PTR [esp+24]
+	sub eax, 1
+	cmp eax, 192
+	jb 20f
 	push edx
 	push ecx
 	call {vg_chacha20_block}
@@ -1660,6 +2077,52 @@ vg_chacha20_poly1305_open:
 	call {vg_poly1305_init_core}
 	pop eax
 	pop eax
+	jmp 21f
+20:
+	pxor xmm0, xmm0
+	movdqu XMMWORD PTR [edi+576], xmm0
+	movdqu XMMWORD PTR [edi+592], xmm0
+	movdqu XMMWORD PTR [edi+608], xmm0
+	movdqu XMMWORD PTR [edi+624], xmm0
+	movdqu XMMWORD PTR [edi+640], xmm0
+	movdqu XMMWORD PTR [edi+656], xmm0
+	movdqu XMMWORD PTR [edi+672], xmm0
+	movdqu XMMWORD PTR [edi+688], xmm0
+	movdqu XMMWORD PTR [edi+704], xmm0
+	movdqu XMMWORD PTR [edi+720], xmm0
+	movdqu XMMWORD PTR [edi+736], xmm0
+	movdqu XMMWORD PTR [edi+752], xmm0
+	movdqu XMMWORD PTR [edi+768], xmm0
+	movdqu XMMWORD PTR [edi+784], xmm0
+	movdqu XMMWORD PTR [edi+800], xmm0
+	movdqu XMMWORD PTR [edi+816], xmm0
+	mov eax, edi
+	add eax, 64
+	mov ecx, edi
+	add ecx, 576
+	mov edx, 256
+	mov ebx, edi
+	add ebx, 128
+	mov esi, ecx
+	push ebx
+	push edx
+	push ecx
+	push eax
+	call {vg_chacha20_xor}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov ecx, edi
+	add ecx, 576
+	mov edx, edi
+	add edx, 448
+	push ecx
+	push edx
+	call {vg_poly1305_init_core}
+	pop eax
+	pop eax
+21:
 	mov ebx, DWORD PTR [esp+12]
 	mov ebp, DWORD PTR [esp+16]
 	mov eax, ebp
@@ -1675,7 +2138,7 @@ vg_chacha20_poly1305_open:
 	pop eax
 	mov edx, ebp
 	and edx, 15
-	je 20f
+	je 22f
 	mov esi, ebp
 	sub esi, edx
 	add esi, ebx
@@ -1686,13 +2149,13 @@ vg_chacha20_poly1305_open:
 	mov DWORD PTR [edi+60], eax
 	mov ecx, edi
 	add ecx, 48
-22:
+24:
 	movzx eax, BYTE PTR [esi]
 	mov BYTE PTR [ecx], al
 	add esi, 1
 	add ecx, 1
 	sub edx, 1
-	jne 22b
+	jne 24b
 	mov eax, 1
 	mov ecx, edi
 	add ecx, 48
@@ -1705,9 +2168,9 @@ vg_chacha20_poly1305_open:
 	pop eax
 	pop eax
 	pop eax
-	jmp 21f
-20:
-21:
+	jmp 23f
+22:
+23:
 	mov ebx, DWORD PTR [esp+20]
 	mov ebp, DWORD PTR [esp+24]
 	mov eax, ebp
@@ -1723,7 +2186,7 @@ vg_chacha20_poly1305_open:
 	pop eax
 	mov edx, ebp
 	and edx, 15
-	je 23f
+	je 25f
 	mov esi, ebp
 	sub esi, edx
 	add esi, ebx
@@ -1734,13 +2197,13 @@ vg_chacha20_poly1305_open:
 	mov DWORD PTR [edi+60], eax
 	mov ecx, edi
 	add ecx, 48
-25:
+27:
 	movzx eax, BYTE PTR [esi]
 	mov BYTE PTR [ecx], al
 	add esi, 1
 	add ecx, 1
 	sub edx, 1
-	jne 25b
+	jne 27b
 	mov eax, 1
 	mov ecx, edi
 	add ecx, 48
@@ -1753,9 +2216,9 @@ vg_chacha20_poly1305_open:
 	pop eax
 	pop eax
 	pop eax
-	jmp 24f
-23:
-24:
+	jmp 26f
+25:
+26:
 	mov eax, DWORD PTR [esp+16]
 	mov DWORD PTR [edi+32], eax
 	mov eax, DWORD PTR [esp+24]
@@ -1775,6 +2238,10 @@ vg_chacha20_poly1305_open:
 	pop eax
 	pop eax
 	pop eax
+	mov eax, DWORD PTR [esp+24]
+	sub eax, 1
+	cmp eax, 192
+	jb 28f
 	mov eax, 1
 	mov DWORD PTR [edi+112], eax
 	mov eax, edi
@@ -1793,6 +2260,44 @@ vg_chacha20_poly1305_open:
 	pop eax
 	pop eax
 	pop eax
+	jmp 29f
+28:
+	mov esi, DWORD PTR [esp+20]
+	mov edx, DWORD PTR [esp+32]
+	mov ecx, DWORD PTR [esp+24]
+	mov ebp, edi
+	add ebp, 640
+	cmp ecx, 16
+	jb 210f
+212:
+	movdqu xmm4, XMMWORD PTR [esi]
+	movdqu xmm5, XMMWORD PTR [ebp]
+	pxor xmm4, xmm5
+	movdqu XMMWORD PTR [edx], xmm4
+	add esi, 16
+	add edx, 16
+	add ebp, 16
+	sub ecx, 16
+	cmp ecx, 16
+	jae 212b
+	jmp 211f
+210:
+211:
+	test ecx, ecx
+	je 213f
+215:
+	movzx eax, BYTE PTR [esi]
+	xor eax, DWORD PTR [ebp]
+	mov BYTE PTR [edx], al
+	add esi, 1
+	add edx, 1
+	add ebp, 1
+	sub ecx, 1
+	jne 215b
+	jmp 214f
+213:
+214:
+29:
 	mov ebx, edi
 	add ebx, 576
 	mov ecx, edi
@@ -1827,29 +2332,29 @@ vg_chacha20_poly1305_open:
 	mov eax, 0
 	adc eax, 0
 	cmp eax, 0
-	je 26f
-	jmp 27f
-26:
+	je 216f
+	jmp 217f
+216:
 	mov ecx, DWORD PTR [esp+32]
 	mov edx, DWORD PTR [esp+24]
 	cmp edx, 0
-	je 28f
-210:
+	je 218f
+220:
 	mov BYTE PTR [ecx], al
 	add ecx, 1
 	sub edx, 1
-	jne 210b
-	jmp 29f
-28:
-29:
-27:
+	jne 220b
+	jmp 219f
+218:
+219:
+217:
 	mov ebx, DWORD PTR [edi]
 	mov esi, DWORD PTR [edi+4]
 	mov ebp, DWORD PTR [edi+12]
 	mov edi, DWORD PTR [edi+8]
-	lea esp, [esp+740]
+	lea esp, [esp+884]
 	pxor xmm0, xmm0
-	lea esp, [esp-1280]
+	lea esp, [esp-1424]
 	movdqu XMMWORD PTR [esp], xmm0
 	movdqu XMMWORD PTR [esp+16], xmm0
 	movdqu XMMWORD PTR [esp+32], xmm0
@@ -1930,7 +2435,16 @@ vg_chacha20_poly1305_open:
 	movdqu XMMWORD PTR [esp+1232], xmm0
 	movdqu XMMWORD PTR [esp+1248], xmm0
 	movdqu XMMWORD PTR [esp+1264], xmm0
-	lea esp, [esp+1280]
+	movdqu XMMWORD PTR [esp+1280], xmm0
+	movdqu XMMWORD PTR [esp+1296], xmm0
+	movdqu XMMWORD PTR [esp+1312], xmm0
+	movdqu XMMWORD PTR [esp+1328], xmm0
+	movdqu XMMWORD PTR [esp+1344], xmm0
+	movdqu XMMWORD PTR [esp+1360], xmm0
+	movdqu XMMWORD PTR [esp+1376], xmm0
+	movdqu XMMWORD PTR [esp+1392], xmm0
+	movdqu XMMWORD PTR [esp+1408], xmm0
+	lea esp, [esp+1424]
 	mov edx, 0
 	xor ecx, ecx
 	pxor xmm0, xmm0
@@ -1945,24 +2459,24 @@ vg_chacha20_poly1305_open:
 	.p2align 6
 
 vg_chacha20_poly1305_open_to:
-	lea esp, [esp-748]
-	mov eax, DWORD PTR [esp+752]
+	lea esp, [esp-892]
+	mov eax, DWORD PTR [esp+896]
 	mov DWORD PTR [esp+4], eax
-	mov eax, DWORD PTR [esp+756]
+	mov eax, DWORD PTR [esp+900]
 	mov DWORD PTR [esp+8], eax
-	mov eax, DWORD PTR [esp+760]
+	mov eax, DWORD PTR [esp+904]
 	mov DWORD PTR [esp+12], eax
-	mov eax, DWORD PTR [esp+764]
+	mov eax, DWORD PTR [esp+908]
 	mov DWORD PTR [esp+16], eax
-	mov eax, DWORD PTR [esp+768]
+	mov eax, DWORD PTR [esp+912]
 	mov DWORD PTR [esp+20], eax
-	mov eax, DWORD PTR [esp+772]
+	mov eax, DWORD PTR [esp+916]
 	mov DWORD PTR [esp+24], eax
-	mov eax, DWORD PTR [esp+776]
+	mov eax, DWORD PTR [esp+920]
 	mov DWORD PTR [esp+28], eax
-	mov eax, DWORD PTR [esp+780]
+	mov eax, DWORD PTR [esp+924]
 	mov DWORD PTR [esp+32], eax
-	mov eax, DWORD PTR [esp+784]
+	mov eax, DWORD PTR [esp+928]
 	mov DWORD PTR [esp+36], eax
 	mov eax, esp
 	add eax, 44
@@ -2015,6 +2529,10 @@ vg_chacha20_poly1305_open_to:
 	add ecx, 64
 	mov edx, edi
 	add edx, 128
+	mov eax, DWORD PTR [esp+24]
+	sub eax, 1
+	cmp eax, 192
+	jb 20f
 	push edx
 	push ecx
 	call {vg_chacha20_block}
@@ -2029,6 +2547,52 @@ vg_chacha20_poly1305_open_to:
 	call {vg_poly1305_init_core}
 	pop eax
 	pop eax
+	jmp 21f
+20:
+	pxor xmm0, xmm0
+	movdqu XMMWORD PTR [edi+576], xmm0
+	movdqu XMMWORD PTR [edi+592], xmm0
+	movdqu XMMWORD PTR [edi+608], xmm0
+	movdqu XMMWORD PTR [edi+624], xmm0
+	movdqu XMMWORD PTR [edi+640], xmm0
+	movdqu XMMWORD PTR [edi+656], xmm0
+	movdqu XMMWORD PTR [edi+672], xmm0
+	movdqu XMMWORD PTR [edi+688], xmm0
+	movdqu XMMWORD PTR [edi+704], xmm0
+	movdqu XMMWORD PTR [edi+720], xmm0
+	movdqu XMMWORD PTR [edi+736], xmm0
+	movdqu XMMWORD PTR [edi+752], xmm0
+	movdqu XMMWORD PTR [edi+768], xmm0
+	movdqu XMMWORD PTR [edi+784], xmm0
+	movdqu XMMWORD PTR [edi+800], xmm0
+	movdqu XMMWORD PTR [edi+816], xmm0
+	mov eax, edi
+	add eax, 64
+	mov ecx, edi
+	add ecx, 576
+	mov edx, 256
+	mov ebx, edi
+	add ebx, 128
+	mov esi, ecx
+	push ebx
+	push edx
+	push ecx
+	push eax
+	call {vg_chacha20_xor}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov ecx, edi
+	add ecx, 576
+	mov edx, edi
+	add edx, 448
+	push ecx
+	push edx
+	call {vg_poly1305_init_core}
+	pop eax
+	pop eax
+21:
 	mov ebx, DWORD PTR [esp+12]
 	mov ebp, DWORD PTR [esp+16]
 	mov eax, ebp
@@ -2044,7 +2608,7 @@ vg_chacha20_poly1305_open_to:
 	pop eax
 	mov edx, ebp
 	and edx, 15
-	je 20f
+	je 22f
 	mov esi, ebp
 	sub esi, edx
 	add esi, ebx
@@ -2055,13 +2619,13 @@ vg_chacha20_poly1305_open_to:
 	mov DWORD PTR [edi+60], eax
 	mov ecx, edi
 	add ecx, 48
-22:
+24:
 	movzx eax, BYTE PTR [esi]
 	mov BYTE PTR [ecx], al
 	add esi, 1
 	add ecx, 1
 	sub edx, 1
-	jne 22b
+	jne 24b
 	mov eax, 1
 	mov ecx, edi
 	add ecx, 48
@@ -2074,9 +2638,9 @@ vg_chacha20_poly1305_open_to:
 	pop eax
 	pop eax
 	pop eax
-	jmp 21f
-20:
-21:
+	jmp 23f
+22:
+23:
 	mov ebx, DWORD PTR [esp+20]
 	mov ebp, DWORD PTR [esp+24]
 	mov eax, ebp
@@ -2092,7 +2656,7 @@ vg_chacha20_poly1305_open_to:
 	pop eax
 	mov edx, ebp
 	and edx, 15
-	je 23f
+	je 25f
 	mov esi, ebp
 	sub esi, edx
 	add esi, ebx
@@ -2103,13 +2667,13 @@ vg_chacha20_poly1305_open_to:
 	mov DWORD PTR [edi+60], eax
 	mov ecx, edi
 	add ecx, 48
-25:
+27:
 	movzx eax, BYTE PTR [esi]
 	mov BYTE PTR [ecx], al
 	add esi, 1
 	add ecx, 1
 	sub edx, 1
-	jne 25b
+	jne 27b
 	mov eax, 1
 	mov ecx, edi
 	add ecx, 48
@@ -2122,9 +2686,9 @@ vg_chacha20_poly1305_open_to:
 	pop eax
 	pop eax
 	pop eax
-	jmp 24f
-23:
-24:
+	jmp 26f
+25:
+26:
 	mov eax, DWORD PTR [esp+16]
 	mov DWORD PTR [edi+32], eax
 	mov eax, DWORD PTR [esp+24]
@@ -2144,6 +2708,10 @@ vg_chacha20_poly1305_open_to:
 	pop eax
 	pop eax
 	pop eax
+	mov eax, DWORD PTR [esp+24]
+	sub eax, 1
+	cmp eax, 192
+	jb 28f
 	mov eax, 1
 	mov DWORD PTR [edi+112], eax
 	mov eax, edi
@@ -2162,6 +2730,44 @@ vg_chacha20_poly1305_open_to:
 	pop eax
 	pop eax
 	pop eax
+	jmp 29f
+28:
+	mov esi, DWORD PTR [esp+20]
+	mov edx, DWORD PTR [esp+32]
+	mov ecx, DWORD PTR [esp+24]
+	mov ebp, edi
+	add ebp, 640
+	cmp ecx, 16
+	jb 210f
+212:
+	movdqu xmm4, XMMWORD PTR [esi]
+	movdqu xmm5, XMMWORD PTR [ebp]
+	pxor xmm4, xmm5
+	movdqu XMMWORD PTR [edx], xmm4
+	add esi, 16
+	add edx, 16
+	add ebp, 16
+	sub ecx, 16
+	cmp ecx, 16
+	jae 212b
+	jmp 211f
+210:
+211:
+	test ecx, ecx
+	je 213f
+215:
+	movzx eax, BYTE PTR [esi]
+	xor eax, DWORD PTR [ebp]
+	mov BYTE PTR [edx], al
+	add esi, 1
+	add edx, 1
+	add ebp, 1
+	sub ecx, 1
+	jne 215b
+	jmp 214f
+213:
+214:
+29:
 	mov ebx, edi
 	add ebx, 576
 	mov ecx, edi
@@ -2196,30 +2802,30 @@ vg_chacha20_poly1305_open_to:
 	mov eax, 0
 	adc eax, 0
 	cmp eax, 0
-	je 26f
-	jmp 27f
-26:
+	je 216f
+	jmp 217f
+216:
 	mov ecx, DWORD PTR [esp+32]
 	mov edx, DWORD PTR [esp+24]
 	cmp edx, 0
-	je 28f
-210:
+	je 218f
+220:
 	mov BYTE PTR [ecx], al
 	add ecx, 1
 	sub edx, 1
-	jne 210b
-	jmp 29f
-28:
-29:
-27:
+	jne 220b
+	jmp 219f
+218:
+219:
+217:
 	mov ebx, DWORD PTR [edi]
 	mov esi, DWORD PTR [edi+4]
 	mov ebp, DWORD PTR [edi+12]
 	mov edi, DWORD PTR [edi+8]
-	lea esp, [esp+748]
+	lea esp, [esp+892]
 	pxor xmm0, xmm0
 	mov ecx, 0
-	lea esp, [esp-1288]
+	lea esp, [esp-1432]
 	movdqu XMMWORD PTR [esp], xmm0
 	movdqu XMMWORD PTR [esp+16], xmm0
 	movdqu XMMWORD PTR [esp+32], xmm0
@@ -2300,9 +2906,18 @@ vg_chacha20_poly1305_open_to:
 	movdqu XMMWORD PTR [esp+1232], xmm0
 	movdqu XMMWORD PTR [esp+1248], xmm0
 	movdqu XMMWORD PTR [esp+1264], xmm0
-	mov DWORD PTR [esp+1280], ecx
-	mov DWORD PTR [esp+1284], ecx
-	lea esp, [esp+1288]
+	movdqu XMMWORD PTR [esp+1280], xmm0
+	movdqu XMMWORD PTR [esp+1296], xmm0
+	movdqu XMMWORD PTR [esp+1312], xmm0
+	movdqu XMMWORD PTR [esp+1328], xmm0
+	movdqu XMMWORD PTR [esp+1344], xmm0
+	movdqu XMMWORD PTR [esp+1360], xmm0
+	movdqu XMMWORD PTR [esp+1376], xmm0
+	movdqu XMMWORD PTR [esp+1392], xmm0
+	movdqu XMMWORD PTR [esp+1408], xmm0
+	mov DWORD PTR [esp+1424], ecx
+	mov DWORD PTR [esp+1428], ecx
+	lea esp, [esp+1432]
 	mov edx, 0
 	xor ecx, ecx
 	pxor xmm0, xmm0
@@ -2396,7 +3011,7 @@ vg_chacha20_poly1305_seal_gather:
 	lea esp, [esp+48]
 	pxor xmm0, xmm0
 	mov ecx, 0
-	lea esp, [esp-1332]
+	lea esp, [esp-1476]
 	movdqu XMMWORD PTR [esp], xmm0
 	movdqu XMMWORD PTR [esp+16], xmm0
 	movdqu XMMWORD PTR [esp+32], xmm0
@@ -2480,8 +3095,17 @@ vg_chacha20_poly1305_seal_gather:
 	movdqu XMMWORD PTR [esp+1280], xmm0
 	movdqu XMMWORD PTR [esp+1296], xmm0
 	movdqu XMMWORD PTR [esp+1312], xmm0
-	mov DWORD PTR [esp+1328], ecx
-	lea esp, [esp+1332]
+	movdqu XMMWORD PTR [esp+1328], xmm0
+	movdqu XMMWORD PTR [esp+1344], xmm0
+	movdqu XMMWORD PTR [esp+1360], xmm0
+	movdqu XMMWORD PTR [esp+1376], xmm0
+	movdqu XMMWORD PTR [esp+1392], xmm0
+	movdqu XMMWORD PTR [esp+1408], xmm0
+	movdqu XMMWORD PTR [esp+1424], xmm0
+	movdqu XMMWORD PTR [esp+1440], xmm0
+	movdqu XMMWORD PTR [esp+1456], xmm0
+	mov DWORD PTR [esp+1472], ecx
+	lea esp, [esp+1476]
 	mov eax, 0
 	mov edx, 0
 	xor ecx, ecx
