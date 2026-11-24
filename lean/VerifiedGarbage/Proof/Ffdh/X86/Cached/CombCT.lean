@@ -69,8 +69,11 @@ theorem select_check : ACheck Generate.select := by dsimp only [ACheck]; taint_d
 theorem dec_check : ACheck (.block [.mov .eax (.mem (sc iOff)), .alu .sub .eax (.imm 1), .store (sc iOff) .eax]) := by
   dsimp only [ACheck]; taint_decide
 
-theorem init_check : ACheck (.block [.mov .ecx (.mem (VG.Impl.Bignum.X86.PublicRt.argAt 0 ctxArg)),
-    .mov .eax (.mem (at_ .ecx 16)), .store (sc rowsOff) .eax, .store (sc iOff) .eax]) := by
+theorem headBase_check : XCheck (prepBasePre .wide) := by dsimp only [XCheck]; taint_decide
+
+theorem headLoad_check : ACheck (.seq (loadRow (rowImm 2) 6)
+    (.block [.mov .ecx (.mem (VG.Impl.Bignum.X86.PublicRt.argAt 0 ctxArg)),
+      .mov .eax (.mem (at_ .ecx 16)), .store (sc rowsOff) .eax, .store (sc iOff) .eax])) := by
   dsimp only [ACheck]; taint_decide
 
 theorem nil_check : ACheck (.block []) := by dsimp only [ACheck]; taint_decide
@@ -256,12 +259,15 @@ def CS (Ex : List Region → List Region → Prop) (base : Addr) (bytes len : Na
 theorem combHead_trace :
     RelCT isa (Both fun s => Run Ex base bytes len args sp s ∧ RoomF sp base bytes) Generate.combHead
       fun _ _ => True := by
-  have hc := winChecks .wide
   unfold Generate.combHead
-  refine VG.RelCT.seq VG.Proof.Ffdh.X86.ctxP_relCT ?_
-  refine VG.RelCT.seq (mul_wst_relCT0 (o := 6) (a := 4) (b := 3) (by decide) (by decide) (by decide) (by decide)
-    (by decide) (by decide) hc.m643 (ks' := [3, 4, 6]) (by decide) (by decide) (by decide)) ?_
-  exact VG.RelCT.taint (A := taint) τA (fun _ _ h => h.1.run.agree h.2.run) init_check
+  refine VG.RelCT.seq (R := Both (Run Ex base bytes len args sp))
+    (taint_both (fun _ _ R₁ R₂ => R₁.1.agree R₂.1) _ VG.Proof.Ffdh.X86.ctxP_check fun _ R =>
+      copyDown_run (j := 9) (d := 0) (by decide) (by decide) (by decide) R.1) ?_
+  refine VG.RelCT.seq (R := Both (Run Ex base bytes len args sp))
+    (relCT_both (VG.RelCT.taint (A := sseTaint) τA (fun _ _ h => h.1.agree h.2) headBase_check) fun _ R =>
+      WP.mono (prepBasePre_ok R.1 .wide) fun _ ⟨hu, _, _, _, _, K⟩ =>
+        ⟨hu, R.2.1.keep K, (K.1 _ (by decide)).trans R.2.2⟩) ?_
+  exact VG.RelCT.taint (A := taint) τA (fun _ _ h => h.1.agree h.2) headLoad_check
 
 /-- The comb's runs with the same public width `bits` and modulus `P` leak the same traces. -/
 theorem comb_trace (hR0 : 0 < Spec.Rsa.FixedBaseComb.rows bits) (hR : Spec.Rsa.FixedBaseComb.rows bits ≤ 1639) :

@@ -189,6 +189,10 @@ theorem prepBody_noSp :
     NoSp (.seq (.block ((List.range 18).flatMap copyArg)) (prepare .wide) : Prog isa) :=
   NoSp.of_all (by rsa_stack_shape)
 
+theorem prepPubBody_noSp :
+    NoSp (.seq (.block ((List.range 18).flatMap copyArg)) preparePub : Prog isa) :=
+  NoSp.of_all (by rsa_stack_shape)
+
 /-- What `prepCall` leaves: `prepCtx_ok`'s, with the changes within a stage's. -/
 abbrev PrepPost (Ex : List Region → List Region → Prop) (base : Addr) (bytes len : Nat) (args : Nat → BitVec 32)
     (s u : State) : Prop :=
