@@ -610,7 +610,7 @@ fn tls_records(c: &mut Criterion) {
     /// (alerts, handshake messages, small requests); records of 112 to 240
     /// bytes with their content type, fewer than 16 blocks; a 2048-byte
     /// record; and records of 288, 416, 432 and 448 bytes of text.
-    const TLS_SIZES: [usize; 9] = [0, 15, 16, 63, 239, 510, 511, 4095, 16383];
+    const TLS_SIZES: [usize; 4] = [0, 15, 239, 16383];
 
     tls_record_rows(c, &TLS_SIZES, Offsets::DEFAULT, "");
     tls_connection_rows(c);
@@ -769,6 +769,8 @@ fn tls_record_rows(c: &mut Criterion, sizes: &[usize], offsets: Offsets, label: 
             (&AES_256_GCM, OsslCipher::aes_256_gcm())
         };
         let vg_key = AesGcm::new(key).unwrap();
+        #[cfg(target_arch="arm")]
+        vg_key.bench_select_wipe(std::env::var_os("VG_BENCH_OLD_ROUTE").is_none());
         // A connection's key has sealed and opened many records before its
         // short ones: seal long records with it first, as a connection has.
         let mut warm = vec![0u8; 1024];

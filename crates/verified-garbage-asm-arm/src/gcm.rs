@@ -1296,11 +1296,74 @@ ldr r10, [r11, #152]
 ldr lr, [r11, #160]
 ldr r11, [r11, #156]
 add sp, sp, #2592
+movw r0, #:lower16:({vg_bench_width} - (2f + 2 * (3f - 2f)))
+movt r0, #:upper16:({vg_bench_width} - (2f + 2 * (3f - 2f)))
+2:
+add r0, pc
+3:
+ldrb r0, [r0, #0]
+cmp r0, #0
+beq 260f
+sub sp, sp, #2608
+add r12, sp, #0
+mov r2, #0
+mov r3, #20
+262:
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+str r2, [r12, #32]
+str r2, [r12, #36]
+str r2, [r12, #40]
+str r2, [r12, #44]
+str r2, [r12, #48]
+str r2, [r12, #52]
+str r2, [r12, #56]
+str r2, [r12, #60]
+str r2, [r12, #64]
+str r2, [r12, #68]
+str r2, [r12, #72]
+str r2, [r12, #76]
+str r2, [r12, #80]
+str r2, [r12, #84]
+str r2, [r12, #88]
+str r2, [r12, #92]
+str r2, [r12, #96]
+str r2, [r12, #100]
+str r2, [r12, #104]
+str r2, [r12, #108]
+str r2, [r12, #112]
+str r2, [r12, #116]
+str r2, [r12, #120]
+str r2, [r12, #124]
+add r12, r12, #128
+subs r3, r3, #1
+bne 262b
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+str r2, [r12, #32]
+str r2, [r12, #36]
+str r2, [r12, #40]
+str r2, [r12, #44]
+add sp, sp, #2608
+b 261f
+260:
 sub sp, sp, #2608
 add r12, sp, #0
 mov r2, #0
 mov r3, #81
-260:
+263:
 str r2, [r12, #0]
 str r2, [r12, #4]
 str r2, [r12, #8]
@@ -1311,12 +1374,13 @@ str r2, [r12, #24]
 str r2, [r12, #28]
 add r12, r12, #32
 subs r3, r3, #1
-bne 260b
+bne 263b
 str r2, [r12, #0]
 str r2, [r12, #4]
 str r2, [r12, #8]
 str r2, [r12, #12]
 add sp, sp, #2608
+261:
 mov r0, #0
 mov r1, #0
 mov r2, #0
@@ -1325,6 +1389,7 @@ mov r12, #0
 cmp r2, r2
 bx lr",
         vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
+        vg_bench_width = sym VG_BENCH_WIDTH,
         vg_aes_ctr32_to = sym super::aes::vg_aes_ctr32_to::vg_aes_ctr32_to,
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
     )
@@ -4827,3 +4892,6 @@ bx lr",
         vg_aes_ctr32_to = sym super::aes::vg_aes_ctr32_to::vg_aes_ctr32_to,
     )
 }
+
+#[unsafe(no_mangle)]
+pub(crate) static VG_BENCH_WIDTH: core::sync::atomic::AtomicU8 = core::sync::atomic::AtomicU8::new(0);

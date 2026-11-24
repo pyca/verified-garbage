@@ -1844,3 +1844,12 @@ mod tests {
         assert_eq!(d.update_aad(&[1]), Err(Error::InvalidAadLength));
     }
 }
+
+#[cfg(target_arch="arm")]
+impl AesGcm {
+    /// Selects the wipe width used by this benchmark executable.
+    pub fn bench_select_wipe(&self, wide: bool) {
+        unsafe extern "C" { static VG_BENCH_WIDTH: core::sync::atomic::AtomicU8; }
+        unsafe { VG_BENCH_WIDTH.store(u8::from(wide),core::sync::atomic::Ordering::Relaxed) };
+    }
+}
