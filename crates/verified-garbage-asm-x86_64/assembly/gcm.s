@@ -3681,7 +3681,7 @@ vg_aes_gcm_seal_contiguous_prepared_vaes_vpclmul_avx512:
 	add rdx, 15
 	shr rdx, 4
 	add rcx, rdx
-	cmp rcx, 32
+	cmp rcx, 28
 	jae 241f
 	mov rdx, QWORD PTR [r15+208]
 	mov rcx, rdx
