@@ -42,7 +42,7 @@ pub(crate) unsafe extern "C" fn vg_rsa_pkcs1_decrypt_precomputed(out: *mut u8, o
 .option arch, +m, +c
 .base64 "cXGKghODAgsDMwMAI7BiABODAgsDM4MAI7RiABODAgsDMwMBI7hiABODAgsDM4MBI7xiABODAgsDMwMCI7BiAhODAgsDM4MCI7RiAhODAgsDMwMDI7hiAhODAgsDM4MDI7xiAhODAgsDMwMEI7BiBBODAgsDM4MEI7RiBBODAgsDMwMFI7hiBBODAgsDM4MFI7xiBBODAgsDMwMGI7BiBhODAgsDM4MGI7RiBhODAgsDMwMHI7hiBhODAgsDM4MHI7xiBhODAgsDMwMII7BiCCO0EggjuKIII7yyCCOwwgo="
 call {vg_rsa_pkcs1_decrypt_precomputed_body}
-.base64 "ioKDuAIJg7+CCQO4ghEDvgIKAz4OADOOz0HChQVPLg+BQg=="
+.base64 "ioKDuAIJg7+CCQO4ghEDvgIKAz4OADOOz0GzBfgBfo+BQg=="
 20:
 .base64 "I4BVAIUFfR8="
 bnez t5, 20b
@@ -50,13 +50,13 @@ bnez t5, 20b
 21:
 .base64 "g0IHACOAVQAFB4UF/Rc="
 bnez a5, 21b
-.base64 "hU4tTw=="
+.base64 "hU5+jw=="
 22:
 .base64 "woUzhtUBhUazdt4AAUezBtdA/oc="
 23:
 .base64 "A8MFAINDBgCzw2MAs/PTADNDcwAjgGUAhQUFBv0X"
 bnez a5, 23b
-.base64 "E14eAPaefR8="
+.base64 "E14eAPaeE18fAA=="
 bnez t5, 22b
 .base64 "QofGhf6H"
 24:

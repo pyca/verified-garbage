@@ -72,9 +72,8 @@ vg_rsa_pkcs1_decrypt_precomputed:
 	ld t3, 160(t0)
 	ld t3, 0(t3)
 	sub t3, t6, t3
-	addi a1, a6, 0
-	addi t5, zero, 1
-	slli t5, t5, 11
+	add a1, a6, t6
+	addi t5, t6, 0
 	addi t0, zero, 0
 20:
 	sb t0, 0(a1)
@@ -92,7 +91,7 @@ vg_rsa_pkcs1_decrypt_precomputed:
 	addi a5, a5, -1
 	bnez a5, 21b
 	addi t4, zero, 1
-	addi t5, zero, 11
+	addi t5, t6, 0
 22:
 	addi a1, a6, 0
 	add a2, a1, t4
@@ -114,7 +113,7 @@ vg_rsa_pkcs1_decrypt_precomputed:
 	bnez a5, 23b
 	srli t3, t3, 1
 	add t4, t4, t4
-	addi t5, t5, -1
+	srli t5, t5, 1
 	bnez t5, 22b
 	addi a4, a6, 0
 	addi a1, a7, 0
