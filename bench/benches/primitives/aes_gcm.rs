@@ -452,50 +452,6 @@ pub fn bench(c: &mut Criterion) {
         });
         g.finish();
 
-        // Seal into the spare capacity of a reusable record buffer.
-        let mut record = Vec::with_capacity(size + 1 + 16);
-        let mut g = c.benchmark_group("aes-128-gcm-encrypt-uninit-reused-key");
-        g.throughput(Throughput::Bytes(size as u64 + 1));
-        g.bench(BenchmarkId::new(VG, size), |b| {
-            b.iter(|| {
-                record.clear();
-                vg_key
-                    .encrypt_uninit(
-                        black_box(&nonce),
-                        black_box(&aad),
-                        &[black_box(&data), black_box(&ty)],
-                        black_box(&mut record.spare_capacity_mut()[..size + 1]),
-                    )
-                    .unwrap()
-                    .1
-            })
-        });
-        g.bench(BenchmarkId::new(OPENSSL, size), |b| {
-            b.iter(|| {
-                record.clear();
-                record.resize(size + 1 + 16, 0);
-                ossl_seal(&[black_box(&data), black_box(&ty)], black_box(&mut record))
-            })
-        });
-        g.bench(BenchmarkId::new(AWS_LC, size), |b| {
-            b.iter(|| {
-                record.clear();
-                record.resize(size + 1 + 16, 0);
-                let (ciphertext, tail) = record.split_at_mut(size);
-                aws_lc_reused
-                    .seal_out_of_place_scatter(
-                        Nonce::assume_unique_for_key(*black_box(&nonce)),
-                        Aad::from(black_box(&aad)),
-                        black_box(&data),
-                        ciphertext,
-                        black_box(&ty),
-                        tail,
-                    )
-                    .unwrap()
-            })
-        });
-        g.finish();
-
         // Two halves, so that whole blocks follow the first piece.
         let (h1, h2) = data.split_at(size / 2);
         let mut out = vec![0u8; size];
@@ -610,10 +566,7 @@ fn tls_records(c: &mut Criterion) {
     /// (alerts, handshake messages, small requests); records of 112 to 240
     /// bytes with their content type, fewer than 16 blocks; a 2048-byte
     /// record; and records of 288, 416, 432 and 448 bytes of text.
-    const TLS_SIZES: [usize; 29] = [
-        15, 31, 47, 63, 111, 127, 207, 239, 254, 255, 256, 257, 287, 415, 431, 447, 1023, 1024,
-        1025, 2047, 4095, 4096, 4097, 9999, 10000, 10001, 16383, 16384, 16385,
-    ];
+    const TLS_SIZES: [usize; 9] = [0, 15, 16, 63, 239, 510, 511, 4095, 16383];
 
     tls_record_rows(c, &TLS_SIZES, Offsets::DEFAULT, "");
     tls_connection_rows(c);
@@ -847,9 +800,33 @@ fn tls_record_rows(c: &mut Criterion, sizes: &[usize], offsets: Offsets, label: 
             });
             g.finish();
 
+            let contiguous = Aligned::new(&[&data[..], &ty].concat(), offsets.input);
+            let one_tag = vg_key
+                .encrypt(&nonce, &aad, &[&contiguous], &mut out)
+                .unwrap();
+            assert_eq!((&out[..], one_tag), (&ct[..], tag));
+            let mut identical = Aligned::new(&contiguous, offsets.input);
+            let identical_tag = vg_key.encrypt_in_place(&nonce, &aad, &mut identical).unwrap();
+            assert_eq!((&identical[..], identical_tag), (&ct[..], tag));
+            let mut one = c.benchmark_group(format!("aes-{bits}-gcm-tls-seal-contiguous") + label);
+            one.throughput(Throughput::Bytes(size as u64 + 1));
+            one.bench(BenchmarkId::new(VG, size), |b| {
+                b.iter(|| {
+                    vg_key
+                        .encrypt(
+                            black_box(&nonce),
+                            black_box(&aad),
+                            &[black_box(&contiguous[..])],
+                            black_box(&mut out),
+                        )
+                        .unwrap()
+                })
+            });
+            one.finish();
+
             // Records shorter than 256 bytes, sealed in place too
             // (`encrypt_in_place`, as QUIC and aws-lc-rs's callers seal).
-            if size < 256 {
+            {
                 let mut g = c.benchmark_group(format!("aes-{bits}-gcm-tls-seal-in-place") + label);
                 g.throughput(Throughput::Bytes(size as u64 + 1));
                 g.bench(BenchmarkId::new(VG, size), |b| {
