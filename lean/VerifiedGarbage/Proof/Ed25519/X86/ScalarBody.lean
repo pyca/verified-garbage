@@ -145,6 +145,10 @@ theorem scalar_ld8 {is : List Instr} {s : State} {Q : State → Prop} {d b : Reg
     some (s.mem (addr (s.gpr b) o)) else none) = _
   simp only [ha, hin, ite_true, Option.map_some]
 
+/-- The 64 bytes the scalar engine reduces, at byte 128 of the working space. -/
+def scalarInput (m : Mem) (x : BitVec 32) : List Byte :=
+  (List.range 64).map fun i => m (addr x (128 + i))
+
 /-- What the scalar engine changes: the products' words, the difference and its temporary. -/
 def scalarBodyFrame (x : BitVec 32) : List Region := sub x scalarQ 72 :: sub x scalarP 32 :: scalarFrame x
 
