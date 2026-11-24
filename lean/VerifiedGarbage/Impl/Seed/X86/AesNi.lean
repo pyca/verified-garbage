@@ -28,7 +28,7 @@ every lane again.
 `Impl.Modes.X86.Core`) for one block at a time. With the modes' scratch
 buffer at `sb`: its first slot holds the address of the table of constants
 `VG_SEED_AESNI` (taken once, by `prepare`, with `symPush`), the block is at
-byte 16, four places of 16 bytes from byte 32 on hold the halves of the
+byte 8, four places of 16 bytes from byte 32 on hold the halves of the
 state that wait for the next round, and from byte 96 on are the 32 round
 keys, each in every lane of its 16 bytes, which `prepare` copies from the
 schedule `vg_seed_expand_key` stores. A round has the right half `R0`,
@@ -152,9 +152,9 @@ def headX : List Instr :=
    .xop (.pshufd .xmm5 .xmm0 0xaa), .xop (.pshufd .xmm0 .xmm0 0xff)]
 
 /-- The table's address, the keys' pointer, the eight turns, and the block
-at byte 16 of the scratch buffer to its words. -/
+at byte 8 of the scratch buffer to its words. -/
 def cryptHead : List Instr :=
-  [.mov tbr (.mem (at_ sb 0)), .mov kr (.reg sb), .alu .add kr (.imm 96), .mov .eax (.imm 8), ld .xmm0 sb 16] ++ headX
+  [.mov tbr (.mem (at_ sb 0)), .mov kr (.reg sb), .alu .add kr (.imm 96), .mov .eax (.imm 8), ld .xmm0 sb 8] ++ headX
 
 /-- The last right half, in `xmm5` and `xmm0`, then the last left half,
 from the first two places, to the block's bytes, in `xmm5`. -/
@@ -164,7 +164,7 @@ def tailX : List Instr :=
    x .punpcklqdq .xmm5 .xmm1, tb .xmm4 oBSW, x .pshufb .xmm5 .xmm4]
 
 /-- The last words to the block. -/
-def cryptTail : List Instr := tailX ++ [stx sb 16 .xmm5]
+def cryptTail : List Instr := tailX ++ [stx sb 8 .xmm5]
 
 /-- The block of the core's buffer, enciphered in place. -/
 def crypt : Prog isa :=
@@ -195,13 +195,13 @@ def prepare : Prog isa :=
     (.loop (.block prepGroup) .ne))
 
 /-- The slots of the scratch buffer the core uses: the table's address and
-three spare slots, the block, the four places of the state's
+a spare slot, the block, two spare slots, the four places of the state's
 halves, and the places of the 32 round keys. -/
 def slots : Nat := 152
 
 /-- The modes' core: one block at a time. -/
 def core : Core :=
-  { prepare := prepare, crypt := crypt, slots := slots, total := slots + 10, buf := 4, G := 1, bw := 4,
+  { prepare := prepare, crypt := crypt, slots := slots, total := slots + 10, buf := 2, G := 1, bw := 4,
     stack := 4, ka := 1 }
 
 end VG.Impl.Seed.X86.AesNi

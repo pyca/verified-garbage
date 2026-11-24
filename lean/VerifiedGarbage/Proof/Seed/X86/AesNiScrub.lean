@@ -40,9 +40,9 @@ meta import VerifiedGarbage.Proof.Framework.Lit
 
 The functions as emitted (`Impl.Seed.X86.AesNi.Fn`): each runs with its
 working space in a frame on the stack, which it wipes, then zeroes, of the
-680 bytes of stack its contract reserves below `esp`, the seven doublewords
+676 bytes of stack its contract reserves below `esp`, the six doublewords
 that the residue analysis (`X86.rtaint`) finds it may leave different in two
-runs, the header of that frame and its last doubleword, clears the registers a callee may change,
+runs, the header of that frame, clears the registers a callee may change,
 and returns without secret residue (`X86.Scrub.verifiedScrubbedSel`, the
 kernel evaluating the analysis of the code with its cleanup:
 `taint_decide_ct`). Their postconditions read the memory on return only
@@ -85,54 +85,54 @@ theorem ofbFinalOut (stack : Nat) :
 /-- `Spec.Seed.cbcEncryptChainedApi` as emitted (`Impl.Seed.X86.AesNi.Fn.cbcEncryptChained`) meets its contract in constant
 time and returns without secret residue. -/
 theorem cbcEncryptChained_scrubbed :
-    VerifiedScrubbed X86.target Impl.Seed.X86.AesNi.Fn.cbcEncryptChained (Spec.Seed.cbcEncryptChainedContract X86.abi 680) 0 :=
-  verifiedScrubbedSel (api := Spec.Seed.cbcEncryptChainedApi) (W := 680)
-    { code := Impl.StackScratch.X86.withStackScratchWiped 676 4 162 Impl.Seed.X86.AesNi.cbcEncryptChained
+    VerifiedScrubbed X86.target Impl.Seed.X86.AesNi.Fn.cbcEncryptChained (Spec.Seed.cbcEncryptChainedContract X86.abi 676) 0 :=
+  verifiedScrubbedSel (api := Spec.Seed.cbcEncryptChainedApi) (W := 676)
+    { code := Impl.StackScratch.X86.withStackScratchWiped 672 4 162 Impl.Seed.X86.AesNi.cbcEncryptChained
       verified := Proof.Seed.X86.AesNi.Fb.cbcEncryptChained_framed }
     Impl.Seed.X86.AesNi.Fn.modeWords (cbcEncryptOut _) (by decide) ⟨_, by taint_decide_ct⟩
 
 /-- `Spec.Seed.ofbApi` as emitted (`Impl.Seed.X86.AesNi.Fn.ofb`) meets its contract in constant
 time and returns without secret residue. -/
 theorem ofb_scrubbed :
-    VerifiedScrubbed X86.target Impl.Seed.X86.AesNi.Fn.ofb (Spec.Seed.ofbContract X86.abi 680) 0 :=
-  verifiedScrubbedSel (api := Spec.Seed.ofbApi) (W := 680)
-    { code := Impl.StackScratch.X86.withStackScratchWiped 676 4 162 Impl.Seed.X86.AesNi.ofb
+    VerifiedScrubbed X86.target Impl.Seed.X86.AesNi.Fn.ofb (Spec.Seed.ofbContract X86.abi 676) 0 :=
+  verifiedScrubbedSel (api := Spec.Seed.ofbApi) (W := 676)
+    { code := Impl.StackScratch.X86.withStackScratchWiped 672 4 162 Impl.Seed.X86.AesNi.ofb
       verified := Proof.Seed.X86.AesNi.Fb.ofb_framed }
     Impl.Seed.X86.AesNi.Fn.modeWords (ofbOut _) (by decide) ⟨_, by taint_decide_ct⟩
 
 /-- `Spec.Seed.ofbFinalApi` as emitted (`Impl.Seed.X86.AesNi.Fn.ofbFinal`) meets its contract in constant
 time and returns without secret residue. -/
 theorem ofbFinal_scrubbed :
-    VerifiedScrubbed X86.target Impl.Seed.X86.AesNi.Fn.ofbFinal (Spec.Seed.ofbFinalContract X86.abi 680) 0 :=
-  verifiedScrubbedSel (api := Spec.Seed.ofbFinalApi) (W := 680)
-    { code := Impl.StackScratch.X86.withStackScratchWiped 676 4 162 Impl.Seed.X86.AesNi.ofbFinal
+    VerifiedScrubbed X86.target Impl.Seed.X86.AesNi.Fn.ofbFinal (Spec.Seed.ofbFinalContract X86.abi 676) 0 :=
+  verifiedScrubbedSel (api := Spec.Seed.ofbFinalApi) (W := 676)
+    { code := Impl.StackScratch.X86.withStackScratchWiped 672 4 162 Impl.Seed.X86.AesNi.ofbFinal
       verified := Proof.Seed.X86.AesNi.FbFinal.ofbFinal_framed }
     Impl.Seed.X86.AesNi.Fn.modeWords (ofbFinalOut _) (by decide) ⟨_, by taint_decide_ct⟩
 
 /-- `Spec.Seed.cfbEncryptApi` as emitted (`Impl.Seed.X86.AesNi.Fn.cfbEncrypt`) meets its contract in constant
 time and returns without secret residue. -/
 theorem cfbEncrypt_scrubbed :
-    VerifiedScrubbed X86.target Impl.Seed.X86.AesNi.Fn.cfbEncrypt (Spec.Seed.cfbEncryptContract X86.abi 680) 0 :=
-  verifiedScrubbedSel (api := Spec.Seed.cfbEncryptApi) (W := 680)
-    { code := Impl.StackScratch.X86.withStackScratchWiped 676 4 162 Impl.Seed.X86.AesNi.cfbEncrypt
+    VerifiedScrubbed X86.target Impl.Seed.X86.AesNi.Fn.cfbEncrypt (Spec.Seed.cfbEncryptContract X86.abi 676) 0 :=
+  verifiedScrubbedSel (api := Spec.Seed.cfbEncryptApi) (W := 676)
+    { code := Impl.StackScratch.X86.withStackScratchWiped 672 4 162 Impl.Seed.X86.AesNi.cfbEncrypt
       verified := Proof.Seed.X86.AesNi.Fb.cfbEncrypt_framed }
     Impl.Seed.X86.AesNi.Fn.modeWords (cfbEncryptOut _) (by decide) ⟨_, by taint_decide_ct⟩
 
 /-- `Spec.Seed.cfbEncryptFinalApi` as emitted (`Impl.Seed.X86.AesNi.Fn.cfbEncryptFinal`) meets its contract in constant
 time and returns without secret residue. -/
 theorem cfbEncryptFinal_scrubbed :
-    VerifiedScrubbed X86.target Impl.Seed.X86.AesNi.Fn.cfbEncryptFinal (Spec.Seed.cfbEncryptFinalContract X86.abi 680) 0 :=
-  verifiedScrubbedSel (api := Spec.Seed.cfbEncryptFinalApi) (W := 680)
-    { code := Impl.StackScratch.X86.withStackScratchWiped 676 4 162 Impl.Seed.X86.AesNi.cfbEncryptFinal
+    VerifiedScrubbed X86.target Impl.Seed.X86.AesNi.Fn.cfbEncryptFinal (Spec.Seed.cfbEncryptFinalContract X86.abi 676) 0 :=
+  verifiedScrubbedSel (api := Spec.Seed.cfbEncryptFinalApi) (W := 676)
+    { code := Impl.StackScratch.X86.withStackScratchWiped 672 4 162 Impl.Seed.X86.AesNi.cfbEncryptFinal
       verified := Proof.Seed.X86.AesNi.FbFinal.cfbEncryptFinal_framed }
     Impl.Seed.X86.AesNi.Fn.modeWords (cfbEncryptFinalOut _) (by decide) ⟨_, by taint_decide_ct⟩
 
 /-- `Spec.Seed.cfbDecryptFinalApi` as emitted (`Impl.Seed.X86.AesNi.Fn.cfbDecryptFinal`) meets its contract in constant
 time and returns without secret residue. -/
 theorem cfbDecryptFinal_scrubbed :
-    VerifiedScrubbed X86.target Impl.Seed.X86.AesNi.Fn.cfbDecryptFinal (Spec.Seed.cfbDecryptFinalContract X86.abi 680) 0 :=
-  verifiedScrubbedSel (api := Spec.Seed.cfbDecryptFinalApi) (W := 680)
-    { code := Impl.StackScratch.X86.withStackScratchWiped 676 4 162 Impl.Seed.X86.AesNi.cfbDecryptFinal
+    VerifiedScrubbed X86.target Impl.Seed.X86.AesNi.Fn.cfbDecryptFinal (Spec.Seed.cfbDecryptFinalContract X86.abi 676) 0 :=
+  verifiedScrubbedSel (api := Spec.Seed.cfbDecryptFinalApi) (W := 676)
+    { code := Impl.StackScratch.X86.withStackScratchWiped 672 4 162 Impl.Seed.X86.AesNi.cfbDecryptFinal
       verified := Proof.Seed.X86.AesNi.FbFinal.cfbDecryptFinal_framed }
     Impl.Seed.X86.AesNi.Fn.modeWords (cfbDecryptFinalOut _) (by decide) ⟨_, by taint_decide_ct⟩
 

@@ -20,12 +20,12 @@ pub const VG_TRIPLE_DES_CBC_ENCRYPT_CHAINED_SSSE3_FEATURES: verified_garbage_cpu
 /// * `iv` must be valid for reads and writes of 8 bytes.
 /// * `data` must be valid for reads and writes of `8 * n` bytes.
 /// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
-/// * None of `schedule`, `iv` and `data` may overlap the arguments on the stack, overlap the return address on the stack or the 984 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `schedule`, `iv` and `data` may overlap the arguments on the stack, overlap the return address on the stack or the 996 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `ssse3` target feature.
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_triple_des_cbc_encrypt_chained_ssse3(schedule: *const [u8; 384], iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
     core::arch::naked_asm!(
-        r#".base64 "jaQkOPz//4uEJMwDAACJRCQEi4Qk0AMAAIlEJAiLhCTUAwAAiUQkDIuEJNgDAACJRCQQieCDwBiJRCQUi0QkFImYiAMAAImwjAMAAIm4kAMAAImolAMAAInHi3QkCIsGiYegAwAAi0YEiYekAwAA"
+        r#".base64 "jaQkLPz//4uEJNgDAACJRCQEi4Qk3AMAAIlEJAiLhCTgAwAAiUQkDIuEJOQDAACJRCQQieCDwBiJRCQUi0QkFImYiAMAAImwjAMAAIm4kAMAAImolAMAAInHi3QkCIsGiYegAwAAi0YEiYekAwAA"
 call 2f
 2:
 mov eax, DWORD PTR [esp]
@@ -51,7 +51,7 @@ jne 23b
 jmp 22f
 21:
 22:
-.base64 "i3QkCIuHoAMAAIkGi4ekAwAAiUYEi5+IAwAAi7eMAwAAi6+UAwAAi7+QAwAAZg/vwLkAAAAA8w9/RCQY8w9/RCQo8w9/RCQ48w9/RCRI8w9/RCRY8w9/RCRo8w9/RCR48w9/hCSIAAAA8w9/hCSYAAAA8w9/hCSoAAAA8w9/hCS4AAAA8w9/hCTIAAAA8w9/hCTYAAAA8w9/hCToAAAA8w9/hCT4AAAA8w9/hCQIAQAA8w9/hCQYAQAA8w9/hCQoAQAA8w9/hCQ4AQAA8w9/hCRIAQAA8w9/hCRYAQAA8w9/hCRoAQAA8w9/hCR4AQAA8w9/hCSIAQAA8w9/hCSYAQAA8w9/hCSoAQAA8w9/hCS4AQAA8w9/hCTIAQAA8w9/hCTYAQAA8w9/hCToAQAA8w9/hCT4AQAA8w9/hCQIAgAA8w9/hCQYAgAA8w9/hCQoAgAA8w9/hCQ4AgAA8w9/hCRIAgAA8w9/hCRYAgAA8w9/hCRoAgAA8w9/hCR4AgAA8w9/hCSIAgAA8w9/hCSYAgAA8w9/hCSoAgAA8w9/hCS4AgAA8w9/hCTIAgAA8w9/hCTYAgAA8w9/hCToAgAA8w9/hCT4AgAA8w9/hCQIAwAA8w9/hCQYAwAA8w9/hCQoAwAA8w9/hCQ4AwAA8w9/hCRIAwAA8w9/hCRYAwAA8w9/hCRoAwAA8w9/hCR4AwAA8w9/hCSIAwAA8w9/hCSYAwAA8w9/hCSoAwAA8w9/hCS4AwAAjaQkyAMAAI2kJCj8//+5AAAAAIlMJBCJTCQUiUwkGIlMJByJTCQgiUwkJI2kJNgDAAC4AAAAALoAAAAAMclmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/8M="
+.base64 "i3QkCIuHoAMAAIkGi4ekAwAAiUYEi5+IAwAAi7eMAwAAi6+UAwAAi7+QAwAAZg/vwLkAAAAA8w9/RCQY8w9/RCQo8w9/RCQ48w9/RCRI8w9/RCRY8w9/RCRo8w9/RCR48w9/hCSIAAAA8w9/hCSYAAAA8w9/hCSoAAAA8w9/hCS4AAAA8w9/hCTIAAAA8w9/hCTYAAAA8w9/hCToAAAA8w9/hCT4AAAA8w9/hCQIAQAA8w9/hCQYAQAA8w9/hCQoAQAA8w9/hCQ4AQAA8w9/hCRIAQAA8w9/hCRYAQAA8w9/hCRoAQAA8w9/hCR4AQAA8w9/hCSIAQAA8w9/hCSYAQAA8w9/hCSoAQAA8w9/hCS4AQAA8w9/hCTIAQAA8w9/hCTYAQAA8w9/hCToAQAA8w9/hCT4AQAA8w9/hCQIAgAA8w9/hCQYAgAA8w9/hCQoAgAA8w9/hCQ4AgAA8w9/hCRIAgAA8w9/hCRYAgAA8w9/hCRoAgAA8w9/hCR4AgAA8w9/hCSIAgAA8w9/hCSYAgAA8w9/hCSoAgAA8w9/hCS4AgAA8w9/hCTIAgAA8w9/hCTYAgAA8w9/hCToAgAA8w9/hCT4AgAA8w9/hCQIAwAA8w9/hCQYAwAA8w9/hCQoAwAA8w9/hCQ4AwAA8w9/hCRIAwAA8w9/hCRYAwAA8w9/hCRoAwAA8w9/hCR4AwAA8w9/hCSIAwAA8w9/hCSYAwAA8w9/hCSoAwAA8w9/hCS4AwAAjaQk1AMAAI2kJBz8//+5AAAAAIlMJBCJTCQUiUwkGIlMJByJTCQgiUwkJImMJNgDAACJjCTcAwAAiYwk4AMAAI2kJOQDAAC4AAAAALoAAAAAMclmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/8M="
 .p2align 6"#,
         VG_TRIPLE_DES_SSSE3 = sym super::consts::VG_TRIPLE_DES_SSSE3,
     )

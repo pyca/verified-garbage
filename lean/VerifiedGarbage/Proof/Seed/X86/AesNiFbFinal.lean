@@ -353,7 +353,7 @@ theorem cfbDecryptFinal_verified : Verified X86.target cfbDecryptFinal decScratc
   final_verified (fun _ hs => cfbDecryptFinal_wp hs) cfbDecryptFinal_ct (fun _ _ _ _ _ _ h => h) wide_implies_dec
 
 theorem frameSat_pre (post : Spec.Seed.cfbFinalSig.Post X86.abi.ptrBits) :
-    ∃ s, (Spec.Seed.cfbFinalSig.contract X86.abi (post := post) (writeArgs := true) (stack := 680)).pre s := by
+    ∃ s, (Spec.Seed.cfbFinalSig.contract X86.abi (post := post) (writeArgs := true) (stack := 676)).pre s := by
   implies_sat [Spec.Seed.cfbFinalSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     [frameSat, X86.arg, X86.argAddr, Mem.readW, Mem.read] using frameSat
 
@@ -363,21 +363,21 @@ theorem ciphAt_congr : ∀ m₁ m₂ k, (∀ i < 128, m₂ (k + BitVec.ofNat 64 
 
 /-- The final CFB128 encryption with its working space on the stack. -/
 theorem cfbEncryptFinal_framed :
-    Verified X86.target (Impl.StackScratch.X86.withStackScratchWiped 676 4 162 cfbEncryptFinal)
-      (Spec.Seed.cfbEncryptFinalContract X86.abi 680) :=
+    Verified X86.target (Impl.StackScratch.X86.withStackScratchWiped 672 4 162 cfbEncryptFinal)
+      (Spec.Seed.cfbEncryptFinalContract X86.abi 676) :=
   X86.Verified.stackScratchWiped (sig := Spec.Seed.cfbFinalSig) (nm := "scratch") (e := .u64)
     (n := 81) (post := Proof.Modes.encFinalPost ciphAt 16 X86.abi.ptrBits) (wa := true) (stack := 4)
-    (bytes := 676) cfbEncryptFinal_verified (by decide) (by lit_decide) (by lit_decide) (by decide)
+    (bytes := 672) cfbEncryptFinal_verified (by decide) (by lit_decide) (by lit_decide) (by decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial)
     (Proof.Modes.encFinalPost_inLocal _ ciphAt_congr) (Proof.Modes.encFinalPost_local _) (frameSat_pre _)
 
 /-- The final CFB128 decryption with its working space on the stack. -/
 theorem cfbDecryptFinal_framed :
-    Verified X86.target (Impl.StackScratch.X86.withStackScratchWiped 676 4 162 cfbDecryptFinal)
-      (Spec.Seed.cfbDecryptFinalContract X86.abi 680) :=
+    Verified X86.target (Impl.StackScratch.X86.withStackScratchWiped 672 4 162 cfbDecryptFinal)
+      (Spec.Seed.cfbDecryptFinalContract X86.abi 676) :=
   X86.Verified.stackScratchWiped (sig := Spec.Seed.cfbFinalSig) (nm := "scratch") (e := .u64)
     (n := 81) (post := Proof.Modes.decFinalPost ciphAt 16 X86.abi.ptrBits) (wa := true) (stack := 4)
-    (bytes := 676) cfbDecryptFinal_verified (by decide) (by lit_decide) (by lit_decide) (by decide)
+    (bytes := 672) cfbDecryptFinal_verified (by decide) (by lit_decide) (by lit_decide) (by decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial)
     (Proof.Modes.decFinalPost_inLocal _ ciphAt_congr) (Proof.Modes.decFinalPost_local _) (frameSat_pre _)
 
@@ -432,17 +432,17 @@ theorem ofbFinal_verified : Verified X86.target ofbFinal ofbScratch :=
   final_verified (fun _ hs => ofbFinal_wp hs) ofbFinal_ct (fun _ _ _ _ _ _ h => h) wide_implies_ofb
 
 theorem ofbFrameSat_pre (post : Spec.Seed.ofbFinalSig.Post X86.abi.ptrBits) :
-    ∃ s, (Spec.Seed.ofbFinalSig.contract X86.abi (post := post) (writeArgs := true) (stack := 680)).pre s := by
+    ∃ s, (Spec.Seed.ofbFinalSig.contract X86.abi (post := post) (writeArgs := true) (stack := 676)).pre s := by
   implies_sat [Spec.Seed.ofbFinalSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     [frameSat, X86.arg, X86.argAddr, Mem.readW, Mem.read] using frameSat
 
 /-- The final OFB function with its working space on the stack. -/
 theorem ofbFinal_framed :
-    Verified X86.target (Impl.StackScratch.X86.withStackScratchWiped 676 4 162 ofbFinal)
-      (Spec.Seed.ofbFinalContract X86.abi 680) :=
+    Verified X86.target (Impl.StackScratch.X86.withStackScratchWiped 672 4 162 ofbFinal)
+      (Spec.Seed.ofbFinalContract X86.abi 676) :=
   X86.Verified.stackScratchWiped (sig := Spec.Seed.ofbFinalSig) (nm := "scratch") (e := .u64)
     (n := 81) (post := Proof.Modes.ofbFinalPost ciphAt 16 X86.abi.ptrBits) (wa := true) (stack := 4)
-    (bytes := 676) ofbFinal_verified (by decide) (by lit_decide) (by lit_decide) (by decide)
+    (bytes := 672) ofbFinal_verified (by decide) (by lit_decide) (by lit_decide) (by decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial)
     (Proof.Modes.ofbFinalPost_inLocal _ ciphAt_congr) (Proof.Modes.ofbFinalPost_local _) (ofbFrameSat_pre _)
 

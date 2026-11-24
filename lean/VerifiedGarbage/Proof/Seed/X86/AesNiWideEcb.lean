@@ -53,8 +53,8 @@ analysis of its code (`X86.sseTaint`); `ecb_framed` runs it with its working
 space on the stack, zeroed on return, and `ecbEncrypt_scrubbed` and
 `ecbDecrypt_scrubbed` are the functions as emitted
 (`Impl.Seed.X86.AesNiWide.Fn`), which return without secret residue
-(`X86.rtaint`), with six doublewords of the stack zeroed, the header of the
-frame and its last doubleword.
+(`X86.rtaint`), with five doublewords of the stack zeroed, the header of the
+frame.
 -/
 
 @[expose] public section
@@ -352,17 +352,17 @@ def frameSat : State where
   rd := [⟨0x1000, 128⟩]
   wr := [⟨0x2000, 0⟩, ⟨0x8004, 12⟩]
 
-theorem frameSat_pre (d : Direction) : ∃ s, (Spec.Seed.ecbContract X86.abi d 740).pre s := by
+theorem frameSat_pre (d : Direction) : ∃ s, (Spec.Seed.ecbContract X86.abi d 736).pre s := by
   implies_sat [Spec.Seed.ecbContract, Spec.Seed.ecbSig, Spec.Seed.ecbPost, X86.abi, X86.argSlots, X86.argVal,
     X86.argBytes] [frameSat, X86.arg, X86.argAddr, Mem.readW, Mem.read] using frameSat
 
 /-- ECB in the direction `d`, with its working space on the stack. -/
 theorem ecb_framed (d : Direction) :
-    Verified X86.target (Impl.StackScratch.X86.withStackScratchWiped 736 3 178 (ecb d))
-      (Spec.Seed.ecbContract X86.abi d 740) :=
+    Verified X86.target (Impl.StackScratch.X86.withStackScratchWiped 732 3 178 (ecb d))
+      (Spec.Seed.ecbContract X86.abi d 736) :=
   X86.Verified.stackScratchWiped (sig := Spec.Seed.ecbSig) (nm := "scratch") (e := .u64)
     (n := 89) (post := Spec.Seed.ecbPost d X86.abi.ptrBits) (wa := true) (stack := 4)
-    (bytes := 736) (ecb_verified d) (by decide) (by cases d <;> lit_decide)
+    (bytes := 732) (ecb_verified d) (by decide) (by cases d <;> lit_decide)
     (by cases d <;> lit_decide) (by decide) (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial)
     (Proof.Seed.ecbPost_local _ _) (Proof.Seed.ecbPostOut_local _ _) (frameSat_pre _)
 
@@ -378,9 +378,9 @@ open VG.X86.Scrub in
 constant time and returns without secret residue. -/
 theorem ecbEncrypt_scrubbed :
     VerifiedScrubbed X86.target Impl.Seed.X86.AesNiWide.Fn.ecbEncrypt
-      (Spec.Seed.ecbContract X86.abi .encrypt 740) 0 :=
-  verifiedScrubbedSel (api := Spec.Seed.ecbEncryptApi) (W := 740)
-    { code := Impl.StackScratch.X86.withStackScratchWiped 736 3 178 (ecb .encrypt)
+      (Spec.Seed.ecbContract X86.abi .encrypt 736) 0 :=
+  verifiedScrubbedSel (api := Spec.Seed.ecbEncryptApi) (W := 736)
+    { code := Impl.StackScratch.X86.withStackScratchWiped 732 3 178 (ecb .encrypt)
       verified := ecb_framed .encrypt }
     Impl.Seed.X86.AesNiWide.Fn.ecbWords (ecbOut _ _) (by decide) ⟨_, by taint_decide_ct⟩
 
@@ -389,9 +389,9 @@ open VG.X86.Scrub in
 constant time and returns without secret residue. -/
 theorem ecbDecrypt_scrubbed :
     VerifiedScrubbed X86.target Impl.Seed.X86.AesNiWide.Fn.ecbDecrypt
-      (Spec.Seed.ecbContract X86.abi .decrypt 740) 0 :=
-  verifiedScrubbedSel (api := Spec.Seed.ecbDecryptApi) (W := 740)
-    { code := Impl.StackScratch.X86.withStackScratchWiped 736 3 178 (ecb .decrypt)
+      (Spec.Seed.ecbContract X86.abi .decrypt 736) 0 :=
+  verifiedScrubbedSel (api := Spec.Seed.ecbDecryptApi) (W := 736)
+    { code := Impl.StackScratch.X86.withStackScratchWiped 732 3 178 (ecb .decrypt)
       verified := ecb_framed .decrypt }
     Impl.Seed.X86.AesNiWide.Fn.ecbWords (ecbOut _ _) (by decide) ⟨_, by taint_decide_ct⟩
 
