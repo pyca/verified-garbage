@@ -11,7 +11,7 @@ public import VerifiedGarbage.Proof.AesGcm.RISCV64.Contiguous.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.RISCV64.Print
 
-import VerifiedGarbage.Proof.AesGcm.RISCV64.Contiguous.PreparedLaw
+public import VerifiedGarbage.Proof.AesGcm.RISCV64.Contiguous.PreparedLaw
 import VerifiedGarbage.Proof.Aes.RISCV64.CodeLit
 import VerifiedGarbage.Proof.Gcm.RISCV64.Lit
 
