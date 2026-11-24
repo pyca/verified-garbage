@@ -348,6 +348,11 @@ impl AesGcm {
         // SAFETY: the caller supplies the input and output. The constructor
         // initialized the context and cached GHASH powers for this round count.
         // The tag is a separate writable local.
+        if (97..=224).contains(&len)
+            && verified_garbage_cpu::detected().contains(verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES)) {
+            unsafe { bench_trim::run(self.key(), self.rounds, nonce.as_ptr(), nonce.len(), aad.as_ptr(), aad.len(), src, dst, len, &mut tag, &self.powers.0); }
+            return tag;
+        }
         unsafe {
             vg_aes_gcm_seal_contiguous_with_powers_auto(
                 dit,
@@ -1800,3 +1805,7 @@ mod tests {
         assert_eq!(d.update_aad(&[1]), Err(Error::InvalidAadLength));
     }
 }
+
+#[cfg(target_arch = "aarch64")]
+#[path = "bench_trim.rs"]
+mod bench_trim;
