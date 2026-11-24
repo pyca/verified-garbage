@@ -32,11 +32,10 @@ theorem genWork_sub (o : State) {wn : Nat} (hw : wn ≤ 2560) :
 theorem genState_sub (o : State) {wn : Nat} (hw : 768 ≤ wn) :
     Region.Sub ⟨genState o wn,80⟩ ⟨genWork o wn,wn⟩ := Lay.wSub (by omega)
 
-theorem genLay {o s : State} {wn : Nat} (e : GeneralEntry o s wn) (hwn : 768 ≤ wn) :
+theorem recordLay {o : State} {wn : Nat} (b : wn ≤ 2560) (hwn : 768 ≤ wn)
+    (sep : (⟨Gather.K o,256⟩ : Region).Disjoint ⟨genWork o wn,wn⟩)
+    (wc : (Gather.K o).toNat+256 ≤ 2^64) (wsp : wn+32 ≤ o.sp.toNat) :
     Lay wn (Gather.K o) (genState o wn) (genWork o wn) := by
-  have b := e.bound
-  have sep := e.lay.bk.symm.sub_right (genWork_sub o b)
-  have wsp := e.lay.w₁
   have hbase : (genBase o wn).toNat + wn + 32 ≤ 2^64 := by
     unfold genBase
     rw [BitVec.toNat_sub,BitVec.toNat_ofNat,Nat.mod_eq_of_lt (a := wn+32) (by omega)]
@@ -47,7 +46,6 @@ theorem genLay {o s : State} {wn : Nat} (e : GeneralEntry o s wn) (hwn : 768 ≤
     rw [BitVec.toNat_add]; have := (genBase o wn).isLt
     change ((genBase o wn).toNat + 32) % 2^64 + wn ≤ 2^64
     omega
-  obtain ⟨_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,wc,_⟩ := e.lay.pre
   refine ⟨⟨hwn,b⟩,wc,?_,ww,sep.sub_right (genState_sub o hwn),sep,?_,?_⟩
   · unfold genState; rw [BitVec.toNat_add,BitVec.toNat_ofNat,Nat.mod_eq_of_lt (a := 16) (by decide)]
     have := (genWork o wn).isLt; omega
@@ -55,9 +53,14 @@ theorem genLay {o s : State} {wn : Nat} (e : GeneralEntry o s wn) (hwn : 768 ≤
       (d := 16) (n := 80) (e := 0) (k := 16) (.inr (by decide)) (by decide) (by decide)
   · exact Offset.disjoint (genWork o wn) (.inl (by decide)) (by decide) (by omega)
 
+theorem genLay {o s : State} {wn : Nat} (e : GeneralEntry o s wn) (hwn : 768 ≤ wn) :
+    Lay wn (Gather.K o) (genState o wn) (genWork o wn) := by
+  obtain ⟨_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,wc,_⟩ := e.lay.pre
+  exact recordLay e.bound hwn (e.lay.bk.symm.sub_right (genWork_sub o e.bound)) wc (by have := e.lay.w₁; have := e.bound; omega)
+
 /-- Before any ciphertext writes, all bytes in external regions still
 come from the entry of the public API. -/
-theorem inputsAgree {o t : State} (L : Gather.Lay .plain o) (f : Frame [Gather.stkR o] o.mem t.mem) :
+theorem inputsAgree {o t : State} (L : Gather.Lay .plain o (Gather.sharedSource o)) (f : Frame [Gather.stkR o] o.mem t.mem) :
     ∀ r ∈ Sig.descRegion 64 (Gather.Src o) (Gather.Cnt o) :: Gather.lsR o, ∀ x, r.Contains x 1 → o.mem x = t.mem x := by
   intro r hr x hx
   symm
@@ -76,7 +79,8 @@ structure PublicBuffers (wn : Nat) (o t : State) : Prop where
   apart : (⟨Gather.Src o,16*Gather.Cnt o⟩ : Region).Disjoint ⟨Gather.Dst o,Gather.L o⟩
   src : ∀ i < Gather.Cnt o, DataOk wn (genState o wn) (genWork o wn) t (Gather.sb t.mem (Gather.Src o) i)
     (Gather.sl t.mem (Gather.Src o) i)
-  srcApart : ∀ i < Gather.Cnt o, (⟨Gather.sb t.mem (Gather.Src o) i,Gather.sl t.mem (Gather.Src o) i⟩ : Region).Disjoint
+  srcLayout : ∀ i < Gather.Cnt o, Gather.sb t.mem (Gather.Src o) i =
+    Generic.atOff (Gather.Dst o) (Spec.Gcm.gatheredLen 64 t.mem (Gather.Src o) i) ∨ (⟨Gather.sb t.mem (Gather.Src o) i,Gather.sl t.mem (Gather.Src o) i⟩ : Region).Disjoint
     ⟨Gather.Dst o,Gather.L o⟩
 
 theorem buffers_of {o s t : State} {wn : Nat} (e : GeneralEntry o s wn) (hwn : 768 ≤ wn)
@@ -110,7 +114,11 @@ theorem buffers_of {o s t : State} {wn : Nat} (e : GeneralEntry o s wn) (hwn : 7
   · intro i hi
     have hr := Gather.slice_mem t.mem (Gather.Src o) hi
     rw [listed] at hr
-    exact (lsd _ hr).1
+    rcases (lsd _ hr).1 with apart | ⟨one,equal⟩
+    · exact Or.inr apart
+    · have z : i = 0 := by omega
+      subst i
+      exact Or.inl (by simpa [Generic.atOff,Spec.Gcm.gatheredLen,Sig.listed] using equal)
 
 end VG.Proof.AesGcm.AArch64.DirectGather
 
@@ -265,7 +273,7 @@ theorem generalPiecesPre {o s a b c : State} {wn : Nat} (e : GeneralEntry o s wn
         simp only [List.mem_cons,List.not_mem_nil,or_false] at hj
         rcases hj with rfl|rfl|rfl <;> decide)) set.sp set.rd set.wr,rounds,x22,
       set.x25,set.x26,set.x27,set.x28,bufs.desc.lt,bufs.desc,total ▸ bufs.dst,total ▸ bufs.apart,bufs.src,
-      total ▸ bufs.srcApart, Proof.Gcm.ctr_zero _ _ _ _ ((blockAt_frame set.mem (hSt 48 16 (by decide))).trans ready.cb),
+      (fun i hi => (bufs.srcLayout i hi).imp_right (fun apart => by rwa [total])), Proof.Gcm.ctr_zero _ _ _ _ ((blockAt_frame set.mem (hSt 48 16 (by decide))).trans ready.cb),
       set.ptr⟩
   exact ⟨pr,total,Fc⟩
 

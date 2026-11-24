@@ -21,7 +21,7 @@ structure Ready (o t : State) : Prop extends Header o t, Cursors o t where
   input : bytesAt t.mem (ghBase o) 256 = aadLayout o
   zero : blockAt t.mem (base o+736) = 0
 
-theorem loopFinish {o s t : State} (l : Gather.Lay .plain o) (hn : L o ≤ 224) (al : AL o ≤ 16)
+theorem loopFinish {o s t : State} (l : BoundedLay o) (hn : L o ≤ 224) (al : AL o ≤ 16)
     (h : Ready o s) (p : Fragment.AtDesc s (Fragment.num s) t) :
     MediumFinishPre o t (base o) (14-blocks o) ∧ Frame [scratch o,dR o] s.mem t.mem := by
   have ag := h.toLocalMem.descriptors l
@@ -45,17 +45,21 @@ theorem loopFinish {o s t : State} (l : Gather.Lay .plain o) (hn : L o ≤ 224) 
     · exact ⟨_,List.mem_cons_self ..,List.mem_singleton.mp hr ▸ slotSub⟩
   have whole := (h.frame.mono (fun r hr => List.mem_cons.mpr (.inl (List.mem_singleton.mp hr)))).trans small
   have hashSub : Region.Sub ⟨K o+240#64,16⟩ (kR .plain o) := Offset.sub_base _ (by decide)
-  obtain ⟨_,wr,kd,_,_,_,_,_,_,_,_,dt,da,_,_,_,_,_,_,sa,_⟩ := l.pre
+  have wr := l.wr
+  have kd := l.kd
+  have dt := l.dt
+  have da := l.da
+  have sa := l.barg
   let g (r : Reg) (hr : r ∉ Fragment.loopRegs) := p.gpr r hr
   have kc : Covers [kR .plain o] (t.rd ++ t.wr) := Covers.of_mem fun r hr => by
-    rw [p.rd,h.rd,l.pre.1,List.mem_singleton.mp hr]; simp
+    rw [p.rd,h.rd,l.rd,List.mem_singleton.mp hr]; simp
   have hkey : Covers [⟨K o+240#64,16⟩] (t.rd ++ t.wr) := covers_off kc (by decide) (by decide)
   have ct := p.gctr (shortCipher o) (inc32 (shortJ0 o)) (fun j hj => by
     change j < Fragment.total s at hj; rw [gl] at hj
     simpa only [Fragment.off,h.key] using h.stream j (by omega))
   change bytesAt t.mem _ (Fragment.total s) = _ ∧ bytesAt t.mem _ (Fragment.total s) = _ at ct
   rw [h.d,h.auth,gl,plain] at ct
-  have apart {r : Region} (a : (stkR o).Disjoint r) (b : r.Disjoint (dR o)) :
+  have apart {r : Region} (a : (boundedStack o).Disjoint r) (b : r.Disjoint (dR o)) :
       ∀ q ∈ [scratch o,dR o], r.Disjoint q := by
     intro q hq; rcases List.mem_cons.mp hq with rfl|hq
     · exact (a.sub_left (scratch_sub o)).symm
@@ -64,7 +68,7 @@ theorem loopFinish {o s t : State} (l : Gather.Lay .plain o) (hn : L o ≤ 224) 
     rw [whole.readW (r := argR o) (by
       have e := scratchArg o 2
       change base o + 768 = stackArgAddr o 2 at e
-      rw [e,l.hargR,l.hA]; apply contains_off <;> decide)
+      rw [e]; exact stackArg_contains o 2 (by decide))
       (apart sa da.symm) (by decide)]
     change o.mem.readW (base o + BitVec.ofNat 64 (Medium.work+8*2)) 64 = _
     rw [scratchArg]; rfl

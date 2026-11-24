@@ -399,9 +399,9 @@ theorem absCall1_ok (v : GcmImpl) {k : Reg → BitVec 64} {H : Block} {x : List 
     · exact .inl (by simp only [headLen] at h16 ⊢; omega_arith)
 
 /-- Before the second call: the arguments for the whole blocks. -/
-theorem absSeg2_ok {k : Reg → BitVec 64} {H : Block} {x : List Byte} {D : Addr} {n o : Nat}
+theorem absSeg2_mem {k : Reg → BitVec 64} {H : Block} {x : List Byte} {D : Addr} {n o : Nat}
     {m₀ : Mem} {j : Nat} {s : State} (h : AbsMid Wn Ctx St W SP k yo H x D n o m₀ j s) :
-    WP isa (.block (absSeg2 yo)) s (Abs3 Wn Ctx St W SP k yo H x D n o m₀ j) := by
+    WP isa (.block (absSeg2 yo)) s fun t => Abs3 Wn Ctx St W SP k yo H x D n o m₀ j t ∧ t.mem = s.mem := by
   have hn' := h.data.lt
   have he := h.env
   obtain hyo' : yo < 4096 := by omega_arith
@@ -428,6 +428,7 @@ theorem absSeg2_ok {k : Reg → BitVec 64} {H : Block} {x : List Byte} {D : Addr
       congr 1
       omega_arith
   refine WP.of_runBlock ⟨s₁, run₁, ?_⟩
+  refine ⟨?_,r₁.mem⟩
   obtain he₁ := he.of_regs r₁
   refine ⟨he₁, h.kept.of_others r₁.others, h.le, x23₁, x24₁, by rw [r₁.others _ (by decide)]; exact h.x25,
     h.data.of_eq r₁.rd r₁.wr, by rw [r₁.mem]; exact h.hH, fun ha => by rw [r₁.mem]; exact h.abs ha, h.whole,
@@ -435,6 +436,11 @@ theorem absSeg2_ok {k : Reg → BitVec 64} {H : Block} {x : List Byte} {D : Addr
   exact ghCall_of L hyo he₁ x0₁ x1₁ x2₁ x3₁ x4₁ (by have := hdj.lt; omega_arith)
     (hdj.st.sub_right (Lay.stSub (by omega_arith))).symm (hdj.w.sub_right (Lay.wSub (by have := L.hWn; omega)))
     (by rw [r₁.rd, r₁.wr]; exact hdj.rd)
+
+theorem absSeg2_ok {k : Reg → BitVec 64} {H : Block} {x : List Byte} {D : Addr} {n o : Nat}
+    {m₀ : Mem} {j : Nat} {s : State} (h : AbsMid Wn Ctx St W SP k yo H x D n o m₀ j s) :
+    WP isa (.block (absSeg2 yo)) s (Abs3 Wn Ctx St W SP k yo H x D n o m₀ j) :=
+  (absSeg2_mem L hyo h).mono fun _ q => q.1
 
 /-- The second call: the whole blocks absorbed, by a call that also writes
 `ex`, apart from the hash subkey and the buffer. -/
