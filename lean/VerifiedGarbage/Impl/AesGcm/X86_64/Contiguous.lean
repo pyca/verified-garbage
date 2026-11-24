@@ -17,11 +17,17 @@ def fusedArgs : List Instr :=
 
 def fused (f : Fn) : Prog isa :=
   .seq (.block fusedArgs) (.frame (.push [.rax]) (call f) (.pop .rax 1))
+def ctrArgs : List Instr :=
+  ([.mov .rdi (.reg .r13), .mov .rsi (.mem (at_ .r15 roundsO))] : List Instr) ++ ptr .rdx .r14 48 ++
+    [.mov .rcx (.mem src), .mov .r8 (.reg .rax), .mov .r11 (.mem (at_ .r15 dataO))] ++ ptr .r9 .r15 bScrO
+
+def hashArgs : List Instr :=
+  ptr .rdi .r13 240 ++ ptr .rsi .r14 16 ++ [.mov .rdx (.mem (at_ .r15 dataO)),
+    .mov .rcx (.mem (at_ .r15 lenO)), .shift .shr .rcx 4] ++ ptr .r8 .r15 bScrO
+
 def separate (ctr gh : Fn) : Prog isa :=
-  .seq (.block (([.mov .rdi (.reg .r13), .mov .rsi (.mem (at_ .r15 roundsO))] : List Instr) ++ ptr .rdx .r14 48 ++
-    [.mov .rcx (.mem src), .mov .r8 (.reg .rax), .mov .r11 (.mem (at_ .r15 dataO))] ++ ptr .r9 .r15 bScrO))
-  (.seq (call ctr) (.seq (.block (ptr .rdi .r13 240 ++ ptr .rsi .r14 16 ++ [.mov .rdx (.mem (at_ .r15 dataO)),
-    .mov .rcx (.mem (at_ .r15 lenO)), .shift .shr .rcx 4] ++ ptr .r8 .r15 bScrO)) (call gh)))
+  .seq (.block ctrArgs) (.seq (call ctr) (.seq (.block hashArgs) (call gh)))
+
 def bulk (kernel : Prog isa) : Prog isa :=
   .seq (.block [.mov .rax (.mem (at_ .r15 lenO)), .store (at_ .r15 tlenO) .rax,
     .shift .shr .rax 4, .alu .test .rax (.reg .rax)])
