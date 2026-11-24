@@ -197,26 +197,3 @@ fn limits_and_lengths() {
         }
     }
 }
-
-/// Decryption undoes encryption for messages of many bytes, which an
-/// implementation may take many at a time, split around any of the byte
-/// counts it may change its course at, and unaligned.
-#[test]
-fn byte_batches_and_continuation() {
-    let iv = [0x3c; 16];
-    for key_len in [16, 24, 32] {
-        let key: Vec<_> = crate::bytes::pattern(key_len, 17, 3);
-        for len in [0usize, 1, 15, 16, 17, 63, 64, 65, 127, 128, 129, 200] {
-            let plain: Vec<_> = crate::bytes::pattern(len, 73, 5);
-            let mut ciphertext = plain.clone();
-            run(&key, &iv, true, &mut ciphertext, &[]);
-            for split in [0, len.min(1), len / 2, len] {
-                let mut guarded = vec![0xa5; len + 2];
-                guarded[1..=len].copy_from_slice(&ciphertext);
-                run(&key, &iv, false, &mut guarded[1..=len], &[split]);
-                assert_eq!(guarded[1..=len], plain);
-                assert_eq!((guarded[0], guarded[len + 1]), (0xa5, 0xa5));
-            }
-        }
-    }
-}

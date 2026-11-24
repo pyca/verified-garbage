@@ -92,7 +92,7 @@ GROUPS = {
         "tests": ["cavp::aes_cfb"],
     },
     "aes_cfb8": {
-        "lib": [],
+        "lib": ["cipher::aes::cfb8"],
         "tests": ["cavp::aes_cfb8"],
     },
     "aes_ctr": {
