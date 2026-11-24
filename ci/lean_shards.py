@@ -32,7 +32,10 @@ the chain, and a sink goes where much of what it imports is built already,
 rather than building it again elsewhere, unless that shard is the slower by
 more than the work it saves. A change to the inputs (the toolchain, the
 dependencies or the package's settings in the lakefile) rebuilds every
-module. A change to one library's settings rebuilds only its modules, and
+module, and so does a change to a library that every library loads as a
+plugin or lists in `needs` (the audit records' `NativeAuditRecords`), which
+Lake puts in every module's trace (`plugin_changes`). A change to one
+library's settings rebuilds only its modules, and
 adding a library or a module to one, or removing one (the lakefile's `globs`
 and `roots`), just the modules it moves (`input_changes`); through their
 imports, what imports them rebuilds too. Each module's outputs belong to one
@@ -261,6 +264,28 @@ def input_changes(then: dict, now: dict, mods, closure=None, config=None) -> set
             if lib["name"] in altered:
                 changed |= library_members(lib, closure) & set(mods)
     return changed
+
+
+def plugin_changes(changed: set[str], mods, closure, config=None) -> set[str]:
+    """The modules (of `mods`) that `changed` rebuilds through the lakefile's
+    `needs` and `plugins`: every module of a library that lists another (as
+    `<library>:<facet>`) whose shared library is built from a changed module,
+    one of its modules or what they import (`closure`, `closures`). Lake puts
+    what a library `needs` in the trace of each of its modules, even with
+    `platformIndependent`, and a plugin it loads in the trace of each module of
+    a library without it, so a change to the audit records' plugin rebuilds
+    every module. `config` is the lakefile, read if not given."""
+    if config is None:
+        config = tomllib.loads((LEAN / "lakefile.toml").read_text())
+    libs = config.get("lean_lib", [])
+    members = {lib["name"]: library_members(lib, closure) for lib in libs}
+    built = {name: set().union(*(closure[m] for m in ms)) for name, ms in members.items()}
+    out = set()
+    for lib in libs:
+        deps = {e.partition(":")[0] for e in lib.get("needs", []) + lib.get("plugins", [])}
+        if any(changed & built.get(d, set()) for d in deps):
+            out |= members[lib["name"]] & set(mods)
+    return out
 
 
 def precompiled_libraries(closure):
@@ -1296,6 +1321,7 @@ def plan(manifest: dict, diagnostics: dict | None = None) -> dict:
         return {"stale": 0, "work": 0, "loads": [], "targets": [], "owner": {}, "edited": []}
     closure = closures(imps)
     changed = {m for m in mods if sources.get(m) != hashes[m]} | input_changes(then, now, mods, closure)
+    changed |= plugin_changes(changed, mods, closure)
     libraries = precompiled_libraries(closure)
     trace_modules = native_trace_modules(closure)
     if changed == set(imps):
