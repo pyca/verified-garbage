@@ -78,7 +78,7 @@ bnez s3, 22b
 j 21f
 20:
 21:
-.base64 "g7ALAIO0iwADuQsBg7mLAQO6CwKDuosCA7sLA4O7iwMKj4FPIzD/ASM0/wEjOP8BIzz/ASMw/wMjNP8DIzj/AyM8/wMjMP8FIzT/BWFhgUIBRYFFAUaBRgFHgUcBSIFIgUIBQ4FDAU6BTgFPgU+CgA=="
+.base64 "g7ALAIO0iwADuQsBg7mLAQO6CwKDuosCA7sLA4O7iwMKj4FPIzD/ASM0/wEjOP8BIzz/ASMw/wMjNP8DIzj/AyM8/wMjMP8FIzT/BWFhgUKBRQFGgUYBR4FHAUiBSIFCAUOBQwFOgU4BT4FPAUWCgA=="
 .option pop"#,
         vg_aes_ctr_core = sym super::aes_ctr::vg_aes_ctr_core::vg_aes_ctr_core,
     )

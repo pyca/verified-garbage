@@ -205,7 +205,6 @@ vg_rc2_cbc_encrypt_chained:
 	sd t6, 504(t5)
 	addi sp, sp, 512
 	addi t0, zero, 0
-	addi a0, zero, 0
 	addi a1, zero, 0
 	addi a2, zero, 0
 	addi a3, zero, 0
@@ -220,6 +219,7 @@ vg_rc2_cbc_encrypt_chained:
 	addi t4, zero, 0
 	addi t5, zero, 0
 	addi t6, zero, 0
+	addi a0, zero, 0
 	ret
 	.option pop
 
@@ -424,7 +424,6 @@ vg_rc2_cbc_decrypt_chained:
 	sd t6, 504(t5)
 	addi sp, sp, 512
 	addi t0, zero, 0
-	addi a0, zero, 0
 	addi a1, zero, 0
 	addi a2, zero, 0
 	addi a3, zero, 0
@@ -439,5 +438,6 @@ vg_rc2_cbc_decrypt_chained:
 	addi t4, zero, 0
 	addi t5, zero, 0
 	addi t6, zero, 0
+	addi a0, zero, 0
 	ret
 	.option pop

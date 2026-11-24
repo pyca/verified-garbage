@@ -175,8 +175,7 @@ vg_mlkem768_keygen:
 	sd t0, 1184(t1)
 	sd t0, 1192(t1)
 	addi sp, sp, 1200
-	slli a0, a0, 32
-	srli a0, a0, 32
+	addiw a0, a0, 0
 	addi a1, zero, 0
 	addi a2, zero, 0
 	addi a3, zero, 0
@@ -365,8 +364,7 @@ vg_mlkem768_encaps:
 	sd t0, 1184(t1)
 	sd t0, 1192(t1)
 	addi sp, sp, 1200
-	slli a0, a0, 32
-	srli a0, a0, 32
+	addiw a0, a0, 0
 	addi a1, zero, 0
 	addi a2, zero, 0
 	addi a3, zero, 0
@@ -555,8 +553,7 @@ vg_mlkem768_encaps_h:
 	sd t0, 1184(t1)
 	sd t0, 1192(t1)
 	addi sp, sp, 1200
-	slli a0, a0, 32
-	srli a0, a0, 32
+	addiw a0, a0, 0
 	addi a1, zero, 0
 	addi a2, zero, 0
 	addi a3, zero, 0
@@ -745,8 +742,7 @@ vg_mlkem768_decaps:
 	sd t0, 1184(t1)
 	sd t0, 1192(t1)
 	addi sp, sp, 1200
-	slli a0, a0, 32
-	srli a0, a0, 32
+	addiw a0, a0, 0
 	addi a1, zero, 0
 	addi a2, zero, 0
 	addi a3, zero, 0
@@ -797,8 +793,7 @@ vg_mlkem768_check_ek:
 	addi a0, zero, 1
 	sub a0, a0, a3
 	addi t0, zero, 0
-	slli a0, a0, 32
-	srli a0, a0, 32
+	addiw a0, a0, 0
 	addi a1, zero, 0
 	addi a2, zero, 0
 	addi a3, zero, 0

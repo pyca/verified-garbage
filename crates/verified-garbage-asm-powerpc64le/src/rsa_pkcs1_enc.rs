@@ -40,7 +40,7 @@ pub(crate) unsafe extern "C" fn vg_rsa_pkcs1_decrypt_precomputed(out: *mut u8, o
     core::arch::naked_asm!(
         r#".base64 "8f4h+AAAgTlwAQzoYAAM+HgBDOhoAAz4gAEM6HAADPiIAQzoeAAM+JABDOiAAAz4mAEM6IgADPigAQzokAAM+KgBDOiYAAz4sAEM6KAADPi4AQzoqAAM+MABDOiwAAz4yAEM6LgADPjQAQzowAAM+NgBDOjIAAz44AEM6NAADPjoAQzo2AAM+PABDOjgAAz46ADM+fAA7Pn4AAz6AAEs+qYCCHwIAQz4eBtufHgjj3x4K7B82AEs6g=="
 bl {vg_rsa_pkcs1_decrypt_precomputed_body}
-.base64 "AACBOQgBDOimAwh8eIskfgAIoDgAAMA4"
+.base64 "AACBOQgBDOimAwh8FHqRfHh75X0AAMA4"
 20:
 .base64 "AADEmAEAhDj//6U4AAAlKA=="
 bne %cr0, 20b
@@ -48,13 +48,13 @@ bne %cr0, 20b
 21:
 .base64 "AADkiAAA5ZgBAIQ4AQClOP//xjgAACYo"
 bne %cr0, 21b
-.base64 "AAAQ6VB4CH0BACA5CwBAOQ=="
+.base64 "AAAQ6VB4CH0BACA5eHvqfQ=="
 22:
-.base64 "eIskfhRKpHwBAMA4ODAGfQAA4DhQOMZ8AATgOA=="
+.base64 "eIskfhRKpHwBAMA4ODAGfQAA4DhQOMZ8eHvnfQ=="
 23:
 .base64 "AABkiQAAhYl4Wox9ODCMfXhia30AAGSZAQCEOAEApTj//+c4AAAnKA=="
 bne %cr0, 23b
-.base64 "QvgIeRRKKX3//0o5AAAqKA=="
+.base64 "QvgIeRRKKX1C+Ep5AAAqKA=="
 bne %cr0, 22b
 .base64 "eIskfnhzxX14e+Z9"
 24:
