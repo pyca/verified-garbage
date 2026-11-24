@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.X448.X86.Verified
 public import VerifiedGarbage.Impl.X448.X86.Base
-public import VerifiedGarbage.Proof.Ed448.CombRef
+public import VerifiedGarbage.Proof.Ed448.SignedComb
 public import VerifiedGarbage.Proof.X448.X86.BaseLit
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Ed448.X86.BaseCT
@@ -10,6 +10,7 @@ public import VerifiedGarbage.Proof.Ed448.X86.BaseMain
 public import VerifiedGarbage.Proof.Ed448.X86.ScalarIO
 public import VerifiedGarbage.Proof.X448.X86.Runs
 import VerifiedGarbage.Proof.X448.X86.Main
+import VerifiedGarbage.Proof.Framework.X86.Syms
 import VerifiedGarbage.Proof.X448.X86.FinalSwap
 import VerifiedGarbage.Proof.X448.X86.Output
 import VerifiedGarbage.Proof.X448.X86.Freeze
@@ -29,7 +30,7 @@ import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.X86.Lit
 meta import VerifiedGarbage.Proof.X448.X86.Verified
 meta import VerifiedGarbage.Impl.X448.X86.Base
-meta import VerifiedGarbage.Proof.Ed448.CombRef
+meta import VerifiedGarbage.Proof.Ed448.SignedComb
 meta import VerifiedGarbage.Proof.X448.X86.BaseLit
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Ed448.X86.BaseCT
@@ -59,16 +60,16 @@ meta import VerifiedGarbage.Proof.Framework.X86.Lit
 # X448 of the base point on x86 (32-bit): `Verified`
 
 `vg_x448_base` is Ed448's base-point multiplication on this target, the
-four-column comb (`Proof/Ed448/X86/BaseMain.lean`'s `combLoop_ok`), on the
+signed radix-16 comb (`Proof/Ed448/X86/CombBase.lean`'s `combBase_ok`), on the
 bits of the decoded scalar (X448's `bitsData_ok`, and `zeroTop_ok` for the
 eight bits above them), then `Y² / X²` of the comb's point by the ladder's
 inversion and output (`invert_ok`, `finishX_ok`): `x448Base_main`, and
 `x448Base_ok` given that this is X448 of the base point
-(`Proof.Ed448.BaseCombUOk`, proven with the group law in
-`Proof/Ed448/CombFacts.lean`, which only the registration file imports).
+(`Proof.Ed448.SignedBaseUOk`, proven with the group law in
+`Proof/Ed448/SignedCombFacts.lean`, which only the registration file imports).
 
 Constant time is run by run, as Ed448's base-point multiplication's
-(`Proof/Ed448/X86/BaseCT.lean`, whose `combLoopG_tr` relates the comb's rows):
+(`Proof/Ed448/X86/BaseCT.lean`, whose `combBaseG_tr` relates the comb's runs):
 the entry by the taint analysis from the arguments (`τb`), the field
 operations by the field functions' constant time, and the last block by the
 taint analysis from what each run's correctness says of its own state.
@@ -79,9 +80,11 @@ taint analysis from what each run's correctness says of its own state.
 namespace VG.Proof.X448
 
 open VG VG.X86 in
+open VG.Proof.Ed448.X86 (TblR CombHeld) in
+open VG.Impl.Ed448.X86 (combSym) in
 /-- `vg_x448_base(out, scalar, scratch)`, whose arguments are on the stack
-(cdecl), with the 20 bytes of stack below its return address that its calls
-of the field functions use. -/
+(cdecl), with the comb's tables (the static `combSym`) and the 20 bytes of stack
+below its return address that its calls of the field functions use. -/
 def x448BaseX86 : Contract X86.isa where
   pre s :=
     let out : Region := ⟨(arg s 0).setWidth 64, 56⟩
@@ -90,31 +93,33 @@ def x448BaseX86 : Contract X86.isa where
     let args : Region := ⟨argAddr s 0, 12⟩
     let ret : Region := ⟨(s.gpr .esp).setWidth 64, 4⟩
     let stk : Region := ⟨(s.gpr .esp).setWidth 64 - 20#64, 20⟩
-    s.rd = [scalar, args] ∧ s.wr = [out, scratch] ∧ out.Disjoint scratch ∧
+    s.rd = [scalar, args, TblR ((s.syms combSym).setWidth 64)] ∧ s.wr = [out, scratch] ∧ out.Disjoint scratch ∧
       scalar.Disjoint scratch ∧ args.Disjoint out ∧ args.Disjoint scratch ∧
       ret.Disjoint out ∧ ret.Disjoint scratch ∧ (arg s 0).toNat + 56 ≤ 2 ^ 32 ∧
       (arg s 1).toNat + 56 ≤ 2 ^ 32 ∧ (arg s 2).toNat + 8192 ≤ 2 ^ 32 ∧
       (s.gpr .esp).toNat + 16 ≤ 2 ^ 32 ∧ 20 ≤ (s.gpr .esp).toNat ∧ stk.Disjoint out ∧
-      stk.Disjoint scratch
+      stk.Disjoint scratch ∧ CombHeld s [out, scratch, stk]
   post s s' := Spec.X448.bytesAt s'.mem ((arg s 0).setWidth 64) 56 =
     Spec.X448.x448 (Spec.X448.bytesAt s.mem ((arg s 1).setWidth 64) 56) Spec.X448.basePoint
   pub s₁ s₂ := s₁.gpr .esp = s₂.gpr .esp ∧ arg s₁ 0 = arg s₂ 0 ∧ arg s₁ 1 = arg s₂ 1 ∧
-    arg s₁ 2 = arg s₂ 2
+    arg s₁ 2 = arg s₂ 2 ∧ s₁.syms combSym = s₂.syms combSym
 
 end VG.Proof.X448
 
 namespace VG.Proof.X448.X86
 
 open VG VG.X86 VG.Impl.X448.X86 VG.Proof.X448.Radix16
-open VG.Proof.Ed448 (BaseCombUOk comb pt)
-open VG.Proof.Ed448.X86 (Args CombInv combLoop_ok initSlots_ok initSlots_E initE
-  stkR_below BitsG combLoopG_tr far_out Input)
+open VG.Proof.Ed448 (SignedBaseUOk signedComb pt)
+open VG.Proof.Ed448.X86 (Args CombInit combInit combBase_ok CombKeep CombG CombP initSlots_ok initSlots_E
+  combVal_lt BitsAtB stkR_below combBaseG_tr far_out Input TblR CombHeld TblMem TblWords combWords_length
+  combConsts_eq satMemWith satMemWith_out satMemWith_held)
+open VG.Impl.Ed448.X86 (combSym combVal combBase combConsts)
 
 /-! ## The precondition -/
 
 /-- `vg_x448_base`'s precondition, by name. -/
 structure BPre (s : State) : Prop where
-  rd : s.rd = [scalarR s, ⟨argAddr s 0, 12⟩]
+  rd : s.rd = [scalarR s, ⟨argAddr s 0, 12⟩, TblR ((s.syms combSym).setWidth 64)]
   wr : s.wr = [outR s, scR (arg s 2)]
   out_sc : (outR s).Disjoint (scR (arg s 2))
   scalar_sc : (scalarR s).Disjoint (scR (arg s 2))
@@ -129,10 +134,11 @@ structure BPre (s : State) : Prop where
   sp_room : 20 ≤ (s.gpr .esp).toNat
   stk_out : (stkR s).Disjoint (outR s)
   stk_sc : (stkR s).Disjoint (scR (arg s 2))
+  held : CombHeld s [outR s, scR (arg s 2), stkR s]
 
 theorem BPre.of {s : State} (h : Proof.X448.x448BaseX86.pre s) : BPre s := by
-  obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15⟩ := h
-  exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15⟩
+  obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16⟩ := h
+  exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16⟩
 
 theorem BPre.stk_args {s : State} (h : BPre s) : (stkR s).Disjoint ⟨argAddr s 0, 12⟩ := by
   have h1 := h.sp_room
@@ -218,18 +224,28 @@ structure XMid (σ s : State) : Prop where
   fe : FE bsX σ s
   rd : s.rd = σ.rd
   saved : Saved (bsX σ) σ.gpr s.mem
-  bits : BitsG bsX kX σ s
-  start : ∀ s', s'.gpr .esi = BitVec.ofNat 32 114 → (∀ r, r ≠ .esi → s'.gpr r = s.gpr r) →
-    s'.mem = s.mem → s'.rd = s.rd → s'.wr = s.wr → CombInv (bsX σ) (kX σ) s s' 114
+  syms : s.syms = σ.syms
+  bits : BitsAtB (bsX σ) (kX σ) s.mem
+  init : CombInit (E s.mem (bsX σ))
+
+/-- The comb's tables, from the entry state's. -/
+theorem BPre.tblMem {σ s : State} (h : BPre σ) (fe : FE bsX σ s) (hr : s.rd = σ.rd) :
+    TblMem (σ.syms combSym) s := by
+  obtain ⟨w, fit, far⟩ := h.held
+  obtain far' : ∀ r ∈ σ.wr ++ [below (σ.gpr .esp) 20], (TblR ((σ.syms combSym).setWidth 64)).Disjoint r := by
+    rw [h.wr, ← stkR_below h.sp_room]
+    simpa using far
+  exact ⟨fit, by rw [hr, h.rd]; simp, w.frame fe.frame far', by rw [fe.sp, fe.wr]; exact far'⟩
 
 theorem entryB_stage {s₀ : State} (h : BPre s₀) : WP isa baseEntry s₀ (XMid s₀) := by
+  refine WP.of_syms ?_
   have hA := h.args
   have hB : BITS = 3072 := rfl
   obtain hin : Input s₀ (bsX s₀) (arg s₀ 1) 56 :=
     Input.of_region h.scalar_fit (by rw [h.rd]; simp) h.scalar_sc
   unfold baseEntry
   refine WP.seq (WP.mono (Proof.Ed448.X86.save_ok hA) fun s₁ ⟨hs₁, sv₁, o₁, k₁⟩ => ?_)
-  refine WP.seq (WP.mono (initSlots_ok hs₁) fun s₂ ⟨l₂, o₂, k₂⟩ => ?_)
+  refine WP.seq (WP.mono (initSlots_ok hs₁ combVal) fun s₂ ⟨l₂, o₂, k₂⟩ => ?_)
   obtain hs₂ := hs₁.of_keeps k₂ (by decide)
   refine WP.seq (WP.mono (zeroTop_ok hs₂) fun s₃ ⟨z₃, o₃, k₃⟩ => ?_)
   obtain hs₃ := hs₂.of_keeps k₃ (by decide)
@@ -243,24 +259,23 @@ theorem entryB_stage {s₀ : State} (h : BPre s₀) : WP isa baseEntry s₀ (XMi
     fun s₄ u₄ => WP.block_nil ?_)
   obtain hs₄ := hs₃.of_upd u₄ (by decide)
   refine WP.mono (bitsData_ok (k := (arg s₀ 1).setWidth 64) hs₄ (by rw [u₄.gpr]) (by rw [u₄.gpr]; exact hin.fit)
-    (by rw [u₄.rd, u₄.wr, k03.2.1, k03.2.2]; exact hin.read) hin.far) fun s₅ ⟨k₅, o₅, bits₅⟩ => ?_
+    (by rw [u₄.rd, u₄.wr, k03.2.1, k03.2.2]; exact hin.read) hin.far) fun s₅ ⟨k₅, o₅, bits₅⟩ sy => ?_
   rw [u₄.mem, bytesAt_outside o03 hin.far] at bits₅
   obtain hs₅ := hs₄.of_keeps k₅ (by decide)
-  obtain bits : BitsG bsX kX s₀ s₅ := fun t ht => by
+  obtain bits : BitsAtB (bsX s₀) (kX s₀) s₅.mem := fun t ht => by
     rcases Nat.lt_or_ge t 448 with h448 | h448
     · exact bits₅ t h448
     · rw [o₅ _ (Or.inr (by rw [ofs_off' _ (by omega_using [hB, ht])]; omega_using [h448])), u₄.mem,
         decodeScalar448_top _ h448, show BITS + t = BITS + 448 + (t - 448) by omega_using [h448]]
       exact z₃ (t - 448) (by omega_using [ht, h448])
-  obtain e₅ : ∀ i : Index, E s₅.mem (bsX s₀) i = Proof.X448.toFe (Impl.Ed448.X86.initVal i.val) := fun i => by
+  obtain e₅ : ∀ i : Index, E s₅.mem (bsX s₀) i = Proof.X448.toFe (combVal i.val) := fun i => by
     have hi := i.isLt
-    rw [← initSlots_E l₂ i]
+    rw [← initSlots_E combVal_lt l₂ i]
     refine congrArg Proof.X448.toFe ?_
     rw [o₅.fe (d := slot i.val) (Or.inl (by simp only [slot]; omega_using [hB, hi]))
         (by simp only [slot]; omega_using [hi]), u₄.mem,
       o₃.fe (d := slot i.val) (Or.inl (by simp only [slot]; omega_using [hB, hi]))
         (by simp only [slot]; omega_using [hi])]
-  obtain ⟨er, eq, ed⟩ := initE _ e₅
   obtain k05 : Keeps [.eax, .ebx, .ebp, .edi, .edx, .esi, .ecx] s₀ s₅ :=
     (k03.mono (by decide)).trans ((u₄.rest (by decide)).trans (k₅.mono (by decide)))
   obtain sp₅ : s₅.gpr .esp = s₀.gpr .esp := k05.1 _ (by decide)
@@ -272,24 +287,25 @@ theorem entryB_stage {s₀ : State} (h : BPre s₀) : WP isa baseEntry s₀ (XMi
     rw [h.wr]; simp
   refine ⟨h, ⟨⟨hs₅, hc₅⟩, sp₅, k05.2.2, (Outside.frame (o03.trans o35)).mono fun r hr => by
       rw [List.mem_singleton.mp hr]; exact ws⟩, k05.2.1,
-    (((sv₁.outside o₂ (by decide)).outside o₃ (by decide)).outside (u₄.mem ▸ o₅) (by decide)), bits,
-    fun s' h1 h2 h3 h4 h5 => ?_⟩
-  have k' : Keeps (.esi :: workRegs) s₅ s' :=
-    ⟨fun r hr => h2 r (fun e => hr (by subst r; exact List.mem_cons_self)), h4, h5⟩
-  exact ⟨hs₅.of_keeps k' (by decide), hc₅.keep (h2 _ (by decide)), k', h1,
-    h3 ▸ WsOut2.refl _ _ _ _ _ _, by rw [h3, er]; rfl, by rw [h3]; exact congrArg Spec.Ed448.Point.Z eq,
-    by rw [h3]; exact ed⟩
+    ((sv₁.outside o₂ (by decide)).outside o₃ (by decide)).outside (u₄.mem ▸ o₅) (by decide), sy, bits, combInit _ e₅⟩
 
 /-! ## The comb, the squares and the inversion -/
 
-/-- After the comb, which started in `s₄`. -/
-def XL (σ s : State) : Prop := ∃ s₄, XMid σ s₄ ∧ CombInv (bsX σ) (kX σ) s₄ s 0 ∧ FE bsX σ s
+/-- After the comb, from the entry state `σ`. -/
+structure XL (σ s : State) : Prop where
+  pre : BPre σ
+  fe : FE bsX σ s
+  rd : s.rd = σ.rd
+  saved : Saved (bsX σ) σ.gpr s.mem
+  r : pt (E s.mem (bsX σ)) 0 1 2 = signedComb (kX σ)
 
-theorem loopB_stage {σ s : State} (h : XMid σ s) : WP isa Impl.Ed448.X86.combLoop s (XL σ) :=
+theorem combB_stage {σ s : State} (h : XMid σ s) : WP isa combBase s (XL σ) :=
   WP.mono (h.fe.wp (NoSp.of_all (by lit_decide)) (by lit_decide)
-    (Q := fun t => CombInv (bsX σ) (kX σ) s t 0) (WP.mono (combLoop_ok h.bits h.start) fun t ht =>
-      ⟨⟨ht.scr, ht.ctx⟩, ht.regs.1 _ (by decide), ht.regs.2.2, ht⟩))
-    fun t ⟨fe, ht⟩ => ⟨s, h, ht, fe⟩
+    (Q := fun t => CombKeep (bsX σ) s t ∧ pt (E t.mem (bsX σ)) 0 1 2 = signedComb (kX σ))
+    (WP.mono (combBase_ok h.fe.fin.scr h.fe.fin.ctx (congrFun h.syms _) (h.pre.tblMem h.fe h.rd) h.bits h.init)
+      fun t ⟨k, r⟩ => ⟨⟨h.fe.fin.scr.of_keeps k.regs (by decide), h.fe.fin.ctx.keep (k.regs.1 _ (by decide))⟩,
+        k.regs.1 _ (by decide), k.regs.2.2, k, r⟩))
+    fun t ⟨fe, k, r⟩ => ⟨h.pre, fe, k.regs.2.1.trans h.rd, h.saved.wsout2 k.mem (by decide) (by decide), r⟩
 
 /-- `X²` and `Y²`. -/
 def uFields : List FieldOp := [.mul 2 0 0, .mul 1 1 1]
@@ -304,8 +320,8 @@ structure XI (σ s : State) : Prop where
   rd : s.rd = σ.rd
   saved : Saved (bsX σ) σ.gpr s.mem
   val : E s.mem (bsX σ) 1 * E s.mem (bsX σ) 21 =
-    (comb (kX σ) 114).Y * (comb (kX σ) 114).Y *
-      Proof.X448.invert ((comb (kX σ) 114).X * (comb (kX σ) 114).X)
+    (signedComb (kX σ)).Y * (signedComb (kX σ)).Y *
+      Proof.X448.invert ((signedComb (kX σ)).X * (signedComb (kX σ)).X)
 
 /-- After the squares. -/
 structure XU (σ s : State) : Prop where
@@ -313,17 +329,16 @@ structure XU (σ s : State) : Prop where
   fe : FE bsX σ s
   rd : s.rd = σ.rd
   saved : Saved (bsX σ) σ.gpr s.mem
-  x : E s.mem (bsX σ) 2 = (comb (kX σ) 114).X * (comb (kX σ) 114).X
-  y : E s.mem (bsX σ) 1 = (comb (kX σ) 114).Y * (comb (kX σ) 114).Y
+  x : E s.mem (bsX σ) 2 = (signedComb (kX σ)).X * (signedComb (kX σ)).X
+  y : E s.mem (bsX σ) 1 = (signedComb (kX σ)).Y * (signedComb (kX σ)).Y
 
 theorem squaresB_stage {σ s : State} (h : XL σ s) :
     WP isa (ops (uFields.map FieldOp.impl)) s (XU σ) := by
-  obtain ⟨s₄, m, L, fe⟩ := h
+  have fe := h.fe
   refine WP.mono (ops_FE fe uFields) fun t ⟨fe', k, e⟩ => ?_
-  obtain hX : E s.mem (bsX σ) 0 = (comb (kX σ) 114).X := congrArg Spec.Ed448.Point.X L.r
-  obtain hY : E s.mem (bsX σ) 1 = (comb (kX σ) 114).Y := congrArg Spec.Ed448.Point.Y L.r
-  exact ⟨m.pre, fe', k.regs.2.1.trans (L.regs.2.1.trans m.rd),
-    (m.saved.wsout2 L.mem (by decide) (by decide)).wsout2 k.mem (by decide) (by decide),
+  obtain hX : E s.mem (bsX σ) 0 = (signedComb (kX σ)).X := congrArg Spec.Ed448.Point.X h.r
+  obtain hY : E s.mem (bsX σ) 1 = (signedComb (kX σ)).Y := congrArg Spec.Ed448.Point.Y h.r
+  exact ⟨h.pre, fe', k.regs.2.1.trans h.rd, h.saved.wsout2 k.mem (by decide) (by decide),
     by rw [e, ← hX]; rfl, by rw [e, ← hY]; rfl⟩
 
 theorem invertB_stage {σ s : State} (h : XU σ s) : WP isa Impl.X448.X86.invert s (XI σ) := by
@@ -401,8 +416,8 @@ theorem finishX_ok {s₀ s : State} {n sc : Nat} (hA : Args s₀ n sc) (h0 : 0 <
 theorem finishB_stage {σ s : State} (h : XI σ s) :
     WP isa finish s fun t => abiPreserved σ t ∧
       Spec.X448.bytesAt t.mem ((arg σ 0).setWidth 64) 56 = Spec.X448.encodeUCoordinate
-        ((comb (kX σ) 114).Y * (comb (kX σ) 114).Y *
-          Proof.X448.invert ((comb (kX σ) 114).X * (comb (kX σ) 114).X)) := by
+        ((signedComb (kX σ)).Y * (signedComb (kX σ)).Y *
+          Proof.X448.invert ((signedComb (kX σ)).X * (signedComb (kX σ)).X)) := by
   have hp := h.pre
   have fe := h.fe
   refine WP.mono (finishX_ok hp.args (by decide) fe.sp h.rd fe.wr fe.frame hp.args_wr fe.fin.scr fe.fin.ctx
@@ -432,14 +447,14 @@ theorem finishB_stage {σ s : State} (h : XI σ s) :
 theorem x448Base_main {s₀ : State} (h : BPre s₀) :
     WP isa x448Base s₀ fun t => abiPreserved s₀ t ∧
       Spec.X448.bytesAt t.mem ((arg s₀ 0).setWidth 64) 56 = Spec.X448.encodeUCoordinate
-        ((comb (kX s₀) 114).Y * (comb (kX s₀) 114).Y *
-          Proof.X448.invert ((comb (kX s₀) 114).X * (comb (kX s₀) 114).X)) := by
+        ((signedComb (kX s₀)).Y * (signedComb (kX s₀)).Y *
+          Proof.X448.invert ((signedComb (kX s₀)).X * (signedComb (kX s₀)).X)) := by
   unfold x448Base
   rw [uFields_impl]
-  exact WP.seq (WP.mono (entryB_stage h) fun _ m => WP.seq (WP.mono (loopB_stage m) fun _ l =>
+  exact WP.seq (WP.mono (entryB_stage h) fun _ m => WP.seq (WP.mono (combB_stage m) fun _ l =>
     WP.seq (WP.mono (squaresB_stage l) fun _ u => WP.seq (WP.mono (invertB_stage u) fun _ i => finishB_stage i))))
 
-theorem x448Base_ok (hu : BaseCombUOk) (s : State) (hs : Proof.X448.x448BaseX86.pre s) :
+theorem x448Base_ok (hu : SignedBaseUOk) (s : State) (hs : Proof.X448.x448BaseX86.pre s) :
     ∃ t s', Exec isa Impl.X448.X86.x448Base s t s' ∧ abiPreserved s s' ∧
       Proof.X448.x448BaseX86.post s s' := by
   obtain ⟨tr, t, he, h1, h2⟩ := x448Base_main (BPre.of hs)
@@ -454,7 +469,9 @@ def XP₀ (σ₁ σ₂ : State) : Prop :=
   Proof.X448.x448BaseX86.pre σ₁ ∧ Proof.X448.x448BaseX86.pre σ₂ ∧ Proof.X448.x448BaseX86.pub σ₁ σ₂
 
 theorem XP₀.hp {σ₁ σ₂ : State} (h : XP₀ σ₁ σ₂) : bsX σ₁ = bsX σ₂ ∧ σ₁.gpr .esp = σ₂.gpr .esp :=
-  ⟨by simp only [bsX, h.2.2.2.2.2], h.2.2.1⟩
+  ⟨by simp only [bsX, h.2.2.2.2.2.1], h.2.2.1⟩
+
+theorem XP₀.combP : CombP XP₀ bsX := fun _ _ h => ⟨h.hp.1, h.hp.2, h.2.2.2.2.2.2⟩
 
 /-- The taint analysis starts with the stack arguments public, and the words holding `out` and
 `scratch` known to be the base addresses of the writable regions. -/
@@ -479,7 +496,7 @@ theorem wfb {s : State} (hp : BPre s) : VG.X86.Taint.Wf τb s := by
 
 theorem agreeb {s₁ s₂ : State} (h₁ : Proof.X448.x448BaseX86.pre s₁) (h₂ : Proof.X448.x448BaseX86.pre s₂)
     (hpub : Proof.X448.x448BaseX86.pub s₁ s₂) : VG.X86.Taint.Agree τb s₁ s₂ := by
-  obtain ⟨hesp, a0, a1, a2⟩ := hpub
+  obtain ⟨hesp, a0, a1, a2, _⟩ := hpub
   have hp₁ := BPre.of h₁; have hp₂ := BPre.of h₂
   refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun _ => ?_, wfb hp₁, wfb hp₂,
     VG.X86.Taint.slotsOk_empty, VG.X86.Taint.slotsAgree_empty, fun _ => hesp,
@@ -503,13 +520,15 @@ theorem entryB_rel : RelCT isa (Runs XP₀ fun σ s => s = σ ∧ BPre σ) baseE
   rintro s₁ s₂ ⟨σ₁, σ₂, hP, ⟨rfl, -⟩, ⟨rfl, -⟩⟩
   exact agreeb hP.1 hP.2.1 hP.2.2
 
-theorem loopB_rel : RelCT isa (Runs XP₀ XMid) Impl.Ed448.X86.combLoop (Runs XP₀ XL) :=
-  Runs.step ((combLoopG_tr (bs := bsX) (k := kX) fun _ _ h => h.hp).mono
-      (fun _ _ ⟨σ₁, σ₂, hP, m₁, m₂⟩ => ⟨σ₁, σ₂, hP, ⟨m₁.fe, m₁.bits⟩, ⟨m₂.fe, m₂.bits⟩⟩) fun _ _ h => h)
-    fun _ _ m => loopB_stage m
+theorem combB_rel : RelCT isa (Runs XP₀ XMid) combBase (Runs XP₀ XL) :=
+  Runs.step ((combBaseG_tr (bs := bsX) (k := kX) XP₀.combP).mono
+      (fun _ _ ⟨σ₁, σ₂, hP, m₁, m₂⟩ => ⟨σ₁, σ₂, hP,
+        ⟨⟨m₁.fe, m₁.rd, m₁.bits, fun _ => m₁.pre.tblMem⟩, congrFun m₁.syms _⟩,
+        ⟨⟨m₂.fe, m₂.rd, m₂.bits, fun _ => m₂.pre.tblMem⟩, congrFun m₂.syms _⟩⟩) fun _ _ h => h)
+    fun _ _ m => combB_stage m
 
 theorem squaresB_rel : RelCT isa (Runs XP₀ XL) (ops (uFields.map FieldOp.impl)) (Runs XP₀ XU) :=
-  Runs.step (ops_tr (fun _ _ h => h.hp) (fun _ _ ⟨_, _, _, fe⟩ => fe.fs) uFields) fun _ _ h => squaresB_stage h
+  Runs.step (ops_tr (fun _ _ h => h.hp) (fun _ _ h => h.fe.fs) uFields) fun _ _ h => squaresB_stage h
 
 theorem invertB_rel : RelCT isa (Runs XP₀ XU) Impl.X448.X86.invert (Runs XP₀ XI) :=
   Runs.step (rf_tr (fun _ _ h => h.hp) (fun _ _ h => h.fe.fs) invert_rel) fun _ _ h => invertB_stage h
@@ -549,7 +568,7 @@ theorem x448Base_ct : ConstantTime isa Proof.X448.x448BaseX86.pre Proof.X448.x44
       (fun s₁ s₂ h => ⟨s₁, s₂, h, ⟨rfl, BPre.of h.1⟩, ⟨rfl, BPre.of h.2.1⟩⟩) fun _ _ h => h)
   unfold x448Base
   rw [uFields_impl]
-  exact entryB_rel.seq (loopB_rel.seq (squaresB_rel.seq (invertB_rel.seq finishB_tr)))
+  exact entryB_rel.seq (combB_rel.seq (squaresB_rel.seq (invertB_rel.seq finishB_tr)))
 
 /-! ## `Verified` -/
 
@@ -565,20 +584,75 @@ def satBaseState : State where
   zf := none
   sf := none
   of := none
-  mem := satBaseMem
-  rd := [⟨0x2000, 56⟩, ⟨0x8004, 12⟩]
+  mem := satMemWith satBaseMem
+  rd := [⟨0x2000, 56⟩, ⟨0x8004, 12⟩, ⟨0x100000, 51072⟩]
   wr := [⟨0x1000, 56⟩, ⟨0x4000, 8192⟩]
+  syms _ := 0x100000
 
-theorem x448Base_verified (hu : BaseCombUOk) :
-    Verified X86.target Impl.X448.X86.x448Base (Spec.X448.x448BaseContract X86.abi 20) :=
-  Verified.of_correct (x448Base_ok hu) x448Base_ct (by
-    have a0 : arg satBaseState 0 = 0x1000 := by decide
-    have a1 : arg satBaseState 1 = 0x2000 := by decide
-    have a2 : arg satBaseState 2 = 0x4000 := by decide
-    have e : argAddr satBaseState 0 = 0x8004 := by decide
-    have esp : satBaseState.gpr .esp = 0x8000 := rfl
-    sig_implies [Spec.X448.x448BaseContract, Spec.X448.x448BaseSig, Proof.X448.x448BaseX86, X86.abi,
-      X86.argSlots, X86.argVal, X86.argBytes]
-      [a0, a1, a2, e, esp] using Proof.X448.X86.satBaseState)
+theorem satBase_arg (j : Nat) (hj : j < 3) :
+    arg satBaseState j = satBaseMem.readW (argAddr satBaseState j) 32 := by
+  unfold arg
+  apply Mem.readW_congr
+  intro b hb
+  change satMemWith satBaseMem _ = _
+  rw [satMemWith_out]
+  have : ∀ j < 3, ∀ b < 4, 8 * 57 * 112 ≤ (argAddr satBaseState j + BitVec.ofNat 64 b - 0x100000).toNat := by
+    decide
+  exact this j hj b (by omega_using [hb])
+
+theorem satBase : (Spec.X448.x448BaseContract (X86.abi.withConsts combConsts) 20).pre satBaseState := by
+  have hl := combWords_length
+  have a0 : arg satBaseState 0 = 0x1000 := (satBase_arg 0 (by decide)).trans (by decide)
+  have a1 : arg satBaseState 1 = 0x2000 := (satBase_arg 1 (by decide)).trans (by decide)
+  have a2 : arg satBaseState 2 = 0x4000 := (satBase_arg 2 (by decide)).trans (by decide)
+  have held : TblWords ((satBaseState.syms combSym).setWidth 64) satBaseState.mem := satMemWith_held satBaseMem
+  generalize e : satBaseState = s
+  sig_pre [Spec.X448.x448BaseContract, Spec.X448.x448BaseSig, X86.abi, X86.argSlots,
+    X86.argVal, X86.argBytes, combConsts_eq, Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow]
+  subst s
+  refine ⟨by decide, by decide, by rw [hl]; rfl, held, by rw [hl]; decide, ?_, ?_, ?_, by decide, ?_⟩
+  · rw [hl]
+    intro r hr
+    change r ∈ [⟨0x1000, 56⟩, ⟨0x4000, 8192⟩] at hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl <;> exact Region.disjoint_of_sep (by decide)
+  · rw [hl]; exact Region.disjoint_of_sep (by decide)
+  · rw [hl]; exact Region.disjoint_of_sep (by decide)
+  · rw [a0, a1, a2]
+    refine ⟨rfl, rfl, ?_⟩
+    repeat' apply And.intro
+    all_goals first | exact Region.disjoint_of_sep (by decide) | decide
+
+theorem x448Base_implies :
+    Proof.X448.x448BaseX86.Implies (Spec.X448.x448BaseContract (X86.abi.withConsts combConsts) 20) where
+  pre s h := by
+    sig_pre [Spec.X448.x448BaseContract, Spec.X448.x448BaseSig, X86.abi, X86.argSlots,
+      X86.argVal, X86.argBytes, combConsts_eq, Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow] at h
+    obtain ⟨h20, hsp, hd, held, hfit, hdw, -, hstk, -, ht, hw, -, oc, oa, sc, ca, ro, -, rc, -,
+      ko, -, kc, -, f0, f1, f2⟩ := h
+    refine ⟨?_, hw, oc, sc, oa.symm, ca.symm, ro, rc, f0, f1, f2, by omega_using [hsp], h20, ko, kc,
+      held, hfit, ?_⟩
+    · rw [← List.take_append_drop (s.rd.length - 1) s.rd, ht, hd]; rfl
+    · intro r hr
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl
+      · exact hdw _ (by rw [hw]; simp)
+      · exact hdw _ (by rw [hw]; simp)
+      · exact hstk
+  post := by
+    intro s t _ h
+    sig_post [Spec.X448.x448BaseContract, Spec.X448.x448BaseSig, X86.abi, X86.argSlots,
+      X86.argVal, X86.argBytes, combConsts_eq, Abi.withConsts]
+    exact h
+  pub s t _ _ h := by
+    sig_pub [Spec.X448.x448BaseContract, Spec.X448.x448BaseSig, X86.abi, X86.argSlots,
+      X86.argVal, X86.argBytes, combConsts_eq, Abi.withConsts] at h
+    obtain ⟨hsp, hsy, h0, h1, h2⟩ := h
+    exact ⟨hsp, h0, h1, h2, hsy⟩
+  sat := ⟨satBaseState, satBase⟩
+
+theorem x448Base_verified (hu : SignedBaseUOk) : Verified X86.target Impl.X448.X86.x448Base
+    (Spec.X448.x448BaseContract (X86.abi.withConsts combConsts) 20) :=
+  Verified.of_correct (x448Base_ok hu) x448Base_ct x448Base_implies
 
 end VG.Proof.X448.X86

@@ -117,3 +117,7 @@ pub use vg_sm4_key_aesni::VG_SM4_KEY_AESNI;
 #[rustfmt::skip]
 mod vg_triple_des_ssse3;
 pub use vg_triple_des_ssse3::VG_TRIPLE_DES_SSSE3;
+
+#[rustfmt::skip]
+mod vg_x448_comb;
+pub use vg_x448_comb::VG_X448_COMB;
