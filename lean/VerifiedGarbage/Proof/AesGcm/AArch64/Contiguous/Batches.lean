@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Contiguous.Remainder
+public import VerifiedGarbage.Proof.Gcm.AArch64.Stitch.ForwardCall
 public import VerifiedGarbage.Proof.Gcm.AArch64.Stitch.DirectBatches
 import VerifiedGarbage.Proof.AesGcm.AArch64.Stitch.Tables
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
@@ -16,7 +17,7 @@ namespace VG.Proof.AesGcm.AArch64.Contiguous.Prepared
 
 open VG VG.AArch64 VG.AArch64.RegUpd VG.Impl.AesGcm.AArch64
 open VG.Impl.AesGcm.AArch64.Contiguous
-open VG.Proof.Gcm.AArch64.Stitch (BatchArgs BatchMid Gh8Ok kRegsT sealPrepared_ok)
+open VG.Proof.Gcm.AArch64.Stitch (BatchArgs BatchMidWith Gh8Ok kRegsT borrowed SealToPre SealToPost sealPreparedWith_ok sealCall_ok forwardCall_ok)
 open VG.Proof.AesGcm.AArch64.Stitch (tblR sFrame pre)
 open VG.Spec.Gcm (ctxH blockAt)
 
@@ -33,15 +34,24 @@ theorem batchSlots {wn : Nat} {Ctx St W O : Addr} {n : Nat} (L : Lay wn Ctx St W
   · exact (ds.symm.sub_left (Offset.sub_base W (by omega))).sub_right (Region.sub_prefix (Nat.mul_div_le n 128))
   · exact Offset.disjoint W (.inl (by change d+8 ≤ 512; omega)) (by omega) (by decide)
 
+private theorem batchCall_ok (forward : Bool) {s : State} (hp : SealToPre s) (gh : Gh8Ok) :
+    WP isa (batchCall forward) s (fun t => SealToPost s t ((kRegsT true ++ borrowed) ++ linkRegs)) := by
+  cases forward
+  · refine (sealCall_ok hp gh).mono fun t h => ?_
+    exact { h with gpr := fun r hr => h.gpr r (by
+      simp only [List.mem_append, not_or] at hr ⊢
+      exact ⟨hr.1.1, hr.2⟩) }
+  · exact forwardCall_ok hp gh
+
 theorem batches_ok {wn R n : Nat} {Ctx St W SP D O P : Addr} {s : State}
-    (L : Lay wn Ctx St W) (he : Env wn Ctx St W SP s) (gh : Gh8Ok)
+    (forward : Bool) (L : Lay wn Ctx St W) (he : Env wn Ctx St W SP s) (gh : Gh8Ok)
     (rounds : R = 10 ∨ R = 12 ∨ R = 14) (x22 : s.gpr .x22 = BitVec.ofNat 64 R)
     (x23 : s.gpr .x23 = D) (x26 : s.gpr .x26 = BitVec.ofNat 64 n)
     (sd : DataOk wn St W s D n) (od : DataW wn Ctx St W s O n) (mode : BufferLayout D O n)
     (hn : 128 ≤ n) (p : GhWCall s Ctx (word St 16) (word W 512) P)
     (pw : s.mem.readW (word s.sp 16) 64 = P) (rp : InRegions (s.rd++s.wr) (word s.sp 16) 8)
     (src : s.mem.readW (word W dataO) 64 = D) (dst : s.mem.readW (word W dstO) 64 = O) :
-    WP isa batches s fun t => ∃ z, BatchMid Ctx St W D O R n (outputView s O) z ∧
+    WP isa (batches forward) s fun t => ∃ z, BatchMidWith (kRegsT true ++ borrowed) Ctx St W D O R n (outputView s O) z ∧
       Regs [.x23] z t ∧ t.gpr .x23 = D ∧ t.gpr .x26 = BitVec.ofNat 64 n := by
   let b := s.write .x .x9 (s.gpr .x26 >>> 7)
   have nb : b.gpr .x9 = BitVec.ofNat 64 (n/128) := by
@@ -82,7 +92,8 @@ theorem batches_ok {wn R n : Nat} {Ctx St W SP D O P : Addr} {s : State}
     · have ne (j : Reg) (mem : j ∈ kRegsT true) : r ≠ j := fun eq => hk (eq ▸ mem)
       simp only [outputView,gpr_write,Size.bits,BitVec.setWidth_eq,r23,ite_false]
       exact (ga r (ne _ (by decide)) r23).trans (g r h5 (ne _ (by decide)))
-  refine WP.seq ((sealPrepared_ok (s := outputView s O) (u := a) aa L gh (aa.sealPre L hn (hH ▸ tok)) ft reg sp rd wr).mono ?_)
+  refine WP.seq ((sealPreparedWith_ok (s := outputView s O) (u := a) aa L
+    (batchCall_ok forward (aa.sealPre L hn (hH ▸ tok)) gh) (fun _ h m => h (List.mem_append_left _ m)) ft reg sp rd wr).mono ?_)
   intro z hz
   have Wz : z.gpr .x19 = W := (hz.gpr _ (by decide) (by decide) (by decide)).trans he.x19
   have rz : InRegions (z.rd++z.wr) (W+232#64) 8 := by rw [hz.rd,hz.wr]; exact he.perm.wR (by decide)

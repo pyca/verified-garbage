@@ -72,14 +72,15 @@ theorem enc_rel {wn R n : Nat} {Ctx W D O P : Addr} {a b : State} {aa ai ba bi :
     (v : GcmImpl) (fused : Bool) (gh : Proof.Gcm.AArch64.Stitch.Gh8Ok) (L : Lay wn Ctx (word W 16) W)
     (x : Ready wn R n Ctx W D O P aa ai a) (y : Ready wn R n Ctx W D O P ba bi b)
     (sp : a.sp = b.sp) (hn : fused = true → 128 ≤ n) (hv : v.ctr.scratch ≤ wn-512) :
-    RelCT isa (Eq2 a b) (encPart v.callees fused) TT := by
+    RelCT isa (Eq2 a b) (encPart v.callees fused (!v.stitch)) TT := by
   have start {u : State} {m iv : List Byte} (q : Ready wn R n Ctx W D O P m iv u) :=
-    prefix_ok fused L q.env gh q.rates q.x22 q.x23 q.x26 q.src q.dst q.mode hn q.powers q.pw q.pRead q.sourceSlot
+    prefix_ok fused (!v.stitch) L q.env gh q.rates q.x22 q.x23 q.x26 q.src q.dst q.mode hn q.powers q.pw q.pRead q.sourceSlot
       q.dstSlot q.cb q.y (by simpa only [paddedAad,List.length_append,Proof.Gcm.length_zeros] using Proof.Gcm.length_pad_mod m.length)
-  have batch : RelCT isa (Eq2 a b) (if fused then batches else .block []) TT := by
+  have batch : RelCT isa (Eq2 a b) (if fused then batches (!v.stitch) else .block []) TT := by
     cases fused
-    · exact rel_taint [] sp (by agree_tac []) ⟨.block [] 256,by decide⟩
-    · refine batches_rel x.env (sp ▸ y.env) ?_ x.x26 x.src.lt x.powers y.powers x.pw y.pw x.pRead y.pRead x.dstSlot y.dstSlot
+    · change RelCT isa (Eq2 a b) (.block []) TT
+      exact rel_taint [] sp (by agree_tac []) ⟨.block [] 256,by decide⟩
+    · refine batches_rel (!v.stitch) x.env (sp ▸ y.env) ?_ x.x26 x.src.lt x.powers y.powers x.pw y.pw x.pRead y.pRead x.dstSlot y.dstSlot
       intro r hr ne
       simp only [Fast.stRegs,List.mem_cons,List.not_mem_nil,or_false] at hr
       rcases hr with rfl|rfl|rfl|rfl|rfl|rfl|rfl
@@ -120,7 +121,7 @@ theorem record_rel {wn R n : Nat} {Ctx W D O P : Addr} {a b : State} {aa ai ba b
     (ext : External wn n W O P a) (ext' : External wn n W O P b)
     (sp : a.sp = b.sp) (tag : a.gpr .x28 = b.gpr .x28) (hla : aa.length < 2^64) (hlb : ba.length < 2^64)
     (hn : fused = true → 128 ≤ n) (hv : v.ctr.scratch ≤ wn-512) :
-    RelCT isa (Eq2 a b) (.seq (if fused then batches else .block []) <| .seq (.block (remainder fused)) <|
+    RelCT isa (Eq2 a b) (.seq (if fused then batches (!v.stitch) else .block []) <| .seq (.block (remainder fused)) <|
       .seq (Impl.AesGcm.AArch64.DirectGather.aligned v.callees) <| .seq (.block (authRemainder fused)) <|
       .seq (Impl.AesGcm.AArch64.Fast.pwSel v.callees 16 g.fn) <|
       .seq (.block (Impl.AesGcm.AArch64.Fast.hReload ++ Impl.Gcm.AArch64.Pmull.loadRev Impl.Gcm.AArch64.Pmull.Y .x20 16 ++

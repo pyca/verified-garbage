@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Contiguous.PreparedVectors
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Contiguous.PreparedSeal
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Contiguous.General
 import VerifiedGarbage.Proof.AesGcm.ScratchPowers8
@@ -125,7 +126,7 @@ theorem fromFront {wn : Nat} {W : Addr} {o a t : State} (c : Inner wn W o) (e : 
 theorem body_ok {wn : Nat} {W : Addr} {o : State} (v : GcmImpl) (g : GhashWithImpl) (fused : Bool)
     (gh : Gh8Ok) (mk : MulKey) (c : Inner wn W o) (hv : v.ctr.scratch ≤ wn-512)
     (hn : (o.gpr .x3).toNat = 12) (ha : (o.gpr .x5).toNat ≤ 16) (hb : fused = true → 128 ≤ nBytes o) :
-    WP isa (preparedBody v.callees g.fn fused) o fun z => GprAbi o z ∧ result o z := by
+    WP isa (preparedBody v.callees g.fn fused (!v.calls.stitch)) o fun z => GprAbi o z ∧ result o z := by
   refine WP.seq ((entry_ok c.hw c.args c.argsWork c.perm).mono ?_)
   intro a e
   refine WP.seq ((front_ok c.lay mk e hn ha c.iv c.aad).mono ?_)
@@ -143,6 +144,7 @@ theorem body_ok {wn : Nat} {W : Addr} {o : State} (v : GcmImpl) (g : GhashWithIm
       have hh : ctxH t.mem (o.gpr .x0) = ctxH o.mem (o.gpr .x0) := f.hH
       rw [key,hh,text] at enc
       exact ⟨abi,by unfold result; rw [hn]; exact enc⟩)
+  rw [show v.calls.stitch = v.stitch from rfl]
   simpa only [afterFront,encPart,finalPart,finishProgram,WP.seq_iff (M := isa)] using verified
 
 end VG.Proof.AesGcm.AArch64.Contiguous.Prepared
@@ -271,9 +273,12 @@ theorem frame_ok {o : State} (v : GcmImpl) (g : GhashWithImpl) (fused : Bool) (g
     (c : Caller o) (p : Powers o) (iv : (o.gpr .x3).toNat = 12) (ha : (o.gpr .x5).toNat ≤ 16)
     (hn : fused = true → 128 ≤ nBytes o) (lo : 768 ≤ v.calls.pwWn) (hi : v.calls.pwWn ≤ 2560)
     (align : v.calls.pwWn % 16 = 0) (hv : v.ctr.scratch ≤ v.calls.pwWn-512)
-    (keep : (preparedFrame v.calls g.fn fused).allInstrs keepsV = true) :
+    (keep : (Impl.StackScratch.AArch64.withStackArgScratch (v.calls.pwWn+32) 3
+      (preparedBody v.callees g.fn fused false)).allInstrs keepsV = true) :
     WP isa (preparedFrame v.calls g.fn fused) o fun t => abiPreserved o t ∧ result o t := by
-  apply WP.withPreservedV (hc := keep)
+  suffices raw : WP isa (preparedFrame v.calls g.fn fused) o (fun t => GprAbi o t ∧ result o t) by
+    obtain ⟨tr,t,ex,⟨hg,hs⟩,post⟩ := raw
+    exact ⟨tr,t,ex,⟨hg,hs,preparedVectors v.calls g.fn fused keep ex⟩,post⟩
   obtain ⟨run,e⟩ := pushed c hi align
   have en := inner c p e lo iv
   apply WP.alloc ⟨by omega,by omega,by omega⟩ (by have := c.room; omega)
@@ -323,7 +328,7 @@ theorem body_rel {wn : Nat} {W : Addr} {a b : State} (v : GcmImpl) (g : GhashWit
     (ai : (a.gpr .x3).toNat = 12) (bi : (b.gpr .x3).toNat = 12)
     (aa : (a.gpr .x5).toNat ≤ 16) (ba : (b.gpr .x5).toNat ≤ 16)
     (hn : fused = true → 128 ≤ nBytes a) (pub : onePub 3 a b) :
-    RelCT isa (Eq2 a b) (preparedBody v.callees g.fn fused) TT := by
+    RelCT isa (Eq2 a b) (preparedBody v.callees g.fn fused (!v.calls.stitch)) TT := by
   obtain ⟨q0,q1,q2,_,q4,q5,q6,q7,sp,stk⟩ := pub
   have size := congrArg BitVec.toNat (stk 0 (by decide))
   refine rel_seq (entry_rel ca cb sp) (entry_ok ca.hw ca.args ca.argsWork ca.perm)

@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.Gcm.AArch64.Forward
 public import VerifiedGarbage.Impl.AesGcm.AArch64.Contiguous.General
 
 /-! The public-length specializations for a 12-byte nonce and at most one
@@ -20,10 +21,13 @@ def preparedArgs : List Instr :=
 
 /-- Authenticate complete eight-block groups in the prepared table. x15 reads
 plaintext, x23 receives ciphertext. Reload the original source for the tail. -/
-def batches : Prog isa :=
+def batchCall (forward : Bool) : Prog isa :=
+  if forward then VG.Impl.Gcm.AArch64.Stitch.forwardCall else VG.Impl.Gcm.AArch64.Stitch.sealCall
+
+def batches (forward : Bool) : Prog isa :=
   Stitch.stitched [] (Stitch.pwTbl 16) <|
     .seq (.block [mov .x15 .x23,.ldr .x .x23 .x19 dstO]) <|
-    .seq VG.Impl.Gcm.AArch64.Stitch.sealCall (.block [.ldr .x .x23 .x19 dataO])
+    .seq (batchCall forward) (.block [.ldr .x .x23 .x19 dataO])
 
 /-- Prepare the two pointers, length and zero keystream cursor of the remainder.
 x27 retains the first ciphertext byte still to be hashed. -/
@@ -41,9 +45,9 @@ def authArgs (fused : Bool) : List Instr :=
 abbrev authRemainder (fused : Bool) := authArgs fused ++ absSeg2 16
 
 /-- Prepared hardware record with the common CTR loop for all tails. -/
-def preparedBody (c : Callees) (gh : Fn) (fused : Bool) : Prog isa :=
+def preparedBody (c : Callees) (gh : Fn) (fused forward : Bool) : Prog isa :=
   .seq (.block preparedArgs) <| .seq front <|
-  .seq (if fused then batches else .block []) <|
+  .seq (if fused then batches forward else .block []) <|
   .seq (.block (remainder fused)) <| .seq (DirectGather.aligned c) <|
   .seq (.block (authRemainder fused)) <| .seq (Fast.pwSel c 16 gh) <|
   .seq (.block (hReload ++ loadRev Y .x20 16 ++ [mov .x13 .x24,mov .x12 .x23])) <|
@@ -51,7 +55,7 @@ def preparedBody (c : Callees) (gh : Fn) (fused : Bool) : Prog isa :=
   .seq (.block tagOut) (.block restore)
 
 def preparedFrame (v : Calls) (gh : Fn) (fused : Bool) : Prog isa :=
-  Impl.StackScratch.AArch64.withStackArgScratch (v.pwWn+32) 3 (preparedBody v.callees gh fused)
+  Impl.StackScratch.AArch64.withStackArgScratch (v.pwWn+32) 3 (preparedBody v.callees gh fused (!v.stitch))
 
 
 
@@ -75,15 +79,19 @@ def shortFrame : Prog isa :=
 def standardGuard : List Instr :=
   [.subImm .x .x10 .x3 12,imm .x9 17,.subs .x .x11 .x5 .x9,.csel .x .x10 .x9 .x10]
 
+/-- Clear borrowed vector high halves on the forwarded path. -/
+def preparedClear (fused forward : Bool) : Impl.Scrub.AArch64.Clear :=
+  if fused && forward then .all else Fn.own
+
 /-- The whole entry branches only on the CPU specialization and public record sizes. -/
 def select (v : Calls) (gh : Fn) : Prog isa :=
   let clear := fun n p => Impl.Scrub.AArch64.scrubAll n 0 Fn.own p
   let fallback := clear (v.pwWn+80) (generalFrame v)
-  let hardware := fun fused => clear (v.pwWn+32) (preparedFrame v gh fused)
-  let large := if v.stitch then
-    .seq (.block [imm .x9 768,.subs .x .x11 .x10 .x9,.sbc .x .x11 .x11 .x11])
-      (.ite (.nonzero .x .x11) (hardware false) (hardware true))
-    else hardware false
+  let hardware := fun fused => Impl.Scrub.AArch64.scrubAll (v.pwWn+32) 0
+    (preparedClear fused (!v.stitch)) (preparedFrame v gh fused)
+  let threshold := if v.stitch then 768 else 4096
+  let large := .seq (.block [imm .x9 threshold,.subs .x .x11 .x10 .x9,.sbc .x .x11 .x11 .x11])
+    (.ite (.nonzero .x .x11) (hardware false) (hardware true))
   if !v.pmull then fallback else
     .seq (.block standardGuard) <| .ite (.zero .x .x10)
       (.seq (.block [.ldrSp .x10 0,imm .x9 97,.subs .x .x11 .x10 .x9,.sbc .x .x11 .x11 .x11])

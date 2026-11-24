@@ -30,7 +30,8 @@ structure BackendFacts (v : GcmImpl) (g : GhashWithImpl) : Prop where
   scratch : v.ctr.scratch ≤ v.calls.pwWn-512
   general : scrubSide (generalFrame v.calls) (v.calls.pwWn+80) 0 own [] = true
   depth : 16*(Impl.AesGcm.AArch64.DirectGather.framed v.calls).aarch64Depth < 2^64
-  prepared (f : Bool) : scrubSide (preparedFrame v.calls g.fn f) (v.calls.pwWn+32) 0 own [] = true
+  prepared (f : Bool) : scrubSide (preparedFrame v.calls g.fn f) (v.calls.pwWn+32) 0 (preparedClear f (!v.calls.stitch)) [] = true
+  vectors (f : Bool) : (withStackArgScratch (v.calls.pwWn+32) 3 (preparedBody v.callees g.fn f false)).allInstrs keepsV = true
   hash : DirectGather.HashEightWithOk
   stitch : VG.Proof.Gcm.AArch64.Stitch.Gh8Ok
   mul : VG.Proof.Gcm.AArch64.Pmull.MulKey
@@ -54,10 +55,10 @@ def standard (s : State) : Prop := (s.gpr .x3).toNat=12 ∧ (s.gpr .x5).toNat≤
 def prepared (fused : Bool) (s : State) : Prop := standard s ∧ (fused=true → 128 ≤ (stackArg s 0).toNat)
 def short (s : State) : Prop := standard s ∧ (stackArg s 0).toNat ≤ 96
 
-private theorem scrubLeaf {p : State → Prop} {code : Prog isa} {W : Nat}
+private theorem scrubLeaf {cl : Clear} {p : State → Prop} {code : Prog isa} {W : Nat}
     (sizes : 0<W ∧ W≤2640 ∧ W%16=0)
-    (side : scrubSide code W 0 own [] = true) (raw : Verified target code (leafContract p)) :
-    VerifiedScrubbed target (scrubAll W 0 own code) (leafContract p) 0 := by
+    (side : scrubSide code W 0 cl [] = true) (raw : Verified target code (leafContract p)) :
+    VerifiedScrubbed target (scrubAll W 0 cl code) (leafContract p) 0 := by
   have hk : ScrubAllOk (leafContract p) W 0 := by
     refine ⟨fun s hs => Nat.le_trans sizes.2.1 hs.1.room,?_,fun _ _ hp => hp.1.2.2.2.2.2.2.2.2.1⟩
     intro s t u hs post mem _
@@ -92,14 +93,14 @@ theorem shortLeaf (hash : DirectGather.HashEightWithOk) (sat : ∃ s, (leafContr
     pa.2.2.2 pb.2.2.2 pub.1
 
 theorem preparedLeaf {v : GcmImpl} {g : GhashWithImpl} (facts : BackendFacts v g) (f : Bool) (sat : ∃ s, (leafContract (prepared f)).pre s) :
-    VerifiedScrubbed target (scrubAll (v.calls.pwWn+32) 0 own (preparedFrame v.calls g.fn f))
+    VerifiedScrubbed target (scrubAll (v.calls.pwWn+32) 0 (preparedClear f (!v.calls.stitch)) (preparedFrame v.calls g.fn f))
       (leafContract (prepared f)) 0 := by
   have sz := facts.sizes
   have hv := facts.scratch
   have side := facts.prepared f
   apply scrubLeaf (by omega) side
   refine ⟨fun _ h => Prepared.frame_ok v g f facts.stitch facts.mul h.1 h.2.1 h.2.2.1.1 h.2.2.1.2 h.2.2.2
-    sz.1 sz.2.1 sz.2.2 hv (DirectGather.keepsV_of_gatherSide side),ct_of ?_,sat⟩
+    sz.1 sz.2.1 sz.2.2 hv (facts.vectors f),ct_of ?_,sat⟩
   intro a b pa pb pub
   exact Prepared.frame_rel v g f facts.stitch facts.mul pa.1 pb.1 pa.2.1 pb.2.1 pa.2.2.1.1 pb.2.2.1.1
     pa.2.2.1.2 pb.2.2.1.2 pa.2.2.2 sz.1 sz.2.1 sz.2.2 hv pub.1

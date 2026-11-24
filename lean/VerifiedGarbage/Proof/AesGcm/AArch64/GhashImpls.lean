@@ -2598,21 +2598,66 @@ theorem generalSide {c : Calls} (h : CallsOk c) :
   · exact side_of_holes h fnOk_nil (generalHoles 768 false)
   · exact side_of_holes h fnOk_nil (generalHoles 2560 false)
 
-private def preparedHoles (wn : Nat) (f : Bool) := withStackArgScratch (wn+32) 3 (preparedBody holes holeW f)
+private def preparedHoles (wn : Nat) (f forward : Bool) :=
+  withStackArgScratch (wn+32) 3 (preparedBody holes holeW f forward)
+
+/-- The saved-lane leaf borrows every caller-volatile high half. All other
+callees satisfy the ordinary, narrower cleanup certificate. -/
+private theorem forwardedSide {c : Calls} (hc : CallsOk c) {w : Prog isa} (hw : FnOk w) {x : Prog isa}
+    {W : Nat} (e : Prog isa) (hx : x = Code.fillN (fills c w) e := by kernel_rfl)
+    (he : calleeSide e Clear.all = true := by kernel_rfl)
+    (hd : (16 * Code.aarch64DepthN [0,0,0,0,0] e).ble W = true := by kernel_rfl)
+    (hW : 0 < W ∧ W < 4096 ∧ W % 16 = 0 := by decide) :
+    scrubSide x W 0 Clear.all [] = true := by
+  let high : Clear := ⟨[],[],hiVecs⟩
+  have expand {b : Prog isa} (h : FnOk b) : calleeSide b (own.union high) = true := sideAll_union_left h.side
+  have ⟨side,depth⟩ := side_depth_of_fillN (ds := [0,0,0,0,0]) hx
+    (by
+      intro b hb
+      simp only [fills,List.mem_cons,List.not_mem_nil,or_false] at hb
+      rcases hb with rfl|rfl|rfl|rfl|rfl
+      exacts [expand (b := c.ctr.code) hc.ctr,expand (b := c.key.code) hc.key,
+        expand (b := c.gh.code) hc.gh,expand (b := c.ctrTo.code) hc.ctrTo,expand hw])
+    (.cons (Nat.le_of_eq hc.ctr.depth) (.cons (Nat.le_of_eq hc.key.depth) (.cons (Nat.le_of_eq hc.gh.depth)
+      (.cons (Nat.le_of_eq hc.ctrTo.depth) (.cons (Nat.le_of_eq hw.depth) .nil)))))
+    (show calleeSide e (own.union high) = true from he) (Nat.le_refl _)
+  exact scrubSide_union (own := own) (cl := high) hW
+    (Nat.le_trans (Nat.mul_le_mul_left 16 depth) (Nat.le_of_ble_eq_true hd)) (.inl rfl) side (by decide)
+
+theorem referenceSide (v : GcmImpl) (g : GhashWithImpl) (f : Bool) :
+    scrubSide (withStackArgScratch (v.calls.pwWn+32) 3 (preparedBody v.callees g.fn f false))
+      (v.calls.pwWn+32) 0 own [] = true := by
+  have hw : FnOk (.call g.fn.name g.fn.code) := ⟨g.fnOk.side,g.fnOk.depth⟩
+  rcases pw_cases v.callsOk with ⟨_,w|w⟩|⟨_,w|w⟩ <;> rw [w] <;> cases f
+  · exact side_of_holes v.callsOk hw (preparedHoles 1024 false false)
+  · exact side_of_holes v.callsOk hw (preparedHoles 1024 true false)
+  · exact side_of_holes v.callsOk hw (preparedHoles 2560 false false)
+  · exact side_of_holes v.callsOk hw (preparedHoles 2560 true false)
+  · exact side_of_holes v.callsOk hw (preparedHoles 768 false false)
+  · exact side_of_holes v.callsOk hw (preparedHoles 768 true false)
+  · exact side_of_holes v.callsOk hw (preparedHoles 2560 false false)
+  · exact side_of_holes v.callsOk hw (preparedHoles 2560 true false)
 
 theorem preparedSide (v : GcmImpl) (g : GhashWithImpl) (f : Bool) :
-    scrubSide (preparedFrame v.calls g.fn f) (v.calls.pwWn+32) 0 own [] = true := by
+    scrubSide (preparedFrame v.calls g.fn f) (v.calls.pwWn+32) 0 (preparedClear f (!v.calls.stitch)) [] = true := by
   have hw : FnOk (.call g.fn.name g.fn.code) := ⟨g.fnOk.side,g.fnOk.depth⟩
-  unfold preparedFrame
-  rcases pw_cases v.callsOk with ⟨_,w|w⟩|⟨_,w|w⟩ <;> rw [w] <;> cases f
-  · exact side_of_holes v.callsOk hw (preparedHoles 1024 false)
-  · exact side_of_holes v.callsOk hw (preparedHoles 1024 true)
-  · exact side_of_holes v.callsOk hw (preparedHoles 2560 false)
-  · exact side_of_holes v.callsOk hw (preparedHoles 2560 true)
-  · exact side_of_holes v.callsOk hw (preparedHoles 768 false)
-  · exact side_of_holes v.callsOk hw (preparedHoles 768 true)
-  · exact side_of_holes v.callsOk hw (preparedHoles 2560 false)
-  · exact side_of_holes v.callsOk hw (preparedHoles 2560 true)
+  cases st : v.calls.stitch with
+  | true =>
+    unfold preparedFrame
+    rw [st]
+    cases f <;> exact referenceSide v g _
+  | false =>
+    cases f with
+    | false =>
+      unfold preparedFrame
+      rw [st]
+      exact referenceSide v g false
+    | true =>
+      simp only [preparedFrame,st,Bool.not_false,preparedClear,Bool.true_and,ite_true]
+      rcases pw_cases v.callsOk with ⟨bad,_⟩|⟨_,w|w⟩
+      · simp [st] at bad
+      · rw [w]; exact forwardedSide v.callsOk hw (preparedHoles 768 true true)
+      · rw [w]; exact forwardedSide v.callsOk hw (preparedHoles 2560 true true)
 
 theorem generalDepth (v : GcmImpl) :
     16*(Impl.AesGcm.AArch64.DirectGather.framed v.calls).aarch64Depth < 2^64 := by
@@ -2630,7 +2675,7 @@ theorem scratch_le (v : GcmImpl) : v.ctr.scratch ≤ v.calls.pwWn-512 := by
 /-- Discharge the arithmetic and register obligations at the concrete registration. -/
 theorem backendFacts (v : GcmImpl) (g : GhashWithImpl) : BackendFacts v g :=
   ⟨DirectGather.generalGather_shared v,DirectGather.generalSize v.callsOk,scratch_le v,
-    generalSide v.callsOk,generalDepth v,preparedSide v g,
+    generalSide v.callsOk,generalDepth v,preparedSide v g,fun f => DirectGather.keepsV_of_gatherSide (referenceSide v g f),
     Proof.Gcm.AArch64.Pmull.hashEightWith_at,Proof.Gcm.AArch64.Stitch.gh8Ok,Proof.Gcm.AArch64.Pmull.mulV_keyV⟩
 
 end VG.Proof.AesGcm.AArch64.Contiguous

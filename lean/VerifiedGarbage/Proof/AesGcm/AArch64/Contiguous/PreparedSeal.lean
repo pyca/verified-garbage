@@ -42,7 +42,7 @@ structure Prefix (wn R n p : Nat) (Ctx St W SP D O : Addr) (x : List Byte) (iv :
   wr : t.wr = s.wr
 
 theorem prefix_ok {wn R n : Nat} {Ctx St W SP D O P : Addr} {s : State} {iv : Block} {x : List Byte}
-    (fused : Bool) (L : Lay wn Ctx St W) (e : Env wn Ctx St W SP s) (gh : Gh8Ok)
+    (fused forward : Bool) (L : Lay wn Ctx St W) (e : Env wn Ctx St W SP s) (gh : Gh8Ok)
     (r : R = 10 ∨ R = 12 ∨ R = 14) (x22 : s.gpr .x22 = BitVec.ofNat 64 R)
     (x23 : s.gpr .x23 = D) (x26 : s.gpr .x26 = BitVec.ofNat 64 n)
     (sd : DataOk wn St W s D n) (od : DataW wn Ctx St W s O n) (mode : BufferLayout D O n)
@@ -51,11 +51,11 @@ theorem prefix_ok {wn R n : Nat} {Ctx St W SP D O P : Addr} {s : State} {iv : Bl
     (src : s.mem.readW (word W dataO) 64 = D) (dst : s.mem.readW (word W dstO) 64 = O)
     (cb : blockAt s.mem (word St 48) = iv) (y : blockAt s.mem (word St 16) = ghash (ctxH s.mem Ctx) (blocks x))
     (xm : x.length % 16 = 0) :
-    WP isa (if fused then batches else .block []) s (Prefix wn R n (done fused n) Ctx St W SP D O x iv s) := by
+    WP isa (if fused then batches forward else .block []) s (Prefix wn R n (done fused n) Ctx St W SP D O x iv s) := by
   cases fused
   · refine WP.block_nil ⟨e,rfl,x23,x26,rfl,rfl,Proof.Gcm.ctr_zero _ _ _ _ cb,?_,Frame.refl _ _,rfl,rfl⟩
     simpa [done,bytesAt] using y
-  · refine (batches_ok L e gh r x22 x23 x26 sd od mode (hn rfl) p pw rp src dst).mono ?_
+  · refine (batches_ok forward L e gh r x22 x23 x26 sd od mode (hn rfl) p pw rp src dst).mono ?_
     intro t ⟨z,h,reg,td,tn⟩
     have hd := h.data
     have hc := h.ctr
@@ -235,8 +235,8 @@ structure Ready (wn R n : Nat) (Ctx W D O P : Addr) (aad nonce : List Byte) (s :
   y : blockAt s.mem (word (word W 16) 16) = ghash (ctxH s.mem Ctx) (blocks (paddedAad aad))
   key : Fast.KeyAt (ctxH s.mem Ctx) s.mem W
 
-abbrev encPart (c : Callees) (fused : Bool) : Prog isa :=
-  .seq (if fused then batches else .block []) (.seq (.block (remainder fused)) (DirectGather.aligned c))
+abbrev encPart (c : Callees) (fused forward : Bool) : Prog isa :=
+  .seq (if fused then batches forward else .block []) (.seq (.block (remainder fused)) (DirectGather.aligned c))
 
 structure Text (wn R n p : Nat) (Ctx W D O : Addr) (aad nonce : List Byte) (s t : State) : Prop where
   env : Env wn Ctx (word W 16) W s.sp t
@@ -252,12 +252,12 @@ structure Text (wn R n p : Nat) (Ctx W D O : Addr) (aad nonce : List Byte) (s t 
 theorem encPart_ok {wn R n : Nat} {Ctx W D O P : Addr} {s : State} {aad nonce : List Byte}
     (v : GcmImpl) (fused : Bool) (gh : Gh8Ok) (L : Lay wn Ctx (word W 16) W)
     (q : Ready wn R n Ctx W D O P aad nonce s) (hn : fused = true → 128 ≤ n) (hv : v.ctr.scratch ≤ wn-512) :
-    WP isa (encPart v.callees fused) s (Text wn R n (done fused n) Ctx W D O aad nonce s) := by
+    WP isa (encPart v.callees fused (!v.stitch)) s (Text wn R n (done fused n) Ctx W D O aad nonce s) := by
   have hp := done_le fused n
   have lim := L.hWn
   have align : (paddedAad aad).length % 16 = 0 := by
     simpa only [paddedAad,List.length_append,Proof.Gcm.length_zeros] using Proof.Gcm.length_pad_mod aad.length
-  refine WP.seq ((prefix_ok fused L q.env gh q.rates q.x22 q.x23 q.x26 q.src q.dst q.mode hn q.powers
+  refine WP.seq ((prefix_ok fused (!v.stitch) L q.env gh q.rates q.x22 q.x23 q.x26 q.src q.dst q.mode hn q.powers
     q.pw q.pRead q.sourceSlot q.dstSlot q.cb q.y align).mono ?_)
   intro u h
   have fu := prefix_writes hp lim.1 h.frame
@@ -440,8 +440,8 @@ theorem finalPart_ok {wn R n j : Nat} {Ctx W D O P Tg : Addr} {s t o : State} {a
   rw [Spec.Gcm.encryptWith,← ct,Proof.Gcm.fullTag_eq,length_bytesAt,oz,hout,cz,List.take_of_length_le (by rw [Proof.Cmac.toBytes_length])]
   rfl
 
-abbrev afterFront (c : Callees) (gh : Fn) (fused : Bool) : Prog isa :=
-  .seq (encPart c fused) (.seq (.seq (.block (authRemainder fused)) (Impl.AesGcm.AArch64.Fast.pwSel c 16 gh)) (finalPart c))
+abbrev afterFront (c : Callees) (gh : Fn) (fused forward : Bool) : Prog isa :=
+  .seq (encPart c fused forward) (.seq (.seq (.block (authRemainder fused)) (Impl.AesGcm.AArch64.Fast.pwSel c 16 gh)) (finalPart c))
 
 theorem afterFront_ok {wn R n : Nat} {Ctx W D O P Tg : Addr} {s o : State} {aad nonce : List Byte}
     (v : GcmImpl) (g : GhashWithImpl) (fused : Bool) (gh : Gh8Ok) (mk : MulKey) (L : Lay wn Ctx (word W 16) W)
@@ -449,7 +449,7 @@ theorem afterFront_ok {wn R n : Nat} {Ctx W D O P Tg : Addr} {s o : State} {aad 
     (ha : aad.length < 2^64) (hv : v.ctr.scratch ≤ wn-512) (sv : SavedAt s.mem W o) (sp : s.sp = o.sp)
     (tag : Covers [⟨Tg,16⟩] s.wr) (x28 : s.gpr .x28 = Tg)
     (tw : (⟨Tg,16⟩ : Region).Disjoint (workR wn W)) (ot : (⟨O,n⟩ : Region).Disjoint ⟨Tg,16⟩) :
-    WP isa (afterFront v.callees g.fn fused) s fun z => GprAbi o z ∧ Frame (recordWrites wn W O Tg n) s.mem z.mem ∧
+    WP isa (afterFront v.callees g.fn fused (!v.stitch)) s fun z => GprAbi o z ∧ Frame (recordWrites wn W O Tg n) s.mem z.mem ∧
       Spec.Gcm.encryptWith (ciphOf s.mem Ctx R) (ctxH s.mem Ctx) 16 nonce (bytesAt s.mem D n) aad =
         (bytesAt z.mem O n,bytesAt z.mem Tg 16) := by
   refine WP.seq ((encPart_ok v fused gh L q hn hv).mono ?_)

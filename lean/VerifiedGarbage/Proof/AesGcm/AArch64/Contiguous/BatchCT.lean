@@ -45,13 +45,13 @@ private theorem batchPtrs {s : State} {W O : Addr} (h19 : s.gpr .x19 = W)
   exact WP.of_runBlock ⟨(s.write .x .x15 (s.gpr .x23)).write .x .x23 O,by arun [h19,dstO,read,slot,BitVec.add_zero],by simp [gpr_write],by simp [gpr_write],⟨by others_tac,rfl,rfl,rfl,rfl⟩⟩
 
 theorem batches_rel {wn n : Nat} {Ctx St W SP O P : Addr} {a b : State}
-    (ea : Env wn Ctx St W SP a) (eb : Env wn Ctx St W SP b)
+    (forward : Bool) (ea : Env wn Ctx St W SP a) (eb : Env wn Ctx St W SP b)
     (reg : ∀ r ∈ stRegs, r ≠ .x9 → a.gpr r = b.gpr r) (an : a.gpr .x26 = BitVec.ofNat 64 n) (hn : n < 2^64)
     (pa : GhWCall a Ctx (word St 16) (word W 512) P) (pb : GhWCall b Ctx (word St 16) (word W 512) P)
     (sa : a.mem.readW (word a.sp 16) 64 = P) (sb : b.mem.readW (word b.sp 16) 64 = P)
     (ra : InRegions (a.rd++a.wr) (word a.sp 16) 8) (rb : InRegions (b.rd++b.wr) (word b.sp 16) 8)
     (da : a.mem.readW (word W dstO) 64 = O) (db : b.mem.readW (word W dstO) 64 = O) :
-    RelCT isa (Eq2 a b) batches TT := by
+    RelCT isa (Eq2 a b) (batches forward) TT := by
   refine Fast.stitched_rel (ea.sp.trans eb.sp.symm) reg an hn ?_
   intro u z sp rg gu mu ru wu su gz mz rz wz sz
   have keep {u a : State} (en : Env wn Ctx St W SP a)
@@ -83,6 +83,6 @@ theorem batches_rel {wn n : Nat} {Ctx St W SP O P : Addr} {a b : State}
   exact rel_taint [.x9,.x15,.x19,.x20,.x21,.x22,.x23,.x26] (ri.sp.trans (sx.trans (sp.trans (sy.symm.trans rj.sp.symm))))
     (by agree_tac [i15,j15,i23,j23,eq .x23 (by decide),lr .x9 (by decide) (by decide),
       lr .x19 (by decide) (by decide),lr .x20 (by decide) (by decide),lr .x21 (by decide) (by decide),
-      lr .x22 (by decide) (by decide),lr .x26 (by decide) (by decide)]) ⟨_,by taint_decide⟩
+      lr .x22 (by decide) (by decide),lr .x26 (by decide) (by decide)]) (by cases forward <;> exact ⟨_,by taint_decide⟩)
 
 end VG.Proof.AesGcm.AArch64.Contiguous.Prepared
