@@ -745,6 +745,21 @@ impl AesGcm {
         plaintext: &[&[u8]],
         out: &mut [MaybeUninit<u8>],
     ) -> Result<Block, Error> {
+        #[cfg(target_arch = "x86_64")]
+        if let [input] = plaintext {
+            crate::dit::enter!(dit);
+            check_nonce(nonce)?;
+            add_len(0, input.len(), MAX_TEXT).map_err(|()| Error::InvalidTextLength)?;
+            if input.len() != out.len() { return Err(Error::InvalidOutputLength); }
+            add_len(0, aad.len(), MAX_AAD).map_err(|()| Error::InvalidAadLength)?;
+            // SAFETY: input and the entire writable output are disjoint.
+            return Ok(unsafe { self.seal_contiguous(dit, nonce, aad, input.as_ptr(), out.as_mut_ptr().cast(), input.len()) });
+        }
+        self.encrypt_gather_checked(nonce, aad, plaintext, out)
+    }
+
+    #[inline(always)]
+    fn encrypt_gather_checked(&self, nonce: &[u8], aad: &[u8], plaintext: &[&[u8]], out: &mut [MaybeUninit<u8>]) -> Result<Block, Error> {
         crate::dit::enter!(dit);
         if plaintext.len() > Self::MAX_PIECES {
             return Err(Error::TooManyPieces);
@@ -773,12 +788,6 @@ impl AesGcm {
     ) -> Block {
         let dst = out.as_mut_ptr().cast();
         let len = out.len();
-        #[cfg(target_arch = "x86_64")]
-        if let [input] = plaintext {
-            // SAFETY: the checked length equals input.len(). The exclusive
-            // output slice is disjoint from the plaintext and other inputs.
-            return unsafe { self.seal_contiguous(dit, nonce, aad, input.as_ptr(), dst, len) };
-        }
         // The descriptors of the pieces, as `vg_aes_gcm_seal_gather` takes
         // them: each its address and its length. Only the first
         // `plaintext.len()` are written, and the function reads only those.
