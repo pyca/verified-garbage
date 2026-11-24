@@ -15,6 +15,8 @@ meta import VerifiedGarbage.Proof.Framework.KernelRfl
 public import VerifiedGarbage.Proof.Ed448.X86.Shake.Entry
 public import VerifiedGarbage.Proof.Ed448.X86.Shake.Header
 public import VerifiedGarbage.Proof.Ed448.X86.VerifyLocal
+public import VerifiedGarbage.Proof.Ed448.X86.Shake.Tbl
+import VerifiedGarbage.Proof.Framework.X86.Syms
 public import VerifiedGarbage.Proof.Ed448.X86.Callee
 public import VerifiedGarbage.Proof.Ed448.X86.ScalarLit
 public import VerifiedGarbage.Impl.Ed448.X86.Verify
@@ -52,6 +54,7 @@ import VerifiedGarbage.Proof.X448.X86.Step
 meta import VerifiedGarbage.Proof.Ed448.X86.Shake.Entry
 meta import VerifiedGarbage.Proof.Ed448.X86.Shake.Header
 meta import VerifiedGarbage.Proof.Ed448.X86.VerifyLocal
+meta import VerifiedGarbage.Proof.Ed448.X86.Shake.Tbl
 meta import VerifiedGarbage.Proof.Ed448.X86.Callee
 meta import VerifiedGarbage.Proof.Ed448.X86.ScalarLit
 meta import VerifiedGarbage.Impl.Ed448.X86.Verify
@@ -112,14 +115,17 @@ layout facts the calls need (`Shake.Kit`).
 namespace VG.Proof.Ed448.X86.Verify
 
 open VG VG.X86
-open VG.Proof.Ed448.X86.Shake (base ARGS RET Kit SCR)
+open VG.Proof.Ed448.X86.Shake (base ARGS RET Kit SCR StIn)
+open VG.Impl.Ed448.X86 (bSym bWords)
 
 abbrev PK (s : State) : Region := ⟨(arg s 0).setWidth 64, 57⟩
 abbrev CTX (s : State) : Region := ⟨(arg s 1).setWidth 64, (arg s 2).toNat⟩
 abbrev MSG (s : State) : Region := ⟨(arg s 3).setWidth 64, (arg s 4).toNat⟩
 abbrev SIG (s : State) : Region := ⟨(arg s 5).setWidth 64, 114⟩
 
-def vfRd (s : State) : List Region := [PK s, CTX s, MSG s, SIG s, ⟨argAddr s 0, 28⟩]
+/-- The inputs, the arguments and the static (which `vg_ed448_verify_equation` reads). -/
+def vfRd (s : State) : List Region :=
+  [PK s, CTX s, MSG s, SIG s, ⟨argAddr s 0, 28⟩, StR bWords ((s.syms bSym).setWidth 64)]
 def vfWr (s : State) : List Region := [⟨(arg s 6).setWidth 64, 8192⟩]
 
 def vfLocal : Contract isa where
@@ -138,7 +144,8 @@ def vfLocal : Contract isa where
       stk.Disjoint pk ∧ stk.Disjoint ctx ∧ stk.Disjoint msg ∧ stk.Disjoint sig ∧ stk.Disjoint scr ∧
       (arg s 0).toNat + 57 ≤ 2 ^ 32 ∧ (arg s 1).toNat + (arg s 2).toNat ≤ 2 ^ 32 ∧
       (arg s 3).toNat + (arg s 4).toNat ≤ 2 ^ 32 ∧ (arg s 5).toNat + 114 ≤ 2 ^ 32 ∧
-      (arg s 6).toNat + 8192 ≤ 2 ^ 32 ∧ 280 ≤ (s.gpr .esp).toNat ∧ (s.gpr .esp).toNat + 32 ≤ 2 ^ 32
+      (arg s 6).toNat + 8192 ≤ 2 ^ 32 ∧ 280 ≤ (s.gpr .esp).toNat ∧ (s.gpr .esp).toNat + 32 ≤ 2 ^ 32 ∧
+      StHeld bSym bWords s [scr, stk]
   post s t := t.gpr .eax = if Spec.Ed448.verify
     (Spec.Ed448.bytesAt s.mem ((arg s 0).setWidth 64) 57)
     (Spec.Ed448.bytesAt s.mem ((arg s 1).setWidth 64) (arg s 2).toNat)
@@ -151,7 +158,8 @@ def vfLocal : Contract isa where
       Spec.Ed448.bytesAt t.mem ((arg t 1).setWidth 64) (arg t 2).toNat ∧
     Spec.Ed448.bytesAt s.mem ((arg s 3).setWidth 64) (arg s 4).toNat =
       Spec.Ed448.bytesAt t.mem ((arg t 3).setWidth 64) (arg t 4).toNat ∧
-    Spec.Ed448.bytesAt s.mem ((arg s 5).setWidth 64) 114 = Spec.Ed448.bytesAt t.mem ((arg t 5).setWidth 64) 114
+    Spec.Ed448.bytesAt s.mem ((arg s 5).setWidth 64) 114 = Spec.Ed448.bytesAt t.mem ((arg t 5).setWidth 64) 114 ∧
+    s.syms bSym = t.syms bSym
 
 structure Facts (s : State) : Prop where
   pc : (PK s).Disjoint (SCR (arg s 6))
@@ -172,10 +180,11 @@ structure Facts (s : State) : Prop where
   scratch : (arg s 6).toNat + 8192 ≤ 2 ^ 32
   below : 280 ≤ (s.gpr .esp).toNat
   above : (s.gpr .esp).toNat + 32 ≤ 2 ^ 32
+  held : StHeld bSym bWords s [SCR (arg s 6), VG.X86.below (s.gpr .esp) 280]
 
 theorem facts {s : State} (h : vfLocal.pre s) : Facts s := by
-  obtain ⟨_, _, pc, xc, mc, sc, ac, rc, kp, kx, km, ks, kc, a, b, c, d, e, f, g⟩ := h
-  exact ⟨pc, xc, mc, sc, ac, rc, kp, kx, km, ks, kc, a, b, c, d, e, f, g⟩
+  obtain ⟨_, _, pc, xc, mc, sc, ac, rc, kp, kx, km, ks, kc, a, b, c, d, e, f, g, w⟩ := h
+  exact ⟨pc, xc, mc, sc, ac, rc, kp, kx, km, ks, kc, a, b, c, d, e, f, g, w⟩
 
 theorem pk_in (s : State) : PK s ∈ vfRd s := List.mem_cons_self
 theorem ctx_in (s : State) : CTX s ∈ vfRd s := List.mem_cons_of_mem _ List.mem_cons_self
@@ -186,6 +195,7 @@ theorem sig_in (s : State) : SIG s ∈ vfRd s :=
 theorem args_in (s : State) : ARGS s 7 ∈ vfRd s :=
   List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _
     List.mem_cons_self)))
+theorem b_in (s : State) : StR bWords ((s.syms bSym).setWidth 64) ∈ vfRd s := by simp [vfRd]
 theorem scr_in (s : State) : SCR (arg s 6) ∈ vfWr s := List.mem_cons_self
 
 theorem kit {s : State} (h : Facts s) : Kit (base s) (arg s 6) 7 (vfRd s) (vfWr s) := by
@@ -195,13 +205,17 @@ theorem kit {s : State} (h : Facts s) : Kit (base s) (arg s 6) 7 (vfRd s) (vfWr 
   · intro r hr R hR
     rw [List.mem_singleton.mp hR]
     simp only [vfRd, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl | rfl
-    exacts [h.pc, h.xc, h.mc, h.sc, h.ac]
+    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
+    exacts [h.pc, h.xc, h.mc, h.sc, h.ac, h.held.2.2 _ (by simp)]
   · intro r hr
     simp only [vfRd, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl | rfl
+    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
     exacts [h.kp.symm, h.kx.symm, h.km.symm, h.ks.symm,
-      Shake.args_stack (n := 7) h.below (by have := h.above; omega_using [this]) (by decide)]
+      Shake.args_stack (n := 7) h.below (by have := h.above; omega_using [this]) (by decide), h.held.2.2 _ (by simp)]
+
+/-- The static, among the inputs. -/
+theorem bIn {s : State} (h : Facts s) : StIn bWords (s.syms bSym) (vfRd s) s.mem :=
+  ⟨h.held.2.1, b_in s, h.held.1⟩
 
 theorem ret_out {s : State} (h : Facts s) : ∀ R ∈ vfWr s, (RET s).Disjoint R := by
   intro R hR
@@ -234,6 +248,7 @@ open VG.Impl.Ed25519.X86.Whole (Value setup)
 open VG.Impl.Ed448.X86.Shake (callWith)
 open VG.Spec.Sha3 (stateAt)
 open VG.Proof.Ed448.X86.Shake
+open VG.Impl.Ed448.X86 (bSym bWords)
 open VG.Proof.Ed25519.X86 (Whole.slots Whole.Within Whole.FR Whole.valid Whole.call_ok Whole.CallReady)
 
 variable {s t u : State} {g : Reg → BitVec 32} {m : Mem}
@@ -451,9 +466,11 @@ theorem eq_setup (h : Facts s) (hc : GCtx s g m t) (ha : Shake.Args (base s) 7 (
     at a0 a1 a2 a3
   exact ⟨a0, a1, a2, a3⟩
 
-theorem eq_pre (h : Facts s) (hu : GCtx s g m u) (hs : EqSlots s u) :
+theorem eq_pre (h : Facts s) (hu : GCtx s g m u) (hs : EqSlots s u) (hy : u.syms bSym = s.syms bSym)
+    (ht : StIn bWords (s.syms bSym) (vfRd s) u.mem) :
     Proof.Ed448.X86.verifyEquationLocal.pre (u.callEntry.withRegions
-      [PK s, SIG s, fr (base s) K 57, ⟨(base s).setWidth 64, 16⟩] [SCR (arg s 6)]) := by
+      [PK s, SIG s, fr (base s) K 57, ⟨(base s).setWidth 64, 16⟩, StR bWords ((s.syms bSym).setWidth 64)]
+      [SCR (arg s 6)]) := by
   have hk := kit h
   have fk := hk.fr_addr (d := K) (by decide)
   have hb := hk.below
@@ -461,25 +478,30 @@ theorem eq_pre (h : Facts s) (hu : GCtx s g m u) (hs : EqSlots s u) :
   have e4 := hk.esp4
   have ab : ∀ rd wr, argAddr (u.callEntry.withRegions rd wr) 0 = (base s).setWidth 64 :=
     VG.Proof.Ed25519.X86.Whole.arg_base hu.esp
-  simp only [Proof.Ed448.X86.verifyEquationLocal, State.withRegions_rd, State.withRegions_wr, arg_withRegions,
+  have held := ht.held hk hu hy (rd := [PK s, SIG s, fr (base s) K 57, ⟨(base s).setWidth 64, 16⟩, StR bWords ((s.syms bSym).setWidth 64)])
+    (wr := [SCR (arg s 6)]) (ht.away₁ hk (scr_in s))
+  have hy' : ∀ rd wr, (u.callEntry.withRegions rd wr).syms bSym = s.syms bSym := fun _ _ => hy
+  simp only [Proof.Ed448.X86.verifyEquationLocal, State.withRegions_rd, State.withRegions_wr, arg_withRegions, hy',
     State.withRegions_gpr, State.callEntry_esp, hu.esp, hk.slot_arg hu (j := 0) (by decide) hs.a0,
     hk.slot_arg hu (j := 1) (by decide) hs.a1, hk.slot_arg hu (j := 2) (by decide) hs.a2,
     hk.slot_arg hu (j := 3) (by decide) hs.a3, ab, fk]
   exact ⟨trivial, trivial, h.pc, h.sc, hk.fr_scr (by decide), Kit.args_disj (by decide) hk.lo_scr,
     hk.ret_disj hk.lo_scr, h.pk, h.sig, hk.fr_fit (by decide), h.scratch, by omega_using [hf, e4], hk.callee_room,
     hk.callee_in _ (pk_in s), hk.callee_in _ (sig_in s), (lo_fr _ (by decide) (by decide)).sub_left hk.callee_lo,
-    hk.callee_stk _ (scr_in s)⟩
+    hk.callee_stk _ (scr_in s), held⟩
 
 theorem eq_covers (s : State) :
-    Covers ([PK s, SIG s, fr (base s) K 57, ⟨(base s).setWidth 64, 16⟩] ++ [SCR (arg s 6)])
+    Covers ([PK s, SIG s, fr (base s) K 57, ⟨(base s).setWidth 64, 16⟩, StR bWords ((s.syms bSym).setWidth 64)] ++
+      [SCR (arg s 6)])
       (vfRd s ++ Whole.FR (base s) :: vfWr s) := by
   refine covers_of fun r hr => ?_
   simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl | rfl
+  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
   · exact .inr ⟨_, List.mem_append_left _ (pk_in s), whole _⟩
   · exact .inr ⟨_, List.mem_append_left _ (sig_in s), whole _⟩
   · exact .inl (frame_within _ (by decide))
   · exact .inl (args_within _ (by decide))
+  · exact .inr ⟨_, List.mem_append_left _ (b_in s), whole _⟩
   · exact .inr ⟨_, List.mem_append_right _ (scr_in s), whole _⟩
 
 theorem eq_writes (s : State) : ∀ r ∈ [SCR (arg s 6)],
@@ -488,19 +510,21 @@ theorem eq_writes (s : State) : ∀ r ∈ [SCR (arg s 6)],
   rw [List.mem_singleton.mp hr]
   exact .inr ⟨_, scr_in s, whole _⟩
 
-def eq_ready (h : Facts s) (hu : GCtx s g m u) (hs : EqSlots s u) :
+def eq_ready (h : Facts s) (hu : GCtx s g m u) (hs : EqSlots s u) (hy : u.syms bSym = s.syms bSym)
+    (ht : StIn bWords (s.syms bSym) (vfRd s) u.mem) :
     Whole.CallReady Proof.Ed448.X86.verifyEquationLocal (base s) (vfRd s) (vfWr s) u :=
-  ⟨_, _, eq_pre h hu hs, eq_covers s, eq_writes s⟩
+  ⟨_, _, eq_pre h hu hs hy ht, eq_covers s, eq_writes s⟩
 
 theorem eq_call {eq : Prog isa} (hE : CalleeOk Proof.Ed448.X86.verifyEquationLocal eq) (h : Facts s)
-    (hu : GCtx s g m u) (hs : EqSlots s u) :
+    (hu : GCtx s g m u) (hs : EqSlots s u) (hy : u.syms bSym = s.syms bSym)
+    (ht : StIn bWords (s.syms bSym) (vfRd s) u.mem) :
     WP isa (.call "vg_ed448_verify_equation" eq) u fun v => GCtx s g m v ∧
       v.gpr .eax = if Spec.Ed448.verifyEquation (Spec.Ed448.bytesAt u.mem ((arg s 0).setWidth 64) 57)
         (Spec.Ed448.bytesAt u.mem ((arg s 5).setWidth 64) 114)
         (Spec.Ed448.bytesAt u.mem ((base s).setWidth 64 + BitVec.ofNat 64 K) 57) then 1 else 0 := by
   have hk := kit h
   have fk := hk.fr_addr (d := K) (by decide)
-  refine Whole.call_ok hu hk.below hE.ok hE.nosp hE.stack (eq_pre h hu hs) (eq_covers s) (eq_writes s)
+  refine Whole.call_ok hu hk.below hE.ok hE.nosp hE.stack (eq_pre h hu hs hy ht) (eq_covers s) (eq_writes s)
     fun v hv _ _ ⟨s₂, _, hg, hpost⟩ => ⟨hv, ?_⟩
   simp only [Proof.Ed448.X86.verifyEquationLocal, State.withRegions_mem, arg_withRegions,
     hk.slot_arg hu (j := 0) (by decide) hs.a0, hk.slot_arg hu (j := 1) (by decide) hs.a1,
@@ -511,14 +535,15 @@ theorem eq_call {eq : Prog isa} (hE : CalleeOk Proof.Ed448.X86.verifyEquationLoc
     hk.entry_bytes hu (D := fr (base s) K 57) (lo_fr _ (by decide) (by decide)) (by show 57 ≤ 2 ^ 64; decide)]
 
 theorem eq_step {eq : Prog isa} (hE : CalleeOk Proof.Ed448.X86.verifyEquationLocal eq) (h : Facts s)
-    (hc : GCtx s g m t) (ha : Shake.Args (base s) 7 (arg s) m) :
+    (hc : GCtx s g m t) (ha : Shake.Args (base s) 7 (arg s) m) (hy : t.syms bSym = s.syms bSym)
+    (ht : StIn bWords (s.syms bSym) (vfRd s) m) :
     WP isa (callWith equationArgs "vg_ed448_verify_equation" eq) t fun v => GCtx s g m v ∧
       v.gpr .eax = if Spec.Ed448.verifyEquation (Spec.Ed448.bytesAt t.mem ((arg s 0).setWidth 64) 57)
         (Spec.Ed448.bytesAt t.mem ((arg s 5).setWidth 64) 114)
         (Spec.Ed448.bytesAt t.mem ((base s).setWidth 64 + BitVec.ofNat 64 K) 57) then 1 else 0 := by
   have hk := kit h
-  refine WP.seq (WP.mono (eq_setup h hc ha) fun u ⟨hu, hm, hs⟩ => ?_)
-  refine WP.mono (eq_call hE h hu hs) fun v ⟨hv, ho⟩ => ⟨hv, ?_⟩
+  refine WP.seq (WP.mono_syms (eq_setup h hc ha) fun u ⟨hu, hm, hs⟩ yu => ?_)
+  refine WP.mono (eq_call hE h hu hs ((congrFun yu _).trans hy) (ht.keep hk hu)) fun v ⟨hv, ho⟩ => ⟨hv, ?_⟩
   have away : ∀ D : Region, (Lo (base s)).Disjoint D → ∀ r ∈ [(⟨(base s).setWidth 64, 24⟩ : Region)], D.Disjoint r :=
     fun D hD r hr => by rw [List.mem_singleton.mp hr]; exact (hD.sub_left (args_lo _ (by decide))).symm
   rw [ho, frame_bytes hm (D := PK s) (away _ (hk.away_input (pk_in s) (whole _)).lo) (by show 57 ≤ 2 ^ 64; decide),
@@ -536,14 +561,15 @@ abbrev result (s : State) (m : Mem) : BitVec 32 :=
         Spec.Ed448.bytesAt m ((arg s 3).setWidth 64) (arg s 4).toNat))) then 1 else 0
 
 theorem body_ok {eq : Prog isa} (hE : CalleeOk Proof.Ed448.X86.verifyEquationLocal eq) (h : Facts s)
-    (hc : GCtx s g m t) (ha : Shake.Args (base s) 7 (arg s) m) (hcl : (arg s 2).toNat < 256) :
+    (hc : GCtx s g m t) (ha : Shake.Args (base s) 7 (arg s) m) (hcl : (arg s 2).toNat < 256) (hy : t.syms bSym = s.syms bSym)
+    (ht : StIn bWords (s.syms bSym) (vfRd s) m) :
     WP isa (body eq) t fun u => GCtx s g m u ∧ u.gpr .eax = result s m := by
   have hk := kit h
-  refine WP.seq (WP.mono (hk.hdr_ok hc ha (j := 2) (off := HDR) (by decide) hcl (by decide))
-    fun t₁ ⟨hc₁, _, hh, _⟩ => ?_)
-  refine WP.seq (WP.mono (hash_ok h hc₁ ha hh) fun t₂ ⟨hc₂, hb₂⟩ => ?_)
-  refine WP.seq (WP.mono (reduce_step h hc₂ ha) fun t₃ ⟨hc₃, _, hk₃⟩ => ?_)
-  refine WP.mono (eq_step hE h hc₃ ha) fun u ⟨hu, ho⟩ => ⟨hu, ?_⟩
+  refine WP.seq (WP.mono_syms (hk.hdr_ok hc ha (j := 2) (off := HDR) (by decide) hcl (by decide))
+    fun t₁ ⟨hc₁, _, hh, _⟩ y₁ => ?_)
+  refine WP.seq (WP.mono_syms (hash_ok h hc₁ ha hh) fun t₂ ⟨hc₂, hb₂⟩ y₂ => ?_)
+  refine WP.seq (WP.mono_syms (reduce_step h hc₂ ha) fun t₃ ⟨hc₃, _, hk₃⟩ y₃ => ?_)
+  refine WP.mono (eq_step hE h hc₃ ha ((congrFun (y₃.trans (y₂.trans y₁)) _).trans hy) ht) fun u ⟨hu, ho⟩ => ⟨hu, ?_⟩
   have hb₂' : Spec.Ed448.bytesAt t₂.mem ((base s).setWidth 64 + BitVec.ofNat 64 HASH) 114 =
       Spec.Ed448.hash (Spec.Ed448.bytesAt m ((arg s 1).setWidth 64) (arg s 2).toNat)
         (Spec.Ed448.bytesAt m ((arg s 5).setWidth 64) 57 ++ Spec.Ed448.bytesAt m ((arg s 0).setWidth 64) 57 ++
@@ -604,7 +630,8 @@ theorem check_ok {s : State} (h : Facts s) (hrd : s.rd = vfRd s) :
 /-- The frame and the body, from the state after the check. -/
 theorem framed_ok {eq : Prog isa} (hE : CalleeOk Proof.Ed448.X86.verifyEquationLocal eq) {s t : State}
     (hp : vfLocal.pre s) (he : t.gpr .esp = s.gpr .esp) (hm : t.mem = s.mem) (hrd : t.rd = s.rd)
-    (hwr : t.wr = s.wr) (hg : ∀ r, r ≠ .eax → t.gpr r = s.gpr r) (hcl : (arg s 2).toNat < 256) :
+    (hwr : t.wr = s.wr) (hg : ∀ r, r ≠ .eax → t.gpr r = s.gpr r) (hcl : (arg s 2).toNat < 256)
+    (hy : t.syms = s.syms) :
     WP isa (.frame (.push (List.replicate 64 .eax)) (body eq) (.pop .edx 64)) t fun u =>
       abiPreserved s u ∧ u.gpr .eax = result s s.mem := by
   have h := facts hp
@@ -615,7 +642,7 @@ theorem framed_ok {eq : Prog isa} (hE : CalleeOk Proof.Ed448.X86.verifyEquationL
   have ha : Shake.Args (base s) 7 (arg s) t.mem := by rw [hm]; exact args_val s 7
   refine WP.frame (rs := List.replicate 64 .eax) (by simp) (by simp) (by decide)
     (by simp only [List.length_replicate]; omega_using [hb]) (body_nosp hE)
-    (WP.mono (body_ok hE h c0 ha hcl) fun u ⟨hu, ho⟩ m v fl => ⟨?_, ?_⟩)
+    (WP.mono (body_ok hE h c0 ha hcl (congrFun hy bSym) (by rw [hm]; exact bIn h)) fun u ⟨hu, ho⟩ m v fl => ⟨?_, ?_⟩)
   · have hu' : VG.Proof.Ed25519.X86.Whole.Ctx (base t) t.gpr t.mem (vfRd s) (vfWr s) u := by
       rw [eb]; exact hu
     refine Shake.abi_of (s' := t) (fun r hr => hg r (by rintro rfl; simp [calleeSaved] at hr)) hm
@@ -630,10 +657,10 @@ theorem verify_ok {eq : Prog isa} (hE : CalleeOk Proof.Ed448.X86.verifyEquationL
     (hp : vfLocal.pre s) : WP isa (code eq) s fun t => abiPreserved s t ∧ vfLocal.post s t := by
   have h := facts hp
   unfold Impl.Ed448.X86.Verify.code
-  refine WP.seq (WP.mono (check_ok h hp.1) fun t ⟨he, hm, hrd, hwr, hg, hz⟩ => ?_)
+  refine WP.seq (WP.mono_syms (check_ok h hp.1) fun t ⟨he, hm, hrd, hwr, hg, hz⟩ hy => ?_)
   refine WP.ite _ hz (fun hcl => ?_) (fun hcl => ?_)
   · have hcl' : (arg s 2).toNat < 256 := of_decide_eq_true hcl
-    refine WP.mono (framed_ok hE hp he hm hrd hwr hg hcl') fun u ⟨ha, ho⟩ => ⟨ha, ?_⟩
+    refine WP.mono (framed_ok hE hp he hm hrd hwr hg hcl' hy) fun u ⟨ha, ho⟩ => ⟨ha, ?_⟩
     change u.gpr .eax = _
     have hl : (Spec.Ed448.bytesAt s.mem ((arg s 1).setWidth 64) (arg s 2).toNat).length = (arg s 2).toNat := by
       simp [Spec.Ed448.bytesAt]
@@ -667,7 +694,7 @@ its inputs' bytes: the public key and the signature, the same in both runs
 (`vfLocal.pub`), and `k`, the reduced hash of the inputs, which the proof
 carries through the hash (`hash_ok`) and the reduction. `verify_verified`:
 for any `eq` meeting `verifyEquationLocal` (`CalleeOk`), `code eq` meets
-`Spec.Ed448.verifyContract X86.abi 280`.
+`Spec.Ed448.verifyContract`, with the static.
 -/
 
 @[expose] public section
@@ -677,6 +704,7 @@ namespace VG.Proof.Ed448.X86.Verify
 open VG VG.X86 VG.Impl.Ed448.X86.Verify
 open VG.Impl.Ed448.X86.Shake (callWith hdrAt)
 open VG.Proof.Ed448.X86.Shake
+open VG.Impl.Ed448.X86 (bSym bWords bConsts)
 open VG.Proof.Ed25519.X86 (Whole.slots)
 
 variable {σ₁ σ₂ : State} {g₁ g₂ : Reg → BitVec 32}
@@ -685,8 +713,8 @@ theorem base_eq (hp : vfLocal.pub σ₁ σ₂) : base σ₂ = base σ₁ := by
   simp only [base, hp.1]
 
 theorem rd_eq (hp : vfLocal.pub σ₁ σ₂) : vfRd σ₂ = vfRd σ₁ := by
-  obtain ⟨e, a0, a1, a2, a3, a4, a5, _⟩ := hp
-  simp only [vfRd, PK, CTX, MSG, SIG, argAddr, e, a0, a1, a2, a3, a4, a5]
+  obtain ⟨e, a0, a1, a2, a3, a4, a5, _, _, _, _, _, y⟩ := hp
+  simp only [vfRd, PK, CTX, MSG, SIG, argAddr, e, a0, a1, a2, a3, a4, a5, y]
 
 theorem wr_eq (hp : vfLocal.pub σ₁ σ₂) : vfWr σ₂ = vfWr σ₁ := by
   simp only [vfWr, hp.2.2.2.2.2.2.2.1]
@@ -707,7 +735,7 @@ theorem inputs_eq (hp : vfLocal.pub σ₁ σ₂) :
     Spec.Ed448.bytesAt σ₂.mem ((arg σ₁ 3).setWidth 64) (arg σ₁ 4).toNat =
       Spec.Ed448.bytesAt σ₁.mem ((arg σ₁ 3).setWidth 64) (arg σ₁ 4).toNat ∧
     Spec.Ed448.bytesAt σ₂.mem ((arg σ₁ 5).setWidth 64) 114 = Spec.Ed448.bytesAt σ₁.mem ((arg σ₁ 5).setWidth 64) 114 := by
-  obtain ⟨_, a0, a1, a2, a3, a4, a5, _, pk, ctx, msg, sig⟩ := hp
+  obtain ⟨_, a0, a1, a2, a3, a4, a5, _, pk, ctx, msg, sig, _⟩ := hp
   rw [← a0] at pk
   rw [← a1, ← a2] at ctx
   rw [← a3, ← a4] at msg
@@ -730,6 +758,9 @@ theorem hv_eq (hp : vfLocal.pub σ₁ σ₂) : HV σ₁ σ₂.mem = HV σ₁ σ�
     show Spec.Sha3.bytesAt σ₂.mem ((arg σ₁ 1).setWidth 64) (arg σ₁ 2).toNat = _ from ctx,
     show Spec.Sha3.bytesAt σ₂.mem ((arg σ₁ 3).setWidth 64) (arg σ₁ 4).toNat = _ from msg, r]
   rfl
+
+abbrev TwoS₁ (σ₁ σ₂ : State) (g₁ g₂ : Reg → BitVec 32) :=
+  TwoS bSym (σ₁.syms bSym) (base σ₁) (vfRd σ₁) (vfWr σ₁) g₁ g₂ σ₁.mem σ₂.mem
 
 abbrev Two₁ (σ₁ σ₂ : State) (g₁ g₂ : Reg → BitVec 32) :=
   Two (base σ₁) (vfRd σ₁) (vfWr σ₁) g₁ g₂ σ₁.mem σ₂.mem
@@ -849,8 +880,8 @@ abbrev EqQ (σ₁ : State) (u : State) : Prop :=
     Spec.Ed448.bytesAt u.mem ((arg σ₁ 5).setWidth 64) 114 = Spec.Ed448.bytesAt σ₁.mem ((arg σ₁ 5).setWidth 64) 114
 
 include hE h hp in
-theorem equation_ct :
-    RelCT isa (Two₁ σ₁ σ₂ g₁ g₂ (KQ σ₁)) (callWith equationArgs "vg_ed448_verify_equation" eq)
+theorem equation_ct (ht₂ : StIn bWords (σ₁.syms bSym) (vfRd σ₁) σ₂.mem) :
+    RelCT isa (TwoS₁ σ₁ σ₂ g₁ g₂ (KQ σ₁)) (callWith equationArgs "vg_ed448_verify_equation" eq)
       (Two₁ σ₁ σ₂ g₁ g₂ fun _ => True) := by
   have hk := kit h
   have ha := args_val σ₁ 7
@@ -861,18 +892,20 @@ theorem equation_ct :
     fun hm hq => (frame_bytes hm (D := fr (base σ₁) K 57) (fun r hr => by
       rw [List.mem_singleton.mp hr]; exact Offset.disjoint_base _ (by decide) (by decide))
       (by show 57 ≤ 2 ^ 64; decide)).trans hq
-  refine RelCT.seq (R := Two₁ σ₁ σ₂ g₁ g₂ (EqQ σ₁))
-    (block_ct (by taint_decide)
+  refine RelCT.seq (R := TwoS₁ σ₁ σ₂ g₁ g₂ (EqQ σ₁))
+    (two_syms (block_ct (by taint_decide)
       (fun _ hc hq => WP.mono (eq_setup h hc ha) fun _ hu => ⟨hu.1, hu.2.2, keep hu.2.1 hq,
         hk.input_bytes (D := PK σ₁) hu.1 (pk_in σ₁) (whole (PK σ₁)) (by show 57 ≤ 2 ^ 64; decide),
         hk.input_bytes (D := SIG σ₁) hu.1 (sig_in σ₁) (whole (SIG σ₁)) (by show 114 ≤ 2 ^ 64; decide)⟩)
       (fun _ hc hq => WP.mono (eq_setup h hc hb) fun _ hu => ⟨hu.1, hu.2.2, keep hu.2.1 hq,
         (hk.input_bytes (D := PK σ₁) hu.1 (pk_in σ₁) (whole (PK σ₁)) (by show 57 ≤ 2 ^ 64; decide)).trans pk₂,
-        (hk.input_bytes (D := SIG σ₁) hu.1 (sig_in σ₁) (whole (SIG σ₁)) (by show 114 ≤ 2 ^ 64; decide)).trans sig₂⟩)) ?_
-  refine call_ct hE.ok hE.ct (fun _ _ _ hc hs => eq_ready h hc hs.1) ?_
-    (fun _ hc hs => WP.mono (eq_call hE h hc hs.1) fun _ hv => ⟨hv.1, trivial⟩)
-    (fun _ hc hs => WP.mono (eq_call hE h hc hs.1) fun _ hv => ⟨hv.1, trivial⟩)
-  intro a b ea eb ha' hb' ar aw br bw
+        (hk.input_bytes (D := SIG σ₁) hu.1 (sig_in σ₁) (whole (SIG σ₁)) (by show 114 ≤ 2 ^ 64; decide)).trans sig₂⟩))) ?_
+  refine RelCT.mono (call_ct (R := fun t => EqQ σ₁ t ∧ t.syms bSym = σ₁.syms bSym ∧
+      StIn bWords (σ₁.syms bSym) (vfRd σ₁) t.mem) hE.ok hE.ct (fun _ _ _ hc hs => eq_ready h hc hs.1.1 hs.2.1 hs.2.2) ?_
+    (fun _ hc hs => WP.mono (eq_call hE h hc hs.1.1 hs.2.1 hs.2.2) fun _ hv => ⟨hv.1, trivial⟩)
+    (fun _ hc hs => WP.mono (eq_call hE h hc hs.1.1 hs.2.1 hs.2.2) fun _ hv => ⟨hv.1, trivial⟩))
+    (fun _ _ hh => hh.two hk (bIn h) ht₂) fun _ _ q => q
+  intro a b ea eb ⟨ha', ya, _⟩ ⟨hb', yb, _⟩ ar aw br bw
   have ca : ∀ j < 4, arg a.callEntry j = Whole.slots (base σ₁) a j := fun j hj =>
     VG.Proof.Ed25519.X86.Whole.call_arg ea hk.below hk.frame (by omega_using [hj])
   have cb : ∀ j < 4, arg b.callEntry j = Whole.slots (base σ₁) b j := fun j hj =>
@@ -884,7 +917,7 @@ theorem equation_ct :
     State.callEntry_esp, arg_withRegions, ca 0 (by decide), ca 1 (by decide), ca 2 (by decide), ca 3 (by decide),
     cb 0 (by decide), cb 1 (by decide), cb 2 (by decide), cb 3 (by decide), ha'.1.a0, ha'.1.a1, ha'.1.a2,
     ha'.1.a3, hb'.1.a0, hb'.1.a1, hb'.1.a2, hb'.1.a3, fk, ea, eb]
-  refine ⟨trivial, trivial, trivial, trivial, trivial, ?_, ?_, ?_⟩
+  refine ⟨trivial, trivial, trivial, trivial, trivial, ?_, ?_, ?_, ya.trans yb.symm⟩
   · rw [entry_bytes' ea hk.below (D := PK σ₁) lpk (by show 57 ≤ 2 ^ 64; decide),
       entry_bytes' eb hk.below (D := PK σ₁) lpk (by show 57 ≤ 2 ^ 64; decide)]
     exact ha'.2.2.1.trans hb'.2.2.1.symm
@@ -896,10 +929,10 @@ theorem equation_ct :
     exact ha'.2.1.trans hb'.2.1.symm
 
 include hE h hp hcl in
-theorem body_ct :
-    RelCT isa (Two₁ σ₁ σ₂ g₁ g₂ fun _ => True) (body eq) (Two₁ σ₁ σ₂ g₁ g₂ fun _ => True) := by
+theorem body_ct (ht₂ : StIn bWords (σ₁.syms bSym) (vfRd σ₁) σ₂.mem) :
+    RelCT isa (TwoS₁ σ₁ σ₂ g₁ g₂ fun _ => True) (body eq) (Two₁ σ₁ σ₂ g₁ g₂ fun _ => True) := by
   unfold body
-  exact RelCT.assoc ((front_ct h hp hcl).seq ((reduce_ct h hp).seq (equation_ct hE h hp)))
+  exact RelCT.assoc ((two_syms (front_ct h hp hcl)).seq ((two_syms (reduce_ct h hp)).seq (equation_ct hE h hp ht₂)))
 
 end
 
@@ -908,7 +941,7 @@ end
 /-- After the check of `ctxlen`. -/
 def After (σ t : State) : Prop :=
   t.gpr .esp = σ.gpr .esp ∧ t.mem = σ.mem ∧ t.rd = σ.rd ∧ t.wr = σ.wr ∧
-    (∀ r, r ≠ .eax → t.gpr r = σ.gpr r) ∧ t.zf = some (decide ((arg σ 2).toNat < 256))
+    (∀ r, r ≠ .eax → t.gpr r = σ.gpr r) ∧ t.zf = some (decide ((arg σ 2).toNat < 256)) ∧ t.syms = σ.syms
 
 theorem verify_ct {eq : Prog isa} (hE : CalleeOk Proof.Ed448.X86.verifyEquationLocal eq) :
     ConstantTime isa vfLocal.pre vfLocal.pub (code eq) := by
@@ -916,18 +949,20 @@ theorem verify_ct {eq : Prog isa} (hE : CalleeOk Proof.Ed448.X86.verifyEquationL
   unfold Impl.Ed448.X86.Verify.code
   refine RelCT.seq (Q := fun _ _ => True) ((RelCT.taint (A := taint) (τr [.esp]) (fun a b h => agree_regs fun r hr => by
       rw [List.mem_singleton.mp hr]; exact h.2.2.1) (by taint_decide)).wpDep (F := After)
-    (fun s₁ s₂ h => ⟨check_ok (facts h.1) h.1.1, check_ok (facts h.2.1) h.2.1.1⟩)) ?_
+    (fun s₁ s₂ h => ⟨WP.mono_syms (check_ok (facts h.1) h.1.1) fun _ c y => ⟨c.1, c.2.1, c.2.2.1, c.2.2.2.1, c.2.2.2.2.1, c.2.2.2.2.2, y⟩,
+      WP.mono_syms (check_ok (facts h.2.1) h.2.1.1) fun _ c y =>
+        ⟨c.1, c.2.1, c.2.2.1, c.2.2.2.1, c.2.2.2.2.1, c.2.2.2.2.2, y⟩⟩)) ?_
   refine RelCT.ite ?_ ?_ ?_
   · rintro a b ⟨_, σ₁, σ₂, ⟨_, _, hp⟩, A₁, A₂⟩
     change a.zf = b.zf
-    rw [A₁.2.2.2.2.2, A₂.2.2.2.2.2, hp.2.2.2.1]
+    rw [A₁.2.2.2.2.2.1, A₂.2.2.2.2.2.1, hp.2.2.2.1]
   · refine RelCT.frame (R := fun _ _ => True) ?_ ?_
     · rintro a b ⟨⟨_, σ₁, σ₂, ⟨_, _, hp⟩, A₁, A₂⟩, _⟩
       rw [A₁.1, A₂.1, hp.1]
     · rintro x y tx ty x' y' ⟨a, b, ⟨⟨_, σ₁, σ₂, ⟨p₁, p₂, hp⟩, A₁, A₂⟩, hev⟩, rfl, rfl⟩ e₁ e₂
       have hcl : (arg σ₁ 2).toNat < 256 := by
         change a.zf = some true at hev
-        rw [A₁.2.2.2.2.2] at hev
+        rw [A₁.2.2.2.2.2.1] at hev
         exact of_decide_eq_true (Option.some.inj hev)
       have h₁ := facts p₁
       have c₁ := push_ctx (s := a) (A₁.2.2.1.trans p₁.1) (A₁.2.2.2.1.trans p₁.2.1) (by rw [A₁.1]; exact h₁.below)
@@ -937,7 +972,11 @@ theorem verify_ct {eq : Prog isa} (hE : CalleeOk Proof.Ed448.X86.verifyEquationL
         (by rw [A₂.1]; exact (facts p₂).below)
       have eb₂ : base b = base σ₁ := by simp only [base, A₂.1, hp.1]
       rw [eb₂, A₂.2.1, rd_eq hp, wr_eq hp] at c₂
-      exact ⟨(body_ct (g₁ := a.gpr) (g₂ := b.gpr) hE h₁ hp hcl _ _ _ _ _ _ ⟨⟨c₁, trivial⟩, ⟨c₂, trivial⟩⟩
+      have hy : σ₁.syms bSym = σ₂.syms bSym := hp.2.2.2.2.2.2.2.2.2.2.2.2
+      have t₂ := bIn (facts p₂)
+      rw [rd_eq hp, ← hy] at t₂
+      exact ⟨(body_ct (g₁ := a.gpr) (g₂ := b.gpr) hE h₁ hp hcl t₂ _ _ _ _ _ _
+        ⟨⟨⟨c₁, trivial⟩, ⟨c₂, trivial⟩⟩, congrFun A₁.2.2.2.2.2.2 _, (congrFun A₂.2.2.2.2.2.2 _).trans hy.symm⟩
         e₁ e₂).1, trivial⟩
   · refine RelCT.taint (A := taint) (τr [.esp]) (fun a b h => agree_regs fun r hr => ?_) (by taint_decide)
     rw [List.mem_singleton.mp hr]
@@ -956,20 +995,22 @@ def vfWide : Contract isa := { vfLocal with
     let args : Region := ⟨argAddr s 0, 28⟩
     let ret : Region := ⟨(s.gpr .esp).setWidth 64, 4⟩
     let stk : Region := ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 280, 280⟩
-    s.rd = [pk, ctx, msg, sig] ∧ s.wr = [scr, args] ∧
+    s.rd = [pk, ctx, msg, sig, StR bWords ((s.syms bSym).setWidth 64)] ∧ s.wr = [scr, args] ∧
       pk.Disjoint scr ∧ ctx.Disjoint scr ∧ msg.Disjoint scr ∧ sig.Disjoint scr ∧ args.Disjoint scr ∧
       ret.Disjoint scr ∧
       stk.Disjoint pk ∧ stk.Disjoint ctx ∧ stk.Disjoint msg ∧ stk.Disjoint sig ∧ stk.Disjoint scr ∧
       (arg s 0).toNat + 57 ≤ 2 ^ 32 ∧ (arg s 1).toNat + (arg s 2).toNat ≤ 2 ^ 32 ∧
       (arg s 3).toNat + (arg s 4).toNat ≤ 2 ^ 32 ∧ (arg s 5).toNat + 114 ≤ 2 ^ 32 ∧
-      (arg s 6).toNat + 8192 ≤ 2 ^ 32 ∧ 280 ≤ (s.gpr .esp).toNat ∧ (s.gpr .esp).toNat + 32 ≤ 2 ^ 32 }
+      (arg s 6).toNat + 8192 ≤ 2 ^ 32 ∧ 280 ≤ (s.gpr .esp).toNat ∧ (s.gpr .esp).toNat + 32 ≤ 2 ^ 32 ∧
+      StHeld bSym bWords s [scr, stk] }
 
 theorem vfWide_pre (s : State) (h : vfWide.pre s) :
     vfLocal.pre (s.withRegions (vfRd s) (vfWr s)) := by
-  obtain ⟨_, _, pc, xc, mc, sc, ac, rc, kp, kx, km, ks, kc, a, b, c, d, e, nb, g⟩ := h
+  obtain ⟨_, _, pc, xc, mc, sc, ac, rc, kp, kx, km, ks, kc, a, b, c, d, e, nb, g, w⟩ := h
   simp only [vfLocal, vfRd, vfWr, PK, CTX, MSG, SIG, arg_withRegions, argAddr_withRegions,
-    State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr, below, Taint.sub_setWidth nb]
-  exact ⟨True.intro, True.intro, pc, xc, mc, sc, ac, rc, kp, kx, km, ks, kc, a, b, c, d, e, nb, g⟩
+    State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr, State.withRegions_mem, State.withRegions_syms,
+    StHeld, below, Taint.sub_setWidth nb]
+  exact ⟨True.intro, True.intro, pc, xc, mc, sc, ac, rc, kp, kx, km, ks, kc, a, b, c, d, e, nb, g, w⟩
 
 def vfSatMem : Mem := fun a =>
   if a = 0x8005 then 0x10 else if a = 0x8009 then 0x20 else if a = 0x8011 then 0x30 else
@@ -981,9 +1022,10 @@ def vfSatState : State where
   zf := none
   sf := none
   of := none
-  mem := vfSatMem
-  rd := [⟨0x1000, 57⟩, ⟨0x2000, 0⟩, ⟨0x3000, 0⟩, ⟨0x4000, 114⟩]
+  mem := satWith bWords vfSatMem
+  rd := [⟨0x1000, 57⟩, ⟨0x2000, 0⟩, ⟨0x3000, 0⟩, ⟨0x4000, 114⟩, ⟨0x100000, 7168⟩]
   wr := [⟨0x5000, 8192⟩, ⟨0x8004, 28⟩]
+  syms _ := 0x100000
 
 private theorem byteMap_inj : ∀ {xs ys : List Byte}, xs.map (·.toNat) = ys.map (·.toNat) → xs = ys
   | [], [], _ => rfl
@@ -991,20 +1033,72 @@ private theorem byteMap_inj : ∀ {xs ys : List Byte}, xs.map (·.toNat) = ys.ma
     simp only [List.map_cons, List.cons.injEq] at h
     rw [BitVec.eq_of_toNat_eq h.1, byteMap_inj h.2]
 
-theorem vfWide_implies : vfWide.Implies (Spec.Ed448.verifyContract X86.abi 280) where
-  pre := by
-    sig_implies_pre [Spec.Ed448.verifyContract, Spec.Ed448.verifySig,
-      Spec.Ed448.scratchWords, vfWide, vfLocal,
-      X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
+theorem bWords_len : bWords.length = 64 * 14 := by simp [bWords]
+
+theorem bConsts_eq : bConsts = [(bSym, bWords)] := rfl
+
+theorem vfSat_arg (j : Nat) (hj : j < 7) : arg vfSatState j = Mem.readW vfSatMem (argAddr vfSatState j) 32 := by
+  unfold arg
+  apply Mem.readW_congr
+  intro b hb
+  change satWith bWords vfSatMem _ = _
+  rw [satWith_out]
+  rw [bWords_len]
+  have : ∀ j < 7, ∀ b < 4, 8 * (64 * 14) ≤ (argAddr vfSatState j + BitVec.ofNat 64 b - 0x100000).toNat := by
+    decide
+  exact this j hj b (by omega_using [hb])
+
+theorem vf_sat : (Spec.Ed448.verifyContract (X86.abi.withConsts bConsts) 280).pre vfSatState := by
+  have hl := bWords_len
+  have a0 : arg vfSatState 0 = 0x1000 := (vfSat_arg 0 (by decide)).trans (by decide)
+  have a1 : arg vfSatState 1 = 0x2000 := (vfSat_arg 1 (by decide)).trans (by decide)
+  have a2 : arg vfSatState 2 = 0 := (vfSat_arg 2 (by decide)).trans (by decide)
+  have a3 : arg vfSatState 3 = 0x3000 := (vfSat_arg 3 (by decide)).trans (by decide)
+  have a4 : arg vfSatState 4 = 0 := (vfSat_arg 4 (by decide)).trans (by decide)
+  have a5 : arg vfSatState 5 = 0x4000 := (vfSat_arg 5 (by decide)).trans (by decide)
+  have a6 : arg vfSatState 6 = 0x5000 := (vfSat_arg 6 (by decide)).trans (by decide)
+  have held : StWords bWords ((vfSatState.syms bSym).setWidth 64) vfSatState.mem :=
+    satWith_held bWords (by rw [hl]; decide) vfSatMem
+  generalize e : vfSatState = s
+  sig_pre [Spec.Ed448.verifyContract, Spec.Ed448.verifySig, Spec.Ed448.scratchWords, X86.abi, X86.argSlots,
+    X86.argVal, X86.argBytes, bConsts_eq, Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow]
+  subst s
+  refine ⟨by decide, by decide, by rw [hl]; rfl, held, by rw [hl]; decide, ?_, ?_, ?_, by decide, ?_⟩
+  · rw [hl]
+    intro r hr
+    change r ∈ [⟨0x5000, 8192⟩, ⟨0x8004, 28⟩] at hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl <;> exact Region.disjoint_of_sep (by decide)
+  · rw [hl]; exact Region.disjoint_of_sep (by decide)
+  · rw [hl]; exact Region.disjoint_of_sep (by decide)
+  · rw [a0, a1, a2, a3, a4, a5, a6]
+    refine ⟨rfl, rfl, ?_⟩
+    repeat' apply And.intro
+    all_goals first | exact Region.disjoint_of_sep (by decide) | decide
+
+theorem vfWide_implies : vfWide.Implies (Spec.Ed448.verifyContract (X86.abi.withConsts bConsts) 280) where
+  pre s h := by
+    sig_pre [Spec.Ed448.verifyContract, Spec.Ed448.verifySig, Spec.Ed448.scratchWords, X86.abi, X86.argSlots,
+      X86.argVal, X86.argBytes, bConsts_eq, Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow] at h
+    obtain ⟨h280, hsp, hd, held, hfit, hdw, -, hstk, -, ht, hw, pc, -, xc, -, mc, -, sc, -, ca,
+      -, -, -, -, rc, -, kp, kx, km, ks, kc, -, f0, f1, f2, f3, f4⟩ := h
+    refine ⟨?_, hw, pc, xc, mc, sc, ca.symm, rc, kp, kx, km, ks, kc, f0, f1, f2, f3, f4, h280, by omega_using [hsp],
+      held, hfit, ?_⟩
+    · rw [← List.take_append_drop (s.rd.length - 1) s.rd, ht, hd]; rfl
+    · intro r hr
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact hdw _ (by rw [hw]; simp)
+      · exact hstk
   post s t _ h := by
     sig_post [Spec.Ed448.verifyContract, Spec.Ed448.verifySig,
-      Spec.Ed448.scratchWords, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
+      Spec.Ed448.scratchWords, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, bConsts_eq, Abi.withConsts]
     change t.gpr .eax = _ at h
     rw [h, BitVec.setWidth_append_eq_right]
   pub s t _ _ h := by
     sig_pub [Spec.Ed448.verifyContract, Spec.Ed448.verifySig,
-      Spec.Ed448.scratchWords, X86.abi, X86.argSlots, X86.argVal, X86.argBytes] at h
-    obtain ⟨sp, bytes, a0, a1, a2, a3, a4, a5, a6⟩ := h
+      Spec.Ed448.scratchWords, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, bConsts_eq, Abi.withConsts] at h
+    obtain ⟨sp, sy, bytes, a0, a1, a2, a3, a4, a5, a6⟩ := h
     have hb := byteMap_inj bytes
     obtain ⟨first, sig⟩ := List.append_inj' hb (by
       simp only [Spec.Ed448.bytesAt, List.length_map, List.length_range])
@@ -1012,23 +1106,11 @@ theorem vfWide_implies : vfWide.Implies (Spec.Ed448.verifyContract X86.abi 280) 
       simp only [Spec.Ed448.bytesAt, List.length_map, List.length_range, a4])
     obtain ⟨pk, ctx⟩ := List.append_inj' first (by
       simp only [Spec.Ed448.bytesAt, List.length_map, List.length_range, a2])
-    exact ⟨sp, a0, a1, a2, a3, a4, a5, a6, pk, ctx, msg, sig⟩
-  sat := by
-    have a0 : arg vfSatState 0 = 0x1000 := by decide
-    have a1 : arg vfSatState 1 = 0x2000 := by decide
-    have a2 : arg vfSatState 2 = 0 := by decide
-    have a3 : arg vfSatState 3 = 0x3000 := by decide
-    have a4 : arg vfSatState 4 = 0 := by decide
-    have a5 : arg vfSatState 5 = 0x4000 := by decide
-    have a6 : arg vfSatState 6 = 0x5000 := by decide
-    have e : argAddr vfSatState 0 = 0x8004 := by decide
-    have esp : vfSatState.gpr .esp = 0x8000 := rfl
-    sig_implies_sat [Spec.Ed448.verifyContract, Spec.Ed448.verifySig,
-      Spec.Ed448.scratchWords, vfWide, vfLocal,
-      X86.abi, X86.argSlots, X86.argVal, X86.argBytes] [a0, a1, a2, a3, a4, a5, a6, e, esp] using vfSatState
+    exact ⟨sp, a0, a1, a2, a3, a4, a5, a6, pk, ctx, msg, sig, sy⟩
+  sat := ⟨vfSatState, vf_sat⟩
 
 theorem verify_verified {eq : Prog isa} (hE : CalleeOk Proof.Ed448.X86.verifyEquationLocal eq) :
-    Verified X86.target (code eq) (Spec.Ed448.verifyContract X86.abi 280) := by
+    Verified X86.target (code eq) (Spec.Ed448.verifyContract (X86.abi.withConsts bConsts) 280) := by
   have hsat := vfWide_implies.sat_left
   have satLocal : ∃ s, vfLocal.pre s := hsat.elim fun s h => ⟨_, vfWide_pre s h⟩
   have verifiedLocal : Verified X86.target (code eq) vfLocal :=
@@ -1040,7 +1122,7 @@ theorem verify_verified {eq : Prog isa} (hE : CalleeOk Proof.Ed448.X86.verifyEqu
     refine ⟨r, ?_, hc⟩
     simp only [vfRd, vfWr, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false]
-    rcases hr with (rfl | rfl | rfl | rfl | rfl) | rfl <;> simp only [true_or, or_true]
+    rcases hr with (rfl | rfl | rfl | rfl | rfl | rfl) | rfl <;> simp only [true_or, or_true]
   · intro s h a n ⟨r, hr, hc⟩
     rw [h.2.1]
     refine ⟨r, ?_, hc⟩
@@ -1050,6 +1132,7 @@ theorem verify_verified {eq : Prog isa} (hE : CalleeOk Proof.Ed448.X86.verifyEqu
   · intro s t _ h
     exact h
   · intro s t _ _ h
-    simpa only [vfWide, vfLocal, arg_withRegions, State.withRegions_gpr, State.withRegions_mem] using h
+    simpa only [vfWide, vfLocal, arg_withRegions, State.withRegions_gpr, State.withRegions_mem,
+      State.withRegions_syms] using h
 
 end VG.Proof.Ed448.X86.Verify

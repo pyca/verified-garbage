@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Impl.Ed448.Comb
 public import VerifiedGarbage.Impl.X448.BaseTable
 public import VerifiedGarbage.Impl.Ed448.Formulas
 public import VerifiedGarbage.Impl.Ed448.X86.Scalar
@@ -50,10 +49,6 @@ first 56 bytes.
 
 The address of the static comes from a balanced frame (`symPush`) and is kept in
 the working space, at `TPTR`.
-
-Verification's table of 16 multiples (`Impl/Ed448/Comb.lean`, whose entries are
-immediates of the code) is selected here too (`combSelect`), for
-`Impl/Ed448/X86/VerifyEquation.lean`.
 
 The only branches are on the loop counters, and every address is a pointer
 plus a constant or a counter, so only the pointers can affect timing.
@@ -133,44 +128,15 @@ def baseBits : Prog isa := .seq (.block [.mov .esi (.mem (at_ .esp 8))]) (bitsLo
 /-- The callee-saved registers saved, the slots initialized and the scalar's bits. -/
 def baseEntry : Prog isa := .seq (.block (save 12)) (.seq (initSlots combVal) baseBits)
 
-/-! ## The four-column table, for verification -/
-
-/-- Word `j` of coordinate `c` (0 is `x`, 1 is `y`) of the table's entry `i`. -/
-def combLimb (i c j : Nat) : Nat :=
-  (if c = 0 then (Comb.entry i).1.val else (Comb.entry i).2.val) / 2 ^ (32 * j) % 2 ^ 32
-
-/-- The row's index into `ecx`: bits `t`, `t + 114`, `t + 228` and `t + 342` of the scalar
-(`t = esi`), as `b₀ + 2 b₁ + 4 b₂ + 8 b₃`, each bit a byte at `ebp + o`, for `ebp = edi + t`. -/
-def combDigit (o : Nat) : List Instr :=
-  [.mov .ebp (.reg .edi), .alu .add .ebp (.reg .esi), .movzx8 .ecx (at_ .ebp (o + 342)),
-    .movzx8 .eax (at_ .ebp (o + 228)), .alu .add .ecx (.reg .ecx), .alu .add .ecx (.reg .eax),
-    .movzx8 .eax (at_ .ebp (o + 114)), .alu .add .ecx (.reg .ecx), .alu .add .ecx (.reg .eax),
-    .movzx8 .eax (at_ .ebp o), .alu .add .ecx (.reg .ecx), .alu .add .ecx (.reg .eax)]
+/-! ## Pieces of a selection -/
 
 /-- `ebx = -(ecx = i)`: the mask of entry `i`, for the index `ecx < 16`. -/
 def selMask (i : Nat) : List Instr :=
   [.mov .eax (.reg .ecx), .alu .xor .eax (.imm (BitVec.ofNat 32 i)), .alu .sub .eax (.imm 1),
     .shift .shr .eax 31, .mov .ebx (.imm 0), .alu .sub .ebx (.reg .eax)]
 
-/-- The word `v j`, under the mask `ebx`, ORed into word `j` of the slot at `o`. -/
-def selLimb (o : Nat) (v : Nat → Nat) (j : Nat) : List Instr :=
-  [.mov .eax (.imm (BitVec.ofNat 32 (v j))), .alu .and .eax (.reg .ebx),
-    .alu .or .eax (.mem (sc (o + 4 * j))), st .eax (o + 4 * j)]
-
-/-- The fourteen words `v`, under the mask `ebx`, ORed into the slot at `o`. -/
-def selCoord (o : Nat) (v : Nat → Nat) : List Instr := (List.range 14).flatMap (selLimb o v)
-
-/-- Entry `i` ORed into slots 8 (`x`) and 9 (`y`) if it is the row's. -/
-def selEntry (i : Nat) : List Instr :=
-  selMask i ++ selCoord (slot 8) (combLimb i 0) ++ selCoord (slot 9) (combLimb i 1)
-
 /-- The slot at `o` zeroed (`eax` is zero). -/
 def zeroSlot (o : Nat) : List Instr := (List.range 14).flatMap fun j => [st .eax (o + 4 * j)]
-
-/-- Slots 8 and 9 zeroed, then every entry scanned: the row's entry, of index `ecx`, in slots 8
-and 9. -/
-def combSelect : List Instr :=
-  .mov .eax (.imm 0) :: zeroSlot (slot 8) ++ zeroSlot (slot 9) ++ (List.range 16).flatMap selEntry
 
 /-- `T` (slots 3–5) into `R` (slots 0–2). -/
 def takeOps : List Op := [.copy (slot 0) (slot 3), .copy (slot 1) (slot 4), .copy (slot 2) (slot 5)]

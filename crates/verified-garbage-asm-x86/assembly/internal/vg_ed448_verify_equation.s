@@ -2011,6 +2011,42 @@ vg_ed448_verify_equation:
 	add esi, 1
 	cmp esi, 456
 	jne 218b
+	mov esi, 0
+	mov ebx, 0
+	mov ecx, 0
+	mov eax, edi
+221:
+	mov ebp, edi
+	add ebp, esi
+	movzx edx, BYTE PTR [ebp+3072]
+	cmp ebx, 0
+	je 222f
+	xor edx, -1
+	add edx, 1
+	and edx, ebx
+	add ecx, edx
+	mov edx, 0
+	mov BYTE PTR [ebp+3072], dl
+	mov BYTE PTR [eax+3072], cl
+	add ebx, ebx
+	and ebx, 127
+	jmp 223f
+222:
+	mov ecx, edx
+	mov ebx, edx
+	add ebx, ebx
+	mov eax, ebp
+223:
+	add esi, 1
+	cmp esi, 456
+	jne 221b
+	call 2f
+2:
+	mov eax, DWORD PTR [esp]
+	.byte 0x81, 192
+	.long {VG_ED448_B_TABLE}
+	pop ecx
+	mov DWORD PTR [edi+4360], eax
 	mov eax, DWORD PTR [edi+832]
 	mov DWORD PTR [edi+64], eax
 	mov eax, DWORD PTR [edi+836]
@@ -2356,7 +2392,7 @@ vg_ed448_verify_equation:
 	pop eax
 	pop eax
 	pop eax
-221:
+224:
 	mov eax, 1600
 	mov ecx, 320
 	mov edx, 2752
@@ -2754,7 +2790,7 @@ vg_ed448_verify_equation:
 	mov DWORD PTR [ebp+308], eax
 	add esi, 384
 	cmp esi, 8192
-	jne 221b
+	jne 224b
 	mov eax, 64
 	mov ecx, 64
 	mov edx, 64
@@ -2824,7 +2860,7 @@ vg_ed448_verify_equation:
 	mov eax, DWORD PTR [edi+1396]
 	mov DWORD PTR [edi+372], eax
 	mov esi, 456
-222:
+225:
 	sub esi, 1
 	mov eax, 1600
 	mov ecx, 64
@@ -2970,1953 +3006,78 @@ vg_ed448_verify_equation:
 	pop eax
 	pop eax
 	pop eax
-	cmp esi, 114
-	jb 223f
-	jmp 224f
-223:
 	mov ebp, edi
 	add ebp, esi
-	movzx ecx, BYTE PTR [ebp+3414]
-	movzx eax, BYTE PTR [ebp+3300]
-	add ecx, ecx
-	add ecx, eax
-	movzx eax, BYTE PTR [ebp+3186]
-	add ecx, ecx
-	add ecx, eax
-	movzx eax, BYTE PTR [ebp+3072]
-	add ecx, ecx
-	add ecx, eax
-	mov eax, 0
-	mov DWORD PTR [edi+1088], eax
-	mov DWORD PTR [edi+1092], eax
-	mov DWORD PTR [edi+1096], eax
-	mov DWORD PTR [edi+1100], eax
-	mov DWORD PTR [edi+1104], eax
-	mov DWORD PTR [edi+1108], eax
-	mov DWORD PTR [edi+1112], eax
-	mov DWORD PTR [edi+1116], eax
-	mov DWORD PTR [edi+1120], eax
-	mov DWORD PTR [edi+1124], eax
-	mov DWORD PTR [edi+1128], eax
-	mov DWORD PTR [edi+1132], eax
-	mov DWORD PTR [edi+1136], eax
-	mov DWORD PTR [edi+1140], eax
-	mov DWORD PTR [edi+1216], eax
-	mov DWORD PTR [edi+1220], eax
-	mov DWORD PTR [edi+1224], eax
-	mov DWORD PTR [edi+1228], eax
-	mov DWORD PTR [edi+1232], eax
-	mov DWORD PTR [edi+1236], eax
-	mov DWORD PTR [edi+1240], eax
-	mov DWORD PTR [edi+1244], eax
-	mov DWORD PTR [edi+1248], eax
-	mov DWORD PTR [edi+1252], eax
-	mov DWORD PTR [edi+1256], eax
-	mov DWORD PTR [edi+1260], eax
-	mov DWORD PTR [edi+1264], eax
-	mov DWORD PTR [edi+1268], eax
+	movzx ecx, BYTE PTR [ebp+3072]
+	cmp ecx, 0
+	jne 226f
+	jmp 227f
+226:
+	sub ecx, 1
+	ror ecx, 29
 	mov eax, ecx
-	xor eax, 0
-	sub eax, 1
-	shr eax, 31
-	mov ebx, 0
-	sub ebx, eax
-	mov eax, 0
-	and eax, ebx
-	or eax, DWORD PTR [edi+1088]
+	ror ecx, 29
+	sub ecx, eax
+	mov ebp, DWORD PTR [edi+4360]
+	add ebp, ecx
+	mov eax, DWORD PTR [ebp]
 	mov DWORD PTR [edi+1088], eax
-	mov eax, 0
-	and eax, ebx
-	or eax, DWORD PTR [edi+1092]
+	mov eax, DWORD PTR [ebp+4]
 	mov DWORD PTR [edi+1092], eax
-	mov eax, 0
-	and eax, ebx
-	or eax, DWORD PTR [edi+1096]
+	mov eax, DWORD PTR [ebp+8]
 	mov DWORD PTR [edi+1096], eax
-	mov eax, 0
-	and eax, ebx
-	or eax, DWORD PTR [edi+1100]
+	mov eax, DWORD PTR [ebp+12]
 	mov DWORD PTR [edi+1100], eax
-	mov eax, 0
-	and eax, ebx
-	or eax, DWORD PTR [edi+1104]
+	mov eax, DWORD PTR [ebp+16]
 	mov DWORD PTR [edi+1104], eax
-	mov eax, 0
-	and eax, ebx
-	or eax, DWORD PTR [edi+1108]
+	mov eax, DWORD PTR [ebp+20]
 	mov DWORD PTR [edi+1108], eax
-	mov eax, 0
-	and eax, ebx
-	or eax, DWORD PTR [edi+1112]
+	mov eax, DWORD PTR [ebp+24]
 	mov DWORD PTR [edi+1112], eax
-	mov eax, 0
-	and eax, ebx
-	or eax, DWORD PTR [edi+1116]
+	mov eax, DWORD PTR [ebp+28]
 	mov DWORD PTR [edi+1116], eax
-	mov eax, 0
-	and eax, ebx
-	or eax, DWORD PTR [edi+1120]
+	mov eax, DWORD PTR [ebp+32]
 	mov DWORD PTR [edi+1120], eax
-	mov eax, 0
-	and eax, ebx
-	or eax, DWORD PTR [edi+1124]
+	mov eax, DWORD PTR [ebp+36]
 	mov DWORD PTR [edi+1124], eax
-	mov eax, 0
-	and eax, ebx
-	or eax, DWORD PTR [edi+1128]
+	mov eax, DWORD PTR [ebp+40]
 	mov DWORD PTR [edi+1128], eax
-	mov eax, 0
-	and eax, ebx
-	or eax, DWORD PTR [edi+1132]
+	mov eax, DWORD PTR [ebp+44]
 	mov DWORD PTR [edi+1132], eax
-	mov eax, 0
-	and eax, ebx
-	or eax, DWORD PTR [edi+1136]
+	mov eax, DWORD PTR [ebp+48]
 	mov DWORD PTR [edi+1136], eax
-	mov eax, 0
-	and eax, ebx
-	or eax, DWORD PTR [edi+1140]
+	mov eax, DWORD PTR [ebp+52]
 	mov DWORD PTR [edi+1140], eax
-	mov eax, 1
-	and eax, ebx
-	or eax, DWORD PTR [edi+1216]
+	mov eax, DWORD PTR [ebp+56]
 	mov DWORD PTR [edi+1216], eax
-	mov eax, 0
-	and eax, ebx
-	or eax, DWORD PTR [edi+1220]
+	mov eax, DWORD PTR [ebp+60]
 	mov DWORD PTR [edi+1220], eax
-	mov eax, 0
-	and eax, ebx
-	or eax, DWORD PTR [edi+1224]
+	mov eax, DWORD PTR [ebp+64]
 	mov DWORD PTR [edi+1224], eax
-	mov eax, 0
-	and eax, ebx
-	or eax, DWORD PTR [edi+1228]
+	mov eax, DWORD PTR [ebp+68]
 	mov DWORD PTR [edi+1228], eax
-	mov eax, 0
-	and eax, ebx
-	or eax, DWORD PTR [edi+1232]
+	mov eax, DWORD PTR [ebp+72]
 	mov DWORD PTR [edi+1232], eax
-	mov eax, 0
-	and eax, ebx
-	or eax, DWORD PTR [edi+1236]
+	mov eax, DWORD PTR [ebp+76]
 	mov DWORD PTR [edi+1236], eax
-	mov eax, 0
-	and eax, ebx
-	or eax, DWORD PTR [edi+1240]
+	mov eax, DWORD PTR [ebp+80]
 	mov DWORD PTR [edi+1240], eax
-	mov eax, 0
-	and eax, ebx
-	or eax, DWORD PTR [edi+1244]
+	mov eax, DWORD PTR [ebp+84]
 	mov DWORD PTR [edi+1244], eax
-	mov eax, 0
-	and eax, ebx
-	or eax, DWORD PTR [edi+1248]
+	mov eax, DWORD PTR [ebp+88]
 	mov DWORD PTR [edi+1248], eax
-	mov eax, 0
-	and eax, ebx
-	or eax, DWORD PTR [edi+1252]
+	mov eax, DWORD PTR [ebp+92]
 	mov DWORD PTR [edi+1252], eax
-	mov eax, 0
-	and eax, ebx
-	or eax, DWORD PTR [edi+1256]
+	mov eax, DWORD PTR [ebp+96]
 	mov DWORD PTR [edi+1256], eax
-	mov eax, 0
-	and eax, ebx
-	or eax, DWORD PTR [edi+1260]
+	mov eax, DWORD PTR [ebp+100]
 	mov DWORD PTR [edi+1260], eax
-	mov eax, 0
-	and eax, ebx
-	or eax, DWORD PTR [edi+1264]
+	mov eax, DWORD PTR [ebp+104]
 	mov DWORD PTR [edi+1264], eax
-	mov eax, 0
-	and eax, ebx
-	or eax, DWORD PTR [edi+1268]
-	mov DWORD PTR [edi+1268], eax
-	mov eax, ecx
-	xor eax, 1
-	sub eax, 1
-	shr eax, 31
-	mov ebx, 0
-	sub ebx, eax
-	mov eax, -955465634
-	and eax, ebx
-	or eax, DWORD PTR [edi+1088]
-	mov DWORD PTR [edi+1088], eax
-	mov eax, 640067627
-	and eax, ebx
-	or eax, DWORD PTR [edi+1092]
-	mov DWORD PTR [edi+1092], eax
-	mov eax, -1962896498
-	and eax, ebx
-	or eax, DWORD PTR [edi+1096]
-	mov DWORD PTR [edi+1096], eax
-	mov eax, 1127973089
-	and eax, ebx
-	or eax, DWORD PTR [edi+1100]
-	mov DWORD PTR [edi+1100], eax
-	mov eax, 716596497
-	and eax, ebx
-	or eax, DWORD PTR [edi+1104]
-	mov DWORD PTR [edi+1104], eax
-	mov eax, 313400055
-	and eax, ebx
-	or eax, DWORD PTR [edi+1108]
-	mov DWORD PTR [edi+1108], eax
-	mov eax, -1546410908
-	and eax, ebx
-	or eax, DWORD PTR [edi+1112]
-	mov DWORD PTR [edi+1112], eax
-	mov eax, -361897180
-	and eax, ebx
-	or eax, DWORD PTR [edi+1116]
-	mov DWORD PTR [edi+1116], eax
-	mov eax, 1192171367
-	and eax, ebx
-	or eax, DWORD PTR [edi+1120]
-	mov DWORD PTR [edi+1120], eax
-	mov eax, -1642830480
-	and eax, ebx
-	or eax, DWORD PTR [edi+1124]
-	mov DWORD PTR [edi+1124], eax
-	mov eax, 582956762
-	and eax, ebx
-	or eax, DWORD PTR [edi+1128]
-	mov DWORD PTR [edi+1128], eax
-	mov eax, 572331430
-	and eax, ebx
-	or eax, DWORD PTR [edi+1132]
-	mov DWORD PTR [edi+1132], eax
-	mov eax, 1810697709
-	and eax, ebx
-	or eax, DWORD PTR [edi+1136]
-	mov DWORD PTR [edi+1136], eax
-	mov eax, 1327067334
-	and eax, ebx
-	or eax, DWORD PTR [edi+1140]
-	mov DWORD PTR [edi+1140], eax
-	mov eax, -231671276
-	and eax, ebx
-	or eax, DWORD PTR [edi+1216]
-	mov DWORD PTR [edi+1216], eax
-	mov eax, -1744275109
-	and eax, ebx
-	or eax, DWORD PTR [edi+1220]
-	mov DWORD PTR [edi+1220], eax
-	mov eax, 1322764461
-	and eax, ebx
-	or eax, DWORD PTR [edi+1224]
-	mov DWORD PTR [edi+1224], eax
-	mov eax, -37940436
-	and eax, ebx
-	or eax, DWORD PTR [edi+1228]
-	mov DWORD PTR [edi+1228], eax
-	mov eax, -428066364
-	and eax, ebx
-	or eax, DWORD PTR [edi+1232]
-	mov DWORD PTR [edi+1232], eax
-	mov eax, 986971932
-	and eax, ebx
-	or eax, DWORD PTR [edi+1236]
-	mov DWORD PTR [edi+1236], eax
-	mov eax, 94421719
-	and eax, ebx
-	or eax, DWORD PTR [edi+1240]
-	mov DWORD PTR [edi+1240], eax
-	mov eax, -2022138850
-	and eax, ebx
-	or eax, DWORD PTR [edi+1244]
-	mov DWORD PTR [edi+1244], eax
-	mov eax, 1822660672
-	and eax, ebx
-	or eax, DWORD PTR [edi+1248]
-	mov DWORD PTR [edi+1248], eax
-	mov eax, 1273656179
-	and eax, ebx
-	or eax, DWORD PTR [edi+1252]
-	mov DWORD PTR [edi+1252], eax
-	mov eax, 1456064354
-	and eax, ebx
-	or eax, DWORD PTR [edi+1256]
-	mov DWORD PTR [edi+1256], eax
-	mov eax, -2005524425
-	and eax, ebx
-	or eax, DWORD PTR [edi+1260]
-	mov DWORD PTR [edi+1260], eax
-	mov eax, 1857469476
-	and eax, ebx
-	or eax, DWORD PTR [edi+1264]
-	mov DWORD PTR [edi+1264], eax
-	mov eax, 1765754481
-	and eax, ebx
-	or eax, DWORD PTR [edi+1268]
-	mov DWORD PTR [edi+1268], eax
-	mov eax, ecx
-	xor eax, 2
-	sub eax, 1
-	shr eax, 31
-	mov ebx, 0
-	sub ebx, eax
-	mov eax, -1930993064
-	and eax, ebx
-	or eax, DWORD PTR [edi+1088]
-	mov DWORD PTR [edi+1088], eax
-	mov eax, 1973655672
-	and eax, ebx
-	or eax, DWORD PTR [edi+1092]
-	mov DWORD PTR [edi+1092], eax
-	mov eax, -797666119
-	and eax, ebx
-	or eax, DWORD PTR [edi+1096]
-	mov DWORD PTR [edi+1096], eax
-	mov eax, -538824655
-	and eax, ebx
-	or eax, DWORD PTR [edi+1100]
-	mov DWORD PTR [edi+1100], eax
-	mov eax, 1835343939
-	and eax, ebx
-	or eax, DWORD PTR [edi+1104]
-	mov DWORD PTR [edi+1104], eax
-	mov eax, 1140976714
-	and eax, ebx
-	or eax, DWORD PTR [edi+1108]
-	mov DWORD PTR [edi+1108], eax
-	mov eax, -619019109
-	and eax, ebx
-	or eax, DWORD PTR [edi+1112]
-	mov DWORD PTR [edi+1112], eax
-	mov eax, -1125598260
-	and eax, ebx
-	or eax, DWORD PTR [edi+1116]
-	mov DWORD PTR [edi+1116], eax
-	mov eax, -1627906373
-	and eax, ebx
-	or eax, DWORD PTR [edi+1120]
-	mov DWORD PTR [edi+1120], eax
-	mov eax, -730763522
-	and eax, ebx
-	or eax, DWORD PTR [edi+1124]
-	mov DWORD PTR [edi+1124], eax
-	mov eax, 1590465405
-	and eax, ebx
-	or eax, DWORD PTR [edi+1128]
-	mov DWORD PTR [edi+1128], eax
-	mov eax, 422907640
-	and eax, ebx
-	or eax, DWORD PTR [edi+1132]
-	mov DWORD PTR [edi+1132], eax
-	mov eax, 338115484
-	and eax, ebx
-	or eax, DWORD PTR [edi+1136]
-	mov DWORD PTR [edi+1136], eax
-	mov eax, 638423842
-	and eax, ebx
-	or eax, DWORD PTR [edi+1140]
-	mov DWORD PTR [edi+1140], eax
-	mov eax, -411307613
-	and eax, ebx
-	or eax, DWORD PTR [edi+1216]
-	mov DWORD PTR [edi+1216], eax
-	mov eax, -1222803935
-	and eax, ebx
-	or eax, DWORD PTR [edi+1220]
-	mov DWORD PTR [edi+1220], eax
-	mov eax, 1754944590
-	and eax, ebx
-	or eax, DWORD PTR [edi+1224]
-	mov DWORD PTR [edi+1224], eax
-	mov eax, -313517667
-	and eax, ebx
-	or eax, DWORD PTR [edi+1228]
-	mov DWORD PTR [edi+1228], eax
-	mov eax, -1517020852
-	and eax, ebx
-	or eax, DWORD PTR [edi+1232]
-	mov DWORD PTR [edi+1232], eax
-	mov eax, -1599165795
-	and eax, ebx
-	or eax, DWORD PTR [edi+1236]
-	mov DWORD PTR [edi+1236], eax
-	mov eax, 1906707432
-	and eax, ebx
-	or eax, DWORD PTR [edi+1240]
-	mov DWORD PTR [edi+1240], eax
-	mov eax, -496157871
-	and eax, ebx
-	or eax, DWORD PTR [edi+1244]
-	mov DWORD PTR [edi+1244], eax
-	mov eax, 672676362
-	and eax, ebx
-	or eax, DWORD PTR [edi+1248]
-	mov DWORD PTR [edi+1248], eax
-	mov eax, 1990778775
-	and eax, ebx
-	or eax, DWORD PTR [edi+1252]
-	mov DWORD PTR [edi+1252], eax
-	mov eax, 108284401
-	and eax, ebx
-	or eax, DWORD PTR [edi+1256]
-	mov DWORD PTR [edi+1256], eax
-	mov eax, 1131864867
-	and eax, ebx
-	or eax, DWORD PTR [edi+1260]
-	mov DWORD PTR [edi+1260], eax
-	mov eax, 626269300
-	and eax, ebx
-	or eax, DWORD PTR [edi+1264]
-	mov DWORD PTR [edi+1264], eax
-	mov eax, -1295310418
-	and eax, ebx
-	or eax, DWORD PTR [edi+1268]
-	mov DWORD PTR [edi+1268], eax
-	mov eax, ecx
-	xor eax, 3
-	sub eax, 1
-	shr eax, 31
-	mov ebx, 0
-	sub ebx, eax
-	mov eax, -1330180329
-	and eax, ebx
-	or eax, DWORD PTR [edi+1088]
-	mov DWORD PTR [edi+1088], eax
-	mov eax, -1602597678
-	and eax, ebx
-	or eax, DWORD PTR [edi+1092]
-	mov DWORD PTR [edi+1092], eax
-	mov eax, 817486766
-	and eax, ebx
-	or eax, DWORD PTR [edi+1096]
-	mov DWORD PTR [edi+1096], eax
-	mov eax, 303368350
-	and eax, ebx
-	or eax, DWORD PTR [edi+1100]
-	mov DWORD PTR [edi+1100], eax
-	mov eax, -1820420224
-	and eax, ebx
-	or eax, DWORD PTR [edi+1104]
-	mov DWORD PTR [edi+1104], eax
-	mov eax, -552800454
-	and eax, ebx
-	or eax, DWORD PTR [edi+1108]
-	mov DWORD PTR [edi+1108], eax
-	mov eax, -988233909
-	and eax, ebx
-	or eax, DWORD PTR [edi+1112]
-	mov DWORD PTR [edi+1112], eax
-	mov eax, -485952643
-	and eax, ebx
-	or eax, DWORD PTR [edi+1116]
-	mov DWORD PTR [edi+1116], eax
-	mov eax, -1106536010
-	and eax, ebx
-	or eax, DWORD PTR [edi+1120]
-	mov DWORD PTR [edi+1120], eax
-	mov eax, 2143574590
-	and eax, ebx
-	or eax, DWORD PTR [edi+1124]
-	mov DWORD PTR [edi+1124], eax
-	mov eax, 211875291
-	and eax, ebx
-	or eax, DWORD PTR [edi+1128]
-	mov DWORD PTR [edi+1128], eax
-	mov eax, 1034342241
-	and eax, ebx
-	or eax, DWORD PTR [edi+1132]
-	mov DWORD PTR [edi+1132], eax
-	mov eax, -1196646638
-	and eax, ebx
-	or eax, DWORD PTR [edi+1136]
-	mov DWORD PTR [edi+1136], eax
-	mov eax, -819338741
-	and eax, ebx
-	or eax, DWORD PTR [edi+1140]
-	mov DWORD PTR [edi+1140], eax
-	mov eax, -1207053069
-	and eax, ebx
-	or eax, DWORD PTR [edi+1216]
-	mov DWORD PTR [edi+1216], eax
-	mov eax, 663731394
-	and eax, ebx
-	or eax, DWORD PTR [edi+1220]
-	mov DWORD PTR [edi+1220], eax
-	mov eax, -124330057
-	and eax, ebx
-	or eax, DWORD PTR [edi+1224]
-	mov DWORD PTR [edi+1224], eax
-	mov eax, -1790747940
-	and eax, ebx
-	or eax, DWORD PTR [edi+1228]
-	mov DWORD PTR [edi+1228], eax
-	mov eax, 2092608113
-	and eax, ebx
-	or eax, DWORD PTR [edi+1232]
-	mov DWORD PTR [edi+1232], eax
-	mov eax, -1433365581
-	and eax, ebx
-	or eax, DWORD PTR [edi+1236]
-	mov DWORD PTR [edi+1236], eax
-	mov eax, -2000805440
-	and eax, ebx
-	or eax, DWORD PTR [edi+1240]
-	mov DWORD PTR [edi+1240], eax
-	mov eax, -815709065
-	and eax, ebx
-	or eax, DWORD PTR [edi+1244]
-	mov DWORD PTR [edi+1244], eax
-	mov eax, -310429642
-	and eax, ebx
-	or eax, DWORD PTR [edi+1248]
-	mov DWORD PTR [edi+1248], eax
-	mov eax, -917605155
-	and eax, ebx
-	or eax, DWORD PTR [edi+1252]
-	mov DWORD PTR [edi+1252], eax
-	mov eax, -910195030
-	and eax, ebx
-	or eax, DWORD PTR [edi+1256]
-	mov DWORD PTR [edi+1256], eax
-	mov eax, -1167495528
-	and eax, ebx
-	or eax, DWORD PTR [edi+1260]
-	mov DWORD PTR [edi+1260], eax
-	mov eax, -1275381990
-	and eax, ebx
-	or eax, DWORD PTR [edi+1264]
-	mov DWORD PTR [edi+1264], eax
-	mov eax, 705701861
-	and eax, ebx
-	or eax, DWORD PTR [edi+1268]
-	mov DWORD PTR [edi+1268], eax
-	mov eax, ecx
-	xor eax, 4
-	sub eax, 1
-	shr eax, 31
-	mov ebx, 0
-	sub ebx, eax
-	mov eax, 1972287072
-	and eax, ebx
-	or eax, DWORD PTR [edi+1088]
-	mov DWORD PTR [edi+1088], eax
-	mov eax, 1274505576
-	and eax, ebx
-	or eax, DWORD PTR [edi+1092]
-	mov DWORD PTR [edi+1092], eax
-	mov eax, -97831446
-	and eax, ebx
-	or eax, DWORD PTR [edi+1096]
-	mov DWORD PTR [edi+1096], eax
-	mov eax, 270235610
-	and eax, ebx
-	or eax, DWORD PTR [edi+1100]
-	mov DWORD PTR [edi+1100], eax
-	mov eax, 1300500130
-	and eax, ebx
-	or eax, DWORD PTR [edi+1104]
-	mov DWORD PTR [edi+1104], eax
-	mov eax, -1824324251
-	and eax, ebx
-	or eax, DWORD PTR [edi+1108]
-	mov DWORD PTR [edi+1108], eax
-	mov eax, -1577643983
-	and eax, ebx
-	or eax, DWORD PTR [edi+1112]
-	mov DWORD PTR [edi+1112], eax
-	mov eax, -855230016
-	and eax, ebx
-	or eax, DWORD PTR [edi+1116]
-	mov DWORD PTR [edi+1116], eax
-	mov eax, -537338776
-	and eax, ebx
-	or eax, DWORD PTR [edi+1120]
-	mov DWORD PTR [edi+1120], eax
-	mov eax, 196435967
-	and eax, ebx
-	or eax, DWORD PTR [edi+1124]
-	mov DWORD PTR [edi+1124], eax
-	mov eax, -1207565691
-	and eax, ebx
-	or eax, DWORD PTR [edi+1128]
-	mov DWORD PTR [edi+1128], eax
-	mov eax, 1615528709
-	and eax, ebx
-	or eax, DWORD PTR [edi+1132]
-	mov DWORD PTR [edi+1132], eax
-	mov eax, 1988192774
-	and eax, ebx
-	or eax, DWORD PTR [edi+1136]
-	mov DWORD PTR [edi+1136], eax
-	mov eax, 70870931
-	and eax, ebx
-	or eax, DWORD PTR [edi+1140]
-	mov DWORD PTR [edi+1140], eax
-	mov eax, 325218965
-	and eax, ebx
-	or eax, DWORD PTR [edi+1216]
-	mov DWORD PTR [edi+1216], eax
-	mov eax, -1612481671
-	and eax, ebx
-	or eax, DWORD PTR [edi+1220]
-	mov DWORD PTR [edi+1220], eax
-	mov eax, 121079258
-	and eax, ebx
-	or eax, DWORD PTR [edi+1224]
-	mov DWORD PTR [edi+1224], eax
-	mov eax, 1881169831
-	and eax, ebx
-	or eax, DWORD PTR [edi+1228]
-	mov DWORD PTR [edi+1228], eax
-	mov eax, 1461608160
-	and eax, ebx
-	or eax, DWORD PTR [edi+1232]
-	mov DWORD PTR [edi+1232], eax
-	mov eax, -1574365893
-	and eax, ebx
-	or eax, DWORD PTR [edi+1236]
-	mov DWORD PTR [edi+1236], eax
-	mov eax, -51911553
-	and eax, ebx
-	or eax, DWORD PTR [edi+1240]
-	mov DWORD PTR [edi+1240], eax
-	mov eax, -381237521
-	and eax, ebx
-	or eax, DWORD PTR [edi+1244]
-	mov DWORD PTR [edi+1244], eax
-	mov eax, -981663065
-	and eax, ebx
-	or eax, DWORD PTR [edi+1248]
-	mov DWORD PTR [edi+1248], eax
-	mov eax, 896926797
-	and eax, ebx
-	or eax, DWORD PTR [edi+1252]
-	mov DWORD PTR [edi+1252], eax
-	mov eax, 1813023419
-	and eax, ebx
-	or eax, DWORD PTR [edi+1256]
-	mov DWORD PTR [edi+1256], eax
-	mov eax, 540048620
-	and eax, ebx
-	or eax, DWORD PTR [edi+1260]
-	mov DWORD PTR [edi+1260], eax
-	mov eax, 1595551357
-	and eax, ebx
-	or eax, DWORD PTR [edi+1264]
-	mov DWORD PTR [edi+1264], eax
-	mov eax, -402045290
-	and eax, ebx
-	or eax, DWORD PTR [edi+1268]
-	mov DWORD PTR [edi+1268], eax
-	mov eax, ecx
-	xor eax, 5
-	sub eax, 1
-	shr eax, 31
-	mov ebx, 0
-	sub ebx, eax
-	mov eax, 197452869
-	and eax, ebx
-	or eax, DWORD PTR [edi+1088]
-	mov DWORD PTR [edi+1088], eax
-	mov eax, 577746052
-	and eax, ebx
-	or eax, DWORD PTR [edi+1092]
-	mov DWORD PTR [edi+1092], eax
-	mov eax, -914935000
-	and eax, ebx
-	or eax, DWORD PTR [edi+1096]
-	mov DWORD PTR [edi+1096], eax
-	mov eax, -1570009034
-	and eax, ebx
-	or eax, DWORD PTR [edi+1100]
-	mov DWORD PTR [edi+1100], eax
-	mov eax, -1096578291
-	and eax, ebx
-	or eax, DWORD PTR [edi+1104]
-	mov DWORD PTR [edi+1104], eax
-	mov eax, -1167809197
-	and eax, ebx
-	or eax, DWORD PTR [edi+1108]
-	mov DWORD PTR [edi+1108], eax
-	mov eax, 695066551
-	and eax, ebx
-	or eax, DWORD PTR [edi+1112]
-	mov DWORD PTR [edi+1112], eax
-	mov eax, 972642710
-	and eax, ebx
-	or eax, DWORD PTR [edi+1116]
-	mov DWORD PTR [edi+1116], eax
-	mov eax, 2065588190
-	and eax, ebx
-	or eax, DWORD PTR [edi+1120]
-	mov DWORD PTR [edi+1120], eax
-	mov eax, 1905526969
-	and eax, ebx
-	or eax, DWORD PTR [edi+1124]
-	mov DWORD PTR [edi+1124], eax
-	mov eax, 959792337
-	and eax, ebx
-	or eax, DWORD PTR [edi+1128]
-	mov DWORD PTR [edi+1128], eax
-	mov eax, -1893336493
-	and eax, ebx
-	or eax, DWORD PTR [edi+1132]
-	mov DWORD PTR [edi+1132], eax
-	mov eax, -1876423808
-	and eax, ebx
-	or eax, DWORD PTR [edi+1136]
-	mov DWORD PTR [edi+1136], eax
-	mov eax, 422274637
-	and eax, ebx
-	or eax, DWORD PTR [edi+1140]
-	mov DWORD PTR [edi+1140], eax
-	mov eax, 661741179
-	and eax, ebx
-	or eax, DWORD PTR [edi+1216]
-	mov DWORD PTR [edi+1216], eax
-	mov eax, -2029023800
-	and eax, ebx
-	or eax, DWORD PTR [edi+1220]
-	mov DWORD PTR [edi+1220], eax
-	mov eax, -1981917365
-	and eax, ebx
-	or eax, DWORD PTR [edi+1224]
-	mov DWORD PTR [edi+1224], eax
-	mov eax, -855153594
-	and eax, ebx
-	or eax, DWORD PTR [edi+1228]
-	mov DWORD PTR [edi+1228], eax
-	mov eax, 1721016894
-	and eax, ebx
-	or eax, DWORD PTR [edi+1232]
-	mov DWORD PTR [edi+1232], eax
-	mov eax, -395532030
-	and eax, ebx
-	or eax, DWORD PTR [edi+1236]
-	mov DWORD PTR [edi+1236], eax
-	mov eax, -732463195
-	and eax, ebx
-	or eax, DWORD PTR [edi+1240]
-	mov DWORD PTR [edi+1240], eax
-	mov eax, 1857109204
-	and eax, ebx
-	or eax, DWORD PTR [edi+1244]
-	mov DWORD PTR [edi+1244], eax
-	mov eax, -2005551471
-	and eax, ebx
-	or eax, DWORD PTR [edi+1248]
-	mov DWORD PTR [edi+1248], eax
-	mov eax, 1778277398
-	and eax, ebx
-	or eax, DWORD PTR [edi+1252]
-	mov DWORD PTR [edi+1252], eax
-	mov eax, 1125372779
-	and eax, ebx
-	or eax, DWORD PTR [edi+1256]
-	mov DWORD PTR [edi+1256], eax
-	mov eax, 1778918459
-	and eax, ebx
-	or eax, DWORD PTR [edi+1260]
-	mov DWORD PTR [edi+1260], eax
-	mov eax, -360964311
-	and eax, ebx
-	or eax, DWORD PTR [edi+1264]
-	mov DWORD PTR [edi+1264], eax
-	mov eax, 630709962
-	and eax, ebx
-	or eax, DWORD PTR [edi+1268]
-	mov DWORD PTR [edi+1268], eax
-	mov eax, ecx
-	xor eax, 6
-	sub eax, 1
-	shr eax, 31
-	mov ebx, 0
-	sub ebx, eax
-	mov eax, -2137966454
-	and eax, ebx
-	or eax, DWORD PTR [edi+1088]
-	mov DWORD PTR [edi+1088], eax
-	mov eax, -809283333
-	and eax, ebx
-	or eax, DWORD PTR [edi+1092]
-	mov DWORD PTR [edi+1092], eax
-	mov eax, -1047196591
-	and eax, ebx
-	or eax, DWORD PTR [edi+1096]
-	mov DWORD PTR [edi+1096], eax
-	mov eax, 400447503
-	and eax, ebx
-	or eax, DWORD PTR [edi+1100]
-	mov DWORD PTR [edi+1100], eax
-	mov eax, 1581822729
-	and eax, ebx
-	or eax, DWORD PTR [edi+1104]
-	mov DWORD PTR [edi+1104], eax
-	mov eax, -1816649243
-	and eax, ebx
-	or eax, DWORD PTR [edi+1108]
-	mov DWORD PTR [edi+1108], eax
-	mov eax, 1055998264
-	and eax, ebx
-	or eax, DWORD PTR [edi+1112]
-	mov DWORD PTR [edi+1112], eax
-	mov eax, 643330604
-	and eax, ebx
-	or eax, DWORD PTR [edi+1116]
-	mov DWORD PTR [edi+1116], eax
-	mov eax, -1248661485
-	and eax, ebx
-	or eax, DWORD PTR [edi+1120]
-	mov DWORD PTR [edi+1120], eax
-	mov eax, 2041563075
-	and eax, ebx
-	or eax, DWORD PTR [edi+1124]
-	mov DWORD PTR [edi+1124], eax
-	mov eax, 474550466
-	and eax, ebx
-	or eax, DWORD PTR [edi+1128]
-	mov DWORD PTR [edi+1128], eax
-	mov eax, 129486999
-	and eax, ebx
-	or eax, DWORD PTR [edi+1132]
-	mov DWORD PTR [edi+1132], eax
-	mov eax, -795473358
-	and eax, ebx
-	or eax, DWORD PTR [edi+1136]
-	mov DWORD PTR [edi+1136], eax
-	mov eax, 1297295291
-	and eax, ebx
-	or eax, DWORD PTR [edi+1140]
-	mov DWORD PTR [edi+1140], eax
-	mov eax, -2028383101
-	and eax, ebx
-	or eax, DWORD PTR [edi+1216]
-	mov DWORD PTR [edi+1216], eax
-	mov eax, -1299442141
-	and eax, ebx
-	or eax, DWORD PTR [edi+1220]
-	mov DWORD PTR [edi+1220], eax
-	mov eax, -827515027
-	and eax, ebx
-	or eax, DWORD PTR [edi+1224]
-	mov DWORD PTR [edi+1224], eax
-	mov eax, -784156703
-	and eax, ebx
-	or eax, DWORD PTR [edi+1228]
-	mov DWORD PTR [edi+1228], eax
-	mov eax, 545245818
-	and eax, ebx
-	or eax, DWORD PTR [edi+1232]
-	mov DWORD PTR [edi+1232], eax
-	mov eax, -1144961640
-	and eax, ebx
-	or eax, DWORD PTR [edi+1236]
-	mov DWORD PTR [edi+1236], eax
-	mov eax, 765548175
-	and eax, ebx
-	or eax, DWORD PTR [edi+1240]
-	mov DWORD PTR [edi+1240], eax
-	mov eax, 13879902
-	and eax, ebx
-	or eax, DWORD PTR [edi+1244]
-	mov DWORD PTR [edi+1244], eax
-	mov eax, 1552277001
-	and eax, ebx
-	or eax, DWORD PTR [edi+1248]
-	mov DWORD PTR [edi+1248], eax
-	mov eax, 210184535
-	and eax, ebx
-	or eax, DWORD PTR [edi+1252]
-	mov DWORD PTR [edi+1252], eax
-	mov eax, 752333695
-	and eax, ebx
-	or eax, DWORD PTR [edi+1256]
-	mov DWORD PTR [edi+1256], eax
-	mov eax, -1417000091
-	and eax, ebx
-	or eax, DWORD PTR [edi+1260]
-	mov DWORD PTR [edi+1260], eax
-	mov eax, -1821745004
-	and eax, ebx
-	or eax, DWORD PTR [edi+1264]
-	mov DWORD PTR [edi+1264], eax
-	mov eax, 621967549
-	and eax, ebx
-	or eax, DWORD PTR [edi+1268]
-	mov DWORD PTR [edi+1268], eax
-	mov eax, ecx
-	xor eax, 7
-	sub eax, 1
-	shr eax, 31
-	mov ebx, 0
-	sub ebx, eax
-	mov eax, 576043922
-	and eax, ebx
-	or eax, DWORD PTR [edi+1088]
-	mov DWORD PTR [edi+1088], eax
-	mov eax, -470907882
-	and eax, ebx
-	or eax, DWORD PTR [edi+1092]
-	mov DWORD PTR [edi+1092], eax
-	mov eax, 1140721608
-	and eax, ebx
-	or eax, DWORD PTR [edi+1096]
-	mov DWORD PTR [edi+1096], eax
-	mov eax, -1726645545
-	and eax, ebx
-	or eax, DWORD PTR [edi+1100]
-	mov DWORD PTR [edi+1100], eax
-	mov eax, -1855942781
-	and eax, ebx
-	or eax, DWORD PTR [edi+1104]
-	mov DWORD PTR [edi+1104], eax
-	mov eax, -1042114997
-	and eax, ebx
-	or eax, DWORD PTR [edi+1108]
-	mov DWORD PTR [edi+1108], eax
-	mov eax, 1006657593
-	and eax, ebx
-	or eax, DWORD PTR [edi+1112]
-	mov DWORD PTR [edi+1112], eax
-	mov eax, 661454700
-	and eax, ebx
-	or eax, DWORD PTR [edi+1116]
-	mov DWORD PTR [edi+1116], eax
-	mov eax, 1447804027
-	and eax, ebx
-	or eax, DWORD PTR [edi+1120]
-	mov DWORD PTR [edi+1120], eax
-	mov eax, 1314705044
-	and eax, ebx
-	or eax, DWORD PTR [edi+1124]
-	mov DWORD PTR [edi+1124], eax
-	mov eax, -1593728843
-	and eax, ebx
-	or eax, DWORD PTR [edi+1128]
-	mov DWORD PTR [edi+1128], eax
-	mov eax, -1679674188
-	and eax, ebx
-	or eax, DWORD PTR [edi+1132]
-	mov DWORD PTR [edi+1132], eax
-	mov eax, 919246045
-	and eax, ebx
-	or eax, DWORD PTR [edi+1136]
-	mov DWORD PTR [edi+1136], eax
-	mov eax, 1262263835
-	and eax, ebx
-	or eax, DWORD PTR [edi+1140]
-	mov DWORD PTR [edi+1140], eax
-	mov eax, 993887956
-	and eax, ebx
-	or eax, DWORD PTR [edi+1216]
-	mov DWORD PTR [edi+1216], eax
-	mov eax, -242748342
-	and eax, ebx
-	or eax, DWORD PTR [edi+1220]
-	mov DWORD PTR [edi+1220], eax
-	mov eax, -1366906053
-	and eax, ebx
-	or eax, DWORD PTR [edi+1224]
-	mov DWORD PTR [edi+1224], eax
-	mov eax, -2125589222
-	and eax, ebx
-	or eax, DWORD PTR [edi+1228]
-	mov DWORD PTR [edi+1228], eax
-	mov eax, -1562780722
-	and eax, ebx
-	or eax, DWORD PTR [edi+1232]
-	mov DWORD PTR [edi+1232], eax
-	mov eax, 1806488238
-	and eax, ebx
-	or eax, DWORD PTR [edi+1236]
-	mov DWORD PTR [edi+1236], eax
-	mov eax, -1588406410
-	and eax, ebx
-	or eax, DWORD PTR [edi+1240]
-	mov DWORD PTR [edi+1240], eax
-	mov eax, -1243251320
-	and eax, ebx
-	or eax, DWORD PTR [edi+1244]
-	mov DWORD PTR [edi+1244], eax
-	mov eax, 645989277
-	and eax, ebx
-	or eax, DWORD PTR [edi+1248]
-	mov DWORD PTR [edi+1248], eax
-	mov eax, 1188108567
-	and eax, ebx
-	or eax, DWORD PTR [edi+1252]
-	mov DWORD PTR [edi+1252], eax
-	mov eax, -145291287
-	and eax, ebx
-	or eax, DWORD PTR [edi+1256]
-	mov DWORD PTR [edi+1256], eax
-	mov eax, 1535406244
-	and eax, ebx
-	or eax, DWORD PTR [edi+1260]
-	mov DWORD PTR [edi+1260], eax
-	mov eax, 1381962272
-	and eax, ebx
-	or eax, DWORD PTR [edi+1264]
-	mov DWORD PTR [edi+1264], eax
-	mov eax, -1663383856
-	and eax, ebx
-	or eax, DWORD PTR [edi+1268]
-	mov DWORD PTR [edi+1268], eax
-	mov eax, ecx
-	xor eax, 8
-	sub eax, 1
-	shr eax, 31
-	mov ebx, 0
-	sub ebx, eax
-	mov eax, 882688192
-	and eax, ebx
-	or eax, DWORD PTR [edi+1088]
-	mov DWORD PTR [edi+1088], eax
-	mov eax, 1491998855
-	and eax, ebx
-	or eax, DWORD PTR [edi+1092]
-	mov DWORD PTR [edi+1092], eax
-	mov eax, -418636912
-	and eax, ebx
-	or eax, DWORD PTR [edi+1096]
-	mov DWORD PTR [edi+1096], eax
-	mov eax, -1833530424
-	and eax, ebx
-	or eax, DWORD PTR [edi+1100]
-	mov DWORD PTR [edi+1100], eax
-	mov eax, 776720581
-	and eax, ebx
-	or eax, DWORD PTR [edi+1104]
-	mov DWORD PTR [edi+1104], eax
-	mov eax, -1303387959
-	and eax, ebx
-	or eax, DWORD PTR [edi+1108]
-	mov DWORD PTR [edi+1108], eax
-	mov eax, 1918958942
-	and eax, ebx
-	or eax, DWORD PTR [edi+1112]
-	mov DWORD PTR [edi+1112], eax
-	mov eax, 993714134
-	and eax, ebx
-	or eax, DWORD PTR [edi+1116]
-	mov DWORD PTR [edi+1116], eax
-	mov eax, 1208637830
-	and eax, ebx
-	or eax, DWORD PTR [edi+1120]
-	mov DWORD PTR [edi+1120], eax
-	mov eax, -205899699
-	and eax, ebx
-	or eax, DWORD PTR [edi+1124]
-	mov DWORD PTR [edi+1124], eax
-	mov eax, 1011787574
-	and eax, ebx
-	or eax, DWORD PTR [edi+1128]
-	mov DWORD PTR [edi+1128], eax
-	mov eax, 1571412189
-	and eax, ebx
-	or eax, DWORD PTR [edi+1132]
-	mov DWORD PTR [edi+1132], eax
-	mov eax, -1736967108
-	and eax, ebx
-	or eax, DWORD PTR [edi+1136]
-	mov DWORD PTR [edi+1136], eax
-	mov eax, -1957078614
-	and eax, ebx
-	or eax, DWORD PTR [edi+1140]
-	mov DWORD PTR [edi+1140], eax
-	mov eax, -533170349
-	and eax, ebx
-	or eax, DWORD PTR [edi+1216]
-	mov DWORD PTR [edi+1216], eax
-	mov eax, -896586868
-	and eax, ebx
-	or eax, DWORD PTR [edi+1220]
-	mov DWORD PTR [edi+1220], eax
-	mov eax, 1465816961
-	and eax, ebx
-	or eax, DWORD PTR [edi+1224]
-	mov DWORD PTR [edi+1224], eax
-	mov eax, -395295261
-	and eax, ebx
-	or eax, DWORD PTR [edi+1228]
-	mov DWORD PTR [edi+1228], eax
-	mov eax, -2128305888
-	and eax, ebx
-	or eax, DWORD PTR [edi+1232]
-	mov DWORD PTR [edi+1232], eax
-	mov eax, 1670080410
-	and eax, ebx
-	or eax, DWORD PTR [edi+1236]
-	mov DWORD PTR [edi+1236], eax
-	mov eax, 1192129551
-	and eax, ebx
-	or eax, DWORD PTR [edi+1240]
-	mov DWORD PTR [edi+1240], eax
-	mov eax, 2024471665
-	and eax, ebx
-	or eax, DWORD PTR [edi+1244]
-	mov DWORD PTR [edi+1244], eax
-	mov eax, -1173378155
-	and eax, ebx
-	or eax, DWORD PTR [edi+1248]
-	mov DWORD PTR [edi+1248], eax
-	mov eax, -1385985915
-	and eax, ebx
-	or eax, DWORD PTR [edi+1252]
-	mov DWORD PTR [edi+1252], eax
-	mov eax, -288016487
-	and eax, ebx
-	or eax, DWORD PTR [edi+1256]
-	mov DWORD PTR [edi+1256], eax
-	mov eax, 2040019834
-	and eax, ebx
-	or eax, DWORD PTR [edi+1260]
-	mov DWORD PTR [edi+1260], eax
-	mov eax, -1041086260
-	and eax, ebx
-	or eax, DWORD PTR [edi+1264]
-	mov DWORD PTR [edi+1264], eax
-	mov eax, 572736854
-	and eax, ebx
-	or eax, DWORD PTR [edi+1268]
-	mov DWORD PTR [edi+1268], eax
-	mov eax, ecx
-	xor eax, 9
-	sub eax, 1
-	shr eax, 31
-	mov ebx, 0
-	sub ebx, eax
-	mov eax, -71323880
-	and eax, ebx
-	or eax, DWORD PTR [edi+1088]
-	mov DWORD PTR [edi+1088], eax
-	mov eax, -699895659
-	and eax, ebx
-	or eax, DWORD PTR [edi+1092]
-	mov DWORD PTR [edi+1092], eax
-	mov eax, -1223080739
-	and eax, ebx
-	or eax, DWORD PTR [edi+1096]
-	mov DWORD PTR [edi+1096], eax
-	mov eax, 1653143047
-	and eax, ebx
-	or eax, DWORD PTR [edi+1100]
-	mov DWORD PTR [edi+1100], eax
-	mov eax, 959501172
-	and eax, ebx
-	or eax, DWORD PTR [edi+1104]
-	mov DWORD PTR [edi+1104], eax
-	mov eax, -242127093
-	and eax, ebx
-	or eax, DWORD PTR [edi+1108]
-	mov DWORD PTR [edi+1108], eax
-	mov eax, -2001278642
-	and eax, ebx
-	or eax, DWORD PTR [edi+1112]
-	mov DWORD PTR [edi+1112], eax
-	mov eax, -1929621281
-	and eax, ebx
-	or eax, DWORD PTR [edi+1116]
-	mov DWORD PTR [edi+1116], eax
-	mov eax, -1976806838
-	and eax, ebx
-	or eax, DWORD PTR [edi+1120]
-	mov DWORD PTR [edi+1120], eax
-	mov eax, 207959334
-	and eax, ebx
-	or eax, DWORD PTR [edi+1124]
-	mov DWORD PTR [edi+1124], eax
-	mov eax, 119567772
-	and eax, ebx
-	or eax, DWORD PTR [edi+1128]
-	mov DWORD PTR [edi+1128], eax
-	mov eax, 1814391423
-	and eax, ebx
-	or eax, DWORD PTR [edi+1132]
-	mov DWORD PTR [edi+1132], eax
-	mov eax, 1712913207
-	and eax, ebx
-	or eax, DWORD PTR [edi+1136]
-	mov DWORD PTR [edi+1136], eax
-	mov eax, 1203697034
-	and eax, ebx
-	or eax, DWORD PTR [edi+1140]
-	mov DWORD PTR [edi+1140], eax
-	mov eax, -1700267072
-	and eax, ebx
-	or eax, DWORD PTR [edi+1216]
-	mov DWORD PTR [edi+1216], eax
-	mov eax, -179875612
-	and eax, ebx
-	or eax, DWORD PTR [edi+1220]
-	mov DWORD PTR [edi+1220], eax
-	mov eax, 1627185736
-	and eax, ebx
-	or eax, DWORD PTR [edi+1224]
-	mov DWORD PTR [edi+1224], eax
-	mov eax, 1159222776
-	and eax, ebx
-	or eax, DWORD PTR [edi+1228]
-	mov DWORD PTR [edi+1228], eax
-	mov eax, -772613132
-	and eax, ebx
-	or eax, DWORD PTR [edi+1232]
-	mov DWORD PTR [edi+1232], eax
-	mov eax, 1966224143
-	and eax, ebx
-	or eax, DWORD PTR [edi+1236]
-	mov DWORD PTR [edi+1236], eax
-	mov eax, -931861025
-	and eax, ebx
-	or eax, DWORD PTR [edi+1240]
-	mov DWORD PTR [edi+1240], eax
-	mov eax, 873189709
-	and eax, ebx
-	or eax, DWORD PTR [edi+1244]
-	mov DWORD PTR [edi+1244], eax
-	mov eax, 101631558
-	and eax, ebx
-	or eax, DWORD PTR [edi+1248]
-	mov DWORD PTR [edi+1248], eax
-	mov eax, 1192052150
-	and eax, ebx
-	or eax, DWORD PTR [edi+1252]
-	mov DWORD PTR [edi+1252], eax
-	mov eax, -653481833
-	and eax, ebx
-	or eax, DWORD PTR [edi+1256]
-	mov DWORD PTR [edi+1256], eax
-	mov eax, 1393124885
-	and eax, ebx
-	or eax, DWORD PTR [edi+1260]
-	mov DWORD PTR [edi+1260], eax
-	mov eax, 1581722325
-	and eax, ebx
-	or eax, DWORD PTR [edi+1264]
-	mov DWORD PTR [edi+1264], eax
-	mov eax, 1230275891
-	and eax, ebx
-	or eax, DWORD PTR [edi+1268]
-	mov DWORD PTR [edi+1268], eax
-	mov eax, ecx
-	xor eax, 10
-	sub eax, 1
-	shr eax, 31
-	mov ebx, 0
-	sub ebx, eax
-	mov eax, 31250192
-	and eax, ebx
-	or eax, DWORD PTR [edi+1088]
-	mov DWORD PTR [edi+1088], eax
-	mov eax, -99420783
-	and eax, ebx
-	or eax, DWORD PTR [edi+1092]
-	mov DWORD PTR [edi+1092], eax
-	mov eax, 565671100
-	and eax, ebx
-	or eax, DWORD PTR [edi+1096]
-	mov DWORD PTR [edi+1096], eax
-	mov eax, -40997660
-	and eax, ebx
-	or eax, DWORD PTR [edi+1100]
-	mov DWORD PTR [edi+1100], eax
-	mov eax, -500357866
-	and eax, ebx
-	or eax, DWORD PTR [edi+1104]
-	mov DWORD PTR [edi+1104], eax
-	mov eax, -1521054604
-	and eax, ebx
-	or eax, DWORD PTR [edi+1108]
-	mov DWORD PTR [edi+1108], eax
-	mov eax, 658170577
-	and eax, ebx
-	or eax, DWORD PTR [edi+1112]
-	mov DWORD PTR [edi+1112], eax
-	mov eax, 417239547
-	and eax, ebx
-	or eax, DWORD PTR [edi+1116]
-	mov DWORD PTR [edi+1116], eax
-	mov eax, 1588957873
-	and eax, ebx
-	or eax, DWORD PTR [edi+1120]
-	mov DWORD PTR [edi+1120], eax
-	mov eax, 229458555
-	and eax, ebx
-	or eax, DWORD PTR [edi+1124]
-	mov DWORD PTR [edi+1124], eax
-	mov eax, -1615255069
-	and eax, ebx
-	or eax, DWORD PTR [edi+1128]
-	mov DWORD PTR [edi+1128], eax
-	mov eax, -2101749150
-	and eax, ebx
-	or eax, DWORD PTR [edi+1132]
-	mov DWORD PTR [edi+1132], eax
-	mov eax, -542198317
-	and eax, ebx
-	or eax, DWORD PTR [edi+1136]
-	mov DWORD PTR [edi+1136], eax
-	mov eax, 1843932345
-	and eax, ebx
-	or eax, DWORD PTR [edi+1140]
-	mov DWORD PTR [edi+1140], eax
-	mov eax, 1485079131
-	and eax, ebx
-	or eax, DWORD PTR [edi+1216]
-	mov DWORD PTR [edi+1216], eax
-	mov eax, -1544178604
-	and eax, ebx
-	or eax, DWORD PTR [edi+1220]
-	mov DWORD PTR [edi+1220], eax
-	mov eax, 1902971309
-	and eax, ebx
-	or eax, DWORD PTR [edi+1224]
-	mov DWORD PTR [edi+1224], eax
-	mov eax, 1901189610
-	and eax, ebx
-	or eax, DWORD PTR [edi+1228]
-	mov DWORD PTR [edi+1228], eax
-	mov eax, -1108583948
-	and eax, ebx
-	or eax, DWORD PTR [edi+1232]
-	mov DWORD PTR [edi+1232], eax
-	mov eax, -1384224929
-	and eax, ebx
-	or eax, DWORD PTR [edi+1236]
-	mov DWORD PTR [edi+1236], eax
-	mov eax, -705945688
-	and eax, ebx
-	or eax, DWORD PTR [edi+1240]
-	mov DWORD PTR [edi+1240], eax
-	mov eax, 1018751073
-	and eax, ebx
-	or eax, DWORD PTR [edi+1244]
-	mov DWORD PTR [edi+1244], eax
-	mov eax, 1461284395
-	and eax, ebx
-	or eax, DWORD PTR [edi+1248]
-	mov DWORD PTR [edi+1248], eax
-	mov eax, -1556214923
-	and eax, ebx
-	or eax, DWORD PTR [edi+1252]
-	mov DWORD PTR [edi+1252], eax
-	mov eax, 1194076029
-	and eax, ebx
-	or eax, DWORD PTR [edi+1256]
-	mov DWORD PTR [edi+1256], eax
-	mov eax, -1983186580
-	and eax, ebx
-	or eax, DWORD PTR [edi+1260]
-	mov DWORD PTR [edi+1260], eax
-	mov eax, -1262726691
-	and eax, ebx
-	or eax, DWORD PTR [edi+1264]
-	mov DWORD PTR [edi+1264], eax
-	mov eax, -664436906
-	and eax, ebx
-	or eax, DWORD PTR [edi+1268]
-	mov DWORD PTR [edi+1268], eax
-	mov eax, ecx
-	xor eax, 11
-	sub eax, 1
-	shr eax, 31
-	mov ebx, 0
-	sub ebx, eax
-	mov eax, 1453224409
-	and eax, ebx
-	or eax, DWORD PTR [edi+1088]
-	mov DWORD PTR [edi+1088], eax
-	mov eax, -2129310050
-	and eax, ebx
-	or eax, DWORD PTR [edi+1092]
-	mov DWORD PTR [edi+1092], eax
-	mov eax, 1895146042
-	and eax, ebx
-	or eax, DWORD PTR [edi+1096]
-	mov DWORD PTR [edi+1096], eax
-	mov eax, -1997455777
-	and eax, ebx
-	or eax, DWORD PTR [edi+1100]
-	mov DWORD PTR [edi+1100], eax
-	mov eax, -1998839025
-	and eax, ebx
-	or eax, DWORD PTR [edi+1104]
-	mov DWORD PTR [edi+1104], eax
-	mov eax, -923450481
-	and eax, ebx
-	or eax, DWORD PTR [edi+1108]
-	mov DWORD PTR [edi+1108], eax
-	mov eax, 665183631
-	and eax, ebx
-	or eax, DWORD PTR [edi+1112]
-	mov DWORD PTR [edi+1112], eax
-	mov eax, 104764282
-	and eax, ebx
-	or eax, DWORD PTR [edi+1116]
-	mov DWORD PTR [edi+1116], eax
-	mov eax, -511560094
-	and eax, ebx
-	or eax, DWORD PTR [edi+1120]
-	mov DWORD PTR [edi+1120], eax
-	mov eax, 563284188
-	and eax, ebx
-	or eax, DWORD PTR [edi+1124]
-	mov DWORD PTR [edi+1124], eax
-	mov eax, 1909960964
-	and eax, ebx
-	or eax, DWORD PTR [edi+1128]
-	mov DWORD PTR [edi+1128], eax
-	mov eax, 112985929
-	and eax, ebx
-	or eax, DWORD PTR [edi+1132]
-	mov DWORD PTR [edi+1132], eax
-	mov eax, 869133277
-	and eax, ebx
-	or eax, DWORD PTR [edi+1136]
-	mov DWORD PTR [edi+1136], eax
-	mov eax, 948114782
-	and eax, ebx
-	or eax, DWORD PTR [edi+1140]
-	mov DWORD PTR [edi+1140], eax
-	mov eax, 353785601
-	and eax, ebx
-	or eax, DWORD PTR [edi+1216]
-	mov DWORD PTR [edi+1216], eax
-	mov eax, -314063545
-	and eax, ebx
-	or eax, DWORD PTR [edi+1220]
-	mov DWORD PTR [edi+1220], eax
-	mov eax, -1919965518
-	and eax, ebx
-	or eax, DWORD PTR [edi+1224]
-	mov DWORD PTR [edi+1224], eax
-	mov eax, -1785157171
-	and eax, ebx
-	or eax, DWORD PTR [edi+1228]
-	mov DWORD PTR [edi+1228], eax
-	mov eax, 1341789305
-	and eax, ebx
-	or eax, DWORD PTR [edi+1232]
-	mov DWORD PTR [edi+1232], eax
-	mov eax, -1584438722
-	and eax, ebx
-	or eax, DWORD PTR [edi+1236]
-	mov DWORD PTR [edi+1236], eax
-	mov eax, -1499226686
-	and eax, ebx
-	or eax, DWORD PTR [edi+1240]
-	mov DWORD PTR [edi+1240], eax
-	mov eax, 1478662585
-	and eax, ebx
-	or eax, DWORD PTR [edi+1244]
-	mov DWORD PTR [edi+1244], eax
-	mov eax, 2021209556
-	and eax, ebx
-	or eax, DWORD PTR [edi+1248]
-	mov DWORD PTR [edi+1248], eax
-	mov eax, -1696703079
-	and eax, ebx
-	or eax, DWORD PTR [edi+1252]
-	mov DWORD PTR [edi+1252], eax
-	mov eax, 917103868
-	and eax, ebx
-	or eax, DWORD PTR [edi+1256]
-	mov DWORD PTR [edi+1256], eax
-	mov eax, -1671240968
-	and eax, ebx
-	or eax, DWORD PTR [edi+1260]
-	mov DWORD PTR [edi+1260], eax
-	mov eax, 263972475
-	and eax, ebx
-	or eax, DWORD PTR [edi+1264]
-	mov DWORD PTR [edi+1264], eax
-	mov eax, -343895274
-	and eax, ebx
-	or eax, DWORD PTR [edi+1268]
-	mov DWORD PTR [edi+1268], eax
-	mov eax, ecx
-	xor eax, 12
-	sub eax, 1
-	shr eax, 31
-	mov ebx, 0
-	sub ebx, eax
-	mov eax, -2024109450
-	and eax, ebx
-	or eax, DWORD PTR [edi+1088]
-	mov DWORD PTR [edi+1088], eax
-	mov eax, -92521600
-	and eax, ebx
-	or eax, DWORD PTR [edi+1092]
-	mov DWORD PTR [edi+1092], eax
-	mov eax, 1230854430
-	and eax, ebx
-	or eax, DWORD PTR [edi+1096]
-	mov DWORD PTR [edi+1096], eax
-	mov eax, 723366700
-	and eax, ebx
-	or eax, DWORD PTR [edi+1100]
-	mov DWORD PTR [edi+1100], eax
-	mov eax, -637976454
-	and eax, ebx
-	or eax, DWORD PTR [edi+1104]
-	mov DWORD PTR [edi+1104], eax
-	mov eax, -1751591552
-	and eax, ebx
-	or eax, DWORD PTR [edi+1108]
-	mov DWORD PTR [edi+1108], eax
-	mov eax, 1254762759
-	and eax, ebx
-	or eax, DWORD PTR [edi+1112]
-	mov DWORD PTR [edi+1112], eax
-	mov eax, -36139836
-	and eax, ebx
-	or eax, DWORD PTR [edi+1116]
-	mov DWORD PTR [edi+1116], eax
-	mov eax, -1927162017
-	and eax, ebx
-	or eax, DWORD PTR [edi+1120]
-	mov DWORD PTR [edi+1120], eax
-	mov eax, -193135593
-	and eax, ebx
-	or eax, DWORD PTR [edi+1124]
-	mov DWORD PTR [edi+1124], eax
-	mov eax, 1572816922
-	and eax, ebx
-	or eax, DWORD PTR [edi+1128]
-	mov DWORD PTR [edi+1128], eax
-	mov eax, 59631187
-	and eax, ebx
-	or eax, DWORD PTR [edi+1132]
-	mov DWORD PTR [edi+1132], eax
-	mov eax, -1893413513
-	and eax, ebx
-	or eax, DWORD PTR [edi+1136]
-	mov DWORD PTR [edi+1136], eax
-	mov eax, 191181556
-	and eax, ebx
-	or eax, DWORD PTR [edi+1140]
-	mov DWORD PTR [edi+1140], eax
-	mov eax, 1114422625
-	and eax, ebx
-	or eax, DWORD PTR [edi+1216]
-	mov DWORD PTR [edi+1216], eax
-	mov eax, 1464756404
-	and eax, ebx
-	or eax, DWORD PTR [edi+1220]
-	mov DWORD PTR [edi+1220], eax
-	mov eax, -1997107942
-	and eax, ebx
-	or eax, DWORD PTR [edi+1224]
-	mov DWORD PTR [edi+1224], eax
-	mov eax, 1812038835
-	and eax, ebx
-	or eax, DWORD PTR [edi+1228]
-	mov DWORD PTR [edi+1228], eax
-	mov eax, 1675206124
-	and eax, ebx
-	or eax, DWORD PTR [edi+1232]
-	mov DWORD PTR [edi+1232], eax
-	mov eax, -501613501
-	and eax, ebx
-	or eax, DWORD PTR [edi+1236]
-	mov DWORD PTR [edi+1236], eax
-	mov eax, 153785994
-	and eax, ebx
-	or eax, DWORD PTR [edi+1240]
-	mov DWORD PTR [edi+1240], eax
-	mov eax, -177545744
-	and eax, ebx
-	or eax, DWORD PTR [edi+1244]
-	mov DWORD PTR [edi+1244], eax
-	mov eax, 1201641810
-	and eax, ebx
-	or eax, DWORD PTR [edi+1248]
-	mov DWORD PTR [edi+1248], eax
-	mov eax, 1806499717
-	and eax, ebx
-	or eax, DWORD PTR [edi+1252]
-	mov DWORD PTR [edi+1252], eax
-	mov eax, 255309865
-	and eax, ebx
-	or eax, DWORD PTR [edi+1256]
-	mov DWORD PTR [edi+1256], eax
-	mov eax, 1674633898
-	and eax, ebx
-	or eax, DWORD PTR [edi+1260]
-	mov DWORD PTR [edi+1260], eax
-	mov eax, -308199247
-	and eax, ebx
-	or eax, DWORD PTR [edi+1264]
-	mov DWORD PTR [edi+1264], eax
-	mov eax, -1153291398
-	and eax, ebx
-	or eax, DWORD PTR [edi+1268]
-	mov DWORD PTR [edi+1268], eax
-	mov eax, ecx
-	xor eax, 13
-	sub eax, 1
-	shr eax, 31
-	mov ebx, 0
-	sub ebx, eax
-	mov eax, 2131122905
-	and eax, ebx
-	or eax, DWORD PTR [edi+1088]
-	mov DWORD PTR [edi+1088], eax
-	mov eax, -1476415020
-	and eax, ebx
-	or eax, DWORD PTR [edi+1092]
-	mov DWORD PTR [edi+1092], eax
-	mov eax, -740390196
-	and eax, ebx
-	or eax, DWORD PTR [edi+1096]
-	mov DWORD PTR [edi+1096], eax
-	mov eax, -1759000487
-	and eax, ebx
-	or eax, DWORD PTR [edi+1100]
-	mov DWORD PTR [edi+1100], eax
-	mov eax, 1414432892
-	and eax, ebx
-	or eax, DWORD PTR [edi+1104]
-	mov DWORD PTR [edi+1104], eax
-	mov eax, 1166875000
-	and eax, ebx
-	or eax, DWORD PTR [edi+1108]
-	mov DWORD PTR [edi+1108], eax
-	mov eax, -1931782329
-	and eax, ebx
-	or eax, DWORD PTR [edi+1112]
-	mov DWORD PTR [edi+1112], eax
-	mov eax, 1019750756
-	and eax, ebx
-	or eax, DWORD PTR [edi+1116]
-	mov DWORD PTR [edi+1116], eax
-	mov eax, -48184975
-	and eax, ebx
-	or eax, DWORD PTR [edi+1120]
-	mov DWORD PTR [edi+1120], eax
-	mov eax, 1130211572
-	and eax, ebx
-	or eax, DWORD PTR [edi+1124]
-	mov DWORD PTR [edi+1124], eax
-	mov eax, -1740823873
-	and eax, ebx
-	or eax, DWORD PTR [edi+1128]
-	mov DWORD PTR [edi+1128], eax
-	mov eax, -970505356
-	and eax, ebx
-	or eax, DWORD PTR [edi+1132]
-	mov DWORD PTR [edi+1132], eax
-	mov eax, 1929840621
-	and eax, ebx
-	or eax, DWORD PTR [edi+1136]
-	mov DWORD PTR [edi+1136], eax
-	mov eax, -60795406
-	and eax, ebx
-	or eax, DWORD PTR [edi+1140]
-	mov DWORD PTR [edi+1140], eax
-	mov eax, 650603260
-	and eax, ebx
-	or eax, DWORD PTR [edi+1216]
-	mov DWORD PTR [edi+1216], eax
-	mov eax, -982566817
-	and eax, ebx
-	or eax, DWORD PTR [edi+1220]
-	mov DWORD PTR [edi+1220], eax
-	mov eax, -110404339
-	and eax, ebx
-	or eax, DWORD PTR [edi+1224]
-	mov DWORD PTR [edi+1224], eax
-	mov eax, -1760109988
-	and eax, ebx
-	or eax, DWORD PTR [edi+1228]
-	mov DWORD PTR [edi+1228], eax
-	mov eax, 574382282
-	and eax, ebx
-	or eax, DWORD PTR [edi+1232]
-	mov DWORD PTR [edi+1232], eax
-	mov eax, 1205650566
-	and eax, ebx
-	or eax, DWORD PTR [edi+1236]
-	mov DWORD PTR [edi+1236], eax
-	mov eax, 534146058
-	and eax, ebx
-	or eax, DWORD PTR [edi+1240]
-	mov DWORD PTR [edi+1240], eax
-	mov eax, -27967894
-	and eax, ebx
-	or eax, DWORD PTR [edi+1244]
-	mov DWORD PTR [edi+1244], eax
-	mov eax, -1757625013
-	and eax, ebx
-	or eax, DWORD PTR [edi+1248]
-	mov DWORD PTR [edi+1248], eax
-	mov eax, -273638847
-	and eax, ebx
-	or eax, DWORD PTR [edi+1252]
-	mov DWORD PTR [edi+1252], eax
-	mov eax, 1589806431
-	and eax, ebx
-	or eax, DWORD PTR [edi+1256]
-	mov DWORD PTR [edi+1256], eax
-	mov eax, 587362736
-	and eax, ebx
-	or eax, DWORD PTR [edi+1260]
-	mov DWORD PTR [edi+1260], eax
-	mov eax, -1438855317
-	and eax, ebx
-	or eax, DWORD PTR [edi+1264]
-	mov DWORD PTR [edi+1264], eax
-	mov eax, 989836390
-	and eax, ebx
-	or eax, DWORD PTR [edi+1268]
-	mov DWORD PTR [edi+1268], eax
-	mov eax, ecx
-	xor eax, 14
-	sub eax, 1
-	shr eax, 31
-	mov ebx, 0
-	sub ebx, eax
-	mov eax, 480281727
-	and eax, ebx
-	or eax, DWORD PTR [edi+1088]
-	mov DWORD PTR [edi+1088], eax
-	mov eax, 1521014168
-	and eax, ebx
-	or eax, DWORD PTR [edi+1092]
-	mov DWORD PTR [edi+1092], eax
-	mov eax, -557525822
-	and eax, ebx
-	or eax, DWORD PTR [edi+1096]
-	mov DWORD PTR [edi+1096], eax
-	mov eax, -494884212
-	and eax, ebx
-	or eax, DWORD PTR [edi+1100]
-	mov DWORD PTR [edi+1100], eax
-	mov eax, -1219746714
-	and eax, ebx
-	or eax, DWORD PTR [edi+1104]
-	mov DWORD PTR [edi+1104], eax
-	mov eax, 487102909
-	and eax, ebx
-	or eax, DWORD PTR [edi+1108]
-	mov DWORD PTR [edi+1108], eax
-	mov eax, 764950724
-	and eax, ebx
-	or eax, DWORD PTR [edi+1112]
-	mov DWORD PTR [edi+1112], eax
-	mov eax, -1445541243
-	and eax, ebx
-	or eax, DWORD PTR [edi+1116]
-	mov DWORD PTR [edi+1116], eax
-	mov eax, -860409544
-	and eax, ebx
-	or eax, DWORD PTR [edi+1120]
-	mov DWORD PTR [edi+1120], eax
-	mov eax, -1475045304
-	and eax, ebx
-	or eax, DWORD PTR [edi+1124]
-	mov DWORD PTR [edi+1124], eax
-	mov eax, -71651550
-	and eax, ebx
-	or eax, DWORD PTR [edi+1128]
-	mov DWORD PTR [edi+1128], eax
-	mov eax, -275139203
-	and eax, ebx
-	or eax, DWORD PTR [edi+1132]
-	mov DWORD PTR [edi+1132], eax
-	mov eax, -1887128028
-	and eax, ebx
-	or eax, DWORD PTR [edi+1136]
-	mov DWORD PTR [edi+1136], eax
-	mov eax, -554568694
-	and eax, ebx
-	or eax, DWORD PTR [edi+1140]
-	mov DWORD PTR [edi+1140], eax
-	mov eax, -968679566
-	and eax, ebx
-	or eax, DWORD PTR [edi+1216]
-	mov DWORD PTR [edi+1216], eax
-	mov eax, 1932557500
-	and eax, ebx
-	or eax, DWORD PTR [edi+1220]
-	mov DWORD PTR [edi+1220], eax
-	mov eax, -1210091537
-	and eax, ebx
-	or eax, DWORD PTR [edi+1224]
-	mov DWORD PTR [edi+1224], eax
-	mov eax, -1214486304
-	and eax, ebx
-	or eax, DWORD PTR [edi+1228]
-	mov DWORD PTR [edi+1228], eax
-	mov eax, -57038419
-	and eax, ebx
-	or eax, DWORD PTR [edi+1232]
-	mov DWORD PTR [edi+1232], eax
-	mov eax, -1277867035
-	and eax, ebx
-	or eax, DWORD PTR [edi+1236]
-	mov DWORD PTR [edi+1236], eax
-	mov eax, 123124761
-	and eax, ebx
-	or eax, DWORD PTR [edi+1240]
-	mov DWORD PTR [edi+1240], eax
-	mov eax, 1386121423
-	and eax, ebx
-	or eax, DWORD PTR [edi+1244]
-	mov DWORD PTR [edi+1244], eax
-	mov eax, 264614709
-	and eax, ebx
-	or eax, DWORD PTR [edi+1248]
-	mov DWORD PTR [edi+1248], eax
-	mov eax, -310538792
-	and eax, ebx
-	or eax, DWORD PTR [edi+1252]
-	mov DWORD PTR [edi+1252], eax
-	mov eax, -2038618036
-	and eax, ebx
-	or eax, DWORD PTR [edi+1256]
-	mov DWORD PTR [edi+1256], eax
-	mov eax, 719575336
-	and eax, ebx
-	or eax, DWORD PTR [edi+1260]
-	mov DWORD PTR [edi+1260], eax
-	mov eax, -551497197
-	and eax, ebx
-	or eax, DWORD PTR [edi+1264]
-	mov DWORD PTR [edi+1264], eax
-	mov eax, 1471840224
-	and eax, ebx
-	or eax, DWORD PTR [edi+1268]
-	mov DWORD PTR [edi+1268], eax
-	mov eax, ecx
-	xor eax, 15
-	sub eax, 1
-	shr eax, 31
-	mov ebx, 0
-	sub ebx, eax
-	mov eax, -2112910522
-	and eax, ebx
-	or eax, DWORD PTR [edi+1088]
-	mov DWORD PTR [edi+1088], eax
-	mov eax, -1899574247
-	and eax, ebx
-	or eax, DWORD PTR [edi+1092]
-	mov DWORD PTR [edi+1092], eax
-	mov eax, -1552778737
-	and eax, ebx
-	or eax, DWORD PTR [edi+1096]
-	mov DWORD PTR [edi+1096], eax
-	mov eax, 1478156372
-	and eax, ebx
-	or eax, DWORD PTR [edi+1100]
-	mov DWORD PTR [edi+1100], eax
-	mov eax, -2130945115
-	and eax, ebx
-	or eax, DWORD PTR [edi+1104]
-	mov DWORD PTR [edi+1104], eax
-	mov eax, 565479382
-	and eax, ebx
-	or eax, DWORD PTR [edi+1108]
-	mov DWORD PTR [edi+1108], eax
-	mov eax, -1216714560
-	and eax, ebx
-	or eax, DWORD PTR [edi+1112]
-	mov DWORD PTR [edi+1112], eax
-	mov eax, -1348061180
-	and eax, ebx
-	or eax, DWORD PTR [edi+1116]
-	mov DWORD PTR [edi+1116], eax
-	mov eax, 810454180
-	and eax, ebx
-	or eax, DWORD PTR [edi+1120]
-	mov DWORD PTR [edi+1120], eax
-	mov eax, -261052641
-	and eax, ebx
-	or eax, DWORD PTR [edi+1124]
-	mov DWORD PTR [edi+1124], eax
-	mov eax, -249043296
-	and eax, ebx
-	or eax, DWORD PTR [edi+1128]
-	mov DWORD PTR [edi+1128], eax
-	mov eax, -1642822534
-	and eax, ebx
-	or eax, DWORD PTR [edi+1132]
-	mov DWORD PTR [edi+1132], eax
-	mov eax, -1548004365
-	and eax, ebx
-	or eax, DWORD PTR [edi+1136]
-	mov DWORD PTR [edi+1136], eax
-	mov eax, 1855906492
-	and eax, ebx
-	or eax, DWORD PTR [edi+1140]
-	mov DWORD PTR [edi+1140], eax
-	mov eax, 1614094338
-	and eax, ebx
-	or eax, DWORD PTR [edi+1216]
-	mov DWORD PTR [edi+1216], eax
-	mov eax, -880471027
-	and eax, ebx
-	or eax, DWORD PTR [edi+1220]
-	mov DWORD PTR [edi+1220], eax
-	mov eax, 171867692
-	and eax, ebx
-	or eax, DWORD PTR [edi+1224]
-	mov DWORD PTR [edi+1224], eax
-	mov eax, 1528474189
-	and eax, ebx
-	or eax, DWORD PTR [edi+1228]
-	mov DWORD PTR [edi+1228], eax
-	mov eax, -1031556009
-	and eax, ebx
-	or eax, DWORD PTR [edi+1232]
-	mov DWORD PTR [edi+1232], eax
-	mov eax, 1517606237
-	and eax, ebx
-	or eax, DWORD PTR [edi+1236]
-	mov DWORD PTR [edi+1236], eax
-	mov eax, -1061571203
-	and eax, ebx
-	or eax, DWORD PTR [edi+1240]
-	mov DWORD PTR [edi+1240], eax
-	mov eax, 158197602
-	and eax, ebx
-	or eax, DWORD PTR [edi+1244]
-	mov DWORD PTR [edi+1244], eax
-	mov eax, 1244935000
-	and eax, ebx
-	or eax, DWORD PTR [edi+1248]
-	mov DWORD PTR [edi+1248], eax
-	mov eax, -1624666618
-	and eax, ebx
-	or eax, DWORD PTR [edi+1252]
-	mov DWORD PTR [edi+1252], eax
-	mov eax, -1836720821
-	and eax, ebx
-	or eax, DWORD PTR [edi+1256]
-	mov DWORD PTR [edi+1256], eax
-	mov eax, 804808488
-	and eax, ebx
-	or eax, DWORD PTR [edi+1260]
-	mov DWORD PTR [edi+1260], eax
-	mov eax, -1647069231
-	and eax, ebx
-	or eax, DWORD PTR [edi+1264]
-	mov DWORD PTR [edi+1264], eax
-	mov eax, -1379534735
-	and eax, ebx
-	or eax, DWORD PTR [edi+1268]
+	mov eax, DWORD PTR [ebp+108]
 	mov DWORD PTR [edi+1268], eax
 	mov eax, 1600
 	mov ecx, 320
-	mov edx, 1344
-	push edx
-	push ecx
-	push eax
-	push edi
-	call {vg_gf448_r32_mul}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	mov eax, 1728
-	mov ecx, 1600
 	push ecx
 	push eax
 	push edi
@@ -4924,7 +3085,7 @@ vg_ed448_verify_equation:
 	pop eax
 	pop eax
 	pop eax
-	mov eax, 1856
+	mov eax, 1728
 	mov ecx, 64
 	mov edx, 1088
 	push edx
@@ -4936,7 +3097,7 @@ vg_ed448_verify_equation:
 	pop eax
 	pop eax
 	pop eax
-	mov eax, 1984
+	mov eax, 1856
 	mov ecx, 192
 	mov edx, 1216
 	push edx
@@ -4948,8 +3109,8 @@ vg_ed448_verify_equation:
 	pop eax
 	pop eax
 	pop eax
-	mov eax, 2112
-	mov ecx, 1472
+	mov eax, 1984
+	mov ecx, 1728
 	mov edx, 1856
 	push edx
 	push ecx
@@ -4960,43 +3121,16 @@ vg_ed448_verify_equation:
 	pop eax
 	pop eax
 	pop eax
+	mov eax, 1984
+	mov ecx, 1984
+	push ecx
+	push eax
+	push edi
+	call {vg_gf448_r32_mul_a24}
+	pop eax
+	pop eax
+	pop eax
 	mov eax, 2112
-	mov ecx, 2112
-	mov edx, 1984
-	push edx
-	push ecx
-	push eax
-	push edi
-	call {vg_gf448_r32_mul}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	mov eax, 2240
-	mov ecx, 1728
-	mov edx, 2112
-	push edx
-	push ecx
-	push eax
-	push edi
-	call {vg_gf448_r32_sub}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	mov eax, 2368
-	mov ecx, 1728
-	mov edx, 2112
-	push edx
-	push ecx
-	push eax
-	push edi
-	call {vg_gf448_r32_add}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	mov eax, 2496
 	mov ecx, 64
 	mov edx, 192
 	push edx
@@ -5008,7 +3142,7 @@ vg_ed448_verify_equation:
 	pop eax
 	pop eax
 	pop eax
-	mov eax, 2624
+	mov eax, 2240
 	mov ecx, 1088
 	mov edx, 1216
 	push edx
@@ -5020,20 +3154,8 @@ vg_ed448_verify_equation:
 	pop eax
 	pop eax
 	pop eax
-	mov eax, 2496
-	mov ecx, 2496
-	mov edx, 2624
-	push edx
-	push ecx
-	push eax
-	push edi
-	call {vg_gf448_r32_mul}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	mov eax, 2624
-	mov ecx, 1600
+	mov eax, 2112
+	mov ecx, 2112
 	mov edx, 2240
 	push edx
 	push ecx
@@ -5044,8 +3166,20 @@ vg_ed448_verify_equation:
 	pop eax
 	pop eax
 	pop eax
-	mov eax, 2496
-	mov ecx, 2496
+	mov eax, 2112
+	mov ecx, 2112
+	mov edx, 1728
+	push edx
+	push ecx
+	push eax
+	push edi
+	call {vg_gf448_r32_sub}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov eax, 2112
+	mov ecx, 2112
 	mov edx, 1856
 	push edx
 	push ecx
@@ -5056,8 +3190,32 @@ vg_ed448_verify_equation:
 	pop eax
 	pop eax
 	pop eax
-	mov eax, 2496
-	mov ecx, 2496
+	mov eax, 2240
+	mov ecx, 1856
+	mov edx, 1728
+	push edx
+	push ecx
+	push eax
+	push edi
+	call {vg_gf448_r32_sub}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov eax, 2368
+	mov ecx, 1600
+	mov edx, 1984
+	push edx
+	push ecx
+	push eax
+	push edi
+	call {vg_gf448_r32_add}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov eax, 1600
+	mov ecx, 1600
 	mov edx, 1984
 	push edx
 	push ecx
@@ -5068,20 +3226,8 @@ vg_ed448_verify_equation:
 	pop eax
 	pop eax
 	pop eax
-	mov eax, 448
-	mov ecx, 2624
-	mov edx, 2496
-	push edx
-	push ecx
-	push eax
-	push edi
-	call {vg_gf448_r32_mul}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	mov eax, 2624
-	mov ecx, 1600
+	mov eax, 1728
+	mov ecx, 320
 	mov edx, 2368
 	push edx
 	push ecx
@@ -5092,21 +3238,9 @@ vg_ed448_verify_equation:
 	pop eax
 	pop eax
 	pop eax
-	mov eax, 2496
-	mov ecx, 1984
-	mov edx, 1856
-	push edx
-	push ecx
-	push eax
-	push edi
-	call {vg_gf448_r32_sub}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	mov eax, 576
-	mov ecx, 2624
-	mov edx, 2496
+	mov eax, 64
+	mov ecx, 1728
+	mov edx, 2112
 	push edx
 	push ecx
 	push eax
@@ -5116,9 +3250,9 @@ vg_ed448_verify_equation:
 	pop eax
 	pop eax
 	pop eax
-	mov eax, 704
-	mov ecx, 2240
-	mov edx, 2368
+	mov eax, 1728
+	mov ecx, 320
+	mov edx, 1600
 	push edx
 	push ecx
 	push eax
@@ -5128,98 +3262,38 @@ vg_ed448_verify_equation:
 	pop eax
 	pop eax
 	pop eax
-	mov eax, DWORD PTR [edi+448]
-	mov DWORD PTR [edi+64], eax
-	mov eax, DWORD PTR [edi+452]
-	mov DWORD PTR [edi+68], eax
-	mov eax, DWORD PTR [edi+456]
-	mov DWORD PTR [edi+72], eax
-	mov eax, DWORD PTR [edi+460]
-	mov DWORD PTR [edi+76], eax
-	mov eax, DWORD PTR [edi+464]
-	mov DWORD PTR [edi+80], eax
-	mov eax, DWORD PTR [edi+468]
-	mov DWORD PTR [edi+84], eax
-	mov eax, DWORD PTR [edi+472]
-	mov DWORD PTR [edi+88], eax
-	mov eax, DWORD PTR [edi+476]
-	mov DWORD PTR [edi+92], eax
-	mov eax, DWORD PTR [edi+480]
-	mov DWORD PTR [edi+96], eax
-	mov eax, DWORD PTR [edi+484]
-	mov DWORD PTR [edi+100], eax
-	mov eax, DWORD PTR [edi+488]
-	mov DWORD PTR [edi+104], eax
-	mov eax, DWORD PTR [edi+492]
-	mov DWORD PTR [edi+108], eax
-	mov eax, DWORD PTR [edi+496]
-	mov DWORD PTR [edi+112], eax
-	mov eax, DWORD PTR [edi+500]
-	mov DWORD PTR [edi+116], eax
-	mov eax, DWORD PTR [edi+576]
-	mov DWORD PTR [edi+192], eax
-	mov eax, DWORD PTR [edi+580]
-	mov DWORD PTR [edi+196], eax
-	mov eax, DWORD PTR [edi+584]
-	mov DWORD PTR [edi+200], eax
-	mov eax, DWORD PTR [edi+588]
-	mov DWORD PTR [edi+204], eax
-	mov eax, DWORD PTR [edi+592]
-	mov DWORD PTR [edi+208], eax
-	mov eax, DWORD PTR [edi+596]
-	mov DWORD PTR [edi+212], eax
-	mov eax, DWORD PTR [edi+600]
-	mov DWORD PTR [edi+216], eax
-	mov eax, DWORD PTR [edi+604]
-	mov DWORD PTR [edi+220], eax
-	mov eax, DWORD PTR [edi+608]
-	mov DWORD PTR [edi+224], eax
-	mov eax, DWORD PTR [edi+612]
-	mov DWORD PTR [edi+228], eax
-	mov eax, DWORD PTR [edi+616]
-	mov DWORD PTR [edi+232], eax
-	mov eax, DWORD PTR [edi+620]
-	mov DWORD PTR [edi+236], eax
-	mov eax, DWORD PTR [edi+624]
-	mov DWORD PTR [edi+240], eax
-	mov eax, DWORD PTR [edi+628]
-	mov DWORD PTR [edi+244], eax
-	mov eax, DWORD PTR [edi+704]
-	mov DWORD PTR [edi+320], eax
-	mov eax, DWORD PTR [edi+708]
-	mov DWORD PTR [edi+324], eax
-	mov eax, DWORD PTR [edi+712]
-	mov DWORD PTR [edi+328], eax
-	mov eax, DWORD PTR [edi+716]
-	mov DWORD PTR [edi+332], eax
-	mov eax, DWORD PTR [edi+720]
-	mov DWORD PTR [edi+336], eax
-	mov eax, DWORD PTR [edi+724]
-	mov DWORD PTR [edi+340], eax
-	mov eax, DWORD PTR [edi+728]
-	mov DWORD PTR [edi+344], eax
-	mov eax, DWORD PTR [edi+732]
-	mov DWORD PTR [edi+348], eax
-	mov eax, DWORD PTR [edi+736]
-	mov DWORD PTR [edi+352], eax
-	mov eax, DWORD PTR [edi+740]
-	mov DWORD PTR [edi+356], eax
-	mov eax, DWORD PTR [edi+744]
-	mov DWORD PTR [edi+360], eax
-	mov eax, DWORD PTR [edi+748]
-	mov DWORD PTR [edi+364], eax
-	mov eax, DWORD PTR [edi+752]
-	mov DWORD PTR [edi+368], eax
-	mov eax, DWORD PTR [edi+756]
-	mov DWORD PTR [edi+372], eax
-224:
+	mov eax, 192
+	mov ecx, 1728
+	mov edx, 2240
+	push edx
+	push ecx
+	push eax
+	push edi
+	call {vg_gf448_r32_mul}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov eax, 320
+	mov ecx, 2368
+	mov edx, 1600
+	push edx
+	push ecx
+	push eax
+	push edi
+	call {vg_gf448_r32_mul}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+227:
 	mov ebp, edi
 	add ebp, esi
 	movzx ecx, BYTE PTR [ebp+4608]
 	cmp ecx, 0
-	jne 225f
-	jmp 226f
-225:
+	jne 228f
+	jmp 229f
+228:
 	ror ecx, 26
 	mov ebp, ecx
 	ror ecx, 31
@@ -5618,9 +3692,9 @@ vg_ed448_verify_equation:
 	mov DWORD PTR [edi+368], eax
 	mov eax, DWORD PTR [edi+756]
 	mov DWORD PTR [edi+372], eax
-226:
+229:
 	cmp esi, 0
-	jne 222b
+	jne 225b
 	mov eax, DWORD PTR [edi+192]
 	mov DWORD PTR [edi+832], eax
 	mov eax, DWORD PTR [edi+196]
@@ -5706,7 +3780,7 @@ vg_ed448_verify_equation:
 	mov eax, DWORD PTR [edi+4276]
 	mov DWORD PTR [edi+1268], eax
 	mov esi, 2
-227:
+230:
 	mov eax, 1600
 	mov ecx, 64
 	mov edx, 832
@@ -5996,9 +4070,9 @@ vg_ed448_verify_equation:
 	pop eax
 	pop eax
 	sub esi, 1
-	jne 227b
+	jne 230b
 	mov esi, 2
-228:
+231:
 	mov eax, 1600
 	mov ecx, 64
 	mov edx, 1344
@@ -6465,7 +4539,7 @@ vg_ed448_verify_equation:
 	mov eax, DWORD PTR [edi+1268]
 	mov DWORD PTR [edi+1140], eax
 	sub esi, 1
-	jne 228b
+	jne 231b
 	mov ecx, DWORD PTR [edi+16]
 	mov eax, 0
 	sub eax, ecx

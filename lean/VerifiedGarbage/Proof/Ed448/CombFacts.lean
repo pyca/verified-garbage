@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ed448.CombRef
 import VerifiedGarbage.Proof.Ed448.Comb
-import VerifiedGarbage.Proof.Ed448.Group.Projective
+public import VerifiedGarbage.Proof.Ed448.Group.Projective
 import VerifiedGarbage.Proof.Ed448.Group.Decode
 import VerifiedGarbage.Proof.Ed448.VerifyEq
 import VerifiedGarbage.Proof.Ed25519.SlidingDigits
@@ -92,7 +92,7 @@ private theorem accScalar_high (k : Nat) {n : Nat} (hn : 114 ≤ n) : accScalar 
   simp only [accScalar, h, Nat.zero_mul, Nat.add_zero]
 
 /-- A table's entry `m` represents `[2m + 1]a`. -/
-private theorem oddMul_rep {a' : Point} {a : EPoint dZ} (ha : Rep a' a) :
+theorem oddMul_rep {a' : Point} {a : EPoint dZ} (ha : Rep a' a) :
     ∀ m, Rep (oddMul a' m) ((2 * m + 1) • a)
   | 0 => by simpa only [oddMul, Nat.mul_zero, Nat.zero_add, one_nsmul] using ha
   | m + 1 => by

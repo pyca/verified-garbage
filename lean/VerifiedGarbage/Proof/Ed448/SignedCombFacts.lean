@@ -4,7 +4,8 @@ public import VerifiedGarbage.Proof.Ed448.SignedComb
 import VerifiedGarbage.Proof.Ed448.Group.Projective
 import VerifiedGarbage.Proof.Ed448.Group.Decode
 import VerifiedGarbage.Proof.X448.BaseDigits
-import VerifiedGarbage.Proof.X448.BaseAdd
+public import VerifiedGarbage.Proof.X448.BaseAdd
+public import VerifiedGarbage.Proof.X448.BaseTable
 import VerifiedGarbage.Proof.X448.Bytes
 import VerifiedGarbage.Proof.Framework.Omega
 import Mathlib.Tactic.Ring
@@ -30,7 +31,7 @@ open Spec.Ed448 (Point)
 open EdwardsLaw
 open VG.Proof.X448
 
-private theorem affAdd_eq (p : Point) (q : Spec.X448.Fe × Spec.X448.Fe) :
+theorem affAdd_eq (p : Point) (q : Spec.X448.Fe × Spec.X448.Fe) :
     affAdd p q = addPt p (basePt q) := by
   simp only [affAdd, addPt, basePt, Point.mk.injEq]
   refine ⟨Ed448.toZ_inj.1 ?_, Ed448.toZ_inj.1 ?_, Ed448.toZ_inj.1 ?_⟩ <;>

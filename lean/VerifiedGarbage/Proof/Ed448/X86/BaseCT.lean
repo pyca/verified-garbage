@@ -145,7 +145,7 @@ theorem BasePre.tblMem {σ s : State} (h : BasePre σ) (fe : FE bsB σ s) (hr : 
   have far' : ∀ r ∈ σ.wr ++ [below (σ.gpr .esp) 20], (TblR ((σ.syms combSym).setWidth 64)).Disjoint r := by
     rw [h.wr, ← stkR_below h.sp_room]
     simpa using far
-  exact ⟨fit, by rw [hr, h.rd]; simp, w.frame fe.frame far', by rw [fe.sp, fe.wr]; exact far'⟩
+  exact ⟨fit, by rw [hr, h.rd]; simp, w.frame (by rw [combWords_length]; decide) fe.frame far', by rw [fe.sp, fe.wr]; exact far'⟩
 
 theorem entry_stage {s₀ : State} (h : BasePre s₀) :
     WP isa baseEntry s₀ (BMid s₀) := by

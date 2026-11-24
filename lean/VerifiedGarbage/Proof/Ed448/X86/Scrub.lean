@@ -77,9 +77,9 @@ theorem signCachedOut (cs : List (String × List (BitVec 64))) :
       rw [bytesAt_congr hb.1]
       exact h
 
-theorem verifyOut :
-    PostOut (Spec.Ed448.verifyContract X86.abi stack) (Spec.Ed448.verifySig.retBits 32) :=
-  postOut_of_local ScrubAbi.plain fun vs m m₁ m₂ r hlen _ h => by
+theorem verifyOut (cs : List (String × List (BitVec 64))) :
+    PostOut (Spec.Ed448.verifyContract (X86.abi.withConsts cs) stack) (Spec.Ed448.verifySig.retBits 32) :=
+  postOut_of_local (ScrubAbi.consts cs) fun vs m m₁ m₂ r hlen _ h => by
     match vs, hlen with
     | [_, _, _, _, _, _, _], _ => exact h
 
@@ -104,10 +104,10 @@ theorem signCached_scrubbed :
 /-- `vg_ed448_verify`. -/
 theorem verify_scrubbed :
     VerifiedScrubbed target Impl.Ed448.X86.Fn.verify
-      (Spec.Ed448.verifyContract X86.abi 280) 32 :=
+      (Spec.Ed448.verifyContract (X86.abi.withConsts Impl.Ed448.X86.bConsts) 280) 32 :=
   verifiedScrubbedAll (api := Spec.Ed448.verifyApi)
     { code := Impl.Ed448.X86.Verify.code Impl.Ed448.X86.verifyEquation
       verified := Verify.verify_verified verifyEquation_calleeOk }
-    (verifyOut _)
+    (verifyOut 280 Impl.Ed448.X86.bConsts)
 
 end VG.Proof.Ed448.X86.Scrub

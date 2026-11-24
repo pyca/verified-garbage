@@ -489,7 +489,7 @@ theorem pkWide_pre (s : State) (h : pkWide.pre s) :
   obtain ⟨_, _, os, oc, sc, ao, ac, ro, rc, ko, ks, kc, no, ns, nc, nb, na, held⟩ := h
   simp only [pkLocal, pkRd, pkWr, arg_withRegions, argAddr_withRegions, State.withRegions_syms,
     State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr, State.withRegions_mem, below,
-    Taint.sub_setWidth nb, CombHeld]
+    Taint.sub_setWidth nb, CombHeld, StHeld]
   exact ⟨True.intro, True.intro, os, oc, sc, ao, ac, ro, rc, ko, ks, kc, no, ns, nc, nb, na, held⟩
 
 theorem pk_sat : (Spec.Ed448.publicKeyContract (X86.abi.withConsts combConsts) 280).pre pkSatState := by

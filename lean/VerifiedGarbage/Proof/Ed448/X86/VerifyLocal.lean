@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Spec.Ed448.Contract
 public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Ed448.X86.CombTbl
+public import VerifiedGarbage.Impl.Ed448.X86.VerifyEquation
 
 /-!
 # Ed448 verification's equation on x86 (32-bit): the contract the proof is written against
@@ -19,10 +21,11 @@ namespace VG.Proof.Ed448.X86
 
 open VG VG.X86
 open VG.Spec.Ed448 (bytesAt)
+open VG.Impl.Ed448.X86 (bSym bWords)
 
 /-- `vg_ed448_verify_equation(pk, signature, challenge, scratch) -> eax`,
-whose arguments are on the stack (cdecl), with the 20 bytes of stack below its
-return address that its calls of the field functions use. -/
+whose arguments are on the stack (cdecl), with the static of `B`'s odd multiples (`bSym`) and the 20
+bytes of stack below its return address that its calls of the field functions use. -/
 def verifyEquationLocal : Contract isa where
   pre s :=
     let pk : Region := ⟨(arg s 0).setWidth 64, 57⟩
@@ -32,13 +35,14 @@ def verifyEquationLocal : Contract isa where
     let args : Region := ⟨argAddr s 0, 16⟩
     let ret : Region := ⟨(s.gpr .esp).setWidth 64, 4⟩
     let stk : Region := ⟨(s.gpr .esp).setWidth 64 - 20#64, 20⟩
-    s.rd = [pk, sig, challenge, args] ∧ s.wr = [scratch] ∧
+    s.rd = [pk, sig, challenge, args, StR bWords ((s.syms bSym).setWidth 64)] ∧ s.wr = [scratch] ∧
       pk.Disjoint scratch ∧ sig.Disjoint scratch ∧ challenge.Disjoint scratch ∧
       args.Disjoint scratch ∧ ret.Disjoint scratch ∧
       (arg s 0).toNat + 57 ≤ 2 ^ 32 ∧ (arg s 1).toNat + 114 ≤ 2 ^ 32 ∧
       (arg s 2).toNat + 57 ≤ 2 ^ 32 ∧ (arg s 3).toNat + 8192 ≤ 2 ^ 32 ∧
       (s.gpr .esp).toNat + 20 ≤ 2 ^ 32 ∧ 20 ≤ (s.gpr .esp).toNat ∧ stk.Disjoint pk ∧
-      stk.Disjoint sig ∧ stk.Disjoint challenge ∧ stk.Disjoint scratch
+      stk.Disjoint sig ∧ stk.Disjoint challenge ∧ stk.Disjoint scratch ∧
+      StHeld bSym bWords s [scratch, stk]
   post s t := t.gpr .eax = if Spec.Ed448.verifyEquation
     (bytesAt s.mem ((arg s 0).setWidth 64) 57) (bytesAt s.mem ((arg s 1).setWidth 64) 114)
     (bytesAt s.mem ((arg s 2).setWidth 64) 57) then 1 else 0
@@ -46,6 +50,7 @@ def verifyEquationLocal : Contract isa where
     arg s 2 = arg t 2 ∧ arg s 3 = arg t 3 ∧
     bytesAt s.mem ((arg s 0).setWidth 64) 57 = bytesAt t.mem ((arg t 0).setWidth 64) 57 ∧
     bytesAt s.mem ((arg s 1).setWidth 64) 114 = bytesAt t.mem ((arg t 1).setWidth 64) 114 ∧
-    bytesAt s.mem ((arg s 2).setWidth 64) 57 = bytesAt t.mem ((arg t 2).setWidth 64) 57
+    bytesAt s.mem ((arg s 2).setWidth 64) 57 = bytesAt t.mem ((arg t 2).setWidth 64) 57 ∧
+    s.syms bSym = t.syms bSym
 
 end VG.Proof.Ed448.X86
