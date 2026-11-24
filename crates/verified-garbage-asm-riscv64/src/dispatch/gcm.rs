@@ -207,7 +207,7 @@ pub unsafe fn vg_aes_gcm_stream_verify_bitsliced_auto(_dit: verified_garbage_cpu
 #[inline]
 pub unsafe fn vg_aes_gcm_seal_bitsliced_auto(_dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16], bk: *const [u64; 156]) {
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::gcm::vg_aes_gcm_seal_bitsliced(ctx, rounds, nonce, nonce_len, aad, aad_len, data, len, tag, bk) }
+    unsafe { crate::gcm::vg_aes_gcm_seal_contiguous_bitsliced(ctx, rounds, nonce, nonce_len, aad, aad_len, data, data, len, tag, bk) }
 }
 
 /// `vg_aes_gcm_open` with the bitsliced form of the key context at `*bk` (`VG.Spec.Gcm.CtxSlicedRepr`), which it may read instead of computing it. Computes the same result as `vg_aes_gcm_open`. The buffer is secret, as the key context is: it may not affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openBitslicedContract`.
@@ -286,5 +286,5 @@ pub unsafe fn vg_aes_gcm_open_to_bitsliced_auto(_dit: verified_garbage_cpu::Dit<
 #[inline]
 pub unsafe fn vg_aes_gcm_seal_gather_bitsliced_auto(_dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16], bk: *const [u64; 156]) {
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::gcm::vg_aes_gcm_seal_gather_bitsliced(ctx, rounds, nonce, nonce_len, aad, aad_len, src, src_count, dst, len, tag, bk) }
+    unsafe { if src_count == 1 { crate::gcm::vg_aes_gcm_seal_contiguous_bitsliced(ctx, rounds, nonce, nonce_len, aad, aad_len, (*src)[0] as *const u8, dst, len, tag, bk) } else { crate::gcm::vg_aes_gcm_seal_gather_bitsliced(ctx, rounds, nonce, nonce_len, aad, aad_len, src, src_count, dst, len, tag, bk) } }
 }
