@@ -6,7 +6,7 @@
 ///
 /// Contract: `VG.Spec.Ctr.aesContract`. Constant time: only the pointers, `rounds`, `n` and the last four bytes of `*ctr` (the 32-bit counter, public in OpenSSL, BoringSSL and AWS-LC, which split the blocks where it wraps) may affect timing, not the key schedule, the rest of the counter block or the data.
 ///
-/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_ctr_aesni` if the CPU supports its features (`VG_AES_CTR_AESNI_FEATURES`); or else `vg_aes_ctr`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_ctr_aesni` if the CPU supports its features (`VG_AES_CTR_AESNI_FEATURES`); `vg_aes_ctr_ssse3` if the CPU supports its features (`VG_AES_CTR_SSSE3_FEATURES`); or else `vg_aes_ctr`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
@@ -35,6 +35,11 @@ pub unsafe fn vg_aes_ctr_auto(_dit: verified_garbage_cpu::Dit<'_>, schedule: *co
         {
             return crate::aes_ctr::vg_aes_ctr_aesni;
         }
+        if const { verified_garbage_cpu::target_contains(crate::aes_ctr::VG_AES_CTR_SSSE3_FEATURES) }
+            || cpu.contains(crate::aes_ctr::VG_AES_CTR_SSSE3_FEATURES)
+        {
+            return crate::aes_ctr::vg_aes_ctr_ssse3;
+        }
         crate::aes_ctr::vg_aes_ctr
     }
     /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
@@ -60,7 +65,7 @@ pub unsafe fn vg_aes_ctr_auto(_dit: verified_garbage_cpu::Dit<'_>, schedule: *co
 ///
 /// Contract: `VG.Spec.Ctr.aesFinalContract`. Constant time: only the pointers, `rounds`, `len` and the last four bytes of `*ctr` (the 32-bit counter, public in OpenSSL, BoringSSL and AWS-LC, which split the blocks where it wraps) may affect timing, not the key schedule, the rest of the counter block or the data.
 ///
-/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_ctr_final_aesni` if the CPU supports its features (`VG_AES_CTR_FINAL_AESNI_FEATURES`); or else `vg_aes_ctr_final`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_ctr_final_aesni` if the CPU supports its features (`VG_AES_CTR_FINAL_AESNI_FEATURES`); `vg_aes_ctr_final_ssse3` if the CPU supports its features (`VG_AES_CTR_FINAL_SSSE3_FEATURES`); or else `vg_aes_ctr_final`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
@@ -88,6 +93,11 @@ pub unsafe fn vg_aes_ctr_final_auto(_dit: verified_garbage_cpu::Dit<'_>, schedul
             || cpu.contains(crate::aes_ctr::VG_AES_CTR_FINAL_AESNI_FEATURES)
         {
             return crate::aes_ctr::vg_aes_ctr_final_aesni;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::aes_ctr::VG_AES_CTR_FINAL_SSSE3_FEATURES) }
+            || cpu.contains(crate::aes_ctr::VG_AES_CTR_FINAL_SSSE3_FEATURES)
+        {
+            return crate::aes_ctr::vg_aes_ctr_final_ssse3;
         }
         crate::aes_ctr::vg_aes_ctr_final
     }

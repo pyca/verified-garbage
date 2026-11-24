@@ -107,7 +107,7 @@ private theorem consume {t : State} {k : Nat} (L : Lay c st w sp) (h : In c st w
     · rw [eK]; exact ((h.data.take hkn).ok.st.sub_right (Lay.stSub (by omega))).symm
   have xs : XSrc true u S D k := ⟨(g _ (by decide) (by decide) (by decide) (by decide)).trans h.r4,
     by have := h.src.fit; omega, by rw [same.rd,same.wr]; exact covers_prefix h.src.rd hkn,
-    fun _ => (h.mode.1.sub_left (Region.sub_prefix hkn)).sub_right (Region.sub_prefix hkn)⟩
+    h.mode.1.imp id (fun hd => (hd.sub_left (Region.sub_prefix hkn)).sub_right (Region.sub_prefix hkn))⟩
   refine WP.seq (WP.seq (WP.of_runBlock ⟨u,run,(xorLoopG_ok u lp xs).mono ?_⟩))
   intro z ⟨mz,z4,_,z2,_,gz,rd,wr,sp'⟩
   rw [eK,same.mem] at mz
@@ -143,7 +143,9 @@ private theorem consume {t : State} {k : Nat} (L : Lay c st w sp) (h : In c st w
     exact a
   · apply bytesAt_frame fw _ (by omega)
     intro q hq; obtain rfl := List.mem_singleton.mp hq
-    exact (h.mode.1.sub_left (Offset.sub_base _ (by omega))).sub_right (Region.sub_prefix hkn)
+    rcases h.mode.1 with rfl | hd
+    · exact (split_disj hkn h.data.ok.lt).symm
+    exact (hd.sub_left (Offset.sub_base _ (by omega))).sub_right (Region.sub_prefix hkn)
   · by_cases e : k=n
     · left; omega
     · right; omega
@@ -385,7 +387,7 @@ theorem destSub (hi : i < a.count) (hn : 0 < sl a.orig.mem a.src i) :
 
 theorem mode (hi : i<a.count) (hn : 0<sl a.orig.mem a.src i) :
     CrMode true a.c a.st a.w a.sp (sb a.orig.mem a.src i) (a.output i) (sl a.orig.mem a.src i) := by
-  refine ⟨(l.srcSafe i hi a.dstR (List.mem_cons_self ..)).sub_right (l.destSub hi hn),
+  refine ⟨.inr ((l.srcSafe i hi a.dstR (List.mem_cons_self ..)).sub_right (l.destSub hi hn)),
     l.belowFit,l.belowCtx,l.belowSt,l.belowW,l.belowSrc i hi,l.belowDst.sub_right (l.destSub hi hn)⟩
 
 theorem metaSafe {d : Nat} (low : 256≤d) (high : d+4≤264) :

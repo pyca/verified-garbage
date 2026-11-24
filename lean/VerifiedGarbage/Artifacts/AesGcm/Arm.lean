@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Gcm.Arm.Law
-public import VerifiedGarbage.Proof.AesGcm.Arm.Scrub
+public import VerifiedGarbage.Proof.AesGcm.Arm.Contiguous.Public
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.Arm.Print
 
@@ -18,6 +18,9 @@ def artifacts : List Artifact := [
   Spec.Gcm.sealApi.artifact Arm.target {
     code := Impl.AesGcm.Arm.Fn.«seal»
     verified := Proof.AesGcm.Arm.Fn.«seal» },
+  Spec.Gcm.sealContiguousApi.artifact Arm.target {
+    code := Impl.AesGcm.Arm.Fn.sealContiguous
+    verified := Proof.AesGcm.Arm.Contiguous.Caller.scrubbed },
   Spec.Gcm.openApi.artifact Arm.target {
     code := Impl.AesGcm.Arm.Fn.«open»
     verified := Proof.AesGcm.Arm.Fn.«open» },

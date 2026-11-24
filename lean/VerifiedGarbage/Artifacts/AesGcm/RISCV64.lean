@@ -7,9 +7,11 @@ public import VerifiedGarbage.Proof.AesGcm.RISCV64.OneBs
 public import VerifiedGarbage.Proof.AesGcm.RISCV64.OpenBs
 public import VerifiedGarbage.Proof.AesGcm.RISCV64.OpenToBs
 public import VerifiedGarbage.Proof.AesGcm.RISCV64.DirectGather.Body
+public import VerifiedGarbage.Proof.AesGcm.RISCV64.Contiguous.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.RISCV64.Print
 
+public import VerifiedGarbage.Proof.AesGcm.RISCV64.Contiguous.PreparedLaw
 import VerifiedGarbage.Proof.Aes.RISCV64.CodeLit
 import VerifiedGarbage.Proof.Gcm.RISCV64.Lit
 
@@ -55,6 +57,10 @@ def artifacts : List Artifact := [
     verified := Proof.AesGcm.RISCV64.openToBs_scrubbed },
   Spec.Gcm.sealGatherBitslicedApi.artifact RISCV64.target {
     code := Impl.AesGcm.RISCV64.Fn.sealGatherBs
-    verified := Proof.AesGcm.RISCV64.DirectGather.sealGather_scrubbed }]
+    verified := Proof.AesGcm.RISCV64.DirectGather.sealGather_scrubbed },
+  Spec.Gcm.sealContiguousBitslicedApi.artifact RISCV64.target {
+    code := Impl.AesGcm.RISCV64.Contiguous.code
+    verified := Proof.AesGcm.RISCV64.Contiguous.scrubbed
+      (Proof.AesGcm.RISCV64.preparedInvocation_wp Proof.Gcm.Holes.mulK_eq) }]
 
 end VG.Artifacts.AesGcm.RISCV64

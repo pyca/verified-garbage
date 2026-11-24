@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Aes.X86.Variant
+public import VerifiedGarbage.Proof.Aes.X86.Sse.Ctr
 public import VerifiedGarbage.Proof.Aes.X86.Ctr32
 public import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyBlocks
 public import VerifiedGarbage.Proof.Aes.X86.AesNi.CT
@@ -8,6 +9,7 @@ import VerifiedGarbage.Proof.Aes.X86.AesNi.Lit
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Aes.X86.Variant
+meta import VerifiedGarbage.Proof.Aes.X86.Sse.Ctr
 meta import VerifiedGarbage.Proof.Aes.X86.Ctr32
 meta import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyBlocks
 meta import VerifiedGarbage.Proof.Aes.X86.AesNi.CT
@@ -330,7 +332,7 @@ end
 
 namespace VG.Proof.Aes.X86.AesNi
 open VG VG.X86
-open VG.Proof.Aes.X86 (CPre GPre dstP ctrPost schP nRounds ctrP datP nBlk ctrSat)
+open VG.Proof.Aes.X86 (CPre GPre dstP ctrPost schP nRounds ctrP datP nBlk)
 
 variable {B : Nat}
 open VG.Spec.Gcm (blockAt blocksAt)
@@ -432,8 +434,10 @@ end
 @[expose] public section
 
 namespace VG.Impl.Aes.X86
-materialize_code ctr32To
 materialize_code expandKey
+namespace Sse
+materialize_code ctr32To
+end Sse
 end VG.Impl.Aes.X86
 
 namespace VG.Proof.Aes.X86.Ctr32Impl
@@ -443,16 +447,16 @@ def scalar : Ctr32Impl where
   callee := .scalar
   depth := by lit_decide
   stack := by lit_decide
-  ok := ctr32_correct
-  ct := ctr32_ct
+  ok := Sse.ctr32_correct
+  ct := Sse.ctr32_ct
   nosp := NoSp.of_all (by lit_decide)
   spSafe := Code.all_of_spTest (by lit_decide)
   scrub := by lit_decide
   suffix := ""
   features := []
-  okTo := ctr32To_correct
-  ctTo := ctr32To_ct
-  small := ⟨ctr32_correct, ctr32_ct, ctr32To_correct, ctr32To_ct⟩
+  okTo := Sse.ctr32To_correct
+  ctTo := Sse.ctr32To_ct
+  small := ⟨Sse.ctr32_correct, Sse.ctr32_ct, Sse.ctr32To_correct, Sse.ctr32To_ct⟩
   expand := .scalar
   expandDepth := by lit_decide
   expandStack := by lit_decide

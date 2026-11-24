@@ -170,16 +170,16 @@ theorem toNat_of_eq {x : BitVec 64} {L : Nat} (h : x = BitVec.ofNat 64 L) : x.to
   rw [h, BitVec.toNat_ofNat]
 
 /-- The tag at `W` copied to `tag` (`s9`). -/
-theorem tagOut_ok {V : Reg → BitVec 64} {sp : Addr} {s : State} (he : Env V sp s)
-    (hTw : Covers [⟨V .s9, 16⟩] s.wr) (hTd : (⟨V .s9, 16⟩ : Region).Disjoint ⟨V .s0, 16⟩) :
+theorem tagOut_at {s : State} {tag w : Addr} (h20 : s.gpr .s9 = tag) (h31 : s.gpr .s0 = w)
+    (hr : Covers [⟨w,16⟩] (s.rd ++ s.wr))
+    (hTw : Covers [⟨tag, 16⟩] s.wr) (hTd : (⟨tag, 16⟩ : Region).Disjoint ⟨w, 16⟩) :
     WP isa (.block tagOut) s fun s' =>
-      bytesAt s'.mem (V .s9) 16 = bytesAt s.mem (V .s0) 16 ∧ Frame [⟨V .s9, 16⟩] s.mem s'.mem ∧
+      bytesAt s'.mem tag 16 = bytesAt s.mem w 16 ∧ Frame [⟨tag, 16⟩] s.mem s'.mem ∧
         (∀ r, r ≠ .t0 → s'.gpr r = s.gpr r) ∧ Keeps' s s' := by
-  have h20 := he.fr .s9 (by decide); have h31 := he.s0
   refine WP.mono (Bytes.copyBytes_ok (tmp := .t0) (src := .s0) (dst := .s9) (soff := 0) (doff := 0) (n := 16)
     (by decide) (by decide) (by decide) (by decide) (fun i hi => ?_) (fun i hi => ?_) (fun i hi hc => ?_))
     fun s' c => ⟨?_, ?_, c.gpr, ⟨c.rd, c.wr, c.sp⟩⟩
-  · rw [h31, Nat.zero_add]; exact he.perm.wR (d := i) (n := 1) (by omega_using [hi])
+  · rw [h31, Nat.zero_add]; exact in_off hr (d := i) (n := 1) (by omega_using [hi]) (by decide)
   · rw [h20, Nat.zero_add]; exact in_off hTw (d := i) (n := 1) (by omega_using [hi]) (by decide)
   · rw [h20, h31, Nat.zero_add, add_ofNat_zero] at hc
     exact hTd.symm _ (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])) hc
@@ -188,6 +188,14 @@ theorem tagOut_ok {V : Reg → BitVec 64} {sp : Addr} {s : State} (he : Env V sp
     have := c.copied i (List.mem_range.mp hi)
     simp only [h20, h31, Nat.zero_add] at this; exact this
   · have := c.frame; rwa [h20, add_ofNat_zero] at this
+
+/-- The tag at `W` copied to `tag` (`s9`). -/
+theorem tagOut_ok {V : Reg → BitVec 64} {sp : Addr} {s : State} (he : Env V sp s)
+    (hTw : Covers [⟨V .s9, 16⟩] s.wr) (hTd : (⟨V .s9, 16⟩ : Region).Disjoint ⟨V .s0, 16⟩) :
+    WP isa (.block tagOut) s fun s' =>
+      bytesAt s'.mem (V .s9) 16 = bytesAt s.mem (V .s0) 16 ∧ Frame [⟨V .s9, 16⟩] s.mem s'.mem ∧
+        (∀ r, r ≠ .t0 → s'.gpr r = s.gpr r) ∧ Keeps' s s' :=
+  tagOut_at (he.fr .s9 (by decide)) he.s0 (covers_left (covers_prefix he.perm.w (by decide))) hTw hTd
 
 section
 variable {ex : List Region} {s₀ : State} (h : finPreX ex s₀)

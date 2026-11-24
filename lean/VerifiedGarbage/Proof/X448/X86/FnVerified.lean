@@ -60,7 +60,7 @@ section
 section
 
 /-!
-# X448 on x86 (32-bit): multiplication-row memory
+# X448 on x86 (32-bit): multiplication-row memory, for Ed448's scalars
 
 The public row pointer moves through the working space while all field inputs
 remain unchanged.
@@ -71,6 +71,9 @@ remain unchanged.
 namespace VG.Proof.X448.X86
 
 open VG VG.X86 VG.Impl.X448.X86 VG.Proof.X448.Radix16
+
+/-- The offset of twenty-eight words, of a scalar's limbs, below the field functions' own working space. -/
+abbrev Slot16 (o : Nat) : Prop := o + 112 ≤ ACC
 
 abbrev accw (m : Mem) (base : Addr) (k : Nat) : Nat := limbs m base ACC k
 
@@ -87,10 +90,10 @@ structure RowInv (base : Addr) (a b : Nat) (s0 : State) (i : Nat) (s : State) : 
   ptr : s.gpr .ebp = s.gpr .edi + BitVec.ofNat 32 (4 * i)
   mem : Outside base ACC 224 s0.mem s.mem
   lt : ∀ k < i + 28, accw s.mem base k < radix
-  val : valN (accw s.mem base) (i + 28) = valN (limbs s0.mem base a) i * fe s0.mem base b
+  val : valN (accw s.mem base) (i + 28) = valN (limbs s0.mem base a) i * fe16 s0.mem base b
 
 theorem rowSrcWith_ok {s : State} {base : Addr} (hs : Scr s base) {mb : Nat → MemOp} {b i j : Nat}
-    (hb : Slot b) (hi : i < 28) (hj : j < 28)
+    (hb : Slot16 b) (hi : i < 28) (hj : j < 28)
     (hp : s.gpr .ebp = s.gpr .edi + BitVec.ofNat 32 (4 * i))
     (hm : s.ea (mb j) = off base (b + 4 * j))
     (hc : (s.gpr .ecx).toNat < radix) (hy : limbs s.mem base b j < radix)
@@ -217,7 +220,7 @@ structure RowCode (base : Addr) (a b : Nat) (s0 : State) (i : Nat) (ldA : List I
     t.gpr .ecx = word s.mem base (a + 4 * i) ∧ Keeps [.ecx] s t ∧ t.mem = s.mem
   mb : ∀ j < 28, ∀ s, Scr s base → Keeps clob s0 s → s.ea (mb j) = off base (b + 4 * j)
 
-theorem rowWith_ok {base : Addr} {a b : Nat} (ha : Slot a) (hb : Slot b) {s0 s : State}
+theorem rowWith_ok {base : Addr} {a b : Nat} (ha : Slot16 a) (hb : Slot16 b) {s0 s : State}
     {ldA : List Instr} {mb : Nat → MemOp}
     (ab : Bounded s0.mem base a) (bb : Bounded s0.mem base b) {i : Nat} (hi : i < 28)
     (hc : RowCode base a b s0 i ldA mb) (h : RowInv base a b s0 i s) :
@@ -225,7 +228,7 @@ theorem rowWith_ok {base : Addr} {a b : Nat} (ha : Slot a) (hb : Slot b) {s0 s :
       RowInv base a b s0 (i + 1) t ∧ t.zf = some (decide (i + 1 = 28)) := by
   have ha' : a + 112 ≤ 3584 := ha
   have hb' : b + 112 ≤ 3584 := hb
-  have input : ∀ o, Slot o → ∀ j < 28, limbs s.mem base o j = limbs s0.mem base o j := by
+  have input : ∀ o, Slot16 o → ∀ j < 28, limbs s.mem base o j = limbs s0.mem base o j := by
     intro o ho j hj
     exact h.mem.limbs (Or.inl ho) (Nat.le_trans ho (by decide)) hj
   unfold rowWith
@@ -301,7 +304,7 @@ theorem rowWith_ok {base : Addr} {a b : Nat} (ha : Slot a) (hb : Slot b) {s0 s :
       exact row_val h.val
 
 /-- X448's rows: `a_i` and `b_j` at constant offsets of `edi`. -/
-theorem rowCode_sc (base : Addr) {a b : Nat} (ha : Slot a) (hb : Slot b) (s0 : State) {i : Nat}
+theorem rowCode_sc (base : Addr) {a b : Nat} (ha : Slot16 a) (hb : Slot16 b) (s0 : State) {i : Nat}
     (hi : i < 28) :
     RowCode base a b s0 i [.mov .ecx (.mem (at_ .ebp a))] (fun j => sc (b + 4 * j)) := by
   have ha' : a + 112 ≤ 3584 := ha
@@ -433,12 +436,10 @@ section
 /-!
 # X448 on x86 (32-bit): numbers of 32-bit words
 
-The arithmetic of `vg_gf448_r16_mul`'s product and `vg_gf448_r16_sqr`'s
+The arithmetic of `vg_gf448_r32_mul`'s product and `vg_gf448_r32_sqr`'s
 square (`Impl/X448/X86.lean`): the columns of a product of two numbers of
-`n` words (`conv_identity`) and of a square (`sqr_identity`), the fold of
-their 28 words by `2^448 = 2^224 + 1` (`foldCol_mod`), the two folds of the
-carry (`fold_carries`), and the words of an element from its limbs
-(`num_pack`).
+`n` words (`conv_identity`) and of a square (`sqr_identity`), and the fold of
+their 28 words by `2^448 = 2^224 + 1`.
 -/
 
 @[expose] public section
@@ -447,18 +448,6 @@ namespace VG.Proof.X448.X86
 
 open VG VG.Proof.X448.Radix16
 open VG.Proof.X25519.X86 (num num_succ num_congr num_add num_mul num_lt)
-
-theorem num_zero (n : Nat) : num (fun _ => 0) n = 0 := by
-  induction n with
-  | zero => rfl
-  | succ n ih => rw [num_succ, ih, Nat.mul_zero]
-
-theorem num_split (f : Nat → Nat) (a b : Nat) :
-    num f (a + b) = num f a + (2 ^ 32) ^ a * num (fun i => f (a + i)) b := by
-  induction b with
-  | zero => simp only [Nat.add_zero, num, Nat.mul_zero]
-  | succ b ih =>
-    rw [Nat.add_succ, num_succ, num_succ, ih, Nat.pow_add, Nat.mul_add, Nat.mul_assoc, Nat.add_assoc]
 
 /-- A number shifted up by `m` words. -/
 theorem num_shift (g : Nat → Nat) (m N : Nat) :
@@ -506,13 +495,6 @@ theorem conv_identity (n : Nat) (fa fb : Nat → Nat) :
   conv_rows n fa fb (2 * n) n (by omega_arith)
 
 /-! ## The columns of a square -/
-
-/-- A number whose words but the first are zero. -/
-theorem num_first {f : Nat → Nat} {n : Nat} (h : ∀ k < n + 1, k ≠ 0 → f k = 0) : num f (n + 1) = f 0 := by
-  rw [Nat.add_comm, num_split,
-    num_congr (g := fun _ => 0) (fun i hi => h (1 + i) (by omega_arith) (by omega_arith)), num_zero,
-    Nat.mul_zero, Nat.add_zero]
-  simp only [num, Nat.pow_zero, Nat.one_mul, Nat.zero_add]
 
 /-- A number whose words but word `m` are zero. -/
 theorem num_delta (c m : Nat) {N : Nat} (h : m < N) :
@@ -634,110 +616,28 @@ theorem sqr_identity (n : Nat) (fa : Nat → Nat) :
 
 /-! ## The fold by the prime -/
 
-theorem pow7 : ((2 : Nat) ^ 32) ^ 7 = half := by decide +kernel
-theorem pow14 : ((2 : Nat) ^ 32) ^ 14 = full := by decide +kernel
-
-/-- Column `k` of the product's 28 words folded by `2^448 = 2^224 + 1`. -/
-def foldCol (p : Nat → Nat) (k : Nat) : Nat :=
-  p k + p (k + 14) + if k < 7 then p (k + 21) else p (k + 7) + p (k + 14)
-
-theorem foldCol_val (p : Nat → Nat) :
-    num (foldCol p) 14 =
-      (num p 7 + num (fun i => p (14 + i)) 7 + num (fun i => p (21 + i)) 7) +
-      half * (num (fun i => p (7 + i)) 7 + num (fun i => p (21 + i)) 7 +
-        num (fun i => p (14 + i)) 7 + num (fun i => p (21 + i)) 7) := by
-  rw [show num (foldCol p) 14 = num (foldCol p) (7 + 7) from rfl, num_split, pow7]
-  apply congrArg₂ (· + ·)
-  · rw [← num_add, ← num_add]
-    apply num_congr
-    intro i hi
-    simp only [foldCol, ite_eq_left hi, Nat.add_comm i]
-  · apply congrArg (half * ·)
-    rw [← num_add, ← num_add, ← num_add]
-    apply num_congr
-    intro i _
-    simp only [foldCol, ite_eq_right (by omega_arith : ¬ 7 + i < 7)]
-    rw [show 7 + i + 14 = 21 + i by omega_arith, show 7 + i + 7 = 14 + i by omega_arith]
-    omega_arith
-
-theorem foldCol_mod (p : Nat → Nat) : num (foldCol p) 14 % Spec.X448.P = num p 28 % Spec.X448.P := by
+/-- The product's 28 words `A0 + A1 φ + A2 φ² + A3 φ³`, as `reduce` folds them. -/
+theorem reduce_val (p : Nat → Nat) :
+    (num p 14 + num (fun i => p (14 + i)) 14 + (half + 1) * num (fun i => p (21 + i)) 7 +
+      half * num (fun i => p (14 + i)) 7) % Spec.X448.P = num p 28 % Spec.X448.P := by
   have hp : Spec.X448.P = full - half - 1 := by decide +kernel
-  have he : num p 28 = num (foldCol p) 14 +
-      Spec.X448.P * (num (fun i => p (14 + i)) 7 + (half + 1) * num (fun i => p (21 + i)) 7) := by
-    rw [foldCol_val, show 28 = 14 + 14 from rfl, num_split, pow14,
-      show 14 = 7 + 7 from rfl, num_split, num_split, pow7]
+  have h1 : num (fun i => p (14 + i)) 14 = num (fun i => p (14 + i)) 7 + half * num (fun i => p (21 + i)) 7 := by
+    rw [show 14 = 7 + 7 from rfl, num_split, pow7]
     simp only [← Nat.add_assoc, Nat.reduceAdd]
+  have he : num p 28 = num p 14 + num (fun i => p (14 + i)) 14 + (half + 1) * num (fun i => p (21 + i)) 7 +
+      half * num (fun i => p (14 + i)) 7 +
+      Spec.X448.P * (num (fun i => p (14 + i)) 7 + (half + 1) * num (fun i => p (21 + i)) 7) := by
+    rw [show 28 = 14 + 14 from rfl, num_split, pow14, h1]
     simp only [hp, full, half, radix, Nat.reducePow]
     omega_arith
   rw [he, Nat.add_mul_mod_self_left]
 
-theorem foldCol_lt {p : Nat → Nat} (h : ∀ i < 28, p i < 2 ^ 32) : num (foldCol p) 14 < 4 * full := by
-  have b : ∀ d, d + 7 ≤ 28 → num (fun i => p (d + i)) 7 < half := fun d hd => by
-    rw [← pow7]; exact num_lt fun i hi => h _ (by omega_arith)
-  have b0 : num p 7 < half := by rw [← pow7]; exact num_lt fun i hi => h _ (by omega_arith)
-  have b1 := b 7 (by decide); have b2 := b 14 (by decide); have b3 := b 21 (by decide)
-  rw [foldCol_val]
-  generalize num p 7 = x0 at *
-  generalize num (fun i => p (7 + i)) 7 = x1 at *
-  generalize num (fun i => p (14 + i)) 7 = x2 at *
-  generalize num (fun i => p (21 + i)) 7 = x3 at *
-  simp only [full, half, radix, Nat.reducePow] at b0 b1 b2 b3 ⊢
-  omega_using [b0, b1, b2, b3]
-
-/-- The carry `c` added to words 0 and 7. -/
-theorem carry_val (r : Nat → Nat) (c : Nat) :
-    num (fun k => r k + if k = 0 ∨ k = 7 then c else 0) 14 = num r 14 + (half + 1) * c := by
-  rw [num_add]
-  apply congrArg (num r 14 + ·)
-  rw [show num (fun k => if k = 0 ∨ k = 7 then c else 0) 14 =
-      num (fun k => if k = 0 ∨ k = 7 then c else 0) (7 + 7) from rfl, num_split, pow7,
-    num_first (n := 6) (fun k hk h0 => ite_eq_right (by omega_arith)),
-    num_first (n := 6) (fun k hk h0 => ite_eq_right (by omega_arith)),
-    ite_eq_left (Or.inl rfl), ite_eq_left (Or.inr rfl), Nat.add_mul, Nat.one_mul, Nat.add_comm]
-
-/-- The carry of the first fold of the carry. -/
-theorem fold_carry1 {r1 c1 r2 c2 : Nat} (hc1 : c1 ≤ 3) (b1 : r1 < full)
-    (h2 : r2 + full * c2 = r1 + (half + 1) * c1) : c2 ≤ 1 := by
-  have small : 4 * (half + 1) < full := by decide +kernel
-  have m1 : (half + 1) * c1 ≤ (half + 1) * 3 := Nat.mul_le_mul_left _ hc1
-  rcases Nat.lt_or_ge c2 2 with h | h
-  · exact Nat.le_of_lt_succ h
-  · have hp := Nat.mul_le_mul_left full h
-    omega_using [hp, m1, small, b1, h2]
-
-/-- The words `r1` and the carry `c1` of the folded product, after the carry
-is folded twice: the second fold does not carry. -/
-theorem fold_carries {V r1 c1 r2 c2 r3 c3 : Nat} (h1 : r1 + full * c1 = V) (hc1 : c1 ≤ 3)
-    (b1 : r1 < full) (b2 : r2 < full) (h2 : r2 + full * c2 = r1 + (half + 1) * c1)
-    (h3 : r3 + full * c3 = r2 + (half + 1) * c2) :
-    c3 = 0 ∧ r3 % Spec.X448.P = V % Spec.X448.P := by
-  have small : 4 * (half + 1) < full := by decide +kernel
-  have m1 : (half + 1) * c1 ≤ (half + 1) * 3 := Nat.mul_le_mul_left _ hc1
-  have hc2 : c2 ≤ 1 := fold_carry1 hc1 b1 h2
-  have hc3 : c3 = 0 := by
-    by_contra hn
-    have hp := Nat.mul_le_mul_left full (show 1 ≤ c3 from Nat.pos_of_ne_zero hn)
-    rcases Nat.eq_zero_or_pos c2 with hc | hc
-    · rw [hc, Nat.mul_zero, Nat.add_zero] at h3; omega_using [h3, hp, b2]
-    · have hc : c2 = 1 := by omega_arith
-      rw [hc, Nat.mul_one] at h2 h3
-      omega_using [h2, h3, hp, m1, small, b1]
-  refine ⟨hc3, ?_⟩
-  rw [hc3, Nat.mul_zero, Nat.add_zero] at h3
-  rw [h3, ← fold_mod, h2, ← fold_mod, h1]
-
-/-! ## Words and limbs -/
-
-/-- The number of the words that pack the limbs in pairs. -/
-theorem num_pack {w l : Nat → Nat} : ∀ n, (∀ k < n, w k = l (2 * k) + 2 ^ 16 * l (2 * k + 1)) →
-    num w n = valN l (2 * n)
-  | 0, _ => rfl
-  | n + 1, h => by
-    rw [num_succ, num_pack n fun k hk => h k (by omega_arith), h n (by omega_arith),
-      show 2 * (n + 1) = 2 * n + 1 + 1 from rfl, valN_succ, valN_succ, Nat.pow_succ radix,
-      show (2 ^ 32 : Nat) ^ n = radix ^ (2 * n) by
-        rw [radix, ← Nat.pow_mul, ← Nat.pow_mul]; exact congrArg (2 ^ ·) (by omega_arith)]
-    simp only [radix, Nat.mul_add, Nat.mul_assoc, Nat.add_assoc]
+/-- The fourteen operands of `reduce`'s second chain. -/
+theorem wrap_val (q : Nat → Nat) : num (fun k => q (k % 7)) 14 = (half + 1) * num q 7 := by
+  rw [show (14 : Nat) = 7 + 7 from rfl, num_split, pow7,
+    num_congr (f := fun k => q (k % 7)) (g := q) (fun k hk => by rw [Nat.mod_eq_of_lt hk]),
+    num_congr (f := fun i => q ((7 + i) % 7)) (g := q) (fun k hk => by
+      rw [Nat.add_mod_left, Nat.mod_eq_of_lt hk]), Nat.add_mul, Nat.one_mul, Nat.add_comm]
 
 end VG.Proof.X448.X86
 
@@ -747,12 +647,11 @@ end
 
 
 /-!
-# X448 on x86 (32-bit): the products of `vg_gf448_r16_mul` and `vg_gf448_r16_sqr`
+# X448 on x86 (32-bit): the products of `vg_gf448_r32_mul` and `vg_gf448_r32_sqr`
 
-The operands packed into words (`pack_ok`), 28 columns of X25519's folded
-by the prime with their carry (`prodWords_ok`), which are a product
-(`mulWords_ok`) or a square (`sqrWords_ok`), and the words unpacked into
-the limbs of the result (`unpack_ok`).
+The operands copied (`operand_ok`), 28 columns of X25519's (`PROD`), and their
+words reduced by the prime into the result (`reduce_ok`, `prodWords_ok`):
+a product or a square.
 -/
 
 @[expose] public section
@@ -796,85 +695,37 @@ theorem outside_of_frame {s : State} {base : Addr} (hs : Scr s base) {d n : Nat}
   rw [Proof.X25519.X86.sub, VG.X86.addr_eq (by omega_using [hd, hn, this]), hs.edi] at hf
   exact Outside.of_frameAt hd hf
 
-/-! ## Packing -/
+/-! ## The operands -/
 
-theorem limb_rotate {w : BitVec 32} (h : w.toNat < 2 ^ 16) : (w.rotateRight 16).toNat = 2 ^ 16 * w.toNat := by
-  have hz : w >>> 16 = 0 := by
-    apply BitVec.eq_of_toNat_eq
-    simp only [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]
-    change w.toNat / 2 ^ 16 = 0
-    omega_using [h]
-  rw [BitVec.rotateRight_def, hz]
-  rw [show (0 : BitVec 32) ||| w <<< (32 - 16 % 32) = w <<< 16 from BitVec.zero_or]
-  simp only [BitVec.toNat_shiftLeft, Nat.shiftLeft_eq]
-  omega_using [h]
-
-theorem packWord_ok {s : State} {base : Addr} (hs : Scr s base) {a o k : Nat} (ha : Slot a) (hk : k < 14)
-    (ho : o + 56 ≤ 8192) (hp : s.gpr .esi = s.gpr .edi + BitVec.ofNat 32 a)
-    (h1 : limbs s.mem base a (2 * k + 1) < radix) :
-    WP isa (.block (packWord o k)) s fun t =>
-      t.mem = s.mem.writeW (off base (o + 4 * k))
-        (BitVec.ofNat 32 (limbs s.mem base a (2 * k) + 2 ^ 16 * limbs s.mem base a (2 * k + 1))) ∧
-      Keeps [.eax, .edx] s t := by
-  have ha' : a + 112 ≤ 3584 := ha
-  unfold packWord
-  refine wp_load (a := off base (a + 4 * (2 * k)))
-    (by rw [show a + 4 * (2 * k) = a + 8 * k by omega_arith]; exact hs.ea_ptr hp (by omega_arith))
-    (hs.read (by omega_arith)) fun t1 u1 => ?_
-  have s1 := hs.of_upd u1 (by decide)
-  have p1 : t1.gpr .esi = t1.gpr .edi + BitVec.ofNat 32 a := by
-    rw [u1.other .esi (by decide), u1.other .edi (by decide)]; exact hp
-  refine wp_load (a := off base (a + 4 * (2 * k + 1)))
-    (by rw [show a + 4 * (2 * k + 1) = a + (8 * k + 4) by omega_arith]; exact s1.ea_ptr p1 (by omega_arith))
-    (s1.read (by omega_arith)) fun t2 u2 => ?_
-  refine wp_shift (by decide) fun t3 u3 => ?_
-  refine wp_alu (Or.inl rfl) rfl fun t4 u4 _ => ?_
-  have s4 := ((s1.of_upd u2 (by decide)).of_upd u3 (by decide)).of_upd u4 (by decide)
-  refine store_ok s4 (by omega_arith) fun t5 u5 => WP.block_nil ⟨?_, ?_⟩
-  · rw [u5.mem, u4.mem, u3.mem, u2.mem, u1.mem, u4.gpr]
-    refine congrArg (s.mem.writeW _) ?_
-    change t3.gpr .eax + t3.gpr .edx = _
-    rw [u3.other .eax (by decide), u3.gpr, u2.other .eax (by decide), u1.gpr, u2.gpr, u1.mem]
-    apply BitVec.eq_of_toNat_eq
-    rw [BitVec.toNat_add, limb_rotate h1, BitVec.toNat_ofNat]
-  · exact (u1.rest (by decide)).trans ((u2.rest (by decide)).trans ((u3.rest (by decide)).trans
-      ((u4.rest (by decide)).trans (u5.rest _))))
-
-/-- The element at `esi = ws + a` packed into the fourteen words at `o`. -/
-theorem pack_ok {s : State} {base : Addr} (hs : Scr s base) {a o : Nat} (ha : Slot a) (hoa : ACC ≤ o)
-    (ho : o + 56 ≤ 8192) (hp : s.gpr .esi = s.gpr .edi + BitVec.ofNat 32 a) (ab : Bounded s.mem base a) :
-    WP isa (.block (pack o)) s fun t =>
-      num (fun k => (word t.mem base (o + 4 * k)).toNat) 14 = fe s.mem base a ∧
-      Outside base o 56 s.mem t.mem ∧ Keeps [.eax, .edx] s t := by
-  have ha' : a + 112 ≤ 3584 := ha
+/-- The element at `esi = ws + a` copied to the fourteen words at `o`. -/
+theorem operand_ok {s : State} {base : Addr} (hs : Scr s base) {a o : Nat} (ha : Slot a) (hoa : ACC ≤ o)
+    (ho : o + 56 ≤ 8192) (hp : s.gpr .esi = s.gpr .edi + BitVec.ofNat 32 a) :
+    WP isa (.block (operand o)) s fun t =>
+      fe t.mem base o = fe s.mem base a ∧ Outside base o 56 s.mem t.mem ∧ Keeps [.eax] s t := by
+  have ha' : a + 56 ≤ 3584 := ha
   have hoa' : 3584 ≤ o := hoa
   let inv := fun n (t : State) =>
-    (∀ k < n, (word t.mem base (o + 4 * k)).toNat =
-      limbs s.mem base a (2 * k) + 2 ^ 16 * limbs s.mem base a (2 * k + 1)) ∧
-    Outside base o 56 s.mem t.mem ∧ Keeps [.eax, .edx] s t
-  obtain step : ∀ n t, n < 14 → inv n t → WP isa (.block (packWord o n)) t (inv (n + 1)) := by
+    (∀ k < n, limbs t.mem base o k = limbs s.mem base a k) ∧ Outside base o 56 s.mem t.mem ∧ Keeps [.eax] s t
+  have step : ∀ n t, n < 14 → inv n t →
+      WP isa (.block [.mov .eax (.mem (wordAt .esi n)), st .eax (o + 4 * n)]) t (inv (n + 1)) := by
     intro n t hn ⟨tf, tm, tk⟩
-    obtain lt : ∀ i < 28, limbs t.mem base a i = limbs s.mem base a i := fun i hi =>
-      tm.limbs (Or.inl (by omega_arith)) (by omega_arith) hi
-    obtain tp : t.gpr .esi = t.gpr .edi + BitVec.ofNat 32 a := by
-      rw [tk.1 _ (by decide), tk.1 _ (by decide)]; exact hp
-    refine WP.mono (packWord_ok (hs.of_keeps tk (by decide)) ha hn ho tp
-      (by rw [lt _ (by omega_arith)]; exact ab _ (by omega_arith))) fun u ⟨um, uk⟩ => ?_
-    rw [lt _ (by omega_arith), lt _ (by omega_arith)] at um
-    obtain out : Outside base (o + 4 * n) 4 t.mem u.mem := by
-      rw [um]; exact writeW_outside _ _ _ (by omega_arith)
-    refine ⟨?_, tm.trans (out.mono (by omega_arith) (by omega_arith)), tk.trans uk⟩
-    intro k hk
-    rw [um, word_write t.mem base (by omega_arith) (by omega_arith)]
-    by_cases h : k = n
-    · have b0 := ab (2 * n) (by omega_arith)
-      have b1 := ab (2 * n + 1) (by omega_arith)
-      simp only [radix] at b0 b1
-      rw [ite_eq_left h, h, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]
-    · rw [ite_eq_right h]; exact tf k (by omega_arith)
-  refine WP.mono (wp_range_flatMap (M := isa) (N := 14) inv step 14 (by decide) s
-    ⟨fun _ hi => by omega, Outside.refl _ _ _ _, Keeps.refl _ _⟩) fun t ⟨tf, tm, tk⟩ => ⟨?_, tm, tk⟩
-  exact num_pack 14 tf
+    have ts := hs.of_keeps tk (by decide)
+    refine wp_load (a := off base (a + 4 * n)) (ptr_ea hs hp tk (by decide) (by decide) (by omega_arith))
+      (ts.read (by omega_arith)) fun u uu => ?_
+    refine store_ok (ts.of_upd uu (by decide)) (by omega_arith) fun v uv => WP.block_nil ⟨?_, ?_, ?_⟩
+    · intro k hk
+      show (word v.mem base (o + 4 * k)).toNat = _
+      rw [uv.mem, uu.mem, uu.gpr, word_write t.mem base (by omega_arith) (by omega_arith)]
+      by_cases h : k = n
+      · rw [ite_eq_left h, h]
+        show limbs t.mem base a n = _
+        exact tm.limbs (k := 14) (Or.inl (by omega_arith)) (by omega_arith) hn
+      · rw [ite_eq_right h]; exact tf k (by omega_arith)
+    · rw [uv.mem, uu.mem]
+      exact tm.trans ((writeW_outside _ _ _ (by omega_arith)).mono (by omega_arith) (by omega_arith))
+    · exact tk.trans ((uu.rest (by decide)).trans (uv.rest _))
+  exact WP.mono (wp_range_flatMap (M := isa) (N := 14) inv step 14 (by decide) s
+    ⟨fun _ hi => by omega, Outside.refl _ _ _ _, Keeps.refl _ _⟩) fun t ⟨tf, tm, tk⟩ => ⟨num_congr tf, tm, tk⟩
 
 /-! ## The columns -/
 
@@ -901,96 +752,127 @@ theorem prodTerms_lt (m : Mem) (x : BitVec 32) (k : Nat) : colv m x (prodTerms k
   have h2 := Nat.mul_le_mul_right (2 ^ 64) hl
   omega_using [h1, h2]
 
-theorem foldTerms_reads {k : Nat} (hk : k < 14) : ∀ t ∈ foldTerms k, ∀ d ∈ treads t, d + 4 ≤ RED := by
-  intro t ht d hd
-  unfold foldTerms at ht
-  split at ht
-  · simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at ht
-    rcases ht with rfl | rfl | rfl <;> simp only [treads, List.mem_singleton] at hd <;> subst hd <;>
-      simp only [PROD, RED, ACC, TMP] <;> omega_arith
-  · simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at ht
-    rcases ht with rfl | rfl | rfl | rfl <;> simp only [treads, List.mem_singleton] at hd <;> subst hd <;>
-      simp only [PROD, RED, ACC, TMP] <;> omega_arith
+/-- The product's words at `PROD` reduced into the element at `ebp`. -/
+theorem reduce_ok {s : State} {base : Addr} (hs : Scr s base) {o : Nat} (ho : Slot o)
+    (hp : s.gpr .ebp = s.gpr .edi + BitVec.ofNat 32 o) :
+    WP isa (.block Impl.X448.X86.reduce) s fun t =>
+      fe t.mem base o % Spec.X448.P = num (limbs s.mem base PROD) 28 % Spec.X448.P ∧
+      Outside base o 56 s.mem t.mem ∧ Keeps [.eax, .ecx] s t := by
+  have ho' : o + 56 ≤ 3584 := ho
+  have hP : PROD = 3696 := rfl
+  have pq : ∀ {m : Mem} {n : Nat}, n ≤ 14 → Outside base o (4 * n) s.mem m → ∀ j < 28,
+      word m base (PROD + 4 * j) = word s.mem base (PROD + 4 * j) := fun hn hm j hj =>
+    hm.word (Or.inr (by omega_arith)) (by omega_arith)
+  unfold Impl.X448.X86.reduce
+  simp only [List.append_assoc]
+  rw [WP.block_append_iff]
+  refine WP.mono (clearCarry_ok s) fun t₀ ⟨f₀, e₀, m₀, k₀⟩ => ?_
+  have k₀ : Keeps [.eax, .ecx] s t₀ := k₀.mono (by decide)
+  have hs₀ := hs.of_keeps k₀ (by decide)
+  have p₀ : t₀.gpr .ebp = t₀.gpr .edi + BitVec.ofNat 32 o := by
+    rw [k₀.1 _ (by decide), k₀.1 _ (by decide)]; exact hp
+  rw [WP.block_append_iff]
+  refine WP.mono (chain_ok (.inl rfl) hs₀ (yo := o) (xo := PROD) (v := fun k => word s.mem base (PROD + 4 * (14 + k)))
+    f₀ 14 (by omega_arith) (by decide) (by unfold Apart; omega_arith) (fun k hk t tk =>
+      ⟨(hs₀.of_keeps tk (by decide)).ea (by omega_arith), ptr_ea hs₀ p₀ tk (by decide) (by decide) (by omega_arith)⟩)
+    (fun k hk t tk tm => ?_)) fun t₁ ⟨k₁, m₁, c₁, f₁, r₁⟩ => ?_
+  · have ts := hs₀.of_keeps tk (by decide)
+    rw [pw, readMem (ts.ea (d := PROD + 4 * (14 + k)) (by omega_arith)) (ts.read (by omega_arith))]
+    rw [m₀] at tm
+    exact congrArg some (pq (by omega_arith) tm _ (by omega_arith))
+  rw [m₀] at r₁ m₁
+  rw [WP.block_append_iff]
+  refine WP.mono (carryUp_ok (n := 0) f₁ ((k₁.1 _ (by decide)).trans e₀) (by decide)) fun t₂ ⟨f₂, e₂, m₂, k₂⟩ => ?_
+  have k₂ : Keeps [.eax, .ecx] s t₂ := k₀.trans ((k₁.mono (by decide)).trans (k₂.mono (by decide)))
+  have hs₂ := hs.of_keeps k₂ (by decide)
+  have p₂ : t₂.gpr .ebp = t₂.gpr .edi + BitVec.ofNat 32 o := by
+    rw [k₂.1 _ (by decide), k₂.1 _ (by decide)]; exact hp
+  rw [WP.block_append_iff]
+  refine WP.mono (chain_ok (.inl rfl) hs₂ (yo := o) (xo := o)
+    (v := fun k => word s.mem base (PROD + 4 * (21 + k % 7))) f₂ 14 (by omega_arith) (by omega_arith) (.inl rfl)
+    (fun k hk t tk => ?_) (fun k hk t tk tm => ?_)) fun t₃ ⟨k₃, m₃, c₂, f₃, r₃⟩ => ?_
+  · have := ptr_ea hs₂ (k := k) p₂ tk (by decide) (by decide) (by omega_arith)
+    exact ⟨this, this⟩
+  · have ts := hs₂.of_keeps tk (by decide)
+    rw [pw, readMem (ts.ea (d := PROD + 4 * (21 + k % 7)) (by omega_arith)) (ts.read (by omega_arith))]
+    rw [m₂] at tm
+    exact congrArg some (pq (n := 14) (by decide) (m₁.trans (tm.mono (by omega_arith) (by omega_arith))) _ (by omega_arith))
+  rw [m₂] at r₃ m₃
+  have m₁₃ := m₁.trans m₃
+  rw [WP.block_append_iff]
+  refine WP.mono (carryUp_ok (n := c₁.toNat) f₃ ((k₃.1 _ (by decide)).trans (by rw [e₂, Nat.zero_add]))
+    (by cases c₁ <;> decide)) fun t₄ ⟨f₄, e₄, m₄, k₄⟩ => ?_
+  have k₄ : Keeps [.eax, .ecx] s t₄ := k₂.trans ((k₃.mono (by decide)).trans (k₄.mono (by decide)))
+  have hs₄ := hs.of_keeps k₄ (by decide)
+  have p₄ : t₄.gpr .ebp = t₄.gpr .edi + BitVec.ofNat 32 o := by
+    rw [k₄.1 _ (by decide), k₄.1 _ (by decide)]; exact hp
+  rw [WP.block_append_iff]
+  refine WP.mono (chain_ok (.inl rfl) hs₄ (yo := o + 28) (xo := o + 28)
+    (v := fun k => word s.mem base (PROD + 4 * (14 + k))) f₄ 7 (by omega_arith) (by omega_arith) (.inl rfl)
+    (fun k hk t tk => ?_) (fun k hk t tk tm => ?_)) fun t₅ ⟨k₅, m₅, c₃, f₅, r₅⟩ => ?_
+  · have := ptr_ea hs₄ (k := 7 + k) p₄ tk (by decide) (by decide) (by omega_arith)
+    rw [show o + 4 * (7 + k) = o + 28 + 4 * k by omega_arith] at this
+    exact ⟨this, this⟩
+  · have ts := hs₄.of_keeps tk (by decide)
+    rw [pw, readMem (ts.ea (d := PROD + 4 * (14 + k)) (by omega_arith)) (ts.read (by omega_arith))]
+    rw [m₄] at tm
+    exact congrArg some (pq (n := 14) (by decide) (m₁₃.trans (tm.mono (by omega_arith) (by omega_arith))) _ (by omega_arith))
+  rw [m₄] at r₅ m₅
+  rw [WP.block_append_iff]
+  refine WP.mono (carryUp_ok (n := c₁.toNat + c₂.toNat) f₅ ((k₅.1 _ (by decide)).trans e₄)
+    (by cases c₁ <;> cases c₂ <;> decide)) fun t₆ ⟨f₆, e₆, m₆, k₆⟩ => ?_
+  have k₆ : Keeps [.eax, .ecx] s t₆ := k₄.trans ((k₅.mono (by decide)).trans (k₆.mono (by decide)))
+  have hs₆ := hs.of_keeps k₆ (by decide)
+  have b : c₁.toNat + c₂.toNat + c₃.toNat ≤ 3 := by cases c₁ <;> cases c₂ <;> cases c₃ <;> decide
+  refine WP.mono (foldChain_ok (.inl rfl) hs₆ ho (by rw [k₆.1 _ (by decide), k₆.1 _ (by decide)]; exact hp) f₆ e₆
+    (Nat.lt_of_le_of_lt b (by decide))) fun t₇ ⟨r₇, m₇, k₇⟩ => ⟨?_, ?_, k₆.trans k₇⟩
+  · rw [folded_add r₇ (fe_lt _ _ _) (Nat.lt_of_le_of_lt b (by decide)), ← reduce_val, m₆]
+    have e13 : num (fun k => (word s.mem base (PROD + 4 * (14 + k))).toNat) 7 =
+        num (fun i => limbs s.mem base PROD (14 + i)) 7 := rfl
+    have e2 : num (fun k => (word s.mem base (PROD + 4 * (21 + k % 7))).toNat) 14 =
+        (half + 1) * num (fun i => limbs s.mem base PROD (21 + i)) 7 :=
+      wrap_val fun i => limbs s.mem base PROD (21 + i)
+    have e1 : num (fun k => (word s.mem base (PROD + 4 * (14 + k))).toNat) 14 =
+        num (fun i => limbs s.mem base PROD (14 + i)) 14 := rfl
+    have sp : ∀ m, fe m base o = num (limbs m base o) 7 + half * num (limbs m base (o + 28)) 7 := fun m => by
+      rw [← pow7]
+      exact (num_split _ 7 7).trans <| congrArg (num (limbs m base o) 7 + (2 ^ 32) ^ 7 * ·) (num_congr fun k _ => by
+        show (word m base (o + 4 * (7 + k))).toNat = (word m base (o + 28 + 4 * k)).toNat
+        rw [show o + 4 * (7 + k) = o + 28 + 4 * k by omega_arith])
+    have lo : num (limbs t₅.mem base o) 7 = num (limbs t₃.mem base o) 7 := num_congr fun k hk => by
+      show (word t₅.mem base (o + 4 * k)).toNat = _
+      rw [m₅.word (Or.inl (by omega_arith)) (by omega_arith)]
+    rw [Proof.X25519.X86.PassRel, ite_eq_left rfl, pow14, show false.toNat = 0 from rfl, Nat.add_zero, e1] at r₁
+    rw [Proof.X25519.X86.PassRel, ite_eq_left rfl, pow14, show false.toNat = 0 from rfl, Nat.add_zero, e2] at r₃
+    rw [Proof.X25519.X86.PassRel, ite_eq_left rfl, pow7, show false.toNat = 0 from rfl, Nat.add_zero, e13] at r₅
+    have r₅ := congrArg (half * ·) r₅
+    have s₃ : num (limbs t₃.mem base o) 14 = _ := sp t₃.mem
+    have s₅ := sp t₅.mem
+    simp only [Nat.mul_add] at r₅
+    rw [← Nat.mul_assoc, show half * half = full from by decide +kernel] at r₅
+    rw [lo] at s₅
+    rw [Nat.mul_add, Nat.mul_add]
+    refine congrArg (· % Spec.X448.P) ?_
+    omega_using [r₁, r₃, r₅, s₃, s₅]
+  · rw [m₆] at m₇
+    exact m₁₃.trans ((m₅.mono (by omega_arith) (by omega_arith)).trans m₇)
 
-theorem foldTerms_colv (m : Mem) (x : BitVec 32) (k : Nat) :
-    colv m x (foldTerms k) = foldCol (fun j => wv m x (PROD + 4 * j)) k := by
-  unfold foldTerms foldCol
-  split <;> simp only [colv, tval, List.map_cons, List.map_nil, List.sum_cons, List.sum_nil,
-    List.cons_append, List.nil_append, Nat.add_zero, Nat.add_assoc]
-
-theorem foldTerms_lt (m : Mem) (x : BitVec 32) (k : Nat) : colv m x (foldTerms k) < 2 ^ 68 := by
-  rw [foldTerms_colv, foldCol]
-  have h0 := wv_lt m x (PROD + 4 * k)
-  have h1 := wv_lt m x (PROD + 4 * (k + 14))
-  have h2 := wv_lt m x (PROD + 4 * (k + 21))
-  have h3 := wv_lt m x (PROD + 4 * (k + 7))
-  split <;> omega_using [h0, h1, h2, h3]
-
-theorem carryTerms_colv (m : Mem) (x : BitVec 32) (k : Nat) :
-    colv m x (carryTerms k) = wv m x (RED + 4 * k) + if k = 0 ∨ k = 7 then wv m x CW else 0 := by
-  unfold carryTerms
-  split <;> simp only [colv, tval, List.map_cons, List.map_nil, List.sum_cons, List.sum_nil, Nat.add_zero]
-
-/-- The carry in the accumulator folded into the words at `RED`, as `2^448 = 2^224 + 1`. -/
-theorem foldCarry_ok {x : BitVec 32} {s : State} (hc : Ctx 8192 x s false) (ha : acc s < 2 ^ 32) :
-    WP isa (.block foldCarry) s fun t => Proof.X25519.X86.Keep s t ∧
-      Frame [Proof.X25519.X86.sub x RED 60] s.mem t.mem ∧
-      num (fun k => wv t.mem x (RED + 4 * k)) 14 + (2 ^ 32) ^ 14 * acc t =
-        num (fun k => wv s.mem x (RED + 4 * k)) 14 + (half + 1) * acc s ∧ acc t < 2 ^ 40 := by
-  have hfit := hc.fit4
-  change WP isa (.block (.store ⟨.edi, CW⟩ .ebx ::
-    (Impl.X25519.X86.zeroAcc ++ Impl.X25519.X86.cols RED 14 carryTerms))) s _
-  refine Wp.wp_stm hc.edi (hc.inW4 (by decide) (by decide)) fun s₁ u₁ => ?_
-  have k₁ : Proof.X25519.X86.Keep s s₁ := ⟨by rw [u₁.gpr], by rw [u₁.gpr], by rw [u₁.gpr], u₁.rd, u₁.wr⟩
-  have c₁ := k₁.ctx hc
-  refine WP.block_append (WP.mono Proof.X25519.X86.zeroAcc_ok fun s₂ ⟨k₂, m₂, a₂⟩ => ?_)
-  have c₂ := k₂.ctx c₁
-  have hw : ∀ k < 14, wv s₂.mem x (RED + 4 * k) = wv s.mem x (RED + 4 * k) := fun k hk => by
-    rw [m₂, u₁.mem, wv, Proof.X25519.X86.wd_write_ne _ _ (by simp only [RED, TMP]; omega_arith)
-      (by simp only [CW, TMP]; omega_arith) (Or.inl (by simp only [RED, CW]; omega_arith))]
-  have hcw : wv s₂.mem x CW = acc s := by
-    rw [m₂, u₁.mem, wv, Proof.X25519.X86.wd_write_self]
-    have hb := (s.gpr .ebx).isLt
-    simp only [acc, Proof.X25519.X86.v] at ha ⊢
-    omega_using [ha, hb]
-  refine WP.mono (cols_ok c₂ carryTerms 14 (by decide) (fun k hk t ht d hd => ?_) (fun k hk => ?_)
-    (by rw [a₂]; decide)) fun s₃ ⟨k₃, f₃, e₃, a₃⟩ => ⟨k₁.trans (k₂.trans k₃), ?_, ?_, a₃⟩
-  · unfold carryTerms at ht
-    split at ht
-    · simp only [List.mem_cons, List.not_mem_nil, or_false] at ht
-      rcases ht with rfl | rfl <;> simp only [treads, List.mem_singleton] at hd <;> subst hd <;>
-        simp only [RED, CW, TMP] <;> omega_arith
-    · simp only [List.mem_cons, List.not_mem_nil, or_false] at ht
-      subst ht
-      simp only [treads, List.mem_singleton] at hd
-      subst hd
-      simp only [RED, TMP]; omega_arith
-  · rw [carryTerms_colv]
-    have h0 := wv_lt s₂.mem x (RED + 4 * k)
-    have h1 := wv_lt s₂.mem x CW
-    split <;> omega_using [h0, h1]
-  · rw [m₂, u₁.mem] at f₃
-    refine (Proof.X25519.X86.frame_write1 (Frame.refl _ _) hfit (by decide) (d := CW) (by decide) (by decide) _).trans
-      (Proof.X25519.X86.frameWiden f₃ hfit (Nat.le_refl _) (by decide) (by decide))
-  · rw [a₂, Nat.zero_add] at e₃
-    rw [e₃, ← carry_val, ← hcw]
-    exact num_congr fun k hk => by rw [carryTerms_colv, hw k hk]
-
-/-- The 28 columns `ts`, of value `V`, reduced modulo the prime into the fourteen words at `RED`. -/
-theorem prodWords_ok {s : State} {base : Addr} (hs : Scr s base) {ts : Nat → List Impl.X25519.X86.Term}
+/-- The 28 columns `ts`, of value `V`, reduced modulo the prime into the element at `o`. -/
+theorem prodWords_ok {s : State} {base : Addr} {n o a : Nat} (hc : FnCtx s base n o a)
+    {ts : Nat → List Impl.X25519.X86.Term}
     {V : Nat} (hr : ∀ k < 28, ∀ t ∈ ts k, ∀ d ∈ treads t, d + 4 ≤ PROD)
     (hb : ∀ k < 28, colv s.mem (s.gpr .edi) (ts k) < 2 ^ 68)
     (hV : num (fun k => colv s.mem (s.gpr .edi) (ts k)) 28 = V) (hlt : V < (2 ^ 32) ^ 28) :
     WP isa (.block (prodWords ts)) s fun t =>
-      num (fun k => (word t.mem base (RED + 4 * k)).toNat) 14 % Spec.X448.P = V % Spec.X448.P ∧
-      Outside base PROD 204 s.mem t.mem ∧ Keeps clob s t := by
-  have hc := hs.ctx
+      fe t.mem base o % Spec.X448.P = V % Spec.X448.P ∧ FieldMem base o s.mem t.mem WORK ∧ Keeps clob s t := by
+  have hs := hc.scr
+  have hx := hs.ctx
   unfold prodWords
-  refine WP.block_append (WP.block_append (WP.block_append (WP.block_append
-    (WP.mono Proof.X25519.X86.zeroAcc_ok fun s₁ ⟨k₁, m₁, a₁⟩ => ?_))))
-  have c₁ := k₁.ctx hc
-  refine WP.mono (cols_ok c₁ ts 28 (by decide) (fun k hk t ht d hd => ?_)
-    (fun k hk => by rw [m₁]; exact hb k hk) (by rw [a₁]; decide)) fun s₂ ⟨k₂, f₂, e₂, _⟩ => ?_
+  simp only [List.append_assoc]
+  refine WP.block_append (WP.mono Proof.X25519.X86.zeroAcc_ok fun s₁ ⟨k₁, m₁, a₁⟩ => ?_)
+  have c₁ := k₁.ctx hx
+  refine WP.block_append (WP.mono (cols_ok c₁ ts 28 (by decide) (fun k hk t ht d hd => ?_)
+    (fun k hk => by rw [m₁]; exact hb k hk) (by rw [a₁]; decide)) fun s₂ ⟨k₂, f₂, e₂, _⟩ => ?_)
   · have := hr k hk t ht d hd
     simp only [PROD, ACC] at this ⊢
     exact ⟨by omega_using [this], .inl this⟩
@@ -1002,65 +884,33 @@ theorem prodWords_ok {s : State} {base : Addr} (hs : Scr s base) {ts : Nat → L
     · have := Nat.mul_le_mul_left ((2 ^ 32) ^ 28) h
       omega_using [this, e₂, hlt]
   rw [z₂, Nat.mul_zero, Nat.add_zero] at e₂
-  have c₂ := k₂.ctx c₁
-  refine WP.mono (cols_ok c₂ foldTerms 14 (by decide) (fun k hk t ht d hd => ?_)
-    (fun k hk => foldTerms_lt _ _ _) (by rw [z₂]; decide)) fun s₃ ⟨k₃, f₃, e₃, _⟩ => ?_
-  · have := foldTerms_reads hk t ht d hd
-    simp only [RED, TMP] at this ⊢
-    exact ⟨by omega_using [this], .inl this⟩
-  rw [z₂, Nat.zero_add, pow14] at e₃
-  have eF : num (fun k => colv s₂.mem (s.gpr .edi) (foldTerms k)) 14 =
-      num (foldCol fun j => wv s₂.mem (s.gpr .edi) (PROD + 4 * j)) 14 :=
-    num_congr fun k _ => foldTerms_colv _ _ _
-  rw [eF] at e₃
-  have hF := foldCol_mod fun j => wv s₂.mem (s.gpr .edi) (PROD + 4 * j)
-  have hFlt := foldCol_lt (p := fun j => wv s₂.mem (s.gpr .edi) (PROD + 4 * j)) fun i _ => wv_lt _ _ _
-  rw [e₂] at hF
-  generalize num (foldCol fun j => wv s₂.mem (s.gpr .edi) (PROD + 4 * j)) 14 = W at *
-  have r1 := num_lt (f := fun k => wv s₃.mem (s.gpr .edi) (RED + 4 * k)) (n := 14) fun _ _ => wv_lt _ _ _
-  rw [pow14] at r1
-  have hc1 : acc s₃ ≤ 3 := by
-    rcases Nat.lt_or_ge (acc s₃) 4 with h | h
-    · exact Nat.le_of_lt_succ h
-    · have := Nat.mul_le_mul_left full h
-      omega_using [this, e₃, hFlt]
-  have c₃ := k₃.ctx c₂
-  refine WP.mono (foldCarry_ok c₃ (by omega_using [hc1])) fun s₄ ⟨k₄, f₄, e₄, _⟩ => ?_
-  rw [pow14] at e₄
-  have r2 := num_lt (f := fun k => wv s₄.mem (s.gpr .edi) (RED + 4 * k)) (n := 14) fun _ _ => wv_lt _ _ _
-  rw [pow14] at r2
-  have hc2 := fold_carry1 hc1 r1 e₄
-  have c₄ := k₄.ctx c₃
-  refine WP.mono (foldCarry_ok c₄ (by omega_using [hc2])) fun s₅ ⟨k₅, f₅, e₅, _⟩ => ?_
-  rw [pow14] at e₅
-  obtain ⟨-, hv⟩ := fold_carries e₃ hc1 r1 r2 e₄ e₅
-  refine ⟨?_, ?_, keeps_of_keep (k₁.trans (k₂.trans (k₃.trans (k₄.trans k₅))))⟩
-  · rw [← hF, ← hv]
+  have k₁₂ : Keeps clob s s₂ := keeps_of_keep (k₁.trans k₂)
+  have o₂ := outside_of_frame hs (by decide) (by decide) f₂
+  have hc₂ := hc.keep k₁₂ (by decide) (by decide) (o₂.mono (by decide) (by decide))
+  rw [WP.block_append_iff]
+  refine WP.mono (argPtr_ok hc₂.args (by have := hc.n3; omega_arith) (by decide) hc₂.argO) fun s₃ ⟨p₃, m₃, k₃⟩ => ?_
+  refine WP.mono (reduce_ok (hc₂.scr.of_keeps k₃ (by decide)) hc.slotO p₃) fun s₄ ⟨v₄, m₄, k₄⟩ =>
+    ⟨?_, ?_, k₁₂.trans ((k₃.mono (by decide)).trans (k₄.mono (by decide)))⟩
+  · rw [v₄, m₃, ← e₂]
     exact congrArg (· % Spec.X448.P) (num_congr fun k hk => by
-      rw [wv, wd_word hs _ (by simp only [RED, TMP]; omega_arith)])
-  · have o₂ := outside_of_frame hs (by decide) (by decide) f₂
-    have o₃ := outside_of_frame hs (by decide) (by decide) f₃
-    have o₄ := outside_of_frame hs (by decide) (by decide) f₄
-    have o₅ := outside_of_frame hs (by decide) (by decide) f₅
-    exact (o₂.mono (by decide) (by decide)).trans ((o₃.mono (by decide) (by decide)).trans
-      ((o₄.mono (by decide) (by decide)).trans (o₅.mono (by decide) (by decide))))
+      rw [wv, wd_word hs _ (by simp only [PROD, ACC]; omega_arith)])
+  · rw [m₃] at m₄
+    exact (FieldMem.work o₂ (by decide) (by decide)).trans (FieldMem.output m₄)
 
 /-- The words at `PA` as the columns' proofs read them. -/
 theorem num_wv {s : State} {base : Addr} (hs : Scr s base) (m : Mem) {o : Nat} (ho : o + 56 ≤ 8192) :
     num (fun k => wv m (s.gpr .edi) (o + 4 * k)) 14 = num (fun k => (word m base (o + 4 * k)).toNat) 14 :=
   num_congr fun k hk => by rw [wv, wd_word hs _ (by omega_arith)]
 
-/-- The words at `PA` and `PB` multiplied, modulo the prime, into the fourteen words at `RED`. -/
-theorem mulWords_ok {s : State} {base : Addr} (hs : Scr s base) :
-    WP isa (.block mulWords) s fun t =>
-      num (fun k => (word t.mem base (RED + 4 * k)).toNat) 14 % Spec.X448.P =
-        num (fun k => (word s.mem base (PA + 4 * k)).toNat) 14 *
-          num (fun k => (word s.mem base (PB + 4 * k)).toNat) 14 % Spec.X448.P ∧
-      Outside base PROD 204 s.mem t.mem ∧ Keeps clob s t := by
-  rw [← num_wv hs _ (by decide), ← num_wv hs _ (by decide)]
+/-- The words at `PA` and `PB` multiplied, modulo the prime, into the element at `o`. -/
+theorem mulWords_ok {s : State} {base : Addr} {n o a : Nat} (hc : FnCtx s base n o a) :
+    WP isa (.block (prodWords prodTerms)) s fun t =>
+      fe t.mem base o % Spec.X448.P = fe s.mem base PA * fe s.mem base PB % Spec.X448.P ∧
+      FieldMem base o s.mem t.mem WORK ∧ Keeps clob s t := by
+  rw [fe, fe, ← num_wv hc.scr _ (by decide), ← num_wv hc.scr _ (by decide)]
   have hA := num_lt (f := fun i => wv s.mem (s.gpr .edi) (PA + 4 * i)) (n := 14) fun _ _ => wv_lt _ _ _
   have hB := num_lt (f := fun j => wv s.mem (s.gpr .edi) (PB + 4 * j)) (n := 14) fun _ _ => wv_lt _ _ _
-  refine prodWords_ok hs (fun k _ => prodTerms_reads) (fun k _ => prodTerms_lt _ _ _) ?_ ?_
+  refine prodWords_ok hc (fun k _ => prodTerms_reads) (fun k _ => prodTerms_lt _ _ _) ?_ ?_
   · rw [← conv_identity 14]
     exact num_congr fun k _ => prodTerms_colv _ _ _
   · have := Nat.mul_lt_mul_of_lt_of_lt hA hB
@@ -1113,116 +963,18 @@ theorem sqrTerms_lt (m : Mem) (x : BitVec 32) {k : Nat} (hk : k < 28) : colv m x
   have h2 := Nat.mul_le_mul_right (2 ^ 65 - 2) hl'
   omega_using [h1, h2]
 
-/-- The words at `PA` squared, modulo the prime, into the fourteen words at `RED`. -/
-theorem sqrWords_ok {s : State} {base : Addr} (hs : Scr s base) :
-    WP isa (.block sqrWords) s fun t =>
-      num (fun k => (word t.mem base (RED + 4 * k)).toNat) 14 % Spec.X448.P =
-        num (fun k => (word s.mem base (PA + 4 * k)).toNat) 14 *
-          num (fun k => (word s.mem base (PA + 4 * k)).toNat) 14 % Spec.X448.P ∧
-      Outside base PROD 204 s.mem t.mem ∧ Keeps clob s t := by
-  rw [← num_wv hs _ (by decide)]
+/-- The words at `PA` squared, modulo the prime, into the element at `o`. -/
+theorem sqrWords_ok {s : State} {base : Addr} {n o a : Nat} (hc : FnCtx s base n o a) :
+    WP isa (.block (prodWords sqrTerms)) s fun t =>
+      fe t.mem base o % Spec.X448.P = fe s.mem base PA * fe s.mem base PA % Spec.X448.P ∧
+      FieldMem base o s.mem t.mem WORK ∧ Keeps clob s t := by
+  rw [fe, ← num_wv hc.scr _ (by decide)]
   have hA := num_lt (f := fun i => wv s.mem (s.gpr .edi) (PA + 4 * i)) (n := 14) fun _ _ => wv_lt _ _ _
-  refine prodWords_ok hs (fun k _ => sqrTerms_reads) (fun k hk => sqrTerms_lt _ _ hk) ?_ ?_
+  refine prodWords_ok hc (fun k _ => sqrTerms_reads) (fun k hk => sqrTerms_lt _ _ hk) ?_ ?_
   · rw [← sqr_identity 14]
     exact num_congr fun k _ => sqrTerms_colv _ _ _
   · have := Nat.mul_lt_mul_of_lt_of_lt hA hA
     rwa [← Nat.pow_add] at this
-
-/-! ## Unpacking -/
-
-theorem unpackWord_ok {s : State} {base : Addr} (hs : Scr s base) {o k : Nat} (ho : Slot o) (hk : k < 14)
-    (hp : s.gpr .ebp = s.gpr .edi + BitVec.ofNat 32 o) :
-    WP isa (.block (unpackWord k)) s fun t =>
-      t.mem = (s.mem.writeW (off base (o + 4 * (2 * k)))
-          (BitVec.ofNat 32 ((word s.mem base (RED + 4 * k)).toNat % 2 ^ 16))).writeW
-        (off base (o + 4 * (2 * k + 1)))
-          (BitVec.ofNat 32 ((word s.mem base (RED + 4 * k)).toNat / 2 ^ 16)) ∧
-      Keeps [.eax, .edx] s t := by
-  have ho' : o + 112 ≤ 3584 := ho
-  have hw := (word s.mem base (RED + 4 * k)).isLt
-  unfold unpackWord
-  refine load_ok hs (by simp only [RED, TMP]; omega_arith) fun t1 u1 => ?_
-  refine wp_mov rfl fun t2 u2 => ?_
-  refine wp_alu (Or.inr (Or.inr (Or.inl rfl))) rfl fun t3 u3 _ => ?_
-  refine wp_shift (by decide) fun t4 u4 => ?_
-  have k4 : Keeps [.eax, .edx] s t4 := (u1.rest (by decide)).trans ((u2.rest (by decide)).trans
-    ((u3.rest (by decide)).trans (u4.rest (by decide))))
-  have s4 := hs.of_keeps k4 (by decide)
-  have p4 : t4.gpr .ebp = t4.gpr .edi + BitVec.ofNat 32 o := by
-    rw [k4.1 _ (by decide), k4.1 _ (by decide)]; exact hp
-  have va : t4.gpr .eax = BitVec.ofNat 32 ((word s.mem base (RED + 4 * k)).toNat % 2 ^ 16) := by
-    rw [u4.other .eax (by decide), u3.gpr]
-    change t2.gpr .eax &&& 65535 = _
-    rw [u2.other .eax (by decide), u1.gpr]
-    apply BitVec.eq_of_toNat_eq
-    rw [and16_nat, BitVec.toNat_ofNat, radix, Nat.mod_eq_of_lt (a := _ % 2 ^ 16) (by omega_using [hw])]
-  have vd : t4.gpr .edx = BitVec.ofNat 32 ((word s.mem base (RED + 4 * k)).toNat / 2 ^ 16) := by
-    rw [u4.gpr]
-    change t3.gpr .edx >>> 16 = _
-    rw [u3.other .edx (by decide), u2.gpr, u1.gpr]
-    apply BitVec.eq_of_toNat_eq
-    rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, BitVec.toNat_ofNat,
-      Nat.mod_eq_of_lt (a := _ / 2 ^ 16) (by omega_using [hw])]
-  refine wp_store (a := off base (o + 4 * (2 * k)))
-    (by rw [show o + 4 * (2 * k) = o + 8 * k by omega_arith]; exact s4.ea_ptr p4 (by omega_arith))
-    (s4.write (by omega_arith)) fun t5 u5 => ?_
-  have s5 := s4.of_keeps (u5.rest []) (by decide)
-  have p5 : t5.gpr .ebp = t5.gpr .edi + BitVec.ofNat 32 o := by rw [u5.gpr]; exact p4
-  refine wp_store (a := off base (o + 4 * (2 * k + 1)))
-    (by rw [show o + 4 * (2 * k + 1) = o + (8 * k + 4) by omega_arith]; exact s5.ea_ptr p5 (by omega_arith))
-    (s5.write (by omega_arith)) fun t6 u6 => WP.block_nil ⟨?_, k4.trans ((u5.rest _).trans (u6.rest _))⟩
-  rw [u6.mem, u5.mem, u4.mem, u3.mem, u2.mem, u1.mem, u5.gpr, va, vd]
-
-/-- The fourteen words at `RED` unpacked into the limbs of the element at `ebp = ws + o`. -/
-theorem unpack_ok {s : State} {base : Addr} (hs : Scr s base) {o : Nat} (ho : Slot o)
-    (hp : s.gpr .ebp = s.gpr .edi + BitVec.ofNat 32 o) :
-    WP isa (.block unpack) s fun t =>
-      Bounded t.mem base o ∧
-      fe t.mem base o = num (fun k => (word s.mem base (RED + 4 * k)).toNat) 14 ∧
-      Outside base o 112 s.mem t.mem ∧ Keeps [.eax, .edx] s t := by
-  have ho' : o + 112 ≤ 3584 := ho
-  let inv := fun n (t : State) =>
-    (∀ k < n, limbs t.mem base o (2 * k) = (word s.mem base (RED + 4 * k)).toNat % 2 ^ 16 ∧
-      limbs t.mem base o (2 * k + 1) = (word s.mem base (RED + 4 * k)).toNat / 2 ^ 16) ∧
-    Outside base o 112 s.mem t.mem ∧ Keeps [.eax, .edx] s t
-  obtain step : ∀ n t, n < 14 → inv n t → WP isa (.block (unpackWord n)) t (inv (n + 1)) := by
-    intro n t hn ⟨tf, tm, tk⟩
-    obtain tp : t.gpr .ebp = t.gpr .edi + BitVec.ofNat 32 o := by
-      rw [tk.1 _ (by decide), tk.1 _ (by decide)]; exact hp
-    obtain wt : word t.mem base (RED + 4 * n) = word s.mem base (RED + 4 * n) :=
-      tm.word (Or.inr (by simp only [RED, TMP]; omega_arith)) (by simp only [RED, TMP]; omega_arith)
-    have hw := (word s.mem base (RED + 4 * n)).isLt
-    refine WP.mono (unpackWord_ok (hs.of_keeps tk (by decide)) ho hn tp) fun u ⟨um, uk⟩ => ?_
-    rw [wt] at um
-    obtain out : Outside base o 112 t.mem u.mem := by
-      rw [um]
-      exact ((writeW_outside _ _ _ (by omega_arith)).mono (by omega_arith) (by omega_arith)).trans
-        ((writeW_outside _ _ _ (by omega_arith)).mono (by omega_arith) (by omega_arith))
-    refine ⟨fun k hk => ⟨?_, ?_⟩, tm.trans out, tk.trans uk⟩
-    · change (word u.mem base (o + 4 * (2 * k))).toNat = _
-      rw [um, word_write _ base (by omega_arith) (by omega_arith), ite_eq_right (by omega_arith),
-        word_write _ base (by omega_arith) (by omega_arith)]
-      by_cases h : k = n
-      · rw [ite_eq_left (by omega_arith), h, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hw])]
-      · rw [ite_eq_right (by omega_arith)]; exact (tf k (by omega_arith)).1
-    · change (word u.mem base (o + 4 * (2 * k + 1))).toNat = _
-      rw [um, word_write _ base (by omega_arith) (by omega_arith)]
-      by_cases h : k = n
-      · rw [ite_eq_left (by omega_arith), h, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hw])]
-      · rw [ite_eq_right (by omega_arith), word_write _ base (by omega_arith) (by omega_arith),
-          ite_eq_right (by omega_arith)]
-        exact (tf k (by omega_arith)).2
-  refine WP.mono (wp_range_flatMap (M := isa) (N := 14) inv step 14 (by decide) s
-    ⟨fun _ hi => by omega, Outside.refl _ _ _ _, Keeps.refl _ _⟩) fun t ⟨tf, tm, tk⟩ => ⟨?_, ?_, tm, tk⟩
-  · intro i hi
-    have hw := (word s.mem base (RED + 4 * (i / 2))).isLt
-    rcases Nat.mod_two_eq_zero_or_one i with h | h
-    · rw [show i = 2 * (i / 2) by omega_arith, (tf (i / 2) (by omega_arith)).1, radix]
-      exact Nat.mod_lt _ (by decide)
-    · rw [show i = 2 * (i / 2) + 1 by omega_arith, (tf (i / 2) (by omega_arith)).2, radix]
-      omega_using [hw]
-  · refine (num_pack 14 fun k hk => ?_).symm
-    rw [(tf k hk).1, (tf k hk).2, Nat.mod_add_div]
 
 /-! ## The function's body -/
 
@@ -1232,23 +984,19 @@ theorem ArgArea.arg_keep {s t : State} {base : Addr} {n : Nat} (h : ArgArea s ba
     arg t i = arg s i :=
   (h.keep (hk.1 _ hr) hk.2.1 hk.2.2 hm).2 i hi
 
-/-- `vg_gf448_r16_mul` between its entry and its exit. -/
+/-- `vg_gf448_r32_mul` between its entry and its exit. -/
 theorem mulBody_ok {t : State} {base : Addr} {o a b : Nat} (tc : FnCtx t base 4 o a)
-    (hvb : arg t 3 = BitVec.ofNat 32 b) (hb : Slot b) (ab : Bounded t.mem base a)
-    (bb : Bounded t.mem base b) :
-    WP isa (.block (argPtr .esi 2 ++ pack PA ++ argPtr .esi 3 ++ pack PB ++ mulWords ++ argPtr .ebp 1 ++
-      unpack)) t fun w =>
-      FieldMem base o t.mem w.mem WORK ∧ Bounded w.mem base o ∧
-      F w.mem base o = F t.mem base a * F t.mem base b ∧ Keeps (.esi :: clob) t w := by
-  have ha' : a + 112 ≤ 3584 := tc.slotA
-  have hb' : b + 112 ≤ 3584 := hb
+    (hvb : arg t 3 = BitVec.ofNat 32 b) (hb : Slot b) :
+    WP isa (.block (argPtr .esi 2 ++ operand PA ++ argPtr .esi 3 ++ operand PB ++ prodWords prodTerms)) t fun w =>
+      FnPost base o t w ∧ F w.mem base o = F t.mem base a * F t.mem base b := by
+  have ha' : a + 56 ≤ 3584 := tc.slotA
+  have hb' : b + 56 ≤ 3584 := hb
   simp only [List.append_assoc]
   rw [WP.block_append_iff]
   refine WP.mono (argPtr_ok tc.args (by decide) (by decide) tc.argA) fun s1 ⟨p1, m1, k1⟩ => ?_
   have c1 := tc.keep k1 (by decide) (by decide) (by rw [m1]; exact Outside.refl _ _ _ _)
   rw [WP.block_append_iff]
-  refine WP.mono (pack_ok c1.scr tc.slotA (by decide) (by decide) p1 (by rw [m1]; exact ab))
-    fun s2 ⟨v2, m2, k2⟩ => ?_
+  refine WP.mono (operand_ok c1.scr tc.slotA (by decide) (by decide) p1) fun s2 ⟨v2, m2, k2⟩ => ?_
   rw [m1] at v2 m2
   have k02 : Keeps (.esi :: clob) t s2 := (k1.mono (by decide)).trans (k2.mono (by decide))
   have o2 : Outside base 0 8192 t.mem s2.mem := m2.mono (by decide) (by decide)
@@ -1257,65 +1005,36 @@ theorem mulBody_ok {t : State} {base : Addr} {o a b : Nat} (tc : FnCtx t base 4 
   refine WP.mono (argPtr_ok c2.args (by decide) (by decide)
     ((tc.args.arg_keep k02 (by decide) o2 (by decide)).trans hvb)) fun s3 ⟨p3, m3, k3⟩ => ?_
   have c3 := c2.keep k3 (by decide) (by decide) (by rw [m3]; exact Outside.refl _ _ _ _)
-  have bb3 : Bounded s3.mem base b := fun i hi => by
-    rw [m3, m2.limbs (Or.inl (by simp only [PA, ACC]; omega_arith)) (by omega_arith) hi]; exact bb i hi
   rw [WP.block_append_iff]
-  refine WP.mono (pack_ok c3.scr hb (by decide) (by decide) p3 bb3) fun s4 ⟨v4, m4, k4⟩ => ?_
+  refine WP.mono (operand_ok c3.scr hb (by decide) (by decide) p3) fun s4 ⟨v4, m4, k4⟩ => ?_
   rw [m3] at v4 m4
   rw [m2.fe (Or.inl (by simp only [PA, ACC]; omega_arith)) (by omega_arith)] at v4
-  have va : num (fun k => (word s4.mem base (PA + 4 * k)).toNat) 14 = fe t.mem base a := by
-    rw [← v2]
-    exact Proof.X25519.X86.num_congr fun k hk => by
-      rw [m4.word (Or.inl (by simp only [PA, PB]; omega_arith)) (by simp only [PA, ACC]; omega_arith)]
+  have va : fe s4.mem base PA = fe t.mem base a := by
+    rw [← v2]; exact m4.fe (Or.inl (by decide)) (by decide)
   have k24 : Keeps (.esi :: clob) s2 s4 := (k3.mono (by decide)).trans (k4.mono (by decide))
   have c4 := c2.keep k24 (by decide) (by decide) (m4.mono (by decide) (by decide))
-  rw [WP.block_append_iff]
-  refine WP.mono (mulWords_ok c4.scr) fun s5 ⟨v5, m5, k5⟩ => ?_
-  rw [va, v4] at v5
-  have c5 := c4.keep k5 (by decide) (by decide) (m5.mono (by decide) (by decide))
-  rw [WP.block_append_iff]
-  refine WP.mono (argPtr_ok c5.args (by decide) (by decide) c5.argO) fun s6 ⟨p6, m6, k6⟩ => ?_
-  have c6 := c5.keep k6 (by decide) (by decide) (by rw [m6]; exact Outside.refl _ _ _ _)
-  refine WP.mono (unpack_ok c6.scr tc.slotO p6) fun s7 ⟨b7, v7, m7, k7⟩ => ⟨?_, b7, ?_, ?_⟩
-  · rw [m6] at m7
-    exact (FieldMem.work m2 (by decide) (by decide)).trans ((FieldMem.work m4 (by decide) (by decide)).trans
-      ((FieldMem.work m5 (by decide) (by decide)).trans (FieldMem.output m7)))
-  · rw [m6] at v7
-    exact toFe_mul (by rw [v7, v5])
-  · exact k02.trans (k24.trans ((k5.mono (by decide)).trans ((k6.mono (by decide)).trans
-      (k7.mono (by decide)))))
+  refine WP.mono (mulWords_ok c4) fun s5 ⟨v5, m5, k5⟩ =>
+    ⟨⟨k02.trans (k24.trans (k5.mono (by decide))), ?_⟩, ?_⟩
+  · exact (FieldMem.work m2 (by decide) (by decide)).trans ((FieldMem.work m4 (by decide) (by decide)).trans m5)
+  · rw [va, v4] at v5; exact toFe_mul v5
 
-/-- `vg_gf448_r16_sqr` between its entry and its exit. -/
-theorem sqrBody_ok {t : State} {base : Addr} {n o a : Nat} (tc : FnCtx t base n o a)
-    (ab : Bounded t.mem base a) :
-    WP isa (.block (argPtr .esi 2 ++ pack PA ++ sqrWords ++ argPtr .ebp 1 ++ unpack)) t fun w =>
-      FieldMem base o t.mem w.mem WORK ∧ Bounded w.mem base o ∧
-      F w.mem base o = F t.mem base a * F t.mem base a ∧ Keeps (.esi :: clob) t w := by
+/-- `vg_gf448_r32_sqr` between its entry and its exit. -/
+theorem sqrBody_ok {t : State} {base : Addr} {n o a : Nat} (tc : FnCtx t base n o a) :
+    WP isa (.block (argPtr .esi 2 ++ operand PA ++ prodWords sqrTerms)) t fun w =>
+      FnPost base o t w ∧ F w.mem base o = F t.mem base a * F t.mem base a := by
   have hn := tc.n3
   simp only [List.append_assoc]
   rw [WP.block_append_iff]
   refine WP.mono (argPtr_ok tc.args (by omega_arith) (by decide) tc.argA) fun s1 ⟨p1, m1, k1⟩ => ?_
   have c1 := tc.keep k1 (by decide) (by decide) (by rw [m1]; exact Outside.refl _ _ _ _)
   rw [WP.block_append_iff]
-  refine WP.mono (pack_ok c1.scr tc.slotA (by decide) (by decide) p1 (by rw [m1]; exact ab))
-    fun s2 ⟨v2, m2, k2⟩ => ?_
+  refine WP.mono (operand_ok c1.scr tc.slotA (by decide) (by decide) p1) fun s2 ⟨v2, m2, k2⟩ => ?_
   rw [m1] at v2 m2
   have k02 : Keeps (.esi :: clob) t s2 := (k1.mono (by decide)).trans (k2.mono (by decide))
   have c2 := tc.keep k02 (by decide) (by decide) (m2.mono (by decide) (by decide))
-  rw [WP.block_append_iff]
-  refine WP.mono (sqrWords_ok c2.scr) fun s5 ⟨v5, m5, k5⟩ => ?_
-  rw [v2] at v5
-  have c5 := c2.keep k5 (by decide) (by decide) (m5.mono (by decide) (by decide))
-  rw [WP.block_append_iff]
-  refine WP.mono (argPtr_ok c5.args (by omega_arith) (by decide) c5.argO) fun s6 ⟨p6, m6, k6⟩ => ?_
-  have c6 := c5.keep k6 (by decide) (by decide) (by rw [m6]; exact Outside.refl _ _ _ _)
-  refine WP.mono (unpack_ok c6.scr tc.slotO p6) fun s7 ⟨b7, v7, m7, k7⟩ => ⟨?_, b7, ?_, ?_⟩
-  · rw [m6] at m7
-    exact (FieldMem.work m2 (by decide) (by decide)).trans
-      ((FieldMem.work m5 (by decide) (by decide)).trans (FieldMem.output m7))
-  · rw [m6] at v7
-    exact toFe_mul (by rw [v7, v5])
-  · exact k02.trans ((k5.mono (by decide)).trans ((k6.mono (by decide)).trans (k7.mono (by decide))))
+  refine WP.mono (sqrWords_ok c2) fun s5 ⟨v5, m5, k5⟩ => ⟨⟨k02.trans (k5.mono (by decide)), ?_⟩, ?_⟩
+  · exact (FieldMem.work m2 (by decide) (by decide)).trans m5
+  · rw [v2] at v5; exact toFe_mul v5
 
 end VG.Proof.X448.X86
 
@@ -1327,11 +1046,11 @@ end
 /-!
 # X448 on x86 (32-bit): the field functions
 
-`vg_gf448_r16_{mul,sqr,add,sub,mul_a24}` (`Impl/X448/X86.lean`) from their entry
+`vg_gf448_r32_{mul,sqr,add,sub,mul_a24}` (`Impl/X448/X86.lean`) from their entry
 (`FnEntry`: the working space `ws` at `base` and the offsets on the stack):
 `fnEntry` loads `ws` into `edi` and saves the callee-saved registers in the
 last 16 bytes of the functions' own working space (`fnEntry_ok`), the
-operation writes its result (`Mul.lean`, `AddSub.lean`, `Small.lean`), and
+operation writes its result (`Small.lean` and above), and
 `fnExit` restores the registers (`fnExit_ok`). Each function changes only
 `eax`, `ecx`, `edx` and the flags, the result and its own working space
 (`FnOut`).
@@ -1360,12 +1079,10 @@ structure FnEntry (s : State) (base : Addr) (n o a : Nat) : Prop where
   slotA : Slot a
 
 /-- What a field function changes: `eax`, `ecx` and `edx`, and in memory
-the result at `o` and its own working space; the result's limbs are below
-`2^16`. -/
+the result at `o` and its own working space. -/
 structure FnOut (base : Addr) (o : Nat) (s t : State) : Prop where
   keeps : Keeps [.eax, .ecx, .edx] s t
   mem : FieldMem base o s.mem t.mem
-  bounded : Bounded t.mem base o
 
 /-- Where the field functions save the callee-saved registers. -/
 def fnSlots : Spill.Slots := [(.ebx, SAVE), (.esi, SAVE + 4), (.edi, SAVE + 8), (.ebp, SAVE + 12)]
@@ -1432,24 +1149,24 @@ theorem fnExit_ok {s : State} {base : Addr} (hs : Scr s base) {g : Reg → BitVe
 
 theorem FnSaved.keep {base : Addr} {g : Reg → BitVec 32} {m m' : Mem} (hs : FnSaved base g m)
     {o : Nat} (ho : Slot o) (h : FieldMem base o m m' WORK) : FnSaved base g m' := by
-  have ho' : o + 112 ≤ 3584 := ho
+  have ho' : o + 56 ≤ 3584 := ho
   refine hs.of_readW fun p hp => ?_
   obtain hp' : SAVE ≤ p.2 ∧ p.2 + 4 ≤ SAVE + 16 := by revert p hp; decide
   obtain hs' : p.2 + 4 < 2 ^ 64 := by simp only [SAVE] at hp'; omega_arith
   exact Mem.readW_congr fun i hi => h _
     (Or.inr (by rw [ofs_off base (d := p.2) (i := i) (by omega_arith)]; simp only [SAVE] at hp'; omega_arith))
-    (Or.inr (by rw [ofs_off base (d := p.2) (i := i) (by omega_arith)]; simp only [SAVE, ACC, WORK, TMP] at hp' ⊢; omega_arith))
+    (Or.inr (by rw [ofs_off base (d := p.2) (i := i) (by omega_arith)]; simp only [SAVE, ACC, WORK] at hp' ⊢; omega_arith))
 
 /-- The exit, after a body that changed the registers `rs` (not `esp`) and,
 in the working space, the result and the arithmetic's own bytes. -/
 theorem fnExit_out {s t u : State} {base : Addr} {n o a : Nat} (tc : FnCtx t base n o a)
     (tv : FnSaved base s.gpr t.mem) (tm : Outside base SAVE 16 s.mem t.mem) (tk : Keeps [.eax, .edi] s t)
     {rs : List Reg} (hrs : .esp ∉ rs) (uk : Keeps rs t u) (us : Scr u base)
-    (um : FieldMem base o t.mem u.mem WORK) (ub : Bounded u.mem base o) :
+    (um : FieldMem base o t.mem u.mem WORK) :
     WP isa (.block fnExit) u fun w => FnOut base o s w ∧ w.mem = u.mem := by
   refine WP.mono (fnExit_ok us (tv.keep tc.slotO um)) fun w ⟨wr, wm, wk⟩ => ?_
   refine ⟨⟨⟨fun r hr => ?_, wk.2.1.trans (uk.2.1.trans tk.2.1), wk.2.2.trans (uk.2.2.trans tk.2.2)⟩,
-    ?_, by rw [wm]; exact ub⟩, wm⟩
+    ?_⟩, wm⟩
   · by_cases hs : r ∈ [Reg.ebx, .esi, .edi, .ebp]
     · exact wr r hs
     · have hr' : r = .esp := by
@@ -1468,21 +1185,9 @@ theorem fnBlock_ok {s : State} {base : Addr} {n o a : Nat} (h : FnEntry s base n
   rw [List.append_assoc, WP.block_append_iff]
   refine WP.mono (fnEntry_ok h) fun t ⟨tc, tv, tm, tk⟩ => ?_
   rw [WP.block_append_iff]
-  refine WP.mono (hb t tc tm tk) fun u ⟨⟨uk, um, ub⟩, uq⟩ => ?_
-  refine WP.mono (fnExit_out tc tv tm tk (by decide) uk (tc.scr.of_keeps uk (by decide)) um ub)
+  refine WP.mono (hb t tc tm tk) fun u ⟨⟨uk, um⟩, uq⟩ => ?_
+  refine WP.mono (fnExit_out tc tv tm tk (by decide) uk (tc.scr.of_keeps uk (by decide)) um)
     fun w ⟨hw, wm⟩ => ⟨hw, by rw [wm]; exact uq⟩
-
-theorem mulA24Fn_ok {s : State} {base : Addr} {o a : Nat} (h : FnEntry s base 3 o a)
-    (ab : Bounded s.mem base a) :
-    WP isa mulA24Fn s fun t => FnOut base o s t ∧ F t.mem base o = Spec.X448.a24 * F s.mem base a := by
-  have ha' : a + 112 ≤ 3584 := h.slotA
-  refine WP.mono (fnBlock_ok (body := argPtr .esi 2 ++ a24Cols ++ normalize)
-    (Q := fun m => F m base o = Spec.X448.a24 * F s.mem base a) h fun t tc tm _ => ?_) fun _ h => h
-  obtain ea : fe t.mem base a = fe s.mem base a := tm.fe (Or.inl (by simp only [SAVE]; omega_arith)) (by omega_arith)
-  obtain bt : Bounded t.mem base a := fun i hi => by
-    rw [tm.limbs (Or.inl (by simp only [SAVE]; omega_arith)) (by omega_arith) hi]; exact ab i hi
-  refine WP.mono (a24Body_ok tc bt) fun u ⟨up, uv⟩ => ⟨up, ?_⟩
-  rw [uv, F, F, ea]
 
 /-- The third argument after the entry. -/
 theorem argB_keep {s t : State} {base : Addr} {o a b : Nat} (h : FnEntry s base 4 o a)
@@ -1492,63 +1197,54 @@ theorem argB_keep {s t : State} {base : Addr} {o a b : Nat} (h : FnEntry s base 
 
 /-- Operands below the own working space read the same after the entry. -/
 theorem entry_operand {s t : State} {base : Addr} {a : Nat} (ha : Slot a)
-    (tm : Outside base SAVE 16 s.mem t.mem) :
-    fe t.mem base a = fe s.mem base a ∧ (Bounded s.mem base a → Bounded t.mem base a) := by
-  have ha' : a + 112 ≤ 3584 := ha
-  refine ⟨tm.fe (Or.inl (by simp only [SAVE]; omega_arith)) (by omega_arith), fun ab i hi => ?_⟩
-  rw [tm.limbs (Or.inl (by simp only [SAVE]; omega_arith)) (by omega_arith) hi]; exact ab i hi
+    (tm : Outside base SAVE 16 s.mem t.mem) : fe t.mem base a = fe s.mem base a := by
+  have ha' : a + 56 ≤ 3584 := ha
+  exact tm.fe (Or.inl (by simp only [SAVE]; omega_arith)) (by omega_arith)
+
+theorem mulA24Fn_ok {s : State} {base : Addr} {o a : Nat} (h : FnEntry s base 3 o a) (hoa : SlotApart o a) :
+    WP isa mulA24Fn s fun t => FnOut base o s t ∧ F t.mem base o = Spec.X448.a24 * F s.mem base a := by
+  rw [show mulA24Fn = .block (fnEntry ++ (argPtr .esi 2 ++ argPtr .ebp 1 ++ mulA24) ++ fnExit)
+    by simp only [mulA24Fn, List.append_assoc]]
+  refine fnBlock_ok (Q := fun m => F m base o = Spec.X448.a24 * F s.mem base a) h fun t tc tm _ => ?_
+  exact WP.mono (a24Body_ok tc hoa) fun u ⟨up, uv⟩ => ⟨up, by rw [uv, F, F, entry_operand h.slotA tm]⟩
 
 theorem addFn_ok {s : State} {base : Addr} {o a b : Nat} (h : FnEntry s base 4 o a)
-    (hvb : arg s 3 = BitVec.ofNat 32 b) (hb : Slot b) (ab : Bounded s.mem base a)
-    (bb : Bounded s.mem base b) :
+    (hvb : arg s 3 = BitVec.ofNat 32 b) (hb : Slot b) (hoa : SlotApart o a) (hob : SlotApart o b) :
     WP isa addFn s fun t => FnOut base o s t ∧ F t.mem base o = F s.mem base a + F s.mem base b := by
-  rw [show addFn = .block (fnEntry ++ (argPtr .esi 2 ++ argPtr .ebp 3 ++ addCols ++ normalize) ++ fnExit)
+  rw [show addFn = .block (fnEntry ++ (argPtrs ++ addSub .adc) ++ fnExit)
     by simp only [addFn, List.append_assoc]]
   refine fnBlock_ok (Q := fun m => F m base o = F s.mem base a + F s.mem base b) h fun t tc tm tk => ?_
-  obtain ⟨ea, ba⟩ := entry_operand h.slotA tm
-  obtain ⟨eb, bb'⟩ := entry_operand hb tm
-  exact WP.mono (addBody_ok tc (argB_keep h hvb tk tm) hb (ba ab) (bb' bb)) fun u ⟨up, uv⟩ =>
-    ⟨up, by rw [uv, F, F, ea, eb]⟩
+  refine WP.mono (addSubBody_ok (.inl rfl) tc (argB_keep h hvb tk tm) hb hoa hob)
+    fun u ⟨up, R₁, c₁, hc, hR, h₁, hF⟩ => ⟨up, ?_⟩
+  rw [entry_operand h.slotA tm, entry_operand hb tm] at h₁
+  exact toFe_add (add_val h₁ hR hc hF)
 
 theorem subFn_ok {s : State} {base : Addr} {o a b : Nat} (h : FnEntry s base 4 o a)
-    (hvb : arg s 3 = BitVec.ofNat 32 b) (hb : Slot b) (ab : Bounded s.mem base a)
-    (bb : Bounded s.mem base b) :
+    (hvb : arg s 3 = BitVec.ofNat 32 b) (hb : Slot b) (hoa : SlotApart o a) (hob : SlotApart o b) :
     WP isa subFn s fun t => FnOut base o s t ∧ F t.mem base o = F s.mem base a - F s.mem base b := by
-  rw [show subFn = .block (fnEntry ++ (argPtr .esi 2 ++ argPtr .ebp 3 ++ subCols ++ normalize) ++ fnExit)
+  rw [show subFn = .block (fnEntry ++ (argPtrs ++ addSub .sbb) ++ fnExit)
     by simp only [subFn, List.append_assoc]]
   refine fnBlock_ok (Q := fun m => F m base o = F s.mem base a - F s.mem base b) h fun t tc tm tk => ?_
-  obtain ⟨ea, ba⟩ := entry_operand h.slotA tm
-  obtain ⟨eb, bb'⟩ := entry_operand hb tm
-  exact WP.mono (subBody_ok tc (argB_keep h hvb tk tm) hb (ba ab) (bb' bb)) fun u ⟨up, uv⟩ =>
-    ⟨up, by rw [uv, F, F, ea, eb]⟩
+  refine WP.mono (addSubBody_ok (.inr rfl) tc (argB_keep h hvb tk tm) hb hoa hob)
+    fun u ⟨up, R₁, c₁, hc, hR, h₁, hF⟩ => ⟨up, ?_⟩
+  rw [entry_operand h.slotA tm, entry_operand hb tm] at h₁
+  exact toFe_sub (sub_val h₁ hR hc hF)
 
 theorem mulFn_ok {s : State} {base : Addr} {o a b : Nat} (h : FnEntry s base 4 o a)
-    (hvb : arg s 3 = BitVec.ofNat 32 b) (hb : Slot b) (ab : Bounded s.mem base a)
-    (bb : Bounded s.mem base b) :
+    (hvb : arg s 3 = BitVec.ofNat 32 b) (hb : Slot b) :
     WP isa mulFn s fun t => FnOut base o s t ∧ F t.mem base o = F s.mem base a * F s.mem base b := by
-  rw [show mulFn = .block (fnEntry ++ ((argPtr .esi 2 ++ pack PA ++ argPtr .esi 3 ++ pack PB ++ mulWords ++
-    argPtr .ebp 1 ++ unpack) ++ fnExit)) by simp only [mulFn, List.append_assoc], WP.block_append_iff]
-  refine WP.mono (fnEntry_ok h) fun t ⟨tc, tv, tm, tk⟩ => ?_
-  obtain ⟨ea, ba⟩ := entry_operand h.slotA tm
-  obtain ⟨eb, bb'⟩ := entry_operand hb tm
-  rw [WP.block_append_iff]
-  refine WP.mono (mulBody_ok tc (argB_keep h hvb tk tm) hb (ba ab) (bb' bb)) fun w ⟨wm, wb, wv, wk⟩ => ?_
-  refine WP.mono (fnExit_out tc tv tm tk (by decide) wk (tc.scr.of_keeps wk (by decide)) wm wb)
-    fun x ⟨hx, xm⟩ => ⟨hx, ?_⟩
-  rw [xm, wv, F, F, F, F, ea, eb]
+  rw [show mulFn = .block (fnEntry ++ (argPtr .esi 2 ++ operand PA ++ argPtr .esi 3 ++ operand PB ++
+    prodWords prodTerms) ++ fnExit) by simp only [mulFn, List.append_assoc]]
+  refine fnBlock_ok (Q := fun m => F m base o = F s.mem base a * F s.mem base b) h fun t tc tm tk => ?_
+  exact WP.mono (mulBody_ok tc (argB_keep h hvb tk tm) hb) fun u ⟨up, uv⟩ =>
+    ⟨up, by rw [uv, F, F, F, F, entry_operand h.slotA tm, entry_operand hb tm]⟩
 
-theorem sqrFn_ok {s : State} {base : Addr} {o a : Nat} (h : FnEntry s base 3 o a)
-    (ab : Bounded s.mem base a) :
+theorem sqrFn_ok {s : State} {base : Addr} {o a : Nat} (h : FnEntry s base 3 o a) :
     WP isa sqrFn s fun t => FnOut base o s t ∧ F t.mem base o = F s.mem base a * F s.mem base a := by
-  rw [show sqrFn = .block (fnEntry ++ ((argPtr .esi 2 ++ pack PA ++ sqrWords ++ argPtr .ebp 1 ++ unpack) ++
-    fnExit)) by simp only [sqrFn, List.append_assoc], WP.block_append_iff]
-  refine WP.mono (fnEntry_ok h) fun t ⟨tc, tv, tm, tk⟩ => ?_
-  obtain ⟨ea, ba⟩ := entry_operand h.slotA tm
-  rw [WP.block_append_iff]
-  refine WP.mono (sqrBody_ok tc (ba ab)) fun w ⟨wm, wb, wv, wk⟩ => ?_
-  refine WP.mono (fnExit_out tc tv tm tk (by decide) wk (tc.scr.of_keeps wk (by decide)) wm wb)
-    fun x ⟨hx, xm⟩ => ⟨hx, ?_⟩
-  rw [xm, wv, F, F, ea]
+  rw [show sqrFn = .block (fnEntry ++ (argPtr .esi 2 ++ operand PA ++ prodWords sqrTerms) ++
+    fnExit) by simp only [sqrFn, List.append_assoc]]
+  refine fnBlock_ok (Q := fun m => F m base o = F s.mem base a * F s.mem base a) h fun t tc tm tk => ?_
+  exact WP.mono (sqrBody_ok tc) fun u ⟨up, uv⟩ => ⟨up, by rw [uv, F, F, entry_operand h.slotA tm]⟩
 
 end VG.Proof.X448.X86
 
@@ -1556,63 +1252,62 @@ end
 
 end
 
-/-! ### `X448.Field16Contract`, which this module and modules that import it used -/
+/-! ### `X448.Field32Contract`, which this module and modules that import it used -/
 
 section
 
 /-!
-# Curve448's field in radix `2^16`
+# Curve448's field in radix `2^32`
 
 Not trusted: the representation of elements of `GF(p)`,
-`p = 2^448 - 2^224 - 1`, each twenty-eight 16-bit limbs, that the 32-bit
-targets' code of X448 and Ed448 keeps them in, and on which their field
-functions (`vg_gf448_r16_mul`, `_sqr`, `_add`, `_sub` and `_mul_a24`) work.
+`p = 2^448 - 2^224 - 1`, each fourteen 32-bit words, that the 32-bit x86
+code of X448 and Ed448 keeps them in, and on which its field
+functions (`vg_gf448_r32_mul`, `_sqr`, `_add`, `_sub` and `_mul_a24`) work.
 
-An element is twenty-eight limbs, each a 32-bit little-endian word below
-`2^16`, least significant first (`Limbs`): the element `Σ lᵢ 2^(16 i)`
-(`valAt`), any number below `2^448` (so not necessarily below `p`). The
+An element is fourteen 32-bit little-endian words, least significant first:
+the element `Σ wᵢ 2^(32 i)` (`valAt`), any number below `2^448` (so not
+necessarily below `p`). The
 elements live in a working space `ws` of 8192 bytes (`[u64; 1024]`, the
 working space of X448's and Ed448's functions), each at a byte offset: `o`
 for the result, `a` and `b` for the operands. The offsets are arguments, so
-that the result may be an operand and the caller keeps its elements where
-it likes. Bytes 3584 to 4095 of `ws` are the function's own working space
-(`ownAt`), and the elements lie below them (`Fits`). On return the
-function's own bytes are unspecified and may hold intermediate values;
-every other byte of `ws` keeps its value but the result's (`Keeps`).
-
-The result's limbs are below `2^16` again, so that it can be the operand of
-any of the functions.
+that the result may be an operand (but not overlap one otherwise, `Apart`)
+and the caller keeps its elements where it likes. Bytes 3584 to 4095 of `ws`
+are the function's own working space (`ownAt`), and the elements lie below
+them (`Fits`). On return the function's own bytes are unspecified and may
+hold intermediate values; every other byte of `ws` keeps its value but the
+result's (`Keeps`).
 -/
 
 @[expose] public section
 
-namespace VG.Proof.X448.Field16
+namespace VG.Proof.X448.Field32
 
 open VG.Spec VG.Spec.X448
 
-/-- The limbs of an element. -/
-def limbs : Nat := 28
+/-- The words of an element. -/
+def words : Nat := 14
 
-/-- The bytes of an element: a 32-bit word per limb. -/
-def elemBytes : Nat := 4 * limbs
+/-- The bytes of an element. -/
+def elemBytes : Nat := 4 * words
 
 /-- Where the function's own working space starts; it ends at byte 4096. -/
 def ownAt : Nat := 3584
 
-/-- Limb `i` of the element at byte offset `o` of the working space `ws`. -/
-def limbAt (m : Mem) (ws : Addr) (o : BitVec 32) (i : Nat) : Nat :=
+/-- Word `i` of the element at byte offset `o` of the working space `ws`. -/
+def wordAt (m : Mem) (ws : Addr) (o : BitVec 32) (i : Nat) : Nat :=
   (m.readW (ws + BitVec.ofNat 64 (o.toNat + 4 * i)) 32).toNat
 
-/-- The value of the first `n` limbs of the element at `o`: `Σ lᵢ 2^(16 i)`. -/
+/-- The value of the first `n` words of the element at `o`: `Σ wᵢ 2^(32 i)`. -/
 def valN (m : Mem) (ws : Addr) (o : BitVec 32) : Nat → Nat
   | 0 => 0
-  | n + 1 => valN m ws o n + 2 ^ (16 * n) * limbAt m ws o n
+  | n + 1 => valN m ws o n + (2 ^ 32) ^ n * wordAt m ws o n
 
 /-- The value of the element at `o`. -/
-def valAt (m : Mem) (ws : Addr) (o : BitVec 32) : Nat := valN m ws o limbs
+def valAt (m : Mem) (ws : Addr) (o : BitVec 32) : Nat := valN m ws o words
 
-/-- Every limb of the element at `o` is below `2^16`. -/
-def Limbs (m : Mem) (ws : Addr) (o : BitVec 32) : Prop := ∀ i < limbs, limbAt m ws o i < 2 ^ 16
+/-- The elements at `o` and `a` are the same, or apart. -/
+def Apart (o a : BitVec 32) : Prop :=
+  o = a ∨ o.toNat + elemBytes ≤ a.toNat ∨ a.toNat + elemBytes ≤ o.toNat
 
 /-- The element at `o` lies below the function's own working space. -/
 abbrev Fits (o : BitVec 32) : Prop := o.toNat + elemBytes ≤ ownAt
@@ -1623,7 +1318,7 @@ def Keeps (ws : Addr) (o : BitVec 32) (m m' : Mem) : Prop :=
   ∀ i < 8192, (i < ownAt ∨ 4096 ≤ i) → (i < o.toNat ∨ o.toNat + elemBytes ≤ i) →
     m' (ws + BitVec.ofNat 64 i) = m (ws + BitVec.ofNat 64 i)
 
-end VG.Proof.X448.Field16
+end VG.Proof.X448.Field32
 
 end
 
@@ -1645,6 +1340,7 @@ the proofs state (`FnOut.post`).
 namespace VG.Proof.X448.X86
 
 open VG VG.X86 VG.Impl.X448.X86 VG.Proof.X448.Radix16
+open VG.Proof.X25519.X86 (num)
 
 /-- The working space, the first argument. -/
 abbrev wsOf (s : State) : Addr := (arg s 0).setWidth 64
@@ -1657,30 +1353,30 @@ def fnPre (len : Nat) (s : State) : Prop :=
 
 /-- The binary functions' contract, for the relation `r` of the values. -/
 def binX86 (r : Nat → Nat → Nat → Prop) : Contract isa where
-  pre s := fnPre 16 s ∧ Proof.X448.Field16.Fits (arg s 1) ∧ Proof.X448.Field16.Fits (arg s 2) ∧
-    Proof.X448.Field16.Fits (arg s 3) ∧ Proof.X448.Field16.Limbs s.mem (wsOf s) (arg s 2) ∧
-    Proof.X448.Field16.Limbs s.mem (wsOf s) (arg s 3)
-  post s s' := Proof.X448.Field16.Limbs s'.mem (wsOf s) (arg s 1) ∧
-    r (Proof.X448.Field16.valAt s'.mem (wsOf s) (arg s 1)) (Proof.X448.Field16.valAt s.mem (wsOf s) (arg s 2))
-      (Proof.X448.Field16.valAt s.mem (wsOf s) (arg s 3)) ∧
-    Proof.X448.Field16.Keeps (wsOf s) (arg s 1) s.mem s'.mem
+  pre s := fnPre 16 s ∧ Proof.X448.Field32.Fits (arg s 1) ∧ Proof.X448.Field32.Fits (arg s 2) ∧
+    Proof.X448.Field32.Fits (arg s 3) ∧ Proof.X448.Field32.Apart (arg s 1) (arg s 2) ∧
+    Proof.X448.Field32.Apart (arg s 1) (arg s 3)
+  post s s' :=
+    r (Proof.X448.Field32.valAt s'.mem (wsOf s) (arg s 1)) (Proof.X448.Field32.valAt s.mem (wsOf s) (arg s 2))
+      (Proof.X448.Field32.valAt s.mem (wsOf s) (arg s 3)) ∧
+    Proof.X448.Field32.Keeps (wsOf s) (arg s 1) s.mem s'.mem
   pub s₁ s₂ := s₁.gpr .esp = s₂.gpr .esp ∧ arg s₁ 0 = arg s₂ 0 ∧ arg s₁ 1 = arg s₂ 1 ∧
     arg s₁ 2 = arg s₂ 2 ∧ arg s₁ 3 = arg s₂ 3
 
 /-- The unary functions' contract, for the relation `r` of the values. -/
 def unX86 (r : Nat → Nat → Prop) : Contract isa where
-  pre s := fnPre 12 s ∧ Proof.X448.Field16.Fits (arg s 1) ∧ Proof.X448.Field16.Fits (arg s 2) ∧
-    Proof.X448.Field16.Limbs s.mem (wsOf s) (arg s 2)
-  post s s' := Proof.X448.Field16.Limbs s'.mem (wsOf s) (arg s 1) ∧
-    r (Proof.X448.Field16.valAt s'.mem (wsOf s) (arg s 1)) (Proof.X448.Field16.valAt s.mem (wsOf s) (arg s 2)) ∧
-    Proof.X448.Field16.Keeps (wsOf s) (arg s 1) s.mem s'.mem
+  pre s := fnPre 12 s ∧ Proof.X448.Field32.Fits (arg s 1) ∧ Proof.X448.Field32.Fits (arg s 2) ∧
+    Proof.X448.Field32.Apart (arg s 1) (arg s 2)
+  post s s' :=
+    r (Proof.X448.Field32.valAt s'.mem (wsOf s) (arg s 1)) (Proof.X448.Field32.valAt s.mem (wsOf s) (arg s 2)) ∧
+    Proof.X448.Field32.Keeps (wsOf s) (arg s 1) s.mem s'.mem
   pub s₁ s₂ := s₁.gpr .esp = s₂.gpr .esp ∧ arg s₁ 0 = arg s₂ 0 ∧ arg s₁ 1 = arg s₂ 1 ∧
     arg s₁ 2 = arg s₂ 2
 
-/-- `vg_gf448_r16_mul_a24`'s contract. -/
+/-- `vg_gf448_r32_mul_a24`'s contract. -/
 def a24X86 : Contract isa := unX86 fun o a => o % Spec.X448.P = 39081 * a % Spec.X448.P
 
-/-- `vg_gf448_r16_sqr`'s contract: what `vg_gf448_r16_mul`'s gives for equal operands. -/
+/-- `vg_gf448_r32_sqr`'s contract: what `vg_gf448_r32_mul`'s gives for equal operands. -/
 def sqrX86 : Contract isa := unX86 fun o a => o % Spec.X448.P = a * a % Spec.X448.P
 
 theorem not_contains_ofs {base x : Addr} (h : ¬ (⟨base, 8192⟩ : Region).Contains x 1) :
@@ -1689,7 +1385,7 @@ theorem not_contains_ofs {base x : Addr} (h : ¬ (⟨base, 8192⟩ : Region).Con
 
 /-- The entry the facts of the contract give. -/
 theorem FnEntry.of_pre {s : State} {n : Nat} (hn : 3 ≤ n) (h : fnPre (4 * n) s)
-    (ho : Proof.X448.Field16.Fits (arg s 1)) (ha : Proof.X448.Field16.Fits (arg s 2)) :
+    (ho : Proof.X448.Field32.Fits (arg s 1)) (ha : Proof.X448.Field32.Fits (arg s 2)) :
     FnEntry s (wsOf s) n (arg s 1).toNat (arg s 2).toNat := by
   obtain ⟨hsp, hrd, hwr, hdis, hret, hfit⟩ := h
   have cont : ∀ i < n, (⟨argAddr s 0, 4 * n⟩ : Region).Contains (argAddr s i) 4 := fun i hi =>
@@ -1707,23 +1403,25 @@ theorem FnEntry.of_pre {s : State} {n : Nat} (hn : 3 ≤ n) (h : fnPre (4 * n) s
 
 /-- The value of an element, as `Spec` states it. -/
 theorem valN_spec (m : Mem) (ws : Addr) (o : BitVec 32) :
-    ∀ n, Proof.X448.Field16.valN m ws o n = valN (limbs m ws o.toNat) n
+    ∀ n, Proof.X448.Field32.valN m ws o n = num (limbs m ws o.toNat) n
   | 0 => rfl
   | n + 1 => by
-    rw [Proof.X448.Field16.valN, valN, valN_spec m ws o n, radix, ← Nat.pow_mul]
+    rw [Proof.X448.Field32.valN, num, valN_spec m ws o n]
     rfl
 
 theorem valAt_eq (m : Mem) (ws : Addr) (o : BitVec 32) :
-    Proof.X448.Field16.valAt m ws o = fe m ws o.toNat := valN_spec m ws o 28
+    Proof.X448.Field32.valAt m ws o = fe m ws o.toNat := valN_spec m ws o 14
 
-theorem limbs_spec {m : Mem} {ws : Addr} {o : BitVec 32} :
-    Proof.X448.Field16.Limbs m ws o ↔ Bounded m ws o.toNat := Iff.rfl
+theorem slotApart_of {o a : BitVec 32} (h : Proof.X448.Field32.Apart o a) : SlotApart o.toNat a.toNat := by
+  rcases h with rfl | h
+  · exact .inl rfl
+  · exact .inr h
 
 /-- `Keeps` from the frame of the field functions. -/
 theorem FieldMem.keeps {base : Addr} {o : BitVec 32} {m m' : Mem} (h : FieldMem base o.toNat m m') :
-    Proof.X448.Field16.Keeps base o m m' := by
+    Proof.X448.Field32.Keeps base o m m' := by
   intro i hi hw ho
-  simp only [Proof.X448.Field16.ownAt, Proof.X448.Field16.elemBytes, Proof.X448.Field16.limbs] at hw ho
+  simp only [Proof.X448.Field32.ownAt, Proof.X448.Field32.elemBytes, Proof.X448.Field32.words] at hw ho
   exact h _ (by rw [ofs, Mem.sub_ofNat_toNat base (by omega_using [hi])]; omega_using [ho])
     (by rw [ofs, Mem.sub_ofNat_toNat base (by omega_using [hi])]; simp only [ACC]; omega_using [hw])
 
@@ -1749,7 +1447,7 @@ namespace VG.Proof.X448.X86
 
 open VG VG.X86 VG.Impl.X448.X86 VG.Proof.X448.Radix16
 
-theorem slot_of_fits {o : BitVec 32} (h : Proof.X448.Field16.Fits o) : Slot o.toNat := h
+theorem slot_of_fits {o : BitVec 32} (h : Proof.X448.Field32.Fits o) : Slot o.toNat := h
 
 /-- A difference, as `Spec` states it. -/
 theorem toFe_sub_inv {a b c : Nat} (h : toFe c = toFe a - toFe b) : (c + b) % Spec.X448.P = a % Spec.X448.P := by
@@ -1786,8 +1484,8 @@ theorem mulFn_correct (s : State) (hs : (binX86 fun o a b => o % Spec.X448.P = a
       (binX86 fun o a b => o % Spec.X448.P = a * b % Spec.X448.P).post s s' := by
   obtain ⟨hp, ho, ha, hb, la, lb⟩ := hs
   have he := FnEntry.of_pre (n := 4) (by decide) hp ho ha
-  obtain ⟨t, s', ex, hk, hv⟩ := mulFn_ok he (b := (arg s 3).toNat) (by simp) (slot_of_fits hb) la lb
-  refine ⟨t, s', ex, hk.abi (NoSp.of_all (by lit_decide)) (by lit_decide) ex (fnPre_ret hp), hk.bounded, ?_, hk.mem.keeps⟩
+  obtain ⟨t, s', ex, hk, hv⟩ := mulFn_ok he (b := (arg s 3).toNat) (by simp) (slot_of_fits hb)
+  refine ⟨t, s', ex, hk.abi (NoSp.of_all (by lit_decide)) (by lit_decide) ex (fnPre_ret hp), ?_, hk.mem.keeps⟩
   rw [valAt_eq, valAt_eq, valAt_eq]
   exact toFe_eq_iff.mp (hv.trans (toFe_mul rfl).symm)
 
@@ -1796,8 +1494,9 @@ theorem addFn_correct (s : State) (hs : (binX86 fun o a b => o % Spec.X448.P = (
       (binX86 fun o a b => o % Spec.X448.P = (a + b) % Spec.X448.P).post s s' := by
   obtain ⟨hp, ho, ha, hb, la, lb⟩ := hs
   have he := FnEntry.of_pre (n := 4) (by decide) hp ho ha
-  obtain ⟨t, s', ex, hk, hv⟩ := addFn_ok he (b := (arg s 3).toNat) (by simp) (slot_of_fits hb) la lb
-  refine ⟨t, s', ex, hk.abi (NoSp.of_all (by lit_decide)) (by lit_decide) ex (fnPre_ret hp), hk.bounded, ?_, hk.mem.keeps⟩
+  obtain ⟨t, s', ex, hk, hv⟩ := addFn_ok he (b := (arg s 3).toNat) (by simp) (slot_of_fits hb)
+    (slotApart_of la) (slotApart_of lb)
+  refine ⟨t, s', ex, hk.abi (NoSp.of_all (by lit_decide)) (by lit_decide) ex (fnPre_ret hp), ?_, hk.mem.keeps⟩
   rw [valAt_eq, valAt_eq, valAt_eq]
   exact toFe_eq_iff.mp (hv.trans (toFe_add rfl).symm)
 
@@ -1806,8 +1505,9 @@ theorem subFn_correct (s : State) (hs : (binX86 fun o a b => (o + b) % Spec.X448
       (binX86 fun o a b => (o + b) % Spec.X448.P = a % Spec.X448.P).post s s' := by
   obtain ⟨hp, ho, ha, hb, la, lb⟩ := hs
   have he := FnEntry.of_pre (n := 4) (by decide) hp ho ha
-  obtain ⟨t, s', ex, hk, hv⟩ := subFn_ok he (b := (arg s 3).toNat) (by simp) (slot_of_fits hb) la lb
-  refine ⟨t, s', ex, hk.abi (NoSp.of_all (by lit_decide)) (by lit_decide) ex (fnPre_ret hp), hk.bounded, ?_, hk.mem.keeps⟩
+  obtain ⟨t, s', ex, hk, hv⟩ := subFn_ok he (b := (arg s 3).toNat) (by simp) (slot_of_fits hb)
+    (slotApart_of la) (slotApart_of lb)
+  refine ⟨t, s', ex, hk.abi (NoSp.of_all (by lit_decide)) (by lit_decide) ex (fnPre_ret hp), ?_, hk.mem.keeps⟩
   rw [valAt_eq, valAt_eq, valAt_eq]
   exact toFe_sub_inv hv
 
@@ -1815,8 +1515,8 @@ theorem mulA24Fn_correct (s : State) (hs : a24X86.pre s) :
     ∃ t s', Exec isa mulA24Fn s t s' ∧ abiPreserved s s' ∧ a24X86.post s s' := by
   obtain ⟨hp, ho, ha, la⟩ := hs
   have he := FnEntry.of_pre (n := 3) (by decide) hp ho ha
-  obtain ⟨t, s', ex, hk, hv⟩ := mulA24Fn_ok he la
-  refine ⟨t, s', ex, hk.abi (NoSp.of_all (by lit_decide)) (by lit_decide) ex (fnPre_ret hp), hk.bounded, ?_, hk.mem.keeps⟩
+  obtain ⟨t, s', ex, hk, hv⟩ := mulA24Fn_ok he (slotApart_of la)
+  refine ⟨t, s', ex, hk.abi (NoSp.of_all (by lit_decide)) (by lit_decide) ex (fnPre_ret hp), ?_, hk.mem.keeps⟩
   rw [valAt_eq, valAt_eq]
   exact toFe_eq_iff.mp (hv.trans (toFe_a24 rfl).symm)
 
@@ -1824,9 +1524,8 @@ theorem sqrFn_correct (s : State) (hs : sqrX86.pre s) :
     ∃ t s', Exec isa sqrFn s t s' ∧ abiPreserved s s' ∧ sqrX86.post s s' := by
   obtain ⟨hp, ho, ha, la⟩ := hs
   have he := FnEntry.of_pre (n := 3) (by decide) hp ho ha
-  obtain ⟨t, s', ex, hk, hv⟩ := sqrFn_ok he la
-  refine ⟨t, s', ex, hk.abi (NoSp.of_all (by lit_decide)) (by lit_decide) ex (fnPre_ret hp), hk.bounded, ?_,
-    hk.mem.keeps⟩
+  obtain ⟨t, s', ex, hk, hv⟩ := sqrFn_ok he
+  refine ⟨t, s', ex, hk.abi (NoSp.of_all (by lit_decide)) (by lit_decide) ex (fnPre_ret hp), ?_, hk.mem.keeps⟩
   rw [valAt_eq, valAt_eq]
   exact toFe_eq_iff.mp (hv.trans (toFe_mul rfl).symm)
 

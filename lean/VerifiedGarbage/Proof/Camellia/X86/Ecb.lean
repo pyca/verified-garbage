@@ -148,7 +148,7 @@ theorem cryptPrepared_wp {s : State} (hp : cryptX86.pre s) {w : List (BitVec 64)
     Region.sub_prefix (by rw [slots_eq]; omega_using [hsz])
   obtain hwS : ScrIn s.wr (arg s 1) := ⟨⟨2 * (arg s 2).toNat, by rw [slots_eq]; omega_using [hsz], by omega_using [fitW],
     by rw [hwr, show 4 * (2 * (arg s 2).toNat) = (arg s 2).toNat * 8 by omega_using []]; exact List.mem_singleton_self _⟩,
-    hfit⟩
+    hfit, by decide⟩
   obtain hrA : (⟨argAddr s 0, 12⟩ : Region) ∈ s.rd := by rw [hrd]; exact List.mem_singleton_self _
   obtain argIn : ∀ {t : State}, t.rd = s.rd → t.wr = s.wr → t.gpr .esp = s.gpr .esp → ∀ i < 3,
       InRegions (t.rd ++ t.wr) (t.ea (argOp i)) 4 := fun h1 h2 h3 i hi => by
@@ -203,7 +203,7 @@ theorem cryptPrepared_wp {s : State} (hp : cryptX86.pre s) {w : List (BitVec 64)
     rw [keepHi₃ _ (by rw [grpSlot_eq]; exact Nat.le_add_right _ _) (by rw [slots_eq]; show 655 + i < 672; omega_using [hi]), m₂]
     exact sv₁ i hi
   -- The epilogue.
-  obtain ⟨s₄, e₄, rg₄, o₄, m₄, -, -⟩ := restoreAt_ok (s₀ := s) (b := arg s 1) (j := cryptSavedSlot) (by decide)
+  obtain ⟨s₄, e₄, rg₄, o₄, m₄, -, -⟩ := restoreAt_ok (N := slots) (s₀ := s) (b := arg s 1) (j := cryptSavedSlot) (by decide)
     (by rw [c₃.wr, wr₂, wr₁]; exact hwS) base₃ sv₃
   obtain fB : Frame [⟨(arg s 1).setWidth 64, 4 * slots⟩] s.mem s₄.mem := by
     rw [m₄]
@@ -556,8 +556,8 @@ theorem groupCount_wp {s : State} {b A : BitVec 32} {v : Nat} (hb : s.gpr .edi =
       s'.gpr .ecx = BitVec.ofNat 32 (min v 8) ∧
       (∀ r, r ≠ .esi → r ≠ .ebp → r ≠ .ecx → s'.gpr r = s.gpr r) ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧
       s'.wr = s.wr := by
-  obtain ⟨s₁, e₁, r₁, o₁, m₁, rd₁, wr₁, -, -⟩ := ldSlot_ok s .esi .edi (k := dSlot) hb (by decide) hw
-  obtain ⟨s₂, e₂, r₂, o₂, m₂, rd₂, wr₂, -, -⟩ := ldSlot_ok s₁ .ebp .edi (k := nSlot)
+  obtain ⟨s₁, e₁, r₁, o₁, m₁, rd₁, wr₁, -, -⟩ := ldSlot_ok (N := slots) s .esi .edi (k := dSlot) hb (by decide) hw
+  obtain ⟨s₂, e₂, r₂, o₂, m₂, rd₂, wr₂, -, -⟩ := ldSlot_ok (N := slots) s₁ .ebp .edi (k := nSlot)
     (by rw [o₁ _ (by decide), hb]) (by decide) (by rw [wr₁]; exact hw)
   unfold groupCount
   refine WP.seq (WP.of_runBlock ⟨s₂, ?_, WP.mono (countR_wp (by rw [r₂, m₁, hn]) hv)
@@ -576,8 +576,8 @@ theorem stDN_ok (s : State) {b : BitVec 32} (hb : s.gpr .edi = b) (hw : ScrIn s.
       s'.gpr = s.gpr ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.zf = s.zf ∧
       Frame [⟨wordAddr b dSlot, 4⟩, ⟨wordAddr b nSlot, 4⟩] s.mem s'.mem := by
   have hfit : b.toNat + 4 * slots ≤ 2 ^ 32 := hw.fit
-  obtain ⟨s₁, e₁, m₁, g₁, rd₁, wr₁, z₁, -, f₁⟩ := stSlot_ok s .esi .edi (k := dSlot) hb (by decide) hw
-  obtain ⟨s₂, e₂, m₂, g₂, rd₂, wr₂, z₂, -, f₂⟩ := stSlot_ok s₁ .ebp .edi (k := nSlot) (by rw [g₁, hb])
+  obtain ⟨s₁, e₁, m₁, g₁, rd₁, wr₁, z₁, -, f₁⟩ := stSlot_ok (N := slots) s .esi .edi (k := dSlot) hb (by decide) hw
+  obtain ⟨s₂, e₂, m₂, g₂, rd₂, wr₂, z₂, -, f₂⟩ := stSlot_ok (N := slots) s₁ .ebp .edi (k := nSlot) (by rw [g₁, hb])
     (by decide) (by rw [wr₁]; exact hw)
   refine ⟨s₂, ?_, ?_, ?_, by rw [g₂, g₁], by rw [rd₂, rd₁], by rw [wr₂, wr₁], by rw [z₂, z₁],
     (f₁.sub fun r hr => ⟨r, by simp at hr; simp [hr], fun _ h => h⟩).trans
@@ -1128,10 +1128,10 @@ theorem prepareKeys_wp (dir : Dir) {s : State} (hp : (prepX86 dir).pre s) :
     exact sv₁ i hi
   obtain hwS₃ : ScrIn s₃.wr b := by rw [k₃.wr, wr₂, wr₁]; exact hwS
   obtain esp₃ : s₃.gpr .esp = s.gpr .esp := by rw [k₃.regs _ (by decide) (by decide), esp₂]
-  obtain ⟨s₄a, e₄a, v₄a, o₄a, m₄a, rd₄a, wr₄a, -, -⟩ := ldSlot_ok s₃ .ebx .edi (k := cryptSavedSlot) base₃ (by decide) hwS₃
-  obtain ⟨s₄b, e₄b, v₄b, o₄b, m₄b, rd₄b, wr₄b, -, -⟩ := ldSlot_ok s₄a .esi .edi (k := cryptSavedSlot + 1)
+  obtain ⟨s₄a, e₄a, v₄a, o₄a, m₄a, rd₄a, wr₄a, -, -⟩ := ldSlot_ok (N := slots) s₃ .ebx .edi (k := cryptSavedSlot) base₃ (by decide) hwS₃
+  obtain ⟨s₄b, e₄b, v₄b, o₄b, m₄b, rd₄b, wr₄b, -, -⟩ := ldSlot_ok (N := slots) s₄a .esi .edi (k := cryptSavedSlot + 1)
     (by rw [o₄a _ (by decide), base₃]) (by decide) (by rw [wr₄a]; exact hwS₃)
-  obtain ⟨s₄c, e₄c, v₄c, o₄c, m₄c, rd₄c, wr₄c, -, -⟩ := ldSlot_ok s₄b .ebp .edi (k := cryptSavedSlot + 3)
+  obtain ⟨s₄c, e₄c, v₄c, o₄c, m₄c, rd₄c, wr₄c, -, -⟩ := ldSlot_ok (N := slots) s₄b .ebp .edi (k := cryptSavedSlot + 3)
     (by rw [o₄b _ (by decide), o₄a _ (by decide), base₃]) (by decide) (by rw [wr₄b, wr₄a]; exact hwS₃)
   obtain esp₄c : s₄c.gpr .esp = s.gpr .esp := by rw [o₄c _ (by decide), o₄b _ (by decide), o₄a _ (by decide), esp₃]
   obtain f₃ : Frame [⟨b.setWidth 64, 4 * slots⟩] s.mem s₃.mem :=

@@ -27,7 +27,7 @@ working space's slots then hold public values (pointers, counts).
 namespace VG.Proof.Cast5.X86
 
 open VG VG.X86 VG.Impl.Cast5.X86
-open VG.Impl.Cast5 (s1234Sym s1234 ecbConsts)
+open VG.Impl.Cast5.X86 (x1234Sym x1234 xEcbConsts)
 
 /-- The initial taint: `esp`, the 20 bytes of arguments (the fifth, the base
 of writable region 1, the working space) and the 4 bytes of stack below `esp`
@@ -76,7 +76,7 @@ theorem τEcb_wf {up : Bool} {s : State} (h : (ecbX up).pre s) : VG.X86.Taint.Wf
     · exact h.dS.symm
 
 theorem τEcb_agree {up : Bool} {s₁ s₂ : State} (h₁ : (ecbX up).pre s₁) (h₂ : (ecbX up).pre s₂)
-    (hp : (ecbX up).pub s₁ s₂) : VG.X86.Taint.AgreeS [s1234Sym] τEcb s₁ s₂ := by
+    (hp : (ecbX up).pub s₁ s₂) : VG.X86.Taint.AgreeS [x1234Sym] τEcb s₁ s₂ := by
   obtain ⟨sp, args, sy⟩ := hp
   refine ⟨⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun _ => ?_, τEcb_wf h₁, τEcb_wf h₂, VG.X86.Taint.slotsOk_empty,
     VG.X86.Taint.slotsAgree_empty, fun _ => sp, fun k h4 hk => ?_⟩, fun n hn => ?_⟩
@@ -94,14 +94,14 @@ theorem τEcb_agree {up : Bool} {s₁ s₂ : State} (h₁ : (ecbX up).pre s₁) 
     exact sy
 
 theorem ecbEncrypt_ct : ConstantTime isa (ecbX true).pre (ecbX true).pub ecbEncrypt :=
-  VG.Taint.constantTime (A := taintSym [s1234Sym]) τEcb (fun _ _ h₁ h₂ hp => τEcb_agree h₁ h₂ hp)
+  VG.Taint.constantTime (A := taintSym [x1234Sym]) τEcb (fun _ _ h₁ h₂ hp => τEcb_agree h₁ h₂ hp)
     (by taint_decide)
 
 theorem ecbDecrypt_ct : ConstantTime isa (ecbX false).pre (ecbX false).pub ecbDecrypt :=
-  VG.Taint.constantTime (A := taintSym [s1234Sym]) τEcb (fun _ _ h₁ h₂ hp => τEcb_agree h₁ h₂ hp)
+  VG.Taint.constantTime (A := taintSym [x1234Sym]) τEcb (fun _ _ h₁ h₂ hp => τEcb_agree h₁ h₂ hp)
     (by taint_decide)
 
-theorem ecbConsts_eq : ecbConsts = [(s1234Sym, s1234)] := rfl
+theorem xEcbConsts_eq : xEcbConsts = [(x1234Sym, x1234)] := rfl
 
 /-- The arguments of the witness at `0x8004`: the schedule at `0x1000`, 16
 rounds, one block at `0x2000` and the working space at `0x3000`. -/
@@ -113,21 +113,21 @@ def satArgs : Mem := fun a =>
 arguments elsewhere (irreducible: unfolding it in a definitional check would
 evaluate the table). -/
 @[irreducible] def ecbSatMem : Mem := fun a =>
-  if (a - 0x100000).toNat < 4096 then constMem 0x100000 s1234 a else satArgs a
+  if (a - 0x100000).toNat < 4096 then constMem 0x100000 x1234 a else satArgs a
 
-theorem ecbSatMem_held : ∀ i < s1234.length,
-    ecbSatMem.readW (0x100000 + BitVec.ofNat 64 (8 * i)) 64 = s1234.getD i 0 := by
+theorem ecbSatMem_held : ∀ i < x1234.length,
+    ecbSatMem.readW (0x100000 + BitVec.ofNat 64 (8 * i)) 64 = x1234.getD i 0 := by
   intro i hi
-  rw [s1234_length] at hi
+  rw [x1234_length] at hi
   have hm : ecbSatMem.readW (0x100000 + BitVec.ofNat 64 (8 * i)) 64 =
-      (constMem 0x100000 s1234).readW (0x100000 + BitVec.ofNat 64 (8 * i)) 64 := by
+      (constMem 0x100000 x1234).readW (0x100000 + BitVec.ofNat 64 (8 * i)) 64 := by
     apply Mem.readW_congr
     intro j hj
     have e : ((0x100000 : Addr) + BitVec.ofNat 64 (8 * i) + BitVec.ofNat 64 j - 0x100000).toNat = 8 * i + j := by
       rw [Offset.add_add, Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hi, hj])]
     unfold ecbSatMem
     rw [e, ite_eq_left (show 8 * i + j < 4096 by omega_using [hi, hj])]
-  exact hm.trans (constMem_held 0x100000 s1234 (by rw [s1234_length]; decide) i (by rw [s1234_length]; exact hi))
+  exact hm.trans (constMem_held 0x100000 x1234 (by rw [x1234_length]; decide) i (by rw [x1234_length]; exact hi))
 
 /-- A state satisfying the ECB functions' precondition. -/
 def ecbSat : State where
@@ -151,7 +151,7 @@ theorem sat_arg (j : Nat) (hj : j < 5) : arg ecbSat j = satArgs.readW (argAddr e
   rw [ite_eq_right (this j hj b (by omega_using [hb]))]
 
 theorem ecb_sat (up : Bool) :
-    (Proof.Cast5.ecbRoundsContract (X86.abi.withConsts ecbConsts) (if up then .encrypt else .decrypt) 4).pre ecbSat := by
+    (Proof.Cast5.ecbRoundsContract (X86.abi.withConsts xEcbConsts) (if up then .encrypt else .decrypt) 4).pre ecbSat := by
   have a0 : arg ecbSat 0 = 0x1000 := (sat_arg 0 (by decide)).trans (by decide)
   have a1 : arg ecbSat 1 = 16 := (sat_arg 1 (by decide)).trans (by decide)
   have a2 : arg ecbSat 2 = 0x2000 := (sat_arg 2 (by decide)).trans (by decide)
@@ -160,10 +160,10 @@ theorem ecb_sat (up : Bool) :
   have held := ecbSatMem_held
   generalize e : ecbSat = s
   sig_pre [Proof.Cast5.ecbRoundsContract, Spec.Cast5.ecbSig, Spec.Cast5.ecbPre, X86.abi, X86.argSlots, X86.argVal,
-    X86.argBytes, ecbConsts_eq, Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow, s1234_length]
+    X86.argBytes, xEcbConsts_eq, Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow, x1234_length]
   subst s
   rw [a0, a1, a2, a3, a4]
-  refine ⟨by decide, by decide, rfl, fun i hi => held i (by rw [s1234_length]; exact hi), by decide, ?_, ?_⟩
+  refine ⟨by decide, by decide, rfl, fun i hi => held i (by rw [x1234_length]; exact hi), by decide, ?_, ?_⟩
   · intro r hr
     change r ∈ [⟨0x2000, 8⟩, ⟨0x3000, 256⟩] at hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -172,20 +172,20 @@ theorem ecb_sat (up : Bool) :
     all_goals first | exact Region.disjoint_of_sep (by decide) | decide | rfl
 
 theorem ecb_implies (up : Bool) :
-    (ecbX up).Implies (Proof.Cast5.ecbRoundsContract (X86.abi.withConsts ecbConsts) (if up then .encrypt else .decrypt) 4) where
+    (ecbX up).Implies (Proof.Cast5.ecbRoundsContract (X86.abi.withConsts xEcbConsts) (if up then .encrypt else .decrypt) 4) where
   pre s h := by
     sig_pre [Proof.Cast5.ecbRoundsContract, Spec.Cast5.ecbSig, Spec.Cast5.ecbPre, X86.abi, X86.argSlots, X86.argVal,
-      X86.argBytes, ecbConsts_eq, Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow, s1234_length] at h
+      X86.argBytes, xEcbConsts_eq, Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow, x1234_length] at h
     obtain ⟨h4, hsp, hdrop, held, fitT, dTw, -, dTB, -, htake, hwr, dKD, dKS, dDS, dDA, dSA, -, dRD, dRS, -, dBK, dBD,
       dBS, -, fK, fD, fS, nv⟩ := h
     have be : below (s.gpr .esp) 4 = ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 4, 4⟩ := by
       simp only [below, Taint.sub_setWidth h4]
     have e8 : 8 * (arg s 3).toNat = (arg s 3).toNat * 8 := Nat.mul_comm _ _
-    have hrd : s.rd = [⟨(arg s 0).setWidth 64, 128⟩, ⟨argAddr s 0, 20⟩, ⟨(s.syms s1234Sym).setWidth 64, 4096⟩] := by
+    have hrd : s.rd = [⟨(arg s 0).setWidth 64, 128⟩, ⟨argAddr s 0, 20⟩, ⟨(s.syms x1234Sym).setWidth 64, 4096⟩] := by
       rw [← List.take_append_drop (s.rd.length - 1) s.rd, htake, hdrop]; rfl
     have mK : (⟨(arg s 0).setWidth 64, 128⟩ : Region) ∈ s.rd := by rw [hrd]; exact List.mem_cons_self
     have mA : (⟨argAddr s 0, 20⟩ : Region) ∈ s.rd := by rw [hrd]; exact List.mem_cons_of_mem _ List.mem_cons_self
-    have mT : (⟨(s.syms s1234Sym).setWidth 64, 4096⟩ : Region) ∈ s.rd := by
+    have mT : (⟨(s.syms x1234Sym).setWidth 64, 4096⟩ : Region) ∈ s.rd := by
       rw [hrd]; exact List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self)
     have mD : (⟨(arg s 2).setWidth 64, (arg s 3).toNat * 8⟩ : Region) ∈ s.wr := by rw [hwr]; exact List.mem_cons_self
     have mS : (⟨(arg s 4).setWidth 64, 256⟩ : Region) ∈ s.wr := by
@@ -208,7 +208,7 @@ theorem ecb_implies (up : Bool) :
     · exact ⟨_, mD, Region.contains_self _ _⟩
     · exact ⟨_, List.mem_append_left _ mK, Region.contains_self _ _⟩
     · exact ⟨_, List.mem_append_left _ mT, Region.contains_self _ _⟩
-    · exact fun i hi => held i (by rw [s1234_length] at hi; exact hi)
+    · exact fun i hi => held i (by rw [x1234_length] at hi; exact hi)
     · exact dDS
     · exact dKS
     · exact dKD
@@ -226,10 +226,10 @@ theorem ecb_implies (up : Bool) :
   post := by
     intro s t _ h
     sig_post [Proof.Cast5.ecbRoundsContract, Spec.Cast5.ecbSig, Proof.Cast5.ecbRoundsPost, X86.abi, X86.argSlots, X86.argVal,
-      X86.argBytes, ecbConsts_eq, Abi.withConsts]
+      X86.argBytes, xEcbConsts_eq, Abi.withConsts]
     exact h
   pub s t _ _ h := by
-    sig_pub [Proof.Cast5.ecbRoundsContract, Spec.Cast5.ecbSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, ecbConsts_eq,
+    sig_pub [Proof.Cast5.ecbRoundsContract, Spec.Cast5.ecbSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, xEcbConsts_eq,
       Abi.withConsts] at h
     obtain ⟨hsp, hsy, h0, h1, h2, h3, h4⟩ := h
     refine ⟨hsp, fun i hi => ?_, hsy⟩
@@ -247,11 +247,11 @@ theorem ecbX_correct (up : Bool) (s : State) (hs : (ecbX up).pre s) :
   exact ⟨t, s', he, ha, hp⟩
 
 theorem ecbEncrypt_verified :
-    Verified X86.target ecbEncrypt (Proof.Cast5.ecbEncryptRoundsContract (X86.abi.withConsts ecbConsts) 4) :=
+    Verified X86.target ecbEncrypt (Proof.Cast5.ecbEncryptRoundsContract (X86.abi.withConsts xEcbConsts) 4) :=
   Verified.of_correct (ecbX_correct true) ecbEncrypt_ct (ecb_implies true)
 
 theorem ecbDecrypt_verified :
-    Verified X86.target ecbDecrypt (Proof.Cast5.ecbDecryptRoundsContract (X86.abi.withConsts ecbConsts) 4) :=
+    Verified X86.target ecbDecrypt (Proof.Cast5.ecbDecryptRoundsContract (X86.abi.withConsts xEcbConsts) 4) :=
   Verified.of_correct (ecbX_correct false) ecbDecrypt_ct (ecb_implies false)
 
 end VG.Proof.Cast5.X86

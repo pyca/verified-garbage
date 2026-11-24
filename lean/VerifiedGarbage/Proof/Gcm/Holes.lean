@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Gcm.Holes.Words
+
 public import Mathlib.Algebra.Polynomial.Expand
 public import Mathlib.Algebra.Polynomial.Div
 public import Mathlib.Data.ZMod.Defs
@@ -295,9 +297,6 @@ theorem lp_polyMul (a b : BitVec 64) : lp (VG.VectorCrypto.polyMul a b) = lp a *
 
 /-! ## The masks -/
 
-/-- The bits congruent to `i` modulo 4. -/
-def K (i : ℕ) : BitVec 64 := 0x1111111111111111#64 <<< i
-
 theorem getLsbD_K {i : ℕ} (hi : i < 4) {j : ℕ} (hj : j < 64) : (K i).getLsbD j = decide (j % 4 = i) := by
   revert j
   interval_cases i <;> decide
@@ -324,16 +323,6 @@ theorem lp_split (a : BitVec 64) :
     have : n % 4 < 4 := Nat.mod_lt _ (by norm_num)
     cases a.getLsbD n <;> interval_cases h : n % 4 <;> simp [lbit]
   · simp [BitVec.getLsbD_of_ge a n (by omega_using [hn]), lbit]
-
-/-- The words `zₜ` of the code: the products of the parts of `a` and `b` whose
-classes add up to `t`, `b`'s parts in order. -/
-def zc (a : BitVec 64) (bs : ℕ → BitVec 64) (t : ℕ) : BitVec 64 :=
-  (a &&& K t) * bs 0 ^^^ (a &&& K ((t + 3) % 4)) * bs 1 ^^^ (a &&& K ((t + 2) % 4)) * bs 2 ^^^
-    (a &&& K ((t + 1) % 4)) * bs 3
-
-/-- The class `t` of each `zₜ`, together. -/
-def holes (a : BitVec 64) (bs : ℕ → BitVec 64) : BitVec 64 :=
-  (zc a bs 0 &&& K 0) ||| (zc a bs 1 &&& K 1) ||| (zc a bs 2 &&& K 2) ||| (zc a bs 3 &&& K 3)
 
 /-- The carry-less product of two 32-bit values by multiplications with holes. -/
 theorem holes_eq (a b : BitVec 64) (ha : a.toNat < 2 ^ 32) (hb : b.toNat < 2 ^ 32) :
@@ -418,11 +407,6 @@ theorem lp_append {n m : ℕ} (a : BitVec n) (b : BitVec m) : lp (a ++ b) = lp b
   · simp only [h1, ↓reduceIte, show m ≤ k by omega_using [h1], coeff_lp, BitVec.getLsbD_of_ge b k (by omega_using [h1])]
     simp [lbit]
 
-/-- The low half of a word. -/
-def lo32 (x : BitVec 64) : BitVec 64 := (x <<< 32) >>> 32
-/-- The high half of a word. -/
-def hi32 (x : BitVec 64) : BitVec 64 := x >>> 32
-
 theorem getLsbD_lo32 (x : BitVec 64) (k : ℕ) : (lo32 x).getLsbD k = (decide (k < 32) && x.getLsbD k) := by
   simp only [lo32, BitVec.getLsbD_ushiftRight, BitVec.getLsbD_shiftLeft]
   by_cases h : k < 32
@@ -483,17 +467,6 @@ theorem lp_holes {a b : BitVec 64} (ha : a.toNat < 2 ^ 32) (hb : b.toNat < 2 ^ 3
   · rw [decide_eq_true hk, Bool.true_and, ← coeff_lp, lp_polyMul]
   · rw [decide_eq_false hk, Bool.false_and, coeff_mul_lt32 ha hb (by omega_using [hk])]; rfl
 
-/-- The 64-bit carry-less product, by three 32-bit ones: the low halves' product, -/
-def pmL (x y : BitVec 64) : BitVec 64 := holes (lo32 x) fun j => lo32 y &&& K j
-/-- the high halves', -/
-def pmH (x y : BitVec 64) : BitVec 64 := holes (hi32 x) fun j => hi32 y &&& K j
-/-- the middle term, -/
-def pmM (x y : BitVec 64) : BitVec 64 :=
-  (holes (lo32 x ^^^ hi32 x) fun j => (lo32 y ^^^ hi32 y) &&& K j) ^^^ pmL x y ^^^ pmH x y
-/-- and its low and high words. -/
-def pm (x y : BitVec 64) : BitVec 64 × BitVec 64 :=
-  (pmL x y ^^^ pmM x y <<< 32, pmH x y ^^^ pmM x y >>> 32)
-
 theorem two_P : (2 : (ZMod 2)[X]) = 0 := by
   rw [← map_ofNat C 2, show (OfNat.ofNat 2 : ZMod 2) = 0 from rfl, map_zero]
 
@@ -549,12 +522,6 @@ theorem ψ_shr_shl (w : BitVec 64) {s : Nat} (hs : 0 < s) (hs' : s < 64) :
   simp only [map_add, map_mul, map_pow, AdjoinRoot.mk_X] at this
   exact this
 
-/-- What a fold adds to the lower word, -/
-def foldLo (lo w : BitVec 64) : BitVec 64 := (((lo ^^^ w) ^^^ (w >>> 1)) ^^^ (w >>> 2)) ^^^ (w >>> 7)
-
-/-- and to the higher. -/
-def foldHi (hi w : BitVec 64) : BitVec 64 := ((hi ^^^ (w <<< 63)) ^^^ (w <<< 62)) ^^^ (w <<< 57)
-
 theorem ψ_fold (lo hi w : BitVec 64) :
     ψ (foldLo lo w) + x ^ 64 * ψ (foldHi hi w) = ψ lo + x ^ 64 * ψ hi + x ^ 128 * ψ w := by
   have e1 := ψ_shr_shl w (s := 1) (by decide) (by decide)
@@ -564,23 +531,11 @@ theorem ψ_fold (lo hi w : BitVec 64) :
   simp only [Nat.reduceSub] at e1 e2 e7
   linear_combination e1 + e2 + e7 - ψ w * x128
 
-/-- The reduction: `W₃` into `W₁, W₂`, then `W₂` into `W₀, W₁`. -/
-def reduce (w0 w1 w2 w3 : BitVec 64) : BitVec 128 :=
-  foldLo w0 (foldHi w2 w3) ++ foldHi (foldLo w1 w3) (foldHi w2 w3)
-
 theorem φ_reduce (w0 w1 w2 w3 : BitVec 64) :
     φ (reduce w0 w1 w2 w3) = ψ w0 + x ^ 64 * ψ w1 + x ^ 128 * ψ w2 + x ^ 192 * ψ w3 := by
   rw [reduce, φ_append, ψ_fold]
   have := ψ_fold w1 w2 w3
   linear_combination x ^ 64 * this
-
-/-- The key's first word, `H · x⁻¹`: `H` shifted up a bit, `x⁻¹ = 1 + x + x⁶ + x¹²⁷` added if
-its constant term was set. -/
-def key0 (h0 h1 : BitVec 64) : BitVec 64 :=
-  ((h0 <<< 1) ^^^ (h1 >>> 63)) ^^^ ((0#64 - (h0 >>> 63)) &&& VG.Impl.Gcm.Clmul.poly)
-
-/-- … and its second. -/
-def key1 (h0 h1 : BitVec 64) : BitVec 64 := (h1 <<< 1) ^^^ ((0#64 - (h0 >>> 63)) &&& 1#64)
 
 theorem mask_msb (h c : BitVec 64) : (0#64 - (h >>> 63)) &&& c = if h.getMsbD 0 then c else 0#64 := by
   rw [ushr63]; split_ifs
@@ -602,13 +557,6 @@ theorem x_φ_key (h0 h1 : BitVec 64) : x * φ (key0 h0 h1 ++ key1 h0 h1) = φ (h
   · ring
   · linear_combination x128 + (x + x ^ 2 + x ^ 7) * two_Q
   · linear_combination x128 + (x + x ^ 2 + x ^ 7) * two_Q
-
-/-- One block's product by the key `k` (`key0`, `key1`), as the code computes it. -/
-def mulK (y0 y1 k0 k1 : BitVec 64) : BitVec 128 :=
-  let l := pm y0 k0
-  let h := pm y1 k1
-  let m := pm (y0 ^^^ y1) (k0 ^^^ k1)
-  reduce l.2 (l.1 ^^^ (m.2 ^^^ l.2 ^^^ h.2)) ((m.1 ^^^ l.1 ^^^ h.1) ^^^ h.2) h.1
 
 theorem φ_mulK (y0 y1 k0 k1 : BitVec 64) : φ (mulK y0 y1 k0 k1) = x * φ (y0 ++ y1) * φ (k0 ++ k1) := by
   have eL := ψ_pm y0 k0

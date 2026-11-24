@@ -66,7 +66,7 @@ def cryptWith (lk : Prog isa) (cs : Nat) (up : Bool) : Prog isa :=
     (.seq (if up then encryptBlockWith lk else decryptBlockWith lk) (.block (storeAt cs))))
 
 /-- The block, encrypted (`up`) or decrypted. -/
-def crypt (up : Bool) : Prog isa := cryptWith (scan s1234Sym) coreSlots up
+def crypt (up : Bool) : Prog isa := cryptWith (scan x1234Sym) coreSlots up
 
 /-- CAST5's core for the modes over the look-up `lk`, which uses `stack`
 bytes of stack: `cs` slots, of which the first 66 are the working space of
@@ -83,7 +83,7 @@ def coreWith (lk : Prog isa) (cs stack : Nat) (up : Bool) : Impl.Modes.X86.Core 
   ka := 2
 
 /-- CAST5's core for the modes, encrypting (`up`) or decrypting. -/
-def dirCore (up : Bool) : Impl.Modes.X86.Core := coreWith (scan s1234Sym) coreSlots 4 up
+def dirCore (up : Bool) : Impl.Modes.X86.Core := coreWith (scan x1234Sym) coreSlots 4 up
 
 /-- `vg_cast5_cbc_encrypt_chained`, with its scratch buffer as the sixth argument. -/
 def cbcEncryptChained : Prog isa := (dirCore true).seq (Impl.Modes.Mode.cbcEncChained 2)

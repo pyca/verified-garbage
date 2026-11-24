@@ -415,8 +415,11 @@ theorem cryptWholeTo_ok {R : Nat} {icb : Block} {P : Nat} {S T : BitVec 32} {n :
     have hk := he₂.sp
     obtain hdj₂ := hdj.of_eq (hk₂.rd.trans hk₁.rd) (hk₂.wr.trans hk₁.wr)
     obtain hsj₂ := hsj.of_eq (hk₂.rd.trans hk₁.rd) (hk₂.wr.trans hk₁.wr)
-    obtain dtj : (⟨State.addr (S + BitVec.ofNat 32 j), 16 * nb⟩ : Region).Disjoint
+    obtain dtj : S + BitVec.ofNat 32 j = T + BitVec.ofNat 32 j ∨ (⟨State.addr (S + BitVec.ofNat 32 j), 16 * nb⟩ : Region).Disjoint
         ⟨State.addr (T + BitVec.ofNat 32 j), 16 * nb⟩ := by
+      rcases dST with eq | dST
+      · exact .inl (congrArg (· + BitVec.ofNat 32 j) eq)
+      right
       rw [eS, eD]
       exact (dST.sub_left (Offset.sub_base _ (by omega_arith))).sub_right (Offset.sub_base _ (by omega_arith))
     obtain b12 : ∀ {R' : Region}, Region.Sub R' ⟨State.addr S, n⟩ → (below12 s₂.sp).Disjoint R' := fun hs => by
@@ -431,7 +434,7 @@ theorem cryptWholeTo_ok {R : Nat} {icb : Block} {P : Nat} {S T : BitVec 32} {n :
         by rw [hg₂ _ (by decide) (by decide) (by decide), h3], h0', h1', h2',
         by rw [hg₂ _ (by decide) (by decide) (by decide), r6₁], h.rounds, by rw [hk]; exact sp12,
         by have := L.cw; omega_arith, by rw [L.stN (by decide)]; have := L.sw; omega_arith, hsj.fit, hdj.ok.fit,
-        by rw [L.wN (by decide)]; have := L.ww; omega_arith, ?_, ?_, ?_, ?_, ?_, ?_, ?_, Or.inr dtj, ?_, ?_, ?_, ?_, ?_, ?_,
+        by rw [L.wN (by decide)]; have := L.ww; omega_arith, ?_, ?_, ?_, ?_, ?_, ?_, ?_, dtj, ?_, ?_, ?_, ?_, ?_, ?_,
         ?_, ?_⟩
       all_goals try simp only [eC, eW]
       · exact (L.cs.sub_left (Region.sub_prefix (by decide))).sub_right (Lay.stSub (by decide))
@@ -511,7 +514,9 @@ theorem cryptWholeTo_ok {R : Nat} {icb : Block} {P : Nat} {S T : BitVec 32} {n :
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl | rfl
         · exact (hst.sub_left hs).sub_right (Lay.stSub (by decide))
-        · exact (dST.sub_left hs).sub_right (Offset.sub_base _ (by omega_arith))
+        · rcases dST with rfl | dST
+          · exact Offset.disjoint _ (.inr (by omega_arith)) (by omega_arith) (by omega_arith)
+          exact (dST.sub_left hs).sub_right (Offset.sub_base _ (by omega_arith))
         · exact (hW.sub_left hs).sub_right (Lay.wSub (by decide))
         · exact (bS.sub_right hs).symm
       rw [hk₄.mem, bytesAt_frame gframe hdis (by omega_arith)]
@@ -688,14 +693,19 @@ theorem tailXor_ok {to : Bool} {R : Nat} {icb : Block} {P : Nat} {S T : BitVec 3
     · rw [hk₄.wr, h.wr]; exact hdj.wr
     · rw [eK]; exact (hdj.ok.st.sub_right (Lay.stSub (by omega_arith))).symm
   obtain xs : XSrc to s₄ (S + BitVec.ofNat 32 j) (T + BitVec.ofNat 32 j) (n - j) := by
-    refine ⟨?_, hsj.fit, by rw [hk₄.rd, hk₄.wr, h.rd, h.wr]; exact hsj.rd, fun ht => ?_⟩
+    refine ⟨?_, hsj.fit, by rw [hk₄.rd, hk₄.wr, h.rd, h.wr]; exact hsj.rd, ?_⟩
     · cases to
       · have e : S = T := hm.mode
         rw [e]; exact h2
       · rw [show xsrc true = .r4 from rfl, hg₄ .r4 (by decide) (by decide) (by decide)]; exact h.r4
-    · subst ht
-      rw [eS, eD]
-      exact (hm.mode.1.sub_left (Offset.sub_base _ (by omega_arith))).sub_right (Offset.sub_base _ (by omega_arith))
+    · cases to with
+      | false => exact .inl (congrArg (· + BitVec.ofNat 32 j) hm.mode)
+      | true =>
+        rcases hm.mode.1 with eq | hd
+        · exact .inl (congrArg (· + BitVec.ofNat 32 j) eq)
+        right
+        rw [eS, eD]
+        exact (hd.sub_left (Offset.sub_base _ (by omega_arith))).sub_right (Offset.sub_base _ (by omega_arith))
   refine WP.mono (xorLoopG_ok s₄ lp xs) fun s₅ ⟨hm₅, _, _, _, _, other, rd₅, wr₅, sp₅⟩ => ?_
   rw [hk₄.mem, eK, eD, eS] at hm₅
   obtain hxl := length_xorBytes s.mem (State.addr S + BitVec.ofNat 64 j) (State.addr st + BitVec.ofNat 64 64) (n - j)

@@ -73,18 +73,18 @@ open VG.Proof.Aes.ScrubLocal (bytesAt_of0)
 
 /-- The data's length, under the tables' ABI. -/
 theorem lenC (x : BitVec 64) (k : Nat) :
-    ((ArgWord.int (X86.abi.withConsts Impl.Cast5.ecbConsts).ptrBits).ofRaw x).toNat * k ≤ x.toNat * k :=
+    ((ArgWord.int (X86.abi.withConsts Impl.Cast5.X86.xEcbConsts).ptrBits).ofRaw x).toNat * k ≤ x.toNat * k :=
   Nat.mul_le_mul_right _ (by simp only [ArgWord.ofRaw, BitVec.toNat_setWidth]; exact Nat.mod_le _ _)
 
 theorem len1C (x : BitVec 64) :
-    ((ArgWord.int (X86.abi.withConsts Impl.Cast5.ecbConsts).ptrBits).ofRaw x).toNat ≤ x.toNat * Elem.u8.size := by
+    ((ArgWord.int (X86.abi.withConsts Impl.Cast5.X86.xEcbConsts).ptrBits).ofRaw x).toNat ≤ x.toNat * Elem.u8.size := by
   have := lenC x 1
   simpa only [Nat.mul_one, Elem.size] using this
 
 /-! ## Postconditions -/
 
 theorem expandKeyOut (stack : Nat) :
-    PostOut (Spec.Cast5.expandKeyContract (X86.abi.withConsts Impl.Cast5.keyConsts) stack)
+    PostOut (Spec.Cast5.expandKeyContract (X86.abi.withConsts Impl.Cast5.X86.xKeyConsts) stack)
       (Spec.Cast5.expandKeySig.retBits 32) :=
   postOut_of_local (ScrubAbi.consts _) fun vs m m₁ m₂ r hlen hb h => by
     match vs, hlen with
@@ -96,7 +96,7 @@ theorem expandKeyOut (stack : Nat) :
       exact h
 
 theorem ecbOut (d : Spec.Cast5.Direction) (stack : Nat) :
-    PostOut (Spec.Cast5.ecbContract (X86.abi.withConsts Impl.Cast5.ecbConsts) d stack)
+    PostOut (Spec.Cast5.ecbContract (X86.abi.withConsts Impl.Cast5.X86.xEcbConsts) d stack)
       (Spec.Cast5.ecbSig.retBits 32) :=
   postOut_of_local (ScrubAbi.consts _) fun vs m m₁ m₂ r hlen hb h => by
     match vs, hlen with
@@ -109,7 +109,7 @@ theorem ecbOut (d : Spec.Cast5.Direction) (stack : Nat) :
       exact h key hk
 
 theorem cbcEncryptOut (stack : Nat) :
-    PostOut (Spec.Cast5.cbcEncryptChainedContract (X86.abi.withConsts Impl.Cast5.ecbConsts) stack)
+    PostOut (Spec.Cast5.cbcEncryptChainedContract (X86.abi.withConsts Impl.Cast5.X86.xEcbConsts) stack)
       (Spec.Cast5.cbcChainedSig.retBits 32) :=
   postOut_of_local (ScrubAbi.consts _) fun vs m m₁ m₂ r hlen hb h => by
     match vs, hlen with
@@ -123,7 +123,7 @@ theorem cbcEncryptOut (stack : Nat) :
       exact h key hk
 
 theorem cbcDecryptOut (stack : Nat) :
-    PostOut (Spec.Cast5.cbcDecryptChainedContract (X86.abi.withConsts Impl.Cast5.ecbConsts) stack)
+    PostOut (Spec.Cast5.cbcDecryptChainedContract (X86.abi.withConsts Impl.Cast5.X86.xEcbConsts) stack)
       (Spec.Cast5.cbcChainedSig.retBits 32) :=
   postOut_of_local (ScrubAbi.consts _) fun vs m m₁ m₂ r hlen hb h => by
     match vs, hlen with
@@ -137,7 +137,7 @@ theorem cbcDecryptOut (stack : Nat) :
       exact h key hk
 
 theorem cfbEncryptOut (stack : Nat) :
-    PostOut (Spec.Cast5.cfbEncryptContract (X86.abi.withConsts Impl.Cast5.ecbConsts) stack)
+    PostOut (Spec.Cast5.cfbEncryptContract (X86.abi.withConsts Impl.Cast5.X86.xEcbConsts) stack)
       (Spec.Cast5.cfbSig.retBits 32) :=
   postOut_of_local (ScrubAbi.consts _) fun vs m m₁ m₂ r hlen hb h => by
     match vs, hlen with
@@ -151,7 +151,7 @@ theorem cfbEncryptOut (stack : Nat) :
       exact h key hk
 
 theorem cfbDecryptOut (stack : Nat) :
-    PostOut (Spec.Cast5.cfbDecryptContract (X86.abi.withConsts Impl.Cast5.ecbConsts) stack)
+    PostOut (Spec.Cast5.cfbDecryptContract (X86.abi.withConsts Impl.Cast5.X86.xEcbConsts) stack)
       (Spec.Cast5.cfbSig.retBits 32) :=
   postOut_of_local (ScrubAbi.consts _) fun vs m m₁ m₂ r hlen hb h => by
     match vs, hlen with
@@ -165,7 +165,7 @@ theorem cfbDecryptOut (stack : Nat) :
       exact h key hk
 
 theorem ofbOut (stack : Nat) :
-    PostOut (Spec.Cast5.ofbContract (X86.abi.withConsts Impl.Cast5.ecbConsts) stack)
+    PostOut (Spec.Cast5.ofbContract (X86.abi.withConsts Impl.Cast5.X86.xEcbConsts) stack)
       (Spec.Cast5.ofbSig.retBits 32) :=
   postOut_of_local (ScrubAbi.consts _) fun vs m m₁ m₂ r hlen hb h => by
     match vs, hlen with
@@ -179,7 +179,7 @@ theorem ofbOut (stack : Nat) :
       exact h key hk
 
 theorem cfbEncryptFinalOut (stack : Nat) :
-    PostOut (Spec.Cast5.cfbEncryptFinalContract (X86.abi.withConsts Impl.Cast5.ecbConsts) stack)
+    PostOut (Spec.Cast5.cfbEncryptFinalContract (X86.abi.withConsts Impl.Cast5.X86.xEcbConsts) stack)
       (Spec.Cast5.cfbFinalSig.retBits 32) :=
   postOut_of_local (ScrubAbi.consts _) fun vs m m₁ m₂ r hlen hb h => by
     match vs, hlen with
@@ -193,7 +193,7 @@ theorem cfbEncryptFinalOut (stack : Nat) :
       exact h key hk
 
 theorem cfbDecryptFinalOut (stack : Nat) :
-    PostOut (Spec.Cast5.cfbDecryptFinalContract (X86.abi.withConsts Impl.Cast5.ecbConsts) stack)
+    PostOut (Spec.Cast5.cfbDecryptFinalContract (X86.abi.withConsts Impl.Cast5.X86.xEcbConsts) stack)
       (Spec.Cast5.cfbFinalSig.retBits 32) :=
   postOut_of_local (ScrubAbi.consts _) fun vs m m₁ m₂ r hlen hb h => by
     match vs, hlen with
@@ -207,7 +207,7 @@ theorem cfbDecryptFinalOut (stack : Nat) :
       exact h key hk
 
 theorem ofbFinalOut (stack : Nat) :
-    PostOut (Spec.Cast5.ofbFinalContract (X86.abi.withConsts Impl.Cast5.ecbConsts) stack)
+    PostOut (Spec.Cast5.ofbFinalContract (X86.abi.withConsts Impl.Cast5.X86.xEcbConsts) stack)
       (Spec.Cast5.ofbFinalSig.retBits 32) :=
   postOut_of_local (ScrubAbi.consts _) fun vs m m₁ m₂ r hlen hb h => by
     match vs, hlen with
@@ -225,7 +225,7 @@ theorem ofbFinalOut (stack : Nat) :
 /-- `Spec.Cast5.expandKeyApi` as emitted (`Impl.Cast5.X86.Fn.expandKey`) meets its contract
 in constant time and returns without secret residue. -/
 theorem expandKey_scrubbed :
-    VerifiedScrubbed X86.target Impl.Cast5.X86.Fn.expandKey (Spec.Cast5.expandKeyContract (X86.abi.withConsts Impl.Cast5.keyConsts) 4) 0 :=
+    VerifiedScrubbed X86.target Impl.Cast5.X86.Fn.expandKey (Spec.Cast5.expandKeyContract (X86.abi.withConsts Impl.Cast5.X86.xKeyConsts) 4) 0 :=
   verifiedScrubbedSel (api := Spec.Cast5.expandKeyApi) (W := 4)
     { code := Impl.Cast5.X86.expandKey
       verified := Proof.Cast5.X86.expandKey_verified }
@@ -234,7 +234,7 @@ theorem expandKey_scrubbed :
 /-- `Spec.Cast5.ecbEncryptApi` as emitted (`Impl.Cast5.X86.Fn.ecbEncrypt`) meets its contract
 in constant time and returns without secret residue. -/
 theorem ecbEncrypt_scrubbed :
-    VerifiedScrubbed X86.target Impl.Cast5.X86.Fn.ecbEncrypt (Spec.Cast5.ecbEncryptContract (X86.abi.withConsts Impl.Cast5.ecbConsts) 4) 0 :=
+    VerifiedScrubbed X86.target Impl.Cast5.X86.Fn.ecbEncrypt (Spec.Cast5.ecbEncryptContract (X86.abi.withConsts Impl.Cast5.X86.xEcbConsts) 4) 0 :=
   verifiedScrubbedSel (api := Spec.Cast5.ecbEncryptApi) (W := 4)
     { code := Impl.Cast5.X86.ecbEncrypt
       verified := Proof.Cast5.ecbEncrypt_keyed Proof.Cast5.X86.ecbEncrypt_verified }
@@ -243,7 +243,7 @@ theorem ecbEncrypt_scrubbed :
 /-- `Spec.Cast5.ecbDecryptApi` as emitted (`Impl.Cast5.X86.Fn.ecbDecrypt`) meets its contract
 in constant time and returns without secret residue. -/
 theorem ecbDecrypt_scrubbed :
-    VerifiedScrubbed X86.target Impl.Cast5.X86.Fn.ecbDecrypt (Spec.Cast5.ecbDecryptContract (X86.abi.withConsts Impl.Cast5.ecbConsts) 4) 0 :=
+    VerifiedScrubbed X86.target Impl.Cast5.X86.Fn.ecbDecrypt (Spec.Cast5.ecbDecryptContract (X86.abi.withConsts Impl.Cast5.X86.xEcbConsts) 4) 0 :=
   verifiedScrubbedSel (api := Spec.Cast5.ecbDecryptApi) (W := 4)
     { code := Impl.Cast5.X86.ecbDecrypt
       verified := Proof.Cast5.ecbDecrypt_keyed Proof.Cast5.X86.ecbDecrypt_verified }
@@ -252,7 +252,7 @@ theorem ecbDecrypt_scrubbed :
 /-- `Spec.Cast5.cbcEncryptChainedApi` as emitted (`Impl.Cast5.X86.Fn.cbcEncryptChained`) meets its contract
 in constant time and returns without secret residue. -/
 theorem cbcEncryptChained_scrubbed :
-    VerifiedScrubbed X86.target Impl.Cast5.X86.Fn.cbcEncryptChained (Spec.Cast5.cbcEncryptChainedContract (X86.abi.withConsts Impl.Cast5.ecbConsts) 336) 0 :=
+    VerifiedScrubbed X86.target Impl.Cast5.X86.Fn.cbcEncryptChained (Spec.Cast5.cbcEncryptChainedContract (X86.abi.withConsts Impl.Cast5.X86.xEcbConsts) 336) 0 :=
   verifiedScrubbedSel (api := Spec.Cast5.cbcEncryptChainedApi) (W := 336)
     { code := Impl.StackScratch.X86.withStackScratchWiped 332 5 76 Impl.Cast5.X86.Modes.cbcEncryptChained
       verified := Proof.Cast5.cbcEncryptChained_keyed Proof.Cast5.X86.ModeFns.cbcEncryptChained_framed }
@@ -261,7 +261,7 @@ theorem cbcEncryptChained_scrubbed :
 /-- `Spec.Cast5.cbcDecryptChainedApi` as emitted (`Impl.Cast5.X86.Fn.cbcDecryptChained`) meets its contract
 in constant time and returns without secret residue. -/
 theorem cbcDecryptChained_scrubbed :
-    VerifiedScrubbed X86.target Impl.Cast5.X86.Fn.cbcDecryptChained (Spec.Cast5.cbcDecryptChainedContract (X86.abi.withConsts Impl.Cast5.ecbConsts) 336) 0 :=
+    VerifiedScrubbed X86.target Impl.Cast5.X86.Fn.cbcDecryptChained (Spec.Cast5.cbcDecryptChainedContract (X86.abi.withConsts Impl.Cast5.X86.xEcbConsts) 336) 0 :=
   verifiedScrubbedSel (api := Spec.Cast5.cbcDecryptChainedApi) (W := 336)
     { code := Impl.StackScratch.X86.withStackScratchWiped 332 5 76 Impl.Cast5.X86.Modes.cbcDecryptChained
       verified := Proof.Cast5.cbcDecryptChained_keyed Proof.Cast5.X86.ModeFns.cbcDecryptChained_framed }
@@ -270,7 +270,7 @@ theorem cbcDecryptChained_scrubbed :
 /-- `Spec.Cast5.cfbEncryptApi` as emitted (`Impl.Cast5.X86.Fn.cfbEncrypt`) meets its contract
 in constant time and returns without secret residue. -/
 theorem cfbEncrypt_scrubbed :
-    VerifiedScrubbed X86.target Impl.Cast5.X86.Fn.cfbEncrypt (Spec.Cast5.cfbEncryptContract (X86.abi.withConsts Impl.Cast5.ecbConsts) 336) 0 :=
+    VerifiedScrubbed X86.target Impl.Cast5.X86.Fn.cfbEncrypt (Spec.Cast5.cfbEncryptContract (X86.abi.withConsts Impl.Cast5.X86.xEcbConsts) 336) 0 :=
   verifiedScrubbedSel (api := Spec.Cast5.cfbEncryptApi) (W := 336)
     { code := Impl.StackScratch.X86.withStackScratchWiped 332 5 76 Impl.Cast5.X86.Modes.cfbEncrypt
       verified := Proof.Cast5.cfbEncrypt_keyed Proof.Cast5.X86.ModeFns.cfbEncrypt_framed }
@@ -279,7 +279,7 @@ theorem cfbEncrypt_scrubbed :
 /-- `Spec.Cast5.cfbDecryptApi` as emitted (`Impl.Cast5.X86.Fn.cfbDecrypt`) meets its contract
 in constant time and returns without secret residue. -/
 theorem cfbDecrypt_scrubbed :
-    VerifiedScrubbed X86.target Impl.Cast5.X86.Fn.cfbDecrypt (Spec.Cast5.cfbDecryptContract (X86.abi.withConsts Impl.Cast5.ecbConsts) 336) 0 :=
+    VerifiedScrubbed X86.target Impl.Cast5.X86.Fn.cfbDecrypt (Spec.Cast5.cfbDecryptContract (X86.abi.withConsts Impl.Cast5.X86.xEcbConsts) 336) 0 :=
   verifiedScrubbedSel (api := Spec.Cast5.cfbDecryptApi) (W := 336)
     { code := Impl.StackScratch.X86.withStackScratchWiped 332 5 76 Impl.Cast5.X86.Modes.cfbDecrypt
       verified := Proof.Cast5.cfbDecrypt_keyed Proof.Cast5.X86.ModeFns.cfbDecrypt_framed }
@@ -288,7 +288,7 @@ theorem cfbDecrypt_scrubbed :
 /-- `Spec.Cast5.cfbEncryptFinalApi` as emitted (`Impl.Cast5.X86.Fn.cfbEncryptFinal`) meets its contract
 in constant time and returns without secret residue. -/
 theorem cfbEncryptFinal_scrubbed :
-    VerifiedScrubbed X86.target Impl.Cast5.X86.Fn.cfbEncryptFinal (Spec.Cast5.cfbEncryptFinalContract (X86.abi.withConsts Impl.Cast5.ecbConsts) 336) 0 :=
+    VerifiedScrubbed X86.target Impl.Cast5.X86.Fn.cfbEncryptFinal (Spec.Cast5.cfbEncryptFinalContract (X86.abi.withConsts Impl.Cast5.X86.xEcbConsts) 336) 0 :=
   verifiedScrubbedSel (api := Spec.Cast5.cfbEncryptFinalApi) (W := 336)
     { code := Impl.StackScratch.X86.withStackScratchWiped 332 5 76 Impl.Cast5.X86.Modes.cfbEncryptFinal
       verified := Proof.Cast5.cfbEncryptFinal_keyed Proof.Cast5.X86.FbFinal.cfbEncryptFinal_framed }
@@ -297,7 +297,7 @@ theorem cfbEncryptFinal_scrubbed :
 /-- `Spec.Cast5.cfbDecryptFinalApi` as emitted (`Impl.Cast5.X86.Fn.cfbDecryptFinal`) meets its contract
 in constant time and returns without secret residue. -/
 theorem cfbDecryptFinal_scrubbed :
-    VerifiedScrubbed X86.target Impl.Cast5.X86.Fn.cfbDecryptFinal (Spec.Cast5.cfbDecryptFinalContract (X86.abi.withConsts Impl.Cast5.ecbConsts) 336) 0 :=
+    VerifiedScrubbed X86.target Impl.Cast5.X86.Fn.cfbDecryptFinal (Spec.Cast5.cfbDecryptFinalContract (X86.abi.withConsts Impl.Cast5.X86.xEcbConsts) 336) 0 :=
   verifiedScrubbedSel (api := Spec.Cast5.cfbDecryptFinalApi) (W := 336)
     { code := Impl.StackScratch.X86.withStackScratchWiped 332 5 76 Impl.Cast5.X86.Modes.cfbDecryptFinal
       verified := Proof.Cast5.cfbDecryptFinal_keyed Proof.Cast5.X86.FbFinal.cfbDecryptFinal_framed }
@@ -306,7 +306,7 @@ theorem cfbDecryptFinal_scrubbed :
 /-- `Spec.Cast5.ofbApi` as emitted (`Impl.Cast5.X86.Fn.ofb`) meets its contract
 in constant time and returns without secret residue. -/
 theorem ofb_scrubbed :
-    VerifiedScrubbed X86.target Impl.Cast5.X86.Fn.ofb (Spec.Cast5.ofbContract (X86.abi.withConsts Impl.Cast5.ecbConsts) 336) 0 :=
+    VerifiedScrubbed X86.target Impl.Cast5.X86.Fn.ofb (Spec.Cast5.ofbContract (X86.abi.withConsts Impl.Cast5.X86.xEcbConsts) 336) 0 :=
   verifiedScrubbedSel (api := Spec.Cast5.ofbApi) (W := 336)
     { code := Impl.StackScratch.X86.withStackScratchWiped 332 5 76 Impl.Cast5.X86.Modes.ofb
       verified := Proof.Cast5.ofb_keyed Proof.Cast5.X86.ModeFns.ofb_framed }
@@ -315,7 +315,7 @@ theorem ofb_scrubbed :
 /-- `Spec.Cast5.ofbFinalApi` as emitted (`Impl.Cast5.X86.Fn.ofbFinal`) meets its contract
 in constant time and returns without secret residue. -/
 theorem ofbFinal_scrubbed :
-    VerifiedScrubbed X86.target Impl.Cast5.X86.Fn.ofbFinal (Spec.Cast5.ofbFinalContract (X86.abi.withConsts Impl.Cast5.ecbConsts) 336) 0 :=
+    VerifiedScrubbed X86.target Impl.Cast5.X86.Fn.ofbFinal (Spec.Cast5.ofbFinalContract (X86.abi.withConsts Impl.Cast5.X86.xEcbConsts) 336) 0 :=
   verifiedScrubbedSel (api := Spec.Cast5.ofbFinalApi) (W := 336)
     { code := Impl.StackScratch.X86.withStackScratchWiped 332 5 76 Impl.Cast5.X86.Modes.ofbFinal
       verified := Proof.Cast5.ofbFinal_keyed Proof.Cast5.X86.FbFinal.ofbFinal_framed }

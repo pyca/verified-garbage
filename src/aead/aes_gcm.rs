@@ -48,25 +48,26 @@ use crate::arch::dispatch::gcm::vg_aes_gcm_open_auto;
     target_arch = "riscv64"
 )))]
 use crate::arch::dispatch::gcm::vg_aes_gcm_open_to_auto;
-#[cfg(not(any(
-    target_arch = "x86_64",
-    target_arch = "aarch64",
-    target_arch = "riscv64"
-)))]
-use crate::arch::dispatch::gcm::vg_aes_gcm_seal_auto;
+#[cfg(any(
+    target_arch = "x86",
+    target_arch = "arm",
+    all(target_arch = "powerpc64", target_endian = "little")
+))]
+use crate::arch::dispatch::gcm::vg_aes_gcm_seal_contiguous_auto as seal_contiguous_kernel;
 #[cfg(not(any(target_arch = "x86_64", target_arch = "riscv64")))]
 use crate::arch::dispatch::gcm::vg_aes_gcm_seal_gather_auto;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::dispatch::gcm::{
     vg_aes_gcm_open_prepared_auto, vg_aes_gcm_open_to_prepared_auto, vg_aes_gcm_prepare_auto,
-    vg_aes_gcm_seal_contiguous_prepared_auto, vg_aes_gcm_seal_gather_prepared_auto,
-    vg_aes_gcm_stream_decrypt_prepared_auto, vg_aes_gcm_stream_encrypt_prepared_auto,
-    vg_aes_gcm_wipe_prepared_auto,
+    vg_aes_gcm_seal_contiguous_prepared_auto as seal_contiguous_kernel,
+    vg_aes_gcm_seal_gather_prepared_auto, vg_aes_gcm_stream_decrypt_prepared_auto,
+    vg_aes_gcm_stream_encrypt_prepared_auto, vg_aes_gcm_wipe_prepared_auto,
 };
 #[cfg(target_arch = "aarch64")]
 use crate::arch::dispatch::gcm::{
     vg_aes_gcm_open_to_with_powers_auto, vg_aes_gcm_open_with_powers_auto,
-    vg_aes_gcm_seal_contiguous_with_powers_auto, vg_aes_gcm_store_powers_auto,
+    vg_aes_gcm_seal_contiguous_with_powers_auto as seal_contiguous_kernel,
+    vg_aes_gcm_store_powers_auto,
 };
 #[cfg(not(any(target_arch = "x86_64", target_arch = "riscv64")))]
 use crate::arch::dispatch::gcm::{vg_aes_gcm_stream_decrypt_auto, vg_aes_gcm_stream_encrypt_auto};
@@ -78,9 +79,10 @@ use crate::arch::dispatch::gcm::{vg_aes_gcm_stream_finish_auto, vg_aes_gcm_strea
 #[cfg(target_arch = "riscv64")]
 use crate::arch::dispatch::gcm::{
     vg_aes_gcm_bitslice_auto, vg_aes_gcm_open_bitsliced_auto, vg_aes_gcm_open_to_bitsliced_auto,
-    vg_aes_gcm_seal_bitsliced_auto, vg_aes_gcm_seal_gather_bitsliced_auto,
-    vg_aes_gcm_stream_decrypt_bitsliced_auto, vg_aes_gcm_stream_encrypt_bitsliced_auto,
-    vg_aes_gcm_stream_finish_bitsliced_auto, vg_aes_gcm_stream_verify_bitsliced_auto,
+    vg_aes_gcm_seal_contiguous_bitsliced_auto as seal_contiguous_kernel,
+    vg_aes_gcm_seal_gather_bitsliced_auto, vg_aes_gcm_stream_decrypt_bitsliced_auto,
+    vg_aes_gcm_stream_encrypt_bitsliced_auto, vg_aes_gcm_stream_finish_bitsliced_auto,
+    vg_aes_gcm_stream_verify_bitsliced_auto,
 };
 use crate::error::InvalidKeyLength;
 #[cfg(not(target_arch = "x86_64"))]
@@ -327,7 +329,6 @@ impl AesGcm {
         Ok(self.seal(dit, nonce, aad, data))
     }
 
-    #[cfg(any(target_arch = "aarch64", target_arch = "x86_64"))]
     #[inline(always)]
     fn seal(&self, dit: crate::dit::Dit<'_>, nonce: &[u8], aad: &[u8], data: &mut [u8]) -> Block {
         let len = data.len();
@@ -336,49 +337,12 @@ impl AesGcm {
         unsafe { self.seal_contiguous(dit, nonce, aad, dst.cast_const(), dst, len) }
     }
 
-    /// Seal a checked contiguous record. The source and destination must be
-    /// identical or disjoint and valid for reads and writes of `len` bytes,
-    /// respectively. The destination must be disjoint from the other inputs.
-    #[cfg(target_arch = "x86_64")]
-    #[inline(always)]
-    unsafe fn seal_contiguous(
-        &self,
-        dit: crate::dit::Dit<'_>,
-        nonce: &[u8],
-        aad: &[u8],
-        src: *const u8,
-        dst: *mut u8,
-        len: usize,
-    ) -> Block {
-        let mut tag = [0; 16];
-        // SAFETY: the caller supplies the plaintext and destination. The
-        // constructor prepared the 1032-byte key for the chosen round count.
-        // The nonce and AAD are readable slices and the tag is local.
-        unsafe {
-            vg_aes_gcm_seal_contiguous_prepared_auto(
-                dit,
-                self.ctx.0.as_ptr(),
-                self.rounds,
-                nonce.as_ptr(),
-                nonce.len(),
-                aad.as_ptr(),
-                aad.len(),
-                src,
-                dst,
-                len,
-                &mut tag,
-            )
-        }
-        tag
-    }
-
-    /// Seal the plaintext at `src` into `dst` and return its detached tag.
+    /// Seal a contiguous plaintext at `src` into `dst` and return its detached tag.
     ///
     /// # Safety
     /// The caller checked the record lengths. The source is readable and the
     /// destination writable for `len` bytes. They are identical or disjoint.
     /// The writable range is exclusive and disjoint from the context, nonce and AAD.
-    #[cfg(target_arch = "aarch64")]
     #[inline(always)]
     unsafe fn seal_contiguous(
         &self,
@@ -391,11 +355,14 @@ impl AesGcm {
     ) -> Block {
         let mut tag = [0; 16];
         // SAFETY: the caller supplies the input and output. The constructor
-        // initialized the context and cached GHASH powers for this round count.
+        // initialized the AES context and any target-specific prepared key data.
         // The tag is a separate writable local.
         unsafe {
-            vg_aes_gcm_seal_contiguous_with_powers_auto(
+            seal_contiguous_kernel(
                 dit,
+                #[cfg(target_arch = "x86_64")]
+                self.ctx.0.as_ptr(),
+                #[cfg(not(target_arch = "x86_64"))]
                 self.key(),
                 self.rounds,
                 nonce.as_ptr(),
@@ -406,58 +373,10 @@ impl AesGcm {
                 dst,
                 len,
                 &mut tag,
+                #[cfg(target_arch = "aarch64")]
                 &self.powers.0,
-            );
-        }
-        tag
-    }
-
-    /// Encrypt the checked record in place with the platform's seal entry.
-    #[cfg(not(any(target_arch = "aarch64", target_arch = "x86_64")))]
-    #[inline(always)]
-    fn seal(&self, dit: crate::dit::Dit<'_>, nonce: &[u8], aad: &[u8], data: &mut [u8]) -> Block {
-        let mut tag: Block = [0; 16];
-        // SAFETY: `self.ctx` is the key context `vg_aes_gcm_init` wrote for
-        // `self.rounds` (10, 12 or 14) rounds, valid for reads of 256 bytes,
-        // on RISC-V next to its bitsliced
-        // form `vg_aes_gcm_bitslice` wrote (`self.bk`, 1248 bytes, read
-        // only); `nonce` and `aad` are valid for reads
-        // and `data` for reads and writes of their lengths, and `tag` (a
-        // local) for reads and writes of 16 bytes. They are distinct objects
-        // (`data` a unique borrow), so the writable ones overlap nothing
-        // else, nor anything on the stack, and none wraps around the end of
-        // the address space.
-        unsafe {
-            #[cfg(target_arch = "riscv64")]
-            vg_aes_gcm_seal_bitsliced_auto(
-                dit,
-                self.key(),
-                self.rounds,
-                nonce.as_ptr(),
-                nonce.len(),
-                aad.as_ptr(),
-                aad.len(),
-                data.as_mut_ptr(),
-                data.len(),
-                &mut tag,
+                #[cfg(target_arch = "riscv64")]
                 &self.bk.0,
-            );
-            #[cfg(not(any(
-                target_arch = "x86_64",
-                target_arch = "aarch64",
-                target_arch = "riscv64"
-            )))]
-            vg_aes_gcm_seal_auto(
-                dit,
-                self.key(),
-                self.rounds,
-                nonce.as_ptr(),
-                nonce.len(),
-                aad.as_ptr(),
-                aad.len(),
-                data.as_mut_ptr(),
-                data.len(),
-                &mut tag,
             );
         }
         tag
@@ -807,7 +726,6 @@ impl AesGcm {
         plaintext: &[&[u8]],
         out: &mut [MaybeUninit<u8>],
     ) -> Block {
-        #[cfg(any(target_arch = "aarch64", target_arch = "x86_64"))]
         if let [input] = plaintext {
             let dst = out.as_mut_ptr().cast();
             let len = out.len();

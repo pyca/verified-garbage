@@ -108,14 +108,14 @@ theorem stepEnv_eval (e : Env) (st : Spec.X448.Ladder) (k : Nat) (u : Spec.X448.
     cswap_fst, cswap_snd, h0, h1, h2, h3, h4]
   exact ⟨rfl, rfl, rfl, rfl, rfl⟩
 
-theorem swaps_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BoundedEnv s.mem base)
+theorem swaps_ok {s : State} {base : Addr} (hs : Scr s base)
     {sw : Bool} (hm : s.gpr .ebx = mask sw) :
     WP isa (.block (cswap X2 X3 ++ cswap Z2 Z3)) s fun t =>
-      Keep base s t ∧ BoundedEnv t.mem base ∧ E t.mem base = opSwap 2 4 sw (opSwap 1 3 sw (E s.mem base)) := by
+      Keep base s t ∧ E t.mem base = opSwap 2 4 sw (opSwap 1 3 sw (E s.mem base)) := by
   rw [WP.block_append_iff]
-  refine WP.mono (cswapE hs hb 1 3 (by decide) hm) fun t ⟨tk, tb, tc, te⟩ => ?_
-  refine WP.mono (cswapE (tk.scr hs) tb 2 4 (by decide) (tc.trans hm)) fun u ⟨uk, ub, _, ue⟩ =>
-    ⟨tk.trans uk, ub, by rw [ue, te]⟩
+  refine WP.mono (cswapE hs 1 3 (by decide) hm) fun t ⟨tk, tc, te⟩ => ?_
+  refine WP.mono (cswapE (tk.scr hs) 2 4 (by decide) (tc.trans hm)) fun u ⟨uk, _, ue⟩ =>
+    ⟨tk.trans uk, by rw [ue, te]⟩
 
 theorem counter_zero {s : State} {n : Nat} (hn : n < 2 ^ 32)
     (hc : s.gpr .esi = BitVec.ofNat 32 n) : (s.gpr .esi == 0) = decide (n = 0) := by
@@ -133,7 +133,6 @@ theorem counter_zero {s : State} {n : Nat} (hn : n < 2 ^ 32)
 structure LInv (base : Addr) (k : Nat) (u : Spec.X448.Fe) (s₀ s : State) (n : Nat) : Prop where
   scr : Scr s base
   ctx : CallCtx s base
-  bounded : BoundedEnv s.mem base
   regs : Keeps (.esi :: workRegs) s₀ s
   esi : s.gpr .esi = BitVec.ofNat 32 n
   mem : WsOut2 base 32 2848 ACC 512 s₀.mem s.mem
@@ -167,18 +166,14 @@ theorem stepBody_ok {s₀ s : State} {base : Addr} {k : Nat} {u : Spec.X448.Fe} 
     wr₁ ▸ hs.wr, by rw [g₁ _ (by decide)]; exact hs.nowrap⟩
   have out₁ : Outside base SWAP 4 s.mem s₁.mem := by
     rw [m₁]; exact writeW_outside _ _ _ (by decide)
-  have l₁ : ∀ i : Index, ∀ j < 28, limbs s₁.mem base (slot i.val) j = limbs s.mem base (slot i.val) j := by
-    intro i j hj
-    exact out₁.limbs (Or.inr (by simp only [slot, SWAP]; omega_using []))
-      (Nat.le_trans (slot_bound i) (by decide)) hj
   have e₁ : E s₁.mem base = E s.mem base := by
-    funext i; exact congrArg toFe (valN_congr (l₁ i))
-  have bb₁ : BoundedEnv s₁.mem base := by
-    intro i j hj; rw [l₁ i j hj]; exact hi.bounded i j hj
-  refine WP.mono (swaps_ok hs₁ bb₁ c₁) fun s₂ ⟨k₂, bb₂, e₂⟩ => ?_
+    funext i
+    exact congrArg toFe (out₁.fe (Or.inr (by simp only [slot, SWAP]; omega_using []))
+      (Nat.le_trans (slot_bound i) (by decide)))
+  refine WP.mono (swaps_ok hs₁ c₁) fun s₂ ⟨k₂, e₂⟩ => ?_
   rw [← stepFields_impl]
   have hc₁ : CallCtx s₁ base := hi.ctx.keep (g₁ _ (by decide))
-  refine WP.mono (ops_ok (k₂.scr hs₁) (k₂.ctx hc₁) bb₂ stepFields) fun s₃ ⟨k₃, bb₃, e₃⟩ => ?_
+  refine WP.mono (ops_ok (k₂.scr hs₁) (k₂.ctx hc₁) stepFields) fun s₃ ⟨k₃, e₃⟩ => ?_
   have core := k₂.trans k₃
   have b₃ : s₃.gpr .esi = BitVec.ofNat 32 n := (core.regs.1 _ (by decide)).trans b₁
   have vals := stepEnv_eval (E s.mem base) (ladderAfter k u (n + 1)) k u n
@@ -186,7 +181,7 @@ theorem stepBody_ok {s₀ s : State} {base : Addr} {k : Nat} {u : Spec.X448.Fe} 
   have e₄ : E s₃.mem base = stepEnv (decide ((ladderAfter k u (n + 1)).swap ^^^ bit k n = 1))
       (E s.mem base) := by rw [e₃, e₂, e₁]; rfl
   rw [← ladderAfter_step k u hn, ← e₄] at vals
-  refine ⟨⟨core.scr hs₁, core.ctx hc₁, bb₃, ?_, b₃, ?_, vals.1, vals.2.1, vals.2.2.1,
+  refine ⟨⟨core.scr hs₁, core.ctx hc₁, ?_, b₃, ?_, vals.1, vals.2.1, vals.2.2.1,
     vals.2.2.2.1, vals.2.2.2.2, ?_⟩, counter_zero (by omega_using [hn]) b₃⟩
   · refine hi.regs.trans ⟨?_, core.regs.2.1.trans rd₁, core.regs.2.2.trans wr₁⟩
     intro r hr
@@ -207,7 +202,7 @@ theorem stepBody_ok {s₀ s : State} {base : Addr} {k : Nat} {u : Spec.X448.Fe} 
 /-- Comparing the public counter changes only flags. -/
 theorem LInv.of_flags {base : Addr} {k n : Nat} {u : Spec.X448.Fe} {s0 s t : State}
     (h : LInv base k u s0 s n) (ht : Fupd s t) : LInv base k u s0 t n := by
-  refine ⟨?_, h.ctx.keep (by rw [ht.gpr]), ht.mem ▸ h.bounded, ?_, ?_, ht.mem ▸ h.mem,
+  refine ⟨?_, h.ctx.keep (by rw [ht.gpr]), ?_, ?_, ht.mem ▸ h.mem,
     ht.mem ▸ h.x1, ht.mem ▸ h.x2, ht.mem ▸ h.z2, ht.mem ▸ h.x3, ht.mem ▸ h.z3, ht.mem ▸ h.swap⟩
   · exact ⟨by rw [ht.gpr]; exact h.scr.edi,
       ht.wr ▸ h.scr.wr, by rw [ht.gpr]; exact h.scr.nowrap⟩

@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.X448.X86.Verified
 public import VerifiedGarbage.Proof.X448.X86.Base
-public import VerifiedGarbage.Proof.Ed448.CombFacts
+public import VerifiedGarbage.Proof.Ed448.SignedCombFacts
 import VerifiedGarbage.Proof.X448.X86.Lit
 public import VerifiedGarbage.Proof.X448.X86.Exchange
 public import VerifiedGarbage.Proof.X448.X86.Scrub

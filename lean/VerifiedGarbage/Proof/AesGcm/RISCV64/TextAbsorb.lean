@@ -56,12 +56,6 @@ theorem t_taFrame {st w sp : Addr} {m m' : Mem} (h : Frame (tFrame st w 16 sp) m
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl <;> simp
 
-/-- Code never changes the permissions or the stack pointer. -/
-theorem WP.with_rdwr {c : Prog isa} {s : State} {Q : State → Prop} (h : WP isa c s Q) :
-    WP isa c s fun s' => Q s' ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp := by
-  obtain ⟨t, s', e, q⟩ := h
-  exact ⟨t, s', e, q, Exec.rdwr e⟩
-
 /-- A frozen register, as the number it holds. -/
 theorem Env.ofNat {V : Reg → BitVec 64} {sp : Addr} {s : State} (he : Env V sp s) {r : Reg} (hr : r ∈ frozen) :
     s.gpr r = BitVec.ofNat 64 (V r).toNat := by

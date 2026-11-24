@@ -58,7 +58,8 @@ open VG.Impl.Modes.X86 (sb at_ argOp Core)
 def tableName : String := "VG_CAMELLIA_AESNI"
 
 /-- The constants, 16 bytes each (two words): the masks, the nibble tables of
-the byte maps, the shuffles of a round, and the constants of the keys. -/
+the byte maps, the shuffles of a round, the constants of the keys, and the
+key schedule's keys (`AesNiExpandKey.lean`). -/
 def table : List (BitVec 64) := [
   0x0f0f0f0f0f0f0f0f, 0x0f0f0f0f0f0f0f0f, 0x0405060700010203, 0x0c0d0e0f08090a0b,
   0x0c0d0e0f08090a0b, 0x0405060700010203, 0x00000f000000000f, 0x00000f000000000f,
@@ -75,7 +76,10 @@ def table : List (BitVec 64) := [
   0x8080038080808002, 0x8080808080808003, 0x0000000000000000, 0xffffffff00000000,
   0x00000000ffffffff, 0xffffffff00000000, 0xffffffff00000000, 0x0000000000000000,
   0xffffffff00000000, 0x00000000ffffffff, 0x0808080808080808, 0x567ad85608080808,
-  0x5e72d05e00000000, 0x5e72d05e00000000, 0x567ad85608080808, 0x0808080808080808
+  0x5e72d05e00000000, 0x5e72d05e00000000, 0x567ad85608080808, 0x0808080808080808,
+  0x8faa9a6242755287, 0x2d825ba24def88e5, 0xd1d84a3c42755287, 0x73f08bfc4def88e5,
+  0x896bb8e6182195cd, 0xdb7dc4eb7f86d6da, 0xd71968b8182195cd, 0x850f14b57f86d6da,
+  0x14517cb4af933234, 0xa3f919c1e5667a61, 0x4a23aceaaf933234, 0xfd8bc99fe5667a61
 ]
 
 /-! ## The constants' offsets -/
@@ -100,6 +104,9 @@ def oM2 : Nat := 448
 def oCK : Nat := 464
 def oGG : Nat := 480
 def oCW2 : Nat := 496
+/-- The keys of the pair `p` of the key schedule's rounds: `KIN` for its two
+constants, then, 16 bytes on, its rounds' keys' differences. -/
+def oSIG (p : Nat) : Nat := 512 + 32 * p
 
 /-- The table's base register in `prepare` and `crypt`. -/
 def tbr : Reg := .ebx

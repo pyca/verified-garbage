@@ -142,7 +142,7 @@ structure ByteInv (base : Addr) (o N : Nat) (P : Addr) (s0 : State) (n : Nat) (s
   even : n % 2 = 0
   counter : s.gpr .ebp = BitVec.ofNat 32 n
   lim : Bounded s.mem base o
-  value : fe s.mem base o = decodeLE ((bytesAt s0.mem P N).drop n) % L
+  value : fe16 s.mem base o = decodeLE ((bytesAt s0.mem P N).drop n) % L
   keeps : LoopKeep base o s0 s
 
 theorem cmp_zero {s : State} {n : Nat} (hn : n < 2 ^ 32) (hc : s.gpr .ebp = BitVec.ofNat 32 n)
@@ -156,9 +156,9 @@ theorem byteLoop_ok {o N : Nat} (ho : Buf o) {s0 : State} {base : Addr} (hs : Sc
     (hfar : ∀ i < N, 8192 ≤ ofs base (p.setWidth 64 + BitVec.ofNat 64 i))
     {n0 : Nat} (hn0 : 0 < n0) (hle : n0 ≤ N) (heven : n0 % 2 = 0)
     (hc : s0.gpr .ebp = BitVec.ofNat 32 n0) (hl : Bounded s0.mem base o)
-    (hv : fe s0.mem base o = decodeLE ((bytesAt s0.mem (p.setWidth 64) N).drop n0) % L) :
+    (hv : fe16 s0.mem base o = decodeLE ((bytesAt s0.mem (p.setWidth 64) N).drop n0) % L) :
     WP isa (.loop (.block (byteStep o)) .ne) s0 fun t => LoopKeep base o s0 t ∧
-      Bounded t.mem base o ∧ fe t.mem base o = decodeLE (bytesAt s0.mem (p.setWidth 64) N) % L := by
+      Bounded t.mem base o ∧ fe16 t.mem base o = decodeLE (bytesAt s0.mem (p.setWidth 64) N) % L := by
   obtain ⟨ho1, ho2⟩ := ho
   obtain hN : N ≤ 2 ^ 32 := by omega_using [hfit]
   apply WP.loop (ByteInv base o N (p.setWidth 64) s0) (n := n0)
@@ -181,7 +181,7 @@ theorem byteLoop_ok {o N : Nat} (ho : Buf o) {s0 : State} {base : Addr} (hs : Sc
       omega_using []
     obtain lu : ∀ j < 28, limbs u.mem base o j = limbs s.mem base o j :=
       fun j hj => mu.limbs (Or.inr (by simp only [W, TF] at ho1 ⊢; omega_using [ho1])) (by omega_using [ho2]) hj
-    obtain fu : fe u.mem base o = fe s.mem base o := valN_congr lu
+    obtain fu : fe16 u.mem base o = fe16 s.mem base o := valN_congr lu
     rw [WP.block_append_iff]
     refine WP.mono (step_ok ⟨ho1, ho2⟩ hsu (fun j hj => by rw [lu j hj]; exact hi.lim j hj)
       (by rw [fu, hi.value]; exact Nat.mod_lt _ Proof.Ed448.L_pos) hwu) fun v ⟨kv, mv, lv, vv⟩ => ?_
@@ -189,7 +189,7 @@ theorem byteLoop_ok {o N : Nat} (ho : Buf o) {s0 : State} {base : Addr} (hs : Sc
     obtain mb : ∀ i < N, s.mem (p.setWidth 64 + BitVec.ofNat 64 i) =
         s0.mem (p.setWidth 64 + BitVec.ofNat 64 i) :=
       fun i hi' => outside2_byte hi.keeps.mem (hfar i hi') (by decide) (by omega_using [ho2])
-    obtain val : fe t.mem base o = decodeLE ((bytesAt s0.mem (p.setWidth 64) N).drop k) % L := by
+    obtain val : fe16 t.mem base o = decodeLE ((bytesAt s0.mem (p.setWidth 64) N).drop k) % L := by
       rw [ht.mem, vv, wu, fu, hi.value, mod_fold, mb k (by omega_using [hk]), mb (k + 1) (by omega_using [hk]),
         decode_drop2 _ _ hk]
     have keep : LoopKeep base o s0 t := hi.keeps.trans
@@ -253,16 +253,16 @@ structure LimbInv (base : Addr) (s0 : State) (j : Nat) (s : State) : Prop where
   bound : j ≤ 56
   counter : s.gpr .ebp = BitVec.ofNat 32 (4 * j)
   lim : Bounded s.mem base RA
-  value : fe s.mem base RA = accFrom (limbs s0.mem base Impl.X448.X86.ACC) j % L
+  value : fe16 s.mem base RA = accFrom (limbs s0.mem base Impl.X448.X86.ACC) j % L
   keeps : LoopKeep base RA s0 s
 
 theorem limbLoop_ok {s0 : State} {base : Addr} (hs : Scr s0 base)
     (hacc : ∀ j < 56, limbs s0.mem base Impl.X448.X86.ACC j < radix)
     (hc : s0.gpr .ebp = BitVec.ofNat 32 (4 * 56)) (hl : Bounded s0.mem base RA)
-    (hv : fe s0.mem base RA = 0) :
+    (hv : fe16 s0.mem base RA = 0) :
     WP isa (.loop (.block limbStep) .ne) s0 fun t => LoopKeep base RA s0 t ∧
       Bounded t.mem base RA ∧
-      fe t.mem base RA = valN (limbs s0.mem base Impl.X448.X86.ACC) 56 % L := by
+      fe16 t.mem base RA = valN (limbs s0.mem base Impl.X448.X86.ACC) 56 % L := by
   have hA := ACC_eq
   obtain ho : Buf RA := ⟨by decide, by decide⟩
   apply WP.loop (LimbInv base s0) (n := 56)
@@ -282,12 +282,12 @@ theorem limbLoop_ok {s0 : State} {base : Addr} (hs : Scr s0 base)
       rw [wu]; change limbs s.mem base Impl.X448.X86.ACC j < _; rw [la j hj]; exact hacc j hj
     obtain lu : ∀ i < 28, limbs u.mem base RA i = limbs s.mem base RA i :=
       fun i hi' => mu.limbs (Or.inr (by simp only [W, RA]; omega_using [])) (by simp only [RA]; omega_using []) hi'
-    obtain fu : fe u.mem base RA = fe s.mem base RA := valN_congr lu
+    obtain fu : fe16 u.mem base RA = fe16 s.mem base RA := valN_congr lu
     rw [WP.block_append_iff]
     refine WP.mono (step_ok ho hsu (fun i hi' => by rw [lu i hi']; exact hi.lim i hi')
       (by rw [fu, hi.value]; exact Nat.mod_lt _ Proof.Ed448.L_pos) hwu) fun v ⟨kv, mv, lv, vv⟩ => ?_
     refine wp_cmp rfl fun t ht hz => WP.block_nil ?_
-    obtain val : fe t.mem base RA = accFrom (limbs s0.mem base Impl.X448.X86.ACC) j % L := by
+    obtain val : fe16 t.mem base RA = accFrom (limbs s0.mem base Impl.X448.X86.ACC) j % L := by
       rw [ht.mem, vv, wu, fu, hi.value, mod_fold, accFrom_step _ hj]
       change ((limbs s.mem base Impl.X448.X86.ACC j) + _) % L = _
       rw [la j hj]
@@ -325,7 +325,7 @@ theorem Bounded_zero {m : Mem} {base : Addr} {o : Nat} (h : ∀ k < 28, limbs m 
     Bounded m base o := fun k hk => by rw [h k hk]; decide
 
 theorem fe_zero {m : Mem} {base : Addr} {o : Nat} (h : ∀ k < 28, limbs m base o k = 0) :
-    fe m base o = 0 := (valN_congr h).trans (valN_zero 28)
+    fe16 m base o = 0 := (valN_congr h).trans (valN_zero 28)
 
 end VG.Proof.Ed448.X86
 
@@ -446,7 +446,7 @@ theorem save_ok {s : State} {n sc : Nat} (hp : Args s n sc) :
 theorem init114_ok {o : Nat} (ho : Buf o) {s : State} {base : Addr} (hs : Scr s base) :
     WP isa (.block (zeroR o ++ ([.mov .ebp (.imm 114)] : List Instr))) s fun v =>
       LoopKeep base o s v ∧ v.gpr .ebp = BitVec.ofNat 32 114 ∧ Bounded v.mem base o ∧
-        fe v.mem base o = 0 := by
+        fe16 v.mem base o = 0 := by
   rw [WP.block_append_iff]
   refine WP.mono (zeroR_ok ho.2 hs) fun u ⟨ku, fu, zu⟩ =>
     wp_mov rfl fun v hv => WP.block_nil
@@ -459,10 +459,11 @@ structure Input (s : State) (base : Addr) (p : BitVec 32) (N : Nat) : Prop where
   fit : p.toNat + N ≤ 2 ^ 32
   read : ∀ i < N, InRegions (s.rd ++ s.wr) (p.setWidth 64 + BitVec.ofNat 64 i) 1
   far : ∀ i < N, 8192 ≤ ofs base (p.setWidth 64 + BitVec.ofNat 64 i)
+  word : ∀ i, i + 4 ≤ N → InRegions (s.rd ++ s.wr) (p.setWidth 64 + BitVec.ofNat 64 i) 4
 
 theorem Input.of_keeps {s t : State} {base : Addr} {p : BitVec 32} {N : Nat} (h : Input s base p N)
     {rs : List Reg} (hk : Keeps rs s t) : Input t base p N :=
-  ⟨h.fit, by rw [hk.2.1, hk.2.2]; exact h.read, h.far⟩
+  ⟨h.fit, by rw [hk.2.1, hk.2.2]; exact h.read, h.far, by rw [hk.2.1, hk.2.2]; exact h.word⟩
 
 /-- An input's bytes across a change of the working space. -/
 theorem Input.bytes {s : State} {base : Addr} {p : BitVec 32} {N : Nat} (h : Input s base p N)
@@ -493,7 +494,8 @@ theorem Input.of_region {s : State} {base : Addr} {p : BitVec 32} {N : Nat} (hfi
     (hin : (⟨p.setWidth 64, N⟩ : Region) ∈ s.rd ++ s.wr)
     (hd : (⟨p.setWidth 64, N⟩ : Region).Disjoint ⟨base, 8192⟩) : Input s base p N :=
   ⟨hfit, fun i hi => ⟨_, hin, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩,
-    fun i hi => VG.Proof.Ed448.X86.far hd hi (by omega_arith)⟩
+    fun i hi => VG.Proof.Ed448.X86.far hd hi (by omega_arith),
+    fun i hi => ⟨_, hin, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩⟩
 
 theorem LoopKeep.whole {base : Addr} {o : Nat} {s t : State} (h : LoopKeep base o s t)
     (ho : o + 112 ≤ 8192) : Outside base 0 8192 s.mem t.mem :=
@@ -502,7 +504,7 @@ theorem LoopKeep.whole {base : Addr} {o : Nat} {s t : State} (h : LoopKeep base 
 theorem reduce114_ok {o : Nat} (ho : Buf o) {s : State} {base : Addr} (hs : Scr s base)
     {p : BitVec 32} (hp : s.gpr .esi = p) (hin : Input s base p 114) :
     WP isa (reduce114 o) s fun t => LoopKeep base o s t ∧ Bounded t.mem base o ∧
-      fe t.mem base o = decodeLE (bytesAt s.mem (p.setWidth 64) 114) % L := by
+      fe16 t.mem base o = decodeLE (bytesAt s.mem (p.setWidth 64) 114) % L := by
   unfold reduce114
   refine WP.seq (WP.mono (init114_ok ho hs) fun v ⟨kv, cv, lv, vv⟩ => ?_)
   obtain mb := hin.bytes (kv.whole (by have := ho.2; omega_arith))
@@ -518,7 +520,7 @@ theorem init57_ok {o : Nat} (ho : Buf o) {s : State} {base : Addr} (hs : Scr s b
     WP isa (.block (zeroR o ++ ([.movzx8 .eax (Impl.X448.X86.at_ .esi 56), Impl.X448.X86.st .eax o,
       .mov .ebp (.imm 56)] : List Instr))) s fun v =>
       LoopKeep base o s v ∧ v.gpr .ebp = BitVec.ofNat 32 56 ∧ Bounded v.mem base o ∧
-      fe v.mem base o = decodeLE ((bytesAt s.mem (p.setWidth 64) 57).drop 56) % L := by
+      fe16 v.mem base o = decodeLE ((bytesAt s.mem (p.setWidth 64) 57).drop 56) % L := by
   obtain ⟨ho1, ho2⟩ := ho
   have hT := TF_eq
   rw [WP.block_append_iff]
@@ -566,7 +568,7 @@ theorem init57_ok {o : Nat} (ho : Buf o) {s : State} {base : Addr} (hs : Scr s b
 theorem reduce57_ok {o : Nat} (ho : Buf o) {s : State} {base : Addr} (hs : Scr s base)
     {p : BitVec 32} (hp : s.gpr .esi = p) (hin : Input s base p 57) :
     WP isa (reduce57 o) s fun t => LoopKeep base o s t ∧ Bounded t.mem base o ∧
-      fe t.mem base o = decodeLE (bytesAt s.mem (p.setWidth 64) 57) % L := by
+      fe16 t.mem base o = decodeLE (bytesAt s.mem (p.setWidth 64) 57) % L := by
   unfold reduce57
   refine WP.seq (WP.mono (init57_ok ho hs hp hin) fun v ⟨kv, cv, lv, vv⟩ => ?_)
   obtain mb := hin.bytes (kv.whole (by have := ho.2; omega_arith))
@@ -664,7 +666,7 @@ theorem finish_ok {s₀ s : State} {n sc : Nat} (hp : Args s₀ n sc) (h0 : 0 < 
     WP isa (.block (finish o)) s fun t =>
       (∀ p ∈ savedSlots, t.gpr p.1 = s₀.gpr p.1) ∧ Keeps finishRegs s t ∧
       Outside ((arg s₀ 0).setWidth 64) 0 57 s.mem t.mem ∧
-      bytesAt t.mem ((arg s₀ 0).setWidth 64) 57 = encodeLE 57 (fe s.mem base o) := by
+      bytesAt t.mem ((arg s₀ 0).setWidth 64) 57 = encodeLE 57 (fe16 s.mem base o) := by
   unfold finish
   simp only [List.cons_append, List.append_assoc]
   refine hp.load hsp hr hwr (hbase ▸ hm) h0 fun v hv => ?_

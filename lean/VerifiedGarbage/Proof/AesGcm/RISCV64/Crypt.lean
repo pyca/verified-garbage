@@ -236,12 +236,9 @@ apart from the source after them. -/
 theorem Alias.rest {o : Bool} {S D : Addr} {n : Nat} (ha : Alias o S D n) {j l : Nat} (hl : j + l ≤ n)
     (hn : n < 2 ^ 64) :
     (⟨D + BitVec.ofNat 64 j, l⟩ : Region).Disjoint ⟨S + BitVec.ofNat 64 (j + l), n - (j + l)⟩ := by
-  cases o
-  · have e : S = D := ha
-    subst e
-    exact Offset.disjoint S (.inl (by omega_using [])) (by omega_using [hl, hn]) (by omega_using [hl, hn])
-  · have ha' : (⟨S, n⟩ : Region).Disjoint ⟨D, n⟩ := ha
-    exact (ha'.sub_left (Offset.sub_base _ (by omega_using [hl]))).sub_right (Offset.sub_base _ (by omega_using [hl])) |>.symm
+  rcases ha.buffers with rfl | apart
+  · exact Offset.disjoint S (.inl (by omega_using [])) (by omega_using [hl, hn]) (by omega_using [hl, hn])
+  · exact (apart.sub_left (Offset.sub_base _ (by omega_using [hl]))).sub_right (Offset.sub_base _ (by omega_using [hl])) |>.symm
 
 /-- The source, part of the way: what is left of it. -/
 theorem Alias.rest_sub {S : Addr} {n j : Nat} (hj : j ≤ n) :
