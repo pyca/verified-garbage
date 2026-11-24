@@ -568,6 +568,7 @@ fn tls_records(c: &mut Criterion) {
     /// record; and records of 288, 416, 432 and 448 bytes of text.
     const TLS_SIZES: [usize; 9] = [0, 15, 16, 63, 239, 510, 511, 4095, 16383];
 
+    check_contiguous(c);
     tls_record_rows(c, &TLS_SIZES, Offsets::DEFAULT, "");
     tls_connection_rows(c);
     key_setup_rows(c);
@@ -1047,3 +1048,48 @@ fn key_setup_rows(c: &mut Criterion) {
     target_arch = "riscv64"
 )))]
 pub fn bench(_: &mut Criterion) {}
+
+/// Untimed comparisons on independent nonce, AAD and payload boundaries,
+/// followed by one AES-192 measurement outside the AES-128/256 subset.
+#[cfg(target_arch="x86_64")]
+fn check_contiguous(c: &mut Criterion) {
+    use verified_garbage::aead::aes_gcm::AesGcm;
+    use openssl::symm::{Cipher, encrypt_aead};
+    use std::hint::black_box;
+    use criterion::BenchmarkId;
+    let patterned = |n: usize, j: usize| (0..n).map(|i| (i*53+j) as u8).collect::<Vec<_>>();
+    let mut records = 0;
+    for (k, cipher) in [(16, Cipher::aes_128_gcm()), (24, Cipher::aes_192_gcm()), (32, Cipher::aes_256_gcm())] {
+        let key = patterned(k, 23);
+        let vg = AesGcm::new(&key).unwrap();
+        for nl in [1, 8, 12, 13, 32] {
+            let nonce = patterned(nl, 81);
+            for al in [0, 5, 16, 17, 31, 255, 496, 513] {
+                let aad = patterned(al, 253);
+                for n in [0,1,15,16,17,31,32,33,63,64,65,239,240,241,255,256,257,447,448,480,511,512,513,4096] {
+                    let p = patterned(n, 164);
+                    let mut ref_tag = [0;16];
+                    let oracle = encrypt_aead(cipher, &key, Some(&nonce), &aad, &p, &mut ref_tag).unwrap();
+                    let mut out=vec![0xa5; n+2];
+                    let t = vg.encrypt(&nonce, &aad, &[&p], &mut out[1..1+n]).unwrap();
+                    assert_eq!((&out[1..1+n],t), (&oracle[..],ref_tag), "disjoint {k} {nl} {al} {n}");
+                    assert_eq!((out[0],out[n+1]), (0xa5,0xa5));
+                    out[1..1+n].copy_from_slice(&p);
+                    let t = vg.encrypt_in_place(&nonce, &aad, &mut out[1..1+n]).unwrap();
+                    assert_eq!((&out[1..1+n],t), (&oracle[..],ref_tag), "identical {k} {nl} {al} {n}");
+                    assert_eq!((out[0],out[n+1]), (0xa5,0xa5));
+                    records += 1;
+                }
+            }
+        }
+    }
+    assert_eq!(records, 2880);
+    eprintln!("Validated both layouts against OpenSSL on {records} records");
+    let key=AesGcm::new(&[3;24]).unwrap();
+    let mut buf=[23;241];
+    let mut g=c.benchmark_group("aes-192-gcm-checked-contiguous");
+    g.bench(BenchmarkId::new("verified-garbage",241), |b| b.iter(|| key.encrypt_in_place(black_box(&[4;12]),black_box(&[8;5]),black_box(&mut buf)).unwrap()));
+    g.finish();
+}
+#[cfg(not(target_arch="x86_64"))]
+fn check_contiguous(_: &mut Criterion) {}
