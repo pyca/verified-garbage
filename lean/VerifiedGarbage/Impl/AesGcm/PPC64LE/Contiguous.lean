@@ -53,11 +53,12 @@ def takeWord (size : VG.PPC64LE.Size) (shift : Nat) : Prog isa :=
   .seq (.block [.lsr .d .r11 .r5 shift]) (.ite (.zero .d .r11) (.block [])
     (.block [.load size .r7 .r3 0,.store size .r7 .r4 0,.addi .r3 .r3 size.bytes,
         .addi .r4 .r4 size.bytes,.subi .r5 .r5 size.bytes]))
+def aadCopy : Prog isa := .seq (takeWord .d 3) (.seq (takeWord .w 2)
+  (.ite (.zero .d .r5) (.block []) copyLoop))
+def aadCopyArgs : List Instr := [mov .r3 .r21, .addi .r4 .r31 tO, mov .r5 .r22]
 def aadSmall : Prog isa := .ite (.zero .d .r22) (.block [])
-  (.seq (.block [.li .r0 0, .store .d .r0 .r31 tO, .store .d .r0 .r31 (tO+8),
-     mov .r3 .r21, .addi .r4 .r31 tO, mov .r5 .r22])
-    (.seq (takeWord .d 3) (.seq (takeWord .w 2) (.seq
-      (.ite (.zero .d .r5) (.block []) copyLoop) (ghash1 16 .r31 tO)))))
+  (.seq (.block ([.li .r0 0, .store .d .r0 .r31 tO, .store .d .r0 .r31 (tO+8)] ++ aadCopyArgs))
+    (.seq aadCopy (ghash1 16 .r31 tO)))
 def aadLong : Prog isa :=
   .seq (.block [mov .r24 .r21, mov .r25 .r22, .li .r26 0])
     (.seq (absorb 16) (.seq (.block [.li .r0 15, .logic .and .r26 .r22 .r0]) (flush 16)))
