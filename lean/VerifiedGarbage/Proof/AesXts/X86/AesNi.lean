@@ -42,16 +42,16 @@ and the epilogue they share with them and with AES-CBC (`ends_wp`).
 
 After `c` blocks (`Inv`), the first `c` blocks are XTS of the original ones
 (`outB`), `xmm7` holds the tweak of block `c`, and the scratch buffer holds
-the two constants of `mulT` and, for decryption, the round keys through
-`aesimc` (`DKeys`). A group of blocks (`group_ok`) is the same code for six
-registers and for one: its tweaks stored (`tweaks_ok`: block `i`'s is the
-tweak times `αⁱ`, by `mulX_val`), each block loaded with its tweak XORed in
-(`xorIn_ok`), the rounds (`rounds_ok`, from `aes_ok` and `aesDec_ok` of
+the constant of the carries and, for decryption, the round keys through
+`aesimc` (`DKeys`). A group of blocks (`group_ok`), six or one: each block is
+loaded with its tweak XORed in, and the tweak stored (`fill_ok`: block `i`'s
+is the tweak times `αⁱ`, by `lanes_ok` and, for the last two of six,
+`last2_ok`), the rounds (`rounds_ok`, from `aes_ok` and `aesDec_ok` of
 `vg_aes_encrypt_blocks_aesni` and `vg_aes_decrypt_blocks_aesni`), and each
-tweak XORed in again and the block stored (`xorOut_ok`); these are stated for
-any addresses of the blocks and the tweaks that are apart. A block in an SSE
-register is its 16 bytes, the first least significant (`bx`,
-`Proof/AesXts/X86/Steps.lean`).
+tweak XORed in again and the block stored (`xorOut_ok`), and the tweak after
+them (`next_ok`); these are stated for any addresses of the blocks and the
+tweaks that are apart. A block in an SSE register is its 16 bytes, the first
+least significant (`bx`, `Proof/AesXts/X86/Steps.lean`).
 -/
 
 @[expose] public section
@@ -71,7 +71,7 @@ open VG.Proof.Aes.X86 (in_rd part_sub_reg addr_add reg32)
 open VG.Proof.CmacAes.X86 (st_getD niKeys)
 open VG.Impl.Aes.X86.AesNi (regs6)
 open VG.Proof.AesCbc (Mode)
-open VG.Proof.AesXts.X86 (exec_shift onesX cX bx alphaX bx_alphaX mulX_val bx_xor bytesAt_bx bytesAt_writeW_bx)
+open VG.Proof.AesXts.X86 (exec_shift Signs signC carryOf dbl_carry bx alphaX bx_alphaX bx_xor bytesAt_bx)
 open VG.Spec.Aes (bytesAt)
 
 /-! ## The pieces of a group, for any addresses of its blocks and tweaks -/
@@ -87,132 +87,336 @@ theorem bx_repeat (x : BitVec 128) : ∀ n, bx (Nat.repeat alphaX n x) = Spec.Xt
     show bx (alphaX (Nat.repeat alphaX n x)) = Spec.Xts.mulAlpha (Spec.Xts.next (bx x) n)
     rw [bx_alphaX, bx_repeat x n]
 
-/-- `mulT`: the tweak in `xmm7` times `α`. -/
-theorem mulT_run (s : State) (x5 : s.xmm .xmm5 = onesX) (x6 : s.xmm .xmm6 = cX) :
-    ∃ s', runBlock isa mulT s = some s' ∧ s'.xmm .xmm7 = alphaX (s.xmm .xmm7) ∧
-      (∀ r, ¬ r = .xmm7 → ¬ r = .xmm4 → s'.xmm r = s.xmm r) ∧ s'.gpr = s.gpr ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧
-      s'.wr = s.wr := by
+/-- `signs`: the constant, and the top bits of the tweak's quadwords. -/
+theorem signs_run (s : State) {P : Addr} (hP : addr (s.gpr .edx) cO = P) (hin : InRegions (s.rd ++ s.wr) P 16) :
+    ∃ s', runBlock isa signs s = some s' ∧ s'.xmm .xmm4 = s.mem.readW P 128 ∧
+      Signs (s.xmm .xmm7) 0 (s'.xmm .xmm5) ∧ s'.xmm .xmm7 = s.xmm .xmm7 ∧ s'.gpr = s.gpr ∧ s'.mem = s.mem ∧
+      s'.rd = s.rd ∧ s'.wr = s.wr := by
   refine ⟨_, by
-    simp only [mulT, runBlock_cons, runStep_some, runBlock_nil, exec, exec_bin, exec_shift, exec_pshufd]
-    rfl, ?_, fun r h₁ h₂ => ?_, ?_, ?_, ?_, ?_⟩
-  · simp only [xmm_setXmm_self, reduceCtorEq, not_false_eq_true, xmm_setXmm_of_ne, x5, x6]
-    exact mulX_val (s.xmm .xmm7)
-  · simp only [xmm_setXmm_of_ne _ _ h₁, xmm_setXmm_of_ne _ _ h₂]
-  · simp only [gpr_setXmm]
-  · simp only [mem_setXmm]
-  · simp only [rd_setXmm]
-  · simp only [wr_setXmm]
+    simp only [signs, runBlock_cons, runStep_some, runBlock_nil, exec, exec_shift, exec_pshufd, State.load128, ea_at',
+      hP, hin, ↓reduceIte, Option.map_some]
+    rfl, ?_, ?_, ?_, by rfl, by rfl, by rfl, by rfl⟩
+  · simp only [xmm_setXmm_self, reduceCtorEq, not_false_eq_true, xmm_setXmm_of_ne]
+  · simp only [xmm_setXmm_self, reduceCtorEq, not_false_eq_true, xmm_setXmm_of_ne]
+    exact Signs.start _
+  · simp only [reduceCtorEq, not_false_eq_true, xmm_setXmm_of_ne]
 
-/-- The tweak of block `j` of a group stored at `tA j`, and the tweak times `α`. -/
-theorem tweak_run {tA : Nat → Addr} (j : Nat) (s : State) (x5 : s.xmm .xmm5 = onesX) (x6 : s.xmm .xmm6 = cX)
-    (ha : addr (s.gpr .edx) (twO + 16 * j) = tA j) (hin : InRegions s.wr (tA j) 16) :
-    ∃ s', runBlock isa (tweak j) s = some s' ∧ s'.xmm .xmm7 = alphaX (s.xmm .xmm7) ∧
-      (∀ r, ¬ r = .xmm7 → ¬ r = .xmm4 → s'.xmm r = s.xmm r) ∧ s'.gpr = s.gpr ∧
-      s'.mem = s.mem.writeW (tA j) (s.xmm .xmm7) ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
-  obtain ⟨s', run, h7, hx, hg, hm, hrd, hwr⟩ := mulT_run ({ s with mem := s.mem.writeW (tA j) (s.xmm .xmm7) }) x5 x6
-  exact ⟨s', by
-    rw [tweak, runBlock_cons]
-    simp only [runStep_some, exec, State.store128, ea_at', ha, hin, ↓reduceIte]
-    exact run, h7, hx, hg, hm, hrd, hwr⟩
-
-/-- The tweaks of `n` blocks of a group, from block `j`: block `j + i`'s is
-the tweak times `αⁱ`, at `tA (j + i)`, and what is left in `xmm7` is the
-tweak times `αⁿ`. -/
-theorem tweaks_ok {tA : Nat → Addr} {T : Region} : ∀ (n j : Nat) (s : State), s.xmm .xmm5 = onesX →
-    s.xmm .xmm6 = cX → (∀ i < n, addr (s.gpr .edx) (twO + 16 * (j + i)) = tA (j + i)) →
-    (∀ i < n, InRegions s.wr (tA (j + i)) 16) → (∀ i < n, T.Contains (tA (j + i)) 16) →
-    (∀ i < n, ∀ i' < n, i ≠ i' → Mem.Sep (tA (j + i)) 16 (tA (j + i')) 16) →
-    WP isa (.block (tweaks j n)) s fun s' =>
-      s'.xmm .xmm7 = Nat.repeat alphaX n (s.xmm .xmm7) ∧
-      (∀ r, ¬ r = .xmm7 → ¬ r = .xmm4 → s'.xmm r = s.xmm r) ∧ s'.gpr = s.gpr ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
-      Frame [T] s.mem s'.mem ∧
-      (∀ i < n, s'.mem.readW (tA (j + i)) 128 = Nat.repeat alphaX i (s.xmm .xmm7)) ∧
-      ∀ a, (∀ i < n, Mem.Sep a 16 (tA (j + i)) 16) → s'.mem.readW a 128 = s.mem.readW a 128
-  | 0, _, s, _, _, _, _, _, _ =>
-    WP.block_nil ⟨rfl, fun _ _ _ => rfl, rfl, rfl, rfl, Frame.refl _ _, fun _ h => absurd h (Nat.not_lt_zero _),
-      fun _ _ => rfl⟩
-  | n + 1, j, s, x5, x6, ha, hin, hT, hsep => by
-    obtain ⟨s₁, run, h7, hx, hg, hm, hrd, hwr⟩ := tweak_run (tA := tA) j s x5 x6 (ha 0 (Nat.succ_pos _))
-      (hin 0 (Nat.succ_pos _))
-    have e (i : Nat) : j + 1 + i = j + (i + 1) := by omega_using []
-    rw [tweaks, WP.block_append_iff]
-    refine WP.of_runBlock ⟨s₁, run, ?_⟩
-    refine WP.mono (tweaks_ok (tA := tA) (T := T) n (j + 1) s₁ (by rw [hx _ (by decide) (by decide), x5])
-      (by rw [hx _ (by decide) (by decide), x6])
-      (fun i hi => by rw [hg, e]; exact ha (i + 1) (by omega_using [hi]))
-      (fun i hi => by rw [hwr, e]; exact hin (i + 1) (by omega_using [hi]))
-      (fun i hi => by rw [e]; exact hT (i + 1) (by omega_using [hi]))
-      (fun i hi i' hi' hne => by
-        rw [e, e]; exact hsep (i + 1) (by omega_using [hi]) (i' + 1) (by omega_using [hi']) (by omega_using [hne])))
-      fun s' ⟨h7', hx', hg', hrd', hwr', hf', hr', hk'⟩ => ?_
-    refine ⟨by rw [h7', h7, repeat_succ'], fun r h₁ h₂ => by rw [hx' r h₁ h₂, hx r h₁ h₂], hg'.trans hg,
-      hrd'.trans hrd, hwr'.trans hwr, ?_, fun i hi => ?_, fun a ha' => ?_⟩
-    · rw [hm] at hf'
-      exact ((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (hT 0 (Nat.succ_pos _))).trans hf'
-    · cases i with
-      | zero =>
-        rw [hk' _ fun i hi => by
-          rw [e]; exact hsep 0 (Nat.succ_pos _) (i + 1) (by omega_using [hi]) (by omega_using []), hm]
-        exact Mem.readW_writeW_self _ _ 16 _ (by decide)
-      | succ i =>
-        obtain h := hr' i (by omega_using [hi])
-        rw [e] at h
-        rw [h, h7, repeat_succ']
-    · rw [hk' a fun i hi => by rw [e]; exact ha' (i + 1) (by omega_using [hi]), hm]
-      exact Mem.readW_writeW_sep (ha' 0 (Nat.succ_pos _)) (by decide)
-
-/-- A block loaded into `b` with its tweak XORed in. -/
-theorem xorIn1_run {dA tA : Nat → Addr} (b : XReg) (hb : ¬ b = .xmm6) (j : Nat) (s : State)
+/-- `lane`: a block loaded with its tweak XORed in, and the tweak stored. -/
+theorem lane_run {dA tA : Nat → Addr} (b : XReg) (hb : ¬ XReg.xmm7 = b) (j : Nat) (s : State)
     (hd : addr (s.gpr .esi) (16 * j) = dA j) (ht : addr (s.gpr .edx) (twO + 16 * j) = tA j)
-    (hind : InRegions (s.rd ++ s.wr) (dA j) 16) (hint : InRegions (s.rd ++ s.wr) (tA j) 16) :
-    ∃ s', runBlock isa [.movdquLoad b (at_ .esi (16 * j)), .movdquLoad .xmm6 (at_ .edx (twO + 16 * j)),
-        .xop (.bin .pxor b .xmm6)] s = some s' ∧
-      s'.xmm b = s.mem.readW (dA j) 128 ^^^ s.mem.readW (tA j) 128 ∧
-      (∀ r, ¬ r = .xmm6 → ¬ r = b → s'.xmm r = s.xmm r) ∧ s'.gpr = s.gpr ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧
-      s'.wr = s.wr := by
+    (hind : InRegions (s.rd ++ s.wr) (dA j) 16) (hint : InRegions s.wr (tA j) 16) :
+    ∃ s', runBlock isa (lane b j) s = some s' ∧ s'.xmm b = s.mem.readW (dA j) 128 ^^^ s.xmm .xmm7 ∧
+      (∀ r, ¬ r = b → s'.xmm r = s.xmm r) ∧ s'.gpr = s.gpr ∧ s'.mem = s.mem.writeW (tA j) (s.xmm .xmm7) ∧
+      s'.rd = s.rd ∧ s'.wr = s.wr := by
   refine ⟨_, by
-    simp only [runBlock_cons, runStep_some, runBlock_nil, exec, exec_bin, State.load128, ea_at', gpr_setXmm,
-      mem_setXmm, rd_setXmm, wr_setXmm, hd, ht, hind, hint, ↓reduceIte, Option.map_some]
-    rfl, ?_, fun r h₁ h₂ => ?_, by rfl, by rfl, by rfl, by rfl⟩
-  · simp only [xmm_setXmm_self, xmm_setXmm_of_ne _ _ hb]; rfl
-  · simp only [xmm_setXmm_of_ne _ _ h₁, xmm_setXmm_of_ne _ _ h₂]
+    simp only [lane, runBlock_cons, runStep_some, runBlock_nil, exec, exec_bin, State.load128, State.store128, ea_at',
+      gpr_setXmm, mem_setXmm, rd_setXmm, wr_setXmm, hd, ht, hind, hint, ↓reduceIte, Option.map_some]
+    rfl, ?_, fun r h => ?_, by rfl, ?_, by rfl, by rfl⟩
+  · show ((s.setXmm b _).setXmm b _).xmm b = _
+    simp only [xmm_setXmm_self, xmm_setXmm_of_ne _ _ hb]; rfl
+  · show ((s.setXmm b _).setXmm b _).xmm r = _
+    simp only [xmm_setXmm_of_ne _ _ h]
+  · simp only [xmm_setXmm_of_ne _ _ hb]
 
-/-- `xorIn`: each block register holds its block with its tweak XORed in. -/
-theorem xorIn_ok {dA tA : Nat → Addr} : ∀ (rs : List XReg) (j : Nat) (s : State), rs.Nodup → .xmm6 ∉ rs →
+/-- `step`: the tweak times `α`, with the carries ahead. -/
+theorem step_run {x : BitVec 128} {k : Nat} (hk : k < 8) (s : State) (h5 : Signs x k (s.xmm .xmm5))
+    (h4 : s.xmm .xmm4 = signC) (h7 : s.xmm .xmm7 = Nat.repeat alphaX k x) :
+    ∃ s', runBlock isa step s = some s' ∧ Signs x (k + 1) (s'.xmm .xmm5) ∧
+      s'.xmm .xmm7 = Nat.repeat alphaX (k + 1) x ∧
+      (∀ r, ¬ r = .xmm5 → ¬ r = .xmm6 → ¬ r = .xmm7 → s'.xmm r = s.xmm r) ∧ s'.gpr = s.gpr ∧ s'.mem = s.mem ∧
+      s'.rd = s.rd ∧ s'.wr = s.wr := by
+  refine ⟨_, by
+    simp only [step, runBlock_cons, runStep_some, runBlock_nil, exec, exec_bin, exec_shift]
+    rfl, ?_, ?_, fun r h₁ h₂ h₃ => ?_, by simp only [gpr_setXmm], by simp only [mem_setXmm],
+    by simp only [rd_setXmm], by simp only [wr_setXmm]⟩
+  · simp only [xmm_setXmm_self, reduceCtorEq, not_false_eq_true, xmm_setXmm_of_ne]
+    exact h5.step
+  · simp only [xmm_setXmm_self, reduceCtorEq, not_false_eq_true, xmm_setXmm_of_ne, eval_movdqa, h4, h7]
+    rw [h5.red (by omega_arith)]
+    exact dbl_carry x hk
+  · simp only [xmm_setXmm_of_ne _ _ h₁, xmm_setXmm_of_ne _ _ h₂, xmm_setXmm_of_ne _ _ h₃]
+
+/-- What the blocks `j … j + n - 1` of a group leave in memory, the tweaks of
+the block `j` on being `x` times `αʲ` on: the tweaks, at `tA`, in `T`. -/
+structure Tweaks (tA : Nat → Addr) (T : Region) (x : BitVec 128) (j n : Nat) (m m' : Mem) : Prop where
+  frame : Frame [T] m m'
+  tw : ∀ i < n, m'.readW (tA (j + i)) 128 = Nat.repeat alphaX (j + i) x
+  keep : ∀ a, (∀ i < n, Mem.Sep a 16 (tA (j + i)) 16) → m'.readW a 128 = m.readW a 128
+
+/-- `lanes`: the blocks from block `j` on, each with its tweak XORed in. -/
+theorem lanes_ok {dA tA : Nat → Addr} {T : Region} {x : BitVec 128} : ∀ (rs : List XReg) (j : Nat) (s : State),
+    j + rs.length < 8 → rs.Nodup → (∀ r ∈ rs, ¬ r = .xmm4 ∧ ¬ r = .xmm5 ∧ ¬ r = .xmm6 ∧ ¬ r = .xmm7) →
+    Signs x j (s.xmm .xmm5) → s.xmm .xmm4 = signC → s.xmm .xmm7 = Nat.repeat alphaX j x →
     (∀ i < rs.length, addr (s.gpr .esi) (16 * (j + i)) = dA (j + i)) →
     (∀ i < rs.length, addr (s.gpr .edx) (twO + 16 * (j + i)) = tA (j + i)) →
     (∀ i < rs.length, InRegions (s.rd ++ s.wr) (dA (j + i)) 16) →
-    (∀ i < rs.length, InRegions (s.rd ++ s.wr) (tA (j + i)) 16) →
-    WP isa (.block (xorIn rs j)) s fun s' =>
-      (∀ i (h : i < rs.length), s'.xmm rs[i] = s.mem.readW (dA (j + i)) 128 ^^^ s.mem.readW (tA (j + i)) 128) ∧
-      (∀ r, ¬ r = .xmm6 → r ∉ rs → s'.xmm r = s.xmm r) ∧ s'.gpr = s.gpr ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧
-      s'.wr = s.wr
-  | [], _, s, _, _, _, _, _, _ =>
-    WP.block_nil ⟨fun _ h => absurd h (Nat.not_lt_zero _), fun _ _ _ => rfl, rfl, rfl, rfl, rfl⟩
-  | b :: bs, j, s, hnd, h6, hd, ht, hind, hint => by
-    have hb6 : ¬ b = .xmm6 := fun h => h6 (h ▸ List.mem_cons_self)
+    (∀ i < rs.length, InRegions s.wr (tA (j + i)) 16) → (∀ i < rs.length, T.Contains (tA (j + i)) 16) →
+    (∀ i < rs.length, ∀ i' < rs.length, i ≠ i' → Mem.Sep (tA (j + i)) 16 (tA (j + i')) 16) →
+    (∀ i < rs.length, ∀ i' < rs.length, Mem.Sep (dA (j + i)) 16 (tA (j + i')) 16) →
+    WP isa (.block (lanes rs j)) s fun s' =>
+      (∀ i (h : i < rs.length), s'.xmm rs[i] = s.mem.readW (dA (j + i)) 128 ^^^ Nat.repeat alphaX (j + i) x) ∧
+      Signs x (j + rs.length) (s'.xmm .xmm5) ∧ s'.xmm .xmm4 = signC ∧
+      s'.xmm .xmm7 = Nat.repeat alphaX (j + rs.length) x ∧
+      (∀ r, ¬ r = .xmm5 → ¬ r = .xmm6 → ¬ r = .xmm7 → r ∉ rs → s'.xmm r = s.xmm r) ∧
+      s'.gpr = s.gpr ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ Tweaks tA T x j rs.length s.mem s'.mem
+  | [], _, s, _, _, _, h5, h4, h7, _, _, _, _, _, _, _ =>
+    WP.block_nil ⟨fun _ h => absurd h (Nat.not_lt_zero _), h5, h4, h7, fun _ _ _ _ _ => rfl, rfl, rfl, rfl,
+      ⟨Frame.refl _ _, fun _ h => absurd h (Nat.not_lt_zero _), fun _ _ => rfl⟩⟩
+  | b :: bs, j, s, hj, hnd, hr, h5, h4, h7, hd, ht, hind, hint, hT, hsep, hdt => by
+    obtain ⟨b4, b5, b6, b7⟩ := hr b List.mem_cons_self
     have hbs : b ∉ bs := (List.nodup_cons.mp hnd).1
-    have h6' : .xmm6 ∉ bs := fun h => h6 (List.mem_cons_of_mem _ h)
     have e (i : Nat) : j + 1 + i = j + (i + 1) := by omega_using []
     have l0 : 0 < (b :: bs).length := Nat.succ_pos _
-    obtain ⟨s₁, run, hv, hx, hg, hm, hrd, hwr⟩ := xorIn1_run (dA := dA) (tA := tA) b hb6 j s (hd 0 l0) (ht 0 l0)
-      (hind 0 l0) (hint 0 l0)
-    rw [xorIn, WP.block_append_iff]
-    refine WP.of_runBlock ⟨s₁, run, ?_⟩
-    refine WP.mono (xorIn_ok (dA := dA) (tA := tA) bs (j + 1) s₁ (List.nodup_cons.mp hnd).2 h6'
+    have hj' : j + (bs.length + 1) < 8 := hj
+    obtain ⟨s₁, run₁, hv₁, hx₁, hg₁, hm₁, hrd₁, hwr₁⟩ := lane_run (dA := dA) (tA := tA) b (fun h => b7 h.symm) j s
+      (hd 0 l0) (ht 0 l0) (hind 0 l0) (hint 0 l0)
+    obtain ⟨s₂, run₂, h5₂, h7₂, hx₂, hg₂, hm₂, hrd₂, hwr₂⟩ := step_run (x := x) (k := j) (by omega_using [hj']) s₁
+      (by rw [hx₁ _ (fun h => b5 h.symm)]; exact h5) (by rw [hx₁ _ (fun h => b4 h.symm)]; exact h4)
+      (by rw [hx₁ _ (fun h => b7 h.symm)]; exact h7)
+    rw [lanes, WP.block_append_iff]
+    refine WP.of_runBlock ⟨s₁, run₁, ?_⟩
+    rw [WP.block_append_iff]
+    refine WP.of_runBlock ⟨s₂, run₂, ?_⟩
+    have hg : s₂.gpr = s.gpr := hg₂.trans hg₁
+    have hrd : s₂.rd = s.rd := hrd₂.trans hrd₁
+    have hwr : s₂.wr = s.wr := hwr₂.trans hwr₁
+    have hm : s₂.mem = s.mem.writeW (tA j) (Nat.repeat alphaX j x) := by rw [hm₂, hm₁, h7]
+    refine WP.mono (lanes_ok (dA := dA) (tA := tA) (T := T) (x := x) bs (j + 1) s₂ (by omega_using [hj'])
+      (List.nodup_cons.mp hnd).2 (fun r h => hr r (List.mem_cons_of_mem _ h)) h5₂
+      (by rw [hx₂ _ (by decide) (by decide) (by decide), hx₁ _ (fun h => b4 h.symm)]; exact h4) h7₂
       (fun i hi => by rw [hg, e]; exact hd (i + 1) (Nat.succ_lt_succ hi))
       (fun i hi => by rw [hg, e]; exact ht (i + 1) (Nat.succ_lt_succ hi))
       (fun i hi => by rw [hrd, hwr, e]; exact hind (i + 1) (Nat.succ_lt_succ hi))
-      (fun i hi => by rw [hrd, hwr, e]; exact hint (i + 1) (Nat.succ_lt_succ hi)))
-      fun s' ⟨hv', hx', hg', hm', hrd', hwr'⟩ => ?_
-    refine ⟨fun i hi => ?_, fun r h₁ h₂ => ?_, hg'.trans hg, hm'.trans hm, hrd'.trans hrd, hwr'.trans hwr⟩
+      (fun i hi => by rw [hwr, e]; exact hint (i + 1) (Nat.succ_lt_succ hi))
+      (fun i hi => by rw [e]; exact hT (i + 1) (Nat.succ_lt_succ hi))
+      (fun i hi i' hi' hne => by
+        rw [e, e]
+        exact hsep (i + 1) (Nat.succ_lt_succ hi) (i' + 1) (Nat.succ_lt_succ hi') (by omega_using [hne]))
+      (fun i hi i' hi' => by
+        rw [e, e]; exact hdt (i + 1) (Nat.succ_lt_succ hi) (i' + 1) (Nat.succ_lt_succ hi')))
+      fun s' ⟨hv', h5', h4', h7', hx', hg', hrd', hwr', hT'⟩ => ?_
+    have el : j + 1 + bs.length = j + (b :: bs).length := e _
+    rw [el] at h5' h7'
+    refine ⟨fun i hi => ?_, h5', h4', h7', fun r h₁ h₂ h₃ h₄ => ?_, hg'.trans hg, hrd'.trans hrd, hwr'.trans hwr,
+      ⟨?_, fun i hi => ?_, fun a ha => ?_⟩⟩
     · cases i with
-      | zero => rw [List.getElem_cons_zero, hx' b hb6 hbs, hv, Nat.add_zero]
+      | zero =>
+        rw [List.getElem_cons_zero, hx' b b5 b6 b7 hbs, hx₂ b b5 b6 b7, hv₁, h7, Nat.add_zero]
       | succ i =>
         obtain hi' : i < bs.length := Nat.lt_of_succ_lt_succ hi
-        rw [List.getElem_cons_succ, hv' i hi', hm, e]
-    · simp only [List.mem_cons, not_or] at h₂
-      rw [hx' r h₁ h₂.2, hx r h₁ h₂.1]
+        rw [List.getElem_cons_succ, hv' i hi', hm, e, Mem.readW_writeW_sep (hdt (i + 1) hi 0 l0) (by decide)]
+    · simp only [List.mem_cons, not_or] at h₄
+      rw [hx' r h₁ h₂ h₃ h₄.2, hx₂ r h₁ h₂ h₃, hx₁ r h₄.1]
+    · have f := hT'.frame
+      rw [hm] at f
+      exact ((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (hT 0 l0)).trans f
+    · cases i with
+      | zero =>
+        rw [hT'.keep _ fun i hi => by
+          rw [e]; exact hsep 0 l0 (i + 1) (Nat.succ_lt_succ hi) (by omega_using []), hm]
+        exact Mem.readW_writeW_self _ _ 16 _ (by decide)
+      | succ i =>
+        obtain h := hT'.tw i (Nat.lt_of_succ_lt_succ hi)
+        rwa [e] at h
+    · rw [hT'.keep a fun i hi => by rw [e]; exact ha (i + 1) (Nat.succ_lt_succ hi), hm]
+      exact Mem.readW_writeW_sep (ha 0 l0) (by decide)
+
+/-- `carries2`: the carries of the tweaks `x` times `αᵏ` and `αᵏ⁺¹`. -/
+theorem carries2_run {x : BitVec 128} {k : Nat} (hk : k + 1 < 8) (s : State) (h5 : Signs x k (s.xmm .xmm5))
+    (h4 : s.xmm .xmm4 = signC) {P : Addr} (hP : addr (s.gpr .edx) rO = P) (hin : InRegions s.wr P 16) :
+    ∃ s', runBlock isa carries2 s = some s' ∧ s'.xmm .xmm5 = carryOf x k ∧
+      (∀ r, ¬ r = .xmm5 → ¬ r = .xmm6 → s'.xmm r = s.xmm r) ∧ s'.gpr = s.gpr ∧
+      s'.mem = s.mem.writeW P (carryOf x (k + 1)) ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
+  refine ⟨_, by
+    simp only [carries2, runBlock_cons, runStep_some, runBlock_nil, exec, exec_bin, exec_shift, State.store128, ea_at',
+      gpr_setXmm, mem_setXmm, rd_setXmm, wr_setXmm, hP, hin, ↓reduceIte]
+    rfl, ?_, fun r h₁ h₂ => ?_, by simp only [gpr_setXmm], ?_,
+    by simp only [rd_setXmm], by simp only [wr_setXmm]⟩
+  · simp only [xmm_setXmm_self, reduceCtorEq, not_false_eq_true, xmm_setXmm_of_ne, h4]
+    exact h5.red (by omega_using [hk])
+  · simp only [xmm_setXmm_of_ne _ _ h₁, xmm_setXmm_of_ne _ _ h₂]
+  · rw [mem_setXmm, mem_setXmm]
+    simp only [xmm_setXmm_self, reduceCtorEq, not_false_eq_true, xmm_setXmm_of_ne, eval_movdqa, h4]
+    rw [h5.step.red (by omega_using [hk])]
+
+/-- `dblWith`: the tweak times `α`, with its carries in `r`. -/
+theorem dblWith_run {x : BitVec 128} {k : Nat} (hk : k < 8) (r : XReg) (hr : ¬ r = .xmm7) (s : State)
+    (h7 : s.xmm .xmm7 = Nat.repeat alphaX k x) (hc : s.xmm r = carryOf x k) :
+    ∃ s', runBlock isa (dblWith r) s = some s' ∧ s'.xmm .xmm7 = Nat.repeat alphaX (k + 1) x ∧
+      (∀ q, ¬ q = .xmm7 → s'.xmm q = s.xmm q) ∧ s'.gpr = s.gpr ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
+  refine ⟨_, by
+    simp only [dblWith, runBlock_cons, runStep_some, runBlock_nil, exec, exec_bin]
+    rfl, ?_, fun q h => ?_, by simp only [gpr_setXmm], by simp only [mem_setXmm],
+    by simp only [rd_setXmm], by simp only [wr_setXmm]⟩
+  · simp only [xmm_setXmm_self, xmm_setXmm_of_ne _ _ hr, h7, hc]
+    exact dbl_carry x hk
+  · simp only [xmm_setXmm_of_ne _ _ h]
+
+/-- `last2`: the last two blocks of six, and the carries of the tweak after
+them kept at `P`. -/
+theorem last2_ok {dA tA : Nat → Addr} {T : Region} {P : Addr} {x : BitVec 128} (s : State)
+    (h5 : Signs x 4 (s.xmm .xmm5)) (h4 : s.xmm .xmm4 = signC) (h7 : s.xmm .xmm7 = Nat.repeat alphaX 4 x)
+    (hd : ∀ i < 6, addr (s.gpr .esi) (16 * i) = dA i) (ht : ∀ i < 6, addr (s.gpr .edx) (twO + 16 * i) = tA i)
+    (hP : addr (s.gpr .edx) rO = P) (hind : ∀ i < 6, InRegions (s.rd ++ s.wr) (dA i) 16)
+    (hint : ∀ i < 6, InRegions s.wr (tA i) 16) (hinP : InRegions s.wr P 16)
+    (hT : ∀ i < 6, T.Contains (tA i) 16) (hTP : T.Contains P 16)
+    (hsep : ∀ i < 6, ∀ i' < 6, i ≠ i' → Mem.Sep (tA i) 16 (tA i') 16)
+    (hPt : ∀ i < 6, Mem.Sep P 16 (tA i) 16)
+    (hdt : ∀ i < 6, ∀ i' < 6, Mem.Sep (dA i) 16 (tA i') 16) (hdP : ∀ i < 6, Mem.Sep (dA i) 16 P 16) :
+    WP isa (.block last2) s fun s' =>
+      s'.xmm .xmm4 = s.mem.readW (dA 4) 128 ^^^ Nat.repeat alphaX 4 x ∧
+      s'.xmm .xmm5 = s.mem.readW (dA 5) 128 ^^^ Nat.repeat alphaX 5 x ∧
+      s'.xmm .xmm7 = Nat.repeat alphaX 5 x ∧ s'.mem.readW P 128 = carryOf x 5 ∧
+      (∀ r ∈ regs4, s'.xmm r = s.xmm r) ∧
+      s'.gpr = s.gpr ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ Frame [T] s.mem s'.mem ∧
+      s'.mem.readW (tA 4) 128 = Nat.repeat alphaX 4 x ∧ s'.mem.readW (tA 5) 128 = Nat.repeat alphaX 5 x ∧
+      ∀ a, Mem.Sep a 16 P 16 → (∀ i < 6, 4 ≤ i → Mem.Sep a 16 (tA i) 16) →
+        s'.mem.readW a 128 = s.mem.readW a 128 := by
+  obtain ⟨s₁, run₁, c₁, x₁, g₁, m₁, rd₁, wr₁⟩ := carries2_run (x := x) (k := 4) (by decide) s h5 h4 hP hinP
+  obtain ⟨s₂, run₂, v₂, x₂, g₂, m₂, rd₂, wr₂⟩ := lane_run (dA := dA) (tA := tA) .xmm4 (by decide) 4 s₁
+    (by rw [g₁]; exact hd 4 (by decide)) (by rw [g₁]; exact ht 4 (by decide))
+    (by rw [rd₁, wr₁]; exact hind 4 (by decide)) (by rw [wr₁]; exact hint 4 (by decide))
+  obtain h7₁ : s₁.xmm .xmm7 = Nat.repeat alphaX 4 x := by rw [x₁ _ (by decide) (by decide), h7]
+  obtain ⟨s₃, run₃, h7₃, x₃, g₃, m₃, rd₃, wr₃⟩ := dblWith_run (x := x) (k := 4) (by decide) .xmm5 (by decide) s₂
+    (by rw [x₂ _ (by decide)]; exact h7₁) (by rw [x₂ _ (by decide)]; exact c₁)
+  obtain gs₃ : s₃.gpr = s.gpr := g₃.trans (g₂.trans g₁)
+  obtain rs₃ : s₃.rd = s.rd := rd₃.trans (rd₂.trans rd₁)
+  obtain ws₃ : s₃.wr = s.wr := wr₃.trans (wr₂.trans wr₁)
+  obtain ⟨s₄, run₄, v₄, x₄, g₄, m₄, rd₄, wr₄⟩ := lane_run (dA := dA) (tA := tA) .xmm5 (by decide) 5 s₃
+    (by rw [gs₃]; exact hd 5 (by decide)) (by rw [gs₃]; exact ht 5 (by decide))
+    (by rw [rs₃, ws₃]; exact hind 5 (by decide)) (by rw [ws₃]; exact hint 5 (by decide))
+  obtain hm₃ : s₃.mem = (s.mem.writeW P (carryOf x 5)).writeW (tA 4) (Nat.repeat alphaX 4 x) := by
+    rw [m₃, m₂, h7₁, m₁]
+  obtain hm₄ : s₄.mem = ((s.mem.writeW P (carryOf x 5)).writeW (tA 4) (Nat.repeat alphaX 4 x)).writeW (tA 5)
+      (Nat.repeat alphaX 5 x) := by rw [m₄, h7₃, hm₃]
+  rw [last2, WP.block_append_iff]
+  refine WP.of_runBlock ⟨s₁, run₁, ?_⟩
+  rw [WP.block_append_iff]
+  refine WP.of_runBlock ⟨s₂, run₂, ?_⟩
+  rw [WP.block_append_iff]
+  refine WP.of_runBlock ⟨s₃, run₃, WP.of_runBlock ⟨s₄, run₄, ?_⟩⟩
+  refine ⟨?_, ?_, ?_, ?_, fun r hr => ?_, g₄.trans gs₃, rd₄.trans rs₃, wr₄.trans ws₃, ?_, ?_, ?_, fun a h₁ h₂ => ?_⟩
+  · rw [x₄ _ (by decide), x₃ _ (by decide), v₂, h7₁, m₁, Mem.readW_writeW_sep (hdP 4 (by decide)) (by decide)]
+  · rw [v₄, h7₃, hm₃, Mem.readW_writeW_sep (hdt 5 (by decide) 4 (by decide)) (by decide),
+      Mem.readW_writeW_sep (hdP 5 (by decide)) (by decide)]
+  · rw [x₄ _ (by decide), h7₃]
+  · rw [hm₄, Mem.readW_writeW_sep (hPt 5 (by decide)) (by decide),
+      Mem.readW_writeW_sep (hPt 4 (by decide)) (by decide)]
+    exact Mem.readW_writeW_self _ _ 16 _ (by decide)
+  · obtain ⟨n4, n5, n6, n7⟩ : ¬ r = .xmm4 ∧ ¬ r = .xmm5 ∧ ¬ r = .xmm6 ∧ ¬ r = .xmm7 := by
+      revert r; decide
+    rw [x₄ r n5, x₃ r n7, x₂ r n4, x₁ r n5 n6]
+  · rw [hm₄]
+    exact (((Frame.refl _ _).writeW (List.mem_singleton_self _) _ hTP).writeW (List.mem_singleton_self _) _
+      (hT 4 (by decide))).writeW (List.mem_singleton_self _) _ (hT 5 (by decide))
+  · rw [hm₄, Mem.readW_writeW_sep (hsep 4 (by decide) 5 (by decide) (by decide)) (by decide)]
+    exact Mem.readW_writeW_self _ _ 16 _ (by decide)
+  · rw [hm₄]; exact Mem.readW_writeW_self _ _ 16 _ (by decide)
+  · rw [hm₄, Mem.readW_writeW_sep (h₂ 5 (by decide) (by decide)) (by decide),
+      Mem.readW_writeW_sep (h₂ 4 (by decide) (by decide)) (by decide), Mem.readW_writeW_sep h₁ (by decide)]
+
+/-- What a `fill` leaves for the blocks in the registers `rs`, the tweak of
+the first being `x`: what `next`, after the blocks are stored, needs for the
+tweak after them. -/
+def Held (rs : List XReg) (P : Addr) (x : BitVec 128) (s : State) : Prop :=
+  if rs.length = 6 then s.xmm .xmm7 = Nat.repeat alphaX 5 x ∧ s.mem.readW P 128 = carryOf x 5
+  else s.xmm .xmm7 = Nat.repeat alphaX rs.length x
+
+/-- `fill6` and `fill1`: each block with its tweak XORed in. -/
+theorem fill_ok {dA tA : Nat → Addr} {T : Region} {P C : Addr} {fill : List Instr} {rs : List XReg}
+    (hrs : (fill = fill6 ∧ rs = regs6) ∨ (fill = fill1 ∧ rs = [.xmm0])) (s : State)
+    (hC : addr (s.gpr .edx) cO = C) (hinC : InRegions (s.rd ++ s.wr) C 16) (hcv : s.mem.readW C 128 = signC)
+    (hd : ∀ i < rs.length, addr (s.gpr .esi) (16 * i) = dA i) (ht : ∀ i < 6, addr (s.gpr .edx) (twO + 16 * i) = tA i)
+    (hP : addr (s.gpr .edx) rO = P) (hind : ∀ i < rs.length, InRegions (s.rd ++ s.wr) (dA i) 16)
+    (hint : ∀ i < 6, InRegions s.wr (tA i) 16) (hinP : InRegions s.wr P 16)
+    (hT : ∀ i < 6, T.Contains (tA i) 16) (hTP : T.Contains P 16)
+    (hsep : ∀ i < 6, ∀ i' < 6, i ≠ i' → Mem.Sep (tA i) 16 (tA i') 16)
+    (hPt : ∀ i < 6, Mem.Sep P 16 (tA i) 16)
+    (hdt : ∀ i < rs.length, ∀ i' < 6, Mem.Sep (dA i) 16 (tA i') 16)
+    (hdP : ∀ i < rs.length, Mem.Sep (dA i) 16 P 16) :
+    WP isa (.block fill) s fun s' =>
+      (∀ i (h : i < rs.length), s'.xmm rs[i] = s.mem.readW (dA i) 128 ^^^ Nat.repeat alphaX i (s.xmm .xmm7)) ∧
+      Held rs P (s.xmm .xmm7) s' ∧ s'.gpr = s.gpr ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ Frame [T] s.mem s'.mem ∧
+      (∀ i < rs.length, s'.mem.readW (tA i) 128 = Nat.repeat alphaX i (s.xmm .xmm7)) := by
+  obtain ⟨s₁, run₁, x4₁, x5₁, x7₁, g₁, m₁, rd₁, wr₁⟩ := signs_run s hC hinC
+  rw [hcv] at x4₁
+  obtain hl : ∀ (qs : List XReg), qs.length ≤ rs.length → qs.length ≤ 6 → qs.Nodup →
+      (∀ r ∈ qs, ¬ r = .xmm4 ∧ ¬ r = .xmm5 ∧ ¬ r = .xmm6 ∧ ¬ r = .xmm7) → _ := fun qs hq hq6 hnd hr =>
+    lanes_ok (dA := dA) (tA := tA) (T := T) (x := s.xmm .xmm7) qs 0 s₁ (by omega_using [hq6]) hnd hr x5₁ x4₁ x7₁
+      (fun i hi => by rw [Nat.zero_add, g₁]; exact hd i (by omega_using [hi, hq]))
+      (fun i hi => by rw [Nat.zero_add, g₁]; exact ht i (by omega_using [hi, hq6]))
+      (fun i hi => by rw [Nat.zero_add, rd₁, wr₁]; exact hind i (by omega_using [hi, hq]))
+      (fun i hi => by rw [Nat.zero_add, wr₁]; exact hint i (by omega_using [hi, hq6]))
+      (fun i hi => by rw [Nat.zero_add]; exact hT i (by omega_using [hi, hq6]))
+      (fun i hi i' hi' hne => by
+        rw [Nat.zero_add, Nat.zero_add]; exact hsep i (by omega_using [hi, hq6]) i' (by omega_using [hi', hq6]) hne)
+      (fun i hi i' hi' => by
+        rw [Nat.zero_add, Nat.zero_add]; exact hdt i (by omega_using [hi, hq]) i' (by omega_using [hi', hq6]))
+  rcases hrs with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
+  · rw [fill6, WP.block_append_iff]
+    refine WP.of_runBlock ⟨s₁, run₁, ?_⟩
+    rw [WP.block_append_iff]
+    refine WP.mono (hl regs4 (by decide) (by decide) (by decide) (by decide))
+      fun s₂ ⟨hv₂, h5₂, h4₂, h7₂, _, g₂, rd₂, wr₂, hT₂⟩ => ?_
+    simp only [Nat.zero_add] at hv₂ h5₂ h7₂
+    obtain t₂ := hT₂.tw
+    obtain k₂ := hT₂.keep
+    simp only [Nat.zero_add] at t₂ k₂
+    obtain gs : s₂.gpr = s.gpr := g₂.trans g₁
+    obtain rs₂ : s₂.rd = s.rd := rd₂.trans rd₁
+    obtain ws₂ : s₂.wr = s.wr := wr₂.trans wr₁
+    refine WP.mono (last2_ok (dA := dA) (tA := tA) (T := T) (P := P) (x := s.xmm .xmm7) s₂ h5₂ h4₂ h7₂
+      (fun i hi => by rw [gs]; exact hd i hi) (fun i hi => by rw [gs]; exact ht i hi) (by rw [gs]; exact hP)
+      (fun i hi => by rw [rs₂, ws₂]; exact hind i hi) (fun i hi => by rw [ws₂]; exact hint i hi)
+      (by rw [ws₂]; exact hinP) hT hTP hsep hPt hdt hdP)
+      fun s₃ ⟨v4, v5, v7, vP, hx₃, g₃, rd₃, wr₃, f₃, t4, t5, k₃⟩ => ?_
+    obtain kd : ∀ i < 6, s₂.mem.readW (dA i) 128 = s.mem.readW (dA i) 128 := fun i hi => by
+      rw [k₂ _ fun i' hi' => hdt i hi i' (Nat.lt_of_lt_of_le hi' (by decide)), m₁]
+    refine ⟨fun i hi => ?_, ?_, g₃.trans gs, rd₃.trans rs₂, wr₃.trans ws₂, ?_, fun i hi => ?_⟩
+    · obtain h | rfl | rfl : i < 4 ∨ i = 4 ∨ i = 5 := by
+        have : i < 6 := hi
+        omega_using [this]
+      · obtain e : regs6[i] = regs4[i]'h := by
+          have : ∀ i (h : i < 4), regs6[i]'(Nat.lt_of_lt_of_le h (by decide)) = regs4[i]'h := by decide
+          exact this i h
+        rw [e, hx₃ (regs4[i]'h) (List.getElem_mem h), hv₂ i h, m₁]
+      · exact v4.trans (by rw [kd 4 (by decide)])
+      · exact v5.trans (by rw [kd 5 (by decide)])
+    · exact (ite_eq_left (by decide)).mpr ⟨v7, vP⟩
+    · rw [← m₁]; exact hT₂.frame.trans f₃
+    · obtain h | rfl | rfl : i < 4 ∨ i = 4 ∨ i = 5 := by
+        have : i < 6 := hi
+        omega_using [this]
+      · rw [k₃ _ (fun y h₁ h₂ => hPt i (by omega_using [h]) y h₂ h₁)
+          fun i' hi' h' => hsep i (by omega_using [h]) i' hi' (by omega_using [h, h'])]
+        exact t₂ i h
+      · exact t4
+      · exact t5
+  · rw [fill1, WP.block_append_iff]
+    refine WP.of_runBlock ⟨s₁, run₁, ?_⟩
+    refine WP.mono (hl [.xmm0] (by decide) (by decide) (by decide) (by decide))
+      fun s₂ ⟨hv₂, _, _, h7₂, _, g₂, rd₂, wr₂, hT₂⟩ => ?_
+    obtain t₂ := hT₂.tw
+    simp only [Nat.zero_add] at hv₂ t₂
+    refine ⟨fun i hi => by rw [hv₂ i hi, m₁], ?_, g₂.trans g₁, rd₂.trans rd₁, wr₂.trans wr₁, ?_, t₂⟩
+    · exact (ite_eq_right (by decide)).mpr h7₂
+    · rw [← m₁]; exact hT₂.frame
+
+/-- `next6`, and nothing after one block: the tweak after the blocks. -/
+theorem next_ok {P : Addr} {x : BitVec 128} {next : List Instr} {rs : List XReg}
+    (hrs : (next = next6 ∧ rs = regs6) ∨ (next = [] ∧ rs = [.xmm0])) (s : State)
+    (hP : addr (s.gpr .edx) rO = P) (hin : InRegions (s.rd ++ s.wr) P 16) (h : Held rs P x s) :
+    WP isa (.block next) s fun s' => s'.xmm .xmm7 = Nat.repeat alphaX rs.length x ∧ s'.gpr = s.gpr ∧
+      s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
+  rcases hrs with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
+  · obtain ⟨h7, hc⟩ := (ite_eq_left (by decide)).mp h
+    rw [next6]
+    refine x_load (B := s.gpr .edx) rfl (by rw [hP]; exact hin) ?_
+    obtain ⟨s', run, v, -, g, m, rd, wr⟩ := dblWith_run (x := x) (k := 5) (by decide) .xmm6 (by decide)
+      (s.setXmm .xmm6 (s.mem.readW (addr (s.gpr .edx) rO) 128)) (by rw [xmm_setXmm_of_ne _ _ (by decide)]; exact h7)
+      (by rw [xmm_setXmm_self, hP]; exact hc)
+    exact WP.of_runBlock ⟨s', run, v, g, m, rd, wr⟩
+  · exact WP.block_nil ⟨(ite_eq_right (by decide)).mp h, rfl, rfl, rfl, rfl⟩
 
 /-- A block register with its tweak XORed in, stored to its block. -/
 theorem xorOut1_run {dA tA : Nat → Addr} (b : XReg) (hb : ¬ b = .xmm6) (j : Nat) (s : State)
@@ -339,8 +543,8 @@ abbrev Sa : Addr := (S s₀).setWidth 64
 /-- Where the tweak of block `i` of a group is kept. -/
 abbrev tA (i : Nat) : Addr := Sa s₀ + BitVec.ofNat 64 (twO + 16 * i)
 
-/-- The tweaks of a group. -/
-abbrev twR : Region := ⟨Sa s₀ + BitVec.ofNat 64 twO, 96⟩
+/-- The tweaks of a group, and the carries after them. -/
+abbrev twR : Region := ⟨Sa s₀ + BitVec.ofNat 64 twO, 112⟩
 
 /-- The cipher of a direction. -/
 abbrev ciph (enc : Bool) : Spec.Cbc.Cipher := ciphOf enc (R s₀) (wK s₀)
@@ -353,7 +557,7 @@ end
 
 /-- After `c` blocks, with `esi` and `edi` at block `p`: the first `c` blocks
 are XTS of the original ones, `xmm7` holds the tweak of block `c`, and the
-scratch buffer holds the two constants and, for decryption, the round keys
+scratch buffer holds the constant and, for decryption, the round keys
 through `aesimc`. -/
 structure Inv (enc : Bool) (s₀ : State) (c p : Nat) (s : State) : Prop where
   le : c ≤ N s₀
@@ -373,8 +577,7 @@ structure Inv (enc : Bool) (s₀ : State) (c p : Nat) (s : State) : Prop where
     if j < c then outB s₀ enc j else bytesAt s₀.mem (blk s₀ j) 16
   iv : bytesAt s.mem ((Iv s₀).setWidth 64) 16 = iv0 s₀
   x7 : bx (s.xmm .xmm7) = Spec.Xts.next (iv0 s₀) c
-  ones : s.mem.readW (Sa s₀ + BitVec.ofNat 64 onesO) 128 = onesX
-  cst : s.mem.readW (Sa s₀ + BitVec.ofNat 64 cO) 128 = cX
+  cst : s.mem.readW (Sa s₀ + BitVec.ofNat 64 cO) 128 = signC
 
 section
 variable {s₀ : State} (hp : UPre s₀)
@@ -388,7 +591,7 @@ theorem tw_sub : Region.Sub (twR s₀) (scrR s₀) := Offset.sub_base _ (by deci
 
 /-- A part of the scratch buffer apart from a group's tweaks, which the group leaves. -/
 theorem scr_keep {m m' : Mem} (hf : Frame [twR s₀, dataR s₀] m m') {o : Nat} (ho : o + 16 ≤ 2176)
-    (ho' : o + 16 ≤ 256 ∨ 352 ≤ o) :
+    (ho' : o + 16 ≤ 256 ∨ 368 ≤ o) :
     m'.readW (Sa s₀ + BitVec.ofNat 64 o) 128 = m.readW (Sa s₀ + BitVec.ofNat 64 o) 128 :=
   hf.readW (r := ⟨Sa s₀ + BitVec.ofNat 64 o, 16⟩) (Region.contains_self _ _) (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -454,7 +657,6 @@ theorem Inv.move {enc : Bool} {c p p' : Nat} {s t : State} (hI : Inv enc s₀ c 
     data := by rw [hm]; exact hI.data
     iv := by rw [hm]; exact hI.iv
     x7 := by rw [hx]; exact hI.x7
-    ones := by rw [hm]; exact hI.ones
     cst := by rw [hm]; exact hI.cst }
 
 omit hp in
@@ -472,13 +674,18 @@ theorem rounds_ok (enc : Bool) (rs : List XReg) (hnd : rs.Nodup) (h6 : .xmm6 ∉
       ⟨fun b hb => bx_ciph (enc := true) (ha b hb), hf⟩
 
 /-- The blocks `c … c + n - 1` (`n` the number of registers) through XTS. -/
-theorem group_ok (enc : Bool) (rs : List XReg) (hrs : rs = regs6 ∨ rs = [.xmm0]) {c : Nat} {s : State}
-    (hc : c + rs.length ≤ N s₀) (hI : Inv enc s₀ c c s) (after : List Instr) {Q : State → Prop}
+theorem group_ok (enc : Bool) {fill next : List Instr} {rs : List XReg}
+    (hrs : (fill = fill6 ∧ next = next6 ∧ rs = regs6) ∨ (fill = fill1 ∧ next = [] ∧ rs = [.xmm0])) {c : Nat}
+    {s : State} (hc : c + rs.length ≤ N s₀) (hI : Inv enc s₀ c c s) (after : List Instr) {Q : State → Prop}
     (hQ : ∀ t, Inv enc s₀ (c + rs.length) c t → WP isa (.block after) t Q) :
-    WP isa (group enc rs after) s Q := by
-  obtain ⟨hnd, h6⟩ : rs.Nodup ∧ .xmm6 ∉ rs := by rcases hrs with rfl | rfl <;> decide
-  obtain h7 : .xmm7 ∉ rs := by rcases hrs with rfl | rfl <;> decide
-  obtain hlen : rs.length ≤ 6 := by rcases hrs with rfl | rfl <;> decide
+    WP isa (group enc fill rs next after) s Q := by
+  obtain hrs' : rs = regs6 ∨ rs = [.xmm0] := hrs.imp (·.2.2) (·.2.2)
+  obtain hfill : (fill = fill6 ∧ rs = regs6) ∨ (fill = fill1 ∧ rs = [.xmm0]) :=
+    hrs.imp (fun h => ⟨h.1, h.2.2⟩) (fun h => ⟨h.1, h.2.2⟩)
+  obtain hnext : (next = next6 ∧ rs = regs6) ∨ (next = [] ∧ rs = [.xmm0]) := hrs.imp (·.2) (·.2)
+  obtain ⟨hnd, h6⟩ : rs.Nodup ∧ .xmm6 ∉ rs := by rcases hrs' with rfl | rfl <;> decide
+  obtain h7 : .xmm7 ∉ rs := by rcases hrs' with rfl | rfl <;> decide
+  obtain hlen : rs.length ≤ 6 := by rcases hrs' with rfl | rfl <;> decide
   have hw := hp.data_fit
   obtain tw : twO = 256 := rfl
   obtain hdat : dataR s₀ ∈ s₀.wr := by rw [hp.wr]; simp
@@ -493,63 +700,31 @@ theorem group_ok (enc : Bool) (rs : List XReg) (hrs : rs = regs6 ∨ rs = [.xmm0
     Offset.contains_base _ (by omega_using [hi, tw]) (by omega_using [hi, tw])
   obtain hdIn : ∀ i, c + i < N s₀ → InRegions s₀.wr (blk s₀ (c + i)) 16 := fun i hi => ⟨_, hdat, hdC i hi⟩
   obtain htIn : ∀ i < 6, InRegions s₀.wr (tA s₀ i) 16 := fun i hi => ⟨_, hscr, htC i hi⟩
-  refine WP.seq ?_
-  show WP isa (.block (.movdquLoad .xmm5 (Impl.Aes.X86.AesNi.at_ .edx onesO) ::
-    .movdquLoad .xmm6 (Impl.Aes.X86.AesNi.at_ .edx cO) :: (tweaks 0 rs.length ++ xorIn rs 0))) s _
-  refine x_load (B := S s₀) hI.edx (by
-    rw [scrA hp (o := onesO) (by decide), hI.wr]
-    exact in_rd ⟨_, hscr, Offset.contains_base _ (by decide) (by decide)⟩) ?_
-  refine x_load (B := S s₀) hI.edx (by
-    rw [scrA hp (o := cO) (by decide)]
-    show InRegions (s.rd ++ s.wr) _ 16
-    rw [hI.wr]
-    exact in_rd ⟨_, hscr, Offset.contains_base _ (by decide) (by decide)⟩) ?_
-  obtain ⟨s₂, hs₂⟩ : ∃ s₂ : State, (s.setXmm .xmm5 (s.mem.readW (addr (S s₀) onesO) 128)).setXmm .xmm6
-      ((s.setXmm .xmm5 (s.mem.readW (addr (S s₀) onesO) 128)).mem.readW (addr (S s₀) cO) 128) = s₂ := ⟨_, rfl⟩
-  rw [hs₂]
-  obtain g₂ : s₂.gpr = s.gpr := by rw [← hs₂]; rfl
-  obtain m₂ : s₂.mem = s.mem := by rw [← hs₂]; rfl
-  obtain rd₂ : s₂.rd = s.rd := by rw [← hs₂]; rfl
-  obtain wr₂ : s₂.wr = s.wr := by rw [← hs₂]; rfl
-  obtain x5₂ : s₂.xmm .xmm5 = onesX := by
-    rw [← hs₂, xmm_setXmm_of_ne _ _ (by decide), xmm_setXmm_self, scrA hp (o := onesO) (by decide)]; exact hI.ones
-  obtain x6₂ : s₂.xmm .xmm6 = cX := by
-    rw [← hs₂, xmm_setXmm_self, mem_setXmm, scrA hp (o := cO) (by decide)]; exact hI.cst
-  obtain x7₂ : s₂.xmm .xmm7 = s.xmm .xmm7 := by
-    rw [← hs₂, xmm_setXmm_of_ne _ _ (by decide), xmm_setXmm_of_ne _ _ (by decide)]
-  rw [WP.block_append_iff]
-  refine WP.mono (tweaks_ok (tA := tA s₀) (T := twR s₀) rs.length 0 s₂ x5₂ x6₂
-    (fun i hi => by rw [Nat.zero_add, g₂]; exact htA i (by omega_using [hi, hlen]))
-    (fun i hi => by rw [Nat.zero_add, wr₂, hI.wr]; exact htIn i (by omega_using [hi, hlen]))
-    (fun i hi => by
-      rw [Nat.zero_add, tA, ← Offset.add_add]
-      exact Offset.contains_base _ (by omega_using [hi, hlen]) (by omega_using [hi, hlen]))
-    (fun i hi i' hi' hne => by
-      rw [Nat.zero_add, Nat.zero_add]
-      exact Offset.sep _ (by omega_using [hne]) (by omega_using [hi, hlen, tw]) (by omega_using [hi', hlen, tw])))
-    fun s₃ ⟨h7₃, hx₃, g₃, rd₃, wr₃, f₃, hr₃, hk₃⟩ => ?_
-  simp only [Nat.zero_add] at hr₃
-  obtain gs₃ : s₃.gpr = s.gpr := g₃.trans g₂
+  obtain hrC : (scrR s₀).Contains (Sa s₀ + BitVec.ofNat 64 rO) 16 := Offset.contains_base _ (by decide) (by decide)
+  obtain htT : ∀ i < 6, (twR s₀).Contains (tA s₀ i) 16 := fun i hi => by
+    rw [tA, ← Offset.add_add]
+    exact Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])
+  obtain hrT : (twR s₀).Contains (Sa s₀ + BitVec.ofNat 64 rO) 16 := by
+    rw [show rO = twO + 96 from rfl, ← Offset.add_add]
+    exact Offset.contains_base _ (by decide) (by decide)
   -- The data is apart from the tweaks.
   obtain sepDT : ∀ i, c + i < N s₀ → ∀ i' < 6, Mem.Sep (blk s₀ (c + i)) 16 (tA s₀ i') 16 := fun i hi i' hi' =>
     hp.data_scr.sep (hdC i hi) (htC i' hi')
-  obtain d₃ : ∀ i, c + i < N s₀ → s₃.mem.readW (blk s₀ (c + i)) 128 = s.mem.readW (blk s₀ (c + i)) 128 :=
-    fun i hi => by
-      rw [hk₃ _ fun i' hi' => by rw [Nat.zero_add]; exact sepDT i hi i' (by omega_using [hi', hlen]), m₂]
-  refine WP.mono (xorIn_ok (dA := fun i => blk s₀ (c + i)) (tA := tA s₀) rs 0 s₃ hnd h6
-    (fun i hi => by rw [Nat.zero_add, gs₃]; exact hdA i (by omega_using [hi, hc]))
-    (fun i hi => by rw [Nat.zero_add, gs₃]; exact htA i (by omega_using [hi, hlen]))
-    (fun i hi => by
-      rw [Nat.zero_add, rd₃, wr₃, wr₂, hI.wr]; exact in_rd (hdIn i (by omega_using [hi, hc])))
-    (fun i hi => by
-      rw [Nat.zero_add, rd₃, wr₃, wr₂, hI.wr]; exact in_rd (htIn i (by omega_using [hi, hlen]))))
-    fun s₄ ⟨hv₄, hx₄, g₄, m₄, rd₄, wr₄⟩ => ?_
-  simp only [Nat.zero_add] at hv₄
-  obtain gs₄ : s₄.gpr = s.gpr := g₄.trans gs₃
-  obtain rs₄ : s₄.rd = s.rd := rd₄.trans (rd₃.trans rd₂)
-  obtain ws₄ : s₄.wr = s.wr := wr₄.trans (wr₃.trans wr₂)
-  obtain f₄ : Frame [twR s₀, dataR s₀] s.mem s₄.mem := by
-    rw [m₄, ← m₂]; exact f₃.mono (by simp)
+  refine WP.seq (WP.mono (fill_ok (dA := fun i => blk s₀ (c + i)) (tA := tA s₀) (T := twR s₀)
+    (P := Sa s₀ + BitVec.ofNat 64 rO) (C := Sa s₀ + BitVec.ofNat 64 cO) hfill s
+    (by rw [hI.edx]; exact scrA hp (by decide))
+    (by rw [hI.wr]; exact in_rd ⟨_, hscr, Offset.contains_base _ (by decide) (by decide)⟩) hI.cst
+    (fun i hi => hdA i (by omega_using [hi, hc])) htA (by rw [hI.edx]; exact scrA hp (by decide))
+    (fun i hi => by rw [hI.wr]; exact in_rd (hdIn i (by omega_using [hi, hc])))
+    (fun i hi => by rw [hI.wr]; exact htIn i hi) (by rw [hI.wr]; exact ⟨_, hscr, hrC⟩) htT hrT
+    (fun i hi i' hi' hne => Offset.sep _ (by omega_using [hne]) (by omega_using [hi, tw]) (by omega_using [hi', tw]))
+    (fun i hi => Offset.sep _ (.inr (by
+      obtain e : rO = 352 := rfl
+      omega_using [hi, tw, e])) (by decide) (by omega_using [hi, tw]))
+    (fun i hi i' hi' => sepDT i (by omega_using [hi, hc]) i' hi')
+    (fun i hi => hp.data_scr.sep (hdC i (by omega_using [hi, hc])) hrC))
+    fun s₄ ⟨hv₄, hh₄, gs₄, rs₄, ws₄, f₃, hr₄⟩ => ?_)
+  obtain f₄ : Frame [twR s₀, dataR s₀] s.mem s₄.mem := f₃.mono (by simp)
   refine WP.seq (WP.mono (rounds_ok enc rs hnd h6 hp.rounds
     (keys_stable hp hI.keys hI.eax (by rw [gs₄]) rs₄ ws₄ f₄)
     (fun he => dkeys_stable hp (hI.dkeys he) hI.eax hI.edx (by rw [gs₄]) (by rw [gs₄]) rs₄ ws₄ f₄)
@@ -574,15 +749,27 @@ theorem group_ok (enc : Bool) (rs : List XReg) (hrs : rs = regs6 ∨ rs = [.xmm0
     (fun i hi i' hi' hne => by
       rw [Nat.zero_add, Nat.zero_add]
       exact Offset.sep _ (by omega_using [hne]) (by omega_using [hi, hc, hw]) (by omega_using [hi', hc, hw])))
-    fun t ⟨hv, hx, g, rd, wr, hf, hk⟩ => ?_
+    fun t₁ ⟨hv, hx, g, rd, wr, hf, hk⟩ => ?_
   simp only [Nat.zero_add] at hv hk
-  obtain gt : t.gpr = s.gpr := g.trans gv
-  obtain rt : t.rd = s.rd := rd.trans (fa.rd.trans rs₄)
-  obtain wt : t.wr = s.wr := wr.trans (fa.wr.trans ws₄)
+  -- What the next tweak needs is kept by the rounds and the stores.
+  obtain hh : Held rs (Sa s₀ + BitVec.ofNat 64 rO) (s.xmm .xmm7) t₁ := by
+    have x7 : t₁.xmm .xmm7 = s₄.xmm .xmm7 := by
+      rw [hx _ (by decide) h7, fa.xmm _ (by simp only [List.mem_cons, not_or]; exact ⟨by decide, h7⟩)]
+    have mP : t₁.mem.readW (Sa s₀ + BitVec.ofNat 64 rO) 128 = s₄.mem.readW (Sa s₀ + BitVec.ofNat 64 rO) 128 := by
+      rw [hk _ fun i hi => fun y h₁ h₂ => hp.data_scr.sep (hdC i (by omega_using [hi, hc])) hrC y h₂ h₁, fa.mem]
+    unfold Held at hh₄ ⊢
+    rw [x7, mP]; exact hh₄
+  rw [WP.block_append_iff]
+  refine WP.mono (next_ok (x := s.xmm .xmm7) hnext t₁ (by rw [g, gv, hI.edx]; exact scrA hp (by decide))
+    (by rw [rd, wr, fa.rd, fa.wr, rs₄, ws₄, hI.wr]; exact in_rd ⟨_, hscr, hrC⟩) hh)
+    fun t ⟨x7t, gt₁, mt, rdt, wrt⟩ => ?_
+  rw [← mt] at hv hf
+  obtain gt : t.gpr = s.gpr := gt₁.trans (g.trans gv)
+  obtain rt : t.rd = s.rd := rdt.trans (rd.trans (fa.rd.trans rs₄))
+  obtain wt : t.wr = s.wr := wrt.trans (wr.trans (fa.wr.trans ws₄))
   -- What the group changes in memory.
   obtain hF' : Frame [twR s₀, ⟨blk s₀ c, 16 * rs.length⟩] s.mem t.mem := by
-    have h₁ : Frame [twR s₀, ⟨blk s₀ c, 16 * rs.length⟩] s.mem s₄.mem := by
-      rw [m₄, ← m₂]; exact f₃.mono (by simp)
+    have h₁ : Frame [twR s₀, ⟨blk s₀ c, 16 * rs.length⟩] s.mem s₄.mem := f₃.mono (by simp)
     rw [← fa.mem] at h₁
     exact h₁.trans (hf.mono (by simp))
   obtain hF : Frame [twR s₀, dataR s₀] s.mem t.mem := hF'.sub fun r hr => by
@@ -592,14 +779,14 @@ theorem group_ok (enc : Bool) (rs : List XReg) (hrs : rs = regs6 ∨ rs = [.xmm0
     · exact ⟨dataR s₀, by simp, Offset.sub_base _ (by omega_using [hc])⟩
   -- The tweak of each block, as the group stored it.
   obtain tv : ∀ i < rs.length, bx (v.mem.readW (tA s₀ i) 128) = Spec.Xts.next (iv0 s₀) (c + i) := fun i hi => by
-    rw [fa.mem, m₄, hr₃ i hi, x7₂, bx_repeat, hI.x7, next_add]
+    rw [fa.mem, hr₄ i hi, bx_repeat, hI.x7, next_add]
   -- Each block of the group.
   obtain blkOut : ∀ i (hi : i < rs.length), bytesAt t.mem (blk s₀ (c + i)) 16 = outB s₀ enc (c + i) := fun i hi => by
     obtain hcN : c + i < N s₀ := by omega_using [hi, hc]
     obtain e₁ : bx (s₄.xmm rs[i]) =
         Spec.Cbc.xor (bytesAt s₀.mem (blk s₀ (c + i)) 16) (Spec.Xts.next (iv0 s₀) (c + i)) := by
-      rw [hv₄ i hi, bx_xor, d₃ i hcN, ← bytesAt_bx, hI.data _ hcN, ite_eq_right (by omega_using []),
-        ← m₄, ← fa.mem, tv i hi]
+      rw [hv₄ i hi, bx_xor, ← bytesAt_bx, hI.data _ hcN, ite_eq_right (by omega_using []), bx_repeat, hI.x7,
+        next_add]
     rw [bytesAt_bx, hv i hi, bx_xor, ha _ (List.getElem_mem hi), e₁, tv i hi]
     rfl
   exact hQ t
@@ -640,10 +827,7 @@ theorem group_ok (enc : Bool) (rs : List XReg) (hrs : rs = regs6 ∨ rs = [.xmm0
           · exact hp.iv_scr.sub_right tw_sub
           · exact hp.iv_data) (by decide)]
         exact hI.iv
-      x7 := by
-        rw [hx _ (by decide) h7, fa.xmm _ (by simp only [List.mem_cons, not_or]; exact ⟨by decide, h7⟩),
-          hx₄ _ (by decide) h7, h7₃, x7₂, bx_repeat, hI.x7, next_add]
-      ones := by rw [scr_keep hp hF (o := onesO) (by decide) (.inr (by decide))]; exact hI.ones
+      x7 := by rw [x7t, bx_repeat, hI.x7, next_add]
       cst := by rw [scr_keep hp hF (o := cO) (by decide) (.inr (by decide))]; exact hI.cst }
 
 end
@@ -673,7 +857,7 @@ theorem advance_ok {enc : Bool} {rest : List Instr} {c m : Nat} (hc : c + m ≤ 
 theorem six_ok {enc : Bool} {c : Nat} (hc : c + 6 ≤ N s₀) {s : State} (hI : Inv enc s₀ c c s) :
     WP isa (six enc) s fun s' => Inv enc s₀ (c + 6) (c + 6) s' ∧ s'.cf = some (decide (N s₀ - (c + 6) < 6)) := by
   obtain hn : N s₀ < 2 ^ 32 := (arg s₀ 4).isLt
-  refine group_ok hp enc regs6 (.inl rfl) hc hI _ fun s₁ hI₁ => ?_
+  refine group_ok hp enc (.inl ⟨rfl, rfl, rfl⟩) hc hI _ fun s₁ hI₁ => ?_
   refine advance_ok hp (m := 6) hc hI₁ fun s₂ hI₂ _ => ?_
   refine x_cmpi fun s₃ u₃ x₃ hcf => WP.block_nil ⟨?_, ?_⟩
   · exact hI₂.move hp (fun r _ _ => by rw [u₃.gpr]) (by rw [u₃.gpr, hI₂.esi]) (by rw [u₃.gpr, hI₂.edi])
@@ -683,7 +867,7 @@ theorem six_ok {enc : Bool} {c : Nat} (hc : c + 6 ≤ N s₀) {s : State} (hI : 
 /-- One block. -/
 theorem one_ok {enc : Bool} {c : Nat} (hc : c < N s₀) {s : State} (hI : Inv enc s₀ c c s) :
     WP isa (one enc) s fun s' => Inv enc s₀ (c + 1) (c + 1) s' ∧ s'.zf = some (decide (N s₀ - (c + 1) = 0)) := by
-  refine group_ok hp enc [.xmm0] (.inr rfl) hc hI _ fun s₁ hI₁ => ?_
+  refine group_ok hp enc (.inr ⟨rfl, rfl, rfl⟩) hc hI _ fun s₁ hI₁ => ?_
   exact advance_ok hp (m := 1) (rest := []) hc hI₁ fun s₂ hI₂ hz => WP.block_nil ⟨hI₂, hz⟩
 
 /-- `test edi, edi`: ZF is set when no block is left. -/
@@ -734,22 +918,18 @@ theorem tail_ok {enc : Bool} {c₀ : Nat} {s₁ : State} (hI₁ : Inv enc s₀ c
 /-! ## Before and after the blocks -/
 
 omit hp in
-/-- The two constants. -/
-theorem consts_run (s : State) :
-    ∃ s', runBlock isa Impl.AesXts.X86.consts s = some s' ∧ s'.xmm .xmm6 = onesX ∧ s'.xmm .xmm7 = cX ∧
-      (∀ r, ¬ r = .eax → s'.gpr r = s.gpr r) ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
+/-- The constant. -/
+theorem const_run (s : State) :
+    ∃ s', runBlock isa const s = some s' ∧ s'.xmm .xmm6 = signC ∧ (∀ r, ¬ r = .eax → s'.gpr r = s.gpr r) ∧
+      s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   refine ⟨_, by
-    simp only [Impl.AesXts.X86.consts, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, exec_bin,
-      exec_shift, exec_pshufd, exec_movd, Option.map_some]
-    rfl, ?_, ?_, fun r h => ?_, by rfl, by rfl, by rfl⟩
+    simp only [const, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, exec_bin, exec_movd, Option.map_some]
+    rfl, ?_, fun r h => ?_, by rfl, by rfl, by rfl⟩
   · simp only [xmm_setXmm_self, xmm_setXmm_of_ne, xmm_setReg, gpr_setReg_self, reduceCtorEq, not_false_eq_true]
-    decide
-  · simp only [xmm_setXmm_self, xmm_setXmm_of_ne, xmm_setReg, gpr_setReg_self, reduceCtorEq, not_false_eq_true,
-      eval_movdqa]
     decide
   · simp only [gpr_setXmm, gpr_setReg_of_ne _ _ h]
 
-/-- After `pro`: the constants in the scratch buffer, and the registers the
+/-- After `pro`: the constant in the scratch buffer, and the registers the
 rounds read. -/
 structure P1 (s₀ s : State) : Prop where
   eax : s.gpr .eax = W s₀
@@ -762,18 +942,15 @@ structure P1 (s₀ s : State) : Prop where
   frame : Frame [ivR s₀, dataR s₀, ⟨Sa s₀, 2064⟩, stkR s₀] (savedMem s₀) s.mem
   data : ∀ j < N s₀, bytesAt s.mem (blk s₀ j) 16 = bytesAt s₀.mem (blk s₀ j) 16
   iv : bytesAt s.mem ((Iv s₀).setWidth 64) 16 = iv0 s₀
-  ones : s.mem.readW (Sa s₀ + BitVec.ofNat 64 onesO) 128 = onesX
-  cst : s.mem.readW (Sa s₀ + BitVec.ofNat 64 cO) 128 = cX
+  cst : s.mem.readW (Sa s₀ + BitVec.ofNat 64 cO) 128 = signC
 
 omit hp in
-/-- The two constants stored. -/
-theorem stores_run {s : State} {P Q : Addr} (hP : addr (s.gpr .edx) onesO = P) (hQ : addr (s.gpr .edx) cO = Q)
-    (iP : InRegions s.wr P 16) (iQ : InRegions s.wr Q 16) :
-    ∃ s', runBlock isa [.movdquStore (at_ .edx onesO) .xmm6, .movdquStore (at_ .edx cO) .xmm7] s = some s' ∧
-      s'.mem = (s.mem.writeW P (s.xmm .xmm6)).writeW Q (s.xmm .xmm7) ∧ s'.gpr = s.gpr ∧ s'.rd = s.rd ∧
-      s'.wr = s.wr :=
+/-- The constant stored. -/
+theorem store_run {s : State} {Q : Addr} (hQ : addr (s.gpr .edx) cO = Q) (iQ : InRegions s.wr Q 16) :
+    ∃ s', runBlock isa [.movdquStore (at_ .edx cO) .xmm6] s = some s' ∧
+      s'.mem = s.mem.writeW Q (s.xmm .xmm6) ∧ s'.gpr = s.gpr ∧ s'.rd = s.rd ∧ s'.wr = s.wr :=
   ⟨_, by
-    simp only [runBlock_cons, runStep_some, runBlock_nil, exec, State.store128, ea_at', hP, hQ, iP, iQ, ↓reduceIte]
+    simp only [runBlock_cons, runStep_some, runBlock_nil, exec, State.store128, ea_at', hQ, iQ, ↓reduceIte]
     rfl, by rfl, by rfl, by rfl, by rfl⟩
 
 omit hp in
@@ -789,34 +966,28 @@ theorem pro_ok {M : Mode} {s : State} (h : LInv M s₀ 0 s) : WP isa (.block pro
   obtain hscr : scrR s₀ ∈ s₀.wr := by rw [hp.wr]; simp
   obtain hrw : s.rd ++ s.wr = s₀.rd ++ s₀.wr := by rw [h.rd, h.wr]
   obtain hargs := hp.args_of (UPre.big_of h.frame)
-  show WP isa (.block (.mov .edx (argOp 5) :: (Impl.AesXts.X86.consts ++
-    ([.movdquStore (Impl.Aes.X86.AesNi.at_ .edx onesO) .xmm6, .movdquStore (Impl.Aes.X86.AesNi.at_ .edx cO) .xmm7,
-      .mov .eax (argOp 0), .mov .ecx (argOp 1)] : List Instr)))) s _
+  show WP isa (.block (.mov .edx (argOp 5) :: (const ++
+    ([.movdquStore (Impl.Aes.X86.AesNi.at_ .edx cO) .xmm6, .mov .eax (argOp 0), .mov .ecx (argOp 1)] : List Instr))))
+    s _
   refine wp_arg (s₀ := s₀) h.esp (by rw [hrw]; exact hp.arg_in (by decide)) (hargs 5 (by decide)) fun s₁ u₁ => ?_
-  obtain ⟨s₂, run₂, x6₂, x7₂, g₂, m₂, rd₂, wr₂⟩ := consts_run s₁
+  obtain ⟨s₂, run₂, x6₂, g₂, m₂, rd₂, wr₂⟩ := const_run s₁
   rw [WP.block_append_iff]
   refine WP.of_runBlock ⟨s₂, run₂, ?_⟩
   obtain edx₂ : s₂.gpr .edx = S s₀ := by rw [g₂ _ (by decide)]; exact u₁.gpr
   obtain w₂ : s₂.wr = s₀.wr := by rw [wr₂, u₁.wr, h.wr]
-  obtain ⟨s₄, run₄, m₄, g₄, rd₄, wr₄⟩ := stores_run (s := s₂) (P := Sa s₀ + BitVec.ofNat 64 onesO)
-    (Q := Sa s₀ + BitVec.ofNat 64 cO)
-    (by rw [edx₂]; exact scrA hp (o := onesO) (by decide)) (by rw [edx₂]; exact scrA hp (o := cO) (by decide))
+  obtain ⟨s₄, run₄, m₄, g₄, rd₄, wr₄⟩ := store_run (s := s₂) (Q := Sa s₀ + BitVec.ofNat 64 cO)
+    (by rw [edx₂]; exact scrA hp (o := cO) (by decide))
     (by rw [w₂]; exact ⟨_, hscr, Offset.contains_base _ (by decide) (by decide)⟩)
-    (by rw [w₂]; exact ⟨_, hscr, Offset.contains_base _ (by decide) (by decide)⟩)
-  show WP isa (.block (([.movdquStore (at_ .edx onesO) .xmm6, .movdquStore (at_ .edx cO) .xmm7] : List Instr) ++
+  show WP isa (.block (([.movdquStore (at_ .edx cO) .xmm6] : List Instr) ++
     ([.mov .eax (argOp 0), .mov .ecx (argOp 1)] : List Instr))) s₂ _
   rw [WP.block_append_iff]
   refine WP.of_runBlock ⟨s₄, run₄, ?_⟩
-  rw [x6₂, x7₂, m₂, u₁.mem] at m₄
-  obtain c0 : (⟨Sa s₀ + BitVec.ofNat 64 onesO, 32⟩ : Region).Contains (Sa s₀ + BitVec.ofNat 64 onesO) 16 := by
-    simp [Region.Contains]
-  obtain f₄ : Frame [⟨Sa s₀ + BitVec.ofNat 64 onesO, 32⟩] s.mem s₄.mem := by
+  rw [x6₂, m₂, u₁.mem] at m₄
+  obtain f₄ : Frame [⟨Sa s₀ + BitVec.ofNat 64 cO, 16⟩] s.mem s₄.mem := by
     rw [m₄]
-    refine ((Frame.refl _ _).writeW (List.mem_singleton_self _) _ c0).writeW (List.mem_singleton_self _) _ ?_
-    rw [show cO = onesO + 16 from rfl, ← Offset.add_add]
-    exact Offset.contains_base _ (by decide) (by decide)
+    exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
   obtain fr₄ : Frame [ivR s₀, dataR s₀, ⟨Sa s₀, 2064⟩, stkR s₀] (savedMem s₀) s₄.mem :=
-    h.frame.trans (scr_frame (o := onesO) (n := 32) (by decide) f₄)
+    h.frame.trans (scr_frame (o := cO) (n := 16) (by decide) f₄)
   obtain esp₄ : s₄.gpr .esp = s₀.gpr .esp := by
     rw [g₄, g₂ _ (by decide), u₁.other _ (by decide)]; exact h.esp
   obtain rw₄ : s₄.rd ++ s₄.wr = s₀.rd ++ s₀.wr := by rw [rd₄, wr₄, rd₂, wr₂, u₁.rd, u₁.wr, hrw]
@@ -826,7 +997,7 @@ theorem pro_ok {M : Mode} {s : State} (h : LInv M s₀ 0 s) : WP isa (.block pro
     (by rw [u₅.rd, u₅.wr, rw₄]; exact hp.arg_in (by decide)) (by rw [u₅.mem]; exact hargs₄ 1 (by decide))
     fun s₆ u₆ => ?_
   obtain m₆ : s₆.mem = s₄.mem := by rw [u₆.mem, u₅.mem]
-  obtain blkScr : ∀ j < N s₀, (⟨blk s₀ j, 16⟩ : Region).Disjoint ⟨Sa s₀ + BitVec.ofNat 64 onesO, 32⟩ :=
+  obtain blkScr : ∀ j < N s₀, (⟨blk s₀ j, 16⟩ : Region).Disjoint ⟨Sa s₀ + BitVec.ofNat 64 cO, 16⟩ :=
     fun j hj => (hp.data_scr.sub_left (UPre.data_sub hj)).sub_right (Offset.sub_base _ (by decide))
   refine WP.block_nil
     { eax := by rw [u₆.other _ (by decide)]; exact u₅.gpr
@@ -853,11 +1024,6 @@ theorem pro_ok {M : Mode} {s : State} (h : LInv M s₀ 0 s) : WP isa (.block pro
           simp only [List.mem_singleton] at hr; subst hr
           exact hp.iv_scr.sub_right (Offset.sub_base _ (by decide))) (by decide), h.iv]
         simp only [chainK, List.take_zero, M.chain_nil]
-      ones := by
-        rw [m₆, m₄, Mem.readW_writeW_sep (by
-          rw [show cO = onesO + 16 from rfl, ← Offset.add_add]
-          exact Offset.sep_base _ (Nat.le_refl _) (by decide)) (by decide)]
-        exact Mem.readW_writeW_self _ _ 16 _ (by decide)
       cst := by rw [m₆, m₄]; exact Mem.readW_writeW_self _ _ 16 _ (by decide) }
 
 end
@@ -914,7 +1080,7 @@ theorem keys_ok (enc : Bool) {s : State} (h : P1 s₀ s) : WP isa (keys enc) s (
       have := hI₂.frame
       rwa [State.withRegions_gpr, h.edx, State.withRegions_mem, State.withRegions_mem] at this
     rw [scrA hp (o := 16) (by decide)] at m₂
-    obtain keep : ∀ o, 352 ≤ o → o + 16 ≤ 2176 →
+    obtain keep : ∀ o, 368 ≤ o → o + 16 ≤ 2176 →
         s₂.mem.readW (Sa s₀ + BitVec.ofNat 64 o) 128 = s.mem.readW (Sa s₀ + BitVec.ofNat 64 o) 128 :=
       fun o h₁ h₂ => m₂.readW (r := ⟨Sa s₀ + BitVec.ofNat 64 o, 16⟩) (Region.contains_self _ _) (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
@@ -938,7 +1104,6 @@ theorem keys_ok (enc : Bool) {s : State} (h : P1 s₀ s) : WP isa (keys enc) s (
             simp only [List.mem_singleton] at hr; subst hr
             exact hp.iv_scr.sub_right (Offset.sub_base _ (by decide))) (by decide)]
           exact h.iv
-        ones := by rw [keep onesO (by decide) (by decide)]; exact h.ones
         cst := by rw [keep cO (by decide) (by decide)]; exact h.cst
         keys := hK₂.keys
         dkeys := fun _ => hK₂ }
@@ -1002,7 +1167,6 @@ theorem start_ok (enc : Bool) {s : State} (h : P2 enc s₀ s) :
         data := fun j hj => by rw [m₄, ite_eq_right (Nat.not_lt_zero _)]; exact h.data j hj
         iv := by rw [m₄]; exact h.iv
         x7 := by rw [x₄, x₃, ← bytesAt_bx, h.iv]; rfl
-        ones := by rw [m₄]; exact h.ones
         cst := by rw [m₄]; exact h.cst }
   · rw [hcf, g₃, u₂.gpr]; rfl
 

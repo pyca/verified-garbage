@@ -18,18 +18,30 @@ The registers are saved in the scratch buffer and restored from it as there
 left and `ebp` `tweak`; `xmm7` holds the tweak of the next block, between
 the groups of blocks.
 
-A group of blocks in the registers `rs` (`group`): the tweaks of its blocks
-are stored at `scratch + 256 + 16 j`, each from `xmm7`, which is then
-multiplied by `α` (`mulT`, as `Impl.AesXts.X86.mulX`, with the two constants
-loaded from `scratch + 352` and `scratch + 368`, where `pro` stores them
-once: the rounds change every other SSE register); each block is loaded and
-its tweak XORed in, through `xmm6` (`xorIn`); the rounds are those of
-`vg_aes_encrypt_blocks_aesni` and `vg_aes_decrypt_blocks_aesni`
+A group of blocks (`group`): each block is loaded, its tweak, in `xmm7`, is
+XORed in and stored at `scratch + 256 + 16 j` (`lane`), and the tweak is
+multiplied by `α` for the next block (`fill6`, `fill1`); the rounds are those
+of `vg_aes_encrypt_blocks_aesni` and `vg_aes_decrypt_blocks_aesni`
 (`Impl.Aes.X86.AesNi.aes`, `aesDec`), each round key through `xmm6`, with a
 branch on the public `rounds`; and each block's tweak is XORed in again and
 the block stored back (`xorOut`). Six blocks at a time while six are left
 (`xmm0`–`xmm5`), then one at a time (`xmm0`). The tweak after the last block
 is then stored at `tweak`.
+
+A tweak waits for only two instructions on the one before: it is doubled in
+two quadwords (`paddq`), and XORed with the two carries, the one out of the
+low quadword and the one out of the high quadword, which is `0x87`. The
+carries of the next tweaks are the top bits of the first one's quadwords, one
+after the other (what `0x87` changes is far below them), which `signs` puts in
+the top bits of two words of `xmm5`; `step` makes the carry of one from a copy
+of it (`psraw` and `pand` with the constant in `xmm4`, which `pro` stores once
+at `scratch + 368`: the rounds change every other SSE register), and shifts it
+for the next (`paddw`). The last two blocks of six take the registers `xmm4`
+and `xmm5`, so the carries of the last two tweaks are made before
+(`carries2`): the one of block 5 stays in `xmm5`, and the one of the block
+after it is kept in the scratch buffer until the blocks are stored (`next6`),
+so that the round keys' loads into `xmm6` do not wait for its load where the
+processor keeps the registers' upper halves.
 
 Decryption runs the equivalent inverse cipher, as
 `vg_aes_decrypt_blocks_aesni` does: `InvMixColumns` of the round keys
@@ -48,37 +60,59 @@ open VG.X86
 open VG.Impl.Aes.X86.AesNi (aes aesDec imcKeys regs6)
 open VG.Impl.CmacAes.X86 (argOp at_ setup restore)
 
-/-- The offsets in the scratch buffer of a group's tweaks and of the two
-constants of `mulT`. -/
+/-- The offsets in the scratch buffer of a group's tweaks, of the carry of the
+last (`last2`) and of the constant of the carries. -/
 def twO : Nat := 256
-def onesO : Nat := 352
+def rO : Nat := 352
 def cO : Nat := 368
 
-/-- The tweak in `xmm7` times `α`, with `xmm4`, all ones in `xmm5` and the
-doublewords `0x87, 1, 1, 1` in `xmm6`. -/
-def mulT : List Instr :=
-  [.xop (.pshufd .xmm4 .xmm7 0x93), .xop (.shift .psrld .xmm4 31), .xop (.bin .paddd .xmm4 .xmm5),
-   .xop (.bin .pandn .xmm4 .xmm6), .xop (.bin .paddd .xmm7 .xmm7), .xop (.bin .pxor .xmm7 .xmm4)]
+/-- The constant of the carries in `xmm4`, and the top bits of the quadwords
+of the tweak in `xmm7` and those below them in words of `xmm5`. -/
+def signs : List Instr :=
+  [.movdquLoad .xmm4 (at_ .edx cO), .xop (.pshufd .xmm5 .xmm7 0x5f), .xop (.shift .psrld .xmm5 16)]
 
-/-- The tweak of block `j` of a group stored, and the tweak times `α`. -/
-def tweak (j : Nat) : List Instr := .movdquStore (at_ .edx (twO + 16 * j)) .xmm7 :: mulT
+/-- Block `j` of a group loaded into `b` with its tweak, in `xmm7`, XORed in,
+and the tweak stored. -/
+def lane (b : XReg) (j : Nat) : List Instr :=
+  [.movdquLoad b (at_ .esi (16 * j)), .xop (.bin .pxor b .xmm7), .movdquStore (at_ .edx (twO + 16 * j)) .xmm7]
 
-/-- The tweaks of `n` blocks of a group, from block `j`. -/
-def tweaks : Nat → Nat → List Instr
-  | _, 0 => []
-  | j, n + 1 => tweak j ++ tweaks (j + 1) n
+/-- The tweak in `xmm7` times `α`, through `xmm6`. -/
+def step : List Instr :=
+  [.xop (.bin .movdqa .xmm6 .xmm5), .xop (.shift .psraw .xmm6 15), .xop (.bin .paddw .xmm5 .xmm5),
+   .xop (.bin .pand .xmm6 .xmm4), .xop (.bin .paddq .xmm7 .xmm7), .xop (.bin .pxor .xmm7 .xmm6)]
 
-/-- The two constants loaded, and the tweaks of the `n` blocks of a group. -/
-def gen (n : Nat) : List Instr :=
-  ([.movdquLoad .xmm5 (at_ .edx onesO), .movdquLoad .xmm6 (at_ .edx cO)] : List Instr) ++ tweaks 0 n
-
-/-- The blocks at `esi + 16 j` on into the block registers, each with its
-tweak XORed in, through `xmm6`. -/
-def xorIn : List XReg → Nat → List Instr
+/-- The blocks from block `j` on in the registers, each with its tweak XORed
+in, and the tweak of the block after them in `xmm7`. -/
+def lanes : List XReg → Nat → List Instr
   | [], _ => []
-  | b :: bs, j =>
-    ([.movdquLoad b (at_ .esi (16 * j)), .movdquLoad .xmm6 (at_ .edx (twO + 16 * j)),
-      .xop (.bin .pxor b .xmm6)] : List Instr) ++ xorIn bs (j + 1)
+  | b :: bs, j => lane b j ++ (step ++ lanes bs (j + 1))
+
+/-- The registers of the first four blocks of six. -/
+def regs4 : List XReg := [.xmm0, .xmm1, .xmm2, .xmm3]
+
+/-- The carries of the last two tweaks: the one of block 5 in `xmm5`, and the
+one of the block after it in the scratch buffer. -/
+def carries2 : List Instr :=
+  [.xop (.bin .movdqa .xmm6 .xmm5), .xop (.bin .paddw .xmm6 .xmm6), .xop (.shift .psraw .xmm6 15),
+   .xop (.bin .pand .xmm6 .xmm4), .movdquStore (at_ .edx rO) .xmm6, .xop (.shift .psraw .xmm5 15),
+   .xop (.bin .pand .xmm5 .xmm4)]
+
+/-- The tweak in `xmm7` times `α`, with its carry in `r`. -/
+def dblWith (r : XReg) : List Instr := [.xop (.bin .paddq .xmm7 .xmm7), .xop (.bin .pxor .xmm7 r)]
+
+/-- The last two blocks of six. -/
+def last2 : List Instr := carries2 ++ (lane .xmm4 4 ++ (dblWith .xmm5 ++ lane .xmm5 5))
+
+/-- Six blocks, with their tweaks XORed in, in `xmm0`–`xmm5`, and the tweak of
+the last in `xmm7`. -/
+def fill6 : List Instr := signs ++ (lanes regs4 0 ++ last2)
+
+/-- The tweak in `xmm7` times `α`, after six blocks. -/
+def next6 : List Instr := .movdquLoad .xmm6 (at_ .edx rO) :: dblWith .xmm6
+
+/-- One block, with its tweak XORed in, in `xmm0`, and the tweak after it in
+`xmm7`. -/
+def fill1 : List Instr := signs ++ lanes [.xmm0] 0
 
 /-- Each block register with its tweak XORed in, through `xmm6`, stored to
 the blocks at `esi + 16 j` on. -/
@@ -91,24 +125,30 @@ def xorOut : List XReg → Nat → List Instr
 /-- The rounds of a direction on the block registers `rs`. -/
 def rounds (enc : Bool) (rs : List XReg) : Prog isa := if enc then aes rs else aesDec rs
 
-/-- The blocks at `esi` in the registers `rs` through XTS, stored back; then
-`rest`. -/
-def group (enc : Bool) (rs : List XReg) (rest : List Instr) : Prog isa :=
-  .seq (.block (gen rs.length ++ xorIn rs 0)) (.seq (rounds enc rs) (.block (xorOut rs 0 ++ rest)))
+/-- The blocks at `esi`, which `fill` loads into the registers `rs`, through
+XTS, stored back; then `next`, and `rest`. -/
+def group (enc : Bool) (fill : List Instr) (rs : List XReg) (next rest : List Instr) : Prog isa :=
+  .seq (.block fill) (.seq (rounds enc rs) (.block (xorOut rs 0 ++ (next ++ rest))))
 
 /-- Six blocks, and CF set if fewer than six are left. -/
 def six (enc : Bool) : Prog isa :=
-  group enc regs6 [.alu .add .esi (.imm 96), .alu .sub .edi (.imm 6), .alu .cmp .edi (.imm 6)]
+  group enc fill6 regs6 next6 [.alu .add .esi (.imm 96), .alu .sub .edi (.imm 6), .alu .cmp .edi (.imm 6)]
 
 /-- One block, and ZF set if none are left. -/
-def one (enc : Bool) : Prog isa := group enc [.xmm0] [.alu .add .esi (.imm 16), .alu .sub .edi (.imm 1)]
+def one (enc : Bool) : Prog isa :=
+  group enc fill1 [.xmm0] [] [.alu .add .esi (.imm 16), .alu .sub .edi (.imm 1)]
 
-/-- The scratch buffer in `edx`, the two constants stored in it, and the
-schedule and `rounds` in `eax` and `ecx`. -/
+/-- The constant of the carries, `0x87` in the low quadword and 1 in the high
+one, in `xmm6`. -/
+def const : List Instr :=
+  [.mov .eax (.imm 0x87), .xop (.movd .xmm6 .eax), .mov .eax (.imm 1), .xop (.movd .xmm7 .eax),
+   .xop (.bin .punpcklqdq .xmm6 .xmm7)]
+
+/-- The scratch buffer in `edx`, the constant stored in it, and the schedule
+and `rounds` in `eax` and `ecx`. -/
 def pro : List Instr :=
-  ([.mov .edx (argOp 5)] : List Instr) ++ Impl.AesXts.X86.consts ++
-    ([.movdquStore (at_ .edx onesO) .xmm6, .movdquStore (at_ .edx cO) .xmm7, .mov .eax (argOp 0),
-      .mov .ecx (argOp 1)] : List Instr)
+  ([.mov .edx (argOp 5)] : List Instr) ++ const ++
+    ([.movdquStore (at_ .edx cO) .xmm6, .mov .eax (argOp 0), .mov .ecx (argOp 1)] : List Instr)
 
 /-- What decryption computes of the round keys before the blocks. -/
 def keys (enc : Bool) : Prog isa := if enc then .block [] else imcKeys

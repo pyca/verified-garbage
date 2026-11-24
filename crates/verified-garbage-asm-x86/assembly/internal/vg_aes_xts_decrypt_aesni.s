@@ -15,16 +15,12 @@ vg_aes_xts_decrypt_aesni:
 	test eax, eax
 	je 20f
 	mov edx, DWORD PTR [esp+24]
-	mov eax, -1
+	mov eax, 135
 	movd xmm6, eax
-	pshufd xmm6, xmm6, 0
-	mov eax, 134
+	mov eax, 1
 	movd xmm7, eax
-	movdqa xmm5, xmm6
-	psrld xmm5, 31
-	pxor xmm7, xmm5
-	movdqu XMMWORD PTR [edx+352], xmm6
-	movdqu XMMWORD PTR [edx+368], xmm7
+	punpcklqdq xmm6, xmm7
+	movdqu XMMWORD PTR [edx+368], xmm6
 	mov eax, DWORD PTR [esp+4]
 	mov ecx, DWORD PTR [esp+8]
 	movdqu xmm6, XMMWORD PTR [eax+16]
@@ -88,68 +84,60 @@ vg_aes_xts_decrypt_aesni:
 	cmp edi, 6
 	jb 26f
 28:
-	movdqu xmm5, XMMWORD PTR [edx+352]
-	movdqu xmm6, XMMWORD PTR [edx+368]
-	movdqu XMMWORD PTR [edx+256], xmm7
-	pshufd xmm4, xmm7, 147
-	psrld xmm4, 31
-	paddd xmm4, xmm5
-	pandn xmm4, xmm6
-	paddd xmm7, xmm7
-	pxor xmm7, xmm4
-	movdqu XMMWORD PTR [edx+272], xmm7
-	pshufd xmm4, xmm7, 147
-	psrld xmm4, 31
-	paddd xmm4, xmm5
-	pandn xmm4, xmm6
-	paddd xmm7, xmm7
-	pxor xmm7, xmm4
-	movdqu XMMWORD PTR [edx+288], xmm7
-	pshufd xmm4, xmm7, 147
-	psrld xmm4, 31
-	paddd xmm4, xmm5
-	pandn xmm4, xmm6
-	paddd xmm7, xmm7
-	pxor xmm7, xmm4
-	movdqu XMMWORD PTR [edx+304], xmm7
-	pshufd xmm4, xmm7, 147
-	psrld xmm4, 31
-	paddd xmm4, xmm5
-	pandn xmm4, xmm6
-	paddd xmm7, xmm7
-	pxor xmm7, xmm4
-	movdqu XMMWORD PTR [edx+320], xmm7
-	pshufd xmm4, xmm7, 147
-	psrld xmm4, 31
-	paddd xmm4, xmm5
-	pandn xmm4, xmm6
-	paddd xmm7, xmm7
-	pxor xmm7, xmm4
-	movdqu XMMWORD PTR [edx+336], xmm7
-	pshufd xmm4, xmm7, 147
-	psrld xmm4, 31
-	paddd xmm4, xmm5
-	pandn xmm4, xmm6
-	paddd xmm7, xmm7
-	pxor xmm7, xmm4
+	movdqu xmm4, XMMWORD PTR [edx+368]
+	pshufd xmm5, xmm7, 95
+	psrld xmm5, 16
 	movdqu xmm0, XMMWORD PTR [esi]
-	movdqu xmm6, XMMWORD PTR [edx+256]
-	pxor xmm0, xmm6
+	pxor xmm0, xmm7
+	movdqu XMMWORD PTR [edx+256], xmm7
+	movdqa xmm6, xmm5
+	psraw xmm6, 15
+	paddw xmm5, xmm5
+	pand xmm6, xmm4
+	paddq xmm7, xmm7
+	pxor xmm7, xmm6
 	movdqu xmm1, XMMWORD PTR [esi+16]
-	movdqu xmm6, XMMWORD PTR [edx+272]
-	pxor xmm1, xmm6
+	pxor xmm1, xmm7
+	movdqu XMMWORD PTR [edx+272], xmm7
+	movdqa xmm6, xmm5
+	psraw xmm6, 15
+	paddw xmm5, xmm5
+	pand xmm6, xmm4
+	paddq xmm7, xmm7
+	pxor xmm7, xmm6
 	movdqu xmm2, XMMWORD PTR [esi+32]
-	movdqu xmm6, XMMWORD PTR [edx+288]
-	pxor xmm2, xmm6
+	pxor xmm2, xmm7
+	movdqu XMMWORD PTR [edx+288], xmm7
+	movdqa xmm6, xmm5
+	psraw xmm6, 15
+	paddw xmm5, xmm5
+	pand xmm6, xmm4
+	paddq xmm7, xmm7
+	pxor xmm7, xmm6
 	movdqu xmm3, XMMWORD PTR [esi+48]
-	movdqu xmm6, XMMWORD PTR [edx+304]
-	pxor xmm3, xmm6
+	pxor xmm3, xmm7
+	movdqu XMMWORD PTR [edx+304], xmm7
+	movdqa xmm6, xmm5
+	psraw xmm6, 15
+	paddw xmm5, xmm5
+	pand xmm6, xmm4
+	paddq xmm7, xmm7
+	pxor xmm7, xmm6
+	movdqa xmm6, xmm5
+	paddw xmm6, xmm6
+	psraw xmm6, 15
+	pand xmm6, xmm4
+	movdqu XMMWORD PTR [edx+352], xmm6
+	psraw xmm5, 15
+	pand xmm5, xmm4
 	movdqu xmm4, XMMWORD PTR [esi+64]
-	movdqu xmm6, XMMWORD PTR [edx+320]
-	pxor xmm4, xmm6
+	pxor xmm4, xmm7
+	movdqu XMMWORD PTR [edx+320], xmm7
+	paddq xmm7, xmm7
+	pxor xmm7, xmm5
 	movdqu xmm5, XMMWORD PTR [esi+80]
-	movdqu xmm6, XMMWORD PTR [edx+336]
-	pxor xmm5, xmm6
+	pxor xmm5, xmm7
+	movdqu XMMWORD PTR [edx+336], xmm7
 	movdqu xmm6, XMMWORD PTR [edx+224]
 	pxor xmm0, xmm6
 	pxor xmm1, xmm6
@@ -283,6 +271,9 @@ vg_aes_xts_decrypt_aesni:
 	movdqu xmm6, XMMWORD PTR [edx+336]
 	pxor xmm5, xmm6
 	movdqu XMMWORD PTR [esi+80], xmm5
+	movdqu xmm6, XMMWORD PTR [edx+352]
+	paddq xmm7, xmm7
+	pxor xmm7, xmm6
 	add esi, 96
 	sub edi, 6
 	cmp edi, 6
@@ -293,18 +284,18 @@ vg_aes_xts_decrypt_aesni:
 	test edi, edi
 	je 213f
 215:
-	movdqu xmm5, XMMWORD PTR [edx+352]
-	movdqu xmm6, XMMWORD PTR [edx+368]
-	movdqu XMMWORD PTR [edx+256], xmm7
-	pshufd xmm4, xmm7, 147
-	psrld xmm4, 31
-	paddd xmm4, xmm5
-	pandn xmm4, xmm6
-	paddd xmm7, xmm7
-	pxor xmm7, xmm4
+	movdqu xmm4, XMMWORD PTR [edx+368]
+	pshufd xmm5, xmm7, 95
+	psrld xmm5, 16
 	movdqu xmm0, XMMWORD PTR [esi]
-	movdqu xmm6, XMMWORD PTR [edx+256]
-	pxor xmm0, xmm6
+	pxor xmm0, xmm7
+	movdqu XMMWORD PTR [edx+256], xmm7
+	movdqa xmm6, xmm5
+	psraw xmm6, 15
+	paddw xmm5, xmm5
+	pand xmm6, xmm4
+	paddq xmm7, xmm7
+	pxor xmm7, xmm6
 	movdqu xmm6, XMMWORD PTR [edx+224]
 	pxor xmm0, xmm6
 	cmp ecx, 10
