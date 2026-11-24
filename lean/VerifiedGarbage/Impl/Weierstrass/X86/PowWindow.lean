@@ -64,6 +64,20 @@ def windowFrom : Nat → Nat → Nat → List TabOp → List TabOp
     else if e < 16 then .get (e / 2) :: squaresThen k ops
     else windowFrom fuel (e / 16) 4 (.mul (e % 16 / 2) :: squaresThen k ops)
 
+/-- The operations that leave the accumulator `x^a` at `x^((a 2^f + e) 2^k)`,
+then `ops`, for `e < 2^f` and the same saved powers: as `windowFrom`, with
+every window's power multiplied in, and the squarings of the zeros above the
+top window. A window is of four bits, or of the bits left if they are
+fewer. -/
+def windowAdd : Nat → Nat → Nat → List TabOp → List TabOp
+  | 0, _, k, ops => squaresThen k ops
+  | f + 4, e, k, ops =>
+    if e % 2 = 0 then windowAdd (f + 3) (e / 2) (k + 1) ops
+    else windowAdd f (e / 16) 4 (.mul (e % 16 / 2) :: squaresThen k ops)
+  | f + 1, e, k, ops =>
+    if e % 2 = 0 then windowAdd f (e / 2) (k + 1) ops
+    else squaresThen (f + 1) (.mul (e / 2) :: squaresThen k ops)
+
 /-- The odd powers below 16 in slots 0 to 7, from the accumulator holding
 the base, with `x²` in slot 8. -/
 def windowTable : List TabOp :=
