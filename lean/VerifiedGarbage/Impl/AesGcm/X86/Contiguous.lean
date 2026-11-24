@@ -26,7 +26,7 @@ def setup : List Instr :=
       .mov .eax (imm 0), .store (at_ .ebp zO) .eax]
 
 def body (c : Callees) : Prog isa :=
-  .seq (.block setup) (.seq (oneAad c) (.seq (Open.decTo c c.ctr)
+  .seq (.block setup) (.seq (oneAad c) (.seq (Open.decTo c c.ctr true)
     (.seq (.block (keep (callerSlot 7) dataO)) (.seq (oneTag c 0) (.seq (tagOut 0) (.block restore))))))
 
 def sealContiguous (c : Callees) : Prog isa :=

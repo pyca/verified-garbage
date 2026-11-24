@@ -78,8 +78,8 @@ theorem xorTail_ok {C St W SP D T : BitVec 32} {s : State} {n : Nat}
     (L : Lay C St W SP 32) (st : St = W+16#32) (E : Env C St W SP s)
     (P : PieceRegions C W SP D T n) (A : PieceAccess s SP D T n)
     (src : slotv s.mem W dataO = D) (len : slotv s.mem W lenO = BitVec.ofNat 32 n)
-    (hlt : n < 2^32) (nz : n%16 ≠ 0) :
-    WP isa (.seq (.block Open.tailRegs) (.seq (xorLoopG true) (.block [.mov .esi (.reg .ebp),.alu .add .esi (imm stO)])))
+    (hlt : n < 2^32) (nz : n%16 ≠ 0) (words : Bool := false) :
+    WP isa (.seq (.block Open.tailRegs) (.seq (xorTailCode words) (.block [.mov .esi (.reg .ebp),.alu .add .esi (imm stO)])))
       s fun t => t.mem = WriteBytes.writeBytes s.mem (w64 (tailPtr T n))
           (xorBytes s.mem (w64 (tailPtr D n)) (w64 (St+64#32)) (n%16)) ∧
         t.gpr .ebp = W ∧ t.gpr .esi = St ∧ t.gpr .esp = SP ∧ t.rd = s.rd ∧ t.wr = s.wr := by
@@ -105,7 +105,7 @@ theorem xorTail_ok {C St W SP D T : BitVec 32} {s : State} {n : Nat}
       by rw [rd,wr,d]; exact covers_off A.rd (by omega_using []) (by omega_using [hlt]),
       by rw [wr,t]; exact covers_off A.wr (by omega_using []) (by omega_using [hlt]),
       ((P.dstWork.sub_left ts).sub_right ks).symm,P.srcDst.imp (congrArg (fun p => tailPtr p n)) (fun hd => (hd.sub_left ds).sub_right ts)⟩
-  refine WP.seq (WP.mono (xorLoopG_ok true u hx) ?_)
+  refine WP.seq (WP.mono (xorTailCode_ok words hx) ?_)
   intro z hz
   have bp' := (hz.other .ebp (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)).trans bp
   have sp' := (hz.other .esp (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)).trans sp
@@ -254,8 +254,8 @@ theorem tailTest {u : State} (env : Env C St W SP u) (len : slotv u.mem W lenO =
 theorem decTo_ok (v : GcmImpl) {s : State} {off : Nat} {ciph : Block → Block} {icb : Block}
     (E : Env C St W SP s) (A : PieceAccess s SP D T n) (r : RoundsAt s.mem W R)
     (src : slotv s.mem W dataO = D) (len : slotv s.mem W lenO = BitVec.ofNat 32 n) (hlt : n < 2^32)
-    (aligned : n ≠ 0 → off%16 = 0) (cipher : ciphOf s.mem C R = ciph) (ctr : CtrS s.mem St ciph icb off) :
-    WP isa (Open.decTo v.callees v.callees.ctr) s (PiecePost s C St W SP D T ciph icb off n) := by
+    (aligned : n ≠ 0 → off%16 = 0) (cipher : ciphOf s.mem C R = ciph) (ctr : CtrS s.mem St ciph icb off) (words : Bool := false) :
+    WP isa (Open.decTo v.callees v.callees.ctr words) s (PiecePost s C St W SP D T ciph icb off n) := by
   have dataW := A.dataW L st P
   refine WP.seq (WP.mono (wholeTo_ok v L st E P A r src len hlt (fun h => aligned (by omega_using [h])) cipher ctr) ?_)
   intro u h
@@ -282,7 +282,7 @@ theorem decTo_ok (v : GcmImpl) {s : State} {off : Nat} {ciph : Block → Block} 
     have sf := f.trans (ksFrame_crFrame L rfl k.frame (D:=T) (n:=n))
     have access := afterAccess L st P A (k.rd.trans h.rd) (k.wr.trans h.wr) sf
     refine WP.mono (xorTail_ok L st k.env P access ((keptSlot L st P A sf (by decide) (by decide)).trans src)
-        ((keptSlot L st P A sf (by decide) (by decide)).trans len) hlt hk) ?_
+        ((keptSlot L st P A sf (by decide) (by decide)).trans len) hlt hk words) ?_
     rintro t ⟨mem,bp,si,sp,r',w'⟩
     exact tailResult L st P A h z k mem bp si sp r' w' hk
 

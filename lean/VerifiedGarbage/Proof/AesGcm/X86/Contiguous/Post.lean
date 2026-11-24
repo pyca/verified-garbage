@@ -121,7 +121,7 @@ theorem payload_pc (v : GcmImpl) (p : BitVec 32 × (Nat → BitVec 32)) (caller 
     (P : DirectGather.PieceRegions (p.2 0) (p.2 8) p.1 (p.2 6) T (p.2 7).toNat)
     (apart : ∀ r∈cipherFrame p T, (⟨argA caller 7,4⟩ : Region).Disjoint r) :
     Pc (PayloadPre p caller T)
-      (.seq (Open.decTo v.callees v.callees.ctr) (.block (keep (callerSlot 7) dataO))) (PayloadPost p T) := by
+      (.seq (Open.decTo v.callees v.callees.ctr true) (.block (keep (callerSlot 7) dataO))) (PayloadPost p T) := by
   let done (b : State × State) (y : State) :=
     PayloadPre p caller T b b.2 ∧
     PiecePost b.2 (p.2 0) (stOf (p.2 8)) (p.2 8) p.1 (p.2 6) T
@@ -130,12 +130,12 @@ theorem payload_pc (v : GcmImpl) (p : BitVec 32 × (Nat → BitVec 32)) (caller 
   · intro b s h
     have len := h.aad.o.lenO.trans (ofNat_toNat32 _).symm
     have result := DirectGather.decTo_ok G.L rfl P v h.aad.o.env h.access h.aad.o.rounds h.aad.o.dataO
-      len (p.2 7).isLt (fun _ => rfl) h.aad.o.ciph (Proof.Gcm.ctr_zero _ _ _ _ h.aad.cb)
+      len (p.2 7).isLt (fun _ => rfl) h.aad.o.ciph (Proof.Gcm.ctr_zero _ _ _ _ h.aad.cb) true
     refine result.mono fun y hy => ?_
     dsimp only [done]
     rw [←h.entry]
     exact ⟨h,hy⟩
-  · apply (DirectGather.decTo_ct v G.L rfl P (p.2 7).isLt (off:=0) (fun _ => rfl)).mono
+  · apply (DirectGather.decTo_ct v G.L rfl P (p.2 7).isLt (off:=0) (fun _ => rfl) true).mono
     rintro s ⟨b,h⟩
     refine ⟨⟨h.aad.o.env,h.access,h.aad.o.rounds,h.aad.o.dataO,?_⟩,inc32 (jOf p b.1),?_⟩
     · rw [ofNat_toNat32]; exact h.aad.o.lenO
@@ -254,7 +254,7 @@ structure Sealed (p : Params) (dst tag : BitVec 32) (ref entry s : State) : Prop
   result : sealedInput p ref entry=(bytesAt s.mem (w64 dst) (p.2 7).toNat, bytesAt s.mem (w64 tag) 16)
   frame : Frame (sealWrites p dst tag) entry.mem s.mem
 
-abbrev sealTail (v : GcmImpl) : Prog isa := .seq (Open.decTo v.callees v.callees.ctr)
+abbrev sealTail (v : GcmImpl) : Prog isa := .seq (Open.decTo v.callees v.callees.ctr true)
   (.seq (.block (keep (callerSlot 7) dataO)) (.seq (oneTag v.callees 0) (.seq (tagOut 0) (.block restore))))
 
 theorem sealTail_pc (v : GcmImpl) (p : Params) (caller dst tag : BitVec 32)
