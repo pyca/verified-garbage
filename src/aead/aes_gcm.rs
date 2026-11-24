@@ -765,8 +765,8 @@ impl AesGcm {
         }
         add_len(0, aad.len(), MAX_AAD).map_err(|()| Error::InvalidAadLength)?;
         let tag = self.seal_pieces(dit, nonce, aad, plaintext, out);
-        // SAFETY: the gather contract specifies every byte of the ciphertext
-        // for arbitrary prior destination contents, including an empty output.
+        // SAFETY: sealing specifies every ciphertext byte for arbitrary prior
+        // destination contents, including an empty output.
         Ok((unsafe { out.assume_init_mut() }, tag))
     }
 
