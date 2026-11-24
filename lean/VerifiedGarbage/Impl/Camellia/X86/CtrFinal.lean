@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Impl.Camellia.X86.Ctr
+public import VerifiedGarbage.Impl.Modes.X86.SeqFinal
 public import VerifiedGarbage.Impl.AesCtr.X86.Final
 public import VerifiedGarbage.Impl.StackScratch.X86
 
@@ -14,9 +14,10 @@ bytes: the caller's callee-saved registers, then a block of the code's own.
 It is AES-CTR's final function's (`Impl/AesCtr/X86/Final.lean`) with
 Camellia's arguments, around calls of an implementation of
 `vg_camellia_ctr`'s code, an internal function `name` with the code `core`
-(the baseline's: `vg_camellia_ctr_core`, `ctrFramed`, `vg_camellia_ctr`'s
-framed by its own working space on the stack), its five arguments pushed in
-a frame of their own (`ctrCall`):
+(the baseline's: `vg_camellia_ctr_core`, `Sse.ctrFramed`, `vg_camellia_ctr`'s
+framed by its own working space on the stack, without the cleanup of the
+registers and the stack that `vg_camellia_ctr` ends with), its five arguments
+pushed in a frame of their own (`ctrCall`):
 
 1. our caller's `ebx`, `esi`, `edi` and `ebp` saved in `save`;
 2. a call of `vg_camellia_ctr` on the `len / 16` whole blocks, which leaves
@@ -42,12 +43,6 @@ open VG.Impl.CmacAes.X86 (argOp at_)
 open VG.Impl.AesCfb.X86 (finalSaved tailTest)
 open VG.Impl.AesCtr.X86 (zeroSlots)
 open VG.Impl.Modes.X86 (tailByte)
-
-/-- `vg_camellia_ctr`'s code, with its working space on the stack: called as an
-internal function of its own, `vg_camellia_ctr_core`, rather than as
-`vg_camellia_ctr`, which also clears the registers and the stack it leaves
-(`Impl.Camellia.X86.Fn.ctr`). -/
-def ctrFramed : Prog isa := Impl.StackScratch.X86.withStackScratchWiped 2756 5 682 ctr
 
 /-- `save` (our stack argument 5) to `eax`, and the registers saved there. -/
 def ctrFinalSave : List Instr := .mov .eax (argOp 5) :: finalSaved.map fun p => .store (at_ .eax p.2) p.1

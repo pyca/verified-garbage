@@ -1,15 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Camellia.X86.Scrub
-public import VerifiedGarbage.Impl.Camellia.X86.Fn
+public import VerifiedGarbage.Proof.Camellia.X86.SseScrub
+public import VerifiedGarbage.Impl.Camellia.X86.SseFn
 public import VerifiedGarbage.Proof.Camellia.X86.AesNiScrub
 public import VerifiedGarbage.Impl.Camellia.X86.AesNiFn
 public import VerifiedGarbage.Proof.Camellia.X86.AesNiWideScrub
 public import VerifiedGarbage.Impl.Camellia.X86.AesNiWideFn
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86.Print
-import VerifiedGarbage.Proof.Camellia.X86.FbLit
-import VerifiedGarbage.Proof.Camellia.X86.FbFinalLit
+import VerifiedGarbage.Proof.Camellia.X86.SseLit
 import VerifiedGarbage.Proof.Camellia.X86.AesNiLit
 import VerifiedGarbage.Proof.Camellia.X86.AesNiWideLit
 
@@ -25,28 +24,28 @@ def artifacts : List Artifact := [
     code := Impl.Camellia.X86.AesNi.Fn.cfbEncrypt
     verified := Proof.Camellia.X86.AesNi.Scrub.cfbEncrypt_scrubbed },
   Spec.Camellia.cfbEncryptApi.artifact X86.target {
-    code := Impl.Camellia.X86.Fn.cfbEncrypt
-    verified := Proof.Camellia.X86.Scrub.cfbEncrypt_scrubbed },
+    code := Impl.Camellia.X86.Sse.Fn.cfbEncrypt
+    verified := Proof.Camellia.X86.Sse.Scrub.cfbEncrypt_scrubbed },
   Spec.Camellia.cfbDecryptApi.artifact X86.target {
     suffix := "_aesni"
     code := Impl.Camellia.X86.AesNiWide.Fn.cfbDecrypt
     verified := Proof.Camellia.X86.AesNiWide.Scrub.cfbDecrypt_scrubbed },
   Spec.Camellia.cfbDecryptApi.artifact X86.target {
-    code := Impl.Camellia.X86.Fn.cfbDecrypt
-    verified := Proof.Camellia.X86.Scrub.cfbDecrypt_scrubbed },
+    code := Impl.Camellia.X86.Sse.Fn.cfbDecrypt
+    verified := Proof.Camellia.X86.Sse.Scrub.cfbDecrypt_scrubbed },
   Spec.Camellia.cfbEncryptFinalApi.artifact X86.target {
     suffix := "_aesni"
     code := Impl.Camellia.X86.AesNi.Fn.cfbEncryptFinal
     verified := Proof.Camellia.X86.AesNi.Scrub.cfbEncryptFinal_scrubbed },
   Spec.Camellia.cfbEncryptFinalApi.artifact X86.target {
-    code := Impl.Camellia.X86.Fn.cfbEncryptFinal
-    verified := Proof.Camellia.X86.Scrub.cfbEncryptFinal_scrubbed },
+    code := Impl.Camellia.X86.Sse.Fn.cfbEncryptFinal
+    verified := Proof.Camellia.X86.Sse.Scrub.cfbEncryptFinal_scrubbed },
   Spec.Camellia.cfbDecryptFinalApi.artifact X86.target {
     suffix := "_aesni"
     code := Impl.Camellia.X86.AesNi.Fn.cfbDecryptFinal
     verified := Proof.Camellia.X86.AesNi.Scrub.cfbDecryptFinal_scrubbed },
   Spec.Camellia.cfbDecryptFinalApi.artifact X86.target {
-    code := Impl.Camellia.X86.Fn.cfbDecryptFinal
-    verified := Proof.Camellia.X86.Scrub.cfbDecryptFinal_scrubbed }]
+    code := Impl.Camellia.X86.Sse.Fn.cfbDecryptFinal
+    verified := Proof.Camellia.X86.Sse.Scrub.cfbDecryptFinal_scrubbed }]
 
 end VG.Artifacts.CamelliaCfb.X86

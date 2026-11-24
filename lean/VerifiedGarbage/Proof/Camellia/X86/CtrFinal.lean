@@ -3,14 +3,12 @@ module
 public import VerifiedGarbage.Impl.Camellia.X86.CtrFinal
 public import VerifiedGarbage.Proof.Camellia.CtrFinal
 public import VerifiedGarbage.Proof.Camellia.CtrScratch
-public import VerifiedGarbage.Proof.Camellia.X86.CtrVerified
 public import VerifiedGarbage.Proof.AesCtr.X86.Final
 public import VerifiedGarbage.Proof.Framework.Scratch
 public import VerifiedGarbage.Proof.Framework.X86.Spill
 public import VerifiedGarbage.Proof.Framework.X86.CallWith
 public import VerifiedGarbage.Proof.Framework.X86.ArgTaint
 public import VerifiedGarbage.Proof.Framework.X86.ScrubSel
-import VerifiedGarbage.Proof.Camellia.X86.CtrLit
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
 import VerifiedGarbage.Proof.Framework.Offset
@@ -28,14 +26,12 @@ import VerifiedGarbage.Proof.Framework.X86.RelCT
 meta import VerifiedGarbage.Impl.Camellia.X86.CtrFinal
 meta import VerifiedGarbage.Proof.Camellia.CtrFinal
 meta import VerifiedGarbage.Proof.Camellia.CtrScratch
-meta import VerifiedGarbage.Proof.Camellia.X86.CtrVerified
 meta import VerifiedGarbage.Proof.AesCtr.X86.Final
 meta import VerifiedGarbage.Proof.Framework.Scratch
 meta import VerifiedGarbage.Proof.Framework.X86.Spill
 meta import VerifiedGarbage.Proof.Framework.X86.CallWith
 meta import VerifiedGarbage.Proof.Framework.X86.ArgTaint
 meta import VerifiedGarbage.Proof.Framework.X86.ScrubSel
-meta import VerifiedGarbage.Proof.Camellia.X86.CtrLit
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
 meta import VerifiedGarbage.Proof.Framework.Offset
@@ -86,8 +82,8 @@ stack arguments (`argTaint`), the calls by the callee's constant time
 (`RelCT.callWith`), whose public arguments, the pointers, `rounds` and the
 number of blocks, agree in both runs. `ctrFinal_framed` runs the code with
 `save` in a frame of 60 bytes (`Verified.stackScratchWiped`), zeroed on
-return, the block included; with the 2796 bytes its calls use below it
-(the callee's five arguments, its return address and its 2772 bytes), 2856
+return, the block included; with the 1600 bytes its calls use below it
+(the callee's five arguments, its return address and its 1576 bytes), 1660
 in all.
 -/
 
@@ -111,7 +107,7 @@ def ctrFinalX86 : Contract isa where
     let sv : Region := ⟨(arg s 5).setWidth 64, 32⟩
     let args : Region := ⟨argAddr s 0, 24⟩
     let ret : Region := ⟨(s.gpr .esp).setWidth 64, 4⟩
-    let stack : Region := ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 2796, 2796⟩
+    let stack : Region := ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 1600, 1600⟩
     s.rd = [sched, args] ∧ s.wr = [ctr, data, sv] ∧
       sched.Disjoint ctr ∧ sched.Disjoint data ∧ sched.Disjoint sv ∧
       ctr.Disjoint data ∧ ctr.Disjoint sv ∧ ctr.Disjoint args ∧
@@ -120,7 +116,7 @@ def ctrFinalX86 : Contract isa where
       stack.Disjoint sched ∧ stack.Disjoint ctr ∧ stack.Disjoint data ∧ stack.Disjoint sv ∧
       (arg s 0).toNat + 272 ≤ 2 ^ 32 ∧ (arg s 2).toNat + 16 ≤ 2 ^ 32 ∧
       (arg s 3).toNat + (arg s 4).toNat ≤ 2 ^ 32 ∧ (arg s 5).toNat + 32 ≤ 2 ^ 32 ∧
-      2796 ≤ (s.gpr .esp).toNat ∧ (s.gpr .esp).toNat + 28 ≤ 2 ^ 32 ∧
+      1600 ≤ (s.gpr .esp).toNat ∧ (s.gpr .esp).toNat + 28 ≤ 2 ^ 32 ∧
       ((arg s 1).toNat = 18 ∨ (arg s 1).toNat = 24)
   post s s' :=
     Spec.Ctr.CryptFinal (Spec.Camellia.cipher (Spec.Camellia.subkeysAt s.mem ((arg s 0).setWidth 64) (arg s 1).toNat))
@@ -138,7 +134,7 @@ def wideX86 : Contract isa :=
       let sv : Region := ⟨(arg s 5).setWidth 64, 32⟩
       let args : Region := ⟨argAddr s 0, 24⟩
       let ret : Region := ⟨(s.gpr .esp).setWidth 64, 4⟩
-      let stack : Region := ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 2796, 2796⟩
+      let stack : Region := ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 1600, 1600⟩
       s.rd = [sched] ∧ s.wr = [ctr, data, sv, args] ∧
         sched.Disjoint ctr ∧ sched.Disjoint data ∧ sched.Disjoint sv ∧
         ctr.Disjoint data ∧ ctr.Disjoint sv ∧ ctr.Disjoint args ∧
@@ -147,15 +143,15 @@ def wideX86 : Contract isa :=
         stack.Disjoint sched ∧ stack.Disjoint ctr ∧ stack.Disjoint data ∧ stack.Disjoint sv ∧
         (arg s 0).toNat + 272 ≤ 2 ^ 32 ∧ (arg s 2).toNat + 16 ≤ 2 ^ 32 ∧
         (arg s 3).toNat + (arg s 4).toNat ≤ 2 ^ 32 ∧ (arg s 5).toNat + 32 ≤ 2 ^ 32 ∧
-        2796 ≤ (s.gpr .esp).toNat ∧ (s.gpr .esp).toNat + 28 ≤ 2 ^ 32 ∧
+        1600 ≤ (s.gpr .esp).toNat ∧ (s.gpr .esp).toNat + 28 ≤ 2 ^ 32 ∧
         ((arg s 1).toNat = 18 ∨ (arg s 1).toNat = 24) }
 
 /-- The contract the frame needs: the shared one on the subkeys, with
-`save`, 32 bytes, as a sixth argument, and 2796 bytes of stack (the callee's
-five arguments, its return address and its own 2772 bytes). -/
+`save`, 32 bytes, as a sixth argument, and 1600 bytes of stack (the callee's
+five arguments, its return address and its own 1576 bytes). -/
 abbrev finalScratchContract : Contract isa :=
   Sig.scratchContract X86.abi Spec.Camellia.ctrFinalSig "save" .u64 4 (Spec.Camellia.ctrFinalPre X86.abi.ptrBits)
-    (Proof.Camellia.ctrFinalPostSk X86.abi.ptrBits) true 2796
+    (Proof.Camellia.ctrFinalPostSk X86.abi.ptrBits) true 1600
 
 /-- A state satisfying the precondition: the subkeys at `0x1000`, 18
 rounds, the counter block at `0x2000`, no data at `0x3000` and `save` at
@@ -224,19 +220,11 @@ theorem verified_wide {c : Prog isa} (h : ∀ s, ctrFinalX86.pre s → ∃ t s',
 
 /-! ## The callee -/
 
-open VG.Impl.Camellia.X86 (ctrFramed ctrCall ctrFinalSave ctrFinalArgs ctrFinalTailArgs ctrFinalXorArgs
+open VG.Impl.Camellia.X86 (ctrCall ctrFinalSave ctrFinalArgs ctrFinalTailArgs ctrFinalXorArgs
   ctrFinalRestore ctrFinalTail ctrFinal)
 
-/-- `vg_camellia_ctr` meets its contract on the subkeys. -/
-theorem ctrFramed_sk : Verified X86.target ctrFramed (Proof.Camellia.ctrContractSk X86.abi 2772) :=
-  X86.Verified.stackScratchWiped (sig := Spec.Camellia.ctrSig) (nm := "scratch") (e := .u64)
-    (n := 341) (pre := Spec.Camellia.ctrPre X86.abi.ptrBits) (post := Proof.Camellia.ctrPostSk X86.abi.ptrBits)
-    (wa := true) (stack := 16) (bytes := 2756) Ctr.ctr_verified (by decide) (by lit_decide) (by lit_decide)
-    (by decide) (Proof.Camellia.ctrPre_local _) (Proof.Camellia.ctrPost_local _)
-    (Proof.Camellia.ctrPostOut_local _) (Ctr.frameSat_ctr _)
-
 /-- The contract `vg_camellia_ctr` is called by. -/
-abbrev calleeK : Contract isa := Proof.Camellia.ctrContractSk X86.abi 2772
+abbrev calleeK : Contract isa := Proof.Camellia.ctrContractSk X86.abi 1576
 
 abbrev ctrRegs : List Reg := [.esi, .ebx, .edx, .ecx, .eax]
 
@@ -254,34 +242,26 @@ structure CtrImpl where
   /-- It is constant time. -/
   ct : ConstantTime isa calleeK.pre calleeK.pub code
   /-- It never writes the stack pointer, and its calls and frames use at most
-  the 2772 bytes of stack its contract reserves. -/
+  the 1576 bytes of stack its contract reserves. -/
   nosp : NoSp code
-  stack : stackUse code ≤ 2772
+  stack : stackUse code ≤ 1576
   spSafe : code.all (fun i => !isa.writesSp i) = true
   /-- What the name of `vg_camellia_ctr_final`'s instance that calls it ends
   with (nothing for the baseline implementation). -/
   suffix : String
   /-- The CPU features its code requires, which its callers require too. -/
   features : List String
-  /-- The doublewords of the 2856 bytes of stack below `esp` that
+  /-- The doublewords of the 1660 bytes of stack below `esp` that
   `vg_camellia_ctr_final` zeroes before it returns when it calls this
   implementation: those that the residue analysis of its code with this
   implementation's (`X86.rtaint`) finds it may leave different in two runs,
   which then ends without secret residue. -/
   words : List Nat
-  wordsOk : X86.Scrub.selSide 2856 words 2856 = true
-  residue : ∃ hc, (rtaint.check (RTaint.init 2856 0) (Impl.Scrub.X86.scrubSel 0 2856 words
+  wordsOk : X86.Scrub.selSide 1660 words 1660 = true
+  residue : ∃ hc, (rtaint.check (RTaint.init 1660 0) (Impl.Scrub.X86.scrubSel 0 1660 words
     (Impl.StackScratch.X86.withStackScratchWiped 60 5 8 (ctrFinal name code))) hc).any (RTaint.done 0) = true
 
 variable {ci : CtrImpl}
-
-theorem ctr_stack : stackUse ctrFramed = 2772 := by
-  obtain h : stackUse Impl.Camellia.X86.ctr = 16 := by lit_decide
-  simp only [ctrFramed, Impl.StackScratch.X86.withStackScratchWiped, Impl.StackScratch.X86.withStackScratch,
-    stackUse, h, X86.frameBytes]
-  decide
-
-theorem ctr_nosp : NoSp ctrFramed := NoSp.of_all (by unfold ctrFramed; lit_decide)
 
 theorem sw32 (x : BitVec 32) : (x.setWidth 64).setWidth 32 = x := by
   apply BitVec.eq_of_toNat_eq; simp
@@ -312,7 +292,7 @@ theorem one_disj {k : Region} {p : Addr} {n : Nat} (h : k.Disjoint ⟨p, n⟩) :
   intro r hr; simp only [List.mem_singleton] at hr; subst hr; exact h.symm
 
 /-- What a call of `vg_camellia_ctr` needs: the subkeys at `W` with `R`
-rounds, the counter block at `C` and `n` blocks at `D`, and 2796 bytes of
+rounds, the counter block at `C` and `n` blocks at `D`, and 1600 bytes of
 stack for the arguments, the return address and the callee's frames. -/
 structure CCall (s : State) (W R C D : BitVec 32) (n : Nat) : Prop where
   eax : s.gpr .eax = W
@@ -320,14 +300,14 @@ structure CCall (s : State) (W R C D : BitVec 32) (n : Nat) : Prop where
   edx : s.gpr .edx = C
   ebx : s.gpr .ebx = D
   esi : s.gpr .esi = BitVec.ofNat 32 n
-  esp : 2796 ≤ (s.gpr .esp).toNat
+  esp : 1600 ≤ (s.gpr .esp).toNat
   rounds : R.toNat = 18 ∨ R.toNat = 24
   wc : (⟨W.setWidth 64, 272⟩ : Region).Disjoint ⟨C.setWidth 64, 16⟩
   wd : (⟨W.setWidth 64, 272⟩ : Region).Disjoint ⟨D.setWidth 64, 16 * n⟩
   cd : (⟨C.setWidth 64, 16⟩ : Region).Disjoint ⟨D.setWidth 64, 16 * n⟩
-  bw : (below (s.gpr .esp) 2796).Disjoint ⟨W.setWidth 64, 272⟩
-  bc : (below (s.gpr .esp) 2796).Disjoint ⟨C.setWidth 64, 16⟩
-  bd : (below (s.gpr .esp) 2796).Disjoint ⟨D.setWidth 64, 16 * n⟩
+  bw : (below (s.gpr .esp) 1600).Disjoint ⟨W.setWidth 64, 272⟩
+  bc : (below (s.gpr .esp) 1600).Disjoint ⟨C.setWidth 64, 16⟩
+  bd : (below (s.gpr .esp) 1600).Disjoint ⟨D.setWidth 64, 16 * n⟩
   fW : W.toNat + 272 ≤ 2 ^ 32
   fC : C.toNat + 16 ≤ 2 ^ 32
   fD : D.toNat + 16 * n ≤ 2 ^ 32
@@ -339,7 +319,7 @@ structure CPost (s : State) (W R C D : BitVec 32) (n : Nat) (s' : State) : Prop 
   rd : s'.rd = s.rd
   wr : s'.wr = s.wr
   saved : ∀ r ∈ calleeSaved, s'.gpr r = s.gpr r
-  frame : Frame [⟨C.setWidth 64, 16⟩, ⟨D.setWidth 64, 16 * n⟩, below (s.gpr .esp) 2796] s.mem s'.mem
+  frame : Frame [⟨C.setWidth 64, 16⟩, ⟨D.setWidth 64, 16 * n⟩, below (s.gpr .esp) 1600] s.mem s'.mem
   out : Spec.Cbc.blocksAt s'.mem (D.setWidth 64) n =
     Spec.Ctr.crypt (Spec.Camellia.cipher (Spec.Camellia.subkeysAt s.mem (W.setWidth 64) R.toNat))
       (bytesAt s.mem (C.setWidth 64) 16) (Spec.Cbc.blocksAt s.mem (D.setWidth 64) n)
@@ -369,25 +349,25 @@ theorem callPre : CallPre calleeK ctrRegs (calleeRd W) (calleeWr (s.gpr .esp) C 
   obtain hn : (BitVec.ofNat 32 n).toNat = n := by rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt h.n_lt]
   have hE := h.esp
   have := (s.gpr .esp).isLt
-  obtain eA : argAddr (pushed ctrRegs s).callEntry 0 = (below (s.gpr .esp) 2796).base + BitVec.ofNat 64 2776 := by
+  obtain eA : argAddr (pushed ctrRegs s).callEntry 0 = (below (s.gpr .esp) 1600).base + BitVec.ofNat 64 1580 := by
     rw [callEntry_argAddr0]; exact below_off (by omega_using [hE]) (by decide) rfl
-  obtain eB : (below (s.gpr .esp) 20) = ⟨(below (s.gpr .esp) 2796).base + BitVec.ofNat 64 2776, 20⟩ :=
+  obtain eB : (below (s.gpr .esp) 20) = ⟨(below (s.gpr .esp) 1600).base + BitVec.ofNat 64 1580, 20⟩ :=
     congrArg (fun x => (⟨x, 20⟩ : Region)) (below_off (by omega_using [hE]) (by decide) rfl)
   obtain e6 : s.gpr .esp - 4 - 4 - 4 - 4 - 4 - 4 = s.gpr .esp - BitVec.ofNat 32 24 := by
     simp only [BitVec.sub_sub]; rfl
   obtain eR : (s.gpr .esp - BitVec.ofNat 32 24).setWidth 64 =
-      (below (s.gpr .esp) 2796).base + BitVec.ofNat 64 2772 :=
+      (below (s.gpr .esp) 1600).base + BitVec.ofNat 64 1576 :=
     below_off (by omega_using [hE]) (by decide) rfl
-  obtain eS : (below (s.gpr .esp) 2796).base + BitVec.ofNat 64 2772 - 2772#64 = (below (s.gpr .esp) 2796).base :=
+  obtain eS : (below (s.gpr .esp) 1600).base + BitVec.ofNat 64 1576 - 1576#64 = (below (s.gpr .esp) 1600).base :=
     BitVec.add_sub_cancel _ _
   obtain eN : (s.gpr .esp - BitVec.ofNat 32 24).toNat = (s.gpr .esp).toNat - 24 := sub_toNat (by omega_using [hE])
-  let B := (below (s.gpr .esp) 2796).base
-  try rewrite [show (below (s.gpr .esp) 2796).base = B from rfl] at *
-  have hb : below (s.gpr .esp) 2796 = ⟨B, 2796⟩ := rfl
-  have sb {d k : Nat} (hd : d + k ≤ 2796) {r : Region} (hr : (below (s.gpr .esp) 2796).Disjoint r) :
+  let B := (below (s.gpr .esp) 1600).base
+  try rewrite [show (below (s.gpr .esp) 1600).base = B from rfl] at *
+  have hb : below (s.gpr .esp) 1600 = ⟨B, 1600⟩ := rfl
+  have sb {d k : Nat} (hd : d + k ≤ 1600) {r : Region} (hr : (below (s.gpr .esp) 1600).Disjoint r) :
       (⟨B + BitVec.ofNat 64 d, k⟩ : Region).Disjoint r := by
     rw [hb] at hr; exact hr.sub_left (Offset.sub_base _ hd)
-  have sb0 {r : Region} (hr : (below (s.gpr .esp) 2796).Disjoint r) : (⟨B, 2772⟩ : Region).Disjoint r := by
+  have sb0 {r : Region} (hr : (below (s.gpr .esp) 1600).Disjoint r) : (⟨B, 1576⟩ : Region).Disjoint r := by
     rw [hb] at hr; exact hr.sub_left (Region.sub_prefix (by decide))
   have hwd := h.wd
   have hcd := h.cd
@@ -399,9 +379,9 @@ theorem callPre : CallPre calleeK ctrRegs (calleeRd W) (calleeWr (s.gpr .esp) C 
       ↓reduceIte, Nat.reduceEqDiff, argBytes, Nat.reduceDiv, List.sum_cons, List.sum_nil, Nat.reduceAdd,
       Nat.reduceMul, sw32, toNat_sw]
     simp only [arg_withRegions, argAddr_withRegions, a0, a1, a2, a3, a4, hn, eA, e6, eN, eR, eS]
-    obtain r1 : (⟨B + BitVec.ofNat 64 2772, 4⟩ : Region).Disjoint ⟨B + BitVec.ofNat 64 2776, 20⟩ :=
+    obtain r1 : (⟨B + BitVec.ofNat 64 1576, 4⟩ : Region).Disjoint ⟨B + BitVec.ofNat 64 1580, 20⟩ :=
       Offset.disjoint B (.inl (by decide)) (by omega_using []) (by omega_using [])
-    obtain r2 : (⟨B, 2772⟩ : Region).Disjoint ⟨B + BitVec.ofNat 64 2776, 20⟩ :=
+    obtain r2 : (⟨B, 1576⟩ : Region).Disjoint ⟨B + BitVec.ofNat 64 1580, 20⟩ :=
       Offset.base_disjoint B (by decide) (by omega_using [])
     exact ⟨by omega_using [hE], by omega_using [], trivial, by rw [calleeWr, eB], h.wc, hwd, (sb (by decide) h.bw).symm, hcd,
       (sb (by decide) h.bc).symm, (sb (by decide) hbd).symm, sb (by decide) h.bw, sb (by decide) h.bc,
@@ -459,14 +439,14 @@ theorem ctr_call {s : State} {W R C D : BitVec 32} {n : Nat} (h : CCall s W R C 
   obtain ⟨a0, a1, a2, a3, a4⟩ := h.args
   obtain fE := callEntry_frame h.fit ctrRegs_esp
   rw [show 4 * ctrRegs.length + 4 = 24 from rfl] at fE
-  obtain fE' : Frame [below (s.gpr .esp) 2796] s.mem (pushed ctrRegs s).callEntry.mem :=
+  obtain fE' : Frame [below (s.gpr .esp) 1600] s.mem (pushed ctrRegs s).callEntry.mem :=
     fE.sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact ⟨_, List.mem_singleton_self _, VG.X86.below_sub (by decide) h.esp⟩
   have hR := h.rounds
   obtain ⟨hdata, hctr⟩ := calleeK_post post (by simp only [arg_withRegions, a1]; exact hR)
   simp only [arg_withRegions, State.withRegions_mem, a0, a1, a2, a3, a4, hn] at hdata hctr
-  obtain m₂ : Frame [below (s.gpr .esp) 2796] s₂.mem s'.mem :=
+  obtain m₂ : Frame [below (s.gpr .esp) 1600] s₂.mem s'.mem :=
     m₂.sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact ⟨_, List.mem_singleton_self _,
@@ -482,8 +462,8 @@ theorem ctr_call {s : State} {W R C D : BitVec 32} {n : Nat} (h : CCall s W R C 
   rcases hr with rfl | rfl | rfl | rfl
   · exact ⟨_, by simp, fun _ h => h⟩
   · exact ⟨⟨D.setWidth 64, 16 * n⟩, by simp, by rw [Nat.mul_comm]; exact fun _ h => h⟩
-  · exact ⟨below (s.gpr .esp) 2796, by simp, VG.X86.below_sub (by decide) h.esp⟩
-  · exact ⟨below (s.gpr .esp) 2796, by simp, VG.X86.below_sub (by omega_using [hst, hlen]) h.esp⟩
+  · exact ⟨below (s.gpr .esp) 1600, by simp, VG.X86.below_sub (by decide) h.esp⟩
+  · exact ⟨below (s.gpr .esp) 1600, by simp, VG.X86.below_sub (by omega_using [hst, hlen]) h.esp⟩
 
 /-- Calls of `vg_camellia_ctr` with the same arguments and stack pointer in
 both runs are constant time. -/
@@ -549,7 +529,7 @@ abbrev cBk : BitVec 32 := fV s₀ + BitVec.ofNat 32 16
 abbrev cBlk : Region := ⟨(fV s₀).setWidth 64 + BitVec.ofNat 64 16, 16⟩
 abbrev fArgs : Region := ⟨argAddr s₀ 0, 24⟩
 abbrev fRet : Region := ⟨(fE s₀).setWidth 64, 4⟩
-abbrev fStk : Region := below (fE s₀) 2796
+abbrev fStk : Region := below (fE s₀) 1600
 /-- The cipher, the counter block and the whole blocks on entry. -/
 abbrev fCiph : Spec.Cbc.Cipher := Spec.Camellia.cipher (Spec.Camellia.subkeysAt s₀.mem ((fW s₀).setWidth 64) (fR s₀))
 abbrev fIv0 : List Byte := bytesAt s₀.mem ((fIv s₀).setWidth 64) 16
@@ -591,13 +571,13 @@ structure CPre (s₀ : State) : Prop where
   iv_fit : (fIv s₀).toNat + 16 ≤ 2 ^ 32
   data_fit : (fD s₀).toNat + fL s₀ ≤ 2 ^ 32
   sv_fit : (fV s₀).toNat + 32 ≤ 2 ^ 32
-  espB : 2796 ≤ (fE s₀).toNat
+  espB : 1600 ≤ (fE s₀).toNat
   esp_fit : (fE s₀).toNat + 28 ≤ 2 ^ 32
   rounds : fR s₀ = 18 ∨ fR s₀ = 24
 
-theorem stk_eq {s₀ : State} (h : 2796 ≤ (fE s₀).toNat) :
-    fStk s₀ = ⟨(fE s₀).setWidth 64 - BitVec.ofNat 64 2796, 2796⟩ := by
-  show (⟨(fE s₀ - BitVec.ofNat 32 2796).setWidth 64, 2796⟩ : Region) = _
+theorem stk_eq {s₀ : State} (h : 1600 ≤ (fE s₀).toNat) :
+    fStk s₀ = ⟨(fE s₀).setWidth 64 - BitVec.ofNat 64 1600, 1600⟩ := by
+  show (⟨(fE s₀ - BitVec.ofNat 32 1600).setWidth 64, 1600⟩ : Region) = _
   rw [Taint.sub_setWidth h]
 
 theorem CPre.of {s₀ : State} (h : ctrFinalX86.pre s₀) : CPre s₀ := by
@@ -652,7 +632,7 @@ theorem CPre.args_stk : (fArgs s₀).Disjoint (fStk s₀) := by
 
 theorem CPre.ret_stk : (fRet s₀).Disjoint (fStk s₀) := by
   rw [stk_eq hp.espB]
-  have := Offset.disjoint_below_above ((fE s₀).setWidth 64) (m := 2796) (a := 0) (l := 4) (by decide)
+  have := Offset.disjoint_below_above ((fE s₀).setWidth 64) (m := 1600) (a := 0) (l := 4) (by decide)
   rw [BitVec.add_zero] at this
   exact this.symm
 
@@ -1408,7 +1388,7 @@ theorem ctrFinal_noSp (ci : CtrImpl) :
   simp only [ctrFinal, ctrCall, ctrFinalTail, Code.allInstrs, AesCfb.X86.all_of_noSp ci.nosp]
   decide
 
-theorem ctrFinal_stack (ci : CtrImpl) : stackUse (ctrFinal ci.name ci.code) ≤ 2796 := by
+theorem ctrFinal_stack (ci : CtrImpl) : stackUse (ctrFinal ci.name ci.code) ≤ 1600 := by
   have hc := ci.stack
   have hp : X86.frameBytes (Instr.push [Reg.esi, Reg.ebx, Reg.edx, Reg.ecx, Reg.eax]) = 20 := rfl
   simp only [ctrFinal, ctrCall, ctrFinalTail, stackUse, Nat.max_le]
@@ -1430,19 +1410,33 @@ it runs its code in a frame of 60 bytes (`withStackScratchWiped 60 5 8`): the
 word standing for the return address, a copy of the five arguments, `save`'s
 address, and `save`'s 32 bytes (the registers, then the block that held the
 last output block), which it zeroes before returning. The code's calls use
-2796 bytes below it, so 2856 in all. -/
+1600 bytes below it, so 1660 in all. -/
 
-theorem frameSat_pre : ∃ s, (Proof.Camellia.ctrFinalContractSk X86.abi 2856).pre s := by
+/-- A state satisfying the function's precondition: the schedule at `0x1000`,
+18 rounds, the chaining value at `0x2000`, and no data at `0x3000`, as stack arguments
+at `0x8004`, which are writable. -/
+def frameSat : State where
+  gpr r := match r with | .esp => 0x8000 | _ => 0
+  cf := none
+  zf := none
+  sf := none
+  of := none
+  mem a := if a = 0x8005 then 0x10 else if a = 0x8008 then 0x12 else if a = 0x800D then 0x20
+    else if a = 0x8011 then 0x30 else 0
+  rd := [⟨0x1000, 272⟩]
+  wr := [⟨0x2000, 16⟩, ⟨0x3000, 0⟩, ⟨0x8004, 20⟩]
+
+theorem frameSat_pre : ∃ s, (Proof.Camellia.ctrFinalContractSk X86.abi 1660).pre s := by
   implies_sat [Proof.Camellia.ctrFinalContractSk, Spec.Camellia.ctrFinalSig, Spec.Camellia.ctrFinalPre, X86.abi,
-    X86.argSlots, X86.argVal, X86.argBytes] [Fb.frameSat, X86.arg, X86.argAddr, Mem.readW, Mem.read] using Fb.frameSat
+    X86.argSlots, X86.argVal, X86.argBytes] [frameSat, X86.arg, X86.argAddr, Mem.readW, Mem.read] using frameSat
 
 theorem ctrFinal_framed (ci : CtrImpl) :
     Verified X86.target (Impl.StackScratch.X86.withStackScratchWiped 60 5 8 (ctrFinal ci.name ci.code))
-      (Spec.Camellia.ctrFinalContract X86.abi 2856) :=
+      (Spec.Camellia.ctrFinalContract X86.abi 1660) :=
   Proof.Camellia.ctrFinal_of_sk <|
   X86.Verified.stackScratchWiped (sig := Spec.Camellia.ctrFinalSig) (nm := "save") (e := .u64) (n := 4)
     (pre := Spec.Camellia.ctrFinalPre X86.abi.ptrBits) (post := Proof.Camellia.ctrFinalPostSk X86.abi.ptrBits)
-    (wa := true) (stack := 2796) (bytes := 60) (words := 8) (ctrFinal_verified ci) (by decide) (ctrFinal_noSp ci)
+    (wa := true) (stack := 1600) (bytes := 60) (words := 8) (ctrFinal_verified ci) (by decide) (ctrFinal_noSp ci)
     (ctrFinal_stack ci) (by decide) (ctrFinalPre_local _) (ctrFinalPost_local _)
     (Proof.Camellia.ctrFinalPostOut_local _) frameSat_pre
 

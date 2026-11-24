@@ -8,20 +8,13 @@ public import VerifiedGarbage.Impl.Scrub.X86.Sel
 /-!
 # The Camellia key schedule on x86 (32-bit), its rounds by `aesenclast`
 
-`expandKey(key, key_len, schedule, scratch)`, cdecl: `vg_camellia_expand_key`
-with its working space in the scratch buffer, which the artifact allocates
-on the stack. The values `KL`, `KR`, `KA` and `KB` (RFC 3713 §2.2) are in the
-slots of the bitsliced code's (`ExpandKey.lean`), and their loads
-(`loadKey`) and the subkeys' stores (`revValues`, `storeSubkeys`) are that
-code's. `KA` and `KB` take three pairs of rounds with the constants
-`Sigma1 … Sigma6` as subkeys, each the last pair of a group of the one-block
-code's (`AesNi.lean`) on the 128-bit value in `xmm0` (`pairX`): the value to
-the rounds' form (`headX`), the two rounds, and back to bytes (`layerIn`, and
-the byte shuffle that `headX` starts with). The keys they read, in that
-code's form, are constants of its table, copied (`keysIn`) to the scratch
-buffer's first 48 slots, where `kr` reads them, 32 bytes further on for each
-pair; the callee-saved registers are in the slots 92 to 95. The table's
-address is taken first, and waits in `edx`.
+The key schedule (`ExpandKey.lean`) whose `KA` and `KB` take the three pairs
+of rounds by AES-NI: each the last pair of a group of the one-block code's
+(`AesNi.lean`) on the 128-bit value in `xmm0` (`pairX`): the value to the
+rounds' form (`headX`), the two rounds, and back to bytes (`layerIn`, and the
+byte shuffle that `headX` starts with). The keys they read, in that code's
+form, are constants of its table, copied (`keysIn`) to the scratch buffer's
+first 48 slots, where `kr` reads them, 32 bytes further on for each pair.
 
 The code is `aes` and `ssse3` code: its dispatcher runs it only where the
 CPU has both.
@@ -32,15 +25,8 @@ CPU has both.
 namespace VG.Impl.Camellia.X86.AesNiKey
 
 open VG.X86
-open VG.Impl.Aes.X86 (sb argOp at_)
-open VG.Impl.Camellia (subkeys128 subkeys256)
+open VG.Impl.Aes.X86 (sb)
 open VG.Impl.Camellia.X86.AesNi (tbr kr m0 x ld stx tb tableName headX layerIn oBSW oSIG)
-
-/-- The callee-saved registers' slots, after the values'. -/
-def savedSlot : Nat := 92
-
-/-- The scratch buffer's slots. -/
-def slots : Nat := 96
 
 /-- The keys of pair `p`, from the table to where its code reads them. -/
 def keysOne (p : Nat) : List Instr :=
@@ -68,18 +54,11 @@ def kaKb : List Instr :=
   stx sb (4 * kaSlot) .xmm4 :: ldV .xmm0 krSlot :: x .pxor .xmm0 .xmm4 :: nextKeys :: (pairX ++
   [stx sb (4 * kbSlot) .xmm4])))
 
-/-- The whole function, after the table's address is in `edx`. -/
-def main : Prog isa :=
-  .seq (.block (saveRegsAt savedSlot 3))
-    (.seq loadKey
-      (.seq (.block (.mov tbr (.reg .edx) :: .mov kr (.reg sb) :: (keysIn ++ kaKb)))
-        (.seq (.block (revValues ++ [.mov .edx (.mem (argOp 2)), .mov .eax (.mem (argOp 1)),
-            .alu .cmp .eax (.imm 16)]))
-          (.seq (.ite .e (.block (storeSubkeys subkeys128)) (.block (storeSubkeys subkeys256)))
-            (.block (restoreRegsAt savedSlot))))))
+/-- The block of the key schedule's code for `KA` and `KB`. -/
+def mid : List Instr := .mov tbr (.reg .edx) :: .mov kr (.reg sb) :: (keysIn ++ kaKb)
 
-def expandKey : Prog isa :=
-  .seq (.frame (.symPush .eax tableName) (.block []) (.pop .ecx 1)) (.seq (.block [.mov .edx (.reg .eax)]) main)
+/-- `vg_camellia_expand_key`, with its scratch buffer as the fourth argument. -/
+def expandKey : Prog isa := X86.expandKey tableName mid
 
 namespace Fn
 
