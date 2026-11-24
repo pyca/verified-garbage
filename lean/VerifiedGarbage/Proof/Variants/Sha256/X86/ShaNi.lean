@@ -103,18 +103,6 @@ theorem compress_shared : Verified X86.target cmpC (Proof.Sha256.compressContrac
     Proof.Sha256.X86.Shared.compressWide_implies.sat_left).of_implies
       Proof.Sha256.X86.Shared.compressWide_implies
 
-theorem updateScratch_shared :
-    Verified X86.target sha256Update (Proof.Sha256.updateScratchContract X86.abi 20) :=
-  (Proof.Sha256.X86.Shared.updateWide_of (Proof.Sha256.X86.Stream.update_of callee update_ct)
-    Proof.Sha256.X86.Shared.updateWide_implies.sat_left).of_implies
-      Proof.Sha256.X86.Shared.updateWide_implies
-
-theorem finalizeScratch_shared :
-    Verified X86.target sha256Finalize (Proof.Sha256.finalizeScratchContract X86.abi 20) :=
-  (Proof.Sha256.X86.Shared.finalizeWide_of (Proof.Sha256.X86.Stream.finalize_of callee finalize_ct)
-    Proof.Sha256.X86.Shared.finalizeWide_implies.sat_left).of_implies
-      Proof.Sha256.X86.Shared.finalizeWide_implies
-
 /-- The streaming functions made with the SHA-NI compression function. Its checks of the code are one kernel
 evaluation (`taint_decide_all`). -/
 def stream : Sha256Stream := by
@@ -179,21 +167,21 @@ def variant : Proof.Sha256.X86.Variants.Backend := by
     cmpStack := Proof.Sha256.X86.ShaNi.compress_stack,
     stream := stream,
     features := ["sha", "ssse3"],
-    update := show Proof.Sha256.X86.Variants.StreamFn Spec.Sha256.updateApi (Impl.StackScratch.X86.withStackScratch 636 5 sha256Update) (20 + 636) from
-      { verified := Proof.Sha256.X86.Shared.update_frame updateScratch_shared ?_
+    update := show Proof.Sha256.X86.Variants.StreamFn Spec.Sha256.updateApi (Impl.StackScratch.X86.withStackScratch 188 5 sha256Update) (20 + 188) from
+      { verified := Proof.Sha256.X86.Shared.update_frame stream.updOK ?_
           ?_
         spSafe := Code.all_of_allInstrs ?_
         post := Proof.Sha256.X86.Variants.updateOut _
         scrub := Proof.Sha256.X86.Variants.update_scrub stream.upd ?_ stream.updSU },
-    finalize := show Proof.Sha256.X86.Variants.StreamFn Spec.Sha256.finalizeApi (Impl.StackScratch.X86.withStackScratch 632 4 sha256Finalize) (20 + 632) from
-      { verified := Proof.Sha256.X86.Shared.finalize_frame finalizeScratch_shared ?_
+    finalize := show Proof.Sha256.X86.Variants.StreamFn Spec.Sha256.finalizeApi (Impl.StackScratch.X86.withStackScratch 184 4 sha256Finalize) (20 + 184) from
+      { verified := Proof.Sha256.X86.Shared.finalize_frame stream.finOK ?_
           ?_
         spSafe := Code.all_of_allInstrs ?_
         post := Proof.Sha256.X86.Variants.finalizeOut _
         scrub := Proof.Sha256.X86.Variants.finalize_scrub stream.fin ?_ stream.finSU },
-    finalize224 := show Proof.Sha256.X86.Variants.StreamFn Spec.Sha256.finalize224Api (Impl.StackScratch.X86.withStackScratch 632 4 sha224Finalize) (20 + 632) from
+    finalize224 := show Proof.Sha256.X86.Variants.StreamFn Spec.Sha256.finalize224Api (Impl.StackScratch.X86.withStackScratch 184 4 sha224Finalize) (20 + 184) from
       { verified := Proof.Sha256.X86.Shared.finalize224_frame
-          (Proof.Sha256.X86.Shared.finalize224Scratch (Proof.Sha256.X86.Stream.finalize224_of callee finalize224_ct))
+          (Proof.Sha256.X86.Stream.finalize224_of callee finalize224_ct)
           ?_ ?_
         spSafe := Code.all_of_allInstrs ?_
         post := Proof.Sha256.X86.Variants.finalize224Out _
