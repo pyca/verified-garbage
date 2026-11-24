@@ -45,13 +45,28 @@ open Gcm.AArch64.Pmull in
 def hash16 : List Instr :=
   (prologueT ++ powersS ++ Gcm.AArch64.Pmull.body 8 ++ Gcm.AArch64.Pmull.body 8) ++ [.vop (.rev .rev64b .v16 .v0)]
 
+open Gcm.AArch64.Pmull in
+def hash16With : List Instr :=
+  (prologueW ++ Gcm.AArch64.Pmull.body 8 ++ Gcm.AArch64.Pmull.body 8) ++ [.vop (.rev .rev64b .v16 .v0)]
+
+abbrev hashCore (cached : Bool) := if cached then hash16With else hash16
+
 def tagOut := writeTag keyO (work+16)
 
-def finish : List Instr := lengths ++ (hashArgs ++ hash16) ++ tagOut ++ restore
+def finishUsing (cached : Bool) : List Instr := lengths ++ (hashArgs ++ hashCore cached) ++ tagOut ++ restore
 
-def body (c : Callees) : Prog isa :=
+abbrev finish := finishUsing false
+
+def bodyWith (c : Callees) (endCode : Prog isa) : Prog isa :=
   .seq (.block setup) <| .seq (.block zero) <| .seq aad <| .seq (keys c) <|
-  .seq (.block cursors) <| .seq shortLoop <| .block finish
+  .seq (.block cursors) <| .seq shortLoop endCode
+
+abbrev body (c : Callees) := bodyWith c (.block finish)
+
+/-- The outer contiguous adapter occupies 48 bytes. Its caller supplied the
+powers pointer as the third stack argument. -/
+def bodyCached (c : Callees) : Prog isa :=
+  bodyWith c (.seq (.block [.ldrSp .x5 (work+48+16)]) (.block (finishUsing true)))
 
 def leaf (c : Callees) : Prog isa :=
   Impl.Scrub.AArch64.scrubAll work 0 Fn.own (.frame (.alloc work) (body c) (.free work))

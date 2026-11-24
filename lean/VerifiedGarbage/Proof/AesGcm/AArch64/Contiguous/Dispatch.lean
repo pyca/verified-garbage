@@ -209,6 +209,20 @@ private theorem limit_eval {n : Nat} {s t : State} (load : s.gpr .x10=stackArg s
   · have z : t.gpr .x11=0 := by by_contra hn; exact ok (cond.mp hn)
     simp [ok,z]
 
+private def boundedBranch (p : State → Prop) (accept : ∀ {s}, intermediate s → p s) :
+    Branch intermediate bounded p (limitCode 225) (.nonzero .x .x11) where
+  take s := decide ((stackArg s 0).toNat<225)
+  run s h := (limit_ok (.inr rfl) s).mono fun t ⟨v,x10,test⟩ => by
+    refine ⟨v,limit_eval h.2.2.2 test,?_,fun _ => accept ⟨v.standard_iff.mpr h.2.2.1,x10.trans (h.2.2.2.trans (v.stackArg 0).symm)⟩⟩
+    intro yes
+    have sm := of_decide_eq_true yes
+    exact ⟨v.standard_iff.mpr h.2.2.1,by rw [v.stackArg]; omega⟩
+  same := by intro a b _ _ p; rw [p.1.2.2.2.2.2.2.2.2.2 0 (by decide)]
+  trace := by
+    intro a b _ _ pub
+    exact rel_taint [] pub.1.2.2.2.2.2.2.2.2.1 (by agree_tac []) ⟨_,by taint_decide⟩
+  residue := Residue.noResidue_of_blind (by decide +kernel) _ 0
+
 private abbrev firstCode : List Instr := .ldrSp .x10 0 :: limitCode 97
 private abbrev loaded (s : State) := s.write .x .x10 (stackArg s 0)
 
@@ -273,9 +287,13 @@ private def shortBranch (p : State → Prop) (accept : ∀ {s}, intermediate s �
 theorem selected {v : GcmImpl} (facts : BackendFacts v) : Checked any (select v.calls) := by
   by_cases portable : (!v.calls.pmull) = true
   · simp only [select,portable,ite_true]; exact generalLeaf facts
-  · simp only [select,portable]
-    exact (nonceBranch standard id).checked ((shortBranch any (fun _ => trivial)).checked (shortLeaf facts.hash)
-      (generalLeaf facts)) (generalLeaf facts)
+  · by_cases zero : v.calls.ctr.scratch=0
+    · simp only [select,portable,zero,ite_true]
+      exact (nonceBranch standard id).checked ((shortBranch intermediate id).checked (shortLeaf facts.hash)
+        ((boundedBranch any (fun _ => trivial)).checked (boundedLeaf facts zero) (generalLeaf facts))) (generalLeaf facts)
+    · simp only [select,portable,zero,ite_false]
+      exact (nonceBranch standard id).checked ((shortBranch any (fun _ => trivial)).checked
+        (shortLeaf facts.hash) (generalLeaf facts)) (generalLeaf facts)
 
 end VG.Proof.AesGcm.AArch64.Contiguous.Guard
 

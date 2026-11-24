@@ -52,10 +52,7 @@ vg_rsa_pkcs1_decrypt_precomputed_sha256_sha2:
 	str x10, [x9, #96]
 	ldr x11, [sp, #96]
 	add x11, x11, #1024
-	ldr x12, [sp, #168]
-	add x12, x12, #7
-	lsr x12, x12, #3
-	add x12, x12, x12
+	movz x12, #256, lsl #0
 	movz x13, #0, lsl #0
 20:
 	str x13, [x11, #0]
@@ -77,13 +74,10 @@ vg_rsa_pkcs1_decrypt_precomputed_sha256_sha2:
 	add x17, x17, #1024
 	ldr x9, [sp, #168]
 	ldr x10, [sp, #216]
-	ldr x8, [sp, #168]
-	ldr x7, [sp, #168]
 	ldr x10, [x10, #0]
 	sub x9, x9, x10
 	movz x14, #1, lsl #0
-	add x7, x7, #7
-	lsr x7, x7, #3
+	movz x8, #11, lsl #0
 22:
 	orr x11, x17, x17
 	add x12, x17, x14
@@ -91,7 +85,7 @@ vg_rsa_pkcs1_decrypt_precomputed_sha256_sha2:
 	and x15, x9, x15
 	movz x16, #0, lsl #0
 	sub x15, x16, x15
-	orr x13, x7, x7
+	movz x13, #128, lsl #0
 23:
 	ldr x10, [x11, #0]
 	ldr x16, [x12, #0]
@@ -105,7 +99,7 @@ vg_rsa_pkcs1_decrypt_precomputed_sha256_sha2:
 	cbnz x13, 23b
 	lsr x9, x9, #1
 	add x14, x14, x14
-	lsr x8, x8, #1
+	sub x8, x8, #1
 	cbnz x8, 22b
 	ldr x11, [sp, #96]
 	add x11, x11, #1024
@@ -228,10 +222,7 @@ vg_rsa_pkcs1_decrypt_precomputed:
 	str x10, [x9, #96]
 	ldr x11, [sp, #96]
 	add x11, x11, #1024
-	ldr x12, [sp, #168]
-	add x12, x12, #7
-	lsr x12, x12, #3
-	add x12, x12, x12
+	movz x12, #256, lsl #0
 	movz x13, #0, lsl #0
 20:
 	str x13, [x11, #0]
@@ -253,13 +244,10 @@ vg_rsa_pkcs1_decrypt_precomputed:
 	add x17, x17, #1024
 	ldr x9, [sp, #168]
 	ldr x10, [sp, #216]
-	ldr x8, [sp, #168]
-	ldr x7, [sp, #168]
 	ldr x10, [x10, #0]
 	sub x9, x9, x10
 	movz x14, #1, lsl #0
-	add x7, x7, #7
-	lsr x7, x7, #3
+	movz x8, #11, lsl #0
 22:
 	orr x11, x17, x17
 	add x12, x17, x14
@@ -267,7 +255,7 @@ vg_rsa_pkcs1_decrypt_precomputed:
 	and x15, x9, x15
 	movz x16, #0, lsl #0
 	sub x15, x16, x15
-	orr x13, x7, x7
+	movz x13, #128, lsl #0
 23:
 	ldr x10, [x11, #0]
 	ldr x16, [x12, #0]
@@ -281,7 +269,7 @@ vg_rsa_pkcs1_decrypt_precomputed:
 	cbnz x13, 23b
 	lsr x9, x9, #1
 	add x14, x14, x14
-	lsr x8, x8, #1
+	sub x8, x8, #1
 	cbnz x8, 22b
 	ldr x11, [sp, #96]
 	add x11, x11, #1024

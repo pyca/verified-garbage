@@ -55,8 +55,8 @@ open VG.Impl.AesGcm.AArch64.DirectGather
 be disjoint, or a single descriptor may name the destination itself. -/
 abbrev boundedStack (s : State) : Region := ⟨s.sp - 752,752⟩
 
-structure BoundedLay (s : State) : Prop where
-  rd : s.rd = [kR .plain s,nR s,aR s,dsR s] ++ lsR s ++ [argR s]
+structure BoundedLay (s : State) (extraReads : List Region := []) : Prop where
+  rd : s.rd = [kR .plain s,nR s,aR s,dsR s] ++ lsR s ++ (argR s :: extraReads)
   wr : s.wr = [dR s,tgR s]
   kd : (kR .plain s).Disjoint (dR s)
   dsDst : (dsR s).Disjoint (dR s)
@@ -115,7 +115,7 @@ theorem LocalMem.agree {size : Fin 753} {s t : State} (h : LocalMem size s t) {r
     simp only [List.mem_singleton] at hq
     exact hd x (scratch_sub size s _ (hq ▸ hy)) hx
 
-theorem LocalMem.descriptors {size : Fin 753} {s t : State} (h : LocalMem size s t) (l : BoundedLay s) :
+theorem LocalMem.descriptors {size : Fin 753} {s t : State} (h : LocalMem size s t) {extra : List Region} (l : BoundedLay s extra) :
     ∀ r ∈ Sig.descRegion 64 (Src s) (Cnt s) :: lsR s, ∀ a, r.Contains a 1 → s.mem a = t.mem a := by
   intro r hr a ha
   rcases List.mem_cons.mp hr with rfl|hr
@@ -127,7 +127,7 @@ theorem LocalMem.read {size : Fin 753} {s t : State} (h : LocalMem size s t) :
   rw [h.rd,h.wr]
   exact Covers.append (Covers.refl _) (Covers.of_mem fun _ hr => List.mem_cons_of_mem _ hr)
 
-theorem LocalMem.arg {size : Fin 753} {s t : State} (h : LocalMem size s t) (l : BoundedLay s) (i : Nat) (hi : i < 3) :
+theorem LocalMem.arg {size : Fin 753} {s t : State} (h : LocalMem size s t) {extra : List Region} (l : BoundedLay s extra) (i : Nat) (hi : i < 3) :
     t.mem.readW (base size s + BitVec.ofNat 64 (size.val+8*i)) 64 = stackArg s i := by
   rw [scratchArg]
   change t.mem.read _ 8 = s.mem.read _ 8
@@ -140,7 +140,7 @@ theorem LocalMem.arg {size : Fin 753} {s t : State} (h : LocalMem size s t) (l :
     exact l.barg.symm
   · decide
 
-theorem LocalMem.argRead {size : Fin 753} {s t : State} (h : LocalMem size s t) (l : BoundedLay s) (i : Nat) (hi : i < 3) :
+theorem LocalMem.argRead {size : Fin 753} {s t : State} (h : LocalMem size s t) {extra : List Region} (l : BoundedLay s extra) (i : Nat) (hi : i < 3) :
     InRegions (t.rd ++ t.wr) (base size s + BitVec.ofNat 64 (size.val+8*i)) 8 := by
   rw [scratchArg,h.rd]
   exact ⟨argR s, List.mem_append_left _ (by rw [l.rd]; simp),stackArg_contains s i hi⟩
@@ -160,7 +160,7 @@ abbrev scratchArg := Compact.scratchArg size
 abbrev blocks (s : State) := (L s+15)/16
 abbrev textOff (s : State) := authO+112-16*blocks s
 
-theorem descriptors_lt {s : State} (l : BoundedLay s) : 16 * Cnt s < 2^64 := by
+theorem descriptors_lt {s : State} {extra : List Region} (l : BoundedLay s extra) : 16 * Cnt s < 2^64 := by
   have bound := l.ods
   apply Nat.lt_of_not_ge
   intro h
@@ -181,7 +181,7 @@ structure Cursors (s t : State) : Prop where
 /-- The same loop writes the caller's ciphertext and the padded GHASH slot for
 either bounded layout. Its proof only needs the ordered keystream and output offsets. -/
 theorem Compact.loopPre {size : Fin 753} {s t : State} {ko ao : Nat}
-    (l : BoundedLay s) (h : Compact.LocalMem size s t)
+    {extra : List Region} (l : BoundedLay s extra) (h : Compact.LocalMem size s t)
     (dst : t.gpr .x2 = Dst s) (tagged : t.gpr .x3 = Compact.base size s + BitVec.ofNat 64 ao)
     (keystream : t.gpr .x1 = Compact.base size s + BitVec.ofNat 64 ko)
     (ds : t.gpr .x6 = Src s) (num : t.gpr .x7 = s.gpr .x7)
@@ -264,7 +264,7 @@ theorem Compact.loopPre {size : Fin 753} {s t : State} {ko ao : Nat}
         using samePtr.symm.trans addr
   · rw [ed,ea]; exact (sd.sub_left authSub).symm
 
-theorem loopPre {s t : State} (l : BoundedLay s) (h : LocalMem s t) (p : Cursors s t)
+theorem loopPre {s t : State} {extra : List Region} (l : BoundedLay s extra) (h : LocalMem s t) (p : Cursors s t)
     (hn : L s ≤ 96) : Fragment.LoopPre t := by
   apply Compact.loopPre (ko := 16) (ao := textOff s) l h p.d p.auth p.key p.ds p.n
   · change 16 + L s ≤ 336-16*((L s+15)/16); omega
@@ -313,7 +313,7 @@ abbrev rawLeaf : Prog isa := .frame (.alloc shortWork) shortBody (.free shortWor
 
 abbrev leafFrame (bytes : Nat) (s : State) : Region := ⟨s.sp - BitVec.ofNat 64 bytes,bytes⟩
 
-private theorem leafPost_frame {bytes : Nat} (hb : bytes ≤ 752) {s t : State} (l : BoundedLay s)
+theorem leafPost_frame {bytes : Nat} (hb : bytes ≤ 752) {s t : State} {extra : List Region} (l : BoundedLay s extra)
     (hq : gatherPost s t) {m : Mem} (fr : Frame [leafFrame bytes s] t.mem m) {v : State} (hm : v.mem = m) :
     gatherPost s v := by
   have sub : (leafFrame bytes s).Sub (boundedStack s) := Offset.sub_below _ (b := 752) hb (by omega)
@@ -1213,7 +1213,7 @@ namespace VG.Proof.AesGcm.AArch64.DirectGather
 open VG VG.AArch64 VG.Impl.AesGcm.AArch64.DirectGather VG.Proof.AesGcm.AArch64.Gather
 open VG.Proof.AesGcm.AArch64 (Eq2 TT rel_seq rel_taint ct_of)
 
-theorem descriptorBytes_agree {a b u v : State} (la : BoundedLay a)
+theorem descriptorBytes_agree {a b u v : State} {extra : List Region} (la : BoundedLay a extra)
     (pub : gatherPub a b) (ds : u.gpr .x6 = Src a) (n : u.gpr .x7 = a.gpr .x7)
     (left : ∀ {x}, (dsR a).Contains x 1 → u.mem x = a.mem x)
     (right : ∀ {x}, (dsR b).Contains x 1 → v.mem x = b.mem x) :

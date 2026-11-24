@@ -75,17 +75,29 @@ abbrev Hash16Ok := ∀ (s : State), nb s = 16 →
       t.v .v16 = VRevOp.eval .rev64b (ext8 y y) ∧ t.mem = s.mem ∧
       t.sp = s.sp ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.gpr .x19 = s.gpr .x19
 
-theorem mediumHash_ok (hash : Hash16Ok) (s : State) (W K : Addr) (h19 : s.gpr .x19 = W)
+abbrev Hash16WithOk := ∀ (s : State), nb s = 16 →
+    Covers ([hR s,Proof.Gcm.AArch64.dR s,⟨s.gpr .x5,128⟩]++[yR s]) (s.rd++s.wr) → Covers [yR s] s.wr → (yR s).Disjoint (Proof.Gcm.AArch64.dR s) →
+    Spec.Gcm.Powers8Repr s.mem (s.gpr .x5) (VG.Proof.Gcm.AArch64.H₀ s) →
+    WP isa (.block Medium.hash16With) s fun t =>
+      let y := ghashFrom (VG.Proof.Gcm.AArch64.H₀ s) (VG.Proof.Gcm.AArch64.Y₀ s)
+        (blocksAt s.mem (VG.Proof.Gcm.AArch64.dp s) 16)
+      t.v .v16 = VRevOp.eval .rev64b (ext8 y y) ∧ t.mem = s.mem ∧
+      t.sp = s.sp ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.gpr .x19 = s.gpr .x19
+
+abbrev MediumCoreOk (cached : Bool) : Prop := if cached then Hash16WithOk else Hash16Ok
+
+theorem mediumHashWith_ok {cached : Bool} (hash : MediumCoreOk cached) (s : State) (W K : Addr) (h19 : s.gpr .x19 = W)
     (h21 : s.gpr .x21 = K) (hw : Covers [⟨W,752⟩] s.wr)
-    (hk : Covers [⟨K+240#64,16⟩] (s.rd ++ s.wr)) (hy : blockAt s.mem (W+736#64) = 0) :
-    WP isa (.block (Medium.hashArgs ++ Medium.hash16)) s fun t =>
+    (hk : Covers [⟨K+240#64,16⟩] (s.rd ++ s.wr)) (hy : blockAt s.mem (W+736#64) = 0)
+    (powers : cached = true → ShortPowers s W K Medium.work) :
+    WP isa (.block (Medium.hashArgs ++ Medium.hashCore cached)) s fun t =>
       let y := ghashFrom (blockAt s.mem (K+240#64)) 0 (blocksAt s.mem (W+480#64) 16)
       t.v .v16 = VRevOp.eval .rev64b (ext8 y y) ∧ t.mem = s.mem ∧ t.gpr .x19 = W ∧
       t.sp = s.sp ∧ t.rd = s.rd ∧ t.wr = s.wr := by
   rw [WP.block_append_iff]
-  obtain ⟨u,run,k,d,y,n,mem,reg,sp,rd,wr⟩ : ∃ u, runBlock isa Medium.hashArgs s = some u ∧
+  obtain ⟨u,run,k,d,y,n,mem,reg,x5,sp,rd,wr⟩ : ∃ u, runBlock isa Medium.hashArgs s = some u ∧
       u.gpr .x0 = K+240#64 ∧ u.gpr .x2 = W+480#64 ∧ u.gpr .x1 = W+736#64 ∧
-      u.gpr .x3 = 16#64 ∧ u.mem = s.mem ∧ u.gpr .x19 = W ∧ u.sp = s.sp ∧ u.rd = s.rd ∧ u.wr = s.wr := by
+      u.gpr .x3 = 16#64 ∧ u.mem = s.mem ∧ u.gpr .x19 = W ∧ u.gpr .x5 = s.gpr .x5 ∧ u.sp = s.sp ∧ u.rd = s.rd ∧ u.wr = s.wr := by
     refine ⟨_,by arun [Medium.hashArgs,Medium.authO,ptr,imm],?_⟩
     simp [gpr_write,h19,h21,mem_write,sp_write,rd_write,wr_write]
   refine WP.of_runBlock ⟨u,run,?_⟩
@@ -98,7 +110,20 @@ theorem mediumHash_ok (hash : Hash16Ok) (s : State) (W K : Addr) (h19 : s.gpr .x
   have dc : Covers [Proof.Gcm.AArch64.dR u] u.wr := by rw [dr,wr]; exact covers_off hw (by decide) (by decide)
   have hc : Covers [hR u] (u.rd++u.wr) := by rwa [hr,rd,wr]
   have sep : (yR u).Disjoint (Proof.Gcm.AArch64.dR u) := by rw [yr,dr]; exact Offset.disjoint W (.inr (by decide)) (by decide) (by decide)
-  refine (hash u hn (Covers.append_left (Covers.cons hc (Covers.right dc)) (Covers.right yc)) yc sep).mono ?_
+  have folded : WP isa (.block (Medium.hashCore cached)) u fun t =>
+      let val := ghashFrom (VG.Proof.Gcm.AArch64.H₀ u) (VG.Proof.Gcm.AArch64.Y₀ u)
+        (blocksAt u.mem (VG.Proof.Gcm.AArch64.dp u) 16)
+      t.v .v16 = VRevOp.eval .rev64b (ext8 val val) ∧ t.mem = u.mem ∧
+      t.sp = u.sp ∧ t.rd = u.rd ∧ t.wr = u.wr ∧ t.gpr .x19 = u.gpr .x19 := by
+    cases cached with
+    | false => exact hash u hn (Covers.append_left (Covers.cons hc (Covers.right dc)) (Covers.right yc)) yc sep
+    | true =>
+      have pc : Covers [⟨u.gpr .x5,128⟩] (u.rd++u.wr) := by rw [x5,rd,wr]; exact (powers rfl).read
+      have repr : Spec.Gcm.Powers8Repr u.mem (u.gpr .x5) (VG.Proof.Gcm.AArch64.H₀ u) := by
+        change Spec.Gcm.Powers8Repr u.mem (u.gpr .x5) (blockAt u.mem (u.gpr .x0))
+        rw [mem,x5,k]; exact (powers rfl).repr
+      exact hash u hn (Covers.append_left (Covers.cons hc (Covers.cons (Covers.right dc) pc)) (Covers.right yc)) yc sep repr
+  refine folded.mono ?_
   rintro t ⟨val,m,rsp,rr,rw',g⟩
   change t.v .v16 = VRevOp.eval .rev64b (ext8 _ _) at val
   simp only [Proof.Gcm.AArch64.H₀,Proof.Gcm.AArch64.hA,Proof.Gcm.AArch64.Y₀,
@@ -132,11 +157,12 @@ structure MediumFinishPre (o s : State) (W : Addr) (lead : Nat) : Prop where
 
 /-- The end of the medium body meets the public gather postcondition and
 restores the registers saved at entry, keeping the medium frame allocated. -/
-theorem mediumFinish_ok (hash : Hash16Ok) (o s : State) (W : Addr) (lead : Nat) (p : MediumFinishPre o s W lead) :
-    WP isa (.block Medium.finish) s fun t =>
+theorem mediumFinishWith_ok {cached : Bool} (hash : MediumCoreOk cached) (o s : State) (W : Addr) (lead : Nat) (p : MediumFinishPre o s W lead)
+    (powers : cached = true → ShortPowers s W (K o) Medium.work) :
+    WP isa (.block (Medium.finishUsing cached)) s fun t =>
       gatherPost o t ∧ (∀ r ∈ preserved, t.gpr r = o.gpr r) ∧ t.sp = W ∧
       t.rd = s.rd ∧ t.wr = s.wr ∧ Frame [⟨W,752⟩, tgR o] s.mem t.mem := by
-  unfold Medium.finish
+  unfold Medium.finishUsing
   rw [WP.block_append_iff, WP.block_append_iff, WP.block_append_iff]
   refine (mediumLengths_ok s p.x19 p.work p.x24 p.x26 (o.gpr .x5).isLt (stackArg o 1).isLt).mono ?_
   intro l pl
@@ -148,8 +174,8 @@ theorem mediumFinish_ok (hash : Hash16Ok) (o s : State) (W : Addr) (lead : Nat) 
   have zero : blockAt l.mem (W+736#64) = 0 := (blockAt_frame lf (by
     simpa only [List.mem_singleton,forall_eq] using Offset.disjoint W (d := 736) (n := 16) (e := 720) (k := 16)
       (.inr (by decide)) (by decide) (by decide))).trans p.zero
-  refine (mediumHash_ok hash l W (K o) ((regs _ (by decide)).trans p.x19) ((regs _ (by decide)).trans p.x21)
-    lw lh zero).mono ?_
+  refine (mediumHashWith_ok hash l W (K o) ((regs _ (by decide)).trans p.x19) ((regs _ (by decide)).trans p.x21)
+    lw lh zero (fun h => (powers h).frame lf subL (p.keyWork.sub_right subL) (regs _ (by decide)) lrd lwr)).mono ?_
   intro h ⟨hash, hm, hx, hsp, hrd, hwr⟩
   have subWork : Frame [⟨W,752⟩] s.mem h.mem := by
     rw [hm]; exact singletonFrame lf (List.mem_singleton_self _) subL
@@ -217,11 +243,11 @@ private theorem mediumTagPtr_ok (s : State) (W : Addr) (w : s.gpr .x19 = W)
   simp only [gpr_write,ite_true,reduceCtorEq,ite_false,gpr_setV,sp_setV,sp_write,mem_setV,
     BitVec.setWidth_eq,w,and_self]
 
-private abbrev mediumEndPrefix := Medium.lengths ++ (Medium.hashArgs ++ Medium.hash16) ++ mediumTagPrefix
+private abbrev mediumEndPrefix (cached : Bool) := Medium.lengths ++ (Medium.hashArgs ++ Medium.hashCore cached) ++ mediumTagPrefix
 private abbrev mediumEndTail := [Instr.strq .v16 .x10 0] ++ Impl.AesGcm.AArch64.restore
 
-private theorem mediumPrefix_ok (hash : Hash16Ok) {o s : State} {W : Addr} {i : Nat} (p : MediumFinishPre o s W i) :
-    WP isa (.block mediumEndPrefix) s fun t => t.gpr .x10 = Tg o ∧ t.gpr .x19 = W ∧ t.sp = W := by
+private theorem mediumPrefix_ok {cached : Bool} (hash : MediumCoreOk cached) {o s : State} {W : Addr} {i : Nat} (p : MediumFinishPre o s W i) (powers : cached = true → ShortPowers s W (K o) Medium.work) :
+    WP isa (.block (mediumEndPrefix cached)) s fun t => t.gpr .x10 = Tg o ∧ t.gpr .x19 = W ∧ t.sp = W := by
   rw [WP.block_append_iff,WP.block_append_iff]
   refine (mediumLengths_ok s p.x19 p.work p.x24 p.x26 (o.gpr .x5).isLt (stackArg o 1).isLt).mono ?_
   intro l pl
@@ -231,8 +257,9 @@ private theorem mediumPrefix_ok (hash : Hash16Ok) {o s : State} {W : Addr} {i : 
   have zero : blockAt l.mem (W+736#64) = 0 := (blockAt_frame lf (by
     simpa only [List.mem_singleton,forall_eq] using Offset.disjoint W (d := 736) (n := 16) (e := 720) (k := 16)
       (.inr (by decide)) (by decide) (by decide))).trans p.zero
-  refine (mediumHash_ok hash l W (K o) ((regs _ (by decide)).trans p.x19) ((regs _ (by decide)).trans p.x21)
-    lw lh zero).mono ?_
+  have subL : Region.Sub ⟨W+720#64,16⟩ ⟨W,752⟩ := Offset.sub_base _ (by decide)
+  refine (mediumHashWith_ok hash l W (K o) ((regs _ (by decide)).trans p.x19) ((regs _ (by decide)).trans p.x21)
+    lw lh zero (fun h => (powers h).frame lf subL (p.keyWork.sub_right subL) (regs _ (by decide)) lrd lwr)).mono ?_
   intro h ⟨_,hm,hx,hsp,hrd,hwr⟩
   have sp := hsp.trans (lsp.trans p.sp)
   refine (mediumTagPtr_ok h W hx (by rw [hrd,hwr,lrd,lwr]; exact in_left (rd := s.rd) (in_off (d := 224) (n := 16) p.work (by decide) (by decide)))
@@ -243,18 +270,39 @@ private theorem mediumPrefix_ok (hash : Hash16Ok) {o s : State} {W : Addr} {i : 
     simpa only [List.mem_singleton,forall_eq] using (Offset.disjoint W (d := 768) (n := 8) (e := 720) (k := 16)
       (.inr (by decide)) (by decide) (by decide))) (by decide),p.tagAddr]
 
-theorem mediumFinish_rel (hash : Hash16Ok) {a b s t : State} {W : Addr} {i j : Nat}
-    (p : MediumFinishPre a s W i) (q : MediumFinishPre b t W j) (k : K a = K b) (tag : Tg a = Tg b) :
-    RelCT isa (Eq2 s t) (.block Medium.finish) TT := by
-  unfold Medium.finish
-  have eq : Medium.lengths ++ (Medium.hashArgs ++ Medium.hash16) ++ Medium.tagOut ++ Impl.AesGcm.AArch64.restore =
-      mediumEndPrefix ++ mediumEndTail := by simp only [Medium.tagOut,writeTag,mediumEndPrefix,mediumEndTail,mediumTagPrefix,List.append_assoc,List.cons_append,
+theorem mediumFinish_ok (hash : Hash16Ok) (o s : State) (W : Addr) (lead : Nat) (p : MediumFinishPre o s W lead) :
+    WP isa (.block Medium.finish) s fun t =>
+      gatherPost o t ∧ (∀ r ∈ preserved, t.gpr r = o.gpr r) ∧ t.sp = W ∧
+      t.rd = s.rd ∧ t.wr = s.wr ∧ Frame [⟨W,752⟩, tgR o] s.mem t.mem :=
+  mediumFinishWith_ok (cached := false) hash o s W lead p (by intro e; cases e)
+
+theorem mediumFinishWith_rel {cached : Bool} (hash : MediumCoreOk cached) {a b s t : State} {W : Addr} {i j : Nat}
+    (p : MediumFinishPre a s W i) (q : MediumFinishPre b t W j) (k : K a = K b) (tag : Tg a = Tg b)
+    (pc : cached = true → ShortPowers s W (K a) Medium.work) (qc : cached = true → ShortPowers t W (K b) Medium.work)
+    (powerEq : cached = true → s.gpr .x5 = t.gpr .x5) :
+    RelCT isa (Eq2 s t) (.block (Medium.finishUsing cached)) TT := by
+  unfold Medium.finishUsing
+  have eq : Medium.lengths ++ (Medium.hashArgs ++ Medium.hashCore cached) ++ Medium.tagOut ++ Impl.AesGcm.AArch64.restore =
+      mediumEndPrefix cached ++ mediumEndTail := by simp only [Medium.tagOut,writeTag,mediumEndPrefix,mediumEndTail,mediumTagPrefix,List.append_assoc,List.cons_append,
         List.nil_append,Medium.keyO,Medium.work]
   rw [eq]
   apply RelCT.block_split
-  refine rel_seq (rel_taint [.x19,.x21] (p.sp.trans q.sp.symm)
-    (by agree_tac [p.x19,q.x19,p.x21,q.x21,k]) ⟨_,by taint_decide⟩) (mediumPrefix_ok hash p) (mediumPrefix_ok hash q) ?_
+  have pre : RelCT isa (Eq2 s t) (.block (mediumEndPrefix cached)) TT := by
+    cases cached with
+    | false =>
+      exact rel_taint [.x19,.x21] (p.sp.trans q.sp.symm)
+        (by agree_tac [p.x19,q.x19,p.x21,q.x21,k]) ⟨_,by taint_decide⟩
+    | true =>
+      have eq5 := powerEq rfl
+      exact rel_taint [.x5,.x19,.x21] (p.sp.trans q.sp.symm)
+        (by agree_tac [p.x19,q.x19,p.x21,q.x21,k,eq5]) ⟨_,by taint_decide⟩
+  refine rel_seq pre (mediumPrefix_ok hash p pc) (mediumPrefix_ok hash q qc) ?_
   intro u v ⟨u10,u19,us⟩ ⟨v10,v19,vs⟩
   exact rel_taint [.x10,.x19] (us.trans vs.symm) (by agree_tac [u10,v10,u19,v19,tag]) ⟨_,by taint_decide⟩
+
+theorem mediumFinish_rel (hash : Hash16Ok) {a b s t : State} {W : Addr} {i j : Nat}
+    (p : MediumFinishPre a s W i) (q : MediumFinishPre b t W j) (k : K a = K b) (tag : Tg a = Tg b) :
+    RelCT isa (Eq2 s t) (.block Medium.finish) TT :=
+  mediumFinishWith_rel (cached := false) hash p q k tag (by intro e; cases e) (by intro e; cases e) (by intro e; cases e)
 
 end VG.Proof.AesGcm.AArch64.DirectGather

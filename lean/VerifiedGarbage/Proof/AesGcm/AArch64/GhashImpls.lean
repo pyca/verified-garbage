@@ -2607,6 +2607,9 @@ theorem generalDepth (v : GcmImpl) :
 
 theorem backendFacts (v : GcmImpl) : BackendFacts v :=
   ⟨DirectGather.generalGather_shared v,DirectGather.generalSize v.callsOk,
-    generalSide v.callsOk,generalDepth v,Proof.Gcm.AArch64.Pmull.hashEightWith_at⟩
+    generalSide v.callsOk,generalDepth v,
+    side_of_holes v.callsOk fnOk_nil (mediumFrame holes),
+    Nat.lt_of_le_of_lt (depth_of_holes (W := 752) v.callsOk fnOk_nil (mediumInner holes)) (by decide),
+    Proof.Gcm.AArch64.Pmull.hash16With_at,Proof.Gcm.AArch64.Pmull.hashEightWith_at⟩
 
 end VG.Proof.AesGcm.AArch64.Contiguous

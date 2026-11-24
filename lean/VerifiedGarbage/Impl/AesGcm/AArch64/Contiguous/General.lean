@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.AesGcm.AArch64.DirectGather
+public import VerifiedGarbage.Impl.AesGcm.AArch64.DirectGather.Medium
 
 /-! Contiguous seal ABI for the general nonce, AAD, and plaintext lengths. -/
 
@@ -18,5 +19,11 @@ def generalArgs : List Instr :=
 
 def generalFrame (v : Calls) : Prog isa :=
   .frame (.alloc 48) (.seq (.block generalArgs) (DirectGather.framed v)) (.free 48)
+
+def mediumInner (c : Callees) : Prog isa :=
+  .frame (.alloc DirectGather.Medium.work) (DirectGather.Medium.bodyCached c) (.free DirectGather.Medium.work)
+
+def mediumFrame (c : Callees) : Prog isa :=
+  .frame (.alloc 48) (.seq (.block generalArgs) (mediumInner c)) (.free 48)
 
 end VG.Impl.AesGcm.AArch64.Contiguous

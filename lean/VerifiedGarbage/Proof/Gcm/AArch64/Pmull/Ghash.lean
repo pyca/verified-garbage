@@ -1520,13 +1520,13 @@ theorem hashEight_at (s : State) (hn : nb s = 8)
       t.sp = s.sp ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.gpr .x19 = s.gpr .x19 := by
   exact fixedHash_at s hc hw hd (by lit_decide) (fun u hp eqn => hashEight_ok u hp (eqn.trans hn))
 
-/-- One fixed eight-block fold using a caller's read-only cached powers. -/
-theorem hashEightWith_at (s : State) (hn : nb s = 8)
+/-- One or two eight-block folds with the table loaded once. -/
+private theorem cachedFold_at (twice : Bool) (s : State) (hn : nb s = if twice then 16 else 8)
     (hc : Covers ([hR s,dR s,⟨s.gpr .x5,128⟩] ++ [yR s]) (s.rd ++ s.wr))
     (hw : Covers [yR s] s.wr) (hd : (yR s).Disjoint (dR s))
     (repr : Spec.Gcm.Powers8Repr s.mem (s.gpr .x5) (H₀ s)) :
-    WP isa (.block (Impl.Gcm.AArch64.Pmull.prologueW ++ body 8)) s fun t =>
-      t.v .v0 = ext8 (Ys s 8) (Ys s 8) ∧ t.mem = s.mem ∧
+    WP isa (.block ((Impl.Gcm.AArch64.Pmull.prologueW ++ body 8) ++ (if twice then body 8 else []))) s fun t =>
+      t.v .v0 = ext8 (Ys s (nb s)) (Ys s (nb s)) ∧ t.mem = s.mem ∧
       t.sp = s.sp ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.gpr .x19 = s.gpr .x19 := by
   let u := s.withRegions [hR s,dR s,⟨s.gpr .x5,128⟩] [yR s]
   have hp : Pm u := {
@@ -1536,14 +1536,51 @@ theorem hashEightWith_at (s : State) (hn : nb s = 8)
     d_in := by change dR s ∈ [hR s,dR s,⟨s.gpr .x5,128⟩]; simp
     y_in := List.mem_singleton_self _
     y_d := hd }
-  have go : WP isa (.block (Impl.Gcm.AArch64.Pmull.prologueW ++ body 8)) u (Inv u 8 8) := by
-    rw [WP.block_append_iff]
+  let core := Impl.Gcm.AArch64.Pmull.prologueW ++ body 8
+  have eight : WP isa (.block core) u (Inv u 8 8) := by
+    rw [show core = _ from rfl,WP.block_append_iff]
     refine (prologueW_at hp (by simp [u]) repr).mono fun _ h => ?_
-    exact body_ok hp (k := 8) (by decide) (by decide) (by decide) (by change 0+8 ≤ nb s; omega) h
-  refine WP.narrow (WP.gprs go (rs := [.x19]) (by lit_decide) rfl) hc hw ?_ rfl
+    exact body_ok hp (k := 8) (by decide) (by decide) (by decide) (by
+      change 0+8 ≤ nb s; rw [hn]; cases twice <;> decide) h
+  have go : WP isa (.block (core ++ (if twice then body 8 else []))) u (Inv u 8 (nb s)) := by
+    cases twice with
+    | false => simpa [hn] using eight
+    | true =>
+      change WP isa (.block (core ++ body 8)) u (Inv u 8 (nb s))
+      rw [WP.block_append_iff]
+      refine eight.mono fun _ inv => ?_
+      have n : nb s = 16 := hn
+      rw [n]
+      exact body_ok hp (k := 8) (by decide) (by decide) (by decide) (by change 8+8 ≤ nb s; omega) inv
+  refine WP.narrow (WP.gprs go (rs := [.x19]) (by cases twice <;> lit_decide) rfl) hc hw ?_ rfl
   intro t hrd hwr hsp _ hi
   obtain ⟨inv,keep⟩ := hi
   exact ⟨ρ_inj (by rw [ρ_ext8_self]; exact inv.y), inv.mem, hsp, hrd, hwr, keep _ (by simp)⟩
+
+/-- One fixed eight-block fold using a caller's read-only cached powers. -/
+theorem hashEightWith_at (s : State) (hn : nb s = 8)
+    (hc : Covers ([hR s,dR s,⟨s.gpr .x5,128⟩] ++ [yR s]) (s.rd ++ s.wr))
+    (hw : Covers [yR s] s.wr) (hd : (yR s).Disjoint (dR s))
+    (repr : Spec.Gcm.Powers8Repr s.mem (s.gpr .x5) (H₀ s)) :
+    WP isa (.block (Impl.Gcm.AArch64.Pmull.prologueW ++ body 8)) s fun t =>
+      t.v .v0 = ext8 (Ys s 8) (Ys s 8) ∧ t.mem = s.mem ∧
+      t.sp = s.sp ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.gpr .x19 = s.gpr .x19 := by
+  simpa [hn] using cachedFold_at false s hn hc hw hd repr
+
+/-- A sixteen-block fold using the existing key table and returning the tag's byte order. -/
+theorem hash16With_at (s : State) (hn : nb s = 16)
+    (hc : Covers ([hR s,dR s,⟨s.gpr .x5,128⟩] ++ [yR s]) (s.rd ++ s.wr))
+    (hw : Covers [yR s] s.wr) (hd : (yR s).Disjoint (dR s))
+    (repr : Spec.Gcm.Powers8Repr s.mem (s.gpr .x5) (H₀ s)) :
+    WP isa (.block ((Impl.Gcm.AArch64.Pmull.prologueW ++ body 8 ++ body 8) ++ ([.vop (.rev .rev64b .v16 .v0)] : List Instr))) s fun t =>
+      t.v .v16 = VRevOp.eval .rev64b (ext8 (Ys s 16) (Ys s 16)) ∧ t.mem = s.mem ∧
+      t.sp = s.sp ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.gpr .x19 = s.gpr .x19 := by
+  rw [WP.block_append_iff]
+  refine (cachedFold_at true s hn hc hw hd repr).mono ?_
+  rintro u ⟨hash,mem,sp,rd,wr,x19⟩
+  rw [hn] at hash
+  refine WP.block_cons_iff.mpr ⟨_,exec_rev64b _ _ _,WP.block_nil ?_⟩
+  exact ⟨congrArg (VRevOp.eval .rev64b) hash,mem,sp,rd,wr,x19⟩
 
 /-- Two successive eight-block batches use the same precomputed powers.
 The final reversal exposes the hash in memory byte order for the tag XOR. -/
