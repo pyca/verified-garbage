@@ -705,30 +705,40 @@ omit L in
 /-- `finish`'s end, after `H'` and `H'²` (from `s₃` to `s₄`): the keystream of
 `ks`, the `r ≤ 16` bytes left after `q` whole blocks encrypted (at `s₃`), and
 the tag. `finishF_ok` takes it after `oneBlocks`, and `finishP` with `q = 0`. -/
-theorem finRest_ok {ks : Prog isa} (hks : KsOk ks) {R : Nat} {D : Addr} {n al N q r : Nat} {H icb : Block}
+theorem finRestFrom_ok (tail : Prog isa) {ks : Prog isa} (hks : KsOk ks) {R : Nat} {D S : Addr} {n al N q r : Nat} {H icb : Block}
     {a : List Byte} {s s₃ s₄ : State}
     (h : ObPre M Ctx W SP R D n s) (hnr : n = 16 * q + r) (hr16 : r ≤ 16)
     (f₃ : Frame (oneFrameB W D SP n) s.mem s₃.mem) (hR₃ : RoundsAt s₃.mem W R)
     (hc₃ : ciphOf s₃.mem Ctx R = ciphOf s.mem Ctx R)
     (hJ₃ : blockAt s₃.mem (W + BitVec.ofNat 64 16) = blockAt s.mem (W + BitVec.ofNat 64 16))
-    (hw₃ : bytesAt s₃.mem D (16 * q) = xorKs (ciphOf s.mem Ctx R) icb 0 (bytesAt s.mem D (16 * q)))
+    (sw : (⟨S,n⟩ : Region).Disjoint ⟨W,2560⟩)
+    (hw₃ : bytesAt s₃.mem D (16 * q) = xorKs (ciphOf s.mem Ctx R) icb 0 (bytesAt s.mem S (16 * q)))
     (hcb₃ : blockAt s₃.mem (cbA W) = Nat.repeat inc32 q icb)
     (ab₃ : Absorbed s₃.mem (yA W) (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 32) H
       (a ++ zeros (padLen a.length) ++ bytesAt s₃.mem D (16 * q)))
-    (ht₃ : bytesAt s₃.mem (D + BitVec.ofNat 64 (16 * q)) r = bytesAt s.mem (D + BitVec.ofNat 64 (16 * q)) r)
+    (ht₃ : bytesAt s₃.mem (S + BitVec.ofNat 64 (16 * q)) r = bytesAt s.mem (S + BitVec.ofNat 64 (16 * q)) r)
     (tl₃ : s₃.mem.readW (W + BitVec.ofNat 64 192) 64 = BitVec.ofNat 64 N)
     (dat₃ : s₃.mem.readW (W + BitVec.ofNat 64 200) 64 = D + BitVec.ofNat 64 (16 * q))
     (Plen : s₃.mem.readW (W + BitVec.ofNat 64 208) 64 = BitVec.ofNat 64 r)
     (hal₃ : s₃.mem.readW (W + BitVec.ofNat 64 184) 64 = BitVec.ofNat 64 al)
     (he₄ : Env Ctx (W + BitVec.ofNat 64 16) W SP s₄) (m₄ : s₄.mem = s₃.mem) (rd₄ : s₄.rd = s.rd)
     (wr₄ : s₄.wr = s.wr) (x0 : s₄.xmm .xmm0 = revMask) (x1 : s₄.xmm .xmm1 = poly) (h1 : IsH1 H (s₄.xmm .xmm3))
-    (h2 : IsH2 H (s₄.xmm .xmm3) (s₄.xmm .xmm6)) :
+    (h2 : IsH2 H (s₄.xmm .xmm3) (s₄.xmm .xmm6))
+    (tail_ok : ∀ {u : State}, FinPre Ctx W SP H al N r (D+BitVec.ofNat 64 (16*q)) u →
+      u.rd=s.rd → u.wr=s.wr → Frame [⟨W+1024#64,64⟩] s₃.mem u.mem →
+      WP isa tail u fun t =>
+        Env Ctx (W+16#64) W SP t ∧ t.rd=u.rd ∧ t.wr=u.wr ∧
+        Frame [⟨W,16⟩,⟨W+512#64,32⟩,⟨D+BitVec.ofNat 64 (16*q),r⟩] u.mem t.mem ∧
+        bytesAt t.mem (D+BitVec.ofNat 64 (16*q)) r = xb u.mem (S+BitVec.ofNat 64 (16*q)) (W+1040#64) r ∧
+        blockAt t.mem W = Spec.Gcm.ghashFrom H (blockAt u.mem (yA W))
+          [ofBytes (xb u.mem (S+BitVec.ofNat 64 (16*q)) (W+1040#64) r ++ zeros (16-r)), ofBytes (lensBlock al N)] ^^^
+          blockAt u.mem (W+1024#64)) :
     WP isa (.seq ks (.seq (.block [.mov .rax (.mem (at_ .r15 lenO)), .alu .test .rax (.reg .rax)])
       (.ite .e (.block (finLens ++ finGh1 ++ tagK 0))
-        (.seq (.block finTextArgs) (.seq (xorText true) (.block (finLens ++ finGh2 ++ tagK 0))))))) s₄ fun s' =>
+        tail))) s₄ fun s' =>
       Env Ctx (W + BitVec.ofNat 64 16) W SP s' ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
       Frame (oneFrameB W D SP n) s.mem s'.mem ∧
-      bytesAt s'.mem D n = xorKs (ciphOf s.mem Ctx R) icb 0 (bytesAt s.mem D n) ∧
+      bytesAt s'.mem D n = xorKs (ciphOf s.mem Ctx R) icb 0 (bytesAt s.mem S n) ∧
       bytesAt s'.mem W 16 = toBytes (ghashFrom H (Spec.Gcm.ghash H (Spec.Gcm.blocks (padded a (bytesAt s'.mem D n))))
         [ofBytes (lensBlock al N)] ^^^ ciphOf s.mem Ctx R (blockAt s.mem (W + BitVec.ofNat 64 16))) := by
   have hD := h.data.ok.w
@@ -790,6 +800,8 @@ theorem finRest_ok {ks : Prog isa} (hks : KsOk ks) {R : Nat} {D : Addr} {n al N 
     fun h₁ _ _ h₂ => (hD.sub_left (Offset.sub_base D h₂)).sub_right (Lay.wSub h₁)
   obtain split : ∀ m : Mem, bytesAt m D n = bytesAt m D (16 * q) ++ bytesAt m (D + BitVec.ofNat 64 (16 * q)) r :=
     fun m => by rw [hnr, ← bytesAt_add]
+  have splitS : bytesAt s.mem S n = bytesAt s.mem S (16*q) ++ bytesAt s.mem (S+BitVec.ofNat 64 (16*q)) r := by
+    rw [hnr, ← bytesAt_add]
   obtain hpre : ∀ m : Mem, Frame [⟨W, 16⟩, ⟨W + BitVec.ofNat 64 512, 32⟩, ⟨D + BitVec.ofNat 64 (16 * q), r⟩] s₆.mem m →
       bytesAt m D (16 * q) = bytesAt s₃.mem D (16 * q) := fun m f => by
     rw [bytesAt_frame f (fun q' hq' => by
@@ -823,36 +835,66 @@ theorem finRest_ok {ks : Prog isa} (hks : KsOk ks) {R : Nat} {D : Addr} {n al N 
     refine WP.mono (finNoTail_ok FP) fun t ⟨het, rdt, wrt, ft, tagt⟩ => ?_
     obtain hct : bytesAt t.mem D n = bytesAt s₃.mem D (16 * q) := by rw [split, hpre _ ft, b0, List.append_nil]
     refine ⟨het, (hrw t rdt wrt).1, (hrw t rdt wrt).2, hFr _ ft, ?_, ?_⟩
-    · rw [hct, hw₃, split s.mem, b0, List.append_nil]
+    · rw [hct, hw₃, splitS, b0, List.append_nil]
     · rw [bytesAt_toBytes', tagt, hY, hK₀, hct, ← padded_eq, Proof.Gcm.padLen_of_mod hXZ,
         show zeros 0 = [] from rfl, List.append_nil]
   · -- Bytes left.
     obtain h0' : r ≠ 0 := of_decide_eq_false h0
-    refine WP.mono (finTail_ok FP) fun t ⟨het, rdt, wrt, ft, bDt, tagt⟩ => ?_
-    obtain hT : xb s₆.mem (D + BitVec.ofNat 64 (16 * q)) (W + BitVec.ofNat 64 1040) r =
-        xorKs (ciphOf s.mem Ctx R) icb (16 * q) (bytesAt s.mem (D + BitVec.ofNat 64 (16 * q)) r) := by
+    refine WP.mono (tail_ok FP (rd₆.trans (rd₅.trans rd₄)) (wr₆.trans (wr₅.trans wr₄)) m₆₃) fun t ⟨het, rdt, wrt, ft, bDt, tagt⟩ => ?_
+    obtain hT : xb s₆.mem (S + BitVec.ofNat 64 (16 * q)) (W + BitVec.ofNat 64 1040) r =
+        xorKs (ciphOf s.mem Ctx R) icb (16 * q) (bytesAt s.mem (S + BitVec.ofNat 64 (16 * q)) r) := by
       rw [tail_xorKs (by omega_arith) hcb₃ hK₁, bytesAt_frame m₆₃ (fun q' hq' => by
-          simp only [List.mem_singleton] at hq'; subst hq'; exact dDW (by decide) (by omega_arith)) (by omega_arith), ht₃]
+          simp only [List.mem_singleton] at hq'; subst hq'; exact (sw.sub_left (Offset.sub_base _ (by omega_arith))).sub_right (Lay.wSub (by decide))) (by omega_arith), ht₃]
     obtain hct : bytesAt t.mem D n =
-        bytesAt s₃.mem D (16 * q) ++ xb s₆.mem (D + BitVec.ofNat 64 (16 * q)) (W + BitVec.ofNat 64 1040) r := by
+        bytesAt s₃.mem D (16 * q) ++ xb s₆.mem (S + BitVec.ofNat 64 (16 * q)) (W + BitVec.ofNat 64 1040) r := by
       rw [split, hpre _ ft, bDt]
     refine ⟨het, (hrw t rdt wrt).1, (hrw t rdt wrt).2, hFr _ ft, ?_, ?_⟩
-    · rw [hct, hw₃, hT, split s.mem, Proof.Gcm.xorKs_append, length_bytesAt, Nat.zero_add]
+    · rw [hct, hw₃, hT, splitS, Proof.Gcm.xorKs_append, length_bytesAt, Nat.zero_add]
     · have hpl : padLen (a ++ zeros (padLen a.length) ++ (bytesAt s₃.mem D (16 * q) ++
-          xb s₆.mem (D + BitVec.ofNat 64 (16 * q)) (W + BitVec.ofNat 64 1040) r)).length = 16 - r := by
+          xb s₆.mem (S + BitVec.ofNat 64 (16 * q)) (W + BitVec.ofNat 64 1040) r)).length = 16 - r := by
         have := hxa
         simp only [padLen, List.length_append, length_bytesAt, length_xb, Proof.Gcm.length_zeros] at this ⊢
         omega_arith
       obtain e : a ++ zeros (padLen a.length) ++ (bytesAt s₃.mem D (16 * q) ++
-          xb s₆.mem (D + BitVec.ofNat 64 (16 * q)) (W + BitVec.ofNat 64 1040) r) ++ zeros (16 - r) =
+          xb s₆.mem (S + BitVec.ofNat 64 (16 * q)) (W + BitVec.ofNat 64 1040) r) ++ zeros (16 - r) =
           a ++ zeros (padLen a.length) ++ bytesAt s₃.mem D (16 * q) ++
-            (xb s₆.mem (D + BitVec.ofNat 64 (16 * q)) (W + BitVec.ofNat 64 1040) r ++ zeros (16 - r)) := by
+            (xb s₆.mem (S + BitVec.ofNat 64 (16 * q)) (W + BitVec.ofNat 64 1040) r ++ zeros (16 - r)) := by
         simp only [List.append_assoc]
-      obtain bs := Proof.Gcm.blocks_single (bs := xb s₆.mem (D + BitVec.ofNat 64 (16 * q)) (W + BitVec.ofNat 64 1040) r ++
+      obtain bs := Proof.Gcm.blocks_single (bs := xb s₆.mem (S + BitVec.ofNat 64 (16 * q)) (W + BitVec.ofNat 64 1040) r ++
         zeros (16 - r)) (by rw [List.length_append, length_xb, Proof.Gcm.length_zeros]; omega_arith)
       rw [bytesAt_toBytes', tagt, hY, hK₀, hct, ← padded_eq, hpl, e, Proof.Gcm.blocks_append hXZ, bs, ghash_snoc,
         ← Proof.Gcm.ghashFrom_append]
       rfl
+
+omit L in
+theorem finRest_ok {ks : Prog isa} (hks : KsOk ks) {R : Nat} {D : Addr} {n al N q r : Nat} {H icb : Block}
+    {a : List Byte} {s s₃ s₄ : State}
+    (h : ObPre M Ctx W SP R D n s) (hnr : n = 16 * q + r) (hr16 : r ≤ 16)
+    (f₃ : Frame (oneFrameB W D SP n) s.mem s₃.mem) (hR₃ : RoundsAt s₃.mem W R)
+    (hc₃ : ciphOf s₃.mem Ctx R = ciphOf s.mem Ctx R)
+    (hJ₃ : blockAt s₃.mem (W + BitVec.ofNat 64 16) = blockAt s.mem (W + BitVec.ofNat 64 16))
+    (hw₃ : bytesAt s₃.mem D (16 * q) = xorKs (ciphOf s.mem Ctx R) icb 0 (bytesAt s.mem D (16 * q)))
+    (hcb₃ : blockAt s₃.mem (cbA W) = Nat.repeat inc32 q icb)
+    (ab₃ : Absorbed s₃.mem (yA W) (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 32) H
+      (a ++ zeros (padLen a.length) ++ bytesAt s₃.mem D (16 * q)))
+    (ht₃ : bytesAt s₃.mem (D + BitVec.ofNat 64 (16 * q)) r = bytesAt s.mem (D + BitVec.ofNat 64 (16 * q)) r)
+    (tl₃ : s₃.mem.readW (W + BitVec.ofNat 64 192) 64 = BitVec.ofNat 64 N)
+    (dat₃ : s₃.mem.readW (W + BitVec.ofNat 64 200) 64 = D + BitVec.ofNat 64 (16 * q))
+    (Plen : s₃.mem.readW (W + BitVec.ofNat 64 208) 64 = BitVec.ofNat 64 r)
+    (hal₃ : s₃.mem.readW (W + BitVec.ofNat 64 184) 64 = BitVec.ofNat 64 al)
+    (he₄ : Env Ctx (W + BitVec.ofNat 64 16) W SP s₄) (m₄ : s₄.mem = s₃.mem) (rd₄ : s₄.rd = s.rd)
+    (wr₄ : s₄.wr = s.wr) (x0 : s₄.xmm .xmm0 = revMask) (x1 : s₄.xmm .xmm1 = poly) (h1 : IsH1 H (s₄.xmm .xmm3))
+    (h2 : IsH2 H (s₄.xmm .xmm3) (s₄.xmm .xmm6)) :
+    WP isa (.seq ks (.seq (.block [.mov .rax (.mem (at_ .r15 lenO)), .alu .test .rax (.reg .rax)])
+      (.ite .e (.block (finLens ++ finGh1 ++ tagK 0))
+        (.seq (.block finTextArgs) (.seq (xorText true) (.block (finLens ++ finGh2 ++ tagK 0))))))) s₄ fun s' =>
+      Env Ctx (W + BitVec.ofNat 64 16) W SP s' ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
+      Frame (oneFrameB W D SP n) s.mem s'.mem ∧
+      bytesAt s'.mem D n = xorKs (ciphOf s.mem Ctx R) icb 0 (bytesAt s.mem D n) ∧
+      bytesAt s'.mem W 16 = toBytes (ghashFrom H (Spec.Gcm.ghash H (Spec.Gcm.blocks (padded a (bytesAt s'.mem D n))))
+        [ofBytes (lensBlock al N)] ^^^ ciphOf s.mem Ctx R (blockAt s.mem (W + BitVec.ofNat 64 16))) := by
+  exact finRestFrom_ok _ hks h hnr hr16 f₃ hR₃ hc₃ hJ₃ h.data.ok.w hw₃ hcb₃ ab₃ ht₃ tl₃ dat₃ Plen hal₃
+    he₄ m₄ rd₄ wr₄ x0 x1 h1 h2 (fun fp _ _ _ => finTail_ok fp)
 
 /-- The body of `seal` with `finishWith ks`: what `sealBody_ok` leaves. -/
 theorem finishF_ok (hF : ShortFacts) {ks : Prog isa} (hks : KsOk ks) {R : Nat} {D : Addr} {n al N : Nat} {H icb : Block} {a : List Byte} {s s₃ : State}
