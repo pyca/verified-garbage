@@ -77,15 +77,16 @@ theorem below176_parts {sp : BitVec 32} (low : 176 ≤ sp.toNat) :
     simp only [BitVec.toNat_setWidth, BitVec.toNat_sub, BitVec.toNat_ofNat]
     omega_arith
 
-/-- The callee's inputs: those of the caller, read from the frame of the copied arguments at `esp`,
-80 bytes below the caller's. -/
-theorem in_callee {Ex : List Region → List Region → Prop} {base : Addr} {bytes len : Nat}
-    {args : Nat → BitVec 32} {s f : State} (h : In Ex base bytes len args s)
+/-- The callee's inputs, for arguments `args'` in its frame at `esp`, 80 bytes below the caller's, that
+are the caller's in the modulus's length and the working space. -/
+theorem in_calleeOf {Ex : List Region → List Region → Prop} {base : Addr} {bytes len : Nat}
+    {args args' : Nat → BitVec 32} {s f : State} (h : In Ex base bytes len args s)
     (RF : RoomF (s.gpr .esp) base bytes) (ef : f.gpr .esp = s.gpr .esp - BitVec.ofNat 32 80)
     (edi : f.gpr .edi = s.gpr .edi) (rd : f.rd = s.rd)
-    (wr : f.wr = ⟨(f.gpr .esp).setWidth 64, 76⟩ :: s.wr)
-    (vals : ∀ i < 18, f.mem.readW (slotAddr ((f.gpr .esp).setWidth 64) i) 32 = args i) :
-    In (fun _ _ => True) base bytes len args f := by
+    (wr : f.wr = ⟨(f.gpr .esp).setWidth 64, 76⟩ :: s.wr) (a1 : args' 1 = args 1) (a16 : args' 16 = args 16)
+    (a17 : args' 17 = args 17)
+    (vals : ∀ i < 18, f.mem.readW (slotAddr ((f.gpr .esp).setWidth 64) i) 32 = args' i) :
+    In (fun _ _ => True) base bytes len args' f := by
   have low := RF.low
   have top := h.top
   have hE := (s.gpr .esp).isLt
@@ -108,8 +109,8 @@ theorem in_callee {Ex : List Region → List Region → Prop} {base : Addr} {byt
   obtain SA : ∀ i < 18, VG.Proof.Dsa.X86.stackAddress f i = slotAddr ((f.gpr .esp).setWidth 64) i :=
     fun i hi => addr_eq (by omega_using [fN, hi, top])
   refine ⟨⟨by rw [edi]; exact h.scratch.edi, by rw [wr]; exact List.mem_cons_of_mem _ h.scratch.wr, nw, ?_⟩,
-    h.lower, h.upper, fun i hi => ⟨⟨?_, ?_⟩, ?_⟩, h.outLen, ⟨by rw [fN]; omega_using [low], belowWs⟩,
-    by rw [fN]; omega_using [top], h.need, h.hbase, h.hbytes, trivial⟩
+    h.lower, h.upper, fun i hi => ⟨⟨?_, ?_⟩, ?_⟩, a1.trans h.outLen, ⟨by rw [fN]; omega_using [low], belowWs⟩,
+    by rw [fN]; omega_using [top], h.need, by rw [a16]; exact h.hbase, by rw [a17]; exact h.hbytes, trivial⟩
   · refine VG.Proof.Weierstrass.X86.stkOk_of (z := 96) (by decide) (by rw [fN]; omega_using [low]) nw
       (by have := h.need; simp only [CrtRt.need, Impl.Bignum.X86.CrtRt.numBase] at this; omega_using [this]) ?_
     have e := belowWs
@@ -119,8 +120,19 @@ theorem in_callee {Ex : List Region → List Region → Prop} {base : Addr} {byt
     exact ⟨_, List.mem_append_right _ (List.mem_cons_self ..),
       Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])⟩
   · rw [SA i hi]; exact frameWs.sub_left (Offset.sub_base _ (by omega_using [hi]))
-  · show f.mem.readW (VG.Proof.Dsa.X86.stackAddress f i) 32 = args i
+  · show f.mem.readW (VG.Proof.Dsa.X86.stackAddress f i) 32 = args' i
     rw [SA i hi]; exact vals i hi
+
+/-- The callee's inputs: those of the caller, read from the frame of the copied arguments at `esp`,
+80 bytes below the caller's. -/
+theorem in_callee {Ex : List Region → List Region → Prop} {base : Addr} {bytes len : Nat}
+    {args : Nat → BitVec 32} {s f : State} (h : In Ex base bytes len args s)
+    (RF : RoomF (s.gpr .esp) base bytes) (ef : f.gpr .esp = s.gpr .esp - BitVec.ofNat 32 80)
+    (edi : f.gpr .edi = s.gpr .edi) (rd : f.rd = s.rd)
+    (wr : f.wr = ⟨(f.gpr .esp).setWidth 64, 76⟩ :: s.wr)
+    (vals : ∀ i < 18, f.mem.readW (slotAddr ((f.gpr .esp).setWidth 64) i) 32 = args i) :
+    In (fun _ _ => True) base bytes len args f :=
+  in_calleeOf h RF ef edi rd wr rfl rfl rfl vals
 
 /-- The callee's regions below `sp`, as offsets of the base of the 176 bytes below it. -/
 theorem callee_addrs {sp : BitVec 32} (low : 176 ≤ sp.toNat) :
@@ -380,17 +392,26 @@ theorem frameF_inv {t : State} (h : In Ex base bytes len args t) {sp : BitVec 32
     (fun _ h => nomatch h) (fun _ h => nomatch h)
   simpa only [val32, w32, Nat.mul_zero, Nat.add_zero] using this
 
+/-- The callee's state after the copy of the arguments, from the caller's `s`: its frame of 76 bytes at
+its `esp`, 80 bytes below the caller's, which it may write. -/
+structure CalleeIn (s u : State) : Prop where
+  esp : u.gpr .esp = s.gpr .esp - BitVec.ofNat 32 80
+  edi : u.gpr .edi = s.gpr .edi
+  rd : u.rd = s.rd
+  wr : u.wr = ⟨(u.gpr .esp).setWidth 64, 76⟩ :: s.wr
+
 /-- A call by `argCall` of `b`, which, from the callee's inputs (the caller's, the arguments copied, and
-memory the caller's but for the 176 bytes below its `esp`), keeps the registers, changes only the ranges `ws`
-and the 96 bytes below its `esp`, and reaches `R`. -/
-theorem argCall_ok {name : String} {b : Prog isa}
+memory the caller's but for the 176 bytes below its `esp`), keeps the registers, changes only the ranges `ws`,
+its frame of arguments and the 96 bytes below its `esp`, and reaches `R`. -/
+theorem argCall_okW {name : String} {b : Prog isa}
     (hns : NoSp (.seq (.block ((List.range 18).flatMap copyArg)) b : Prog isa)) {s : State}
     (h : In Ex base bytes len args s) (RF : RoomF (s.gpr .esp) base bytes) {ws : List (Nat × Nat)}
     (hws : ∀ p ∈ ws, p.1 + p.2 ≤ bytes) {R : Mem → Prop}
     (hR : ∀ {m m' : Mem} {rs : List Region}, R m → Frame rs m m' →
       (∀ r ∈ rs, Region.Sub r (below (s.gpr .esp) 176)) → R m')
     (hb : ∀ u, In (fun _ _ => True) base bytes len args u → Frame (frameF base (s.gpr .esp) []) s.mem u.mem →
-      WP isa b u fun v => Frame (frameR base (u.gpr .esp) ws) u.mem v.mem ∧
+      CalleeIn s u →
+      WP isa b u fun v => Frame (⟨(u.gpr .esp).setWidth 64, 76⟩ :: frameR base (u.gpr .esp) ws) u.mem v.mem ∧
         Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] u v ∧ R v.mem) :
     WP isa (argCall name b) s (ArgPost Ex base bytes len args ws R s) := by
   have low := RF.low
@@ -426,11 +447,20 @@ theorem argCall_ok {name : String} {b : Prog isa}
   obtain Fs : Frame (frameF base (s.gpr .esp) []) s.mem u.mem :=
     (frameF_of_sub Fret fun r hr => by rw [List.mem_singleton.mp hr]; exact r4).trans
       (frameF_of_sub Fc fun r hr => by rw [List.mem_singleton.mp hr]; exact r76)
-  refine WP.mono (hb u h' Fs) fun v ⟨Fp, Kv, Rv⟩ => ?_
+  refine WP.mono (hb u h' Fs ⟨by rw [uesp, t0esp80], by rw [K.1 _ (by decide), t0gpr _ (by decide)],
+    by rw [K.2.1, t0rd], by rw [K.2.2, t0wr, uesp]⟩) fun v ⟨Fp, Kv, Rv⟩ => ?_
   obtain vesp : v.gpr .esp = t0.gpr .esp := (Kv.1 _ (by decide)).trans uesp
-  rw [uesp, t0esp] at Fp
+  rw [uesp] at Fp
+  obtain r96' : Region.Sub (below (t0.gpr .esp) 96) (below (s.gpr .esp) 176) := by rw [t0esp]; exact r96
+  obtain d96' : Region.Disjoint ⟨(s.gpr .esp - 4).setWidth 64, 4⟩ (below (t0.gpr .esp) 96) := by
+    rw [t0esp]; exact d96
   obtain Fw : Frame (frameF base (s.gpr .esp) ws) s.mem v.mem :=
-    (frameF_mono Fs (fun _ h => nomatch h)).trans (frameF_of_frameR Fp r96)
+    (frameF_mono Fs (fun _ h => nomatch h)).trans (Fp.sub fun r hr => by
+      simp only [frameR, List.mem_cons, List.mem_map] at hr
+      rcases hr with rfl | rfl | ⟨p, hp, rfl⟩
+      · exact ⟨_, List.mem_cons_self .., r76⟩
+      · exact ⟨_, List.mem_cons_self .., r96'⟩
+      · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_map.mpr ⟨p, hp, rfl⟩)), fun _ h => h⟩)
   refine ⟨?_, ?_, ?_⟩
   · rw [freed_esp, vesp, t0esp80]
     apply BitVec.eq_of_toNat_eq
@@ -439,9 +469,10 @@ theorem argCall_ok {name : String} {b : Prog isa}
     omega_using [low, hE, fb]
   · rw [freed_mem]
     rw [Fp.readW (r := ⟨(s.gpr .esp - 4).setWidth 64, 4⟩) (Region.contains_self _ _) (fun r hr => by
-        rw [frameR, List.mem_cons, List.mem_map] at hr
-        rcases hr with rfl | ⟨p, hp, rfl⟩
-        · exact d96
+        simp only [frameR, List.mem_cons, List.mem_map] at hr
+        rcases hr with rfl | rfl | ⟨p, hp, rfl⟩
+        · exact d76
+        · exact d96'
         · exact retWs.sub_right (Offset.sub_base _ (hws p hp)))
       (by decide),
       Fc.readW (r := ⟨(s.gpr .esp - 4).setWidth 64, 4⟩) (Region.contains_self _ _)
@@ -457,6 +488,22 @@ theorem argCall_ok {name : String} {b : Prog isa}
       · simp only [State.setReg, freed_wr]; rw [Kv.2.2, K.2.2, t0wr]; rfl
     exact ⟨in_keepFF h Kw (by decide) (by decide) RF Fw hws, Fw, Kw, by
       show R (freed argsFrame v).mem; rw [freed_mem]; exact Rv⟩
+
+/-- A call by `argCall` of `b`, which, from the callee's inputs (the caller's, the arguments copied, and
+memory the caller's but for the 176 bytes below its `esp`), keeps the registers, changes only the ranges `ws`
+and the 96 bytes below its `esp`, and reaches `R`. -/
+theorem argCall_ok {name : String} {b : Prog isa}
+    (hns : NoSp (.seq (.block ((List.range 18).flatMap copyArg)) b : Prog isa)) {s : State}
+    (h : In Ex base bytes len args s) (RF : RoomF (s.gpr .esp) base bytes) {ws : List (Nat × Nat)}
+    (hws : ∀ p ∈ ws, p.1 + p.2 ≤ bytes) {R : Mem → Prop}
+    (hR : ∀ {m m' : Mem} {rs : List Region}, R m → Frame rs m m' →
+      (∀ r ∈ rs, Region.Sub r (below (s.gpr .esp) 176)) → R m')
+    (hb : ∀ u, In (fun _ _ => True) base bytes len args u → Frame (frameF base (s.gpr .esp) []) s.mem u.mem →
+      WP isa b u fun v => Frame (frameR base (u.gpr .esp) ws) u.mem v.mem ∧
+        Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] u v ∧ R v.mem) :
+    WP isa (argCall name b) s (ArgPost Ex base bytes len args ws R s) :=
+  argCall_okW hns h RF hws hR fun u hu Fs _ => WP.mono (hb u hu Fs) fun _ ⟨F, K, Rv⟩ =>
+    ⟨F.sub fun r hr => ⟨r, List.mem_cons_of_mem _ hr, fun _ h => h⟩, K, Rv⟩
 
 theorem prepCall_ok {s : State} (h : In Ex base bytes len args s) (RF : RoomF (s.gpr .esp) base bytes) :
     WP isa prepCall s (PrepPost Ex base bytes len args s) := by
