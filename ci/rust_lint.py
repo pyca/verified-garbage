@@ -60,6 +60,11 @@ def run(crate):
         package = ["-p", "rustls-verified-garbage"]
         cargo(["fmt", "--check", *package], ROOT)
         cargo(["clippy", "--all-targets", "--locked", *package], ROOT)
+        # The library alone, as its users build it: with the tests, Cargo
+        # also enables the features of the development dependencies
+        # (rustls's defaults, `std`), which hid a missing `rustls/std`.
+        cargo(["clippy", "--lib", "--locked", *package], ROOT)
+        cargo(["clippy", "--lib", "--locked", "--no-default-features", *package], ROOT)
         return
     if crate == "library":
         targets = [arg for e in entries(crate) for arg in ("--target", e["target"])]

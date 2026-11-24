@@ -63,8 +63,9 @@ vg_rsa_pkcs1_decrypt_precomputed_umaal:
 	ldr r0, [sp, #64]
 	movw lr, #1024
 	add r0, r0, lr
+	ldr lr, [sp, #184]
+	add r0, r0, lr
 	movw r2, #0
-	movw lr, #2048
 20:
 	ldrb r1, [r0, #0]
 	and r1, r1, r2
@@ -90,12 +91,11 @@ vg_rsa_pkcs1_decrypt_precomputed_umaal:
 	ldr r1, [r1, #0]
 	add r12, sp, #0
 	ldr r0, [sp, #184]
+	str r0, [r12, #116]
 	sub r0, r0, r1
 	str r0, [r12, #108]
 	movw r0, #1
 	str r0, [r12, #112]
-	movw r0, #11
-	str r0, [r12, #116]
 22:
 	add r12, sp, #0
 	ldr r0, [sp, #64]
@@ -107,7 +107,7 @@ vg_rsa_pkcs1_decrypt_precomputed_umaal:
 	and r2, r2, #1
 	movw r3, #0
 	sub r2, r3, r2
-	movw lr, #1024
+	ldr lr, [sp, #184]
 23:
 	ldrb r3, [r0, #0]
 	ldrb r4, [r1, #0]
@@ -127,7 +127,7 @@ vg_rsa_pkcs1_decrypt_precomputed_umaal:
 	add r0, r0, r0
 	str r0, [r12, #112]
 	ldr r0, [sp, #116]
-	sub r0, r0, #1
+	lsr r0, r0, #1
 	str r0, [r12, #116]
 	cmp r0, #0
 	bne 22b
@@ -423,8 +423,9 @@ vg_rsa_pkcs1_decrypt_precomputed:
 	ldr r0, [sp, #64]
 	movw lr, #1024
 	add r0, r0, lr
+	ldr lr, [sp, #184]
+	add r0, r0, lr
 	movw r2, #0
-	movw lr, #2048
 20:
 	ldrb r1, [r0, #0]
 	and r1, r1, r2
@@ -450,12 +451,11 @@ vg_rsa_pkcs1_decrypt_precomputed:
 	ldr r1, [r1, #0]
 	add r12, sp, #0
 	ldr r0, [sp, #184]
+	str r0, [r12, #116]
 	sub r0, r0, r1
 	str r0, [r12, #108]
 	movw r0, #1
 	str r0, [r12, #112]
-	movw r0, #11
-	str r0, [r12, #116]
 22:
 	add r12, sp, #0
 	ldr r0, [sp, #64]
@@ -467,7 +467,7 @@ vg_rsa_pkcs1_decrypt_precomputed:
 	and r2, r2, #1
 	movw r3, #0
 	sub r2, r3, r2
-	movw lr, #1024
+	ldr lr, [sp, #184]
 23:
 	ldrb r3, [r0, #0]
 	ldrb r4, [r1, #0]
@@ -487,7 +487,7 @@ vg_rsa_pkcs1_decrypt_precomputed:
 	add r0, r0, r0
 	str r0, [r12, #112]
 	ldr r0, [sp, #116]
-	sub r0, r0, #1
+	lsr r0, r0, #1
 	str r0, [r12, #116]
 	cmp r0, #0
 	bne 22b

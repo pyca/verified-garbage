@@ -302,7 +302,6 @@ vg_chacha20_poly1305_seal:
 	sd t6, 616(t5)
 	addi sp, sp, 624
 	addi t0, zero, 0
-	addi a0, zero, 0
 	addi a1, zero, 0
 	addi a2, zero, 0
 	addi a3, zero, 0
@@ -317,6 +316,7 @@ vg_chacha20_poly1305_seal:
 	addi t4, zero, 0
 	addi t5, zero, 0
 	addi t6, zero, 0
+	addi a0, zero, 0
 	ret
 	.option pop
 
@@ -701,8 +701,6 @@ vg_chacha20_poly1305_open:
 	sd t6, 616(t5)
 	addi sp, sp, 624
 	addi t0, zero, 0
-	slli a0, a0, 32
-	srli a0, a0, 32
 	addi a1, zero, 0
 	addi a2, zero, 0
 	addi a3, zero, 0
@@ -717,6 +715,7 @@ vg_chacha20_poly1305_open:
 	addi t4, zero, 0
 	addi t5, zero, 0
 	addi t6, zero, 0
+	addiw a0, a0, 0
 	ret
 	.option pop
 
@@ -1114,8 +1113,6 @@ vg_chacha20_poly1305_open_to:
 	sd t0, 0(t1)
 	sd t0, 8(t1)
 	addi sp, sp, 640
-	slli a0, a0, 32
-	srli a0, a0, 32
 	addi a1, zero, 0
 	addi a2, zero, 0
 	addi a3, zero, 0
@@ -1130,6 +1127,7 @@ vg_chacha20_poly1305_open_to:
 	addi t4, zero, 0
 	addi t5, zero, 0
 	addi t6, zero, 0
+	addiw a0, a0, 0
 	ret
 	.option pop
 
@@ -1216,7 +1214,6 @@ vg_chacha20_poly1305_seal_gather:
 	sd t0, 624(t1)
 	sd t0, 632(t1)
 	addi sp, sp, 640
-	addi a0, zero, 0
 	addi a1, zero, 0
 	addi a2, zero, 0
 	addi a3, zero, 0
@@ -1231,5 +1228,6 @@ vg_chacha20_poly1305_seal_gather:
 	addi t4, zero, 0
 	addi t5, zero, 0
 	addi t6, zero, 0
+	addi a0, zero, 0
 	ret
 	.option pop

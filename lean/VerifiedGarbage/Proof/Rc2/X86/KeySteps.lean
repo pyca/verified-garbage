@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Rc2.X86.PiLookup
 public import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Rc2.Select32
+import VerifiedGarbage.Proof.Framework.X86.Syms
 
 @[expose] public section
 
@@ -64,6 +65,27 @@ theorem addr_add {x : BitVec 32} {k : Nat} (h : x.toNat + k < 2 ^ 32) :
   VG.X86.addr_eq h
 
 def keyTemps : List Reg := [.eax, .ecx, .ebx, .edx]
+
+/-- A block changes no static's address. -/
+theorem runBlock_syms {is : List Instr} {s s' : State} (h : runBlock isa is s = some s') : s'.syms = s.syms := by
+  obtain ⟨_, u, he, hu⟩ := WP.of_runBlock (M := isa) (Q := fun u => u = s') ⟨s', h, rfl⟩
+  subst hu
+  exact Exec.syms he
+
+/-- What key expansion needs of a look-up `look` of PITABLE[EAX & 255] into
+EAX: where `P` holds it runs, keeping memory and every register but EAX, EBX
+and EDX; and `P` is about the writable regions, EDI, EBP and the statics'
+addresses only, so it holds throughout the key expansion's loops. -/
+structure LookOk (look : List Instr) (P : State → Prop) : Prop where
+  run : ∀ s, P s → WP isa (.block look) s (fun s' =>
+    s'.gpr .eax = (Spec.Rc2.pi ((s.gpr .eax).setWidth 8)).setWidth 32 ∧ Keep [.eax, .ebx, .edx] s s')
+  keep : ∀ s s', P s → s'.wr = s.wr → s'.gpr .edi = s.gpr .edi → s'.gpr .ebp = s.gpr .ebp →
+    s'.syms = s.syms → P s'
+
+/-- The baseline's look-up passes its result through the 16 bytes at EDI. -/
+theorem piLookup_lookOk : LookOk piLookup (fun s => InRegions s.wr (addr32 (s.gpr .edi)) 16) where
+  run s h := piLookup_ok s h
+  keep s s' h wr edi _ _ := by rw [wr, edi]; exact h
 
 /-- The public zero flag controls the key-expansion loops. -/
 def zeroFlag (s : State) : Option Bool := s.zf

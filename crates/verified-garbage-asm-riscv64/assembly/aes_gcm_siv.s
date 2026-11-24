@@ -3055,8 +3055,7 @@ vg_aes_gcm_siv_open:
 	addi sp, sp, 2032
 	addi sp, sp, 16
 	addi sp, sp, 2032
-	slli a0, a0, 32
-	srli a0, a0, 32
+	addiw a0, a0, 0
 	addi a1, zero, 0
 	addi a2, zero, 0
 	addi a3, zero, 0

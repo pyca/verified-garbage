@@ -367,12 +367,12 @@ def frameSat : State where
   wr := [⟨0x2000, 16⟩, ⟨0x3000, 0⟩, ⟨0x8004, 16⟩]
 
 theorem frameSat_fb (post : Spec.Seed.ofbSig.Post X86.abi.ptrBits) :
-    ∃ s, (Spec.Seed.ofbSig.contract X86.abi (post := post) (writeArgs := true) (stack := 740)).pre s := by
+    ∃ s, (Spec.Seed.ofbSig.contract X86.abi (post := post) (writeArgs := true) (stack := 744)).pre s := by
   implies_sat [Spec.Seed.ofbSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     [frameSat, X86.arg, X86.argAddr, Mem.readW, Mem.read] using frameSat
 
 theorem frameSat_cbc (post : Spec.Seed.cbcChainedSig.Post X86.abi.ptrBits) :
-    ∃ s, (Spec.Seed.cbcChainedSig.contract X86.abi (post := post) (writeArgs := true) (stack := 740)).pre s := by
+    ∃ s, (Spec.Seed.cbcChainedSig.contract X86.abi (post := post) (writeArgs := true) (stack := 744)).pre s := by
   implies_sat [Spec.Seed.cbcChainedSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     [frameSat, X86.arg, X86.argAddr, Mem.readW, Mem.read] using frameSat
 
@@ -419,21 +419,21 @@ theorem cfbDecrypt_verified :
 
 /-- `cbcDecryptChained` with its working space on the stack. -/
 theorem cbcDecryptChained_framed :
-    Verified X86.target (Impl.StackScratch.X86.withStackScratchWiped 736 4 178 cbcDecryptChained)
-      (Spec.Seed.cbcDecryptChainedContract X86.abi 740) :=
+    Verified X86.target (Impl.StackScratch.X86.withStackScratchWiped 740 4 178 cbcDecryptChained)
+      (Spec.Seed.cbcDecryptChainedContract X86.abi 744) :=
   X86.Verified.stackScratchWiped (sig := Spec.Seed.cbcChainedSig) (nm := "scratch") (e := .u64)
     (n := 89) (post := Proof.Seed.cbcDecChainedPost X86.abi.ptrBits) (wa := true) (stack := 4)
-    (bytes := 736) cbcDecryptChained_verified (by decide) (by lit_decide) (by lit_decide) (by decide)
+    (bytes := 740) cbcDecryptChained_verified (by decide) (by lit_decide) (by lit_decide) (by decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial)
     (Proof.Seed.cbcDecChainedPost_local _) (Proof.Seed.cbcDecChainedPostOut_local _) (frameSat_cbc _)
 
 /-- `cfbDecrypt` with its working space on the stack. -/
 theorem cfbDecrypt_framed :
-    Verified X86.target (Impl.StackScratch.X86.withStackScratchWiped 736 4 178 cfbDecrypt)
-      (Spec.Seed.cfbDecryptContract X86.abi 740) :=
+    Verified X86.target (Impl.StackScratch.X86.withStackScratchWiped 740 4 178 cfbDecrypt)
+      (Spec.Seed.cfbDecryptContract X86.abi 744) :=
   X86.Verified.stackScratchWiped (sig := Spec.Seed.cfbSig) (nm := "scratch") (e := .u64)
     (n := 89) (post := Proof.Seed.cfbDecPost X86.abi.ptrBits) (wa := true) (stack := 4)
-    (bytes := 736) cfbDecrypt_verified (by decide) (by lit_decide) (by lit_decide) (by decide)
+    (bytes := 740) cfbDecrypt_verified (by decide) (by lit_decide) (by lit_decide) (by decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial)
     (Proof.Seed.cfbDecPost_local _) (Proof.Seed.cfbDecPostOut_local _) (frameSat_fb _)
 

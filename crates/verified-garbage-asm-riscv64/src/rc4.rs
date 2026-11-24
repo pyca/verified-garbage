@@ -36,7 +36,7 @@ j 21f
 20:
 .base64 "BUU="
 21:
-.base64 "gUICFQGRgUUBRoFGAUeBRwFIgUiBQgFDgUMBToFOAU+BT4KA"
+.base64 "gUKBRQFGgUYBR4FHAUiBSIFCAUOBQwFOgU4BT4FPASWCgA=="
 .option pop"#,
     )
 }
@@ -68,7 +68,7 @@ bnez a2, 22b
 j 21f
 20:
 21:
-.base64 "gUIBRYFFAUaBRgFHgUcBSIFIgUIBQ4FDAU6BTgFPgU+CgA=="
+.base64 "gUKBRQFGgUYBR4FHAUiBSIFCAUOBQwFOgU4BT4FPAUWCgA=="
 .option pop"#,
     )
 }

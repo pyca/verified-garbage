@@ -280,7 +280,6 @@ vg_sha3_224_finalize:
 	sd t0, 1184(t1)
 	sd t0, 1192(t1)
 	addi sp, sp, 1200
-	addi a0, zero, 0
 	addi a1, zero, 0
 	addi a2, zero, 0
 	addi a3, zero, 0
@@ -295,6 +294,7 @@ vg_sha3_224_finalize:
 	addi t4, zero, 0
 	addi t5, zero, 0
 	addi t6, zero, 0
+	addi a0, zero, 0
 	ret
 	.option pop
 
@@ -574,7 +574,6 @@ vg_sha3_256_finalize:
 	sd t0, 1184(t1)
 	sd t0, 1192(t1)
 	addi sp, sp, 1200
-	addi a0, zero, 0
 	addi a1, zero, 0
 	addi a2, zero, 0
 	addi a3, zero, 0
@@ -589,6 +588,7 @@ vg_sha3_256_finalize:
 	addi t4, zero, 0
 	addi t5, zero, 0
 	addi t6, zero, 0
+	addi a0, zero, 0
 	ret
 	.option pop
 
@@ -868,7 +868,6 @@ vg_sha3_384_finalize:
 	sd t0, 1184(t1)
 	sd t0, 1192(t1)
 	addi sp, sp, 1200
-	addi a0, zero, 0
 	addi a1, zero, 0
 	addi a2, zero, 0
 	addi a3, zero, 0
@@ -883,6 +882,7 @@ vg_sha3_384_finalize:
 	addi t4, zero, 0
 	addi t5, zero, 0
 	addi t6, zero, 0
+	addi a0, zero, 0
 	ret
 	.option pop
 
@@ -1162,7 +1162,6 @@ vg_sha3_512_finalize:
 	sd t0, 1184(t1)
 	sd t0, 1192(t1)
 	addi sp, sp, 1200
-	addi a0, zero, 0
 	addi a1, zero, 0
 	addi a2, zero, 0
 	addi a3, zero, 0
@@ -1177,6 +1176,7 @@ vg_sha3_512_finalize:
 	addi t4, zero, 0
 	addi t5, zero, 0
 	addi t6, zero, 0
+	addi a0, zero, 0
 	ret
 	.option pop
 
@@ -1442,7 +1442,6 @@ vg_shake128_finalize:
 	sd t0, 1120(t1)
 	sd t0, 1128(t1)
 	addi sp, sp, 1136
-	addi a0, zero, 0
 	addi a1, zero, 0
 	addi a2, zero, 0
 	addi a3, zero, 0
@@ -1457,6 +1456,7 @@ vg_shake128_finalize:
 	addi t4, zero, 0
 	addi t5, zero, 0
 	addi t6, zero, 0
+	addi a0, zero, 0
 	ret
 	.option pop
 
@@ -1709,7 +1709,6 @@ vg_shake256_finalize:
 	sd t0, 1120(t1)
 	sd t0, 1128(t1)
 	addi sp, sp, 1136
-	addi a0, zero, 0
 	addi a1, zero, 0
 	addi a2, zero, 0
 	addi a3, zero, 0
@@ -1724,6 +1723,7 @@ vg_shake256_finalize:
 	addi t4, zero, 0
 	addi t5, zero, 0
 	addi t6, zero, 0
+	addi a0, zero, 0
 	ret
 	.option pop
 

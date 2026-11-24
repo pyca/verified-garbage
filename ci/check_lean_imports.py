@@ -28,6 +28,13 @@ proofs. Exits non-zero on violations.
     native spec, tactic and target. The audit records' modules
     (`AUDIT_RECORDS`) are the exception: they are `NativeAuditRecords`, which
     every other library loads as a plugin.
+  * No module of lean/VerifiedGarbage/ imports one of the project's other
+    libraries (`OTHER_LIBRARIES`: the tests, the audit base's check). The
+    emitter's audits (TCB/AuditRecords.lean) read the records only of
+    modules named `VerifiedGarbage.…`, and take any other module for one of
+    Lean or a dependency, trusted as TCB/AuditBase.lean lists it: what a
+    proof imports from these libraries would escape the audits
+    (https://github.com/pyca/verified-garbage/issues/6304).
 """
 
 import pathlib
@@ -55,6 +62,23 @@ ALLOWED_IMPORTS = {
 
 def allowed(mod: str, prefixes: tuple[str, ...]) -> bool:
     return any(mod == p or mod.startswith(p if p.endswith(".") else p + ".") for p in prefixes)
+
+
+# The project's libraries other than lean/VerifiedGarbage/'s (lean/lakefile.toml),
+# which no module of it may import.
+OTHER_LIBRARIES = ("VerifiedGarbageTest", "VerifiedGarbageAuditBase")
+
+
+def other_library_imports(lean: pathlib.Path, texts: dict[pathlib.Path, str]) -> list[str]:
+    """A line for each import, by a module under `lean` (lean/VerifiedGarbage/),
+    of a module of `OTHER_LIBRARIES` (from `texts`, each file's)."""
+    out = []
+    for f in sorted(lean.rglob("*.lean")):
+        for n, mod in imports(texts[f]):
+            if allowed(mod, OTHER_LIBRARIES):
+                out.append(f"{f.relative_to(lean.parent.parent)}:{n}: may not import {mod}, a module of "
+                           f"{mod.split('.')[0]}: the emitter's audits do not read its records")
+    return out
 
 
 def target_of(parts, targets: set[str]) -> str | None:
@@ -184,6 +208,7 @@ def main() -> int:
     mods = lean_shards.modules(LEAN.parent)
     texts = {f: f.read_text() for f in mods.values()}
     errors = tcb_lemmas(LEAN, texts)
+    errors += other_library_imports(LEAN, texts)
     targets = {p.name for p in (LEAN / "TCB").iterdir() if p.is_dir()}
     lean = len(str(LEAN)) + 1
     for f in sorted(LEAN.rglob("*.lean")):
