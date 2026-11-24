@@ -4778,24 +4778,24 @@ vg_sm4_gcm_seal_aesni_pclmul:
 	.p2align 6
 
 vg_sm4_gcm_open_aesni_pclmul:
-	lea esp, [esp-2604]
-	mov eax, DWORD PTR [esp+2608]
-	mov DWORD PTR [esp+4], eax
-	mov eax, DWORD PTR [esp+2612]
-	mov DWORD PTR [esp+8], eax
-	mov eax, DWORD PTR [esp+2616]
-	mov DWORD PTR [esp+12], eax
+	lea esp, [esp-2616]
 	mov eax, DWORD PTR [esp+2620]
-	mov DWORD PTR [esp+16], eax
+	mov DWORD PTR [esp+4], eax
 	mov eax, DWORD PTR [esp+2624]
-	mov DWORD PTR [esp+20], eax
+	mov DWORD PTR [esp+8], eax
 	mov eax, DWORD PTR [esp+2628]
-	mov DWORD PTR [esp+24], eax
+	mov DWORD PTR [esp+12], eax
 	mov eax, DWORD PTR [esp+2632]
-	mov DWORD PTR [esp+28], eax
+	mov DWORD PTR [esp+16], eax
 	mov eax, DWORD PTR [esp+2636]
-	mov DWORD PTR [esp+32], eax
+	mov DWORD PTR [esp+20], eax
 	mov eax, DWORD PTR [esp+2640]
+	mov DWORD PTR [esp+24], eax
+	mov eax, DWORD PTR [esp+2644]
+	mov DWORD PTR [esp+28], eax
+	mov eax, DWORD PTR [esp+2648]
+	mov DWORD PTR [esp+32], eax
+	mov eax, DWORD PTR [esp+2652]
 	mov DWORD PTR [esp+36], eax
 	mov eax, esp
 	add eax, 44
@@ -5670,7 +5670,7 @@ vg_sm4_gcm_open_aesni_pclmul:
 	mov esi, DWORD PTR [ebp+132]
 	mov edi, DWORD PTR [ebp+136]
 	mov ebp, DWORD PTR [ebp+140]
-	lea esp, [esp+2604]
+	lea esp, [esp+2616]
 	pxor xmm0, xmm0
 	mov ecx, 0
 	lea esp, [esp-4080]
@@ -5929,14 +5929,14 @@ vg_sm4_gcm_open_aesni_pclmul:
 	movdqu XMMWORD PTR [esp+4032], xmm0
 	movdqu XMMWORD PTR [esp+4048], xmm0
 	movdqu XMMWORD PTR [esp+4064], xmm0
-	lea esp, [esp-60]
+	lea esp, [esp-72]
 	movdqu XMMWORD PTR [esp], xmm0
 	movdqu XMMWORD PTR [esp+16], xmm0
 	movdqu XMMWORD PTR [esp+32], xmm0
-	mov DWORD PTR [esp+48], ecx
-	mov DWORD PTR [esp+52], ecx
-	mov DWORD PTR [esp+56], ecx
-	lea esp, [esp+60]
+	movdqu XMMWORD PTR [esp+48], xmm0
+	mov DWORD PTR [esp+64], ecx
+	mov DWORD PTR [esp+68], ecx
+	lea esp, [esp+72]
 	lea esp, [esp+4080]
 	mov edx, 0
 	xor ecx, ecx
@@ -9269,24 +9269,24 @@ vg_sm4_gcm_seal_pclmul:
 	.p2align 6
 
 vg_sm4_gcm_open_pclmul:
-	lea esp, [esp-2604]
-	mov eax, DWORD PTR [esp+2608]
-	mov DWORD PTR [esp+4], eax
-	mov eax, DWORD PTR [esp+2612]
-	mov DWORD PTR [esp+8], eax
-	mov eax, DWORD PTR [esp+2616]
-	mov DWORD PTR [esp+12], eax
+	lea esp, [esp-2616]
 	mov eax, DWORD PTR [esp+2620]
-	mov DWORD PTR [esp+16], eax
+	mov DWORD PTR [esp+4], eax
 	mov eax, DWORD PTR [esp+2624]
-	mov DWORD PTR [esp+20], eax
+	mov DWORD PTR [esp+8], eax
 	mov eax, DWORD PTR [esp+2628]
-	mov DWORD PTR [esp+24], eax
+	mov DWORD PTR [esp+12], eax
 	mov eax, DWORD PTR [esp+2632]
-	mov DWORD PTR [esp+28], eax
+	mov DWORD PTR [esp+16], eax
 	mov eax, DWORD PTR [esp+2636]
-	mov DWORD PTR [esp+32], eax
+	mov DWORD PTR [esp+20], eax
 	mov eax, DWORD PTR [esp+2640]
+	mov DWORD PTR [esp+24], eax
+	mov eax, DWORD PTR [esp+2644]
+	mov DWORD PTR [esp+28], eax
+	mov eax, DWORD PTR [esp+2648]
+	mov DWORD PTR [esp+32], eax
+	mov eax, DWORD PTR [esp+2652]
 	mov DWORD PTR [esp+36], eax
 	mov eax, esp
 	add eax, 44
@@ -10161,7 +10161,7 @@ vg_sm4_gcm_open_pclmul:
 	mov esi, DWORD PTR [ebp+132]
 	mov edi, DWORD PTR [ebp+136]
 	mov ebp, DWORD PTR [ebp+140]
-	lea esp, [esp+2604]
+	lea esp, [esp+2616]
 	pxor xmm0, xmm0
 	mov ecx, 0
 	lea esp, [esp-4080]
@@ -10420,14 +10420,14 @@ vg_sm4_gcm_open_pclmul:
 	movdqu XMMWORD PTR [esp+4032], xmm0
 	movdqu XMMWORD PTR [esp+4048], xmm0
 	movdqu XMMWORD PTR [esp+4064], xmm0
-	lea esp, [esp-60]
+	lea esp, [esp-72]
 	movdqu XMMWORD PTR [esp], xmm0
 	movdqu XMMWORD PTR [esp+16], xmm0
 	movdqu XMMWORD PTR [esp+32], xmm0
-	mov DWORD PTR [esp+48], ecx
-	mov DWORD PTR [esp+52], ecx
-	mov DWORD PTR [esp+56], ecx
-	lea esp, [esp+60]
+	movdqu XMMWORD PTR [esp+48], xmm0
+	mov DWORD PTR [esp+64], ecx
+	mov DWORD PTR [esp+68], ecx
+	lea esp, [esp+72]
 	lea esp, [esp+4080]
 	mov edx, 0
 	xor ecx, ecx
@@ -14558,24 +14558,24 @@ vg_sm4_gcm_seal_aesni:
 	.p2align 6
 
 vg_sm4_gcm_open_aesni:
-	lea esp, [esp-2604]
-	mov eax, DWORD PTR [esp+2608]
-	mov DWORD PTR [esp+4], eax
-	mov eax, DWORD PTR [esp+2612]
-	mov DWORD PTR [esp+8], eax
-	mov eax, DWORD PTR [esp+2616]
-	mov DWORD PTR [esp+12], eax
+	lea esp, [esp-2616]
 	mov eax, DWORD PTR [esp+2620]
-	mov DWORD PTR [esp+16], eax
+	mov DWORD PTR [esp+4], eax
 	mov eax, DWORD PTR [esp+2624]
-	mov DWORD PTR [esp+20], eax
+	mov DWORD PTR [esp+8], eax
 	mov eax, DWORD PTR [esp+2628]
-	mov DWORD PTR [esp+24], eax
+	mov DWORD PTR [esp+12], eax
 	mov eax, DWORD PTR [esp+2632]
-	mov DWORD PTR [esp+28], eax
+	mov DWORD PTR [esp+16], eax
 	mov eax, DWORD PTR [esp+2636]
-	mov DWORD PTR [esp+32], eax
+	mov DWORD PTR [esp+20], eax
 	mov eax, DWORD PTR [esp+2640]
+	mov DWORD PTR [esp+24], eax
+	mov eax, DWORD PTR [esp+2644]
+	mov DWORD PTR [esp+28], eax
+	mov eax, DWORD PTR [esp+2648]
+	mov DWORD PTR [esp+32], eax
+	mov eax, DWORD PTR [esp+2652]
 	mov DWORD PTR [esp+36], eax
 	mov eax, esp
 	add eax, 44
@@ -15450,7 +15450,7 @@ vg_sm4_gcm_open_aesni:
 	mov esi, DWORD PTR [ebp+132]
 	mov edi, DWORD PTR [ebp+136]
 	mov ebp, DWORD PTR [ebp+140]
-	lea esp, [esp+2604]
+	lea esp, [esp+2616]
 	pxor xmm0, xmm0
 	mov ecx, 0
 	lea esp, [esp-4080]
@@ -15709,14 +15709,14 @@ vg_sm4_gcm_open_aesni:
 	movdqu XMMWORD PTR [esp+4032], xmm0
 	movdqu XMMWORD PTR [esp+4048], xmm0
 	movdqu XMMWORD PTR [esp+4064], xmm0
-	lea esp, [esp-60]
+	lea esp, [esp-72]
 	movdqu XMMWORD PTR [esp], xmm0
 	movdqu XMMWORD PTR [esp+16], xmm0
 	movdqu XMMWORD PTR [esp+32], xmm0
-	mov DWORD PTR [esp+48], ecx
-	mov DWORD PTR [esp+52], ecx
-	mov DWORD PTR [esp+56], ecx
-	lea esp, [esp+60]
+	movdqu XMMWORD PTR [esp+48], xmm0
+	mov DWORD PTR [esp+64], ecx
+	mov DWORD PTR [esp+68], ecx
+	lea esp, [esp+72]
 	lea esp, [esp+4080]
 	mov edx, 0
 	xor ecx, ecx
@@ -19049,24 +19049,24 @@ vg_sm4_gcm_seal:
 	.p2align 6
 
 vg_sm4_gcm_open:
-	lea esp, [esp-2604]
-	mov eax, DWORD PTR [esp+2608]
-	mov DWORD PTR [esp+4], eax
-	mov eax, DWORD PTR [esp+2612]
-	mov DWORD PTR [esp+8], eax
-	mov eax, DWORD PTR [esp+2616]
-	mov DWORD PTR [esp+12], eax
+	lea esp, [esp-2616]
 	mov eax, DWORD PTR [esp+2620]
-	mov DWORD PTR [esp+16], eax
+	mov DWORD PTR [esp+4], eax
 	mov eax, DWORD PTR [esp+2624]
-	mov DWORD PTR [esp+20], eax
+	mov DWORD PTR [esp+8], eax
 	mov eax, DWORD PTR [esp+2628]
-	mov DWORD PTR [esp+24], eax
+	mov DWORD PTR [esp+12], eax
 	mov eax, DWORD PTR [esp+2632]
-	mov DWORD PTR [esp+28], eax
+	mov DWORD PTR [esp+16], eax
 	mov eax, DWORD PTR [esp+2636]
-	mov DWORD PTR [esp+32], eax
+	mov DWORD PTR [esp+20], eax
 	mov eax, DWORD PTR [esp+2640]
+	mov DWORD PTR [esp+24], eax
+	mov eax, DWORD PTR [esp+2644]
+	mov DWORD PTR [esp+28], eax
+	mov eax, DWORD PTR [esp+2648]
+	mov DWORD PTR [esp+32], eax
+	mov eax, DWORD PTR [esp+2652]
 	mov DWORD PTR [esp+36], eax
 	mov eax, esp
 	add eax, 44
@@ -19941,7 +19941,7 @@ vg_sm4_gcm_open:
 	mov esi, DWORD PTR [ebp+132]
 	mov edi, DWORD PTR [ebp+136]
 	mov ebp, DWORD PTR [ebp+140]
-	lea esp, [esp+2604]
+	lea esp, [esp+2616]
 	pxor xmm0, xmm0
 	mov ecx, 0
 	lea esp, [esp-4080]
@@ -20200,14 +20200,14 @@ vg_sm4_gcm_open:
 	movdqu XMMWORD PTR [esp+4032], xmm0
 	movdqu XMMWORD PTR [esp+4048], xmm0
 	movdqu XMMWORD PTR [esp+4064], xmm0
-	lea esp, [esp-60]
+	lea esp, [esp-72]
 	movdqu XMMWORD PTR [esp], xmm0
 	movdqu XMMWORD PTR [esp+16], xmm0
 	movdqu XMMWORD PTR [esp+32], xmm0
-	mov DWORD PTR [esp+48], ecx
-	mov DWORD PTR [esp+52], ecx
-	mov DWORD PTR [esp+56], ecx
-	lea esp, [esp+60]
+	movdqu XMMWORD PTR [esp+48], xmm0
+	mov DWORD PTR [esp+64], ecx
+	mov DWORD PTR [esp+68], ecx
+	lea esp, [esp+72]
 	lea esp, [esp+4080]
 	mov edx, 0
 	xor ecx, ecx
