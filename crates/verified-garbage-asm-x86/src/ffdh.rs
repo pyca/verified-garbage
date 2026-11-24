@@ -298,7 +298,7 @@ jne 282b
 .base64 "iwOLVQAxwiHKMdCJA4PFBIPDBIPvBA=="
 jne 283b
 .base64 "i3wkRA=="
-call {vg_ffdh_prepare_wide}
+call {vg_ffdh_prepare_public_wide}
 .base64 "uf////+LVCQIg8IHweoDAdIB0gHSAdKDwiCJ/YHFCA0AAAHVAdUB1QHVAdUB1QHVAdUB1QHVi1QkCIPCB8HqAwHSAdIB0gHSg8IgifuBwwgNAAAB0wHTAdMB0wHTi3wkCIPHB8HvAwH/Af8B/w=="
 284:
 .base64 "iwOLVQAxwiHKMdCJA4PFBIPDBIPvBA=="
@@ -340,6 +340,7 @@ jmp 251f
 .p2align 6"#,
         vg_ffdh_prepare_wide = sym super::ffdh::vg_ffdh_prepare_wide::vg_ffdh_prepare_wide,
         vg_rsa_mont_mul_at = sym super::rsa::vg_rsa_mont_mul_at::vg_rsa_mont_mul_at,
+        vg_ffdh_prepare_public_wide = sym super::ffdh::vg_ffdh_prepare_public_wide::vg_ffdh_prepare_public_wide,
         vg_ffdh_window_q_wide = sym super::ffdh::vg_ffdh_window_q_wide::vg_ffdh_window_q_wide,
         VG_FFDH_VETTED_GROUPS_X86 = sym super::consts::VG_FFDH_VETTED_GROUPS_X86,
     )
@@ -421,7 +422,7 @@ jne 214b
 .base64 "iwOLVQAxwiHKMdCJA4PFBIPDBIPvBA=="
 jne 215b
 .base64 "i3wkRA=="
-call {vg_ffdh_prepare_wide}
+call {vg_ffdh_prepare_public_wide}
 .base64 "uf////+LVCQIg8IHweoDAdIB0gHSAdKDwiCJ/YHFCA0AAAHVAdUB1QHVAdUB1QHVAdUB1QHVAdUB1YtUJAiDwgfB6gMB0gHSAdIB0oPCIIn7gcMIDQAAAdMB0wHTAdMB04t8JAiDxwfB7wMB/wH/Af8="
 216:
 .base64 "iwOLVQAxwiHKMdCJA4PFBIPDBIPvBA=="
@@ -447,7 +448,7 @@ jmp 211f
 211:
 .base64 "jWQkTItfIItvJIt3KIt/LGYP78C5AAAAAI2kJAT////zD38EJPMPf0QkEPMPf0QkIPMPf0QkMPMPf0QkQPMPf0QkUPMPf0QkYPMPf0QkcPMPf4QkgAAAAPMPf4QkkAAAAPMPf4QkoAAAAPMPf4QksAAAAPMPf4QkwAAAAPMPf4Qk0AAAAPMPf4Qk4AAAAImMJPAAAACJjCT0AAAAiYwk+AAAAI2kJPwAAAC6AAAAADHJZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7//D"
 .p2align 6"#,
-        vg_ffdh_prepare_wide = sym super::ffdh::vg_ffdh_prepare_wide::vg_ffdh_prepare_wide,
+        vg_ffdh_prepare_public_wide = sym super::ffdh::vg_ffdh_prepare_public_wide::vg_ffdh_prepare_public_wide,
         vg_ffdh_window_q_wide = sym super::ffdh::vg_ffdh_window_q_wide::vg_ffdh_window_q_wide,
     )
 }
@@ -589,7 +590,7 @@ je 228f
 .base64 "iwOLVQAxwiHKMdCJA4PFBIPDBIPvBA=="
 jne 230b
 .base64 "i3wkRA=="
-call {vg_ffdh_prepare_wide}
+call {vg_ffdh_prepare_public_wide}
 call {vg_ffdh_ladder_two_wide}
 jmp 229f
 228:
@@ -598,7 +599,7 @@ jmp 229f
 .base64 "iwOLVQAxwiHKMdCJA4PFBIPDBIPvBA=="
 jne 231b
 .base64 "i3wkRA=="
-call {vg_ffdh_prepare_wide}
+call {vg_ffdh_prepare_public_wide}
 .base64 "uf////+LVCQIg8IHweoDAdIB0gHSAdKDwiCJ/YHFCA0AAAHVAdUB1QHVAdUB1QHVAdUB1QHVi1QkCIPCB8HqAwHSAdIB0gHSg8IgifuBwwgNAAAB0wHTAdMB0wHTi3wkCIPHB8HvAwH/Af8B/w=="
 232:
 .base64 "iwOLVQAxwiHKMdCJA4PFBIPDBIPvBA=="
@@ -628,7 +629,7 @@ jmp 222f
 222:
 .base64 "jWQkTItfIItvJIt3KIt/LGYP78C5AAAAAI2kJAT////zD38EJPMPf0QkEPMPf0QkIPMPf0QkMPMPf0QkQPMPf0QkUPMPf0QkYPMPf0QkcPMPf4QkgAAAAPMPf4QkkAAAAPMPf4QkoAAAAPMPf4QksAAAAPMPf4QkwAAAAPMPf4Qk0AAAAPMPf4Qk4AAAAImMJPAAAACJjCT0AAAAiYwk+AAAAI2kJPwAAAC6AAAAADHJZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7//D"
 .p2align 6"#,
-        vg_ffdh_prepare_wide = sym super::ffdh::vg_ffdh_prepare_wide::vg_ffdh_prepare_wide,
+        vg_ffdh_prepare_public_wide = sym super::ffdh::vg_ffdh_prepare_public_wide::vg_ffdh_prepare_public_wide,
         vg_ffdh_ladder_two_wide = sym super::ffdh::vg_ffdh_ladder_two_wide::vg_ffdh_ladder_two_wide,
         vg_ffdh_window_top_wide = sym super::ffdh::vg_ffdh_window_top_wide::vg_ffdh_window_top_wide,
     )
@@ -856,7 +857,7 @@ je 224f
 .base64 "iwOLVQAxwiHKMdCJA4PFBIPDBIPvBA=="
 jne 226b
 .base64 "i3wkRA=="
-call {vg_ffdh_prepare_wide}
+call {vg_ffdh_prepare_public_wide}
 call {vg_ffdh_ladder_two_wide}
 jmp 225f
 224:
@@ -865,7 +866,7 @@ jmp 225f
 .base64 "iwOLVQAxwiHKMdCJA4PFBIPDBIPvBA=="
 jne 227b
 .base64 "i3wkRA=="
-call {vg_ffdh_prepare_wide}
+call {vg_ffdh_prepare_public_wide}
 .base64 "uf////+LVCQIg8IHweoDAdIB0gHSAdKDwiCJ/YHFCA0AAAHVAdUB1QHVAdUB1QHVAdUB1QHVi1QkCIPCB8HqAwHSAdIB0gHSg8IgifuBwwgNAAAB0wHTAdMB0wHTi3wkCIPHB8HvAwH/Af8B/w=="
 228:
 .base64 "iwOLVQAxwiHKMdCJA4PFBIPDBIPvBA=="
@@ -915,7 +916,7 @@ jne 237b
 220:
 .base64 "jWQkTItfIItvJIt3KIt/LGYP78C5AAAAAI2kJAT////zD38EJPMPf0QkEPMPf0QkIPMPf0QkMPMPf0QkQPMPf0QkUPMPf0QkYPMPf0QkcPMPf4QkgAAAAPMPf4QkkAAAAPMPf4QkoAAAAPMPf4QksAAAAPMPf4QkwAAAAPMPf4Qk0AAAAPMPf4Qk4AAAAImMJPAAAACJjCT0AAAAiYwk+AAAAI2kJPwAAAC6AAAAADHJZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7//D"
 .p2align 6"#,
-        vg_ffdh_prepare_wide = sym super::ffdh::vg_ffdh_prepare_wide::vg_ffdh_prepare_wide,
+        vg_ffdh_prepare_public_wide = sym super::ffdh::vg_ffdh_prepare_public_wide::vg_ffdh_prepare_public_wide,
         vg_ffdh_ladder_two_wide = sym super::ffdh::vg_ffdh_ladder_two_wide::vg_ffdh_ladder_two_wide,
         vg_ffdh_window_top_wide = sym super::ffdh::vg_ffdh_window_top_wide::vg_ffdh_window_top_wide,
     )
@@ -1758,6 +1759,10 @@ pub(crate) mod vg_ffdh_ladder_two_wide;
 #[rustfmt::skip]
 #[path = "internal/vg_ffdh_parameter_candidate_sieved.rs"]
 pub(crate) mod vg_ffdh_parameter_candidate_sieved;
+
+#[rustfmt::skip]
+#[path = "internal/vg_ffdh_prepare_public_wide.rs"]
+pub(crate) mod vg_ffdh_prepare_public_wide;
 
 #[rustfmt::skip]
 #[path = "internal/vg_ffdh_prepare_wide.rs"]
