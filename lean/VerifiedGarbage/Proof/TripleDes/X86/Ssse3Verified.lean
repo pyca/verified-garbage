@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.TripleDes.X86.CbcVerified
 public import VerifiedGarbage.Proof.TripleDes.X86.FbFinalVerified
 public import VerifiedGarbage.Proof.Framework.X86.ScrubSel
 public import VerifiedGarbage.Proof.Framework.Registration
-import VerifiedGarbage.Proof.TripleDes.X86.Scrub
 import VerifiedGarbage.Proof.TripleDes.X86.Ssse3Lit
 import VerifiedGarbage.Proof.Framework.X86.SseTaint
 import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
@@ -17,7 +16,6 @@ meta import VerifiedGarbage.Proof.TripleDes.X86.CbcVerified
 meta import VerifiedGarbage.Proof.TripleDes.X86.FbFinalVerified
 meta import VerifiedGarbage.Proof.Framework.X86.ScrubSel
 meta import VerifiedGarbage.Proof.Framework.Registration
-meta import VerifiedGarbage.Proof.TripleDes.X86.Scrub
 meta import VerifiedGarbage.Proof.TripleDes.X86.Ssse3Lit
 meta import VerifiedGarbage.Proof.Framework.X86.SseTaint
 meta import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
