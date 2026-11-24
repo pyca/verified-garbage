@@ -5,6 +5,16 @@ public import VerifiedGarbage.Proof.ChaCha20.Spec
 public import VerifiedGarbage.Impl.ChaCha20.X86
 public import VerifiedGarbage.Proof.Framework.X86.Taint
 import VerifiedGarbage.Proof.Framework.Range
+public import VerifiedGarbage.Proof.ChaCha20.X86.Kernels
+import VerifiedGarbage.Proof.Framework.X86.SseTaint
+import VerifiedGarbage.Proof.Framework.X86.SseDword
+import VerifiedGarbage.Proof.Framework.X86.Sse
+import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Framework.X86.Wp
+import VerifiedGarbage.Proof.Framework.X86.Exec
+import VerifiedGarbage.Proof.Framework.X86.Reduce
+import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Spec.ChaCha20.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Contract
@@ -14,6 +24,7 @@ meta import VerifiedGarbage.Proof.ChaCha20.Spec
 meta import VerifiedGarbage.Impl.ChaCha20.X86
 meta import VerifiedGarbage.Proof.Framework.X86.Taint
 meta import VerifiedGarbage.Proof.Framework.Range
+meta import VerifiedGarbage.Proof.Framework.X86.SseTaint
 meta import VerifiedGarbage.Spec.ChaCha20.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Contract
@@ -39,157 +50,156 @@ open VG.Spec.ChaCha20 (Word quarterRound qround innerBlock)
 /-- The address of word `k` of `buf`, relative to its 64-bit address `B`. -/
 abbrev wordAddr (B : Addr) (k : Nat) : Addr := B + BitVec.ofNat 64 (4 * k)
 
-/-- The state `v` is in `buf[0..64)`. -/
-def Holds (B : Addr) (v : CState) (m : Mem) : Prop :=
-  ∀ k (hk : k < 16), m.readW (wordAddr B k) 32 = v[k]
-
-theorem word_sep (B : Addr) {j k : Nat} (hj : j < 16) (hk : k < 16) (h : j ≠ k) :
-    Mem.Sep (wordAddr B j) 4 (wordAddr B k) 4 := Offset.sep B (by lit_omega) (by lit_omega) (by lit_omega)
-
-theorem readW_writeW_word (m : Mem) (B : Addr) (v : Word) {j k : Nat} (hj : j < 16) (hk : k < 16)
-    (h : j ≠ k) : (m.writeW (wordAddr B k) v).readW (wordAddr B j) 32 = m.readW (wordAddr B j) 32 :=
-  Mem.readW_writeW_sep (word_sep B hj hk h) (by decide)
-
 theorem toNat_ofNat_lt {n : Nat} (h : n < 2 ^ 64) : (BitVec.ofNat 64 n).toNat = n := by
   rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt h
 
-/-- The working state, `buf[0..64)`. -/
-abbrev workR (B : Addr) : Region := ⟨B, 64⟩
+/-! ## A double round on the rows -/
 
-theorem word_in_work (B : Addr) {k : Nat} (hk : k < 16) : (workR B).Contains (wordAddr B k) 4 := Offset.contains_base B (by lit_omega) (by lit_omega)
+/-- The column round and the diagonal round of `innerBlock`. -/
+def colRound (v : CState) : CState := qround (qround (qround (qround v 0 4 8 12) 1 5 9 13) 2 6 10 14) 3 7 11 15
+def diagRound (v : CState) : CState := qround (qround (qround (qround v 0 5 10 15) 1 6 11 12) 2 7 8 13) 3 4 9 14
 
-/-- What the rounds need of the machine state: `esi` points to `buf`, whose
-working state is readable and writable. -/
-structure Ctx (B : Addr) (s : State) : Prop where
-  ea : ∀ k < 16, addr (s.gpr .esi) (4 * k) = wordAddr B k
-  inw : ∀ k < 16, InRegions (s.rd ++ s.wr) (wordAddr B k) 4
-  outw : ∀ k < 16, InRegions s.wr (wordAddr B k) 4
+theorem innerBlock_eq (v : CState) : innerBlock v = diagRound (colRound v) := rfl
 
-/-! ## One quarter round -/
+/-- The state `v` in `xmm0`–`xmm3`, a row each. -/
+def Rows (v : CState) (s : State) : Prop :=
+  ∀ l (hl : l < 4), dw s .xmm0 l = v[l] ∧ dw s .xmm1 l = v[4 + l] ∧ dw s .xmm2 l = v[8 + l] ∧
+    dw s .xmm3 l = v[12 + l]
 
-theorem qr_ok (s : State) (va vb vc vd : Word)
-    (ha : s.gpr .eax = va) (hb : s.gpr .ebx = vb) (hc : s.gpr .ecx = vc) (hd : s.gpr .edx = vd) :
-    WP isa (.block qr) s fun s' =>
-      s'.gpr .eax = (quarterRound va vb vc vd).1 ∧ s'.gpr .ebx = (quarterRound va vb vc vd).2.1 ∧
-      s'.gpr .ecx = (quarterRound va vb vc vd).2.2.1 ∧ s'.gpr .edx = (quarterRound va vb vc vd).2.2.2 ∧
-      s'.gpr .esi = s.gpr .esi ∧ s'.gpr .edi = s.gpr .edi ∧ s'.gpr .esp = s.gpr .esp ∧
-      s'.gpr .ebp = s.gpr .ebp ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
+/-- The state `v` with row `r` rotated by `r` doublewords: each diagonal in a
+column. -/
+def DRows (v : CState) (s : State) : Prop :=
+  ∀ l (hl : l < 4), dw s .xmm0 l = v[l] ∧ dw s .xmm1 l = v[4 + (l + 1) % 4]'(by omega_using [hl]) ∧
+    dw s .xmm2 l = v[8 + (l + 2) % 4]'(by omega_using [hl]) ∧
+    dw s .xmm3 l = v[12 + (l + 3) % 4]'(by omega_using [hl])
+
+private theorem fv3 : ((3 : Fin 16) : Nat) = 3 := rfl
+private theorem fv4 : ((4 : Fin 16) : Nat) = 4 := rfl
+private theorem fv5 : ((5 : Fin 16) : Nat) = 5 := rfl
+private theorem fv6 : ((6 : Fin 16) : Nat) = 6 := rfl
+private theorem fv7 : ((7 : Fin 16) : Nat) = 7 := rfl
+private theorem fv8 : ((8 : Fin 16) : Nat) = 8 := rfl
+private theorem fv9 : ((9 : Fin 16) : Nat) = 9 := rfl
+private theorem fv10 : ((10 : Fin 16) : Nat) = 10 := rfl
+private theorem fv11 : ((11 : Fin 16) : Nat) = 11 := rfl
+private theorem fv12 : ((12 : Fin 16) : Nat) = 12 := rfl
+private theorem fv13 : ((13 : Fin 16) : Nat) = 13 := rfl
+private theorem fv14 : ((14 : Fin 16) : Nat) = 14 := rfl
+private theorem fv15 : ((15 : Fin 16) : Nat) = 15 := rfl
+
+theorem colRound_get (v : CState) {l : Nat} (hl : l < 4) :
+    (colRound v)[l] = (quarterRound v[l] v[4 + l] v[8 + l] v[12 + l]).1 ∧
+    (colRound v)[4 + l] = (quarterRound v[l] v[4 + l] v[8 + l] v[12 + l]).2.1 ∧
+    (colRound v)[8 + l] = (quarterRound v[l] v[4 + l] v[8 + l] v[12 + l]).2.2.1 ∧
+    (colRound v)[12 + l] = (quarterRound v[l] v[4 + l] v[8 + l] v[12 + l]).2.2.2 := by
+  rcases cases4 hl with rfl | rfl | rfl | rfl <;> simp [colRound, qround_get, fv3, fv4, fv5, fv6, fv7, fv8, fv9, fv10, fv11, fv12, fv13, fv14, fv15]
+
+theorem diagRound_get (v : CState) {l : Nat} (hl : l < 4) :
+    (diagRound v)[l] = (quarterRound v[l] (v[4 + (l + 1) % 4]'(by omega_using [hl]))
+      (v[8 + (l + 2) % 4]'(by omega_using [hl])) (v[12 + (l + 3) % 4]'(by omega_using [hl]))).1 ∧
+    (diagRound v)[4 + (l + 1) % 4]'(by omega_using [hl]) = (quarterRound v[l]
+      (v[4 + (l + 1) % 4]'(by omega_using [hl])) (v[8 + (l + 2) % 4]'(by omega_using [hl]))
+      (v[12 + (l + 3) % 4]'(by omega_using [hl]))).2.1 ∧
+    (diagRound v)[8 + (l + 2) % 4]'(by omega_using [hl]) = (quarterRound v[l]
+      (v[4 + (l + 1) % 4]'(by omega_using [hl])) (v[8 + (l + 2) % 4]'(by omega_using [hl]))
+      (v[12 + (l + 3) % 4]'(by omega_using [hl]))).2.2.1 ∧
+    (diagRound v)[12 + (l + 3) % 4]'(by omega_using [hl]) = (quarterRound v[l]
+      (v[4 + (l + 1) % 4]'(by omega_using [hl])) (v[8 + (l + 2) % 4]'(by omega_using [hl]))
+      (v[12 + (l + 3) % 4]'(by omega_using [hl]))).2.2.2 := by
+  rcases cases4 hl with rfl | rfl | rfl | rfl <;> simp [diagRound, qround_get, fv3, fv4, fv5, fv6, fv7, fv8, fv9, fv10, fv11, fv12, fv13, fv14, fv15]
+
+/-- What a double round keeps: everything but `xmm0`–`xmm4`. -/
+structure Kept (s s' : State) : Prop where
+  gpr : s'.gpr = s.gpr
+  mem : s'.mem = s.mem
+  rd : s'.rd = s.rd
+  wr : s'.wr = s.wr
+
+theorem Kept.trans {a b c : State} (h₁ : Kept a b) (h₂ : Kept b c) : Kept a c :=
+  ⟨h₂.gpr.trans h₁.gpr, h₂.mem.trans h₁.mem, h₂.rd.trans h₁.rd, h₂.wr.trans h₁.wr⟩
+
+/-- `shuf i j k`: rows 1, 2 and 3 shuffled. -/
+theorem shuf_ok (i j k : BitVec 8) (s : State) :
+    WP isa (.block (shuf i j k)) s fun s' => s'.xmm .xmm0 = s.xmm .xmm0 ∧
+      s'.xmm .xmm1 = shufDwords (s.xmm .xmm1) i ∧ s'.xmm .xmm2 = shufDwords (s.xmm .xmm2) j ∧
+      s'.xmm .xmm3 = shufDwords (s.xmm .xmm3) k ∧ Kept s s' := by
   apply WP.of_runBlock
-  simp only [reduceCtorEq, ↓reduceIte, Nat.reduceLeDiff, Nat.reduceEqDiff, Nat.reducePow, and_self, qr, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, execShift, readSrc,
-    State.setReg, arithFlags, State.setFlags, ha, hb, hc, hd, 
-    Option.bind_some, Option.some.injEq, exists_eq_left']
-  and_intros
-  all_goals simp only [quarterRound_eq]
+  simp only [shuf, runBlock_cons, runStep_some, runBlock_nil, reduceExec, XOp.exec, Option.some.injEq,
+    exists_eq_left']
+  refine ⟨?_, ?_, ?_, ?_, ⟨rfl, rfl, rfl, rfl⟩⟩ <;>
+    simp only [RegUpd.xmm_setXmm_self, RegUpd.xmm_setXmm_of_ne _ _ (by decide : ¬XReg.xmm0 = .xmm1),
+      RegUpd.xmm_setXmm_of_ne _ _ (by decide : ¬XReg.xmm0 = .xmm2),
+      RegUpd.xmm_setXmm_of_ne _ _ (by decide : ¬XReg.xmm0 = .xmm3),
+      RegUpd.xmm_setXmm_of_ne _ _ (by decide : ¬XReg.xmm1 = .xmm2),
+      RegUpd.xmm_setXmm_of_ne _ _ (by decide : ¬XReg.xmm1 = .xmm3),
+      RegUpd.xmm_setXmm_of_ne _ _ (by decide : ¬XReg.xmm2 = .xmm3),
+      RegUpd.xmm_setXmm_of_ne _ _ (by decide : ¬XReg.xmm2 = .xmm1),
+      RegUpd.xmm_setXmm_of_ne _ _ (by decide : ¬XReg.xmm3 = .xmm1),
+      RegUpd.xmm_setXmm_of_ne _ _ (by decide : ¬XReg.xmm3 = .xmm2)]
 
-theorem quarter_ok {x y z w : Nat} (hx : x < 16) (hy : y < 16) (hz : z < 16) (hw : w < 16)
-    (hd : [x, y, z, w].Nodup) {B : Addr} {v : CState} {s : State} (hctx : Ctx B s)
-    (h : Holds B v s.mem) :
-    WP isa (quarter x y z w) s fun s' =>
-      Holds B (qround v ⟨x, hx⟩ ⟨y, hy⟩ ⟨z, hz⟩ ⟨w, hw⟩) s'.mem ∧ Frame [workR B] s.mem s'.mem ∧
-      s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.gpr .esi = s.gpr .esi ∧ s'.gpr .edi = s.gpr .edi ∧
-      s'.gpr .esp = s.gpr .esp ∧ s'.gpr .ebp = s.gpr .ebp := by
-  have nd : (x ≠ y ∧ x ≠ z ∧ x ≠ w) ∧ (y ≠ z ∧ y ≠ w) ∧ z ≠ w := by simpa using hd
-  obtain ⟨⟨nxy, nxz, nxw⟩, ⟨nyz, nyw⟩, nzw⟩ := nd
-  have ex := hctx.ea x hx; have ey := hctx.ea y hy; have ez := hctx.ea z hz; have ew := hctx.ea w hw
-  have ix := hctx.inw x hx; have iy := hctx.inw y hy; have iz := hctx.inw z hz; have iw := hctx.inw w hw
-  have ox := hctx.outw x hx; have oy := hctx.outw y hy; have oz := hctx.outw z hz
-  have ow := hctx.outw w hw
-  simp only [addr] at ex ey ez ew
-  unfold quarter
-  rw [WP.block_append_iff, WP.block_append_iff]
-  -- The loads.
-  apply WP.of_runBlock
-  simp only [reduceCtorEq, ↓reduceIte, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, State.setReg, State.ea,
-    at_, State.load32, ex, ey, ez, ew, ix, iy, iz, iw, Option.map_some,
-    Option.some.injEq, exists_eq_left']
-  refine WP.mono (qr_ok _ (v[x]'hx) (v[y]'hy) (v[z]'hz) (v[w]'hw) (by simp [h x hx]) (by simp [h y hy])
-    (by simp [h z hz]) (by simp [h w hw])) fun s₁ ⟨ha, hb, hc, hd,
-    hesi, hedi, hesp, hebp, hm, hrd, hwr⟩ => ?_
-  simp only [ite_false, reduceCtorEq] at hesi hedi hesp hebp
-  -- The stores.
-  apply WP.of_runBlock
-  simp only [↓reduceIte, runBlock_cons, runStep_some, runBlock_nil, exec, State.ea, State.store32, hesi,
-    ex, ey, ez, ew, hrd, hwr, hm, ox, oy, oz, ow, Option.some.injEq,
-    exists_eq_left', ha, hb, hc, hd]
-  refine ⟨fun k hk => ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-  rotate_left 2
-  all_goals try first | trivial | exact hedi | exact hesp | exact hebp
-  · rw [qround_get _ _ _ _ _ k hk]
-    simp only
-    have g : ∀ j (hj : j < 16), s.mem.readW (wordAddr B j) 32 = v[j] := h
-    by_cases e4 : w = k
-    · subst e4; simp only [ite_true]
-      rw [Mem.readW_writeW_self32]; rfl
-    by_cases e3 : z = k
-    · subst e3; simp only [ite_true, e4, ite_false]
-      rw [readW_writeW_word _ _ _ hz hw nzw, Mem.readW_writeW_self32]; rfl
-    by_cases e2 : y = k
-    · subst e2; simp only [ite_true, e4, e3, ite_false]
-      rw [readW_writeW_word _ _ _ hy hw nyw, readW_writeW_word _ _ _ hy hz nyz,
-        Mem.readW_writeW_self32]; rfl
-    by_cases e1 : x = k
-    · subst e1; simp only [ite_true, e4, e3, e2, ite_false]
-      rw [readW_writeW_word _ _ _ hx hw nxw, readW_writeW_word _ _ _ hx hz nxz,
-        readW_writeW_word _ _ _ hx hy nxy, Mem.readW_writeW_self32]; rfl
-    simp only [e4, e3, e2, e1, ite_false]
-    rw [readW_writeW_word _ _ _ hk hw (Ne.symm e4), readW_writeW_word _ _ _ hk hz (Ne.symm e3),
-      readW_writeW_word _ _ _ hk hy (Ne.symm e2), readW_writeW_word _ _ _ hk hx (Ne.symm e1)]
-    exact g k hk
-  · exact ((((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (word_in_work B hx)).writeW
-      (List.mem_singleton_self _) _ (word_in_work B hy)).writeW (List.mem_singleton_self _) _
-      (word_in_work B hz)).writeW (List.mem_singleton_self _) _ (word_in_work B hw)
+/-- The quarter round on the columns of the rows. -/
+theorem col_ok {v : CState} {s : State} (h : Rows v s) :
+    WP isa (.block (vqr .xmm0 .xmm1 .xmm2 .xmm3 .xmm4)) s fun s' => Rows (colRound v) s' ∧ Kept s s' :=
+  WP.mono (vqr_ok (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+    (by decide) (by decide) (by decide) s) fun s' ⟨q, _, g, m, rd, wr⟩ => ⟨fun l hl => by
+      obtain ⟨a, b, c, d⟩ := q l hl
+      obtain ⟨ha, hb, hc, hd⟩ := h l hl
+      obtain ⟨ca, cb, cc, cd⟩ := colRound_get v hl
+      rw [a, b, c, d, ha, hb, hc, hd]
+      exact ⟨ca.symm, cb.symm, cc.symm, cd.symm⟩, ⟨g, m, rd, wr⟩⟩
 
-/-! ## Double rounds -/
+/-- The quarter round on the diagonals, in columns. -/
+theorem diag_ok {v : CState} {s : State} (h : DRows v s) :
+    WP isa (.block (vqr .xmm0 .xmm1 .xmm2 .xmm3 .xmm4)) s fun s' => DRows (diagRound v) s' ∧ Kept s s' :=
+  WP.mono (vqr_ok (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+    (by decide) (by decide) (by decide) s) fun s' ⟨q, _, g, m, rd, wr⟩ => ⟨fun l hl => by
+      obtain ⟨a, b, c, d⟩ := q l hl
+      obtain ⟨ha, hb, hc, hd⟩ := h l hl
+      obtain ⟨ca, cb, cc, cd⟩ := diagRound_get v hl
+      rw [a, b, c, d, ha, hb, hc, hd]
+      exact ⟨ca.symm, cb.symm, cc.symm, cd.symm⟩, ⟨g, m, rd, wr⟩⟩
 
-/-- The rounds invariant, relative to the state `s₀` at the start of the rounds. -/
-structure RI (B : Addr) (v : CState) (s₀ s : State) : Prop where
-  holds : Holds B v s.mem
-  frame : Frame [workR B] s₀.mem s.mem
-  rd : s.rd = s₀.rd
-  wr : s.wr = s₀.wr
-  esi : s.gpr .esi = s₀.gpr .esi
-  edi : s.gpr .edi = s₀.gpr .edi
-  esp : s.gpr .esp = s₀.gpr .esp
-  ebp : s.gpr .ebp = s₀.gpr .ebp
+/-- The rows rotated: the diagonals in columns. -/
+theorem toDiag {v : CState} {s s' : State} (h : Rows v s) (h0 : s'.xmm .xmm0 = s.xmm .xmm0)
+    (h1 : s'.xmm .xmm1 = shufDwords (s.xmm .xmm1) 0x39) (h2 : s'.xmm .xmm2 = shufDwords (s.xmm .xmm2) 0x4e)
+    (h3 : s'.xmm .xmm3 = shufDwords (s.xmm .xmm3) 0x93) : DRows v s' := by
+  intro l hl
+  simp only [dw, h0, h1, h2, h3, dword_shufDwords _ _ hl]
+  rcases cases4 hl with rfl | rfl | rfl | rfl
+  · exact ⟨(h 0 (by decide)).1, (h 1 (by decide)).2.1, (h 2 (by decide)).2.2.1, (h 3 (by decide)).2.2.2⟩
+  · exact ⟨(h 1 (by decide)).1, (h 2 (by decide)).2.1, (h 3 (by decide)).2.2.1, (h 0 (by decide)).2.2.2⟩
+  · exact ⟨(h 2 (by decide)).1, (h 3 (by decide)).2.1, (h 0 (by decide)).2.2.1, (h 1 (by decide)).2.2.2⟩
+  · exact ⟨(h 3 (by decide)).1, (h 0 (by decide)).2.1, (h 1 (by decide)).2.2.1, (h 2 (by decide)).2.2.2⟩
 
-theorem RI.ctx {B : Addr} {v : CState} {s₀ s : State} (h : RI B v s₀ s) (hc : Ctx B s₀) :
-    Ctx B s :=
-  ⟨fun k hk => by rw [h.esi]; exact hc.ea k hk, fun k hk => by rw [h.rd, h.wr]; exact hc.inw k hk,
-    fun k hk => by rw [h.wr]; exact hc.outw k hk⟩
+/-- The rows rotated back. -/
+theorem ofDiag {v : CState} {s s' : State} (h : DRows v s) (h0 : s'.xmm .xmm0 = s.xmm .xmm0)
+    (h1 : s'.xmm .xmm1 = shufDwords (s.xmm .xmm1) 0x93) (h2 : s'.xmm .xmm2 = shufDwords (s.xmm .xmm2) 0x4e)
+    (h3 : s'.xmm .xmm3 = shufDwords (s.xmm .xmm3) 0x39) : Rows v s' := by
+  intro l hl
+  simp only [dw, h0, h1, h2, h3, dword_shufDwords _ _ hl]
+  rcases cases4 hl with rfl | rfl | rfl | rfl
+  · exact ⟨(h 0 (by decide)).1, (h 3 (by decide)).2.1, (h 2 (by decide)).2.2.1, (h 1 (by decide)).2.2.2⟩
+  · exact ⟨(h 1 (by decide)).1, (h 0 (by decide)).2.1, (h 3 (by decide)).2.2.1, (h 2 (by decide)).2.2.2⟩
+  · exact ⟨(h 2 (by decide)).1, (h 1 (by decide)).2.1, (h 0 (by decide)).2.2.1, (h 3 (by decide)).2.2.2⟩
+  · exact ⟨(h 3 (by decide)).1, (h 2 (by decide)).2.1, (h 1 (by decide)).2.2.1, (h 0 (by decide)).2.2.2⟩
 
-theorem quarter_step {x y z w : Nat} (hx : x < 16) (hy : y < 16) (hz : z < 16) (hw : w < 16)
-    (hd : [x, y, z, w].Nodup) {B : Addr} {v : CState} {s₀ s : State} (hctx : Ctx B s₀)
-    (h : RI B v s₀ s) :
-    WP isa (quarter x y z w) s (RI B (qround v ⟨x, hx⟩ ⟨y, hy⟩ ⟨z, hz⟩ ⟨w, hw⟩) s₀) :=
-  WP.mono (quarter_ok hx hy hz hw hd (h.ctx hctx) h.holds)
-    fun _ ⟨hh, hf, hrd, hwr, hesi, hedi, hesp, hebp⟩ =>
-      ⟨hh, h.frame.trans hf, hrd.trans h.rd, hwr.trans h.wr, hesi.trans h.esi, hedi.trans h.edi,
-        hesp.trans h.esp, hebp.trans h.ebp⟩
+theorem doubleRound_ok {v : CState} {s : State} (h : Rows v s) :
+    WP isa doubleRound s fun s' => Rows (innerBlock v) s' ∧ Kept s s' := by
+  rw [show doubleRound = .block (vqr .xmm0 .xmm1 .xmm2 .xmm3 .xmm4 ++ (shuf 0x39 0x4e 0x93 ++
+    (vqr .xmm0 .xmm1 .xmm2 .xmm3 .xmm4 ++ shuf 0x93 0x4e 0x39))) by
+    simp only [doubleRound, List.append_assoc]]
+  refine WP.block_append (WP.mono (col_ok h) fun s₁ ⟨r₁, k₁⟩ => ?_)
+  refine WP.block_append (WP.mono (shuf_ok _ _ _ s₁) fun s₂ ⟨a0, a1, a2, a3, k₂⟩ => ?_)
+  refine WP.block_append (WP.mono (diag_ok (toDiag r₁ a0 a1 a2 a3)) fun s₃ ⟨r₃, k₃⟩ => ?_)
+  refine WP.mono (shuf_ok _ _ _ s₃) fun s₄ ⟨b0, b1, b2, b3, k₄⟩ => ?_
+  rw [innerBlock_eq]
+  exact ⟨ofDiag r₃ b0 b1 b2 b3, ((k₁.trans k₂).trans k₃).trans k₄⟩
 
-theorem doubleRound_ok {B : Addr} {v : CState} {s₀ s : State} (hctx : Ctx B s₀)
-    (h : RI B v s₀ s) : WP isa doubleRound s (RI B (innerBlock v) s₀) := by
-  unfold doubleRound
-  refine WP.seq (WP.mono (quarter_step (x := 0) (y := 4) (z := 8) (w := 12) (by decide) (by decide)
-    (by decide) (by decide) (by decide) hctx h) fun _ h1 => ?_)
-  refine WP.seq (WP.mono (quarter_step (x := 1) (y := 5) (z := 9) (w := 13) (by decide) (by decide)
-    (by decide) (by decide) (by decide) hctx h1) fun _ h2 => ?_)
-  refine WP.seq (WP.mono (quarter_step (x := 2) (y := 6) (z := 10) (w := 14) (by decide) (by decide)
-    (by decide) (by decide) (by decide) hctx h2) fun _ h3 => ?_)
-  refine WP.seq (WP.mono (quarter_step (x := 3) (y := 7) (z := 11) (w := 15) (by decide) (by decide)
-    (by decide) (by decide) (by decide) hctx h3) fun _ h4 => ?_)
-  refine WP.seq (WP.mono (quarter_step (x := 0) (y := 5) (z := 10) (w := 15) (by decide) (by decide)
-    (by decide) (by decide) (by decide) hctx h4) fun _ h5 => ?_)
-  refine WP.seq (WP.mono (quarter_step (x := 1) (y := 6) (z := 11) (w := 12) (by decide) (by decide)
-    (by decide) (by decide) (by decide) hctx h5) fun _ h6 => ?_)
-  refine WP.seq (WP.mono (quarter_step (x := 2) (y := 7) (z := 8) (w := 13) (by decide) (by decide)
-    (by decide) (by decide) (by decide) hctx h6) fun _ h7 => ?_)
-  exact quarter_step (x := 3) (y := 4) (z := 9) (w := 14) (by decide) (by decide) (by decide)
-    (by decide) (by decide) hctx h7
-
-theorem rounds_ok {B : Addr} {v : CState} {s₀ : State} (hctx : Ctx B s₀) (h : Holds B v s₀.mem) :
-    ∀ n, WP isa (rounds n) s₀ (RI B (Nat.repeat innerBlock n v) s₀)
-  | 0 => WP.block_nil ⟨h, Frame.refl _ _, rfl, rfl, rfl, rfl, rfl, rfl⟩
-  | n + 1 => WP.seq (WP.mono (rounds_ok hctx h n) fun _ h' => doubleRound_ok hctx h')
+theorem rounds_ok {v : CState} {s₀ : State} (h : Rows v s₀) :
+    ∀ n, WP isa (rounds n) s₀ fun s => Rows (Nat.repeat innerBlock n v) s ∧ Kept s₀ s
+  | 0 => WP.block_nil ⟨h, rfl, rfl, rfl, rfl⟩
+  | n + 1 => WP.seq (WP.mono (rounds_ok h n) fun _ ⟨hr, hk⟩ =>
+      WP.mono (doubleRound_ok hr) fun _ ⟨hr', hk'⟩ => ⟨hr', hk.trans hk'⟩)
 
 end VG.Proof.ChaCha20.X86
 
@@ -323,14 +333,7 @@ theorem read_st {m : Mem} (hf : Frame [bufR s₀] s₀.mem m) {k : Nat} (hk : k 
 
 end Pre
 
-theorem workR_sub (B : Addr) : Region.Sub (workR B) ⟨B, 256⟩ := Region.sub_prefix (by lit_omega)
-
-theorem frame_buf {s₀ : State} {m m' : Mem} (hf : Frame [workR (BA s₀)] m m') :
-    Frame [bufR s₀] m m' :=
-  hf.sub fun r hr => ⟨bufR s₀, List.mem_singleton_self _, by
-    simp only [List.mem_singleton] at hr; subst hr; exact workR_sub _⟩
-
-/-! ## Saving the callee-saved registers, and loading the pointers -/
+/-! ## Loading the rows -/
 
 theorem readW_writeW_off (m : Mem) (p : Addr) (v : Word) {d e : Nat} (hd : d < 2 ^ 32)
     (he : e < 2 ^ 32) (h : d + 4 ≤ e ∨ e + 4 ≤ d) :
@@ -338,156 +341,169 @@ theorem readW_writeW_off (m : Mem) (p : Addr) (v : Word) {d e : Nat} (hd : d < 2
       m.readW (p + BitVec.ofNat 64 d) 32 :=
   Mem.readW_writeW_sep (Offset.sep p h (by lit_omega) (by lit_omega)) (by decide)
 
-/-- The callee-saved registers `ebx, esi, edi` and their slots in `buf`. -/
-def blockSaved : Spill.Slots := [(.ebx, 64), (.esi, 68), (.edi, 72)]
+/-- Row `r` of the state at `p`: its words `4 r`, …, `4 r + 3`. -/
+theorem row_read (m : Mem) (p : Addr) {r l : Nat} (hl : l < 4) :
+    dword (m.readW (p + BitVec.ofNat 64 (16 * r)) 128) l = m.readW (p + BitVec.ofNat 64 (4 * (4 * r + l))) 32 := by
+  rw [dword_readW _ _ hl, Offset.add_add, show 16 * r + 4 * l = 4 * (4 * r + l) by omega_arith]
 
-theorem blockSaved_fits : Spill.Fits 76 blockSaved := by decide
+namespace Pre
+variable {s₀ : State} (hp : Pre s₀)
+include hp
 
-theorem blockSaved_addr {s₀ : State} (hp : Pre s₀) : ∀ p ∈ blockSaved, addr (bp s₀) p.2 = BA s₀ + BitVec.ofNat 64 p.2 :=
-  fun p h => hp.eaB (by have := blockSaved_fits.1 p h; lit_omega)
+theorem in_row {r : Nat} (hr : r < 4) (ws : List Region) :
+    InRegions (s₀.rd ++ ws) (SA s₀ + BitVec.ofNat 64 (16 * r)) 16 :=
+  ⟨stR s₀, by simp [hp.rd], contains_off (by lit_omega) (by lit_omega)⟩
 
-/-- The memory after the prologue's stores. -/
-abbrev saveMem (s₀ : State) : Mem := Spill.saveMem s₀.mem (BA s₀ + BitVec.ofNat 64 ·) s₀.gpr blockSaved
+/-- A row of the input state, after writes to `buf` only. -/
+theorem read_row {m : Mem} (hf : Frame [bufR s₀] s₀.mem m) {r l : Nat} (hr : r < 4) (hl : l < 4) :
+    dword (m.readW (SA s₀ + BitVec.ofNat 64 (16 * r)) 128) l = (V s₀)[4 * r + l]'(by omega_using [hr, hl]) := by
+  rw [row_read _ _ hl]
+  exact hp.read_st hf (by omega_using [hr, hl])
 
-/-- The callee-saved registers `ebx, esi, edi` are saved in `buf`. -/
-abbrev Saved (s₀ : State) (m : Mem) : Prop := Spill.Saved m (BA s₀ + BitVec.ofNat 64 ·) s₀.gpr blockSaved
+end Pre
 
-theorem saveMem_saved (s₀ : State) : Saved s₀ (saveMem s₀) :=
-  Spill.saveMem_saved_ofNat _ _ _ blockSaved_fits (by decide)
+theorem row_ne4 {r : Nat} : ¬row r = XReg.xmm4 := by
+  unfold row; split <;> decide
 
-theorem saveMem_frame (s₀ : State) : Frame [bufR s₀] s₀.mem (saveMem s₀) :=
-  Spill.saveMem_frame List.mem_cons_self _ _ _ _ fun p h =>
-    have := blockSaved_fits.1 p h; contains_off (by lit_omega) (by lit_omega)
+theorem row_ne5 {r : Nat} : ¬row r = XReg.xmm5 := by
+  unfold row; split <;> decide
 
-/-- The saved registers survive writes to the working state. -/
-theorem saved_frame {s₀ : State} {m m' : Mem} (h : Saved s₀ m) (hf : Frame [workR (BA s₀)] m m') :
-    Saved s₀ m' :=
-  h.of_frame hf (R := ⟨BA s₀ + BitVec.ofNat 64 64, 12⟩)
-    (fun p hp => by
-      have := blockSaved_fits.1 p hp
-      have : 64 ≤ p.2 := by revert p hp; decide
-      exact Offset.contains _ this (by lit_omega) (by lit_omega))
-    (by simp only [List.mem_singleton, forall_eq]; exact Offset.disjoint_base _ (by decide) (by lit_omega))
+theorem row_inj {r r' : Nat} (hr : r < 4) (hr' : r' < 4) (h : r ≠ r') : ¬row r' = row r := by
+  rcases cases4 hr with rfl | rfl | rfl | rfl <;> rcases cases4 hr' with rfl | rfl | rfl | rfl <;>
+    first | exact absurd rfl h | decide
 
-theorem save_ok {s₀ : State} (hp : Pre s₀) :
-    WP isa (.block save) s₀ fun s₁ =>
-      (∀ r, r ≠ .eax → r ≠ .ecx → r ≠ .esi → r ≠ .edi → s₁.gpr r = s₀.gpr r) ∧
-      s₁.gpr .esi = bp s₀ ∧ s₁.gpr .edi = st s₀ ∧ s₁.rd = s₀.rd ∧ s₁.wr = s₀.wr ∧
-      s₁.mem = saveMem s₀ := by
-  rw [show save = .mov .eax (.mem (at_ .esp 8)) :: .mov .ecx (.mem (at_ .esp 4)) :: (Spill.saveCode .eax blockSaved ++
-    ([.mov .esi (.reg .eax), .mov .edi (.reg .ecx)] : List Instr)) from rfl]
-  refine Wp.wp_ldm rfl (hp.in_arg (i := 1) (by lit_omega)) fun s₁ u₁ => ?_
-  refine Wp.wp_ldm (by rw [u₁.other _ (by decide)]) (by rw [u₁.rd, u₁.wr]; exact hp.in_arg (i := 0) (by lit_omega))
-    fun s₂ u₂ => ?_
-  have hB : s₂.gpr .eax = bp s₀ := by rw [u₂.other _ (by decide), u₁.gpr]; rfl
-  refine Spill.save_ok blockSaved (fun p h => by
-      rw [hB, u₂.wr, u₁.wr, blockSaved_addr hp p h]; exact hp.out_buf (by have := blockSaved_fits.1 p h; lit_omega))
-    fun s₃ u₃ => Wp.wp_mov fun s₄ u₄ => Wp.wp_mov fun s₅ u₅ => WP.block_nil ⟨fun r h1 h2 h3 h4 => ?_, ?_, ?_,
-      by rw [u₅.rd, u₄.rd, u₃.rd, u₂.rd, u₁.rd], by rw [u₅.wr, u₄.wr, u₃.wr, u₂.wr, u₁.wr], ?_⟩
-  · rw [u₅.other _ h4, u₄.other _ h3, u₃.gpr, u₂.other _ h2, u₁.other _ h1]
-  · rw [u₅.other _ (by decide), u₄.gpr, u₃.gpr, hB]
-  · rw [u₅.gpr, u₄.other _ (by decide), u₃.gpr, u₂.gpr, u₁.mem]; rfl
-  · rw [u₅.mem, u₄.mem, u₃.mem, hB, u₂.mem, u₁.mem]
-    exact Spill.saveMem_congr _ _ (blockSaved_addr hp) fun p h => by
-      have : p.1 ≠ .ecx ∧ p.1 ≠ .eax := by revert p h; decide
-      rw [u₂.other _ this.1, u₁.other _ this.2]
+theorem dword_movd (w : Word) : dword ((0 : BitVec 96) ++ w) 0 = w := by
+  apply BitVec.eq_of_getLsbD_eq; intro i hi
+  simp only [dword, BitVec.getLsbD_extractLsb', BitVec.getLsbD_append, Nat.mul_zero, Nat.zero_add, hi,
+    decide_true, Bool.true_and, ↓reduceIte]
 
-/-! ## Copying the state -/
-
-/-- The copy invariant after `n` words, relative to the state `s₁` after the prologue. -/
-structure CI (s₀ s₁ : State) (n : Nat) (s : State) : Prop where
-  keep : ∀ r, r ≠ .eax → s.gpr r = s₁.gpr r
+/-- The load invariant after `n` rows. -/
+structure LI (s₀ s₁ : State) (n : Nat) (s : State) : Prop where
+  rows : ∀ r l (hr : r < 4) (hl : l < 4), r < n →
+    dword (s.xmm (row r)) l = (V s₀)[4 * r + l]'(by omega_using [hr, hl])
+  keep : ∀ q, q ≠ .edx → s.gpr q = s₁.gpr q
+  mem : s.mem = s₀.mem
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
-  fb : Frame [bufR s₀] s₀.mem s.mem
-  fw : Frame [workR (BA s₀)] s₁.mem s.mem
-  copied : ∀ j (hj : j < 16), j < n → s.mem.readW (wordAddr (BA s₀) j) 32 = (V s₀)[j]
 
-theorem copy_step {s₀ s₁ : State} (hp : Pre s₀) (hesi : s₁.gpr .esi = bp s₀)
-    (hedi : s₁.gpr .edi = st s₀) {n : Nat} (hn : n < 16) {s : State} (hc : CI s₀ s₁ n s) :
-    WP isa (.block (copyWord n)) s (CI s₀ s₁ (n + 1)) := by
-  have hsi : s.gpr .esi = bp s₀ := (hc.keep _ (by decide)).trans hesi
-  have hdi : s.gpr .edi = st s₀ := (hc.keep _ (by decide)).trans hedi
-  have eS : (st s₀ + BitVec.ofNat 32 (4 * n)).setWidth 64 = SA s₀ + BitVec.ofNat 64 (4 * n) :=
-    hp.eaS (by lit_omega)
-  have eB : (bp s₀ + BitVec.ofNat 32 (4 * n)).setWidth 64 = wordAddr (BA s₀) n := hp.eaB (by lit_omega)
-  have iS : InRegions (s.rd ++ s.wr) (SA s₀ + BitVec.ofNat 64 (4 * n)) 4 := by
-    rw [hc.rd, hc.wr]; exact hp.in_st hn _
-  have oB : InRegions s.wr (wordAddr (BA s₀) n) 4 := by rw [hc.wr]; exact hp.out_buf (by lit_omega)
-  have hv := hp.read_st hc.fb hn
+theorem rowIn_ok {s₀ s₁ : State} (hp : Pre s₀) (heax : s₁.gpr .eax = st s₀) {n : Nat} (hn : n < 4)
+    {s : State} (h : LI s₀ s₁ n s) : WP isa (.block (rowIn n)) s (LI s₀ s₁ (n + 1)) := by
+  obtain ha : s.gpr .eax = st s₀ := (h.keep _ (by decide)).trans heax
+  obtain ea : ∀ k, k < 4 → (st s₀ + BitVec.ofNat 32 (16 * n + 4 * k)).setWidth 64 =
+      SA s₀ + BitVec.ofNat 64 (4 * (4 * n + k)) := fun k hk => by
+    rw [show 4 * (4 * n + k) = 16 * n + 4 * k by omega_arith]
+    exact hp.eaS (by omega_using [hn, hk])
+  obtain hin : ∀ k, k < 4 → InRegions (s.rd ++ s.wr) (SA s₀ + BitVec.ofNat 64 (4 * (4 * n + k))) 4 := fun k hk => by
+    rw [h.rd]; exact hp.in_st (by omega_using [hn, hk]) _
+  obtain hv : ∀ k (hk : k < 4), s.mem.readW (SA s₀ + BitVec.ofNat 64 (4 * (4 * n + k))) 32 =
+      (V s₀)[4 * n + k]'(by omega_using [hn, hk]) := fun k hk => by
+    rw [h.mem]; exact hp.read_st (Frame.refl _ _) (by omega_using [hn, hk])
+  obtain e0 := ea 0 (by decide); obtain e1 := ea 1 (by decide)
+  obtain e2 := ea 2 (by decide); obtain e3 := ea 3 (by decide)
+  obtain i0 := hin 0 (by decide); obtain i1 := hin 1 (by decide)
+  obtain i2 := hin 2 (by decide); obtain i3 := hin 3 (by decide)
+  obtain v0 := hv 0 (by decide); obtain v1 := hv 1 (by decide)
+  obtain v2 := hv 2 (by decide); obtain v3 := hv 3 (by decide)
+  simp only [Nat.mul_zero, Nat.add_zero] at e0 i0 v0
   apply WP.of_runBlock
-  simp only [reduceCtorEq, ↓reduceIte, copyWord, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, State.setReg,
-    State.ea, at_, State.load32, State.store32, hsi, hdi, eS, eB, iS, oB, hv, 
-    Option.map_some, Option.some.injEq, exists_eq_left']
-  refine ⟨fun r hr => by simp [hr, hc.keep r hr], hc.rd, hc.wr,
-    hc.fb.writeW (List.mem_singleton_self _) _ (contains_off (by lit_omega) (by lit_omega)),
-    hc.fw.writeW (List.mem_singleton_self _) _ (word_in_work _ hn), fun j hj hjn => ?_⟩
-  rcases Nat.lt_succ_iff_lt_or_eq.mp hjn with hjn | rfl
-  · rw [readW_writeW_word _ _ _ hj hn (by lit_omega)]; exact hc.copied j hj hjn
-  · exact Mem.readW_writeW_self32 _ _ _
+  simp only [reduceCtorEq, ↓reduceIte, rowIn, xb, runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec,
+    readSrc, State.load32, State.ea, at_, RegUpd.gpr_setXmm, RegUpd.mem_setXmm, RegUpd.rd_setXmm,
+    RegUpd.wr_setXmm, RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg, ha, e0, e1, e2,
+    e3, i0, i1, i2, i3, v0, v1, v2, v3, Option.map_some, Option.some.injEq, exists_eq_left']
+  refine ⟨fun r l hr hl hrn => ?_, fun q hq => ?_, h.mem, h.rd, h.wr⟩
+  · by_cases hrn' : r = n
+    · subst hrn'
+      simp only [RegUpd.xmm_setXmm_self, RegUpd.xmm_setXmm_of_ne _ _ row_ne4, RegUpd.xmm_setXmm_of_ne _ _ row_ne5,
+        RegUpd.xmm_setXmm_of_ne _ _ (by decide : ¬XReg.xmm4 = .xmm5), RegUpd.xmm_setReg, punpckldq_eq,
+        punpcklqdq_eq, dword_ofDwords_0, dword_ofDwords_1, dword_movd]
+      rcases cases4 hl with rfl | rfl | rfl | rfl
+      · exact dword_ofDwords_0 ..
+      · exact dword_ofDwords_1 ..
+      · exact dword_ofDwords_2 ..
+      · exact dword_ofDwords_3 ..
+    · simp only [RegUpd.xmm_setXmm_of_ne _ _ (row_inj hn hr (Ne.symm hrn')), RegUpd.xmm_setXmm_of_ne _ _ row_ne4,
+        RegUpd.xmm_setXmm_of_ne _ _ row_ne5, RegUpd.xmm_setReg]
+      exact h.rows r l hr hl (by omega_using [hrn, hrn'])
+  · simp only [RegUpd.gpr_setXmm, RegUpd.gpr_setReg_of_ne _ _ hq]
+    exact h.keep q hq
+
+/-- The pointers in `eax` and `ecx`, and the input state in the rows. -/
+theorem load_ok {s₀ : State} (hp : Pre s₀) :
+    WP isa (.block rowsIn) s₀ fun s₁ => Rows (V s₀) s₁ ∧ s₁.gpr .eax = st s₀ ∧ s₁.gpr .ecx = bp s₀ ∧
+      (∀ r, r ≠ .eax → r ≠ .ecx → r ≠ .edx → s₁.gpr r = s₀.gpr r) ∧ s₁.mem = s₀.mem ∧ s₁.rd = s₀.rd ∧
+      s₁.wr = s₀.wr := by
+  refine WP.block_append ?_
+  refine Wp.wp_ldm rfl (hp.in_arg (i := 0) (by lit_omega)) fun s₁ u₁ => ?_
+  refine Wp.wp_ldm (by rw [u₁.other _ (by decide)]) (by rw [u₁.rd, u₁.wr]; exact hp.in_arg (i := 1) (by lit_omega))
+    fun s₂ u₂ => WP.block_nil ?_
+  obtain hA : s₂.gpr .eax = st s₀ := by rw [u₂.other _ (by decide), u₁.gpr]; rfl
+  obtain hC : s₂.gpr .ecx = bp s₀ := by rw [u₂.gpr, u₁.mem]; rfl
+  obtain h₀ : LI s₀ s₂ 0 s₂ := ⟨fun _ _ _ _ h => absurd h (by omega_arith), fun _ _ => rfl, by rw [u₂.mem, u₁.mem],
+    by rw [u₂.rd, u₁.rd], by rw [u₂.wr, u₁.wr]⟩
+  refine WP.mono (wp_range_flatMap (M := isa) (LI s₀ s₂) (fun k s hk h => rowIn_ok hp hA hk h) 4
+    (Nat.le_refl _) s₂ h₀) fun s₃ h₃ => ?_
+  refine ⟨fun l hl => ?_, by rw [h₃.keep _ (by decide), hA], by rw [h₃.keep _ (by decide), hC],
+    fun r h1 h2 h3 => by rw [h₃.keep _ h3, u₂.other _ h2, u₁.other _ h1], h₃.mem, h₃.rd, h₃.wr⟩
+  exact ⟨by simpa [Impl.ChaCha20.X86.row] using h₃.rows 0 l (by decide) hl (by decide),
+    by simpa [Impl.ChaCha20.X86.row] using h₃.rows 1 l (by decide) hl (by decide),
+    by simpa [Impl.ChaCha20.X86.row] using h₃.rows 2 l (by decide) hl (by decide),
+    by simpa [Impl.ChaCha20.X86.row] using h₃.rows 3 l (by decide) hl (by decide)⟩
 
 /-! ## Adding the input state -/
 
-/-- The add invariant after `n` words, relative to the state `sB` after the rounds. -/
+/-- The register of a row, read by cases. -/
+theorem Rows.row {v : CState} {s : State} (h : Rows v s) {r l : Nat} (hr : r < 4) (hl : l < 4) :
+    dw s (row r) l = v[4 * r + l]'(by omega_using [hr, hl]) := by
+  rcases cases4 hr with rfl | rfl | rfl | rfl
+  · simpa [Impl.ChaCha20.X86.row] using (h l hl).1
+  · simpa [Impl.ChaCha20.X86.row] using (h l hl).2.1
+  · simpa [Impl.ChaCha20.X86.row] using (h l hl).2.2.1
+  · simpa [Impl.ChaCha20.X86.row] using (h l hl).2.2.2
+
+/-- The add invariant after `n` rows, relative to the state `sB` after the rounds. -/
 structure AI (s₀ sB : State) (n : Nat) (s : State) : Prop where
-  out : ∀ j (hj : j < 16), s.mem.readW (wordAddr (BA s₀) j) 32 =
-    if j < n then (Rs s₀)[j] + (V s₀)[j] else (Rs s₀)[j]
-  keep : ∀ r, r ≠ .eax → s.gpr r = sB.gpr r
+  out : ∀ j (hj : j < 16), j < 4 * n → s.mem.readW (wordAddr (BA s₀) j) 32 = (Rs s₀)[j] + (V s₀)[j]
+  rows : ∀ r, r < 4 → n ≤ r → s.xmm (row r) = sB.xmm (row r)
+  gpr : s.gpr = sB.gpr
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
   fb : Frame [bufR s₀] s₀.mem s.mem
-  fw : Frame [workR (BA s₀)] sB.mem s.mem
 
-theorem add_step {s₀ sB : State} (hp : Pre s₀) (hesi : sB.gpr .esi = bp s₀)
-    (hedi : sB.gpr .edi = st s₀) {n : Nat} (hn : n < 16) {s : State} (ha : AI s₀ sB n s) :
-    WP isa (.block (addWord n)) s (AI s₀ sB (n + 1)) := by
-  have hsi : s.gpr .esi = bp s₀ := (ha.keep _ (by decide)).trans hesi
-  have hdi : s.gpr .edi = st s₀ := (ha.keep _ (by decide)).trans hedi
-  have eS : (st s₀ + BitVec.ofNat 32 (4 * n)).setWidth 64 = SA s₀ + BitVec.ofNat 64 (4 * n) :=
-    hp.eaS (by lit_omega)
-  have eB : (bp s₀ + BitVec.ofNat 32 (4 * n)).setWidth 64 = wordAddr (BA s₀) n := hp.eaB (by lit_omega)
-  have iS : InRegions (s.rd ++ s.wr) (SA s₀ + BitVec.ofNat 64 (4 * n)) 4 := by
-    rw [ha.rd, ha.wr]; exact hp.in_st hn _
-  have iB : InRegions (s.rd ++ s.wr) (wordAddr (BA s₀) n) 4 := by
-    rw [ha.wr]; exact hp.in_buf (by lit_omega) _
-  have oB : InRegions s.wr (wordAddr (BA s₀) n) 4 := by rw [ha.wr]; exact hp.out_buf (by lit_omega)
-  have hv := hp.read_st ha.fb hn
-  have hr := ha.out n hn
-  simp only [Nat.lt_irrefl, ite_false] at hr
+theorem add_step {s₀ sB : State} (hp : Pre s₀) (hR : Rows (Rs s₀) sB) (heax : sB.gpr .eax = st s₀)
+    (hecx : sB.gpr .ecx = bp s₀) {n : Nat} (hn : n < 4) {s : State} (ha : AI s₀ sB n s) :
+    WP isa (.block (addRow n)) s (AI s₀ sB (n + 1)) := by
+  obtain eS : s.ea (at_ .eax (16 * n)) = SA s₀ + BitVec.ofNat 64 (16 * n) := by
+    show addr (s.gpr .eax) (16 * n) = _
+    rw [ha.gpr, heax]; exact hp.eaS (by omega_using [hn])
+  obtain eB : s.ea (at_ .ecx (16 * n)) = BA s₀ + BitVec.ofNat 64 (16 * n) := by
+    show addr (s.gpr .ecx) (16 * n) = _
+    rw [ha.gpr, hecx]; exact hp.eaB (by omega_using [hn])
+  obtain iS : InRegions (s.rd ++ s.wr) (SA s₀ + BitVec.ofNat 64 (16 * n)) 16 := by
+    rw [ha.rd]; exact hp.in_row hn _
+  obtain oB : InRegions s.wr (BA s₀ + BitVec.ofNat 64 (16 * n)) 16 := by
+    rw [ha.wr]; exact hp.out_buf (by omega_using [hn])
   apply WP.of_runBlock
-  simp only [reduceCtorEq, ↓reduceIte, Nat.reducePow, addWord, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc,
-    State.setReg, arithFlags, State.setFlags, State.ea, at_, State.load32, State.store32, hsi, hdi,
-    eS, eB, iS, iB, oB, hv, hr, Option.map_some,
-    Option.bind_some, Option.some.injEq, exists_eq_left']
-  refine ⟨fun j hj => ?_, fun r hr => by simp [hr, ha.keep r hr], ha.rd, ha.wr,
-    ha.fb.writeW (List.mem_singleton_self _) _ (contains_off (by lit_omega) (by lit_omega)),
-    ha.fw.writeW (List.mem_singleton_self _) _ (word_in_work _ hn)⟩
-  by_cases hjn : j = n
-  · subst hjn; simp [Mem.readW_writeW_self32]
-  · rw [readW_writeW_word _ _ _ hj hn hjn, ha.out j hj]
-    split <;> split <;> first | omega | rfl
-
-/-! ## Restoring the callee-saved registers -/
-
-theorem restore_ok {s₀ : State} (hp : Pre s₀) {s : State} (hs : Saved s₀ s.mem)
-    (hesi : s.gpr .esi = bp s₀) (hwr : s.wr = s₀.wr) :
-    WP isa (.block restore) s fun s' =>
-      s'.mem = s.mem ∧ s'.gpr .ebx = s₀.gpr .ebx ∧ s'.gpr .esi = s₀.gpr .esi ∧
-      s'.gpr .edi = s₀.gpr .edi ∧ ∀ r, r ≠ .eax → r ≠ .ebx → r ≠ .esi → r ≠ .edi → s'.gpr r = s.gpr r := by
-  rw [show restore = .mov .eax (.reg .esi) :: (Spill.restoreCode .eax blockSaved ++ []) from rfl]
-  refine Wp.wp_mov fun s₁ u₁ => ?_
-  have hB : s₁.gpr .eax = bp s₀ := by rw [u₁.gpr, hesi]
-  refine Spill.restore_ok blockSaved (by decide)
-    (fun p h => by
-      rw [hB, u₁.rd, u₁.wr, hwr, blockSaved_addr hp p h]; exact hp.in_buf (by have := blockSaved_fits.1 p h; lit_omega) _)
-    (by rw [hB, u₁.mem]; exact hs.congr (fun p h => (blockSaved_addr hp p h).symm) fun _ _ => rfl)
-    fun s' r' => WP.block_nil ⟨by rw [r'.mem, u₁.mem], r'.gpr (.ebx, 64) (by decide),
-      r'.gpr (.esi, 68) (by decide), r'.gpr (.edi, 72) (by decide), fun r h1 h2 h3 h4 => ?_⟩
-  rw [r'.other r (by simp [blockSaved, h2, h3, h4]), u₁.other _ h1]
+  simp only [addRow, xb, runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec, State.load128,
+    State.store128, ea_setXmm', RegUpd.rd_setXmm, RegUpd.wr_setXmm, RegUpd.mem_setXmm, RegUpd.gpr_setXmm, eS,
+    eB, iS, oB, ↓reduceIte, Option.map_some, Option.some.injEq, exists_eq_left']
+  refine ⟨fun j hj hjn => ?_, fun r hr hnr => ?_, ha.gpr, ha.rd, ha.wr,
+    ha.fb.writeW (List.mem_singleton_self _) _ (contains_off (by omega_using [hn]) (by lit_omega))⟩
+  · simp only [RegUpd.xmm_setXmm_self, RegUpd.xmm_setXmm_of_ne _ _ row_ne4]
+    by_cases hlt : j < 4 * n
+    · rw [show wordAddr (BA s₀) j = BA s₀ + BitVec.ofNat 64 (4 * j) from rfl,
+        Mem.readW_writeW_sep (Offset.sep (BA s₀) (.inl (by omega_using [hlt])) (by omega_using [hj])
+          (by omega_using [hn])) (by decide)]
+      exact ha.out j hj hlt
+    · obtain ⟨l, hl, rfl⟩ : ∃ l, l < 4 ∧ j = 4 * n + l := ⟨j - 4 * n, by omega_using [hlt, hjn], by omega_using [hlt]⟩
+      rw [show wordAddr (BA s₀) (4 * n + l) = BA s₀ + BitVec.ofNat 64 (16 * n) + BitVec.ofNat 64 (4 * l) by
+        rw [Offset.add_add, show 16 * n + 4 * l = 4 * (4 * n + l) by omega_arith], readW_writeW128 _ _ _ hl,
+        dword_paddd _ _ hl, ha.rows n hn (Nat.le_refl _), hp.read_row ha.fb hn hl]
+      exact congrArg (· + _) (hR.row hn hl)
+  · simp only [RegUpd.xmm_setXmm_of_ne _ _ (row_inj hn hr (by omega_using [hnr])),
+      RegUpd.xmm_setXmm_of_ne _ _ row_ne4]
+    exact ha.rows r hr (by omega_using [hnr])
 
 /-! ## The whole function -/
-
-theorem finish_split : finish ++ restore = (List.range 16).flatMap addWord ++ restore := rfl
 
 theorem block_post {p : Addr} {m : Mem} {R v : CState}
     (h : ∀ j (hj : j < 16), m.readW (wordAddr p j) 32 = R[j] + v[j]) :
@@ -499,52 +515,22 @@ theorem block_post {p : Addr} {m : Mem} {R v : CState}
 
 theorem correct {s₀ : State} (hp : Pre s₀) :
     WP isa block s₀ fun s' => abiPreserved s₀ s' ∧ Proof.ChaCha20.blockX86.post s₀ s' := by
-  refine WP.seq ?_
-  rw [WP.block_append_iff]
-  refine WP.mono (save_ok hp) fun s₁ ⟨hk₁, hesi₁, hedi₁, hrd₁, hwr₁, hm₁⟩ => ?_
-  have hc₀ : CI s₀ s₁ 0 s₁ :=
-    ⟨fun _ _ => rfl, hrd₁, hwr₁, hm₁ ▸ saveMem_frame s₀, Frame.refl _ _,
-      fun _ _ h => absurd h (by lit_omega)⟩
-  refine WP.mono (wp_range_flatMap (M := isa) (CI s₀ s₁)
-    (fun k s hk hc => copy_step hp hesi₁ hedi₁ hk hc) 16 (Nat.le_refl _) s₁ hc₀) fun s₂ hc => ?_
-  have hsi₂ : s₂.gpr .esi = bp s₀ := (hc.keep _ (by decide)).trans hesi₁
-  have hdi₂ : s₂.gpr .edi = st s₀ := (hc.keep _ (by decide)).trans hedi₁
-  have hctx : Ctx (BA s₀) s₂ :=
-    ⟨fun k hk => by rw [hsi₂]; exact hp.eaB (by lit_omega),
-      fun k hk => by rw [hc.wr]; exact hp.in_buf (by lit_omega) _,
-      fun k hk => by rw [hc.wr]; exact hp.out_buf (by lit_omega)⟩
-  refine WP.seq (WP.mono (rounds_ok hctx (fun k hk => hc.copied k hk hk) 10) fun s₃ hR => ?_)
-  rw [finish_split, WP.block_append_iff]
-  have ha₀ : AI s₀ s₃ 0 s₃ :=
-    ⟨fun j hj => by simp only [Nat.not_lt_zero, ite_false]; exact hR.holds j hj, fun _ _ => rfl,
-      hR.rd.trans hc.rd, hR.wr.trans hc.wr, hc.fb.trans (frame_buf hR.frame), Frame.refl _ _⟩
-  refine WP.mono (wp_range_flatMap (M := isa) (AI s₀ s₃)
-    (fun k s hk ha => add_step hp (hR.esi.trans hsi₂) (hR.edi.trans hdi₂) hk ha) 16 (Nat.le_refl _) s₃ ha₀)
-    fun s₄ hA => ?_
-  have hwork : Frame [workR (BA s₀)] s₁.mem s₄.mem := (hc.fw.trans hR.frame).trans hA.fw
-  have hsaved : Saved s₀ s₄.mem := saved_frame (hm₁ ▸ saveMem_saved s₀) hwork
-  have hsi₄ : s₄.gpr .esi = bp s₀ := (hA.keep _ (by decide)).trans (hR.esi.trans hsi₂)
-  refine WP.mono (restore_ok hp hsaved hsi₄ hA.wr) fun s' ⟨hm', hbx, hsi, hdi, hk'⟩ => ?_
-  have hesp : s'.gpr .esp = s₀.gpr .esp := by
-    rw [hk' _ (by decide) (by decide) (by decide) (by decide), hA.keep _ (by decide), hR.esp,
-      hc.keep _ (by decide), hk₁ _ (by decide) (by decide) (by decide) (by decide)]
-  have hebp : s'.gpr .ebp = s₀.gpr .ebp := by
-    rw [hk' _ (by decide) (by decide) (by decide) (by decide), hA.keep _ (by decide), hR.ebp,
-      hc.keep _ (by decide), hk₁ _ (by decide) (by decide) (by decide) (by decide)]
+  refine WP.seq (WP.mono (load_ok hp) fun s₁ ⟨r₁, a₁, c₁, g₁, m₁, rd₁, wr₁⟩ => ?_)
+  refine WP.seq (WP.mono (rounds_ok r₁ 10) fun s₂ ⟨r₂, k₂⟩ => ?_)
+  obtain ha₀ : AI s₀ s₂ 0 s₂ := ⟨fun _ _ h => absurd h (by omega_arith), fun _ _ _ => rfl, rfl,
+    k₂.rd.trans rd₁, k₂.wr.trans wr₁, by rw [k₂.mem, m₁]; exact Frame.refl _ _⟩
+  refine WP.mono (wp_range_flatMap (M := isa) (AI s₀ s₂)
+    (fun k s hk ha => add_step hp r₂ (by rw [k₂.gpr]; exact a₁) (by rw [k₂.gpr]; exact c₁) hk ha) 4
+    (Nat.le_refl _) s₂ ha₀) fun s' hA => ?_
+  obtain hg : ∀ r, r ≠ .eax → r ≠ .ecx → r ≠ .edx → s'.gpr r = s₀.gpr r := fun r h1 h2 h3 => by
+    rw [hA.gpr, k₂.gpr]; exact g₁ r h1 h2 h3
   refine ⟨⟨fun r hr => ?_, ?_⟩, ?_⟩
   · simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl | rfl
-    · exact hbx
-    · exact hsi
-    · exact hdi
-    · exact hebp
-    · exact hesp
-  · rw [hm']
-    refine hA.fb.readW (r := retR s₀) (Region.contains_self _ _) ?_ (by decide)
+    rcases hr with rfl | rfl | rfl | rfl | rfl <;> exact hg _ (by decide) (by decide) (by decide)
+  · refine hA.fb.readW (r := retR s₀) (Region.contains_self _ _) ?_ (by decide)
     simpa using hp.ret_buf
   · show stateAt s'.mem (BA s₀) = Spec.ChaCha20.block (V s₀)
-    rw [hm']
-    exact block_post fun j hj => by simpa [hj] using hA.out j hj
+    exact block_post fun j hj => hA.out j hj (by omega_using [hj])
 
 /-! ## Constant time -/
 
@@ -587,6 +573,6 @@ theorem block_correct (s : State) (hs : Proof.ChaCha20.blockX86.pre s) :
   correct (pre_of s hs)
 
 theorem block_ct : ConstantTime isa Proof.ChaCha20.blockX86.pre Proof.ChaCha20.blockX86.pub block :=
-  VG.Taint.constantTime (A := taint) τ₀ (fun _ _ h₁ h₂ hpub => agree₀ h₁ h₂ hpub) (by taint_decide)
+  VG.Taint.constantTime (A := sseTaint) τ₀ (fun _ _ h₁ h₂ hpub => agree₀ h₁ h₂ hpub) (by taint_decide)
 
 end VG.Proof.ChaCha20.X86

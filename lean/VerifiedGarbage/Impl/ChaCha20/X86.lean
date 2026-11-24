@@ -8,15 +8,17 @@ public import VerifiedGarbage.TCB.X86.Isa
 `vg_chacha20_block(state, buf)`, cdecl: the arguments are at `[esp + 4]` and
 `[esp + 8]`.
 
-With only seven usable registers, the state lives in memory:
-* `buf[0..64)` is the working state: the input state is copied there, each
-  quarter round loads its four words into `eax, ebx, ecx, edx` and stores them
-  back, and finally the input state (re-read from `state`) is added in place,
-  leaving the result.
-* `esi` points to `buf` and `edi` to `state`; both are loaded from their
-  argument slots, and `buf[64..76)` holds the saved `ebx, esi, edi`.
-* Every address is `esp`, `esi`, `edi` or `eax` (while it holds `buf`) plus a
-  constant, and there are no branches, so only the pointers can affect timing.
+The state is in SSE2 registers, a row of four words each (`xmm0`–`xmm3`),
+loaded from `state` (`eax`) a word at a time (`rowIn`):
+* a column round is the quarter round on each doubleword of the four rows
+  (`vqr`, with `xmm4` for the rotations), and a diagonal round the same
+  after rows 1, 2 and 3 are rotated by one, two and three doublewords
+  (`pshufd`), which are rotated back after it;
+* finally each row of the input state (re-read from `state`, through
+  `xmm4`) is added, and the row stored to `buf` (`ecx`).
+* Only `eax`, `ecx`, `edx` and `xmm0`–`xmm5` are written, and of `buf` only its
+  first 64 bytes. Every address is `esp`, `eax` or `ecx` plus a constant,
+  and there are no branches, so only the pointers can affect timing.
 -/
 
 @[expose] public section
@@ -27,61 +29,7 @@ open VG.X86
 
 def at_ (b : Reg) (d : Nat) : MemOp := { base := b, disp := d }
 
-/-- The quarter round (RFC 8439 §2.1) on `eax, ebx, ecx, edx`. A rotation left
-by `k` is a rotation right by `32 - k`. -/
-def qr : List Instr := [
-  .alu .add .eax (.reg .ebx), .alu .xor .edx (.reg .eax), .shift .ror .edx 16,
-  .alu .add .ecx (.reg .edx), .alu .xor .ebx (.reg .ecx), .shift .ror .ebx 20,
-  .alu .add .eax (.reg .ebx), .alu .xor .edx (.reg .eax), .shift .ror .edx 24,
-  .alu .add .ecx (.reg .edx), .alu .xor .ebx (.reg .ecx), .shift .ror .ebx 25]
-
-/-- `QUARTERROUND(x, y, z, w)` (RFC 8439 §2.2) on the words in `buf`. -/
-def quarter (x y z w : Nat) : Prog isa := .block (
-  ([.mov .eax (.mem (at_ .esi (4 * x))), .mov .ebx (.mem (at_ .esi (4 * y))),
-   .mov .ecx (.mem (at_ .esi (4 * z))), .mov .edx (.mem (at_ .esi (4 * w)))] : List Instr) ++ qr ++
-  ([.store (at_ .esi (4 * x)) .eax, .store (at_ .esi (4 * y)) .ebx,
-   .store (at_ .esi (4 * z)) .ecx, .store (at_ .esi (4 * w)) .edx] : List Instr))
-
-/-- `inner_block` (RFC 8439 §2.3.1): a column round and a diagonal round. -/
-def doubleRound : Prog isa :=
-  .seq (quarter 0 4 8 12) <| .seq (quarter 1 5 9 13) <| .seq (quarter 2 6 10 14) <|
-  .seq (quarter 3 7 11 15) <| .seq (quarter 0 5 10 15) <| .seq (quarter 1 6 11 12) <|
-  .seq (quarter 2 7 8 13) (quarter 3 4 9 14)
-
-/-- `n` double rounds. -/
-def rounds : Nat → Prog isa
-  | 0 => .block []
-  | n + 1 => .seq (rounds n) doubleRound
-
-/-- Load the pointers (into `eax` and `ecx`), save `ebx, esi, edi` in `buf`,
-and move the pointers to `esi` and `edi`. -/
-def save : List Instr := [
-  .mov .eax (.mem (at_ .esp 8)), .mov .ecx (.mem (at_ .esp 4)), .store (at_ .eax 64) .ebx,
-  .store (at_ .eax 68) .esi, .store (at_ .eax 72) .edi, .mov .esi (.reg .eax),
-  .mov .edi (.reg .ecx)]
-
-/-- Copy word `k` of the input state to `buf`. -/
-def copyWord (k : Nat) : List Instr :=
-  [.mov .eax (.mem (at_ .edi (4 * k))), .store (at_ .esi (4 * k)) .eax]
-
-def copy : List Instr := (List.range 16).flatMap copyWord
-
-/-- Add word `k` of the input state into `buf`. -/
-def addWord (k : Nat) : List Instr :=
-  [.mov .eax (.mem (at_ .esi (4 * k))), .alu .add .eax (.mem (at_ .edi (4 * k))),
-   .store (at_ .esi (4 * k)) .eax]
-
-def finish : List Instr := (List.range 16).flatMap addWord
-
-/-- Restore `ebx, esi, edi` (via `eax`). -/
-def restore : List Instr := [
-  .mov .eax (.reg .esi), .mov .ebx (.mem (at_ .eax 64)), .mov .esi (.mem (at_ .eax 68)),
-  .mov .edi (.mem (at_ .eax 72))]
-
-def block : Prog isa :=
-  .seq (.block (save ++ copy)) (.seq (rounds 10) (.block (finish ++ restore)))
-
-/-! ## SSE2: the quarter round on four blocks at once, for `vg_chacha20_xor` -/
+/-! ## SSE2: the quarter round on each doubleword of four registers -/
 
 /-- `op dst, src` on XMM registers. -/
 def xb (op : XBinOp) (d r : XReg) : Instr := .xop (.bin op d r)
@@ -92,7 +40,8 @@ def vrot (x : XReg) (k : Nat) (t : XReg) : List Instr :=
    .xop (.shift .psrld t (BitVec.ofNat 8 (32 - k))), xb .por x t]
 
 /-- The quarter round (RFC 8439 §2.1) on each doubleword of `a, b, c, d`,
-with `t` as scratch (for the four-block code of `vg_chacha20_xor`): a
+with `t` as scratch (for the block function, and the four-block code of
+`vg_chacha20_xor`): a
 rotation by 16 swaps the words of each doubleword (`pshuflw`, `pshufhw`), the
 others are two shifts and an `or`. -/
 def vqr (a b c d t : XReg) : List Instr :=
@@ -100,6 +49,59 @@ def vqr (a b c d t : XReg) : List Instr :=
    xb .paddd c d, xb .pxor b c] ++ vrot b 12 t ++
   [xb .paddd a b, xb .pxor d a] ++ vrot d 8 t ++
   [xb .paddd c d, xb .pxor b c] ++ vrot b 7 t
+
+/-! ## The block function -/
+
+/-- The register of row `r`. -/
+def row : Nat → XReg
+  | 0 => .xmm0
+  | 1 => .xmm1
+  | 2 => .xmm2
+  | _ => .xmm3
+
+/-- Row `r` of the state at `eax` into its register, a word at a time
+(through `edx`, `xmm4` and `xmm5`): the callers have just stored the state's
+words, and a 16-byte load would wait for those stores. -/
+def rowIn (r : Nat) : List Instr :=
+  [.mov .edx (.mem (at_ .eax (16 * r))), .xop (.movd (row r) .edx),
+   .mov .edx (.mem (at_ .eax (16 * r + 4))), .xop (.movd .xmm4 .edx), xb .punpckldq (row r) .xmm4,
+   .mov .edx (.mem (at_ .eax (16 * r + 8))), .xop (.movd .xmm4 .edx),
+   .mov .edx (.mem (at_ .eax (16 * r + 12))), .xop (.movd .xmm5 .edx), xb .punpckldq .xmm4 .xmm5,
+   xb .punpcklqdq (row r) .xmm4]
+
+/-- `state` into `eax` and `buf` into `ecx`. -/
+def loadArgs : List Instr := [.mov .eax (.mem (at_ .esp 4)), .mov .ecx (.mem (at_ .esp 8))]
+
+/-- The pointers, and the four rows of the state into `xmm0`–`xmm3`. -/
+def rowsIn : List Instr := loadArgs ++ (List.range 4).flatMap rowIn
+
+/-- Rows 1, 2 and 3 rotated by `i`, `j` and `k` doublewords (`pshufd`). -/
+def shuf (i j k : BitVec 8) : List Instr :=
+  [.xop (.pshufd .xmm1 .xmm1 i), .xop (.pshufd .xmm2 .xmm2 j), .xop (.pshufd .xmm3 .xmm3 k)]
+
+/-- `inner_block` (RFC 8439 §2.3.1): a column round, and a diagonal round
+between the rotations of the rows that bring each diagonal into a column and
+back. -/
+def doubleRound : Prog isa :=
+  .block (vqr .xmm0 .xmm1 .xmm2 .xmm3 .xmm4 ++ shuf 0x39 0x4e 0x93 ++
+    vqr .xmm0 .xmm1 .xmm2 .xmm3 .xmm4 ++ shuf 0x93 0x4e 0x39)
+
+/-- `n` double rounds. -/
+def rounds : Nat → Prog isa
+  | 0 => .block []
+  | n + 1 => .seq (rounds n) doubleRound
+
+/-- Row `r` of the input state added to its register (through `xmm4`), and
+the sum stored to `buf`. -/
+def addRow (r : Nat) : List Instr :=
+  [.movdquLoad .xmm4 (at_ .eax (16 * r)), xb .paddd (row r) .xmm4, .movdquStore (at_ .ecx (16 * r)) (row r)]
+
+def finish : List Instr := (List.range 4).flatMap addRow
+
+def block : Prog isa :=
+  .seq (.block rowsIn) (.seq (rounds 10) (.block finish))
+
+/-! ## SSSE3: the rotations by 16 and 8 bits of `vg_chacha20_xor_ssse3` -/
 
 /-- Where `vqr3` finds its `pshufb` controls in `buf` (through `edi`). -/
 def rot16Off : Nat := 288
