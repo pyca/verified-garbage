@@ -73,6 +73,8 @@ def Sig.bufNames : List (String × Param) → List (String × Bool)
   | (_, .int ..) :: ps => Sig.bufNames ps
   | (n, .array w ..) :: ps => (s!"`{n}`", w) :: Sig.bufNames ps
   | (n, .slice w ..) :: ps => (s!"`{n}`", w) :: Sig.bufNames ps
+  | (n, .inOutSlice _ dst _) :: ps =>
+    (s!"`{n}` when distinct from `{dst}`", false) :: (s!"`{dst}`", true) :: Sig.bufNames ps
   | (n, .slices ..) :: ps => (s!"`{n}`", false) :: (s!"the slices `{n}` lists", false) :: Sig.bufNames ps
   | (n, .table _) :: ps => (s!"`{n}`", false) :: Sig.bufNames ps
 
@@ -85,7 +87,7 @@ documentation states it: that of `Sig.bufs`, a number for an array and
 def Param.sizeDoc : Param → Option String
   | .int .. => none
   | .array _ e n => some s!"{n * e.size}"
-  | .slice _ e len => some (if e.size = 1 then s!"`{len}`" else s!"`{e.size} * {len}`")
+  | .slice _ e len | .inOutSlice e _ len => some (if e.size = 1 then s!"`{len}`" else s!"`{e.size} * {len}`")
   | .slices _ count => some s!"`2 * size_of::<usize>() * {count}`"
   | .table n => some s!"`{n} * size_of::<usize>()`"
 
@@ -105,11 +107,15 @@ def Sig.validDoc {M : ISA} (A : Abi M) (sig : Sig) : List String :=
           bytes" else s!", and each slice it lists for reads of {e.size} times its length in bytes"
       | _ => ""
     let aligned := match p with
-      | .array _ e _ | .slice _ e _ =>
+      | .array _ e _ | .slice _ e _ | .inOutSlice e .. =>
         if A.alignsBufs && 1 < e.align then s!", and aligned for `{e.scalar.rust}`" else ""
       | _ => ""
     p.sizeDoc.map fun size =>
-      s!"`{n}` must be valid for {access} of {size} bytes{listed}{aligned}."
+      match p with
+      | .inOutSlice _ dst _ =>
+        s!"`{n}` must be valid for reads of {size} bytes{aligned}, and `{dst}` for reads and writes of \
+          {size} bytes{aligned}. The two pointers must be identical or their regions disjoint."
+      | _ => s!"`{n}` must be valid for {access} of {size} bytes{listed}{aligned}."
 
 /-- `xs` as an English list joined by `conj`: "a", "a or b", "a, b or c". -/
 def englishList (conj : String) : List String → String

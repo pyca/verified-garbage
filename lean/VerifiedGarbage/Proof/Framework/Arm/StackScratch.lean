@@ -70,7 +70,7 @@ theorem widths_mem (sig : Sig) : ∀ w ∈ widths sig, w = 32 ∨ w = 64 := by
   | table _ => rw [h] at hp; simp [Param.words, ArgWord.bits, abi_ptrBits] at hp; omega_using [hp]
   | slice _ _ _ =>
     rw [h] at hp; simp [Param.words, ArgWord.bits, abi_ptrBits] at hp; omega_using [hp]
-  | slices _ _ =>
+  | slices _ _ | inOutSlice _ _ _ =>
     rw [h] at hp; simp [Param.words, ArgWord.bits, abi_ptrBits] at hp; omega_using [hp]
 
 theorem args_arm (sig : Sig) :

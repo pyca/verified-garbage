@@ -323,6 +323,24 @@ def x86State : X86.State where
 #guard X86.abi.reserved 12 x86State == [⟨0x100, 4⟩, ⟨0xf4, 12⟩]
 #guard X86.abi.ret x86State == 0x0000000200000001
 
+/-! ## Contiguous input and output with a shared length -/
+
+def buffers : Sig where
+  params := [("src", .inOutSlice .u8 "dst" "len"), ("tag", .array true .u8 16)]
+
+#guard buffers.rust == "(src: *const u8, dst: *mut u8, len: usize, tag: *mut [u8; 16])"
+#guard buffers.words 32 == [.addr, .addr, .int 32, .addr]
+#guard buffers.words 64 == [.addr, .addr, .int 64, .addr]
+#guard (buffers.params.flatMap (·.2.pubs)) == [true, true, true, true]
+#guard Sig.bufs buffers.params [100, 100, 16, 200] == [(⟨100, 16⟩, true), (⟨200, 16⟩, true)]
+#guard Sig.bufs buffers.params [0, 100, 16, 200] ==
+  [(⟨0, 16⟩, false), (⟨100, 16⟩, true), (⟨200, 16⟩, true)]
+-- Distinct pointers into overlapping ranges keep both regions, so the
+-- contract's pairwise separation check applies even at a one-byte offset.
+#guard Sig.bufs buffers.params [100, 101, 16, 200] ==
+  [(⟨100, 16⟩, false), (⟨101, 16⟩, true), (⟨200, 16⟩, true)]
+#guard Sig.bufs buffers.params [100, 100, 0, 200] == [(⟨100, 0⟩, true), (⟨200, 16⟩, true)]
+
 /-! ## Lists of slices
 
 The memory of a list of slices is its descriptors (two pointer-sized words
