@@ -29,7 +29,7 @@ section
 
 Untrusted: everything here is checked by Lean. The contract the proof of
 `vg_aes_gcm_seal_gather` is written against, which the shared one
-(`Proof.AesGcm.sealGatherRoundsContract`, with the 2688 bytes of stack below the stack
+(`Proof.AesGcm.sealGatherRoundsContract`, with the `N + 128` bytes of stack below the stack
 pointer that its frame and its call use) implies (`Gather/Verified.lean`):
 cdecl, `(ctx, rounds, nonce, nonce_len, aad, aad_len, src, src_count, dst,
 len, tag)` at `[esp + 4]` on, which the function may overwrite.
@@ -74,7 +74,7 @@ abbrev dR : Region := ⟨w64 (Dst s), L s⟩
 abbrev tgR : Region := ⟨w64 (Tg s), 16⟩
 abbrev argR : Region := ⟨argAddr s 0, 44⟩
 abbrev retR : Region := ⟨w64 (s.gpr .esp), 4⟩
-abbrev stkR : Region := ⟨w64 (s.gpr .esp) - BitVec.ofNat 64 2688, 2688⟩
+abbrev stkR (N : Nat) : Region := ⟨w64 (s.gpr .esp) - BitVec.ofNat 64 (N + 128), N + 128⟩
 
 /-- The total length of the first `i` slices, and their bytes. -/
 abbrev gl (i : Nat) : Nat := gatheredLen 32 s.mem (w64 (Src s)) i
@@ -82,8 +82,9 @@ abbrev pt (i : Nat) : List Byte := gathered 32 s.mem (w64 (Src s)) i
 
 end
 
-/-- What the code of `vg_aes_gcm_seal_gather` needs. -/
-def gatherPre (s : State) : Prop :=
+/-- What the code of `vg_aes_gcm_seal_gather` needs, with a working space of `N` bytes: `N + 128`
+bytes of stack. -/
+def gatherPre (N : Nat) (s : State) : Prop :=
   s.rd = [kR s, nR s, aR s, dsR s] ++ lsR s ∧ s.wr = [dR s, tgR s, argR s] ∧
     (kR s).Disjoint (dR s) ∧ (kR s).Disjoint (tgR s) ∧ (kR s).Disjoint (argR s) ∧
     (nR s).Disjoint (dR s) ∧ (nR s).Disjoint (tgR s) ∧ (nR s).Disjoint (argR s) ∧
@@ -94,13 +95,13 @@ def gatherPre (s : State) : Prop :=
     (retR s).Disjoint (kR s) ∧ (retR s).Disjoint (nR s) ∧ (retR s).Disjoint (aR s) ∧
     (retR s).Disjoint (dR s) ∧ (retR s).Disjoint (tgR s) ∧ (retR s).Disjoint (dsR s) ∧
     (∀ r ∈ lsR s, (retR s).Disjoint r) ∧ (retR s).Disjoint (argR s) ∧
-    (stkR s).Disjoint (kR s) ∧ (stkR s).Disjoint (nR s) ∧ (stkR s).Disjoint (aR s) ∧
-    (stkR s).Disjoint (dR s) ∧ (stkR s).Disjoint (tgR s) ∧ (stkR s).Disjoint (dsR s) ∧
-    (∀ r ∈ lsR s, (stkR s).Disjoint r) ∧ (stkR s).Disjoint (argR s) ∧
+    (stkR s N).Disjoint (kR s) ∧ (stkR s N).Disjoint (nR s) ∧ (stkR s N).Disjoint (aR s) ∧
+    (stkR s N).Disjoint (dR s) ∧ (stkR s N).Disjoint (tgR s) ∧ (stkR s N).Disjoint (dsR s) ∧
+    (∀ r ∈ lsR s, (stkR s N).Disjoint r) ∧ (stkR s N).Disjoint (argR s) ∧
     (K s).toNat + 256 ≤ 2 ^ 32 ∧ (Nn s).toNat + NL s ≤ 2 ^ 32 ∧ (Ad s).toNat + AL s ≤ 2 ^ 32 ∧
     (Dst s).toNat + L s ≤ 2 ^ 32 ∧ (Tg s).toNat + 16 ≤ 2 ^ 32 ∧
     (Src s).toNat + Cnt s * 8 ≤ 2 ^ 32 ∧ (∀ r ∈ lsR s, r.base.toNat + r.len ≤ 2 ^ 32) ∧
-    2688 ≤ (s.gpr .esp).toNat ∧ (s.gpr .esp).toNat + 48 ≤ 2 ^ 32 ∧
+    N + 128 ≤ (s.gpr .esp).toNat ∧ (s.gpr .esp).toNat + 48 ≤ 2 ^ 32 ∧
     ((arg s 1).toNat = 10 ∨ (arg s 1).toNat = 12 ∨ (arg s 1).toNat = 14) ∧ gl s (Cnt s) = L s
 
 /-- What two runs agree on: the stack pointer, the arguments and the descriptors. -/
@@ -115,8 +116,8 @@ def gatherPost (s s' : State) : Prop :=
     (bytesAt s'.mem (w64 (Dst s)) (L s), bytesAt s'.mem (w64 (Tg s)) 16)
 
 /-- `vg_aes_gcm_seal_gather`. -/
-def gatherX86 : Contract isa where
-  pre := gatherPre
+def gatherX86 (N : Nat) : Contract isa where
+  pre := gatherPre N
   post := gatherPost
   pub := gatherPub
 

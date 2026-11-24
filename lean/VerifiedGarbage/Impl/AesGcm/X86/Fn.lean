@@ -72,8 +72,9 @@ blocks, as emitted. -/
 def openTo (f : Impl.AesGcm.X86.Fn) : Prog isa :=
   Impl.Scrub.X86.scrubAll 32 2696 (withStackScratch 2616 12 (Impl.AesGcm.X86.Open.openTo c f))
 
-/-- Seal directly from the source descriptors and wipe the private workspace. -/
-def sealGather : Prog isa :=
-  Impl.Scrub.X86.scrubAll 0 2688 (DirectGather.sealGather c)
+/-- Seal directly from the source descriptors and wipe the private workspace, of `n` words as
+`seal`'s. -/
+def sealGather (n : Nat) : Prog isa :=
+  Impl.Scrub.X86.scrubAll 0 (8 * n + 128) (DirectGather.sealGather c (8 * n))
 
 end VG.Impl.AesGcm.X86.Fn

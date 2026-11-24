@@ -13,9 +13,9 @@ whose algorithm and pieces these follow.
 ## The working space
 
 Every function has a buffer `W` of 2560 bytes (`scratch` or `work`, its
-last argument), but `seal` and `open` over an implementation of
-`vg_aes_ctr32_to` that uses 256 bytes of its own or fewer, whose `W` is of
-768 bytes (`Fn.seal`, `Fn.open`):
+last argument), but `seal`, `open` and `seal_gather` over an implementation
+of `vg_aes_ctr32_to` that uses 256 bytes of its own or fewer, whose `W` is
+of 768 bytes (`Fn.seal`, `Fn.open`, `Fn.sealGather`):
 
 * `[0, 16)`: the tag `finish`, `verify` and `seal` compute;
 * `[16, 96)`: the streaming state of `seal` and `open`;

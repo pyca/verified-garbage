@@ -52,13 +52,13 @@ def pieces (c : Callees) : Prog isa :=
 descriptor pointer and count follow the tag in private argument slots. -/
 def sourceSlot (i : Nat) : Nat := if i < 6 then i else if i < 9 then i+2 else i-3
 
-def copySlot (i : Nat) : List Instr :=
-  Impl.StackScratch.X86.copyArg (2612 + 4*sourceSlot i - 4*i) i
+def copySlot (f i : Nat) : List Instr :=
+  Impl.StackScratch.X86.copyArg (f + 4*sourceSlot i - 4*i) i
 
 def zeroRet : List Instr := [.mov .eax (imm 0), .store (at_ .esp 0) .eax]
 
-def frameArgs : List Instr :=
-  (List.range 11).flatMap copySlot ++
+def frameArgs (f : Nat) : List Instr :=
+  (List.range 11).flatMap (copySlot f) ++
     [.mov .eax (.reg .esp), .alu .add .eax (imm 52), .store (at_ .esp 48) .eax] ++ zeroRet
 
 def loopSetup : List Instr :=
@@ -72,7 +72,8 @@ def body (c : Callees) : Prog isa :=
       (.seq (pieces c) (.seq (.block tagSetup)
         (.seq (oneTag c 0) (.seq (tagOut 0) (.block restore)))))))
 
-def sealGather (c : Callees) : Prog isa :=
-  .frame (.alloc 2612) (.seq (.block frameArgs) (body c)) (.free 2612)
+/-- With a working space of `n` bytes, after the 52 of the frame's own slots. -/
+def sealGather (c : Callees) (n : Nat) : Prog isa :=
+  .frame (.alloc (n + 52)) (.seq (.block (frameArgs (n + 52))) (body c)) (.free (n + 52))
 
 end VG.Impl.AesGcm.X86.DirectGather

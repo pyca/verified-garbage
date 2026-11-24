@@ -44,9 +44,9 @@ theorem w64_sub {x : BitVec 32} {k : Nat} (hk : k ≤ x.toNat) :
   rw [show 2 ^ 64 - k + x.toNat = (x.toNat - k) + 2 ^ 64 by omega_arith, Nat.add_mod_right, Nat.mod_eq_of_lt (by omega_arith)]
 
 /-- The bottom of the stack reserved by the public gather contract. -/
-abbrev Bs (s : State) : Addr := w64 (s.gpr .esp) - BitVec.ofNat 64 2688
+abbrev Bs (N : Nat) (s : State) : Addr := w64 (s.gpr .esp) - BitVec.ofNat 64 (N + 128)
 
-structure Lay (s : State) : Prop where
+structure Lay (N : Nat) (s : State) : Prop where
   rd : s.rd = [kR s, nR s, aR s, dsR s] ++ lsR s
   wr : s.wr = [dR s, tgR s, argR s]
   kd : (kR s).Disjoint (dR s)
@@ -60,13 +60,13 @@ structure Lay (s : State) : Prop where
   dls : ∀ r ∈ lsR s, (dR s).Disjoint r
   ed : (retR s).Disjoint (dR s)
   et : (retR s).Disjoint (tgR s)
-  bk : (stkR s).Disjoint (kR s)
-  bn : (stkR s).Disjoint (nR s)
-  ba : (stkR s).Disjoint (aR s)
-  bd : (stkR s).Disjoint (dR s)
-  bt : (stkR s).Disjoint (tgR s)
-  bds : (stkR s).Disjoint (dsR s)
-  bls : ∀ r ∈ lsR s, (stkR s).Disjoint r
+  bk : (stkR s N).Disjoint (kR s)
+  bn : (stkR s N).Disjoint (nR s)
+  ba : (stkR s N).Disjoint (aR s)
+  bd : (stkR s N).Disjoint (dR s)
+  bt : (stkR s N).Disjoint (tgR s)
+  bds : (stkR s N).Disjoint (dsR s)
+  bls : ∀ r ∈ lsR s, (stkR s N).Disjoint r
   ok : (K s).toNat + 256 ≤ 2 ^ 32
   on : (Nn s).toNat + NL s ≤ 2 ^ 32
   oa : (Ad s).toNat + AL s ≤ 2 ^ 32
@@ -74,13 +74,15 @@ structure Lay (s : State) : Prop where
   ot : (Tg s).toNat + 16 ≤ 2 ^ 32
   ods : (Src s).toNat + Cnt s * 8 ≤ 2 ^ 32
   ol : ∀ r ∈ lsR s, r.base.toNat + r.len ≤ 2 ^ 32
-  w₁ : 2688 ≤ (s.gpr .esp).toNat
+  w₁ : N + 128 ≤ (s.gpr .esp).toNat
   hR : (arg s 1).toNat = 10 ∨ (arg s 1).toNat = 12 ∨ (arg s 1).toNat = 14
   hgl : gl s (Cnt s) = L s
-  hBn : (Bs s).toNat + 2736 ≤ 2 ^ 32
-  hE : w64 (s.gpr .esp) = Bs s + BitVec.ofNat 64 2688
+  hBn : (Bs N s).toNat + (N + 176) ≤ 2 ^ 32
+  hE : w64 (s.gpr .esp) = Bs N s + BitVec.ofNat 64 (N + 128)
+  big : 768 ≤ N
+  le : N ≤ 2560
 
-theorem lay {s : State} (hs : gatherPre s) : Lay s := by
+theorem lay {N : Nat} {s : State} (hs : gatherPre N s) (big : 768 ≤ N) (le : N ≤ 2560) : Lay N s := by
   sig_split hs
   rename_i rd wr kd kt hdrop4 nd nt hdrop7 ad at_ hdrop10 dt dds dls hdrop14 hdrop15 hdrop16 hdrop17 hdrop18
     hdrop19 hdrop20 hdrop21 hdrop22 ed et hdrop25 hdrop26 hdrop27 bk bn ba bd bt bds bls hdrop35 ok on oa od
@@ -89,31 +91,31 @@ theorem lay {s : State} (hs : gatherPre s) : Lay s := by
     hdrop26 hdrop27 hdrop35
   have hgl := hs
   clear hs
-  have hB : Bs s = w64 (s.gpr .esp - BitVec.ofNat 32 2688) := (w64_sub (by omega_arith)).symm
-  have hBn : (Bs s).toNat = (s.gpr .esp).toNat - 2688 := by rw [hB, toNat_w64, sub_toNat32 (by omega_arith)]
-  have hE : w64 (s.gpr .esp) = Bs s + BitVec.ofNat 64 2688 := (BitVec.sub_add_cancel _ _).symm
+  have hB : Bs N s = w64 (s.gpr .esp - BitVec.ofNat 32 (N + 128)) := (w64_sub (by omega_arith)).symm
+  have hBn : (Bs N s).toNat = (s.gpr .esp).toNat - (N + 128) := by rw [hB, toNat_w64, sub_toNat32 (by omega_arith)]
+  have hE : w64 (s.gpr .esp) = Bs N s + BitVec.ofNat 64 (N + 128) := (BitVec.sub_add_cancel _ _).symm
   refine ⟨rd, wr, kd, kt, nd, nt, ad, at_, dt, dds, dls, ed, et, bk, bn, ba, bd, bt, bds, bls, ok, on, oa, od, ot,
-    ods, ol, w₁, hR, hgl, by omega_arith, hE⟩
+    ods, ol, w₁, hR, hgl, by omega_arith, hE, big, le⟩
 
 /-- Parts of the stack below the stack pointer. -/
-theorem stk_sub (s : State) (d n : Nat) (h' : d + n ≤ 2688) :
-    (⟨Bs s + BitVec.ofNat 64 d, n⟩ : Region).Sub ⟨Bs s, 2688⟩ :=
+theorem stk_sub (N : Nat) (s : State) (d n : Nat) (h' : d + n ≤ N + 128) :
+    (⟨Bs N s + BitVec.ofNat 64 d, n⟩ : Region).Sub ⟨Bs N s, N + 128⟩ :=
   Offset.sub_base _ h'
 
 namespace Lay
 
-variable {s : State} (h : Lay s)
+variable {N : Nat} {s : State} (h : Lay N s)
 include h
 
-theorem hArg : argR s = ⟨Bs s + BitVec.ofNat 64 2692, 44⟩ := by
+theorem hArg : argR s = ⟨Bs N s + BitVec.ofNat 64 (N + 132), 44⟩ := by
   show (⟨w64 (s.gpr .esp + BitVec.ofNat 32 (4 + 4 * 0)), 44⟩ : Region) = _
-  have hb : (Bs s).toNat=(s.gpr .esp).toNat-2688 := by
-    have b : Bs s = w64 (s.gpr .esp - BitVec.ofNat 32 2688) := (w64_sub h.w₁).symm
+  have hb : (Bs N s).toNat=(s.gpr .esp).toNat-(N + 128) := by
+    have b : Bs N s = w64 (s.gpr .esp - BitVec.ofNat 32 (N + 128)) := (w64_sub h.w₁).symm
     rw [b,toNat_w64,sub_toNat32 h.w₁]
   have bound := h.hBn
   rw [hb] at bound
   have low := h.w₁
-  rw [w64_add (by omega_arith), h.hE, Offset.add_ofNat_add_ofNat]
+  rw [w64_add (by omega_arith), h.hE, Offset.add_ofNat_add_ofNat, show N + 128 + (4 + 4 * 0) = N + 132 from rfl]
 
 end Lay
 end VG.Proof.AesGcm.X86.Gather
