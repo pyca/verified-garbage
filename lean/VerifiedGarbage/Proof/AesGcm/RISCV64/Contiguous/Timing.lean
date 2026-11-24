@@ -14,6 +14,8 @@ import VerifiedGarbage.Proof.Framework.RelCTAssoc
 
 public section
 namespace VG.Proof.AesGcm.RISCV64.Contiguous
+
+variable {w tag tag' : VG.Addr}
 open VG VG.RISCV64 VG.Impl.AesGcm.RISCV64
 open VG.Impl.AesGcm.RISCV64.Contiguous
 open VG.Proof.Gather.RISCV64 (Eq2 TT rel_seq rel_taint)

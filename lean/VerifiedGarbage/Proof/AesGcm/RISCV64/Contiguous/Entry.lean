@@ -14,6 +14,8 @@ import VerifiedGarbage.Proof.Framework.RISCV64.RegUpd
 
 namespace VG.Proof.AesGcm.RISCV64.Contiguous
 
+variable {w tag : VG.Addr}
+
 open VG VG.RISCV64 VG.Impl.AesGcm.RISCV64
 open VG.Impl.AesGcm.RISCV64.Contiguous (entry payloadArgs)
 

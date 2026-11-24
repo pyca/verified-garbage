@@ -59,7 +59,7 @@ theorem inner_align {s : State} (h : Caller s) : (allocated s).sp.toNat%16=0 := 
   rw [toNat_sub_ofNat' (by have := h.space;omega)]
   have := h.align;omega
 
-theorem extended_read {s : State} (h : Covers rs (s.rd++s.wr)) : Covers rs ((allocated s).rd++(allocated s).wr) := by
+theorem extended_read {s : State} {rs : List Region} (h : Covers rs (s.rd++s.wr)) : Covers rs ((allocated s).rd++(allocated s).wr) := by
   intro a n ha
   obtain ⟨r,hr,hit⟩ := h a n ha
   exact ⟨r,(List.mem_append.mp hr).elim (List.mem_append_left _) (fun k => List.mem_append_right _ (List.mem_cons_of_mem _ k)),hit⟩
