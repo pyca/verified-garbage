@@ -594,7 +594,10 @@ def main():
     if not base.is_dir():
         note = "No base to compare with, so head ran alone."
     elif modules["base"] is not None:
-        binaries["base"], note, source = build_base(base, head)
+        source = head
+        binaries["base"] = TARGET / (pathlib.Path(binaries["head"]).name + "-legacy-control")
+        shutil.copy2(binaries["head"], binaries["base"])
+        note = "Both sides use one compiled image; control rows use the legacy entry on both sides."
         if binaries["base"] is not None:
             modules["base"] = selected_modules(source, args.modules)
     if args.arch:
@@ -640,6 +643,7 @@ def main():
         for side, bench, unit in order:
             print(f"{home(side)}{f': {bench}' if bench else ''}", file=sys.stderr)
             checkout = base if side == "base" else head
+            os.environ["VG_IA32_PLACEMENT_SIDE"] = side
             times = run(binary_of(side), work / home(side) / (bench or "all"), VG, args, checkout,
                         modules_of(side, bench), unit, bench)
             for bench_id, t in times.items():

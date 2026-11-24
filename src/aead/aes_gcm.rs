@@ -241,6 +241,15 @@ impl Drop for AesGcm {
     }
 }
 
+#[cfg(target_arch = "x86")]
+static IA32_BENCH_LEGACY: core::sync::atomic::AtomicBool = core::sync::atomic::AtomicBool::new(false);
+
+#[cfg(target_arch = "x86")]
+/// Select the older IA-32 seal entry for these paired same-binary tests.
+pub fn ia32_select_benchmark_entry(legacy: bool) {
+    IA32_BENCH_LEGACY.store(legacy, core::sync::atomic::Ordering::Relaxed);
+}
+
 impl AesGcm {
     /// The size of a full tag, in bytes.
     pub const TAG_SIZE: usize = 16;
@@ -336,6 +345,18 @@ impl AesGcm {
         let len = data.len();
         let dst = data.as_mut_ptr();
         // SAFETY: both pointers refer to the same exclusive, initialized slice.
+        #[cfg(target_arch = "x86")]
+        if IA32_BENCH_LEGACY.load(core::sync::atomic::Ordering::Relaxed) {
+            let mut tag = [0; 16];
+            // SAFETY: the caller checked the same lengths and provides a separate tag.
+            unsafe {
+                crate::arch::dispatch::gcm::vg_aes_gcm_seal_auto(
+                    dit, self.key(), self.rounds, nonce.as_ptr(), nonce.len(),
+                    aad.as_ptr(), aad.len(), dst, len, &mut tag,
+                );
+            }
+            return tag;
+        }
         unsafe { self.seal_contiguous(dit, nonce, aad, dst.cast_const(), dst, len) }
     }
 
