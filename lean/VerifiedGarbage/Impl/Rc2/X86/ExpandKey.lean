@@ -40,7 +40,11 @@ def storeKey : List Instr :=
 def fillFinish : List Instr :=
   storeKey ++ ([.alu .add .ecx (.imm 1), .alu .cmp .ecx (.imm 128)] : List Instr)
 
-def fillKey : List Instr := fillInput ++ piLookup ++ fillFinish
+/-- A step of the fill loop, with the look-up `look` of PITABLE[EAX & 255]
+into EAX (which may change EAX, EBX, EDX, the flags and the XMM registers). -/
+def fillKeyWith (look : List Instr) : List Instr := fillInput ++ look ++ fillFinish
+
+def fillKey : List Instr := fillKeyWith piLookup
 
 def maskCode : Prog isa :=
   .seq (.block [.mov .edx (.mem (memOp .esp 12)), .alu .and .edx (.imm 7), imm .ebx 255])
@@ -52,7 +56,9 @@ def reduceInput : List Instr :=
   [rr .edx .edi, .alu .add .edx (.reg .ecx), .movzx8 .eax (memOp .edx 0),
    .alu .and .eax (.reg .ebx)]
 
-def reduceKey : List Instr := reduceInput ++ piLookup ++ storeKey
+def reduceKeyWith (look : List Instr) : List Instr := reduceInput ++ look ++ storeKey
+
+def reduceKey : List Instr := reduceKeyWith piLookup
 
 def descendInput : List Instr :=
   [.alu .sub .ecx (.imm 1), rr .edx .edi, .alu .add .edx (.reg .ecx),
@@ -60,24 +66,31 @@ def descendInput : List Instr :=
    .alu .add .ebx (.reg .esi), rr .edx .edi, .alu .add .edx (.reg .ebx),
    .movzx8 .ebx (memOp .edx 0), .alu .xor .eax (.reg .ebx)]
 
-def descendKey : List Instr :=
-  descendInput ++ piLookup ++ (storeKey ++ ([.alu .cmp .ecx (.imm 0)] : List Instr))
+def descendKeyWith (look : List Instr) : List Instr :=
+  descendInput ++ look ++ (storeKey ++ ([.alu .cmp .ecx (.imm 0)] : List Instr))
+
+def descendKey : List Instr := descendKeyWith piLookup
+
+/-- The fill loop, unless the key has 128 bytes. -/
+def maybeFillWith (look : List Instr) : Prog isa :=
+  .seq (.block [.alu .cmp .ecx (.imm 128)])
+    (.ite .ne (.loop (.block (fillKeyWith look)) .ne) (.block []))
 
 def expandCopyFill : Prog isa :=
-  .seq (.loop (.block copyKey) .ne)
-    (.seq (.block [.alu .cmp .ecx (.imm 128)])
-      (.ite .ne (.loop (.block fillKey) .ne) (.block [])))
+  .seq (.loop (.block copyKey) .ne) (maybeFillWith piLookup)
 
 def reduceSetup : List Instr :=
   [.mov .esi (.mem (memOp .esp 12)), .alu .add .esi (.imm 7), .shift .shr .esi 3,
    imm .ecx 128, .alu .sub .ecx (.reg .esi)]
 
-def expandReduce : Prog isa :=
+def expandReduceWith (look : List Instr) : Prog isa :=
   .seq (.block reduceSetup)
     (.seq maskCode
-      (.seq (.block reduceKey)
+      (.seq (.block (reduceKeyWith look))
         (.seq (.block [.alu .cmp .ecx (.imm 0)])
-          (.ite .ne (.loop (.block descendKey) .ne) (.block [])))))
+          (.ite .ne (.loop (.block (descendKeyWith look)) .ne) (.block [])))))
+
+def expandReduce : Prog isa := expandReduceWith piLookup
 
 def expandKey : Prog isa :=
   .seq (.block [.mov .eax (.mem (memOp .esp 20))])

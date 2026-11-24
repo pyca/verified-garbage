@@ -7,6 +7,7 @@ public import VerifiedGarbage.TCB.X86.Print
 import VerifiedGarbage.Proof.Rc2.X86.Lit
 import VerifiedGarbage.Proof.Rc2.X86.Cbc.Lit
 import VerifiedGarbage.Proof.Rc2.X86.Stream.Lit
+import VerifiedGarbage.Proof.Rc2.X86.Ssse3Lit
 
 /-! # RC2 on x86 -/
 
@@ -15,6 +16,10 @@ import VerifiedGarbage.Proof.Rc2.X86.Stream.Lit
 namespace VG.Artifacts.Rc2.X86
 
 def artifacts : List Artifact := [
+  Spec.Rc2.cbcInitApi.artifact X86.target {
+    suffix := "_ssse3"
+    code := Impl.Rc2.X86.Fn.cbcInitSsse3
+    verified := Proof.Rc2.X86.Scrub.cbcInitSsse3_scrubbed },
   Spec.Rc2.cbcInitApi.artifact X86.target {
     code := Impl.Rc2.X86.Fn.cbcInit
     verified := Proof.Rc2.X86.Scrub.cbcInit_scrubbed },

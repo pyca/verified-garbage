@@ -18,6 +18,7 @@ returns, so `ebx` and `esi` hold arguments: our caller's values of them are
 saved in `scratch[512..520)`, beyond the callee's scratch space, and
 restored after the call through `ebx`, which the callee preserves. Every
 branch and address depends only on `esp`, the pointers and the lengths.
+`initWith` is `init` with any function in the key expansion's place.
 -/
 
 @[expose] public section
@@ -69,12 +70,16 @@ def initArgs : List Instr :=
   [rr .ebx .eax, rr .esi .ecx, .mov .edx (.mem (argOp 2)), .mov .ecx (.mem (argOp 1)),
    .mov .eax (.mem (argOp 0))]
 
+/-- `init` with the key expansion `key`, the function `name`. -/
+def initWith (name : String) (key : Prog isa) : Prog isa :=
+  .seq checks (.seq (.block [.alu .test .eax (.reg .eax)]) (.ite .ne (.block [])
+    (.seq (.block initArgs) (.seq (call5 name key) (.block (restore ++ [imm .eax 0]))))))
+
 def keyCall : Prog isa := call5 "vg_rc2_expand_key" expandKey
 
 def initBody : Prog isa :=
   .seq (.block initArgs) (.seq keyCall (.block (restore ++ [imm .eax 0])))
 
-def init : Prog isa :=
-  .seq checks (.seq (.block [.alu .test .eax (.reg .eax)]) (.ite .ne (.block []) initBody))
+def init : Prog isa := initWith "vg_rc2_expand_key" expandKey
 
 end VG.Impl.Rc2.X86.Stream
