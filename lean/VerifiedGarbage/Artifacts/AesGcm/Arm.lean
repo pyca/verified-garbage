@@ -19,7 +19,7 @@ def artifacts : List Artifact := [
     code := Impl.AesGcm.Arm.Fn.«seal»
     verified := Proof.AesGcm.Arm.Fn.«seal» },
   Spec.Gcm.sealContiguousApi.artifact Arm.target {
-    code := Impl.Scrub.Arm.scrubAll 0 2608 Impl.AesGcm.Arm.Contiguous.sealContiguous
+    code := Impl.AesGcm.Arm.Fn.sealContiguous
     verified := Proof.AesGcm.Arm.Contiguous.Caller.scrubbed },
   Spec.Gcm.openApi.artifact Arm.target {
     code := Impl.AesGcm.Arm.Fn.«open»
