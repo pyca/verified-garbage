@@ -1,4 +1,7 @@
 module
+public import VerifiedGarbage.Proof.AesGcm.X86_64.ContiguousEntryCT
+import VerifiedGarbage.Proof.AesGcm.X86_64.ContiguousDeferred
+import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.Short
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Leaves
 public import VerifiedGarbage.Impl.AesGcm.X86_64.Contiguous
 import VerifiedGarbage.Proof.AesGcm.X86_64.Frame
@@ -161,5 +164,49 @@ theorem selectedSp (v : GcmImpl) {ctr : Fn} (defer wide : Bool) (n : Nat) {b : O
   | none => exact base false
   | some f =>
     exact onFlag_spSafe (withStackArgScratch_spSafe (spBody v (fusedSp (hb f rfl)) true wide true)) (base true)
+
+open VG.Proof.Gcm.X86_64.Stitch (CtxMode)
+open DirectGather (ctrFn)
+
+/-- One functional, leakage and stack certificate for an AES-GCM record body. -/
+structure RecordProof (M : CtxMode) (p : Prog isa) : Prop where
+  ok : RecordOk M p
+  ct : RecordCT M p
+  safe : CoreSafe p
+
+theorem plainProof (v : GcmVariant) (defer vec wide : Bool) {k : Nat} (backend : v.lvTW.level≤k)
+    (level : (if vec then (if wide then 2 else 1) else 0)≤k) {M : CtxMode} :
+    RecordProof M (if defer then deferredBody v.impl.callees (ctrFn v) else
+      body v.impl.callees vec wide false (separate (ctrFn v) v.impl.callees.gh)) := by
+  have side : calleeSide (ctrFn v).code k 8=true :=
+    calleeSide_mono (Nat.le_trans (level_join_right _ _) backend) (Nat.zero_le _) v.ctrTo.side
+  cases defer
+  · have bulk : BulkOk M (Impl.AesGcm.X86_64.Contiguous.bulk (separate (ctrFn v) v.impl.callees.gh)) :=
+      fun h o a b c => separate_bulk_ok v.ctrTo v.impl.gh h o a b c
+    exact ⟨plain_ok Short.shortFacts v.impl vec wide _ bulk,plain_ct Short.shortFacts v.impl vec wide bulk
+      (separate_ct v.ctrTo v.impl.gh) (separate_keeps v.ctrTo v.impl.gh),
+      separateSafe v.impl vec wide ((callees_sideTW v).mono backend) side v.ctrTo.spSafe level⟩
+  · exact ⟨deferred_ok v.impl v.ctrTo,deferred_ct v.impl v.ctrTo,
+      delayedSafe v.impl ((callees_sideTW v).mono backend) side v.ctrTo.spSafe⟩
+
+private theorem preparedProof {np : Nat} {hn : 8≤np ∧ np≤24} (v : GcmVariant) (wide : Bool)
+    (leaf : BlocksTo.SealFn (CtxMode.preparedN np hn))
+    (pow : wide → Short.PowOk (CtxMode.preparedN np hn) Impl.AesGcm.X86_64.Short.powersP Impl.AesGcm.X86_64.Short.ghashP)
+    (side : calleeSide leaf.fn.code v.lvT.level 8=true) (level : (if wide then 2 else 1)≤v.lvT.level) :
+    RecordProof (CtxMode.preparedN np hn) (body v.impl.callees true wide true (fused leaf.fn)) := by
+  have bulk : BulkOk _ (Impl.AesGcm.X86_64.Contiguous.bulk (fused leaf.fn)) := fun h o a b c => fused_bulk_ok leaf h o a b c
+  exact ⟨prepared_ok Short.shortFacts v.impl wide pow _ bulk,prepared_ct Short.shortFacts v.impl wide pow
+    (fun _ => Short.powersP_ct) bulk (fused_ct leaf) (fused_keeps leaf),fusedSafe v.impl wide (callees_sideT v)
+    side leaf.spAll level⟩
+
+theorem ready16Proof (v : GcmVariant) {leaf} (selected : leaf∈sealLeafR16 v) (level : 1≤v.lvT.level) :
+    RecordProof CtxMode.prepared16 (body v.impl.callees true false true (fused leaf.fn)) :=
+  preparedProof v false leaf (fun h => Bool.noConfusion h) (calleeSide_mono (DirectGather.lvG_le_T v) (Nat.le_refl _)
+    (selectSealLeaf_side v _ _ _ _ _ selected)) level
+
+theorem ready48Proof (v : GcmVariant) {leaf} (selected : leaf∈sealLeafR v) (level : 2≤v.lvT.level) :
+    RecordProof CtxMode.prepared (body v.impl.callees true true true (fused leaf.fn)) :=
+  preparedProof v true leaf (fun _ => Short.powOk_powersP) (calleeSide_mono (DirectGather.lvG_le_T v) (Nat.le_refl _)
+    (selectSealLeaf_side v _ _ _ _ _ selected)) level
 
 end VG.Proof.AesGcm.X86_64.ContiguousSeal
