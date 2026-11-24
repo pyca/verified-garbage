@@ -101,21 +101,65 @@ private theorem spDeferred (v : GcmImpl) {ctr : Fn} (ct : Sp ctr.code) :
   simp only [core,deferredBody,bulk,Impl.AesGcm.X86_64.Contiguous.call,Code.all,ct,aa,tail,tg.2,Bool.true_and,Bool.and_true]
   decide +kernel
 
+/-- Properties needed before assigning a private work area to the raw entry. -/
+structure CoreSafe (record : Prog isa) : Prop where
+  sp : Sp (core record)
+  depth : (core record).x86_64Depth ≤ 24
+  mx : (core record).allInstrs (fun i => !loadsMxcsr i)=true
+
+private theorem rawSafe {r : Prog isa} {k : Nat} (sp : Sp (core r)) (h : calleeSide (core r) k 24=true) :
+    CoreSafe r := by
+  simp only [calleeSide,Bool.and_eq_true,decide_eq_true_eq] at h
+  refine ⟨sp,h.1.1,?_⟩
+  have both := (Code.allInstrs_eq _ _).symm.trans h.1.2
+  exact (Code.allInstrs_eq _ _).trans (List.all_eq_true.mpr fun i hi =>
+    (Bool.and_eq_true_iff.mp (List.all_eq_true.mp both i hi)).2)
+
+private theorem separateCoreSide (vec wide : Bool) :
+    stubCallee (core (body stub5 vec wide false (separate ctrToStub stub5.gh)))
+      (if vec then (if wide then 2 else 1) else 0) allowance 24=true := by
+  cases vec <;> cases wide <;> lit_decide
+
+private theorem fusedCoreSide (wide : Bool) :
+    stubCallee (core (body stub5 true wide true (fused (fnStub "B"))))
+      (if wide then 2 else 1) allowance 24=true := by cases wide <;> lit_decide
+
+private theorem delayedCoreSide :
+    stubCallee (core (deferredBody stub5 ctrToStub)) 0 allowance 24=true := by lit_decide
+
+private theorem separateSp (v : GcmImpl) {ctr : Fn} (ct : Sp ctr.code) : Sp (separate ctr v.callees.gh) := by
+  simp only [Sp,separate,Impl.AesGcm.X86_64.Contiguous.call,Code.all,GcmImpl.callees,v.gh.spSafe,ct,Bool.true_and,Bool.and_true]
+  decide +kernel
+
+private theorem fusedSp {f : Fn} (h : Sp f.code) : Sp (fused f) := by
+  simp only [Sp,fused,Impl.AesGcm.X86_64.Contiguous.call,Code.all,h,Bool.and_true]
+  decide +kernel
+
+theorem separateSafe (v : GcmImpl) (vec wide : Bool) {ctr : Fn} {k : Nat} (hs : CalleesSide k v.callees)
+    (hc : calleeSide ctr.code k 8=true) (sp : Sp ctr.code) (hk : (if vec then (if wide then 2 else 1) else 0)≤k) :
+    CoreSafe (body v.callees vec wide false (separate ctr v.callees.gh)) :=
+  rawSafe (spBody v (separateSp v sp) vec wide false)
+    (calleeSide_of_fill (fillBody hs (fillSeparate hc hs.gh) vec wide false) hk (separateCoreSide vec wide))
+
+theorem fusedSafe (v : GcmImpl) (wide : Bool) {f : Fn} {k : Nat} (hs : CalleesSide k v.callees)
+    (hf : calleeSide f.code k 8=true) (sp : Sp f.code) (hk : (if wide then 2 else 1)≤k) :
+    CoreSafe (body v.callees true wide true (fused f)) :=
+  rawSafe (spBody v (fusedSp sp) true wide true)
+    (calleeSide_of_fill (fillBody hs (fillFused hf) true wide true) hk (fusedCoreSide wide))
+
+theorem delayedSafe (v : GcmImpl) {ctr : Fn} {k : Nat} (hs : CalleesSide k v.callees)
+    (hc : calleeSide ctr.code k 8=true) (sp : Sp ctr.code) : CoreSafe (deferredBody v.callees ctr) :=
+  rawSafe (spDeferred v sp) (calleeSide_of_fill (fillDeferred hs hc) (Nat.zero_le _) delayedCoreSide)
+
 theorem selectedSp (v : GcmImpl) {ctr : Fn} (defer wide : Bool) (n : Nat) {b : Option Fn}
     (ct : Sp ctr.code) (hb : ∀ f∈b, Sp f.code) : Sp (selected defer wide n v.callees ctr b) := by
-  have split : Sp (separate ctr v.callees.gh) := by
-    simp only [Sp,separate,Impl.AesGcm.X86_64.Contiguous.call,Code.all,GcmImpl.callees,v.gh.spSafe,ct,Bool.true_and,Bool.and_true]
-    decide +kernel
   have base (vec : Bool) : Sp (if defer then framed (deferredBody v.callees ctr) else one v.callees vec wide false (separate ctr v.callees.gh)) := by
     cases defer
-    · exact withStackArgScratch_spSafe (spBody v split vec wide false)
+    · exact withStackArgScratch_spSafe (spBody v (separateSp v ct) vec wide false)
     · exact withStackArgScratch_spSafe (spDeferred v ct)
   cases b with
   | none => exact base false
   | some f =>
-    have fusedSp : Sp (fused f) := by
-      simp only [Sp,fused,Impl.AesGcm.X86_64.Contiguous.call,Code.all,hb f rfl,Bool.and_true]
-      decide +kernel
-    exact onFlag_spSafe (withStackArgScratch_spSafe (spBody v fusedSp true wide true)) (base true)
+    exact onFlag_spSafe (withStackArgScratch_spSafe (spBody v (fusedSp (hb f rfl)) true wide true)) (base true)
 
 end VG.Proof.AesGcm.X86_64.ContiguousSeal
