@@ -240,8 +240,10 @@ own changes are rebuilt either way, on top of the restored build.
   after the call and `test eax, eax`, and the functions called there); its
   dispatcher then does not, and the other paths pay nothing.
 * `TCB/` holds definitions only and imports only Lean core; lemmas go in
-  `Proof/`. `Spec/` and `Impl/` never import `Proof/`.
-  `ci/check_lean_imports.py` checks both.
+  `Proof/`. `Spec/` and `Impl/` never import `Proof/`. Nothing in
+  `lean/VerifiedGarbage/` imports the project's other libraries
+  (`VerifiedGarbageTest`, `VerifiedGarbageAuditBase`), whose records the
+  emitter's audits do not read. `ci/check_lean_imports.py` checks all three.
 
 ## Skills
 
