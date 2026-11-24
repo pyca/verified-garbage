@@ -33,6 +33,39 @@ theorem tailPtr_ok {Ctx W SP S : Addr} {n r : Nat} {s : State}
   · intro z nz; simp [gpr_setReg,nz]
   all_goals rfl
 
+theorem vecArgs_ok {Ctx W SP S D : Addr} {n r : Nat} {s : State}
+    (env : Env Ctx (W+16#64) W SP s) (dat : s.mem.readW (W+200#64) 64=D)
+    (tlen : s.mem.readW (W+192#64) 64=BitVec.ofNat 64 n) (len : s.mem.readW (W+208#64) 64=BitVec.ofNat 64 r)
+    (le : r≤n) (slot : InRegions (s.rd++s.wr) (SP+8#64) 8) (src : s.mem.readW (SP+8#64) 64=S)
+    (slots : (⟨SP+8#64,8⟩ : Region).Disjoint ⟨W,2560⟩) :
+    ∃ t, runBlock isa (Impl.AesGcm.X86_64.Short.finTextArgs ++ Contiguous.regs .rbx) s=some t ∧
+      t.mem = writeBytes s.mem (W+512#64) (List.replicate 16 0) ∧
+      t.gpr .rdi=W+512#64 ∧ t.gpr .rsi=D ∧ t.gpr .rdx=W+1040#64 ∧ t.gpr .rcx=BitVec.ofNat 64 r ∧
+      t.gpr .rbx=S+BitVec.ofNat 64 (n-r) ∧ (∀ z ∈ [Reg.rsp,.r13,.r14,.r15], t.gpr z=s.gpr z) ∧
+      t.rd=s.rd ∧ t.wr=s.wr ∧ ∀ x, x≠.xmm7 → t.xmm x=s.xmm x := by
+  obtain ⟨u,run,mu,di,si,dx,cx,gu,ru,wu,xu⟩ := Short.finTextArgs_ok s env dat len
+  have keep (z) (hz : z ∈ [Reg.r13,.r14,.r15,.rsp]) : u.gpr z=s.gpr z := by
+    simp only [List.mem_cons,List.not_mem_nil,or_false] at hz
+    rcases hz with rfl|rfl|rfl|rfl <;> exact gu _ (by decide) (by decide) (by decide) (by decide)
+  have frame : Frame [⟨W+512#64,16⟩] s.mem u.mem := by
+    rw [mu]; exact writeBytes_frame' _ (List.length_replicate ..)
+  have memslot : u.mem.readW (SP+8#64) 64=S := by
+    rw [frame.readW (Region.contains_self _ _) (fun b hb => by
+      obtain rfl := List.mem_singleton.mp hb; exact slots.sub_right (Lay.wSub (by decide))) (by decide), src]
+  have memw (i : Nat) (hi : i+8≤512) :
+      u.mem.readW (W+BitVec.ofNat 64 i) 64=s.mem.readW (W+BitVec.ofNat 64 i) 64 := by
+    apply frame.readW (Region.contains_self _ _) _ (by decide)
+    intro b hb; obtain rfl := List.mem_singleton.mp hb
+    exact Offset.disjoint W (.inl hi) (by omega_using [hi]) (by decide)
+  obtain ⟨v,run',reg,gv,mv,rv,wv,xv⟩ := tailPtr_ok (env.keep keep ru wu)
+    (by rw [ru,wu]; exact slot) memslot ((memw 192 (by decide)).trans tlen) ((memw 208 (by decide)).trans len) le
+  refine ⟨v,by rw [runBlock_append,run]; exact run',mv.trans mu,(gv _ (by decide)).trans di,
+    (gv _ (by decide)).trans si,(gv _ (by decide)).trans dx,(gv _ (by decide)).trans cx,reg,?_,
+    rv.trans ru,wv.trans wu,fun q neq => by rw [xv,xu q neq]⟩
+  intro z hz
+  simp only [List.mem_cons,List.not_mem_nil,or_false] at hz
+  rcases hz with rfl|rfl|rfl|rfl <;> exact (gv _ (by decide)).trans (keep _ (by decide))
+
 theorem vecTail_ok {Ctx W SP S D : Addr} {H : Block} {al n r : Nat} {s : State}
     (P : Short.FinPre Ctx W SP H al n r D s) (le : r≤n)
     (slot : InRegions (s.rd++s.wr) (SP+8#64) 8) (src : s.mem.readW (SP+8#64) 64=S)
@@ -48,28 +81,6 @@ theorem vecTail_ok {Ctx W SP S D : Addr} {H : Block} {al n r : Nat} {s : State}
       blockAt t.mem W = Spec.Gcm.ghashFrom H (blockAt s.mem (yA W))
         [Spec.Gcm.ofBytes (Short.xb s.mem (S+BitVec.ofNat 64 (n-r)) (W+1040#64) r ++ Spec.Gcm.zeros (16-r)),
          Spec.Gcm.ofBytes (Proof.Gcm.lensBlock al n)] ^^^ blockAt s.mem (W+1024#64) := by
-  apply Short.finTailFrom_ok _ .rbx P (by decide) _ read alias apart
-  obtain ⟨u,run,mu,di,si,dx,cx,gu,ru,wu,xu⟩ := Short.finTextArgs_ok s P.env P.dat P.len
-  have keep (z) (hz : z ∈ [Reg.r13,.r14,.r15,.rsp]) : u.gpr z=s.gpr z := by
-    simp only [List.mem_cons,List.not_mem_nil,or_false] at hz
-    rcases hz with rfl|rfl|rfl|rfl <;> exact gu _ (by decide) (by decide) (by decide) (by decide)
-  have frame : Frame [⟨W+512#64,16⟩] s.mem u.mem := by
-    rw [mu]; exact writeBytes_frame' _ (List.length_replicate ..)
-  have memslot : u.mem.readW (SP+8#64) 64=S := by
-    rw [frame.readW (Region.contains_self _ _) (fun b hb => by
-      obtain rfl := List.mem_singleton.mp hb; exact slots.sub_right (Lay.wSub (by decide))) (by decide), src]
-  have memw (i : Nat) (hi : i+8≤512) :
-      u.mem.readW (W+BitVec.ofNat 64 i) 64=s.mem.readW (W+BitVec.ofNat 64 i) 64 := by
-    apply frame.readW (Region.contains_self _ _) _ (by decide)
-    intro b hb; obtain rfl := List.mem_singleton.mp hb
-    exact Offset.disjoint W (.inl hi) (by omega_using [hi]) (by decide)
-  obtain ⟨v,run',reg,gv,mv,rv,wv,xv⟩ := tailPtr_ok (P.env.keep keep ru wu)
-    (by rw [ru,wu]; exact slot) memslot ((memw 192 (by decide)).trans P.tlen) ((memw 208 (by decide)).trans P.len) le
-  refine ⟨v,by rw [runBlock_append,run]; exact run',mv.trans mu,(gv _ (by decide)).trans di,
-    (gv _ (by decide)).trans si,(gv _ (by decide)).trans dx,(gv _ (by decide)).trans cx,reg,?_,
-    rv.trans ru,wv.trans wu,fun q neq => by rw [xv,xu q neq]⟩
-  intro z hz
-  simp only [List.mem_cons,List.not_mem_nil,or_false] at hz
-  rcases hz with rfl|rfl|rfl|rfl <;> exact (gv _ (by decide)).trans (keep _ (by decide))
+  exact Short.finTailFrom_ok _ .rbx P (by decide) (vecArgs_ok P.env P.dat P.tlen P.len le slot src slots) read alias apart
 
 end VG.Proof.AesGcm.X86_64.ContiguousSeal
