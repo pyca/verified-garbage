@@ -735,7 +735,9 @@ runs for their number, public, four at a time and then one at a time, each
 block's `L_{ntz(i)}` in the table or where `lAddr` finds it from the block's
 index (`lAddr_ct`, `quad_ct`, `single_ct`, `pass_ct`);
 `whole` is the table, as long as the public number of blocks needs
-(`ltable_ct`), then two passes around a call (`wholeIn_ct`, `whole_ct`);
+(`ltable_ct`), then two passes around a call (`wholeIn_ct`, `whole_ct`), or
+with AES-NI one pass, whose groups of blocks are addressed as a pass's
+blocks are (`groupNi_ct`, `wholeNi_ct`);
 the rest addresses the
 data's end and `W` (`rest_ct`); `body` branches on the data's length
 (`body_ct`); the tag addresses only `W` (`tag_ct`).
@@ -1137,6 +1139,197 @@ theorem whole_ct {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State} {
   rw [Proof.Ocb.blockAtMem_frame K₁.frame (fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact (tblR_w (.inl (by decide)) (by decide)).symm), hl0]
 
+/-! ## The whole blocks with AES-NI -/
+
+/-- Registers pinned. -/
+theorem pinL {I : State → Prop} {rs : List Reg} {v : Reg → BitVec 32} (h : ∀ s, I s → ∀ r ∈ rs, s.gpr r = v r) :
+    ∀ s₁ s₂, I s₁ → I s₂ → ∀ r ∈ rs, s₁.gpr r = s₂.gpr r := fun s₁ s₂ h₁ h₂ r hr => by
+  rw [h s₁ h₁ r hr, h s₂ h₂ r hr]
+
+/-- Checksums of the whole blocks, from `c0`. -/
+def ckNi (p : Prm) (O0 l : Block) (X : Nat → Block) (enc : Bool) (t₀ : State) (c0 : Block) : Nat → Block
+  | 0 => c0
+  | k + 1 => ckNi p O0 l X enc t₀ c0 k ^^^ if enc then X k else zN p O0 l X enc t₀ k ^^^ offAt O0 l (k + 1)
+
+/-- The state after `i` of the `m` blocks, and `j` offsets of the group after
+them, for some offset, `L_*`, blocks and checksums. -/
+def NiI (p : Prm) (enc : Bool) (m i j : Nat) (t : State) : Prop :=
+  ∃ O0 l X ckF t₀, (∀ k < m, ckF (k + 1) = ckF k ^^^ if enc then X k else zN p O0 l X enc t₀ k ^^^ offAt O0 l (k + 1)) ∧
+    NiInv p m O0 l X enc ckF t₀ t i j
+
+/-- A group's registers: what its blocks, offsets and round keys are
+addressed with, and the rounds. -/
+def niV (p : Prm) (i : Nat) : Reg → BitVec 32
+  | .eax => p.K
+  | .ecx => BitVec.ofNat 32 p.R
+  | .edx => p.W + BitVec.ofNat 32 scrO
+  | .ebp => p.W
+  | .esi => p.D + BitVec.ofNat 32 (16 * i)
+  | _ => 0
+
+/-- The code of a group but its offsets, constant time from those registers. -/
+def GrpCT (p : Prm) (enc : Bool) (rs : List XReg) (rest : List Instr) : Prop :=
+  ∀ i, CT (fun s => ∀ r ∈ [Reg.eax, .ecx, .edx, .ebp, .esi], s.gpr r = niV p i r)
+    (.seq (.block (inNi enc rs 0)) (.seq (aesNi enc rs)
+      (.block (outNi enc rs 0 ++ (.movdquLoad .xmm0 (at_ .ebp (ofO + 16 * (rs.length - 1))) ::
+        .alu .add .esi (imm (16 * rs.length)) :: .alu .sub .ebx (imm rs.length) :: rest)))))
+
+theorem grpCT_seal6 (p : Prm) : GrpCT p true lanes6 [.alu .cmp .ebx (imm 6)] := fun _ => by
+  exact CT.taintS [.eax, .ecx, .edx, .ebp, .esi] (pinL fun _ h => h) (by taint_decide)
+
+theorem grpCT_open6 (p : Prm) : GrpCT p false lanes6 [.alu .cmp .ebx (imm 6)] := fun _ => by
+  exact CT.taintS [.eax, .ecx, .edx, .ebp, .esi] (pinL fun _ h => h) (by taint_decide)
+
+theorem grpCT_seal1 (p : Prm) : GrpCT p true [.xmm0] [] := fun _ => by
+  exact CT.taintS [.eax, .ecx, .edx, .ebp, .esi] (pinL fun _ h => h) (by taint_decide)
+
+theorem grpCT_open1 (p : Prm) : GrpCT p false [.xmm0] [] := fun _ => by
+  exact CT.taintS [.eax, .ecx, .edx, .ebp, .esi] (pinL fun _ h => h) (by taint_decide)
+
+/-- The code of one offset but `lAddr`. -/
+theorem ofsBlk_ct {J : State → Prop} {a b : BitVec 32} (h : ∀ s, J s → s.gpr .ebp = a ∧ s.gpr .edx = b) {j : Nat}
+    (hj : j < 6) : CT J (.block [.movdquLoad .xmm6 (at_ .edx 0), .xop (.bin .pxor .xmm0 .xmm6),
+      .movdquStore (at_ .ebp (ofO + 16 * j)) .xmm0, .alu .add .edi (imm 1)]) := by
+  match j, hj with
+  | 0, _ => exact CT.taintS [.ebp, .edx] (pin2 h) (by taint_decide)
+  | 1, _ => exact CT.taintS [.ebp, .edx] (pin2 h) (by taint_decide)
+  | 2, _ => exact CT.taintS [.ebp, .edx] (pin2 h) (by taint_decide)
+  | 3, _ => exact CT.taintS [.ebp, .edx] (pin2 h) (by taint_decide)
+  | 4, _ => exact CT.taintS [.ebp, .edx] (pin2 h) (by taint_decide)
+  | 5, _ => exact CT.taintS [.ebp, .edx] (pin2 h) (by taint_decide)
+
+/-- `ofsNi`: each `L_{ntz(i)}` is where `lAddr` finds it from the block's index. -/
+theorem ofsNi_ct {p : Prm} (L : Lay p) {enc : Bool} {m i : Nat} (hmn : 16 * m ≤ p.n) : ∀ (n j : Nat), i + j + n ≤ m →
+    j + n ≤ 6 → CT (NiI p enc m i j) (ofsNi n j)
+  | 0, _, _, _ => CT.nil
+  | n + 1, j, hi, hj => by
+    have hn := L.n32
+    refine RelCT.assoc (CT.seq (J := NiI p enc m i (j + 1)) (CT.seq (J := fun t => t.gpr .ebp = p.W ∧
+        t.gpr .edx = p.W + BitVec.ofNat 32 (lOff (i + j + 1)))
+      (lAddr_ct L (i := i + j + 1) (by omega_arith) (by omega_arith) fun t ⟨_, _, _, _, _, _, P⟩ => ⟨P.env, P.edi, _, P.l0⟩)
+      (fun t ⟨_, _, _, _, _, _, P⟩ => WP.mono (lAddr_ok L P.env (M := m) (by omega_arith) (by omega_arith)
+        (by omega_arith) P.edi P.l0 P.tbl) fun t₁ P₁ => ⟨(P₁.env L P.env).ebp, P₁.edx⟩)
+      (ofsBlk_ct (fun _ h => h) (by omega_arith)))
+      (fun t ⟨_, _, _, _, _, hck, P⟩ => WP.mono (ofsStep_ok L hmn (by omega_arith) (by omega_arith) P) fun t' P' =>
+        ⟨_, _, _, _, _, hck, P'⟩)
+      (ofsNi_ct L hmn n (j + 1) (by omega_arith) (by omega_arith)))
+
+/-- A group of blocks. -/
+theorem groupNi_ct {p : Prm} (L : Lay p) {enc : Bool} {rs : List XReg} {rest : List Instr} (hg : GrpCT p enc rs rest)
+    (hlen : rs.length ≤ 6) {m i : Nat} (hmn : 16 * m ≤ p.n) (hi : i + rs.length ≤ m) :
+    CT (NiI p enc m i 0) (groupNi enc rs rest) := by
+  unfold groupNi
+  refine CT.seq (J := NiI p enc m i rs.length) (ofsNi_ct L hmn rs.length 0 (by omega_arith) (by omega_arith))
+    (fun t ⟨_, _, _, _, _, hck, P⟩ => WP.mono (ofsNi_ok L hmn rs.length 0 t (by omega_arith) (by omega_arith) P)
+      fun t' P' => ⟨_, _, _, _, _, hck, by rw [Nat.zero_add] at P'; exact P'⟩)
+    (CT.seq (J := fun s => ∀ r ∈ [Reg.eax, .ecx, .edx, .ebp, .esi], s.gpr r = niV p i r)
+      (CT.taint [.ebp] (pin_ebp fun _ ⟨_, _, _, _, _, _, P⟩ => P.env.ebp) (by taint_decide))
+      (fun t ⟨_, _, _, _, _, _, P⟩ => ?_) (hg i))
+  obtain ⟨t', run, ax, cx, dx, g, -⟩ := keysNi_ok L P.env
+  refine WP.of_runBlock ⟨t', run, fun r hr => ?_⟩
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl | rfl
+  · exact ax
+  · exact cx
+  · exact dx
+  · rw [g _ (by decide) (by decide) (by decide), P.env.ebp]; rfl
+  · rw [g _ (by decide) (by decide) (by decide), P.esi]; rfl
+
+/-- All the blocks, after `cmp ebx, 6`. -/
+theorem blocksNi_ct {p : Prm} (L : Lay p) {enc : Bool} (h6 : GrpCT p enc lanes6 [.alu .cmp .ebx (imm 6)])
+    (h1 : GrpCT p enc [.xmm0] []) {m : Nat} (hmn : 16 * m ≤ p.n) :
+    CT (fun t => NiI p enc m 0 0 t ∧ t.cf = some (decide (m - 0 < 6))) (blocksNi enc) := by
+  have hn := L.n32
+  unfold blocksNi
+  refine CT.seq (J := NiI p enc m (6 * (m / 6)) 0)
+    (CT.ite (decide (m - 0 < 6)) (fun _ h => eval_b h.2) (fun _ => CT.nil) fun hb => ?_)
+    (fun t ⟨⟨_, _, _, _, _, hck, P⟩, cf⟩ => WP.mono (sixNi_ok L hmn hck P cf) fun t' P' => ⟨_, _, _, _, _, hck, P'⟩)
+    (CT.seq (J := fun t => NiI p enc m (6 * (m / 6)) 0 t ∧ t.zf = some (decide (m - 6 * (m / 6) = 0)))
+      (CT.taint [.ebp] (pin_ebp fun _ ⟨_, _, _, _, _, _, P⟩ => P.env.ebp) (by taint_decide))
+      (fun t ⟨_, _, _, _, _, hck, P⟩ => ?_)
+      (CT.ite (decide (m - 6 * (m / 6) = 0)) (fun _ h => eval_e h.2) (fun _ => CT.nil) fun hb => ?_))
+  · -- six at a time
+    have hb := of_decide_eq_false hb
+    refine (CT.loopN (fun n t => 0 < n ∧ 6 * n ≤ m ∧ NiI p enc m (6 * (m / 6 - n)) 0 t) (fun n => ?_)
+      (fun n t ⟨hn0, hnm, _, _, _, _, _, hck, P⟩ => WP.mono (sixStep_ok L hmn hck (by omega_arith) P) fun t' ⟨P', cf'⟩ =>
+        ⟨hn0, by rw [eval_ae cf']; congr 1; by_cases h : n = 1 <;> simp [h] <;> omega_arith,
+          fun h1 => ⟨by omega_arith, by omega_arith, _, _, _, _, _, hck, by
+            rw [show 6 * (m / 6 - (n - 1)) = 6 * (m / 6 - n) + 6 by omega_arith]; exact P'⟩⟩) (m / 6)).mono
+      fun t h => ⟨by omega_arith, by omega_arith, by rw [Nat.sub_self]; exact h.1⟩
+    by_cases hn : 0 < n ∧ 6 * n ≤ m
+    swap
+    · exact RelCT.of_false fun _ _ h => hn ⟨h.1.1, h.1.2.1⟩
+    exact (groupNi_ct L h6 (by decide) hmn (by simp only [lanes6, List.length]; omega_arith)).mono fun _ h => h.2.2
+  · obtain ⟨t', run, P', zf'⟩ := testNi_ok (by omega_arith) P
+    exact WP.of_runBlock ⟨t', run, ⟨_, _, _, _, _, hck, P'⟩, zf'⟩
+  · -- one at a time
+    have hb := of_decide_eq_false hb
+    refine (CT.loopN (fun n t => 0 < n ∧ n ≤ m ∧ NiI p enc m (m - n) 0 t) (fun n => ?_)
+      (fun n t ⟨hn0, hnm, _, _, _, _, _, hck, P⟩ => WP.mono (oneStep_ok L hmn hck (by omega_arith) P) fun t' ⟨P', zf'⟩ =>
+        ⟨hn0, by rw [eval_ne zf']; congr 1; by_cases h : n = 1 <;> simp [h] <;> omega_arith,
+          fun h1 => ⟨by omega_arith, by omega_arith, _, _, _, _, _, hck, by
+            rw [show m - (n - 1) = m - n + 1 by omega_arith]; exact P'⟩⟩) (m - 6 * (m / 6))).mono
+      fun t h => ⟨by omega_arith, by omega_arith, by
+        rw [show m - (m - 6 * (m / 6)) = 6 * (m / 6) by omega_arith]; exact h.1⟩
+    by_cases hn : 0 < n ∧ n ≤ m
+    swap
+    · exact RelCT.of_false fun _ _ h => hn ⟨h.1.1, h.1.2.1⟩
+    exact (groupNi_ct L h1 (by decide) hmn (by simp only [List.length]; omega_arith)).mono fun _ h => h.2.2
+
+/-- `imcNi`: the round keys are addressed from the public slots. -/
+theorem imcNi_ct {p : Prm} (L : Lay p) (enc : Bool) : CT (Env p) (imcNi enc) := by
+  cases enc
+  · refine CT.seq (J := fun s => ∀ r ∈ [Reg.eax, .ecx, .edx], s.gpr r = niV p 0 r)
+      (CT.taint [.ebp] (pin_ebp fun _ h => h.ebp) (by taint_decide)) (fun t E => ?_)
+      (CT.taintS [.eax, .ecx, .edx] (pinL fun _ h => h) (by taint_decide))
+    obtain ⟨t', run, ax, cx, dx, -⟩ := keysNi_ok L E
+    refine WP.of_runBlock ⟨t', run, fun r hr => ?_⟩
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl
+    · exact ax
+    · exact cx
+    · exact dx
+  · exact CT.nil
+
+/-- The whole blocks with AES-NI. -/
+theorem wholeNi_ct {p : Prm} (L : Lay p) {enc : Bool} (h6 : GrpCT p enc lanes6 [.alu .cmp .ebx (imm 6)])
+    (h1 : GrpCT p enc [.xmm0] []) {m : Nat} (hmn : 16 * m ≤ p.n) : CT (WhI p m) (wholeNi enc) := by
+  have hn := L.n32
+  have hm : m < 2 ^ 32 := by omega_arith
+  unfold wholeNi
+  refine CT.seq (J := WhT p m) ((ltable_ct L hm).mono fun _ h => ⟨h.1, h.2.1⟩)
+    (fun t ⟨E, nb, l, hl0⟩ => WP.mono (ltable_ok L E hm nb hl0) fun t₁ ⟨T₁, K₁⟩ =>
+      ⟨K₁.env L E, by rw [K₁.nb, nb], l, by
+        rw [Proof.Ocb.blockAtMem_frame K₁.frame (fun r hr => by
+          simp only [List.mem_singleton] at hr; subst hr; exact (tblR_w (.inl (by decide)) (by decide)).symm), hl0], T₁⟩)
+    (CT.seq (J := fun t => WhT p m t ∧ (enc = false → DkMem p (bytesAt t.mem (w64 p.K) (16 * (p.R + 1))) t.mem))
+      ((imcNi_ct L enc).mono fun _ h => h.1) (fun t ⟨E, nb, l, hl0, hT⟩ => ?_)
+      (CT.seq (J := fun t => NiI p enc m 0 0 t ∧ t.cf = some (decide (m - 0 < 6)))
+        (CT.taintS [.ebp] (pin_ebp fun _ h => h.1.1.ebp) (by taint_decide))
+        (fun t ⟨⟨E, nb, l, hl0, hT⟩, hD⟩ => ?_)
+        (CT.seq (J := fun t => t.gpr .ebp = p.W) (blocksNi_ct L h6 h1 hmn)
+          (fun t ⟨⟨_, _, _, _, _, hck, P⟩, cf⟩ => WP.mono (blocksNi_ok L hmn hck P cf) fun t' P' => P'.env.ebp)
+          (CT.taintS [.ebp] (pin_ebp fun _ h => h) (by taint_decide)))))
+  · refine WP.mono (imcNi_ok L (enc := enc) E rfl) fun t₂ ⟨D₂, E₂, f₂, rd₂, wr₂⟩ => ?_
+    have hw : bytesAt t₂.mem (w64 p.K) (16 * (p.R + 1)) = bytesAt t.mem (w64 p.K) (16 * (p.R + 1)) := by
+      have hb := L.rounds_le
+      exact Proof.AesGcm.X86.bytesAt_frame (frame_toMut f₂ fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr; exact inMut_w p (.inr (.inr (.inr (by decide)))))
+        (fun r hr => (k_mut L r hr).sub_left (Region.sub_prefix (by omega_arith))) (by omega_arith)
+    refine ⟨⟨E₂, ?_, l, ?_, hT.frame f₂ fun r hr => ?_⟩, by rw [hw]; exact D₂⟩
+    · rw [← nb]
+      exact f₂.readW (r := ⟨w64 p.W + BitVec.ofNat 64 nbO, 4⟩) (Region.contains_self _ _) (fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr; exact Lay.w_w (.inl (by decide)) (by decide) (by decide))
+        (by decide)
+    · rw [Proof.Ocb.blockAtMem_frame f₂ (fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr; exact Lay.w_w (.inl (by decide)) (by decide) (by decide)), hl0]
+    · simp only [List.mem_singleton] at hr; subst hr; exact tblR_w (.inr (by decide)) (by decide)
+  · obtain ⟨t', run, P, cf⟩ := startNi_ok L (enc := enc) E hmn nb hl0 hT hD
+      (ckF := ckNi p (blockAtMem t.mem (w64 p.W + BitVec.ofNat 64 ofsO)) l
+        (fun k => blockAtMem t.mem (w64 p.D + BitVec.ofNat 64 (16 * k))) enc t (blockAtMem t.mem (w64 p.W + BitVec.ofNat 64 ckO)))
+      rfl rfl (fun _ _ => rfl)
+    exact WP.of_runBlock ⟨t', run, ⟨_, _, _, _, _, fun _ _ => rfl, P⟩, cf⟩
+
 /-! ## The rest -/
 
 /-- What the rest's pieces need: the environment, the rest's address in
@@ -1272,6 +1465,26 @@ theorem bodyRest_ct (v : BlocksImpl) (enc : Bool) {p : Prm} (L : Lay p) :
       exact (rest_ct v enc L hr (Nat.mod_lt _ (by decide))).mono fun t h =>
         ⟨h.1, h.2.1, h.2.2.1, rbuf_tail L h.1 hr⟩)
 
+/-- The whole blocks of `seal`. -/
+theorem wholesSeal_ct (v : BlocksImpl) {p : Prm} (L : Lay p) : CT (WhI p (p.n / 16)) (wholes (callees v) true) := by
+  unfold wholes
+  by_cases h : hardware (callees v) = true
+  · rw [ite_eq_left h]
+    exact wholeNi_ct L (grpCT_seal6 p) (grpCT_seal1 p) (Nat.mul_div_le _ _)
+  · rw [ite_eq_right h, ite_eq_left rfl]
+    exact whole_ct v.encOk v.encCt v.encNosp v.encStack L sealPre_ok xorOfs_ok (stepCT_sealPre p) (stepCT_xorOfs p)
+      (Nat.mul_div_le _ _)
+
+/-- The whole blocks of `open`. -/
+theorem wholesOpen_ct (v : BlocksImpl) {p : Prm} (L : Lay p) : CT (WhI p (p.n / 16)) (wholes (callees v) false) := by
+  unfold wholes
+  by_cases h : hardware (callees v) = true
+  · rw [ite_eq_left h]
+    exact wholeNi_ct L (grpCT_open6 p) (grpCT_open1 p) (Nat.mul_div_le _ _)
+  · rw [ite_eq_right h, ite_eq_right Bool.false_ne_true]
+    exact whole_ct v.decOk v.decCt v.decNosp v.decStack L xorOfs_ok openPost_ok (stepCT_xorOfs p) (stepCT_openPost p)
+      (Nat.mul_div_le _ _)
+
 theorem bodySeal_ct (v : BlocksImpl) {p : Prm} (L : Lay p) : CT (BI p) (body (callees v) true) := by
   have hn := L.n32
   simp only [body, ↓reduceIte]
@@ -1279,14 +1492,9 @@ theorem bodySeal_ct (v : BlocksImpl) {p : Prm} (L : Lay p) : CT (BI p) (body (ca
       (CT.taint [.ebp] (pin_ebp fun _ h => h.1.ebp) (by taint_decide)) (fun t ⟨E, _, _, hl0⟩ => bodyHead_whi L E hl0)
       (CT.ite _ (fun _ h => eval_e h.2) (fun _ => CT.nil) fun _ => ?_)) (fun t ⟨E, ho0, hck, hl0⟩ => ?_)
     (bodyRest_ct v true L))
-  · exact (whole_ct v.encOk v.encCt v.encNosp v.encStack L sealPre_ok xorOfs_ok (stepCT_sealPre p) (stepCT_xorOfs p)
-      (Nat.mul_div_le _ _)).mono fun _ h => h.1
-  · exact WP.mono (wholeIte_ok (O0 := blockAtMem t.mem (w64 p.W + BitVec.ofNat 64 ofsO))
-      (l := ctxLstar t.mem (w64 p.K)) (G := fun m => ctxCiph m (w64 p.K) p.R)
-      (ckF1 := ckOf fun i => blockAtMem t.mem (w64 p.D + BitVec.ofNat 64 (16 * i)))
-      (ckF2 := fun _ => ckOf (fun i => blockAtMem t.mem (w64 p.D + BitVec.ofNat 64 (16 * i))) (p.n / 16))
-      v.encOk v.encNosp v.encStack (fun P _ hi => P.enc hi) (fun h => ctxCiph_mut L h) sealPre_ok xorOfs_ok
-      L E rfl ho0 hck hl0 (fun _ _ => rfl) rfl (fun _ _ => rfl)) fun _ Pw => Pw.env
+  · exact (wholesSeal_ct v L).mono fun _ h => h.1
+  · exact WP.mono (wholeIte_ok L E rfl ho0 hck hl0 (fun h => by rw [h]; rfl) fun s₁ H => wholesSeal_ok v L H)
+      fun _ Pw => Pw.env
 
 theorem bodyOpen_ct (v : BlocksImpl) {p : Prm} (L : Lay p) : CT (BI p) (body (callees v) false) := by
   have hn := L.n32
@@ -1295,16 +1503,9 @@ theorem bodyOpen_ct (v : BlocksImpl) {p : Prm} (L : Lay p) : CT (BI p) (body (ca
       (CT.taint [.ebp] (pin_ebp fun _ h => h.1.ebp) (by taint_decide)) (fun t ⟨E, _, _, hl0⟩ => bodyHead_whi L E hl0)
       (CT.ite _ (fun _ h => eval_e h.2) (fun _ => CT.nil) fun _ => ?_)) (fun t ⟨E, ho0, hck, hl0⟩ => ?_)
     (bodyRest_ct v false L))
-  · exact (whole_ct v.decOk v.decCt v.decNosp v.decStack L xorOfs_ok openPost_ok (stepCT_xorOfs p) (stepCT_openPost p)
-      (Nat.mul_div_le _ _)).mono fun _ h => h.1
-  · exact WP.mono (wholeIte_ok (O0 := blockAtMem t.mem (w64 p.W + BitVec.ofNat 64 ofsO))
-      (l := ctxLstar t.mem (w64 p.K)) (G := fun m => ctxInv m (w64 p.K) p.R) (ckF1 := fun _ => 0)
-      (ckF2 := ckOf fun i => ctxInv t.mem (w64 p.K) p.R
-        (blockAtMem t.mem (w64 p.D + BitVec.ofNat 64 (16 * i)) ^^^
-          offAt (blockAtMem t.mem (w64 p.W + BitVec.ofNat 64 ofsO)) (ctxLstar t.mem (w64 p.K)) (i + 1)) ^^^
-        offAt (blockAtMem t.mem (w64 p.W + BitVec.ofNat 64 ofsO)) (ctxLstar t.mem (w64 p.K)) (i + 1))
-      v.decOk v.decNosp v.decStack (fun P _ hi => P.dec hi) (fun h => ctxInv_mut L h) xorOfs_ok openPost_ok
-      L E rfl ho0 hck hl0 (fun _ _ => rfl) rfl (fun _ _ => rfl)) fun _ Pw => Pw.env
+  · exact (wholesOpen_ct v L).mono fun _ h => h.1
+  · exact WP.mono (wholeIte_ok L E rfl ho0 hck hl0 (fun h => by rw [h]; rfl) fun s₁ H => wholesOpen_ok v L H)
+      fun _ Pw => Pw.env
 
 /-! ## The tag -/
 
@@ -2338,21 +2539,37 @@ theorem noEsp_of {c : Prog isa} (h : NoSp c) :
   rw [Code.allInstrs_eq]
   exact List.all_eq_true.mpr fun i hi => by simp [h i hi]
 
+theorem wholes_seal (c : Callees) :
+    wholes c true = wholeNi true ∨ wholes c true = whole c.enc (addCk ++ xorOfs) xorOfs := by
+  unfold wholes; split
+  · exact .inl rfl
+  · exact .inr rfl
+
+theorem wholes_open (c : Callees) :
+    wholes c false = wholeNi false ∨ wholes c false = whole c.dec xorOfs (xorOfs ++ addCk) := by
+  unfold wholes; split
+  · exact .inl rfl
+  · exact .inr rfl
+
 variable (v : BlocksImpl)
 
 theorem seal_noEsp : («seal» (callees v)).allInstrs (fun i => !Taint.clobbers i .esp) = true := by
-  simp only [«seal», front, ocbEntry, Impl.AesGcm.X86.entry, nonce, nonceBlock, Impl.AesGcm.X86.copyLoop,
-    Impl.AesOcb.X86.hash, hashChunk, hashFill, lNtz, hashSum, hashRest, padTo, body, whole, wholeIn, pass, quad, single, lAddr, rest,
+  simp only [«seal», front, body]
+  rcases wholes_seal (callees v) with h | h <;> rw [h] <;>
+    simp only [ocbEntry, Impl.AesGcm.X86.entry, nonce, nonceBlock, Impl.AesGcm.X86.copyLoop,
+    Impl.AesOcb.X86.hash, hashChunk, hashFill, lNtz, hashSum, hashRest, padTo, whole, wholeIn, pass, quad, single, lAddr, rest,
     padCk, xorPad, Impl.AesGcm.X86.xorLoop, tag, tagOut, callBlocks, blocksFrame, callees, Code.allInstrs,
-    noEsp_of v.encNosp, noEsp_of v.decNosp, ↓reduceIte]
-  decide +kernel
+    noEsp_of v.encNosp, noEsp_of v.decNosp, ↓reduceIte] <;>
+    decide +kernel
 
 theorem open_noEsp : («open» (callees v)).allInstrs (fun i => !Taint.clobbers i .esp) = true := by
-  simp only [«open», front, ocbEntry, Impl.AesGcm.X86.entry, nonce, nonceBlock, Impl.AesGcm.X86.copyLoop,
-    Impl.AesOcb.X86.hash, hashChunk, hashFill, lNtz, hashSum, hashRest, padTo, body, whole, wholeIn, pass, quad, single, lAddr, rest,
+  simp only [«open», front, body]
+  rcases wholes_open (callees v) with h | h <;> rw [h] <;>
+    simp only [ocbEntry, Impl.AesGcm.X86.entry, nonce, nonceBlock, Impl.AesGcm.X86.copyLoop,
+    Impl.AesOcb.X86.hash, hashChunk, hashFill, lNtz, hashSum, hashRest, padTo, whole, wholeIn, pass, quad, single, lAddr, rest,
     padCk, xorPad, Impl.AesGcm.X86.xorLoop, tag, recv, cmp, mask, callBlocks, blocksFrame, callees, Code.allInstrs,
-    noEsp_of v.encNosp, noEsp_of v.decNosp, Bool.false_eq_true, ↓reduceIte]
-  decide +kernel
+    noEsp_of v.encNosp, noEsp_of v.decNosp, Bool.false_eq_true, ↓reduceIte] <;>
+    decide +kernel
 
 theorem init_noEsp : (init (callees v)).allInstrs (fun i => !Taint.clobbers i .esp) = true := by
   simp only [init, Impl.AesGcm.X86.entry, keyFrame, blocksFrame, callees, Code.allInstrs, noEsp_of v.encNosp,
@@ -2360,36 +2577,44 @@ theorem init_noEsp : (init (callees v)).allInstrs (fun i => !Taint.clobbers i .e
   decide +kernel
 
 theorem seal_stackUse : stackUse («seal» (callees v)) ≤ 24 := by
-  simp only [«seal», front, ocbEntry, Impl.AesGcm.X86.entry, nonce, nonceBlock, Impl.AesGcm.X86.copyLoop,
-    Impl.AesOcb.X86.hash, hashChunk, hashFill, lNtz, hashSum, hashRest, padTo, body, whole, wholeIn, pass, quad, single, lAddr, rest,
+  simp only [«seal», front, body]
+  rcases wholes_seal (callees v) with h | h <;> rw [h] <;>
+    simp only [ocbEntry, Impl.AesGcm.X86.entry, nonce, nonceBlock, Impl.AesGcm.X86.copyLoop,
+    Impl.AesOcb.X86.hash, hashChunk, hashFill, lNtz, hashSum, hashRest, padTo, whole, wholeIn, pass, quad, single, lAddr, rest,
     padCk, xorPad, Impl.AesGcm.X86.xorLoop, tag, tagOut, callBlocks, blocksFrame, callees, stackUse, v.encStack,
-    v.decStack, ↓reduceIte]
-  decide +kernel
+    v.decStack, ↓reduceIte] <;>
+    decide +kernel
 
 theorem open_stackUse : stackUse («open» (callees v)) ≤ 24 := by
-  simp only [«open», front, ocbEntry, Impl.AesGcm.X86.entry, nonce, nonceBlock, Impl.AesGcm.X86.copyLoop,
-    Impl.AesOcb.X86.hash, hashChunk, hashFill, lNtz, hashSum, hashRest, padTo, body, whole, wholeIn, pass, quad, single, lAddr, rest,
+  simp only [«open», front, body]
+  rcases wholes_open (callees v) with h | h <;> rw [h] <;>
+    simp only [ocbEntry, Impl.AesGcm.X86.entry, nonce, nonceBlock, Impl.AesGcm.X86.copyLoop,
+    Impl.AesOcb.X86.hash, hashChunk, hashFill, lNtz, hashSum, hashRest, padTo, whole, wholeIn, pass, quad, single, lAddr, rest,
     padCk, xorPad, Impl.AesGcm.X86.xorLoop, tag, recv, cmp, mask, callBlocks, blocksFrame, callees, stackUse,
-    v.encStack, v.decStack, Bool.false_eq_true, ↓reduceIte]
-  decide +kernel
+    v.encStack, v.decStack, Bool.false_eq_true, ↓reduceIte] <;>
+    decide +kernel
 
 theorem init_stackUse : stackUse (init (callees v)) ≤ 24 := by
   simp only [init, Impl.AesGcm.X86.entry, keyFrame, blocksFrame, callees, stackUse, v.encStack, v.expandStack]
   decide +kernel
 
 theorem seal_spSafe : («seal» (callees v)).all (fun i => !isa.writesSp i) = true := by
-  simp only [«seal», front, ocbEntry, Impl.AesGcm.X86.entry, nonce, nonceBlock, Impl.AesGcm.X86.copyLoop,
-    Impl.AesOcb.X86.hash, hashChunk, hashFill, lNtz, hashSum, hashRest, padTo, body, whole, wholeIn, pass, quad, single, lAddr, rest,
+  simp only [«seal», front, body]
+  rcases wholes_seal (callees v) with h | h <;> rw [h] <;>
+    simp only [ocbEntry, Impl.AesGcm.X86.entry, nonce, nonceBlock, Impl.AesGcm.X86.copyLoop,
+    Impl.AesOcb.X86.hash, hashChunk, hashFill, lNtz, hashSum, hashRest, padTo, whole, wholeIn, pass, quad, single, lAddr, rest,
     padCk, xorPad, Impl.AesGcm.X86.xorLoop, tag, tagOut, callBlocks, blocksFrame, callees, Code.all, v.encSpSafe,
-    v.decSpSafe, Bool.and_true, ↓reduceIte]
-  decide +kernel
+    v.decSpSafe, Bool.and_true, ↓reduceIte] <;>
+    decide +kernel
 
 theorem open_spSafe : («open» (callees v)).all (fun i => !isa.writesSp i) = true := by
-  simp only [«open», front, ocbEntry, Impl.AesGcm.X86.entry, nonce, nonceBlock, Impl.AesGcm.X86.copyLoop,
-    Impl.AesOcb.X86.hash, hashChunk, hashFill, lNtz, hashSum, hashRest, padTo, body, whole, wholeIn, pass, quad, single, lAddr, rest,
+  simp only [«open», front, body]
+  rcases wholes_open (callees v) with h | h <;> rw [h] <;>
+    simp only [ocbEntry, Impl.AesGcm.X86.entry, nonce, nonceBlock, Impl.AesGcm.X86.copyLoop,
+    Impl.AesOcb.X86.hash, hashChunk, hashFill, lNtz, hashSum, hashRest, padTo, whole, wholeIn, pass, quad, single, lAddr, rest,
     padCk, xorPad, Impl.AesGcm.X86.xorLoop, tag, recv, cmp, mask, callBlocks, blocksFrame, callees, Code.all,
-    v.encSpSafe, v.decSpSafe, Bool.false_eq_true, Bool.and_true, ↓reduceIte]
-  decide +kernel
+    v.encSpSafe, v.decSpSafe, Bool.false_eq_true, Bool.and_true, ↓reduceIte] <;>
+    decide +kernel
 
 theorem init_spSafe : (init (callees v)).all (fun i => !isa.writesSp i) = true := by
   simp only [init, Impl.AesGcm.X86.entry, keyFrame, blocksFrame, callees, Code.all, v.encSpSafe, v.expandSpSafe,

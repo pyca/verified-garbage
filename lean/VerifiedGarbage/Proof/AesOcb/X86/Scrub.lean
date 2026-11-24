@@ -101,13 +101,20 @@ theorem openOut (stack : Nat) :
 open Impl.StackScratch.X86 (withStackScratch)
 open Proof.Aes.X86 (BlocksImpl)
 
-/-- Block functions and key expansion with no code. -/
+/-- Block functions and key expansion with no code, by a name that does not
+choose the whole blocks with AES-NI (`Impl.AesOcb.X86.hardware`). -/
 def stubCallees : Impl.AesOcb.X86.Callees := ⟨⟨"", .block []⟩, ⟨"", .block []⟩, ⟨"", .block []⟩⟩
+
+/-- `stubCallees` by the name that chooses them. -/
+def stubCalleesNi : Impl.AesOcb.X86.Callees :=
+  ⟨⟨"vg_aes_encrypt_blocks_aesni", .block []⟩, ⟨"", .block []⟩, ⟨"", .block []⟩⟩
 
 -- OCB's own code, with the stubs, as literals for the kernel's evaluation.
 materialize_code initStub := withStackScratch 2580 3 (Impl.AesOcb.X86.init stubCallees)
 materialize_code sealStub := withStackScratch 2608 10 (Impl.AesOcb.X86.seal stubCallees)
+materialize_code sealStubNi := withStackScratch 2608 10 (Impl.AesOcb.X86.seal stubCalleesNi)
 materialize_code openStub := withStackScratch 2608 10 (Impl.AesOcb.X86.open stubCallees)
+materialize_code openStubNi := withStackScratch 2608 10 (Impl.AesOcb.X86.open stubCalleesNi)
 
 theorem init_side : scrubFSide (withStackScratch 2580 3 (Impl.AesOcb.X86.init stubCallees)) [] 2604 = true := by
   lit_decide
@@ -115,24 +122,21 @@ theorem init_side : scrubFSide (withStackScratch 2580 3 (Impl.AesOcb.X86.init st
 theorem seal_side : scrubFSide (withStackScratch 2608 10 (Impl.AesOcb.X86.seal stubCallees)) [] 2632 = true := by
   lit_decide
 
+theorem sealNi_side :
+    scrubFSide (withStackScratch 2608 10 (Impl.AesOcb.X86.seal stubCalleesNi)) [] 2632 = true := by
+  lit_decide
+
 theorem open_side : scrubFSide (withStackScratch 2608 10 (Impl.AesOcb.X86.open stubCallees)) [] 2632 = true := by
+  lit_decide
+
+theorem openNi_side :
+    scrubFSide (withStackScratch 2608 10 (Impl.AesOcb.X86.open stubCalleesNi)) [] 2632 = true := by
   lit_decide
 
 theorem init_fill (e d k : Impl.AesGcm.X86.Fn) (he : calleeSide e.code 0 = true)
     (hk : calleeSide k.code 0 = true) :
     Fill 0 (withStackScratch 2580 3 (Impl.AesOcb.X86.init stubCallees))
       (withStackScratch 2580 3 (Impl.AesOcb.X86.init ⟨e, d, k⟩)) := by
-  fill_calls
-
-theorem seal_fill (e d k : Impl.AesGcm.X86.Fn) (he : calleeSide e.code 0 = true) :
-    Fill 0 (withStackScratch 2608 10 (Impl.AesOcb.X86.seal stubCallees))
-      (withStackScratch 2608 10 (Impl.AesOcb.X86.seal ⟨e, d, k⟩)) := by
-  fill_calls
-
-theorem open_fill (e d k : Impl.AesGcm.X86.Fn) (he : calleeSide e.code 0 = true)
-    (hd : calleeSide d.code 0 = true) :
-    Fill 0 (withStackScratch 2608 10 (Impl.AesOcb.X86.open stubCallees))
-      (withStackScratch 2608 10 (Impl.AesOcb.X86.open ⟨e, d, k⟩)) := by
   fill_calls
 
 /-- `scrubFSide` of `vg_aes_ocb_init`, whatever the implementation. -/
@@ -143,14 +147,20 @@ theorem init_scrub (v : BlocksImpl) :
 
 /-- `scrubFSide` of `vg_aes_ocb_seal`, whatever the implementation. -/
 theorem seal_scrub (v : BlocksImpl) :
-    scrubFSide (withStackScratch 2608 10 (Impl.AesOcb.X86.seal (callees v))) [] 2632 = true :=
-  scrubFSide_of_fill (seal_fill _ _ _ (calleeSide_of_eq v.encStack v.encScrub)) seal_side
+    scrubFSide (withStackScratch 2608 10 (Impl.AesOcb.X86.seal (callees v))) [] 2632 = true := by
+  have he : calleeSide v.enc.code 0 = true := calleeSide_of_eq v.encStack v.encScrub
+  by_cases h : Impl.AesOcb.X86.hardware (callees v) = true
+  · exact scrubFSide_of_fill (n := 0) (by fill_calls) sealNi_side
+  · exact scrubFSide_of_fill (n := 0) (by fill_calls) seal_side
 
 /-- `scrubFSide` of `vg_aes_ocb_open`, whatever the implementation. -/
 theorem open_scrub (v : BlocksImpl) :
-    scrubFSide (withStackScratch 2608 10 (Impl.AesOcb.X86.open (callees v))) [] 2632 = true :=
-  scrubFSide_of_fill (open_fill _ _ _ (calleeSide_of_eq v.encStack v.encScrub)
-    (calleeSide_of_eq v.decStack v.decScrub)) open_side
+    scrubFSide (withStackScratch 2608 10 (Impl.AesOcb.X86.open (callees v))) [] 2632 = true := by
+  have he : calleeSide v.enc.code 0 = true := calleeSide_of_eq v.encStack v.encScrub
+  have hd : calleeSide v.dec.code 0 = true := calleeSide_of_eq v.decStack v.decScrub
+  by_cases h : Impl.AesOcb.X86.hardware (callees v) = true
+  · exact scrubFSide_of_fill (n := 0) (by fill_calls) openNi_side
+  · exact scrubFSide_of_fill (n := 0) (by fill_calls) open_side
 
 /-! ## The functions as emitted -/
 
