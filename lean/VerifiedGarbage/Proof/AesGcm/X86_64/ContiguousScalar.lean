@@ -31,7 +31,7 @@ theorem finishScalar_ok (v : GcmImpl) {M : CtxMode} {Ctx W SP S D : Addr} {R n a
     WP isa (Contiguous.finishScalar v.callees) u (BodyPost Ctx W SP S D R n al H icb a s) := by
   unfold Contiguous.finishScalar
   apply WP.seq_assoc
-  apply Split.finCallsFrom_ok v reg.lay ob post.rd post.wr reg.sW (reg.ks.sub_left (below_sub (by decide) (by decide)))
+  apply Split.finCallsFrom_ok v reg.lay ob post.rd post.wr reg.sW reg.ks
     reg.sD post.frame post.tlen reg.data.ok.lt post.dat post.len bulk.1 bulk.2.1 bulk.2.2 hH hcb hal habs
   intro rounds len hd
   let off := 16*(n/16)

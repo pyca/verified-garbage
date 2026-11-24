@@ -106,7 +106,7 @@ theorem separate_ok {M : CtxMode} (ctr : Proof.Aes.X86_64.Ctr32ToImpl) (gh : Gha
   have Dq := h.data.take hq
   have dW := Dq.ok.w
   have kS : Region.Sub (below SP 8) (below SP 24) := below_sub (by decide) (by decide)
-  have kW := h.kw.sub_left (below_sub (by decide : 24≤56) (by decide))
+  have kW := h.kw
   have L := h.lay
   unfold Contiguous.separate Contiguous.call
   refine WP.seq ((ctrArgs_ok h hq qreg read src dst).mono fun u ⟨gu,ru,wu,mu,c⟩ => ?_)

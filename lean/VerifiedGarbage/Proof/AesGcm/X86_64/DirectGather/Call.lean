@@ -50,6 +50,10 @@ section
 variable {M : CtxMode} {Ctx W SP D S : Addr} {R n sl : Nat} {s : State} (h : SealRegions M Ctx W SP D S R n sl s)
 include h
 
+omit h in
+private theorem stk24_sub {SP : Addr} {a k : Nat} (ha : a ≤ 24) (hk : k ≤ a) :
+    Region.Sub ⟨SP - BitVec.ofNat 64 a, k⟩ (below SP 24) := Offset.sub_below _ ha (by omega_arith)
+
 theorem compactPre {q : Nat} (hq : 16 * q ≤ sl) {u : State}
     (hrsp : u.gpr .rsp = SP - BitVec.ofNat 64 16) (hrd : u.rd = compactReads M Ctx SP S q) (hwr : u.wr = callWr W D q)
     (h_di : u.gpr .rdi = Ctx) (h_si : u.gpr .rsi = BitVec.ofNat 64 R)
@@ -64,7 +68,7 @@ theorem compactPre {q : Nat} (hq : 16 * q ≤ sl) {u : State}
   obtain hqn : (BitVec.ofNat 64 q).toNat = q := by rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by omega_arith)
   obtain hRn : (BitVec.ofNat 64 R).toNat = R := by
     rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by rcases h.rounds.2 with h | h | h <;> subst h <;> decide)
-  have sp := h.sp56
+  have sp : 24 ≤ SP.toNat := h.stackSpace
   obtain hargs : (BlocksTo.aR u true) = ⟨SP - BitVec.ofNat 64 8, 8⟩ := by
     simp only [BlocksTo.aR, BlocksTo.SP, hrsp]
     rw [sub_add_ofNat _ (by decide)]
@@ -74,9 +78,9 @@ theorem compactPre {q : Nat} (hq : 16 * q ≤ sl) {u : State}
     simp only [BlocksTo.tR, BlocksTo.callBytes, BlocksTo.SP, below, hrsp]
     rw [← Offset.sub_add_eq, ← BitVec.ofNat_add]
     rfl
-  obtain tA : Region.Sub ⟨SP - BitVec.ofNat 64 8, 8⟩ (below SP 56) := stk56_sub (by decide) (by decide)
-  obtain tR' : Region.Sub ⟨SP - BitVec.ofNat 64 16, 8⟩ (below SP 56) := stk56_sub (by decide) (by decide)
-  obtain tS : Region.Sub ⟨SP - BitVec.ofNat 64 24, 8⟩ (below SP 56) := stk56_sub (by decide) (by decide)
+  obtain tA : Region.Sub ⟨SP - BitVec.ofNat 64 8, 8⟩ (below SP 24) := stk24_sub (by decide) (by decide)
+  obtain tR' : Region.Sub ⟨SP - BitVec.ofNat 64 16, 8⟩ (below SP 24) := stk24_sub (by decide) (by decide)
+  obtain tS : Region.Sub ⟨SP - BitVec.ofNat 64 24, 8⟩ (below SP 24) := stk24_sub (by decide) (by decide)
   obtain pr : Region.Sub ⟨S, q * 16⟩ ⟨S, sl⟩ := Region.sub_prefix (by omega_arith)
   obtain ds : Region.Sub ⟨D, q * 16⟩ ⟨D, n⟩ := Region.sub_prefix (by have := h.sl_le; omega_arith)
   obtain cW : Region.Sub (cbR W) ⟨W, 2560⟩ := fun a hc => st_w a (cb_sub a hc)
@@ -134,7 +138,7 @@ theorem compactInput {q : Nat} (hq : 16 * q ≤ sl) {st : State}
       (compactState M Ctx W SP D S q st).gpr .rsp = SP - BitVec.ofNat 64 16 ∧
       stackArg (compactState M Ctx W SP D S q st) 0 = W + BitVec.ofNat 64 448 := by
   have L := h.lay
-  have sp := h.sp56
+  have sp : 24 ≤ SP.toNat := h.stackSpace
   have hn := h.data.ok.lt
   obtain hqs : q * 16 ≤ sl := by omega_arith
   obtain hn8 : 8 * [Reg.rax].length ≤ (st.gpr .rsp).toNat := by rw [hsp]; simp; omega_arith
@@ -149,11 +153,11 @@ theorem compactInput {q : Nat} (hq : 16 * q ≤ sl) {st : State}
     have := callEntry_frame (pushed [.rax] st)
     rw [hP] at this
     simpa only [below, ← Offset.sub_add_eq, ← BitVec.ofNat_add] using this
-  obtain b56 : ∀ {a k : Nat}, a ≤ 56 → k ≤ a → ∃ r ∈ [below SP 56], Region.Sub ⟨SP - BitVec.ofNat 64 a, k⟩ r :=
-    fun ha hk => ⟨_, List.mem_singleton_self _, stk56_sub ha hk⟩
-  obtain fS : Frame [below SP 56] st.mem (pushed [.rax] st).callEntry.mem :=
-    (hpf'.sub fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact b56 (by decide) (by decide)).trans
-      (hE.sub fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact b56 (by decide) (by decide))
+  obtain onStack : ∀ {a k : Nat}, a ≤ 24 → k ≤ a → ∃ r ∈ [below SP 24], Region.Sub ⟨SP - BitVec.ofNat 64 a, k⟩ r :=
+    fun ha hk => ⟨_, List.mem_singleton_self _, stk24_sub ha hk⟩
+  obtain fS : Frame [below SP 24] st.mem (pushed [.rax] st).callEntry.mem :=
+    (hpf'.sub fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact onStack (by decide) (by decide)).trans
+      (hE.sub fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact onStack (by decide) (by decide))
   obtain hPsp8 : 8 ≤ (SP - BitVec.ofNat 64 8).toNat := by rw [toNat_sub_ofNat (by omega_arith)]; omega_arith
   obtain hPt : (SP - BitVec.ofNat 64 8).toNat = SP.toNat - 8 := toNat_sub_ofNat (by omega_arith)
   obtain ea : ∀ i, i < 1 → stackArg ((pushed [.rax] st).callEntry.withRegions (compactReads M Ctx SP S q)
@@ -218,7 +222,7 @@ theorem compactCall_ok (T : BlocksTo.SealFn M) {q : Nat} (hq : 16 * q ≤ sl) {s
       blockAt st'.mem (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 16) =
         ghashFrom (ctxH s.mem Ctx) (blockAt s.mem (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 16)) (blocksAt st'.mem D q) := by
   have L := h.lay
-  have sp := h.sp56
+  have sp : 24 ≤ SP.toNat := h.stackSpace
   have hn := h.data.ok.lt
   obtain hqs : q * 16 ≤ sl := by omega_arith
   obtain hn8 : 8 * [Reg.rax].length ≤ (st.gpr .rsp).toNat := by rw [hsp]; simp; omega_arith
@@ -231,21 +235,21 @@ theorem compactCall_ok (T : BlocksTo.SealFn M) {q : Nat} (hq : 16 * q ≤ sl) {s
     have := callEntry_frame (pushed [.rax] st)
     rw [hP] at this
     simpa only [below, ← Offset.sub_add_eq, ← BitVec.ofNat_add] using this
-  obtain b56 : ∀ {a k : Nat}, a ≤ 56 → k ≤ a → ∃ r ∈ [below SP 56], Region.Sub ⟨SP - BitVec.ofNat 64 a, k⟩ r :=
-    fun ha hk => ⟨_, List.mem_singleton_self _, stk56_sub ha hk⟩
-  obtain fS : Frame [below SP 56] st.mem (pushed [.rax] st).callEntry.mem :=
-    (hpf'.sub fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact b56 (by decide) (by decide)).trans
-      (hE.sub fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact b56 (by decide) (by decide))
+  obtain onStack : ∀ {a k : Nat}, a ≤ 24 → k ≤ a → ∃ r ∈ [below SP 24], Region.Sub ⟨SP - BitVec.ofNat 64 a, k⟩ r :=
+    fun ha hk => ⟨_, List.mem_singleton_self _, stk24_sub ha hk⟩
+  obtain fS : Frame [below SP 24] st.mem (pushed [.rax] st).callEntry.mem :=
+    (hpf'.sub fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact onStack (by decide) (by decide)).trans
+      (hE.sub fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact onStack (by decide) (by decide))
   have b24 {a k : Nat} (ha : a ≤ 24) (hk : k ≤ a) : Region.Sub ⟨SP - BitVec.ofNat 64 a, k⟩ (below SP 24) :=
     Offset.sub_below _ ha (by omega_arith)
   have kM := h.kM
   obtain ⟨hpre, cr, cw, gU, -, a0⟩ := compactInput h hq hsp hrd hwr hm h_di h_si h_dx h_cx h_8 h_9 h_10 h_ax
   -- What the push and the return address leave as it was.
-  obtain keep : ∀ {p : Addr} {k : Nat}, (⟨p, k⟩ : Region).Disjoint (below SP 56) → k ≤ 2 ^ 64 →
+  obtain keep : ∀ {p : Addr} {k : Nat}, (⟨p, k⟩ : Region).Disjoint (below SP 24) → k ≤ 2 ^ 64 →
       bytesAt (pushed [.rax] st).callEntry.mem p k = bytesAt s.mem p k := fun hd hk => by
     rw [← hm]
     exact bytesAt_frame fS (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hd) hk
-  obtain keepB : ∀ {p : Addr}, (⟨p, 16⟩ : Region).Disjoint (below SP 56) →
+  obtain keepB : ∀ {p : Addr}, (⟨p, 16⟩ : Region).Disjoint (below SP 24) →
       blockAt (pushed [.rax] st).callEntry.mem p = blockAt s.mem p := fun hd => by
     rw [blockAt, blockAt, keep hd (by decide)]
   obtain cW : Region.Sub (cbR W) ⟨W, 2560⟩ := fun a hc => st_w a (cb_sub a hc)
@@ -278,10 +282,10 @@ theorem compactCall_ok (T : BlocksTo.SealFn M) {q : Nat} (hq : 16 * q ≤ sl) {s
   refine ⟨r₃, hwr', fun m u fm => ?_⟩
   -- The `pop` loses the frame's 24 bytes, in the stack below `SP`, apart from
   -- the outputs.
-  obtain fm' : Frame [below SP 56] s'.mem m := by
+  obtain fm' : Frame [below SP 24] s'.mem m := by
     rw [hsp] at fm
-    exact fm.sub fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact b56 (by decide) (by decide)
-  obtain one : ∀ {r : Region}, (below SP 56).Disjoint r → ∀ r' ∈ [below SP 56], r.Disjoint r' := fun hd r' hr => by
+    exact fm.sub fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact onStack (by decide) (by decide)
+  obtain one : ∀ {r : Region}, (below SP 24).Disjoint r → ∀ r' ∈ [below SP 24], r.Disjoint r' := fun hd r' hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact hd.symm
   obtain kD : blocksAt m D q = blocksAt s'.mem D q :=
     blocksAt_frame fm' (one (h.kd.sub_right (Region.sub_prefix (by have := h.sl_le; omega_arith))))
