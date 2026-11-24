@@ -144,20 +144,37 @@ def addRoundKey (P : Nat → VReg) : List Instr :=
 
 /-! ## Eight blocks -/
 
+/-- Store a public byte permutation as two immediate words. -/
+def storeIndex (off : Nat) (v : BitVec 128) : List Instr :=
+  VG.Impl.Tbl.AArch64.const64 .x6 (v.extractLsb' 0 64) ++
+    VG.Impl.Tbl.AArch64.const64 .x7 (v.extractLsb' 64 64) ++ [.stp .x6 .x7 sb off]
+
+/-- The unused gap between the S-box spills and the expanded round keys holds
+the ShiftRows and MixColumns byte indices for repeated encryption rounds. -/
+def saveRoundIndices : List Instr :=
+  storeIndex 96 srIdx ++ storeIndex 112 rotIdx
+
+def roundIndex (cached : Bool) (offset : Nat) (value : BitVec 128) : List Instr :=
+  if cached then [.ldrq idxR sb offset] else const128 idxR value
+
 /-- A middle round, with `kp` at the previous round key. -/
-def roundBody : List Instr :=
-  ([.addImm .x kp kp 128] : List Instr) ++ sboxCode ++ permBytes B srIdx ++ mixColumns ++
+def roundBodyUsing (cached : Bool) : List Instr :=
+  ([.addImm .x kp kp 128] : List Instr) ++ sboxCode ++ (roundIndex cached 96 srIdx ++ tbls B) ++ (roundIndex cached 112 rotIdx ++ mcCore) ++
   addRoundKey A ++ ([.subImm .x cnt cnt 1] : List Instr)
 
 /-- The last round. -/
-def lastRound : List Instr :=
-  ([.addImm .x kp kp 128] : List Instr) ++ sboxCode ++ permBytes B srIdx ++ addRoundKey B
+def lastRoundUsing (cached : Bool) : List Instr :=
+  ([.addImm .x kp kp 128] : List Instr) ++ sboxCode ++ (roundIndex cached 96 srIdx ++ tbls B) ++ addRoundKey B
 
 /-- Encrypt the eight blocks in `A 0 … A 7`, into `B 0 … B 7`. -/
-def encrypt8 : Prog isa :=
+def encrypt8Using (cached : Bool) : Prog isa :=
   .seq (.block (bitslice A ++ ([.addImm .x kp sb 128, .subImm .x cnt .x1 1] : List Instr) ++
       addRoundKey A))
-    (.seq (.loop (.block roundBody) (.nonzero .x cnt)) (.block (lastRound ++ bitslice B)))
+    (.seq (.loop (.block (roundBodyUsing cached)) (.nonzero .x cnt)) (.block (lastRoundUsing cached ++ bitslice B)))
+
+abbrev roundBody := roundBodyUsing false
+abbrev lastRound := lastRoundUsing false
+abbrev encrypt8 := encrypt8Using false
 
 /-- A middle round of the inverse cipher, with `kp` at the next round key. -/
 def invRoundBody : List Instr :=

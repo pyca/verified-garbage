@@ -617,12 +617,12 @@ theorem st_readW (m : Mem) (p : Addr) : st (m.readW p 128) = Spec.Aes.stateAt m 
 
 theorem keysAt_frame {m m' : Mem} {b : Addr} {R : Nat} {w : List Byte} {rs : List Region}
     (hR : R ≤ 14) (hf : Frame rs m m')
-    (hd : ∀ r ∈ rs, Region.Disjoint ⟨b + BitVec.ofNat 64 96, 1952⟩ r) (h : KeysAt m b R w) :
+    (hd : ∀ r ∈ rs, Region.Disjoint ⟨b + BitVec.ofNat 64 128, 1920⟩ r) (h : KeysAt m b R w) :
     KeysAt m' b R w := by
   intro j hj
   refine keyRel_congr (h j hj) fun k hk => ?_
   simp only [key_addr]
-  exact hf.readW (r := ⟨b + BitVec.ofNat 64 96, 1952⟩)
+  exact hf.readW (r := ⟨b + BitVec.ofNat 64 128, 1920⟩)
     (Offset.contains _ (by omega_using []) (by omega_using [hR, hj, hk]) (by omega_using [])) hd
     (by decide)
 

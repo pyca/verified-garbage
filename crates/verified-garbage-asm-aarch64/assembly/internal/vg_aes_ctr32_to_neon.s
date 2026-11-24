@@ -60,6 +60,24 @@ vg_aes_ctr32_to_neon:
 	add x7, x7, #128
 	sub x8, x8, #1
 	cbnz x8, 24b
+	movz x6, #1280, lsl #0
+	movk x6, #3850, lsl #16
+	movk x6, #2308, lsl #32
+	movk x6, #782, lsl #48
+	movz x7, #3336, lsl #0
+	movk x7, #1794, lsl #16
+	movk x7, #268, lsl #32
+	movk x7, #2822, lsl #48
+	stp x6, x7, [x5, #96]
+	movz x6, #513, lsl #0
+	movk x6, #3, lsl #16
+	movk x6, #1541, lsl #32
+	movk x6, #1031, lsl #48
+	movz x7, #2569, lsl #0
+	movk x7, #2059, lsl #16
+	movk x7, #3597, lsl #32
+	movk x7, #3087, lsl #48
+	stp x6, x7, [x5, #112]
 25:
 	add w12, w10, #0
 	rev w12, w12
@@ -323,16 +341,7 @@ vg_aes_ctr32_to_neon:
 	not v22.16b, v22.16b
 	mov v23.16b, v5.16b
 	mov v16.16b, v1.16b
-	movz x6, #1280, lsl #0
-	movk x6, #3850, lsl #16
-	movk x6, #2308, lsl #32
-	movk x6, #782, lsl #48
-	movz x7, #3336, lsl #0
-	movk x7, #1794, lsl #16
-	movk x7, #268, lsl #32
-	movk x7, #2822, lsl #48
-	mov v25.d[0], x6
-	mov v25.d[1], x7
+	ldr q25, [x5, #96]
 	tbl v16.16b, {v16.16b}, v25.16b
 	tbl v17.16b, {v17.16b}, v25.16b
 	tbl v18.16b, {v18.16b}, v25.16b
@@ -341,16 +350,7 @@ vg_aes_ctr32_to_neon:
 	tbl v21.16b, {v21.16b}, v25.16b
 	tbl v22.16b, {v22.16b}, v25.16b
 	tbl v23.16b, {v23.16b}, v25.16b
-	movz x6, #513, lsl #0
-	movk x6, #3, lsl #16
-	movk x6, #1541, lsl #32
-	movk x6, #1031, lsl #48
-	movz x7, #2569, lsl #0
-	movk x7, #2059, lsl #16
-	movk x7, #3597, lsl #32
-	movk x7, #3087, lsl #48
-	mov v25.d[0], x6
-	mov v25.d[1], x7
+	ldr q25, [x5, #112]
 	tbl v0.16b, {v16.16b}, v25.16b
 	eor v16.16b, v16.16b, v0.16b
 	tbl v1.16b, {v17.16b}, v25.16b
@@ -536,16 +536,7 @@ vg_aes_ctr32_to_neon:
 	not v22.16b, v22.16b
 	mov v23.16b, v5.16b
 	mov v16.16b, v1.16b
-	movz x6, #1280, lsl #0
-	movk x6, #3850, lsl #16
-	movk x6, #2308, lsl #32
-	movk x6, #782, lsl #48
-	movz x7, #3336, lsl #0
-	movk x7, #1794, lsl #16
-	movk x7, #268, lsl #32
-	movk x7, #2822, lsl #48
-	mov v25.d[0], x6
-	mov v25.d[1], x7
+	ldr q25, [x5, #96]
 	tbl v16.16b, {v16.16b}, v25.16b
 	tbl v17.16b, {v17.16b}, v25.16b
 	tbl v18.16b, {v18.16b}, v25.16b

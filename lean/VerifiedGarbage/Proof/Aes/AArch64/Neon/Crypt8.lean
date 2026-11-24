@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Aes.AArch64.Neon.Layers
 public import VerifiedGarbage.Proof.Aes.InvRounds
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.Tbl
 import VerifiedGarbage.Proof.Framework.AArch64.Reduce
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Offset
@@ -153,6 +154,30 @@ theorem eval_cnt {s : State} {k : Nat} (h : s.gpr cnt = BitVec.ofNat 64 k) (hk :
 theorem qa_congr {s s' : State} (h : s'.v = s.v) : QA s' = QA s := by
   funext i; show s'.v (A i) = s.v (A i); rw [h]
 
+/-- The permutation indices in the public-constant slots of the private workspace. -/
+def RoundIndices (m : Mem) (b : Addr) : Prop :=
+  m.readW (b + BitVec.ofNat 64 96) 128 = srIdx ∧ m.readW (b + BitVec.ofNat 64 112) 128 = rotIdx
+
+theorem RoundIndices.fetch {s₀ s : State} {cached : Bool} {R : Nat} {w : List Byte}
+    (hp : EncPre s₀ R w) (hc : Ctx s₀ s)
+    (h : cached = true → RoundIndices s₀.mem (s₀.gpr sb)) (off : Nat) (val : BitVec 128)
+    (halign : off % 16 = 0) (hlo : 96 ≤ off) (hhi : off + 16 ≤ 128)
+    (hv : RoundIndices s₀.mem (s₀.gpr sb) → s₀.mem.readW (s₀.gpr sb + BitVec.ofNat 64 off) 128 = val) :
+    IndexLoad (roundIndex cached off val) s val := by
+  cases cached with
+  | false => exact Tbl.const128_ok s idxR val
+  | true =>
+    have mem := hc.frame.readW (w := 128) (a := s₀.gpr sb + BitVec.ofNat 64 off)
+      (r := ⟨s₀.gpr sb + BitVec.ofNat 64 96, 32⟩)
+      (Offset.contains _ (by omega_using [hlo]) (by omega_using [hhi]) (by omega_using []))
+      (fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr
+        exact Offset.disjoint_base _ (by omega_using []) (by omega_using [])) (by decide)
+    obtain ⟨len, hl, fit, hr⟩ := hc.scr hp
+    apply cachedIndexLoad ⟨halign, by omega_using [hhi]⟩
+    · exact ⟨_, List.mem_append_right _ hr, Offset.contains_base _ (by omega_using [hl, hhi]) (by omega_using [hhi])⟩
+    · rw [hc.base, mem]; exact hv (h rfl)
+
 /-! ## The rounds -/
 
 theorem kp_step (b : Addr) (m : Nat) :
@@ -182,24 +207,28 @@ theorem ark_step {P : Nat → VReg}
   exact bs_addRoundKey h' hbs hkey
 
 /-- A middle round. -/
-theorem round_ok {s₀ s : State} {R m : Nat} {w : List Byte} {T : Nat → Spec.Aes.State}
-    (hp : EncPre s₀ R w) (hc : Ctx s₀ s)
+theorem roundUsing_ok {s₀ s : State} {R m : Nat} {w : List Byte} {T : Nat → Spec.Aes.State}
+    (hp : EncPre s₀ R w) {cached : Bool} (tab : cached = true → RoundIndices s₀.mem (s₀.gpr sb)) (hc : Ctx s₀ s)
     (hk : s.gpr kp = s₀.gpr sb + BitVec.ofNat 64 (128 + 128 * m))
     (hn : s.gpr cnt = BitVec.ofNat 64 (R - 1 - m)) (hm : m + 1 < R) (hbs : BsRel (QA s) T) :
-    WP isa (.block roundBody) s fun s' => Ctx s₀ s' ∧
+    WP isa (.block (roundBodyUsing cached)) s fun s' => Ctx s₀ s' ∧
       s'.gpr kp = s₀.gpr sb + BitVec.ofNat 64 (128 + 128 * (m + 1)) ∧
       s'.gpr cnt = BitVec.ofNat 64 (R - 1 - (m + 1)) ∧
       BsRel (QA s') (fun b => rnd w (m + 1) (T b)) := by
-  simp only [roundBody]
+  simp only [roundBodyUsing]
   repeat rw [WP.block_append_iff (M := isa)]
   refine gpr_wp (exec_addImm_x (by decide)) hc (.inl rfl) fun s₁ hc₁ hk₁ ho₁ hv₁ _ => WP.block_nil ?_
   rw [read_x, hk, kp_step] at hk₁
   have hbs₁ : BsRel (QA s₁) T := by rw [qa_congr hv₁]; exact hbs
   refine layer_wp (sbox_ok (hc₁.scr hp)) hc₁ fun s₂ hc₂ h₂ hk₂ hn₂ => ?_
   have hbs₂ := bs_subBytes h₂ hbs₁
-  refine layer_wp' (shiftRows_wp s₂) hc₂ fun s₃ hc₃ h₃ hk₃ hn₃ => ?_
+  refine layer_wp' (permBytesUsing_wp sr_check (fun _ _ => rfl)
+    (fun p hp => by simp only [srSrc]; omega_using [hp]) (by decide) s₂
+    (RoundIndices.fetch hp hc₂ tab 96 srIdx (by decide) (by decide) (by decide) And.left)) hc₂ fun s₃ hc₃ h₃ hk₃ hn₃ => ?_
   have hbs₃ := bs_shiftRows h₃ hbs₂
-  refine layer_wp' (mixColumns_wp s₃) hc₃ fun s₄ hc₄ h₄ hk₄ hn₄ => ?_
+  refine layer_wp' (columnsUsing_wp mc_check (fun j p hp wt hwt => by
+    obtain ⟨wk, -, rfl⟩ := List.mem_map.mp hwt; exact down_lt p _ hp) s₃
+    (RoundIndices.fetch hp hc₃ tab 112 rotIdx (by decide) (by decide) (by decide) And.right)) hc₃ fun s₄ hc₄ h₄ hk₄ hn₄ => ?_
   have hbs₄ := bs_mixColumns h₄ hbs₃
   refine ark_step arkA_check hp hc₄ (j := m + 1) (by rw [hk₄, hk₃, hk₂, hk₁]) (by omega_using [hm])
     hbs₄ fun s₅ hc₅ hk₅ hn₅ hbs₅ => ?_
@@ -211,9 +240,9 @@ theorem round_ok {s₀ s : State} {R m : Nat} {w : List Byte} {T : Nat → Spec.
   · rw [qa_congr hv₆]; exact hbs₅
 
 /-- Eight blocks, from `InRel` to `InRel` of their encryptions. -/
-theorem encrypt8_ok {s₀ : State} {R : Nat} {w : List Byte} {S : Nat → Spec.Aes.State}
-    (hp : EncPre s₀ R w) (hin : InRel (QA s₀) S) :
-    WP isa encrypt8 s₀ fun s => Ctx s₀ s ∧ InRel (QB s) (fun b => cipher R w (S b)) := by
+theorem encrypt8Using_ok {s₀ : State} {R : Nat} {w : List Byte} {S : Nat → Spec.Aes.State}
+    (hp : EncPre s₀ R w) {cached : Bool} (tab : cached = true → RoundIndices s₀.mem (s₀.gpr sb)) (hin : InRel (QA s₀) S) :
+    WP isa (encrypt8Using cached) s₀ fun s => Ctx s₀ s ∧ InRel (QB s) (fun b => cipher R w (S b)) := by
   have hR : R ≤ 14 := by rcases hp.rounds with h | h | h <;> omega_using [h]
   have hR1 : 2 ≤ R := by rcases hp.rounds with h | h | h <;> omega_using [h]
   let K : Nat → Spec.Aes.State := fun b => addRoundKey (S b) (roundKey w 0)
@@ -244,7 +273,7 @@ theorem encrypt8_ok {s₀ : State} {R : Nat} {w : List Byte} {S : Nat → Spec.A
   · -- The middle rounds.
     refine WP.loop (M := isa) Inv (fun n s hs => ?_) (R - 1) s h
     obtain ⟨m, rfl, hm, hc, hk, hn, hbs⟩ := hs
-    refine WP.mono (round_ok hp hc hk hn hm hbs) fun s' ⟨hc', hk', hn', hbs'⟩ => ?_
+    refine WP.mono (roundUsing_ok hp tab hc hk hn hm hbs) fun s' ⟨hc', hk', hn', hbs'⟩ => ?_
     have hz := eval_cnt hn' (by omega_using [hR])
     by_cases hlast : m + 2 = R
     · refine .inl ⟨hz.trans (by simp [show R - 1 - (m + 1) = 0 by omega_using [hlast]]), hc', ?_, ?_⟩
@@ -258,14 +287,16 @@ theorem encrypt8_ok {s₀ : State} {R : Nat} {w : List Byte} {S : Nat → Spec.A
   · -- The last round, and back to blocks.
     obtain ⟨hc, hk, hbs⟩ := h
     rw [WP.block_append_iff (M := isa)]
-    simp only [lastRound]
+    simp only [lastRoundUsing]
     repeat rw [WP.block_append_iff (M := isa)]
     refine gpr_wp (exec_addImm_x (by decide)) hc (.inl rfl) fun s₁ hc₁ hk₁ _ hv₁ _ => WP.block_nil ?_
     rw [read_x, hk, kp_step, show R - 1 + 1 = R by omega_using [hR1]] at hk₁
     have hbs₁ : BsRel (QA s₁) (fun b => midRounds w (R - 1) (K b)) := by rw [qa_congr hv₁]; exact hbs
     refine layer_wp (sbox_ok (hc₁.scr hp)) hc₁ fun s₂ hc₂ h₂ hk₂ _ => ?_
     have hbs₂ := bs_subBytes h₂ hbs₁
-    refine layer_wp' (shiftRows_wp s₂) hc₂ fun s₃ hc₃ h₃ hk₃ _ => ?_
+    refine layer_wp' (permBytesUsing_wp sr_check (fun _ _ => rfl)
+    (fun p hp => by simp only [srSrc]; omega_using [hp]) (by decide) s₂
+    (RoundIndices.fetch hp hc₂ tab 96 srIdx (by decide) (by decide) (by decide) And.left)) hc₂ fun s₃ hc₃ h₃ hk₃ _ => ?_
     have hbs₃ := bs_shiftRows h₃ hbs₂
     refine ark_step arkB_check hp hc₃ (j := R) (by rw [hk₃, hk₂, hk₁]) (Nat.le_refl R) hbs₃
       fun s₄ hc₄ _ _ hbs₄ => ?_
@@ -274,6 +305,11 @@ theorem encrypt8_ok {s₀ : State} {R : Nat} {w : List Byte} {S : Nat → Spec.A
     have := in_of_bs h₅ hbs₄
     intro b hb i hi j hj
     rw [this b hb i hi j hj]; simp only [cipher_eq]; rfl
+
+theorem encrypt8_ok {s₀ : State} {R : Nat} {w : List Byte} {S : Nat → Spec.Aes.State}
+    (hp : EncPre s₀ R w) (hin : InRel (QA s₀) S) :
+    WP isa encrypt8 s₀ fun s => Ctx s₀ s ∧ InRel (QB s) (fun b => cipher R w (S b)) :=
+  encrypt8Using_ok hp (cached := false) (fun h => by cases h) hin
 
 /-! ## The inverse cipher -/
 

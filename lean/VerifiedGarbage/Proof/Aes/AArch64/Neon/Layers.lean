@@ -587,17 +587,36 @@ theorem lin_ok {k xb : Nat} {c : StraightQ.Cfg} {is : List Instr} {Pi Po : Nat �
 
 theorem noExt_ok (s : State) : StraightQ.Ok noExt s := fun _ h => absurd h (by simp [noExt])
 
+/-- Loading a byte-permutation vector only clobbers the index and the constant-building registers. -/
+abbrev IndexLoad (load : List Instr) (s : State) (v : BitVec 128) :=
+  WP isa (.block load) s fun t => t.v idxR = v ∧ (∀ w, w ≠ idxR → t.v w = s.v w) ∧
+    (∀ g, g ≠ .x6 → g ≠ .x7 → t.gpr g = s.gpr g) ∧ t.mem = s.mem ∧ t.rd = s.rd ∧
+    t.wr = s.wr ∧ t.sp = s.sp
+
+theorem cachedIndexLoad {off : Nat} {s : State} {v : BitVec 128} (ha : off % 16 = 0 ∧ off < 65536)
+    (hr : InRegions (s.rd ++ s.wr) (s.gpr sb + BitVec.ofNat 64 off) 16)
+    (hv : s.mem.readW (s.gpr sb + BitVec.ofNat 64 off) 128 = v) :
+    IndexLoad [.ldrq idxR sb off] s v := by
+  rw [IndexLoad, WP.block_cons_iff]
+  refine ⟨s.setV idxR (s.mem.readW (s.gpr sb + BitVec.ofNat 64 off) 128), ?_,
+    WP.block_nil ⟨?_, ?_, fun _ _ _ => rfl, rfl, rfl, rfl, rfl⟩⟩
+  · simp only [exec, addr, show off % 16 = 0 ∧ off < 4096 * 16 from ha, and_self, ite_true,
+      Option.bind_some, State.load, hr, Option.map_some, Mem.readW]
+    rfl
+  · simp [State.setV, hv]
+  · intro w hw; simp [State.setV, hw]
+
 /-- The bytes of the words `P 0 … P 7` permuted: bit `p` from bit `src p`. -/
-theorem permBytes_wp {P : Nat → VReg} {c : BitVec 128} {g : Nat → Nat → List Nat} {src : Nat → Nat}
+theorem permBytesUsing_wp {P : Nat → VReg} {c : BitVec 128} {g : Nat → Nat → List Nat} {src : Nat → Nat}
     (hchk : StraightQ.check (lanes 128 10) noExt (StraightQ.linExt 0) (tbls P)
       (StraightQ.linEnv (insOf P) [(idxR, c)]) (StraightQ.linPost 10 (outsOf P g)) = true)
     (hg : ∀ j p, g j p = [128 * j + src p]) (hsrc : ∀ p < 128, src p < 128)
-    (hP : ∀ j < 8, P j ≠ idxR) (s : State) :
-    WP isa (.block (permBytes P c)) s fun s' =>
+    (hP : ∀ j < 8, P j ≠ idxR) (s : State) {load : List Instr}
+    (hl : IndexLoad load s c) :
+    WP isa (.block (load ++ tbls P)) s fun s' =>
       (∀ j < 8, ∀ p < 128, (s'.v (P j)).getLsbD p = (s.v (P j)).getLsbD (src p)) ∧ Keeps s s' := by
-  unfold permBytes
   rw [WP.block_append_iff (M := isa)]
-  refine WP.mono (Tbl.const128_ok s idxR c) fun t ⟨tv, to, tg, tm, trd, twr, tsp⟩ => ?_
+  refine WP.mono hl fun t ⟨tv, to, tg, tm, trd, twr, tsp⟩ => ?_
   obtain ⟨s', hs', hout, hsame⟩ := lin_ok hchk (by decide) (noExt_ok t) (fun i => t.v (P i))
     (fun _ _ => rfl) (fun r v h => by
       simp only [List.mem_singleton, Prod.mk.injEq] at h
@@ -607,6 +626,15 @@ theorem permBytes_wp {P : Nat → VReg} {c : BitVec 128} {g : Nat → Nat → Li
   refine WP.of_runBlock ⟨s', hs', fun j hj p hp => ?_, kt.trans (Keeps.of_v hsame)⟩
   rw [hout j hj p hp, hg, xorBits_cons, xorBits_nil, Bool.xor_false, bitOf_word _ _ _ (hsrc p hp),
     to _ (hP j hj)]
+
+theorem permBytes_wp {P : Nat → VReg} {c : BitVec 128} {g : Nat → Nat → List Nat} {src : Nat → Nat}
+    (hchk : StraightQ.check (lanes 128 10) noExt (StraightQ.linExt 0) (tbls P)
+      (StraightQ.linEnv (insOf P) [(idxR, c)]) (StraightQ.linPost 10 (outsOf P g)) = true)
+    (hg : ∀ j p, g j p = [128 * j + src p]) (hsrc : ∀ p < 128, src p < 128)
+    (hP : ∀ j < 8, P j ≠ idxR) (s : State) :
+    WP isa (.block (permBytes P c)) s fun s' =>
+      (∀ j < 8, ∀ p < 128, (s'.v (P j)).getLsbD p = (s.v (P j)).getLsbD (src p)) ∧ Keeps s s' :=
+  permBytesUsing_wp hchk hg hsrc hP s (Tbl.const128_ok s idxR c)
 
 theorem shiftRows_wp (s : State) :
     WP isa (.block (permBytes B srIdx)) s fun s' =>
@@ -621,16 +649,16 @@ theorem invShiftRows_wp (s : State) :
     (by decide) s
 
 /-- A layer of rotations of the columns, from `B 0 … B 7` to `A 0 … A 7`. -/
-theorem columns_wp {core : List Instr} {terms : Nat → Nat → List (Nat × Nat)}
+theorem columnsUsing_wp {core : List Instr} {terms : Nat → Nat → List (Nat × Nat)}
     (hchk : StraightQ.check (lanes 128 10) noExt (StraightQ.linExt 0) core
       (StraightQ.linEnv (insOf B) [(idxR, rotIdx)])
       (StraightQ.linPost 10 (outsOf A fun j p => (terms j p).map fun wt => 128 * wt.1 + wt.2)) = true)
-    (hlt : ∀ j p, p < 128 → ∀ wt ∈ terms j p, wt.2 < 128) (s : State) :
-    WP isa (.block (const128 idxR rotIdx ++ core)) s fun s' =>
+    (hlt : ∀ j p, p < 128 → ∀ wt ∈ terms j p, wt.2 < 128) (s : State) {load : List Instr} (hl : IndexLoad load s rotIdx) :
+    WP isa (.block (load ++ core)) s fun s' =>
       (∀ j < 8, ∀ p < 128, (s'.v (A j)).getLsbD p = termsXor (fun k => s.v (B k)) (terms j p)) ∧
         Keeps s s' := by
   rw [WP.block_append_iff (M := isa)]
-  refine WP.mono (Tbl.const128_ok s idxR rotIdx) fun t ⟨tv, to, tg, tm, trd, twr, tsp⟩ => ?_
+  refine WP.mono hl fun t ⟨tv, to, tg, tm, trd, twr, tsp⟩ => ?_
   obtain ⟨s', hs', hout, hsame⟩ := lin_ok hchk (by decide) (noExt_ok t) (fun i => s.v (B i))
     (fun i hi => (to _ (by revert i; decide)).symm) (fun r v h => by
       simp only [List.mem_singleton, Prod.mk.injEq] at h
@@ -639,6 +667,16 @@ theorem columns_wp {core : List Instr} {terms : Nat → Nat → List (Nat × Nat
   have kt : Keeps s t := ⟨tg, trd, twr, tsp, by rw [tm]; exact Frame.refl _ _⟩
   refine WP.of_runBlock ⟨s', hs', fun j hj p hp => ?_, kt.trans (Keeps.of_v hsame)⟩
   rw [hout j hj p hp, xorBits_map _ _ (hlt j p hp)]
+
+theorem columns_wp {core : List Instr} {terms : Nat → Nat → List (Nat × Nat)}
+    (hchk : StraightQ.check (lanes 128 10) noExt (StraightQ.linExt 0) core
+      (StraightQ.linEnv (insOf B) [(idxR, rotIdx)])
+      (StraightQ.linPost 10 (outsOf A fun j p => (terms j p).map fun wt => 128 * wt.1 + wt.2)) = true)
+    (hlt : ∀ j p, p < 128 → ∀ wt ∈ terms j p, wt.2 < 128) (s : State) :
+    WP isa (.block (const128 idxR rotIdx ++ core)) s fun s' =>
+      (∀ j < 8, ∀ p < 128, (s'.v (A j)).getLsbD p = termsXor (fun k => s.v (B k)) (terms j p)) ∧
+        Keeps s s' :=
+  columnsUsing_wp hchk hlt s (Tbl.const128_ok s idxR rotIdx)
 
 theorem mixColumns_wp (s : State) :
     WP isa (.block mixColumns) s fun s' =>

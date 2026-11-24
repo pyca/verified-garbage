@@ -14,7 +14,9 @@ as `vg_aes_ctr32` (`Ctr32.lean`), and its out-of-place form, the internal
 
 Eight blocks at a time, encrypted as `vg_aes_encrypt_blocks_neon` encrypts
 them (`Blocks.lean`: `keySetup`, `keyBody`, `encrypt8`), with the round keys
-bitsliced once a call.
+bitsliced once a call. The ShiftRows and MixColumns indices are stored
+once per call at scratch offsets 96 and 112, between the S-box scratch and
+the expanded keys.
 
 * The counter, an integer, is in `w10`. Each group builds eight counter
   blocks in `v0`–`v7` (`Aese.ctrs`), encrypts them into `v16`–`v23`, and
@@ -60,7 +62,7 @@ def ctrAdvance (to : Bool) : Prog isa :=
 
 /-- One group of (up to) eight blocks. -/
 def ctrGroup (to : Bool) : Prog isa :=
-  .seq (.block (ctrs regs8 0)) (.seq encrypt8 (.seq (xorFrom to 7 0) (ctrAdvance to)))
+  .seq (.block (ctrs regs8 0)) (.seq (encrypt8Using true) (.seq (xorFrom to 7 0) (ctrAdvance to)))
 
 /-- The destination to `x14`, out of place, and the counter to `w10`. -/
 def ctrSetup (to : Bool) : List Instr :=
@@ -71,7 +73,7 @@ def ctrSetup (to : Bool) : List Instr :=
 def ctr32Gen (to : Bool) : Prog isa :=
   .seq (.block (ctrSetup to))
     (.seq (.seq (.block keySetup)
-        (.seq (.loop (.block keyBody) (.nonzero .x kp)) (.loop (ctrGroup to) (.nonzero .x .x4))))
+        (.seq (.loop (.block keyBody) (.nonzero .x kp)) (.seq (.block saveRoundIndices) (.loop (ctrGroup to) (.nonzero .x .x4)))))
       (.block ctrStore))
 
 /-- `vg_aes_ctr32_neon`: nothing for no block, one to four blocks by vector
