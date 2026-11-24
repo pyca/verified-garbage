@@ -750,42 +750,33 @@ impl AesGcm {
             return Err(Error::TooManyPieces);
         }
         check_nonce(nonce)?;
-        let mut len = 0;
-        for p in plaintext {
-            len = add_len(len, p.len(), MAX_TEXT).map_err(|()| Error::InvalidTextLength)?;
-        }
-        if len != out.len() as u64 {
-            return Err(Error::InvalidOutputLength);
-        }
-        add_len(0, aad.len(), MAX_AAD).map_err(|()| Error::InvalidAadLength)?;
-        Ok(self.seal_pieces(dit, nonce, aad, plaintext, out))
-    }
-
-    /// Seal the caller's checked plaintext pieces into their exact-size destination.
-    #[inline(always)]
-    fn seal_pieces(
-        &self,
-        dit: crate::dit::Dit<'_>,
-        nonce: &[u8],
-        aad: &[u8],
-        plaintext: &[&[u8]],
-        out: &mut [MaybeUninit<u8>],
-    ) -> Block {
-        let dst = out.as_mut_ptr().cast();
-        let len = out.len();
+        let validate_out = |len: u64| {
+            if len != out.len() as u64 {
+                return Err(Error::InvalidOutputLength);
+            }
+            add_len(0, aad.len(), MAX_AAD).map_err(|()| Error::InvalidAadLength)?;
+            Ok(())
+        };
         #[cfg(target_arch = "x86_64")]
         if let [input] = plaintext {
+            let len = add_len(0, input.len(), MAX_TEXT).map_err(|()| Error::InvalidTextLength)?;
+            validate_out(len)?;
             // SAFETY: the checked length equals input.len(). The exclusive
             // output slice is disjoint from the plaintext and other inputs.
-            return unsafe { self.seal_contiguous(dit, nonce, aad, input.as_ptr(), dst, len) };
+            return Ok(unsafe { self.seal_contiguous(dit, nonce, aad, input.as_ptr(), out.as_mut_ptr().cast(), input.len()) });
         }
         // The descriptors of the pieces, as `vg_aes_gcm_seal_gather` takes
         // them: each its address and its length. Only the first
         // `plaintext.len()` are written, and the function reads only those.
         let mut descs = [const { MaybeUninit::<[usize; 2]>::uninit() }; Self::MAX_PIECES];
+        let mut len = 0;
         for (d, p) in descs.iter_mut().zip(plaintext) {
+            len = add_len(len, p.len(), MAX_TEXT).map_err(|()| Error::InvalidTextLength)?;
             d.write([p.as_ptr() as usize, p.len()]);
         }
+        validate_out(len)?;
+        let dst = out.as_mut_ptr().cast();
+        let len = out.len();
         let src: *const [usize; 2] = descs.as_ptr().cast();
         let mut tag: Block = [0; 16];
         // SAFETY: as in `seal`, with `dst` writable for
@@ -843,7 +834,7 @@ impl AesGcm {
                 &mut tag,
             );
         }
-        tag
+        Ok(tag)
     }
 
     /// Starts encrypting a message under this key and `nonce` (of any
