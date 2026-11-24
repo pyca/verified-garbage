@@ -5,14 +5,14 @@
 // gives.
 
 vg_sm4_ctr_aesni:
-	lea esp, [esp-752]
-	mov eax, DWORD PTR [esp+756]
-	mov DWORD PTR [esp+4], eax
+	lea esp, [esp-756]
 	mov eax, DWORD PTR [esp+760]
-	mov DWORD PTR [esp+8], eax
+	mov DWORD PTR [esp+4], eax
 	mov eax, DWORD PTR [esp+764]
-	mov DWORD PTR [esp+12], eax
+	mov DWORD PTR [esp+8], eax
 	mov eax, DWORD PTR [esp+768]
+	mov DWORD PTR [esp+12], eax
+	mov eax, DWORD PTR [esp+772]
 	mov DWORD PTR [esp+16], eax
 	mov eax, esp
 	add eax, 24
@@ -1325,8 +1325,8 @@ vg_sm4_ctr_aesni:
 	movdqu XMMWORD PTR [esp+728], xmm0
 	mov DWORD PTR [esp+744], ecx
 	mov DWORD PTR [esp+748], ecx
-	lea esp, [esp+752]
-	lea esp, [esp-756]
+	lea esp, [esp+756]
+	lea esp, [esp-760]
 	mov ecx, 0
 	mov DWORD PTR [esp+4], ecx
 	mov DWORD PTR [esp+8], ecx
@@ -1334,7 +1334,8 @@ vg_sm4_ctr_aesni:
 	mov DWORD PTR [esp+16], ecx
 	mov DWORD PTR [esp+20], ecx
 	mov DWORD PTR [esp+24], ecx
-	lea esp, [esp+756]
+	mov DWORD PTR [esp+756], ecx
+	lea esp, [esp+760]
 	mov eax, 0
 	mov edx, 0
 	xor ecx, ecx

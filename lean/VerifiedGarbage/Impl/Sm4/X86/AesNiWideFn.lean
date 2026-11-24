@@ -15,7 +15,15 @@ different in two runs zeroed, and the registers a callee may change
 cleared, so that it returns without secret residue. `ctrFramed` is CTR's
 code in its frame without that cleanup, the internal function that
 `vg_sm4_ctr_final` calls and cleans up after (`Impl.Sm4.X86.Fn.ctrFinal`,
-with the doublewords `ctrFinalWords`). -/
+with the doublewords `ctrFinalWords`).
+
+A function's frame is larger than its working space and header need (756
+bytes for 752), so that the working space, which `withStackScratchWiped`
+puts 24 bytes above the frame's base for four arguments, is at a multiple
+of 16 when `esp` is one at the call: the core's 16-byte loads and stores
+then cross no page, or line of the cache. `ctrFramed`'s frame is as it
+was: `vg_sm4_ctr_final` calls it from a frame of its own, and the library
+gives that function a message's last bytes, fewer than 16. -/
 
 @[expose] public section
 
@@ -29,10 +37,11 @@ def ctrFramed : Prog isa := Impl.StackScratch.X86.withStackScratchWiped 752 4 18
 
 namespace Fn
 
-/-- The doublewords of the 756 bytes of stack below `esp` that the residue
+/-- The doublewords of the 760 bytes of stack below `esp` that the residue
 analysis finds each function may leave different in two runs: the header
-of its working space's frame. -/
-def modeWords : List Nat := [1, 2, 3, 4, 5, 6]
+of its working space's frame, and the frame's last doubleword, which
+nothing writes. -/
+def modeWords : List Nat := [1, 2, 3, 4, 5, 6, 189]
 
 /-- And of the 1592 bytes of `vg_sm4_ctr_final` calling `ctrFramed`: the
 header of that call's frame, and what the baseline's leaves of its own. -/
@@ -41,18 +50,18 @@ def ctrFinalWords : List Nat :=
 
 /-- `Spec.Sm4.cbcDecryptChainedApi`'s function as emitted. -/
 def cbcDecryptChained : Prog isa :=
-  Impl.Scrub.X86.scrubSel 0 756 modeWords
-    (Impl.StackScratch.X86.withStackScratchWiped 752 4 182 Impl.Sm4.X86.AesNiWide.cbcDecryptChained)
+  Impl.Scrub.X86.scrubSel 0 760 modeWords
+    (Impl.StackScratch.X86.withStackScratchWiped 756 4 182 Impl.Sm4.X86.AesNiWide.cbcDecryptChained)
 
 /-- `Spec.Sm4.cfbDecryptApi`'s function as emitted. -/
 def cfbDecrypt : Prog isa :=
-  Impl.Scrub.X86.scrubSel 0 756 modeWords
-    (Impl.StackScratch.X86.withStackScratchWiped 752 4 182 Impl.Sm4.X86.AesNiWide.cfbDecrypt)
+  Impl.Scrub.X86.scrubSel 0 760 modeWords
+    (Impl.StackScratch.X86.withStackScratchWiped 756 4 182 Impl.Sm4.X86.AesNiWide.cfbDecrypt)
 
 /-- `Spec.Sm4.ctrApi`'s function as emitted. -/
 def ctr : Prog isa :=
-  Impl.Scrub.X86.scrubSel 0 756 modeWords
-    (Impl.StackScratch.X86.withStackScratchWiped 752 4 182 Impl.Sm4.X86.AesNiWide.ctr)
+  Impl.Scrub.X86.scrubSel 0 760 modeWords
+    (Impl.StackScratch.X86.withStackScratchWiped 756 4 182 Impl.Sm4.X86.AesNiWide.ctr)
 
 end Fn
 
