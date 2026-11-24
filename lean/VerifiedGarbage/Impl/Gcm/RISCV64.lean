@@ -160,13 +160,13 @@ def prep : List Instr :=
 
 /-- `Y := (Y ⊕ X) • H` for the block `X` at `data`: the three products,
 their sum and the reduction. -/
-def blockCode : List Instr :=
+def blockCodeWith (spill : Reg) (first : Nat) : List Instr :=
   loadBE64 .t0 .t2 DP 0 ++ loadBE64 .t1 .t2 DP 8 ++
   [.logic .xor Y0 Y0 .t0, .logic .xor Y1 Y1 .t1] ++
-  pmCode Y0 (slot 0) ++ [.store .d PL FP (slot 36), .store .d (Z 0) FP (slot 37)] ++
-  pmCode Y1 (slot 12) ++ [.store .d PL FP (slot 38), .store .d (Z 0) FP (slot 39)] ++
+  pmCode Y0 (slot 0) ++ [.store .d PL spill (slot (first + 0)), .store .d (Z 0) spill (slot (first + 1))] ++
+  pmCode Y1 (slot 12) ++ [.store .d PL spill (slot (first + 2)), .store .d (Z 0) spill (slot (first + 3))] ++
   [.logic .xor Y0 Y0 Y1] ++ pmCode Y0 (slot 24) ++
-  [.load .d .t0 FP (slot 36), .load .d .t1 FP (slot 37), .load .d .t2 FP (slot 38), .load .d .t3 FP (slot 39),
+  [.load .d .t0 spill (slot (first + 0)), .load .d .t1 spill (slot (first + 1)), .load .d .t2 spill (slot (first + 2)), .load .d .t3 spill (slot (first + 3)),
    -- `w₁`, `w₂`
    .logic .xor B (Z 0) .t1, .logic .xor B B .t3, .logic .xor B .t0 B,
    .logic .xor T PL .t0, .logic .xor T T .t2, .logic .xor T T .t3,
@@ -183,6 +183,9 @@ def blockCode : List Instr :=
    .shift .sll .d .t4 T 63, .logic .xor Y1 B .t4, .shift .sll .d .t4 T 62, .logic .xor Y1 Y1 .t4,
    .shift .sll .d .t4 T 57, .logic .xor Y1 Y1 .t4,
    .addi DP DP 16, .addi N N (-1)]
+
+/-- The public GHASH operation keeps its products in the frame following its prepared key. -/
+def blockCode : List Instr := blockCodeWith FP 36
 
 /-! ## The function -/
 

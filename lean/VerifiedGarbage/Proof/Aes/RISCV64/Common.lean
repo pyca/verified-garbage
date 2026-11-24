@@ -396,6 +396,39 @@ theorem ark_step {s₀ s : State} {X : Addr} {R j : Nat} {w : List Byte} {T : Na
     WP isa (.block addRoundKey) s P :=
   ark_stepK hp.toK hc hk hj hbs h
 
+private theorem shiftRowsK_ok (kb : Reg) {s : State} (hok : Ok srCfg s) (hks : MasksAt s.mem (s.gpr sb) srKs) :
+    ∃ s', runBlock isa (shiftRowsK kb) s = some s' ∧
+      (∀ j < 8, ∀ p < 64, (Q s' j).getLsbD p = (Q s j).getLsbD (srSrc p)) ∧ Rest srCfg s s' := by
+  unfold shiftRowsK
+  split
+  · exact shiftFast_ok hok hks
+  · exact shiftRows_ok hok hks
+
+private theorem mixKeyStep {s₀ s : State} {X : Addr} {kb : Reg} {K : Region}
+    {R j : Nat} {w : List Byte} {T : Nat → Spec.Aes.State} (hp : EncPreK s₀ X kb K R w)
+    (hc : Ctx s₀ s) (hk : s.gpr kp = s₀.gpr .a0 + BitVec.ofNat 64 (64*j))
+    (hj : j ≤ R) (hbs : BsRel (Q s) T) {P : State → Prop}
+    (next : ∀ t, Ctx s₀ t → t.gpr kp = s.gpr kp →
+      BsRel (Q t) (fun b => addRoundKey (mixColumns (T b)) (roundKey w j)) → P t) :
+    WP isa (.block (roundCoreK kb)) s P := by
+  unfold roundCoreK
+  split
+  · have ok := ark_cfg_okK (hc.scr hp.scr)
+      (by rw [hk,hc.rd,hc.wr]; exact hp.kin j hj)
+      (by rw [hk];exact al_add hp.kal (by decide) (by omega_arith))
+    have key : KeyRel (keyWord s) (roundKey w j) := by
+      unfold keyWord; rw [hk]; exact hp.keysAt hc j hj
+    refine layer_wp (mixAdd_ok ok) rfl (by decide) hc fun t ht bits ptr => next t ht ptr ?_
+    let mid := fun i => Q t i ^^^ keyWord s i
+    have mixed : BsRel mid (fun b => mixColumns (T b)) := by
+      refine bs_mixColumns (fun i hi p hp => ?_) hbs
+      simp [mid,BitVec.getLsbD_xor,bits i hi p hp]
+    exact bs_addRoundKey (fun i _ p _ => by simp [mid,BitVec.getLsbD_xor]) mixed key
+  · rw [WP.block_append_iff (M := isa)]
+    refine layer_wp (mixColumns_ok (hc.bsOk hp.scr)) rfl (by decide) hc fun t ht bits ptr => ?_
+    exact ark_stepK hp ht (ptr.trans hk) hj (bs_mixColumns bits hbs)
+      fun v hv pv bs => next v hv (pv.trans ptr) bs
+
 /-- A middle round. -/
 theorem round_okK {s₀ s : State} {X : Addr} {kb : Reg} {K : Region} {R m : Nat} {w : List Byte}
     {T : Nat → Spec.Aes.State} (hp : EncPreK s₀ X kb K R w) (hc : Ctx s₀ s) (hk : s.gpr kp = s₀.gpr .a0 + BitVec.ofNat 64 (64 * m))
@@ -413,18 +446,16 @@ theorem round_okK {s₀ s : State} {X : Addr} {kb : Reg} {K : Region} {R m : Nat
     rw [this]; exact hbs
   refine layer_wp (sbox_ok (hc₁.sboxOk hp.scr)) rfl (by decide) hc₁ fun s₂ hc₂ h₂ hk₂ => ?_
   have hbs₂ := bs_subBytes h₂ hbs₁
-  refine layer_wp (shiftRows_ok (hc₂.srOk hp.scr) (hc₂.srKs hp.masks)) rfl (by decide) hc₂
+  refine layer_wp (shiftRowsK_ok kb (hc₂.srOk hp.scr) (hc₂.srKs hp.masks)) rfl (by decide) hc₂
     fun s₃ hc₃ h₃ hk₃ => ?_
   have hbs₃ := bs_shiftRows h₃ hbs₂
-  refine layer_wp (mixColumns_ok (hc₃.bsOk hp.scr)) rfl (by decide) hc₃ fun s₄ hc₄ h₄ hk₄ => ?_
-  have hbs₄ := bs_mixColumns h₄ hbs₃
-  have hk₄' : s₄.gpr kp = s₀.gpr .a0 + BitVec.ofNat 64 (64 * (m + 1)) := by rw [hk₄, hk₃, hk₂, hk₁]
-  refine ark_stepK hp hc₄ hk₄' (by omega_arith) hbs₄ fun s₅ hc₅ hk₅ hbs₅ => ?_
+  have hk₃' : s₃.gpr kp = s₀.gpr .a0 + BitVec.ofNat 64 (64 * (m + 1)) := by rw [hk₃,hk₂,hk₁]
+  refine mixKeyStep hp hc₃ hk₃' (by omega_arith) hbs₃ fun s₅ hc₅ hk₅ hbs₅ => ?_
   refine cmpLastK_wp hc₅ fun s₆ hc₆ hk₆ hq₆ hz₆ => ⟨hc₆, ?_, ?_, ?_⟩
-  · rw [hk₆, hk₅, hk₄']
+  · rw [hk₆, hk₅, hk₃']
   · have : Q s₆ = Q s₅ := funext hq₆
     rw [this]; exact hbs₅
-  · rw [hz₆, hk₅, hk₄', hc₅.keep _ hp.kbr.1 hp.kbr.2, kp_off _ _ hp.k0, zf_last _ hR hm]
+  · rw [hz₆, hk₅, hk₃', hc₅.keep _ hp.kbr.1 hp.kbr.2, kp_off _ _ hp.k0, zf_last _ hR hm]
 
 theorem eval_t0 {s : State} {b : Bool} (h : (s.gpr t0 == 0) = b) :
     isa.eval (.nonzero t0) s = some (!b) := by
@@ -486,7 +517,7 @@ theorem encrypt4K_ok {s₀ : State} {X : Addr} {kb : Reg} {K : Region} {R : Nat}
   · -- The last round, and back to blocks.
     obtain ⟨hc, hk, hbs⟩ := h
     rw [WP.block_append_iff (M := isa)]
-    simp only [lastRound]
+    simp only [lastRoundK]
     repeat rw [WP.block_append_iff (M := isa)]
     refine addKp_wp hc fun s₁ hc₁ hk₁ hq₁ => ?_
     rw [hk, kp_step, show R - 1 + 1 = R by omega_arith] at hk₁
@@ -495,7 +526,7 @@ theorem encrypt4K_ok {s₀ : State} {X : Addr} {kb : Reg} {K : Region} {R : Nat}
       rw [this]; exact hbs
     refine layer_wp (sbox_ok (hc₁.sboxOk hp.scr)) rfl (by decide) hc₁ fun s₂ hc₂ h₂ hk₂ => ?_
     have hbs₂ := bs_subBytes h₂ hbs₁
-    refine layer_wp (shiftRows_ok (hc₂.srOk hp.scr) (hc₂.srKs hp.masks)) rfl (by decide) hc₂
+    refine layer_wp (shiftRowsK_ok kb (hc₂.srOk hp.scr) (hc₂.srKs hp.masks)) rfl (by decide) hc₂
       fun s₃ hc₃ h₃ hk₃ => ?_
     have hbs₃ := bs_shiftRows h₃ hbs₂
     refine ark_stepK hp hc₃ (by rw [hk₃, hk₂, hk₁]) (Nat.le_refl R) hbs₃ fun s₄ hc₄ _ hbs₄ => ?_
