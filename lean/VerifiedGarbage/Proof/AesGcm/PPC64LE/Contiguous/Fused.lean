@@ -1,5 +1,7 @@
 module
 
+-- separate module: Check the register and scratch permissions of the independently verified fused AES-GCM call.
+
 public import VerifiedGarbage.Impl.AesGcm.PPC64LE.Contiguous
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.SplitBlocks.Buffers
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Call

@@ -15,7 +15,7 @@ namespace VG.Proof.AesGcm.PPC64LE.Contiguous
 open VG VG.PPC64LE VG.Impl.AesGcm.PPC64LE.Contiguous
 open VG.Proof.Gather.PPC64LE (Eq2 TT rel_taint rel_seq)
 
-theorem entry_rel {s t : State} (a : Arguments s w) (b : Arguments t w) (sp : s.sp = t.sp) :
+theorem entry_rel {s t : State} {w : Addr} (a : Arguments s w) (b : Arguments t w) (sp : s.sp = t.sp) :
     RelCT isa (Eq2 s t) (.block entry) TT := by
   rw [entry,List.append_assoc]
   apply RelCT.block_append

@@ -35,7 +35,7 @@ structure Started (s : State) (w : Addr) (t : State) : Prop where
   len : t.gpr .r23 = s.mem.readW (s.sp+96) 64
   tag : t.gpr .r20 = s.mem.readW (s.sp+104) 64
 
-theorem entry_wp {s : State} (a : Arguments s w) : WP isa (.block entry) s (Started s w) := by
+theorem entry_wp {s : State} {w : Addr} (a : Arguments s w) : WP isa (.block entry) s (Started s w) := by
   unfold entry
   refine WP.block_append (WP.block_append ?_)
   refine WP.mono (oneA_at (off := 112) (by decide) (by decide) (a.slot 2 (by decide)) a.scratch)
