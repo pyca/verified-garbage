@@ -64,7 +64,8 @@ theorem pairFacts_ro_w (l : List Region) (a : Region) :
       Function.comp_def, Bool.false_or, Sig.conj_append, ih, List.forall_mem_cons]
     simp [List.filterMap_cons, Sig.conj, Sig.conj_cons, filterMap_none']
 
-theorem gatherPre_of_spec {s : State} (h : (Proof.AesGcm.sealGatherRoundsContract X86.abi 2688).pre s) : gatherPre s := by
+theorem gatherPre_of_spec {N : Nat} {s : State} (h : (Proof.AesGcm.sealGatherRoundsContract X86.abi (N + 128)).pre s) :
+    gatherPre N s := by
   sig_pre [Proof.AesGcm.sealGatherRoundsContract, Spec.Gcm.sealGatherSig, Spec.Gcm.sealGatherPre, X86.abi] at h
   sig_split h
   simp only [List.filter_map, List.map_map, List.filterMap_map, List.map_nil, Function.comp_def,
@@ -83,14 +84,14 @@ theorem gatherPre_of_spec {s : State} (h : (Proof.AesGcm.sealGatherRoundsContrac
     ek, en, ea, ed, et, eds, els, earg, bk, bn, ba, bd, bt, bds, bls, barg, fl, ok, on, oa, od, ods, ol, w₁,
     by omega_using [w₂], hR, h⟩
 
-theorem gatherPost_of {s s' : State} (h : gatherPost s s') :
-    (Proof.AesGcm.sealGatherRoundsContract X86.abi 2688).post s s' := by
+theorem gatherPost_of {N : Nat} {s s' : State} (h : gatherPost s s') :
+    (Proof.AesGcm.sealGatherRoundsContract X86.abi (N + 128)).post s s' := by
   sig_post [Proof.AesGcm.sealGatherRoundsContract, Spec.Gcm.sealGatherSig, Proof.AesGcm.sealGatherRoundsPost, X86.abi, argVal,
     ↓reduceIte, Nat.reduceEqDiff, argBytes, Nat.reduceDiv, List.sum_cons, List.sum_nil, Nat.reduceAdd,
     Nat.reduceMul, sw32, toNat_w64]
   exact fun _ _ => h
 
-theorem gatherPub_of {s₁ s₂ : State} (hp : (Proof.AesGcm.sealGatherRoundsContract X86.abi 2688).pub s₁ s₂) :
+theorem gatherPub_of {N : Nat} {s₁ s₂ : State} (hp : (Proof.AesGcm.sealGatherRoundsContract X86.abi (N + 128)).pub s₁ s₂) :
     gatherPub s₁ s₂ := by
   sig_pub [Proof.AesGcm.sealGatherRoundsContract, Spec.Gcm.sealGatherSig, Spec.Gcm.sealGatherPre, X86.abi, argVal,
     ↓reduceIte, Nat.reduceEqDiff, argBytes, Nat.reduceDiv, List.sum_cons, List.sum_nil, Nat.reduceAdd,
@@ -116,12 +117,14 @@ def gatherSat : State where
   rd := [⟨0x1000, 256⟩, ⟨0x2000, 0⟩, ⟨0x2100, 0⟩, ⟨0x3000, 0⟩]
   wr := [⟨0x4000, 0⟩, ⟨0x5000, 16⟩, ⟨0x8004, 44⟩]
 
-theorem gatherSat_pre : ∃ s, (Proof.AesGcm.sealGatherRoundsContract X86.abi 2688).pre s := by
-  implies_sat [Proof.AesGcm.sealGatherRoundsContract, Spec.Gcm.sealGatherSig, Spec.Gcm.sealGatherPre,
+theorem gatherSat_pre {N : Nat} (hN : N = 768 ∨ N = 2560) :
+    ∃ s, (Proof.AesGcm.sealGatherRoundsContract X86.abi (N + 128)).pre s := by
+  rcases hN with rfl | rfl <;> implies_sat [Proof.AesGcm.sealGatherRoundsContract, Spec.Gcm.sealGatherSig, Spec.Gcm.sealGatherPre,
     X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     [gatherSat, X86.arg, X86.argAddr, Mem.readW, Mem.read] using gatherSat
 
-theorem gather_implies : gatherX86.Implies (Proof.AesGcm.sealGatherRoundsContract X86.abi 2688) :=
-  ⟨fun _ h => gatherPre_of_spec h, fun _ _ _ h => gatherPost_of h, fun _ _ _ _ h => gatherPub_of h, gatherSat_pre⟩
+theorem gather_implies {N : Nat} (hN : N = 768 ∨ N = 2560) :
+    (gatherX86 N).Implies (Proof.AesGcm.sealGatherRoundsContract X86.abi (N + 128)) :=
+  ⟨fun _ h => gatherPre_of_spec h, fun _ _ _ h => gatherPost_of h, fun _ _ _ _ h => gatherPub_of h, gatherSat_pre hN⟩
 
 end VG.Proof.AesGcm.X86.Gather

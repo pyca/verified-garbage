@@ -207,7 +207,9 @@ materialize_code sealStubS := withStackScratch 812 9 («seal» stub)
 materialize_code openStubS := withStackScratch 816 10 («open» stub)
 materialize_code openToStub := withStackScratch 2616 12 (Open.openTo stub stubFn)
 materialize_code sealGatherStub :=
-  VG.Impl.AesGcm.X86.DirectGather.sealGather stub
+  VG.Impl.AesGcm.X86.DirectGather.sealGather stub 2560
+materialize_code sealGatherStubS :=
+  VG.Impl.AesGcm.X86.DirectGather.sealGather stub 768
 
 theorem init_side : scrubFSide (withStackScratch 2580 3 (init stub)) [] 2612 = true := by lit_decide
 theorem streamInit_side : scrubFSide (withStackScratch 2584 4 (streamInit stub)) [] 2608 = true := by
@@ -229,7 +231,11 @@ theorem openS_side : scrubFSide (withStackScratch 816 10 («open» stub)) [] 848
 theorem openTo_side : scrubFSide (withStackScratch 2616 12 (Open.openTo stub stubFn)) [] 2696 = true := by
   lit_decide
 theorem sealGather_side :
-    scrubFSide (VG.Impl.AesGcm.X86.DirectGather.sealGather stub) [] 2688 = true := by
+    scrubFSide (VG.Impl.AesGcm.X86.DirectGather.sealGather stub 2560) [] 2688 = true := by
+  lit_decide
+
+theorem sealGatherS_side :
+    scrubFSide (VG.Impl.AesGcm.X86.DirectGather.sealGather stub 768) [] 896 = true := by
   lit_decide
 
 variable (v : GcmImpl)
@@ -299,9 +305,14 @@ theorem openTo_scrub :
   exact scrubFSide_of_fill (n := 0) (by fill_calls) openTo_side
 
 theorem sealGather_scrub :
-    scrubFSide (VG.Impl.AesGcm.X86.DirectGather.sealGather v.callees) [] 2688 = true := by
+    scrubFSide (VG.Impl.AesGcm.X86.DirectGather.sealGather v.callees 2560) [] 2688 = true := by
   obtain ⟨hc, hk, hg⟩ := holes v
   exact scrubFSide_of_fill (n := 0) (by fill_calls) sealGather_side
+
+theorem sealGatherS_scrub :
+    scrubFSide (VG.Impl.AesGcm.X86.DirectGather.sealGather v.callees 768) [] 896 = true := by
+  obtain ⟨hc, hk, hg⟩ := holes v
+  exact scrubFSide_of_fill (n := 0) (by fill_calls) sealGatherS_side
 
 /-! ## The functions as emitted -/
 
@@ -416,13 +427,24 @@ theorem openTo_scrubbed :
     (@openToOut _) (hs := openTo_scrub v)
 
 theorem sealGather_scrubbed :
-    VerifiedScrubbed target (Impl.AesGcm.X86.Fn.sealGather v.callees)
+    VerifiedScrubbed target (Impl.AesGcm.X86.Fn.sealGather v.callees 320)
       (Spec.Gcm.sealGatherContract X86.abi 2688) 0 :=
   verifiedScrubbedAll (api := Spec.Gcm.sealGatherApi)
-    { code := VG.Impl.AesGcm.X86.DirectGather.sealGather v.callees
-      verified := Proof.AesGcm.sealGather_keyed (DirectGather.sealGather_verified v)
-      spSafe := DirectGather.core_safe v }
+    { code := VG.Impl.AesGcm.X86.DirectGather.sealGather v.callees 2560
+      verified := Proof.AesGcm.sealGather_keyed (DirectGather.sealGather_verified (N := 2560) v (.inr rfl))
+      spSafe := DirectGather.core_safe v (.inr rfl) }
     (sealGatherOut _) (hs := sealGather_scrub v)
+
+/-- `vg_aes_gcm_seal_gather` with 768 bytes of working space, as `sealS_scrubbed`. -/
+theorem sealGatherS_scrubbed (h : v.ctr.scr ≤ 256) :
+    VerifiedScrubbed target (Impl.AesGcm.X86.Fn.sealGather v.callees 96)
+      (Spec.Gcm.sealGatherContract X86.abi 896) 0 :=
+  have := WSize.small h
+  verifiedScrubbedAll (api := Spec.Gcm.sealGatherApi)
+    { code := VG.Impl.AesGcm.X86.DirectGather.sealGather v.callees 768
+      verified := Proof.AesGcm.sealGather_keyed (DirectGather.sealGather_verified (N := 768) v (.inl rfl))
+      spSafe := DirectGather.core_safe v (.inl rfl) }
+    (sealGatherOut _) (hs := sealGatherS_scrub v)
 
 /-! ## `spSafe` of the functions as emitted, which their registrations state -/
 
@@ -457,7 +479,10 @@ theorem openTo_spSafeF :
     (Impl.AesGcm.X86.Fn.openTo v.callees (OpenTo.toFn v)).all (fun i => !isa.writesSp i) = true :=
   scrubAll_spSafe (OpenTo.openTo_spSafe v)
 theorem sealGather_spSafeF :
-    (Impl.AesGcm.X86.Fn.sealGather v.callees).all (fun i => !isa.writesSp i) = true :=
-  scrubAll_spSafe (DirectGather.core_safe v)
+    (Impl.AesGcm.X86.Fn.sealGather v.callees 320).all (fun i => !isa.writesSp i) = true :=
+  scrubAll_spSafe (DirectGather.core_safe v (.inr rfl))
+theorem sealGatherS_spSafeF :
+    (Impl.AesGcm.X86.Fn.sealGather v.callees 96).all (fun i => !isa.writesSp i) = true :=
+  scrubAll_spSafe (DirectGather.core_safe v (.inl rfl))
 
 end VG.Proof.AesGcm.X86.Scrub

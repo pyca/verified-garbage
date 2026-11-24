@@ -4342,28 +4342,28 @@ vg_aes_gcm_open_aesni_pclmul:
 	.p2align 6
 
 vg_aes_gcm_seal_gather_aesni_pclmul:
-	lea esp, [esp-2612]
-	mov eax, DWORD PTR [esp+2616]
+	lea esp, [esp-820]
+	mov eax, DWORD PTR [esp+824]
 	mov DWORD PTR [esp+4], eax
-	mov eax, DWORD PTR [esp+2620]
+	mov eax, DWORD PTR [esp+828]
 	mov DWORD PTR [esp+8], eax
-	mov eax, DWORD PTR [esp+2624]
+	mov eax, DWORD PTR [esp+832]
 	mov DWORD PTR [esp+12], eax
-	mov eax, DWORD PTR [esp+2628]
+	mov eax, DWORD PTR [esp+836]
 	mov DWORD PTR [esp+16], eax
-	mov eax, DWORD PTR [esp+2632]
+	mov eax, DWORD PTR [esp+840]
 	mov DWORD PTR [esp+20], eax
-	mov eax, DWORD PTR [esp+2636]
+	mov eax, DWORD PTR [esp+844]
 	mov DWORD PTR [esp+24], eax
-	mov eax, DWORD PTR [esp+2648]
+	mov eax, DWORD PTR [esp+856]
 	mov DWORD PTR [esp+28], eax
-	mov eax, DWORD PTR [esp+2652]
+	mov eax, DWORD PTR [esp+860]
 	mov DWORD PTR [esp+32], eax
-	mov eax, DWORD PTR [esp+2656]
+	mov eax, DWORD PTR [esp+864]
 	mov DWORD PTR [esp+36], eax
-	mov eax, DWORD PTR [esp+2640]
+	mov eax, DWORD PTR [esp+848]
 	mov DWORD PTR [esp+40], eax
-	mov eax, DWORD PTR [esp+2644]
+	mov eax, DWORD PTR [esp+852]
 	mov DWORD PTR [esp+44], eax
 	mov eax, esp
 	add eax, 52
@@ -5236,9 +5236,9 @@ vg_aes_gcm_seal_gather_aesni_pclmul:
 	mov esi, DWORD PTR [ebp+132]
 	mov edi, DWORD PTR [ebp+136]
 	mov ebp, DWORD PTR [ebp+140]
-	lea esp, [esp+2612]
+	lea esp, [esp+820]
 	pxor xmm0, xmm0
-	lea esp, [esp-2688]
+	lea esp, [esp-896]
 	movdqu XMMWORD PTR [esp], xmm0
 	movdqu XMMWORD PTR [esp+16], xmm0
 	movdqu XMMWORD PTR [esp+32], xmm0
@@ -5295,119 +5295,7 @@ vg_aes_gcm_seal_gather_aesni_pclmul:
 	movdqu XMMWORD PTR [esp+848], xmm0
 	movdqu XMMWORD PTR [esp+864], xmm0
 	movdqu XMMWORD PTR [esp+880], xmm0
-	movdqu XMMWORD PTR [esp+896], xmm0
-	movdqu XMMWORD PTR [esp+912], xmm0
-	movdqu XMMWORD PTR [esp+928], xmm0
-	movdqu XMMWORD PTR [esp+944], xmm0
-	movdqu XMMWORD PTR [esp+960], xmm0
-	movdqu XMMWORD PTR [esp+976], xmm0
-	movdqu XMMWORD PTR [esp+992], xmm0
-	movdqu XMMWORD PTR [esp+1008], xmm0
-	movdqu XMMWORD PTR [esp+1024], xmm0
-	movdqu XMMWORD PTR [esp+1040], xmm0
-	movdqu XMMWORD PTR [esp+1056], xmm0
-	movdqu XMMWORD PTR [esp+1072], xmm0
-	movdqu XMMWORD PTR [esp+1088], xmm0
-	movdqu XMMWORD PTR [esp+1104], xmm0
-	movdqu XMMWORD PTR [esp+1120], xmm0
-	movdqu XMMWORD PTR [esp+1136], xmm0
-	movdqu XMMWORD PTR [esp+1152], xmm0
-	movdqu XMMWORD PTR [esp+1168], xmm0
-	movdqu XMMWORD PTR [esp+1184], xmm0
-	movdqu XMMWORD PTR [esp+1200], xmm0
-	movdqu XMMWORD PTR [esp+1216], xmm0
-	movdqu XMMWORD PTR [esp+1232], xmm0
-	movdqu XMMWORD PTR [esp+1248], xmm0
-	movdqu XMMWORD PTR [esp+1264], xmm0
-	movdqu XMMWORD PTR [esp+1280], xmm0
-	movdqu XMMWORD PTR [esp+1296], xmm0
-	movdqu XMMWORD PTR [esp+1312], xmm0
-	movdqu XMMWORD PTR [esp+1328], xmm0
-	movdqu XMMWORD PTR [esp+1344], xmm0
-	movdqu XMMWORD PTR [esp+1360], xmm0
-	movdqu XMMWORD PTR [esp+1376], xmm0
-	movdqu XMMWORD PTR [esp+1392], xmm0
-	movdqu XMMWORD PTR [esp+1408], xmm0
-	movdqu XMMWORD PTR [esp+1424], xmm0
-	movdqu XMMWORD PTR [esp+1440], xmm0
-	movdqu XMMWORD PTR [esp+1456], xmm0
-	movdqu XMMWORD PTR [esp+1472], xmm0
-	movdqu XMMWORD PTR [esp+1488], xmm0
-	movdqu XMMWORD PTR [esp+1504], xmm0
-	movdqu XMMWORD PTR [esp+1520], xmm0
-	movdqu XMMWORD PTR [esp+1536], xmm0
-	movdqu XMMWORD PTR [esp+1552], xmm0
-	movdqu XMMWORD PTR [esp+1568], xmm0
-	movdqu XMMWORD PTR [esp+1584], xmm0
-	movdqu XMMWORD PTR [esp+1600], xmm0
-	movdqu XMMWORD PTR [esp+1616], xmm0
-	movdqu XMMWORD PTR [esp+1632], xmm0
-	movdqu XMMWORD PTR [esp+1648], xmm0
-	movdqu XMMWORD PTR [esp+1664], xmm0
-	movdqu XMMWORD PTR [esp+1680], xmm0
-	movdqu XMMWORD PTR [esp+1696], xmm0
-	movdqu XMMWORD PTR [esp+1712], xmm0
-	movdqu XMMWORD PTR [esp+1728], xmm0
-	movdqu XMMWORD PTR [esp+1744], xmm0
-	movdqu XMMWORD PTR [esp+1760], xmm0
-	movdqu XMMWORD PTR [esp+1776], xmm0
-	movdqu XMMWORD PTR [esp+1792], xmm0
-	movdqu XMMWORD PTR [esp+1808], xmm0
-	movdqu XMMWORD PTR [esp+1824], xmm0
-	movdqu XMMWORD PTR [esp+1840], xmm0
-	movdqu XMMWORD PTR [esp+1856], xmm0
-	movdqu XMMWORD PTR [esp+1872], xmm0
-	movdqu XMMWORD PTR [esp+1888], xmm0
-	movdqu XMMWORD PTR [esp+1904], xmm0
-	movdqu XMMWORD PTR [esp+1920], xmm0
-	movdqu XMMWORD PTR [esp+1936], xmm0
-	movdqu XMMWORD PTR [esp+1952], xmm0
-	movdqu XMMWORD PTR [esp+1968], xmm0
-	movdqu XMMWORD PTR [esp+1984], xmm0
-	movdqu XMMWORD PTR [esp+2000], xmm0
-	movdqu XMMWORD PTR [esp+2016], xmm0
-	movdqu XMMWORD PTR [esp+2032], xmm0
-	movdqu XMMWORD PTR [esp+2048], xmm0
-	movdqu XMMWORD PTR [esp+2064], xmm0
-	movdqu XMMWORD PTR [esp+2080], xmm0
-	movdqu XMMWORD PTR [esp+2096], xmm0
-	movdqu XMMWORD PTR [esp+2112], xmm0
-	movdqu XMMWORD PTR [esp+2128], xmm0
-	movdqu XMMWORD PTR [esp+2144], xmm0
-	movdqu XMMWORD PTR [esp+2160], xmm0
-	movdqu XMMWORD PTR [esp+2176], xmm0
-	movdqu XMMWORD PTR [esp+2192], xmm0
-	movdqu XMMWORD PTR [esp+2208], xmm0
-	movdqu XMMWORD PTR [esp+2224], xmm0
-	movdqu XMMWORD PTR [esp+2240], xmm0
-	movdqu XMMWORD PTR [esp+2256], xmm0
-	movdqu XMMWORD PTR [esp+2272], xmm0
-	movdqu XMMWORD PTR [esp+2288], xmm0
-	movdqu XMMWORD PTR [esp+2304], xmm0
-	movdqu XMMWORD PTR [esp+2320], xmm0
-	movdqu XMMWORD PTR [esp+2336], xmm0
-	movdqu XMMWORD PTR [esp+2352], xmm0
-	movdqu XMMWORD PTR [esp+2368], xmm0
-	movdqu XMMWORD PTR [esp+2384], xmm0
-	movdqu XMMWORD PTR [esp+2400], xmm0
-	movdqu XMMWORD PTR [esp+2416], xmm0
-	movdqu XMMWORD PTR [esp+2432], xmm0
-	movdqu XMMWORD PTR [esp+2448], xmm0
-	movdqu XMMWORD PTR [esp+2464], xmm0
-	movdqu XMMWORD PTR [esp+2480], xmm0
-	movdqu XMMWORD PTR [esp+2496], xmm0
-	movdqu XMMWORD PTR [esp+2512], xmm0
-	movdqu XMMWORD PTR [esp+2528], xmm0
-	movdqu XMMWORD PTR [esp+2544], xmm0
-	movdqu XMMWORD PTR [esp+2560], xmm0
-	movdqu XMMWORD PTR [esp+2576], xmm0
-	movdqu XMMWORD PTR [esp+2592], xmm0
-	movdqu XMMWORD PTR [esp+2608], xmm0
-	movdqu XMMWORD PTR [esp+2624], xmm0
-	movdqu XMMWORD PTR [esp+2640], xmm0
-	movdqu XMMWORD PTR [esp+2656], xmm0
-	movdqu XMMWORD PTR [esp+2672], xmm0
-	lea esp, [esp+2688]
+	lea esp, [esp+896]
 	mov eax, 0
 	mov edx, 0
 	xor ecx, ecx
@@ -10370,28 +10258,28 @@ vg_aes_gcm_open_aesni:
 	.p2align 6
 
 vg_aes_gcm_seal_gather_aesni:
-	lea esp, [esp-2612]
-	mov eax, DWORD PTR [esp+2616]
+	lea esp, [esp-820]
+	mov eax, DWORD PTR [esp+824]
 	mov DWORD PTR [esp+4], eax
-	mov eax, DWORD PTR [esp+2620]
+	mov eax, DWORD PTR [esp+828]
 	mov DWORD PTR [esp+8], eax
-	mov eax, DWORD PTR [esp+2624]
+	mov eax, DWORD PTR [esp+832]
 	mov DWORD PTR [esp+12], eax
-	mov eax, DWORD PTR [esp+2628]
+	mov eax, DWORD PTR [esp+836]
 	mov DWORD PTR [esp+16], eax
-	mov eax, DWORD PTR [esp+2632]
+	mov eax, DWORD PTR [esp+840]
 	mov DWORD PTR [esp+20], eax
-	mov eax, DWORD PTR [esp+2636]
+	mov eax, DWORD PTR [esp+844]
 	mov DWORD PTR [esp+24], eax
-	mov eax, DWORD PTR [esp+2648]
+	mov eax, DWORD PTR [esp+856]
 	mov DWORD PTR [esp+28], eax
-	mov eax, DWORD PTR [esp+2652]
+	mov eax, DWORD PTR [esp+860]
 	mov DWORD PTR [esp+32], eax
-	mov eax, DWORD PTR [esp+2656]
+	mov eax, DWORD PTR [esp+864]
 	mov DWORD PTR [esp+36], eax
-	mov eax, DWORD PTR [esp+2640]
+	mov eax, DWORD PTR [esp+848]
 	mov DWORD PTR [esp+40], eax
-	mov eax, DWORD PTR [esp+2644]
+	mov eax, DWORD PTR [esp+852]
 	mov DWORD PTR [esp+44], eax
 	mov eax, esp
 	add eax, 52
@@ -11264,9 +11152,9 @@ vg_aes_gcm_seal_gather_aesni:
 	mov esi, DWORD PTR [ebp+132]
 	mov edi, DWORD PTR [ebp+136]
 	mov ebp, DWORD PTR [ebp+140]
-	lea esp, [esp+2612]
+	lea esp, [esp+820]
 	pxor xmm0, xmm0
-	lea esp, [esp-2688]
+	lea esp, [esp-896]
 	movdqu XMMWORD PTR [esp], xmm0
 	movdqu XMMWORD PTR [esp+16], xmm0
 	movdqu XMMWORD PTR [esp+32], xmm0
@@ -11323,119 +11211,7 @@ vg_aes_gcm_seal_gather_aesni:
 	movdqu XMMWORD PTR [esp+848], xmm0
 	movdqu XMMWORD PTR [esp+864], xmm0
 	movdqu XMMWORD PTR [esp+880], xmm0
-	movdqu XMMWORD PTR [esp+896], xmm0
-	movdqu XMMWORD PTR [esp+912], xmm0
-	movdqu XMMWORD PTR [esp+928], xmm0
-	movdqu XMMWORD PTR [esp+944], xmm0
-	movdqu XMMWORD PTR [esp+960], xmm0
-	movdqu XMMWORD PTR [esp+976], xmm0
-	movdqu XMMWORD PTR [esp+992], xmm0
-	movdqu XMMWORD PTR [esp+1008], xmm0
-	movdqu XMMWORD PTR [esp+1024], xmm0
-	movdqu XMMWORD PTR [esp+1040], xmm0
-	movdqu XMMWORD PTR [esp+1056], xmm0
-	movdqu XMMWORD PTR [esp+1072], xmm0
-	movdqu XMMWORD PTR [esp+1088], xmm0
-	movdqu XMMWORD PTR [esp+1104], xmm0
-	movdqu XMMWORD PTR [esp+1120], xmm0
-	movdqu XMMWORD PTR [esp+1136], xmm0
-	movdqu XMMWORD PTR [esp+1152], xmm0
-	movdqu XMMWORD PTR [esp+1168], xmm0
-	movdqu XMMWORD PTR [esp+1184], xmm0
-	movdqu XMMWORD PTR [esp+1200], xmm0
-	movdqu XMMWORD PTR [esp+1216], xmm0
-	movdqu XMMWORD PTR [esp+1232], xmm0
-	movdqu XMMWORD PTR [esp+1248], xmm0
-	movdqu XMMWORD PTR [esp+1264], xmm0
-	movdqu XMMWORD PTR [esp+1280], xmm0
-	movdqu XMMWORD PTR [esp+1296], xmm0
-	movdqu XMMWORD PTR [esp+1312], xmm0
-	movdqu XMMWORD PTR [esp+1328], xmm0
-	movdqu XMMWORD PTR [esp+1344], xmm0
-	movdqu XMMWORD PTR [esp+1360], xmm0
-	movdqu XMMWORD PTR [esp+1376], xmm0
-	movdqu XMMWORD PTR [esp+1392], xmm0
-	movdqu XMMWORD PTR [esp+1408], xmm0
-	movdqu XMMWORD PTR [esp+1424], xmm0
-	movdqu XMMWORD PTR [esp+1440], xmm0
-	movdqu XMMWORD PTR [esp+1456], xmm0
-	movdqu XMMWORD PTR [esp+1472], xmm0
-	movdqu XMMWORD PTR [esp+1488], xmm0
-	movdqu XMMWORD PTR [esp+1504], xmm0
-	movdqu XMMWORD PTR [esp+1520], xmm0
-	movdqu XMMWORD PTR [esp+1536], xmm0
-	movdqu XMMWORD PTR [esp+1552], xmm0
-	movdqu XMMWORD PTR [esp+1568], xmm0
-	movdqu XMMWORD PTR [esp+1584], xmm0
-	movdqu XMMWORD PTR [esp+1600], xmm0
-	movdqu XMMWORD PTR [esp+1616], xmm0
-	movdqu XMMWORD PTR [esp+1632], xmm0
-	movdqu XMMWORD PTR [esp+1648], xmm0
-	movdqu XMMWORD PTR [esp+1664], xmm0
-	movdqu XMMWORD PTR [esp+1680], xmm0
-	movdqu XMMWORD PTR [esp+1696], xmm0
-	movdqu XMMWORD PTR [esp+1712], xmm0
-	movdqu XMMWORD PTR [esp+1728], xmm0
-	movdqu XMMWORD PTR [esp+1744], xmm0
-	movdqu XMMWORD PTR [esp+1760], xmm0
-	movdqu XMMWORD PTR [esp+1776], xmm0
-	movdqu XMMWORD PTR [esp+1792], xmm0
-	movdqu XMMWORD PTR [esp+1808], xmm0
-	movdqu XMMWORD PTR [esp+1824], xmm0
-	movdqu XMMWORD PTR [esp+1840], xmm0
-	movdqu XMMWORD PTR [esp+1856], xmm0
-	movdqu XMMWORD PTR [esp+1872], xmm0
-	movdqu XMMWORD PTR [esp+1888], xmm0
-	movdqu XMMWORD PTR [esp+1904], xmm0
-	movdqu XMMWORD PTR [esp+1920], xmm0
-	movdqu XMMWORD PTR [esp+1936], xmm0
-	movdqu XMMWORD PTR [esp+1952], xmm0
-	movdqu XMMWORD PTR [esp+1968], xmm0
-	movdqu XMMWORD PTR [esp+1984], xmm0
-	movdqu XMMWORD PTR [esp+2000], xmm0
-	movdqu XMMWORD PTR [esp+2016], xmm0
-	movdqu XMMWORD PTR [esp+2032], xmm0
-	movdqu XMMWORD PTR [esp+2048], xmm0
-	movdqu XMMWORD PTR [esp+2064], xmm0
-	movdqu XMMWORD PTR [esp+2080], xmm0
-	movdqu XMMWORD PTR [esp+2096], xmm0
-	movdqu XMMWORD PTR [esp+2112], xmm0
-	movdqu XMMWORD PTR [esp+2128], xmm0
-	movdqu XMMWORD PTR [esp+2144], xmm0
-	movdqu XMMWORD PTR [esp+2160], xmm0
-	movdqu XMMWORD PTR [esp+2176], xmm0
-	movdqu XMMWORD PTR [esp+2192], xmm0
-	movdqu XMMWORD PTR [esp+2208], xmm0
-	movdqu XMMWORD PTR [esp+2224], xmm0
-	movdqu XMMWORD PTR [esp+2240], xmm0
-	movdqu XMMWORD PTR [esp+2256], xmm0
-	movdqu XMMWORD PTR [esp+2272], xmm0
-	movdqu XMMWORD PTR [esp+2288], xmm0
-	movdqu XMMWORD PTR [esp+2304], xmm0
-	movdqu XMMWORD PTR [esp+2320], xmm0
-	movdqu XMMWORD PTR [esp+2336], xmm0
-	movdqu XMMWORD PTR [esp+2352], xmm0
-	movdqu XMMWORD PTR [esp+2368], xmm0
-	movdqu XMMWORD PTR [esp+2384], xmm0
-	movdqu XMMWORD PTR [esp+2400], xmm0
-	movdqu XMMWORD PTR [esp+2416], xmm0
-	movdqu XMMWORD PTR [esp+2432], xmm0
-	movdqu XMMWORD PTR [esp+2448], xmm0
-	movdqu XMMWORD PTR [esp+2464], xmm0
-	movdqu XMMWORD PTR [esp+2480], xmm0
-	movdqu XMMWORD PTR [esp+2496], xmm0
-	movdqu XMMWORD PTR [esp+2512], xmm0
-	movdqu XMMWORD PTR [esp+2528], xmm0
-	movdqu XMMWORD PTR [esp+2544], xmm0
-	movdqu XMMWORD PTR [esp+2560], xmm0
-	movdqu XMMWORD PTR [esp+2576], xmm0
-	movdqu XMMWORD PTR [esp+2592], xmm0
-	movdqu XMMWORD PTR [esp+2608], xmm0
-	movdqu XMMWORD PTR [esp+2624], xmm0
-	movdqu XMMWORD PTR [esp+2640], xmm0
-	movdqu XMMWORD PTR [esp+2656], xmm0
-	movdqu XMMWORD PTR [esp+2672], xmm0
-	lea esp, [esp+2688]
+	lea esp, [esp+896]
 	mov eax, 0
 	mov edx, 0
 	xor ecx, ecx
