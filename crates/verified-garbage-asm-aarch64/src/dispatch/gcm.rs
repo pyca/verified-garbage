@@ -784,12 +784,19 @@ pub unsafe fn vg_aes_gcm_store_powers_auto(_dit: verified_garbage_cpu::Dit<'_>, 
 
 #[inline]
 pub unsafe fn bench_cached_gather_auto(_dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16], pw: *const [u64; 16]) {
-    /// The type of the implementations.
-    type Impl = unsafe extern "C" fn(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16], pw: *const [u64; 16]);
+    let f = unsafe {core::mem::transmute::<*mut (), BenchImpl>(BENCH_SELECTED.load(core::sync::atomic::Ordering::Relaxed))};
+    unsafe {f(ctx, rounds, nonce, nonce_len, aad, aad_len, src, src_count, dst, len, tag, pw)}
+}
+type BenchImpl = unsafe extern "C" fn(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16], pw: *const [u64; 16]);
+
+static BENCH_SELECTED: core::sync::atomic::AtomicPtr<()> = core::sync::atomic::AtomicPtr::new(crate::gcm::bench_old_gather as *mut ());
+
+/// Set the public benchmark caller's target outside the timed loop.
+pub fn bench_select_gather(cached: bool) {
     /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
     /// features the CPU has.
     #[cold]
-    fn select() -> Impl {
+    fn cached_target() -> BenchImpl {
         let cpu = verified_garbage_cpu::detected();
         if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_SEAL_GATHER_AES_SHA3_FEATURES) }
             || cpu.contains(crate::gcm::VG_AES_GCM_SEAL_GATHER_AES_SHA3_FEATURES)
@@ -808,21 +815,30 @@ pub unsafe fn bench_cached_gather_auto(_dit: verified_garbage_cpu::Dit<'_>, ctx:
         }
         crate::gcm::bench_cached_gather
     }
-    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
-    /// after it, and runs it.
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
     #[cold]
-    unsafe extern "C" fn first(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16], pw: *const [u64; 16]) {
-        let f = select();
-        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
-        // SAFETY: the caller's obligations, which are those of every implementation, `f`
-        // among them, and the CPU has the features `f` needs.
-        unsafe { f(ctx, rounds, nonce, nonce_len, aad, aad_len, src, src_count, dst, len, tag, pw) }
+    fn original_target() -> BenchImpl {
+        let cpu = verified_garbage_cpu::detected();
+        if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_SEAL_GATHER_AES_SHA3_FEATURES) }
+            || cpu.contains(crate::gcm::VG_AES_GCM_SEAL_GATHER_AES_SHA3_FEATURES)
+        {
+            return crate::gcm::bench_old_gather_aes_sha3;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_SEAL_GATHER_AES_FEATURES) }
+            || cpu.contains(crate::gcm::VG_AES_GCM_SEAL_GATHER_AES_FEATURES)
+        {
+            return crate::gcm::bench_old_gather_aes;
+        }
+        if const { verified_garbage_cpu::COMPILED.0 != 0 }
+            || cpu.0 != 0
+        {
+            return crate::gcm::bench_old_gather_neon;
+        }
+        crate::gcm::bench_old_gather
     }
-    /// The function to call: `first`, until it records the implementation it chose.
-    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
-        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
-    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
-    // or an implementation `select` returned, which needs only features the CPU has. Calling
-    // either carries the caller's obligations, which are those of every implementation.
-    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(ctx, rounds, nonce, nonce_len, aad, aad_len, src, src_count, dst, len, tag, pw) }
+
+    let f = if cached {cached_target()} else {original_target()};
+    BENCH_SELECTED.store(f as *mut (),core::sync::atomic::Ordering::Relaxed);
 }
+

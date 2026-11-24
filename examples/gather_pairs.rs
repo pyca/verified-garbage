@@ -4,15 +4,15 @@ use verified_garbage::aead::aes_gcm::AesGcm;
 #[repr(align(64))]
 struct Buffer([u8;32768]);
 #[inline(never)]
-fn sample<const CACHED:bool>(k:&AesGcm,nonce:&[u8],aad:&[u8],pieces:&[&[u8]],dst:&mut[u8],count:usize)->f64{
+fn sample(k:&AesGcm,nonce:&[u8],aad:&[u8],pieces:&[&[u8]],dst:&mut[u8],count:usize)->f64{
     let t=Instant::now();
     for _ in 0..count {
-        let tag=if CACHED{k.bench_cached_encrypt(black_box(nonce),black_box(aad),black_box(pieces),black_box(&mut *dst))}
-          else {k.encrypt(black_box(nonce),black_box(aad),black_box(pieces),black_box(&mut *dst))}.unwrap();black_box(tag);
+        let tag=k.encrypt(black_box(nonce),black_box(aad),black_box(pieces),black_box(&mut *dst)).unwrap();black_box(tag);
     }
     t.elapsed().as_nanos() as f64/count as f64
 }
 fn main(){
+    let aa=std::env::var_os("AA").is_some();
     let quick=std::env::var_os("CHECK_ONLY").is_some();
     let aad=[23,3,3,0,32];let nonce=[19u8;12];let mut input=Box::new(Buffer([0;32768]));
     for (i,x) in input.0.iter_mut().enumerate(){*x=(i*29+11) as u8;}
@@ -20,7 +20,7 @@ fn main(){
     let sizes=[1usize,16,17,64,96,97,128,224,225,511,768,769,1024,1536,4096,8192,16384];
     let mut cases=vec![];
     for bits in [128usize,192,256] {for &n in &sizes {for mode in 0..4 {
-        if n<511 && mode>=2 {continue} if n==1&&mode==0 {continue}
+        if n<511 && mode>=2 {continue} 
         cases.push((bits,n,mode));
     }}}
     let mut seed=12387456u64;
@@ -35,15 +35,17 @@ fn main(){
         let pieces=&parts[..count];let mut expected=p.to_vec();let want=key.encrypt_in_place(&nonce,&aad,&mut expected).unwrap();
         for cached in [false,true] {
             let out=&mut dst.0[13..13+n];out.fill(0x39);
-            let tag=if cached {key.bench_cached_encrypt(&nonce,&aad,pieces,out)} else {key.encrypt(&nonce,&aad,pieces,out)}.unwrap();
+            AesGcm::bench_select_gather(cached);let tag=key.encrypt(&nonce,&aad,pieces,out).unwrap();
             assert_eq!(out,expected);assert_eq!(tag,want);
         }
         if quick{continue}
-        let out=&mut dst.0[13..13+n];let ns=sample::<false>(&key,&nonce,&aad,pieces,out,64).max(10.);
+        let out=&mut dst.0[13..13+n];let ns=sample(&key,&nonce,&aad,pieces,out,64).max(10.);
         let reps=(300_000./ns).ceil() as usize;
         for i in 0..16 {let order=(i+mode)%2==0;
-            let a=if order{sample::<false>(&key,&nonce,&aad,pieces,out,reps)}else{sample::<true>(&key,&nonce,&aad,pieces,out,reps)};
-            let b=if order{sample::<true>(&key,&nonce,&aad,pieces,out,reps)}else{sample::<false>(&key,&nonce,&aad,pieces,out,reps)};
+            AesGcm::bench_select_gather(!order && !aa);
+            let a=sample(&key,&nonce,&aad,pieces,out,reps);
+            AesGcm::bench_select_gather(order && !aa);
+            let b=sample(&key,&nonce,&aad,pieces,out,reps);
             println!("{bits},{n},{mode},{i},{:.4},{:.4}",if order{a}else{b},if order{b}else{a});
         }
     }

@@ -54,7 +54,7 @@ use crate::arch::dispatch::gcm::vg_aes_gcm_open_to_auto;
     target_arch = "riscv64"
 )))]
 use crate::arch::dispatch::gcm::vg_aes_gcm_seal_auto;
-#[cfg(not(any(target_arch = "x86_64", target_arch = "riscv64")))]
+#[cfg(not(any(target_arch = "x86_64", target_arch = "riscv64",target_arch="aarch64")))]
 use crate::arch::dispatch::gcm::vg_aes_gcm_seal_gather_auto;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::dispatch::gcm::{
@@ -840,7 +840,23 @@ impl AesGcm {
                 &mut tag,
                 &self.bk.0,
             );
-            #[cfg(not(any(target_arch = "x86_64", target_arch = "riscv64")))]
+            #[cfg(target_arch = "aarch64")]
+            crate::arch::dispatch::gcm::bench_cached_gather_auto(
+                dit,
+                self.key(),
+                self.rounds,
+                nonce.as_ptr(),
+                nonce.len(),
+                aad.as_ptr(),
+                aad.len(),
+                src,
+                plaintext.len(),
+                dst,
+                len,
+                &mut tag,
+                &self.powers.0,
+            );
+            #[cfg(not(any(target_arch = "x86_64", target_arch = "riscv64", target_arch = "aarch64")))]
             vg_aes_gcm_seal_gather_auto(
                 dit,
                 self.key(),
@@ -1803,132 +1819,6 @@ mod tests {
 
 #[cfg(target_arch="aarch64")]
 impl AesGcm {
-    /// Benchmark gathering with the prepared GHASH powers.
-    pub fn bench_cached_encrypt(
-        &self,
-        nonce: &[u8],
-        aad: &[u8],
-        plaintext: &[&[u8]],
-        out: &mut [u8],
-    ) -> Result<Block, Error> {
-        // SAFETY: MaybeUninit<u8> has the layout of u8. encrypt_uninit
-        // writes only initialized bytes and leaves the slice alone on error.
-        let dst = unsafe { core::slice::from_raw_parts_mut(out.as_mut_ptr().cast(), out.len()) };
-        self.bench_cached_encrypt_uninit(nonce, aad, plaintext, dst)
-            .map(|(_, tag)| tag)
-    }
-
-    fn bench_cached_encrypt_uninit<'out>(
-        &self,
-        nonce: &[u8],
-        aad: &[u8],
-        plaintext: &[&[u8]],
-        out: &'out mut [MaybeUninit<u8>],
-    ) -> Result<(&'out mut [u8], Block), Error> {
-        crate::dit::enter!(dit);
-        if plaintext.len() > Self::MAX_PIECES {
-            return Err(Error::TooManyPieces);
-        }
-        check_nonce(nonce)?;
-        let mut len = 0;
-        for p in plaintext {
-            len = add_len(len, p.len(), MAX_TEXT).map_err(|()| Error::InvalidTextLength)?;
-        }
-        if len != out.len() as u64 {
-            return Err(Error::InvalidOutputLength);
-        }
-        add_len(0, aad.len(), MAX_AAD).map_err(|()| Error::InvalidAadLength)?;
-        let tag = self.bench_cached_seal_pieces(dit, nonce, aad, plaintext, out);
-        // SAFETY: the gather contract specifies every byte of the ciphertext
-        // for arbitrary prior destination contents, including an empty output.
-        Ok((unsafe { out.assume_init_mut() }, tag))
-    }
-
-    fn bench_cached_seal_pieces(
-        &self,
-        dit: crate::dit::Dit<'_>,
-        nonce: &[u8],
-        aad: &[u8],
-        plaintext: &[&[u8]],
-        out: &mut [MaybeUninit<u8>],
-    ) -> Block {
-        let dst = out.as_mut_ptr().cast();
-        let len = out.len();
-        #[cfg(target_arch = "aarch64")]
-        if len <= 96
-            && nonce.len() == 12
-            && aad.len() <= 16
-            && let [input] = plaintext
-        {
-            // SAFETY: the validated single input and exclusive output are disjoint and have equal lengths.
-            return unsafe { self.seal_contiguous(dit, nonce, aad, input.as_ptr(), dst, len) };
-        }
-        // The descriptors of the pieces, as `vg_aes_gcm_seal_gather` takes
-        // them: each its address and its length. Only the first
-        // `plaintext.len()` are written, and the function reads only those.
-        let mut descs = [const { MaybeUninit::<[usize; 2]>::uninit() }; Self::MAX_PIECES];
-        for (d, p) in descs.iter_mut().zip(plaintext) {
-            d.write([p.as_ptr() as usize, p.len()]);
-        }
-        let src: *const [usize; 2] = descs.as_ptr().cast();
-        let mut tag: Block = [0; 16];
-        // SAFETY: as in `seal`, with `dst` writable for
-        // `len` bytes; `src` points to `plaintext.len()` initialized
-        // descriptors (in `descs`, a local), each the address and the length
-        // of a piece valid for reads, which are `len` bytes in all.
-        // The pieces and the descriptors are read only, and overlap neither
-        // the exclusive destination nor `tag`, nor anything on the stack the
-        // function uses.
-        unsafe {
-            #[cfg(target_arch = "x86_64")]
-            vg_aes_gcm_seal_gather_prepared_auto(
-                dit,
-                self.ctx.0.as_ptr(),
-                self.rounds,
-                nonce.as_ptr(),
-                nonce.len(),
-                aad.as_ptr(),
-                aad.len(),
-                src,
-                plaintext.len(),
-                dst,
-                len,
-                &mut tag,
-            );
-            #[cfg(target_arch = "riscv64")]
-            vg_aes_gcm_seal_gather_bitsliced_auto(
-                dit,
-                self.key(),
-                self.rounds,
-                nonce.as_ptr(),
-                nonce.len(),
-                aad.as_ptr(),
-                aad.len(),
-                src,
-                plaintext.len(),
-                dst,
-                len,
-                &mut tag,
-                &self.bk.0,
-            );
-            #[cfg(not(any(target_arch = "x86_64", target_arch = "riscv64")))]
-            crate::arch::dispatch::gcm::bench_cached_gather_auto(
-                dit,
-                self.key(),
-                self.rounds,
-                nonce.as_ptr(),
-                nonce.len(),
-                aad.as_ptr(),
-                aad.len(),
-                src,
-                plaintext.len(),
-                dst,
-                len,
-                &mut tag,
-                &self.powers.0,
-            );
-        }
-        tag
-    }
-
+    /// Set the paired gather implementation for a benchmark sample.
+    pub fn bench_select_gather(cached: bool) { crate::arch::dispatch::gcm::bench_select_gather(cached) }
 }
