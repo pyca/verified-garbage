@@ -12293,7 +12293,7 @@ vg_aes_gcm_seal_gather_prepared_vaes_vpclmul_avx512:
 	add rdx, 15
 	shr rdx, 4
 	add rcx, rdx
-	cmp rcx, 24
+	cmp rcx, 28
 	jae 240f
 	mov rdx, QWORD PTR [r15+208]
 	mov rcx, rdx
@@ -12776,7 +12776,7 @@ vg_aes_gcm_seal_gather_prepared_vaes_vpclmul_avx512:
 	add rdx, 15
 	shr rdx, 4
 	add rcx, rdx
-	cmp rcx, 24
+	cmp rcx, 28
 	jae 286f
 	mov rdx, QWORD PTR [r15+208]
 	mov rcx, rdx
