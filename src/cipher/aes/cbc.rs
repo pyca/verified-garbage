@@ -174,3 +174,64 @@ impl Drop for Key {
         zeroize(&mut self.schedule.0);
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::{AesCbcDecryptor, AesCbcEncryptor};
+
+    /// The longest message: more than two groups of the blocks an
+    /// implementation may take at a time.
+    const MAX: usize = 16 * 129;
+
+    /// The parallel block groups and their tails preserve streaming
+    /// behavior, including unaligned buffers and empty calls at each split.
+    #[test]
+    fn block_batches_and_continuation() {
+        let iv = [0x3c; 16];
+        let key: [u8; 32] = core::array::from_fn(|i| (17 * i + 3) as u8);
+        let plain: [u8; MAX] = core::array::from_fn(|i| (73 * i + 5) as u8);
+        for key in [&key[..16], &key[..24], &key[..]] {
+            for blocks in [
+                0usize, 1, 7, 8, 9, 15, 16, 17, 31, 32, 33, 63, 64, 65, 127, 128, 129,
+            ] {
+                let len = 16 * blocks;
+                let mut ciphertext = plain;
+                AesCbcEncryptor::new(key, &iv)
+                    .unwrap()
+                    .encrypt(&mut ciphertext[..len])
+                    .unwrap();
+                for split in [
+                    0,
+                    blocks.min(1),
+                    blocks / 2,
+                    blocks.saturating_sub(1),
+                    blocks,
+                ] {
+                    for encrypt in [true, false] {
+                        let (input, expected) = if encrypt {
+                            (&plain, &ciphertext)
+                        } else {
+                            (&ciphertext, &plain)
+                        };
+                        let mut guarded = [0xa5; MAX + 2];
+                        guarded[1..=len].copy_from_slice(&input[..len]);
+                        let mut encryptor = AesCbcEncryptor::new(key, &iv).unwrap();
+                        let mut decryptor = AesCbcDecryptor::new(key, &iv).unwrap();
+                        let mut rest = &mut guarded[1..=len];
+                        for piece in [0, 16 * split, 0, len - 16 * split] {
+                            let (first, tail) = rest.split_at_mut(piece);
+                            if encrypt {
+                                encryptor.encrypt(first).unwrap();
+                            } else {
+                                decryptor.decrypt(first).unwrap();
+                            }
+                            rest = tail;
+                        }
+                        assert_eq!(guarded[1..=len], expected[..len]);
+                        assert_eq!((guarded[0], guarded[len + 1]), (0xa5, 0xa5));
+                    }
+                }
+            }
+        }
+    }
+}

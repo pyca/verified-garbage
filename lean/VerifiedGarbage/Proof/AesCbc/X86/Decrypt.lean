@@ -889,9 +889,8 @@ theorem ct : ConstantTime isa (cbcX86 false).pre (cbcX86 false).pub decrypt :=
 
 /-! ## The contract -/
 
-/-- `decrypt` meets the contract the CBC code around a block function meets
-(`decryptZ_verified`): it needs none of the 24 bytes below `esp` that
-contract reserves. -/
+/-- `decrypt` meets the contract with the 24 bytes of stack of a call of a
+block function, none of which it needs. -/
 theorem verified : Verified X86.target decrypt (Proof.AesCbc.decryptRoundsContract X86.abi 24) :=
   Verified.of_correct correct ct dec_implies
 

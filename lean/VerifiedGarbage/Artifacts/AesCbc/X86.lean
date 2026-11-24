@@ -24,6 +24,7 @@ def artifacts : List Artifact :=
     Spec.Cbc.aesDecryptApi.artifact X86.target {
       suffix := v.suffix
       code := Impl.AesCbc.X86.Fn.decrypt (Proof.AesCbc.X86.Wiped.decryptCode v) v.suffix (Proof.AesCbc.X86.Wiped.decWritten v)
+        (Proof.AesCbc.X86.Wiped.decStack v)
       verified := Proof.AesCbc.X86.Scrub.decrypt_scrubbed v
       spSafe := Proof.AesCbc.X86.Scrub.decrypt_fnSpSafe v }]
 

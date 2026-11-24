@@ -179,22 +179,10 @@ theorem encPre_taint : ∃ h, (taint.check (argTaint [.esi] (4 + 4 * 6)) (.block
 theorem encPost_taint : ∃ h, (taint.check (argTaint [.esi] (4 + 4 * 6)) (.block encPost) h).isSome = true :=
   ⟨_, by taint_decide⟩
 
-theorem decPre_taint : ∃ h, (taint.check (argTaint [.esi] (4 + 4 * 6)) (.block decPre) h).isSome = true :=
-  ⟨_, by taint_decide⟩
-
-theorem decPost_taint : ∃ h, (taint.check (argTaint [.esi] (4 + 4 * 6)) (.block decPost) h).isSome = true :=
-  ⟨_, by taint_decide⟩
-
 theorem encBody_ct (v : BlocksImpl) : BodyCt (cbcMode true) (encBody v.enc) :=
   fun hp hp' hq k => body_ct (fun hq k => pub_D32 hq k) v.encOk v.encCt v.encNosp v.encStack encPre_taint encPost_taint
     (@fun _ hp _ hk _ h => WP.mono (encA_wp hp hk h) fun _ a => Mid.of hp hk h a
       ((Proof.Cmac.xor4Mem_frame _ _ _ _).sub fun r hr => by
-        simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, by simp, fun _ h => h⟩)) hp hp' hq k
-
-theorem decBody_ct (v : BlocksImpl) : BodyCt (cbcMode false) (decBody v.dec) :=
-  fun hp hp' hq k => body_ct (fun hq k => pub_D32 hq k) v.decOk v.decCt v.decNosp v.decStack decPre_taint decPost_taint
-    (@fun _ hp _ hk _ h => WP.mono (decA_wp hp hk h) fun _ a => Mid.of hp hk h a
-      ((copy4Mem_frame _ _ _).sub fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, by simp, fun _ h => h⟩)) hp hp' hq k
 
 /-! ## The loop -/

@@ -49,7 +49,7 @@ iv, data, len, scratch, save)`: AES-CFB's final functions' (`finalX86`),
 with the data and the block at `iv` as `Spec.Ofb.CryptFinal` says, by AES
 with the key schedule it is given. -/
 def ofbFinalX86 : Contract isa :=
-  { finalX86 true with
+  { finalX86 true 24 with
     post := fun s s' => Spec.Ofb.CryptFinal (ciphAt s.mem ((arg s 0).setWidth 64) (arg s 1).toNat) 16 s.mem
       s'.mem ((arg s 2).setWidth 64) ((arg s 3).setWidth 64) (arg s 4).toNat }
 
@@ -75,7 +75,7 @@ theorem final_implies : ofbFinalX86.Implies finalScratchContract := by
     X86.argBytes, ofbFinalX86, finalX86] [a0, a1, a2, a3, a4, a5, a6, e, esp] using finalSat
 
 /-- `Spec.Ofb.CryptFinal`, from what the function leaves. -/
-theorem final_post {s₀ s₁ s' : State} (h : Done ofbMode s₀ s₁) (hm : s'.mem = s₁.mem) :
+theorem final_post {s₀ s₁ s' : State} (h : Done ofbMode 24 s₀ s₁) (hm : s'.mem = s₁.mem) :
     ofbFinalX86.post s₀ s' := by
   show Spec.Ofb.CryptFinal (ciphAt s₀.mem ((fW s₀).setWidth 64) (fR s₀)) 16 s₀.mem s'.mem
     ((fIv s₀).setWidth 64) ((fD s₀).setWidth 64) (fL s₀)
@@ -93,7 +93,7 @@ theorem final_correct (v : BlocksImpl) (hsp : NoSp (cryptCode v)) (hst : stackUs
     ∃ t s', Exec isa (cryptFinal (cryptCode v) v.enc v.suffix) s t s' ∧ abiPreserved s s' ∧
       ofbFinalX86.post s s' := by
   obtain ⟨t, s', he, hg, s₁, h₁, hm⟩ :=
-    final_wp (M := ofbMode) (cryptCode_correct v) hsp hst v (FPre.of (enc := true) hs)
+    final_wp (M := ofbMode) (fun s hs => cryptCode_correct v s hs.1) hsp hst v (FPre.of (enc := true) hs)
   exact ⟨t, s', he, hg, final_post h₁ hm⟩
 
 /-! ## The code's properties -/
@@ -146,7 +146,9 @@ theorem cryptFinal_spSafe (v : BlocksImpl) :
 theorem cryptFinal_verified (v : BlocksImpl) :
     Verified X86.target (cryptFinal (cryptCode v) v.enc v.suffix) finalScratchContract :=
   Verified.of_correct (final_correct v (cryptCode_noSp v) (cryptCode_stack v))
-    (final_ct (enc := true) (cryptCode_correct v) (cryptCode_ct v) (cryptCode_noSp v) (cryptCode_stack v) v)
+    (final_ct (enc := true) (fun s hs => cryptCode_correct v s hs.1)
+      (fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ => cryptCode_ct v s₁ s₂ t₁ t₂ s₁' s₂' h₁.1 h₂.1) (cryptCode_noSp v)
+      (cryptCode_stack v) v)
     final_implies
 
 /-! ## With `save` on the stack

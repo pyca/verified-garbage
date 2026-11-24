@@ -11,17 +11,31 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_cfb128_decrypt_ssse3_core() {
     core::arch::naked_asm!(
-        r#".base64 "i0QkGImYEAgAAImwFAgAAIm4GAgAAImoHAgAAIt0JBCLRCQUhcA="
+        r#".base64 "jaQkxPv//4uEJEAEAACJRCQEi4QkRAQAAIlEJAiLhCRIBAAAiUQkDIuEJEwEAACJRCQQi4QkUAQAAIlEJBSLhCRUBAAAiUQkGIngg8AgiUQkHItEJByJmAAEAACJsAQEAACJuAgEAACJqAwEAACLdCQQi3wkFIX/"
 je 20f
 22:
-.base64 "i0QkBItMJAiLXCQMvwEAAACLbCQYVVdTUVA="
+.base64 "u0AAAACD/0A="
+jb 23f
+jmp 24f
+23:
+.base64 "ifs="
+24:
+.base64 "i2wkDPMPb0UAifCLVCQcidk="
+25:
+.base64 "8w9/AvMPbwCDwBCDwhCD6QE="
+jne 25b
+.base64 "8w9/RQCLRCQEi0wkCItUJByLbCQYVVNSUVA="
 call {vg_aes_encrypt_blocks_ssse3}
-.base64 "WFhYWFiLXCQMiwaLCzHIiQaLRgSLSwQxyIlGBItGCItLCDHIiUYIi0YMi0sMMciJRgyLA4sOMciJA4tDBItOBDHIiUMEi0MIi04IMciJQwiLQwyLTgwxyIlDDIPGEItEJBQBwAHAAcABwANEJBA5xg=="
+.base64 "WFhYWFiLVCQcidk="
+26:
+.base64 "8w9vBvMPbwpmD+/B8w9/BoPGEIPCEIPpAQ=="
+jne 26b
+.base64 "Kd8="
 jne 22b
 jmp 21f
 20:
 21:
-.base64 "i0QkGIuYEAgAAIuwFAgAAIu4GAgAAIuoHAgAAMM="
+.base64 "i0QkHIuYAAQAAIuwBAQAAIu4CAQAAIuoDAQAAI2kJDwEAADD"
 .p2align 6"#,
         vg_aes_encrypt_blocks_ssse3 = sym crate::aes::vg_aes_encrypt_blocks_ssse3::vg_aes_encrypt_blocks_ssse3,
     )
