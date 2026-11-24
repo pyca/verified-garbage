@@ -51,20 +51,14 @@ theorem scalarArgs_ok {Ctx W SP S D : Addr} {n r : Nat} {u : State}
   exact WP.of_runBlock ⟨x,by rw [runBlock_append,run]; exact run₁,
     (regs _ (by decide) (by decide)).trans ptr,x12,bp,env',xm,xr,xw⟩
 
-theorem finishScalar_ok (v : GcmImpl) {M : CtxMode} {Ctx W SP S D : Addr} {R n al : Nat}
-    {s u : State} {H icb : Block} {a : List Byte}
-    (reg : SealRegions M Ctx W SP D S R n n s) (ob : ObPre M Ctx W SP R D n s)
-    (post : ObPost Ctx W SP D n s u) (bulk : BlocksResult Ctx W R S D (n/16) s u)
-    (hH : blockAt s.mem (Ctx+240#64)=H) (hcb : blockAt s.mem (cbA W)=icb)
-    (hal : s.mem.readW (W+184#64) 64=BitVec.ofNat 64 al)
-    (habs : Absorbed s.mem (yA W) (W+16#64+32#64) H (a++zeros (padLen a.length)))
-    (slot : InRegions (s.rd++s.wr) (SP+8#64) 8) (src : u.mem.readW (SP+8#64) 64=S) :
-    WP isa (Contiguous.finishScalar v.callees) u (BodyPost Ctx W SP S D R n al H icb a s) := by
-  unfold Contiguous.finishScalar
-  apply WP.seq_assoc
-  apply Split.finCallsFrom_ok v reg.lay ob post.rd post.wr reg.sW reg.ks
-    reg.sD post.frame post.tlen reg.data.ok.lt post.dat post.len bulk.1 bulk.2.1 bulk.2.2 hH hcb hal habs
-  intro rounds len hd
+theorem scalarCipher_ok (v : GcmImpl) {M : CtxMode} {Ctx W SP S D : Addr} {R n : Nat}
+    {s u : State} {icb : Block} (reg : SealRegions M Ctx W SP D S R n n s) (post : ObPost Ctx W SP D n s u)
+    (slot : InRegions (s.rd++s.wr) (SP+8#64) 8) (src : u.mem.readW (SP+8#64) 64=S)
+    (rounds : RoundsAt u.mem W R) (len : u.mem.readW (W+208#64) 64=BitVec.ofNat 64 (n-16*(n/16)))
+    (hd : DataW Ctx (W+16#64) W SP u (D+BitVec.ofNat 64 (16*(n/16))) (n-16*(n/16))) :
+    WP isa (.seq (.block (Contiguous.regs .rbx ++ [.mov .r12 (.mem (at_ .r15 dataO)),.mov .rbp (.mem (at_ .r15 lenO))]))
+      (cryptTailG v.callees true)) u fun t => CrOutQ Ctx (W+16#64) W SP R icb (16*(n/16))
+        (D+BitVec.ofNat 64 (16*(n/16))) (n-16*(n/16)) u.mem (S+BitVec.ofNat 64 (16*(n/16))) 0 t ∧ t.rd=u.rd ∧ t.wr=u.wr := by
   let off := 16*(n/16)
   let r := n-off
   have le : off≤n := Nat.mul_div_le _ _
@@ -89,5 +83,20 @@ theorem finishScalar_ok (v : GcmImpl) {M : CtxMode} {Ctx W SP S D : Addr} {R n a
     exact ⟨ptr',data,by simpa using lay,by rw [xm]⟩
   refine (WP.with_rdwr (cryptTailG_ok v reg.lay true mid (by dsimp [off,r]; omega) (by rw [xm]) origin)).mono
     fun t ⟨ho,dr,dw⟩ => ⟨ho,dr.trans xr,dw.trans xw⟩
+
+theorem finishScalar_ok (v : GcmImpl) {M : CtxMode} {Ctx W SP S D : Addr} {R n al : Nat}
+    {s u : State} {H icb : Block} {a : List Byte}
+    (reg : SealRegions M Ctx W SP D S R n n s) (ob : ObPre M Ctx W SP R D n s)
+    (post : ObPost Ctx W SP D n s u) (bulk : BlocksResult Ctx W R S D (n/16) s u)
+    (hH : blockAt s.mem (Ctx+240#64)=H) (hcb : blockAt s.mem (cbA W)=icb)
+    (hal : s.mem.readW (W+184#64) 64=BitVec.ofNat 64 al)
+    (habs : Absorbed s.mem (yA W) (W+16#64+32#64) H (a++zeros (padLen a.length)))
+    (slot : InRegions (s.rd++s.wr) (SP+8#64) 8) (src : u.mem.readW (SP+8#64) 64=S) :
+    WP isa (Contiguous.finishScalar v.callees) u (BodyPost Ctx W SP S D R n al H icb a s) := by
+  unfold Contiguous.finishScalar
+  apply WP.seq_assoc
+  apply Split.finCallsFrom_ok v reg.lay ob post.rd post.wr reg.sW reg.ks
+    reg.sD post.frame post.tlen reg.data.ok.lt post.dat post.len bulk.1 bulk.2.1 bulk.2.2 hH hcb hal habs
+  exact scalarCipher_ok v reg post slot src
 
 end VG.Proof.AesGcm.X86_64.ContiguousSeal

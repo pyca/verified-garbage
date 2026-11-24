@@ -28,7 +28,7 @@ private theorem powersPost {Ctx W SP : Addr} {s t : State} (e : Env Ctx (W+16#64
 
 theorem finish_plain (facts : ShortFacts) (v : GcmImpl) (vec wide : Bool) {M : CtxMode} :
     FinishOk M (if vec then Contiguous.finishVec false wide else Contiguous.finishScalar v.callees) := by
-  intro Ctx W SP S D R n al s u H icb a reg ob post bulk hH hcb hal habs read src apart
+  intro Ctx W SP S D R n al s u H icb a reg ob post bulk hH hcb hal habs read src apart _ _ _ _
   cases vec
   · exact finishScalar_ok v reg ob post bulk hH hcb hal habs read src
   · apply finishVec_ok false wide reg ob post bulk hH hcb hal habs read src apart
@@ -42,7 +42,7 @@ theorem finish_plain (facts : ShortFacts) (v : GcmImpl) (vec wide : Bool) {M : C
 
 theorem finish_prepared (facts : ShortFacts) (wide : Bool) {np : Nat} {hn : 8≤np ∧ np≤24} :
     FinishOk (CtxMode.preparedN np hn) (Contiguous.finishVec true wide) := by
-  intro Ctx W SP S D R n al s u H icb a reg ob post bulk hH hcb hal habs read src apart
+  intro Ctx W SP S D R n al s u H icb a reg ob post bulk hH hcb hal habs read src apart _ _ _ _
   apply finishVec_ok true wide reg ob post bulk hH hcb hal habs read src apart
   have X := reg.ext
   have fr := obFrame_B post.frame
@@ -68,26 +68,26 @@ theorem finish_prepared (facts : ShortFacts) (wide : Bool) {np : Nat} {hn : 8≤
 def RecordOk (M : CtxMode) (f : Prog isa) : Prop :=
   ∀ {o u : State} {Ctx W SP Np A S D : Addr} {nl al n : Nat},
     OneCtx o 5 Ctx W SP Np A D nl al n → CtxExt M Ctx (W+16#64) W SP D n o →
-    SpanLayout o S S D W SP n n → S.toNat+n≤2^64 → o.mem.readW (SP+8#64) 64=S →
+    SpanLayout o S S D W SP n n → S.toNat+n≤2^64 → o.mem.readW (SP+8#64) 64=S → o.mem.readW (SP+16#64) 64=D →
     OneEntry o Ctx W SP A D n u → o.gpr .rdx=Np → (o.gpr .rcx).toNat=nl → (o.gpr .r9).toNat=al →
     WP isa f u (SealPostFrom o Ctx W SP D n (o.gpr .rsi).toNat al (ctxH o.mem Ctx)
       (Spec.Gcm.j0 (ctxH o.mem Ctx) (bytesAt o.mem Np nl)) (bytesAt o.mem A al) (bytesAt o.mem S n))
 
 theorem plain_ok (facts : ShortFacts) (v : GcmImpl) (vec wide : Bool) {M : CtxMode} (k : Prog isa)
     (hb : BulkOk M (Contiguous.bulk k)) : RecordOk M (Contiguous.body v.callees vec wide false k) := by
-  intro o u Ctx W SP Np A S D nl al n C X geo wrap src E hp hl ha
-  exact body_ok hb (finish_plain facts v vec wide) C X geo wrap ha src (oneMid_ok v C E hp hl ha)
+  intro o u Ctx W SP Np A S D nl al n C X geo wrap src dst E hp hl ha
+  exact body_ok hb (finish_plain facts v vec wide) C X geo wrap ha src dst (oneMid_ok v C E hp hl ha)
 
 theorem prepared_ok (facts : ShortFacts) (v : GcmImpl) (wide : Bool) {np : Nat} {hn : 8≤np ∧ np≤24}
     (pow : wide → Short.PowOk (CtxMode.preparedN np hn) Impl.AesGcm.X86_64.Short.powersP Impl.AesGcm.X86_64.Short.ghashP)
     (k : Prog isa) (hb : BulkOk (CtxMode.preparedN np hn) (Contiguous.bulk k)) :
     RecordOk (CtxMode.preparedN np hn) (Contiguous.body v.callees true wide true k) := by
-  intro o u Ctx W SP Np A S D nl al n C X geo wrap src E hp hl ha
+  intro o u Ctx W SP Np A S D nl al n C X geo wrap src dst E hp hl ha
   have long {z : State} (init : OneEntry o Ctx W SP A D n z) : WP isa
       (.seq (Contiguous.aad v.callees true wide true) (.seq (Contiguous.bulk k) (Contiguous.finishVec true wide))) z
       (SealPostFrom o Ctx W SP D n (o.gpr .rsi).toNat al (ctxH o.mem Ctx)
         (Spec.Gcm.j0 (ctxH o.mem Ctx) (bytesAt o.mem Np nl)) (bytesAt o.mem A al) (bytesAt o.mem S n)) := by
-    apply body_ok hb (finish_prepared facts wide) C X geo wrap ha src
+    apply body_ok hb (finish_prepared facts wide) C X geo wrap ha src dst
     refine WP.seq ((Fast.condE_ok (any:=!wide) C init hl ha).mono fun t ⟨cond,f,keep⟩ => ?_)
     refine WP.ite (decide ¬Fast.IsFast nl al n (!wide)) (eval_e cond) (fun _ => ?_) (fun hh => ?_)
     · simpa only [keep.mem] using oneMid_ok v C f hp hl ha

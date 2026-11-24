@@ -49,7 +49,7 @@ theorem entry_ok {M : CtxMode} {body : Prog isa} (h : RecordOk M body) {s : Stat
   have C := p.ctx
   refine WP.seq ((oneEntryAt_okL (id:=1) (il:=2) (wo:=40) (by decide) (by decide) C rfl rfl rfl rfl rfl rfl
     (C.args 4 (by decide))).mono fun u ⟨E,_⟩ => ?_)
-  refine WP.seq ((h C p.ext p.geo p.nowrap rfl E rfl rfl rfl).mono fun v ⟨env,rd,wr,saved,frame,ct,tag⟩ => WP.seq ?_)
+  refine WP.seq ((h C p.ext p.geo p.nowrap rfl rfl E rfl rfl rfl).mono fun v ⟨env,rd,wr,saved,frame,ct,tag⟩ => WP.seq ?_)
   have sub : Region.Sub ⟨SP s+32#64,8⟩ ⟨SP s+8#64,8*5⟩ := by
     rw [show 32#64 = (BitVec.ofNat 64 (8+24)) from rfl,← add_ofNat_assoc]; exact Offset.sub_base _ (by decide)
   have slot : v.mem.readW (v.gpr .rsp+32#64) 64=T s := by

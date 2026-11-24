@@ -105,10 +105,11 @@ structure ScalarI (Ctx W SP S D : Addr) (R al n r : Nat) (s : State) : Prop wher
   output : DataW Ctx (W+16#64) W SP s D r
   alias : S+BitVec.ofNat 64 (n-r)=D ∨ (⟨S+BitVec.ofNat 64 (n-r),r⟩ : Region).Disjoint ⟨D,r⟩
 
-theorem finishScalar_ct (v : GcmImpl) {Ctx W SP S D : Addr} (L : Lay Ctx (W+16#64) W SP)
+theorem scalarCipher_ct (v : GcmImpl) {Ctx W SP S D : Addr} (L : Lay Ctx (W+16#64) W SP)
     {R al n r : Nat} (le : r≤n) (short : r<16) (dw : (⟨D,r⟩ : Region).Disjoint ⟨W,2560⟩) :
     RelCT isa (fun x y => ScalarI Ctx W SP S D R al n r x ∧ ScalarI Ctx W SP S D R al n r y)
-      (Contiguous.finishScalar v.callees) (fun _ _ => True) := by
+      (.seq (.block (Contiguous.regs .rbx ++ [.mov .r12 (.mem (at_ .r15 dataO)),.mov .rbp (.mem (at_ .r15 lenO))])) (cryptTailG v.callees true))
+      (fun x y => OneT Ctx W SP R al D r n x ∧ OneT Ctx W SP R al D r n y) := by
   let Q := S+BitVec.ofNat 64 (n-r)
   let T := OneT Ctx W SP R al D r n
   let F (s : State) := T s ∧ CrMid Ctx (W+16#64) W SP R 0 0 D r s.mem 0 s ∧
@@ -131,9 +132,13 @@ theorem finishScalar_ct (v : GcmImpl) {Ctx W SP S D : Addr} (L : Lay Ctx (W+16#6
   have wk (s) (h : F s) : WP isa (cryptTailG v.callees true) s T := by
     refine (WP.with_rdwr (cryptTailG_ok v L true h.2.1 (by simpa using short) rfl h.2.2.1)).mono fun t ⟨out,rd,wr⟩ => ?_
     exact h.1.frame L out.env rd wr dw (crFrame_one out.frame)
-  unfold Contiguous.finishScalar
-  apply RelCT.seq (rel_next (rel_env_regs [] (fun _ h => h.tag.env) (fun _ h => h.tag.env)
-    (fun _ _ _ _ _ h => by cases h) ⟨_,by taint_decide⟩) setup setup)
-  exact RelCT.seq (rel_next ctk wk wk) (oneTag_relT v L (.inl rfl) dw)
+  exact RelCT.seq (rel_next (rel_env_regs [] (fun _ h => h.tag.env) (fun _ h => h.tag.env)
+    (fun _ _ _ _ _ h => by cases h) ⟨_,by taint_decide⟩) setup setup) (rel_next ctk wk wk)
+
+theorem finishScalar_ct (v : GcmImpl) {Ctx W SP S D : Addr} (L : Lay Ctx (W+16#64) W SP)
+    {R al n r : Nat} (le : r≤n) (short : r<16) (dw : (⟨D,r⟩ : Region).Disjoint ⟨W,2560⟩) :
+    RelCT isa (fun x y => ScalarI Ctx W SP S D R al n r x ∧ ScalarI Ctx W SP S D R al n r y)
+      (Contiguous.finishScalar v.callees) (fun _ _ => True) := by
+  exact rel_reassoc2 (RelCT.seq (scalarCipher_ct v L le short dw) (oneTag_relT v L (.inl rfl) dw))
 
 end VG.Proof.AesGcm.X86_64.ContiguousSeal

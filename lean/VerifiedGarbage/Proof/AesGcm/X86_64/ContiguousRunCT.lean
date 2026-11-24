@@ -24,10 +24,15 @@ open Short (SpanLayout ShortFacts rel_next)
 
 structure AfterAad (M : CtxMode) (Ctx W SP S D : Addr) (R n al : Nat) (u : State) extends BulkIn M Ctx W SP S D R n u where
   alen : u.mem.readW (W+184#64) 64=BitVec.ofNat 64 al
+  dst : u.mem.readW (SP+16#64) 64=D
+  slotRead : InRegions (u.rd++u.wr) (SP+16#64) 8
+  dstWork : (⟨SP+16#64,8⟩ : Region).Disjoint ⟨W,2560⟩
+  dstOut : (⟨SP+16#64,8⟩ : Region).Disjoint ⟨D,n⟩
   slotDst : (⟨SP+8#64,8⟩ : Region).Disjoint ⟨D,n⟩
 
 structure AfterBulk (M : CtxMode) (Ctx W SP S D : Addr) (R n al : Nat) (u : State) : Prop where
   scalar : ScalarI Ctx W SP S (D+BitVec.ofNat 64 (16*(n/16))) R al n (n%16) u
+  origin : ∃ s, AfterAad M Ctx W SP S D R n al s ∧ ObPost Ctx W SP D n s u
   slotWork : (⟨SP+8#64,8⟩ : Region).Disjoint ⟨W,2560⟩
   ext : CtxExt M Ctx (W+16#64) W SP (D+BitVec.ofNat 64 (16*(n/16))) (n%16) u
 
@@ -58,7 +63,7 @@ theorem afterBulk_ok {M : CtxMode} {Ctx W SP S D : Addr} {R n al : Nat} {s u : S
       · exact h.slotDst.sub_right (Region.sub_prefix (by omega_arith))
       · exact h.apart.sub_right (Lay.wSub (by decide))
       · exact Offset.disjoint_below SP (by decide)) (by decide),h.src]
-  refine ⟨⟨tag,by rw [p.rd,p.wr]; exact h.read,src,by rw [off]; exact q,d,?_⟩,h.apart,x⟩
+  refine ⟨⟨tag,by rw [p.rd,p.wr]; exact h.read,src,by rw [off]; exact q,d,?_⟩,⟨s,h,p⟩,h.apart,x⟩
   rw [off]
   rcases h.reg.sD with same|apart
   · exact .inl (by rw [same])
@@ -68,6 +73,7 @@ theorem afterAad_ok {M : CtxMode} {s₀ s₁ s₂ : State} {Ctx W SP Np A S D : 
     (C : OneCtx s₀ 5 Ctx W SP Np A D nl al n) (X : CtxExt M Ctx (W+16#64) W SP D n s₀)
     (geo : SpanLayout s₀ S S D W SP n n) (nowrap : S.toNat+n≤2^64)
     (ha : (s₀.gpr .r9).toNat=al) (src : s₀.mem.readW (SP+8#64) 64=S)
+    (dst : s₀.mem.readW (SP+16#64) 64=D)
     (m : OneMid s₀ Ctx W SP D n (ctxH s₀.mem Ctx) (bytesAt s₀.mem Np nl) (bytesAt s₀.mem A al) s₁.mem s₂) :
     AfterAad M Ctx W SP S D (s₀.gpr .rsi).toNat n al s₂ := by
   have dM {p : Addr} {k : Nat} (w : (⟨p,k⟩ : Region).Disjoint ⟨W,2560⟩) (sp : (⟨p,k⟩ : Region).Disjoint (below SP 8)) :
@@ -90,7 +96,13 @@ theorem afterAad_ok {M : CtxMode} {s₀ s₁ s₂ : State} {Ctx W SP Np A S D : 
   have orig : s₂.mem.readW (SP+8#64) 64=S := by
     rw [m.frame.readW (Region.contains_self _ _) (dM dw (ds.sub_right b8)) (by decide),src]
   have alen : s₂.mem.readW (W+184#64) 64=BitVec.ofNat 64 al := by rw [m.alen,← ha,BitVec.ofNat_toNat,BitVec.setWidth_eq]
-  exact ⟨⟨reg,ob,read,orig,dw⟩,alen,dq⟩
+  have sub : Region.Sub ⟨SP+16#64,8⟩ ⟨SP+8#64,8*5⟩ := by
+    rw [show (16#64 : Addr)=BitVec.ofNat 64 (8+8) from rfl,← add_ofNat_assoc]; exact Offset.sub_base _ (by decide)
+  have dest : s₂.mem.readW (SP+16#64) 64=D := by
+    rw [m.frame.readW (Region.contains_self _ _) (dM (C.dA.sub_left sub)
+      ((Offset.disjoint_below SP (n:=24) (d:=16) (k:=8) (by decide)).sub_right b8)) (by decide),dst]
+  exact ⟨⟨reg,ob,read,orig,dw⟩,alen,dest,by rw [m.rd,m.wr]; exact C.args 1 (by decide),
+    C.dA.sub_left sub,C.dAD.sub_left sub,dq⟩
 
 def FinishCT (M : CtxMode) (f : Prog isa) : Prop :=
   ∀ {Ctx W SP S D : Addr} {R n al : Nat}, Lay Ctx (W+16#64) W SP → (R=10 ∨ R=12 ∨ R=14) →
@@ -122,7 +134,7 @@ theorem finishPrepared_ct (wide : Bool) {np : Nat} {hn : 8≤np ∧ np≤24} :
     ⟨e.keep (fun r hr => o.gpr _ (by simp only [List.mem_cons,List.not_mem_nil,or_false] at hr;
                                       rcases hr with rfl|rfl|rfl|rfl <;> decide)) o.rd o.wr,o.mem,o.rd,o.wr⟩
 
-theorem run_ct {M : CtxMode} {k fin : Prog isa} (hb : BulkOk M (Contiguous.bulk k))
+theorem run_ct {M : CtxMode} {k fin : Prog isa} {hash : Bool} (hb : BulkOk M (Contiguous.bulk k) hash)
     (hc : KernelCT M k) (hw : KernelKeeps M k) (hf : FinishCT M fin)
     {Ctx W SP S D : Addr} {R n al : Nat} (L : Lay Ctx (W+16#64) W SP) (hR : R=10 ∨ R=12 ∨ R=14)
     (dw : (⟨D,n⟩ : Region).Disjoint ⟨W,2560⟩) :
@@ -139,6 +151,7 @@ structure RecordInput (M : CtxMode) (o : State) (Ctx W SP Np A S D : Addr) (nl a
   geom : SpanLayout o S S D W SP n n
   nowrap : S.toNat+n≤2^64
   src : o.mem.readW (SP+8#64) 64=S
+  dst : o.mem.readW (SP+16#64) 64=D
   nonce : o.gpr .rdx=Np
   nlEq : (o.gpr .rcx).toNat=nl
   alEq : (o.gpr .r9).toNat=al
@@ -153,7 +166,7 @@ theorem RecordInput.afterAad {M : CtxMode} {o u z : State} {Ctx W SP Np A S D : 
     (h : RecordInput M o Ctx W SP Np A S D nl al n R)
     (m : OneMid o Ctx W SP D n (ctxH o.mem Ctx) (bytesAt o.mem Np nl) (bytesAt o.mem A al) u.mem z) :
     AfterAad M Ctx W SP S D R n al z :=
-  h.rounds ▸ afterAad_ok h.ctx h.ext h.geom h.nowrap h.alEq h.src m
+  h.rounds ▸ afterAad_ok h.ctx h.ext h.geom h.nowrap h.alEq h.src h.dst m
 
 theorem RecordInput.slot {M : CtxMode} {o u : State} {Ctx W SP Np A S D : Addr} {nl al n R : Nat}
     (h : RecordInput M o Ctx W SP Np A S D nl al n R) (e : OneEntry o Ctx W SP A D n u) :

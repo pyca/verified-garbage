@@ -93,6 +93,51 @@ theorem hashArgs_ok {Ctx W SP D : Addr} {n : Nat} {s : State}
   · subst t; exact covers_cons (e.perm.stC (by decide)) (e.perm.wC (by decide))
 
 
+theorem deferredCtr_ok {M : CtxMode} (ctr : Proof.Aes.X86_64.Ctr32ToImpl)
+    {Ctx W SP D S : Addr} {R n : Nat} {s : State}
+    (h : SealRegions M Ctx W SP D S R n n s) (qreg : s.gpr .rax = BitVec.ofNat 64 (n/16))
+    (read : InRegions (s.rd++s.wr) (SP+8#64) 8) (src : s.mem.readW (SP+8#64) 64 = S)
+    (dst : s.mem.readW (W+200#64) 64 = D) :
+    WP isa (.seq (.block Contiguous.ctrArgs) (Contiguous.call ⟨ctr.callee.name,ctr.callee.code⟩)) s fun t =>
+      (∀ z ∈ calleeSaved, t.gpr z = s.gpr z) ∧ t.rd=s.rd ∧ t.wr=s.wr ∧
+      Frame (obFrame (W+16#64) W SP D (n/16)) s.mem t.mem ∧ BlocksResult Ctx W R S D (n/16) s t false := by
+  let q := n/16
+  have hq : 16*q ≤ n := Nat.mul_div_le _ _
+  have Dq := h.data.take hq
+  have dW := Dq.ok.w
+  have kS : Region.Sub (below SP 8) (below SP 24) := below_sub (by decide) (by decide)
+  have kW := h.kw
+  have L := h.lay
+  unfold Contiguous.call
+  refine WP.seq ((ctrArgs_ok h hq qreg read src dst).mono fun u ⟨gu,ru,wu,mu,c⟩ => ?_)
+  refine (ctrTo_call ctr c).mono fun v hc => ?_
+  have eu := h.env.of_saved gu ru wu
+  have ev := eu.of_saved hc.saved hc.rd hc.wr
+  have df := Dq.of_eq (hc.rd.trans ru) (hc.wr.trans wu)
+  have full := h.data.of_eq (hc.rd.trans ru) (hc.wr.trans wu)
+  have ctrframe := hc.frame
+  rw [eu.rsp,mu] at ctrframe
+  have cf : Frame (obFrame (W+16#64) W SP D q) s.mem v.mem := by
+    refine ctrframe.sub fun r hr => ?_
+    simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
+    rcases hr with rfl|rfl|rfl|rfl
+    · exact ⟨_,List.mem_cons_self ..,fun _ hx => hx⟩
+    · exact ⟨⟨D,q*16⟩,by simp [obFrame],Region.sub_prefix (by omega_arith)⟩
+    · exact ⟨⟨W+448#64,2112⟩,by simp [obFrame],Region.sub_prefix (by decide)⟩
+    · exact ⟨below SP 24,by simp [obFrame],kS⟩
+  have cy : (⟨yA W,16⟩ : Region).Disjoint ⟨cbA W,16⟩ := Offset.disjoint (W+16#64) (.inl (by decide)) (by decide) (by decide)
+  have y : blockAt v.mem (yA W) = blockAt s.mem (yA W) := by
+    apply blockAt_frame ctrframe
+    intro r hr
+    simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
+    rcases hr with rfl|rfl|rfl|rfl
+    · exact cy
+    · exact (Dq.ok.st.sub_right (Lay.stSub (by decide))).symm
+    · exact L.st_w (by decide) (.inr ⟨by decide,by decide⟩)
+    · exact (L.stk_st (by decide)).symm
+  exact ⟨fun r hr => (hc.saved r hr).trans (gu r hr),hc.rd.trans ru,hc.wr.trans wu,cf,by simpa only [mu,q,ctxCiph] using hc.out,
+    by simpa only [mu] using hc.ctr,y⟩
+
 theorem separate_ok {M : CtxMode} (ctr : Proof.Aes.X86_64.Ctr32ToImpl) (gh : GhashImpl)
     {Ctx W SP D S : Addr} {R n : Nat} {s : State}
     (h : SealRegions M Ctx W SP D S R n n s) (qreg : s.gpr .rax = BitVec.ofNat 64 (n/16))
@@ -183,7 +228,7 @@ theorem separate_ok {M : CtxMode} (ctr : Proof.Aes.X86_64.Ctr32ToImpl) (gh : Gha
   · simpa only [mu] using cb.trans hc.ctr
   · rw [show blocksAt t.mem D (n/16) = blocksAt v.mem D (n/16) from db]
     change _ = ghashFrom (blockAt s.mem (Ctx+240#64)) _ _
-    simpa only [mx,hk,y] using hh.out
+    simpa only [mx,hk,y,↓reduceIte] using hh.out
 
 theorem separate_bulk_ok {M : CtxMode} (ctr : Proof.Aes.X86_64.Ctr32ToImpl) (gh : GhashImpl) {Ctx W SP S D : Addr} {R n : Nat} {s : State}
     (h : SealRegions M Ctx W SP D S R n n s) (ob : ObPre M Ctx W SP R D n s)
@@ -191,6 +236,6 @@ theorem separate_bulk_ok {M : CtxMode} (ctr : Proof.Aes.X86_64.Ctr32ToImpl) (gh 
     (apart : (⟨SP+8#64,8⟩ : Region).Disjoint ⟨W,2560⟩) :
     WP isa (Contiguous.bulk (Contiguous.separate ⟨ctr.callee.name,ctr.callee.code⟩ gh.fn)) s fun t =>
       ObPost Ctx W SP D n s t ∧ BlocksResult Ctx W R S D (n/16) s t := by
-  exact bulk_ok _ (separate_ok ctr gh) h ob src slot apart
+  exact bulk_ok (hash:=true) _ (separate_ok ctr gh) h ob src slot apart
 
 end VG.Proof.AesGcm.X86_64.ContiguousSeal

@@ -50,7 +50,7 @@ theorem finishVec_ok (prepared wide : Bool) {M : CtxMode} {Ctx W SP S D : Addr} 
   obtain ⟨fr,rnds,_,kc,j,pfx,ctr,abs,remain⟩ := ob_factsFrom reg.lay ob reg.sW
     reg.ks reg.sD post.frame hH hcb habs ha ct cb
     (Z:=bytesAt u.mem D (16*(n/16))) (by rw [length_bytesAt]; omega_arith)
-    (by change _ = _; rw [y]; change ghashFrom (blockAt s.mem (Ctx+240#64)) _ _ = _; rw [hH,Proof.Gcm.blocksAt_eq])
+    (by change _ = _; rw [y]; change ghashFrom (blockAt s.mem (Ctx+240#64)) _ _ = _; rw [hH,Proof.Gcm.blocksAt_eq]; rfl)
   have count : blockAt u.mem (cbA W) = Nat.repeat inc32 (n/16) icb := by rw [cb,hcb]
   have la : u.mem.readW (W+184#64) 64=BitVec.ofNat 64 al := by
     rw [fr.readW (r:=⟨W+184#64,8⟩) (Region.contains_self _ _)

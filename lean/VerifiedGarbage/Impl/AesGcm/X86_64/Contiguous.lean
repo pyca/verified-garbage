@@ -1,4 +1,6 @@
 module
+public import VerifiedGarbage.Impl.Gcm.X86_64.Flag
+public import VerifiedGarbage.Impl.Scrub.X86_64
 public import VerifiedGarbage.Impl.AesGcm.X86_64.Fn
 
 /-! Contiguous AES-GCM seal with separate source and destination registers.
@@ -44,6 +46,16 @@ def finishVec (prepared wide : Bool) : Prog isa :=
 def finishScalar (c : Callees) : Prog isa :=
  .seq (.block (regs .rbx ++ [.mov .r12 (.mem (at_ .r15 dataO)), .mov .rbp (.mem (at_ .r15 lenO))]))
   (.seq (cryptTailG c true) (oneTag c 0))
+
+/-- The AES-NI/PCLMUL profile hashes the complete ciphertext once both the
+whole and partial blocks have reached their destination. -/
+def deferredBody (c : Callees) (ctr : Fn) : Prog isa :=
+  let crypt := bulk (.seq (.block ctrArgs) (call ctr))
+  let tail := regs .rbx ++ [.mov .r12 (.mem (at_ .r15 dataO)),.mov .rbp (.mem (at_ .r15 lenO))]
+  let full := [.mov .r12 (.mem (at_ .rsp 16)),.mov .rbp (.mem (at_ .r15 tlenO)),.mov32 .rbx (imm 0)]
+  .seq (oneAad c) (.seq crypt (.seq (.block tail) (.seq (cryptTailG c true)
+    (.seq (.block full) (tagCiphertext c 0)))))
+
 def boundedArgs : List Instr :=
   [.mov .rbx (.mem src), .mov .r10 (.mem (at_ .r15 lenO)), .mov .r11 (.reg .rbx)]
 
@@ -57,8 +69,23 @@ def body (c : Callees) (vec wide prepared : Bool) (kernel : Prog isa) : Prog isa
   let long := .seq (aad c vec wide prepared) (.seq (bulk kernel) (if vec then finishVec prepared wide else finishScalar c))
   if prepared && wide then .seq Short.cond (.ite .e long bounded) else long
 
-def one (c : Callees) (vec wide prepared : Bool) (kernel : Prog isa) : Prog isa :=
+def framed (record : Prog isa) : Prog isa :=
   Impl.StackScratch.X86_64.withStackArgScratch 2608 4 (.seq (.block (oneEntry 40 16 24))
-    (.seq (body c vec wide prepared kernel) (.seq (.block (tagOut (at_ .rsp 32))) (.block restore))))
+    (.seq record (.seq (.block (tagOut (at_ .rsp 32))) (.block restore))))
+
+def one (c : Callees) (vec wide prepared : Bool) (kernel : Prog isa) : Prog isa :=
+  framed (body c vec wide prepared kernel)
+
+/-- One entry per CPU variant. The prepared flag selects whether the key
+already holds enough powers of the hash subkey. Buffer layout has no effect
+on this choice. -/
+def prepared (level : Impl.Scrub.X86_64.VecLevel) (defer wide : Bool) (threshold : Nat)
+    (c : Callees) (ctr : Fn) (blocks : Option Fn) : Prog isa :=
+  let plain := if defer then framed (deferredBody c ctr) else
+    one c blocks.isSome wide false (separate ctr c.gh)
+  let selected := match blocks with
+    | some b => Impl.Gcm.X86_64.Flag.onFlag threshold (one c true wide true (fused b)) plain
+    | none => plain
+  Impl.Scrub.X86_64.scrubAll level 0 2640 selected
 
 end VG.Impl.AesGcm.X86_64.Contiguous

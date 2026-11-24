@@ -28,7 +28,7 @@ theorem entry_start {M : CtxMode} {s : State} (p : EntryPre M s) :
 theorem entry_tag {M : CtxMode} {body : Prog isa} (hw : RecordOk M body) {s u : State} (p : EntryPre M s)
     (E : OneEntry s (K s) (W s) (SP s) (s.gpr .r8) (D s) (N s) u) :
     WP isa body u (TagAt (K s) (W s+16#64) (W s) (SP s) .rsp 32 (T s)) := by
-  refine (hw p.ctx p.ext p.geo p.nowrap rfl E rfl rfl rfl).mono fun v ⟨env,rd,wr,_,frame,_⟩ => ?_
+  refine (hw p.ctx p.ext p.geo p.nowrap rfl rfl E rfl rfl rfl).mono fun v ⟨env,rd,wr,_,frame,_⟩ => ?_
   have sub : Region.Sub ⟨SP s+32#64,8⟩ ⟨SP s+8#64,8*5⟩ := by
     rw [show 32#64 = (BitVec.ofNat 64 (8+24)) from rfl,← add_ofNat_assoc]; exact Offset.sub_base _ (by decide)
   refine ⟨env,?_,by rw [env.rsp,rd,wr]; exact p.ctx.args 3 (by decide)⟩
@@ -57,7 +57,7 @@ theorem entry_ct {M : CtxMode} {body : Prog isa} (hw : RecordOk M body) (hc : Re
   have r : (b.gpr .rsi).toNat=(a.gpr .rsi).toNat := congrArg BitVec.toNat (eq.1 _ (by decide)).symm
   have recordInput {u : State} (g : EntryPre M u) : RecordInput M u (K u) (W u) (SP u) (u.gpr .rdx) (u.gpr .r8) (S u) (D u)
       (u.gpr .rcx).toNat (u.gpr .r9).toNat (N u) (u.gpr .rsi).toNat :=
-    ⟨g.ctx,g.ext,g.geo,g.nowrap,rfl,rfl,rfl,rfl,rfl⟩
+    ⟨g.ctx,g.ext,g.geo,g.nowrap,rfl,rfl,rfl,rfl,rfl,rfl⟩
   have qb := recordInput q
   rw [k,w,sp,no,ar,src,dst,nl,al,n,r] at qb
   have ea := entry_start p
