@@ -1074,15 +1074,13 @@ add r4, r4, r1
 mov r5, r0
 cmp r12, #0
 beq 238f
-mov r2, r6
-mov r0, r12
-add r1, r11, #512
-push {{r0, r1, r2}}
 mov r0, r9
 mov r1, r8
 add r2, r10, #48
+add lr, r11, #512
+push {{r12, lr}}
 bl {vg_aes_ctr32_to}
-ldr r12, [sp], #12
+ldr r12, [sp], #8
 add r6, r6, r12, lsl #4
 b 239f
 238:
@@ -1260,32 +1258,16 @@ add r12, r11, #512
 push {{r12, lr}}
 bl {vg_ghash}
 ldr r12, [sp], #8
-ldr r0, [r10, #16]
-str r0, [r11, #0]
-ldr r0, [r10, #20]
-str r0, [r11, #4]
-ldr r0, [r10, #24]
-str r0, [r11, #8]
-ldr r0, [r10, #28]
-str r0, [r11, #12]
 mov r0, r9
 mov r1, r8
 mov r2, r10
-add r3, r11, #0
+add r3, r10, #16
+ldr r6, [sp, #16]
 mov r12, #1
 add lr, r11, #512
 push {{r12, lr}}
-bl {vg_aes_ctr32}
+bl {vg_aes_ctr32_to}
 ldr r12, [sp], #8
-ldr r1, [sp, #16]
-ldr r0, [r11, #0]
-str r0, [r1, #0]
-ldr r0, [r11, #4]
-str r0, [r1, #4]
-ldr r0, [r11, #8]
-str r0, [r1, #8]
-ldr r0, [r11, #12]
-str r0, [r1, #12]
 ldr r4, [r11, #128]
 ldr r5, [r11, #132]
 ldr r6, [r11, #136]
