@@ -225,7 +225,7 @@ The wide prepared loop needs ZMM registers; AES-NI without AVX keeps the
 plaintext-to-ciphertext pass separate from authentication. -/
 def contiguousArtifact (v : GcmVariant) : Artifact :=
   let plain := fun _ : Unit =>
-    let defer := v.impl.suffix == "_aesni_pclmul"
+    let defer := v.impl.suffix == "_aesni" || v.impl.suffix == "_aesni_pclmul"
     let cert := ContiguousSeal.unstitched v defer
     Spec.Gcm.sealContiguousPreparedApi.artifact X86_64.target {
       suffix := v.impl.suffix

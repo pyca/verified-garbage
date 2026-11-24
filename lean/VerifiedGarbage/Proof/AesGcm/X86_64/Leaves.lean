@@ -2756,8 +2756,8 @@ theorem verified {code : Prog isa} (p : Certificate code) : VerifiedScrubbed tar
 
 theorem spSafe {code : Prog isa} (p : Certificate code) : Sp code := p.2
 
-/-- One unstitched record, sealed from either source layout. Only the
-AES-NI/PCLMUL backend with legacy SSE encoding defers its GHASH call. -/
+/-- One unstitched record, sealed from either source layout. Both legacy
+AES-NI backends can defer GHASH until the ciphertext is complete. -/
 theorem unstitched (v : GcmVariant) (defer : Bool) : Certificate
     (prepared v.lvTW defer false 16 v.impl.callees (ctrFn v) none) := by
   have p := plainProof (M:=CtxMode.base) v defer false false (Nat.le_refl _) (Nat.zero_le _)
