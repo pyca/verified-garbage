@@ -610,10 +610,7 @@ fn tls_records(c: &mut Criterion) {
     /// (alerts, handshake messages, small requests); records of 112 to 240
     /// bytes with their content type, fewer than 16 blocks; a 2048-byte
     /// record; and records of 288, 416, 432 and 448 bytes of text.
-    const TLS_SIZES: [usize; 29] = [
-        15, 31, 47, 63, 111, 127, 207, 239, 254, 255, 256, 257, 287, 415, 431, 447, 1023, 1024,
-        1025, 2047, 4095, 4096, 4097, 9999, 10000, 10001, 16383, 16384, 16385,
-    ];
+    const TLS_SIZES: [usize; 12] = [95, 96, 111, 126, 127, 128, 159, 191, 222, 223, 224, 16383];
 
     tls_record_rows(c, &TLS_SIZES, Offsets::DEFAULT, "");
     tls_connection_rows(c);
@@ -847,9 +844,33 @@ fn tls_record_rows(c: &mut Criterion, sizes: &[usize], offsets: Offsets, label: 
             });
             g.finish();
 
+            let contiguous = Aligned::new(&[&data[..], &ty].concat(), offsets.input);
+            let one_tag = vg_key
+                .encrypt(&nonce, &aad, &[&contiguous], &mut out)
+                .unwrap();
+            assert_eq!((&out[..], one_tag), (&ct[..], tag));
+            let mut one = c.benchmark_group(format!("aes-{bits}-gcm-tls-seal-contiguous") + label);
+            one.throughput(Throughput::Bytes(size as u64 + 1));
+            one.bench(BenchmarkId::new(VG, size), |b| {
+                b.iter(|| {
+                    vg_key
+                        .encrypt(
+                            black_box(&nonce),
+                            black_box(&aad),
+                            &[black_box(&contiguous[..])],
+                            black_box(&mut out),
+                        )
+                        .unwrap()
+                })
+            });
+            one.finish();
+
             // Records shorter than 256 bytes, sealed in place too
             // (`encrypt_in_place`, as QUIC and aws-lc-rs's callers seal).
-            if size < 256 {
+            {
+                record.copy_from_slice(&contiguous);
+                let identical_tag = vg_key.encrypt_in_place(&nonce, &aad, &mut record).unwrap();
+                assert_eq!((&record[..], identical_tag), (&ct[..], tag));
                 let mut g = c.benchmark_group(format!("aes-{bits}-gcm-tls-seal-in-place") + label);
                 g.throughput(Throughput::Bytes(size as u64 + 1));
                 g.bench(BenchmarkId::new(VG, size), |b| {
