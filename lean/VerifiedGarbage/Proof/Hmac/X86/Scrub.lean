@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.X86.ScrubProved
+public import VerifiedGarbage.Proof.Framework.X86.ScrubSel
 public import VerifiedGarbage.Proof.Framework.X86.ScrubCall
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Impl.Hmac.X86
@@ -53,11 +54,18 @@ meta import VerifiedGarbage.Proof.Sha512.X86.Lit
 `vg_hmac_<hash>_init` and `vg_hmac_<hash>_finalize` as emitted
 (`Impl.Hmac.X86.Fn`): PBKDF2's HMAC functions in frames holding their
 working space (`Proof.Pbkdf2.Whole.X86.initCode`,
-`Proof.Pbkdf2.Md.X86.finFramed`), followed by the zeroing of the stack their
+`Proof.Pbkdf2.Md.X86.finFramed`; SHA-224's and SHA-256's `finalize` in a
+frame of the 208 bytes its code uses, `finFramedW`, 236 bytes with the
+return address and the arguments), followed by the zeroing of the stack their
 contracts reserve and the clearing of the registers a callee may change
 (`X86.Scrub.verifiedScrubbedAll`). Their postconditions read the memory on
 return only within their buffers (`initOut`, `finOut`, from
 `Proof.Hmac.initPostOut_local` and `finalizePostOut_local`).
+
+SHA-224's and SHA-256's `init` zeroes its frames itself, the short key's
+holding only the working space its code uses, and is followed by the
+zeroing of the doublewords that leaves (`X86.Scrub.SelScrub.scrubbed`, from
+each backend's residue analysis of it, `Backend.hmacInitSel`).
 
 MD5 and the SHA-512 family have one implementation each, whose code the
 kernel evaluates here. SHA-1, SHA-224 and SHA-256 are generic over their
@@ -77,7 +85,7 @@ namespace VG.Proof.Hmac.X86.Scrub
 open VG.X86 VG.X86.Scrub
 open VG.Impl.StackScratch.X86 (withStackScratch)
 open VG.Proof.Pbkdf2.Whole.X86 (initCode md5F sha384F sha512F sha512_224F sha512_256F)
-open VG.Proof.Pbkdf2.Md.X86 (finFrame finFramed md5M sha384M sha512M' sha512_224M sha512_256M)
+open VG.Proof.Pbkdf2.Md.X86 (finFrame finFramed finFramedW md5M sha384M sha512M' sha512_224M sha512_256M)
 open VG.Proof.Pbkdf2.Whole.X86.Any (anyFrame)
 
 /-- HMAC's `init`'s postcondition reads the memory on return only within the
@@ -233,22 +241,13 @@ def sha1FStub : Impl.Pbkdf2.Whole.X86.Fns := Proof.Sha1.X86.Variants.fns "" "" (
 /-- SHA-224's hash function, with a stub backend. -/
 def sha224MStub : Impl.Pbkdf2.Md.X86.Hash :=
   Proof.Sha256.X86.Variants.mdHash224 "" "" (.block []) (.block []) (.block [])
-/-- The functions SHA-224's `init` calls, with a stub backend. -/
-def sha224FStub : Impl.Pbkdf2.Whole.X86.Fns :=
-  Proof.Sha256.X86.Variants.fns224 "" "" (.block []) (.block []) (.block [])
 /-- SHA-256's hash function, with a stub backend. -/
 def sha256MStub : Impl.Pbkdf2.Md.X86.Hash :=
   Proof.Sha256.X86.Variants.mdHash "" "" (.block []) (.block []) (.block [])
-/-- The functions SHA-256's `init` calls, with a stub backend. -/
-def sha256FStub : Impl.Pbkdf2.Whole.X86.Fns :=
-  Proof.Sha256.X86.Variants.fns "" "" (.block []) (.block []) (.block [])
-
 materialize_code sha1InitStubLit := initCode Spec.Hmac.sha1I sha1MStub.hmacInit sha1FStub
 materialize_code sha1FinStubLit := withStackScratch (finFrame Spec.Hmac.sha1I) 5 sha1MStub.hmacFin
-materialize_code sha224InitStubLit := initCode Spec.Hmac.sha224I sha224MStub.hmacInit sha224FStub
-materialize_code sha224FinStubLit := withStackScratch (finFrame Spec.Hmac.sha224I) 5 sha224MStub.hmacFin
-materialize_code sha256InitStubLit := initCode Spec.Hmac.sha256I sha256MStub.hmacInit sha256FStub
-materialize_code sha256FinStubLit := withStackScratch (finFrame Spec.Hmac.sha256I) 5 sha256MStub.hmacFin
+materialize_code sha224FinStubLit := withStackScratch 236 5 sha224MStub.hmacFin
+materialize_code sha256FinStubLit := withStackScratch 236 5 sha256MStub.hmacFin
 
 theorem sha1InitSide :
     scrubFSide (initCode Spec.Hmac.sha1I sha1MStub.hmacInit sha1FStub) [] (56 + anyFrame Spec.Hmac.sha1I) = true := by
@@ -258,20 +257,12 @@ theorem sha1FinSide :
     scrubFSide (withStackScratch (finFrame Spec.Hmac.sha1I) 5 sha1MStub.hmacFin) [] (28 + finFrame Spec.Hmac.sha1I) = true := by
   lit_decide
 
-theorem sha224InitSide :
-    scrubFSide (initCode Spec.Hmac.sha224I sha224MStub.hmacInit sha224FStub) [] (56 + anyFrame Spec.Hmac.sha224I) = true := by
-  lit_decide
-
 theorem sha224FinSide :
-    scrubFSide (withStackScratch (finFrame Spec.Hmac.sha224I) 5 sha224MStub.hmacFin) [] (28 + finFrame Spec.Hmac.sha224I) = true := by
-  lit_decide
-
-theorem sha256InitSide :
-    scrubFSide (initCode Spec.Hmac.sha256I sha256MStub.hmacInit sha256FStub) [] (56 + anyFrame Spec.Hmac.sha256I) = true := by
+    scrubFSide (withStackScratch 236 5 sha224MStub.hmacFin) [] (28 + 236) = true := by
   lit_decide
 
 theorem sha256FinSide :
-    scrubFSide (withStackScratch (finFrame Spec.Hmac.sha256I) 5 sha256MStub.hmacFin) [] (28 + finFrame Spec.Hmac.sha256I) = true := by
+    scrubFSide (withStackScratch 236 5 sha256MStub.hmacFin) [] (28 + 236) = true := by
   lit_decide
 
 /-- The Merkle–Damgård hash with a backend's compression and streaming functions. -/
@@ -316,38 +307,20 @@ theorem sha1FinFill (sfx cN : String) (c u f : Prog isa) (hc : calleeSide c 20 =
   let M := Proof.Sha1.X86.Variants.mdHash sfx cN c u f
   exact fin_fill sha1MStub (finFrame Spec.Hmac.sha1I) cN M.st.updN M.st.finN c u f hc hf
 
-theorem sha224InitFill (sfx cN : String) (c u f : Prog isa) (hc : calleeSide c 20 = true)
-    (hu : calleeSide u 20 = true) (hf : calleeSide f 20 = true) :
-    Fill 20 (initCode Spec.Hmac.sha224I sha224MStub.hmacInit sha224FStub)
-      (initCode Spec.Hmac.sha224I (Proof.Sha256.X86.Variants.mdHash224 sfx cN c u f).hmacInit
-        (Proof.Sha256.X86.Variants.fns224 sfx cN c u f)) := by
-  let F := Proof.Sha256.X86.Variants.fns224 sfx cN c u f
-  exact init_fill Spec.Hmac.sha224I sha224MStub sha224FStub cN F.H.updN F.H.finN F.hiN
-    c u f hc hu hf (by fill_calls)
-
 theorem sha224FinFill (sfx cN : String) (c u f : Prog isa) (hc : calleeSide c 20 = true)
     (hf : calleeSide f 20 = true) :
-    Fill 20 (withStackScratch (finFrame Spec.Hmac.sha224I) 5 sha224MStub.hmacFin)
-      (withStackScratch (finFrame Spec.Hmac.sha224I) 5
+    Fill 20 (withStackScratch 236 5 sha224MStub.hmacFin)
+      (withStackScratch 236 5
         (Proof.Sha256.X86.Variants.mdHash224 sfx cN c u f).hmacFin) := by
   let M := Proof.Sha256.X86.Variants.mdHash224 sfx cN c u f
-  exact fin_fill sha224MStub (finFrame Spec.Hmac.sha224I) cN M.st.updN M.st.finN c u f hc hf
-
-theorem sha256InitFill (sfx cN : String) (c u f : Prog isa) (hc : calleeSide c 20 = true)
-    (hu : calleeSide u 20 = true) (hf : calleeSide f 20 = true) :
-    Fill 20 (initCode Spec.Hmac.sha256I sha256MStub.hmacInit sha256FStub)
-      (initCode Spec.Hmac.sha256I (Proof.Sha256.X86.Variants.mdHash sfx cN c u f).hmacInit
-        (Proof.Sha256.X86.Variants.fns sfx cN c u f)) := by
-  let F := Proof.Sha256.X86.Variants.fns sfx cN c u f
-  exact init_fill Spec.Hmac.sha256I sha256MStub sha256FStub cN F.H.updN F.H.finN F.hiN
-    c u f hc hu hf (by fill_calls)
+  exact fin_fill sha224MStub 236 cN M.st.updN M.st.finN c u f hc hf
 
 theorem sha256FinFill (sfx cN : String) (c u f : Prog isa) (hc : calleeSide c 20 = true)
     (hf : calleeSide f 20 = true) :
-    Fill 20 (withStackScratch (finFrame Spec.Hmac.sha256I) 5 sha256MStub.hmacFin)
-      (withStackScratch (finFrame Spec.Hmac.sha256I) 5 (Proof.Sha256.X86.Variants.mdHash sfx cN c u f).hmacFin) := by
+    Fill 20 (withStackScratch 236 5 sha256MStub.hmacFin)
+      (withStackScratch 236 5 (Proof.Sha256.X86.Variants.mdHash sfx cN c u f).hmacFin) := by
   let M := Proof.Sha256.X86.Variants.mdHash sfx cN c u f
-  exact fin_fill sha256MStub (finFrame Spec.Hmac.sha256I) cN M.st.updN M.st.finN c u f hc hf
+  exact fin_fill sha256MStub 236 cN M.st.updN M.st.finN c u f hc hf
 
 /-! ### SHA-1 -/
 
@@ -389,29 +362,28 @@ theorem sha1_finSp (v : Proof.Sha1.X86.Variants.Backend) :
 theorem sha224_init_scrubbed (v : Proof.Sha256.X86.Variants.Backend) :
     VerifiedScrubbed X86.target (Impl.Hmac.X86.Fn.sha256Init v.M224 v.F224)
       (Spec.Hmac.sha224I.initAnyKeyContract X86.abi (76 + anyFrame Spec.Hmac.sha224I)) 0 :=
-  verifiedScrubbedAll (api := Spec.Hmac.sha224I.initAnyKeyApi)
+  SelScrub.scrubbed (api := Spec.Hmac.sha224I.initAnyKeyApi)
     { suffix := v.suffix
-      code := initCode Spec.Hmac.sha224I v.M224.hmacInit v.F224
+      code := Impl.Hmac.X86.Fn.sha256InitBody v.M224 v.F224
+      stack := 76 + anyFrame Spec.Hmac.sha224I
       verified := Proof.Pbkdf2.Whole.X86.Any.sha224_initF v
       spSafe := Proof.Pbkdf2.Whole.X86.Any.sha224_initSp v }
-    (initOut Spec.Hmac.sha224I Proof.Hmac.sha224_local _) (W := 76 + anyFrame Spec.Hmac.sha224I)
-    (hs := scrubFSide_of_fill (sha224InitFill _ _ _ _ _ (calleeSide_of_eq v.cmpStack v.cmpScrub)
-      (calleeSide_of_le v.stream.updSU v.updScrub) (calleeSide_of_le v.stream.finSU v.finScrub)) sha224InitSide)
+    v.hmacInit224Sel (initOut Spec.Hmac.sha224I Proof.Hmac.sha224_local _)
 
 theorem sha224_initSp (v : Proof.Sha256.X86.Variants.Backend) :
     (Impl.Hmac.X86.Fn.sha256Init v.M224 v.F224).all (fun i => !isa.writesSp i) = true :=
-  scrubAll_spSafe (Proof.Pbkdf2.Whole.X86.Any.sha224_initSp v)
+  scrubSel_spSafe (Proof.Pbkdf2.Whole.X86.Any.sha224_initSp v)
 
 theorem sha224_fin_scrubbed (v : Proof.Sha256.X86.Variants.Backend) :
     VerifiedScrubbed X86.target (Impl.Hmac.X86.Fn.sha256Finalize v.M224)
-      (Spec.Hmac.sha224I.finalizeContract X86.abi (48 + finFrame Spec.Hmac.sha224I)) 0 :=
+      (Spec.Hmac.sha224I.finalizeContract X86.abi (48 + 236)) 0 :=
   verifiedScrubbedAll (api := Spec.Hmac.sha224I.finalizeApi)
     { suffix := v.suffix
-      code := withStackScratch (finFrame Spec.Hmac.sha224I) 5 v.M224.hmacFin
-      verified := finFramed v.hmacFin224 Proof.Hmac.sha224_local Proof.Pbkdf2.Md.X86.sha224_finFrameSat
+      code := withStackScratch 236 5 v.M224.hmacFin
+      verified := finFramedW 26 v.hmacFin224Fit Proof.Hmac.sha224_local Proof.Pbkdf2.Md.X86.sha224_finFitSat
         (Proof.Pbkdf2.Md.X86.noEsp_of v.finalize224NoSp) v.finalize224Stack
       spSafe := Proof.Pbkdf2.Md.X86.withStackScratch_spSafe v.fin224Sp }
-    (finOut Spec.Hmac.sha224I _) (W := 48 + finFrame Spec.Hmac.sha224I)
+    (finOut Spec.Hmac.sha224I _) (W := 48 + 236)
     (hs := scrubFSide_of_fill (sha224FinFill _ _ _ _ _ (calleeSide_of_eq v.cmpStack v.cmpScrub)
       (calleeSide_of_le v.stream.finSU v.finScrub)) sha224FinSide)
 
@@ -424,29 +396,28 @@ theorem sha224_finSp (v : Proof.Sha256.X86.Variants.Backend) :
 theorem sha256_init_scrubbed (v : Proof.Sha256.X86.Variants.Backend) :
     VerifiedScrubbed X86.target (Impl.Hmac.X86.Fn.sha256Init v.M v.F)
       (Spec.Hmac.sha256I.initAnyKeyContract X86.abi (76 + anyFrame Spec.Hmac.sha256I)) 0 :=
-  verifiedScrubbedAll (api := Spec.Hmac.sha256I.initAnyKeyApi)
+  SelScrub.scrubbed (api := Spec.Hmac.sha256I.initAnyKeyApi)
     { suffix := v.suffix
-      code := initCode Spec.Hmac.sha256I v.M.hmacInit v.F
+      code := Impl.Hmac.X86.Fn.sha256InitBody v.M v.F
+      stack := 76 + anyFrame Spec.Hmac.sha256I
       verified := Proof.Pbkdf2.Whole.X86.Any.sha256_initF v
       spSafe := Proof.Pbkdf2.Whole.X86.Any.sha256_initSp v }
-    (initOut Spec.Hmac.sha256I Proof.Hmac.sha256_local _) (W := 76 + anyFrame Spec.Hmac.sha256I)
-    (hs := scrubFSide_of_fill (sha256InitFill _ _ _ _ _ (calleeSide_of_eq v.cmpStack v.cmpScrub)
-      (calleeSide_of_le v.stream.updSU v.updScrub) (calleeSide_of_le v.stream.finSU v.finScrub)) sha256InitSide)
+    v.hmacInitSel (initOut Spec.Hmac.sha256I Proof.Hmac.sha256_local _)
 
 theorem sha256_initSp (v : Proof.Sha256.X86.Variants.Backend) :
     (Impl.Hmac.X86.Fn.sha256Init v.M v.F).all (fun i => !isa.writesSp i) = true :=
-  scrubAll_spSafe (Proof.Pbkdf2.Whole.X86.Any.sha256_initSp v)
+  scrubSel_spSafe (Proof.Pbkdf2.Whole.X86.Any.sha256_initSp v)
 
 theorem sha256_fin_scrubbed (v : Proof.Sha256.X86.Variants.Backend) :
     VerifiedScrubbed X86.target (Impl.Hmac.X86.Fn.sha256Finalize v.M)
-      (Spec.Hmac.sha256I.finalizeContract X86.abi (48 + finFrame Spec.Hmac.sha256I)) 0 :=
+      (Spec.Hmac.sha256I.finalizeContract X86.abi (48 + 236)) 0 :=
   verifiedScrubbedAll (api := Spec.Hmac.sha256I.finalizeApi)
     { suffix := v.suffix
-      code := withStackScratch (finFrame Spec.Hmac.sha256I) 5 v.M.hmacFin
-      verified := finFramed v.hmacFin Proof.Hmac.sha256_local Proof.Pbkdf2.Md.X86.sha256_finFrameSat
+      code := withStackScratch 236 5 v.M.hmacFin
+      verified := finFramedW 26 v.hmacFinFit Proof.Hmac.sha256_local Proof.Pbkdf2.Md.X86.sha256_finFitSat
         (Proof.Pbkdf2.Md.X86.noEsp_of v.finalizeNoSp) v.finalizeStack
       spSafe := Proof.Pbkdf2.Md.X86.withStackScratch_spSafe v.finSp }
-    (finOut Spec.Hmac.sha256I _) (W := 48 + finFrame Spec.Hmac.sha256I)
+    (finOut Spec.Hmac.sha256I _) (W := 48 + 236)
     (hs := scrubFSide_of_fill (sha256FinFill _ _ _ _ _ (calleeSide_of_eq v.cmpStack v.cmpScrub)
       (calleeSide_of_le v.stream.finSU v.finScrub)) sha256FinSide)
 
