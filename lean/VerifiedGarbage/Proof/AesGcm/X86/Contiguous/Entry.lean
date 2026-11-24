@@ -17,19 +17,19 @@ namespace VG.Proof.AesGcm.X86.Contiguous
 open VG VG.X86 VG.Impl.AesGcm.X86 VG.Impl.AesGcm.X86.Contiguous
 
 theorem callerAddress (sp : BitVec 32) (i : Nat) :
-    argA (sp - 2608#32) (callerSlot i) = argA sp i := by
-  have shift : 4 + 4 * callerSlot i = 2608 + (4 + 4 * i) := by change 4 + 4 * (652+i) = _; omega
+    argA (sp - 2572#32) (callerSlot i) = argA sp i := by
+  have shift : 4 + 4 * callerSlot i = 2572 + (4 + 4 * i) := by change 4 + 4 * (643+i) = _; omega
   rw [argA, shift, BitVec.ofNat_add, ←BitVec.add_assoc, BitVec.sub_add_cancel]
 
 /-- The tag pass reads the destination found in the caller's original slot. -/
 theorem readCaller {s : State} {sp w : BitVec 32} {i o : Nat}
-    (esp : s.gpr .esp = sp - 2608#32) (ebp : s.gpr .ebp = w)
+    (esp : s.gpr .esp = sp - 2572#32) (ebp : s.gpr .ebp = w)
     (fw : w.toNat + 2560 ≤ 2^32) (hw : Covers [⟨w64 w,2560⟩] s.wr)
     (readable : InRegions (s.rd ++ s.wr) (argA sp i) 4) (fits : o + 4 ≤ 2560) :
     ∃ z, runBlock isa (keep (callerSlot i) o) s = some z ∧
       z.mem = s.mem.writeW (w64 w + BitVec.ofNat 64 o) (s.mem.readW (argA sp i) 32) ∧
       (∀ r, r ≠ .eax → z.gpr r = s.gpr r) ∧ z.rd = s.rd ∧ z.wr = s.wr := by
-  have read : InRegions (s.rd ++ s.wr) (argA (sp-2608#32) (callerSlot i)) 4 := callerAddress sp i ▸ readable
+  have read : InRegions (s.rd ++ s.wr) (argA (sp-2572#32) (callerSlot i)) 4 := callerAddress sp i ▸ readable
   simpa only [callerAddress] using keep_readable esp ebp fw hw read fits
 
 theorem setup_rel {s t : State} (sameStack : s.gpr .esp = t.gpr .esp) :

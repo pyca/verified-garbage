@@ -9,13 +9,15 @@ The private frame contains the existing GCM workspace and the outgoing CTR desti
 namespace VG.Impl.AesGcm.X86.Contiguous
 open VG.X86
 
-abbrev frameBytes := 2608
+/-- Place the 2560-byte workspace 12 bytes above the outgoing destination word.
+The full 2604-byte wipe then begins on a 16-byte boundary under the i686 System V ABI. -/
+abbrev frameBytes := 2572
 
 /-- After reserving the frame, the caller's argument words follow it and the return address. -/
 abbrev callerSlot (i : Nat) := frameBytes / 4 + i
 
 def setup : List Instr :=
-  [.mov .eax (.reg .esp), .alu .add .eax (imm 48)] ++ saveAt ++
+  [.mov .eax (.reg .esp), .alu .add .eax (imm 12)] ++ saveAt ++
     [.mov .esi (.reg .ebp), .alu .add .esi (imm stO)] ++
     keep (callerSlot 0) ctxO ++ keep (callerSlot 1) roundsO ++ keep (callerSlot 2) dO ++
     keep (callerSlot 3) nO ++ [.store (at_ .ebp nlO) .eax] ++ keep (callerSlot 4) aadO ++
@@ -32,6 +34,6 @@ def sealContiguous (c : Callees) : Prog isa :=
 
 /-- Wipe the caller-scratch registers and the private frame before returning. -/
 def scrubbed (c : Callees) : Prog isa :=
-  Impl.Scrub.X86.scrubAll 0 2640 (sealContiguous c)
+  Impl.Scrub.X86.scrubAll 0 2604 (sealContiguous c)
 
 end VG.Impl.AesGcm.X86.Contiguous

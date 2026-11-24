@@ -117,7 +117,7 @@ structure PayloadPost (p : BitVec 32 × (Nat → BitVec 32)) (T : BitVec 32) (b 
   frame : Frame (textWrites p T) b.2.mem s.mem
 
 theorem payload_pc (v : GcmImpl) (p : BitVec 32 × (Nat → BitVec 32)) (caller T : BitVec 32)
-    (sp : p.1=caller-2608#32) (G : OL p) (Q : OL (destParams p T)) (D : OLD (destParams p T))
+    (sp : p.1=caller-2572#32) (G : OL p) (Q : OL (destParams p T)) (D : OLD (destParams p T))
     (P : DirectGather.PieceRegions (p.2 0) (p.2 8) p.1 (p.2 6) T (p.2 7).toNat)
     (apart : ∀ r∈cipherFrame p T, (⟨argA caller 7,4⟩ : Region).Disjoint r) :
     Pc (PayloadPre p caller T)
@@ -258,7 +258,7 @@ abbrev sealTail (v : GcmImpl) : Prog isa := .seq (Open.decTo v.callees v.callees
   (.seq (.block (keep (callerSlot 7) dataO)) (.seq (oneTag v.callees 0) (.seq (tagOut 0) (.block restore))))
 
 theorem sealTail_pc (v : GcmImpl) (p : Params) (caller dst tag : BitVec 32)
-    (sp : p.1=caller-2608#32) (G : OL p) (Q : OL (destParams p dst)) (D : OLD (destParams p dst))
+    (sp : p.1=caller-2572#32) (G : OL p) (Q : OL (destParams p dst)) (D : OLD (destParams p dst))
     (P : DirectGather.PieceRegions (p.2 0) (p.2 8) p.1 (p.2 6) dst (p.2 7).toNat)
     (apart : ∀ r∈cipherFrame p dst, (⟨argA caller 7,4⟩ : Region).Disjoint r)
     (fits : tag.toNat+16≤2^32) (tw : (⟨w64 tag,16⟩ : Region).Disjoint ⟨w64 (p.2 8),2560⟩)

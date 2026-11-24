@@ -28,14 +28,14 @@ namespace VG.Proof.AesGcm.X86.Contiguous
 open VG VG.X86 VG.X86.RegUpd VG.Impl.AesGcm.X86 VG.Impl.AesGcm.X86.Contiguous
 
 abbrev startCode : List Instr :=
-  [.mov .eax (.reg .esp), .alu .add .eax (imm 48)] ++ saveAt ++ oPre
+  [.mov .eax (.reg .esp), .alu .add .eax (imm 12)] ++ saveAt ++ oPre
 
-theorem start_run (s : State) {W : BitVec 32} (work : s.gpr .esp + 48#32 = W)
+theorem start_run (s : State) {W : BitVec 32} (work : s.gpr .esp + 12#32 = W)
     (ww : Covers [⟨w64 W, 2560⟩] s.wr) (fits : W.toNat + 2560 ≤ 2^32) :
     ∃ t, runBlock isa startCode s = some t ∧ t.gpr .ebp = W ∧ t.gpr .esi = stOf W ∧
       t.gpr .esp = s.gpr .esp ∧ SavedAt t.mem W s ∧
       Frame [savedR W] s.mem t.mem ∧ t.rd = s.rd ∧ t.wr = s.wr := by
-  have ptr : ∃ u, runBlock isa [.mov .eax (.reg .esp), .alu .add .eax (imm 48)] s = some u ∧
+  have ptr : ∃ u, runBlock isa [.mov .eax (.reg .esp), .alu .add .eax (imm 12)] s = some u ∧
       u.gpr .eax = W ∧ (∀ r, r ≠ .eax → u.gpr r = s.gpr r) ∧
       u.mem = s.mem ∧ u.rd = s.rd ∧ u.wr = s.wr := by
     refine ⟨_, by xrun [], ?_, ?_, ?_, ?_, ?_⟩
@@ -65,7 +65,7 @@ the existing argument-slot proof with the unframed routines. -/
 theorem copyCallerSlots {s : State} {caller W : BitVec 32} (ps : List (Nat × Nat))
     (fields : ∀ p ∈ ps, p.1 < 10 ∧ p.2 + 4 ≤ 2560 ∧ p.2 % 4 = 0)
     (distinct : (ps.map (·.2)).Nodup)
-    (esp : s.gpr .esp = caller - 2608#32) (ebp : s.gpr .ebp = W)
+    (esp : s.gpr .esp = caller - 2572#32) (ebp : s.gpr .ebp = W)
     (wW : Covers [⟨w64 W, 2560⟩] s.wr) (fw : W.toNat + 2560 ≤ 2^32)
     (args : Covers [argsR caller 10] (s.rd ++ s.wr))
     (apart : (argsR caller 10).Disjoint ⟨w64 W, 2560⟩)
@@ -80,7 +80,7 @@ theorem copyCallerSlots {s : State} {caller W : BitVec 32} (ps : List (Nat × Na
 
 /-- The nonce length is read once and written into both slots used by GCM. -/
 theorem copyNonceLength {s : State} {W SP : BitVec 32}
-    (esp : s.gpr .esp = SP - 2608#32) (ebp : s.gpr .ebp = W)
+    (esp : s.gpr .esp = SP - 2572#32) (ebp : s.gpr .ebp = W)
     (fw : W.toNat + 2560 ≤ 2^32) (hw : Covers [⟨w64 W,2560⟩] s.wr)
     (readable : InRegions (s.rd ++ s.wr) (argA SP 3) 4) :
     ∃ t, runBlock isa (keep (callerSlot 3) nO ++ ([.store (at_ .ebp nlO) .eax] : List Instr)) s = some t ∧
@@ -102,13 +102,13 @@ theorem copyNonceLength {s : State} {W SP : BitVec 32}
 /-- Record the ciphertext destination for the shared payload call, then zero
 the workspace word used as the length of the trailing piece. -/
 theorem finishSlots {s : State} {W SP : BitVec 32}
-    (esp : s.gpr .esp = SP - 2608#32) (ebp : s.gpr .ebp = W)
+    (esp : s.gpr .esp = SP - 2572#32) (ebp : s.gpr .ebp = W)
     (fw : W.toNat + 2560 ≤ 2^32) (hw : Covers [⟨w64 W,2560⟩] s.wr)
     (readable : InRegions (s.rd ++ s.wr) (argA SP 7) 4)
-    (slot : InRegions s.wr (w64 (SP - 2608#32)) 4) :
+    (slot : InRegions s.wr (w64 (SP - 2572#32)) 4) :
     ∃ t, runBlock isa [.mov .eax (argOp (callerSlot 7)), .store (at_ .esp 0) .eax,
       .mov .eax (imm 0), .store (at_ .ebp zO) .eax] s = some t ∧
-      t.mem = (s.mem.writeW (w64 (SP - 2608#32)) (s.mem.readW (argA SP 7) 32)).writeW
+      t.mem = (s.mem.writeW (w64 (SP - 2572#32)) (s.mem.readW (argA SP 7) 32)).writeW
         (w64 W + BitVec.ofNat 64 zO) (0#32) ∧
       (∀ r, r ≠ .eax → t.gpr r = s.gpr r) ∧ t.rd = s.rd ∧ t.wr = s.wr := by
   have ar := callerAddress SP 7
@@ -127,23 +127,23 @@ end VG.Proof.AesGcm.X86.Contiguous
 namespace VG.Proof.AesGcm.X86.Contiguous
 open VG VG.X86
 
-abbrev publicContract := Spec.Gcm.sealContiguousContract X86.abi 2640
+abbrev publicContract := Spec.Gcm.sealContiguousContract X86.abi 2604
 abbrev caller (s : State) := s.gpr .esp
-abbrev sp (s : State) := caller s - 2608#32
-abbrev work (s : State) := sp s + 48#32
+abbrev sp (s : State) := caller s - 2572#32
+abbrev work (s : State) := sp s + 12#32
 abbrev keyR (s : State) : Region := ⟨w64 (arg s 0),256⟩
 abbrev ivR (s : State) : Region := ⟨w64 (arg s 2),(arg s 3).toNat⟩
 abbrev aadR (s : State) : Region := ⟨w64 (arg s 4),(arg s 5).toNat⟩
 abbrev srcR (s : State) : Region := ⟨w64 (arg s 6),(arg s 8).toNat⟩
 abbrev dstR (s : State) : Region := ⟨w64 (arg s 7),(arg s 8).toNat⟩
 abbrev tagR (s : State) : Region := ⟨w64 (arg s 9),16⟩
-abbrev stackR (s : State) : Region := ⟨w64 (caller s)-2640#64,2640⟩
+abbrev stackR (s : State) : Region := ⟨w64 (caller s)-2604#64,2604⟩
 abbrev retR (s : State) : Region := ⟨w64 (caller s),4⟩
 abbrev incoming (s : State) := argsR (caller s) 10
 abbrev external (s : State) := [keyR s, ivR s, aadR s, srcR s, dstR s, tagR s, incoming s]
 
 structure Layout (s : State) : Prop where
-  down : 2640 ≤ (caller s).toNat
+  down : 2604 ≤ (caller s).toNat
   up : (caller s).toNat + 44 ≤ 2^32
   readable : ∀ r ∈ [keyR s,ivR s,aadR s,srcR s], r ∈ s.rd ++ s.wr
   writable : ∀ r ∈ [dstR s,tagR s,incoming s], r ∈ s.wr
@@ -212,26 +212,26 @@ theorem public_layout {s : State} (h : publicContract.pre s) : Layout s := by
 /-- Offsets relative to the lowest address reserved for calls and the allocated frame. -/
 abbrev part (s : State) (d n : Nat) : Region := ⟨(stackR s).base + BitVec.ofNat 64 d,n⟩
 
-theorem spNat {s : State} (h : Layout s) : (sp s).toNat = (caller s).toNat - 2608 :=
+theorem spNat {s : State} (h : Layout s) : (sp s).toNat = (caller s).toNat - 2572 :=
   by
-    have low : 2608 ≤ (caller s).toNat := by omega_using [h.down]
-    change ((caller s) - 2608#32).toNat = _
+    have low : 2572 ≤ (caller s).toNat := by omega_using [h.down]
+    change ((caller s) - 2572#32).toNat = _
     rw [BitVec.toNat_sub,BitVec.toNat_ofNat]
     have := (caller s).isLt
     omega
 
-theorem workNat {s : State} (h : Layout s) : (work s).toNat = (sp s).toNat + 48 :=
+theorem workNat {s : State} (h : Layout s) : (work s).toNat = (sp s).toNat + 12 :=
   toNat_add32 (by omega_using [spNat h,h.up,h.down])
 
 theorem spAddr {s : State} (h : Layout s) : w64 (sp s) = (stackR s).base + 32#64 := by
-  change (caller s - 2608#32).setWidth 64 = (caller s).setWidth 64 - 2640#64 + 32#64
-  rw [Taint.sub_setWidth (by omega_using [h.down] : 2608 ≤ (caller s).toNat)]
+  change (caller s - 2572#32).setWidth 64 = (caller s).setWidth 64 - 2604#64 + 32#64
+  rw [Taint.sub_setWidth (by omega_using [h.down] : 2572 ≤ (caller s).toNat)]
   rw [BitVec.sub_eq_add_neg,BitVec.sub_eq_add_neg,BitVec.add_assoc]
   rfl
 
-theorem workAddr {s : State} (h : Layout s) : w64 (work s) = (stackR s).base + 80#64 := by
-  change w64 (sp s + 48#32) = _
-  rw [w64_add (by omega_using [spNat h,h.up,h.down] : (sp s).toNat + 48 < 2^32),spAddr h,BitVec.add_assoc]
+theorem workAddr {s : State} (h : Layout s) : w64 (work s) = (stackR s).base + 44#64 := by
+  change w64 (sp s + 12#32) = _
+  rw [w64_add (by omega_using [spNat h,h.up,h.down] : (sp s).toNat + 12 < 2^32),spAddr h,BitVec.add_assoc]
   rfl
 
 theorem callZone {s : State} (h : Layout s) : below (sp s) 32 = part s 0 32 := by
@@ -241,11 +241,11 @@ theorem callZone {s : State} (h : Layout s) : below (sp s) 32 = part s 0 32 := b
   change (⟨(stackR s).base,32⟩ : Region) = ⟨(stackR s).base + 0#64,32⟩
   rw [BitVec.add_zero]
 
-theorem partSub (s : State) {d n : Nat} (h : d+n ≤ 2640) : (part s d n).Sub (stackR s) :=
+theorem partSub (s : State) {d n : Nat} (h : d+n ≤ 2604) : (part s d n).Sub (stackR s) :=
   Offset.sub_base _ h
 
 theorem workSub {s : State} (h : Layout s) : (⟨w64 (work s),2560⟩ : Region).Sub (stackR s) := by
-  rw [workAddr h]; exact partSub s (d:=80) (by decide)
+  rw [workAddr h]; exact partSub s (d:=44) (by decide)
 
 theorem callSub {s : State} (h : Layout s) : (below (sp s) 32).Sub (stackR s) := by
   rw [callZone h]; exact partSub s (by decide)
@@ -256,7 +256,7 @@ theorem slotSub {s : State} (h : Layout s) : (⟨w64 (sp s),4⟩ : Region).Sub (
 theorem slotWork {s : State} (h : Layout s) :
     (⟨w64 (sp s),4⟩ : Region).Disjoint ⟨w64 (work s),2560⟩ := by
   rw [spAddr h,workAddr h]
-  exact Offset.disjoint _ (d:=32) (e:=80) (by decide) (by decide) (by decide)
+  exact Offset.disjoint _ (d:=32) (e:=44) (by decide) (by decide) (by decide)
 
 theorem pieceRegions {s : State} (h : Layout s) :
     DirectGather.PieceRegions (arg s 0) (work s) (sp s) (arg s 6) (arg s 7) (arg s 8).toNat := by
@@ -284,7 +284,7 @@ theorem oldLayout {s : State} (h : Layout s) {text : BitVec 32}
   have slotAway {r : Region} (mem : r ∈ external s) := (h.stack _ mem).sub_left (slotSub h)
   have kw : (below (sp s) 32).Disjoint ⟨w64 W,2560⟩ := by
     rw [callZone h]; change (part s 0 32).Disjoint ⟨w64 (work s),2560⟩
-    rw [workAddr h]; exact Offset.disjoint _ (d:=0) (e:=80) (by decide) (by decide) (by decide)
+    rw [workAddr h]; exact Offset.disjoint _ (d:=0) (e:=44) (by decide) (by decide) (by decide)
   have mk : keyR s ∈ external s := by simp [external]
   have mn : ivR s ∈ external s := by simp [external]
   have ma : aadR s ∈ external s := by simp [external]
@@ -447,8 +447,8 @@ theorem publicPost {s z : State} (eqn : Equation s z.mem) : publicContract.post 
   rwa [cipher,hash,←Spec.Gcm.encrypt_eq] at eqn
 
 theorem retOutside (s : State) : (retR s).Disjoint (stackR s) := by
-  have pos : w64 (caller s)=(stackR s).base+2640#64 := by
-    change _=w64 (caller s)-2640#64+2640#64
+  have pos : w64 (caller s)=(stackR s).base+2604#64 := by
+    change _=w64 (caller s)-2604#64+2604#64
     rw [BitVec.sub_add_cancel]
   unfold retR
   rw [pos]
@@ -512,7 +512,7 @@ end VG.Proof.AesGcm.X86.Contiguous
 namespace VG.Proof.AesGcm.X86.Contiguous
 open VG VG.X86 VG.Impl.AesGcm.X86 VG.Impl.AesGcm.X86.Contiguous
 
-abbrev allocated (s : State) := allocFrame 2608 s
+abbrev allocated (s : State) := allocFrame 2572 s
 abbrev workR (s : State) : Region := ⟨w64 (work s),2560⟩
 abbrev tempR (s : State) : Region := ⟨w64 (sp s),4⟩
 abbrev cell (s : State) (offset : Nat) : Region := ⟨w64 (work s) + BitVec.ofNat 64 offset,4⟩
@@ -534,14 +534,14 @@ theorem allocatedWork {s : State} (l : Layout s) : Covers [workR s] (allocated s
   apply Covers.of_sub
   intro r hr
   obtain rfl := List.mem_singleton.mp hr
-  refine ⟨_,List.mem_cons_self,48,?_,by change 48+2560≤2608; decide⟩
+  refine ⟨_,List.mem_cons_self,12,?_,by change 12+2560≤2572; decide⟩
   exact w64_add (by omega_using [spNat l,l.up,l.down])
 
 theorem allocatedSlot {s : State} : Covers [tempR s] (allocated s).wr := by
   apply Covers.of_sub
   intro r hr
   obtain rfl := List.mem_singleton.mp hr
-  exact ⟨_,List.mem_cons_self,0,(BitVec.add_zero _).symm,by change 0+4≤2608; decide⟩
+  exact ⟨_,List.mem_cons_self,0,(BitVec.add_zero _).symm,by change 0+4≤2572; decide⟩
 
 theorem workFit {s : State} (l : Layout s) : (work s).toNat + 2560 ≤ 2^32 := by
   omega_using [workNat l,spNat l,l.up,l.down]
@@ -762,10 +762,10 @@ namespace VG.Proof.AesGcm.X86.Contiguous
 open VG VG.X86 VG.X86.RegUpd VG.Impl.AesGcm.X86
 
 abbrev SetupOk := ∀ s : State, Layout s →
-  WP isa (.block Impl.AesGcm.X86.Contiguous.setup) (Gather.allocated 2608 s) fun e => ∃ ref, Ready s ref e
+  WP isa (.block Impl.AesGcm.X86.Contiguous.setup) (Gather.allocated 2572 s) fun e => ∃ ref, Ready s ref e
 
 private theorem srcParams_eq {s t : State} (h : pubN 10 s t) : srcParams t=srcParams s := by
-  have sp : Contiguous.sp t=Contiguous.sp s := congrArg (·-2608#32) h.1.symm
+  have sp : Contiguous.sp t=Contiguous.sp s := congrArg (·-2572#32) h.1.symm
   refine Prod.ext sp ?_
   funext i
   by_cases six : i=6
@@ -773,7 +773,7 @@ private theorem srcParams_eq {s t : State} (h : pubN 10 s t) : srcParams t=srcPa
   by_cases seven : i=7
   · subst i; exact (h.2 8 (by decide)).symm
   by_cases eight : i=8
-  · subst i; exact congrArg (·+48#32) sp
+  · subst i; exact congrArg (·+12#32) sp
   by_cases publicWord : i<6
   · simpa only [srcParams,params,six,seven,eight,publicWord,ite_true,ite_false] using (h.2 i (by omega)).symm
   · simp only [srcParams,params,six,seven,eight,publicWord,ite_false]
@@ -818,7 +818,7 @@ theorem constantTime (v : GcmImpl) (setup : SetupOk) :
   have l := public_layout hs
   have l' := public_layout ht
   apply Gather.rel_alloc
-  refine rel_seq (setup_rel (congrArg (·-2608#32) hp.1)) (setup s l) (setup t l') ?_
+  refine rel_seq (setup_rel (congrArg (·-2572#32) hp.1)) (setup s l) (setup t l') ?_
   intro a b ha hb
   obtain ⟨x,hx⟩ := ha
   obtain ⟨y,hy⟩ := hb
@@ -837,14 +837,14 @@ theorem coreSafe (v : GcmImpl) : (sealContiguous v.callees).all (fun i => !isa.w
   change ((true && _) && true)=true
   rw [bodySafe]; rfl
 
-private theorem releaseSub {s : State} (l : Layout s) : (below (caller s) 2608).Sub (stackR s) := by
-  have st : below (caller s) 2640=stackR s := (below_eq l.down).symm
+private theorem releaseSub {s : State} (l : Layout s) : (below (caller s) 2572).Sub (stackR s) := by
+  have st : below (caller s) 2604=stackR s := (below_eq l.down).symm
   rw [←st]
   exact X86.below_sub (by decide) l.down
 
 private theorem releaseEqn {s z : State} (l : Layout s) {m : Mem} (h : Equation s z.mem)
-    (f : Frame [below (caller s) 2608] z.mem m) : Equation s m := by
-  have away {r : Region} (hr : r∈external s) : ∀ q∈[below (caller s) 2608], r.Disjoint q :=
+    (f : Frame [below (caller s) 2572] z.mem m) : Equation s m := by
+  have away {r : Region} (hr : r∈external s) : ∀ q∈[below (caller s) 2572], r.Disjoint q :=
     fun _ hq => List.mem_singleton.mp hq ▸ (l.stack _ hr).symm.sub_right (releaseSub l)
   exact h.trans (Prod.ext (Proof.Cmac.bytesAt_frame f (away (r:=dstR s) (by simp [external])) (by omega_using [(arg s 8).isLt])).symm
     (Proof.Cmac.bytesAt_frame f (away (r:=tagR s) (by simp [external])) (by decide)).symm)
@@ -852,7 +852,7 @@ private theorem releaseEqn {s z : State} (l : Layout s) {m : Mem} (h : Equation 
 theorem correct (v : GcmImpl) (setup : SetupOk) (s : State) (hs : publicContract.pre s) :
     WP isa (sealContiguous v.callees) s fun z => abiPreserved s z ∧ publicContract.post s z := by
   have l := public_layout hs
-  apply Gather.WP.alloc ⟨by decide,by decide,by decide⟩ (by change 2608≤(caller s).toNat; omega_using [l.down])
+  apply Gather.WP.alloc ⟨by decide,by decide,by decide⟩ (by change 2572≤(caller s).toNat; omega_using [l.down])
     (VG.X86.noSp_of_all (bodySafe v))
   refine WP.seq ((setup s l).mono ?_)
   intro e he
@@ -863,7 +863,7 @@ theorem correct (v : GcmImpl) (setup : SetupOk) (s : State) (hs : publicContract
   · intro r hr
     by_cases eq : r=.esp
     · subst r
-      change out.gpr .esp+2608#32=caller s
+      change out.gpr .esp+2572#32=caller s
       rw [done.sp]; exact BitVec.sub_add_cancel _ _
     · exact (gpr_setReg_of_ne _ _ eq).trans (done.saved r hr eq)
   · change m.readW (w64 (caller s)) 32=_
@@ -915,10 +915,10 @@ theorem public_postOut : VG.X86.Scrub.PostOut publicContract 0 := by
       · first | exact (Scrub.bytesAt_of hb.2.2.2.1 (Scrub.len_le len)).symm | exact (Scrub.bytesAt_of hb.2.2.2.2.1 (Scrub.len_le len)).symm
       · first | exact (Scrub.bytesAt_of hb.2.2.2.2 (Nat.le_refl 16)).symm | exact (Scrub.bytesAt_of hb.2.2.2.2.2 (Nat.le_refl 16)).symm
 
-private theorem stub_side : scrubFSide (Impl.AesGcm.X86.Contiguous.sealContiguous Scrub.stub) [] 2640 = true := by
+private theorem stub_side : scrubFSide (Impl.AesGcm.X86.Contiguous.sealContiguous Scrub.stub) [] 2604 = true := by
   lit_decide
 
-theorem scrub_side (v : GcmImpl) : scrubFSide (Impl.AesGcm.X86.Contiguous.sealContiguous v.callees) [] 2640 = true := by
+theorem scrub_side (v : GcmImpl) : scrubFSide (Impl.AesGcm.X86.Contiguous.sealContiguous v.callees) [] 2604 = true := by
   obtain ⟨hc,hk,hg⟩ := Scrub.holes v
   exact scrubFSide_of_fill (n:=0) (by fill_calls) stub_side
 
