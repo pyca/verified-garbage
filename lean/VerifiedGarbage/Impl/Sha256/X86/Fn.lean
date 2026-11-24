@@ -20,8 +20,10 @@ clearing (`Impl.Scrub.X86.scrubSel 0`), so that each returns without secret
 residue;
 and `vg_sha256_update`, `vg_sha256_finalize` and `vg_sha224_finalize`, a
 backend's streaming functions in a frame of working space
-(`Impl.StackScratch.X86.withStackScratch`), followed by the zeroing of the
-stack they and their callees use and that clearing.
+(`Impl.StackScratch.X86.withStackScratch`: the 160 bytes they use, the
+return address, the arguments and the buffer's address, and no more, since
+all of it is zeroed on every call), followed by the zeroing of the stack
+they and their callees use and that clearing.
 -/
 
 @[expose] public section
@@ -44,16 +46,16 @@ def digest (H : Impl.Pbkdf2.Stream.X86.Hash) : Prog isa :=
 
 /-- `vg_sha256_update` over a backend's streaming `update` `c`, as emitted. -/
 def update (c : Prog isa) : Prog isa :=
-  Impl.Scrub.X86.scrubAll 0 (20 + 636) (Impl.StackScratch.X86.withStackScratch 636 5 c)
+  Impl.Scrub.X86.scrubAll 0 (20 + 188) (Impl.StackScratch.X86.withStackScratch 188 5 c)
 
 /-- `vg_sha256_finalize` over a backend's streaming `finalize` `c`, as emitted. -/
 def finalize (c : Prog isa) : Prog isa :=
-  Impl.Scrub.X86.scrubAll 0 (20 + 632) (Impl.StackScratch.X86.withStackScratch 632 4 c)
+  Impl.Scrub.X86.scrubAll 0 (20 + 184) (Impl.StackScratch.X86.withStackScratch 184 4 c)
 
 /-- `vg_sha224_finalize` over a backend's compression function `cmpN`/`cmpC`, as
 emitted. -/
 def finalize224 (cmpN : String) (cmpC : Prog isa) : Prog isa :=
-  Impl.Scrub.X86.scrubAll 0 (20 + 632)
-    (Impl.StackScratch.X86.withStackScratch 632 4 (Stream.finalize224 cmpN cmpC))
+  Impl.Scrub.X86.scrubAll 0 (20 + 184)
+    (Impl.StackScratch.X86.withStackScratch 184 4 (Stream.finalize224 cmpN cmpC))
 
 end VG.Impl.Sha256.X86.Fn

@@ -747,37 +747,37 @@ theorem finalize224Out (stack : Nat) :
   X86.Scrub.postOut_of_local X86.Scrub.ScrubAbi.plain (Proof.Sha256.finalize224Post_out 32)
 
 theorem update_side :
-    X86.Scrub.scrubFSide (Impl.StackScratch.X86.withStackScratch 636 5 (.block [])) [] 636 = true := by
+    X86.Scrub.scrubFSide (Impl.StackScratch.X86.withStackScratch 188 5 (.block [])) [] 188 = true := by
   lit_decide
 
 /-- What the cleanup needs of `update`'s code with the streaming `update` `c`, in its
-frame of 636 bytes, from `c`'s `calleeOk` and stack. -/
+frame of 188 bytes, from `c`'s `calleeOk` and stack. -/
 theorem update_scrub (c : Prog isa) (hc : calleeOk c = true) (hs : stackUse c ≤ 20) :
-    X86.Scrub.scrubFSide (Impl.StackScratch.X86.withStackScratch 636 5 c) [] (20 + 636) = true := by
+    X86.Scrub.scrubFSide (Impl.StackScratch.X86.withStackScratch 188 5 c) [] (20 + 188) = true := by
   have h := X86.Scrub.calleeSide_of_le (n := 20) hs hc
   exact X86.Scrub.scrubFSide_of_fill (n := 20) (by fill_calls) update_side
 
 theorem finalize_side :
-    X86.Scrub.scrubFSide (Impl.StackScratch.X86.withStackScratch 632 4 (.block [])) [] 632 = true := by
+    X86.Scrub.scrubFSide (Impl.StackScratch.X86.withStackScratch 184 4 (.block [])) [] 184 = true := by
   lit_decide
 
 /-- What the cleanup needs of `finalize`'s code with the streaming `finalize` `c`, in its
-frame of 632 bytes, from `c`'s `calleeOk` and stack. -/
+frame of 184 bytes, from `c`'s `calleeOk` and stack. -/
 theorem finalize_scrub (c : Prog isa) (hc : calleeOk c = true) (hs : stackUse c ≤ 20) :
-    X86.Scrub.scrubFSide (Impl.StackScratch.X86.withStackScratch 632 4 c) [] (20 + 632) = true := by
+    X86.Scrub.scrubFSide (Impl.StackScratch.X86.withStackScratch 184 4 c) [] (20 + 184) = true := by
   have h := X86.Scrub.calleeSide_of_le (n := 20) hs hc
   exact X86.Scrub.scrubFSide_of_fill (n := 20) (by fill_calls) finalize_side
 
 theorem finalize224_side :
-    X86.Scrub.scrubFSide (Impl.StackScratch.X86.withStackScratch 632 4 (Impl.Sha256.X86.Stream.finalize224 "" (.block [])))
-      [] (20 + 632) = true := by
+    X86.Scrub.scrubFSide (Impl.StackScratch.X86.withStackScratch 184 4 (Impl.Sha256.X86.Stream.finalize224 "" (.block [])))
+      [] (20 + 184) = true := by
   lit_decide
 
 /-- What the cleanup needs of SHA-224's `finalize` with the compression function
 `cmpN`/`cmpC`, from `cmpC`'s `calleeOk` and stack. -/
 theorem finalize224_scrub (cmpN : String) (cmpC : Prog isa) (hc : calleeOk cmpC = true) (hs : stackUse cmpC = 0) :
-    X86.Scrub.scrubFSide (Impl.StackScratch.X86.withStackScratch 632 4 (Impl.Sha256.X86.Stream.finalize224 cmpN cmpC))
-      [] (20 + 632) = true := by
+    X86.Scrub.scrubFSide (Impl.StackScratch.X86.withStackScratch 184 4 (Impl.Sha256.X86.Stream.finalize224 cmpN cmpC))
+      [] (20 + 184) = true := by
   have h := X86.Scrub.calleeSide_of_eq (n := 0) hs hc
   exact X86.Scrub.scrubFSide_of_fill (n := 0) (by fill_calls) finalize224_side
 
@@ -809,12 +809,12 @@ structure Backend where
   /-- Its own functions: the streaming `update` and `finalize` made with it,
   `stream`'s in a frame of working space, and SHA-224's `finalize`
   (`Impl.Sha256.X86.Fn.update`, …). -/
-  update : StreamFn Spec.Sha256.updateApi (Impl.StackScratch.X86.withStackScratch 636 5 stream.upd)
-    (20 + 636)
-  finalize : StreamFn Spec.Sha256.finalizeApi (Impl.StackScratch.X86.withStackScratch 632 4 stream.fin)
-    (20 + 632)
+  update : StreamFn Spec.Sha256.updateApi (Impl.StackScratch.X86.withStackScratch 188 5 stream.upd)
+    (20 + 188)
+  finalize : StreamFn Spec.Sha256.finalizeApi (Impl.StackScratch.X86.withStackScratch 184 4 stream.fin)
+    (20 + 184)
   finalize224 : StreamFn Spec.Sha256.finalize224Api
-    (Impl.StackScratch.X86.withStackScratch 632 4 (Impl.Sha256.X86.Stream.finalize224 cmpN cmpC)) (20 + 632)
+    (Impl.StackScratch.X86.withStackScratch 184 4 (Impl.Sha256.X86.Stream.finalize224 cmpN cmpC)) (20 + 184)
   /-- The compression function and the streaming functions it makes, the
   code the functions built on it call, have no MMX instruction and make no
   indirect call (`calleeOk`): what the cleanup of every function that calls
@@ -908,7 +908,7 @@ theorem iterate224 : Verified X86.target v.M224.iterate (Proof.Pbkdf2.Instance.i
 without secret residue (`StreamFn.scrubbed`). -/
 theorem update_scrubbed :
     VerifiedScrubbed X86.target (Impl.Sha256.X86.Fn.update v.stream.upd)
-      (Spec.Sha256.updateApi.contract X86.abi (20 + 636)) (Spec.Sha256.updateApi.sig.retBits 32) :=
+      (Spec.Sha256.updateApi.contract X86.abi (20 + 188)) (Spec.Sha256.updateApi.sig.retBits 32) :=
   v.update.scrubbed
 
 theorem update_spSafe : (Impl.Sha256.X86.Fn.update v.stream.upd).all (fun i => !isa.writesSp i) = true :=
@@ -917,7 +917,7 @@ theorem update_spSafe : (Impl.Sha256.X86.Fn.update v.stream.upd).all (fun i => !
 /-- `vg_sha256_finalize` as emitted with `v`'s streaming `finalize`, likewise. -/
 theorem finalize_scrubbed :
     VerifiedScrubbed X86.target (Impl.Sha256.X86.Fn.finalize v.stream.fin)
-      (Spec.Sha256.finalizeApi.contract X86.abi (20 + 632)) (Spec.Sha256.finalizeApi.sig.retBits 32) :=
+      (Spec.Sha256.finalizeApi.contract X86.abi (20 + 184)) (Spec.Sha256.finalizeApi.sig.retBits 32) :=
   v.finalize.scrubbed
 
 theorem finalize_spSafe : (Impl.Sha256.X86.Fn.finalize v.stream.fin).all (fun i => !isa.writesSp i) = true :=
@@ -926,7 +926,7 @@ theorem finalize_spSafe : (Impl.Sha256.X86.Fn.finalize v.stream.fin).all (fun i 
 /-- `vg_sha224_finalize` as emitted with `v`'s compression function, likewise. -/
 theorem finalize224_scrubbed :
     VerifiedScrubbed X86.target (Impl.Sha256.X86.Fn.finalize224 v.cmpN v.cmpC)
-      (Spec.Sha256.finalize224Api.contract X86.abi (20 + 632)) (Spec.Sha256.finalize224Api.sig.retBits 32) :=
+      (Spec.Sha256.finalize224Api.contract X86.abi (20 + 184)) (Spec.Sha256.finalize224Api.sig.retBits 32) :=
   v.finalize224.scrubbed
 
 theorem finalize224_spSafe :
