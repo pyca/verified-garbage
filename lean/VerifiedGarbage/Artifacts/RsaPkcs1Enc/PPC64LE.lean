@@ -12,8 +12,8 @@ public import VerifiedGarbage.TCB.PPC64LE.Print
 namespace VG.Artifacts.RsaPkcs1Enc.PPC64LE
 
 def artifacts : List Artifact := [
-  Spec.RsaPkcs1Enc.decryptPrecomputedFrontApi.artifact PPC64LE.target {
-    code := Impl.RsaPkcs1Enc.PPC64LE.Fn.decryptPrecomputedFront
+  Spec.RsaPkcs1Enc.decryptPrecomputedApi.artifact PPC64LE.target {
+    code := Impl.RsaPkcs1Enc.PPC64LE.Fn.decryptPrecomputed
     verified := Proof.RsaPkcs1Enc.PPC64LE.Front.front_scrubbed },
   Spec.RsaPkcs1Enc.encryptRandomApi.artifact PPC64LE.target {
     code := Impl.RsaPkcs1Enc.PPC64LE.Fn.encryptRandom

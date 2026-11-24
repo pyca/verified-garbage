@@ -4,7 +4,7 @@
 // `src/` as its machine code, which `lean/VerifiedGarbage/TCB/<ISA>/Encode.lean`
 // gives.
 
-vg_rsa_pkcs1_decrypt_precomputed_front:
+vg_rsa_pkcs1_decrypt_precomputed:
 	stdu %r1, -272(%r1)
 	addi %r12, %r1, 0
 	ld %r0, 368(%r12)
@@ -55,8 +55,8 @@ vg_rsa_pkcs1_decrypt_precomputed_front:
 	addi %r12, %r1, 0
 	ld %r0, 264(%r12)
 	mtlr %r0
-	or %r4, %r17, %r17
-	li %r5, 2048
+	add %r4, %r17, %r15
+	or %r5, %r15, %r15
 	li %r6, 0
 20:
 	stb %r6, 0(%r4)
@@ -78,7 +78,7 @@ vg_rsa_pkcs1_decrypt_precomputed_front:
 	ld %r8, 0(%r16)
 	subf %r8, %r8, %r15
 	li %r9, 1
-	li %r10, 11
+	or %r10, %r15, %r15
 22:
 	or %r4, %r17, %r17
 	add %r5, %r4, %r9
@@ -86,7 +86,7 @@ vg_rsa_pkcs1_decrypt_precomputed_front:
 	and %r6, %r8, %r6
 	li %r7, 0
 	subf %r6, %r6, %r7
-	li %r7, 1024
+	or %r7, %r15, %r15
 23:
 	lbz %r11, 0(%r4)
 	lbz %r12, 0(%r5)
@@ -101,7 +101,7 @@ vg_rsa_pkcs1_decrypt_precomputed_front:
 	bne %cr0, 23b
 	rldicl %r8, %r8, 63, 1
 	add %r9, %r9, %r9
-	addi %r10, %r10, -1
+	rldicl %r10, %r10, 63, 1
 	cmpldi %cr0, %r10, 0
 	bne %cr0, 22b
 	or %r4, %r17, %r17

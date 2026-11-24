@@ -336,7 +336,7 @@ abbrev code (privN : String) (priv : Prog isa) : Prog isa := codeWith H setup pr
 operation's 12 and 13, after `setup`. -/
 def extraMoves : List Instr := [.addSp .x9 0] ++ mvArg 15 96 ++ mvArg 16 104
 
-/-- `vg_rsa_pkcs1_decrypt_precomputed`, calling
+/-- `vg_rsa_pkcs1_decrypt_precomputed_body`, calling
 `vg_rsa_private_checked_precomputed`. -/
 abbrev codeP (privN : String) (priv : Prog isa) : Prog isa := codeWith H (setup ++ extraMoves) privN priv
 

@@ -184,7 +184,7 @@ theorem sealWithShX_ct {Wn : Nat} (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) (
       Frame [workR Wn (stackArg σ₁ w), ⟨σ₁.gpr .x6, (σ₁.gpr .x7).toNat⟩] σ₁.mem v₁.mem →
       v₂.rd = σ₂.rd → v₂.wr = σ₂.wr →
       Frame [workR Wn (stackArg σ₁ w), ⟨σ₁.gpr .x6, (σ₁.gpr .x7).toNat⟩] σ₂.mem v₂.mem →
-      RelCT isa (Eq2 v₁ v₂) (.seq (.block tb) Impl.Gcm.AArch64.Stitch.enc) TT)
+      RelCT isa (Eq2 v₁ v₂) (.seq (.block tb) Impl.Gcm.AArch64.Stitch.sealInPlace) TT)
     (htbrelS : ∀ {σ₁ σ₂ : State}, pre σ₁ → pre σ₂ → onePub (w + 1) σ₁ σ₂ → ∀ v₁ v₂ : State, v₁.sp = σ₁.sp →
       v₂.sp = σ₁.sp → (∀ r ∈ shRegs, v₁.gpr r = v₂.gpr r) →
       v₁.rd = σ₁.rd → v₁.wr = σ₁.wr →
@@ -392,7 +392,7 @@ theorem sealWithSh_ct {Wn : Nat} (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) (g
       Frame [workR Wn (stackArg σ₁ w), ⟨σ₁.gpr .x6, (σ₁.gpr .x7).toNat⟩] σ₁.mem v₁.mem →
       v₂.rd = σ₂.rd → v₂.wr = σ₂.wr →
       Frame [workR Wn (stackArg σ₁ w), ⟨σ₁.gpr .x6, (σ₁.gpr .x7).toNat⟩] σ₂.mem v₂.mem →
-      RelCT isa (Eq2 v₁ v₂) (.seq (.block tb) Impl.Gcm.AArch64.Stitch.enc) TT)
+      RelCT isa (Eq2 v₁ v₂) (.seq (.block tb) Impl.Gcm.AArch64.Stitch.sealInPlace) TT)
     (htbrelS : ∀ {σ₁ σ₂ : State}, pre σ₁ → pre σ₂ → onePub (w + 1) σ₁ σ₂ → ∀ v₁ v₂ : State, v₁.sp = σ₁.sp →
       v₂.sp = σ₁.sp → (∀ r ∈ shRegs, v₁.gpr r = v₂.gpr r) →
       v₁.rd = σ₁.rd → v₁.wr = σ₁.wr →

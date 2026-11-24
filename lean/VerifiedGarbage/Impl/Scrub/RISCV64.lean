@@ -16,7 +16,8 @@ where its Rust caller cannot clear it (`RISCV64.NoResidue`), as
   is zero and `t1` the frame's `sp` (`sd` takes no base `sp` in the model), or
   only some of them (`scrubSel`);
 * the caller-saved integer registers `a1`–`a7` and `t0`–`t6`, with
-  `li r, 0`, and the bits of `a0`, the result, above its `retBits` low ones.
+  `li r, 0`, and the bits of `a0`, the result, above its `retBits` low ones,
+  which it leaves as the psABI requires (`retFix`).
 
 The model has no other register a function may change (see
 `TCB/RISCV64/Residue.lean`): `ra` and `s0`–`s11` are restored, and the
@@ -36,11 +37,15 @@ def zeroR (r : Reg) : Instr := .li r 0
 def scratchRegs : List Reg :=
   [.a1, .a2, .a3, .a4, .a5, .a6, .a7, .t0, .t1, .t2, .t3, .t4, .t5, .t6]
 
-/-- Clear the bits of `a0` above a result of `retBits` bits: all of them
-(`li`), or, for a narrower result, by a shift left then right of the same
-amount. -/
+/-- Leave the bits of `a0` above a result of `retBits` bits as the psABI
+requires (`RISCV64.abi.retExt`): with no result, all of them cleared (`li`);
+for a 32-bit one, the sign-extension of its bit 31 (`addiw a0, a0, 0`, what
+the assembler calls `sext.w`), as for every integer narrower than XLEN bits
+("Integer Calling Convention"); for another narrower one (no `IntTy` is), cleared by
+a shift left then right of the same amount. -/
 def retFix (retBits : Nat) : List Instr :=
   if retBits = 0 then [zeroR .a0]
+  else if retBits = 32 then [.addiw .a0 .a0 0]
   else if retBits < 64 then
     [.shift .sll .d .a0 .a0 (64 - retBits), .shift .srl .d .a0 .a0 (64 - retBits)]
   else []
@@ -89,12 +94,17 @@ def wipeSel : List (Nat × List (Nat × Nat)) → Prog isa
   | [] => .block []
   | (b, rs) :: bs => .frame (.alloc b) (.seq (.block (.addSp .t1 0 :: storesRuns rs)) (wipeSel bs)) (.free b)
 
-/-- The clearing of `scrubSel`. -/
-def scrubTailSel (retBits : Nat) (fs : List (Nat × List (Nat × Nat))) : Prog isa :=
-  .seq (.block [zeroR .t0]) (.seq (wipeSel fs) (.block (retFix retBits ++ scratchRegs.map zeroR)))
+/-- The clearing of `scrubSel` but the result's (`retFix`). -/
+def scrubTailSel (fs : List (Nat × List (Nat × Nat))) : Prog isa :=
+  .seq (.block [zeroR .t0]) (.seq (wipeSel fs) (.block (scratchRegs.map zeroR)))
 
-/-- `c`, then the clearing of the runs of `fs`. -/
+/-- `c`, then the clearing of the runs of `fs` and of the caller-saved registers, but `a0`:
+what the residue analysis sees, which leaves `a0` to `retFix`. -/
+def scrubSelBody (fs : List (Nat × List (Nat × Nat))) (c : Prog isa) : Prog isa :=
+  .seq c (scrubTailSel fs)
+
+/-- `c`, then the clearing of the runs of `fs`, then `retFix`. -/
 def scrubSel (retBits : Nat) (fs : List (Nat × List (Nat × Nat))) (c : Prog isa) : Prog isa :=
-  .seq c (scrubTailSel retBits fs)
+  .seq (scrubSelBody fs c) (.block (retFix retBits))
 
 end VG.Impl.Scrub.RISCV64

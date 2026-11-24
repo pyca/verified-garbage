@@ -3,12 +3,12 @@
 //! `assembly/rsa_pkcs1_enc.s`.
 #![allow(dead_code)]
 
-/// The CPU features `vg_rsa_pkcs1_decrypt_precomputed_front_sha256_sha2` requires (`Artifact.features`).
-pub const VG_RSA_PKCS1_DECRYPT_PRECOMPUTED_FRONT_SHA256_SHA2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA2);
+/// The CPU features `vg_rsa_pkcs1_decrypt_precomputed_sha256_sha2` requires (`Artifact.features`).
+pub const VG_RSA_PKCS1_DECRYPT_PRECOMPUTED_SHA256_SHA2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA2);
 
 /// RSAES-PKCS1-V1_5-DECRYPT (RFC 8017 §7.2.2) with implicit rejection (draft-irtf-cfrg-rsa-guidance), of the ciphertext `input` with the private key `(n, e, d, p, q, dp, dq, qinv)`, RSADP checked against `e`: returns 1 and writes the message, or for an invalid padding the alternative message, at the start of `out` and zeros after it, so that the caller can shorten `out` to the message's length without moving it, and its length to `*msg_len`; or writes zeros to `out` and `*msg_len` and returns 0 if the ciphertext is not below `n` or the key is refused, or 2 if RSADP fails its check against `e`. `pre` (`pre_len` words) must hold what `vg_rsa_private_precompute` wrote for `n`, `p` and `q` (returning 1), as `n`, `p` and `q` must be valid.
 ///
-/// Contract: `VG.Spec.RsaPkcs1Enc.decryptPrecomputedFrontContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, the contents of `n` and `e` and the first `2 * ⌈n_len / 8⌉` words of `pre` (the modulus' values), not on the ciphertext, the private key, the rest of `pre`, the validity of the padding, the length of the message or which message is returned.
+/// Contract: `VG.Spec.RsaPkcs1Enc.decryptPrecomputedContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, the contents of `n` and `e` and the first `2 * ⌈n_len / 8⌉` words of `pre` (the modulus' values), not on the ciphertext, the private key, the rest of `pre`, the validity of the padding, the length of the message or which message is returned.
 ///
 /// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
@@ -40,7 +40,7 @@ pub const VG_RSA_PKCS1_DECRYPT_PRECOMPUTED_FRONT_SHA256_SHA2_FEATURES: verified_
 /// * None of `out`, `msg_len`, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv`, `scratch` and `pre` may overlap the 3776 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha2` target feature.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_rsa_pkcs1_decrypt_precomputed_front_sha256_sha2(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, d: *const u8, d_len: usize, input: *const u8, input_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_rsa_pkcs1_decrypt_precomputed_sha256_sha2(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, d: *const u8, d_len: usize, input: *const u8, input_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
     core::arch::naked_asm!(
         r".inst 0xf81f0ffe,0xd10443ff,0x910003e9,0xf9004d20,0xf9005524,0xf9006d22,0xf94093ea,0xf900012a
 .inst 0xf94097ea,0xf900052a,0xf9409bea,0xf900092a,0xf9409fea,0xf9000d2a,0xf940a3ea,0xf900112a
@@ -48,7 +48,8 @@ pub(crate) unsafe extern "C" fn vg_rsa_pkcs1_decrypt_precomputed_front_sha256_sh
 .inst 0xf940b7ea,0xf900252a,0xf940bbea,0xf900292a,0xf940bfea,0xf9002d2a,0xf940c3ea,0xf900312a
 .inst 0xf940c7ea,0xf900352a,0xf940cbea,0xf900392a,0xf940cfea,0xf9003d2a,0xf940d3ea,0xf900412a
 bl {vg_rsa_pkcs1_decrypt_precomputed_body_sha256_sha2}
-.inst 0x910003e9,0xf9007120,0xf940c7ea,0xf900312a,0xf94033eb,0x9110016b,0xd280200c,0xd280000d
+.inst 0x910003e9,0xf9007120,0xf940c7ea,0xf900312a,0xf94033eb,0x9110016b,0xf94057ec,0x91001d8c
+.inst 0xd343fd8c,0x8b0c018c,0xd280000d
 20:
 .inst 0xf900016d,0x9100216b,0xd100058c
 cbnz x12, 20b
@@ -56,14 +57,15 @@ cbnz x12, 20b
 21:
 .inst 0x3940016a,0x3900018a,0x9100056b,0x9100058c,0xd10005ad
 cbnz x13, 21b
-.inst 0xf94033f1,0x91100231,0xf94057e9,0xf9406fea,0xf940014a,0xcb0a0129,0xd280002e,0xd2800168
+.inst 0xf94033f1,0x91100231,0xf94057e9,0xf9406fea,0xf94057e8,0xf94057e7,0xf940014a,0xcb0a0129
+.inst 0xd280002e,0x91001ce7,0xd343fce7
 22:
-.inst 0xaa11022b,0x8b0e022c,0xd280002f,0x8a0f012f,0xd2800010,0xcb0f020f,0xd280100d
+.inst 0xaa11022b,0x8b0e022c,0xd280002f,0x8a0f012f,0xd2800010,0xcb0f020f,0xaa0700ed
 23:
 .inst 0xf940016a,0xf9400190,0xca0a0210,0x8a0f0210,0xca10014a,0xf900016a,0x9100216b,0x9100218c
 .inst 0xd10005ad
 cbnz x13, 23b
-.inst 0xd341fd29,0x8b0e01ce,0xd1000508
+.inst 0xd341fd29,0x8b0e01ce,0xd341fd08
 cbnz x8, 22b
 .inst 0xf94033eb,0x9110016b,0xf9404fec,0xf94057ed
 24:
@@ -87,7 +89,7 @@ cbnz x10, 25b
 
 /// RSAES-PKCS1-V1_5-DECRYPT (RFC 8017 §7.2.2) with implicit rejection (draft-irtf-cfrg-rsa-guidance), of the ciphertext `input` with the private key `(n, e, d, p, q, dp, dq, qinv)`, RSADP checked against `e`: returns 1 and writes the message, or for an invalid padding the alternative message, at the start of `out` and zeros after it, so that the caller can shorten `out` to the message's length without moving it, and its length to `*msg_len`; or writes zeros to `out` and `*msg_len` and returns 0 if the ciphertext is not below `n` or the key is refused, or 2 if RSADP fails its check against `e`. `pre` (`pre_len` words) must hold what `vg_rsa_private_precompute` wrote for `n`, `p` and `q` (returning 1), as `n`, `p` and `q` must be valid.
 ///
-/// Contract: `VG.Spec.RsaPkcs1Enc.decryptPrecomputedFrontContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, the contents of `n` and `e` and the first `2 * ⌈n_len / 8⌉` words of `pre` (the modulus' values), not on the ciphertext, the private key, the rest of `pre`, the validity of the padding, the length of the message or which message is returned.
+/// Contract: `VG.Spec.RsaPkcs1Enc.decryptPrecomputedContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, the contents of `n` and `e` and the first `2 * ⌈n_len / 8⌉` words of `pre` (the modulus' values), not on the ciphertext, the private key, the rest of `pre`, the validity of the padding, the length of the message or which message is returned.
 ///
 /// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
@@ -118,7 +120,7 @@ cbnz x10, 25b
 /// * `out`, `msg_len` and `scratch` must not overlap each other, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv`, `pre` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `out`, `msg_len`, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv`, `scratch` and `pre` may overlap the 3776 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_rsa_pkcs1_decrypt_precomputed_front(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, d: *const u8, d_len: usize, input: *const u8, input_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_rsa_pkcs1_decrypt_precomputed(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, d: *const u8, d_len: usize, input: *const u8, input_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
     core::arch::naked_asm!(
         r".inst 0xf81f0ffe,0xd10443ff,0x910003e9,0xf9004d20,0xf9005524,0xf9006d22,0xf94093ea,0xf900012a
 .inst 0xf94097ea,0xf900052a,0xf9409bea,0xf900092a,0xf9409fea,0xf9000d2a,0xf940a3ea,0xf900112a
@@ -126,7 +128,8 @@ pub(crate) unsafe extern "C" fn vg_rsa_pkcs1_decrypt_precomputed_front(out: *mut
 .inst 0xf940b7ea,0xf900252a,0xf940bbea,0xf900292a,0xf940bfea,0xf9002d2a,0xf940c3ea,0xf900312a
 .inst 0xf940c7ea,0xf900352a,0xf940cbea,0xf900392a,0xf940cfea,0xf9003d2a,0xf940d3ea,0xf900412a
 bl {vg_rsa_pkcs1_decrypt_precomputed_body}
-.inst 0x910003e9,0xf9007120,0xf940c7ea,0xf900312a,0xf94033eb,0x9110016b,0xd280200c,0xd280000d
+.inst 0x910003e9,0xf9007120,0xf940c7ea,0xf900312a,0xf94033eb,0x9110016b,0xf94057ec,0x91001d8c
+.inst 0xd343fd8c,0x8b0c018c,0xd280000d
 20:
 .inst 0xf900016d,0x9100216b,0xd100058c
 cbnz x12, 20b
@@ -134,14 +137,15 @@ cbnz x12, 20b
 21:
 .inst 0x3940016a,0x3900018a,0x9100056b,0x9100058c,0xd10005ad
 cbnz x13, 21b
-.inst 0xf94033f1,0x91100231,0xf94057e9,0xf9406fea,0xf940014a,0xcb0a0129,0xd280002e,0xd2800168
+.inst 0xf94033f1,0x91100231,0xf94057e9,0xf9406fea,0xf94057e8,0xf94057e7,0xf940014a,0xcb0a0129
+.inst 0xd280002e,0x91001ce7,0xd343fce7
 22:
-.inst 0xaa11022b,0x8b0e022c,0xd280002f,0x8a0f012f,0xd2800010,0xcb0f020f,0xd280100d
+.inst 0xaa11022b,0x8b0e022c,0xd280002f,0x8a0f012f,0xd2800010,0xcb0f020f,0xaa0700ed
 23:
 .inst 0xf940016a,0xf9400190,0xca0a0210,0x8a0f0210,0xca10014a,0xf900016a,0x9100216b,0x9100218c
 .inst 0xd10005ad
 cbnz x13, 23b
-.inst 0xd341fd29,0x8b0e01ce,0xd1000508
+.inst 0xd341fd29,0x8b0e01ce,0xd341fd08
 cbnz x8, 22b
 .inst 0xf94033eb,0x9110016b,0xf9404fec,0xf94057ed
 24:

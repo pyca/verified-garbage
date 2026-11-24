@@ -70,6 +70,12 @@ theorem Sig.bufs_append_ro (pb : Nat) (nm : String) (e : Elem) (n : Nat) (x : Bi
       List.length_nil] at h
     simp only [List.cons_append, Sig.bufs]
     exact Sig.bufs_append_ro pb nm e n x ps vs (by omega_using [h])
+  | (_, .inOutSlice ..) :: ps, src :: dst :: l :: vs, h => by
+    simp only [List.flatMap_cons, Param.words.eq_6, List.length_append, List.length_cons,
+      List.length_nil] at h
+    simp only [List.cons_append, Sig.bufs]
+    rw [Sig.bufs_append_ro pb nm e n x ps vs (by omega_using [h])]
+    split <;> rfl
   | [], _ :: _, h => by simp at h
   | (_, .int ..) :: _, [], h => by simp [Param.words.eq_1] at h
   | (_, .array ..) :: _, [], h => by simp [Param.words.eq_2] at h
@@ -78,6 +84,9 @@ theorem Sig.bufs_append_ro (pb : Nat) (nm : String) (e : Elem) (n : Nat) (x : Bi
   | (_, .slices ..) :: _, [], h => by simp [Param.words.eq_4] at h
   | (_, .slices ..) :: _, [_], h => by simp [Param.words.eq_4] at h
   | (_, .table _) :: _, [], h => by simp [Param.words.eq_5] at h
+  | (_, .inOutSlice ..) :: _, [], h => by simp [Param.words.eq_6] at h
+  | (_, .inOutSlice ..) :: _, [_], h => by simp [Param.words.eq_6] at h
+  | (_, .inOutSlice ..) :: _, [_, _], h => by simp [Param.words.eq_6] at h
 
 end VG
 

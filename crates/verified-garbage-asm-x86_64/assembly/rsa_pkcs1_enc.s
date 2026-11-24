@@ -4,7 +4,7 @@
 // `src/` as its machine code, which `lean/VerifiedGarbage/TCB/<ISA>/Encode.lean`
 // gives.
 
-vg_rsa_pkcs1_decrypt_precomputed_front_sha256_shani_crt_ifma512:
+vg_rsa_pkcs1_decrypt_precomputed_sha256_shani_crt_ifma512:
 	lea rsp, [rsp-296]
 	mov rax, QWORD PTR [rsp+304]
 	mov QWORD PTR [rsp], rax
@@ -55,10 +55,14 @@ vg_rsa_pkcs1_decrypt_precomputed_front_sha256_shani_crt_ifma512:
 	add rcx, 1024
 	mov eax, 0
 	mov r8d, 0
+	mov r10, QWORD PTR [rsp+184]
+	add r10, 3
+	shr r10, 2
+	shl r10, 3
 20:
 	mov QWORD PTR [rcx+r8*1], rax
 	add r8, 8
-	cmp r8, 2048
+	cmp r8, r10
 	jne 20b
 	mov rsi, QWORD PTR [rsp+168]
 	mov r10, QWORD PTR [rsp+184]
@@ -70,11 +74,11 @@ vg_rsa_pkcs1_decrypt_precomputed_front_sha256_shani_crt_ifma512:
 	cmp r8, r10
 	jne 21b
 	mov rax, QWORD PTR [rsp+184]
+	mov r10, rax
 	mov rdi, QWORD PTR [rsp+232]
 	sub rax, QWORD PTR [rdi]
 	mov QWORD PTR [rsp+272], rax
 	mov edx, 1
-	mov r10d, 11
 22:
 	mov rsi, rdx
 	add rsi, rcx
@@ -91,14 +95,14 @@ vg_rsa_pkcs1_decrypt_precomputed_front_sha256_shani_crt_ifma512:
 	xor rax, rdi
 	mov BYTE PTR [rcx+r8*1], al
 	add r8, 1
-	cmp r8, 1024
+	cmp r8, r10
 	jne 23b
 	mov rax, QWORD PTR [rsp+272]
 	shr rax, 1
 	mov QWORD PTR [rsp+272], rax
 	add rdx, rdx
-	sub r10, 1
-	jne 22b
+	cmp r10, rdx
+	jae 22b
 	mov rdi, QWORD PTR [rsp+168]
 	mov r10, QWORD PTR [rsp+184]
 	mov r8d, 0
@@ -277,7 +281,7 @@ vg_rsa_pkcs1_decrypt_precomputed_front_sha256_shani_crt_ifma512:
 	ret
 	.p2align 6
 
-vg_rsa_pkcs1_decrypt_precomputed_front_sha256_shani_crt_ifma:
+vg_rsa_pkcs1_decrypt_precomputed_sha256_shani_crt_ifma:
 	lea rsp, [rsp-296]
 	mov rax, QWORD PTR [rsp+304]
 	mov QWORD PTR [rsp], rax
@@ -328,10 +332,14 @@ vg_rsa_pkcs1_decrypt_precomputed_front_sha256_shani_crt_ifma:
 	add rcx, 1024
 	mov eax, 0
 	mov r8d, 0
+	mov r10, QWORD PTR [rsp+184]
+	add r10, 3
+	shr r10, 2
+	shl r10, 3
 20:
 	mov QWORD PTR [rcx+r8*1], rax
 	add r8, 8
-	cmp r8, 2048
+	cmp r8, r10
 	jne 20b
 	mov rsi, QWORD PTR [rsp+168]
 	mov r10, QWORD PTR [rsp+184]
@@ -343,11 +351,11 @@ vg_rsa_pkcs1_decrypt_precomputed_front_sha256_shani_crt_ifma:
 	cmp r8, r10
 	jne 21b
 	mov rax, QWORD PTR [rsp+184]
+	mov r10, rax
 	mov rdi, QWORD PTR [rsp+232]
 	sub rax, QWORD PTR [rdi]
 	mov QWORD PTR [rsp+272], rax
 	mov edx, 1
-	mov r10d, 11
 22:
 	mov rsi, rdx
 	add rsi, rcx
@@ -364,14 +372,14 @@ vg_rsa_pkcs1_decrypt_precomputed_front_sha256_shani_crt_ifma:
 	xor rax, rdi
 	mov BYTE PTR [rcx+r8*1], al
 	add r8, 1
-	cmp r8, 1024
+	cmp r8, r10
 	jne 23b
 	mov rax, QWORD PTR [rsp+272]
 	shr rax, 1
 	mov QWORD PTR [rsp+272], rax
 	add rdx, rdx
-	sub r10, 1
-	jne 22b
+	cmp r10, rdx
+	jae 22b
 	mov rdi, QWORD PTR [rsp+168]
 	mov r10, QWORD PTR [rsp+184]
 	mov r8d, 0
@@ -550,7 +558,7 @@ vg_rsa_pkcs1_decrypt_precomputed_front_sha256_shani_crt_ifma:
 	ret
 	.p2align 6
 
-vg_rsa_pkcs1_decrypt_precomputed_front_sha256_shani_crt_adx:
+vg_rsa_pkcs1_decrypt_precomputed_sha256_shani_crt_adx:
 	lea rsp, [rsp-296]
 	mov rax, QWORD PTR [rsp+304]
 	mov QWORD PTR [rsp], rax
@@ -601,10 +609,14 @@ vg_rsa_pkcs1_decrypt_precomputed_front_sha256_shani_crt_adx:
 	add rcx, 1024
 	mov eax, 0
 	mov r8d, 0
+	mov r10, QWORD PTR [rsp+184]
+	add r10, 3
+	shr r10, 2
+	shl r10, 3
 20:
 	mov QWORD PTR [rcx+r8*1], rax
 	add r8, 8
-	cmp r8, 2048
+	cmp r8, r10
 	jne 20b
 	mov rsi, QWORD PTR [rsp+168]
 	mov r10, QWORD PTR [rsp+184]
@@ -616,11 +628,11 @@ vg_rsa_pkcs1_decrypt_precomputed_front_sha256_shani_crt_adx:
 	cmp r8, r10
 	jne 21b
 	mov rax, QWORD PTR [rsp+184]
+	mov r10, rax
 	mov rdi, QWORD PTR [rsp+232]
 	sub rax, QWORD PTR [rdi]
 	mov QWORD PTR [rsp+272], rax
 	mov edx, 1
-	mov r10d, 11
 22:
 	mov rsi, rdx
 	add rsi, rcx
@@ -637,14 +649,14 @@ vg_rsa_pkcs1_decrypt_precomputed_front_sha256_shani_crt_adx:
 	xor rax, rdi
 	mov BYTE PTR [rcx+r8*1], al
 	add r8, 1
-	cmp r8, 1024
+	cmp r8, r10
 	jne 23b
 	mov rax, QWORD PTR [rsp+272]
 	shr rax, 1
 	mov QWORD PTR [rsp+272], rax
 	add rdx, rdx
-	sub r10, 1
-	jne 22b
+	cmp r10, rdx
+	jae 22b
 	mov rdi, QWORD PTR [rsp+168]
 	mov r10, QWORD PTR [rsp+184]
 	mov r8d, 0
@@ -807,7 +819,7 @@ vg_rsa_pkcs1_decrypt_precomputed_front_sha256_shani_crt_adx:
 	ret
 	.p2align 6
 
-vg_rsa_pkcs1_decrypt_precomputed_front_sha256_shani:
+vg_rsa_pkcs1_decrypt_precomputed_sha256_shani:
 	lea rsp, [rsp-296]
 	mov rax, QWORD PTR [rsp+304]
 	mov QWORD PTR [rsp], rax
@@ -858,10 +870,14 @@ vg_rsa_pkcs1_decrypt_precomputed_front_sha256_shani:
 	add rcx, 1024
 	mov eax, 0
 	mov r8d, 0
+	mov r10, QWORD PTR [rsp+184]
+	add r10, 3
+	shr r10, 2
+	shl r10, 3
 20:
 	mov QWORD PTR [rcx+r8*1], rax
 	add r8, 8
-	cmp r8, 2048
+	cmp r8, r10
 	jne 20b
 	mov rsi, QWORD PTR [rsp+168]
 	mov r10, QWORD PTR [rsp+184]
@@ -873,11 +889,11 @@ vg_rsa_pkcs1_decrypt_precomputed_front_sha256_shani:
 	cmp r8, r10
 	jne 21b
 	mov rax, QWORD PTR [rsp+184]
+	mov r10, rax
 	mov rdi, QWORD PTR [rsp+232]
 	sub rax, QWORD PTR [rdi]
 	mov QWORD PTR [rsp+272], rax
 	mov edx, 1
-	mov r10d, 11
 22:
 	mov rsi, rdx
 	add rsi, rcx
@@ -894,14 +910,14 @@ vg_rsa_pkcs1_decrypt_precomputed_front_sha256_shani:
 	xor rax, rdi
 	mov BYTE PTR [rcx+r8*1], al
 	add r8, 1
-	cmp r8, 1024
+	cmp r8, r10
 	jne 23b
 	mov rax, QWORD PTR [rsp+272]
 	shr rax, 1
 	mov QWORD PTR [rsp+272], rax
 	add rdx, rdx
-	sub r10, 1
-	jne 22b
+	cmp r10, rdx
+	jae 22b
 	mov rdi, QWORD PTR [rsp+168]
 	mov r10, QWORD PTR [rsp+184]
 	mov r8d, 0
@@ -1182,7 +1198,7 @@ vg_rsa_pkcs1_decrypt_precomputed_front_sha256_shani:
 	ret
 	.p2align 6
 
-vg_rsa_pkcs1_decrypt_precomputed_front_sha256_avx2_crt_ifma512:
+vg_rsa_pkcs1_decrypt_precomputed_sha256_avx2_crt_ifma512:
 	lea rsp, [rsp-296]
 	mov rax, QWORD PTR [rsp+304]
 	mov QWORD PTR [rsp], rax
@@ -1233,10 +1249,14 @@ vg_rsa_pkcs1_decrypt_precomputed_front_sha256_avx2_crt_ifma512:
 	add rcx, 1024
 	mov eax, 0
 	mov r8d, 0
+	mov r10, QWORD PTR [rsp+184]
+	add r10, 3
+	shr r10, 2
+	shl r10, 3
 20:
 	mov QWORD PTR [rcx+r8*1], rax
 	add r8, 8
-	cmp r8, 2048
+	cmp r8, r10
 	jne 20b
 	mov rsi, QWORD PTR [rsp+168]
 	mov r10, QWORD PTR [rsp+184]
@@ -1248,11 +1268,11 @@ vg_rsa_pkcs1_decrypt_precomputed_front_sha256_avx2_crt_ifma512:
 	cmp r8, r10
 	jne 21b
 	mov rax, QWORD PTR [rsp+184]
+	mov r10, rax
 	mov rdi, QWORD PTR [rsp+232]
 	sub rax, QWORD PTR [rdi]
 	mov QWORD PTR [rsp+272], rax
 	mov edx, 1
-	mov r10d, 11
 22:
 	mov rsi, rdx
 	add rsi, rcx
@@ -1269,14 +1289,14 @@ vg_rsa_pkcs1_decrypt_precomputed_front_sha256_avx2_crt_ifma512:
 	xor rax, rdi
 	mov BYTE PTR [rcx+r8*1], al
 	add r8, 1
-	cmp r8, 1024
+	cmp r8, r10
 	jne 23b
 	mov rax, QWORD PTR [rsp+272]
 	shr rax, 1
 	mov QWORD PTR [rsp+272], rax
 	add rdx, rdx
-	sub r10, 1
-	jne 22b
+	cmp r10, rdx
+	jae 22b
 	mov rdi, QWORD PTR [rsp+168]
 	mov r10, QWORD PTR [rsp+184]
 	mov r8d, 0
@@ -1455,7 +1475,7 @@ vg_rsa_pkcs1_decrypt_precomputed_front_sha256_avx2_crt_ifma512:
 	ret
 	.p2align 6
 
-vg_rsa_pkcs1_decrypt_precomputed_front_sha256_avx2_crt_ifma:
+vg_rsa_pkcs1_decrypt_precomputed_sha256_avx2_crt_ifma:
 	lea rsp, [rsp-296]
 	mov rax, QWORD PTR [rsp+304]
 	mov QWORD PTR [rsp], rax
@@ -1506,10 +1526,14 @@ vg_rsa_pkcs1_decrypt_precomputed_front_sha256_avx2_crt_ifma:
 	add rcx, 1024
 	mov eax, 0
 	mov r8d, 0
+	mov r10, QWORD PTR [rsp+184]
+	add r10, 3
+	shr r10, 2
+	shl r10, 3
 20:
 	mov QWORD PTR [rcx+r8*1], rax
 	add r8, 8
-	cmp r8, 2048
+	cmp r8, r10
 	jne 20b
 	mov rsi, QWORD PTR [rsp+168]
 	mov r10, QWORD PTR [rsp+184]
@@ -1521,11 +1545,11 @@ vg_rsa_pkcs1_decrypt_precomputed_front_sha256_avx2_crt_ifma:
 	cmp r8, r10
 	jne 21b
 	mov rax, QWORD PTR [rsp+184]
+	mov r10, rax
 	mov rdi, QWORD PTR [rsp+232]
 	sub rax, QWORD PTR [rdi]
 	mov QWORD PTR [rsp+272], rax
 	mov edx, 1
-	mov r10d, 11
 22:
 	mov rsi, rdx
 	add rsi, rcx
@@ -1542,14 +1566,14 @@ vg_rsa_pkcs1_decrypt_precomputed_front_sha256_avx2_crt_ifma:
 	xor rax, rdi
 	mov BYTE PTR [rcx+r8*1], al
 	add r8, 1
-	cmp r8, 1024
+	cmp r8, r10
 	jne 23b
 	mov rax, QWORD PTR [rsp+272]
 	shr rax, 1
 	mov QWORD PTR [rsp+272], rax
 	add rdx, rdx
-	sub r10, 1
-	jne 22b
+	cmp r10, rdx
+	jae 22b
 	mov rdi, QWORD PTR [rsp+168]
 	mov r10, QWORD PTR [rsp+184]
 	mov r8d, 0
@@ -1728,7 +1752,7 @@ vg_rsa_pkcs1_decrypt_precomputed_front_sha256_avx2_crt_ifma:
 	ret
 	.p2align 6
 
-vg_rsa_pkcs1_decrypt_precomputed_front_sha256_avx2_crt_adx:
+vg_rsa_pkcs1_decrypt_precomputed_sha256_avx2_crt_adx:
 	lea rsp, [rsp-296]
 	mov rax, QWORD PTR [rsp+304]
 	mov QWORD PTR [rsp], rax
@@ -1779,10 +1803,14 @@ vg_rsa_pkcs1_decrypt_precomputed_front_sha256_avx2_crt_adx:
 	add rcx, 1024
 	mov eax, 0
 	mov r8d, 0
+	mov r10, QWORD PTR [rsp+184]
+	add r10, 3
+	shr r10, 2
+	shl r10, 3
 20:
 	mov QWORD PTR [rcx+r8*1], rax
 	add r8, 8
-	cmp r8, 2048
+	cmp r8, r10
 	jne 20b
 	mov rsi, QWORD PTR [rsp+168]
 	mov r10, QWORD PTR [rsp+184]
@@ -1794,11 +1822,11 @@ vg_rsa_pkcs1_decrypt_precomputed_front_sha256_avx2_crt_adx:
 	cmp r8, r10
 	jne 21b
 	mov rax, QWORD PTR [rsp+184]
+	mov r10, rax
 	mov rdi, QWORD PTR [rsp+232]
 	sub rax, QWORD PTR [rdi]
 	mov QWORD PTR [rsp+272], rax
 	mov edx, 1
-	mov r10d, 11
 22:
 	mov rsi, rdx
 	add rsi, rcx
@@ -1815,14 +1843,14 @@ vg_rsa_pkcs1_decrypt_precomputed_front_sha256_avx2_crt_adx:
 	xor rax, rdi
 	mov BYTE PTR [rcx+r8*1], al
 	add r8, 1
-	cmp r8, 1024
+	cmp r8, r10
 	jne 23b
 	mov rax, QWORD PTR [rsp+272]
 	shr rax, 1
 	mov QWORD PTR [rsp+272], rax
 	add rdx, rdx
-	sub r10, 1
-	jne 22b
+	cmp r10, rdx
+	jae 22b
 	mov rdi, QWORD PTR [rsp+168]
 	mov r10, QWORD PTR [rsp+184]
 	mov r8d, 0
@@ -1985,7 +2013,7 @@ vg_rsa_pkcs1_decrypt_precomputed_front_sha256_avx2_crt_adx:
 	ret
 	.p2align 6
 
-vg_rsa_pkcs1_decrypt_precomputed_front_sha256_avx2:
+vg_rsa_pkcs1_decrypt_precomputed_sha256_avx2:
 	lea rsp, [rsp-296]
 	mov rax, QWORD PTR [rsp+304]
 	mov QWORD PTR [rsp], rax
@@ -2036,10 +2064,14 @@ vg_rsa_pkcs1_decrypt_precomputed_front_sha256_avx2:
 	add rcx, 1024
 	mov eax, 0
 	mov r8d, 0
+	mov r10, QWORD PTR [rsp+184]
+	add r10, 3
+	shr r10, 2
+	shl r10, 3
 20:
 	mov QWORD PTR [rcx+r8*1], rax
 	add r8, 8
-	cmp r8, 2048
+	cmp r8, r10
 	jne 20b
 	mov rsi, QWORD PTR [rsp+168]
 	mov r10, QWORD PTR [rsp+184]
@@ -2051,11 +2083,11 @@ vg_rsa_pkcs1_decrypt_precomputed_front_sha256_avx2:
 	cmp r8, r10
 	jne 21b
 	mov rax, QWORD PTR [rsp+184]
+	mov r10, rax
 	mov rdi, QWORD PTR [rsp+232]
 	sub rax, QWORD PTR [rdi]
 	mov QWORD PTR [rsp+272], rax
 	mov edx, 1
-	mov r10d, 11
 22:
 	mov rsi, rdx
 	add rsi, rcx
@@ -2072,14 +2104,14 @@ vg_rsa_pkcs1_decrypt_precomputed_front_sha256_avx2:
 	xor rax, rdi
 	mov BYTE PTR [rcx+r8*1], al
 	add r8, 1
-	cmp r8, 1024
+	cmp r8, r10
 	jne 23b
 	mov rax, QWORD PTR [rsp+272]
 	shr rax, 1
 	mov QWORD PTR [rsp+272], rax
 	add rdx, rdx
-	sub r10, 1
-	jne 22b
+	cmp r10, rdx
+	jae 22b
 	mov rdi, QWORD PTR [rsp+168]
 	mov r10, QWORD PTR [rsp+184]
 	mov r8d, 0
@@ -2242,7 +2274,7 @@ vg_rsa_pkcs1_decrypt_precomputed_front_sha256_avx2:
 	ret
 	.p2align 6
 
-vg_rsa_pkcs1_decrypt_precomputed_front_crt_ifma512:
+vg_rsa_pkcs1_decrypt_precomputed_crt_ifma512:
 	lea rsp, [rsp-296]
 	mov rax, QWORD PTR [rsp+304]
 	mov QWORD PTR [rsp], rax
@@ -2293,10 +2325,14 @@ vg_rsa_pkcs1_decrypt_precomputed_front_crt_ifma512:
 	add rcx, 1024
 	mov eax, 0
 	mov r8d, 0
+	mov r10, QWORD PTR [rsp+184]
+	add r10, 3
+	shr r10, 2
+	shl r10, 3
 20:
 	mov QWORD PTR [rcx+r8*1], rax
 	add r8, 8
-	cmp r8, 2048
+	cmp r8, r10
 	jne 20b
 	mov rsi, QWORD PTR [rsp+168]
 	mov r10, QWORD PTR [rsp+184]
@@ -2308,11 +2344,11 @@ vg_rsa_pkcs1_decrypt_precomputed_front_crt_ifma512:
 	cmp r8, r10
 	jne 21b
 	mov rax, QWORD PTR [rsp+184]
+	mov r10, rax
 	mov rdi, QWORD PTR [rsp+232]
 	sub rax, QWORD PTR [rdi]
 	mov QWORD PTR [rsp+272], rax
 	mov edx, 1
-	mov r10d, 11
 22:
 	mov rsi, rdx
 	add rsi, rcx
@@ -2329,14 +2365,14 @@ vg_rsa_pkcs1_decrypt_precomputed_front_crt_ifma512:
 	xor rax, rdi
 	mov BYTE PTR [rcx+r8*1], al
 	add r8, 1
-	cmp r8, 1024
+	cmp r8, r10
 	jne 23b
 	mov rax, QWORD PTR [rsp+272]
 	shr rax, 1
 	mov QWORD PTR [rsp+272], rax
 	add rdx, rdx
-	sub r10, 1
-	jne 22b
+	cmp r10, rdx
+	jae 22b
 	mov rdi, QWORD PTR [rsp+168]
 	mov r10, QWORD PTR [rsp+184]
 	mov r8d, 0
@@ -2515,7 +2551,7 @@ vg_rsa_pkcs1_decrypt_precomputed_front_crt_ifma512:
 	ret
 	.p2align 6
 
-vg_rsa_pkcs1_decrypt_precomputed_front_crt_ifma:
+vg_rsa_pkcs1_decrypt_precomputed_crt_ifma:
 	lea rsp, [rsp-296]
 	mov rax, QWORD PTR [rsp+304]
 	mov QWORD PTR [rsp], rax
@@ -2566,10 +2602,14 @@ vg_rsa_pkcs1_decrypt_precomputed_front_crt_ifma:
 	add rcx, 1024
 	mov eax, 0
 	mov r8d, 0
+	mov r10, QWORD PTR [rsp+184]
+	add r10, 3
+	shr r10, 2
+	shl r10, 3
 20:
 	mov QWORD PTR [rcx+r8*1], rax
 	add r8, 8
-	cmp r8, 2048
+	cmp r8, r10
 	jne 20b
 	mov rsi, QWORD PTR [rsp+168]
 	mov r10, QWORD PTR [rsp+184]
@@ -2581,11 +2621,11 @@ vg_rsa_pkcs1_decrypt_precomputed_front_crt_ifma:
 	cmp r8, r10
 	jne 21b
 	mov rax, QWORD PTR [rsp+184]
+	mov r10, rax
 	mov rdi, QWORD PTR [rsp+232]
 	sub rax, QWORD PTR [rdi]
 	mov QWORD PTR [rsp+272], rax
 	mov edx, 1
-	mov r10d, 11
 22:
 	mov rsi, rdx
 	add rsi, rcx
@@ -2602,14 +2642,14 @@ vg_rsa_pkcs1_decrypt_precomputed_front_crt_ifma:
 	xor rax, rdi
 	mov BYTE PTR [rcx+r8*1], al
 	add r8, 1
-	cmp r8, 1024
+	cmp r8, r10
 	jne 23b
 	mov rax, QWORD PTR [rsp+272]
 	shr rax, 1
 	mov QWORD PTR [rsp+272], rax
 	add rdx, rdx
-	sub r10, 1
-	jne 22b
+	cmp r10, rdx
+	jae 22b
 	mov rdi, QWORD PTR [rsp+168]
 	mov r10, QWORD PTR [rsp+184]
 	mov r8d, 0
@@ -2788,7 +2828,7 @@ vg_rsa_pkcs1_decrypt_precomputed_front_crt_ifma:
 	ret
 	.p2align 6
 
-vg_rsa_pkcs1_decrypt_precomputed_front_crt_adx:
+vg_rsa_pkcs1_decrypt_precomputed_crt_adx:
 	lea rsp, [rsp-296]
 	mov rax, QWORD PTR [rsp+304]
 	mov QWORD PTR [rsp], rax
@@ -2839,10 +2879,14 @@ vg_rsa_pkcs1_decrypt_precomputed_front_crt_adx:
 	add rcx, 1024
 	mov eax, 0
 	mov r8d, 0
+	mov r10, QWORD PTR [rsp+184]
+	add r10, 3
+	shr r10, 2
+	shl r10, 3
 20:
 	mov QWORD PTR [rcx+r8*1], rax
 	add r8, 8
-	cmp r8, 2048
+	cmp r8, r10
 	jne 20b
 	mov rsi, QWORD PTR [rsp+168]
 	mov r10, QWORD PTR [rsp+184]
@@ -2854,11 +2898,11 @@ vg_rsa_pkcs1_decrypt_precomputed_front_crt_adx:
 	cmp r8, r10
 	jne 21b
 	mov rax, QWORD PTR [rsp+184]
+	mov r10, rax
 	mov rdi, QWORD PTR [rsp+232]
 	sub rax, QWORD PTR [rdi]
 	mov QWORD PTR [rsp+272], rax
 	mov edx, 1
-	mov r10d, 11
 22:
 	mov rsi, rdx
 	add rsi, rcx
@@ -2875,14 +2919,14 @@ vg_rsa_pkcs1_decrypt_precomputed_front_crt_adx:
 	xor rax, rdi
 	mov BYTE PTR [rcx+r8*1], al
 	add r8, 1
-	cmp r8, 1024
+	cmp r8, r10
 	jne 23b
 	mov rax, QWORD PTR [rsp+272]
 	shr rax, 1
 	mov QWORD PTR [rsp+272], rax
 	add rdx, rdx
-	sub r10, 1
-	jne 22b
+	cmp r10, rdx
+	jae 22b
 	mov rdi, QWORD PTR [rsp+168]
 	mov r10, QWORD PTR [rsp+184]
 	mov r8d, 0
@@ -3045,7 +3089,7 @@ vg_rsa_pkcs1_decrypt_precomputed_front_crt_adx:
 	ret
 	.p2align 6
 
-vg_rsa_pkcs1_decrypt_precomputed_front:
+vg_rsa_pkcs1_decrypt_precomputed:
 	lea rsp, [rsp-296]
 	mov rax, QWORD PTR [rsp+304]
 	mov QWORD PTR [rsp], rax
@@ -3096,10 +3140,14 @@ vg_rsa_pkcs1_decrypt_precomputed_front:
 	add rcx, 1024
 	mov eax, 0
 	mov r8d, 0
+	mov r10, QWORD PTR [rsp+184]
+	add r10, 3
+	shr r10, 2
+	shl r10, 3
 20:
 	mov QWORD PTR [rcx+r8*1], rax
 	add r8, 8
-	cmp r8, 2048
+	cmp r8, r10
 	jne 20b
 	mov rsi, QWORD PTR [rsp+168]
 	mov r10, QWORD PTR [rsp+184]
@@ -3111,11 +3159,11 @@ vg_rsa_pkcs1_decrypt_precomputed_front:
 	cmp r8, r10
 	jne 21b
 	mov rax, QWORD PTR [rsp+184]
+	mov r10, rax
 	mov rdi, QWORD PTR [rsp+232]
 	sub rax, QWORD PTR [rdi]
 	mov QWORD PTR [rsp+272], rax
 	mov edx, 1
-	mov r10d, 11
 22:
 	mov rsi, rdx
 	add rsi, rcx
@@ -3132,14 +3180,14 @@ vg_rsa_pkcs1_decrypt_precomputed_front:
 	xor rax, rdi
 	mov BYTE PTR [rcx+r8*1], al
 	add r8, 1
-	cmp r8, 1024
+	cmp r8, r10
 	jne 23b
 	mov rax, QWORD PTR [rsp+272]
 	shr rax, 1
 	mov QWORD PTR [rsp+272], rax
 	add rdx, rdx
-	sub r10, 1
-	jne 22b
+	cmp r10, rdx
+	jae 22b
 	mov rdi, QWORD PTR [rsp+168]
 	mov r10, QWORD PTR [rsp+184]
 	mov r8d, 0

@@ -137,8 +137,7 @@ vg_x448_exchange:
 	sd t0, 0(t1)
 	sd t0, 8(t1)
 	addi sp, sp, 16
-	slli a0, a0, 32
-	srli a0, a0, 32
+	addiw a0, a0, 0
 	addi a1, zero, 0
 	addi a2, zero, 0
 	addi a3, zero, 0

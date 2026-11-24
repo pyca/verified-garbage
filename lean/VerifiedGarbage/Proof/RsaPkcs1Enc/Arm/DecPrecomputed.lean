@@ -9,7 +9,7 @@ import VerifiedGarbage.Proof.Rsa.BytesFrame
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.PrivCall
 import VerifiedGarbage.Proof.Framework.Contract
 
-/-! # `vg_rsa_pkcs1_decrypt_precomputed` on ARMv7
+/-! # `vg_rsa_pkcs1_decrypt_precomputed_body` on ARMv7
 
 `vg_rsa_pkcs1_decrypt`'s code calling `vg_rsa_private_checked_precomputed`
 with the key's precomputed values `pre` (`code decFns true`, `decryptCodeP`),
@@ -63,7 +63,7 @@ theorem preState_key : Spec.Rsa.privatePrecompute (Spec.Rsa.bytesAt preState.mem
     show (bif _ then _ else _) = _
     rw [hs, Bool.cond_false, ha, Bool.cond_true]
 
-theorem satisfiablePre : ∃ s, (Proof.RsaPkcs1Enc.decryptPrecomputedContract abi stackBytes).pre s := by
+theorem satisfiablePre : ∃ s, (Proof.RsaPkcs1Enc.decryptPrecomputedBodyContract abi stackBytes).pre s := by
   have p11 : BitVec.setWidth 64 (stackArg preState 7) = 0x4200 := by decide
   have p13 : BitVec.setWidth 64 (stackArg preState 9) = 0x4300 := by decide
   have p23 : BitVec.setWidth 64 (stackArg preState 19) = 0x4800 := by decide
@@ -72,7 +72,7 @@ theorem satisfiablePre : ∃ s, (Proof.RsaPkcs1Enc.decryptPrecomputedContract ab
   have l14 : (stackArg preState 10).toNat = 32 := by decide
   have l24 : (stackArg preState 20).toNat = 24 := by decide
   refine ⟨preState, ?_⟩
-  sig_pre [Proof.RsaPkcs1Enc.decryptPrecomputedContract, Proof.RsaPkcs1Enc.decryptPrecomputedSig,
+  sig_pre [Proof.RsaPkcs1Enc.decryptPrecomputedBodyContract, Proof.RsaPkcs1Enc.decryptPrecomputedBodySig,
     Proof.RsaPkcs1Enc.decryptSig, abi, argRegs, reduceClassify, Loc.val, State.addr]
   sig_and_intros
   rotate_right
@@ -87,7 +87,7 @@ theorem satisfiablePre : ∃ s, (Proof.RsaPkcs1Enc.decryptPrecomputedContract ab
 
 /-! ## The entry -/
 
-abbrev specP : Contract isa := Proof.RsaPkcs1Enc.decryptPrecomputedContract abi stackBytes
+abbrev specP : Contract isa := Proof.RsaPkcs1Enc.decryptPrecomputedBodyContract abi stackBytes
 
 /-- The elements of a list that is a function's values at `0 … n - 1`. -/
 private theorem getD_of_eq_map_range {α : Type} (f : Nat → α) (d : α) {l : List α} {n : Nat}
@@ -96,7 +96,7 @@ private theorem getD_of_eq_map_range {α : Type} (f : Nat → α) (d : α) {l : 
   rw [List.getD_eq_getElem?_getD, List.getElem?_map, List.getElem?_range hi]; rfl
 
 theorem in_of_preP {s : State} (h : specP.pre s) : In (ep s true) (entered frameBytes s) := by
-  sig_pre [Proof.RsaPkcs1Enc.decryptPrecomputedContract, Proof.RsaPkcs1Enc.decryptPrecomputedSig,
+  sig_pre [Proof.RsaPkcs1Enc.decryptPrecomputedBodyContract, Proof.RsaPkcs1Enc.decryptPrecomputedBodySig,
     Proof.RsaPkcs1Enc.decryptSig, abi, argRegs, reduceClassify, Loc.val] at h
   sig_split h
   rename_i hsp hsa hrd hwr oM oN oE oD oI oP oQ oDP oDQ oQI oS oPre oA mN mE mD mI mP mQ mDP mDQ mQI mS mPre mA
@@ -221,7 +221,7 @@ abbrev decryptCodeP (v : Proof.Rsa.Arm.CrtImpl) : Prog isa :=
   code decFns true (privN true v) (privC true v)
 
 theorem specP_sp {s : State} (h : specP.pre s) : stackBytes ≤ s.sp.toNat := by
-  sig_pre [Proof.RsaPkcs1Enc.decryptPrecomputedContract, Proof.RsaPkcs1Enc.decryptPrecomputedSig,
+  sig_pre [Proof.RsaPkcs1Enc.decryptPrecomputedBodyContract, Proof.RsaPkcs1Enc.decryptPrecomputedBodySig,
     Proof.RsaPkcs1Enc.decryptSig, abi, argRegs, reduceClassify, Loc.val] at h
   exact h.1
 
@@ -249,7 +249,7 @@ theorem code_okP (v : Proof.Rsa.Arm.CrtImpl) {s : State} (h : specP.pre s) :
   · rw [pushRegion_eq (F := frameBytes) (A := 84) (C := 3488) (argv := (ep s true).argv)
       (ro := (ep s true).ro) (rw := [(ep s true).OUT, (ep s true).ML, (ep s true).SCR]) hsp]
     exact hin.ok.push_apart r hr
-  · sig_post [Proof.RsaPkcs1Enc.decryptPrecomputedContract, Proof.RsaPkcs1Enc.decryptPrecomputedSig,
+  · sig_post [Proof.RsaPkcs1Enc.decryptPrecomputedBodyContract, Proof.RsaPkcs1Enc.decryptPrecomputedBodySig,
       Proof.RsaPkcs1Enc.decryptSig, abi, argRegs, reduceClassify, Loc.val]
     rw [BitVec.setWidth_append_eq_right]
     have ro := fun {R : Region} (hR : R ∈ (ep s true).ro) =>
@@ -274,7 +274,7 @@ theorem code_okP (v : Proof.Rsa.Arm.CrtImpl) {s : State} (h : specP.pre s) :
     exact res
 
 theorem ep_eqP {s₁ s₂ : State} (hp : specP.pub s₁ s₂) : ep s₁ true = ep s₂ true := by
-  sig_pub [Proof.RsaPkcs1Enc.decryptPrecomputedContract, Proof.RsaPkcs1Enc.decryptPrecomputedSig,
+  sig_pub [Proof.RsaPkcs1Enc.decryptPrecomputedBodyContract, Proof.RsaPkcs1Enc.decryptPrecomputedBodySig,
     Proof.RsaPkcs1Enc.decryptSig, abi, argRegs, reduceClassify, Loc.val] at hp
   obtain ⟨hsp, hl, h0, h1, h2, h3, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17,
     a18, a19, a20⟩ := hp
@@ -293,7 +293,7 @@ theorem code_ctP (v : Proof.Rsa.Arm.CrtImpl) : ConstantTime isa specP.pre specP.
   intro s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hp e₁ e₂
   have hep := ep_eqP hp
   have hsp : s₁.sp = s₂.sp := by
-    sig_pub [Proof.RsaPkcs1Enc.decryptPrecomputedContract, Proof.RsaPkcs1Enc.decryptPrecomputedSig,
+    sig_pub [Proof.RsaPkcs1Enc.decryptPrecomputedBodyContract, Proof.RsaPkcs1Enc.decryptPrecomputedBodySig,
       Proof.RsaPkcs1Enc.decryptSig, abi, argRegs, reduceClassify, Loc.val] at hp
     exact hp.1
   refine (wrap_ct (F := frameBytes) (by decide) (P := fun a b => a = s₁ ∧ b = s₂)
@@ -304,9 +304,9 @@ theorem code_ctP (v : Proof.Rsa.Arm.CrtImpl) : ConstantTime isa specP.pre specP.
   rintro a b ⟨_, _, ⟨rfl, rfl⟩, rfl, rfl⟩
   exact ⟨_, _, entered_stateP h₁, by rw [hep]; exact entered_stateP h₂⟩
 
-/-- `vg_rsa_pkcs1_decrypt_precomputed`, calling `vg_rsa_private_checked_precomputed` over `v`. -/
+/-- `vg_rsa_pkcs1_decrypt_precomputed_body`, calling `vg_rsa_private_checked_precomputed` over `v`. -/
 theorem decryptPrecomputed_verified (v : Proof.Rsa.Arm.CrtImpl) :
-    Verified target (decryptCodeP v) (Proof.RsaPkcs1Enc.decryptPrecomputedContract abi stackBytes) :=
+    Verified target (decryptCodeP v) (Proof.RsaPkcs1Enc.decryptPrecomputedBodyContract abi stackBytes) :=
   ⟨fun _ h => let ⟨t, s', he, hq⟩ := code_okP v h; ⟨t, s', he, hq.1, hq.2⟩, code_ctP v, satisfiablePre⟩
 
 end VG.Proof.RsaPkcs1Enc.Arm.Dec

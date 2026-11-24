@@ -4,7 +4,7 @@
 // `src/` as its machine code, which `lean/VerifiedGarbage/TCB/<ISA>/Encode.lean`
 // gives.
 
-vg_rsa_pkcs1_decrypt_precomputed_front_umaal:
+vg_rsa_pkcs1_decrypt_precomputed_umaal:
 	push {r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, lr}
 	sub sp, sp, #128
 	add r12, sp, #0
@@ -63,8 +63,9 @@ vg_rsa_pkcs1_decrypt_precomputed_front_umaal:
 	ldr r0, [sp, #64]
 	movw lr, #1024
 	add r0, r0, lr
+	ldr lr, [sp, #184]
+	add r0, r0, lr
 	movw r2, #0
-	movw lr, #2048
 20:
 	ldrb r1, [r0, #0]
 	and r1, r1, r2
@@ -90,12 +91,11 @@ vg_rsa_pkcs1_decrypt_precomputed_front_umaal:
 	ldr r1, [r1, #0]
 	add r12, sp, #0
 	ldr r0, [sp, #184]
+	str r0, [r12, #116]
 	sub r0, r0, r1
 	str r0, [r12, #108]
 	movw r0, #1
 	str r0, [r12, #112]
-	movw r0, #11
-	str r0, [r12, #116]
 22:
 	add r12, sp, #0
 	ldr r0, [sp, #64]
@@ -107,7 +107,7 @@ vg_rsa_pkcs1_decrypt_precomputed_front_umaal:
 	and r2, r2, #1
 	movw r3, #0
 	sub r2, r3, r2
-	movw lr, #1024
+	ldr lr, [sp, #184]
 23:
 	ldrb r3, [r0, #0]
 	ldrb r4, [r1, #0]
@@ -127,7 +127,7 @@ vg_rsa_pkcs1_decrypt_precomputed_front_umaal:
 	add r0, r0, r0
 	str r0, [r12, #112]
 	ldr r0, [sp, #116]
-	sub r0, r0, #1
+	lsr r0, r0, #1
 	str r0, [r12, #116]
 	cmp r0, #0
 	bne 22b
@@ -364,7 +364,7 @@ vg_rsa_pkcs1_encrypt_random_umaal:
 	cmp r2, r2
 	bx lr
 
-vg_rsa_pkcs1_decrypt_precomputed_front:
+vg_rsa_pkcs1_decrypt_precomputed:
 	push {r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, lr}
 	sub sp, sp, #128
 	add r12, sp, #0
@@ -423,8 +423,9 @@ vg_rsa_pkcs1_decrypt_precomputed_front:
 	ldr r0, [sp, #64]
 	movw lr, #1024
 	add r0, r0, lr
+	ldr lr, [sp, #184]
+	add r0, r0, lr
 	movw r2, #0
-	movw lr, #2048
 20:
 	ldrb r1, [r0, #0]
 	and r1, r1, r2
@@ -450,12 +451,11 @@ vg_rsa_pkcs1_decrypt_precomputed_front:
 	ldr r1, [r1, #0]
 	add r12, sp, #0
 	ldr r0, [sp, #184]
+	str r0, [r12, #116]
 	sub r0, r0, r1
 	str r0, [r12, #108]
 	movw r0, #1
 	str r0, [r12, #112]
-	movw r0, #11
-	str r0, [r12, #116]
 22:
 	add r12, sp, #0
 	ldr r0, [sp, #64]
@@ -467,7 +467,7 @@ vg_rsa_pkcs1_decrypt_precomputed_front:
 	and r2, r2, #1
 	movw r3, #0
 	sub r2, r3, r2
-	movw lr, #1024
+	ldr lr, [sp, #184]
 23:
 	ldrb r3, [r0, #0]
 	ldrb r4, [r1, #0]
@@ -487,7 +487,7 @@ vg_rsa_pkcs1_decrypt_precomputed_front:
 	add r0, r0, r0
 	str r0, [r12, #112]
 	ldr r0, [sp, #116]
-	sub r0, r0, #1
+	lsr r0, r0, #1
 	str r0, [r12, #116]
 	cmp r0, #0
 	bne 22b

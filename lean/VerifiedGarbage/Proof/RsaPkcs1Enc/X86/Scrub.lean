@@ -32,9 +32,9 @@ contract reserves and the tail that clears the registers
 within `out` and `tape`, given that `out` holds `n_len` bytes
 (`X86.Scrub.PostOut`).
 
-`vg_rsa_pkcs1_decrypt_precomputed`'s code, generic over SHA-256's
+`vg_rsa_pkcs1_decrypt_precomputed_body`'s code, generic over SHA-256's
 implementation (`Backend`) and the private-key operation's (`CrtImpl`),
-which `vg_rsa_pkcs1_decrypt_precomputed_front` calls (`FrontScrub.lean`):
+which `vg_rsa_pkcs1_decrypt_precomputed` calls (`FrontScrub.lean`):
 what a cleanup needs of it holds with every implementation
 (`decrypt_scrub`): its code with holes where each implementation's code
 goes, of the stack each states (`holeStub`: 0 bytes for the compression
@@ -99,7 +99,7 @@ theorem encryptRandom_scrubbed :
 open VG.Proof.Sha256.X86.Variants (Backend)
 open VG.Proof.Rsa.X86.PrivChecked (CrtImpl privCodeP crtPBaseline)
 
-/-- `vg_rsa_pkcs1_decrypt_precomputed` with holes for SHA-256's compression
+/-- `vg_rsa_pkcs1_decrypt_precomputed_body` with holes for SHA-256's compression
 function (no stack), `update` and `finalize` (20 bytes each) and the
 private-key operation's public precomputation and check (96 bytes each). -/
 def decryptStub : Prog isa :=
@@ -122,7 +122,7 @@ theorem decrypt_fill (v : Backend) (c : CrtImpl) (hm : calleeSide v.cmpC 0 = tru
   -- SHA-256's blocks of instructions, the same whatever its implementation:
   all_goals exact FillB.refl _
 
-/-- `scrubFSide` of `vg_rsa_pkcs1_decrypt_precomputed`, whatever the
+/-- `scrubFSide` of `vg_rsa_pkcs1_decrypt_precomputed_body`, whatever the
 implementations of SHA-256 and the private-key operation. -/
 theorem decrypt_scrub (v : Backend) (c : CrtImpl) :
     scrubFSide (Proof.RsaPkcs1Enc.X86.Dec.decryptCodeP v c crtPBaseline) [] 3568 = true :=

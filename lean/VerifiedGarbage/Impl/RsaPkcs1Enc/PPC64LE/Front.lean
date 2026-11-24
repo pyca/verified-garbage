@@ -8,8 +8,8 @@ public import VerifiedGarbage.Impl.RsaPkcs1Enc.PPC64LE.Decrypt
 /-!
 # RSAES-PKCS1-v1_5 decryption with the message first, on PPC64LE
 
-`vg_rsa_pkcs1_decrypt_precomputed_front` takes the arguments of
-`vg_rsa_pkcs1_decrypt_precomputed` and calls it (`callee`, by `name`) with
+`vg_rsa_pkcs1_decrypt_precomputed` takes the arguments of
+`vg_rsa_pkcs1_decrypt_precomputed_body` and calls it (`callee`, by `name`) with
 them: the eight argument registers as they came, and its 17 stack arguments
 copied to the frame's Parameter Save Area (`r1 + 96`, as
 `withStackScratchArgs` does, `Impl/StackScratch/PPC64LE/Args.lean`), in a
@@ -23,15 +23,18 @@ That function writes the message `M` at the end of `out`, after `k - L`
 zeros (`L` its length, at `*msg_len`), or zeros and a length of 0. After
 the call (`after`, which restores the link register), the result waits in
 `r3`, which nothing after it writes, and the first 2048 bytes of `scratch`,
-whose contents on return are unspecified, are a buffer: cleared
-(`clearBuf`), `out`'s `k` bytes copied to it (`copyIn`), shifted left by
-`s = k - *msg_len` bytes in eleven passes (`shift`), pass `j` moving each of
-its first 1024 bytes `2^j` bytes under the mask of bit `j` of `s`
-(`shiftPass`, as RSAES-OAEP decryption's, `Impl/RsaOaep/PPC64LE/Decrypt.lean`;
-`s ≤ k ≤ 1024 < 2^11`), and its first `k` bytes copied back to `out`
-(`copyOut`): `M`, then zeros. `*msg_len` is left as the call wrote it, and
-the result is the call's. No address or branch depends on `s`, which is
-secret: only masks do. `restore` restores our caller's `r14`–`r17`.
+whose contents on return are unspecified, are a buffer: its bytes `k` to
+`2k` cleared (`clearBuf`), `out`'s `k` bytes copied to its first `k`
+(`copyIn`), its first `k` bytes shifted left by `s = k - *msg_len` bytes in
+one pass for each bit of `k` (`shift`), pass `j` moving each of them `2^j`
+bytes under the mask of bit `j` of `s` (`shiftPass`, as RSAES-OAEP
+decryption's, `Impl/RsaOaep/PPC64LE/Decrypt.lean`; `s ≤ k < 2^b`, `b` the
+number of bits of `k`, and pass `j` reads below `k + 2^j ≤ 2k ≤ 2048`), and
+its first `k` bytes copied back to `out` (`copyOut`): `M`, then zeros.
+`*msg_len` is left as the call wrote it, and the result is the call's. No
+address, branch or loop count depends on `s`, which is secret, only on `k`,
+which is public: only masks do. `restore` restores our caller's
+`r14`–`r17`.
 -/
 
 @[expose] public section
@@ -66,27 +69,29 @@ def setup : List Instr :=
 /-- The return address back from its slot. -/
 def after : List Instr := [.addSp .r12 0, .load .d .r0 .r12 oLr, .mtlr .r0]
 
-/-- The buffer's 2048 bytes cleared. -/
-def clearBuf : Prog isa := .seq (.block [mov .r4 .r17, .li .r5 2048, .li .r6 0]) zeroLoop
+/-- The buffer's bytes `k` to `2k` cleared. -/
+def clearBuf : Prog isa := .seq (.block [.add .r4 .r17 .r15, mov .r5 .r15, .li .r6 0]) zeroLoop
 
 /-- `out`'s `k` bytes to the buffer. -/
 def copyIn : Prog isa := .seq (.block [mov .r4 .r14, mov .r5 .r17, mov .r6 .r15]) copyLoop
 
-/-- A pass: each of the buffer's first 1024 bytes replaced by the one `d`
+/-- A pass: each of the buffer's first `k` bytes replaced by the one `d`
 (`r9`) bytes after it if bit 0 of `a` (`r8`) is set. -/
 def shiftPass : Prog isa :=
   .seq (.block [mov .r4 .r17, .add .r5 .r4 .r9, .li .r6 1, .logic .and .r6 .r8 .r6, .li .r7 0,
-      .sub .r6 .r7 .r6, .li .r7 1024])
+      .sub .r6 .r7 .r6, mov .r7 .r15])
     (.loop (.block [.lbz .r11 .r4 0, .lbz .r12 .r5 0, .logic .xor .r12 .r12 .r11, .logic .and .r12 .r12 .r6,
       .logic .xor .r11 .r11 .r12, .stb .r11 .r4 0, .addi .r4 .r4 1, .addi .r5 .r5 1, .subi .r7 .r7 1])
       (.nonzero .d .r7))
 
-/-- The next pass: the next bit of `a`, twice the distance. -/
-def nextPass : List Instr := [.lsr .d .r8 .r8 1, .add .r9 .r9 .r9, .subi .r10 .r10 1]
+/-- The next pass: the next bit of `a`, twice the distance, and the next
+bit of `k` (`r10`). -/
+def nextPass : List Instr := [.lsr .d .r8 .r8 1, .add .r9 .r9 .r9, .lsr .d .r10 .r10 1]
 
-/-- The buffer shifted left by `k - *msg_len` bytes, in eleven passes. -/
+/-- The buffer's first `k` bytes shifted left by `k - *msg_len` bytes, in a
+pass for each bit of `k`. -/
 def shift : Prog isa :=
-  .seq (.block [.load .d .r8 .r16 0, .sub .r8 .r15 .r8, .li .r9 1, .li .r10 11])
+  .seq (.block [.load .d .r8 .r16 0, .sub .r8 .r15 .r8, .li .r9 1, mov .r10 .r15])
     (.loop (.seq shiftPass (.block nextPass)) (.nonzero .d .r10))
 
 /-- The buffer's first `k` bytes to `out`. -/
@@ -100,16 +105,16 @@ def restore : List Instr :=
 /-- After the call: the message moved to the start of `out`. -/
 def tail : Prog isa := .seq clearBuf (.seq copyIn (.seq shift copyOut))
 
-/-- The function's body, calling `vg_rsa_pkcs1_decrypt_precomputed`
+/-- The function's body, calling `vg_rsa_pkcs1_decrypt_precomputed_body`
 (`callee`) by `name`. -/
 def body (name : String) (callee : Prog isa) : Prog isa :=
   .seq (.block setup) (.seq (.call name callee) (.seq (.block after) (.seq tail (.block restore))))
 
-/-- `vg_rsa_pkcs1_decrypt_precomputed_front`, calling `callee` by `name`. -/
+/-- `vg_rsa_pkcs1_decrypt_precomputed`, calling `callee` by `name`. -/
 def code (name : String) (callee : Prog isa) : Prog isa :=
   .frame (.alloc frameBytes) (body name callee) (.free frameBytes)
 
-/-- The name of `vg_rsa_pkcs1_decrypt_precomputed`'s code before its
+/-- The name of `vg_rsa_pkcs1_decrypt_precomputed_body`'s code before its
 cleanup, an internal function. -/
 def bodyName : String := "vg_rsa_pkcs1_decrypt_precomputed_body"
 
@@ -120,13 +125,13 @@ namespace VG.Impl.RsaPkcs1Enc.PPC64LE.Fn
 open VG.PPC64LE
 open VG.Impl.Scrub.PPC64LE (scrubAll)
 
-/-- `Spec.RsaPkcs1Enc.decryptPrecomputedFrontApi`'s function as emitted,
-calling `vg_rsa_pkcs1_decrypt_precomputed`'s code before its cleanup
+/-- `Spec.RsaPkcs1Enc.decryptPrecomputedApi`'s function as emitted,
+calling `vg_rsa_pkcs1_decrypt_precomputed_body`'s code before its cleanup
 (`Decrypt.codeP`) as the internal function `Front.bodyName`, then its
 cleanup: the 3920 bytes of stack its frame (272) and the callee (3648) use
 zeroed, and every volatile register cleared, as for
-`vg_rsa_pkcs1_decrypt_precomputed` (`Fn.decryptPrecomputed`). -/
-def decryptPrecomputedFront : Prog isa :=
+`vg_rsa_pkcs1_decrypt_precomputed_body` (`Fn.decryptPrecomputed`). -/
+def decryptPrecomputed : Prog isa :=
   scrubAll 32 3920 Impl.Scrub.PPC64LE.Clear.all (Front.code Front.bodyName Impl.RsaPkcs1Enc.PPC64LE.Decrypt.codeP)
 
 end VG.Impl.RsaPkcs1Enc.PPC64LE.Fn

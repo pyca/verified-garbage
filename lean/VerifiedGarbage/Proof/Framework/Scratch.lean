@@ -138,6 +138,12 @@ theorem Sig.bufs_append_array (pb : Nat) (nm : String) (e : Elem) (n : Nat) (x :
       List.length_nil] at h
     simp only [List.cons_append, Sig.bufs]
     rw [Sig.bufs_append_array pb nm e n x ps vs (by omega_using [h])]
+  | (_, .inOutSlice ..) :: ps, src :: dst :: l :: vs, h => by
+    simp only [List.flatMap_cons, Param.words.eq_6, List.length_append, List.length_cons,
+      List.length_nil] at h
+    simp only [List.cons_append, Sig.bufs]
+    rw [Sig.bufs_append_array pb nm e n x ps vs (by omega_using [h])]
+    split <;> rfl
   | (_, .slices ..) :: ps, v :: l :: vs, h => by
     simp only [List.flatMap_cons, Param.words.eq_4, List.length_append, List.length_cons,
       List.length_nil] at h
@@ -152,7 +158,10 @@ theorem Sig.bufs_append_array (pb : Nat) (nm : String) (e : Elem) (n : Nat) (x :
   | (_, .int ..) :: _, [], h => by simp [Param.words.eq_1] at h
   | (_, .array ..) :: _, [], h => by simp [Param.words.eq_2] at h
   | (_, .slice ..) :: _, [], h => by simp [Param.words.eq_3] at h
+  | (_, .inOutSlice ..) :: _, [], h => by simp [Param.words.eq_6] at h
   | (_, .slice ..) :: _, [_], h => by simp [Param.words.eq_3] at h
+  | (_, .inOutSlice ..) :: _, [_], h => by simp [Param.words.eq_6] at h
+  | (_, .inOutSlice ..) :: _, [_, _], h => by simp [Param.words.eq_6] at h
   | (_, .slices ..) :: _, [], h => by simp [Param.words.eq_4] at h
   | (_, .slices ..) :: _, [_], h => by simp [Param.words.eq_4] at h
   | (_, .table _) :: _, [], h => by simp [Param.words.eq_5] at h
@@ -183,6 +192,12 @@ theorem Sig.alignedBufs_append_array (pb : Nat) (nm : String) (e : Elem) (n : Na
     simp only [List.cons_append, Sig.alignedBufs]
     rw [Sig.alignedBufs_append_array pb nm e n x ps vs (by omega_using [h])]
     split <;> rfl
+  | (_, .inOutSlice e' _ _) :: ps, src :: dst :: l :: vs, h => by
+    simp only [List.flatMap_cons, Param.words.eq_6, List.length_append, List.length_cons,
+      List.length_nil] at h
+    simp only [List.cons_append, Sig.alignedBufs]
+    rw [Sig.alignedBufs_append_array pb nm e n x ps vs (by omega_using [h])]
+    split <;> rfl
   | (_, .slices ..) :: ps, v :: l :: vs, h => by
     simp only [List.flatMap_cons, Param.words.eq_4, List.length_append, List.length_cons,
       List.length_nil] at h
@@ -197,7 +212,10 @@ theorem Sig.alignedBufs_append_array (pb : Nat) (nm : String) (e : Elem) (n : Na
   | (_, .int ..) :: _, [], h => by simp [Param.words.eq_1] at h
   | (_, .array ..) :: _, [], h => by simp [Param.words.eq_2] at h
   | (_, .slice ..) :: _, [], h => by simp [Param.words.eq_3] at h
+  | (_, .inOutSlice ..) :: _, [], h => by simp [Param.words.eq_6] at h
   | (_, .slice ..) :: _, [_], h => by simp [Param.words.eq_3] at h
+  | (_, .inOutSlice ..) :: _, [_], h => by simp [Param.words.eq_6] at h
+  | (_, .inOutSlice ..) :: _, [_, _], h => by simp [Param.words.eq_6] at h
   | (_, .slices ..) :: _, [], h => by simp [Param.words.eq_4] at h
   | (_, .slices ..) :: _, [_], h => by simp [Param.words.eq_4] at h
   | (_, .table _) :: _, [], h => by simp [Param.words.eq_5] at h
@@ -224,6 +242,11 @@ theorem Sig.lists_append_array (pb : Nat) (m : Mem) (nm : String) (e : Elem) (n 
       List.length_nil] at h
     simp only [List.cons_append, Sig.lists]
     exact Sig.lists_append_array pb m nm e n x ps vs (by omega_using [h])
+  | (_, .inOutSlice ..) :: ps, src :: dst :: l :: vs, h => by
+    simp only [List.flatMap_cons, Param.words.eq_6, List.length_append, List.length_cons,
+      List.length_nil] at h
+    simp only [List.cons_append, Sig.lists]
+    exact Sig.lists_append_array pb m nm e n x ps vs (by omega_using [h])
   | (_, .slices ..) :: ps, v :: l :: vs, h => by
     simp only [List.flatMap_cons, Param.words.eq_4, List.length_append, List.length_cons,
       List.length_nil] at h
@@ -238,7 +261,10 @@ theorem Sig.lists_append_array (pb : Nat) (m : Mem) (nm : String) (e : Elem) (n 
   | (_, .int ..) :: _, [], h => by simp [Param.words.eq_1] at h
   | (_, .array ..) :: _, [], h => by simp [Param.words.eq_2] at h
   | (_, .slice ..) :: _, [], h => by simp [Param.words.eq_3] at h
+  | (_, .inOutSlice ..) :: _, [], h => by simp [Param.words.eq_6] at h
   | (_, .slice ..) :: _, [_], h => by simp [Param.words.eq_3] at h
+  | (_, .inOutSlice ..) :: _, [_], h => by simp [Param.words.eq_6] at h
+  | (_, .inOutSlice ..) :: _, [_, _], h => by simp [Param.words.eq_6] at h
   | (_, .slices ..) :: _, [], h => by simp [Param.words.eq_4] at h
   | (_, .slices ..) :: _, [_], h => by simp [Param.words.eq_4] at h
   | (_, .table _) :: _, [], h => by simp [Param.words.eq_5] at h
@@ -265,6 +291,11 @@ theorem Sig.descs_append_array (pb : Nat) (nm : String) (e : Elem) (n : Nat) (x 
       List.length_nil] at h
     simp only [List.cons_append, Sig.descs]
     exact Sig.descs_append_array pb nm e n x ps vs (by omega_using [h])
+  | (_, .inOutSlice ..) :: ps, src :: dst :: l :: vs, h => by
+    simp only [List.flatMap_cons, Param.words.eq_6, List.length_append, List.length_cons,
+      List.length_nil] at h
+    simp only [List.cons_append, Sig.descs]
+    exact Sig.descs_append_array pb nm e n x ps vs (by omega_using [h])
   | (_, .slices ..) :: ps, v :: l :: vs, h => by
     simp only [List.flatMap_cons, Param.words.eq_4, List.length_append, List.length_cons,
       List.length_nil] at h
@@ -279,7 +310,10 @@ theorem Sig.descs_append_array (pb : Nat) (nm : String) (e : Elem) (n : Nat) (x 
   | (_, .int ..) :: _, [], h => by simp [Param.words.eq_1] at h
   | (_, .array ..) :: _, [], h => by simp [Param.words.eq_2] at h
   | (_, .slice ..) :: _, [], h => by simp [Param.words.eq_3] at h
+  | (_, .inOutSlice ..) :: _, [], h => by simp [Param.words.eq_6] at h
   | (_, .slice ..) :: _, [_], h => by simp [Param.words.eq_3] at h
+  | (_, .inOutSlice ..) :: _, [_], h => by simp [Param.words.eq_6] at h
+  | (_, .inOutSlice ..) :: _, [_, _], h => by simp [Param.words.eq_6] at h
   | (_, .slices ..) :: _, [], h => by simp [Param.words.eq_4] at h
   | (_, .slices ..) :: _, [_], h => by simp [Param.words.eq_4] at h
   | (_, .table _) :: _, [], h => by simp [Param.words.eq_5] at h
@@ -327,6 +361,7 @@ theorem Sig.descs_sub_lists (pb : Nat) (m : Mem) :
   | (_, .int ..) :: ps, _ :: vs, r, h => Sig.descs_sub_lists pb m ps vs r h
   | (_, .array ..) :: ps, _ :: vs, r, h => Sig.descs_sub_lists pb m ps vs r h
   | (_, .slice ..) :: ps, _ :: _ :: vs, r, h => Sig.descs_sub_lists pb m ps vs r h
+  | (_, .inOutSlice ..) :: ps, _ :: _ :: _ :: vs, r, h => Sig.descs_sub_lists pb m ps vs r h
   | (_, .slices ..) :: ps, _ :: _ :: vs, r, h => by
     simp only [Sig.descs, List.mem_cons] at h
     simp only [Sig.lists, List.mem_cons, List.mem_append]
@@ -340,7 +375,10 @@ theorem Sig.descs_sub_lists (pb : Nat) (m : Mem) :
   | (_, .int ..) :: _, [], _, h => by simp [Sig.descs] at h
   | (_, .array ..) :: _, [], _, h => by simp [Sig.descs] at h
   | (_, .slice ..) :: _, [], _, h => by simp [Sig.descs] at h
+  | (_, .inOutSlice ..) :: _, [], _, h => by simp [Sig.descs] at h
   | (_, .slice ..) :: _, [_], _, h => by simp [Sig.descs] at h
+  | (_, .inOutSlice ..) :: _, [_], _, h => by simp [Sig.descs] at h
+  | (_, .inOutSlice ..) :: _, [_, _], _, h => by simp [Sig.descs] at h
   | (_, .slices ..) :: _, [], _, h => by simp [Sig.descs] at h
   | (_, .slices ..) :: _, [_], _, h => by simp [Sig.descs] at h
   | (_, .table _) :: _, [], _, h => by simp [Sig.descs] at h
@@ -355,6 +393,7 @@ theorem Sig.lists_congr (pb : Nat) {m₁ m₂ : Mem} :
   | (_, .int ..) :: ps, _ :: vs, h => Sig.lists_congr pb ps vs h
   | (_, .array ..) :: ps, _ :: vs, h => Sig.lists_congr pb ps vs h
   | (_, .slice ..) :: ps, _ :: _ :: vs, h => Sig.lists_congr pb ps vs h
+  | (_, .inOutSlice ..) :: ps, _ :: _ :: _ :: vs, h => Sig.lists_congr pb ps vs h
   | (_, .slices e _) :: ps, p :: n :: vs, h => by
     simp only [Sig.descs, List.mem_cons, forall_eq_or_imp] at h
     simp only [Sig.lists]
@@ -366,7 +405,10 @@ theorem Sig.lists_congr (pb : Nat) {m₁ m₂ : Mem} :
   | (_, .int ..) :: _, [], _ => rfl
   | (_, .array ..) :: _, [], _ => rfl
   | (_, .slice ..) :: _, [], _ => rfl
+  | (_, .inOutSlice ..) :: _, [], _ => rfl
   | (_, .slice ..) :: _, [_], _ => rfl
+  | (_, .inOutSlice ..) :: _, [_], _ => rfl
+  | (_, .inOutSlice ..) :: _, [_, _], _ => rfl
   | (_, .slices ..) :: _, [], _ => rfl
   | (_, .slices ..) :: _, [_], _ => rfl
   | (_, .table _) :: _, [], _ => rfl
@@ -403,12 +445,16 @@ theorem Sig.lists_of_noLists (pb : Nat) (m : Mem) :
   | (_, .int ..) :: ps, _ :: vs, h => Sig.lists_of_noLists pb m ps vs (by simpa [Sig.noLists] using h)
   | (_, .array ..) :: ps, _ :: vs, h => Sig.lists_of_noLists pb m ps vs (by simpa [Sig.noLists] using h)
   | (_, .slice ..) :: ps, _ :: _ :: vs, h => Sig.lists_of_noLists pb m ps vs (by simpa [Sig.noLists] using h)
+  | (_, .inOutSlice ..) :: ps, _ :: _ :: _ :: vs, h => Sig.lists_of_noLists pb m ps vs (by simpa [Sig.noLists] using h)
   | (_, .slices ..) :: _, _, h => by simp [Sig.noLists] at h
   | (_, .table _) :: _, _, h => by simp [Sig.noLists] at h
   | (_, .int ..) :: _, [], _ => rfl
   | (_, .array ..) :: _, [], _ => rfl
   | (_, .slice ..) :: _, [], _ => rfl
+  | (_, .inOutSlice ..) :: _, [], _ => rfl
   | (_, .slice ..) :: _, [_], _ => rfl
+  | (_, .inOutSlice ..) :: _, [_], _ => rfl
+  | (_, .inOutSlice ..) :: _, [_, _], _ => rfl
 
 theorem Sig.descs_of_noLists (pb : Nat) :
     ∀ (ps : List (String × Param)) (vs : List (BitVec 64)), Sig.noLists ps = true →
@@ -417,12 +463,16 @@ theorem Sig.descs_of_noLists (pb : Nat) :
   | (_, .int ..) :: ps, _ :: vs, h => Sig.descs_of_noLists pb ps vs (by simpa [Sig.noLists] using h)
   | (_, .array ..) :: ps, _ :: vs, h => Sig.descs_of_noLists pb ps vs (by simpa [Sig.noLists] using h)
   | (_, .slice ..) :: ps, _ :: _ :: vs, h => Sig.descs_of_noLists pb ps vs (by simpa [Sig.noLists] using h)
+  | (_, .inOutSlice ..) :: ps, _ :: _ :: _ :: vs, h => Sig.descs_of_noLists pb ps vs (by simpa [Sig.noLists] using h)
   | (_, .slices ..) :: _, _, h => by simp [Sig.noLists] at h
   | (_, .table _) :: _, _, h => by simp [Sig.noLists] at h
   | (_, .int ..) :: _, [], _ => rfl
   | (_, .array ..) :: _, [], _ => rfl
   | (_, .slice ..) :: _, [], _ => rfl
+  | (_, .inOutSlice ..) :: _, [], _ => rfl
   | (_, .slice ..) :: _, [_], _ => rfl
+  | (_, .inOutSlice ..) :: _, [_], _ => rfl
+  | (_, .inOutSlice ..) :: _, [_, _], _ => rfl
 
 theorem Sig.noLists_withScratch {sig : Sig} (nm : String) (e : Elem) (n : Nat)
     (h : Sig.noLists sig.params = true) : Sig.noLists (sig.withScratch nm e n).params = true := by

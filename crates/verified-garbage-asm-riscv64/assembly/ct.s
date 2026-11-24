@@ -32,8 +32,7 @@ vg_ct_eq:
 	srli a0, a4, 63
 21:
 	addi t0, zero, 0
-	slli a0, a0, 32
-	srli a0, a0, 32
+	addiw a0, a0, 0
 	addi a1, zero, 0
 	addi a2, zero, 0
 	addi a3, zero, 0

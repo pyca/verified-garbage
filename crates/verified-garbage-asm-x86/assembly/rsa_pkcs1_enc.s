@@ -329,7 +329,7 @@ vg_rsa_pkcs1_encrypt_random:
 	ret
 	.p2align 6
 
-vg_rsa_pkcs1_decrypt_precomputed_front_sha256_shani:
+vg_rsa_pkcs1_decrypt_precomputed_sha256_shani:
 	push ebx
 	push ebp
 	push esi
@@ -388,9 +388,10 @@ vg_rsa_pkcs1_decrypt_precomputed_front_sha256_shani:
 	call {vg_rsa_pkcs1_decrypt_precomputed_body_sha256_shani}
 	mov DWORD PTR [esp+100], eax
 	mov ebp, DWORD PTR [esp+248]
+	mov ecx, DWORD PTR [esp+180]
 	mov esi, ebp
 	add esi, 2048
-	mov ecx, 2048
+	add esi, ecx
 	mov eax, 0
 20:
 	mov BYTE PTR [esi], al
@@ -416,8 +417,6 @@ vg_rsa_pkcs1_decrypt_precomputed_front_sha256_shani:
 	mov DWORD PTR [esp+120], eax
 	mov eax, 1
 	mov DWORD PTR [esp+124], eax
-	mov eax, 11
-	mov DWORD PTR [esp+128], eax
 22:
 	mov esi, ebp
 	add esi, 2048
@@ -427,7 +426,7 @@ vg_rsa_pkcs1_decrypt_precomputed_front_sha256_shani:
 	and eax, 1
 	mov edx, 0
 	sub edx, eax
-	mov ecx, 1024
+	mov ecx, DWORD PTR [esp+180]
 23:
 	movzx eax, BYTE PTR [esi]
 	movzx ebx, BYTE PTR [edi]
@@ -445,10 +444,9 @@ vg_rsa_pkcs1_decrypt_precomputed_front_sha256_shani:
 	mov eax, DWORD PTR [esp+124]
 	add eax, eax
 	mov DWORD PTR [esp+124], eax
-	mov eax, DWORD PTR [esp+128]
-	sub eax, 1
-	mov DWORD PTR [esp+128], eax
-	jne 22b
+	mov ecx, DWORD PTR [esp+180]
+	cmp ecx, eax
+	jae 22b
 	mov esi, ebp
 	add esi, 2048
 	mov ebx, DWORD PTR [esp+164]
@@ -721,7 +719,7 @@ vg_rsa_pkcs1_decrypt_precomputed_front_sha256_shani:
 	ret
 	.p2align 6
 
-vg_rsa_pkcs1_decrypt_precomputed_front:
+vg_rsa_pkcs1_decrypt_precomputed:
 	push ebx
 	push ebp
 	push esi
@@ -780,9 +778,10 @@ vg_rsa_pkcs1_decrypt_precomputed_front:
 	call {vg_rsa_pkcs1_decrypt_precomputed_body}
 	mov DWORD PTR [esp+100], eax
 	mov ebp, DWORD PTR [esp+248]
+	mov ecx, DWORD PTR [esp+180]
 	mov esi, ebp
 	add esi, 2048
-	mov ecx, 2048
+	add esi, ecx
 	mov eax, 0
 20:
 	mov BYTE PTR [esi], al
@@ -808,8 +807,6 @@ vg_rsa_pkcs1_decrypt_precomputed_front:
 	mov DWORD PTR [esp+120], eax
 	mov eax, 1
 	mov DWORD PTR [esp+124], eax
-	mov eax, 11
-	mov DWORD PTR [esp+128], eax
 22:
 	mov esi, ebp
 	add esi, 2048
@@ -819,7 +816,7 @@ vg_rsa_pkcs1_decrypt_precomputed_front:
 	and eax, 1
 	mov edx, 0
 	sub edx, eax
-	mov ecx, 1024
+	mov ecx, DWORD PTR [esp+180]
 23:
 	movzx eax, BYTE PTR [esi]
 	movzx ebx, BYTE PTR [edi]
@@ -837,10 +834,9 @@ vg_rsa_pkcs1_decrypt_precomputed_front:
 	mov eax, DWORD PTR [esp+124]
 	add eax, eax
 	mov DWORD PTR [esp+124], eax
-	mov eax, DWORD PTR [esp+128]
-	sub eax, 1
-	mov DWORD PTR [esp+128], eax
-	jne 22b
+	mov ecx, DWORD PTR [esp+180]
+	cmp ecx, eax
+	jae 22b
 	mov esi, ebp
 	add esi, 2048
 	mov ebx, DWORD PTR [esp+164]

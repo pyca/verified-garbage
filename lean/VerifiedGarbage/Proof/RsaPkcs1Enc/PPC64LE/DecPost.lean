@@ -40,7 +40,7 @@ section
 # `vg_rsa_pkcs1_decrypt` on PPC64LE: the precondition
 
 `DPre pc s`: the shared contract's precondition (`decryptContract`, or with
-`pc` `decryptPrecomputedContract`, with the stack of the frame and of
+`pc` `decryptPrecomputedBodyContract`, with the stack of the frame and of
 `vg_rsa_private_checked`'s, `stackBytes`), by name (`dPre_of`); with `pc`,
 what it says of `pre` (`PreX`).
 -/
@@ -176,7 +176,7 @@ abbrev HypS (pc : Bool) (s : State) : Prop :=
       (Spec.Rsa.bytesAt s.mem (stackArg s 5) (stackArg s 6).toNat) =
     some (Spec.Rsa.wordsAt s.mem (stackArg s 15) (stackArg s 16).toNat)
 
-/-- What `vg_rsa_pkcs1_decrypt_precomputed`'s precondition adds: `pre`'s facts. -/
+/-- What `vg_rsa_pkcs1_decrypt_precomputed_body`'s precondition adds: `pre`'s facts. -/
 structure PreX (s : State) : Prop where
   oP : (oR s).Disjoint (preR s)
   mP : (mlR s).Disjoint (preR s)

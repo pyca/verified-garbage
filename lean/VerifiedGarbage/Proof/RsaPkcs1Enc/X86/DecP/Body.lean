@@ -69,7 +69,7 @@ end VG.Proof.RsaPkcs1Sig.X86
 /-!
 ## RSAES-PKCS1-v1_5 decryption on x86, given `pre`: the body
 
-`vg_rsa_pkcs1_decrypt_precomputed`'s entry has `vg_rsa_pkcs1_decrypt`'s
+`vg_rsa_pkcs1_decrypt_precomputed_body`'s entry has `vg_rsa_pkcs1_decrypt`'s
 buffers, `pre` (read) and two more arguments (`EP.layP`, `SP`). The body
 copies the call's twenty-two arguments (`privArgsP_vp`), calls
 `vg_rsa_private_checked_precomputed` (`call_vpP`), and from there on is
@@ -93,7 +93,7 @@ namespace EP
 
 variable (P : EP) (pre : BitVec 32) (L : Nat)
 
-/-- The arguments of `vg_rsa_pkcs1_decrypt_precomputed`, in order. -/
+/-- The arguments of `vg_rsa_pkcs1_decrypt_precomputed_body`, in order. -/
 abbrev argvP : List (BitVec 32) :=
   [P.out, BitVec.ofNat 32 P.K, P.ml, P.n, BitVec.ofNat 32 P.K, P.e, BitVec.ofNat 32 P.el, P.d,
     BitVec.ofNat 32 P.dl, P.inp, BitVec.ofNat 32 P.K, P.p, BitVec.ofNat 32 P.pl, P.q, BitVec.ofNat 32 P.ql,

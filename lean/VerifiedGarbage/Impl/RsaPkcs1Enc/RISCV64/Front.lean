@@ -8,8 +8,8 @@ public import VerifiedGarbage.Impl.Scrub.RISCV64
 /-!
 # RSAES-PKCS1-v1_5 decryption with the message first, on RISC-V
 
-`vg_rsa_pkcs1_decrypt_precomputed_front` takes the arguments of
-`vg_rsa_pkcs1_decrypt_precomputed` and calls it (`body`, by its name) with
+`vg_rsa_pkcs1_decrypt_precomputed` takes the arguments of
+`vg_rsa_pkcs1_decrypt_precomputed_body` and calls it (`body`, by its name) with
 them: the eight argument registers as they came, and its 17 stack arguments
 copied to the bottom of a frame of `frameBytes` (176) bytes (`copyArg`, as
 `withStackScratchArgs` copies them), which keeps `sp` a multiple of 16 at
@@ -21,16 +21,17 @@ That function writes the message `M` at the end of `out`, after `k - L`
 zeros (`L` its length, at `*msg_len`), or zeros and a length of 0. After the
 call its result stays in `a0`, which nothing after writes, and `out`, `k`,
 `scratch` (our stack argument 13) and `s = k - *msg_len` are loaded into
-`a7`, `t6`, `a6` and `t3` (`load`, `diff`). The first 2048 bytes of
-`scratch`, whose contents on return are unspecified, hold a buffer: cleared
-(`clearBuf`, RSASSA-PKCS1-v1_5's `fillLoop`), `out`'s `k` bytes copied to it
-(`copyIn`, its `copyLoop`), shifted left by `s` bytes in eleven passes
-(`shift`), pass `j` replacing each of its first `k` bytes by the one `2^j`
-bytes after it under the mask of bit `j` of `s` (RSAES-OAEP decryption's
-`passBody`; `s ≤ k ≤ 1024 < 2^11`, and `k + 1024 ≤ 2048`), and its first `k`
-bytes copied back to `out` (`copyOut`): `M`, then zeros. `*msg_len` is left
-as the call wrote it, and the result is the call's. No address or branch
-depends on `s`, which is secret: only masks do.
+`a7`, `t6`, `a6` and `t3` (`load`, `diff`). The first `2k` bytes of
+`scratch`, whose contents on return are unspecified, hold a buffer: its bytes
+from `k` to `2k` cleared (`clearBuf`, RSASSA-PKCS1-v1_5's `fillLoop`),
+`out`'s `k` bytes copied before them (`copyIn`, its `copyLoop`), shifted left
+by `s` bytes in `bitLength(k)` passes (`shift`), pass `j` replacing each of
+its first `k` bytes by the one `2^j` bytes after it under the mask of bit `j`
+of `s` (RSAES-OAEP decryption's `passBody`; `s ≤ k < 2^bitLength(k)`, and
+`2^j ≤ k`, so a pass reads below `2k ≤ 2048`), and its first `k` bytes copied
+back to `out` (`copyOut`): `M`, then zeros. `*msg_len` is left as the call
+wrote it, and the result is the call's. No address, branch or count of
+passes depends on `s`, which is secret: only masks do.
 -/
 
 @[expose] public section
@@ -73,10 +74,9 @@ def load : List Instr :=
 /-- `s = k - *msg_len` into `t3`. -/
 def diff : List Instr := [.load .d .t3 .t3 0, .sub .t3 .t6 .t3]
 
-/-- The buffer's 2048 bytes cleared (`2048 = 1 << 11`, past the reach of an
-immediate). -/
-def clearBuf : Prog isa :=
-  .seq (.block [mov .a1 .a6, .li .t5 1, .shift .sll .d .t5 .t5 11, .li .t0 0]) fillLoop
+/-- The buffer's `k` bytes after the first `k` cleared, which the passes
+read beyond what `copyIn` writes. -/
+def clearBuf : Prog isa := .seq (.block [.add .a1 .a6 .t6, mov .t5 .t6, .li .t0 0]) fillLoop
 
 /-- `out`'s `k` bytes to the buffer. -/
 def copyIn : Prog isa := .seq (.block [mov .a4 .a7, mov .a1 .a6, mov .a5 .t6]) copyLoop
@@ -88,13 +88,13 @@ def shiftPass : Prog isa :=
       .sub .a3 .a4 .a3, mov .a5 .t6])
     (countLoop .a5 Impl.RsaOaep.RISCV64.Dec.passBody)
 
-/-- The next pass: `x` halved, `d` doubled, the count of passes (`t5`) less
-one. -/
-def nextPass : List Instr := [.shift .srl .d .t3 .t3 1, .add .t4 .t4 .t4, .addi .t5 .t5 (-1)]
+/-- The next pass: `x` halved, `d` doubled, the count of passes (`t5`, from
+`k`) halved. -/
+def nextPass : List Instr := [.shift .srl .d .t3 .t3 1, .add .t4 .t4 .t4, .shift .srl .d .t5 .t5 1]
 
-/-- The buffer shifted left by `s` (`t3`) bytes, in eleven passes, the
-`j`-th by `d = 2^j`. -/
-def shift : Prog isa := .seq (.block [.li .t4 1, .li .t5 11]) (.loop (.seq shiftPass (.block nextPass)) (.nonzero .t5))
+/-- The buffer shifted left by `s` (`t3`) bytes, in `bitLength(k)` passes
+(until `k` halved is 0), the `j`-th by `d = 2^j`. -/
+def shift : Prog isa := .seq (.block [.li .t4 1, mov .t5 .t6]) (.loop (.seq shiftPass (.block nextPass)) (.nonzero .t5))
 
 /-- The buffer's first `k` bytes to `out`. -/
 def copyOut : Prog isa := .seq (.block [mov .a4 .a6, mov .a1 .a7, mov .a5 .t6]) copyLoop
@@ -106,12 +106,12 @@ def ret : List Instr := [.addSp .t0 0, .load .d .ra .t0 sRa]
 def tail : Prog isa :=
   .seq (.block diff) (.seq clearBuf (.seq copyIn (.seq shift (.seq copyOut (.block ret)))))
 
-/-- The function's body, calling `vg_rsa_pkcs1_decrypt_precomputed`
+/-- The function's body, calling `vg_rsa_pkcs1_decrypt_precomputed_body`
 (`callee`) by `name`. -/
 def body (name : String) (callee : Prog isa) : Prog isa :=
   .seq (.block setup) (.seq (.call name callee) (.seq (.block load) tail))
 
-/-- `vg_rsa_pkcs1_decrypt_precomputed_front`, calling `callee` by `name`. -/
+/-- `vg_rsa_pkcs1_decrypt_precomputed`, calling `callee` by `name`. -/
 def code (name : String) (callee : Prog isa) : Prog isa :=
   .frame (.alloc frameBytes) (body name callee) (.free frameBytes)
 
@@ -122,14 +122,14 @@ namespace VG.Impl.RsaPkcs1Enc.RISCV64.Fn
 open VG.RISCV64
 open VG.Impl.Scrub.RISCV64 (scrubAll)
 
-/-- The internal name of `vg_rsa_pkcs1_decrypt_precomputed`'s code before
-its cleanup, which `vg_rsa_pkcs1_decrypt_precomputed_front` calls. -/
+/-- The internal name of `vg_rsa_pkcs1_decrypt_precomputed_body`'s code before
+its cleanup, which `vg_rsa_pkcs1_decrypt_precomputed` calls. -/
 def bodyName : String := "vg_rsa_pkcs1_decrypt_precomputed_body"
 
-/-- `vg_rsa_pkcs1_decrypt_precomputed_front`: `Front.code` calling
-`vg_rsa_pkcs1_decrypt_precomputed`'s code before its cleanup, then the
+/-- `vg_rsa_pkcs1_decrypt_precomputed`: `Front.code` calling
+`vg_rsa_pkcs1_decrypt_precomputed_body`'s code before its cleanup, then the
 cleanup of the 3632 bytes of stack its frame (176) and the callee (3456)
 use. -/
-def decryptPrecomputedFront : Prog isa := scrubAll 32 3632 (Front.code bodyName Decrypt.codeP)
+def decryptPrecomputed : Prog isa := scrubAll 32 3632 (Front.code bodyName Decrypt.codeP)
 
 end VG.Impl.RsaPkcs1Enc.RISCV64.Fn

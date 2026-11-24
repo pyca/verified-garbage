@@ -45,6 +45,7 @@ def wrInfo : List (String × Param) → Nat → List (Nat × Nat)
   | (_, .slice m _ _) :: ps, w => (if m then [(w, 0)] else []) ++ wrInfo ps (w + 2)
   | (_, .slices ..) :: ps, w => wrInfo ps (w + 2)
   | (_, .table _) :: ps, w => wrInfo ps (w + 1)
+  | (_, .inOutSlice ..) :: ps, w => (w + 1, 0) :: wrInfo ps (w + 3)
 
 /-- The argument registers holding the address of writable buffer `i`, `i + 1`, …. -/
 def basesAux : List (Nat × Nat) → Nat → List (Reg × Nat × Nat)
@@ -129,7 +130,7 @@ theorem wr_info : ∀ (ps : List (String × Param)) (vs : List (BitVec 64)) (w :
     ∀ i (h : i < (wrInfo ps w).length), w ≤ ((wrInfo ps w)[i]).1 ∧ ((wrInfo ps w)[i].1 - w) < vs.length ∧
       ((wrOf ps vs).getD i ⟨0, 0⟩).base = vs.getD ((wrInfo ps w)[i].1 - w) 0
   | [], vs, w, _ => ⟨by simp [wrOf, Sig.bufs, wrInfo], fun i h => by simp [wrInfo] at h⟩
-  | (_, p) :: ps, vs, w, hl => by
+  | (name, p) :: ps, vs, w, hl => by
     cases p with
     | int ty pb =>
       obtain ⟨v, vs, rfl⟩ : ∃ v vs', vs = v :: vs' := by
@@ -241,6 +242,31 @@ theorem wr_info : ∀ (ps : List (String × Param)) (vs : List (BitVec 64)) (w :
       simp only [wrOf, Sig.bufs] at c ⊢
       rw [c, show (wrInfo ps (w + 1))[i].1 - w = (wrInfo ps (w + 1))[i].1 - (w + 1) + 1 by omega_using [a]]
       simp
+
+    | inOutSlice e dstName lenName =>
+      obtain ⟨src, dst, l, vs, rfl⟩ : ∃ src dst l rest, vs = src :: dst :: l :: rest := by
+        match vs with
+        | [] | [_] | [_, _] => simp [Param.words] at hl
+        | src :: dst :: l :: rest => exact ⟨src, dst, l, rest, rfl⟩
+      have hl' : vs.length = (ps.flatMap (·.2.words 64)).length := by
+        simp only [List.flatMap_cons, Param.words, List.length_append, List.length_cons, List.length_nil] at hl ⊢
+        omega_using [hl]
+      obtain ⟨h1, h2⟩ := wr_info ps vs (w + 3) hl'
+      have hwr : wrOf ((name, Param.inOutSlice e dstName lenName) :: ps) (src :: dst :: l :: vs) =
+          ⟨dst, l.toNat * e.size⟩ :: wrOf ps vs := by
+        by_cases h : src = dst <;> simp [wrOf, Sig.bufs, h]
+      rw [hwr]
+      refine ⟨by simpa [wrInfo] using (List.Forall₂.cons (R := fun (r : Region) l => l ≤ r.len) (a := ⟨dst, l.toNat * e.size⟩) (b := 0) (Nat.zero_le _) h1), fun i h => ?_⟩
+      cases i with
+      | zero => simp [wrInfo]
+      | succ i =>
+        have hi : i < (wrInfo ps (w + 3)).length := by simpa [wrInfo] using h
+        obtain ⟨a, b, c⟩ := h2 i hi
+        simp only [wrInfo, List.getElem_cons_succ, List.getD_cons_succ]
+        refine ⟨by omega_using [a], by simp; omega_using [b], ?_⟩
+        rw [c, show (wrInfo ps (w + 3))[i].1 - w =
+          (wrInfo ps (w + 3))[i].1 - (w + 3) + 1 + 1 + 1 by omega_using [a]]
+        simp
 
 theorem basesAux_mem : ∀ {qs : List (Nat × Nat)} {i : Nat} {p : Reg × Nat × Nat}, p ∈ basesAux qs i →
     ∃ j, ∃ h : j < qs.length, argRegs[qs[j].1]? = some p.1 ∧ p.2 = (i + j, 0)

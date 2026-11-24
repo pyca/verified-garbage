@@ -30,9 +30,9 @@ meta import VerifiedGarbage.Proof.Framework.Lit
 
 The functions as emitted (`Impl.Seed.X86.AesNiWide.Fn`): each runs with its
 working space in a frame on the stack, which it wipes, then zeroes, of the
-740 bytes of stack its contract reserves below `esp`, the six doublewords
+744 bytes of stack its contract reserves below `esp`, the seven doublewords
 that the residue analysis (`X86.rtaint`) finds it may leave different in two
-runs, the header of that frame, clears the registers a callee may change,
+runs, the header of that frame and its last doubleword, clears the registers a callee may change,
 and returns without secret residue (`X86.Scrub.verifiedScrubbedSel`, the
 kernel evaluating the analysis of the code with its cleanup:
 `taint_decide_ct`). Their postconditions read the memory on return only
@@ -61,18 +61,18 @@ theorem cfbDecryptOut (stack : Nat) : PostOut (Spec.Seed.cfbDecryptContract X86.
 contract in constant time and returns without secret residue. -/
 theorem cbcDecryptChained_scrubbed :
     VerifiedScrubbed X86.target Impl.Seed.X86.AesNiWide.Fn.cbcDecryptChained
-      (Spec.Seed.cbcDecryptChainedContract X86.abi 740) 0 :=
-  verifiedScrubbedSel (api := Spec.Seed.cbcDecryptChainedApi) (W := 740)
-    { code := Impl.StackScratch.X86.withStackScratchWiped 736 4 178 Impl.Seed.X86.AesNiWide.cbcDecryptChained
+      (Spec.Seed.cbcDecryptChainedContract X86.abi 744) 0 :=
+  verifiedScrubbedSel (api := Spec.Seed.cbcDecryptChainedApi) (W := 744)
+    { code := Impl.StackScratch.X86.withStackScratchWiped 740 4 178 Impl.Seed.X86.AesNiWide.cbcDecryptChained
       verified := Proof.Seed.X86.AesNiWide.Modes.cbcDecryptChained_framed }
     Impl.Seed.X86.AesNiWide.Fn.modeWords (cbcDecryptOut _) (by decide) ⟨_, by taint_decide_ct⟩
 
 /-- `Spec.Seed.cfbDecryptApi` as emitted (`Impl.Seed.X86.AesNiWide.Fn.cfbDecrypt`) meets its contract in
 constant time and returns without secret residue. -/
 theorem cfbDecrypt_scrubbed :
-    VerifiedScrubbed X86.target Impl.Seed.X86.AesNiWide.Fn.cfbDecrypt (Spec.Seed.cfbDecryptContract X86.abi 740) 0 :=
-  verifiedScrubbedSel (api := Spec.Seed.cfbDecryptApi) (W := 740)
-    { code := Impl.StackScratch.X86.withStackScratchWiped 736 4 178 Impl.Seed.X86.AesNiWide.cfbDecrypt
+    VerifiedScrubbed X86.target Impl.Seed.X86.AesNiWide.Fn.cfbDecrypt (Spec.Seed.cfbDecryptContract X86.abi 744) 0 :=
+  verifiedScrubbedSel (api := Spec.Seed.cfbDecryptApi) (W := 744)
+    { code := Impl.StackScratch.X86.withStackScratchWiped 740 4 178 Impl.Seed.X86.AesNiWide.cfbDecrypt
       verified := Proof.Seed.X86.AesNiWide.Modes.cfbDecrypt_framed }
     Impl.Seed.X86.AesNiWide.Fn.modeWords (cfbDecryptOut _) (by decide) ⟨_, by taint_decide_ct⟩
 

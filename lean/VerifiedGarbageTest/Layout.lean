@@ -197,6 +197,14 @@ def lists : Sig where
       `key` may overlap the return address on the stack, or wrap around the end of the address \
       space (no Rust object does)."]
 
+def pair : Sig where
+  params := [("src", .inOutSlice .u32 "dst" "len")]
+
+#guard pair.validDoc RISCV64.abi == ["`src` must be valid for reads of `4 * len` bytes, and aligned for `u32`, and `dst` for reads and writes of `4 * len` bytes, and aligned for `u32`. The two pointers must be identical or their regions disjoint."]
+#guard Sig.alignedBufs pair.params [8, 20, 4] == [(8, 4), (20, 4)]
+#guard Sig.bufs pair.params [8, 8, 4] == [(⟨8, 16⟩, true)]
+#guard Rust.argsOf pair == "src, dst, len"
+
 /-! ## Rendering: the note goes before `# Safety` -/
 
 def safeDoc : String := "Does things.\n\n# Safety\n\n* `p` must be valid."

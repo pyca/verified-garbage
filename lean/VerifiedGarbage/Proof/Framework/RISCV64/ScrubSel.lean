@@ -12,12 +12,17 @@ import VerifiedGarbage.Proof.Framework.Omega
 # Clearing only the stack the residue analysis finds secret (64-bit RISC-V)
 
 `Impl.Scrub.RISCV64.scrubSel rb fs c` is `c`, then the clearing of `scrubAll` with frames that
-zero only the doublewords of their runs (`fs`). Its run after `c` leaves the registers as
-`scrubAll`'s does and the memory as it was but within the frames (`tailSel_run`), so it is
-verified against `c`'s contract (`Verified.scrubSel`), with `scrubAll`'s proof. It returns
-without secret residue when the residue analysis (`rtaint`) of the whole of it, from where
-the contract starts it, ends in `RTaint.done` (`RTaint.noResidue_of_verified`): that analysis
-sees the clearing's stores, and that they leave no byte of the window secret.
+zero only the doublewords of their runs (`fs`), then `retFix rb`. Its run after `c` but
+`retFix` (`scrubSelBody`) leaves the registers as `scrubAll`'s does but `a0`, which it leaves
+as `c` did, and the memory as it was but within the frames (`tailSel_run`), so it is
+verified against `c`'s contract (`Verified.scrubSelBody`), with `scrubAll`'s proof, and so is
+all of it (`Verified.withRetFix`). It returns without secret residue when the residue
+analysis (`rtaint`) of all of it but `retFix`, from where the contract starts it, ends in
+`RTaint.done 64` (`RTaint.noResidue_of_verified`): that analysis sees the clearing's stores,
+and that they leave no byte of the window secret, and every register but `a0` public.
+`retFix` then leaves `a0` as the result requires (`retFix_outside`): its bits above the
+result cleared, or, for a 32-bit result, its bit 31 sign-extended, as the psABI requires,
+which depends on nothing but the result.
 
 `verifiedScrubbedSel` states it of a registration's code, as `verifiedScrubbedAll`
 (`ScrubProved.lean`) does of `scrubAll`, with what the cleanup needs of its frames
@@ -176,11 +181,11 @@ def tailSelTr (fs : List (Nat × List (Nat × Nat))) (p : Addr) : List Leak := [
 
 /-- The clearing's run: it leaves the registers as `scrubAll`'s does (`finG`), and the memory
 as it was outside its frames. -/
-theorem tailSel_run {rb : Nat} (hrb : rb ≤ 64) {fs : List (Nat × List (Nat × Nat))} (hv : FramesOk fs)
+theorem tailSel_run {fs : List (Nat × List (Nat × Nat))} (hv : FramesOk fs)
     (u : State) (hs : sizeOf fs ≤ u.sp.toNat) (h16 : u.sp.toNat % 16 = 0) :
     ∃ m U, (∀ x, ¬ (x - (u.sp - BitVec.ofNat 64 (sizeOf fs))).toNat < sizeOf fs → m x = u.mem x) ∧
-      Exec isa (scrubTailSel rb fs) u (tailSelTr fs u.sp)
-        { u with gpr := finG rb u.gpr, mem := m, unknowns := U } := by
+      Exec isa (scrubTailSel fs) u (tailSelTr fs u.sp)
+        { u with gpr := finG 64 u.gpr, mem := m, unknowns := U } := by
   have h₀ : execBlock isa [zeroR .t0] u =
       some ({ u with gpr := fun r => if r ∈ [Reg.t0] then 0 else u.gpr r }, []) := zeroRs_run [.t0] u
   generalize hu₁ : ({ u with gpr := fun r => if r ∈ [Reg.t0] then 0 else u.gpr r } : State) = u₁ at h₀
@@ -188,20 +193,21 @@ theorem tailSel_run {rb : Nat} (hrb : rb ≤ 64) {fs : List (Nat × List (Nat ×
   have hmem : u₁.mem = u.mem := by rw [← hu₁]
   have hg₁ : ∀ r, r ≠ .t0 → u₁.gpr r = u.gpr r := fun r hr => by rw [← hu₁]; simp [hr]
   obtain ⟨g, m, U, hg, hm, hw⟩ := wipeSel_run fs u₁ hv (hsp ▸ hs) (hsp ▸ h16) (by rw [← hu₁]; simp)
-  have hc := execBlock_append (M := isa) (retFix rb) (scratchRegs.map zeroR)
-    { u₁ with gpr := g, mem := m, unknowns := U }
-  rw [retFix_run hrb, Option.bind_some, zeroRs_run] at hc
+  have hc := zeroRs_run scratchRegs { u₁ with gpr := g, mem := m, unknowns := U }
   have e := Exec.seq (.block h₀) (.seq hw (.block hc))
-  have eg : (fun r => if r ∈ scratchRegs then 0 else
-      (fun r => if r = Reg.a0 then fixA rb (g .a0) else g r) r) = finG rb u.gpr := by
+  have eg : (fun r => if r ∈ scratchRegs then 0 else g r) = finG 64 u.gpr := by
     funext r
-    simp only [finG]
+    simp only [finG, fixA, show (64 : Nat) ≠ 0 by decide, show (64 : Nat) ≠ 32 by decide,
+      show ¬ (64 : Nat) < 64 by decide, ite_false]
     by_cases h : r ∈ scratchRegs
     · simp [h]
     · have h0 : r ≠ .t0 := fun e => h (e ▸ by decide)
       have h1 : r ≠ .t1 := fun e => h (e ▸ by decide)
-      simp only [h, ite_false, hg r h1, hg₁ r h0, hg .a0 (by decide), hg₁ .a0 (by decide)]
-  have et : ([] ++ (wipeSelTr fs u₁.sp ++ ([] ++ []))) = tailSelTr fs u.sp := by
+      simp only [h, ite_false, hg r h1, hg₁ r h0]
+      by_cases ha : r = .a0
+      · subst ha; simp
+      · simp [ha]
+  have et : ([] ++ (wipeSelTr fs u₁.sp ++ [])) = tailSelTr fs u.sp := by
     simp only [hsp, tailSelTr, List.nil_append]
   refine ⟨m, U, fun x hx => by rw [hm x (by rw [hsp]; exact hx), hmem], ?_⟩
   simp only at e
@@ -234,12 +240,17 @@ theorem regions_out (hA : ScrubAbi A) {s : State} (h : (sig.contract A pre post 
   · subst h0; omega_using [hb]
   · exact (contract_pre_scrub hA h).2.2 g hg h0 x ((below_contains_iff _ _ _).mpr hb) hx
 
-/-- `c` followed by `scrubSel`'s clearing is verified against `c`'s contract. -/
-theorem Verified.scrubSel {c : Prog isa} {fs : List (Nat × List (Nat × Nat))}
+theorem finG_64_a0 (g : Reg → BitVec 64) : finG 64 g .a0 = g .a0 := by
+  simp only [finG, fixA, show Reg.a0 ∉ scratchRegs by decide, show (64 : Nat) ≠ 0 by decide,
+    show (64 : Nat) ≠ 32 by decide, show ¬ (64 : Nat) < 64 by decide, ite_false, ite_true]
+
+/-- `c` followed by `scrubSel`'s clearing but the result's (`scrubSelBody`) is verified
+against `c`'s contract. -/
+theorem Verified.scrubSelBody {c : Prog isa} {fs : List (Nat × List (Nat × Nat))}
     (hA : ScrubAbi A) (h : Verified target c (sig.contract A pre post wa stack leak))
-    (hfs : FramesOk fs) (hsz : sizeOf fs ≤ stack) (hrb : sig.retBits A.ptrBits ≤ 64)
+    (hfs : FramesOk fs) (hsz : sizeOf fs ≤ stack)
     (hpost : PostOut (sig.contract A pre post wa stack leak) (sig.retBits A.ptrBits)) :
-    Verified target (Impl.Scrub.RISCV64.scrubSel (sig.retBits A.ptrBits) fs c)
+    Verified target (Impl.Scrub.RISCV64.scrubSelBody fs c)
       (sig.contract A pre post wa stack leak) := by
   obtain ⟨hcor, hct, hsat⟩ := h
   have run : ∀ s t u, (sig.contract A pre post wa stack leak).pre s → Exec isa c s t u →
@@ -250,12 +261,12 @@ theorem Verified.scrubSel {c : Prog isa} {fs : List (Nat × List (Nat × Nat))}
     exact ⟨ha, hp, ha.2.1⟩
   have tail : ∀ s t u, (sig.contract A pre post wa stack leak).pre s → Exec isa c s t u →
       ∃ m U, (∀ x, ¬ (x - (s.sp - BitVec.ofNat 64 (sizeOf fs))).toNat < sizeOf fs → m x = u.mem x) ∧
-        Exec isa (scrubTailSel (sig.retBits A.ptrBits) fs) u (tailSelTr fs s.sp)
-          { u with gpr := finG (sig.retBits A.ptrBits) u.gpr, mem := m, unknowns := U } := by
+        Exec isa (scrubTailSel fs) u (tailSelTr fs s.sp)
+          { u with gpr := finG 64 u.gpr, mem := m, unknowns := U } := by
     intro s t u hs he
     obtain ⟨h16s, hsts, -⟩ := contract_pre_scrub hA hs
     obtain ⟨-, -, hsp⟩ := run s t u hs he
-    obtain ⟨m, U, hm, e⟩ := tailSel_run hrb hfs u
+    obtain ⟨m, U, hm, e⟩ := tailSel_run hfs u
       (by rw [hsp]; rcases hsts with h0 | h0 <;> omega_using [h0, hsz]) (by rw [hsp]; exact h16s)
     refine ⟨m, U, fun x hx => hm x (by rw [hsp]; exact hx), ?_⟩
     rw [← hsp]; exact e
@@ -267,7 +278,7 @@ theorem Verified.scrubSel {c : Prog isa} {fs : List (Nat × List (Nat × Nat))}
     · obtain ⟨h1, h2⟩ := not_scratch_preserved r hr
       simp only [finG, h1, h2, ite_false]
       exact ha.1 r hr
-    · show finG (sig.retBits A.ptrBits) u.gpr .ra = _
+    · show finG 64 u.gpr .ra = _
       simp only [finG, show Reg.ra ∉ scratchRegs by decide, ite_false, show Reg.ra ≠ .a0 by decide]
       exact ha.2.2
     · refine hpost s u _ hs hq (fun x ⟨g, hg, hx⟩ => hm x fun hb => ?_) ?_
@@ -276,9 +287,8 @@ theorem Verified.scrubSel {c : Prog isa} {fs : List (Nat × List (Nat × Nat))}
         by_cases h0 : stack = 0
         · subst h0; omega_using [hsz, hb]
         · exact regions_out hA hs g hg x hx (below_le hsz (by omega_using [hsts, h0, hS]) hb)
-      · show (finG (sig.retBits A.ptrBits) u.gpr .a0).setWidth _ = _
-        simp only [finG, show Reg.a0 ∉ scratchRegs by decide, ite_false, ite_true]
-        exact fixA_low hrb _
+      · show (finG 64 u.gpr .a0).setWidth _ = _
+        rw [finG_64_a0]
   · cases e₁ with | seq a₁ b₁ =>
     cases e₂ with | seq a₂ b₂ =>
     obtain ⟨_, _, -, et₁⟩ := tail s₁ _ _ h₁ a₁
@@ -286,6 +296,44 @@ theorem Verified.scrubSel {c : Prog isa} {fs : List (Nat × List (Nat × Nat))}
     obtain ⟨rfl, -⟩ := Exec.det b₁ et₁
     obtain ⟨rfl, -⟩ := Exec.det b₂ et₂
     rw [hct _ _ _ _ _ _ h₁ h₂ hp a₁ a₂, contract_pub_sp hA hp]
+
+/-- The state after `retFix rb` from `u`. -/
+def fixState (rb : Nat) (u : State) : State :=
+  { u with gpr := fun r => if r = .a0 then fixA rb (u.gpr .a0) else u.gpr r }
+
+/-- Code verified against a contract, then `retFix rb` for its result of `rb` bits: verified
+against the same contract, whose postcondition reads only the result's bits of `a0`. -/
+theorem Verified.withRetFix {c : Prog isa}
+    (h : Verified target c (sig.contract A pre post wa stack leak)) (hrb : sig.retBits A.ptrBits ≤ 64)
+    (hpost : PostOut (sig.contract A pre post wa stack leak) (sig.retBits A.ptrBits)) :
+    Verified target (.seq c (.block (Impl.Scrub.RISCV64.retFix (sig.retBits A.ptrBits))))
+      (sig.contract A pre post wa stack leak) := by
+  obtain ⟨hcor, hct, hsat⟩ := h
+  have fx : ∀ u, Exec isa (.block (Impl.Scrub.RISCV64.retFix (sig.retBits A.ptrBits))) u []
+      (fixState (sig.retBits A.ptrBits) u) := fun u => .block (retFix_run hrb u)
+  refine ⟨fun s hs => ?_, fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hp e₁ e₂ => ?_, hsat⟩
+  · obtain ⟨t, u, he, ha, hq⟩ := hcor s hs
+    refine ⟨_, _, .seq he (fx u), ⟨fun r hr => ?_, ha.2.1, ?_⟩, ?_⟩
+    · simp only [fixState, (not_scratch_preserved r hr).2, ite_false]; exact ha.1 r hr
+    · simp only [fixState, show Reg.ra ≠ .a0 by decide, ite_false]; exact ha.2.2
+    · refine hpost s u _ hs hq (fun _ _ => rfl) ?_
+      simp only [fixState, ite_true]
+      exact fixA_low hrb _
+  · cases e₁ with | seq a₁ b₁ =>
+    cases e₂ with | seq a₂ b₂ =>
+    rw [(Exec.det b₁ (fx _)).1, (Exec.det b₂ (fx _)).1, hct _ _ _ _ _ _ h₁ h₂ hp a₁ a₂]
+
+/-- Two runs that agree on everything but `a0` (`Outside 64`), then `retFix rb`, agree on
+everything but the result (`RetOutside`). -/
+theorem retFix_outside (hA : ScrubAbi A) {rb : Nat} (hrb : rb ≤ 64) (hr : sig.retBits A.ptrBits = rb)
+    {X Y : State} (O : Outside 64 X Y) :
+    RetOutside (sig.contract A pre post wa stack leak) rb (fixState rb X) (fixState rb Y) := by
+  obtain ⟨h₁, h₂, h₃, -, h₅, h₆⟩ := O
+  refine retOutside_of ⟨h₁, h₂, fun r hr => ?_, by rw [ushiftRight_64, ushiftRight_64], h₅, h₆⟩
+    (fun h32 => ?_) (fun h32 => ⟨contract_retExt32 hA (hr.trans h32), ?_, ?_⟩)
+  · simp only [fixState, hr, ite_false]; exact h₃ r hr
+  · simp only [fixState, ite_true]; rw [fixA_hi hrb h32, fixA_hi hrb h32]
+  all_goals simp only [fixState, ite_true]; subst h32; exact fixA_sext _
 
 end
 
@@ -302,17 +350,26 @@ theorem framesOk_of {fs : List (Nat × List (Nat × Nat))} (h : framesOkB fs = t
   obtain ⟨⟨⟨h1, h2⟩, h3⟩, h4⟩ := h f hf
   exact ⟨h1, h2, h3, h4⟩
 
+theorem scrubSelBody_verified {api : Api} (r : Unscrubbed api target) (fs : List (Nat × List (Nat × Nat)))
+    (hfs : FramesOk fs) (hsz : sizeOf fs ≤ r.stack) (hpost : PostOut r.contract (retBitsOf r)) :
+    Verified target (scrubSelBody fs r.code) r.contract := by
+  obtain ⟨pre, post, leak, e⟩ := r.ofSig
+  have hv := r.verified
+  have hp := hpost
+  unfold retBitsOf at hp
+  rw [e] at hv hp ⊢
+  exact Verified.scrubSelBody (ScrubAbi.of r.consts api.sig r.tables) hv hfs hsz hp
+
 theorem scrubSelCode_verified {api : Api} (r : Unscrubbed api target) (fs : List (Nat × List (Nat × Nat)))
     (hfs : FramesOk fs) (hsz : sizeOf fs ≤ r.stack) (hrb : retBitsOf r ≤ 64)
     (hpost : PostOut r.contract (retBitsOf r)) :
     Verified target (scrubSel (retBitsOf r) fs r.code) r.contract := by
+  have hb := scrubSelBody_verified r fs hfs hsz hpost
   obtain ⟨pre, post, leak, e⟩ := r.ofSig
-  have hv := r.verified
   have hp := hpost
   unfold retBitsOf at hrb hp ⊢
-  rw [e] at hv hp ⊢
-  have hrb' := hrb
-  exact Verified.scrubSel (ScrubAbi.of r.consts api.sig r.tables) hv hfs hsz hrb' hp
+  rw [e] at hb hp ⊢
+  exact Verified.withRetFix hb hrb hp
 
 /-- Where the residue analysis of `r`'s function starts holds of the states its contract
 starts from, if the `e.2` bytes from what each register `e.1` of `bp0` holds are in its
@@ -338,19 +395,29 @@ theorem scrubSel_pre {api : Api} (r : Unscrubbed api target) (bp0 : List (Reg ×
   exact hout g hg _ hc
 
 /-- `r`'s code followed by the clearing of only the runs of `fs` returns without secret
-residue if the residue analysis of the whole, stated of `code`, `W` and `rb`, which are
-`r`'s code, stack and result width (so that the kernel evaluates it without the
-registration, whose proofs mention the code), ends in `done`. -/
+residue if the residue analysis of all of it but `retFix` (`scrubSelBody`), stated of `code`
+and `W`, which are `r`'s code and stack (so that the kernel evaluates it without the
+registration, whose proofs mention the code), ends in `done 64`: every register but `a0` as
+in the other run, which `retFix` then leaves as the result requires (`retFix_outside`). -/
 theorem scrubSel_noResidue {api : Api} (r : Unscrubbed api target) (fs : List (Nat × List (Nat × Nat)))
     (bp0 : List (Reg × Nat)) (hfs : FramesOk fs) (hsz : sizeOf fs ≤ r.stack) (hrb : retBitsOf r ≤ 64)
     (hpost : PostOut r.contract (retBitsOf r))
     (hbp : ∀ s, r.contract.pre s → ∀ e ∈ bp0, ∀ i < e.2, ∃ g ∈ s.rd ++ s.wr,
       g.Contains (s.gpr e.1 + BitVec.ofNat 64 i) 1)
-    (code : Prog isa) (W rb : Nat) (hc : r.code = code) (hW : r.stack = W) (hr : retBitsOf r = rb)
-    (hres : ∃ hc, (rtaint.check (RTaint.init W bp0) (scrubSel rb fs code) hc).any (RTaint.done rb) = true) :
-    NoResidue (scrubSel (retBitsOf r) fs r.code) r.contract (retBitsOf r) :=
-  RTaint.noResidue_of_verified (scrubSelCode_verified r fs hfs hsz hrb hpost) (scrubSel_pre r bp0 hbp)
-    (by subst hc hW hr; exact hres)
+    (code : Prog isa) (W : Nat) (hc : r.code = code) (hW : r.stack = W)
+    (hres : ∃ hc, (rtaint.check (RTaint.init W bp0) (scrubSelBody fs code) hc).any (RTaint.done 64) = true) :
+    NoResidue (scrubSel (retBitsOf r) fs r.code) r.contract (retBitsOf r) := by
+  have hb := RTaint.noResidue_of_verified (scrubSelBody_verified r fs hfs hsz hpost) (scrubSel_pre r bp0 hbp)
+    (by subst hc hW; exact hres)
+  intro s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hp ho hu e₁ e₂
+  cases e₁ with | seq a₁ b₁ =>
+  cases e₂ with | seq a₂ b₂ =>
+  obtain ⟨-, rfl⟩ := Exec.det b₁ (.block (retFix_run hrb _))
+  obtain ⟨-, rfl⟩ := Exec.det b₂ (.block (retFix_run hrb _))
+  have O : Outside 64 _ _ := (hb _ _ _ _ _ _ h₁ h₂ hp ho hu a₁ a₂).elim id (·.1)
+  obtain ⟨pre, post, leak, e⟩ := r.ofSig
+  rw [e]
+  exact retFix_outside (ScrubAbi.of r.consts api.sig r.tables) hrb rfl O
 
 /-! ## A buffer the first argument points to -/
 
@@ -443,24 +510,24 @@ theorem of_selSide {fs : List (Nat × List (Nat × Nat))} {stack rb : Nat} (h : 
 /-- `r`'s code `code` with its cleanup of only the runs of `fs`
 (`scrubSel`, with a result of `rb` bits) meets `r`'s contract in constant
 time and returns without secret residue: the theorem about the code that a
-registration binds. The residue analysis of the code with its cleanup
-(`RISCV64.rtaint`, from a state where the `e.2` bytes from what each
-register `e.1` of `bp0` holds are buffers of the contract's: `hbp`) ends
-in `done`: `hres`, which the kernel evaluates where the theorem is used
-(`taint_decide_ct`), stated of `code`, `W` and `rb`. -/
+registration binds. The residue analysis of the code with its cleanup but
+`retFix` (`scrubSelBody`; `RISCV64.rtaint`, from a state where the `e.2` bytes
+from what each register `e.1` of `bp0` holds are buffers of the contract's:
+`hbp`) ends in `done 64`: `hres`, which the kernel evaluates where the theorem
+is used (`taint_decide_ct`), stated of `code` and `W`. -/
 theorem verifiedScrubbedSel {api : Api} (r : Unscrubbed api target)
     (fs : List (Nat × List (Nat × Nat))) (bp0 : List (Reg × Nat)) {code : Prog isa} {W rb : Nat}
     (hpost : PostOut r.contract rb) (hs : selSide fs W rb = true)
     (hbp : ∀ s, r.contract.pre s → ∀ e ∈ bp0, ∀ i < e.2, ∃ g ∈ s.rd ++ s.wr,
       g.Contains (s.gpr e.1 + BitVec.ofNat 64 i) 1)
-    (hres : ∃ hc, (rtaint.check (RTaint.init W bp0) (scrubSel rb fs code) hc).any
-      (RTaint.done rb) = true)
+    (hres : ∃ hc, (rtaint.check (RTaint.init W bp0) (scrubSelBody fs code) hc).any
+      (RTaint.done 64) = true)
     (hc : r.code = code := by rfl) (hW : r.stack = W := by rfl)
     (hb : retBitsOf r = rb := by rfl) :
     VerifiedScrubbed target (scrubSel rb fs code) r.contract rb := by
   subst hc hW hb
   have h := of_selSide hs
   exact ⟨scrubSelCode_verified r fs h.1 h.2.1 h.2.2 hpost,
-    scrubSel_noResidue r fs bp0 h.1 h.2.1 h.2.2 hpost hbp _ _ _ rfl rfl rfl hres⟩
+    scrubSel_noResidue r fs bp0 h.1 h.2.1 h.2.2 hpost hbp _ _ rfl rfl hres⟩
 
 end VG.RISCV64.Scrub

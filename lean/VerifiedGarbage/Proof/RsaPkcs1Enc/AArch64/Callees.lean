@@ -1065,7 +1065,7 @@ theorem result_ok {P : Nat} {s : State} (h : (decSpec P).pre s) {x0c : BitVec 64
   sig_post [Proof.RsaPkcs1Enc.decryptContract, Proof.RsaPkcs1Enc.decryptSig, AArch64.abi, AArch64.argRegs,
     _root_.List.range, _root_.List.range.loop, List.append_eq]
   -- The buffers, as the layout names them.
-  show Proof.RsaPkcs1Enc.writtenMsg t.mem (lay P s).out (lay P s).ml (lay P s).k.toNat ((t.gpr .x0).setWidth 32)
+  show Proof.RsaPkcs1Enc.writtenMsgEnd t.mem (lay P s).out (lay P s).ml (lay P s).k.toNat ((t.gpr .x0).setWidth 32)
     (Spec.RsaPkcs1Enc.decrypt (Spec.Rsa.bytesAt s.mem (lay P s).n (lay P s).k.toNat)
       (Spec.Rsa.bytesAt s.mem (lay P s).e (lay P s).el.toNat) (dOf (lay P s) s.mem)
       (Spec.Rsa.bytesAt s.mem (lay P s).p (lay P s).pl.toNat) (Spec.Rsa.bytesAt s.mem (lay P s).q (lay P s).ql.toNat)
@@ -1080,7 +1080,7 @@ theorem result_ok {P : Nat} {s : State} (h : (decSpec P).pre s) {x0c : BitVec 64
     simp only [Spec.Rsa.wordsAt, List.range_one, List.map_cons, List.map_nil, Nat.mul_zero, BitVec.add_zero]
   simp only [Spec.RsaPkcs1Enc.decrypt]
   have eO : rsadpOf (lay P s) s.mem (cOf (lay P s) s.mem) = privOut (lay P s) s.mem := rfl
-  show Proof.RsaPkcs1Enc.writtenMsg _ _ _ _ _ (Spec.RsaPkcs1Enc.decryptWith (rsadpOf (lay P s) s.mem)
+  show Proof.RsaPkcs1Enc.writtenMsgEnd _ _ _ _ _ (Spec.RsaPkcs1Enc.decryptWith (rsadpOf (lay P s) s.mem)
     (Spec.Rsa.bytesAt s.mem (lay P s).n (lay P s).k.toNat).length (dOf (lay P s) s.mem) (cOf (lay P s) s.mem))
   cases hO : privOut (lay P s) s.mem with
   | ok EM' =>
@@ -1304,12 +1304,12 @@ theorem sub120 (s : State) : Region.Sub ⟨stackArgAddr s 0, 120⟩ ⟨stackArgA
   simpa using Offset.sub_base (stackArgAddr s 0) (d := 0) (n := 120) (k := 136) (by decide)
 
 theorem decSpec_of {P : Nat} {s : State}
-    (h : (Proof.RsaPkcs1Enc.decryptPrecomputedContract AArch64.abi (P + 240)).pre s) :
+    (h : (Proof.RsaPkcs1Enc.decryptPrecomputedBodyContract AArch64.abi (P + 240)).pre s) :
     (decSpec P).pre (s.withRegions (rdD s) s.wr) ∧ PreD P s := by
-  sig_pre [Proof.RsaPkcs1Enc.decryptPrecomputedContract, Proof.RsaPkcs1Enc.decryptPrecomputedSig,
+  sig_pre [Proof.RsaPkcs1Enc.decryptPrecomputedBodyContract, Proof.RsaPkcs1Enc.decryptPrecomputedBodySig,
     Proof.RsaPkcs1Enc.decryptSig, AArch64.abi, AArch64.argRegs, stackArgs_seventeen, List.append_eq,
     _root_.List.range, _root_.List.range.loop] at h
-  sig_pre [Proof.RsaPkcs1Enc.decryptPrecomputedContract, Proof.RsaPkcs1Enc.decryptPrecomputedSig,
+  sig_pre [Proof.RsaPkcs1Enc.decryptPrecomputedBodyContract, Proof.RsaPkcs1Enc.decryptPrecomputedBodySig,
     Proof.RsaPkcs1Enc.decryptSig, AArch64.abi, AArch64.argRegs, stackArgs_seventeen, List.append_eq,
     _root_.List.range, _root_.List.range.loop] at h
   sig_split h
@@ -1739,18 +1739,18 @@ theorem stageP_ok (pv : PrivPImpl) {s : State} (hD : (decSpec (pv.S + 1)).pre (s
 
 
 theorem post_of {P : Nat} {s s' : State} (h : (decSpec P).post (s.withRegions (rdD s) s.wr) s') :
-    (Proof.RsaPkcs1Enc.decryptPrecomputedContract AArch64.abi (P + 240)).post s (s'.withRegions s.rd s.wr) := by
+    (Proof.RsaPkcs1Enc.decryptPrecomputedBodyContract AArch64.abi (P + 240)).post s (s'.withRegions s.rd s.wr) := by
   sig_post [Proof.RsaPkcs1Enc.decryptContract, Proof.RsaPkcs1Enc.decryptSig, AArch64.abi, AArch64.argRegs,
     _root_.List.range, _root_.List.range.loop, List.append_eq] at h
-  sig_post [Proof.RsaPkcs1Enc.decryptPrecomputedContract, Proof.RsaPkcs1Enc.decryptPrecomputedSig,
+  sig_post [Proof.RsaPkcs1Enc.decryptPrecomputedBodyContract, Proof.RsaPkcs1Enc.decryptPrecomputedBodySig,
     Proof.RsaPkcs1Enc.decryptSig, AArch64.abi, AArch64.argRegs, stackArgs_seventeen, List.append_eq,
     _root_.List.range, _root_.List.range.loop]
   exact h
 
 theorem decP_correct (v : Compress) (pv : PrivPImpl) (s : State)
-    (h : (Proof.RsaPkcs1Enc.decryptPrecomputedContract AArch64.abi (pv.S + 1 + 240)).pre s) :
+    (h : (Proof.RsaPkcs1Enc.decryptPrecomputedBodyContract AArch64.abi (pv.S + 1 + 240)).pre s) :
     ∃ t s', Exec isa (codeP (HH v) pv.name pv.code) s t s' ∧ abiPreserved s s' ∧
-      (Proof.RsaPkcs1Enc.decryptPrecomputedContract AArch64.abi (pv.S + 1 + 240)).post s s' := by
+      (Proof.RsaPkcs1Enc.decryptPrecomputedBodyContract AArch64.abi (pv.S + 1 + 240)).post s s' := by
   have hS := pv.S15
   obtain ⟨hD, hx⟩ := decSpec_of h
   obtain ⟨t, s', he, ha, hp⟩ := decW_ok v (by omega_using [hS]) (s := narrowD s) (R₀ := rdD s) (X := XD s)
@@ -1833,7 +1833,7 @@ theorem privP_ct (pv : PrivPImpl) : RelCT isa (Two pv.S CtxReadyP) (.call pv.nam
     fun _ _ _ _ _ hL hP h => privP_call pv hL hP h.2.2.2.2 h.1 h.2.1 h.2.2.1 h.2.2.2.1
 
 /-- The precomputed contract, for the callee's `S + 1` bytes of stack. -/
-abbrev decPSpec (S : Nat) : Contract isa := Proof.RsaPkcs1Enc.decryptPrecomputedContract AArch64.abi (S + 1 + 240)
+abbrev decPSpec (S : Nat) : Contract isa := Proof.RsaPkcs1Enc.decryptPrecomputedBodyContract AArch64.abi (S + 1 + 240)
 
 /-- Two calls whose public data agree, narrowed, in the inner frame. -/
 def EnteredP (S : Nat) (a b : State) : Prop :=
@@ -1848,7 +1848,7 @@ theorem setupP_ct (S : Nat) : RelCT isa (EnteredP S) (.block (setup ++ extraMove
   subst ea eb
   obtain ⟨hD₁, hx₁⟩ := decSpec_of h₁
   obtain ⟨hD₂, hx₂⟩ := decSpec_of h₂
-  sig_pub [Proof.RsaPkcs1Enc.decryptPrecomputedContract, Proof.RsaPkcs1Enc.decryptPrecomputedSig,
+  sig_pub [Proof.RsaPkcs1Enc.decryptPrecomputedBodyContract, Proof.RsaPkcs1Enc.decryptPrecomputedBodySig,
     Proof.RsaPkcs1Enc.decryptSig, AArch64.abi, AArch64.argRegs, stackArgs_seventeen, List.append_eq,
     _root_.List.range, _root_.List.range.loop] at hp
   obtain ⟨hsp, hl, h0, h1, h2, h3, h4, h5, h6, h7, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13,
@@ -1887,7 +1887,7 @@ theorem decPN_ct (v : Compress) (pv : PrivPImpl) :
   have hS := pv.S15
   refine RelCT.constantTime (RelCT.pushFrame (fun _ _ ⟨_, _, ⟨s₁, s₂, _, _, hp, e₁, e₂⟩⟩ => by
       subst e₁ e₂
-      sig_pub [Proof.RsaPkcs1Enc.decryptPrecomputedContract, Proof.RsaPkcs1Enc.decryptPrecomputedSig,
+      sig_pub [Proof.RsaPkcs1Enc.decryptPrecomputedBodyContract, Proof.RsaPkcs1Enc.decryptPrecomputedBodySig,
         Proof.RsaPkcs1Enc.decryptSig, AArch64.abi, AArch64.argRegs, stackArgs_seventeen, List.append_eq,
         _root_.List.range, _root_.List.range.loop] at hp
       exact hp.1) (RelCT.alloc (R := fun _ _ => True) ?_))
@@ -1917,11 +1917,11 @@ def decStackP (pv : PrivPImpl) : Nat := pv.stack + 240
 
 theorem decStackP_eq (pv : PrivPImpl) : decStackP pv = pv.S + 1 + 240 := by rw [decStackP, pv.stack_eq]
 
-/-- `vg_rsa_pkcs1_decrypt_precomputed`, with `v` and `pv`. -/
+/-- `vg_rsa_pkcs1_decrypt_precomputed_body`, with `v` and `pv`. -/
 theorem decP_verified (v : Compress) (pv : PrivPImpl)
-    (hsat : ∃ s, (Proof.RsaPkcs1Enc.decryptPrecomputedContract AArch64.abi (decStackP pv)).pre s) :
+    (hsat : ∃ s, (Proof.RsaPkcs1Enc.decryptPrecomputedBodyContract AArch64.abi (decStackP pv)).pre s) :
     Verified AArch64.target (codeP (HH v) pv.name pv.code)
-      (Proof.RsaPkcs1Enc.decryptPrecomputedContract AArch64.abi (decStackP pv)) := by
+      (Proof.RsaPkcs1Enc.decryptPrecomputedBodyContract AArch64.abi (decStackP pv)) := by
   rw [decStackP_eq] at hsat ⊢
   exact ⟨decP_correct v pv, decP_ct v pv, hsat⟩
 
@@ -1971,9 +1971,9 @@ theorem preD_args : stackArg preStateD 0 = 1 ∧ stackArg preStateD 1 = 0x4100 �
   decide
 
 theorem decP_sat (K : Nat) (hK : K ≤ 2 ^ 20) :
-    ∃ s, (Proof.RsaPkcs1Enc.decryptPrecomputedContract AArch64.abi (K + 240)).pre s := by
+    ∃ s, (Proof.RsaPkcs1Enc.decryptPrecomputedBodyContract AArch64.abi (K + 240)).pre s := by
   refine ⟨preStateD, ?_⟩
-  sig_pre [Proof.RsaPkcs1Enc.decryptPrecomputedContract, Proof.RsaPkcs1Enc.decryptPrecomputedSig,
+  sig_pre [Proof.RsaPkcs1Enc.decryptPrecomputedBodyContract, Proof.RsaPkcs1Enc.decryptPrecomputedBodySig,
     Proof.RsaPkcs1Enc.decryptSig, AArch64.abi, AArch64.argRegs, stackArgs_seventeen, List.append_eq,
     _root_.List.range, _root_.List.range.loop]
   obtain ⟨a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16⟩ := preD_args
@@ -2066,7 +2066,7 @@ theorem dec_sat (c : Proof.Rsa.AArch64.CrtImpl) :
     stackArgs_fifteen, List.append_eq, Spec.Rsa.lenValid] [decSatState] using decSatState
 
 /-- `vg_rsa_private_checked_precomputed` calling `c`, as
-`vg_rsa_pkcs1_decrypt_precomputed`'s callee. -/
+`vg_rsa_pkcs1_decrypt_precomputed_body`'s callee. -/
 def privPOf (c : Proof.Rsa.AArch64.CrtImpl) : Dec.PrivPImpl where
   name := Proof.Rsa.AArch64.privPName c
   code := Proof.Rsa.AArch64.privPCode c
@@ -2077,7 +2077,7 @@ def privPOf (c : Proof.Rsa.AArch64.CrtImpl) : Dec.PrivPImpl where
   noDit := Proof.Rsa.AArch64.privPCode_noDit c
 
 theorem decP_sat' (c : Proof.Rsa.AArch64.CrtImpl) :
-    ∃ s, (Proof.RsaPkcs1Enc.decryptPrecomputedContract AArch64.abi (Dec.decStackP (privPOf c))).pre s :=
+    ∃ s, (Proof.RsaPkcs1Enc.decryptPrecomputedBodyContract AArch64.abi (Dec.decStackP (privPOf c))).pre s :=
   Dec.decP_sat Proof.Rsa.AArch64.stackBytes (by decide)
 
 end VG.Proof.RsaPkcs1Enc.AArch64

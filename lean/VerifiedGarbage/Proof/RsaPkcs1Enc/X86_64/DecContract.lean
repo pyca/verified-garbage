@@ -163,7 +163,7 @@ def decK : Contract isa where
       (stackArg s 12).toNat = (stackArg s 8).toNat ∧
       Spec.Rsa.scratchWords (s.gpr .r8).toNat ≤ (stackArg s 16).toNat
   post s s' :=
-    Proof.RsaPkcs1Enc.writtenMsg s'.mem (s.gpr .rdi) (s.gpr .rdx) (s.gpr .r8).toNat ((s'.gpr .rax).setWidth 32)
+    Proof.RsaPkcs1Enc.writtenMsgEnd s'.mem (s.gpr .rdi) (s.gpr .rdx) (s.gpr .r8).toNat ((s'.gpr .rax).setWidth 32)
       (Spec.RsaPkcs1Enc.decrypt (Spec.Rsa.bytesAt s.mem (s.gpr .rcx) (s.gpr .r8).toNat)
         (Spec.Rsa.bytesAt s.mem (s.gpr .r9) (stackArg s 0).toNat)
         (Spec.Rsa.bytesAt s.mem (stackArg s 1) (stackArg s 2).toNat)

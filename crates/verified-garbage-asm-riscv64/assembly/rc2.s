@@ -163,8 +163,6 @@ vg_rc2_cbc_init:
 	sd t0, 592(t1)
 	sd t0, 600(t1)
 	addi sp, sp, 608
-	slli a0, a0, 32
-	srli a0, a0, 32
 	addi a1, zero, 0
 	addi a2, zero, 0
 	addi a3, zero, 0
@@ -179,5 +177,6 @@ vg_rc2_cbc_init:
 	addi t4, zero, 0
 	addi t5, zero, 0
 	addi t6, zero, 0
+	addiw a0, a0, 0
 	ret
 	.option pop
