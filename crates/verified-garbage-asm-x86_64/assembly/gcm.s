@@ -41132,7 +41132,7 @@ vg_aes_gcm_seal_contiguous_prepared:
 	mov rax, QWORD PTR [r15+208]
 	sub rax, 16
 	ror rax, 4
-	cmp rax, 15
+	cmp rax, 7
 	jb 212f
 	mov rax, QWORD PTR [r15+208]
 	mov QWORD PTR [r15+192], rax
