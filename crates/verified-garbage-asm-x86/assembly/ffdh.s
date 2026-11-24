@@ -1490,7 +1490,7 @@ vg_ffdh_check_domain:
 	sub edi, 4
 	jne 283b
 	mov edi, DWORD PTR [esp+68]
-	call {vg_ffdh_prepare_wide}
+	call {vg_ffdh_prepare_public_wide}
 	mov ecx, -1
 	mov edx, DWORD PTR [esp+8]
 	add edx, 7
@@ -2267,7 +2267,7 @@ vg_ffdh_check_public:
 	sub edi, 4
 	jne 215b
 	mov edi, DWORD PTR [esp+68]
-	call {vg_ffdh_prepare_wide}
+	call {vg_ffdh_prepare_public_wide}
 	mov ecx, -1
 	mov edx, DWORD PTR [esp+8]
 	add edx, 7
@@ -3732,7 +3732,7 @@ vg_ffdh_check_private:
 	sub edi, 4
 	jne 230b
 	mov edi, DWORD PTR [esp+68]
-	call {vg_ffdh_prepare_wide}
+	call {vg_ffdh_prepare_public_wide}
 	call {vg_ffdh_ladder_two_wide}
 	jmp 229f
 228:
@@ -3784,7 +3784,7 @@ vg_ffdh_check_private:
 	sub edi, 4
 	jne 231b
 	mov edi, DWORD PTR [esp+68]
-	call {vg_ffdh_prepare_wide}
+	call {vg_ffdh_prepare_public_wide}
 	mov ecx, -1
 	mov edx, DWORD PTR [esp+8]
 	add edx, 7
@@ -5911,7 +5911,7 @@ vg_ffdh_derive_public:
 	sub edi, 4
 	jne 226b
 	mov edi, DWORD PTR [esp+68]
-	call {vg_ffdh_prepare_wide}
+	call {vg_ffdh_prepare_public_wide}
 	call {vg_ffdh_ladder_two_wide}
 	jmp 225f
 224:
@@ -5963,7 +5963,7 @@ vg_ffdh_derive_public:
 	sub edi, 4
 	jne 227b
 	mov edi, DWORD PTR [esp+68]
-	call {vg_ffdh_prepare_wide}
+	call {vg_ffdh_prepare_public_wide}
 	mov ecx, -1
 	mov edx, DWORD PTR [esp+8]
 	add edx, 7

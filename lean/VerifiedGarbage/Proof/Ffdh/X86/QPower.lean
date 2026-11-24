@@ -450,7 +450,7 @@ theorem powQ_ok (h : In Ex base bytes len args s) (G : DomGeo args base bytes le
   obtain e8 := lo_wide len 8
   have nb : numBase = 3336 := rfl
   unfold powQ
-  refine WP.seq (WP.mono (ctxP_ok h RF hP) fun u₁ ⟨C₁, one₁, R₁, F₁, k₁, K₁⟩ => ?_)
+  refine WP.seq (WP.mono (ctxPub_ok h RF hP) fun u₁ ⟨C₁, one₁, R₁, F₁, k₁, K₁⟩ => ?_)
   have h₁ := C₁.inp
   refine WP.seq (WP.mono (copyIn_ok h₁ (j := b) (d := 5) hb9 hb (by decide)) fun u₂ ⟨O₂, V₂, K₂⟩ => ?_)
   obtain C₂ : CtxOk Ex base bytes len args .wide P u₂ := by

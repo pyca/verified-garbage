@@ -320,4 +320,140 @@ theorem powP_trace {b e : Nat} (hb9 : 9 ≤ b) (hb : b ≤ 17) (he9 : 9 ≤ e) (
   refine VG.RelCT.seq (copyWin_relCT he9 he (.inr rfl) hce) ?_
   exact winCall_relCT.mono (fun _ _ h => h) fun _ _ h => ⟨h.1.run, h.2.run⟩
 
+/-! ## The context of a public modulus
+
+`powerTwoPub` branches on the top word of the modulus, so its runs leak the same traces where they have
+the same modulus (`preparePub_relCT`, from runs with the same number in slot 0): the test's `Gate` is a
+condition on that number, and either side is checked by the taint analysis, as `prepare`'s is. -/
+
+theorem basePre_check : XCheck (prepBasePre .wide) := by dsimp only [XCheck]; taint_decide
+
+theorem topTest_check : ACheck Impl.Ffdh.X86.topTest := by dsimp only [ACheck]; taint_decide
+
+theorem powerTwo_check : XCheck (powerTwo .wide) := by dsimp only [XCheck]; taint_decide
+
+theorem seedTwo_check : XCheck Impl.Ffdh.X86.seedTwo := by dsimp only [XCheck]; taint_decide
+
+/-- A run after `prepBasePre`: the context of `M`, with the number in slot 3 below it. -/
+abbrev BaseSt (Ex : List Region → List Region → Prop) (base : Addr) (bytes len : Nat) (args : Nat → BitVec 32)
+    (sp : BitVec 32) (M : Nat) (u : State) : Prop :=
+  CtxOk Ex base bytes len args .wide M u ∧ sv u.mem base len .wide 3 < M ∧ ArgsOk u ∧ u.gpr .esp = sp
+
+/-- After `powerTwo`'s changes, what the squares of a context's setup start from. -/
+theorem BaseSt.wst {M : Nat} {s u : State} (B : BaseSt Ex base bytes len args sp M s)
+    (F : Frame (frameR base (s.gpr .esp) (powR len .wide)) s.mem u.mem)
+    (V : sv u.mem base len .wide 4 = 2 ^ twoExp len .wide % sv s.mem base len .wide 0)
+    (K : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s u) : WSt Ex base bytes len args sp .wide [3, 4] 0 u := by
+  obtain ⟨C, lt3, A, e⟩ := B
+  have h := C.inp
+  have nw := h.scratch.nowrap
+  obtain f8 := h.slot_fit .wide (j := 8) (by decide)
+  obtain bw := bc_eq_cwc len .wide
+  have est : st len .wide = 2 * bc len .wide + 32 := rfl
+  obtain z0 : lo len (.slot .wide 0) = numBase := sl_zero len .wide
+  obtain s01 : lo len (.slot .wide 0) + st len .wide ≤ lo len (.slot .wide 1) := sl_le (len := len) .wide (by decide)
+  obtain s13 : lo len (.slot .wide 1) + st len .wide ≤ lo len (.slot .wide 3) := sl_le (len := len) .wide (by decide)
+  obtain s34 : lo len (.slot .wide 3) + st len .wide ≤ lo len (.slot .wide 4) := sl_le (len := len) .wide (by decide)
+  obtain s48 : lo len (.slot .wide 4) + st len .wide ≤ lo len (.slot .wide 8) := sl_le (len := len) .wide (by decide)
+  obtain fitW : ∀ p ∈ powR len .wide, p.1 + p.2 ≤ bytes := by
+    intro p hp
+    simp only [powR, List.mem_cons, List.not_mem_nil, or_false] at hp
+    rcases hp with rfl | rfl <;> dsimp only <;> omega_arith
+  obtain e3 : sv u.mem base len .wide 3 = sv s.mem base len .wide 3 :=
+    frameR_val32 F h.room nw (by omega_arith) (by
+      intro p hp
+      simp only [powR, List.mem_cons, List.not_mem_nil, or_false] at hp
+      rcases hp with rfl | rfl <;> dsimp only <;> omega_arith) fitW
+  refine ⟨M, C.keepF K (by decide) (by decide) F fitW (by
+      intro p hp
+      simp only [powR, List.mem_cons, List.not_mem_nil, or_false] at hp
+      rcases hp with rfl | rfl <;> dsimp only <;> omega_arith), fun j hj => ?_,
+    fun _ hj => absurd hj (Nat.not_lt_zero _), A.keep K, (K.1 _ (by decide)).trans e⟩
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
+  rcases hj with rfl | rfl
+  · rw [e3]; exact lt3
+  · rw [V, C.mod]; exact Nat.mod_lt _ (by have := C.gt; omega_arith)
+
+/-- `preparePub`, for runs with the same number `m` in slot 0. -/
+theorem preparePub_relCT {m : Nat} :
+    RelCT isa (Both fun s => Run Ex base bytes len args sp s ∧ sv s.mem base len .wide 0 = m)
+      Impl.Ffdh.X86.preparePub (Both (WSt Ex base bytes len args sp .wide [3, 4] 0)) := by
+  have hc := prepChecks .wide
+  unfold Impl.Ffdh.X86.preparePub
+  refine VG.RelCT.seq (R := Both (BaseSt Ex base bytes len args sp (safeM m)))
+    (relCT_both (VG.RelCT.taint (A := sseTaint) τA (fun _ _ h => h.1.1.agree h.2.1) basePre_check)
+      fun s P => ?_) ?_
+  · obtain ⟨R, e⟩ := P
+    refine WP.mono (prepBasePre_ok R.1 .wide) fun u ⟨hu, _, M, one, I, K⟩ => ?_
+    rw [e] at M I
+    exact ⟨⟨hu, M, safeM_gt _, safeM_odd _, I⟩, by rw [one]; exact safeM_gt _, R.2.1.keep K,
+      (K.1 _ (by decide)).trans R.2.2⟩
+  refine VG.RelCT.seq (R := Both (WSt Ex base bytes len args sp .wide [3, 4] 0)) ?_ (squares4_relCT hc)
+  unfold Impl.Ffdh.X86.powerTwoPub
+  have ag : ∀ x y : State, BaseSt Ex base bytes len args sp (safeM m) x →
+      BaseSt Ex base bytes len args sp (safeM m) y → VG.X86.Taint.Agree τA x y :=
+    fun _ _ B₁ B₂ => agreeA B₁.1.inp B₂.1.inp B₁.2.2.1 B₂.2.2.1 (B₁.2.2.2.trans B₂.2.2.2.symm)
+  refine VG.RelCT.seq (R := Both fun u => BaseSt Ex base bytes len args sp (safeM m) u ∧
+      Gate u (safeM m / 2 ^ (32 * (cwc len .wide - 1)) = 0))
+    (relCT_both (RelCT.taint (A := taint) τA (fun _ _ h => ag _ _ h.1 h.2) topTest_check) fun s B => ?_) ?_
+  · refine WP.mono (topTest_ok B.1.inp) fun u ⟨mu, K, z⟩ =>
+      ⟨⟨B.1.regs K mu, by rw [mu]; exact B.2.1, B.2.2.1.keep K, (K.1 _ (by decide)).trans B.2.2.2⟩,
+        Gate.of_eval z (decide_eq_true_iff.trans (by rw [topW_eq B.1.inp.lower', B.1.mod]))⟩
+  refine gate_relCT (fun _ h => h.2)
+    (relCT_both (VG.RelCT.taint (A := sseTaint) τA (fun _ _ h => ag _ _ h.1.1.1 h.2.1.1) powerTwo_check)
+      fun s P => ?_)
+    (relCT_both (VG.RelCT.taint (A := sseTaint) τA (fun _ _ h => ag _ _ h.1.1.1 h.2.1.1) seedTwo_check)
+      fun s P => ?_)
+  · obtain B := P.1.1
+    exact WP.mono (powerTwo_ok B.1.inp .wide (by rw [B.1.mod]; exact B.1.gt)) fun u ⟨F, V, K⟩ => B.wst F V K
+  · obtain B := P.1.1
+    exact WP.mono (seedTwo_ok B.1.inp (by rw [B.1.mod]; exact B.1.odd)
+      (by rw [topW_eq B.1.inp.lower', B.1.mod]; exact P.2)) fun u ⟨F, V, K⟩ => B.wst F V K
+
+/-- The call of `preparePub`, for runs with the same number `m` in slot 0. -/
+theorem prepPubCall_trace {m : Nat} :
+    RelCT isa (Both fun s => (Run Ex base bytes len args sp s ∧ RoomF sp base bytes) ∧ sv s.mem base len .wide 0 = m)
+      Impl.Ffdh.X86.prepPubCall fun _ _ => True := by
+  unfold Impl.Ffdh.X86.prepPubCall
+  refine argCall_trace (Pc := fun u => Run (fun _ _ => True) base bytes len args (sp - BitVec.ofNat 32 80) u ∧
+      sv u.mem base len .wide 0 = m) (fun _ h => h.1) (fun s u P C Fs => ?_)
+    (preparePub_relCT.mono (fun _ _ h => h) fun _ _ _ => trivial)
+  have run : Run (fun _ _ => True) base bytes len args (sp - BitVec.ofNat 32 80)
+      (u.withRegions (u.rd ++ u.wr) [⟨base, bytes⟩]) :=
+    ⟨VG.Proof.Ffdh.X86.In.narrow C.1 trivial, ⟨C.1.top, fun r hr => by rw [List.mem_singleton.mp hr]; exact C.2.2⟩,
+      C.2.1⟩
+  exact ⟨⟨run, (frameF_sv P.1.1.1 P.1.2 Fs (by decide)).trans P.2⟩, _, preparePub_ok run.1⟩
+
+/-- The call of `preparePub`, with what each run reaches: `prepCall_relCTF`'s. -/
+theorem prepPubCall_relCTF {m : Nat} :
+    RelCT isa (Both fun s => (Run Ex base bytes len args sp s ∧ RoomF sp base bytes) ∧ sv s.mem base len .wide 0 = m)
+      Impl.Ffdh.X86.prepPubCall
+      (Both fun u => WSt Ex base bytes len args sp .wide [3, 4] 0 u ∧ PrepFacts base len u) := by
+  refine relCT_both prepPubCall_trace fun x P => ?_
+  obtain ⟨⟨R, F⟩, -⟩ := P
+  have e := R.2.2
+  rw [← e] at F
+  refine WP.mono (prepPubCall_ok R.1 F) fun u ⟨C, one, R2, _, K⟩ => ?_
+  obtain hM := safeM_gt (sv x.mem base len .wide 0)
+  refine ⟨⟨_, C, fun j hj => ?_, fun _ h => absurd h (Nat.not_lt_zero _), R.2.1.keep K, (K.1 _ (by decide)).trans e⟩,
+    one, by rw [C.mod]; exact R2⟩
+  rcases List.mem_cons.mp hj with rfl | hj
+  · rw [one]; exact hM
+  · rw [List.mem_singleton.mp hj, R2]; exact Nat.mod_lt _ (by omega_arith)
+
+/-- The context of a public p, for runs with the same p (slot 9): `ctxP_relCTF`'s. -/
+theorem ctxPub_relCTF {m : Nat} :
+    RelCT isa (Both fun s => (Run Ex base bytes len args sp s ∧ RoomF sp base bytes) ∧ sv s.mem base len .wide 9 = m)
+      Impl.Ffdh.X86.ctxPub
+      (Both fun u => WSt Ex base bytes len args sp .wide [3, 4] 0 u ∧ PrepFacts base len u) := by
+  unfold Impl.Ffdh.X86.ctxPub
+  refine VG.RelCT.seq (taint_both
+    (P := fun s => (Run Ex base bytes len args sp s ∧ RoomF sp base bytes) ∧ sv s.mem base len .wide 9 = m)
+    (F := fun s => (Run Ex base bytes len args sp s ∧ RoomF sp base bytes) ∧ sv s.mem base len .wide 0 = m)
+    (fun _ _ R₁ R₂ => R₁.1.1.agree R₂.1.1) _ ctxP_check fun s R => ?_) prepPubCall_relCTF
+  have f := R.1.1.1.slot_fit .wide (j := 0) (by decide)
+  have est : st len .wide = 2 * bc len .wide + 32 := rfl
+  exact WP.mono (copyIn_ok R.1.1.1 (j := 9) (d := 0) (by decide) (by decide) (by decide)) fun u ⟨O, V, K⟩ =>
+    ⟨⟨R.1.1.keep K (O.mono (Nat.zero_le _) (by omega_arith)), R.1.2⟩, V.trans R.2⟩
+
 end VG.Proof.Ffdh.X86

@@ -237,12 +237,13 @@ theorem PubAt.yv {u : State} (A : PubAt Ex base bytes len dlen args sp D Yb u) :
 def F1 (Ex : List Region → List Region → Prop) (base : Addr) (bytes len dlen : Nat) (args : Nat → BitVec 32)
     (sp : BitVec 32) (D Yb : List Byte) (u : State) : Prop :=
   DomAt Ex base bytes len dlen args sp D u ∧
-    Gate u (¬ (Spec.Rsa.os2ip Yb < pm1 len (pD len D) ∧ 1 < Spec.Rsa.os2ip Yb))
+    Gate u (¬ (Spec.Rsa.os2ip Yb < pm1 len (pD len D) ∧ 1 < Spec.Rsa.os2ip Yb)) ∧
+    sv u.mem base len .wide 9 = pD len D
 
 /-- After `qTest`. -/
 def Q1 (Ex : List Region → List Region → Prop) (base : Addr) (bytes len dlen : Nat) (args : Nat → BitVec 32)
     (sp : BitVec 32) (D : List Byte) (u : State) : Prop :=
-  DomAt Ex base bytes len dlen args sp D u ∧ Gate u (dlen = 2 * len)
+  DomAt Ex base bytes len dlen args sp D u ∧ Gate u (dlen = 2 * len) ∧ sv u.mem base len .wide 9 = pD len D
 
 theorem pubQ_trace :
     RelCT isa (Both fun u => Q1 Ex base bytes len dlen args sp D u ∧ ¬ dlen = 2 * len) pubQ fun _ _ => True := by
@@ -253,7 +254,7 @@ theorem pubQ_trace :
   exact (VG.RelCT.seq QPower.qScan_relCT (VG.RelCT.seq (QPower.powQ_trace (b := 12) (by decide) (by decide)
     copy12_check) (RelCT.taint (A := taint) τA (fun _ _ h => h.1.agree h.2)
       VG.Proof.Ffdh.X86.CheckDomain.eqStatus_check))).mono
-    (fun _ _ h => ⟨h.1.1.1.qrun, h.2.1.1.qrun⟩) fun _ _ h => h
+    (fun _ _ h => ⟨⟨h.1.1.1.qrun, h.1.1.2.2⟩, ⟨h.2.1.1.qrun, h.2.1.2.2⟩⟩) fun _ _ h => h
 
 theorem body_relCT :
     RelCT isa (Both (PubAt Ex base bytes len dlen args sp D Yb)) Impl.Ffdh.X86.CheckPublic.body fun _ _ => True := by
@@ -262,16 +263,16 @@ theorem body_relCT :
   refine VG.RelCT.seq (aRel (F := F1 Ex base bytes len dlen args sp D Yb) (fun _ A => A.dom.run) front_check
     fun x A => ?_) ?_
   · refine WP.mono (front_ok A.dom.run.1 A.dom.geo A.geo (by rw [A.dom.run.2.2]; exact A.dom.room) (by rw [A.dom.run.2.2]; exact A.hy40))
-      fun u ⟨S, G, _, _⟩ => ⟨A.dom.step S, ?_⟩
+      fun u ⟨S, G, V9, _⟩ => ⟨A.dom.step S, ?_, by rw [V9, A.dom.comp0]⟩
     rw [A.dom.comp0, A.yv] at G
     exact G
-  · refine gate_relCT (fun _ h => h.2) (aEnd (fun _ h => h.1.1.run) ret0_check) ?_
+  · refine gate_relCT (fun _ h => h.2.1) (aEnd (fun _ h => h.1.1.run) ret0_check) ?_
     refine VG.RelCT.seq (aRel (F := Q1 Ex base bytes len dlen args sp D) (fun _ h => h.1.1.run) qTest_check
       fun x h => ?_) ?_
-    · obtain ⟨⟨A, _⟩, _⟩ := h
+    · obtain ⟨⟨A, _, h9⟩, _⟩ := h
       exact WP.mono (qTest_ok A.run.1 A.geo.e3 A.geo.e12 A.geo.dl) fun u ⟨z, m, K⟩ =>
-        ⟨A.step (Step.regs A.run.1 m K), Gate.of_eval z decide_eq_true_iff⟩
-    · exact gate_relCT (fun _ h => h.2) (aEnd (fun _ h => h.1.1.run) ret1_check) pubQ_trace
+        ⟨A.step (Step.regs A.run.1 m K), Gate.of_eval z decide_eq_true_iff, by rw [m]; exact h9⟩
+    · exact gate_relCT (fun _ h => h.2.1) (aEnd (fun _ h => h.1.1.run) ret1_check) pubQ_trace
 
 end
 

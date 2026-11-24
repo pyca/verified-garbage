@@ -161,10 +161,13 @@ theorem qScan_trace : RelCT isa (Both (QRun Ex base bytes len args sp bs)) qScan
     exact ⟨lead bs - (i + 1), by omega_arith, i + 1, rfl, by omega_arith, Sx, Sy⟩
 
 /-- The scan, with what each run reaches: its two words. -/
-theorem qScan_relCT : RelCT isa (Both (QRun Ex base bytes len args sp bs)) qScan
-    (Both fun u => QRun Ex base bytes len args sp bs u ∧ QAt base len args bs u.mem) :=
-  relCT_both qScan_trace fun _ A => WP.mono (qScan_ok A.run.1 A.geo) fun _ ⟨S, Q, _⟩ =>
-    ⟨A.step S, by rw [A.q] at Q; exact Q⟩
+theorem qScan_relCT {m : Nat} :
+    RelCT isa (Both fun u => QRun Ex base bytes len args sp bs u ∧ sv u.mem base len .wide 9 = m) qScan
+      (Both fun u => (QRun Ex base bytes len args sp bs u ∧ QAt base len args bs u.mem) ∧
+        sv u.mem base len .wide 9 = m) :=
+  relCT_both (qScan_trace.mono (fun _ _ h => ⟨h.1.1, h.2.1⟩) fun _ _ h => h) fun _ A =>
+    WP.mono (qScan_ok A.1.run.1 A.1.geo) fun _ ⟨S, Q, k⟩ =>
+      ⟨⟨A.1.step S, by rw [A.1.q] at Q; exact Q⟩, k.slot_eq.trans A.2⟩
 
 /-! ## The power -/
 
@@ -333,21 +336,21 @@ theorem winQCall_relCT :
   exact WP.mono (winQCall_ok C QR.geo RF (by rw [e]; exact QR.hb40) one (by rw [r2, C.mod])
     (by rw [QR.q]; exact Qat)) fun u ⟨Cu, _, K, _⟩ => ⟨Cu.inp, Aok.keep K, (K.1 _ (by decide)).trans e⟩
 
-/-- A power to q modulo p, after the scan: the base in slot `b`. -/
-theorem powQ_trace {b : Nat} (hb9 : 9 ≤ b) (hb : b ≤ 17)
+/-- A power to q modulo p, after the scan, for runs with the same p (slot 9): the base in slot `b`. -/
+theorem powQ_trace {b m : Nat} (hb9 : 9 ≤ b) (hb : b ≤ 17)
     (hcb : ACheck (copy (.slot .wide b) (.slot .wide 5) (one .wide))) :
-    RelCT isa (Both fun u => QRun Ex base bytes len args sp bs u ∧ QAt base len args bs u.mem) (powQ b)
-      (Both (Run Ex base bytes len args sp)) := by
+    RelCT isa (Both fun u => (QRun Ex base bytes len args sp bs u ∧ QAt base len args bs u.mem) ∧
+      sv u.mem base len .wide 9 = m) (powQ b) (Both (Run Ex base bytes len args sp)) := by
   unfold powQ
   refine VG.RelCT.seq (R := Both (QPre Ex base bytes len args sp bs)) ?_
     (VG.RelCT.seq (R := Both (QPre Ex base bytes len args sp bs)) ?_ winQCall_relCT)
   · refine ((relCT_keep (X := fun u => QRun Ex base bytes len args sp bs u ∧ QAt base len args bs u.mem)
-      ctxP_relCTF fun s R X => ?_).mono
-        (fun _ _ h => ⟨⟨⟨h.1.1.run, h.1.1.room⟩, h.1⟩, ⟨⟨h.2.1.run, h.2.1.room⟩, h.2⟩⟩)
+      ctxPub_relCTF fun s R X => ?_).mono
+        (fun _ _ h => ⟨⟨⟨⟨h.1.1.1.run, h.1.1.1.room⟩, h.1.2⟩, h.1.1⟩, ⟨⟨⟨h.2.1.1.run, h.2.1.1.room⟩, h.2.2⟩, h.2.1⟩⟩)
         fun _ _ h => ⟨⟨⟨⟨h.1.1.1, h.1.2.1.room⟩, h.1.1.2⟩, h.1.2⟩, ⟨⟨h.2.1.1, h.2.2.1.room⟩, h.2.1.2⟩, h.2.2⟩)
-    obtain RF : RoomF (s.gpr .esp) base bytes := by rw [R.1.2.2]; exact R.2
-    exact WP.mono (ctxP_ok R.1.1 RF rfl) fun u ⟨_, _, _, F, k, K⟩ =>
-      ⟨X.1.step (Step.opsF R.1.1 RF F K), X.2.kept k⟩
+    obtain RF : RoomF (s.gpr .esp) base bytes := by rw [R.1.1.2.2]; exact R.1.2
+    exact WP.mono (ctxPub_ok R.1.1.1 RF rfl) fun u ⟨_, _, _, F, k, K⟩ =>
+      ⟨X.1.step (Step.opsF R.1.1.1 RF F K), X.2.kept k⟩
   · refine relCT_keep (X := fun u => QRun Ex base bytes len args sp bs u ∧ QAt base len args bs u.mem)
       (copyWin_relCT hb9 hb (.inl rfl) hcb) fun s W X => ?_
     have h := W.1.1.run.1
