@@ -399,6 +399,7 @@ structure CalleeIn (s u : State) : Prop where
   edi : u.gpr .edi = s.gpr .edi
   rd : u.rd = s.rd
   wr : u.wr = ⟨(u.gpr .esp).setWidth 64, 76⟩ :: s.wr
+  sub : Region.Sub ⟨(u.gpr .esp).setWidth 64, 76⟩ (below (s.gpr .esp) 176)
 
 /-- A call by `argCall` of `b`, which, from the callee's inputs (the caller's, the arguments copied, and
 memory the caller's but for the 176 bytes below its `esp`), keeps the registers, changes only the ranges `ws`,
@@ -448,7 +449,7 @@ theorem argCall_okW {name : String} {b : Prog isa}
     (frameF_of_sub Fret fun r hr => by rw [List.mem_singleton.mp hr]; exact r4).trans
       (frameF_of_sub Fc fun r hr => by rw [List.mem_singleton.mp hr]; exact r76)
   refine WP.mono (hb u h' Fs ⟨by rw [uesp, t0esp80], by rw [K.1 _ (by decide), t0gpr _ (by decide)],
-    by rw [K.2.1, t0rd], by rw [K.2.2, t0wr, uesp]⟩) fun v ⟨Fp, Kv, Rv⟩ => ?_
+    by rw [K.2.1, t0rd], by rw [K.2.2, t0wr, uesp], by rw [uesp]; exact r76⟩) fun v ⟨Fp, Kv, Rv⟩ => ?_
   obtain vesp : v.gpr .esp = t0.gpr .esp := (Kv.1 _ (by decide)).trans uesp
   rw [uesp] at Fp
   obtain r96' : Region.Sub (below (t0.gpr .esp) 96) (below (s.gpr .esp) 176) := by rw [t0esp]; exact r96

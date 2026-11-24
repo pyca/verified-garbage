@@ -11,6 +11,9 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.CallLay
+import VerifiedGarbage.Proof.Dsa.PackedBytes
+import VerifiedGarbage.Proof.Rsa.X86.StackTactic
+import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Stage
 
 /-!
 # FFDH on i686: a power to q, over its bytes from the first nonzero one
@@ -206,5 +209,225 @@ theorem qScan_ok (h : In Ex base bytes len args s) (G : DomGeo args base bytes l
   · rw [← I3.mem]
     exact ((kept_word S₃.inp (d := qpOff) (by decide) (by decide) O4).mono (by decide) (by decide)).trans
       ((kept_word S₄.inp (d := qlOff) (by decide) (by decide) O5).mono (by decide) (by decide))
+
+/-- The scan's words through what keeps the header's words. -/
+theorem QAt.kept {bs : List Byte} {m m' : Mem} {js ds : List Nat} (Q : QAt base len args bs m)
+    (k : Kept base len js ds m m') (hp : qpOff ∉ ds := by decide) (hl : qlOff ∉ ds := by decide) :
+    QAt base len args bs m' :=
+  ⟨(BitVec.eq_of_toNat_eq (k.words qpOff (by decide) (by decide) (by decide) hp)).trans Q.ptr,
+    (BitVec.eq_of_toNat_eq (k.words qlOff (by decide) (by decide) (by decide) hl)).trans Q.cnt⟩
+
+/-- A header word through changes in the 176 bytes below `sp` alone. -/
+theorem frameF_word {t : State} (h : In Ex base bytes len args t) {sp : BitVec 32} (RF : RoomF sp base bytes)
+    {m m' : Mem} (F : Frame (frameF base sp []) m m') {d : Nat} (hd : d + 4 ≤ 32) :
+    m'.readW (off base d) 32 = m.readW (off base d) 32 := by
+  have r := word_room h hd
+  apply BitVec.eq_of_toNat_eq
+  show w32 m' base d = w32 m base d
+  rw [← w32_val32_one, ← w32_val32_one]
+  exact frameF_val32 F RF h.scratch.nowrap (by omega_arith) (fun _ h => nomatch h) (fun _ h => nomatch h)
+
+/-- The bytes of a number from byte `a` on. -/
+theorem drop_bytes (m : Mem) (p : Addr) {a n : Nat} (h : a ≤ n) :
+    Spec.Rsa.bytesAt m (p + BitVec.ofNat 64 a) (n - a) = (Spec.Rsa.bytesAt m p n).drop a := by
+  rw [← VG.Proof.Dsa.bytesAt_slice m p (total := n) (offset := a) (len := n - a) (by omega_arith),
+    List.take_of_length_le (by simp only [List.length_drop, VG.Proof.Bignum.bytesAt_length]; exact Nat.le_refl _)]
+
+/-- The arguments with q's address and length, from its first byte that counts, in 10 and 11. -/
+def qArgs (args : Nat → BitVec 32) (p l : BitVec 32) (i : Nat) : BitVec 32 :=
+  if i = 10 then p else if i = 11 then l else args i
+
+/-- `setQ`, in the callee's frame: its arguments 10 and 11 are the header's two words. -/
+theorem setQ_ok {u : State} (h : In Ex base bytes len args s) (RF : RoomF (s.gpr .esp) base bytes)
+    (hu : In (fun _ _ => True) base bytes len args u) (CI : CalleeIn s u) :
+    WP isa (.block setQ) u fun v => Keeps [.eax] u v ∧
+      Frame [⟨(u.gpr .esp).setWidth 64, 76⟩] u.mem v.mem ∧
+      In (fun _ _ => True) base bytes len
+        (qArgs args (u.mem.readW (off base qpOff) 32) (u.mem.readW (off base qlOff) 32)) v := by
+  have top := hu.top
+  obtain r1 := word_room hu (d := qpOff) (by decide)
+  obtain r2 := word_room hu (d := qlOff) (by decide)
+  generalize hP : (u.gpr .esp).setWidth 64 = P
+  obtain vals : ∀ i < 18, u.mem.readW (slotAddr P i) 32 = args i := fun i hi => by
+    rw [← hP, ← (hu.stack i hi).value]
+    show _ = u.mem.readW (VG.Proof.Dsa.X86.stackAddress u i) 32
+    rw [show VG.Proof.Dsa.X86.stackAddress u i = slotAddr ((u.gpr .esp).setWidth 64) i from
+      addr_eq (by omega_arith)]
+  obtain fa : Region.Disjoint ⟨P, 76⟩ ⟨base, bytes⟩ := by rw [← hP]; exact callee_frame_apart RF CI.esp
+  unfold setQ
+  refine wp_movS (readSrc_sc hu.scratch r1) fun u1 a1 _ => ?_
+  obtain ⟨ea1, w1⟩ := frame76_store (t := u1) (P := P) (by rw [a1.other _ (by decide), hP])
+    (by rw [a1.other _ (by decide)]; exact top)
+    (by rw [a1.keeps.2.2, CI.wr, hP]; exact List.mem_cons_self ..) (i := 10) (by decide)
+  refine wp_storeS ea1 w1 fun u2 m2 => ?_
+  obtain K2 : Keeps [.eax] u u2 := a1.keeps.trans ((m2.keeps []).mono (by decide))
+  obtain F2 : Frame [⟨P, 76⟩] u.mem u2.mem := by
+    rw [m2.mem, a1.mem]
+    exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (by decide) (by decide))
+  refine wp_movS ((readSrc_sc (hu.scratch.of_keeps K2 (by decide) (by decide)) r2).trans (congrArg some
+    (F2.readW (r := ⟨off base qlOff, 4⟩) (Region.contains_self _ _) (fun r hr => by
+      rw [List.mem_singleton.mp hr]; exact (fa.sub_right (Offset.sub_base _ r2)).symm) (by decide))))
+    fun u3 a3 _ => ?_
+  obtain K3 : Keeps [.eax] u u3 := K2.trans a3.keeps
+  obtain ⟨ea3, w3⟩ := frame76_store (t := u3) (P := P) (by rw [K3.1 _ (by decide), hP])
+    (by rw [K3.1 _ (by decide)]; exact top)
+    (by rw [K3.2.2, CI.wr, hP]; exact List.mem_cons_self ..) (i := 11) (by decide)
+  refine wp_storeS ea3 w3 fun v m4 => WP.block_nil ?_
+  obtain K4 : Keeps [.eax] u v := K3.trans ((m4.keeps []).mono (by decide))
+  obtain mv : v.mem = ((u.mem.writeW (slotAddr P 10) (u.mem.readW (off base qpOff) 32)).writeW (slotAddr P 11)
+      (u.mem.readW (off base qlOff) 32)) := by rw [m4.mem, a3.mem, a3.gpr, m2.mem, a1.mem, a1.gpr]
+  refine ⟨K4, ?_, in_calleeOf h RF ((K4.1 _ (by decide)).trans CI.esp) ((K4.1 _ (by decide)).trans CI.edi)
+    (K4.2.1.trans CI.rd) (by rw [K4.2.2, CI.wr, K4.1 _ (by decide)]) rfl rfl rfl fun i hi => ?_⟩
+  · rw [mv]
+    exact ((Frame.refl _ _).writeW (List.mem_singleton_self _) _
+      (Offset.contains_base _ (by decide) (by decide))).writeW (List.mem_singleton_self _) _
+      (Offset.contains_base _ (by decide) (by decide))
+  · rw [K4.1 _ (by decide), hP, mv]
+    unfold qArgs
+    by_cases e11 : i = 11
+    · subst e11; rw [Mem.readW_writeW_self32]; rfl
+    · rw [frame76_other _ _ _ (fun e => e11 e.symm) (by decide) hi, ite_eq_right e11]
+      by_cases e10 : i = 10
+      · subst e10; rw [Mem.readW_writeW_self32]; rfl
+      · rw [frame76_other _ _ _ (fun e => e10 e.symm) (by decide) hi, ite_eq_right e10, vals i hi]
+
+theorem winQBody_noSp :
+    NoSp (.seq (.block ((List.range 18).flatMap copyArg)) (.seq (.block setQ)
+      (.seq (loadTop (.slot .wide 8) (one .wide) 10 11) (windowPowerWith .wide (lenCount 11)))) : Prog isa) :=
+  NoSp.of_all (by rsa_stack_shape)
+
+/-- `winQCall`: slot 5 to the power of q, raised over q's bytes from its first that counts, for the scan's
+words. -/
+theorem winQCall_ok {M : Nat} (C : CtxOk Ex base bytes len args .wide M s)
+    (G : DomGeo args base bytes len (3 * len) s.rd s.wr) (RF : RoomF (s.gpr .esp) base bytes)
+    (hb40 : Region.Disjoint ⟨byteAddr (args 2), 3 * len⟩ (below (s.gpr .esp) 176))
+    (h3 : sv s.mem base len .wide 3 = 1) (h4 : sv s.mem base len .wide 4 = 2 ^ (16 * bc len .wide) % M)
+    (Q : QAt base len args (qBytes s.mem args len) s.mem) :
+    WP isa winQCall s fun u => CtxOk Ex base bytes len args .wide M u ∧
+      Frame (frameF base (s.gpr .esp) (pwR len .wide)) s.mem u.mem ∧
+      Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s u ∧
+      sv u.mem base len .wide 6 = sv s.mem base len .wide 5 ^ comp s.mem args len 2 % M := by
+  have fit := G.fit
+  have lw := G.lower
+  have up := G.upper
+  obtain lb := len_le_bc len
+  obtain bw := bc_eq_cwc len .wide
+  obtain f8 := C.inp.slot_fit .wide (j := 8) (by decide)
+  have est : st len .wide = 2 * bc len .wide + 32 := rfl
+  obtain ⟨a6, n6⟩ : byteAddr (args 6) = byteAddr (args 2) + BitVec.ofNat 64 (2 * len) ∧
+      (args 6).toNat = (args 2).toNat + 2 * len := G.addr (k := 2) (by decide) (by omega_arith)
+  obtain qv : comp s.mem args len 2 = Spec.Rsa.os2ip (qBytes s.mem args len) := rfl
+  generalize hbs : qBytes s.mem args len = bs at Q qv
+  obtain bl : bs.length = len := by rw [← hbs]; exact VG.Proof.Bignum.bytesAt_length _ _ _
+  obtain ne : bs ≠ [] := fun e => by rw [e] at bl; simp at bl; omega_arith
+  obtain ll := lead_lt ne
+  unfold winQCall
+  refine WP.mono (argCall_okW winQBody_noSp C.inp RF (pwR_fit C.inp .wide)
+    (R := WinMem base len M (sv s.mem base len .wide 5 ^ comp s.mem args len 2 % M))
+    (fun W F hr => winMem_below C.inp RF W F hr) fun u hu Fs CI => ?_)
+    fun w ⟨I, F, K, a, b, c⟩ => ⟨⟨I, a, C.gt, C.odd, b⟩, F, K, c⟩
+  -- The callee's arguments 10 and 11.
+  refine WP.seq (WP.mono (setQ_ok C.inp RF hu CI) fun v ⟨Kv, Fv, hv⟩ => ?_)
+  rw [frameF_word C.inp RF Fs (d := qpOff) (by decide), Q.ptr,
+    frameF_word C.inp RF Fs (d := qlOff) (by decide), Q.cnt] at hv
+  generalize hA : qArgs args (args 6 + BitVec.ofNat 32 (lead bs)) (BitVec.ofNat 32 (len - lead bs)) = A at hv
+  obtain e10 : A 10 = args 6 + BitVec.ofNat 32 (lead bs) := by rw [← hA]; rfl
+  obtain e11 : A 11 = BitVec.ofNat 32 (len - lead bs) := by rw [← hA]; rfl
+  obtain n10 : (A 10).toNat = (args 2).toNat + 2 * len + lead bs := by
+    rw [e10, BitVec.toNat_add, BitVec.toNat_ofNat]; omega_arith
+  obtain ea : byteAddr (A 10) = byteAddr (args 2) + BitVec.ofNat 64 (2 * len + lead bs) := by
+    rw [e10, VG.Proof.Bignum.X86.byteAddr_add (by omega_arith), a6, VG.Offset.add_add]
+  obtain vesp : v.gpr .esp = u.gpr .esp := Kv.1 _ (by decide)
+  obtain Fs' : Frame (frameF base (s.gpr .esp) []) s.mem v.mem :=
+    Fs.trans (frameF_of_sub Fv fun r hr => by rw [List.mem_singleton.mp hr]; exact CI.sub)
+  have e := fun j (hj : j ≤ 27) => frameF_sv C.inp RF Fs' hj
+  obtain Cv : CtxOk (fun _ _ => True) base bytes len A .wide M v :=
+    ⟨hv, by rw [e 0 (by decide)]; exact C.mod, C.gt, C.odd, by rw [frameF_inv C.inp RF Fs']; exact C.inv⟩
+  -- q's bytes from the first that counts.
+  obtain rdq : InRegions (v.rd ++ v.wr) (byteAddr (A 10)) (len - lead bs) := by
+    obtain ⟨r, hr, hc⟩ := VG.CallLay.inRegions_sub (off := 2 * len + lead bs) (l := len - lead bs) G.rd
+      (by omega_arith) (by omega_arith)
+    rw [ea, Kv.2.1, Kv.2.2, CI.rd, CI.wr]
+    refine ⟨r, ?_, hc⟩
+    rcases List.mem_append.mp hr with hr | hr
+    · exact List.mem_append_left _ hr
+    · exact List.mem_append_right _ (List.mem_cons_of_mem _ hr)
+  obtain qsub : Region.Sub ⟨byteAddr (A 10), len - lead bs⟩ ⟨byteAddr (args 2), 3 * len⟩ := by
+    rw [ea]; exact Offset.sub_base _ (by omega_arith)
+  refine WP.seq (WP.mono (loadTopCtx_ok Cv (d := 8) (p := 10) (l := 11) (L := len - lead bs) (by decide) (by decide)
+    (by decide) (by decide) e11 (by omega_arith) (by omega_arith) (by omega_arith) rdq (G.apart.sub_left qsub))
+    fun u₁ ⟨C₁, V₁, O₁, K₁⟩ => ?_)
+  obtain qb : Spec.Rsa.bytesAt v.mem (byteAddr (A 10)) (len - lead bs) = bs.drop (lead bs) := by
+    rw [frame_bytes Fs' (fun r hr => by
+      simp only [frameF, frameR, List.map_nil, List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact hb40.sub_left qsub
+      · exact (hb40.sub_left qsub).sub_right (VG.X86.below_sub (by decide) RF.low)) (by omega_arith), ea,
+      ← hbs, show (2 * len + lead bs) = 2 * len + lead bs from rfl, ← VG.Offset.add_add]
+    exact drop_bytes _ _ (by omega_arith)
+  rw [qb, os2ip_drop_lead, ← qv] at V₁
+  obtain sp₁ : u₁.gpr .esp = u.gpr .esp := (K₁.1 _ (by decide)).trans vesp
+  refine WP.mono (windowPowerWith_ok C₁
+    (by rw [slotKeep hv (by decide) (by decide) O₁, e 3 (by decide)]; exact h3)
+    (by rw [slotKeep hv (by decide) (by decide) O₁, e 4 (by decide)]; exact h4) (N := 2 * (len - lead bs))
+    (by omega_arith) (by omega_arith) fun t Ct =>
+    wp_movS (Ct.inp.arg (i := 11) (by decide)) fun t₁ a₁ _ => wp_addS rfl fun t₂ a₂ _ => WP.block_nil
+      ⟨a₁.keeps.trans (a₂.keeps.mono (by decide)), by rw [a₂.mem, a₁.mem], by
+        rw [a₂.gpr, a₁.gpr, e11, BitVec.ofNat_add_ofNat]; congr 1; omega_arith⟩)
+    fun w ⟨Cw, F, K, Y⟩ => ⟨?_, (Kv.mono (by decide) : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] u v).trans
+      (K₁.trans K), Cw.mod, Cw.inv, ?_⟩
+  · rw [sp₁] at F
+    exact ((Fv.sub fun r hr => ⟨r, by rw [List.mem_singleton.mp hr]; exact List.mem_cons_self .., fun _ h => h⟩).trans
+      ((frameR_of_outside (sp := u.gpr .esp) (ws := pwR len .wide) O₁ (by omega_arith) (by simp)).sub
+        fun r hr => ⟨r, List.mem_cons_of_mem _ hr, fun _ h => h⟩)).trans
+      (F.sub fun r hr => ⟨r, List.mem_cons_of_mem _ hr, fun _ h => h⟩)
+  · rw [Y, V₁, show 32 * cwc len .wide = 8 * bc len .wide by omega_arith, top_windows (by omega_arith),
+      slotKeep hv (by decide) (by decide) O₁, e 5 (by decide)]
+
+/-- Slot 6 the wide slot `b` to the power of q, modulo p (in the wide slot 9), for the scan's words. -/
+theorem powQ_ok (h : In Ex base bytes len args s) (G : DomGeo args base bytes len (3 * len) s.rd s.wr)
+    (RF : RoomF (s.gpr .esp) base bytes)
+    (hb40 : Region.Disjoint ⟨byteAddr (args 2), 3 * len⟩ (below (s.gpr .esp) 176)) {P b : Nat} (hb9 : 9 ≤ b)
+    (hb : b ≤ 19) (hP : safeM (sv s.mem base len .wide 9) = P)
+    (Q : QAt base len args (qBytes s.mem args len) s.mem) :
+    WP isa (powQ b) s fun u =>
+      CtxOk Ex base bytes len args .wide P u ∧
+      sv u.mem base len .wide 6 = sv s.mem base len .wide b ^ comp s.mem args len 2 % P ∧
+      sv u.mem base len .wide 3 = 1 ∧
+      Frame (frameF base (s.gpr .esp) (stR len 0)) s.mem u.mem ∧ Kept base len [] [] s.mem u.mem ∧
+      Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s u := by
+  have bl := h.bytes_lt
+  have lw := G.lower
+  obtain f8 := h.slot_fit .wide (j := 8) (by decide)
+  have est : st len .wide = 2 * bc len .wide + 32 := rfl
+  obtain e5 := lo_wide len 5
+  obtain e8 := lo_wide len 8
+  have nb : numBase = 3336 := rfl
+  have up := G.upper
+  unfold powQ
+  refine WP.seq (WP.mono (ctxP_ok h RF hP) fun u₁ ⟨C₁, one₁, R₁, F₁, k₁, K₁⟩ => ?_)
+  have h₁ := C₁.inp
+  refine WP.seq (WP.mono (copyIn_ok h₁ (j := b) (d := 5) hb9 hb (by decide)) fun u₂ ⟨O₂, V₂, K₂⟩ => ?_)
+  obtain C₂ : CtxOk Ex base bytes len args .wide P u₂ := by
+    refine C₁.keepF (regs := [.eax, .ebx, .ecx, .edx, .ebp]) K₂ (by decide) (by decide)
+      (ws := [(lo len (.slot .wide 5), bc len .wide)]) (frameR_of_outside O₂ (by omega_arith) (by simp)) ?_ ?_
+    · intro p hp; simp only [List.mem_singleton] at hp; subst hp; dsimp only; omega_arith
+    · intro p hp; simp only [List.mem_singleton] at hp; subst hp; dsimp only; omega_arith
+  obtain G₂ : Frame (frameR base (s.gpr .esp) (stR len 0)) u₁.mem u₂.mem :=
+    stR_of_outside h (by decide) O₂ ⟨_, by simp, slot_in h .wide (j := 5) (by decide)⟩
+  obtain F₂ : Frame (frameF base (s.gpr .esp) (stR len 0)) s.mem u₂.mem := F₁.trans (frameF_of G₂)
+  obtain S₂ : Step Ex base bytes len args s u₂ := Step.opsF h RF F₂ (K₁.trans (K₂.mono (by decide)))
+  obtain k₂ : Kept base len [] [] s.mem u₂.mem := k₁.trans (kept_ops h G₂ h.room)
+  obtain sp₂ : u₂.gpr .esp = s.gpr .esp := S₂.esp
+  obtain qb : qBytes u₂.mem args len = qBytes s.mem args len :=
+    frame_bytes S₂.frame (fun r hr => (dom_frame h G RF hb40 r hr).sub_left (Offset.sub_base _ (by omega_arith)))
+      (by omega_arith)
+  obtain one₂ : sv u₂.mem base len .wide 3 = 1 := by rw [slotKeep h₁ (by decide) (by decide) O₂, one₁]
+  refine WP.mono (winQCall_ok C₂ (G.keep ⟨rfl, rfl⟩ S₂.keeps) (by rw [sp₂]; exact RF) (by rw [sp₂]; exact hb40) one₂
+    (by rw [slotKeep h₁ (by decide) (by decide) O₂, R₁]) (by rw [qb]; exact Q.kept k₂)) fun u ⟨C, F, K, Y⟩ => ?_
+  rw [V₂, k₁.slots b hb9 hb (by simp), comp_keep h G RF hb40 S₂.frame (k := 2) (by omega_arith)] at Y
+  rw [sp₂] at F
+  obtain Gf := frameF_widen F (pwR_in C₂.inp .wide 0)
+  exact ⟨C, Y, by rw [pwR_sv3 C₂.inp F RF, one₂], F₂.trans Gf, k₂.trans (keptF_ops h Gf RF), S₂.keeps.trans K⟩
 
 end VG.Proof.Ffdh.X86.QPower
