@@ -21,7 +21,11 @@ import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Stage
 `qScan_ok`: the scan leaves, in the header's words `qpOff` and `qlOff`, the
 address of q's first nonzero byte (of its last byte, if all are zero) and
 the number of bytes from it on, `lead` of q's bytes past q's address and
-short of `p_len` (`Proof/Ffdh/Lead.lean`).
+short of `p_len` (`Proof/Ffdh/Lead.lean`). `setQ_ok`: in its frame, the
+callee's arguments 10 and 11 become those two words. `winQCall_ok` and
+`powQ_ok`: the power, raised over the windows of the bytes from `lead` on
+(`qRest_ok`), is to q, the domain's third component, since the bytes
+dropped are zero (`qTail`, by `os2ip_drop_lead`).
 -/
 
 @[expose] public section
