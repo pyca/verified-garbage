@@ -732,6 +732,7 @@ impl AesGcm {
     /// one piece (`&[buf]`); there may be at most
     /// [`MAX_PIECES`](Self::MAX_PIECES). The nonce is as for
     /// [`encrypt_in_place`](Self::encrypt_in_place).
+    #[cfg_attr(target_arch = "x86_64", inline)]
     pub fn encrypt(
         &self,
         nonce: &[u8],
@@ -749,6 +750,7 @@ impl AesGcm {
     /// uninitialized. Its length must equal the combined plaintext length.
     /// Returns the initialized ciphertext in that storage and its tag.
     /// On error, the output is untouched.
+    #[cfg_attr(target_arch = "x86_64", inline)]
     pub fn encrypt_uninit<'out>(
         &self,
         nonce: &[u8],
@@ -805,14 +807,39 @@ impl AesGcm {
         plaintext: &[&[u8]],
         out: &mut [MaybeUninit<u8>],
     ) -> Block {
-        let dst = out.as_mut_ptr().cast();
-        let len = out.len();
         #[cfg(any(target_arch = "aarch64", target_arch = "x86_64"))]
         if let [input] = plaintext {
+            let dst = out.as_mut_ptr().cast();
+            let len = out.len();
             // SAFETY: the checked length equals input.len(). The exclusive
             // destination is disjoint from the borrowed input and metadata.
             return unsafe { self.seal_contiguous(dit, nonce, aad, input.as_ptr(), dst, len) };
         }
+        #[cfg(target_arch = "x86_64")]
+        if let [first, second] = plaintext {
+            let pair = [
+                [first.as_ptr() as usize, first.len()],
+                [second.as_ptr() as usize, second.len()],
+            ];
+            // SAFETY: each descriptor describes its borrowed plaintext slice.
+            return unsafe {
+                self.seal_descriptors(dit, nonce, aad, pair.as_ptr(), pair.len(), out)
+            };
+        }
+        self.seal_descriptor_list(dit, nonce, aad, plaintext, out)
+    }
+
+    // Keep the maximum-size descriptor array out of the two-fragment caller's frame.
+    #[cfg_attr(target_arch = "x86_64", inline(never))]
+    #[cfg_attr(not(target_arch = "x86_64"), inline(always))]
+    fn seal_descriptor_list(
+        &self,
+        dit: crate::dit::Dit<'_>,
+        nonce: &[u8],
+        aad: &[u8],
+        plaintext: &[&[u8]],
+        out: &mut [MaybeUninit<u8>],
+    ) -> Block {
         // The descriptors of the pieces, as `vg_aes_gcm_seal_gather` takes
         // them: each its address and its length. Only the first
         // `plaintext.len()` are written, and the function reads only those.
@@ -820,15 +847,33 @@ impl AesGcm {
         for (d, p) in descs.iter_mut().zip(plaintext) {
             d.write([p.as_ptr() as usize, p.len()]);
         }
-        let src: *const [usize; 2] = descs.as_ptr().cast();
+        // SAFETY: the checked count fits in descs, and each initialized
+        // entry describes the corresponding borrowed plaintext slice.
+        unsafe {
+            self.seal_descriptors(dit, nonce, aad, descs.as_ptr().cast(), plaintext.len(), out)
+        }
+    }
+
+    /// Seal checked plaintext from `count` live, initialized descriptors at
+    /// `src`. Their address/length pairs must describe readable slices whose
+    /// combined length equals `out.len()`. Neither the data nor the descriptors
+    /// may overlap the exclusive destination.
+    #[inline(always)]
+    unsafe fn seal_descriptors(
+        &self,
+        dit: crate::dit::Dit<'_>,
+        nonce: &[u8],
+        aad: &[u8],
+        src: *const [usize; 2],
+        count: usize,
+        out: &mut [MaybeUninit<u8>],
+    ) -> Block {
+        let dst = out.as_mut_ptr().cast();
+        let len = out.len();
         let mut tag: Block = [0; 16];
-        // SAFETY: as in `seal`, with `dst` writable for
-        // `len` bytes; `src` points to `plaintext.len()` initialized
-        // descriptors (in `descs`, a local), each the address and the length
-        // of a piece valid for reads, which are `len` bytes in all.
-        // The pieces and the descriptors are read only, and overlap neither
-        // the exclusive destination nor `tag`, nor anything on the stack the
-        // function uses.
+        // SAFETY: the caller checked the inputs and supplies the descriptors
+        // above. `out` is writable for `len` bytes, `tag` is a disjoint local,
+        // and the key context and other borrowed inputs remain readable.
         unsafe {
             #[cfg(target_arch = "x86_64")]
             vg_aes_gcm_seal_gather_prepared_auto(
@@ -840,7 +885,7 @@ impl AesGcm {
                 aad.as_ptr(),
                 aad.len(),
                 src,
-                plaintext.len(),
+                count,
                 dst,
                 len,
                 &mut tag,
@@ -855,7 +900,7 @@ impl AesGcm {
                 aad.as_ptr(),
                 aad.len(),
                 src,
-                plaintext.len(),
+                count,
                 dst,
                 len,
                 &mut tag,
@@ -871,7 +916,7 @@ impl AesGcm {
                 aad.as_ptr(),
                 aad.len(),
                 src,
-                plaintext.len(),
+                count,
                 dst,
                 len,
                 &mut tag,
