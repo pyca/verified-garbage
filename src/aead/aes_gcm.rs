@@ -750,10 +750,15 @@ impl AesGcm {
             return Err(Error::TooManyPieces);
         }
         check_nonce(nonce)?;
-        let mut len = 0;
-        for p in plaintext {
-            len = add_len(len, p.len(), MAX_TEXT).map_err(|()| Error::InvalidTextLength)?;
-        }
+        let len = if let [first, second] = plaintext {
+            add_len(first.len() as u64, second.len(), MAX_TEXT).map_err(|()| Error::InvalidTextLength)?
+        } else {
+            let mut len = 0;
+            for p in plaintext {
+                len = add_len(len, p.len(), MAX_TEXT).map_err(|()| Error::InvalidTextLength)?;
+            }
+            len
+        };
         if len != out.len() as u64 {
             return Err(Error::InvalidOutputLength);
         }
