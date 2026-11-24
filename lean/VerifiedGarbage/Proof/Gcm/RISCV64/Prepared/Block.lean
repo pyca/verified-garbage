@@ -1,9 +1,11 @@
 module
 
+import Mathlib.Tactic.IntervalCases
+
 -- separate module: The block arithmetic proof checks intermediate product spills independently from the function prologue, loop and frame cleanup.
 
 public import VerifiedGarbage.Impl.Gcm.RISCV64.Prepared
-public import VerifiedGarbage.Proof.Gcm.RISCV64.Law
+public import VerifiedGarbage.Proof.Gcm.RISCV64.Kernel
 public import VerifiedGarbage.Proof.Framework.RISCV64.MRun
 public import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Framework.AddrArith
@@ -325,7 +327,7 @@ structure SplitLoopPre (H : Block) (D : Addr) (m₀ : Mem) (n₀ : Nat) (sY : St
   bytes : ∀ i < n₀, ∀ j < 16, ∀ m : Mem, Frame [⟨sY.gpr .a0, 32⟩] sY.mem m →
     m (D + BitVec.ofNat 64 (16 * i) + BitVec.ofNat 64 j) = m₀ (D + BitVec.ofNat 64 (16 * i) + BitVec.ofNat 64 j)
 
-theorem split_step {H Y₀ : Block} {D : Addr} {m₀ : Mem} {n₀ : Nat} {sY : State} (hL : SplitLoopPre H D m₀ n₀ sY)
+theorem split_step (product : VG.Proof.Gcm.Holes.MulLaw) {H Y₀ : Block} {D : Addr} {m₀ : Mem} {n₀ : Nat} {sY : State} (hL : SplitLoopPre H D m₀ n₀ sY)
     (hn₀ : n₀ < 2 ^ 64) {i : Nat} (hi : i < n₀) {s : State} (hs : SplitInv H Y₀ D m₀ n₀ sY i s) :
     WP isa (.block (blockCodeWith HP 0)) s (SplitInv H Y₀ D m₀ n₀ sY (i + 1)) := by
   obtain ⟨slots, tableRead, hK, ⟨h0, h1, hH, ht⟩, hd, hb⟩ := hL
@@ -343,7 +345,7 @@ theorem split_step {H Y₀ : Block} {D : Addr} {m₀ : Mem} {n₀ : Nat} {sY : S
     exact Proof.Gcm.blockAt_congr fun j hj => hb i hi j hj _ hs.frame
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · refine ey.trans ?_
-    rw [mulT_tab tabs, Holes.mulK_eq, ← hH, ← BitVec.xor_append, hx, Proof.Gcm.ghashFrom_blocksAt_succ]
+    rw [mulT_tab tabs, product, ← hH, ← BitVec.xor_append, hx, Proof.Gcm.ghashFrom_blocksAt_succ]
     exact congrArg (fun v => mul (v ^^^ _) H) hs.y
   · rw [ed, hs.dp, BitVec.add_assoc, show (16 : BitVec 64) = BitVec.ofNat 64 16 from rfl, BitVec.ofNat_add_ofNat]
     congr 2
@@ -357,11 +359,11 @@ theorem split_step {H Y₀ : Block} {D : Addr} {m₀ : Mem} {n₀ : Nat} {sY : S
   · intro k hk; rw [tt k hk, hs.tab k hk]
   · rw [Keep.gpr hs.keep (r:=.a0) (by decide)] at ft; exact hs.frame.trans ft
 
-theorem split_loop {H Y₀ : Block} {D : Addr} {m₀ : Mem} {n₀ : Nat} {sY : State} (hL : SplitLoopPre H D m₀ n₀ sY)
+theorem split_loop (product : VG.Proof.Gcm.Holes.MulLaw) {H Y₀ : Block} {D : Addr} {m₀ : Mem} {n₀ : Nat} {sY : State} (hL : SplitLoopPre H D m₀ n₀ sY)
     (hn₀ : n₀ < 2 ^ 64) (hpos : 0 < n₀) {s : State} (hs : SplitInv H Y₀ D m₀ n₀ sY 0 s) :
     WP isa (.loop (.block (blockCodeWith HP 0)) (.nonzero N)) s (SplitInv H Y₀ D m₀ n₀ sY n₀) := by
   refine WP.loop (M := isa) (fun k s' => ∃ i, k = n₀ - i ∧ i < n₀ ∧ SplitInv H Y₀ D m₀ n₀ sY i s')
-    (fun k s' ⟨i, hk, hi, hb⟩ => WP.mono (split_step hL hn₀ hi hb) fun s'' hb' => ?_) n₀ s
+    (fun k s' ⟨i, hk, hi, hb⟩ => WP.mono (split_step product hL hn₀ hi hb) fun s'' hb' => ?_) n₀ s
     ⟨0, rfl, hpos, hs⟩
   obtain hev := eval_nonzero_ofNat s'' N (k := n₀ - (i + 1)) (by omega_using [hn₀]) hb'.n
   by_cases hl : i + 1 = n₀

@@ -37,9 +37,9 @@ private theorem sat : ∃ s,contract.pre s := by
     | exact Region.disjoint_of_sep (by decide)
     | exact Proof.AesGcm.ctxSlicedRepr_of_zero (GatherBs.gatherBsSatMem_zero (p := (0x5000 : Addr)) (n := 1248) (by decide)) (GatherBs.gatherBsSatMem_zero (p := (0x1000 : Addr)) (n := 256) (by decide))
 
-private theorem correct : Verified target (framedWith VG.Impl.Gcm.RISCV64.Prepared.preparedInvocation) contract :=
-  ⟨fun _ h => WP.mono (framed_prepared_wp (caller_of_pre h) (prepared_of_pre h)) fun _ ⟨abi,result⟩ => ⟨abi,post_of_sealed result⟩,
-    VG.Proof.Gather.RISCV64.ct_of fun _ _ h k p => framed_prepared_rel (caller_of_pre h) (caller_of_pre k) (prepared_of_pre h) (prepared_of_pre k) (args_of_pub p),sat⟩
+private theorem correct (run : PreparedInvocationLaw) : Verified target (framedWith VG.Impl.Gcm.RISCV64.Prepared.preparedInvocation) contract :=
+  ⟨fun _ h => WP.mono (framed_prepared_wp run (caller_of_pre h) (prepared_of_pre h)) fun _ ⟨abi,result⟩ => ⟨abi,post_of_sealed result⟩,
+    VG.Proof.Gather.RISCV64.ct_of fun _ _ h k p => framed_prepared_rel run (caller_of_pre h) (caller_of_pre k) (prepared_of_pre h) (prepared_of_pre k) (args_of_pub p),sat⟩
 
 private theorem post_out : PostOut contract 0 := by
   intro s t u h out same _
@@ -56,10 +56,10 @@ private theorem post_out : PostOut contract 0 := by
     VG.RISCV64.abi,VG.RISCV64.argRegs,List.getD,List.range,List.range.loop] at out ⊢
   simpa only [dst,tag] using out
 
-theorem scrubbed :
+theorem scrubbed (run : PreparedInvocationLaw) :
     VerifiedScrubbed target VG.Impl.AesGcm.RISCV64.Contiguous.code contract 0 :=
   verifiedScrubbedSel (api := sealContiguousBitslicedApi) (W := 4656)
-    {code := framedWith VG.Impl.Gcm.RISCV64.Prepared.preparedInvocation,verified := correct} VG.Impl.AesGcm.RISCV64.Contiguous.scrubFrames []
+    {code := framedWith VG.Impl.Gcm.RISCV64.Prepared.preparedInvocation,verified := correct run} VG.Impl.AesGcm.RISCV64.Contiguous.scrubFrames []
     post_out (by lit_decide) (hbp_nil _) residue
 
 end VG.Proof.AesGcm.RISCV64.Contiguous

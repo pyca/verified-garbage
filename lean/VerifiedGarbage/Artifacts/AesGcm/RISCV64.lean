@@ -11,6 +11,7 @@ public import VerifiedGarbage.Proof.AesGcm.RISCV64.Contiguous.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.RISCV64.Print
 
+import VerifiedGarbage.Proof.AesGcm.RISCV64.Contiguous.PreparedLaw
 import VerifiedGarbage.Proof.Aes.RISCV64.CodeLit
 import VerifiedGarbage.Proof.Gcm.RISCV64.Lit
 
@@ -59,6 +60,7 @@ def artifacts : List Artifact := [
     verified := Proof.AesGcm.RISCV64.DirectGather.sealGather_scrubbed },
   Spec.Gcm.sealContiguousBitslicedApi.artifact RISCV64.target {
     code := Impl.AesGcm.RISCV64.Contiguous.code
-    verified := Proof.AesGcm.RISCV64.Contiguous.scrubbed }]
+    verified := Proof.AesGcm.RISCV64.Contiguous.scrubbed
+      (Proof.AesGcm.RISCV64.preparedInvocation_wp Proof.Gcm.Holes.mulK_eq) }]
 
 end VG.Artifacts.AesGcm.RISCV64

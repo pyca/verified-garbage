@@ -1,10 +1,12 @@
 module
 
+import Mathlib.Tactic.IntervalCases
+
 -- separate module: The standalone GHASH callee contract is independent of its AES-GCM caller and of the caller’s workspace layout.
 
 public import VerifiedGarbage.Impl.Gcm.RISCV64.Prepared
 public import VerifiedGarbage.Proof.Framework.RISCV64.Wp
-public import VerifiedGarbage.Proof.Gcm.RISCV64.Law
+public import VerifiedGarbage.Proof.Gcm.RISCV64.Kernel
 public import VerifiedGarbage.Proof.Framework.RISCV64.MRun
 public import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Framework.AddrArith
@@ -143,7 +145,7 @@ structure SplitHead (H : Block) (s a sY : State) : Prop where
   fy : Frame [⟨a.sp,112⟩] s.mem sY.mem
 
 theorem cached_head_ok {H : Block} (s : State) (hp : CachedPre H s) :
-    WP isa (.block (.addSp .t0 0 :: compactSave ++ [.addi FP HP 0, .addSp HP 0] ++ maskCode ++ loadY)) (allocd 112 s)
+    WP isa (.block (.addSp .t0 0 :: compactSave ++ ([.addi FP HP 0, .addSp HP 0] : List Instr) ++ maskCode ++ loadY)) (allocd 112 s)
       (SplitHead H s (allocd 112 s)) := by
   set a := allocd 112 s with ha
   have ard : a.rd = s.rd := rfl
@@ -320,7 +322,7 @@ open VG.Spec.Gcm (Block blockAt blocksAt ghashFrom)
 
 def hashDone (H : Block) (s t : State) : Prop := blockAt t.mem (s.gpr .a1) =
     ghashFrom H (blockAt s.mem (s.gpr .a1)) (blocksAt s.mem (s.gpr .a2) (s.gpr .a3).toNat)
-theorem preparedHash_ok {H : Block} (s : State) (hp : CachedPre H s) (hsp : 112 ≤ s.sp.toNat) :
+theorem preparedHash_ok (product : VG.Proof.Gcm.Holes.MulLaw) {H : Block} (s : State) (hp : CachedPre H s) (hsp : 112 ≤ s.sp.toNat) :
     WP isa cachedHash s fun s' => hashDone H s s' ∧ ∀ r ∈ savedRegs, s'.gpr r = s.gpr r := by
 
   refine WP.ite _ (eval_zero s N) (fun h0 => WP.block_nil ⟨?_, fun _ _ => rfl⟩) (fun h0 => ?_)
@@ -335,7 +337,7 @@ theorem preparedHash_ok {H : Block} (s : State) (hp : CachedPre H s) (hsp : 112 
   refine WP.allocLe ⟨by decide, by decide, by decide⟩ hsp ?_
   unfold cachedBody
   refine WP.seq (WP.mono (cached_head_ok s hp) fun sY hH => ?_)
-  refine WP.seq (WP.mono (split_loop hH.loop (s.gpr .a3).isLt hpos hH.inv) fun sL hBL => ?_)
+  refine WP.seq (WP.mono (split_loop product hH.loop (s.gpr .a3).isLt hpos hH.inv) fun sL hBL => ?_)
   have hfp := hH.spill
   obtain hslot : ∀ p ∈ compactSaved, sL.mem.readW ((allocd 112 s).sp + BitVec.ofNat 64 p.2) 64 = s.gpr p.1 := by
     intro p hp
@@ -363,9 +365,9 @@ theorem preparedHash_ok {H : Block} (s : State) (hp : CachedPre H s) (hsp : 112 
     lost_byte fl (R := ⟨s.gpr .a1, 16⟩) hp.stackY.symm hi) h1
 
 
-theorem preparedHash_law {H : Block} (s : State) (hp : CachedPre H s) (hsp : 112 ≤ s.sp.toNat) :
+theorem preparedHash_law (product : VG.Proof.Gcm.Holes.MulLaw) {H : Block} (s : State) (hp : CachedPre H s) (hsp : 112 ≤ s.sp.toNat) :
     ∃ tr t, Exec isa cachedHash s tr t ∧ abiPreserved s t ∧ hashDone H s t := by
-  obtain ⟨tr,t,hx,⟨post,hsv⟩,hkeep⟩ := WP.keep (.a0 :: written) (preparedHash_ok s hp hsp) (by lit_decide) (by lit_decide)
+  obtain ⟨tr,t,hx,⟨post,hsv⟩,hkeep⟩ := WP.keep (.a0 :: written) (preparedHash_ok product s hp hsp) (by lit_decide) (by lit_decide)
   refine ⟨tr,t,hx,⟨fun r hr => ?_,Exec.sp hx,hkeep.gpr (by decide)⟩,post⟩
   by_cases h : r ∈ saved.map Prod.fst
   · exact hsv r h

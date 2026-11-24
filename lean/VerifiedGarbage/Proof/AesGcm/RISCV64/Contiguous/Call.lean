@@ -70,7 +70,7 @@ theorem Copied.satisfies {s t : State} (v : Copied s t) (h : Caller s) : ArgsAt 
 
 /-- Copying the public arguments into the new frame preserves the prepared table
 and makes its pointer available at stack slot two throughout the operation. -/
-theorem Copied.hashScope {s t : State} (v : Copied s t) (h : Caller s) (extra : PreparedCaller s) :
+theorem Copied.hashScope {s t : State} (v : Copied s t) (run : PreparedInvocationLaw) (h : Caller s) (extra : PreparedCaller s) :
     HashScope ((callArgs s).ctx+BitVec.ofNat 64 240) (callArgs s).keys
       (sealWrites (callArgs s).st (callArgs s).work (callArgs s).dst (callArgs s).sp (callArgs s).len.toNat) t := by
   let p := callArgs s
@@ -93,7 +93,7 @@ theorem Copied.hashScope {s t : State} (v : Copied s t) (h : Caller s) (extra : 
     rw [ptr,hc]
     exact hf
   rw [← ptr]
-  apply preparedHashScope input
+  apply preparedHashScope run input
   · have sl : (⟨t.sp+BitVec.ofNat 64 16,8⟩ : Region).Sub (VG.Proof.AesGcm.RISCV64.args t 4) := Offset.sub t.sp (d:=16) (n:=8) (e:=0) (k:=32) (by decide) (by decide)
     intro r hr
     simp only [sealWrites,List.mem_cons,List.not_mem_nil,or_false] at hr
@@ -118,8 +118,8 @@ theorem Copied.hashScope {s t : State} (v : Copied s t) (h : Caller s) (extra : 
     · exact a.lay.cs.sub_left (Lay.ctxSub (by decide))
     · exact a.stk.c.sub_left (Lay.ctxSub (by decide))
 
-theorem Copied.hashAction {s t : State} (v : Copied s t) (h : Caller s) (extra : PreparedCaller s) :
+theorem Copied.hashAction {s t : State} (v : Copied s t) (run : PreparedInvocationLaw) (h : Caller s) (extra : PreparedCaller s) :
     sealAction VG.Impl.Gcm.RISCV64.Prepared.preparedInvocation (callArgs s) t :=
-  (v.hashScope h extra).action
+  (v.hashScope run h extra).action
 
 end VG.Proof.AesGcm.RISCV64.Contiguous

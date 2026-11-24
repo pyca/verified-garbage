@@ -60,12 +60,12 @@ theorem framed_wp_with {invoke : Prog isa} {s : State} (h : Caller s)
       bytesAt_frame fm (dec ⟨p.tag,16⟩ (by simp [Args.regions])) (by decide)]
     exact out
 
-theorem framed_prepared_wp {s : State} (h : Caller s) (extra : PreparedCaller s) :
+theorem framed_prepared_wp (run : PreparedInvocationLaw) {s : State} (h : Caller s) (extra : PreparedCaller s) :
     WP isa (framedWith VG.Impl.Gcm.RISCV64.Prepared.preparedInvocation) s
       fun t => abiPreserved s t ∧ sealed s t :=
-  framed_wp_with h (fun z => z.hashAction h extra)
+  framed_wp_with h (fun z => z.hashAction run h extra)
 
-theorem framed_prepared_rel {s t : State} (a : Caller s) (b : Caller t) (pa : PreparedCaller s) (pb : PreparedCaller t)
+theorem framed_prepared_rel (run : PreparedInvocationLaw) {s t : State} (a : Caller s) (b : Caller t) (pa : PreparedCaller s) (pb : PreparedCaller t)
     (pub : callArgs s=callArgs t) :
     RelCT isa (Eq2 s t) (framedWith VG.Impl.Gcm.RISCV64.Prepared.preparedInvocation) TT := by
   have shared := congrArg Args.sp pub
@@ -85,6 +85,6 @@ theorem framed_prepared_rel {s t : State} (a : Caller s) (b : Caller t) (pa : Pr
     obtain ⟨_,rfl⟩ := Prod.mk.inj (Option.some.inj hy)
     exact ⟨congrArg (fun u => setArgsTrace 2608 u 3) shared,trivial⟩
   · rw [ex,ey]
-    exact preparedBody_rel (es.satisfies a) (pub ▸ et.satisfies b) (es.hashScope a pa) (pub ▸ et.hashScope b pb)
+    exact preparedBody_rel (es.satisfies a) (pub ▸ et.satisfies b) (es.hashScope run a pa) (pub ▸ et.hashScope run b pb)
 
 end VG.Proof.AesGcm.RISCV64.Contiguous
