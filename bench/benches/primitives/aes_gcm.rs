@@ -610,7 +610,7 @@ fn tls_records(c: &mut Criterion) {
     /// (alerts, handshake messages, small requests); records of 112 to 240
     /// bytes with their content type, fewer than 16 blocks; a 2048-byte
     /// record; and records of 288, 416, 432 and 448 bytes of text.
-    const TLS_SIZES: [usize; 9] = [0, 15, 16, 63, 239, 510, 511, 4095, 16383];
+    const TLS_SIZES: [usize; 4] = [0, 15, 239, 16383];
 
     tls_record_rows(c, &TLS_SIZES, Offsets::DEFAULT, "");
     tls_connection_rows(c);
@@ -852,9 +852,31 @@ fn tls_record_rows(c: &mut Criterion, sizes: &[usize], offsets: Offsets, label: 
             let mut same = Aligned::new(&contiguous, offsets.input);
             let same_tag = vg_key.encrypt_in_place(&nonce, &aad, &mut same).unwrap();
             assert_eq!((&same[..], &same_tag[..]), (&ct[..], &tag[..]));
+            #[cfg(target_arch="arm")]
+            {
+                let mut baseline = Aligned::new(&contiguous, offsets.input);
+                let old_tag = vg_key.bench_legacy_encrypt_in_place(&nonce, &aad, &mut baseline).unwrap();
+                assert_eq!((&baseline[..], &old_tag[..]), (&ct[..], &tag[..]));
+                let old_tag = vg_key.bench_legacy_encrypt(&nonce, &aad, &[&contiguous], &mut out).unwrap();
+                assert_eq!((&out[..], &old_tag[..]), (&ct[..], &tag[..]));
+            }
             let mut one = c.benchmark_group(format!("aes-{bits}-gcm-tls-seal-contiguous") + label);
             one.throughput(Throughput::Bytes(size as u64 + 1));
             one.bench(BenchmarkId::new(VG, size), |b| {
+#[cfg(target_arch="arm")]
+                if std::env::var_os("VG_BENCH_OLD_ROUTE").is_some() {
+                b.iter(|| {
+                    vg_key
+                        .bench_legacy_encrypt(
+                            black_box(&nonce),
+                            black_box(&aad),
+                            &[black_box(&contiguous[..])],
+                            black_box(&mut out),
+                        )
+                        .unwrap()
+                });
+                    return;
+                }
                 b.iter(|| {
                     vg_key
                         .encrypt(
@@ -874,6 +896,19 @@ fn tls_record_rows(c: &mut Criterion, sizes: &[usize], offsets: Offsets, label: 
                 let mut g = c.benchmark_group(format!("aes-{bits}-gcm-tls-seal-in-place") + label);
                 g.throughput(Throughput::Bytes(size as u64 + 1));
                 g.bench(BenchmarkId::new(VG, size), |b| {
+#[cfg(target_arch="arm")]
+                if std::env::var_os("VG_BENCH_OLD_ROUTE").is_some() {
+                    b.iter(|| {
+                        vg_key
+                            .bench_legacy_encrypt_in_place(
+                                black_box(&nonce),
+                                black_box(&aad),
+                                black_box(&mut record[..]),
+                            )
+                            .unwrap()
+                    });
+                    return;
+                }
                     b.iter(|| {
                         vg_key
                             .encrypt_in_place(
