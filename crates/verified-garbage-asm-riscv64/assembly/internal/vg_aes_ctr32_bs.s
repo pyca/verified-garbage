@@ -658,9 +658,7 @@ vg_aes_ctr32_bs:
 	ld t3, 512(a5)
 	ld t4, 520(a5)
 	ld t5, 528(a5)
-	ld t6, 536(a5)
 	ld a6, 544(a5)
-	ld a7, 552(a5)
 	srli t0, s0, 4
 	and t0, t0, t4
 	slli t1, s0, 12
@@ -669,12 +667,11 @@ vg_aes_ctr32_bs:
 	xor s0, s0, t0
 	xor s0, s0, t1
 	srli t0, s0, 8
+	xor t0, t0, s0
 	and t0, t0, a6
-	slli t1, s0, 8
-	and t1, t1, a7
-	and s0, s0, t6
 	xor s0, s0, t0
-	xor s0, s0, t1
+	slli t0, t0, 8
+	xor s0, s0, t0
 	srli t0, s1, 4
 	and t0, t0, t4
 	slli t1, s1, 12
@@ -683,12 +680,11 @@ vg_aes_ctr32_bs:
 	xor s1, s1, t0
 	xor s1, s1, t1
 	srli t0, s1, 8
+	xor t0, t0, s1
 	and t0, t0, a6
-	slli t1, s1, 8
-	and t1, t1, a7
-	and s1, s1, t6
 	xor s1, s1, t0
-	xor s1, s1, t1
+	slli t0, t0, 8
+	xor s1, s1, t0
 	srli t0, s2, 4
 	and t0, t0, t4
 	slli t1, s2, 12
@@ -697,12 +693,11 @@ vg_aes_ctr32_bs:
 	xor s2, s2, t0
 	xor s2, s2, t1
 	srli t0, s2, 8
+	xor t0, t0, s2
 	and t0, t0, a6
-	slli t1, s2, 8
-	and t1, t1, a7
-	and s2, s2, t6
 	xor s2, s2, t0
-	xor s2, s2, t1
+	slli t0, t0, 8
+	xor s2, s2, t0
 	srli t0, s3, 4
 	and t0, t0, t4
 	slli t1, s3, 12
@@ -711,12 +706,11 @@ vg_aes_ctr32_bs:
 	xor s3, s3, t0
 	xor s3, s3, t1
 	srli t0, s3, 8
+	xor t0, t0, s3
 	and t0, t0, a6
-	slli t1, s3, 8
-	and t1, t1, a7
-	and s3, s3, t6
 	xor s3, s3, t0
-	xor s3, s3, t1
+	slli t0, t0, 8
+	xor s3, s3, t0
 	srli t0, s4, 4
 	and t0, t0, t4
 	slli t1, s4, 12
@@ -725,12 +719,11 @@ vg_aes_ctr32_bs:
 	xor s4, s4, t0
 	xor s4, s4, t1
 	srli t0, s4, 8
+	xor t0, t0, s4
 	and t0, t0, a6
-	slli t1, s4, 8
-	and t1, t1, a7
-	and s4, s4, t6
 	xor s4, s4, t0
-	xor s4, s4, t1
+	slli t0, t0, 8
+	xor s4, s4, t0
 	srli t0, s5, 4
 	and t0, t0, t4
 	slli t1, s5, 12
@@ -739,12 +732,11 @@ vg_aes_ctr32_bs:
 	xor s5, s5, t0
 	xor s5, s5, t1
 	srli t0, s5, 8
+	xor t0, t0, s5
 	and t0, t0, a6
-	slli t1, s5, 8
-	and t1, t1, a7
-	and s5, s5, t6
 	xor s5, s5, t0
-	xor s5, s5, t1
+	slli t0, t0, 8
+	xor s5, s5, t0
 	srli t0, s6, 4
 	and t0, t0, t4
 	slli t1, s6, 12
@@ -753,12 +745,11 @@ vg_aes_ctr32_bs:
 	xor s6, s6, t0
 	xor s6, s6, t1
 	srli t0, s6, 8
+	xor t0, t0, s6
 	and t0, t0, a6
-	slli t1, s6, 8
-	and t1, t1, a7
-	and s6, s6, t6
 	xor s6, s6, t0
-	xor s6, s6, t1
+	slli t0, t0, 8
+	xor s6, s6, t0
 	srli t0, s7, 4
 	and t0, t0, t4
 	slli t1, s7, 12
@@ -767,12 +758,11 @@ vg_aes_ctr32_bs:
 	xor s7, s7, t0
 	xor s7, s7, t1
 	srli t0, s7, 8
+	xor t0, t0, s7
 	and t0, t0, a6
-	slli t1, s7, 8
-	and t1, t1, a7
-	and s7, s7, t6
 	xor s7, s7, t0
-	xor s7, s7, t1
+	slli t0, t0, 8
+	xor s7, s7, t0
 	srli t4, s7, 16
 	slli t3, s7, 48
 	xor t3, t3, t4
@@ -852,30 +842,22 @@ vg_aes_ctr32_bs:
 	slli t2, s7, 32
 	xor t2, t2, t4
 	xor s5, s5, t2
-	addi s7, s5, 0
-	addi s6, s4, 0
-	addi s5, s3, 0
-	addi s4, s2, 0
-	addi s3, s1, 0
-	addi s2, s0, 0
-	addi s1, t1, 0
-	addi s0, t0, 0
-	ld t0, 0(a1)
-	xor s0, s0, t0
-	ld t0, 8(a1)
-	xor s1, s1, t0
-	ld t0, 16(a1)
-	xor s2, s2, t0
-	ld t0, 24(a1)
-	xor s3, s3, t0
-	ld t0, 32(a1)
-	xor s4, s4, t0
-	ld t0, 40(a1)
-	xor s5, s5, t0
-	ld t0, 48(a1)
-	xor s6, s6, t0
-	ld t0, 56(a1)
-	xor s7, s7, t0
+	ld t3, 56(a1)
+	ld t4, 48(a1)
+	xor s7, s5, t3
+	xor s6, s4, t4
+	ld t3, 40(a1)
+	ld t4, 32(a1)
+	xor s5, s3, t3
+	xor s4, s2, t4
+	ld t3, 24(a1)
+	ld t4, 16(a1)
+	xor s3, s1, t3
+	xor s2, s0, t4
+	ld t3, 8(a1)
+	ld t4, 0(a1)
+	xor s1, t1, t3
+	xor s0, t0, t4
 	sub t0, a1, ra
 	addi t0, t0, -1856
 	bnez t0, 25b
@@ -1025,9 +1007,7 @@ vg_aes_ctr32_bs:
 	ld t3, 512(a5)
 	ld t4, 520(a5)
 	ld t5, 528(a5)
-	ld t6, 536(a5)
 	ld a6, 544(a5)
-	ld a7, 552(a5)
 	srli t0, s0, 4
 	and t0, t0, t4
 	slli t1, s0, 12
@@ -1036,12 +1016,11 @@ vg_aes_ctr32_bs:
 	xor s0, s0, t0
 	xor s0, s0, t1
 	srli t0, s0, 8
+	xor t0, t0, s0
 	and t0, t0, a6
-	slli t1, s0, 8
-	and t1, t1, a7
-	and s0, s0, t6
 	xor s0, s0, t0
-	xor s0, s0, t1
+	slli t0, t0, 8
+	xor s0, s0, t0
 	srli t0, s1, 4
 	and t0, t0, t4
 	slli t1, s1, 12
@@ -1050,12 +1029,11 @@ vg_aes_ctr32_bs:
 	xor s1, s1, t0
 	xor s1, s1, t1
 	srli t0, s1, 8
+	xor t0, t0, s1
 	and t0, t0, a6
-	slli t1, s1, 8
-	and t1, t1, a7
-	and s1, s1, t6
 	xor s1, s1, t0
-	xor s1, s1, t1
+	slli t0, t0, 8
+	xor s1, s1, t0
 	srli t0, s2, 4
 	and t0, t0, t4
 	slli t1, s2, 12
@@ -1064,12 +1042,11 @@ vg_aes_ctr32_bs:
 	xor s2, s2, t0
 	xor s2, s2, t1
 	srli t0, s2, 8
+	xor t0, t0, s2
 	and t0, t0, a6
-	slli t1, s2, 8
-	and t1, t1, a7
-	and s2, s2, t6
 	xor s2, s2, t0
-	xor s2, s2, t1
+	slli t0, t0, 8
+	xor s2, s2, t0
 	srli t0, s3, 4
 	and t0, t0, t4
 	slli t1, s3, 12
@@ -1078,12 +1055,11 @@ vg_aes_ctr32_bs:
 	xor s3, s3, t0
 	xor s3, s3, t1
 	srli t0, s3, 8
+	xor t0, t0, s3
 	and t0, t0, a6
-	slli t1, s3, 8
-	and t1, t1, a7
-	and s3, s3, t6
 	xor s3, s3, t0
-	xor s3, s3, t1
+	slli t0, t0, 8
+	xor s3, s3, t0
 	srli t0, s4, 4
 	and t0, t0, t4
 	slli t1, s4, 12
@@ -1092,12 +1068,11 @@ vg_aes_ctr32_bs:
 	xor s4, s4, t0
 	xor s4, s4, t1
 	srli t0, s4, 8
+	xor t0, t0, s4
 	and t0, t0, a6
-	slli t1, s4, 8
-	and t1, t1, a7
-	and s4, s4, t6
 	xor s4, s4, t0
-	xor s4, s4, t1
+	slli t0, t0, 8
+	xor s4, s4, t0
 	srli t0, s5, 4
 	and t0, t0, t4
 	slli t1, s5, 12
@@ -1106,12 +1081,11 @@ vg_aes_ctr32_bs:
 	xor s5, s5, t0
 	xor s5, s5, t1
 	srli t0, s5, 8
+	xor t0, t0, s5
 	and t0, t0, a6
-	slli t1, s5, 8
-	and t1, t1, a7
-	and s5, s5, t6
 	xor s5, s5, t0
-	xor s5, s5, t1
+	slli t0, t0, 8
+	xor s5, s5, t0
 	srli t0, s6, 4
 	and t0, t0, t4
 	slli t1, s6, 12
@@ -1120,12 +1094,11 @@ vg_aes_ctr32_bs:
 	xor s6, s6, t0
 	xor s6, s6, t1
 	srli t0, s6, 8
+	xor t0, t0, s6
 	and t0, t0, a6
-	slli t1, s6, 8
-	and t1, t1, a7
-	and s6, s6, t6
 	xor s6, s6, t0
-	xor s6, s6, t1
+	slli t0, t0, 8
+	xor s6, s6, t0
 	srli t0, s7, 4
 	and t0, t0, t4
 	slli t1, s7, 12
@@ -1134,12 +1107,11 @@ vg_aes_ctr32_bs:
 	xor s7, s7, t0
 	xor s7, s7, t1
 	srli t0, s7, 8
+	xor t0, t0, s7
 	and t0, t0, a6
-	slli t1, s7, 8
-	and t1, t1, a7
-	and s7, s7, t6
 	xor s7, s7, t0
-	xor s7, s7, t1
+	slli t0, t0, 8
+	xor s7, s7, t0
 	ld t0, 0(a1)
 	xor s0, s0, t0
 	ld t0, 8(a1)
@@ -2321,9 +2293,7 @@ vg_aes_ctr32_bs:
 	ld t3, 512(a5)
 	ld t4, 520(a5)
 	ld t5, 528(a5)
-	ld t6, 536(a5)
 	ld a6, 544(a5)
-	ld a7, 552(a5)
 	srli t0, s0, 4
 	and t0, t0, t4
 	slli t1, s0, 12
@@ -2332,12 +2302,11 @@ vg_aes_ctr32_bs:
 	xor s0, s0, t0
 	xor s0, s0, t1
 	srli t0, s0, 8
+	xor t0, t0, s0
 	and t0, t0, a6
-	slli t1, s0, 8
-	and t1, t1, a7
-	and s0, s0, t6
 	xor s0, s0, t0
-	xor s0, s0, t1
+	slli t0, t0, 8
+	xor s0, s0, t0
 	srli t0, s1, 4
 	and t0, t0, t4
 	slli t1, s1, 12
@@ -2346,12 +2315,11 @@ vg_aes_ctr32_bs:
 	xor s1, s1, t0
 	xor s1, s1, t1
 	srli t0, s1, 8
+	xor t0, t0, s1
 	and t0, t0, a6
-	slli t1, s1, 8
-	and t1, t1, a7
-	and s1, s1, t6
 	xor s1, s1, t0
-	xor s1, s1, t1
+	slli t0, t0, 8
+	xor s1, s1, t0
 	srli t0, s2, 4
 	and t0, t0, t4
 	slli t1, s2, 12
@@ -2360,12 +2328,11 @@ vg_aes_ctr32_bs:
 	xor s2, s2, t0
 	xor s2, s2, t1
 	srli t0, s2, 8
+	xor t0, t0, s2
 	and t0, t0, a6
-	slli t1, s2, 8
-	and t1, t1, a7
-	and s2, s2, t6
 	xor s2, s2, t0
-	xor s2, s2, t1
+	slli t0, t0, 8
+	xor s2, s2, t0
 	srli t0, s3, 4
 	and t0, t0, t4
 	slli t1, s3, 12
@@ -2374,12 +2341,11 @@ vg_aes_ctr32_bs:
 	xor s3, s3, t0
 	xor s3, s3, t1
 	srli t0, s3, 8
+	xor t0, t0, s3
 	and t0, t0, a6
-	slli t1, s3, 8
-	and t1, t1, a7
-	and s3, s3, t6
 	xor s3, s3, t0
-	xor s3, s3, t1
+	slli t0, t0, 8
+	xor s3, s3, t0
 	srli t0, s4, 4
 	and t0, t0, t4
 	slli t1, s4, 12
@@ -2388,12 +2354,11 @@ vg_aes_ctr32_bs:
 	xor s4, s4, t0
 	xor s4, s4, t1
 	srli t0, s4, 8
+	xor t0, t0, s4
 	and t0, t0, a6
-	slli t1, s4, 8
-	and t1, t1, a7
-	and s4, s4, t6
 	xor s4, s4, t0
-	xor s4, s4, t1
+	slli t0, t0, 8
+	xor s4, s4, t0
 	srli t0, s5, 4
 	and t0, t0, t4
 	slli t1, s5, 12
@@ -2402,12 +2367,11 @@ vg_aes_ctr32_bs:
 	xor s5, s5, t0
 	xor s5, s5, t1
 	srli t0, s5, 8
+	xor t0, t0, s5
 	and t0, t0, a6
-	slli t1, s5, 8
-	and t1, t1, a7
-	and s5, s5, t6
 	xor s5, s5, t0
-	xor s5, s5, t1
+	slli t0, t0, 8
+	xor s5, s5, t0
 	srli t0, s6, 4
 	and t0, t0, t4
 	slli t1, s6, 12
@@ -2416,12 +2380,11 @@ vg_aes_ctr32_bs:
 	xor s6, s6, t0
 	xor s6, s6, t1
 	srli t0, s6, 8
+	xor t0, t0, s6
 	and t0, t0, a6
-	slli t1, s6, 8
-	and t1, t1, a7
-	and s6, s6, t6
 	xor s6, s6, t0
-	xor s6, s6, t1
+	slli t0, t0, 8
+	xor s6, s6, t0
 	srli t0, s7, 4
 	and t0, t0, t4
 	slli t1, s7, 12
@@ -2430,12 +2393,11 @@ vg_aes_ctr32_bs:
 	xor s7, s7, t0
 	xor s7, s7, t1
 	srli t0, s7, 8
+	xor t0, t0, s7
 	and t0, t0, a6
-	slli t1, s7, 8
-	and t1, t1, a7
-	and s7, s7, t6
 	xor s7, s7, t0
-	xor s7, s7, t1
+	slli t0, t0, 8
+	xor s7, s7, t0
 	srli t4, s7, 16
 	slli t3, s7, 48
 	xor t3, t3, t4
@@ -2515,30 +2477,22 @@ vg_aes_ctr32_bs:
 	slli t2, s7, 32
 	xor t2, t2, t4
 	xor s5, s5, t2
-	addi s7, s5, 0
-	addi s6, s4, 0
-	addi s5, s3, 0
-	addi s4, s2, 0
-	addi s3, s1, 0
-	addi s2, s0, 0
-	addi s1, t1, 0
-	addi s0, t0, 0
-	ld t0, 0(a1)
-	xor s0, s0, t0
-	ld t0, 8(a1)
-	xor s1, s1, t0
-	ld t0, 16(a1)
-	xor s2, s2, t0
-	ld t0, 24(a1)
-	xor s3, s3, t0
-	ld t0, 32(a1)
-	xor s4, s4, t0
-	ld t0, 40(a1)
-	xor s5, s5, t0
-	ld t0, 48(a1)
-	xor s6, s6, t0
-	ld t0, 56(a1)
-	xor s7, s7, t0
+	ld t3, 56(a1)
+	ld t4, 48(a1)
+	xor s7, s5, t3
+	xor s6, s4, t4
+	ld t3, 40(a1)
+	ld t4, 32(a1)
+	xor s5, s3, t3
+	xor s4, s2, t4
+	ld t3, 24(a1)
+	ld t4, 16(a1)
+	xor s3, s1, t3
+	xor s2, s0, t4
+	ld t3, 8(a1)
+	ld t4, 0(a1)
+	xor s1, t1, t3
+	xor s0, t0, t4
 	sub t0, a1, ra
 	addi t0, t0, -1856
 	bnez t0, 213b
@@ -2688,9 +2642,7 @@ vg_aes_ctr32_bs:
 	ld t3, 512(a5)
 	ld t4, 520(a5)
 	ld t5, 528(a5)
-	ld t6, 536(a5)
 	ld a6, 544(a5)
-	ld a7, 552(a5)
 	srli t0, s0, 4
 	and t0, t0, t4
 	slli t1, s0, 12
@@ -2699,12 +2651,11 @@ vg_aes_ctr32_bs:
 	xor s0, s0, t0
 	xor s0, s0, t1
 	srli t0, s0, 8
+	xor t0, t0, s0
 	and t0, t0, a6
-	slli t1, s0, 8
-	and t1, t1, a7
-	and s0, s0, t6
 	xor s0, s0, t0
-	xor s0, s0, t1
+	slli t0, t0, 8
+	xor s0, s0, t0
 	srli t0, s1, 4
 	and t0, t0, t4
 	slli t1, s1, 12
@@ -2713,12 +2664,11 @@ vg_aes_ctr32_bs:
 	xor s1, s1, t0
 	xor s1, s1, t1
 	srli t0, s1, 8
+	xor t0, t0, s1
 	and t0, t0, a6
-	slli t1, s1, 8
-	and t1, t1, a7
-	and s1, s1, t6
 	xor s1, s1, t0
-	xor s1, s1, t1
+	slli t0, t0, 8
+	xor s1, s1, t0
 	srli t0, s2, 4
 	and t0, t0, t4
 	slli t1, s2, 12
@@ -2727,12 +2677,11 @@ vg_aes_ctr32_bs:
 	xor s2, s2, t0
 	xor s2, s2, t1
 	srli t0, s2, 8
+	xor t0, t0, s2
 	and t0, t0, a6
-	slli t1, s2, 8
-	and t1, t1, a7
-	and s2, s2, t6
 	xor s2, s2, t0
-	xor s2, s2, t1
+	slli t0, t0, 8
+	xor s2, s2, t0
 	srli t0, s3, 4
 	and t0, t0, t4
 	slli t1, s3, 12
@@ -2741,12 +2690,11 @@ vg_aes_ctr32_bs:
 	xor s3, s3, t0
 	xor s3, s3, t1
 	srli t0, s3, 8
+	xor t0, t0, s3
 	and t0, t0, a6
-	slli t1, s3, 8
-	and t1, t1, a7
-	and s3, s3, t6
 	xor s3, s3, t0
-	xor s3, s3, t1
+	slli t0, t0, 8
+	xor s3, s3, t0
 	srli t0, s4, 4
 	and t0, t0, t4
 	slli t1, s4, 12
@@ -2755,12 +2703,11 @@ vg_aes_ctr32_bs:
 	xor s4, s4, t0
 	xor s4, s4, t1
 	srli t0, s4, 8
+	xor t0, t0, s4
 	and t0, t0, a6
-	slli t1, s4, 8
-	and t1, t1, a7
-	and s4, s4, t6
 	xor s4, s4, t0
-	xor s4, s4, t1
+	slli t0, t0, 8
+	xor s4, s4, t0
 	srli t0, s5, 4
 	and t0, t0, t4
 	slli t1, s5, 12
@@ -2769,12 +2716,11 @@ vg_aes_ctr32_bs:
 	xor s5, s5, t0
 	xor s5, s5, t1
 	srli t0, s5, 8
+	xor t0, t0, s5
 	and t0, t0, a6
-	slli t1, s5, 8
-	and t1, t1, a7
-	and s5, s5, t6
 	xor s5, s5, t0
-	xor s5, s5, t1
+	slli t0, t0, 8
+	xor s5, s5, t0
 	srli t0, s6, 4
 	and t0, t0, t4
 	slli t1, s6, 12
@@ -2783,12 +2729,11 @@ vg_aes_ctr32_bs:
 	xor s6, s6, t0
 	xor s6, s6, t1
 	srli t0, s6, 8
+	xor t0, t0, s6
 	and t0, t0, a6
-	slli t1, s6, 8
-	and t1, t1, a7
-	and s6, s6, t6
 	xor s6, s6, t0
-	xor s6, s6, t1
+	slli t0, t0, 8
+	xor s6, s6, t0
 	srli t0, s7, 4
 	and t0, t0, t4
 	slli t1, s7, 12
@@ -2797,12 +2742,11 @@ vg_aes_ctr32_bs:
 	xor s7, s7, t0
 	xor s7, s7, t1
 	srli t0, s7, 8
+	xor t0, t0, s7
 	and t0, t0, a6
-	slli t1, s7, 8
-	and t1, t1, a7
-	and s7, s7, t6
 	xor s7, s7, t0
-	xor s7, s7, t1
+	slli t0, t0, 8
+	xor s7, s7, t0
 	ld t0, 0(a1)
 	xor s0, s0, t0
 	ld t0, 8(a1)
