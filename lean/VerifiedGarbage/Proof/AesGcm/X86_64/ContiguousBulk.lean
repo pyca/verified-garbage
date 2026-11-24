@@ -135,11 +135,16 @@ def BlocksResult (Ctx W : Addr) (R : Nat) (S D : Addr) (q : Nat) (s t : State) :
   blockAt t.mem (cbA W) = Nat.repeat inc32 q (blockAt s.mem (cbA W)) ∧
   blockAt t.mem (yA W) = ghashFrom (ctxH s.mem Ctx) (blockAt s.mem (yA W)) (blocksAt t.mem D q)
 
-theorem fused_bulk_ok {M : CtxMode} (T : BlocksTo.SealFn M) {Ctx W SP S D : Addr} {R n : Nat} {s : State}
+theorem bulk_ok {M : CtxMode} (kernel : Prog isa) {Ctx W SP S D : Addr} {R n : Nat} {s : State}
+    (op : ∀ {u : State}, SealRegions M Ctx W SP D S R n n u → u.gpr .rax = BitVec.ofNat 64 (n/16) →
+      InRegions (u.rd++u.wr) (SP+8#64) 8 → u.mem.readW (SP+8#64) 64 = S →
+      u.mem.readW (W+200#64) 64 = D → u.mem.readW (W+208#64) 64 = BitVec.ofNat 64 n →
+      WP isa kernel u fun t => (∀ z ∈ calleeSaved, t.gpr z = u.gpr z) ∧ t.rd=u.rd ∧ t.wr=u.wr ∧
+        Frame (obFrame (W+16#64) W SP D (n/16)) u.mem t.mem ∧ BlocksResult Ctx W R S D (n/16) u t)
     (h : SealRegions M Ctx W SP D S R n n s) (ob : ObPre M Ctx W SP R D n s)
     (src : s.mem.readW (SP+8#64) 64 = S) (slot : InRegions (s.rd++s.wr) (SP+8#64) 8)
     (apart : (⟨SP+8#64,8⟩ : Region).Disjoint ⟨W,2560⟩) :
-    WP isa (Contiguous.bulk (Contiguous.fused T.fn)) s fun t =>
+    WP isa (Contiguous.bulk kernel) s fun t =>
       ObPost Ctx W SP D n s t ∧ BlocksResult Ctx W R S D (n/16) s t := by
   let v := BitVec.ofNat 64 n
   let w := W+BitVec.ofNat 64 192
@@ -148,20 +153,28 @@ theorem fused_bulk_ok {M : CtxMode} (T : BlocksTo.SealFn M) {Ctx W SP S D : Addr
     (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
   have one {r : Region} (sep : r.Disjoint ⟨W,2560⟩) : ∀ b ∈ [(⟨w,8⟩ : Region)], r.Disjoint b := by
     intro b hb; obtain rfl := List.mem_singleton.mp hb; exact sep.sub_right ww
-  obtain ⟨-, -, -, eK, eC, eY, -, eH, -⟩ := w192_eqs h.lay ob v
+  obtain ⟨-, -, eN, eK, eC, eY, -, eH, -⟩ := w192_eqs h.lay ob v
   have eS : blocksAt (s.mem.writeW w v) S (n / 16) = blocksAt s.mem S (n / 16) :=
     blocksAt_frame writeFrame (one (h.sW.sub_left (Region.sub_prefix (by omega_arith)))) (by have := h.sWrap; omega_arith)
-  dsimp only [v,w] at eK eC eY eH eS
+  dsimp only [v,w] at eK eC eY eH eS eN
   refine bulk_core (Out := BlocksResult Ctx W R S D (n/16)) _ h.lay ob (fun u _ q mem rd wr env rounds dst => ?_) (fun hz u m => ?_) (fun u t z m o fr => ?_)
   · have ext := h.ext.keep rd wr (by rw [mem]; exact writeFrame) (one h.ext.cw)
     have input : SealRegions M Ctx W SP D S R n n u :=
       { h with env := env, rounds := rounds, data := h.data.of_eq rd wr, srcCov := by rw [rd,wr]; exact h.srcCov, ext := ext }
-    exact fused_ok T input (Nat.mul_div_le n 16) q (by rw [rd,wr]; exact slot)
-      (by rw [mem,writeFrame.readW (Region.contains_self _ _) (one apart) (by decide)]; exact src) dst
+    exact op input q (by rw [rd,wr]; exact slot)
+      (by rw [mem,writeFrame.readW (Region.contains_self _ _) (one apart) (by decide)]; exact src) dst (by rw [mem,eN,ob.len])
   · rw [BlocksResult,hz,m,eC,eY]; exact ⟨rfl,rfl,rfl⟩
   · obtain ⟨b,c,y⟩ := ob_after h.lay ob fr
     obtain ⟨ob,oc,oy⟩ := o
     simp only [ctxCiph,ctxH,m,eK,eC,eY,eH,eS] at ob oc oy
     exact ⟨b.trans ob,c.trans oc,by rw [y,b]; exact oy⟩
+
+theorem fused_bulk_ok {M : CtxMode} (T : BlocksTo.SealFn M) {Ctx W SP S D : Addr} {R n : Nat} {s : State}
+    (h : SealRegions M Ctx W SP D S R n n s) (ob : ObPre M Ctx W SP R D n s)
+    (src : s.mem.readW (SP+8#64) 64 = S) (slot : InRegions (s.rd++s.wr) (SP+8#64) 8)
+    (apart : (⟨SP+8#64,8⟩ : Region).Disjoint ⟨W,2560⟩) :
+    WP isa (Contiguous.bulk (Contiguous.fused T.fn)) s fun t =>
+      ObPost Ctx W SP D n s t ∧ BlocksResult Ctx W R S D (n/16) s t := by
+  exact bulk_ok _ (fun hu q read origin dest _ => fused_ok T hu (Nat.mul_div_le n 16) q read origin dest) h ob src slot apart
 
 end VG.Proof.AesGcm.X86_64.ContiguousSeal

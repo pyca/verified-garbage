@@ -185,4 +185,12 @@ theorem separate_ok {M : CtxMode} (ctr : Proof.Aes.X86_64.Ctr32ToImpl) (gh : Gha
     change _ = ghashFrom (blockAt s.mem (Ctx+240#64)) _ _
     simpa only [mx,hk,y] using hh.out
 
+theorem separate_bulk_ok {M : CtxMode} (ctr : Proof.Aes.X86_64.Ctr32ToImpl) (gh : GhashImpl) {Ctx W SP S D : Addr} {R n : Nat} {s : State}
+    (h : SealRegions M Ctx W SP D S R n n s) (ob : ObPre M Ctx W SP R D n s)
+    (src : s.mem.readW (SP+8#64) 64 = S) (slot : InRegions (s.rd++s.wr) (SP+8#64) 8)
+    (apart : (⟨SP+8#64,8⟩ : Region).Disjoint ⟨W,2560⟩) :
+    WP isa (Contiguous.bulk (Contiguous.separate ⟨ctr.callee.name,ctr.callee.code⟩ gh.fn)) s fun t =>
+      ObPost Ctx W SP D n s t ∧ BlocksResult Ctx W R S D (n/16) s t := by
+  exact bulk_ok _ (separate_ok ctr gh) h ob src slot apart
+
 end VG.Proof.AesGcm.X86_64.ContiguousSeal
