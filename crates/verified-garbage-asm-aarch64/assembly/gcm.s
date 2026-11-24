@@ -2552,27 +2552,15 @@ vg_aes_gcm_seal_contiguous_with_powers_aes_sha3:
 	subs x11, x5, x9
 	csel x10, x9, x10, hs
 	cbz x10, 20f
-	sub sp, sp, #48
-	ldr x9, [sp, #48]
-	ldr x10, [sp, #56]
-	str x7, [sp, #0]
-	str x9, [sp, #8]
-	str x10, [sp, #16]
-	str x6, [sp, #24]
-	str x9, [sp, #32]
-	add x6, sp, #24
-	movz x7, #1, lsl #0
 	sub sp, sp, #1056
 	add x16, sp, #0
 	ldr x17, [sp, #1056]
 	str x17, [x16, #0]
 	ldr x17, [sp, #1064]
 	str x17, [x16, #8]
-	ldr x17, [sp, #1072]
-	str x17, [x16, #16]
 	add x17, sp, #32
-	str x17, [x16, #24]
-	ldr x9, [sp, #24]
+	str x17, [x16, #16]
+	ldr x9, [sp, #16]
 	str x20, [x9, #136]
 	str x21, [x9, #144]
 	str x22, [x9, #152]
@@ -2596,13 +2584,10 @@ vg_aes_gcm_seal_contiguous_with_powers_aes_sha3:
 	add x24, x3, #0
 	add x26, x3, #0
 	movz x27, #0, lsl #0
-	str x6, [x19, #336]
-	str x7, [x19, #344]
+	str x7, [x19, #336]
 	ldr x9, [sp, #0]
-	str x9, [x19, #232]
-	ldr x9, [sp, #8]
 	str x9, [x19, #240]
-	ldr x10, [sp, #16]
+	ldr x10, [sp, #8]
 	str x10, [x19, #248]
 	add x28, x10, #0
 	sub x9, x24, #12
@@ -2726,7 +2711,6 @@ vg_aes_gcm_seal_contiguous_with_powers_aes_sha3:
 	str x9, [x20, #24]
 	ldr x23, [x19, #216]
 	ldr x24, [x19, #224]
-	movz x25, #0, lsl #0
 	lsr x3, x24, #4
 	add x2, x23, #0
 	add x0, x21, #240
@@ -2735,194 +2719,102 @@ vg_aes_gcm_seal_contiguous_with_powers_aes_sha3:
 	lsl x9, x3, #4
 	add x23, x23, x9
 	sub x24, x24, x9
+	cbz x3, 219f
 	bl {vg_ghash_aes}
-	add x11, x20, #32
-	add x12, x23, #0
-	add x13, x24, #0
-	cbz x13, 219f
-	lsr x14, x13, #2
-	cbz x14, 221f
-	lsr x14, x13, #3
-	cbz x14, 223f
-225:
-	ldr x14, [x12, #0]
-	str x14, [x11, #0]
-	add x12, x12, #8
-	add x11, x11, #8
-	sub x13, x13, #8
-	lsr x14, x13, #3
-	cbnz x14, 225b
-	b 224f
-223:
-224:
-	lsr x14, x13, #2
-	cbz x14, 226f
-	ldr w14, [x12, #0]
-	str w14, [x11, #0]
-	add x12, x12, #4
-	add x11, x11, #4
-	sub x13, x13, #4
-	b 227f
-226:
-227:
-	cbz x13, 228f
-230:
-	ldrb w14, [x12, #0]
-	strb w14, [x11, #0]
-	add x12, x12, #1
-	add x11, x11, #1
-	sub x13, x13, #1
-	cbnz x13, 230b
-	b 229f
-228:
-229:
-	b 222f
-221:
-231:
-	ldrb w14, [x12, #0]
-	strb w14, [x11, #0]
-	add x12, x12, #1
-	add x11, x11, #1
-	sub x13, x13, #1
-	cbnz x13, 231b
-222:
 	b 220f
 219:
 220:
-	ldr x25, [x19, #224]
-	movz x9, #15, lsl #0
-	and x25, x25, x9
-	add x12, x20, #32
+	cbz x24, 221f
+	add x25, x24, #0
+	add x12, x23, #0
 	movz x9, #0, lsl #0
 	str x9, [x19, #96]
 	str x9, [x19, #104]
 	add x11, x19, #96
 	add x13, x25, #0
-	cbz x13, 232f
+	cbz x13, 223f
 	lsr x14, x13, #2
-	cbz x14, 234f
+	cbz x14, 225f
 	lsr x14, x13, #3
-	cbz x14, 236f
-238:
+	cbz x14, 227f
+229:
 	ldr x14, [x12, #0]
 	str x14, [x11, #0]
 	add x12, x12, #8
 	add x11, x11, #8
 	sub x13, x13, #8
 	lsr x14, x13, #3
-	cbnz x14, 238b
-	b 237f
-236:
-237:
+	cbnz x14, 229b
+	b 228f
+227:
+228:
 	lsr x14, x13, #2
-	cbz x14, 239f
+	cbz x14, 230f
 	ldr w14, [x12, #0]
 	str w14, [x11, #0]
 	add x12, x12, #4
 	add x11, x11, #4
 	sub x13, x13, #4
-	b 240f
-239:
-240:
-	cbz x13, 241f
-243:
-	ldrb w14, [x12, #0]
-	strb w14, [x11, #0]
-	add x12, x12, #1
-	add x11, x11, #1
-	sub x13, x13, #1
-	cbnz x13, 243b
-	b 242f
-241:
-242:
-	b 235f
+	b 231f
+230:
+231:
+	cbz x13, 232f
 234:
-244:
 	ldrb w14, [x12, #0]
 	strb w14, [x11, #0]
 	add x12, x12, #1
 	add x11, x11, #1
 	sub x13, x13, #1
-	cbnz x13, 244b
-235:
+	cbnz x13, 234b
 	b 233f
 232:
 233:
-	cbz x25, 245f
+	b 226f
+225:
+235:
+	ldrb w14, [x12, #0]
+	strb w14, [x11, #0]
+	add x12, x12, #1
+	add x11, x11, #1
+	sub x13, x13, #1
+	cbnz x13, 235b
+226:
+	b 224f
+223:
+224:
+	cbz x25, 236f
 	movz x3, #1, lsl #0
-	b 246f
-245:
+	b 237f
+236:
 	movz x3, #0, lsl #0
-246:
+237:
 	add x0, x21, #240
 	add x1, x20, #16
 	add x4, x19, #512
 	add x2, x19, #96
 	bl {vg_ghash_aes}
-	ldr x27, [x19, #336]
-	ldr x28, [x19, #344]
-	ldr x26, [x19, #232]
+	b 222f
+221:
+222:
+	ldr x23, [x19, #232]
+	ldr x24, [x19, #240]
+	ldr x26, [x19, #336]
 	str x26, [x19, #352]
 	movz x25, #0, lsl #0
-	cbz x28, 247f
-249:
-	ldr x23, [x27, #0]
-	ldr x24, [x27, #8]
-	add x27, x27, #16
-	cbz x25, 250f
-	movz x9, #16, lsl #0
-	sub x9, x9, x25
-	lsr x10, x24, #4
-	cbnz x10, 252f
-	sub x11, x9, x24
-	lsr x11, x11, #63
-	cbz x11, 254f
-	add x10, x9, #0
-	b 255f
-254:
-	add x10, x24, #0
-255:
-	b 253f
-252:
-	add x10, x9, #0
-253:
-	add x11, x20, #64
-	add x11, x11, x25
-	add x25, x25, x10
-	movz x9, #15, lsl #0
-	and x25, x25, x9
-	cbz x10, 256f
-258:
-	ldrb w13, [x23, #0]
-	ldrb w14, [x11, #0]
-	eor w13, w13, w14
-	strb w13, [x26, #0]
-	add x23, x23, #1
-	add x11, x11, #1
-	add x26, x26, #1
-	sub x24, x24, #1
-	sub x10, x10, #1
-	cbnz x10, 258b
-	b 257f
-256:
-257:
-	b 251f
-250:
-251:
 	add x9, x24, #256
 	lsr x9, x9, #10
-	cbz x9, 259f
+	cbz x9, 238f
 	ldr x2, [x19, #352]
 	sub x3, x26, x2
 	lsr x3, x3, #4
-	cbz x3, 261f
+	cbz x3, 240f
 	add x0, x21, #240
 	add x1, x20, #16
 	add x4, x19, #512
 	bl {vg_ghash_aes}
-	b 262f
-261:
-262:
+	b 241f
+240:
+241:
 	add x15, x23, #0
 	add x23, x26, #0
 	add x26, x24, #0
@@ -3057,10 +2949,10 @@ vg_aes_gcm_seal_contiguous_with_powers_aes_sha3:
 	movz x10, #127, lsl #0
 	and x24, x24, x10
 	str x26, [x19, #352]
-	b 260f
-259:
-260:
-	cbz x24, 263f
+	b 239f
+238:
+239:
+	cbz x24, 242f
 	lsr x4, x24, #4
 	add x3, x23, #0
 	add x0, x21, #0
@@ -3072,17 +2964,21 @@ vg_aes_gcm_seal_contiguous_with_powers_aes_sha3:
 	sub x24, x24, x9
 	add x6, x26, #0
 	add x26, x26, x9
+	cbz x4, 244f
 	bl {vg_aes_ctr32_to_aes}
-	cbz x24, 265f
-	cbz x24, 267f
+	b 245f
+244:
+245:
+	cbz x24, 246f
+	cbz x24, 248f
 	movz x4, #1, lsl #0
 	movz x9, #0, lsl #0
 	str x9, [x20, #64]
 	str x9, [x20, #72]
-	b 268f
-267:
+	b 249f
+248:
 	movz x4, #0, lsl #0
-268:
+249:
 	add x0, x21, #0
 	add x1, x22, #0
 	add x2, x20, #48
@@ -3092,8 +2988,12 @@ vg_aes_gcm_seal_contiguous_with_powers_aes_sha3:
 	add x10, x24, #0
 	add x25, x24, #0
 	add x11, x20, #64
-	cbz x10, 269f
-271:
+	lsr x12, x24, #3
+	cbnz x12, 250f
+	lsr x12, x24, #2
+	cbnz x12, 252f
+	cbz x10, 254f
+256:
 	ldrb w13, [x23, #0]
 	ldrb w14, [x11, #0]
 	eor w13, w13, w14
@@ -3103,21 +3003,52 @@ vg_aes_gcm_seal_contiguous_with_powers_aes_sha3:
 	add x26, x26, #1
 	sub x24, x24, #1
 	sub x10, x10, #1
-	cbnz x10, 271b
-	b 270f
-269:
-270:
-	b 266f
-265:
-266:
-	b 264f
-263:
-264:
-	sub x28, x28, #1
-	cbnz x28, 249b
-	b 248f
+	cbnz x10, 256b
+	b 255f
+254:
+255:
+	b 253f
+252:
+	sub x12, x24, #4
+	add x0, x23, x12
+	add x1, x11, x12
+	add x2, x26, x12
+	ldr w13, [x23, #0]
+	ldr w14, [x11, #0]
+	eor w13, w13, w14
+	ldr w14, [x0, #0]
+	ldr w15, [x1, #0]
+	eor w14, w14, w15
+	str w13, [x26, #0]
+	str w14, [x2, #0]
+	add x23, x23, x24
+	add x26, x26, x24
+	movz x24, #0, lsl #0
+253:
+	b 251f
+250:
+	sub x12, x24, #8
+	add x0, x23, x12
+	add x1, x11, x12
+	add x2, x26, x12
+	ldr x13, [x23, #0]
+	ldr x14, [x11, #0]
+	eor x13, x13, x14
+	ldr x14, [x0, #0]
+	ldr x15, [x1, #0]
+	eor x14, x14, x15
+	str x13, [x26, #0]
+	str x14, [x2, #0]
+	add x23, x23, x24
+	add x26, x26, x24
+	movz x24, #0, lsl #0
+251:
+	b 247f
+246:
 247:
-248:
+	b 243f
+242:
+243:
 	ldr x23, [x19, #352]
 	sub x24, x26, x23
 	lsr x3, x24, #4
@@ -3128,67 +3059,260 @@ vg_aes_gcm_seal_contiguous_with_powers_aes_sha3:
 	lsl x9, x3, #4
 	add x23, x23, x9
 	sub x24, x24, x9
+	cbz x3, 257f
 	bl {vg_ghash_aes}
-	add x11, x20, #32
+	b 258f
+257:
+258:
+	cbz x24, 259f
+	add x25, x24, #0
 	add x12, x23, #0
-	add x13, x24, #0
-	cbz x13, 272f
+	movz x9, #0, lsl #0
+	str x9, [x19, #96]
+	str x9, [x19, #104]
+	add x11, x19, #96
+	add x13, x25, #0
+	cbz x13, 261f
 	lsr x14, x13, #2
-	cbz x14, 274f
+	cbz x14, 263f
 	lsr x14, x13, #3
-	cbz x14, 276f
-278:
+	cbz x14, 265f
+267:
 	ldr x14, [x12, #0]
 	str x14, [x11, #0]
 	add x12, x12, #8
 	add x11, x11, #8
 	sub x13, x13, #8
 	lsr x14, x13, #3
-	cbnz x14, 278b
-	b 277f
-276:
-277:
+	cbnz x14, 267b
+	b 266f
+265:
+266:
 	lsr x14, x13, #2
-	cbz x14, 279f
+	cbz x14, 268f
 	ldr w14, [x12, #0]
 	str w14, [x11, #0]
 	add x12, x12, #4
 	add x11, x11, #4
 	sub x13, x13, #4
-	b 280f
-279:
-280:
-	cbz x13, 281f
-283:
+	b 269f
+268:
+269:
+	cbz x13, 270f
+272:
 	ldrb w14, [x12, #0]
 	strb w14, [x11, #0]
 	add x12, x12, #1
 	add x11, x11, #1
 	sub x13, x13, #1
-	cbnz x13, 283b
-	b 282f
-281:
-282:
+	cbnz x13, 272b
+	b 271f
+270:
+271:
+	b 264f
+263:
+273:
+	ldrb w14, [x12, #0]
+	strb w14, [x11, #0]
+	add x12, x12, #1
+	add x11, x11, #1
+	sub x13, x13, #1
+	cbnz x13, 273b
+264:
+	b 262f
+261:
+262:
+	cbz x25, 274f
+	movz x3, #1, lsl #0
 	b 275f
 274:
-284:
-	ldrb w14, [x12, #0]
-	strb w14, [x11, #0]
-	add x12, x12, #1
-	add x11, x11, #1
-	sub x13, x13, #1
-	cbnz x13, 284b
+	movz x3, #0, lsl #0
 275:
-	b 273f
-272:
-273:
-	add x25, x24, #0
-	add x12, x20, #32
+	add x0, x21, #240
+	add x1, x20, #16
+	add x4, x19, #512
+	add x2, x19, #96
+	bl {vg_ghash_aes}
+	b 260f
+259:
+260:
+	ldr x26, [x19, #224]
+	ldr x27, [x19, #240]
+	lsl x9, x26, #3
+	rev x9, x9
+	str x9, [x19, #96]
+	lsl x9, x27, #3
+	rev x9, x9
+	str x9, [x19, #104]
+	movz x3, #1, lsl #0
+	add x0, x21, #240
+	add x1, x20, #16
+	add x4, x19, #512
+	add x2, x19, #96
+	bl {vg_ghash_aes}
+	add x0, x21, #0
+	add x1, x22, #0
+	add x2, x20, #0
+	add x3, x20, #16
+	movz x4, #1, lsl #0
+	add x5, x19, #512
+	ldr x6, [x19, #248]
+	bl {vg_aes_ctr32_to_aes}
+	ldr x20, [x19, #136]
+	ldr x21, [x19, #144]
+	ldr x22, [x19, #152]
+	ldr x23, [x19, #160]
+	ldr x24, [x19, #168]
+	ldr x25, [x19, #176]
+	ldr x26, [x19, #184]
+	ldr x27, [x19, #192]
+	ldr x28, [x19, #200]
+	ldr x30, [x19, #208]
+	ldr x19, [x19, #128]
+	add sp, sp, #1056
+	movz x1, #0, lsl #0
+	movz x2, #0, lsl #0
+	movz x3, #0, lsl #0
+	movz x4, #0, lsl #0
+	movz x5, #0, lsl #0
+	movz x6, #0, lsl #0
+	movz x7, #0, lsl #0
+	movz x8, #0, lsl #0
+	movz x9, #0, lsl #0
+	movz x10, #0, lsl #0
+	movz x11, #0, lsl #0
+	movz x12, #0, lsl #0
+	movz x13, #0, lsl #0
+	movz x14, #0, lsl #0
+	movz x15, #0, lsl #0
+	movz x16, #0, lsl #0
+	movz x17, #0, lsl #0
+	movi v0.2d, #0
+	movi v1.2d, #0
+	movi v2.2d, #0
+	movi v3.2d, #0
+	movi v4.2d, #0
+	movi v5.2d, #0
+	movi v6.2d, #0
+	movi v7.2d, #0
+	movi v16.2d, #0
+	movi v17.2d, #0
+	movi v18.2d, #0
+	movi v19.2d, #0
+	movi v20.2d, #0
+	movi v21.2d, #0
+	movi v22.2d, #0
+	movi v23.2d, #0
+	movi v24.2d, #0
+	movi v25.2d, #0
+	movi v26.2d, #0
+	movi v27.2d, #0
+	movi v28.2d, #0
+	movi v29.2d, #0
+	movi v30.2d, #0
+	movi v31.2d, #0
+	tst x1, x1
+	movz x0, #0, lsl #0
+	sub sp, sp, #1056
+	movi v31.2d, #0
+	add x9, sp, #0
+	movz x10, #16, lsl #0
+276:
+	str q31, [x9, #0]
+	str q31, [x9, #16]
+	str q31, [x9, #32]
+	str q31, [x9, #48]
+	add x9, x9, #64
+	sub x10, x10, #1
+	cbnz x10, 276b
+	str q31, [x9, #0]
+	str q31, [x9, #16]
+	add sp, sp, #1056
+	b 21f
+20:
+	ldr x10, [sp, #0]
+	add x10, x10, #31
+	lsr x11, x10, #7
+	cbz x11, 277f
+	lsr x11, x10, #8
+	cbz x11, 279f
+	add x11, x10, #225
+	lsr x11, x11, #10
+	cbz x11, 281f
+	sub sp, sp, #1056
+	add x16, sp, #0
+	ldr x17, [sp, #1056]
+	str x17, [x16, #0]
+	ldr x17, [sp, #1064]
+	str x17, [x16, #8]
+	ldr x17, [sp, #1072]
+	str x17, [x16, #16]
+	add x17, sp, #32
+	str x17, [x16, #24]
+	ldr x9, [sp, #24]
+	str x20, [x9, #136]
+	str x21, [x9, #144]
+	str x22, [x9, #152]
+	str x23, [x9, #160]
+	str x24, [x9, #168]
+	str x25, [x9, #176]
+	str x26, [x9, #184]
+	str x27, [x9, #192]
+	str x28, [x9, #200]
+	str x30, [x9, #208]
+	str x19, [x9, #128]
+	add x19, x9, #0
+	add x20, x19, #16
+	add x21, x0, #0
+	add x22, x1, #0
+	str x5, [x19, #224]
+	str x6, [x19, #232]
+	str x7, [x19, #320]
+	ldr x7, [sp, #0]
+	str x7, [x19, #240]
+	add x23, x2, #0
+	ldr x28, [sp, #8]
+	ldr x8, [sp, #16]
+	ldr w9, [x23, #0]
+	ldr w10, [x23, #4]
+	ldr w11, [x23, #8]
+	movz w12, #256, lsl #16
+	str w9, [x20, #0]
+	str w10, [x20, #4]
+	str w11, [x20, #8]
+	str w12, [x20, #12]
+	add x25, x5, #0
+	add x27, x4, #0
+	add x23, x6, #0
+	add x26, x7, #0
+	ldr w9, [x20, #0]
+	ldr w10, [x20, #4]
+	ldr w11, [x20, #8]
+	ldr w12, [x20, #12]
+	rev w12, w12
+	add w12, w12, #1
+	rev w12, w12
+	str w9, [x20, #48]
+	str w10, [x20, #52]
+	str w11, [x20, #56]
+	str w12, [x20, #60]
+	movz x9, #0, lsl #0
+	str x9, [x20, #16]
+	str x9, [x20, #24]
+	ldr q16, [x8, #16]
+	ext v24.16b, v16.16b, v16.16b, #8
+	movz x5, #49664, lsl #48
+	dup v1.2d, x5
+	str q16, [x19, #288]
+	str q24, [x19, #304]
+	movi v0.2d, #0
+	add x13, x25, #0
+	add x12, x27, #0
+	cbz x13, 283f
 	movz x9, #0, lsl #0
 	str x9, [x19, #96]
 	str x9, [x19, #104]
 	add x11, x19, #96
-	add x13, x25, #0
 	cbz x13, 285f
 	lsr x14, x13, #2
 	cbz x14, 287f
@@ -3239,47 +3363,550 @@ vg_aes_gcm_seal_contiguous_with_powers_aes_sha3:
 	b 286f
 285:
 286:
-	cbz x25, 298f
-	movz x3, #1, lsl #0
+	ldr q6, [x19, #96]
+	rev64 v6.16b, v6.16b
+	eor v6.16b, v6.16b, v0.16b
+	movi v3.2d, #0
+	movi v4.2d, #0
+	movi v5.2d, #0
+	pmull v7.1q, v6.1d, v24.1d
+	eor v5.16b, v5.16b, v7.16b
+	pmull2 v7.1q, v6.2d, v24.2d
+	eor v3.16b, v3.16b, v7.16b
+	pmull v7.1q, v6.1d, v16.1d
+	eor v4.16b, v4.16b, v7.16b
+	pmull2 v7.1q, v6.2d, v16.2d
+	eor v4.16b, v4.16b, v7.16b
+	pmull v7.1q, v3.1d, v1.1d
+	ext v3.16b, v3.16b, v3.16b, #8
+	eor v4.16b, v4.16b, v3.16b
+	eor v4.16b, v4.16b, v7.16b
+	pmull v7.1q, v4.1d, v1.1d
+	ext v5.16b, v5.16b, v5.16b, #8
+	eor v5.16b, v5.16b, v4.16b
+	ext v7.16b, v7.16b, v7.16b, #8
+	eor v0.16b, v5.16b, v7.16b
+	b 284f
+283:
+284:
+	rev64 v0.16b, v0.16b
+	str q0, [x20, #16]
+	lsr x9, x26, #7
+	cbz x9, 298f
+	ldr x5, [sp, #16]
+	ldr q16, [x5, #16]
+	ext v24.16b, v16.16b, v16.16b, #8
+	ldr q17, [x5, #0]
+	ext v25.16b, v17.16b, v17.16b, #8
+	ldr q18, [x5, #48]
+	ext v26.16b, v18.16b, v18.16b, #8
+	ldr q19, [x5, #32]
+	ext v27.16b, v19.16b, v19.16b, #8
+	ldr q20, [x5, #80]
+	ext v28.16b, v20.16b, v20.16b, #8
+	ldr q21, [x5, #64]
+	ext v29.16b, v21.16b, v21.16b, #8
+	ldr q22, [x5, #112]
+	ext v30.16b, v22.16b, v22.16b, #8
+	ldr q23, [x5, #96]
+	ext v31.16b, v23.16b, v23.16b, #8
+	str q24, [x19, #512]
+	str q25, [x19, #528]
+	str q26, [x19, #544]
+	str q27, [x19, #560]
+	str q28, [x19, #576]
+	str q29, [x19, #592]
+	str q30, [x19, #608]
+	str q31, [x19, #624]
+	eor v2.16b, v30.16b, v22.16b
+	eor v3.16b, v29.16b, v21.16b
+	ext v4.16b, v2.16b, v3.16b, #8
+	str q4, [x19, #640]
+	eor v2.16b, v28.16b, v20.16b
+	eor v3.16b, v27.16b, v19.16b
+	ext v4.16b, v2.16b, v3.16b, #8
+	str q4, [x19, #656]
+	eor v2.16b, v26.16b, v18.16b
+	eor v3.16b, v25.16b, v17.16b
+	ext v4.16b, v2.16b, v3.16b, #8
+	str q4, [x19, #672]
+	eor v2.16b, v24.16b, v16.16b
+	eor v3.16b, v31.16b, v23.16b
+	ext v4.16b, v2.16b, v3.16b, #8
+	str q4, [x19, #688]
+	add x15, x23, #0
+	ldr x23, [x19, #320]
+	bl {vg_aes_gcm_seal_batches_aes_sha3}
+	ldr x23, [x19, #232]
 	b 299f
 298:
-	movz x3, #0, lsl #0
 299:
-	add x0, x21, #240
-	add x1, x20, #16
-	add x4, x19, #512
-	add x2, x19, #96
-	bl {vg_ghash_aes}
-	ldr x26, [x19, #224]
-	ldr x27, [x19, #240]
-	lsl x9, x26, #3
-	rev x9, x9
-	str x9, [x19, #96]
-	lsl x9, x27, #3
-	rev x9, x9
-	str x9, [x19, #104]
-	movz x3, #1, lsl #0
-	add x0, x21, #240
-	add x1, x20, #16
-	add x4, x19, #512
-	add x2, x19, #96
-	bl {vg_ghash_aes}
-	ldr x9, [x20, #16]
-	str x9, [x19, #0]
-	ldr x9, [x20, #24]
-	str x9, [x19, #8]
+	ldr x27, [x19, #320]
+	lsr x9, x26, #7
+	lsl x9, x9, #7
+	add x23, x23, x9
+	add x27, x27, x9
+	sub x24, x26, x9
+	add x26, x27, #0
+	movz x25, #0, lsl #0
+	lsr x4, x24, #4
+	add x3, x23, #0
 	add x0, x21, #0
 	add x1, x22, #0
-	add x2, x20, #0
-	add x3, x19, #0
-	movz x4, #1, lsl #0
+	add x2, x20, #48
 	add x5, x19, #512
+	lsl x9, x4, #4
+	add x23, x23, x9
+	sub x24, x24, x9
+	add x6, x26, #0
+	add x26, x26, x9
+	cbz x4, 2100f
+	bl {vg_aes_ctr32_to_aes}
+	b 2101f
+2100:
+2101:
+	cbz x24, 2102f
+	cbz x24, 2104f
+	movz x4, #1, lsl #0
+	movz x9, #0, lsl #0
+	str x9, [x20, #64]
+	str x9, [x20, #72]
+	b 2105f
+2104:
+	movz x4, #0, lsl #0
+2105:
+	add x0, x21, #0
+	add x1, x22, #0
+	add x2, x20, #48
+	add x5, x19, #512
+	add x3, x20, #64
 	bl {vg_aes_ctr32_aes}
-	ldr x28, [x19, #248]
-	ldr x9, [x19, #0]
-	str x9, [x28, #0]
-	ldr x9, [x19, #8]
-	str x9, [x28, #8]
+	add x10, x24, #0
+	add x25, x24, #0
+	add x11, x20, #64
+	lsr x12, x24, #3
+	cbnz x12, 2106f
+	lsr x12, x24, #2
+	cbnz x12, 2108f
+	cbz x10, 2110f
+2112:
+	ldrb w13, [x23, #0]
+	ldrb w14, [x11, #0]
+	eor w13, w13, w14
+	strb w13, [x26, #0]
+	add x23, x23, #1
+	add x11, x11, #1
+	add x26, x26, #1
+	sub x24, x24, #1
+	sub x10, x10, #1
+	cbnz x10, 2112b
+	b 2111f
+2110:
+2111:
+	b 2109f
+2108:
+	sub x12, x24, #4
+	add x0, x23, x12
+	add x1, x11, x12
+	add x2, x26, x12
+	ldr w13, [x23, #0]
+	ldr w14, [x11, #0]
+	eor w13, w13, w14
+	ldr w14, [x0, #0]
+	ldr w15, [x1, #0]
+	eor w14, w14, w15
+	str w13, [x26, #0]
+	str w14, [x2, #0]
+	add x23, x23, x24
+	add x26, x26, x24
+	movz x24, #0, lsl #0
+2109:
+	b 2107f
+2106:
+	sub x12, x24, #8
+	add x0, x23, x12
+	add x1, x11, x12
+	add x2, x26, x12
+	ldr x13, [x23, #0]
+	ldr x14, [x11, #0]
+	eor x13, x13, x14
+	ldr x14, [x0, #0]
+	ldr x15, [x1, #0]
+	eor x14, x14, x15
+	str x13, [x26, #0]
+	str x14, [x2, #0]
+	add x23, x23, x24
+	add x26, x26, x24
+	movz x24, #0, lsl #0
+2107:
+	b 2103f
+2102:
+2103:
+	ldr x26, [x19, #240]
+	add x23, x27, #0
+	lsr x9, x26, #7
+	lsl x9, x9, #7
+	sub x24, x26, x9
+	lsr x3, x24, #4
+	add x2, x23, #0
+	add x0, x21, #240
+	add x1, x20, #16
+	add x4, x19, #512
+	lsl x9, x3, #4
+	add x23, x23, x9
+	sub x24, x24, x9
+	cbz x3, 2113f
+	lsr x9, x3, #1
+	cbz x9, 2115f
+	ldr x5, [sp, #16]
+	bl {vg_ghash_with_powers_aes}
+	b 2116f
+2115:
+	bl {vg_ghash_aes}
+2116:
+	b 2114f
+2113:
+2114:
+	ldr q16, [x19, #288]
+	ldr q24, [x19, #304]
+	movz x5, #49664, lsl #48
+	dup v1.2d, x5
+	ldr q0, [x20, #16]
+	rev64 v0.16b, v0.16b
+	add x13, x24, #0
+	add x12, x23, #0
+	cbz x13, 2117f
+	lsr x9, x26, #4
+	cbz x9, 2119f
+	movz x9, #16, lsl #0
+	sub x9, x9, x13
+	dup v6.16b, w9
+	adrp x11, {VG_GCM_TAIL_IDX}
+	add x11, x11, {VG_GCM_TAIL_IDX}
+	ldr q7, [x11, #16]
+	add v7.16b, v7.16b, v6.16b
+	sub x11, x12, x9
+	ldr q6, [x11, #0]
+	tbl v6.16b, {v6.16b}, v7.16b
+	eor v6.16b, v6.16b, v0.16b
+	movi v3.2d, #0
+	movi v4.2d, #0
+	movi v5.2d, #0
+	pmull v7.1q, v6.1d, v24.1d
+	eor v5.16b, v5.16b, v7.16b
+	pmull2 v7.1q, v6.2d, v24.2d
+	eor v3.16b, v3.16b, v7.16b
+	pmull v7.1q, v6.1d, v16.1d
+	eor v4.16b, v4.16b, v7.16b
+	pmull2 v7.1q, v6.2d, v16.2d
+	eor v4.16b, v4.16b, v7.16b
+	pmull v7.1q, v3.1d, v1.1d
+	ext v3.16b, v3.16b, v3.16b, #8
+	eor v4.16b, v4.16b, v3.16b
+	eor v4.16b, v4.16b, v7.16b
+	pmull v7.1q, v4.1d, v1.1d
+	ext v5.16b, v5.16b, v5.16b, #8
+	eor v5.16b, v5.16b, v4.16b
+	ext v7.16b, v7.16b, v7.16b, #8
+	eor v0.16b, v5.16b, v7.16b
+	b 2120f
+2119:
+	cbz x13, 2121f
+	movz x9, #0, lsl #0
+	str x9, [x19, #96]
+	str x9, [x19, #104]
+	add x11, x19, #96
+	cbz x13, 2123f
+	lsr x14, x13, #2
+	cbz x14, 2125f
+	lsr x14, x13, #3
+	cbz x14, 2127f
+2129:
+	ldr x14, [x12, #0]
+	str x14, [x11, #0]
+	add x12, x12, #8
+	add x11, x11, #8
+	sub x13, x13, #8
+	lsr x14, x13, #3
+	cbnz x14, 2129b
+	b 2128f
+2127:
+2128:
+	lsr x14, x13, #2
+	cbz x14, 2130f
+	ldr w14, [x12, #0]
+	str w14, [x11, #0]
+	add x12, x12, #4
+	add x11, x11, #4
+	sub x13, x13, #4
+	b 2131f
+2130:
+2131:
+	cbz x13, 2132f
+2134:
+	ldrb w14, [x12, #0]
+	strb w14, [x11, #0]
+	add x12, x12, #1
+	add x11, x11, #1
+	sub x13, x13, #1
+	cbnz x13, 2134b
+	b 2133f
+2132:
+2133:
+	b 2126f
+2125:
+2135:
+	ldrb w14, [x12, #0]
+	strb w14, [x11, #0]
+	add x12, x12, #1
+	add x11, x11, #1
+	sub x13, x13, #1
+	cbnz x13, 2135b
+2126:
+	b 2124f
+2123:
+2124:
+	ldr q6, [x19, #96]
+	rev64 v6.16b, v6.16b
+	eor v6.16b, v6.16b, v0.16b
+	movi v3.2d, #0
+	movi v4.2d, #0
+	movi v5.2d, #0
+	pmull v7.1q, v6.1d, v24.1d
+	eor v5.16b, v5.16b, v7.16b
+	pmull2 v7.1q, v6.2d, v24.2d
+	eor v3.16b, v3.16b, v7.16b
+	pmull v7.1q, v6.1d, v16.1d
+	eor v4.16b, v4.16b, v7.16b
+	pmull2 v7.1q, v6.2d, v16.2d
+	eor v4.16b, v4.16b, v7.16b
+	pmull v7.1q, v3.1d, v1.1d
+	ext v3.16b, v3.16b, v3.16b, #8
+	eor v4.16b, v4.16b, v3.16b
+	eor v4.16b, v4.16b, v7.16b
+	pmull v7.1q, v4.1d, v1.1d
+	ext v5.16b, v5.16b, v5.16b, #8
+	eor v5.16b, v5.16b, v4.16b
+	ext v7.16b, v7.16b, v7.16b, #8
+	eor v0.16b, v5.16b, v7.16b
+	b 2122f
+2121:
+2122:
+2120:
+	b 2118f
+2117:
+2118:
+	sub x13, x22, #10
+	sub x14, x22, #12
+	cbz x13, 2136f
+	cbz x14, 2138f
+	ldr q28, [x20, #0]
+	ldr x10, [x19, #224]
+	ldr q29, [x21, #0]
+	lsl x10, x10, #3
+	aese v28.16b, v29.16b
+	aesmc v28.16b, v28.16b
+	lsl x9, x26, #3
+	ldr q29, [x21, #16]
+	mov v6.d[0], x10
+	aese v28.16b, v29.16b
+	aesmc v28.16b, v28.16b
+	mov v6.d[1], x9
+	ldr q29, [x21, #32]
+	aese v28.16b, v29.16b
+	eor v6.16b, v6.16b, v0.16b
+	aesmc v28.16b, v28.16b
+	movi v3.2d, #0
+	ldr q29, [x21, #48]
+	aese v28.16b, v29.16b
+	movi v4.2d, #0
+	aesmc v28.16b, v28.16b
+	ldr q29, [x21, #64]
+	movi v5.2d, #0
+	aese v28.16b, v29.16b
+	pmull v7.1q, v6.1d, v24.1d
+	aesmc v28.16b, v28.16b
+	ldr q29, [x21, #80]
+	eor v5.16b, v5.16b, v7.16b
+	aese v28.16b, v29.16b
+	pmull2 v7.1q, v6.2d, v24.2d
+	aesmc v28.16b, v28.16b
+	ldr q29, [x21, #96]
+	eor v3.16b, v3.16b, v7.16b
+	aese v28.16b, v29.16b
+	aesmc v28.16b, v28.16b
+	pmull v7.1q, v6.1d, v16.1d
+	ldr q29, [x21, #112]
+	eor v4.16b, v4.16b, v7.16b
+	aese v28.16b, v29.16b
+	aesmc v28.16b, v28.16b
+	pmull2 v7.1q, v6.2d, v16.2d
+	ldr q29, [x21, #128]
+	aese v28.16b, v29.16b
+	eor v4.16b, v4.16b, v7.16b
+	aesmc v28.16b, v28.16b
+	pmull v7.1q, v3.1d, v1.1d
+	ldr q29, [x21, #144]
+	aese v28.16b, v29.16b
+	ext v3.16b, v3.16b, v3.16b, #8
+	aesmc v28.16b, v28.16b
+	eor v4.16b, v4.16b, v3.16b
+	ldr q29, [x21, #160]
+	aese v28.16b, v29.16b
+	eor v4.16b, v4.16b, v7.16b
+	aesmc v28.16b, v28.16b
+	ldr q29, [x21, #176]
+	pmull v7.1q, v4.1d, v1.1d
+	aese v28.16b, v29.16b
+	ext v5.16b, v5.16b, v5.16b, #8
+	aesmc v28.16b, v28.16b
+	ldr q29, [x21, #192]
+	eor v5.16b, v5.16b, v4.16b
+	aese v28.16b, v29.16b
+	aesmc v28.16b, v28.16b
+	ext v7.16b, v7.16b, v7.16b, #8
+	ldr q29, [x21, #208]
+	eor v0.16b, v5.16b, v7.16b
+	aese v28.16b, v29.16b
+	ldr q29, [x21, #224]
+	rev64 v0.16b, v0.16b
+	eor v28.16b, v28.16b, v29.16b
+	eor v0.16b, v0.16b, v28.16b
+	str q0, [x28, #0]
+	b 2139f
+2138:
+	ldr q28, [x20, #0]
+	ldr x10, [x19, #224]
+	ldr q29, [x21, #0]
+	lsl x10, x10, #3
+	aese v28.16b, v29.16b
+	lsl x9, x26, #3
+	aesmc v28.16b, v28.16b
+	ldr q29, [x21, #16]
+	mov v6.d[0], x10
+	aese v28.16b, v29.16b
+	mov v6.d[1], x9
+	aesmc v28.16b, v28.16b
+	ldr q29, [x21, #32]
+	eor v6.16b, v6.16b, v0.16b
+	aese v28.16b, v29.16b
+	movi v3.2d, #0
+	aesmc v28.16b, v28.16b
+	movi v4.2d, #0
+	ldr q29, [x21, #48]
+	aese v28.16b, v29.16b
+	movi v5.2d, #0
+	aesmc v28.16b, v28.16b
+	pmull v7.1q, v6.1d, v24.1d
+	ldr q29, [x21, #64]
+	aese v28.16b, v29.16b
+	eor v5.16b, v5.16b, v7.16b
+	aesmc v28.16b, v28.16b
+	pmull2 v7.1q, v6.2d, v24.2d
+	ldr q29, [x21, #80]
+	eor v3.16b, v3.16b, v7.16b
+	aese v28.16b, v29.16b
+	aesmc v28.16b, v28.16b
+	pmull v7.1q, v6.1d, v16.1d
+	ldr q29, [x21, #96]
+	eor v4.16b, v4.16b, v7.16b
+	aese v28.16b, v29.16b
+	aesmc v28.16b, v28.16b
+	pmull2 v7.1q, v6.2d, v16.2d
+	ldr q29, [x21, #112]
+	eor v4.16b, v4.16b, v7.16b
+	aese v28.16b, v29.16b
+	pmull v7.1q, v3.1d, v1.1d
+	aesmc v28.16b, v28.16b
+	ldr q29, [x21, #128]
+	ext v3.16b, v3.16b, v3.16b, #8
+	aese v28.16b, v29.16b
+	eor v4.16b, v4.16b, v3.16b
+	aesmc v28.16b, v28.16b
+	ldr q29, [x21, #144]
+	eor v4.16b, v4.16b, v7.16b
+	aese v28.16b, v29.16b
+	pmull v7.1q, v4.1d, v1.1d
+	aesmc v28.16b, v28.16b
+	ext v5.16b, v5.16b, v5.16b, #8
+	ldr q29, [x21, #160]
+	aese v28.16b, v29.16b
+	eor v5.16b, v5.16b, v4.16b
+	aesmc v28.16b, v28.16b
+	ext v7.16b, v7.16b, v7.16b, #8
+	ldr q29, [x21, #176]
+	aese v28.16b, v29.16b
+	eor v0.16b, v5.16b, v7.16b
+	ldr q29, [x21, #192]
+	rev64 v0.16b, v0.16b
+	eor v28.16b, v28.16b, v29.16b
+	eor v0.16b, v0.16b, v28.16b
+	str q0, [x28, #0]
+2139:
+	b 2137f
+2136:
+	ldr q28, [x20, #0]
+	ldr x10, [x19, #224]
+	ldr q29, [x21, #0]
+	lsl x10, x10, #3
+	aese v28.16b, v29.16b
+	lsl x9, x26, #3
+	aesmc v28.16b, v28.16b
+	mov v6.d[0], x10
+	ldr q29, [x21, #16]
+	mov v6.d[1], x9
+	aese v28.16b, v29.16b
+	eor v6.16b, v6.16b, v0.16b
+	aesmc v28.16b, v28.16b
+	ldr q29, [x21, #32]
+	movi v3.2d, #0
+	aese v28.16b, v29.16b
+	movi v4.2d, #0
+	aesmc v28.16b, v28.16b
+	movi v5.2d, #0
+	ldr q29, [x21, #48]
+	pmull v7.1q, v6.1d, v24.1d
+	aese v28.16b, v29.16b
+	eor v5.16b, v5.16b, v7.16b
+	aesmc v28.16b, v28.16b
+	ldr q29, [x21, #64]
+	pmull2 v7.1q, v6.2d, v24.2d
+	aese v28.16b, v29.16b
+	eor v3.16b, v3.16b, v7.16b
+	aesmc v28.16b, v28.16b
+	pmull v7.1q, v6.1d, v16.1d
+	ldr q29, [x21, #80]
+	eor v4.16b, v4.16b, v7.16b
+	aese v28.16b, v29.16b
+	pmull2 v7.1q, v6.2d, v16.2d
+	aesmc v28.16b, v28.16b
+	eor v4.16b, v4.16b, v7.16b
+	ldr q29, [x21, #96]
+	aese v28.16b, v29.16b
+	pmull v7.1q, v3.1d, v1.1d
+	aesmc v28.16b, v28.16b
+	ext v3.16b, v3.16b, v3.16b, #8
+	ldr q29, [x21, #112]
+	eor v4.16b, v4.16b, v3.16b
+	aese v28.16b, v29.16b
+	eor v4.16b, v4.16b, v7.16b
+	aesmc v28.16b, v28.16b
+	pmull v7.1q, v4.1d, v1.1d
+	ldr q29, [x21, #128]
+	aese v28.16b, v29.16b
+	ext v5.16b, v5.16b, v5.16b, #8
+	aesmc v28.16b, v28.16b
+	eor v5.16b, v5.16b, v4.16b
+	ldr q29, [x21, #144]
+	ext v7.16b, v7.16b, v7.16b, #8
+	aese v28.16b, v29.16b
+	eor v0.16b, v5.16b, v7.16b
+	ldr q29, [x21, #160]
+	rev64 v0.16b, v0.16b
+	eor v28.16b, v28.16b, v29.16b
+	eor v0.16b, v0.16b, v28.16b
+	str q0, [x28, #0]
+2137:
 	ldr x20, [x19, #136]
 	ldr x21, [x19, #144]
 	ldr x22, [x19, #152]
@@ -3292,7 +3919,6 @@ vg_aes_gcm_seal_contiguous_with_powers_aes_sha3:
 	ldr x30, [x19, #208]
 	ldr x19, [x19, #128]
 	add sp, sp, #1056
-	add sp, sp, #48
 	movz x1, #0, lsl #0
 	movz x2, #0, lsl #0
 	movz x3, #0, lsl #0
@@ -3336,37 +3962,23 @@ vg_aes_gcm_seal_contiguous_with_powers_aes_sha3:
 	movi v31.2d, #0
 	tst x1, x1
 	movz x0, #0, lsl #0
-	sub sp, sp, #1104
+	sub sp, sp, #1056
 	movi v31.2d, #0
 	add x9, sp, #0
-	movz x10, #17, lsl #0
-2100:
+	movz x10, #16, lsl #0
+2140:
 	str q31, [x9, #0]
 	str q31, [x9, #16]
 	str q31, [x9, #32]
 	str q31, [x9, #48]
 	add x9, x9, #64
 	sub x10, x10, #1
-	cbnz x10, 2100b
+	cbnz x10, 2140b
 	str q31, [x9, #0]
-	add sp, sp, #1104
-	b 21f
-20:
-	ldr x10, [sp, #0]
-	movz x9, #97, lsl #0
-	subs x11, x10, x9
-	sbc x11, x11, x11
-	cbnz x11, 2101f
-	sub sp, sp, #48
-	ldr x9, [sp, #48]
-	ldr x10, [sp, #56]
-	str x7, [sp, #0]
-	str x9, [sp, #8]
-	str x10, [sp, #16]
-	str x6, [sp, #24]
-	str x9, [sp, #32]
-	add x6, sp, #24
-	movz x7, #1, lsl #0
+	str q31, [x9, #16]
+	add sp, sp, #1056
+	b 282f
+281:
 	sub sp, sp, #1056
 	add x16, sp, #0
 	ldr x17, [sp, #1056]
@@ -3393,119 +4005,14 @@ vg_aes_gcm_seal_contiguous_with_powers_aes_sha3:
 	add x20, x19, #16
 	add x21, x0, #0
 	add x22, x1, #0
-	str x4, [x19, #216]
 	str x5, [x19, #224]
 	str x6, [x19, #232]
+	str x7, [x19, #320]
+	ldr x7, [sp, #0]
 	str x7, [x19, #240]
 	add x23, x2, #0
-	add x24, x3, #0
-	add x26, x3, #0
-	movz x27, #0, lsl #0
-	str x6, [x19, #336]
-	str x7, [x19, #344]
-	ldr x9, [sp, #0]
-	str x9, [x19, #232]
-	ldr x9, [sp, #8]
-	str x9, [x19, #240]
-	ldr x10, [sp, #16]
-	str x10, [x19, #248]
-	add x28, x10, #0
-	sub x9, x24, #12
-	cbz x9, 2103f
-	movz x9, #0, lsl #0
-	str x9, [x20, #0]
-	str x9, [x20, #8]
-	lsr x3, x24, #4
-	add x2, x23, #0
-	add x0, x21, #240
-	add x1, x20, #0
-	add x4, x19, #512
-	lsl x9, x3, #4
-	add x23, x23, x9
-	movz x10, #15, lsl #0
-	and x25, x24, x10
-	bl {vg_ghash_aes}
-	add x12, x23, #0
-	movz x9, #0, lsl #0
-	str x9, [x19, #96]
-	str x9, [x19, #104]
-	add x11, x19, #96
-	add x13, x25, #0
-	cbz x13, 2105f
-	lsr x14, x13, #2
-	cbz x14, 2107f
-	lsr x14, x13, #3
-	cbz x14, 2109f
-2111:
-	ldr x14, [x12, #0]
-	str x14, [x11, #0]
-	add x12, x12, #8
-	add x11, x11, #8
-	sub x13, x13, #8
-	lsr x14, x13, #3
-	cbnz x14, 2111b
-	b 2110f
-2109:
-2110:
-	lsr x14, x13, #2
-	cbz x14, 2112f
-	ldr w14, [x12, #0]
-	str w14, [x11, #0]
-	add x12, x12, #4
-	add x11, x11, #4
-	sub x13, x13, #4
-	b 2113f
-2112:
-2113:
-	cbz x13, 2114f
-2116:
-	ldrb w14, [x12, #0]
-	strb w14, [x11, #0]
-	add x12, x12, #1
-	add x11, x11, #1
-	sub x13, x13, #1
-	cbnz x13, 2116b
-	b 2115f
-2114:
-2115:
-	b 2108f
-2107:
-2117:
-	ldrb w14, [x12, #0]
-	strb w14, [x11, #0]
-	add x12, x12, #1
-	add x11, x11, #1
-	sub x13, x13, #1
-	cbnz x13, 2117b
-2108:
-	b 2106f
-2105:
-2106:
-	cbz x25, 2118f
-	movz x3, #1, lsl #0
-	b 2119f
-2118:
-	movz x3, #0, lsl #0
-2119:
-	add x0, x21, #240
-	add x1, x20, #0
-	add x4, x19, #512
-	add x2, x19, #96
-	bl {vg_ghash_aes}
-	lsl x9, x27, #3
-	rev x9, x9
-	str x9, [x19, #96]
-	lsl x9, x26, #3
-	rev x9, x9
-	str x9, [x19, #104]
-	movz x3, #1, lsl #0
-	add x0, x21, #240
-	add x1, x20, #0
-	add x4, x19, #512
-	add x2, x19, #96
-	bl {vg_ghash_aes}
-	b 2104f
-2103:
+	ldr x28, [sp, #8]
+	ldr x8, [sp, #16]
 	ldr w9, [x23, #0]
 	ldr w10, [x23, #4]
 	ldr w11, [x23, #8]
@@ -3514,7 +4021,10 @@ vg_aes_gcm_seal_contiguous_with_powers_aes_sha3:
 	str w10, [x20, #4]
 	str w11, [x20, #8]
 	str w12, [x20, #12]
-2104:
+	add x25, x5, #0
+	add x27, x4, #0
+	add x23, x6, #0
+	add x26, x7, #0
 	ldr w9, [x20, #0]
 	ldr w10, [x20, #4]
 	ldr w11, [x20, #8]
@@ -3529,235 +4039,83 @@ vg_aes_gcm_seal_contiguous_with_powers_aes_sha3:
 	movz x9, #0, lsl #0
 	str x9, [x20, #16]
 	str x9, [x20, #24]
-	ldr x23, [x19, #216]
-	ldr x24, [x19, #224]
-	movz x25, #0, lsl #0
-	lsr x3, x24, #4
-	add x2, x23, #0
-	add x0, x21, #240
-	add x1, x20, #16
-	add x4, x19, #512
-	lsl x9, x3, #4
-	add x23, x23, x9
-	sub x24, x24, x9
-	bl {vg_ghash_aes}
-	add x11, x20, #32
-	add x12, x23, #0
-	add x13, x24, #0
-	cbz x13, 2120f
-	lsr x14, x13, #2
-	cbz x14, 2122f
-	lsr x14, x13, #3
-	cbz x14, 2124f
-2126:
-	ldr x14, [x12, #0]
-	str x14, [x11, #0]
-	add x12, x12, #8
-	add x11, x11, #8
-	sub x13, x13, #8
-	lsr x14, x13, #3
-	cbnz x14, 2126b
-	b 2125f
-2124:
-2125:
-	lsr x14, x13, #2
-	cbz x14, 2127f
-	ldr w14, [x12, #0]
-	str w14, [x11, #0]
-	add x12, x12, #4
-	add x11, x11, #4
-	sub x13, x13, #4
-	b 2128f
-2127:
-2128:
-	cbz x13, 2129f
-2131:
-	ldrb w14, [x12, #0]
-	strb w14, [x11, #0]
-	add x12, x12, #1
-	add x11, x11, #1
-	sub x13, x13, #1
-	cbnz x13, 2131b
-	b 2130f
-2129:
-2130:
-	b 2123f
-2122:
-2132:
-	ldrb w14, [x12, #0]
-	strb w14, [x11, #0]
-	add x12, x12, #1
-	add x11, x11, #1
-	sub x13, x13, #1
-	cbnz x13, 2132b
-2123:
-	b 2121f
-2120:
-2121:
-	ldr x25, [x19, #224]
-	movz x9, #15, lsl #0
-	and x25, x25, x9
-	add x12, x20, #32
+	ldr q16, [x8, #16]
+	ext v24.16b, v16.16b, v16.16b, #8
+	movz x5, #49664, lsl #48
+	dup v1.2d, x5
+	str q16, [x19, #288]
+	str q24, [x19, #304]
+	movi v0.2d, #0
+	add x13, x25, #0
+	add x12, x27, #0
+	cbz x13, 2141f
 	movz x9, #0, lsl #0
 	str x9, [x19, #96]
 	str x9, [x19, #104]
 	add x11, x19, #96
-	add x13, x25, #0
-	cbz x13, 2133f
+	cbz x13, 2143f
 	lsr x14, x13, #2
-	cbz x14, 2135f
+	cbz x14, 2145f
 	lsr x14, x13, #3
-	cbz x14, 2137f
-2139:
+	cbz x14, 2147f
+2149:
 	ldr x14, [x12, #0]
 	str x14, [x11, #0]
 	add x12, x12, #8
 	add x11, x11, #8
 	sub x13, x13, #8
 	lsr x14, x13, #3
-	cbnz x14, 2139b
-	b 2138f
-2137:
-2138:
+	cbnz x14, 2149b
+	b 2148f
+2147:
+2148:
 	lsr x14, x13, #2
-	cbz x14, 2140f
+	cbz x14, 2150f
 	ldr w14, [x12, #0]
 	str w14, [x11, #0]
 	add x12, x12, #4
 	add x11, x11, #4
 	sub x13, x13, #4
-	b 2141f
-2140:
-2141:
-	cbz x13, 2142f
-2144:
-	ldrb w14, [x12, #0]
-	strb w14, [x11, #0]
-	add x12, x12, #1
-	add x11, x11, #1
-	sub x13, x13, #1
-	cbnz x13, 2144b
-	b 2143f
-2142:
-2143:
-	b 2136f
-2135:
-2145:
-	ldrb w14, [x12, #0]
-	strb w14, [x11, #0]
-	add x12, x12, #1
-	add x11, x11, #1
-	sub x13, x13, #1
-	cbnz x13, 2145b
-2136:
-	b 2134f
-2133:
-2134:
-	cbz x25, 2146f
-	movz x3, #1, lsl #0
-	b 2147f
-2146:
-	movz x3, #0, lsl #0
-2147:
-	add x0, x21, #240
-	add x1, x20, #16
-	add x4, x19, #512
-	add x2, x19, #96
-	bl {vg_ghash_aes}
-	ldr x27, [x19, #336]
-	ldr x28, [x19, #344]
-	ldr x26, [x19, #232]
-	str x26, [x19, #352]
-	movz x25, #0, lsl #0
-	cbz x28, 2148f
+	b 2151f
 2150:
-	ldr x23, [x27, #0]
-	ldr x24, [x27, #8]
-	add x27, x27, #16
-	cbz x25, 2151f
-	movz x9, #16, lsl #0
-	sub x9, x9, x25
-	lsr x10, x24, #4
-	cbnz x10, 2153f
-	sub x11, x9, x24
-	lsr x11, x11, #63
-	cbz x11, 2155f
-	add x10, x9, #0
-	b 2156f
-2155:
-	add x10, x24, #0
-2156:
-	b 2154f
-2153:
-	add x10, x9, #0
-2154:
-	add x11, x20, #64
-	add x11, x11, x25
-	add x25, x25, x10
-	movz x9, #15, lsl #0
-	and x25, x25, x9
-	cbz x10, 2157f
-2159:
-	ldrb w13, [x23, #0]
-	ldrb w14, [x11, #0]
-	eor w13, w13, w14
-	strb w13, [x26, #0]
-	add x23, x23, #1
-	add x11, x11, #1
-	add x26, x26, #1
-	sub x24, x24, #1
-	sub x10, x10, #1
-	cbnz x10, 2159b
-	b 2158f
-2157:
-2158:
-	b 2152f
 2151:
+	cbz x13, 2152f
+2154:
+	ldrb w14, [x12, #0]
+	strb w14, [x11, #0]
+	add x12, x12, #1
+	add x11, x11, #1
+	sub x13, x13, #1
+	cbnz x13, 2154b
+	b 2153f
 2152:
-	add x9, x24, #256
-	lsr x9, x9, #10
-	cbz x9, 2160f
-	ldr x2, [x19, #352]
-	sub x3, x26, x2
-	lsr x3, x3, #4
-	cbz x3, 2162f
-	add x0, x21, #240
-	add x1, x20, #16
-	add x4, x19, #512
-	bl {vg_ghash_aes}
-	b 2163f
-2162:
-2163:
-	add x15, x23, #0
-	add x23, x26, #0
-	add x26, x24, #0
-	add x0, x21, #0
-	ldr q6, [x0, #240]
+2153:
+	b 2146f
+2145:
+2155:
+	ldrb w14, [x12, #0]
+	strb w14, [x11, #0]
+	add x12, x12, #1
+	add x11, x11, #1
+	sub x13, x13, #1
+	cbnz x13, 2155b
+2146:
+	b 2144f
+2143:
+2144:
+	ldr q6, [x19, #96]
 	rev64 v6.16b, v6.16b
-	movz x5, #49664, lsl #48
-	dup v1.2d, x5
-	ushr v7.2d, v6.2d, #63
-	shl v3.2d, v6.2d, #1
-	ext v4.16b, v7.16b, v7.16b, #8
-	eor v3.16b, v3.16b, v4.16b
-	pmull v5.1q, v7.1d, v1.1d
-	eor v24.16b, v3.16b, v5.16b
-	ext v16.16b, v24.16b, v24.16b, #8
-	pmull v5.1q, v24.1d, v24.1d
-	pmull2 v3.1q, v24.2d, v24.2d
-	pmull v7.1q, v3.1d, v1.1d
-	ext v3.16b, v3.16b, v3.16b, #8
-	eor v4.16b, v3.16b, v7.16b
-	pmull v7.1q, v4.1d, v1.1d
-	ext v5.16b, v5.16b, v5.16b, #8
-	eor v5.16b, v5.16b, v4.16b
-	ext v7.16b, v7.16b, v7.16b, #8
-	eor v25.16b, v5.16b, v7.16b
-	ext v17.16b, v25.16b, v25.16b, #8
-	pmull v5.1q, v25.1d, v24.1d
-	pmull2 v3.1q, v25.2d, v24.2d
-	pmull v4.1q, v25.1d, v16.1d
-	pmull2 v7.1q, v25.2d, v16.2d
+	eor v6.16b, v6.16b, v0.16b
+	movi v3.2d, #0
+	movi v4.2d, #0
+	movi v5.2d, #0
+	pmull v7.1q, v6.1d, v24.1d
+	eor v5.16b, v5.16b, v7.16b
+	pmull2 v7.1q, v6.2d, v24.2d
+	eor v3.16b, v3.16b, v7.16b
+	pmull v7.1q, v6.1d, v16.1d
+	eor v4.16b, v4.16b, v7.16b
+	pmull2 v7.1q, v6.2d, v16.2d
 	eor v4.16b, v4.16b, v7.16b
 	pmull v7.1q, v3.1d, v1.1d
 	ext v3.16b, v3.16b, v3.16b, #8
@@ -3767,105 +4125,16 @@ vg_aes_gcm_seal_contiguous_with_powers_aes_sha3:
 	ext v5.16b, v5.16b, v5.16b, #8
 	eor v5.16b, v5.16b, v4.16b
 	ext v7.16b, v7.16b, v7.16b, #8
-	eor v26.16b, v5.16b, v7.16b
-	ext v18.16b, v26.16b, v26.16b, #8
-	pmull v5.1q, v25.1d, v25.1d
-	pmull2 v3.1q, v25.2d, v25.2d
-	pmull v7.1q, v3.1d, v1.1d
-	ext v3.16b, v3.16b, v3.16b, #8
-	eor v4.16b, v3.16b, v7.16b
-	pmull v7.1q, v4.1d, v1.1d
-	ext v5.16b, v5.16b, v5.16b, #8
-	eor v5.16b, v5.16b, v4.16b
-	ext v7.16b, v7.16b, v7.16b, #8
-	eor v27.16b, v5.16b, v7.16b
-	ext v19.16b, v27.16b, v27.16b, #8
-	pmull v5.1q, v26.1d, v25.1d
-	pmull2 v3.1q, v26.2d, v25.2d
-	pmull v4.1q, v26.1d, v17.1d
-	pmull2 v7.1q, v26.2d, v17.2d
-	eor v4.16b, v4.16b, v7.16b
-	pmull v7.1q, v3.1d, v1.1d
-	ext v3.16b, v3.16b, v3.16b, #8
-	eor v4.16b, v4.16b, v3.16b
-	eor v4.16b, v4.16b, v7.16b
-	pmull v7.1q, v4.1d, v1.1d
-	ext v5.16b, v5.16b, v5.16b, #8
-	eor v5.16b, v5.16b, v4.16b
-	ext v7.16b, v7.16b, v7.16b, #8
-	eor v28.16b, v5.16b, v7.16b
-	ext v20.16b, v28.16b, v28.16b, #8
-	pmull v5.1q, v26.1d, v26.1d
-	pmull2 v3.1q, v26.2d, v26.2d
-	pmull v7.1q, v3.1d, v1.1d
-	ext v3.16b, v3.16b, v3.16b, #8
-	eor v4.16b, v3.16b, v7.16b
-	pmull v7.1q, v4.1d, v1.1d
-	ext v5.16b, v5.16b, v5.16b, #8
-	eor v5.16b, v5.16b, v4.16b
-	ext v7.16b, v7.16b, v7.16b, #8
-	eor v29.16b, v5.16b, v7.16b
-	ext v21.16b, v29.16b, v29.16b, #8
-	pmull v5.1q, v27.1d, v26.1d
-	pmull2 v3.1q, v27.2d, v26.2d
-	pmull v4.1q, v27.1d, v18.1d
-	pmull2 v7.1q, v27.2d, v18.2d
-	eor v4.16b, v4.16b, v7.16b
-	pmull v7.1q, v3.1d, v1.1d
-	ext v3.16b, v3.16b, v3.16b, #8
-	eor v4.16b, v4.16b, v3.16b
-	eor v4.16b, v4.16b, v7.16b
-	pmull v7.1q, v4.1d, v1.1d
-	ext v5.16b, v5.16b, v5.16b, #8
-	eor v5.16b, v5.16b, v4.16b
-	ext v7.16b, v7.16b, v7.16b, #8
-	eor v30.16b, v5.16b, v7.16b
-	ext v22.16b, v30.16b, v30.16b, #8
-	pmull v5.1q, v27.1d, v27.1d
-	pmull2 v3.1q, v27.2d, v27.2d
-	pmull v7.1q, v3.1d, v1.1d
-	ext v3.16b, v3.16b, v3.16b, #8
-	eor v4.16b, v3.16b, v7.16b
-	pmull v7.1q, v4.1d, v1.1d
-	ext v5.16b, v5.16b, v5.16b, #8
-	eor v5.16b, v5.16b, v4.16b
-	ext v7.16b, v7.16b, v7.16b, #8
-	eor v31.16b, v5.16b, v7.16b
-	ext v23.16b, v31.16b, v31.16b, #8
-	str q24, [x19, #512]
-	str q25, [x19, #528]
-	str q26, [x19, #544]
-	str q27, [x19, #560]
-	str q28, [x19, #576]
-	str q29, [x19, #592]
-	str q30, [x19, #608]
-	str q31, [x19, #624]
-	eor v2.16b, v30.16b, v22.16b
-	eor v3.16b, v29.16b, v21.16b
-	ext v4.16b, v2.16b, v3.16b, #8
-	str q4, [x19, #640]
-	eor v2.16b, v28.16b, v20.16b
-	eor v3.16b, v27.16b, v19.16b
-	ext v4.16b, v2.16b, v3.16b, #8
-	str q4, [x19, #656]
-	eor v2.16b, v26.16b, v18.16b
-	eor v3.16b, v25.16b, v17.16b
-	ext v4.16b, v2.16b, v3.16b, #8
-	str q4, [x19, #672]
-	eor v2.16b, v24.16b, v16.16b
-	eor v3.16b, v31.16b, v23.16b
-	ext v4.16b, v2.16b, v3.16b, #8
-	str q4, [x19, #688]
-	bl {vg_aes_gcm_seal_batches_aes_sha3}
-	add x26, x9, #0
-	add x23, x15, #0
-	movz x10, #127, lsl #0
-	and x24, x24, x10
-	str x26, [x19, #352]
-	b 2161f
-2160:
-2161:
-	cbz x24, 2164f
+	eor v0.16b, v5.16b, v7.16b
+	b 2142f
+2141:
+2142:
+	rev64 v0.16b, v0.16b
+	str q0, [x20, #16]
+	ldr x27, [x19, #320]
+	add x24, x26, #0
+	add x26, x27, #0
+	movz x25, #0, lsl #0
 	lsr x4, x24, #4
 	add x3, x23, #0
 	add x0, x21, #0
@@ -3877,17 +4146,21 @@ vg_aes_gcm_seal_contiguous_with_powers_aes_sha3:
 	sub x24, x24, x9
 	add x6, x26, #0
 	add x26, x26, x9
+	cbz x4, 2156f
 	bl {vg_aes_ctr32_to_aes}
-	cbz x24, 2166f
-	cbz x24, 2168f
+	b 2157f
+2156:
+2157:
+	cbz x24, 2158f
+	cbz x24, 2160f
 	movz x4, #1, lsl #0
 	movz x9, #0, lsl #0
 	str x9, [x20, #64]
 	str x9, [x20, #72]
-	b 2169f
-2168:
+	b 2161f
+2160:
 	movz x4, #0, lsl #0
-2169:
+2161:
 	add x0, x21, #0
 	add x1, x22, #0
 	add x2, x20, #48
@@ -3897,8 +4170,12 @@ vg_aes_gcm_seal_contiguous_with_powers_aes_sha3:
 	add x10, x24, #0
 	add x25, x24, #0
 	add x11, x20, #64
-	cbz x10, 2170f
-2172:
+	lsr x12, x24, #3
+	cbnz x12, 2162f
+	lsr x12, x24, #2
+	cbnz x12, 2164f
+	cbz x10, 2166f
+2168:
 	ldrb w13, [x23, #0]
 	ldrb w14, [x11, #0]
 	eor w13, w13, w14
@@ -3908,23 +4185,52 @@ vg_aes_gcm_seal_contiguous_with_powers_aes_sha3:
 	add x26, x26, #1
 	sub x24, x24, #1
 	sub x10, x10, #1
-	cbnz x10, 2172b
-	b 2171f
-2170:
-2171:
+	cbnz x10, 2168b
 	b 2167f
 2166:
 2167:
 	b 2165f
 2164:
+	sub x12, x24, #4
+	add x0, x23, x12
+	add x1, x11, x12
+	add x2, x26, x12
+	ldr w13, [x23, #0]
+	ldr w14, [x11, #0]
+	eor w13, w13, w14
+	ldr w14, [x0, #0]
+	ldr w15, [x1, #0]
+	eor w14, w14, w15
+	str w13, [x26, #0]
+	str w14, [x2, #0]
+	add x23, x23, x24
+	add x26, x26, x24
+	movz x24, #0, lsl #0
 2165:
-	sub x28, x28, #1
-	cbnz x28, 2150b
-	b 2149f
-2148:
-2149:
-	ldr x23, [x19, #352]
-	sub x24, x26, x23
+	b 2163f
+2162:
+	sub x12, x24, #8
+	add x0, x23, x12
+	add x1, x11, x12
+	add x2, x26, x12
+	ldr x13, [x23, #0]
+	ldr x14, [x11, #0]
+	eor x13, x13, x14
+	ldr x14, [x0, #0]
+	ldr x15, [x1, #0]
+	eor x14, x14, x15
+	str x13, [x26, #0]
+	str x14, [x2, #0]
+	add x23, x23, x24
+	add x26, x26, x24
+	movz x24, #0, lsl #0
+2163:
+	b 2159f
+2158:
+2159:
+	ldr x26, [x19, #240]
+	add x23, x27, #0
+	add x24, x26, #0
 	lsr x3, x24, #4
 	add x2, x23, #0
 	add x0, x21, #240
@@ -3933,158 +4239,358 @@ vg_aes_gcm_seal_contiguous_with_powers_aes_sha3:
 	lsl x9, x3, #4
 	add x23, x23, x9
 	sub x24, x24, x9
+	cbz x3, 2169f
+	lsr x9, x3, #1
+	cbz x9, 2171f
+	ldr x5, [sp, #16]
+	bl {vg_ghash_with_powers_aes}
+	b 2172f
+2171:
 	bl {vg_ghash_aes}
-	add x11, x20, #32
-	add x12, x23, #0
+2172:
+	b 2170f
+2169:
+2170:
+	ldr q16, [x19, #288]
+	ldr q24, [x19, #304]
+	movz x5, #49664, lsl #48
+	dup v1.2d, x5
+	ldr q0, [x20, #16]
+	rev64 v0.16b, v0.16b
 	add x13, x24, #0
+	add x12, x23, #0
 	cbz x13, 2173f
-	lsr x14, x13, #2
-	cbz x14, 2175f
-	lsr x14, x13, #3
-	cbz x14, 2177f
-2179:
-	ldr x14, [x12, #0]
-	str x14, [x11, #0]
-	add x12, x12, #8
-	add x11, x11, #8
-	sub x13, x13, #8
-	lsr x14, x13, #3
-	cbnz x14, 2179b
-	b 2178f
-2177:
-2178:
-	lsr x14, x13, #2
-	cbz x14, 2180f
-	ldr w14, [x12, #0]
-	str w14, [x11, #0]
-	add x12, x12, #4
-	add x11, x11, #4
-	sub x13, x13, #4
-	b 2181f
-2180:
-2181:
-	cbz x13, 2182f
-2184:
-	ldrb w14, [x12, #0]
-	strb w14, [x11, #0]
-	add x12, x12, #1
-	add x11, x11, #1
-	sub x13, x13, #1
-	cbnz x13, 2184b
-	b 2183f
-2182:
-2183:
+	lsr x9, x26, #4
+	cbz x9, 2175f
+	movz x9, #16, lsl #0
+	sub x9, x9, x13
+	dup v6.16b, w9
+	adrp x11, {VG_GCM_TAIL_IDX}
+	add x11, x11, {VG_GCM_TAIL_IDX}
+	ldr q7, [x11, #16]
+	add v7.16b, v7.16b, v6.16b
+	sub x11, x12, x9
+	ldr q6, [x11, #0]
+	tbl v6.16b, {v6.16b}, v7.16b
+	eor v6.16b, v6.16b, v0.16b
+	movi v3.2d, #0
+	movi v4.2d, #0
+	movi v5.2d, #0
+	pmull v7.1q, v6.1d, v24.1d
+	eor v5.16b, v5.16b, v7.16b
+	pmull2 v7.1q, v6.2d, v24.2d
+	eor v3.16b, v3.16b, v7.16b
+	pmull v7.1q, v6.1d, v16.1d
+	eor v4.16b, v4.16b, v7.16b
+	pmull2 v7.1q, v6.2d, v16.2d
+	eor v4.16b, v4.16b, v7.16b
+	pmull v7.1q, v3.1d, v1.1d
+	ext v3.16b, v3.16b, v3.16b, #8
+	eor v4.16b, v4.16b, v3.16b
+	eor v4.16b, v4.16b, v7.16b
+	pmull v7.1q, v4.1d, v1.1d
+	ext v5.16b, v5.16b, v5.16b, #8
+	eor v5.16b, v5.16b, v4.16b
+	ext v7.16b, v7.16b, v7.16b, #8
+	eor v0.16b, v5.16b, v7.16b
 	b 2176f
 2175:
-2185:
-	ldrb w14, [x12, #0]
-	strb w14, [x11, #0]
-	add x12, x12, #1
-	add x11, x11, #1
-	sub x13, x13, #1
-	cbnz x13, 2185b
-2176:
-	b 2174f
-2173:
-2174:
-	add x25, x24, #0
-	add x12, x20, #32
+	cbz x13, 2177f
 	movz x9, #0, lsl #0
 	str x9, [x19, #96]
 	str x9, [x19, #104]
 	add x11, x19, #96
-	add x13, x25, #0
-	cbz x13, 2186f
+	cbz x13, 2179f
 	lsr x14, x13, #2
-	cbz x14, 2188f
+	cbz x14, 2181f
 	lsr x14, x13, #3
-	cbz x14, 2190f
-2192:
+	cbz x14, 2183f
+2185:
 	ldr x14, [x12, #0]
 	str x14, [x11, #0]
 	add x12, x12, #8
 	add x11, x11, #8
 	sub x13, x13, #8
 	lsr x14, x13, #3
-	cbnz x14, 2192b
-	b 2191f
-2190:
-2191:
+	cbnz x14, 2185b
+	b 2184f
+2183:
+2184:
 	lsr x14, x13, #2
-	cbz x14, 2193f
+	cbz x14, 2186f
 	ldr w14, [x12, #0]
 	str w14, [x11, #0]
 	add x12, x12, #4
 	add x11, x11, #4
 	sub x13, x13, #4
-	b 2194f
-2193:
-2194:
-	cbz x13, 2195f
-2197:
-	ldrb w14, [x12, #0]
-	strb w14, [x11, #0]
-	add x12, x12, #1
-	add x11, x11, #1
-	sub x13, x13, #1
-	cbnz x13, 2197b
-	b 2196f
-2195:
-2196:
-	b 2189f
-2188:
-2198:
-	ldrb w14, [x12, #0]
-	strb w14, [x11, #0]
-	add x12, x12, #1
-	add x11, x11, #1
-	sub x13, x13, #1
-	cbnz x13, 2198b
-2189:
 	b 2187f
 2186:
 2187:
-	cbz x25, 2199f
-	movz x3, #1, lsl #0
-	b 2200f
-2199:
-	movz x3, #0, lsl #0
-2200:
-	add x0, x21, #240
-	add x1, x20, #16
-	add x4, x19, #512
-	add x2, x19, #96
-	bl {vg_ghash_aes}
-	ldr x26, [x19, #224]
-	ldr x27, [x19, #240]
+	cbz x13, 2188f
+2190:
+	ldrb w14, [x12, #0]
+	strb w14, [x11, #0]
+	add x12, x12, #1
+	add x11, x11, #1
+	sub x13, x13, #1
+	cbnz x13, 2190b
+	b 2189f
+2188:
+2189:
+	b 2182f
+2181:
+2191:
+	ldrb w14, [x12, #0]
+	strb w14, [x11, #0]
+	add x12, x12, #1
+	add x11, x11, #1
+	sub x13, x13, #1
+	cbnz x13, 2191b
+2182:
+	b 2180f
+2179:
+2180:
+	ldr q6, [x19, #96]
+	rev64 v6.16b, v6.16b
+	eor v6.16b, v6.16b, v0.16b
+	movi v3.2d, #0
+	movi v4.2d, #0
+	movi v5.2d, #0
+	pmull v7.1q, v6.1d, v24.1d
+	eor v5.16b, v5.16b, v7.16b
+	pmull2 v7.1q, v6.2d, v24.2d
+	eor v3.16b, v3.16b, v7.16b
+	pmull v7.1q, v6.1d, v16.1d
+	eor v4.16b, v4.16b, v7.16b
+	pmull2 v7.1q, v6.2d, v16.2d
+	eor v4.16b, v4.16b, v7.16b
+	pmull v7.1q, v3.1d, v1.1d
+	ext v3.16b, v3.16b, v3.16b, #8
+	eor v4.16b, v4.16b, v3.16b
+	eor v4.16b, v4.16b, v7.16b
+	pmull v7.1q, v4.1d, v1.1d
+	ext v5.16b, v5.16b, v5.16b, #8
+	eor v5.16b, v5.16b, v4.16b
+	ext v7.16b, v7.16b, v7.16b, #8
+	eor v0.16b, v5.16b, v7.16b
+	b 2178f
+2177:
+2178:
+2176:
+	b 2174f
+2173:
+2174:
+	sub x13, x22, #10
+	sub x14, x22, #12
+	cbz x13, 2192f
+	cbz x14, 2194f
+	ldr q28, [x20, #0]
+	ldr x10, [x19, #224]
+	ldr q29, [x21, #0]
+	lsl x10, x10, #3
+	aese v28.16b, v29.16b
+	aesmc v28.16b, v28.16b
 	lsl x9, x26, #3
-	rev x9, x9
-	str x9, [x19, #96]
-	lsl x9, x27, #3
-	rev x9, x9
-	str x9, [x19, #104]
-	movz x3, #1, lsl #0
-	add x0, x21, #240
-	add x1, x20, #16
-	add x4, x19, #512
-	add x2, x19, #96
-	bl {vg_ghash_aes}
-	ldr x9, [x20, #16]
-	str x9, [x19, #0]
-	ldr x9, [x20, #24]
-	str x9, [x19, #8]
-	add x0, x21, #0
-	add x1, x22, #0
-	add x2, x20, #0
-	add x3, x19, #0
-	movz x4, #1, lsl #0
-	add x5, x19, #512
-	bl {vg_aes_ctr32_aes}
-	ldr x28, [x19, #248]
-	ldr x9, [x19, #0]
-	str x9, [x28, #0]
-	ldr x9, [x19, #8]
-	str x9, [x28, #8]
+	ldr q29, [x21, #16]
+	mov v6.d[0], x10
+	aese v28.16b, v29.16b
+	aesmc v28.16b, v28.16b
+	mov v6.d[1], x9
+	ldr q29, [x21, #32]
+	aese v28.16b, v29.16b
+	eor v6.16b, v6.16b, v0.16b
+	aesmc v28.16b, v28.16b
+	movi v3.2d, #0
+	ldr q29, [x21, #48]
+	aese v28.16b, v29.16b
+	movi v4.2d, #0
+	aesmc v28.16b, v28.16b
+	ldr q29, [x21, #64]
+	movi v5.2d, #0
+	aese v28.16b, v29.16b
+	pmull v7.1q, v6.1d, v24.1d
+	aesmc v28.16b, v28.16b
+	ldr q29, [x21, #80]
+	eor v5.16b, v5.16b, v7.16b
+	aese v28.16b, v29.16b
+	pmull2 v7.1q, v6.2d, v24.2d
+	aesmc v28.16b, v28.16b
+	ldr q29, [x21, #96]
+	eor v3.16b, v3.16b, v7.16b
+	aese v28.16b, v29.16b
+	aesmc v28.16b, v28.16b
+	pmull v7.1q, v6.1d, v16.1d
+	ldr q29, [x21, #112]
+	eor v4.16b, v4.16b, v7.16b
+	aese v28.16b, v29.16b
+	aesmc v28.16b, v28.16b
+	pmull2 v7.1q, v6.2d, v16.2d
+	ldr q29, [x21, #128]
+	aese v28.16b, v29.16b
+	eor v4.16b, v4.16b, v7.16b
+	aesmc v28.16b, v28.16b
+	pmull v7.1q, v3.1d, v1.1d
+	ldr q29, [x21, #144]
+	aese v28.16b, v29.16b
+	ext v3.16b, v3.16b, v3.16b, #8
+	aesmc v28.16b, v28.16b
+	eor v4.16b, v4.16b, v3.16b
+	ldr q29, [x21, #160]
+	aese v28.16b, v29.16b
+	eor v4.16b, v4.16b, v7.16b
+	aesmc v28.16b, v28.16b
+	ldr q29, [x21, #176]
+	pmull v7.1q, v4.1d, v1.1d
+	aese v28.16b, v29.16b
+	ext v5.16b, v5.16b, v5.16b, #8
+	aesmc v28.16b, v28.16b
+	ldr q29, [x21, #192]
+	eor v5.16b, v5.16b, v4.16b
+	aese v28.16b, v29.16b
+	aesmc v28.16b, v28.16b
+	ext v7.16b, v7.16b, v7.16b, #8
+	ldr q29, [x21, #208]
+	eor v0.16b, v5.16b, v7.16b
+	aese v28.16b, v29.16b
+	ldr q29, [x21, #224]
+	rev64 v0.16b, v0.16b
+	eor v28.16b, v28.16b, v29.16b
+	eor v0.16b, v0.16b, v28.16b
+	str q0, [x28, #0]
+	b 2195f
+2194:
+	ldr q28, [x20, #0]
+	ldr x10, [x19, #224]
+	ldr q29, [x21, #0]
+	lsl x10, x10, #3
+	aese v28.16b, v29.16b
+	lsl x9, x26, #3
+	aesmc v28.16b, v28.16b
+	ldr q29, [x21, #16]
+	mov v6.d[0], x10
+	aese v28.16b, v29.16b
+	mov v6.d[1], x9
+	aesmc v28.16b, v28.16b
+	ldr q29, [x21, #32]
+	eor v6.16b, v6.16b, v0.16b
+	aese v28.16b, v29.16b
+	movi v3.2d, #0
+	aesmc v28.16b, v28.16b
+	movi v4.2d, #0
+	ldr q29, [x21, #48]
+	aese v28.16b, v29.16b
+	movi v5.2d, #0
+	aesmc v28.16b, v28.16b
+	pmull v7.1q, v6.1d, v24.1d
+	ldr q29, [x21, #64]
+	aese v28.16b, v29.16b
+	eor v5.16b, v5.16b, v7.16b
+	aesmc v28.16b, v28.16b
+	pmull2 v7.1q, v6.2d, v24.2d
+	ldr q29, [x21, #80]
+	eor v3.16b, v3.16b, v7.16b
+	aese v28.16b, v29.16b
+	aesmc v28.16b, v28.16b
+	pmull v7.1q, v6.1d, v16.1d
+	ldr q29, [x21, #96]
+	eor v4.16b, v4.16b, v7.16b
+	aese v28.16b, v29.16b
+	aesmc v28.16b, v28.16b
+	pmull2 v7.1q, v6.2d, v16.2d
+	ldr q29, [x21, #112]
+	eor v4.16b, v4.16b, v7.16b
+	aese v28.16b, v29.16b
+	pmull v7.1q, v3.1d, v1.1d
+	aesmc v28.16b, v28.16b
+	ldr q29, [x21, #128]
+	ext v3.16b, v3.16b, v3.16b, #8
+	aese v28.16b, v29.16b
+	eor v4.16b, v4.16b, v3.16b
+	aesmc v28.16b, v28.16b
+	ldr q29, [x21, #144]
+	eor v4.16b, v4.16b, v7.16b
+	aese v28.16b, v29.16b
+	pmull v7.1q, v4.1d, v1.1d
+	aesmc v28.16b, v28.16b
+	ext v5.16b, v5.16b, v5.16b, #8
+	ldr q29, [x21, #160]
+	aese v28.16b, v29.16b
+	eor v5.16b, v5.16b, v4.16b
+	aesmc v28.16b, v28.16b
+	ext v7.16b, v7.16b, v7.16b, #8
+	ldr q29, [x21, #176]
+	aese v28.16b, v29.16b
+	eor v0.16b, v5.16b, v7.16b
+	ldr q29, [x21, #192]
+	rev64 v0.16b, v0.16b
+	eor v28.16b, v28.16b, v29.16b
+	eor v0.16b, v0.16b, v28.16b
+	str q0, [x28, #0]
+2195:
+	b 2193f
+2192:
+	ldr q28, [x20, #0]
+	ldr x10, [x19, #224]
+	ldr q29, [x21, #0]
+	lsl x10, x10, #3
+	aese v28.16b, v29.16b
+	lsl x9, x26, #3
+	aesmc v28.16b, v28.16b
+	mov v6.d[0], x10
+	ldr q29, [x21, #16]
+	mov v6.d[1], x9
+	aese v28.16b, v29.16b
+	eor v6.16b, v6.16b, v0.16b
+	aesmc v28.16b, v28.16b
+	ldr q29, [x21, #32]
+	movi v3.2d, #0
+	aese v28.16b, v29.16b
+	movi v4.2d, #0
+	aesmc v28.16b, v28.16b
+	movi v5.2d, #0
+	ldr q29, [x21, #48]
+	pmull v7.1q, v6.1d, v24.1d
+	aese v28.16b, v29.16b
+	eor v5.16b, v5.16b, v7.16b
+	aesmc v28.16b, v28.16b
+	ldr q29, [x21, #64]
+	pmull2 v7.1q, v6.2d, v24.2d
+	aese v28.16b, v29.16b
+	eor v3.16b, v3.16b, v7.16b
+	aesmc v28.16b, v28.16b
+	pmull v7.1q, v6.1d, v16.1d
+	ldr q29, [x21, #80]
+	eor v4.16b, v4.16b, v7.16b
+	aese v28.16b, v29.16b
+	pmull2 v7.1q, v6.2d, v16.2d
+	aesmc v28.16b, v28.16b
+	eor v4.16b, v4.16b, v7.16b
+	ldr q29, [x21, #96]
+	aese v28.16b, v29.16b
+	pmull v7.1q, v3.1d, v1.1d
+	aesmc v28.16b, v28.16b
+	ext v3.16b, v3.16b, v3.16b, #8
+	ldr q29, [x21, #112]
+	eor v4.16b, v4.16b, v3.16b
+	aese v28.16b, v29.16b
+	eor v4.16b, v4.16b, v7.16b
+	aesmc v28.16b, v28.16b
+	pmull v7.1q, v4.1d, v1.1d
+	ldr q29, [x21, #128]
+	aese v28.16b, v29.16b
+	ext v5.16b, v5.16b, v5.16b, #8
+	aesmc v28.16b, v28.16b
+	eor v5.16b, v5.16b, v4.16b
+	ldr q29, [x21, #144]
+	ext v7.16b, v7.16b, v7.16b, #8
+	aese v28.16b, v29.16b
+	eor v0.16b, v5.16b, v7.16b
+	ldr q29, [x21, #160]
+	rev64 v0.16b, v0.16b
+	eor v28.16b, v28.16b, v29.16b
+	eor v0.16b, v0.16b, v28.16b
+	str q0, [x28, #0]
+2193:
 	ldr x20, [x19, #136]
 	ldr x21, [x19, #144]
 	ldr x22, [x19, #152]
@@ -4097,6 +4603,654 @@ vg_aes_gcm_seal_contiguous_with_powers_aes_sha3:
 	ldr x30, [x19, #208]
 	ldr x19, [x19, #128]
 	add sp, sp, #1056
+	movz x1, #0, lsl #0
+	movz x2, #0, lsl #0
+	movz x3, #0, lsl #0
+	movz x4, #0, lsl #0
+	movz x5, #0, lsl #0
+	movz x6, #0, lsl #0
+	movz x7, #0, lsl #0
+	movz x8, #0, lsl #0
+	movz x9, #0, lsl #0
+	movz x10, #0, lsl #0
+	movz x11, #0, lsl #0
+	movz x12, #0, lsl #0
+	movz x13, #0, lsl #0
+	movz x14, #0, lsl #0
+	movz x15, #0, lsl #0
+	movz x16, #0, lsl #0
+	movz x17, #0, lsl #0
+	movi v0.2d, #0
+	movi v1.2d, #0
+	movi v2.2d, #0
+	movi v3.2d, #0
+	movi v4.2d, #0
+	movi v5.2d, #0
+	movi v6.2d, #0
+	movi v7.2d, #0
+	movi v16.2d, #0
+	movi v17.2d, #0
+	movi v18.2d, #0
+	movi v19.2d, #0
+	movi v20.2d, #0
+	movi v21.2d, #0
+	movi v22.2d, #0
+	movi v23.2d, #0
+	movi v24.2d, #0
+	movi v25.2d, #0
+	movi v26.2d, #0
+	movi v27.2d, #0
+	movi v28.2d, #0
+	movi v29.2d, #0
+	movi v30.2d, #0
+	movi v31.2d, #0
+	tst x1, x1
+	movz x0, #0, lsl #0
+	sub sp, sp, #1056
+	movi v31.2d, #0
+	add x9, sp, #0
+	movz x10, #16, lsl #0
+2196:
+	str q31, [x9, #0]
+	str q31, [x9, #16]
+	str q31, [x9, #32]
+	str q31, [x9, #48]
+	add x9, x9, #64
+	sub x10, x10, #1
+	cbnz x10, 2196b
+	str q31, [x9, #0]
+	str q31, [x9, #16]
+	add sp, sp, #1056
+282:
+	b 280f
+279:
+	sub sp, sp, #48
+	ldr x9, [sp, #48]
+	ldr x10, [sp, #56]
+	str x7, [sp, #0]
+	str x9, [sp, #8]
+	str x10, [sp, #16]
+	str x6, [sp, #24]
+	str x9, [sp, #32]
+	add x6, sp, #24
+	movz x7, #1, lsl #0
+	sub sp, sp, #752
+	add x9, sp, #0
+	str x20, [x9, #136]
+	str x21, [x9, #144]
+	str x22, [x9, #152]
+	str x23, [x9, #160]
+	str x24, [x9, #168]
+	str x25, [x9, #176]
+	str x26, [x9, #184]
+	str x27, [x9, #192]
+	str x28, [x9, #200]
+	str x30, [x9, #208]
+	str x19, [x9, #128]
+	add x19, x9, #0
+	add x21, x0, #0
+	add x22, x1, #0
+	add x23, x2, #0
+	add x24, x5, #0
+	ldr x26, [sp, #760]
+	add x25, x26, #15
+	lsr x25, x25, #4
+	lsl x25, x25, #4
+	movi v0.2d, #0
+	str q0, [x19, #224]
+	str q0, [x19, #240]
+	str q0, [x19, #256]
+	str q0, [x19, #272]
+	str q0, [x19, #288]
+	str q0, [x19, #304]
+	str q0, [x19, #320]
+	str q0, [x19, #336]
+	str q0, [x19, #352]
+	str q0, [x19, #368]
+	str q0, [x19, #384]
+	str q0, [x19, #400]
+	str q0, [x19, #416]
+	str q0, [x19, #432]
+	str q0, [x19, #448]
+	str q0, [x19, #464]
+	str q0, [x19, #480]
+	str q0, [x19, #496]
+	str q0, [x19, #512]
+	str q0, [x19, #528]
+	str q0, [x19, #544]
+	str q0, [x19, #560]
+	str q0, [x19, #576]
+	str q0, [x19, #592]
+	str q0, [x19, #608]
+	str q0, [x19, #624]
+	str q0, [x19, #640]
+	str q0, [x19, #656]
+	str q0, [x19, #672]
+	str q0, [x19, #688]
+	str q0, [x19, #704]
+	str q0, [x19, #720]
+	str q0, [x19, #736]
+	add x11, x19, #704
+	sub x11, x11, x25
+	add x12, x4, #0
+	add x13, x24, #0
+	cbz x13, 2197f
+	lsr x14, x13, #2
+	cbz x14, 2199f
+	lsr x14, x13, #3
+	cbz x14, 2201f
+2203:
+	ldr x14, [x12, #0]
+	str x14, [x11, #0]
+	add x12, x12, #8
+	add x11, x11, #8
+	sub x13, x13, #8
+	lsr x14, x13, #3
+	cbnz x14, 2203b
+	b 2202f
+2201:
+2202:
+	lsr x14, x13, #2
+	cbz x14, 2204f
+	ldr w14, [x12, #0]
+	str w14, [x11, #0]
+	add x12, x12, #4
+	add x11, x11, #4
+	sub x13, x13, #4
+	b 2205f
+2204:
+2205:
+	cbz x13, 2206f
+2208:
+	ldrb w14, [x12, #0]
+	strb w14, [x11, #0]
+	add x12, x12, #1
+	add x11, x11, #1
+	sub x13, x13, #1
+	cbnz x13, 2208b
+	b 2207f
+2206:
+2207:
+	b 2200f
+2199:
+2209:
+	ldrb w14, [x12, #0]
+	strb w14, [x11, #0]
+	add x12, x12, #1
+	add x11, x11, #1
+	sub x13, x13, #1
+	cbnz x13, 2209b
+2200:
+	b 2198f
+2197:
+2198:
+	ldr x9, [x23, #0]
+	ldr w10, [x23, #8]
+	mov v31.d[0], x9
+	mov v31.s[2], w10
+	movz w12, #256, lsl #16
+	mov v31.s[3], w12
+	str q31, [x19, #0]
+	add x0, x21, #0
+	add x1, x22, #0
+	add x2, x19, #0
+	add x3, x19, #224
+	lsr x4, x25, #4
+	add x4, x4, #1
+	add x5, x19, #736
+	add x27, x6, #0
+	add x28, x7, #0
+	bl {vg_aes_ctr32_aes}
+	add x6, x27, #0
+	add x7, x28, #0
+	add x1, x19, #240
+	ldr x2, [sp, #752]
+	add x3, x19, #720
+	sub x3, x3, x25
+	cbz x7, 2210f
+2212:
+	ldr x0, [x6, #0]
+	ldr x12, [x6, #8]
+	add x6, x6, #16
+	lsr x13, x12, #4
+	movz x14, #15, lsl #0
+	and x12, x12, x14
+	cbz x13, 2213f
+2215:
+	ldr q0, [x0, #0]
+	ldr q1, [x1, #0]
+	eor v0.16b, v0.16b, v1.16b
+	str q0, [x2, #0]
+	str q0, [x3, #0]
+	add x0, x0, #16
+	add x1, x1, #16
+	add x2, x2, #16
+	add x3, x3, #16
+	sub x13, x13, #1
+	cbnz x13, 2215b
+	b 2214f
+2213:
+2214:
+	cbz x12, 2216f
+	lsr x14, x12, #3
+	cbnz x14, 2218f
+	lsr x14, x12, #2
+	cbnz x14, 2220f
+2222:
+	ldrb w14, [x0, #0]
+	ldrb w15, [x1, #0]
+	eor w14, w14, w15
+	strb w14, [x2, #0]
+	strb w14, [x3, #0]
+	add x0, x0, #1
+	add x1, x1, #1
+	add x2, x2, #1
+	add x3, x3, #1
+	sub x12, x12, #1
+	cbnz x12, 2222b
+	b 2221f
+2220:
+	ldr w14, [x0, #0]
+	ldr w15, [x1, #0]
+	eor w13, w14, w15
+	sub x12, x12, #4
+	add x0, x0, x12
+	add x1, x1, x12
+	ldr w14, [x0, #0]
+	ldr w15, [x1, #0]
+	eor w14, w14, w15
+	str w13, [x2, #0]
+	str w13, [x3, #0]
+	add x2, x2, x12
+	add x3, x3, x12
+	str w14, [x2, #0]
+	str w14, [x3, #0]
+	add x0, x0, #4
+	add x1, x1, #4
+	add x2, x2, #4
+	add x3, x3, #4
+2221:
+	b 2219f
+2218:
+	ldr x14, [x0, #0]
+	ldr x15, [x1, #0]
+	eor x13, x14, x15
+	sub x12, x12, #8
+	add x0, x0, x12
+	add x1, x1, x12
+	ldr x14, [x0, #0]
+	ldr x15, [x1, #0]
+	eor x14, x14, x15
+	str x13, [x2, #0]
+	str x13, [x3, #0]
+	add x2, x2, x12
+	add x3, x3, x12
+	str x14, [x2, #0]
+	str x14, [x3, #0]
+	add x0, x0, #8
+	add x1, x1, #8
+	add x2, x2, #8
+	add x3, x3, #8
+2219:
+	b 2217f
+2216:
+2217:
+	sub x7, x7, #1
+	cbnz x7, 2212b
+	b 2211f
+2210:
+2211:
+	ldr x5, [sp, #816]
+	lsl x9, x24, #3
+	rev x9, x9
+	str x9, [x19, #720]
+	lsl x9, x26, #3
+	rev x9, x9
+	str x9, [x19, #728]
+	add x0, x21, #240
+	add x1, x19, #736
+	add x2, x19, #480
+	movz x3, #16, lsl #0
+	ldr q16, [x5, #16]
+	ext v24.16b, v16.16b, v16.16b, #8
+	ldr q17, [x5, #0]
+	ext v25.16b, v17.16b, v17.16b, #8
+	ldr q18, [x5, #48]
+	ext v26.16b, v18.16b, v18.16b, #8
+	ldr q19, [x5, #32]
+	ext v27.16b, v19.16b, v19.16b, #8
+	ldr q20, [x5, #80]
+	ext v28.16b, v20.16b, v20.16b, #8
+	ldr q21, [x5, #64]
+	ext v29.16b, v21.16b, v21.16b, #8
+	ldr q22, [x5, #112]
+	ext v30.16b, v22.16b, v22.16b, #8
+	ldr q23, [x5, #96]
+	ext v31.16b, v23.16b, v23.16b, #8
+	movz x5, #49664, lsl #48
+	dup v1.2d, x5
+	ldr q0, [x1, #0]
+	rev64 v0.16b, v0.16b
+	lsr x5, x3, #3
+	sub x11, x26, #129
+	lsr x11, x11, #63
+	cbnz x11, 2223f
+	sub x11, x26, #161
+	lsr x11, x11, #63
+	cbnz x11, 2225f
+	movi v3.2d, #0
+	movi v4.2d, #0
+	movi v5.2d, #0
+	ldr q6, [x2, #16]
+	rev64 v6.16b, v6.16b
+	pmull v7.1q, v6.1d, v30.1d
+	eor v5.16b, v5.16b, v7.16b
+	pmull2 v7.1q, v6.2d, v30.2d
+	eor v3.16b, v3.16b, v7.16b
+	pmull v7.1q, v6.1d, v22.1d
+	eor v4.16b, v4.16b, v7.16b
+	pmull2 v7.1q, v6.2d, v22.2d
+	eor v4.16b, v4.16b, v7.16b
+	ldr q6, [x2, #32]
+	rev64 v6.16b, v6.16b
+	pmull v7.1q, v6.1d, v29.1d
+	eor v5.16b, v5.16b, v7.16b
+	pmull2 v7.1q, v6.2d, v29.2d
+	eor v3.16b, v3.16b, v7.16b
+	pmull v7.1q, v6.1d, v21.1d
+	eor v4.16b, v4.16b, v7.16b
+	pmull2 v7.1q, v6.2d, v21.2d
+	eor v4.16b, v4.16b, v7.16b
+	ldr q6, [x2, #48]
+	rev64 v6.16b, v6.16b
+	pmull v7.1q, v6.1d, v28.1d
+	eor v5.16b, v5.16b, v7.16b
+	pmull2 v7.1q, v6.2d, v28.2d
+	eor v3.16b, v3.16b, v7.16b
+	pmull v7.1q, v6.1d, v20.1d
+	eor v4.16b, v4.16b, v7.16b
+	pmull2 v7.1q, v6.2d, v20.2d
+	eor v4.16b, v4.16b, v7.16b
+	ldr q6, [x2, #64]
+	rev64 v6.16b, v6.16b
+	pmull v7.1q, v6.1d, v27.1d
+	eor v5.16b, v5.16b, v7.16b
+	pmull2 v7.1q, v6.2d, v27.2d
+	eor v3.16b, v3.16b, v7.16b
+	pmull v7.1q, v6.1d, v19.1d
+	eor v4.16b, v4.16b, v7.16b
+	pmull2 v7.1q, v6.2d, v19.2d
+	eor v4.16b, v4.16b, v7.16b
+	ldr q6, [x2, #80]
+	rev64 v6.16b, v6.16b
+	pmull v7.1q, v6.1d, v26.1d
+	eor v5.16b, v5.16b, v7.16b
+	pmull2 v7.1q, v6.2d, v26.2d
+	eor v3.16b, v3.16b, v7.16b
+	pmull v7.1q, v6.1d, v18.1d
+	eor v4.16b, v4.16b, v7.16b
+	pmull2 v7.1q, v6.2d, v18.2d
+	eor v4.16b, v4.16b, v7.16b
+	ldr q6, [x2, #96]
+	rev64 v6.16b, v6.16b
+	pmull v7.1q, v6.1d, v25.1d
+	eor v5.16b, v5.16b, v7.16b
+	pmull2 v7.1q, v6.2d, v25.2d
+	eor v3.16b, v3.16b, v7.16b
+	pmull v7.1q, v6.1d, v17.1d
+	eor v4.16b, v4.16b, v7.16b
+	pmull2 v7.1q, v6.2d, v17.2d
+	eor v4.16b, v4.16b, v7.16b
+	ldr q6, [x2, #112]
+	rev64 v6.16b, v6.16b
+	pmull v7.1q, v6.1d, v24.1d
+	eor v5.16b, v5.16b, v7.16b
+	pmull2 v7.1q, v6.2d, v24.2d
+	eor v3.16b, v3.16b, v7.16b
+	pmull v7.1q, v6.1d, v16.1d
+	eor v4.16b, v4.16b, v7.16b
+	pmull2 v7.1q, v6.2d, v16.2d
+	eor v4.16b, v4.16b, v7.16b
+	ldr q6, [x2, #0]
+	rev64 v6.16b, v6.16b
+	eor v6.16b, v6.16b, v0.16b
+	pmull v7.1q, v6.1d, v31.1d
+	eor v5.16b, v5.16b, v7.16b
+	pmull2 v7.1q, v6.2d, v31.2d
+	eor v3.16b, v3.16b, v7.16b
+	pmull v7.1q, v6.1d, v23.1d
+	eor v4.16b, v4.16b, v7.16b
+	pmull2 v7.1q, v6.2d, v23.2d
+	eor v4.16b, v4.16b, v7.16b
+	pmull v7.1q, v3.1d, v1.1d
+	ext v3.16b, v3.16b, v3.16b, #8
+	eor v4.16b, v4.16b, v3.16b
+	eor v4.16b, v4.16b, v7.16b
+	pmull v7.1q, v4.1d, v1.1d
+	ext v5.16b, v5.16b, v5.16b, #8
+	eor v5.16b, v5.16b, v4.16b
+	ext v7.16b, v7.16b, v7.16b, #8
+	eor v0.16b, v5.16b, v7.16b
+	add x2, x2, #128
+	sub x3, x3, #8
+	lsr x5, x3, #3
+	b 2226f
+2225:
+	add x2, x2, #64
+	sub x3, x3, #4
+	lsr x5, x3, #3
+	movi v3.2d, #0
+	movi v4.2d, #0
+	movi v5.2d, #0
+	ldr q6, [x2, #16]
+	rev64 v6.16b, v6.16b
+	pmull v7.1q, v6.1d, v26.1d
+	eor v5.16b, v5.16b, v7.16b
+	pmull2 v7.1q, v6.2d, v26.2d
+	eor v3.16b, v3.16b, v7.16b
+	pmull v7.1q, v6.1d, v18.1d
+	eor v4.16b, v4.16b, v7.16b
+	pmull2 v7.1q, v6.2d, v18.2d
+	eor v4.16b, v4.16b, v7.16b
+	ldr q6, [x2, #32]
+	rev64 v6.16b, v6.16b
+	pmull v7.1q, v6.1d, v25.1d
+	eor v5.16b, v5.16b, v7.16b
+	pmull2 v7.1q, v6.2d, v25.2d
+	eor v3.16b, v3.16b, v7.16b
+	pmull v7.1q, v6.1d, v17.1d
+	eor v4.16b, v4.16b, v7.16b
+	pmull2 v7.1q, v6.2d, v17.2d
+	eor v4.16b, v4.16b, v7.16b
+	ldr q6, [x2, #48]
+	rev64 v6.16b, v6.16b
+	pmull v7.1q, v6.1d, v24.1d
+	eor v5.16b, v5.16b, v7.16b
+	pmull2 v7.1q, v6.2d, v24.2d
+	eor v3.16b, v3.16b, v7.16b
+	pmull v7.1q, v6.1d, v16.1d
+	eor v4.16b, v4.16b, v7.16b
+	pmull2 v7.1q, v6.2d, v16.2d
+	eor v4.16b, v4.16b, v7.16b
+	ldr q6, [x2, #0]
+	rev64 v6.16b, v6.16b
+	eor v6.16b, v6.16b, v0.16b
+	pmull v7.1q, v6.1d, v27.1d
+	eor v5.16b, v5.16b, v7.16b
+	pmull2 v7.1q, v6.2d, v27.2d
+	eor v3.16b, v3.16b, v7.16b
+	pmull v7.1q, v6.1d, v19.1d
+	eor v4.16b, v4.16b, v7.16b
+	pmull2 v7.1q, v6.2d, v19.2d
+	eor v4.16b, v4.16b, v7.16b
+	pmull v7.1q, v3.1d, v1.1d
+	ext v3.16b, v3.16b, v3.16b, #8
+	eor v4.16b, v4.16b, v3.16b
+	eor v4.16b, v4.16b, v7.16b
+	pmull v7.1q, v4.1d, v1.1d
+	ext v5.16b, v5.16b, v5.16b, #8
+	eor v5.16b, v5.16b, v4.16b
+	ext v7.16b, v7.16b, v7.16b, #8
+	eor v0.16b, v5.16b, v7.16b
+	add x2, x2, #64
+	sub x3, x3, #4
+	lsr x5, x3, #3
+2226:
+	b 2224f
+2223:
+	add x2, x2, #96
+	sub x3, x3, #6
+	lsr x5, x3, #3
+	movi v3.2d, #0
+	movi v4.2d, #0
+	movi v5.2d, #0
+	ldr q6, [x2, #16]
+	rev64 v6.16b, v6.16b
+	pmull v7.1q, v6.1d, v24.1d
+	eor v5.16b, v5.16b, v7.16b
+	pmull2 v7.1q, v6.2d, v24.2d
+	eor v3.16b, v3.16b, v7.16b
+	pmull v7.1q, v6.1d, v16.1d
+	eor v4.16b, v4.16b, v7.16b
+	pmull2 v7.1q, v6.2d, v16.2d
+	eor v4.16b, v4.16b, v7.16b
+	ldr q6, [x2, #0]
+	rev64 v6.16b, v6.16b
+	eor v6.16b, v6.16b, v0.16b
+	pmull v7.1q, v6.1d, v25.1d
+	eor v5.16b, v5.16b, v7.16b
+	pmull2 v7.1q, v6.2d, v25.2d
+	eor v3.16b, v3.16b, v7.16b
+	pmull v7.1q, v6.1d, v17.1d
+	eor v4.16b, v4.16b, v7.16b
+	pmull2 v7.1q, v6.2d, v17.2d
+	eor v4.16b, v4.16b, v7.16b
+	pmull v7.1q, v3.1d, v1.1d
+	ext v3.16b, v3.16b, v3.16b, #8
+	eor v4.16b, v4.16b, v3.16b
+	eor v4.16b, v4.16b, v7.16b
+	pmull v7.1q, v4.1d, v1.1d
+	ext v5.16b, v5.16b, v5.16b, #8
+	eor v5.16b, v5.16b, v4.16b
+	ext v7.16b, v7.16b, v7.16b, #8
+	eor v0.16b, v5.16b, v7.16b
+	add x2, x2, #32
+	sub x3, x3, #2
+	lsr x5, x3, #3
+2224:
+	movi v3.2d, #0
+	movi v4.2d, #0
+	movi v5.2d, #0
+	ldr q6, [x2, #16]
+	rev64 v6.16b, v6.16b
+	pmull v7.1q, v6.1d, v30.1d
+	eor v5.16b, v5.16b, v7.16b
+	pmull2 v7.1q, v6.2d, v30.2d
+	eor v3.16b, v3.16b, v7.16b
+	pmull v7.1q, v6.1d, v22.1d
+	eor v4.16b, v4.16b, v7.16b
+	pmull2 v7.1q, v6.2d, v22.2d
+	eor v4.16b, v4.16b, v7.16b
+	ldr q6, [x2, #32]
+	rev64 v6.16b, v6.16b
+	pmull v7.1q, v6.1d, v29.1d
+	eor v5.16b, v5.16b, v7.16b
+	pmull2 v7.1q, v6.2d, v29.2d
+	eor v3.16b, v3.16b, v7.16b
+	pmull v7.1q, v6.1d, v21.1d
+	eor v4.16b, v4.16b, v7.16b
+	pmull2 v7.1q, v6.2d, v21.2d
+	eor v4.16b, v4.16b, v7.16b
+	ldr q6, [x2, #48]
+	rev64 v6.16b, v6.16b
+	pmull v7.1q, v6.1d, v28.1d
+	eor v5.16b, v5.16b, v7.16b
+	pmull2 v7.1q, v6.2d, v28.2d
+	eor v3.16b, v3.16b, v7.16b
+	pmull v7.1q, v6.1d, v20.1d
+	eor v4.16b, v4.16b, v7.16b
+	pmull2 v7.1q, v6.2d, v20.2d
+	eor v4.16b, v4.16b, v7.16b
+	ldr q6, [x2, #64]
+	rev64 v6.16b, v6.16b
+	pmull v7.1q, v6.1d, v27.1d
+	eor v5.16b, v5.16b, v7.16b
+	pmull2 v7.1q, v6.2d, v27.2d
+	eor v3.16b, v3.16b, v7.16b
+	pmull v7.1q, v6.1d, v19.1d
+	eor v4.16b, v4.16b, v7.16b
+	pmull2 v7.1q, v6.2d, v19.2d
+	eor v4.16b, v4.16b, v7.16b
+	ldr q6, [x2, #80]
+	rev64 v6.16b, v6.16b
+	pmull v7.1q, v6.1d, v26.1d
+	eor v5.16b, v5.16b, v7.16b
+	pmull2 v7.1q, v6.2d, v26.2d
+	eor v3.16b, v3.16b, v7.16b
+	pmull v7.1q, v6.1d, v18.1d
+	eor v4.16b, v4.16b, v7.16b
+	pmull2 v7.1q, v6.2d, v18.2d
+	eor v4.16b, v4.16b, v7.16b
+	ldr q6, [x2, #96]
+	rev64 v6.16b, v6.16b
+	pmull v7.1q, v6.1d, v25.1d
+	eor v5.16b, v5.16b, v7.16b
+	pmull2 v7.1q, v6.2d, v25.2d
+	eor v3.16b, v3.16b, v7.16b
+	pmull v7.1q, v6.1d, v17.1d
+	eor v4.16b, v4.16b, v7.16b
+	pmull2 v7.1q, v6.2d, v17.2d
+	eor v4.16b, v4.16b, v7.16b
+	ldr q6, [x2, #112]
+	rev64 v6.16b, v6.16b
+	pmull v7.1q, v6.1d, v24.1d
+	eor v5.16b, v5.16b, v7.16b
+	pmull2 v7.1q, v6.2d, v24.2d
+	eor v3.16b, v3.16b, v7.16b
+	pmull v7.1q, v6.1d, v16.1d
+	eor v4.16b, v4.16b, v7.16b
+	pmull2 v7.1q, v6.2d, v16.2d
+	eor v4.16b, v4.16b, v7.16b
+	ldr q6, [x2, #0]
+	rev64 v6.16b, v6.16b
+	eor v6.16b, v6.16b, v0.16b
+	pmull v7.1q, v6.1d, v31.1d
+	eor v5.16b, v5.16b, v7.16b
+	pmull2 v7.1q, v6.2d, v31.2d
+	eor v3.16b, v3.16b, v7.16b
+	pmull v7.1q, v6.1d, v23.1d
+	eor v4.16b, v4.16b, v7.16b
+	pmull2 v7.1q, v6.2d, v23.2d
+	eor v4.16b, v4.16b, v7.16b
+	pmull v7.1q, v3.1d, v1.1d
+	ext v3.16b, v3.16b, v3.16b, #8
+	eor v4.16b, v4.16b, v3.16b
+	eor v4.16b, v4.16b, v7.16b
+	pmull v7.1q, v4.1d, v1.1d
+	ext v5.16b, v5.16b, v5.16b, #8
+	eor v5.16b, v5.16b, v4.16b
+	ext v7.16b, v7.16b, v7.16b, #8
+	eor v0.16b, v5.16b, v7.16b
+	add x2, x2, #128
+	sub x3, x3, #8
+	lsr x5, x3, #3
+	rev64 v16.16b, v0.16b
+	ldr q0, [x19, #224]
+	eor v16.16b, v16.16b, v0.16b
+	ldr x10, [sp, #768]
+	str q16, [x10, #0]
+	ldr x20, [x19, #136]
+	ldr x21, [x19, #144]
+	ldr x22, [x19, #152]
+	ldr x23, [x19, #160]
+	ldr x24, [x19, #168]
+	ldr x25, [x19, #176]
+	ldr x26, [x19, #184]
+	ldr x27, [x19, #192]
+	ldr x28, [x19, #200]
+	ldr x30, [x19, #208]
+	ldr x19, [x19, #128]
+	add sp, sp, #752
 	add sp, sp, #48
 	movz x1, #0, lsl #0
 	movz x2, #0, lsl #0
@@ -4141,22 +5295,24 @@ vg_aes_gcm_seal_contiguous_with_powers_aes_sha3:
 	movi v31.2d, #0
 	tst x1, x1
 	movz x0, #0, lsl #0
-	sub sp, sp, #1104
+	sub sp, sp, #800
 	movi v31.2d, #0
 	add x9, sp, #0
-	movz x10, #17, lsl #0
-2201:
+	movz x10, #12, lsl #0
+2227:
 	str q31, [x9, #0]
 	str q31, [x9, #16]
 	str q31, [x9, #32]
 	str q31, [x9, #48]
 	add x9, x9, #64
 	sub x10, x10, #1
-	cbnz x10, 2201b
+	cbnz x10, 2227b
 	str q31, [x9, #0]
-	add sp, sp, #1104
-	b 2102f
-2101:
+	str q31, [x9, #16]
+	add sp, sp, #800
+280:
+	b 278f
+277:
 	sub sp, sp, #368
 	add x9, sp, #0
 	str x20, [x9, #136]
@@ -4192,60 +5348,60 @@ vg_aes_gcm_seal_contiguous_with_powers_aes_sha3:
 	sub x11, x11, x25
 	add x12, x4, #0
 	add x13, x24, #0
-	cbz x13, 2202f
+	cbz x13, 2228f
 	lsr x14, x13, #2
-	cbz x14, 2204f
+	cbz x14, 2230f
 	lsr x14, x13, #3
-	cbz x14, 2206f
-2208:
+	cbz x14, 2232f
+2234:
 	ldr x14, [x12, #0]
 	str x14, [x11, #0]
 	add x12, x12, #8
 	add x11, x11, #8
 	sub x13, x13, #8
 	lsr x14, x13, #3
-	cbnz x14, 2208b
-	b 2207f
-2206:
-2207:
+	cbnz x14, 2234b
+	b 2233f
+2232:
+2233:
 	lsr x14, x13, #2
-	cbz x14, 2209f
+	cbz x14, 2235f
 	ldr w14, [x12, #0]
 	str w14, [x11, #0]
 	add x12, x12, #4
 	add x11, x11, #4
 	sub x13, x13, #4
-	b 2210f
-2209:
-2210:
-	cbz x13, 2211f
-2213:
+	b 2236f
+2235:
+2236:
+	cbz x13, 2237f
+2239:
 	ldrb w14, [x12, #0]
 	strb w14, [x11, #0]
 	add x12, x12, #1
 	add x11, x11, #1
 	sub x13, x13, #1
-	cbnz x13, 2213b
-	b 2212f
-2211:
-2212:
-	b 2205f
-2204:
-2214:
+	cbnz x13, 2239b
+	b 2238f
+2237:
+2238:
+	b 2231f
+2230:
+2240:
 	ldrb w14, [x12, #0]
 	strb w14, [x11, #0]
 	add x12, x12, #1
 	add x11, x11, #1
 	sub x13, x13, #1
-	cbnz x13, 2214b
-2205:
-	b 2203f
-2202:
-2203:
+	cbnz x13, 2240b
+2231:
+	b 2229f
+2228:
+2229:
 	sub x13, x22, #10
 	sub x14, x22, #12
-	cbz x13, 2215f
-	cbz x14, 2217f
+	cbz x13, 2241f
+	cbz x14, 2243f
 	ldr x9, [x23, #0]
 	ldr w10, [x23, #8]
 	mov v31.d[0], x9
@@ -4489,8 +5645,8 @@ vg_aes_gcm_seal_contiguous_with_powers_aes_sha3:
 	str q5, [x19, #80]
 	eor v6.16b, v6.16b, v30.16b
 	str q6, [x19, #96]
-	b 2218f
-2217:
+	b 2244f
+2243:
 	ldr x9, [x23, #0]
 	ldr w10, [x23, #8]
 	mov v31.d[0], x9
@@ -4704,9 +5860,9 @@ vg_aes_gcm_seal_contiguous_with_powers_aes_sha3:
 	str q5, [x19, #80]
 	eor v6.16b, v6.16b, v30.16b
 	str q6, [x19, #96]
-2218:
-	b 2216f
-2215:
+2244:
+	b 2242f
+2241:
 	ldr x9, [x23, #0]
 	ldr w10, [x23, #8]
 	mov v31.d[0], x9
@@ -4890,7 +6046,7 @@ vg_aes_gcm_seal_contiguous_with_powers_aes_sha3:
 	str q5, [x19, #80]
 	eor v6.16b, v6.16b, v30.16b
 	str q6, [x19, #96]
-2216:
+2242:
 	add x1, x19, #16
 	add x2, x7, #0
 	add x3, x19, #336
@@ -4900,8 +6056,8 @@ vg_aes_gcm_seal_contiguous_with_powers_aes_sha3:
 	lsr x13, x12, #4
 	movz x14, #15, lsl #0
 	and x12, x12, x14
-	cbz x13, 2219f
-2221:
+	cbz x13, 2245f
+2247:
 	ldr q0, [x0, #0]
 	ldr q1, [x1, #0]
 	eor v0.16b, v0.16b, v1.16b
@@ -4912,16 +6068,16 @@ vg_aes_gcm_seal_contiguous_with_powers_aes_sha3:
 	add x2, x2, #16
 	add x3, x3, #16
 	sub x13, x13, #1
-	cbnz x13, 2221b
-	b 2220f
-2219:
-2220:
-	cbz x12, 2222f
+	cbnz x13, 2247b
+	b 2246f
+2245:
+2246:
+	cbz x12, 2248f
 	lsr x14, x12, #3
-	cbnz x14, 2224f
+	cbnz x14, 2250f
 	lsr x14, x12, #2
-	cbnz x14, 2226f
-2228:
+	cbnz x14, 2252f
+2254:
 	ldrb w14, [x0, #0]
 	ldrb w15, [x1, #0]
 	eor w14, w14, w15
@@ -4932,9 +6088,9 @@ vg_aes_gcm_seal_contiguous_with_powers_aes_sha3:
 	add x2, x2, #1
 	add x3, x3, #1
 	sub x12, x12, #1
-	cbnz x12, 2228b
-	b 2227f
-2226:
+	cbnz x12, 2254b
+	b 2253f
+2252:
 	ldr w14, [x0, #0]
 	ldr w15, [x1, #0]
 	eor w13, w14, w15
@@ -4954,9 +6110,9 @@ vg_aes_gcm_seal_contiguous_with_powers_aes_sha3:
 	add x1, x1, #4
 	add x2, x2, #4
 	add x3, x3, #4
-2227:
-	b 2225f
-2224:
+2253:
+	b 2251f
+2250:
 	ldr x14, [x0, #0]
 	ldr x15, [x1, #0]
 	eor x13, x14, x15
@@ -4976,10 +6132,10 @@ vg_aes_gcm_seal_contiguous_with_powers_aes_sha3:
 	add x1, x1, #8
 	add x2, x2, #8
 	add x3, x3, #8
-2225:
-	b 2223f
-2222:
-2223:
+2251:
+	b 2249f
+2248:
+2249:
 	ldr x5, [sp, #384]
 	lsl x9, x24, #3
 	rev x9, x9
@@ -5175,19 +6331,19 @@ vg_aes_gcm_seal_contiguous_with_powers_aes_sha3:
 	movi v31.2d, #0
 	add x9, sp, #0
 	movz x10, #5, lsl #0
-2229:
+2255:
 	str q31, [x9, #0]
 	str q31, [x9, #16]
 	str q31, [x9, #32]
 	str q31, [x9, #48]
 	add x9, x9, #64
 	sub x10, x10, #1
-	cbnz x10, 2229b
+	cbnz x10, 2255b
 	str q31, [x9, #0]
 	str q31, [x9, #16]
 	str q31, [x9, #32]
 	add sp, sp, #368
-2102:
+278:
 21:
 	ret
 	.p2align 6
@@ -21226,27 +22382,15 @@ vg_aes_gcm_seal_contiguous_with_powers_aes:
 	subs x11, x5, x9
 	csel x10, x9, x10, hs
 	cbz x10, 20f
-	sub sp, sp, #48
-	ldr x9, [sp, #48]
-	ldr x10, [sp, #56]
-	str x7, [sp, #0]
-	str x9, [sp, #8]
-	str x10, [sp, #16]
-	str x6, [sp, #24]
-	str x9, [sp, #32]
-	add x6, sp, #24
-	movz x7, #1, lsl #0
 	sub sp, sp, #800
 	add x16, sp, #0
 	ldr x17, [sp, #800]
 	str x17, [x16, #0]
 	ldr x17, [sp, #808]
 	str x17, [x16, #8]
-	ldr x17, [sp, #816]
-	str x17, [x16, #16]
 	add x17, sp, #32
-	str x17, [x16, #24]
-	ldr x9, [sp, #24]
+	str x17, [x16, #16]
+	ldr x9, [sp, #16]
 	str x20, [x9, #136]
 	str x21, [x9, #144]
 	str x22, [x9, #152]
@@ -21270,13 +22414,10 @@ vg_aes_gcm_seal_contiguous_with_powers_aes:
 	add x24, x3, #0
 	add x26, x3, #0
 	movz x27, #0, lsl #0
-	str x6, [x19, #336]
-	str x7, [x19, #344]
+	str x7, [x19, #336]
 	ldr x9, [sp, #0]
-	str x9, [x19, #232]
-	ldr x9, [sp, #8]
 	str x9, [x19, #240]
-	ldr x10, [sp, #16]
+	ldr x10, [sp, #8]
 	str x10, [x19, #248]
 	add x28, x10, #0
 	sub x9, x24, #12
@@ -21400,7 +22541,6 @@ vg_aes_gcm_seal_contiguous_with_powers_aes:
 	str x9, [x20, #24]
 	ldr x23, [x19, #216]
 	ldr x24, [x19, #224]
-	movz x25, #0, lsl #0
 	lsr x3, x24, #4
 	add x2, x23, #0
 	add x0, x21, #240
@@ -21409,181 +22549,240 @@ vg_aes_gcm_seal_contiguous_with_powers_aes:
 	lsl x9, x3, #4
 	add x23, x23, x9
 	sub x24, x24, x9
+	cbz x3, 219f
 	bl {vg_ghash_aes}
-	add x11, x20, #32
-	add x12, x23, #0
-	add x13, x24, #0
-	cbz x13, 219f
-	lsr x14, x13, #2
-	cbz x14, 221f
-	lsr x14, x13, #3
-	cbz x14, 223f
-225:
-	ldr x14, [x12, #0]
-	str x14, [x11, #0]
-	add x12, x12, #8
-	add x11, x11, #8
-	sub x13, x13, #8
-	lsr x14, x13, #3
-	cbnz x14, 225b
-	b 224f
-223:
-224:
-	lsr x14, x13, #2
-	cbz x14, 226f
-	ldr w14, [x12, #0]
-	str w14, [x11, #0]
-	add x12, x12, #4
-	add x11, x11, #4
-	sub x13, x13, #4
-	b 227f
-226:
-227:
-	cbz x13, 228f
-230:
-	ldrb w14, [x12, #0]
-	strb w14, [x11, #0]
-	add x12, x12, #1
-	add x11, x11, #1
-	sub x13, x13, #1
-	cbnz x13, 230b
-	b 229f
-228:
-229:
-	b 222f
-221:
-231:
-	ldrb w14, [x12, #0]
-	strb w14, [x11, #0]
-	add x12, x12, #1
-	add x11, x11, #1
-	sub x13, x13, #1
-	cbnz x13, 231b
-222:
 	b 220f
 219:
 220:
-	ldr x25, [x19, #224]
-	movz x9, #15, lsl #0
-	and x25, x25, x9
-	add x12, x20, #32
+	cbz x24, 221f
+	add x25, x24, #0
+	add x12, x23, #0
 	movz x9, #0, lsl #0
 	str x9, [x19, #96]
 	str x9, [x19, #104]
 	add x11, x19, #96
 	add x13, x25, #0
-	cbz x13, 232f
+	cbz x13, 223f
 	lsr x14, x13, #2
-	cbz x14, 234f
+	cbz x14, 225f
 	lsr x14, x13, #3
-	cbz x14, 236f
-238:
+	cbz x14, 227f
+229:
 	ldr x14, [x12, #0]
 	str x14, [x11, #0]
 	add x12, x12, #8
 	add x11, x11, #8
 	sub x13, x13, #8
 	lsr x14, x13, #3
-	cbnz x14, 238b
-	b 237f
-236:
-237:
+	cbnz x14, 229b
+	b 228f
+227:
+228:
 	lsr x14, x13, #2
-	cbz x14, 239f
+	cbz x14, 230f
 	ldr w14, [x12, #0]
 	str w14, [x11, #0]
 	add x12, x12, #4
 	add x11, x11, #4
 	sub x13, x13, #4
-	b 240f
-239:
-240:
-	cbz x13, 241f
-243:
-	ldrb w14, [x12, #0]
-	strb w14, [x11, #0]
-	add x12, x12, #1
-	add x11, x11, #1
-	sub x13, x13, #1
-	cbnz x13, 243b
-	b 242f
-241:
-242:
-	b 235f
+	b 231f
+230:
+231:
+	cbz x13, 232f
 234:
-244:
 	ldrb w14, [x12, #0]
 	strb w14, [x11, #0]
 	add x12, x12, #1
 	add x11, x11, #1
 	sub x13, x13, #1
-	cbnz x13, 244b
-235:
+	cbnz x13, 234b
 	b 233f
 232:
 233:
-	cbz x25, 245f
+	b 226f
+225:
+235:
+	ldrb w14, [x12, #0]
+	strb w14, [x11, #0]
+	add x12, x12, #1
+	add x11, x11, #1
+	sub x13, x13, #1
+	cbnz x13, 235b
+226:
+	b 224f
+223:
+224:
+	cbz x25, 236f
 	movz x3, #1, lsl #0
-	b 246f
-245:
+	b 237f
+236:
 	movz x3, #0, lsl #0
-246:
+237:
 	add x0, x21, #240
 	add x1, x20, #16
 	add x4, x19, #512
 	add x2, x19, #96
 	bl {vg_ghash_aes}
-	ldr x27, [x19, #336]
-	ldr x28, [x19, #344]
-	ldr x26, [x19, #232]
+	b 222f
+221:
+222:
+	ldr x23, [x19, #232]
+	ldr x24, [x19, #240]
+	ldr x26, [x19, #336]
 	str x26, [x19, #352]
 	movz x25, #0, lsl #0
-	cbz x28, 247f
-249:
-	ldr x23, [x27, #0]
-	ldr x24, [x27, #8]
-	add x27, x27, #16
-	cbz x25, 250f
-	movz x9, #16, lsl #0
-	sub x9, x9, x25
-	lsr x10, x24, #4
-	cbnz x10, 252f
-	sub x11, x9, x24
-	lsr x11, x11, #63
-	cbz x11, 254f
-	add x10, x9, #0
-	b 255f
-254:
-	add x10, x24, #0
-255:
-	b 253f
-252:
-	add x10, x9, #0
-253:
-	add x11, x20, #64
-	add x11, x11, x25
-	add x25, x25, x10
-	movz x9, #15, lsl #0
-	and x25, x25, x9
-	cbz x10, 256f
-258:
-	ldrb w13, [x23, #0]
-	ldrb w14, [x11, #0]
-	eor w13, w13, w14
-	strb w13, [x26, #0]
-	add x23, x23, #1
-	add x11, x11, #1
-	add x26, x26, #1
-	sub x24, x24, #1
-	sub x10, x10, #1
-	cbnz x10, 258b
-	b 257f
-256:
-257:
-	b 251f
-250:
-251:
-	cbz x24, 259f
+	add x9, x24, #256
+	lsr x9, x9, #10
+	cbz x9, 238f
+	ldr x2, [x19, #352]
+	sub x3, x26, x2
+	lsr x3, x3, #4
+	cbz x3, 240f
+	add x0, x21, #240
+	add x1, x20, #16
+	add x4, x19, #512
+	bl {vg_ghash_aes}
+	b 241f
+240:
+241:
+	add x15, x23, #0
+	add x23, x26, #0
+	add x26, x24, #0
+	add x0, x21, #0
+	ldr q6, [x0, #240]
+	rev64 v6.16b, v6.16b
+	movz x5, #49664, lsl #48
+	dup v1.2d, x5
+	ushr v7.2d, v6.2d, #63
+	shl v3.2d, v6.2d, #1
+	ext v4.16b, v7.16b, v7.16b, #8
+	eor v3.16b, v3.16b, v4.16b
+	pmull v5.1q, v7.1d, v1.1d
+	eor v24.16b, v3.16b, v5.16b
+	ext v16.16b, v24.16b, v24.16b, #8
+	pmull v5.1q, v24.1d, v24.1d
+	pmull2 v3.1q, v24.2d, v24.2d
+	pmull v7.1q, v3.1d, v1.1d
+	ext v3.16b, v3.16b, v3.16b, #8
+	eor v4.16b, v3.16b, v7.16b
+	pmull v7.1q, v4.1d, v1.1d
+	ext v5.16b, v5.16b, v5.16b, #8
+	eor v5.16b, v5.16b, v4.16b
+	ext v7.16b, v7.16b, v7.16b, #8
+	eor v25.16b, v5.16b, v7.16b
+	ext v17.16b, v25.16b, v25.16b, #8
+	pmull v5.1q, v25.1d, v24.1d
+	pmull2 v3.1q, v25.2d, v24.2d
+	pmull v4.1q, v25.1d, v16.1d
+	pmull2 v7.1q, v25.2d, v16.2d
+	eor v4.16b, v4.16b, v7.16b
+	pmull v7.1q, v3.1d, v1.1d
+	ext v3.16b, v3.16b, v3.16b, #8
+	eor v4.16b, v4.16b, v3.16b
+	eor v4.16b, v4.16b, v7.16b
+	pmull v7.1q, v4.1d, v1.1d
+	ext v5.16b, v5.16b, v5.16b, #8
+	eor v5.16b, v5.16b, v4.16b
+	ext v7.16b, v7.16b, v7.16b, #8
+	eor v26.16b, v5.16b, v7.16b
+	ext v18.16b, v26.16b, v26.16b, #8
+	pmull v5.1q, v25.1d, v25.1d
+	pmull2 v3.1q, v25.2d, v25.2d
+	pmull v7.1q, v3.1d, v1.1d
+	ext v3.16b, v3.16b, v3.16b, #8
+	eor v4.16b, v3.16b, v7.16b
+	pmull v7.1q, v4.1d, v1.1d
+	ext v5.16b, v5.16b, v5.16b, #8
+	eor v5.16b, v5.16b, v4.16b
+	ext v7.16b, v7.16b, v7.16b, #8
+	eor v27.16b, v5.16b, v7.16b
+	ext v19.16b, v27.16b, v27.16b, #8
+	pmull v5.1q, v26.1d, v25.1d
+	pmull2 v3.1q, v26.2d, v25.2d
+	pmull v4.1q, v26.1d, v17.1d
+	pmull2 v7.1q, v26.2d, v17.2d
+	eor v4.16b, v4.16b, v7.16b
+	pmull v7.1q, v3.1d, v1.1d
+	ext v3.16b, v3.16b, v3.16b, #8
+	eor v4.16b, v4.16b, v3.16b
+	eor v4.16b, v4.16b, v7.16b
+	pmull v7.1q, v4.1d, v1.1d
+	ext v5.16b, v5.16b, v5.16b, #8
+	eor v5.16b, v5.16b, v4.16b
+	ext v7.16b, v7.16b, v7.16b, #8
+	eor v28.16b, v5.16b, v7.16b
+	ext v20.16b, v28.16b, v28.16b, #8
+	pmull v5.1q, v26.1d, v26.1d
+	pmull2 v3.1q, v26.2d, v26.2d
+	pmull v7.1q, v3.1d, v1.1d
+	ext v3.16b, v3.16b, v3.16b, #8
+	eor v4.16b, v3.16b, v7.16b
+	pmull v7.1q, v4.1d, v1.1d
+	ext v5.16b, v5.16b, v5.16b, #8
+	eor v5.16b, v5.16b, v4.16b
+	ext v7.16b, v7.16b, v7.16b, #8
+	eor v29.16b, v5.16b, v7.16b
+	ext v21.16b, v29.16b, v29.16b, #8
+	pmull v5.1q, v27.1d, v26.1d
+	pmull2 v3.1q, v27.2d, v26.2d
+	pmull v4.1q, v27.1d, v18.1d
+	pmull2 v7.1q, v27.2d, v18.2d
+	eor v4.16b, v4.16b, v7.16b
+	pmull v7.1q, v3.1d, v1.1d
+	ext v3.16b, v3.16b, v3.16b, #8
+	eor v4.16b, v4.16b, v3.16b
+	eor v4.16b, v4.16b, v7.16b
+	pmull v7.1q, v4.1d, v1.1d
+	ext v5.16b, v5.16b, v5.16b, #8
+	eor v5.16b, v5.16b, v4.16b
+	ext v7.16b, v7.16b, v7.16b, #8
+	eor v30.16b, v5.16b, v7.16b
+	ext v22.16b, v30.16b, v30.16b, #8
+	pmull v5.1q, v27.1d, v27.1d
+	pmull2 v3.1q, v27.2d, v27.2d
+	pmull v7.1q, v3.1d, v1.1d
+	ext v3.16b, v3.16b, v3.16b, #8
+	eor v4.16b, v3.16b, v7.16b
+	pmull v7.1q, v4.1d, v1.1d
+	ext v5.16b, v5.16b, v5.16b, #8
+	eor v5.16b, v5.16b, v4.16b
+	ext v7.16b, v7.16b, v7.16b, #8
+	eor v31.16b, v5.16b, v7.16b
+	ext v23.16b, v31.16b, v31.16b, #8
+	str q24, [x19, #512]
+	str q25, [x19, #528]
+	str q26, [x19, #544]
+	str q27, [x19, #560]
+	str q28, [x19, #576]
+	str q29, [x19, #592]
+	str q30, [x19, #608]
+	str q31, [x19, #624]
+	eor v2.16b, v30.16b, v22.16b
+	eor v3.16b, v29.16b, v21.16b
+	ext v4.16b, v2.16b, v3.16b, #8
+	str q4, [x19, #640]
+	eor v2.16b, v28.16b, v20.16b
+	eor v3.16b, v27.16b, v19.16b
+	ext v4.16b, v2.16b, v3.16b, #8
+	str q4, [x19, #656]
+	eor v2.16b, v26.16b, v18.16b
+	eor v3.16b, v25.16b, v17.16b
+	ext v4.16b, v2.16b, v3.16b, #8
+	str q4, [x19, #672]
+	eor v2.16b, v24.16b, v16.16b
+	eor v3.16b, v31.16b, v23.16b
+	ext v4.16b, v2.16b, v3.16b, #8
+	str q4, [x19, #688]
+	bl {vg_aes_gcm_seal_batches_aes}
+	add x26, x9, #0
+	add x23, x15, #0
+	movz x10, #127, lsl #0
+	and x24, x24, x10
+	str x26, [x19, #352]
+	b 239f
+238:
+239:
+	cbz x24, 242f
 	lsr x4, x24, #4
 	add x3, x23, #0
 	add x0, x21, #0
@@ -21595,17 +22794,21 @@ vg_aes_gcm_seal_contiguous_with_powers_aes:
 	sub x24, x24, x9
 	add x6, x26, #0
 	add x26, x26, x9
+	cbz x4, 244f
 	bl {vg_aes_ctr32_to_aes}
-	cbz x24, 261f
-	cbz x24, 263f
+	b 245f
+244:
+245:
+	cbz x24, 246f
+	cbz x24, 248f
 	movz x4, #1, lsl #0
 	movz x9, #0, lsl #0
 	str x9, [x20, #64]
 	str x9, [x20, #72]
-	b 264f
-263:
+	b 249f
+248:
 	movz x4, #0, lsl #0
-264:
+249:
 	add x0, x21, #0
 	add x1, x22, #0
 	add x2, x20, #48
@@ -21615,8 +22818,12 @@ vg_aes_gcm_seal_contiguous_with_powers_aes:
 	add x10, x24, #0
 	add x25, x24, #0
 	add x11, x20, #64
-	cbz x10, 265f
-267:
+	lsr x12, x24, #3
+	cbnz x12, 250f
+	lsr x12, x24, #2
+	cbnz x12, 252f
+	cbz x10, 254f
+256:
 	ldrb w13, [x23, #0]
 	ldrb w14, [x11, #0]
 	eor w13, w13, w14
@@ -21626,21 +22833,52 @@ vg_aes_gcm_seal_contiguous_with_powers_aes:
 	add x26, x26, #1
 	sub x24, x24, #1
 	sub x10, x10, #1
-	cbnz x10, 267b
-	b 266f
-265:
-266:
-	b 262f
-261:
-262:
-	b 260f
-259:
-260:
-	sub x28, x28, #1
-	cbnz x28, 249b
-	b 248f
+	cbnz x10, 256b
+	b 255f
+254:
+255:
+	b 253f
+252:
+	sub x12, x24, #4
+	add x0, x23, x12
+	add x1, x11, x12
+	add x2, x26, x12
+	ldr w13, [x23, #0]
+	ldr w14, [x11, #0]
+	eor w13, w13, w14
+	ldr w14, [x0, #0]
+	ldr w15, [x1, #0]
+	eor w14, w14, w15
+	str w13, [x26, #0]
+	str w14, [x2, #0]
+	add x23, x23, x24
+	add x26, x26, x24
+	movz x24, #0, lsl #0
+253:
+	b 251f
+250:
+	sub x12, x24, #8
+	add x0, x23, x12
+	add x1, x11, x12
+	add x2, x26, x12
+	ldr x13, [x23, #0]
+	ldr x14, [x11, #0]
+	eor x13, x13, x14
+	ldr x14, [x0, #0]
+	ldr x15, [x1, #0]
+	eor x14, x14, x15
+	str x13, [x26, #0]
+	str x14, [x2, #0]
+	add x23, x23, x24
+	add x26, x26, x24
+	movz x24, #0, lsl #0
+251:
+	b 247f
+246:
 247:
-248:
+	b 243f
+242:
+243:
 	ldr x23, [x19, #352]
 	sub x24, x26, x23
 	lsr x3, x24, #4
@@ -21651,128 +22889,83 @@ vg_aes_gcm_seal_contiguous_with_powers_aes:
 	lsl x9, x3, #4
 	add x23, x23, x9
 	sub x24, x24, x9
+	cbz x3, 257f
 	bl {vg_ghash_aes}
-	add x11, x20, #32
-	add x12, x23, #0
-	add x13, x24, #0
-	cbz x13, 268f
-	lsr x14, x13, #2
-	cbz x14, 270f
-	lsr x14, x13, #3
-	cbz x14, 272f
-274:
-	ldr x14, [x12, #0]
-	str x14, [x11, #0]
-	add x12, x12, #8
-	add x11, x11, #8
-	sub x13, x13, #8
-	lsr x14, x13, #3
-	cbnz x14, 274b
-	b 273f
-272:
-273:
-	lsr x14, x13, #2
-	cbz x14, 275f
-	ldr w14, [x12, #0]
-	str w14, [x11, #0]
-	add x12, x12, #4
-	add x11, x11, #4
-	sub x13, x13, #4
-	b 276f
-275:
-276:
-	cbz x13, 277f
-279:
-	ldrb w14, [x12, #0]
-	strb w14, [x11, #0]
-	add x12, x12, #1
-	add x11, x11, #1
-	sub x13, x13, #1
-	cbnz x13, 279b
-	b 278f
-277:
-278:
-	b 271f
-270:
-280:
-	ldrb w14, [x12, #0]
-	strb w14, [x11, #0]
-	add x12, x12, #1
-	add x11, x11, #1
-	sub x13, x13, #1
-	cbnz x13, 280b
-271:
-	b 269f
-268:
-269:
+	b 258f
+257:
+258:
+	cbz x24, 259f
 	add x25, x24, #0
-	add x12, x20, #32
+	add x12, x23, #0
 	movz x9, #0, lsl #0
 	str x9, [x19, #96]
 	str x9, [x19, #104]
 	add x11, x19, #96
 	add x13, x25, #0
-	cbz x13, 281f
+	cbz x13, 261f
 	lsr x14, x13, #2
-	cbz x14, 283f
+	cbz x14, 263f
 	lsr x14, x13, #3
-	cbz x14, 285f
-287:
+	cbz x14, 265f
+267:
 	ldr x14, [x12, #0]
 	str x14, [x11, #0]
 	add x12, x12, #8
 	add x11, x11, #8
 	sub x13, x13, #8
 	lsr x14, x13, #3
-	cbnz x14, 287b
-	b 286f
-285:
-286:
+	cbnz x14, 267b
+	b 266f
+265:
+266:
 	lsr x14, x13, #2
-	cbz x14, 288f
+	cbz x14, 268f
 	ldr w14, [x12, #0]
 	str w14, [x11, #0]
 	add x12, x12, #4
 	add x11, x11, #4
 	sub x13, x13, #4
-	b 289f
-288:
-289:
-	cbz x13, 290f
-292:
+	b 269f
+268:
+269:
+	cbz x13, 270f
+272:
 	ldrb w14, [x12, #0]
 	strb w14, [x11, #0]
 	add x12, x12, #1
 	add x11, x11, #1
 	sub x13, x13, #1
-	cbnz x13, 292b
-	b 291f
-290:
-291:
-	b 284f
-283:
-293:
+	cbnz x13, 272b
+	b 271f
+270:
+271:
+	b 264f
+263:
+273:
 	ldrb w14, [x12, #0]
 	strb w14, [x11, #0]
 	add x12, x12, #1
 	add x11, x11, #1
 	sub x13, x13, #1
-	cbnz x13, 293b
-284:
-	b 282f
-281:
-282:
-	cbz x25, 294f
+	cbnz x13, 273b
+264:
+	b 262f
+261:
+262:
+	cbz x25, 274f
 	movz x3, #1, lsl #0
-	b 295f
-294:
+	b 275f
+274:
 	movz x3, #0, lsl #0
-295:
+275:
 	add x0, x21, #240
 	add x1, x20, #16
 	add x4, x19, #512
 	add x2, x19, #96
 	bl {vg_ghash_aes}
+	b 260f
+259:
+260:
 	ldr x26, [x19, #224]
 	ldr x27, [x19, #240]
 	lsl x9, x26, #3
@@ -21787,22 +22980,14 @@ vg_aes_gcm_seal_contiguous_with_powers_aes:
 	add x4, x19, #512
 	add x2, x19, #96
 	bl {vg_ghash_aes}
-	ldr x9, [x20, #16]
-	str x9, [x19, #0]
-	ldr x9, [x20, #24]
-	str x9, [x19, #8]
 	add x0, x21, #0
 	add x1, x22, #0
 	add x2, x20, #0
-	add x3, x19, #0
+	add x3, x20, #16
 	movz x4, #1, lsl #0
 	add x5, x19, #512
-	bl {vg_aes_ctr32_aes}
-	ldr x28, [x19, #248]
-	ldr x9, [x19, #0]
-	str x9, [x28, #0]
-	ldr x9, [x19, #8]
-	str x9, [x28, #8]
+	ldr x6, [x19, #248]
+	bl {vg_aes_ctr32_to_aes}
 	ldr x20, [x19, #136]
 	ldr x21, [x19, #144]
 	ldr x22, [x19, #152]
@@ -21815,7 +23000,6 @@ vg_aes_gcm_seal_contiguous_with_powers_aes:
 	ldr x30, [x19, #208]
 	ldr x19, [x19, #128]
 	add sp, sp, #800
-	add sp, sp, #48
 	movz x1, #0, lsl #0
 	movz x2, #0, lsl #0
 	movz x3, #0, lsl #0
@@ -21858,38 +23042,41 @@ vg_aes_gcm_seal_contiguous_with_powers_aes:
 	movi v30.2d, #0
 	movi v31.2d, #0
 	tst x1, x1
+	mov v8.d[1], x1
+	mov v9.d[1], x1
+	mov v10.d[1], x1
+	mov v11.d[1], x1
+	mov v12.d[1], x1
+	mov v13.d[1], x1
+	mov v14.d[1], x1
+	mov v15.d[1], x1
 	movz x0, #0, lsl #0
-	sub sp, sp, #848
+	sub sp, sp, #800
 	movi v31.2d, #0
 	add x9, sp, #0
-	movz x10, #13, lsl #0
-296:
+	movz x10, #12, lsl #0
+276:
 	str q31, [x9, #0]
 	str q31, [x9, #16]
 	str q31, [x9, #32]
 	str q31, [x9, #48]
 	add x9, x9, #64
 	sub x10, x10, #1
-	cbnz x10, 296b
+	cbnz x10, 276b
 	str q31, [x9, #0]
-	add sp, sp, #848
+	str q31, [x9, #16]
+	add sp, sp, #800
 	b 21f
 20:
 	ldr x10, [sp, #0]
-	movz x9, #97, lsl #0
-	subs x11, x10, x9
-	sbc x11, x11, x11
-	cbnz x11, 297f
-	sub sp, sp, #48
-	ldr x9, [sp, #48]
-	ldr x10, [sp, #56]
-	str x7, [sp, #0]
-	str x9, [sp, #8]
-	str x10, [sp, #16]
-	str x6, [sp, #24]
-	str x9, [sp, #32]
-	add x6, sp, #24
-	movz x7, #1, lsl #0
+	add x10, x10, #31
+	lsr x11, x10, #7
+	cbz x11, 277f
+	lsr x11, x10, #8
+	cbz x11, 279f
+	add x11, x10, #225
+	lsr x11, x11, #10
+	cbz x11, 281f
 	sub sp, sp, #800
 	add x16, sp, #0
 	ldr x17, [sp, #800]
@@ -21916,119 +23103,14 @@ vg_aes_gcm_seal_contiguous_with_powers_aes:
 	add x20, x19, #16
 	add x21, x0, #0
 	add x22, x1, #0
-	str x4, [x19, #216]
 	str x5, [x19, #224]
 	str x6, [x19, #232]
+	str x7, [x19, #320]
+	ldr x7, [sp, #0]
 	str x7, [x19, #240]
 	add x23, x2, #0
-	add x24, x3, #0
-	add x26, x3, #0
-	movz x27, #0, lsl #0
-	str x6, [x19, #336]
-	str x7, [x19, #344]
-	ldr x9, [sp, #0]
-	str x9, [x19, #232]
-	ldr x9, [sp, #8]
-	str x9, [x19, #240]
-	ldr x10, [sp, #16]
-	str x10, [x19, #248]
-	add x28, x10, #0
-	sub x9, x24, #12
-	cbz x9, 299f
-	movz x9, #0, lsl #0
-	str x9, [x20, #0]
-	str x9, [x20, #8]
-	lsr x3, x24, #4
-	add x2, x23, #0
-	add x0, x21, #240
-	add x1, x20, #0
-	add x4, x19, #512
-	lsl x9, x3, #4
-	add x23, x23, x9
-	movz x10, #15, lsl #0
-	and x25, x24, x10
-	bl {vg_ghash_aes}
-	add x12, x23, #0
-	movz x9, #0, lsl #0
-	str x9, [x19, #96]
-	str x9, [x19, #104]
-	add x11, x19, #96
-	add x13, x25, #0
-	cbz x13, 2101f
-	lsr x14, x13, #2
-	cbz x14, 2103f
-	lsr x14, x13, #3
-	cbz x14, 2105f
-2107:
-	ldr x14, [x12, #0]
-	str x14, [x11, #0]
-	add x12, x12, #8
-	add x11, x11, #8
-	sub x13, x13, #8
-	lsr x14, x13, #3
-	cbnz x14, 2107b
-	b 2106f
-2105:
-2106:
-	lsr x14, x13, #2
-	cbz x14, 2108f
-	ldr w14, [x12, #0]
-	str w14, [x11, #0]
-	add x12, x12, #4
-	add x11, x11, #4
-	sub x13, x13, #4
-	b 2109f
-2108:
-2109:
-	cbz x13, 2110f
-2112:
-	ldrb w14, [x12, #0]
-	strb w14, [x11, #0]
-	add x12, x12, #1
-	add x11, x11, #1
-	sub x13, x13, #1
-	cbnz x13, 2112b
-	b 2111f
-2110:
-2111:
-	b 2104f
-2103:
-2113:
-	ldrb w14, [x12, #0]
-	strb w14, [x11, #0]
-	add x12, x12, #1
-	add x11, x11, #1
-	sub x13, x13, #1
-	cbnz x13, 2113b
-2104:
-	b 2102f
-2101:
-2102:
-	cbz x25, 2114f
-	movz x3, #1, lsl #0
-	b 2115f
-2114:
-	movz x3, #0, lsl #0
-2115:
-	add x0, x21, #240
-	add x1, x20, #0
-	add x4, x19, #512
-	add x2, x19, #96
-	bl {vg_ghash_aes}
-	lsl x9, x27, #3
-	rev x9, x9
-	str x9, [x19, #96]
-	lsl x9, x26, #3
-	rev x9, x9
-	str x9, [x19, #104]
-	movz x3, #1, lsl #0
-	add x0, x21, #240
-	add x1, x20, #0
-	add x4, x19, #512
-	add x2, x19, #96
-	bl {vg_ghash_aes}
-	b 2100f
-299:
+	ldr x28, [sp, #8]
+	ldr x8, [sp, #16]
 	ldr w9, [x23, #0]
 	ldr w10, [x23, #4]
 	ldr w11, [x23, #8]
@@ -22037,7 +23119,10 @@ vg_aes_gcm_seal_contiguous_with_powers_aes:
 	str w10, [x20, #4]
 	str w11, [x20, #8]
 	str w12, [x20, #12]
-2100:
+	add x25, x5, #0
+	add x27, x4, #0
+	add x23, x6, #0
+	add x26, x7, #0
 	ldr w9, [x20, #0]
 	ldr w10, [x20, #4]
 	ldr w11, [x20, #8]
@@ -22052,192 +23137,156 @@ vg_aes_gcm_seal_contiguous_with_powers_aes:
 	movz x9, #0, lsl #0
 	str x9, [x20, #16]
 	str x9, [x20, #24]
-	ldr x23, [x19, #216]
-	ldr x24, [x19, #224]
-	movz x25, #0, lsl #0
-	lsr x3, x24, #4
-	add x2, x23, #0
-	add x0, x21, #240
-	add x1, x20, #16
-	add x4, x19, #512
-	lsl x9, x3, #4
-	add x23, x23, x9
-	sub x24, x24, x9
-	bl {vg_ghash_aes}
-	add x11, x20, #32
-	add x12, x23, #0
-	add x13, x24, #0
-	cbz x13, 2116f
-	lsr x14, x13, #2
-	cbz x14, 2118f
-	lsr x14, x13, #3
-	cbz x14, 2120f
-2122:
-	ldr x14, [x12, #0]
-	str x14, [x11, #0]
-	add x12, x12, #8
-	add x11, x11, #8
-	sub x13, x13, #8
-	lsr x14, x13, #3
-	cbnz x14, 2122b
-	b 2121f
-2120:
-2121:
-	lsr x14, x13, #2
-	cbz x14, 2123f
-	ldr w14, [x12, #0]
-	str w14, [x11, #0]
-	add x12, x12, #4
-	add x11, x11, #4
-	sub x13, x13, #4
-	b 2124f
-2123:
-2124:
-	cbz x13, 2125f
-2127:
-	ldrb w14, [x12, #0]
-	strb w14, [x11, #0]
-	add x12, x12, #1
-	add x11, x11, #1
-	sub x13, x13, #1
-	cbnz x13, 2127b
-	b 2126f
-2125:
-2126:
-	b 2119f
-2118:
-2128:
-	ldrb w14, [x12, #0]
-	strb w14, [x11, #0]
-	add x12, x12, #1
-	add x11, x11, #1
-	sub x13, x13, #1
-	cbnz x13, 2128b
-2119:
-	b 2117f
-2116:
-2117:
-	ldr x25, [x19, #224]
-	movz x9, #15, lsl #0
-	and x25, x25, x9
-	add x12, x20, #32
+	ldr q16, [x8, #16]
+	ext v24.16b, v16.16b, v16.16b, #8
+	movz x5, #49664, lsl #48
+	dup v1.2d, x5
+	str q16, [x19, #288]
+	str q24, [x19, #304]
+	movi v0.2d, #0
+	add x13, x25, #0
+	add x12, x27, #0
+	cbz x13, 283f
 	movz x9, #0, lsl #0
 	str x9, [x19, #96]
 	str x9, [x19, #104]
 	add x11, x19, #96
-	add x13, x25, #0
-	cbz x13, 2129f
+	cbz x13, 285f
 	lsr x14, x13, #2
-	cbz x14, 2131f
+	cbz x14, 287f
 	lsr x14, x13, #3
-	cbz x14, 2133f
-2135:
+	cbz x14, 289f
+291:
 	ldr x14, [x12, #0]
 	str x14, [x11, #0]
 	add x12, x12, #8
 	add x11, x11, #8
 	sub x13, x13, #8
 	lsr x14, x13, #3
-	cbnz x14, 2135b
-	b 2134f
-2133:
-2134:
+	cbnz x14, 291b
+	b 290f
+289:
+290:
 	lsr x14, x13, #2
-	cbz x14, 2136f
+	cbz x14, 292f
 	ldr w14, [x12, #0]
 	str w14, [x11, #0]
 	add x12, x12, #4
 	add x11, x11, #4
 	sub x13, x13, #4
-	b 2137f
-2136:
-2137:
-	cbz x13, 2138f
-2140:
+	b 293f
+292:
+293:
+	cbz x13, 294f
+296:
 	ldrb w14, [x12, #0]
 	strb w14, [x11, #0]
 	add x12, x12, #1
 	add x11, x11, #1
 	sub x13, x13, #1
-	cbnz x13, 2140b
-	b 2139f
-2138:
-2139:
-	b 2132f
-2131:
-2141:
+	cbnz x13, 296b
+	b 295f
+294:
+295:
+	b 288f
+287:
+297:
 	ldrb w14, [x12, #0]
 	strb w14, [x11, #0]
 	add x12, x12, #1
 	add x11, x11, #1
 	sub x13, x13, #1
-	cbnz x13, 2141b
-2132:
-	b 2130f
-2129:
-2130:
-	cbz x25, 2142f
-	movz x3, #1, lsl #0
-	b 2143f
-2142:
-	movz x3, #0, lsl #0
-2143:
-	add x0, x21, #240
-	add x1, x20, #16
-	add x4, x19, #512
-	add x2, x19, #96
-	bl {vg_ghash_aes}
-	ldr x27, [x19, #336]
-	ldr x28, [x19, #344]
-	ldr x26, [x19, #232]
-	str x26, [x19, #352]
+	cbnz x13, 297b
+288:
+	b 286f
+285:
+286:
+	ldr q6, [x19, #96]
+	rev64 v6.16b, v6.16b
+	eor v6.16b, v6.16b, v0.16b
+	movi v3.2d, #0
+	movi v4.2d, #0
+	movi v5.2d, #0
+	pmull v7.1q, v6.1d, v24.1d
+	eor v5.16b, v5.16b, v7.16b
+	pmull2 v7.1q, v6.2d, v24.2d
+	eor v3.16b, v3.16b, v7.16b
+	pmull v7.1q, v6.1d, v16.1d
+	eor v4.16b, v4.16b, v7.16b
+	pmull2 v7.1q, v6.2d, v16.2d
+	eor v4.16b, v4.16b, v7.16b
+	pmull v7.1q, v3.1d, v1.1d
+	ext v3.16b, v3.16b, v3.16b, #8
+	eor v4.16b, v4.16b, v3.16b
+	eor v4.16b, v4.16b, v7.16b
+	pmull v7.1q, v4.1d, v1.1d
+	ext v5.16b, v5.16b, v5.16b, #8
+	eor v5.16b, v5.16b, v4.16b
+	ext v7.16b, v7.16b, v7.16b, #8
+	eor v0.16b, v5.16b, v7.16b
+	b 284f
+283:
+284:
+	rev64 v0.16b, v0.16b
+	str q0, [x20, #16]
+	lsr x9, x26, #7
+	cbz x9, 298f
+	ldr x5, [sp, #16]
+	ldr q16, [x5, #16]
+	ext v24.16b, v16.16b, v16.16b, #8
+	ldr q17, [x5, #0]
+	ext v25.16b, v17.16b, v17.16b, #8
+	ldr q18, [x5, #48]
+	ext v26.16b, v18.16b, v18.16b, #8
+	ldr q19, [x5, #32]
+	ext v27.16b, v19.16b, v19.16b, #8
+	ldr q20, [x5, #80]
+	ext v28.16b, v20.16b, v20.16b, #8
+	ldr q21, [x5, #64]
+	ext v29.16b, v21.16b, v21.16b, #8
+	ldr q22, [x5, #112]
+	ext v30.16b, v22.16b, v22.16b, #8
+	ldr q23, [x5, #96]
+	ext v31.16b, v23.16b, v23.16b, #8
+	str q24, [x19, #512]
+	str q25, [x19, #528]
+	str q26, [x19, #544]
+	str q27, [x19, #560]
+	str q28, [x19, #576]
+	str q29, [x19, #592]
+	str q30, [x19, #608]
+	str q31, [x19, #624]
+	eor v2.16b, v30.16b, v22.16b
+	eor v3.16b, v29.16b, v21.16b
+	ext v4.16b, v2.16b, v3.16b, #8
+	str q4, [x19, #640]
+	eor v2.16b, v28.16b, v20.16b
+	eor v3.16b, v27.16b, v19.16b
+	ext v4.16b, v2.16b, v3.16b, #8
+	str q4, [x19, #656]
+	eor v2.16b, v26.16b, v18.16b
+	eor v3.16b, v25.16b, v17.16b
+	ext v4.16b, v2.16b, v3.16b, #8
+	str q4, [x19, #672]
+	eor v2.16b, v24.16b, v16.16b
+	eor v3.16b, v31.16b, v23.16b
+	ext v4.16b, v2.16b, v3.16b, #8
+	str q4, [x19, #688]
+	add x15, x23, #0
+	ldr x23, [x19, #320]
+	bl {vg_aes_gcm_seal_batches_aes}
+	ldr x23, [x19, #232]
+	b 299f
+298:
+299:
+	ldr x27, [x19, #320]
+	lsr x9, x26, #7
+	lsl x9, x9, #7
+	add x23, x23, x9
+	add x27, x27, x9
+	sub x24, x26, x9
+	add x26, x27, #0
 	movz x25, #0, lsl #0
-	cbz x28, 2144f
-2146:
-	ldr x23, [x27, #0]
-	ldr x24, [x27, #8]
-	add x27, x27, #16
-	cbz x25, 2147f
-	movz x9, #16, lsl #0
-	sub x9, x9, x25
-	lsr x10, x24, #4
-	cbnz x10, 2149f
-	sub x11, x9, x24
-	lsr x11, x11, #63
-	cbz x11, 2151f
-	add x10, x9, #0
-	b 2152f
-2151:
-	add x10, x24, #0
-2152:
-	b 2150f
-2149:
-	add x10, x9, #0
-2150:
-	add x11, x20, #64
-	add x11, x11, x25
-	add x25, x25, x10
-	movz x9, #15, lsl #0
-	and x25, x25, x9
-	cbz x10, 2153f
-2155:
-	ldrb w13, [x23, #0]
-	ldrb w14, [x11, #0]
-	eor w13, w13, w14
-	strb w13, [x26, #0]
-	add x23, x23, #1
-	add x11, x11, #1
-	add x26, x26, #1
-	sub x24, x24, #1
-	sub x10, x10, #1
-	cbnz x10, 2155b
-	b 2154f
-2153:
-2154:
-	b 2148f
-2147:
-2148:
-	cbz x24, 2156f
 	lsr x4, x24, #4
 	add x3, x23, #0
 	add x0, x21, #0
@@ -22249,7 +23298,705 @@ vg_aes_gcm_seal_contiguous_with_powers_aes:
 	sub x24, x24, x9
 	add x6, x26, #0
 	add x26, x26, x9
+	cbz x4, 2100f
 	bl {vg_aes_ctr32_to_aes}
+	b 2101f
+2100:
+2101:
+	cbz x24, 2102f
+	cbz x24, 2104f
+	movz x4, #1, lsl #0
+	movz x9, #0, lsl #0
+	str x9, [x20, #64]
+	str x9, [x20, #72]
+	b 2105f
+2104:
+	movz x4, #0, lsl #0
+2105:
+	add x0, x21, #0
+	add x1, x22, #0
+	add x2, x20, #48
+	add x5, x19, #512
+	add x3, x20, #64
+	bl {vg_aes_ctr32_aes}
+	add x10, x24, #0
+	add x25, x24, #0
+	add x11, x20, #64
+	lsr x12, x24, #3
+	cbnz x12, 2106f
+	lsr x12, x24, #2
+	cbnz x12, 2108f
+	cbz x10, 2110f
+2112:
+	ldrb w13, [x23, #0]
+	ldrb w14, [x11, #0]
+	eor w13, w13, w14
+	strb w13, [x26, #0]
+	add x23, x23, #1
+	add x11, x11, #1
+	add x26, x26, #1
+	sub x24, x24, #1
+	sub x10, x10, #1
+	cbnz x10, 2112b
+	b 2111f
+2110:
+2111:
+	b 2109f
+2108:
+	sub x12, x24, #4
+	add x0, x23, x12
+	add x1, x11, x12
+	add x2, x26, x12
+	ldr w13, [x23, #0]
+	ldr w14, [x11, #0]
+	eor w13, w13, w14
+	ldr w14, [x0, #0]
+	ldr w15, [x1, #0]
+	eor w14, w14, w15
+	str w13, [x26, #0]
+	str w14, [x2, #0]
+	add x23, x23, x24
+	add x26, x26, x24
+	movz x24, #0, lsl #0
+2109:
+	b 2107f
+2106:
+	sub x12, x24, #8
+	add x0, x23, x12
+	add x1, x11, x12
+	add x2, x26, x12
+	ldr x13, [x23, #0]
+	ldr x14, [x11, #0]
+	eor x13, x13, x14
+	ldr x14, [x0, #0]
+	ldr x15, [x1, #0]
+	eor x14, x14, x15
+	str x13, [x26, #0]
+	str x14, [x2, #0]
+	add x23, x23, x24
+	add x26, x26, x24
+	movz x24, #0, lsl #0
+2107:
+	b 2103f
+2102:
+2103:
+	ldr x26, [x19, #240]
+	add x23, x27, #0
+	lsr x9, x26, #7
+	lsl x9, x9, #7
+	sub x24, x26, x9
+	lsr x3, x24, #4
+	add x2, x23, #0
+	add x0, x21, #240
+	add x1, x20, #16
+	add x4, x19, #512
+	lsl x9, x3, #4
+	add x23, x23, x9
+	sub x24, x24, x9
+	cbz x3, 2113f
+	lsr x9, x3, #1
+	cbz x9, 2115f
+	ldr x5, [sp, #16]
+	bl {vg_ghash_with_powers_aes}
+	b 2116f
+2115:
+	bl {vg_ghash_aes}
+2116:
+	b 2114f
+2113:
+2114:
+	ldr q16, [x19, #288]
+	ldr q24, [x19, #304]
+	movz x5, #49664, lsl #48
+	dup v1.2d, x5
+	ldr q0, [x20, #16]
+	rev64 v0.16b, v0.16b
+	add x13, x24, #0
+	add x12, x23, #0
+	cbz x13, 2117f
+	lsr x9, x26, #4
+	cbz x9, 2119f
+	movz x9, #16, lsl #0
+	sub x9, x9, x13
+	dup v6.16b, w9
+	adrp x11, {VG_GCM_TAIL_IDX}
+	add x11, x11, {VG_GCM_TAIL_IDX}
+	ldr q7, [x11, #16]
+	add v7.16b, v7.16b, v6.16b
+	sub x11, x12, x9
+	ldr q6, [x11, #0]
+	tbl v6.16b, {v6.16b}, v7.16b
+	eor v6.16b, v6.16b, v0.16b
+	movi v3.2d, #0
+	movi v4.2d, #0
+	movi v5.2d, #0
+	pmull v7.1q, v6.1d, v24.1d
+	eor v5.16b, v5.16b, v7.16b
+	pmull2 v7.1q, v6.2d, v24.2d
+	eor v3.16b, v3.16b, v7.16b
+	pmull v7.1q, v6.1d, v16.1d
+	eor v4.16b, v4.16b, v7.16b
+	pmull2 v7.1q, v6.2d, v16.2d
+	eor v4.16b, v4.16b, v7.16b
+	pmull v7.1q, v3.1d, v1.1d
+	ext v3.16b, v3.16b, v3.16b, #8
+	eor v4.16b, v4.16b, v3.16b
+	eor v4.16b, v4.16b, v7.16b
+	pmull v7.1q, v4.1d, v1.1d
+	ext v5.16b, v5.16b, v5.16b, #8
+	eor v5.16b, v5.16b, v4.16b
+	ext v7.16b, v7.16b, v7.16b, #8
+	eor v0.16b, v5.16b, v7.16b
+	b 2120f
+2119:
+	cbz x13, 2121f
+	movz x9, #0, lsl #0
+	str x9, [x19, #96]
+	str x9, [x19, #104]
+	add x11, x19, #96
+	cbz x13, 2123f
+	lsr x14, x13, #2
+	cbz x14, 2125f
+	lsr x14, x13, #3
+	cbz x14, 2127f
+2129:
+	ldr x14, [x12, #0]
+	str x14, [x11, #0]
+	add x12, x12, #8
+	add x11, x11, #8
+	sub x13, x13, #8
+	lsr x14, x13, #3
+	cbnz x14, 2129b
+	b 2128f
+2127:
+2128:
+	lsr x14, x13, #2
+	cbz x14, 2130f
+	ldr w14, [x12, #0]
+	str w14, [x11, #0]
+	add x12, x12, #4
+	add x11, x11, #4
+	sub x13, x13, #4
+	b 2131f
+2130:
+2131:
+	cbz x13, 2132f
+2134:
+	ldrb w14, [x12, #0]
+	strb w14, [x11, #0]
+	add x12, x12, #1
+	add x11, x11, #1
+	sub x13, x13, #1
+	cbnz x13, 2134b
+	b 2133f
+2132:
+2133:
+	b 2126f
+2125:
+2135:
+	ldrb w14, [x12, #0]
+	strb w14, [x11, #0]
+	add x12, x12, #1
+	add x11, x11, #1
+	sub x13, x13, #1
+	cbnz x13, 2135b
+2126:
+	b 2124f
+2123:
+2124:
+	ldr q6, [x19, #96]
+	rev64 v6.16b, v6.16b
+	eor v6.16b, v6.16b, v0.16b
+	movi v3.2d, #0
+	movi v4.2d, #0
+	movi v5.2d, #0
+	pmull v7.1q, v6.1d, v24.1d
+	eor v5.16b, v5.16b, v7.16b
+	pmull2 v7.1q, v6.2d, v24.2d
+	eor v3.16b, v3.16b, v7.16b
+	pmull v7.1q, v6.1d, v16.1d
+	eor v4.16b, v4.16b, v7.16b
+	pmull2 v7.1q, v6.2d, v16.2d
+	eor v4.16b, v4.16b, v7.16b
+	pmull v7.1q, v3.1d, v1.1d
+	ext v3.16b, v3.16b, v3.16b, #8
+	eor v4.16b, v4.16b, v3.16b
+	eor v4.16b, v4.16b, v7.16b
+	pmull v7.1q, v4.1d, v1.1d
+	ext v5.16b, v5.16b, v5.16b, #8
+	eor v5.16b, v5.16b, v4.16b
+	ext v7.16b, v7.16b, v7.16b, #8
+	eor v0.16b, v5.16b, v7.16b
+	b 2122f
+2121:
+2122:
+2120:
+	b 2118f
+2117:
+2118:
+	sub x13, x22, #10
+	sub x14, x22, #12
+	cbz x13, 2136f
+	cbz x14, 2138f
+	ldr q28, [x20, #0]
+	ldr x10, [x19, #224]
+	ldr q29, [x21, #0]
+	lsl x10, x10, #3
+	aese v28.16b, v29.16b
+	aesmc v28.16b, v28.16b
+	lsl x9, x26, #3
+	ldr q29, [x21, #16]
+	mov v6.d[0], x10
+	aese v28.16b, v29.16b
+	aesmc v28.16b, v28.16b
+	mov v6.d[1], x9
+	ldr q29, [x21, #32]
+	aese v28.16b, v29.16b
+	eor v6.16b, v6.16b, v0.16b
+	aesmc v28.16b, v28.16b
+	movi v3.2d, #0
+	ldr q29, [x21, #48]
+	aese v28.16b, v29.16b
+	movi v4.2d, #0
+	aesmc v28.16b, v28.16b
+	ldr q29, [x21, #64]
+	movi v5.2d, #0
+	aese v28.16b, v29.16b
+	pmull v7.1q, v6.1d, v24.1d
+	aesmc v28.16b, v28.16b
+	ldr q29, [x21, #80]
+	eor v5.16b, v5.16b, v7.16b
+	aese v28.16b, v29.16b
+	pmull2 v7.1q, v6.2d, v24.2d
+	aesmc v28.16b, v28.16b
+	ldr q29, [x21, #96]
+	eor v3.16b, v3.16b, v7.16b
+	aese v28.16b, v29.16b
+	aesmc v28.16b, v28.16b
+	pmull v7.1q, v6.1d, v16.1d
+	ldr q29, [x21, #112]
+	eor v4.16b, v4.16b, v7.16b
+	aese v28.16b, v29.16b
+	aesmc v28.16b, v28.16b
+	pmull2 v7.1q, v6.2d, v16.2d
+	ldr q29, [x21, #128]
+	aese v28.16b, v29.16b
+	eor v4.16b, v4.16b, v7.16b
+	aesmc v28.16b, v28.16b
+	pmull v7.1q, v3.1d, v1.1d
+	ldr q29, [x21, #144]
+	aese v28.16b, v29.16b
+	ext v3.16b, v3.16b, v3.16b, #8
+	aesmc v28.16b, v28.16b
+	eor v4.16b, v4.16b, v3.16b
+	ldr q29, [x21, #160]
+	aese v28.16b, v29.16b
+	eor v4.16b, v4.16b, v7.16b
+	aesmc v28.16b, v28.16b
+	ldr q29, [x21, #176]
+	pmull v7.1q, v4.1d, v1.1d
+	aese v28.16b, v29.16b
+	ext v5.16b, v5.16b, v5.16b, #8
+	aesmc v28.16b, v28.16b
+	ldr q29, [x21, #192]
+	eor v5.16b, v5.16b, v4.16b
+	aese v28.16b, v29.16b
+	aesmc v28.16b, v28.16b
+	ext v7.16b, v7.16b, v7.16b, #8
+	ldr q29, [x21, #208]
+	eor v0.16b, v5.16b, v7.16b
+	aese v28.16b, v29.16b
+	ldr q29, [x21, #224]
+	rev64 v0.16b, v0.16b
+	eor v28.16b, v28.16b, v29.16b
+	eor v0.16b, v0.16b, v28.16b
+	str q0, [x28, #0]
+	b 2139f
+2138:
+	ldr q28, [x20, #0]
+	ldr x10, [x19, #224]
+	ldr q29, [x21, #0]
+	lsl x10, x10, #3
+	aese v28.16b, v29.16b
+	lsl x9, x26, #3
+	aesmc v28.16b, v28.16b
+	ldr q29, [x21, #16]
+	mov v6.d[0], x10
+	aese v28.16b, v29.16b
+	mov v6.d[1], x9
+	aesmc v28.16b, v28.16b
+	ldr q29, [x21, #32]
+	eor v6.16b, v6.16b, v0.16b
+	aese v28.16b, v29.16b
+	movi v3.2d, #0
+	aesmc v28.16b, v28.16b
+	movi v4.2d, #0
+	ldr q29, [x21, #48]
+	aese v28.16b, v29.16b
+	movi v5.2d, #0
+	aesmc v28.16b, v28.16b
+	pmull v7.1q, v6.1d, v24.1d
+	ldr q29, [x21, #64]
+	aese v28.16b, v29.16b
+	eor v5.16b, v5.16b, v7.16b
+	aesmc v28.16b, v28.16b
+	pmull2 v7.1q, v6.2d, v24.2d
+	ldr q29, [x21, #80]
+	eor v3.16b, v3.16b, v7.16b
+	aese v28.16b, v29.16b
+	aesmc v28.16b, v28.16b
+	pmull v7.1q, v6.1d, v16.1d
+	ldr q29, [x21, #96]
+	eor v4.16b, v4.16b, v7.16b
+	aese v28.16b, v29.16b
+	aesmc v28.16b, v28.16b
+	pmull2 v7.1q, v6.2d, v16.2d
+	ldr q29, [x21, #112]
+	eor v4.16b, v4.16b, v7.16b
+	aese v28.16b, v29.16b
+	pmull v7.1q, v3.1d, v1.1d
+	aesmc v28.16b, v28.16b
+	ldr q29, [x21, #128]
+	ext v3.16b, v3.16b, v3.16b, #8
+	aese v28.16b, v29.16b
+	eor v4.16b, v4.16b, v3.16b
+	aesmc v28.16b, v28.16b
+	ldr q29, [x21, #144]
+	eor v4.16b, v4.16b, v7.16b
+	aese v28.16b, v29.16b
+	pmull v7.1q, v4.1d, v1.1d
+	aesmc v28.16b, v28.16b
+	ext v5.16b, v5.16b, v5.16b, #8
+	ldr q29, [x21, #160]
+	aese v28.16b, v29.16b
+	eor v5.16b, v5.16b, v4.16b
+	aesmc v28.16b, v28.16b
+	ext v7.16b, v7.16b, v7.16b, #8
+	ldr q29, [x21, #176]
+	aese v28.16b, v29.16b
+	eor v0.16b, v5.16b, v7.16b
+	ldr q29, [x21, #192]
+	rev64 v0.16b, v0.16b
+	eor v28.16b, v28.16b, v29.16b
+	eor v0.16b, v0.16b, v28.16b
+	str q0, [x28, #0]
+2139:
+	b 2137f
+2136:
+	ldr q28, [x20, #0]
+	ldr x10, [x19, #224]
+	ldr q29, [x21, #0]
+	lsl x10, x10, #3
+	aese v28.16b, v29.16b
+	lsl x9, x26, #3
+	aesmc v28.16b, v28.16b
+	mov v6.d[0], x10
+	ldr q29, [x21, #16]
+	mov v6.d[1], x9
+	aese v28.16b, v29.16b
+	eor v6.16b, v6.16b, v0.16b
+	aesmc v28.16b, v28.16b
+	ldr q29, [x21, #32]
+	movi v3.2d, #0
+	aese v28.16b, v29.16b
+	movi v4.2d, #0
+	aesmc v28.16b, v28.16b
+	movi v5.2d, #0
+	ldr q29, [x21, #48]
+	pmull v7.1q, v6.1d, v24.1d
+	aese v28.16b, v29.16b
+	eor v5.16b, v5.16b, v7.16b
+	aesmc v28.16b, v28.16b
+	ldr q29, [x21, #64]
+	pmull2 v7.1q, v6.2d, v24.2d
+	aese v28.16b, v29.16b
+	eor v3.16b, v3.16b, v7.16b
+	aesmc v28.16b, v28.16b
+	pmull v7.1q, v6.1d, v16.1d
+	ldr q29, [x21, #80]
+	eor v4.16b, v4.16b, v7.16b
+	aese v28.16b, v29.16b
+	pmull2 v7.1q, v6.2d, v16.2d
+	aesmc v28.16b, v28.16b
+	eor v4.16b, v4.16b, v7.16b
+	ldr q29, [x21, #96]
+	aese v28.16b, v29.16b
+	pmull v7.1q, v3.1d, v1.1d
+	aesmc v28.16b, v28.16b
+	ext v3.16b, v3.16b, v3.16b, #8
+	ldr q29, [x21, #112]
+	eor v4.16b, v4.16b, v3.16b
+	aese v28.16b, v29.16b
+	eor v4.16b, v4.16b, v7.16b
+	aesmc v28.16b, v28.16b
+	pmull v7.1q, v4.1d, v1.1d
+	ldr q29, [x21, #128]
+	aese v28.16b, v29.16b
+	ext v5.16b, v5.16b, v5.16b, #8
+	aesmc v28.16b, v28.16b
+	eor v5.16b, v5.16b, v4.16b
+	ldr q29, [x21, #144]
+	ext v7.16b, v7.16b, v7.16b, #8
+	aese v28.16b, v29.16b
+	eor v0.16b, v5.16b, v7.16b
+	ldr q29, [x21, #160]
+	rev64 v0.16b, v0.16b
+	eor v28.16b, v28.16b, v29.16b
+	eor v0.16b, v0.16b, v28.16b
+	str q0, [x28, #0]
+2137:
+	ldr x20, [x19, #136]
+	ldr x21, [x19, #144]
+	ldr x22, [x19, #152]
+	ldr x23, [x19, #160]
+	ldr x24, [x19, #168]
+	ldr x25, [x19, #176]
+	ldr x26, [x19, #184]
+	ldr x27, [x19, #192]
+	ldr x28, [x19, #200]
+	ldr x30, [x19, #208]
+	ldr x19, [x19, #128]
+	add sp, sp, #800
+	movz x1, #0, lsl #0
+	movz x2, #0, lsl #0
+	movz x3, #0, lsl #0
+	movz x4, #0, lsl #0
+	movz x5, #0, lsl #0
+	movz x6, #0, lsl #0
+	movz x7, #0, lsl #0
+	movz x8, #0, lsl #0
+	movz x9, #0, lsl #0
+	movz x10, #0, lsl #0
+	movz x11, #0, lsl #0
+	movz x12, #0, lsl #0
+	movz x13, #0, lsl #0
+	movz x14, #0, lsl #0
+	movz x15, #0, lsl #0
+	movz x16, #0, lsl #0
+	movz x17, #0, lsl #0
+	movi v0.2d, #0
+	movi v1.2d, #0
+	movi v2.2d, #0
+	movi v3.2d, #0
+	movi v4.2d, #0
+	movi v5.2d, #0
+	movi v6.2d, #0
+	movi v7.2d, #0
+	movi v16.2d, #0
+	movi v17.2d, #0
+	movi v18.2d, #0
+	movi v19.2d, #0
+	movi v20.2d, #0
+	movi v21.2d, #0
+	movi v22.2d, #0
+	movi v23.2d, #0
+	movi v24.2d, #0
+	movi v25.2d, #0
+	movi v26.2d, #0
+	movi v27.2d, #0
+	movi v28.2d, #0
+	movi v29.2d, #0
+	movi v30.2d, #0
+	movi v31.2d, #0
+	tst x1, x1
+	mov v8.d[1], x1
+	mov v9.d[1], x1
+	mov v10.d[1], x1
+	mov v11.d[1], x1
+	mov v12.d[1], x1
+	mov v13.d[1], x1
+	mov v14.d[1], x1
+	mov v15.d[1], x1
+	movz x0, #0, lsl #0
+	sub sp, sp, #800
+	movi v31.2d, #0
+	add x9, sp, #0
+	movz x10, #12, lsl #0
+2140:
+	str q31, [x9, #0]
+	str q31, [x9, #16]
+	str q31, [x9, #32]
+	str q31, [x9, #48]
+	add x9, x9, #64
+	sub x10, x10, #1
+	cbnz x10, 2140b
+	str q31, [x9, #0]
+	str q31, [x9, #16]
+	add sp, sp, #800
+	b 282f
+281:
+	sub sp, sp, #800
+	add x16, sp, #0
+	ldr x17, [sp, #800]
+	str x17, [x16, #0]
+	ldr x17, [sp, #808]
+	str x17, [x16, #8]
+	ldr x17, [sp, #816]
+	str x17, [x16, #16]
+	add x17, sp, #32
+	str x17, [x16, #24]
+	ldr x9, [sp, #24]
+	str x20, [x9, #136]
+	str x21, [x9, #144]
+	str x22, [x9, #152]
+	str x23, [x9, #160]
+	str x24, [x9, #168]
+	str x25, [x9, #176]
+	str x26, [x9, #184]
+	str x27, [x9, #192]
+	str x28, [x9, #200]
+	str x30, [x9, #208]
+	str x19, [x9, #128]
+	add x19, x9, #0
+	add x20, x19, #16
+	add x21, x0, #0
+	add x22, x1, #0
+	str x5, [x19, #224]
+	str x6, [x19, #232]
+	str x7, [x19, #320]
+	ldr x7, [sp, #0]
+	str x7, [x19, #240]
+	add x23, x2, #0
+	ldr x28, [sp, #8]
+	ldr x8, [sp, #16]
+	ldr w9, [x23, #0]
+	ldr w10, [x23, #4]
+	ldr w11, [x23, #8]
+	movz w12, #256, lsl #16
+	str w9, [x20, #0]
+	str w10, [x20, #4]
+	str w11, [x20, #8]
+	str w12, [x20, #12]
+	add x25, x5, #0
+	add x27, x4, #0
+	add x23, x6, #0
+	add x26, x7, #0
+	ldr w9, [x20, #0]
+	ldr w10, [x20, #4]
+	ldr w11, [x20, #8]
+	ldr w12, [x20, #12]
+	rev w12, w12
+	add w12, w12, #1
+	rev w12, w12
+	str w9, [x20, #48]
+	str w10, [x20, #52]
+	str w11, [x20, #56]
+	str w12, [x20, #60]
+	movz x9, #0, lsl #0
+	str x9, [x20, #16]
+	str x9, [x20, #24]
+	ldr q16, [x8, #16]
+	ext v24.16b, v16.16b, v16.16b, #8
+	movz x5, #49664, lsl #48
+	dup v1.2d, x5
+	str q16, [x19, #288]
+	str q24, [x19, #304]
+	movi v0.2d, #0
+	add x13, x25, #0
+	add x12, x27, #0
+	cbz x13, 2141f
+	movz x9, #0, lsl #0
+	str x9, [x19, #96]
+	str x9, [x19, #104]
+	add x11, x19, #96
+	cbz x13, 2143f
+	lsr x14, x13, #2
+	cbz x14, 2145f
+	lsr x14, x13, #3
+	cbz x14, 2147f
+2149:
+	ldr x14, [x12, #0]
+	str x14, [x11, #0]
+	add x12, x12, #8
+	add x11, x11, #8
+	sub x13, x13, #8
+	lsr x14, x13, #3
+	cbnz x14, 2149b
+	b 2148f
+2147:
+2148:
+	lsr x14, x13, #2
+	cbz x14, 2150f
+	ldr w14, [x12, #0]
+	str w14, [x11, #0]
+	add x12, x12, #4
+	add x11, x11, #4
+	sub x13, x13, #4
+	b 2151f
+2150:
+2151:
+	cbz x13, 2152f
+2154:
+	ldrb w14, [x12, #0]
+	strb w14, [x11, #0]
+	add x12, x12, #1
+	add x11, x11, #1
+	sub x13, x13, #1
+	cbnz x13, 2154b
+	b 2153f
+2152:
+2153:
+	b 2146f
+2145:
+2155:
+	ldrb w14, [x12, #0]
+	strb w14, [x11, #0]
+	add x12, x12, #1
+	add x11, x11, #1
+	sub x13, x13, #1
+	cbnz x13, 2155b
+2146:
+	b 2144f
+2143:
+2144:
+	ldr q6, [x19, #96]
+	rev64 v6.16b, v6.16b
+	eor v6.16b, v6.16b, v0.16b
+	movi v3.2d, #0
+	movi v4.2d, #0
+	movi v5.2d, #0
+	pmull v7.1q, v6.1d, v24.1d
+	eor v5.16b, v5.16b, v7.16b
+	pmull2 v7.1q, v6.2d, v24.2d
+	eor v3.16b, v3.16b, v7.16b
+	pmull v7.1q, v6.1d, v16.1d
+	eor v4.16b, v4.16b, v7.16b
+	pmull2 v7.1q, v6.2d, v16.2d
+	eor v4.16b, v4.16b, v7.16b
+	pmull v7.1q, v3.1d, v1.1d
+	ext v3.16b, v3.16b, v3.16b, #8
+	eor v4.16b, v4.16b, v3.16b
+	eor v4.16b, v4.16b, v7.16b
+	pmull v7.1q, v4.1d, v1.1d
+	ext v5.16b, v5.16b, v5.16b, #8
+	eor v5.16b, v5.16b, v4.16b
+	ext v7.16b, v7.16b, v7.16b, #8
+	eor v0.16b, v5.16b, v7.16b
+	b 2142f
+2141:
+2142:
+	rev64 v0.16b, v0.16b
+	str q0, [x20, #16]
+	ldr x27, [x19, #320]
+	add x24, x26, #0
+	add x26, x27, #0
+	movz x25, #0, lsl #0
+	lsr x4, x24, #4
+	add x3, x23, #0
+	add x0, x21, #0
+	add x1, x22, #0
+	add x2, x20, #48
+	add x5, x19, #512
+	lsl x9, x4, #4
+	add x23, x23, x9
+	sub x24, x24, x9
+	add x6, x26, #0
+	add x26, x26, x9
+	cbz x4, 2156f
+	bl {vg_aes_ctr32_to_aes}
+	b 2157f
+2156:
+2157:
 	cbz x24, 2158f
 	cbz x24, 2160f
 	movz x4, #1, lsl #0
@@ -22269,8 +24016,12 @@ vg_aes_gcm_seal_contiguous_with_powers_aes:
 	add x10, x24, #0
 	add x25, x24, #0
 	add x11, x20, #64
-	cbz x10, 2162f
-2164:
+	lsr x12, x24, #3
+	cbnz x12, 2162f
+	lsr x12, x24, #2
+	cbnz x12, 2164f
+	cbz x10, 2166f
+2168:
 	ldrb w13, [x23, #0]
 	ldrb w14, [x11, #0]
 	eor w13, w13, w14
@@ -22280,23 +24031,52 @@ vg_aes_gcm_seal_contiguous_with_powers_aes:
 	add x26, x26, #1
 	sub x24, x24, #1
 	sub x10, x10, #1
-	cbnz x10, 2164b
+	cbnz x10, 2168b
+	b 2167f
+2166:
+2167:
+	b 2165f
+2164:
+	sub x12, x24, #4
+	add x0, x23, x12
+	add x1, x11, x12
+	add x2, x26, x12
+	ldr w13, [x23, #0]
+	ldr w14, [x11, #0]
+	eor w13, w13, w14
+	ldr w14, [x0, #0]
+	ldr w15, [x1, #0]
+	eor w14, w14, w15
+	str w13, [x26, #0]
+	str w14, [x2, #0]
+	add x23, x23, x24
+	add x26, x26, x24
+	movz x24, #0, lsl #0
+2165:
 	b 2163f
 2162:
+	sub x12, x24, #8
+	add x0, x23, x12
+	add x1, x11, x12
+	add x2, x26, x12
+	ldr x13, [x23, #0]
+	ldr x14, [x11, #0]
+	eor x13, x13, x14
+	ldr x14, [x0, #0]
+	ldr x15, [x1, #0]
+	eor x14, x14, x15
+	str x13, [x26, #0]
+	str x14, [x2, #0]
+	add x23, x23, x24
+	add x26, x26, x24
+	movz x24, #0, lsl #0
 2163:
 	b 2159f
 2158:
 2159:
-	b 2157f
-2156:
-2157:
-	sub x28, x28, #1
-	cbnz x28, 2146b
-	b 2145f
-2144:
-2145:
-	ldr x23, [x19, #352]
-	sub x24, x26, x23
+	ldr x26, [x19, #240]
+	add x23, x27, #0
+	add x24, x26, #0
 	lsr x3, x24, #4
 	add x2, x23, #0
 	add x0, x21, #240
@@ -22305,106 +24085,94 @@ vg_aes_gcm_seal_contiguous_with_powers_aes:
 	lsl x9, x3, #4
 	add x23, x23, x9
 	sub x24, x24, x9
-	bl {vg_ghash_aes}
-	add x11, x20, #32
-	add x12, x23, #0
-	add x13, x24, #0
-	cbz x13, 2165f
-	lsr x14, x13, #2
-	cbz x14, 2167f
-	lsr x14, x13, #3
-	cbz x14, 2169f
+	cbz x3, 2169f
+	lsr x9, x3, #1
+	cbz x9, 2171f
+	ldr x5, [sp, #16]
+	bl {vg_ghash_with_powers_aes}
+	b 2172f
 2171:
-	ldr x14, [x12, #0]
-	str x14, [x11, #0]
-	add x12, x12, #8
-	add x11, x11, #8
-	sub x13, x13, #8
-	lsr x14, x13, #3
-	cbnz x14, 2171b
+	bl {vg_ghash_aes}
+2172:
 	b 2170f
 2169:
 2170:
-	lsr x14, x13, #2
-	cbz x14, 2172f
-	ldr w14, [x12, #0]
-	str w14, [x11, #0]
-	add x12, x12, #4
-	add x11, x11, #4
-	sub x13, x13, #4
-	b 2173f
-2172:
-2173:
-	cbz x13, 2174f
-2176:
-	ldrb w14, [x12, #0]
-	strb w14, [x11, #0]
-	add x12, x12, #1
-	add x11, x11, #1
-	sub x13, x13, #1
-	cbnz x13, 2176b
-	b 2175f
-2174:
+	ldr q16, [x19, #288]
+	ldr q24, [x19, #304]
+	movz x5, #49664, lsl #48
+	dup v1.2d, x5
+	ldr q0, [x20, #16]
+	rev64 v0.16b, v0.16b
+	add x13, x24, #0
+	add x12, x23, #0
+	cbz x13, 2173f
+	lsr x9, x26, #4
+	cbz x9, 2175f
+	movz x9, #16, lsl #0
+	sub x9, x9, x13
+	dup v6.16b, w9
+	adrp x11, {VG_GCM_TAIL_IDX}
+	add x11, x11, {VG_GCM_TAIL_IDX}
+	ldr q7, [x11, #16]
+	add v7.16b, v7.16b, v6.16b
+	sub x11, x12, x9
+	ldr q6, [x11, #0]
+	tbl v6.16b, {v6.16b}, v7.16b
+	eor v6.16b, v6.16b, v0.16b
+	movi v3.2d, #0
+	movi v4.2d, #0
+	movi v5.2d, #0
+	pmull v7.1q, v6.1d, v24.1d
+	eor v5.16b, v5.16b, v7.16b
+	pmull2 v7.1q, v6.2d, v24.2d
+	eor v3.16b, v3.16b, v7.16b
+	pmull v7.1q, v6.1d, v16.1d
+	eor v4.16b, v4.16b, v7.16b
+	pmull2 v7.1q, v6.2d, v16.2d
+	eor v4.16b, v4.16b, v7.16b
+	pmull v7.1q, v3.1d, v1.1d
+	ext v3.16b, v3.16b, v3.16b, #8
+	eor v4.16b, v4.16b, v3.16b
+	eor v4.16b, v4.16b, v7.16b
+	pmull v7.1q, v4.1d, v1.1d
+	ext v5.16b, v5.16b, v5.16b, #8
+	eor v5.16b, v5.16b, v4.16b
+	ext v7.16b, v7.16b, v7.16b, #8
+	eor v0.16b, v5.16b, v7.16b
+	b 2176f
 2175:
-	b 2168f
-2167:
-2177:
-	ldrb w14, [x12, #0]
-	strb w14, [x11, #0]
-	add x12, x12, #1
-	add x11, x11, #1
-	sub x13, x13, #1
-	cbnz x13, 2177b
-2168:
-	b 2166f
-2165:
-2166:
-	add x25, x24, #0
-	add x12, x20, #32
+	cbz x13, 2177f
 	movz x9, #0, lsl #0
 	str x9, [x19, #96]
 	str x9, [x19, #104]
 	add x11, x19, #96
-	add x13, x25, #0
-	cbz x13, 2178f
+	cbz x13, 2179f
 	lsr x14, x13, #2
-	cbz x14, 2180f
+	cbz x14, 2181f
 	lsr x14, x13, #3
-	cbz x14, 2182f
-2184:
+	cbz x14, 2183f
+2185:
 	ldr x14, [x12, #0]
 	str x14, [x11, #0]
 	add x12, x12, #8
 	add x11, x11, #8
 	sub x13, x13, #8
 	lsr x14, x13, #3
-	cbnz x14, 2184b
-	b 2183f
-2182:
+	cbnz x14, 2185b
+	b 2184f
 2183:
+2184:
 	lsr x14, x13, #2
-	cbz x14, 2185f
+	cbz x14, 2186f
 	ldr w14, [x12, #0]
 	str w14, [x11, #0]
 	add x12, x12, #4
 	add x11, x11, #4
 	sub x13, x13, #4
-	b 2186f
-2185:
+	b 2187f
 2186:
-	cbz x13, 2187f
-2189:
-	ldrb w14, [x12, #0]
-	strb w14, [x11, #0]
-	add x12, x12, #1
-	add x11, x11, #1
-	sub x13, x13, #1
-	cbnz x13, 2189b
-	b 2188f
 2187:
-2188:
-	b 2181f
-2180:
+	cbz x13, 2188f
 2190:
 	ldrb w14, [x12, #0]
 	strb w14, [x11, #0]
@@ -22412,51 +24180,263 @@ vg_aes_gcm_seal_contiguous_with_powers_aes:
 	add x11, x11, #1
 	sub x13, x13, #1
 	cbnz x13, 2190b
+	b 2189f
+2188:
+2189:
+	b 2182f
 2181:
-	b 2179f
-2178:
-2179:
-	cbz x25, 2191f
-	movz x3, #1, lsl #0
-	b 2192f
 2191:
-	movz x3, #0, lsl #0
-2192:
-	add x0, x21, #240
-	add x1, x20, #16
-	add x4, x19, #512
-	add x2, x19, #96
-	bl {vg_ghash_aes}
-	ldr x26, [x19, #224]
-	ldr x27, [x19, #240]
+	ldrb w14, [x12, #0]
+	strb w14, [x11, #0]
+	add x12, x12, #1
+	add x11, x11, #1
+	sub x13, x13, #1
+	cbnz x13, 2191b
+2182:
+	b 2180f
+2179:
+2180:
+	ldr q6, [x19, #96]
+	rev64 v6.16b, v6.16b
+	eor v6.16b, v6.16b, v0.16b
+	movi v3.2d, #0
+	movi v4.2d, #0
+	movi v5.2d, #0
+	pmull v7.1q, v6.1d, v24.1d
+	eor v5.16b, v5.16b, v7.16b
+	pmull2 v7.1q, v6.2d, v24.2d
+	eor v3.16b, v3.16b, v7.16b
+	pmull v7.1q, v6.1d, v16.1d
+	eor v4.16b, v4.16b, v7.16b
+	pmull2 v7.1q, v6.2d, v16.2d
+	eor v4.16b, v4.16b, v7.16b
+	pmull v7.1q, v3.1d, v1.1d
+	ext v3.16b, v3.16b, v3.16b, #8
+	eor v4.16b, v4.16b, v3.16b
+	eor v4.16b, v4.16b, v7.16b
+	pmull v7.1q, v4.1d, v1.1d
+	ext v5.16b, v5.16b, v5.16b, #8
+	eor v5.16b, v5.16b, v4.16b
+	ext v7.16b, v7.16b, v7.16b, #8
+	eor v0.16b, v5.16b, v7.16b
+	b 2178f
+2177:
+2178:
+2176:
+	b 2174f
+2173:
+2174:
+	sub x13, x22, #10
+	sub x14, x22, #12
+	cbz x13, 2192f
+	cbz x14, 2194f
+	ldr q28, [x20, #0]
+	ldr x10, [x19, #224]
+	ldr q29, [x21, #0]
+	lsl x10, x10, #3
+	aese v28.16b, v29.16b
+	aesmc v28.16b, v28.16b
 	lsl x9, x26, #3
-	rev x9, x9
-	str x9, [x19, #96]
-	lsl x9, x27, #3
-	rev x9, x9
-	str x9, [x19, #104]
-	movz x3, #1, lsl #0
-	add x0, x21, #240
-	add x1, x20, #16
-	add x4, x19, #512
-	add x2, x19, #96
-	bl {vg_ghash_aes}
-	ldr x9, [x20, #16]
-	str x9, [x19, #0]
-	ldr x9, [x20, #24]
-	str x9, [x19, #8]
-	add x0, x21, #0
-	add x1, x22, #0
-	add x2, x20, #0
-	add x3, x19, #0
-	movz x4, #1, lsl #0
-	add x5, x19, #512
-	bl {vg_aes_ctr32_aes}
-	ldr x28, [x19, #248]
-	ldr x9, [x19, #0]
-	str x9, [x28, #0]
-	ldr x9, [x19, #8]
-	str x9, [x28, #8]
+	ldr q29, [x21, #16]
+	mov v6.d[0], x10
+	aese v28.16b, v29.16b
+	aesmc v28.16b, v28.16b
+	mov v6.d[1], x9
+	ldr q29, [x21, #32]
+	aese v28.16b, v29.16b
+	eor v6.16b, v6.16b, v0.16b
+	aesmc v28.16b, v28.16b
+	movi v3.2d, #0
+	ldr q29, [x21, #48]
+	aese v28.16b, v29.16b
+	movi v4.2d, #0
+	aesmc v28.16b, v28.16b
+	ldr q29, [x21, #64]
+	movi v5.2d, #0
+	aese v28.16b, v29.16b
+	pmull v7.1q, v6.1d, v24.1d
+	aesmc v28.16b, v28.16b
+	ldr q29, [x21, #80]
+	eor v5.16b, v5.16b, v7.16b
+	aese v28.16b, v29.16b
+	pmull2 v7.1q, v6.2d, v24.2d
+	aesmc v28.16b, v28.16b
+	ldr q29, [x21, #96]
+	eor v3.16b, v3.16b, v7.16b
+	aese v28.16b, v29.16b
+	aesmc v28.16b, v28.16b
+	pmull v7.1q, v6.1d, v16.1d
+	ldr q29, [x21, #112]
+	eor v4.16b, v4.16b, v7.16b
+	aese v28.16b, v29.16b
+	aesmc v28.16b, v28.16b
+	pmull2 v7.1q, v6.2d, v16.2d
+	ldr q29, [x21, #128]
+	aese v28.16b, v29.16b
+	eor v4.16b, v4.16b, v7.16b
+	aesmc v28.16b, v28.16b
+	pmull v7.1q, v3.1d, v1.1d
+	ldr q29, [x21, #144]
+	aese v28.16b, v29.16b
+	ext v3.16b, v3.16b, v3.16b, #8
+	aesmc v28.16b, v28.16b
+	eor v4.16b, v4.16b, v3.16b
+	ldr q29, [x21, #160]
+	aese v28.16b, v29.16b
+	eor v4.16b, v4.16b, v7.16b
+	aesmc v28.16b, v28.16b
+	ldr q29, [x21, #176]
+	pmull v7.1q, v4.1d, v1.1d
+	aese v28.16b, v29.16b
+	ext v5.16b, v5.16b, v5.16b, #8
+	aesmc v28.16b, v28.16b
+	ldr q29, [x21, #192]
+	eor v5.16b, v5.16b, v4.16b
+	aese v28.16b, v29.16b
+	aesmc v28.16b, v28.16b
+	ext v7.16b, v7.16b, v7.16b, #8
+	ldr q29, [x21, #208]
+	eor v0.16b, v5.16b, v7.16b
+	aese v28.16b, v29.16b
+	ldr q29, [x21, #224]
+	rev64 v0.16b, v0.16b
+	eor v28.16b, v28.16b, v29.16b
+	eor v0.16b, v0.16b, v28.16b
+	str q0, [x28, #0]
+	b 2195f
+2194:
+	ldr q28, [x20, #0]
+	ldr x10, [x19, #224]
+	ldr q29, [x21, #0]
+	lsl x10, x10, #3
+	aese v28.16b, v29.16b
+	lsl x9, x26, #3
+	aesmc v28.16b, v28.16b
+	ldr q29, [x21, #16]
+	mov v6.d[0], x10
+	aese v28.16b, v29.16b
+	mov v6.d[1], x9
+	aesmc v28.16b, v28.16b
+	ldr q29, [x21, #32]
+	eor v6.16b, v6.16b, v0.16b
+	aese v28.16b, v29.16b
+	movi v3.2d, #0
+	aesmc v28.16b, v28.16b
+	movi v4.2d, #0
+	ldr q29, [x21, #48]
+	aese v28.16b, v29.16b
+	movi v5.2d, #0
+	aesmc v28.16b, v28.16b
+	pmull v7.1q, v6.1d, v24.1d
+	ldr q29, [x21, #64]
+	aese v28.16b, v29.16b
+	eor v5.16b, v5.16b, v7.16b
+	aesmc v28.16b, v28.16b
+	pmull2 v7.1q, v6.2d, v24.2d
+	ldr q29, [x21, #80]
+	eor v3.16b, v3.16b, v7.16b
+	aese v28.16b, v29.16b
+	aesmc v28.16b, v28.16b
+	pmull v7.1q, v6.1d, v16.1d
+	ldr q29, [x21, #96]
+	eor v4.16b, v4.16b, v7.16b
+	aese v28.16b, v29.16b
+	aesmc v28.16b, v28.16b
+	pmull2 v7.1q, v6.2d, v16.2d
+	ldr q29, [x21, #112]
+	eor v4.16b, v4.16b, v7.16b
+	aese v28.16b, v29.16b
+	pmull v7.1q, v3.1d, v1.1d
+	aesmc v28.16b, v28.16b
+	ldr q29, [x21, #128]
+	ext v3.16b, v3.16b, v3.16b, #8
+	aese v28.16b, v29.16b
+	eor v4.16b, v4.16b, v3.16b
+	aesmc v28.16b, v28.16b
+	ldr q29, [x21, #144]
+	eor v4.16b, v4.16b, v7.16b
+	aese v28.16b, v29.16b
+	pmull v7.1q, v4.1d, v1.1d
+	aesmc v28.16b, v28.16b
+	ext v5.16b, v5.16b, v5.16b, #8
+	ldr q29, [x21, #160]
+	aese v28.16b, v29.16b
+	eor v5.16b, v5.16b, v4.16b
+	aesmc v28.16b, v28.16b
+	ext v7.16b, v7.16b, v7.16b, #8
+	ldr q29, [x21, #176]
+	aese v28.16b, v29.16b
+	eor v0.16b, v5.16b, v7.16b
+	ldr q29, [x21, #192]
+	rev64 v0.16b, v0.16b
+	eor v28.16b, v28.16b, v29.16b
+	eor v0.16b, v0.16b, v28.16b
+	str q0, [x28, #0]
+2195:
+	b 2193f
+2192:
+	ldr q28, [x20, #0]
+	ldr x10, [x19, #224]
+	ldr q29, [x21, #0]
+	lsl x10, x10, #3
+	aese v28.16b, v29.16b
+	lsl x9, x26, #3
+	aesmc v28.16b, v28.16b
+	mov v6.d[0], x10
+	ldr q29, [x21, #16]
+	mov v6.d[1], x9
+	aese v28.16b, v29.16b
+	eor v6.16b, v6.16b, v0.16b
+	aesmc v28.16b, v28.16b
+	ldr q29, [x21, #32]
+	movi v3.2d, #0
+	aese v28.16b, v29.16b
+	movi v4.2d, #0
+	aesmc v28.16b, v28.16b
+	movi v5.2d, #0
+	ldr q29, [x21, #48]
+	pmull v7.1q, v6.1d, v24.1d
+	aese v28.16b, v29.16b
+	eor v5.16b, v5.16b, v7.16b
+	aesmc v28.16b, v28.16b
+	ldr q29, [x21, #64]
+	pmull2 v7.1q, v6.2d, v24.2d
+	aese v28.16b, v29.16b
+	eor v3.16b, v3.16b, v7.16b
+	aesmc v28.16b, v28.16b
+	pmull v7.1q, v6.1d, v16.1d
+	ldr q29, [x21, #80]
+	eor v4.16b, v4.16b, v7.16b
+	aese v28.16b, v29.16b
+	pmull2 v7.1q, v6.2d, v16.2d
+	aesmc v28.16b, v28.16b
+	eor v4.16b, v4.16b, v7.16b
+	ldr q29, [x21, #96]
+	aese v28.16b, v29.16b
+	pmull v7.1q, v3.1d, v1.1d
+	aesmc v28.16b, v28.16b
+	ext v3.16b, v3.16b, v3.16b, #8
+	ldr q29, [x21, #112]
+	eor v4.16b, v4.16b, v3.16b
+	aese v28.16b, v29.16b
+	eor v4.16b, v4.16b, v7.16b
+	aesmc v28.16b, v28.16b
+	pmull v7.1q, v4.1d, v1.1d
+	ldr q29, [x21, #128]
+	aese v28.16b, v29.16b
+	ext v5.16b, v5.16b, v5.16b, #8
+	aesmc v28.16b, v28.16b
+	eor v5.16b, v5.16b, v4.16b
+	ldr q29, [x21, #144]
+	ext v7.16b, v7.16b, v7.16b, #8
+	aese v28.16b, v29.16b
+	eor v0.16b, v5.16b, v7.16b
+	ldr q29, [x21, #160]
+	rev64 v0.16b, v0.16b
+	eor v28.16b, v28.16b, v29.16b
+	eor v0.16b, v0.16b, v28.16b
+	str q0, [x28, #0]
+2193:
 	ldr x20, [x19, #136]
 	ldr x21, [x19, #144]
 	ldr x22, [x19, #152]
@@ -22469,6 +24449,654 @@ vg_aes_gcm_seal_contiguous_with_powers_aes:
 	ldr x30, [x19, #208]
 	ldr x19, [x19, #128]
 	add sp, sp, #800
+	movz x1, #0, lsl #0
+	movz x2, #0, lsl #0
+	movz x3, #0, lsl #0
+	movz x4, #0, lsl #0
+	movz x5, #0, lsl #0
+	movz x6, #0, lsl #0
+	movz x7, #0, lsl #0
+	movz x8, #0, lsl #0
+	movz x9, #0, lsl #0
+	movz x10, #0, lsl #0
+	movz x11, #0, lsl #0
+	movz x12, #0, lsl #0
+	movz x13, #0, lsl #0
+	movz x14, #0, lsl #0
+	movz x15, #0, lsl #0
+	movz x16, #0, lsl #0
+	movz x17, #0, lsl #0
+	movi v0.2d, #0
+	movi v1.2d, #0
+	movi v2.2d, #0
+	movi v3.2d, #0
+	movi v4.2d, #0
+	movi v5.2d, #0
+	movi v6.2d, #0
+	movi v7.2d, #0
+	movi v16.2d, #0
+	movi v17.2d, #0
+	movi v18.2d, #0
+	movi v19.2d, #0
+	movi v20.2d, #0
+	movi v21.2d, #0
+	movi v22.2d, #0
+	movi v23.2d, #0
+	movi v24.2d, #0
+	movi v25.2d, #0
+	movi v26.2d, #0
+	movi v27.2d, #0
+	movi v28.2d, #0
+	movi v29.2d, #0
+	movi v30.2d, #0
+	movi v31.2d, #0
+	tst x1, x1
+	movz x0, #0, lsl #0
+	sub sp, sp, #800
+	movi v31.2d, #0
+	add x9, sp, #0
+	movz x10, #12, lsl #0
+2196:
+	str q31, [x9, #0]
+	str q31, [x9, #16]
+	str q31, [x9, #32]
+	str q31, [x9, #48]
+	add x9, x9, #64
+	sub x10, x10, #1
+	cbnz x10, 2196b
+	str q31, [x9, #0]
+	str q31, [x9, #16]
+	add sp, sp, #800
+282:
+	b 280f
+279:
+	sub sp, sp, #48
+	ldr x9, [sp, #48]
+	ldr x10, [sp, #56]
+	str x7, [sp, #0]
+	str x9, [sp, #8]
+	str x10, [sp, #16]
+	str x6, [sp, #24]
+	str x9, [sp, #32]
+	add x6, sp, #24
+	movz x7, #1, lsl #0
+	sub sp, sp, #752
+	add x9, sp, #0
+	str x20, [x9, #136]
+	str x21, [x9, #144]
+	str x22, [x9, #152]
+	str x23, [x9, #160]
+	str x24, [x9, #168]
+	str x25, [x9, #176]
+	str x26, [x9, #184]
+	str x27, [x9, #192]
+	str x28, [x9, #200]
+	str x30, [x9, #208]
+	str x19, [x9, #128]
+	add x19, x9, #0
+	add x21, x0, #0
+	add x22, x1, #0
+	add x23, x2, #0
+	add x24, x5, #0
+	ldr x26, [sp, #760]
+	add x25, x26, #15
+	lsr x25, x25, #4
+	lsl x25, x25, #4
+	movi v0.2d, #0
+	str q0, [x19, #224]
+	str q0, [x19, #240]
+	str q0, [x19, #256]
+	str q0, [x19, #272]
+	str q0, [x19, #288]
+	str q0, [x19, #304]
+	str q0, [x19, #320]
+	str q0, [x19, #336]
+	str q0, [x19, #352]
+	str q0, [x19, #368]
+	str q0, [x19, #384]
+	str q0, [x19, #400]
+	str q0, [x19, #416]
+	str q0, [x19, #432]
+	str q0, [x19, #448]
+	str q0, [x19, #464]
+	str q0, [x19, #480]
+	str q0, [x19, #496]
+	str q0, [x19, #512]
+	str q0, [x19, #528]
+	str q0, [x19, #544]
+	str q0, [x19, #560]
+	str q0, [x19, #576]
+	str q0, [x19, #592]
+	str q0, [x19, #608]
+	str q0, [x19, #624]
+	str q0, [x19, #640]
+	str q0, [x19, #656]
+	str q0, [x19, #672]
+	str q0, [x19, #688]
+	str q0, [x19, #704]
+	str q0, [x19, #720]
+	str q0, [x19, #736]
+	add x11, x19, #704
+	sub x11, x11, x25
+	add x12, x4, #0
+	add x13, x24, #0
+	cbz x13, 2197f
+	lsr x14, x13, #2
+	cbz x14, 2199f
+	lsr x14, x13, #3
+	cbz x14, 2201f
+2203:
+	ldr x14, [x12, #0]
+	str x14, [x11, #0]
+	add x12, x12, #8
+	add x11, x11, #8
+	sub x13, x13, #8
+	lsr x14, x13, #3
+	cbnz x14, 2203b
+	b 2202f
+2201:
+2202:
+	lsr x14, x13, #2
+	cbz x14, 2204f
+	ldr w14, [x12, #0]
+	str w14, [x11, #0]
+	add x12, x12, #4
+	add x11, x11, #4
+	sub x13, x13, #4
+	b 2205f
+2204:
+2205:
+	cbz x13, 2206f
+2208:
+	ldrb w14, [x12, #0]
+	strb w14, [x11, #0]
+	add x12, x12, #1
+	add x11, x11, #1
+	sub x13, x13, #1
+	cbnz x13, 2208b
+	b 2207f
+2206:
+2207:
+	b 2200f
+2199:
+2209:
+	ldrb w14, [x12, #0]
+	strb w14, [x11, #0]
+	add x12, x12, #1
+	add x11, x11, #1
+	sub x13, x13, #1
+	cbnz x13, 2209b
+2200:
+	b 2198f
+2197:
+2198:
+	ldr x9, [x23, #0]
+	ldr w10, [x23, #8]
+	mov v31.d[0], x9
+	mov v31.s[2], w10
+	movz w12, #256, lsl #16
+	mov v31.s[3], w12
+	str q31, [x19, #0]
+	add x0, x21, #0
+	add x1, x22, #0
+	add x2, x19, #0
+	add x3, x19, #224
+	lsr x4, x25, #4
+	add x4, x4, #1
+	add x5, x19, #736
+	add x27, x6, #0
+	add x28, x7, #0
+	bl {vg_aes_ctr32_aes}
+	add x6, x27, #0
+	add x7, x28, #0
+	add x1, x19, #240
+	ldr x2, [sp, #752]
+	add x3, x19, #720
+	sub x3, x3, x25
+	cbz x7, 2210f
+2212:
+	ldr x0, [x6, #0]
+	ldr x12, [x6, #8]
+	add x6, x6, #16
+	lsr x13, x12, #4
+	movz x14, #15, lsl #0
+	and x12, x12, x14
+	cbz x13, 2213f
+2215:
+	ldr q0, [x0, #0]
+	ldr q1, [x1, #0]
+	eor v0.16b, v0.16b, v1.16b
+	str q0, [x2, #0]
+	str q0, [x3, #0]
+	add x0, x0, #16
+	add x1, x1, #16
+	add x2, x2, #16
+	add x3, x3, #16
+	sub x13, x13, #1
+	cbnz x13, 2215b
+	b 2214f
+2213:
+2214:
+	cbz x12, 2216f
+	lsr x14, x12, #3
+	cbnz x14, 2218f
+	lsr x14, x12, #2
+	cbnz x14, 2220f
+2222:
+	ldrb w14, [x0, #0]
+	ldrb w15, [x1, #0]
+	eor w14, w14, w15
+	strb w14, [x2, #0]
+	strb w14, [x3, #0]
+	add x0, x0, #1
+	add x1, x1, #1
+	add x2, x2, #1
+	add x3, x3, #1
+	sub x12, x12, #1
+	cbnz x12, 2222b
+	b 2221f
+2220:
+	ldr w14, [x0, #0]
+	ldr w15, [x1, #0]
+	eor w13, w14, w15
+	sub x12, x12, #4
+	add x0, x0, x12
+	add x1, x1, x12
+	ldr w14, [x0, #0]
+	ldr w15, [x1, #0]
+	eor w14, w14, w15
+	str w13, [x2, #0]
+	str w13, [x3, #0]
+	add x2, x2, x12
+	add x3, x3, x12
+	str w14, [x2, #0]
+	str w14, [x3, #0]
+	add x0, x0, #4
+	add x1, x1, #4
+	add x2, x2, #4
+	add x3, x3, #4
+2221:
+	b 2219f
+2218:
+	ldr x14, [x0, #0]
+	ldr x15, [x1, #0]
+	eor x13, x14, x15
+	sub x12, x12, #8
+	add x0, x0, x12
+	add x1, x1, x12
+	ldr x14, [x0, #0]
+	ldr x15, [x1, #0]
+	eor x14, x14, x15
+	str x13, [x2, #0]
+	str x13, [x3, #0]
+	add x2, x2, x12
+	add x3, x3, x12
+	str x14, [x2, #0]
+	str x14, [x3, #0]
+	add x0, x0, #8
+	add x1, x1, #8
+	add x2, x2, #8
+	add x3, x3, #8
+2219:
+	b 2217f
+2216:
+2217:
+	sub x7, x7, #1
+	cbnz x7, 2212b
+	b 2211f
+2210:
+2211:
+	ldr x5, [sp, #816]
+	lsl x9, x24, #3
+	rev x9, x9
+	str x9, [x19, #720]
+	lsl x9, x26, #3
+	rev x9, x9
+	str x9, [x19, #728]
+	add x0, x21, #240
+	add x1, x19, #736
+	add x2, x19, #480
+	movz x3, #16, lsl #0
+	ldr q16, [x5, #16]
+	ext v24.16b, v16.16b, v16.16b, #8
+	ldr q17, [x5, #0]
+	ext v25.16b, v17.16b, v17.16b, #8
+	ldr q18, [x5, #48]
+	ext v26.16b, v18.16b, v18.16b, #8
+	ldr q19, [x5, #32]
+	ext v27.16b, v19.16b, v19.16b, #8
+	ldr q20, [x5, #80]
+	ext v28.16b, v20.16b, v20.16b, #8
+	ldr q21, [x5, #64]
+	ext v29.16b, v21.16b, v21.16b, #8
+	ldr q22, [x5, #112]
+	ext v30.16b, v22.16b, v22.16b, #8
+	ldr q23, [x5, #96]
+	ext v31.16b, v23.16b, v23.16b, #8
+	movz x5, #49664, lsl #48
+	dup v1.2d, x5
+	ldr q0, [x1, #0]
+	rev64 v0.16b, v0.16b
+	lsr x5, x3, #3
+	sub x11, x26, #129
+	lsr x11, x11, #63
+	cbnz x11, 2223f
+	sub x11, x26, #161
+	lsr x11, x11, #63
+	cbnz x11, 2225f
+	movi v3.2d, #0
+	movi v4.2d, #0
+	movi v5.2d, #0
+	ldr q6, [x2, #16]
+	rev64 v6.16b, v6.16b
+	pmull v7.1q, v6.1d, v30.1d
+	eor v5.16b, v5.16b, v7.16b
+	pmull2 v7.1q, v6.2d, v30.2d
+	eor v3.16b, v3.16b, v7.16b
+	pmull v7.1q, v6.1d, v22.1d
+	eor v4.16b, v4.16b, v7.16b
+	pmull2 v7.1q, v6.2d, v22.2d
+	eor v4.16b, v4.16b, v7.16b
+	ldr q6, [x2, #32]
+	rev64 v6.16b, v6.16b
+	pmull v7.1q, v6.1d, v29.1d
+	eor v5.16b, v5.16b, v7.16b
+	pmull2 v7.1q, v6.2d, v29.2d
+	eor v3.16b, v3.16b, v7.16b
+	pmull v7.1q, v6.1d, v21.1d
+	eor v4.16b, v4.16b, v7.16b
+	pmull2 v7.1q, v6.2d, v21.2d
+	eor v4.16b, v4.16b, v7.16b
+	ldr q6, [x2, #48]
+	rev64 v6.16b, v6.16b
+	pmull v7.1q, v6.1d, v28.1d
+	eor v5.16b, v5.16b, v7.16b
+	pmull2 v7.1q, v6.2d, v28.2d
+	eor v3.16b, v3.16b, v7.16b
+	pmull v7.1q, v6.1d, v20.1d
+	eor v4.16b, v4.16b, v7.16b
+	pmull2 v7.1q, v6.2d, v20.2d
+	eor v4.16b, v4.16b, v7.16b
+	ldr q6, [x2, #64]
+	rev64 v6.16b, v6.16b
+	pmull v7.1q, v6.1d, v27.1d
+	eor v5.16b, v5.16b, v7.16b
+	pmull2 v7.1q, v6.2d, v27.2d
+	eor v3.16b, v3.16b, v7.16b
+	pmull v7.1q, v6.1d, v19.1d
+	eor v4.16b, v4.16b, v7.16b
+	pmull2 v7.1q, v6.2d, v19.2d
+	eor v4.16b, v4.16b, v7.16b
+	ldr q6, [x2, #80]
+	rev64 v6.16b, v6.16b
+	pmull v7.1q, v6.1d, v26.1d
+	eor v5.16b, v5.16b, v7.16b
+	pmull2 v7.1q, v6.2d, v26.2d
+	eor v3.16b, v3.16b, v7.16b
+	pmull v7.1q, v6.1d, v18.1d
+	eor v4.16b, v4.16b, v7.16b
+	pmull2 v7.1q, v6.2d, v18.2d
+	eor v4.16b, v4.16b, v7.16b
+	ldr q6, [x2, #96]
+	rev64 v6.16b, v6.16b
+	pmull v7.1q, v6.1d, v25.1d
+	eor v5.16b, v5.16b, v7.16b
+	pmull2 v7.1q, v6.2d, v25.2d
+	eor v3.16b, v3.16b, v7.16b
+	pmull v7.1q, v6.1d, v17.1d
+	eor v4.16b, v4.16b, v7.16b
+	pmull2 v7.1q, v6.2d, v17.2d
+	eor v4.16b, v4.16b, v7.16b
+	ldr q6, [x2, #112]
+	rev64 v6.16b, v6.16b
+	pmull v7.1q, v6.1d, v24.1d
+	eor v5.16b, v5.16b, v7.16b
+	pmull2 v7.1q, v6.2d, v24.2d
+	eor v3.16b, v3.16b, v7.16b
+	pmull v7.1q, v6.1d, v16.1d
+	eor v4.16b, v4.16b, v7.16b
+	pmull2 v7.1q, v6.2d, v16.2d
+	eor v4.16b, v4.16b, v7.16b
+	ldr q6, [x2, #0]
+	rev64 v6.16b, v6.16b
+	eor v6.16b, v6.16b, v0.16b
+	pmull v7.1q, v6.1d, v31.1d
+	eor v5.16b, v5.16b, v7.16b
+	pmull2 v7.1q, v6.2d, v31.2d
+	eor v3.16b, v3.16b, v7.16b
+	pmull v7.1q, v6.1d, v23.1d
+	eor v4.16b, v4.16b, v7.16b
+	pmull2 v7.1q, v6.2d, v23.2d
+	eor v4.16b, v4.16b, v7.16b
+	pmull v7.1q, v3.1d, v1.1d
+	ext v3.16b, v3.16b, v3.16b, #8
+	eor v4.16b, v4.16b, v3.16b
+	eor v4.16b, v4.16b, v7.16b
+	pmull v7.1q, v4.1d, v1.1d
+	ext v5.16b, v5.16b, v5.16b, #8
+	eor v5.16b, v5.16b, v4.16b
+	ext v7.16b, v7.16b, v7.16b, #8
+	eor v0.16b, v5.16b, v7.16b
+	add x2, x2, #128
+	sub x3, x3, #8
+	lsr x5, x3, #3
+	b 2226f
+2225:
+	add x2, x2, #64
+	sub x3, x3, #4
+	lsr x5, x3, #3
+	movi v3.2d, #0
+	movi v4.2d, #0
+	movi v5.2d, #0
+	ldr q6, [x2, #16]
+	rev64 v6.16b, v6.16b
+	pmull v7.1q, v6.1d, v26.1d
+	eor v5.16b, v5.16b, v7.16b
+	pmull2 v7.1q, v6.2d, v26.2d
+	eor v3.16b, v3.16b, v7.16b
+	pmull v7.1q, v6.1d, v18.1d
+	eor v4.16b, v4.16b, v7.16b
+	pmull2 v7.1q, v6.2d, v18.2d
+	eor v4.16b, v4.16b, v7.16b
+	ldr q6, [x2, #32]
+	rev64 v6.16b, v6.16b
+	pmull v7.1q, v6.1d, v25.1d
+	eor v5.16b, v5.16b, v7.16b
+	pmull2 v7.1q, v6.2d, v25.2d
+	eor v3.16b, v3.16b, v7.16b
+	pmull v7.1q, v6.1d, v17.1d
+	eor v4.16b, v4.16b, v7.16b
+	pmull2 v7.1q, v6.2d, v17.2d
+	eor v4.16b, v4.16b, v7.16b
+	ldr q6, [x2, #48]
+	rev64 v6.16b, v6.16b
+	pmull v7.1q, v6.1d, v24.1d
+	eor v5.16b, v5.16b, v7.16b
+	pmull2 v7.1q, v6.2d, v24.2d
+	eor v3.16b, v3.16b, v7.16b
+	pmull v7.1q, v6.1d, v16.1d
+	eor v4.16b, v4.16b, v7.16b
+	pmull2 v7.1q, v6.2d, v16.2d
+	eor v4.16b, v4.16b, v7.16b
+	ldr q6, [x2, #0]
+	rev64 v6.16b, v6.16b
+	eor v6.16b, v6.16b, v0.16b
+	pmull v7.1q, v6.1d, v27.1d
+	eor v5.16b, v5.16b, v7.16b
+	pmull2 v7.1q, v6.2d, v27.2d
+	eor v3.16b, v3.16b, v7.16b
+	pmull v7.1q, v6.1d, v19.1d
+	eor v4.16b, v4.16b, v7.16b
+	pmull2 v7.1q, v6.2d, v19.2d
+	eor v4.16b, v4.16b, v7.16b
+	pmull v7.1q, v3.1d, v1.1d
+	ext v3.16b, v3.16b, v3.16b, #8
+	eor v4.16b, v4.16b, v3.16b
+	eor v4.16b, v4.16b, v7.16b
+	pmull v7.1q, v4.1d, v1.1d
+	ext v5.16b, v5.16b, v5.16b, #8
+	eor v5.16b, v5.16b, v4.16b
+	ext v7.16b, v7.16b, v7.16b, #8
+	eor v0.16b, v5.16b, v7.16b
+	add x2, x2, #64
+	sub x3, x3, #4
+	lsr x5, x3, #3
+2226:
+	b 2224f
+2223:
+	add x2, x2, #96
+	sub x3, x3, #6
+	lsr x5, x3, #3
+	movi v3.2d, #0
+	movi v4.2d, #0
+	movi v5.2d, #0
+	ldr q6, [x2, #16]
+	rev64 v6.16b, v6.16b
+	pmull v7.1q, v6.1d, v24.1d
+	eor v5.16b, v5.16b, v7.16b
+	pmull2 v7.1q, v6.2d, v24.2d
+	eor v3.16b, v3.16b, v7.16b
+	pmull v7.1q, v6.1d, v16.1d
+	eor v4.16b, v4.16b, v7.16b
+	pmull2 v7.1q, v6.2d, v16.2d
+	eor v4.16b, v4.16b, v7.16b
+	ldr q6, [x2, #0]
+	rev64 v6.16b, v6.16b
+	eor v6.16b, v6.16b, v0.16b
+	pmull v7.1q, v6.1d, v25.1d
+	eor v5.16b, v5.16b, v7.16b
+	pmull2 v7.1q, v6.2d, v25.2d
+	eor v3.16b, v3.16b, v7.16b
+	pmull v7.1q, v6.1d, v17.1d
+	eor v4.16b, v4.16b, v7.16b
+	pmull2 v7.1q, v6.2d, v17.2d
+	eor v4.16b, v4.16b, v7.16b
+	pmull v7.1q, v3.1d, v1.1d
+	ext v3.16b, v3.16b, v3.16b, #8
+	eor v4.16b, v4.16b, v3.16b
+	eor v4.16b, v4.16b, v7.16b
+	pmull v7.1q, v4.1d, v1.1d
+	ext v5.16b, v5.16b, v5.16b, #8
+	eor v5.16b, v5.16b, v4.16b
+	ext v7.16b, v7.16b, v7.16b, #8
+	eor v0.16b, v5.16b, v7.16b
+	add x2, x2, #32
+	sub x3, x3, #2
+	lsr x5, x3, #3
+2224:
+	movi v3.2d, #0
+	movi v4.2d, #0
+	movi v5.2d, #0
+	ldr q6, [x2, #16]
+	rev64 v6.16b, v6.16b
+	pmull v7.1q, v6.1d, v30.1d
+	eor v5.16b, v5.16b, v7.16b
+	pmull2 v7.1q, v6.2d, v30.2d
+	eor v3.16b, v3.16b, v7.16b
+	pmull v7.1q, v6.1d, v22.1d
+	eor v4.16b, v4.16b, v7.16b
+	pmull2 v7.1q, v6.2d, v22.2d
+	eor v4.16b, v4.16b, v7.16b
+	ldr q6, [x2, #32]
+	rev64 v6.16b, v6.16b
+	pmull v7.1q, v6.1d, v29.1d
+	eor v5.16b, v5.16b, v7.16b
+	pmull2 v7.1q, v6.2d, v29.2d
+	eor v3.16b, v3.16b, v7.16b
+	pmull v7.1q, v6.1d, v21.1d
+	eor v4.16b, v4.16b, v7.16b
+	pmull2 v7.1q, v6.2d, v21.2d
+	eor v4.16b, v4.16b, v7.16b
+	ldr q6, [x2, #48]
+	rev64 v6.16b, v6.16b
+	pmull v7.1q, v6.1d, v28.1d
+	eor v5.16b, v5.16b, v7.16b
+	pmull2 v7.1q, v6.2d, v28.2d
+	eor v3.16b, v3.16b, v7.16b
+	pmull v7.1q, v6.1d, v20.1d
+	eor v4.16b, v4.16b, v7.16b
+	pmull2 v7.1q, v6.2d, v20.2d
+	eor v4.16b, v4.16b, v7.16b
+	ldr q6, [x2, #64]
+	rev64 v6.16b, v6.16b
+	pmull v7.1q, v6.1d, v27.1d
+	eor v5.16b, v5.16b, v7.16b
+	pmull2 v7.1q, v6.2d, v27.2d
+	eor v3.16b, v3.16b, v7.16b
+	pmull v7.1q, v6.1d, v19.1d
+	eor v4.16b, v4.16b, v7.16b
+	pmull2 v7.1q, v6.2d, v19.2d
+	eor v4.16b, v4.16b, v7.16b
+	ldr q6, [x2, #80]
+	rev64 v6.16b, v6.16b
+	pmull v7.1q, v6.1d, v26.1d
+	eor v5.16b, v5.16b, v7.16b
+	pmull2 v7.1q, v6.2d, v26.2d
+	eor v3.16b, v3.16b, v7.16b
+	pmull v7.1q, v6.1d, v18.1d
+	eor v4.16b, v4.16b, v7.16b
+	pmull2 v7.1q, v6.2d, v18.2d
+	eor v4.16b, v4.16b, v7.16b
+	ldr q6, [x2, #96]
+	rev64 v6.16b, v6.16b
+	pmull v7.1q, v6.1d, v25.1d
+	eor v5.16b, v5.16b, v7.16b
+	pmull2 v7.1q, v6.2d, v25.2d
+	eor v3.16b, v3.16b, v7.16b
+	pmull v7.1q, v6.1d, v17.1d
+	eor v4.16b, v4.16b, v7.16b
+	pmull2 v7.1q, v6.2d, v17.2d
+	eor v4.16b, v4.16b, v7.16b
+	ldr q6, [x2, #112]
+	rev64 v6.16b, v6.16b
+	pmull v7.1q, v6.1d, v24.1d
+	eor v5.16b, v5.16b, v7.16b
+	pmull2 v7.1q, v6.2d, v24.2d
+	eor v3.16b, v3.16b, v7.16b
+	pmull v7.1q, v6.1d, v16.1d
+	eor v4.16b, v4.16b, v7.16b
+	pmull2 v7.1q, v6.2d, v16.2d
+	eor v4.16b, v4.16b, v7.16b
+	ldr q6, [x2, #0]
+	rev64 v6.16b, v6.16b
+	eor v6.16b, v6.16b, v0.16b
+	pmull v7.1q, v6.1d, v31.1d
+	eor v5.16b, v5.16b, v7.16b
+	pmull2 v7.1q, v6.2d, v31.2d
+	eor v3.16b, v3.16b, v7.16b
+	pmull v7.1q, v6.1d, v23.1d
+	eor v4.16b, v4.16b, v7.16b
+	pmull2 v7.1q, v6.2d, v23.2d
+	eor v4.16b, v4.16b, v7.16b
+	pmull v7.1q, v3.1d, v1.1d
+	ext v3.16b, v3.16b, v3.16b, #8
+	eor v4.16b, v4.16b, v3.16b
+	eor v4.16b, v4.16b, v7.16b
+	pmull v7.1q, v4.1d, v1.1d
+	ext v5.16b, v5.16b, v5.16b, #8
+	eor v5.16b, v5.16b, v4.16b
+	ext v7.16b, v7.16b, v7.16b, #8
+	eor v0.16b, v5.16b, v7.16b
+	add x2, x2, #128
+	sub x3, x3, #8
+	lsr x5, x3, #3
+	rev64 v16.16b, v0.16b
+	ldr q0, [x19, #224]
+	eor v16.16b, v16.16b, v0.16b
+	ldr x10, [sp, #768]
+	str q16, [x10, #0]
+	ldr x20, [x19, #136]
+	ldr x21, [x19, #144]
+	ldr x22, [x19, #152]
+	ldr x23, [x19, #160]
+	ldr x24, [x19, #168]
+	ldr x25, [x19, #176]
+	ldr x26, [x19, #184]
+	ldr x27, [x19, #192]
+	ldr x28, [x19, #200]
+	ldr x30, [x19, #208]
+	ldr x19, [x19, #128]
+	add sp, sp, #752
 	add sp, sp, #48
 	movz x1, #0, lsl #0
 	movz x2, #0, lsl #0
@@ -22513,22 +25141,24 @@ vg_aes_gcm_seal_contiguous_with_powers_aes:
 	movi v31.2d, #0
 	tst x1, x1
 	movz x0, #0, lsl #0
-	sub sp, sp, #848
+	sub sp, sp, #800
 	movi v31.2d, #0
 	add x9, sp, #0
-	movz x10, #13, lsl #0
-2193:
+	movz x10, #12, lsl #0
+2227:
 	str q31, [x9, #0]
 	str q31, [x9, #16]
 	str q31, [x9, #32]
 	str q31, [x9, #48]
 	add x9, x9, #64
 	sub x10, x10, #1
-	cbnz x10, 2193b
+	cbnz x10, 2227b
 	str q31, [x9, #0]
-	add sp, sp, #848
-	b 298f
-297:
+	str q31, [x9, #16]
+	add sp, sp, #800
+280:
+	b 278f
+277:
 	sub sp, sp, #368
 	add x9, sp, #0
 	str x20, [x9, #136]
@@ -22564,60 +25194,60 @@ vg_aes_gcm_seal_contiguous_with_powers_aes:
 	sub x11, x11, x25
 	add x12, x4, #0
 	add x13, x24, #0
-	cbz x13, 2194f
+	cbz x13, 2228f
 	lsr x14, x13, #2
-	cbz x14, 2196f
+	cbz x14, 2230f
 	lsr x14, x13, #3
-	cbz x14, 2198f
-2200:
+	cbz x14, 2232f
+2234:
 	ldr x14, [x12, #0]
 	str x14, [x11, #0]
 	add x12, x12, #8
 	add x11, x11, #8
 	sub x13, x13, #8
 	lsr x14, x13, #3
-	cbnz x14, 2200b
-	b 2199f
-2198:
-2199:
+	cbnz x14, 2234b
+	b 2233f
+2232:
+2233:
 	lsr x14, x13, #2
-	cbz x14, 2201f
+	cbz x14, 2235f
 	ldr w14, [x12, #0]
 	str w14, [x11, #0]
 	add x12, x12, #4
 	add x11, x11, #4
 	sub x13, x13, #4
-	b 2202f
-2201:
-2202:
-	cbz x13, 2203f
-2205:
+	b 2236f
+2235:
+2236:
+	cbz x13, 2237f
+2239:
 	ldrb w14, [x12, #0]
 	strb w14, [x11, #0]
 	add x12, x12, #1
 	add x11, x11, #1
 	sub x13, x13, #1
-	cbnz x13, 2205b
-	b 2204f
-2203:
-2204:
-	b 2197f
-2196:
-2206:
+	cbnz x13, 2239b
+	b 2238f
+2237:
+2238:
+	b 2231f
+2230:
+2240:
 	ldrb w14, [x12, #0]
 	strb w14, [x11, #0]
 	add x12, x12, #1
 	add x11, x11, #1
 	sub x13, x13, #1
-	cbnz x13, 2206b
-2197:
-	b 2195f
-2194:
-2195:
+	cbnz x13, 2240b
+2231:
+	b 2229f
+2228:
+2229:
 	sub x13, x22, #10
 	sub x14, x22, #12
-	cbz x13, 2207f
-	cbz x14, 2209f
+	cbz x13, 2241f
+	cbz x14, 2243f
 	ldr x9, [x23, #0]
 	ldr w10, [x23, #8]
 	mov v31.d[0], x9
@@ -22861,8 +25491,8 @@ vg_aes_gcm_seal_contiguous_with_powers_aes:
 	str q5, [x19, #80]
 	eor v6.16b, v6.16b, v30.16b
 	str q6, [x19, #96]
-	b 2210f
-2209:
+	b 2244f
+2243:
 	ldr x9, [x23, #0]
 	ldr w10, [x23, #8]
 	mov v31.d[0], x9
@@ -23076,9 +25706,9 @@ vg_aes_gcm_seal_contiguous_with_powers_aes:
 	str q5, [x19, #80]
 	eor v6.16b, v6.16b, v30.16b
 	str q6, [x19, #96]
-2210:
-	b 2208f
-2207:
+2244:
+	b 2242f
+2241:
 	ldr x9, [x23, #0]
 	ldr w10, [x23, #8]
 	mov v31.d[0], x9
@@ -23262,7 +25892,7 @@ vg_aes_gcm_seal_contiguous_with_powers_aes:
 	str q5, [x19, #80]
 	eor v6.16b, v6.16b, v30.16b
 	str q6, [x19, #96]
-2208:
+2242:
 	add x1, x19, #16
 	add x2, x7, #0
 	add x3, x19, #336
@@ -23272,8 +25902,8 @@ vg_aes_gcm_seal_contiguous_with_powers_aes:
 	lsr x13, x12, #4
 	movz x14, #15, lsl #0
 	and x12, x12, x14
-	cbz x13, 2211f
-2213:
+	cbz x13, 2245f
+2247:
 	ldr q0, [x0, #0]
 	ldr q1, [x1, #0]
 	eor v0.16b, v0.16b, v1.16b
@@ -23284,16 +25914,16 @@ vg_aes_gcm_seal_contiguous_with_powers_aes:
 	add x2, x2, #16
 	add x3, x3, #16
 	sub x13, x13, #1
-	cbnz x13, 2213b
-	b 2212f
-2211:
-2212:
-	cbz x12, 2214f
+	cbnz x13, 2247b
+	b 2246f
+2245:
+2246:
+	cbz x12, 2248f
 	lsr x14, x12, #3
-	cbnz x14, 2216f
+	cbnz x14, 2250f
 	lsr x14, x12, #2
-	cbnz x14, 2218f
-2220:
+	cbnz x14, 2252f
+2254:
 	ldrb w14, [x0, #0]
 	ldrb w15, [x1, #0]
 	eor w14, w14, w15
@@ -23304,9 +25934,9 @@ vg_aes_gcm_seal_contiguous_with_powers_aes:
 	add x2, x2, #1
 	add x3, x3, #1
 	sub x12, x12, #1
-	cbnz x12, 2220b
-	b 2219f
-2218:
+	cbnz x12, 2254b
+	b 2253f
+2252:
 	ldr w14, [x0, #0]
 	ldr w15, [x1, #0]
 	eor w13, w14, w15
@@ -23326,9 +25956,9 @@ vg_aes_gcm_seal_contiguous_with_powers_aes:
 	add x1, x1, #4
 	add x2, x2, #4
 	add x3, x3, #4
-2219:
-	b 2217f
-2216:
+2253:
+	b 2251f
+2250:
 	ldr x14, [x0, #0]
 	ldr x15, [x1, #0]
 	eor x13, x14, x15
@@ -23348,10 +25978,10 @@ vg_aes_gcm_seal_contiguous_with_powers_aes:
 	add x1, x1, #8
 	add x2, x2, #8
 	add x3, x3, #8
-2217:
-	b 2215f
-2214:
-2215:
+2251:
+	b 2249f
+2248:
+2249:
 	ldr x5, [sp, #384]
 	lsl x9, x24, #3
 	rev x9, x9
@@ -23547,19 +26177,19 @@ vg_aes_gcm_seal_contiguous_with_powers_aes:
 	movi v31.2d, #0
 	add x9, sp, #0
 	movz x10, #5, lsl #0
-2221:
+2255:
 	str q31, [x9, #0]
 	str q31, [x9, #16]
 	str q31, [x9, #32]
 	str q31, [x9, #48]
 	add x9, x9, #64
 	sub x10, x10, #1
-	cbnz x10, 2221b
+	cbnz x10, 2255b
 	str q31, [x9, #0]
 	str q31, [x9, #16]
 	str q31, [x9, #32]
 	add sp, sp, #368
-298:
+278:
 21:
 	ret
 	.p2align 6
@@ -28841,27 +31471,15 @@ vg_aes_gcm_seal_gather_neon:
 	.p2align 6
 
 vg_aes_gcm_seal_contiguous_with_powers_neon:
-	sub sp, sp, #48
-	ldr x9, [sp, #48]
-	ldr x10, [sp, #56]
-	str x7, [sp, #0]
-	str x9, [sp, #8]
-	str x10, [sp, #16]
-	str x6, [sp, #24]
-	str x9, [sp, #32]
-	add x6, sp, #24
-	movz x7, #1, lsl #0
 	sub sp, sp, #2592
 	add x16, sp, #0
 	ldr x17, [sp, #2592]
 	str x17, [x16, #0]
 	ldr x17, [sp, #2600]
 	str x17, [x16, #8]
-	ldr x17, [sp, #2608]
-	str x17, [x16, #16]
 	add x17, sp, #32
-	str x17, [x16, #24]
-	ldr x9, [sp, #24]
+	str x17, [x16, #16]
+	ldr x9, [sp, #16]
 	str x20, [x9, #136]
 	str x21, [x9, #144]
 	str x22, [x9, #152]
@@ -28885,13 +31503,10 @@ vg_aes_gcm_seal_contiguous_with_powers_neon:
 	add x24, x3, #0
 	add x26, x3, #0
 	movz x27, #0, lsl #0
-	str x6, [x19, #336]
-	str x7, [x19, #344]
+	str x7, [x19, #336]
 	ldr x9, [sp, #0]
-	str x9, [x19, #232]
-	ldr x9, [sp, #8]
 	str x9, [x19, #240]
-	ldr x10, [sp, #16]
+	ldr x10, [sp, #8]
 	str x10, [x19, #248]
 	add x28, x10, #0
 	sub x9, x24, #12
@@ -29015,7 +31630,6 @@ vg_aes_gcm_seal_contiguous_with_powers_neon:
 	str x9, [x20, #24]
 	ldr x23, [x19, #216]
 	ldr x24, [x19, #224]
-	movz x25, #0, lsl #0
 	lsr x3, x24, #4
 	add x2, x23, #0
 	add x0, x21, #240
@@ -29024,181 +31638,89 @@ vg_aes_gcm_seal_contiguous_with_powers_neon:
 	lsl x9, x3, #4
 	add x23, x23, x9
 	sub x24, x24, x9
+	cbz x3, 217f
 	bl {vg_ghash_neon}
-	add x11, x20, #32
-	add x12, x23, #0
-	add x13, x24, #0
-	cbz x13, 217f
-	lsr x14, x13, #2
-	cbz x14, 219f
-	lsr x14, x13, #3
-	cbz x14, 221f
-223:
-	ldr x14, [x12, #0]
-	str x14, [x11, #0]
-	add x12, x12, #8
-	add x11, x11, #8
-	sub x13, x13, #8
-	lsr x14, x13, #3
-	cbnz x14, 223b
-	b 222f
-221:
-222:
-	lsr x14, x13, #2
-	cbz x14, 224f
-	ldr w14, [x12, #0]
-	str w14, [x11, #0]
-	add x12, x12, #4
-	add x11, x11, #4
-	sub x13, x13, #4
-	b 225f
-224:
-225:
-	cbz x13, 226f
-228:
-	ldrb w14, [x12, #0]
-	strb w14, [x11, #0]
-	add x12, x12, #1
-	add x11, x11, #1
-	sub x13, x13, #1
-	cbnz x13, 228b
-	b 227f
-226:
-227:
-	b 220f
-219:
-229:
-	ldrb w14, [x12, #0]
-	strb w14, [x11, #0]
-	add x12, x12, #1
-	add x11, x11, #1
-	sub x13, x13, #1
-	cbnz x13, 229b
-220:
 	b 218f
 217:
 218:
-	ldr x25, [x19, #224]
-	movz x9, #15, lsl #0
-	and x25, x25, x9
-	add x12, x20, #32
+	cbz x24, 219f
+	add x25, x24, #0
+	add x12, x23, #0
 	movz x9, #0, lsl #0
 	str x9, [x19, #96]
 	str x9, [x19, #104]
 	add x11, x19, #96
 	add x13, x25, #0
-	cbz x13, 230f
+	cbz x13, 221f
 	lsr x14, x13, #2
-	cbz x14, 232f
+	cbz x14, 223f
 	lsr x14, x13, #3
-	cbz x14, 234f
-236:
+	cbz x14, 225f
+227:
 	ldr x14, [x12, #0]
 	str x14, [x11, #0]
 	add x12, x12, #8
 	add x11, x11, #8
 	sub x13, x13, #8
 	lsr x14, x13, #3
-	cbnz x14, 236b
-	b 235f
-234:
-235:
+	cbnz x14, 227b
+	b 226f
+225:
+226:
 	lsr x14, x13, #2
-	cbz x14, 237f
+	cbz x14, 228f
 	ldr w14, [x12, #0]
 	str w14, [x11, #0]
 	add x12, x12, #4
 	add x11, x11, #4
 	sub x13, x13, #4
-	b 238f
-237:
-238:
-	cbz x13, 239f
-241:
-	ldrb w14, [x12, #0]
-	strb w14, [x11, #0]
-	add x12, x12, #1
-	add x11, x11, #1
-	sub x13, x13, #1
-	cbnz x13, 241b
-	b 240f
-239:
-240:
-	b 233f
+	b 229f
+228:
+229:
+	cbz x13, 230f
 232:
-242:
 	ldrb w14, [x12, #0]
 	strb w14, [x11, #0]
 	add x12, x12, #1
 	add x11, x11, #1
 	sub x13, x13, #1
-	cbnz x13, 242b
-233:
+	cbnz x13, 232b
 	b 231f
 230:
 231:
-	cbz x25, 243f
+	b 224f
+223:
+233:
+	ldrb w14, [x12, #0]
+	strb w14, [x11, #0]
+	add x12, x12, #1
+	add x11, x11, #1
+	sub x13, x13, #1
+	cbnz x13, 233b
+224:
+	b 222f
+221:
+222:
+	cbz x25, 234f
 	movz x3, #1, lsl #0
-	b 244f
-243:
+	b 235f
+234:
 	movz x3, #0, lsl #0
-244:
+235:
 	add x0, x21, #240
 	add x1, x20, #16
 	add x4, x19, #512
 	add x2, x19, #96
 	bl {vg_ghash_neon}
-	ldr x27, [x19, #336]
-	ldr x28, [x19, #344]
-	ldr x26, [x19, #232]
+	b 220f
+219:
+220:
+	ldr x23, [x19, #232]
+	ldr x24, [x19, #240]
+	ldr x26, [x19, #336]
 	str x26, [x19, #352]
 	movz x25, #0, lsl #0
-	cbz x28, 245f
-247:
-	ldr x23, [x27, #0]
-	ldr x24, [x27, #8]
-	add x27, x27, #16
-	cbz x25, 248f
-	movz x9, #16, lsl #0
-	sub x9, x9, x25
-	lsr x10, x24, #4
-	cbnz x10, 250f
-	sub x11, x9, x24
-	lsr x11, x11, #63
-	cbz x11, 252f
-	add x10, x9, #0
-	b 253f
-252:
-	add x10, x24, #0
-253:
-	b 251f
-250:
-	add x10, x9, #0
-251:
-	add x11, x20, #64
-	add x11, x11, x25
-	add x25, x25, x10
-	movz x9, #15, lsl #0
-	and x25, x25, x9
-	cbz x10, 254f
-256:
-	ldrb w13, [x23, #0]
-	ldrb w14, [x11, #0]
-	eor w13, w13, w14
-	strb w13, [x26, #0]
-	add x23, x23, #1
-	add x11, x11, #1
-	add x26, x26, #1
-	sub x24, x24, #1
-	sub x10, x10, #1
-	cbnz x10, 256b
-	b 255f
-254:
-255:
-	b 249f
-248:
-249:
-	cbz x24, 257f
+	cbz x24, 236f
 	lsr x4, x24, #4
 	add x3, x23, #0
 	add x0, x21, #0
@@ -29210,17 +31732,21 @@ vg_aes_gcm_seal_contiguous_with_powers_neon:
 	sub x24, x24, x9
 	add x6, x26, #0
 	add x26, x26, x9
+	cbz x4, 238f
 	bl {vg_aes_ctr32_to_neon}
-	cbz x24, 259f
-	cbz x24, 261f
+	b 239f
+238:
+239:
+	cbz x24, 240f
+	cbz x24, 242f
 	movz x4, #1, lsl #0
 	movz x9, #0, lsl #0
 	str x9, [x20, #64]
 	str x9, [x20, #72]
-	b 262f
-261:
+	b 243f
+242:
 	movz x4, #0, lsl #0
-262:
+243:
 	add x0, x21, #0
 	add x1, x22, #0
 	add x2, x20, #48
@@ -29230,8 +31756,12 @@ vg_aes_gcm_seal_contiguous_with_powers_neon:
 	add x10, x24, #0
 	add x25, x24, #0
 	add x11, x20, #64
-	cbz x10, 263f
-265:
+	lsr x12, x24, #3
+	cbnz x12, 244f
+	lsr x12, x24, #2
+	cbnz x12, 246f
+	cbz x10, 248f
+250:
 	ldrb w13, [x23, #0]
 	ldrb w14, [x11, #0]
 	eor w13, w13, w14
@@ -29241,21 +31771,52 @@ vg_aes_gcm_seal_contiguous_with_powers_neon:
 	add x26, x26, #1
 	sub x24, x24, #1
 	sub x10, x10, #1
-	cbnz x10, 265b
-	b 264f
-263:
-264:
-	b 260f
-259:
-260:
-	b 258f
-257:
-258:
-	sub x28, x28, #1
-	cbnz x28, 247b
-	b 246f
-245:
+	cbnz x10, 250b
+	b 249f
+248:
+249:
+	b 247f
 246:
+	sub x12, x24, #4
+	add x0, x23, x12
+	add x1, x11, x12
+	add x2, x26, x12
+	ldr w13, [x23, #0]
+	ldr w14, [x11, #0]
+	eor w13, w13, w14
+	ldr w14, [x0, #0]
+	ldr w15, [x1, #0]
+	eor w14, w14, w15
+	str w13, [x26, #0]
+	str w14, [x2, #0]
+	add x23, x23, x24
+	add x26, x26, x24
+	movz x24, #0, lsl #0
+247:
+	b 245f
+244:
+	sub x12, x24, #8
+	add x0, x23, x12
+	add x1, x11, x12
+	add x2, x26, x12
+	ldr x13, [x23, #0]
+	ldr x14, [x11, #0]
+	eor x13, x13, x14
+	ldr x14, [x0, #0]
+	ldr x15, [x1, #0]
+	eor x14, x14, x15
+	str x13, [x26, #0]
+	str x14, [x2, #0]
+	add x23, x23, x24
+	add x26, x26, x24
+	movz x24, #0, lsl #0
+245:
+	b 241f
+240:
+241:
+	b 237f
+236:
+237:
 	ldr x23, [x19, #352]
 	sub x24, x26, x23
 	lsr x3, x24, #4
@@ -29266,128 +31827,83 @@ vg_aes_gcm_seal_contiguous_with_powers_neon:
 	lsl x9, x3, #4
 	add x23, x23, x9
 	sub x24, x24, x9
+	cbz x3, 251f
 	bl {vg_ghash_neon}
-	add x11, x20, #32
-	add x12, x23, #0
-	add x13, x24, #0
-	cbz x13, 266f
-	lsr x14, x13, #2
-	cbz x14, 268f
-	lsr x14, x13, #3
-	cbz x14, 270f
-272:
-	ldr x14, [x12, #0]
-	str x14, [x11, #0]
-	add x12, x12, #8
-	add x11, x11, #8
-	sub x13, x13, #8
-	lsr x14, x13, #3
-	cbnz x14, 272b
-	b 271f
-270:
-271:
-	lsr x14, x13, #2
-	cbz x14, 273f
-	ldr w14, [x12, #0]
-	str w14, [x11, #0]
-	add x12, x12, #4
-	add x11, x11, #4
-	sub x13, x13, #4
-	b 274f
-273:
-274:
-	cbz x13, 275f
-277:
-	ldrb w14, [x12, #0]
-	strb w14, [x11, #0]
-	add x12, x12, #1
-	add x11, x11, #1
-	sub x13, x13, #1
-	cbnz x13, 277b
-	b 276f
-275:
-276:
-	b 269f
-268:
-278:
-	ldrb w14, [x12, #0]
-	strb w14, [x11, #0]
-	add x12, x12, #1
-	add x11, x11, #1
-	sub x13, x13, #1
-	cbnz x13, 278b
-269:
-	b 267f
-266:
-267:
+	b 252f
+251:
+252:
+	cbz x24, 253f
 	add x25, x24, #0
-	add x12, x20, #32
+	add x12, x23, #0
 	movz x9, #0, lsl #0
 	str x9, [x19, #96]
 	str x9, [x19, #104]
 	add x11, x19, #96
 	add x13, x25, #0
-	cbz x13, 279f
+	cbz x13, 255f
 	lsr x14, x13, #2
-	cbz x14, 281f
+	cbz x14, 257f
 	lsr x14, x13, #3
-	cbz x14, 283f
-285:
+	cbz x14, 259f
+261:
 	ldr x14, [x12, #0]
 	str x14, [x11, #0]
 	add x12, x12, #8
 	add x11, x11, #8
 	sub x13, x13, #8
 	lsr x14, x13, #3
-	cbnz x14, 285b
-	b 284f
-283:
-284:
+	cbnz x14, 261b
+	b 260f
+259:
+260:
 	lsr x14, x13, #2
-	cbz x14, 286f
+	cbz x14, 262f
 	ldr w14, [x12, #0]
 	str w14, [x11, #0]
 	add x12, x12, #4
 	add x11, x11, #4
 	sub x13, x13, #4
-	b 287f
-286:
-287:
-	cbz x13, 288f
-290:
+	b 263f
+262:
+263:
+	cbz x13, 264f
+266:
 	ldrb w14, [x12, #0]
 	strb w14, [x11, #0]
 	add x12, x12, #1
 	add x11, x11, #1
 	sub x13, x13, #1
-	cbnz x13, 290b
-	b 289f
-288:
-289:
-	b 282f
-281:
-291:
+	cbnz x13, 266b
+	b 265f
+264:
+265:
+	b 258f
+257:
+267:
 	ldrb w14, [x12, #0]
 	strb w14, [x11, #0]
 	add x12, x12, #1
 	add x11, x11, #1
 	sub x13, x13, #1
-	cbnz x13, 291b
-282:
-	b 280f
-279:
-280:
-	cbz x25, 292f
+	cbnz x13, 267b
+258:
+	b 256f
+255:
+256:
+	cbz x25, 268f
 	movz x3, #1, lsl #0
-	b 293f
-292:
+	b 269f
+268:
 	movz x3, #0, lsl #0
-293:
+269:
 	add x0, x21, #240
 	add x1, x20, #16
 	add x4, x19, #512
 	add x2, x19, #96
 	bl {vg_ghash_neon}
+	b 254f
+253:
+254:
 	ldr x26, [x19, #224]
 	ldr x27, [x19, #240]
 	lsl x9, x26, #3
@@ -29402,22 +31918,14 @@ vg_aes_gcm_seal_contiguous_with_powers_neon:
 	add x4, x19, #512
 	add x2, x19, #96
 	bl {vg_ghash_neon}
-	ldr x9, [x20, #16]
-	str x9, [x19, #0]
-	ldr x9, [x20, #24]
-	str x9, [x19, #8]
 	add x0, x21, #0
 	add x1, x22, #0
 	add x2, x20, #0
-	add x3, x19, #0
+	add x3, x20, #16
 	movz x4, #1, lsl #0
 	add x5, x19, #512
-	bl {vg_aes_ctr32_neon}
-	ldr x28, [x19, #248]
-	ldr x9, [x19, #0]
-	str x9, [x28, #0]
-	ldr x9, [x19, #8]
-	str x9, [x28, #8]
+	ldr x6, [x19, #248]
+	bl {vg_aes_ctr32_to_neon}
 	ldr x20, [x19, #136]
 	ldr x21, [x19, #144]
 	ldr x22, [x19, #152]
@@ -29430,7 +31938,6 @@ vg_aes_gcm_seal_contiguous_with_powers_neon:
 	ldr x30, [x19, #208]
 	ldr x19, [x19, #128]
 	add sp, sp, #2592
-	add sp, sp, #48
 	movz x1, #0, lsl #0
 	movz x2, #0, lsl #0
 	movz x3, #0, lsl #0
@@ -29474,20 +31981,21 @@ vg_aes_gcm_seal_contiguous_with_powers_neon:
 	movi v31.2d, #0
 	tst x1, x1
 	movz x0, #0, lsl #0
-	sub sp, sp, #2640
+	sub sp, sp, #2592
 	movi v31.2d, #0
 	add x9, sp, #0
-	movz x10, #41, lsl #0
-294:
+	movz x10, #40, lsl #0
+270:
 	str q31, [x9, #0]
 	str q31, [x9, #16]
 	str q31, [x9, #32]
 	str q31, [x9, #48]
 	add x9, x9, #64
 	sub x10, x10, #1
-	cbnz x10, 294b
+	cbnz x10, 270b
 	str q31, [x9, #0]
-	add sp, sp, #2640
+	str q31, [x9, #16]
+	add sp, sp, #2592
 	ret
 	.p2align 6
 
@@ -33065,27 +35573,15 @@ vg_aes_gcm_seal_gather:
 	.p2align 6
 
 vg_aes_gcm_seal_contiguous_with_powers:
-	sub sp, sp, #48
-	ldr x9, [sp, #48]
-	ldr x10, [sp, #56]
-	str x7, [sp, #0]
-	str x9, [sp, #8]
-	str x10, [sp, #16]
-	str x6, [sp, #24]
-	str x9, [sp, #32]
-	add x6, sp, #24
-	movz x7, #1, lsl #0
 	sub sp, sp, #2592
 	add x16, sp, #0
 	ldr x17, [sp, #2592]
 	str x17, [x16, #0]
 	ldr x17, [sp, #2600]
 	str x17, [x16, #8]
-	ldr x17, [sp, #2608]
-	str x17, [x16, #16]
 	add x17, sp, #32
-	str x17, [x16, #24]
-	ldr x9, [sp, #24]
+	str x17, [x16, #16]
+	ldr x9, [sp, #16]
 	str x20, [x9, #136]
 	str x21, [x9, #144]
 	str x22, [x9, #152]
@@ -33109,13 +35605,10 @@ vg_aes_gcm_seal_contiguous_with_powers:
 	add x24, x3, #0
 	add x26, x3, #0
 	movz x27, #0, lsl #0
-	str x6, [x19, #336]
-	str x7, [x19, #344]
+	str x7, [x19, #336]
 	ldr x9, [sp, #0]
-	str x9, [x19, #232]
-	ldr x9, [sp, #8]
 	str x9, [x19, #240]
-	ldr x10, [sp, #16]
+	ldr x10, [sp, #8]
 	str x10, [x19, #248]
 	add x28, x10, #0
 	sub x9, x24, #12
@@ -33239,7 +35732,6 @@ vg_aes_gcm_seal_contiguous_with_powers:
 	str x9, [x20, #24]
 	ldr x23, [x19, #216]
 	ldr x24, [x19, #224]
-	movz x25, #0, lsl #0
 	lsr x3, x24, #4
 	add x2, x23, #0
 	add x0, x21, #240
@@ -33248,181 +35740,89 @@ vg_aes_gcm_seal_contiguous_with_powers:
 	lsl x9, x3, #4
 	add x23, x23, x9
 	sub x24, x24, x9
+	cbz x3, 217f
 	bl {vg_ghash}
-	add x11, x20, #32
-	add x12, x23, #0
-	add x13, x24, #0
-	cbz x13, 217f
-	lsr x14, x13, #2
-	cbz x14, 219f
-	lsr x14, x13, #3
-	cbz x14, 221f
-223:
-	ldr x14, [x12, #0]
-	str x14, [x11, #0]
-	add x12, x12, #8
-	add x11, x11, #8
-	sub x13, x13, #8
-	lsr x14, x13, #3
-	cbnz x14, 223b
-	b 222f
-221:
-222:
-	lsr x14, x13, #2
-	cbz x14, 224f
-	ldr w14, [x12, #0]
-	str w14, [x11, #0]
-	add x12, x12, #4
-	add x11, x11, #4
-	sub x13, x13, #4
-	b 225f
-224:
-225:
-	cbz x13, 226f
-228:
-	ldrb w14, [x12, #0]
-	strb w14, [x11, #0]
-	add x12, x12, #1
-	add x11, x11, #1
-	sub x13, x13, #1
-	cbnz x13, 228b
-	b 227f
-226:
-227:
-	b 220f
-219:
-229:
-	ldrb w14, [x12, #0]
-	strb w14, [x11, #0]
-	add x12, x12, #1
-	add x11, x11, #1
-	sub x13, x13, #1
-	cbnz x13, 229b
-220:
 	b 218f
 217:
 218:
-	ldr x25, [x19, #224]
-	movz x9, #15, lsl #0
-	and x25, x25, x9
-	add x12, x20, #32
+	cbz x24, 219f
+	add x25, x24, #0
+	add x12, x23, #0
 	movz x9, #0, lsl #0
 	str x9, [x19, #96]
 	str x9, [x19, #104]
 	add x11, x19, #96
 	add x13, x25, #0
-	cbz x13, 230f
+	cbz x13, 221f
 	lsr x14, x13, #2
-	cbz x14, 232f
+	cbz x14, 223f
 	lsr x14, x13, #3
-	cbz x14, 234f
-236:
+	cbz x14, 225f
+227:
 	ldr x14, [x12, #0]
 	str x14, [x11, #0]
 	add x12, x12, #8
 	add x11, x11, #8
 	sub x13, x13, #8
 	lsr x14, x13, #3
-	cbnz x14, 236b
-	b 235f
-234:
-235:
+	cbnz x14, 227b
+	b 226f
+225:
+226:
 	lsr x14, x13, #2
-	cbz x14, 237f
+	cbz x14, 228f
 	ldr w14, [x12, #0]
 	str w14, [x11, #0]
 	add x12, x12, #4
 	add x11, x11, #4
 	sub x13, x13, #4
-	b 238f
-237:
-238:
-	cbz x13, 239f
-241:
-	ldrb w14, [x12, #0]
-	strb w14, [x11, #0]
-	add x12, x12, #1
-	add x11, x11, #1
-	sub x13, x13, #1
-	cbnz x13, 241b
-	b 240f
-239:
-240:
-	b 233f
+	b 229f
+228:
+229:
+	cbz x13, 230f
 232:
-242:
 	ldrb w14, [x12, #0]
 	strb w14, [x11, #0]
 	add x12, x12, #1
 	add x11, x11, #1
 	sub x13, x13, #1
-	cbnz x13, 242b
-233:
+	cbnz x13, 232b
 	b 231f
 230:
 231:
-	cbz x25, 243f
+	b 224f
+223:
+233:
+	ldrb w14, [x12, #0]
+	strb w14, [x11, #0]
+	add x12, x12, #1
+	add x11, x11, #1
+	sub x13, x13, #1
+	cbnz x13, 233b
+224:
+	b 222f
+221:
+222:
+	cbz x25, 234f
 	movz x3, #1, lsl #0
-	b 244f
-243:
+	b 235f
+234:
 	movz x3, #0, lsl #0
-244:
+235:
 	add x0, x21, #240
 	add x1, x20, #16
 	add x4, x19, #512
 	add x2, x19, #96
 	bl {vg_ghash}
-	ldr x27, [x19, #336]
-	ldr x28, [x19, #344]
-	ldr x26, [x19, #232]
+	b 220f
+219:
+220:
+	ldr x23, [x19, #232]
+	ldr x24, [x19, #240]
+	ldr x26, [x19, #336]
 	str x26, [x19, #352]
 	movz x25, #0, lsl #0
-	cbz x28, 245f
-247:
-	ldr x23, [x27, #0]
-	ldr x24, [x27, #8]
-	add x27, x27, #16
-	cbz x25, 248f
-	movz x9, #16, lsl #0
-	sub x9, x9, x25
-	lsr x10, x24, #4
-	cbnz x10, 250f
-	sub x11, x9, x24
-	lsr x11, x11, #63
-	cbz x11, 252f
-	add x10, x9, #0
-	b 253f
-252:
-	add x10, x24, #0
-253:
-	b 251f
-250:
-	add x10, x9, #0
-251:
-	add x11, x20, #64
-	add x11, x11, x25
-	add x25, x25, x10
-	movz x9, #15, lsl #0
-	and x25, x25, x9
-	cbz x10, 254f
-256:
-	ldrb w13, [x23, #0]
-	ldrb w14, [x11, #0]
-	eor w13, w13, w14
-	strb w13, [x26, #0]
-	add x23, x23, #1
-	add x11, x11, #1
-	add x26, x26, #1
-	sub x24, x24, #1
-	sub x10, x10, #1
-	cbnz x10, 256b
-	b 255f
-254:
-255:
-	b 249f
-248:
-249:
-	cbz x24, 257f
+	cbz x24, 236f
 	lsr x4, x24, #4
 	add x3, x23, #0
 	add x0, x21, #0
@@ -33434,17 +35834,21 @@ vg_aes_gcm_seal_contiguous_with_powers:
 	sub x24, x24, x9
 	add x6, x26, #0
 	add x26, x26, x9
+	cbz x4, 238f
 	bl {vg_aes_ctr32_to}
-	cbz x24, 259f
-	cbz x24, 261f
+	b 239f
+238:
+239:
+	cbz x24, 240f
+	cbz x24, 242f
 	movz x4, #1, lsl #0
 	movz x9, #0, lsl #0
 	str x9, [x20, #64]
 	str x9, [x20, #72]
-	b 262f
-261:
+	b 243f
+242:
 	movz x4, #0, lsl #0
-262:
+243:
 	add x0, x21, #0
 	add x1, x22, #0
 	add x2, x20, #48
@@ -33454,8 +35858,12 @@ vg_aes_gcm_seal_contiguous_with_powers:
 	add x10, x24, #0
 	add x25, x24, #0
 	add x11, x20, #64
-	cbz x10, 263f
-265:
+	lsr x12, x24, #3
+	cbnz x12, 244f
+	lsr x12, x24, #2
+	cbnz x12, 246f
+	cbz x10, 248f
+250:
 	ldrb w13, [x23, #0]
 	ldrb w14, [x11, #0]
 	eor w13, w13, w14
@@ -33465,21 +35873,52 @@ vg_aes_gcm_seal_contiguous_with_powers:
 	add x26, x26, #1
 	sub x24, x24, #1
 	sub x10, x10, #1
-	cbnz x10, 265b
-	b 264f
-263:
-264:
-	b 260f
-259:
-260:
-	b 258f
-257:
-258:
-	sub x28, x28, #1
-	cbnz x28, 247b
-	b 246f
-245:
+	cbnz x10, 250b
+	b 249f
+248:
+249:
+	b 247f
 246:
+	sub x12, x24, #4
+	add x0, x23, x12
+	add x1, x11, x12
+	add x2, x26, x12
+	ldr w13, [x23, #0]
+	ldr w14, [x11, #0]
+	eor w13, w13, w14
+	ldr w14, [x0, #0]
+	ldr w15, [x1, #0]
+	eor w14, w14, w15
+	str w13, [x26, #0]
+	str w14, [x2, #0]
+	add x23, x23, x24
+	add x26, x26, x24
+	movz x24, #0, lsl #0
+247:
+	b 245f
+244:
+	sub x12, x24, #8
+	add x0, x23, x12
+	add x1, x11, x12
+	add x2, x26, x12
+	ldr x13, [x23, #0]
+	ldr x14, [x11, #0]
+	eor x13, x13, x14
+	ldr x14, [x0, #0]
+	ldr x15, [x1, #0]
+	eor x14, x14, x15
+	str x13, [x26, #0]
+	str x14, [x2, #0]
+	add x23, x23, x24
+	add x26, x26, x24
+	movz x24, #0, lsl #0
+245:
+	b 241f
+240:
+241:
+	b 237f
+236:
+237:
 	ldr x23, [x19, #352]
 	sub x24, x26, x23
 	lsr x3, x24, #4
@@ -33490,128 +35929,83 @@ vg_aes_gcm_seal_contiguous_with_powers:
 	lsl x9, x3, #4
 	add x23, x23, x9
 	sub x24, x24, x9
+	cbz x3, 251f
 	bl {vg_ghash}
-	add x11, x20, #32
-	add x12, x23, #0
-	add x13, x24, #0
-	cbz x13, 266f
-	lsr x14, x13, #2
-	cbz x14, 268f
-	lsr x14, x13, #3
-	cbz x14, 270f
-272:
-	ldr x14, [x12, #0]
-	str x14, [x11, #0]
-	add x12, x12, #8
-	add x11, x11, #8
-	sub x13, x13, #8
-	lsr x14, x13, #3
-	cbnz x14, 272b
-	b 271f
-270:
-271:
-	lsr x14, x13, #2
-	cbz x14, 273f
-	ldr w14, [x12, #0]
-	str w14, [x11, #0]
-	add x12, x12, #4
-	add x11, x11, #4
-	sub x13, x13, #4
-	b 274f
-273:
-274:
-	cbz x13, 275f
-277:
-	ldrb w14, [x12, #0]
-	strb w14, [x11, #0]
-	add x12, x12, #1
-	add x11, x11, #1
-	sub x13, x13, #1
-	cbnz x13, 277b
-	b 276f
-275:
-276:
-	b 269f
-268:
-278:
-	ldrb w14, [x12, #0]
-	strb w14, [x11, #0]
-	add x12, x12, #1
-	add x11, x11, #1
-	sub x13, x13, #1
-	cbnz x13, 278b
-269:
-	b 267f
-266:
-267:
+	b 252f
+251:
+252:
+	cbz x24, 253f
 	add x25, x24, #0
-	add x12, x20, #32
+	add x12, x23, #0
 	movz x9, #0, lsl #0
 	str x9, [x19, #96]
 	str x9, [x19, #104]
 	add x11, x19, #96
 	add x13, x25, #0
-	cbz x13, 279f
+	cbz x13, 255f
 	lsr x14, x13, #2
-	cbz x14, 281f
+	cbz x14, 257f
 	lsr x14, x13, #3
-	cbz x14, 283f
-285:
+	cbz x14, 259f
+261:
 	ldr x14, [x12, #0]
 	str x14, [x11, #0]
 	add x12, x12, #8
 	add x11, x11, #8
 	sub x13, x13, #8
 	lsr x14, x13, #3
-	cbnz x14, 285b
-	b 284f
-283:
-284:
+	cbnz x14, 261b
+	b 260f
+259:
+260:
 	lsr x14, x13, #2
-	cbz x14, 286f
+	cbz x14, 262f
 	ldr w14, [x12, #0]
 	str w14, [x11, #0]
 	add x12, x12, #4
 	add x11, x11, #4
 	sub x13, x13, #4
-	b 287f
-286:
-287:
-	cbz x13, 288f
-290:
+	b 263f
+262:
+263:
+	cbz x13, 264f
+266:
 	ldrb w14, [x12, #0]
 	strb w14, [x11, #0]
 	add x12, x12, #1
 	add x11, x11, #1
 	sub x13, x13, #1
-	cbnz x13, 290b
-	b 289f
-288:
-289:
-	b 282f
-281:
-291:
+	cbnz x13, 266b
+	b 265f
+264:
+265:
+	b 258f
+257:
+267:
 	ldrb w14, [x12, #0]
 	strb w14, [x11, #0]
 	add x12, x12, #1
 	add x11, x11, #1
 	sub x13, x13, #1
-	cbnz x13, 291b
-282:
-	b 280f
-279:
-280:
-	cbz x25, 292f
+	cbnz x13, 267b
+258:
+	b 256f
+255:
+256:
+	cbz x25, 268f
 	movz x3, #1, lsl #0
-	b 293f
-292:
+	b 269f
+268:
 	movz x3, #0, lsl #0
-293:
+269:
 	add x0, x21, #240
 	add x1, x20, #16
 	add x4, x19, #512
 	add x2, x19, #96
 	bl {vg_ghash}
+	b 254f
+253:
+254:
 	ldr x26, [x19, #224]
 	ldr x27, [x19, #240]
 	lsl x9, x26, #3
@@ -33626,22 +36020,14 @@ vg_aes_gcm_seal_contiguous_with_powers:
 	add x4, x19, #512
 	add x2, x19, #96
 	bl {vg_ghash}
-	ldr x9, [x20, #16]
-	str x9, [x19, #0]
-	ldr x9, [x20, #24]
-	str x9, [x19, #8]
 	add x0, x21, #0
 	add x1, x22, #0
 	add x2, x20, #0
-	add x3, x19, #0
+	add x3, x20, #16
 	movz x4, #1, lsl #0
 	add x5, x19, #512
-	bl {vg_aes_ctr32}
-	ldr x28, [x19, #248]
-	ldr x9, [x19, #0]
-	str x9, [x28, #0]
-	ldr x9, [x19, #8]
-	str x9, [x28, #8]
+	ldr x6, [x19, #248]
+	bl {vg_aes_ctr32_to}
 	ldr x20, [x19, #136]
 	ldr x21, [x19, #144]
 	ldr x22, [x19, #152]
@@ -33654,7 +36040,6 @@ vg_aes_gcm_seal_contiguous_with_powers:
 	ldr x30, [x19, #208]
 	ldr x19, [x19, #128]
 	add sp, sp, #2592
-	add sp, sp, #48
 	movz x1, #0, lsl #0
 	movz x2, #0, lsl #0
 	movz x3, #0, lsl #0
@@ -33698,20 +36083,21 @@ vg_aes_gcm_seal_contiguous_with_powers:
 	movi v31.2d, #0
 	tst x1, x1
 	movz x0, #0, lsl #0
-	sub sp, sp, #2640
+	sub sp, sp, #2592
 	movi v31.2d, #0
 	add x9, sp, #0
-	movz x10, #41, lsl #0
-294:
+	movz x10, #40, lsl #0
+270:
 	str q31, [x9, #0]
 	str q31, [x9, #16]
 	str q31, [x9, #32]
 	str q31, [x9, #48]
 	add x9, x9, #64
 	sub x10, x10, #1
-	cbnz x10, 294b
+	cbnz x10, 270b
 	str q31, [x9, #0]
-	add sp, sp, #2640
+	str q31, [x9, #16]
+	add sp, sp, #2592
 	ret
 	.p2align 6
 

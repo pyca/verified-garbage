@@ -250,6 +250,10 @@ pub(crate) mod vg_aes_expand_key_scratch_aes;
 pub(crate) mod vg_aes_gcm_init_core;
 
 #[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_seal_batches_aes.rs"]
+pub(crate) mod vg_aes_gcm_seal_batches_aes;
+
+#[rustfmt::skip]
 #[path = "internal/vg_aes_gcm_seal_batches_aes_sha3.rs"]
 pub(crate) mod vg_aes_gcm_seal_batches_aes_sha3;
 
