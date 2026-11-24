@@ -103,8 +103,9 @@ theorem prod_identity9 (fa fb : Nat → Nat) :
   generalize 2 ^ 32 = B
   simp only [X25519.X86.numB, List.range_succ, List.range_zero, List.nil_append, List.cons_append,
     List.filter_cons, List.filter_nil]
-  simp (config := {decide := true}) only [↓reduceIte, List.map_cons, List.map_nil,
-    List.sum_cons, List.sum_nil]
+  simp only [Nat.reduceLeDiff, Nat.reduceSub, Nat.reduceLT, Nat.zero_le, Nat.le_refl, decide_true, decide_false,
+    Bool.and_self, Bool.and_false, Bool.and_true, Bool.false_eq_true, ↓reduceIte, List.map_cons,
+    List.map_nil, List.sum_cons, List.sum_nil]
   grind
 
 /-- Terms that are zero may be left out of a sum. -/
