@@ -184,7 +184,6 @@ DECIDE_SIMP_ALLOWED = {
     "VerifiedGarbage/Proof/Rc2/Arm/KeyIO.lean": 2,
     "VerifiedGarbage/Proof/Rc2/Arm/KeySteps.lean": 6,
     "VerifiedGarbage/Proof/Rc2/Arm/Rounds.lean": 2,
-    "VerifiedGarbage/Proof/Rc2/X86/BlockArgs.lean": 1,
     "VerifiedGarbage/Proof/Rc2/X86/KeySteps.lean": 2,
     "VerifiedGarbage/Proof/Rc2/X86_64/KeyLoop.lean": 10,
     "VerifiedGarbage/Proof/Rc2/X86_64/Save.lean": 5,
