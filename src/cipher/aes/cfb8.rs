@@ -153,3 +153,40 @@ impl Drop for Key {
         zeroize(&mut self.schedule.0);
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::{AesCfb8Decryptor, AesCfb8Encryptor};
+
+    /// The longest message: more than three groups of the bytes an
+    /// implementation may take at a time.
+    const MAX: usize = 200;
+
+    /// Decryption undoes encryption for messages of many bytes, which an
+    /// implementation may take many at a time, split around any of the byte
+    /// counts it may change its course at, and unaligned.
+    #[test]
+    fn byte_batches_and_continuation() {
+        let iv = [0x3c; 16];
+        let key: [u8; 32] = core::array::from_fn(|i| (17 * i + 3) as u8);
+        let plain: [u8; MAX] = core::array::from_fn(|i| (73 * i + 5) as u8);
+        for key in [&key[..16], &key[..24], &key[..]] {
+            for len in [0usize, 1, 15, 16, 17, 63, 64, 65, 127, 128, 129, MAX] {
+                let mut ciphertext = plain;
+                AesCfb8Encryptor::new(key, &iv)
+                    .unwrap()
+                    .encrypt(&mut ciphertext[..len]);
+                for split in [0, len.min(1), len / 2, len] {
+                    let mut guarded = [0xa5; MAX + 2];
+                    guarded[1..=len].copy_from_slice(&ciphertext[..len]);
+                    let mut decryptor = AesCfb8Decryptor::new(key, &iv).unwrap();
+                    let (first, rest) = guarded[1..=len].split_at_mut(split);
+                    decryptor.decrypt(first);
+                    decryptor.decrypt(rest);
+                    assert_eq!(guarded[1..=len], plain[..len]);
+                    assert_eq!((guarded[0], guarded[len + 1]), (0xa5, 0xa5));
+                }
+            }
+        }
+    }
+}
