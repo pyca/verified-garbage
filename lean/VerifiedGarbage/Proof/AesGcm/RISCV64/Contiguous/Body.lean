@@ -1,5 +1,7 @@
 module
 
+-- separate module: The body-to-payload precondition proof depends on the concrete register and workspace layout.
+
 public import VerifiedGarbage.Proof.AesGcm.RISCV64.Contiguous.PayloadCT
 public import VerifiedGarbage.Proof.AesGcm.RISCV64.Contiguous.Exit
 import VerifiedGarbage.Proof.AesGcm.RISCV64.StreamCrypt
@@ -163,7 +165,7 @@ private theorem slot_arg {p : Args} {s t : State} (h : ArgsAt p s) (sp : t.sp=s.
     (Offset.sub s.sp (d := 8*i) (n := 8) (e := 0) (k := 32) (by omega) (by omega)))
 
 theorem prepare_wp {p : Args} {s v : State} (h : ArgsAt p s) (e : AfterAad p s v) :
-    WP isa (.block (VG.Impl.AesGcm.RISCV64.Contiguous.payloadArgs ++ [.li .t0 241])) v (Prepared p s) := by
+    WP isa (.block (VG.Impl.AesGcm.RISCV64.Contiguous.payloadArgs ++ ([.li .t0 241] : List Instr))) v (Prepared p s) := by
   obtain ⟨_,oa⟩ := e.auth
   have vv (r : Reg) (hr : r ∈ frozen) := oa.env.fr r hr
   have w : v.gpr .s0=p.work := vv _ (by decide)
