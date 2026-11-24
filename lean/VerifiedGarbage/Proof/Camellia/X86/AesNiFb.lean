@@ -402,19 +402,19 @@ def frameSat : State where
 
 theorem frameSat_ofb (post : Spec.Camellia.ofbSig.Post X86.abi.ptrBits) :
     ∃ s, (Spec.Camellia.ofbSig.contract X86.abi (pre := Spec.Camellia.ofbPre X86.abi.ptrBits) (post := post)
-      (writeArgs := true) (stack := 588)).pre s := by
+      (writeArgs := true) (stack := 580)).pre s := by
   implies_sat [Spec.Camellia.ofbSig, Spec.Camellia.ofbPre, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     [frameSat, X86.arg, X86.argAddr, Mem.readW, Mem.read] using frameSat
 
 theorem frameSat_cfb (post : Spec.Camellia.cfbSig.Post X86.abi.ptrBits) :
     ∃ s, (Spec.Camellia.cfbSig.contract X86.abi (pre := Spec.Camellia.cfbPre X86.abi.ptrBits) (post := post)
-      (writeArgs := true) (stack := 588)).pre s := by
+      (writeArgs := true) (stack := 580)).pre s := by
   implies_sat [Spec.Camellia.cfbSig, Spec.Camellia.cfbPre, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     [frameSat, X86.arg, X86.argAddr, Mem.readW, Mem.read] using frameSat
 
 theorem frameSat_cbc (post : Spec.Camellia.cbcChainedSig.Post X86.abi.ptrBits) :
     ∃ s, (Spec.Camellia.cbcChainedSig.contract X86.abi (pre := Proof.Camellia.cbcChainedPre X86.abi.ptrBits)
-      (post := post) (writeArgs := true) (stack := 588)).pre s := by
+      (post := post) (writeArgs := true) (stack := 580)).pre s := by
   implies_sat [Spec.Camellia.cbcChainedSig, Proof.Camellia.cbcChainedPre, X86.abi, X86.argSlots, X86.argVal,
       X86.argBytes]
     [frameSat, X86.arg, X86.argAddr, Mem.readW, Mem.read] using frameSat
@@ -466,36 +466,36 @@ theorem cbcEncryptChained_verified :
 
 /-- `ofb` with its working space on the stack. -/
 theorem ofb_framed :
-    Verified X86.target (Impl.StackScratch.X86.withStackScratchWiped 584 5 136 ofb)
-      (Spec.Camellia.ofbContract X86.abi 588) :=
+    Verified X86.target (Impl.StackScratch.X86.withStackScratchWiped 576 5 136 ofb)
+      (Spec.Camellia.ofbContract X86.abi 580) :=
   Proof.Camellia.ofb_of_sk <|
   X86.Verified.stackScratchWiped (sig := Spec.Camellia.ofbSig) (nm := "scratch") (e := .u64)
     (n := 68) (pre := Spec.Camellia.ofbPre X86.abi.ptrBits) (post := Proof.Camellia.ofbPostSk X86.abi.ptrBits)
-    (wa := true) (stack := 4) (bytes := 584) ofb_verified (by decide) (by lit_decide) (by lit_decide) (by decide)
+    (wa := true) (stack := 4) (bytes := 576) ofb_verified (by decide) (by lit_decide) (by lit_decide) (by decide)
     (Proof.Camellia.ofbPre_local _)
     (Proof.Camellia.ofbPost_local _) (Proof.Camellia.ofbPostOut_local _) (frameSat_ofb _)
 
 /-- `cfbEncrypt` with its working space on the stack. -/
 theorem cfbEncrypt_framed :
-    Verified X86.target (Impl.StackScratch.X86.withStackScratchWiped 584 5 136 cfbEncrypt)
-      (Spec.Camellia.cfbEncryptContract X86.abi 588) :=
+    Verified X86.target (Impl.StackScratch.X86.withStackScratchWiped 576 5 136 cfbEncrypt)
+      (Spec.Camellia.cfbEncryptContract X86.abi 580) :=
   Proof.Camellia.cfbEncrypt_of_sk <|
   X86.Verified.stackScratchWiped (sig := Spec.Camellia.cfbSig) (nm := "scratch") (e := .u64)
     (n := 68) (pre := Spec.Camellia.cfbPre X86.abi.ptrBits)
     (post := Proof.Camellia.cfbEncryptPostSk X86.abi.ptrBits) (wa := true) (stack := 4)
-    (bytes := 584) cfbEncrypt_verified (by decide) (by lit_decide) (by lit_decide) (by decide)
+    (bytes := 576) cfbEncrypt_verified (by decide) (by lit_decide) (by lit_decide) (by decide)
     (Proof.Camellia.cfbPre_local _)
     (Proof.Camellia.cfbEncryptPost_local _) (Proof.Camellia.cfbEncryptPostOut_local _) (frameSat_cfb _)
 
 /-- `cbcEncryptChained` with its working space on the stack. -/
 theorem cbcEncryptChained_framed :
-    Verified X86.target (Impl.StackScratch.X86.withStackScratchWiped 584 5 136 cbcEncryptChained)
-      (Spec.Camellia.cbcEncryptChainedContract X86.abi 588) :=
+    Verified X86.target (Impl.StackScratch.X86.withStackScratchWiped 576 5 136 cbcEncryptChained)
+      (Spec.Camellia.cbcEncryptChainedContract X86.abi 580) :=
   Proof.Camellia.cbcEncryptChained_of_sk <|
   X86.Verified.stackScratchWiped (sig := Spec.Camellia.cbcChainedSig) (nm := "scratch") (e := .u64)
     (n := 68) (pre := Proof.Camellia.cbcChainedPre X86.abi.ptrBits)
     (post := Proof.Camellia.cbcEncChainedPost X86.abi.ptrBits) (wa := true) (stack := 4)
-    (bytes := 584) cbcEncryptChained_verified (by decide) (by lit_decide) (by lit_decide) (by decide)
+    (bytes := 576) cbcEncryptChained_verified (by decide) (by lit_decide) (by lit_decide) (by decide)
     (Proof.Camellia.cbcChainedPre_local _)
     (Proof.Camellia.cbcEncChainedPost_local _) (Proof.Camellia.cbcEncChainedPostOut_local _) (frameSat_cbc _)
 

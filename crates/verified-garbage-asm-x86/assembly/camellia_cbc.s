@@ -5,16 +5,16 @@
 // gives.
 
 vg_camellia_cbc_encrypt_chained_aesni:
-	lea esp, [esp-584]
-	mov eax, DWORD PTR [esp+588]
+	lea esp, [esp-576]
+	mov eax, DWORD PTR [esp+580]
 	mov DWORD PTR [esp+4], eax
-	mov eax, DWORD PTR [esp+592]
+	mov eax, DWORD PTR [esp+584]
 	mov DWORD PTR [esp+8], eax
-	mov eax, DWORD PTR [esp+596]
+	mov eax, DWORD PTR [esp+588]
 	mov DWORD PTR [esp+12], eax
-	mov eax, DWORD PTR [esp+600]
+	mov eax, DWORD PTR [esp+592]
 	mov DWORD PTR [esp+16], eax
-	mov eax, DWORD PTR [esp+604]
+	mov eax, DWORD PTR [esp+596]
 	mov DWORD PTR [esp+20], eax
 	mov eax, esp
 	add eax, 28
@@ -691,8 +691,8 @@ vg_camellia_cbc_encrypt_chained_aesni:
 	movdqu XMMWORD PTR [esp+524], xmm0
 	movdqu XMMWORD PTR [esp+540], xmm0
 	movdqu XMMWORD PTR [esp+556], xmm0
-	lea esp, [esp+584]
-	lea esp, [esp-588]
+	lea esp, [esp+576]
+	lea esp, [esp-580]
 	mov ecx, 0
 	mov DWORD PTR [esp+4], ecx
 	mov DWORD PTR [esp+8], ecx
@@ -702,9 +702,7 @@ vg_camellia_cbc_encrypt_chained_aesni:
 	mov DWORD PTR [esp+24], ecx
 	mov DWORD PTR [esp+28], ecx
 	mov DWORD PTR [esp+576], ecx
-	mov DWORD PTR [esp+580], ecx
-	mov DWORD PTR [esp+584], ecx
-	lea esp, [esp+588]
+	lea esp, [esp+580]
 	mov eax, 0
 	mov edx, 0
 	xor ecx, ecx

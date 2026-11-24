@@ -12,7 +12,16 @@ wipes (`withStackScratchWiped`), then its cleanup
 (`Impl.Scrub.X86.scrubSel rb W ws`): of the `W` bytes of stack below `esp`
 that its contract reserves, the doublewords `ws` its code may leave
 different in two runs zeroed, and the registers a callee may change
-cleared, so that it returns without secret residue. -/
+cleared, so that it returns without secret residue.
+
+A function's frame is larger than its working space and header need (888
+bytes for 884), so that the working space, which `withStackScratchWiped`
+puts 28 bytes above the frame's base for five arguments, is at a multiple
+of 16 when `esp` is one at the call: the places and the blocks, at
+multiples of 16 in it, which every round loads and stores, then cross no
+page, or line of the cache (the keys, as `AesNi.prepare` lays them out
+from byte 24 on, are 8 modulo 16). `ctrFramed`'s frame is as it was:
+`vg_camellia_ctr_final` calls it from a frame of its own. -/
 
 @[expose] public section
 

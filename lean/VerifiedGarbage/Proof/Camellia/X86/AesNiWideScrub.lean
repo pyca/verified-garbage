@@ -24,9 +24,9 @@ meta import VerifiedGarbage.Proof.Framework.Lit
 
 The functions as emitted (`Impl.Camellia.X86.AesNiWide.Fn`): each runs with
 its working space in a frame on the stack, which it wipes, then zeroes, of
-the 892 bytes of stack its contract reserves below `esp`, the seven
+the 892 bytes of stack its contract reserves below `esp`, the eight
 doublewords that the residue analysis (`X86.rtaint`) finds it may leave
-different in two runs, the header of that frame, clears the registers a
+different in two runs, the header of that frame and its last doubleword, clears the registers a
 callee may change, and returns without secret residue
 (`X86.Scrub.verifiedScrubbedSel`, the kernel evaluating the analysis of the
 code with its cleanup: `taint_decide_ct`). Their postconditions read the

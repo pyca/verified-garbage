@@ -14,7 +14,12 @@ core for four blocks in the direction `d` (`AesNiWide.lean`), by groups of
 four and of two blocks, then one block at a time, with its scratch buffer as
 the fifth argument. `Fn.ecbEncrypt` and `Fn.ecbDecrypt` are the functions
 as emitted: with that working space in a frame on the stack, which they
-wipe, then their cleanup (`Impl.Scrub.X86.scrubSel`).
+wipe, then their cleanup (`Impl.Scrub.X86.scrubSel`). The frame is larger
+than the working space and its header need (884 bytes for 880), so that
+the working space, which `withStackScratchWiped` puts 24 bytes above the
+frame's base for four arguments, is at a multiple of 16 when `esp` is one
+at the call: the places and the blocks, at multiples of 16 in it, then
+cross no page, or line of the cache.
 -/
 
 @[expose] public section

@@ -55,8 +55,8 @@ is constant time by the taint analysis of its code (`X86.sseTaint`);
 `ecb_framed` runs it with its working space on the stack, zeroed on return,
 and `ecbEncrypt_scrubbed` and `ecbDecrypt_scrubbed` are the functions as
 emitted (`Impl.Camellia.X86.AesNiWide.Fn`), which return without secret
-residue (`X86.rtaint`), with six doublewords of the stack zeroed, the
-header of the frame.
+residue (`X86.rtaint`), with seven doublewords of the stack zeroed, the
+header of the frame and its last doubleword.
 -/
 
 @[expose] public section
