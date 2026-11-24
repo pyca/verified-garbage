@@ -27,7 +27,7 @@ pub(crate) unsafe extern "C" fn vg_hmac_sha224_init_shani(inner: *mut [u8; 96], 
     core::arch::naked_asm!(
         r#".base64 "i0QkEIP4QQ=="
 jae 20f
-.base64 "jaQkOP///4uEJMwAAACJRCQEi4Qk0AAAAIlEJAiLhCTUAAAAiUQkDIuEJNgAAACJRCQQieCDwBiJRCQUi0QkFImYoAAAAImwpAAAAIm4qAAAAImorAAAAInFi1wkBIt0JAhT"
+.base64 "jaQkKP///4uEJNwAAACJRCQEi4Qk4AAAAIlEJAiLhCTkAAAAiUQkDIuEJOgAAACJRCQQieCDwBiJRCQUi0QkFImYoAAAAImwpAAAAIm4qAAAAImorAAAAInFi1wkBIt0JAhT"
 call {vg_sha224_init_core}
 .base64 "WFY="
 call {vg_sha224_init_core}
@@ -43,9 +43,9 @@ jmp 23f
 call {vg_sha256_compress_shani}
 .base64 "WFhYWInzidiDwCC5AQAAAFVRUFM="
 call {vg_sha256_compress_shani}
-.base64 "WFhYWInoi5igAAAAi7CkAAAAi7ioAAAAi6isAAAAZg/vwLkAAAAA8w9/RCQY8w9/RCQo8w9/RCQ48w9/RCRI8w9/RCRY8w9/RCRo8w9/RCR48w9/hCSIAAAA8w9/hCSYAAAA8w9/hCSoAAAA8w9/hCS4AAAAjaQkyAAAAA=="
+.base64 "WFhYWInoi5igAAAAi7CkAAAAi7ioAAAAi6isAAAAZg/vwLkAAAAA8w9/RCQY8w9/RCQo8w9/RCQ48w9/RCRI8w9/RCRY8w9/RCRo8w9/RCR48w9/hCSIAAAA8w9/hCSYAAAA8w9/hCSoAAAA8w9/hCS4AAAA8w9/hCTIAAAAjaQk2AAAAA=="
 21:
-.base64 "jaQkXPn//7kAAAAAiUwkHIlMJCCJTCQkiUwkKIlMJCyJTCQwiUwkNIlMJDiJTCQ8iUwkQIlMJESJTCRIiUwkTIlMJFCJTCRUiUwkWIlMJFyJTCRgiYwkyAUAAImMJMwFAACJjCTQBQAAiYwk1AUAAImMJNgFAACJjCTcBQAAiYwk4AUAAImMJOQFAACJjCToBQAAiYwk7AUAAImMJPAFAACNpCSkBgAAuAAAAAC6AAAAADHJZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7//D"
+.base64 "jaQkXPn//7kAAAAAiUwkHIlMJCCJTCQkiUwkKIlMJCyJTCQwiUwkNIlMJDiJTCQ8iUwkQIlMJESJTCRIiUwkTIlMJFCJTCRUiUwkWIlMJFyJTCRgiYwkuAUAAImMJLwFAACJjCTABQAAiYwkxAUAAImMJMgFAACJjCTMBQAAiYwk0AUAAImMJNQFAACJjCTYBQAAiYwk3AUAAImMJOAFAACNpCSkBgAAuAAAAAC6AAAAADHJZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7//D"
 20:
 .base64 "jaQkqPn//4uEJFwGAACJRCQEi4QkYAYAAIlEJAiLhCRkBgAAiUQkDIuEJGgGAACJRCQQieCDwBiJRCQUi0QkFImYQAMAAImwRAMAAIm4SAMAAImoTAMAAInFi0wkEIP5QQ=="
 jae 25f
@@ -91,16 +91,16 @@ pub const VG_HMAC_SHA224_FINALIZE_SHANI_FEATURES: verified_garbage_cpu::Features
 /// * `out` must be valid for reads and writes of 28 bytes.
 /// * The contents of `inner` on return are unspecified.
 /// * `inner` and `out` must not overlap each other or `outer` (distinct Rust objects never do).
-/// * None of `inner`, `outer` and `out` may overlap the arguments on the stack, overlap the return address on the stack or the 284 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `inner`, `outer` and `out` may overlap the arguments on the stack, overlap the return address on the stack or the 332 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `ssse3` and `sha` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_hmac_sha224_finalize_shani(inner: *mut [u8; 96], outer: *const [u8; 96], count: u64, out: *mut [u8; 28]) {
     core::arch::naked_asm!(
-        r#".base64 "jaQkFP///4uEJPAAAACJRCQEi4Qk9AAAAIlEJAiLhCT4AAAAiUQkDIuEJPwAAACJRCQQi4QkAAEAAIlEJBSJ4IPAHIlEJBiLRCQYiZigAAAAibCkAAAAibioAAAAiaisAAAAicWLXCQEi3QkCIt8JBSLRCQMi0wkEInqgcKwAAAAVVJRUFM="
+        r#".base64 "jaQk5P7//4uEJCABAACJRCQEi4QkJAEAAIlEJAiLhCQoAQAAiUQkDIuEJCwBAACJRCQQi4QkMAEAAIlEJBSJ4IPAHIlEJBiLRCQYiZigAAAAibCkAAAAibioAAAAiaisAAAAicWLXCQEi3QkCIt8JBSLRCQMi0wkEInqgcKwAAAAVVJRUFM="
 call {vg_sha256_finalize_scratch_shani}
 .base64 "WFhYWFiLDokLi04EiUsEi04IiUsIi04MiUsMi04QiUsQi04UiUsUi04YiUsYi04ciUsci42wAAAAiUsgi420AAAAiUski424AAAAiUsoi428AAAAiUssi43AAAAAiUswi43EAAAAiUs0i43IAAAAiUs4uYAAAACJSzy5AAAAAIlLQLkAAAAAiUtEuQAAAACJS0i5AAAAAIlLTLkAAAAAiUtQuQAAAACJS1S5AAAAAIlLWLkAAALgiUtcidiDwCC5AQAAAFVRUFM="
 call {vg_sha256_compress_shani}
-.base64 "WFhYWInYg8AgiwsPyYkIi0sED8mJSASLSwgPyYlICItLDA/JiUgMi0sQD8mJSBCLSxQPyYlIFItLGA/JiUgYi0scD8mJSByLSyCJD4tLJIlPBItLKIlPCItLLIlPDItLMIlPEItLNIlPFItLOIlPGInoi5igAAAAi7CkAAAAi7ioAAAAi6isAAAAjaQk7AAAAGYP78C5AAAAAI2kJOT+///zD38EJPMPf0QkEPMPf0QkIPMPf0QkMPMPf0QkQPMPf0QkUPMPf0QkYPMPf0QkcPMPf4QkgAAAAPMPf4QkkAAAAPMPf4QkoAAAAPMPf4QksAAAAPMPf4QkwAAAAPMPf4Qk0AAAAPMPf4Qk4AAAAPMPf4Qk8AAAAPMPf4QkAAEAAImMJBABAACJjCQUAQAAiYwkGAEAAI2kJBwBAAC4AAAAALoAAAAAMclmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/8M="
+.base64 "WFhYWInYg8AgiwsPyYkIi0sED8mJSASLSwgPyYlICItLDA/JiUgMi0sQD8mJSBCLSxQPyYlIFItLGA/JiUgYi0scD8mJSByLSyCJD4tLJIlPBItLKIlPCItLLIlPDItLMIlPEItLNIlPFItLOIlPGInoi5igAAAAi7CkAAAAi7ioAAAAi6isAAAAjaQkHAEAAGYP78C5AAAAAI2kJLT+///zD38EJPMPf0QkEPMPf0QkIPMPf0QkMPMPf0QkQPMPf0QkUPMPf0QkYPMPf0QkcPMPf4QkgAAAAPMPf4QkkAAAAPMPf4QkoAAAAPMPf4QksAAAAPMPf4QkwAAAAPMPf4Qk0AAAAPMPf4Qk4AAAAPMPf4Qk8AAAAPMPf4QkAAEAAPMPf4QkEAEAAPMPf4QkIAEAAPMPf4QkMAEAAImMJEABAACJjCREAQAAiYwkSAEAAI2kJEwBAAC4AAAAALoAAAAAMclmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/8M="
 .p2align 6"#,
         vg_sha256_finalize_scratch_shani = sym super::sha256::vg_sha256_finalize_scratch_shani::vg_sha256_finalize_scratch_shani,
         vg_sha256_compress_shani = sym super::sha256::vg_sha256_compress_shani::vg_sha256_compress_shani,
@@ -127,7 +127,7 @@ pub(crate) unsafe extern "C" fn vg_hmac_sha224_init(inner: *mut [u8; 96], outer:
     core::arch::naked_asm!(
         r#".base64 "i0QkEIP4QQ=="
 jae 20f
-.base64 "jaQkOP///4uEJMwAAACJRCQEi4Qk0AAAAIlEJAiLhCTUAAAAiUQkDIuEJNgAAACJRCQQieCDwBiJRCQUi0QkFImYoAAAAImwpAAAAIm4qAAAAImorAAAAInFi1wkBIt0JAhT"
+.base64 "jaQkKP///4uEJNwAAACJRCQEi4Qk4AAAAIlEJAiLhCTkAAAAiUQkDIuEJOgAAACJRCQQieCDwBiJRCQUi0QkFImYoAAAAImwpAAAAIm4qAAAAImorAAAAInFi1wkBIt0JAhT"
 call {vg_sha224_init_core}
 .base64 "WFY="
 call {vg_sha224_init_core}
@@ -143,9 +143,9 @@ jmp 23f
 call {vg_sha256_compress}
 .base64 "WFhYWInzidiDwCC5AQAAAFVRUFM="
 call {vg_sha256_compress}
-.base64 "WFhYWInoi5igAAAAi7CkAAAAi7ioAAAAi6isAAAAZg/vwLkAAAAA8w9/RCQY8w9/RCQo8w9/RCQ48w9/RCRI8w9/RCRY8w9/RCRo8w9/RCR48w9/hCSIAAAA8w9/hCSYAAAA8w9/hCSoAAAA8w9/hCS4AAAAjaQkyAAAAA=="
+.base64 "WFhYWInoi5igAAAAi7CkAAAAi7ioAAAAi6isAAAAZg/vwLkAAAAA8w9/RCQY8w9/RCQo8w9/RCQ48w9/RCRI8w9/RCRY8w9/RCRo8w9/RCR48w9/hCSIAAAA8w9/hCSYAAAA8w9/hCSoAAAA8w9/hCS4AAAA8w9/hCTIAAAAjaQk2AAAAA=="
 21:
-.base64 "jaQkXPn//7kAAAAAiUwkHIlMJCCJTCQkiUwkKIlMJCyJTCQwiUwkNIlMJDiJTCQ8iUwkQIlMJESJTCRIiUwkTIlMJFCJTCRUiUwkWIlMJFyJTCRgiYwkyAUAAImMJMwFAACJjCTQBQAAiYwk1AUAAImMJNgFAACJjCTcBQAAiYwk4AUAAImMJOQFAACJjCToBQAAiYwk7AUAAImMJPAFAACNpCSkBgAAuAAAAAC6AAAAADHJZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7//D"
+.base64 "jaQkXPn//7kAAAAAiUwkHIlMJCCJTCQkiUwkKIlMJCyJTCQwiUwkNIlMJDiJTCQ8iUwkQIlMJESJTCRIiUwkTIlMJFCJTCRUiUwkWIlMJFyJTCRgiYwkuAUAAImMJLwFAACJjCTABQAAiYwkxAUAAImMJMgFAACJjCTMBQAAiYwk0AUAAImMJNQFAACJjCTYBQAAiYwk3AUAAImMJOAFAACNpCSkBgAAuAAAAAC6AAAAADHJZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7//D"
 20:
 .base64 "jaQkqPn//4uEJFwGAACJRCQEi4QkYAYAAIlEJAiLhCRkBgAAiUQkDIuEJGgGAACJRCQQieCDwBiJRCQUi0QkFImYQAMAAImwRAMAAIm4SAMAAImoTAMAAInFi0wkEIP5QQ=="
 jae 25f
@@ -188,15 +188,15 @@ jmp 21b
 /// * `out` must be valid for reads and writes of 28 bytes.
 /// * The contents of `inner` on return are unspecified.
 /// * `inner` and `out` must not overlap each other or `outer` (distinct Rust objects never do).
-/// * None of `inner`, `outer` and `out` may overlap the arguments on the stack, overlap the return address on the stack or the 284 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `inner`, `outer` and `out` may overlap the arguments on the stack, overlap the return address on the stack or the 332 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_hmac_sha224_finalize(inner: *mut [u8; 96], outer: *const [u8; 96], count: u64, out: *mut [u8; 28]) {
     core::arch::naked_asm!(
-        r#".base64 "jaQkFP///4uEJPAAAACJRCQEi4Qk9AAAAIlEJAiLhCT4AAAAiUQkDIuEJPwAAACJRCQQi4QkAAEAAIlEJBSJ4IPAHIlEJBiLRCQYiZigAAAAibCkAAAAibioAAAAiaisAAAAicWLXCQEi3QkCIt8JBSLRCQMi0wkEInqgcKwAAAAVVJRUFM="
+        r#".base64 "jaQk5P7//4uEJCABAACJRCQEi4QkJAEAAIlEJAiLhCQoAQAAiUQkDIuEJCwBAACJRCQQi4QkMAEAAIlEJBSJ4IPAHIlEJBiLRCQYiZigAAAAibCkAAAAibioAAAAiaisAAAAicWLXCQEi3QkCIt8JBSLRCQMi0wkEInqgcKwAAAAVVJRUFM="
 call {vg_sha256_finalize_scratch}
 .base64 "WFhYWFiLDokLi04EiUsEi04IiUsIi04MiUsMi04QiUsQi04UiUsUi04YiUsYi04ciUsci42wAAAAiUsgi420AAAAiUski424AAAAiUsoi428AAAAiUssi43AAAAAiUswi43EAAAAiUs0i43IAAAAiUs4uYAAAACJSzy5AAAAAIlLQLkAAAAAiUtEuQAAAACJS0i5AAAAAIlLTLkAAAAAiUtQuQAAAACJS1S5AAAAAIlLWLkAAALgiUtcidiDwCC5AQAAAFVRUFM="
 call {vg_sha256_compress}
-.base64 "WFhYWInYg8AgiwsPyYkIi0sED8mJSASLSwgPyYlICItLDA/JiUgMi0sQD8mJSBCLSxQPyYlIFItLGA/JiUgYi0scD8mJSByLSyCJD4tLJIlPBItLKIlPCItLLIlPDItLMIlPEItLNIlPFItLOIlPGInoi5igAAAAi7CkAAAAi7ioAAAAi6isAAAAjaQk7AAAAGYP78C5AAAAAI2kJOT+///zD38EJPMPf0QkEPMPf0QkIPMPf0QkMPMPf0QkQPMPf0QkUPMPf0QkYPMPf0QkcPMPf4QkgAAAAPMPf4QkkAAAAPMPf4QkoAAAAPMPf4QksAAAAPMPf4QkwAAAAPMPf4Qk0AAAAPMPf4Qk4AAAAPMPf4Qk8AAAAPMPf4QkAAEAAImMJBABAACJjCQUAQAAiYwkGAEAAI2kJBwBAAC4AAAAALoAAAAAMclmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/8M="
+.base64 "WFhYWInYg8AgiwsPyYkIi0sED8mJSASLSwgPyYlICItLDA/JiUgMi0sQD8mJSBCLSxQPyYlIFItLGA/JiUgYi0scD8mJSByLSyCJD4tLJIlPBItLKIlPCItLLIlPDItLMIlPEItLNIlPFItLOIlPGInoi5igAAAAi7CkAAAAi7ioAAAAi6isAAAAjaQkHAEAAGYP78C5AAAAAI2kJLT+///zD38EJPMPf0QkEPMPf0QkIPMPf0QkMPMPf0QkQPMPf0QkUPMPf0QkYPMPf0QkcPMPf4QkgAAAAPMPf4QkkAAAAPMPf4QkoAAAAPMPf4QksAAAAPMPf4QkwAAAAPMPf4Qk0AAAAPMPf4Qk4AAAAPMPf4Qk8AAAAPMPf4QkAAEAAPMPf4QkEAEAAPMPf4QkIAEAAPMPf4QkMAEAAImMJEABAACJjCREAQAAiYwkSAEAAI2kJEwBAAC4AAAAALoAAAAAMclmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/8M="
 .p2align 6"#,
         vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch::vg_sha256_finalize_scratch,
         vg_sha256_compress = sym super::sha256::vg_sha256_compress::vg_sha256_compress,

@@ -86,7 +86,7 @@ theorem sha256_initF (v : Backend) :
     Verified X86.target (Impl.Hmac.X86.Fn.sha256InitBody v.M v.F)
       (Spec.Hmac.sha256I.initAnyKeyContract X86.abi (76 + anyFrame Spec.Hmac.sha256I)) :=
   initEntry_verified (I := Spec.Hmac.sha256I)
-    (initFramedWipedW 22 44 v.hmacInitFit Proof.Hmac.sha256_local Md.X86.sha256_initFitSat (Md.X86.noEsp_of v.initNoSp) v.initStack)
+    (initFramedWipedW 24 48 v.hmacInitFit Proof.Hmac.sha256_local Md.X86.sha256_initFitSat (Md.X86.noEsp_of v.initNoSp) v.initStack)
     (sha256_anyFramed v) (by decide) (by decide) (by decide) sha256_anyFrameSat
 
 theorem sha256_initSp (v : Backend) :
@@ -149,7 +149,7 @@ theorem sha224_initF (v : Backend) :
     Verified X86.target (Impl.Hmac.X86.Fn.sha256InitBody v.M224 v.F224)
       (Spec.Hmac.sha224I.initAnyKeyContract X86.abi (76 + anyFrame Spec.Hmac.sha224I)) :=
   initEntry_verified (I := Spec.Hmac.sha224I)
-    (initFramedWipedW 22 44 v.hmacInit224Fit Proof.Hmac.sha224_local Md.X86.sha224_initFitSat (Md.X86.noEsp_of v.init224NoSp) v.init224Stack)
+    (initFramedWipedW 24 48 v.hmacInit224Fit Proof.Hmac.sha224_local Md.X86.sha224_initFitSat (Md.X86.noEsp_of v.init224NoSp) v.init224Stack)
     (sha224_anyFramed v) (by decide) (by decide) (by decide) sha224_anyFrameSat
 
 theorem sha224_initSp (v : Backend) :

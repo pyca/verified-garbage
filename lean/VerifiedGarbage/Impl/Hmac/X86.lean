@@ -29,9 +29,11 @@ Every number is the literal its proof states (`Proof/Hmac/X86/Scrub.lean`):
 the frames' bytes and the stack the cleanup zeroes, from the instance's
 working space (`Proof.Pbkdf2.Md.X86.initFrame`, `finFrame`,
 `Proof.Pbkdf2.Whole.X86.Any.anyFrame`), but SHA-224's and SHA-256's
-`finalize`, whose frame holds only the 208 bytes of working space its code
-uses (`Proof.Pbkdf2.Md.X86.finFramedW`): the whole frame is zeroed on every
-call. SHA-224 and SHA-256 share them, as do the hashes of the SHA-512
+`finalize`, whose frame holds 256 bytes of working space, the 208 its code
+uses and 48 more, so that the frame (284 bytes) is a multiple of 64 bytes
+less than the instance's (860) and the functions it calls find their stack
+where it was in a cache line (`Proof.Pbkdf2.Md.X86.finFramedW`): the whole
+frame is zeroed on every call. SHA-224 and SHA-256 share them, as do the hashes of the SHA-512
 family.
 -/
 
@@ -69,36 +71,39 @@ def sha1Finalize (M : Hash) : Prog isa :=
 /-! ## SHA-224 and SHA-256 -/
 
 /-- `vg_hmac_sha224_init` and `vg_hmac_sha256_init` before their cleanup: for
-a key of at most a block, `M.hmacInit` in a frame of the 176 bytes of working
-space its code uses (the compression function's and our caller's registers;
-200 bytes with the return address, the arguments and the buffer's address),
-which it zeroes; for a longer key (cold), `F.hmacInitAny` in its larger
+a key of at most a block, `M.hmacInit` in a frame of 192 bytes of working
+space, the 176 its code uses (the compression function's and our caller's
+registers) and 16 more, so that the frame, 216 bytes with the return address,
+the arguments and the buffer's address, is a multiple of 64 bytes less than
+the 856 of the instance's working space, and what the code and the
+functions it calls keep on the stack is where it was in a cache line, which
+it zeroes; for a longer key (cold), `F.hmacInitAny` in its larger
 frame, which it zeroes. -/
 def sha256InitBody (M : Hash) (F : Fns) : Prog isa :=
-  initEntry 64 (withStackScratchWiped 200 4 44 M.hmacInit) (withStackScratchWiped 1624 4 400 F.hmacInitAny)
+  initEntry 64 (withStackScratchWiped 216 4 48 M.hmacInit) (withStackScratchWiped 1624 4 400 F.hmacInitAny)
 
 /-- The doublewords of the 1700 bytes below `esp` on entry that
 `sha256InitBody` may leave different in two runs, as the residue analysis
 finds (`X86.rtaint`): what neither frame zeroes of itself, its header (the
 word for the return address, the copies of the arguments, the buffer's
 address), and the stack below it that the functions it calls use. The short
-key's frame is the 200 bytes at the top (doublewords 375 to 424: its header
-is 375 to 380, and its callees use 370 to 374), the long key's the 1624
+key's frame is the 216 bytes at the top (doublewords 371 to 424: its header
+is 371 to 376, and its callees use 366 to 370), the long key's the 1624
 (19 to 424: header 19 to 24, callees 7 to 18). -/
 def sha256InitWords : List Nat :=
   [7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,
-    370, 371, 372, 373, 374, 375, 376, 377, 378, 379, 380]
+    366, 367, 368, 369, 370, 371, 372, 373, 374, 375, 376]
 
 /-- `vg_hmac_sha224_init` and `vg_hmac_sha256_init`, as emitted:
 `sha256InitBody`, then the zeroing of the doublewords it leaves
-(`Impl.Scrub.X86.scrubSel`), so that a key of at most a block zeroes its 200
+(`Impl.Scrub.X86.scrubSel`), so that a key of at most a block zeroes its 216
 bytes and those, not the 1700 the long key's frame takes. -/
 def sha256Init (M : Hash) (F : Fns) : Prog isa :=
   Impl.Scrub.X86.scrubSel 0 1700 sha256InitWords (sha256InitBody M F)
 
 /-- `vg_hmac_sha224_finalize` and `vg_hmac_sha256_finalize`, as emitted. -/
 def sha256Finalize (M : Hash) : Prog isa :=
-  Impl.Scrub.X86.scrubAll 0 284 (withStackScratch 236 5 M.hmacFin)
+  Impl.Scrub.X86.scrubAll 0 332 (withStackScratch 284 5 M.hmacFin)
 
 /-! ## The SHA-512 family -/
 
