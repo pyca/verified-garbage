@@ -50,11 +50,15 @@ def boundedArgs : List Instr :=
 def bounded : Prog isa :=
   .seq (.block boundedArgs)
     (call Short.bounded)
+def aad (c : Callees) (vec wide prepared : Bool) : Prog isa :=
+  if prepared && vec then .seq (Fast.cond (!wide)) (.ite .e (oneAad c) Fast.aad) else oneAad c
+
+def body (c : Callees) (vec wide prepared : Bool) (kernel : Prog isa) : Prog isa :=
+  let long := .seq (aad c vec wide prepared) (.seq (bulk kernel) (if vec then finishVec prepared wide else finishScalar c))
+  if prepared && wide then .seq Short.cond (.ite .e long bounded) else long
+
 def one (c : Callees) (vec wide prepared : Bool) (kernel : Prog isa) : Prog isa :=
- let aad := if prepared && vec then .seq (Fast.cond (!wide)) (.ite .e (oneAad c) Fast.aad) else oneAad c
- let long := .seq aad (.seq (bulk kernel) (if vec then finishVec prepared wide else finishScalar c))
- let body := if prepared && wide then .seq Short.cond (.ite .e long bounded) else long
- Impl.StackScratch.X86_64.withStackArgScratch 2608 4 (.seq (.block (oneEntry 40 16 24))
-  (.seq body (.seq (.block (tagOut (at_ .rsp 32))) (.block restore))))
+  Impl.StackScratch.X86_64.withStackArgScratch 2608 4 (.seq (.block (oneEntry 40 16 24))
+    (.seq (body c vec wide prepared kernel) (.seq (.block (tagOut (at_ .rsp 32))) (.block restore))))
 
 end VG.Impl.AesGcm.X86_64.Contiguous
