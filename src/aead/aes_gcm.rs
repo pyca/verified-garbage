@@ -240,6 +240,14 @@ impl Drop for AesGcm {
     }
 }
 
+#[cfg(target_arch = "x86")]
+static IA32_BENCH_LEGACY: core::sync::atomic::AtomicBool = core::sync::atomic::AtomicBool::new(false);
+
+#[cfg(target_arch = "x86")]
+pub fn ia32_select_benchmark_entry(legacy: bool) {
+    IA32_BENCH_LEGACY.store(legacy, core::sync::atomic::Ordering::Relaxed);
+}
+
 impl AesGcm {
     /// The size of a full tag, in bytes.
     pub const TAG_SIZE: usize = 16;
@@ -397,7 +405,16 @@ impl AesGcm {
             #[cfg(target_arch = "x86")]
             {
                 let dst = data.as_mut_ptr();
-                tag = self.seal_contiguous(dit, nonce, aad, dst.cast_const(), dst, data.len());
+                if IA32_BENCH_LEGACY.load(core::sync::atomic::Ordering::Relaxed) {
+                    let mut old = [0; 16];
+                    crate::arch::dispatch::gcm::vg_aes_gcm_seal_auto(
+                        dit, self.key(), self.rounds, nonce.as_ptr(), nonce.len(),
+                        aad.as_ptr(), aad.len(), dst, data.len(), &mut old,
+                    );
+                    tag = old;
+                } else {
+                    tag = self.seal_contiguous(dit, nonce, aad, dst.cast_const(), dst, data.len());
+                }
             }
             #[cfg(not(any(
                 target_arch = "x86",

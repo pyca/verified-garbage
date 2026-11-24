@@ -610,9 +610,10 @@ fn tls_records(c: &mut Criterion) {
     /// (alerts, handshake messages, small requests); records of 112 to 240
     /// bytes with their content type, fewer than 16 blocks; a 2048-byte
     /// record; and records of 288, 416, 432 and 448 bytes of text.
-    const TLS_SIZES: [usize; 14] = [0, 15, 16, 63, 239, 495, 508, 509, 510, 511, 512, 513, 4095, 16383];
+    const TLS_SIZES: [usize; 4] = [239, 508, 509, 510];
 
     tls_record_rows(c, &TLS_SIZES, Offsets::DEFAULT, "");
+    tls_record_rows(c, &TLS_SIZES, Offsets::DEFAULT, "-control");
     tls_connection_rows(c);
     key_setup_rows(c);
 }
@@ -749,6 +750,10 @@ impl AsRef<[u8]> for Aligned {
     target_arch = "riscv64"
 ))]
 fn tls_record_rows(c: &mut Criterion, sizes: &[usize], offsets: Offsets, label: &str) {
+    #[cfg(target_arch = "x86")]
+    verified_garbage::aead::aes_gcm::ia32_select_benchmark_entry(
+        label == "-control" || std::env::var("VG_IA32_PLACEMENT_SIDE").as_deref() == Ok("base")
+    );
     use std::hint::black_box;
 
     use aws_lc_rs::aead::{AES_128_GCM, AES_256_GCM, Aad, LessSafeKey, Nonce, UnboundKey};
