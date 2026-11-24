@@ -66,6 +66,18 @@ class OtherLibraries(unittest.TestCase):
             "VerifiedGarbageAuditBase: the emitter's audits do not read its records"])
 
 
+class Plugins(unittest.TestCase):
+    def test_every_library_but_the_exempt(self):
+        plugin = {"plugins": [check_lean_imports.AUDIT_PLUGIN]}
+        config = {"lean_lib": [{"name": "VerifiedGarbage", **plugin}, {"name": "NativeAuditRecords"},
+                               {"name": "AuditBase"}, {"name": "NewTests"},
+                               {"name": "Other", "plugins": ["Something:shared"]}]}
+        self.assertEqual(check_lean_imports.plugin_problems(config), [
+            f"lean/lakefile.toml: library {n} does not load the audit records' plugin: "
+            f"give it `plugins = [\"{check_lean_imports.AUDIT_PLUGIN}\"]`, as every other library has "
+            "(TCB/AuditRecords.lean would trust its modules unread)" for n in ("NewTests", "Other")])
+
+
 class Imports(unittest.TestCase):
     def test_lines_and_kinds(self):
         text = ("module\n\npublic import A.B\n  meta import all C\npublic meta import D\n"

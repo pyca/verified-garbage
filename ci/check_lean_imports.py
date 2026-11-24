@@ -35,6 +35,12 @@ proofs. Exits non-zero on violations.
     Lean or a dependency, trusted as TCB/AuditBase.lean lists it: what a
     proof imports from these libraries would escape the audits
     (https://github.com/pyca/verified-garbage/issues/6304).
+  * Every library of lean/lakefile.toml loads the plugin that writes the
+    audit records (`AUDIT_PLUGIN`), but the plugin's own and the audit
+    base's check (`UNRECORDED_LIBRARIES`). The audits read the records of
+    every module that wrote them, and take a module that wrote none, unless
+    it is named as one of this project's, for one of Lean or a dependency:
+    a library without the plugin would be trusted unread.
 """
 
 import pathlib
@@ -67,6 +73,25 @@ def allowed(mod: str, prefixes: tuple[str, ...]) -> bool:
 # The project's libraries other than lean/VerifiedGarbage/'s (lean/lakefile.toml),
 # which no module of it may import.
 OTHER_LIBRARIES = ("VerifiedGarbageTest", "VerifiedGarbageAuditBase")
+
+
+# The plugin that writes the audit records (TCB/AuditRecords.lean), and the
+# libraries that do not load it, with why.
+AUDIT_PLUGIN = "NativeAuditRecords:shared"
+UNRECORDED_LIBRARIES = {
+    "NativeAuditRecords": "the plugin itself, which cannot record itself",
+    "AuditBase": "the audit base's check, which no module imports (TCB/AuditBase.lean)",
+}
+
+
+def plugin_problems(config: dict) -> list[str]:
+    """A line for each library of `config` (lean/lakefile.toml) that does not
+    load `AUDIT_PLUGIN`, but `UNRECORDED_LIBRARIES`."""
+    return [f"lean/lakefile.toml: library {lib.get('name')} does not load the audit records' plugin: "
+            f"give it `plugins = [\"{AUDIT_PLUGIN}\"]`, as every other library has "
+            "(TCB/AuditRecords.lean would trust its modules unread)"
+            for lib in config.get("lean_lib", [])
+            if lib.get("name") not in UNRECORDED_LIBRARIES and AUDIT_PLUGIN not in lib.get("plugins", [])]
 
 
 def other_library_imports(lean: pathlib.Path, texts: dict[pathlib.Path, str]) -> list[str]:
@@ -209,6 +234,7 @@ def main() -> int:
     texts = {f: f.read_text() for f in mods.values()}
     errors = tcb_lemmas(LEAN, texts)
     errors += other_library_imports(LEAN, texts)
+    errors += plugin_problems(tomllib.loads((LEAN.parent / "lakefile.toml").read_text()))
     targets = {p.name for p in (LEAN / "TCB").iterdir() if p.is_dir()}
     lean = len(str(LEAN)) + 1
     for f in sorted(LEAN.rglob("*.lean")):
