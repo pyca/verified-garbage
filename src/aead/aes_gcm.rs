@@ -662,7 +662,15 @@ impl AesGcm {
         // SAFETY: MaybeUninit<u8> has the layout of u8. encrypt_uninit
         // writes only initialized bytes and leaves the slice alone on error.
         let dst = unsafe { core::slice::from_raw_parts_mut(out.as_mut_ptr().cast(), out.len()) };
-        self.encrypt_checked(nonce, aad, plaintext, dst)
+        #[cfg(target_arch = "x86_64")]
+        {
+            self.encrypt_checked(nonce, aad, plaintext, dst, |_, tag| tag)
+        }
+        #[cfg(not(target_arch = "x86_64"))]
+        {
+            self.encrypt_uninit(nonce, aad, plaintext, dst)
+                .map(|(_, tag)| tag)
+        }
     }
 
     /// Like [`encrypt`](Self::encrypt), with output storage that may be
@@ -677,20 +685,32 @@ impl AesGcm {
         plaintext: &[&[u8]],
         out: &'out mut [MaybeUninit<u8>],
     ) -> Result<(&'out mut [u8], Block), Error> {
-        let tag = self.encrypt_checked(nonce, aad, plaintext, out)?;
-        // SAFETY: both seal contracts initialize the entire destination on success.
-        Ok((unsafe { out.assume_init_mut() }, tag))
+        #[cfg(target_arch = "x86_64")]
+        {
+            let tag = self.encrypt_checked(nonce, aad, plaintext, out, |_, tag| tag)?;
+            // SAFETY: both seal contracts initialize the entire destination on success.
+            Ok((unsafe { out.assume_init_mut() }, tag))
+        }
+        #[cfg(not(target_arch = "x86_64"))]
+        {
+            self.encrypt_checked(nonce, aad, plaintext, out, |out, tag| {
+                // SAFETY: both seal contracts initialize the entire destination on success.
+                (unsafe { out.assume_init_mut() }, tag)
+            })
+        }
     }
 
-    // Return the tag directly so encrypt can use the caller's return slot.
+    // On x86-64, return the tag in the caller's slot. Other targets build the
+    // ciphertext/tag pair directly for encrypt_uninit's out-of-line entry.
     #[inline(always)]
-    fn encrypt_checked(
+    fn encrypt_checked<'out, T>(
         &self,
         nonce: &[u8],
         aad: &[u8],
         plaintext: &[&[u8]],
-        out: &mut [MaybeUninit<u8>],
-    ) -> Result<Block, Error> {
+        out: &'out mut [MaybeUninit<u8>],
+        finish: impl FnOnce(&'out mut [MaybeUninit<u8>], Block) -> T,
+    ) -> Result<T, Error> {
         crate::dit::enter!(dit);
         if plaintext.len() > Self::MAX_PIECES {
             return Err(Error::TooManyPieces);
@@ -713,7 +733,8 @@ impl AesGcm {
             return Err(Error::InvalidOutputLength);
         }
         add_len(0, aad.len(), MAX_AAD).map_err(|()| Error::InvalidAadLength)?;
-        Ok(self.seal_pieces(dit, nonce, aad, plaintext, out))
+        let tag = self.seal_pieces(dit, nonce, aad, plaintext, out);
+        Ok(finish(out, tag))
     }
 
     /// Seal the caller's checked plaintext pieces into their exact-size destination.
