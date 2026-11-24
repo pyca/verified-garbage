@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Variants.ChaCha20Xor.AArch64
 public import VerifiedGarbage.Spec.ChaCha20Poly1305.Contract
-public import VerifiedGarbage.TCB.AArch64.Print
+public import VerifiedGarbage.TCB.AArch64.Target
 
 /-! # ChaCha20-Poly1305 (RFC 8439 §2.8) on AArch64 -/
 
@@ -13,7 +13,7 @@ public import VerifiedGarbage.TCB.AArch64.Print
 
 namespace VG.Artifacts.ChaCha20Poly1305.AArch64
 
-def artifacts : List Artifact :=
+def artifacts : List (Artifact AArch64.target) :=
   VG.Proof.Variants.ChaCha20Xor.AArch64.variants.flatMap fun v => [
     Spec.ChaCha20Poly1305.sealApi.artifact AArch64.target {
       suffix := v.callee.suffix

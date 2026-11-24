@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.X25519.PPC64LE.BaseVerified
 public import VerifiedGarbage.Proof.X25519.PPC64LE.Exchange
 public import VerifiedGarbage.Proof.X25519.PPC64LE.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.PPC64LE.Print
+public import VerifiedGarbage.TCB.PPC64LE.Target
 
 /-! # X25519 (RFC 7748) on PPC64LE -/
 
@@ -13,7 +13,7 @@ public import VerifiedGarbage.TCB.PPC64LE.Print
 
 namespace VG.Artifacts.X25519.PPC64LE
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact PPC64LE.target) := [
   Spec.X25519.exchangeApi.artifact PPC64LE.target {
     code := Impl.X25519.PPC64LE.Fn.exchange
     verified := Proof.X25519.PPC64LE.Scrub.exchange_scrubbed },

@@ -13,7 +13,7 @@ public import VerifiedGarbage.Proof.MlKem.X86.Mul
 public import VerifiedGarbage.Proof.MlKem.X86.NttInv
 public import VerifiedGarbage.Proof.MlKem.X86.Sample
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.X86.Print
+public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.MlKem1024.X86.CompressEncode
 public import VerifiedGarbage.Proof.MlKem1024.X86.DecodeDecompress
 
@@ -23,7 +23,7 @@ public import VerifiedGarbage.Proof.MlKem1024.X86.DecodeDecompress
 
 namespace VG.Artifacts.MlKem.X86
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact X86.target) := [
   Spec.MlKem.checkEkApi.artifact X86.target {
     code := Impl.MlKem.X86.Fn.checkEk
     verified := Proof.MlKem.X86.Scrub.checkEk_scrubbed },

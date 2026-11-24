@@ -5,7 +5,6 @@ public import VerifiedGarbage.Impl.Pbkdf2.Whole.X86.Fn
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Lit
 public import VerifiedGarbage.TCB.X86.Target
-public import VerifiedGarbage.TCB.X86.Print
 
 /-! # PBKDF2-HMAC-SHA-512 (RFC 8018) on x86 -/
 
@@ -13,7 +12,7 @@ public import VerifiedGarbage.TCB.X86.Print
 
 namespace VG.Artifacts.Pbkdf2Sha512.X86
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact X86.target) := [
   Spec.Hmac.sha512I.pbkdf2Api.artifact X86.target {
     code := Impl.Pbkdf2.Whole.X86.Fn.sha512 Proof.Pbkdf2.Whole.X86.sha512F
     verified := Proof.Pbkdf2.Whole.X86.Scrub.sha512_scrubbed }]

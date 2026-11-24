@@ -16,7 +16,6 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowBase
 public import VerifiedGarbage.Spec.Ecdsa.Verify.Secp256k1
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.Secp256k1.Lit
 public import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.TCB.AArch64.Target
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 public import VerifiedGarbage.Proof.EcKey.PublicKey
 public import VerifiedGarbage.Proof.Ecdh.AArch64.Peer
@@ -35,7 +34,7 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.Bytes
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Rep
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Window
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowQuad
-public import VerifiedGarbage.TCB.AArch64.Print
+public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Secp256k1.AArch64.Law
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvInterface
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Secp256k1
@@ -55,7 +54,7 @@ open VG.Proof.Secp256k1.AArch64 (hasLaw)
 open VG.Proof.HmacTable.AArch64 (tables)
 open VG.Proof.Variants.MdHash.AArch64 (variants hashes)
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact AArch64.target) := [
   Spec.Ecdsa.Rfc6979.Curves.secp256k1SignApi.artifact AArch64.target {
     tables := [("hmac", tables variants)]
     code := Impl.Ecdsa.Rfc6979.AArch64.Fn.secp256k1 hashes
@@ -67,7 +66,7 @@ namespace VG.Artifacts.EcdsaSecp256k1.AArch64
 
 open VG.Proof.Secp256k1.AArch64 (hasLaw)
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact AArch64.target) := [
   Spec.Ecdsa.Secp256k1.verifyHashApi.artifact AArch64.target {
     code := Impl.Ecdsa.Verify.AArch64.Secp256k1.Joint.Fn.verifyHash
     verified := Proof.Ecdsa.Rfc6979.AArch64.secp256k1Verify hasLaw.law hasLaw.inv }] ++

@@ -18,7 +18,6 @@ public import VerifiedGarbage.Spec.Ecdsa.Verify.P521
 public import Mathlib.Tactic.ClearExcept
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointVerified
-import VerifiedGarbage.TCB.AArch64.Target
 import VerifiedGarbage.Impl.Ecdsa.P521.AArch64
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 public import VerifiedGarbage.Impl.Ecdh.P256.AArch64
@@ -103,7 +102,7 @@ public import VerifiedGarbage.Proof.Weierstrass.BytesLen
 public import VerifiedGarbage.Proof.Weierstrass.CoZTable
 public import VerifiedGarbage.Proof.Weierstrass.CombCheckFast
 public import VerifiedGarbage.Proof.Weierstrass.WinJacMath
-public import VerifiedGarbage.TCB.AArch64.Print
+public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.P521.AArch64.Law
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.P521
 import Mathlib.Data.Finset.Attr
@@ -122,7 +121,7 @@ open VG.Proof.P521.AArch64 (hasLaw)
 open VG.Proof.HmacTable.AArch64 (tables)
 open VG.Proof.Variants.MdHash.AArch64 (variants hashes)
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact AArch64.target) := [
   Spec.Ecdsa.Rfc6979.Curves.p521SignApi.artifact AArch64.target {
     tables := [("hmac", tables variants)]
     code := Impl.Ecdsa.Rfc6979.AArch64.Fn.p521 hashes
@@ -134,7 +133,7 @@ namespace VG.Artifacts.EcdsaP521.AArch64
 
 open VG.Proof.P521.AArch64 (hasLaw)
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact AArch64.target) := [
   Spec.Ecdsa.P521.verifyHashApi.artifact AArch64.target {
     code := Impl.Ecdsa.Verify.AArch64.Fn.verifyHashP521
     verified := Proof.Ecdsa.Rfc6979.AArch64.p521Verify hasLaw.law hasLaw.prime hasLaw.inv (Proof.P521.combOk7 hasLaw.law) }] ++

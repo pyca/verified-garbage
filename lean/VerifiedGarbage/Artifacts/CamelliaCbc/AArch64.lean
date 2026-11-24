@@ -4,7 +4,7 @@ public import VerifiedGarbage.Impl.Camellia.AArch64.Fn
 public import VerifiedGarbage.Proof.Camellia.AArch64.CbcVerified
 public import VerifiedGarbage.Proof.Camellia.AArch64.Residue
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.AArch64.Print
+public import VerifiedGarbage.TCB.AArch64.Target
 
 /-! # Camellia-CBC on AArch64 -/
 
@@ -12,7 +12,7 @@ public import VerifiedGarbage.TCB.AArch64.Print
 
 namespace VG.Artifacts.CamelliaCbc.AArch64
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact AArch64.target) := [
   Spec.Camellia.cbcEncryptChainedApi.artifact AArch64.target {
     code := Impl.Camellia.AArch64.Fn.cbcEncryptChained
     verified := Proof.Camellia.AArch64.Residue.cbcEncryptChainedCode_scrubbed },

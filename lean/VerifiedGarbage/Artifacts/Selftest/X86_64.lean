@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Selftest.X86_64
-public import VerifiedGarbage.TCB.X86_64.Print
+public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.TCB.Registration
 
 /-! # The emitter's self-test on x86-64 -/
@@ -10,9 +10,8 @@ public import VerifiedGarbage.TCB.Registration
 
 namespace VG.Artifacts.Selftest.X86_64
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact X86_64.target) := [
   { Spec.Selftest.addApi with
-    target := .of X86_64.target
     doc := Spec.Selftest.addApi.summary
     code := Proof.Selftest.X86_64.addScrubbed
     contract := Spec.Selftest.addContract X86_64.abi

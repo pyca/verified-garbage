@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Cast5.Arm.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.Arm.Print
+public import VerifiedGarbage.TCB.Arm.Target
 
 /-! # CAST5-CBC on ARMv7 -/
 
@@ -10,7 +10,7 @@ public import VerifiedGarbage.TCB.Arm.Print
 
 namespace VG.Artifacts.Cast5Cbc.Arm
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact Arm.target) := [
   Spec.Cast5.cbcEncryptChainedApi.artifact Arm.target {
     code := Impl.Cast5.Arm.Fn.cbcEncryptChained
     verified := Proof.Cast5.Arm.Fn.cbcEncryptChained },

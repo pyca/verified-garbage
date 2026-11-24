@@ -13,7 +13,6 @@ public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.P521.X86_64.TaintSumsWin
 public import VerifiedGarbage.Proof.P521.X86_64.TaintSumsWinAdx
 public import VerifiedGarbage.Spec.Ecdh.P521
-import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Weierstrass.Law
 import VerifiedGarbage.Proof.Mont.X86_64.Wide
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
@@ -35,7 +34,7 @@ public import VerifiedGarbage.Proof.Weierstrass.X86_64.SpillUnch
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombJ
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombJDigit
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJLoop
-public import VerifiedGarbage.TCB.X86_64.Print
+public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.P521.X86_64.Law
 
 /-! # ECDH over P-521 (SP 800-56A) on x86-64 -/
@@ -46,7 +45,7 @@ namespace VG.Artifacts.EcdhP521.X86_64
 
 open VG.Proof.P521.X86_64 (hasLaw)
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact X86_64.target) := [
   Spec.Ecdh.P521.exchangeApi.artifact X86_64.target
     { code := Impl.Ecdh.X86_64.Fn.exchangeP521
       verified := Proof.Ecdh.X86_64.P521.exchange_scrubbed hasLaw.law hasLaw.inv hasLaw.prime

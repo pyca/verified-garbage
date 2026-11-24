@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.TripleDes.Arm.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.Arm.Print
+public import VerifiedGarbage.TCB.Arm.Target
 
 /-! # Triple DES-CBC on ARMv7 -/
 
@@ -10,7 +10,7 @@ public import VerifiedGarbage.TCB.Arm.Print
 
 namespace VG.Artifacts.TripleDesCbc.Arm
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact Arm.target) := [
   Spec.TripleDes.cbcEncryptChainedApi.artifact Arm.target {
     code := Impl.TripleDes.Arm.Fn.cbcEncrypt
     verified := Proof.TripleDes.Arm.Fn.cbcEncrypt },

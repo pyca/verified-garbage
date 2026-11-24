@@ -6,7 +6,7 @@ import VerifiedGarbage.Proof.Blake2.X86.LitB
 public import VerifiedGarbage.Proof.Blake2.X86.Scrub
 public import VerifiedGarbage.Impl.Blake2.X86.Fn
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.X86.Print
+public import VerifiedGarbage.TCB.X86.Target
 
 /-! # BLAKE2b (RFC 7693) on x86 -/
 
@@ -14,7 +14,7 @@ public import VerifiedGarbage.TCB.X86.Print
 
 namespace VG.Artifacts.Blake2b.X86
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact X86.target) := [
   Spec.Blake2.initBApi.artifact X86.target {
     code := Impl.Blake2.X86.Fn.init Spec.Blake2.b
     verified := Proof.Blake2.X86.Scrub.initB_scrubbed },

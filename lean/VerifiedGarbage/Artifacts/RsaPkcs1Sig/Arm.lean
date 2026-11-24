@@ -352,7 +352,6 @@ public import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.SgTaint
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Vp
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.Verify
 public import VerifiedGarbage.Proof.Sha256.Stream
-public import VerifiedGarbage.TCB.Arm.Print
 public import VerifiedGarbage.Proof.Variants.RsaPrivateCrt.Arm
 
 /-! # RSASSA-PKCS1-v1_5 (RFC 8017) on ARMv7 -/
@@ -363,7 +362,7 @@ namespace VG.Artifacts.RsaPkcs1Sig.Arm
 
 open VG.Proof.Rsa.Arm (CrtImpl)
 
-def artifacts : List Artifact :=
+def artifacts : List (Artifact Arm.target) :=
   VG.Proof.Variants.RsaPrivateCrt.Arm.variants.flatMap fun (v : CrtImpl) => [
     Spec.RsaPkcs1Sig.signPrecomputedApi.artifact Arm.target {
       suffix := v.suffix

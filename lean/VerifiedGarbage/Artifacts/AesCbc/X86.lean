@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Impl.AesCbc.X86.Wiped
 public import VerifiedGarbage.Proof.AesCbc.X86.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.X86.Print
+public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Variants.AesBlocks.X86
 
 /-! # AES-CBC (NIST SP 800-38A §6.2) on x86 -/
@@ -14,7 +14,7 @@ namespace VG.Artifacts.AesCbc.X86
 
 open VG.Proof.AesCbc.X86.Scrub
 
-def artifacts : List Artifact :=
+def artifacts : List (Artifact X86.target) :=
   VG.Proof.Variants.AesBlocks.X86.variants.flatMap fun (v : Proof.Aes.X86.BlocksImpl) => [
     Spec.Cbc.aesEncryptApi.artifact X86.target {
       suffix := v.suffix

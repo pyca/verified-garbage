@@ -7,7 +7,7 @@ public import VerifiedGarbage.Proof.Cast5.AArch64.FbResidue
 import VerifiedGarbage.Proof.Cast5.AArch64.ModesLit
 import VerifiedGarbage.Proof.Cast5.AArch64.FbFinalLit
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.AArch64.Print
+public import VerifiedGarbage.TCB.AArch64.Target
 
 /-! # CAST5-OFB on AArch64 -/
 
@@ -15,7 +15,7 @@ public import VerifiedGarbage.TCB.AArch64.Print
 
 namespace VG.Artifacts.Cast5Ofb.AArch64
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact AArch64.target) := [
   Spec.Cast5.ofbApi.artifact AArch64.target {
     code := Impl.Cast5.AArch64.Fn.ofb
     verified := Proof.Cast5.AArch64.FbResidue.ofbCode_scrubbed },

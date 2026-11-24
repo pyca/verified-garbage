@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Sha3.Arm.Absorb
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.Arm.Print
+public import VerifiedGarbage.TCB.Arm.Target
 
 /-! # SHA-3 and SHAKE (FIPS 202) on ARMv7 -/
 
@@ -10,7 +10,7 @@ public import VerifiedGarbage.TCB.Arm.Print
 
 namespace VG.Artifacts.Sha3.Arm
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact Arm.target) := [
   Spec.Sha3.updateSha3_224Api.artifact Arm.target {
     code := Impl.Sha3.Arm.Fn.update Spec.Sha3.hashSha3_224.rate
     verified := Proof.Sha3.Arm.Fn.update_sha3_224 },

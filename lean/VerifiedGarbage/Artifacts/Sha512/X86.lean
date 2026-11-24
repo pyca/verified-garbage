@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Sha512.X86.Scrub
 public import VerifiedGarbage.Impl.Sha512.X86.Stream
 public import VerifiedGarbage.Impl.Sha512.X86.Digest
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.X86.Print
+public import VerifiedGarbage.TCB.X86.Target
 import VerifiedGarbage.Proof.Sha512.X86.Lit
 
 /-! # SHA-384, SHA-512, SHA-512/224 and SHA-512/256 (FIPS 180-4) on x86 -/
@@ -13,7 +13,7 @@ import VerifiedGarbage.Proof.Sha512.X86.Lit
 
 namespace VG.Artifacts.Sha512.X86
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact X86.target) := [
   Spec.Sha512.init384Api.artifact X86.target {
     code := Impl.Sha512.X86.Fn.init Spec.Sha512.H0_384
     verified := Proof.Sha512.X86.Scrub.init384_scrubbed },

@@ -71,7 +71,6 @@ public import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombJ
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombJDigit
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombSelectY
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinLoop
-public import VerifiedGarbage.TCB.X86_64.Print
 public import VerifiedGarbage.Proof.P224.X86_64.Law
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvInterface
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.P224
@@ -89,7 +88,7 @@ open VG.Proof.Ecdsa.Rfc6979.X86_64 (signCodeT OK p224 p224T_verified signCode_sp
 open VG.Proof.HmacTable.X86_64 (tables names)
 
 def artifactsFor (vs : List Proof.Pbkdf2.Md.X86_64.MdHash)
-    (hu : ∀ w ∈ vs, Proof.HmacTable.X86_64.HmacUp w) : List Artifact :=
+    (hu : ∀ w ∈ vs, Proof.HmacTable.X86_64.HmacUp w) : List (Artifact X86_64.target) :=
   if hv : OK vs ∧ "VG_P224_COMB" ∉ names vs then [
     Spec.Ecdsa.Rfc6979.Curves.p224SignApi.artifact X86_64.target
       { tables := [("hmac", tables vs)]
@@ -98,7 +97,7 @@ def artifactsFor (vs : List Proof.Pbkdf2.Md.X86_64.MdHash)
         spSafe := Proof.Ecdsa.Rfc6979.X86_64.p224T_spSafe hasLaw.law (Proof.P224.combOk7 hasLaw.law) hasLaw.inv vs }]
   else []
 
-def artifacts : List Artifact :=
+def artifacts : List (Artifact X86_64.target) :=
   artifactsFor VG.Proof.Variants.MdHash.X86_64.variants Proof.HmacTable.X86_64.variants_up
 
 end VG.Artifacts.EcdsaP224.X86_64.Rfc6979
@@ -107,7 +106,7 @@ namespace VG.Artifacts.EcdsaP224.X86_64
 
 open VG.Proof.P224.X86_64 (hasLaw)
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact X86_64.target) := [
   Spec.Ecdsa.P224.verifyHashApi.artifact X86_64.target
     { code := Impl.Ecdsa.X86_64.VerifyHash.Fn.verifyHash Spec.Ecdsa.P224.inst.curve.len false Impl.Ecdsa.Verify.X86_64.jointVerifyP224 104
       verified := Proof.Ecdsa.Verify.X86_64.P224.verifyHash_scrubbed hasLaw.law (Proof.P224.combOk7 hasLaw.law) hasLaw.inv

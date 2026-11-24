@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Rc2.X86.Scrub
 public import VerifiedGarbage.Impl.Rc2.X86.Fn
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.X86.Print
+public import VerifiedGarbage.TCB.X86.Target
 import VerifiedGarbage.Proof.Rc2.X86.Lit
 import VerifiedGarbage.Proof.Rc2.X86.Cbc.Lit
 import VerifiedGarbage.Proof.Rc2.X86.Stream.Lit
@@ -15,7 +15,7 @@ import VerifiedGarbage.Proof.Rc2.X86.Ssse3Lit
 
 namespace VG.Artifacts.Rc2.X86
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact X86.target) := [
   Spec.Rc2.cbcInitApi.artifact X86.target {
     suffix := "_ssse3"
     code := Impl.Rc2.X86.Fn.cbcInitSsse3

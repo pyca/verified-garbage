@@ -9,7 +9,6 @@ public import VerifiedGarbage.Impl.Ecdsa.Verify.BrainpoolP320r1.PPC64LE
 public import VerifiedGarbage.Proof.Ecdsa.Verify.PPC64LE.BrainpoolP320r1.Verified
 public import VerifiedGarbage.Spec.Ecdsa.Verify.BrainpoolP320r1
 public import VerifiedGarbage.Impl.Ecdsa.PPC64LE.VerifyHash
-public import VerifiedGarbage.TCB.PPC64LE.Print
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Scrub
 public import VerifiedGarbage.Impl.Ecdsa.Rfc6979.PPC64LE.Fn
 public import VerifiedGarbage.Proof.Ecdsa.Verify.PPC64LE.Scrub
@@ -30,7 +29,7 @@ open VG.Proof.HmacTable.PPC64LE (vars names tables fnsOf)
 
 open VG.Proof.BrainpoolP320r1.PPC64LE (hasLaw)
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact PPC64LE.target) := [
   Spec.Ecdsa.BrainpoolP320r1.verifyHashApi.artifact PPC64LE.target {
     code := Impl.Ecdsa.Verify.PPC64LE.Fn.brainpoolp320r1Verify
     verified := Proof.Ecdsa.Verify.PPC64LE.Scrub.brainpoolp320r1Verify_scrubbed hasLaw.law }] ++

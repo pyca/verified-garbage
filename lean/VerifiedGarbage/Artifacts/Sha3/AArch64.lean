@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Sha3.AArch64.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.AArch64.Print
+public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Variants.Keccak.AArch64
 
 /-! # SHA-3 and SHAKE (FIPS 202) on AArch64 -/
@@ -11,7 +11,7 @@ public import VerifiedGarbage.Proof.Variants.Keccak.AArch64
 
 namespace VG.Artifacts.Sha3.AArch64
 
-def artifacts : List Artifact :=
+def artifacts : List (Artifact AArch64.target) :=
   VG.Proof.Variants.Keccak.AArch64.variants.flatMap fun (v : Proof.Sha3.AArch64.Permutation) => [
     Spec.Sha3.updateSha3_224Api.artifact AArch64.target {
       suffix := v.callee.suffix

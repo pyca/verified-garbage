@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Argon2.Arm.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.Arm.Print
+public import VerifiedGarbage.TCB.Arm.Target
 
 /-! # Argon2 (RFC 9106) on ARMv7 -/
 
@@ -10,7 +10,7 @@ public import VerifiedGarbage.TCB.Arm.Print
 
 namespace VG.Artifacts.Argon2.Arm
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact Arm.target) := [
   Spec.Argon2.deriveApi.artifact Arm.target {
     code := Impl.Argon2.Arm.Fn.derive
     verified := Proof.Argon2.Arm.Fn.derive }]

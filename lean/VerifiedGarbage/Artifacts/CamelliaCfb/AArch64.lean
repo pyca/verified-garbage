@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Camellia.AArch64.FbVerified
 public import VerifiedGarbage.Proof.Camellia.AArch64.FbFinalVerified
 public import VerifiedGarbage.Proof.Camellia.AArch64.Residue
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.AArch64.Print
+public import VerifiedGarbage.TCB.AArch64.Target
 import VerifiedGarbage.Proof.Camellia.AArch64.FbLit
 import VerifiedGarbage.Proof.Camellia.AArch64.FbFinalLit
 
@@ -15,7 +15,7 @@ import VerifiedGarbage.Proof.Camellia.AArch64.FbFinalLit
 
 namespace VG.Artifacts.CamelliaCfb.AArch64
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact AArch64.target) := [
   Spec.Camellia.cfbEncryptApi.artifact AArch64.target {
     code := Impl.Camellia.AArch64.Fn.cfbEncrypt
     verified := Proof.Camellia.AArch64.Residue.cfbEncryptCode_scrubbed },

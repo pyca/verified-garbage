@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.AesCtr.X86_64.Verified
 public import VerifiedGarbage.Proof.AesCtr.X86_64.Final
 public import VerifiedGarbage.Proof.Aes.X86_64.FinalScrub
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.X86_64.Print
+public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Variants.AesCtr32.X86_64
 
 /-! # AES-CTR (NIST SP 800-38A §6.5) on x86-64 -/
@@ -14,7 +14,7 @@ public import VerifiedGarbage.Proof.Variants.AesCtr32.X86_64
 
 namespace VG.Artifacts.AesCtr.X86_64
 
-def artifacts : List Artifact :=
+def artifacts : List (Artifact X86_64.target) :=
   VG.Proof.Variants.AesCtr32.X86_64.variants.flatMap fun (v : Proof.Aes.X86_64.Ctr32Impl) => [
     Spec.Ctr.aesApi.artifact X86_64.target {
       suffix := v.suffix

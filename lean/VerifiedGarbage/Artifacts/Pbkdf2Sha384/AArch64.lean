@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Variant
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.AArch64.Print
+public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Variants.MdHash.AArch64
 
 /-! # PBKDF2-HMAC-SHA-384 (RFC 8018) on AArch64 -/
@@ -11,7 +11,7 @@ public import VerifiedGarbage.Proof.Variants.MdHash.AArch64
 
 namespace VG.Artifacts.Pbkdf2Sha384.AArch64
 
-def artifacts : List Artifact :=
+def artifacts : List (Artifact AArch64.target) :=
   VG.Proof.Variants.MdHash.AArch64.sha384Variants.flatMap fun (v : Proof.Pbkdf2.Md.AArch64.MdHash) => [
     v.I.pbkdf2Api.artifact AArch64.target {
       suffix := v.suffix

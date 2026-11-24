@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Camellia.Arm.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.Arm.Print
+public import VerifiedGarbage.TCB.Arm.Target
 
 /-! # Camellia-CFB128 on ARMv7 -/
 
@@ -10,7 +10,7 @@ public import VerifiedGarbage.TCB.Arm.Print
 
 namespace VG.Artifacts.CamelliaCfb.Arm
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact Arm.target) := [
   Spec.Camellia.cfbEncryptApi.artifact Arm.target {
     code := Impl.Camellia.Arm.Fn.cfbEncrypt
     verified := Proof.Camellia.Arm.Fn.cfbEncrypt },

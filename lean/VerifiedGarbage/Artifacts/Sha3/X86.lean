@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Sha3.X86.Absorb
 public import VerifiedGarbage.Proof.Sha3.X86.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.X86.Print
+public import VerifiedGarbage.TCB.X86.Target
 import VerifiedGarbage.Proof.Sha3.X86.Lit
 
 /-! # SHA-3 and SHAKE (FIPS 202) on x86 -/
@@ -12,7 +12,7 @@ import VerifiedGarbage.Proof.Sha3.X86.Lit
 
 namespace VG.Artifacts.Sha3.X86
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact X86.target) := [
   Spec.Sha3.updateSha3_224Api.artifact X86.target {
     code := Impl.Sha3.X86.Fn.update Spec.Sha3.hashSha3_224.rate
     verified := Proof.Sha3.X86.Absorb.update_sha3_224_scrubbed },

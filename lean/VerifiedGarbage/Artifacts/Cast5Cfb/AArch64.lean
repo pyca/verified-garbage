@@ -9,7 +9,7 @@ import VerifiedGarbage.Proof.Cast5.AArch64.FbFinalLit
 import VerifiedGarbage.Proof.Cast5.AArch64.TblLit
 public import VerifiedGarbage.Proof.Cast5.AArch64.ModesResidue
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.AArch64.Print
+public import VerifiedGarbage.TCB.AArch64.Target
 
 /-! # CAST5-CFB64 on AArch64 -/
 
@@ -17,7 +17,7 @@ public import VerifiedGarbage.TCB.AArch64.Print
 
 namespace VG.Artifacts.Cast5Cfb.AArch64
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact AArch64.target) := [
   Spec.Cast5.cfbEncryptApi.artifact AArch64.target {
     code := Impl.Cast5.AArch64.Fn.cfbEncrypt
     verified := Proof.Cast5.AArch64.ModesResidue.cfbEncryptCode_scrubbed },

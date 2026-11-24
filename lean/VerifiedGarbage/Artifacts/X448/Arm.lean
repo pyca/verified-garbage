@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.X448.Arm.Scrub
 public import VerifiedGarbage.Proof.Ed448.CombFacts
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.Arm.Print
+public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.Variants.Curve448Field.Arm
 
 /-! # X448 (RFC 7748) on ARMv7 -/
@@ -12,7 +12,7 @@ public import VerifiedGarbage.Proof.Variants.Curve448Field.Arm
 
 namespace VG.Artifacts.X448.Arm
 
-def artifacts : List Artifact :=
+def artifacts : List (Artifact Arm.target) :=
   VG.Proof.Variants.Curve448Field.Arm.variants.flatMap fun (v : Proof.Variants.Curve448Field.Arm.Variant) => [
     Spec.X448.exchangeApi.artifact Arm.target {
       suffix := v.suffix

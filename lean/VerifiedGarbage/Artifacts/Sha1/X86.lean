@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Sha1.X86.Scrub
 public import VerifiedGarbage.Impl.Sha1.X86.Fn
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.X86.Print
+public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Sha1.X86.Variants.Interface
 public import VerifiedGarbage.Proof.Variants.Sha1.X86
 public import VerifiedGarbage.Proof.Sha256.X86.Variants.Interface
@@ -15,7 +15,7 @@ public import VerifiedGarbage.Proof.Variants.Sha256.X86
 
 namespace VG.Artifacts.Sha1.X86
 
-def artifacts : List Artifact :=
+def artifacts : List (Artifact X86.target) :=
   (VG.Proof.Variants.Sha1.X86.variants.flatMap fun (v : Proof.Sha1.X86.Variants.Backend) => [
     Spec.Sha1.digestApi.artifact X86.target {
       suffix := v.suffix

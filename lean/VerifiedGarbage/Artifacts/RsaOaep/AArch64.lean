@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.RsaOaep.AArch64.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.AArch64.Print
+public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Variants.RsaPrivateCrt.AArch64
 public import VerifiedGarbage.Proof.Variants.MdHash.AArch64
 public import VerifiedGarbage.Proof.Variants.RsaPublicPrecomputed.AArch64
@@ -17,7 +17,7 @@ namespace VG.Artifacts.RsaOaep.AArch64.RsaPrivateCrtAllMdHash
 open VG.Proof.MdHashTable.AArch64 (tables)
 open VG.Proof.Variants.MdHash.AArch64 (variants hashes)
 
-def artifacts (c : Proof.Rsa.AArch64.CrtImpl) : List Artifact := [
+def artifacts (c : Proof.Rsa.AArch64.CrtImpl) : List (Artifact AArch64.target) := [
   Spec.RsaOaep.decryptPrecomputedMdTablesApi.artifact AArch64.target {
     suffix := qualifiedName "" [("crt", c.suffix)]
     tables := [("hash", tables variants), ("mgf1", tables variants)]
@@ -32,7 +32,7 @@ namespace VG.Artifacts.RsaOaep.AArch64.RsaPublicPrecomputedAllMdHash
 open VG.Proof.MdHashTable.AArch64 (tables)
 open VG.Proof.Variants.MdHash.AArch64 (variants hashes)
 
-def artifacts (c : Proof.Rsa.AArch64.PublicImpl) : List Artifact := [
+def artifacts (c : Proof.Rsa.AArch64.PublicImpl) : List (Artifact AArch64.target) := [
   Spec.RsaOaep.encryptMdTablesApi.artifact AArch64.target {
     suffix := qualifiedName "" [("rsa", c.suffix)]
     tables := [("hash", tables variants), ("mgf1", tables variants)]
@@ -43,7 +43,7 @@ end VG.Artifacts.RsaOaep.AArch64.RsaPublicPrecomputedAllMdHash
 
 namespace VG.Artifacts.RsaOaep.AArch64
 
-def artifacts : List Artifact :=
+def artifacts : List (Artifact AArch64.target) :=
   (VG.Proof.Variants.RsaPrivateCrt.AArch64.variants.flatMap RsaPrivateCrtAllMdHash.artifacts) ++
   (VG.Proof.Variants.RsaPublicPrecomputed.AArch64.variants.flatMap RsaPublicPrecomputedAllMdHash.artifacts)
 

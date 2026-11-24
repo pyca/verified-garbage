@@ -56,7 +56,6 @@ public import VerifiedGarbage.Proof.X25519.Field
 public import VerifiedGarbage.Proof.X25519.X86.Arith
 public import VerifiedGarbage.Proof.X25519.X86.Fold
 import VerifiedGarbage.Proof.X25519.X86.Column
-public import VerifiedGarbage.TCB.X86.Print
 public import VerifiedGarbage.Proof.P192.X86.Law
 public import VerifiedGarbage.Proof.Ecdh.X86.P192.Scrub
 
@@ -68,7 +67,7 @@ namespace VG.Artifacts.EcdhP192.X86
 
 open VG.Proof.P192.X86 (hasLaw)
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact X86.target) := [
   Spec.Ecdh.P192.exchangeApi.artifact X86.target {
     code := Impl.Ecdh.X86.Fn.exchangeP192
     verified := Proof.Ecdh.X86.P192.Scrub.exchange_scrubbed hasLaw.law }]

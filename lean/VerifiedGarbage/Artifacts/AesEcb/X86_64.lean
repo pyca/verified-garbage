@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesEcb.X86_64
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.X86_64.Print
+public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Variants.AesBlocks.X86_64
 public import VerifiedGarbage.Proof.Variants.Zeroize.X86_64
 
@@ -12,7 +12,7 @@ public import VerifiedGarbage.Proof.Variants.Zeroize.X86_64
 
 namespace VG.Artifacts.AesEcb.X86_64
 
-def artifacts : List Artifact :=
+def artifacts : List (Artifact X86_64.target) :=
   VG.Proof.Variants.AesBlocks.X86_64.variants.flatMap fun (v : Proof.Aes.X86_64.BlocksImpl) =>
     VG.Proof.Variants.Zeroize.X86_64.variants.flatMap fun (z : Proof.Zeroize.X86_64.ZeroizeImpl) =>
     (if h : v.encWritten = 0 then

@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.ChaCha20.AArch64.Stream.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Variants.ChaCha20Xor.AArch64
 public import VerifiedGarbage.Spec.ChaCha20.Contract
-public import VerifiedGarbage.TCB.AArch64.Print
+public import VerifiedGarbage.TCB.AArch64.Target
 
 /-! # ChaCha20 (RFC 8439) on AArch64 -/
 
@@ -14,7 +14,7 @@ public import VerifiedGarbage.TCB.AArch64.Print
 
 namespace VG.Artifacts.ChaCha20.AArch64
 
-def direct : List Artifact := [
+def direct : List (Artifact AArch64.target) := [
   Spec.ChaCha20.initApi.artifact AArch64.target {
     code := Impl.ChaCha20.AArch64.Fn.init
     verified := Proof.ChaCha20.AArch64.Stream.init_scrubbed },
@@ -22,7 +22,7 @@ def direct : List Artifact := [
     code := Impl.ChaCha20.AArch64.Fn.setNonce
     verified := Proof.ChaCha20.AArch64.Stream.setNonce_scrubbed }]
 
-def artifacts : List Artifact :=
+def artifacts : List (Artifact AArch64.target) :=
   direct ++ VG.Proof.Variants.ChaCha20Xor.AArch64.variants.flatMap fun v => [
     Spec.ChaCha20.applyApi.artifact AArch64.target {
       suffix := v.callee.suffix

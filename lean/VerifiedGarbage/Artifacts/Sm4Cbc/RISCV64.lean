@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Sm4.RISCV64.Scrub
 public import VerifiedGarbage.Impl.Sm4.RISCV64.Fn
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.RISCV64.Print
+public import VerifiedGarbage.TCB.RISCV64.Target
 import VerifiedGarbage.Proof.Sm4.RISCV64.ModesLit
 
 /-! # SM4-CBC on RISC-V -/
@@ -12,7 +12,7 @@ import VerifiedGarbage.Proof.Sm4.RISCV64.ModesLit
 
 namespace VG.Artifacts.Sm4Cbc.RISCV64
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact RISCV64.target) := [
   Spec.Sm4.cbcEncryptChainedApi.artifact RISCV64.target {
     code := Impl.Sm4.RISCV64.Fn.cbcEncryptChained
     verified := Proof.Sm4.RISCV64.Scrub.cbcEncryptChained_scrubbed },

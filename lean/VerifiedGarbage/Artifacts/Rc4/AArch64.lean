@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Rc4.AArch64.VerifiedInit
 public import VerifiedGarbage.Proof.Rc4.AArch64.VerifiedApply
 public import VerifiedGarbage.Proof.Rc4.AArch64.Residue
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.AArch64.Print
+public import VerifiedGarbage.TCB.AArch64.Target
 
 /-! # RC4 on AArch64 -/
 
@@ -13,7 +13,7 @@ public import VerifiedGarbage.TCB.AArch64.Print
 
 namespace VG.Artifacts.Rc4.AArch64
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact AArch64.target) := [
   Spec.Rc4.initApi.artifact AArch64.target {
     code := Impl.Rc4.AArch64.Fn.init
     verified := Proof.Rc4.AArch64.initCleared_scrubbed },

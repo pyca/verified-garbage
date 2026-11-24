@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Sha1.PPC64LE.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Sha1
-public import VerifiedGarbage.TCB.PPC64LE.Print
+public import VerifiedGarbage.TCB.PPC64LE.Target
 
 /-! # SHA-1 (FIPS 180-4) on PPC64LE -/
 
@@ -11,7 +11,7 @@ public import VerifiedGarbage.TCB.PPC64LE.Print
 
 namespace VG.Artifacts.Sha1.PPC64LE
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact PPC64LE.target) := [
   Spec.Sha1.initApi.artifact PPC64LE.target {
     code := Impl.Sha1.PPC64LE.Stream.init
     verified := Proof.Sha1.PPC64LE.init_scrubbed },

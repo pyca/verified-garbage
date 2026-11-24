@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Impl.EcKey.P256.ArmFn
 public import VerifiedGarbage.Proof.EcKey.Arm.P256.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.Arm.Print
+public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.P256.Arm.Law
 
 /-! # P-256 public keys (FIPS 186-5 §A.2) on ARMv7 -/
@@ -14,7 +14,7 @@ namespace VG.Artifacts.EcP256.Arm
 
 open VG.Proof.P256.Arm (hasLaw)
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact Arm.target) := [
   Spec.EcKey.P256.inst.compressPublicKeyApi.artifact Arm.target {
     code := Impl.EcKey.Arm.Fn.compressP256
     verified := Proof.EcKey.Arm.Fn.compressP256 },

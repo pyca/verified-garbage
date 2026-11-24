@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Idea.X86.Scrub
 public import VerifiedGarbage.Impl.Idea.X86.Fn
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.X86.Print
+public import VerifiedGarbage.TCB.X86.Target
 import VerifiedGarbage.Proof.Idea.X86.Lit
 
 /-! # IDEA on x86 -/
@@ -12,7 +12,7 @@ import VerifiedGarbage.Proof.Idea.X86.Lit
 
 namespace VG.Artifacts.Idea.X86
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact X86.target) := [
   Spec.Idea.expandKeyApi.artifact X86.target {
     code := Impl.Idea.X86.Fn.expandKey
     verified := Proof.Idea.X86.Scrub.expandKey_scrubbed },

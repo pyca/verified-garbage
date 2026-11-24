@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.RISCV64.Fn
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.RISCV64.Front
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.RISCV64.Print
+public import VerifiedGarbage.TCB.RISCV64.Target
 
 /-! # RSAES-PKCS1-v1_5 (RFC 8017) on RISC-V -/
 
@@ -11,7 +11,7 @@ public import VerifiedGarbage.TCB.RISCV64.Print
 
 namespace VG.Artifacts.RsaPkcs1Enc.RISCV64
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact RISCV64.target) := [
   Spec.RsaPkcs1Enc.decryptPrecomputedApi.artifact RISCV64.target {
     code := Impl.RsaPkcs1Enc.RISCV64.Fn.decryptPrecomputed
     verified := Proof.RsaPkcs1Enc.RISCV64.Front.decryptPrecomputed },

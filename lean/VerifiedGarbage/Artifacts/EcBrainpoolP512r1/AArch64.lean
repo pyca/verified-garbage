@@ -7,7 +7,7 @@ public import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.BrainpoolP512r1
 public import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.BrainpoolP512r1Decompress
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Spec.EcKey.BrainpoolP512r1
-public import VerifiedGarbage.TCB.AArch64.Print
+public import VerifiedGarbage.TCB.AArch64.Target
 
 /-! # brainpoolP512r1 public keys (FIPS 186-5 §A.2) on AArch64 -/
 
@@ -17,7 +17,7 @@ namespace VG.Artifacts.EcBrainpoolP512r1.AArch64
 
 open VG.Proof.BrainpoolP512r1.AArch64 (hasLaw)
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact AArch64.target) := [
   Spec.EcKey.BrainpoolP512r1.publicKeyApi.artifact AArch64.target {
     code := Impl.EcKey.AArch64.Fn.publicKeyBrainpoolP512r1
     verified := Proof.EcKey.AArch64.BrainpoolP512r1.pk_scrubbed hasLaw.law hasLaw.inv },

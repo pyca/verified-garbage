@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Camellia.RISCV64.Scrub
 public import VerifiedGarbage.Impl.Camellia.RISCV64.Fn
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.RISCV64.Print
+public import VerifiedGarbage.TCB.RISCV64.Target
 import VerifiedGarbage.Proof.Camellia.RISCV64.ModesLit
 
 /-! # Camellia-CTR on RISC-V -/
@@ -12,7 +12,7 @@ import VerifiedGarbage.Proof.Camellia.RISCV64.ModesLit
 
 namespace VG.Artifacts.CamelliaCtr.RISCV64
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact RISCV64.target) := [
   Spec.Camellia.ctrApi.artifact RISCV64.target {
     code := Impl.Camellia.RISCV64.Fn.ctr
     verified := Proof.Camellia.RISCV64.Scrub.ctr_scrubbed },

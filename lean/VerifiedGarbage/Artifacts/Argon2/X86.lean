@@ -8,7 +8,7 @@ import VerifiedGarbage.Proof.Blake2.X86.LitB
 public import VerifiedGarbage.Proof.Argon2.X86.Scrub
 public import VerifiedGarbage.Impl.Argon2.X86.Derive
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.X86.Print
+public import VerifiedGarbage.TCB.X86.Target
 
 /-! # Argon2 (RFC 9106) on x86 -/
 
@@ -16,7 +16,7 @@ public import VerifiedGarbage.TCB.X86.Print
 
 namespace VG.Artifacts.Argon2.X86
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact X86.target) := [
   Spec.Argon2.deriveApi.artifact X86.target {
     code := Impl.Argon2.X86.Fn.derive
     verified := Proof.Argon2.X86.Scrub.derive_scrubbed }]

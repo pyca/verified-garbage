@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.TripleDes.PPC64LE.Bitsliced.Verified
 public import VerifiedGarbage.Proof.TripleDes.PPC64LE.Frame
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.TripleDes.PPC64LE.Scrub
-public import VerifiedGarbage.TCB.PPC64LE.Print
+public import VerifiedGarbage.TCB.PPC64LE.Target
 import VerifiedGarbage.Proof.TripleDes.PPC64LE.Bitsliced.Lit
 
 /-! # Triple DES on PPC64LE -/
@@ -14,7 +14,7 @@ import VerifiedGarbage.Proof.TripleDes.PPC64LE.Bitsliced.Lit
 
 namespace VG.Artifacts.TripleDes.PPC64LE
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact PPC64LE.target) := [
   Spec.TripleDes.expandKeyApi.artifact PPC64LE.target {
     code := Impl.TripleDes.PPC64LE.Fn.expandKey
     verified := Proof.TripleDes.PPC64LE.Scrub.expandKey_scrubbed },

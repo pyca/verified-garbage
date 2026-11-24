@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Scrub
 public import VerifiedGarbage.Impl.Hmac.Stream.PPC64LE.Fn
 public import VerifiedGarbage.TCB.PPC64LE.Target
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.PPC64LE.Print
 
 /-! # HMAC-SHA-224 (RFC 2104) on PPC64LE -/
 
@@ -12,7 +11,7 @@ public import VerifiedGarbage.TCB.PPC64LE.Print
 
 namespace VG.Artifacts.HmacSha224.PPC64LE
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact PPC64LE.target) := [
   Spec.Hmac.sha224I.initAnyKeyApi.artifact PPC64LE.target {
     code := Impl.Hmac.Stream.PPC64LE.Fn.initSha224
     verified := Proof.Hmac.Stream.PPC64LE.Scrub.sha224_init_scrubbed },

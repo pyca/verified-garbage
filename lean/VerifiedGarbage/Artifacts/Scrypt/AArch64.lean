@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Scrypt.AArch64.Whole.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.AArch64.Print
+public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Variants.Sha256Compress.AArch64
 
 /-! # scrypt (RFC 7914) on AArch64 -/
@@ -11,7 +11,7 @@ public import VerifiedGarbage.Proof.Variants.Sha256Compress.AArch64
 
 namespace VG.Artifacts.Scrypt.AArch64
 
-def artifacts : List Artifact :=
+def artifacts : List (Artifact AArch64.target) :=
   VG.Proof.Variants.Sha256Compress.AArch64.variants.flatMap fun (c : Proof.Sha256.AArch64.Compress) => [
     Spec.Scrypt.scryptApi.artifact AArch64.target {
       suffix := c.suffix

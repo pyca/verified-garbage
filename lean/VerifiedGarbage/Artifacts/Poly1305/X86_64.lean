@@ -9,7 +9,7 @@ public import VerifiedGarbage.Proof.Poly1305.X86_64.Frame
 import Mathlib.Tactic.NormNum.Inv
 import Mathlib.Tactic.NormNum.Pow
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.X86_64.Print
+public import VerifiedGarbage.TCB.X86_64.Target
 import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Lit
 import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Lit
 import VerifiedGarbage.Proof.Poly1305.X86_64.Ifma.Lit
@@ -35,13 +35,13 @@ public import VerifiedGarbage.Proof.Variants.Poly1305Blocks.X86_64
 
 namespace VG.Artifacts.Poly1305.X86_64
 
-def direct : List Artifact := [
+def direct : List (Artifact X86_64.target) := [
   Spec.Poly1305.initApi.artifact X86_64.target { code := Impl.Poly1305.X86_64.Fn.init, verified := Proof.Poly1305.X86_64.init_scrubbed, spSafe := Proof.Poly1305.X86_64.init_spSafe },
   Spec.Poly1305.finalizeApi.artifact X86_64.target { code := Impl.Poly1305.X86_64.Fn.finalize, verified := Proof.Poly1305.X86_64.finalize_scrubbed, spSafe := Proof.Poly1305.X86_64.finalize_spSafe }]
 
 open VG.Proof.Poly1305.X86_64 (BlocksImpl)
 
-def artifacts : List Artifact :=
+def artifacts : List (Artifact X86_64.target) :=
   direct ++
   VG.Proof.Variants.Poly1305Blocks.X86_64.variants.map fun (v : BlocksImpl) =>
     Spec.Poly1305.updateApi.artifact X86_64.target {

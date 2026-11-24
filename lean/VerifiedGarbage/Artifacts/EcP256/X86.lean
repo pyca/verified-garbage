@@ -64,11 +64,10 @@ public import VerifiedGarbage.Proof.X25519.Field
 public import VerifiedGarbage.Proof.X25519.X86.Arith
 public import VerifiedGarbage.Proof.X25519.X86.Fold
 public import VerifiedGarbage.Proof.Weierstrass.X86.InvInterface
-import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Weierstrass.Law
 public import VerifiedGarbage.Impl.EcKey.P256.X86
 import VerifiedGarbage.Proof.X25519.X86.Column
-public import VerifiedGarbage.TCB.X86.Print
+public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.P256.X86.Law
 public import VerifiedGarbage.Proof.EcKey.Compressed.X86.P256
 public import VerifiedGarbage.Proof.EcKey.Compressed.X86.P256Decompress
@@ -82,7 +81,7 @@ namespace VG.Artifacts.EcP256.X86
 
 open VG.Proof.P256.X86 (hasLaw)
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact X86.target) := [
   Spec.EcKey.P256.inst.compressPublicKeyApi.artifact X86.target {
     code := Impl.EcKey.X86.Fn.compressP256
     verified := Proof.EcKey.X86.P256.Scrub.compress_scrubbed hasLaw.inv },

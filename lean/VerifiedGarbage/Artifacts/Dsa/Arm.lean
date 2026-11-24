@@ -9,7 +9,7 @@ public import VerifiedGarbage.Proof.Dsa.Arm.PrevalidatedVerified
 public import VerifiedGarbage.Proof.Dsa.Arm.Gen.Init
 public import VerifiedGarbage.Proof.Dsa.Arm.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.Arm.Print
+public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.TCB.Registration
 import VerifiedGarbage.Proof.Dsa.Arm.Leaves
 public import VerifiedGarbage.Proof.Dsa.Arm.Gen.Instances
@@ -22,7 +22,7 @@ namespace VG.Artifacts.Dsa.Arm
 
 open VG Proof.Dsa.Arm.Gen
 
-def artifacts : List Artifact :=
+def artifacts : List (Artifact Arm.target) :=
   [Spec.Dsa.parameterInitApi.artifact Arm.target {
     code := Impl.Dsa.Arm.Fn.parameterInit
     verified := Proof.Dsa.Arm.Fn.parameterInit }] ++

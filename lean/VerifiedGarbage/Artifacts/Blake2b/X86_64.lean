@@ -4,7 +4,7 @@ public import VerifiedGarbage.Impl.Blake2.X86_64.Fn
 public import VerifiedGarbage.Proof.Blake2.X86_64.Stream.Verified
 import VerifiedGarbage.Proof.Blake2.X86_64.Stream.CT
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.X86_64.Print
+public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Blake2.X86_64.Backend
 public import VerifiedGarbage.Proof.Blake2.X86_64.Scrub
 public import VerifiedGarbage.Proof.Framework.X86_64.Registration
@@ -31,7 +31,7 @@ public import VerifiedGarbage.Proof.Variants.MdHash.X86_64
 
 namespace VG.Artifacts.Blake2b.X86_64
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact X86_64.target) := [
   Spec.Blake2.initBApi.artifact X86_64.target { code := Impl.Blake2.X86_64.Fn.initB, verified := Proof.Blake2.X86_64.initB_scrubbed, spSafe := Proof.Blake2.X86_64.initB_spSafe }] ++
   (VG.Proof.Variants.Blake2b.X86_64.variants.flatMap fun (v : Proof.Blake2.X86_64.Backend) => [
     Spec.Blake2.updateBApi.artifact VG.X86_64.target {

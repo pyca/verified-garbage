@@ -98,8 +98,8 @@ theorem verified (w : BitVec 64) : Verified target (code w) (contract w) := by
   · sig_post [contract, sig, abi, argRegs]
   · sig_pre [contract, sig, abi, argRegs, stackBelow, sat]
 
-def artifactOf (fn : String) (w : BitVec 64) : Artifact where
-  target := .of (renderOnly target)
+def artifactOf (fn : String) (w : BitVec 64) : EmitArtifact where
+  target := .of (renderOnly target) emitter
   module := "test"
   name := fn
   sig := sig
@@ -109,7 +109,7 @@ def artifactOf (fn : String) (w : BitVec 64) : Artifact where
   verified := renderOnly_verified (verified w)
   spSafe := rfl
 
-def artifact : Artifact := artifactOf "vg_test_ldrqtbl" 42
+def artifact : EmitArtifact := artifactOf "vg_test_ldrqtbl" 42
 
 /-- The rendering: the table's address formed with `adrSym`, then read
 through the register as by any `ldr q`. -/
@@ -150,8 +150,8 @@ pub static VG_TEST_LDRQTBL: Table<32> = Table(*b\"\\
 
 -- Two artifacts carrying the same table: one static. Another giving it other
 -- words: refused.
-def same : Artifact := artifactOf "vg_test_ldrqtbl_same" 42
-def other : Artifact := artifactOf "vg_test_ldrqtbl_other" 41
+def same : EmitArtifact := artifactOf "vg_test_ldrqtbl_same" 42
+def other : EmitArtifact := artifactOf "vg_test_ldrqtbl_other" 41
 #guard (Rust.checkConsts [.of (.of artifact), .of (.of same)] (.of (.of artifact))).isOk
 #guard Rust.tables [artifact, same] == [(name, tbl 42)]
 #guard !(Rust.checkConsts [.of (.of artifact), .of (.of other)] (.of (.of artifact))).isOk

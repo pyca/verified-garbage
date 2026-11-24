@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Argon2.AArch64.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.AArch64.Print
+public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Variants.Blake2b.AArch64
 
 /-! # Argon2 (RFC 9106) on AArch64 -/
@@ -11,7 +11,7 @@ public import VerifiedGarbage.Proof.Variants.Blake2b.AArch64
 
 namespace VG.Artifacts.Argon2.AArch64
 
-def artifacts : List Artifact :=
+def artifacts : List (Artifact AArch64.target) :=
   VG.Proof.Variants.Blake2b.AArch64.variants.flatMap fun (v : Proof.Argon2.AArch64.HPrime.Backend) => [
     Spec.Argon2.deriveApi.artifact VG.AArch64.target {
       suffix := v.suffix

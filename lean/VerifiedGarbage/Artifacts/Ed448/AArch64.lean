@@ -7,7 +7,7 @@ public import VerifiedGarbage.Proof.Ed448.AArch64.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Variants.Keccak.AArch64
 public import VerifiedGarbage.Spec.Ed448.Contract
-public import VerifiedGarbage.TCB.AArch64.Print
+public import VerifiedGarbage.TCB.AArch64.Target
 
 /-! # Ed448 (RFC 8032) on AArch64 -/
 
@@ -15,7 +15,7 @@ public import VerifiedGarbage.TCB.AArch64.Print
 
 namespace VG.Artifacts.Ed448.AArch64
 
-def artifacts : List Artifact :=
+def artifacts : List (Artifact AArch64.target) :=
   (VG.Proof.Variants.Keccak.AArch64.variants.map fun v =>
     Spec.Ed448.publicKeyApi.artifact AArch64.target {
       suffix := v.callee.suffix

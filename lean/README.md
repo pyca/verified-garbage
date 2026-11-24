@@ -21,10 +21,10 @@ VerifiedGarbage/
     Artifact.lean   Target, Contract, `Verified`: what "verified" means;
                     `Sig.contract`: the contract obligations a signature implies
                     (no printer: every proof imports it)
-    Registration.lean  `Artifact`, emitted for an `EmitTarget` (a target with its
-                    ISA's printer and Rust `cfg`, `Emitter`); `Api.artifact`: an `Artifact`
-                    made from an `Api` and only what its implementation chooses
-                    (`Registration`)
+    Registration.lean  `Artifact T`, a verified function of the target `T`, emitted
+                    for an `EmitTarget` (`T` with its printer and Rust `cfg`, `Emitter`);
+                    `Api.artifact`: an `Artifact` made from an `Api` and only what its
+                    implementation chooses (`Registration`)
     Rust.lean       rendering artifacts as Rust naked functions; checks that every
                     call is of the function whose code the model runs for it (an
                     artifact, or an internal function the emitter writes from that
@@ -94,7 +94,11 @@ never import proofs.
    target (`Artifact.ofApi`), so a registration file, or a proof building
    artifacts for a generic caller, cannot pair a function's name with another
    function's contract; the emitter refuses an artifact that is not made from
-   an `Api` with a contract. An `Artifact` cannot be built
+   an `Api` with a contract. Nor can it choose the target model the proof is
+   on, or how the code is printed: the emitter's driver (`Emit.driver`) takes
+   the list of `Artifacts/<Alg>/<T>.lean` as a `List (Artifact VG.<T>.target)`,
+   of the target `TCB/<T>/Target.lean` defines, and prints it with
+   `VG.<T>.emitter` (`TCB/<T>/Print.lean`). An `Artifact` cannot be built
    without the proof, and the emitter's `#assert_standard_axioms` rejects
    `sorry`, `native_decide` and any non-standard axiom anywhere in them. The
    emitter runs compiled code, so it also rejects anything that makes the

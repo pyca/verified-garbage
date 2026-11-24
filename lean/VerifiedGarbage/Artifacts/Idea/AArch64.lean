@@ -8,7 +8,7 @@ import Mathlib.Data.Finset.Attr
 import Mathlib.Tactic.Finiteness.Attr
 import Mathlib.Tactic.SetLike
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.AArch64.Print
+public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Idea.AArch64.Residue
 
 /-! # IDEA on AArch64 -/
@@ -17,7 +17,7 @@ public import VerifiedGarbage.Proof.Idea.AArch64.Residue
 
 namespace VG.Artifacts.Idea.AArch64
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact AArch64.target) := [
   Spec.Idea.expandKeyApi.artifact AArch64.target {
     code := Impl.Idea.AArch64.Fn.expandKey
     verified := Proof.Idea.AArch64.Residue.expandKeyCleared_scrubbed },

@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.TCB.Arm.Target
-public import VerifiedGarbage.TCB.Arm.Print
 public import VerifiedGarbage.Proof.Hkdf.Arm.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Impl.Hkdf.Arm.Fn
@@ -14,7 +13,7 @@ namespace VG.Artifacts.Hkdf.Arm
 
 open VG.Proof.HmacTable.Arm (vars tables fnsOf)
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact Arm.target) := [
   Spec.Hkdf.keyApi.artifact Arm.target {
     tables := [("hmac", tables vars)]
     code := Impl.Hkdf.Arm.Fn.key (fnsOf vars)

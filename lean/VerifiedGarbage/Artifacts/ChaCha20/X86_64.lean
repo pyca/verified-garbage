@@ -10,7 +10,7 @@ public import Mathlib.Data.List.Induction
 public import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
 public import VerifiedGarbage.Proof.Aes.X86_64.Lit
-public import VerifiedGarbage.TCB.X86_64.Print
+public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Stream.ApplyCT
 public import VerifiedGarbage.Proof.Variants.ChaCha20Xor.X86_64
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Scrub
@@ -23,7 +23,7 @@ public import VerifiedGarbage.Impl.ChaCha20.X86_64.Fn
 
 namespace VG.Artifacts.ChaCha20.X86_64
 
-def direct : List Artifact := [
+def direct : List (Artifact X86_64.target) := [
   Spec.ChaCha20.initApi.artifact X86_64.target {
     code := Impl.ChaCha20.X86_64.Fn.init
     verified := Proof.ChaCha20.X86_64.Scrub.init_scrubbed
@@ -33,7 +33,7 @@ def direct : List Artifact := [
     verified := Proof.ChaCha20.X86_64.Scrub.setNonce_scrubbed
     spSafe := Proof.ChaCha20.X86_64.Scrub.setNonce_spSafeFn }]
 
-def artifacts : List Artifact :=
+def artifacts : List (Artifact X86_64.target) :=
   direct ++
   (VG.Proof.Variants.ChaCha20Xor.X86_64.xorVariants.map fun (v : Proof.ChaCha20.X86_64.XorImpl) =>
     Spec.ChaCha20.applyApi.artifact X86_64.target {

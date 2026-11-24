@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesCcm.PPC64LE.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.PPC64LE.Print
+public import VerifiedGarbage.TCB.PPC64LE.Target
 
 /-! # AES-CCM (NIST SP 800-38C) on PPC64LE -/
 
@@ -10,7 +10,7 @@ public import VerifiedGarbage.TCB.PPC64LE.Print
 
 namespace VG.Artifacts.AesCcm.PPC64LE
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact PPC64LE.target) := [
   Spec.Ccm.sealApi.artifact PPC64LE.target {
     code := Impl.AesCcm.PPC64LE.Fn.seal
     verified := Proof.AesCcm.PPC64LE.Scrub.seal_scrubbed },

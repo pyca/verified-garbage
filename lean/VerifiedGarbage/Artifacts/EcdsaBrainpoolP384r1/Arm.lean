@@ -6,7 +6,7 @@ public import VerifiedGarbage.Spec.Ecdsa.Verify.BrainpoolP384r1
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP384r1.Scrub
 public import VerifiedGarbage.Impl.Ecdsa.Arm.VerifyHash
-public import VerifiedGarbage.TCB.Arm.Print
+public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Impl.Ecdsa.BrainpoolP384r1.ArmFn
 public import VerifiedGarbage.Proof.BrainpoolP384r1.Arm.Law
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.BrainpoolP384r1Comb
@@ -19,7 +19,7 @@ namespace VG.Artifacts.EcdsaBrainpoolP384r1.Arm
 
 open VG.Proof.BrainpoolP384r1.Arm (hasLaw)
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact Arm.target) := [
   Spec.Ecdsa.BrainpoolP384r1.verifyHashApi.artifact Arm.target {
     code := Impl.Ecdsa.Arm.Fn.verifyBrainpoolP384r1
     verified := Proof.Ecdsa.Arm.Fn.verifyBrainpoolP384r1 hasLaw.law },

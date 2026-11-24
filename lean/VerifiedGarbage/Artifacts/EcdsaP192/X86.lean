@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.TCB.X86.Target
-public import VerifiedGarbage.TCB.X86.Print
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.P192.X86.Law
 public import VerifiedGarbage.Proof.Ecdsa.X86.P192.Scrub
@@ -24,7 +23,7 @@ open VG.Proof.Ecdsa.Rfc6979.X86 (OK)
 open VG.Proof.HmacTable.X86 (names tables fnsOf)
 open VG.Proof.Ecdsa.X86.P192.Scrub (vs sign_scrubbed)
 
-def artifacts : List Artifact :=
+def artifacts : List (Artifact X86.target) :=
   if hv : OK vs ∧ "VG_P192_COMB" ∉ names vs then [
     Spec.Ecdsa.Rfc6979.Curves.p192SignApi.artifact X86.target {
       tables := [("hmac", tables vs)]
@@ -38,7 +37,7 @@ namespace VG.Artifacts.EcdsaP192.X86
 
 open VG.Proof.P192.X86 (hasLaw)
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact X86.target) := [
   Spec.Ecdsa.P192.verifyHashApi.artifact X86.target {
     code := Impl.Ecdsa.X86.Fn.verifyP192
     verified := Proof.Ecdsa.X86.P192.Scrub.verify_scrubbed hasLaw.law }] ++

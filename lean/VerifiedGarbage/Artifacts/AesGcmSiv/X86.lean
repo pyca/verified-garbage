@@ -37,7 +37,6 @@ public import VerifiedGarbage.Proof.Gcm.Bits
 public import VerifiedGarbage.Proof.Gcm.SealGather
 public import VerifiedGarbage.Proof.GcmSiv.Words32
 public import VerifiedGarbage.Proof.Siv.Spec
-public import VerifiedGarbage.TCB.X86.Print
 public import VerifiedGarbage.Proof.Variants.AesGcm.X86
 
 /-! # AES-GCM-SIV (RFC 8452) on x86 -/
@@ -50,7 +49,7 @@ open VG.Proof.AesGcm.X86 (GcmImpl GcmVariant)
 open VG.Proof.AesGcmSiv.X86
 
 /-- The artifacts calling the implementations `v`. -/
-def artifactsOf (v : GcmImpl) : List Artifact := [
+def artifactsOf (v : GcmImpl) : List (Artifact X86.target) := [
   Spec.GcmSiv.sealApi.artifact X86.target {
     suffix := v.suffix
     code := Impl.AesGcmSiv.X86.Fn.«seal» v.callees
@@ -63,9 +62,9 @@ def artifactsOf (v : GcmImpl) : List Artifact := [
     spSafe := Proof.AesGcmSiv.X86.Scrub.open_fnSpSafe v }]
 
 /-- The artifacts of a variant, from the implementations it names. -/
-def artifactsFor (v : GcmVariant) : List Artifact := artifactsOf v.impl
+def artifactsFor (v : GcmVariant) : List (Artifact X86.target) := artifactsOf v.impl
 
-def artifacts : List Artifact :=
+def artifacts : List (Artifact X86.target) :=
   VG.Proof.Variants.AesGcm.X86.variants.flatMap fun v => artifactsFor v
 
 end VG.Artifacts.AesGcmSiv.X86

@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Scrypt.X86.Scrub
 public import VerifiedGarbage.Impl.Scrypt.X86.Fn
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.X86.Print
+public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Variants.Sha256.X86
 
 /-! # scrypt (RFC 7914) on x86 -/
@@ -14,7 +14,7 @@ namespace VG.Artifacts.Scrypt.X86
 
 open VG.Proof.Scrypt.X86.Whole (pbkName pbkOf)
 
-def artifacts : List Artifact :=
+def artifacts : List (Artifact X86.target) :=
   VG.Proof.Variants.Sha256.X86.variants.flatMap fun (v : Proof.Sha256.X86.Variants.Backend) => [
     Spec.Scrypt.scryptApi.artifact X86.target {
       suffix := v.suffix

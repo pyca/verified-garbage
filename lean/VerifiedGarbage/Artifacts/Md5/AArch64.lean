@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Md5.AArch64.Shared
 public import VerifiedGarbage.Proof.Md5.AArch64.Stream.Init
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.AArch64.Print
+public import VerifiedGarbage.TCB.AArch64.Target
 
 /-! # MD5 (RFC 1321) on AArch64 -/
 
@@ -11,7 +11,7 @@ public import VerifiedGarbage.TCB.AArch64.Print
 
 namespace VG.Artifacts.Md5.AArch64
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact AArch64.target) := [
   Spec.Md5.initApi.artifact AArch64.target {
     code := Impl.Md5.AArch64.Stream.init
     verified := Proof.Md5.AArch64.Stream.init_scrubbed },

@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Impl.EcKey.Secp256k1.ArmFn
 public import VerifiedGarbage.Proof.EcKey.Arm.Secp256k1.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.Arm.Print
+public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.Secp256k1.Arm.Law
 
 /-! # secp256k1 public keys (FIPS 186-5 §A.2) on ARMv7 -/
@@ -14,7 +14,7 @@ namespace VG.Artifacts.EcSecp256k1.Arm
 
 open VG.Proof.Secp256k1.Arm (hasLaw)
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact Arm.target) := [
   Spec.EcKey.Secp256k1.inst.compressPublicKeyApi.artifact Arm.target {
     code := Impl.EcKey.Arm.Fn.compressSecp256k1
     verified := Proof.EcKey.Arm.Fn.compressSecp256k1 },

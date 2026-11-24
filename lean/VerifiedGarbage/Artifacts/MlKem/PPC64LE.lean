@@ -14,7 +14,7 @@ public import VerifiedGarbage.Proof.MlKem.PPC64LE.CompressEncode
 public import VerifiedGarbage.Proof.MlKem.PPC64LE.DecodeDecompress
 public import VerifiedGarbage.Proof.MlKem.PPC64LE.CallWipe
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.PPC64LE.Print
+public import VerifiedGarbage.TCB.PPC64LE.Target
 public import VerifiedGarbage.Proof.MlKem1024.PPC64LE.CheckEk
 public import VerifiedGarbage.Proof.MlKem1024.PPC64LE.CompressEncode
 public import VerifiedGarbage.Proof.MlKem1024.PPC64LE.Decompress
@@ -25,7 +25,7 @@ public import VerifiedGarbage.Proof.MlKem1024.PPC64LE.Decompress
 
 namespace VG.Artifacts.MlKem.PPC64LE
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact PPC64LE.target) := [
   Spec.MlKem.keyGenApi.artifact PPC64LE.target {
     code := Impl.MlKem.PPC64LE.Fn.keyGen
     verified := Proof.MlKem.PPC64LE.Scrub.keyGen_scrubbed },

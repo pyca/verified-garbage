@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.MlDsa.PPC64LE.Scrub
 public import VerifiedGarbage.Proof.MlDsa.PPC64LE.KeyGen.Inst
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.PPC64LE.Print
+public import VerifiedGarbage.TCB.PPC64LE.Target
 public import VerifiedGarbage.Proof.MlDsa.PPC64LE.PkTr
 public import VerifiedGarbage.Proof.MlDsa.PPC64LE.PreparedKey
 public import VerifiedGarbage.Proof.MlDsa.PPC64LE.Sign.Inst
@@ -16,7 +16,7 @@ public import VerifiedGarbage.Proof.MlDsa.PPC64LE.Verify.Inst
 
 namespace VG.Artifacts.MlDsa.PPC64LE
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact PPC64LE.target) := [
   Spec.MlDsa.keyGen44Api.artifact PPC64LE.target {
     code := Impl.MlDsa.PPC64LE.Fn.keyGen44
     verified := Proof.MlDsa.PPC64LE.Scrub.keyGen44_scrubbed },

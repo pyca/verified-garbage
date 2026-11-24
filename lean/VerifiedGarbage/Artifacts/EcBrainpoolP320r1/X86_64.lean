@@ -1,7 +1,6 @@
 module
 
 import VerifiedGarbage.Proof.EcKey.X86_64.BrainpoolP320r1.Lit
-import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvSpec
 public import VerifiedGarbage.Proof.EcKey.X86_64.BrainpoolP320r1.Verified
 import Mathlib.Data.Finset.Card
@@ -48,7 +47,7 @@ public import VerifiedGarbage.Proof.Weierstrass.X86_64.MontWide8
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombJ
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombJDigit
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombSelectY
-public import VerifiedGarbage.TCB.X86_64.Print
+public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.BrainpoolP320r1.X86_64.Law
 public import VerifiedGarbage.Proof.EcKey.Validate.X86_64.BrainpoolP320r1
 public import VerifiedGarbage.Proof.EcKey.Compressed.X86_64.BrainpoolP320r1
@@ -63,7 +62,7 @@ namespace VG.Artifacts.EcBrainpoolP320r1.X86_64.Compressed
 
 open VG.Proof.BrainpoolP320r1.X86_64 (hasLaw)
 
-def artifacts : List Artifact :=
+def artifacts : List (Artifact X86_64.target) :=
   [Spec.EcKey.BrainpoolP320r1.inst.compressPublicKeyApi.artifact X86_64.target
     { code := Impl.EcKey.Compressed.X86_64.Fn.compress Impl.Ecdsa.X86_64.brainpoolp320r1
       verified := Proof.EcKey.Compressed.X86_64.BrainpoolP320r1.scrubbed hasLaw.inv
@@ -80,7 +79,7 @@ namespace VG.Artifacts.EcBrainpoolP320r1.X86_64.Validate
 
 open VG.Proof.BrainpoolP320r1.X86_64 (hasLaw)
 
-def artifacts : List Artifact :=
+def artifacts : List (Artifact X86_64.target) :=
   [Spec.EcKey.BrainpoolP320r1.inst.validatePublicKeyApi.artifact X86_64.target
     { code := Impl.EcKey.Validate.X86_64.Fn.validate Impl.Ecdsa.X86_64.brainpoolp320r1
       verified := Proof.EcKey.Validate.X86_64.BrainpoolP320r1.scrubbed hasLaw.inv
@@ -92,7 +91,7 @@ namespace VG.Artifacts.EcBrainpoolP320r1.X86_64
 
 open VG.Proof.BrainpoolP320r1.X86_64 (hasLaw)
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact X86_64.target) := [
   Spec.EcKey.BrainpoolP320r1.publicKeyApi.artifact X86_64.target
     { code := Impl.EcKey.X86_64.Fn.publicKeyBrainpoolP320r1
       verified := Proof.EcKey.X86_64.BrainpoolP320r1.publicKey_scrubbed hasLaw.law hasLaw.inv

@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Dsa.X86.Scrub
 public import VerifiedGarbage.Impl.Dsa.X86.Fn
 public import VerifiedGarbage.TCB.Registration
-public import VerifiedGarbage.TCB.X86.Print
+public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Variants.Sha1.X86
 public import VerifiedGarbage.Proof.Variants.Sha256.X86
@@ -18,7 +18,7 @@ namespace VG.Artifacts.Dsa.X86
 
 open VG.Proof.Dsa.X86.Scrub
 
-def direct : List Artifact := [
+def direct : List (Artifact X86.target) := [
   Spec.Dsa.generateKeyApi.artifact X86.target {
     code := Impl.Dsa.X86.Fn.generateKey
     verified := Proof.Dsa.X86.Scrub.generateKey_scrubbed
@@ -54,7 +54,7 @@ namespace VG.Artifacts.Dsa.X86
 
 open VG.Proof.Dsa.X86.Generation (geo1 geo256)
 
-def artifacts : List Artifact :=
+def artifacts : List (Artifact X86.target) :=
   direct ++
   (Proof.Dsa.X86.Generation.hashPairs.flatMap fun ((v1, v256) : Proof.Sha1.X86.Variants.Backend × Proof.Sha256.X86.Variants.Backend) =>
     VG.Proof.Variants.MillerRabin.X86.variants.map fun (v : Proof.MillerRabin.X86.RoundImpl) =>

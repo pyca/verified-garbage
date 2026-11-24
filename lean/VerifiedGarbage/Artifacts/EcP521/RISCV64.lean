@@ -6,7 +6,6 @@ public import VerifiedGarbage.Impl.Ecdh.P521.RISCV64
 public import VerifiedGarbage.Proof.Ecdh.RISCV64.P521.PublicKeyVerified
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Spec.EcKey.P521
-public import VerifiedGarbage.TCB.RISCV64.Print
 import VerifiedGarbage.Proof.Ecdh.RISCV64.P521.EcdhLit
 public import VerifiedGarbage.Proof.P521.RISCV64.Law
 public import VerifiedGarbage.Impl.EcKey.Compressed.P521.RISCV64
@@ -21,7 +20,7 @@ namespace VG.Artifacts.EcP521.RISCV64
 
 open VG.Proof.P521.RISCV64 (hasLaw)
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact RISCV64.target) := [
   Spec.EcKey.P521.inst.compressPublicKeyApi.artifact RISCV64.target {
     code := Impl.EcKey.Compressed.RISCV64.Fn.compressP521
     verified := Proof.EcKey.Compressed.RISCV64.P521.compress_scrubbed },

@@ -7,7 +7,7 @@ public import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Sha512
 public import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Sha512_224
 public import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Sha512_256
 import VerifiedGarbage.Proof.Sha512.PPC64LE.Lit
-public import VerifiedGarbage.TCB.PPC64LE.Print
+public import VerifiedGarbage.TCB.PPC64LE.Target
 
 /-! # SHA-384, SHA-512, SHA-512/224 and SHA-512/256 (FIPS 180-4) on PPC64LE -/
 
@@ -15,7 +15,7 @@ public import VerifiedGarbage.TCB.PPC64LE.Print
 
 namespace VG.Artifacts.Sha512.PPC64LE
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact PPC64LE.target) := [
   Spec.Sha512.init384Api.artifact PPC64LE.target {
     code := Impl.Sha512.PPC64LE.Stream.init Spec.Sha512.H0_384
     verified := Proof.Sha512.PPC64LE.init_scrubbed Spec.Sha512.H0_384 },

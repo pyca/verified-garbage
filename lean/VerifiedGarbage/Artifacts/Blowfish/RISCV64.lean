@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Blowfish.RISCV64.Scrub
 public import VerifiedGarbage.Impl.Blowfish.RISCV64.Fn
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.RISCV64.Print
+public import VerifiedGarbage.TCB.RISCV64.Target
 import VerifiedGarbage.Proof.Blowfish.RISCV64.Lit
 
 /-! # Blowfish on RISC-V -/
@@ -12,7 +12,7 @@ import VerifiedGarbage.Proof.Blowfish.RISCV64.Lit
 
 namespace VG.Artifacts.Blowfish.RISCV64
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact RISCV64.target) := [
   Spec.Blowfish.expandKeyApi.artifact RISCV64.target {
     code := Impl.Blowfish.RISCV64.Fn.expandKey
     verified := Proof.Blowfish.RISCV64.Scrub.expandKey_scrubbed },

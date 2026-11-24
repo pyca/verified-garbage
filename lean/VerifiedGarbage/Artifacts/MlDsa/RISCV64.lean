@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.RISCV64.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.RISCV64.Print
+public import VerifiedGarbage.TCB.RISCV64.Target
 
 /-! # ML-DSA (FIPS 204) on RISC-V -/
 
@@ -10,7 +10,7 @@ public import VerifiedGarbage.TCB.RISCV64.Print
 
 namespace VG.Artifacts.MlDsa.RISCV64
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact RISCV64.target) := [
   Spec.MlDsa.keyGen44Api.artifact RISCV64.target {
     code := Impl.MlDsa.RISCV64.Fn.keyGen44
     verified := Proof.MlDsa.RISCV64.Scrub.keyGen44_scrubbed },

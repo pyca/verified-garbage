@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.Hkdf.AArch64.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Variants.MdHash.AArch64
 public import VerifiedGarbage.Impl.Hkdf.AArch64.Fn
-public import VerifiedGarbage.TCB.AArch64.Print
 
 /-! # HKDF (RFC 5869) on AArch64 -/
 
@@ -16,7 +15,7 @@ namespace VG.Artifacts.Hkdf.AArch64
 open VG.Proof.HmacTable.AArch64 (tables fnsOf)
 open VG.Proof.Variants.MdHash.AArch64 (variants)
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact AArch64.target) := [
   Spec.Hkdf.keyApi.artifact AArch64.target {
     tables := [("hmac", tables variants)]
     code := Impl.Hkdf.AArch64.Fn.key (fnsOf variants)

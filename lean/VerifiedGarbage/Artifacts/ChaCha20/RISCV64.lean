@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.ChaCha20.RISCV64.Scrub
 public import VerifiedGarbage.TCB.RISCV64.Target
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.RISCV64.Print
 
 /-! # ChaCha20 (RFC 8439) on RISC-V -/
 
@@ -11,7 +10,7 @@ public import VerifiedGarbage.TCB.RISCV64.Print
 
 namespace VG.Artifacts.ChaCha20.RISCV64
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact RISCV64.target) := [
   Spec.ChaCha20.initApi.artifact RISCV64.target {
     code := Impl.ChaCha20.RISCV64.Fn.init
     verified := Proof.ChaCha20.RISCV64.Scrub.init_scrubbed },

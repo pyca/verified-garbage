@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.RsaOaep.X86.Scrub
 public import VerifiedGarbage.Impl.RsaOaep.X86.Fn
 public import VerifiedGarbage.Proof.RsaOaep.X86.Inst
 public import VerifiedGarbage.Spec.RsaOaep.MdTables
-public import VerifiedGarbage.TCB.X86.Print
+public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Variants.Sha1.X86
 public import VerifiedGarbage.Proof.Variants.Sha256.X86
 public import VerifiedGarbage.Proof.Variants.RsaPrivateCrt.X86
@@ -21,7 +21,7 @@ open VG.Proof.RsaOaep.X86 (OK)
 open VG.Proof.RsaOaep.X86.Scrub (allVars encrypt_scrubbed)
 open VG.Proof.HashTable.X86 (tables fnsOf)
 
-def artifacts : List Artifact :=
+def artifacts : List (Artifact X86.target) :=
   if h : OK allVars then [
     Spec.RsaOaep.encryptMdTablesApi.artifact X86.target {
       suffix := qualifiedName "" []
@@ -41,7 +41,7 @@ open VG.Proof.HashTable.X86 (tables fnsOf)
 open VG.Proof.RsaOaep.X86.Scrub (allVars decrypt_scrubbed decrypt_spSafe)
 open VG.Proof.Rsa.X86.PrivChecked (crtPBaseline privCodeP)
 
-def artifacts (c : Proof.Rsa.X86.PrivChecked.CrtImpl) : List Artifact :=
+def artifacts (c : Proof.Rsa.X86.PrivChecked.CrtImpl) : List (Artifact X86.target) :=
   if h : OK allVars then [
     Spec.RsaOaep.decryptPrecomputedMdTablesApi.artifact X86.target {
       suffix := qualifiedName "" [("crt", c.suffix)]
@@ -56,7 +56,7 @@ end VG.Artifacts.RsaOaep.X86.RsaPrivateCrtAllSha1AllSha256
 
 namespace VG.Artifacts.RsaOaep.X86
 
-def artifacts : List Artifact :=
+def artifacts : List (Artifact X86.target) :=
   AllSha1AllSha256.artifacts ++
   (VG.Proof.Variants.RsaPrivateCrt.X86.variants.flatMap fun v => RsaPrivateCrtAllSha1AllSha256.artifacts v)
 

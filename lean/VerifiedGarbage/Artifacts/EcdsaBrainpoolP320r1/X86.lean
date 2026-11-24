@@ -59,7 +59,6 @@ import VerifiedGarbage.Impl.Ecdsa.BrainpoolP320r1.X86
 import VerifiedGarbage.Proof.X25519.X86.Column
 import VerifiedGarbage.Proof.Framework.X86.TaintMono
 public import VerifiedGarbage.Impl.Ecdsa.X86.VerifyHash
-public import VerifiedGarbage.TCB.X86.Print
 public import VerifiedGarbage.Proof.BrainpoolP320r1.X86.Law
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.BrainpoolP320r1
 public import VerifiedGarbage.Proof.Variants.Sha1.X86
@@ -80,7 +79,7 @@ open VG.Proof.BrainpoolP320r1.X86 (hasLaw)
 open VG.Proof.Ecdsa.Rfc6979.X86 (OK brainpoolp320r1Sign_scrubbed)
 open VG.Proof.HmacTable.X86 (names vars tables fnsOf)
 
-def artifacts : List Artifact :=
+def artifacts : List (Artifact X86.target) :=
   if hv : OK (vars VG.Proof.Variants.Sha1.X86.variants VG.Proof.Variants.Sha256.X86.variants) ∧
       "VG_BRAINPOOLP320R1_COMB" ∉ names (vars VG.Proof.Variants.Sha1.X86.variants VG.Proof.Variants.Sha256.X86.variants) then [
     Spec.Ecdsa.Rfc6979.Curves.brainpoolp320r1SignApi.artifact X86.target {
@@ -95,7 +94,7 @@ namespace VG.Artifacts.EcdsaBrainpoolP320r1.X86
 
 open VG.Proof.BrainpoolP320r1.X86 (hasLaw)
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact X86.target) := [
   Spec.Ecdsa.BrainpoolP320r1.verifyHashApi.artifact X86.target {
     code := Impl.Ecdsa.X86.Fn.verifyBrainpoolP320r1
     verified := Proof.Ecdsa.Verify.X86.BrainpoolP320r1.verify_scrubbed hasLaw.law }] ++

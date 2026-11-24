@@ -4,7 +4,7 @@ public import VerifiedGarbage.Impl.Seed.AArch64.Fn
 public import VerifiedGarbage.Proof.Seed.AArch64.CbcVerified
 public import VerifiedGarbage.Proof.Seed.AArch64.ModesResidue
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.AArch64.Print
+public import VerifiedGarbage.TCB.AArch64.Target
 
 /-! # SEED-CBC on AArch64 -/
 
@@ -12,7 +12,7 @@ public import VerifiedGarbage.TCB.AArch64.Print
 
 namespace VG.Artifacts.SeedCbc.AArch64
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact AArch64.target) := [
   Spec.Seed.cbcEncryptChainedApi.artifact AArch64.target {
     code := Impl.Seed.AArch64.Fn.cbcEncryptChained
     verified := Proof.Seed.AArch64.ModesResidue.cbcEncryptChainedCode_scrubbed },

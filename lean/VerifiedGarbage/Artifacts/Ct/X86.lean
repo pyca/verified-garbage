@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Ct.X86.Scrub
 public import VerifiedGarbage.Impl.Ct.X86
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.X86.Print
+public import VerifiedGarbage.TCB.X86.Target
 
 /-! # Constant-time byte comparison on x86 -/
 
@@ -12,7 +12,7 @@ public import VerifiedGarbage.TCB.X86.Print
 namespace VG.Artifacts.Ct.X86
 open VG.X86
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact X86.target) := [
   Spec.Ct.eqApi.artifact target {
     code := Impl.Ct.X86.Fn.eq
     verified := Proof.Ct.X86.Scrub.eq_scrubbed }]

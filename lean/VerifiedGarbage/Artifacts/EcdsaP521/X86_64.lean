@@ -20,7 +20,6 @@ public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P521.JointChecks
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P521.JointLit
 public import VerifiedGarbage.Spec.Ecdsa.Verify.P521
 public import VerifiedGarbage.Impl.Ecdsa.X86_64.VerifyHash
-import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Weierstrass.Law
 import VerifiedGarbage.Impl.Ecdsa.P521.X86_64
 import VerifiedGarbage.Proof.Mont.X86_64.Wide
@@ -75,7 +74,7 @@ public import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombJ
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombJDigit
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombSelectY
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinLoop
-public import VerifiedGarbage.TCB.X86_64.Print
+public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.P521.X86_64.Law
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.P521Adx
 public import VerifiedGarbage.Proof.Variants.MdHash.X86_64
@@ -92,7 +91,7 @@ open VG.Proof.Ecdsa.Rfc6979.X86_64 (signCodeT OK p521Of p521T_verified signCode_
 open VG.Proof.HmacTable.X86_64 (tables names)
 open VG.Proof.Variants.MdHash.X86_64 (variants)
 
-def artifacts : List Artifact :=
+def artifacts : List (Artifact X86_64.target) :=
   if hv : OK variants ∧ "VG_P521_COMB" ∉ names variants then [
     Spec.Ecdsa.Rfc6979.Curves.p521SignApi.artifact X86_64.target
       { tables := [("hmac", tables variants)]
@@ -113,7 +112,7 @@ namespace VG.Artifacts.EcdsaP521.X86_64
 
 open VG.Proof.P521.X86_64 (hasLaw)
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact X86_64.target) := [
   Spec.Ecdsa.P521.verifyHashApi.artifact X86_64.target
     { code := Impl.Ecdsa.X86_64.VerifyHash.Fn.verifyHash Spec.Ecdsa.P521.inst.curve.len true Impl.Ecdsa.Verify.X86_64.jointVerifyP521
       verified := Proof.Ecdsa.Verify.X86_64.P521.verifyHash_scrubbed hasLaw.law (Proof.P521.combOk7 hasLaw.law) hasLaw.inv

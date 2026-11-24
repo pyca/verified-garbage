@@ -47,7 +47,6 @@ public import VerifiedGarbage.Proof.Weierstrass.X86_64.SpillUnch
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.TComb
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombSelectY
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinLoop
-public import VerifiedGarbage.TCB.X86_64.Print
 public import VerifiedGarbage.Proof.P224.X86_64.Law
 
 /-! # ECDH over P-224 (SP 800-56A) on x86-64 -/
@@ -58,7 +57,7 @@ namespace VG.Artifacts.EcdhP224.X86_64
 
 open VG.Proof.P224.X86_64 (hasLaw)
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact X86_64.target) := [
   Spec.Ecdh.P224.exchangeApi.artifact X86_64.target
     { code := Impl.Ecdh.X86_64.Fn.exchangeP224
       verified := Proof.Ecdh.X86_64.P224.exchange_scrubbed hasLaw.law hasLaw.inv

@@ -5,7 +5,7 @@ public import VerifiedGarbage.Impl.TripleDes.X86.Fn
 public import VerifiedGarbage.Proof.TripleDes.X86.Ssse3Verified
 public import VerifiedGarbage.Impl.TripleDes.X86.Ssse3
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.X86.Print
+public import VerifiedGarbage.TCB.X86.Target
 import VerifiedGarbage.Proof.TripleDes.X86.Ssse3Lit
 import VerifiedGarbage.Proof.TripleDes.X86.FbFinalLit
 import VerifiedGarbage.Proof.TripleDes.X86.FbLit
@@ -16,7 +16,7 @@ import VerifiedGarbage.Proof.TripleDes.X86.FbLit
 
 namespace VG.Artifacts.TripleDesCfb.X86
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact X86.target) := [
   Spec.TripleDes.cfbEncryptApi.artifact X86.target {
     suffix := "_ssse3"
     code := Impl.TripleDes.X86.Ssse3.Fn.cfbEncrypt

@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Dit.AArch64
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.AArch64.Print
+public import VerifiedGarbage.TCB.AArch64.Target
 
 /-! # Data independent timing (FEAT_DIT) on AArch64 -/
 
@@ -10,7 +10,7 @@ public import VerifiedGarbage.TCB.AArch64.Print
 
 namespace VG.Artifacts.Dit.AArch64
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact AArch64.target) := [
   Spec.Dit.enterApi.artifact AArch64.target {
     code := Impl.Dit.AArch64.enter
     verified := Proof.Dit.AArch64.enter_scrubbed },

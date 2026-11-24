@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Camellia.PPC64LE.ModesFrame
 public import VerifiedGarbage.Proof.Camellia.PPC64LE.FbFinalVerified
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Camellia.PPC64LE.Scrub
-public import VerifiedGarbage.TCB.PPC64LE.Print
+public import VerifiedGarbage.TCB.PPC64LE.Target
 import VerifiedGarbage.Proof.Camellia.PPC64LE.ModesLit
 import VerifiedGarbage.Proof.Camellia.PPC64LE.Lit
 import VerifiedGarbage.Proof.Camellia.PPC64LE.FbFinalLit
@@ -16,7 +16,7 @@ import VerifiedGarbage.Proof.Camellia.PPC64LE.FbFinalLit
 
 namespace VG.Artifacts.CamelliaOfb.PPC64LE
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact PPC64LE.target) := [
   Spec.Camellia.ofbApi.artifact PPC64LE.target {
     code := Impl.Camellia.PPC64LE.Fn.ofb
     verified := Proof.Camellia.PPC64LE.Scrub.ofb_scrubbed },

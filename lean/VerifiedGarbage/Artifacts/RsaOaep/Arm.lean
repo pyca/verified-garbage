@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.RsaOaep.Arm.Inst
 public import VerifiedGarbage.Proof.Rsa.Arm.PublicOfCrt
 public import VerifiedGarbage.Spec.RsaOaep.MdTables
-public import VerifiedGarbage.TCB.Arm.Print
+public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.Variants.RsaPrivateCrt.Arm
 
 /-! # RSAES-OAEP (RFC 8017) on ARMv7 -/
@@ -18,7 +18,7 @@ open VG.Proof.Rsa.Arm (CrtImpl)
 open VG.Proof.RsaOaep.Arm (OK)
 open VG.Proof.HashTable.Arm (vars tables)
 
-def artifacts : List Artifact :=
+def artifacts : List (Artifact Arm.target) :=
   VG.Proof.Variants.RsaPrivateCrt.Arm.variants.flatMap fun (v : CrtImpl) =>
     if h : OK vars then [
       Spec.RsaOaep.decryptPrecomputedMdTablesApi.artifact Arm.target {

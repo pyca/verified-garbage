@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Poly1305.X86.Scrub
 public import VerifiedGarbage.Impl.Poly1305.X86
 import VerifiedGarbage.Proof.Poly1305.X86.Lit
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.X86.Print
+public import VerifiedGarbage.TCB.X86.Target
 
 /-! # Poly1305 (RFC 8439 §2.5) on x86 -/
 
@@ -12,7 +12,7 @@ public import VerifiedGarbage.TCB.X86.Print
 
 namespace VG.Artifacts.Poly1305.X86
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact X86.target) := [
   Spec.Poly1305.initApi.artifact X86.target {
     code := Impl.Poly1305.X86.Fn.init
     verified := Proof.Poly1305.X86.Scrub.init_scrubbed },

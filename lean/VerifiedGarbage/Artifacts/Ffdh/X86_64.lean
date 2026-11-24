@@ -7,7 +7,7 @@ public import VerifiedGarbage.Proof.Ffdh.X86_64.DomainScrub
 public import VerifiedGarbage.Proof.Variants.MillerRabin.X86_64
 public import VerifiedGarbage.Proof.Variants.FfdhExp.X86_64
 public import VerifiedGarbage.Proof.Framework.QualifiedName
-public import VerifiedGarbage.TCB.X86_64.Print
+public import VerifiedGarbage.TCB.X86_64.Target
 
 /-! # Finite-field Diffie–Hellman (SP 800-56A) on x86-64 -/
 
@@ -16,7 +16,7 @@ public import VerifiedGarbage.TCB.X86_64.Print
 namespace VG.Artifacts.Ffdh.X86_64
 open VG.X86_64
 
-def direct : List Artifact := [
+def direct : List (Artifact X86_64.target) := [
   Spec.Ffdh.parameterInitApi.artifact target { code := Impl.Ffdh.X86_64.Fn.parameterInit, verified := Proof.Ffdh.X86_64.Scrub.parameterInit_scrubbed, spSafe := Proof.Ffdh.X86_64.Scrub.parameterInit_spSafe },
   Spec.Ffdh.keyInitApi.artifact target { code := Impl.Ffdh.X86_64.Fn.keyInit, verified := Proof.Ffdh.X86_64.Scrub.keyInit_scrubbed, spSafe := Proof.Ffdh.X86_64.Scrub.keyInit_spSafe }]
 end VG.Artifacts.Ffdh.X86_64
@@ -24,7 +24,8 @@ end VG.Artifacts.Ffdh.X86_64
 -- Emit FFDH domain operations for every shared arithmetic backend and exponentiation
 namespace VG.Artifacts.Ffdh.X86_64.MillerRabinFfdhExp
 
-def artifacts (v : Proof.MillerRabin.X86_64.RoundImpl) (e : Proof.Ffdh.X86_64.ExpImpl) : List Artifact := [
+def artifacts (v : Proof.MillerRabin.X86_64.RoundImpl) (e : Proof.Ffdh.X86_64.ExpImpl) :
+    List (Artifact X86_64.target) := [
   Spec.Ffdh.checkPublicApi.artifact X86_64.target {
     suffix := qualifiedName "" [("mr", v.suffix), ("exp", e.suffix)]
     code := Impl.Ffdh.X86_64.Fn.checkPublic (Proof.Ffdh.X86_64.DomainScrub.level v e) v.mm (e.code v.mm)
@@ -55,7 +56,7 @@ end VG.Artifacts.Ffdh.X86_64.MillerRabinFfdhExp
 
 namespace VG.Artifacts.Ffdh.X86_64
 
-def artifacts : List Artifact :=
+def artifacts : List (Artifact X86_64.target) :=
   (VG.Proof.Variants.MillerRabin.X86_64.arithVariants.flatMap fun (v : Proof.MillerRabin.X86_64.RoundImpl) => [
     Spec.Ffdh.generationPrecomputeApi.artifact X86_64.target {
       suffix := v.suffix

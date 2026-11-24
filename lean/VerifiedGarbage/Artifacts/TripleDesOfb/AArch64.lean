@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.TripleDes.AArch64.FbVerified
 public import VerifiedGarbage.Proof.TripleDes.AArch64.FbFinalVerified
 public import VerifiedGarbage.Proof.TripleDes.AArch64.ModesResidue
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.AArch64.Print
+public import VerifiedGarbage.TCB.AArch64.Target
 import VerifiedGarbage.Proof.TripleDes.AArch64.FbLit
 import VerifiedGarbage.Proof.TripleDes.AArch64.FbFinalLit
 
@@ -15,7 +15,7 @@ import VerifiedGarbage.Proof.TripleDes.AArch64.FbFinalLit
 
 namespace VG.Artifacts.TripleDesOfb.AArch64
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact AArch64.target) := [
   Spec.TripleDes.ofbApi.artifact AArch64.target {
     code := Impl.TripleDes.AArch64.Fn.ofb
     verified := Proof.TripleDes.AArch64.ModesResidue.ofbCode_scrubbed },

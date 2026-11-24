@@ -6,7 +6,6 @@ public import VerifiedGarbage.Impl.Ecdh.P224.RISCV64
 public import VerifiedGarbage.Proof.Ecdh.RISCV64.P224.PublicKeyVerified
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Spec.EcKey.P224
-public import VerifiedGarbage.TCB.RISCV64.Print
 import VerifiedGarbage.Proof.Ecdh.RISCV64.P224.EcdhLit
 public import VerifiedGarbage.Proof.P224.RISCV64.Law
 public import VerifiedGarbage.Impl.EcKey.Compressed.P224.RISCV64
@@ -21,7 +20,7 @@ namespace VG.Artifacts.EcP224.RISCV64
 
 open VG.Proof.P224.RISCV64 (hasLaw)
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact RISCV64.target) := [
   Spec.EcKey.P224.inst.compressPublicKeyApi.artifact RISCV64.target {
     code := Impl.EcKey.Compressed.RISCV64.Fn.compressP224
     verified := Proof.EcKey.Compressed.RISCV64.P224.compress_scrubbed },

@@ -11,7 +11,7 @@ import Mathlib.Tactic.NormNum.Prime
 import Mathlib.Tactic.Positivity.Finset
 public import VerifiedGarbage.Proof.Ed448.PPC64LE.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.PPC64LE.Print
+public import VerifiedGarbage.TCB.PPC64LE.Target
 public import VerifiedGarbage.Proof.Ed448.PPC64LE.Whole.SignVerified
 public import VerifiedGarbage.Proof.Ed448.PPC64LE.Whole.VerifyVerified
 
@@ -21,7 +21,7 @@ public import VerifiedGarbage.Proof.Ed448.PPC64LE.Whole.VerifyVerified
 
 namespace VG.Artifacts.Ed448.PPC64LE
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact PPC64LE.target) := [
   Spec.Ed448.publicKeyApi.artifact PPC64LE.target {
     code := Impl.Ed448.PPC64LE.Fn.publicKey
     verified := Proof.Ed448.PPC64LE.Scrub.publicKey_scrubbed },

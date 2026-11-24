@@ -42,7 +42,6 @@ public import VerifiedGarbage.Proof.EcKey.AArch64.Lit
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.BoothLit
 public import VerifiedGarbage.Proof.Framework.Contract
 import Mathlib.Data.Finset.Card
-import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Impl.Ecdsa.P256.AArch64
 import VerifiedGarbage.Proof.Divstep.Bound
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedFixedDigitTiming
@@ -127,7 +126,7 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowTable
 public import VerifiedGarbage.Proof.Weierstrass.BytesLen
 public import VerifiedGarbage.Proof.Weierstrass.CombCheckFast
 public import VerifiedGarbage.Proof.Weierstrass.WinJacMath
-public import VerifiedGarbage.TCB.AArch64.Print
+public import VerifiedGarbage.TCB.AArch64.Target
 import VerifiedGarbage.Proof.Framework.Pratt
 import VerifiedGarbage.Proof.Weierstrass.JacInplace
 public import VerifiedGarbage.Proof.P256.AArch64.Law
@@ -148,7 +147,7 @@ open VG.Proof.P256.AArch64 (hasLaw)
 open VG.Proof.HmacTable.AArch64 (tables)
 open VG.Proof.Variants.MdHash.AArch64 (variants hashes)
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact AArch64.target) := [
   Spec.Ecdsa.Rfc6979.Curves.p256SignApi.artifact AArch64.target {
     tables := [("hmac", tables variants)]
     code := Impl.Ecdsa.Rfc6979.AArch64.Fn.p256 hashes
@@ -161,7 +160,7 @@ namespace VG.Artifacts.EcdsaP256.AArch64
 
 open VG.Proof.P256.AArch64 (hasLaw)
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact AArch64.target) := [
   Spec.Ecdsa.P256.verifyHashApi.artifact AArch64.target {
     code := Impl.Ecdsa.Verify.AArch64.P256Allocated.Fn.verifyHash
     verified := Proof.Ecdsa.Verify.AArch64.allocatedVerifyHash_scrubbed hasLaw.law hasLaw.prime hasLaw.inv hasLaw.invToM (Proof.P256.gtabOk9 hasLaw.law) }] ++

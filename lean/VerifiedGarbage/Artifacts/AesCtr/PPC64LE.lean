@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.AesCtr.PPC64LE.Verified
 public import VerifiedGarbage.Proof.AesCtr.PPC64LE.Final
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Aes.PPC64LE.Scrub
-public import VerifiedGarbage.TCB.PPC64LE.Print
+public import VerifiedGarbage.TCB.PPC64LE.Target
 
 /-! # AES-CTR (NIST SP 800-38A §6.5) on PPC64LE -/
 
@@ -12,7 +12,7 @@ public import VerifiedGarbage.TCB.PPC64LE.Print
 
 namespace VG.Artifacts.AesCtr.PPC64LE
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact PPC64LE.target) := [
   Spec.Ctr.aesApi.artifact PPC64LE.target {
     code := Impl.Aes.PPC64LE.Fn.ctr
     verified := Proof.Aes.PPC64LE.Scrub.ctr_scrubbed },

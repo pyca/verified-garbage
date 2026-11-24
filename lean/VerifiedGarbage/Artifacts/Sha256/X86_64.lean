@@ -4,7 +4,7 @@ public import VerifiedGarbage.Impl.Sha256.X86_64.Fn
 public import VerifiedGarbage.Proof.Sha256.X86_64.Shared
 public import VerifiedGarbage.Proof.Sha256.X86_64.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.X86_64.Print
+public import VerifiedGarbage.TCB.X86_64.Target
 import VerifiedGarbage.Proof.Sha256.X86_64.Avx2.Lit
 import VerifiedGarbage.Proof.Sha256.X86_64.Lit
 public import VerifiedGarbage.Proof.Blake2.X86_64.Backend
@@ -33,7 +33,7 @@ public import VerifiedGarbage.Proof.Variants.MdHash.X86_64
 
 namespace VG.Artifacts.Sha256.X86_64
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact X86_64.target) := [
   Spec.Sha256.init224Api.artifact X86_64.target { code := Impl.Sha256.X86_64.Fn.init224, verified := Proof.Sha256.X86_64.init224_scrubbed, spSafe := Proof.Sha256.X86_64.init224_spSafe },
   Spec.Sha256.initApi.artifact X86_64.target { code := Impl.Sha256.X86_64.Fn.init, verified := Proof.Sha256.X86_64.init_scrubbed, spSafe := Proof.Sha256.X86_64.init_spSafe }] ++
   (VG.Proof.Variants.MdHash.X86_64.sha224Streams.flatMap

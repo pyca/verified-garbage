@@ -8,7 +8,7 @@ public import VerifiedGarbage.Proof.X448.X86.Exchange
 public import VerifiedGarbage.Proof.X448.X86.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Impl.X448.X86.Base
-public import VerifiedGarbage.TCB.X86.Print
+public import VerifiedGarbage.TCB.X86.Target
 
 /-! # X448 (RFC 7748) on x86 -/
 
@@ -16,7 +16,7 @@ public import VerifiedGarbage.TCB.X86.Print
 
 namespace VG.Artifacts.X448.X86
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact X86.target) := [
   Spec.X448.exchangeApi.artifact X86.target {
     code := Impl.X448.X86.Fn.exchange
     verified := Proof.X448.X86.Scrub.exchange_scrubbed },

@@ -7,7 +7,7 @@ public import VerifiedGarbage.Proof.Rc2.PPC64LE.Stream.Frame
 public import VerifiedGarbage.Proof.Rc2.PPC64LE.Cbc.Chained
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Rc2.PPC64LE.Scrub
-public import VerifiedGarbage.TCB.PPC64LE.Print
+public import VerifiedGarbage.TCB.PPC64LE.Target
 
 /-! # RC2 on PPC64LE -/
 
@@ -15,7 +15,7 @@ public import VerifiedGarbage.TCB.PPC64LE.Print
 
 namespace VG.Artifacts.Rc2.PPC64LE
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact PPC64LE.target) := [
   Spec.Rc2.cbcInitApi.artifact PPC64LE.target {
     code := Impl.Rc2.PPC64LE.Fn.cbcInit
     verified := Proof.Rc2.PPC64LE.Scrub.cbcInit_scrubbed },

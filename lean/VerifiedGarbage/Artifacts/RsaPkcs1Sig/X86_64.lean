@@ -4,7 +4,7 @@ public import VerifiedGarbage.Impl.RsaPkcs1Sig.X86_64.Fn
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.Scrub
 public import VerifiedGarbage.Proof.Variants.RsaPrivateCrt.X86_64
 public import VerifiedGarbage.Proof.Variants.RsaPublicPrecomputed.X86_64
-public import VerifiedGarbage.TCB.X86_64.Print
+public import VerifiedGarbage.TCB.X86_64.Target
 
 /-! # RSASSA-PKCS1-v1_5 (RFC 8017) on x86-64 -/
 
@@ -17,7 +17,7 @@ open VG.Proof.Rsa.X86_64 (PublicImpl)
 open VG.Proof.Rsa.X86_64 (CrtImpl)
 open VG.Proof.RsaPkcs1Sig.X86_64
 
-def artifacts : List Artifact :=
+def artifacts : List (Artifact X86_64.target) :=
   (VG.Proof.Variants.RsaPrivateCrt.X86_64.variants.flatMap fun (v : CrtImpl) => [
     Spec.RsaPkcs1Sig.signPrecomputedApi.artifact X86_64.target {
       suffix := v.suffix

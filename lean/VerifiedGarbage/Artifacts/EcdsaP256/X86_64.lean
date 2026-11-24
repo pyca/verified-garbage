@@ -24,7 +24,6 @@ public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.LitErase
 public import VerifiedGarbage.Spec.Ecdsa.Verify.P256
 public import VerifiedGarbage.Impl.Ecdsa.X86_64.VerifyHash
 public import VerifiedGarbage.Proof.P256.GTable9
-import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Weierstrass.Law
 import VerifiedGarbage.Impl.Ecdsa.P256.X86_64
 import VerifiedGarbage.Impl.Ecdsa.Verify.P256.X86_64
@@ -88,7 +87,7 @@ public import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombJ
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombJDigit
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombSelectY
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinLoop
-public import VerifiedGarbage.TCB.X86_64.Print
+public import VerifiedGarbage.TCB.X86_64.Target
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JacMixedAdd
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JointFixedLoad
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JointFixedPoint
@@ -109,7 +108,7 @@ open VG.Proof.Ecdsa.Rfc6979.X86_64 (signCodeT OK p256Of p256T_verified signCode_
 open VG.Proof.HmacTable.X86_64 (tables names)
 open VG.Proof.Variants.MdHash.X86_64 (variants)
 
-def artifacts : List Artifact :=
+def artifacts : List (Artifact X86_64.target) :=
   if hv : OK variants ∧ "VG_P256_COMB" ∉ names variants then [
     Spec.Ecdsa.Rfc6979.Curves.p256SignApi.artifact X86_64.target
       { tables := [("hmac", tables variants)]
@@ -130,7 +129,7 @@ namespace VG.Artifacts.EcdsaP256.X86_64
 
 open VG.Proof.P256.X86_64 (hasLaw)
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact X86_64.target) := [
   Spec.Ecdsa.P256.verifyHashApi.artifact X86_64.target
     { suffix := "_ifma"
       code := Impl.Ecdsa.X86_64.VerifyHash.Fn.verifyHashEvex Spec.Ecdsa.P256.inst.curve.len false Impl.Ecdsa.Verify.X86_64.jointVerifyP256Ifma

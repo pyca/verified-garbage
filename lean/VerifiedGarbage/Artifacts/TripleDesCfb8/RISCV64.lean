@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.TripleDes.RISCV64.Scrub
 public import VerifiedGarbage.Impl.TripleDes.RISCV64.Fn
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.RISCV64.Print
+public import VerifiedGarbage.TCB.RISCV64.Target
 import VerifiedGarbage.Proof.TripleDes.RISCV64.ModesLit
 
 /-! # Triple DES-CFB8 on RISC-V -/
@@ -12,7 +12,7 @@ import VerifiedGarbage.Proof.TripleDes.RISCV64.ModesLit
 
 namespace VG.Artifacts.TripleDesCfb8.RISCV64
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact RISCV64.target) := [
   Spec.TripleDes.cfb8EncryptApi.artifact RISCV64.target {
     code := Impl.TripleDes.RISCV64.Fn.cfb8Encrypt
     verified := Proof.TripleDes.RISCV64.Scrub.cfb8Encrypt_scrubbed },

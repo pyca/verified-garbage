@@ -7,7 +7,6 @@ public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Ecdsa.RISCV64.P192.VerifyVerified
 public import VerifiedGarbage.Spec.Ecdsa.Verify.P192
 public import VerifiedGarbage.Impl.Ecdsa.RISCV64.VerifyHash
-public import VerifiedGarbage.TCB.RISCV64.Print
 import VerifiedGarbage.Proof.Ecdsa.RISCV64.P192.VerifyLit
 public import VerifiedGarbage.Proof.P192.RISCV64.Law
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.RISCV64.P192
@@ -25,7 +24,7 @@ open VG.Proof.P192.RISCV64 (hasLaw)
 open VG.Proof.HmacTable.RISCV64 (tables)
 open VG.Proof.Variants.MdHash.RISCV64 (variants fns)
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact RISCV64.target) := [
   Spec.Ecdsa.Rfc6979.Curves.p192SignApi.artifact RISCV64.target {
     tables := [("hmac", tables variants)]
     code := Impl.Ecdsa.Rfc6979.RISCV64.Fn.p192 fns
@@ -37,7 +36,7 @@ namespace VG.Artifacts.EcdsaP192.RISCV64
 
 open VG.Proof.P192.RISCV64 (hasLaw)
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact RISCV64.target) := [
   Spec.Ecdsa.P192.verifyHashApi.artifact RISCV64.target {
     code := Impl.Ecdsa.RISCV64.Fn.verifyP192
     verified := Proof.Ecdsa.RISCV64.P192.verifyHash_scrubbed hasLaw.law }] ++

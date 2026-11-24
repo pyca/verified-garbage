@@ -4,7 +4,6 @@ public import VerifiedGarbage.TCB.RISCV64.Target
 public import VerifiedGarbage.Proof.Blake2.RISCV64.Scrub
 public import VerifiedGarbage.Impl.Blake2.RISCV64.Fn
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.RISCV64.Print
 import VerifiedGarbage.Proof.Blake2.RISCV64.Lit
 import VerifiedGarbage.Proof.Blake2.RISCV64.Stream.Lit
 
@@ -14,7 +13,7 @@ import VerifiedGarbage.Proof.Blake2.RISCV64.Stream.Lit
 
 namespace VG.Artifacts.Blake2b.RISCV64
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact RISCV64.target) := [
   Spec.Blake2.initBApi.artifact RISCV64.target {
     code := Impl.Blake2.RISCV64.Fn.initB
     verified := Proof.Blake2.RISCV64.initB_scrubbed },

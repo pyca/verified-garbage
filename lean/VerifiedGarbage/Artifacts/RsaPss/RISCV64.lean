@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.RsaPss.RISCV64.Fn
 public import VerifiedGarbage.Spec.RsaPss.MdTable
-public import VerifiedGarbage.TCB.RISCV64.Print
+public import VerifiedGarbage.TCB.RISCV64.Target
 
 /-! # RSASSA-PSS (RFC 8017) on RISC-V -/
 
@@ -14,7 +14,7 @@ namespace VG.Artifacts.RsaPss.RISCV64
 open VG.Proof.RsaPss.RISCV64 (OK)
 open VG.Proof.MdHashTable.RISCV64 (vars tables fnsOf fns3)
 
-def artifacts : List Artifact :=
+def artifacts : List (Artifact RISCV64.target) :=
   if h : OK vars vars then [
     Spec.RsaPss.verifyPrecomputedMdTableApi.artifact RISCV64.target {
       tables := [("hash", tables vars), ("mgf1", tables vars)]

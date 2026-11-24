@@ -6,7 +6,7 @@ public import VerifiedGarbage.Impl.AesGcm.AArch64.Fn
 public import VerifiedGarbage.Impl.Gcm.AArch64.Fn
 public import VerifiedGarbage.Proof.AesGcm.AArch64.GhashImpls
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.AArch64.Print
+public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Variants.AesGcm.AArch64
 
 /-! # AES-GCM (NIST SP 800-38D) on AArch64 -/
@@ -18,7 +18,7 @@ namespace VG.Artifacts.AesGcm.AArch64
 open VG.Proof.AesGcm.AArch64
 
 /-- The initialization and stream functions of the variant `g`. -/
-def artifactsOf (g : GcmVariant) : List Artifact := [
+def artifactsOf (g : GcmVariant) : List (Artifact AArch64.target) := [
   Spec.Gcm.initApi.artifact AArch64.target {
     suffix := g.impl.suffix
     code := Impl.AesGcm.AArch64.Fn.init g.calls
@@ -50,7 +50,7 @@ def artifactsOf (g : GcmVariant) : List Artifact := [
 
 /-- The initialization and stream functions of the variant `g`, which call
 its implementations by the addresses in `d8` and `d9`. -/
-def artifactsDS (g : GcmVariant) : List Artifact := [
+def artifactsDS (g : GcmVariant) : List (Artifact AArch64.target) := [
   Spec.Gcm.initApi.artifact AArch64.target {
     suffix := g.impl.suffix
     code := Impl.AesGcm.AArch64.Fn.initDS g.calls
@@ -81,7 +81,7 @@ def artifactsDS (g : GcmVariant) : List Artifact := [
     verified := Proof.AesGcm.AArch64.streamVerifyDS_scrubbed g }]
 
 /-- Contiguous seal over identical or separate buffers, using the same code for each layout. -/
-def contiguousArtifact (g : GcmVariant) : Artifact :=
+def contiguousArtifact (g : GcmVariant) : Artifact AArch64.target :=
   Spec.Gcm.sealContiguousWithPowersApi.artifact AArch64.target {
     suffix := g.impl.suffix
     code := Impl.AesGcm.AArch64.Contiguous.select g.calls GhashWithImpl.aes.fn
@@ -89,7 +89,7 @@ def contiguousArtifact (g : GcmVariant) : Artifact :=
       (Proof.AesGcm.AArch64.Contiguous.backendFacts g.impl GhashWithImpl.aes) }
 
 /-- The gather implementation consumes the original input slices on each backend. -/
-def gatherArtifact (g : GcmVariant) : Artifact :=
+def gatherArtifact (g : GcmVariant) : Artifact AArch64.target :=
   Spec.Gcm.sealGatherApi.artifact AArch64.target {
     suffix := g.impl.suffix
     code := Impl.AesGcm.AArch64.DirectGather.sealGather g.calls
@@ -98,7 +98,7 @@ def gatherArtifact (g : GcmVariant) : Artifact :=
 /-- `vg_aes_gcm_seal_with_powers`, `vg_aes_gcm_open_with_powers` and
 `vg_aes_gcm_open_to_with_powers` of the variant `g`, calling `w` on the path
 for TLS records. -/
-def withPowersArtifacts (g : GcmVariant) (w : GhashWithImpl) : List Artifact := [
+def withPowersArtifacts (g : GcmVariant) (w : GhashWithImpl) : List (Artifact AArch64.target) := [
   Spec.Gcm.sealWithPowersApi.artifact AArch64.target {
     suffix := g.impl.suffix
     code := Impl.AesGcm.AArch64.Fn.sealWithPowers g.calls w.fn
@@ -115,7 +115,7 @@ def withPowersArtifacts (g : GcmVariant) (w : GhashWithImpl) : List Artifact := 
 /-- `vg_aes_gcm_seal_with_powers`, `vg_aes_gcm_open_with_powers` and
 `vg_aes_gcm_open_to_with_powers` of a variant without code that reads the
 powers: its `seal`, `open` and `open_to`. -/
-def basePwArtifacts (g : GcmVariant) : List Artifact := [
+def basePwArtifacts (g : GcmVariant) : List (Artifact AArch64.target) := [
   Spec.Gcm.sealWithPowersApi.artifact AArch64.target {
     suffix := g.impl.suffix
     code := Impl.AesGcm.AArch64.Fn.sealWithPowersBase g.calls
@@ -132,12 +132,12 @@ def basePwArtifacts (g : GcmVariant) : List Artifact := [
 /-- The artifacts of a variant: the functions it has (`GcmVariant.whole`,
 `withPowers`, `basePowers`), calling its implementations directly or by
 their addresses (`GcmVariant.direct`, `viaRegs`). -/
-def artifactsFor (g : GcmVariant) : List Artifact :=
+def artifactsFor (g : GcmVariant) : List (Artifact AArch64.target) :=
   (g.whole.flatMap GcmVariant.direct).flatMap artifactsOf ++ (g.whole.flatMap GcmVariant.viaRegs).flatMap artifactsDS ++
     [gatherArtifact g, contiguousArtifact g] ++
     g.withPowers.flatMap (withPowersArtifacts g) ++ g.basePowers.flatMap basePwArtifacts
 
-def artifacts : List Artifact :=
+def artifacts : List (Artifact AArch64.target) :=
   VG.Proof.Variants.AesGcm.AArch64.variants.flatMap artifactsFor ++ [
     Spec.Gcm.storePowersApi.artifact AArch64.target {
       code := Impl.AesGcm.AArch64.Fn.storePowers
