@@ -74,7 +74,8 @@ def hashTrimmed : Prog isa :=
   .seq (.block prologueW) <|
   .seq (chooseGroup 129
     (.ite (.zero .x .x24) (chooseGroup 113 (.block (advance 8)) (firstHashGroup 1)) (firstHashGroup 2))
-    (chooseGroup 161 (firstHashGroup 4) (firstHashGroup 8)))
+    (chooseGroup 161 (.ite (.zero .x .x24) (firstHashGroup 3) (firstHashGroup 4))
+      (.ite (.zero .x .x24) (chooseGroup 193 (firstHashGroup 5) (firstHashGroup 7)) (firstHashGroup 8))))
     (.block (Gcm.AArch64.Pmull.body 8 ++ [.vop (.rev .rev64b .v16 .v0)]))
 
 /-- Everything up to loading the tag pointer, before the final store. -/

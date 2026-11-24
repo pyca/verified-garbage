@@ -47,7 +47,7 @@ abbrev groupFlag (s : State) (n : Nat) := (s.gpr .x26 - BitVec.ofNat 64 n) >>> 6
 
 /-- Both the CTR lane count and the initial GHASH group are selected by the
 same public-length test. Only x11 changes before entering the selected arm. -/
-theorem chooseGroup_ok {s : State} {n : Nat} (cut : n=113 ∨ n=129 ∨ n=161)
+theorem chooseGroup_ok {s : State} {n : Nat} (cut : n=113 ∨ n=129 ∨ n=161 ∨ n=193)
     {yes no : Prog isa} {Q : State → Prop}
     (yesOk : groupFlag s n ≠ 0 → WP isa yes (s.write .x .x11 (groupFlag s n)) Q)
     (noOk : ¬ groupFlag s n ≠ 0 → WP isa no (s.write .x .x11 (groupFlag s n)) Q) :
@@ -56,7 +56,7 @@ theorem chooseGroup_ok {s : State} {n : Nat} (cut : n=113 ∨ n=129 ∨ n=161)
   let u := (s.write .x .x11 d).write .x .x11 (groupFlag s n)
   apply WP.seq
   refine WP.of_runBlock ⟨u,?_,?_⟩
-  · rcases cut with rfl|rfl|rfl <;> arun []
+  · rcases cut with rfl|rfl|rfl|rfl <;> arun []
   · by_cases hit : groupFlag s n ≠ 0
     · apply WP.ite _ (show isa.eval (.nonzero .x .x11) u = some true from by
         change some (!(groupFlag s n == (0:Addr))) = _; simpa using hit)
@@ -106,10 +106,9 @@ abbrev Hash16Ok := ∀ (s : State), nb s = 16 →
       t.sp = s.sp ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.gpr .x19 = s.gpr .x19
 
 /-- Size-dependent ranges of known zero GHASH input before the first AAD block. -/
-abbrev TrimZeros (s : State) (addr : Addr) : Prop :=
-  ∀ k, (k=6 ∧ ((s.gpr .x26-129#64) >>> 63) ≠ 0) ∨ (k=4 ∧ ((s.gpr .x26-161#64) >>> 63) ≠ 0) ∨
-    (s.gpr .x24 = 0 ∧ ((k=7 ∧ ((s.gpr .x26-129#64) >>> 63) ≠ 0) ∨
-      (k=8 ∧ ((s.gpr .x26-113#64) >>> 63) ≠ 0))) →
+structure TrimZeros (s : State) (addr : Addr) : Prop where
+  bounded : (s.gpr .x26).toNat ≤ 224
+  blocks : ∀ k, k ≤ 14 - ((s.gpr .x26).toNat + 15) / 16 + (if s.gpr .x24 = 0 then 1 else 0) →
     blocksAt s.mem addr k = List.replicate k 0
 
 abbrev Hash16WithOk := ∀ (s : State), nb s = 16 →
@@ -166,9 +165,10 @@ theorem mediumHashWith_ok {cached : Bool} (hash : MediumCoreOk cached) (s : Stat
         change Spec.Gcm.Powers8Repr u.mem (u.gpr .x5) (blockAt u.mem (u.gpr .x0))
         rw [mem,x5,k]; exact (powers rfl).repr
       have z : TrimZeros u (VG.Proof.Gcm.AArch64.dp u) := by
+        refine ⟨x26 ▸ (trim rfl).bounded,?_⟩
         intro i h; change blocksAt u.mem (u.gpr .x2) i = _
         rw [x24,x26] at h
-        rw [mem,d]; exact trim rfl i h
+        rw [mem,d]; exact (trim rfl).blocks i h
       have init : VG.Proof.Gcm.AArch64.Y₀ u = 0 := by
         change blockAt u.mem (u.gpr .x1) = 0
         rw [mem,y,hy]
@@ -227,22 +227,12 @@ private theorem transcriptZeros {o s l : State} {W : Addr} {lead tagOff : Nat} {
   simp only [List.append_assoc] at data
   have mem := bytesAt_frame lf (by simpa only [List.mem_singleton, forall_eq] using (Offset.disjoint W (d := 480) (n := 240) (e := 720) (k := 16) (.inl (by decide)) (by decide) (by decide))) (by decide)
   have len : (l.gpr .x26).toNat = d.len.toNat := by rw [lengthReg,p.x26,BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt d.len.isLt
+  refine ⟨len ▸ shape.2,?_⟩
   intro k h
-  have small {n : Nat} (threshold : n = 113 ∨ n = 129 ∨ n = 161)
-      (hit : ((l.gpr .x26 - BitVec.ofNat 64 n) >>> 63) ≠ 0) : d.len.toNat < n := by
-    by_contra negative
-    have lower : n ≤ (l.gpr .x26).toNat := by omega_using [negative,len]
-    apply hit
-    apply BitVec.eq_of_toNat_eq
-    have nfit : (BitVec.ofNat 64 n).toNat = n := by rcases threshold with rfl|rfl|rfl <;> rfl
-    have le : BitVec.ofNat 64 n ≤ l.gpr .x26 := by change (BitVec.ofNat 64 n).toNat ≤ _; rwa [nfit]
-    rw [BitVec.toNat_ushiftRight,Nat.shiftRight_eq_div_pow,BitVec.toNat_sub_of_le le,nfit]
-    apply Nat.div_eq_of_lt
-    exact Nat.lt_of_le_of_lt (Nat.sub_le _ _) (by omega_using [shape,len] : (l.gpr .x26).toNat < 9223372036854775808)
-  rcases h with ⟨rfl,hit⟩ | ⟨rfl,hit⟩ | ⟨empty,ext⟩
-  · exact zeroBlocks (mem.trans data) (by omega_using [shape,small (.inr (.inl rfl)) hit]) (by decide)
-  · exact zeroBlocks (mem.trans data) (by omega_using [shape,small (.inr (.inr rfl)) hit]) (by decide)
-  · have al : AL o = 0 := by
+  rw [len,← shape.1] at h
+  by_cases empty : l.gpr .x24 = 0
+  · simp only [empty,ite_true] at h
+    have al : AL o = 0 := by
       rw [aadReg,p.x24] at empty
       have hh := congrArg BitVec.toNat empty
       change (o.gpr .x5).toNat = 0
@@ -253,9 +243,9 @@ private theorem transcriptZeros {o s l : State} {W : Addr} {lead tagOff : Nat} {
     have joined : zeros (16*lead) ++ zeros 16 = zeros (16*(lead+1)) := by
       unfold zeros; rw [List.replicate_append_replicate]; congr 1 <;> omega
     rw [joined] at data
-    rcases ext with ⟨rfl,hit⟩ | ⟨rfl,hit⟩
-    · exact zeroBlocks (mem.trans data) (by omega_using [shape,small (.inr (.inl rfl)) hit]) (by decide)
-    · exact zeroBlocks (mem.trans data) (by omega_using [shape,small (.inl rfl) hit]) (by decide)
+    exact zeroBlocks (mem.trans data) h (by omega_using [h,shape])
+  · simp only [empty,ite_false,Nat.add_zero] at h
+    exact zeroBlocks (mem.trans data) h (by omega_using [h,shape])
 
 abbrev finishProgram (cached : Bool) (tagOff : Nat := 768) : Prog isa :=
   if cached then Medium.finishCached tagOff else .block (Medium.finish tagOff)

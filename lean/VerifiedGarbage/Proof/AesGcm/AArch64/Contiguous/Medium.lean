@@ -525,7 +525,7 @@ private theorem chooseWidth {o s : State} (n : Nat) (cut : n=129 ∨ n=161)
     (small : ∀ flag, len o < n → WP isa yes (s.write .x .x11 flag) Q)
     (large : ∀ flag, WP isa no (s.write .x .x11 flag) Q) :
     WP isa (Medium.chooseGroup n yes no) s Q := by
-  apply chooseGroup_ok (.inr cut)
+  apply chooseGroup_ok (by omega_using [cut])
   · intro hit
     apply small
     by_contra bad

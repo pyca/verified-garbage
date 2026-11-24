@@ -2596,7 +2596,7 @@ open VG.Proof.Gcm.Clmul
 open VG.Impl.Gcm.AArch64.Pmull (prologueW body advance)
 open VG.Impl.AesGcm.AArch64.DirectGather.Medium (chooseGroup firstHashGroup hashTrimmed)
 
-private theorem runChoice {n : Nat} (bound : n=113 ∨ n=129 ∨ n=161) {yes no : Prog isa} {base s : State}
+private theorem runChoice {n : Nat} (bound : n=113 ∨ n=129 ∨ n=161 ∨ n=193) {yes no : Prog isa} {base s : State}
     (inv : Inv base 8 0 s) (Q : State → Prop)
     (left : ∀ t, ((s.gpr .x26 - BitVec.ofNat 64 n) >>> 63) ≠ 0 → t.gpr .x26=s.gpr .x26 → t.gpr .x24=s.gpr .x24 → Inv base 8 0 t → WP isa yes t Q)
     (right : ∀ t, ¬ ((s.gpr .x26 - BitVec.ofNat 64 n) >>> 63) ≠ 0 → t.gpr .x26=s.gpr .x26 → t.gpr .x24=s.gpr .x24 → Inv base 8 0 t → WP isa no t Q) :
@@ -2605,7 +2605,7 @@ private theorem runChoice {n : Nat} (bound : n=113 ∨ n=129 ∨ n=161) {yes no 
     ⟨inv.le,inv.c,inv.t,inv.sw,inv.y,inv.x0,inv.x1,inv.x2,inv.x3,inv.x5,inv.mem,inv.rd,inv.wr⟩
   exact chooseGroup_ok bound (fun hit => left _ hit rfl rfl keep) (fun hit => right _ hit rfl rfl keep)
 
-private theorem shortGroup {k : Nat} (hk : k=1 ∨ k=2 ∨ k=4) {u t : State} (hp : Pm u) (N : nb u=16)
+private theorem shortGroup {k : Nat} (hk : 0 < k ∧ k < 8) {u t : State} (hp : Pm u) (N : nb u=16)
     (zero : Ys u 0 = Ys u (8-k)) (inv : Inv u 8 0 t) :
     WP isa (firstHashGroup k) t (Inv u 8 8) := by
   have ne : k≠8 := by omega_using [hk]
@@ -2623,11 +2623,17 @@ theorem zeroFold {s : State} {k : Nat} (init : Y₀ s = 0)
   rw [z,init]
   simpa only [List.append_nil] using (Proof.Gcm.ghashFrom_zeros (H₀ s) k []).symm
 
-theorem trimmedHash_at (s : State) (hn : nb s=16)
-    (six : ((s.gpr .x26-129#64) >>> 63) ≠ 0 → Ys s 0 = Ys s 6)
-    (seven : s.gpr .x24 = 0 → ((s.gpr .x26-129#64) >>> 63) ≠ 0 → Ys s 0 = Ys s 7)
-    (eight : s.gpr .x24 = 0 → ((s.gpr .x26-113#64) >>> 63) ≠ 0 → Ys s 0 = Ys s 8)
-    (four : ((s.gpr .x26-161#64) >>> 63) ≠ 0 → Ys s 0 = Ys s 4)
+private theorem belowThreshold {s : State} {addr : Addr} (z : TrimZeros s addr) (n : Nat) (hn : n ≤ 193)
+    (hit : ((s.gpr .x26 - BitVec.ofNat 64 n) >>> 63) ≠ 0) : (s.gpr .x26).toNat < n := by
+  by_contra! neg
+  have fit : (BitVec.ofNat 64 n).toNat = n := Nat.mod_eq_of_lt (by omega_using [hn])
+  have le : BitVec.ofNat 64 n ≤ s.gpr .x26 := by change (BitVec.ofNat 64 n).toNat ≤ _; rwa [fit]
+  apply hit
+  apply BitVec.eq_of_toNat_eq
+  rw [BitVec.toNat_ushiftRight,Nat.shiftRight_eq_div_pow,BitVec.toNat_sub_of_le le,fit]
+  exact Nat.div_eq_of_lt (by omega_using [z.bounded])
+
+theorem trimmedHash_at (s : State) (hn : nb s=16) (z : TrimZeros s (dp s)) (init : Y₀ s = 0)
     (hc : Covers ([hR s,Proof.Gcm.AArch64.dR s,⟨s.gpr .x5,128⟩] ++ [yR s]) (s.rd ++ s.wr))
     (hw : Covers [yR s] s.wr) (hd : (yR s).Disjoint (Proof.Gcm.AArch64.dR s))
     (repr : Spec.Gcm.Powers8Repr s.mem (s.gpr .x5) (H₀ s)) :
@@ -2643,6 +2649,10 @@ theorem trimmedHash_at (s : State) (hn : nb s=16)
     y_in := List.mem_singleton_self _
     y_d := hd }
   have N : nb u = 16 := hn
+  have leading {k : Nat} (h : k ≤ 14 - ((s.gpr .x26).toNat+15)/16) : Ys s 0 = Ys s k :=
+    zeroFold init (z.blocks k (Nat.le_trans h (Nat.le_add_right ..)))
+  have noAad {k : Nat} (e : s.gpr .x24 = 0) (h : k ≤ 14 - ((s.gpr .x26).toNat+15)/16 + 1) :
+      Ys s 0 = Ys s k := zeroFold init (z.blocks k (by simpa only [e,ite_true] using h))
   have go : WP isa hashTrimmed u fun z =>
       z.v .v16 = VRevOp.eval .rev64b (ext8 (Ys u 16) (Ys u 16)) ∧ z.mem=u.mem := by
     apply WP.seq
@@ -2652,25 +2662,48 @@ theorem trimmedHash_at (s : State) (hn : nb s=16)
     have al : t.gpr .x24 = s.gpr .x24 := keep _ (by simp)
     apply WP.seq
     refine (runChoice (n:=129) (.inr (.inl rfl)) inv (Inv u 8 8) ?_ ?_).mono ?_
-    · intro z small zlen za i
+    · intro z₁ small zlen za i
       have hlen := len ▸ small
-      by_cases empty : z.gpr .x24 = 0
+      by_cases empty : z₁.gpr .x24 = 0
       · have emptyS : s.gpr .x24 = 0 := (za.trans al).symm.trans empty
-        apply WP.ite _ (show isa.eval (.zero .x .x24) z = some true from by change some (z.gpr .x24 == (0:Addr)) = _; simp [empty])
+        apply WP.ite _ (show isa.eval (.zero .x .x24) z₁ = some true from by change some (z₁.gpr .x24 == (0:Addr)) = _; simp [empty])
         · intro _
           apply runChoice (n:=113) (.inl rfl) i
           · intro y hit _ _ j
-            exact advanceLeading (by omega_using [N]) (by decide) (eight emptyS ((zlen.trans len) ▸ hit)) j
-          · intro y _ _ _ j; exact shortGroup (k:=1) (.inl rfl) hp N (seven emptyS hlen) j
+            exact advanceLeading (by omega_using [N]) (by decide) (noAad emptyS (by omega_using [belowThreshold z 113 (by decide) ((zlen.trans len) ▸ hit)])) j
+          · intro y _ _ _ j; exact shortGroup (k:=1) (by decide) hp N (noAad emptyS (by omega_using [belowThreshold z 129 (by decide) hlen])) j
         · intro bad; contradiction
-      · apply WP.ite _ (show isa.eval (.zero .x .x24) z = some false from by change some (z.gpr .x24 == (0:Addr)) = _; simpa using empty)
+      · apply WP.ite _ (show isa.eval (.zero .x .x24) z₁ = some false from by change some (z₁.gpr .x24 == (0:Addr)) = _; simpa using empty)
         · intro bad; contradiction
-        · intro _; exact shortGroup (k:=2) (.inr (.inl rfl)) hp N (six hlen) i
-    · intro z _ zlen _ i
-      apply runChoice (n:=161) (.inr (.inr rfl)) i
-      · intro y small _ _ j; exact shortGroup (k:=4) (.inr (.inr rfl)) hp N (four ((zlen.trans len) ▸ small)) j
-      · intro y _ _ _ j
-        simpa only [firstHashGroup,ite_true,List.nil_append] using body_ok hp (k:=8) (by decide) (by decide) (by decide) (by rw [N]; decide) j
+        · intro _; exact shortGroup (k:=2) (by decide) hp N (leading (by omega_using [belowThreshold z 129 (by decide) hlen])) i
+    · intro t₁ _ n₁ a₁ i
+      apply runChoice (n:=161) (by decide) i
+      · intro t₂ hit _ a₂ j
+        have small := belowThreshold z 161 (by decide) ((n₁.trans len) ▸ hit)
+        have env := a₂.trans (a₁.trans al)
+        by_cases empty : t₂.gpr .x24 = 0
+        · apply WP.ite _ (show isa.eval (.zero .x .x24) t₂ = some true from by change some (t₂.gpr .x24 == (0:Addr)) = _; simp [empty])
+          · intro _; exact shortGroup (k:=3) (by decide) hp N (noAad (env.symm.trans empty) (by omega_using [small])) j
+          · intro bad; cases bad
+        · apply WP.ite _ (show isa.eval (.zero .x .x24) t₂ = some false from by change some (t₂.gpr .x24 == (0:Addr)) = _; simpa using empty)
+          · intro bad; cases bad
+          · intro _; exact shortGroup (k:=4) (by decide) hp N (leading (by omega_using [small])) j
+      · intro t₂ _ n₂ a₂ j
+        have env := a₂.trans (a₁.trans al)
+        by_cases empty : t₂.gpr .x24 = 0
+        · apply WP.ite _ (show isa.eval (.zero .x .x24) t₂ = some true from by change some (t₂.gpr .x24 == (0:Addr)) = _; simp [empty])
+          · intro _
+            apply runChoice (n:=193) (by decide) j
+            · intro t₃ hit _ _ j
+              have small := belowThreshold z 193 (by decide) ((n₂.trans (n₁.trans len)) ▸ hit)
+              exact shortGroup (k:=5) (by decide) hp N (noAad (env.symm.trans empty) (by omega_using [small])) j
+            · intro t₃ _ _ _ j
+              exact shortGroup (k:=7) (by decide) hp N (noAad (env.symm.trans empty) (by omega_using [z.bounded])) j
+          · intro bad; cases bad
+        · apply WP.ite _ (show isa.eval (.zero .x .x24) t₂ = some false from by change some (t₂.gpr .x24 == (0:Addr)) = _; simpa using empty)
+          · intro bad; cases bad
+          · intro _
+            simpa only [firstHashGroup,ite_true,List.nil_append] using body_ok hp (k:=8) (by decide) (by decide) (by decide) (by rw [N]; decide) j
     · intro z first
       rw [WP.block_append_iff]
       refine (body_ok hp (k:=8) (by decide) (by decide) (by decide) (by rw [N]) first).mono ?_
@@ -2797,11 +2830,7 @@ theorem backendFacts (v : GcmImpl) (g : GhashWithImpl) : BackendFacts v g :=
     Standalone.body_ok v Proof.Gcm.AArch64.Pmull.mulV_keyV (fun _ => Proof.Gcm.AArch64.Stitch.gatherLaws) (scratch_le v),
     Standalone.body_rel v (fun _ => Proof.Gcm.AArch64.Stitch.gatherLaws) (scratch_le v),
     standaloneSide v,DirectGather.keepsV_of_gatherSide (standaloneReferenceSide v),preparedSide v g,fun f => DirectGather.keepsV_of_gatherSide (referenceSide v g f),
-    (fun s hn z init => DirectGather.trimmedHash_at s hn
-      (fun h => DirectGather.zeroFold init (z _ (.inl ⟨rfl,h⟩)))
-      (fun ha h => DirectGather.zeroFold init (z _ (.inr (.inr ⟨ha,.inl ⟨rfl,h⟩⟩))))
-      (fun ha h => DirectGather.zeroFold init (z _ (.inr (.inr ⟨ha,.inr ⟨rfl,h⟩⟩))))
-      (fun h => DirectGather.zeroFold init (z _ (.inr (.inl ⟨rfl,h⟩))))),Proof.Gcm.AArch64.Pmull.hashEightWith_at,Proof.Gcm.AArch64.Stitch.gh8Ok,Proof.Gcm.AArch64.Pmull.mulV_keyV,
+    DirectGather.trimmedHash_at,Proof.Gcm.AArch64.Pmull.hashEightWith_at,Proof.Gcm.AArch64.Stitch.gh8Ok,Proof.Gcm.AArch64.Pmull.mulV_keyV,
     Proof.Gcm.AArch64.Pmull.prepPow.key⟩
 
 end VG.Proof.AesGcm.AArch64.Contiguous
