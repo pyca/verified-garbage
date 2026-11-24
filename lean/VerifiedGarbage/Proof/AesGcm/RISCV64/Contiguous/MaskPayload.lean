@@ -85,6 +85,25 @@ theorem maskData_wp {V : Reg → BitVec 64} {sp : Addr} {s : State} {X D : Addr}
 
 abbrev dataFrame (st w D : Addr) (n : Nat) := ⟨D,n⟩ :: maskFrame st w
 
+theorem data_apart {D st w : Addr} {n : Nat} {r : Region} (rd : r.Disjoint ⟨D,n⟩)
+    (rw : r.Disjoint ⟨w+256,256⟩) (rs : r.Disjoint ⟨st,16⟩) (rk : r.Disjoint ⟨w+512,2048⟩) :
+    ∀ x ∈ dataFrame st w D n, r.Disjoint x := by
+  intro x hx
+  simp only [dataFrame,maskFrame,List.mem_cons,List.not_mem_nil,or_false] at hx
+  rcases hx with rfl | rfl | rfl | rfl
+  · exact rd
+  · exact rw
+  · exact rs
+  · exact rk
+
+theorem data_slot {V : Reg → BitVec 64} {s u : State} {D : Addr} {n : Nat}
+    (L : Lay (V .s2) (V .s1) (V .s0)) (dd : DataW (V .s2) (V .s1) (V .s0) s D n)
+    (fr : Frame (dataFrame (V .s1) (V .s0) D n) s.mem u.mem) :
+    u.mem.readW (V .s0+BitVec.ofNat 64 dataO) 64=s.mem.readW (V .s0+BitVec.ofNat 64 dataO) 64 :=
+  slot_keep fr (data_apart (dd.ok.w.symm.sub_left (Lay.wSub (by decide))) (Lay.w_w (.inl (by decide)) (by decide) (by decide))
+    (by simpa using (L.st_w (a := 0) (n := 16) (d := dataO) (k := 8) (by decide) (.inr ⟨by decide,by decide⟩)).symm)
+    (Lay.w_w (.inl (by decide)) (by decide) (by decide)))
+
 /-- Authenticate the ciphertext produced by the XOR loop in its final destination, and leave the tag in scratch. -/
 theorem shortPayload_wp [VG.Proof.Gcm.RISCV64.GhashLaw] {V : Reg → BitVec 64} {sp : Addr} {s : State} {X D : Addr}
     {R : Nat} {a : List Byte} {H : Block}
@@ -109,34 +128,19 @@ theorem shortPayload_wp [VG.Proof.Gcm.RISCV64.GhashLaw] {V : Reg → BitVec 64} 
   have hw := maskData_wp he L src dst (n := (V .s11).toNat) (by simpa using len) small xd dd alias rounds hR hb
   apply WP.seq
   refine WP.mono (WP.seq_iff.mp hw) fun _ run => WP.seq (WP.mono run fun u ⟨eu,ku,fr,mask,ct⟩ => ?_)
-  have apart {r : Region} (rd : r.Disjoint ⟨D,(V .s11).toNat⟩) (rw : r.Disjoint ⟨V .s0+256,256⟩)
-      (rs : r.Disjoint ⟨V .s1,16⟩) (rk : r.Disjoint ⟨V .s0+512,2048⟩) :
-      ∀ x ∈ dataFrame (V .s1) (V .s0) D (V .s11).toNat, r.Disjoint x := by
-    intro x hx
-    simp only [dataFrame,maskFrame,List.mem_cons,List.not_mem_nil,or_false] at hx
-    rcases hx with rfl | rfl | rfl | rfl
-    · exact rd
-    · exact rw
-    · exact rs
-    · exact rk
   have ctx : ∀ r ∈ dataFrame (V .s1) (V .s0) D (V .s11).toNat,(⟨V .s2,256⟩ : Region).Disjoint r :=
-    apart dd.ctx (L.cw'.sub_right (Lay.wSub (d := 256) (by decide))) (L.cs.sub_right (Region.sub_prefix (by decide)))
+    data_apart dd.ctx (L.cw'.sub_right (Lay.wSub (d := 256) (by decide))) (L.cs.sub_right (Region.sub_prefix (by decide)))
       (L.cw'.sub_right (Lay.wSub (d := 512) (by decide)))
   have H' := (blockAt_frame fr (fun r hr => (ctx r hr).sub_left (Offset.sub_base _ (d := 240) (by decide : 240+16≤256)))).trans hH
   have hashKeep (i : Nat) (hi : i=16 ∨ i=32) : ∀ r ∈ dataFrame (V .s1) (V .s0) D (V .s11).toNat,
-      (⟨V .s1+BitVec.ofNat 64 i,16⟩ : Region).Disjoint r := apart
+      (⟨V .s1+BitVec.ofNat 64 i,16⟩ : Region).Disjoint r := data_apart
     (dd.ok.st.symm.sub_left (Lay.stSub (by omega))) (L.st_w (by omega) (.inr ⟨by decide,by decide⟩))
     (by simpa using Lay.st_st (st := V .s1) (a := i) (n := 16) (d := 0) (k := 16) (.inr (by omega)) (by omega) (by decide))
     (L.st_w (by omega) (.inr ⟨by decide,by decide⟩))
   have ab : Absorbed u.mem (V .s1+BitVec.ofNat 64 16) (V .s1+BitVec.ofNat 64 32) H (a++zeros (padLen a.length)) :=
     ⟨(blockAt_frame fr (hashKeep 16 (.inl rfl))).trans hab.1,
       (bytesAt_frame fr (fun r hr => (hashKeep 32 (.inr rfl) r hr).sub_left (Region.sub_prefix (by omega))) (by omega)).trans hab.2⟩
-  have sl : u.mem.readW (V .s0+BitVec.ofNat 64 dataO) 64=D := by
-    rw [fr.readW (r := ⟨_,8⟩) (Region.contains_self _ _) (apart
-      (dd.ok.w.symm.sub_left (Lay.wSub (by decide))) (Lay.w_w (.inl (by decide)) (by decide) (by decide))
-      (by simpa using (L.st_w (a := 0) (n := 16) (d := dataO) (k := 8) (by decide) (.inr ⟨by decide,by decide⟩)).symm)
-      (Lay.w_w (.inl (by decide)) (by decide) (by decide))) (by decide)]
-    exact slot
+  have sl := (data_slot L dd fr).trans slot
   refine WP.mono (authenticate_wp L eu H' hl ab (dd.ok.of_eq ku.rd ku.wr ku.sp) sl) fun t ⟨et,tag,ft⟩ =>
     ⟨et,?_,by rw [tag,ct,mask],?_⟩
   · rw [bytesAt_frame ft (fun r hr => by
