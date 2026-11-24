@@ -23,9 +23,12 @@ middle of the product, added once for the eight (`kreduce`); the sum of a
 power's halves is in `scratch` too, two powers to a slot (the slots 10 to
 13, `halves`), and so is the reduction's constant (the slot 9), which the
 blocks leave no register for. `Y` is kept in the slot 8 between the turns,
-and its block is the last a turn multiplies. The remaining blocks go one at
-a time, with `H'` alone, which is all that fewer than eight blocks compute:
-they do not write `scratch`.
+and its block is the last a turn multiplies. The blocks left after them,
+`m < 8`, are multiplied by `H'ᵐ`, …, `H'` in one loop (`left`), whose pointer
+goes down the powers in `scratch`: `Y ← mul(Y ⊕ X₁, H'ᵐ) ⊕ … ⊕ mul(Xₘ, H')`,
+each product four carry-less multiplications added to the three parts
+(`acc4`), which are reduced once (`leftEnd`). Fewer than eight blocks go one
+at a time, with `H'` alone: they do not write `scratch`.
 
 All GPR writes are caller-saved (`eax`, `ecx`, `edx`), so stack use is zero.
 Every branch and every address depends only on the pointers and `n`.
@@ -195,19 +198,53 @@ def body : List Instr :=
 def epilogue : List Instr :=
   [.xop (.bin .pshufb .xmm2 .xmm0), .movdquStore (at_ .ecx 0) .xmm2]
 
-/-- After the blocks of eight: `Y` into `xmm2`, `H'` into `xmm3`, and `y`
-back into `ecx`. -/
+/-- After the blocks of eight, with none left: `Y` into `xmm2`, and `y` back
+into `ecx`. -/
 def after8 : List Instr :=
-  [.xop (.bin .movdqa .xmm2 .xmm6), .movdquLoad .xmm3 (slot 0), .mov .ecx (.mem (argOp 1))]
+  [.xop (.bin .movdqa .xmm2 .xmm6), .mov .ecx (.mem (argOp 1))]
 
-/-- After `cmp eax, 8`: unless there are fewer than eight blocks, the
-powers, the blocks eight at a time, and `after8`; then the blocks left one
-at a time, and `Y` stored. -/
+/-- The product of `xmm2` and `xmm3` added to `xmm4` (lo), `xmm5` (mid) and
+`xmm6` (hi): three of its four carry-less multiplications each in a copy of
+`xmm2` in `xmm7`, the fourth in `xmm2` itself. -/
+def acc4 : List Instr :=
+  [.xop (.bin .movdqa .xmm7 .xmm2), .xop (.pclmulqdq .xmm7 .xmm3 0x00), .xop (.bin .pxor .xmm4 .xmm7),
+   .xop (.bin .movdqa .xmm7 .xmm2), .xop (.pclmulqdq .xmm7 .xmm3 0x11), .xop (.bin .pxor .xmm6 .xmm7),
+   .xop (.bin .movdqa .xmm7 .xmm2), .xop (.pclmulqdq .xmm7 .xmm3 0x01), .xop (.bin .pxor .xmm5 .xmm7),
+   .xop (.pclmulqdq .xmm2 .xmm3 0x10), .xop (.bin .pxor .xmm5 .xmm2)]
+
+/-- Before the blocks left, `eax` of them (fewer than eight): `Y` from
+`xmm6` into `xmm1`, the product zeroed, `eax` times 16 (the bytes left), and
+`ecx` after the power the first of them takes, `scratch + eax`. -/
+def leftSetup : List Instr :=
+  ([.xop (.bin .movdqa .xmm1 .xmm6)] : List Instr) ++ zero ++
+  ([.alu .add .eax (.reg .eax), .alu .add .eax (.reg .eax), .alu .add .eax (.reg .eax),
+    .alu .add .eax (.reg .eax), .mov .ecx (.mem (argOp 4)), .alu .add .ecx (.reg .eax)] : List Instr)
+
+/-- A block left: `ecx` down to its power, the block (with `Y` from `xmm1`,
+which is then zero, for the first) times the power, added, and on to the
+next. -/
+def left : List Instr :=
+  ([.alu .sub .ecx (.imm 16), .movdquLoad .xmm2 (at_ .edx 0), .xop (.bin .pshufb .xmm2 .xmm0),
+    .xop (.bin .pxor .xmm2 .xmm1), .xop (.bin .pxor .xmm1 .xmm1), .movdquLoad .xmm3 (at_ .ecx 0)] : List Instr) ++
+  acc4 ++ ([.alu .add .edx (.imm 16), .alu .sub .eax (.imm 16)] : List Instr)
+
+/-- After the blocks left, with `scratch` in `ecx` again: the reduction,
+with its constant from the slot 9, of their products into `xmm2`, and `y`
+back into `ecx`. -/
+def leftEnd : List Instr :=
+  ([.movdquLoad .xmm1 (slot 9)] : List Instr) ++ reduce ++ ([.mov .ecx (.mem (argOp 1))] : List Instr)
+
+/-- After `cmp eax, 8`: fewer than eight blocks one at a time; otherwise the
+powers, the blocks eight at a time, and the blocks left in one loop
+(`after8` if there are none); then `Y` stored. -/
 def ghash : Prog isa :=
   .seq (.block prologue)
-    (.seq (.ite .b (.block [])
-        (.seq (.block pows) (.seq (.loop (.block body8) .ae) (.block after8))))
-      (.seq (.block [.alu .test .eax (.reg .eax)])
-        (.seq (.ite .e (.block []) (.loop (.block body) .ne)) (.block epilogue))))
+    (.seq (.ite .b
+        (.seq (.block [.alu .test .eax (.reg .eax)]) (.ite .e (.block []) (.loop (.block body) .ne)))
+        (.seq (.block pows) (.seq (.loop (.block body8) .ae)
+          (.seq (.block [.alu .test .eax (.reg .eax)])
+            (.ite .e (.block after8)
+              (.seq (.block leftSetup) (.seq (.loop (.block left) .ne) (.block leftEnd))))))))
+      (.block epilogue))
 
 end VG.Impl.Gcm.X86.Pclmul
