@@ -38,6 +38,9 @@ import VerifiedGarbage.Proof.Bignum.Math
 public import VerifiedGarbage.Proof.Mont.X86.PowerStep
 import VerifiedGarbage.Proof.Mont.X86.ExponentMask
 import VerifiedGarbage.Proof.Mont.X86.ShiftDown
+import VerifiedGarbage.Proof.Dsa.X86.Comb.Setup
+import VerifiedGarbage.Proof.Mont.X86.PublicPowerTiming
+import VerifiedGarbage.Proof.Mont.X86.CombDigitMath
 
 /-! ### `Dsa.X86.PowCore`, which this module and modules that import it used -/
 
@@ -741,7 +744,7 @@ The setup leaves `2^(65 n) mod m` in slot 4, and each Montgomery square of
 `2^(64 n + c) mod m` is `2^(64 n + 2 c) mod m` (`square_value`), so six of
 them leave `R² mod m`, `R = 2^(64 n)` (`squarings_ok`). Then the result is
 `R mod m` and the base is encoded (`encode_ok`), the loop raises it to the
-exponent, and a product with one decodes it (`core_ok`).
+exponent, and a product with one decodes it (`coreBits_ok`).
 -/
 
 @[expose] public section
@@ -827,11 +830,11 @@ theorem finish_ok {t : State} {T : Nat} (S : St n m size base s₀ t) (hn : 2 �
     (by rw [y₁, Nat.mod_mod]) (by rw [Pu, O₁])
   rwa [Nat.mod_eq_of_lt Lu, Nat.mod_eq_of_lt hT] at v
 
-theorem core_ok {s : State} {base : Addr} {size n e m : Nat}
+theorem coreBits_ok {s : State} {base : Addr} {size n e m : Nat}
     (hs : Scr s base size) (R : CallRoom (s.gpr .esp) base size) (hz : contextBytes n ≤ size)
     (hn : 2 ≤ n) (hn48 : n ≤ 48) (he : 1 < e) (hen : e ≤ 2 * n)
     (hv : wordsVal s.mem base (slot n 0) n = m) (hm1 : 1 < m) (hodd : m % 2 = 1) :
-    WP isa (core n e) s fun t =>
+    WP isa (coreBits n e) s fun t =>
       wordsVal t.mem base (slot n 6) n =
         wordsVal s.mem base (slot n 5) n ^ val32 s.mem base (slot n 8) e % m ∧
       OutsS base (s.gpr .esp) (coreRanges n) s.mem t.mem ∧ Keeps powerClob s t := by
@@ -839,8 +842,8 @@ theorem core_ok {s : State} {base : Addr} {size n e m : Nat}
   obtain hnz : contextBytes n ≤ 2 ^ 64 := by omega_arith
   obtain b8 := slot_bound (n := n) (i := 8) (by decide)
   simp only [stride] at b8
-  unfold core setup
-  refine WP.seq (WP.seq (WP.mono (contextSeed_ok (bits := 65 * n) hs (by omega_arith) (by omega_arith) (by omega_arith) hz hv hm1
+  unfold coreBits setup2
+  refine WP.seq (WP.seq (WP.mono (VG.Proof.Dsa.X86.Comb.seed_ok hs (by omega_arith) (by omega_arith) hz hv hm1
     hodd) fun u ⟨Cu, _, Xu, Ou, Ku⟩ => ?_))
   obtain hset : ∀ r ∈ setupRanges n, ∃ c ∈ coreRanges n, c.1 ≤ r.1 ∧ r.1 + r.2 ≤ c.1 + c.2 := by
     intro r hr
@@ -908,45 +911,6 @@ theorem core_saved {s t : State} {base : Addr} {sp : BitVec 32} {size n : Nat} {
       simp only [coreRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl <;> simp only [slot_lin] <;> omega_using [hp']) (by omega_using [hz, hp'])]
   exact H p hp
-
-theorem body_ok {s : State} {base : Addr} {size n e m : Nat}
-    (E : Entry s base size) (R : CallRoom (s.gpr .esp) base size) (hz : contextBytes n ≤ size)
-    (hn : 2 ≤ n) (hn48 : n ≤ 48) (he : 1 < e) (hen : e ≤ 2 * n)
-    (hv : wordsVal s.mem base (slot n 0) n = m) (hm1 : 1 < m) (hodd : m % 2 = 1) :
-    WP isa (body n e) s fun t =>
-      wordsVal t.mem base (slot n 6) n =
-        wordsVal s.mem base (slot n 5) n ^ val32 s.mem base (slot n 8) e % m ∧
-      OutsS base (s.gpr .esp) (scratch n) s.mem t.mem ∧
-      (∀ r ∈ calleeSaved, t.gpr r = s.gpr r) ∧ t.rd = s.rd ∧ t.wr = s.wr := by
-  have nw := E.nowrap
-  have hz24 : 24 ≤ size := by simp only [contextBytes, slot, stride] at hz; omega_using [hz]
-  unfold body
-  refine WP.seq (WP.mono (save_ok E hz24) fun u ⟨Su, Saved, Ou, Ku⟩ => ?_)
-  have uesp : u.gpr .esp = s.gpr .esp := Ku.1 _ (by decide)
-  have vals : ∀ {d k : Nat}, 24 ≤ d → d + 4 * k ≤ 2 ^ 64 →
-      val32 u.mem base d k = val32 s.mem base d k :=
-    fun hd hk => Ou.val32 (by omega_using [hd]) hk
-  have V : wordsVal u.mem base (slot n 0) n = m := by
-    rw [wordsVal_eq_val32, vals (by simp only [slot]; omega_using []) (by simp only [slot, stride]; omega_using [hn48]),
-      ← wordsVal_eq_val32, hv]
-  refine WP.seq (WP.mono (core_ok Su (by rw [uesp]; exact R) hz hn hn48 he hen V hm1 hodd)
-    fun v ⟨Vv, Ov, Kv⟩ => ?_)
-  rw [uesp] at Ov
-  refine WP.mono (restore_ok (Su.of_keeps Kv (by decide)) hz24 (core_saved Ov R nw hz24 Saved))
-    fun t R' => ⟨?_, ?_, R'.abi (by decide) (by decide) ?_, ?_, ?_⟩
-  · rw [R'.mem, Vv, wordsVal_eq_val32, vals (by simp only [slot]; omega_using [])
-      (by simp only [slot, stride]; omega_using [hn48]), vals (by simp only [slot]; omega_using [])
-      (by simp only [slot, stride]; omega_using [hn48, hen]), ← wordsVal_eq_val32]
-  · rw [R'.mem]
-    refine (OutsS.of_outs (Outs.of_outside (Ou.mono (by decide) (by decide)) (List.mem_cons_self ..))).trans ?_
-    refine Ov.widen fun y hy r hr => ?_
-    simp only [coreRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
-    have h0 := hy (0, 64) (List.mem_cons_self ..)
-    have h1 := hy _ (List.mem_cons_of_mem _ (List.mem_cons_self ..))
-    rcases hr with rfl | rfl <;> dsimp only at * <;> omega_arith
-  · exact (Kv.1 _ (by decide)).trans (Ku.1 _ (by decide))
-  · rw [R'.rd, Kv.2.1, Ku.2.1]
-  · rw [R'.wr, Kv.2.2, Ku.2.2]
 
 end VG.Proof.Dsa.X86.Pow
 
@@ -1222,11 +1186,6 @@ theorem wk_squarings (hn : 2 ≤ n) :
         (by decide) (List.mem_singleton_self _) (fun x hx => by rw [List.mem_singleton.mp hx]; decide)
         (fun x hx => .inl (List.mem_singleton.mp hx)))
 
-/-- What the core needs of a run on entry. -/
-def CoreIn (n : Nat) (base : Addr) (sp : BitVec 32) (u : State) : Prop :=
-  ∃ size m, Scr u base size ∧ CallRoom sp base size ∧ u.gpr .esp = sp ∧ contextBytes n ≤ size ∧
-    VG.Proof.Mont.wordsVal u.mem base (slot n 0) n = m ∧ 1 < m ∧ m % 2 = 1
-
 theorem setupRanges_core (n : Nat) :
     ∀ r ∈ setupRanges n, ∃ c ∈ coreRanges n, c.1 ≤ r.1 ∧ r.1 + r.2 ≤ c.1 + c.2 := by
   have b8 := slot_bound (n := n) (i := 8) (by decide)
@@ -1237,30 +1196,62 @@ theorem setupRanges_core (n : Nat) :
   · exact ⟨(0, 8), List.mem_cons_self .., by decide, by decide⟩
   all_goals exact in_core (by decide) (by simp only [contextBytes, slot_lin] at b8 ⊢; omega_arith)
 
-theorem contextSeed_check (n bits : Nat) :
-    VG.Taint.check taint (workspaceTaint false) (contextSeed n bits) contextSetupHint = some counterEndTaint :=
-  exponent_check_seq taint
-    (exponent_check_seq taint (setupInverse_taint false (slot n 0) 0) (by rfl)
-      (one_check false n (slot n 3))) (by rfl)
-    (powerTwo_check (contextMod n) (slot n 2) (slot n 4) bits)
+/-- What the core needs of a run on entry, with the working space's size and
+the modulus, which two runs share: the modulus is public. -/
+def CoreIn2 (n : Nat) (base : Addr) (sp : BitVec 32) (size m : Nat) (u : State) : Prop :=
+  Scr u base size ∧ CallRoom sp base size ∧ u.gpr .esp = sp ∧ contextBytes n ≤ size ∧
+    wordsVal u.mem base (slot n 0) n = m ∧ 1 < m ∧ m % 2 = 1
 
-theorem wk_seed (hn : 2 ≤ n) (hn48 : n ≤ 48) :
-    RelCT isa (Both (CoreIn n base sp)) (contextSeed n (65 * n)) (Both (Wk n base sp none [4])) := by
-  refine relCT_both (RelCT.taint (A := taint) (hc := contextSetupHint) (workspaceTaint false) (fun s t h => ?_)
-    (by rw [contextSeed_check]; rfl)) ?_
-  · obtain ⟨_, _, h₁, -⟩ := h.1
-    obtain ⟨_, _, h₂, -⟩ := h.2
-    exact agree_regs (rs := [.edi]) fun r hr => by
-      obtain rfl := List.mem_singleton.mp hr
-      exact BitVec.eq_of_toNat_eq (h₁.edi_toNat.trans h₂.edi_toNat.symm)
-  · intro u ⟨size, m, hs, R, e, hz, hv, hm1, hodd⟩
-    refine WP.mono (contextSeed_ok (bits := 65 * n) hs (by omega_arith) (by omega_arith) (by omega_arith) hz hv hm1 hodd)
+theorem contextStart_check (n : Nat) :
+    VG.Taint.check taint (workspaceTaint false) (contextStart n)
+      (.seq (workspaceTaint false) (.block []) (oneHint false)) = some (zerosTaint false) :=
+  exponent_check_seq taint (setupInverse_taint false (slot n 0) 0) (by rfl) (one_check false n (slot n 3))
+
+/-- The context's seed: its branch is on the top word of the modulus, which
+the two runs share. -/
+theorem seed_relCT {size m : Nat} (hn : 0 < n) :
+    RelCT isa (Both (CoreIn2 n base sp size m)) (VG.Impl.Dsa.X86.Comb.seed n) (VG.X86.Taint.Agree (workspaceTaint false)) := by
+  have b0 := slot_bound (n := n) (i := 0) (by decide)
+  simp only [stride] at b0
+  by_cases hsz : contextBytes n ≤ size
+  case neg => exact VG.RelCT.of_false fun _ _ h => hsz h.1.2.2.2.1
+  unfold VG.Impl.Dsa.X86.Comb.seed
+  refine RelCT.seq (R := fun (s t : State) => Context n m base size s ∧ Context n m base size t) ?_ ?_
+  · intro s t tr ur sf tf ⟨⟨hs, _, _, hz, hv, hm1, hodd⟩, ⟨ht, _, _, _, hv', _, _⟩⟩ Es Et
+    have DI : s.gpr .edi = t.gpr .edi := BitVec.eq_of_toNat_eq (hs.edi_toNat.trans ht.edi_toNat.symm)
+    exact ⟨((RelCT.taint (A := taint) (hc := .seq (workspaceTaint false) (.block []) (oneHint false))
+        (workspaceTaint false)
+        (fun (a b : State) (h : a.gpr .edi = b.gpr .edi) => agree_regs (rs := [.edi]) fun r hr => by
+          obtain rfl := List.mem_singleton.mp hr; exact h)
+        (by rw [contextStart_check]; rfl)) _ _ _ _ _ _ DI Es Et).1,
+      (wp_result (contextStart_ok hs hn hz hv hm1 hodd) Es).1,
+      (wp_result (contextStart_ok ht hn hz hv' hm1 hodd) Et).1⟩
+  · apply (publicPower_relCT (contextMod n) (slot n 2) (slot n 4) base size (by
+      change slot n 0 + 4 * (2 * n - 1) + 4 ≤ size
+      omega)).mono
+    · intro s t ⟨S, T⟩
+      refine ⟨S.scr, T.scr, ?_⟩
+      change w32 s.mem base (slot n 0 + 4 * (2 * n - 1)) = w32 t.mem base (slot n 0 + 4 * (2 * n - 1))
+      rw [← VG.Proof.Mont.X86.Comb.val32_word (by omega_arith : 2 * n - 1 < 2 * n),
+        ← VG.Proof.Mont.X86.Comb.val32_word (by omega_arith : 2 * n - 1 < 2 * n),
+        ← wordsVal_eq_val32, ← wordsVal_eq_val32,
+        show wordsVal s.mem base (slot n 0) n = m from S.modulus.val,
+        show wordsVal t.mem base (slot n 0) n = m from T.modulus.val]
+    · exact fun _ _ h => h
+
+theorem wk_seed2 {size m : Nat} (hn : 2 ≤ n) (hn48 : n ≤ 48) :
+    RelCT isa (Both (CoreIn2 n base sp size m)) (VG.Impl.Dsa.X86.Comb.seed n) (Both (Wk n base sp none [4])) := by
+  have W : ∀ u, CoreIn2 n base sp size m u → WP isa (VG.Impl.Dsa.X86.Comb.seed n) u (Wk n base sp none [4]) := by
+    intro u ⟨hs, R, e', hz, hv, hm1, hodd⟩
+    refine WP.mono (VG.Proof.Dsa.X86.Comb.seed_ok hs (by omega_arith) (by omega_arith) hz hv hm1 hodd)
       fun v ⟨Cv, _, Xv, Ov, Kv⟩ => ?_
-    rw [← e] at R
-    refine ⟨size, m, u, ⟨Cv, R, Kv, (OutsS.of_outs Ov).core (setupRanges_core n)⟩, e, ?_, fun b hb => ?_⟩
+    rw [← e'] at R
+    refine ⟨size, m, u, ⟨Cv, R, Kv, (OutsS.of_outs Ov).core (setupRanges_core n)⟩, e', ?_, fun b hb => ?_⟩
     · intro c h; cases h
     · rw [List.mem_singleton.mp hb, Xv]
       exact Nat.mod_lt _ (by omega_arith)
+  intro s t tr ur sf tf H E F
+  exact ⟨(seed_relCT (by omega_arith) _ _ _ _ _ _ H E F).1, wp_result (W s H.1) E, wp_result (W t H.2) F⟩
 
 theorem wk_encode (hn : 2 ≤ n) :
     RelCT isa (Both (Wk n base sp none [4])) (encode n) (Both (Wk n base sp none [5])) := by
@@ -1383,10 +1374,10 @@ theorem wk_finish {cnt : Option Nat} (hn : 2 ≤ n) :
   · obtain ⟨size, m, s₀, S, e, _, B⟩ := h.2
     exact ⟨size, m, S.ctx, e ▸ S.room, S.esp.trans e, B 7 (by simp)⟩
 
-theorem core_relCT {e : Nat} (hn : 2 ≤ n) (hn48 : n ≤ 48) (he : 1 < e) (hen : e ≤ 2 * n) :
-    RelCT isa (Both (CoreIn n base sp)) (core n e) (fun _ _ => True) := by
-  unfold core setup
-  refine VG.RelCT.seq (VG.RelCT.seq (wk_seed hn hn48) (wk_squarings hn 6)) ?_
+theorem coreBits_relCT {e size m : Nat} (hn : 2 ≤ n) (hn48 : n ≤ 48) (he : 1 < e) (hen : e ≤ 2 * n) :
+    RelCT isa (Both (CoreIn2 n base sp size m)) (coreBits n e) (fun _ _ => True) := by
+  unfold coreBits setup2
+  refine VG.RelCT.seq (VG.RelCT.seq (wk_seed2 hn hn48) (wk_squarings hn 6)) ?_
   refine VG.RelCT.seq (wk_encode hn) ?_
   refine VG.RelCT.seq (wk_start e) ?_
   refine VG.RelCT.seq ((wk_loop hn he hen (32 * e)).mono (fun _ _ h => ⟨by omega_arith, by omega_arith, h⟩) fun _ _ h => h) ?_
@@ -1404,89 +1395,6 @@ end
 
 end
 
-
-/-! # Constant-time traces of the shared IA-32 exponentiation body
-
-Two runs from the same stack pointer and working space, each ready for the
-body (`BodyIn`), leak the same trace: the saves read the argument and store
-through public pointers, the core's traces agree (`core_relCT`), and it
-leaves `edi` as it found it, through which the restores read. -/
-
-@[expose] public section
-namespace VG.Proof.Dsa.X86.Pow
-open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Mont.X86.Dynamic VG.Impl.Mont.X86.Dynamic
-open VG.Impl.Dsa.X86.Pow
-
-/-- What the body needs of a run on entry: the working space at its first argument, the 96 bytes
-of stack below `esp` apart from it, and the modulus odd and above 1. -/
-def BodyIn (n : Nat) (s : State) : Prop :=
-  ∃ size, Entry s ((arg s 0).setWidth 64) size ∧ CallRoom (s.gpr .esp) ((arg s 0).setWidth 64) size ∧
-    contextBytes n ≤ size ∧ 1 < wordsVal s.mem ((arg s 0).setWidth 64) (slot n 0) n ∧
-    wordsVal s.mem ((arg s 0).setWidth 64) (slot n 0) n % 2 = 1
-
-theorem edi_of_scr {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) :
-    s.gpr .edi = BitVec.ofNat 32 base.toNat := by
-  apply BitVec.eq_of_toNat_eq
-  have := hs.edi_toNat
-  have := (s.gpr .edi).isLt
-  rw [hs.edi_toNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]
-
-theorem body_relCT (n e : Nat) (hn : 2 ≤ n) (hn48 : n ≤ 48) (he : 1 < e) (hen : e ≤ 2 * n) :
-    RelCT isa (fun s t => s.gpr .esp = t.gpr .esp ∧ arg s 0 = arg t 0 ∧
-      readSrc s (.mem (VG.Impl.Mont.X86.at_ .esp 4)) = some (arg s 0) ∧
-      readSrc t (.mem (VG.Impl.Mont.X86.at_ .esp 4)) = some (arg t 0) ∧ BodyIn n s ∧ BodyIn n t)
-      (body n e) (fun _ _ => True) := by
-  unfold body
-  have saveCT : RelCT isa (fun s t => s.gpr .esp = t.gpr .esp ∧ arg s 0 = arg t 0 ∧
-      readSrc s (.mem (VG.Impl.Mont.X86.at_ .esp 4)) = some (arg s 0) ∧
-      readSrc t (.mem (VG.Impl.Mont.X86.at_ .esp 4)) = some (arg t 0))
-      (.block save) (VG.X86.Taint.Agree (workspaceTaint false)) := by
-    unfold save
-    rw [List.append_assoc]
-    exact RelCT.block_append (RelCT.seq (scratchArgument_relCT 0)
-      (checkedProgramChange (σ := workspaceTaint false) (hint := .block []) rfl rfl))
-  have saved := (saveCT.mono (P' := fun (s t : State) => s.gpr .esp = t.gpr .esp ∧ arg s 0 = arg t 0 ∧
-      readSrc s (.mem (VG.Impl.Mont.X86.at_ .esp 4)) = some (arg s 0) ∧
-      readSrc t (.mem (VG.Impl.Mont.X86.at_ .esp 4)) = some (arg t 0) ∧ BodyIn n s ∧ BodyIn n t)
-      (fun _ _ h => ⟨h.1, h.2.1, h.2.2.1, h.2.2.2.1⟩) fun _ _ h => h).wpDep
-    (F := fun (σ u : State) => CoreIn n ((arg σ 0).setWidth 64) (σ.gpr .esp) u ∧
-      (∀ r ∈ calleeSaved, r ≠ .edi → u.gpr r = σ.gpr r))
-    fun s t ⟨_, _, _, _, B₁, B₂⟩ => by
-      have go : ∀ σ, BodyIn n σ → WP isa (.block save) σ fun u =>
-          CoreIn n ((arg σ 0).setWidth 64) (σ.gpr .esp) u ∧ (∀ r ∈ calleeSaved, r ≠ .edi → u.gpr r = σ.gpr r) := by
-        intro σ ⟨size, E, R, hz, hm1, hodd⟩
-        have hz24 : 24 ≤ size := by simp only [contextBytes, slot, stride] at hz; omega_using [hz]
-        refine WP.mono (save_ok E hz24) fun u ⟨Su, _, Ou, Ku⟩ => ?_
-        have hv : wordsVal u.mem ((arg σ 0).setWidth 64) (slot n 0) n =
-            wordsVal σ.mem ((arg σ 0).setWidth 64) (slot n 0) n := by
-          rw [wordsVal_eq_val32, wordsVal_eq_val32]
-          exact Ou.val32 (by simp only [slot]; omega_using []) (by have := E.nowrap; simp only [slot, stride] at hz ⊢; omega_using [hn48])
-        exact ⟨⟨size, _, Su, R, Ku.1 _ (by decide), hz, hv, hm1, hodd⟩,
-          fun r hr hne => Ku.1 r (by revert hr hne; cases r <;> simp [calleeSaved])⟩
-      exact ⟨go s B₁, go t B₂⟩
-  refine VG.RelCT.seq (R := fun u v => ∃ p : Addr × BitVec 32, Both (CoreIn n p.1 p.2) u v)
-    (saved.mono (fun _ _ h => h) fun u v ⟨_, σ₁, σ₂, ⟨SP, A0, _⟩, ⟨C₁, _⟩, ⟨C₂, _⟩⟩ =>
-      ⟨((arg σ₁ 0).setWidth 64, σ₁.gpr .esp), C₁, by rw [A0, SP]; exact C₂⟩) ?_
-  refine VG.RelCT.seq (R := VG.X86.Taint.Agree (workspaceTaint false)) ?_
-    ((checkedProgramChange (σ := { regs := .ofList [], flags := false }) (hint := .block []) (by rfl) rfl).mono
-      (fun _ _ h => h) (fun _ _ _ => trivial))
-  refine VG.RelCT.exists_ fun p => ?_
-  have go : ∀ u, CoreIn n p.1 p.2 u → WP isa (core n e) u fun w => w.gpr .edi = BitVec.ofNat 32 p.1.toNat := by
-    intro u ⟨size, m, hs, R, esp, hz, hv, hm1, hodd⟩
-    rw [← esp] at R
-    exact WP.mono (core_ok hs R hz hn hn48 he hen hv hm1 hodd) fun w ⟨_, _, K⟩ => by
-      rw [K.1 _ (by decide)]; exact edi_of_scr hs
-  refine ((core_relCT (base := p.1) (sp := p.2) hn hn48 he hen).wp (F₁ := fun (w : State) => w.gpr .edi = BitVec.ofNat 32 p.1.toNat)
-    (F₂ := fun (w : State) => w.gpr .edi = BitVec.ofNat 32 p.1.toNat) fun u v h => ⟨go u h.1, go v h.2⟩).mono
-    (fun _ _ h => h) fun w₁ w₂ ⟨_, e₁, e₂⟩ => agree_regs (rs := [.edi]) fun r hr => by
-      obtain rfl := List.mem_singleton.mp hr
-      rw [e₁, e₂]
-
-end VG.Proof.Dsa.X86.Pow
-
-end
-
-end
 
 /-! # Correctness and secrecy of callable IA-32 exponentiation -/
 

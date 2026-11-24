@@ -104,7 +104,7 @@ theorem verifiedScrubbed {api : Api} (r : Unscrubbed api target) {rb : Nat}
     have hv := r.verified
     rw [e] at hv ⊢
     obtain ⟨h₁, h₂⟩ := Verified.scrub (ScrubAbi.of r.consts api.sig r.tables) hv hs rfl
-    exact ⟨h₁, h₂⟩
+    exact ⟨h₁, h₂, fun ty _ h => by cases ty <;> cases h⟩
   rw [retBits_abi, hb] at h
   exact h
 
@@ -128,6 +128,6 @@ theorem verifiedScrubbedAll {api : Api} (r : Unscrubbed api target) {n rb : Nat}
   rw [ec] at hv hpost ⊢
   obtain ⟨h₁, h₂⟩ := Verified.scrubAllS (ScrubAbi.of r.consts api.sig r.tables) hv hd (tablesCall_pub htc) hn
     rfl hpost
-  exact ⟨h₁, h₂⟩
+  exact ⟨h₁, h₂, fun ty _ h => by cases ty <;> cases h⟩
 
 end VG.Arm.Scrub

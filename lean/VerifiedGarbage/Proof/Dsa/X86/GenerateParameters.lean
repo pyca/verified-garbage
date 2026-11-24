@@ -82,7 +82,7 @@ namespace VG.Proof.Dsa.X86
 open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Mont.X86.Dynamic
 open VG.Impl.Mont.X86.Dynamic VG.Impl.Dsa.Layout VG.Impl.Dsa.X86 VG.Proof.Ecdsa.X86
 
-theorem generateSubgroup_ok {base : Addr} {size pLen qLen p q g : Nat} {s0 : State}
+public theorem generateSubgroup_ok {base : Addr} {size pLen qLen p q g : Nat} {s0 : State}
     (M : Moduli base size pLen qLen p q s0)
     (G : CallerBuffer s0 base size (.input .g) pLen)
     (hg : operandValue s0 base (.input .g) pLen = g) :

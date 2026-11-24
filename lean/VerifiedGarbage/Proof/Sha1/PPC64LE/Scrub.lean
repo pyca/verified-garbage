@@ -71,6 +71,6 @@ arguments. It meets its contract in constant time and returns without secret res
 theorem init_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.Sha1.PPC64LE.Stream.init
       (Spec.Sha1.initContract PPC64LE.abi) 0 :=
-  ⟨Proof.Sha1.PPC64LE.Shared.init, Proof.Sha1.PPC64LE.Stream.init_noResidue _ _⟩
+  ⟨Proof.Sha1.PPC64LE.Shared.init, Proof.Sha1.PPC64LE.Stream.init_noResidue _ _, fun _ _ _ h => by cases h⟩
 
 end VG.Proof.Sha1.PPC64LE

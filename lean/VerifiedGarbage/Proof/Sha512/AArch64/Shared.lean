@@ -261,7 +261,7 @@ theorem _root_.VG.Proof.Sha512.AArch64.Stream.init384_scrubbed :
     VerifiedScrubbed _root_.VG.AArch64.target (Impl.Sha512.AArch64.Stream.init Spec.Sha512.H0_384)
       (Spec.Sha512.initContract AArch64.abi Spec.Sha512.H0_384) 0 :=
   ⟨Proof.Sha512.AArch64.Shared.init Spec.Sha512.H0_384,
-    Proof.Sha512.AArch64.Stream.init_noResidue _ _ _⟩
+    Proof.Sha512.AArch64.Stream.init_noResidue _ _ _, fun ty _ h => by cases ty <;> cases h⟩
 
 /-- The function as its registration binds it: it meets its contract in constant time and returns
 without secret residue. -/
@@ -269,7 +269,7 @@ theorem _root_.VG.Proof.Sha512.AArch64.Stream.init512_scrubbed :
     VerifiedScrubbed _root_.VG.AArch64.target (Impl.Sha512.AArch64.Stream.init Spec.Sha512.H0_512)
       (Spec.Sha512.initContract AArch64.abi Spec.Sha512.H0_512) 0 :=
   ⟨Proof.Sha512.AArch64.Shared.init Spec.Sha512.H0_512,
-    Proof.Sha512.AArch64.Stream.init_noResidue _ _ _⟩
+    Proof.Sha512.AArch64.Stream.init_noResidue _ _ _, fun ty _ h => by cases ty <;> cases h⟩
 
 /-- The function as its registration binds it: it meets its contract in constant time and returns
 without secret residue. -/
@@ -277,7 +277,7 @@ theorem _root_.VG.Proof.Sha512.AArch64.Stream.init512_224_scrubbed :
     VerifiedScrubbed _root_.VG.AArch64.target (Impl.Sha512.AArch64.Stream.init Spec.Sha512.H0_512_224)
       (Spec.Sha512.initContract AArch64.abi Spec.Sha512.H0_512_224) 0 :=
   ⟨Proof.Sha512.AArch64.Shared.init Spec.Sha512.H0_512_224,
-    Proof.Sha512.AArch64.Stream.init_noResidue _ _ _⟩
+    Proof.Sha512.AArch64.Stream.init_noResidue _ _ _, fun ty _ h => by cases ty <;> cases h⟩
 
 /-- The function as its registration binds it: it meets its contract in constant time and returns
 without secret residue. -/
@@ -285,6 +285,6 @@ theorem _root_.VG.Proof.Sha512.AArch64.Stream.init512_256_scrubbed :
     VerifiedScrubbed _root_.VG.AArch64.target (Impl.Sha512.AArch64.Stream.init Spec.Sha512.H0_512_256)
       (Spec.Sha512.initContract AArch64.abi Spec.Sha512.H0_512_256) 0 :=
   ⟨Proof.Sha512.AArch64.Shared.init Spec.Sha512.H0_512_256,
-    Proof.Sha512.AArch64.Stream.init_noResidue _ _ _⟩
+    Proof.Sha512.AArch64.Stream.init_noResidue _ _ _, fun ty _ h => by cases ty <;> cases h⟩
 
 end VG.Proof.Sha512.AArch64.Shared

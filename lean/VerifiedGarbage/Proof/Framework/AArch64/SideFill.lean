@@ -232,7 +232,7 @@ theorem verifiedScrubbedClearAll {c : Prog isa} {k : Contract isa} {W rb : Nat} 
   ⟨Verified.scrubAll clearAll_wf hv hW hrb hok,
     noResidue_scrubAll clearAll_wf (clearAll_keeps _) hv hW hok.sp hd
       (Code.all_of_allInstrs (allInstrs_of_sideAll hs))
-      (fun _ _ _ n hn => by rw [inames_of_noIcall (noIcall_of_sideAll hs)] at hn; cases hn) hrb⟩
+      (fun _ _ _ n hn => by rw [inames_of_noIcall (noIcall_of_sideAll hs)] at hn; cases hn) hrb, fun ty _ h => by cases ty <;> cases h⟩
 
 /-- `c`, which has no frames, with the registers it may write cleared
 (`scrubOf 0`: no stack to zero) meets `c`'s contract in constant time and
@@ -245,7 +245,7 @@ theorem verifiedScrubbedOf0 {c : Prog isa} {k : Contract isa} {rb : Nat} (hv : V
     VerifiedScrubbed target (scrubOf 0 rb c) k rb :=
   ⟨Verified.scrubAll0 (Clear.of_wf _) hv hrb hok,
     noResidue_scrubAll0 (Clear.of_wf _) (Clear.of_keeps _) hv hd
-      (Code.all_of_allInstrs (allInstrs_of_sideAll hs)) hrb⟩
+      (Code.all_of_allInstrs (allInstrs_of_sideAll hs)) hrb, fun ty _ h => by cases ty <;> cases h⟩
 
 /-- What code without frames states it writes of a buffer
 (`Registration.written`) holds of it with its registers cleared

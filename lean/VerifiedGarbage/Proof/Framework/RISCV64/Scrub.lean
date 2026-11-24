@@ -608,6 +608,50 @@ theorem contract_retExt32 {A : Abi isa} (hA : ScrubAbi A) {sig : Sig} {pre post 
 theorem fixA_sext (x : BitVec 64) : fixA 32 x = sext32Of (fixA 32 x) := by
   simp only [fixA, sext32Of, show (32 : Nat) ≠ 0 by decide, ite_false, ite_true, setWidth_sext32]
 
+/-- The psABI's only rule for a result (`abi.retExt`): a `u32`'s, sign-extended. -/
+theorem abi_retExt_some {ty : IntTy} {f : BitVec 64 → BitVec 64} (h : abi.retExt ty = some f) :
+    f = sext32Of := by
+  cases ty with
+  | u32 => cases h; rfl
+  | u64 => cases h
+  | usize => cases h
+
+/-- A contract `Sig.contract` derives that requires a rule of its result is for a
+32-bit result. -/
+theorem retBits_of_retExt {A : Abi isa} (hA : ScrubAbi A) {sig : Sig} {pre post wa stack leak}
+    {f : BitVec 64 → BitVec 64} (h : (sig.contract A pre post wa stack leak).retExt = some f) :
+    sig.retBits A.ptrBits = 32 := by
+  simp only [Sig.contract, hA.retExt] at h
+  unfold Sig.retBits
+  rcases e : sig.ret with _ | ⟨_ | _ | _⟩ <;> rw [e] at h <;> first | rfl | cases h
+
+/-- Code whose every run from `k.pre` ends with `a0` as `retFix rb` leaves it, `rb` 32
+wherever `k` requires a rule of its result, returns its result as the psABI requires. -/
+theorem retAbi_of_fixA {c : Prog isa} {k : Contract isa} {rb : Nat}
+    (hk : ∀ f, k.retExt = some f → rb = 32)
+    (ha : ∀ s t s', k.pre s → Exec isa c s t s' → ∃ x, s'.gpr .a0 = fixA rb x) :
+    RetAbi target c k := by
+  intro ty f hty hf s t s' hs he
+  obtain rfl := abi_retExt_some hty
+  obtain rfl := hk _ hf
+  obtain ⟨x, hx⟩ := ha s t s' hs he
+  show s'.gpr .a0 = sext32Of (s'.gpr .a0)
+  rw [hx]
+  exact fixA_sext x
+
+/-- What `scrubAll rb stack c` leaves in `a0`: `retFix rb` of what was there. -/
+theorem scrubAll_a0 {rb stack : Nat} (hrb : rb ≤ 64) {c : Prog isa} {s s' : State} {t : List Leak}
+    (he : Exec isa (Impl.Scrub.RISCV64.scrubAll rb stack c) s t s') : ∃ x, s'.gpr .a0 = fixA rb x := by
+  cases he with | seq _ h₂ =>
+  cases h₂ with | seq _ h₃ =>
+  cases h₃ with | seq _ h₄ =>
+  cases h₄ with | block hb =>
+  rw [execBlock_append, retFix_run hrb, Option.bind_some, zeroRs_run] at hb
+  simp only [Option.map_some, Option.some.injEq, Prod.mk.injEq] at hb
+  obtain ⟨rfl, -⟩ := hb
+  simp only [show Reg.a0 ∉ scratchRegs by decide, ite_false, ite_true]
+  exact ⟨_, rfl⟩
+
 /-- The calling convention of every RISC-V artifact (`Api.artifact`). -/
 theorem ScrubAbi.of (cs : List (String × List (BitVec 64))) (sig : Sig) (ts : List (String × List FnTable)) :
     ScrubAbi ((abi.withConsts cs).withTables sig ts) :=

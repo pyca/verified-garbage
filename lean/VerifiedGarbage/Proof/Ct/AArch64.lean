@@ -249,6 +249,6 @@ theorem _root_.VG.Proof.Ct.AArch64.eqCleared_scrubbed :
     VerifiedScrubbed AArch64.target Impl.Ct.AArch64.Fn.eq
       (Spec.Ct.eqContract AArch64.abi) 32 :=
   ⟨Proof.Ct.AArch64.eqCleared_verified,
-    Proof.Ct.AArch64.eqCleared_noResidue _⟩
+    Proof.Ct.AArch64.eqCleared_noResidue _, fun ty _ h => by cases ty <;> cases h⟩
 
 end VG.Proof.Ct.AArch64

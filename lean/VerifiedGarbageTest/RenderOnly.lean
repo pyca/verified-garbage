@@ -22,9 +22,12 @@ namespace VG.Test
 the emitter, never for an artifact of the library. -/
 abbrev renderOnly (T : Target) : Target := { T with noResidue := some fun _ _ _ => True }
 
-/-- `Verified` on `T` is `VerifiedScrubbed` on `renderOnly T`. -/
+/-- `Verified` on `T` is `VerifiedScrubbed` on `renderOnly T`, on a target whose
+calling convention has no rule for any result (`Abi.retExt`), so that `RetAbi` holds of any
+code. -/
 theorem renderOnly_verified {T : Target} {c : Prog T.isa} {k : Contract T.isa} {retBits : Nat}
-    (h : Verified T c k) : VerifiedScrubbed (renderOnly T) c k retBits :=
-  ⟨h, trivial⟩
+    (h : Verified T c k) (hr : ∀ ty, T.abi.retExt ty = none := by intro ty; cases ty <;> rfl) :
+    VerifiedScrubbed (renderOnly T) c k retBits :=
+  ⟨h, trivial, fun ty _ hf => by rw [show (renderOnly T).abi = T.abi from rfl, hr ty] at hf; cases hf⟩
 
 end VG.Test

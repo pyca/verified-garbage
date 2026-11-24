@@ -707,7 +707,7 @@ theorem verifiedScrubbed_ofSide {c : Prog isa} {k : Contract isa} {W rb : Nat} {
     (hs : scrubSide c W rb cl ts = true) (hW : 0 < W)
     (hsy : ∀ s₁ s₂, k.pub s₁ s₂ → ∀ m ∈ inames c, s₁.syms m = s₂.syms m) :
     VerifiedScrubbed target (scrubAll W rb cl c) k rb := by
-  refine ⟨Verified.scrubAllOfV hv hok hs, ?_⟩
+  refine ⟨Verified.scrubAllOfV hv hok hs, ?_, fun ty _ h => by cases ty <;> cases h⟩
   obtain ⟨hwf, hkp, hdit, hrb⟩ := keeps_of_side hs
   have h := hs
   simp only [scrubSide, Nat.pos_iff_ne_zero.mp hW, ↓reduceIte, Bool.and_eq_true, decide_eq_true_eq,

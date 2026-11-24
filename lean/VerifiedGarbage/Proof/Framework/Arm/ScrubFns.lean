@@ -88,7 +88,7 @@ theorem verifiedScrubbedAllFns {A : Abi isa} (hA : ScrubAbi A) {fns : List Strin
     VerifiedScrubbed target (scrubAll rb stack c)
       (sig.contract ((A.withFns fns).withTables sig ts) pre post wa stack leak) rb := by
   obtain ⟨h₁, h₂⟩ := Verified.scrubAllS ((hA.withFns fns).tables sig ts) hv hd (fnsCall_pub hc) hn e hpost
-  exact ⟨h₁, h₂⟩
+  exact ⟨h₁, h₂, fun ty _ h => by cases ty <;> cases h⟩
 
 /-- Code without indirect calls, made to call `n` by its address in a
 register, calls indirectly only `n`. -/

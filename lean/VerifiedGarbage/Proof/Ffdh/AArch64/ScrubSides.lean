@@ -98,12 +98,12 @@ theorem derivePublic_scrubbed :
 /-- `vg_ffdh_parameter_init`, whose code leaves nothing to clear. -/
 theorem parameterInit_scrubbed :
     VerifiedScrubbed target Impl.Ffdh.AArch64.Generation.init (Spec.Ffdh.parameterInitContract abi) 32 :=
-  ⟨Proof.Ffdh.AArch64.Generation.init_verified, Proof.Ffdh.AArch64.Generation.init_noResidue _ _⟩
+  ⟨Proof.Ffdh.AArch64.Generation.init_verified, Proof.Ffdh.AArch64.Generation.init_noResidue _ _, fun ty _ h => by cases ty <;> cases h⟩
 
 /-- `vg_ffdh_key_init`, whose code leaves nothing to clear. -/
 theorem keyInit_scrubbed :
     VerifiedScrubbed target Impl.Ffdh.AArch64.KeyGeneration.init (Spec.Ffdh.keyInitContract abi) 32 :=
-  ⟨Proof.Ffdh.AArch64.KeyGeneration.init_verified, Proof.Ffdh.AArch64.KeyGeneration.init_noResidue _ _⟩
+  ⟨Proof.Ffdh.AArch64.KeyGeneration.init_verified, Proof.Ffdh.AArch64.KeyGeneration.init_noResidue _ _, fun ty _ h => by cases ty <;> cases h⟩
 
 end VG.Proof.Ffdh.AArch64.Scrub
 

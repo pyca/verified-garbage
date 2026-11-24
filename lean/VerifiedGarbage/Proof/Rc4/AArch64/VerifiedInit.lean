@@ -792,6 +792,6 @@ theorem _root_.VG.Proof.Rc4.AArch64.initCleared_scrubbed :
     VerifiedScrubbed AArch64.target Impl.Rc4.AArch64.Fn.init
       (Spec.Rc4.initContract AArch64.abi) 32 :=
   ⟨Proof.Rc4.AArch64.initCleared_verified,
-    Proof.Rc4.AArch64.initCleared_noResidue _⟩
+    Proof.Rc4.AArch64.initCleared_noResidue _, fun ty _ h => by cases ty <;> cases h⟩
 
 end VG.Proof.Rc4.AArch64

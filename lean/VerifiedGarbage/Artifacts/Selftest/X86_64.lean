@@ -17,6 +17,7 @@ def artifacts : List Artifact := [
     code := Proof.Selftest.X86_64.addScrubbed
     contract := Spec.Selftest.addContract X86_64.abi
     verified := ⟨Proof.Selftest.X86_64.addScrubbed_verified,
-      Proof.Selftest.X86_64.addScrubbed_noResidue⟩ }]
+      Proof.Selftest.X86_64.addScrubbed_noResidue,
+      Proof.Selftest.X86_64.addScrubbed_retAbi⟩ }]
 
 end VG.Artifacts.Selftest.X86_64

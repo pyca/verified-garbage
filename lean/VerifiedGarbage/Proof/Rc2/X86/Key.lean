@@ -21,6 +21,7 @@ meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 import VerifiedGarbage.Proof.Rc2.X86.KeyIO
 public import VerifiedGarbage.Proof.Rc2.X86.KeySteps
 public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Proof.Framework.X86.CallWith
 meta import VerifiedGarbage.Proof.Rc2.X86.KeyIO
 meta import VerifiedGarbage.Proof.Rc2.X86.KeySteps
 meta import VerifiedGarbage.TCB.X86.Target
@@ -128,11 +129,12 @@ theorem key_body_correct (s : State) (hs : keyContract.pre s) :
     rw [ptr₂] at outFrame₃
     exact (scratchFrame.mono (by simp)).trans (outFrame₃.mono (by simp))
   obtain args₃ := args_frame argFrame₃ sp₃ spFit (by simpa using And.intro argsScratch argsOut)
-  apply WP.mono (expandReduce_ok s₃ _ (arg s 2).toNat hb hb'
+  apply WP.mono (expandReduce_ok piLookup_lookOk s₃ _ (arg s 2).toNat hb hb'
     (by rw [h₃.1.reg .edi (by decide), ptr₂]; exact outFit)
     (argRead s₃ (h₃.1.rd.trans rd₂) (h₃.1.wr.trans wr₂) sp₃ 2 (by decide))
     (by simpa only [arg, argAddr, Nat.reduceMul, Nat.reduceAdd, BitVec.ofNat_toNat, BitVec.setWidth_eq, addr32, BitVec.ofNat_eq_ofNat] using args₃ 2 (by decide))
-    write₃ (by rw [h₃.1.wr, h₃.1.reg .edi (by decide)]; exact lanes₂) (by rw [h₃.1.reg .edi (by decide)]; exact h₃.2))
+    write₃ (show InRegions s₃.wr (addr32 (s₃.gpr .edi)) 16 by rw [h₃.1.wr, h₃.1.reg .edi (by decide)]; exact lanes₂)
+    (by rw [h₃.1.reg .edi (by decide)]; exact h₃.2))
   intro s₄ h₄
   obtain core := (CoreFrame.of_key h₃.1).trans h₄.1
   obtain outFrame : Frame [⟨addr32 (arg s 3), 128⟩] s₂.mem s₄.mem := by
@@ -241,5 +243,24 @@ theorem keyTaint_agree {s₁ s₂ : State} (h₁ : keyContract.pre s₁) (h₂ :
 theorem expandKey_constantTime : ConstantTime isa keyContract.pre keyContract.pub expandKey := by
   exact VG.Taint.constantTime (A := VG.X86.sseTaint) keyTaint (fun _ _ h₁ h₂ hp => keyTaint_agree h₁ h₂ hp)
     (by taint_decide)
+
+/-! ## Key expansions that use the stack -/
+
+/-- `keyContract`, for code that uses the `n` bytes of stack below `esp`,
+which are apart from the buffers it writes. -/
+def keyContractS (n : Nat) : Contract isa :=
+  { keyContract with
+    pre := fun s => keyContract.pre s ∧ n ≤ (s.gpr .esp).toNat ∧
+      (below (s.gpr .esp) n).Disjoint ⟨addr32 (arg s 3), 128⟩ ∧
+      (below (s.gpr .esp) n).Disjoint ⟨addr32 (arg s 4), 512⟩ }
+
+/-- A key expansion for `init` to call, `name`, which uses `n` bytes of stack. -/
+structure KeyFn (n : Nat) where
+  name : String
+  code : Prog isa
+  correct : ∀ s, (keyContractS n).pre s → WP isa code s (fun s' => abiPreserved s s' ∧ keyContract.post s s')
+  ct : ConstantTime isa (keyContractS n).pre keyContract.pub code
+  nosp : NoSp code
+  stack : stackUse code = n
 
 end VG.Proof.Rc2.X86

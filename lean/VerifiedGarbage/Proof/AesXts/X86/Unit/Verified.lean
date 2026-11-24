@@ -1,6 +1,8 @@
 module
 
-import VerifiedGarbage.Proof.AesXts.X86.Verified
+public import VerifiedGarbage.Proof.AesXts.X86.Verified
+public import VerifiedGarbage.Proof.AesXts.X86.AesNi
+public import VerifiedGarbage.Impl.AesXts.X86AesNi
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Aes.X86.BlocksVariant
 public import VerifiedGarbage.Proof.Framework.X86.ArgTaint
@@ -2353,75 +2355,146 @@ end
 # XTS-AES of data units on x86: `Verified`
 
 Correctness (`encrypt_wp`, `decrypt_wp`) and constant time (`encrypt_ct`,
-`decrypt_ct`) for the whole-block functions calling any implementation `v`
-of the block functions (`xtsE v`, `xtsD v`), a state satisfying the
-precondition (`unitSat`), and the shared contracts of
+`decrypt_ct`) for any implementation `v` of the whole-block functions
+(`XtsImpl`): those that call an implementation of the block functions
+(`XtsImpl.blocks`), and the one-pass functions with AES-NI, which call
+nothing (`XtsImpl.aesni`, `Proof/AesXts/X86/AesNi.lean`); a state
+satisfying the precondition (`unitSat`), and the shared contracts of
 `Spec/Xts/Contract.lean`, with 52 bytes of stack: the frame of a call's six
-arguments, its return address, and the whole-block function's 24.
+arguments, its return address, and the whole-block function's 24 at most.
 -/
 
 @[expose] public section
 
-namespace VG.Proof.AesXts.X86.Unit
+namespace VG.Proof.AesXts.X86
 
-open VG VG.X86 VG.Impl.AesXts.X86Unit
+open VG VG.X86
 open VG.Proof.AesCbc (aesWith_state aesInvWith_state)
+open VG.Proof.AesCbc.X86 (modeX86)
 open VG.Proof.Aes.X86 (BlocksImpl)
 
-/-- `vg_aes_xts_encrypt` calling the block functions of `v`, with `v`'s suffix. -/
-abbrev xtsE (v : BlocksImpl) : Impl.Aes.X86.Blocks :=
-  ⟨"vg_aes_xts_encrypt" ++ v.suffix, Impl.AesXts.X86.encrypt v.enc⟩
-
-/-- `vg_aes_xts_decrypt` calling the block functions of `v`, with `v`'s suffix. -/
-abbrev xtsD (v : BlocksImpl) : Impl.Aes.X86.Blocks :=
-  ⟨"vg_aes_xts_decrypt" ++ v.suffix, Impl.AesXts.X86.decrypt v.dec⟩
+/-- An implementation of `vg_aes_xts_encrypt` and `vg_aes_xts_decrypt` on x86. -/
+structure XtsImpl where
+  /-- `vg_aes_xts_encrypt`: its symbol and code. -/
+  enc : Impl.Aes.X86.Blocks
+  encStack : stackUse enc.code ≤ 24
+  encOk : ∀ s, (modeX86 (AesXts.xtsMode true)).pre s →
+    ∃ t s', Exec isa enc.code s t s' ∧ abiPreserved s s' ∧ (modeX86 (AesXts.xtsMode true)).post s s'
+  encCt : ConstantTime isa (modeX86 (AesXts.xtsMode true)).pre (modeX86 (AesXts.xtsMode true)).pub enc.code
+  encNosp : NoSp enc.code
+  encSpSafe : enc.code.all (fun i => !isa.writesSp i) = true
+  /-- `enc`'s code has no MMX instruction and makes no indirect call
+  (`calleeOk`): what the cleanup of a function that calls it needs of it,
+  with its stack (`X86.Scrub.calleeSide`). -/
+  encScrub : calleeOk enc.code = true
+  /-- `vg_aes_xts_decrypt`: its symbol and code. -/
+  dec : Impl.Aes.X86.Blocks
+  decStack : stackUse dec.code ≤ 24
+  decOk : ∀ s, (modeX86 (AesXts.xtsMode false)).pre s →
+    ∃ t s', Exec isa dec.code s t s' ∧ abiPreserved s s' ∧ (modeX86 (AesXts.xtsMode false)).post s s'
+  decCt : ConstantTime isa (modeX86 (AesXts.xtsMode false)).pre (modeX86 (AesXts.xtsMode false)).pub dec.code
+  decNosp : NoSp dec.code
+  decSpSafe : dec.code.all (fun i => !isa.writesSp i) = true
+  /-- `encScrub`, of `dec`. -/
+  decScrub : calleeOk dec.code = true
+  /-- What the names of its callers' instances end with (e.g. `_aesni`;
+  nothing for the baseline implementation). -/
+  suffix : String
 
 theorem callee_nosp_all {c : Prog isa} (h : NoSp c) : c.allInstrs (fun i => !Taint.clobbers i .esp) = true := by
   rw [Code.allInstrs_eq]
   exact List.all_eq_true.mpr fun i hi => by simp only [h i hi, Bool.not_false]
 
-theorem xtsE_nosp (v : BlocksImpl) : NoSp (xtsE v).code := by
+theorem xtsE_nosp (v : BlocksImpl) : NoSp (Impl.AesXts.X86.encrypt v.enc) := by
   apply NoSp.of_all
   simp only [Impl.AesXts.X86.encrypt, Impl.AesXts.X86.crypt, Impl.AesXts.X86.batch, Impl.AesXts.X86.pass,
     Impl.AesOcb.X86.blocksFrame, Code.allInstrs, callee_nosp_all v.encNosp]
-  decide +kernel
+  decide
 
-theorem xtsD_nosp (v : BlocksImpl) : NoSp (xtsD v).code := by
+theorem xtsD_nosp (v : BlocksImpl) : NoSp (Impl.AesXts.X86.decrypt v.dec) := by
   apply NoSp.of_all
   simp only [Impl.AesXts.X86.decrypt, Impl.AesXts.X86.crypt, Impl.AesXts.X86.batch, Impl.AesXts.X86.pass,
     Impl.AesOcb.X86.blocksFrame, Code.allInstrs, callee_nosp_all v.decNosp]
-  decide +kernel
+  decide
 
-theorem xtsE_stack (v : BlocksImpl) : stackUse (xtsE v).code ≤ 24 := by
+theorem xtsE_stack (v : BlocksImpl) : stackUse (Impl.AesXts.X86.encrypt v.enc) ≤ 24 := by
   simp only [Impl.AesXts.X86.encrypt, Impl.AesXts.X86.crypt, Impl.AesXts.X86.batch, Impl.AesXts.X86.pass,
     Impl.AesOcb.X86.blocksFrame, stackUse, v.encStack]
-  decide +kernel
+  decide
 
-theorem xtsD_stack (v : BlocksImpl) : stackUse (xtsD v).code ≤ 24 := by
+theorem xtsD_stack (v : BlocksImpl) : stackUse (Impl.AesXts.X86.decrypt v.dec) ≤ 24 := by
   simp only [Impl.AesXts.X86.decrypt, Impl.AesXts.X86.crypt, Impl.AesXts.X86.batch, Impl.AesXts.X86.pass,
     Impl.AesOcb.X86.blocksFrame, stackUse, v.decStack]
-  decide +kernel
+  decide
 
-theorem xfnE (v : BlocksImpl) : XFn true (xtsE v) where
-  ok _ hs := crypt_wp true v.encOk v.encNosp v.encStack (fun R w m p => (aesWith_state R w m p).symm) hs
-  ct := crypt_ct true v.encOk v.encCt v.encNosp v.encStack fun R w m p => (aesWith_state R w m p).symm
-  nosp := xtsE_nosp v
-  stack := xtsE_stack v
+theorem xtsE_calleeOk (v : BlocksImpl) : calleeOk (Impl.AesXts.X86.encrypt v.enc) = true := by
+  simp only [Impl.AesXts.X86.encrypt, Impl.AesXts.X86.crypt, Impl.AesXts.X86.batch, Impl.AesXts.X86.pass,
+    Impl.AesOcb.X86.blocksFrame, calleeOk, v.encScrub]
+  decide
 
-theorem xfnD (v : BlocksImpl) : XFn false (xtsD v) where
-  ok _ hs := crypt_wp false v.decOk v.decNosp v.decStack (fun R w m p => (aesInvWith_state R w m p).symm) hs
-  ct := crypt_ct false v.decOk v.decCt v.decNosp v.decStack fun R w m p => (aesInvWith_state R w m p).symm
-  nosp := xtsD_nosp v
-  stack := xtsD_stack v
+theorem xtsD_calleeOk (v : BlocksImpl) : calleeOk (Impl.AesXts.X86.decrypt v.dec) = true := by
+  simp only [Impl.AesXts.X86.decrypt, Impl.AesXts.X86.crypt, Impl.AesXts.X86.batch, Impl.AesXts.X86.pass,
+    Impl.AesOcb.X86.blocksFrame, calleeOk, v.decScrub]
+  decide
 
-theorem encrypt_spSafe (v : BlocksImpl) : (encrypt (xtsE v)).all (fun i => !isa.writesSp i) = true := by
-  simp only [encrypt, tweak, encSteal, swap, xcall, Code.all, Proof.AesXts.X86.encrypt_spSafe v]
-  decide +kernel
+namespace XtsImpl
 
-theorem decrypt_spSafe (v : BlocksImpl) : (decrypt (xtsE v) (xtsD v)).all (fun i => !isa.writesSp i) = true := by
-  simp only [decrypt, tweak, decSteal, swap, xcall, Code.all, Proof.AesXts.X86.encrypt_spSafe v,
-    Proof.AesXts.X86.decrypt_spSafe v]
-  decide +kernel
+/-- The whole-block functions that call the block functions of `v`, with
+`v`'s suffix: three passes over the data. -/
+def blocks (v : BlocksImpl) : XtsImpl where
+  enc := ⟨"vg_aes_xts_encrypt" ++ v.suffix, Impl.AesXts.X86.encrypt v.enc⟩
+  encStack := xtsE_stack v
+  encOk _ hs := crypt_wp true v.encOk v.encNosp v.encStack (fun R w m p => (aesWith_state R w m p).symm) hs
+  encCt := crypt_ct true v.encOk v.encCt v.encNosp v.encStack fun R w m p => (aesWith_state R w m p).symm
+  encNosp := xtsE_nosp v
+  encSpSafe := encrypt_spSafe v
+  encScrub := xtsE_calleeOk v
+  dec := ⟨"vg_aes_xts_decrypt" ++ v.suffix, Impl.AesXts.X86.decrypt v.dec⟩
+  decStack := xtsD_stack v
+  decOk _ hs := crypt_wp false v.decOk v.decNosp v.decStack (fun R w m p => (aesInvWith_state R w m p).symm) hs
+  decCt := crypt_ct false v.decOk v.decCt v.decNosp v.decStack fun R w m p => (aesInvWith_state R w m p).symm
+  decNosp := xtsD_nosp v
+  decSpSafe := decrypt_spSafe v
+  decScrub := xtsD_calleeOk v
+  suffix := v.suffix
+
+/-- The functions with AES-NI: one pass over the data. -/
+def aesni : XtsImpl where
+  enc := ⟨"vg_aes_xts_encrypt_aesni", Impl.AesXts.X86AesNi.encrypt⟩
+  encStack := Nat.le_trans (Nat.le_of_eq AesNi.encrypt_stack) (Nat.zero_le _)
+  encOk := AesNi.encrypt_ok
+  encCt := AesNi.encrypt_ct
+  encNosp := AesNi.encrypt_noSp
+  encSpSafe := AesNi.encrypt_spSafe
+  encScrub := AesNi.encrypt_calleeOk
+  dec := ⟨"vg_aes_xts_decrypt_aesni", Impl.AesXts.X86AesNi.decrypt⟩
+  decStack := Nat.le_trans (Nat.le_of_eq AesNi.decrypt_stack) (Nat.zero_le _)
+  decOk := AesNi.decrypt_ok
+  decCt := AesNi.decrypt_ct
+  decNosp := AesNi.decrypt_noSp
+  decSpSafe := AesNi.decrypt_spSafe
+  decScrub := AesNi.decrypt_calleeOk
+  suffix := "_aesni"
+
+end XtsImpl
+
+end VG.Proof.AesXts.X86
+
+namespace VG.Proof.AesXts.X86.Unit
+
+open VG VG.X86 VG.Impl.AesXts.X86Unit
+
+theorem xfnE (v : XtsImpl) : XFn true v.enc := ⟨v.encOk, v.encCt, v.encNosp, v.encStack⟩
+
+theorem xfnD (v : XtsImpl) : XFn false v.dec := ⟨v.decOk, v.decCt, v.decNosp, v.decStack⟩
+
+theorem encrypt_spSafe (v : XtsImpl) : (encrypt v.enc).all (fun i => !isa.writesSp i) = true := by
+  simp only [encrypt, tweak, encSteal, swap, xcall, Code.all, v.encSpSafe]
+  decide
+
+theorem decrypt_spSafe (v : XtsImpl) : (decrypt v.enc v.dec).all (fun i => !isa.writesSp i) = true := by
+  simp only [decrypt, tweak, decSteal, swap, xcall, Code.all, v.encSpSafe, v.decSpSafe]
+  decide
 
 /-- A state satisfying the precondition: AES-128, a data unit of one block
 at `0x4000`, and the scratch buffer at `0x5000`, as stack arguments at
@@ -2438,8 +2511,8 @@ def unitSat : State where
   rd := [⟨0x1000, 240⟩, ⟨0x2000, 240⟩, ⟨0x3000, 16⟩, ⟨0x8004, 28⟩]
   wr := [⟨0x4000, 16⟩, ⟨0x5000, 2432⟩]
 
-theorem encrypt_verified (v : BlocksImpl) :
-    Verified X86.target (encrypt (xtsE v)) (Spec.Xts.aesEncryptUnitContract X86.abi 52) :=
+theorem encrypt_verified (v : XtsImpl) :
+    Verified X86.target (encrypt v.enc) (Spec.Xts.aesEncryptUnitContract X86.abi 52) :=
   Verified.of_correct (fun _ hs => encrypt_wp (UPre.of hs) (xfnE v)) (encrypt_ct (xfnE v)) (by
     have a0 : arg unitSat 0 = 0x1000 := by decide
     have a1 : arg unitSat 1 = 0x2000 := by decide
@@ -2455,8 +2528,8 @@ theorem encrypt_verified (v : BlocksImpl) :
       xtsOf, E, W, K, R, I, D, Len, S, Sa, Da, schR, tschR, iR, dataR, scrR, argsR, retR, stkR]
       [a0, a1, a2, a3, a4, a5, a6, e, esp] using unitSat)
 
-theorem decrypt_verified (v : BlocksImpl) :
-    Verified X86.target (decrypt (xtsE v) (xtsD v)) (Spec.Xts.aesDecryptUnitContract X86.abi 52) :=
+theorem decrypt_verified (v : XtsImpl) :
+    Verified X86.target (decrypt v.enc v.dec) (Spec.Xts.aesDecryptUnitContract X86.abi 52) :=
   Verified.of_correct (fun _ hs => decrypt_wp (UPre.of hs) (xfnE v) (xfnD v)) (decrypt_ct (xfnE v) (xfnD v)) (by
     have a0 : arg unitSat 0 = 0x1000 := by decide
     have a1 : arg unitSat 1 = 0x2000 := by decide

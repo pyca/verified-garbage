@@ -79,6 +79,10 @@ mod vg_p521_comb;
 pub use vg_p521_comb::VG_P521_COMB;
 
 #[rustfmt::skip]
+mod vg_rc2_pitable;
+pub use vg_rc2_pitable::VG_RC2_PITABLE;
+
+#[rustfmt::skip]
 mod vg_rc4_ssse3;
 pub use vg_rc4_ssse3::VG_RC4_SSSE3;
 

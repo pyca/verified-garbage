@@ -446,7 +446,7 @@ theorem verifiedScrubbedWiped {c : Prog isa}
   have hv : Verified target (withStackScratchWiped bytes (slots sig) words c)
       (sig.contract abi pre post false (0 + bytes) leak) :=
     Verified.stackScratchWiped h hb hsp hd (by omega_using [hw]) hpre hpost hpostOut hsat hl hleak
-  refine ⟨⟨fun s hs => ?_, fun s₁ s₂ t₁ t₂ u₁ u₂ p₁ p₂ hp e₁ e₂ => ?_, hv.2.2⟩, ?_⟩
+  refine ⟨⟨fun s hs => ?_, fun s₁ s₂ t₁ t₂ u₁ u₂ p₁ p₂ hp e₁ e₂ => ?_, hv.2.2⟩, ?_, fun ty _ h => by cases ty <;> cases h⟩
   · obtain ⟨t, u, he, habi, hq⟩ := hv.1 s hs
     obtain ⟨u', hb', ok⟩ := tail_run hrb u
     refine ⟨t ++ [], u', .seq he (.block hb'), ⟨fun r hr => ?_, by rw [ok.mem]; exact habi.2⟩,

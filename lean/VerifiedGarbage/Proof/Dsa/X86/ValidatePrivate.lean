@@ -20,6 +20,7 @@ import VerifiedGarbage.Proof.Dsa.X86.InstallArguments
 import VerifiedGarbage.Proof.Dsa.X86.InstalledInputs
 import VerifiedGarbage.Proof.Dsa.X86.PackedKeyBuffers
 import VerifiedGarbage.Proof.Dsa.X86.PrivateKey
+import VerifiedGarbage.Proof.Dsa.X86.GenerateParameters
 import VerifiedGarbage.Proof.Dsa.X86.ShapeModuli
 import VerifiedGarbage.Proof.Dsa.X86.ShapeSavedFrame
 import VerifiedGarbage.Proof.Dsa.X86.SavedFrame
@@ -158,6 +159,33 @@ theorem privateValidatingEntry_ok {s : State} (A : PrivateValidatingABI s) :
       exact (field_keep O2 hn).trans (Args a ha)
     · exact N.trans (field_keep O2 (by decide)).symm
 
+/-- The public value of a private key is in the generator's subgroup:
+`y^q = (g^x)^q = (g^q)^x = 1`. -/
+theorem subgroup_of_power {p q g y x : Nat} (hg : 1 < g) (hp : g < p) (hq : g ^ q % p = 1)
+    (hy : g ^ x % p = y) : y ^ q % p = 1 := by
+  rw [← hy, ← Nat.pow_mod, ← Nat.pow_mul, Nat.mul_comm, Nat.pow_mul, Nat.pow_mod, hq, Nat.one_pow]
+  exact Nat.mod_eq_of_lt (Nat.lt_trans hg hp)
+
+/-- The validator's checks of the domain and of the generator's subgroup
+power: `Validate.publicKey`'s, but the public value's power. -/
+theorem validateChecks_ok {base : Addr} {size pLen qLen p q g y : Nat} {s0 : State}
+    (M : Moduli base size pLen qLen p q s0)
+    (G : CallerBuffer s0 base size (.input .g) pLen)
+    (Y : CallerBuffer s0 base size (.input .y) pLen)
+    (hg : operandValue s0 base (.input .g) pLen = g)
+    (hy : operandValue s0 base (.input .y) pLen = y) :
+    WP isa (.seq (Validate.domain pLen qLen) (Generate.subgroup pLen qLen)) s0 fun sf =>
+      Moduli base size pLen qLen p q sf ∧
+      flagW base (Layout.field .mask) sf = flagW base (Layout.field .mask) s0 &&&
+        mask32 (((1 < g ∧ g < p) ∧ (1 < y ∧ y < p)) ∧ (p - 1) % q = 0 ∧ g ^ q % p = 1) ∧
+      Execution base s0 sf := by
+  refine WP.seq (WP.mono (domain_ok M G Y hg hy) fun s1 ⟨M1, F1, _, E1⟩ => ?_)
+  refine WP.mono (generateSubgroup_ok M1 (E1.buffer G (by decide))
+    ((E1.value G (by decide) M.extent).trans hg)) fun sf ⟨Mf, Ff, Ef⟩ => ?_
+  refine ⟨Mf, ?_, E1.trans Ef⟩
+  rw [Ff, F1]
+  simp only [BitVec.and_assoc, mask32_and, and_assoc]
+
 theorem privateValidatingSized_spec {base : Addr} {size pLen qLen p q g y x : Nat}
     {s : State} {key : List Byte}
     (scr : Scr s base size) (extent : usedBytes ≤ size) (widths : Spec.Dsa.lengthsValid pLen qLen)
@@ -199,7 +227,7 @@ theorem privateValidatingSized_spec {base : Addr} {size pLen qLen p q g y x : Na
     have hyt := (Y.value_keep_shape O K (by decide) (by decide) bound).trans hy
     have hxt := (X.value_keep_shape O K (by decide) (by decide) bound).trans hx
     have hkt := (K0.value_keep_shape O K (by decide) (by decide) bound).trans hk
-    refine WP.seq (WP.seq (WP.mono (publicKey_ok Mt Gt Yt hgt hyt) fun u ⟨Mu, Fu, _, E⟩ =>
+    refine WP.seq (WP.seq (WP.mono (validateChecks_ok Mt Gt Yt hgt hyt) fun u ⟨Mu, Fu, E⟩ =>
       WP.mono (privateKey_ok Mu (E.buffer Gt (by decide)) (E.buffer Yt (by decide))
         (E.buffer Xt (by decide)) (E.buffer Kt (by decide))
         ((E.value Gt (by decide) Mt.extent).trans hgt) ((E.value Yt (by decide) Mt.extent).trans hyt)
@@ -207,17 +235,22 @@ theorem privateValidatingSized_spec {base : Addr} {size pLen qLen p q g y x : Na
         fun v ⟨Mv, Fv, _, Ev'⟩ => ?_))
     have Ev := E.trans Ev'
     have mask : flagW base (Layout.field .mask) v =
-        mask32 (shapeValid p q ∧ publicChecks p q g y ∧ (0 < x ∧ x < q) ∧ (0 < x ∧ x < q) ∧
-          g ^ x % p = y) := by
+        mask32 (shapeValid p q ∧ (((1 < g ∧ g < p) ∧ (1 < y ∧ y < p)) ∧ (p - 1) % q = 0 ∧
+          g ^ q % p = 1) ∧ (0 < x ∧ x < q) ∧ (0 < x ∧ x < q) ∧ g ^ x % p = y) := by
       rw [Fv, Fu, F]
       simp only [mask32_and, and_assoc]
     refine WP.mono (result_ok Mv.scr Mv.saved _ mask) fun sf ⟨V, Kf, Of⟩ => ?_
     refine ⟨?_, ((K.mono (by decide)).trans Ev.keeps).trans (Kf.mono (by decide)), ?_, ?_⟩
     · rw [V, value]
       by_cases h : shapeValid p q ∧ publicChecks p q g y ∧ (0 < x ∧ x < q) ∧ g ^ x % p = y
-      · simp only [h]; rfl
-      · have h' : ¬ (shapeValid p q ∧ publicChecks p q g y ∧ (0 < x ∧ x < q) ∧ (0 < x ∧ x < q) ∧
-            g ^ x % p = y) := fun H => h ⟨H.1, H.2.1, H.2.2.1, H.2.2.2.2⟩
+      · have h' : shapeValid p q ∧ (((1 < g ∧ g < p) ∧ (1 < y ∧ y < p)) ∧ (p - 1) % q = 0 ∧
+            g ^ q % p = 1) ∧ (0 < x ∧ x < q) ∧ (0 < x ∧ x < q) ∧ g ^ x % p = y :=
+          ⟨h.1, ⟨h.2.1.1, h.2.1.2.1, h.2.1.2.2.1⟩, h.2.2.1, h.2.2.1, h.2.2.2⟩
+        simp only [h, h']; rfl
+      · have h' : ¬ (shapeValid p q ∧ (((1 < g ∧ g < p) ∧ (1 < y ∧ y < p)) ∧ (p - 1) % q = 0 ∧
+            g ^ q % p = 1) ∧ (0 < x ∧ x < q) ∧ (0 < x ∧ x < q) ∧ g ^ x % p = y) := fun H =>
+          h ⟨H.1, ⟨H.2.1.1, H.2.1.2.1, H.2.1.2.2,
+            subgroup_of_power H.2.1.1.1.1 H.2.1.1.1.2 H.2.1.2.2 H.2.2.2.2⟩, H.2.2.1, H.2.2.2.2⟩
         simp only [h, h', decide_false, ite_false]; rfl
     · rw [Of]
       intro a ha hstack

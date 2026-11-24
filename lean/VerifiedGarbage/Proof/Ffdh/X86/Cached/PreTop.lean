@@ -80,8 +80,8 @@ tooth's by `rows` squares, and the entries `d + j` for `0 < j < d`, entry
 # FFDH's key-generation context on i686: its rows
 
 The precomputation writes the context: `storeRow_ok` copies a wide slot to
-a row of it, `loadRow_ok` a row back to a slot, each by `selectLoop` with an
-all-ones mask.
+a row of it by `selectLoop` with an all-ones mask, as `loadRow_ok`
+(`Select.lean`) copies a row back to a slot.
 -/
 
 namespace VG.Proof.Ffdh.X86.Cached.Pre
@@ -123,21 +123,6 @@ theorem slot_span (h : In Ex base bytes len args s) {a : Nat} (ha : a ≤ 27) :
   have nw := h.scratch.nowrap
   refine ⟨?_, by omega_using [bw, f, est, nw]⟩
   exact ⟨_, List.mem_append_right _ h.ws.wr, Offset.contains_base _ (by omega_using [bw, f, est]) (by omega_using [f, nw])⟩
-
-/-- An index into `eax`, by code that keeps the rest. -/
-abbrev Idx (idx : List Instr) (s : State) (j : Nat) : Prop :=
-  ∀ (is : List Instr) (Q : State → Prop), (∀ u, Keeps [.eax] s u → u.mem = s.mem →
-    u.gpr .eax = BitVec.ofNat 32 j → WP isa (.block is) u Q) → WP isa (.block (idx ++ is)) s Q
-
-theorem rowImm_idx (k : Nat) : Idx (rowImm k) s k := fun is Q k' => by
-  simp only [rowImm, List.cons_append, List.nil_append]
-  exact wp_movS rfl fun u U _ => k' u U.keeps U.mem U.gpr
-
-/-- Row `j`'s bytes in the context. -/
-theorem row_fit {j : Nat} (hj : j < 34) : 24 + bc len .wide * j + bc len .wide ≤ ctxBytes len := by
-  have := Nat.mul_le_mul_left (bc len .wide) (show j + 1 ≤ 34 by omega_using [hj])
-  rw [Nat.mul_succ] at this
-  simp only [ctxBytes]; omega_using [this]
 
 /-- Slot `a` to row `j` of the context. -/
 theorem storeRow_ok (h : In Ex base bytes len args s) (C : CtxW base bytes len args s) {idx : List Instr} {j a : Nat}
@@ -208,65 +193,6 @@ theorem storeRow_ok (h : In Ex base bytes len args s) (C : CtxW base bytes len a
   refine ⟨KeyCut.in_keepOut h Ku (by decide) (by decide) Fu argR, ?_, ?_, Ku⟩
   · rw [U.mem, ← m₀₄]; rw [← bw] at O; exact O
   · rw [U.mem, V, ← m₀₄]; rfl
-
-/-- Row `j` of the context to slot `a`. -/
-theorem loadRow_ok (h : In Ex base bytes len args s) (C : CtxRd base bytes len args s) {idx : List Instr} {j a : Nat}
-    (hj : j < 34) (ha : a ≤ 27) (hidx : Idx idx s j) :
-    WP isa (loadRow idx a) s fun u =>
-      In Ex base bytes len args u ∧ Outside base (lo len (.slot .wide a)) (bc len .wide) s.mem u.mem ∧
-      sv u.mem base len .wide a = val32 s.mem (ctxAddr args) (24 + bc len .wide * j) (cwc len .wide) ∧
-      Keeps [.eax, .ebx, .ecx, .edx, .ebp] s u := by
-  have bl := h.bytes_lt
-  have nw := h.scratch.nowrap
-  obtain fa := h.slot_fit .wide (j := a) ha
-  obtain bw := bc_eq_cwc len .wide
-  obtain g := bc_ge h.lower' .wide
-  obtain hb := bc_le h.upper' .wide
-  have est : st len .wide = 2 * bc len .wide + 32 := rfl
-  obtain rf := row_fit (len := len) hj
-  unfold loadRow
-  simp only [List.append_assoc]
-  refine WP.seq (hidx _ _ fun s₀ K₀ m₀ e₀ => ?_)
-  obtain h₀ := h.regs K₀ m₀
-  refine rowAt_ok (r := .ebp) (j := j) h₀ (by omega_using [hj]) e₀ fun s₁ K₁ m₁ p₁ => ?_
-  obtain h₁ := h₀.regs K₁ m₁
-  simp only [List.cons_append, List.nil_append]
-  refine wp_movS rfl fun s₂ U₂ _ => ?_
-  obtain h₂ := h₁.regs U₂.keeps U₂.mem
-  refine ptrTo_ok (r := .ebx) (t := .edx) (x := .slot .wide a) (by decide) (by decide) h₂.edi h₂.width h.upper'
-    (by omega_using [bl, fa]) fun s₃ K₃ m₃ p₃ => ?_
-  obtain h₃ := h₂.regs K₃ m₃
-  refine cntTo_ok (n := one .wide) (r := .edi) h₃.width h.upper' (by decide) fun s₄ K₄ m₄ e₄ => WP.block_nil ?_
-  obtain K₀₄ : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .edi] s s₄ :=
-    (((K₀.mono (by decide)).trans (K₁.mono (by decide))).trans (U₂.keeps.mono (by decide))).trans
-      ((K₃.mono (by decide)).trans (K₄.mono (by decide)))
-  obtain m₀₄ : s₄.mem = s.mem := by rw [m₄, m₃, U₂.mem, m₁, m₀]
-  obtain ws₄ : Ws s₄ base bytes := h.ws.of_keeps K₀₄
-  obtain ebp₄ : PtrAt s₄ (ctxAddr args) .ebp (24 + bc len .wide * j) := by
-    rw [PtrAt, K₄.1 _ (by decide), K₃.1 _ (by decide), U₂.other _ (by decide)]; exact p₁
-  obtain ebx₄ : PtrAt s₄ base .ebx (lo len (.slot .wide a)) := by rw [PtrAt, K₄.1 _ (by decide)]; exact p₃
-  obtain edi₄ : (s₄.gpr .edi).toNat = 4 * cwc len .wide := by
-    rw [e₄, cb1, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hb])]; exact bw
-  obtain ecx₄ : s₄.gpr .ecx = cmask true := by
-    rw [K₄.1 _ (by decide), K₃.1 _ (by decide), U₂.gpr]; rfl
-  obtain span : Span s₄ (ctxAddr args) (24 + bc len .wide * j) (4 * cwc len .wide) :=
-    (C.keep K₀₄).row (by rw [← bw]; exact rf)
-  obtain dis : Region.Disjoint ⟨off (ctxAddr args) (24 + bc len .wide * j), 4 * cwc len .wide⟩
-      ⟨off base (lo len (.slot .wide a)), 4 * cwc len .wide⟩ :=
-    (C.apart.sub_left (Offset.sub_base _ (by rw [← bw]; exact rf))).sub_right (Offset.sub_base _ (by omega_using [fa, bw, est]))
-  refine WP.seq (WP.mono (selectLoop_far_ok ws₄ true (by omega) span (by omega_using [fa, bw, est]) dis ebp₄ ebx₄ edi₄ ecx₄)
-    fun t ⟨O, V, _, _, Kt⟩ => ?_)
-  obtain K₀t : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .edi] s t := K₀₄.trans (Kt.mono (by decide))
-  obtain Oall : Outside base 0 bytes s.mem t.mem := by rw [← m₀₄]; exact O.mono (Nat.zero_le _) (by omega_using [fa, bw, est])
-  refine wp_movS ((h.stack 16 (by decide)).keep K₀t (by decide) Oall).readSrc fun u U _ => WP.block_nil ?_
-  obtain ed : u.gpr .edi = s.gpr .edi := by rw [U.gpr]; exact h.edi_eq
-  obtain Ku : Keeps [.eax, .ebx, .ecx, .edx, .ebp] s u :=
-    VG.Proof.Bignum.X86.PublicRt.Keeps.drop_edi (rs := [.eax, .ebx, .ecx, .edx, .ebp])
-      ((K₀t.trans (U.keeps.mono (by decide))).mono (by decide)) ed
-  refine ⟨h.keep Ku (by decide) (by decide) (by rw [U.mem]; exact Oall), ?_, ?_, Ku⟩
-  · rw [U.mem, ← m₀₄, bw]; exact O
-  · simp only [sv]
-    rw [U.mem, V, m₀₄]; rfl
 
 end
 

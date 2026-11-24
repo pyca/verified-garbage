@@ -66,7 +66,7 @@ theorem _root_.VG.Proof.Idea.AArch64.Residue.expandKeyCleared_scrubbed :
     VerifiedScrubbed AArch64.target Impl.Idea.AArch64.Fn.expandKey
       (Spec.Idea.expandKeyContract AArch64.abi) 0 :=
   ⟨Proof.Idea.AArch64.Residue.expandKeyCleared_verified,
-    Proof.Idea.AArch64.Residue.expandKeyCleared_noResidue _⟩
+    Proof.Idea.AArch64.Residue.expandKeyCleared_noResidue _, fun ty _ h => by cases ty <;> cases h⟩
 
 /-- The function as its registration binds it: it meets its contract in constant time and returns
 without secret residue. -/
@@ -74,7 +74,7 @@ theorem _root_.VG.Proof.Idea.AArch64.Residue.invertKeyCleared_scrubbed :
     VerifiedScrubbed AArch64.target Impl.Idea.AArch64.Fn.invertKey
       (Spec.Idea.invertKeyContract AArch64.abi) 0 :=
   ⟨Proof.Idea.AArch64.Residue.invertKeyCleared_verified,
-    Proof.Idea.AArch64.Residue.invertKeyCleared_noResidue _⟩
+    Proof.Idea.AArch64.Residue.invertKeyCleared_noResidue _, fun ty _ h => by cases ty <;> cases h⟩
 
 /-- The function as its registration binds it: it meets its contract in constant time and returns
 without secret residue. -/
@@ -82,6 +82,6 @@ theorem _root_.VG.Proof.Idea.AArch64.Residue.ecbCleared_scrubbed :
     VerifiedScrubbed AArch64.target Impl.Idea.AArch64.Fn.ecb
       (Spec.Idea.ecbContract AArch64.abi) 0 :=
   ⟨Proof.Idea.AArch64.Residue.ecbCleared_verified,
-    Proof.Idea.AArch64.Residue.ecbCleared_noResidue _⟩
+    Proof.Idea.AArch64.Residue.ecbCleared_noResidue _, fun ty _ h => by cases ty <;> cases h⟩
 
 end VG.Proof.Idea.AArch64.Residue

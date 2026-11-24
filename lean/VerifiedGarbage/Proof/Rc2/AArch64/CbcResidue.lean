@@ -64,7 +64,7 @@ theorem _root_.VG.Proof.Rc2.AArch64.CbcResidue.cbcEncryptChainedCode_scrubbed :
     VerifiedScrubbed AArch64.target Impl.Rc2.AArch64.Fn.cbcEncryptChained
       (Spec.Rc2.cbcEncryptChainedContract AArch64.abi 512) 0 :=
   ⟨Proof.Rc2.AArch64.CbcResidue.cbcEncryptChainedCode_verified,
-    Proof.Rc2.AArch64.CbcResidue.cbcEncryptChainedCode_noResidue⟩
+    Proof.Rc2.AArch64.CbcResidue.cbcEncryptChainedCode_noResidue, fun ty _ h => by cases ty <;> cases h⟩
 
 /-- The function as its registration binds it: it meets its contract in constant time and returns
 without secret residue. -/
@@ -72,6 +72,6 @@ theorem _root_.VG.Proof.Rc2.AArch64.CbcResidue.cbcDecryptChainedCode_scrubbed :
     VerifiedScrubbed AArch64.target Impl.Rc2.AArch64.Fn.cbcDecryptChained
       (Spec.Rc2.cbcDecryptChainedContract AArch64.abi 512) 0 :=
   ⟨Proof.Rc2.AArch64.CbcResidue.cbcDecryptChainedCode_verified,
-    Proof.Rc2.AArch64.CbcResidue.cbcDecryptChainedCode_noResidue⟩
+    Proof.Rc2.AArch64.CbcResidue.cbcDecryptChainedCode_noResidue, fun ty _ h => by cases ty <;> cases h⟩
 
 end VG.Proof.Rc2.AArch64.CbcResidue

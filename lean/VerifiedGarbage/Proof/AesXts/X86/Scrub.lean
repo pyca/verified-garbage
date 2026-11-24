@@ -31,12 +31,13 @@ Each as emitted (`Impl.AesXts.X86Unit.Fn`) zeroes the stack of its
 contract below `esp` and clears the registers, and returns without secret
 residue (`X86.Scrub.verifiedScrubbedAll`: `encryptUnit_scrubbed`,
 `decryptUnit_scrubbed`). What that needs of the code (`scrubFSide`) holds
-whatever the implementation of the block functions (`encrypt_scrub`,
-`decrypt_scrub`): from XTS's code with stub block functions, whose code is
-`.block []`, which the kernel evaluates once (`encrypt_side`,
-`decrypt_side`), the implementation's own facts (`BlocksImpl.encScrub`,
-`decScrub`, their stacks), and `Fill`, which `fill_calls` proves by walking
-only XTS's code.
+whatever the implementation of the whole-block functions (`XtsImpl`;
+`encrypt_scrub`, `decrypt_scrub`): from the code with stub whole-block
+functions, whose code is `.block []`, which the kernel evaluates once over
+the 28 bytes of a call's frame and return address (`encrypt_side`,
+`decrypt_side`), the implementation's own facts (`XtsImpl.encScrub`,
+`decScrub`, and their stacks, 24 bytes at most), and `Fill`, which
+`fill_calls` proves by walking only the unit functions' code.
 -/
 
 @[expose] public section
@@ -78,85 +79,71 @@ theorem decryptUnitOut (stack : Nat) :
 
 /-! ## What the scrub needs of the code -/
 
-open Proof.Aes.X86 (BlocksImpl)
+/-- A whole-block function with no code. -/
+def stubXts : Impl.Aes.X86.Blocks := ⟨"", .block []⟩
 
-/-- A block function with no code. -/
-def stubBlocks : Impl.Aes.X86.Blocks := ⟨"", .block []⟩
+-- The unit functions' own code, with the stubs, as literals for the kernel's evaluation.
+materialize_code encryptStub := Impl.AesXts.X86Unit.encrypt stubXts
+materialize_code decryptStub := Impl.AesXts.X86Unit.decrypt stubXts stubXts
 
-/-- `vg_aes_xts_encrypt` over `b`, by the name `sfx` ends. -/
-abbrev xE (b : Impl.Aes.X86.Blocks) (sfx : String) : Impl.Aes.X86.Blocks :=
-  ⟨"vg_aes_xts_encrypt" ++ sfx, Impl.AesXts.X86.encrypt b⟩
-
-/-- `vg_aes_xts_decrypt` over `b`, by the name `sfx` ends. -/
-abbrev xD (b : Impl.Aes.X86.Blocks) (sfx : String) : Impl.Aes.X86.Blocks :=
-  ⟨"vg_aes_xts_decrypt" ++ sfx, Impl.AesXts.X86.decrypt b⟩
-
--- XTS's own code, with the stubs, as literals for the kernel's evaluation.
-materialize_code encryptStub := Impl.AesXts.X86Unit.encrypt (xE stubBlocks "")
-materialize_code decryptStub := Impl.AesXts.X86Unit.decrypt (xE stubBlocks "") (xD stubBlocks "")
-
-theorem encrypt_side : scrubFSide (Impl.AesXts.X86Unit.encrypt (xE stubBlocks "")) [] 52 = true := by
+theorem encrypt_side : scrubFSide (Impl.AesXts.X86Unit.encrypt stubXts) [] 28 = true := by
   lit_decide
 
-theorem decrypt_side :
-    scrubFSide (Impl.AesXts.X86Unit.decrypt (xE stubBlocks "") (xD stubBlocks "")) [] 52 = true := by
+theorem decrypt_side : scrubFSide (Impl.AesXts.X86Unit.decrypt stubXts stubXts) [] 28 = true := by
   lit_decide
 
-theorem encrypt_fill (e : Impl.Aes.X86.Blocks) (sfx : String) (he : calleeSide e.code 0 = true) :
-    Fill 0 (Impl.AesXts.X86Unit.encrypt (xE stubBlocks "")) (Impl.AesXts.X86Unit.encrypt (xE e sfx)) := by
+theorem encrypt_fill (e : Impl.Aes.X86.Blocks) (he : calleeSide e.code 24 = true) :
+    Fill 24 (Impl.AesXts.X86Unit.encrypt stubXts) (Impl.AesXts.X86Unit.encrypt e) := by
   fill_calls
 
-theorem decrypt_fill (e d : Impl.Aes.X86.Blocks) (sfx : String) (he : calleeSide e.code 0 = true)
-    (hd : calleeSide d.code 0 = true) :
-    Fill 0 (Impl.AesXts.X86Unit.decrypt (xE stubBlocks "") (xD stubBlocks ""))
-      (Impl.AesXts.X86Unit.decrypt (xE e sfx) (xD d sfx)) := by
+theorem decrypt_fill (e d : Impl.Aes.X86.Blocks) (he : calleeSide e.code 24 = true)
+    (hd : calleeSide d.code 24 = true) :
+    Fill 24 (Impl.AesXts.X86Unit.decrypt stubXts stubXts) (Impl.AesXts.X86Unit.decrypt e d) := by
   fill_calls
 
 /-- `scrubFSide` of `vg_aes_xts_encrypt_unit`, whatever the implementation. -/
-theorem encrypt_scrub (v : BlocksImpl) :
-    scrubFSide (Impl.AesXts.X86Unit.encrypt (Unit.xtsE v)) [] 52 = true :=
-  scrubFSide_of_fill (encrypt_fill _ _ (calleeSide_of_eq v.encStack v.encScrub)) encrypt_side
+theorem encrypt_scrub (v : XtsImpl) : scrubFSide (Impl.AesXts.X86Unit.encrypt v.enc) [] 52 = true :=
+  scrubFSide_of_fill (encrypt_fill _ (calleeSide_of_le v.encStack v.encScrub)) encrypt_side
 
 /-- `scrubFSide` of `vg_aes_xts_decrypt_unit`, whatever the implementation. -/
-theorem decrypt_scrub (v : BlocksImpl) :
-    scrubFSide (Impl.AesXts.X86Unit.decrypt (Unit.xtsE v) (Unit.xtsD v)) [] 52 = true :=
-  scrubFSide_of_fill (decrypt_fill _ _ _ (calleeSide_of_eq v.encStack v.encScrub)
-    (calleeSide_of_eq v.decStack v.decScrub)) decrypt_side
+theorem decrypt_scrub (v : XtsImpl) : scrubFSide (Impl.AesXts.X86Unit.decrypt v.enc v.dec) [] 52 = true :=
+  scrubFSide_of_fill (decrypt_fill _ _ (calleeSide_of_le v.encStack v.encScrub)
+    (calleeSide_of_le v.decStack v.decScrub)) decrypt_side
 
 /-! ## The functions as emitted -/
 
 /-- `vg_aes_xts_encrypt_unit` over `v` as emitted (`Impl.AesXts.X86Unit.Fn.encrypt`)
 meets its contract in constant time and returns without secret residue. -/
-theorem encryptUnit_scrubbed (v : BlocksImpl) :
-    VerifiedScrubbed X86.target (Impl.AesXts.X86Unit.Fn.encrypt (Proof.AesXts.X86.Unit.xtsE v))
+theorem encryptUnit_scrubbed (v : XtsImpl) :
+    VerifiedScrubbed X86.target (Impl.AesXts.X86Unit.Fn.encrypt v.enc)
       (Spec.Xts.aesEncryptUnitContract X86.abi 52) 0 :=
   verifiedScrubbedAll (api := Spec.Xts.aesEncryptUnitApi) {
       suffix := v.suffix
-      code := Impl.AesXts.X86Unit.encrypt (Unit.xtsE v)
+      code := Impl.AesXts.X86Unit.encrypt v.enc
       verified := Unit.encrypt_verified v
       spSafe := Unit.encrypt_spSafe v }
     (encryptUnitOut _) (W := 52) (hs := encrypt_scrub v)
 
 /-- `vg_aes_xts_decrypt_unit` over `v` as emitted (`Impl.AesXts.X86Unit.Fn.decrypt`)
 meets its contract in constant time and returns without secret residue. -/
-theorem decryptUnit_scrubbed (v : BlocksImpl) :
-    VerifiedScrubbed X86.target (Impl.AesXts.X86Unit.Fn.decrypt (Proof.AesXts.X86.Unit.xtsE v) (Proof.AesXts.X86.Unit.xtsD v))
+theorem decryptUnit_scrubbed (v : XtsImpl) :
+    VerifiedScrubbed X86.target (Impl.AesXts.X86Unit.Fn.decrypt v.enc v.dec)
       (Spec.Xts.aesDecryptUnitContract X86.abi 52) 0 :=
   verifiedScrubbedAll (api := Spec.Xts.aesDecryptUnitApi) {
       suffix := v.suffix
-      code := Impl.AesXts.X86Unit.decrypt (Unit.xtsE v) (Unit.xtsD v)
+      code := Impl.AesXts.X86Unit.decrypt v.enc v.dec
       verified := Unit.decrypt_verified v
       spSafe := Unit.decrypt_spSafe v }
     (decryptUnitOut _) (W := 52) (hs := decrypt_scrub v)
 
 /-- `Impl.AesXts.X86Unit.Fn.encrypt` writes `esp` only in its frames and calls. -/
-theorem encryptUnit_fnSpSafe (v : BlocksImpl) :
-    (Impl.AesXts.X86Unit.Fn.encrypt (Proof.AesXts.X86.Unit.xtsE v)).all (fun i => !X86.isa.writesSp i) = true :=
+theorem encryptUnit_fnSpSafe (v : XtsImpl) :
+    (Impl.AesXts.X86Unit.Fn.encrypt v.enc).all (fun i => !X86.isa.writesSp i) = true :=
   scrubAll_spSafe (Unit.encrypt_spSafe v)
 
 /-- `Impl.AesXts.X86Unit.Fn.decrypt` writes `esp` only in its frames and calls. -/
-theorem decryptUnit_fnSpSafe (v : BlocksImpl) :
-    (Impl.AesXts.X86Unit.Fn.decrypt (Proof.AesXts.X86.Unit.xtsE v) (Proof.AesXts.X86.Unit.xtsD v)).all
+theorem decryptUnit_fnSpSafe (v : XtsImpl) :
+    (Impl.AesXts.X86Unit.Fn.decrypt v.enc v.dec).all
       (fun i => !X86.isa.writesSp i) = true :=
   scrubAll_spSafe (Unit.decrypt_spSafe v)
 

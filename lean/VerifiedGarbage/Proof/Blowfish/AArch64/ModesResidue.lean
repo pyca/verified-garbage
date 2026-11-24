@@ -157,7 +157,7 @@ theorem _root_.VG.Proof.Blowfish.AArch64.ModesResidue.ecbEncryptCode_scrubbed :
     VerifiedScrubbed AArch64.target Impl.Blowfish.AArch64.Fn.ecbEncrypt
       (Spec.Blowfish.ecbContract AArch64.abi Spec.Blowfish.Direction.encrypt 256) 0 :=
   ⟨Proof.Blowfish.AArch64.ModesResidue.ecbEncryptCode_verified,
-    Proof.Blowfish.AArch64.ModesResidue.ecbEncryptCode_noResidue⟩
+    Proof.Blowfish.AArch64.ModesResidue.ecbEncryptCode_noResidue, fun ty _ h => by cases ty <;> cases h⟩
 
 /-- The function as its registration binds it: it meets its contract in constant time and returns
 without secret residue. -/
@@ -165,7 +165,7 @@ theorem _root_.VG.Proof.Blowfish.AArch64.ModesResidue.ecbDecryptCode_scrubbed :
     VerifiedScrubbed AArch64.target Impl.Blowfish.AArch64.Fn.ecbDecrypt
       (Spec.Blowfish.ecbContract AArch64.abi Spec.Blowfish.Direction.decrypt 256) 0 :=
   ⟨Proof.Blowfish.AArch64.ModesResidue.ecbDecryptCode_verified,
-    Proof.Blowfish.AArch64.ModesResidue.ecbDecryptCode_noResidue⟩
+    Proof.Blowfish.AArch64.ModesResidue.ecbDecryptCode_noResidue, fun ty _ h => by cases ty <;> cases h⟩
 
 /-- The function as its registration binds it: it meets its contract in constant time and returns
 without secret residue. -/
@@ -173,7 +173,7 @@ theorem _root_.VG.Proof.Blowfish.AArch64.ModesResidue.cbcEncryptChainedCode_scru
     VerifiedScrubbed AArch64.target Impl.Blowfish.AArch64.Fn.cbcEncryptChained
       (Spec.Blowfish.cbcEncryptChainedContract AArch64.abi 224) 0 :=
   ⟨Proof.Blowfish.AArch64.ModesResidue.cbcEncryptChainedCode_verified,
-    Proof.Blowfish.AArch64.ModesResidue.cbcEncryptChainedCode_noResidue⟩
+    Proof.Blowfish.AArch64.ModesResidue.cbcEncryptChainedCode_noResidue, fun ty _ h => by cases ty <;> cases h⟩
 
 /-- The function as its registration binds it: it meets its contract in constant time and returns
 without secret residue. -/
@@ -181,7 +181,7 @@ theorem _root_.VG.Proof.Blowfish.AArch64.ModesResidue.cbcDecryptChainedCode_scru
     VerifiedScrubbed AArch64.target Impl.Blowfish.AArch64.Fn.cbcDecryptChained
       (Spec.Blowfish.cbcDecryptChainedContract AArch64.abi 224) 0 :=
   ⟨Proof.Blowfish.AArch64.ModesResidue.cbcDecryptChainedCode_verified,
-    Proof.Blowfish.AArch64.ModesResidue.cbcDecryptChainedCode_noResidue⟩
+    Proof.Blowfish.AArch64.ModesResidue.cbcDecryptChainedCode_noResidue, fun ty _ h => by cases ty <;> cases h⟩
 
 /-- The function as its registration binds it: it meets its contract in constant time and returns
 without secret residue. -/
@@ -189,7 +189,7 @@ theorem _root_.VG.Proof.Blowfish.AArch64.ModesResidue.cfbEncryptCode_scrubbed :
     VerifiedScrubbed AArch64.target Impl.Blowfish.AArch64.Fn.cfbEncrypt
       (Spec.Blowfish.cfbEncryptContract AArch64.abi 224) 0 :=
   ⟨Proof.Blowfish.AArch64.ModesResidue.cfbEncryptCode_verified,
-    Proof.Blowfish.AArch64.ModesResidue.cfbEncryptCode_noResidue⟩
+    Proof.Blowfish.AArch64.ModesResidue.cfbEncryptCode_noResidue, fun ty _ h => by cases ty <;> cases h⟩
 
 /-- The function as its registration binds it: it meets its contract in constant time and returns
 without secret residue. -/
@@ -197,7 +197,7 @@ theorem _root_.VG.Proof.Blowfish.AArch64.ModesResidue.cfbDecryptCode_scrubbed :
     VerifiedScrubbed AArch64.target Impl.Blowfish.AArch64.Fn.cfbDecrypt
       (Spec.Blowfish.cfbDecryptContract AArch64.abi 224) 0 :=
   ⟨Proof.Blowfish.AArch64.ModesResidue.cfbDecryptCode_verified,
-    Proof.Blowfish.AArch64.ModesResidue.cfbDecryptCode_noResidue⟩
+    Proof.Blowfish.AArch64.ModesResidue.cfbDecryptCode_noResidue, fun ty _ h => by cases ty <;> cases h⟩
 
 /-- The function as its registration binds it: it meets its contract in constant time and returns
 without secret residue. -/
@@ -205,7 +205,7 @@ theorem _root_.VG.Proof.Blowfish.AArch64.ModesResidue.cfbEncryptFinalCode_scrubb
     VerifiedScrubbed AArch64.target Impl.Blowfish.AArch64.Fn.cfbEncryptFinal
       (Spec.Blowfish.cfbEncryptFinalContract AArch64.abi 224) 0 :=
   ⟨Proof.Blowfish.AArch64.ModesResidue.cfbEncryptFinalCode_verified,
-    Proof.Blowfish.AArch64.ModesResidue.cfbEncryptFinalCode_noResidue⟩
+    Proof.Blowfish.AArch64.ModesResidue.cfbEncryptFinalCode_noResidue, fun ty _ h => by cases ty <;> cases h⟩
 
 /-- The function as its registration binds it: it meets its contract in constant time and returns
 without secret residue. -/
@@ -213,7 +213,7 @@ theorem _root_.VG.Proof.Blowfish.AArch64.ModesResidue.cfbDecryptFinalCode_scrubb
     VerifiedScrubbed AArch64.target Impl.Blowfish.AArch64.Fn.cfbDecryptFinal
       (Spec.Blowfish.cfbDecryptFinalContract AArch64.abi 224) 0 :=
   ⟨Proof.Blowfish.AArch64.ModesResidue.cfbDecryptFinalCode_verified,
-    Proof.Blowfish.AArch64.ModesResidue.cfbDecryptFinalCode_noResidue⟩
+    Proof.Blowfish.AArch64.ModesResidue.cfbDecryptFinalCode_noResidue, fun ty _ h => by cases ty <;> cases h⟩
 
 /-- The function as its registration binds it: it meets its contract in constant time and returns
 without secret residue. -/
@@ -221,7 +221,7 @@ theorem _root_.VG.Proof.Blowfish.AArch64.ModesResidue.ofbCode_scrubbed :
     VerifiedScrubbed AArch64.target Impl.Blowfish.AArch64.Fn.ofb
       (Spec.Blowfish.ofbContract AArch64.abi 224) 0 :=
   ⟨Proof.Blowfish.AArch64.ModesResidue.ofbCode_verified,
-    Proof.Blowfish.AArch64.ModesResidue.ofbCode_noResidue⟩
+    Proof.Blowfish.AArch64.ModesResidue.ofbCode_noResidue, fun ty _ h => by cases ty <;> cases h⟩
 
 /-- The function as its registration binds it: it meets its contract in constant time and returns
 without secret residue. -/
@@ -229,6 +229,6 @@ theorem _root_.VG.Proof.Blowfish.AArch64.ModesResidue.ofbFinalCode_scrubbed :
     VerifiedScrubbed AArch64.target Impl.Blowfish.AArch64.Fn.ofbFinal
       (Spec.Blowfish.ofbFinalContract AArch64.abi 224) 0 :=
   ⟨Proof.Blowfish.AArch64.ModesResidue.ofbFinalCode_verified,
-    Proof.Blowfish.AArch64.ModesResidue.ofbFinalCode_noResidue⟩
+    Proof.Blowfish.AArch64.ModesResidue.ofbFinalCode_noResidue, fun ty _ h => by cases ty <;> cases h⟩
 
 end VG.Proof.Blowfish.AArch64.ModesResidue

@@ -8,7 +8,9 @@ import VerifiedGarbage.Proof.Weierstrass.X86.Bits
 import VerifiedGarbage.Proof.Weierstrass.X86.Copy
 import VerifiedGarbage.Proof.Ecdsa.X86.Main
 public import VerifiedGarbage.Proof.Ecdsa.X86.Stages
-import VerifiedGarbage.Proof.Ecdsa.X86.Inv
+public import VerifiedGarbage.Proof.Ecdsa.X86.Inv
+public import VerifiedGarbage.Proof.Weierstrass.X86.PowWindow
+import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Proof.Ecdsa.X86.Scalar
 import VerifiedGarbage.Proof.Ecdsa.X86.Middle
 public import VerifiedGarbage.Proof.Ecdh.X86.Validate
@@ -321,7 +323,11 @@ open VG.Impl.Ecdsa.Verify.X86 (SM' EM' RM' UM VM U V)
 variable {c : Cfg}
 
 /-- The slots `mid_ok` writes. -/
-abbrev midW : List Nat := [SM', TMP, ACC, PT, EM', RM', UM, VM, U, V]
+abbrev midW : List Nat :=
+  [SM', TMP, ACC, PT, EM', RM', UM, VM, U, V, EXPP, EXPN, T0, T1, T2, T3, T4, T5, DX]
+
+/-- The slots the power of `s` writes: a power's, and its saved powers'. -/
+abbrev sPowW : List Nat := [ACC, PT, TMP, EXPP, EXPN, T0, T1, T2, T3, T4, T5, DX]
 
 /-- After `u` and `v`. -/
 structure Mid (c : Cfg) (s₀ : State) (base : Addr) (s : State) : Prop where
@@ -388,13 +394,87 @@ theorem mulN_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size)
       k.gpr, k.rd, k.wr, unch_slots (MN'_n c) rfl k.unch (l := [o, TMP]) (by simp) (by simp),
       fun hi h₁ h₂ => sv_keep (MN'_n c) rfl h7 hn k hi h₁ h₂, lt, e⟩
 
+theorem p521ScalarOps_run : tabRun Impl.Ecdsa.Verify.X86.Cfg.p521ScalarOps (1, List.replicate 9 0) =
+    some (Spec.P521.n - 2, [1, 3, 5, 7, 9, 11, 13, 15, 2 ^ 128 - 1]) := by
+  kernel_rfl
+
+/-- The sequence of a curve's order reaches `n - 2`. -/
+theorem scalarOps_run {m bits : Nat} (h3 : 3 ≤ m) (hm : m - 2 < 2 ^ bits) (hb : bits + 4 < 2 ^ 32) :
+    ∃ T, tabRun (Impl.Ecdsa.Verify.X86.Cfg.scalarOps m bits) (1, List.replicate 9 0) = some (m - 2, T) := by
+  unfold Impl.Ecdsa.Verify.X86.Cfg.scalarOps
+  split
+  next h => exact ⟨_, h ▸ p521ScalarOps_run⟩
+  next _ => exact ⟨_, windowOps_run (by omega_using [h3]) hm hb⟩
+
+theorem sSlots_ok : ∀ i ∈ Impl.Ecdsa.Verify.X86.Cfg.sSlots,
+    i < 45 ∧ i ∉ [ACC, PT, TMP] ∧ KM ≠ i ∧ MN ≠ i := by decide
+
+/-- The saved powers of `s` are slots apart from the power's own. -/
+theorem sTab_lay (hc : CfgOk c) :
+    TabLay c.powN c.wk (Impl.Ecdsa.Verify.X86.Cfg.sSlots.map c.sl) := by
+  have h10 := hc.n10
+  refine ⟨fun o ho => ?_, fun o ho => ?_, fun o ho => ?_, fun o ho => ?_, ?_⟩
+  · obtain ⟨i, hi, rfl⟩ := List.mem_map.mp ho
+    exact sl_below_wk c (sSlots_ok i hi).1
+  · obtain ⟨i, hi, rfl⟩ := List.mem_map.mp ho
+    rw [powWxN_eq]
+    exact apart_append (apart_slW (sSlots_ok i hi).2.1) (apart_wk (sSlots_ok i hi).1)
+  · obtain ⟨i, hi, rfl⟩ := List.mem_map.mp ho
+    exact sl_apart c (sSlots_ok i hi).2.2.1
+  · obtain ⟨i, hi, rfl⟩ := List.mem_map.mp ho
+    exact sl_apart c (sSlots_ok i hi).2.2.2
+  · exact List.pairwise_map.mpr ((by decide : Impl.Ecdsa.Verify.X86.Cfg.sSlots.Pairwise (· ≠ ·)).imp
+      fun h => sl_apart c h)
+
+/-- `w = s^(n-2)`: the signature's inversion, or the power by the order's
+sequence, which also writes its saved powers. -/
+theorem sPow_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size)
+    (hM : ModOkW c.MN' size c.C.n s.mem base) (hB : wordsVal s.mem base (c.sl KM) c.n < c.C.n)
+    (hO : wordsVal s.mem base (c.sl ONEN) c.n = 2 ^ (64 * c.n) % c.C.n)
+    (hbits : ∀ t < 64 * c.n, s.mem (off base (bitsAt c.n 2 + t)) = if (c.C.n - 2).testBit t then 1 else 0)
+    (he : c.C.n - 2 < 2 ^ (64 * c.n)) :
+    WP isa (Impl.Ecdsa.Verify.X86.Cfg.sPow c) s fun z => Keeps powClob s z ∧
+      Unch base (pwW c sPowW) s.mem z.mem ∧
+      wordsVal z.mem base (c.sl ACC) c.n < c.C.n ∧
+      toM c.C.n (2 ^ (64 * c.n)) (wordsVal z.mem base (c.sl ACC) c.n) =
+        toM c.C.n (2 ^ (64 * c.n)) (wordsVal s.mem base (c.sl KM) c.n) ^ (c.C.n - 2) := by
+  have h10 := hc.n10
+  unfold Impl.Ecdsa.Verify.X86.Cfg.sPow
+  split
+  · refine WP.mono (nPow_ok hc hs hM hB hO hbits he) fun z ⟨K, U, lt, v⟩ => ⟨K, U.cover ?_, lt, v⟩
+    intro w hw
+    rcases List.mem_append.mp hw with hw | hw
+    · obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hw
+      obtain hl : ∀ i ∈ [ACC, PT, TMP], i ∈ sPowW := by decide
+      exact ⟨(c.sl i, 8 * c.n), List.mem_append_left _ (List.mem_map_of_mem (hl i hi)),
+        Nat.le_refl _, Nat.le_refl _⟩
+    · exact ⟨w, List.mem_append_right _ hw, Nat.le_refl _, Nat.le_refl _⟩
+  · obtain ⟨T, hT⟩ := scalarOps_run (m := c.C.n) (bits := 64 * c.n) hc.n_ge he (by omega_arith)
+    refine WP.mono (tabPower_ok (powLayN hc) (powWkN hc) (unitMod_pow_two hc.n_odd (64 * c.n))
+      (sTab_lay hc) _ hT hs hM hB) fun z ⟨K, U, lt, v⟩ => ⟨K, U.cover ?_, lt, v⟩
+    intro w hw
+    rcases List.mem_append.mp hw with hw | hw
+    · rw [powWxN_eq] at hw
+      rcases List.mem_append.mp hw with hw | hw
+      · obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hw
+        obtain hl : ∀ i ∈ [ACC, PT, TMP], i ∈ sPowW := by decide
+        exact ⟨(c.sl i, 8 * c.n), List.mem_append_left _ (List.mem_map_of_mem (hl i hi)),
+          Nat.le_refl _, Nat.le_refl _⟩
+      · exact ⟨w, List.mem_append_right _ (List.mem_cons_of_mem _ hw), Nat.le_refl _, Nat.le_refl _⟩
+    · obtain ⟨o, ho, rfl⟩ := List.mem_map.mp hw
+      obtain ⟨i, hi, rfl⟩ := List.mem_map.mp ho
+      obtain hl : ∀ i ∈ Impl.Ecdsa.Verify.X86.Cfg.sSlots, i ∈ sPowW := by decide
+      exact ⟨(c.sl i, 8 * c.n), List.mem_append_left _ (List.mem_map_of_mem (hl i hi)),
+        Nat.le_refl _, Nat.le_refl _⟩
+
 /-- The checks of `r` and `s`, `w = s^(n-2)`, `u` and `v`. -/
 theorem mid_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State}
     (hF : Front c s₀ base s) (hsp₁ : SpOk (Impl.Ecdsa.Verify.X86.Cfg.scalars c) c.stk)
-    (hsp₂ : SpOk c.nPow c.stk) (hsp₃ : SpOk (Impl.Ecdsa.Verify.X86.Cfg.uv c) c.stk)
+    (hsp₂ : SpOk (Impl.Ecdsa.Verify.X86.Cfg.sPow c) c.stk)
+    (hsp₃ : SpOk (Impl.Ecdsa.Verify.X86.Cfg.uv c) c.stk)
     {rest : Prog isa} {Q : State → Prop}
     (h : ∀ s', Mid c s₀ base s' → WP isa rest s' Q) :
-    WP isa (.seq (Impl.Ecdsa.Verify.X86.Cfg.scalars c) (.seq c.nPow
+    WP isa (.seq (Impl.Ecdsa.Verify.X86.Cfg.scalars c) (.seq (Impl.Ecdsa.Verify.X86.Cfg.sPow c)
       (.seq (Impl.Ecdsa.Verify.X86.Cfg.uv c) rest))) s Q := by
   have h0 := hc.n0
   have h7 := hc.n10
@@ -441,7 +521,7 @@ theorem mid_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State}
   obtain sm₃ : toM c.C.n (2 ^ (64 * c.n)) (sv c base s₃ SM') = Fin.ofNat c.C.n (sigS c s₀) := by
     rw [toM_r2 hnR (by rw [e₃, show sv c base s₂ R2N = _ from F₂.r2n]), v₂ (by decide) (by decide), hF.pt]
   -- `w = s^(n-2)`.
-  refine WP.seq (K₃.withSp hsp₂ (WP.mono (nPow_ok hc hs₃ M₃ lt₃
+  refine WP.seq (K₃.withSp hsp₂ (WP.mono (sPow_ok hc hs₃ M₃ lt₃
     F₃.onen (fun t ht => by
       show s₃.mem (off base (bitsAt c.n 2 + t)) = _
       rw [tbl_unch U₃ h7 (j := 2) (by decide) ht (tbl_apart_slWk (by decide) (by decide) ht),
@@ -452,7 +532,7 @@ theorem mid_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State}
   obtain F₄ := F₃.unch h7 hn fixedOk_pwW U₄
   obtain KK₄ : Keep c s₀ base s₄ := ⟨hs₄, by rw [K₄.1 _ (by decide), K₃.esp], by rw [K₄.2.1, K₃.rd],
     by rw [K₄.2.2, K₃.wr], F₄, f₄, hF.sp_lo⟩
-  obtain e₄ : ∀ {i}, i < 45 → i ∉ [ACC, PT, TMP] → sv c base s₄ i = sv c base s₃ i := fun hi hl =>
+  obtain e₄ : ∀ {i}, i < 45 → i ∉ sPowW → sv c base s₄ i = sv c base s₃ i := fun hi hl =>
     sv_unch U₄ h7 hn hi (apart_pwW hi hl)
   obtain w₄ : toM c.C.n (2 ^ (64 * c.n)) (sv c base s₄ ACC) = Fin.ofNat c.C.n (sigS c s₀) ^ (c.C.n - 2) := by
     rw [← sm₃]; exact v₄
@@ -495,10 +575,10 @@ theorem mid_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State}
       exact ⟨(c.sl i, 8 * c.n), List.mem_append_left _ (List.mem_map_of_mem (hl i hi)),
         Nat.le_refl _, Nat.le_refl _⟩
     · exact ⟨w, List.mem_append_right _ (List.mem_cons_of_mem _ hw), Nat.le_refl _, Nat.le_refl _⟩
-  obtain cv4 : ∀ w ∈ pwW c, ∃ w' ∈ pwW c midW, w'.1 ≤ w.1 ∧ w.1 + w.2 ≤ w'.1 + w'.2 := fun w hw => by
+  obtain cv4 : ∀ w ∈ pwW c sPowW, ∃ w' ∈ pwW c midW, w'.1 ≤ w.1 ∧ w.1 + w.2 ≤ w'.1 + w'.2 := fun w hw => by
     rcases List.mem_append.mp hw with hw | hw
     · obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hw
-      obtain hl : ∀ i ∈ [ACC, PT, TMP], i ∈ midW := by decide
+      obtain hl : ∀ i ∈ sPowW, i ∈ midW := by decide
       exact ⟨(c.sl i, 8 * c.n), List.mem_append_left _ (List.mem_map_of_mem (hl i hi)),
         Nat.le_refl _, Nat.le_refl _⟩
     · exact ⟨w, List.mem_append_right _ hw, Nat.le_refl _, Nat.le_refl _⟩
