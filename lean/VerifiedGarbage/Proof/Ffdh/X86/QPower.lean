@@ -195,9 +195,9 @@ theorem qScan_ok (h : In Ex base bytes len args s) (G : DomGeo args base bytes l
   obtain s4 : Scr u4 base bytes := s3.of_keeps (m4.keeps []) (by decide)
   refine wp_storeS (s4.ea (d := qlOff) (by omega_arith)) (s4.write (d := qlOff) (n := 4) r2) fun u5 m5 =>
     WP.block_nil ?_
-  obtain O4 : Outside base qpOff 4 u3.mem u4.mem := by rw [m4.mem]; exact writeW32_outside _ _ _ (by omega_arith)
+  obtain O4 : Outside base qpOff 4 u3.mem u4.mem := by rw [m4.mem]; exact writeW32_outside _ _ _ (by decide)
   obtain S₄ : Step Ex base bytes len args u3 u4 := Step.word S₃.inp (by decide) O4 (m4.keeps [])
-  obtain O5 : Outside base qlOff 4 u4.mem u5.mem := by rw [m5.mem]; exact writeW32_outside _ _ _ (by omega_arith)
+  obtain O5 : Outside base qlOff 4 u4.mem u5.mem := by rw [m5.mem]; exact writeW32_outside _ _ _ (by decide)
   obtain S₅ : Step Ex base bytes len args u4 u5 := Step.word S₄.inp (by decide) O5 (m5.keeps [])
   refine ⟨(S₃.trans S₄).trans S₅, ⟨?_, ?_⟩, ?_⟩
   · rw [m5.mem, Mem.readW_writeW_sep (Offset.sep base (by decide) (by decide) (by decide)) (by decide), m4.mem,
