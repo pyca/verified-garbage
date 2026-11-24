@@ -34,18 +34,19 @@ meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 @[expose] public section
 namespace VG.Proof.AesGcm.X86_64.ContiguousSeal
 open VG VG.X86_64 VG.X86_64.RegUpd VG.Impl.AesGcm.X86_64
-open VG.Impl.AesGcm.X86_64.Contiguous (copyMask pairArgs mixMasks maskXor authReload authLens)
+open VG.Impl.AesGcm.X86_64.Contiguous (copyMask maskArgs mixMasks maskXor authReload authLens)
 open VG.Spec.Gcm (blockAt)
 open VG.Spec.Aes (bytesAt)
 open VG.WriteBytes
 open VG.Proof.AesOcb.X86_64 (BCall BPost blk_call)
 
 /-- The existing AES block entry may write the two mask slots and its own scratch. -/
-theorem mask_call_args {s : State} {Ctx W SP : Addr} {R : Nat} (L : Lay Ctx (W+16#64) W SP)
+theorem encmask_call_args {s : State} {Ctx W SP : Addr} {R : Nat} (k : Nat) (small : k=1 ∨ k=2) (L : Lay Ctx (W+16#64) W SP)
     (e : Env Ctx (W+16#64) W SP s) (rr : R=10 ∨ R=12 ∨ R=14)
     (di : s.gpr .rdi=Ctx) (si : s.gpr .rsi=BitVec.ofNat 64 R)
-    (dx : s.gpr .rdx=W+256#64) (cx : s.gpr .rcx=2#64) (r8 : s.gpr .r8=W+512#64) :
-    BCall s Ctx (W+256#64) (W+512#64) R 2 := by
+    (dx : s.gpr .rdx=W+256#64) (cx : s.gpr .rcx=BitVec.ofNat 64 k) (r8 : s.gpr .r8=W+512#64) :
+    BCall s Ctx (W+256#64) (W+512#64) R k := by
+  rcases small with rfl|rfl <;> (
   refine ⟨di,si,dx,cx,r8,rr,?_,(L.cw'.sub_left (Region.sub_prefix (by decide))).sub_right (Lay.wSub (d:=256) (by decide)),
     (L.cw'.sub_left (Region.sub_prefix (by decide))).sub_right (Lay.wSub (d:=512) (by decide)),
     Offset.disjoint W (.inl (by decide)) (by decide) (by decide),?_,?_,?_,?_,?_⟩
@@ -56,7 +57,7 @@ theorem mask_call_args {s : State} {Ctx W SP : Addr} {R : Nat} (L : Lay Ctx (W+1
   · rw [e.rsp];exact L.stk_w (by decide)
   · exact covers_cons (by simpa only [BitVec.add_zero] using e.perm.ctxC (d:=0) (n:=240) (by decide)) (covers_cons (covers_left (e.perm.wC (by decide)))
       (covers_left (e.perm.wC (by decide))))
-  · exact covers_cons (e.perm.wC (by decide)) (e.perm.wC (by decide))
+  · exact covers_cons (e.perm.wC (by decide)) (e.perm.wC (by decide)))
 
 theorem encrypted_mask_pair {s t : State} {Ctx W : Addr} {R : Nat}
     (h : BPost Spec.Aes.cipher s Ctx (W+256#64) (W+512#64) R 2 t) :
@@ -103,24 +104,26 @@ theorem copyMask_ok {s : State} {Ctx St W SP : Addr} (e : Env Ctx St W SP s) (fr
   · change blockAt (s.mem.writeW (W+BitVec.ofNat 64 toOff) val) _=_
     rw [blockAt_eq,Mem.readW_writeW_self _ _ 16 _ (by decide),blockAt_eq]
 
-theorem pairArgs_ok {s : State} {Ctx W SP : Addr} {R : Nat}
-    (L : Lay Ctx (W+16#64) W SP) (e : Env Ctx (W+16#64) W SP s) (rr : RoundsAt s.mem W R) :
-    WP isa (.block pairArgs) s fun t => BCall t Ctx (W+256#64) (W+512#64) R 2 ∧
+theorem maskArgs_ok {s : State} {Ctx W SP : Addr} {R : Nat}
+    (k : Nat) (small : k=1 ∨ k=2) (L : Lay Ctx (W+16#64) W SP) (e : Env Ctx (W+16#64) W SP s) (rr : RoundsAt s.mem W R) :
+    WP isa (.block (maskArgs k)) s fun t => BCall t Ctx (W+256#64) (W+512#64) R k ∧
       t.mem=s.mem ∧ t.rd=s.rd ∧ t.wr=s.wr ∧ (∀ r ∈ calleeSaved, t.gpr r=s.gpr r) := by
   have rd := e.perm.wR (show 176+8≤2560 by decide)
-  unfold pairArgs
+  unfold maskArgs
   obtain ⟨t,rn,di,si,dx,cx,r8,mem,dr,dw,saved⟩ :
       ∃ t, runBlock isa ([.mov .rdi (.reg .r13),.mov .rsi (.mem (at_ .r15 roundsO))] ++ ptr .rdx .r15 256 ++
-        [.mov32 .rcx (imm 2)] ++ ptr .r8 .r15 scrO) s = some t ∧
+        [.mov32 .rcx (imm k)] ++ ptr .r8 .r15 scrO) s = some t ∧
       t.gpr .rdi=Ctx ∧ t.gpr .rsi=BitVec.ofNat 64 R ∧ t.gpr .rdx=W+256#64 ∧
-      t.gpr .rcx=2#64 ∧ t.gpr .r8=W+512#64 ∧ t.mem=s.mem ∧ t.rd=s.rd ∧ t.wr=s.wr ∧
+      t.gpr .rcx=BitVec.ofNat 64 k ∧ t.gpr .r8=W+512#64 ∧ t.mem=s.mem ∧ t.rd=s.rd ∧ t.wr=s.wr ∧
       (∀ r ∈ calleeSaved, t.gpr r=s.gpr r) := by
     refine ⟨_,by xrun [e.r13,e.r15,roundsO,scrO,rd,ptr],?_,?_,?_,?_,?_,?_,?_,?_,?_⟩
     all_goals try rfl
     all_goals try (simp [gpr_setReg,rr.1];done)
+    · rcases small with rfl|rfl <;> rfl
     · intro r h;simp only [calleeSaved,List.mem_cons,List.not_mem_nil,or_false] at h
       rcases h with rfl|rfl|rfl|rfl|rfl|rfl|rfl <;> simp [gpr_setReg]
-  exact WP.of_runBlock ⟨t,rn,mask_call_args L (e.of_saved saved dr dw) rr.2 di si dx cx r8,mem,dr,dw,saved⟩
+  exact WP.of_runBlock ⟨t,rn,encmask_call_args k small L (e.of_saved saved dr dw) rr.2 di si dx cx r8,mem,dr,dw,saved⟩
+
 
 abbrev pairFrame (W SP : Addr) : List Region := [⟨W+256#64,32⟩,⟨W+512#64,2048⟩,below SP 8]
 abbrev makeMasks := Contiguous.makeMasks Contiguous.maskAES
@@ -153,7 +156,7 @@ theorem makeMasks_ok {s : State} {Ctx W SP : Addr} {R : Nat}
     rw [blockAt_frame fb (by intro q h;obtain rfl := List.mem_singleton.mp h;exact Offset.disjoint W (.inl (by decide)) (by decide) (by decide)),ha,BitVec.add_zero]
   have q : blockAt b.mem (W+272#64)=blockAt s.mem ((W+16#64)+48#64) := by
     rw [hb,blockAt_frame fa (by intro z h;obtain rfl := List.mem_singleton.mp h;exact L.st_w (by decide) (.inr ⟨by decide,by decide⟩))]
-  refine (pairArgs_ok L eb rr').mono fun v ⟨args,mv,rv,wv,gv⟩ => ?_
+  refine (maskArgs_ok 2 (.inr rfl) L eb rr').mono fun v ⟨args,mv,rv,wv,gv⟩ => ?_
   let aes := Proof.Aes.X86_64.BlocksImpl.scalar
   refine (blk_call (name:=aes.enc.name) aes.encOk aes.encNosp aes.encDepth args).mono fun t post => ?_
   obtain ⟨j,c⟩ := encrypted_mask_pair post
@@ -423,7 +426,7 @@ theorem makeMasks_rel {Ctx W SP : Addr} {R : Nat} (L : Lay Ctx (W+16#64) W SP) :
     RelCT isa (fun s t => F s ∧ F t) makeMasks (fun _ _ => True) := by
   let F (s : State) := Env Ctx (W+16#64) W SP s ∧ RoundsAt s.mem W R
   let C (s : State) := BCall s Ctx (W+256#64) (W+512#64) R 2 ∧ s.gpr .rsp=SP
-  have prep (s) (h : F s) : WP isa (.block (copyMask 0 256 ++ copyMask 48 272 ++ pairArgs)) s C := by
+  have prep (s) (h : F s) : WP isa (.block (copyMask 0 256 ++ copyMask 48 272 ++ maskArgs 2)) s C := by
     rw [WP.block_append_iff,WP.block_append_iff]
     refine (copyMask_ok h.1 0 256 (by decide) (by decide)).mono fun a ⟨ea,_,_,_,fa,_⟩ => ?_
     refine (copyMask_ok ea 48 272 (by decide) (by decide)).mono fun b ⟨eb,_,_,_,fb,_⟩ => ?_
@@ -431,7 +434,7 @@ theorem makeMasks_rel {Ctx W SP : Addr} {R : Nat} (L : Lay Ctx (W+16#64) W SP) :
       intro q h;obtain rfl := List.mem_singleton.mp h;exact Offset.disjoint W (.inl (by decide)) (by decide) (by decide)) (by decide)).trans
       ((fa.readW (r:=⟨W+176#64,8⟩) (Region.contains_self _ _) (by
       intro q h;obtain rfl := List.mem_singleton.mp h;exact Offset.disjoint W (.inl (by decide)) (by decide) (by decide)) (by decide)).trans h.2.1),h.2.2⟩
-    exact (pairArgs_ok L eb rr).mono fun _ ⟨call,_,_,_,g⟩ => ⟨call,(g _ (by decide)).trans eb.rsp⟩
+    exact (maskArgs_ok 2 (.inr rfl) L eb rr).mono fun _ ⟨call,_,_,_,g⟩ => ⟨call,(g _ (by decide)).trans eb.rsp⟩
   unfold makeMasks Contiguous.makeMasks
   apply RelCT.seq (rel_next (rel_env_regs [] (fun _ (h : F _) => h.1) (fun _ (h : F _) => h.1)
     (fun _ _ _ _ _ h => by cases h) ⟨_,by taint_decide⟩) prep prep)
@@ -545,13 +548,203 @@ private theorem maskChoice_step {s u : State} {Ctx W SP D : Addr} {n : Nat} (p :
     simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
     rcases hr with rfl|rfl|rfl|rfl <;> decide)) rd wr,rd.trans p.rd,wr.trans p.wr,m ▸ p.frame,m ▸ p.tlen,m ▸ p.dat,m ▸ p.len⟩
 
-private theorem choiceOk {M : CtxMode} {f g : Prog isa} (a : FinishOk M f) (b : FinishOk M g) : FinishOk M (Contiguous.maskChoice f g) := by
+theorem oneMask_ok {Ctx W SP : Addr} {R : Nat} {s : State} (L : Lay Ctx (W+16#64) W SP)
+    (e : Env Ctx (W+16#64) W SP s) (rr : RoundsAt s.mem W R) :
+    WP isa (Contiguous.oneMask Contiguous.maskAES) s fun t => Env Ctx (W+16#64) W SP t ∧ t.rd=s.rd ∧ t.wr=s.wr ∧
+      Frame (pairFrame W SP) s.mem t.mem ∧ blockAt t.mem (W+256#64)=ciphOf s.mem Ctx R (blockAt s.mem (W+16#64)) := by
+  unfold Contiguous.oneMask
+  apply WP.seq
+  rw [WP.block_append_iff]
+  refine (copyMask_ok e 0 256 (by decide) (by decide)).mono fun a ⟨ea,_,ra,wa,fa,ha⟩ => ?_
+  have dis (i : Nat) (h : i+8≤256) : ∀ z ∈ [(⟨W+256#64,16⟩ : Region)],(⟨W+BitVec.ofNat 64 i,8⟩ : Region).Disjoint z := by
+    intro q hq;obtain rfl := List.mem_singleton.mp hq;exact Offset.disjoint W (.inl h) (by omega) (by decide)
+  have rr' : RoundsAt a.mem W R := ⟨(fa.readW (r:=⟨W+176#64,8⟩) (Region.contains_self _ _) (dis 176 (by decide)) (by decide)).trans rr.1,rr.2⟩
+  have key := ciph_frame fa (by intro q hq;obtain rfl := List.mem_singleton.mp hq;exact L.cw'.sub_right (Lay.wSub (by decide))) rr.2
+  refine (maskArgs_ok 1 (.inl rfl) L ea rr').mono fun b ⟨args,mb,rb,wb,gb⟩ => ?_
+  let aes := Proof.Aes.X86_64.BlocksImpl.scalar
+  refine (blk_call (name:=aes.enc.name) aes.encOk aes.encNosp aes.encDepth args).mono fun t enc => ?_
+  have out := enc.enc (i:=0) (by decide)
+  change blockAt t.mem ((W+256#64)+0#64)=ciphOf b.mem Ctx R (blockAt b.mem ((W+256#64)+0#64)) at out
+  simp only [BitVec.add_zero,mb,key,ha] at out
+  have sp := (gb _ (by decide : Reg.rsp ∈ calleeSaved)).trans ea.rsp
+  have f := enc.frame
+  rw [sp,mb] at f
+  refine ⟨(ea.of_saved gb rb wb).of_saved enc.saved enc.rd enc.wr,enc.rd.trans (rb.trans ra),enc.wr.trans (wb.trans wa),?_,?_⟩
+  · refine (fa.sub ?_).trans (f.sub ?_)
+    · intro z h; obtain rfl := List.mem_singleton.mp h; exact ⟨_,List.mem_cons_self ..,Region.sub_prefix (by decide)⟩
+    · intro z h; simp only [List.mem_cons,List.not_mem_nil,or_false] at h
+      rcases h with rfl|rfl|rfl
+      · exact ⟨_,List.mem_cons_self ..,Region.sub_prefix (by decide)⟩
+      · exact ⟨_,List.mem_cons_of_mem _ (List.mem_cons_self ..),fun _ h => h⟩
+      · exact ⟨_,by simp,fun _ h => h⟩
+  · simpa only [BitVec.add_zero] using out
+
+theorem keepLensRounds {Ctx W SP : Addr} {R : Nat} {a b : Mem} (L : Lay Ctx (W+16#64) W SP)
+    (fr : Frame (tFrame (W+16#64) W SP 16) a b) (rr : RoundsAt a W R) : RoundsAt b W R :=
+  rounds_frame fr (fun r hr => by
+    simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
+    rcases hr with rfl|rfl|rfl|rfl
+    · exact (L.st_w (by decide) (.inr ⟨by decide,by decide⟩)).symm
+    · exact Offset.disjoint W (.inr (by decide)) (by decide) (by decide)
+    · exact Offset.disjoint W (.inl (by decide)) (by decide) (by decide)
+    · exact (L.stk_w (by decide)).symm) rr
+
+theorem directEcbTag_ok (v : GcmImpl) {Ctx W SP : Addr} {R : Nat} {s : State} {H : Block}
+    (L : Lay Ctx (W+16#64) W SP) (e : Env Ctx (W+16#64) W SP s) (rr : RoundsAt s.mem W R)
+    (hash : blockAt s.mem (Ctx+240#64)=H) : WP isa (Contiguous.directEcbTag v.callees Contiguous.maskAES) s fun t =>
+      Env Ctx (W+16#64) W SP t ∧ t.rd=s.rd ∧ t.wr=s.wr ∧ Frame (⟨W,16⟩::wFrame W SP) s.mem t.mem ∧
+      bytesAt t.mem W 16=VG.Spec.Gcm.toBytes (ghashFrom H (blockAt s.mem (W+16#64+16#64))
+        [VG.Spec.Gcm.ofBytes (lensBlock (s.gpr .rbx).toNat (s.gpr .rbp).toNat)] ^^^ ciphOf s.mem Ctx R (blockAt s.mem (W+16#64))) := by
+  refine WP.seq ((WP.with_rdwr (lens_ok v L (.inr rfl) e hash)).mono fun a ⟨⟨ea,_,y,fa⟩,ra,wa⟩ => ?_)
+  have rr' := keepLensRounds L fa rr
+  have jj : blockAt a.mem (W+16#64)=blockAt s.mem (W+16#64) := blockAt_frame fa (fun r hr => by
+    simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
+    rcases hr with rfl|rfl|rfl|rfl
+    · simpa using L.st_st (a:=0) (n:=16) (d:=16) (k:=16) (.inl (by decide)) (by decide) (by decide)
+    · simpa using L.st_w (a:=0) (n:=16) (d:=96) (k:=16) (by decide) (.inr ⟨by decide,by decide⟩)
+    · simpa using L.st_w (a:=0) (n:=16) (d:=512) (k:=256) (by decide) (.inr ⟨by decide,by decide⟩)
+    · simpa using (L.stk_st (a:=0) (n:=16) (by decide)).symm)
+  have kk : ciphOf a.mem Ctx R=ciphOf s.mem Ctx R := ciph_frame fa (fun r hr => by
+    simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
+    rcases hr with rfl|rfl|rfl|rfl
+    · exact L.cs.sub_right (Lay.stSub (by decide))
+    · exact L.cw'.sub_right (Lay.wSub (by decide))
+    · exact L.cw'.sub_right (Lay.wSub (by decide))
+    · exact L.kc.symm) rr.2
+  refine WP.seq ((oneMask_ok L ea rr').mono fun b ⟨eb,rb,wb,fb,cb⟩ => ?_)
+  refine (mixMasks_ok eb).mono fun t ⟨et,rt,wt,ft,mix⟩ => ?_
+  have yy : blockAt b.mem (W+16#64+16#64)=blockAt a.mem (W+16#64+16#64) := by
+    rw [show W+16#64+16#64=W+32#64 by rw [BitVec.add_assoc];rfl]
+    exact blockAt_frame fb (pairLow L 32 16 (by decide))
+  have bf : Frame (wFrame W SP) a.mem b.mem := fb.sub fun r hr => by
+    simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
+    rcases hr with rfl|rfl|rfl
+    · exact ⟨_,List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self ..)),Offset.sub W (by decide) (by decide)⟩
+    · exact ⟨_,List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self ..)),Offset.sub W (by decide) (by decide)⟩
+    · exact ⟨_,by simp,fun _ h => h⟩
+  refine ⟨et,rt.trans (rb.trans ra),wt.trans (wb.trans wa),?_,?_⟩
+  · exact (((tFrame_one fa).trans bf).mono fun r h => List.mem_cons_of_mem _ h).trans
+      (ft.mono fun r h => by obtain rfl := List.mem_singleton.mp h;exact List.mem_cons_self ..)
+  · rw [Short.bytesAt_toBytes',mix,yy,y,cb,kk,jj]
+
+
+theorem oneMask_rel {Ctx W SP : Addr} {R : Nat} (L : Lay Ctx (W+16#64) W SP) :
+    let F (s : State) := Env Ctx (W+16#64) W SP s ∧ RoundsAt s.mem W R
+    RelCT isa (fun s t => F s ∧ F t) (Contiguous.oneMask Contiguous.maskAES) (fun _ _ => True) := by
+  let F (s : State) := Env Ctx (W+16#64) W SP s ∧ RoundsAt s.mem W R
+  let C (s : State) := BCall s Ctx (W+256#64) (W+512#64) R 1 ∧ s.gpr .rsp=SP
+  have prep (s) (h : F s) : WP isa (.block (copyMask 0 256 ++ maskArgs 1)) s C := by
+    rw [WP.block_append_iff]
+    refine (copyMask_ok h.1 0 256 (by decide) (by decide)).mono fun a ⟨ea,_,_,_,fa,_⟩ => ?_
+    have rr : RoundsAt a.mem W R := rounds_frame fa (fun z hz => by
+      obtain rfl := List.mem_singleton.mp hz;exact Offset.disjoint W (.inl (by decide)) (by decide) (by decide)) h.2
+    exact (maskArgs_ok 1 (.inl rfl) L ea rr).mono fun _ ⟨call,_,_,_,g⟩ => ⟨call,(g _ (by decide)).trans ea.rsp⟩
+  apply RelCT.seq (Short.rel_next (rel_env_regs [] (fun _ (h : F _) => h.1) (fun _ (h : F _) => h.1)
+    (fun _ _ _ _ _ h => by cases h) ⟨_,by taint_decide⟩) prep prep)
+  let aes := Proof.Aes.X86_64.BlocksImpl.scalar
+  exact VG.Proof.AesOcb.X86_64.blk_rel aes.encOk aes.encCt (fun _ _ h => ⟨_,_,_,_,_,h.1.1,h.2.1,h.1.2.trans h.2.2.symm⟩)
+theorem directEcbTag_ct (v : GcmImpl) {Ctx W SP : Addr} {R n al : Nat} (L : Lay Ctx (W+16#64) W SP) :
+    let F (s : State) := Env Ctx (W+16#64) W SP s ∧ RoundsAt s.mem W R ∧ s.gpr .rbx=BitVec.ofNat 64 al ∧ s.gpr .rbp=BitVec.ofNat 64 n
+    RelCT isa (fun s t => F s ∧ F t) (Contiguous.directEcbTag v.callees Contiguous.maskAES) (fun _ _ => True) := by
+  let F (s : State) := Env Ctx (W+16#64) W SP s ∧ RoundsAt s.mem W R ∧ s.gpr .rbx=BitVec.ofNat 64 al ∧ s.gpr .rbp=BitVec.ofNat 64 n
+  let E (s : State) := Env Ctx (W+16#64) W SP s ∧ RoundsAt s.mem W R
+  have sameLens : RelCT isa (fun s t => F s ∧ F t) (lens v.callees 16) (fun _ _ => True) := by
+    apply (lens_rel v L (.inr rfl)).mono _ (fun _ _ h => h)
+    intro s t h
+    refine ⟨h.1.1,h.2.1,?_⟩
+    intro r hr
+    simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
+    rcases hr with rfl|rfl
+    · rw [h.1.2.2.1,h.2.2.2.1]
+    · rw [h.1.2.2.2,h.2.2.2.2]
+  have ln s (h : F s) : WP isa (lens v.callees 16) s E :=
+    (lens_ok v L (.inr rfl) h.1 rfl).mono fun _ l => ⟨l.1,keepLensRounds L l.2.2.2 h.2.1⟩
+  have mk s (h : E s) : WP isa (Contiguous.oneMask Contiguous.maskAES) s (Env Ctx (W+16#64) W SP ·) :=
+    (oneMask_ok L h.1 h.2).mono fun _ m => m.1
+  exact RelCT.seq (Short.rel_next sameLens ln ln) (RelCT.seq (Short.rel_next (oneMask_rel L) mk mk)
+    (rel_env_regs [] (fun _ h => h) (fun _ h => h) (fun _ _ _ _ _ h => by cases h) ⟨_,by taint_decide⟩))
+
+private theorem tagArgs {Ctx W SP : Addr} {s : State} {al n : Nat}
+    (e : Env Ctx (W+16#64) W SP s)
+    (a : s.mem.readW (W+184#64) 64=BitVec.ofNat 64 al)
+    (l : s.mem.readW (W+192#64) 64=BitVec.ofNat 64 n) :
+    ∃ t,runBlock isa authLens s=some t ∧ Env Ctx (W+16#64) W SP t ∧
+      t.gpr .rbx=BitVec.ofNat 64 al ∧ t.gpr .rbp=BitVec.ofNat 64 n ∧ t.mem=s.mem ∧ t.rd=s.rd ∧ t.wr=s.wr := by
+  have ra := e.perm.wR (show 184+8≤2560 by decide)
+  have rn := e.perm.wR (show 192+8≤2560 by decide)
+  obtain ⟨t,run,g,bx,bp,m,rd,wr⟩ : ∃ t, runBlock isa authLens s=some t ∧ (∀ r,r≠.rbx → r≠.rbp → t.gpr r=s.gpr r) ∧
+      t.gpr .rbx=BitVec.ofNat 64 al ∧ t.gpr .rbp=BitVec.ofNat 64 n ∧ t.mem=s.mem ∧ t.rd=s.rd ∧ t.wr=s.wr := by
+    refine ⟨_,by xrun [authLens,e.r15,ra,rn],?_,?_,?_,?_,?_,?_⟩
+    · intro r hr hb; simp [gpr_setReg,hr,hb]
+    · simp [gpr_setReg,a]
+    · simp [gpr_setReg,l]
+    all_goals rfl
+  exact ⟨t,run,e.keep (fun r hr => g _ (by
+    simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
+    rcases hr with rfl|rfl|rfl|rfl <;> decide) (by
+    simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
+    rcases hr with rfl|rfl|rfl|rfl <;> decide)) rd wr,bx,bp,m,rd,wr⟩
+
+private theorem alignedTag_ok (v : GcmImpl) {M : CtxMode} {Ctx W SP S D : Addr} {R n al : Nat}
+    {s u : State} {H icb : Block} {a : List Byte} (aligned : n%16=0)
+    (reg : Split.SealRegions M Ctx W SP D S R n n s) (ob : ObPre M Ctx W SP R D n s)
+    (post : ObPost Ctx W SP D n s u) (bulk : BlocksResult Ctx W R S D (n/16) s u)
+    (hH : blockAt s.mem (Ctx+240#64)=H) (hcb : blockAt s.mem (cbA W)=icb)
+    (hal : s.mem.readW (W+184#64) 64=BitVec.ofNat 64 al)
+    (habs : Absorbed s.mem (yA W) (W+16#64+32#64) H (a++zeros (padLen a.length))) :
+    WP isa (Contiguous.alignedTag v.callees Contiguous.maskAES) u (BodyPost Ctx W SP S D R n al H icb a s) := by
+  have len : 16*(n/16)=n := by omega
+  have ha : (a++zeros (padLen a.length)).length%16=0 := by
+    simp only [List.length_append,Proof.Gcm.length_zeros];exact Proof.Gcm.length_pad_mod _
+  obtain ⟨fr,rounds,hkey,ck,j,pre,_,abs,_⟩ := ob_factsFrom reg.lay ob reg.sW reg.ks reg.sD post.frame hH hcb habs ha
+    bulk.1 bulk.2.1 (Z:=bytesAt u.mem D n) (by rw [length_bytesAt];exact aligned) (by
+      rw [bulk.2.2];change ghashFrom (blockAt s.mem (Ctx+240#64)) _ _=_
+      rw [hH,Proof.Gcm.blocksAt_eq,len]; rfl)
+  rw [len] at pre
+  have hx : (a++zeros (padLen a.length)++bytesAt u.mem D n).length%16=0 := by rw [List.length_append,length_bytesAt];omega
+  have la := (fr.readW (w:=64) (r:=⟨W+184#64,8⟩) (Region.contains_self _ _)
+    (kept_oneFrameB reg.lay reg.data.ok.w ob.t_w (.inl ⟨by decide,by decide⟩)) (by decide)).trans hal
+  obtain ⟨t,run,e,bx,bp,m,rd,wr⟩ := tagArgs post.env la post.tlen
+  refine WP.seq (WP.of_runBlock ⟨t,run,?_⟩)
+  refine (directEcbTag_ok v reg.lay e (m ▸ rounds) (m ▸ hkey)).mono fun z ⟨ez,rz,wz,fz,tag'⟩ => ?_
+  rw [m] at fz
+  have f := fr.trans (oneFrame_B (n:=n) (k:=0) (Nat.zero_le _) (by simpa using wFrame_one (W:=W) (D:=D) (n:=n) (o:=0) (.inl rfl) (by simpa only [BitVec.add_zero] using fz)))
+  have same : bytesAt z.mem D n=bytesAt u.mem D n := bytesAt_frame fz (fun q hq => by
+    simp only [wFrame,List.mem_cons,List.not_mem_nil,or_false] at hq
+    rcases hq with rfl|rfl|rfl|rfl|rfl
+    · simpa using reg.data.ok.w.sub_right (Region.sub_prefix (show 16≤2560 by decide))
+    · exact reg.data.ok.w.sub_right (Lay.wSub (by decide))
+    · exact reg.data.ok.w.sub_right (Lay.wSub (by decide))
+    · exact reg.data.ok.w.sub_right (Lay.wSub (by decide))
+    · exact reg.data.ok.stk.symm) (Nat.le_of_lt reg.data.ok.lt)
+  refine ⟨ez,rz.trans (rd.trans post.rd),wz.trans (wr.trans post.wr),f,same.trans pre,?_⟩
+  have padded' := padded_eq a (bytesAt u.mem D n)
+  rw [Proof.Gcm.padLen_of_mod hx, show zeros 0=[] from rfl,List.append_nil] at padded'
+  have y := abs.whole_eq hx
+  rw [padded'] at y
+  rw [m,bx,bp,toNat_ofNat_of_lt reg.data.ok.lt,BitVec.toNat_ofNat,lensBlock_mod_left,ck,j,
+    show blockAt u.mem (W+16#64+16#64)=_ from y] at tag'
+  rw [same]
+  simpa only [BitVec.add_zero] using tag'
+
+private theorem alignedTag_ct (v : GcmImpl) {M : CtxMode} : FinishCT M (Contiguous.alignedTag v.callees Contiguous.maskAES) := by
+  intro Ctx W SP S D R n al L _ _
+  let P (s : State) := Env Ctx (W+16#64) W SP s ∧ RoundsAt s.mem W R ∧ s.gpr .rbx=BitVec.ofNat 64 al ∧ s.gpr .rbp=BitVec.ofNat 64 n
+  have args s (h : AfterBulk M Ctx W SP S D R n al s) : WP isa (.block authLens) s P := by
+    obtain ⟨t,run,e,bx,bp,m,_,_⟩ := tagArgs h.scalar.tag.env h.scalar.tag.alen h.scalar.tag.tlen
+    exact WP.of_runBlock ⟨t,run,e,m ▸ h.scalar.tag.rounds,bx,bp⟩
+  refine RelCT.seq (Short.rel_next (rel_env_regs [] (fun _ h => h.scalar.tag.env) (fun _ h => h.scalar.tag.env)
+    (fun _ _ _ _ _ h => by cases h) ⟨_,by taint_decide⟩) args args) ?_
+  exact directEcbTag_ct v L
+
+private theorem choiceOk (v : GcmImpl) {M : CtxMode} {g : Prog isa} (b : FinishOk M g) :
+    FinishOk M (Contiguous.maskChoice (Contiguous.alignedTag v.callees Contiguous.maskAES) g) := by
   intro Ctx W SP S D R n al s u H icb bytes reg ob p bulk hH hcb hal habs read src apart dread dst dout dw
   obtain ⟨t,run,zf,m,p'⟩ := maskChoice_step p
   have bt : BlocksResult Ctx W R S D (n/16) s t := by simpa only [BlocksResult,m] using bulk
-  have fs := a reg ob p' bt hH hcb hal habs read (m ▸ src) apart dread (m ▸ dst) dout dw
+  have fs (z : decide (n%16=0)=true) := alignedTag_ok v (of_decide_eq_true z) reg ob p' bt hH hcb hal habs
   have gs := b reg ob p' bt hH hcb hal habs read (m ▸ src) apart dread (m ▸ dst) dout dw
-  exact WP.seq (WP.of_runBlock ⟨t,run,WP.ite (decide (n%16=0)) (eval_e zf) (fun _ => fs) (fun _ => gs)⟩)
+  exact WP.seq (WP.of_runBlock ⟨t,run,WP.ite (decide (n%16=0)) (eval_e zf) fs (fun _ => gs)⟩)
 
 private theorem choiceCT {M : CtxMode} {f g : Prog isa} (a : FinishCT M f) (b : FinishCT M g) : FinishCT M (Contiguous.maskChoice f g) := by
   intro Ctx W SP S D R n al L hR dw
@@ -567,26 +760,21 @@ private theorem choiceCT {M : CtxMode} {f g : Prog isa} (a : FinishCT M f) (b : 
     ((a L hR dw).mono (fun _ _ h => ⟨h.1.1.2,h.1.2.2⟩) (fun _ _ h => h))
     ((b L hR dw).mono (fun _ _ h => ⟨h.1.1.2,h.1.2.2⟩) (fun _ _ h => h))
 
-theorem masksRecord_ok (facts : Short.ShortFacts) (aligned : Bool) (v : GcmImpl) (ctr : Proof.Aes.X86_64.Ctr32ToImpl) {M : CtxMode} :
-    RecordOk M (Contiguous.masksBody v.callees ⟨ctr.callee.name,ctr.callee.code⟩ Contiguous.maskAES aligned) := by
+theorem masksRecord_ok (v : GcmImpl) (ctr : Proof.Aes.X86_64.Ctr32ToImpl) {M : CtxMode} :
+    RecordOk M (Contiguous.masksBody v.callees ⟨ctr.callee.name,ctr.callee.code⟩ Contiguous.maskAES) := by
   intro o u Ctx W SP Np A S D nl al n C X geo wrap src dst E hp hl ha
   have bulk : BulkOk M (Contiguous.bulk (Contiguous.separate ⟨ctr.callee.name,ctr.callee.code⟩ v.callees.gh)) :=
     fun h ob a b c => separate_bulk_ok ctr v.gh h ob a b c
-  have fin : FinishOk M (Contiguous.maskFinish v.callees Contiguous.maskAES aligned) := by
-    cases aligned
-    · exact scalarMasks_ok v
-    · exact choiceOk (finish_plain facts v false false) (scalarMasks_ok v)
+  have fin : FinishOk M (Contiguous.maskFinish v.callees Contiguous.maskAES) := choiceOk v (scalarMasks_ok v)
   exact body_ok bulk fin C X geo wrap ha src dst (oneMid_ok v C E hp hl ha)
 
-theorem masksRecord_ct (facts : Short.ShortFacts) (aligned : Bool) (v : GcmImpl) (ctr : Proof.Aes.X86_64.Ctr32ToImpl) {M : CtxMode} :
-    RecordCT M (Contiguous.masksBody v.callees ⟨ctr.callee.name,ctr.callee.code⟩ Contiguous.maskAES aligned) := by
+theorem masksRecord_ct (v : GcmImpl) (ctr : Proof.Aes.X86_64.Ctr32ToImpl) {M : CtxMode} :
+    RecordCT M (Contiguous.masksBody v.callees ⟨ctr.callee.name,ctr.callee.code⟩ Contiguous.maskAES) := by
   intro o p Ctx W SP Np A S D nl al n R a b
   have bulk : BulkOk M (Contiguous.bulk (Contiguous.separate ⟨ctr.callee.name,ctr.callee.code⟩ v.callees.gh)) :=
     fun h ob a b c => separate_bulk_ok ctr v.gh h ob a b c
-  have fin : FinishCT M (Contiguous.maskFinish v.callees Contiguous.maskAES aligned) := by
-    cases aligned
-    · exact scalarMasks_ct v
-    · exact choiceCT (finishPlain_ct facts v false false) (scalarMasks_ct v)
+  have fin : FinishCT M (Contiguous.maskFinish v.callees Contiguous.maskAES) :=
+    choiceCT (alignedTag_ct v) (scalarMasks_ct v)
   exact RelCT.seq (ordinaryAad_ct v a b) (run_ct bulk (separate_ct ctr v.gh) (separate_keeps ctr v.gh)
     fin a.ctx.lay (a.rounds ▸ a.ctx.rounds) a.ctx.dE)
 

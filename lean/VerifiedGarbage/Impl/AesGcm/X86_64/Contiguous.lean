@@ -52,16 +52,16 @@ def maskAES : Fn :=
 def copyMask (fromOff toOff : Nat) : List Instr :=
   [.movdquLoad .xmm0 (at_ .r14 fromOff), .movdquStore (at_ .r15 toOff) .xmm0]
 
-def pairArgs : List Instr :=
+def maskArgs (count : Nat) : List Instr :=
   [.mov .rdi (.reg .r13), .mov .rsi (.mem (at_ .r15 roundsO))] ++ ptr .rdx .r15 256 ++
-    [.mov32 .rcx (imm 2)] ++ ptr .r8 .r15 scrO
+    [.mov32 .rcx (imm count)] ++ ptr .r8 .r15 scrO
 
 def mixMasks : List Instr :=
   [.movdquLoad .xmm0 (at_ .r15 256), .movdquLoad .xmm1 (at_ .r14 16),
     .xop (.bin .pxor .xmm0 .xmm1), .movdquStore (at_ .r15 0) .xmm0]
 
 def makeMasks (enc : Fn) : Prog isa :=
-  .seq (.block (copyMask 0 256 ++ copyMask 48 272 ++ pairArgs)) (call enc)
+  .seq (.block (copyMask 0 256 ++ copyMask 48 272 ++ maskArgs 2)) (call enc)
 
 def maskXor : Prog isa :=
   .seq (.block [.alu .test .rbp (.reg .rbp)]) (.ite .e (.block [])
@@ -88,11 +88,20 @@ def finishScalar (c : Callees) : Prog isa :=
 def maskChoice (f g : Prog isa) : Prog isa :=
   .seq (.block [.mov .rax (.mem (at_ .r15 lenO)),.alu .test .rax (.reg .rax)]) (.ite .e f g)
 
-def maskFinish (c : Callees) (enc : Fn) (aligned : Bool) : Prog isa :=
-  if aligned then maskChoice (finishScalar c) (finishMasks c enc) else finishMasks c enc
+/-- The completed bulk loop has already authenticated the aligned record. -/
+def oneMask (enc : Fn) : Prog isa :=
+  .seq (.block (copyMask 0 256 ++ maskArgs 1)) (call enc)
 
-def masksBody (c : Callees) (ctr enc : Fn) (aligned : Bool) : Prog isa :=
-  .seq (oneAad c) (.seq (bulk (separate ctr c.gh)) (maskFinish c enc aligned))
+def directEcbTag (c : Callees) (enc : Fn) : Prog isa :=
+  .seq (lens c 16) (.seq (oneMask enc) (.block mixMasks))
+
+def alignedTag (c : Callees) (enc : Fn) : Prog isa := .seq (.block authLens) (directEcbTag c enc)
+
+def maskFinish (c : Callees) (enc : Fn) : Prog isa :=
+  maskChoice (alignedTag c enc) (finishMasks c enc)
+
+def masksBody (c : Callees) (ctr enc : Fn) : Prog isa :=
+  .seq (oneAad c) (.seq (bulk (separate ctr c.gh)) (maskFinish c enc))
 
 /-- The AES-NI/PCLMUL profile hashes the complete ciphertext once both the
 whole and partial blocks have reached their destination. -/
@@ -126,8 +135,8 @@ def one (c : Callees) (vec wide prepared : Bool) (kernel : Prog isa) : Prog isa 
   framed (body c vec wide prepared kernel)
 
 /-- A preallocated record sealed using the bitsliced two-mask completion. -/
-def preparedMasks (level : Impl.Scrub.X86_64.VecLevel) (c : Callees) (ctr : Fn) (aligned : Bool) : Prog isa :=
-  Impl.Scrub.X86_64.scrubAll level 0 2640 (framed (masksBody c ctr maskAES aligned))
+def preparedMasks (level : Impl.Scrub.X86_64.VecLevel) (c : Callees) (ctr : Fn) : Prog isa :=
+  Impl.Scrub.X86_64.scrubAll level 0 2640 (framed (masksBody c ctr maskAES))
 
 /-- One entry per CPU variant. The prepared flag selects whether the key
 already holds enough powers of the hash subkey. Buffer layout has no effect

@@ -37322,93 +37322,6 @@ vg_aes_gcm_seal_contiguous_prepared_pclmul:
 	movdqu XMMWORD PTR [r15], xmm0
 	jmp 215f
 214:
-	mov rbx, QWORD PTR [rsp+8]
-	add rbx, QWORD PTR [r15+192]
-	sub rbx, QWORD PTR [r15+208]
-	mov r12, QWORD PTR [r15+200]
-	mov rbp, QWORD PTR [r15+208]
-	test rbp, rbp
-	je 224f
-	mov eax, 0
-	mov QWORD PTR [r14+64], rax
-	mov QWORD PTR [r14+72], rax
-	mov rdi, r13
-	mov rsi, QWORD PTR [r15+176]
-	mov rdx, r14
-	add rdx, 48
-	mov rcx, r14
-	add rcx, 64
-	mov r8d, 1
-	mov r9, r15
-	add r9, 512
-	call {vg_aes_ctr32}
-	mov rdi, r12
-	mov rsi, r14
-	add rsi, 64
-	mov rcx, rbp
-	mov r10d, 0
-226:
-	movzx eax, BYTE PTR [rbx+r10*1]
-	movzx r11d, BYTE PTR [rsi+r10*1]
-	xor rax, r11
-	mov BYTE PTR [rdi+r10*1], al
-	add r10, 1
-	cmp r10, rcx
-	jne 226b
-	jmp 225f
-224:
-225:
-	mov r12, QWORD PTR [r15+200]
-	mov rbp, QWORD PTR [r15+208]
-	mov ebx, 0
-	mov rdx, r12
-	mov rcx, rbp
-	shr rcx, 4
-	mov rax, rbp
-	and rbp, 15
-	sub rax, rbp
-	add r12, rax
-	test rcx, rcx
-	je 227f
-	mov rdi, r13
-	add rdi, 240
-	mov rsi, r14
-	add rsi, 16
-	mov r8, r15
-	add r8, 512
-	call {vg_ghash_pclmul}
-	jmp 228f
-227:
-228:
-	mov rcx, rbp
-	test rcx, rcx
-	je 229f
-	mov eax, 0
-	mov QWORD PTR [r15+96], rax
-	mov QWORD PTR [r15+104], rax
-	mov rdi, r15
-	add rdi, 96
-	mov rsi, r12
-	mov r10d, 0
-231:
-	movzx eax, BYTE PTR [rsi+r10*1]
-	mov BYTE PTR [rdi+r10*1], al
-	add r10, 1
-	cmp r10, rcx
-	jne 231b
-	mov rdi, r13
-	add rdi, 240
-	mov rsi, r14
-	add rsi, 16
-	mov rdx, r15
-	add rdx, 96
-	mov ecx, 1
-	mov r8, r15
-	add r8, 512
-	call {vg_ghash_pclmul}
-	jmp 230f
-229:
-230:
 	mov rbx, QWORD PTR [r15+184]
 	mov rbp, QWORD PTR [r15+192]
 	mov rax, rbx
@@ -37433,19 +37346,20 @@ vg_aes_gcm_seal_contiguous_prepared_pclmul:
 	mov r8, r15
 	add r8, 512
 	call {vg_ghash_pclmul}
-	mov rax, QWORD PTR [r14+16]
-	mov QWORD PTR [r15], rax
-	mov rax, QWORD PTR [r14+24]
-	mov QWORD PTR [r15+8], rax
+	movdqu xmm0, XMMWORD PTR [r14]
+	movdqu XMMWORD PTR [r15+256], xmm0
 	mov rdi, r13
 	mov rsi, QWORD PTR [r15+176]
-	mov rdx, r14
-	mov rcx, r15
-	add rcx, 0
-	mov r8d, 1
-	mov r9, r15
-	add r9, 512
-	call {vg_aes_ctr32}
+	mov rdx, r15
+	add rdx, 256
+	mov ecx, 1
+	mov r8, r15
+	add r8, 512
+	call {vg_aes_encrypt_blocks}
+	movdqu xmm0, XMMWORD PTR [r15+256]
+	movdqu xmm1, XMMWORD PTR [r14+16]
+	pxor xmm0, xmm1
+	movdqu XMMWORD PTR [r15], xmm0
 215:
 	mov rdi, QWORD PTR [rsp+32]
 	mov rax, QWORD PTR [r15]
@@ -41162,6 +41076,9 @@ vg_aes_gcm_seal_contiguous_prepared:
 	jmp 213f
 212:
 213:
+	mov rax, QWORD PTR [r15+208]
+	test rax, rax
+	je 214f
 	mov rbx, QWORD PTR [rsp+8]
 	add rbx, QWORD PTR [r15+192]
 	sub rbx, QWORD PTR [r15+208]
@@ -41180,23 +41097,23 @@ vg_aes_gcm_seal_contiguous_prepared:
 	add r8, 512
 	call {vg_aes_encrypt_blocks}
 	test rbp, rbp
-	je 214f
+	je 216f
 	mov rdi, r12
 	mov rcx, rbp
 	mov rsi, r15
 	add rsi, 272
 	mov r10d, 0
-216:
+218:
 	movzx eax, BYTE PTR [rbx+r10*1]
 	movzx r11d, BYTE PTR [rsi+r10*1]
 	xor rax, r11
 	mov BYTE PTR [rdi+r10*1], al
 	add r10, 1
 	cmp r10, rcx
-	jne 216b
-	jmp 215f
-214:
-215:
+	jne 218b
+	jmp 217f
+216:
+217:
 	mov r12, QWORD PTR [r15+200]
 	mov rbp, QWORD PTR [r15+208]
 	mov ebx, 0
@@ -41208,7 +41125,7 @@ vg_aes_gcm_seal_contiguous_prepared:
 	sub rax, rbp
 	add r12, rax
 	test rcx, rcx
-	je 217f
+	je 219f
 	mov rdi, r13
 	add rdi, 240
 	mov rsi, r14
@@ -41216,12 +41133,12 @@ vg_aes_gcm_seal_contiguous_prepared:
 	mov r8, r15
 	add r8, 512
 	call {vg_ghash}
-	jmp 218f
-217:
-218:
+	jmp 220f
+219:
+220:
 	mov rcx, rbp
 	test rcx, rcx
-	je 219f
+	je 221f
 	mov eax, 0
 	mov QWORD PTR [r15+96], rax
 	mov QWORD PTR [r15+104], rax
@@ -41229,12 +41146,12 @@ vg_aes_gcm_seal_contiguous_prepared:
 	add rdi, 96
 	mov rsi, r12
 	mov r10d, 0
-221:
+223:
 	movzx eax, BYTE PTR [rsi+r10*1]
 	mov BYTE PTR [rdi+r10*1], al
 	add r10, 1
 	cmp r10, rcx
-	jne 221b
+	jne 223b
 	mov rdi, r13
 	add rdi, 240
 	mov rsi, r14
@@ -41245,9 +41162,9 @@ vg_aes_gcm_seal_contiguous_prepared:
 	mov r8, r15
 	add r8, 512
 	call {vg_ghash}
-	jmp 220f
-219:
-220:
+	jmp 222f
+221:
+222:
 	mov rbx, QWORD PTR [r15+184]
 	mov rbp, QWORD PTR [r15+192]
 	mov rax, rbx
@@ -41276,6 +41193,47 @@ vg_aes_gcm_seal_contiguous_prepared:
 	movdqu xmm1, XMMWORD PTR [r14+16]
 	pxor xmm0, xmm1
 	movdqu XMMWORD PTR [r15], xmm0
+	jmp 215f
+214:
+	mov rbx, QWORD PTR [r15+184]
+	mov rbp, QWORD PTR [r15+192]
+	mov rax, rbx
+	add rax, rax
+	add rax, rax
+	add rax, rax
+	bswap rax
+	mov QWORD PTR [r15+96], rax
+	mov rax, rbp
+	add rax, rax
+	add rax, rax
+	add rax, rax
+	bswap rax
+	mov QWORD PTR [r15+104], rax
+	mov rdi, r13
+	add rdi, 240
+	mov rsi, r14
+	add rsi, 16
+	mov rdx, r15
+	add rdx, 96
+	mov ecx, 1
+	mov r8, r15
+	add r8, 512
+	call {vg_ghash}
+	movdqu xmm0, XMMWORD PTR [r14]
+	movdqu XMMWORD PTR [r15+256], xmm0
+	mov rdi, r13
+	mov rsi, QWORD PTR [r15+176]
+	mov rdx, r15
+	add rdx, 256
+	mov ecx, 1
+	mov r8, r15
+	add r8, 512
+	call {vg_aes_encrypt_blocks}
+	movdqu xmm0, XMMWORD PTR [r15+256]
+	movdqu xmm1, XMMWORD PTR [r14+16]
+	pxor xmm0, xmm1
+	movdqu XMMWORD PTR [r15], xmm0
+215:
 	mov rdi, QWORD PTR [rsp+32]
 	mov rax, QWORD PTR [r15]
 	mov rdx, QWORD PTR [r15+8]
