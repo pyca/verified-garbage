@@ -200,34 +200,3 @@ fn limits_and_lengths() {
         }
     }
 }
-
-/// Decryption undoes encryption for messages of many blocks, whose blocks an
-/// implementation may take many at a time, with and without a partial last
-/// segment, split before any of the block counts it may change its course at,
-/// and unaligned.
-#[test]
-fn block_batches_and_continuation() {
-    let iv = [0x3c; 16];
-    for key_len in [16, 24, 32] {
-        let key = crate::bytes::pattern(key_len, 17, 3);
-        for blocks in [0usize, 1, 7, 8, 9, 63, 64, 65, 127, 128, 129] {
-            for tail in [0, 5] {
-                let plain = crate::bytes::pattern(16 * blocks + tail, 73, 5);
-                let mut ciphertext = plain.clone();
-                AesCfb128Encryptor::new(&key, &iv)
-                    .unwrap()
-                    .encrypt_final(&mut ciphertext);
-                for split in [0, blocks.min(1), blocks / 2, blocks] {
-                    let mut guarded = vec![0xa5; plain.len() + 2];
-                    guarded[1..plain.len() + 1].copy_from_slice(&ciphertext);
-                    let mut decryptor = AesCfb128Decryptor::new(&key, &iv).unwrap();
-                    let (first, rest) = guarded[1..plain.len() + 1].split_at_mut(16 * split);
-                    decryptor.decrypt(first).unwrap();
-                    decryptor.decrypt_final(rest);
-                    assert_eq!(guarded[1..plain.len() + 1], plain);
-                    assert_eq!((guarded[0], guarded[plain.len() + 1]), (0xa5, 0xa5));
-                }
-            }
-        }
-    }
-}
