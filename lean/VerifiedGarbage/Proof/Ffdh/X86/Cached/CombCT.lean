@@ -43,12 +43,13 @@ abbrev toothTail (j : Nat) : List Instr :=
   [.alu .and .eax (.imm 1)] ++ List.replicate j (.alu .add .eax (.reg .eax)) ++
     [.alu .or .eax (.mem (sc winOff)), .store (sc winOff) .eax]
 
-theorem tooth_eq (j : Nat) : tooth j = .seq (.block (toothHead j)) (.seq bit (.block (toothTail j))) := rfl
+theorem tooth_eq (j : Nat) :
+    tooth j = .seq (.block (toothHead j)) (.seq VG.Impl.Ffdh.X86.scalarBit (.block (toothTail j))) := rfl
 
 /-- The bit, with its index public. -/
 abbrev SCheck (p : Prog isa) : Prop := (VG.Taint.check taint τAs p (VG.Taint.hintOf taint τAs p)).isSome = true
 
-theorem bit_check : SCheck Generate.bit := by dsimp only [SCheck]; taint_decide
+theorem bit_check : SCheck VG.Impl.Ffdh.X86.scalarBit := by dsimp only [SCheck]; taint_decide
 
 theorem toothHead_check : ∀ j < 5, ACheck (.block (toothHead j)) := by
   intro j hj

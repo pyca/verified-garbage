@@ -157,14 +157,14 @@ variable {Ex : List Region → List Region → Prop} {s : State} {base : Addr} {
 /-- Bit `k` (in `esi`, public) of x (slot 13), in the low bit of `eax`. -/
 theorem bit_ok (h : In Ex base bytes len args s) {k : Nat} (hk : k < 2 ^ 32)
     (hesi : s.gpr .esi = BitVec.ofNat 32 k) :
-    WP isa Generate.bit s fun u => u.mem = s.mem ∧ Keeps [.eax, .ecx, .edx, .ebp] s u ∧
+    WP isa VG.Impl.Ffdh.X86.scalarBit s fun u => u.mem = s.mem ∧ Keeps [.eax, .ecx, .edx, .ebp] s u ∧
       (u.gpr .eax).toNat % 2 = VG.Proof.Rsa.FixedBaseComb.bit (sv s.mem base len .wide 13) k := by
   have bl := h.bytes_lt
   obtain f13 := h.slot_fit .wide (j := 13) (by decide)
   obtain bw := bc_eq_cwc len .wide
   have est : st len .wide = 2 * bc len .wide + 32 := rfl
   obtain hb := bc_le h.upper' .wide
-  unfold Generate.bit
+  unfold VG.Impl.Ffdh.X86.scalarBit
   simp only [List.cons_append, List.nil_append]
   refine WP.seq (wp_mov fun s₁ U₁ => wp_shr (by decide) fun s₂ U₂ => wp_addS rfl fun s₃ U₃ _ =>
     wp_addS rfl fun s₄ U₄ _ => ?_)

@@ -8,6 +8,8 @@ import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.CallLay
 import VerifiedGarbage.Proof.Ffdh.X86.Checks
 import VerifiedGarbage.Proof.Ffdh.X86.StagesCT
+import VerifiedGarbage.Proof.Ffdh.X86.LadderCT
+meta import VerifiedGarbage.Proof.Ffdh.X86.LadderCT
 import VerifiedGarbage.Proof.Bignum.X86.CrtRt.TimePower
 meta import VerifiedGarbage.Proof.Ffdh.X86.Checks
 meta import VerifiedGarbage.Proof.Ffdh.X86.StagesCT
@@ -305,8 +307,29 @@ theorem powTop_trace (hx : args 11 = BitVec.ofNat 32 xl ∧ 0 < xl ∧ xl ≤ 10
     · rw [R4]; exact Nat.mod_lt _ (by omega_using [hM])
   · exact (winTopCall_relCT hx.1 hx.2.1 hl hx.2.2).mono (fun _ _ h => h) fun _ _ h => ⟨WSt.run h.1, WSt.run h.2⟩
 
-theorem pair_trace {P : State → Prop}
-    (hP : ∀ x, P x → RX Ex base bytes len xl args sp x ∧ (RoomF sp base bytes ∧ Region.Disjoint ⟨byteAddr (args 10), xl⟩ (below sp 176))) :
+/-- g's power, for runs with the same g (slot 10): its test, which the runs' g decides, then `powTop` or
+p's context and the ladder over x's `xl` bytes. -/
+theorem powTopG_trace {g : Nat} (hx : args 11 = BitVec.ofNat 32 xl ∧ 0 < xl ∧ xl ≤ 1024)
+    (RF : RoomF sp base bytes) (hx40 : Region.Disjoint ⟨byteAddr (args 10), xl⟩ (below sp 176)) :
+    RelCT isa (Both fun u => RX Ex base bytes len xl args sp u ∧ sv u.mem base len .wide 10 = g)
+      Impl.Ffdh.X86.powTopG (Both (Run Ex base bytes len args sp)) := by
+  unfold Impl.Ffdh.X86.powTopG
+  refine VG.RelCT.seq (aRel (F := fun u => RX Ex base bytes len xl args sp u ∧ Gate u (¬ g = 2))
+    (fun _ h => h.1.1) Ladder.twoTest_check fun x h => ?_) ?_
+  · obtain ⟨⟨R, X⟩, e⟩ := h
+    exact WP.mono (Ladder.twoTest_ok R.1) fun u ⟨S, Gt, _⟩ =>
+      ⟨⟨run_step R S, X.keep ⟨rfl, rfl⟩ S.keeps⟩, by rw [e] at Gt; exact Gt⟩
+  refine gate_relCT (fun _ h => h.2)
+    ((powTop_trace hx RF hx40).mono (fun _ _ h => ⟨h.1.1.1, h.2.1.1⟩) fun _ _ h => h) ?_
+  exact VG.RelCT.seq (R := Both (WinPre Ex base bytes len args sp))
+    ((relCT_keepA (A := RoomF sp base bytes) ctxP_relCTF fun _ h => h.2).mono
+      (fun _ _ h => ⟨⟨h.1.1.1.1, RF⟩, ⟨h.2.1.1.1, RF⟩⟩)
+      fun _ _ h => ⟨⟨⟨h.1.1.1, h.1.2⟩, h.1.1.2⟩, ⟨⟨h.2.1.1, h.2.2⟩, h.2.1.2⟩⟩)
+    (Ladder.ladderCall_relCT hx.1 hx.2.1 hx.2.2)
+
+theorem pair_trace {P : State → Prop} {g : Nat}
+    (hP : ∀ x, P x → RX Ex base bytes len xl args sp x ∧ (RoomF sp base bytes ∧ Region.Disjoint ⟨byteAddr (args 10), xl⟩ (below sp 176)))
+    (hg : ∀ x, P x → sv x.mem base len .wide 10 = g) :
     RelCT isa (Both P) Impl.Ffdh.X86.CheckPrivate.pair fun _ _ => True := by
   by_cases hx : (args 11 = BitVec.ofNat 32 xl ∧ 0 < xl ∧ xl ≤ 1024) ∧
     (RoomF sp base bytes ∧ Region.Disjoint ⟨byteAddr (args 10), xl⟩ (below sp 176))
@@ -317,15 +340,18 @@ theorem pair_trace {P : State → Prop}
   unfold Impl.Ffdh.X86.CheckPrivate.pair
   have ao : accOff = 8 := rfl
   have nb : numBase = 3336 := rfl
-  refine VG.RelCT.seq (aRel (F := fun v => RX Ex base bytes len xl args sp v ∧ ∃ c, v.gpr .ecx = cmask c)
-    (fun x h => (hP x h).1.1) range_check fun x R => ?_) ?_
-  · obtain ⟨⟨R, X⟩, _⟩ := hP x R
+  refine VG.RelCT.seq (aRel (F := fun v => (RX Ex base bytes len xl args sp v ∧ sv v.mem base len .wide 10 = g) ∧
+      ∃ c, v.gpr .ecx = cmask c) (fun x h => (hP x h).1.1) range_check fun x Px => ?_) ?_
+  · obtain ⟨⟨R, X⟩, _⟩ := hP x Px
     exact WP.mono (rangeMask_ok R.1 (a := 12) (by decide)) fun v ⟨_, e, O, K⟩ =>
-      ⟨⟨run_step R (Step.word R.1 (by decide) O K), X.keep ⟨rfl, rfl⟩ K⟩, _, e⟩
-  refine VG.RelCT.seq (aRel (F := RX Ex base bytes len xl args sp) (fun _ h => h.1.1) store_check
-    fun x ⟨⟨R, X⟩, c, e⟩ => WP.mono (storeMask_ok R.1 (d := accOff) (by omega_using [ao, nb]) e) fun v ⟨_, O, _, _, K⟩ =>
-      ⟨run_step R (Step.word R.1 (by omega_using [ao]) O K), X.keep ⟨rfl, rfl⟩ K⟩) ?_
-  exact VG.RelCT.seq (powTop_trace hx.1 hx.2.1 hx.2.2) (RelCT.taint (A := taint) τA (fun _ _ h => h.1.agree h.2) tail_check)
+      ⟨⟨⟨run_step R (Step.word R.1 (by decide) O K), X.keep ⟨rfl, rfl⟩ K⟩, by
+        rw [(kept_word R.1 (d := maskOff) (by decide) (by decide) O).slot_eq]; exact hg x Px⟩, _, e⟩
+  refine VG.RelCT.seq (aRel (F := fun v => RX Ex base bytes len xl args sp v ∧ sv v.mem base len .wide 10 = g)
+    (fun _ h => h.1.1.1) store_check
+    fun x ⟨⟨⟨R, X⟩, e10⟩, c, e⟩ => WP.mono (storeMask_ok R.1 (d := accOff) (by omega_using [ao, nb]) e) fun v ⟨_, O, _, _, K⟩ =>
+      ⟨⟨run_step R (Step.word R.1 (by omega_using [ao]) O K), X.keep ⟨rfl, rfl⟩ K⟩, by
+        rw [(kept_word R.1 (d := accOff) (by omega_using [ao, nb]) (by decide) O).slot_eq]; exact e10⟩) ?_
+  exact VG.RelCT.seq (powTopG_trace hx.1 hx.2.1 hx.2.2) (RelCT.taint (A := taint) τA (fun _ _ h => h.1.agree h.2) tail_check)
 
 /-- A run, with the domain's geometry. -/
 def RG (Ex : List Region → List Region → Prop) (base : Addr) (bytes len dlen : Nat) (args : Nat → BitVec 32)
@@ -385,15 +411,17 @@ theorem body_relCT :
   rw [body_eq]
   apply VG.RelCT.chain
   refine VG.RelCT.seq (VG.Proof.Bignum.X86.PublicRt.relCT_both
-    (F := fun u => (RX Ex base bytes len xl args sp u ∧ (RoomF sp base bytes ∧ Region.Disjoint ⟨byteAddr (args 10), xl⟩ (below sp 176))) ∧
-      Gate u (St = 2)) front_trace fun x A => ?_) ?_
+    (F := fun u => ((RX Ex base bytes len xl args sp u ∧ (RoomF sp base bytes ∧ Region.Disjoint ⟨byteAddr (args 10), xl⟩ (below sp 176))) ∧
+      sv u.mem base len .wide 10 = VG.Proof.Ffdh.X86.CheckDomain.gD len D) ∧ Gate u (St = 2)) front_trace fun x A => ?_) ?_
   · refine WP.mono (front_ok A.pub.dom.run.1 A.pub.dom.geo A.pub.geo A.geo
       (by rw [A.pub.dom.run.2.2]; exact A.pub.dom.room)
       (by rw [A.pub.dom.run.2.2]; exact A.pub.dom.hb40) (by rw [A.pub.dom.run.2.2]; exact A.pub.hy40)
-      (by rw [A.pub.dom.run.2.2]; exact A.hx40)) fun u ⟨S, G, _⟩ =>
-      ⟨⟨⟨run_step A.pub.dom.run S, A.geo.keep ⟨rfl, rfl⟩ S.keeps⟩, A.pub.dom.room, A.hx40⟩, G.congr ?_⟩
+      (by rw [A.pub.dom.run.2.2]; exact A.hx40)) fun u ⟨S, G, _, V10, _⟩ =>
+      ⟨⟨⟨⟨run_step A.pub.dom.run S, A.geo.keep ⟨rfl, rfl⟩ S.keeps⟩, A.pub.dom.room, A.hx40⟩, by
+        rw [V10, A.pub.dom.comp1]⟩, G.congr ?_⟩
     rw [← A.st, status_two, params, A.pub.dom.dom]
-  · exact gate_relCT (fun _ h => h.2) (aEnd (fun _ h => h.1.1.1.1) ret2_check) (pair_trace fun _ h => h.1.1)
+  · exact gate_relCT (fun _ h => h.2) (aEnd (fun _ h => h.1.1.1.1.1) ret2_check)
+      (pair_trace (fun _ h => h.1.1.1) fun _ h => h.1.1.2)
 
 end
 

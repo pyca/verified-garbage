@@ -11,6 +11,8 @@ import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Stage
 import VerifiedGarbage.Proof.Bignum.X86.CrtRt.StageR
 import VerifiedGarbage.Proof.Ffdh.Domain
 import VerifiedGarbage.Proof.Ffdh.X86.Checks
+import VerifiedGarbage.Proof.Ffdh.X86.Ladder
+import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Ffdh.X86.Ops
 public import VerifiedGarbage.Proof.Ffdh.X86.Stages
 public import VerifiedGarbage.Proof.Framework.RelCTChain
@@ -27,7 +29,8 @@ any domain: below q, or without q below `p − 1`, which for a p of zero is
 also below p). `body_ok`: for a valid domain, the status is
 `privateStatus`: 2 for an invalid scalar, else 1 exactly when
 `1 < y < p − 1` and `g^x mod p = y`; a power of the checked generator is in
-its subgroup (`publicValid_power`).
+its subgroup (`publicValid_power`). The power is `powTopG_ok`'s: the ladder
+of `Ladder.lean` where g is two, else the windowed power over x's bytes.
 -/
 
 @[expose] public section
@@ -144,6 +147,45 @@ theorem powTop_ok (h : In Ex base bytes len args s) (X : XGeo args base bytes le
   obtain G := frameF_widen F (pwR_in C₃.inp .wide 0)
   refine ⟨C, Y, ?_, F₃.trans G, k₃.trans (keptF_ops h G RF), K₃.trans K⟩
   rw [pwR_sv3 C₃.inp F RF, one₃]
+
+/-- g (slot 10) to the power of x, which is both in slot 13 and at its arguments: by the ladder where g
+is two, else by `powTop`. Slot 17 changes. -/
+theorem powTopG_ok (h : In Ex base bytes len args s) (X : XGeo args base bytes len xl s.rd s.wr)
+    (RF : RoomF (s.gpr .esp) base bytes) (hx40 : Region.Disjoint ⟨byteAddr (args 10), xl⟩ (below (s.gpr .esp) 176))
+    {P : Nat} (hP : safeM (sv s.mem base len .wide 9) = P)
+    (h13 : sv s.mem base len .wide 13 = xv s.mem args xl) :
+    WP isa Impl.Ffdh.X86.powTopG s fun u =>
+      CtxOk Ex base bytes len args .wide P u ∧
+      sv u.mem base len .wide 6 = sv s.mem base len .wide 10 ^ xv s.mem args xl % P ∧
+      Step Ex base bytes len args s u ∧ Kept base len [17] [] s.mem u.mem := by
+  have xp := X.pos
+  have xle := X.le
+  have up := h.upper'
+  have xf := X.fit
+  unfold Impl.Ffdh.X86.powTopG
+  refine WP.seq (WP.mono (Ladder.twoTest_ok h) fun u₁ ⟨S₁, Gt, k₁⟩ => ?_)
+  obtain RF₁ := S₁.room RF
+  obtain hx40₁ : Region.Disjoint ⟨byteAddr (args 10), xl⟩ (below (u₁.gpr .esp) 176) := by rw [S₁.esp]; exact hx40
+  obtain xe : xv u₁.mem args xl = xv s.mem args xl := by
+    rw [xv, bytes_keep h X.apart (by omega_arith) RF hx40 S₁.frame]
+  obtain nine₁ : safeM (sv u₁.mem base len .wide 9) = P := by rw [k₁.slot_eq, hP]
+  refine WP.gate Gt (fun _ => ?_) (fun g2 => ?_)
+  · refine WP.mono (powTop_ok S₁.inp (X.keep ⟨rfl, rfl⟩ S₁.keeps) RF₁ hx40₁ (b := 10) (by decide) (by decide) nine₁)
+      fun u ⟨C, Y, _, F, k, K⟩ => ?_
+    exact ⟨C, by rw [Y, k₁.slot_eq, xe], S₁.trans (Step.opsF S₁.inp RF₁ F K), k₁.trans k.mono⟩
+  · have g2 : sv s.mem base len .wide 10 = 2 := Classical.not_not.mp g2
+    refine WP.seq (WP.mono (ctxP_ok S₁.inp RF₁ nine₁) fun u₂ ⟨C₂, one₂, R₂, F₂, k₂, K₂⟩ => ?_)
+    obtain sp₂ : u₂.gpr .esp = u₁.gpr .esp := K₂.1 _ (by decide)
+    obtain x13₂ : sv u₂.mem base len .wide 13 = xv s.mem args xl := by rw [k₂.slot_eq, k₁.slot_eq, h13]
+    obtain xlt : xv s.mem args xl < 2 ^ (8 * xl) := by
+      have := VG.Proof.Bignum.os2ip_lt (Spec.Rsa.bytesAt s.mem (byteAddr (args 10)) xl)
+      rwa [VG.Proof.Bignum.bytesAt_length, show (256 : Nat) = 2 ^ 8 from rfl, ← Nat.pow_mul] at this
+    refine WP.mono (Ladder.ladderCall_ok C₂ (by rw [sp₂]; exact RF₁) one₂ R₂ X.e11 xp (by omega_arith))
+      fun u ⟨C, F, K, Y⟩ => ?_
+    rw [sp₂] at F
+    obtain Gf := frameF_widen F (pwR_in C₂.inp .wide 0)
+    exact ⟨C, by rw [Y, x13₂, Nat.mod_eq_of_lt xlt, g2], S₁.trans (Step.opsF S₁.inp RF₁ (F₂.trans Gf) (K₂.trans K)),
+      (k₁.trans k₂.mono).trans (keptF_ops S₁.inp Gf RF₁).mono⟩
 
 /-- A copy of the wide slot 15 into 16. -/
 theorem copy1516_ok (h : In Ex base bytes len args s) :
@@ -366,7 +408,7 @@ theorem front_ok (h : In Ex base bytes len args s) (G : DomGeo args base bytes l
 theorem pair_ok (h : In Ex base bytes len args s) {p g y x : Nat} (h9 : sv s.mem base len .wide 9 = p)
     (h10 : sv s.mem base len .wide 10 = g) (h12 : sv s.mem base len .wide 12 = y)
     (X : XGeo args base bytes len xl s.rd s.wr) (RF : RoomF (s.gpr .esp) base bytes) (hx40 : Region.Disjoint ⟨byteAddr (args 10), xl⟩ (below (s.gpr .esp) 176))
-    (hx : xv s.mem args xl = x) (h14 : sv s.mem base len .wide 14 = 1)
+    (hx : xv s.mem args xl = x) (h13 : sv s.mem base len .wide 13 = x) (h14 : sv s.mem base len .wide 14 = 1)
     (h15 : sv s.mem base len .wide 15 = pm1 len p) :
     WP isa Impl.Ffdh.X86.CheckPrivate.pair s (Res base len s
       ((decide (g ^ x % safeM p = y) && (decide (y < pm1 len p) && decide (1 < y))).toNat)) := by
@@ -384,12 +426,11 @@ theorem pair_ok (h : In Ex base bytes len args s) {p g y x : Nat} (h9 : sv s.mem
   obtain k₁₂ : Kept base len [] [maskOff, accOff] s.mem u₂.mem := k₁.mono.trans k₂.mono
   obtain S₁₂ := S₁.trans S₂
   have xf := X.fit
-  refine WP.seq (WP.mono (powTop_ok S₂.inp (X.keep ⟨rfl, rfl⟩ S₁₂.keeps) (by rw [S₁₂.esp]; exact RF) (by rw [S₁₂.esp]; exact hx40)
-    (P := safeM p) (b := 10) (by decide) (by decide) (by rw [k₁₂.slot_eq, h9]))
-    fun u₃ ⟨C₃, Y₃, _, F₃, k₃, K₃⟩ => ?_)
   obtain xe : xv u₂.mem args xl = x := by rw [xv, bytes_keep h X.apart (by omega_arith) RF hx40 S₁₂.frame]; exact hx
+  refine WP.seq (WP.mono (powTopG_ok S₂.inp (X.keep ⟨rfl, rfl⟩ S₁₂.keeps) (by rw [S₁₂.esp]; exact RF) (by rw [S₁₂.esp]; exact hx40)
+    (P := safeM p) (by rw [k₁₂.slot_eq, h9]) (by rw [k₁₂.slot_eq, h13, xe]))
+    fun u₃ ⟨C₃, Y₃, S₃, k₃⟩ => ?_)
   rw [k₁₂.slot_eq, h10, xe] at Y₃
-  obtain S₃ : Step Ex base bytes len args u₂ u₃ := Step.opsF S₂.inp (S₁₂.room RF) F₃ K₃
   refine WP.seq (WP.mono (eqW_ok C₃.inp (a := 6) (b := 12) (by decide) (by decide)) fun u₄ ⟨m₄, e₄, K₄⟩ => ?_)
   rw [Y₃, k₃.slot_eq, k₁₂.slot_eq, h12] at e₄
   obtain S₄ : Step Ex base bytes len args u₃ u₄ := Step.regs C₃.inp m₄ K₄
@@ -417,10 +458,10 @@ theorem body_ok (h : In Ex base bytes len args s) (G : DomGeo args base bytes le
   obtain hpa := comp_p s.mem args h2
   obtain hga := comp_g s.mem args h2
   rw [body_eq]
-  refine WP.chain_split (front_ok h G Y X RF hb40 hy40 hx40) fun u ⟨S, Gt, V9, V10, V12, _, V14, V15⟩ => ?_
+  refine WP.chain_split (front_ok h G Y X RF hb40 hy40 hx40) fun u ⟨S, Gt, V9, V10, V12, V13, V14, V15⟩ => ?_
   refine WP.gate Gt (fun inval => WP.mono (ret_res (base := base) (len := len)) fun t R => ⟨2, S.res R, ?_⟩)
     (fun val => WP.mono (pair_ok (x := xv s.mem args xl) S.inp V9 V10 V12 (X.keep ⟨rfl, rfl⟩ S.keeps) (by rw [S.esp]; exact RF) (by rw [S.esp]; exact hx40)
-      (by have := X.fit; rw [xv, bytes_keep h X.apart (by omega_arith) RF hx40 S.frame]) V14 V15) fun t R => ⟨_, S.res R, ?_⟩)
+      (by have := X.fit; rw [xv, bytes_keep h X.apart (by omega_arith) RF hx40 S.frame]) V13 V14 V15) fun t R => ⟨_, S.res R, ?_⟩)
   · intro _
     simp only [expected, Spec.Ffdh.privateStatus, inval, Bool.not_false, ↓reduceIte]
   · intro v
