@@ -12,9 +12,9 @@ import VerifiedGarbage.Proof.Framework.X86.Reduce
 
 Each operation of `Impl/X25519/X86.lean` on elements at offsets of the working
 space, as the operation of `GF(p)` on their values modulo `p`: `mul` (by
-product scanning into `T`, then `lo + 38 hi`), `add`, `sub` (as `a + (2²⁵⁶ - 1 -
-b) + (2²⁵⁶ - 75)`), `mulSmall` (by 121665). Each leaves the rest of memory
-unchanged but for the output and, for `mul`, `T`.
+product scanning into `T`, then `lo + 38 hi`), `add` and `sub` (three passes of a
+carry or a borrow, `addSub_ok`), `mulSmall` (by 121665). Each leaves the rest of
+memory unchanged but for the output and, for `mul`, `T`.
 -/
 
 @[expose] public section
@@ -262,16 +262,16 @@ theorem read_ok {o a k : Nat} (h : Apart o a) (ha : Below a) (hk : k < 8) :
 `addSub op o a b` runs a carry (or borrow) through the eight words three times: the words of `[a]`
 and `[b]`, then 38 for the carry out and the carries it starts, then 38 into word 0 for a carry
 out of that, after which the number is small (or, subtracting, large) and nothing is carried.
-`Rel op A Y c R c' B` is what a pass does to numbers below `B`: `A + Y + c = R + B c'` for `adc`,
+`PassRel op A Y c R c' B` is what a pass does to numbers below `B`: `A + Y + c = R + B c'` for `adc`,
 and `A + B c' = R + Y + c` for `sbb`. -/
 
 /-- A pass of `adc` or of `sbb`: the numbers, the carry in, the result and the carry out. -/
-def Rel (op : AluOp) (A Y c R c' B : Nat) : Prop :=
+def PassRel (op : AluOp) (A Y c R c' B : Nat) : Prop :=
   if op = .adc then A + Y + c = R + B * c' else A + B * c' = R + Y + c
 
-theorem Rel.succ {op : AluOp} {A Y c₀ R c a y r c' P : Nat} (h : Rel op A Y c₀ R c P)
-    (hs : Rel op a y c r c' (2 ^ 32)) : Rel op (A + P * a) (Y + P * y) c₀ (R + P * r) c' (P * 2 ^ 32) := by
-  unfold Rel at *
+theorem PassRel.succ {op : AluOp} {A Y c₀ R c a y r c' P : Nat} (h : PassRel op A Y c₀ R c P)
+    (hs : PassRel op a y c r c' (2 ^ 32)) : PassRel op (A + P * a) (Y + P * y) c₀ (R + P * r) c' (P * 2 ^ 32) := by
+  unfold PassRel at *
   split at h
   · rw [ite_eq_left ‹_›] at hs ⊢
     have e := congrArg (P * ·) hs
@@ -327,14 +327,14 @@ theorem wp_ldC {W : Nat} {c : Bool} {x : BitVec 32} (hc : Ctx W x s c) {d : Reg}
 end
 
 /-- A word of a pass: the word of `[a]`, `op` the operand's value `y` and the carry, into `[o]`. -/
-theorem chainStep_ok {op : AluOp} (hop : op = .adc ∨ op = .sbb) {x : BitVec 32} {s : State}
+theorem carryStep_ok {op : AluOp} (hop : op = .adc ∨ op = .sbb) {x : BitVec 32} {s : State}
     (hc : Ctx W x s c) {o a k : Nat} (ha : a + 4 * k + 4 ≤ 4096) (ho : o + 4 * k + 4 ≤ 4096) {src : Src}
     {y : BitVec 32} {cin : Bool} (hcf : s.cf = some cin)
     (hy : ∀ t, Keep s t → t.gpr .ecx = s.gpr .ecx → t.mem = s.mem → readSrc t src = some y) :
-    WP isa (.block (chainStep op o a k src)) s fun t => Keep s t ∧ t.gpr .ecx = s.gpr .ecx ∧
+    WP isa (.block (carryStep op o a k src)) s fun t => Keep s t ∧ t.gpr .ecx = s.gpr .ecx ∧
       ∃ r : BitVec 32, ∃ c' : Bool, t.mem = s.mem.writeW (addr x (o + 4 * k)) r ∧ t.cf = some c' ∧
-        Rel op (wv s.mem x (a + 4 * k)) y.toNat cin.toNat r.toNat c'.toNat (2 ^ 32) := by
-  unfold chainStep
+        PassRel op (wv s.mem x (a + 4 * k)) y.toNat cin.toNat r.toNat c'.toNat (2 ^ 32) := by
+  unfold carryStep
   refine wp_ldC hc ha fun s₁ u₁ f₁ => ?_
   have k₁ : Keep s s₁ := updKeep u₁
   have y₁ := hy s₁ k₁ (u₁.other _ (by decide)) u₁.mem
@@ -349,8 +349,8 @@ theorem chainStep_ok {op : AluOp} (hop : op = .adc ∨ op = .sbb) {x : BitVec 32
       by rw [m.gpr, u₂.other _ (by decide), u₁.other _ (by decide)], _, _,
       by rw [m.mem, u₂.mem, u₁.mem], by rw [m.cf, f₂], ?_⟩
     rw [u₂.gpr, u₁.gpr, add3_toNat]
-    show Rel .adc (wv s.mem x (a + 4 * k)) y.toNat cin.toNat _ _ _
-    rw [Rel, ite_eq_left rfl, carry_toNat (by omega_using [hw, hyl, hcl])]
+    show PassRel .adc (wv s.mem x (a + 4 * k)) y.toNat cin.toNat _ _ _
+    rw [PassRel, ite_eq_left rfl, carry_toNat (by omega_using [hw, hyl, hcl])]
     exact (Nat.mod_add_div _ _).symm
   · refine wp_sbbC y₁ (f₁.trans hcf) fun s₂ u₂ f₂ => ?_
     refine Wp.wp_stm ((u₂.other _ (by decide)).trans ((u₁.other _ (by decide)).trans hc.edi))
@@ -359,40 +359,40 @@ theorem chainStep_ok {op : AluOp} (hop : op = .adc ∨ op = .sbb) {x : BitVec 32
       by rw [m.gpr, u₂.other _ (by decide), u₁.other _ (by decide)], _, _,
       by rw [m.mem, u₂.mem, u₁.mem], by rw [m.cf, f₂], ?_⟩
     rw [u₂.gpr, u₁.gpr]
-    show Rel .sbb (wv s.mem x (a + 4 * k)) y.toNat cin.toNat _ _ _
-    rw [Rel, ite_eq_right (by decide)]
+    show PassRel .sbb (wv s.mem x (a + 4 * k)) y.toNat cin.toNat _ _ _
+    rw [PassRel, ite_eq_right (by decide)]
     exact (sub3_toNat _ _ _).symm
 
-theorem chain_succ (op : AluOp) (o a n : Nat) (src : Nat → Src) :
-    ((List.range (n + 1)).flatMap fun k => chainStep op o a k (src k)) =
-      ((List.range n).flatMap fun k => chainStep op o a k (src k)) ++ chainStep op o a n (src n) := by
+theorem carryPass_succ (op : AluOp) (o a n : Nat) (src : Nat → Src) :
+    ((List.range (n + 1)).flatMap fun k => carryStep op o a k (src k)) =
+      ((List.range n).flatMap fun k => carryStep op o a k (src k)) ++ carryStep op o a n (src n) := by
   simp only [List.range_succ, List.flatMap_append, List.flatMap_singleton]
 
 /-- The first `n` words of a pass, for operands of values `y k` whatever the words below theirs
 hold. -/
-theorem chainTo_ok {op : AluOp} (hop : op = .adc ∨ op = .sbb) {x : BitVec 32} {s : State}
+theorem carryPassTo_ok {op : AluOp} (hop : op = .adc ∨ op = .sbb) {x : BitVec 32} {s : State}
     (hc : Ctx W x s c) {o a : Nat} (ho : Below o) (ha : Below a) (hoa : Apart o a) {src : Nat → Src}
     {y : Nat → BitVec 32} {cin : Bool} (hcf : s.cf = some cin)
     (hy : ∀ k < 8, ∀ t, Keep s t → t.gpr .ecx = s.gpr .ecx → Frame [sub x o (4 * k)] s.mem t.mem →
       readSrc t (src k) = some (y k)) :
-    ∀ n ≤ 8, WP isa (.block ((List.range n).flatMap fun k => chainStep op o a k (src k))) s fun t =>
+    ∀ n ≤ 8, WP isa (.block ((List.range n).flatMap fun k => carryStep op o a k (src k))) s fun t =>
       Keep s t ∧ t.gpr .ecx = s.gpr .ecx ∧ Frame [sub x o (4 * n)] s.mem t.mem ∧
-        ∃ c' : Bool, t.cf = some c' ∧ Rel op (num (fun k => wv s.mem x (a + 4 * k)) n)
+        ∃ c' : Bool, t.cf = some c' ∧ PassRel op (num (fun k => wv s.mem x (a + 4 * k)) n)
           (num (fun k => (y k).toNat) n) cin.toNat (num (fun k => wv t.mem x (o + 4 * k)) n) c'.toNat
           ((2 ^ 32) ^ n)
   | 0, _ => WP.block_nil ⟨Keep.refl _, rfl, Frame.refl _ _, cin, hcf, by
-      rcases hop with rfl | rfl <;> simp [Rel, num]⟩
+      rcases hop with rfl | rfl <;> simp [PassRel, num]⟩
   | n + 1, hn => by
     simp only [Below, T] at ho ha
     have hfit := hc.fit4
-    rw [chain_succ]
-    refine WP.block_append (WP.mono (chainTo_ok hop hc (by simpa only [Below, T] using ho)
+    rw [carryPass_succ]
+    refine WP.block_append (WP.mono (carryPassTo_ok hop hc (by simpa only [Below, T] using ho)
       (by simpa only [Below, T] using ha) hoa hcf hy n (by omega_using [hn]))
       fun t ⟨kt, et, ft, ct, hct, rt⟩ => ?_)
     have wa : wd t.mem x (a + 4 * n) = wd s.mem x (a + 4 * n) :=
       wd_frame1 ft hfit (by omega_using [ho, hn]) (by omega_using [ha, hn])
         (apart_read hoa (Nat.le_refl n) (by omega_using [hn]))
-    refine WP.mono (chainStep_ok hop (kt.ctx hc) (k := n) (by omega_using [ha, hn]) (by omega_using [ho, hn]) hct
+    refine WP.mono (carryStep_ok hop (kt.ctx hc) (k := n) (by omega_using [ha, hn]) (by omega_using [ho, hn]) hct
       fun u ku eu mu => hy n (by omega_using [hn]) u (kt.trans ku) (eu.trans et) (by rw [mu]; exact ft))
       fun u ⟨ku, eu, r, c', mu, cu, ru⟩ => ⟨kt.trans ku, eu.trans et, ?_, c', cu, ?_⟩
     · rw [mu]
@@ -407,21 +407,21 @@ theorem chainTo_ok {op : AluOp} (hop : op = .adc ∨ op = .sbb) {x : BitVec 32} 
         show (wd u.mem x (o + 4 * n)).toNat = _
         rw [mu, wd_write_self]
       rw [num_succ, num_succ, num_succ, lowO, topO, Nat.pow_succ]
-      have ru' : Rel op (wv s.mem x (a + 4 * n)) (y n).toNat ct.toNat r.toNat c'.toNat (2 ^ 32) := by
+      have ru' : PassRel op (wv s.mem x (a + 4 * n)) (y n).toNat ct.toNat r.toNat c'.toNat (2 ^ 32) := by
         have e : wv t.mem x (a + 4 * n) = wv s.mem x (a + 4 * n) := congrArg BitVec.toNat wa
         rw [e] at ru; exact ru
       exact rt.succ ru'
 
 /-- A pass over the eight words of `[a]`, into `[o]`. -/
-theorem chain_ok {op : AluOp} (hop : op = .adc ∨ op = .sbb) {x : BitVec 32} {s : State}
+theorem carryPass_ok {op : AluOp} (hop : op = .adc ∨ op = .sbb) {x : BitVec 32} {s : State}
     (hc : Ctx W x s c) {o a : Nat} (ho : Below o) (ha : Below a) (hoa : Apart o a) {src : Nat → Src}
     {y : Nat → BitVec 32} {cin : Bool} (hcf : s.cf = some cin)
     (hy : ∀ k < 8, ∀ t, Keep s t → t.gpr .ecx = s.gpr .ecx → Frame [sub x o (4 * k)] s.mem t.mem →
       readSrc t (src k) = some (y k)) :
-    WP isa (.block (chain op o a src)) s fun t => Keep s t ∧ t.gpr .ecx = s.gpr .ecx ∧
+    WP isa (.block (carryPass op o a src)) s fun t => Keep s t ∧ t.gpr .ecx = s.gpr .ecx ∧
       Frame [sub x o 32] s.mem t.mem ∧ ∃ c' : Bool, t.cf = some c' ∧
-        Rel op (fe s.mem x a) (num (fun k => (y k).toNat) 8) cin.toNat (fe t.mem x o) c'.toNat (2 ^ 256) :=
-  chainTo_ok hop hc ho ha hoa hcf hy 8 (Nat.le_refl _)
+        PassRel op (fe s.mem x a) (num (fun k => (y k).toNat) 8) cin.toNat (fe t.mem x o) c'.toNat (2 ^ 256) :=
+  carryPassTo_ok hop hc ho ha hoa hcf hy 8 (Nat.le_refl _)
 
 /-- The carry flag cleared. -/
 theorem clearCarry_ok {s : State} :
@@ -458,9 +458,9 @@ theorem addSub_ok {op : AluOp} (hop : op = .adc ∨ op = .sbb) {x : BitVec 32} {
     (hob : Apart o b) :
     WP isa (.block (addSub op o a b)) s fun t => Keep s t ∧ Frame [sub x o 32] s.mem t.mem ∧
       ∃ R₁ R₂ w r hi : Nat, ∃ c₁ c₂ c₃ : Bool,
-        Rel op (fe s.mem x a) (fe s.mem x b) 0 R₁ c₁.toNat (2 ^ 256) ∧
-        Rel op R₁ (38 * c₁.toNat) 0 R₂ c₂.toNat (2 ^ 256) ∧
-        Rel op w (38 * c₂.toNat) 0 r c₃.toNat (2 ^ 32) ∧ R₂ = w + 2 ^ 32 * hi ∧
+        PassRel op (fe s.mem x a) (fe s.mem x b) 0 R₁ c₁.toNat (2 ^ 256) ∧
+        PassRel op R₁ (38 * c₁.toNat) 0 R₂ c₂.toNat (2 ^ 256) ∧
+        PassRel op w (38 * c₂.toNat) 0 r c₃.toNat (2 ^ 32) ∧ R₂ = w + 2 ^ 32 * hi ∧
         fe t.mem x o = r + 2 ^ 32 * hi ∧ R₁ < 2 ^ 256 ∧ w < 2 ^ 32 ∧ r < 2 ^ 32 ∧ hi < 2 ^ 224 := by
   have hfit := hc.fit4
   have ho' : o + 32 ≤ 864 := ho
@@ -469,7 +469,7 @@ theorem addSub_ok {op : AluOp} (hop : op = .adc ∨ op = .sbb) {x : BitVec 32} {
   simp only [List.append_assoc]
   refine WP.block_append (WP.mono clearCarry_ok fun u₀ ⟨k₀, m₀, f₀⟩ => ?_)
   -- The words of `[a]` and `[b]`.
-  refine WP.block_append (WP.mono (chain_ok hop (k₀.ctx hc) ho ha hoa (y := fun k => wd s.mem x (b + 4 * k)) f₀
+  refine WP.block_append (WP.mono (carryPass_ok hop (k₀.ctx hc) ho ha hoa (y := fun k => wd s.mem x (b + 4 * k)) f₀
     (fun k hk t kt _ ft => ?_)) fun u₁ ⟨k₁, _, f₁, c₁, cf₁, r₁⟩ => ?_)
   · rw [readSrc_sc (kt.ctx (k₀.ctx hc)) (by omega_using [hb', hk])]
     exact congrArg some ((wd_frame1 ft hfit (by omega_using [ho', hk]) (by omega_using [hb', hk])
@@ -478,7 +478,7 @@ theorem addSub_ok {op : AluOp} (hop : op = .adc ∨ op = .sbb) {x : BitVec 32} {
   -- 38 for the carry out, and the carries it starts.
   refine WP.block_append (WP.mono (carry38_ok cf₁) fun u₂ ⟨k₂, m₂, f₂, e₂⟩ => ?_)
   have c₂' := k₂.ctx (k₁.ctx (k₀.ctx hc))
-  refine WP.block_append (WP.mono (chain_ok hop c₂' ho ho (.inl rfl)
+  refine WP.block_append (WP.mono (carryPass_ok hop c₂' ho ho (.inl rfl)
     (y := fun k => if k = 0 then BitVec.ofNat 32 (38 * c₁.toNat) else 0) f₂ (fun k hk t kt et _ => ?_))
     fun u₃ ⟨k₃, _, f₃, c₂, cf₃, r₃⟩ => ?_)
   · unfold foldSrc
@@ -492,7 +492,7 @@ theorem addSub_ok {op : AluOp} (hop : op = .adc ∨ op = .sbb) {x : BitVec 32} {
   -- 38 into word 0 for a carry out of that.
   refine WP.block_append (WP.mono (carry38_ok cf₃) fun u₄ ⟨k₄, m₄, f₄, e₄⟩ => ?_)
   have c₄ := k₄.ctx (k₃.ctx c₂')
-  refine WP.mono (chainStep_ok hop c₄ (o := o) (a := o) (k := 0) (by omega_using [ho']) (by omega_using [ho']) f₄
+  refine WP.mono (carryStep_ok hop c₄ (o := o) (a := o) (k := 0) (by omega_using [ho']) (by omega_using [ho']) f₄
     (y := BitVec.ofNat 32 (38 * c₂.toNat)) fun t _ et _ => by show some (t.gpr .ecx) = _; rw [et, e₄])
     fun t ⟨k₅, _, r, c₃, m₅, _, r₅⟩ => ?_
   rw [m₄, ofNat38_toNat, Nat.mul_zero, Nat.add_zero] at r₅
@@ -519,7 +519,7 @@ theorem add_ok {x : BitVec 32} {s : State} (hc : Ctx W x s c) {o a b : Nat} (ho 
       fe s'.mem x o % P = (fe s.mem x a + fe s.mem x b) % P := by
   refine WP.mono (addSub_ok (.inl rfl) hc ho ha hb hoa hob)
     fun t ⟨kt, ft, R₁, R₂, w, r, hi, c₁, c₂, c₃, h₁, h₂, h₃, eR, eF, lR, lw, lr, _⟩ => ⟨kt, ft, ?_⟩
-  simp only [Rel, ↓reduceIte, Nat.add_zero] at h₁ h₂ h₃
+  simp only [PassRel, ↓reduceIte, Nat.add_zero] at h₁ h₂ h₃
   have hA := fe_lt s.mem x a
   have hB := fe_lt s.mem x b
   have b₁ : c₁.toNat ≤ 1 := by cases c₁ <;> decide
@@ -541,7 +541,7 @@ theorem sub_ok {x : BitVec 32} {s : State} (hc : Ctx W x s c) {o a b : Nat} (ho 
       (fe s'.mem x o + fe s.mem x b) % P = fe s.mem x a % P := by
   refine WP.mono (addSub_ok (.inr rfl) hc ho ha hb hoa hob)
     fun t ⟨kt, ft, R₁, R₂, w, r, hi, c₁, c₂, c₃, h₁, h₂, h₃, eR, eF, lR, lw, lr, lh⟩ => ⟨kt, ft, ?_⟩
-  simp only [Rel, reduceCtorEq, ↓reduceIte, Nat.add_zero] at h₁ h₂ h₃
+  simp only [PassRel, reduceCtorEq, ↓reduceIte, Nat.add_zero] at h₁ h₂ h₃
   have hA := fe_lt s.mem x a
   have hB := fe_lt s.mem x b
   have b₁ : c₁.toNat ≤ 1 := by cases c₁ <;> decide
