@@ -374,7 +374,7 @@ impl AesGcm {
     #[inline(always)]
     fn seal(&self, dit: crate::dit::Dit<'_>, nonce: &[u8], aad: &[u8], data: &mut [u8]) -> Block {
         #[cfg(target_arch = "aarch64")]
-        if data.len() <= 96 && nonce.len() == 12 && aad.len() <= 16 {
+        if data.len() <= 224 && nonce.len() == 12 && aad.len() <= 16 {
             let dst = data.as_mut_ptr();
             // SAFETY: both pointers address the same exclusive, initialized bytes.
             return unsafe {
@@ -784,7 +784,7 @@ impl AesGcm {
         let dst = out.as_mut_ptr().cast();
         let len = out.len();
         #[cfg(target_arch = "aarch64")]
-        if len <= 96
+        if len <= 224
             && nonce.len() == 12
             && aad.len() <= 16
             && let [input] = plaintext
@@ -1272,7 +1272,7 @@ mod tests {
         let lens = (1024..=1040)
             .chain((256..=656).step_by(16).flat_map(|l| [l, l + 5]))
             .chain(0..=17)
-            .chain([95, 96, 97, 100, 255, 300, 511, 512, 513, 767, 768, 769])
+            .chain([95, 96, 97, 100, 223, 224, 225, 255, 300, 511, 512, 513, 767, 768, 769])
             .chain([
                 1300, 1535, 1536, 2048, 2303, 2304, 2305, 3071, 3072, 3073, 3100,
             ]);
