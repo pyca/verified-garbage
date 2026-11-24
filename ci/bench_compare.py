@@ -584,18 +584,10 @@ def main():
     modules = {"head": selected_modules(head, args.modules), "base": selected_modules(base, args.modules)}
     if modules["head"] is None or (args.modules and set(modules["head"].split()) != set(args.modules.split())):
         p.error("head's benchmark registry does not use the selected modules")
-    binaries = {"head": build(head), "base": None}
-    note = "Base has no selected benchmarks; head's and the references' results are new."
-    if not base.is_dir():
-        note = "No base to compare with, so head ran alone."
-    elif modules["base"] is not None:
-        binaries["base"], note, source = build_base(base, head)
-        if binaries["base"] is not None:
-            modules["base"] = selected_modules(source, args.modules)
-    # Isolate the effect of entry selection from link layout. Both sides and
-    # each fresh-copy pair execute exactly the same compiled instructions.
-    binaries["base"] = binaries["head"]
-    print(f"Same-binary entry comparison {binaries['head']}", file=sys.stderr)
+    binary = build(head)
+    binaries = {"head": binary, "base": binary}
+    note = "Diagnostic runs use the same binary and opposite entry selections."
+    print(f"Same-binary entry comparison {binary}", file=sys.stderr)
     if args.arch:
         for binary in filter(None, binaries.values()):
             check_arch(binary, args.arch)
@@ -682,10 +674,11 @@ def main():
         for side in spread:
             spread[side] = {i: [t] for i, t in best[side].items() if i[0] in copied}
         copy_modules = (lambda side, _bench: modules[side]) if owner is not None else (
-            lambda _side, _bench: FRESH_COPIES_MODULES)
+            lambda side, _bench: modules[side])
         for c in range(1, args.copies):
             print(f"copy {c + 1}/{args.copies} of {len(copied)} group(s)", file=sys.stderr)
-            copies = {side: fresh_copy(b, c) if b is not None else None for side, b in binaries.items()}
+            copy = fresh_copy(binary, c)
+            copies = {"head": copy, "base": copy}
             try:
                 measure(interleaved(units(copied, owner), copies, c), lambda side: str(copies[side]),
                         lambda side, c=c: f"{side}-copy-{c}", copy_modules, spread)
