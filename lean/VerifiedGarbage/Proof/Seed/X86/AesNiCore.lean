@@ -555,16 +555,16 @@ theorem byteOf_wordAt (b : Spec.Seed.Block) (i : Nat) {k : Nat} (hk : k < 4) :
   · exact h4.2.2.1
   · exact h4.2.2.2
 
-/-- Word `w` of the block at byte 8 of the scratch buffer. -/
+/-- Word `w` of the block at byte 16 of the scratch buffer. -/
 def bwd (m : Mem) (B : BitVec 32) (w : Nat) : Word :=
-  Spec.Seed.wordAt (Spec.Seed.blockAt m (B.setWidth 64 + BitVec.ofNat 64 8)) (4 * w)
+  Spec.Seed.wordAt (Spec.Seed.blockAt m (B.setWidth 64 + BitVec.ofNat 64 16)) (4 * w)
 
 theorem blockAt_getD (m : Mem) (p : Addr) {i : Nat} (hi : i < 16) :
     (Spec.Seed.blockAt m p).getD i 0 = m (p + BitVec.ofNat 64 i) := by
   simp [Spec.Seed.blockAt, Vector.getD, hi]
 
 theorem byteOf_bwd (m : Mem) (B : BitVec 32) {w k : Nat} (hw : w < 4) (hk : k < 4) :
-    byteOf (bwd m B w) k = m (B.setWidth 64 + BitVec.ofNat 64 (8 + (4 * w + (3 - k)))) := by
+    byteOf (bwd m B w) k = m (B.setWidth 64 + BitVec.ofNat 64 (16 + (4 * w + (3 - k)))) := by
   rw [bwd, byteOf_wordAt _ _ hk, blockAt_getD _ _ (by omega_using [hw, hk]), Offset.add_ofNat_add_ofNat]
 
 section
@@ -635,7 +635,7 @@ abbrev keyOf (rk : Nat → Word) : Nat → Word × Word := fun j => (rk (2 * j),
 section
 variable {s₀ s : State} {B : BitVec 32} {rk : Nat → Word}
 
-/-- The block at byte 8 of the scratch buffer to its words, and the
+/-- The block at byte 16 of the scratch buffer to its words, and the
 registers of the loop. -/
 theorem cryptHead_wp (hB : s.gpr Impl.Modes.X86.sb = B) (hs : ScrIn s B 162)
     (htab : s.mem.readW (B.setWidth 64) 32 = s.syms tableName) (hk : ∀ i < 32, KeyAt s.mem B i (rk i)) :
@@ -649,7 +649,7 @@ theorem cryptHead_wp (hB : s.gpr Impl.Modes.X86.sb = B) (hs : ScrIn s B 162)
   have hw : InRegions (s.rd ++ s.wr) (addr B 0) 4 := ⟨_, List.mem_append_right _ hs.wr, by
     rw [addr_eq (by omega_using [hf])]; exact Offset.contains_base _ (by decide) (by decide)⟩
   show WP isa (.block (.mov tbr (.mem ⟨Impl.Modes.X86.sb, 0⟩) :: .mov kr (.reg Impl.Modes.X86.sb) ::
-    .alu .add kr (.imm 96) :: .mov .eax (.imm 8) :: .movdquLoad .xmm0 ⟨Impl.Modes.X86.sb, 8⟩ :: headX)) s _
+    .alu .add kr (.imm 96) :: .mov .eax (.imm 8) :: .movdquLoad .xmm0 ⟨Impl.Modes.X86.sb, 16⟩ :: headX)) s _
   refine Wp.wp_ldm hB hw fun s₁ u₁ => ?_
   refine Wp.wp_mov fun s₂ u₂ => ?_
   refine Wp.wp_addi fun s₃ u₃ => ?_
@@ -669,20 +669,20 @@ theorem cryptHead_wp (hB : s.gpr Impl.Modes.X86.sb = B) (hs : ScrIn s B 162)
     · rw [u₄.other _ (by decide), u₃.gpr, u₂.gpr, u₁.other _ (by decide), hB]
       rfl
   have c₄ : s₄.gpr .eax = BitVec.ofNat 32 8 := by rw [u₄.gpr]; rfl
-  have ha8 : addr B 8 = B.setWidth 64 + BitVec.ofNat 64 8 := addr_eq (by omega_using [hf])
-  have hl : InRegions (s₄.rd ++ s₄.wr) (addr (s₄.gpr Impl.Modes.X86.sb) 8) 16 :=
+  have ha8 : addr B 16 = B.setWidth 64 + BitVec.ofNat 64 16 := addr_eq (by omega_using [hf])
+  have hl : InRegions (s₄.rd ++ s₄.wr) (addr (s₄.gpr Impl.Modes.X86.sb) 16) 16 :=
     ⟨_, List.mem_append_right _ (by rw [w₄]; exact hs.wr), by
       rw [b₄, ha8]; exact Offset.contains_base _ (by decide) (by decide)⟩
   refine wp_ldx hl ?_
-  obtain ⟨s₅, hs₅⟩ : ∃ s₅, s₅ = s₄.setXmm .xmm0 (s₄.mem.readW (addr (s₄.gpr Impl.Modes.X86.sb) 8) 128) := ⟨_, rfl⟩
+  obtain ⟨s₅, hs₅⟩ : ∃ s₅, s₅ = s₄.setXmm .xmm0 (s₄.mem.readW (addr (s₄.gpr Impl.Modes.X86.sb) 16) 128) := ⟨_, rfl⟩
   rw [← hs₅]
   have a₅ : At s B 0 s₅ := by subst hs₅; exact a₄.of_gpr rfl rfl rfl rfl
   have e₅ : s₅.mem = s.mem := by subst hs₅; exact e₄
   have c₅ : s₅.gpr .eax = BitVec.ofNat 32 8 := by subst hs₅; exact c₄
-  have hbyte : ∀ k < 16, byte (s₅.xmm .xmm0) k = s.mem (B.setWidth 64 + BitVec.ofNat 64 (8 + k)) := fun k hk => by
+  have hbyte : ∀ k < 16, byte (s₅.xmm .xmm0) k = s.mem (B.setWidth 64 + BitVec.ofNat 64 (16 + k)) := fun k hk => by
     subst hs₅
     rw [RegUpd.xmm_setXmm_self]
-    show (s₄.mem.readW (addr (s₄.gpr Impl.Modes.X86.sb) 8) 128).extractLsb' (8 * k) 8 = _
+    show (s₄.mem.readW (addr (s₄.gpr Impl.Modes.X86.sb) 16) 128).extractLsb' (8 * k) 8 = _
     rw [byte_readW _ _ (by omega_using [hk]), b₄, ha8, Offset.add_ofNat_add_ofNat, e₄]
   refine WP.mono (head_wp (B := B) (by rw [a₅.tb, a₅.syms]) a₅.base (by rw [a₅.wr]; exact hs.wr) hf)
     fun s₈ ⟨g₈, _, rd₈, wr₈, sy₈, f₈, wd₈, x5₈, x0₈, m₈⟩ => ?_
@@ -782,15 +782,15 @@ theorem loop_wp (hs : ScrIn s₀ B 162) {b : Spec.Seed.Block} {n : Nat} (hn : 1 
   · exact .inr ⟨by show s₁.zf.map _ = _; rw [z₁, decide_eq_false h1]; rfl, n - 1, by omega_using [hn],
       by omega_using [hn, h1], i₁⟩
 
-/-- The last right half, then the last left half, to the block, at byte 8
+/-- The last right half, then the last left half, to the block, at byte 16
 of the scratch buffer. -/
 theorem cryptTail_wp {n : Nat} (hs : ScrIn s₀ B 162) (h : At s₀ B n s) (hm : ∀ q < 16, byte (s.xmm m0) q = 0x0f#8)
     {l0 l1 r0 r1 : Word} (w0 : WordAt s.mem B 0 l0) (w1 : WordAt s.mem B 1 l1) (h5 : Hw (s.xmm .xmm5) r0)
     (h0 : Hw (s.xmm .xmm0) r1) :
     WP isa (.block cryptTail) s fun s' => s'.gpr Impl.Modes.X86.sb = B ∧ s'.gpr .esp = s₀.gpr .esp ∧
       s'.rd = s₀.rd ∧ s'.wr = s₀.wr ∧ s'.syms = s₀.syms ∧
-      Frame [⟨B.setWidth 64 + BitVec.ofNat 64 8, 16⟩] s.mem s'.mem ∧
-      ∀ q < 16, s'.mem (B.setWidth 64 + BitVec.ofNat 64 8 + BitVec.ofNat 64 q) =
+      Frame [⟨B.setWidth 64 + BitVec.ofNat 64 16, 16⟩] s.mem s'.mem ∧
+      ∀ q < 16, s'.mem (B.setWidth 64 + BitVec.ofNat 64 16 + BitVec.ofNat 64 q) =
         byteOf ((#v[r0, r1, l0, l1] : Vector Word 4).getD (q / 4) 0) (3 - q % 4) := by
   have hf : B.toNat + 648 ≤ 2 ^ 32 := hs.fit
   have he := h.env hs hm
@@ -822,17 +822,17 @@ theorem cryptTail_wp {n : Nat} (hs : ScrIn s₀ B 162) (h : At s₀ B n s) (hm :
       rw [h3] at this
       exact this
   obtain ⟨f, rfl⟩ := hsame
-  have ha : addr B 8 = B.setWidth 64 + BitVec.ofNat 64 8 := addr_eq (by omega_using [hf])
-  have hwr : InRegions s.wr (addr (s.gpr Impl.Modes.X86.sb) 8) 16 := ⟨_, by rw [h.wr]; exact hs.wr, by
+  have ha : addr B 16 = B.setWidth 64 + BitVec.ofNat 64 16 := addr_eq (by omega_using [hf])
+  have hwr : InRegions s.wr (addr (s.gpr Impl.Modes.X86.sb) 16) 16 := ⟨_, by rw [h.wr]; exact hs.wr, by
     rw [h.base, ha]; exact Offset.contains_base _ (by decide) (by decide)⟩
   refine wp_stx (s := { s with xmm := f }) hwr (WP.block_nil ?_)
   refine ⟨h.base, h.esp, h.rd, h.wr, h.syms, ?_, fun q hq => ?_⟩
-  · show Frame _ s.mem (s.mem.writeW (addr (s.gpr Impl.Modes.X86.sb) 8) (f .xmm5))
+  · show Frame _ s.mem (s.mem.writeW (addr (s.gpr Impl.Modes.X86.sb) 16) (f .xmm5))
     rw [h.base, ha]
     exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ 16)
-  · show (s.mem.writeW (addr (s.gpr Impl.Modes.X86.sb) 8) (f .xmm5)) _ = _
+  · show (s.mem.writeW (addr (s.gpr Impl.Modes.X86.sb) 16) (f .xmm5)) _ = _
     rw [h.base, ← ha,
-      ← byte_readW (s.mem.writeW (addr B 8) (f .xmm5)) (addr B 8) (w := 128) (k := q) (by omega_using [hq]),
+      ← byte_readW (s.mem.writeW (addr B 16) (f .xmm5)) (addr B 16) (w := 128) (k := q) (by omega_using [hq]),
       Mem.readW_writeW_self _ _ 16 _ (by decide)]
     exact v q hq
 
@@ -840,19 +840,19 @@ private theorem ofFn_toList (v : Spec.Seed.Block) : (Vector.ofFn fun i : Fin 16 
   apply Vector.ext; intro i hi
   simp
 
-/-- `crypt` enciphers the block at byte 8 of the scratch buffer, under the
+/-- `crypt` enciphers the block at byte 16 of the scratch buffer, under the
 round keys in their places, and changes nothing else but the four places of
 the state's halves. -/
 theorem crypt_wp {k : Spec.Seed.Schedule} (hB : s.gpr Impl.Modes.X86.sb = B) (hs : ScrIn s B 162)
     (htab : s.mem.readW (B.setWidth 64) 32 = s.syms tableName) (hk : ∀ i < 32, KeyAt s.mem B i (k.getD i 0)) :
     WP isa crypt s fun s' => s'.gpr Impl.Modes.X86.sb = B ∧ s'.gpr .esp = s.gpr .esp ∧ s'.rd = s.rd ∧
       s'.wr = s.wr ∧ s'.syms = s.syms ∧
-      Frame [⟨B.setWidth 64 + BitVec.ofNat 64 8, 16⟩, ⟨B.setWidth 64 + BitVec.ofNat 64 32, 64⟩] s.mem s'.mem ∧
+      Frame [⟨B.setWidth 64 + BitVec.ofNat 64 16, 16⟩, ⟨B.setWidth 64 + BitVec.ofNat 64 32, 64⟩] s.mem s'.mem ∧
       (∀ i < 32, KeyAt s'.mem B i (k.getD i 0)) ∧
-      Spec.Aes.bytesAt s'.mem (B.setWidth 64 + BitVec.ofNat 64 8) 16 =
-        Spec.Seed.cipher k (Spec.Aes.bytesAt s.mem (B.setWidth 64 + BitVec.ofNat 64 8) 16) := by
+      Spec.Aes.bytesAt s'.mem (B.setWidth 64 + BitVec.ofNat 64 16) 16 =
+        Spec.Seed.cipher k (Spec.Aes.bytesAt s.mem (B.setWidth 64 + BitVec.ofNat 64 16) 16) := by
   obtain ⟨rk, hrk⟩ : ∃ rk : Nat → Word, rk = fun i => k.getD i 0 := ⟨_, rfl⟩
-  obtain ⟨blk, hblk⟩ : ∃ blk, blk = Spec.Seed.blockAt s.mem (B.setWidth 64 + BitVec.ofNat 64 8) := ⟨_, rfl⟩
+  obtain ⟨blk, hblk⟩ : ∃ blk, blk = Spec.Seed.blockAt s.mem (B.setWidth 64 + BitVec.ofNat 64 16) := ⟨_, rfl⟩
   have hk' : ∀ i < 32, KeyAt s.mem B i (rk i) := by rw [hrk]; exact hk
   show WP isa (.seq (.block cryptHead) (.seq (.loop (.block turn) .ne) (.block cryptTail))) s _
   refine WP.seq (WP.mono (cryptHead_wp hB hs htab hk') fun s₁ ⟨a₁, m₁, c₁, f₁, k₁, w0₁, w1₁, x5₁, x0₁⟩ => ?_)
@@ -1231,12 +1231,12 @@ theorem ready_frame {s s' : State} {B : BitVec 32} {k : Spec.Seed.Schedule} {rs 
     (h : Ready s B k) (hsy : s'.syms = s.syms) (hf : Frame rs s.mem s'.mem)
     (hd : ∀ r ∈ rs, Region.Disjoint (coreRegion core B) r ∨ Region.Sub r (blkRegion core B)) : Ready s' B k := by
   obtain ⟨hk, ht, hfit⟩ := h
-  have keep : ∀ {a n : Nat}, a + n ≤ 608 → (a + n ≤ 8 ∨ 24 ≤ a) → ∀ r ∈ rs,
+  have keep : ∀ {a n : Nat}, a + n ≤ 608 → (a + n ≤ 16 ∨ 32 ≤ a) → ∀ r ∈ rs,
       Region.Disjoint ⟨B.setWidth 64 + BitVec.ofNat 64 a, n⟩ r := fun {a n} h₁ h₂ r hr => by
     rcases hd r hr with h | h
     · exact h.sub_left (Offset.sub_base _ (by rw [core_slots]; omega_arith))
     · exact (Offset.disjoint (B.setWidth 64) (d := a) (n := n) (e := 4 * core.buf) (k := 4 * core.bw * core.G)
-        (by show a + n ≤ 8 ∨ 8 + 16 ≤ a; omega_arith) (by omega_arith) (by decide)).sub_right h
+        (by show a + n ≤ 16 ∨ 16 + 16 ≤ a; omega_arith) (by omega_arith) (by decide)).sub_right h
   refine ⟨fun i hi q hq => ?_, ?_, hfit⟩
   · have := hf.bytes (R := ⟨B.setWidth 64 + BitVec.ofNat 64 (96 + 16 * i + q), 1⟩)
       (keep (by omega_arith) (.inr (by omega_arith))) (by show (1 : Nat) ≤ 2 ^ 64; decide) (i := 0)
@@ -1271,8 +1271,8 @@ theorem crypt_ok {s : State} {B : BitVec 32} {k : Spec.Seed.Schedule} (hB : s.gp
       s'.rd = s.rd ∧ s'.wr = s.wr := by
   obtain ⟨hk, ht, hfit⟩ := hr
   refine WP.mono (crypt_wp hB hs ht hk) fun s' ⟨b, e, rd, wr, sy, f, k', v⟩ => ?_
-  have hblk : blkAddr core B 0 = B.setWidth 64 + BitVec.ofNat 64 8 := by
-    show B.setWidth 64 + BitVec.ofNat 64 (4 * 2) + BitVec.ofNat 64 (4 * 4 * 0) = _
+  have hblk : blkAddr core B 0 = B.setWidth 64 + BitVec.ofNat 64 16 := by
+    show B.setWidth 64 + BitVec.ofNat 64 (4 * 4) + BitVec.ofNat 64 (4 * 4 * 0) = _
     rw [Offset.add_ofNat_add_ofNat]
   refine ⟨b, e, ⟨k', ?_, hfit⟩, f.sub fun r hr => ?_, fun j hj => ?_, rd, wr⟩
   · rw [f.readW (r := ⟨B.setWidth 64, 4⟩) (Region.contains_self _ 4) (fun r hr => by
