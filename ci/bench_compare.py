@@ -843,4 +843,7 @@ def main():
 
 
 if __name__ == "__main__":
+    if "8370C" not in cpu_model():
+        print(f"Not measured: this comparison requires the 8370C CPU of the initial regression; runner has {cpu_model()}")
+        sys.exit(0)
     sys.exit(main())
