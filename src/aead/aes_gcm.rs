@@ -49,13 +49,17 @@ use crate::arch::dispatch::gcm::vg_aes_gcm_open_auto;
 )))]
 use crate::arch::dispatch::gcm::vg_aes_gcm_open_to_auto;
 #[cfg(not(any(
+    target_arch = "x86",
     target_arch = "x86_64",
     target_arch = "aarch64",
     target_arch = "riscv64",
     all(target_arch = "powerpc64", target_endian = "little")
 )))]
 use crate::arch::dispatch::gcm::vg_aes_gcm_seal_auto;
-#[cfg(all(target_arch = "powerpc64", target_endian = "little"))]
+#[cfg(any(
+    target_arch = "x86",
+    all(target_arch = "powerpc64", target_endian = "little")
+))]
 use crate::arch::dispatch::gcm::vg_aes_gcm_seal_contiguous_auto as seal_contiguous_kernel;
 #[cfg(not(any(target_arch = "x86_64", target_arch = "riscv64")))]
 use crate::arch::dispatch::gcm::vg_aes_gcm_seal_gather_auto;
@@ -332,6 +336,7 @@ impl AesGcm {
     }
 
     #[cfg(any(
+        target_arch = "x86",
         target_arch = "aarch64",
         target_arch = "riscv64",
         all(target_arch = "powerpc64", target_endian = "little")
@@ -351,6 +356,7 @@ impl AesGcm {
     /// destination writable for `len` bytes. They are identical or disjoint.
     /// The writable range is exclusive and disjoint from the context, nonce and AAD.
     #[cfg(any(
+        target_arch = "x86",
         target_arch = "aarch64",
         target_arch = "riscv64",
         all(target_arch = "powerpc64", target_endian = "little")
@@ -393,6 +399,7 @@ impl AesGcm {
 
     /// Encrypt the checked record in place with the platform's seal entry.
     #[cfg(not(any(
+        target_arch = "x86",
         target_arch = "aarch64",
         target_arch = "riscv64",
         all(target_arch = "powerpc64", target_endian = "little")
@@ -773,6 +780,7 @@ impl AesGcm {
         let dst = out.as_mut_ptr().cast();
         let len = out.len();
         #[cfg(any(
+            target_arch = "x86",
             target_arch = "aarch64",
             target_arch = "riscv64",
             all(target_arch = "powerpc64", target_endian = "little")
