@@ -65,7 +65,8 @@ def shortRecordBody : Prog isa :=
   .seq (.block (DirectGather.shortSetupAt k)) <| .seq (.block DirectGather.shortZero) <|
     .seq DirectGather.shortAad <| .seq (VG.Impl.Gcm.AArch64.Stitch.byRounds (DirectGather.shortKeys 0)) <|
     .seq (.block directPointers) <| .seq (DirectGather.shortPieceWith [mov .x0 .x6,mov .x12 .x26]) <|
-    .block (DirectGather.shortLengths ++ DirectGather.shortHash DirectGather.authO ++
+    .seq (.block [.ldrSp .x5 (k+16)]) <|
+    .block (DirectGather.shortLengths ++ DirectGather.shortHashWith DirectGather.authO DirectGather.hashEightWith ++
       DirectGather.shortTagAt (k+8) ++ restore)
 
 def shortFrame : Prog isa :=
@@ -79,12 +80,13 @@ def select (v : Calls) (gh : Fn) : Prog isa :=
   let clear := fun n p => Impl.Scrub.AArch64.scrubAll n 0 Fn.own p
   let fallback := clear (v.pwWn+80) (generalFrame v)
   let hardware := fun fused => clear (v.pwWn+32) (preparedFrame v gh fused)
+  let large := if v.stitch then
+    .seq (.block [imm .x9 768,.subs .x .x11 .x10 .x9,.sbc .x .x11 .x11 .x11])
+      (.ite (.nonzero .x .x11) (hardware false) (hardware true))
+    else hardware false
   if !v.pmull then fallback else
     .seq (.block standardGuard) <| .ite (.zero .x .x10)
-      (if v.stitch then
-        .seq (.block [.ldrSp .x10 0,imm .x9 97,.subs .x .x11 .x10 .x9,.sbc .x .x11 .x11 .x11]) <|
-          .ite (.nonzero .x .x11) (clear DirectGather.shortWork shortFrame) <|
-          .seq (.block [imm .x9 768,.subs .x .x11 .x10 .x9,.sbc .x .x11 .x11 .x11]) (.ite (.nonzero .x .x11) (hardware false) (hardware true))
-       else hardware false) fallback
+      (.seq (.block [.ldrSp .x10 0,imm .x9 97,.subs .x .x11 .x10 .x9,.sbc .x .x11 .x11 .x11])
+        (.ite (.nonzero .x .x11) (clear DirectGather.shortWork shortFrame) large)) fallback
 
 end VG.Impl.AesGcm.AArch64.Contiguous

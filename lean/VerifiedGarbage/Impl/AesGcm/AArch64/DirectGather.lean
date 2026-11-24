@@ -131,9 +131,14 @@ def hashEight : List Instr := prologueT ++ powersS ++ body 8
 
 /-- The accumulator initially holds zero. The hash ends in the register
 used by the final tag operation. -/
-def shortHash (base : Nat) : List Instr :=
+def shortHashWith (base : Nat) (core : List Instr) : List Instr :=
   [ptr .x0 .x21 240, ptr .x1 .x19 (base+128), .vop (.movi0 .v0), .strq .v0 .x1 0,
-   ptr .x2 .x19 base, imm .x3 8] ++ hashEight ++ [.vop (.logic .orr .v16 .v0 .v0)]
+   ptr .x2 .x19 base, imm .x3 8] ++ core ++ [.vop (.logic .orr .v16 .v0 .v0)]
+
+abbrev shortHash (base : Nat) := shortHashWith base hashEight
+
+/-- Fold eight authentication blocks with the powers supplied by the key. -/
+abbrev hashEightWith := VG.Impl.Gcm.AArch64.Pmull.prologueW ++ VG.Impl.Gcm.AArch64.Pmull.body 8
 
 /-- Process the descriptors after the nonce and AAD have been absorbed. -/
 def text (c : Callees) (stitch : Bool) : Prog isa :=

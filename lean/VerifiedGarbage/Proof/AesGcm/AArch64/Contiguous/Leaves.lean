@@ -31,7 +31,7 @@ structure BackendFacts (v : GcmImpl) (g : GhashWithImpl) : Prop where
   general : scrubSide (generalFrame v.calls) (v.calls.pwWn+80) 0 own [] = true
   depth : 16*(Impl.AesGcm.AArch64.DirectGather.framed v.calls).aarch64Depth < 2^64
   prepared (f : Bool) : scrubSide (preparedFrame v.calls g.fn f) (v.calls.pwWn+32) 0 own [] = true
-  hash : DirectGather.HashEightOk
+  hash : DirectGather.HashEightWithOk
   stitch : VG.Proof.Gcm.AArch64.Stitch.Gh8Ok
   mul : VG.Proof.Gcm.AArch64.Pmull.MulKey
 
@@ -82,13 +82,13 @@ theorem generalLeaf {v : GcmImpl} {g : GhashWithImpl} (facts : BackendFacts v g)
   refine ⟨fun _ h => general_ok v facts.gather h.1 (DirectGather.keepsV_of_gatherSide side) facts.depth,
     ct_of (fun _ _ pa pb pub => general_rel v facts.gather pa.1 pb.1 pub.1 pub.2),sat⟩
 
-theorem shortLeaf (hash : DirectGather.HashEightOk) (sat : ∃ s, (leafContract short).pre s) :
+theorem shortLeaf (hash : DirectGather.HashEightWithOk) (sat : ∃ s, (leafContract short).pre s) :
     VerifiedScrubbed target (scrubAll 368 0 own shortFrame) (leafContract short) 0 := by
   apply scrubLeaf (by decide) shortSide
-  refine ⟨fun _ h => Short.frame_ok hash h.1 h.2.2.1.1 h.2.2.1.2 h.2.2.2
+  refine ⟨fun _ h => Short.frame_ok hash h.1 h.2.1 h.2.2.1.1 h.2.2.1.2 h.2.2.2
     (DirectGather.keepsV_of_gatherSide shortSide),ct_of ?_,sat⟩
   intro a b pa pb pub
-  exact Short.frame_rel hash pa.1 pb.1 pa.2.2.1.1 pb.2.2.1.1 pa.2.2.1.2 pb.2.2.1.2
+  exact Short.frame_rel hash pa.1 pb.1 pa.2.1 pb.2.1 pa.2.2.1.1 pb.2.2.1.1 pa.2.2.1.2 pb.2.2.1.2
     pa.2.2.2 pb.2.2.2 pub.1
 
 theorem preparedLeaf {v : GcmImpl} {g : GhashWithImpl} (facts : BackendFacts v g) (f : Bool) (sat : ∃ s, (leafContract (prepared f)).pre s) :

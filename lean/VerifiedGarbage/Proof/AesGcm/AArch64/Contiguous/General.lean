@@ -99,6 +99,17 @@ structure Caller (s : State) : Prop where
   top : s.sp.toNat+24 ≤ 2^64
   rounds : VG.Proof.AesGcm.AArch64.rounds (s.gpr .x1)
 
+namespace Prepared
+
+abbrev powerR (s : State) : Region := ⟨stackArg s 2,128⟩
+structure Powers (o : State) : Prop where
+  read : Covers [powerR o] (o.rd++o.wr)
+  dst : (powerR o).Disjoint (dstR o)
+  stack : (powerR o).Disjoint (below o.sp 2640)
+  repr : Spec.Gcm.Powers8Repr o.mem (stackArg o 2) (Spec.Gcm.ctxH o.mem (o.gpr .x0))
+
+end Prepared
+
 structure Entered (o t : State) : Prop where
   sp : t.sp = o.sp - 48
   rd : t.rd = o.rd

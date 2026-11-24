@@ -158,13 +158,6 @@ open VG.Proof.Gcm.AArch64.Pmull (MulKey)
 open VG.Proof.Gcm.AArch64.Stitch (Gh8Ok)
 open VG.Spec.Aes (bytesAt)
 
-abbrev powerR (s : State) : Region := ⟨stackArg s 2,128⟩
-structure Powers (o : State) : Prop where
-  read : Covers [powerR o] (o.rd++o.wr)
-  dst : (powerR o).Disjoint (dstR o)
-  stack : (powerR o).Disjoint (below o.sp 2640)
-  repr : Spec.Gcm.Powers8Repr o.mem (stackArg o 2) (Spec.Gcm.ctxH o.mem (o.gpr .x0))
-
 theorem pushed {o : State} {wn : Nat} (c : Caller o) (hi : wn ≤ 2560) (align : wn%16=0) :
     let a := allocated (wn+32) o
     execBlock isa (setArgs (wn+32) 3) a = some (setArgsState (wn+32) 3 a,setArgsTrace (wn+32) a.sp 3) ∧

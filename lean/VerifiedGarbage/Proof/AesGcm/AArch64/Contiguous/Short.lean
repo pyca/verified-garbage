@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.AesGcm.AArch64.Contiguous.General
 public import VerifiedGarbage.Proof.AesGcm.AArch64.DirectGather.LeafCT
 import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.AesGcm.ScratchPowers8
 import VerifiedGarbage.Proof.Cmac.Spec
 import VerifiedGarbage.Proof.Cmac.Stream
 import VerifiedGarbage.Proof.Cmac.Frame
@@ -185,21 +186,28 @@ theorem ciphertext {o s t : State} (c : Caller o) (hn : len o ≤ 96) (h : Ready
   · exact p.written.dst j hj
   · exact p.written.auth j hj
 
+theorem cursorFrame {o s t : State} (h : Ready o s) (hn : len o ≤ 96)
+    (p : Fragment.Cursor (buffers o) s (len o) (len o) t) :
+    Frame [scratch o,dstR o] o.mem t.mem := by
+  let slot : Region := ⟨(buffers o).auth,len o⟩
+  have f : Frame [dstR o,slot] s.mem t.mem := p.written.frame
+  have slotSub : slot.Sub (scratch o) := Offset.sub_base _ (by
+    change 224+112-16*count o+len o ≤ 368; unfold count; omega)
+  have small : Frame [scratch o,dstR o] s.mem t.mem := f.sub fun r hr => by
+    rcases List.mem_cons.mp hr with rfl|hr
+    · exact ⟨_,by simp,fun _ => id⟩
+    · exact ⟨_,List.mem_cons_self ..,List.mem_singleton.mp hr ▸ slotSub⟩
+  exact (h.frame.mono (fun r hr => List.mem_cons.mpr (.inl (List.mem_singleton.mp hr)))).trans small
+
 theorem finishPre {o s t : State} (c : Caller o) (hn : len o ≤ 96) (al : AL o ≤ 16)
     (h : Ready o s) (p : Fragment.Cursor (buffers o) s (len o) (len o) t) :
     ShortFinishPreFor o t (base o) (6-count o) (out o) 376 := by
   let slot : Region := ⟨(buffers o).auth,len o⟩
   have f : Frame [dstR o,slot] s.mem t.mem := p.written.frame
-  have slotSub : slot.Sub (scratch o) := Offset.sub_base _ (by
-    change 224+112-16*count o+len o ≤ 368; unfold count; omega)
   have ds := scratchApart _ c (dstR o) (by simp [externalRegions])
   have ts := scratchApart _ c (tagR o) (by simp [externalRegions])
   have bk := scratchApart _ c (kR .plain o) (by simp [externalRegions])
-  have small : Frame [scratch o,dstR o] s.mem t.mem := f.sub fun r hr => by
-    rcases List.mem_cons.mp hr with rfl|hr
-    · exact ⟨_,by simp,fun _ => id⟩
-    · exact ⟨_,List.mem_cons_self ..,List.mem_singleton.mp hr ▸ slotSub⟩
-  have whole := (h.frame.mono (fun r hr => List.mem_cons.mpr (.inl (List.mem_singleton.mp hr)))).trans small
+  have whole := cursorFrame h hn p
   have apart {r : Region} (a : (scratch o).Disjoint r) (b : r.Disjoint (dstR o)) :
       ∀ q ∈ [scratch o,dstR o], r.Disjoint q := by
     intro q hq; rcases List.mem_cons.mp hq with rfl|hq
@@ -239,7 +247,44 @@ theorem finishPre {o s t : State} (c : Caller o) (hn : len o ≤ 96) (al : AL o 
           (by change 224+112-16*count o+len o ≤ 2^64; omega)),h.mask]
   · exact authFilledFor ds hn al _ (Proof.Cmac.bytesAt_length ..) f h.input (ct.2.trans ct.1.symm)
 
-theorem frame_ok (hash : HashEightOk) {o : State} (c : Caller o) (iv : NL o = 12) (al : AL o ≤ 16)
+/-- Load the publicly addressed table after the fragment has written the destination.
+The caller proved it disjoint from both the ciphertext and this frame. -/
+theorem loadPowers {o s t : State} (c : Caller o) (key : Prepared.Powers o)
+    (hn : len o ≤ 96) (al : AL o ≤ 16) (h : Ready o s)
+    (cur : Fragment.Cursor (buffers o) s (len o) (len o) t) :
+    WP isa (.block [.ldrSp .x5 (shortWork+16)]) t fun u =>
+      ShortFinishPreFor o u (base o) (6-count o) (out o) 376 ∧ ShortPowers u (base o) (K o) ∧
+      u.gpr .x5 = stackArg o 2 := by
+  have p := finishPre c hn al h cur
+  have mem := cursorFrame h hn cur
+  have slot : base o + 384#64 = stackArgAddr o 2 := scratchArg o 2
+  have ptr : InRegions (t.rd ++ t.wr) (t.sp+384#64) 8 := by
+    rw [p.sp,cur.rd,cur.wr]
+    exact argRead c h.toLocalMem 2 (by decide)
+  have addr : t.mem.readW (t.sp+384#64) 64 = stackArg o 2 := by
+    rw [p.sp,slot]
+    exact mem.readW (r := callerArgs o) (stackArg_contains o 2 (by decide)) (by
+      intro r hr; rcases List.mem_cons.mp hr with rfl|hr
+      · exact argsApart o
+      · exact List.mem_singleton.mp hr ▸ c.dstArgs.symm) (by decide)
+  have sep : (Prepared.powerR o).Disjoint (scratch o) :=
+    key.stack.sub_right (Offset.sub_below _ (by decide) (by decide))
+  rw [WP.block_cons_iff]
+  refine ⟨_,exec_ldrSp (off := 384) (by decide) ptr,WP.block_nil ?_⟩
+  have g : (t.write .x .x5 (t.mem.readW (t.sp+384#64) 64)).gpr .x5 = stackArg o 2 := by
+    simpa only [gpr_write,ite_true,BitVec.setWidth_eq] using addr
+  refine ⟨{p with}, ⟨?_,?_,?_⟩,g⟩
+  · rw [g,rd_write,wr_write,cur.rd,cur.wr]
+    exact key.read.trans h.toLocalMem.read
+  · rw [g]; exact sep
+  · rw [g,mem_write,p.hashKey]
+    exact Proof.AesGcm.powers8Repr_congr (fun i hi => mem.bytes (R := Prepared.powerR o)
+      (by intro r hr; rcases List.mem_cons.mp hr with rfl|hr
+          · exact sep
+          · exact List.mem_singleton.mp hr ▸ key.dst)
+      (by change (128:Nat) ≤ 2^64; decide) hi) key.repr
+
+theorem frame_ok (hash : HashEightWithOk) {o : State} (c : Caller o) (pw : Prepared.Powers o) (iv : NL o = 12) (al : AL o ≤ 16)
     (hn : len o ≤ 96) (keep : shortFrame.allInstrs keepsV = true) :
     WP isa shortFrame o fun t => abiPreserved o t ∧ result o t := by
   apply WP.withPreservedV (hc := keep)
@@ -251,7 +296,9 @@ theorem frame_ok (hash : HashEightOk) {o : State} (c : Caller o) (iv : NL o = 12
   intro s h
   refine WP.seq ((Fragment.directPiece_ok (pieceLayout c hn h) h.x6 h.x26 h.key h.dst h.auth).mono ?_)
   intro z cursor
-  refine (shortFinishAt_ok (.inl rfl) hash o z (base o) _ (finishPre c hn al h cursor)).mono ?_
+  refine WP.seq ((loadPowers c pw hn al h cursor).mono ?_)
+  intro u ⟨p,pc,_⟩
+  refine (shortFinishUsing_ok (cached := true) (.inl rfl) hash o u (base o) _ p (fun _ => pc)).mono ?_
   intro t ⟨post,g,sp,_,_,_⟩ m v fr
   exact ⟨⟨g,by change t.sp+BitVec.ofNat 64 shortWork = o.sp; rw [sp]; exact BitVec.sub_add_cancel _ _⟩,
     result_frame c (by decide) post fr⟩

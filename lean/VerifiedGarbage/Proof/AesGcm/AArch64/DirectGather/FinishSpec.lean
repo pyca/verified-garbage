@@ -12,6 +12,7 @@ import VerifiedGarbage.Proof.AesGcm.AArch64.Loops
 import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.Run
 import VerifiedGarbage.Proof.AesGcm.AArch64.Seal
 import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.AesGcm.ScratchPowers8
 import VerifiedGarbage.Proof.Cmac.Frame
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
@@ -120,23 +121,49 @@ abbrev HashEightOk := ∀ (s : State), nb s = 8 →
         (blocksAt s.mem (VG.Proof.Gcm.AArch64.dp s) 8)
       t.v .v0 = ext8 y y ∧ t.mem = s.mem ∧ t.sp = s.sp ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.gpr .x19 = s.gpr .x19
 
+abbrev HashEightWithOk := ∀ (s : State), nb s = 8 →
+    Covers ([hR s,dR s,⟨s.gpr .x5,128⟩]++[yR s]) (s.rd++s.wr) → Covers [yR s] s.wr →
+    (yR s).Disjoint (dR s) → Spec.Gcm.Powers8Repr s.mem (s.gpr .x5) (VG.Proof.Gcm.AArch64.H₀ s) →
+    WP isa (.block hashEightWith) s fun t =>
+      let y := ghashFrom (VG.Proof.Gcm.AArch64.H₀ s) (VG.Proof.Gcm.AArch64.Y₀ s)
+        (blocksAt s.mem (VG.Proof.Gcm.AArch64.dp s) 8)
+      t.v .v0 = ext8 y y ∧ t.mem = s.mem ∧ t.sp = s.sp ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.gpr .x19 = s.gpr .x19
+
+abbrev shortCore (cached : Bool) := if cached then hashEightWith else hashEight
+abbrev CoreOk (cached : Bool) : Prop := if cached then HashEightWithOk else HashEightOk
+
+structure ShortPowers (s : State) (W K : Addr) : Prop where
+  read : Covers [⟨s.gpr .x5,128⟩] (s.rd ++ s.wr)
+  apart : (⟨s.gpr .x5,128⟩ : Region).Disjoint ⟨W,shortWork⟩
+  repr : Spec.Gcm.Powers8Repr s.mem (s.gpr .x5) (blockAt s.mem (K+240#64))
+
+theorem ShortPowers.frame {s t : State} {W K : Addr} {r : Region} (p : ShortPowers s W K)
+    (fr : Frame [r] s.mem t.mem) (sub : r.Sub ⟨W,shortWork⟩)
+    (key : (⟨K+240#64,16⟩ : Region).Disjoint r) (reg : t.gpr .x5 = s.gpr .x5)
+    (rd : t.rd = s.rd) (wr : t.wr = s.wr) : ShortPowers t W K := by
+  refine ⟨by rw [reg,rd,wr]; exact p.read, by rw [reg]; exact p.apart, ?_⟩
+  rw [reg,blockAt_frame fr (by simpa only [List.mem_singleton,forall_eq] using key)]
+  exact Proof.AesGcm.powers8Repr_congr (fun i hi => fr.bytes (R := ⟨s.gpr .x5,128⟩)
+    (by simpa only [List.mem_singleton,forall_eq] using p.apart.sub_right sub) (by change (128 : Nat) ≤ 2^64; decide) hi) p.repr
+
 /-- GHASH the eight authentication blocks after clearing the accumulator in
 the adjacent scratch slot. This leaves all eight input blocks intact. -/
-theorem shortHash_ok (hash : HashEightOk) (s : State) (W K : Addr) (h19 : s.gpr .x19 = W) (h21 : s.gpr .x21 = K)
+theorem shortHashWith_ok {cached : Bool} (hash : CoreOk cached) (s : State) (W K : Addr) (h19 : s.gpr .x19 = W) (h21 : s.gpr .x21 = K)
     (hwork : Covers [⟨W, shortWork⟩] s.wr)
     (hctx : Covers [⟨K+240#64,16⟩] (s.rd ++ s.wr))
-    (hsep : Region.Disjoint ⟨K+240#64,16⟩ ⟨W+352#64,16⟩) :
-    WP isa (.block (shortHash authO)) s fun t =>
+    (hsep : Region.Disjoint ⟨K+240#64,16⟩ ⟨W+352#64,16⟩)
+    (powers : cached = true → ShortPowers s W K) :
+    WP isa (.block (shortHashWith authO (shortCore cached))) s fun t =>
       let g := ghashFrom (blockAt s.mem (K+240#64)) 0 (blocksAt s.mem (W+224#64) 8)
       t.v .v16 = ext8 g g ∧ Frame [⟨W+352#64,16⟩] s.mem t.mem ∧ t.gpr .x19 = W ∧
       t.sp = s.sp ∧ t.rd = s.rd ∧ t.wr = s.wr := by
-  unfold shortHash
+  unfold shortHashWith
   rw [WP.block_append_iff, WP.block_append_iff]
   let setup : List Instr := [ptr .x0 .x21 240, ptr .x1 .x19 (authO+128), .vop (.movi0 .v0),
     .strq .v0 .x1 0, ptr .x2 .x19 authO, imm .x3 8]
   have init : ∃ u, runBlock isa setup s = some u ∧ u.gpr .x0 = K+240#64 ∧
       u.gpr .x1 = W+352#64 ∧ u.gpr .x2 = W+224#64 ∧ u.gpr .x3 = 8#64 ∧
-      u.mem = s.mem.write (W+352#64) 16 0 ∧ u.gpr .x19 = W ∧
+      u.mem = s.mem.write (W+352#64) 16 0 ∧ u.gpr .x19 = W ∧ u.gpr .x5 = s.gpr .x5 ∧
       u.sp = s.sp ∧ u.rd = s.rd ∧ u.wr = s.wr := by
     have hw := in_off (d := 352) (n := 16) hwork (by decide) (by decide)
     refine ⟨_, by
@@ -151,7 +178,7 @@ theorem shortHash_ok (hash : HashEightOk) (s : State) (W K : Addr) (h19 : s.gpr 
         h19, mem_setV, mem_write, v_setV_self, sp_write, sp_setV, rd_write, rd_setV, wr_write,
         wr_setV, BitVec.add_zero, and_self]
     decide
-  obtain ⟨u, run, u0, u1, u2, u3, um, u19, usp, urd, uwr⟩ := init
+  obtain ⟨u, run, u0, u1, u2, u3, um, u19, u5, usp, urd, uwr⟩ := init
   refine WP.of_runBlock ⟨u, run, ?_⟩
   have un : nb u = 8 := by unfold nb; rw [u3]; rfl
   have uh : hR u = ⟨K+240#64,16⟩ := congrArg (fun b => Region.mk b 16) u0
@@ -171,13 +198,33 @@ theorem shortHash_ok (hash : HashEightOk) (s : State) (W K : Addr) (h19 : s.gpr 
     · exact blockAt_frame fr (by simpa only [List.mem_singleton, forall_eq] using hsep)
     · rw [um]; exact blockAt_store s.mem (W+352#64) 0
     · exact blocksAt_frame fr (by simpa only [List.mem_singleton, forall_eq, ← ud, ← uy] using sep.symm) (by decide)
-  refine (hash u un (Covers.append_left (Covers.cons hc (Covers.right dc)) (Covers.right yc)) yc sep).mono ?_
+  have folded : WP isa (.block (shortCore cached)) u fun t =>
+      let val := ghashFrom (VG.Proof.Gcm.AArch64.H₀ u) (VG.Proof.Gcm.AArch64.Y₀ u) (blocksAt u.mem (VG.Proof.Gcm.AArch64.dp u) 8)
+      t.v .v0 = ext8 val val ∧ t.mem = u.mem ∧ t.sp = u.sp ∧ t.rd = u.rd ∧ t.wr = u.wr ∧ t.gpr .x19 = u.gpr .x19 := by
+    cases cached with
+    | false => exact hash u un (Covers.append_left (Covers.cons hc (Covers.right dc)) (Covers.right yc)) yc sep
+    | true =>
+      have pc := (powers rfl).frame fr (Offset.sub_base _ (by decide)) hsep u5 urd uwr
+      have repr : Spec.Gcm.Powers8Repr u.mem (u.gpr .x5) (VG.Proof.Gcm.AArch64.H₀ u) := by
+        change Spec.Gcm.Powers8Repr u.mem (u.gpr .x5) (blockAt u.mem (u.gpr .x0)); rw [u0]; exact pc.repr
+      exact hash u un (Covers.append_left (Covers.cons hc (Covers.cons (Covers.right dc) pc.read)) (Covers.right yc)) yc sep repr
+  refine folded.mono ?_
   intro v hv
   obtain ⟨v0, vm, vsp, vrd, vwr, v19⟩ := hv
   rw [WP.block_cons_iff]
   refine ⟨v.setV .v16 (v.v .v0 ||| v.v .v0), rfl, WP.block_nil ?_⟩
   simp only [v_setV_self, BitVec.or_self, v0, hashVal, mem_setV, vm, fr, gpr_setV, v19, u19, sp_setV, vsp,
     usp, rd_setV, vrd, urd, wr_setV, vwr, uwr, and_self]
+
+theorem shortHash_ok (hash : HashEightOk) (s : State) (W K : Addr) (h19 : s.gpr .x19 = W) (h21 : s.gpr .x21 = K)
+    (hwork : Covers [⟨W, shortWork⟩] s.wr)
+    (hctx : Covers [⟨K+240#64,16⟩] (s.rd ++ s.wr))
+    (hsep : Region.Disjoint ⟨K+240#64,16⟩ ⟨W+352#64,16⟩) :
+    WP isa (.block (shortHash authO)) s fun t =>
+      let g := ghashFrom (blockAt s.mem (K+240#64)) 0 (blocksAt s.mem (W+224#64) 8)
+      t.v .v16 = ext8 g g ∧ Frame [⟨W+352#64,16⟩] s.mem t.mem ∧ t.gpr .x19 = W ∧
+      t.sp = s.sp ∧ t.rd = s.rd ∧ t.wr = s.wr :=
+  shortHashWith_ok (cached := false) hash s W K h19 h21 hwork hctx hsep (by intro e; cases e)
 
 end VG.Proof.AesGcm.AArch64.DirectGather
 
@@ -297,8 +344,8 @@ theorem singletonFrame {r : Region} {rs : List Region} {m m' : Mem}
 
 /-- The end of the short body meets the public gather postcondition and
 restores the registers saved at entry, keeping the short frame allocated. -/
-theorem shortFinishAt_ok {d : ShortOutput} {tagOff : Nat} (off : tagOff = 376 ∨ tagOff = 384) (hash : HashEightOk) (o s : State) (W : Addr) (lead : Nat) (p : ShortFinishPreFor o s W lead d tagOff) :
-    WP isa (.block (shortLengths ++ shortHash authO ++ shortTagAt tagOff ++ Impl.AesGcm.AArch64.restore)) s fun t =>
+theorem shortFinishUsing_ok {cached : Bool} {d : ShortOutput} {tagOff : Nat} (off : tagOff = 376 ∨ tagOff = 384) (hash : CoreOk cached) (o s : State) (W : Addr) (lead : Nat) (p : ShortFinishPreFor o s W lead d tagOff) (powers : cached = true → ShortPowers s W (K o)) :
+    WP isa (.block (shortLengths ++ shortHashWith authO (shortCore cached) ++ shortTagAt tagOff ++ Impl.AesGcm.AArch64.restore)) s fun t =>
       d.post o t ∧ (∀ r ∈ preserved, t.gpr r = o.gpr r) ∧ t.sp = W ∧
       t.rd = s.rd ∧ t.wr = s.wr ∧ Frame [⟨W,shortWork⟩, (⟨d.tag,16⟩ : Region)] s.mem t.mem := by
   rw [WP.block_append_iff, WP.block_append_iff, WP.block_append_iff]
@@ -309,8 +356,9 @@ theorem shortFinishAt_ok {d : ShortOutput} {tagOff : Nat} (off : tagOff = 376 �
   have lh : Covers [⟨K o+240#64,16⟩] (l.rd ++ l.wr) := by rw [lrd,lwr]; exact p.key
   have subL : Region.Sub ⟨W+336#64,16⟩ ⟨W,shortWork⟩ := Offset.sub_base _ (by decide)
   have subY : Region.Sub ⟨W+352#64,16⟩ ⟨W,shortWork⟩ := Offset.sub_base _ (by decide)
-  refine (shortHash_ok hash l W (K o) ((regs _ (by decide)).trans p.x19) ((regs _ (by decide)).trans p.x21)
-    lw lh (p.keyWork.sub_right subY)).mono ?_
+  refine (shortHashWith_ok hash l W (K o) ((regs _ (by decide)).trans p.x19) ((regs _ (by decide)).trans p.x21)
+    lw lh (p.keyWork.sub_right subY) (fun h => (powers h).frame lf subL (p.keyWork.sub_right subL)
+      (regs .x5 (by decide)) lrd lwr)).mono ?_
   intro h ph
   obtain ⟨hash, hf, hx, hsp, hrd, hwr⟩ := ph
   have subWork : Frame [⟨W,shortWork⟩] s.mem h.mem :=
@@ -357,6 +405,12 @@ theorem shortFinishAt_ok {d : ShortOutput} {tagOff : Nat} (off : tagOff = 376 �
       rw [blockAt_frame hf (by simpa only [List.mem_singleton, forall_eq] using Offset.base_disjoint W (k := 16) (e := 352) (n := 16) (by decide) (by decide)),
         blockAt_frame lf (by simpa only [List.mem_singleton, forall_eq] using Offset.base_disjoint W (k := 16) (e := 336) (n := 16) (by decide) (by decide)), p.mask]
     rw [zm, Proof.Cmac.bytesAt_blockAt, tag, hkey, hmask]
+
+theorem shortFinishAt_ok {d : ShortOutput} {tagOff : Nat} (off : tagOff = 376 ∨ tagOff = 384) (hash : HashEightOk) (o s : State) (W : Addr) (lead : Nat) (p : ShortFinishPreFor o s W lead d tagOff) :
+    WP isa (.block (shortLengths ++ shortHash authO ++ shortTagAt tagOff ++ Impl.AesGcm.AArch64.restore)) s fun t =>
+      d.post o t ∧ (∀ r ∈ preserved, t.gpr r = o.gpr r) ∧ t.sp = W ∧
+      t.rd = s.rd ∧ t.wr = s.wr ∧ Frame [⟨W,shortWork⟩, (⟨d.tag,16⟩ : Region)] s.mem t.mem :=
+  shortFinishUsing_ok (cached := false) off hash o s W lead p (by intro e; cases e)
 
 theorem shortFinish_ok (hash : HashEightOk) (o s : State) (W : Addr) (lead : Nat) (p : ShortFinishPre o s W lead) :
     WP isa (.block (shortLengths ++ shortHash authO ++ shortTagOut ++ Impl.AesGcm.AArch64.restore)) s fun t =>

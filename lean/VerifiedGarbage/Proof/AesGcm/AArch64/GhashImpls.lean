@@ -2631,6 +2631,6 @@ theorem scratch_le (v : GcmImpl) : v.ctr.scratch ≤ v.calls.pwWn-512 := by
 theorem backendFacts (v : GcmImpl) (g : GhashWithImpl) : BackendFacts v g :=
   ⟨DirectGather.generalGather_shared v,DirectGather.generalSize v.callsOk,scratch_le v,
     generalSide v.callsOk,generalDepth v,preparedSide v g,
-    Proof.Gcm.AArch64.Pmull.hashEight_at,Proof.Gcm.AArch64.Stitch.gh8Ok,Proof.Gcm.AArch64.Pmull.mulV_keyV⟩
+    Proof.Gcm.AArch64.Pmull.hashEightWith_at,Proof.Gcm.AArch64.Stitch.gh8Ok,Proof.Gcm.AArch64.Pmull.mulV_keyV⟩
 
 end VG.Proof.AesGcm.AArch64.Contiguous

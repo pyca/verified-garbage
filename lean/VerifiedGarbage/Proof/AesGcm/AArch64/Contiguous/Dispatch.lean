@@ -269,12 +269,12 @@ private theorem firstOutside : NoResidue (.block firstCode) (leafContract standa
     (⟨fun _ => True,fun _ _ => True,fun _ _ => True,none⟩ : Contract isa) 0 _ _ _ _ _ _ trivial trivial trivial
     eq un (.block ha) (.block hb)
 
-private def shortBranch : Branch standard short intermediate firstCode (.nonzero .x .x11) where
+private def shortBranch (p : State → Prop) (accept : ∀ {s}, intermediate s → p s) : Branch standard short p firstCode (.nonzero .x .x11) where
   take s := decide ((stackArg s 0).toNat<97)
   run s h := (firstRun h.1).mono fun t ⟨v,x10,hit⟩ => by
     have test := @limit_eval 97 (loaded s) t (by exact gpr_write_self ..)
       (by simpa only [loaded,gpr_write_self,BitVec.setWidth_eq] using hit)
-    refine ⟨v,test,?_,fun _ => ⟨v.standard_iff.mpr h.2.2,x10.trans (v.stackArg 0).symm⟩⟩
+    refine ⟨v,test,?_,fun _ => accept ⟨v.standard_iff.mpr h.2.2,x10.trans (v.stackArg 0).symm⟩⟩
     intro yes
     have sm := of_decide_eq_true yes
     exact ⟨v.standard_iff.mpr h.2.2,by rw [v.stackArg]; omega⟩
@@ -285,14 +285,17 @@ private def shortBranch : Branch standard short intermediate firstCode (.nonzero
   residue := firstOutside
 
 theorem selected {v : GcmImpl} {g : GhashWithImpl} (facts : BackendFacts v g) : Checked any (select v.calls g.fn) := by
-  unfold select
-  split
-  · exact generalLeaf facts
-  · split
-    · exact (nonceBranch standard id).checked (shortBranch.checked (shortLeaf facts.hash)
+  by_cases portable : (!v.calls.pmull) = true
+  · simp only [select,portable,ite_true]
+    exact generalLeaf facts
+  · by_cases fused : v.calls.stitch = true
+    · simp only [select,portable,fused,ite_true]
+      exact (nonceBranch standard id).checked ((shortBranch intermediate id).checked (shortLeaf facts.hash)
         (mediumBranch.checked (preparedLeaf facts false) (preparedLeaf facts true))) (generalLeaf facts)
-    · exact (nonceBranch (prepared false) (fun h => ⟨h,fun e => Bool.noConfusion e⟩)).checked
-        (preparedLeaf facts false) (generalLeaf facts)
+    · simp only [select,portable,fused]
+      exact (nonceBranch standard id).checked
+        ((shortBranch (prepared false) (fun h => ⟨h.1,fun e => Bool.noConfusion e⟩)).checked
+          (shortLeaf facts.hash) (preparedLeaf facts false)) (generalLeaf facts)
 
 end VG.Proof.AesGcm.AArch64.Contiguous.Guard
 

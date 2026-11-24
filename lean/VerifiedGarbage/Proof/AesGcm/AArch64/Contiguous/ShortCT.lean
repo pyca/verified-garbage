@@ -21,7 +21,8 @@ open VG.Impl.AesGcm.AArch64.Contiguous VG.Impl.AesGcm.AArch64.DirectGather
 open VG.Proof.AesGcm.AArch64.DirectGather
 open VG.Proof.AesGcm.AArch64 (Eq2 TT rel_seq rel_taint)
 
-theorem frame_rel (hash : HashEightOk) {a b : State} (ca : Caller a) (cb : Caller b)
+theorem frame_rel (hash : HashEightWithOk) {a b : State} (ca : Caller a) (cb : Caller b)
+    (ka : Prepared.Powers a) (kb : Prepared.Powers b)
     (ai : NL a = 12) (bi : NL b = 12) (aa : AL a ≤ 16) (ba : AL b ≤ 16)
     (an : len a ≤ 96) (bn : len b ≤ 96) (pub : onePub 3 a b) :
     RelCT isa (Eq2 a b) shortFrame TT := by
@@ -56,6 +57,12 @@ theorem frame_rel (hash : HashEightOk) {a b : State} (ca : Caller a) (cb : Calle
     (Fragment.directPiece_ok (pieceLayout ca an hu) hu.x6 hu.x26 hu.key hu.dst hu.auth)
     (Fragment.directPiece_ok (pieceLayout cb bn hv) hv.x6 hv.x26 hv.key hv.dst hv.auth) ?_
   intro x y hx hy
-  exact shortFinishAt_rel (.inl rfl) hash (finishPre ca an aa hu hx) (w ▸ finishPre cb bn ba hv hy) q0 (stk 1 (by decide))
+  have xs := hx.sp.trans hu.sp
+  have ys := hy.sp.trans hv.sp
+  refine rel_seq (rel_taint [] (xs.trans (w.trans ys.symm)) (by agree_tac []) ⟨_,by taint_decide⟩)
+    (loadPowers ca ka an aa hu hx) (loadPowers cb kb bn ba hv hy) ?_
+  intro z v ⟨p,pc,p5⟩ ⟨q,qc,q5'⟩
+  exact shortFinishUsing_rel (cached := true) (.inl rfl) hash p (w ▸ q) q0 (stk 1 (by decide))
+    (fun _ => pc) (fun _ => w ▸ qc) (fun _ => p5.trans ((stk 2 (by decide)).trans q5'.symm))
 
 end VG.Proof.AesGcm.AArch64.Contiguous.Short
