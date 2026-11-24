@@ -341,6 +341,14 @@ def buffers : Sig where
   [(⟨100, 16⟩, false), (⟨101, 16⟩, true), (⟨200, 16⟩, true)]
 #guard Sig.bufs buffers.params [100, 100, 0, 200] == [(⟨100, 0⟩, true), (⟨200, 16⟩, true)]
 
+-- The same separation predicate used by Sig.contract admits exactly the
+-- two intended layouts for any addresses and length.
+example (src dst len : BitVec 64) :
+    (Sig.bufs [("src", .inOutSlice .u8 "dst" "len")] [src, dst, len]).Pairwise
+        (fun a b => (a.2 || b.2) → a.1.Disjoint b.1) ↔
+      src = dst ∨ (⟨src, len.toNat⟩ : Region).Disjoint ⟨dst, len.toNat⟩ := by
+  by_cases h : src = dst <;> simp [Sig.bufs, h, Elem.size, List.pairwise_cons]
+
 /-! ## Lists of slices
 
 The memory of a list of slices is its descriptors (two pointer-sized words
