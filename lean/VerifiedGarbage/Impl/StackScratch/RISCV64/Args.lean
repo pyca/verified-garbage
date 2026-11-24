@@ -41,11 +41,13 @@ def copyArg (bytes j : Nat) : List Instr :=
   [.addi .t1 .t0 ((argStep bytes : Nat) : Int), .load .d .t1 .t1 (bytes - argStep bytes + 8 * j),
     .store .d .t1 .t0 (8 * j)]
 
-/-- Copy the `m` doublewords of stack arguments, and pass the buffer, at
-`sp + 8 + 8m`, as the next. -/
-def setArgs (bytes m : Nat) : List Instr :=
+/-- Copy the stack arguments and pass a scratch buffer at the chosen frame offset. -/
+def setArgsAt (bytes m workOff : Nat) : List Instr :=
   [.addSp .t0 0] ++ (List.range m).flatMap (copyArg bytes) ++
-    [.addi .t1 .t0 ((8 + 8 * m : Nat) : Int), .store .d .t1 .t0 (8 * m)]
+    [.addi .t1 .t0 (workOff : Int), .store .d .t1 .t0 (8 * m)]
+
+/-- By default, the scratch buffer immediately follows the argument slots. -/
+abbrev setArgs (bytes m : Nat) := setArgsAt bytes m (8 + 8*m)
 
 /-- `c`, whose scratch buffer is the stack argument after `m` doublewords of
 others, with the buffer in a frame of `bytes` bytes on the stack, at
