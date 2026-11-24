@@ -1894,7 +1894,7 @@ theorem openShortP_xdepth :
 variable (v : GcmImpl) {M : CtxMode} (B : BlkFn M)
 
 theorem sealMP_mx : (Impl.AesGcm.X86_64.Short.«seal» (v.withBlk B) Impl.AesGcm.X86_64.Short.powersP Impl.AesGcm.X86_64.Short.ghashP
-      (Impl.AesGcm.X86_64.FastSeal.sel (v.withBlk B) (Impl.AesGcm.X86_64.Short.sealLong (v.withBlk B))) Impl.AesGcm.X86_64.Short.boundedSame true).allInstrs
+      (Impl.AesGcm.X86_64.FastSeal.sel (v.withBlk B) (Impl.AesGcm.X86_64.Short.sealLong (v.withBlk B))) Impl.AesGcm.X86_64.Short.boundedSame).allInstrs
     (fun i => !loadsMxcsr i) = true := by
   have e := B.encMx
   have d := B.decMx
@@ -1903,7 +1903,7 @@ theorem sealMP_mx : (Impl.AesGcm.X86_64.Short.«seal» (v.withBlk B) Impl.AesGcm
   decide +kernel
 
 theorem sealMP_spSafe : (Impl.AesGcm.X86_64.Short.«seal» (v.withBlk B) Impl.AesGcm.X86_64.Short.powersP Impl.AesGcm.X86_64.Short.ghashP
-      (Impl.AesGcm.X86_64.FastSeal.sel (v.withBlk B) (Impl.AesGcm.X86_64.Short.sealLong (v.withBlk B))) Impl.AesGcm.X86_64.Short.boundedSame true).all
+      (Impl.AesGcm.X86_64.FastSeal.sel (v.withBlk B) (Impl.AesGcm.X86_64.Short.sealLong (v.withBlk B))) Impl.AesGcm.X86_64.Short.boundedSame).all
     (fun i => !X86_64.isa.writesSp i) = true := by
   have e := B.encSp
   have d := B.decSp
@@ -1911,14 +1911,12 @@ theorem sealMP_spSafe : (Impl.AesGcm.X86_64.Short.«seal» (v.withBlk B) Impl.Ae
     GcmImpl.withBlk, GcmImpl.callees, v.ctr.spSafe, v.key.spSafe, v.gh.spSafe, Bool.true_and, Bool.and_true]
   decide +kernel
 
-private theorem sealCond_xdepth : (Impl.AesGcm.X86_64.Short.condWith true).x86_64Depth = 0 := by decide +kernel
-
 theorem sealMP_xdepth :
     (Impl.AesGcm.X86_64.Short.«seal» (v.withBlk B) Impl.AesGcm.X86_64.Short.powersP Impl.AesGcm.X86_64.Short.ghashP
-      (Impl.AesGcm.X86_64.FastSeal.sel (v.withBlk B) (Impl.AesGcm.X86_64.Short.sealLong (v.withBlk B))) Impl.AesGcm.X86_64.Short.boundedSame true).x86_64Depth ≤ 24 := by
+      (Impl.AesGcm.X86_64.FastSeal.sel (v.withBlk B) (Impl.AesGcm.X86_64.Short.sealLong (v.withBlk B))) Impl.AesGcm.X86_64.Short.boundedSame).x86_64Depth ≤ 24 := by
   have e := B.encXd
   have d := B.decXd
-  simp only [Impl.AesGcm.X86_64.Short.«seal», Impl.AesGcm.X86_64.Short.sealLong, Impl.AesGcm.X86_64.FastSeal.sel, Impl.AesGcm.X86_64.FastSeal.run, Fast.fastCond_xdepth, Fast.fastAad_xdepth, sealCond_xdepth, sealShortP_xdepth, finish_xdepth, finishK_xdepth, finishPK_xdepth, init, streamInit, streamAad, streamEncrypt, streamDecrypt, «seal», «open», openBody, ghash1, absorbHead, absorbWhole, absorbTail, absorb, absorbPad, padTail, flush, lens, cryptHead, cryptWhole, cryptTail, cryptTailG, crypt, cryptAl, tag, j0hash, j0, firstFlush, streamText, streamLoad, streamSmall, streamHead, headPart, partWith, streamNext, streamBlocks, finTag, oneAad, oneBlocks, oneTag, oneCrypt, oneCryptG, oneCryptBlk, ↓reduceIte, Bool.false_eq_true, oneUndo, tagLenOk, recv, Impl.AesGcm.X86_64.cmp, tagOut, copyTag, copyLoop, xorLoop, xorLoopG, minLen, j012, initState,
+  simp only [Impl.AesGcm.X86_64.Short.«seal», Impl.AesGcm.X86_64.Short.sealLong, Impl.AesGcm.X86_64.FastSeal.sel, Impl.AesGcm.X86_64.FastSeal.run, Fast.fastCond_xdepth, Fast.fastAad_xdepth, cond_xdepth, sealShortP_xdepth, finish_xdepth, finishK_xdepth, finishPK_xdepth, init, streamInit, streamAad, streamEncrypt, streamDecrypt, «seal», «open», openBody, ghash1, absorbHead, absorbWhole, absorbTail, absorb, absorbPad, padTail, flush, lens, cryptHead, cryptWhole, cryptTail, cryptTailG, crypt, cryptAl, tag, j0hash, j0, firstFlush, streamText, streamLoad, streamSmall, streamHead, headPart, partWith, streamNext, streamBlocks, finTag, oneAad, oneBlocks, oneTag, oneCrypt, oneCryptG, oneCryptBlk, ↓reduceIte, Bool.false_eq_true, oneUndo, tagLenOk, recv, Impl.AesGcm.X86_64.cmp, tagOut, copyTag, copyLoop, xorLoop, xorLoopG, minLen, j012, initState,
     Code.x86_64Depth, X86_64.Instr.frameBytes, List.length_cons, List.length_nil, GcmImpl.withBlk, GcmImpl.callees,
     v.ctr.noStack, v.key.noStack, v.gh.noStack, Nat.max_le, ↓reduceIte, Bool.false_eq_true]
   omega_using [e]
@@ -2012,9 +2010,9 @@ variable (B : BlkFn CtxMode.prepared)
 
 theorem sealMP_correct (hF : ShortFacts) (s : State) (hs : (Proof.AesGcm.sealX86_64M CtxMode.prepared).pre s) :
     ∃ t s', Exec isa (Impl.AesGcm.X86_64.Short.«seal» (v.withBlk B) Impl.AesGcm.X86_64.Short.powersP Impl.AesGcm.X86_64.Short.ghashP
-      (Impl.AesGcm.X86_64.FastSeal.sel (v.withBlk B) (Impl.AesGcm.X86_64.Short.sealLong (v.withBlk B))) Impl.AesGcm.X86_64.Short.boundedSame true) s t s' ∧
+      (Impl.AesGcm.X86_64.FastSeal.sel (v.withBlk B) (Impl.AesGcm.X86_64.Short.sealLong (v.withBlk B))) Impl.AesGcm.X86_64.Short.boundedSame) s t s' ∧
       abiPreserved s s' ∧ Proof.AesGcm.sealX86_64.post s s' := by
-  obtain ⟨t, s', he, hg, hp⟩ := sealM_of hs (sealMid_with (six := true) (boundedSameOk hF)
+  obtain ⟨t, s', he, hg, hp⟩ := sealM_of hs (sealMid_with (boundedSameOk hF)
     (FastSeal.sealSel_ok hF v B finKs_ksOk (sealLongOk_sealLong hF v B)))
   exact ⟨t, s', he, abiPreserved_of_exec (sealMP_mx v B) he hg, hp⟩
 
@@ -2066,7 +2064,7 @@ it is faster than `SealFin.mid` at every length. -/
 def sealCodeP (v : GcmImpl) (c : Callees) : Prog isa :=
   if v.short then
     Impl.AesGcm.X86_64.Short.«seal» c Impl.AesGcm.X86_64.Short.powersP Impl.AesGcm.X86_64.Short.ghashP
-      (Impl.AesGcm.X86_64.FastSeal.sel c (Impl.AesGcm.X86_64.Short.sealLong c)) Impl.AesGcm.X86_64.Short.boundedSame true
+      (Impl.AesGcm.X86_64.FastSeal.sel c (Impl.AesGcm.X86_64.Short.sealLong c)) Impl.AesGcm.X86_64.Short.boundedSame
   else if v.fin then
     Impl.AesGcm.X86_64.SealFin.«seal» c
       (Impl.AesGcm.X86_64.FastSeal.sel c (Impl.AesGcm.X86_64.SealFin.mid c) Impl.AesGcm.X86_64.Short.finKsA true)
@@ -2130,7 +2128,7 @@ theorem sealSelPrepared_framed (hF : Short.ShortFacts) :
       (Proof.AesGcm.sealPreparedRoundsContract X86_64.abi 2624) := by
   unfold GcmImpl.sealCodeP; split
   · exact sealPreparedCode_framed (sealPreparedCode_verified (Short.sealMP_correct v B hF)
-      (ct_of_rel fun _ _ hp hp' pub => Short.sealWith_rel (six := true) v B (Short.boundedSameOk hF) (Short.boundedSameRel hF)
+      (ct_of_rel fun _ _ hp hp' pub => Short.sealWith_rel v B (Short.boundedSameOk hF) (Short.boundedSameRel hF)
         (FastSeal.sealSel_ok hF v B Short.finKs_ksOk (Short.sealLongOk_sealLong hF v B))
         (FastSeal.sealSel_rel hF v B Short.finKs_ksOk Short.finKs_rel (Short.sealLongRel_sealLong hF v B)) hp hp' pub)) (Short.sealMP_spSafe v B)
       (Short.sealMP_xdepth v B)

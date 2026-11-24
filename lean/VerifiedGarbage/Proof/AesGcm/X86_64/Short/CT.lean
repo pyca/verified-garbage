@@ -429,13 +429,13 @@ theorem sealMid_with {M : Gcm.X86_64.Stitch.CtxMode}
     {body lng : Prog isa} (hbody : BoundedOk M body) (hlng : SealLongOk M lng) {s s₁ : State}
     {Ctx W SP Np A D : Addr} {nl al n : Nat} (C : OneCtx s 4 Ctx W SP Np A D nl al n)
     (X : CtxExt M Ctx (W + BitVec.ofNat 64 16) W SP D n s) (E : OneEntry s Ctx W SP A D n s₁)
-    (hNp : s.gpr .rdx = Np) (hnl : (s.gpr .rcx).toNat = nl) (hal : (s.gpr .r9).toNat = al) (six : Bool := false) :
-    WP isa (.seq (Impl.AesGcm.X86_64.Short.condWith six) (.ite .e lng body)) s₁
+    (hNp : s.gpr .rdx = Np) (hnl : (s.gpr .rcx).toNat = nl) (hal : (s.gpr .r9).toNat = al) :
+    WP isa (.seq Impl.AesGcm.X86_64.Short.cond (.ite .e lng body)) s₁
       (SealRunPost s Ctx W SP Np A D nl al n) :=
-  WP.seq (WP.mono (condE_ok C E hnl hal six) fun _ ⟨hz, E₂, _⟩ =>
-    WP.ite (decide ¬IsShortAt six _ _ _) (eval_e hz) (fun _ => hlng C X E₂ hNp hnl hal) fun h => by
+  WP.seq (WP.mono (condE_ok C E hnl hal) fun _ ⟨hz, E₂, _⟩ =>
+    WP.ite (decide ¬IsShort _ _ _) (eval_e hz) (fun _ => hlng C X E₂ hNp hnl hal) fun h => by
       have h' := Decidable.not_not.mp (of_decide_eq_false h)
-      exact hbody C X E₂ hNp hnl hal (IsShortAt.full h'))
+      exact hbody C X E₂ hNp hnl hal h')
 
 /-- `seal` after the entry: `cond`, then the short path or the other
 instances' body, which leave the same. -/
@@ -1448,24 +1448,24 @@ theorem sealWith_rel (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M)
     {body lng : Prog isa} (hbody : BoundedOk M body) (hct : BoundedRel M body) (hlng : SealLongOk M lng)
     (hlr : SealLongRel M lng) {s₀ s₀' : State}
     (hp : (Proof.AesGcm.sealX86_64M M).pre s₀) (hp' : (Proof.AesGcm.sealX86_64M M).pre s₀')
-    (hq : Proof.AesGcm.sealX86_64.pub s₀ s₀') (six : Bool := false) :
-    RelCT isa (fun s₁ s₂ => s₁ = s₀ ∧ s₂ = s₀') (Impl.AesGcm.X86_64.Short.«seal» (v.withBlk B) (lng := lng) (shortBody := body) (sixBatches := six))
+    (hq : Proof.AesGcm.sealX86_64.pub s₀ s₀') :
+    RelCT isa (fun s₁ s₂ => s₁ = s₀ ∧ s₂ = s₀') (Impl.AesGcm.X86_64.Short.«seal» (v.withBlk B) (lng := lng) (shortBody := body))
       fun _ _ => True :=
-  sealM_relOf hp hp' hq (fun C X E hn hl ha => sealMid_with hbody hlng C X E hn hl ha six) fun {Ctx W SP _ A D nl al n _} C C' X X' hNp hnl hal hR hNp' hnl' hal' hR' => by
+  sealM_relOf hp hp' hq (sealMid_with hbody hlng) fun {Ctx W SP _ A D nl al n _} C C' X X' hNp hnl hal hR hNp' hnl' hal' hR' => by
     have hlt := C.data.ok.lt
     have hw : ∀ {s₀ : State} {Np : Addr} (C : OneCtx s₀ 4 Ctx W SP Np A D nl al n), (s₀.gpr .rcx).toNat = nl →
         (s₀.gpr .r9).toNat = al → ∀ s, OneEntry s₀ Ctx W SP A D n s →
-        WP isa (condWith six) s fun u => u.zf = some (decide ¬IsShortAt six nl al n) ∧ OneEntry s₀ Ctx W SP A D n u :=
-      fun C hnl hal s h => WP.mono (condE_ok C h hnl hal six) fun _ ⟨z, E, _⟩ => ⟨z, E⟩
+        WP isa cond s fun u => u.zf = some (decide ¬IsShort nl al n) ∧ OneEntry s₀ Ctx W SP A D n u :=
+      fun C hnl hal s h => WP.mono (condE_ok C h hnl hal) fun _ ⟨z, E, _⟩ => ⟨z, E⟩
     have c := rel_next ((cond_rel (F₁ := OneEntry s₀ Ctx W SP A D n) (F₂ := OneEntry s₀' Ctx W SP A D n)
         (fun _ h => condS_of h hnl hal) (fun _ h => condS_of h hnl' hal')
-        (by rw [← hnl]; exact BitVec.isLt _) (by rw [← hal]; exact BitVec.isLt _) (by omega_arith) six))
+        (by rw [← hnl]; exact BitVec.isLt _) (by rw [← hal]; exact BitVec.isLt _) (by omega_arith)))
       (hw C hnl hal) (hw C' hnl' hal')
     refine RelCT.seq (c.mono (fun _ _ h => ⟨h.2.1, h.2.2⟩) fun _ _ h => h) (rel_ite_e (fun _ _ h => by rw [h.1.1, h.2.1])
       ((hlr C C' X X' hNp hnl hal hR hNp' hnl' hal' hR').mono
         (fun _ _ h => ⟨h.1.1.2, h.1.2.2⟩) fun _ _ h => h) ?_)
-    by_cases hs : IsShortAt six nl al n
-    · exact (hct C C' X X' hNp hnl hal hR hNp' hnl' hal' hR' (IsShortAt.full hs)).mono
+    by_cases hs : IsShort nl al n
+    · exact (hct C C' X X' hNp hnl hal hR hNp' hnl' hal' hR' hs).mono
         (fun _ _ h => ⟨h.1.1.2, h.1.2.2⟩) fun _ _ h => h
     · exact RelCT.of_false fun _ _ h => by have := h.1.1.1.symm.trans h.2; simp [hs] at this
 
