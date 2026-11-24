@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.X86_64.ScrubSel
 public import VerifiedGarbage.Impl.Sm4.X86_64.Fn
+import VerifiedGarbage.Proof.Sm4.X86_64.KeyCall
 import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Framework.X86_64.ScrubProved
 public import VerifiedGarbage.Spec.Sm4.Contract
@@ -68,9 +69,10 @@ frames that keep their working space on the stack already show
 `Impl.Scrub.X86_64.scrubAll` (`X86_64.Scrub.verifiedScrubbedAll`), which wipes
 every granule of its stack: it calls `vg_sm4_ctr`'s code as the internal
 `vg_sm4_ctr_core` (`Impl.Sm4.X86_64.ctrFramed`), which restores the callee-saved
-registers from slots of its frame the analysis loses track of. SM4-GCM calls
-`vg_sm4_expand_key`'s code as the internal `vg_sm4_expand_key_core`
-(`Impl.Sm4Gcm.X86_64.keyFn`).
+registers from slots of its frame the analysis loses track of.
+The key expansion and SM4-GCM share the internal `vg_sm4_expand_key_core`
+(`Impl.Sm4.X86_64.Fn.keyCore`): the key expansion clears its whole stack
+after the call.
 -/
 
 @[expose] public section
@@ -81,7 +83,7 @@ open VG.X86_64 VG.X86_64.Scrub
 
 /-! ## Postconditions -/
 
-theorem expandKeyOut : PostOut (Spec.Sm4.expandKeyContract X86_64.abi 3144) (Spec.Sm4.expandKeySig.retBits 64) :=
+theorem expandKeyOut : PostOut (Spec.Sm4.expandKeyContract X86_64.abi 3160) (Spec.Sm4.expandKeySig.retBits 64) :=
   postOut_of_local (leak := none) ScrubAbi.plain (Proof.Sm4.expandKeyPostOut_local _)
 
 theorem ecbEncryptOut : PostOut (Spec.Sm4.ecbContract X86_64.abi .encrypt 3144) (Spec.Sm4.ecbSig.retBits 64) :=
@@ -122,9 +124,8 @@ theorem ctrFinalOut : PostOut (Spec.Sm4.ctrFinalContract X86_64.abi 3296) (Spec.
 
 /-! ## The registrations -/
 
-/-- `vg_sm4_expand_key`'s code. -/
-abbrev expandKeyCode : Prog isa :=
-  Impl.StackScratch.X86_64.withStackScratchWiped 3144 .rdx 392 Impl.Sm4.X86_64.expandKey
+/-- `vg_sm4_expand_key`'s shared-core call. -/
+abbrev expandKeyCode : Prog isa := Impl.Sm4.X86_64.Fn.keyCall
 
 /-- `vg_sm4_ecb_encrypt`'s code. -/
 abbrev ecbEncryptCode : Prog isa :=
@@ -172,22 +173,18 @@ abbrev ctrCode : Prog isa :=
 
 /-! ## The functions as emitted -/
 
-theorem expandKey_codeSp : (Impl.StackScratch.X86_64.withStackScratchWiped 3144 .rdx 392 Impl.Sm4.X86_64.expandKey).all (fun i => !VG.X86_64.isa.writesSp i) = true := by
-  sp_safe
-
-/-- `Spec.Sm4.expandKeyApi`'s function as emitted (`Impl.Sm4.X86_64.Fn.expandKey`) meets its contract in
-constant time and returns without secret residue. -/
+/-- The key expansion calls SM4-GCM's core and clears all of its stack. -/
 theorem expandKey_scrubbed :
-    VerifiedScrubbed target Impl.Sm4.X86_64.Fn.expandKey (Spec.Sm4.expandKeyApi.contract X86_64.abi 3144) 0 :=
-  verifiedScrubbedSel (api := Spec.Sm4.expandKeyApi)
+    VerifiedScrubbed target Impl.Sm4.X86_64.Fn.expandKey (Spec.Sm4.expandKeyApi.contract X86_64.abi 3160) 0 :=
+  verifiedScrubbedAll (api := Spec.Sm4.expandKeyApi)
     { code := expandKeyCode
-      stack := 3144
-      verified := Proof.Sm4.X86_64.expandKey_framed
-      spSafe := expandKey_codeSp }
-    .sse [(0, 1)] expandKeyOut (RScrub.pubOk_nil _) (by taint_decide)
+      stack := 3160
+      verified := keyCall_verified
+      spSafe := keyCall_spSafe }
+    .sse expandKeyOut
 
-theorem expandKey_spSafe : Impl.Sm4.X86_64.Fn.expandKey.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
-  scrubKs_spSafe expandKey_codeSp
+theorem expandKey_spSafe : Impl.Sm4.X86_64.Fn.expandKey.all (fun i => !isa.writesSp i) = true :=
+  scrubKs_spSafe keyCall_spSafe
 
 theorem ecbEncrypt_codeSp : (Impl.StackScratch.X86_64.withStackScratchWiped 3144 .rcx 392 (Impl.Sm4.X86_64.ecb .encrypt)).all (fun i => !VG.X86_64.isa.writesSp i) = true := by
   sp_safe
