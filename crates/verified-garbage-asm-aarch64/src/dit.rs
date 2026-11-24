@@ -8,7 +8,7 @@ pub const VG_DIT_ENTER_FEATURES: verified_garbage_cpu::Features = verified_garba
 
 /// Turns data independent timing on (on AArch64, PSTATE.DIT), and returns 1 if it was already on and 0 if it was off. Writes no memory. Its time may depend on whether the mode was on, which is public.
 ///
-/// Contract: `VG.Spec.Dit.enterContract`, and its effect on the mode is `VG.Proof.Dit.AArch64.enter_dit` (on AArch64).
+/// Contract: `VG.Spec.Dit.enterContract`, and its effect on the mode is the `mode` of `VG.Spec.Dit.enterApi`.
 ///
 /// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
@@ -35,7 +35,7 @@ pub const VG_DIT_ENTER_DSB_FEATURES: verified_garbage_cpu::Features = verified_g
 
 /// Turns data independent timing on (on AArch64, PSTATE.DIT), and returns 1 if it was already on and 0 if it was off. Writes no memory. Its time may depend on whether the mode was on, which is public.
 ///
-/// Contract: `VG.Spec.Dit.enterContract`, and its effect on the mode is `VG.Proof.Dit.AArch64.enter_dit` (on AArch64).
+/// Contract: `VG.Spec.Dit.enterContract`, and its effect on the mode is the `mode` of `VG.Spec.Dit.enterApi`.
 ///
 /// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
@@ -62,7 +62,7 @@ pub const VG_DIT_ENTER_SB_FEATURES: verified_garbage_cpu::Features = verified_ga
 
 /// Turns data independent timing on (on AArch64, PSTATE.DIT), and returns 1 if it was already on and 0 if it was off. Writes no memory. Its time may depend on whether the mode was on, which is public.
 ///
-/// Contract: `VG.Spec.Dit.enterContract`, and its effect on the mode is `VG.Proof.Dit.AArch64.enter_dit` (on AArch64).
+/// Contract: `VG.Spec.Dit.enterContract`, and its effect on the mode is the `mode` of `VG.Spec.Dit.enterApi`.
 ///
 /// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
@@ -89,7 +89,7 @@ pub const VG_DIT_CLEAR_FEATURES: verified_garbage_cpu::Features = verified_garba
 
 /// Turns data independent timing off (on AArch64, PSTATE.DIT). Writes no memory. Call it only after `vg_dit_enter` returned 0, so that the mode is left as it was.
 ///
-/// Contract: `VG.Spec.Dit.clearContract`, and its effect on the mode is `VG.Proof.Dit.AArch64.clear_dit` (on AArch64).
+/// Contract: `VG.Spec.Dit.clearContract`, and its effect on the mode is the `mode` of `VG.Spec.Dit.clearApi`.
 ///
 /// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///

@@ -42,7 +42,8 @@ the same proofs cover all three.
 `enter_dit` and `clear_dit` prove what the contracts cannot name, the
 functions' effect on PSTATE.DIT, of every run of their code in the model:
 after `vg_dit_enter` (or a variant), PSTATE.DIT is 1, and `x0` is 1 if it was 1 on entry
-and 0 if it was 0; after `vg_dit_clear`, it is 0.
+and 0 if it was 0; after `vg_dit_clear`, it is 0. `enter_mode` and the rest say
+so as their `Api`s do (`Api.mode`).
 -/
 
 @[expose] public section
@@ -260,5 +261,39 @@ theorem _root_.VG.Proof.Dit.AArch64.clear_scrubbed :
       (Spec.Dit.clearContract AArch64.abi) 0 :=
   ⟨Proof.Dit.AArch64.clear_verified,
     Proof.Dit.AArch64.clear_noResidue _ _, fun ty _ h => by cases ty <;> cases h⟩
+
+/-! ## Their effect on the mode, as their `Api`s state it (`Api.mode`) -/
+
+theorem enterWith_mode {k : Contract isa} (bars : List Barrier) :
+    ∀ q, Spec.Dit.enterApi.mode = some q → ∀ s t s', k.pre s → Exec isa (enterWith bars) s t s' →
+      q (abi.mode s) (abi.mode s') (abi.ret s') := by
+  intro q hq s t s' _ he
+  obtain rfl := Option.some.inj hq
+  obtain ⟨hd, hr⟩ := enter_dit he
+  simp only [abi, hd, hr]
+  cases s.dit <;> simp
+
+theorem enter_mode {k : Contract isa} :
+    ∀ q, Spec.Dit.enterApi.mode = some q → ∀ s t s', k.pre s → Exec isa enter s t s' →
+      q (abi.mode s) (abi.mode s') (abi.ret s') :=
+  enterWith_mode []
+
+theorem enterDsb_mode {k : Contract isa} :
+    ∀ q, Spec.Dit.enterApi.mode = some q → ∀ s t s', k.pre s → Exec isa enterDsb s t s' →
+      q (abi.mode s) (abi.mode s') (abi.ret s') :=
+  enterWith_mode [.dsbSy, .isb]
+
+theorem enterSb_mode {k : Contract isa} :
+    ∀ q, Spec.Dit.enterApi.mode = some q → ∀ s t s', k.pre s → Exec isa enterSb s t s' →
+      q (abi.mode s) (abi.mode s') (abi.ret s') :=
+  enterWith_mode [.sb]
+
+theorem clear_mode {k : Contract isa} :
+    ∀ q, Spec.Dit.clearApi.mode = some q → ∀ s t s', k.pre s → Exec isa clear s t s' →
+      q (abi.mode s) (abi.mode s') (abi.ret s') := by
+  intro q hq s t s' _ he
+  obtain rfl := Option.some.inj hq
+  simp only [abi, clear_dit he]
+  rfl
 
 end VG.Proof.Dit.AArch64
