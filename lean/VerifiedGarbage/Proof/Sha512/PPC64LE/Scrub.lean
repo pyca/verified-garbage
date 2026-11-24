@@ -164,6 +164,6 @@ arguments. It meets its contract in constant time and returns without secret res
 theorem init_scrubbed (iv : Spec.Sha512.HashValue) :
     VerifiedScrubbed PPC64LE.target (Impl.Sha512.PPC64LE.Stream.init iv)
       (Spec.Sha512.initContract PPC64LE.abi iv) 0 :=
-  ⟨Proof.Sha512.PPC64LE.Shared.init iv, Proof.Sha512.PPC64LE.Stream.init_noResidue _ _ _⟩
+  ⟨Proof.Sha512.PPC64LE.Shared.init iv, Proof.Sha512.PPC64LE.Stream.init_noResidue _ _ _, fun _ _ _ h => by cases h⟩
 
 end VG.Proof.Sha512.PPC64LE

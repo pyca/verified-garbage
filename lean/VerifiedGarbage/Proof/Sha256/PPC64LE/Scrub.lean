@@ -109,13 +109,13 @@ arguments. It meets its contract in constant time and returns without secret res
 theorem init224_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.Sha256.PPC64LE.Stream.init224
       (Spec.Sha256.init224Contract PPC64LE.abi) 0 :=
-  ⟨Proof.Sha256.PPC64LE.Shared.init224, Proof.Sha256.PPC64LE.Stream.init224_noResidue _ _⟩
+  ⟨Proof.Sha256.PPC64LE.Shared.init224, Proof.Sha256.PPC64LE.Stream.init224_noResidue _ _, fun _ _ _ h => by cases h⟩
 
 /-- `vg_sha256_init` needs no cleanup: it reads no memory, so what it leaves is a function of its
 arguments. It meets its contract in constant time and returns without secret residue. -/
 theorem init_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.Sha256.PPC64LE.Stream.init
       (Spec.Sha256.initContract PPC64LE.abi) 0 :=
-  ⟨Proof.Sha256.PPC64LE.Shared.init, Proof.Sha256.PPC64LE.Stream.init_noResidue _ _⟩
+  ⟨Proof.Sha256.PPC64LE.Shared.init, Proof.Sha256.PPC64LE.Stream.init_noResidue _ _, fun _ _ _ h => by cases h⟩
 
 end VG.Proof.Sha256.PPC64LE

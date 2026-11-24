@@ -1189,6 +1189,63 @@ theorem scrubTail_r3 {rb : Nat} {cs : List Nat} {cl : Clear} (hcl : cl.r3 = true
   simp only [hgs, ite_false, hcl, and_self, ite_true]
   exact ⟨_, rfl⟩
 
+/-- Every path of the code ends with `li r3, k`: a code shape whose result needs no
+`retFix`. -/
+def endsLiR3 : Prog isa → Bool
+  | .block l => match l.getLast? with
+    | some (.li .r3 _) => true
+    | _ => false
+  | .seq _ c => endsLiR3 c
+  | .ite _ a b => endsLiR3 a && endsLiR3 b
+  | _ => false
+
+/-- A block that ends with `li r3, k` leaves `r3 = k`, `k < 2 ^ 15`. -/
+theorem block_endsLi {l : List Instr} {k : Nat} (hl : l.getLast? = some (.li .r3 k)) {s s' : State}
+    {t : List Leak} (h : execBlock isa l s = some (s', t)) : k < 2 ^ 15 ∧ s'.gpr .r3 = BitVec.ofNat 64 k := by
+  have hne : l ≠ [] := fun e => by simp [e] at hl
+  have e := List.dropLast_concat_getLast hne
+  rw [List.getLast?_eq_some_getLast hne, Option.some.injEq] at hl
+  rw [hl] at e
+  rw [← e, execBlock_append] at h
+  cases h₁ : execBlock isa l.dropLast s with
+  | none => rw [h₁] at h; cases h
+  | some p =>
+    rw [h₁, Option.bind_some] at h
+    by_cases hk : k < 2 ^ 15
+    · simp only [execBlock, isa, exec_li hk, Option.map_some, Option.some.injEq, Prod.mk.injEq] at h
+      obtain ⟨rfl, -⟩ := h
+      exact ⟨hk, by simp [State.write]⟩
+    · simp [execBlock, isa, exec, hk] at h
+
+/-- Every run of code of `endsLiR3` shape leaves `r3 = k` for some `k < 2 ^ 15`. -/
+theorem r3_of_endsLi {c : Prog isa} {s s' : State} {t : List Leak} (he : Exec isa c s t s') :
+    endsLiR3 c = true → ∃ k, k < 2 ^ 15 ∧ s'.gpr .r3 = BitVec.ofNat 64 k := by
+  induction he with
+  | block hb =>
+    rename_i l _ _ _
+    intro h
+    simp only [endsLiR3] at h
+    split at h
+    · next k hl => exact ⟨_, block_endsLi hl hb⟩
+    · cases h
+  | seq _ _ _ ih₂ => intro h; exact ih₂ h
+  | iteT _ _ ih => intro h; simp only [endsLiR3, Bool.and_eq_true] at h; exact ih h.1
+  | iteF _ _ ih => intro h; simp only [endsLiR3, Bool.and_eq_true] at h; exact ih h.2
+  | _ => intro h; simp [endsLiR3] at h
+
+/-- Code of `endsLiR3` shape returns its result as ELFv2 requires: `r3` is a constant
+below `2 ^ 15`, its own zero-extension. -/
+theorem retAbi_of_endsLi {c : Prog isa} {k : Contract isa} (h : endsLiR3 c = true) :
+    RetAbi target c k := by
+  intro ty f hty _ s t s' _ he
+  obtain rfl := abi_retExt_some hty
+  obtain ⟨n, hn, hr⟩ := r3_of_endsLi he h
+  show s'.gpr .r3 = zext32Of (s'.gpr .r3)
+  rw [hr]
+  apply BitVec.eq_of_toNat_eq
+  simp only [zext32Of, BitVec.toNat_setWidth, BitVec.toNat_ofNat]
+  omega
+
 /-- The calling convention of every PPC64LE artifact (`Api.artifact`). -/
 theorem ScrubAbi.of (cs : List (String × List (BitVec 64))) (sig : Sig) (ts : List (String × List FnTable)) :
     ScrubAbi ((abi.withConsts cs).withTables sig ts) :=
