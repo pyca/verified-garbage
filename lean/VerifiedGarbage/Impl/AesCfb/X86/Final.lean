@@ -119,17 +119,19 @@ around a block function, or `encryptChain`), as emitted. -/
 def encrypt (whole : Prog isa) : Prog isa := Impl.Scrub.X86.scrubAll 0 24 whole
 
 /-- `vg_aes_cfb128_decrypt` with the whole-block code `whole` (`decrypt`
-around a block function, or `decryptNi`), as emitted. -/
-def decrypt (whole : Prog isa) : Prog isa := Impl.Scrub.X86.scrubAll 0 24 whole
+around a block function, or `decryptNi`), which uses `k` bytes of stack, as
+emitted. -/
+def decrypt (whole : Prog isa) (k : Nat) : Prog isa := Impl.Scrub.X86.scrubAll 0 k whole
 
 /-- `vg_aes_cfb128_encrypt_final` with the whole-block code `whole` and the
 block function `b`, of the variant `sfx`, as emitted. -/
 def encryptFinal (whole : Prog isa) (b : Blocks) (sfx : String) : Prog isa :=
   Impl.Scrub.X86.scrubAll 0 100 (withStackScratchWiped 48 6 4 (Impl.AesCfb.X86.encryptFinal whole b sfx))
 
-/-- `vg_aes_cfb128_decrypt_final` with the whole-block code `whole` and the
-block function `b`, of the variant `sfx`, as emitted. -/
-def decryptFinal (whole : Prog isa) (b : Blocks) (sfx : String) : Prog isa :=
-  Impl.Scrub.X86.scrubAll 0 100 (withStackScratchWiped 48 6 4 (Impl.AesCfb.X86.decryptFinal whole b sfx))
+/-- `vg_aes_cfb128_decrypt_final` with the whole-block code `whole`, which
+uses `k` bytes of stack, and the block function `b`, of the variant `sfx`, as
+emitted. -/
+def decryptFinal (whole : Prog isa) (b : Blocks) (sfx : String) (k : Nat) : Prog isa :=
+  Impl.Scrub.X86.scrubAll 0 (28 + k + 48) (withStackScratchWiped 48 6 4 (Impl.AesCfb.X86.decryptFinal whole b sfx))
 
 end VG.Impl.AesCfb.X86.Fn

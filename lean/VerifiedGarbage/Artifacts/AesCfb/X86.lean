@@ -21,7 +21,7 @@ def artifacts : List (Artifact X86.target) :=
       spSafe := Proof.AesCfb.X86.Scrub.encrypt_fnSpSafe v },
     Spec.Cfb.aesDecryptApi.artifact X86.target {
       suffix := v.suffix
-      code := Impl.AesCfb.X86.Fn.decrypt (Proof.AesCfb.X86.decryptCode v)
+      code := Impl.AesCfb.X86.Fn.decrypt (Proof.AesCfb.X86.decryptCode v) (Proof.AesCbc.X86.Wiped.decStack v)
       verified := Proof.AesCfb.X86.Scrub.decrypt_scrubbed v
       spSafe := Proof.AesCfb.X86.Scrub.decrypt_fnSpSafe v },
     Spec.Cfb.aesEncryptFinalApi.artifact X86.target {
@@ -32,6 +32,7 @@ def artifacts : List (Artifact X86.target) :=
     Spec.Cfb.aesDecryptFinalApi.artifact X86.target {
       suffix := v.suffix
       code := Impl.AesCfb.X86.Fn.decryptFinal (Proof.AesCfb.X86.decryptCode v) v.enc v.suffix
+        (Proof.AesCbc.X86.Wiped.decStack v)
       verified := Proof.AesCfb.X86.Scrub.decryptFinal_scrubbed v
       spSafe := Proof.AesCfb.X86.Scrub.decryptFinal_fnSpSafe v }]
 

@@ -11,17 +11,31 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_cbc_decrypt_unwiped_ssse3() {
     core::arch::naked_asm!(
-        r#".base64 "i0QkGImYEAgAAImwFAgAAIm4GAgAAImoHAgAAIt0JBCLRCQUhcA="
+        r#".base64 "jaQkxPv//4uEJEAEAACJRCQEi4QkRAQAAIlEJAiLhCRIBAAAiUQkDIuEJEwEAACJRCQQi4QkUAQAAIlEJBSLhCRUBAAAiUQkGIngg8AgiUQkHItEJByJmAAEAACJsAQEAACJuAgEAACJqAwEAACLdCQQi3wkFIX/"
 je 20f
 22:
-.base64 "i2wkGLgAAAAAiYUACAAAiYUECAAAiYUICAAAiYUMCAAAi4UACAAAiw4xyImFAAgAAIuFBAgAAItOBDHIiYUECAAAi4UICAAAi04IMciJhQgIAACLhQwIAACLTgwxyImFDAgAAItEJASLTCQIifO/AQAAAItsJBhVV1NRUA=="
+.base64 "u0AAAACD/0A="
+jb 23f
+jmp 24f
+23:
+.base64 "ifs="
+24:
+.base64 "i2wkDPMPb0UAifCLVCQcidk="
+25:
+.base64 "8w9/AvMPbwCDwBCDwhCD6QE="
+jne 25b
+.base64 "8w9/RQCLRCQEi0wkCInyi2wkGFVTUlFQ"
 call {vg_aes_decrypt_blocks_ssse3}
-.base64 "WFhYWFiLXCQMiwaLCzHIiQaLRgSLSwQxyIlGBItGCItLCDHIiUYIi0YMi0sMMciJRgyLbCQYuAAAAACJA4lDBIlDCIlDDIsDi40ACAAAMciJA4tDBIuNBAgAADHIiUMEi0MIi40ICAAAMciJQwiLQwyLjQwIAAAxyIlDDIPGEItEJBQBwAHAAcABwANEJBA5xg=="
+.base64 "WFhYWFiLVCQcidk="
+26:
+.base64 "8w9vBvMPbwpmD+/B8w9/BoPGEIPCEIPpAQ=="
+jne 26b
+.base64 "Kd8="
 jne 22b
 jmp 21f
 20:
 21:
-.base64 "i0QkGIuYEAgAAIuwFAgAAIu4GAgAAIuoHAgAAItMJBi4AAAAAImBAAgAAImBBAgAAImBCAgAAImBDAgAALgAAAAAiYEQCAAAiYEUCAAAiYEYCAAAiYEcCAAAww=="
+.base64 "i0QkHIuYAAQAAIuwBAQAAIu4CAQAAIuoDAQAAI2kJDwEAADD"
 .p2align 6"#,
         vg_aes_decrypt_blocks_ssse3 = sym crate::aes::vg_aes_decrypt_blocks_ssse3::vg_aes_decrypt_blocks_ssse3,
     )
