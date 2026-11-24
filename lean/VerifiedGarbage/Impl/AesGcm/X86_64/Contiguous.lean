@@ -136,14 +136,17 @@ def batchAuth (c : Callees) : Prog isa :=
 
 def batchMasks (c : Callees) (enc : Fn) : Prog isa := .seq (batchKeys enc) (.seq batchText (batchAuth c))
 
+/-- The PCLMUL profile reaches the software-AES batch crossover earlier. -/
+def batchLimit (narrow : Bool) : Nat := if narrow then 7 else 15
+
 /-- Rotating the byte count minus one block moves any partial byte count above
 the bound. The mask workspace can hold J0 and one to fifteen payload counters. -/
-def chooseBatch (bounded ordinary : Prog isa) : Prog isa :=
+def chooseBatch (narrow : Bool) (bounded ordinary : Prog isa) : Prog isa :=
   .seq (.block [.mov .rax (.mem (at_ .r15 lenO)), .alu .sub .rax (imm 16), .shift .ror .rax 4,
-    .alu .cmp .rax (imm 15)]) (.ite .b bounded ordinary)
+    .alu .cmp .rax (imm (batchLimit narrow))]) (.ite .b bounded ordinary)
 
-def softwareBody (c : Callees) (ctr enc : Fn) : Prog isa :=
-  .seq (oneAad c) (chooseBatch (batchMasks c enc) (.seq (bulk (separate ctr c.gh)) (maskFinish c enc)))
+def softwareBody (narrow : Bool) (c : Callees) (ctr enc : Fn) : Prog isa :=
+  .seq (oneAad c) (chooseBatch narrow (batchMasks c enc) (.seq (bulk (separate ctr c.gh)) (maskFinish c enc)))
 
 /-- The AES-NI/PCLMUL profile hashes the complete ciphertext once both the
 whole and partial blocks have reached their destination. -/
@@ -177,8 +180,8 @@ def one (c : Callees) (vec wide prepared : Bool) (kernel : Prog isa) : Prog isa 
   framed (body c vec wide prepared kernel)
 
 /-- A preallocated record using bitsliced AES for both payload and tag masks. -/
-def preparedMasks (level : Impl.Scrub.X86_64.VecLevel) (c : Callees) (ctr : Fn) : Prog isa :=
-  Impl.Scrub.X86_64.scrubAll level 0 2640 (framed (softwareBody c ctr maskAES))
+def preparedMasks (narrow : Bool) (level : Impl.Scrub.X86_64.VecLevel) (c : Callees) (ctr : Fn) : Prog isa :=
+  Impl.Scrub.X86_64.scrubAll level 0 2640 (framed (softwareBody narrow c ctr maskAES))
 
 /-- One entry per CPU variant. The prepared flag selects whether the key
 already holds enough powers of the hash subkey. Buffer layout has no effect

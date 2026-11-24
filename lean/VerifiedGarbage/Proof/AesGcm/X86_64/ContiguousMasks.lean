@@ -1304,32 +1304,32 @@ private theorem batchPost_ok (v : GcmImpl) {Ctx W SP S D : Addr} {R n al : Nat} 
       · exact ⟨below SP 24,by simp,below_sub (by decide) (by decide)⟩
   · rw [Short.bytesAt_toBytes',mix,same]
 
-private theorem batchChoice_step {s : State} {Ctx W SP : Addr} {n : Nat} (e : Env Ctx (W+16#64) W SP s)
+private theorem batchChoice_step (narrow : Bool) {s : State} {Ctx W SP : Addr} {n : Nat} (e : Env Ctx (W+16#64) W SP s)
     (len : s.mem.readW (W+208#64) 64=BitVec.ofNat 64 n) :
     ∃ t, runBlock isa [.mov .rax (.mem (at_ .r15 lenO)),.alu .sub .rax (imm 16),.shift .ror .rax 4,
-      .alu .cmp .rax (imm 15)] s=some t ∧ t.cf=some (decide (((BitVec.ofNat 64 n-16#64).rotateRight 4).toNat<15)) ∧
+      .alu .cmp .rax (imm (Contiguous.batchLimit narrow))] s=some t ∧ t.cf=some (decide (((BitVec.ofNat 64 n-16#64).rotateRight 4).toNat<Contiguous.batchLimit narrow)) ∧
       Env Ctx (W+16#64) W SP t ∧ t.mem=s.mem ∧ t.rd=s.rd ∧ t.wr=s.wr := by
   have read := e.perm.wR (show 208+8≤2560 by decide)
   refine ⟨_,by xrun [e.r15,read,len],?_,?_,?_,?_,?_⟩
-  · rfl
+  · cases narrow <;> rfl
   · exact e.keep (fun r h => by
       simp only [List.mem_cons,List.not_mem_nil,or_false] at h
       rcases h with rfl|rfl|rfl|rfl <;> rfl) rfl rfl
   all_goals rfl
 
-theorem softwareRecord_ok (v : GcmImpl) (ctr : Proof.Aes.X86_64.Ctr32ToImpl) {M : CtxMode} :
-    RecordOk M (Contiguous.softwareBody v.callees ⟨ctr.callee.name,ctr.callee.code⟩ Contiguous.maskAES) := by
+theorem softwareRecord_ok (narrow : Bool) (v : GcmImpl) (ctr : Proof.Aes.X86_64.Ctr32ToImpl) {M : CtxMode} :
+    RecordOk M (Contiguous.softwareBody narrow v.callees ⟨ctr.callee.name,ctr.callee.code⟩ Contiguous.maskAES) := by
   intro o u Ctx W SP Np A S D nl al n C X geo wrap src dst E hp hl ha
   unfold Contiguous.softwareBody Contiguous.chooseBatch
   refine WP.seq ((oneMid_ok v C E hp hl ha).mono fun s m => ?_)
-  obtain ⟨t,run,cf,et,mt,rt,wt⟩ := batchChoice_step m.env m.len
+  obtain ⟨t,run,cf,et,mt,rt,wt⟩ := batchChoice_step narrow m.env m.len
   have m' : OneMid o Ctx W SP D n (Spec.Gcm.ctxH o.mem Ctx) (bytesAt o.mem Np nl) (bytesAt o.mem A al) u.mem t :=
     ⟨et,mt ▸ m.hH,mt ▸ m.rounds,mt ▸ m.dat,mt ▸ m.len,mt ▸ m.alen,mt ▸ m.j0,
       mt ▸ m.abs,mt ▸ m.cb,mt ▸ m.saved,mt ▸ m.frame,mt ▸ m.fr,rt.trans m.rd,wt.trans m.wr⟩
   have aa := afterAad_ok C X geo wrap ha src dst m'
   refine WP.seq (WP.of_runBlock ⟨t,run,?_⟩)
   refine WP.ite _ cf (fun yes => ?_) (fun _ => ?_)
-  · obtain ⟨k,hk,hn⟩ := batch_guard (BitVec.ofNat 64 n) (of_decide_eq_true yes)
+  · obtain ⟨k,hk,hn⟩ := batch_guard (BitVec.ofNat 64 n) (Nat.lt_of_lt_of_le (of_decide_eq_true yes) (show Contiguous.batchLimit narrow≤15 by cases narrow <;> decide))
     rw [toNat_ofNat_of_lt C.data.ok.lt] at hn
     subst n
     unfold Contiguous.batchMasks
@@ -1481,15 +1481,15 @@ private theorem batch_rel (v : GcmImpl) {Ctx W SP S D : Addr} {M : CtxMode} {n R
   exact RelCT.seq (rel_next (batchText_rel.mono (fun _ _ h => ⟨ptrs _ h.1,ptrs _ h.2⟩) (fun _ _ h => h)) text text)
     ((batchAuth_rel v L).mono (fun _ _ h => ⟨auth _ h.1,auth _ h.2⟩) (fun _ _ h => h))
 
-theorem softwareRecord_ct (v : GcmImpl) (ctr : Proof.Aes.X86_64.Ctr32ToImpl) {M : CtxMode} :
-    RecordCT M (Contiguous.softwareBody v.callees ⟨ctr.callee.name,ctr.callee.code⟩ Contiguous.maskAES) := by
+theorem softwareRecord_ct (narrow : Bool) (v : GcmImpl) (ctr : Proof.Aes.X86_64.Ctr32ToImpl) {M : CtxMode} :
+    RecordCT M (Contiguous.softwareBody narrow v.callees ⟨ctr.callee.name,ctr.callee.code⟩ Contiguous.maskAES) := by
   intro o p Ctx W SP Np A S D nl al n R a b
   let F := AfterAad M Ctx W SP S D R n al
-  let flag := decide (((BitVec.ofNat 64 n-16#64).rotateRight 4).toNat<15)
+  let flag := decide (((BitVec.ofNat 64 n-16#64).rotateRight 4).toNat<Contiguous.batchLimit narrow)
   let G (s : State) := F s ∧ s.cf=some flag
   have guard s (aa : F s) : WP isa (.block [.mov .rax (.mem (at_ .r15 lenO)),.alu .sub .rax (imm 16),.shift .ror .rax 4,
-      .alu .cmp .rax (imm 15)]) s G := by
-    obtain ⟨t,run,cf,et,mt,rt,wt⟩ := batchChoice_step aa.reg.env aa.ob.len
+      .alu .cmp .rax (imm (Contiguous.batchLimit narrow))]) s G := by
+    obtain ⟨t,run,cf,et,mt,rt,wt⟩ := batchChoice_step narrow aa.reg.env aa.ob.len
     refine WP.of_runBlock ⟨t,run,?_,cf⟩
     let ext : CtxExt M Ctx (W+16#64) W SP D n t := { aa.reg.ext with
       cov := by rw [rt,wt];exact aa.reg.ext.cov
@@ -1504,12 +1504,12 @@ theorem softwareRecord_ct (v : GcmImpl) (ctr : Proof.Aes.X86_64.Ctr32ToImpl) {M 
       by rw [rt,wt];exact aa.slotRead,aa.dstWork,aa.dstOut,aa.slotDst⟩
   unfold Contiguous.softwareBody Contiguous.chooseBatch
   refine RelCT.seq (ordinaryAad_ct v a b) (RelCT.seq (rel_next (rel_env_regs [] (fun _ (h : F _) => h.ob.env)
-    (fun _ (h : F _) => h.ob.env) (fun _ _ _ _ _ h => by cases h) ⟨_,by taint_decide⟩) guard guard) ?_)
+    (fun _ (h : F _) => h.ob.env) (fun _ _ _ _ _ h => by cases h) (by cases narrow <;> exact ⟨_,by taint_decide⟩)) guard guard) ?_)
   refine RelCT.ite (fun _ _ h => h.1.2.trans h.2.2.symm) ?_ ?_
   · apply Split.rel_each
     intro x y ⟨⟨hx,hy⟩,take⟩
     have eq : flag=true := Option.some.inj (hx.2.symm.trans take)
-    obtain ⟨k,hk,hn⟩ := batch_guard _ (of_decide_eq_true eq)
+    obtain ⟨k,hk,hn⟩ := batch_guard _ (Nat.lt_of_lt_of_le (of_decide_eq_true eq) (show Contiguous.batchLimit narrow≤15 by cases narrow <;> decide))
     rw [toNat_ofNat_of_lt a.ctx.data.ok.lt] at hn
     subst n
     refine (batch_rel v (M:=M) (S:=S) (D:=D) (R:=R) (al:=al) (n:=k+1) (by omega) (by omega) a.ctx.lay).mono ?_ (fun _ _ h => h)
