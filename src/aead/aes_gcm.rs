@@ -312,6 +312,7 @@ impl AesGcm {
     ///
     /// The nonce may have any nonzero length; 12 bytes is the recommended
     /// (and fastest) one. A nonce must never be used twice with the same key.
+    #[cfg_attr(target_arch = "x86_64", inline)]
     pub fn encrypt_in_place(
         &self,
         nonce: &[u8],
