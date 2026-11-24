@@ -1556,7 +1556,7 @@ theorem hmacInit_scrubbed (v : MdHash) :
     (sideAll_withStackScratchWiped
       (hmacInitAny_side v.coreSide.any v.side.init v.side.upd v.side.fin v.side.comp)) (Or.inl rfl)
   exact ⟨initEntry_verified short.verified long.verified (by omega) (by omega) v.hB v.hmacAnyF.2.2,
-    initEntry_noResidue short.noResidue long.noResidue (by omega) (by omega) v.hB⟩
+    initEntry_noResidue short.noResidue long.noResidue (by omega) (by omega) v.hB, fun ty _ h => by cases ty <;> cases h⟩
 
 end MdHash
 

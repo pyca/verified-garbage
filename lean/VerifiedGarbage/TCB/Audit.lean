@@ -18,7 +18,8 @@ imports, besides the axiom audit (`TCB/Axioms.lean`):
   `implemented_by`, `extern` or `export`, which substitute other code for a
   definition (or give one to a constant the kernel knows nothing of); what
   Lean and Mathlib implement so is trusted, as Lean is. And no module of this
-  project (`VerifiedGarbage` or a module under it) may declare a `csimp`
+  project (any that wrote audit records, or is named as one of this project's
+  libraries, `AuditRecords.isProjectModule`) may declare a `csimp`
   theorem (or axiom), which the compiler rewrites by in whatever it compiles
   later, or an `init`/`builtin_init` (`initialize`), which runs when the
   emitter imports its module. Any of these could make the emitter write code
@@ -38,7 +39,8 @@ constant or module holds from the audit records its module wrote when it was
 built (`TCB/AuditRecords.lean`), which saw its proofs and the values of its
 definitions: so they run in a module too, which sees what it imports from other
 modules without their proofs, and without the values of definitions they do not
-expose. A module of this project built without the records fails both. The
+expose. A module's records are read whatever its name, and a module of this
+project built without the records fails both. The
 records' own `initialize` (`TCB/AuditRecords.lean`, which registers them) is the one
 this project declares: its module and `TCB/AuditBase.lean` write no records
 (`AuditRecords.unrecorded`), so it reaches no audit, and no name is exempt (a

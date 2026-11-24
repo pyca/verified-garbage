@@ -36,6 +36,48 @@ class TcbLemmas(unittest.TestCase):
                 "prove it under Proof/"])
 
 
+class OtherLibraries(unittest.TestCase):
+    def check(self, files):
+        with tree(files) as d:
+            lean = pathlib.Path(d) / "lean" / "VerifiedGarbage"
+            texts = {f: f.read_text() for f in lean.rglob("*.lean")}
+            return check_lean_imports.other_library_imports(lean, texts)
+
+    def test_mentions_and_own_imports(self):
+        # A name in a comment, and an import of the library's own modules, are fine.
+        self.assertEqual(self.check({
+            "lean/VerifiedGarbage/Proof/A.lean":
+                "module\npublic import VerifiedGarbage.Spec.A\n"
+                "import VerifiedGarbageTestHelpers.X\n/-! `VerifiedGarbageTest/A.lean` checks it. -/\n",
+            "lean/VerifiedGarbageTest/A.lean": "module\nimport VerifiedGarbage.Proof.A\n"}), [])
+
+    def test_imports_of_other_libraries(self):
+        # From any directory, in any kind of import, and the library's root too.
+        self.assertEqual(self.check({
+            "lean/VerifiedGarbage/Proof/A.lean":
+                "module\npublic import VerifiedGarbage.Spec.A\nimport VerifiedGarbageTest.Helper\n",
+            "lean/VerifiedGarbage/Artifacts/A/X.lean": "module\npublic meta import all VerifiedGarbageTest\n",
+            "lean/VerifiedGarbage/TCB/A.lean": "module\nimport VerifiedGarbageAuditBase\n"}), [
+            "lean/VerifiedGarbage/Artifacts/A/X.lean:2: may not import VerifiedGarbageTest, a module of "
+            "VerifiedGarbageTest: the emitter's audits do not read its records",
+            "lean/VerifiedGarbage/Proof/A.lean:3: may not import VerifiedGarbageTest.Helper, a module of "
+            "VerifiedGarbageTest: the emitter's audits do not read its records",
+            "lean/VerifiedGarbage/TCB/A.lean:2: may not import VerifiedGarbageAuditBase, a module of "
+            "VerifiedGarbageAuditBase: the emitter's audits do not read its records"])
+
+
+class Plugins(unittest.TestCase):
+    def test_every_library_but_the_exempt(self):
+        plugin = {"plugins": [check_lean_imports.AUDIT_PLUGIN]}
+        config = {"lean_lib": [{"name": "VerifiedGarbage", **plugin}, {"name": "NativeAuditRecords"},
+                               {"name": "AuditBase"}, {"name": "NewTests"},
+                               {"name": "Other", "plugins": ["Something:shared"]}]}
+        self.assertEqual(check_lean_imports.plugin_problems(config), [
+            f"lean/lakefile.toml: library {n} does not load the audit records' plugin: "
+            f"give it `plugins = [\"{check_lean_imports.AUDIT_PLUGIN}\"]`, as every other library has "
+            "(TCB/AuditRecords.lean would trust its modules unread)" for n in ("NewTests", "Other")])
+
+
 class Imports(unittest.TestCase):
     def test_lines_and_kinds(self):
         text = ("module\n\npublic import A.B\n  meta import all C\npublic meta import D\n"

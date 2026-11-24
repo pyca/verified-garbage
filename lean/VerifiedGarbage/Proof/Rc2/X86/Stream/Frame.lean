@@ -118,7 +118,8 @@ end
 /-!
 # Streaming RC2-CBC on x86 (32-bit): the contracts the proofs use
 
-`Spec.Rc2.cbcInitContract` spelled out for x86, with the arguments only
+`Spec.Rc2.cbcInitContract` spelled out for x86, for `k` bytes of stack
+(`initContractS k`), with the arguments only
 read (the taint analysis follows them in memory only while nothing that may
 alias them is written): `Verified.lean` moves the
 proofs to the shared contracts, which let the code write them.
@@ -128,7 +129,7 @@ namespace VG.Proof.Rc2.X86.Stream
 
 open VG VG.X86
 
-def initContract : Contract isa where
+def initContractS (k : Nat) : Contract isa where
   pre s :=
     let key : Region := ⟨(arg s 0).setWidth 64, (arg s 1).toNat⟩
     let iv : Region := ⟨(arg s 3).setWidth 64, (arg s 4).toNat⟩
@@ -136,14 +137,14 @@ def initContract : Contract isa where
     let buf : Region := ⟨(arg s 6).setWidth 64, 576⟩
     let args : Region := ⟨argAddr s 0, 28⟩
     let ret : Region := ⟨(s.gpr .esp).setWidth 64, 4⟩
-    let stack := below (s.gpr .esp) 24
+    let stack := below (s.gpr .esp) k
     s.rd = [key, iv, args] ∧ s.wr = [ctx, buf] ∧
       key.Disjoint ctx ∧ key.Disjoint buf ∧ iv.Disjoint ctx ∧ iv.Disjoint buf ∧ ctx.Disjoint buf ∧
       args.Disjoint ctx ∧ args.Disjoint buf ∧ ret.Disjoint ctx ∧ ret.Disjoint buf ∧
       stack.Disjoint key ∧ stack.Disjoint iv ∧ stack.Disjoint ctx ∧ stack.Disjoint buf ∧
       (arg s 0).toNat + (arg s 1).toNat ≤ 2 ^ 32 ∧ (arg s 3).toNat + (arg s 4).toNat ≤ 2 ^ 32 ∧
       (arg s 5).toNat + 144 ≤ 2 ^ 32 ∧ (arg s 6).toNat + 576 ≤ 2 ^ 32 ∧
-      24 ≤ (s.gpr .esp).toNat ∧ (s.gpr .esp).toNat + 32 ≤ 2 ^ 32
+      k ≤ (s.gpr .esp).toNat ∧ (s.gpr .esp).toNat + 32 ≤ 2 ^ 32
   post s s' :=
     ∀ direction, match Spec.Rc2.initWithEffectiveBits
         (Spec.Rc2.bytesAt s.mem ((arg s 0).setWidth 64) (arg s 1).toNat)
@@ -151,6 +152,10 @@ def initContract : Contract isa where
       | .ok c => BitVec.setWidth 32 (s'.gpr .edx ++ s'.gpr .eax) = 0 ∧ Spec.Rc2.contextAt s'.mem ((arg s 5).setWidth 64) direction 0 = c
       | .error e => (BitVec.setWidth 32 (s'.gpr .edx ++ s'.gpr .eax)).toNat = e.code
   pub s₁ s₂ := s₁.gpr .esp = s₂.gpr .esp ∧ ∀ i < 7, arg s₁ i = arg s₂ i
+
+/-- `init`'s contract with the baseline's key expansion, which uses no stack:
+24 bytes, the frame of the call's arguments and its return address. -/
+def initContract : Contract isa := initContractS 24
 
 end VG.Proof.Rc2.X86.Stream
 
@@ -237,6 +242,23 @@ theorem pre_of {s₀ : State} (h : initContract.pre s₀) : Pre s₀ := by
   obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h17, h18, h19, h20,
     h21⟩ := h
   exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h17, h18, h19, h20, h21⟩
+
+/-- The stack below `init`'s own 24 bytes, for a key expansion that uses `n` bytes of it. -/
+structure Deep (n : Nat) (s₀ : State) : Prop where
+  lo : 24 + n ≤ (E s₀).toNat
+  c : (below (E s₀) (24 + n)).Disjoint (ctxR s₀)
+  s : (below (E s₀) (24 + n)).Disjoint (scR s₀)
+
+theorem pre_mono {n : Nat} {s₀ : State} (h : (initContractS (24 + n)).pre s₀) : initContract.pre s₀ := by
+  obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h17, h18, h19, h20,
+    h21⟩ := h
+  have sub : Region.Sub (below (s₀.gpr .esp) 24) (below (s₀.gpr .esp) (24 + n)) :=
+    below_sub (Nat.le_add_right _ _) h20
+  exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12.sub_left sub, h13.sub_left sub, h14.sub_left sub,
+    h15.sub_left sub, h16, h17, h18, h19, by omega_using [h20], h21⟩
+
+theorem deep_of {n : Nat} {s₀ : State} (h : (initContractS (24 + n)).pre s₀) : Deep n s₀ :=
+  ⟨h.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1, h.2.2.2.2.2.2.2.2.2.2.2.2.2.1, h.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1⟩
 
 theorem cv_sub {s₀ : State} : Region.Sub (cvR s₀) (ctxR s₀) := Offset.sub_base _ (by decide)
 theorem sch_sub {s₀ : State} : Region.Sub (schR s₀) (ctxR s₀) := Region.sub_prefix (by decide)
@@ -535,7 +557,11 @@ end
 # Streaming RC2-CBC on x86 (32-bit): `init` is correct
 
 The call of the verified key expansion (`keyCall_ok`) and `init_correct`: the
-error code for invalid lengths, and otherwise the context.
+error code for invalid lengths, and otherwise the context. Both are for any
+key expansion `K` that meets `keyContract` with `n` bytes of stack (`KeyFn n`,
+`Proof/Rc2/X86/Key.lean`): the baseline's (`baseKey`), which uses none, and
+the one that reads PITABLE by `pshufb` (`Proof/Rc2/X86/Ssse3Key.lean`), which
+uses four, below the 24 of the call's frame (`Deep n`).
 -/
 
 namespace VG.Proof.Rc2.X86.Stream.Init
@@ -548,6 +574,15 @@ theorem key_nosp : NoSp Impl.Rc2.X86.expandKey := NoSp.of_all (by lit_decide)
 
 theorem key_stack : stackUse Impl.Rc2.X86.expandKey = 0 := by decide
 
+/-- The baseline's key expansion, which uses no stack. -/
+def baseKey : KeyFn 0 where
+  name := "vg_rc2_expand_key"
+  code := Impl.Rc2.X86.expandKey
+  correct s h := key_body_correct s h.1
+  ct s₁ s₂ t₁ t₂ u₁ u₂ h₁ h₂ := expandKey_constantTime s₁ s₂ t₁ t₂ u₁ u₂ h₁.1 h₂.1
+  nosp := key_nosp
+  stack := key_stack
+
 def callRd (s₀ s : State) : List Region := [keyR s₀, ⟨argAddr (pushed rs5 s).callEntry 0, 20⟩]
 def callWr (s₀ : State) : List Region := [schR s₀, ⟨sA s₀, 512⟩]
 
@@ -558,11 +593,11 @@ theorem setWidth_append (a b : BitVec 32) : BitVec.setWidth 32 (a ++ b) = b := b
   omega_using []
 
 /-- What the call of `vg_rc2_expand_key(key, key_len, effective_bits, ctx, scratch)` needs. -/
-theorem keyCallPre_ok {s₀ s : State} (hp : Pre s₀) (hk : 1 ≤ kl s₀ ∧ kl s₀ ≤ 128)
+theorem keyCallPre_ok {n : Nat} {s₀ s : State} (hp : Pre s₀) (hd : Deep n s₀) (hk : 1 ≤ kl s₀ ∧ kl s₀ ≤ 128)
     (he : 1 ≤ eb s₀ ∧ eb s₀ ≤ 1024) (hc : Common s₀ s)
     (eax : s.gpr .eax = key s₀) (ecx : s.gpr .ecx = arg s₀ 1) (edx : s.gpr .edx = arg s₀ 2)
     (esi : s.gpr .esi = ctx s₀) (ebx : s.gpr .ebx = scr s₀) :
-    VG.X86.CallPre keyContract rs5 (callRd s₀ s) (callWr s₀) s := by
+    VG.X86.CallPre (keyContractS n) rs5 (callRd s₀ s) (callWr s₀) s := by
   have hlo := hp.sp_lo
   have hEf := hp.sp_fit
   have hesp : s.gpr .esp = E s₀ := hc.esp
@@ -584,19 +619,23 @@ theorem keyCallPre_ok {s₀ s : State} (hp : Pre s₀) (hk : 1 ≤ kl s₀ ∧ k
     rw [show E s₀ - BitVec.ofNat 32 24 = E s₀ - BitVec.ofNat 32 20 - BitVec.ofNat 32 4 by
       rw [← VG.Offset.sub_add_eq]; rfl]
     exact this
+  obtain kN : Region.Sub (below (E s₀ - BitVec.ofNat 32 24) n) (below (E s₀) (24 + n)) :=
+    below_inner (sp := E s₀) (a := n) (b := 24 + n) (k := 24) (by omega_using []) hd.lo
   obtain bS : Region.Sub ⟨sA s₀, 512⟩ (scR s₀) := Region.sub_prefix (by decide)
   obtain wr : s.wr = [ctxR s₀, scR s₀] := hc.wr.trans hp.wr
   obtain rd : s.rd = [keyR s₀, ivR s₀, argR s₀] := hc.rd.trans hp.rd
   have sing {r r' : Region} (h : r.Disjoint r') : ∀ x ∈ [r'], r.Disjoint x := fun x hx => by
     simp only [List.mem_singleton] at hx; subst hx; exact h
   refine ⟨?_, ?_, ?_⟩
-  · simp only [keyContract, callRd, callWr, State.withRegions_rd, State.withRegions_wr, State.withRegions_gpr,
-      arg_withRegions, argAddr_withRegions, a0, a1, a2, a3, a4, eA, eSp, addr32]
-    refine ⟨trivial, trivial, hp.k_c.sub_right sch_sub, hp.k_s.sub_right bS,
+  · simp only [keyContractS, keyContract, callRd, callWr, State.withRegions_rd, State.withRegions_wr,
+      State.withRegions_gpr, arg_withRegions, argAddr_withRegions, a0, a1, a2, a3, a4, eA, eSp, addr32]
+    refine ⟨⟨trivial, trivial, hp.k_c.sub_right sch_sub, hp.k_s.sub_right bS,
       (hp.c_s.sub_left sch_sub).sub_right bS, (hp.t_c.sub_left kA').sub_right sch_sub,
       (hp.t_s.sub_left kA').sub_right bS, (hp.t_c.sub_left kR).sub_right sch_sub,
       (hp.t_s.sub_left kR).sub_right bS, hp.k_fit, by have := hp.c_fit; omega_using [this],
-      by have := hp.s_fit; omega_using [this], by rw [sub_toNat (by omega_using [hlo])]; omega_using [], hk.1, hk.2, he.1, he.2⟩
+      by have := hp.s_fit; omega_using [this], by rw [sub_toNat (by omega_using [hlo])]; omega_using [], hk.1, hk.2, he.1, he.2⟩,
+      by rw [sub_toNat (by omega_using [hlo])]; have := hd.lo; omega_using [this],
+      (hd.c.sub_left kN).sub_right sch_sub, (hd.s.sub_left kN).sub_right bS⟩
   · refine Covers.of_sub fun r hr => ?_
     simp only [callRd, callWr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil,
       or_false] at hr
@@ -613,15 +652,16 @@ theorem keyCallPre_ok {s₀ s : State} (hp : Pre s₀) (hk : 1 ≤ kl s₀ ∧ k
     · exact ⟨scR s₀, by simp [wr], 0, (BitVec.add_zero _).symm, Nat.le_of_ble_eq_true rfl⟩
 
 /-- The call of `vg_rc2_expand_key(key, key_len, effective_bits, ctx, scratch)`. -/
-theorem keyCall_ok {s₀ s : State} (hp : Pre s₀) (hk : 1 ≤ kl s₀ ∧ kl s₀ ≤ 128)
+theorem keyCall_ok {n : Nat} (K : KeyFn n) {s₀ s : State} (hp : Pre s₀) (hd : Deep n s₀)
+    (hk : 1 ≤ kl s₀ ∧ kl s₀ ≤ 128)
     (he : 1 ≤ eb s₀ ∧ eb s₀ ≤ 1024) (hc : Common s₀ s)
     (eax : s.gpr .eax = key s₀) (ecx : s.gpr .ecx = arg s₀ 1) (edx : s.gpr .edx = arg s₀ 2)
     (esi : s.gpr .esi = ctx s₀) (ebx : s.gpr .ebx = scr s₀) {Q : State → Prop}
     (hQ : ∀ s', s'.rd = s.rd → s'.wr = s.wr → (∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) →
-      Frame [schR s₀, ⟨sA s₀, 512⟩, stkR s₀] s.mem s'.mem →
+      Frame [schR s₀, ⟨sA s₀, 512⟩, below (E s₀) (24 + n)] s.mem s'.mem →
       Spec.Rc2.scheduleAt s'.mem (cA s₀) =
         Spec.Rc2.expandKey (Spec.Rc2.bytesAt s₀.mem (kA s₀) (kl s₀)) (eb s₀) → Q s') :
-    WP isa keyCall s Q := by
+    WP isa (call5 K.name K.code) s Q := by
   have hlo := hp.sp_lo
   have hEf := hp.sp_fit
   have hesp : s.gpr .esp = E s₀ := hc.esp
@@ -638,13 +678,13 @@ theorem keyCall_ok {s₀ s : State} (hp : Pre s₀) (hk : 1 ≤ kl s₀ ∧ kl s
   obtain a3 : arg (pushed rs5 s).callEntry 3 = ctx s₀ := by rw [callEntry_arg fit hrs (by simp)]; exact esi
   have sing {r r' : Region} (h : r.Disjoint r') : ∀ x ∈ [r'], r.Disjoint x := fun x hx => by
     simp only [List.mem_singleton] at hx; subst hx; exact h
-  refine WP.callWith (k := keyContract) key_body_correct key_nosp (by simp) hrs
-    (by rw [key_stack, hesp]; simp only [List.length_cons, List.length_nil]; have := hp.sp_lo; omega_using [hlo])
-    (keyCallPre_ok hp hk he hc eax ecx edx esi ebx) fun s' rd' wr' cs f ⟨s₂, m₂, post⟩ => ?_
+  refine WP.callWith (k := keyContractS n) K.correct K.nosp (by simp) hrs
+    (by rw [K.stack, hesp]; simp only [List.length_cons, List.length_nil]; have := hd.lo; omega_using [this])
+    (keyCallPre_ok hp hd hk he hc eax ecx edx esi ebx) fun s' rd' wr' cs f ⟨s₂, m₂, post⟩ => ?_
   · have ce := callEntry_frame fit hrs
     obtain kE : Region.Sub (below (s.gpr .esp) (4 * rs5.length + 4)) (stkR s₀) := by
       rw [hesp]; exact fun _ h => h
-    simp only [keyContract, arg_withRegions, State.withRegions_mem, a0, a1, a2, a3, addr32] at post
+    simp only [keyContractS, keyContract, arg_withRegions, State.withRegions_mem, a0, a1, a2, a3, addr32] at post
     -- The pop loses the arguments' frame, below `esp`, apart from the schedule.
     have fL : Frame [stkR s₀] s₂.mem s'.mem := m₂.sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
@@ -661,8 +701,9 @@ theorem keyCall_ok {s₀ s : State} (hp : Pre s₀) (hk : 1 ≤ kl s₀ ∧ kl s
     rcases hr with rfl | rfl | rfl
     · exact ⟨schR s₀, by simp, fun _ h => h⟩
     · exact ⟨⟨sA s₀, 512⟩, by simp, fun _ h => h⟩
-    · refine ⟨stkR s₀, by simp, ?_⟩
-      rw [key_stack, hesp]; exact fun _ h => h
+    · refine ⟨below (E s₀) (24 + n), by simp, ?_⟩
+      rw [K.stack, hesp]
+      exact below_sub (by simp only [List.length_cons, List.length_nil]; omega_using []) hd.lo
 
 theorem code_err {s₀ : State} (h : code s₀ ≠ 0) :
     code s₀ = (if ¬(1 ≤ kl s₀ ∧ kl s₀ ≤ 128) then 1 else if ¬(1 ≤ eb s₀ ∧ eb s₀ ≤ 1024) then 2 else 3) ∧
@@ -680,10 +721,11 @@ theorem code_ok {s₀ : State} (h : code s₀ = 0) :
 theorem code_lt (s₀ : State) : code s₀ < 4 := by
   unfold code; split <;> [skip; split <;> [skip; split]] <;> decide
 
-theorem init_correct (s₀ : State) (hs : initContract.pre s₀) :
-    WP isa init s₀ (fun s' => abiPreserved s₀ s' ∧ initContract.post s₀ s') := by
-  obtain hp := pre_of hs
-  rw [init]
+theorem init_correct {n : Nat} (K : KeyFn n) (s₀ : State) (hs : (initContractS (24 + n)).pre s₀) :
+    WP isa (initWith K.name K.code) s₀ (fun s' => abiPreserved s₀ s' ∧ (initContractS (24 + n)).post s₀ s') := by
+  obtain hp := pre_of (pre_mono hs)
+  obtain hD := deep_of hs
+  rw [initWith]
   refine WP.seq (checks_ok hp fun s c m a b e => ?_)
   refine WP.seq (wp_test fun s₁ f₁ hz => WP.block_nil ?_)
   obtain hz' : s₁.zf = some (decide (code s₀ = 0)) := by
@@ -705,13 +747,13 @@ theorem init_correct (s₀ : State) (hs : initContract.pre s₀) :
       exact hcode
   · have h0 : code s₀ = 0 := of_decide_eq_true (by revert hb; cases decide (code s₀ = 0) <;> simp)
     obtain ⟨hk, he, hi⟩ := code_ok h0
-    rw [initBody]
     refine WP.seq (initArgs_ok hp hi c₁ (by rw [f₁.mem, m]) (by rw [f₁.gpr]; exact b) (by rw [f₁.gpr]; exact e)
       fun t ct ea ec ed es eb' cv w₁ w₂ => ?_)
-    refine WP.seq (keyCall_ok hp hk he ct ea ec ed es eb' fun s' rd' wr' cs f sch => ?_)
+    refine WP.seq (keyCall_ok K hp hD hk he ct ea ec ed es eb' fun s' rd' wr' cs f sch => ?_)
     obtain bS : Region.Sub ⟨sA s₀, 512⟩ (scR s₀) := Region.sub_prefix (by decide)
-    have sep3 {r : Region} (h₁ : r.Disjoint (schR s₀)) (h₂ : r.Disjoint ⟨sA s₀, 512⟩) (h₃ : r.Disjoint (stkR s₀)) :
-        ∀ x ∈ [schR s₀, ⟨sA s₀, 512⟩, stkR s₀], r.Disjoint x := by
+    have sep3 {r : Region} (h₁ : r.Disjoint (schR s₀)) (h₂ : r.Disjoint ⟨sA s₀, 512⟩)
+        (h₃ : r.Disjoint (below (E s₀) (24 + n))) :
+        ∀ x ∈ [schR s₀, ⟨sA s₀, 512⟩, below (E s₀) (24 + n)], r.Disjoint x := by
       simp only [List.mem_cons, List.not_mem_nil, or_false]
       rintro x (rfl | rfl | rfl)
       exacts [h₁, h₂, h₃]
@@ -720,7 +762,7 @@ theorem init_correct (s₀ : State) (hs : initContract.pre s₀) :
       refine f.readW (Region.contains_self _ _) (sep3 ?_ ?_ ?_) (by decide)
       · exact (hp.c_s.sub_left sch_sub).symm.sub_left (hp.scr_sub hd')
       · rw [hp.scr_addr hd']; exact Offset.disjoint_base _ hd (by omega_using [hd'])
-      · exact hp.t_s.symm.sub_left (hp.scr_sub hd')
+      · exact hD.s.symm.sub_left (hp.scr_sub hd')
     have scIn (d : Nat) (hd : d + 4 ≤ 576) : InRegions (s'.rd ++ s'.wr) (addr (scr s₀) d) 4 := by
       rw [wr', ct.wr, hp.wr, hp.scr_addr hd]
       exact ⟨scR s₀, by simp, Offset.contains_base _ hd (by omega_using [hd])⟩
@@ -744,9 +786,10 @@ theorem init_correct (s₀ : State) (hs : initContract.pre s₀) :
       · rw [g _ (by decide) (by decide) (by decide) (by decide)]; exact ct.edi
       · rw [g _ (by decide) (by decide) (by decide) (by decide)]; exact ct.ebp
       · rw [g _ (by decide) (by decide) (by decide) (by decide)]; exact ct.esp
-    · have retStk : (retR s₀).Disjoint (stkR s₀) := by
-        show Region.Disjoint ⟨(E s₀).setWidth 64, 4⟩ ⟨(E s₀ - BitVec.ofNat 32 24).setWidth 64, 24⟩
-        rw [Taint.sub_setWidth hp.sp_lo]; exact Offset.base_disjoint_below _ (by decide)
+    · have retStk : (retR s₀).Disjoint (below (E s₀) (24 + n)) := by
+        show Region.Disjoint ⟨(E s₀).setWidth 64, 4⟩ ⟨(E s₀ - BitVec.ofNat 32 (24 + n)).setWidth 64, 24 + n⟩
+        rw [Taint.sub_setWidth hD.lo]
+        exact Offset.base_disjoint_below _ (by have h₁ := hD.lo; have h₂ := (E s₀).isLt; omega_using [h₁, h₂])
       rw [mem, f.readW (Region.contains_self _ _) (sep3 (hp.r_c.sub_right sch_sub) (hp.r_s.sub_right bS) retStk)
         (by decide)]
       refine ct.frame.readW (Region.contains_self _ _) (fun r hr => ?_) (by decide)
@@ -760,7 +803,7 @@ theorem init_correct (s₀ : State) (hs : initContract.pre s₀) :
       · rw [mem]; exact sch
       · show Spec.Rc2.blockAt s₄.mem (cA s₀ + BitVec.ofNat 64 128) = _
         rw [mem, Proof.Rc2.blockAt_frame f _ (sep3 sch_cv.symm ((hp.c_s.sub_left cv_sub).sub_right bS)
-          (hp.t_c.sub_right cv_sub).symm)]
+          (hD.c.sub_right cv_sub).symm)]
         exact cv
 
 end VG.Proof.Rc2.X86.Stream.Init
@@ -821,7 +864,7 @@ section
 # Streaming RC2-CBC on x86 (32-bit): the shared contracts
 
 The shared contract (`Proof.Rc2.cbcInitScratchContract`) lets the code
-write its arguments; `wideInit` is the per-target contract with that
+write its arguments; `wideInitS` is the per-target contract with that
 permission, which implies the shared one. `narrow*` drop it again, for the
 proofs against `initContract`.
 -/
@@ -830,9 +873,9 @@ namespace VG.Proof.Rc2.X86.Stream
 
 open VG VG.X86
 
-/-- `initContract`, with the arguments writable. -/
-def wideInit : Contract isa :=
-  { initContract with
+/-- `initContractS k`, with the arguments writable. -/
+def wideInitS (k : Nat) : Contract isa :=
+  { initContractS k with
     pre := fun s =>
       let key : Region := ⟨(arg s 0).setWidth 64, (arg s 1).toNat⟩
       let iv : Region := ⟨(arg s 3).setWidth 64, (arg s 4).toNat⟩
@@ -840,14 +883,14 @@ def wideInit : Contract isa :=
       let buf : Region := ⟨(arg s 6).setWidth 64, 576⟩
       let args : Region := ⟨argAddr s 0, 28⟩
       let ret : Region := ⟨(s.gpr .esp).setWidth 64, 4⟩
-      let stack := below (s.gpr .esp) 24
+      let stack := below (s.gpr .esp) k
       s.rd = [key, iv] ∧ s.wr = [ctx, buf, args] ∧
         key.Disjoint ctx ∧ key.Disjoint buf ∧ iv.Disjoint ctx ∧ iv.Disjoint buf ∧ ctx.Disjoint buf ∧
         args.Disjoint ctx ∧ args.Disjoint buf ∧ ret.Disjoint ctx ∧ ret.Disjoint buf ∧
         stack.Disjoint key ∧ stack.Disjoint iv ∧ stack.Disjoint ctx ∧ stack.Disjoint buf ∧
         (arg s 0).toNat + (arg s 1).toNat ≤ 2 ^ 32 ∧ (arg s 3).toNat + (arg s 4).toNat ≤ 2 ^ 32 ∧
         (arg s 5).toNat + 144 ≤ 2 ^ 32 ∧ (arg s 6).toNat + 576 ≤ 2 ^ 32 ∧
-        24 ≤ (s.gpr .esp).toNat ∧ (s.gpr .esp).toNat + 32 ≤ 2 ^ 32 }
+        k ≤ (s.gpr .esp).toNat ∧ (s.gpr .esp).toNat + 32 ≤ 2 ^ 32 }
 
 /-- `init(0x1000, 1, 8, 0x2000, 8, 0x3000, 0x4000)`. -/
 def initSat : State where
@@ -879,19 +922,34 @@ tactic_template "wide_pre " "[" ls:Lean.Parser.Tactic.simpLemma,* "]" : tactic =
            | with_reducible assumption
            | with_reducible exact Region.Disjoint.symm ‹_›)))
 
-theorem init_implies : wideInit.Implies (Proof.Rc2.cbcInitScratchContract abi 24) where
+theorem init_implies : (wideInitS 24).Implies (Proof.Rc2.cbcInitScratchContract abi 24) where
   pre := by
     wide_pre [Proof.Rc2.cbcInitScratchContract, Proof.Rc2.cbcInitScratchSig, Spec.Rc2.cbcInitPost, abi, argSlots, argVal, argBytes,
-      wideInit, initContract, below]
+      wideInitS, initContractS, below]
   post := by
     sig_implies_post [Proof.Rc2.cbcInitScratchContract, Proof.Rc2.cbcInitScratchSig, Spec.Rc2.cbcInitPost, abi, argSlots, argVal, argBytes,
-      wideInit, initContract, below]
+      wideInitS, initContractS, below]
   pub := by
     sig_implies_pub [Proof.Rc2.cbcInitScratchContract, Proof.Rc2.cbcInitScratchSig, Spec.Rc2.cbcInitPost, abi, argSlots, argVal, argBytes,
-      wideInit, initContract, below]
+      wideInitS, initContractS, below]
   sat := by
     sig_implies_sat [Proof.Rc2.cbcInitScratchContract, Proof.Rc2.cbcInitScratchSig, Spec.Rc2.cbcInitPost, abi, argSlots, argVal, argBytes,
-      wideInit, initContract, below] [initSat, arg, argAddr, Mem.readW, Mem.read] using initSat
+      wideInitS, initContractS, below] [initSat, arg, argAddr, Mem.readW, Mem.read] using initSat
+
+/-- For a key expansion that uses four bytes of stack. -/
+theorem init_implies28 : (wideInitS 28).Implies (Proof.Rc2.cbcInitScratchContract abi 28) where
+  pre := by
+    wide_pre [Proof.Rc2.cbcInitScratchContract, Proof.Rc2.cbcInitScratchSig, Spec.Rc2.cbcInitPost, abi, argSlots, argVal, argBytes,
+      wideInitS, initContractS, below]
+  post := by
+    sig_implies_post [Proof.Rc2.cbcInitScratchContract, Proof.Rc2.cbcInitScratchSig, Spec.Rc2.cbcInitPost, abi, argSlots, argVal, argBytes,
+      wideInitS, initContractS, below]
+  pub := by
+    sig_implies_pub [Proof.Rc2.cbcInitScratchContract, Proof.Rc2.cbcInitScratchSig, Spec.Rc2.cbcInitPost, abi, argSlots, argVal, argBytes,
+      wideInitS, initContractS, below]
+  sat := by
+    sig_implies_sat [Proof.Rc2.cbcInitScratchContract, Proof.Rc2.cbcInitScratchSig, Spec.Rc2.cbcInitPost, abi, argSlots, argVal, argBytes,
+      wideInitS, initContractS, below] [initSat, arg, argAddr, Mem.readW, Mem.read] using initSat
 
 end VG.Proof.Rc2.X86.Stream
 
@@ -911,7 +969,8 @@ namespace VG.Proof.Rc2.X86.Stream.Init
 
 open VG VG.X86 VG.X86.Wp VG.Impl.Rc2.X86.Stream
 
-def Rel (s₁ s₂ : State) : Prop := initContract.pre s₁ ∧ initContract.pre s₂ ∧ initContract.pub s₁ s₂
+def Rel (n : Nat) (s₁ s₂ : State) : Prop :=
+  (initContractS (24 + n)).pre s₁ ∧ (initContractS (24 + n)).pre s₂ ∧ (initContractS (24 + n)).pub s₁ s₂
 
 theorem Pre.disj {s₀ s : State} (hp : Pre s₀) (hc : Common s₀ s) :
     ∀ r ∈ s.wr, Region.Disjoint ⟨(s.gpr .esp).setWidth 64, 4⟩ r ∧ Region.Disjoint ⟨argAddr s 0, 28⟩ r := by
@@ -925,10 +984,10 @@ theorem Pre.disj {s₀ s : State} (hp : Pre s₀) (hc : Common s₀ s) :
 theorem arg_eq {s₀ s : State} (hc : Common s₀ s) (hm : s.mem = s₀.mem) (i : Nat) : arg s i = arg s₀ i := by
   unfold arg argAddr; rw [hc.esp, hm]
 
-theorem agree_mid {σ₁ σ₂ s₁ s₂ : State} (h : Rel σ₁ σ₂) (c₁ : Common σ₁ s₁) (c₂ : Common σ₂ s₂)
+theorem agree_mid {n : Nat} {σ₁ σ₂ s₁ s₂ : State} (h : Rel n σ₁ σ₂) (c₁ : Common σ₁ s₁) (c₂ : Common σ₂ s₂)
     (m₁ : s₁.mem = σ₁.mem) (m₂ : s₂.mem = σ₂.mem) : VG.X86.Taint.Agree τ0 s₁ s₂ := by
-  have hp₁ := pre_of h.1
-  have hp₂ := pre_of h.2.1
+  have hp₁ := pre_of (pre_mono h.1)
+  have hp₂ := pre_of (pre_mono h.2.1)
   refine τ0_agree (by rw [c₁.esp]; exact hp₁.sp_fit) (by rw [c₂.esp]; exact hp₂.sp_fit) (hp₁.disj c₁)
     (hp₂.disj c₂) (by rw [c₁.esp, c₂.esp]; exact h.2.2.1) fun i hi => ?_
   rw [arg_eq c₁ m₁, arg_eq c₂ m₂]; exact h.2.2.2 i hi
@@ -959,13 +1018,13 @@ structure Args (s₀ s : State) : Prop where
   esi : s.gpr .esi = ctx s₀
   ebx : s.gpr .ebx = scr s₀
 
-def CheckedRel (s₁ s₂ : State) : Prop := ∃ σ₁ σ₂, Rel σ₁ σ₂ ∧ Checked σ₁ s₁ ∧ Checked σ₂ s₂
+def CheckedRel (n : Nat) (s₁ s₂ : State) : Prop := ∃ σ₁ σ₂, Rel n σ₁ σ₂ ∧ Checked σ₁ s₁ ∧ Checked σ₂ s₂
 
-def ArgsRel (s₁ s₂ : State) : Prop := ∃ σ₁ σ₂, Rel σ₁ σ₂ ∧ code σ₁ = 0 ∧ Args σ₁ s₁ ∧ Args σ₂ s₂
+def ArgsRel (n : Nat) (s₁ s₂ : State) : Prop := ∃ σ₁ σ₂, Rel n σ₁ σ₂ ∧ code σ₁ = 0 ∧ Args σ₁ s₁ ∧ Args σ₂ s₂
 
-theorem args_ct :
-    RelCT isa (fun s₁ s₂ => CheckedRel s₁ s₂ ∧ isa.eval .ne s₁ = some false) (.block initArgs) ArgsRel := by
-  have ct : RelCT isa (fun s₁ s₂ => CheckedRel s₁ s₂ ∧ isa.eval .ne s₁ = some false) (.block initArgs)
+theorem args_ct {n : Nat} :
+    RelCT isa (fun s₁ s₂ => CheckedRel n s₁ s₂ ∧ isa.eval .ne s₁ = some false) (.block initArgs) (ArgsRel n) := by
+  have ct : RelCT isa (fun s₁ s₂ => CheckedRel n s₁ s₂ ∧ isa.eval .ne s₁ = some false) (.block initArgs)
       (fun _ _ => True) := by
     refine RelCT.taint (A := taint) τ0 (fun s₁ s₂ h => ?_) (by taint_decide)
     obtain ⟨⟨σ₁, σ₂, hσ, k₁, k₂⟩, -⟩ := h
@@ -975,14 +1034,14 @@ theorem args_ct :
     rw [z] at this
     exact of_decide_eq_true (by revert this; cases decide (code _ = 0) <;> simp)
   have h : ∀ σ : State × State, RelCT isa (fun s₁ s₂ =>
-      (CheckedRel s₁ s₂ ∧ isa.eval .ne s₁ = some false) ∧ Rel σ.1 σ.2 ∧ Checked σ.1 s₁ ∧ Checked σ.2 s₂ ∧
-        code σ.1 = 0) (.block initArgs) ArgsRel := fun σ => by
+      (CheckedRel n s₁ s₂ ∧ isa.eval .ne s₁ = some false) ∧ Rel n σ.1 σ.2 ∧ Checked σ.1 s₁ ∧ Checked σ.2 s₂ ∧
+        code σ.1 = 0) (.block initArgs) (ArgsRel n) := fun σ => by
     refine ((ct.mono (fun _ _ h => h.1) (fun _ _ h => h)).wp
-      (F₁ := fun (s : State) => Rel σ.1 σ.2 ∧ code σ.1 = 0 ∧ Args σ.1 s) (F₂ := Args σ.2) fun s₁ s₂ h => ?_).mono
+      (F₁ := fun (s : State) => Rel n σ.1 σ.2 ∧ code σ.1 = 0 ∧ Args σ.1 s) (F₂ := Args σ.2) fun s₁ s₂ h => ?_).mono
       (fun _ _ h => h) fun _ _ h => ⟨σ.1, σ.2, h.2.1.1, h.2.1.2.1, h.2.1.2.2, h.2.2⟩
     obtain ⟨-, hσ, k₁, k₂, h0⟩ := h
-    have hp₁ := pre_of hσ.1
-    have hp₂ := pre_of hσ.2.1
+    have hp₁ := pre_of (pre_mono hσ.1)
+    have hp₂ := pre_of (pre_mono hσ.2.1)
     have h0' : code σ.2 = 0 := (code_eq hσ.2.2.2).symm.trans h0
     exact ⟨initArgs_ok hp₁ (code_ok h0).2.2 k₁.common k₁.mem k₁.ebx k₁.esi
         fun t c ea ec ed es eb _ _ _ => ⟨hσ, h0, c, ea, ec, ed, es, eb⟩,
@@ -992,15 +1051,18 @@ theorem args_ct :
   obtain ⟨⟨σ₁, σ₂, hσ, k₁, k₂⟩, z⟩ := hh
   exact ⟨(σ₁, σ₂), ⟨⟨σ₁, σ₂, hσ, k₁, k₂⟩, z⟩, hσ, k₁, k₂, code0 k₁ z⟩
 
-theorem call_ct : RelCT isa ArgsRel keyCall (fun s₁ s₂ => s₁.gpr .ebx = s₂.gpr .ebx) := by
+theorem call_ct {n : Nat} (K : KeyFn n) :
+    RelCT isa (ArgsRel n) (call5 K.name K.code) (fun s₁ s₂ => s₁.gpr .ebx = s₂.gpr .ebx) := by
   rintro s₁ s₂ t₁ t₂ u₁ u₂ ⟨σ₁, σ₂, ⟨h₁, h₂, sp, args⟩, h0, a₁, a₂⟩ e₁ e₂
-  have hp₁ := pre_of h₁
-  have hp₂ := pre_of h₂
+  have hp₁ := pre_of (pre_mono h₁)
+  have hp₂ := pre_of (pre_mono h₂)
+  have hd₁ := deep_of h₁
+  have hd₂ := deep_of h₂
   have h0' : code σ₂ = 0 := (code_eq args).symm.trans h0
   obtain ⟨hk₁, he₁, -⟩ := code_ok h0
   obtain ⟨hk₂, he₂, -⟩ := code_ok h0'
-  have pre₁ := keyCallPre_ok hp₁ hk₁ he₁ a₁.common a₁.eax a₁.ecx a₁.edx a₁.esi a₁.ebx
-  have pre₂ := keyCallPre_ok hp₂ hk₂ he₂ a₂.common a₂.eax a₂.ecx a₂.edx a₂.esi a₂.ebx
+  have pre₁ := keyCallPre_ok hp₁ hd₁ hk₁ he₁ a₁.common a₁.eax a₁.ecx a₁.edx a₁.esi a₁.ebx
+  have pre₂ := keyCallPre_ok hp₂ hd₂ hk₂ he₂ a₂.common a₂.eax a₂.ecx a₂.edx a₂.esi a₂.ebx
   have fit (s : State) (σ : State) (hp : Pre σ) (c : Common σ s) : 4 * rs5.length + 4 ≤ (s.gpr .esp).toNat := by
     rw [c.esp]; simp only [List.length_cons, List.length_nil]; have := hp.sp_lo; omega_arith
   have hrs : Reg.esp ∉ rs5 := by decide
@@ -1009,8 +1071,8 @@ theorem call_ct : RelCT isa ArgsRel keyCall (fun s₁ s₂ => s₁.gpr .ebx = s�
     simp only [callRd, callEntry_argAddr0, esp, keyR, kA, kl, key, args 0 (by decide), args 1 (by decide)]
   have wr : callWr σ₂ = callWr σ₁ := by
     simp only [callWr, schR, cA, sA, ctx, scr, args 5 (by decide), args 6 (by decide)]
-  have ct : RelCT isa (fun a b => a = s₁ ∧ b = s₂) keyCall (fun _ _ => True) := by
-    apply RelCT.callWith key_body_correct expandKey_constantTime (callRd σ₁ s₁) (callWr σ₁)
+  have ct : RelCT isa (fun a b => a = s₁ ∧ b = s₂) (call5 K.name K.code) (fun _ _ => True) := by
+    apply RelCT.callWith (k := keyContractS n) K.correct K.ct (callRd σ₁ s₁) (callWr σ₁)
     intro a b hab
     rw [hab.1, hab.2]
     refine ⟨pre₁, by rw [← rd, ← wr]; exact pre₂, esp, ?_, ?_⟩
@@ -1028,29 +1090,29 @@ theorem call_ct : RelCT isa ArgsRel keyCall (fun s₁ s₂ => s₁.gpr .ebx = s�
   obtain ⟨ht, -, b₁, b₂⟩ := (ct.wp (F₁ := fun (s : State) => s.gpr .ebx = scr σ₁) (F₂ := fun (s : State) => s.gpr .ebx = scr σ₂)
     fun a b ⟨ha, hb⟩ => by
       subst ha hb
-      exact ⟨keyCall_ok hp₁ hk₁ he₁ a₁.common a₁.eax a₁.ecx a₁.edx a₁.esi a₁.ebx
+      exact ⟨keyCall_ok K hp₁ hd₁ hk₁ he₁ a₁.common a₁.eax a₁.ecx a₁.edx a₁.esi a₁.ebx
           fun s' _ _ cs _ _ => (cs .ebx (by simp [calleeSaved])).trans a₁.ebx,
-        keyCall_ok hp₂ hk₂ he₂ a₂.common a₂.eax a₂.ecx a₂.edx a₂.esi a₂.ebx
+        keyCall_ok K hp₂ hd₂ hk₂ he₂ a₂.common a₂.eax a₂.ecx a₂.edx a₂.esi a₂.ebx
           fun s' _ _ cs _ _ => (cs .ebx (by simp [calleeSaved])).trans a₂.ebx⟩) _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂
   exact ⟨ht, show u₁.gpr .ebx = u₂.gpr .ebx by rw [b₁, b₂, scr, scr, args 6 (by decide)]⟩
 
-theorem init_constantTime : ConstantTime isa initContract.pre initContract.pub init := by
+theorem init_constantTime {n : Nat} (K : KeyFn n) :
+    ConstantTime isa (initContractS (24 + n)).pre (initContractS (24 + n)).pub (initWith K.name K.code) := by
   refine RelCT.constantTime (Q := fun _ _ => True) ?_
-  unfold init
+  unfold initWith
   apply RelCT.assoc
-  have hA : RelCT isa Rel (.seq checks (.block [.alu .test .eax (.reg .eax)])) (fun _ _ => True) :=
+  have hA : RelCT isa (Rel n) (.seq checks (.block [.alu .test .eax (.reg .eax)])) (fun _ _ => True) :=
     RelCT.taint (A := taint) τ0 (fun s₁ s₂ h => agree_mid h (Common.refl _) (Common.refl _) rfl rfl)
       (by taint_decide)
-  refine ((hA.wpDep (F := Checked) fun s₁ s₂ (h : Rel s₁ s₂) =>
-    ⟨checked_ok (pre_of h.1), checked_ok (pre_of h.2.1)⟩).mono (fun _ _ h => h)
-      (Q' := CheckedRel) fun _ _ h => h.2).seq ?_
+  refine ((hA.wpDep (F := Checked) fun s₁ s₂ (h : Rel n s₁ s₂) =>
+    ⟨checked_ok (pre_of (pre_mono h.1)), checked_ok (pre_of (pre_mono h.2.1))⟩).mono (fun _ _ h => h)
+      (Q' := CheckedRel n) fun _ _ h => h.2).seq ?_
   apply RelCT.ite
   · rintro s₁ s₂ ⟨σ₁, σ₂, ⟨-, -, -, args⟩, k₁, k₂⟩
     show s₁.zf.map (!·) = s₂.zf.map (!·)
     rw [k₁.zf, k₂.zf, code_eq args]
   · exact RelCT.nil fun _ _ _ => trivial
-  · unfold initBody
-    refine args_ct.seq (call_ct.seq ?_)
+  · refine args_ct.seq ((call_ct K).seq ?_)
     exact RelCT.taint (A := taint) (τr [.ebx])
       (fun _ _ h => agree_regs (fun r hr => by rw [List.mem_singleton.mp hr]; exact h)) (by taint_decide)
 
@@ -1062,7 +1124,7 @@ end
 # Streaming RC2-CBC on x86 (32-bit): `Verified`
 
 `init` meets `initContract`, with its arguments only read; the shared
-contract lets the code write them too (`wideInit`), which
+contract lets the code write them too (`wideInitS`), which
 `Verified.narrowTo` allows, and `init_implies` takes the proof to the shared
 contract.
 -/
@@ -1078,26 +1140,31 @@ def initRd (s : State) : List Region :=
 def initWr (s : State) : List Region := [⟨(arg s 5).setWidth 64, 144⟩, ⟨(arg s 6).setWidth 64, 576⟩]
 
 tactic_template "rc2_stream_narrow" loc:Lean.Parser.Tactic.location : tactic =>
-  `(tactic| simp only [VG.Proof.Rc2.X86.Stream.initContract, VG.Proof.Rc2.X86.Stream.wideInit,
+  `(tactic| simp only [VG.Proof.Rc2.X86.Stream.initContractS, VG.Proof.Rc2.X86.Stream.wideInitS,
                      VG.Proof.Rc2.X86.Stream.initRd, VG.Proof.Rc2.X86.Stream.initWr, VG.X86.arg_withRegions,
                      VG.X86.argAddr_withRegions, VG.X86.State.withRegions_gpr, VG.X86.State.withRegions_mem,
                      VG.X86.State.withRegions_rd, VG.X86.State.withRegions_wr] $loc)
 tactic_template "rc2_stream_narrow" : tactic => `(tactic| rc2_stream_narrow at ⊢)
 
-theorem wideInit_pre (s : State) (h : wideInit.pre s) : initContract.pre (s.withRegions (initRd s) (initWr s)) := by
+theorem wideInit_pre (k : Nat) (s : State) (h : (wideInitS k).pre s) :
+    (initContractS k).pre (s.withRegions (initRd s) (initWr s)) := by
   obtain ⟨_, _, h⟩ := h
   rc2_stream_narrow
   exact ⟨trivial, trivial, h⟩
 
-theorem init_verified : Verified target Impl.Rc2.X86.Stream.init (Proof.Rc2.cbcInitScratchContract abi 24) := by
-  have hsat := init_implies.sat_left
-  have narrowSat : ∃ s, initContract.pre s := by
+/-- `init` over the key expansion `K`, which uses `n` bytes of stack. -/
+theorem init_verifiedS {n : Nat} (K : KeyFn n)
+    (himp : (wideInitS (24 + n)).Implies (Proof.Rc2.cbcInitScratchContract abi (24 + n))) :
+    Verified target (Impl.Rc2.X86.Stream.initWith K.name K.code) (Proof.Rc2.cbcInitScratchContract abi (24 + n)) := by
+  have hsat := himp.sat_left
+  have narrowSat : ∃ s, (initContractS (24 + n)).pre s := by
     obtain ⟨s, hs⟩ := hsat
-    exact ⟨_, wideInit_pre s hs⟩
-  apply Verified.of_implies _ init_implies
+    exact ⟨_, wideInit_pre _ s hs⟩
+  apply Verified.of_implies _ himp
   refine Verified.narrowTo
-    (Verified.of_correct (fun s hs => Init.init_correct s hs) Init.init_constantTime (.refl narrowSat))
-    initRd initWr wideInit_pre ?_ ?_ ?_ ?_ hsat
+    (Verified.of_correct (T := target) (k := initContractS (24 + n)) (fun s hs => Init.init_correct K s hs)
+      (Init.init_constantTime K) (.refl narrowSat))
+    initRd initWr (wideInit_pre _) ?_ ?_ ?_ ?_ hsat
   · intro s h
     obtain ⟨rd, wr, _⟩ := h
     rw [rd, wr]
@@ -1119,6 +1186,9 @@ theorem init_verified : Verified target Impl.Rc2.X86.Stream.init (Proof.Rc2.cbcI
   · intro s₁ s₂ _ _ h
     rc2_stream_narrow
     exact h
+
+theorem init_verified : Verified target Impl.Rc2.X86.Stream.init (Proof.Rc2.cbcInitScratchContract abi 24) :=
+  init_verifiedS Init.baseKey init_implies
 
 end VG.Proof.Rc2.X86.Stream
 

@@ -8,8 +8,10 @@ public import VerifiedGarbage.Impl.Dsa.X86.Generate
 `validate` is `vg_dsa_validate_private_key` (Spec/Dsa/PrevalidatedSign.lean):
 the domain checker's cdecl entry (`Generate.checkEntry`), with the nonce
 field pointing at x, and its public-width dispatch, around the signer's key
-checks (`Validate.publicKey` and `Validate.privateKey`, whose nonce range
-check is then x's): every check signing makes of the key. `sign` is
+checks (`Validate.domain`, the generator's subgroup power and
+`Validate.privateKey`, whose nonce range check is then x's): every check
+signing makes of the key, but the public value's subgroup power, which the
+generator's and `g^x = y` imply (`y^q = (g^q)^x`). `sign` is
 `vg_dsa_sign_prevalidated`, the signer the randomized wrapper calls for a
 validated key: the signer's program with those two checks, and their two
 exponentiations, replaced by rebuilding q−2 and the nonce's range check;
@@ -30,7 +32,8 @@ scratch_len)`: the domain checker's arguments, with x after the public value. -/
 def validateEntry : List Instr := Generate.checkEntry ++ nonceAtX
 
 def validateCompute (pLen qLen : Nat) : Prog isa :=
-  .seq (Validate.publicKey pLen qLen) (Validate.privateKey pLen qLen)
+  .seq (.seq (Validate.domain pLen qLen) (Generate.subgroup pLen qLen))
+    (Validate.privateKey pLen qLen)
 
 def validate : Prog isa := Core.sequence [
   .block validateEntry,

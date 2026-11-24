@@ -6,7 +6,7 @@
 ///
 /// Contract: `VG.Spec.Rc2.cbcInitContract`. Constant time: only the pointers, `key_len`, `effective_bits` and `iv_len` may affect timing, not the key or the IV.
 ///
-/// It runs `vg_rc2_cbc_init`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_rc2_cbc_init_ssse3` if the CPU supports its features (`VG_RC2_CBC_INIT_SSSE3_FEATURES`); or else `vg_rc2_cbc_init`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
@@ -19,10 +19,39 @@
 /// * `ctx` must be valid for reads and writes of 144 bytes.
 /// * If the function returns nonzero, the contents of `ctx` on return are unspecified.
 /// * `ctx` must not overlap `key` or `iv` (distinct Rust objects never do).
-/// * None of `key`, `iv` and `ctx` may overlap the arguments on the stack, overlap the return address on the stack or the 632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `key`, `iv` and `ctx` may overlap the arguments on the stack, overlap the return address on the stack or the 636 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_rc2_cbc_init_auto(_dit: verified_garbage_cpu::Dit<'_>, key: *const u8, key_len: usize, effective_bits: usize, iv: *const u8, iv_len: usize, ctx: *mut [u8; 144]) -> u32 {
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::rc2::vg_rc2_cbc_init(key, key_len, effective_bits, iv, iv_len, ctx) }
+    /// The type of the implementations.
+    type Impl = unsafe extern "C" fn(key: *const u8, key_len: usize, effective_bits: usize, iv: *const u8, iv_len: usize, ctx: *mut [u8; 144]) -> u32;
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        if const { verified_garbage_cpu::target_contains(crate::rc2::VG_RC2_CBC_INIT_SSSE3_FEATURES) }
+            || cpu.contains(crate::rc2::VG_RC2_CBC_INIT_SSSE3_FEATURES)
+        {
+            return crate::rc2::vg_rc2_cbc_init_ssse3;
+        }
+        crate::rc2::vg_rc2_cbc_init
+    }
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "C" fn first(key: *const u8, key_len: usize, effective_bits: usize, iv: *const u8, iv_len: usize, ctx: *mut [u8; 144]) -> u32 {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(key, key_len, effective_bits, iv, iv_len, ctx) }
+    }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(key, key_len, effective_bits, iv, iv_len, ctx) }
 }

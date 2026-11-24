@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.Selftest.Contract
 public import VerifiedGarbage.Impl.Scrub.X86_64
 public import VerifiedGarbage.TCB.X86_64.Residue
+public import VerifiedGarbage.TCB.Registration
 import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-! # Pipeline self-test: x86-64 proof -/
@@ -107,5 +108,12 @@ theorem addScrubbed_noResidue :
     rw [g₁, g₂, hdi, hsi, hax']
   · rw [m₁, m₂]
     exact hm x (by rw [← r₁, ← w₁]; exact hx')
+
+
+/-- `addScrubbed` returns its result as the calling convention requires: the System V
+AMD64 psABI has no rule for any result (`X86_64.abi.retExt`). -/
+theorem addScrubbed_retAbi :
+    RetAbi X86_64.target addScrubbed (Spec.Selftest.addContract X86_64.abi) :=
+  fun ty _ h => by cases ty <;> cases h
 
 end VG.Proof.Selftest.X86_64

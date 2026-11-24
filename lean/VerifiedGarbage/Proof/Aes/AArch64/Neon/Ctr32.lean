@@ -310,18 +310,19 @@ theorem srcF {m : Mem} {c : Nat} (hf : Frame [oR s₀ to, ⟨s₀.gpr .x5, 2048�
     ∀ i, 16 * c ≤ i → i < 16 * nb s₀ →
       m (dp s₀ + BitVec.ofNat 64 i) = s₀.mem (dp s₀ + BitVec.ofNat 64 i) := by
   have hn := hp.pre.nb16
-  cases to with
-  | false =>
+  rcases hp.pre.layout with same | apart
+  ·
     intro i h1 h2
-    have := hd i h2
-    rw [ite_eq_right (by omega_using [h1])] at this
-    exact this
-  | true =>
+    have result := hd i h2
+    rw [same] at result
+    rw [ite_eq_right (by omega_using [h1])] at result
+    exact result
+  ·
     intro i _ h2
     exact hf.bytes (R := dR s₀)
       (by
         simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
-        exact ⟨hp.pre.src rfl, hp.d_b⟩)
+        exact ⟨apart, hp.d_b⟩)
       hn h2
 
 end PreS
@@ -406,7 +407,7 @@ theorem ctrGroup_ok {to : Bool} {s₀ : State} (hp : PreS to s₀) {g : Nat} {s 
     (keep₂ _ hne.1 hne.2.1 hne.2.2.1 hne.2.2.2.1 hne.2.2.2.2.1).trans hi.xo
   obtain x4₂ : s₂.gpr .x4 = BitVec.ofNat 64 (nb s₀ - 8 * g) :=
     (keep₂ .x4 (by decide) (by decide) (by decide) (by decide) (by decide)).trans hi.x4
-  refine WP.seq (xorFrom_wp to 7 0 rfl hp.pre.dDO x3₂ xo₂ x4₂ (by omega_using [hg]) n16
+  refine WP.seq (xorFrom_wp to 7 0 rfl hp.pre.layout x3₂ xo₂ x4₂ (by omega_using [hg]) n16
     (by rw [hc₂.rd, hc₂.wr, f₁.rd, f₁.wr, hi.rd, hi.wr]; exact hp.pre.dat)
     (by rw [hc₂.wr, f₁.wr, hi.wr]; exact hp.pre.out) data₂ (hp.srcF frame₂ data₂) hks
     fun s₃ d₃ f₃ g₃ rd₃ wr₃ => ?_)

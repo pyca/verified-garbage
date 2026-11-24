@@ -98,7 +98,8 @@ theorem pointsWindow_ok (hc : CfgOk c) (hn4 : c.n = 4) (hC : Law c.C) (hT : Comb
     (hQ : Rep c.C (tmv c.C c.n base s (c.sl PX)) (tmv c.C c.n base s (c.sl PY))
       (tmv c.C c.n base s (c.sl ONEP)) P) (hst : ∀ r ∈ s₀.wr, Region.Disjoint (below (s₀.gpr .esp) c.stk) r) (hspG : SpOk c.gMul c.stk)
     (hsp : SpOk (Impl.Ecdsa.Verify.X86.Cfg.pointsWindow c) c.stk) {rest : Prog isa} {Q : State → Prop}
-    (h : ∀ s', Pts c s₀ base (fun j X Y Z => Rep c.C X Y Z (mul (sv c base s U >>> j) (G c.C))) (fun j X Y Z => Rep c.C X Y Z (mul (sv c base s V >>> j) P)) s' → WP isa rest s' Q) :
+    (h : ∀ s', Pts c s₀ base (fun j X Y Z => Rep c.C X Y Z (mul (sv c base s U >>> j) (G c.C))) (fun j X Y Z => Rep c.C X Y Z (mul (sv c base s V >>> j) P)) s' →
+      sv c base s' K = sigR c s₀ → WP isa rest s' Q) :
     WP isa (.seq (Impl.Ecdsa.Verify.X86.Cfg.pointsWindow c) rest) s Q := by
   have h0 := hc.n0
   have h7 := hc.n10
@@ -165,7 +166,7 @@ theorem pointsWindow_ok (hc : CfgOk c) (hn4 : c.n = 4) (hC : Law c.C) (hT : Comb
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hi
     rcases hi with rfl | rfl | rfl <;>
       exact sv_unch U₅ h7 hn (by decide) (windowW_apart hn4 (by decide) (by decide))
-  refine WP.mono (sum_ok hc hs₅ M₅ (fun i hi => ?_)) fun s₆ ⟨hs₆, g₆, rd₆, wr₆, U₆, M₆, rz₆, t₆, rx₆⟩ f₆ => h s₆ ?_
+  refine WP.mono (sum_ok hc hs₅ M₅ (fun i hi => ?_)) fun s₆ ⟨hs₆, g₆, rd₆, wr₆, U₆, M₆, rz₆, t₆, rx₆⟩ f₆ => h s₆ ?_ ?_
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hi
     rcases hi with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · exact lt_of_eq_of_lt F₅.ap (hmont _)
@@ -221,6 +222,9 @@ theorem pointsWindow_ok (hc : CfgOk c) (hn4 : c.n = 4) (hC : Law c.C) (hT : Comb
   · exact fun _ => (sv_unch U₆ h7 hn (i := K) (by decide) (apart_slWk (by decide) (by decide))).trans
       ((v₅ (by decide) (by decide)).trans
         ((W₃ (by decide) (by decide)).trans hM.k))
+  · exact (sv_unch U₆ h7 hn (i := K) (by decide) (apart_slWk (by decide) (by decide))).trans
+      ((v₅ (by decide) (by decide)).trans
+        ((W₃ (by decide) (by decide)).trans hM.k))
 
 theorem pointsComb_ok (hc : CfgOk c) (hC : Law c.C) (hne : c.C.n < 2 ^ (8 * c.C.len)) (hT : CombTbls c)
     (hCo : ∀ d, c.comb = some d → CombOk c d) (ham3 : c.n = 4 ∧ c.combJac = true → AM3 c.C)
@@ -237,7 +241,8 @@ theorem pointsComb_ok (hc : CfgOk c) (hC : Law c.C) (hne : c.C.n < 2 ^ (8 * c.C.
     (h24 : c.stk = 24) (hspG : SpOk c.gMul c.stk)
     (hsp : SpOk (Impl.Ecdsa.Verify.X86.Cfg.pointsComb c) c.stk) {rest : Prog isa} {Q : State → Prop}
     (h : ∀ s', Pts c s₀ base (fun j X Y Z => Rep c.C X Y Z (mul (sv c base s U >>> j) (G c.C)))
-      (fun j X Y Z => Rep c.C X Y Z (mul (sv c base s V >>> j) P)) s' → WP isa rest s' Q) :
+      (fun j X Y Z => Rep c.C X Y Z (mul (sv c base s V >>> j) P)) s' →
+      sv c base s' K = sigR c s₀ → WP isa rest s' Q) :
     WP isa (.seq (Impl.Ecdsa.Verify.X86.Cfg.pointsComb c) rest) s Q := by
   unfold Impl.Ecdsa.Verify.X86.Cfg.pointsComb at hsp ⊢
   by_cases h4 : c.n = 4 ∧ c.combJac = true

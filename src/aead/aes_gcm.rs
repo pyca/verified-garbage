@@ -64,7 +64,8 @@ use crate::arch::dispatch::gcm::{
 #[cfg(target_arch = "aarch64")]
 use crate::arch::dispatch::gcm::{
     vg_aes_gcm_open_to_with_powers_auto, vg_aes_gcm_open_with_powers_auto,
-    vg_aes_gcm_seal_with_powers_auto, vg_aes_gcm_store_powers_auto,
+    vg_aes_gcm_seal_contiguous_with_powers_auto, vg_aes_gcm_seal_with_powers_auto,
+    vg_aes_gcm_store_powers_auto,
 };
 #[cfg(not(any(target_arch = "x86_64", target_arch = "riscv64")))]
 use crate::arch::dispatch::gcm::{vg_aes_gcm_stream_decrypt_auto, vg_aes_gcm_stream_encrypt_auto};
@@ -324,12 +325,60 @@ impl AesGcm {
         Ok(self.seal(dit, nonce, aad, data))
     }
 
+    /// Seal a bounded contiguous plaintext at `src` into `dst` and return its detached tag.
+    ///
+    /// # Safety
+    /// The caller checked the record lengths. The source is readable and the
+    /// destination writable for `len` bytes. They are identical or disjoint.
+    /// The writable range is exclusive and disjoint from the context, nonce and AAD.
+    #[cfg(target_arch = "aarch64")]
+    #[inline(always)]
+    unsafe fn seal_contiguous(
+        &self,
+        dit: crate::dit::Dit<'_>,
+        nonce: &[u8],
+        aad: &[u8],
+        src: *const u8,
+        dst: *mut u8,
+        len: usize,
+    ) -> Block {
+        let mut tag = [0; 16];
+        // SAFETY: the caller supplies the input and output. The constructor
+        // initialized the context and cached GHASH powers for this round count.
+        // The tag is a separate writable local.
+        unsafe {
+            vg_aes_gcm_seal_contiguous_with_powers_auto(
+                dit,
+                self.key(),
+                self.rounds,
+                nonce.as_ptr(),
+                nonce.len(),
+                aad.as_ptr(),
+                aad.len(),
+                src,
+                dst,
+                len,
+                &mut tag,
+                &self.powers.0,
+            );
+        }
+        tag
+    }
+
     /// `vg_aes_gcm_seal` (on x86-64, `vg_aes_gcm_seal_prepared`; on
     /// AArch64, `vg_aes_gcm_seal_with_powers`; on RISC-V,
     /// `vg_aes_gcm_seal_bitsliced`) of `data` in place, whose lengths the
     /// caller checked.
     #[inline(always)]
     fn seal(&self, dit: crate::dit::Dit<'_>, nonce: &[u8], aad: &[u8], data: &mut [u8]) -> Block {
+        #[cfg(target_arch = "aarch64")]
+        if data.len() <= 96 && nonce.len() == 12 && aad.len() <= 16 {
+            let dst = data.as_mut_ptr();
+            // SAFETY: both pointers address the same exclusive, initialized bytes.
+            return unsafe {
+                self.seal_contiguous(dit, nonce, aad, dst.cast_const(), dst, data.len())
+            };
+        }
         #[cfg(target_arch = "arm")]
         let tag;
         #[cfg(not(target_arch = "arm"))]
@@ -776,6 +825,15 @@ impl AesGcm {
         if let [input] = plaintext {
             // SAFETY: the checked lengths agree, and the exclusive destination
             // is disjoint from the input slice and the detached tag.
+            return unsafe { self.seal_contiguous(dit, nonce, aad, input.as_ptr(), dst, len) };
+        }
+        #[cfg(target_arch = "aarch64")]
+        if len <= 96
+            && nonce.len() == 12
+            && aad.len() <= 16
+            && let [input] = plaintext
+        {
+            // SAFETY: the validated single input and exclusive output are disjoint and have equal lengths.
             return unsafe { self.seal_contiguous(dit, nonce, aad, input.as_ptr(), dst, len) };
         }
         // The descriptors of the pieces, as `vg_aes_gcm_seal_gather` takes
@@ -1257,9 +1315,8 @@ mod tests {
         let aad = [9u8; 17];
         let lens = (1024..=1040)
             .chain((256..=656).step_by(16).flat_map(|l| [l, l + 5]))
-            .chain([
-                0, 1, 15, 16, 17, 100, 255, 300, 511, 512, 513, 767, 768, 769,
-            ])
+            .chain(0..=17)
+            .chain([95, 96, 97, 100, 255, 300, 511, 512, 513, 767, 768, 769])
             .chain([
                 1300, 1535, 1536, 2048, 2303, 2304, 2305, 3071, 3072, 3073, 3100,
             ]);

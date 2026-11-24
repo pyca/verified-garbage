@@ -500,6 +500,40 @@ class Plan(Project):
         self.edit('"VerifiedGarbage.Spec.A"]', '"VerifiedGarbage.Spec.A", "VerifiedGarbage.Spec.B"]')
         self.assertEqual(self.stale(), 3)
 
+    def with_plugin(self, needs):
+        """The project with Spec.B in a library of its own, which
+        `VerifiedGarbage` loads as a plugin (with `needs` it too, or not),
+        and the manifest taken after."""
+        self.edit('platformIndependent = true\n',
+                  'platformIndependent = true\nplugins = ["NativePlugin:shared"]\n'
+                  + ('needs = ["NativePlugin:shared"]\n' if needs else ""))
+        f = self.lean / "lakefile.toml"
+        f.write_text(f.read_text() + '\n[[lean_lib]]\nname = "NativePlugin"\nroots = []\n'
+                     'globs = ["VerifiedGarbage.Spec.B"]\nprecompileModules = true\n')
+        self.manifest = {"inputs": shards.inputs(),
+                         "sources": {m: shards.digest(f) for m, f in shards.modules().items()}}
+
+    def test_a_plugin_s_module_rebuilds_every_module(self):
+        # Every module of a library that needs the plugin is in its trace,
+        # not only Spec.B's importers (Proof and the root).
+        self.with_plugin(needs=True)
+        (self.lean / "VerifiedGarbage/Spec/B.lean").write_text("-- changed\n")
+        self.assertEqual(self.stale(), 5)
+
+    def test_a_plugin_alone_rebuilds_every_module(self):
+        # A plugin alone is in the trace of a library without
+        # `platformIndependent`; the plan counts it in any (an estimate: one
+        # that counts too many only shards more).
+        self.with_plugin(needs=False)
+        (self.lean / "VerifiedGarbage/Spec/B.lean").write_text("-- changed\n")
+        self.assertEqual(self.stale(), 5)
+
+    def test_another_module_with_a_plugin(self):
+        # Spec.A is not the plugin's: as without one.
+        self.with_plugin(needs=True)
+        (self.lean / "VerifiedGarbage/Spec/A.lean").write_text("-- changed\n")
+        self.assertEqual(self.stale(), 3)
+
     def test_a_comment(self):
         self.edit("# Compiled specifications.", "# The compiled specifications.")
         self.assertEqual(self.stale(), 0)

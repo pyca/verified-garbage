@@ -188,7 +188,7 @@ that has every volatile register `c` may write. -/
 noncomputable def scrubSide (c : Prog isa) (d rb : Nat) (cl : Clear)
     (ts : List (String × List FnTable) := []) : Bool :=
   c.ppc64leDepth == d && d % 16 == 0 && (d == 0 || decide (48 ≤ d)) && tablesCall c ts &&
-    decide (rb ≤ 64) && wfB cl (chunks d) && keepsB c cl
+    decide (rb ≤ 64) && wfB cl (chunks d) && keepsB c cl && (cl.r3 || rb != 32)
 
 /-- `r`'s code, scrubbed with the stack and the registers stated, is
 verified against `r`'s contract and returns without secret residue. -/
@@ -198,7 +198,7 @@ private theorem scrubAll_ok {api : Api} (r : Unscrubbed api target) {d : Nat} {c
     Verified target (scrubAll (retBitsOf r) d cl r.code) r.contract ∧
       NoResidue (scrubAll (retBitsOf r) d cl r.code) r.contract (retBitsOf r) := by
   simp only [scrubSide, Bool.and_eq_true, Bool.or_eq_true, beq_iff_eq, decide_eq_true_eq] at hs
-  obtain ⟨⟨⟨⟨⟨⟨hde, h16⟩, h48⟩, htc⟩, hrb⟩, hwf⟩, hk⟩ := hs
+  obtain ⟨⟨⟨⟨⟨⟨⟨hde, h16⟩, h48⟩, htc⟩, hrb⟩, hwf⟩, hk⟩, -⟩ := hs
   subst hde
   obtain ⟨pre, post, leak, e⟩ := r.ofSig
   have hv := r.verified
@@ -219,7 +219,8 @@ and that `cl` is a `Clear` the tail can run, with no stack to wipe, that has
 every volatile register `c` may write. -/
 noncomputable def wipedSide (c body : Prog isa) (bytes words rb : Nat) (cl : Clear) : Bool :=
   decide (32 < bytes) && decide (bytes < 4096) && bytes % 16 == 0 && 8 * words == bytes - 32 &&
-    icallFree body && body.ppc64leDepth == 0 && decide (rb ≤ 64) && wfB cl [] && keepsB c cl
+    icallFree body && body.ppc64leDepth == 0 && decide (rb ≤ 64) && wfB cl [] && keepsB c cl &&
+    (cl.r3 || rb != 32)
 
 /-- `r`'s code, followed by the clearing of the registers stated alone, is
 verified against `r`'s contract and returns without secret residue. -/
@@ -230,7 +231,7 @@ private theorem scrubWiped_ok {api : Api} (r : Unscrubbed api target) {bytes : N
     Verified target (.seq r.code (scrubTail (retBitsOf r) [] cl)) r.contract ∧
       NoResidue (.seq r.code (scrubTail (retBitsOf r) [] cl)) r.contract (retBitsOf r) := by
   simp only [wipedSide, Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at hs
-  obtain ⟨⟨⟨⟨⟨⟨⟨⟨hB1, hB2⟩, hB3⟩, hw⟩, hic⟩, hd⟩, hrb⟩, hwf⟩, hk⟩ := hs
+  obtain ⟨⟨⟨⟨⟨⟨⟨⟨⟨hB1, hB2⟩, hB3⟩, hw⟩, hic⟩, hd⟩, hrb⟩, hwf⟩, hk⟩, -⟩ := hs
   have sh : WipedShape r.code r.stack := ⟨bytes, reg, words, body, hc, ⟨hB1, hB2, hB3⟩, hw, hic, hd, hst⟩
   obtain ⟨pre, post, leak, e⟩ := r.ofSig
   have hv := r.verified
@@ -241,6 +242,19 @@ private theorem scrubWiped_ok {api : Api} (r : Unscrubbed api target) {bytes : N
   have hA := ScrubAbi.of r.consts api.sig r.tables
   exact Verified.scrubOf hA hv ⟨fun _ h => by simp at h, fun _ h => by simp at h⟩ (Nat.zero_le _)
     (wf_of_wfB hwf) (keeps_of_keepsB hk) hrb' hp (WipedShape.agree hA hv sh)
+
+/-- `r`'s code, then the clearing of `cs` and of the registers `cl`, which fixes `r3`
+wherever the result has 32 bits, returns its result as ELFv2 requires. -/
+private theorem retAbi_scrub {api : Api} (r : Unscrubbed api target) {cs : List Nat} {cl : Clear}
+    (hcl : (cl.r3 || retBitsOf r != 32) = true) (hgs : ∀ g ∈ cl.gs, g ∈ scratchRegs) :
+    RetAbi target (.seq r.code (scrubTail (retBitsOf r) cs cl)) r.contract := by
+  refine retAbi_of_fixA (rb := retBitsOf r) (fun f hf => ?_) (fun h32 s t s' _ he => ?_)
+  · obtain ⟨pre, post, leak, e⟩ := r.ofSig
+    rw [e] at hf
+    exact retBits_of_retExt (ScrubAbi.of r.consts api.sig r.tables) hf
+  · have hc : cl.r3 = true := by simpa [h32] using hcl
+    cases he with | seq _ ht =>
+    exact scrubTail_r3 hc (fun h => absurd (hgs _ h) (by decide)) ht
 
 /-! ## The theorems a registration binds
 
@@ -255,7 +269,8 @@ theorem verifiedScrubbedAll {api : Api} (r : Unscrubbed api target) (d : Nat) (c
     VerifiedScrubbed target (scrubAll rb d cl r.code) r.contract rb := by
   subst hb
   have h := scrubAll_ok r hs hd hpost
-  exact ⟨h.1, h.2⟩
+  simp only [scrubSide, Bool.and_eq_true] at hs
+  exact ⟨h.1, h.2, retAbi_scrub r hs.2 (wf_of_wfB hs.1.1.2).gs⟩
 
 /-- `verifiedScrubbedAll`, of code that wipes its own frame
 (`withStackScratchWiped bytes reg words body`, with no frame inside it): its
@@ -269,6 +284,7 @@ theorem verifiedScrubbedWiped {api : Api} (r : Unscrubbed api target) (bytes : N
     VerifiedScrubbed target (scrubAll rb 0 cl r.code) r.contract rb := by
   subst hb
   have h := scrubWiped_ok r hc hs hst hpost
-  exact ⟨h.1, h.2⟩
+  simp only [wipedSide, Bool.and_eq_true] at hs
+  exact ⟨h.1, h.2, retAbi_scrub r hs.2 (wf_of_wfB hs.1.1.2).gs⟩
 
 end VG.PPC64LE.Scrub

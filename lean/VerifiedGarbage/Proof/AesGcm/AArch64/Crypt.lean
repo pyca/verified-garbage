@@ -126,11 +126,28 @@ theorem ctr_whole_to {m m' : Mem} {cb ks dp op : Addr} {ciph : Block → Block} 
       show (n + k) / 16 = k / 16 + n / 16 by omega_using [h0], show (n + k) % 16 = k % 16 by omega_using [h0]]
   · rw [hc, hcb, ← Proof.Gcm.repeat_add]; congr 1; omega_using [h0]
 
+/-- The source and destination of a traversal have the same start or disjoint
+ranges. Two corresponding subranges retain that property. -/
+abbrev BufferLayout (D O : Addr) (n : Nat) : Prop :=
+  O = D ∨ (⟨D,n⟩ : Region).Disjoint ⟨O,n⟩
+
+theorem BufferLayout.sub {D O : Addr} {n j k : Nat} (lay : BufferLayout D O n)
+    (hk : j+k ≤ n) : BufferLayout (D+BitVec.ofNat 64 j) (O+BitVec.ofNat 64 j) k := by
+  rcases lay with rfl | apart
+  · exact Or.inl rfl
+  · exact Or.inr ((apart.sub_left (Offset.sub_base D hk)).sub_right (Offset.sub_base O hk))
+
+theorem BufferLayout.take {D O : Addr} {n k : Nat} (lay : BufferLayout D O n)
+    (hk : k ≤ n) : BufferLayout D O k := by
+  rcases lay with same | apart
+  · exact Or.inl same
+  · exact Or.inr ((apart.sub_left (Region.sub_prefix hk)).sub_right (Region.sub_prefix hk))
+
 /-- The output: in place (`to = false`) the text itself (`O = D`); out of
 place a writable buffer of `n` bytes at `O`, apart from the text, with
 `x26` at byte `j` of it. -/
 def OutAt (Wn : Nat) (to : Bool) (Ctx St W : Addr) (s : State) (D O : Addr) (n j : Nat) : Prop :=
-  cond to (DataW Wn Ctx St W s O n ∧ (⟨D, n⟩ : Region).Disjoint ⟨O, n⟩ ∧ s.gpr .x26 = O + BitVec.ofNat 64 j)
+  cond to (DataW Wn Ctx St W s O n ∧ BufferLayout D O n ∧ s.gpr .x26 = O + BitVec.ofNat 64 j)
     (O = D)
 
 theorem OutAt.eq {Wn : Nat} {Ctx St W : Addr} {s : State} {D O : Addr} {n j : Nat} (h : OutAt Wn false Ctx St W s D O n j) :
@@ -138,7 +155,7 @@ theorem OutAt.eq {Wn : Nat} {Ctx St W : Addr} {s : State} {D O : Addr} {n j : Na
 
 theorem OutAt.mkTo {Wn : Nat} {Ctx St W : Addr} {s : State} {D O : Addr} {n j : Nat} (hw : DataW Wn Ctx St W s O n)
     (hd : (⟨D, n⟩ : Region).Disjoint ⟨O, n⟩) (h26 : s.gpr .x26 = O + BitVec.ofNat 64 j) :
-    OutAt Wn true Ctx St W s D O n j := And.intro hw (And.intro hd h26)
+    OutAt Wn true Ctx St W s D O n j := And.intro hw (And.intro (Or.inr hd) h26)
 
 theorem OutAt.of_eq {Wn : Nat} {to : Bool} {Ctx St W : Addr} {s s' : State} {D O : Addr} {n j : Nat}
     (h : OutAt Wn to Ctx St W s D O n j) (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr)
@@ -146,7 +163,7 @@ theorem OutAt.of_eq {Wn : Nat} {to : Bool} {Ctx St W : Addr} {s s' : State} {D O
   cases to
   · exact h
   · obtain ⟨hw, hd, x26⟩ := h
-    exact OutAt.mkTo (hw.of_eq hrd hwr) hd (h26.trans x26)
+    exact ⟨hw.of_eq hrd hwr, hd, h26.trans x26⟩
 
 /-- The text: in place written (`DataW`), out of place only read (`DataOk`). -/
 theorem dataOk_of {Wn : Nat} {to : Bool} {Ctx St W : Addr} {s : State} {D : Addr} {n : Nat}
@@ -183,7 +200,9 @@ theorem OutAt.disj {Wn : Nat} {to : Bool} {Ctx St W : Addr} {s : State} {D O : A
     subst e
     exact Offset.disjoint _ (.inl hab) (by omega_arith) (by omega_arith)
   · obtain ⟨-, hd, -⟩ := h
-    exact (hd.symm.sub_left (Offset.sub_base O (by omega_arith))).sub_right (Offset.sub_base D hcd)
+    rcases hd with rfl | apart
+    · exact Offset.disjoint _ (.inl hab) (by omega_arith) (by omega_arith)
+    · exact (apart.symm.sub_left (Offset.sub_base O (by omega_arith))).sub_right (Offset.sub_base D hcd)
 
 /-- `Kept` but for `x26`, which out of place holds the output. -/
 def KeptTo (k : Reg → BitVec 64) (s : State) : Prop := ∀ r ∈ [Reg.x22, .x27, .x28], s.gpr r = k r
@@ -306,7 +325,7 @@ structure CrOutG (Wn : Nat) (to : Bool) (Ctx St W SP : Addr) (k : Reg → BitVec
   out : Ctr m₀ (St + BitVec.ofNat 64 48) (St + BitVec.ofNat 64 64) (ciphOf m₀ Ctx R) icb P →
     bytesAt s.mem O n = xorKs (ciphOf m₀ Ctx R) icb P (bytesAt m₀ D n)
   frame : Frame (crFrame Wn St W O n) m₀ s.mem
-  outAt : cond to (DataW Wn Ctx St W s O n ∧ (⟨D, n⟩ : Region).Disjoint ⟨O, n⟩) (O = D)
+  outAt : cond to (DataW Wn Ctx St W s O n ∧ BufferLayout D O n) (O = D)
 
 abbrev CrOut (Wn : Nat) (Ctx St W SP : Addr) (k : Reg → BitVec 64) (R : Nat) (icb : Block) (P : Nat) (D : Addr)
     (n : Nat) (m₀ : Mem) (s : State) : Prop :=
@@ -372,7 +391,7 @@ theorem ctrToCall_of {R : Nat} {s : State} (he : Env Wn Ctx St W SP s) (hR : R =
     (hko : (⟨Ctx, 240⟩ : Region).Disjoint ⟨O', 16 * nb⟩)
     (hcd : (⟨St + BitVec.ofNat 64 48, 16⟩ : Region).Disjoint ⟨D', 16 * nb⟩)
     (hco : (⟨St + BitVec.ofNat 64 48, 16⟩ : Region).Disjoint ⟨O', 16 * nb⟩)
-    (hdo : (⟨D', 16 * nb⟩ : Region).Disjoint ⟨O', 16 * nb⟩)
+    (hdo : BufferLayout D' O' (16 * nb))
     (hds : (⟨D', 16 * nb⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 512, Wn - 512⟩)
     (hos : (⟨O', 16 * nb⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 512, Wn - 512⟩)
     (hdr : Covers [⟨D', 16 * nb⟩] (s.rd ++ s.wr)) (how : Covers [⟨O', 16 * nb⟩] s.wr) :
@@ -415,7 +434,7 @@ theorem crCallG_of {to : Bool} {R : Nat} {s : State} (he : Env Wn Ctx St W SP s)
     exact ctrToCall_of L he hR h0 h1 h2 h3 h4 h5 (h6 rfl) hdj.wrap hoj.ok.wrap
       (hoj.ctx.sub_left (Region.sub_prefix (by decide))) (hdj.st.sub_right (Lay.stSub (by decide))).symm
       (hoj.ok.st.sub_right (Lay.stSub (by decide))).symm
-      ((hdo.sub_left (Offset.sub_base D (by omega_arith))).sub_right (Offset.sub_base O (by omega_arith)))
+      (hdo.sub (by omega_arith))
       (hdj.w.sub_right (Lay.wSub (by have := he.perm.hWn; omega))) (hoj.ok.w.sub_right (Lay.wSub (by have := he.perm.hWn; omega))) hdj.rd hoj.wr
 
 omit L in
@@ -1146,7 +1165,7 @@ theorem crArgsG_ok (to : Bool) {k : Reg → BitVec 64} {R : Nat} {icb : Block} {
         · simp [gpr_write, e26]
         · simp [gpr_write, e26, x9₄, add_ofNat_assoc]
       exact ⟨s₅, fun _ hq => WP.of_runBlock ⟨s₅, run₅, hq⟩, r₅,
-        OutAt.mkTo (hw.of_eq (r₅.rd.trans r₄.rd) (r₅.wr.trans r₄.wr)) hdo x26₅, fun _ => x6₅, nofun⟩
+        ⟨hw.of_eq (r₅.rd.trans r₄.rd) (r₅.wr.trans r₄.wr), hdo, x26₅⟩, fun _ => x6₅, nofun⟩
   show WP isa (.block (crArgs ++ cond to [mov .x6 .x26, .add .x .x26 .x26 .x9] [])) s _
   refine WP.block_append_iff.mpr (WP.of_runBlock ⟨s₄, run₄, w₅ _ ?_⟩)
   obtain gg : ∀ r, r ∉ [Reg.x4, .x3, .x0, .x1, .x2, .x5, .x9, .x23, .x24, .x6, .x26] → s₅.gpr r = s.gpr r :=

@@ -308,7 +308,7 @@ private theorem suffix_rel {v : GcmImpl} {stitch : Bool} {a : Generic.TextArgs} 
     (sa _ _ x) (sb _ _ y) fun _ _ ⟨ea,ra,ta⟩ ⟨eb,rb,tb⟩ => ?_
   exact finalCode_rel v (hSt ▸ pa.lay) (hSt ▸ ea) (hSt ▸ eb) ra rb pa.rounds ta tb hv
 
-private theorem descBeforeText {o s : State} (e : Gather.Lay .plain o) (f : Frame [Gather.stkR o] o.mem s.mem)
+private theorem descBeforeText {o s : State} (e : Gather.Lay .plain o (Gather.sharedSource o)) (f : Frame [Gather.stkR o] o.mem s.mem)
     {i : Nat} (h : i < Gather.Cnt o*16) (lt : i<2^64) :
     o.mem (Gather.Src o+BitVec.ofNat 64 i) = s.mem (Gather.Src o+BitVec.ofNat 64 i) := by
   exact inputsAgree e f _ (List.mem_cons_self ..) _ (Offset.contains_base _ (by

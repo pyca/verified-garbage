@@ -75,6 +75,6 @@ theorem verifiedScrubbedAllUp {api : Api} (r : Unscrubbed api target) {n rb : Na
     (upperOk_lock hv.2.1 (fun s₁ s₂ h f hf => tables_pub_syms h f (hnames f hf)) hup)
     hrb' hp hr ht (.inl mem_xregs) (fun e => absurd e (by decide)) (fun _ _ e => absurd e (by decide)) hgk
     (fun s₁ s₂ h f hf => tables_pub_syms (contract_pub h) f (hnames f hf))
-  exact ⟨key.1, key.2⟩
+  exact ⟨key.1, key.2, fun ty _ h => by cases ty <;> cases h⟩
 
 end VG.X86_64.Scrub

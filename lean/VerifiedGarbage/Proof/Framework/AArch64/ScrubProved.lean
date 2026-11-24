@@ -219,7 +219,7 @@ theorem verifiedScrubbedAll {api : Api} (r : Unscrubbed api target) (cl : Clear)
     VerifiedScrubbed target (scrubAll W rb cl r.code) r.contract rb := by
   subst hW hb
   have hv := Verified.scrubAllOfV (ts := r.tables) r.verified hok hs
-  refine ⟨hv, ?_⟩
+  refine ⟨hv, ?_, fun ty _ h => by cases ty <;> cases h⟩
   obtain ⟨hwf, hkp, hdit, hrb⟩ := keeps_of_side hs
   rcases Nat.eq_zero_or_pos r.stack with h0 | hpos
   · have hs' := hs
@@ -244,7 +244,7 @@ theorem verifiedScrubbedOf {c : Prog isa} {k : Contract isa} {W rb : Nat} (hv : 
   ⟨Verified.scrubAll (Clear.of_wf _) hv hW hrb hok,
     noResidue_scrubAll (Clear.of_wf _) (Clear.of_keeps _) hv hW hok.sp hd
       (Code.all_of_allInstrs (allInstrs_of_sideAll hs))
-      (fun _ _ _ n hn => by rw [inames_of_noIcall (noIcall_of_sideAll hs)] at hn; cases hn) hrb⟩
+      (fun _ _ _ n hn => by rw [inames_of_noIcall (noIcall_of_sideAll hs)] at hn; cases hn) hrb, fun ty _ h => by cases ty <;> cases h⟩
 
 /-- `sideAll` of code in a frame of its own (`withStackScratch`). -/
 theorem sideAll_withStackScratch {p : Instr → Bool} {bytes : Nat} {r : Reg} {c : Prog isa}

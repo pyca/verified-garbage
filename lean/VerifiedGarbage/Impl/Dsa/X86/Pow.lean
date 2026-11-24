@@ -11,7 +11,9 @@ public import VerifiedGarbage.Impl.Dsa.HelperLayout
 The caller loads the modulus, base and exponent into the existing Montgomery
 workspace. Each width has one callable setup-and-exponentiation body.
 
-The context's setup (`contextSeed`) leaves `2^(65 n) mod m` in slot 4, which
+The modulus is public (DSA's p or q, or a candidate of the parameter search),
+so the context's setup (`Comb.seed`) starts from the modulus's top bit where
+that is set, and leaves `2^(65 n) mod m` in slot 4, which
 six Montgomery squarings raise to `R² mod m`, `R = 2^(64 n)`: the Montgomery
 square of `2^(64 n + j)` is `2^(64 n + 2 j)`, so the doublings reach `65 n`
 bits instead of `128 n`. Every Montgomery multiplication is
@@ -61,8 +63,10 @@ def squarings (n : Nat) : Nat → Prog isa
   | 0 => .block []
   | k + 1 => .seq (squarings n k) (mul n 4 4 4)
 
-/-- `R² mod m` in slot 4, from `2^(65 n) mod m`. -/
-def setup (n : Nat) : Prog isa := .seq (contextSeed n (65 * n)) (squarings n 6)
+/-- `R² mod m` in slot 4, for a modulus that is public: from
+`2^(65 n) mod m` by `Comb.seed`, which starts from the modulus's top bit
+where it is set. -/
+def setup2 (n : Nat) : Prog isa := .seq (Comb.seed n) (squarings n 6)
 
 /-- One in slot 7; the result `R mod m`, one in Montgomery form; the base
 encoded. -/
@@ -81,13 +85,11 @@ def step (n e : Nat) : Prog isa :=
 /-- The result decoded: its product with one. -/
 def finish (n : Nat) : Prog isa := .seq (one n (slot n 7)) (mul n 6 6 7)
 
-def core (n e : Nat) : Prog isa :=
-  .seq (setup n) <| .seq (encode n) <|
+/-- The power a bit of the exponent at a time, from its low bit. -/
+def coreBits (n e : Nat) : Prog isa :=
+  .seq (setup2 n) <| .seq (encode n) <|
   .seq (.block [.mov .esi (.imm (BitVec.ofNat 32 (32 * e)))]) <|
   .seq (.loop (step n e) .ne) (finish n)
-
-def body (n e : Nat) : Prog isa :=
-  .seq (.block save) (.seq (core n e) (.block restore))
 
 /-! ## The product of two powers
 
@@ -95,9 +97,8 @@ def body (n e : Nat) : Prog isa :=
 their top bits down: each iteration squares the result and multiplies it by
 one of `1`, `g`, `y` and `g y` (in Montgomery form), the entry of the two
 bits, read by masked selections of every entry: `32 e` squarings and as
-many multiplications, where two exponentiations take `128 e`. Its modulus
-is public, so its context starts from the modulus's top bit where that is
-set (`setup2`). The caller
+many multiplications, where two exponentiations take `128 e`. Its context
+is `core`'s (`setup2`). The caller
 loads `g` into slot 5, `y` into slot 7, `u` into slot 8 and `v` after it
 (`exp2`). Slot 6 is the result and slot 7 the selected entry; the entries
 are `R` and `g y R` in slot 3, which only the setup uses (`cellR`,
@@ -146,15 +147,54 @@ def step2 (n e : Nat) : Prog isa :=
   .seq (Comb.shiftOne e (slot n 8)) <| .seq (Comb.shiftOne e (exp2 n))
     (.block [.alu .sub .esi (.imm 1), .alu .cmp .esi (.imm 0)])
 
-/-- `R² mod m` in slot 4, as `setup`, for a modulus that is public: from
-`2^(65 n) mod m` by `Comb.seed`, which starts from the modulus's top bit
-where it is set. -/
-def setup2 (n : Nat) : Prog isa := .seq (Comb.seed n) (squarings n 6)
-
 def core2 (n e : Nat) : Prog isa :=
   .seq (setup2 n) <| .seq (table2 n) <|
   .seq (.block [.mov .esi (.imm (BitVec.ofNat 32 (32 * e)))]) <|
   .seq (.loop (step2 n e) .ne) (finish n)
+
+/-! ## The power by a window of two bits
+
+`coreW` computes `g^x mod m` from the exponent's top bits down, two at a
+time: each iteration squares the result twice and multiplies it by one of
+`1`, `g`, `g²` and `g³`, read by `core2`'s masked selections of every entry
+(`select2`): `32 e` squarings and `16 e` multiplications, where `coreBits`
+takes `32 e` of each. The entries are `core2`'s for `y = g²` (`tableW`): the
+window `d` is `d mod 2 + 2 (d / 2)`, and its entry `g^(d mod 2) y^(d / 2)`.
+The entries' cells in slot 3 are free of the multiplication's range only
+from 6 words, so the narrower moduli (q's) keep `coreBits`.
+-/
+
+/-- The entries `R`, `g R`, `g² R` and `g³ R`: `table2`'s for `y = g`, whose
+`y R` is `g R`, then `g² R` into slot 4 and `g³ R` into `cellGY`, each
+through slot 7. -/
+def tableW (n : Nat) : Prog isa :=
+  .seq (copyWords n (slot n 5) (slot n 7)) <| .seq (table2 n) <|
+  .seq (mul n 7 4 5) <| .seq (copyWords n (slot n 7) (slot n 4)) <|
+  .seq (mul n 7 7 5) (copyWords n (slot n 7) (cellGY n))
+
+/-- The window: the exponent's top two bits. -/
+def digitW (n e : Nat) : List Instr :=
+  [.mov .eax (.mem (sc (slot n 8 + 4 * (e - 1)))), .shift .shr .eax 30, .store (sc windowOffset) .eax]
+
+/-- An iteration: the result squared twice, times the entry of the
+exponent's top two bits; the exponent shifted up by them, the count
+decremented. -/
+def stepW (n e : Nat) : Prog isa :=
+  .seq (mul n 6 6 6) <| .seq (mul n 6 6 6) <| .seq (.block (digitW n e)) <| .seq (select2 n) <|
+  .seq (mul n 6 6 7) <| .seq (Comb.shiftOne e (slot n 8)) <| .seq (Comb.shiftOne e (slot n 8))
+    (.block [.alu .sub .esi (.imm 1), .alu .cmp .esi (.imm 0)])
+
+def coreW (n e : Nat) : Prog isa :=
+  .seq (setup2 n) <| .seq (tableW n) <|
+  .seq (.block [.mov .esi (.imm (BitVec.ofNat 32 (16 * e)))]) <|
+  .seq (.loop (stepW n e) .ne) (finish n)
+
+/-- `[slot 6] = [slot 5]^[slot 8] mod [slot 0]`, the exponent of `e` 32-bit
+words: by the window from 6 words of modulus. -/
+def core (n e : Nat) : Prog isa := if 6 ≤ n then coreW n e else coreBits n e
+
+def body (n e : Nat) : Prog isa :=
+  .seq (.block save) (.seq (core n e) (.block restore))
 
 def scratch (n : Nat) : List (Nat × Nat) := [(0, 64), (slot n 1, contextBytes n - slot n 1)]
 

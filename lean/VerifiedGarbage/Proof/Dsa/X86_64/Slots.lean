@@ -100,7 +100,7 @@ theorem scrubbedFns {sig : Sig} {pre : Curry (sig.words abi.ptrBits) (Mem → Pr
   have key := Verified.scrubM (f := .avx) (scrubAbi_fns x xs) h (SpSafe.of_all hsp) hd
     hcs hst hcv' hlv' (fun _ => mxSame_of_noLoad hmx) (.inl (by rw [hrb'])) hpost hres ht (.inl mem_xregs)
     (fun _ => mem_xregs) (fun _ _ e => absurd e (by decide)) hgk
-  exact ⟨key.1, key.2 fun s₁ s₂ hp n hn => (pub_withFns.mp hp).2 n (hin n hn)⟩
+  exact ⟨key.1, key.2 fun s₁ s₂ hp n hn => (pub_withFns.mp hp).2 n (hin n hn), fun ty _ h => by cases ty <;> cases h⟩
 
 /-! ## What the contracts read of memory
 

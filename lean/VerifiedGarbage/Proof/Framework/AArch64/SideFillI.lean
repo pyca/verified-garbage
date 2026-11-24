@@ -164,7 +164,7 @@ theorem verifiedScrubbedOfFillI {c e b : Prog isa} {n : String} {k : Contract is
   subst hc
   exact ⟨Verified.scrubAll (Clear.of_wf _) hv hW hrb hok,
     noResidue_scrubAll (Clear.of_wf _) (Clear.of_keeps _) hv hW hok.sp hdc (Code.all_of_allInstrs ha)
-      (fun s₁ s₂ hp m hm => by rw [hn m hm]; exact hsy s₁ s₂ hp) hrb⟩
+      (fun s₁ s₂ hp m hm => by rw [hn m hm]; exact hsy s₁ s₂ hp) hrb, fun ty _ h => by cases ty <;> cases h⟩
 
 end AArch64.Scrub
 

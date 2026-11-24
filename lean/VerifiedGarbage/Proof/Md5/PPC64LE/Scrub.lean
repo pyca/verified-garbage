@@ -56,6 +56,6 @@ arguments. It meets its contract in constant time and returns without secret res
 theorem init_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.Md5.PPC64LE.Stream.init
       (Spec.Md5.initContract PPC64LE.abi) 0 :=
-  ⟨Proof.Md5.PPC64LE.Shared.init, Proof.Md5.PPC64LE.Stream.init_noResidue _ _⟩
+  ⟨Proof.Md5.PPC64LE.Shared.init, Proof.Md5.PPC64LE.Stream.init_noResidue _ _, fun _ _ _ h => by cases h⟩
 
 end VG.Proof.Md5.PPC64LE

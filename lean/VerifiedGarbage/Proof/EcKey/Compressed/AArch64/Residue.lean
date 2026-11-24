@@ -59,7 +59,7 @@ theorem scrubbed (hL : Proof.Weierstrass.Law Spec.P192.curve)
     (hI : Proof.Weierstrass.AArch64.InvSounds) :
     VerifiedScrubbed target Impl.EcKey.AArch64.Fn.decompressP192
       (Spec.EcKey.P192.inst.decompressPublicKeyContract abi 0) 32 :=
-  ⟨verified hL hI, noResidue hL hI⟩
+  ⟨verified hL hI, noResidue hL hI, fun ty _ h => by cases ty <;> cases h⟩
 
 end P192
 
@@ -83,7 +83,7 @@ theorem scrubbed (hL : Proof.Weierstrass.Law Spec.P256.curve)
     (hI : Proof.Weierstrass.AArch64.InvSounds) :
     VerifiedScrubbed target Impl.EcKey.AArch64.Fn.decompressP256
       (Spec.EcKey.P256.inst.decompressPublicKeyContract abi 0) 32 :=
-  ⟨verified hL hI, noResidue hL hI⟩
+  ⟨verified hL hI, noResidue hL hI, fun ty _ h => by cases ty <;> cases h⟩
 
 end P256
 

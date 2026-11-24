@@ -13,6 +13,7 @@ import VerifiedGarbage.Proof.Aes.AArch64.CodeLit
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 
 /-!
 # AES-GCM on AArch64: the functions called
@@ -378,7 +379,7 @@ structure CtrToCall (s : State) (K C D O S : Addr) (R n : Nat) (N : Nat := 2048)
   cd : (⟨C, 16⟩ : Region).Disjoint ⟨D, 16 * n⟩
   co : (⟨C, 16⟩ : Region).Disjoint ⟨O, 16 * n⟩
   cs : (⟨C, 16⟩ : Region).Disjoint ⟨S, N⟩
-  dO : (⟨D, 16 * n⟩ : Region).Disjoint ⟨O, 16 * n⟩
+  dO : O = D ∨ (⟨D, 16 * n⟩ : Region).Disjoint ⟨O, 16 * n⟩
   ds : (⟨D, 16 * n⟩ : Region).Disjoint ⟨S, N⟩
   os : (⟨O, 16 * n⟩ : Region).Disjoint ⟨S, N⟩
   reads : Covers ([⟨K, 240⟩, ⟨D, 16 * n⟩] ++ [⟨C, 16⟩, ⟨O, 16 * n⟩, ⟨S, N⟩]) (s.rd ++ s.wr)

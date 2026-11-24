@@ -582,18 +582,19 @@ theorem PreC.src {to : Bool} {s₀ : State} (hp : PreC to s₀) {m : Mem} {c : N
     ∀ i, 16 * c ≤ i → i < 16 * Aese.nb s₀ →
       m (Aese.dp s₀ + BitVec.ofNat 64 i) = s₀.mem (Aese.dp s₀ + BitVec.ofNat 64 i) := by
   have hn := hp.pre.nb16
-  cases to with
-  | false =>
+  rcases hp.pre.layout with same | apart
+  ·
     intro i h1 h2
-    have := hd i h2
-    rw [ite_eq_right (by omega_using [h1])] at this
-    exact this
-  | true =>
+    have result := hd i h2
+    rw [same] at result
+    rw [ite_eq_right (by omega_using [h1])] at result
+    exact result
+  ·
     intro i _ h2
     exact hf.bytes (R := Aese.dR s₀)
       (by
         simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
-        exact ⟨hp.c_d.symm, hp.pre.src rfl⟩)
+        exact ⟨hp.c_d.symm, apart⟩)
       hn h2
 
 /-- The general registers `ctrFew` writes. -/

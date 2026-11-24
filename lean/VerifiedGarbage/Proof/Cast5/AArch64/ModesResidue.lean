@@ -185,7 +185,7 @@ theorem _root_.VG.Proof.Cast5.AArch64.ModesResidue.cbcDecryptChainedCode_scrubbe
     VerifiedScrubbed AArch64.target Impl.Cast5.AArch64.Fn.cbcDecryptChained
       (Spec.Cast5.cbcDecryptChainedContract AArch64.abi 224) 0 :=
   ⟨Proof.Cast5.AArch64.ModesResidue.cbcDecryptChainedCode_verified,
-    Proof.Cast5.AArch64.ModesResidue.cbcDecryptChainedCode_noResidue⟩
+    Proof.Cast5.AArch64.ModesResidue.cbcDecryptChainedCode_noResidue, fun ty _ h => by cases ty <;> cases h⟩
 
 /-- The function as its registration binds it: it meets its contract in constant time and returns
 without secret residue. -/
@@ -201,7 +201,7 @@ theorem _root_.VG.Proof.Cast5.AArch64.ModesResidue.cfbDecryptCode_scrubbed :
     VerifiedScrubbed AArch64.target Impl.Cast5.AArch64.Fn.cfbDecrypt
       (Spec.Cast5.cfbDecryptContract AArch64.abi 224) 0 :=
   ⟨Proof.Cast5.AArch64.ModesResidue.cfbDecryptCode_verified,
-    Proof.Cast5.AArch64.ModesResidue.cfbDecryptCode_noResidue⟩
+    Proof.Cast5.AArch64.ModesResidue.cfbDecryptCode_noResidue, fun ty _ h => by cases ty <;> cases h⟩
 
 /-- The function as its registration binds it: it meets its contract in constant time and returns
 without secret residue. -/

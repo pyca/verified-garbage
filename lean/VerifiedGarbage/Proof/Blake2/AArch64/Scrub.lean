@@ -57,7 +57,7 @@ open VG.AArch64 VG.AArch64.Scrub VG.Spec.Blake2
 
 theorem initB :
     VerifiedScrubbed target (Impl.Blake2.AArch64.Fn.init b) (initBContract abi) 0 :=
-  ⟨Stream.initBCleared_verified, Stream.initBCleared_noResidue _⟩
+  ⟨Stream.initBCleared_verified, Stream.initBCleared_noResidue _, fun ty _ h => by cases ty <;> cases h⟩
 
 theorem updateB :
     VerifiedScrubbed target (Impl.Blake2.AArch64.Fn.update b) (updateBContract abi (16 + 112)) 0 :=
@@ -75,7 +75,7 @@ theorem finalizeB :
 
 theorem initS :
     VerifiedScrubbed target (Impl.Blake2.AArch64.Fn.init s) (initSContract abi) 0 :=
-  ⟨Stream.initSCleared_verified, Stream.initSCleared_noResidue _⟩
+  ⟨Stream.initSCleared_verified, Stream.initSCleared_noResidue _, fun ty _ h => by cases ty <;> cases h⟩
 
 theorem updateS :
     VerifiedScrubbed target (Impl.Blake2.AArch64.Fn.update s) (updateSContract abi (16 + 112)) 0 :=

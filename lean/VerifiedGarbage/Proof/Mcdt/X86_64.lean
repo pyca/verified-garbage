@@ -399,7 +399,7 @@ theorem enter_scrubbed :
   have h := Scrub.scrubSideG_ok (api := Spec.Mcdt.enterApi) { code := enter, stack := 8, verified := verified }
     .sse .avx false [0] [8] [.rcx, .rdx] (by lit_decide) enterOut (RScrub.resOk_allC _ _ (by decide) rfl)
     (by decide)
-  exact ⟨h.1, h.2⟩
+  exact ⟨h.1, h.2, fun ty _ h => by cases ty <;> cases h⟩
 
 theorem enter_spSafe : Impl.Mcdt.X86_64.enterCall.all (fun i => !X86_64.isa.writesSp i) = true := by
   sp_safe

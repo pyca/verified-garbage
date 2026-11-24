@@ -275,6 +275,6 @@ theorem noResidue (k : Contract isa) (r : Nat) : NoResidue zeroize k r :=
 without secret residue: what its registration binds. -/
 theorem zeroize_scrubbed :
     VerifiedScrubbed target zeroize (Spec.Zeroize.zeroizeContract abi) (Spec.Zeroize.zeroizeApi.sig.retBits 64) :=
-  ⟨verified, noResidue _ _⟩
+  ⟨verified, noResidue _ _, fun _ _ _ h => by cases h⟩
 
 end VG.Proof.Zeroize.PPC64LE
