@@ -44,6 +44,7 @@ abbrev Auth (st : Addr) (H : Block) (x : List Byte) (t : State) :=
 abbrev paddedTail (x d : List Byte) := (x++d)++zeros (padLen (x++d).length)
 
 structure Joined (s t : State) (H icb : Block) (x : List Byte) : Prop where
+  sp : t.sp=s.sp
   regs : ∀ r∈savedEnd,t.gpr r=s.gpr r
   data : bytesAt t.mem (s.gpr .r27) (datLen s)=xorKs (ctxCiph s.mem (s.gpr .r29) (s.gpr .r28).toNat) icb 0
     (bytesAt s.mem (s.gpr .r19) (datLen s))
@@ -134,7 +135,7 @@ theorem joinRest {s u t : State} {icb H : Block} {x : List Byte}
   rw [srcAfter p m.frame] at tail
   have fr := z.frame
   rw [st,w,q.dst] at fr
-  refine ⟨?_,?_,?_,(m.frame.mono fun _ e => List.mem_append_left _ e).trans (fr.mono fun _ e => List.mem_append_right _ e)⟩
+  refine ⟨z.env.sp,?_,?_,?_,(m.frame.mono fun _ e => List.mem_append_left _ e).trans (fr.mono fun _ e => List.mem_append_right _ e)⟩
   · intro r hr
     have h : r∈frozen ∧ r∈prefixKeep ∧ r≠.r21 ∧ r≠.r19 := by revert r;decide
     rw [z.env.fr r h.1]
@@ -163,7 +164,7 @@ theorem cipher_wp [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.F
   · have zero : (restR s).len=0 := by simpa using yes
     have same : datPrefix s=datLen s := by have h := Nat.add_sub_of_le (prefixLe (datLen s));change datLen s-datPrefix s=0 at zero;change datPrefix s+(datLen s-datPrefix s)=datLen s at h;omega
     have align : datLen s%16=0 := by rw [←same,datPrefix,(prefixEq _).symm];simp
-    refine WP.block_nil ⟨fun r hr => q.saved r (by revert r;decide),?_,?_,m.frame.mono fun _ e => List.mem_append_left _ e⟩
+    refine WP.block_nil ⟨q.sp,fun r hr => q.saved r (by revert r;decide),?_,?_,m.frame.mono fun _ e => List.mem_append_left _ e⟩
     · have h := m.data
       change bytesAt u.mem _ (datPrefix s)=xorKs _ _ _ (bytesAt _ _ (datPrefix s)) at h
       rwa [same] at h
