@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Sm4.AArch64.CtrFinal
 public import VerifiedGarbage.Proof.Variants.Sm4Ctr.AArch64
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.AArch64.Print
+public import VerifiedGarbage.TCB.AArch64.Target
 import VerifiedGarbage.Proof.Sm4.AArch64.Lit
 public import VerifiedGarbage.Proof.Sm4.AArch64.CtrScrub
 
@@ -13,7 +13,7 @@ public import VerifiedGarbage.Proof.Sm4.AArch64.CtrScrub
 
 namespace VG.Artifacts.Sm4Ctr.AArch64
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact AArch64.target) := [
   Spec.Sm4.ctrApi.artifact AArch64.target {
     suffix := "_sm4"
     code := Impl.Sm4.AArch64.Fn.ctrSm4

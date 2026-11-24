@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.CmacAes.Arm.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.Arm.Print
+public import VerifiedGarbage.TCB.Arm.Target
 
 /-! # AES-CMAC (NIST SP 800-38B) on ARMv7 -/
 
@@ -10,7 +10,7 @@ public import VerifiedGarbage.TCB.Arm.Print
 
 namespace VG.Artifacts.CmacAes.Arm
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact Arm.target) := [
   Spec.Cmac.aesInitApi.artifact Arm.target {
     code := Impl.CmacAes.Arm.Fn.init
     verified := Proof.CmacAes.Arm.Fn.init },

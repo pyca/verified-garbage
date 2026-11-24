@@ -18,7 +18,6 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowBase
 public import VerifiedGarbage.Spec.Ecdsa.Verify.P384
 public import Mathlib.Tactic.ClearExcept
 public import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.TCB.AArch64.Target
 import VerifiedGarbage.Impl.Ecdsa.P384.AArch64
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 public import VerifiedGarbage.Impl.Ecdh.P384.AArch64
@@ -55,7 +54,7 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowQuad
 public import VerifiedGarbage.Proof.Weierstrass.CoZTable
 public import VerifiedGarbage.Proof.Weierstrass.CombCheckFast
 public import VerifiedGarbage.Proof.Weierstrass.WinJacMath
-public import VerifiedGarbage.TCB.AArch64.Print
+public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.P384.AArch64.Law
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.P384
 import Mathlib.Data.Finset.Attr
@@ -74,7 +73,7 @@ open VG.Proof.P384.AArch64 (hasLaw)
 open VG.Proof.HmacTable.AArch64 (tables)
 open VG.Proof.Variants.MdHash.AArch64 (variants hashes)
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact AArch64.target) := [
   Spec.Ecdsa.Rfc6979.Curves.p384SignApi.artifact AArch64.target {
     tables := [("hmac", tables variants)]
     code := Impl.Ecdsa.Rfc6979.AArch64.Fn.p384 hashes
@@ -86,7 +85,7 @@ namespace VG.Artifacts.EcdsaP384.AArch64
 
 open VG.Proof.P384.AArch64 (hasLaw)
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact AArch64.target) := [
   Spec.Ecdsa.P384.verifyHashApi.artifact AArch64.target {
     code := Impl.Ecdsa.Verify.AArch64.Fn.verifyHashP384
     verified := Proof.Ecdsa.Rfc6979.AArch64.p384Verify hasLaw.law hasLaw.prime hasLaw.inv (Proof.P384.gtabOk9 hasLaw.law) }] ++

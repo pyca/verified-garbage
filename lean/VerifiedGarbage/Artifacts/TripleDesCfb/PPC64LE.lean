@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.TripleDes.PPC64LE.ModesFrame
 public import VerifiedGarbage.Proof.TripleDes.PPC64LE.FbFinalVerified
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.TripleDes.PPC64LE.Scrub
-public import VerifiedGarbage.TCB.PPC64LE.Print
+public import VerifiedGarbage.TCB.PPC64LE.Target
 import VerifiedGarbage.Proof.TripleDes.PPC64LE.ModesLit
 import VerifiedGarbage.Proof.TripleDes.PPC64LE.FunctionsLit
 import VerifiedGarbage.Proof.TripleDes.PPC64LE.FbFinalLit
@@ -16,7 +16,7 @@ import VerifiedGarbage.Proof.TripleDes.PPC64LE.FbFinalLit
 
 namespace VG.Artifacts.TripleDesCfb.PPC64LE
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact PPC64LE.target) := [
   Spec.TripleDes.cfbEncryptApi.artifact PPC64LE.target {
     code := Impl.TripleDes.PPC64LE.Fn.cfbEncrypt
     verified := Proof.TripleDes.PPC64LE.Scrub.cfbEncrypt_scrubbed },

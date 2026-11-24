@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Impl.EcKey.P521.ArmFn
 public import VerifiedGarbage.Proof.EcKey.Arm.P521.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.Arm.Print
+public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.P521.Arm.Law
 
 /-! # P-521 public keys (FIPS 186-5 §A.2) on ARMv7 -/
@@ -14,7 +14,7 @@ namespace VG.Artifacts.EcP521.Arm
 
 open VG.Proof.P521.Arm (hasLaw)
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact Arm.target) := [
   Spec.EcKey.P521.inst.compressPublicKeyApi.artifact Arm.target {
     code := Impl.EcKey.Arm.Fn.compressP521
     verified := Proof.EcKey.Arm.Fn.compressP521 },

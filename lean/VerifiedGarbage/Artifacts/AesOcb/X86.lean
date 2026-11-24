@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Impl.AesOcb.X86
 public import VerifiedGarbage.Proof.AesOcb.X86.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.X86.Print
+public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Variants.AesBlocks.X86
 
 /-! # AES-OCB (RFC 7253) on x86 -/
@@ -12,7 +12,7 @@ public import VerifiedGarbage.Proof.Variants.AesBlocks.X86
 
 namespace VG.Artifacts.AesOcb.X86
 
-def artifacts : List Artifact :=
+def artifacts : List (Artifact X86.target) :=
   VG.Proof.Variants.AesBlocks.X86.variants.flatMap fun (v : Proof.Aes.X86.BlocksImpl) => [
     Spec.Ocb.initApi.artifact X86.target {
       suffix := v.suffix

@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Impl.AesSiv.X86
 public import VerifiedGarbage.Proof.AesSiv.X86.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.X86.Print
+public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Variants.AesCtr32.X86
 
 /-! # AES-SIV (RFC 5297) on x86 -/
@@ -12,7 +12,7 @@ public import VerifiedGarbage.Proof.Variants.AesCtr32.X86
 
 namespace VG.Artifacts.AesSiv.X86
 
-def artifacts : List Artifact :=
+def artifacts : List (Artifact X86.target) :=
   VG.Proof.Variants.AesCtr32.X86.variants.flatMap fun (v : Proof.Aes.X86.Ctr32Impl) => [
     Spec.Siv.initApi.artifact X86.target {
       suffix := v.suffix

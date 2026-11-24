@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Gcm.PPC64LE.Vpmsum.Law
 public import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.PPC64LE.Print
+public import VerifiedGarbage.TCB.PPC64LE.Target
 import VerifiedGarbage.Proof.Sm4.PPC64LE.Ctr32Lit
 import VerifiedGarbage.Proof.Sm4.PPC64LE.Lit
 
@@ -17,7 +17,7 @@ namespace VG.Artifacts.Sm4Gcm.PPC64LE
 
 open VG.Proof.Sm4Gcm.PPC64LE.Scrub
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact PPC64LE.target) := [
   Spec.Sm4.Gcm.initApi.artifact PPC64LE.target {
     code := Impl.Sm4Gcm.PPC64LE.Fn.init
     verified := Proof.Sm4Gcm.PPC64LE.Scrub.init_scrubbed },

@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.ChaCha20.Arm.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.Arm.Print
+public import VerifiedGarbage.TCB.Arm.Target
 
 /-! # ChaCha20 (RFC 8439) on ARMv7 -/
 
@@ -10,7 +10,7 @@ public import VerifiedGarbage.TCB.Arm.Print
 
 namespace VG.Artifacts.ChaCha20.Arm
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact Arm.target) := [
   Spec.ChaCha20.initApi.artifact Arm.target {
     code := Impl.ChaCha20.Arm.Fn.init
     verified := Proof.ChaCha20.Arm.Fn.init },

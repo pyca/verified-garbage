@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Impl.EcKey.BrainpoolP320r1.ArmFn
 public import VerifiedGarbage.Proof.EcKey.Arm.BrainpoolP320r1.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.Arm.Print
+public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.BrainpoolP320r1.Arm.Law
 public import VerifiedGarbage.Proof.Weierstrass.Law
 
@@ -15,7 +15,7 @@ namespace VG.Artifacts.EcBrainpoolP320r1.Arm
 
 open VG.Proof.BrainpoolP320r1.Arm (hasLaw)
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact Arm.target) := [
   Spec.EcKey.BrainpoolP320r1.publicKeyApi.artifact Arm.target {
     code := Impl.EcKey.Arm.Fn.publicKeyBrainpoolP320r1
     verified := Proof.EcKey.Arm.Fn.publicKeyBrainpoolP320r1 hasLaw.law },

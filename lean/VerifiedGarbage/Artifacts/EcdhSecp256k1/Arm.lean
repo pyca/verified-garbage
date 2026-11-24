@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Impl.Ecdh.Secp256k1.ArmFn
 public import VerifiedGarbage.Proof.Ecdh.Arm.Secp256k1.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.Arm.Print
+public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.Secp256k1.Arm.Law
 public import VerifiedGarbage.Proof.Weierstrass.Law
 
@@ -15,7 +15,7 @@ namespace VG.Artifacts.EcdhSecp256k1.Arm
 
 open VG.Proof.Secp256k1.Arm (hasLaw)
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact Arm.target) := [
   Spec.Ecdh.Secp256k1.exchangeApi.artifact Arm.target {
     code := Impl.Ecdh.Arm.Fn.exchangeSecp256k1
     verified := Proof.Ecdh.Arm.Fn.exchangeSecp256k1 hasLaw.law },

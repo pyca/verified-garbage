@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Sha256.PPC64LE.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Sha256
 import VerifiedGarbage.Proof.Sha256.PPC64LE.Lit
-public import VerifiedGarbage.TCB.PPC64LE.Print
 public import VerifiedGarbage.TCB.PPC64LE.Target
 public import VerifiedGarbage.Proof.Sha256.PPC64LE.Sha224
 public import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Sha224
@@ -15,7 +14,7 @@ public import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Sha224
 
 namespace VG.Artifacts.Sha256.PPC64LE
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact PPC64LE.target) := [
   Spec.Sha256.init224Api.artifact PPC64LE.target {
     code := Impl.Sha256.PPC64LE.Stream.init224
     verified := Proof.Sha256.PPC64LE.init224_scrubbed },

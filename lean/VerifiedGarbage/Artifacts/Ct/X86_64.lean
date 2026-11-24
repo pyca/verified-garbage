@@ -9,7 +9,7 @@ public import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Framework.RegSetOrder
 public import VerifiedGarbage.Proof.Framework.RegionsSub
 public import VerifiedGarbage.Proof.Framework.X86_64.Masked
-public import VerifiedGarbage.TCB.X86_64.Print
+public import VerifiedGarbage.TCB.X86_64.Target
 
 /-! # Constant-time byte comparison on x86-64 -/
 
@@ -18,6 +18,6 @@ public import VerifiedGarbage.TCB.X86_64.Print
 namespace VG.Artifacts.Ct.X86_64
 open VG.X86_64
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact X86_64.target) := [
   Spec.Ct.eqApi.artifact target { code := Impl.Ct.X86_64.Fn.eq, verified := Proof.Ct.X86_64.eq_scrubbed, spSafe := Proof.Ct.X86_64.eq_spSafe }]
 end VG.Artifacts.Ct.X86_64

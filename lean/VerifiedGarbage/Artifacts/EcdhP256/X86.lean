@@ -8,7 +8,6 @@ import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Spec.Ecdh.P256
-import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Weierstrass.Law
 public import VerifiedGarbage.Proof.Framework.X86.Sse
 import VerifiedGarbage.Proof.X25519.X86.Column
@@ -59,7 +58,7 @@ public import VerifiedGarbage.Proof.Weierstrass.X86.WinJacLoop
 public import VerifiedGarbage.Proof.X25519.Field
 public import VerifiedGarbage.Proof.X25519.X86.Arith
 public import VerifiedGarbage.Proof.X25519.X86.Fold
-public import VerifiedGarbage.TCB.X86.Print
+public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.P256.X86.Law
 public import VerifiedGarbage.Proof.Ecdh.X86.P256.Scrub
 
@@ -71,7 +70,7 @@ namespace VG.Artifacts.EcdhP256.X86
 
 open VG.Proof.P256.X86 (hasLaw)
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact X86.target) := [
   Spec.Ecdh.P256.exchangeApi.artifact X86.target {
     code := Impl.Ecdh.X86.Fn.exchangeP256
     verified := Proof.Ecdh.X86.P256.Scrub.exchange_scrubbed hasLaw.law hasLaw.inv hasLaw.prime }]

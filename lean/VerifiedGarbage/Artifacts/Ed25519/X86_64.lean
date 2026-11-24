@@ -18,7 +18,7 @@ public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
 public import VerifiedGarbage.Proof.Framework.X86_64.ScrubOr
 public import VerifiedGarbage.Proof.Ed25519.X86_64.Scrub
-public import VerifiedGarbage.TCB.X86_64.Print
+public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Variants.Sha512Compress.X86_64
 
 /-! # Ed25519 (RFC 8032) on x86-64 -/
@@ -35,7 +35,7 @@ def verifyWith (c : Proof.Sha512.X86_64.Compress) (fld : Impl.Ed25519.X86_64.Ari
     (fs : String)
     (hq : Proof.Ed25519.X86_64.VerifyMessage.EqCode fld win) (lv : Impl.Scrub.X86_64.VecLevel)
     (hs : Proof.Ed25519.X86_64.Scrub.VerifyStub lv fld win fs) :
-    Artifact :=
+    Artifact X86_64.target :=
   Spec.Ed25519.verifyApi.artifact X86_64.target
     { suffix := c.suffix ++ fs
       code := Impl.Ed25519.X86_64.VerifyMessage.Fn.verify (c.level.join lv) fld win fs c.callee c.suffix
@@ -47,7 +47,7 @@ implementation `c`, calling the base-point multiplication `bs` (`vg_ed25519_scal
 the suffix `fs`), whose own instructions are at the level `lv`. -/
 def signExpandedWith (c : Proof.Sha512.X86_64.Compress) (bs : Prog X86_64.isa)
     [Proof.Ed25519.X86_64.EdBase bs] (fs : String) (lv : Impl.Scrub.X86_64.VecLevel)
-    (hs : Proof.Ed25519.X86_64.Scrub.SignStub lv bs fs) : Artifact :=
+    (hs : Proof.Ed25519.X86_64.Scrub.SignStub lv bs fs) : Artifact X86_64.target :=
   Spec.Ed25519.signExpandedApi.artifact X86_64.target
     { suffix := c.suffix ++ fs
       code := Impl.Ed25519.X86_64.SignCached.Fn.signExpanded (c.level.join lv) bs fs c.callee c.suffix
@@ -60,7 +60,7 @@ what it leaves), calling `vg_ed25519_public_key_expanded` with the suffix `fs`, 
 base-point multiplication is `bs`, whose own instructions are at the level `lv`. -/
 def keyPairWith (c : Proof.Sha512.X86_64.Compress) (bs : Prog X86_64.isa)
     [Proof.Ed25519.X86_64.EdBase bs] (fs : String) (lv : Impl.Scrub.X86_64.VecLevel)
-    (hs : Proof.Ed25519.X86_64.Scrub.KeyPairStub lv bs fs) : Artifact :=
+    (hs : Proof.Ed25519.X86_64.Scrub.KeyPairStub lv bs fs) : Artifact X86_64.target :=
   Spec.Ed25519.keyPairApi.artifact X86_64.target
     { suffix := c.suffix ++ fs
       code := Impl.Ed25519.X86_64.KeyPair.Fn.keyPair (c.level.join lv)
@@ -80,7 +80,7 @@ def withField (c : Proof.Sha512.X86_64.Compress) (fld : Impl.Ed25519.X86_64.Arit
     (lvV lvS : Impl.Scrub.X86_64.VecLevel)
     (hv : Proof.Ed25519.X86_64.Scrub.VerifyStub lvV fld (Impl.Ed25519.X86_64.windows fld) fs)
     (hs : Proof.Ed25519.X86_64.Scrub.SignStub lvS bs fs) (hk : Proof.Ed25519.X86_64.Scrub.KeyPairStub lvS bs fs) :
-    List Artifact :=
+    List (Artifact X86_64.target) :=
   [verifyWith c fld (Impl.Ed25519.X86_64.windows fld) fs hq lvV hv,
     signExpandedWith c bs fs lvS hs, keyPairWith c bs fs lvS hk]
 
@@ -89,7 +89,7 @@ each field multiplication of the Ed25519 functions, best first: with
 AVX512_IFMA (`_ifma`), verification with its windows, and signing with its
 comb; BMI2's and ADX's (`_adx`, whose comb also selects its entries with
 AVX2); and the baseline's. -/
-def artifactsFor (c : Proof.Sha512.X86_64.Compress) : List Artifact :=
+def artifactsFor (c : Proof.Sha512.X86_64.Compress) : List (Artifact X86_64.target) :=
   [verifyWith c Impl.X25519.X86_64.adx
         Impl.Ed25519.X86_64.Ifma.windows "_ifma" Proof.Ed25519.X86_64.VerifyCode.ifma_eq .avx
         Proof.Ed25519.X86_64.Scrub.verify_stub_ifma,
@@ -103,7 +103,7 @@ def artifactsFor (c : Proof.Sha512.X86_64.Compress) : List Artifact :=
         Proof.Ed25519.X86_64.VerifyCode.baseline_eq .sse .sse Proof.Ed25519.X86_64.Scrub.verify_stub_baseline
         Proof.Ed25519.X86_64.Scrub.sign_stub_baseline Proof.Ed25519.X86_64.Scrub.keyPair_stub_baseline
 
-def artifacts : List Artifact :=
+def artifacts : List (Artifact X86_64.target) :=
   VG.Proof.Variants.Sha512Compress.X86_64.variants.flatMap fun v => artifactsFor v
 
 end VG.Artifacts.Ed25519.X86_64

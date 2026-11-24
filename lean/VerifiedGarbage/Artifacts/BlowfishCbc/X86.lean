@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Blowfish.X86.Scrub
 public import VerifiedGarbage.Impl.Blowfish.X86.Fn
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.X86.Print
+public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Blowfish.X86.Ssse3Verified
 public import VerifiedGarbage.Impl.Blowfish.X86.Ssse3
 public import VerifiedGarbage.Proof.Blowfish.X86.Ssse3WideVerified
@@ -18,7 +18,7 @@ import VerifiedGarbage.Proof.Blowfish.X86.Ssse3WideLit
 
 namespace VG.Artifacts.BlowfishCbc.X86
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact X86.target) := [
   Spec.Blowfish.cbcEncryptChainedApi.artifact X86.target {
     suffix := "_ssse3"
     code := Impl.Blowfish.X86.Ssse3.Fn.cbcEncryptChained

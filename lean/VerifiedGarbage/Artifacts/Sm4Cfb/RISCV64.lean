@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Sm4.RISCV64.Scrub
 public import VerifiedGarbage.Impl.Sm4.RISCV64.Fn
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.RISCV64.Print
+public import VerifiedGarbage.TCB.RISCV64.Target
 import VerifiedGarbage.Proof.Sm4.RISCV64.ModesLit
 import VerifiedGarbage.Proof.Sm4.RISCV64.FbFinalLit
 
@@ -13,7 +13,7 @@ import VerifiedGarbage.Proof.Sm4.RISCV64.FbFinalLit
 
 namespace VG.Artifacts.Sm4Cfb.RISCV64
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact RISCV64.target) := [
   Spec.Sm4.cfbEncryptApi.artifact RISCV64.target {
     code := Impl.Sm4.RISCV64.Fn.cfbEncrypt
     verified := Proof.Sm4.RISCV64.Scrub.cfbEncrypt_scrubbed },

@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Rsa.AArch64.InvBatch
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Rsa.AArch64.Fn
-public import VerifiedGarbage.TCB.AArch64.Print
+public import VerifiedGarbage.TCB.AArch64.Target
 
 /-! # RSA (RFC 8017) on AArch64 -/
 
@@ -11,7 +11,7 @@ public import VerifiedGarbage.TCB.AArch64.Print
 
 namespace VG.Artifacts.Rsa.AArch64
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact AArch64.target) := [
   Spec.Rsa.publicPrecomputeApi.artifact AArch64.target {
     code := Impl.Rsa.AArch64.Fn.publicPrecompute
     verified := Proof.Rsa.AArch64.Fn.publicPrecompute },

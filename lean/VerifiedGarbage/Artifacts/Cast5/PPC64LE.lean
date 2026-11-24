@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Cast5.PPC64LE.EcbVerified
 public import VerifiedGarbage.Proof.Cast5.PPC64LE.KeyVerified
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Cast5.PPC64LE.Scrub
-public import VerifiedGarbage.TCB.PPC64LE.Print
+public import VerifiedGarbage.TCB.PPC64LE.Target
 import VerifiedGarbage.Proof.Cast5.PPC64LE.Lit
 
 /-! # CAST5 (RFC 2144) on PPC64LE -/
@@ -13,7 +13,7 @@ import VerifiedGarbage.Proof.Cast5.PPC64LE.Lit
 
 namespace VG.Artifacts.Cast5.PPC64LE
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact PPC64LE.target) := [
   Spec.Cast5.expandKeyApi.artifact PPC64LE.target {
     code := Impl.Cast5.PPC64LE.Fn.expandKey
     verified := Proof.Cast5.PPC64LE.Scrub.expandKey_scrubbed },

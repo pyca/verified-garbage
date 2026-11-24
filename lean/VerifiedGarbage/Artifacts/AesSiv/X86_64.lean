@@ -38,7 +38,7 @@ public import VerifiedGarbage.Proof.Gcm.Stream
 public import VerifiedGarbage.Proof.Gcm.X86_64.Bits
 public import VerifiedGarbage.Spec.Ccm.Contract
 import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
-public import VerifiedGarbage.TCB.X86_64.Print
+public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Variants.AesCtr32.X86_64
 public import VerifiedGarbage.Proof.Variants.CmacAesUpdate.X86_64
 
@@ -50,7 +50,7 @@ namespace VG.Artifacts.AesSiv.X86_64
 
 open VG.Proof.AesSiv.X86_64
 
-def artifacts : List Artifact :=
+def artifacts : List (Artifact X86_64.target) :=
   (VG.Proof.Variants.AesCtr32.X86_64.variants.flatMap fun (v : Proof.Aes.X86_64.Ctr32Impl) => [
     Spec.Siv.initApi.artifact X86_64.target
       (match v.free with

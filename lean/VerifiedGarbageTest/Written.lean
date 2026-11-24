@@ -83,8 +83,8 @@ theorem verified : Verified target code contract := by
     exact ⟨Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide),
       Region.disjoint_of_sep (by decide), by decide, by decide, by decide⟩
 
-def artifact (w : List (String × Nat)) : Artifact where
-  target := .of (renderOnly target)
+def artifact (w : List (String × Nat)) : EmitArtifact where
+  target := .of (renderOnly target) emitter
   module := "test"
   name := "vg_test_written"
   sig := sig
@@ -144,7 +144,7 @@ pub unsafe extern \"C\" fn vg_test_written(buf: *mut [u64; 4], other: *mut [u8; 
 #guard Rust.writtenName "vg_x25519_base" "scratch" == "VG_X25519_BASE_SCRATCH_WRITTEN"
 
 /-- The artifact, its name `name` and its module `module`. -/
-def named (name : String) (module : String := "test") : Artifact :=
+def named (name : String) (module : String := "test") : EmitArtifact :=
   { artifact [] with name := name, module := module }
 
 #guard (Rust.checkName (artifact [])).isOk

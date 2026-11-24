@@ -5,7 +5,7 @@ public import VerifiedGarbage.Impl.AesCfb8.X86_64.Fn
 public import VerifiedGarbage.Impl.AesCfb.X86_64.Fn
 public import VerifiedGarbage.Proof.AesCfb8.X86_64.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.X86_64.Print
+public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Variants.AesBlocks.X86_64
 public import VerifiedGarbage.Proof.Aes.X86_64.ModesScrub
 
@@ -16,7 +16,7 @@ public import VerifiedGarbage.Proof.Aes.X86_64.ModesScrub
 namespace VG.Artifacts.AesCfb8.X86_64
 
 
-def artifacts : List Artifact :=
+def artifacts : List (Artifact X86_64.target) :=
   VG.Proof.Variants.AesBlocks.X86_64.variants.flatMap fun (v : Proof.Aes.X86_64.BlocksImpl) => [
     Spec.Cfb8.aesEncryptApi.artifact X86_64.target {
       suffix := v.suffix

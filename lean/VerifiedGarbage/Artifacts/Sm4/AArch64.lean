@@ -9,7 +9,7 @@ public import VerifiedGarbage.Proof.Sm4.AArch64.Sm4e.Key
 public import VerifiedGarbage.Proof.Sm4.AArch64.EcbResidue
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Sm4.AArch64.CtrScrub
-public import VerifiedGarbage.TCB.AArch64.Print
+public import VerifiedGarbage.TCB.AArch64.Target
 
 /-! # SM4 on AArch64 -/
 
@@ -17,7 +17,7 @@ public import VerifiedGarbage.TCB.AArch64.Print
 
 namespace VG.Artifacts.Sm4.AArch64
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact AArch64.target) := [
   Spec.Sm4.expandKeyApi.artifact AArch64.target {
     suffix := "_sm4"
     code := Impl.Sm4.AArch64.Sm4e.expandKey

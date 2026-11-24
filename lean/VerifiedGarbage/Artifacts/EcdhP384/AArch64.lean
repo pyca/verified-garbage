@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Ecdh.AArch64.P384.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.P384.AArch64.Law
 public import VerifiedGarbage.Spec.Ecdh.P384
-public import VerifiedGarbage.TCB.AArch64.Print
+public import VerifiedGarbage.TCB.AArch64.Target
 
 /-! # ECDH over P-384 (SP 800-56A) on AArch64 -/
 
@@ -15,7 +15,7 @@ namespace VG.Artifacts.EcdhP384.AArch64
 
 open VG.Proof.P384.AArch64 (hasLaw)
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact AArch64.target) := [
   Spec.Ecdh.P384.exchangeApi.artifact AArch64.target {
     code := Impl.Ecdh.AArch64.Fn.exchangeP384
     verified := Proof.Ecdh.AArch64.P384.exchange_scrubbed hasLaw.law hasLaw.inv hasLaw.prime }]

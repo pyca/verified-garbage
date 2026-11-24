@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.RsaPss.PPC64LE.Scrub
 public import VerifiedGarbage.Impl.RsaPss.PPC64LE.Fn
 public import VerifiedGarbage.Spec.RsaPss.MdTable
-public import VerifiedGarbage.TCB.PPC64LE.Print
+public import VerifiedGarbage.TCB.PPC64LE.Target
 
 /-! # RSASSA-PSS (RFC 8017) on PPC64LE -/
 
@@ -14,7 +14,7 @@ namespace VG.Artifacts.RsaPss.PPC64LE
 
 open VG.Proof.MdHashTable.PPC64LE (mvars tables fnsOf fns3)
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact PPC64LE.target) := [
   Spec.RsaPss.verifyPrecomputedMdTableApi.artifact PPC64LE.target {
     tables := [("hash", tables mvars), ("mgf1", tables mvars)]
     code := Impl.RsaPss.PPC64LE.Fn.verifyPrecomputed (fnsOf mvars) (fns3 mvars)

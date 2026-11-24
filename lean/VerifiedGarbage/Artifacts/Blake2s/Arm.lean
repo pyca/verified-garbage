@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Blake2.Arm.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.Arm.Print
+public import VerifiedGarbage.TCB.Arm.Target
 
 /-! # BLAKE2s (RFC 7693) on ARMv7 -/
 
@@ -10,7 +10,7 @@ public import VerifiedGarbage.TCB.Arm.Print
 
 namespace VG.Artifacts.Blake2s.Arm
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact Arm.target) := [
   Spec.Blake2.initSApi.artifact Arm.target {
     code := Impl.Blake2.Arm.Fn.initS
     verified := Proof.Blake2.Arm.Fn.initS },

@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Impl.AesXts.X86_64Fn
 public import VerifiedGarbage.Proof.AesXts.X86_64.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.X86_64.Print
+public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Variants.AesXts.X86_64
 
 /-! # XTS-AES (IEEE Std 1619-2007, NIST SP 800-38E) on x86-64 -/
@@ -12,7 +12,7 @@ public import VerifiedGarbage.Proof.Variants.AesXts.X86_64
 
 namespace VG.Artifacts.AesXts.X86_64
 
-def artifacts : List Artifact :=
+def artifacts : List (Artifact X86_64.target) :=
   VG.Proof.Variants.AesXts.X86_64.variants.flatMap fun (v : Proof.AesXts.X86_64.XtsImpl) => [
     Spec.Xts.aesEncryptUnitApi.artifact X86_64.target {
       suffix := v.suffix

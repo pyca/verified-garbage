@@ -13,7 +13,7 @@ public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.Gh
 public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.SealCT
 public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.Setup
 public import VerifiedGarbage.Proof.Ocb.Spec
-public import VerifiedGarbage.TCB.X86_64.Print
+public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Variants.AesGcm.X86_64
 
 /-! # AES-GCM-SIV (RFC 8452) on x86-64 -/
@@ -26,7 +26,7 @@ open VG.Proof.AesGcm.X86_64 (GcmImpl GcmVariant)
 open VG.Proof.AesGcmSiv.X86_64
 
 /-- The artifacts calling the implementations `v`. -/
-def artifactsOf (v : GcmImpl) : List Artifact := [
+def artifactsOf (v : GcmImpl) : List (Artifact X86_64.target) := [
   Spec.GcmSiv.sealApi.artifact X86_64.target
     (if sivReg v then
       { suffix := v.suffix
@@ -55,7 +55,7 @@ def artifactsOf (v : GcmImpl) : List Artifact := [
 /-- The instances with the AVX2 copies (`_avx2`), for a variant that has
 them (`hasWide`), by the lengths where the variant's code does not take
 them already. -/
-def wideArtifactsOf (v : GcmImpl) : List Artifact := [
+def wideArtifactsOf (v : GcmImpl) : List (Artifact X86_64.target) := [
   Spec.GcmSiv.sealApi.artifact X86_64.target {
     suffix := v.suffix ++ "_avx2"
     code := Impl.AesGcmSiv.X86_64.Fn.sealAvx2 (softLevel v true (loopsOf v)) v.callees (ecbFn v) (sivWide v) (loopsOf v)
@@ -71,10 +71,10 @@ def wideArtifactsOf (v : GcmImpl) : List Artifact := [
 where they may run (`hasWide`), first, which its dispatchers then try first;
 then those without them, where they may run where the others cannot
 (`hasNarrow`). -/
-def artifactsFor (v : GcmImpl) : List Artifact :=
+def artifactsFor (v : GcmImpl) : List (Artifact X86_64.target) :=
   (if hasWide v then wideArtifactsOf v else []) ++ if hasNarrow v then artifactsOf v else []
 
-def artifacts : List Artifact :=
+def artifacts : List (Artifact X86_64.target) :=
   (sivImpls (VG.Proof.Variants.AesGcm.X86_64.variants.map (·.impl))).flatMap artifactsFor
 
 end VG.Artifacts.AesGcmSiv.X86_64

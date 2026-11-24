@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Camellia.PPC64LE.Verified
 public import VerifiedGarbage.Proof.Camellia.PPC64LE.KeyVerified
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Camellia.PPC64LE.Scrub
-public import VerifiedGarbage.TCB.PPC64LE.Print
+public import VerifiedGarbage.TCB.PPC64LE.Target
 
 /-! # Camellia on PPC64LE -/
 
@@ -12,7 +12,7 @@ public import VerifiedGarbage.TCB.PPC64LE.Print
 
 namespace VG.Artifacts.Camellia.PPC64LE
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact PPC64LE.target) := [
   Spec.Camellia.expandKeyApi.artifact PPC64LE.target {
     code := Impl.Camellia.PPC64LE.Fn.expandKey
     verified := Proof.Camellia.PPC64LE.Scrub.expandKey_scrubbed },

@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Gcm.RISCV64.Law
 public import VerifiedGarbage.Proof.Sm4Gcm.RISCV64.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.RISCV64.Print
+public import VerifiedGarbage.TCB.RISCV64.Target
 
 import VerifiedGarbage.Proof.Sm4.RISCV64.Lit
 import VerifiedGarbage.Proof.Sm4.RISCV64.ModesLit
@@ -15,7 +15,7 @@ import VerifiedGarbage.Proof.Gcm.RISCV64.Lit
 
 namespace VG.Artifacts.Sm4Gcm.RISCV64
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact RISCV64.target) := [
   Spec.Sm4.Gcm.initApi.artifact RISCV64.target {
     code := Impl.Sm4Gcm.RISCV64.Fn.init
     verified := Proof.Sm4Gcm.RISCV64.Scrub.init_scrubbed },

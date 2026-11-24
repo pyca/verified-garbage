@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.Arm.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.Arm.Print
+public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterBackend
 public import VerifiedGarbage.Impl.Ffdh.Arm.ParameterSearch
 public import VerifiedGarbage.Spec.Ffdh.GenerationContract
@@ -37,7 +37,7 @@ public import VerifiedGarbage.Proof.Ffdh.Arm.SharedExchangeInstances
 namespace VG.Artifacts.Ffdh.Arm.Cached
 open VG
 
-def artifactsFor (v : Proof.Bignum.Arm.MontBackend) : List Artifact :=
+def artifactsFor (v : Proof.Bignum.Arm.MontBackend) : List (Artifact Arm.target) :=
   [Spec.Ffdh.generationPrecomputeApi.artifact VG.Arm.target {
     suffix := v.suffix
     code := Impl.Ffdh.Arm.Fn.generationPrecompute (Proof.Ffdh.Arm.combPrecomputeCalledCode v)
@@ -48,7 +48,7 @@ def artifactsFor (v : Proof.Bignum.Arm.MontBackend) : List Artifact :=
       (Proof.Ffdh.Arm.KeySearch.calledCode (Proof.Ffdh.Arm.CachedKeyGenerate.backend v))
     verified := Proof.Ffdh.Arm.Fn.cachedKeySearch v }]
 
-def artifacts : List Artifact :=
+def artifacts : List (Artifact Arm.target) :=
   VG.Proof.Variants.RsaMont.Arm.variants.flatMap fun v => artifactsFor v
 
 end VG.Artifacts.Ffdh.Arm.Cached
@@ -57,13 +57,13 @@ end VG.Artifacts.Ffdh.Arm.Cached
 namespace VG.Artifacts.Ffdh.Arm.DerivePublic
 open VG
 
-def artifactsFor (b : Proof.Bignum.Arm.MontBackend) : List Artifact :=
+def artifactsFor (b : Proof.Bignum.Arm.MontBackend) : List (Artifact Arm.target) :=
   [Spec.Ffdh.derivePublicApi.artifact VG.Arm.target {
     suffix := b.suffix
     code := Impl.Ffdh.Arm.Fn.derivePublic (Proof.Ffdh.Arm.SharedDerive.calledCode b)
     verified := Proof.Ffdh.Arm.Fn.derivePublic b }]
 
-def artifacts : List Artifact :=
+def artifacts : List (Artifact Arm.target) :=
   VG.Proof.Variants.RsaMont.Arm.variants.flatMap fun v => artifactsFor v
 
 end VG.Artifacts.Ffdh.Arm.DerivePublic
@@ -72,7 +72,7 @@ end VG.Artifacts.Ffdh.Arm.DerivePublic
 namespace VG.Artifacts.Ffdh.Arm.Domain.RsaMont
 open VG
 
-def artifacts (b : Proof.Bignum.Arm.MontBackend) : List Artifact :=
+def artifacts (b : Proof.Bignum.Arm.MontBackend) : List (Artifact Arm.target) :=
   [Spec.Ffdh.checkDomainApi.artifact VG.Arm.target {
     suffix := b.suffix
     code := Impl.Ffdh.Arm.Fn.checkDomain (Proof.Ffdh.Arm.SharedCheckDomain.calledCode b)
@@ -90,7 +90,7 @@ end VG.Artifacts.Ffdh.Arm.Domain.RsaMont
 
 namespace VG.Artifacts.Ffdh.Arm.Domain
 
-def artifacts : List Artifact :=
+def artifacts : List (Artifact Arm.target) :=
   VG.Proof.Variants.RsaMont.Arm.variants.flatMap fun v => RsaMont.artifacts v
 
 end VG.Artifacts.Ffdh.Arm.Domain
@@ -99,13 +99,13 @@ end VG.Artifacts.Ffdh.Arm.Domain
 namespace VG.Artifacts.Ffdh.Arm.Exchange
 open VG
 
-def artifactsFor (b : Proof.Bignum.Arm.MontBackend) : List Artifact :=
+def artifactsFor (b : Proof.Bignum.Arm.MontBackend) : List (Artifact Arm.target) :=
   [Spec.Ffdh.exchangeApi.artifact VG.Arm.target {
     suffix := b.suffix
     code := Impl.Ffdh.Arm.Fn.exchange (Proof.Ffdh.Arm.SharedExchange.calledCode b)
     verified := Proof.Ffdh.Arm.Fn.exchange b }]
 
-def artifacts : List Artifact :=
+def artifacts : List (Artifact Arm.target) :=
   VG.Proof.Variants.RsaMont.Arm.variants.flatMap fun v => artifactsFor v
 
 end VG.Artifacts.Ffdh.Arm.Exchange
@@ -113,7 +113,7 @@ end VG.Artifacts.Ffdh.Arm.Exchange
 namespace VG.Artifacts.Ffdh.Arm
 open VG
 
-def direct : List Artifact :=
+def direct : List (Artifact Arm.target) :=
   [
     Spec.Ffdh.keyInitApi.artifact VG.Arm.target {
       code := Impl.Ffdh.Arm.Fn.keyInit
@@ -128,7 +128,7 @@ namespace VG.Artifacts.Ffdh.Arm
 
 open VG
 
-def artifacts : List Artifact :=
+def artifacts : List (Artifact Arm.target) :=
   Cached.artifacts ++
   DerivePublic.artifacts ++
   Domain.artifacts ++

@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Sm4.X86.Scrub
 public import VerifiedGarbage.Impl.Sm4.X86.Fn
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.X86.Print
+public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Sm4.X86.AesNiWideScrub
 public import VerifiedGarbage.Impl.Sm4.X86.AesNiWideFn
 import VerifiedGarbage.Proof.Sm4.X86.CtrLit
@@ -17,7 +17,7 @@ public import VerifiedGarbage.Proof.Variants.Sm4Ctr.X86
 namespace VG.Artifacts.Sm4Ctr.X86
 
 /-- `vg_sm4_ctr_final`, with each implementation of `vg_sm4_ctr`'s code. -/
-def finals : List Artifact :=
+def finals : List (Artifact X86.target) :=
   VG.Proof.Variants.Sm4Ctr.X86.variants.map fun (c : Proof.Sm4.X86.CtrFinal.CtrImpl) =>
     Spec.Sm4.ctrFinalApi.artifact X86.target {
       suffix := c.suffix
@@ -25,7 +25,7 @@ def finals : List Artifact :=
       verified := Proof.Sm4.X86.Scrub.ctrFinal_scrubbed c
       spSafe := Proof.Sm4.X86.Scrub.ctrFinal_spSafeF c }
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact X86.target) := [
   Spec.Sm4.ctrApi.artifact X86.target {
     suffix := "_aesni"
     code := Impl.Sm4.X86.AesNiWide.Fn.ctr

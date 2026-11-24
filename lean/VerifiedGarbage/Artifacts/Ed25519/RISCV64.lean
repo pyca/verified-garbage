@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Ed25519.RISCV64.Fn
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.RISCV64.Print
 public import VerifiedGarbage.TCB.RISCV64.Target
 
 /-! # Ed25519 (RFC 8032) on RISC-V -/
@@ -11,7 +10,7 @@ public import VerifiedGarbage.TCB.RISCV64.Target
 
 namespace VG.Artifacts.Ed25519.RISCV64
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact RISCV64.target) := [
   Spec.Ed25519.keyPairApi.artifact RISCV64.target {
     code := Impl.Ed25519.RISCV64.Fn.keyPair Proof.Ed25519.RISCV64.KeyPair.dgCode
     verified := Proof.Ed25519.RISCV64.Fn.keyPair },

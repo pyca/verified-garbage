@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Hmac.X86.Scrub
 public import VerifiedGarbage.Impl.Hmac.X86
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.X86.Print
+public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Hashes
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Lit
 import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Lit
@@ -14,7 +14,7 @@ import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Lit
 
 namespace VG.Artifacts.HmacSha384.X86
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact X86.target) := [
   Spec.Hmac.sha384I.initAnyKeyApi.artifact X86.target {
     code := Impl.Hmac.X86.Fn.sha512Init Proof.Pbkdf2.Md.X86.sha384M Proof.Pbkdf2.Whole.X86.sha384F
     verified := Proof.Hmac.X86.Scrub.sha384_init_scrubbed

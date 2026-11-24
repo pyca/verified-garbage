@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Mcdt.X86_64
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.X86_64.Print
+public import VerifiedGarbage.TCB.X86_64.Target
 
 /-! # Intel's MXCSR mitigation of MCDT on x86-64 -/
 
@@ -10,7 +10,7 @@ public import VerifiedGarbage.TCB.X86_64.Print
 
 namespace VG.Artifacts.Mcdt.X86_64
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact X86_64.target) := [
   Spec.Mcdt.enterApi.artifact X86_64.target {
     code := Impl.Mcdt.X86_64.enterCall
     verified := Proof.Mcdt.X86_64.enter_scrubbed

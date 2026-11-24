@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Hmac.Stream.Arm.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.Arm.Print
+public import VerifiedGarbage.TCB.Arm.Target
 
 /-! # HMAC-SHA-512/224 (RFC 2104) on ARMv7 -/
 
@@ -10,7 +10,7 @@ public import VerifiedGarbage.TCB.Arm.Print
 
 namespace VG.Artifacts.HmacSha512_224.Arm
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact Arm.target) := [
   Spec.Hmac.sha512_224I.initAnyKeyApi.artifact Arm.target {
     code := Impl.Hmac.Stream.Arm.Fn.initSha512_224
     verified := Proof.Hmac.Stream.Arm.Fn.initSha512_224 },

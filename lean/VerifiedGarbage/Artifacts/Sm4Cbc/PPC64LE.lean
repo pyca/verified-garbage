@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Sm4.PPC64LE.ModesVerified
 public import VerifiedGarbage.Proof.Sm4.PPC64LE.ModesFrame
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Sm4.PPC64LE.Scrub
-public import VerifiedGarbage.TCB.PPC64LE.Print
+public import VerifiedGarbage.TCB.PPC64LE.Target
 import VerifiedGarbage.Proof.Sm4.PPC64LE.ModesLit
 import VerifiedGarbage.Proof.Sm4.PPC64LE.Lit
 
@@ -14,7 +14,7 @@ import VerifiedGarbage.Proof.Sm4.PPC64LE.Lit
 
 namespace VG.Artifacts.Sm4Cbc.PPC64LE
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact PPC64LE.target) := [
   Spec.Sm4.cbcEncryptChainedApi.artifact PPC64LE.target {
     code := Impl.Sm4.PPC64LE.Fn.cbcEncrypt
     verified := Proof.Sm4.PPC64LE.Scrub.cbcEncrypt_scrubbed },

@@ -4,7 +4,7 @@ public import VerifiedGarbage.Impl.AesCbc.X86_64.Fn
 public import VerifiedGarbage.Proof.AesCbc.X86_64.Wiped
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
-public import VerifiedGarbage.TCB.X86_64.Print
+public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Variants.AesBlocks.X86_64
 public import VerifiedGarbage.Proof.Variants.Zeroize.X86_64
 
@@ -14,7 +14,7 @@ public import VerifiedGarbage.Proof.Variants.Zeroize.X86_64
 
 namespace VG.Artifacts.AesCbc.X86_64
 
-def direct : List Artifact := [
+def direct : List (Artifact X86_64.target) := [
   Spec.Cbc.aesDecryptApi.artifact VG.X86_64.target {
     suffix := "_vaes_avx512"
     code := Impl.AesCbc.X86_64.Fn.decryptVaes512 .avx Proof.Zeroize.X86_64.ZeroizeImpl.avx.name
@@ -25,7 +25,7 @@ end VG.Artifacts.AesCbc.X86_64
 
 namespace VG.Artifacts.AesCbc.X86_64
 
-def artifacts : List Artifact :=
+def artifacts : List (Artifact X86_64.target) :=
   direct ++
   (VG.Proof.Variants.AesBlocks.X86_64.variants.flatMap fun (v : Proof.Aes.X86_64.BlocksImpl) =>
     VG.Proof.Variants.Zeroize.X86_64.variants.flatMap fun (z : Proof.Zeroize.X86_64.ZeroizeImpl) =>

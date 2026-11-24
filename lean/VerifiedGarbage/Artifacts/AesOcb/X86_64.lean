@@ -57,7 +57,7 @@ public import VerifiedGarbage.Proof.Gcm.Spec
 public import VerifiedGarbage.Proof.Gcm.Stream
 public import VerifiedGarbage.Proof.Gcm.X86_64.Bits
 public import VerifiedGarbage.Spec.Ccm.Contract
-public import VerifiedGarbage.TCB.X86_64.Print
+public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Variants.AesBlocks.X86_64
 public import VerifiedGarbage.Proof.AesOcb.X86_64.Scrub
 public import VerifiedGarbage.Proof.AesOcb.X86_64.AesNi.Verified
@@ -71,7 +71,7 @@ namespace VG.Artifacts.AesOcb.X86_64
 
 open VG.Proof.AesOcb.X86_64
 
-def artifacts : List Artifact :=
+def artifacts : List (Artifact X86_64.target) :=
   VG.Proof.Variants.AesBlocks.X86_64.variants.map (fun (v : Proof.Aes.X86_64.BlocksImpl) =>
     Spec.Ocb.initApi.artifact X86_64.target {
       suffix := v.suffix

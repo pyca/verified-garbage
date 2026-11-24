@@ -4,7 +4,7 @@ public import VerifiedGarbage.Impl.Blake2.AArch64.Stream
 public import VerifiedGarbage.Proof.Blake2.AArch64.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Spec.Blake2.Contract
-public import VerifiedGarbage.TCB.AArch64.Print
+public import VerifiedGarbage.TCB.AArch64.Target
 
 /-! # BLAKE2s (RFC 7693) on AArch64 -/
 
@@ -12,7 +12,7 @@ public import VerifiedGarbage.TCB.AArch64.Print
 
 namespace VG.Artifacts.Blake2s.AArch64
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact AArch64.target) := [
   Spec.Blake2.initSApi.artifact AArch64.target {
     code := Impl.Blake2.AArch64.Fn.init Spec.Blake2.s
     verified := Proof.Blake2.AArch64.Fn.initS },

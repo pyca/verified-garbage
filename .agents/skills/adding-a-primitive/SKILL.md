@@ -39,8 +39,9 @@ instructions in an ISA model) go in their own PR before either.
    simpler per-target contract of its own and moved to the shared one with
    `Verified.of_implies` (see `Proof/Framework/Contract.lean`).
 4. An `Artifact` in the registration file `Artifacts/<Alg>/<Target>.lean`,
-   which defines `VG.Artifacts.<Alg>.<Target>.artifacts` (a new file for a
-   new algorithm or target; see `Artifacts/Selftest/X86_64.lean`). An
+   which defines `VG.Artifacts.<Alg>.<Target>.artifacts : List (Artifact
+   <Target>.target)` (a new file for a new algorithm or target; see
+   `Artifacts/Selftest/X86_64.lean`). An
    algorithm has one file per target, holding the artifacts of all its
    functions, whatever variant lists they map over
    (`artifacts := [ … ] ++ Sign.artifacts`, with the artifacts of a function
@@ -49,10 +50,10 @@ instructions in an ISA model) go in their own PR before either.
    from the function's `Api` by `Api.artifact` (`TCB/Registration.lean`),
    with the file importing
    `Proof/Framework/Registration.lean` for its default proofs, and its
-   target's printer, `TCB/<Target>/Print.lean` (`public import
-   VerifiedGarbage.TCB.X86_64.Print`), whose `Emitter` instance
-   `Api.artifact` takes (no proof imports a printer, so a change to one
-   rebuilds only registration files; a generic file imports it too):
+   target, `TCB/<Target>/Target.lean` (`public import
+   VerifiedGarbage.TCB.X86_64.Target`). It imports no printer: the emitter's
+   driver names the target's, and requires the list to be of the target its
+   directory names (`Emit.driver`):
 
    ```lean
      Spec.<Alg>.fooApi.artifact X86_64.target {
@@ -109,7 +110,7 @@ instructions in an ISA model) go in their own PR before either.
    registration file applies it to each: the implementations of the callee
    on a target are one list, `variants` in
    `Proof/Variants/<Iface>/<Target>.lean`, which the caller's registration
-   maps over (`def artifacts : List Artifact :=
+   maps over (`def artifacts : List (Artifact X86_64.target) :=
    Proof.Variants.<Iface>.<Target>.variants.flatMap artifactsFor`), and so
    is a function that calls such a caller (e.g. HMAC's `init`, calling
    SHA-256's `update`). A function that calls functions of several such

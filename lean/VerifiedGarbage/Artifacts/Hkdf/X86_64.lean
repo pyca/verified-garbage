@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.Hkdf.X86_64.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Variants.MdHash.X86_64
 public import VerifiedGarbage.Impl.Hkdf.X86_64.Fn
-public import VerifiedGarbage.TCB.X86_64.Print
 
 /-! # HKDF (RFC 5869) on x86-64 -/
 
@@ -17,7 +16,7 @@ open VG.Proof.HmacTable.X86_64 (tables fnsOf)
 open VG.Proof.Variants.MdHash.X86_64 (variants)
 open VG.Proof.Hkdf.X86_64 (OK)
 
-def artifacts : List Artifact :=
+def artifacts : List (Artifact X86_64.target) :=
   if hO : OK variants then [
     Spec.Hkdf.keyApi.artifact X86_64.target {
       tables := [("hmac", tables variants)]

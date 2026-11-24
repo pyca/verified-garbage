@@ -6,7 +6,6 @@ public import VerifiedGarbage.Impl.Ecdh.P192.RISCV64
 public import VerifiedGarbage.Proof.Ecdh.RISCV64.P192.PublicKeyVerified
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Spec.EcKey.P192
-public import VerifiedGarbage.TCB.RISCV64.Print
 import VerifiedGarbage.Proof.Ecdh.RISCV64.P192.EcdhLit
 public import VerifiedGarbage.Proof.P192.RISCV64.Law
 public import VerifiedGarbage.Impl.EcKey.Compressed.P192.RISCV64
@@ -21,7 +20,7 @@ namespace VG.Artifacts.EcP192.RISCV64
 
 open VG.Proof.P192.RISCV64 (hasLaw)
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact RISCV64.target) := [
   Spec.EcKey.P192.inst.compressPublicKeyApi.artifact RISCV64.target {
     code := Impl.EcKey.Compressed.RISCV64.Fn.compressP192
     verified := Proof.EcKey.Compressed.RISCV64.P192.compress_scrubbed },

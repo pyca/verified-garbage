@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Cast5.Arm.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.Arm.Print
+public import VerifiedGarbage.TCB.Arm.Target
 
 /-! # CAST5 (RFC 2144) on ARMv7 -/
 
@@ -10,7 +10,7 @@ public import VerifiedGarbage.TCB.Arm.Print
 
 namespace VG.Artifacts.Cast5.Arm
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact Arm.target) := [
   Spec.Cast5.expandKeyApi.artifact Arm.target {
     code := Impl.Cast5.Arm.Fn.expandKey
     verified := Proof.Cast5.Arm.Fn.expandKey },

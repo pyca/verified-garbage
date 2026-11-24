@@ -17,7 +17,6 @@ import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Spec.Ecdh.P256
-import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Weierstrass.Law
 public import VerifiedGarbage.Proof.Mont.X86_64.Wide
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
@@ -82,7 +81,7 @@ public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacBuild
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacEntry
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacStep
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinLoop
-public import VerifiedGarbage.TCB.X86_64.Print
+public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.P256.X86_64.Law
 
 /-! # ECDH over P-256 (SP 800-56A) on x86-64 -/
@@ -93,7 +92,7 @@ namespace VG.Artifacts.EcdhP256.X86_64
 
 open VG.Proof.P256.X86_64 (hasLaw)
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact X86_64.target) := [
   Spec.Ecdh.P256.exchangeApi.artifact X86_64.target
     { suffix := "_ifma"
       code := Impl.Ecdh.X86_64.Fn.exchangeP256Ifma

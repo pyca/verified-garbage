@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.X86.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.X86.Print
+public import VerifiedGarbage.TCB.X86.Target
 import VerifiedGarbage.Proof.Sha3.X86.Lit
 import VerifiedGarbage.Proof.Framework.X86.Lit
 
@@ -14,7 +14,7 @@ namespace VG.Artifacts.MlDsa.X86
 
 open VG
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact X86.target) := [
   Spec.MlDsa.keyGen44Api.artifact X86.target {
     code := Impl.MlDsa.X86.Fn.keyGen Spec.MlDsa.mlDsa44
     verified := Proof.MlDsa.X86.Scrub.keyGen_scrubbed "mldsa44" "ML-DSA-44" Proof.MlDsa.X86.Scrub.inst44.params

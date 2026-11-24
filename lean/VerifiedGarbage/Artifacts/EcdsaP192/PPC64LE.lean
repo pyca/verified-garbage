@@ -10,7 +10,6 @@ public import VerifiedGarbage.Impl.Ecdsa.Verify.P192.PPC64LE
 public import VerifiedGarbage.Proof.Ecdsa.Verify.PPC64LE.P192.Verified
 public import VerifiedGarbage.Spec.Ecdsa.Verify.P192
 public import VerifiedGarbage.Impl.Ecdsa.PPC64LE.VerifyHash
-public import VerifiedGarbage.TCB.PPC64LE.Print
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Scrub
 public import VerifiedGarbage.Impl.Ecdsa.Rfc6979.PPC64LE.Fn
 public import VerifiedGarbage.Proof.Ecdsa.Verify.PPC64LE.Scrub
@@ -31,7 +30,7 @@ open VG.Proof.HmacTable.PPC64LE (vars tables fnsOf names)
 
 open VG.Proof.P192.PPC64LE (hasLaw)
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact PPC64LE.target) := [
   Spec.Ecdsa.P192.verifyHashApi.artifact PPC64LE.target {
     code := Impl.Ecdsa.Verify.PPC64LE.Fn.p192Verify
     verified := Proof.Ecdsa.Verify.PPC64LE.Scrub.p192Verify_scrubbed hasLaw.law }] ++

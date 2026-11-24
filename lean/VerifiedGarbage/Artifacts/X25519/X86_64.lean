@@ -20,7 +20,7 @@ public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
 public import VerifiedGarbage.Proof.Framework.X86_64.ScrubOr
 public import VerifiedGarbage.Proof.X25519.X86_64.Scrub
-public import VerifiedGarbage.TCB.X86_64.Print
+public import VerifiedGarbage.TCB.X86_64.Target
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.Lit
 import VerifiedGarbage.Proof.X25519.X86_64.Base.Lit
 import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Lit
@@ -31,7 +31,7 @@ import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Lit
 
 namespace VG.Artifacts.X25519.X86_64
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact X86_64.target) := [
   Spec.X25519.exchangeApi.artifact X86_64.target
     { suffix := "_ifma"
       code := Impl.Xdh.X86_64.Fn.exchangeEvex "vg_x25519_ifma" Impl.X25519.X86_64.x25519Ifma 32

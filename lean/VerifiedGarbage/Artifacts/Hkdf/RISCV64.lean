@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.Hkdf.RISCV64.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Variants.MdHash.RISCV64
 public import VerifiedGarbage.Impl.Hkdf.RISCV64.Fn
-public import VerifiedGarbage.TCB.RISCV64.Print
 
 /-! # HKDF (RFC 5869) on RISC-V -/
 
@@ -16,7 +15,7 @@ namespace VG.Artifacts.Hkdf.RISCV64
 open VG.Proof.HmacTable.RISCV64 (tables)
 open VG.Proof.Variants.MdHash.RISCV64 (variants fns)
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact RISCV64.target) := [
   Spec.Hkdf.extractApi.artifact RISCV64.target {
     tables := [("hmac", tables variants)]
     code := Impl.Hkdf.RISCV64.Fn.extract fns

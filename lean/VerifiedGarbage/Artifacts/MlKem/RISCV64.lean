@@ -14,7 +14,7 @@ public import VerifiedGarbage.Proof.MlKem.RISCV64.CompressEncode
 public import VerifiedGarbage.Proof.MlKem.RISCV64.DecodeDecompress
 public import VerifiedGarbage.Proof.MlKem.RISCV64.CallWipe
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.RISCV64.Print
+public import VerifiedGarbage.TCB.RISCV64.Target
 public import VerifiedGarbage.Proof.MlKem1024.RISCV64.CheckEk
 public import VerifiedGarbage.Proof.MlKem1024.RISCV64.CompressEncode
 public import VerifiedGarbage.Proof.MlKem1024.RISCV64.Decompress
@@ -25,7 +25,7 @@ public import VerifiedGarbage.Proof.MlKem1024.RISCV64.Decompress
 
 namespace VG.Artifacts.MlKem.RISCV64
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact RISCV64.target) := [
   Spec.MlKem.keyGenApi.artifact RISCV64.target {
     code := Impl.MlKem.RISCV64.Fn.keyGen
     verified := Proof.MlKem.RISCV64.Scrub.keyGen_scrubbed },

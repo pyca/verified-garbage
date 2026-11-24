@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MdStream.Arm.ShaScrub
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.Arm.Print
+public import VerifiedGarbage.TCB.Arm.Target
 
 /-! # SHA-384, SHA-512, SHA-512/224 and SHA-512/256 (FIPS 180-4) on ARMv7 -/
 
@@ -10,7 +10,7 @@ public import VerifiedGarbage.TCB.Arm.Print
 
 namespace VG.Artifacts.Sha512.Arm
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact Arm.target) := [
   Spec.Sha512.init384Api.artifact Arm.target {
     code := Impl.Sha512.Arm.Fn.init384
     verified := Proof.Sha512.Arm.Fn.init384 },

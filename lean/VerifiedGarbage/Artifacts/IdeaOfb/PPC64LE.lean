@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Idea.PPC64LE.ModesFrame
 public import VerifiedGarbage.Proof.Idea.PPC64LE.FbFinalVerified
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Idea.PPC64LE.Scrub
-public import VerifiedGarbage.TCB.PPC64LE.Print
+public import VerifiedGarbage.TCB.PPC64LE.Target
 import VerifiedGarbage.Proof.Idea.PPC64LE.ModesLit
 import VerifiedGarbage.Proof.Idea.PPC64LE.FbFinalLit
 
@@ -15,7 +15,7 @@ import VerifiedGarbage.Proof.Idea.PPC64LE.FbFinalLit
 
 namespace VG.Artifacts.IdeaOfb.PPC64LE
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact PPC64LE.target) := [
   Spec.Idea.ofbApi.artifact PPC64LE.target {
     code := Impl.Idea.PPC64LE.Fn.ofb
     verified := Proof.Idea.PPC64LE.Scrub.ofb_scrubbed },

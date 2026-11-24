@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Aes.Arm.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.Arm.Print
+public import VerifiedGarbage.TCB.Arm.Target
 
 /-! # AES-CFB8 (NIST SP 800-38A §6.3) on ARMv7 -/
 
@@ -10,7 +10,7 @@ public import VerifiedGarbage.TCB.Arm.Print
 
 namespace VG.Artifacts.AesCfb8.Arm
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact Arm.target) := [
   Spec.Cfb8.aesEncryptApi.artifact Arm.target {
     code := Impl.Aes.Arm.Fn.cfb8Encrypt
     verified := Proof.Aes.Arm.Fn.cfb8Encrypt },

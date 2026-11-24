@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.CmacAes.Stream.RISCV64.Scrub
 public import VerifiedGarbage.Impl.CmacAes.Stream.RISCV64.Fn
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.RISCV64.Print
+public import VerifiedGarbage.TCB.RISCV64.Target
 
 /-! # AES-CMAC (NIST SP 800-38B) on RISC-V -/
 
@@ -11,7 +11,7 @@ public import VerifiedGarbage.TCB.RISCV64.Print
 
 namespace VG.Artifacts.CmacAes.RISCV64
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact RISCV64.target) := [
   Spec.Cmac.aesInitApi.artifact RISCV64.target {
     code := Impl.CmacAes.Stream.RISCV64.Fn.init
     verified := Proof.CmacAes.Stream.RISCV64.Scrub.init_scrubbed },

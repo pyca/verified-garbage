@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.RsaOaep.PPC64LE.Scrub
 public import VerifiedGarbage.Impl.RsaOaep.PPC64LE.Fn
 public import VerifiedGarbage.Spec.RsaOaep.MdTables
-public import VerifiedGarbage.TCB.PPC64LE.Print
+public import VerifiedGarbage.TCB.PPC64LE.Target
 
 /-! # RSAES-OAEP (RFC 8017) on PPC64LE -/
 
@@ -14,7 +14,7 @@ namespace VG.Artifacts.RsaOaep.PPC64LE
 
 open VG.Proof.MdHashTable.PPC64LE (mvars tables fns3)
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact PPC64LE.target) := [
   Spec.RsaOaep.decryptPrecomputedMdTablesApi.artifact PPC64LE.target {
     tables := [("hash", tables mvars), ("mgf1", tables mvars)]
     code := Impl.RsaOaep.PPC64LE.Fn.decryptP (fns3 mvars)

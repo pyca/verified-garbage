@@ -7,7 +7,7 @@ public import VerifiedGarbage.Impl.Camellia.X86.AesNiFn
 public import VerifiedGarbage.Proof.Camellia.X86.AesNiWideScrub
 public import VerifiedGarbage.Impl.Camellia.X86.AesNiWideFn
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.X86.Print
+public import VerifiedGarbage.TCB.X86.Target
 import VerifiedGarbage.Proof.Camellia.X86.SseLit
 import VerifiedGarbage.Proof.Camellia.X86.AesNiLit
 import VerifiedGarbage.Proof.Camellia.X86.AesNiWideLit
@@ -18,7 +18,7 @@ import VerifiedGarbage.Proof.Camellia.X86.AesNiWideLit
 
 namespace VG.Artifacts.CamelliaCfb.X86
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact X86.target) := [
   Spec.Camellia.cfbEncryptApi.artifact X86.target {
     suffix := "_aesni"
     code := Impl.Camellia.X86.AesNi.Fn.cfbEncrypt

@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.Arm.Fn
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.Arm.Print
+public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.Variants.RsaPrivateCrt.Arm
 public import VerifiedGarbage.Proof.Variants.RsaMont.Arm
 public import VerifiedGarbage.Proof.Variants.RsaInverse.Arm
@@ -14,7 +14,7 @@ public import VerifiedGarbage.Proof.Rsa.Arm.InvLoop
 
 namespace VG.Artifacts.Rsa.Arm
 
-def direct : List Artifact := [
+def direct : List (Artifact Arm.target) := [
   Spec.Rsa.checkKeyApi.artifact Arm.target {
     suffix := "_umaal"
     code := Impl.Rsa.Arm.Fn.checkKeyU
@@ -29,7 +29,7 @@ namespace VG.Artifacts.Rsa.Arm
 
 open VG.Proof.Rsa.Arm
 
-def artifacts : List Artifact :=
+def artifacts : List (Artifact Arm.target) :=
   (VG.Proof.Variants.RsaInverse.Arm.variants.flatMap fun (v : Proof.Variants.RsaInverse.Arm.Variant) => [
     Spec.Rsa.crtValuesApi.artifact Arm.target {
       suffix := v.suffix

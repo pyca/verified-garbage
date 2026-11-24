@@ -44,7 +44,7 @@ public import VerifiedGarbage.Proof.TripleDes.X86_64.Key.Rotation
 public import VerifiedGarbage.Proof.TripleDes.X86_64.KeySteps
 public import VerifiedGarbage.Proof.TripleDes.X86_64.RoundBody
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
-public import VerifiedGarbage.TCB.X86_64.Print
+public import VerifiedGarbage.TCB.X86_64.Target
 
 /-! # Triple DES on x86-64 -/
 
@@ -52,7 +52,7 @@ public import VerifiedGarbage.TCB.X86_64.Print
 
 namespace VG.Artifacts.TripleDes.X86_64
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact X86_64.target) := [
   Spec.TripleDes.expandKeyApi.artifact X86_64.target { code := Impl.TripleDes.X86_64.Fn.expandKey, verified := Proof.TripleDes.X86_64.Scrub.expandKey_scrubbed, spSafe := Proof.TripleDes.X86_64.Scrub.expandKey_spSafe },
   Spec.TripleDes.ecbEncryptApi.artifact X86_64.target { suffix := "_avx512", code := Impl.TripleDes.X86_64.Fn.ecbEncryptAvx512, verified := Proof.TripleDes.X86_64.Scrub.ecbEncryptAvx512_scrubbed, spSafe := Proof.TripleDes.X86_64.Scrub.ecbEncryptAvx512_spSafe },
   Spec.TripleDes.ecbEncryptApi.artifact X86_64.target { suffix := "_avx2", code := Impl.TripleDes.X86_64.Fn.ecbEncryptAvx2, verified := Proof.TripleDes.X86_64.Scrub.ecbEncryptAvx2_scrubbed, spSafe := Proof.TripleDes.X86_64.Scrub.ecbEncryptAvx2_spSafe },

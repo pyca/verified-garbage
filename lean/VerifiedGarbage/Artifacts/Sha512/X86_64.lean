@@ -4,7 +4,7 @@ public import VerifiedGarbage.Impl.Sha512.X86_64.Fn
 public import VerifiedGarbage.Proof.Sha512.X86_64.Shared
 public import VerifiedGarbage.Proof.Sha512.X86_64.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.X86_64.Print
+public import VerifiedGarbage.TCB.X86_64.Target
 import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Lit
 import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Lit
 import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Lit
@@ -34,7 +34,7 @@ public import VerifiedGarbage.Proof.Variants.MdHash.X86_64
 
 namespace VG.Artifacts.Sha512.X86_64
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact X86_64.target) := [
   Spec.Sha512.init384Api.artifact X86_64.target { code := Impl.Sha512.X86_64.Fn.init384, verified := Proof.Sha512.X86_64.init384_scrubbed, spSafe := Proof.Sha512.X86_64.init384_spSafe },
   Spec.Sha512.init512Api.artifact X86_64.target { code := Impl.Sha512.X86_64.Fn.init512, verified := Proof.Sha512.X86_64.init512_scrubbed, spSafe := Proof.Sha512.X86_64.init512_spSafe },
   Spec.Sha512.init512_224Api.artifact X86_64.target { code := Impl.Sha512.X86_64.Fn.init512_224, verified := Proof.Sha512.X86_64.init512_224_scrubbed, spSafe := Proof.Sha512.X86_64.init512_224_spSafe },

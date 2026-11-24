@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.Rc2.X86_64.Key
 public import VerifiedGarbage.Proof.Rc2.X86_64.Cbc.Chained
 public import VerifiedGarbage.Proof.Rc2.X86_64.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.X86_64.Print
+public import VerifiedGarbage.TCB.X86_64.Target
 import VerifiedGarbage.Proof.Rc2.X86_64.Stream.Lit
 
 /-! # RC2 on x86-64 -/
@@ -15,7 +15,7 @@ import VerifiedGarbage.Proof.Rc2.X86_64.Stream.Lit
 
 namespace VG.Artifacts.Rc2.X86_64
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact X86_64.target) := [
   Spec.Rc2.cbcInitApi.artifact X86_64.target {
     code := Impl.Rc2.X86_64.Fn.cbcInit
     verified := Proof.Rc2.X86_64.Scrub.cbcInit_scrubbed },

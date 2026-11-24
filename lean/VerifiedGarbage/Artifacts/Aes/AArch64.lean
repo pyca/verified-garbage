@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.Aes.AArch64.Frame
 public import VerifiedGarbage.Proof.Aes.AArch64.ExpandKey
 public import VerifiedGarbage.Proof.Aes.AArch64.KeyResidue
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.AArch64.Print
+public import VerifiedGarbage.TCB.AArch64.Target
 
 /-! # AES (FIPS 197) on AArch64 -/
 
@@ -14,7 +14,7 @@ public import VerifiedGarbage.TCB.AArch64.Print
 
 namespace VG.Artifacts.Aes.AArch64
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact AArch64.target) := [
   Spec.Aes.expandKeyApi.artifact AArch64.target {
     code := Impl.Aes.AArch64.Fn.expandKey
     verified := Proof.Aes.AArch64.KeyResidue.expandKeyCode_scrubbed },

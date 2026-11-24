@@ -91,8 +91,9 @@ def printer : Printer isa where
 
 /-- What the emitter needs of the target (`Emitter`): its printer, its Rust `cfg`
 and ABI string, and how documentation names its calling convention's
-argument area and reserved memory (`abi`'s `argArea` and `reserved`). -/
-instance : Emitter isa where
+argument area and reserved memory (`abi`'s `argArea` and `reserved`). Every
+artifact of the target is emitted with it (`Emit.driver`). -/
+def emitter : Emitter isa where
   printer := printer
   -- `armeb` targets are big-endian. Apple's 32-bit ARM targets do not use AAPCS:
   -- `armv7s-apple-ios` uses APCS, where a 64-bit argument takes the next two

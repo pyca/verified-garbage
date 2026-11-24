@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Scrypt.Arm.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.Arm.Print
+public import VerifiedGarbage.TCB.Arm.Target
 
 /-! # scrypt (RFC 7914) on ARMv7 -/
 
@@ -10,7 +10,7 @@ public import VerifiedGarbage.TCB.Arm.Print
 
 namespace VG.Artifacts.Scrypt.Arm
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact Arm.target) := [
   Spec.Scrypt.scryptApi.artifact Arm.target {
     code := Impl.Scrypt.Arm.Fn.scrypt
     verified := Proof.Scrypt.Arm.Fn.scrypt }]

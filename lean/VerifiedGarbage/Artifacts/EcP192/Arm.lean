@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Impl.EcKey.P192.ArmFn
 public import VerifiedGarbage.Proof.EcKey.Arm.P192.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.Arm.Print
+public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.P192.Arm.Law
 
 /-! # P-192 public keys (FIPS 186-5 §A.2) on ARMv7 -/
@@ -14,7 +14,7 @@ namespace VG.Artifacts.EcP192.Arm
 
 open VG.Proof.P192.Arm (hasLaw)
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact Arm.target) := [
   Spec.EcKey.P192.publicKeyApi.artifact Arm.target {
     code := Impl.EcKey.Arm.Fn.publicKeyP192
     verified := Proof.EcKey.Arm.Fn.publicKeyP192 hasLaw.law },

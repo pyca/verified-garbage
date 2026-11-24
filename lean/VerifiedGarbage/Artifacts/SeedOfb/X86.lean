@@ -5,7 +5,7 @@ public import VerifiedGarbage.Impl.Seed.X86.SseFn
 public import VerifiedGarbage.Proof.Seed.X86.AesNiScrub
 public import VerifiedGarbage.Impl.Seed.X86.AesNiFn
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.X86.Print
+public import VerifiedGarbage.TCB.X86.Target
 import VerifiedGarbage.Proof.Seed.X86.SseLit
 import VerifiedGarbage.Proof.Seed.X86.AesNiLit
 
@@ -15,7 +15,7 @@ import VerifiedGarbage.Proof.Seed.X86.AesNiLit
 
 namespace VG.Artifacts.SeedOfb.X86
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact X86.target) := [
   Spec.Seed.ofbApi.artifact X86.target {
     suffix := "_aesni"
     code := Impl.Seed.X86.AesNi.Fn.ofb

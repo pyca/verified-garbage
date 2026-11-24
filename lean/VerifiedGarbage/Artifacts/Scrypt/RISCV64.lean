@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Scrypt.RISCV64.RoMix
 public import VerifiedGarbage.Proof.Scrypt.RISCV64.Whole.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Scrypt.RISCV64.Scrub
-public import VerifiedGarbage.TCB.RISCV64.Print
+public import VerifiedGarbage.TCB.RISCV64.Target
 public import VerifiedGarbage.Impl.Scrypt.RISCV64.Fn
 
 /-! # scrypt (RFC 7914) on RISC-V -/
@@ -14,7 +14,7 @@ public import VerifiedGarbage.Impl.Scrypt.RISCV64.Fn
 
 namespace VG.Artifacts.Scrypt.RISCV64
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact RISCV64.target) := [
   Spec.Scrypt.scryptApi.artifact RISCV64.target {
     code := Impl.Scrypt.RISCV64.Fn.scrypt Proof.Scrypt.RISCV64.Whole.pbkName
       Proof.Scrypt.RISCV64.Whole.pbkCode

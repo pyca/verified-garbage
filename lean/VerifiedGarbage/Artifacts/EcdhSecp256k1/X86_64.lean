@@ -1,7 +1,6 @@
 module
 import VerifiedGarbage.Proof.Ecdh.X86_64.Secp256k1.Lit
 
-import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvSpec
 public import VerifiedGarbage.Proof.Ecdh.X86_64.Secp256k1.Verified
 import Mathlib.Data.Finset.Card
@@ -46,7 +45,7 @@ public import VerifiedGarbage.Proof.Weierstrass.X86_64.SpillUnch
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.TComb
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombSelectY
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinLoop
-public import VerifiedGarbage.TCB.X86_64.Print
+public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Secp256k1.X86_64.Law
 
 /-! # ECDH over secp256k1 (SP 800-56A) on x86-64 -/
@@ -57,7 +56,7 @@ namespace VG.Artifacts.EcdhSecp256k1.X86_64
 
 open VG.Proof.Secp256k1.X86_64 (hasLaw)
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact X86_64.target) := [
   Spec.Ecdh.Secp256k1.exchangeApi.artifact X86_64.target
     { code := Impl.Ecdh.X86_64.Fn.exchangeSecp256k1
       verified := Proof.Ecdh.X86_64.Secp256k1.exchange_scrubbed hasLaw.law hasLaw.inv

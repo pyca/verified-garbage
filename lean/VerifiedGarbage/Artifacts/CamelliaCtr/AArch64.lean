@@ -4,7 +4,7 @@ public import VerifiedGarbage.Impl.Camellia.AArch64.CtrFinal
 public import VerifiedGarbage.Proof.Camellia.AArch64.CtrScrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Spec.Camellia.CtrFinal
-public import VerifiedGarbage.TCB.AArch64.Print
+public import VerifiedGarbage.TCB.AArch64.Target
 
 /-! # Camellia-CTR on AArch64 -/
 
@@ -12,7 +12,7 @@ public import VerifiedGarbage.TCB.AArch64.Print
 
 namespace VG.Artifacts.CamelliaCtr.AArch64
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact AArch64.target) := [
   Spec.Camellia.ctrApi.artifact AArch64.target {
     code := Impl.Camellia.AArch64.Fn.ctr
     verified := Proof.Camellia.AArch64.Fn.ctr },

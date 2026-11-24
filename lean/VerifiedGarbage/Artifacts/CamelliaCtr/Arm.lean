@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Camellia.Arm.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.Arm.Print
+public import VerifiedGarbage.TCB.Arm.Target
 
 /-! # Camellia-CTR on ARMv7 -/
 
@@ -10,7 +10,7 @@ public import VerifiedGarbage.TCB.Arm.Print
 
 namespace VG.Artifacts.CamelliaCtr.Arm
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact Arm.target) := [
   Spec.Camellia.ctrApi.artifact Arm.target {
     code := Impl.Camellia.Arm.Fn.ctr
     verified := Proof.Camellia.Arm.Fn.ctr },

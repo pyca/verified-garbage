@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Blowfish.Arm.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.Arm.Print
+public import VerifiedGarbage.TCB.Arm.Target
 
 /-! # Blowfish on ARMv7 -/
 
@@ -10,7 +10,7 @@ public import VerifiedGarbage.TCB.Arm.Print
 
 namespace VG.Artifacts.Blowfish.Arm
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact Arm.target) := [
   Spec.Blowfish.expandKeyApi.artifact Arm.target {
     code := Impl.Blowfish.Arm.Fn.expandKey
     verified := Proof.Blowfish.Arm.Fn.expandKey },

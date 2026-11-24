@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.KeyInit
 public import VerifiedGarbage.Spec.RsaKeyGen.KeySearchContract
 import Mathlib.Tactic.Finiteness.Attr
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.AArch64.Print
+public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.MillerRabin.AArch64.Backend
 public import VerifiedGarbage.Impl.RsaKeyGen.AArch64.Candidate
 public import VerifiedGarbage.Spec.RsaKeyGen.Contract
@@ -192,12 +192,12 @@ public import VerifiedGarbage.Proof.Variants.MillerRabin.AArch64
 
 namespace VG.Artifacts.RsaKeyGen.AArch64
 
-def direct : List Artifact := [
+def direct : List (Artifact AArch64.target) := [
   Spec.RsaKeyGen.keyInitApi.artifact AArch64.target {
     code := Impl.RsaKeyGen.AArch64.KeyInit.Fn.init
     verified := Proof.RsaKeyGen.AArch64.KeyInit.init_scrubbed }]
 
-def artifacts : List Artifact :=
+def artifacts : List (Artifact AArch64.target) :=
   direct ++
   (VG.Proof.Variants.MillerRabin.AArch64.variants.flatMap fun (v : Proof.MillerRabin.AArch64.RoundImpl) => [
     Spec.RsaKeyGen.keySearchApi.artifact AArch64.target {

@@ -48,7 +48,7 @@ public import VerifiedGarbage.Proof.Gcm.Bits
 public import VerifiedGarbage.Proof.Gcm.Spec
 public import VerifiedGarbage.Proof.Gcm.Stream
 public import VerifiedGarbage.Proof.Gcm.X86_64.Bits
-public import VerifiedGarbage.TCB.X86_64.Print
+public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Variants.CmacAesUpdate.X86_64
 
 /-! # AES-CCM (NIST SP 800-38C) on x86-64 -/
@@ -59,7 +59,7 @@ namespace VG.Artifacts.AesCcm.X86_64
 
 open VG.Proof.AesCcm.X86_64
 
-def artifacts : List Artifact :=
+def artifacts : List (Artifact X86_64.target) :=
   VG.Proof.Variants.CmacAesUpdate.X86_64.variants.flatMap fun (v : Proof.CmacAes.X86_64.UpdateImpl) => [
     Spec.Ccm.sealApi.artifact X86_64.target {
       suffix := v.suffix

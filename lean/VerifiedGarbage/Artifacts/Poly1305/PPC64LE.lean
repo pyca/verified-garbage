@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Poly1305.PPC64LE.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.PPC64LE.Print
+public import VerifiedGarbage.TCB.PPC64LE.Target
 
 /-! # Poly1305 (RFC 8439 §2.5) on PPC64LE -/
 
@@ -10,7 +10,7 @@ public import VerifiedGarbage.TCB.PPC64LE.Print
 
 namespace VG.Artifacts.Poly1305.PPC64LE
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact PPC64LE.target) := [
   Spec.Poly1305.initApi.artifact PPC64LE.target {
     code := Impl.Poly1305.PPC64LE.Fn.init
     verified := Proof.Poly1305.PPC64LE.Scrub.init_scrubbed },

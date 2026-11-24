@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.EcKey.PPC64LE.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.PPC64LE.Print
+public import VerifiedGarbage.TCB.PPC64LE.Target
 public import VerifiedGarbage.Proof.Secp256k1.PPC64LE.Law
 
 /-! # secp256k1 public keys (FIPS 186-5 §A.2) on PPC64LE -/
@@ -13,7 +13,7 @@ namespace VG.Artifacts.EcSecp256k1.PPC64LE
 
 open VG.Proof.Secp256k1.PPC64LE (hasLaw)
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact PPC64LE.target) := [
   Spec.EcKey.Secp256k1.inst.compressPublicKeyApi.artifact PPC64LE.target {
     code := Impl.EcKey.PPC64LE.Fn.secp256k1Compress
     verified := Proof.EcKey.PPC64LE.Scrub.secp256k1Compress_scrubbed },

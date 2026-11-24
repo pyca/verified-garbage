@@ -6,7 +6,6 @@ public import VerifiedGarbage.Impl.Ecdh.Secp256k1.RISCV64
 public import VerifiedGarbage.Proof.Ecdh.RISCV64.Secp256k1.PublicKeyVerified
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Spec.EcKey.Secp256k1
-public import VerifiedGarbage.TCB.RISCV64.Print
 import VerifiedGarbage.Proof.Ecdh.RISCV64.Secp256k1.EcdhLit
 public import VerifiedGarbage.Proof.Secp256k1.RISCV64.Law
 public import VerifiedGarbage.Impl.EcKey.Compressed.Secp256k1.RISCV64
@@ -21,7 +20,7 @@ namespace VG.Artifacts.EcSecp256k1.RISCV64
 
 open VG.Proof.Secp256k1.RISCV64 (hasLaw)
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact RISCV64.target) := [
   Spec.EcKey.Secp256k1.inst.compressPublicKeyApi.artifact RISCV64.target {
     code := Impl.EcKey.Compressed.RISCV64.Fn.compressSecp256k1
     verified := Proof.EcKey.Compressed.RISCV64.Secp256k1.compress_scrubbed },

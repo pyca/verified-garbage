@@ -15,7 +15,6 @@ import VerifiedGarbage.Proof.Ed448.X86_64.Point64.Lit
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
 public import VerifiedGarbage.Proof.Ed448.X86_64.Scrub
-public import VerifiedGarbage.TCB.X86_64.Print
 import VerifiedGarbage.Proof.X448.X86_64.Adx.Lit
 import VerifiedGarbage.Proof.X448.X86_64.Lit
 public import VerifiedGarbage.Proof.Variants.Curve448Field.X86_64
@@ -103,14 +102,14 @@ public import VerifiedGarbage.Proof.Ed448.X86_64.Verify.HashCT
 -- Ed448 public-key derivation on x86-64
 namespace VG.Artifacts.Ed448.X86_64.PublicKey
 
-def artifactsFor (v : Impl.Ed448.X86_64.FieldVariant) : List Artifact := [
+def artifactsFor (v : Impl.Ed448.X86_64.FieldVariant) : List (Artifact X86_64.target) := [
   Spec.Ed448.publicKeyApi.artifact X86_64.target
     { suffix := v.suffix
       code := Impl.Ed448.X86_64.Fn.publicKey v
       verified := Proof.Ed448.X86_64.Scrub.publicKey_scrubbed v
       spSafe := Proof.Ed448.X86_64.Scrub.publicKey_spSafe v }]
 
-def artifacts : List Artifact :=
+def artifacts : List (Artifact X86_64.target) :=
   VG.Proof.Variants.Curve448Field.X86_64.variants.flatMap fun v => artifactsFor v
 
 end VG.Artifacts.Ed448.X86_64.PublicKey
@@ -118,14 +117,14 @@ end VG.Artifacts.Ed448.X86_64.PublicKey
 -- Ed448 signing with a cached public key on x86-64
 namespace VG.Artifacts.Ed448.X86_64.SignCached
 
-def artifactsFor (v : Impl.Ed448.X86_64.FieldVariant) : List Artifact := [
+def artifactsFor (v : Impl.Ed448.X86_64.FieldVariant) : List (Artifact X86_64.target) := [
   Spec.Ed448.signCachedApi.artifact X86_64.target
     { suffix := v.suffix
       code := Impl.Ed448.X86_64.SignCached.Fn.signCached v
       verified := Proof.Ed448.X86_64.Scrub.signCached_scrubbed v
       spSafe := Proof.Ed448.X86_64.Scrub.signCached_spSafe v }]
 
-def artifacts : List Artifact :=
+def artifacts : List (Artifact X86_64.target) :=
   VG.Proof.Variants.Curve448Field.X86_64.variants.flatMap fun v => artifactsFor v
 
 end VG.Artifacts.Ed448.X86_64.SignCached
@@ -133,21 +132,21 @@ end VG.Artifacts.Ed448.X86_64.SignCached
 -- Ed448 verification on x86-64
 namespace VG.Artifacts.Ed448.X86_64.Verify
 
-def artifactsFor (v : Impl.Ed448.X86_64.FieldVariant) : List Artifact := [
+def artifactsFor (v : Impl.Ed448.X86_64.FieldVariant) : List (Artifact X86_64.target) := [
   Spec.Ed448.verifyApi.artifact X86_64.target
     { suffix := v.suffix
       code := Impl.Ed448.X86_64.Verify.Fn.verify v
       verified := Proof.Ed448.X86_64.Scrub.verify_scrubbed v
       spSafe := Proof.Ed448.X86_64.Scrub.verify_spSafe v }]
 
-def artifacts : List Artifact :=
+def artifacts : List (Artifact X86_64.target) :=
   VG.Proof.Variants.Curve448Field.X86_64.variants.flatMap fun v => artifactsFor v
 
 end VG.Artifacts.Ed448.X86_64.Verify
 
 namespace VG.Artifacts.Ed448.X86_64
 
-def artifacts : List Artifact :=
+def artifacts : List (Artifact X86_64.target) :=
   PublicKey.artifacts ++
   SignCached.artifacts ++
   Verify.artifacts

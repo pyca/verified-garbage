@@ -7,7 +7,7 @@ public import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Secp256k1.CombVerified -- s
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Ecdsa.Arm.Secp256k1.Scrub
 public import VerifiedGarbage.Impl.Ecdsa.Arm.VerifyHash
-public import VerifiedGarbage.TCB.Arm.Print
+public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Impl.Ecdsa.Secp256k1.ArmFn
 public import VerifiedGarbage.Proof.Secp256k1.Arm.Law
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Secp256k1Comb
@@ -20,7 +20,7 @@ namespace VG.Artifacts.EcdsaSecp256k1.Arm
 
 open VG.Proof.Secp256k1.Arm (hasLaw)
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact Arm.target) := [
   Spec.Ecdsa.Secp256k1.verifyHashApi.artifact Arm.target {
     code := Impl.Ecdsa.Arm.Fn.verifySecp256k1
     verified := Proof.Ecdsa.Arm.Fn.verifySecp256k1 hasLaw.law },

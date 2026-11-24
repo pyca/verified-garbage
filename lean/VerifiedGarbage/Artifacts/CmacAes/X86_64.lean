@@ -29,7 +29,7 @@ public import VerifiedGarbage.Proof.Framework.X86_64.Sse
 public import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 public import VerifiedGarbage.Proof.Gcm.Spec
 public import VerifiedGarbage.Proof.Gcm.X86_64.Bits
-public import VerifiedGarbage.TCB.X86_64.Print
+public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Variants.AesCtr32.X86_64
 public import VerifiedGarbage.Proof.Variants.CmacAesUpdate.X86_64
 
@@ -41,7 +41,7 @@ namespace VG.Artifacts.CmacAes.X86_64
 
 open VG.Proof.CmacAes.X86_64
 
-def artifacts : List Artifact :=
+def artifacts : List (Artifact X86_64.target) :=
   (VG.Proof.Variants.CmacAesUpdate.X86_64.variants.flatMap fun (v : Proof.CmacAes.X86_64.UpdateImpl) => [
     Spec.Cmac.aesAbsorbApi.artifact X86_64.target {
       suffix := v.suffix

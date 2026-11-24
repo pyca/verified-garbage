@@ -207,8 +207,8 @@ theorem verified : Verified target code contract := by
     exact ⟨by decide, ⟨_, rfl, _, .inl rfl, by decide⟩, fun _ => by decide,
       Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide), by decide⟩
 
-def artifact : Artifact where
-  target := .of (renderOnly target)
+def artifact : EmitArtifact where
+  target := .of (renderOnly target) emitter
   module := "test"
   name := "vg_test_fn_tables"
   sig := sig
@@ -263,7 +263,7 @@ pub static VG_TEST_FNS_A: super::TestFns = super::TestFns {
 };
 "
 
-#guard Rust.fnTableFile (.of target) tA [] (fun n => s!"test::{n}") == expectedA
+#guard Rust.fnTableFile (.of target emitter) tA [] (fun n => s!"test::{n}") == expectedA
 #guard ((Rust.fnTablesMod "x86_64" (Rust.fnTables [artifact]) fun _ => []).splitOn
   "pub struct TestFns {\n    fns: [*const (); 1],\n    data: [usize; 1],\n}").length == 2
 -- Each table's items are re-exported by name: its static, and its features' constant if any.

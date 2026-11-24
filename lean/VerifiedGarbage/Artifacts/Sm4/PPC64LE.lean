@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Sm4.PPC64LE.Verified
 public import VerifiedGarbage.Proof.Sm4.PPC64LE.PreparedVerified
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Sm4.PPC64LE.Scrub
-public import VerifiedGarbage.TCB.PPC64LE.Print
+public import VerifiedGarbage.TCB.PPC64LE.Target
 import VerifiedGarbage.Proof.Sm4.PPC64LE.Lit
 
 /-! # SM4 on PPC64LE -/
@@ -14,7 +14,7 @@ import VerifiedGarbage.Proof.Sm4.PPC64LE.Lit
 
 namespace VG.Artifacts.Sm4.PPC64LE
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact PPC64LE.target) := [
   Spec.Sm4.expandKeyApi.artifact PPC64LE.target {
     code := Impl.Sm4.PPC64LE.Fn.expandKey
     verified := Proof.Sm4.PPC64LE.Scrub.expandKey_scrubbed },

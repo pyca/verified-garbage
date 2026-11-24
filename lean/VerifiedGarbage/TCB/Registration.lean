@@ -20,10 +20,16 @@ comes from the `Api` (`Spec/`): the Rust module, name, signature and
 documentation, `writeArgs`, and the contract on the target, which the proof
 is of; or from the code: the CPU features it needs (`Code.requiresDedup`).
 So of a registration, a reviewer reads `suffix`; the kernel checks
-the rest, `written` included. The code is printed, and its documentation
-written, with what the emitter needs of the target, its ISA's one `Emitter`
-instance (`TCB/<ISA>/Print.lean`), which `Api.artifact` pairs with the target
-(`EmitTarget`).
+the rest, `written` included.
+
+An artifact's type is of its target (`Artifact T`), and it says nothing of how
+its code is printed. The emitter's driver (`Emit.driver`) names both: it takes
+the artifacts of a registration file `Artifacts/<Alg>/<T>.lean` at the type
+`List (Artifact VG.<T>.target)`, so that the kernel checks that each is proven
+on the ISA model, calling convention and `noResidue` that `TCB/<T>/` defines,
+and emits them with `VG.<T>.emitter` (`TCB/<T>/Print.lean`), which it pairs them
+with (`EmitArtifact`). No registration, nor anything it imports, can choose
+either.
 
 `Artifact`, `EmitTarget` and how the documentation states the obligations a
 signature implies are defined here rather than with `Target` and `Verified`
@@ -36,9 +42,9 @@ a printer or on the emitted documentation.
 namespace VG
 
 /-- A target with what the emitter needs of it besides its model and calling
-convention (its ISA's `Emitter`): the target an artifact is emitted for.
-None of it is part of `Target`, which every proof imports, so that a change
-to it rebuilds only the registration files and the emitter, not the proofs. -/
+convention (its `Emitter`): the target an artifact is emitted for. None of it
+is part of `Target`, which every proof imports, so that a change to it rebuilds
+only the emitter, not the proofs or the registration files. -/
 structure EmitTarget extends Target where
   printer : Printer isa
   /-- `Emitter.rustCfg`. -/
@@ -50,8 +56,8 @@ structure EmitTarget extends Target where
   /-- `Emitter.reservedDoc`. -/
   reservedDoc : Nat → Option String
 
-/-- The target `T` with its ISA's `Emitter`. -/
-def EmitTarget.of (T : Target) [e : Emitter T.isa] : EmitTarget :=
+/-- The target `T` with its `Emitter`. -/
+def EmitTarget.of (T : Target) (e : Emitter T.isa) : EmitTarget :=
   ⟨T, e.printer, e.rustCfg, e.rustAbi, e.argAreaDoc, e.reservedDoc⟩
 
 /-! ## Documenting the obligations `Sig.contract` implies
@@ -203,9 +209,9 @@ def Abi.withFns {M : ISA} (A : Abi M) (fns : List String) : Abi M :=
   | [] => A
   | fns => { A with pub s₁ s₂ := A.pub s₁ s₂ ∧ ∀ f ∈ fns, M.fnAddr s₁ f = M.fnAddr s₂ f }
 
-/-- A verified function, ready to be emitted into the Rust crate. -/
-structure Artifact where
-  target : EmitTarget
+/-- A verified function of the target `target`, ready to be emitted into the
+Rust crate. -/
+structure Artifact (target : Target) where
   /-- The Rust module the function is emitted into, `src/asm/<target>/<module>.rs`
   (e.g. `sha256`). -/
   module : String
@@ -256,7 +262,7 @@ structure Artifact where
   /-- The proof, for a result of `sig.retBits` bits at the target's pointer
   width (which `Abi.withConsts`, `Abi.withFns` and `Abi.withTables` leave as
   it is: they change only what the calling convention reads and requires). -/
-  verified : VerifiedScrubbed target.toTarget code contract (sig.retBits target.abi.ptrBits)
+  verified : VerifiedScrubbed target code contract (sig.retBits target.abi.ptrBits)
   /-- `Sig.contract`'s `writeArgs` and `stack` for `contract` (see `ofSig`). -/
   writeArgs : Bool := false
   stack : Nat := 0
@@ -502,11 +508,9 @@ signature and `writeArgs` are `api`'s, its name `api`'s followed by
 `r.suffix` (its `base` `api`'s), its documentation `api`'s (`Api.doc`), and its
 contract `api`'s on `target`, for `r.consts`, `r.fns`, `r.tables` and
 `r.stack` (`Api.contract`); its CPU
-features those its code requires (`Code.requiresDedup`); its code is
-printed and documented with `target`'s ISA's `Emitter` (`EmitTarget.of`). -/
-def Api.artifact (api : Api) (target : Target) [Emitter target.isa] (r : Registration api target) :
-    Artifact where
-  target := .of target
+features those its code requires (`Code.requiresDedup`). -/
+def Api.artifact (api : Api) (target : Target) (r : Registration api target) :
+    Artifact target where
   module := api.module
   name := api.name ++ r.suffix
   base := api.name

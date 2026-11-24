@@ -10,7 +10,7 @@ import Mathlib.Tactic.NormNum.GCD
 import Mathlib.Tactic.NormNum.Prime
 import Mathlib.Tactic.Positivity.Finset
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.X86.Print
+public import VerifiedGarbage.TCB.X86.Target
 
 /-! # Ed25519 (RFC 8032) on x86 -/
 
@@ -18,7 +18,7 @@ public import VerifiedGarbage.TCB.X86.Print
 
 namespace VG.Artifacts.Ed25519.X86
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact X86.target) := [
   Spec.Ed25519.keyPairApi.artifact X86.target {
     code := Impl.Ed25519.X86.Fn.keyPair
     verified := Proof.Ed25519.X86.Scrub.keyPair_scrubbed },

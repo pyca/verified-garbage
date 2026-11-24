@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ed25519.Arm.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.Arm.Print
+public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.Variants.Ed25519Field.Arm
 
 /-! # Ed25519 (RFC 8032) on ARMv7 -/
@@ -11,7 +11,7 @@ public import VerifiedGarbage.Proof.Variants.Ed25519Field.Arm
 
 namespace VG.Artifacts.Ed25519.Arm
 
-def artifacts : List Artifact :=
+def artifacts : List (Artifact Arm.target) :=
   VG.Proof.Variants.Ed25519Field.Arm.variants.flatMap fun (v : Proof.Variants.Ed25519Field.Arm.Variant) => [
     Spec.Ed25519.keyPairApi.artifact Arm.target {
       suffix := v.suffix

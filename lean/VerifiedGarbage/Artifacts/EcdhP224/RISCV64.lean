@@ -6,7 +6,6 @@ public import VerifiedGarbage.Impl.Ecdh.P224.RISCV64
 public import VerifiedGarbage.Proof.Ecdh.RISCV64.P224.EcdhVerified
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Spec.Ecdh.P224
-public import VerifiedGarbage.TCB.RISCV64.Print
 import VerifiedGarbage.Proof.Ecdh.RISCV64.P224.EcdhLit
 public import VerifiedGarbage.Proof.P224.RISCV64.Law
 
@@ -18,7 +17,7 @@ namespace VG.Artifacts.EcdhP224.RISCV64
 
 open VG.Proof.P224.RISCV64 (hasLaw)
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact RISCV64.target) := [
   Spec.Ecdh.P224.exchangeApi.artifact RISCV64.target {
     code := Impl.Ecdh.RISCV64.Fn.exchangeP224
     verified := Proof.Ecdh.RISCV64.P224.exchange_scrubbed hasLaw.law }]

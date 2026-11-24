@@ -9,7 +9,6 @@ import Mathlib.Data.Nat.Find
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Framework.TaintSum
 public import VerifiedGarbage.Spec.EcKey.Secp256k1
-import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Weierstrass.Law
 import VerifiedGarbage.Proof.X25519.X86.Column
 public import VerifiedGarbage.Proof.EcKey.PublicKey
@@ -42,7 +41,7 @@ public import VerifiedGarbage.Impl.EcKey.Secp256k1.X86
 public import VerifiedGarbage.Proof.X25519.Field
 public import VerifiedGarbage.Proof.X25519.X86.Arith
 public import VerifiedGarbage.Proof.X25519.X86.Fold
-public import VerifiedGarbage.TCB.X86.Print
+public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Secp256k1.X86.Law
 public import VerifiedGarbage.Proof.EcKey.Compressed.X86.Secp256k1
 public import VerifiedGarbage.Proof.EcKey.Compressed.X86.Secp256k1Decompress
@@ -56,7 +55,7 @@ namespace VG.Artifacts.EcSecp256k1.X86
 
 open VG.Proof.Secp256k1.X86 (hasLaw)
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact X86.target) := [
   Spec.EcKey.Secp256k1.inst.compressPublicKeyApi.artifact X86.target {
     code := Impl.EcKey.X86.Fn.compressSecp256k1
     verified := Proof.EcKey.X86.Secp256k1.Scrub.compress_scrubbed hasLaw.inv },

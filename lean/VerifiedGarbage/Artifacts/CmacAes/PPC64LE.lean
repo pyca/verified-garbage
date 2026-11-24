@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.CmacAes.Stream.PPC64LE.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.PPC64LE.Print
+public import VerifiedGarbage.TCB.PPC64LE.Target
 
 /-! # AES-CMAC (NIST SP 800-38B) on PPC64LE -/
 
@@ -10,7 +10,7 @@ public import VerifiedGarbage.TCB.PPC64LE.Print
 
 namespace VG.Artifacts.CmacAes.PPC64LE
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact PPC64LE.target) := [
   Spec.Cmac.aesInitApi.artifact PPC64LE.target {
     code := Impl.CmacAes.Stream.PPC64LE.Fn.init
     verified := Proof.CmacAes.Stream.PPC64LE.Scrub.init_scrubbed },

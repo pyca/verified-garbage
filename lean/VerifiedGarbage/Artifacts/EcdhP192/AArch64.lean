@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Ecdh.AArch64.P192.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.P192.AArch64.Law
 public import VerifiedGarbage.Spec.Ecdh.P192
-public import VerifiedGarbage.TCB.AArch64.Print
+public import VerifiedGarbage.TCB.AArch64.Target
 
 /-! # ECDH over P-192 (SP 800-56A) on AArch64 -/
 
@@ -15,7 +15,7 @@ namespace VG.Artifacts.EcdhP192.AArch64
 
 open VG.Proof.P192.AArch64 (hasLaw)
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact AArch64.target) := [
   Spec.Ecdh.P192.exchangeApi.artifact AArch64.target {
     code := Impl.Ecdh.AArch64.Fn.exchangeP192
     verified := Proof.Ecdh.AArch64.P192.exchange_scrubbed hasLaw.law hasLaw.inv }]

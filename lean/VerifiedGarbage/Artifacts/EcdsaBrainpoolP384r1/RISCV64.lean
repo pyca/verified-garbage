@@ -9,7 +9,6 @@ public import VerifiedGarbage.Impl.Ecdsa.BrainpoolP384r1.RISCV64.Ecdsa
 public import VerifiedGarbage.Proof.Ecdsa.RISCV64.BrainpoolP384r1.VerifyVerified
 public import VerifiedGarbage.Spec.Ecdsa.Verify.BrainpoolP384r1
 public import VerifiedGarbage.Impl.Ecdsa.RISCV64.VerifyHash
-public import VerifiedGarbage.TCB.RISCV64.Print
 import VerifiedGarbage.Proof.Ecdsa.RISCV64.BrainpoolP384r1.SignLit
 import VerifiedGarbage.Proof.Ecdsa.RISCV64.BrainpoolP384r1.VerifyLit
 public import VerifiedGarbage.Proof.BrainpoolP384r1.RISCV64.Law
@@ -28,7 +27,7 @@ open VG.Proof.BrainpoolP384r1.RISCV64 (hasLaw)
 open VG.Proof.HmacTable.RISCV64 (tables)
 open VG.Proof.Variants.MdHash.RISCV64 (variants fns)
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact RISCV64.target) := [
   Spec.Ecdsa.Rfc6979.Curves.brainpoolp384r1SignApi.artifact RISCV64.target {
     tables := [("hmac", tables variants)]
     code := Impl.Ecdsa.Rfc6979.RISCV64.Fn.brainpoolp384r1 fns
@@ -40,7 +39,7 @@ namespace VG.Artifacts.EcdsaBrainpoolP384r1.RISCV64
 
 open VG.Proof.BrainpoolP384r1.RISCV64 (hasLaw)
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact RISCV64.target) := [
   Spec.Ecdsa.BrainpoolP384r1.verifyHashApi.artifact RISCV64.target {
     code := Impl.Ecdsa.RISCV64.Fn.verifyBrainpoolP384r1
     verified := Proof.Ecdsa.RISCV64.BrainpoolP384r1.verifyHash_scrubbed hasLaw.law }] ++

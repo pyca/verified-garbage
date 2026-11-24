@@ -180,7 +180,7 @@ loads (what no target owns, and their targets'). On a failure, it reports the
 warnings and errors, not the profile every module records (`lakefile.toml`),
 and gives Lake's exit code. -/
 def setUp (driver setup : FilePath) (mods : List String) : IO (Option UInt32) := do
-  IO.FS.writeFile driver (VG.Emit.driver mods)
+  IO.FS.writeFile driver (← IO.ofExcept (VG.Emit.driver mods))
   let r ← IO.Process.output { cmd := "lake", args := #["setup-file", driver.toString] }
   unless r.exitCode == 0 do
     IO.eprint (withoutInfo r.stderr)

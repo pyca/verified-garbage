@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.Sm4.AArch64.Sm4e.Modes
 public import VerifiedGarbage.Proof.Sm4.AArch64.Sm4e.Chained
 public import VerifiedGarbage.Proof.Sm4.AArch64.ModesResidue
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.AArch64.Print
+public import VerifiedGarbage.TCB.AArch64.Target
 
 /-! # SM4-CBC on AArch64 -/
 
@@ -14,7 +14,7 @@ public import VerifiedGarbage.TCB.AArch64.Print
 
 namespace VG.Artifacts.Sm4Cbc.AArch64
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact AArch64.target) := [
   Spec.Sm4.cbcEncryptChainedApi.artifact AArch64.target {
     suffix := "_sm4"
     code := Impl.Sm4.AArch64.Fn.cbcEncryptChainedSm4

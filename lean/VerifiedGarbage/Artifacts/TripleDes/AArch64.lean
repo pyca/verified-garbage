@@ -27,7 +27,7 @@ public import VerifiedGarbage.Proof.TripleDes.AArch64.Permutation
 public import VerifiedGarbage.Proof.TripleDes.AArch64.RoundBody
 public import VerifiedGarbage.Proof.TripleDes.Bytes
 public import VerifiedGarbage.Proof.TripleDes.Permutation
-public import VerifiedGarbage.TCB.AArch64.Print
+public import VerifiedGarbage.TCB.AArch64.Target
 
 /-! # Triple DES on AArch64 -/
 
@@ -35,7 +35,7 @@ public import VerifiedGarbage.TCB.AArch64.Print
 
 namespace VG.Artifacts.TripleDes.AArch64
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact AArch64.target) := [
   Spec.TripleDes.expandKeyApi.artifact AArch64.target {
     code := Impl.TripleDes.AArch64.Fn.expandKey
     verified := Proof.TripleDes.AArch64.expandKeyCleared_scrubbed },

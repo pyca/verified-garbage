@@ -3,14 +3,14 @@ module
 public import VerifiedGarbage.Proof.Rsa.X86.Scrub
 public import VerifiedGarbage.Impl.Rsa.X86.Fn
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.X86.Print
+public import VerifiedGarbage.TCB.X86.Target
 
 /-! # RSA (RFC 8017) on x86 -/
 
 @[expose] public section
 namespace VG.Artifacts.Rsa.X86
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact X86.target) := [
   Spec.Rsa.recoverPrimesDetApi.artifact X86.target {
     code := Impl.Rsa.X86.Fn.recoverPrimesDet
     verified := Proof.Rsa.X86.Scrub.recoverPrimesDet_scrubbed },

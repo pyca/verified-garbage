@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.TripleDes.PPC64LE.ModesVerified
 public import VerifiedGarbage.Proof.TripleDes.PPC64LE.ModesFrame
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.TripleDes.PPC64LE.Scrub
-public import VerifiedGarbage.TCB.PPC64LE.Print
+public import VerifiedGarbage.TCB.PPC64LE.Target
 import VerifiedGarbage.Proof.TripleDes.PPC64LE.ModesLit
 import VerifiedGarbage.Proof.TripleDes.PPC64LE.FunctionsLit
 
@@ -14,7 +14,7 @@ import VerifiedGarbage.Proof.TripleDes.PPC64LE.FunctionsLit
 
 namespace VG.Artifacts.TripleDesCbc.PPC64LE
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact PPC64LE.target) := [
   Spec.TripleDes.cbcEncryptChainedApi.artifact PPC64LE.target {
     code := Impl.TripleDes.PPC64LE.Fn.cbcEncryptChained
     verified := Proof.TripleDes.PPC64LE.Scrub.cbcEncryptChained_scrubbed },

@@ -96,8 +96,8 @@ theorem verified : Verified target code contract := by
       stackBelow, tbl, sat]
     exact ⟨by decide, by decide⟩
 
-def artifact : Artifact where
-  target := .of (renderOnly target)
+def artifact : EmitArtifact where
+  target := .of (renderOnly target) emitter
   module := "test"
   name := "vg_test_consts"
   sig := sig
@@ -185,7 +185,7 @@ def expectedSyms : String := "    core::arch::naked_asm!(
     )
 "
 
-#guard Rust.asmOf (.of (renderOnly target))
+#guard Rust.asmOf (.of (renderOnly target) emitter)
   [.sym "adrp x0, " .page "vg_test_callee", .sym "adrp x1, " .page "VG_TEST_TABLE"]
   (fun n => if n == "vg_test_callee" then "test" else "") "super" == expectedSyms
 

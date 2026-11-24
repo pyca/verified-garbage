@@ -785,7 +785,7 @@ def sampleRV : Prog RISCV64.isa :=
   ([".option push", ".option arch, +m, +c"], [".option pop"])
 #guard ["x86_64", "x86", "aarch64", "arm", "powerpc64le"].all (Rust.funcOptions · == ([], []))
 #guard match Artifacts.Ct.RISCV64.artifacts with
-  | [a] => ((Rust.function a (fun _ => "")).splitOn "naked_asm!(\n").getLast! == "        r#\".option push
+  | [a] => ((Rust.function (.of RISCV64.emitter a) (fun _ => "")).splitOn "naked_asm!(\n").getLast! == "        r#\".option push
 .option arch, +m, +c
 .base64 \"AUeziNVA\"
 beqz a7, 20f

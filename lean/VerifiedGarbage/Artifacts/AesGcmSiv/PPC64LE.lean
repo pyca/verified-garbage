@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Gcm.PPC64LE.Vpmsum.Law
 public import VerifiedGarbage.Proof.AesGcmSiv.PPC64LE.Scrub
 public import VerifiedGarbage.Proof.GcmSiv.Polyval
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.PPC64LE.Print
+public import VerifiedGarbage.TCB.PPC64LE.Target
 
 /-! # AES-GCM-SIV (RFC 8452) on PPC64LE -/
 
@@ -12,7 +12,7 @@ public import VerifiedGarbage.TCB.PPC64LE.Print
 
 namespace VG.Artifacts.AesGcmSiv.PPC64LE
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact PPC64LE.target) := [
   Spec.GcmSiv.sealApi.artifact PPC64LE.target {
     code := Impl.AesGcmSiv.PPC64LE.Fn.seal
     verified := Proof.AesGcmSiv.PPC64LE.Scrub.seal_scrubbed Proof.GcmSiv.Polyval.tagInput_eq_tagInputG },

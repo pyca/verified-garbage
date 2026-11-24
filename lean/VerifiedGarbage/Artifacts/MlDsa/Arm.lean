@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.MlDsa.Arm.Scrub
 public import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Inst
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.Arm.Print
 public import VerifiedGarbage.Proof.MlDsa.Arm.PkTr
 public import VerifiedGarbage.Proof.MlDsa.Arm.PreparedKey.Verified
 public import VerifiedGarbage.Proof.MlDsa.Arm.Message.Verified
@@ -46,7 +45,7 @@ namespace VG.Artifacts.MlDsa.Arm
 
 open VG
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact Arm.target) := [
   Spec.MlDsa.keyGen44Api.artifact Arm.target {
     code := Impl.MlDsa.Arm.Fn.keyGen Spec.MlDsa.mlDsa44
     verified := Proof.MlDsa.Arm.Fn.keyGen "mldsa44" "ML-DSA-44" (.inl rfl) },

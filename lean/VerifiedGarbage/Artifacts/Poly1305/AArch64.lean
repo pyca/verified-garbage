@@ -4,7 +4,7 @@ public import VerifiedGarbage.Impl.Poly1305.AArch64.Vector
 public import VerifiedGarbage.Proof.Poly1305.AArch64.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Spec.Poly1305.Contract
-public import VerifiedGarbage.TCB.AArch64.Print
+public import VerifiedGarbage.TCB.AArch64.Target
 
 /-! # Poly1305 (RFC 8439 §2.5) on AArch64 -/
 
@@ -12,7 +12,7 @@ public import VerifiedGarbage.TCB.AArch64.Print
 
 namespace VG.Artifacts.Poly1305.AArch64
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact AArch64.target) := [
   Spec.Poly1305.initApi.artifact AArch64.target {
     code := Impl.Poly1305.AArch64.init
     verified := Proof.Poly1305.AArch64.Fn.init },

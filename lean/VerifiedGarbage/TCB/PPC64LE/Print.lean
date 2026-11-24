@@ -157,8 +157,9 @@ def printer : Printer isa where
 
 /-- What the emitter needs of the target (`Emitter`): its printer, its Rust `cfg`
 and ABI string, and how documentation names its calling convention's
-argument area and reserved memory (`abi`'s `argArea` and `reserved`). -/
-instance : Emitter isa where
+argument area and reserved memory (`abi`'s `argArea` and `reserved`). Every
+artifact of the target is emitted with it (`Emit.driver`). -/
+def emitter : Emitter isa where
   printer := printer
   rustCfg := "all(target_arch = \"powerpc64\", target_endian = \"little\")"
   rustAbi := "C"

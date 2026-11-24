@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.RsaKeyGen.Arm.KeyInit
 public import VerifiedGarbage.Spec.RsaKeyGen.KeySearchContract
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Rsa.Arm.InvLoop
-public import VerifiedGarbage.TCB.Arm.Print
+public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Verified
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Search.Verified
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Generate.Verified
@@ -248,12 +248,12 @@ public import VerifiedGarbage.Proof.Variants.MillerRabin.Arm
 
 namespace VG.Artifacts.RsaKeyGen.Arm
 
-def direct : List Artifact := [
+def direct : List (Artifact Arm.target) := [
   Spec.RsaKeyGen.keyInitApi.artifact Arm.target {
     code := Impl.RsaKeyGen.Arm.Fn.generateInit
     verified := Proof.RsaKeyGen.Arm.Fn.generateInit }]
 
-def artifacts : List Artifact :=
+def artifacts : List (Artifact Arm.target) :=
   direct ++
   (VG.Proof.Variants.MillerRabin.Arm.variants.flatMap fun (v : Proof.MillerRabin.Arm.RoundImpl) => [
     Spec.RsaKeyGen.keySearchApi.artifact Arm.target {

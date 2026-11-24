@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Seed.RISCV64.Scrub
 public import VerifiedGarbage.Impl.Seed.RISCV64.Fn
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.RISCV64.Print
+public import VerifiedGarbage.TCB.RISCV64.Target
 import VerifiedGarbage.Proof.Seed.RISCV64.ModesLit
 
 /-! # SEED-CBC on RISC-V -/
@@ -12,7 +12,7 @@ import VerifiedGarbage.Proof.Seed.RISCV64.ModesLit
 
 namespace VG.Artifacts.SeedCbc.RISCV64
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact RISCV64.target) := [
   Spec.Seed.cbcEncryptChainedApi.artifact RISCV64.target {
     code := Impl.Seed.RISCV64.Fn.cbcEncryptChained
     verified := Proof.Seed.RISCV64.Scrub.cbcEncryptChained_scrubbed },

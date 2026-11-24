@@ -13,7 +13,6 @@ public import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.VerifiedAdx
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
 public import VerifiedGarbage.Proof.Framework.Registration
-import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Weierstrass.Law
 import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
 public import VerifiedGarbage.Proof.Mont.X86_64.Wide
@@ -62,7 +61,7 @@ public import VerifiedGarbage.Proof.Weierstrass.X86_64.MontWide8
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombJ
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombJDigit
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombSelectY
-public import VerifiedGarbage.TCB.X86_64.Print
+public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.P521.X86_64.Law
 public import VerifiedGarbage.Proof.EcKey.Validate.X86_64.P521
 public import VerifiedGarbage.Proof.EcKey.Compressed.X86_64.P521
@@ -77,7 +76,7 @@ namespace VG.Artifacts.EcP521.X86_64.Compressed
 
 open VG.Proof.P521.X86_64 (hasLaw)
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact X86_64.target) := [
   Spec.EcKey.P521.inst.compressPublicKeyApi.artifact X86_64.target
     { code := Impl.EcKey.Compressed.X86_64.Fn.compress Impl.Ecdsa.X86_64.p521
       verified := Proof.EcKey.Compressed.X86_64.P521.scrubbed hasLaw.inv false
@@ -104,7 +103,7 @@ namespace VG.Artifacts.EcP521.X86_64.Validate
 
 open VG.Proof.P521.X86_64 (hasLaw)
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact X86_64.target) := [
   Spec.EcKey.P521.inst.validatePublicKeyApi.artifact X86_64.target
     { code := Impl.EcKey.Validate.X86_64.Fn.validate Impl.Ecdsa.X86_64.p521
       verified := Proof.EcKey.Validate.X86_64.P521.scrubbed hasLaw.inv false
@@ -121,7 +120,7 @@ namespace VG.Artifacts.EcP521.X86_64
 
 open VG.Proof.P521.X86_64 (hasLaw)
 
-def artifacts : List Artifact :=
+def artifacts : List (Artifact X86_64.target) :=
   Compressed.artifacts ++ [
   Spec.EcKey.P521.publicKeyApi.artifact X86_64.target
     { code := Impl.EcKey.X86_64.Fn.publicKeyP521

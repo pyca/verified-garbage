@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Variants.Keccak.AArch64
-public import VerifiedGarbage.TCB.AArch64.Print
+public import VerifiedGarbage.TCB.AArch64.Target
 
 /-! # ML-DSA (FIPS 204) on AArch64 -/
 
@@ -17,7 +17,7 @@ secret sampling with the four-way samplers of `v`, and positive transform
 arithmetic, which needs no CPU feature. Where the paired-state kernels may
 use the SHA3 instructions (`pairedSha3`), the matrix entries left after the
 groups of four are sampled as a pair; otherwise one at a time. -/
-def artifacts : List Artifact :=
+def artifacts : List (Artifact AArch64.target) :=
   VG.Proof.Variants.Keccak.AArch64.variants.flatMap fun (v : Proof.Sha3.AArch64.Permutation) => [
     Spec.MlDsa.keyGen44Api.artifact AArch64.target {
       suffix := v.callee.suffix
@@ -37,7 +37,7 @@ end VG.Artifacts.MlDsa.AArch64.KeyGen
 -- ML-DSA (FIPS 204) public-key hash `tr = H(pk, 64)` on AArch64
 namespace VG.Artifacts.MlDsa.AArch64.PkTr
 
-def artifactsFor (v : Proof.Sha3.AArch64.Permutation) : List Artifact := [
+def artifactsFor (v : Proof.Sha3.AArch64.Permutation) : List (Artifact AArch64.target) := [
   Spec.MlDsa.pkTr44Api.artifact AArch64.target {
     suffix := v.callee.suffix
     vendor := v.vendor
@@ -54,7 +54,7 @@ def artifactsFor (v : Proof.Sha3.AArch64.Permutation) : List Artifact := [
     code := Impl.MlDsa.AArch64.Fn.pkTr v.callee Spec.MlDsa.mlDsa87
     verified := Proof.MlDsa.AArch64.Fn.pkTr87 v }]
 
-def artifacts : List Artifact :=
+def artifacts : List (Artifact AArch64.target) :=
   VG.Proof.Variants.Keccak.AArch64.variants.flatMap artifactsFor
 
 end VG.Artifacts.MlDsa.AArch64.PkTr
@@ -65,7 +65,7 @@ open VG VG.Spec.MlDsa
 
 /-- Signing a message representative, with the key's bytes and with a prepared
 key, for each parameter set. -/
-def artifacts : List Artifact :=
+def artifacts : List (Artifact AArch64.target) :=
   VG.Proof.Variants.Keccak.AArch64.variants.flatMap fun (v : Proof.Sha3.AArch64.Permutation) => [
     (signApi mlDsa44 "mldsa44" "ML-DSA-44").artifact AArch64.target {
       suffix := v.callee.suffix
@@ -100,7 +100,7 @@ open VG VG.Spec.MlDsa
 
 /-- Signing a message, with the key's bytes and with a prepared key, for each
 parameter set. -/
-def artifacts : List Artifact :=
+def artifacts : List (Artifact AArch64.target) :=
   VG.Proof.Variants.Keccak.AArch64.variants.flatMap fun (v : Proof.Sha3.AArch64.Permutation) => [
     (signMessageApi mlDsa44 "mldsa44" "ML-DSA-44").artifact AArch64.target {
       suffix := v.callee.suffix
@@ -135,7 +135,7 @@ open VG VG.Spec.MlDsa
 
 /-- Verifying a signature of a message representative, with the key's bytes and
 with a prepared key, for each parameter set. -/
-def artifacts : List Artifact :=
+def artifacts : List (Artifact AArch64.target) :=
   VG.Proof.Variants.Keccak.AArch64.variants.flatMap fun (v : Proof.Sha3.AArch64.Permutation) => [
     (verifyApi mlDsa44 "mldsa44" "ML-DSA-44").artifact AArch64.target {
       suffix := v.callee.suffix
@@ -170,7 +170,7 @@ open VG VG.Spec.MlDsa
 
 /-- Verifying a signature of a message, with the key's bytes and with a prepared
 key, for each parameter set. -/
-def artifacts : List Artifact :=
+def artifacts : List (Artifact AArch64.target) :=
   VG.Proof.Variants.Keccak.AArch64.variants.flatMap fun (v : Proof.Sha3.AArch64.Permutation) => [
     (verifyMessageCachedApi mlDsa44 "mldsa44" "ML-DSA-44").artifact AArch64.target {
       suffix := v.callee.suffix
@@ -201,7 +201,7 @@ end VG.Artifacts.MlDsa.AArch64.VerifyMessageCached
 
 namespace VG.Artifacts.MlDsa.AArch64
 
-def artifacts : List Artifact :=
+def artifacts : List (Artifact AArch64.target) :=
   KeyGen.artifacts ++
   PkTr.artifacts ++
   [

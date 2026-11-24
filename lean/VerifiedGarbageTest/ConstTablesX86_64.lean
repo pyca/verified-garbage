@@ -103,8 +103,8 @@ theorem verified : Verified target code contract := by
       stackBelow, tbl, sat]
     exact ⟨by decide, by decide, Region.disjoint_of_sep (by decide), by decide⟩
 
-def artifact : Artifact where
-  target := .of (renderOnly target)
+def artifact : EmitArtifact where
+  target := .of (renderOnly target) emitter
   module := "test"
   name := "vg_test_consts"
   sig := sig

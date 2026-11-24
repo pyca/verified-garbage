@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Md5.PPC64LE.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.PPC64LE.Print
+public import VerifiedGarbage.TCB.PPC64LE.Target
 
 /-! # MD5 (RFC 1321) on PPC64LE -/
 
@@ -10,7 +10,7 @@ public import VerifiedGarbage.TCB.PPC64LE.Print
 
 namespace VG.Artifacts.Md5.PPC64LE
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact PPC64LE.target) := [
   Spec.Md5.initApi.artifact PPC64LE.target {
     code := Impl.Md5.PPC64LE.Stream.init
     verified := Proof.Md5.PPC64LE.init_scrubbed },

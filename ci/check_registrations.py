@@ -43,8 +43,13 @@ named code and a theorem about it and nothing else (`target_problems`):
     state what the implementation chooses and prove nothing (`written`, the
     output regions a function writes, is proven by its `writtenOk`);
   * the file has no tactic block at all, not even a default's, no anonymous
-    constructor (`⟨…⟩`), no `Artifact` built by hand (`target := …`), and
-    nothing of `<T>.Scrub`, the target's cleanup framework.
+    constructor (`⟨…⟩`), no `Artifact` built by hand (a `verified :=` outside
+    those records, `Artifact.mk`) or updated (`{ … with … }`), and nothing of
+    `<T>.Scrub`, the target's cleanup framework.
+
+That each artifact is of its directory's target, whatever `target` means
+there, and that it is printed with that target's printer, is not checked here:
+the emitter's driver states it, and Lean checks it (`Emit.driver`).
 
 Two shapes are accepted explicitly, each for the reason given:
 
@@ -109,7 +114,9 @@ STREAM_CODE = re.compile(r"Impl\.Scrub\.X86_64\.scrubSel ([\w.']+)\.sel\.level \
 SELFTEST = "VerifiedGarbage/Artifacts/Selftest/"
 CHOICE = re.compile(r"\(\s*(?:match|if)(?![\w'])")
 ARM = re.compile(r"=>|(?<![\w'])(?:then|else)(?![\w'])")
-RAW = re.compile(r"(?<![\w.'])target\s*:=")
+PROOF = re.compile(r"(?<![\w.'])verified\s*:=")
+RAW = re.compile(r"(?<![\w'])Artifact\.mk(?![\w'])|"
+                 r"\{(?!\s*(?:match|if)(?![\w']))[^{}|]*?(?<![\w.'])with(?![\w'])")
 
 
 def code_only(text: str) -> str:
@@ -283,10 +290,12 @@ def target_problems(rel: str, target: str, code: str, line) -> list[str]:
     framework = re.compile(r"(?<![\w.'])(?:VG\.)?" + target + r"\.Scrub(?![\w'])")
     for pat, what in [(ANON, "an anonymous constructor (`⟨…⟩`)"),
                       (framework, f"the scrub framework (`{target}.Scrub`)"),
-                      (RAW, "an `Artifact` built by hand (`target := …`)")]:
+                      (RAW, "an `Artifact` built by hand (`{ … with … }`, `Artifact.mk`)")]:
         for m in pat.finditer(code):
             out.append(f"lean/{rel}:{line(m.start())}: {what} in a registration file; "
                        f"{shape}, whose proof is made under `Proof/` {SKILL}")
+    # The records of the registrations, or None if one is not given as any.
+    spans: list[tuple[int, int]] | None = []
     record = re.compile(r"\s+(?:(?:VG\.)?" + target + r"\.)?target\s*([{(])")
     for m in ARTIFACT.finditer(code):
         r = record.match(code, m.end())
@@ -296,12 +305,19 @@ def target_problems(rel: str, target: str, code: str, line) -> list[str]:
         elif r:
             recs = choice_records(code, r.end() - 1)
         if not recs:
+            spans = None
             out.append(f"lean/{rel}:{line(m.start())}: a registration not given as a record, or "
                        f"as a `match` or `if` each of whose arms is one; write `.artifact "
                        f"{target}.target {{ code := Impl.… verified := Proof.… }}` {SKILL}")
             continue
         for at in recs:
+            if spans is not None:
+                spans.append((at, record_fields(code, at)[1]))
             out += record_problems(rel, target, code, line, at)
+    for m in PROOF.finditer(code):
+        if spans is not None and not any(a < m.start() < b for a, b in spans):
+            out.append(f"lean/{rel}:{line(m.start())}: an `Artifact` built by hand (a `verified :=` "
+                       f"outside a registration's record) in a registration file; {shape} {SKILL}")
     return out
 
 

@@ -6,6 +6,8 @@ import VerifiedGarbage.TCB.Emit
 meta import VerifiedGarbage.TCB.Emit
 import VerifiedGarbage.Artifacts.Poly1305.AArch64
 meta import VerifiedGarbage.Artifacts.Poly1305.AArch64
+import VerifiedGarbage.TCB.AArch64.Print
+meta import VerifiedGarbage.TCB.AArch64.Print
 
 /-!
 # Dispatchers (`Rust.dispatcher`)
@@ -22,8 +24,11 @@ other names of them.
 namespace VG.Test.Dispatch
 open VG
 
+def arts : List EmitArtifact :=
+  EmitArtifact.ofList AArch64.target AArch64.emitter Artifacts.Poly1305.AArch64.artifacts
+
 def out : List (String × String) :=
-  match Rust.files Artifacts.Poly1305.AArch64.artifacts with
+  match Rust.files arts with
   | .ok fs => fs
   | .error e => [("error", e)]
 
@@ -89,8 +94,8 @@ def has (text part : String) : Bool := (text.splitOn part).length > 1
 
 /-- The files of Poly1305 on AArch64, with `f` applied to `_neon` without its
 registration's `extra` features and `vendor`. -/
-def neonOut (f : Artifact → Artifact) : Except String (List (String × String)) :=
-  Rust.files (Artifacts.Poly1305.AArch64.artifacts.map fun a =>
+def neonOut (f : EmitArtifact → EmitArtifact) : Except String (List (String × String)) :=
+  Rust.files (arts.map fun a =>
     if a.name == "vg_poly1305_update_neon" then f { a with extra := [], vendor := none } else a)
 
 -- The registration's choice: the same files.
@@ -117,14 +122,14 @@ def neonOut (f : Artifact → Artifact) : Except String (List (String × String)
 
 /-- `_neon` as the registration has it (a list of it), its other
 implementations, and another name of `_neon` that any target may choose. -/
-def neon : List Artifact :=
-  Artifacts.Poly1305.AArch64.artifacts.filter (·.name == "vg_poly1305_update_neon")
-def others : List Artifact :=
-  Artifacts.Poly1305.AArch64.artifacts.filter (·.name != "vg_poly1305_update_neon")
-def neon2 : List Artifact := neon.map fun a => { a with name := "vg_poly1305_update_neon2", vendor := none }
+def neon : List EmitArtifact :=
+  arts.filter (·.name == "vg_poly1305_update_neon")
+def others : List EmitArtifact :=
+  arts.filter (·.name != "vg_poly1305_update_neon")
+def neon2 : List EmitArtifact := neon.map fun a => { a with name := "vg_poly1305_update_neon2", vendor := none }
 
 /-- The dispatchers of Poly1305 with the artifacts `as`. -/
-def dispatchOf (as : List Artifact) : String :=
+def dispatchOf (as : List EmitArtifact) : String :=
   match Rust.files as with
   | .ok fs => ((fs.find? (·.1 == "verified-garbage-asm-aarch64/src/dispatch/poly1305.rs")).map
       (·.2)).getD ""
@@ -145,7 +150,7 @@ def dispatchOf (as : List Artifact) : String :=
   documentation"
 
 -- Every implementation of a function is in one registration file.
-#guard (Emit.checkSources [("A", Artifacts.Poly1305.AArch64.artifacts)]).toOption.isSome
+#guard (Emit.checkSources [("A", arts)]).toOption.isSome
 #guard match Emit.checkSources [("A", others), ("B", neon)] with
   | .error e => has e "aarch64: the implementations of vg_poly1305_update are in two registration \
       files, A and B"
@@ -181,7 +186,7 @@ def notDit : String :=
   "error: aarch64: vg_poly1305_update_neon would never run"
 
 -- It means nothing for a base, and a microarchitecture must be a name.
-#guard has (dispatchOf (Artifacts.Poly1305.AArch64.artifacts.map fun a =>
+#guard has (dispatchOf (arts.map fun a =>
     if a.name == "vg_poly1305_update" then { a with notWith := ["dit"] } else a))
   "error: aarch64: vg_poly1305_update is a base, which its dispatcher falls back on: `notWith` \
   means nothing for it"

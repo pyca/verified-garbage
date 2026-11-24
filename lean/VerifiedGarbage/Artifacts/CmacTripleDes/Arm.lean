@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.CmacTripleDes.Arm.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.Arm.Print
+public import VerifiedGarbage.TCB.Arm.Target
 
 /-! # TDEA-CMAC (3DES-CMAC, NIST SP 800-38B) on ARMv7 -/
 
@@ -10,7 +10,7 @@ public import VerifiedGarbage.TCB.Arm.Print
 
 namespace VG.Artifacts.CmacTripleDes.Arm
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact Arm.target) := [
   Spec.Cmac.tdesStreamInitApi.artifact Arm.target {
     code := Impl.CmacTripleDes.Arm.Fn.streamInit
     verified := Proof.CmacTripleDes.Arm.Fn.streamInit },

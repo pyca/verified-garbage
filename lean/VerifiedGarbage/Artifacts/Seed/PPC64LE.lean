@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Seed.PPC64LE.Frame
 public import VerifiedGarbage.Proof.Seed.PPC64LE.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Seed.PPC64LE.Scrub
-public import VerifiedGarbage.TCB.PPC64LE.Print
+public import VerifiedGarbage.TCB.PPC64LE.Target
 import VerifiedGarbage.Proof.Seed.PPC64LE.Lit
 
 /-! # SEED on PPC64LE -/
@@ -13,7 +13,7 @@ import VerifiedGarbage.Proof.Seed.PPC64LE.Lit
 
 namespace VG.Artifacts.Seed.PPC64LE
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact PPC64LE.target) := [
   Spec.Seed.expandKeyApi.artifact PPC64LE.target {
     code := Impl.Seed.PPC64LE.Fn.expandKey
     verified := Proof.Seed.PPC64LE.Scrub.expandKey_scrubbed },

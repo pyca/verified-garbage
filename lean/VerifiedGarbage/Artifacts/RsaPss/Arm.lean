@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.RsaPss.Arm.Inst
 public import VerifiedGarbage.Proof.Rsa.Arm.PublicOfCrt
 public import VerifiedGarbage.Spec.RsaPss.MdTable
-public import VerifiedGarbage.TCB.Arm.Print
+public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.Variants.RsaPrivateCrt.Arm
 
 /-! # RSASSA-PSS (RFC 8017) on ARMv7 -/
@@ -17,7 +17,7 @@ namespace VG.Artifacts.RsaPss.Arm
 open VG.Proof.Rsa.Arm (CrtImpl)
 open VG.Proof.RsaPss.Arm (OK)
 
-def artifacts : List Artifact :=
+def artifacts : List (Artifact Arm.target) :=
   VG.Proof.Variants.RsaPrivateCrt.Arm.variants.flatMap fun (v : CrtImpl) =>
     if h : OK Proof.MdHashTable.Arm.vars Proof.HashTable.Arm.vars then [
       Spec.RsaPss.signPrecomputedMdTableApi.artifact Arm.target {

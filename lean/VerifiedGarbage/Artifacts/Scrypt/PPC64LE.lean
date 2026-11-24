@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.Scrypt.PPC64LE.Whole.Verified
 public import VerifiedGarbage.Proof.Scrypt.PPC64LE.Scrub
 public import VerifiedGarbage.Impl.Scrypt.PPC64LE.Fn
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.PPC64LE.Print
+public import VerifiedGarbage.TCB.PPC64LE.Target
 
 /-! # scrypt (RFC 7914) on PPC64LE -/
 
@@ -14,7 +14,7 @@ public import VerifiedGarbage.TCB.PPC64LE.Print
 
 namespace VG.Artifacts.Scrypt.PPC64LE
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact PPC64LE.target) := [
   Spec.Scrypt.scryptApi.artifact PPC64LE.target {
     code := Impl.Scrypt.PPC64LE.Fn.scrypt Proof.Scrypt.PPC64LE.Whole.pbkName
       Proof.Scrypt.PPC64LE.Whole.pbkCode

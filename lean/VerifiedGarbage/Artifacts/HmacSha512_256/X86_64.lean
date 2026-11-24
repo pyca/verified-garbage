@@ -28,7 +28,7 @@ public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Words
 public import VerifiedGarbage.Proof.Pbkdf2.Scratch
 public import VerifiedGarbage.Proof.Sha256.X86_64.Compress
 public import VerifiedGarbage.Proof.Sha512.X86_64.Wide
-public import VerifiedGarbage.TCB.X86_64.Print
+public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Variants.MdHash.X86_64
 
 /-! # HMAC-SHA-512/256 (RFC 2104) on x86-64 -/
@@ -37,7 +37,7 @@ public import VerifiedGarbage.Proof.Variants.MdHash.X86_64
 
 namespace VG.Artifacts.HmacSha512_256.X86_64
 
-def artifacts : List Artifact :=
+def artifacts : List (Artifact X86_64.target) :=
   (VG.Proof.Variants.MdHash.X86_64.sha512_256Inits.map fun (v : Proof.Pbkdf2.Md.X86_64.InitImpl Spec.Hmac.sha512_256I) =>
     Spec.Hmac.sha512_256I.initAnyKeyApi.artifact X86_64.target {
       suffix := v.suffix

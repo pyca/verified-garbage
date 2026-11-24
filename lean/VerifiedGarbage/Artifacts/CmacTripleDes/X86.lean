@@ -7,7 +7,7 @@ public import VerifiedGarbage.Impl.CmacTripleDes.X86.Ssse3
 import VerifiedGarbage.Proof.CmacTripleDes.X86.Lit
 import VerifiedGarbage.Proof.CmacTripleDes.X86.Ssse3Lit
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.X86.Print
+public import VerifiedGarbage.TCB.X86.Target
 
 /-! # TDEA-CMAC (3DES-CMAC, NIST SP 800-38B) on x86 -/
 
@@ -15,7 +15,7 @@ public import VerifiedGarbage.TCB.X86.Print
 
 namespace VG.Artifacts.CmacTripleDes.X86
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact X86.target) := [
   Spec.Cmac.tdesStreamInitApi.artifact X86.target {
     code := Impl.CmacTripleDes.Stream.X86.Fn.init
     verified := Proof.CmacTripleDes.Stream.X86.Scrub.init_scrubbed },

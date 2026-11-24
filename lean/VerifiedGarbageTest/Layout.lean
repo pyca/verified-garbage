@@ -50,45 +50,45 @@ def ro : Sig where
 def none' : Sig where
   params := [("a", .int .u64 false)]
 
-#guard Sig.layoutDoc (.of X86_64.target) sample false 0 == [
+#guard Sig.layoutDoc (.of X86_64.target X86_64.emitter) sample false 0 == [
     "`w` and `x` must not overlap each other, `r` or `y` (distinct Rust objects never do).",
     "None of `w`, `r`, `x` and `y` may overlap the return address on the stack, or wrap around \
       the end of the address space (no Rust object does)."]
 
-#guard Sig.layoutDoc (.of X86_64.target) sample true 8 == [
+#guard Sig.layoutDoc (.of X86_64.target X86_64.emitter) sample true 8 == [
     "`w` and `x` must not overlap each other, `r` or `y` (distinct Rust objects never do).",
     "None of `w`, `r`, `x` and `y` may overlap the return address on the stack or the 8 bytes of \
       stack below it, or wrap around the end of the address space (no Rust object does)."]
 
-#guard Sig.layoutDoc (.of AArch64.target) sample false 0 == [
+#guard Sig.layoutDoc (.of AArch64.target AArch64.emitter) sample false 0 == [
     "`w` and `x` must not overlap each other, `r` or `y` (distinct Rust objects never do).",
     "None of `w`, `r`, `x` and `y` may wrap around the end of the address space (no Rust object \
       does)."]
 
-#guard Sig.layoutDoc (.of AArch64.target) sample true 16 == [
+#guard Sig.layoutDoc (.of AArch64.target AArch64.emitter) sample true 16 == [
     "`w` and `x` must not overlap each other, `r` or `y` (distinct Rust objects never do).",
     "None of `w`, `r`, `x` and `y` may overlap the 16 bytes of stack below the stack pointer, or \
       wrap around the end of the address space (no Rust object does)."]
 
-#guard Sig.layoutDoc (.of Arm.target) sample false 0 == [
+#guard Sig.layoutDoc (.of Arm.target Arm.emitter) sample false 0 == [
     "`w` and `x` must not overlap each other, `r`, `y` or the arguments on the stack (distinct \
       Rust objects never do).",
     "None of `w`, `r`, `x` and `y` may wrap around the end of the address space (no Rust object \
       does)."]
 
-#guard Sig.layoutDoc (.of Arm.target) sample true 8 == [
+#guard Sig.layoutDoc (.of Arm.target Arm.emitter) sample true 8 == [
     "`w` and `x` must not overlap each other, `r`, `y` or the arguments on the stack (distinct \
       Rust objects never do).",
     "None of `w`, `r`, `x` and `y` may overlap the 8 bytes of stack below the stack pointer, or \
       wrap around the end of the address space (no Rust object does)."]
 
-#guard Sig.layoutDoc (.of X86.target) sample false 0 == [
+#guard Sig.layoutDoc (.of X86.target X86.emitter) sample false 0 == [
     "`w` and `x` must not overlap each other, `r`, `y` or the arguments on the stack (distinct \
       Rust objects never do).",
     "None of `w`, `r`, `x` and `y` may overlap the return address on the stack, or wrap around \
       the end of the address space (no Rust object does)."]
 
-#guard Sig.layoutDoc (.of X86.target) sample true 4 == [
+#guard Sig.layoutDoc (.of X86.target X86.emitter) sample true 4 == [
     "`w` and `x` must not overlap each other, `r` or `y` (distinct Rust objects never do).",
     "None of `w`, `r`, `x` and `y` may overlap the arguments on the stack, overlap the return \
       address on the stack or the 4 bytes of stack below it, or wrap around the end of the address \
@@ -100,47 +100,47 @@ def many : Sig where
   params := sample.params ++ [("a", .int .u64 false), ("b", .int .u64 false),
     ("c", .int .u64 false)]
 
-#guard Sig.layoutDoc (.of X86_64.target) many false 0 == [
+#guard Sig.layoutDoc (.of X86_64.target X86_64.emitter) many false 0 == [
     "`w` and `x` must not overlap each other, `r`, `y` or the arguments on the stack (distinct \
       Rust objects never do).",
     "None of `w`, `r`, `x` and `y` may overlap the return address on the stack, or wrap around \
       the end of the address space (no Rust object does)."]
 
-#guard Sig.layoutDoc (.of AArch64.target) many false 0 == [
+#guard Sig.layoutDoc (.of AArch64.target AArch64.emitter) many false 0 == [
     "`w` and `x` must not overlap each other, `r`, `y` or the arguments on the stack (distinct \
       Rust objects never do).",
     "None of `w`, `r`, `x` and `y` may wrap around the end of the address space (no Rust object \
       does)."]
 
-#guard Sig.layoutNote (.of X86_64.target) many true == []
+#guard Sig.layoutNote (.of X86_64.target X86_64.emitter) many true == []
 
-#guard Sig.layoutNote (.of AArch64.target) many true == []
+#guard Sig.layoutNote (.of AArch64.target AArch64.emitter) many true == []
 
-#guard Sig.layoutDoc (.of X86_64.target) one false 0 == [
+#guard Sig.layoutDoc (.of X86_64.target X86_64.emitter) one false 0 == [
     "`state` must not overlap the return address on the stack, or wrap around the end of the \
       address space (no Rust object does)."]
 
-#guard Sig.layoutDoc (.of Arm.target) one false 0 == [
+#guard Sig.layoutDoc (.of Arm.target Arm.emitter) one false 0 == [
     "`state` must not wrap around the end of the address space (no Rust object does)."]
 
-#guard Sig.layoutDoc (.of X86.target) one true 0 == [
+#guard Sig.layoutDoc (.of X86.target X86.emitter) one true 0 == [
     "`state` must not overlap the arguments on the stack, overlap the return address on the \
       stack, or wrap around the end of the address space (no Rust object does)."]
 
-#guard Sig.layoutDoc (.of X86_64.target) ro false 0 == [
+#guard Sig.layoutDoc (.of X86_64.target X86_64.emitter) ro false 0 == [
     "Neither `a` nor `b` may overlap the return address on the stack, or wrap around the end of \
       the address space (no Rust object does)."]
 
-#guard Sig.layoutDoc (.of X86_64.target) none' false 0 == []
+#guard Sig.layoutDoc (.of X86_64.target X86_64.emitter) none' false 0 == []
 
-#guard Sig.layoutNote (.of X86.target) sample true ==
+#guard Sig.layoutNote (.of X86.target X86.emitter) sample true ==
   ["The function may overwrite the arguments on the stack, as the calling convention lets it."]
 
-#guard Sig.layoutNote (.of X86.target) sample false == []
+#guard Sig.layoutNote (.of X86.target X86.emitter) sample false == []
 
-#guard Sig.layoutNote (.of Arm.target) sample true == []
+#guard Sig.layoutNote (.of Arm.target Arm.emitter) sample true == []
 
-#guard Sig.layoutNote (.of X86_64.target) sample true == []
+#guard Sig.layoutNote (.of X86_64.target X86_64.emitter) sample true == []
 
 /-! ## The memory each buffer must be valid for -/
 
@@ -190,7 +190,7 @@ def lists : Sig where
 
 -- The slices a list lists are buffers of their own: the writable buffer may
 -- not overlap them either.
-#guard Sig.layoutDoc (.of X86_64.target) lists false 0 == [
+#guard Sig.layoutDoc (.of X86_64.target X86_64.emitter) lists false 0 == [
     "`out` must not overlap `parts`, the slices `parts` lists, `words`, the slices `words` lists \
       or `key` (distinct Rust objects never do).",
     "None of `out`, `parts`, the slices `parts` lists, `words`, the slices `words` lists and \

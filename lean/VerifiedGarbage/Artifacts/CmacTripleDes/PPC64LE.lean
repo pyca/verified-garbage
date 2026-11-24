@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.CmacTripleDes.Stream.PPC64LE.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.PPC64LE.Print
+public import VerifiedGarbage.TCB.PPC64LE.Target
 import VerifiedGarbage.Proof.CmacTripleDes.Stream.PPC64LE.Lit
 import VerifiedGarbage.Proof.TripleDes.PPC64LE.FunctionsLit
 
@@ -12,7 +12,7 @@ import VerifiedGarbage.Proof.TripleDes.PPC64LE.FunctionsLit
 
 namespace VG.Artifacts.CmacTripleDes.PPC64LE
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact PPC64LE.target) := [
   Spec.Cmac.tdesStreamInitApi.artifact PPC64LE.target {
     code := Impl.CmacTripleDes.Stream.PPC64LE.Fn.init
     verified := Proof.CmacTripleDes.Stream.PPC64LE.Scrub.init_scrubbed },

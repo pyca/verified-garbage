@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.RsaKeyGen.RISCV64.Fn
 public import VerifiedGarbage.Spec.RsaKeyGen.KeySearchContract
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.RISCV64.Print
+public import VerifiedGarbage.TCB.RISCV64.Target
 public import VerifiedGarbage.Proof.MillerRabin.RISCV64.Backend
 public import VerifiedGarbage.Impl.RsaKeyGen.RISCV64.Fn
 public import VerifiedGarbage.Proof.Variants.MillerRabin.RISCV64
@@ -17,12 +17,12 @@ public import VerifiedGarbage.Proof.Divstep.TcSBounds
 
 namespace VG.Artifacts.RsaKeyGen.RISCV64
 
-def direct : List Artifact := [
+def direct : List (Artifact RISCV64.target) := [
   Spec.RsaKeyGen.keyInitApi.artifact RISCV64.target {
     code := Impl.RsaKeyGen.RISCV64.KeyInit.Fn.init
     verified := Proof.RsaKeyGen.RISCV64.Fn.init_scrubbed }]
 
-def artifacts : List Artifact :=
+def artifacts : List (Artifact RISCV64.target) :=
   direct ++ Proof.Variants.MillerRabin.RISCV64.variants.map fun (v : Proof.MillerRabin.RISCV64.RoundImpl) =>
     Spec.RsaKeyGen.keySearchApi.artifact RISCV64.target {
       suffix := v.suffix

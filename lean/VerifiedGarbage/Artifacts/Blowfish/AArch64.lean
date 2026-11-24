@@ -7,7 +7,7 @@ public import VerifiedGarbage.Proof.Blowfish.AArch64.Frame
 public import VerifiedGarbage.Proof.Blowfish.AArch64.Verified
 public import VerifiedGarbage.Proof.Blowfish.AArch64.ModesResidue
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.AArch64.Print
+public import VerifiedGarbage.TCB.AArch64.Target
 
 /-! # Blowfish on AArch64 -/
 
@@ -15,7 +15,7 @@ public import VerifiedGarbage.TCB.AArch64.Print
 
 namespace VG.Artifacts.Blowfish.AArch64
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact AArch64.target) := [
   Spec.Blowfish.expandKeyApi.artifact AArch64.target {
     code := Impl.Blowfish.AArch64.Fn.expandKey
     verified := Proof.Blowfish.AArch64.expandKeyCleared_scrubbed },

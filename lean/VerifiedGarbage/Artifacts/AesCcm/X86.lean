@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Impl.AesCcm.X86
 public import VerifiedGarbage.Proof.AesCcm.X86.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.X86.Print
+public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Variants.AesCtr32.X86
 
 /-! # AES-CCM (NIST SP 800-38C) on x86 -/
@@ -12,7 +12,7 @@ public import VerifiedGarbage.Proof.Variants.AesCtr32.X86
 
 namespace VG.Artifacts.AesCcm.X86
 
-def artifacts : List Artifact :=
+def artifacts : List (Artifact X86.target) :=
   VG.Proof.Variants.AesCtr32.X86.variants.flatMap fun (v : Proof.Aes.X86.Ctr32Impl) => [
     Spec.Ccm.sealApi.artifact X86.target {
       suffix := v.suffix

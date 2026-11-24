@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.X25519.Arm.Base
 public import VerifiedGarbage.Proof.X25519.Arm.Exchange
 public import VerifiedGarbage.Impl.X25519.Arm.Exchange
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.Arm.Print
+public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.Variants.Ed25519Field.Arm
 import VerifiedGarbage.Proof.X25519.Arm.Lit
 
@@ -15,7 +15,7 @@ import VerifiedGarbage.Proof.X25519.Arm.Lit
 
 namespace VG.Artifacts.X25519.Arm
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact Arm.target) := [
   Spec.X25519.exchangeApi.artifact Arm.target {
     code := Impl.X25519.Arm.Fn.exchange
     verified := Proof.X25519.Arm.Fn.exchange },

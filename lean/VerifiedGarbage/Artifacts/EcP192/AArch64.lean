@@ -7,7 +7,7 @@ public import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.Residue
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.P192.AArch64.Law
 public import VerifiedGarbage.Spec.EcKey.P192
-public import VerifiedGarbage.TCB.AArch64.Print
+public import VerifiedGarbage.TCB.AArch64.Target
 
 /-! # P-192 public keys (FIPS 186-5 §A.2) on AArch64 -/
 
@@ -17,7 +17,7 @@ namespace VG.Artifacts.EcP192.AArch64
 
 open VG.Proof.P192.AArch64 (hasLaw)
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact AArch64.target) := [
   Spec.EcKey.P192.inst.compressPublicKeyApi.artifact AArch64.target {
     code := Impl.EcKey.AArch64.Fn.compressP192
     verified := Proof.EcKey.Compressed.AArch64.P192.scrubbed hasLaw.inv },

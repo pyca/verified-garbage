@@ -7,7 +7,7 @@ public import VerifiedGarbage.Impl.Seed.X86.SseFn
 public import VerifiedGarbage.Proof.Seed.X86.AesNiWideEcb
 public import VerifiedGarbage.Impl.Seed.X86.AesNiWideEcb
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.X86.Print
+public import VerifiedGarbage.TCB.X86.Target
 import VerifiedGarbage.Proof.Seed.X86.ExpandKeyLit
 import VerifiedGarbage.Proof.Seed.X86.SseLit
 import VerifiedGarbage.Proof.Seed.X86.AesNiWideLit
@@ -18,7 +18,7 @@ import VerifiedGarbage.Proof.Seed.X86.AesNiWideLit
 
 namespace VG.Artifacts.Seed.X86
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact X86.target) := [
   Spec.Seed.expandKeyApi.artifact X86.target {
     code := Impl.Seed.X86.Fn.expandKey
     verified := Proof.Seed.X86.expandKey_scrubbed },

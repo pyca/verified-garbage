@@ -16,7 +16,6 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowBase
 public import VerifiedGarbage.Spec.Ecdsa.Verify.BrainpoolP384r1
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP384r1.Lit
 public import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.TCB.AArch64.Target
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 public import VerifiedGarbage.Proof.EcKey.PublicKey
 public import VerifiedGarbage.Proof.Ecdh.AArch64.Peer
@@ -35,7 +34,7 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.Bytes
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Rep
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Window
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowQuad
-public import VerifiedGarbage.TCB.AArch64.Print
+public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.BrainpoolP384r1.AArch64.Law
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvInterface
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.BrainpoolP384r1
@@ -55,7 +54,7 @@ open VG.Proof.BrainpoolP384r1.AArch64 (hasLaw)
 open VG.Proof.HmacTable.AArch64 (tables)
 open VG.Proof.Variants.MdHash.AArch64 (variants hashes)
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact AArch64.target) := [
   Spec.Ecdsa.Rfc6979.Curves.brainpoolp384r1SignApi.artifact AArch64.target {
     tables := [("hmac", tables variants)]
     code := Impl.Ecdsa.Rfc6979.AArch64.Fn.brainpoolp384r1 hashes
@@ -67,7 +66,7 @@ namespace VG.Artifacts.EcdsaBrainpoolP384r1.AArch64
 
 open VG.Proof.BrainpoolP384r1.AArch64 (hasLaw)
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact AArch64.target) := [
   Spec.Ecdsa.BrainpoolP384r1.verifyHashApi.artifact AArch64.target {
     code := Impl.Ecdsa.Verify.AArch64.BrainpoolP384r1.Joint.Fn.verifyHash
     verified := Proof.Ecdsa.Rfc6979.AArch64.brainpoolp384r1Verify hasLaw.law hasLaw.inv }] ++

@@ -5,7 +5,7 @@ import Mathlib.Data.Finset.Attr
 import Mathlib.Tactic.Finiteness.Attr
 import Mathlib.Tactic.SetLike
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.Arm.Print
+public import VerifiedGarbage.TCB.Arm.Target
 
 /-! # IDEA-CBC on ARMv7 -/
 
@@ -13,7 +13,7 @@ public import VerifiedGarbage.TCB.Arm.Print
 
 namespace VG.Artifacts.IdeaCbc.Arm
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact Arm.target) := [
   Spec.Idea.cbcEncryptChainedApi.artifact Arm.target {
     code := Impl.Idea.Arm.Fn.cbcEncryptChained
     verified := Proof.Idea.Arm.Fn.cbcEncryptChained },

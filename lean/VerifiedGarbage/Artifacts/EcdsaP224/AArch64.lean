@@ -16,7 +16,6 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowBase
 public import VerifiedGarbage.Spec.Ecdsa.Verify.P224
 public import Mathlib.Tactic.ClearExcept
 public import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.TCB.AArch64.Target
 import VerifiedGarbage.Impl.Ecdsa.P224.AArch64
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 public import VerifiedGarbage.Impl.Ecdh.P224.AArch64
@@ -40,7 +39,7 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.Window
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowQuad
 public import VerifiedGarbage.Proof.Weierstrass.CombCheckFast
 public import VerifiedGarbage.Proof.Weierstrass.MulContract
-public import VerifiedGarbage.TCB.AArch64.Print
+public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.P224.AArch64.Law
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvInterface
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.P224
@@ -60,7 +59,7 @@ open VG.Proof.P224.AArch64 (hasLaw)
 open VG.Proof.HmacTable.AArch64 (tables)
 open VG.Proof.Variants.MdHash.AArch64 (variants hashes)
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact AArch64.target) := [
   Spec.Ecdsa.Rfc6979.Curves.p224SignApi.artifact AArch64.target {
     tables := [("hmac", tables variants)]
     code := Impl.Ecdsa.Rfc6979.AArch64.Fn.p224 hashes
@@ -72,7 +71,7 @@ namespace VG.Artifacts.EcdsaP224.AArch64
 
 open VG.Proof.P224.AArch64 (hasLaw)
 
-def artifacts : List Artifact := [
+def artifacts : List (Artifact AArch64.target) := [
   Spec.Ecdsa.P224.verifyHashApi.artifact AArch64.target {
     code := Impl.Ecdsa.Verify.AArch64.Fn.verifyHashP224
     verified := Proof.Ecdsa.Rfc6979.AArch64.p224Verify hasLaw.law hasLaw.inv (Proof.P224.combOk7 hasLaw.law) }] ++

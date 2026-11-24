@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.TCB.X86.Target
-public import VerifiedGarbage.TCB.X86.Print
 public import VerifiedGarbage.Proof.Hkdf.X86.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Impl.Hkdf.X86.Fn
@@ -16,7 +15,7 @@ open VG.Proof.HmacTable.X86 (tables fnsOf)
 open VG.Proof.Hkdf.X86 (OK)
 open VG.Proof.Hkdf.X86.Scrub (vs)
 
-def artifacts : List Artifact :=
+def artifacts : List (Artifact X86.target) :=
   if hO : OK vs then [
     Spec.Hkdf.keyApi.artifact X86.target {
       tables := [("hmac", tables vs)]
