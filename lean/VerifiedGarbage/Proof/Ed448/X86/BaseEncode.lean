@@ -33,24 +33,25 @@ callee-saved registers restored (`baseEncode_ok`). The 57 bytes are
 namespace VG.Proof.Ed448.X86
 
 open VG VG.X86 VG.Proof.X448.X86 VG.Proof.X448.Radix16
+open VG.Proof.X25519.X86 (num num_succ num_congr)
 open VG.Impl.Ed448.X86 (signBit baseEncode)
 open VG.Impl.X448.X86 (slot X2 ACC ld at_)
 open VG.Spec.Ed448 (bytesAt)
 
 theorem invEnv_x0 (e : Env) : invEnv e 0 = e 0 := rfl
 
-/-- The value of slot 1 mod 2 is its limb 0's. -/
+/-- The value of slot 1 mod 2 is its word 0's. -/
 theorem fe_mod2 (m : Mem) (base : Addr) : fe m base X2 % 2 = limbs m base X2 0 % 2 := by
-  obtain h : ∀ n, valN (limbs m base X2) (n + 1) % 2 = limbs m base X2 0 % 2 := by
+  obtain h : ∀ n, num (limbs m base X2) (n + 1) % 2 = limbs m base X2 0 % 2 := by
     intro n
     induction n with
-    | zero => simp [valN]
+    | zero => simp [num]
     | succ n ih =>
-      obtain e : (2 ^ 16) ^ (n + 1) * limbs m base X2 (n + 1) =
-          2 * ((2 ^ 16) ^ n * 2 ^ 15 * limbs m base X2 (n + 1)) := by
-        rw [Nat.pow_succ]; grind
-      rw [valN_succ, Nat.add_mod, ih, radix, e, Nat.mul_mod_right, Nat.add_zero, Nat.mod_mod]
-  exact h 27
+      obtain e : (2 ^ 32) ^ (n + 1) * limbs m base X2 (n + 1) =
+          2 * ((2 ^ 32) ^ n * 2 ^ 31 * limbs m base X2 (n + 1)) := by
+        rw [Nat.pow_succ (2 ^ 32) n]; grind
+      rw [num_succ, Nat.add_mod, ih, e, Nat.mul_mod_right, Nat.add_zero, Nat.mod_mod]
+  exact h 13
 
 /-- The low bit of a word, rotated into bit 7 of its low byte. -/
 theorem sign_byte (w : BitVec 32) :
@@ -77,7 +78,7 @@ theorem baseEncode_ok {s₀ s : State} {n sc : Nat} (hA : Args s₀ n sc) (h0 : 
     (hsp : s.gpr .esp = s₀.gpr .esp) (hr : s.rd = s₀.rd) (hwr : s.wr = s₀.wr)
     {base : Addr} (hm : Frame (s₀.wr ++ [below (s₀.gpr .esp) 20]) s₀.mem s.mem)
     (hawr : ∀ r ∈ s₀.wr ++ [below (s₀.gpr .esp) 20], (⟨argAddr s₀ 0, 4 * n⟩ : Region).Disjoint r)
-    (hs : Scr s base) (hc : CallCtx s base) (hb : BoundedEnv s.mem base)
+    (hs : Scr s base) (hc : CallCtx s base)
     (hout : (⟨(arg s₀ 0).setWidth 64, 57⟩ : Region) ∈ s₀.wr) (hofit : (arg s₀ 0).toNat + 57 ≤ 2 ^ 32)
     (hd : (⟨(arg s₀ 0).setWidth 64, 57⟩ : Region).Disjoint ⟨base, 8192⟩)
     {g : Reg → BitVec 32} (sv : Saved base g s.mem) :
@@ -103,7 +104,7 @@ theorem baseEncode_ok {s₀ s : State} {n sc : Nat} (hA : Args s₀ n sc) (h0 : 
   unfold baseEncode
   refine WP.seq (WP.mono (WP.withFrame (NoSp.of_all (by lit_decide))
     (by rw [show stackUse Impl.X448.X86.invert = 20 by lit_decide]; exact hc.sp)
-    (invert_ok hs hc hb)) fun s₁ ⟨⟨k₁, b₁, e₁⟩, f₁⟩ => ?_)
+    (invert_ok hs hc)) fun s₁ ⟨⟨k₁, e₁⟩, f₁⟩ => ?_)
   obtain hs₁ := k₁.scr hs
   obtain hc₁ := k₁.ctx hc
   obtain sp₁ : s₁.gpr .esp = s₀.gpr .esp := (k₁.regs.1 _ (by decide)).trans hsp
@@ -111,7 +112,7 @@ theorem baseEncode_ok {s₀ s : State} {n sc : Nat} (hA : Args s₀ n sc) (h0 : 
   refine WP.seq (WP.mono (WP.withFrame (NoSp.of_all (by lit_decide))
     (Nat.le_trans (by lit_decide :
       stackUse (Impl.X448.X86.ops (encodeFields.map FieldOp.impl)) ≤ 20) hc₁.sp)
-    (ops_ok hs₁ hc₁ b₁ encodeFields)) fun s₂ ⟨⟨k₂, b₂, e₂⟩, f₂⟩ => ?_)
+    (ops_ok hs₁ hc₁ encodeFields)) fun s₂ ⟨⟨k₂, e₂⟩, f₂⟩ => ?_)
   obtain hs₂ := k₂.scr hs₁
   obtain ex : E s₂.mem base 1 = E s.mem base 0 * Proof.X448.invert (E s.mem base 2) := by
     rw [e₂, e₁]
@@ -126,7 +127,7 @@ theorem baseEncode_ok {s₀ s : State} {n sc : Nat} (hA : Args s₀ n sc) (h0 : 
   simp only [List.append_assoc]
   -- `x` fully reduced.
   rw [WP.block_append_iff]
-  refine WP.mono (freeze_ok hs₂ (b₂ 1)) fun s₃ ⟨bx₃, vx₃, m₃, k₃⟩ => ?_
+  refine WP.mono (freeze_ok hs₂) fun s₃ ⟨vx₃, m₃, k₃⟩ => ?_
   obtain hs₃ := hs₂.of_keeps k₃ (by decide)
   obtain f03 : Frame (s₀.wr ++ [below (s₀.gpr .esp) 20]) s.mem s₃.mem :=
     ((wf hsp hwr (by rwa [show stackUse Impl.X448.X86.invert = 20 by lit_decide] at f₁)).trans
@@ -166,7 +167,7 @@ theorem baseEncode_ok {s₀ s : State} {n sc : Nat} (hA : Args s₀ n sc) (h0 : 
   obtain E₈ : E s₈.mem base = E s₃.mem base := by
     funext i
     simp only [E, F]
-    exact congrArg Proof.X448.toFe (valN_congr fun j hj =>
+    exact congrArg Proof.X448.toFe (num_congr fun j hj =>
       congrArg BitVec.toNat (w₈ _ (by have := i.isLt; simp only [slot]; omega_using [hj])))
   obtain E₃ : E s₃.mem base = E s₂.mem base := by
     rw [E_update (o := 1) (m₃.ws (by decide))]
@@ -176,18 +177,14 @@ theorem baseEncode_ok {s₀ s : State} {n sc : Nat} (hA : Args s₀ n sc) (h0 : 
       change Proof.X448.toFe (fe s₃.mem base X2) = Proof.X448.toFe (fe s₂.mem base X2)
       rw [vx₃]; exact Proof.X448.toFe_mod _
     · rw [Function.update_of_ne hi]
-  obtain b₃ : BoundedEnv s₃.mem base := bounded_update (o := 1) (m₃.ws (by decide)) b₂ bx₃
-  obtain b₈ : BoundedEnv s₈.mem base := fun i j hj => by
-    change (word s₈.mem base (slot i.val + 4 * j)).toNat < _
-    rw [w₈ _ (by have := i.isLt; simp only [slot]; omega_using [hj])]; exact b₃ i j hj
   -- `y` into slot 1, fully reduced.
   change WP isa (.block (Impl.X448.X86.copy X2 (slot 4) ++ _)) s₈ _
   rw [WP.block_append_iff]
-  refine WP.mono (WP.and (copyE hs₈ b₈ 1 4) (copy_ok hs₈ (o := X2) (a := slot 4) (by decide) (by decide)
-    (by decide))) fun s₉ ⟨⟨k₉, b₉, e₉⟩, _, m₉, _⟩ => ?_
+  refine WP.mono (WP.and (copyE hs₈ 1 4) (copy_ok hs₈ (o := X2) (a := slot 4) (by decide) (by decide)
+    (by decide))) fun s₉ ⟨⟨k₉, e₉⟩, _, m₉, _⟩ => ?_
   obtain hs₉ := k₉.scr hs₈
   rw [WP.block_append_iff]
-  refine WP.mono (freeze_ok hs₉ (b₉ 1)) fun s₁₀ ⟨by₁₀, vy₁₀, m₁₀, k₁₀⟩ => ?_
+  refine WP.mono (freeze_ok hs₉) fun s₁₀ ⟨vy₁₀, m₁₀, k₁₀⟩ => ?_
   obtain hs₁₀ := hs₉.of_keeps k₁₀ (by decide)
   obtain y₁₀ : fe s₁₀.mem base X2 = (E s.mem base 1 * Proof.X448.invert (E s.mem base 2)).val := by
     obtain hy : (E s₉.mem base 1).val = fe s₉.mem base X2 % Spec.X448.P := Proof.X448.toFe_val _
@@ -200,8 +197,9 @@ theorem baseEncode_ok {s₀ s : State} {n sc : Nat} (hA : Args s₀ n sc) (h0 : 
   obtain wr₁₀ : s₁₀.wr = s₀.wr := by
     rw [k₁₀.2.2, k₉.regs.2.2, u₈.wr, u₇.wr, u₆.wr, u₅.wr, u₄.wr, kk.2.2, hwr]
   rw [WP.block_append_iff]
-  refine WP.mono (output_ok (p := (arg s₀ 0).setWidth 64) hs₁₀ by₁₀ (by rw [esi₁₀])
-    (by rw [esi₁₀]; omega_using [hofit]) (fun j hj => by rw [wr₁₀]; exact hw57 j (by omega_using [hj])) hfar56)
+  refine WP.mono (output_ok (p := (arg s₀ 0).setWidth 64) hs₁₀ (by rw [esi₁₀])
+    (by rw [esi₁₀]; omega_using [hofit]) (fun j hj => by
+      rw [wr₁₀]; exact ⟨_, hout, Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj])⟩) hfar56)
     fun s₁₁ ⟨v₁₁, o₁₁, k₁₁⟩ => ?_
   -- The saved registers.
   obtain sv₃ : Saved base g s₃.mem :=

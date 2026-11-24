@@ -6,7 +6,7 @@
 ///
 /// Contract: `VG.Spec.Cfb8.aesEncryptContract`. Constant time: only the pointers, `rounds` and `len` may affect timing, not the key schedule, the input block or the data.
 ///
-/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_cfb8_encrypt_aesni` if the CPU supports its features (`VG_AES_CFB8_ENCRYPT_AESNI_FEATURES`); or else `vg_aes_cfb8_encrypt`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_cfb8_encrypt_aesni` if the CPU supports its features (`VG_AES_CFB8_ENCRYPT_AESNI_FEATURES`); `vg_aes_cfb8_encrypt_ssse3` if the CPU supports its features (`VG_AES_CFB8_ENCRYPT_SSSE3_FEATURES`); or else `vg_aes_cfb8_encrypt`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
@@ -35,6 +35,11 @@ pub unsafe fn vg_aes_cfb8_encrypt_auto(_dit: verified_garbage_cpu::Dit<'_>, sche
         {
             return crate::aes_cfb8::vg_aes_cfb8_encrypt_aesni;
         }
+        if const { verified_garbage_cpu::target_contains(crate::aes_cfb8::VG_AES_CFB8_ENCRYPT_SSSE3_FEATURES) }
+            || cpu.contains(crate::aes_cfb8::VG_AES_CFB8_ENCRYPT_SSSE3_FEATURES)
+        {
+            return crate::aes_cfb8::vg_aes_cfb8_encrypt_ssse3;
+        }
         crate::aes_cfb8::vg_aes_cfb8_encrypt
     }
     /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
@@ -60,7 +65,7 @@ pub unsafe fn vg_aes_cfb8_encrypt_auto(_dit: verified_garbage_cpu::Dit<'_>, sche
 ///
 /// Contract: `VG.Spec.Cfb8.aesDecryptContract`. Constant time: only the pointers, `rounds` and `len` may affect timing, not the key schedule, the input block or the data.
 ///
-/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_cfb8_decrypt_aesni` if the CPU supports its features (`VG_AES_CFB8_DECRYPT_AESNI_FEATURES`); or else `vg_aes_cfb8_decrypt`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_cfb8_decrypt_aesni` if the CPU supports its features (`VG_AES_CFB8_DECRYPT_AESNI_FEATURES`); `vg_aes_cfb8_decrypt_ssse3` if the CPU supports its features (`VG_AES_CFB8_DECRYPT_SSSE3_FEATURES`); or else `vg_aes_cfb8_decrypt`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
@@ -88,6 +93,11 @@ pub unsafe fn vg_aes_cfb8_decrypt_auto(_dit: verified_garbage_cpu::Dit<'_>, sche
             || cpu.contains(crate::aes_cfb8::VG_AES_CFB8_DECRYPT_AESNI_FEATURES)
         {
             return crate::aes_cfb8::vg_aes_cfb8_decrypt_aesni;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::aes_cfb8::VG_AES_CFB8_DECRYPT_SSSE3_FEATURES) }
+            || cpu.contains(crate::aes_cfb8::VG_AES_CFB8_DECRYPT_SSSE3_FEATURES)
+        {
+            return crate::aes_cfb8::vg_aes_cfb8_decrypt_ssse3;
         }
         crate::aes_cfb8::vg_aes_cfb8_decrypt
     }

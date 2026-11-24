@@ -24,7 +24,7 @@ structure Op (base : Addr) (o : Nat) (s t : State) : Prop where
   keeps : Keeps clob s t
   mem : FieldMem base o s.mem t.mem
 
-abbrev Slot (o : Nat) : Prop := o + 112 ≤ ACC
+abbrev Slot (o : Nat) : Prop := o + 56 ≤ ACC
 
 
 end VG.Proof.X448.X86

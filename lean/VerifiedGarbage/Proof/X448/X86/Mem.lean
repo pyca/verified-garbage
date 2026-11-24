@@ -2,12 +2,17 @@ module
 
 public import VerifiedGarbage.Impl.X448.X86
 public import VerifiedGarbage.Proof.X448.Radix16
+public import VerifiedGarbage.Proof.X25519.X86.Basic
 import VerifiedGarbage.Proof.Framework.X86.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # X448 on x86 (32-bit): the working space
+
+A field element is fourteen 32-bit words (`fe`); Ed448's scalar arithmetic
+keeps its remainders in twenty-eight 16-bit limbs of a word each (`fe16`,
+`Bounded`).
 -/
 
 @[expose] public section
@@ -15,11 +20,16 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 namespace VG.Proof.X448.X86
 
 open VG VG.X86 VG.Impl.X448.X86 VG.Proof.X448.Radix16
+open VG.Proof.X25519.X86 (num num_congr num_lt)
 
 abbrev off (p : Addr) (d : Nat) : Addr := p + BitVec.ofNat 64 d
 abbrev word (m : Mem) (base : Addr) (d : Nat) : BitVec 32 := m.readW (off base d) 32
 abbrev limbs (m : Mem) (base : Addr) (o : Nat) (i : Nat) : Nat := (word m base (o + 4 * i)).toNat
-abbrev fe (m : Mem) (base : Addr) (o : Nat) : Nat := valN (limbs m base o) 28
+abbrev fe (m : Mem) (base : Addr) (o : Nat) : Nat := num (limbs m base o) 14
+abbrev fe16 (m : Mem) (base : Addr) (o : Nat) : Nat := valN (limbs m base o) 28
+
+theorem fe_lt (m : Mem) (base : Addr) (o : Nat) : fe m base o < full :=
+  Nat.lt_of_lt_of_eq (num_lt fun _ _ => BitVec.isLt _) (by decide +kernel)
 
 def Bounded (m : Mem) (base : Addr) (o : Nat) : Prop := ∀ i < 28, limbs m base o i < radix
 
@@ -91,14 +101,18 @@ theorem Outside.word {base : Addr} {o n : Nat} {m m' : Mem} (h : Outside base o 
     (hd : d + 4 ≤ o ∨ o + n ≤ d) (hd' : d + 4 ≤ 8192) : word m' base d = word m base d :=
   (Mem.readW_congr fun i hi => (h _ (by rw [ofs_off base (by omega_using [hd', hi])]; omega_using [hd, hi])).symm).symm
 
-theorem Outside.limbs {base : Addr} {o n : Nat} {m m' : Mem} (h : Outside base o n m m') {d : Nat}
-    (hd : d + 112 ≤ o ∨ o + n ≤ d) (hd' : d + 112 ≤ 8192) {i : Nat} (hi : i < 28) :
+theorem Outside.limbs {base : Addr} {o n : Nat} {m m' : Mem} (h : Outside base o n m m') {d k : Nat}
+    (hd : d + 4 * k ≤ o ∨ o + n ≤ d) (hd' : d + 4 * k ≤ 8192) {i : Nat} (hi : i < k) :
     limbs m' base d i = limbs m base d i :=
   congrArg BitVec.toNat (h.word (by omega_using [hd, hi]) (by omega_using [hd', hi]))
 
 theorem Outside.fe {base : Addr} {o n : Nat} {m m' : Mem} (h : Outside base o n m m') {d : Nat}
-    (hd : d + 112 ≤ o ∨ o + n ≤ d) (hd' : d + 112 ≤ 8192) : fe m' base d = fe m base d :=
-  valN_congr fun _ hi => h.limbs hd hd' hi
+    (hd : d + 56 ≤ o ∨ o + n ≤ d) (hd' : d + 56 ≤ 8192) : fe m' base d = fe m base d :=
+  num_congr fun _ hi => h.limbs (k := 14) hd hd' hi
+
+theorem Outside.fe16 {base : Addr} {o n : Nat} {m m' : Mem} (h : Outside base o n m m') {d : Nat}
+    (hd : d + 112 ≤ o ∨ o + n ≤ d) (hd' : d + 112 ≤ 8192) : fe16 m' base d = fe16 m base d :=
+  valN_congr fun _ hi => h.limbs (k := 28) hd hd' hi
 
 theorem writeW_outside (m : Mem) (base : Addr) {d : Nat} (v : BitVec 32) (h : d + 4 ≤ 8192) :
     Outside base d 4 m (m.writeW (off base d) v) := by
@@ -121,7 +135,7 @@ theorem word_write (m : Mem) (base : Addr) {o i j : Nat} (ho : o + 4 * (i + 1) �
 /-- A field operation writes its result and its temporary coefficients, in
 the `n` bytes from `ACC` (by default the field functions' own working space). -/
 def FieldMem (base : Addr) (o : Nat) (m m' : Mem) (n : Nat := 512) : Prop :=
-  ∀ x, (ofs base x < o ∨ o + 112 ≤ ofs base x) →
+  ∀ x, (ofs base x < o ∨ o + 56 ≤ ofs base x) →
     (ofs base x < ACC ∨ ACC + n ≤ ofs base x) → m' x = m x
 
 theorem FieldMem.trans {base : Addr} {o n : Nat} {m₁ m₂ m₃ : Mem} (h₁ : FieldMem base o m₁ m₂ n)
@@ -132,7 +146,7 @@ theorem FieldMem.mono {base : Addr} {o n n' : Nat} {m m' : Mem} (h : FieldMem ba
     (hn : n ≤ n') : FieldMem base o m m' n' :=
   fun x hx hw => h x hx (by omega_using [hn, hw])
 
-theorem FieldMem.output {base : Addr} {o n : Nat} {m m' : Mem} (h : Outside base o 112 m m') :
+theorem FieldMem.output {base : Addr} {o n : Nat} {m m' : Mem} (h : Outside base o 56 m m') :
     FieldMem base o m m' n := fun x hx _ => h x hx
 
 theorem FieldMem.work {base : Addr} {o d k n : Nat} {m m' : Mem} (h : Outside base d k m m')
@@ -140,38 +154,38 @@ theorem FieldMem.work {base : Addr} {o d k n : Nat} {m m' : Mem} (h : Outside ba
   fun x _ hx => h.mono hl hr x hx
 
 theorem FieldMem.word {base : Addr} {o n : Nat} {m m' : Mem} (h : FieldMem base o m m' n) {d : Nat}
-    (hd : d + 4 ≤ o ∨ o + 112 ≤ d) (hw : d + 4 ≤ ACC) : word m' base d = word m base d :=
+    (hd : d + 4 ≤ o ∨ o + 56 ≤ d) (hw : d + 4 ≤ ACC) : word m' base d = word m base d :=
   (Mem.readW_congr fun i hi => (h _ (by rw [ofs_off base (by simp only [ACC] at hw; omega_using [hw, hi])]; omega_using [hd, hi])
     (Or.inl (by rw [ofs_off base (by simp only [ACC] at hw; omega_using [hw, hi])]; omega_using [hw, hi]))).symm).symm
 
 theorem FieldMem.limbs {base : Addr} {o n : Nat} {m m' : Mem} (h : FieldMem base o m m' n) {d : Nat}
-    (hd : d + 112 ≤ o ∨ o + 112 ≤ d) (hw : d + 112 ≤ ACC) {i : Nat} (hi : i < 28) :
+    (hd : d + 56 ≤ o ∨ o + 56 ≤ d) (hw : d + 56 ≤ ACC) {i : Nat} (hi : i < 14) :
     limbs m' base d i = limbs m base d i :=
   congrArg BitVec.toNat (h.word (by omega_using [hd, hi]) (by omega_using [hw, hi]))
 
 /-- `FieldMem` in the working space alone: what a call of a field function
 changes there (it also writes the stack). -/
 def WsField (base : Addr) (o : Nat) (m m' : Mem) : Prop :=
-  ∀ x, ofs base x < 8192 → (ofs base x < o ∨ o + 112 ≤ ofs base x) →
+  ∀ x, ofs base x < 8192 → (ofs base x < o ∨ o + 56 ≤ ofs base x) →
     (ofs base x < ACC ∨ ACC + 512 ≤ ofs base x) → m' x = m x
 
 theorem FieldMem.ws {base : Addr} {o n : Nat} {m m' : Mem} (h : FieldMem base o m m' n) (hn : n ≤ 512) :
     WsField base o m m' := fun x _ hx hw => h x hx (by omega_using [hn, hw])
 
 theorem WsField.word {base : Addr} {o : Nat} {m m' : Mem} (h : WsField base o m m') {d : Nat}
-    (hd : d + 4 ≤ o ∨ o + 112 ≤ d) (hw : d + 4 ≤ ACC) : word m' base d = word m base d :=
+    (hd : d + 4 ≤ o ∨ o + 56 ≤ d) (hw : d + 4 ≤ ACC) : word m' base d = word m base d :=
   (Mem.readW_congr fun i hi => (h _ (by rw [ofs_off base (by simp only [ACC] at hw; omega_using [hw, hi])]; simp only [ACC] at hw; omega_using [hw, hi])
     (by rw [ofs_off base (by simp only [ACC] at hw; omega_using [hw, hi])]; omega_using [hd, hi])
     (Or.inl (by rw [ofs_off base (by simp only [ACC] at hw; omega_using [hw, hi])]; omega_using [hw, hi]))).symm).symm
 
 theorem WsField.limbs {base : Addr} {o : Nat} {m m' : Mem} (h : WsField base o m m') {d : Nat}
-    (hd : d + 112 ≤ o ∨ o + 112 ≤ d) (hw : d + 112 ≤ ACC) {i : Nat} (hi : i < 28) :
+    (hd : d + 56 ≤ o ∨ o + 56 ≤ d) (hw : d + 56 ≤ ACC) {i : Nat} (hi : i < 14) :
     limbs m' base d i = limbs m base d i :=
   congrArg BitVec.toNat (h.word (by omega_using [hd, hi]) (by omega_using [hw, hi]))
 
 theorem WsField.fe {base : Addr} {o : Nat} {m m' : Mem} (h : WsField base o m m') {d : Nat}
-    (hd : d + 112 ≤ o ∨ o + 112 ≤ d) (hw : d + 112 ≤ ACC) : fe m' base d = fe m base d :=
-  valN_congr fun _ hi => h.limbs hd hw hi
+    (hd : d + 56 ≤ o ∨ o + 56 ≤ d) (hw : d + 56 ≤ ACC) : fe m' base d = fe m base d :=
+  num_congr fun _ hi => h.limbs hd hw hi
 
 /-- Memory outside two ranges, used by the conditional swap. -/
 def Outside2 (base : Addr) (x nx y ny : Nat) (m m' : Mem) : Prop :=

@@ -9,6 +9,8 @@ import VerifiedGarbage.Proof.Ed448.X86.VerifyDecodeY
 import VerifiedGarbage.Proof.X448.X86.Frame
 import VerifiedGarbage.Proof.X448.X86.Counters
 import VerifiedGarbage.Proof.X448.X86.Iter
+import VerifiedGarbage.Proof.Framework.X86.Syms
+import VerifiedGarbage.Proof.Framework.X86.SymFrame
 import VerifiedGarbage.Proof.X448.X86.FnLit
 import VerifiedGarbage.Proof.Ed448.X86.VerifyLit
 import VerifiedGarbage.Proof.Framework.Offset
@@ -35,20 +37,23 @@ its own state (`FS`: the field arithmetic's invariant and `esp`; `FE`, with
 the memory but the working space and the stack below the return address,
 where code reads the arguments), and the loops by `RelCT.loop`, with the
 correctness proofs' invariants. `VP₀` relates the entry states. The recoding
-of `k`'s digits, and the loop's addition of the entry of a digit, branch on
-`k` and address the working space by it: `k` is public (`VP₀.kv`), so two
-runs are in the same state of the recoding after each bit, and load the same
-digit.
+of the digits, and the loop's additions of the entries of digits, branch on
+`S` and `k` and address the working space and the static by them: both are public (`VP₀.sv`,
+`VP₀.kv`), so two runs are in the same state of the recodings after each bit, and load the same
+digits; the static's entry is loaded from its address (`StepA`).
 -/
 
 @[expose] public section
 
 namespace VG.Proof.Ed448.X86
 
-open VG VG.X86 VG.Proof.X448.X86 VG.Proof.X448.Radix16
+open VG VG.X86 VG.Proof.X448.X86
 open VG.Proof.Ed448 (RecoverOk fopValid evalOps)
+open VG.Proof.Ed448 (vdigits bdigits)
+open VG.Impl.Ed448 (PublicTable.entry)
 open VG.Impl.Ed448.X86 (verifyEquation ventry vdecodeInit vdecodeBody vbodyA vnext decode field root RX RY KBITS VTAB
-  vtable vtableInit vtableStep ventryStore ventryLoad vcombIf vaddIf addTake addAtZ)
+  vtable vtableInit vtableStep ventryStore ventryLoad vbaseIf vbase vbaseAddr vbaseLoad vaddIf addTake addAtZ bSym
+  bWords BPTR vrecode recBit fromEntry addAff)
 open VG.Impl.X448.X86 (slot BITS)
 
 /-- Two entry states the constant-time statement relates. -/
@@ -107,27 +112,27 @@ theorem root_rel (base : Addr) : RelCT isa (RF base) root (RF base) := by
 
 /-- A field program, keeping a predicate field programs keep. -/
 theorem field_gen {P : State → State → Prop} (hF : ∀ σ s, P σ s → FS bsV σ s)
-    (hK : ∀ σ s t, P σ s → Keep (bsV σ) s t → BoundedEnv t.mem (bsV σ) → P σ t)
+    (hK : ∀ σ s t, P σ s → Keep (bsV σ) s t → P σ t)
     (l : List Impl.Ed448.FOp) (hv : ∀ op ∈ l, fopValid op) :
     RelCT isa (Runs VP₀ P) (field l) (Runs VP₀ P) := by
   refine Runs.step (R := fun _ _ => True) ?_ fun σ s h =>
-    WP.mono (field_ok l hv (hF _ _ h).1.scr (hF _ _ h).1.ctx (hF _ _ h).1.bounded) fun t ⟨k, b, _⟩ =>
-      hK σ s t h k b
+    WP.mono (field_ok l hv (hF _ _ h).1.scr (hF _ _ h).1.ctx) fun t ⟨k, _⟩ =>
+      hK σ s t h k
   rw [field_ops l hv]
   exact ops_tr (fun _ _ h => h.hp) hF _
 
-theorem FS.keep {σ s t : State} (h : FS bsV σ s) (k : Keep (bsV σ) s t) (b : BoundedEnv t.mem (bsV σ)) :
-    FS bsV σ t := ⟨⟨k.scr h.1.scr, k.ctx h.1.ctx, b⟩, (k.regs.1 _ (by decide)).trans h.2⟩
+theorem FS.keep {σ s t : State} (h : FS bsV σ s) (k : Keep (bsV σ) s t) :
+    FS bsV σ t := ⟨⟨k.scr h.1.scr, k.ctx h.1.ctx⟩, (k.regs.1 _ (by decide)).trans h.2⟩
 
 /-- A field program, from `FS` to `FS`. -/
 theorem field_FS (l : List Impl.Ed448.FOp) (hv : ∀ op ∈ l, fopValid op) :
     RelCT isa (Runs VP₀ (FS bsV)) (field l) (Runs VP₀ (FS bsV)) :=
-  field_gen (fun _ _ h => h) (fun _ _ _ h k b => FS.keep h k b) l hv
+  field_gen (fun _ _ h => h) (fun _ _ _ h k => FS.keep h k) l hv
 
 theorem root_FS : RelCT isa (Runs VP₀ (FS bsV)) root (Runs VP₀ (FS bsV)) :=
   Runs.step (rf_tr (fun _ _ h => h.hp) (fun _ _ h => h) root_rel) fun σ s h =>
-    WP.mono (root_ok h.1.scr h.1.ctx h.1.bounded) fun t ⟨k, b, _⟩ =>
-      ⟨⟨k.scr h.1.scr, k.ctx h.1.ctx, b⟩, (k.regs.1 _ (by decide)).trans h.2⟩
+    WP.mono (root_ok h.1.scr h.1.ctx) fun t ⟨k, _⟩ =>
+      ⟨⟨k.scr h.1.scr, k.ctx h.1.ctx⟩, (k.regs.1 _ (by decide)).trans h.2⟩
 
 /-- The comparison of slots 12 and 13, from `FS` to `FS`. -/
 theorem eqSlots_FS :
@@ -135,8 +140,8 @@ theorem eqSlots_FS :
       (Runs VP₀ (FS bsV)) :=
   Runs.step (RelCT.taint (A := taint) (τr [.esp, .edi])
     (fun _ _ ⟨_, _, hP, f₁, f₂⟩ => FS.agree hP f₁ f₂) (by taint_decide)) fun σ s h =>
-    WP.mono (eqSlots_ok h.1.scr h.1.bounded 12 13 (by decide) (by decide) (by decide)) fun t ⟨k, bt, _⟩ =>
-      ⟨⟨k.scr h.1.scr, k.ctx h.1.ctx, bt⟩, (k.regs.1 _ (by decide)).trans h.2⟩
+    WP.mono (eqSlots_ok h.1.scr 12 13 (by decide) (by decide) (by decide)) fun t ⟨k, _⟩ =>
+      ⟨⟨k.scr h.1.scr, k.ctx h.1.ctx⟩, (k.regs.1 _ (by decide)).trans h.2⟩
 
 /-! ## The entry -/
 
@@ -200,18 +205,20 @@ structure VE (σ s₁ : State) : Prop where
   out : Outside (bsV σ) 0 8192 σ.mem s₁.mem
   bits : BitsAt σ s₁
   e : ∀ i : Index, E s₁.mem (bsV σ) i = Proof.X448.toFe (Impl.Ed448.X86.initVal i.val)
+  rd : s₁.rd = σ.rd
+  sy : s₁.syms = σ.syms
 
 theorem ventry_VE {σ : State} (h : VerifyPre σ) : WP isa ventry σ (VE σ) :=
-  WP.mono (WP.and (ventry_loopPre h) (ventry_ok h rfl)) fun _ ⟨lp, _, _, o, k, _, bits, _, e⟩ =>
-    ⟨h, lp, k.1 _ (by decide), o, bits, e⟩
+  WP.mono_syms (WP.and (ventry_loopPre h) (ventry_ok h rfl)) fun _ ⟨lp, _, _, o, k, _, bits, e⟩ y =>
+    ⟨h, lp, k.1 _ (by decide), o, bits, e, k.2.1, y⟩
 
 /-- `FE` from the entry, for a state the decoding has reached. -/
-theorem VE.fe {σ s₁ t : State} (h : VE σ s₁) (ht : Scr t (bsV σ)) (hb : BoundedEnv t.mem (bsV σ))
+theorem VE.fe {σ s₁ t : State} (h : VE σ s₁) (ht : Scr t (bsV σ))
     {rs : List Reg} (hk : Keeps rs s₁ t) (hesp : .esp ∉ rs) (hx : XF (bsV σ) s₁ s₁.mem t.mem) :
     FE bsV σ t := by
   have sp : t.gpr .esp = σ.gpr .esp := (hk.1 _ hesp).trans h.sp
   have hw : σ.wr = [⟨bsV σ, 8192⟩] := h.pre.wr
-  refine ⟨⟨ht, h.lp.ctx.keep (hk.1 _ hesp), hb⟩, sp, hk.2.2.trans (h.lp.wr.trans hw.symm), ?_⟩
+  refine ⟨⟨ht, h.lp.ctx.keep (hk.1 _ hesp)⟩, sp, hk.2.2.trans (h.lp.wr.trans hw.symm), ?_⟩
   have st : callStk s₁ = below (σ.gpr .esp) 20 := by simp only [callStk, h.sp]
   have f1 : Frame (σ.wr ++ [below (σ.gpr .esp) 20]) σ.mem s₁.mem :=
     (Outside.frame h.out).mono fun r hr => by rw [List.mem_singleton.mp hr, hw]; exact List.mem_cons_self
@@ -220,7 +227,7 @@ theorem VE.fe {σ s₁ t : State} (h : VE σ s₁) (ht : Scr t (bsV σ)) (hb : B
   simpa using hr
 
 theorem VE.fe₁ {σ s₁ : State} (h : VE σ s₁) : FE bsV σ s₁ :=
-  h.fe h.lp.scr h.lp.bounded (Keeps.refl [] _) (by decide) (Frame.refl _ _)
+  h.fe h.lp.scr (Keeps.refl [] _) (by decide) (Frame.refl _ _)
 
 /-! ## The decoding loop -/
 
@@ -229,7 +236,7 @@ def LoopAt (σ : State) (n : Nat) (x : State) : Prop :=
   ∃ s₁, VE σ s₁ ∧ DecInv (bsV σ) s₁ (arg σ 1) (arg σ 0) n x
 
 theorem LoopAt.fe {σ x : State} {n : Nat} (h : LoopAt σ n x) : FE bsV σ x :=
-  let ⟨_, e, d⟩ := h; e.fe (d.scr e.lp.scr) d.bounded d.keeps (by decide) d.ext
+  let ⟨_, e, d⟩ := h; e.fe (d.scr e.lp.scr) d.keeps (by decide) d.ext
 
 /-- After an iteration's first block. -/
 def MidAt (σ : State) (n : Nat) (u : State) : Prop :=
@@ -238,8 +245,7 @@ def MidAt (σ : State) (n : Nat) (u : State) : Prop :=
 theorem MidAt.fe {σ u : State} {n : Nat} (h : MidAt σ n u) : FE bsV σ u := by
   obtain ⟨_, s₁, t, e, d, a⟩ := h
   have kt := d.keeps.trans a.2.1
-  exact e.fe ((d.scr e.lp.scr).of_keeps a.2.1 (by decide)) (BoundedEnv.out a.2.2.1 (by decide) d.bounded)
-    kt (by decide) (d.ext.trans (XF.of_out a.2.2.1 (by decide)))
+  exact e.fe ((d.scr e.lp.scr).of_keeps a.2.1 (by decide)) kt (by decide) (d.ext.trans (XF.of_out a.2.2.1 (by decide)))
 
 /-- The pointer to the point an iteration decodes. -/
 theorem MidAt.esi {σ u : State} {n : Nat} (h : MidAt σ n u) :
@@ -263,9 +269,9 @@ theorem decode_FE (hR : RecoverOk) {σ u : State} {n : Nat} (h : MidAt σ n u) :
     · exact e.lp.isig.of_keeps kt
     · exact e.lp.ipk.of_keeps kt
   refine WP.mono (fe.wp (NoSp.of_all (by lit_decide)) (by lit_decide) (Q := fun _ => True)
-    (WP.mono (decode_ok hR fe.fin.scr fe.fin.ctx fe.fin.bounded hp hin.fit hin.read hin.far 6 7
-      (Or.inl ⟨rfl, rfl⟩) h10u h11u) fun w ⟨k, b, _⟩ =>
-      ⟨⟨k.scr fe.fin.scr, k.ctx fe.fin.ctx, b⟩, k.regs.1 _ (by decide), k.regs.2.2, trivial⟩))
+    (WP.mono (decode_ok hR fe.fin.scr fe.fin.ctx hp hin.fit hin.read (fun k hk => hin.word _ (by omega_using [hk])) hin.far 6 7
+      (Or.inl ⟨rfl, rfl⟩) h10u h11u) fun w ⟨k, _⟩ =>
+      ⟨⟨k.scr fe.fin.scr, k.ctx fe.fin.ctx⟩, k.regs.1 _ (by decide), k.regs.2.2, trivial⟩))
     fun w ⟨f, _⟩ => f
 
 /-- The decoding's trace. -/
@@ -289,8 +295,8 @@ theorem decode_tr (n : Nat) : RelCT isa (Runs VP₀ (MidAt · n ·)) (decode 6 7
       split
       · exact e.lp.isig.of_keeps kt
       · exact e.lp.ipk.of_keeps kt
-    exact WP.mono (decodeY_ok fe.fin.scr fe.fin.bounded hp hin.fit hin.read hin.far 7 (by decide))
-      fun w ⟨k, b, _⟩ => ⟨⟨k.scr fe.fin.scr, k.ctx fe.fin.ctx, b⟩, (k.regs.1 _ (by decide)).trans fe.sp⟩
+    exact WP.mono (decodeY_ok fe.fin.scr hp hin.fit hin.read (fun k hk => hin.word _ (by omega_using [hk])) hin.far 7 (by decide))
+      fun w ⟨k, _⟩ => ⟨⟨k.scr fe.fin.scr, k.ctx fe.fin.ctx⟩, (k.regs.1 _ (by decide)).trans fe.sp⟩
   refine (field_FS _ (by decide)).seq (root_FS.seq ((field_FS _ (by decide)).seq
     (eqSlots_FS.seq ((field_FS _ (by decide)).seq ?_))))
   exact RelCT.taint (A := taint) (τr [.esp, .edi]) (fun _ _ ⟨_, _, hP, f₁, f₂⟩ => FS.agree hP f₁ f₂)
@@ -358,67 +364,84 @@ theorem field_tr {F : State → State → Prop} (hF : ∀ σ s, F σ s → FS bs
   rw [field_ops l hv]
   exact ops_tr (fun _ _ h => h.hp) hF _
 
+/-- After the decodings. -/
+def VD (σ s : State) : Prop := LoopAt σ 0 s ∧ VerifyPre σ ∧ s.rd = σ.rd ∧ s.syms = σ.syms
+
 /-- After `-A`. -/
-def V3 (σ s₃ : State) : Prop := ∃ s₂, LoopAt σ 0 s₂ ∧ Keep (bsV σ) s₂ s₃ ∧
-  E s₃.mem (bsV σ) = evalOps [.sub 6 0 6] (E s₂.mem (bsV σ)) ∧ FE bsV σ s₃
+def V3 (σ s₃ : State) : Prop := (∃ s₂, LoopAt σ 0 s₂ ∧ Keep (bsV σ) s₂ s₃ ∧
+  E s₃.mem (bsV σ) = evalOps [.sub 6 0 6] (E s₂.mem (bsV σ)) ∧ FE bsV σ s₃) ∧
+  VerifyPre σ ∧ s₃.rd = σ.rd ∧ s₃.syms = σ.syms
 
-theorem V3.fe {σ s : State} (h : V3 σ s) : FE bsV σ s := by obtain ⟨_, _, _, _, fe⟩ := h; exact fe
+theorem V3.fe {σ s : State} (h : V3 σ s) : FE bsV σ s := by obtain ⟨⟨_, _, _, _, fe⟩, _⟩ := h; exact fe
 
-theorem negA_rel : RelCT isa (Runs VP₀ (LoopAt · 0 ·)) (field [.sub 6 0 6]) (Runs VP₀ V3) := by
-  refine Runs.step (field_tr (fun _ _ h => h.fe.fs) _ (by decide)) ?_
-  intro σ s h
+theorem negA_rel : RelCT isa (Runs VP₀ VD) (field [.sub 6 0 6]) (Runs VP₀ V3) := by
+  refine Runs.step (field_tr (fun _ _ h => h.1.fe.fs) _ (by decide)) ?_
+  intro σ s ⟨h, hp, hr, hy⟩
   have fe := h.fe
-  exact WP.mono (fe.wp (NoSp.of_all (by lit_decide)) (by lit_decide)
+  exact WP.mono_syms (fe.wp (NoSp.of_all (by lit_decide)) (by lit_decide)
     (Q := fun t => Keep (bsV σ) s t ∧ E t.mem (bsV σ) = evalOps [.sub 6 0 6] (E s.mem (bsV σ)))
-    (WP.mono (field_ok _ (by decide) fe.fin.scr fe.fin.ctx fe.fin.bounded) fun t ⟨k, b, e⟩ =>
-      ⟨⟨k.scr fe.fin.scr, k.ctx fe.fin.ctx, b⟩, k.regs.1 _ (by decide), k.regs.2.2, k, e⟩))
-    fun t ⟨f, k, e⟩ => ⟨s, h, k, e, f⟩
+    (WP.mono (field_ok _ (by decide) fe.fin.scr fe.fin.ctx) fun t ⟨k, e⟩ =>
+      ⟨⟨k.scr fe.fin.scr, k.ctx fe.fin.ctx⟩, k.regs.1 _ (by decide), k.regs.2.2, k, e⟩))
+    fun t ⟨f, k, e⟩ y => ⟨⟨s, h, k, e, f⟩, hp, k.regs.2.1.trans hr, y.trans hy⟩
 
-/-- What the recoding, the table and the loop start from: the bits, 1 and `d` in their slots,
-and `R`'s coordinates bounded. -/
+/-- What the recoding, the table and the loop start from: the bits, 1 and `d` in their slots. -/
 theorem V3.facts {σ s₃ : State} (h : V3 σ s₃) :
-    BitsAt σ s₃ ∧ E s₃.mem (bsV σ) 10 = 1 ∧ E s₃.mem (bsV σ) 11 = Spec.Ed448.d ∧
-      Bounded s₃.mem (bsV σ) RX ∧ Bounded s₃.mem (bsV σ) RY := by
-  obtain ⟨s₂, ⟨s₁, e, d⟩, k₃, e₃, -⟩ := h
+    BitsAt σ s₃ ∧ E s₃.mem (bsV σ) 10 = 1 ∧ E s₃.mem (bsV σ) 11 = Spec.Ed448.d := by
+  obtain ⟨⟨s₂, ⟨s₁, e, d⟩, k₃, e₃, -⟩, -⟩ := h
   obtain ⟨_, k₃e⟩ := sub6_E (E s₂.mem (bsV σ))
   rw [← e₃] at k₃e
-  obtain ⟨bx, by'⟩ := d.rBnd rfl
   exact ⟨VBits.kept (WsOut2.widen k₃.2) (VBits.keptD d.frame e.bits),
     by rw [k₃e 10 (by decide), d.other 10 (by decide) (by decide) (by decide), e.lp.e10],
-    by rw [k₃e 11 (by decide), d.other 11 (by decide) (by decide) (by decide), e.lp.e11],
-    (F_high k₃.2 (by decide) (Or.inl rfl)).2 bx, (F_high k₃.2 (by decide) (Or.inr rfl)).2 by'⟩
+    by rw [k₃e 11 (by decide), d.other 11 (by decide) (by decide) (by decide), e.lp.e11]⟩
 
 /-- `k`, the same in two runs: the challenge is public. -/
 theorem VP₀.kv {σ₁ σ₂ : State} (h : VP₀ σ₁ σ₂) : KV σ₁ = KV σ₂ :=
-  congrArg Spec.Ed448.decodeLE h.2.2.2.2.2.2.2.2.2
+  congrArg Spec.Ed448.decodeLE h.2.2.2.2.2.2.2.2.2.1
 
-/-- From the recoding of `k`'s digits on: the field arithmetic's invariant, the bits of `S` and
-the digits of `k`, 1 and `d` in their slots, and `R`'s coordinates bounded. -/
-structure VW (σ s : State) : Prop where
+/-- `S`, the same in two runs: the signature is public. -/
+theorem VP₀.sv {σ₁ σ₂ : State} (h : VP₀ σ₁ σ₂) : SV σ₁ = SV σ₂ := by
+  have e := congrArg (List.drop 57) h.2.2.2.2.2.2.2.2.1
+  rw [bytesAt_drop57, bytesAt_drop57] at e
+  exact congrArg Spec.Ed448.decodeLE e
+
+/-- The static's address, the same in two runs. -/
+theorem VP₀.bv {σ₁ σ₂ : State} (h : VP₀ σ₁ σ₂) : σ₁.syms bSym = σ₂.syms bSym := h.2.2.2.2.2.2.2.2.2.2
+
+/-- After the recodings: the field arithmetic's invariant, the digits of `S` and `k`, 1 and `d` in
+their slots. -/
+structure VR (σ s : State) : Prop where
   fe : FE bsV σ s
   dig : VDig (bsV σ) (SV σ) (KV σ) s.mem
   one : E s.mem (bsV σ) 10 = 1
   d : E s.mem (bsV σ) 11 = Spec.Ed448.d
-  rx : Bounded s.mem (bsV σ) RX
-  ry : Bounded s.mem (bsV σ) RY
+  pre : VerifyPre σ
+  rd : s.rd = σ.rd
+
+/-- From the static's address on: the static's address too. -/
+structure VW (σ s : State) : Prop extends VR σ s where
+  ptr : word s.mem (bsV σ) BPTR = σ.syms bSym
+
+/-- The static. -/
+theorem VW.bAt {σ s : State} (h : VW σ s) : BAt (bsV σ) (σ.syms bSym) s :=
+  ⟨h.pre.bMemF h.fe.sp h.rd h.fe.wr h.fe.frame, h.ptr⟩
 
 /-- After field operations that keep slots 10 and 11. -/
 theorem VW.keep {σ s t : State} (h : VW σ s) (fe : FE bsV σ t) (k : Keep (bsV σ) s t)
     (e10 : E t.mem (bsV σ) 10 = E s.mem (bsV σ) 10) (e11 : E t.mem (bsV σ) 11 = E s.mem (bsV σ) 11) :
     VW σ t :=
-  ⟨fe, h.dig.keep k.mem, e10.trans h.one, e11.trans h.d, (F_high k.mem (by decide) (Or.inl rfl)).2 h.rx,
-    (F_high k.mem (by decide) (Or.inr rfl)).2 h.ry⟩
+  ⟨⟨fe, h.dig.keep k.mem, e10.trans h.one, e11.trans h.d, h.pre, k.regs.2.1.trans h.rd⟩,
+    (k.mem.word (Or.inr (by decide)) (Or.inr (by decide)) (by decide)).trans h.ptr⟩
 
 /-- `FE`, after code that writes no memory and keeps `esp` and `edi`. -/
 theorem feMem {σ s t : State} (fe : FE bsV σ s) {rs : List Reg} (k : Keeps rs s t) (hesp : .esp ∉ rs)
     (hedi : .edi ∉ rs) (m : t.mem = s.mem) : FE bsV σ t :=
-  ⟨⟨fe.fin.scr.of_keeps k hedi, fe.fin.ctx.keep (k.1 _ hesp), m ▸ fe.fin.bounded⟩, (k.1 _ hesp).trans fe.sp,
+  ⟨⟨fe.fin.scr.of_keeps k hedi, fe.fin.ctx.keep (k.1 _ hesp)⟩, (k.1 _ hesp).trans fe.sp,
     k.2.2.trans fe.wr, by rw [m]; exact fe.frame⟩
 
 theorem VW.of_mem {σ s t : State} (h : VW σ s) {rs : List Reg} (k : Keeps rs s t) (hesp : .esp ∉ rs)
     (hedi : .edi ∉ rs) (m : t.mem = s.mem) : VW σ t :=
-  ⟨feMem h.fe k hesp hedi m, by rw [m]; exact h.dig, by rw [m]; exact h.one, by rw [m]; exact h.d,
-    by rw [m]; exact h.rx, by rw [m]; exact h.ry⟩
+  ⟨⟨feMem h.fe k hesp hedi m, by rw [m]; exact h.dig, by rw [m]; exact h.one, by rw [m]; exact h.d, h.pre,
+    k.2.1.trans h.rd⟩, by rw [m]; exact h.ptr⟩
 
 /-- A list of field operations that keeps slots 10 and 11. -/
 theorem opsVW (xs : List FieldOp) (h10 : (10 : Index) ∉ xs.map fdest) (h11 : (11 : Index) ∉ xs.map fdest) :
@@ -427,16 +450,19 @@ theorem opsVW (xs : List FieldOp) (h10 : (10 : Index) ∉ xs.map fdest) (h11 : (
     WP.mono (ops_FE h.fe xs) fun t ⟨fe, k, e⟩ =>
       h.keep fe k (by rw [e, applyOps_keep _ _ h10]) (by rw [e, applyOps_keep _ _ h11])
 
-/-! ## `k`'s digits
+/-! ## The digits
 
-Two runs on the same `k` are in the same state of the recoding after each bit (`RecSt`, from
+Two runs on the same scalar are in the same state of the recoding after each bit (`RecSt`, from
 each run's correctness), so the test of a window in hand and the addresses of the bytes they
 store agree. -/
 
+section
+variable {B W : Nat} {κ : State → Nat}
+
 /-- What a bit's first block needs public: the working space, the counter, the weight and the
 window's address. -/
-theorem RecSt.agree {i e : Nat} {σ₁ σ₂ s₁ s₂ : State} (hP : VP₀ σ₁ σ₂)
-    (h₁ : RecSt (bsV σ₁) (KV σ₁) i e s₁) (h₂ : RecSt (bsV σ₂) (KV σ₂) i e s₂) :
+theorem RecSt.agree (hκ : ∀ σ₁ σ₂, VP₀ σ₁ σ₂ → κ σ₁ = κ σ₂) {i e : Nat} {σ₁ σ₂ s₁ s₂ : State} (hP : VP₀ σ₁ σ₂)
+    (h₁ : RecSt B W (bsV σ₁) (κ σ₁) i e s₁) (h₂ : RecSt B W (bsV σ₂) (κ σ₂) i e s₂) :
     VG.X86.Taint.Agree (τr [.edi, .esi, .ebx, .eax]) s₁ s₂ := by
   have hedi : s₁.gpr .edi = s₂.gpr .edi := edi_eq h₁.scr (hP.hp.1 ▸ h₂.scr)
   refine agree_regs fun r hr => ?_
@@ -444,51 +470,75 @@ theorem RecSt.agree {i e : Nat} {σ₁ σ₂ s₁ s₂ : State} (hP : VP₀ σ�
   rcases hr with rfl | rfl | rfl | rfl
   · exact hedi
   · exact h₁.esi.trans h₂.esi.symm
-  · rw [h₁.ebx, h₂.ebx, hP.kv]
-  · rw [h₁.eax, h₂.eax, hedi, hP.kv]
+  · rw [h₁.ebx, h₂.ebx, hκ _ _ hP]
+  · rw [h₁.eax, h₂.eax, hedi, hκ _ _ hP]
+
+variable (hBW : (B = KBITS ∧ W = 4) ∨ (B = BITS ∧ W = 7))
+include hBW
+
+omit κ in
+theorem recW : 1 < W ∧ W < 8 ∧ B + 456 ≤ 8192 := by
+  rcases hBW with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> decide
 
 /-- One bit's trace. -/
-theorem recBit_tr (i : Nat) (hi : i < 456) :
-    RelCT isa (Runs VP₀ fun σ s => RecSt (bsV σ) (KV σ) i i s) Impl.Ed448.X86.recBit fun _ _ => True := by
+theorem recBit_tr (hκ : ∀ σ₁ σ₂, VP₀ σ₁ σ₂ → κ σ₁ = κ σ₂) (i : Nat) (hi : i < 456) :
+    RelCT isa (Runs VP₀ fun σ s => RecSt B W (bsV σ) (κ σ) i i s) (recBit B (2 ^ W - 1)) fun _ _ => True := by
+  obtain ⟨hW, hW8, hB⟩ := recW hBW
+  obtain ⟨_, th⟩ : ∃ R, RelCT isa (Runs VP₀ fun σ s => RecSt B W (bsV σ) (κ σ) i i s)
+      (.block (Impl.Ed448.X86.recHead B)) R := by
+    rcases hBW with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
+    · exact ⟨_, RelCT.taint (A := taint) (τr [.edi, .esi, .ebx, .eax])
+        (fun _ _ ⟨_, _, hP, h₁, h₂⟩ => RecSt.agree hκ hP h₁ h₂) (by taint_decide)⟩
+    · exact ⟨_, RelCT.taint (A := taint) (τr [.edi, .esi, .ebx, .eax])
+        (fun _ _ ⟨_, _, hP, h₁, h₂⟩ => RecSt.agree hκ hP h₁ h₂) (by taint_decide)⟩
+  obtain tg : ∀ P : State → State → Prop, (∀ s₁ s₂, P s₁ s₂ → VG.X86.Taint.Agree (τr [.ebp, .eax]) s₁ s₂) →
+      ∃ R, RelCT isa P (.block (Impl.Ed448.X86.recGrow B (2 ^ W - 1))) R := by
+    intro P hP
+    rcases hBW with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
+    · exact ⟨_, RelCT.taint (A := taint) (τr [.ebp, .eax]) hP (by taint_decide)⟩
+    · exact ⟨_, RelCT.taint (A := taint) (τr [.ebp, .eax]) hP (by taint_decide)⟩
   unfold Impl.Ed448.X86.recBit
-  refine RelCT.seq (Runs.step (G := fun σ s => RecH (bsV σ) (KV σ) i s)
-      (RelCT.taint (A := taint) (τr [.edi, .esi, .ebx, .eax])
-        (fun _ _ ⟨_, _, hP, h₁, h₂⟩ => RecSt.agree hP h₁ h₂) (by taint_decide))
-      fun σ s h => WP.mono (recHead_ok h hi) fun t ht => ht.1)
+  refine RelCT.seq (Runs.step (G := fun σ s => RecH B W (bsV σ) (κ σ) i s) th
+      fun σ s h => WP.mono (recHead_ok hW hW8 hB h hi) fun t ht => ht.1)
     (RelCT.seq (R := fun _ _ => True) (VG.X86.RelCT.ite ?_ ?_ ?_)
       (RelCT.taint (A := taint) (τr []) (fun _ _ _ => agree_regs fun _ h => (List.not_mem_nil h).elim)
         (by taint_decide)))
   · rintro s₁ s₂ ⟨σ₁, σ₂, hP, h₁, h₂⟩
     change s₁.zf = s₂.zf
-    rw [h₁.zf, h₂.zf, hP.kv]
+    rw [h₁.zf, h₂.zf, hκ _ _ hP]
   · exact RelCT.taint (A := taint) (τr []) (fun _ _ _ => agree_regs fun _ h => (List.not_mem_nil h).elim)
       (by taint_decide)
-  · refine RelCT.taint (A := taint) (τr [.ebp, .eax]) ?_ (by taint_decide)
-    rintro s₁ s₂ ⟨⟨σ₁, σ₂, hP, h₁, h₂⟩, -⟩
-    have hedi : s₁.gpr .edi = s₂.gpr .edi := edi_eq h₁.st.scr (hP.hp.1 ▸ h₂.st.scr)
-    refine agree_regs fun r hr => ?_
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl
-    · rw [h₁.ebp, h₂.ebp, hedi]
-    · rw [h₁.st.eax, h₂.st.eax, hedi, hP.kv]
+  · have ag : ∀ s₁ s₂, Runs VP₀ (fun σ s => RecH B W (bsV σ) (κ σ) i s) s₁ s₂ →
+        VG.X86.Taint.Agree (τr [.ebp, .eax]) s₁ s₂ := by
+      rintro s₁ s₂ ⟨σ₁, σ₂, hP, h₁, h₂⟩
+      have hedi : s₁.gpr .edi = s₂.gpr .edi := edi_eq h₁.st.scr (hP.hp.1 ▸ h₂.st.scr)
+      refine agree_regs fun r hr => ?_
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · rw [h₁.ebp, h₂.ebp, hedi]
+      · rw [h₁.st.eax, h₂.st.eax, hedi, hκ _ _ hP]
+    obtain ⟨_, t⟩ := tg _ ag
+    exact t.mono (fun _ _ h => h.1) fun _ _ _ => trivial
 
-/-- In the recoding, `n + 1` bits left. -/
-def RecI (n : Nat) (σ s : State) : Prop := n < 456 ∧ RecSt (bsV σ) (KV σ) (455 - n) (455 - n) s
-
-theorem vrecode_tr : RelCT isa (Runs VP₀ V3) Impl.Ed448.X86.vrecode fun _ _ => True := by
+theorem vrecode_tr (hκ : ∀ σ₁ σ₂, VP₀ σ₁ σ₂ → κ σ₁ = κ σ₂) {F : State → State → Prop}
+    (hF : ∀ σ s, F σ s → Scr s (bsV σ) ∧ ∀ q < 456, s.mem (off (bsV σ) (B + q)) = BitVec.ofNat 8 (kbit (κ σ) q)) :
+    RelCT isa (Runs VP₀ F) (vrecode B (2 ^ W - 1)) fun _ _ => True := by
+  obtain ⟨hW, hW8, hB⟩ := recW hBW
   unfold Impl.Ed448.X86.vrecode
-  refine RelCT.seq (Runs.step (G := RecI 455) (RelCT.taint (A := taint) (τr [])
+  refine RelCT.seq (Runs.step (G := fun σ s => 455 < 456 ∧ RecSt B W (bsV σ) (κ σ) (455 - 455) (455 - 455) s)
+      (RelCT.taint (A := taint) (τr [])
       (fun _ _ _ => agree_regs fun _ h => (List.not_mem_nil h).elim) (by taint_decide)) ?_)
-    (RelCT.loop (M := isa) (fun n => Runs VP₀ (RecI n)) (fun n => ?_) 455)
+    (RelCT.loop (M := isa) (fun n => Runs VP₀ fun σ s => n < 456 ∧ RecSt B W (bsV σ) (κ σ) (455 - n) (455 - n) s)
+      (fun n => ?_) 455)
   · intro σ s h
-    exact WP.mono (recInit_ok (K := KV σ) h.fe.fin.scr fun q hq => (h.facts.1 q hq).2) fun t ⟨_, _, r⟩ =>
+    exact WP.mono (recInit_ok (W := W) (K := κ σ) (hF σ s h).1 (hF σ s h).2) fun t ⟨_, _, r⟩ =>
       ⟨by decide, r⟩
-  · refine Runs.then (G := fun σ t => n < 456 ∧ RecSt (bsV σ) (KV σ) (455 - n + 1) (455 - n + 1) t ∧
+  · refine Runs.then (G := fun σ t => n < 456 ∧ RecSt B W (bsV σ) (κ σ) (455 - n + 1) (455 - n + 1) t ∧
         t.zf = some (decide (455 - n + 1 = 456))) (fun _ _ h => h)
-      ((recBit_tr (455 - n) (by omega_arith)).mono
+      ((recBit_tr hBW hκ (455 - n) (by omega_arith)).mono
         (fun _ _ ⟨σ₁, σ₂, hP, h₁, h₂⟩ => ⟨σ₁, σ₂, hP, h₁.2, h₂.2⟩) fun _ _ h => h) ?_ ?_
     · rintro σ s ⟨hn, h⟩
-      exact WP.mono (recBit_ok h (by omega_arith)) fun t ⟨_, _, r, z⟩ => ⟨hn, r, z⟩
+      exact WP.mono (recBit_ok hW hW8 hB h (by omega_arith)) fun t ⟨_, _, r, z⟩ => ⟨hn, r, z⟩
     · rintro σ₁ σ₂ t₁ t₂ hP - ⟨hn, r₁, z₁⟩ ⟨-, r₂, z₂⟩
       rw [eval_ne z₁, eval_ne z₂]
       refine ⟨rfl, fun _ => trivial, fun hz => ?_⟩
@@ -497,24 +547,84 @@ theorem vrecode_tr : RelCT isa (Runs VP₀ V3) Impl.Ed448.X86.vrecode fun _ _ =>
       exact ⟨n - 1, by omega_using [h0, hn], σ₁, σ₂, hP, ⟨by omega_using [hn], by rw [e]; exact r₁⟩,
         ⟨by omega_using [hn], by rw [e]; exact r₂⟩⟩
 
-theorem vrecode_rel : RelCT isa (Runs VP₀ V3) Impl.Ed448.X86.vrecode (Runs VP₀ VW) :=
-  Runs.step vrecode_tr fun σ s h => by
-    obtain ⟨bits, h10, h11, rx, ry⟩ := h.facts
+end
+
+/-- After the recoding of `k`. -/
+structure VK (σ s : State) : Prop where
+  fe : FE bsV σ s
+  bits : ∀ q < 456, s.mem (off (bsV σ) (BITS + q)) = BitVec.ofNat 8 (kbit (SV σ) q)
+  dig : ∀ q < 456, s.mem (off (bsV σ) (KBITS + q)) = BitVec.ofNat 8 (vdigits (KV σ) q)
+  one : E s.mem (bsV σ) 10 = 1
+  d : E s.mem (bsV σ) 11 = Spec.Ed448.d
+  pre : VerifyPre σ
+  rd : s.rd = σ.rd
+  sy : s.syms = σ.syms
+
+theorem vrecodeK_rel : RelCT isa (Runs VP₀ V3) (vrecode KBITS 15) (Runs VP₀ VK) :=
+  Runs.step (vrecode_tr (B := KBITS) (W := 4) (κ := KV) (.inl ⟨rfl, rfl⟩) (fun _ _ h => h.kv)
+    fun σ s h => ⟨h.fe.fin.scr, fun q hq => (h.facts.1 q hq).2⟩) fun σ s h => by
+    obtain ⟨bits, h10, h11⟩ := h.facts
     have fe := h.fe
-    refine WP.mono (fe.wp (NoSp.of_all (by lit_decide)) (by lit_decide)
-      (Q := fun t => Outside (bsV σ) KBITS 456 s.mem t.mem ∧
-        ∀ q < 456, t.mem (off (bsV σ) (KBITS + q)) = BitVec.ofNat 8 (Proof.Ed448.vdigits (KV σ) q))
-      (WP.mono (vrecode_ok fe.fin.scr fun q hq => (bits q hq).2) fun t ⟨k, o, dig⟩ =>
-        ⟨⟨fe.fin.scr.of_keeps k (by decide), fe.fin.ctx.keep (k.1 _ (by decide)),
-          (slots_out o (by decide)).2 fe.fin.bounded⟩, k.1 _ (by decide), k.2.2, o, dig⟩))
-      fun t ⟨fe', o, dig⟩ => ?_
-    obtain ⟨eE, -⟩ := slots_out o (by decide)
-    exact ⟨fe', fun q hq => ⟨by
+    obtain ⟨-, hp, hr, hy⟩ := h
+    refine WP.mono_syms (fe.wp (NoSp.of_all (by lit_decide)) (by lit_decide)
+      (Q := fun t => Keeps recRegs s t ∧ Outside (bsV σ) KBITS 456 s.mem t.mem ∧
+        ∀ q < 456, t.mem (off (bsV σ) (KBITS + q)) = BitVec.ofNat 8 (vdigits (KV σ) q))
+      (WP.mono (vrecode_ok (B := KBITS) (W := 4) (by decide) (by decide) (by decide) fe.fin.scr
+        fun q hq => (bits q hq).2) fun t ⟨k, o, dig⟩ =>
+        ⟨⟨fe.fin.scr.of_keeps k (by decide), fe.fin.ctx.keep (k.1 _ (by decide))⟩, k.1 _ (by decide), k.2.2, k, o, dig⟩))
+      fun t ⟨fe', k, o, dig⟩ y => ?_
+    obtain eE := slots_out o (by decide)
+    exact ⟨fe', fun q hq => by
         rw [o _ (Or.inl (by rw [ofs_off' _ (by simp only [BITS]; omega_using [hq])]; simp only [BITS, KBITS]; omega_using [hq]))]
-        exact (bits q hq).1, dig q hq⟩,
-      by rw [eE]; exact h10, by rw [eE]; exact h11,
-      (F_below (WsBelow.of_out o (Nat.le_refl _)) (Nat.le_refl _) (by decide) (Or.inl rfl)).2 rx,
-      (F_below (WsBelow.of_out o (Nat.le_refl _)) (Nat.le_refl _) (by decide) (Or.inr rfl)).2 ry⟩
+        exact (bits q hq).1, dig,
+      by rw [eE]; exact h10, by rw [eE]; exact h11, hp, k.2.1.trans hr, y.trans hy⟩
+
+theorem vrecodeS_rel : RelCT isa (Runs VP₀ VK) (vrecode BITS 127)
+    (Runs VP₀ fun σ s => VR σ s ∧ s.syms = σ.syms) :=
+  Runs.step (vrecode_tr (B := BITS) (W := 7) (κ := SV) (.inr ⟨rfl, rfl⟩) (fun _ _ h => h.sv)
+    fun σ s h => ⟨h.fe.fin.scr, h.bits⟩) fun σ s h => by
+    have fe := h.fe
+    refine WP.mono_syms (fe.wp (NoSp.of_all (by lit_decide)) (by lit_decide)
+      (Q := fun t => Keeps recRegs s t ∧ Outside (bsV σ) BITS 456 s.mem t.mem ∧
+        ∀ q < 456, t.mem (off (bsV σ) (BITS + q)) = BitVec.ofNat 8 (bdigits (SV σ) q))
+      (WP.mono (vrecode_ok (B := BITS) (W := 7) (by decide) (by decide) (by decide) fe.fin.scr h.bits)
+        fun t ⟨k, o, dig⟩ =>
+        ⟨⟨fe.fin.scr.of_keeps k (by decide), fe.fin.ctx.keep (k.1 _ (by decide))⟩, k.1 _ (by decide), k.2.2, k, o, dig⟩))
+      fun t ⟨fe', k, o, dig⟩ y => ?_
+    obtain eE := slots_out o (by decide)
+    exact ⟨⟨fe', fun q hq => ⟨dig q hq, by
+        rw [o _ (Or.inr (by rw [ofs_off' _ (by simp only [KBITS]; omega_using [hq])]; simp only [BITS, KBITS]; omega_using [hq]))]
+        exact h.dig q hq⟩,
+      by rw [eE]; exact h.one, by rw [eE]; exact h.d, h.pre, k.2.1.trans h.rd⟩, y.trans h.sy⟩
+
+/-! ## The static's address -/
+
+theorem vbase_rel : RelCT isa (Runs VP₀ fun σ s => VR σ s ∧ s.syms = σ.syms) vbase (Runs VP₀ VW) := by
+  have h4 : ∀ {σ s : State}, VR σ s → 4 ≤ (s.gpr .esp).toNat := fun h => Nat.le_trans (by decide) h.fe.fin.ctx.sp
+  refine Runs.step (R := fun _ _ => True) ?_ fun σ s ⟨h, sy⟩ => ?_
+  · unfold Impl.Ed448.X86.vbase
+    have fr : RelCT isa (Runs VP₀ fun σ s => VR σ s ∧ s.syms = σ.syms) (.frame (.symPush .eax bSym) (.block []) (.pop .ecx 1))
+        (fun _ _ => True) := by
+      rintro s t tr₁ tr₂ s' t' ⟨σ₁, σ₂, hp, ⟨f₁, -⟩, ⟨f₂, -⟩⟩ e₁ e₂
+      exact ⟨by rw [symFrame_trace (h4 f₁) e₁, symFrame_trace (h4 f₂) e₂, f₁.fe.sp, f₂.fe.sp, hp.hp.2], trivial⟩
+    refine RelCT.seq (Runs.step (G := fun σ t => (t.gpr .edi).setWidth 64 = bsV σ) fr fun σ s ⟨h, _⟩ => ?_)
+      (RelCT.taint (A := taint) (τr [.edi]) ?_ (by taint_decide))
+    · exact WP.mono (symFrame_ok bSym s (h4 h)) fun t ht => by rw [ht.gpr _ (by decide)]; exact h.fe.fin.scr.edi
+    · rintro s₁ s₂ ⟨σ₁, σ₂, hp, f₁, f₂⟩
+      refine agree_regs fun r hr => ?_
+      rw [List.mem_singleton.mp hr]
+      exact BitVec.eq_of_toNat_eq (by
+        have := congrArg BitVec.toNat (f₁.trans (hp.hp.1.trans f₂.symm))
+        simpa only [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (Nat.lt_of_lt_of_le (BitVec.isLt _) (by decide : 2 ^ 32 ≤ 2 ^ 64))] using this)
+  · refine WP.mono (h.fe.wp (NoSp.of_all (by lit_decide)) (by lit_decide)
+      (Q := fun t => Keeps [.eax, .ecx] s t ∧ word t.mem (bsV σ) BPTR = s.syms bSym ∧
+        ∀ p, ofs (bsV σ) p < 8192 → (ofs (bsV σ) p < BPTR ∨ BPTR + 4 ≤ ofs (bsV σ) p) → t.mem p = s.mem p)
+      (WP.mono (vbase_ok h.fe.fin.scr h.fe.fin.ctx) fun t ⟨kt, pt, m⟩ =>
+        ⟨⟨h.fe.fin.scr.of_keeps kt (by decide), h.fe.fin.ctx.keep (kt.1 _ (by decide))⟩, kt.1 _ (by decide), kt.2.2, kt, pt, m⟩))
+      fun t ⟨fe, kt, pt, m⟩ => ?_
+    obtain eE := vbase_E m
+    exact ⟨⟨fe, vbase_dig m h.dig, by rw [eE]; exact h.one, by rw [eE]; exact h.d, h.pre, kt.2.1.trans h.rd⟩,
+      pt.trans (congrFun sy _)⟩
 
 /-! ## The table of `-A`'s odd multiples -/
 
@@ -537,9 +647,8 @@ theorem ventryStoreT_ok {j : Nat} {σ s : State} (h : TI j σ s) :
       t.gpr .esi = BitVec.ofNat 32 (VTAB + 384 * (j + 1)) ∧ t.zf = some (decide (j + 1 = 8)) := by
   obtain ⟨fe, he, hj⟩ := h
   exact fe.wp (NoSp.of_all (by lit_decide)) (by lit_decide)
-    (WP.mono (ventryStore_ok fe.fin.scr fe.fin.bounded hj he) fun t ⟨k, o, _, g, z⟩ =>
-      ⟨⟨fe.fin.scr.of_keeps k (by decide), fe.fin.ctx.keep (k.1 _ (by decide)),
-        (slots_out o (by simp only [VTAB]; omega_arith)).2 fe.fin.bounded⟩, k.1 _ (by decide), k.2.2, g, z⟩)
+    (WP.mono (ventryStore_ok fe.fin.scr hj he) fun t ⟨k, o, _, g, z⟩ =>
+      ⟨⟨fe.fin.scr.of_keeps k (by decide), fe.fin.ctx.keep (k.1 _ (by decide))⟩, k.1 _ (by decide), k.2.2, g, z⟩)
 
 theorem vtableInit_rel : RelCT isa (Runs VP₀ VW) vtableInit (Runs VP₀ (TI 1)) := by
   unfold Impl.Ed448.X86.vtableInit
@@ -596,11 +705,10 @@ theorem vtable_rel : RelCT isa (Runs VP₀ VW) vtable (Runs VP₀ VT) :=
   Runs.step vtable_tr fun σ s h => by
     have fe := h.fe
     refine WP.mono (fe.wp (NoSp.of_all (by lit_decide)) (by lit_decide) (Q := Tabled (bsV σ) s)
-      (WP.mono (vtable_ok fe.fin.scr fe.fin.ctx fe.fin.bounded h.one h.d) fun t T =>
-        ⟨⟨T.scr, T.ctx, T.bounded⟩, T.regs.1 _ (by decide), T.regs.2.2, T⟩)) fun t ⟨fe', T⟩ => ?_
-    exact ⟨⟨fe', h.dig.below T.mem (by decide) (by decide), T.one, T.d,
-      (F_below T.mem (by decide) (by decide) (Or.inl rfl)).2 h.rx,
-      (F_below T.mem (by decide) (by decide) (Or.inr rfl)).2 h.ry⟩, _, T.tab⟩
+      (WP.mono (vtable_ok fe.fin.scr fe.fin.ctx h.one h.d) fun t T =>
+        ⟨⟨T.scr, T.ctx⟩, T.regs.1 _ (by decide), T.regs.2.2, T⟩)) fun t ⟨fe', T⟩ => ?_
+    exact ⟨⟨⟨fe', h.dig.below T.mem (by decide) (by decide), T.one, T.d, h.pre, T.regs.2.1.trans h.rd⟩,
+      (T.mem.word (by decide) (by decide) (Or.inr (by decide)) (Or.inr (by decide))).trans h.ptr⟩, _, T.tab⟩
 
 /-! ## The loop over the bits -/
 
@@ -615,13 +723,13 @@ theorem VT.of_mem {σ s t : State} (h : VT σ s) {rs : List Reg} (k : Keeps rs s
 
 /-- Code that keeps the field arithmetic's frame and slots 10 and 11 keeps `VT`. -/
 theorem VT.wp {σ s : State} (h : VT σ s) {c : Prog isa} (hc : NoSp c) (hu : stackUse c ≤ 20)
-    (hw : WP isa c s fun t => Keep (bsV σ) s t ∧ BoundedEnv t.mem (bsV σ) ∧
+    (hw : WP isa c s fun t => Keep (bsV σ) s t ∧
       E t.mem (bsV σ) 10 = E s.mem (bsV σ) 10 ∧ E t.mem (bsV σ) 11 = E s.mem (bsV σ) 11) :
     WP isa c s fun t => VT σ t ∧ Keep (bsV σ) s t :=
   WP.mono (h.1.fe.wp hc hu (Q := fun t => Keep (bsV σ) s t ∧
       E t.mem (bsV σ) 10 = E s.mem (bsV σ) 10 ∧ E t.mem (bsV σ) 11 = E s.mem (bsV σ) 11)
-    (WP.mono hw fun t ⟨k, b, e10, e11⟩ =>
-      ⟨⟨k.scr h.1.fe.fin.scr, k.ctx h.1.fe.fin.ctx, b⟩, k.regs.1 _ (by decide), k.regs.2.2, k, e10, e11⟩))
+    (WP.mono hw fun t ⟨k, e10, e11⟩ =>
+      ⟨⟨k.scr h.1.fe.fin.scr, k.ctx h.1.fe.fin.ctx⟩, k.regs.1 _ (by decide), k.regs.2.2, k, e10, e11⟩))
     fun t ⟨fe, k, e10, e11⟩ => ⟨h.keep fe k e10 e11, k⟩
 
 /-- Within the iteration of bit `n`. -/
@@ -651,9 +759,9 @@ theorem doubleW (n : Nat) :
   rw [field, doubleF0_impl]
   exact opsW n _ (by decide) (by decide)
 
-theorem addTake8W (n : Nat) :
-    RelCT isa (Runs VP₀ (StepW n)) (addTake Impl.Ed448.addOps) (Runs VP₀ (StepW n)) := by
-  rw [addTake8_impl]
+theorem addBaseW (n : Nat) :
+    RelCT isa (Runs VP₀ (StepW n)) (Impl.X448.X86.ops (addAff 0 1 2)) (Runs VP₀ (StepW n)) := by
+  rw [addBase_impl]
   exact opsW n _ (by decide) (by decide)
 
 theorem addTake6W (n : Nat) :
@@ -661,43 +769,67 @@ theorem addTake6W (n : Nat) :
   rw [addTake6_impl]
   exact opsW n _ (by decide) (by decide)
 
-/-- The selection of the comb's entry, in a row. -/
-theorem selectW_ok {n : Nat} {σ s : State} (h : StepW n σ s) (hn : n < 114) :
-    WP isa (.block (Impl.Ed448.X86.combDigit Impl.X448.X86.BITS ++ Impl.Ed448.X86.combSelect)) s (StepW n σ) := by
-  obtain ⟨vt, he, hn'⟩ := h
+/-- After digit `n` of `S` is loaded. -/
+def StepB (n : Nat) (σ t : State) : Prop :=
+  StepW n σ t ∧ t.gpr .ecx = BitVec.ofNat 32 (bdigits (SV σ) n) ∧ t.zf = some (decide (bdigits (SV σ) n = 0))
+
+/-- The address of the static's entry of a digit that is not zero. -/
+def StepA (n : Nat) (σ t : State) : Prop := StepW n σ t ∧
+  t.gpr .ebp = σ.syms bSym + BitVec.ofNat 32 (112 * ((bdigits (SV σ) n - 1) / 2)) ∧
+  (bdigits (SV σ) n % 2 = 1 ∧ bdigits (SV σ) n < 128)
+
+theorem bdigits_odd {S n : Nat} (h0 : bdigits S n ≠ 0) : bdigits S n % 2 = 1 ∧ bdigits S n < 128 :=
+  (Proof.Ed25519.Slide.digitsW_odd (W := 7) (by decide) 456 S n).resolve_left h0
+
+theorem bdigits_lt (S n : Nat) : bdigits S n < 128 := by
+  by_cases h : bdigits S n = 0
+  · rw [h]; decide
+  · exact (bdigits_odd h).2
+
+theorem baseAddrW_ok {n : Nat} {σ s : State} (h : StepB n σ s) (h0 : bdigits (SV σ) n ≠ 0) :
+    WP isa (.block vbaseAddr) s (StepA n σ) := by
+  obtain ⟨⟨vt, he, hn⟩, hc, -⟩ := h
+  have hd := bdigits_odd h0
+  exact WP.mono (vbaseAddr_ok vt.1.fe.fin.scr vt.1.ptr hd.2 hd.1 hc) fun t ⟨b, k, m⟩ =>
+    ⟨⟨vt.of_mem k (by decide) (by decide) m, (k.1 _ (by decide)).trans he, hn⟩, b, hd⟩
+
+/-- The load of the static's entry. -/
+theorem baseLoadW_ok {n : Nat} {σ s : State} (h : StepA n σ s) :
+    WP isa (.block (fromEntry (slot 8) 0 ++ fromEntry (slot 9) 56)) s (StepW n σ) := by
+  obtain ⟨⟨vt, he, hn⟩, hb, hd⟩ := h
   have fe := vt.1.fe
-  refine WP.mono (vt.wp (NoSp.of_all (by lit_decide)) (by lit_decide) ?_) fun t ⟨vt', k⟩ =>
-    ⟨vt', (k.regs.1 _ (by decide)).trans he, hn'⟩
-  rw [WP.block_append_iff]
-  refine WP.mono (combDigit_ok (k := SV σ) fe.fin.scr (by decide) hn he fun i hi => (vt.1.dig i hi).1)
-    fun u ⟨d, ku, mu⟩ => ?_
-  obtain hsu := fe.fin.scr.of_keeps ku (by decide)
-  obtain K : Keep (bsV σ) s u := ⟨ku.mono (by decide), by rw [mu]; exact WsOut2.refl _ _ _ _ _ _⟩
-  refine WP.mono (combSelect_ok hsu (mu ▸ fe.fin.bounded) (Proof.Ed448.combDigit_lt (SV σ) n) d)
-    fun t ⟨kt, bt, et⟩ => ⟨K.trans kt, bt, ?_, ?_⟩
-  · rw [et, mu]; rfl
-  · rw [et, mu]; rfl
+  refine WP.mono (vt.wp (NoSp.of_all (by lit_decide)) (by lit_decide)
+    (WP.mono (vbaseCopy_ok fe.fin.scr vt.1.bAt hd.2 hb) fun t ⟨k, e⟩ =>
+      ⟨k, by rw [e]; rfl, by rw [e]; rfl⟩)) fun t ⟨vt', k⟩ => ⟨vt', (k.regs.1 _ (by decide)).trans he, hn⟩
 
-/-- After the test of a row. -/
-def StepC (n : Nat) (σ t : State) : Prop := StepW n σ t ∧ isa.eval .b t = some (decide (n < 114))
-
-theorem vcombIf_rel (n : Nat) : RelCT isa (Runs VP₀ (StepW n)) vcombIf (Runs VP₀ (StepW n)) := by
-  unfold Impl.Ed448.X86.vcombIf
-  refine RelCT.seq (Runs.step (G := StepC n) (RelCT.taint (A := taint) (τr [.esp, .esi, .edi])
+theorem vbaseIf_rel (n : Nat) : RelCT isa (Runs VP₀ (StepW n)) vbaseIf (Runs VP₀ (StepW n)) := by
+  unfold Impl.Ed448.X86.vbaseIf Impl.Ed448.X86.vbaseLoad
+  refine RelCT.seq (Runs.step (G := StepB n) (RelCT.taint (A := taint) (τr [.esp, .esi, .edi])
       (fun _ _ h => StepW.agree h) (by taint_decide)) ?_) (VG.X86.RelCT.ite ?_ ?_ ?_)
   · rintro σ s ⟨vt, he, hn⟩
-    exact WP.mono (vrowTest_ok s hn he) fun t ⟨c, f⟩ =>
-      ⟨⟨vt.of_mem (f.rest []) (by decide) (by decide) f.mem, (congrFun f.gpr _).trans he, hn⟩, c⟩
-  · rintro s₁ s₂ ⟨σ₁, σ₂, hP, ⟨-, c₁⟩, ⟨-, c₂⟩⟩
-    rw [c₁, c₂]
-  · refine (RelCT.seq (Runs.step (P₀ := VP₀) (F := fun σ t => StepW n σ t ∧ n < 114) (G := StepW n)
-        (RelCT.taint (A := taint) (τr [.esp, .esi, .edi])
-          (fun _ _ ⟨σ₁, σ₂, hP, f₁, f₂⟩ => StepW.agree ⟨σ₁, σ₂, hP, f₁.1, f₂.1⟩) (by taint_decide))
-        fun σ s h => selectW_ok h.1 h.2) (addTake8W n)).mono ?_ fun _ _ h => h
-    rintro s₁ s₂ ⟨⟨σ₁, σ₂, hP, ⟨w₁, c₁⟩, ⟨w₂, c₂⟩⟩, hc⟩
-    have hn : n < 114 := by rw [c₁] at hc; exact of_decide_eq_true (Option.some.inj hc)
-    exact ⟨σ₁, σ₂, hP, ⟨w₁, hn⟩, ⟨w₂, hn⟩⟩
-  · exact VG.X86.RelCT.nil fun s₁ s₂ ⟨⟨σ₁, σ₂, hP, ⟨w₁, _⟩, ⟨w₂, _⟩⟩, _⟩ => ⟨σ₁, σ₂, hP, w₁, w₂⟩
+    exact WP.mono (vdigit_ok vt.1.fe.fin.scr (by decide) hn (bdigits_lt _ _) he (vt.1.dig n hn).1) fun t ⟨z, c, k, m⟩ =>
+      ⟨⟨vt.of_mem k (by decide) (by decide) m, (k.1 _ (by decide)).trans he, hn⟩, c, z⟩
+  · rintro s₁ s₂ ⟨σ₁, σ₂, hP, ⟨-, -, z₁⟩, ⟨-, -, z₂⟩⟩
+    rw [eval_ne z₁, eval_ne z₂, hP.sv]
+  · refine (RelCT.seq (RelCT.seq (Runs.step (P₀ := VP₀)
+        (F := fun σ t => StepB n σ t ∧ bdigits (SV σ) n ≠ 0) (G := StepA n)
+        (RelCT.taint (A := taint) (τr [.esp, .edi]) ?_ (by taint_decide))
+        fun σ s h => baseAddrW_ok h.1 h.2)
+        (Runs.step (G := StepW n) (RelCT.taint (A := taint) (τr [.esp, .edi, .ebp]) ?_ (by taint_decide))
+          fun σ s h => baseLoadW_ok h)) (addBaseW n)).mono ?_ fun _ _ h => h
+    · rintro s₁ s₂ ⟨σ₁, σ₂, hP, ⟨d₁, -⟩, ⟨d₂, -⟩⟩
+      exact FS.agree hP d₁.1.1.1.fe.fs d₂.1.1.1.fe.fs
+    · rintro s₁ s₂ ⟨σ₁, σ₂, hP, d₁, d₂⟩
+      refine agree_regs fun r hr => ?_
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl
+      · exact d₁.1.1.1.fe.sp.trans (hP.hp.2.trans d₂.1.1.1.fe.sp.symm)
+      · exact edi_eq d₁.1.1.1.fe.fin.scr (hP.hp.1 ▸ d₂.1.1.1.fe.fin.scr)
+      · rw [d₁.2.1, d₂.2.1, hP.sv, hP.bv]
+    · rintro s₁ s₂ ⟨⟨σ₁, σ₂, hP, d₁, d₂⟩, hc⟩
+      have h1 : bdigits (SV σ₁) n ≠ 0 := by rw [eval_ne d₁.2.2] at hc; simpa using hc
+      exact ⟨σ₁, σ₂, hP, ⟨d₁, h1⟩, ⟨d₂, hP.sv ▸ h1⟩⟩
+  · exact VG.X86.RelCT.nil fun s₁ s₂ ⟨⟨σ₁, σ₂, hP, d₁, d₂⟩, _⟩ => ⟨σ₁, σ₂, hP, d₁.1, d₂.1⟩
 
 /-- After digit `n` of `k` is loaded. -/
 def StepD (n : Nat) (σ t : State) : Prop :=
@@ -714,15 +846,15 @@ theorem entryW_ok {n : Nat} {σ s : State} (h : StepD n σ s) (h0 : Proof.Ed448.
     (Proof.Ed25519.Slide.digits_odd 456 (KV σ) n).resolve_left h0
   obtain hj8 : (Proof.Ed448.vdigits (KV σ) n - 1) / 2 < 8 := by have := hodd.2; omega_using [this]
   refine WP.mono (vt.wp (NoSp.of_all (by lit_decide)) (by lit_decide)
-    (WP.mono (ventryLoad_ok fe.fin.scr fe.fin.bounded hodd.2 hodd.1 hc (ht _ hj8)) fun t ⟨k, b, e⟩ =>
-      ⟨k, b, by rw [e]; rfl, by rw [e]; rfl⟩)) fun t ⟨vt', k⟩ => ⟨vt', (k.regs.1 _ (by decide)).trans he, hn⟩
+    (WP.mono (ventryLoad_ok fe.fin.scr hodd.2 hodd.1 hc (ht _ hj8)) fun t ⟨k, e⟩ =>
+      ⟨k, by rw [e]; rfl, by rw [e]; rfl⟩)) fun t ⟨vt', k⟩ => ⟨vt', (k.regs.1 _ (by decide)).trans he, hn⟩
 
 theorem vaddIf_rel (n : Nat) : RelCT isa (Runs VP₀ (StepW n)) vaddIf (Runs VP₀ (StepW n)) := by
   unfold Impl.Ed448.X86.vaddIf
   refine RelCT.seq (Runs.step (G := StepD n) (RelCT.taint (A := taint) (τr [.esp, .esi, .edi])
       (fun _ _ h => StepW.agree h) (by taint_decide)) ?_) (VG.X86.RelCT.ite ?_ ?_ ?_)
   · rintro σ s ⟨vt, he, hn⟩
-    exact WP.mono (vdigit_ok vt.1.fe.fin.scr hn (vdigits_lt _ _) he (vt.1.dig n hn).2) fun t ⟨z, c, k, m⟩ =>
+    exact WP.mono (vdigit_ok vt.1.fe.fin.scr (by decide) hn (Nat.lt_trans (vdigits_lt _ _) (by decide)) he (vt.1.dig n hn).2) fun t ⟨z, c, k, m⟩ =>
       ⟨⟨vt.of_mem k (by decide) (by decide) m, (k.1 _ (by decide)).trans he, hn⟩, c, z⟩
   · rintro s₁ s₂ ⟨σ₁, σ₂, hP, ⟨-, -, z₁⟩, ⟨-, -, z₂⟩⟩
     rw [eval_ne z₁, eval_ne z₂, hP.kv]
@@ -750,7 +882,7 @@ theorem vstep_rel (n : Nat) : RelCT isa (Runs VP₀ (LI n)) Impl.Ed448.X86.vstep
   unfold Impl.Ed448.X86.vstep
   refine RelCT.seq (Runs.step (G := StepW n) (RelCT.taint (A := taint) (τr [])
       (fun _ _ _ => agree_regs fun _ h => (List.not_mem_nil h).elim) (by taint_decide)) ?_)
-    ((doubleW n).seq ((vcombIf_rel n).seq ((vaddIf_rel n).seq
+    ((doubleW n).seq ((vbaseIf_rel n).seq ((vaddIf_rel n).seq
       (Runs.step (RelCT.taint (A := taint) (τr [])
         (fun _ _ _ => agree_regs fun _ h => (List.not_mem_nil h).elim) (by taint_decide)) ?_))))
   · rintro σ s ⟨hn, vt, he⟩
@@ -794,7 +926,7 @@ theorem vR_rel : RelCT isa (Runs VP₀ VW) (.block Impl.Ed448.X86.vR) (Runs VP�
   refine Runs.step (RelCT.taint (A := taint) (τr [.esp, .edi])
     (fun _ _ ⟨_, _, hP, f₁, f₂⟩ => FS.agree hP f₁.fe.fs f₂.fe.fs) (by taint_decide)) ?_
   intro σ s h
-  exact WP.mono (vR_ok h.fe.fin.scr h.fe.fin.bounded h.rx h.ry) fun t ⟨k, b, _⟩ => FS.keep h.fe.fs k b
+  exact WP.mono (vR_ok h.fe.fin.scr) fun t ⟨k, _⟩ => FS.keep h.fe.fs k
 
 /-- In `vdouble`, `k + 1` iterations left. -/
 def DI (k : Nat) (σ s : State) : Prop := FS bsV σ s ∧ s.gpr .esi = BitVec.ofNat 32 (k + 1) ∧ k + 1 < 2 ^ 16
@@ -812,8 +944,8 @@ theorem vdouble_rel : RelCT isa (Runs VP₀ (FS bsV)) Impl.Ed448.X86.vdouble (Ru
     ((field_tr (fun _ _ h => h.1) _ (by decide)).seq (RelCT.taint (A := taint) (τr [])
       (fun _ _ _ => agree_regs fun _ h => (List.not_mem_nil h).elim) (by taint_decide))) ?_ ?_
   · rintro σ s ⟨f, e, hk⟩
-    exact WP.mono (vdoubleStep_ok f.1.scr f.1.ctx f.1.bounded (k := k) (by omega_using [hk]) e)
-      fun t ⟨et, zt, kt, _, bt, _⟩ => ⟨⟨⟨f.1.scr.of_keeps kt (by decide), f.1.ctx.keep (kt.1 _ (by decide)), bt⟩,
+    exact WP.mono (vdoubleStep_ok f.1.scr f.1.ctx (k := k) (by omega_using [hk]) e)
+      fun t ⟨et, zt, kt, _⟩ => ⟨⟨⟨f.1.scr.of_keeps kt (by decide), f.1.ctx.keep (kt.1 _ (by decide))⟩,
         (kt.1 _ (by decide)).trans f.2⟩, et, zt, by omega_using [hk]⟩
   · rintro σ₁ σ₂ t₁ t₂ hP - ⟨f₁, e₁, z₁, b₁⟩ ⟨f₂, e₂, z₂, b₂⟩
     rw [eval_ne z₁, eval_ne z₂]
@@ -833,22 +965,22 @@ theorem vcmp_tr (k : Nat) : RelCT isa (Runs VP₀ (CI k)) Impl.Ed448.X86.vcmp fu
   unfold Impl.Ed448.X86.vcmp
   refine RelCT.seq (Runs.step (G := CI k) (field_tr (fun _ _ h => h.1) _ (by decide)) ?_) ?_
   · intro σ s h
-    exact WP.mono (field_ok _ (by decide) h.1.1.scr h.1.1.ctx h.1.1.bounded) fun t ⟨kt, bt, _⟩ =>
-      h.keep kt.regs (FS.keep h.1 kt bt)
+    exact WP.mono (field_ok _ (by decide) h.1.1.scr h.1.1.ctx) fun t ⟨kt, _⟩ =>
+      h.keep kt.regs (FS.keep h.1 kt)
   refine RelCT.seq (Runs.step (G := CI k) (RelCT.taint (A := taint) (τr [.esp, .edi])
     (fun _ _ ⟨_, _, hP, f₁, f₂⟩ => FS.agree hP f₁.1 f₂.1) (by taint_decide)) ?_) ?_
   · intro σ s h
-    exact WP.mono (eqSlots_ok h.1.1.scr h.1.1.bounded 12 13 (by decide) (by decide) (by decide))
-      fun t ⟨k', bt, _, _, kw⟩ =>
-        h.keep kw ⟨⟨k'.scr h.1.1.scr, k'.ctx h.1.1.ctx, bt⟩, (k'.regs.1 _ (by decide)).trans h.1.2⟩
+    exact WP.mono (eqSlots_ok h.1.1.scr 12 13 (by decide) (by decide) (by decide))
+      fun t ⟨k', _, _, kw⟩ =>
+        h.keep kw ⟨⟨k'.scr h.1.1.scr, k'.ctx h.1.1.ctx⟩, (k'.regs.1 _ (by decide)).trans h.1.2⟩
   rw [show Impl.X448.X86.ops [.copy (slot 0) (slot 6), .copy (slot 8) (slot 9)] =
     Impl.X448.X86.ops (([.copy 0 6, .copy 8 9] : List FieldOp).map FieldOp.impl) from rfl]
   refine RelCT.seq (Runs.step (G := CI k) (ops_tr (fun _ _ h => h.hp) (fun _ _ h => h.1) _) ?_)
     (RelCT.taint (A := taint) (τr []) (fun _ _ _ => agree_regs fun _ h => (List.not_mem_nil h).elim)
       (by taint_decide))
   intro σ s h
-  exact WP.mono (ops_ok h.1.1.scr h.1.1.ctx h.1.1.bounded _) fun t ⟨kt, bt, _⟩ =>
-    h.keep kt.regs (FS.keep h.1 kt bt)
+  exact WP.mono (ops_ok h.1.1.scr h.1.1.ctx _) fun t ⟨kt, _⟩ =>
+    h.keep kt.regs (FS.keep h.1 kt)
 
 theorem vfinish_tr : RelCT isa (Runs VP₀ (FS bsV)) Impl.Ed448.X86.vfinish fun _ _ => True := by
   unfold Impl.Ed448.X86.vfinish
@@ -863,8 +995,8 @@ theorem vfinish_tr : RelCT isa (Runs VP₀ (FS bsV)) Impl.Ed448.X86.vfinish fun 
   refine Runs.then (G := fun σ t => FS bsV σ t ∧ t.gpr .esi = BitVec.ofNat 32 k ∧ t.zf = some (decide (k = 0)) ∧
       k < 2) (fun _ _ h => h) (vcmp_tr k) ?_ ?_
   · rintro σ s ⟨f, e, hk⟩
-    exact WP.mono (vcmp_ok f.1.scr f.1.ctx f.1.bounded hk e)
-      fun t ⟨et, zt, kt, _, bt, _⟩ => ⟨⟨⟨f.1.scr.of_keeps kt (by decide), f.1.ctx.keep (kt.1 _ (by decide)), bt⟩,
+    exact WP.mono (vcmp_ok f.1.scr f.1.ctx hk e)
+      fun t ⟨et, zt, kt, _⟩ => ⟨⟨⟨f.1.scr.of_keeps kt (by decide), f.1.ctx.keep (kt.1 _ (by decide))⟩,
         (kt.1 _ (by decide)).trans f.2⟩, et, zt, hk⟩
   · rintro σ₁ σ₂ t₁ t₂ hP - ⟨f₁, e₁, z₁, b₁⟩ ⟨f₂, e₂, z₂, b₂⟩
     rw [eval_ne z₁, eval_ne z₂]
@@ -873,26 +1005,37 @@ theorem vfinish_tr : RelCT isa (Runs VP₀ (FS bsV)) Impl.Ed448.X86.vfinish fun 
     have e : k - 1 + 1 = k := by omega_using [hk0]
     exact ⟨k - 1, by omega_using [hk0], σ₁, σ₂, hP, ⟨f₁, e ▸ e₁, by omega_using [b₁]⟩, ⟨f₂, e ▸ e₂, by omega_using [b₁]⟩⟩
 
-theorem vafter_tr : RelCT isa (Runs VP₀ (LoopAt · 0 ·)) Impl.Ed448.X86.vafter fun _ _ => True := by
+theorem vafter_tr : RelCT isa (Runs VP₀ VD) Impl.Ed448.X86.vafter fun _ _ => True := by
   unfold Impl.Ed448.X86.vafter
-  exact negA_rel.seq (vrecode_rel.seq (vtable_rel.seq (vloop_rel.seq (copy6_rel.seq (vR_rel.seq vfinish_tr)))))
+  exact negA_rel.seq (vrecodeK_rel.seq (vrecodeS_rel.seq (vbase_rel.seq (vtable_rel.seq (vloop_rel.seq
+    (copy6_rel.seq (vR_rel.seq vfinish_tr)))))))
+
+theorem vdecode_tr (hR : RecoverOk) : RelCT isa (Runs VP₀ VE) Impl.Ed448.X86.vdecode fun _ _ => True := by
+  unfold Impl.Ed448.X86.vdecode
+  refine RelCT.mono (RelCT.seq (R := Runs VP₀ fun σ x => 1 ≤ 2 ∧ LoopAt σ 2 x) ?_
+    (RelCT.loop (M := isa) (fun n => Runs VP₀ fun σ x => 1 ≤ n ∧ LoopAt σ n x) (vdecodeBody_rel hR) 2))
+    (fun _ _ h => h) fun _ _ _ => trivial
+  refine Runs.step (G := fun σ x => 1 ≤ 2 ∧ LoopAt σ 2 x) (RelCT.taint (A := taint) (τa 20)
+    (fun _ _ ⟨_, _, hP, e₁, e₂⟩ => FE.agreeV hP e₁.fe₁ e₂.fe₁) (by taint_decide)) ?_
+  intro σ s e
+  exact WP.mono (vdecodeInit_ok e.lp.scr e.lp.sig) fun t ht => ⟨by decide, s, e, ht⟩
+
+theorem vdecode_rel (hR : RecoverOk) : RelCT isa (Runs VP₀ VE) Impl.Ed448.X86.vdecode (Runs VP₀ VD) :=
+  Runs.step (vdecode_tr hR) fun _ s e =>
+    WP.mono_syms (vdecode_ok hR e.lp.scr e.lp.ctx e.lp.wr e.lp.sig e.lp.pk e.lp.isig e.lp.ipk e.lp.dsig
+      e.lp.dpk e.lp.e10 e.lp.e11) fun _ d y =>
+      ⟨⟨s, e, d⟩, e.pre, d.keeps.2.1.trans e.rd, y.trans e.sy⟩
 
 theorem verifyEquation_ct (hR : RecoverOk) :
     ConstantTime isa verifyEquationLocal.pre verifyEquationLocal.pub verifyEquation := by
   refine RelCT.constantTime (Q := fun _ _ => True)
     ((?_ : RelCT isa (Runs VP₀ fun σ s => s = σ ∧ VerifyPre σ) verifyEquation fun _ _ => True).mono
       (fun s₁ s₂ h => ⟨s₁, s₂, h, ⟨rfl, VerifyPre.of h.1⟩, ⟨rfl, VerifyPre.of h.2.1⟩⟩) fun _ _ h => h)
-  unfold verifyEquation Impl.Ed448.X86.vdecode
+  unfold verifyEquation
   refine RelCT.seq (Runs.step (G := VE) (RelCT.taint (A := taint) verifyTaint ?_ (by taint_decide))
     fun σ s ⟨e, h⟩ => by subst e; exact ventry_VE h)
-    (RelCT.seq (RelCT.seq (R := Runs VP₀ fun σ x => 1 ≤ 2 ∧ LoopAt σ 2 x) ?_ ?_) vafter_tr)
-  · rintro s₁ s₂ ⟨σ₁, σ₂, hP, ⟨rfl, -⟩, ⟨rfl, -⟩⟩
-    exact verifyTaint_agree hP.1 hP.2.1 hP.2.2
-  · refine Runs.step (G := fun σ x => 1 ≤ 2 ∧ LoopAt σ 2 x) (RelCT.taint (A := taint) (τa 20)
-      (fun _ _ ⟨_, _, hP, e₁, e₂⟩ => FE.agreeV hP e₁.fe₁ e₂.fe₁) (by taint_decide)) ?_
-    intro σ s e
-    exact WP.mono (vdecodeInit_ok e.lp.scr e.lp.bounded e.lp.sig) fun t ht => ⟨by decide, s, e, ht⟩
-  · exact RelCT.loop (M := isa) (fun n => Runs VP₀ fun σ x => 1 ≤ n ∧ LoopAt σ n x)
-      (vdecodeBody_rel hR) 2
+    ((vdecode_rel hR).seq vafter_tr)
+  rintro s₁ s₂ ⟨σ₁, σ₂, hP, ⟨rfl, -⟩, ⟨rfl, -⟩⟩
+  exact verifyTaint_agree hP.1 hP.2.1 hP.2.2
 
 end VG.Proof.Ed448.X86

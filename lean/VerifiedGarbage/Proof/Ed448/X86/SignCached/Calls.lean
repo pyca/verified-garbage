@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.Ed448.X86.ScalarVerified
 public import VerifiedGarbage.Proof.Ed448.X86.ScalarLit
 public import VerifiedGarbage.Proof.Ed448.X86.ScalarMain
 import VerifiedGarbage.Proof.Framework.X86.CallWith
+import VerifiedGarbage.Proof.Framework.X86.Syms
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Ed25519.X86.Whole.BlocksCT
 import VerifiedGarbage.Proof.Ed448.ScalarWords
@@ -25,7 +26,6 @@ import VerifiedGarbage.Proof.Sha512.Spec
 import VerifiedGarbage.Proof.Sha512.X86.Stream.Init
 import VerifiedGarbage.Proof.X25519.X86.Basic
 import VerifiedGarbage.Proof.X448.Bytes
-import VerifiedGarbage.Proof.X448.X86.Carry
 import VerifiedGarbage.Proof.X448.X86.Columns
 import VerifiedGarbage.Proof.X448.X86.Copy
 import VerifiedGarbage.Proof.X448.X86.FnVerified
@@ -56,6 +56,7 @@ open VG VG.X86 VG.Impl.Ed448.X86.SignCached
 open VG.Impl.Ed25519.X86.Whole (Value)
 open VG.Impl.Ed448.X86.Shake (callWith)
 open VG.Proof.Ed448.X86.Shake
+open VG.Impl.Ed448.X86 (combSym)
 open VG.Proof.Ed25519.X86 (Whole.slots Whole.Within Whole.FR Whole.call_ok Whole.CallReady)
 
 variable {s t u : State} {g : Reg → BitVec 32} {m : Mem}
@@ -192,29 +193,36 @@ theorem b_setup (hc : GCtx s g m t) (ha : Shake.Args (base s) 8 (arg s) m) :
   simp only [argVal_caller, List.getElem_cons_zero, List.getElem_cons_succ, BitVec.add_zero] at a0 a1 a2
   exact ⟨a0, a1, a2⟩
 
-theorem b_pre (hu : GCtx s g m u) (hs : BSlots s u) :
-    scalarBaseLocal.pre (u.callEntry.withRegions [OUT2 s, ⟨(base s).setWidth 64, 12⟩] [OUT1 s, SCR (arg s 7)]) := by
+theorem b_pre (hu : GCtx s g m u) (hs : BSlots s u) (hy : u.syms combSym = s.syms combSym)
+    (ht : TblIn (s.syms combSym) (scRd s) u.mem) :
+    scalarBaseLocal.pre (u.callEntry.withRegions [OUT2 s, ⟨(base s).setWidth 64, 12⟩, TblR ((s.syms combSym).setWidth 64)]
+      [OUT1 s, SCR (arg s 7)]) := by
   have hk := kit h
   have hb := hk.below
   have hf := hk.frame
   have e4 := hk.esp4
-  simp only [scalarBaseLocal, State.withRegions_rd, State.withRegions_wr, arg_withRegions,
+  have held := ht.held hk hu hy (rd := [OUT2 s, ⟨(base s).setWidth 64, 12⟩, TblR ((s.syms combSym).setWidth 64)])
+    (wr := [OUT1 s, SCR (arg s 7)]) (ht.away hk (out := OUT1 s) (sc := SCR (arg s 7))
+      ⟨_, out_in s, (out1_within s).sub⟩ (scr_in s))
+  have hy' : ∀ rd wr, (u.callEntry.withRegions rd wr).syms combSym = s.syms combSym := fun _ _ => hy
+  simp only [scalarBaseLocal, State.withRegions_rd, State.withRegions_wr, arg_withRegions, hy',
     State.withRegions_gpr, State.callEntry_esp, hu.esp, hk.slot_arg hu (j := 0) (by decide) hs.a0,
     hk.slot_arg hu (j := 1) (by decide) hs.a1, hk.slot_arg hu (j := 2) (by decide) hs.a2, ab_eq hu,
     out2_addr h]
   exact ⟨trivial, trivial, out1_scr h, out2_scr h, Kit.args_disj (by decide) (out1_lo h),
     Kit.args_disj (by decide) hk.lo_scr, hk.ret_disj (out1_lo h), hk.ret_disj hk.lo_scr,
     by have := h.out; omega_using [this], out2_fit h, h.scratch, by omega_using [hf, e4], hk.callee_room, (hk.callee_stk _ (out_in s)).sub_right (out1_within s).sub,
-    hk.callee_stk _ (scr_in s)⟩
+    hk.callee_stk _ (scr_in s), held⟩
 
 omit h in
 theorem b_covers (s : State) :
-    Covers ([OUT2 s, ⟨(base s).setWidth 64, 12⟩] ++ [OUT1 s, SCR (arg s 7)]) (scRd s ++ Whole.FR (base s) :: scWr s) := by
+    Covers ([OUT2 s, ⟨(base s).setWidth 64, 12⟩, TblR ((s.syms combSym).setWidth 64)] ++ [OUT1 s, SCR (arg s 7)]) (scRd s ++ Whole.FR (base s) :: scWr s) := by
   refine covers_of fun r hr => ?_
   simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl
+  rcases hr with rfl | rfl | rfl | rfl | rfl
   · exact .inr ⟨_, List.mem_append_right _ (out_in s), out2_within s⟩
   · exact .inl (args_within _ (by decide))
+  · exact .inr ⟨_, List.mem_append_left _ (tbl_in s), whole _⟩
   · exact .inr ⟨_, List.mem_append_right _ (out_in s), out1_within s⟩
   · exact .inr ⟨_, List.mem_append_right _ (scr_in s), whole _⟩
 
@@ -227,17 +235,19 @@ theorem b_writes (s : State) : ∀ r ∈ [OUT1 s, SCR (arg s 7)],
   · exact .inr ⟨_, out_in s, out1_within s⟩
   · exact .inr ⟨_, scr_in s, whole _⟩
 
-def b_ready (hu : GCtx s g m u) (hs : BSlots s u) :
+def b_ready (hu : GCtx s g m u) (hs : BSlots s u) (hy : u.syms combSym = s.syms combSym)
+    (ht : TblIn (s.syms combSym) (scRd s) u.mem) :
     Whole.CallReady scalarBaseLocal (base s) (scRd s) (scWr s) u :=
-  ⟨_, _, b_pre h hu hs, b_covers s, b_writes s⟩
+  ⟨_, _, b_pre h hu hs hy ht, b_covers s, b_writes s⟩
 
-theorem b_call {base' : Prog isa} (hB : CalleeOk scalarBaseLocal base') (hu : GCtx s g m u) (hs : BSlots s u) :
+theorem b_call {base' : Prog isa} (hB : CalleeOk scalarBaseLocal base') (hu : GCtx s g m u) (hs : BSlots s u)
+    (hy : u.syms combSym = s.syms combSym) (ht : TblIn (s.syms combSym) (scRd s) u.mem) :
     WP isa (.call "vg_ed448_scalar_base" base') u fun v => GCtx s g m v ∧
       Frame [OUT1 s, SCR (arg s 7), Lo (base s)] u.mem v.mem ∧
       Spec.Ed448.bytesAt v.mem ((arg s 0).setWidth 64) 57 =
         Spec.Ed448.scalarBase (Spec.Ed448.bytesAt u.mem ((arg s 0).setWidth 64 + BitVec.ofNat 64 57) 57) := by
   have hk := kit h
-  refine Whole.call_ok hu hk.below hB.ok hB.nosp hB.stack (b_pre h hu hs) (b_covers s) (b_writes s)
+  refine Whole.call_ok hu hk.below hB.ok hB.nosp hB.stack (b_pre h hu hs hy ht) (b_covers s) (b_writes s)
     fun v hv hf _ ⟨s₂, hm₂, _, hpost⟩ => ⟨hv, call_frame3 h hf, ?_⟩
   simp only [scalarBaseLocal, State.withRegions_mem, arg_withRegions, hm₂,
     hk.slot_arg hu (j := 0) (by decide) hs.a0, hk.slot_arg hu (j := 1) (by decide) hs.a1, out2_addr h] at hpost

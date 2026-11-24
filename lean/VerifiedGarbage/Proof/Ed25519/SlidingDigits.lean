@@ -8,15 +8,16 @@ import VerifiedGarbage.Proof.Framework.Omega
 /-!
 # Sliding-window digits, a bit at a time
 
-A scalar `K` recoded from its lowest bit into digits that are zero or odd and below 16, by an
-automaton that reads one bit a step (`step`) and keeps the digits written so far up to date:
+A scalar `K` recoded from its lowest bit into digits that are zero or odd and below `2 ^ W`, by an
+automaton that reads one bit a step (`stepW`) and keeps the digits written so far up to date:
 with no window in hand (`m = 0`), bit `i` is the digit at `i`, and a set bit opens a window
 there (`m = 2`); with a window in hand, opened at `p`, the digit at `i` is zero and the bit,
 times the window's weight `m`, is added to the digit at `p`; the window closes after its
-fourth bit (`m = 16`). So after `i` bits the digits weighted by powers of two sum to
-`K mod 2^i` (`Good.sum`), and after `n` to `K < 2^n` itself (`digits_sum`: 256 bits for
-Ed25519's challenge, 456 for Ed448's); each is zero or odd and below 16 (`digits_odd`), and a
-nonzero one is followed by three zeros, though nothing here needs that. `topPos` is the
+`W`-th bit (`m = 2 ^ W`). So after `i` bits the digits weighted by powers of two sum to
+`K mod 2^i` (`Good.sum`), and after `n` to `K < 2^n` itself (`digitsW_sum`: 256 bits for
+Ed25519's challenge, 456 for Ed448's); each is zero or odd and below `2 ^ W` (`digitsW_odd`), and a
+nonzero one is followed by `W - 1` zeros, though nothing here needs that. `step`, `run` and
+`digits` are those of windows of four bits. `topPos` is the
 position of the highest digit that is not zero, where a sum over the digits from the top may
 start.
 -/
@@ -95,50 +96,50 @@ def bit (K i : Nat) : Nat := K / 2 ^ i % 2
 
 theorem bit_lt (K i : Nat) : bit K i < 2 := Nat.mod_lt _ (by decide)
 
-/-- One bit (see the module's description). -/
-def step (K : Nat) (s : St) : St :=
+/-- One bit (see the module's description), for windows of `W` bits. -/
+def stepW (W K : Nat) (s : St) : St :=
   if s.m = 0 then ⟨s.i + 1, 2 * bit K s.i, bit K s.i, s.i, upd s.u s.i (bit K s.i)⟩
-  else ⟨s.i + 1, 2 * s.m % 16, s.w + s.m * bit K s.i, s.p,
+  else ⟨s.i + 1, 2 * s.m % 2 ^ W, s.w + s.m * bit K s.i, s.p,
     upd (upd s.u s.i 0) s.p (s.w + s.m * bit K s.i)⟩
 
 /-- The state after `n` bits. -/
-def run (K : Nat) : Nat → St
+def runW (W K : Nat) : Nat → St
   | 0 => init
-  | n + 1 => step K (run K n)
+  | n + 1 => stepW W K (runW W K n)
 
-theorem run_succ (K n : Nat) : run K (n + 1) = step K (run K n) := rfl
+theorem runW_succ (W K n : Nat) : runW W K (n + 1) = stepW W K (runW W K n) := rfl
 
-/-- The digits of `K < 2 ^ n`. -/
-def digits (n K : Nat) : Nat → Nat := (run K n).u
+/-- The digits of `K < 2 ^ n`, for windows of `W` bits. -/
+def digitsW (W n K : Nat) : Nat → Nat := (runW W K n).u
 
-theorem digits_eq (n K q : Nat) : digits n K q = (run K n).u q := rfl
+theorem digitsW_eq (W n K q : Nat) : digitsW W n K q = (runW W K n).u q := rfl
 
 /-- What every state of the recoding satisfies. -/
-structure Good (K : Nat) (s : St) : Prop where
-  m : s.m = 0 ∨ (s.p < s.i ∧ s.i ≤ s.p + 3 ∧ s.m = 2 ^ (s.i - s.p) ∧ s.u s.p = s.w ∧ s.w < s.m ∧ s.w % 2 = 1)
-  w : s.w < 16
+structure Good (W K : Nat) (s : St) : Prop where
+  m : s.m = 0 ∨ (s.p < s.i ∧ s.i < s.p + W ∧ s.m = 2 ^ (s.i - s.p) ∧ s.u s.p = s.w ∧ s.w < s.m ∧ s.w % 2 = 1)
+  w : s.w < 2 ^ W
   p : s.p ≤ s.i
   above : ∀ q, s.i ≤ q → s.u q = 0
-  odd : ∀ q, s.u q = 0 ∨ (s.u q % 2 = 1 ∧ s.u q < 16)
+  odd : ∀ q, s.u q = 0 ∨ (s.u q % 2 = 1 ∧ s.u q < 2 ^ W)
   sum : wsum s.u 0 s.i = K % 2 ^ s.i
 
-theorem init_good (K : Nat) : Good K init :=
-  ⟨.inl rfl, by decide, Nat.le_refl _, fun _ _ => rfl, fun _ => .inl rfl, by simp [init, wsum, Nat.mod_one]⟩
+theorem init_good (W K : Nat) : Good W K init :=
+  ⟨.inl rfl, Nat.two_pow_pos W, Nat.le_refl _, fun _ _ => rfl, fun _ => .inl rfl, by simp [init, wsum, Nat.mod_one]⟩
 
-/-- The weight is 0, 2, 4 or 8. -/
-theorem Good.m_cases {K : Nat} {s : St} (h : Good K s) : s.m = 0 ∨ s.m = 2 ∨ s.m = 4 ∨ s.m = 8 := by
+/-- The weight is below `2 ^ W`. -/
+theorem Good.m_lt {W K : Nat} {s : St} (h : Good W K s) : s.m < 2 ^ W := by
   rcases h.m with h0 | ⟨h1, h2, h3, -⟩
-  · exact .inl h0
-  · rcases (by omega_using [h1, h2] : s.i - s.p = 1 ∨ s.i - s.p = 2 ∨ s.i - s.p = 3) with e | e | e <;>
-      rw [e] at h3 <;> simp [h3]
+  · rw [h0]; exact Nat.two_pow_pos W
+  · rw [h3]; exact Nat.pow_lt_pow_right (by decide) (by omega_using [h1, h2])
 
-theorem step_good {K : Nat} {s : St} (h : Good K s) : Good K (step K s) := by
+theorem stepW_good {W K : Nat} (hW : 1 < W) {s : St} (h : Good W K s) : Good W K (stepW W K s) := by
   obtain ⟨i, m, w, p, u⟩ := s
   obtain ⟨hm, hw, hp, habove, hodd, hsum⟩ := h
   dsimp only at hm hw hp habove hodd hsum
   have hb := bit_lt K i
   have hK1 : K % 2 ^ (i + 1) = K % 2 ^ i + 2 ^ i * bit K i := Nat.mod_pow_succ
-  unfold step
+  have hW2 : 2 < 2 ^ W := Nat.pow_lt_pow_right (a := 2) (m := 1) (by decide) hW
+  unfold stepW
   dsimp only
   generalize bit K i = b at hb hK1 ⊢
   by_cases h0 : m = 0
@@ -146,9 +147,9 @@ theorem step_good {K : Nat} {s : St} (h : Good K s) : Good K (step K s) := by
     refine ⟨?_, ?_, ?_, fun q hq => ?_, fun q => ?_, ?_⟩ <;> dsimp only at *
     · rcases (by omega_using [hb] : b = 0 ∨ b = 1) with rfl | rfl
       · exact .inl rfl
-      · refine .inr ⟨Nat.lt_succ_self _, by omega_using [], ?_, upd_self _ _ _, by decide, by decide⟩
+      · refine .inr ⟨Nat.lt_succ_self _, by omega_using [hW], ?_, upd_self _ _ _, by decide, by decide⟩
         rw [Nat.add_sub_cancel_left]
-    · omega_using [hb]
+    · omega_using [hb, hW2]
     · exact Nat.le_succ _
     · rw [upd_ne _ _ (by omega_using [hq])]
       exact habove q (by omega_using [hq])
@@ -156,7 +157,7 @@ theorem step_good {K : Nat} {s : St} (h : Good K s) : Good K (step K s) := by
       · rw [hq, upd_self]
         rcases (by omega_using [hb] : b = 0 ∨ b = 1) with rfl | rfl
         · exact .inl rfl
-        · exact .inr ⟨by decide, by decide⟩
+        · exact .inr ⟨by decide, by omega_using [hW2]⟩
       · rw [upd_ne _ _ hq]; exact hodd q
     · rw [wsum_snoc, Nat.zero_add, upd_self, wsum_congr (v := u) fun j _ h2 => upd_ne _ _ (by omega_using [h2]),
         hsum, hK1]
@@ -171,35 +172,32 @@ theorem step_good {K : Nat} {s : St} (h : Good K s) : Good K (step K s) := by
         by_cases hqi : q = i
         · rw [hqi, upd_self, habove i (Nat.le_refl _)]
         · rw [upd_ne _ _ hqi]
-    have hd : i - p = 1 ∨ i - p = 2 ∨ i - p = 3 := by omega_using [h1, h2]
-    have hmc : m = 2 ∨ m = 4 ∨ m = 8 := by
-      rcases hd with e | e | e <;> rw [e] at h3 <;> simp [h3]
-    have hw' : w + m * b < 2 * m ∧ (w + m * b) % 2 = 1 ∧ w + m * b < 16 := by
-      rcases (by omega_using [hb] : b = 0 ∨ b = 1) with rfl | rfl <;> rcases hmc with rfl | rfl | rfl <;>
-        omega_using [h5, h6]
+    have hm2 : 2 * m = 2 ^ (i + 1 - p) := by
+      rw [h3, show i + 1 - p = (i - p) + 1 by omega_using [h1], Nat.pow_succ, Nat.mul_comm]
+    have hle : 2 * m ≤ 2 ^ W := by
+      rw [hm2]; exact Nat.pow_le_pow_right (by decide) (by omega_using [h2])
+    have hev : m % 2 = 0 := by
+      rw [h3, show i - p = (i - p - 1) + 1 by omega_using [h1], Nat.pow_succ, Nat.mul_mod_left]
+    have hw' : w + m * b < 2 * m ∧ (w + m * b) % 2 = 1 := by
+      rcases (by omega_using [hb] : b = 0 ∨ b = 1) with rfl | rfl
+      · rw [Nat.mul_zero]; exact ⟨by omega_using [h5], h6⟩
+      · rw [Nat.mul_one]; exact ⟨by omega_using [h5], by omega_using [h6, hev]⟩
     refine ⟨?_, ?_, ?_, fun q hq => ?_, fun q => ?_, ?_⟩ <;> dsimp only at *
-    · by_cases h8 : m = 8
-      · exact .inl (by rw [h8])
-      · have h23 : i - p = 1 ∨ i - p = 2 := by
-          rcases hd with e | e | e
-          · exact .inl e
-          · exact .inr e
-          · rw [e] at h3; exact absurd h3 h8
-        refine .inr ⟨Nat.lt_succ_of_lt h1, by omega_using [h23], ?_, upd_self _ _ _, ?_, hw'.2.1⟩
-        · rcases h23 with e | e
-          · rw [show i + 1 - p = 2 by omega_using [e, h1], h3, e]
-          · rw [show i + 1 - p = 3 by omega_using [e, h1], h3, e]
-        · rcases hmc with e | e | e
-          · rw [e] at hw' ⊢; exact hw'.1
-          · rw [e] at hw' ⊢; exact hw'.1
-          · exact absurd e h8
-    · exact hw'.2.2
+    · by_cases h8 : i + 1 = p + W
+      · refine .inl ?_
+        rw [hm2, show i + 1 - p = W by omega_using [h8], Nat.mod_self]
+      · have hlt : 2 * m < 2 ^ W := by
+          rw [hm2]; exact Nat.pow_lt_pow_right (by decide) (by omega_using [h1, h2, h8])
+        refine .inr ⟨Nat.lt_succ_of_lt h1, by omega_using [h2, h8], ?_, upd_self _ _ _, ?_, hw'.2⟩
+        · rw [Nat.mod_eq_of_lt hlt, hm2]
+        · rw [Nat.mod_eq_of_lt hlt]; exact hw'.1
+    · exact Nat.lt_of_lt_of_le hw'.1 hle
     · exact Nat.le_succ_of_le hp
     · rw [upd_ne _ _ (by omega_using [hq, h1]), upd_ne _ _ (by omega_using [hq])]
       exact habove q (by omega_using [hq])
     · by_cases hq : q = p
       · rw [hq, upd_self]
-        exact .inr ⟨hw'.2.1, hw'.2.2⟩
+        exact .inr ⟨hw'.2, Nat.lt_of_lt_of_le hw'.1 hle⟩
       · rw [upd_ne _ _ hq]
         by_cases hqi : q = i
         · rw [hqi, upd_self]; exact .inl rfl
@@ -210,41 +208,84 @@ theorem step_good {K : Nat} {s : St} (h : Good K s) : Good K (step K s) := by
       omega_arith
 
 /-- A step with no window in hand. -/
-theorem step_idle {K : Nat} {s : St} (h : s.m = 0) :
-    (step K s).m = 2 * bit K s.i ∧ (step K s).w = bit K s.i ∧ (step K s).p = s.i ∧
-      (step K s).u = upd s.u s.i (bit K s.i) := by
-  unfold step
+theorem stepW_idle {W K : Nat} {s : St} (h : s.m = 0) :
+    (stepW W K s).m = 2 * bit K s.i ∧ (stepW W K s).w = bit K s.i ∧ (stepW W K s).p = s.i ∧
+      (stepW W K s).u = upd s.u s.i (bit K s.i) := by
+  unfold stepW
   rw [ite_eq_left h]
   exact ⟨rfl, rfl, rfl, rfl⟩
 
 /-- A step with a window in hand. -/
-theorem step_grow {K : Nat} {s : St} (h : s.m ≠ 0) :
-    (step K s).m = 2 * s.m % 16 ∧ (step K s).w = s.w + s.m * bit K s.i ∧ (step K s).p = s.p ∧
-      (step K s).u = upd (upd s.u s.i 0) s.p (s.w + s.m * bit K s.i) := by
-  unfold step
+theorem stepW_grow {W K : Nat} {s : St} (h : s.m ≠ 0) :
+    (stepW W K s).m = 2 * s.m % 2 ^ W ∧ (stepW W K s).w = s.w + s.m * bit K s.i ∧ (stepW W K s).p = s.p ∧
+      (stepW W K s).u = upd (upd s.u s.i 0) s.p (s.w + s.m * bit K s.i) := by
+  unfold stepW
   rw [ite_eq_right h]
   exact ⟨rfl, rfl, rfl, rfl⟩
 
-theorem run_good (K : Nat) : ∀ n, Good K (run K n)
-  | 0 => init_good K
-  | n + 1 => step_good (run_good K n)
+theorem runW_good {W : Nat} (hW : 1 < W) (K : Nat) : ∀ n, Good W K (runW W K n)
+  | 0 => init_good W K
+  | n + 1 => stepW_good hW (runW_good hW K n)
 
-theorem step_i (K : Nat) (s : St) : (step K s).i = s.i + 1 := by
-  unfold step; split <;> rfl
-
-theorem run_i (K : Nat) : ∀ n, (run K n).i = n
+theorem runW_i (W K : Nat) : ∀ n, (runW W K n).i = n
   | 0 => rfl
-  | n + 1 => by rw [run_succ, step_i, run_i K n]
+  | n + 1 => by
+    rw [runW_succ, stepW]
+    split <;> exact congrArg (· + 1) (runW_i W K n)
 
 /-- The digits sum to `K`. -/
-theorem digits_sum {n K : Nat} (hK : K < 2 ^ n) : wsum (digits n K) 0 n = K := by
-  have h := (run_good K n).sum
-  rw [run_i, Nat.mod_eq_of_lt hK] at h
+theorem digitsW_sum {W n K : Nat} (hW : 1 < W) (hK : K < 2 ^ n) : wsum (digitsW W n K) 0 n = K := by
+  have h := (runW_good hW K n).sum
+  rw [runW_i, Nat.mod_eq_of_lt hK] at h
   exact h
+
+/-- Each digit is zero, or odd and below `2 ^ W`. -/
+theorem digitsW_odd {W : Nat} (hW : 1 < W) (n K q : Nat) :
+    digitsW W n K q = 0 ∨ (digitsW W n K q % 2 = 1 ∧ digitsW W n K q < 2 ^ W) :=
+  (runW_good hW K n).odd q
+
+/-! ## Windows of four bits -/
+
+/-- One bit, for windows of four bits. -/
+abbrev step (K : Nat) (s : St) : St := stepW 4 K s
+
+/-- The state after `n` bits. -/
+abbrev run (K : Nat) (n : Nat) : St := runW 4 K n
+
+theorem run_succ (K n : Nat) : run K (n + 1) = step K (run K n) := rfl
+
+/-- The digits of `K < 2 ^ n`: each zero or odd and below 16. -/
+abbrev digits (n K : Nat) : Nat → Nat := digitsW 4 n K
+
+theorem digits_eq (n K q : Nat) : digits n K q = (run K n).u q := rfl
+
+theorem run_good (K n : Nat) : Good 4 K (run K n) := runW_good (by decide) K n
+
+/-- The weight is 0, 2, 4 or 8. -/
+theorem Good.m_cases {K : Nat} {s : St} (h : Good 4 K s) : s.m = 0 ∨ s.m = 2 ∨ s.m = 4 ∨ s.m = 8 := by
+  rcases h.m with h0 | ⟨h1, h2, h3, -⟩
+  · exact .inl h0
+  · rcases (by omega_using [h1, h2] : s.i - s.p = 1 ∨ s.i - s.p = 2 ∨ s.i - s.p = 3) with e | e | e <;>
+      rw [e] at h3 <;> simp [h3]
+
+/-- A step with no window in hand. -/
+theorem step_idle {K : Nat} {s : St} (h : s.m = 0) :
+    (step K s).m = 2 * bit K s.i ∧ (step K s).w = bit K s.i ∧ (step K s).p = s.i ∧
+      (step K s).u = upd s.u s.i (bit K s.i) := stepW_idle h
+
+/-- A step with a window in hand. -/
+theorem step_grow {K : Nat} {s : St} (h : s.m ≠ 0) :
+    (step K s).m = 2 * s.m % 16 ∧ (step K s).w = s.w + s.m * bit K s.i ∧ (step K s).p = s.p ∧
+      (step K s).u = upd (upd s.u s.i 0) s.p (s.w + s.m * bit K s.i) := stepW_grow h
+
+theorem run_i (K n : Nat) : (run K n).i = n := runW_i 4 K n
+
+/-- The digits sum to `K`. -/
+theorem digits_sum {n K : Nat} (hK : K < 2 ^ n) : wsum (digits n K) 0 n = K := digitsW_sum (by decide) hK
 
 /-- Each digit is zero, or odd and below 16. -/
 theorem digits_odd (n K q : Nat) : digits n K q = 0 ∨ (digits n K q % 2 = 1 ∧ digits n K q < 16) :=
-  (run_good K n).odd q
+  digitsW_odd (W := 4) (by decide) n K q
 
 /-! ## The top digit -/
 

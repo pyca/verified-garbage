@@ -15,8 +15,8 @@ computes `X448(k, 5)` as the u-coordinate `y² / x²` of `[k] B` on edwards448
 
 `[k] B` is Ed448's base-point multiplication on this target
 (`Impl/Ed448/X86/ScalarBase.lean`): its entry (the callee-saved registers
-saved in the working space, and the slots initialized) and its four-column
-comb (`combLoop`), which leaves `[k] B` as `(X : Y : Z)` in slots 0–2. The
+saved in the working space, and the slots initialized) and its signed radix-16
+comb (`combBase`), which leaves `[k] B` as `(X : Y : Z)` in slots 0–2. The
 comb reads 456 bits, a byte each at `BITS`: X448's `bits` expands the decoded
 (clamped) scalar's 448, and the eight above them are zeroed (`zeroTop`).
 
@@ -44,11 +44,12 @@ def uOps : List Op := [.mul Z2 X1 X1, .mul X2 X2 X2]
 /-- The callee-saved registers saved, the slots initialized, and the 456 bits the comb reads: the
 decoded scalar's 448, and zeros above them. -/
 def baseEntry : Prog isa :=
-  .seq (.block (Impl.Ed448.X86.save 12)) <| .seq Impl.Ed448.X86.initSlots <| .seq (.block zeroTop) bits
+  .seq (.block (Impl.Ed448.X86.save 12)) <| .seq (Impl.Ed448.X86.initSlots Impl.Ed448.X86.combVal) <|
+    .seq (.block zeroTop) bits
 
 /-- `vg_x448_base(out = [esp + 4], scalar = [esp + 8], scratch = [esp + 12])`. -/
 def x448Base : Prog isa :=
-  .seq baseEntry <| .seq Impl.Ed448.X86.combLoop <| .seq (ops uOps) <| .seq invert finish
+  .seq baseEntry <| .seq Impl.Ed448.X86.combBase <| .seq (ops uOps) <| .seq invert finish
 
 end VG.Impl.X448.X86
 

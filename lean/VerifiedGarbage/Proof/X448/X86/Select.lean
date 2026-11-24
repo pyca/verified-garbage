@@ -23,7 +23,7 @@ def selectStep (i : Nat) : List Instr :=
   [ld .eax (X2 + 4 * i), ld .edx (TMP + 4 * i), .alu .xor .edx (.reg .eax),
     .alu .and .edx (.reg .ecx), .alu .xor .eax (.reg .edx), st .eax (X2 + 4 * i)]
 
-theorem selectStep_ok {s : State} {base : Addr} (hs : Scr s base) {i : Nat} (hi : i < 28)
+theorem selectStep_ok {s : State} {base : Addr} (hs : Scr s base) {i : Nat} (hi : i < 14)
     {sw : Bool} (hc : s.gpr .ecx = mask sw) :
     WP isa (.block (selectStep i)) s fun t =>
       t.mem = s.mem.writeW (off base (X2 + 4 * i))
@@ -53,13 +53,13 @@ theorem selectStep_ok {s : State} {base : Addr} (hs : Scr s base) {i : Nat} (hi 
       ((hv.rest (by decide)).trans ((hw.rest (by decide)).trans ((hx.rest (by decide)).trans (hy.rest _))))))
 
 theorem select_ok {s : State} {base : Addr} (hs : Scr s base) {sw : Bool} (hc : s.gpr .ecx = mask sw) :
-    WP isa (.block ((List.range 28).flatMap selectStep)) s fun t =>
-      (∀ i < 28, limbs t.mem base X2 i = if sw then limbs s.mem base TMP i else limbs s.mem base X2 i) ∧
-      Outside base X2 112 s.mem t.mem ∧ Keeps [.eax, .edx] s t := by
+    WP isa (.block ((List.range 14).flatMap selectStep)) s fun t =>
+      (∀ i < 14, limbs t.mem base X2 i = if sw then limbs s.mem base TMP i else limbs s.mem base X2 i) ∧
+      Outside base X2 56 s.mem t.mem ∧ Keeps [.eax, .edx] s t := by
   let inv := fun n (t : State) =>
     (∀ i < n, limbs t.mem base X2 i = if sw then limbs s.mem base TMP i else limbs s.mem base X2 i) ∧
     Outside base X2 (4 * n) s.mem t.mem ∧ Keeps [.eax, .edx] s t
-  have st : ∀ n t, n < 28 → inv n t → WP isa (.block (selectStep n)) t (inv (n + 1)) := by
+  have st : ∀ n t, n < 14 → inv n t → WP isa (.block (selectStep n)) t (inv (n + 1)) := by
     intro n t hn ⟨tf, tm, tk⟩
     refine WP.mono (selectStep_ok (hs.of_keeps tk (by decide)) hn ((tk.1 _ (by decide)).trans hc))
       fun u ⟨um, uk⟩ => ?_
@@ -75,7 +75,7 @@ theorem select_ok {s : State} {base : Addr} (hs : Scr s base) {sw : Bool} (hc : 
         tm.word (Or.inr (by omega_using [])) (by simp only [X2, slot]; omega_using [hn])]
       cases sw <;> rfl
     · rw [ite_eq_right h]; exact tf i (by omega_using [hi, h])
-  exact wp_range_flatMap (M := isa) (N := 28) inv st 28 (by decide) s
+  exact wp_range_flatMap (M := isa) (N := 14) inv st 14 (by decide) s
     ⟨fun _ hi => by omega, Outside.refl _ _ _ _, Keeps.refl _ _⟩
 
 end VG.Proof.X448.X86

@@ -466,6 +466,90 @@ vg_aes_ecb_decrypt_aesni:
 	ret
 	.p2align 6
 
+vg_aes_ecb_encrypt_ssse3:
+	lea esp, [esp-28]
+	mov eax, DWORD PTR [esp+32]
+	mov DWORD PTR [esp], eax
+	mov eax, DWORD PTR [esp+36]
+	mov DWORD PTR [esp+4], eax
+	mov eax, DWORD PTR [esp+40]
+	mov DWORD PTR [esp+8], eax
+	mov eax, DWORD PTR [esp+44]
+	mov DWORD PTR [esp+12], eax
+	mov eax, DWORD PTR [esp+48]
+	mov DWORD PTR [esp+16], eax
+	call {vg_aes_encrypt_blocks_ssse3}
+	mov DWORD PTR [esp+20], eax
+	mov DWORD PTR [esp+24], edx
+	mov eax, DWORD PTR [esp+48]
+	mov DWORD PTR [esp], eax
+	mov eax, 480
+	mov DWORD PTR [esp+4], eax
+	call {vg_zeroize_core}
+	mov eax, DWORD PTR [esp+20]
+	mov edx, DWORD PTR [esp+24]
+	lea esp, [esp+28]
+	pxor xmm0, xmm0
+	lea esp, [esp-32]
+	movdqu XMMWORD PTR [esp], xmm0
+	movdqu XMMWORD PTR [esp+16], xmm0
+	lea esp, [esp+32]
+	mov eax, 0
+	mov edx, 0
+	xor ecx, ecx
+	pxor xmm0, xmm0
+	pxor xmm1, xmm1
+	pxor xmm2, xmm2
+	pxor xmm3, xmm3
+	pxor xmm4, xmm4
+	pxor xmm5, xmm5
+	pxor xmm6, xmm6
+	pxor xmm7, xmm7
+	ret
+	.p2align 6
+
+vg_aes_ecb_decrypt_ssse3:
+	lea esp, [esp-28]
+	mov eax, DWORD PTR [esp+32]
+	mov DWORD PTR [esp], eax
+	mov eax, DWORD PTR [esp+36]
+	mov DWORD PTR [esp+4], eax
+	mov eax, DWORD PTR [esp+40]
+	mov DWORD PTR [esp+8], eax
+	mov eax, DWORD PTR [esp+44]
+	mov DWORD PTR [esp+12], eax
+	mov eax, DWORD PTR [esp+48]
+	mov DWORD PTR [esp+16], eax
+	call {vg_aes_decrypt_blocks_ssse3}
+	mov DWORD PTR [esp+20], eax
+	mov DWORD PTR [esp+24], edx
+	mov eax, DWORD PTR [esp+48]
+	mov DWORD PTR [esp], eax
+	mov eax, 720
+	mov DWORD PTR [esp+4], eax
+	call {vg_zeroize_core}
+	mov eax, DWORD PTR [esp+20]
+	mov edx, DWORD PTR [esp+24]
+	lea esp, [esp+28]
+	pxor xmm0, xmm0
+	lea esp, [esp-32]
+	movdqu XMMWORD PTR [esp], xmm0
+	movdqu XMMWORD PTR [esp+16], xmm0
+	lea esp, [esp+32]
+	mov eax, 0
+	mov edx, 0
+	xor ecx, ecx
+	pxor xmm0, xmm0
+	pxor xmm1, xmm1
+	pxor xmm2, xmm2
+	pxor xmm3, xmm3
+	pxor xmm4, xmm4
+	pxor xmm5, xmm5
+	pxor xmm6, xmm6
+	pxor xmm7, xmm7
+	ret
+	.p2align 6
+
 vg_aes_ecb_encrypt:
 	lea esp, [esp-28]
 	mov eax, DWORD PTR [esp+32]

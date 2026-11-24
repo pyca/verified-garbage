@@ -93,7 +93,7 @@ theorem dirCore_ka (d : Dir) : (dirCore d).ka = 2 := rfl
 theorem scrIn_of {s : State} {B : BitVec 32} {d : Dir}
     (hs : VG.Proof.Modes.X86.ScrIn s B (dirCore d).total) : ScrIn s.wr B :=
   have hf := hs.fit
-  ⟨⟨682, by rw [slots_eq]; decide, hf, hs.wr⟩, by rw [dirCore_total] at hf; rw [slots_eq]; omega_using [hf]⟩
+  ⟨⟨682, by rw [slots_eq]; decide, hf, hs.wr⟩, by rw [dirCore_total] at hf; rw [slots_eq]; omega_using [hf], by decide⟩
 
 /-- Regions within the core's slots are within the modes' scratch buffer. -/
 theorem sub_scr {s : State} {B : BitVec 32} {d : Dir} (hs : VG.Proof.Modes.X86.ScrIn s B (dirCore d).total)

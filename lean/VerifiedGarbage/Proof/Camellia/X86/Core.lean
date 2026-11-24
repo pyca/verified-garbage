@@ -42,11 +42,15 @@ theorem d2Slot_eq : d2Slot = 56 := rfl
 /-- Word `j` of entry `i` of the table, in the scratch buffer at `b`. -/
 def entryW (m : Mem) (b : BitVec 32) (i j : Nat) : BitVec 32 := m.readW (wordAddr b (keySlot + 16 * i + j)) 32
 
-/-- The scratch buffer at `b`, of `slots` slots or more (a mode keeps its
-own after them), in the regions `rs`. -/
-structure ScrIn (rs : List Region) (b : BitVec 32) : Prop where
-  mem : ∃ n, slots ≤ n ∧ b.toNat + 4 * n ≤ 2 ^ 32 ∧ (⟨b.setWidth 64, 4 * n⟩ : Region) ∈ rs
-  fit : b.toNat + 4 * slots ≤ 2 ^ 32
+/-- The scratch buffer at `b`, of `N` slots or more (a mode keeps its
+own after them), the key schedule's values' at least, in the regions `rs`. -/
+structure ScrInN (N : Nat) (rs : List Region) (b : BitVec 32) : Prop where
+  mem : ∃ n, N ≤ n ∧ b.toNat + 4 * n ≤ 2 ^ 32 ∧ (⟨b.setWidth 64, 4 * n⟩ : Region) ∈ rs
+  fit : b.toNat + 4 * N ≤ 2 ^ 32
+  min : 96 ≤ N
+
+/-- The bitsliced code's scratch buffer. -/
+abbrev ScrIn := ScrInN slots
 
 /-- What the rounds need: the scratch buffer, writable, and a table of `nk`
 subkeys. -/
@@ -113,16 +117,17 @@ theorem slot_in {rs : List Region} {b : BitVec 32} {n k : Nat} (hr : (⟨b.setWi
     have := setWidth_toNat b
     exact VG.Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
 
-/-- A scratch buffer of exactly `slots` slots. -/
-theorem ScrIn.exact {rs : List Region} {b : BitVec 32} (hr : (⟨b.setWidth 64, 4 * slots⟩ : Region) ∈ rs)
-    (hfit : b.toNat + 4 * slots ≤ 2 ^ 32) : ScrIn rs b := ⟨⟨slots, Nat.le_refl _, hfit, hr⟩, hfit⟩
+/-- A scratch buffer of exactly `N` slots. -/
+theorem ScrInN.exact {N : Nat} {rs : List Region} {b : BitVec 32} (hr : (⟨b.setWidth 64, 4 * N⟩ : Region) ∈ rs)
+    (hfit : b.toNat + 4 * N ≤ 2 ^ 32) (hmin : 96 ≤ N := by decide) : ScrInN N rs b :=
+  ⟨⟨N, Nat.le_refl _, hfit, hr⟩, hfit, hmin⟩
 
-theorem ScrIn.slot {rs : List Region} {b : BitVec 32} (h : ScrIn rs b) {k : Nat} (hk : k < slots) :
+theorem ScrInN.slot {N : Nat} {rs : List Region} {b : BitVec 32} (h : ScrInN N rs b) {k : Nat} (hk : k < N) :
     InRegions rs (wordAddr b k) 4 :=
   let ⟨_, hn, hf, hr⟩ := h.mem
   slot_in hr hf (Nat.lt_of_lt_of_le hk hn)
 
-theorem ScrIn.slot_rd {s : State} {b : BitVec 32} (h : ScrIn s.wr b) {k : Nat} (hk : k < slots) :
+theorem ScrInN.slot_rd {N : Nat} {s : State} {b : BitVec 32} (h : ScrInN N s.wr b) {k : Nat} (hk : k < N) :
     InRegions (s.rd ++ s.wr) (wordAddr b k) 4 := by
   obtain ⟨r, hr, hc⟩ := h.slot hk
   exact ⟨r, List.mem_append_right _ hr, hc⟩
@@ -193,7 +198,7 @@ theorem Ctx.ok {s₀ s : State} {nk : Nat} {E : Nat → BitVec 64} (hp : KeyCtx 
   ok_layer (by rw [hc.wr]; exact hp.scr) hc.base hk hm
 
 theorem Ctx.scr {s₀ s : State} {nk : Nat} {E : Nat → BitVec 64} (hp : KeyCtx s₀ nk E) (hc : Ctx s₀ s) :
-    ScrIn s.wr (s.gpr sb) := ⟨by rw [hc.wr, hc.base]; exact hp.scr.mem, by rw [hc.base]; exact hp.scr.fit⟩
+    ScrIn s.wr (s.gpr sb) := ⟨by rw [hc.wr, hc.base]; exact hp.scr.mem, by rw [hc.base]; exact hp.scr.fit, hp.scr.min⟩
 
 /-! ## Single instructions -/
 

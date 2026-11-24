@@ -1,26 +1,22 @@
 module
 
-public import VerifiedGarbage.Impl.Aes.X86.Ctr32
 public import VerifiedGarbage.Proof.Framework.X86.Taint
 public import VerifiedGarbage.Proof.Aes.X86.Common
 public import VerifiedGarbage.Spec.Gcm
 import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Impl.Aes.X86.Ctr32
 meta import VerifiedGarbage.Proof.Framework.X86.Taint
 meta import VerifiedGarbage.Proof.Aes.X86.Common
 meta import VerifiedGarbage.Spec.Gcm
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
-# AES counter mode on x86 (32-bit): the contract, and constant time
+# AES counter mode on x86 (32-bit): the contract, and where constant time starts
 
-The contract the proof is written against, and the constant-time half of
-the proof: the taint analysis (`VG.X86.Taint`) starts with `esp` public
-and knows where the arguments are and which of them are the base addresses
-of the counter block, the data and the scratch buffer. The data pointer
-and the count round-trip through public slots of the scratch buffer; the
-stores of the keystream through the data pointer forget them, and the code
-stores them again from the registers.
+The contract the proofs of the implementations are written against, and
+where their constant-time halves start: the taint analysis (`VG.X86.Taint`)
+starts with `esp` public and knows where the arguments are and which of them
+are the base addresses of the counter block, the data and the scratch
+buffer.
 -/
 
 @[expose] public section
@@ -383,11 +379,6 @@ theorem ctrTo_agreeN {s₁ s₂ : State} {B : Nat} (h₁ : (Proof.Aes.ctr32ToX86
 theorem ctrTo_agree₀ {s₁ s₂ : State} (h₁ : Proof.Aes.ctr32ToX86.pre s₁) (h₂ : Proof.Aes.ctr32ToX86.pre s₂)
     (hpub : Proof.Aes.ctr32ToX86.pub s₁ s₂) : VG.X86.Taint.Agree ctrToτ₀ s₁ s₂ := ctrTo_agreeN h₁ h₂ hpub
 
-theorem ctr32To_ct :
-    ConstantTime isa Proof.Aes.ctr32ToX86.pre Proof.Aes.ctr32ToX86.pub Impl.Aes.X86.ctr32To :=
-  VG.Taint.constantTime (A := VG.X86.taint) ctrToτ₀ (fun _ _ h₁ h₂ hp => ctrTo_agree₀ h₁ h₂ hp)
-    (by taint_decide)
-
 /-- In place, the analysis is that of `ctrToτ₀`: the word holding `dst`
 holds the data's base address. -/
 theorem ctr_wfN {s : State} {B : Nat} (hp : CPre s B) : VG.X86.Taint.Wf (ctrToτN B) s := by
@@ -435,10 +426,5 @@ theorem ctr_agreeN {s₁ s₂ : State} {B : Nat} (h₁ : (Proof.Aes.ctr32X86N B)
 
 theorem ctr_agree₀ {s₁ s₂ : State} (h₁ : Proof.Aes.ctr32X86.pre s₁) (h₂ : Proof.Aes.ctr32X86.pre s₂)
     (hpub : Proof.Aes.ctr32X86.pub s₁ s₂) : VG.X86.Taint.Agree ctrToτ₀ s₁ s₂ := ctr_agreeN h₁ h₂ hpub
-
-/-- `vg_aes_ctr32_to` in place. -/
-theorem ctr32_ct : ConstantTime isa Proof.Aes.ctr32X86.pre Proof.Aes.ctr32X86.pub Impl.Aes.X86.ctr32To :=
-  VG.Taint.constantTime (A := VG.X86.taint) ctrToτ₀ (fun _ _ h₁ h₂ hp => ctr_agree₀ h₁ h₂ hp)
-    (by taint_decide)
 
 end VG.Proof.Aes.X86
