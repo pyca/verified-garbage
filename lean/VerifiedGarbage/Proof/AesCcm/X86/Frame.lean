@@ -321,7 +321,7 @@ theorem mask_ct {K W SP : BitVec 32} (L : Lay K W SP) {D : BitVec 32} {n : Nat} 
   refine CT.block_seq [.ebp] (pin_ebp fun _ ⟨_, _, _, _, _, hbp, _⟩ => hbp) (by taint_decide)
     (fun s₁ ⟨s, hs, m₁, cx₁, _, bp₁, sp₁, rd₁, wr₁⟩ => maskArgs_ok L
       ⟨bp₁, sp₁, (h s hs).1.perm.of_eq rd₁ wr₁⟩ (by rw [m₁]; exact (h s hs).2.1) cx₁) ?_
-  exact CT.taint [.edi, .ecx] (pin2 fun _ ⟨_, _, hdi, hcx⟩ => ⟨hdi, hcx⟩) (by taint_decide)
+  exact CT.taintS [.edi, .ecx] (pin2 fun _ ⟨_, _, hdi, hcx⟩ => ⟨hdi, hcx⟩) (by taint_decide)
 
 /-! ## `open` -/
 

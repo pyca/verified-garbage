@@ -1298,31 +1298,47 @@ vg_aes_ccm_open_aesni:
 	mov ebx, 0
 	sub ebx, DWORD PTR [ebp+176]
 	mov edi, DWORD PTR [ebp+168]
-	cmp ecx, 4
+	cmp ecx, 16
 	jb 230f
+	movd xmm0, ebx
+	pshufd xmm0, xmm0, 0
 232:
+	movdqu xmm1, XMMWORD PTR [edi]
+	pand xmm1, xmm0
+	movdqu XMMWORD PTR [edi], xmm1
+	add edi, 16
+	sub ecx, 16
+	cmp ecx, 16
+	jae 232b
+	pxor xmm1, xmm1
+	jmp 231f
+230:
+231:
+	cmp ecx, 4
+	jb 233f
+235:
 	mov edx, DWORD PTR [edi]
 	and edx, ebx
 	mov DWORD PTR [edi], edx
 	add edi, 4
 	sub ecx, 4
 	cmp ecx, 4
-	jae 232b
-	jmp 231f
-230:
-231:
+	jae 235b
+	jmp 234f
+233:
+234:
 	test ecx, ecx
-	je 233f
-235:
+	je 236f
+238:
 	movzx edx, BYTE PTR [edi]
 	and edx, ebx
 	mov BYTE PTR [edi], dl
 	add edi, 1
 	sub ecx, 1
-	jne 235b
-	jmp 234f
-233:
-234:
+	jne 238b
+	jmp 237f
+236:
+237:
 	jmp 229f
 228:
 229:
@@ -2800,31 +2816,47 @@ vg_aes_ccm_open:
 	mov ebx, 0
 	sub ebx, DWORD PTR [ebp+176]
 	mov edi, DWORD PTR [ebp+168]
-	cmp ecx, 4
+	cmp ecx, 16
 	jb 228f
+	movd xmm0, ebx
+	pshufd xmm0, xmm0, 0
 230:
+	movdqu xmm1, XMMWORD PTR [edi]
+	pand xmm1, xmm0
+	movdqu XMMWORD PTR [edi], xmm1
+	add edi, 16
+	sub ecx, 16
+	cmp ecx, 16
+	jae 230b
+	pxor xmm1, xmm1
+	jmp 229f
+228:
+229:
+	cmp ecx, 4
+	jb 231f
+233:
 	mov edx, DWORD PTR [edi]
 	and edx, ebx
 	mov DWORD PTR [edi], edx
 	add edi, 4
 	sub ecx, 4
 	cmp ecx, 4
-	jae 230b
-	jmp 229f
-228:
-229:
+	jae 233b
+	jmp 232f
+231:
+232:
 	test ecx, ecx
-	je 231f
-233:
+	je 234f
+236:
 	movzx edx, BYTE PTR [edi]
 	and edx, ebx
 	mov BYTE PTR [edi], dl
 	add edi, 1
 	sub ecx, 1
-	jne 233b
-	jmp 232f
-231:
-232:
+	jne 236b
+	jmp 235f
+234:
+235:
 	jmp 227f
 226:
 227:
