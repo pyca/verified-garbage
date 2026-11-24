@@ -56,10 +56,10 @@ theorem authRest_wp [VG.Proof.Gcm.PPC64LE.GhashLaw] {s : State} {H : Block} (x :
     ⟨done.env,done.hH,fun initial => done.abs (ab.abs initial),(abs_taFrame ab.frame).trans (t_taFrame done.frame)⟩
 
 /-- Replace the saved source by the public suffix length once the source is in r24. -/
-abbrev suffixRegs (V : Reg → Addr) (n : Nat) (r : Reg) := if r=.r19 then BitVec.ofNat 64 n else V r
+abbrev suffixValues (V : Reg → Addr) (n : Nat) (r : Reg) := if r=.r19 then BitVec.ofNat 64 n else V r
 
 abbrev suffixEnd (V : Reg → Addr) (n : Nat) :=
-  cursors (suffixRegs V n) (V .r18+BitVec.ofNat 64 (16*(n/16)))
+  cursors (suffixValues V n) (V .r18+BitVec.ofNat 64 (16*(n/16)))
 
 structure RestResult (V : Reg → Addr) (sp S : Addr) (n R k : Nat) (icb H : Block) (x : List Byte) (s t : State) : Prop where
   env : Env (suffixEnd V n) sp t
@@ -76,7 +76,7 @@ theorem remaining_wp [VG.Proof.Gcm.PPC64LE.GhashLaw] {s : State} {S : Addr} {n R
     (ctr : Ctr s.mem (V .r30+BitVec.ofNat 64 48) (V .r30+BitVec.ofNat 64 64) (ciphOf s.mem (V .r29) R) icb k) :
     WP isa VG.Impl.AesGcm.PPC64LE.Contiguous.remaining s (RestResult V sp S n R k icb H x s) := by
   let D := V .r18
-  let T := suffixRegs V n
+  let T := suffixValues V n
   let u := (s.write .r21 D).write .r19 (BitVec.ofNat 64 n)
   have st : WP isa (.block [mov .r21 .r18,mov .r19 .r25]) s (·=u) := by
     have d := env.fr .r18 (by decide)
@@ -90,8 +90,8 @@ theorem remaining_wp [VG.Proof.Gcm.PPC64LE.GhashLaw] {s : State} {S : Addr} {n R
     by_cases eq : r=.r21
     · subst r;simp [u,T,State.write,cursors]
     by_cases el : r=.r19
-    · subst r;simp [u,T,State.write,cursors,suffixRegs]
-    simp [u,T,State.write,cursors,suffixRegs,eq,el,env.fr r hr]
+    · subst r;simp [u,T,State.write,cursors,suffixValues]
+    simp [u,T,State.write,cursors,suffixValues,eq,el,env.fr r hr]
   have ru : Range T u S D n := ⟨range.src.of_eq rfl rfl,range.dst.of_eq rfl rfl,range.buffers⟩
   refine WP.seq (WP.mono (cryptRest_wp ue ptr len ru L rounds key aligned ctr) fun v ce => ?_)
   have fr : Frame (crFrame (V .r30) (V .r31) D n) s.mem v.mem := ce.frame

@@ -139,7 +139,7 @@ theorem joinRest {s u t : State} {icb H : Block} {x : List Byte}
   · intro r hr
     have h : r∈frozen ∧ r∈prefixKeep ∧ r≠.r21 ∧ r≠.r19 := by revert r;decide
     rw [z.env.fr r h.1]
-    simpa [suffixEnd,cursors,suffixRegs,h.2.2.1,h.2.2.2] using q.saved r h.2.1
+    simpa [suffixEnd,cursors,suffixValues,h.2.2.1,h.2.2.2] using q.saved r h.2.1
   · have join := done_appendTo (j := datPrefix s) (l := (restR s).len) (pre.trans m.data) (by rw [Nat.zero_add]; exact tail)
     simpa only [sum] using join
   · have full : bytesAt t.mem (s.gpr .r27) (datLen s)=bytesAt u.mem (s.gpr .r27) (datPrefix s)++
