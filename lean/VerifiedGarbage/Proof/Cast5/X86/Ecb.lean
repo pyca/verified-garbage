@@ -10,6 +10,7 @@ public import VerifiedGarbage.Proof.Cast5.Round
 public import VerifiedGarbage.Proof.Cast5.Table
 public import VerifiedGarbage.Proof.Cast5.X86.Run
 import VerifiedGarbage.Proof.Framework.X86.SseDword
+import VerifiedGarbage.Proof.Framework.X86.SseWord
 import VerifiedGarbage.Proof.Framework.X86.Sse
 public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
@@ -30,9 +31,10 @@ section
 # CAST5 on 32-bit x86: the scan of a table
 
 `scan sym` obtains the address `T` of `sym` in a four-byte frame below `esp`,
-then visits the 256 entries of 16 bytes of the table at `T`, in order, and
-leaves in each dword lane `k` of `xmm1` dword `k` of the entry whose number
-is in lane `k` of `xmm0` (`scan_ok`). Vector values are kept as their four
+then visits the 64 groups of four entries of 16 bytes of the table at `T`, in
+order, and leaves in each dword lane `k` of `xmm1` dword `k` of the entry whose
+number is in lane `k` of `xmm0` (`scan_ok`), the table at `T` holding the steps
+of the entries' dwords (`TabAt`). Vector values are kept as their four
 dword lanes (`L`).
 -/
 
@@ -44,98 +46,200 @@ open VG VG.X86 VG.X86.Lanes VG.X86.RegUpd VG.Impl.Cast5.X86
 open VG.Impl.Cast5 (table)
 open VG.Proof.Cast5 (ent Held tableEnt ent_table flatMap_range_succ)
 
-/-! ## One entry -/
+/-! ## A group of entries -/
 
-/-- Lane `k` of the result once entries `0 … j - 1` are visited. -/
-def acc (tab : Nat → Nat → BitVec 32) (idx : Nat → BitVec 32) (j k : Nat) : BitVec 32 :=
-  if (idx k).toNat < j then tab (idx k).toNat k else 0
+/-- Lane `k` of the result once groups `0 … n - 1` are visited. -/
+def acc (tab : Nat → Nat → BitVec 32) (idx : Nat → BitVec 32) (n k : Nat) : BitVec 32 :=
+  if n = 0 then 0#32 else tab (4 * min ((idx k).toNat / 4) (n - 1) + (idx k).toNat % 4) k
 
 /-- Every lane `n`. -/
 def splat (n : Nat) : Nat → BitVec 32 := fun _ => BitVec.ofNat 32 n
 
-theorem acc_succ (tab : Nat → Nat → BitVec 32) (idx : Nat → BitVec 32) {j : Nat} (hj : j < 256) (k : Nat) :
-    (acc tab idx j k ||| (tab j k &&& if idx k = BitVec.ofNat 32 j then 0xFFFFFFFF else 0)) =
-      acc tab idx (j + 1) k := by
-  unfold acc
-  by_cases h : idx k = BitVec.ofNat 32 j
-  · have hn : (idx k).toNat = j := by rw [h, BitVec.toNat_ofNat]; omega_arith
-    rw [ite_eq_left h, ite_eq_right (by omega_arith), ite_eq_left (by omega_arith), hn]
+/-- All ones or nothing. -/
+def sel (p : Bool) : BitVec 32 := if p then 0xFFFFFFFF else 0#32
+
+theorem and_sel (x : BitVec 32) (p : Bool) : x &&& sel p = if p then x else 0#32 := by
+  cases p
+  · exact BitVec.and_zero
+  · exact BitVec.and_allOnes
+
+theorem notSel_and (x : BitVec 32) (p : Bool) : ~~~sel p &&& x = if p then 0#32 else x := by
+  cases p
+  · rw [show ~~~sel false = BitVec.allOnes 32 by decide]; exact BitVec.allOnes_and
+  · rw [show ~~~sel true = 0#32 by decide]; exact BitVec.zero_and
+
+/-- The index's bits but its low two, less `n`. -/
+def hiLane (idx : Nat → BitVec 32) (n k : Nat) : BitVec 32 := idx k >>> 2 - BitVec.ofNat 32 n
+
+/-- The mask of bit `b` of the index. -/
+def bitLane (idx : Nat → BitVec 32) (b k : Nat) : BitVec 32 := sel (decide ((idx k).toNat / 2 ^ b % 2 = 1))
+
+theorem bitVal {x : BitVec 32} (hx : x.toNat < 256) {b : Nat} (hb : b < 2) :
+    (x <<< (31 - b) >>> 31 + 0xFFFFFFFF) ^^^ 0xFFFFFFFF = sel (decide (x.toNat / 2 ^ b % 2 = 1)) := by
+  have h : ∀ y : Byte, ∀ b < 2, (y.setWidth 32 <<< (31 - b) >>> 31 + 0xFFFFFFFF) ^^^ 0xFFFFFFFF =
+      sel (decide (y.toNat / 2 ^ b % 2 = 1)) := by decide
+  have e : (x.setWidth 8).toNat = x.toNat := by rw [BitVec.toNat_setWidth]; exact Nat.mod_eq_of_lt hx
+  have e' : (x.setWidth 8).setWidth 32 = x := by
+    apply BitVec.eq_of_toNat_eq; rw [BitVec.toNat_setWidth, e]; exact Nat.mod_eq_of_lt x.isLt
+  have := h (x.setWidth 8) b hb
+  rwa [e, e'] at this
+
+/-- A lane's words shifted right, arithmetically, by 15. -/
+def sar (v : BitVec 32) : BitVec 32 :=
+  (v.extractLsb' 16 16).sshiftRight 15 ++ (v.extractLsb' 0 16).sshiftRight 15
+
+theorem dword_words (x : BitVec 128) (k : Nat) : dword x k = word x (2 * k + 1) ++ word x (2 * k) := by
+  apply BitVec.eq_of_getLsbD_eq; intro i hi
+  rw [BitVec.getLsbD_append, getLsbD_dword, decide_eq_true hi, Bool.true_and]
+  by_cases h : i < 16
+  · rw [ite_eq_left h, getLsbD_word _ _ _ h]; congr 1; omega_using []
+  · rw [ite_eq_right h, getLsbD_word _ _ _ (by omega_using [hi])]; congr 1; omega_using [h]
+
+theorem psraw_L (f : Nat → BitVec 32) : XShiftOp.eval .psraw (L f) 15 = L fun k => sar (f k) :=
+  L_ext fun k hk => by
+    rw [dword_words, word_psraw (a := L f) 15 (i := 2 * k + 1) (by omega_using [hk]),
+      word_psraw (a := L f) 15 (i := 2 * k) (by omega_using [hk]), word_dword _ _ 1 (by decide),
+      show 2 * k = 2 * k + 0 from rfl, word_dword _ _ 0 (by decide), dword_L _ hk]
+    rfl
+
+theorem pandn_L (f g : Nat → BitVec 32) : XBinOp.eval .pandn (L f) (L g) = L fun k => ~~~f k &&& g k :=
+  L_ext fun k hk => by
+    conv => rhs; rw [← dword_L f hk, ← dword_L g hk]
     apply BitVec.eq_of_getLsbD_eq; intro i hi
-    simp only [BitVec.getLsbD_or, BitVec.getLsbD_and]
-    rw [show (0xFFFFFFFF : BitVec 32) = BitVec.allOnes 32 by decide, BitVec.getLsbD_allOnes]
-    simp [hi]
-  · have hn : (idx k).toNat ≠ j := fun h' => h (BitVec.eq_of_toNat_eq (by
-      rw [h', BitVec.toNat_ofNat]; omega_arith))
-    rw [ite_eq_right h, show ∀ y : BitVec 32, y &&& 0 = 0 from fun y => BitVec.eq_of_getLsbD_eq (by simp),
-      show ∀ y : BitVec 32, y ||| 0 = y from fun y => BitVec.eq_of_getLsbD_eq (by simp)]
-    by_cases h2 : (idx k).toNat < j
-    · rw [ite_eq_left h2, ite_eq_left (by omega_arith)]
-    · rw [ite_eq_right h2, ite_eq_right (by omega_arith)]
+    simp [XBinOp.eval, dword, hi, show 32 * k + i < 128 by omega_using [hk, hi]]
+
+theorem sar_hi {x : BitVec 32} (hx : x.toNat < 256) {n : Nat} (hn : n < 64) :
+    sar (x >>> 2 - BitVec.ofNat 32 n) = sel (decide (x.toNat / 4 < n)) := by
+  have hs : (x >>> 2).toNat = x.toNat / 4 := by rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]
+  by_cases h : x.toNat / 4 < n
+  · have e : x >>> 2 - BitVec.ofNat 32 n = 0#32 - BitVec.ofNat 32 (n - x.toNat / 4) := by
+      apply BitVec.eq_of_toNat_eq
+      simp only [BitVec.toNat_sub, hs, BitVec.toNat_ofNat]
+      omega_arith
+    have d : ∀ m < 64, 0 < m → sar (0#32 - BitVec.ofNat 32 m) = sel true := by decide
+    rw [e, d _ (by omega_arith) (by omega_arith), decide_eq_true h]
+  · have e : x >>> 2 - BitVec.ofNat 32 n = BitVec.ofNat 32 (x.toNat / 4 - n) := by
+      apply BitVec.eq_of_toNat_eq
+      simp only [BitVec.toNat_sub, hs, BitVec.toNat_ofNat]
+      omega_arith
+    have d : ∀ m < 64, sar (BitVec.ofNat 32 m) = sel false := by decide
+    rw [e, d _ (by omega_arith), decide_eq_false h]
+
+/-- The polynomial of a group's coefficients gives its changes. -/
+theorem poly (g : Nat → BitVec 32) {n i : Nat} :
+    (stepAt g (4 * n) ^^^ (stepAt g (4 * n + 1) &&& sel (decide (i / 2 ^ 0 % 2 = 1)))) ^^^
+      ((stepAt g (4 * n + 2) ^^^ (stepAt g (4 * n + 3) &&& sel (decide (i / 2 ^ 0 % 2 = 1)))) &&&
+        sel (decide (i / 2 ^ 1 % 2 = 1))) = dif g (4 * n + i % 4) := by
+  have e0 : stepAt g (4 * n) = dif g (4 * n) := by
+    unfold stepAt; rw [show 4 * n % 4 = 0 by omega_arith]; rfl
+  have e1 : stepAt g (4 * n + 1) = dif g (4 * n) ^^^ dif g (4 * n + 1) := by
+    unfold stepAt; rw [show (4 * n + 1) % 4 = 1 by omega_arith]; rfl
+  have e2 : stepAt g (4 * n + 2) = dif g (4 * n) ^^^ dif g (4 * n + 2) := by
+    unfold stepAt; rw [show (4 * n + 2) % 4 = 2 by omega_arith]; rfl
+  have e3 : stepAt g (4 * n + 3) = dif g (4 * n) ^^^ dif g (4 * n + 1) ^^^ (dif g (4 * n + 2) ^^^ dif g (4 * n + 3)) := by
+    unfold stepAt; rw [show (4 * n + 3) % 4 = 3 by omega_arith]; rfl
+  rw [e0, e1, e2, e3]
+  have h0 : i / 2 ^ 0 % 2 = i % 4 % 2 := by omega_arith
+  have h1 : i / 2 ^ 1 % 2 = i % 4 / 2 := by omega_arith
+  rw [h0, h1]
+  rcases cases4 (Nat.mod_lt i (show 0 < 4 by decide)) with h | h | h | h <;> rw [h] <;>
+    generalize dif g (4 * n) = a, dif g (4 * n + 1) = b, dif g (4 * n + 2) = c, dif g (4 * n + 3) = d <;>
+    simp only [and_sel, Nat.reduceMod, Nat.reduceDiv, Nat.reduceEqDiff, decide_true, decide_false, ite_true,
+      Bool.false_eq_true, ite_false, BitVec.xor_zero] <;>
+    (apply BitVec.eq_of_getLsbD_eq; intro m hm
+     simp only [BitVec.getLsbD_xor]
+     cases a.getLsbD m <;> cases b.getLsbD m <;> cases c.getLsbD m <;> cases d.getLsbD m <;> rfl)
+
+theorem acc_succ (tab : Nat → Nat → BitVec 32) (idx : Nat → BitVec 32) (n k : Nat) :
+    (acc tab idx n k ^^^ (~~~sel (decide ((idx k).toNat / 4 < n)) &&&
+      dif (tab · k) (4 * n + (idx k).toNat % 4))) = acc tab idx (n + 1) k := by
+  rw [notSel_and]
+  generalize hi : (idx k).toNat = i
+  unfold acc
+  rw [hi, ite_eq_right (Nat.succ_ne_zero n), Nat.add_sub_cancel]
+  by_cases h : i / 4 < n
+  · rw [decide_eq_true h, ite_eq_left rfl, ite_eq_right (by omega_arith), Nat.min_eq_left (by omega_arith),
+      Nat.min_eq_left (by omega_arith), BitVec.xor_zero]
+  · rw [decide_eq_false h, ite_eq_right Bool.false_ne_true, Nat.min_eq_right (by omega_arith)]
+    unfold dif
+    by_cases h0 : n = 0
+    · rw [ite_eq_left h0, ite_eq_left (by omega_arith), BitVec.zero_xor, Nat.min_eq_right (by omega_arith)]
+    · rw [ite_eq_right h0, ite_eq_right (by omega_arith), Nat.min_eq_right (by omega_arith),
+        show 4 * n + i % 4 - 4 = 4 * (n - 1) + i % 4 by omega_arith, BitVec.xor_comm, BitVec.xor_assoc,
+        BitVec.xor_self, BitVec.xor_zero]
 
 /-- What the loop of a scan keeps of a state. -/
 structure LoopKeep (s t : State) : Prop where
   gpr : ∀ r, r ≠ .eax → r ≠ .ecx → r ≠ .edx → t.gpr r = s.gpr r
-  x0 : t.xmm .xmm0 = s.xmm .xmm0
   mem : t.mem = s.mem
   rd : t.rd = s.rd
   wr : t.wr = s.wr
   syms : t.syms = s.syms
 
 theorem LoopKeep.trans {s t u : State} (h : LoopKeep s t) (h' : LoopKeep t u) : LoopKeep s u :=
-  ⟨fun r a b c => (h'.gpr r a b c).trans (h.gpr r a b c), h'.x0.trans h.x0, h'.mem.trans h.mem,
+  ⟨fun r a b c => (h'.gpr r a b c).trans (h.gpr r a b c), h'.mem.trans h.mem,
    h'.rd.trans h.rd, h'.wr.trans h.wr, h'.syms.trans h.syms⟩
 
 /-- `LoopKeep s t` for `t` made from `s` by writes of `eax`, `ecx`, `edx`, the
-flags and registers other than `xmm0`. -/
+flags and vector registers. -/
 tactic_template "loop_keep" : tactic => `(tactic| (
-                   refine ⟨?_, ?_, ?_, ?_, ?_, ?_⟩
+                   refine ⟨?_, ?_, ?_, ?_, ?_⟩
                    · intro r ha hc hd
                      simp only [gpr_setXmm, gpr_setReg, ha, hc, hd, gpr_setFlags, gpr_arithFlags, ite_false]
-                   all_goals simp (disch := decide) only [xmm_setXmm_of_ne, xmm_setReg', xmm_setFlags',
-                     xmm_arithFlags', mem_setXmm, mem_setReg, mem_setFlags, mem_arithFlags, rd_setXmm, rd_setReg, rd_setFlags,
+                   all_goals simp (disch := decide) only [mem_setXmm, mem_setReg, mem_setFlags, mem_arithFlags,
+                     rd_setXmm, rd_setReg, rd_setFlags,
                      rd_arithFlags, wr_setXmm, wr_setReg, wr_setFlags, wr_arithFlags, syms_setXmm', syms_setReg',
                      syms_setFlags', syms_arithFlags']))
 
-/-- The state of the scan with entries `0 … j - 1` visited, from `s₀`. -/
-structure ScanAt (s₀ : State) (tab : Nat → Nat → BitVec 32) (idx : Nat → BitVec 32) (j : Nat)
+/-- The state of the scan with groups `0 … n - 1` visited, from `s₀`. -/
+structure ScanAt (s₀ : State) (tab : Nat → Nat → BitVec 32) (idx : Nat → BitVec 32) (n : Nat)
     (s : State) : Prop where
-  x0 : s.xmm .xmm0 = L idx
-  x1 : s.xmm .xmm1 = L (acc tab idx j)
-  x2 : s.xmm .xmm2 = L (splat j)
-  x3 : s.xmm .xmm3 = L (splat 1)
-  x6 : s.xmm .xmm6 = L (splat 0xFFFFFFFF)
+  x0 : s.xmm .xmm0 = L (hiLane idx n)
+  x1 : s.xmm .xmm1 = L (acc tab idx n)
+  x5 : s.xmm .xmm5 = L (splat 0xFFFFFFFF)
+  x6 : s.xmm .xmm6 = L (bitLane idx 0)
+  x7 : s.xmm .xmm7 = L (bitLane idx 1)
   keep : LoopKeep s₀ s
 
-theorem entry_ok {s₀ s : State} {tab : Nat → Nat → BitVec 32} {idx : Nat → BitVec 32} {j : Nat} (e : Nat)
-    (hj : j < 256) (hidx : ∀ k < 4, (idx k).toNat < 256) (h : ScanAt s₀ tab idx j s)
-    (hr : InRegions (s.rd ++ s.wr) (addr (s.gpr .ecx) (16 * e)) 16)
-    (hv : ∀ k < 4, s.mem.readW (addr (s.gpr .ecx) (16 * e) + BitVec.ofNat 64 (4 * k)) 32 = tab j k) :
-    WP isa (.block (scanEntry e)) s fun t => ScanAt s₀ tab idx (j + 1) t ∧ t.gpr = s.gpr := by
-  obtain ⟨h0, h1, h2, h3, h6, hk⟩ := h
-  unfold scanEntry
-  crun [hr]
+theorem group_ok {s₀ s : State} {tab : Nat → Nat → BitVec 32} {idx : Nat → BitVec 32} {n : Nat} (e : Nat)
+    (hn : n < 64) (hidx : ∀ k < 4, (idx k).toNat < 256) (h : ScanAt s₀ tab idx n s)
+    (hr : ∀ c < 4, InRegions (s.rd ++ s.wr) (addr (s.gpr .ecx) (64 * e + 16 * c)) 16)
+    (hv : ∀ c < 4, ∀ k < 4, s.mem.readW (addr (s.gpr .ecx) (64 * e + 16 * c) + BitVec.ofNat 64 (4 * k)) 32 =
+      stepAt (tab · k) (4 * n + c)) :
+    WP isa (.block (scanGroup e)) s fun t => ScanAt s₀ tab idx (n + 1) t ∧ t.gpr = s.gpr := by
+  obtain ⟨h0, h1, h5, h6, h7, hk⟩ := h
+  obtain r0 : InRegions (s.rd ++ s.wr) (addr (s.gpr .ecx) (64 * e)) 16 := hr 0 (by decide)
+  obtain r1 : InRegions (s.rd ++ s.wr) (addr (s.gpr .ecx) (64 * e + 16)) 16 := hr 1 (by decide)
+  obtain r2 : InRegions (s.rd ++ s.wr) (addr (s.gpr .ecx) (64 * e + 32)) 16 := hr 2 (by decide)
+  obtain r3 : InRegions (s.rd ++ s.wr) (addr (s.gpr .ecx) (64 * e + 32 + 16)) 16 := hr 3 (by decide)
+  unfold scanGroup pair xb
+  crun [r0, r1, r2, r3]
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
     simp (disch := decide) only [xmm_setXmm_self, xmm_setXmm_of_ne, movdqa_L]
-  · exact h0
-  · rw [h0, h1, h2, h6, pxor_L, paddd_L, psrld_L, pslld_L, por_L, readW128_L, pand_L, por_L]
-    refine L_congr fun k hk => ?_
-    rw [hv k hk, show splat j k = BitVec.ofNat 32 j from rfl,
-      show splat 0xFFFFFFFF k = (0xFFFFFFFF : BitVec 32) from rfl, mask_eq (hidx k hk) hj]
-    exact acc_succ tab idx hj k
-  · rw [h2, h3, paddd_L]
+  · rw [h0, h5, paddd_L]
     refine L_congr fun k _ => ?_
-    simp only [splat, BitVec.ofNat_add]
-  · exact h3
+    rw [hiLane, hiLane, splat, BitVec.ofNat_add, ← BitVec.sub_sub, BitVec.sub_eq_add_neg _ (BitVec.ofNat 32 1)]
+    rfl
+  · rw [h0, h1, h6, h7, readW128_L, readW128_L, readW128_L, readW128_L, pand_L, pxor_L, pand_L, pxor_L, pand_L, pxor_L,
+      psraw_L, pandn_L, pxor_L]
+    refine L_congr fun k hk => ?_
+    rw [show hiLane idx n k = idx k >>> 2 - BitVec.ofNat 32 n from rfl, sar_hi (hidx k hk) hn, ← acc_succ,
+      ← poly (tab · k), ← hv 1 (by decide) k hk, ← hv 2 (by decide) k hk, ← hv 3 (by decide) k hk,
+      ← show _ = stepAt (tab · k) (4 * n) from hv 0 (by decide) k hk]
+    rfl
+  · exact h5
   · exact h6
+  · exact h7
   · exact hk.trans (by loop_keep)
 
-theorem entries_ok {s₀ s : State} {tab : Nat → Nat → BitVec 32} {idx : Nat → BitVec 32} {q : Nat}
-    (hq : q < 64) (hidx : ∀ k < 4, (idx k).toNat < 256)
-    (hr : ∀ e < 4, InRegions (s.rd ++ s.wr) (addr (s.gpr .ecx) (16 * e)) 16)
-    (hv : ∀ e < 4, ∀ k < 4,
-      s.mem.readW (addr (s.gpr .ecx) (16 * e) + BitVec.ofNat 64 (4 * k)) 32 = tab (4 * q + e) k) :
+theorem groups_ok {s₀ s : State} {tab : Nat → Nat → BitVec 32} {idx : Nat → BitVec 32} {q : Nat}
+    (hq : q < 16) (hidx : ∀ k < 4, (idx k).toNat < 256)
+    (hr : ∀ e < 4, ∀ c < 4, InRegions (s.rd ++ s.wr) (addr (s.gpr .ecx) (64 * e + 16 * c)) 16)
+    (hv : ∀ e < 4, ∀ c < 4, ∀ k < 4,
+      s.mem.readW (addr (s.gpr .ecx) (64 * e + 16 * c) + BitVec.ofNat 64 (4 * k)) 32 =
+        stepAt (tab · k) (4 * (4 * q + e) + c)) :
     ∀ e ≤ 4, ScanAt s₀ tab idx (4 * q) s →
-      WP isa (.block ((List.range e).flatMap scanEntry)) s
+      WP isa (.block ((List.range e).flatMap scanGroup)) s
         fun t => ScanAt s₀ tab idx (4 * q + e) t ∧ t.gpr = s.gpr ∧ t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr := by
   intro e he h
   induction e with
@@ -143,76 +247,126 @@ theorem entries_ok {s₀ s : State} {tab : Nat → Nat → BitVec 32} {idx : Nat
   | succ e ih =>
     rw [flatMap_range_succ, WP.block_append_iff]
     refine WP.mono (ih (by omega_arith)) fun t ⟨ht, hg, hm, hrd, hwr⟩ => ?_
-    have hr' : InRegions (t.rd ++ t.wr) (addr (t.gpr .ecx) (16 * e)) 16 := by
-      rw [hrd, hwr, hg]; exact hr e (by omega_arith)
-    refine WP.mono (entry_ok e (by omega_arith) hidx ht hr' (fun k hk => by rw [hm, hg]; exact hv e (by omega_arith) k hk))
+    refine WP.mono (group_ok e (by omega_arith) hidx ht
+      (fun c hc => by rw [hrd, hwr, hg]; exact hr e (by omega_arith) c hc)
+      (fun c hc k hk => by rw [hm, hg]; exact hv e (by omega_arith) c hc k hk))
       fun u ⟨hu, hug⟩ => ⟨hu, hug.trans hg, ?_⟩
     refine ⟨by rw [hu.keep.mem, ← ht.keep.mem, hm], by rw [hu.keep.rd, ← ht.keep.rd, hrd],
       by rw [hu.keep.wr, ← ht.keep.wr, hwr]⟩
 
-theorem ScanAt.keepTo {s₀ s t : State} {tab : Nat → Nat → BitVec 32} {idx : Nat → BitVec 32} {j : Nat}
-    (h : ScanAt s₀ tab idx j s) (hk : LoopKeep s t) (h1 : t.xmm .xmm1 = s.xmm .xmm1)
-    (h2 : t.xmm .xmm2 = s.xmm .xmm2) (h3 : t.xmm .xmm3 = s.xmm .xmm3) (h6 : t.xmm .xmm6 = s.xmm .xmm6) :
-    ScanAt s₀ tab idx j t :=
-  ⟨hk.x0.trans h.x0, h1.trans h.x1, h2.trans h.x2, h3.trans h.x3, h6.trans h.x6, h.keep.trans hk⟩
+theorem ScanAt.keepTo {s₀ s t : State} {tab : Nat → Nat → BitVec 32} {idx : Nat → BitVec 32} {n : Nat}
+    (h : ScanAt s₀ tab idx n s) (hk : LoopKeep s t) (hx : t.xmm = s.xmm) : ScanAt s₀ tab idx n t :=
+  ⟨by rw [hx]; exact h.x0, by rw [hx]; exact h.x1, by rw [hx]; exact h.x5, by rw [hx]; exact h.x6,
+    by rw [hx]; exact h.x7, h.keep.trans hk⟩
 
-/-- The address of entry `e` of group `q` of the table at `T`. -/
-theorem entry_addr {T : BitVec 32} (hT : T.toNat + 4096 ≤ 2 ^ 32) {q e : Nat} (hq : q < 64) (he : e < 4) :
-    addr (T + BitVec.ofNat 32 (64 * q)) (16 * e) = T.setWidth 64 + BitVec.ofNat 64 (64 * q + 16 * e) := by
-  rw [show addr (T + BitVec.ofNat 32 (64 * q)) (16 * e) = addr T (64 * q + 16 * e) by
+/-- The address of coefficient `c` of group `e` of the four groups `q` of the table at `T`. -/
+theorem entry_addr {T : BitVec 32} (hT : T.toNat + 4096 ≤ 2 ^ 32) {q e c : Nat} (hq : q < 16) (he : e < 4) (hc : c < 4) :
+    addr (T + BitVec.ofNat 32 (256 * q)) (64 * e + 16 * c) =
+      T.setWidth 64 + BitVec.ofNat 64 (256 * q + (64 * e + 16 * c)) := by
+  rw [show addr (T + BitVec.ofNat 32 (256 * q)) (64 * e + 16 * c) = addr T (256 * q + (64 * e + 16 * c)) by
     simp only [addr, BitVec.add_assoc, BitVec.ofNat_add]]
   exact addr_eq (by omega_arith)
 
-/-- The entries of the table at `T`, as dwords. -/
+/-- The steps of the entries `tab` at `T`, as dwords. -/
 def TabAt (m : Mem) (T : BitVec 32) (tab : Nat → Nat → BitVec 32) : Prop :=
-  ∀ j < 256, ∀ k < 4, m.readW (T.setWidth 64 + BitVec.ofNat 64 (16 * j + 4 * k)) 32 = tab j k
+  ∀ j < 256, ∀ k < 4, m.readW (T.setWidth 64 + BitVec.ofNat 64 (16 * j + 4 * k)) 32 = stepAt (tab · k) j
+
+/-- A table of steps holds the steps of the table. -/
+theorem tabAt_steps {m : Mem} {T : BitVec 32} {a b c d : Byte → Spec.Cast5.Word}
+    (h : Held m (T.setWidth 64) (table (steps a) (steps b) (steps c) (steps d))) : TabAt m T (tableEnt a b c d) := by
+  intro j hj k hk
+  refine (ent_table h hj hk).trans ?_
+  have e : (BitVec.ofNat 8 j).toNat = j := by rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt hj
+  rcases cases4 hk with rfl | rfl | rfl | rfl <;> simp only [tableEnt, steps, e]
 
 theorem body_ok {s₀ s : State} {tab : Nat → Nat → BitVec 32} {idx : Nat → BitVec 32} {T : BitVec 32} {q : Nat}
-    (hq : q < 64) (hidx : ∀ k < 4, (idx k).toNat < 256) (hfit : T.toNat + 4096 ≤ 2 ^ 32)
+    (hq : q < 16) (hidx : ∀ k < 4, (idx k).toNat < 256) (hfit : T.toNat + 4096 ≤ 2 ^ 32)
     (hT : InRegions (s₀.rd ++ s₀.wr) (T.setWidth 64) 4096) (htab : TabAt s₀.mem T tab)
-    (hecx : s.gpr .ecx = T + BitVec.ofNat 32 (64 * q)) (h : ScanAt s₀ tab idx (4 * q) s) :
+    (hecx : s.gpr .ecx = T + BitVec.ofNat 32 (256 * q)) (h : ScanAt s₀ tab idx (4 * q) s) :
     WP isa (.block scanBody) s fun t => ScanAt s₀ tab idx (4 * (q + 1)) t ∧
-      t.gpr .ecx = T + BitVec.ofNat 32 (64 * (q + 1)) ∧ t.gpr .edx = s.gpr .edx - 1 ∧
+      t.gpr .ecx = T + BitVec.ofNat 32 (256 * (q + 1)) ∧ t.gpr .edx = s.gpr .edx - 1 ∧
       t.zf = some (s.gpr .edx - 1 == 0) := by
   unfold scanBody
   rw [WP.block_append_iff]
-  have hr : ∀ e < 4, InRegions (s.rd ++ s.wr) (addr (s.gpr .ecx) (16 * e)) 16 := fun e he => by
-    rw [h.keep.rd, h.keep.wr, hecx, entry_addr hfit hq he]
+  have hr : ∀ e < 4, ∀ c < 4, InRegions (s.rd ++ s.wr) (addr (s.gpr .ecx) (64 * e + 16 * c)) 16 := fun e he c hc => by
+    rw [h.keep.rd, h.keep.wr, hecx, entry_addr hfit hq he hc]
     exact CallLay.inRegions_sub hT (by omega_arith) (by decide)
-  have hv : ∀ e < 4, ∀ k < 4,
-      s.mem.readW (addr (s.gpr .ecx) (16 * e) + BitVec.ofNat 64 (4 * k)) 32 = tab (4 * q + e) k :=
-    fun e he k hk => by
-      rw [h.keep.mem, hecx, entry_addr hfit hq he, Offset.add_add,
-        show 64 * q + 16 * e + 4 * k = 16 * (4 * q + e) + 4 * k by omega_arith]
+  have hv : ∀ e < 4, ∀ c < 4, ∀ k < 4,
+      s.mem.readW (addr (s.gpr .ecx) (64 * e + 16 * c) + BitVec.ofNat 64 (4 * k)) 32 =
+        stepAt (tab · k) (4 * (4 * q + e) + c) :=
+    fun e he c hc k hk => by
+      rw [h.keep.mem, hecx, entry_addr hfit hq he hc, Offset.add_add,
+        show 256 * q + (64 * e + 16 * c) + 4 * k = 16 * (4 * (4 * q + e) + c) + 4 * k by omega_arith]
       exact htab _ (by omega_arith) k hk
-  refine WP.mono (entries_ok hq hidx hr hv 4 (Nat.le_refl _) h) fun t ⟨ht, hg, _, _, _⟩ => ?_
+  refine WP.mono (groups_ok hq hidx hr hv 4 (Nat.le_refl _) h) fun t ⟨ht, hg, _, _, _⟩ => ?_
   crun
-  rw [hg, hecx, BitVec.add_assoc, ← BitVec.ofNat_add, show 64 * q + 64 = 64 * (q + 1) by omega_arith]
-  exact ⟨ht.keepTo (by loop_keep) rfl rfl rfl rfl, rfl, rfl, rfl⟩
+  rw [hg, hecx, BitVec.add_assoc, ← BitVec.ofNat_add, show 256 * q + 256 = 256 * (q + 1) by omega_arith]
+  exact ⟨ht.keepTo (by loop_keep) rfl, rfl, rfl, rfl⟩
 
 theorem acc_zero (tab : Nat → Nat → BitVec 32) (idx : Nat → BitVec 32) : L (acc tab idx 0) = 0 := by
   rw [show (0 : BitVec 128) = L fun _ => 0 by decide]
-  exact L_congr fun k _ => by simp [acc]
+  exact L_congr fun k _ => rfl
 
-/-- The setup of the scan: the table's address (from `eax`) in `ecx`, 64
-groups to go in `edx`, nothing found yet, entry 0 next, one and all ones. -/
-theorem start_ok (s : State) (tab : Nat → Nat → BitVec 32) {idx : Nat → BitVec 32} (h0 : s.xmm .xmm0 = L idx) :
-    WP isa (.block scanStart) s fun t =>
-      ScanAt s tab idx 0 t ∧ t.gpr .ecx = s.gpr .eax ∧ t.gpr .edx = 64 := by
-  unfold scanStart
+theorem pslld_Ln (f : Nat → BitVec 32) {n : Nat} (hn : n < 32) :
+    XShiftOp.eval .pslld (L f) (BitVec.ofNat 8 n) = L fun k => f k <<< n := by
+  have e : (BitVec.ofNat 8 n).toNat = n := by rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by omega_using [hn])
+  exact L_ext fun k hk => by rw [dword_pslld _ _ (by rw [e]; exact hn) hk, dword_L _ hk, e]
+
+theorem psrld_Ln (f : Nat → BitVec 32) {n : Nat} (hn : n < 32) :
+    XShiftOp.eval .psrld (L f) (BitVec.ofNat 8 n) = L fun k => f k >>> n := by
+  have e : (BitVec.ofNat 8 n).toNat = n := by rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by omega_using [hn])
+  exact L_ext fun k hk => by rw [dword_psrld _ _ (by rw [e]; exact hn) hk, dword_L _ hk, e]
+
+theorem bitMask_ok (s : State) {idx : Nat → BitVec 32} (hidx : ∀ k < 4, (idx k).toNat < 256) {x : XReg} {b : Nat}
+    (hb : b < 2) (h0 : s.xmm .xmm0 = L idx) (h5 : s.xmm .xmm5 = L (splat 0xFFFFFFFF)) (hx : x = .xmm6 ∨ x = .xmm7) :
+    WP isa (.block (bitMask x b)) s fun t => t.xmm x = L (bitLane idx b) ∧
+      (∀ y, y ≠ x → t.xmm y = s.xmm y) ∧ t.gpr = s.gpr ∧ LoopKeep s t := by
+  have h5' : x ≠ .xmm5 := by rcases hx with rfl | rfl <;> decide
+  unfold bitMask xb
   crun
-  refine ⟨⟨?_, ?_, ?_, ?_, ?_, by loop_keep⟩, rfl⟩ <;>
-    simp (disch := decide) only [xmm_setXmm_self, xmm_setXmm_of_ne, xmm_setReg']
-  · exact h0
+  refine ⟨?_, fun y hy => ?_, by loop_keep⟩
+  · simp only [xmm_setXmm_of_ne _ _ h5'.symm, movdqa_L]
+    rw [h0, h5, pslld_Ln _ (by omega_using [hb]), show (31 : BitVec 8) = BitVec.ofNat 8 31 from rfl,
+      psrld_Ln _ (by decide), paddd_L, pxor_L]
+    exact L_congr fun k hk => bitVal (hidx k hk) hb
+  · simp only [xmm_setXmm_of_ne _ _ hy]
+
+/-- The setup of the scan: the table's address (from `eax`) in `ecx`, 16
+times four groups to go in `edx`, nothing found yet, and the masks. -/
+theorem start_ok (s : State) (tab : Nat → Nat → BitVec 32) {idx : Nat → BitVec 32}
+    (hidx : ∀ k < 4, (idx k).toNat < 256) (h0 : s.xmm .xmm0 = L idx) :
+    WP isa (.block scanStart) s fun t =>
+      ScanAt s tab idx 0 t ∧ t.gpr .ecx = s.gpr .eax ∧ t.gpr .edx = 16 := by
+  unfold scanStart
+  simp only [List.append_assoc]
+  rw [WP.block_append_iff]
+  have h1 : WP isa (.block [.mov .ecx (.reg .eax), .mov .edx (imm 16), .mov .eax (imm 0xFFFFFFFF),
+      .xop (.movd .xmm5 .eax), .xop (.pshufd .xmm5 .xmm5 0)]) s fun t =>
+      t.xmm .xmm5 = L (splat 0xFFFFFFFF) ∧ t.xmm .xmm0 = L idx ∧ t.gpr .ecx = s.gpr .eax ∧ t.gpr .edx = 16 ∧
+        LoopKeep s t := by
+    crun
+    exact ⟨bcast_L _, h0, rfl, by loop_keep⟩
+  refine WP.mono h1 fun t ⟨t5, t0, tc, td, tk⟩ => ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (bitMask_ok t hidx (by decide) t0 t5 (.inl rfl)) fun u ⟨u6, ux, ug, uk⟩ => ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (bitMask_ok u hidx (by decide) ((ux _ (by decide)).trans t0) ((ux _ (by decide)).trans t5) (.inr rfl))
+    fun v ⟨v7, vx, vg, vk⟩ => ?_
+  unfold xb
+  crun
+  refine ⟨⟨?_, ?_, ?_, ?_, ?_, (tk.trans (uk.trans vk)).trans (by loop_keep)⟩, by rw [vg, ug]; exact tc,
+    by rw [vg, ug]; exact td⟩ <;>
+    simp (disch := decide) only [xmm_setXmm_self, xmm_setXmm_of_ne]
+  · rw [vx _ (by decide), ux _ (by decide), t0, show (2 : BitVec 8) = BitVec.ofNat 8 2 from rfl, psrld_Ln _ (by decide)]
+    exact L_congr fun k _ => by simp only [hiLane, BitVec.sub_zero]
   · rw [acc_zero, XBinOp.eval, BitVec.xor_self]; rfl
-  · rw [show L (splat 0) = 0 by decide, XBinOp.eval, BitVec.xor_self]; rfl
-  · exact bcast_L _
-  · exact bcast_L _
+  · rw [vx _ (by decide), ux _ (by decide), t5]
+  · rw [vx _ (by decide), u6]
+  · exact v7
 
 /-- What a scan keeps of a state. -/
 structure ScanKeep (s t : State) : Prop where
   gpr : ∀ r, r ≠ .eax → r ≠ .ecx → r ≠ .edx → t.gpr r = s.gpr r
-  x0 : t.xmm .xmm0 = s.xmm .xmm0
   mem : Frame [below (s.gpr .esp) 4] s.mem t.mem
   rd : t.rd = s.rd
   wr : t.wr = s.wr
@@ -232,8 +386,8 @@ theorem symFrame_ok' (name : String) (s : State) (hsp : 4 ≤ (s.gpr .esp).toNat
   rw [ht]
   simp [symPopped, popReg, symPushed, State.setReg, arithFlags, State.setFlags]
 
-/-- The scan: lane `k` of `xmm1` is dword `k` of the entry of the table at
-`sym` whose number is lane `k` of `xmm0`. -/
+/-- The scan: lane `k` of `xmm1` is dword `k` of the entry, of those whose steps
+are the table at `sym`, whose number is lane `k` of `xmm0`. -/
 theorem scan_ok (s : State) (sym : String) {tab : Nat → Nat → BitVec 32} {idx : Nat → BitVec 32}
     (h0 : s.xmm .xmm0 = L idx) (hidx : ∀ k < 4, (idx k).toNat < 256) (hsp : 4 ≤ (s.gpr .esp).toNat)
     (hfit : (s.syms sym).toNat + 4096 ≤ 2 ^ 32)
@@ -251,16 +405,18 @@ theorem scan_ok (s : State) (sym : String) {tab : Nat → Nat → BitVec 32} {id
     · exact Offset.contains_base _ (by omega_arith) (by omega_arith)
     · intro r hr; rw [List.mem_singleton] at hr; subst hr; exact hdis
   have hfit' : (u.syms sym).toNat + 4096 ≤ 2 ^ 32 := by rw [hu.syms]; exact hfit
-  refine WP.seq (WP.mono (start_ok u tab hu0) fun v ⟨hv, hvc, hvd⟩ => ?_)
+  refine WP.seq (WP.mono (start_ok u tab hidx hu0) fun v ⟨hv, hvc, hvd⟩ => ?_)
   rw [hu.addr] at hvc
-  refine wp_countdown (cnt := .edx) (N := 64) (by decide) (by decide)
-    (fun q w => ScanAt u tab idx (4 * q) w ∧ w.gpr .ecx = u.syms sym + BitVec.ofNat 32 (64 * q))
+  refine wp_countdown (cnt := .edx) (N := 16) (by decide) (by decide)
+    (fun q w => ScanAt u tab idx (4 * q) w ∧ w.gpr .ecx = u.syms sym + BitVec.ofNat 32 (256 * q))
     (fun q hq w ⟨hw, hwc⟩ _ => WP.mono (body_ok hq hidx hfit' hT' htab' hwc hw) fun x ⟨hx, hxc, hxd, hz⟩ =>
       ⟨⟨hx, hxc⟩, hxd, hz⟩)
     (fun w ⟨hw, _⟩ => ⟨?_, ?_⟩) ⟨hv, by rw [hvc, hu.syms]; exact (BitVec.add_zero _).symm⟩ (by rw [hvd]; rfl)
   · rw [hw.x1]
-    exact L_congr fun k hk => by rw [acc, ite_eq_left (by have := hidx k hk; omega_arith)]
-  · exact ⟨fun r a b c => (hw.keep.gpr r a b c).trans (hu.gpr r (by simp [a, b])), hw.keep.x0.trans (by rw [hux]),
+    exact L_congr fun k hk => by
+      have := hidx k hk
+      rw [acc, ite_eq_right (by decide), Nat.min_eq_left (by omega_arith), Nat.div_add_mod]
+  · exact ⟨fun r a b c => (hw.keep.gpr r a b c).trans (hu.gpr r (by simp [a, b])),
       by rw [hw.keep.mem]; exact hu.frame, hw.keep.rd.trans hu.rd, hw.keep.wr.trans hu.wr,
       hw.keep.syms.trans hu.syms⟩
 
@@ -274,7 +430,7 @@ end
 # CAST5 on 32-bit x86: a round
 
 `round t up` computes `I` (`mask`, `rotate`), spreads its bytes over the
-lanes of `xmm0` (`spread`), scans `VG_CAST5_S1234`, stores the four values
+lanes of `xmm0` (`spread`), scans `VG_CAST5_S1234_STEPS`, stores the four values
 in the working space and combines them into `f` (`combine`), then makes the
 Feistel step and moves the subkeys' pointer in its slot (`feistel`).
 `round_ok` is about `roundWith lk.code t up`, the round over any look-ups
@@ -286,7 +442,7 @@ Feistel step and moves the subkeys' pointer in its slot (`feistel`).
 namespace VG.Proof.Cast5.X86
 
 open VG VG.X86 VG.X86.Lanes VG.X86.RegUpd VG.Impl.Cast5.X86
-open VG.Impl.Cast5 (s1234Sym)
+open VG.Impl.Cast5.X86 (x1234Sym)
 open VG.Proof.Cast5 (tableEnt)
 
 /-! ## The working space -/
@@ -621,7 +777,7 @@ The rounds, the groups and the blocks are proven over any look-up
 (`roundWith lk.code` to `decryptBlockWith lk.code`, for `lk : Lk` with
 `LkOk lk`, in the context `CtxG lk`): `round_step`, `groupEnc_ok`,
 `groupDec_ok`, `encryptBlockWith_ok`, `decryptBlockWith_ok`. The scan of
-`VG_CAST5_S1234` is one (`scanLk`, `scanLk_ok`), and `encryptBlock_ok` and
+`VG_CAST5_S1234_STEPS` is one (`scanLk`, `scanLk_ok`), and `encryptBlock_ok` and
 `decryptBlock_ok` are the instances for it.
 -/
 
@@ -630,7 +786,7 @@ The rounds, the groups and the blocks are proven over any look-up
 namespace VG.Proof.Cast5.X86
 
 open VG VG.X86 VG.X86.RegUpd VG.Impl.Cast5.X86
-open VG.Impl.Cast5 (s1234Sym)
+open VG.Impl.Cast5.X86 (x1234Sym)
 open VG.Proof.Cast5 (tableEnt encFold decFold encFold_succ decFold_succ encryptBlock_eq decryptBlock_eq f_eq
   roundI decodeBlock_blockAt blockAt_write)
 
@@ -665,11 +821,11 @@ structure Ctx (s : State) (S K : BitVec 32) (k : Spec.Cast5.Schedule) (n : Nat) 
   dS : Region.Disjoint ⟨S.setWidth 64, 256⟩ (below (s.gpr .esp) 4)
   dK : Region.Disjoint ⟨K.setWidth 64, 128⟩ (below (s.gpr .esp) 4)
   dKS : Region.Disjoint ⟨K.setWidth 64, 128⟩ ⟨S.setWidth 64, 256⟩
-  fitT : (s.syms s1234Sym).toNat + 4096 ≤ 2 ^ 32
-  inT : InRegions (s.rd ++ s.wr) ((s.syms s1234Sym).setWidth 64) 4096
-  dT : Region.Disjoint ⟨(s.syms s1234Sym).setWidth 64, 4096⟩ (below (s.gpr .esp) 4)
-  dTS : Region.Disjoint ⟨(s.syms s1234Sym).setWidth 64, 4096⟩ ⟨S.setWidth 64, 256⟩
-  tab : TabAt s.mem (s.syms s1234Sym) tab1234
+  fitT : (s.syms x1234Sym).toNat + 4096 ≤ 2 ^ 32
+  inT : InRegions (s.rd ++ s.wr) ((s.syms x1234Sym).setWidth 64) 4096
+  dT : Region.Disjoint ⟨(s.syms x1234Sym).setWidth 64, 4096⟩ (below (s.gpr .esp) 4)
+  dTS : Region.Disjoint ⟨(s.syms x1234Sym).setWidth 64, 4096⟩ ⟨S.setWidth 64, 256⟩
+  tab : TabAt s.mem (s.syms x1234Sym) tab1234
 
 /-- A slot region inside the working space. -/
 theorem slot_sub (S : BitVec 32) {d n : Nat} (h : d + n ≤ 256) : Region.Sub (slotR S d n) ⟨S.setWidth 64, 256⟩ :=
@@ -679,7 +835,7 @@ theorem slot_sub (S : BitVec 32) {d n : Nat} (h : d + n ≤ 256) : Region.Sub (s
 `48 … 63`. -/
 theorem blockMem_disjoint {s : State} {S K : BitVec 32} {k : Spec.Cast5.Schedule} {n : Nat} (h : Ctx s S K k n) :
     ∀ r ∈ blockMem S (s.gpr .esp), r.Disjoint ⟨K.setWidth 64, 128⟩ ∧
-      r.Disjoint ⟨(s.syms s1234Sym).setWidth 64, 4096⟩ ∧ r.Disjoint (slotR S 48 16) := by
+      r.Disjoint ⟨(s.syms x1234Sym).setWidth 64, 4096⟩ ∧ r.Disjoint (slotR S 48 16) := by
   intro r hr
   simp only [blockMem, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
@@ -703,7 +859,7 @@ theorem slot_frame {m m' : Mem} {rs : List Region} {S : BitVec 32} (hfit : S.toN
 theorem Ctx.transfer {s u : State} {S K : BitVec 32} {k : Spec.Cast5.Schedule} {n : Nat} (h : Ctx s S K k n)
     (hsi : u.gpr .esi = S) (hsp : u.gpr .esp = s.gpr .esp) (hrd : u.rd = s.rd) (hwr : u.wr = s.wr)
     (hsy : u.syms = s.syms) {rs : List Region} (hf : Frame rs s.mem u.mem)
-    (hd : ∀ r ∈ rs, r.Disjoint ⟨K.setWidth 64, 128⟩ ∧ r.Disjoint ⟨(s.syms s1234Sym).setWidth 64, 4096⟩ ∧
+    (hd : ∀ r ∈ rs, r.Disjoint ⟨K.setWidth 64, 128⟩ ∧ r.Disjoint ⟨(s.syms x1234Sym).setWidth 64, 4096⟩ ∧
       r.Disjoint (slotR S 48 16)) :
     Ctx u S K k n := by
   refine ⟨hsi, h.fitS, by rw [hwr]; exact h.wS, ?_, ?_, h.nv, h.fitK, by rw [hrd, hwr]; exact h.inK,
@@ -715,7 +871,7 @@ theorem Ctx.transfer {s u : State} {S K : BitVec 32} {k : Spec.Cast5.Schedule} {
   · rw [hf.readW (r := ⟨K.setWidth 64, 128⟩) (Offset.contains_base _ (by omega_arith) (by omega_arith))
       (fun r hr => (hd r hr).1.symm) (by decide)]
     exact h.key j hj
-  · rw [hsy, hf.readW (r := ⟨(s.syms s1234Sym).setWidth 64, 4096⟩) (Offset.contains_base _ (by omega_arith) (by omega_arith))
+  · rw [hsy, hf.readW (r := ⟨(s.syms x1234Sym).setWidth 64, 4096⟩) (Offset.contains_base _ (by omega_arith) (by omega_arith))
       (fun r hr => (hd r hr).2.1.symm) (by decide)]
     exact h.tab j hj q hq
 
@@ -1145,29 +1301,29 @@ theorem decryptBlockWith_ok {lk : Lk} {s : State} {S K : BitVec 32} {k : Spec.Ca
 
 /-! ### The rounds over the scan -/
 
-/-- The scan of `VG_CAST5_S1234` as the rounds' look-ups: four bytes of
+/-- The scan of `VG_CAST5_S1234_STEPS` as the rounds' look-ups: four bytes of
 stack, no other memory, and the table readable, apart from the stack and the
 working space, and holding the S-boxes. -/
 def scanLk : Lk where
-  code := scan s1234Sym
+  code := scan x1234Sym
   n := 4
   X _ := []
-  Pre s S := 4 ≤ (s.gpr .esp).toNat ∧ (s.syms s1234Sym).toNat + 4096 ≤ 2 ^ 32 ∧
-    InRegions (s.rd ++ s.wr) ((s.syms s1234Sym).setWidth 64) 4096 ∧
-    Region.Disjoint ⟨(s.syms s1234Sym).setWidth 64, 4096⟩ (below (s.gpr .esp) 4) ∧
-    Region.Disjoint ⟨(s.syms s1234Sym).setWidth 64, 4096⟩ ⟨S.setWidth 64, 256⟩ ∧
-    TabAt s.mem (s.syms s1234Sym) tab1234
+  Pre s S := 4 ≤ (s.gpr .esp).toNat ∧ (s.syms x1234Sym).toNat + 4096 ≤ 2 ^ 32 ∧
+    InRegions (s.rd ++ s.wr) ((s.syms x1234Sym).setWidth 64) 4096 ∧
+    Region.Disjoint ⟨(s.syms x1234Sym).setWidth 64, 4096⟩ (below (s.gpr .esp) 4) ∧
+    Region.Disjoint ⟨(s.syms x1234Sym).setWidth 64, 4096⟩ ⟨S.setWidth 64, 256⟩ ∧
+    TabAt s.mem (s.syms x1234Sym) tab1234
 
 theorem scanLk_ok : LkOk scanLk where
   ok s S idx _ hp h0 hidx := by
     obtain ⟨hsp, fT, inT, dT, -, tab⟩ := hp
-    exact WP.mono (scan_ok s s1234Sym h0 hidx hsp fT inT dT tab) fun t ⟨h1, hk⟩ =>
+    exact WP.mono (scan_ok s x1234Sym h0 hidx hsp fT inT dT tab) fun t ⟨h1, hk⟩ =>
       ⟨h1, hk.gpr, hk.mem, hk.rd, hk.wr, hk.syms⟩
   transfer {s u S} hp _ hsp hrd hwr hsy hf := by
     obtain ⟨h4, fT, inT, dT, dTS, tab⟩ := hp
     refine ⟨by rw [hsp]; exact h4, by rw [hsy]; exact fT, by rw [hrd, hwr, hsy]; exact inT,
       by rw [hsy, hsp]; exact dT, by rw [hsy]; exact dTS, fun j hj q hq => ?_⟩
-    rw [hsy, hf.readW (r := ⟨(s.syms s1234Sym).setWidth 64, 4096⟩)
+    rw [hsy, hf.readW (r := ⟨(s.syms x1234Sym).setWidth 64, 4096⟩)
       (Offset.contains_base _ (by omega_arith) (by omega_arith)) (fun r hr => ?_) (by decide)]
     · exact tab j hj q hq
     · simp only [blockMemG, scanLk, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -1226,7 +1382,7 @@ structure BPre (s : State) (S K D : BitVec 32) (k : Spec.Cast5.Schedule) (n : Na
   wD : InRegions s.wr (D.setWidth 64) 8
   dDS : Region.Disjoint (blockR D) ⟨S.setWidth 64, 256⟩
   dDK : Region.Disjoint (blockR D) ⟨K.setWidth 64, 128⟩
-  dDT : Region.Disjoint (blockR D) ⟨(s.syms s1234Sym).setWidth 64, 4096⟩
+  dDT : Region.Disjoint (blockR D) ⟨(s.syms x1234Sym).setWidth 64, 4096⟩
   dDsp : Region.Disjoint (blockR D) (below (s.gpr .esp) 4)
 
 /-- Encryption or decryption of a block. -/
@@ -1434,7 +1590,7 @@ block in turn (`ecbLoop_ok`) and restores the registers (`ecb_correct`).
 namespace VG.Proof.Cast5.X86
 
 open VG VG.X86 VG.X86.RegUpd VG.Impl.Cast5.X86
-open VG.Impl.Cast5 (s1234Sym s1234)
+open VG.Impl.Cast5.X86 (x1234Sym x1234)
 open VG.Proof.Cast5 (tableEnt Held)
 
 /-! ## Frames of the layouts -/
@@ -1457,16 +1613,16 @@ theorem scheduleAt_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {K
     hf.bytes (R := ⟨K, 128⟩) hd (by show (128 : Nat) ≤ 2 ^ 64; decide) (show 4 * i < 128 by omega_arith)]
 
 /-- The table's words, as the scans read them. -/
-theorem tabAt_of_held {m : Mem} {T : BitVec 32} (h : Held m (T.setWidth 64) s1234) : TabAt m T tab1234 :=
-  fun _ hj _ hk => Proof.Cast5.ent_table h hj hk
+theorem tabAt_of_held {m : Mem} {T : BitVec 32} (h : Held m (T.setWidth 64) x1234) : TabAt m T tab1234 :=
+  tabAt_steps h
 
-theorem s1234_length : s1234.length = 512 := Proof.Cast5.table_length _ _ _ _
+theorem x1234_length : x1234.length = 512 := Proof.Cast5.table_length _ _ _ _
 
-theorem held_frame {rs : List Region} {m m' : Mem} {T : Addr} (h : Held m T s1234) (hf : Frame rs m m')
-    (hd : ∀ r ∈ rs, Region.Disjoint ⟨T, 4096⟩ r) : Held m' T s1234 := by
+theorem held_frame {rs : List Region} {m m' : Mem} {T : Addr} (h : Held m T x1234) (hf : Frame rs m m')
+    (hd : ∀ r ∈ rs, Region.Disjoint ⟨T, 4096⟩ r) : Held m' T x1234 := by
   intro i hi
-  rw [s1234_length] at hi
-  rw [← h i (by rw [s1234_length]; exact hi)]
+  rw [x1234_length] at hi
+  rw [← h i (by rw [x1234_length]; exact hi)]
   exact hf.readW (r := ⟨T, 4096⟩) (Offset.contains_base _ (by omega_arith) (by omega_arith)) hd (by decide)
 
 /-! ## The layout -/
@@ -1485,24 +1641,24 @@ structure Lay (s : State) (m0 : Mem) (S D K : BitVec 32) (k : Spec.Cast5.Schedul
   fitS : S.toNat + 256 ≤ 2 ^ 32
   fitD : D.toNat + 8 * N ≤ 2 ^ 32
   fitK : K.toNat + 128 ≤ 2 ^ 32
-  fitT : (s.syms s1234Sym).toNat + 4096 ≤ 2 ^ 32
+  fitT : (s.syms x1234Sym).toNat + 4096 ≤ 2 ^ 32
   wS : InRegions s.wr (S.setWidth 64) 256
   wD : InRegions s.wr (D.setWidth 64) (8 * N)
   inK : InRegions (s.rd ++ s.wr) (K.setWidth 64) 128
-  inT : InRegions (s.rd ++ s.wr) ((s.syms s1234Sym).setWidth 64) 4096
+  inT : InRegions (s.rd ++ s.wr) ((s.syms x1234Sym).setWidth 64) 4096
   sp : 4 ≤ (s.gpr .esp).toNat
   dDS : Region.Disjoint ⟨D.setWidth 64, 8 * N⟩ ⟨S.setWidth 64, 256⟩
   dKS : Region.Disjoint ⟨K.setWidth 64, 128⟩ ⟨S.setWidth 64, 256⟩
   dKD : Region.Disjoint ⟨K.setWidth 64, 128⟩ ⟨D.setWidth 64, 8 * N⟩
-  dTS : Region.Disjoint ⟨(s.syms s1234Sym).setWidth 64, 4096⟩ ⟨S.setWidth 64, 256⟩
-  dTD : Region.Disjoint ⟨(s.syms s1234Sym).setWidth 64, 4096⟩ ⟨D.setWidth 64, 8 * N⟩
+  dTS : Region.Disjoint ⟨(s.syms x1234Sym).setWidth 64, 4096⟩ ⟨S.setWidth 64, 256⟩
+  dTD : Region.Disjoint ⟨(s.syms x1234Sym).setWidth 64, 4096⟩ ⟨D.setWidth 64, 8 * N⟩
   dS : Region.Disjoint ⟨S.setWidth 64, 256⟩ (below (s.gpr .esp) 4)
   dD : Region.Disjoint ⟨D.setWidth 64, 8 * N⟩ (below (s.gpr .esp) 4)
   dK : Region.Disjoint ⟨K.setWidth 64, 128⟩ (below (s.gpr .esp) 4)
-  dT : Region.Disjoint ⟨(s.syms s1234Sym).setWidth 64, 4096⟩ (below (s.gpr .esp) 4)
+  dT : Region.Disjoint ⟨(s.syms x1234Sym).setWidth 64, 4096⟩ (below (s.gpr .esp) 4)
   nv : n = 12 ∨ n = 16
   sk : Spec.Cast5.scheduleAt m0 (K.setWidth 64) = k
-  held : Held m0 ((s.syms s1234Sym).setWidth 64) s1234
+  held : Held m0 ((s.syms x1234Sym).setWidth 64) x1234
   schedSlot : m0.readW (addr S schedOff) 32 = K
   roundsSlot : m0.readW (addr S roundsOff) 32 = BitVec.ofNat 32 n
 
@@ -1532,7 +1688,7 @@ theorem sub_blk (P : Addr) {N j : Nat} (hj : j < N) :
 `32 … 55`. -/
 theorem loopMem_disjoint {s : State} {m0 : Mem} {S D K : BitVec 32} {k : Spec.Cast5.Schedule} {n N : Nat}
     (hl : Lay s m0 S D K k n N) : ∀ r ∈ loopMem S D N (s.gpr .esp), r.Disjoint ⟨K.setWidth 64, 128⟩ ∧
-      r.Disjoint ⟨(s.syms s1234Sym).setWidth 64, 4096⟩ ∧ r.Disjoint (slotR S 32 24) := by
+      r.Disjoint ⟨(s.syms x1234Sym).setWidth 64, 4096⟩ ∧ r.Disjoint (slotR S 32 24) := by
   intro r hr
   simp only [loopMem, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
@@ -1714,7 +1870,7 @@ schedule, the blocks, the working space and the table separate from each
 other, from the word below `esp` and (those written) from the arguments and
 the return address. -/
 structure EPre (s : State) : Prop where
-  rdEq : s.rd = [⟨(arg s 0).setWidth 64, 128⟩, ⟨argAddr s 0, 20⟩, ⟨(s.syms s1234Sym).setWidth 64, 4096⟩]
+  rdEq : s.rd = [⟨(arg s 0).setWidth 64, 128⟩, ⟨argAddr s 0, 20⟩, ⟨(s.syms x1234Sym).setWidth 64, 4096⟩]
   wrEq : s.wr = [⟨(arg s 2).setWidth 64, (arg s 3).toNat * 8⟩, ⟨(arg s 4).setWidth 64, 256⟩]
   sp : 4 ≤ (s.gpr .esp).toNat
   spfit : (s.gpr .esp).toNat + 24 ≤ 2 ^ 32
@@ -1722,21 +1878,21 @@ structure EPre (s : State) : Prop where
   fitS : (arg s 4).toNat + 256 ≤ 2 ^ 32
   fitD : (arg s 2).toNat + 8 * (arg s 3).toNat ≤ 2 ^ 32
   fitK : (arg s 0).toNat + 128 ≤ 2 ^ 32
-  fitT : (s.syms s1234Sym).toNat + 4096 ≤ 2 ^ 32
+  fitT : (s.syms x1234Sym).toNat + 4096 ≤ 2 ^ 32
   wS : InRegions s.wr ((arg s 4).setWidth 64) 256
   wD : InRegions s.wr ((arg s 2).setWidth 64) (8 * (arg s 3).toNat)
   inK : InRegions (s.rd ++ s.wr) ((arg s 0).setWidth 64) 128
-  inT : InRegions (s.rd ++ s.wr) ((s.syms s1234Sym).setWidth 64) 4096
-  held : Held s.mem ((s.syms s1234Sym).setWidth 64) s1234
+  inT : InRegions (s.rd ++ s.wr) ((s.syms x1234Sym).setWidth 64) 4096
+  held : Held s.mem ((s.syms x1234Sym).setWidth 64) x1234
   dDS : Region.Disjoint ⟨(arg s 2).setWidth 64, 8 * (arg s 3).toNat⟩ ⟨(arg s 4).setWidth 64, 256⟩
   dKS : Region.Disjoint ⟨(arg s 0).setWidth 64, 128⟩ ⟨(arg s 4).setWidth 64, 256⟩
   dKD : Region.Disjoint ⟨(arg s 0).setWidth 64, 128⟩ ⟨(arg s 2).setWidth 64, 8 * (arg s 3).toNat⟩
-  dTS : Region.Disjoint ⟨(s.syms s1234Sym).setWidth 64, 4096⟩ ⟨(arg s 4).setWidth 64, 256⟩
-  dTD : Region.Disjoint ⟨(s.syms s1234Sym).setWidth 64, 4096⟩ ⟨(arg s 2).setWidth 64, 8 * (arg s 3).toNat⟩
+  dTS : Region.Disjoint ⟨(s.syms x1234Sym).setWidth 64, 4096⟩ ⟨(arg s 4).setWidth 64, 256⟩
+  dTD : Region.Disjoint ⟨(s.syms x1234Sym).setWidth 64, 4096⟩ ⟨(arg s 2).setWidth 64, 8 * (arg s 3).toNat⟩
   dS : Region.Disjoint ⟨(arg s 4).setWidth 64, 256⟩ (below (s.gpr .esp) 4)
   dD : Region.Disjoint ⟨(arg s 2).setWidth 64, 8 * (arg s 3).toNat⟩ (below (s.gpr .esp) 4)
   dK : Region.Disjoint ⟨(arg s 0).setWidth 64, 128⟩ (below (s.gpr .esp) 4)
-  dT : Region.Disjoint ⟨(s.syms s1234Sym).setWidth 64, 4096⟩ (below (s.gpr .esp) 4)
+  dT : Region.Disjoint ⟨(s.syms x1234Sym).setWidth 64, 4096⟩ (below (s.gpr .esp) 4)
   dAS : Region.Disjoint ⟨argAddr s 0, 20⟩ ⟨(arg s 4).setWidth 64, 256⟩
   dAD : Region.Disjoint ⟨argAddr s 0, 20⟩ ⟨(arg s 2).setWidth 64, 8 * (arg s 3).toNat⟩
   dRS : Region.Disjoint ⟨(s.gpr .esp).setWidth 64, 4⟩ ⟨(arg s 4).setWidth 64, 256⟩
@@ -1750,7 +1906,7 @@ def ecbX (up : Bool) : Contract isa where
     Spec.Cast5.blocksAt s'.mem ((arg s 2).setWidth 64) (arg s 3).toNat =
       Spec.Cast5.ecb (Spec.Cast5.scheduleAt s.mem ((arg s 0).setWidth 64)) (arg s 1).toNat
         (if up then .encrypt else .decrypt) (Spec.Cast5.blocksAt s.mem ((arg s 2).setWidth 64) (arg s 3).toNat)
-  pub s₁ s₂ := s₁.gpr .esp = s₂.gpr .esp ∧ (∀ i < 5, arg s₁ i = arg s₂ i) ∧ s₁.syms s1234Sym = s₂.syms s1234Sym
+  pub s₁ s₂ := s₁.gpr .esp = s₂.gpr .esp ∧ (∀ i < 5, arg s₁ i = arg s₂ i) ∧ s₁.syms x1234Sym = s₂.syms x1234Sym
 
 theorem cipher_map (up : Bool) (k : Spec.Cast5.Schedule) (n : Nat) (bs : List Spec.Cast5.Block) :
     bs.map (cipher up k n) = Spec.Cast5.ecb k n (if up then .encrypt else .decrypt) bs := by

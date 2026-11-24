@@ -80,14 +80,14 @@ instance for the scan (`scanCore`).
 namespace VG.Proof.Cast5.X86.Mode
 
 open VG VG.X86 VG.X86.Wp VG.X86.RegUpd VG.Impl.Cast5.X86 VG.Impl.Cast5.X86.Modes
-open VG.Impl.Cast5 (s1234Sym s1234)
+open VG.Impl.Cast5.X86 (x1234Sym x1234)
 open VG.Proof.Cast5 (Held dirCipher bytesAt_eq ofFn_bytesAt dirCipher_length)
 open VG.Proof.Modes.X86 (coreRegion blkRegion blkAddr stkRegion slotA CoreSpec Layout ScrIn)
 
 /-- The subkeys at `K`. -/
 abbrev keyR (K : BitVec 32) : Region := ⟨K.setWidth 64, 128⟩
 /-- The table of S-boxes. -/
-abbrev tabR (s : State) : Region := ⟨(s.syms s1234Sym).setWidth 64, 4096⟩
+abbrev tabR (s : State) : Region := ⟨(s.syms x1234Sym).setWidth 64, 4096⟩
 /-- The key's two arguments. -/
 abbrev argR (s : State) : Region := ⟨addr (s.gpr .esp) 4, 8⟩
 /-- The `n` bytes below `esp`, which the look-ups use. -/
@@ -107,9 +107,9 @@ structure Base (tab : Bool) (n : Nat) (s : State) (K : BitVec 32) (k : Spec.Cast
   fitK : K.toNat + 128 ≤ 2 ^ 32
   inK : InRegions (s.rd ++ s.wr) (K.setWidth 64) 128
   sk : Spec.Cast5.scheduleAt s.mem (K.setWidth 64) = k
-  tabOk : tab = true → (s.syms s1234Sym).toNat + 4096 ≤ 2 ^ 32 ∧
-    InRegions (s.rd ++ s.wr) ((s.syms s1234Sym).setWidth 64) 4096 ∧
-    Held s.mem ((s.syms s1234Sym).setWidth 64) s1234 ∧ (∀ x ∈ s.wr, (tabR s).Disjoint x) ∧
+  tabOk : tab = true → (s.syms x1234Sym).toNat + 4096 ≤ 2 ^ 32 ∧
+    InRegions (s.rd ++ s.wr) ((s.syms x1234Sym).setWidth 64) 4096 ∧
+    Held s.mem ((s.syms x1234Sym).setWidth 64) x1234 ∧ (∀ x ∈ s.wr, (tabR s).Disjoint x) ∧
     (tabR s).Disjoint (stk n s)
   dW : ∀ x ∈ s.wr, (keyR K).Disjoint x ∧ (argR s).Disjoint x
   dKs : (keyR K).Disjoint (stk n s)
@@ -551,7 +551,7 @@ the chaining value, OFB and CFB (`Proof.Modes.X86.cbcEncChained_wp`, …)
 over CAST5's core (`Mode.dirCoreSpec`), with the working space as a sixth
 argument (`modeX ivw post`: the chaining value is writable if `ivw`, as it
 is for all of them). The table of S-boxes is readable, where the static
-`VG_CAST5_S1234` puts it, and holds the S-boxes (`Held`).
+`VG_CAST5_S1234_STEPS` puts it, and holds the S-boxes (`Held`).
 
 They are instances of the same theorems for any core that fits
 (`cbcEncryptChained_wp_of`, …, over `Fits cs tab b n` and the precondition
@@ -566,7 +566,7 @@ taint's (`τG b n`, `τG_wf`, `τG_agree`).
 namespace VG.Proof.Cast5.X86.ModeFns
 
 open VG VG.X86 VG.Impl.Cast5.X86.Modes VG.Impl.Modes
-open VG.Impl.Cast5 (s1234Sym s1234)
+open VG.Impl.Cast5.X86 (x1234Sym x1234)
 open VG.Proof.Modes.X86 (SeqPre stkRegion cbcEncChained_wp cbcDecChained_wp ofb_wp cfbEnc_wp cfbDec_wp)
 open VG.Proof.Cast5.X86.Mode (dirCoreSpec KeyArgs Base)
 open VG.Proof.Cast5 (Held)
@@ -582,7 +582,7 @@ abbrev scrA (s : State) : Region := ⟨(arg s 5).setWidth 64, 304⟩
 /-- The arguments. -/
 abbrev argsA (s : State) : Region := ⟨argAddr s 0, 24⟩
 /-- The table of S-boxes. -/
-abbrev tabA (s : State) : Region := ⟨(s.syms s1234Sym).setWidth 64, 4096⟩
+abbrev tabA (s : State) : Region := ⟨(s.syms x1234Sym).setWidth 64, 4096⟩
 /-- The return address. -/
 abbrev retA (s : State) : Region := ⟨(s.gpr .esp).setWidth 64, 4⟩
 /-- The word below `esp`, which the core's scans use. -/
@@ -610,8 +610,8 @@ structure MPre (ivw : Bool) (s : State) : Prop where
   fitV : (arg s 2).toNat + 8 ≤ 2 ^ 32
   fitD : (arg s 3).toNat + 8 * (arg s 4).toNat ≤ 2 ^ 32
   fitS : (arg s 5).toNat + 304 ≤ 2 ^ 32
-  fitT : (s.syms s1234Sym).toNat + 4096 ≤ 2 ^ 32
-  held : Held s.mem ((s.syms s1234Sym).setWidth 64) s1234
+  fitT : (s.syms x1234Sym).toNat + 4096 ≤ 2 ^ 32
+  held : Held s.mem ((s.syms x1234Sym).setWidth 64) x1234
   dDS : (dataA s).Disjoint (scrA s)
   dVS : (ivA s).Disjoint (scrA s)
   dVD : ivw = true → (ivA s).Disjoint (dataA s)
@@ -629,7 +629,7 @@ def modeX (ivw : Bool) (post : State → State → Prop) : Contract isa where
   pre := MPre ivw
   post := post
   pub s₁ s₂ := s₁.gpr .esp = s₂.gpr .esp ∧ (∀ i < 6, arg s₁ i = arg s₂ i) ∧
-    s₁.syms s1234Sym = s₂.syms s1234Sym
+    s₁.syms x1234Sym = s₂.syms x1234Sym
 
 /-! ## Any core that fits
 
@@ -670,8 +670,8 @@ structure GPre (tab : Bool) (b n : Nat) (ivw : Bool) (s : State) : Prop where
   fitV : (arg s 2).toNat + 8 ≤ 2 ^ 32
   fitD : (arg s 3).toNat + 8 * (arg s 4).toNat ≤ 2 ^ 32
   fitS : (arg s 5).toNat + b ≤ 2 ^ 32
-  tabOk : tab = true → (s.syms s1234Sym).toNat + 4096 ≤ 2 ^ 32 ∧
-    Held s.mem ((s.syms s1234Sym).setWidth 64) s1234 ∧ (∀ r ∈ s.wr, (tabA s).Disjoint r) ∧
+  tabOk : tab = true → (s.syms x1234Sym).toNat + 4096 ≤ 2 ^ 32 ∧
+    Held s.mem ((s.syms x1234Sym).setWidth 64) x1234 ∧ (∀ r ∈ s.wr, (tabA s).Disjoint r) ∧
     (tabA s).Disjoint (stkG n s)
   dDS : (dataA s).Disjoint (scrG b s)
   dVS : (ivA s).Disjoint (scrG b s)
@@ -819,8 +819,8 @@ subkeys and the arguments readable, and their distances (`hK`, `hT`). -/
 theorem keyFacts_of {s : State} {rs : List Region} (hlo : n ≤ (s.gpr .esp).toNat)
     (hfit : (s.gpr .esp).toNat + 28 ≤ 2 ^ 32) (mA : argsA s ∈ s.rd ++ s.wr) (mK : keyA s ∈ s.rd ++ s.wr)
     (nv : (arg s 1).toNat = 12 ∨ (arg s 1).toNat = 16) (fitK : (arg s 0).toNat + 128 ≤ 2 ^ 32)
-    (hT : tab = true → (s.syms s1234Sym).toNat + 4096 ≤ 2 ^ 32 ∧ tabA s ∈ s.rd ++ s.wr ∧
-      Held s.mem ((s.syms s1234Sym).setWidth 64) s1234 ∧ (∀ r ∈ s.wr, (tabA s).Disjoint r) ∧
+    (hT : tab = true → (s.syms x1234Sym).toNat + 4096 ≤ 2 ^ 32 ∧ tabA s ∈ s.rd ++ s.wr ∧
+      Held s.mem ((s.syms x1234Sym).setWidth 64) x1234 ∧ (∀ r ∈ s.wr, (tabA s).Disjoint r) ∧
       (tabA s).Disjoint (stkG n s) ∧ ∀ r ∈ rs, (tabA s).Disjoint r)
     (dKw : ∀ r ∈ s.wr, (keyA s).Disjoint r) (dAw : ∀ r ∈ s.wr, (argsA s).Disjoint r)
     (dKs : (keyA s).Disjoint (stkG n s))
@@ -1044,7 +1044,7 @@ theorem τG_agree {tab : Bool} {b n : Nat} {s₁ s₂ : State} (h₁ : GPre tab 
 
 theorem τFb_agree {post : State → State → Prop} {s₁ s₂ : State} (h₁ : (modeX true post).pre s₁)
     (h₂ : (modeX true post).pre s₂) (hp : (modeX true post).pub s₁ s₂) :
-    VG.X86.Taint.AgreeS [s1234Sym] τFb s₁ s₂ := by
+    VG.X86.Taint.AgreeS [x1234Sym] τFb s₁ s₂ := by
   obtain ⟨sp, args, sy⟩ := hp
   refine ⟨τG_agree (MPre.gen h₁) (MPre.gen h₂) sp args, fun n hn => ?_⟩
   simp only [List.mem_singleton] at hn
@@ -1052,30 +1052,30 @@ theorem τFb_agree {post : State → State → Prop} {s₁ s₂ : State} (h₁ :
 
 theorem cbcEncryptChained_ct :
     ConstantTime isa (modeX true cbcEncPost).pre (modeX true cbcEncPost).pub cbcEncryptChained :=
-  VG.Taint.constantTime (A := taintSym [s1234Sym]) τFb (fun _ _ h₁ h₂ hp => τFb_agree h₁ h₂ hp)
+  VG.Taint.constantTime (A := taintSym [x1234Sym]) τFb (fun _ _ h₁ h₂ hp => τFb_agree h₁ h₂ hp)
     (by taint_decide)
 
 theorem cbcDecryptChained_ct :
     ConstantTime isa (modeX true cbcDecPost).pre (modeX true cbcDecPost).pub cbcDecryptChained :=
-  VG.Taint.constantTime (A := taintSym [s1234Sym]) τFb (fun _ _ h₁ h₂ hp => τFb_agree h₁ h₂ hp)
+  VG.Taint.constantTime (A := taintSym [x1234Sym]) τFb (fun _ _ h₁ h₂ hp => τFb_agree h₁ h₂ hp)
     (by taint_decide)
 
 theorem ofb_ct : ConstantTime isa (modeX true ofbPost).pre (modeX true ofbPost).pub ofb :=
-  VG.Taint.constantTime (A := taintSym [s1234Sym]) τFb (fun _ _ h₁ h₂ hp => τFb_agree h₁ h₂ hp)
+  VG.Taint.constantTime (A := taintSym [x1234Sym]) τFb (fun _ _ h₁ h₂ hp => τFb_agree h₁ h₂ hp)
     (by taint_decide)
 
 theorem cfbEncrypt_ct : ConstantTime isa (modeX true cfbEncPost).pre (modeX true cfbEncPost).pub cfbEncrypt :=
-  VG.Taint.constantTime (A := taintSym [s1234Sym]) τFb (fun _ _ h₁ h₂ hp => τFb_agree h₁ h₂ hp)
+  VG.Taint.constantTime (A := taintSym [x1234Sym]) τFb (fun _ _ h₁ h₂ hp => τFb_agree h₁ h₂ hp)
     (by taint_decide)
 
 theorem cfbDecrypt_ct : ConstantTime isa (modeX true cfbDecPost).pre (modeX true cfbDecPost).pub cfbDecrypt :=
-  VG.Taint.constantTime (A := taintSym [s1234Sym]) τFb (fun _ _ h₁ h₂ hp => τFb_agree h₁ h₂ hp)
+  VG.Taint.constantTime (A := taintSym [x1234Sym]) τFb (fun _ _ h₁ h₂ hp => τFb_agree h₁ h₂ hp)
     (by taint_decide)
 
 /-! ## The contracts -/
 
-open VG.Impl.Cast5 (ecbConsts)
-open VG.Proof.Cast5.X86 (ecbConsts_eq s1234_length)
+open VG.Impl.Cast5.X86 (xEcbConsts)
+open VG.Proof.Cast5.X86 (xEcbConsts_eq x1234_length)
 
 /-! ## Satisfiability -/
 
@@ -1090,21 +1090,21 @@ def satArgs : Mem := fun a =>
 elsewhere (irreducible: unfolding it in a definitional check would evaluate
 the table). -/
 @[irreducible] def satMem : Mem := fun a =>
-  if (a - 0x100000).toNat < 4096 then constMem 0x100000 s1234 a else satArgs a
+  if (a - 0x100000).toNat < 4096 then constMem 0x100000 x1234 a else satArgs a
 
-theorem satMem_held : ∀ i < s1234.length,
-    satMem.readW (0x100000 + BitVec.ofNat 64 (8 * i)) 64 = s1234.getD i 0 := by
+theorem satMem_held : ∀ i < x1234.length,
+    satMem.readW (0x100000 + BitVec.ofNat 64 (8 * i)) 64 = x1234.getD i 0 := by
   intro i hi
-  rw [s1234_length] at hi
+  rw [x1234_length] at hi
   have hm : satMem.readW (0x100000 + BitVec.ofNat 64 (8 * i)) 64 =
-      (constMem 0x100000 s1234).readW (0x100000 + BitVec.ofNat 64 (8 * i)) 64 := by
+      (constMem 0x100000 x1234).readW (0x100000 + BitVec.ofNat 64 (8 * i)) 64 := by
     apply Mem.readW_congr
     intro j hj
     have e : ((0x100000 : Addr) + BitVec.ofNat 64 (8 * i) + BitVec.ofNat 64 j - 0x100000).toNat = 8 * i + j := by
       rw [Offset.add_add, Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hi, hj])]
     unfold satMem
     rw [e, ite_eq_left (show 8 * i + j < 4096 by omega_using [hi, hj])]
-  exact hm.trans (constMem_held 0x100000 s1234 (by rw [s1234_length]; decide) i (by rw [s1234_length]; exact hi))
+  exact hm.trans (constMem_held 0x100000 x1234 (by rw [x1234_length]; decide) i (by rw [x1234_length]; exact hi))
 
 /-- A state satisfying the modes' precondition, with the chaining value
 readable (`ivw = false`) or writable. -/
@@ -1163,15 +1163,15 @@ theorem frameSat_arg (ivw : Bool) (j : Nat) (hj : j < 5) :
 with the working space as a sixth argument, under the calling convention with the table. -/
 abbrev fbK (sig : Sig) (pre : Curry (sig.words X86.abi.ptrBits) (Mem → Prop)) (post : sig.Post X86.abi.ptrBits) :
     Contract isa :=
-  Sig.scratchContract (X86.abi.withConsts ecbConsts) sig "scratch" .u64 38 pre post true 4
+  Sig.scratchContract (X86.abi.withConsts xEcbConsts) sig "scratch" .u64 38 pre post true 4
 
 theorem ofb_pre {post : Spec.Cast5.ofbSig.Post X86.abi.ptrBits} (s : State)
     (h : (fbK Spec.Cast5.ofbSig (Spec.Cast5.ofbPre X86.abi.ptrBits) post).pre s) :
     MPre true (s.withRegions (rdL true s) (wrL true s)) ∧ s.rd = [keyA s, tabA s] ∧
       s.wr = [ivA s, ⟨(arg s 3).setWidth 64, (arg s 4).toNat * 8⟩, scrA s, argsA s] := by
   sig_pre [Sig.scratchContract, Sig.withScratch, Spec.Cast5.ofbSig, Spec.Cast5.ofbPre, X86.abi, X86.argSlots,
-    X86.argVal, X86.argBytes, ecbConsts_eq, Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow,
-    s1234_length, Curry.withScratch] at h
+    X86.argVal, X86.argBytes, xEcbConsts_eq, Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow,
+    x1234_length, Curry.withScratch] at h
   obtain ⟨h4, hsp, hdrop, held, fitT, dTw, -, dTB, -, htake, hwr, dKV, dKD, dKS, -, dVD, dVS, dVA, dDS, dDA, dSA,
     -, dRV, dRD, dRS, -, dBK, dBV, dBD, dBS, -, fK, fV, fD, fS, nv⟩ := h
   have hrd : s.rd = [keyA s, tabA s] := by
@@ -1185,7 +1185,7 @@ theorem ofb_pre {post : Spec.Cast5.ofbSig.Post X86.abi.ptrBits} (s : State)
   have mS : scrA s ∈ s.wr := by
     rw [hwr]; exact List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self)
   refine ⟨⟨rfl, rfl, h4, (by show (s.gpr .esp).toNat + 28 ≤ 2 ^ 32; omega_using [hsp]), nv, fK, fV, fD, fS, fitT,
-    (fun i hi => held i (by rw [s1234_length] at hi; exact hi)), dDS, dVS, (fun _ => dVD),
+    (fun i hi => held i (by rw [x1234_length] at hi; exact hi)), dDS, dVS, (fun _ => dVD),
     (fun r hr => ?_), (fun r hr => ?_), (fun r hr => ?_), (fun r hr => ?_), (fun r hr => ?_),
     (by show Region.Disjoint _ (below (s.gpr .esp) 4); rw [be]; exact dBK.symm),
     (by show Region.Disjoint _ (below (s.gpr .esp) 4); rw [be]; exact dTB)⟩, hrd,
@@ -1216,7 +1216,7 @@ theorem ofb_pub {post : Spec.Cast5.ofbSig.Post X86.abi.ptrBits} {postX : State �
     (modeX true postX).pub (s₁.withRegions (rdL true s₁) (wrL true s₁))
       (s₂.withRegions (rdL true s₂) (wrL true s₂)) := by
   sig_pub [Sig.scratchContract, Sig.withScratch, Spec.Cast5.ofbSig, X86.abi, X86.argSlots, X86.argVal,
-    X86.argBytes, ecbConsts_eq, Abi.withConsts, Curry.withScratch] at h
+    X86.argBytes, xEcbConsts_eq, Abi.withConsts, Curry.withScratch] at h
   obtain ⟨hsp, hsy, h0, h1, h2, h3, h4, h5⟩ := h
   refine ⟨hsp, fun i hi => ?_, hsy⟩
   rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 by omega_using [hi]) with rfl | rfl | rfl | rfl | rfl | rfl
@@ -1265,11 +1265,11 @@ theorem ofb_sat {post : Spec.Cast5.ofbSig.Post X86.abi.ptrBits} :
   have held := satMem_held
   generalize e : satState true = s
   sig_pre [Sig.scratchContract, Sig.withScratch, Spec.Cast5.ofbSig, Spec.Cast5.ofbPre, X86.abi, X86.argSlots,
-    X86.argVal, X86.argBytes, ecbConsts_eq, Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow,
-    s1234_length, Curry.withScratch]
+    X86.argVal, X86.argBytes, xEcbConsts_eq, Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow,
+    x1234_length, Curry.withScratch]
   subst s
   rw [a0, a1, a2, a3, a4, a5]
-  refine ⟨by decide, by decide, rfl, fun i hi => held i (by rw [s1234_length]; exact hi), by decide, ?_, ?_⟩
+  refine ⟨by decide, by decide, rfl, fun i hi => held i (by rw [x1234_length]; exact hi), by decide, ?_, ?_⟩
   · intro r hr
     change r ∈ [⟨0x2000, 8⟩, ⟨0x3000, 0⟩, ⟨0x4000, 304⟩, ⟨0x8004, 24⟩] at hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -1278,7 +1278,7 @@ theorem ofb_sat {post : Spec.Cast5.ofbSig.Post X86.abi.ptrBits} :
     all_goals first | exact Region.disjoint_of_sep (by decide) | decide | rfl | exact Or.inr rfl
 
 theorem ofb_frameSat (post : Spec.Cast5.ofbSig.Post X86.abi.ptrBits) :
-    ∃ s, (Spec.Cast5.ofbSig.contract (X86.abi.withConsts ecbConsts) (Spec.Cast5.ofbPre X86.abi.ptrBits) post true
+    ∃ s, (Spec.Cast5.ofbSig.contract (X86.abi.withConsts xEcbConsts) (Spec.Cast5.ofbPre X86.abi.ptrBits) post true
       336).pre s := by
   refine ⟨frameSat true, ?_⟩
   have a0 : arg (frameSat true) 0 = 0x1000 := (frameSat_arg true 0 (by decide)).trans (by decide)
@@ -1288,11 +1288,11 @@ theorem ofb_frameSat (post : Spec.Cast5.ofbSig.Post X86.abi.ptrBits) :
   have a4 : arg (frameSat true) 4 = 0 := (frameSat_arg true 4 (by decide)).trans (by decide)
   have held := satMem_held
   generalize e : frameSat true = s
-  sig_pre [Spec.Cast5.ofbSig, Spec.Cast5.ofbPre, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, ecbConsts_eq,
-    Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow, s1234_length]
+  sig_pre [Spec.Cast5.ofbSig, Spec.Cast5.ofbPre, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, xEcbConsts_eq,
+    Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow, x1234_length]
   subst s
   rw [a0, a1, a2, a3, a4]
-  refine ⟨by decide, by decide, rfl, fun i hi => held i (by rw [s1234_length]; exact hi), by decide, ?_, ?_⟩
+  refine ⟨by decide, by decide, rfl, fun i hi => held i (by rw [x1234_length]; exact hi), by decide, ?_, ?_⟩
   · intro r hr
     change r ∈ [⟨0x2000, 8⟩, ⟨0x3000, 0⟩, ⟨0x8004, 20⟩] at hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -1305,8 +1305,8 @@ theorem cfb_pre {post : Spec.Cast5.cfbSig.Post X86.abi.ptrBits} (s : State)
     MPre true (s.withRegions (rdL true s) (wrL true s)) ∧ s.rd = [keyA s, tabA s] ∧
       s.wr = [ivA s, ⟨(arg s 3).setWidth 64, (arg s 4).toNat * 8⟩, scrA s, argsA s] := by
   sig_pre [Sig.scratchContract, Sig.withScratch, Spec.Cast5.cfbSig, Spec.Cast5.cfbPre, X86.abi, X86.argSlots,
-    X86.argVal, X86.argBytes, ecbConsts_eq, Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow,
-    s1234_length, Curry.withScratch] at h
+    X86.argVal, X86.argBytes, xEcbConsts_eq, Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow,
+    x1234_length, Curry.withScratch] at h
   obtain ⟨h4, hsp, hdrop, held, fitT, dTw, -, dTB, -, htake, hwr, dKV, dKD, dKS, -, dVD, dVS, dVA, dDS, dDA, dSA,
     -, dRV, dRD, dRS, -, dBK, dBV, dBD, dBS, -, fK, fV, fD, fS, nv⟩ := h
   have hrd : s.rd = [keyA s, tabA s] := by
@@ -1320,7 +1320,7 @@ theorem cfb_pre {post : Spec.Cast5.cfbSig.Post X86.abi.ptrBits} (s : State)
   have mS : scrA s ∈ s.wr := by
     rw [hwr]; exact List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self)
   refine ⟨⟨rfl, rfl, h4, (by show (s.gpr .esp).toNat + 28 ≤ 2 ^ 32; omega_using [hsp]), nv, fK, fV, fD, fS, fitT,
-    (fun i hi => held i (by rw [s1234_length] at hi; exact hi)), dDS, dVS, (fun _ => dVD),
+    (fun i hi => held i (by rw [x1234_length] at hi; exact hi)), dDS, dVS, (fun _ => dVD),
     (fun r hr => ?_), (fun r hr => ?_), (fun r hr => ?_), (fun r hr => ?_), (fun r hr => ?_),
     (by show Region.Disjoint _ (below (s.gpr .esp) 4); rw [be]; exact dBK.symm),
     (by show Region.Disjoint _ (below (s.gpr .esp) 4); rw [be]; exact dTB)⟩, hrd,
@@ -1351,7 +1351,7 @@ theorem cfb_pub {post : Spec.Cast5.cfbSig.Post X86.abi.ptrBits} {postX : State �
     (modeX true postX).pub (s₁.withRegions (rdL true s₁) (wrL true s₁))
       (s₂.withRegions (rdL true s₂) (wrL true s₂)) := by
   sig_pub [Sig.scratchContract, Sig.withScratch, Spec.Cast5.cfbSig, X86.abi, X86.argSlots, X86.argVal,
-    X86.argBytes, ecbConsts_eq, Abi.withConsts, Curry.withScratch] at h
+    X86.argBytes, xEcbConsts_eq, Abi.withConsts, Curry.withScratch] at h
   obtain ⟨hsp, hsy, h0, h1, h2, h3, h4, h5⟩ := h
   refine ⟨hsp, fun i hi => ?_, hsy⟩
   rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 by omega_using [hi]) with rfl | rfl | rfl | rfl | rfl | rfl
@@ -1400,11 +1400,11 @@ theorem cfb_sat {post : Spec.Cast5.cfbSig.Post X86.abi.ptrBits} :
   have held := satMem_held
   generalize e : satState true = s
   sig_pre [Sig.scratchContract, Sig.withScratch, Spec.Cast5.cfbSig, Spec.Cast5.cfbPre, X86.abi, X86.argSlots,
-    X86.argVal, X86.argBytes, ecbConsts_eq, Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow,
-    s1234_length, Curry.withScratch]
+    X86.argVal, X86.argBytes, xEcbConsts_eq, Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow,
+    x1234_length, Curry.withScratch]
   subst s
   rw [a0, a1, a2, a3, a4, a5]
-  refine ⟨by decide, by decide, rfl, fun i hi => held i (by rw [s1234_length]; exact hi), by decide, ?_, ?_⟩
+  refine ⟨by decide, by decide, rfl, fun i hi => held i (by rw [x1234_length]; exact hi), by decide, ?_, ?_⟩
   · intro r hr
     change r ∈ [⟨0x2000, 8⟩, ⟨0x3000, 0⟩, ⟨0x4000, 304⟩, ⟨0x8004, 24⟩] at hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -1413,7 +1413,7 @@ theorem cfb_sat {post : Spec.Cast5.cfbSig.Post X86.abi.ptrBits} :
     all_goals first | exact Region.disjoint_of_sep (by decide) | decide | rfl | exact Or.inr rfl
 
 theorem cfb_frameSat (post : Spec.Cast5.cfbSig.Post X86.abi.ptrBits) :
-    ∃ s, (Spec.Cast5.cfbSig.contract (X86.abi.withConsts ecbConsts) (Spec.Cast5.cfbPre X86.abi.ptrBits) post true
+    ∃ s, (Spec.Cast5.cfbSig.contract (X86.abi.withConsts xEcbConsts) (Spec.Cast5.cfbPre X86.abi.ptrBits) post true
       336).pre s := by
   refine ⟨frameSat true, ?_⟩
   have a0 : arg (frameSat true) 0 = 0x1000 := (frameSat_arg true 0 (by decide)).trans (by decide)
@@ -1423,11 +1423,11 @@ theorem cfb_frameSat (post : Spec.Cast5.cfbSig.Post X86.abi.ptrBits) :
   have a4 : arg (frameSat true) 4 = 0 := (frameSat_arg true 4 (by decide)).trans (by decide)
   have held := satMem_held
   generalize e : frameSat true = s
-  sig_pre [Spec.Cast5.cfbSig, Spec.Cast5.cfbPre, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, ecbConsts_eq,
-    Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow, s1234_length]
+  sig_pre [Spec.Cast5.cfbSig, Spec.Cast5.cfbPre, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, xEcbConsts_eq,
+    Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow, x1234_length]
   subst s
   rw [a0, a1, a2, a3, a4]
-  refine ⟨by decide, by decide, rfl, fun i hi => held i (by rw [s1234_length]; exact hi), by decide, ?_, ?_⟩
+  refine ⟨by decide, by decide, rfl, fun i hi => held i (by rw [x1234_length]; exact hi), by decide, ?_, ?_⟩
   · intro r hr
     change r ∈ [⟨0x2000, 8⟩, ⟨0x3000, 0⟩, ⟨0x8004, 20⟩] at hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -1441,14 +1441,14 @@ theorem ofb_verified :
       (fbK Spec.Cast5.ofbSig (Spec.Cast5.ofbPre X86.abi.ptrBits) (Proof.Cast5.ofbPost X86.abi.ptrBits)) :=
   ofbK_verified (fun _ hs => ofb_wp_x86 hs) ofb_ct (fun s s' _ h => by
       sig_post [Sig.scratchContract, Sig.withScratch, Spec.Cast5.ofbSig, Proof.Cast5.ofbPost, X86.abi,
-        X86.argSlots, X86.argVal, X86.argBytes, ecbConsts_eq, Abi.withConsts, Curry.withScratch]
+        X86.argSlots, X86.argVal, X86.argBytes, xEcbConsts_eq, Abi.withConsts, Curry.withScratch]
       exact h) ⟨_, ofb_sat⟩
 
 /-- `ofb` with its working space on the stack. -/
 theorem ofb_framed :
     Verified X86.target (Impl.StackScratch.X86.withStackScratchWiped 332 5 76 ofb)
-      (Proof.Cast5.ofbRoundsContract (X86.abi.withConsts ecbConsts) 336) :=
-  X86.Verified.stackScratchWipedC (c₀ := (s1234Sym, s1234)) (cs := []) (sig := Spec.Cast5.ofbSig)
+      (Proof.Cast5.ofbRoundsContract (X86.abi.withConsts xEcbConsts) 336) :=
+  X86.Verified.stackScratchWipedC (c₀ := (x1234Sym, x1234)) (cs := []) (sig := Spec.Cast5.ofbSig)
     (nm := "scratch") (e := .u64) (n := 38) (pre := Spec.Cast5.ofbPre X86.abi.ptrBits)
     (post := Proof.Cast5.ofbPost X86.abi.ptrBits) (wa := true) (stack := 4) (bytes := 332)
     ofb_verified (by decide) (by lit_decide) (by lit_decide) (by decide)
@@ -1460,14 +1460,14 @@ theorem cfbEncrypt_verified :
       (fbK Spec.Cast5.cfbSig (Spec.Cast5.cfbPre X86.abi.ptrBits) (Proof.Cast5.cfbEncPost X86.abi.ptrBits)) :=
   cfbK_verified (fun _ hs => cfbEncrypt_wp hs) cfbEncrypt_ct (fun s s' _ h => by
       sig_post [Sig.scratchContract, Sig.withScratch, Spec.Cast5.cfbSig, Proof.Cast5.cfbEncPost, X86.abi,
-        X86.argSlots, X86.argVal, X86.argBytes, ecbConsts_eq, Abi.withConsts, Curry.withScratch]
+        X86.argSlots, X86.argVal, X86.argBytes, xEcbConsts_eq, Abi.withConsts, Curry.withScratch]
       exact h) ⟨_, cfb_sat⟩
 
 /-- `cfbEncrypt` with its working space on the stack. -/
 theorem cfbEncrypt_framed :
     Verified X86.target (Impl.StackScratch.X86.withStackScratchWiped 332 5 76 cfbEncrypt)
-      (Proof.Cast5.cfbEncryptRoundsContract (X86.abi.withConsts ecbConsts) 336) :=
-  X86.Verified.stackScratchWipedC (c₀ := (s1234Sym, s1234)) (cs := []) (sig := Spec.Cast5.cfbSig)
+      (Proof.Cast5.cfbEncryptRoundsContract (X86.abi.withConsts xEcbConsts) 336) :=
+  X86.Verified.stackScratchWipedC (c₀ := (x1234Sym, x1234)) (cs := []) (sig := Spec.Cast5.cfbSig)
     (nm := "scratch") (e := .u64) (n := 38) (pre := Spec.Cast5.cfbPre X86.abi.ptrBits)
     (post := Proof.Cast5.cfbEncPost X86.abi.ptrBits) (wa := true) (stack := 4) (bytes := 332)
     cfbEncrypt_verified (by decide) (by lit_decide) (by lit_decide) (by decide)
@@ -1479,14 +1479,14 @@ theorem cfbDecrypt_verified :
       (fbK Spec.Cast5.cfbSig (Spec.Cast5.cfbPre X86.abi.ptrBits) (Proof.Cast5.cfbDecPost X86.abi.ptrBits)) :=
   cfbK_verified (fun _ hs => cfbDecrypt_wp hs) cfbDecrypt_ct (fun s s' _ h => by
       sig_post [Sig.scratchContract, Sig.withScratch, Spec.Cast5.cfbSig, Proof.Cast5.cfbDecPost, X86.abi,
-        X86.argSlots, X86.argVal, X86.argBytes, ecbConsts_eq, Abi.withConsts, Curry.withScratch]
+        X86.argSlots, X86.argVal, X86.argBytes, xEcbConsts_eq, Abi.withConsts, Curry.withScratch]
       exact h) ⟨_, cfb_sat⟩
 
 /-- `cfbDecrypt` with its working space on the stack. -/
 theorem cfbDecrypt_framed :
     Verified X86.target (Impl.StackScratch.X86.withStackScratchWiped 332 5 76 cfbDecrypt)
-      (Proof.Cast5.cfbDecryptRoundsContract (X86.abi.withConsts ecbConsts) 336) :=
-  X86.Verified.stackScratchWipedC (c₀ := (s1234Sym, s1234)) (cs := []) (sig := Spec.Cast5.cfbSig)
+      (Proof.Cast5.cfbDecryptRoundsContract (X86.abi.withConsts xEcbConsts) 336) :=
+  X86.Verified.stackScratchWipedC (c₀ := (x1234Sym, x1234)) (cs := []) (sig := Spec.Cast5.cfbSig)
     (nm := "scratch") (e := .u64) (n := 38) (pre := Spec.Cast5.cfbPre X86.abi.ptrBits)
     (post := Proof.Cast5.cfbDecPost X86.abi.ptrBits) (wa := true) (stack := 4) (bytes := 332)
     cfbDecrypt_verified (by decide) (by lit_decide) (by lit_decide) (by decide)
@@ -1500,8 +1500,8 @@ theorem cbcC_pre {post : Spec.Cast5.cbcChainedSig.Post X86.abi.ptrBits} (s : Sta
     MPre true (s.withRegions (rdL true s) (wrL true s)) ∧ s.rd = [keyA s, tabA s] ∧
       s.wr = [ivA s, ⟨(arg s 3).setWidth 64, (arg s 4).toNat * 8⟩, scrA s, argsA s] := by
   sig_pre [Sig.scratchContract, Sig.withScratch, Spec.Cast5.cbcChainedSig, Proof.Cast5.cbcChainedPre, X86.abi, X86.argSlots,
-    X86.argVal, X86.argBytes, ecbConsts_eq, Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow,
-    s1234_length, Curry.withScratch] at h
+    X86.argVal, X86.argBytes, xEcbConsts_eq, Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow,
+    x1234_length, Curry.withScratch] at h
   obtain ⟨h4, hsp, hdrop, held, fitT, dTw, -, dTB, -, htake, hwr, dKV, dKD, dKS, -, dVD, dVS, dVA, dDS, dDA, dSA,
     -, dRV, dRD, dRS, -, dBK, dBV, dBD, dBS, -, fK, fV, fD, fS, nv⟩ := h
   have hrd : s.rd = [keyA s, tabA s] := by
@@ -1515,7 +1515,7 @@ theorem cbcC_pre {post : Spec.Cast5.cbcChainedSig.Post X86.abi.ptrBits} (s : Sta
   have mS : scrA s ∈ s.wr := by
     rw [hwr]; exact List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self)
   refine ⟨⟨rfl, rfl, h4, (by show (s.gpr .esp).toNat + 28 ≤ 2 ^ 32; omega_using [hsp]), nv, fK, fV, fD, fS, fitT,
-    (fun i hi => held i (by rw [s1234_length] at hi; exact hi)), dDS, dVS, (fun _ => dVD),
+    (fun i hi => held i (by rw [x1234_length] at hi; exact hi)), dDS, dVS, (fun _ => dVD),
     (fun r hr => ?_), (fun r hr => ?_), (fun r hr => ?_), (fun r hr => ?_), (fun r hr => ?_),
     (by show Region.Disjoint _ (below (s.gpr .esp) 4); rw [be]; exact dBK.symm),
     (by show Region.Disjoint _ (below (s.gpr .esp) 4); rw [be]; exact dTB)⟩, hrd,
@@ -1546,7 +1546,7 @@ theorem cbcC_pub {post : Spec.Cast5.cbcChainedSig.Post X86.abi.ptrBits} {postX :
     (modeX true postX).pub (s₁.withRegions (rdL true s₁) (wrL true s₁))
       (s₂.withRegions (rdL true s₂) (wrL true s₂)) := by
   sig_pub [Sig.scratchContract, Sig.withScratch, Spec.Cast5.cbcChainedSig, X86.abi, X86.argSlots, X86.argVal,
-    X86.argBytes, ecbConsts_eq, Abi.withConsts, Curry.withScratch] at h
+    X86.argBytes, xEcbConsts_eq, Abi.withConsts, Curry.withScratch] at h
   obtain ⟨hsp, hsy, h0, h1, h2, h3, h4, h5⟩ := h
   refine ⟨hsp, fun i hi => ?_, hsy⟩
   rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 by omega_using [hi]) with rfl | rfl | rfl | rfl | rfl | rfl
@@ -1595,11 +1595,11 @@ theorem cbcC_sat {post : Spec.Cast5.cbcChainedSig.Post X86.abi.ptrBits} :
   have held := satMem_held
   generalize e : satState true = s
   sig_pre [Sig.scratchContract, Sig.withScratch, Spec.Cast5.cbcChainedSig, Proof.Cast5.cbcChainedPre, X86.abi, X86.argSlots,
-    X86.argVal, X86.argBytes, ecbConsts_eq, Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow,
-    s1234_length, Curry.withScratch]
+    X86.argVal, X86.argBytes, xEcbConsts_eq, Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow,
+    x1234_length, Curry.withScratch]
   subst s
   rw [a0, a1, a2, a3, a4, a5]
-  refine ⟨by decide, by decide, rfl, fun i hi => held i (by rw [s1234_length]; exact hi), by decide, ?_, ?_⟩
+  refine ⟨by decide, by decide, rfl, fun i hi => held i (by rw [x1234_length]; exact hi), by decide, ?_, ?_⟩
   · intro r hr
     change r ∈ [⟨0x2000, 8⟩, ⟨0x3000, 0⟩, ⟨0x4000, 304⟩, ⟨0x8004, 24⟩] at hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -1608,7 +1608,7 @@ theorem cbcC_sat {post : Spec.Cast5.cbcChainedSig.Post X86.abi.ptrBits} :
     all_goals first | exact Region.disjoint_of_sep (by decide) | decide | rfl | exact Or.inr rfl
 
 theorem cbcC_frameSat (post : Spec.Cast5.cbcChainedSig.Post X86.abi.ptrBits) :
-    ∃ s, (Spec.Cast5.cbcChainedSig.contract (X86.abi.withConsts ecbConsts) (Proof.Cast5.cbcChainedPre X86.abi.ptrBits) post true
+    ∃ s, (Spec.Cast5.cbcChainedSig.contract (X86.abi.withConsts xEcbConsts) (Proof.Cast5.cbcChainedPre X86.abi.ptrBits) post true
       336).pre s := by
   refine ⟨frameSat true, ?_⟩
   have a0 : arg (frameSat true) 0 = 0x1000 := (frameSat_arg true 0 (by decide)).trans (by decide)
@@ -1618,11 +1618,11 @@ theorem cbcC_frameSat (post : Spec.Cast5.cbcChainedSig.Post X86.abi.ptrBits) :
   have a4 : arg (frameSat true) 4 = 0 := (frameSat_arg true 4 (by decide)).trans (by decide)
   have held := satMem_held
   generalize e : frameSat true = s
-  sig_pre [Spec.Cast5.cbcChainedSig, Proof.Cast5.cbcChainedPre, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, ecbConsts_eq,
-    Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow, s1234_length]
+  sig_pre [Spec.Cast5.cbcChainedSig, Proof.Cast5.cbcChainedPre, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, xEcbConsts_eq,
+    Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow, x1234_length]
   subst s
   rw [a0, a1, a2, a3, a4]
-  refine ⟨by decide, by decide, rfl, fun i hi => held i (by rw [s1234_length]; exact hi), by decide, ?_, ?_⟩
+  refine ⟨by decide, by decide, rfl, fun i hi => held i (by rw [x1234_length]; exact hi), by decide, ?_, ?_⟩
   · intro r hr
     change r ∈ [⟨0x2000, 8⟩, ⟨0x3000, 0⟩, ⟨0x8004, 20⟩] at hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -1636,14 +1636,14 @@ theorem cbcEncryptChained_verified :
         (Proof.Cast5.cbcEncChainedPost X86.abi.ptrBits)) :=
   cbcK_verified (fun _ hs => cbcEncryptChained_wp hs) cbcEncryptChained_ct (fun s s' _ h => by
       sig_post [Sig.scratchContract, Sig.withScratch, Spec.Cast5.cbcChainedSig, Proof.Cast5.cbcEncChainedPost,
-        X86.abi, X86.argSlots, X86.argVal, X86.argBytes, ecbConsts_eq, Abi.withConsts, Curry.withScratch]
+        X86.abi, X86.argSlots, X86.argVal, X86.argBytes, xEcbConsts_eq, Abi.withConsts, Curry.withScratch]
       exact h) ⟨_, cbcC_sat⟩
 
 /-- `cbcEncryptChained` with its working space on the stack. -/
 theorem cbcEncryptChained_framed :
     Verified X86.target (Impl.StackScratch.X86.withStackScratchWiped 332 5 76 cbcEncryptChained)
-      (Proof.Cast5.cbcEncryptChainedRoundsContract (X86.abi.withConsts ecbConsts) 336) :=
-  X86.Verified.stackScratchWipedC (c₀ := (s1234Sym, s1234)) (cs := []) (sig := Spec.Cast5.cbcChainedSig)
+      (Proof.Cast5.cbcEncryptChainedRoundsContract (X86.abi.withConsts xEcbConsts) 336) :=
+  X86.Verified.stackScratchWipedC (c₀ := (x1234Sym, x1234)) (cs := []) (sig := Spec.Cast5.cbcChainedSig)
     (nm := "scratch") (e := .u64) (n := 38) (pre := Proof.Cast5.cbcChainedPre X86.abi.ptrBits)
     (post := Proof.Cast5.cbcEncChainedPost X86.abi.ptrBits) (wa := true) (stack := 4) (bytes := 332)
     cbcEncryptChained_verified (by decide) (by lit_decide) (by lit_decide) (by decide)
@@ -1656,14 +1656,14 @@ theorem cbcDecryptChained_verified :
         (Proof.Cast5.cbcDecChainedPost X86.abi.ptrBits)) :=
   cbcK_verified (fun _ hs => cbcDecryptChained_wp hs) cbcDecryptChained_ct (fun s s' _ h => by
       sig_post [Sig.scratchContract, Sig.withScratch, Spec.Cast5.cbcChainedSig, Proof.Cast5.cbcDecChainedPost,
-        X86.abi, X86.argSlots, X86.argVal, X86.argBytes, ecbConsts_eq, Abi.withConsts, Curry.withScratch]
+        X86.abi, X86.argSlots, X86.argVal, X86.argBytes, xEcbConsts_eq, Abi.withConsts, Curry.withScratch]
       exact h) ⟨_, cbcC_sat⟩
 
 /-- `cbcDecryptChained` with its working space on the stack. -/
 theorem cbcDecryptChained_framed :
     Verified X86.target (Impl.StackScratch.X86.withStackScratchWiped 332 5 76 cbcDecryptChained)
-      (Proof.Cast5.cbcDecryptChainedRoundsContract (X86.abi.withConsts ecbConsts) 336) :=
-  X86.Verified.stackScratchWipedC (c₀ := (s1234Sym, s1234)) (cs := []) (sig := Spec.Cast5.cbcChainedSig)
+      (Proof.Cast5.cbcDecryptChainedRoundsContract (X86.abi.withConsts xEcbConsts) 336) :=
+  X86.Verified.stackScratchWipedC (c₀ := (x1234Sym, x1234)) (cs := []) (sig := Spec.Cast5.cbcChainedSig)
     (nm := "scratch") (e := .u64) (n := 38) (pre := Proof.Cast5.cbcChainedPre X86.abi.ptrBits)
     (post := Proof.Cast5.cbcDecChainedPost X86.abi.ptrBits) (wa := true) (stack := 4) (bytes := 332)
     cbcDecryptChained_verified (by decide) (by lit_decide) (by lit_decide) (by decide)

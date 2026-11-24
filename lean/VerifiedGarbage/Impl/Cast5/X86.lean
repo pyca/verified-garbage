@@ -9,14 +9,18 @@ public import VerifiedGarbage.Impl.Cast5.Lines
 
 As on x86-64 (`Impl/Cast5/X86_64.lean`), a lookup in an S-box never uses a
 secret as an address: the four lookups of a round function are made at once by
-a *scan* of the static table `VG_CAST5_S1234` (or `VG_CAST5_S5678` in key
-expansion), 256 entries of 16 bytes, in SSE2 registers: the indices are the
-four dword lanes of `xmm0`, and every entry is loaded, in order, ANDed with a
-mask that is all ones in the lanes whose index it is and ORed into the result,
-`xmm1`. The model's SSE2 has no `pcmpeqd`, so the mask of entry `j` is built
-from `d = idx ^ j`, which is below 256: `d - 1` shifted right by 8 is
-`0x00FFFFFF` if `d = 0` and `0` otherwise, and ORed with itself shifted left
-by 8 it is all ones or nothing.
+a *scan* of a static table (`VG_CAST5_S1234_STEPS`, or `VG_CAST5_S5678_STEPS` in
+key expansion) of 256 entries of 16 bytes, in SSE2 registers: the indices are the
+four dword lanes of `xmm0`, and every entry is loaded, in order.
+
+The tables are not the S-boxes, but what makes a scan of them cheap, with no
+mask for each entry. In each S-box, a group of four entries holds the change from
+the group before (`dif`), so that the entry at `i` is the XOR of the `i mod 4`th
+changes of the groups `0, …, i / 4`; and not as the four changes but as the
+coefficients of the polynomial over GF(2) whose values they are, in the two bits
+of `i mod 4` (`stepAt`). Evaluating it takes a `pand` with a mask of a bit, made
+once, and a `pxor` for each coefficient, and a group counts if `i / 4` less its
+number is not negative, which the sign bits of its words say.
 
 The rotation by the secret amount `Kr` (§2.2) is five rotations by 1, 2, 4, 8
 and 16, each kept or not by a mask made from a bit of `Kr` (`rotate`).
@@ -38,34 +42,82 @@ def at_ (base : Reg) (offset : Nat) : MemOp := { base, disp := offset }
 /-- An immediate. -/
 def imm (n : Nat) : Src := .imm (BitVec.ofNat 32 n)
 
+/-! ## The tables -/
+
+/-- What entry `n` adds to entry `n - 4`. -/
+def dif (g : Nat → Spec.Cast5.Word) (n : Nat) : Spec.Cast5.Word := if n < 4 then g n else g n ^^^ g (n - 4)
+
+/-- Entry `n` of the scanned table of the entries `g`: of each group of four
+entries' `dif`s, the coefficients of the polynomial in the bits of the number in
+the group, `c₀ ^ b₀ c₁ ^ b₁ (c₂ ^ b₀ c₃)`. -/
+def stepAt (g : Nat → Spec.Cast5.Word) (n : Nat) : Spec.Cast5.Word :=
+  match n % 4 with
+  | 0 => dif g n
+  | 1 => dif g (n - 1) ^^^ dif g n
+  | 2 => dif g (n - 2) ^^^ dif g n
+  | _ => dif g (n - 3) ^^^ dif g (n - 2) ^^^ (dif g (n - 1) ^^^ dif g n)
+
+/-- The scanned table of an S-box. -/
+def steps (f : Byte → Spec.Cast5.Word) (x : Byte) : Spec.Cast5.Word :=
+  stepAt (fun n => f (BitVec.ofNat 8 n)) x.toNat
+
+/-- The steps of `S4, S3, S2, S1`. -/
+def x1234 : List (BitVec 64) :=
+  table (steps Spec.Cast5.S4) (steps Spec.Cast5.S3) (steps Spec.Cast5.S2) (steps Spec.Cast5.S1)
+
+/-- The steps of `S8, S7, S6, S5`. -/
+def x5678 : List (BitVec 64) :=
+  table (steps Spec.Cast5.S8) (steps Spec.Cast5.S7) (steps Spec.Cast5.S6) (steps Spec.Cast5.S5)
+
+def x1234Sym : String := "VG_CAST5_S1234_STEPS"
+def x5678Sym : String := "VG_CAST5_S5678_STEPS"
+
+/-- The tables the ECB functions and the modes read. -/
+def xEcbConsts : List (String × List (BitVec 64)) := [(x1234Sym, x1234)]
+
+/-- The tables key expansion reads. -/
+def xKeyConsts : List (String × List (BitVec 64)) := [(x5678Sym, x5678)]
+
 /-! ## The scan -/
 
-/-- Entry `e` of the four at `ecx`: its mask, from the indices in `xmm0`, the
-entry's number in every lane of `xmm2` and all ones in `xmm6`, ANDed with it
-and ORed into `xmm1`; then the next number (`xmm3` is one in every lane). -/
-def scanEntry (e : Nat) : List Instr :=
-  [.xop (.bin .movdqa .xmm4 .xmm0), .xop (.bin .pxor .xmm4 .xmm2), .xop (.bin .paddd .xmm4 .xmm6),
-   .xop (.shift .psrld .xmm4 8), .xop (.bin .movdqa .xmm7 .xmm4), .xop (.shift .pslld .xmm7 8),
-   .xop (.bin .por .xmm4 .xmm7),
-   .movdquLoad .xmm5 (at_ .ecx (16 * e)), .xop (.bin .pand .xmm5 .xmm4),
-   .xop (.bin .por .xmm1 .xmm5), .xop (.bin .paddd .xmm2 .xmm3)]
+/-- An XMM operation `d := d op r`. -/
+def xb (op : XBinOp) (d r : XReg) : Instr := .xop (.bin op d r)
 
-/-- Four entries, then on to the next four (ZF is set after the last). -/
+/-- The coefficient `c₂ ^ b₀ c₃` or `c₀ ^ b₀ c₁` at `ecx + d`, in `x`, `xmm6`
+holding `b₀`. -/
+def pair (x y : XReg) (d : Nat) : List Instr :=
+  [.movdquLoad x (at_ .ecx d), .movdquLoad y (at_ .ecx (d + 16)), xb .pand y .xmm6, xb .pxor x y]
+
+/-- Group `e` of the four at `ecx`: its polynomial's value at the low two bits of
+the index (`xmm6`, `xmm7`) XORed into `xmm1` unless the index's other bits less
+the number of groups before it (`xmm0`) are negative; then that less one. -/
+def scanGroup (e : Nat) : List Instr :=
+  pair .xmm2 .xmm3 (64 * e) ++ pair .xmm3 .xmm4 (64 * e + 32) ++
+    [xb .pand .xmm3 .xmm7, xb .pxor .xmm2 .xmm3,
+     xb .movdqa .xmm3 .xmm0, .xop (.shift .psraw .xmm3 15), xb .pandn .xmm3 .xmm2, xb .pxor .xmm1 .xmm3,
+     xb .paddd .xmm0 .xmm5]
+
+/-- Four groups, then on to the next four (ZF is set after the last). -/
 def scanBody : List Instr :=
-  (List.range 4).flatMap scanEntry ++ ([.alu .add .ecx (imm 64), .alu .sub .edx (imm 1)] : List Instr)
+  (List.range 4).flatMap scanGroup ++ ([.alu .add .ecx (imm 256), .alu .sub .edx (imm 1)] : List Instr)
 
-/-- The setup of a scan, the table's address in `eax`: the table in `ecx`, 64
-groups of four entries to go in `edx`, nothing found yet, entry 0 next, one
-and all ones in every lane of `xmm3` and `xmm6`. -/
+/-- `x` := all ones in the lanes of `xmm0` whose bit `b` is set, nothing in the
+others; `xmm5` is all ones. -/
+def bitMask (x : XReg) (b : Nat) : List Instr :=
+  [xb .movdqa x .xmm0, .xop (.shift .pslld x (BitVec.ofNat 8 (31 - b))), .xop (.shift .psrld x 31),
+   xb .paddd x .xmm5, xb .pxor x .xmm5]
+
+/-- The setup of a scan, the table's address in `eax`: the table in `ecx`, 16
+times four groups to go in `edx`, all ones in `xmm5`, the masks of the index's
+low two bits, its other bits in `xmm0`, and nothing found yet. -/
 def scanStart : List Instr :=
-  [.mov .ecx (.reg .eax), .mov .edx (imm 64), .xop (.bin .pxor .xmm1 .xmm1),
-   .xop (.bin .pxor .xmm2 .xmm2), .mov .eax (imm 1), .xop (.movd .xmm3 .eax),
-   .xop (.pshufd .xmm3 .xmm3 0), .mov .eax (imm 0xFFFFFFFF), .xop (.movd .xmm6 .eax),
-   .xop (.pshufd .xmm6 .xmm6 0)]
+  [.mov .ecx (.reg .eax), .mov .edx (imm 16), .mov .eax (imm 0xFFFFFFFF), .xop (.movd .xmm5 .eax),
+   .xop (.pshufd .xmm5 .xmm5 0)] ++ bitMask .xmm6 0 ++ bitMask .xmm7 1 ++
+  [.xop (.shift .psrld .xmm0 2), xb .pxor .xmm1 .xmm1]
 
 /-- The table `sym` at the indices in the lanes of `xmm0` (each less than
-256), into the lanes of `xmm1`. Clobbers `eax`, `ecx`, `edx`, `xmm1`–`xmm7`
-but `xmm0`, the flags, and the word below `esp`. -/
+256), into the lanes of `xmm1`. Clobbers `eax`, `ecx`, `edx`, the XMM
+registers, the flags, and the word below `esp`. -/
 def scan (sym : String) : Prog isa :=
   .seq (.frame (.symPush .eax sym) (.block []) (.pop .ecx 1))
     (.seq (.block scanStart) (.loop (.block scanBody) .ne))
@@ -148,8 +200,8 @@ def roundWith (lk : Prog isa) (t : Nat) (up : Bool) : Prog isa :=
     (.seq lk
       (.block (([.movdquStore (at_ .esi 0) .xmm1] : List Instr) ++ combine t ++ feistel up)))
 
-/-- A round of Type `t`, its look-ups the scan of `VG_CAST5_S1234`. -/
-def round (t : Nat) (up : Bool) : Prog isa := roundWith (scan s1234Sym) t up
+/-- A round of Type `t`, its look-ups the scan of `VG_CAST5_S1234_STEPS`. -/
+def round (t : Nat) (up : Bool) : Prog isa := roundWith (scan x1234Sym) t up
 
 /-- Three rounds, of Types 1, 2 and 3 (encryption) or 3, 2 and 1
 (decryption), then the count of groups left down (ZF set at 0). -/
@@ -158,7 +210,7 @@ def groupWith (lk : Prog isa) (up : Bool) : Prog isa :=
     (.seq (roundWith lk (if up then 3 else 1) up)
       (.block [.mov .edx (.mem (at_ .esi gcOff)), .alu .sub .edx (imm 1), .store (at_ .esi gcOff) .edx])))
 
-def group (up : Bool) : Prog isa := groupWith (scan s1234Sym) up
+def group (up : Bool) : Prog isa := groupWith (scan x1234Sym) up
 
 /-- The count of groups, `rounds / 4 + 1`: 4 for 12 rounds, 5 for 16; ZF set
 if `rounds` is 16. -/
@@ -176,7 +228,7 @@ def encryptBlockWith (lk : Prog isa) : Prog isa :=
       (.seq (.block [.mov .ecx (.mem (at_ .esi roundsOff)), .alu .cmp .ecx (imm 16)])
         (.ite .e (roundWith lk 1 true) (.block []))))
 
-def encryptBlock : Prog isa := encryptBlockWith (scan s1234Sym)
+def encryptBlock : Prog isa := encryptBlockWith (scan x1234Sym)
 
 /-- Decrypting the block in `(ebx, ebp)`: round 16 if there are 16, then the
 rest in groups of three, down from the last; the subkeys' pointer starts at
@@ -189,7 +241,7 @@ def decryptBlockWith (lk : Prog isa) : Prog isa :=
     (.seq (.ite .e (roundWith lk 1 false) (.block []))
       (.loop (groupWith lk false) .ne))
 
-def decryptBlock : Prog isa := decryptBlockWith (scan s1234Sym)
+def decryptBlock : Prog isa := decryptBlockWith (scan x1234Sym)
 
 /-- The block at the data slot into `(ebx, ebp)` = `(L₀, R₀)`. -/
 def load : List Instr :=
@@ -254,7 +306,7 @@ def extraOff : Nat := 48
 /-- Where key expansion saves the callee-saved registers. -/
 def keySavedOff : Nat := 64
 
-/-- The lanes `S8[d], S7[c], S6[b], S5[a]` of a scan of `VG_CAST5_S5678`, for
+/-- The lanes `S8[d], S7[c], S6[b], S5[a]` of a scan of `VG_CAST5_S5678_STEPS`, for
 the bytes `a, b, c, d`. Clobbers `eax`, `ecx`, `edx`, `ebp`, `xmm4`, `xmm5`. -/
 def gather (a b c d : Pos) : List Instr :=
   [.movzx8 .ecx (at_ .esi (srcOff d)), .movzx8 .edx (at_ .esi (srcOff c)),
@@ -274,13 +326,13 @@ def lineTail (l : Line) : List Instr :=
 
 /-- A line, into `eax`. -/
 def line (l : Line) : Prog isa :=
-  .seq (.block (gather l.main.1 l.main.2.1 l.main.2.2.1 l.main.2.2.2)) (.seq (scan s5678Sym)
+  .seq (.block (gather l.main.1 l.main.2.1 l.main.2.2.1 l.main.2.2.2)) (.seq (scan x5678Sym)
     (.block (lineTail l)))
 
 /-- The extra lookups of a group: `S5[a], S6[b], S7[c], S8[d]`, to the lanes
 3, 2, 1, 0 at `esi + 48`. -/
 def extras (a b c d : Pos) : Prog isa :=
-  .seq (.block (gather a b c d)) (.seq (scan s5678Sym)
+  .seq (.block (gather a b c d)) (.seq (scan x5678Sym)
     (.block [.movdquStore (at_ .esi extraOff) .xmm1]))
 
 /-- Four lines, after their extra lookups, each followed by its store `st k`. -/
