@@ -204,7 +204,8 @@ theorem prepare_verified : Verified X86_64.target prepare (Proof.Gcm.preparePowe
 /-- `prepare` after setting the count to 48, on the prepared key context. -/
 theorem prepareFlagged_verified :
     Verified X86_64.target (Impl.Gcm.X86_64.Flag.prepareFlagged 48 prepare) (Spec.Gcm.prepareContract X86_64.abi) :=
-  Prepare.flagged_verified (Or.inr rfl) prepare (fun _ hw hwrap => prepare_ok hw hwrap) (by decide +kernel)
+  Prepare.flagged_verified (Or.inr rfl) prepare
+    (fun _ hw hwrap => WP.mono (prepare_ok hw hwrap) fun _ h => ⟨h, h.2.1⟩) (by decide +kernel)
     Prepare.flaggedZ_ct
 
 end VG.Proof.Gcm.X86_64.PrepareZ

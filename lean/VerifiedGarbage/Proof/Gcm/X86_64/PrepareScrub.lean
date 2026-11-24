@@ -89,14 +89,25 @@ theorem prepareOut (stack : Nat) :
     match vs, hlen with
     | [ctx], _ =>
       simp only [Spec.Gcm.prepareSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq] at hb
-      change Spec.Aes.bytesAt m₁ ctx 256 = _ ∧ Spec.Gcm.PreparedRepr m₁ ctx at h
-      change Spec.Aes.bytesAt m₂ ctx 256 = _ ∧ Spec.Gcm.PreparedRepr m₂ ctx
-      obtain ⟨h1, h2⟩ := h
-      refine ⟨?_, preparedRepr_of hb (by decide) h2⟩
-      have := bytesAt_of hb (d := 0) (n := 256) (by decide)
-      simp only [BitVec.add_zero] at this
-      rw [this]
-      exact h1
+      change Spec.Gcm.preparePost 64 ctx m m₁ r at h
+      change Spec.Gcm.preparePost 64 ctx m m₂ r
+      obtain ⟨h1, h2, h3, h4⟩ := h
+      have hp := powerCount_of hb (by decide)
+      have hl : Spec.Gcm.wipePreparedLen m₂ ctx = Spec.Gcm.wipePreparedLen m₁ ctx := by
+        simp only [Spec.Gcm.wipePreparedLen, hp]
+      have hle : Spec.Gcm.wipePreparedLen m₁ ctx ≤ 1024 := by
+        unfold Spec.Gcm.wipePreparedLen; split
+        · decide
+        · split <;> decide
+      unfold Spec.Gcm.preparePost
+      rw [hl, hp]
+      refine ⟨?_, preparedRepr_of hb (by decide) h2, h3, ?_⟩
+      · have := bytesAt_of hb (d := 0) (n := 256) (by decide)
+        simp only [BitVec.add_zero] at this
+        rw [this]
+        exact h1
+      · rw [bytesAt_of hb (by simp only [Elem.size]; omega_using [hle])]
+        exact h4
 
 theorem wipePreparedOut (stack : Nat) :
     PostOut (Spec.Gcm.wipePreparedContract X86_64.abi stack) (Spec.Gcm.wipePreparedSig.retBits 64) :=
@@ -104,16 +115,20 @@ theorem wipePreparedOut (stack : Nat) :
     match vs, hlen with
     | [ctx], _ =>
       simp only [Spec.Gcm.wipePreparedSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq] at hb
-      change Spec.Aes.bytesAt m₁ ctx (Spec.Gcm.wipePreparedLen m ctx) = _ at h
-      change Spec.Aes.bytesAt m₂ ctx (Spec.Gcm.wipePreparedLen m ctx) = _
+      change Spec.Gcm.wipePreparedPost 64 ctx m m₁ r at h
+      change Spec.Gcm.wipePreparedPost 64 ctx m m₂ r
+      obtain ⟨h1, h2⟩ := h
       have hl : Spec.Gcm.wipePreparedLen m ctx ≤ 1032 := by
         unfold Spec.Gcm.wipePreparedLen; split
         · decide
         · split <;> decide
-      have := bytesAt_of hb (d := 0) (n := Spec.Gcm.wipePreparedLen m ctx) (by simp only [Elem.size]; omega_using [hl])
-      simp only [BitVec.add_zero] at this
-      rw [this]
-      exact h
+      refine ⟨?_, ?_⟩
+      · have := bytesAt_of hb (d := 0) (n := Spec.Gcm.wipePreparedLen m ctx) (by simp only [Elem.size]; omega_using [hl])
+        simp only [BitVec.add_zero] at this
+        rw [this]
+        exact h1
+      · rw [bytesAt_of hb (by simp only [Elem.size]; omega_using [hl])]
+        exact h2
 
 /-! ## The registrations -/
 

@@ -296,7 +296,8 @@ theorem prepareFlagged_verified :
     Verified X86_64.target (Impl.Gcm.X86_64.Flag.prepareFlagged 16 Impl.Gcm.X86_64.PrepareAvx.prepare16)
       (Spec.Gcm.prepareContract X86_64.abi) :=
   Prepare.flagged_verified (Or.inl rfl) _
-    (fun _ hw _ => WP.mono (prepare16_ok hw) fun _ h => ⟨h.1, h.2.1, fun r h₁ _ => h.2.2.1 r h₁, h.2.2.2⟩)
+    (fun _ hw _ => WP.mono (prepare16_ok' hw) fun _ h =>
+      ⟨⟨h.1.1, h.1.2.1, fun r h₁ _ => h.1.2.2.1 r h₁, h.1.2.2.2⟩, h.2⟩)
     (by decide +kernel) Prepare.flaggedAvx_ct
 
 end VG.Proof.Gcm.X86_64.PrepareAvx
