@@ -157,4 +157,18 @@ theorem entry_ct {M : CtxMode} {body : Prog isa} (hw : RecordOk M body) (hc : Re
     (p.ctx.args 4 (by decide)) (q.ctx.args 4 (by decide)) ⟨_,by taint_decide⟩ ea eb ?_)
   exact RelCT.seq (mid.mono (fun _ _ h => h.2) (fun _ _ h => h)) (tagOut_rel (b:=.rsp) (d:=32) (by simp) ⟨_,by taint_decide⟩ (fun _ _ h => h))
 
+/-- Lift the whole-record correctness and leakage proofs to a contract once its
+memory, outputs and public ABI arguments have been identified. -/
+theorem rawVerified {contract : Contract isa} {M : CtxMode} {body : Prog isa}
+    (hw : RecordOk M body) (hc : RecordCT M body)
+    (mx : (Contiguous.core body).allInstrs (fun i => !loadsMxcsr i)=true)
+    (inputs : ∀ s,contract.pre s → EntryPre M s)
+    (outputs : ∀ s t,contract.pre s → EntryPost s t → contract.post s t)
+    (publicArgs : ∀ s t,contract.pub s t → EntryPublic s t)
+    (sat : ∃ s,contract.pre s) : Verified X86_64.target (Contiguous.core body) contract := by
+  refine ⟨fun s hs => ?_,fun s t _ _ _ _ hs ht pb ex ey => ?_,sat⟩
+  · obtain ⟨tr,t,run,regs,post⟩ := entry_ok hw (inputs s hs)
+    exact ⟨tr,t,run,abiPreserved_of_exec mx run regs,outputs s t hs post⟩
+  · exact (entry_ct hw hc (inputs s hs) (inputs t ht) (publicArgs s t pb) s t _ _ _ _ ⟨rfl,rfl⟩ ex ey).1
+
 end VG.Proof.AesGcm.X86_64.ContiguousSeal
