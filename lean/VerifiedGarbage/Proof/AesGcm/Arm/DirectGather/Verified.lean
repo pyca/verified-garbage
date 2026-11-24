@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.AesGcm.Arm.ArgSlots
 public import VerifiedGarbage.Proof.Framework.Arm.StackScratch
 public import VerifiedGarbage.Impl.AesGcm.Arm.DirectGather
 import VerifiedGarbage.Proof.Framework.Arm.Exec
@@ -37,138 +38,29 @@ open VG VG.Arm VG.Impl.AesGcm.Arm.DirectGather
 namespace Slot
 
 def index (j : Nat) := ([0,1,4,5,6,2,3] : List Nat)[j]!
-def source (j : Nat) := 2608 + 4 * index j
-def move (j : Nat) : List Instr := [.ldrSp .lr (source j),.str .lr .r12 (4*j)]
-def leaks (sp : BitVec 32) (j : Nat) : List Leak := [.addr (sa sp (source j)),.addr (sa sp (4*j))]
+def slots : Args.Slots where
+  count := 7
+  bytes := 2608
+  index := index
+  indexLt := by
+    intro j hj
+    have : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 := by omega
+    rcases this with h|h|h|h|h|h|h <;> subst h <;> decide
+  header := by decide
+  imm := by decide
+  small := by decide
 
-theorem bound {j : Nat} (hj : j<7) : 2608 ≤ source j ∧ source j+4≤2636 := by
-  have : j=0 ∨ j=1 ∨ j=2 ∨ j=3 ∨ j=4 ∨ j=5 ∨ j=6 := by omega
-  rcases this with h|h|h|h|h|h|h <;> subst h <;> decide
+abbrev source (j : Nat) := 2608 + 4 * index j
+abbrev Layout := Args.Layout slots
+abbrev Ready := Args.Ready slots
+abbrev frameTrace := slots.frameTrace
 
-structure Layout (u : State) : Prop where
-  fit : u.sp.toNat+2636≤2^32
-  read : ∀ j<7, InRegions (u.rd++u.wr) (sa u.sp (source j)) 4
-  write : ∀ d, d+4≤36 → InRegions u.wr (sa u.sp d) 4
-
-structure Copied (u t : State) (n : Nat) : Prop where
-  sp : t.sp=u.sp
-  rd : t.rd=u.rd
-  wr : t.wr=u.wr
-  regs : ∀ r, r≠.lr → t.gpr r=u.gpr r
-  frame : Frame [⟨State.addr u.sp,28⟩] u.mem t.mem
-  words : ∀ j<n, t.mem.readW (sa u.sp (4*j)) 32=u.mem.readW (sa u.sp (source j)) 32
-
-theorem Layout.sep {u : State} (L : Layout u) {d e : Nat}
-    (gap : d+4≤e ∨ e+4≤d) (dl : d+4≤2636) (el : e+4≤2636) :
-    Mem.Sep (sa u.sp d) (32/8) (sa u.sp e) (32/8) := by
-  have fit := L.fit
-  rw [sa_eq (by omega),sa_eq (by omega)]
-  exact Offset.sep _ gap (by omega) (by omega)
-
-theorem Layout.range {u : State} (L : Layout u) {d k : Nat} (hk : d+4≤k) (hf : k≤2636) :
-    (⟨State.addr u.sp,k⟩ : Region).Contains (sa u.sp d) 4 := by
-  have fit := L.fit
-  rw [sa_eq (by omega)]
-  exact Offset.contains_base _ hk (by omega)
-
-theorem copies {u : State} (L : Layout u) (r12 : u.gpr .r12=u.sp) : ∀ n, n≤7 →
-    ∃ t, execBlock isa ((List.range n).flatMap move) u=some (t,(List.range n).flatMap (leaks u.sp)) ∧
-      Copied u t n
-  | 0,_ => ⟨u,rfl,rfl,rfl,rfl,fun _ _ => rfl,Frame.refl _ _,fun _ h => absurd h (Nat.not_lt_zero _)⟩
-  | n+1,hn => by
-    obtain ⟨t,run,h⟩ := copies L r12 n (by omega)
-    have hi : n<7 := by omega
-    have ⟨lower,upper⟩ := bound hi
-    have base : t.gpr .r12=t.sp := by rw [h.regs _ (by decide),r12,h.sp]
-    have read := L.read n hi
-    have write := L.write (4*n) (by omega)
-    let off := source n - 4*n
-    have offEq : off+4*n = source n := Nat.sub_add_cancel (by omega)
-    have step := copyArg_run (bytes:=off) (j:=n) base (by omega)
-      (by rw [h.rd,h.wr,h.sp,offEq]; exact read)
-      (by rw [h.wr,h.sp]; exact write)
-    have op : move n = VG.Impl.StackScratch.Arm.copyArg off n := by
-      simp only [move,VG.Impl.StackScratch.Arm.copyArg,offEq]
-    rw [List.range_succ,List.flatMap_append,List.flatMap_append,List.flatMap_singleton,List.flatMap_singleton,
-      execBlock_append,run,Option.bind_some,op,step,Option.map_some,h.sp,offEq]
-    refine ⟨_,rfl,h.sp,h.rd,h.wr,fun r neq => (copyState_gpr _ _ t neq).trans (h.regs r neq),?_,?_⟩
-    · change Frame _ _ (t.mem.writeW (sa t.sp _) _)
-      rw [h.sp]
-      exact h.frame.writeW (List.mem_singleton_self _) _ (L.range (by omega) (by decide : 28≤2636))
-    · intro j hj
-      change (t.mem.writeW (sa t.sp (4*n)) (t.mem.readW (sa t.sp (off+4*n)) 32)).readW _ 32=_
-      rw [h.sp,offEq]
-      rcases Nat.lt_or_ge j n with lt|ge
-      · rw [Mem.readW_writeW_sep (L.sep (.inl (by omega)) (by omega) (by omega)) (by decide),h.words j lt]
-      · obtain rfl : j=n := by omega
-        rw [Mem.readW_writeW_self32]
-        refine h.frame.readW (r:=⟨sa u.sp (source j),4⟩) (Region.contains_self _ _) ?_ (by decide)
-        intro r hr
-        obtain rfl := List.mem_singleton.mp hr
-        have fit := L.fit
-        rw [sa_eq (by omega)]
-        exact Offset.disjoint_base _ (by omega) (by omega)
-
-/-- Stack traffic is fixed for every call. -/
-def frameTrace (sp : BitVec 32) := [.addr (sa sp 32)] ++ (List.range 7).flatMap (leaks sp) ++
-  [.addr (sa sp 28),.addr (sa sp 32)]
-
-structure Ready (u t : State) : Prop where
-  sp : t.sp=u.sp
-  rd : t.rd=u.rd
-  wr : t.wr=u.wr
-  regs : ∀ r, r≠.r12 → t.gpr r=u.gpr r
-  frame : Frame [⟨State.addr u.sp,36⟩] u.mem t.mem
-  words : ∀ j<7, t.mem.readW (sa u.sp (4*j)) 32=u.mem.readW (sa u.sp (source j)) 32
-  scratch : t.mem.readW (sa u.sp 28) 32 = u.sp+36
+theorem bound {j : Nat} (hj : j < 7) : 2608 ≤ source j ∧ source j + 4 ≤ 2636 :=
+  slots.bound hj
 
 theorem frameArgs_run {u : State} (L : Layout u) :
-    ∃ t, execBlock isa frameArgs u=some (t,frameTrace u.sp) ∧ Ready u t := by
-  let v := savedState 7 u
-  have head := head_run (u:=u) (m:=7) (by decide) (L.write _ (by decide))
-  have vL : Layout v := ⟨L.fit,L.read,L.write⟩
-  obtain ⟨x,run,c⟩ := copies vL (savedState_r12 7 u) 7 (by decide)
-  have sp : x.sp=u.sp := c.sp
-  have wr : x.wr=u.wr := c.wr
-  have rd : x.rd=u.rd := c.rd
-  have r12 : x.gpr .r12=x.sp := (c.regs _ (by decide)).trans ((savedState_r12 _ _).trans sp.symm)
-  obtain ⟨t,tail,trd,twr,tsp,regs,mem,lr⟩ := tail_run (m:=7) r12 (by decide)
-    (by rw [sp,wr]; exact L.write _ (by decide))
-    (by rw [sp,rd,wr]; obtain ⟨r,hr,hc⟩ := L.write 32 (by decide); exact ⟨r,List.mem_append_right _ hr,hc⟩)
-  have code : frameArgs = [.addSp .r12 0, .str .lr .r12 (4*7+4)] ++ (List.range 7).flatMap move ++
-      [.addSp .lr (4*7+8),.str .lr .r12 (4*7),.ldrSp .lr (4*7+4)] := rfl
-  have hf : Frame [⟨State.addr u.sp,36⟩] u.mem v.mem :=
-    (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (L.range (d:=32) (by decide) (by decide))
-  have hf' : Frame [⟨State.addr u.sp,36⟩] u.mem x.mem :=
-    hf.trans (c.frame.sub fun r hr => by
-      obtain rfl := List.mem_singleton.mp hr
-      exact ⟨_,List.mem_singleton_self _,Region.sub_prefix (by decide : 28≤36)⟩)
-  have saved : x.mem.readW (sa u.sp 32) 32 = u.gpr .lr := by
-    rw [c.frame.readW (r:=⟨sa u.sp 32,4⟩) (Region.contains_self _ _) (fun r hr => ?_) (by decide)]
-    · exact Mem.readW_writeW_self32 _ _ _
-    · obtain rfl := List.mem_singleton.mp hr
-      change Region.Disjoint ⟨sa u.sp 32,4⟩ ⟨State.addr u.sp,28⟩
-      have fit := L.fit
-      rw [sa_eq (by omega)]
-      exact Offset.disjoint_base _ (by decide) (by decide)
-  refine ⟨t,?_,tsp.trans sp,trd.trans rd,twr.trans wr,?_,?_,?_,?_⟩
-  · rw [code,execBlock_append,execBlock_append,head]
-    dsimp only [v] at run
-    simp only [Option.bind_some,run,Option.map_some,savedState_sp,tail,sp]
-    rfl
-  · intro r h
-    by_cases q : r=.lr
-    · subst q; rw [lr,mem,sp,Mem.readW_writeW_sep (L.sep (.inr (by decide)) (by decide) (by decide)) (by decide)]
-      exact saved
-    · rw [regs r q,c.regs r q]; exact savedState_gpr _ _ h
-  · rw [mem,sp]; exact hf'.writeW (List.mem_singleton_self _) _ (L.range (d:=28) (by decide) (by decide))
-  · intro j hj
-    have ⟨lo,hi⟩ := bound hj
-    rw [mem,sp,Mem.readW_writeW_sep (L.sep (.inl (by omega)) (by omega) (by decide)) (by decide)]
-    have z := c.words j hj
-    change x.mem.readW (sa u.sp (4*j)) 32 = (u.mem.writeW (sa u.sp 32) (u.gpr .lr)).readW (sa u.sp (source j)) 32 at z
-    rw [z,Mem.readW_writeW_sep (L.sep (.inr (by omega)) hi (by decide)) (by decide)]
-  · rw [mem,sp,Mem.readW_writeW_self32]; rfl
+    ∃ t, execBlock isa frameArgs u = some (t, frameTrace u.sp) ∧ Ready u t :=
+  Args.frameArgs_run L
 
 end Slot
 end VG.Proof.AesGcm.Arm.DirectGather
@@ -247,12 +139,13 @@ theorem allocatedSlots {o : State} (h : gatherPre o) : Slot.Layout (allocState 2
       rw [BitVec.ofNat_add,←BitVec.add_assoc,BitVec.sub_add_cancel]
       exact sa_eq (by unfold Slot.source at high; omega)
     refine ⟨argR o,List.mem_append_left _ (show argR o∈o.rd by rw [h.1]; simp),?_⟩
-    change (argR o).Contains (sa (sp o) _) 4
+    change (argR o).Contains (sa (sp o) (Slot.source j)) 4
     rw [shift]
     change (Region.mk (State.addr (o.sp+BitVec.ofNat 32 (4*0))) 28).Contains _ _
     rw [Nat.mul_zero,show o.sp+BitVec.ofNat 32 0=o.sp from BitVec.add_zero _]
     exact Offset.contains_base _ (by unfold Slot.source at high; omega) (by unfold Slot.source at high; omega)
   · intro d hd
+    change d + 4 ≤ 36 at hd
     refine ⟨_,List.mem_cons_self ..,?_⟩
     change (Region.mk (State.addr (sp o)) 2608).Contains (sa (sp o) d) 4
     rw [sa_eq (by omega)]
@@ -271,7 +164,8 @@ theorem Prepared.word {o t : State} (p : Prepared o t) {i : Nat} (hi : i<7) :
 
 theorem Prepared.workspace {o t : State} (p : Prepared o t) : arg (narrow o t) 7=work o := by
   change t.mem.readW (sa t.sp 28) 32=_
-  rw [p.sp,p.scratch]; rfl
+  rw [p.sp]
+  exact p.scratch
 
 theorem Prepared.one {o t : State} (p : Prepared o t) (h : gatherPre o) : onePre 8 7 (narrow o t) := by
   have f := fits h

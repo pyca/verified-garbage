@@ -1412,7 +1412,7 @@ theorem cryptTo_in {s₀ s₁ : State} (ho : OPre true s₀) {c st w sp k7 k8 S 
       ⟨dok, by rw [hk.wr]; exact covers_of_mem dw, cD⟩, fun hc₀ => by simpa using hc₀,
       fun _ => by simp [bytesAt]; rfl, by rw [add_ofNat_zero], .inr (by decide), Frame.refl _ _,
       fun _ => by rw [h6, add_ofNat_zero], one_dataOk h hk,
-      ⟨sD, sp12, b12c, by rw [hst]; exact b12w.sub_right (Lay.wSub (by decide)), b12w, b12s, b12d⟩⟩
+      ⟨.inr sD, sp12, b12c, by rw [hst]; exact b12w.sub_right (Lay.wSub (by decide)), b12w, b12s, b12d⟩⟩
   refine ⟨ci, WP.mono (WP.with_rdwr (cryptTo_ok L ci)) fun s₂ hh => ?_⟩
   obtain ⟨co, rd₂, wr₂, sp₂⟩ := hh
   obtain hA : ∀ r ∈ crFrameG true (oSt s₀ (oWi true)) (arg s₀ (oWi true)) s₀.sp (arg s₀ 4) (arg s₀ 3).toNat,
@@ -2021,7 +2021,9 @@ theorem cryptWhole_ct {to : Bool} {k8 : BitVec 32} {R : Nat} {S T : BitVec 32} {
         · exact L.st_w (by decide) (.inr ⟨by decide, by decide⟩)
         · exact hdj.ok.w.sub_right (Lay.wSub (by decide))
         · exact hsj.st.sub_right (Lay.stSub (by decide))
-        · right
+        · rcases dST with eq | dST
+          · exact .inl (congrArg (· + BitVec.ofNat 32 j) eq)
+          right
           rw [eS, eD]
           exact (dST.sub_left (Offset.sub_base _ (by omega_using [h0]))).sub_right (Offset.sub_base _ (by omega_using [h0]))
         · exact hsj.w.sub_right (Lay.wSub (by decide))
