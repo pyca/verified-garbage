@@ -13,6 +13,8 @@ meta import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 
 public section
 namespace VG.Proof.AesGcm.RISCV64.Contiguous
+
+variable {w tag : VG.Addr}
 open VG VG.RISCV64 VG.Impl.AesGcm.RISCV64
 open VG.Impl.AesGcm.RISCV64.Contiguous (exitHead exitCode)
 open VG.Proof.Gather.RISCV64 (Eq2 TT rel_seq rel_taint)
