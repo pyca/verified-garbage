@@ -294,7 +294,7 @@ theorem ctE'_ok (hMK : MulKey) {o : Nat} (ho : o = 0 ∨ o = 112) {to : Bool} {H
       (dataOk_of h.data).lt
       (by rw [hD₂, Offset.add_add]; congr 2; omega_using [hn₂, hjn]) (by omega_using [hlt]))))
     fun s₁₁ ⟨⟨y₁₁, hk₁₁, he₁₁, og₁₁, f₁₁, v₁₁⟩, rd₁₁, wr₁₁⟩ => ?_)
-  unfold Impl.AesGcm.AArch64.Fast.lensTagAt
+  unfold Impl.AesGcm.AArch64.Fast.lensTagAt Impl.AesGcm.AArch64.Fast.finishLengths
   simp only [List.append_assoc]
   rw [WP.block_append_iff]
   obtain w₁ := he₁₁.perm.wW (show 96 + 8 ≤ 512 by decide)

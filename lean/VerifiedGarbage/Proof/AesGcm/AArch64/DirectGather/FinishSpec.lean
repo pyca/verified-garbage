@@ -77,6 +77,25 @@ theorem writeTag_ok {maskOff argOff : Nat} (maskAlign : maskOff % 16 = 0)
       Stitch.ext8_xor, ext8_ext8, rev64b_read, ext8_ext8]
   · exact (Frame.refl _ _).write (List.mem_singleton_self _) _ (Region.contains_self _ _)
 
+theorem shortTagAt_ok {k : Nat} (valid : k % 8 = 0 ∧ k < 32768) (s : State) (W T : Addr) (g : Spec.Gcm.Block)
+    (hw : s.gpr .x19 = W) (hY : s.v .v16 = ext8 g g)
+    (hmask : InRegions (s.rd ++ s.wr) W 16)
+    (hptr : InRegions (s.rd ++ s.wr) (s.sp + BitVec.ofNat 64 k) 8)
+    (ht : s.mem.readW (s.sp + BitVec.ofNat 64 k) 64 = T) (hout : InRegions s.wr T 16) :
+    WP isa (.block (shortTagAt k)) s fun t =>
+      Spec.Gcm.blockAt t.mem T = g ^^^ Spec.Gcm.blockAt s.mem W ∧
+      Frame [⟨T,16⟩] s.mem t.mem ∧ t.gpr .x19 = W ∧ t.sp = s.sp ∧ t.rd = s.rd ∧ t.wr = s.wr := by
+  unfold shortTagAt
+  rw [WP.block_cons_iff]
+  refine ⟨_, exec_rev64b _ _ _, ?_⟩
+  let u := s.setV .v16 (VRevOp.eval .rev64b (s.v .v16))
+  have y : u.v .v16 = VRevOp.eval .rev64b (ext8 g g) := by simp only [u,v_setV,ite_true,hY]
+  have out := writeTag_ok (maskOff := 0) (argOff := k) (by decide) (by decide) valid
+    u W T g hw y (by simpa only [u,rd_setV,wr_setV,BitVec.add_zero] using hmask)
+    hptr ht hout
+  change WP isa (.block (writeTag 0 k)) u _
+  simpa only [u,mem_setV,sp_setV,rd_setV,wr_setV,BitVec.add_zero] using out
+
 theorem shortTagOut_ok (s : State) (W T : Addr) (g : Spec.Gcm.Block)
     (hw : s.gpr .x19 = W) (hY : s.v .v16 = ext8 g g)
     (hmask : InRegions (s.rd ++ s.wr) W 16)
@@ -84,17 +103,8 @@ theorem shortTagOut_ok (s : State) (W T : Addr) (g : Spec.Gcm.Block)
     (ht : s.mem.readW (s.sp + 384#64) 64 = T) (hout : InRegions s.wr T 16) :
     WP isa (.block shortTagOut) s fun t =>
       Spec.Gcm.blockAt t.mem T = g ^^^ Spec.Gcm.blockAt s.mem W ∧
-      Frame [⟨T,16⟩] s.mem t.mem ∧ t.gpr .x19 = W ∧ t.sp = s.sp ∧ t.rd = s.rd ∧ t.wr = s.wr := by
-  unfold shortTagOut
-  rw [WP.block_cons_iff]
-  refine ⟨_, exec_rev64b _ _ _, ?_⟩
-  let u := s.setV .v16 (VRevOp.eval .rev64b (s.v .v16))
-  have y : u.v .v16 = VRevOp.eval .rev64b (ext8 g g) := by simp only [u,v_setV,ite_true,hY]
-  have out := writeTag_ok (maskOff := 0) (argOff := 384) (by decide) (by decide) (by decide)
-    u W T g hw y (by simpa only [u,rd_setV,wr_setV,BitVec.add_zero] using hmask)
-    hptr ht hout
-  change WP isa (.block (writeTag 0 384)) u _
-  simpa only [u,mem_setV,sp_setV,rd_setV,wr_setV,BitVec.add_zero] using out
+      Frame [⟨T,16⟩] s.mem t.mem ∧ t.gpr .x19 = W ∧ t.sp = s.sp ∧ t.rd = s.rd ∧ t.wr = s.wr :=
+  shortTagAt_ok (k := 384) (by decide) s W T g hw hY hmask hptr ht hout
 
 open VG.Impl.AesGcm.AArch64 (ptr imm)
 open VG.Proof.Gcm.AArch64 (hR dR yR nb)
@@ -183,6 +193,42 @@ open VG VG.AArch64 VG.Proof.AesGcm.AArch64.Gather VG.Spec.Gcm
 open VG.Spec.Aes (bytesAt)
 open VG.Proof.Gcm (lensBlock)
 
+/-- The description shared by the gather and contiguous bounded records.
+The plaintext comes from the original caller's memory. -/
+structure ShortOutput where
+  dst : Addr
+  len : Addr
+  tag : Addr
+  plain : List Byte
+
+abbrev ShortOutput.gather (s : State) : ShortOutput := ⟨Dst s,stackArg s 1,Tg s,pt s (Cnt s)⟩
+
+abbrev ShortOutput.post (d : ShortOutput) (s t : State) : Prop :=
+  encryptWith (ctxCiph s.mem (K s) (s.gpr .x1).toNat) (ctxH s.mem (K s)) 16
+    (bytesAt s.mem (Nn s) (NL s)) d.plain (bytesAt s.mem (Ad s) (AL s)) =
+    (bytesAt t.mem d.dst d.len.toNat,bytesAt t.mem d.tag 16)
+
+theorem record_post_of_blocks (k : Nat) (s t : State) (d : ShortOutput) (work : Mem) (auth : Addr) (lead : Nat)
+    :
+    let a := bytesAt s.mem (Ad s) (AL s)
+    let iv := bytesAt s.mem (Nn s) (NL s)
+    let cipher := ctxCiph s.mem (K s) (s.gpr .x1).toNat
+    let H := ctxH s.mem (K s)
+    let ct := bytesAt t.mem d.dst d.len.toNat
+    a.length ≤ 16 →
+    ct = gctr cipher (inc32 (j0 H iv)) d.plain →
+    bytesAt work auth (16*k) = zeros (16 * lead) ++ a ++ zeros (16 - a.length) ++ ct ++
+      zeros (padLen ct.length) ++ lensBlock a.length ct.length →
+    bytesAt t.mem d.tag 16 = toBytes (ghashFrom H 0 (blocksAt work auth k) ^^^ cipher (j0 H iv)) →
+    d.post s t := by
+  dsimp only
+  intro hlen hct hbuf htag
+  rw [Proof.Gcm.blocksAt_eq, hbuf, Proof.Gcm.ghash_lead _ _ hlen] at htag
+  unfold ShortOutput.post encryptWith
+  rw [← hct]
+  dsimp only
+  rw [Proof.Gcm.fullTag_eq, List.take_of_length_le (by rw [Proof.Cmac.toBytes_length]), htag]
+
 theorem gather_post_of_blocks (k : Nat) (s t : State) (work : Mem) (auth : Addr) (lead : Nat)
     :
     let a := bytesAt s.mem (Ad s) (AL s)
@@ -195,14 +241,8 @@ theorem gather_post_of_blocks (k : Nat) (s t : State) (work : Mem) (auth : Addr)
     bytesAt work auth (16*k) = zeros (16 * lead) ++ a ++ zeros (16 - a.length) ++ ct ++
       zeros (padLen ct.length) ++ lensBlock a.length ct.length →
     bytesAt t.mem (Tg s) 16 = toBytes (ghashFrom H 0 (blocksAt work auth k) ^^^ cipher (j0 H iv)) →
-    gatherPost s t := by
-  dsimp only
-  intro hlen hct hbuf htag
-  rw [Proof.Gcm.blocksAt_eq, hbuf, Proof.Gcm.ghash_lead _ _ hlen] at htag
-  unfold gatherPost encryptWith
-  rw [← hct]
-  dsimp only
-  rw [Proof.Gcm.fullTag_eq, List.take_of_length_le (by rw [Proof.Cmac.toBytes_length]), htag]
+    gatherPost s t :=
+  record_post_of_blocks k s t (.gather s) work auth lead
 
 end VG.Proof.AesGcm.AArch64.DirectGather
 
@@ -225,28 +265,31 @@ abbrev shortCt (o s : State) := bytesAt s.mem (Dst o) (L o)
 
 /-- Facts at exit from the descriptor loop. The seven filled blocks precede
 the length block and the GHASH accumulator in the short workspace. -/
-structure ShortFinishPre (o s : State) (W : Addr) (lead : Nat) : Prop where
+structure ShortFinishPreFor (o s : State) (W : Addr) (lead : Nat) (d : ShortOutput) (tagOff : Nat) : Prop where
   x19 : s.gpr .x19 = W
   x21 : s.gpr .x21 = K o
   x24 : s.gpr .x24 = BitVec.ofNat 64 (AL o)
-  x26 : s.gpr .x26 = BitVec.ofNat 64 (L o)
+  x26 : s.gpr .x26 = BitVec.ofNat 64 d.len.toNat
   sp : s.sp = W
   saved : SavedAt s.mem W o
   work : Covers [⟨W,shortWork⟩] s.wr
   key : Covers [⟨K o+240#64,16⟩] (s.rd ++ s.wr)
-  ptr : InRegions (s.rd ++ s.wr) (W+384#64) 8
-  tag : InRegions s.wr (Tg o) 16
-  tagAddr : s.mem.readW (W+384#64) 64 = Tg o
+  ptr : InRegions (s.rd ++ s.wr) (W+BitVec.ofNat 64 tagOff) 8
+  tag : InRegions s.wr (d.tag) 16
+  tagAddr : s.mem.readW (W+BitVec.ofNat 64 tagOff) 64 = d.tag
   keyWork : Region.Disjoint ⟨K o+240#64,16⟩ ⟨W,shortWork⟩
-  dstWork : (dR o).Disjoint ⟨W,shortWork⟩
-  tagWork : (tgR o).Disjoint ⟨W,shortWork⟩
-  dstTag : (dR o).Disjoint (tgR o)
+  dstWork : ((⟨d.dst,d.len.toNat⟩ : Region)).Disjoint ⟨W,shortWork⟩
+  tagWork : ((⟨d.tag,16⟩ : Region)).Disjoint ⟨W,shortWork⟩
+  dstTag : ((⟨d.dst,d.len.toNat⟩ : Region)).Disjoint ((⟨d.tag,16⟩ : Region))
   shortAad : AL o ≤ 16
   hashKey : blockAt s.mem (K o+240#64) = ctxH o.mem (K o)
   mask : blockAt s.mem W = shortCipher o (shortJ0 o)
-  ct : shortCt o s = gctr (shortCipher o) (inc32 (shortJ0 o)) (pt o (Cnt o))
+  ct : (bytesAt s.mem d.dst d.len.toNat) = gctr (shortCipher o) (inc32 (shortJ0 o)) d.plain
   auth : bytesAt s.mem (W+224#64) 112 = zeros (16*lead) ++ shortAadBytes o ++ zeros (16-AL o) ++
-    shortCt o s ++ zeros (padLen (L o))
+    (bytesAt s.mem d.dst d.len.toNat) ++ zeros (padLen d.len.toNat)
+
+abbrev ShortFinishPre (o s : State) (W : Addr) (lead : Nat) :=
+  ShortFinishPreFor o s W lead (.gather o) 384
 
 theorem singletonFrame {r : Region} {rs : List Region} {m m' : Mem}
     (h : Frame [r] m m') {r' : Region} (hr : r' ∈ rs) (hs : Region.Sub r r') : Frame rs m m' :=
@@ -254,12 +297,12 @@ theorem singletonFrame {r : Region} {rs : List Region} {m m' : Mem}
 
 /-- The end of the short body meets the public gather postcondition and
 restores the registers saved at entry, keeping the short frame allocated. -/
-theorem shortFinish_ok (hash : HashEightOk) (o s : State) (W : Addr) (lead : Nat) (p : ShortFinishPre o s W lead) :
-    WP isa (.block (shortLengths ++ shortHash authO ++ shortTagOut ++ Impl.AesGcm.AArch64.restore)) s fun t =>
-      gatherPost o t ∧ (∀ r ∈ preserved, t.gpr r = o.gpr r) ∧ t.sp = W ∧
-      t.rd = s.rd ∧ t.wr = s.wr ∧ Frame [⟨W,shortWork⟩, tgR o] s.mem t.mem := by
+theorem shortFinishAt_ok {d : ShortOutput} {tagOff : Nat} (off : tagOff = 376 ∨ tagOff = 384) (hash : HashEightOk) (o s : State) (W : Addr) (lead : Nat) (p : ShortFinishPreFor o s W lead d tagOff) :
+    WP isa (.block (shortLengths ++ shortHash authO ++ shortTagAt tagOff ++ Impl.AesGcm.AArch64.restore)) s fun t =>
+      d.post o t ∧ (∀ r ∈ preserved, t.gpr r = o.gpr r) ∧ t.sp = W ∧
+      t.rd = s.rd ∧ t.wr = s.wr ∧ Frame [⟨W,shortWork⟩, (⟨d.tag,16⟩ : Region)] s.mem t.mem := by
   rw [WP.block_append_iff, WP.block_append_iff, WP.block_append_iff]
-  refine (shortLengths_ok s p.x19 p.work p.x24 p.x26 (o.gpr .x5).isLt (stackArg o 1).isLt).mono ?_
+  refine (shortLengths_ok s p.x19 p.work p.x24 p.x26 (o.gpr .x5).isLt d.len.isLt).mono ?_
   intro l pl
   obtain ⟨lens, lf, regs, lsp, lrd, lwr, _⟩ := pl
   have lw : Covers [⟨W,shortWork⟩] l.wr := lwr ▸ p.work
@@ -272,15 +315,15 @@ theorem shortFinish_ok (hash : HashEightOk) (o s : State) (W : Addr) (lead : Nat
   obtain ⟨hash, hf, hx, hsp, hrd, hwr⟩ := ph
   have subWork : Frame [⟨W,shortWork⟩] s.mem h.mem :=
     (singletonFrame lf (List.mem_singleton_self _) subL).trans (singletonFrame hf (List.mem_singleton_self _) subY)
-  have ptrRead : h.mem.readW (W+384#64) 64 = Tg o := by
-    rw [subWork.readW (r := ⟨W+384#64,8⟩) (Region.contains_self _ _) (by
-      simpa only [List.mem_singleton, forall_eq] using Offset.disjoint_base W (d := 384) (n := 8)
-        (k := shortWork) (by decide) (by decide)) (by decide), p.tagAddr]
+  have ptrRead : h.mem.readW (W+BitVec.ofNat 64 tagOff) 64 = d.tag := by
+    rw [subWork.readW (r := ⟨W+BitVec.ofNat 64 tagOff,8⟩) (Region.contains_self _ _) (by
+      simpa only [List.mem_singleton, forall_eq] using Offset.disjoint_base W (d := tagOff) (n := 8)
+        (k := shortWork) (by rcases off with rfl|rfl <;> decide) (by rcases off with rfl|rfl <;> decide)) (by decide), p.tagAddr]
   have hspW := hsp.trans (lsp.trans p.sp)
   have mask0 : InRegions (h.rd ++ h.wr) W 16 := by
     rw [hrd,hwr,lrd,lwr]
     simpa only [BitVec.add_zero] using in_left (rd := s.rd) (in_off (d := 0) (n := 16) p.work (by decide) (by decide))
-  refine (shortTagOut_ok h W (Tg o) _ hx hash mask0 (by rw [hspW,hrd,hwr,lrd,lwr]; exact p.ptr)
+  refine (shortTagAt_ok (k := tagOff) (by rcases off with rfl|rfl <;> decide) h W (d.tag) _ hx hash mask0 (by rw [hspW,hrd,hwr,lrd,lwr]; exact p.ptr)
     (by rwa [hspW]) (by rw [hwr,lwr]; exact p.tag)).mono ?_
   intro t tt
   obtain ⟨tag, tf, tx, tsp, trd, twr⟩ := tt
@@ -291,19 +334,19 @@ theorem shortFinish_ok (hash : HashEightOk) (o s : State) (W : Addr) (lead : Nat
     rw [twr,hwr,lwr]; exact p.work)) sf (by decide)).mono ?_
   intro z hz
   obtain ⟨abi, zm, _, zrd, zwr⟩ := hz
-  have f : Frame [⟨W,shortWork⟩, tgR o] s.mem z.mem := by
+  have f : Frame [⟨W,shortWork⟩, (⟨d.tag,16⟩ : Region)] s.mem z.mem := by
     rw [zm]
     exact (singletonFrame subWork (List.mem_cons_self ..) (fun _ => id)).trans
       (singletonFrame tf (by simp) (fun _ => id))
-  have zct : shortCt o z = shortCt o s := bytesAt_frame f (by
+  have zct : (bytesAt z.mem d.dst d.len.toNat) = (bytesAt s.mem d.dst d.len.toNat) := bytesAt_frame f (by
     intro r hr; rcases List.mem_cons.mp hr with e | e
     · exact e ▸ p.dstWork
     · exact (List.mem_singleton.mp e) ▸ p.dstTag)
-    (Nat.le_of_lt (stackArg o 1).isLt)
-  refine ⟨gather_post_of_blocks 8 o z l.mem (W+224#64) lead ?_ (zct.trans p.ct) ?_ ?_, abi.1, abi.2,
+    (Nat.le_of_lt d.len.isLt)
+  refine ⟨record_post_of_blocks 8 o z d l.mem (W+224#64) lead ?_ (zct.trans p.ct) ?_ ?_, abi.1, abi.2,
     zrd.trans (trd.trans (hrd.trans lrd)), zwr.trans (twr.trans (hwr.trans lwr)), f⟩
   · simpa only [Proof.Cmac.bytesAt_length] using p.shortAad
-  · change _ = _ ++ shortAadBytes o ++ _ ++ shortCt o z ++ _ ++ _
+  · change _ = _ ++ shortAadBytes o ++ _ ++ (bytesAt z.mem d.dst d.len.toNat) ++ _ ++ _
     rw [zct, Proof.Cmac.bytesAt_length, Proof.Cmac.bytesAt_length,
       show (16*8:Nat) = 112+16 from rfl, Proof.Cmac.Stream.bytesAt_append, Offset.add_add, lens,
       bytesAt_frame lf (by simpa only [List.mem_singleton, forall_eq] using Offset.disjoint W (d := 224) (n := 112) (e := 336) (k := 16) (.inl (by decide)) (by decide) (by decide))
@@ -314,5 +357,11 @@ theorem shortFinish_ok (hash : HashEightOk) (o s : State) (W : Addr) (lead : Nat
       rw [blockAt_frame hf (by simpa only [List.mem_singleton, forall_eq] using Offset.base_disjoint W (k := 16) (e := 352) (n := 16) (by decide) (by decide)),
         blockAt_frame lf (by simpa only [List.mem_singleton, forall_eq] using Offset.base_disjoint W (k := 16) (e := 336) (n := 16) (by decide) (by decide)), p.mask]
     rw [zm, Proof.Cmac.bytesAt_blockAt, tag, hkey, hmask]
+
+theorem shortFinish_ok (hash : HashEightOk) (o s : State) (W : Addr) (lead : Nat) (p : ShortFinishPre o s W lead) :
+    WP isa (.block (shortLengths ++ shortHash authO ++ shortTagOut ++ Impl.AesGcm.AArch64.restore)) s fun t =>
+      gatherPost o t ∧ (∀ r ∈ preserved, t.gpr r = o.gpr r) ∧ t.sp = W ∧
+      t.rd = s.rd ∧ t.wr = s.wr ∧ Frame [⟨W,shortWork⟩, tgR o] s.mem t.mem :=
+  shortFinishAt_ok (.inr rfl) hash o s W lead p
 
 end VG.Proof.AesGcm.AArch64.DirectGather

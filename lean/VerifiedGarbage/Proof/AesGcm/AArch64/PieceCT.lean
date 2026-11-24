@@ -132,7 +132,7 @@ theorem crypt_rel (v : GcmImpl) {k₁ k₂ : Reg → BitVec 64} {R P : Nat} {D :
       (by agree_tac [h₁.env.x19, h₂.env.x19, h₁.env.x20, h₂.env.x20, h₁.env.x21, h₂.env.x21, h₁.x22, h₂.x22,
         h₁.x23, h₂.x23, h₁.x24, h₂.x24, h₁.x25, h₂.x25]) ⟨_, by taint_decide⟩)
     (crSeg1_ok L (icb := 0) h₁) (crSeg1_ok L (icb := 0) h₂) fun τ₁ τ₂ a₁ a₂ => ?_
-  refine rel_seq (rel_ctrLe v.ctr hv a₁.call a₂.call (by rw [a₁.env.sp, a₂.env.sp]))
+  refine rel_seq (rel_payloadLe v.ctr hv a₁.call a₂.call (by rw [a₁.env.sp, a₂.env.sp]))
     (ctrCall1_ok L v a₁ (hc h₁ a₁.frame)) (ctrCall1_ok L v a₂ (hc h₂ a₂.frame)) fun τ₁ τ₂ b₁ b₂ => ?_
   refine rel_seq (rel_taint [.x19, .x20, .x21, .x22, .x23, .x24, .x25] (by rw [b₁.1.env.sp, b₂.1.env.sp])
       (by agree_tac [b₁.1.env.x19, b₂.1.env.x19, b₁.1.env.x20, b₂.1.env.x20, b₁.1.env.x21, b₂.1.env.x21,
@@ -168,7 +168,7 @@ theorem cryptAlG_rel (v : GcmImpl) (to : Bool) {k₁ k₂ : Reg → BitVec 64} {
     have c₁ := a₁.call
     have c₂ := a₂.call
     cases to
-    · exact rel_ctrLe v.ctr hv c₁ c₂ hsp
+    · exact rel_payloadLe v.ctr hv c₁ c₂ hsp
     · exact ctrTo_relLe v.ctr hv fun a b hab => by obtain ⟨rfl, rfl⟩ := hab; exact ⟨_, _, _, _, _, _, _, c₁, c₂, hsp⟩
   refine rel_seq (rel_taint [.x19, .x20, .x21, .x22, .x23, .x24, .x25] (by rw [b₁.1.env.sp, b₂.1.env.sp])
       (by agree_tac [b₁.1.env.x19, b₂.1.env.x19, b₁.1.env.x20, b₂.1.env.x20, b₁.1.env.x21, b₂.1.env.x21,

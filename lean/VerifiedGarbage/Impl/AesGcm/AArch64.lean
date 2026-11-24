@@ -270,6 +270,10 @@ def ctrArgs : List Instr := [mov .x0 .x21, mov .x1 .x22, ptr .x2 .x20 48, ptr .x
 
 def ctrCall : Prog isa := .call c.ctr.name c.ctr.code
 
+/-- Set the destination to the input for in-place payloads and enter the same
+two-pointer counter-mode kernel as the disjoint caller. -/
+def ctrPayload : Prog isa := .seq (.block [mov .x6 .x3]) (.call c.ctrTo.name c.ctrTo.code)
+
 /-- The arguments for the whole blocks at `x23`, and `x23` and `x24` past them. -/
 def crArgs : List Instr :=
   ([.lsr .x .x4 .x24 4, mov .x3 .x23] : List Instr) ++ ctrArgs ++
@@ -296,11 +300,11 @@ def crTail : Prog isa :=
   .seq (.block [ptr .x11 .x20 64, mov .x12 .x23, mov .x13 .x24]) xor
 
 def crypt : Prog isa :=
-  .seq crSeg1 (.seq (ctrCall c) (.seq crSeg2 (.seq (ctrCall c) crTail)))
+  .seq crSeg1 (.seq (ctrPayload c) (.seq crSeg2 (.seq (ctrCall c) crTail)))
 
 /-- `crypt` from the start of a keystream block (`x25 = 0`): no rest of a
 block to use first. -/
-def cryptAl : Prog isa := .seq (.block crArgs) (.seq (ctrCall c) (.seq crSeg2 (.seq (ctrCall c) crTail)))
+def cryptAl : Prog isa := .seq (.block crArgs) (.seq (ctrPayload c) (.seq crSeg2 (.seq (ctrCall c) crTail)))
 
 /-! ### Out of place
 
@@ -314,7 +318,7 @@ keystream block and copied from it to the output (`crTailG`). -/
 def crArgsG (to : Bool) : List Instr := crArgs ++ cond to [mov .x6 .x26, .add .x .x26 .x26 .x9] []
 
 /-- `ctrCall`, or out of place a call of `vg_aes_ctr32_to`. -/
-def ctrCallG (to : Bool) : Prog isa := cond to (.call c.ctrTo.name c.ctrTo.code) (ctrCall c)
+def ctrCallG (to : Bool) : Prog isa := cond to (.call c.ctrTo.name c.ctrTo.code) (ctrPayload c)
 
 /-- `crTail`, or out of place the last `x24` bytes at `x23` XORed into the
 keystream block (at `x20 + 64`) and copied from it to the output (`x26`). -/

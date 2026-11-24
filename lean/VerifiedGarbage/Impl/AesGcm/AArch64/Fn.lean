@@ -217,14 +217,14 @@ def streamAadDS (v : Calls) : Prog isa :=
   viaDS [ghR v] v.wn "vg_aes_gcm_stream_aad_core" 0 0
     (withStackScratch v.wn .x5 (AesGcm.AArch64.streamAad v.callees))
 
-/-- `vg_aes_gcm_stream_encrypt`, by `d8` and `d9`. -/
+/-- `vg_aes_gcm_stream_encrypt`, by `d8`, `d9` and `d10`. -/
 def streamEncryptDS (v : Calls) : Prog isa :=
-  viaDS [ghR v, ctrR v] v.wn "vg_aes_gcm_stream_encrypt_core" 0 0
+  viaDS [ghR v, ctrR v, toR v] v.wn "vg_aes_gcm_stream_encrypt_core" 0 0
     (withStackScratch v.wn .x7 (AesGcm.AArch64.streamEncrypt v.callees))
 
-/-- `vg_aes_gcm_stream_decrypt`, by `d8` and `d9`. -/
+/-- `vg_aes_gcm_stream_decrypt`, by `d8`, `d9` and `d10`. -/
 def streamDecryptDS (v : Calls) : Prog isa :=
-  viaDS [ghR v, ctrR v] v.wn "vg_aes_gcm_stream_decrypt_core" 0 0
+  viaDS [ghR v, ctrR v, toR v] v.wn "vg_aes_gcm_stream_decrypt_core" 0 0
     (withStackScratch v.wn .x7 (AesGcm.AArch64.streamDecrypt v.callees))
 
 /-- `vg_aes_gcm_stream_finish`, by `d8` and `d9`. -/
@@ -238,16 +238,16 @@ def streamVerifyDS (v : Calls) : Prog isa :=
     (withStackScratch v.wn .x7 (AesGcm.AArch64.streamVerify v.callees))
 
 /-- `vg_aes_gcm_seal_with_powers` of implementations without code that reads
-the powers, by `d8` and `d9`: its one stack argument copied by the entry,
+the powers, by `d8`, `d9` and `d10`: its one stack argument copied by the entry,
 then by `withStackArgScratch`. -/
 def sealWithPowersBaseDS (v : Calls) : Prog isa :=
-  viaDS [ghR v, ctrR v] 2576 "vg_aes_gcm_seal_with_powers_core" 0 1
+  viaDS [ghR v, ctrR v, toR v] 2576 "vg_aes_gcm_seal_with_powers_core" 0 1
     (withStackArgScratch 2576 1 (sealCode v))
 
-/-- `vg_aes_gcm_open_with_powers` of those implementations, by `d8` and `d9`,
+/-- `vg_aes_gcm_open_with_powers` of those implementations, by `d8`, `d9` and `d10`,
 as `sealWithPowersBaseDS`. -/
 def openWithPowersBaseDS (v : Calls) : Prog isa :=
-  viaDS [ghR v, ctrR v] 2592 "vg_aes_gcm_open_with_powers_core" 32 2
+  viaDS [ghR v, ctrR v, toR v] 2592 "vg_aes_gcm_open_with_powers_core" 32 2
     (withStackArgScratch 2592 2 (openCode v))
 
 /-- `vg_aes_gcm_open_to_with_powers` of those implementations, by `d8`, `d9`

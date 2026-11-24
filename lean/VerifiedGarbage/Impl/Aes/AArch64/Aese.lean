@@ -117,7 +117,7 @@ def body8 (to : Bool) : Prog isa :=
   .seq (.block (ctrs regs8 0))
     (.seq (aes regs8)
       (.block (xorData to regs8 0 ++ (([.addImm .w .x10 .x10 8, .addImm .x .x3 .x3 128,
-        .subImm .x .x4 .x4 8, .lsr .x .x13 .x4 3] : List Instr) ++ advO to 128))))
+        .subImm .x .x13 .x13 1] : List Instr) ++ advO to 128))))
 
 /-- One block. -/
 def body1 (to : Bool) : Prog isa :=
@@ -126,12 +126,13 @@ def body1 (to : Bool) : Prog isa :=
       (.block (xorData to [.v0] 0 ++ (([.addImm .w .x10 .x10 1, .addImm .x .x3 .x3 16,
         .subImm .x .x4 .x4 1] : List Instr) ++ advO to 16))))
 
-/-- Load the round keys, and set up `x6`, `x7`, the counter `w10` and `x13 = n / 8`. -/
+/-- Load the round keys, and set up `x6`, `x7`, the counter `w10` and the batch and remainder counts. -/
 def setup : List Instr :=
   (List.range 13).map (fun j => .ldrq (kreg j) .x0 (16 * j)) ++
   ([.lsl .x .x9 .x1 4, .add .x .x9 .x0 .x9, .ldrq .v30 .x9 0, .subImm .x .x9 .x9 16,
    .ldrq .v29 .x9 0, .subImm .x .x6 .x1 10, .subImm .x .x7 .x1 12,
-   .ldr .w .x10 .x2 12, .rev32 .x10 .x10, .lsr .x .x13 .x4 3] : List Instr)
+   .ldr .w .x10 .x2 12, .rev32 .x10 .x10, .lsr .x .x13 .x4 3,
+   .movz .x .x9 7 0, .logic .and .x .x4 .x4 .x9] : List Instr)
 
 /-- Write the final counter back. -/
 def ctrStore : List Instr := [.rev32 .x12 .x10, .str .w .x12 .x2 12]

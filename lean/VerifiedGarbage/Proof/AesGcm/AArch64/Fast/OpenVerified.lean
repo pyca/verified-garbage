@@ -43,8 +43,8 @@ theorem fastOpenWithE_keepsV (v : GcmImpl) {k : Nat} (hk : k = 16 ∨ k = 24) {c
     Impl.AesGcm.AArch64.Fast.padMul, Impl.AesGcm.AArch64.Fast.padMulT, Impl.AesGcm.AArch64.Fast.oneCryptT, Impl.AesGcm.AArch64.Tail.cryptAlT,
     Impl.AesGcm.AArch64.Tail.crSeg2T, Impl.AesGcm.AArch64.Tail.crTailT, openRest, openMain, oneCrypt, cryptAl, crArgs, tagLenOk,
     tagIn, cmpSeg, cmp, cmp16, j0, j0hash, oneAad, absorbAl, decAbs, fo, textAbs, finBody, tag,
-    crSeg2, crTail, ctrCall, ghCall, absorb, absSeg1, absTail, minK, copy, copyB, Impl.AesGcm.AArch64.xor,
-    padSeg, flush, lens, GcmImpl.callees, Code.allInstrs, v.ctr.keepsV, v.gh.keepsV, hcl] <;>
+    crSeg2, crTail, ctrPayload, ctrCall, ghCall, absorb, absSeg1, absTail, minK, copy, copyB, Impl.AesGcm.AArch64.xor,
+    padSeg, flush, lens, GcmImpl.callees, Code.allInstrs, v.ctr.toKeepsV, v.ctr.keepsV, v.gh.keepsV, hcl] <;>
   decide +kernel
 
 theorem fastOpenWith_keepsV (v : GcmImpl) {gh : Fn} (hgh : gh.code.allInstrs keepsV = true) :
@@ -145,8 +145,8 @@ theorem fastOpenWithE_depth0 (v : GcmImpl) {k : Nat} (hk : k = 16 ∨ k = 24) {c
     Impl.AesGcm.AArch64.Fast.padMul, Impl.AesGcm.AArch64.Fast.padMulT, Impl.AesGcm.AArch64.Fast.oneCryptT, Impl.AesGcm.AArch64.Tail.cryptAlT,
     Impl.AesGcm.AArch64.Tail.crSeg2T, Impl.AesGcm.AArch64.Tail.crTailT, openRest, openMain, oneCrypt, cryptAl, crArgs, tagLenOk,
     tagIn, cmpSeg, cmp, cmp16, j0, j0hash, oneAad, absorbAl, decAbs, fo, textAbs, finBody, tag,
-    crSeg2, crTail, ctrCall, ghCall, absorb, absSeg1, absTail, minK, copy, copyB, Impl.AesGcm.AArch64.xor,
-    padSeg, flush, lens, GcmImpl.callees, Code.aarch64Depth, depth_of_noFrames v.ctr.noFrames,
+    crSeg2, crTail, ctrPayload, ctrCall, ghCall, absorb, absSeg1, absTail, minK, copy, copyB, Impl.AesGcm.AArch64.xor,
+    padSeg, flush, lens, GcmImpl.callees, Code.aarch64Depth, depth_of_noFrames v.ctr.toNoFrames, depth_of_noFrames v.ctr.noFrames,
     depth_of_noFrames v.gh.noFrames, hcl] <;> decide
 
 open VG.Proof.AesGcm.AArch64.Gather in
@@ -162,9 +162,9 @@ theorem openCode_depth (v : GcmImpl) :
     decide
   · simp only [Impl.StackScratch.AArch64.withStackArgScratch, «open», openRest, openMain, oneCrypt, cryptAl,
       crArgs, tagLenOk, tagIn, cmpSeg, cmp, cmp16, j0, j0hash, oneAad, absorbAl, decAbs, fo, textAbs, finBody,
-      tag, crSeg2, crTail, ctrCall, ghCall, absorb, absSeg1, absTail, minK, copy, copyB,
+      tag, crSeg2, crTail, ctrPayload, ctrCall, ghCall, absorb, absSeg1, absTail, minK, copy, copyB,
       Impl.AesGcm.AArch64.xor, padSeg, flush, lens, GcmImpl.callees, Code.aarch64Depth, Instr.frameUnits,
-      depth_of_noFrames v.ctr.noFrames, depth_of_noFrames v.gh.noFrames]
+      depth_of_noFrames v.ctr.toNoFrames, depth_of_noFrames v.ctr.noFrames, depth_of_noFrames v.gh.noFrames]
     decide
 
 end VG.Proof.AesGcm.AArch64

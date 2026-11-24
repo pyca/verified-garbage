@@ -37,6 +37,20 @@ theorem rel_ctrLe (v : Ctr32Impl) {N : Nat} (hle : v.scratch ≤ N) {σ₁ σ₂
     RelCT isa (Eq2 σ₁ σ₂) (.call v.callee.name v.callee.code) TT :=
   ctr_relLe v hle fun a b hab => by obtain ⟨rfl, rfl⟩ := hab; exact ⟨K, C, D, S, R, n, h₁, h₂, hsp⟩
 
+/-- Only the public input address is copied into the shared call's destination register. -/
+theorem rel_payloadLe (v : Ctr32Impl) {N : Nat} (hle : v.scratch ≤ N) {a b : State} {K C D S : Addr} {R n : Nat}
+    (ha : CtrCall a K C D S R n N) (hb : CtrCall b K C D S R n N) (hsp : a.sp = b.sp) :
+    RelCT isa (Eq2 a b) (.seq (.block [Impl.AesGcm.AArch64.mov .x6 .x3]) (.call v.to.name v.to.code)) TT := by
+  refine rel_seq (F₁ := fun t => t = sameDst a) (F₂ := fun t => t = sameDst b) (rel_taint [] hsp (by agree_tac []) ⟨.block [] 256, by decide⟩)
+    (WP.of_runBlock ⟨_, sameDst_run a, rfl⟩) (WP.of_runBlock ⟨_, sameDst_run b, rfl⟩) ?_
+  intro u z hu hz
+  subst u z
+  refine ctrTo_relLe v hle (P := Eq2 (sameDst a) (sameDst b)) ?_
+  intro x y hxy
+  obtain ⟨hx, hy⟩ := hxy
+  subst x y
+  exact ⟨K, C, D, D, S, R, n, ha.same, hb.same, hsp⟩
+
 theorem rel_key (k : KeyImpl) {σ₁ σ₂ : State} {K C S : Addr} {L : Nat} (h₁ : KeyCall σ₁ K C S L)
     (h₂ : KeyCall σ₂ K C S L) (hsp : σ₁.sp = σ₂.sp) : RelCT isa (Eq2 σ₁ σ₂) (.call k.fn.name k.fn.code) TT :=
   key_rel k fun a b hab => by obtain ⟨rfl, rfl⟩ := hab; exact ⟨K, C, S, L, h₁, h₂, hsp⟩

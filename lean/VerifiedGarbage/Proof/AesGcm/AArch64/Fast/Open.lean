@@ -341,7 +341,7 @@ theorem openRunAX_ok {Wn : Nat} (v : GcmImpl) (hMK : MulKey) {to : Bool} {O : Ad
       s₁₁.mem.readW (W + BitVec.ofNat 64 d) 64 = t.mem.readW (W + BitVec.ofNat 64 d) 64 := fun d h₁ h₂' =>
     slot_kept F₁₁ (disj_ex (slots_fastFrameP W) (exW (Lay.wSub (by omega)))) h₁ h₂'
   -- The lengths block.
-  unfold Impl.AesGcm.AArch64.Fast.lensTagAt
+  unfold Impl.AesGcm.AArch64.Fast.lensTagAt Impl.AesGcm.AArch64.Fast.finishLengths
   rw [WP.seq_iff]
   simp only [List.append_assoc]
   rw [WP.block_append_iff]

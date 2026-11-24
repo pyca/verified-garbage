@@ -18,7 +18,7 @@ open VG.Spec.Gcm (zeros padLen)
 open VG.WriteBytes
 open VG.Impl.AesGcm.AArch64.DirectGather
 
-abbrev size : Fin 2593 := ⟨Medium.work,by decide⟩
+abbrev size : Fin 753 := ⟨Medium.work,by decide⟩
 abbrev base (s : State) := s.sp - BitVec.ofNat 64 Medium.work
 abbrev scratch (s : State) : Region := ⟨base s,Medium.work⟩
 abbrev LocalMem := Compact.LocalMem size
@@ -33,7 +33,7 @@ structure Cursors (s t : State) : Prop where
   ds : t.gpr .x6 = Src s
   n : t.gpr .x7 = s.gpr .x7
 
-theorem loopPre {s t : State} (l : Gather.Lay .plain s) (h : LocalMem s t) (p : Cursors s t)
+theorem loopPre {s t : State} (l : BoundedLay s) (h : LocalMem s t) (p : Cursors s t)
     (hn : L s ≤ 224) : Fragment.LoopPre t := by
   apply Compact.loopPre (ko := 240) (ao := textOff s) l h p.d p.auth p.key p.ds p.n
   · change 240 + L s ≤ 720-16*((L s+15)/16); omega
@@ -55,7 +55,7 @@ structure Header (s t : State) : Prop extends LocalMem s t where
   x6 : t.gpr .x6 = Src s
   x7 : t.gpr .x7 = s.gpr .x7
 
-theorem entered {s : State} (l : Gather.Lay .plain s) (hn : L s ≤ 224) :
+theorem entered {s : State} (l : BoundedLay s) (hn : L s ≤ 224) :
     WP isa (.block Medium.setup) (allocated Medium.work s) fun t => Header s t ∧ t.gpr .x4 = Ad s := by
   let a := allocated Medium.work s
   have localA : LocalMem s a := ⟨Frame.refl _ _,rfl,rfl⟩
@@ -105,7 +105,7 @@ theorem Header.advance {s t u : State} (h : Header s t) {d n : Nat}
   exact Offset.disjoint _ (.inl low) (by decide) (by change d+n ≤ 752 at high; omega)
 
 /-- After setup and AAD absorption, only the short frame has changed. -/
-theorem prefix_ok {s : State} (l : Gather.Lay .plain s) (hn : L s ≤ 224) (hal : AL s ≤ 16) :
+theorem prefix_ok {s : State} (l : BoundedLay s) (hn : L s ≤ 224) (hal : AL s ≤ 16) :
     WP isa (.seq (.block Medium.setup) (.seq (.block Medium.zero) Medium.aad)) (allocated Medium.work s)
       fun t => Header s t ∧ bytesAt t.mem (ghBase s) 256 = aadLayout s ∧
         bytesAt t.mem (base s+224) 256 = zeros 256 ∧ bytesAt t.mem (base s+736) 16 = zeros 16 := by
@@ -127,7 +127,7 @@ theorem prefix_ok {s : State} (l : Gather.Lay .plain s) (hn : L s ≤ 224) (hal 
     simpa only [ghBase,Medium.authO,BitVec.add_assoc,show (224:Addr)+256#64=480#64 by decide] using slice 256 256 (by decide)
   have z4 := (congrFun zg .x4).trans a4
   have al : (aadBytes s).length = AL s := Proof.AesCcm.length_bytesAt _ _ _
-  have ar : aR s ∈ s.rd := by rw [l.pre.1]; simp
+  have ar : aR s ∈ s.rd := by rw [l.rd]; simp
   have b6 : blocks s ≤ 14 := by unfold blocks; omega
   have asub : (⟨base s + BitVec.ofNat 64 (aadOff s), AL s⟩ : Region).Sub (scratch s) :=
     Offset.sub_base _ (by change 480+224-16*blocks s+AL s ≤ 752; omega)
@@ -160,7 +160,7 @@ theorem prefix_ok {s : State} (l : Gather.Lay .plain s) (hn : L s ≤ 224) (hal 
           (by decide) (by change 480+224-16*blocks s+AL s ≤ 2^64; omega)) (by decide)]
       simpa only [BitVec.add_assoc,show (224:Addr)+512#64=736 by decide] using slice 512 16 (by decide)
 
-theorem authFilled {s : State} {m m' : Mem} (l : Gather.Lay .plain s)
+theorem authFilled {s : State} {m m' : Mem} (l : BoundedLay s)
     (hn : L s ≤ 224) (hal : AL s ≤ 16) (ct : List Byte) (hlen : ct.length = L s)
     (f : Frame [dR s,⟨base s + BitVec.ofNat 64 (textOff s),L s⟩] m m')
     (b : bytesAt m (ghBase s) 256 = aadLayout s)

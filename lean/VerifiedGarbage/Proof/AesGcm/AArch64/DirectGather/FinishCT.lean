@@ -18,14 +18,14 @@ open VG VG.AArch64 VG.AArch64.RegUpd VG.Proof.AesGcm.AArch64.Gather VG.Impl.AesG
 open VG.Proof.Gcm.AArch64.Pmull (exec_rev64b exec_ldrq exec_eor)
 open VG.Proof.AesGcm.AArch64 (rel_seq rel_taint Eq2 TT)
 
-private def loadTag : List Instr :=
+private def loadTag (tagOff : Nat) : List Instr :=
   [.vop (.rev .rev64b .v16 .v16),.ldrq .v0 .x19 streamO,.vop (.logic .eor .v16 .v16 .v0),
-    .ldrSp .x10 (shortWork+16)]
+    .ldrSp .x10 tagOff]
 
-private theorem tagPtr_ok (s : State) (W : Addr) (w : s.gpr .x19 = W)
+private theorem tagPtr_ok {tagOff : Nat} (off : tagOff = 376 ∨ tagOff = 384) (s : State) (W : Addr) (w : s.gpr .x19 = W)
     (read : InRegions (s.rd ++ s.wr) W 16)
-    (ptr : InRegions (s.rd ++ s.wr) (s.sp+384#64) 8) :
-    WP isa (.block loadTag) s fun t => t.gpr .x10 = s.mem.readW (s.sp+384#64) 64 ∧
+    (ptr : InRegions (s.rd ++ s.wr) (s.sp+BitVec.ofNat 64 tagOff) 8) :
+    WP isa (.block (loadTag tagOff)) s fun t => t.gpr .x10 = s.mem.readW (s.sp+BitVec.ofNat 64 tagOff) 64 ∧
       t.gpr .x19 = W ∧ t.sp = s.sp := by
   unfold loadTag
   rw [WP.block_cons_iff]
@@ -36,18 +36,17 @@ private theorem tagPtr_ok (s : State) (W : Addr) (w : s.gpr .x19 = W)
   rw [WP.block_cons_iff]
   refine ⟨_, exec_eor _ _ _ _,?_⟩
   rw [WP.block_cons_iff]
-  refine ⟨_,exec_ldrSp (off := shortWork+16) (by decide) ptr,WP.block_nil ?_⟩
+  refine ⟨_,exec_ldrSp (off := tagOff) (by rcases off with rfl|rfl <;> decide) ptr,WP.block_nil ?_⟩
   simp only [gpr_write,ite_true,reduceCtorEq,ite_false,gpr_setV,sp_setV,sp_write,mem_setV,
     BitVec.setWidth_eq,w,and_self]
-  exact ⟨rfl,trivial⟩
 
-private abbrev endPrefix := shortLengths ++ shortHash authO ++ loadTag
+private abbrev endPrefix (tagOff : Nat) := shortLengths ++ shortHash authO ++ loadTag tagOff
 private abbrev endTail := [Instr.strq .v16 .x10 0] ++ Impl.AesGcm.AArch64.restore
 
-private theorem prefix_ok (hash : HashEightOk) {o s : State} {W : Addr} {i : Nat} (p : ShortFinishPre o s W i) :
-    WP isa (.block endPrefix) s fun t => t.gpr .x10 = Tg o ∧ t.gpr .x19 = W ∧ t.sp = W := by
+private theorem prefix_ok {tagOff : Nat} (off : tagOff = 376 ∨ tagOff = 384) {d : ShortOutput} (hash : HashEightOk) {o s : State} {W : Addr} {i : Nat} (p : ShortFinishPreFor o s W i d tagOff) :
+    WP isa (.block (endPrefix tagOff)) s fun t => t.gpr .x10 = d.tag ∧ t.gpr .x19 = W ∧ t.sp = W := by
   rw [WP.block_append_iff,WP.block_append_iff]
-  refine (shortLengths_ok s p.x19 p.work p.x24 p.x26 (o.gpr .x5).isLt (stackArg o 1).isLt).mono ?_
+  refine (shortLengths_ok s p.x19 p.work p.x24 p.x26 (o.gpr .x5).isLt d.len.isLt).mono ?_
   intro l pl
   obtain ⟨_, lf, regs, lsp, lrd, lwr, _⟩ := pl
   have lw : Covers [⟨W,shortWork⟩] l.wr := lwr ▸ p.work
@@ -57,29 +56,34 @@ private theorem prefix_ok (hash : HashEightOk) {o s : State} {W : Addr} {i : Nat
     lw lh (p.keyWork.sub_right subY)).mono ?_
   intro h ⟨_, hf, hx, hsp, hrd, hwr⟩
   have sp := hsp.trans (lsp.trans p.sp)
-  refine (tagPtr_ok h W hx (by rw [hrd,hwr,lrd,lwr]; simpa only [BitVec.add_zero] using (
+  refine (tagPtr_ok off h W hx (by rw [hrd,hwr,lrd,lwr]; simpa only [BitVec.add_zero] using (
     in_left (rd := s.rd) (in_off (d := 0) (n := 16) p.work (by decide) (by decide))))
     (by rw [sp,hrd,hwr,lrd,lwr]; exact p.ptr)).mono ?_
   intro t ⟨tp,tx,ts⟩
   refine ⟨?_,tx,ts.trans sp⟩
-  rw [tp, sp, hf.readW (r := ⟨W+384#64,8⟩) (Region.contains_self _ _) (by
-    simpa only [List.mem_singleton,forall_eq] using (Offset.disjoint W (d := 384) (n := 8) (e := 352) (k := 16)
-      (.inr (by decide)) (by decide) (by decide))) (by decide),
-    lf.readW (r := ⟨W+384#64,8⟩) (Region.contains_self _ _) (by
-    simpa only [List.mem_singleton,forall_eq] using (Offset.disjoint W (d := 384) (n := 8) (e := 336) (k := 16)
-      (.inr (by decide)) (by decide) (by decide))) (by decide),p.tagAddr]
+  rw [tp, sp, hf.readW (r := ⟨W+BitVec.ofNat 64 tagOff,8⟩) (Region.contains_self _ _) (by
+    simpa only [List.mem_singleton,forall_eq] using (Offset.disjoint W (d := tagOff) (n := 8) (e := 352) (k := 16)
+      (.inr (by omega)) (by omega) (by decide))) (by decide),
+    lf.readW (r := ⟨W+BitVec.ofNat 64 tagOff,8⟩) (Region.contains_self _ _) (by
+    simpa only [List.mem_singleton,forall_eq] using (Offset.disjoint W (d := tagOff) (n := 8) (e := 336) (k := 16)
+      (.inr (by omega)) (by omega) (by decide))) (by decide),p.tagAddr]
 
-theorem shortFinish_rel (hash : HashEightOk) {a b s t : State} {W : Addr} {i j : Nat}
-    (p : ShortFinishPre a s W i) (q : ShortFinishPre b t W j) (k : K a = K b) (tag : Tg a = Tg b) :
-    RelCT isa (Eq2 s t) (.block (shortLengths ++ shortHash authO ++ shortTagOut ++ Impl.AesGcm.AArch64.restore)) TT := by
-  have eq : shortLengths ++ shortHash authO ++ shortTagOut ++ Impl.AesGcm.AArch64.restore =
-      endPrefix ++ endTail := by simp only [shortTagOut,writeTag,endPrefix,endTail,loadTag,List.append_assoc,List.cons_append,
+theorem shortFinishAt_rel {tagOff : Nat} (off : tagOff = 376 ∨ tagOff = 384) {da db : ShortOutput} (hash : HashEightOk) {a b s t : State} {W : Addr} {i j : Nat}
+    (p : ShortFinishPreFor a s W i da tagOff) (q : ShortFinishPreFor b t W j db tagOff) (k : K a = K b) (tag : da.tag = db.tag) :
+    RelCT isa (Eq2 s t) (.block (shortLengths ++ shortHash authO ++ shortTagAt tagOff ++ Impl.AesGcm.AArch64.restore)) TT := by
+  have eq : shortLengths ++ shortHash authO ++ shortTagAt tagOff ++ Impl.AesGcm.AArch64.restore =
+      endPrefix tagOff ++ endTail := by simp only [shortTagAt,writeTag,endPrefix,endTail,loadTag,List.append_assoc,List.cons_append,
         List.nil_append]
   rw [eq]
   apply RelCT.block_split
   refine rel_seq (rel_taint [.x19,.x21] (p.sp.trans q.sp.symm)
-    (by agree_tac [p.x19,q.x19,p.x21,q.x21,k]) ⟨_,by taint_decide⟩) (prefix_ok hash p) (prefix_ok hash q) ?_
+    (by agree_tac [p.x19,q.x19,p.x21,q.x21,k]) (by rcases off with rfl|rfl <;> exact ⟨_,by taint_decide⟩)) (prefix_ok off hash p) (prefix_ok off hash q) ?_
   intro u v ⟨u10,u19,us⟩ ⟨v10,v19,vs⟩
   exact rel_taint [.x10,.x19] (us.trans vs.symm) (by agree_tac [u10,v10,u19,v19,tag]) ⟨_,by taint_decide⟩
+
+theorem shortFinish_rel (hash : HashEightOk) {a b s t : State} {W : Addr} {i j : Nat}
+    (p : ShortFinishPre a s W i) (q : ShortFinishPre b t W j) (k : K a = K b) (tag : Tg a = Tg b) :
+    RelCT isa (Eq2 s t) (.block (shortLengths ++ shortHash authO ++ shortTagOut ++ Impl.AesGcm.AArch64.restore)) TT :=
+  shortFinishAt_rel (.inr rfl) hash p q k tag
 
 end VG.Proof.AesGcm.AArch64.DirectGather

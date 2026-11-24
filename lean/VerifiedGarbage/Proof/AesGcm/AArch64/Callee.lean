@@ -13,6 +13,7 @@ import VerifiedGarbage.Proof.Aes.AArch64.CodeLit
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 
 /-!
 # AES-GCM on AArch64: the functions called
@@ -378,11 +379,29 @@ structure CtrToCall (s : State) (K C D O S : Addr) (R n : Nat) (N : Nat := 2048)
   cd : (⟨C, 16⟩ : Region).Disjoint ⟨D, 16 * n⟩
   co : (⟨C, 16⟩ : Region).Disjoint ⟨O, 16 * n⟩
   cs : (⟨C, 16⟩ : Region).Disjoint ⟨S, N⟩
-  dO : (⟨D, 16 * n⟩ : Region).Disjoint ⟨O, 16 * n⟩
+  dO : O = D ∨ (⟨D, 16 * n⟩ : Region).Disjoint ⟨O, 16 * n⟩
   ds : (⟨D, 16 * n⟩ : Region).Disjoint ⟨S, N⟩
   os : (⟨O, 16 * n⟩ : Region).Disjoint ⟨S, N⟩
   reads : Covers ([⟨K, 240⟩, ⟨D, 16 * n⟩] ++ [⟨C, 16⟩, ⟨O, 16 * n⟩, ⟨S, N⟩]) (s.rd ++ s.wr)
   writes : Covers [⟨C, 16⟩, ⟨O, 16 * n⟩, ⟨S, N⟩] s.wr
+
+/-- The shared payload call's in-place register setup. -/
+def sameDst (s : State) : State := s.write .x .x6 (s.gpr .x3)
+
+theorem sameDst_run (s : State) :
+    runBlock isa [Impl.AesGcm.AArch64.mov .x6 .x3] s = some (sameDst s) := by
+  rw [Impl.AesGcm.AArch64.mov, runBlock_cons, exec_addImm_x (by decide), runStep_some, runBlock_nil]
+  simp only [sameDst, State.read, Size.bits, BitVec.setWidth_eq, BitVec.add_zero]
+
+theorem CtrCall.same {s : State} {K C D S : Addr} {R n N : Nat} (h : CtrCall s K C D S R n N) :
+    CtrToCall (sameDst s) K C D D S R n N := by
+  refine ⟨h.x0, h.x1, h.x2, h.x3, h.x4, h.x5, h.x3, h.rounds, h.wrap, h.wrap, h.n_lt, h.kc, h.kd, h.ks,
+    h.cd, h.cd, h.cs, Or.inl rfl, h.ds, h.ds, ?_, h.writes⟩
+  intro a k ha
+  obtain ⟨r, hr, hc⟩ := ha
+  apply h.reads a k
+  exact ⟨r, by simpa only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false,
+    or_left_comm, or_assoc, or_self_left] using hr, hc⟩
 
 /-- What a call of `vg_aes_ctr32_to` leaves. -/
 structure CtrToPost (s : State) (K C D O S : Addr) (R n : Nat) (s' : State) (N : Nat := 2048) : Prop where
@@ -438,6 +457,18 @@ theorem ctrTo_callLe (v : Ctr32Impl) {s : State} {K C D O S : Addr} {R n N : Nat
   · exact ⟨_, List.mem_cons_self, fun _ h => h⟩
   · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, fun _ h => h⟩
   · exact ⟨⟨S, N⟩, List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self), Region.sub_prefix hle⟩
+
+/-- The identical-layout call shares the disjoint kernel and its correctness proof. -/
+theorem payload_callLe (v : Ctr32Impl) {s : State} {K C D S : Addr} {R n N : Nat}
+    (hle : v.scratch ≤ N) (h : CtrCall s K C D S R n N) :
+    WP isa (.seq (.block [Impl.AesGcm.AArch64.mov .x6 .x3]) (.call v.to.name v.to.code)) s
+      (fun t => CtrToPost s K C D D S R n t N) := by
+  refine WP.seq (WP.of_runBlock ⟨_, sameDst_run s, (ctrTo_callLe v hle h.same).mono fun t p => ?_⟩)
+  refine ⟨p.rd, p.wr, p.sp, ?_, p.frame, p.out, p.ctr⟩
+  intro r hr h30
+  refine (p.saved r hr h30).trans (VG.AArch64.RegUpd.gpr_write_of_ne _ _ _ ?_)
+  rintro rfl
+  contradiction
 
 theorem ctrTo_call (v : Ctr32Impl) {s : State} {K C D O S : Addr} {R n : Nat}
     (h : CtrToCall s K C D O S R n) :

@@ -82,6 +82,6 @@ def crTailT : Prog isa :=
 
 /-- `cryptAl` with `crSeg2T` and `crTailT`. -/
 def cryptAlT : Prog isa :=
-  .seq (.block crArgs) (.seq (ctrCall c) (.seq crSeg2T (.seq (ctrCall c) crTailT)))
+  .seq (.block crArgs) (.seq (ctrPayload c) (.seq crSeg2T (.seq (ctrCall c) crTailT)))
 
 end VG.Impl.AesGcm.AArch64.Tail

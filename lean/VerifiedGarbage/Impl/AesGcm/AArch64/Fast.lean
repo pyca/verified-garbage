@@ -82,12 +82,13 @@ def front : Prog isa :=
       initState ++ hPrime ++ ([mov .x13 .x25, mov .x12 .x27] : List Instr)))
     (.seq padMul (.block storeY))
 
-/-- The lengths block `[8 alen]₆₄ ‖ [8 len]₆₄` in `T` (the length of the text
-in `x26`), absorbed, the accumulator stored, and the arguments for the tag at
-`W + o`. -/
-def lensTagAt (o : Nat) : List Instr :=
+/-- Hash the encoded bit lengths and store the accumulator. -/
+abbrev finishLengths : List Instr :=
   ([.ldr .x .x10 .x19 alenO, .lsl .x .x9 .x10 3, .rev .x9 .x9, .str .x .x9 .x19 tO, .lsl .x .x9 .x26 3,
-    .rev .x9 .x9, .str .x .x9 .x19 (tO + 8)] : List Instr) ++ mulT ++ storeY ++ tagSeg o
+    .rev .x9 .x9, .str .x .x9 .x19 (tO + 8)] : List Instr) ++ (mulT ++ storeY)
+
+/-- Store the final GHASH state and prepare the tag at `W + o`. -/
+def lensTagAt (o : Nat) : List Instr := finishLengths ++ tagSeg o
 
 /-- `lensTagAt`, with the tag at `W`. -/
 def lensTag : List Instr := lensTagAt 0

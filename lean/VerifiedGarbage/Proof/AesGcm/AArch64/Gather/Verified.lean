@@ -120,9 +120,9 @@ open VG.Impl.AesGcm.AArch64 in
 theorem seal_depth (v : GcmImpl) :
     16 * (Impl.StackScratch.AArch64.withStackArgScratch 2576 1 («seal» v.callees)).aarch64Depth ≤ 2576 := by
   simp only [Impl.StackScratch.AArch64.withStackArgScratch, «seal», sealRest, j0, j0hash, oneAad, absorbAl, encBody, fo, textAbs,
-    finBody, tag, crypt, crSeg1, crSeg2, crTail, ctrCall, ghCall, absorb, absSeg1, absTail, minK, copy, copyB, xorB,
+    finBody, tag, crypt, crSeg1, crSeg2, crTail, ctrCall, ctrPayload, ghCall, absorb, absSeg1, absTail, minK, copy, copyB, xorB,
     Impl.AesGcm.AArch64.xor, padSeg, flush, lens, GcmImpl.callees, Code.aarch64Depth, Instr.frameUnits,
-    depth_of_noFrames v.ctr.noFrames, depth_of_noFrames v.key.noFrames, depth_of_noFrames v.gh.noFrames]
+    depth_of_noFrames v.ctr.noFrames, depth_of_noFrames v.ctr.toNoFrames, depth_of_noFrames v.key.noFrames, depth_of_noFrames v.gh.noFrames]
   decide
 
 end VG.Proof.AesGcm.AArch64.Gather

@@ -51,8 +51,8 @@ theorem fastSealWithE_keepsV (v : GcmImpl) {k : Nat} (hk : k = 8 ∨ k = 16) {cl
     Impl.AesGcm.AArch64.Fast.cond, Impl.AesGcm.AArch64.Fast.padMul, Impl.AesGcm.AArch64.Fast.padMulT, Impl.AesGcm.AArch64.Tail.cryptAlT,
     Impl.AesGcm.AArch64.Tail.crSeg2T, Impl.AesGcm.AArch64.Tail.crTailT, crSeg2, crTail,
     sealRest, j0, j0hash, oneAad, absorbAl, encBody, fo, textAbs, finBody, tag, crypt, crSeg1,
-    ctrCall, ghCall, absorb, absSeg1, absTail, minK, copy, Impl.AesGcm.AArch64.xor, padSeg, flush, lens, GcmImpl.callees,
-    Code.allInstrs, v.ctr.keepsV, v.gh.keepsV, hcl] <;> decide +kernel
+    ctrPayload, ctrCall, ghCall, absorb, absSeg1, absTail, minK, copy, Impl.AesGcm.AArch64.xor, padSeg, flush, lens, GcmImpl.callees,
+    Code.allInstrs, v.ctr.toKeepsV, v.ctr.keepsV, v.gh.keepsV, hcl] <;> decide +kernel
 
 theorem fastSealWith_keepsV (v : GcmImpl) {gh : Fn} (hgh : gh.code.allInstrs keepsV = true) :
     (Impl.AesGcm.AArch64.Fast.sealWith v.callees gh).allInstrs keepsV = true :=
@@ -144,9 +144,9 @@ theorem fastSealWithE_depth0 (v : GcmImpl) {k : Nat} (hk : k = 8 ∨ k = 16) {cl
   simp only [Impl.AesGcm.AArch64.Fast.sealWithE, Impl.AesGcm.AArch64.Fast.runWithP, Impl.AesGcm.AArch64.Fast.front,
     Impl.AesGcm.AArch64.Fast.cond, Impl.AesGcm.AArch64.Fast.padMul, Impl.AesGcm.AArch64.Fast.padMulT, Impl.AesGcm.AArch64.Tail.cryptAlT,
     Impl.AesGcm.AArch64.Tail.crSeg2T, Impl.AesGcm.AArch64.Tail.crTailT, crSeg2, crTail, sealRest, j0, j0hash,
-    oneAad, absorbAl, encBody, fo, textAbs, finBody, tag, crypt, crSeg1, ctrCall, ghCall, absorb, absSeg1, absTail,
+    oneAad, absorbAl, encBody, fo, textAbs, finBody, tag, crypt, crSeg1, ctrPayload, ctrCall, ghCall, absorb, absSeg1, absTail,
     minK, copy, Impl.AesGcm.AArch64.xor, padSeg, flush, lens, GcmImpl.callees, Code.aarch64Depth,
-    depth_of_noFrames v.ctr.noFrames, depth_of_noFrames v.gh.noFrames, hcl] <;> decide
+    depth_of_noFrames v.ctr.toNoFrames, depth_of_noFrames v.ctr.noFrames, depth_of_noFrames v.gh.noFrames, hcl] <;> decide
 
 open VG.Proof.AesGcm.AArch64.Gather in
 /-- The frames of `sealWith v gh`, in its frame of 2576 bytes, use at most those. -/

@@ -41,9 +41,9 @@ theorem stitchSealWithS_keepsV (v : GcmImpl) {k : Nat} (hk : k = 8 ∨ k = 16) {
     Impl.AesGcm.AArch64.Stitch.stitched, Impl.AesGcm.AArch64.Fast.front, Impl.AesGcm.AArch64.Fast.cond,
     Impl.AesGcm.AArch64.Fast.padMul, Impl.AesGcm.AArch64.Fast.padMulT, Impl.AesGcm.AArch64.Tail.cryptAlT,
     Impl.AesGcm.AArch64.Tail.crSeg2T, Impl.AesGcm.AArch64.Tail.crTailT, crSeg2, crTail, sealRest, j0, j0hash, oneAad, absorbAl, encBody, fo,
-    textAbs, finBody, tag, crypt, crSeg1, ctrCall, ghCall, absorb, absSeg1, absTail, minK, copy,
+    textAbs, finBody, tag, crypt, crSeg1, ctrCall, ctrPayload, ghCall, absorb, absSeg1, absTail, minK, copy,
     Impl.AesGcm.AArch64.xor, padSeg, flush, lens, GcmImpl.callees, Code.allInstrs, List.nil_append,
-    v.ctr.keepsV, v.gh.keepsV, htb, hcl, Bool.and_true, Bool.true_and]
+    v.ctr.keepsV, v.ctr.toKeepsV, v.gh.keepsV, htb, hcl, Bool.and_true, Bool.true_and]
   -- The four cases in one kernel evaluation: they are mostly the same instructions.
   taint_decide_all
 
@@ -67,7 +67,7 @@ theorem stitchOpenWithS_keepsV (v : GcmImpl) {to : Bool} {w : Nat} (hw : (to = f
     Impl.AesGcm.AArch64.Tail.cryptAlT, Impl.AesGcm.AArch64.Tail.crSeg2T, Impl.AesGcm.AArch64.Tail.crTailT,
     openEntryG, openRestG, openMainG, oneCryptG, cryptAlG, crArgsG, ctrCallG, crTailG, wipeG, wipeLoop, crArgs,
     tagLenOk, tagIn, cmpSeg, cmp, cmp16, j0, j0hash, oneAad, absorbAl, decAbs, fo, textAbs, finBody, tag,
-    crSeg2, crTail, ctrCall, ghCall, absorb, absSeg1, absTail, minK, copy, copyB, Impl.AesGcm.AArch64.xor,
+    crSeg2, crTail, ctrCall, ctrPayload, ghCall, absorb, absSeg1, absTail, minK, copy, copyB, Impl.AesGcm.AArch64.xor,
     padSeg, flush, lens, GcmImpl.callees, Code.allInstrs, List.nil_append, v.ctr.keepsV, v.ctr.toKeepsV,
     v.gh.keepsV, htb, hcl, Bool.and_true, Bool.true_and]
   -- The four cases in one kernel evaluation: they are mostly the same instructions.

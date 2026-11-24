@@ -57,15 +57,3 @@ def leaf (c : Callees) : Prog isa :=
   Impl.Scrub.AArch64.scrubAll work 0 Fn.own (.frame (.alloc work) (body c) (.free work))
 
 end VG.Impl.AesGcm.AArch64.DirectGather.Medium
-
-
-namespace VG.Impl.AesGcm.AArch64.DirectGather
-
-/-- The hardware AES backend uses bounded leaves for standard nonces and a
-single AAD block. Other records use the descriptor loop for general lengths. -/
-def sealGather (v : Calls) : Prog AArch64.isa :=
-  if v.stitch && v.ctr.scratch == 0 then
-    chooseShort (chooseRecord 224 (Medium.leaf v.callees) (longSeal v))
-  else longSeal v
-
-end VG.Impl.AesGcm.AArch64.DirectGather

@@ -1,6 +1,9 @@
 module
 
-public import VerifiedGarbage.Impl.AesGcm.AArch64.DirectGather.Medium
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Contiguous.Leaves
+
+public import VerifiedGarbage.Impl.AesGcm.AArch64.DirectGather.Contiguous
+import VerifiedGarbage.Proof.AesGcm.AArch64.DirectGather.Contiguous
 import VerifiedGarbage.Proof.AesGcm.AArch64.DirectGather.MediumCT
 import VerifiedGarbage.Proof.AesGcm.AArch64.DirectGather.MediumBody
 
@@ -1344,10 +1347,6 @@ open VG.Impl.AesGcm.AArch64.Fn (own)
 open VG.Impl.StackScratch.AArch64 (withStackScratch withStackArgScratch)
 open VG.Impl.Scrub.AArch64 (scrubAll)
 
-/-- What the functions of `v` call, as `Impl/` takes it. -/
-def GcmImpl.calls (v : GcmImpl) : Calls :=
-  ⟨v.ctr.callee, v.ctr.to, v.key.fn, v.gh.fn, v.gh.pmull, v.stitch, v.suffix⟩
-
 /-- What the functions of the variant `g` call. -/
 def GcmVariant.calls (g : GcmVariant) : Calls := g.impl.calls
 
@@ -1854,13 +1853,14 @@ theorem wrapGeneral {c : Calls} (h : CallsOk c) (raw : Verified target (framed c
   exact False.elim (List.not_mem_nil bad)
 
 theorem mediumVerified_of {c : Calls} (callees : CallsOk c)
-    (correct : ∀ s, Gather.Lay .plain s → NL s = 12 → AL s ≤ 16 → L s ≤ 224 →
+    (correct : ∀ s, BoundedLay s → NL s = 12 → AL s ≤ 16 → L s ≤ 224 →
       WP isa (Medium.body c.callees) (allocated Medium.work s) fun t => gatherPost s t ∧
         (∀ r ∈ preserved, t.gpr r = s.gpr r) ∧ t.sp = s.sp - BitVec.ofNat 64 Medium.work)
-    (timing : ∀ {a b}, Gather.Lay .plain a → Gather.Lay .plain b →
+    (timing : ∀ {a b}, BoundedLay a → BoundedLay b →
       recordWithin 224 a → recordWithin 224 b → gatherPub a b →
       RelCT isa (Eq2 (allocated Medium.work a) (allocated Medium.work b)) (Medium.body c.callees) TT) :
     VerifiedScrubbed target (Medium.leaf c.callees) (boundedRecordContract 224) 0 := by
+  apply BoundedLay.forGather
   apply boundedLeaf_verified _ (by decide) _ correct timing
   exact side_of_holes callees fnOk_nil (.frame (.alloc Medium.work) (Medium.body holes) (.free Medium.work))
 
@@ -1875,25 +1875,35 @@ theorem registerGather {c : Calls} (h : CallsOk c)
     next fast =>
       simp only [Bool.and_eq_true,beq_iff_eq] at fast
       have hzero := fast.2
-      exact chooseShort_scrubbed (shortLeaf_verified Proof.Gcm.AArch64.Pmull.hashEight_at)
+      exact chooseRecord_scrubbed (.inl rfl) (Contiguous.Forward.shortCaller_verified Proof.Gcm.AArch64.Pmull.hashEight_at)
         (chooseRecord_scrubbed (.inr rfl) (medium hzero) long)
     next => exact long
   refine ⟨Proof.AesGcm.sealGather_keyed (result.verified.of_implies gather_implies),?_⟩
   intro a b τ υ a' b' pa pb pub
   exact result.noResidue a b τ υ a' b' ⟨gatherPre_of_spec pa,trivial⟩ ⟨gatherPre_of_spec pb,trivial⟩ (gatherPub_of pub)
 
-theorem generalGather_verified (v : GcmImpl) : Verified target (framed v.calls) (gatherAArch64 .plain) := by
+theorem generalGather_shared (v : GcmImpl) : Verified target (framed v.calls) sharedGatherContract := by
   have sz := generalSize v.callsOk
   have hx : v.ctr.scratch ≤ v.calls.pwWn - 512 := by
     rw [pwWn_eq]
     rcases v.ctr.scratch_ok with h|h <;> cases st : v.stitch <;> simp [gcmPwWn,gcmWn,st,h]
-  refine ⟨?_,ct_of (fun a b pa pb pub => generalFramed_rel (Gather.lay pa.1) (Gather.lay pb.1)
+  refine ⟨?_,ct_of (fun a b pa pb pub => generalFramed_rel (Gather.lay pa) (Gather.lay pb)
     pub sz.2.1 sz.2.2 _ (fun _ _ eu ew _ => generalBody_rel v v.stitch eu ew pub sz.1 hx (fun _ => Proof.Gcm.AArch64.Stitch.gatherLaws))),?_⟩
   · intro o po
     apply WP.withPreservedV (hc := keepsV_of_gatherSide (generalSide v.callsOk))
-    exact (generalFramed_wp o (Gather.lay po.1) sz.2.1 sz.2.2 _
+    exact (generalFramed_wp o (Gather.lay po) sz.2.1 sz.2.2 _
       (fun _ en => generalBody_ok v v.stitch en sz.1 hx (fun _ => Proof.Gcm.AArch64.Stitch.gatherLaws))).mono
       (fun _ ⟨p,g⟩ => ⟨g,p⟩)
+  · obtain ⟨s,hs⟩ := gatherSat_pre
+    exact ⟨s,(Gather.lay (gatherPre_of_spec hs)).shared.pre⟩
+
+theorem generalGather_verified (v : GcmImpl) : Verified target (framed v.calls) (gatherAArch64 .plain) := by
+  have raw := generalGather_shared v
+  have pre {s : State} (h : (gatherAArch64 .plain).pre s) : sharedGatherContract.pre s :=
+    (Gather.lay h.1).shared.pre
+  refine ⟨fun s h => raw.1 s (pre h),?_,?_⟩
+  · intro a b τ υ a' b' pa pb pub
+    exact raw.2.1 a b τ υ a' b' (pre pa) (pre pb) pub
   · obtain ⟨s,hs⟩ := gatherSat_pre
     exact ⟨s,gatherPre_of_spec hs,trivial⟩
 
@@ -2456,19 +2466,19 @@ theorem initDS_scrubbed (g : GcmVariant) :
 included. -/
 theorem streamEncryptDS_scrubbed (g : GcmVariant) :
     VerifiedScrubbed AArch64.target (Fn.streamEncryptDS g.calls)
-      (Spec.Gcm.streamEncryptContract (AArch64.abi.withFns [g.calls.gh.name, g.calls.ctr.name]) (g.calls.wn + 32)) 0 := by
+      (Spec.Gcm.streamEncryptContract (AArch64.abi.withFns [g.calls.gh.name, g.calls.ctr.name, g.calls.ctrTo.name]) (g.calls.wn + 32)) 0 := by
   have hc := g.impl.callsOk
   have hv : Verified AArch64.target (withStackScratch g.impl.calls.wn .x7 (Impl.AesGcm.AArch64.streamEncrypt g.impl.calls.callees))
       (Proof.AesGcm.streamEncryptRoundsContract AArch64.abi g.impl.calls.wn) := by
     rw [wn_eq]; exact streamEncrypt_framedW g.impl
   have hk : nStack Spec.Gcm.streamCryptSig = 0 := by decide
-  have hF : Impl.Sha3.AArch64.frameDS 0 [Fn.ghR g.calls, Fn.ctrR g.calls].length = 32 := by
+  have hF : Impl.Sha3.AArch64.frameDS 0 [Fn.ghR g.calls, Fn.ctrR g.calls, Fn.toR g.calls].length = 32 := by
     simp only [List.length_cons, List.length_nil]; rfl
-  have h := verifiedScrubbed_viaDS (p₀ := Fn.ghR g.calls) (L' := [Fn.ctrR g.calls]) (core := "vg_aes_gcm_stream_encrypt_core")
+  have h := verifiedScrubbed_viaDS (p₀ := Fn.ghR g.calls) (L' := [Fn.ctrR g.calls, Fn.toR g.calls]) (core := "vg_aes_gcm_stream_encrypt_core")
     hv (streamEncrypt_side hc) (AArch64.Scrub.scrubAllOk_regs (sig := Spec.Gcm.streamCryptSig) (Nat.le_of_ble_eq_true rfl) (Nat.add_pos_left (wn_pos hc) _) (Nat.le_refl _) (Proof.AesGcm.streamEncryptPostOut_local _))
-    (by simp [Fn.ghR, Fn.ctrR]) (by simp [Fn.ghR, Fn.ctrR, Impl.Scrub.AArch64.hiVecs]) (wn_pos hc)
+    (by simp [Fn.ghR, Fn.ctrR, Fn.toR]) (by simp [Fn.ghR, Fn.ctrR, Fn.toR, Impl.Scrub.AArch64.hiVecs]) (wn_pos hc)
     (by rw [hk, hF]; rcases wn_cases hc with h | h <;> rw [h] <;> decide)
-    (by simp only [AArch64.Scrub.wfB, Impl.Sha3.AArch64.clearDL, List.map_cons, List.map_nil, Fn.ghR, Fn.ctrR]; decide)
+    (by simp only [AArch64.Scrub.wfB, Impl.Sha3.AArch64.clearDL, List.map_cons, List.map_nil, Fn.ghR, Fn.ctrR, Fn.toR]; decide)
     (by decide) (Proof.AesGcm.streamTextPre_local _) (Proof.AesGcm.streamEncryptPost_local _) (fun vs m m₁ m₂ x hlen _ _ hb h => Proof.AesGcm.streamEncryptPostOut_local _ vs m m₁ m₂ x hlen hb h)
     hv.2.2
     (by rw [hk, hF]; rcases wn_cases hc with h | h <;> rw [h]
@@ -2482,19 +2492,19 @@ theorem streamEncryptDS_scrubbed (g : GcmVariant) :
 included. -/
 theorem streamDecryptDS_scrubbed (g : GcmVariant) :
     VerifiedScrubbed AArch64.target (Fn.streamDecryptDS g.calls)
-      (Spec.Gcm.streamDecryptContract (AArch64.abi.withFns [g.calls.gh.name, g.calls.ctr.name]) (g.calls.wn + 32)) 0 := by
+      (Spec.Gcm.streamDecryptContract (AArch64.abi.withFns [g.calls.gh.name, g.calls.ctr.name, g.calls.ctrTo.name]) (g.calls.wn + 32)) 0 := by
   have hc := g.impl.callsOk
   have hv : Verified AArch64.target (withStackScratch g.impl.calls.wn .x7 (Impl.AesGcm.AArch64.streamDecrypt g.impl.calls.callees))
       (Proof.AesGcm.streamDecryptRoundsContract AArch64.abi g.impl.calls.wn) := by
     rw [wn_eq]; exact streamDecrypt_framedW g.impl
   have hk : nStack Spec.Gcm.streamCryptSig = 0 := by decide
-  have hF : Impl.Sha3.AArch64.frameDS 0 [Fn.ghR g.calls, Fn.ctrR g.calls].length = 32 := by
+  have hF : Impl.Sha3.AArch64.frameDS 0 [Fn.ghR g.calls, Fn.ctrR g.calls, Fn.toR g.calls].length = 32 := by
     simp only [List.length_cons, List.length_nil]; rfl
-  have h := verifiedScrubbed_viaDS (p₀ := Fn.ghR g.calls) (L' := [Fn.ctrR g.calls]) (core := "vg_aes_gcm_stream_decrypt_core")
+  have h := verifiedScrubbed_viaDS (p₀ := Fn.ghR g.calls) (L' := [Fn.ctrR g.calls, Fn.toR g.calls]) (core := "vg_aes_gcm_stream_decrypt_core")
     hv (streamDecrypt_side hc) (AArch64.Scrub.scrubAllOk_regs (sig := Spec.Gcm.streamCryptSig) (Nat.le_of_ble_eq_true rfl) (Nat.add_pos_left (wn_pos hc) _) (Nat.le_refl _) (Proof.AesGcm.streamDecryptPostOut_local _))
-    (by simp [Fn.ghR, Fn.ctrR]) (by simp [Fn.ghR, Fn.ctrR, Impl.Scrub.AArch64.hiVecs]) (wn_pos hc)
+    (by simp [Fn.ghR, Fn.ctrR, Fn.toR]) (by simp [Fn.ghR, Fn.ctrR, Fn.toR, Impl.Scrub.AArch64.hiVecs]) (wn_pos hc)
     (by rw [hk, hF]; rcases wn_cases hc with h | h <;> rw [h] <;> decide)
-    (by simp only [AArch64.Scrub.wfB, Impl.Sha3.AArch64.clearDL, List.map_cons, List.map_nil, Fn.ghR, Fn.ctrR]; decide)
+    (by simp only [AArch64.Scrub.wfB, Impl.Sha3.AArch64.clearDL, List.map_cons, List.map_nil, Fn.ghR, Fn.ctrR, Fn.toR]; decide)
     (by decide) (Proof.AesGcm.streamTextPre_local _) (Proof.AesGcm.streamDecryptPost_local _) (fun vs m m₁ m₂ x hlen _ _ hb h => Proof.AesGcm.streamDecryptPostOut_local _ vs m m₁ m₂ x hlen hb h)
     hv.2.2
     (by rw [hk, hF]; rcases wn_cases hc with h | h <;> rw [h]
@@ -2566,3 +2576,61 @@ same for each. -/
 def GcmVariant.viaRegs (g : GcmVariant) : List GcmVariant := if g.calls.pmull then [] else [g]
 
 end VG.Proof.AesGcm.AArch64
+
+namespace VG.Proof.AesGcm.AArch64.Contiguous
+open VG VG.AArch64 VG.AArch64.Scrub VG.Impl.Scrub.AArch64
+open VG.Impl.AesGcm.AArch64 (Calls)
+open VG.Impl.AesGcm.AArch64.Fn (own)
+open VG.Impl.AesGcm.AArch64.Contiguous
+open VG.Impl.StackScratch.AArch64 (withStackArgScratch)
+open Scrubbed
+
+private def generalHoles (wn : Nat) (st : Bool) : Prog isa := Code.frame (.alloc 48)
+    (.seq (.block generalArgs) (withStackArgScratch (wn+32) 3
+      (Impl.AesGcm.AArch64.DirectGather.body holes st))) (.free 48)
+
+theorem generalSide {c : Calls} (h : CallsOk c) :
+    scrubSide (generalFrame c) (c.pwWn+80) 0 own [] = true := by
+  unfold generalFrame Impl.AesGcm.AArch64.DirectGather.framed
+  rcases pw_cases h with ⟨st,w|w⟩|⟨st,w|w⟩ <;> rw [st,w]
+  · exact side_of_holes h fnOk_nil (generalHoles 1024 true)
+  · exact side_of_holes h fnOk_nil (generalHoles 2560 true)
+  · exact side_of_holes h fnOk_nil (generalHoles 768 false)
+  · exact side_of_holes h fnOk_nil (generalHoles 2560 false)
+
+private def preparedHoles (wn : Nat) (f : Bool) := withStackArgScratch (wn+32) 3 (preparedBody holes holeW f)
+
+theorem preparedSide (v : GcmImpl) (g : GhashWithImpl) (f : Bool) :
+    scrubSide (preparedFrame v.calls g.fn f) (v.calls.pwWn+32) 0 own [] = true := by
+  have hw : FnOk (.call g.fn.name g.fn.code) := ⟨g.fnOk.side,g.fnOk.depth⟩
+  unfold preparedFrame
+  rcases pw_cases v.callsOk with ⟨_,w|w⟩|⟨_,w|w⟩ <;> rw [w] <;> cases f
+  · exact side_of_holes v.callsOk hw (preparedHoles 1024 false)
+  · exact side_of_holes v.callsOk hw (preparedHoles 1024 true)
+  · exact side_of_holes v.callsOk hw (preparedHoles 2560 false)
+  · exact side_of_holes v.callsOk hw (preparedHoles 2560 true)
+  · exact side_of_holes v.callsOk hw (preparedHoles 768 false)
+  · exact side_of_holes v.callsOk hw (preparedHoles 768 true)
+  · exact side_of_holes v.callsOk hw (preparedHoles 2560 false)
+  · exact side_of_holes v.callsOk hw (preparedHoles 2560 true)
+
+theorem generalDepth (v : GcmImpl) :
+    16*(Impl.AesGcm.AArch64.DirectGather.framed v.calls).aarch64Depth < 2^64 := by
+  have side := DirectGather.generalSide v.callsOk
+  have h := (DirectGather.generalSize v.callsOk).2.1
+  simp only [scrubSide, Nat.ne_of_gt (show 0 < v.calls.pwWn+32 by omega), ↓reduceIte, Bool.and_eq_true, decide_eq_true_eq] at side
+  have d := side.1.1.1.1.1.2
+  omega
+
+theorem scratch_le (v : GcmImpl) : v.ctr.scratch ≤ v.calls.pwWn-512 := by
+  rw [pwWn_eq]
+  rcases v.ctr.scratch_ok with h|h <;> cases st : v.stitch <;>
+    simp [gcmPwWn, gcmWn, h, st]
+
+/-- Discharge the arithmetic and register obligations at the concrete registration. -/
+theorem backendFacts (v : GcmImpl) (g : GhashWithImpl) : BackendFacts v g :=
+  ⟨DirectGather.generalGather_shared v,DirectGather.generalSize v.callsOk,scratch_le v,
+    generalSide v.callsOk,generalDepth v,preparedSide v g,
+    Proof.Gcm.AArch64.Pmull.hashEight_at,Proof.Gcm.AArch64.Stitch.gh8Ok,Proof.Gcm.AArch64.Pmull.mulV_keyV⟩
+
+end VG.Proof.AesGcm.AArch64.Contiguous

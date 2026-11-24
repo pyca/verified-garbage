@@ -1,6 +1,9 @@
 module
 
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Contiguous.Public
+
 public import VerifiedGarbage.Impl.AesGcm.AArch64.Fn
+public import VerifiedGarbage.Proof.AesGcm.AArch64.DirectGather.Contiguous
 public import VerifiedGarbage.Impl.Gcm.AArch64.Fn
 public import VerifiedGarbage.Proof.AesGcm.AArch64.GhashImpls
 public import VerifiedGarbage.Proof.Framework.Registration
@@ -78,6 +81,14 @@ def artifactsDS (g : GcmVariant) : List Artifact := [
     code := Impl.AesGcm.AArch64.Fn.streamVerifyDS g.calls
     verified := Proof.AesGcm.AArch64.streamVerifyDS_scrubbed g }]
 
+/-- Contiguous seal over identical or separate buffers, using the same code for each layout. -/
+def contiguousArtifact (g : GcmVariant) : Artifact :=
+  Spec.Gcm.sealContiguousWithPowersApi.artifact AArch64.target {
+    suffix := g.impl.suffix
+    code := Impl.AesGcm.AArch64.Contiguous.select g.calls GhashWithImpl.aes.fn
+    verified := Proof.AesGcm.AArch64.Contiguous.public_verified
+      (Proof.AesGcm.AArch64.Contiguous.backendFacts g.impl GhashWithImpl.aes) }
+
 /-- The gather implementation consumes the original input slices on each backend. -/
 def gatherArtifact (g : GcmVariant) : Artifact :=
   Spec.Gcm.sealGatherApi.artifact AArch64.target {
@@ -91,8 +102,9 @@ for TLS records. -/
 def withPowersArtifacts (g : GcmVariant) (w : GhashWithImpl) : List Artifact := [
   Spec.Gcm.sealWithPowersApi.artifact AArch64.target {
     suffix := g.impl.suffix
-    code := Impl.AesGcm.AArch64.Fn.sealWithPowers g.calls w.fn
-    verified := Proof.AesGcm.AArch64.sealWithPowers_scrubbed g w },
+    code := Impl.AesGcm.AArch64.DirectGather.Contiguous.sealWithPowers g.calls w.fn
+    verified := Proof.AesGcm.AArch64.DirectGather.Contiguous.Selection.withPowers_scrubbed Proof.Gcm.AArch64.Pmull.hashEight_at
+      g.calls w.fn (Proof.AesGcm.AArch64.sealWithPowers_scrubbed g w) },
   Spec.Gcm.openWithPowersApi.artifact AArch64.target {
     suffix := g.impl.suffix
     code := Impl.AesGcm.AArch64.Fn.openWithPowers g.calls w.fn
@@ -124,7 +136,7 @@ def basePwArtifacts (g : GcmVariant) : List Artifact := [
 their addresses (`GcmVariant.direct`, `viaRegs`). -/
 def artifactsFor (g : GcmVariant) : List Artifact :=
   (g.whole.flatMap GcmVariant.direct).flatMap artifactsOf ++ (g.whole.flatMap GcmVariant.viaRegs).flatMap artifactsDS ++
-    [gatherArtifact g] ++
+    [gatherArtifact g, contiguousArtifact g] ++
     g.withPowers.flatMap (withPowersArtifacts g) ++ g.basePowers.flatMap basePwArtifacts
 
 def artifacts : List Artifact :=
