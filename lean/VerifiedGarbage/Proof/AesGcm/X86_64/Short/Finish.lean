@@ -440,13 +440,22 @@ structure FinPre (Ctx W SP : Addr) (H : Block) (al n r : Nat) (D : Addr) (s : St
 /-- With bytes left: they are encrypted with the keystream at `K[1]` and
 copied to `G[0]`, and the tag of `GHASH` continued over `G[0]` and the
 lengths block is at `W`. -/
-theorem finTail_ok {Ctx W SP D : Addr} {H : Block} {al n r : Nat} {s : State} (P : FinPre Ctx W SP H al n r D s) :
-    WP isa (.seq (.block finTextArgs) (.seq (xorText true) (.block (finLens ++ finGh2 ++ tagK 0)))) s fun t =>
+theorem finTailFrom_ok (prep : List Instr) (source : Reg) {Ctx W SP D S : Addr} {H : Block} {al n r : Nat} {s : State} (P : FinPre Ctx W SP H al n r D s)
+    (allowed : source ∈ [Reg.rsi,.rbx])
+    (setup : ∃ t, runBlock isa prep s = some t ∧
+      t.mem = writeBytes s.mem (W+512#64) (List.replicate 16 0) ∧
+      t.gpr .rdi = W+512#64 ∧ t.gpr .rsi = D ∧ t.gpr .rdx = W+1040#64 ∧ t.gpr .rcx = BitVec.ofNat 64 r ∧
+      t.gpr source = S ∧ (∀ z ∈ [Reg.rsp,.r13,.r14,.r15], t.gpr z=s.gpr z) ∧ t.rd=s.rd ∧ t.wr=s.wr ∧
+      ∀ x, x≠.xmm7 → t.xmm x=s.xmm x)
+    (read : Covers [⟨S, r⟩] (s.rd ++ s.wr))
+    (alias : S = D ∨ (⟨S,r⟩ : Region).Disjoint ⟨D,r⟩)
+    (apart : (⟨S,r⟩ : Region).Disjoint ⟨W,2560⟩) :
+    WP isa (.seq (.block prep) (.seq (xorText true source) (.block (finLens ++ finGh2 ++ tagK 0)))) s fun t =>
       Env Ctx (W + BitVec.ofNat 64 16) W SP t ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
       Frame [⟨W, 16⟩, ⟨W + BitVec.ofNat 64 512, 32⟩, ⟨D, r⟩] s.mem t.mem ∧
-      bytesAt t.mem D r = xb s.mem D (W + BitVec.ofNat 64 1040) r ∧
+      bytesAt t.mem D r = xb s.mem S (W + BitVec.ofNat 64 1040) r ∧
       blockAt t.mem W = Spec.Gcm.ghashFrom H (blockAt s.mem (yA W))
-          [Spec.Gcm.ofBytes (xb s.mem D (W + BitVec.ofNat 64 1040) r ++ Spec.Gcm.zeros (16 - r)),
+          [Spec.Gcm.ofBytes (xb s.mem S (W + BitVec.ofNat 64 1040) r ++ Spec.Gcm.zeros (16 - r)),
             Spec.Gcm.ofBytes (Proof.Gcm.lensBlock al n)] ^^^
         blockAt s.mem (W + BitVec.ofNat 64 1024) := by
   have he := P.env
@@ -457,7 +466,7 @@ theorem finTail_ok {Ctx W SP D : Addr} {H : Block} {al n r : Nat} {s : State} (P
       (⟨W + BitVec.ofNat 64 d, k⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 e, j⟩ :=
     fun h _ _ => Offset.disjoint W h (by omega_arith) (by omega_arith)
   -- `G[0]` zeroed, and the arguments.
-  obtain ⟨s₁, run₁, m₁, di₁, si₁, dx₁, cx₁, g₁, rd₁, wr₁, x₁⟩ := finTextArgs_ok s he P.dat P.len
+  obtain ⟨s₁, run₁, m₁, di₁, si₁, dx₁, cx₁, reg, g₁, rd₁, wr₁, x₁⟩ := setup
   refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
   obtain xp : XorPre true s₁ D (W + BitVec.ofNat 64 1040) (W + BitVec.ofNat 64 512) r :=
     ⟨si₁, dx₁, di₁, cx₁, by omega_arith, by rw [rd₁, wr₁]; exact P.rd,
@@ -465,17 +474,18 @@ theorem finTail_ok {Ctx W SP D : Addr} {H : Block} {al n r : Nat} {s : State} (P
       fun _ => by rw [wr₁]; exact he.perm.wC (by omega_arith), dW (by omega_arith), fun _ => dW (by omega_arith),
       fun _ => dWW (.inr (by omega_arith)) (by omega_arith) (by omega_arith)⟩
   -- The text.
-  refine WP.seq (WP.mono (xorText_ok true s₁ xp) fun s₂ ⟨m₂, g₂, rd₂, wr₂, z₂⟩ => ?_)
+  refine WP.seq (WP.mono (xorText_at_ok true source s₁ xp reg allowed (by rw [rd₁,wr₁]; exact read)
+    alias (fun _ => apart.sub_right (Lay.wSub (by omega_arith)))) fun s₂ ⟨m₂, g₂, rd₂, wr₂, z₂⟩ => ?_)
   obtain he₁ : Env Ctx (W + BitVec.ofNat 64 16) W SP s₁ := he.keep (fun g hg => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hg
-    rcases hg with rfl | rfl | rfl | rfl <;> exact g₁ _ (by decide) (by decide) (by decide) (by decide)) rd₁ wr₁
+    rcases hg with rfl | rfl | rfl | rfl <;> exact g₁ _ (by decide)) rd₁ wr₁
   obtain he₂ : Env Ctx (W + BitVec.ofNat 64 16) W SP s₂ := he₁.keep (fun g hg => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hg
     rcases hg with rfl | rfl | rfl | rfl <;> exact g₂ _ (by decide) (by decide) (by decide) (by decide)) rd₂ wr₂
   obtain x₂ : ∀ q, q ≠ .xmm4 → q ≠ .xmm7 → s₂.xmm q = s.xmm q := fun q a b => by
     rw [show s₂.xmm q = s₂.zlane q 0 from rfl, z₂ q (by simp [a]) 0 (by decide)]
     exact x₁ q b
-  generalize hc : xb s₁.mem D (W + BitVec.ofNat 64 1040) r = c at m₂
+  generalize hc : xb s₁.mem S (W + BitVec.ofNat 64 1040) r = c at m₂
   obtain hcl : c.length = r := by rw [← hc, length_xb]
   obtain f₁ : Frame [⟨W + BitVec.ofNat 64 512, 16⟩] s.mem s₁.mem := by
     rw [m₁]; exact writeBytes_frame' _ (List.length_replicate ..)
@@ -529,10 +539,10 @@ theorem finTail_ok {Ctx W SP D : Addr} {H : Block} {al n r : Nat} {s : State} (P
     rw [bytesAt_frame (writeBytes_frame' _ hcl) (fun q hq => by
         simp only [List.mem_singleton] at hq; subst hq; exact dW (by omega_arith)) (by omega_arith), ← hcl]
     exact bytesAt_writeBytes_self _ _ _ (by omega_arith)
-  obtain hc' : c = xb s.mem D (W + BitVec.ofNat 64 1040) r := by
+  obtain hc' : c = xb s.mem S (W + BitVec.ofNat 64 1040) r := by
     rw [← hc]; simp only [xb]
     rw [bytesAt_frame f₁ (fun q hq => by
-        simp only [List.mem_singleton] at hq; subst hq; exact dW (by decide)) (by omega_arith),
+        simp only [List.mem_singleton] at hq; subst hq; exact apart.sub_right (Lay.wSub (by decide))) (by omega_arith),
       bytesAt_frame f₁ (fun q hq => by
         simp only [List.mem_singleton] at hq; subst hq; exact dWW (.inr (by omega_arith)) (by omega_arith) (by decide)) (by omega_arith)]
   -- `G[0]`: the ciphertext and zeros.
@@ -583,6 +593,22 @@ theorem finTail_ok {Ctx W SP D : Addr} {H : Block} {al n r : Nat} {s : State} (P
         simp only [List.mem_singleton] at hq; subst hq; simpa using dW (d := 0) (k := 16) (by decide)) (by omega_arith),
       m₄, bD, hc']
   · rw [t₅, y₄, m₄, hY, bW (.inr ⟨Nat.le_refl _, by decide⟩), hb₀, hb₁, hc']
+
+theorem finTail_ok {Ctx W SP D : Addr} {H : Block} {al n r : Nat} {s : State} (P : FinPre Ctx W SP H al n r D s) :
+    WP isa (.seq (.block finTextArgs) (.seq (xorText true) (.block (finLens ++ finGh2 ++ tagK 0)))) s fun t =>
+      Env Ctx (W + BitVec.ofNat 64 16) W SP t ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
+      Frame [⟨W, 16⟩, ⟨W + BitVec.ofNat 64 512, 32⟩, ⟨D, r⟩] s.mem t.mem ∧
+      bytesAt t.mem D r = xb s.mem D (W + BitVec.ofNat 64 1040) r ∧
+      blockAt t.mem W = Spec.Gcm.ghashFrom H (blockAt s.mem (yA W))
+          [Spec.Gcm.ofBytes (xb s.mem D (W + BitVec.ofNat 64 1040) r ++ Spec.Gcm.zeros (16 - r)),
+            Spec.Gcm.ofBytes (Proof.Gcm.lensBlock al n)] ^^^
+        blockAt s.mem (W + BitVec.ofNat 64 1024) := by
+  apply finTailFrom_ok finTextArgs .rsi P (by decide) _ P.rd (.inl rfl) P.dW
+  obtain ⟨t,run,mem,di,si,dx,cx,g,rd,wr,x⟩ := finTextArgs_ok s P.env P.dat P.len
+  refine ⟨t,run,mem,di,si,dx,cx,si,?_,rd,wr,x⟩
+  intro z hz
+  simp only [List.mem_cons,List.not_mem_nil,or_false] at hz
+  rcases hz with rfl|rfl|rfl|rfl <;> exact g _ (by decide) (by decide) (by decide) (by decide)
 
 /-- Authenticate the lengths and optionally the already staged ciphertext block;
 both the separate-output and in-place paths use this suffix. -/
