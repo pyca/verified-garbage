@@ -104,17 +104,12 @@ theorem deferredCtr_ok {M : CtxMode} (ctr : Proof.Aes.X86_64.Ctr32ToImpl)
   let q := n/16
   have hq : 16*q ≤ n := Nat.mul_div_le _ _
   have Dq := h.data.take hq
-  have dW := Dq.ok.w
   have kS : Region.Sub (below SP 8) (below SP 24) := below_sub (by decide) (by decide)
-  have kW := h.kw
   have L := h.lay
   unfold Contiguous.call
   refine WP.seq ((ctrArgs_ok h hq qreg read src dst).mono fun u ⟨gu,ru,wu,mu,c⟩ => ?_)
   refine (ctrTo_call ctr c).mono fun v hc => ?_
   have eu := h.env.of_saved gu ru wu
-  have ev := eu.of_saved hc.saved hc.rd hc.wr
-  have df := Dq.of_eq (hc.rd.trans ru) (hc.wr.trans wu)
-  have full := h.data.of_eq (hc.rd.trans ru) (hc.wr.trans wu)
   have ctrframe := hc.frame
   rw [eu.rsp,mu] at ctrframe
   have cf : Frame (obFrame (W+16#64) W SP D q) s.mem v.mem := by
@@ -153,23 +148,12 @@ theorem separate_ok {M : CtxMode} (ctr : Proof.Aes.X86_64.Ctr32ToImpl) (gh : Gha
   have kS : Region.Sub (below SP 8) (below SP 24) := below_sub (by decide) (by decide)
   have kW := h.kw
   have L := h.lay
-  unfold Contiguous.separate Contiguous.call
-  refine WP.seq ((ctrArgs_ok h hq qreg read src dst).mono fun u ⟨gu,ru,wu,mu,c⟩ => ?_)
-  refine WP.seq ((ctrTo_call ctr c).mono fun v hc => ?_)
-  have eu := h.env.of_saved gu ru wu
-  have ev := eu.of_saved hc.saved hc.rd hc.wr
-  have df := Dq.of_eq (hc.rd.trans ru) (hc.wr.trans wu)
-  have full := h.data.of_eq (hc.rd.trans ru) (hc.wr.trans wu)
-  have ctrframe := hc.frame
-  rw [eu.rsp,mu] at ctrframe
-  have cf : Frame (obFrame (W+16#64) W SP D q) s.mem v.mem := by
-    refine ctrframe.sub fun r hr => ?_
-    simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
-    rcases hr with rfl|rfl|rfl|rfl
-    · exact ⟨_,List.mem_cons_self ..,fun _ hx => hx⟩
-    · exact ⟨⟨D,q*16⟩,by simp [obFrame],Region.sub_prefix (by omega_arith)⟩
-    · exact ⟨⟨W+448#64,2112⟩,by simp [obFrame],Region.sub_prefix (by decide)⟩
-    · exact ⟨below SP 24,by simp [obFrame],kS⟩
+  unfold Contiguous.separate
+  refine WP.seq ((WP.seq_iff.mp (deferredCtr_ok ctr h qreg read src dst)).mono fun u hu => WP.seq (hu.mono ?_))
+  rintro v ⟨gv,rv,wv,cf,out,count,y⟩
+  change blockAt v.mem (yA W)=blockAt s.mem (yA W) at y
+  have ev := h.env.of_saved gv rv wv
+  have full := h.data.of_eq rv wv
   have slot {j : Nat} (lo : 176≤j) (hi : j+8≤240) :=
     cf.readW (w:=64) (r:=⟨W+BitVec.ofNat 64 j,8⟩) (Region.contains_self _ _) (ob_slots L h.data.ok.w (by omega_arith : q*16≤n) kW lo hi) (by decide)
   have dj := (slot (by decide : 176≤200) (by decide)).trans dst
@@ -188,24 +172,16 @@ theorem separate_ok {M : CtxMode} (ctr : Proof.Aes.X86_64.Ctr32ToImpl) (gh : Gha
     · exact ⟨⟨W+448#64,2112⟩,by simp [obFrame],Region.sub_prefix (by decide)⟩
     · exact ⟨below SP 24,by simp [obFrame],kS⟩
   have hk : blockAt v.mem (Ctx+240#64) = blockAt s.mem (Ctx+240#64) := by
-    apply blockAt_frame ctrframe
+    apply blockAt_frame cf
     intro r hr
     simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
-    rcases hr with rfl|rfl|rfl|rfl
+    rcases hr with rfl|rfl|rfl|rfl|rfl
     · exact L.ctx_st (by decide) (by decide)
-    · exact Dq.ctx.sub_left (Lay.ctxSub (by decide))
+    · exact L.ctx_st (by decide) (by decide)
+    · exact (h.data.ctx.sub_left (Lay.ctxSub (by decide))).sub_right (Region.sub_prefix (by omega_arith))
     · exact L.ctx_w (by decide) (by decide)
-    · exact (L.stk_ctx (by decide)).symm
+    · exact (h.kM.sub_right (Offset.sub_base _ (show 240+16≤M.len from M.ge))).symm
   have cy : (⟨yA W,16⟩ : Region).Disjoint ⟨cbA W,16⟩ := Offset.disjoint (W+16#64) (.inl (by decide)) (by decide) (by decide)
-  have y : blockAt v.mem (yA W) = blockAt s.mem (yA W) := by
-    apply blockAt_frame ctrframe
-    intro r hr
-    simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
-    rcases hr with rfl|rfl|rfl|rfl
-    · exact cy
-    · exact (Dq.ok.st.sub_right (Lay.stSub (by decide))).symm
-    · exact L.st_w (by decide) (.inr ⟨by decide,by decide⟩)
-    · exact (L.stk_st (by decide)).symm
   have db : blocksAt t.mem D q = blocksAt v.mem D q := by
     apply blocksAt_frame hashframe _ (by have := Dq.ok.lt; omega_arith)
     intro r hr
@@ -222,10 +198,8 @@ theorem separate_ok {M : CtxMode} (ctr : Proof.Aes.X86_64.Ctr32ToImpl) (gh : Gha
     · exact cy.symm
     · exact L.st_w (by decide) (.inr ⟨by decide,by decide⟩)
     · exact (L.stk_st (by decide)).symm
-  refine ⟨fun z hz => (hh.saved z hz).trans ((gx z hz).trans ((hc.saved z hz).trans (gu z hz))),
-    hh.rd.trans (rx.trans (hc.rd.trans ru)), hh.wr.trans (wx.trans (hc.wr.trans wu)), cf.trans hf, ?_, ?_, ?_⟩
-  · simpa only [mu,q,ctxCiph] using db.trans hc.out
-  · simpa only [mu] using cb.trans hc.ctr
+  refine ⟨fun z hz => (hh.saved z hz).trans ((gx z hz).trans (gv z hz)),
+    hh.rd.trans (rx.trans rv),hh.wr.trans (wx.trans wv),cf.trans hf,db.trans out,cb.trans count,?_⟩
   · rw [show blocksAt t.mem D (n/16) = blocksAt v.mem D (n/16) from db]
     change _ = ghashFrom (blockAt s.mem (Ctx+240#64)) _ _
     simpa only [mx,hk,y,↓reduceIte] using hh.out
