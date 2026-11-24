@@ -42,11 +42,11 @@ the implementation's own facts (`BlocksImpl.encScrub`, its stack), and
 `Fill`, which `fill_calls` proves by walking only CFB's code. The `_final`
 forms call the whole-segment code as `vg_aes_cfb128_encrypt_core` and
 `vg_aes_cfb128_decrypt_core` (`Impl.AesCfb.X86.encryptFinal`), unscrubbed.
-The whole-block code of encryption for AES-NI (`encryptCode`, `hardware`)
-is a closed term, which the kernel evaluates as it is (`encryptNi_side`),
-and the final function around it with the stub block function
-(`encryptFinalNi_side`); so is decryption's (`decryptCode`,
-`decryptNi_side`, `decryptFinalNi_side`).
+The whole-block code of encryption around a chain (`encryptCode`) is a closed
+term, which the kernel evaluates as it is (`encryptChain_side`), and the final
+function around it with the stub block function (`encryptFinalChain_side`); so
+is decryption's for AES-NI (`decryptCode`, `hardware`, `decryptNi_side`,
+`decryptFinalNi_side`).
 -/
 
 @[expose] public section
@@ -118,6 +118,7 @@ theorem decryptFinalOut (stack : Nat) :
 
 open Impl.StackScratch.X86 (withStackScratchWiped)
 open Proof.Aes.X86 (BlocksImpl)
+open Impl.Aes.X86 (Chain)
 
 /-- A block function with no code. -/
 def stubBlocks : Impl.Aes.X86.Blocks := ⟨"", .block []⟩
@@ -127,9 +128,10 @@ materialize_code encryptStub := Impl.AesCfb.X86.encrypt stubBlocks
 materialize_code decryptStub := Impl.AesCfb.X86.decrypt stubBlocks
 materialize_code encryptFinalStub :=
   withStackScratchWiped 48 6 4 (Impl.AesCfb.X86.encryptFinal (Impl.AesCfb.X86.encrypt stubBlocks) stubBlocks "")
-materialize_code encryptNiLit := Impl.AesCfb.X86.encryptNi
-materialize_code encryptFinalNiStub :=
-  withStackScratchWiped 48 6 4 (Impl.AesCfb.X86.encryptFinal Impl.AesCfb.X86.encryptNi stubBlocks "")
+materialize_code encryptFinalAesNiStub := withStackScratchWiped 48 6 4
+  (Impl.AesCfb.X86.encryptFinal (Impl.AesCfb.X86.encryptChain Chain.aesNi) stubBlocks "")
+materialize_code encryptFinalSsse3Stub := withStackScratchWiped 48 6 4
+  (Impl.AesCfb.X86.encryptFinal (Impl.AesCfb.X86.encryptChain Chain.ssse3) stubBlocks "")
 materialize_code decryptFinalStub :=
   withStackScratchWiped 48 6 4 (Impl.AesCfb.X86.decryptFinal (Impl.AesCfb.X86.decrypt stubBlocks) stubBlocks "")
 materialize_code decryptNiLit := Impl.AesCfb.X86.decryptNi
@@ -146,13 +148,15 @@ theorem encryptFinal_side : scrubFSide (withStackScratchWiped 48 6 4
     (Impl.AesCfb.X86.encryptFinal (Impl.AesCfb.X86.encrypt stubBlocks) stubBlocks "")) [] 100 = true := by
   lit_decide
 
-/-- Encryption with AES-NI: the loop itself, which calls nothing. -/
-theorem encryptNi_side : scrubFSide Impl.AesCfb.X86.encryptNi [] 24 = true := by
-  lit_decide
+/-- Encryption around a chain: the loop itself, which calls nothing. -/
+theorem encryptChain_side {name : String} {c : Chain} (h : Chain.of name = some c) :
+    scrubFSide (Impl.AesCfb.X86.encryptChain c) [] 24 = true := by
+  rcases Proof.Aes.X86.Chain.of_cases h with rfl | rfl <;> lit_decide
 
-theorem encryptFinalNi_side : scrubFSide (withStackScratchWiped 48 6 4
-    (Impl.AesCfb.X86.encryptFinal Impl.AesCfb.X86.encryptNi stubBlocks "")) [] 100 = true := by
-  lit_decide
+theorem encryptFinalChain_side {name : String} {c : Chain} (h : Chain.of name = some c) :
+    scrubFSide (withStackScratchWiped 48 6 4
+      (Impl.AesCfb.X86.encryptFinal (Impl.AesCfb.X86.encryptChain c) stubBlocks "")) [] 100 = true := by
+  rcases Proof.Aes.X86.Chain.of_cases h with rfl | rfl <;> lit_decide
 
 theorem decryptFinal_side : scrubFSide (withStackScratchWiped 48 6 4
     (Impl.AesCfb.X86.decryptFinal (Impl.AesCfb.X86.decrypt stubBlocks) stubBlocks "")) [] 100 = true := by
@@ -181,10 +185,10 @@ theorem encryptFinal_fill (b : Impl.Aes.X86.Blocks) (sfx : String) (hb : calleeS
       (withStackScratchWiped 48 6 4 (Impl.AesCfb.X86.encryptFinal (Impl.AesCfb.X86.encrypt b) b sfx)) := by
   fill_calls
 
-theorem encryptFinalNi_fill (b : Impl.Aes.X86.Blocks) (sfx : String) (hb : calleeSide b.code 0 = true) :
-    Fill 0 (withStackScratchWiped 48 6 4 (Impl.AesCfb.X86.encryptFinal Impl.AesCfb.X86.encryptNi stubBlocks ""))
-      (withStackScratchWiped 48 6 4 (Impl.AesCfb.X86.encryptFinal Impl.AesCfb.X86.encryptNi b sfx)) := by
-  fill_calls
+theorem encryptFinalChain_fill {name : String} {c : Chain} (h : Chain.of name = some c) (b : Impl.Aes.X86.Blocks) (sfx : String) (hb : calleeSide b.code 0 = true) :
+    Fill 0 (withStackScratchWiped 48 6 4 (Impl.AesCfb.X86.encryptFinal (Impl.AesCfb.X86.encryptChain c) stubBlocks ""))
+      (withStackScratchWiped 48 6 4 (Impl.AesCfb.X86.encryptFinal (Impl.AesCfb.X86.encryptChain c) b sfx)) := by
+  rcases Proof.Aes.X86.Chain.of_cases h with rfl | rfl <;> fill_calls
 
 theorem decryptFinal_fill (b : Impl.Aes.X86.Blocks) (sfx : String) (hb : calleeSide b.code 0 = true) :
     Fill 0
@@ -202,9 +206,10 @@ open Proof.AesCbc.X86.Wiped (hardware)
 
 /-- `scrubFSide` of `vg_aes_cfb128_encrypt`, whatever the implementation. -/
 theorem encrypt_scrub (v : BlocksImpl) : scrubFSide (encryptCode v) [] 24 = true := by
-  by_cases hw : hardware v = true
-  · rw [encryptCode, ite_eq_left hw]; exact encryptNi_side
-  · rw [encryptCode, ite_eq_right hw]
+  cases h : Chain.of v.enc.name with
+  | some c => rw [encryptCode_some h]; exact encryptChain_side h
+  | none =>
+    rw [encryptCode_none h]
     exact scrubFSide_of_fill (encrypt_fill _ (calleeSide_of_eq v.encStack v.encScrub)) encrypt_side
 
 /-- `scrubFSide` of `vg_aes_cfb128_decrypt`, whatever the implementation. -/
@@ -218,11 +223,13 @@ theorem decrypt_scrub (v : BlocksImpl) : scrubFSide (decryptCode v) [] 24 = true
 theorem encryptFinal_scrub (v : BlocksImpl) :
     scrubFSide (withStackScratchWiped 48 6 4 (Impl.AesCfb.X86.encryptFinal (encryptCode v) v.enc v.suffix))
       [] 100 = true := by
-  by_cases hw : hardware v = true
-  · rw [encryptCode, ite_eq_left hw]
-    exact scrubFSide_of_fill (encryptFinalNi_fill _ _ (calleeSide_of_eq v.encStack v.encScrub))
-      encryptFinalNi_side
-  · rw [encryptCode, ite_eq_right hw]
+  cases h : Chain.of v.enc.name with
+  | some c =>
+    rw [encryptCode_some h]
+    exact scrubFSide_of_fill (encryptFinalChain_fill h _ _ (calleeSide_of_eq v.encStack v.encScrub))
+      (encryptFinalChain_side h)
+  | none =>
+    rw [encryptCode_none h]
     exact scrubFSide_of_fill (encryptFinal_fill _ _ (calleeSide_of_eq v.encStack v.encScrub)) encryptFinal_side
 
 /-- `scrubFSide` of `vg_aes_cfb128_decrypt_final`, whatever the implementation. -/

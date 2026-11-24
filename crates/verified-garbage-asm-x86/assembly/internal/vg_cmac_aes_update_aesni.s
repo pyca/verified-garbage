@@ -14,14 +14,15 @@ vg_cmac_aes_update_aesni:
 	mov eax, DWORD PTR [esp+20]
 	test eax, eax
 	je 20f
-	mov edi, DWORD PTR [esp+20]
 	mov eax, DWORD PTR [esp+4]
 	mov ecx, DWORD PTR [esp+8]
+	mov esi, DWORD PTR [esp+16]
+	mov ebp, DWORD PTR [esp+20]
 	mov edx, DWORD PTR [esp+12]
 	movdqu xmm0, XMMWORD PTR [edx]
 22:
-	movdqu xmm7, XMMWORD PTR [esi]
-	pxor xmm0, xmm7
+	movdqu xmm1, XMMWORD PTR [esi]
+	pxor xmm0, xmm1
 	movdqu xmm6, XMMWORD PTR [eax]
 	pxor xmm0, xmm6
 	movdqu xmm6, XMMWORD PTR [eax+16]
@@ -67,8 +68,9 @@ vg_cmac_aes_update_aesni:
 	aesenclast xmm0, xmm6
 24:
 	add esi, 16
-	sub edi, 1
+	sub ebp, 1
 	jne 22b
+	mov edx, DWORD PTR [esp+12]
 	movdqu XMMWORD PTR [edx], xmm0
 	jmp 21f
 20:

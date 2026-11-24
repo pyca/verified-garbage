@@ -88,6 +88,9 @@ structure Dir where
   derive : List Instr
   /-- Where the round keys' slots start, after the tables. -/
   slots : Nat
+  /-- Whether the setup saves the callee-saved registers, which a caller of
+  `setup` and `prep` alone has saved itself. -/
+  keep : Bool
   /-- The slots from the schedule (argument 0) and the rounds (argument 1). -/
   prep : Prog isa
   /-- The vector of `a / ·`. -/
@@ -108,7 +111,7 @@ def saved : Nat := d.slots + 240
 
 /-- The callee-saved registers, and their offsets in the scratch buffer. -/
 def savedRegs : List (Reg × Nat) :=
-  [(.ebx, d.saved), (.esi, d.saved + 4), (.ebp, d.saved + 8), (.edi, d.saved + 12)]
+  if d.keep then [(.ebx, d.saved), (.esi, d.saved + 4), (.ebp, d.saved + 8), (.edi, d.saved + 12)] else []
 
 /-- `ebx` to slot 1, and the rounds but one into `ecx`. -/
 def start : List Instr :=
@@ -203,11 +206,14 @@ def prepTail : List Instr :=
 
 def prep : Prog isa := .seq (.block prepHead) (.seq (.loop (.block prepBody) .ne) (.block prepTail))
 
+/-- Encryption, saving the callee-saved registers if `keep`. -/
+def dir (keep : Bool) : Dir :=
+  { tabs := tabs, derive := derive, slots := slots, keep := keep, prep := prep, inva := 3, first := first, mix := mix,
+    last := last }
+
 end Enc
 
-def enc : Dir :=
-  { tabs := Enc.tabs, derive := Enc.derive, slots := Enc.slots, prep := Enc.prep, inva := 3,
-    first := Enc.first, mix := Enc.mix, last := Enc.last }
+def enc : Dir := Enc.dir true
 
 /-! ## Decryption -/
 
@@ -280,7 +286,7 @@ def prep : Prog isa :=
 end Dec
 
 def dec : Dir :=
-  { tabs := Dec.tabs, derive := Dec.derive, slots := Dec.slots, prep := Dec.prep, inva := 1,
+  { tabs := Dec.tabs, derive := Dec.derive, slots := Dec.slots, keep := true, prep := Dec.prep, inva := 1,
     first := Dec.first, mix := Dec.mix, last := Dec.last }
 
 /-- `vg_aes_encrypt_blocks_ssse3`. -/

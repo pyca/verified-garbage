@@ -110,17 +110,15 @@ theorem crypt_stack (v : BlocksImpl) : stackUse (crypt v.enc) = 24 := by
 
 /-- The whole-block code of `v` writes `esp` only in its frames and calls. -/
 theorem cryptCode_noSp (v : BlocksImpl) : NoSp (cryptCode v) := by
-  unfold cryptCode
-  split
-  · exact Ni.noSp
+  rcases cryptCode_cases v with ⟨c, h, e⟩ | e <;> rw [e]
+  · exact Chained.noSp h
   · exact crypt_noSp v
 
 /-- It uses at most the 24 bytes of stack of a call of a block function:
-with AES-NI, none. -/
+around a chain, none. -/
 theorem cryptCode_stack (v : BlocksImpl) : stackUse (cryptCode v) ≤ 24 := by
-  unfold cryptCode
-  split
-  · rw [Ni.stack]; decide
+  rcases cryptCode_cases v with ⟨c, h, e⟩ | e <;> rw [e]
+  · rw [Chained.stack h]; decide
   · exact Nat.le_of_eq (crypt_stack v)
 
 theorem cryptFinal_noSp (v : BlocksImpl) :

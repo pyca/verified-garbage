@@ -6,6 +6,8 @@ public import VerifiedGarbage.Proof.AesCbc.X86.Wiped
 public import VerifiedGarbage.Spec.Cbc.Contract
 public import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 public import VerifiedGarbage.Impl.AesCbc.X86.Wiped
+import VerifiedGarbage.Proof.AesCbc.X86.Decrypt
+import VerifiedGarbage.Proof.Aes.X86.Chain
 import VerifiedGarbage.Proof.AesEcb.Wipe
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.X86.Lit
@@ -36,8 +38,9 @@ call of it, then of `vg_zeroize` on the bytes of `scratch` it writes, with
 without secret residue (`X86.Scrub.verifiedScrubbedAll`), which
 `encrypt_scrubbed` and `decrypt_scrubbed` prove by cases. What that
 needs of the code (`scrubFSide`) holds whatever the implementation: the CBC
-code for AES-NI (`hardware`) is a closed term, which the kernel evaluates
-(`ni_side`, `dec_callee`); for any other, the CBC code around a stub block
+code around a chain (`Chain.of`) and AES-NI's decryption (`hardware`) are
+closed terms, which the kernel evaluates (`ni_side`, `ssse3_callee`,
+`dec_callee`); for any other, the CBC code around a stub block
 function, whose code is `.block []` (`encZ_side`, `decZ_side`), and the
 call with a stub (`wipedStub`), whose callee and the instructions that pass
 `vg_zeroize` its length (`zeroArgs`) are `.block []`, which the kernel
@@ -52,6 +55,7 @@ namespace VG.Proof.AesCbc.X86.Scrub
 
 open VG.X86 VG.X86.Scrub VG.Proof.AesCbc.Wipe VG.Proof.AesCbc.X86.Wiped
 open Proof.Aes.X86 (BlocksImpl)
+open Impl.Aes.X86 (Chain)
 open Impl.CallWipe.X86 (frameSize copyArgs zeroArgs restoreRet)
 
 /-! ## Postconditions -/
@@ -112,7 +116,6 @@ def wipedStub (body : Prog isa) : Prog isa :=
     (.free (frameSize 6))
 
 -- CBC's own code, with the stubs, as literals for the kernel's evaluation.
-materialize_code encryptNiLit := Impl.AesCbc.X86.encryptNi
 materialize_code decryptNiLit := Impl.AesCbc.X86.Decrypt.decrypt
 materialize_code encZStub := Impl.AesCbc.X86.encryptZ stubBlocks
 materialize_code decZStub := Impl.AesCbc.X86.decryptZ stubBlocks
@@ -120,7 +123,10 @@ materialize_code encWStub := wipedStub (Impl.AesCbc.X86.encryptZ stubBlocks)
 materialize_code decWStub := wipedStub (Impl.AesCbc.X86.decryptZ stubBlocks)
 materialize_code holeWStub := wipedStub (.block [])
 
-theorem ni_side : scrubFSide Impl.AesCbc.X86.encryptNi [] 24 = true := by
+theorem ni_side : scrubFSide (Impl.AesCbc.X86.encryptChain Chain.aesNi) [] 24 = true := by
+  lit_decide
+
+theorem ssse3_callee : calleeSide (Impl.AesCbc.X86.encryptChain Chain.ssse3) 24 = true := by
   lit_decide
 
 theorem dec_callee : calleeSide Impl.AesCbc.X86.Decrypt.decrypt 24 = true := by
@@ -169,22 +175,42 @@ theorem holeW_fill (body : Prog isa) (sfx : String) (n : Nat) (hb : calleeSide b
     Fill 24 (wipedStub (.block [])) (Impl.AesCbc.X86.Wiped.decrypt body sfx n) := by
   fill_calls
 
+theorem encHoleW_fill (body : Prog isa) (sfx : String) (n : Nat) (hb : calleeSide body 24 = true)
+    (hz : calleeSide (.block (zeroArgs 6 5 n)) 24 = true) :
+    Fill 24 (wipedStub (.block [])) (Impl.AesCbc.X86.Wiped.encrypt body sfx n) := by
+  fill_calls
+
 /-- `scrubFSide` of the CBC encryption code, where it writes nothing in
-`scratch`, whatever the implementation. -/
-theorem encFree_scrub (v : BlocksImpl) : scrubFSide (encryptCode v) [] 24 = true := by
-  by_cases hw : hardware v = true
-  · rw [encryptCode, ite_eq_left hw]; exact ni_side
-  · rw [encryptCode, ite_eq_right hw]
+`scratch` (with a chain, AES-NI's). -/
+theorem encFree_scrub (v : BlocksImpl) (h : encWritten v = 0) : scrubFSide (encryptCode v) [] 24 = true := by
+  cases hc : Chain.of v.enc.name with
+  | some c =>
+    rw [encWritten_some hc] at h
+    rw [encryptCode_some hc]
+    rcases Proof.Aes.X86.Chain.of_cases hc with rfl | rfl
+    · exact ni_side
+    · exact absurd h (by decide)
+  | none =>
+    rw [encryptCode_none hc]
     exact scrubFSide_of_fill (encZ_fill _ (calleeSide_of_eq v.encStack v.encScrub)) encZ_side
 
 /-- `scrubFSide` of the call of the CBC encryption code, then of
 `vg_zeroize`, where it writes in `scratch`. -/
 theorem encWiped_scrub (v : BlocksImpl) (h : ¬encWritten v = 0) :
     scrubFSide (Impl.AesCbc.X86.Wiped.encrypt (encryptCode v) v.suffix (encWritten v)) [] 72 = true := by
-  have hw : ¬hardware v = true := fun hw => h (by rw [encWritten, ite_eq_left hw])
-  rw [encryptCode, ite_eq_right hw]
-  exact scrubFSide_of_fill (encW_fill _ _ _ (calleeSide_of_eq v.encStack v.encScrub) (zeroArgs_side _ _))
-    encW_side
+  cases hc : Chain.of v.enc.name with
+  | some c =>
+    have hd : calleeSide (encryptCode v) 24 = true := by
+      rw [encWritten_some hc] at h
+      rw [encryptCode_some hc]
+      rcases Proof.Aes.X86.Chain.of_cases hc with rfl | rfl
+      · exact absurd rfl h
+      · exact ssse3_callee
+    exact scrubFSide_of_fill (encHoleW_fill _ _ _ hd (zeroArgs_side _ _)) holeW_side
+  | none =>
+    rw [encryptCode_none hc]
+    exact scrubFSide_of_fill (encW_fill _ _ _ (calleeSide_of_eq v.encStack v.encScrub) (zeroArgs_side _ _))
+      encW_side
 
 /-- `scrubFSide` of the CBC decryption code, where it writes nothing in
 `scratch` (never with AES-NI). -/
@@ -226,7 +252,7 @@ theorem encrypt_scrubbed (v : BlocksImpl) :
         stack := 24
         verified := encrypt_free v h
         spSafe := encryptCode_spSafe v }
-      (encryptOut _) (W := 24) (hs := encFree_scrub v)
+      (encryptOut _) (W := 24) (hs := encFree_scrub v h)
   · rw [ite_eq_right h, ite_eq_right h]
     exact verifiedScrubbedAll (api := Spec.Cbc.aesEncryptApi) {
         suffix := v.suffix
