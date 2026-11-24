@@ -289,22 +289,22 @@ jne 278b
 jne 279b
 .base64 "CdmD8f+FyQ=="
 je 280f
-.base64 "i3QkHItMJCA="
+.base64 "uf////+LVCQIg8IHweoDAdIB0gHSAdKDwiCJ/YHFCA0AAAHVAdUB1QHVAdUB1QHVAdUB1YtUJAiDwgfB6gMB0gHSAdIB0oPCIIn7gcMIDQAAi3wkCIPHB8HvAwH/Af8B/w=="
 282:
-.base64 "D7YGg8D/GcCD8P+JyoPC/hnSIdCD4AEBxinBhcA="
-jne 282b
-.base64 "iXcQiU8Uuf////+LVCQIg8IHweoDAdIB0gHSAdKDwiCJ/YHFCA0AAAHVAdUB1QHVAdUB1QHVAdUB1YtUJAiDwgfB6gMB0gHSAdIB0oPCIIn7gcMIDQAAi3wkCIPHB8HvAwH/Af8B/w=="
-283:
 .base64 "iwOLVQAxwiHKMdCJA4PFBIPDBIPvBA=="
-jne 283b
+jne 282b
 .base64 "i3wkRA=="
 call {vg_ffdh_prepare_wide}
 .base64 "uf////+LVCQIg8IHweoDAdIB0gHSAdKDwiCJ/YHFCA0AAAHVAdUB1QHVAdUB1QHVAdUB1QHVi1QkCIPCB8HqAwHSAdIB0gHSg8IgifuBwwgNAAAB0wHTAdMB0wHTi3wkCIPHB8HvAwH/Af8B/w=="
+283:
+.base64 "iwOLVQAxwiHKMdCJA4PFBIPDBIPvBA=="
+jne 283b
+.base64 "i3wkRLn/////i1QkCIPCB8HqAwHSAdIB0gHSg8Igif2BxQgNAAAB1QHVAdUB1QHVAdUB1QHVAdUB1QHVi1QkCIPCB8HqAwHSAdIB0gHSg8IgifuBwwgNAAAB0wHTAdMB0wHTAdMB0wHTi3wkCIPHB8HvAwH/Af8B/w=="
 284:
 .base64 "iwOLVQAxwiHKMdCJA4PFBIPDBIPvBA=="
 jne 284b
 .base64 "i3wkRA=="
-call {vg_ffdh_window_q_wide}
+call {vg_ffdh_window_wide}
 .base64 "i1QkCIPCB8HqAwHSAdIB0gHSg8Igif6BxggNAAAB1gHWAdYB1gHWAdaLVCQIg8IHweoDAdIB0gHSAdKDwiCJ/YHFCA0AAAHVAdUB1YtUJAiDwgfB6gMB0gHSAdK5AAAAAA=="
 285:
 .base64 "iwYByRtFABnJg8YEg8UEg+oE"
@@ -340,7 +340,7 @@ jmp 251f
 .p2align 6"#,
         vg_ffdh_prepare_wide = sym super::ffdh::vg_ffdh_prepare_wide::vg_ffdh_prepare_wide,
         vg_rsa_mont_mul_at = sym super::rsa::vg_rsa_mont_mul_at::vg_rsa_mont_mul_at,
-        vg_ffdh_window_q_wide = sym super::ffdh::vg_ffdh_window_q_wide::vg_ffdh_window_q_wide,
+        vg_ffdh_window_wide = sym super::ffdh::vg_ffdh_window_wide::vg_ffdh_window_wide,
         VG_FFDH_VETTED_GROUPS_X86 = sym super::consts::VG_FFDH_VETTED_GROUPS_X86,
     )
 }
@@ -412,30 +412,38 @@ jne 29b
 je 210f
 .base64 "i0QkNCtEJBArRCQQ"
 je 212f
-.base64 "i3QkHItMJCA="
+.base64 "i1QkCIPCB8HqAwHSAdIB0gHSg8Igif2BxQgNAAAB1QHVAdUB1QHVAdUB1QHVAdUB1QHVi0wkCIPBB8HpAwHJAckBybgAAAAA"
 214:
-.base64 "D7YGg8D/GcCD8P+JyoPC/hnSIdCD4AEBxinBhcA="
+.base64 "iUUAg8UEg+kE"
 jne 214b
-.base64 "iXcQiU8Uuf////+LVCQIg8IHweoDAdIB0gHSAdKDwiCJ/YHFCA0AAAHVAdUB1QHVAdUB1QHVAdUB1YtUJAiDwgfB6gMB0gHSAdIB0oPCIIn7gcMIDQAAi3wkCIPHB8HvAwH/Af8B/w=="
+.base64 "i1QkCIPCB8HqAwHSAdIB0gHSg8IgifuBwwgNAAAB0wHTAdMB0wHTAdMB0wHTAdMB0wHTi3QkHItMJCABzoPuAQ=="
 215:
-.base64 "iwOLVQAxwiHKMdCJA4PFBIPDBIPvBA=="
+.base64 "D7YGiAODwwGD7gGD6QGD+QA="
 jne 215b
-.base64 "i3wkRA=="
-call {vg_ffdh_prepare_wide}
-.base64 "uf////+LVCQIg8IHweoDAdIB0gHSAdKDwiCJ/YHFCA0AAAHVAdUB1QHVAdUB1QHVAdUB1QHVAdUB1YtUJAiDwgfB6gMB0gHSAdIB0oPCIIn7gcMIDQAAAdMB0wHTAdMB04t8JAiDxwfB7wMB/wH/Af8="
+.base64 "uf////+LVCQIg8IHweoDAdIB0gHSAdKDwiCJ/YHFCA0AAAHVAdUB1QHVAdUB1QHVAdUB1YtUJAiDwgfB6gMB0gHSAdIB0oPCIIn7gcMIDQAAi3wkCIPHB8HvAwH/Af8B/w=="
 216:
 .base64 "iwOLVQAxwiHKMdCJA4PFBIPDBIPvBA=="
 jne 216b
 .base64 "i3wkRA=="
-call {vg_ffdh_window_q_wide}
-.base64 "i1QkCIPCB8HqAwHSAdIB0gHSg8Igif6BxggNAAAB1gHWAdYB1gHWAdaLVCQIg8IHweoDAdIB0gHSAdKDwiCJ/YHFCA0AAAHVAdUB1YtUJAiDwgfB6gMB0gHSAdK5AAAAAA=="
+call {vg_ffdh_prepare_wide}
+.base64 "uf////+LVCQIg8IHweoDAdIB0gHSAdKDwiCJ/YHFCA0AAAHVAdUB1QHVAdUB1QHVAdUB1QHVAdUB1YtUJAiDwgfB6gMB0gHSAdIB0oPCIIn7gcMIDQAAAdMB0wHTAdMB04t8JAiDxwfB7wMB/wH/Af8="
 217:
-.base64 "iwYByRtFABnJg8YEg8UEg+oE"
+.base64 "iwOLVQAxwiHKMdCJA4PFBIPDBIPvBA=="
 jne 217b
-.base64 "icuLVCQIg8IHweoDAdIB0gHSAdKDwiCJ/oHGCA0AAAHWAdYB1otUJAiDwgfB6gMB0gHSAdIB0oPCIIn9gcUIDQAAAdUB1QHVAdUB1QHVi1QkCIPCB8HqAwHSAdIB0rkAAAAA"
+.base64 "i3wkRLn/////i1QkCIPCB8HqAwHSAdIB0gHSg8Igif2BxQgNAAAB1QHVAdUB1QHVAdUB1QHVAdUB1QHVi1QkCIPCB8HqAwHSAdIB0gHSg8IgifuBwwgNAAAB0wHTAdMB0wHTAdMB0wHTi3wkCIPHB8HvAwH/Af8B/w=="
 218:
-.base64 "iwYByRtFABnJg8YEg8UEg+oE"
+.base64 "iwOLVQAxwiHKMdCJA4PFBIPDBIPvBA=="
 jne 218b
+.base64 "i3wkRA=="
+call {vg_ffdh_window_wide}
+.base64 "i1QkCIPCB8HqAwHSAdIB0gHSg8Igif6BxggNAAAB1gHWAdYB1gHWAdaLVCQIg8IHweoDAdIB0gHSAdKDwiCJ/YHFCA0AAAHVAdUB1YtUJAiDwgfB6gMB0gHSAdK5AAAAAA=="
+219:
+.base64 "iwYByRtFABnJg8YEg8UEg+oE"
+jne 219b
+.base64 "icuLVCQIg8IHweoDAdIB0gHSAdKDwiCJ/oHGCA0AAAHWAdYB1otUJAiDwgfB6gMB0gHSAdIB0oPCIIn9gcUIDQAAAdUB1QHVAdUB1QHVi1QkCIPCB8HqAwHSAdIB0rkAAAAA"
+220:
+.base64 "iwYByRtFABnJg8YEg8UEg+oE"
+jne 220b
 .base64 "CdmD8f+JyIPgAQ=="
 jmp 213f
 212:
@@ -448,7 +456,7 @@ jmp 211f
 .base64 "jWQkTItfIItvJIt3KIt/LGYP78C5AAAAAI2kJAT////zD38EJPMPf0QkEPMPf0QkIPMPf0QkMPMPf0QkQPMPf0QkUPMPf0QkYPMPf0QkcPMPf4QkgAAAAPMPf4QkkAAAAPMPf4QkoAAAAPMPf4QksAAAAPMPf4QkwAAAAPMPf4Qk0AAAAPMPf4Qk4AAAAImMJPAAAACJjCT0AAAAiYwk+AAAAI2kJPwAAAC6AAAAADHJZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7//D"
 .p2align 6"#,
         vg_ffdh_prepare_wide = sym super::ffdh::vg_ffdh_prepare_wide::vg_ffdh_prepare_wide,
-        vg_ffdh_window_q_wide = sym super::ffdh::vg_ffdh_window_q_wide::vg_ffdh_window_q_wide,
+        vg_ffdh_window_wide = sym super::ffdh::vg_ffdh_window_wide::vg_ffdh_window_wide,
     )
 }
 
@@ -1708,10 +1716,6 @@ pub(crate) mod vg_ffdh_parameter_candidate_sieved;
 #[rustfmt::skip]
 #[path = "internal/vg_ffdh_prepare_wide.rs"]
 pub(crate) mod vg_ffdh_prepare_wide;
-
-#[rustfmt::skip]
-#[path = "internal/vg_ffdh_window_q_wide.rs"]
-pub(crate) mod vg_ffdh_window_q_wide;
 
 #[rustfmt::skip]
 #[path = "internal/vg_ffdh_window_top_wide.rs"]

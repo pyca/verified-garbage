@@ -9,7 +9,6 @@ import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Import
 import VerifiedGarbage.Proof.Bignum.X86.CrtRt.StageR
 import VerifiedGarbage.Proof.Ffdh.Domain
 import VerifiedGarbage.Proof.Ffdh.X86.Checks
-import VerifiedGarbage.Proof.Ffdh.X86.QPower
 public import VerifiedGarbage.Proof.Ffdh.X86.Ops
 public import VerifiedGarbage.Proof.Ffdh.X86.Stages
 public import VerifiedGarbage.Proof.Framework.RelCTChain
@@ -19,7 +18,7 @@ public import VerifiedGarbage.Proof.Framework.RelCTChain
 
 `body_ok`: for a valid domain, the status of `body` is 1 exactly when y is
 a valid public value (`publicValid`): `1 < y < p − 1` (`rangeMask`), and
-with q, `y^q mod p = 1` (`powQ` and `eqStatus`). The body runs whatever the
+with q, `y^q mod p = 1` (`powP` and `eqStatus`). The body runs whatever the
 domain, its powers modulo `safeM p`.
 -/
 
@@ -87,9 +86,9 @@ abbrev pubFront : List (Prog isa) :=
   [Impl.Ffdh.X86.pSetup, load (.slot .wide 12) (one .wide) 8 9, Impl.Ffdh.X86.rangeMask 12,
     Impl.Ffdh.X86.testMask]
 
-/-- The body with q: `y^q mod p = 1`, the power raised over q's bytes from its first nonzero one. -/
+/-- The body with q: `y^q mod p = 1`. -/
 abbrev pubQ : Prog isa :=
-  .seq Impl.Ffdh.X86.qScan (.seq (Impl.Ffdh.X86.powQ 12) (Impl.Ffdh.X86.eqStatus 6 3))
+  .seq (load (.slot .wide 11) (one .wide) 6 7) (.seq (Impl.Ffdh.X86.powP 12 11) (Impl.Ffdh.X86.eqStatus 6 3))
 
 theorem body_eq : Impl.Ffdh.X86.CheckPublic.body = Prog.chain pubFront (.ite .e (Impl.Ffdh.X86.ret 0)
     (.seq (.block Impl.Ffdh.X86.qTest) (.ite .e (Impl.Ffdh.X86.ret 1) pubQ))) := rfl
@@ -190,20 +189,21 @@ theorem body_ok (h : In Ex base bytes len args s) (G : DomGeo args base bytes le
     omega_using [dl, this]
   subst e3
   have G₅ := G.keep ⟨rfl, rfl⟩ S'.keeps
-  refine WP.seq (WP.mono (QPower.qScan_ok S₅.inp G₅) fun u₆ ⟨S₆, Q₆, k₆⟩ => ?_)
-  have S'' := S'.trans S₆
+  refine WP.seq (WP.mono (loadComp_ok S₅.inp G₅ (k := 2) (j := 11) (by decide) (by omega_using []) (by decide))
+    fun u₆ ⟨V₆, O₆, K₆⟩ => ?_)
+  rw [comp_keep h G RF hb40 S'.frame (by omega_using [])] at V₆
+  have S₆ : Step Ex base bytes len args u₅ u₆ := Step.slot S₅.inp (by decide) O₆ K₆
+  have k₆ := kept_slot S₅.inp (a := 11) O₆
   have nine₆ : sv u₆.mem base len .wide 9 = p := by rw [k₆.slot_eq, m₅, V9]
   have y₆ : sv u₆.mem base len .wide 12 = y := by rw [k₆.slot_eq, m₅, V12]
-  have RF₆ := S''.room RF
-  refine WP.seq (WP.mono (QPower.powQ_ok S₆.inp (G.keep ⟨rfl, rfl⟩ S''.keeps) RF₆ (by rw [S''.esp]; exact hb40)
-    (P := safeM p) (b := 12) (by decide) (by decide) (by rw [nine₆])
-    (by rw [QPower.qBytes_keep h G RF hb40 S''.frame, ← QPower.qBytes_keep h G RF hb40 S'.frame]; exact Q₆))
-    fun u₇ ⟨C₇, Y₇, one₇, F₇, _, K₇⟩ => ?_)
-  rw [y₆, comp_keep h G RF hb40 S''.frame (k := 2) (by omega_using [])] at Y₇
+  have RF₆ := (S'.trans S₆).room RF
+  refine WP.seq (WP.mono (powP_ok S₆.inp RF₆ (P := safeM p) (b := 12) (e := 11) (by decide) (by decide) (by decide)
+    (by decide) (by rw [nine₆])) fun u₇ ⟨C₇, Y₇, one₇, F₇, _, K₇⟩ => ?_)
+  rw [y₆, V₆] at Y₇
   have S₇ : Step Ex base bytes len args u₆ u₇ := Step.opsF S₆.inp RF₆ F₇ K₇
   refine WP.mono (eqStatus_res C₇.inp (a := 6) (b := 3) (by decide) (by decide)) fun t R => ?_
   rw [Y₇, one₇] at R
-  refine ⟨_, (S''.trans S₇).res R, fun v => ?_⟩
+  refine ⟨_, ((S'.trans S₆).trans S₇).res R, fun v => ?_⟩
   obtain ⟨gt, odd⟩ := pv v
   rw [safeM_of gt odd]
   have hq := comp_q (len := len) s.mem args

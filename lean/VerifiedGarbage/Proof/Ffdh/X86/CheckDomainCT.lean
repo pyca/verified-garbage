@@ -2,8 +2,6 @@ module
 
 import VerifiedGarbage.Proof.Ffdh.X86.StagesCT
 public import VerifiedGarbage.Proof.Ffdh.X86.EntryCT
-public import VerifiedGarbage.Proof.Ffdh.X86.QPowerCT
-meta import VerifiedGarbage.Proof.Ffdh.X86.QPowerCT
 meta import VerifiedGarbage.Proof.Ffdh.X86.StagesCT
 meta import VerifiedGarbage.Proof.Ffdh.X86.EntryCT
 import VerifiedGarbage.Proof.Framework.Sig
@@ -163,9 +161,8 @@ leak the same traces. Their bodies, narrowed to the working space
 branch tests a condition on it (a `Gate`): that p is a valid modulus, that
 g is out of range, whether there is a q, whether q is out of range, whether
 q does not divide `p − 1`. Every piece between them is checked by the taint
-analysis, but for the calls of a multiplication and the power to q, over
-q's bytes from its first nonzero one, which the domain fixes
-(`Proof/Ffdh/X86/QPowerCT.lean`).
+analysis, but for the calls of a multiplication and the windowed powers
+(`powP_trace`).
 -/
 
 @[expose] public section
@@ -196,6 +193,8 @@ theorem dividesTail_check : ACheck (Prog.chain [zero (.slot .wide 17) (one .wide
     equal (.slot .wide 6) (.slot .wide 17) (one .wide), testMask] (.block [])) := by dsimp only [ACheck]; taint_decide
 theorem mul653_check : MulCheck .wide 6 5 3 := by dsimp only [MulCheck]; taint_decide
 theorem copy10_check : ACheck (copy (.slot .wide 10) (.slot .wide 5) (one .wide)) := by
+  dsimp only [ACheck]; taint_decide
+theorem copy11_check : ACheck (copy (.slot .wide 11) (.slot .wide 8) (one .wide)) := by
   dsimp only [ACheck]; taint_decide
 theorem eqStatus_check : ACheck (Impl.Ffdh.X86.eqStatus 6 3) := by dsimp only [ACheck]; taint_decide
 theorem fill_check :
@@ -274,18 +273,10 @@ def W1 (Ex : List Region → List Region → Prop) (base : Addr) (bytes len dlen
     Gate u (¬ (qD len D % 2 = 1 ∧ 2 < qD len D ∧ qD len D < pD len D - 1)) ∧
     sv u.mem base len .wide 11 = qD len D ∧ sv u.mem base len .wide 15 = pD len D - 1
 
-/-- A run with a domain of three components, before the power to q: its q is the domain's third. -/
-theorem DomAt.qrun {u : State} (A : DomAt Ex base bytes len (3 * len) args sp D u) :
-    QPower.QRun Ex base bytes len args sp ((D.drop (2 * len)).take len) u :=
-  QPower.QRun.of_dom A.run A.room A.geo A.hb40 A.dom
-
-/-- The power to q runs over q's bytes from its first nonzero one, which the runs' domain fixes. -/
-theorem subgroup_trace (h3 : dlen = 3 * len) :
-    RelCT isa (Both (DomAt Ex base bytes len dlen args sp D)) subgroup fun _ _ => True := by
-  subst h3
-  exact (VG.RelCT.seq QPower.qScan_relCT (VG.RelCT.seq (QPower.powQ_trace (b := 10) (by decide) (by decide)
-    copy10_check) (RelCT.taint (A := taint) τA (fun _ _ h => h.1.agree h.2) eqStatus_check))).mono
-    (fun _ _ h => ⟨h.1.qrun, h.2.qrun⟩) fun _ _ h => h
+theorem subgroup_trace :
+    RelCT isa (Both fun s => Run Ex base bytes len args sp s ∧ RoomF sp base bytes) subgroup fun _ _ => True :=
+  VG.RelCT.seq (powP_trace (b := 10) (e := 11) (by decide) (by decide) (by decide) (by decide) copy10_check
+    copy11_check) (RelCT.taint (A := taint) τA (fun _ _ h => h.1.agree h.2) eqStatus_check)
 
 theorem dividesFront_trace :
     RelCT isa (Both fun s => Run Ex base bytes len args sp s ∧ RoomF sp base bytes)
@@ -305,26 +296,23 @@ theorem dividesFront_trace :
     (by decide) (by decide) mul653_check (ks := [3, 4]) (ks' := []) (by decide) (by decide) (by decide)) ?_
   exact RelCT.taint (A := taint) τA (fun _ _ h => h.1.agree h.2) dividesTail_check
 
-theorem divides_relCT (h3 : dlen = 3 * len) :
+theorem divides_relCT :
     RelCT isa (Both fun u => W1 Ex base bytes len dlen args sp D u ∧
       ¬ ¬ (qD len D % 2 = 1 ∧ 2 < qD len D ∧ qD len D < pD len D - 1)) divides fun _ _ => True := by
   rw [divides_eq]
   apply VG.RelCT.chain
-  refine VG.RelCT.seq (relCT_both (F := fun u => DomAt Ex base bytes len dlen args sp D u ∧
+  refine VG.RelCT.seq (relCT_both (F := fun u => (Run Ex base bytes len args sp u ∧ RoomF sp base bytes) ∧
       Gate u (¬ (pD len D - 1) % qD len D = 0)) (dividesFront_trace.mono
         (fun _ _ h => ⟨⟨h.1.1.1.run, h.1.1.1.room⟩, ⟨h.2.1.1.run, h.2.1.1.room⟩⟩) fun _ _ h => h) fun x h => ?_) ?_
   · obtain ⟨⟨A, _, h11, h15⟩, c⟩ := h
     have c := Classical.not_not.mp c
     exact WP.mono (dividesFront_ok A.run.1 (by rw [A.run.2.2]; exact A.room) h11 h15 c.1 c.2.1)
-      fun u ⟨S, G, _⟩ => ⟨A.step S, G⟩
-  · exact gate_relCT (fun _ h => h.2) (aEnd (fun _ h => h.1.1.run) ret0_check)
-      ((subgroup_trace h3).mono (fun _ _ h => ⟨h.1.1.1, h.2.1.1⟩) fun _ _ h => h)
+      fun u ⟨S, G, _⟩ => ⟨⟨(A.step S).run, A.room⟩, G⟩
+  · exact gate_relCT (fun _ h => h.2) (aEnd (fun _ h => h.1.1.1) ret0_check)
+      (subgroup_trace.mono (fun _ _ h => ⟨h.1.1.1, h.2.1.1⟩) fun _ _ h => h)
 
 theorem withQ_relCT :
     RelCT isa (Both fun u => QT Ex base bytes len dlen args sp D u ∧ ¬ dlen = 2 * len) withQ fun _ _ => True := by
-  by_cases h3 : dlen = 3 * len
-  swap
-  · exact RelCT.of_false fun _ _ h => h3 (h.1.1.1.geo.dl.resolve_left h.1.2)
   rw [withQ_eq]
   apply VG.RelCT.chain
   refine VG.RelCT.seq (aRel (F := W1 Ex base bytes len dlen args sp D) (fun _ h => h.1.1.run) withQFront_check
@@ -336,7 +324,7 @@ theorem withQ_relCT :
     · rw [A.comp2 h3] at Gt; exact Gt
     · rw [q11, A.comp2 h3]
     · rw [kk 15 (by decide) (by decide) (by decide) (by decide), h15]
-  · exact gate_relCT (fun _ h => h.2.1) (aEnd (fun _ h => h.1.1.run) ret0_check) (divides_relCT h3)
+  · exact gate_relCT (fun _ h => h.2.1) (aEnd (fun _ h => h.1.1.run) ret0_check) divides_relCT
 
 theorem checked_relCT :
     RelCT isa (Both fun u => B1 Ex base bytes len dlen args sp D u ∧ Spec.Rsa.modulusValid (pD len D) len = true)

@@ -80,7 +80,7 @@ open VG VG.X86 VG.X86.Wp VG.Impl.Mont.X86 VG.Impl.Bignum.X86 VG.Impl.Bignum.X86.
 open VG.Proof.Mont.X86 VG.Proof.Bignum.X86 VG.Proof.Bignum.X86.CrtRt VG.Proof.Ffdh.X86
 open VG.Proof.Ffdh.X86.CheckDomain (domBytes argNum_comp)
 open VG.Proof.Ffdh.X86.CheckPublic (YGeo yv bytes_keep)
-open VG.Proof.Ffdh.X86.CheckPrivate (XGeo xv)
+open VG.Proof.Ffdh.X86.CheckPrivate (XGeo xv loadTopCtx_ok top_windows)
 
 variable {Ex : List Region → List Region → Prop} {s : State} {base : Addr} {bytes len dlen xl : Nat}
   {args : Nat → BitVec 32}

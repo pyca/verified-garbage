@@ -190,9 +190,7 @@ The contract releases the domain and y: runs from the same arguments, domain
 and y leak the same traces. Their bodies, narrowed to the working space, run
 from states with the same domain and y (`PubAt`), and each branch tests a
 condition on them: that y is out of range (against `pm1 p`, what `pSetup`
-leaves for any p), whether there is a q. With a q, the power runs over q's
-bytes from its first nonzero one, which the domain fixes
-(`Proof/Ffdh/X86/QPowerCT.lean`).
+leaves for any p), whether there is a q.
 -/
 
 @[expose] public section
@@ -209,6 +207,7 @@ open VG.Impl.Ffdh.X86 (argsFrame ret testMask)
 /-! ## The taint checks -/
 
 theorem front_check : ACheck (Prog.chain pubFront (.block [])) := by dsimp only [ACheck]; taint_decide
+theorem loadQ_check : ACheck (load (.slot .wide 11) (one .wide) 6 7) := by dsimp only [ACheck]; taint_decide
 theorem copy12_check : ACheck (copy (.slot .wide 12) (.slot .wide 5) (one .wide)) := by
   dsimp only [ACheck]; taint_decide
 theorem fill_check :
@@ -246,14 +245,16 @@ def Q1 (Ex : List Region → List Region → Prop) (base : Addr) (bytes len dlen
 
 theorem pubQ_trace :
     RelCT isa (Both fun u => Q1 Ex base bytes len dlen args sp D u ∧ ¬ dlen = 2 * len) pubQ fun _ _ => True := by
-  by_cases h3 : dlen = 3 * len
-  swap
-  · exact RelCT.of_false fun _ _ h => h3 (h.1.1.1.geo.dl.resolve_left h.1.2)
-  subst h3
-  exact (VG.RelCT.seq QPower.qScan_relCT (VG.RelCT.seq (QPower.powQ_trace (b := 12) (by decide) (by decide)
-    copy12_check) (RelCT.taint (A := taint) τA (fun _ _ h => h.1.agree h.2)
-      VG.Proof.Ffdh.X86.CheckDomain.eqStatus_check))).mono
-    (fun _ _ h => ⟨h.1.1.1.qrun, h.2.1.1.qrun⟩) fun _ _ h => h
+  refine VG.RelCT.seq (aRel (F := fun u => Run Ex base bytes len args sp u ∧ RoomF sp base bytes)
+    (fun _ h => h.1.1.run) loadQ_check fun x h => ?_) ?_
+  · obtain ⟨⟨A, _⟩, n2⟩ := h
+    have h3 : dlen = 3 * len := by have := A.geo.dl; omega_using [n2, this]
+    exact WP.mono (loadComp_ok A.run.1 A.geo (k := 2) (j := 11) (by decide) (by omega_using [h3]) (by decide))
+      fun u ⟨_, O, K⟩ => ⟨⟨(Step.slot A.run.1 (by decide) O K).inp, A.run.2.1.keep K,
+        (K.1 _ (by decide)).trans A.run.2.2⟩, A.room⟩
+  · exact VG.RelCT.seq (powP_trace (b := 12) (e := 11) (by decide) (by decide) (by decide) (by decide) copy12_check
+      VG.Proof.Ffdh.X86.CheckDomain.copy11_check)
+      (RelCT.taint (A := taint) τA (fun _ _ h => h.1.agree h.2) VG.Proof.Ffdh.X86.CheckDomain.eqStatus_check)
 
 theorem body_relCT :
     RelCT isa (Both (PubAt Ex base bytes len dlen args sp D Yb)) Impl.Ffdh.X86.CheckPublic.body fun _ _ => True := by
