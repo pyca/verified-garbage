@@ -1288,7 +1288,7 @@ theorem gSel_ct {g : Geo} (G : GeoOk g) {α : Type} {Φ : α → State → Prop}
 /-- What the exponentiation's timing needs of a run after the selections. -/
 private theorem gPowCall_in {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) {s : State} {p h x F : Nat}
     (hp1 : 1 < p) (hodd : p % 2 = 1) {s₆ : State} (S : SelPost E g p h x F s s₆) :
-    VG.Proof.Dsa.X86.Pow.CallIn g.n64 s₆ := by
+    VG.Proof.Dsa.X86.Pow.CallIn g.n64 E.size p s₆ := by
   have sz := v.size_ge
   have bd := G.bounds
   have n64 : g.n64 = g.pLen / 8 := rfl
@@ -1296,7 +1296,7 @@ private theorem gPowCall_in {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) {s :
     simp only [contextBytes, slot, stride]; omega_using [bd, n64]
   have low := v.low
   have ss := v.stackScratch
-  refine ⟨E.base, E.size, S.scr, ?_, by omega_using [sz, cb], S.modv ▸ hp1, S.modv ▸ hodd⟩
+  refine ⟨E.base, S.scr, ?_, by omega_using [sz, cb], S.modv, hp1, hodd⟩
   rw [S.sp]; exact ⟨by omega_using [low], ss.elim (fun h => .inl h) (fun h => .inr (by omega_using [h]))⟩
 
 theorem gPow_dims {g : Geo} (G : GeoOk g) :
@@ -1323,16 +1323,18 @@ theorem gCall_ct {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) :
   let Pin : State → Prop := fun t => ∀ r ∈ [Reg.esp, .edi], t.gpr r = baseVal E r
   refine RelCT.seq (R := fun t₁ t₂ => Pin t₁ ∧ Pin t₂) ?_ ?_
   · have D := gPow_dims G
-    obtain call := (VG.Proof.Dsa.X86.Pow.call_relCT g.n64 g.e D.1 D.2.1 D.2.2.1 D.2.2.2).mono (P' := Both fun (a : Nat × Nat × Nat × Nat) t =>
+    obtain call : RelCT isa (Both fun (a : Nat × Nat × Nat × Nat) t =>
         ∃ s, Base E s ∧ SelPost E g a.2.1 (hVal E a.1) a.2.2.1 a.2.2.2 s t ∧ 1 < a.2.1 ∧ a.2.1 % 2 = 1)
-      (fun s t h => by
-        obtain ⟨a, h₁, h₂⟩ := h
-        obtain p₁ := pinsOf a s h₁
-        obtain p₂ := pinsOf a t h₂
-        refine ⟨(p₁ _ (by simp)).trans (p₂ _ (by simp)).symm, (p₁ _ (by simp)).trans (p₂ _ (by simp)).symm, ?_⟩
-        obtain ⟨s₀, _, S₁, hp1, hodd⟩ := h₁
-        obtain ⟨t₀, _, S₂, _⟩ := h₂
-        exact ⟨gPowCall_in G v hp1 hodd S₁, gPowCall_in G v hp1 hodd S₂⟩) (fun _ _ h => h)
+        (VG.Impl.Dsa.X86.Pow.call g.n64 g.e) (fun _ _ => True) := by
+      intro s t tr ur sf tf h Es Et
+      obtain ⟨a, h₁, h₂⟩ := h
+      obtain p₁ := pinsOf a s h₁
+      obtain p₂ := pinsOf a t h₂
+      obtain ⟨s₀, _, S₁, hp1, hodd⟩ := h₁
+      obtain ⟨t₀, _, S₂, _⟩ := h₂
+      exact (VG.Proof.Dsa.X86.Pow.call_relCT g.n64 g.e E.size a.2.1 D.1 D.2.1 D.2.2.1 D.2.2.2) _ _ _ _ _ _
+        ⟨(p₁ _ (by simp)).trans (p₂ _ (by simp)).symm, (p₁ _ (by simp)).trans (p₂ _ (by simp)).symm,
+          gPowCall_in G v hp1 hodd S₁, gPowCall_in G v hp1 hodd S₂⟩ Es Et
     refine (call.wp (F₁ := Pin) (F₂ := Pin) fun s t h => ?_).mono (fun _ _ h => h) fun _ _ h => h.2
     obtain ⟨a, ⟨s₀, _, S₁, hp1, hodd⟩, ⟨t₀, _, S₂, _⟩⟩ := h
     obtain p₁ := pinsOf a s ⟨s₀, ‹_›, S₁, hp1, hodd⟩
