@@ -20,6 +20,37 @@ open VG.Spec.Aes (bytesAt)
 open VG.Proof.Gcm (Absorbed)
 open Split (SealRegions)
 
+theorem scalarArgs_ok {Ctx W SP S D : Addr} {n r : Nat} {u : State}
+    (env0 : Env Ctx (W+16#64) W SP u) (slot : InRegions (u.rd++u.wr) (SP+8#64) 8)
+    (src : u.mem.readW (SP+8#64) 64=S) (total : u.mem.readW (W+192#64) 64=BitVec.ofNat 64 n)
+    (len : u.mem.readW (W+208#64) 64=BitVec.ofNat 64 r) (dat : u.mem.readW (W+200#64) 64=D) (le : r≤n) :
+    WP isa (.block (Contiguous.regs .rbx ++ [.mov .r12 (.mem (at_ .r15 dataO)),.mov .rbp (.mem (at_ .r15 lenO))])) u
+      fun x => x.gpr .rbx=S+BitVec.ofNat 64 (n-r) ∧ x.gpr .r12=D ∧ x.gpr .rbp=BitVec.ofNat 64 r ∧
+        Env Ctx (W+16#64) W SP x ∧ x.mem=u.mem ∧ x.rd=u.rd ∧ x.wr=u.wr := by
+  obtain ⟨t,run,ptr,g,mem,rd,wr,_⟩ := tailPtr_ok env0 slot src total len le
+  have env := env0.keep (fun z hz => g _ (by
+    simp only [List.mem_cons,List.not_mem_nil,or_false] at hz
+    rcases hz with rfl|rfl|rfl|rfl <;> decide)) rd wr
+  have r200 := env.perm.wR (show 200+8≤2560 by decide)
+  have r208 := env.perm.wR (show 208+8≤2560 by decide)
+  obtain ⟨x,run₁,bp,x12,regs,mem₁,rd₁,wr₁⟩ :
+      ∃ x, runBlock isa [.mov .r12 (.mem (at_ .r15 dataO)), .mov .rbp (.mem (at_ .r15 lenO))] t = some x ∧
+      x.gpr .rbp=BitVec.ofNat 64 r ∧ x.gpr .r12=D ∧
+      (∀ z, z≠.r12 → z≠.rbp → x.gpr z=t.gpr z) ∧ x.mem=t.mem ∧ x.rd=t.rd ∧ x.wr=t.wr := by
+    refine ⟨_,by xrun [env.r15,r200,r208],?_,?_,?_,?_,?_,?_⟩
+    · simpa only [gpr_setReg_self,mem] using len
+    · simpa [gpr_setReg,mem] using dat
+    · intro z a b; simp [gpr_setReg,a,b]
+    all_goals rfl
+  have env' := env.keep (fun z hz => by
+    simp only [List.mem_cons,List.not_mem_nil,or_false] at hz
+    rcases hz with rfl|rfl|rfl|rfl <;> exact regs _ (by decide) (by decide)) rd₁ wr₁
+  have xm := mem₁.trans mem
+  have xr := rd₁.trans rd
+  have xw := wr₁.trans wr
+  exact WP.of_runBlock ⟨x,by rw [runBlock_append,run]; exact run₁,
+    (regs _ (by decide) (by decide)).trans ptr,x12,bp,env',xm,xr,xw⟩
+
 theorem finishScalar_ok (v : GcmImpl) {M : CtxMode} {Ctx W SP S D : Addr} {R n al : Nat}
     {s u : State} {H icb : Block} {a : List Byte}
     (reg : SealRegions M Ctx W SP D S R n n s) (ob : ObPre M Ctx W SP R D n s)
@@ -38,30 +69,11 @@ theorem finishScalar_ok (v : GcmImpl) {M : CtxMode} {Ctx W SP S D : Addr} {R n a
   let r := n-off
   have le : off≤n := Nat.mul_div_le _ _
   have eq : n-r=off := by dsimp only [r]; omega
-  obtain ⟨t,run,ptr,g,mem,rd,wr,_⟩ := tailPtr_ok post.env (by rw [post.rd,post.wr]; exact slot) src
-    post.tlen len (Nat.sub_le ..)
-  have ptr' : t.gpr .rbx = S+BitVec.ofNat 64 off := by simpa only [eq] using (show t.gpr .rbx=S+BitVec.ofNat 64 (n-r) from ptr)
-  have env := post.env.keep (fun z hz => g _ (by
-    simp only [List.mem_cons,List.not_mem_nil,or_false] at hz
-    rcases hz with rfl|rfl|rfl|rfl <;> decide)) rd wr
-  have r200 := env.perm.wR (show 200+8≤2560 by decide)
-  have r208 := env.perm.wR (show 208+8≤2560 by decide)
-  obtain ⟨x,run₁,bp,x12,regs,mem₁,rd₁,wr₁⟩ :
-      ∃ x, runBlock isa [.mov .r12 (.mem (at_ .r15 dataO)), .mov .rbp (.mem (at_ .r15 lenO))] t = some x ∧
-      x.gpr .rbp=BitVec.ofNat 64 r ∧ x.gpr .r12=D+BitVec.ofNat 64 off ∧
-      (∀ z, z≠.r12 → z≠.rbp → x.gpr z=t.gpr z) ∧ x.mem=t.mem ∧ x.rd=t.rd ∧ x.wr=t.wr := by
-    refine ⟨_,by xrun [env.r15,r200,r208],?_,?_,?_,?_,?_,?_⟩
-    · simpa only [gpr_setReg_self,mem] using len
-    · simpa [gpr_setReg,mem,off] using post.dat
-    · intro z a b; simp [gpr_setReg,a,b]
-    all_goals rfl
-  refine WP.seq (WP.of_runBlock ⟨x,by rw [runBlock_append,run]; exact run₁,?_⟩)
-  have env' := env.keep (fun z hz => by
-    simp only [List.mem_cons,List.not_mem_nil,or_false] at hz
-    rcases hz with rfl|rfl|rfl|rfl <;> exact regs _ (by decide) (by decide)) rd₁ wr₁
-  have xm := mem₁.trans mem
-  have xr := rd₁.trans rd
-  have xw := wr₁.trans wr
+  apply WP.seq
+  refine (scalarArgs_ok post.env (by rw [post.rd,post.wr]; exact slot) src post.tlen len post.dat (Nat.sub_le ..)).mono ?_
+  intro x hx
+  obtain ⟨ptr,x12,bp,env',xm,xr,xw⟩ := hx
+  have ptr' : x.gpr .rbx=S+BitVec.ofNat 64 off := by simpa only [eq] using (show x.gpr .rbx=S+BitVec.ofNat 64 (n-r) from ptr)
   have mid : CrMid Ctx (W+16#64) W SP R icb off (D+BitVec.ofNat 64 off) r u.mem 0 x := by
     refine ⟨env',Nat.zero_le _,by simpa using x12,by simpa using bp,hd.of_eq xr xw,by rw [xm]; exact rounds,
       fun hh => by simpa [xm] using hh,fun _ => by simp [bytesAt]; rfl,by rw [xm],.inr (by dsimp [off]; omega),
@@ -74,7 +86,7 @@ theorem finishScalar_ok (v : GcmImpl) {M : CtxMode} {Ctx W SP S D : Addr} {R n a
     · exact .inr ((apart.sub_left (Offset.sub_base _ (by dsimp [r]; omega))).sub_right (Offset.sub_base _ (by dsimp [r]; omega)))
   have origin : TailSrc true (W+16#64) W SP x u.mem (D+BitVec.ofNat 64 off) 0 r (S+BitVec.ofNat 64 off) := by
     simp only [TailSrc,↓reduceIte,Nat.sub_zero]
-    exact ⟨(regs _ (by decide) (by decide)).trans ptr',data,by simpa using lay,by rw [xm]⟩
+    exact ⟨ptr',data,by simpa using lay,by rw [xm]⟩
   refine (WP.with_rdwr (cryptTailG_ok v reg.lay true mid (by dsimp [off,r]; omega) (by rw [xm]) origin)).mono
     fun t ⟨ho,dr,dw⟩ => ⟨ho,dr.trans xr,dw.trans xw⟩
 
