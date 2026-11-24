@@ -308,7 +308,7 @@ theorem scWide_pre (s : State) (h : scWide.pre s) :
     b1, b2, b3, b4, b5, b6, nb, b8, b9, b10, held⟩ := h
   simp only [scLocal, scRd, scWr, SEED, PK, CTX, MSG, OUT, arg_withRegions, argAddr_withRegions,
     State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr, State.withRegions_mem,
-    State.withRegions_syms, CombHeld, below, Taint.sub_setWidth nb]
+    State.withRegions_syms, CombHeld, StHeld, below, Taint.sub_setWidth nb]
   exact ⟨True.intro, True.intro, a1, a2, a3, a4, a5, a6, ko, a8, a9, a10, a11, a12, a13, a14, ks, kp, kx, km, kc,
     b1, b2, b3, b4, b5, b6, nb, b8, b9, b10, held⟩
 

@@ -96,29 +96,33 @@ theorem tbl_word {mem : Mem} {T : Addr} (h : TblWords T mem) {j c m w : Nat} (hj
       ← Offset.add_add, Mem.readW_hi32 h64, extract_ofNat64, Nat.div_div_eq_div_mul, ← Nat.pow_add,
       show 32 * (2 * k + 1) = 64 * k + 32 by omega_using []]
 
-/-- The comb's tables at `P`: in 32-bit memory, readable, their words, apart from what the code
+/-- A static's words `ws` at `P`: in 32-bit memory, readable, apart from what the code
 writes. -/
-structure TblMem (P : BitVec 32) (s : State) : Prop where
-  fit : P.toNat + 8 * combWords.length ≤ 2 ^ 32
-  rd : TblR (P.setWidth 64) ∈ s.rd
-  words : TblWords (P.setWidth 64) s.mem
-  far : ∀ r ∈ s.wr ++ [below (s.gpr .esp) 20], (TblR (P.setWidth 64)).Disjoint r
+structure StMem (ws : List (BitVec 64)) (P : BitVec 32) (s : State) : Prop where
+  fit : P.toNat + 8 * ws.length ≤ 2 ^ 32
+  rd : StR ws (P.setWidth 64) ∈ s.rd
+  words : StWords ws (P.setWidth 64) s.mem
+  far : ∀ r ∈ s.wr ++ [below (s.gpr .esp) 20], (StR ws (P.setWidth 64)).Disjoint r
+
+/-- The comb's tables at `P`. -/
+abbrev TblMem (P : BitVec 32) (s : State) : Prop := StMem combWords P s
 
 /-- The comb's tables at `P`, whose address is at `TPTR`. -/
-structure TblAt (base : Addr) (P : BitVec 32) (s : State) : Prop extends TblMem P s where
+structure TblAt (base : Addr) (P : BitVec 32) (s : State) : Prop extends StMem combWords P s where
   ptr : word s.mem base TPTR = P
 
-/-- The tables survive code that uses at most 20 bytes of stack. -/
-theorem TblMem.frame {P : BitVec 32} {s t : State} (h : TblMem P s)
+/-- The words survive code that uses at most 20 bytes of stack. -/
+theorem StMem.frame {ws : List (BitVec 64)} {P : BitVec 32} {s t : State} (h : StMem ws P s)
     (hsp : t.gpr .esp = s.gpr .esp) (hr : t.rd = s.rd) (hw : t.wr = s.wr)
-    (hf : Frame (s.wr ++ [below (s.gpr .esp) 20]) s.mem t.mem) : TblMem P t :=
-  ⟨h.fit, hr ▸ h.rd, h.words.frame hf h.far, by rw [hsp, hw]; exact h.far⟩
+    (hf : Frame (s.wr ++ [below (s.gpr .esp) 20]) s.mem t.mem) : StMem ws P t :=
+  ⟨h.fit, hr ▸ h.rd, h.words.frame (Nat.lt_of_le_of_lt (Nat.le_add_left _ _) (Nat.lt_of_le_of_lt h.fit (by decide))) hf h.far,
+    by rw [hsp, hw]; exact h.far⟩
 
 theorem TblAt.frame {base : Addr} {P : BitVec 32} {s t : State} (h : TblAt base P s)
     (hsp : t.gpr .esp = s.gpr .esp) (hr : t.rd = s.rd) (hw : t.wr = s.wr)
     (hf : Frame (s.wr ++ [below (s.gpr .esp) 20]) s.mem t.mem)
     (hp : word t.mem base TPTR = word s.mem base TPTR) : TblAt base P t :=
-  ⟨h.toTblMem.frame hsp hr hw hf, hp.trans h.ptr⟩
+  ⟨h.toStMem.frame hsp hr hw hf, hp.trans h.ptr⟩
 
 /-- The words `V` at `a + c`, readable and beyond the working space. -/
 def Cands (base : Addr) (a : BitVec 32) (c : Nat) (V : Nat → Nat) (s : State) : Prop :=
@@ -875,13 +879,14 @@ structure CombKeep (base : Addr) (s t : State) : Prop where
 theorem wsWide {base : Addr} {m m' : Mem} (h : WsOut2 base 64 2816 ACC 512 m m') : WsOut2 base 64 2816 ACC 516 m m' :=
   fun p h8 h1 h2 => h p h8 h1 (by rcases h2 with h2 | h2 <;> [exact Or.inl h2; exact Or.inr (by omega_using [h2])])
 
-theorem tblSetup_ok {s : State} {base : Addr} (hs : Scr s base) (hc : CallCtx s base) :
-    WP isa tblSetup s fun t => Keeps [.eax, .ecx] s t ∧ word t.mem base TPTR = s.syms combSym ∧
-      WsOut2 base 64 2816 ACC 516 s.mem t.mem ∧ (∀ d, d + 4 ≤ TPTR → word t.mem base d = word s.mem base d) ∧
-      ∀ t' < 456, t.mem (off base (BITS + t')) = s.mem (off base (BITS + t')) := by
+/-- A static's address, by a balanced frame, to the word at `d`. -/
+theorem symTo_ok (sym : String) {s : State} {base : Addr} (hs : Scr s base) (hc : CallCtx s base) {d : Nat}
+    (hd : d + 4 ≤ 8192) :
+    WP isa (.seq (.frame (.symPush .eax sym) (.block []) (.pop .ecx 1)) (.block [st .eax d])) s fun t =>
+      Keeps [.eax, .ecx] s t ∧ word t.mem base d = s.syms sym ∧
+      ∀ p, ofs base p < 8192 → (ofs base p < d ∨ d + 4 ≤ ofs base p) → t.mem p = s.mem p := by
   have h4 : 4 ≤ (s.gpr .esp).toNat := Nat.le_trans (by decide) hc.sp
-  unfold tblSetup
-  refine WP.seq (WP.mono (symFrame_ok combSym s h4) fun u hu => ?_)
+  refine WP.seq (WP.mono (symFrame_ok sym s h4) fun u hu => ?_)
   have ku : Keeps [.eax, .ecx] s u := ⟨hu.gpr, hu.rd, hu.wr⟩
   have mu : ∀ p, ofs base p < 8192 → u.mem p = s.mem p := fun p hp => by
     refine hu.frame p fun r hr => ?_
@@ -891,18 +896,26 @@ theorem tblSetup_ok {s : State} {base : Addr} (hs : Scr s base) (hc : CallCtx s 
     simp only [Region.Contains]
     simp only [ofs] at hp
     omega_using [hp]
-  refine store_ok (hs.of_keeps ku (by decide)) (by decide) fun t ht => WP.block_nil ?_
-  have ot : Outside base TPTR 4 u.mem t.mem := by rw [ht.mem]; exact writeW_outside _ _ _ (by decide)
+  refine store_ok (hs.of_keeps ku (by decide)) hd fun t ht => WP.block_nil ?_
+  have ot : Outside base d 4 u.mem t.mem := by rw [ht.mem]; exact writeW_outside _ _ _ hd
+  refine ⟨ku.trans (ht.rest _), ?_, fun p h8 h2 => ?_⟩
+  · rw [ht.mem, hu.addr]; exact Mem.readW_writeW_self32 _ _ _
+  · rw [ot p h2, mu p h8]
+
+theorem tblSetup_ok {s : State} {base : Addr} (hs : Scr s base) (hc : CallCtx s base) :
+    WP isa tblSetup s fun t => Keeps [.eax, .ecx] s t ∧ word t.mem base TPTR = s.syms combSym ∧
+      WsOut2 base 64 2816 ACC 516 s.mem t.mem ∧ (∀ d, d + 4 ≤ TPTR → word t.mem base d = word s.mem base d) ∧
+      ∀ t' < 456, t.mem (off base (BITS + t')) = s.mem (off base (BITS + t')) := by
   have hT : TPTR = 4096 := rfl
   have hA : ACC = 3584 := rfl
   have hB : BITS = 3072 := rfl
-  refine ⟨ku.trans (ht.rest _), ?_, fun p h8 h1 h2 => ?_, fun d hd => ?_, fun i hi => ?_⟩
-  · rw [ht.mem, hu.addr]; exact Mem.readW_writeW_self32 _ _ _
-  · rw [ot p (by omega_using [h2, hT, hA]), mu p h8]
-  · rw [ot.word (Or.inl hd) (by omega_using [hd, hT])]
-    exact (Mem.readW_congr fun i hi => (mu _ (by rw [ofs_off base (by omega_using [hd, hT, hi])]; omega_using [hd, hT, hi])).symm).symm
-  · have e : ofs base (off base (BITS + i)) = BITS + i := ofs_off' base (by omega_using [hi, hB])
-    rw [ot _ (by rw [e]; omega_using [hi, hB, hT]), mu _ (by rw [e]; omega_using [hi, hB])]
+  unfold tblSetup
+  refine WP.mono (symTo_ok combSym hs hc (by decide)) fun t ⟨k, w, m⟩ =>
+    ⟨k, w, fun p h8 h1 h2 => m p h8 (by omega_using [h2, hT, hA]), fun d hd => ?_, fun i hi => ?_⟩
+  · refine (Mem.readW_congr fun i hi => (m _ ?_ (Or.inl ?_)).symm).symm <;>
+      rw [ofs_off base (by omega_using [hd, hT, hi])] <;> omega_using [hd, hT, hi]
+  · exact m _ (by rw [ofs_off' base (by omega_using [hi, hB])]; omega_using [hi, hB])
+      (Or.inl (by rw [ofs_off' base (by omega_using [hi, hB])]; omega_using [hi, hB, hT]))
 
 /-- The slots before the comb: both accumulators at `[G] B`, 1, `d` and zero. -/
 structure CombInit (e : Env) : Prop where

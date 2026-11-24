@@ -248,17 +248,12 @@ end
 section
 
 /-!
-# Ed448 base-point multiplication on x86 (32-bit): the comb's rows
+# Ed448 base-point multiplication on x86 (32-bit): the field programs, and masks
 
-The doubling and addition programs (`Impl/Ed448/Formulas.lean`) run as X448's
-verified field operations on the slots (`ops_ok`), and evaluate to `double`
-and the specification's `pointAdd` (`rowEnv_r`): `Proof/Ed448/CombRef.lean`'s
-`combRow`. One row (`combStep_ok`) doubles `R` (slots 0–2), computes the index
-of its four bits of the scalar (`combDigit_ok`), selects the table's entry of
-that index into `Q`'s `x` and `y` (slots 8 and 9: `combSelect_ok`, every entry
-ORed in under the mask of its index being the row's), and adds `Q` into `T`
-(slots 3–5), copied into `R`; the loop (`combLoop_ok`) leaves `R` as the comb
-over all 114 rows, `comb k 114`.
+The doubling and addition programs (`Impl/Ed448/Formulas.lean`) as X448's
+verified field operations on the slots, and pieces of the comb's selection
+(`Proof/Ed448/X86/CombBase.lean`): the mask of an index (`selMask_ok`) and a
+word ORed in under it (`sel_word`).
 -/
 
 @[expose] public section
@@ -267,9 +262,8 @@ namespace VG.Proof.Ed448.X86
 
 open VG VG.X86 VG.Proof.X448.X86 VG.Proof.X448.Radix16
 open VG.Proof.X25519.X86 (num num_succ num_congr)
-open VG.Proof.Ed448 (double comb combRow combPoint comb_row combDigit_lt pt addWith)
 open VG.Impl.Ed448 (doubleOps addOps)
-open VG.Impl.Ed448.X86 (toOp field combLimb selMask selLimb selCoord selEntry zeroSlot combSelect takeOps)
+open VG.Impl.Ed448.X86 (toOp selMask zeroSlot takeOps)
 open VG.Impl.X448.X86 (BITS slot ACC ld st sc at_)
 
 /-! ## The field programs -/
@@ -291,93 +285,6 @@ def takeFields : List FieldOp := [.copy 0 3, .copy 1 4, .copy 2 5]
 theorem doubleFields_impl : doubleOps.map toOp = doubleFields.map FieldOp.impl := by decide +kernel
 theorem addTake_impl : addOps.map toOp ++ takeOps = (addFields ++ takeFields).map FieldOp.impl := by
   decide +kernel
-
-/-- The table's entry `i` in `Q`'s `x` and `y`. -/
-def selEnv (i : Nat) (e : Env) : Env :=
-  Function.update (Function.update e 8 (Impl.Ed448.Comb.entry i).1) 9 (Impl.Ed448.Comb.entry i).2
-
-/-! ## The row's index -/
-
-theorem bit_lt (k t : Nat) : (k >>> t) &&& 1 < 2 := Nat.lt_of_le_of_lt Nat.and_le_right (by decide)
-
-/-- Four bits, each a byte, as the row's index. -/
-theorem digit_val : ∀ b0 < 2, ∀ b1 < 2, ∀ b2 < 2, ∀ b3 < 2,
-    (let c3 := (BitVec.ofNat 8 b3).setWidth 32
-     let c2 := c3 + c3 + (BitVec.ofNat 8 b2).setWidth 32
-     let c1 := c2 + c2 + (BitVec.ofNat 8 b1).setWidth 32
-     c1 + c1 + (BitVec.ofNat 8 b0).setWidth 32) =
-      BitVec.ofNat 32 (b0 + 2 * b1 + 4 * b2 + 8 * b3) := by
-  decide
-
-/-- The index of row `t` (`esi`) of the bits of `k`, a byte each from `o`, into `ecx`. -/
-theorem combDigit_ok {s : State} {base : Addr} (hs : Scr s base) {o : Nat} (ho : o + 456 ≤ 8192)
-    {k t : Nat} (ht : t < 114) (hb : s.gpr .esi = BitVec.ofNat 32 t)
-    (hbits : ∀ i < 456, s.mem (off base (o + i)) = BitVec.ofNat 8 ((k >>> i) &&& 1)) :
-    WP isa (.block (Impl.Ed448.X86.combDigit o)) s fun u =>
-      u.gpr .ecx = BitVec.ofNat 32 (Proof.Ed448.combDigit k t) ∧ Keeps [.ebp, .ecx, .eax] s u ∧
-        u.mem = s.mem := by
-  unfold Impl.Ed448.X86.combDigit
-  refine wp_mov rfl fun u1 v1 => wp_alu (Or.inl rfl) rfl fun u2 v2 _ => ?_
-  obtain ep : u2.gpr .ebp = s.gpr .edi + BitVec.ofNat 32 t := by
-    rw [v2.gpr]; change u1.gpr .ebp + u1.gpr .esi = _
-    rw [v1.gpr, v1.other .esi (by decide), hb]
-  obtain ea : ∀ (u : State) (c : Nat), u.gpr .ebp = s.gpr .edi + BitVec.ofNat 32 t → c + t < 8192 →
-      u.ea (at_ .ebp c) = off base (c + t) := fun u c hu hc => by
-    change (u.gpr .ebp + BitVec.ofNat 32 c).setWidth 64 = _
-    rw [hu, Offset.add_add, Nat.add_comm t c]
-    exact hs.ea hc
-  obtain rd : ∀ c, c + t < 8192 → InRegions (s.rd ++ s.wr) (off base (c + t)) 1 := fun c hc =>
-    hs.read (by omega_using [hc])
-  obtain bit : ∀ c, c + t < 456 → s.mem (off base (o + c + t)) = BitVec.ofNat 8 ((k >>> (t + c)) &&& 1) :=
-    fun c hc => by
-      rw [show o + c + t = o + (t + c) by omega_arith]
-      exact hbits _ (by omega_using [hc])
-  obtain m2 : u2.mem = s.mem := by rw [v2.mem, v1.mem]
-  obtain r2 : u2.rd ++ u2.wr = s.rd ++ s.wr := by rw [v2.rd, v2.wr, v1.rd, v1.wr]
-  refine wp_load8 (a := off base (o + 342 + t)) (ea u2 _ ep (by omega_using [ho, ht]))
-    (by rw [r2]; exact rd _ (by omega_using [ho, ht])) fun u3 v3 => ?_
-  obtain c3 : u3.gpr .ecx = (BitVec.ofNat 8 ((k >>> (t + 342)) &&& 1)).setWidth 32 := by
-    rw [v3.gpr, m2, bit 342 (by omega_using [ht])]
-  refine wp_load8 (a := off base (o + 228 + t))
-    (ea u3 _ ((v3.other .ebp (by decide)).trans ep) (by omega_using [ho, ht]))
-    (by rw [v3.rd, v3.wr, r2]; exact rd _ (by omega_using [ho, ht])) fun u4 v4 => ?_
-  refine wp_alu (Or.inl rfl) rfl fun u5 v5 _ => wp_alu (Or.inl rfl) rfl fun u6 v6 _ => ?_
-  obtain c6 : u6.gpr .ecx = u3.gpr .ecx + u3.gpr .ecx +
-      (BitVec.ofNat 8 ((k >>> (t + 228)) &&& 1)).setWidth 32 := by
-    rw [v6.gpr]; change u5.gpr .ecx + u5.gpr .eax = _
-    rw [v5.gpr, v5.other .eax (by decide)]; change u4.gpr .ecx + u4.gpr .ecx + u4.gpr .eax = _
-    rw [v4.gpr, v4.other .ecx (by decide), v3.mem, m2, bit 228 (by omega_using [ht])]
-  obtain k6 : Keeps [.ebp, .ecx, .eax] u2 u6 :=
-    (v3.rest (by decide)).trans ((v4.rest (by decide)).trans ((v5.rest (by decide)).trans (v6.rest (by decide))))
-  obtain m6 : u6.mem = s.mem := by rw [v6.mem, v5.mem, v4.mem, v3.mem, m2]
-  refine wp_load8 (a := off base (o + 114 + t))
-    (ea u6 _ ((v6.other .ebp (by decide)).trans ((v5.other .ebp (by decide)).trans
-      ((v4.other .ebp (by decide)).trans ((v3.other .ebp (by decide)).trans ep)))) (by omega_using [ho, ht]))
-    (by rw [k6.2.1, k6.2.2, r2]; exact rd _ (by omega_using [ho, ht])) fun u7 v7 => ?_
-  refine wp_alu (Or.inl rfl) rfl fun u8 v8 _ => wp_alu (Or.inl rfl) rfl fun u9 v9 _ => ?_
-  obtain c9 : u9.gpr .ecx = u6.gpr .ecx + u6.gpr .ecx +
-      (BitVec.ofNat 8 ((k >>> (t + 114)) &&& 1)).setWidth 32 := by
-    rw [v9.gpr]; change u8.gpr .ecx + u8.gpr .eax = _
-    rw [v8.gpr, v8.other .eax (by decide)]; change u7.gpr .ecx + u7.gpr .ecx + u7.gpr .eax = _
-    rw [v7.gpr, v7.other .ecx (by decide), m6, bit 114 (by omega_using [ht])]
-  obtain k9 : Keeps [.ebp, .ecx, .eax] u6 u9 :=
-    (v7.rest (by decide)).trans ((v8.rest (by decide)).trans (v9.rest (by decide)))
-  obtain m9 : u9.mem = s.mem := by rw [v9.mem, v8.mem, v7.mem, m6]
-  refine wp_load8 (a := off base (o + 0 + t))
-    (ea u9 _ ((v9.other .ebp (by decide)).trans ((v8.other .ebp (by decide)).trans
-      ((v7.other .ebp (by decide)).trans ((v6.other .ebp (by decide)).trans ((v5.other .ebp (by decide)).trans
-        ((v4.other .ebp (by decide)).trans ((v3.other .ebp (by decide)).trans ep)))))))
-      (by omega_using [ho, ht]))
-    (by rw [k9.2.1, k9.2.2, k6.2.1, k6.2.2, r2]; exact rd _ (by omega_using [ho, ht])) fun u10 v10 => ?_
-  refine wp_alu (Or.inl rfl) rfl fun u11 v11 _ => wp_alu (Or.inl rfl) rfl fun u12 v12 _ =>
-    WP.block_nil ⟨?_, ?_, ?_⟩
-  · rw [v12.gpr]; change u11.gpr .ecx + u11.gpr .eax = _
-    rw [v11.gpr, v11.other .eax (by decide)]; change u10.gpr .ecx + u10.gpr .ecx + u10.gpr .eax = _
-    rw [v10.gpr, v10.other .ecx (by decide), m9, bit 0 (by omega_using [ht]), c9, c6, c3]
-    exact digit_val _ (bit_lt k t) _ (bit_lt k (t + 114)) _ (bit_lt k (t + 228)) _ (bit_lt k (t + 342))
-  · exact ((v1.rest (by decide)).trans (v2.rest (by decide))).trans (k6.trans (k9.trans
-      ((v10.rest (by decide)).trans ((v11.rest (by decide)).trans (v12.rest (by decide))))))
-  · rw [v12.mem, v11.mem, v10.mem, m9]
 
 /-! ## The selection -/
 
@@ -402,53 +309,6 @@ theorem selMask_ok (s : State) {d i : Nat} (hd : d < 16) (hi : i < 16) (h5 : s.g
       ((v4.rest (by decide)).trans ((v5.rest (by decide)).trans (v6.rest (by decide))))))
   · rw [v6.mem, v5.mem, v4.mem, v3.mem, v2.mem, v1.mem]
 
-theorem selLimb_ok {s : State} {base : Addr} (hs : Scr s base) {o j : Nat} (ho : o + 56 ≤ 4096)
-    (hj : j < 14) (v : Nat → Nat) {b : Bool} (h4 : s.gpr .ebx = mask b) :
-    WP isa (.block (selLimb o v j)) s fun t =>
-      t.mem = s.mem.writeW (off base (o + 4 * j))
-        ((BitVec.ofNat 32 (v j) &&& mask b) ||| word s.mem base (o + 4 * j)) ∧
-      Keeps [.eax] s t := by
-  unfold selLimb
-  refine wp_mov rfl fun u1 v1 => wp_alu (Or.inr (Or.inr (Or.inl rfl))) rfl fun u2 v2 _ => ?_
-  obtain hs2 : Scr u2 base := (hs.of_upd v1 (by decide)).of_upd v2 (by decide)
-  refine wp_alu (Or.inr (Or.inr (Or.inr (Or.inl rfl)))) (readSc hs2 (by omega_using [ho, hj])) fun u3 v3 _ => ?_
-  refine store_ok (hs2.of_upd v3 (by decide)) (by omega_using [ho, hj]) fun u4 v4 => WP.block_nil ⟨?_, ?_⟩
-  · rw [v4.mem, v3.mem, v3.gpr]
-    change u2.mem.writeW _ (u2.gpr .eax ||| word u2.mem base _) = _
-    rw [v2.gpr, v2.mem, v1.mem]
-    change s.mem.writeW _ ((u1.gpr .eax &&& u1.gpr .ebx) ||| _) = _
-    rw [v1.gpr, v1.other _ (by decide), h4]
-  · exact (v1.rest (by decide)).trans ((v2.rest (by decide)).trans ((v3.rest (by decide)).trans (v4.rest _)))
-
-theorem selCoord_ok {s : State} {base : Addr} (hs : Scr s base) {o : Nat} (ho : o + 56 ≤ 4096)
-    (v : Nat → Nat) {b : Bool} (h4 : s.gpr .ebx = mask b) :
-    WP isa (.block (selCoord o v)) s fun t =>
-      (∀ j < 14, word t.mem base (o + 4 * j) =
-        (BitVec.ofNat 32 (v j) &&& mask b) ||| word s.mem base (o + 4 * j)) ∧
-      Outside base o 56 s.mem t.mem ∧ Keeps [.eax] s t := by
-  let inv := fun n (t : State) =>
-    (∀ j < n, word t.mem base (o + 4 * j) =
-      (BitVec.ofNat 32 (v j) &&& mask b) ||| word s.mem base (o + 4 * j)) ∧
-    (∀ j, n ≤ j → j < 14 → word t.mem base (o + 4 * j) = word s.mem base (o + 4 * j)) ∧
-    Outside base o 56 s.mem t.mem ∧ Keeps [.eax] s t
-  obtain step : ∀ n t, n < 14 → inv n t → WP isa (.block (selLimb o v n)) t (inv (n + 1)) := by
-    intro n t hn ⟨tf, ta, tm, tk⟩
-    refine WP.mono (selLimb_ok (hs.of_keeps tk (by decide)) ho hn v ((tk.1 _ (by decide)).trans h4))
-      fun u ⟨um, uk⟩ => ?_
-    obtain out : Outside base (o + 4 * n) 4 t.mem u.mem := by
-      rw [um]; exact writeW_outside _ _ _ (by omega_using [ho, hn])
-    refine ⟨fun j hj => ?_, fun j hj hj' => ?_, tm.trans (out.mono (by omega_using []) (by omega_using [hn])),
-      tk.trans uk⟩
-    · rw [um, word_write t.mem base (by omega_using [ho, hn]) (by omega_using [ho, hn, hj])]
-      by_cases h : j = n
-      · rw [ite_eq_left h, h, ta n (Nat.le_refl _) hn]
-      · rw [ite_eq_right h]; exact tf j (by omega_using [hj, h])
-    · rw [out.word (by omega_using [hj]) (by omega_using [ho, hj'])]
-      exact ta j (by omega_using [hj]) hj'
-  refine WP.mono (wp_range_flatMap (M := isa) (N := 14) inv step 14 (by decide) s ?_)
-    fun t ⟨tf, _, tm, tk⟩ => ⟨tf, tm, tk⟩
-  exact ⟨fun _ hj => absurd hj (Nat.not_lt_zero _), fun _ _ _ => rfl, Outside.refl _ _ _ _, Keeps.refl _ _⟩
-
 theorem zeroSlot_ok {s : State} {base : Addr} (hs : Scr s base) {o : Nat} (ho : o + 56 ≤ 4096)
     (h3 : s.gpr .eax = 0) :
     WP isa (.block (zeroSlot o)) s fun t =>
@@ -468,14 +328,6 @@ theorem zeroSlot_ok {s : State} {base : Addr} (hs : Scr s base) {o : Nat} (ho : 
     · rw [ite_eq_right h]; exact tf j (by omega_using [hj, h])
   exact wp_range_flatMap (M := isa) (N := 14) inv step 14 (by decide) s
     ⟨fun _ hj => absurd hj (Nat.not_lt_zero _), Outside.refl _ _ _ _, Keeps.refl _ _⟩
-
-/-- After the first `n` entries: slots 8 and 9 hold the entry of index `d` if it is below `n`,
-and zero otherwise. -/
-def Sel (base : Addr) (d n : Nat) (m : Mem) : Prop :=
-  ∀ c < 2, ∀ j < 14, word m base (slot (8 + c) + 4 * j) =
-    if d < n then BitVec.ofNat 32 (combLimb d c j) else 0
-
-theorem combLimb_lt (i c j : Nat) : combLimb i c j < 2 ^ 32 := Nat.mod_lt _ (by decide)
 
 theorem and_mask_true_or (x : BitVec 32) : (x &&& mask true) ||| (0 : BitVec 32) = x := by
   show (x &&& BitVec.allOnes 32) ||| 0 = x
@@ -502,109 +354,12 @@ theorem sel_word {d n : Nat} {w : BitVec 32} {v v' : Nat}
     · rw [ite_eq_left hlt, ite_eq_left (by omega_using [hlt])]
     · rw [ite_eq_right hlt, ite_eq_right (by omega_using [hlt, h])]
 
-theorem selEntry_ok {s : State} {base : Addr} (hs : Scr s base) {d n : Nat} (hd : d < 16) (hn : n < 16)
-    (h5 : s.gpr .ecx = BitVec.ofNat 32 d) (hsel : Sel base d n s.mem) :
-    WP isa (.block (selEntry n)) s fun t =>
-      Sel base d (n + 1) t.mem ∧ Outside base (slot 8) 240 s.mem t.mem ∧ Keeps [.eax, .ebx] s t := by
-  have h8 : slot 8 = 1088 := rfl
-  have h9 : slot 9 = 1216 := rfl
-  unfold selEntry
-  rw [List.append_assoc, WP.block_append_iff]
-  refine WP.mono (selMask_ok s hd hn h5) fun u ⟨u4, uk, um⟩ => ?_
-  obtain hsu := hs.of_keeps uk (by decide)
-  rw [WP.block_append_iff]
-  refine WP.mono (selCoord_ok hsu (o := slot 8) (by omega_using [h8]) (combLimb n 0) u4)
-    fun v ⟨vf, vm, vk⟩ => ?_
-  obtain hsv := hsu.of_keeps vk (by decide)
-  refine WP.mono (selCoord_ok hsv (o := slot 9) (by omega_using [h9]) (combLimb n 1)
-    ((vk.1 _ (by decide)).trans u4)) fun w ⟨wf, wm, wk⟩ => ⟨?_, ?_, ?_⟩
-  · intro c hc j hj
-    rcases (by omega_using [hc] : c = 0 ∨ c = 1) with rfl | rfl
-    · rw [show slot (8 + 0) = slot 8 from rfl, wm.word (by omega_using [h8, h9, hj]) (by omega_using [h8, hj]), vf j hj, um]
-      exact sel_word (hsel 0 (by decide) j hj) (fun h => by rw [h])
-    · rw [show slot (8 + 1) = slot 9 from rfl, wf j hj, vm.word (by omega_using [h8, h9, hj]) (by omega_using [h9, hj]), um]
-      exact sel_word (hsel 1 (by decide) j hj) (fun h => by rw [h])
-  · rw [← um]
-    exact (vm.mono (by omega_using [h8]) (by omega_using [h8])).trans
-      (wm.mono (by omega_using [h8, h9]) (by omega_using [h8, h9]))
-  · exact uk.trans ((vk.mono (by decide)).trans (wk.mono (by decide)))
-
 /-- A slot whose words are the digits of a field element holds it. -/
 theorem F_digits {m : Mem} {base : Addr} {o : Nat} (x : Spec.X448.Fe)
     (h : ∀ k < 14, limbs m base o k = x.val / 2 ^ (32 * k) % 2 ^ 32) : F m base o = x := by
   simp only [F, fe]
   rw [num_congr (g := fun k => x.val / 2 ^ (32 * k) % 2 ^ 32) h, num_digits,
     Nat.mod_eq_of_lt (Nat.lt_trans x.isLt (by decide +kernel)), Proof.X448.toFe_self]
-
-theorem combSelect_ok {s : State} {base : Addr} (hs : Scr s base) {d : Nat}
-    (hd : d < 16) (h5 : s.gpr .ecx = BitVec.ofNat 32 d) :
-    WP isa (.block combSelect) s fun t => Keep base s t ∧
-      E t.mem base = selEnv d (E s.mem base) := by
-  have h8 : slot 8 = 1088 := rfl
-  have h9 : slot 9 = 1216 := rfl
-  have hA : ACC = 3584 := rfl
-  unfold combSelect
-  rw [List.append_assoc]
-  refine wp_mov rfl fun u hu => ?_
-  obtain ku : Keeps [.eax, .ebx] s u := hu.rest (by decide)
-  obtain hsu := hs.of_keeps ku (by decide)
-  refine WP.block_append_iff.mpr (WP.mono (zeroSlot_ok hsu (o := slot 8) (by omega_using [h8]) hu.gpr)
-    fun v ⟨vf, vm, vk⟩ => ?_)
-  obtain hsv := hsu.of_keeps vk (by decide)
-  rw [WP.block_append_iff]
-  refine WP.mono (zeroSlot_ok hsv (o := slot 9) (by omega_using [h9]) ((vk.1 _ (by decide)).trans hu.gpr))
-    fun w ⟨wf, wm, wk⟩ => ?_
-  obtain kw : Keeps [.eax, .ebx] s w := ku.trans ((vk.mono (by simp)).trans (wk.mono (by simp)))
-  obtain ow : Outside base (slot 8) 240 s.mem w.mem := by
-    rw [← hu.mem]
-    exact (vm.mono (by omega_using [h8]) (by omega_using [h8])).trans
-      (wm.mono (by omega_using [h8, h9]) (by omega_using [h8, h9]))
-  obtain sel0 : Sel base d 0 w.mem := by
-    intro c hc j hj
-    rw [ite_eq_right (Nat.not_lt_zero _)]
-    rcases (by omega_using [hc] : c = 0 ∨ c = 1) with rfl | rfl
-    · rw [show slot (8 + 0) = slot 8 from rfl, wm.word (by omega_using [h8, h9, hj]) (by omega_using [h8, hj])]
-      exact vf j hj
-    · exact wf j hj
-  let inv := fun n (t : State) =>
-    Sel base d n t.mem ∧ Outside base (slot 8) 240 s.mem t.mem ∧ Keeps [.eax, .ebx] s t
-  obtain step : ∀ n t, n < 16 → inv n t → WP isa (.block (selEntry n)) t (inv (n + 1)) := by
-    intro n t hn ⟨ts, tm, tk⟩
-    exact WP.mono (selEntry_ok (hs.of_keeps tk (by decide)) hd hn ((tk.1 _ (by decide)).trans h5) ts)
-      fun x ⟨xs, xm, xk⟩ => ⟨xs, tm.trans xm, tk.trans xk⟩
-  refine WP.mono (wp_range_flatMap (M := isa) (N := 16) inv step 16 (by decide) w ⟨sel0, ow, kw⟩)
-    fun t ⟨ts, tm, tk⟩ => ?_
-  obtain lx : ∀ j < 14, limbs t.mem base (slot 8) j = (Impl.Ed448.Comb.entry d).1.val / 2 ^ (32 * j) % 2 ^ 32 :=
-    fun j hj => by
-      change (word t.mem base (slot (8 + 0) + 4 * j)).toNat = _
-      rw [ts 0 (by decide) j hj, ite_eq_left hd, BitVec.toNat_ofNat,
-        Nat.mod_eq_of_lt (combLimb_lt _ _ _)]
-      rfl
-  obtain ly : ∀ j < 14, limbs t.mem base (slot 9) j = (Impl.Ed448.Comb.entry d).2.val / 2 ^ (32 * j) % 2 ^ 32 :=
-    fun j hj => by
-      change (word t.mem base (slot (8 + 1) + 4 * j)).toNat = _
-      rw [ts 1 (by decide) j hj, ite_eq_left hd, BitVec.toNat_ofNat,
-        Nat.mod_eq_of_lt (combLimb_lt _ _ _)]
-      rfl
-  obtain other : ∀ i : Index, i ≠ 8 → i ≠ 9 → ∀ j < 14,
-      limbs t.mem base (slot i.val) j = limbs s.mem base (slot i.val) j := fun i h8' h9' j hj => by
-    have e8 := slot_sep h8'
-    have e9 := slot_sep h9'
-    have hi := slot_bound i
-    change slot i.val + 56 ≤ 3584 at hi
-    exact tm.limbs (by change slot i.val + 56 ≤ slot 8 ∨ slot 8 + 56 ≤ slot i.val at e8
-                       change slot i.val + 56 ≤ slot 9 ∨ slot 9 + 56 ≤ slot i.val at e9
-                       simp only [slot] at e8 e9 ⊢
-                       omega_using [e8, e9]) (by omega_using [hi]) hj
-  refine ⟨⟨tk.mono (by decide), fun p _ hp _ => tm p (by omega_using [hp, h8])⟩, ?_⟩
-  · funext i
-    by_cases i9 : i = 9
-    · subst i9; rw [selEnv, Function.update_self]; exact F_digits _ ly
-    · rw [selEnv, Function.update_of_ne i9]
-      by_cases i8 : i = 8
-      · subst i8; rw [Function.update_self]; exact F_digits _ lx
-      · rw [Function.update_of_ne i8]
-        exact congrArg Proof.X448.toFe (num_congr (other i i8 i9))
 
 end VG.Proof.Ed448.X86
 

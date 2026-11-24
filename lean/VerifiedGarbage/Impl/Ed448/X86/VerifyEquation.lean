@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Ed448.X86.ScalarBase
+public import VerifiedGarbage.Impl.Ed448.PublicTable
 
 /-!
 # Ed448 verification's equation on x86 (32-bit)
@@ -25,7 +26,8 @@ reduction works on slot 1 alone, which comparisons and decoding use.
 
 * The bits: byte `t` at `BITS` is bit `t` of `S`, and byte `t` at `KBITS` bit `t` of `k`, by
   X448's `bitsLoop`; then, once `A` is decoded, the bytes at `KBITS` are recoded in place into
-  `k`'s digits (`vrecode`), each zero or odd and below 16, which sum to `k` at the powers of two.
+  `k`'s digits (`vrecode`), each zero or odd and below 16, which sum to `k` at the powers of two,
+  and those at `BITS` into `S`'s, each zero or odd and below 128.
 * `S < L`: its byte 56 is 0 and its low 448 bits plus `2^448 - L` (the
   words `kWord`) do not carry out of 448 bits.
 * Decoding a point (RFC 8032 §5.2.3) at `esi` into the slots `xo` and `yo`: the fourteen words of `y`, which must be below `p`
@@ -40,22 +42,21 @@ reduction works on slot 1 alone, which comparisons and decoding use.
   at `RX` and `RY` (`Z = 1` in slot 10). `A` is negated, its odd multiples
   `[1](-A), [3](-A), …, [15](-A)` are put in a table at `VTAB` (`vtable`), and
   `Q = [S]B + [k](-A)` computed from the top bit down: `Q` (slots 0–2) doubled
-  for each of the 456 bits; in the last 114, the rows of base-point
-  multiplication's comb (`ScalarBase.lean`), the table's entry of the row's
-  four bits of `S` selected into slots 8–9 and added, so that the comb shares
-  the doublings; and, where digit `t` of `k` is not zero, the entry of `-A`'s
-  table for that digit loaded into slots 6, 7 and 21 and added: a sliding
-  window of four bits on `k`, in the same doublings. The signature and the
-  challenge are public (a verification may leak its inputs), so the window's
-  entry is only added where the digit is not zero, and loaded from the
+  for each of the 456 bits; where digit `t` of `S` is not zero, the affine multiple of `B` by it, of
+  the static `bSym` (`vbase` keeps its address at `BPTR`), loaded into slots 8–9 and added
+  (`addAff`); and, where digit `t` of `k` is not zero, the entry of `-A`'s
+  table for that digit loaded into slots 6, 7 and 21 and added: sliding
+  windows of seven bits on `S` and of four on `k`, in the same doublings. The signature and the
+  challenge are public (a verification may leak its inputs), so an
+  entry is only added where its digit is not zero, and loaded from the
   digit's address: the branch and the address are on the digit, which is
   loaded again from the working space where it is used.
 * `Q`'s `Y` is moved to slot 6 (slot 1 is used to compare), `R` copied
-  into slots 8–9 (the comb's entry is no longer needed), `Q` and `R` doubled twice (a
+  into slots 8–9 (the static's entry is no longer needed), `Q` and `R` doubled twice (a
   loop, `vdouble`), and compared: `X_Q Z_R = X_R Z_Q` and `Y_Q Z_R = Y_R Z_Q`, fully reduced.
 
 The result is 1 if `BAD` is 0. Every address depends only on the pointers
-and on `k`'s digits, and every branch on the pointers and on the bits of `k`.
+and on the digits of `S` and `k`, and every branch on the pointers and on their bits.
 -/
 
 @[expose] public section
@@ -79,6 +80,9 @@ def RY : Nat := 4224
 /-- The pointer to the point the decoding loop decodes next, and the decodings left. -/
 def PCUR : Nat := 4352
 def CNT : Nat := 4356
+
+/-- The static's address, while `Q` is computed. -/
+def BPTR : Nat := 4360
 
 /-- The bits of `k`, one per byte, and then its digits. -/
 def KBITS : Nat := 4608
@@ -199,7 +203,7 @@ def vdecodeInit : List Instr :=
 and `R` at `RX` and `RY`. -/
 def vdecode : Prog isa := .seq (.block vdecodeInit) (.loop vdecodeBody .ne)
 
-/-- `R` into slots 8–9 (the comb's entry is no longer needed). -/
+/-- `R` into slots 8–9 (the static's entry is no longer needed). -/
 def vR : List Instr := copy (slot 8) RX ++ copy (slot 9) RY
 
 /-! ## `[S]B + [k](-A)` -/
@@ -212,52 +216,54 @@ def addAtZ (x y z : Nat) : List FOp := [
   .sub 19 19 14, .sub 19 19 15, .mul 3 20 19, .mul 20 12 18, .sub 19 15 14, .mul 4 20 19,
   .mul 5 17 18]
 
-/-! ### `k`'s digits
+/-! ### The digits
 
-`k`'s 456 bits are recoded in place, from the lowest, into 456 digits, each zero or odd and
-below 16, that sum to `k` weighted by the powers of two: a set bit that no window covers opens a
-window of four bits there, whose digit is those bits' value, and the other three digits of the
-window are zero. Byte `t` at `KBITS`, the bit of `k`, becomes the digit. The recoding reads one
+The 456 bits of a scalar, a byte each at `B`, are recoded in place, from the lowest, into 456 digits,
+each zero or odd and below `2^W` (`M = 2^W - 1` is below), that sum to the scalar weighted by the
+powers of two: a set bit that no window covers opens a
+window of `W` bits there, whose digit is those bits' value, and the other digits of the
+window are zero. Byte `t`, the bit, becomes the digit. The recoding reads one
 bit a step (`recBit`): `esi` counts the bits read, `ebx` holds the weight of the next bit in the
-window in hand (zero with none: 2, 4, 8 and then none again), `ecx` that window's digit so far
-and `eax` the address of that digit's byte, less `KBITS`. With no window, the bit is the digit,
+window in hand (zero with none: 2, 4, … and then none again), `ecx` that window's digit so far
+and `eax` the address of that digit's byte, less `B`. With no window, the bit is the digit,
 so the byte stays, and opens a window if it is set; with one, the digit is zero and the bit, at
 its weight, is added to the window's digit, whose byte is stored again: the bytes below the bits
-read are those of their digits, and nothing is left to do after the last. `k` is public, and so
-are the digits. -/
+read are those of their digits, and nothing is left to do after the last. `S` and `k` are public, and so
+are the digits: `k`'s at `KBITS` (`W = 4`) and `S`'s at `BITS` (`W = 7`). -/
 
-/-- The address of byte `esi`, less `KBITS`, into `ebp`, the byte (the bit of `k`) into `edx`,
+/-- The address of byte `esi`, less `B`, into `ebp`, the byte (the bit) into `edx`,
 and ZF set with no window in hand. -/
-def recHead : List Instr :=
-  [.mov .ebp (.reg .edi), .alu .add .ebp (.reg .esi), .movzx8 .edx (at_ .ebp KBITS),
+def recHead (B : Nat) : List Instr :=
+  [.mov .ebp (.reg .edi), .alu .add .ebp (.reg .esi), .movzx8 .edx (at_ .ebp B),
     .alu .cmp .ebx (.imm 0)]
 
-/-- No window in hand: the bit of `k` is the digit, so the byte stays; it is a window's first,
+/-- No window in hand: the bit is the digit, so the byte stays; it is a window's first,
 with the weight 2 next, if it is set. -/
 def recOpen : List Instr :=
   [.mov .ecx (.reg .edx), .mov .ebx (.reg .edx), .alu .add .ebx (.reg .ebx), .mov .eax (.reg .ebp)]
 
-/-- A window in hand: the bit of `k` is added to the window's digit at the weight `ebx` (under
+/-- A window in hand: the bit is added to the window's digit at the weight `ebx` (under
 the mask of the bit), the digit of the bit is zero, the window's digit is stored again, and the
-weight doubles, and is none after 8. -/
-def recGrow : List Instr :=
+weight doubles, and is none after the window's last. -/
+def recGrow (B M : Nat) : List Instr :=
   [.alu .xor .edx (.imm 0xFFFFFFFF), .alu .add .edx (.imm 1), .alu .and .edx (.reg .ebx),
-    .alu .add .ecx (.reg .edx), .mov .edx (.imm 0), .store8 (at_ .ebp KBITS) .dl,
-    .store8 (at_ .eax KBITS) .cl, .alu .add .ebx (.reg .ebx), .alu .and .ebx (.imm 15)]
+    .alu .add .ecx (.reg .edx), .mov .edx (.imm 0), .store8 (at_ .ebp B) .dl,
+    .store8 (at_ .eax B) .cl, .alu .add .ebx (.reg .ebx), .alu .and .ebx (.imm (BitVec.ofNat 32 M))]
 
 /-- The next bit; ZF is set after bit 455. -/
 def recNext : List Instr := [.alu .add .esi (.imm 1), .alu .cmp .esi (.imm 456)]
 
 /-- One bit, of byte `esi`. -/
-def recBit : Prog isa :=
-  .seq (.block recHead) (.seq (.ite .e (.block recOpen) (.block recGrow)) (.block recNext))
+def recBit (B M : Nat) : Prog isa :=
+  .seq (.block (recHead B)) (.seq (.ite .e (.block recOpen) (.block (recGrow B M))) (.block recNext))
 
 /-- No bit read, no window, and a window's address that is in the bytes. -/
 def recInit : List Instr :=
   [.mov .esi (.imm 0), .mov .ebx (.imm 0), .mov .ecx (.imm 0), .mov .eax (.reg .edi)]
 
-/-- `k`'s digits in place of its bits, in the bytes at `KBITS`. -/
-def vrecode : Prog isa := .seq (.block recInit) (.loop recBit .ne)
+/-- A scalar's digits in place of its bits, in the bytes at `B`, for windows of `W` bits and
+`M = 2^W - 1`. -/
+def vrecode (B M : Nat) : Prog isa := .seq (.block recInit) (.loop (recBit B M) .ne)
 
 /-! ### The table of `-A`'s odd multiples -/
 
@@ -299,21 +305,46 @@ def vneutral : List Op :=
 is the neutral point after it. -/
 def vtable : Prog isa := .seq vtableInit <| .seq (.loop vtableStep .ne) (ops vneutral)
 
+/-! ### The static of `B`'s odd multiples -/
+
+/-- The static holding the affine points `[1]B, [3]B, …, [127]B`. -/
+def bSym : String := "VG_ED448_B_TABLE"
+
+/-- Word `i` (of 64 bits) of the static: entry `i / 14` takes 112 bytes, its `x` and then its `y`. -/
+def bWord (i : Nat) : BitVec 64 :=
+  let e := Impl.Ed448.PublicTable.entry (i / 14)
+  BitVec.ofNat 64 ((if i % 14 < 7 then e.1 else e.2).val / 2 ^ (64 * (i % 7)))
+
+/-- The words of the 64 entries. -/
+def bWords : List (BitVec 64) := (List.range (64 * 14)).map bWord
+
+/-- The static verification reads. -/
+def bConsts : List (String × List (BitVec 64)) := [(bSym, bWords)]
+
+/-- The static's address, obtained in a balanced four-byte CALL frame (`symPush`; the saved `eip` is
+popped into `ecx`), to `BPTR`. -/
+def vbase : Prog isa :=
+  .seq (.frame (.symPush .eax bSym) (.block []) (.pop .ecx 1)) (.block [st .eax BPTR])
+
 /-! ### The sum -/
 
-/-- CF set exactly when `esi < 114`: the bit is a row of the comb. -/
-def vrowTest : List Instr := [.alu .cmp .esi (.imm 114)]
-
-/-- In the comb's rows, the bits below 114: the table's entry of the row's four bits of `S`
-selected into slots 8–9 (`combSelect`) and added to `Q`. -/
-def vcombIf : Prog isa :=
-  .seq (.block vrowTest)
-    (.ite .b (.seq (.block (combDigit BITS ++ combSelect)) (addTake addOps)) (.block []))
-
-/-- Digit `esi` of `k` into `ecx`, and ZF clear exactly when it is not zero. -/
-def vdigit : List Instr :=
-  [.mov .ebp (.reg .edi), .alu .add .ebp (.reg .esi), .movzx8 .ecx (at_ .ebp KBITS),
+/-- Digit `esi` of those at `B` into `ecx`, and ZF clear exactly when it is not zero. -/
+def vdigit (B : Nat) : List Instr :=
+  [.mov .ebp (.reg .edi), .alu .add .ebp (.reg .esi), .movzx8 .ecx (at_ .ebp B),
     .alu .cmp .ecx (.imm 0)]
+
+/-- `ebp` = the address of the entry of the odd digit `ecx` of the static, entry `(ecx - 1) / 2`:
+56 bytes a unit of `ecx - 1` (64 and 8 times it, by rotations). -/
+def vbaseAddr : List Instr :=
+  [.alu .sub .ecx (.imm 1), .shift .ror .ecx 29, .mov .eax (.reg .ecx), .shift .ror .ecx 29,
+    .alu .sub .ecx (.reg .eax), ld .ebp BPTR, .alu .add .ebp (.reg .ecx)]
+
+/-- The static's entry of the odd digit `ecx` into slots 8 and 9. -/
+def vbaseLoad : Prog isa := .seq (.block vbaseAddr) (.block (fromEntry (slot 8) 0 ++ fromEntry (slot 9) 56))
+
+/-- `Q = Q +` the static's entry of digit `esi` of `S`, if the digit is not zero. -/
+def vbaseIf : Prog isa :=
+  .seq (.block (vdigit BITS)) (.ite .ne (.seq vbaseLoad (ops (addAff 0 1 2))) (.block []))
 
 /-- `ebp` = the address of the entry of the odd digit `ecx`, entry `(ecx - 1) / 2`, less
 `VTAB - 192`: 192 bytes a unit of the digit (64 and 128 times it, by rotations). -/
@@ -328,13 +359,13 @@ def ventryLoad : List Instr :=
 
 /-- `Q = Q +` the table's entry of digit `esi` of `k`, if the digit is not zero. -/
 def vaddIf : Prog isa :=
-  .seq (.block vdigit)
+  .seq (.block (vdigit KBITS))
     (.ite .ne (.seq (.block ventryLoad) (addTake (addAtZ 6 7 21))) (.block []))
 
-/-- One bit `t = esi - 1`, from the top: `Q` doubled, the comb's entry added in the comb's rows,
-the entry of `k`'s digit added if the digit is not zero, and the counter compared with zero. -/
+/-- One bit `t = esi - 1`, from the top: `Q` doubled, the entries of `S`'s digit and of `k`'s added,
+each if the digit is not zero, and the counter compared with zero. -/
 def vstep : Prog isa :=
-  .seq (.block [.alu .sub .esi (.imm 1)]) <| .seq (field doubleOps) <| .seq vcombIf <|
+  .seq (.block [.alu .sub .esi (.imm 1)]) <| .seq (field doubleOps) <| .seq vbaseIf <|
   .seq vaddIf (.block [.alu .cmp .esi (.imm 0)])
 
 /-- The 456 bits, from 455 down to 0. -/
@@ -377,10 +408,11 @@ def vfinish : Prog isa :=
   .seq vdouble <| .seq (.block [.mov .esi (.imm 2)]) <| .seq (.loop vcmp .ne) <|
   .block (ld .ecx BAD :: isZero .ecx ++ restore ++ [.mov .eax (.reg .ecx)])
 
-/-- After the decodings: `A` negated, `k`'s digits, the table of `-A`'s odd multiples, `Q`, `R`
+/-- After the decodings: `A` negated, the digits, the static's address, the table of `-A`'s odd multiples, `Q`, `R`
 copied back, and the comparison. -/
 def vafter : Prog isa :=
-  .seq (field [.sub 6 0 6]) <| .seq vrecode <| .seq vtable <| .seq vloop <|
+  .seq (field [.sub 6 0 6]) <| .seq (vrecode KBITS 15) <| .seq (vrecode BITS 127) <| .seq vbase <|
+  .seq vtable <| .seq vloop <|
   .seq (ops [.copy (slot 6) X2]) <| .seq (.block vR) vfinish
 
 /-- `vg_ed448_verify_equation(pk = [esp + 4], signature = [esp + 8],

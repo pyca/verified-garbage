@@ -55,6 +55,10 @@ mod vg_ed25519_verify_neg_base;
 pub use vg_ed25519_verify_neg_base::VG_ED25519_VERIFY_NEG_BASE;
 
 #[rustfmt::skip]
+mod vg_ed448_b_table;
+pub use vg_ed448_b_table::VG_ED448_B_TABLE;
+
+#[rustfmt::skip]
 mod vg_ffdh_vetted_groups_x86;
 pub use vg_ffdh_vetted_groups_x86::VG_FFDH_VETTED_GROUPS_X86;
 
