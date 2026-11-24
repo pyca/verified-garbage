@@ -220,7 +220,7 @@ private def mediumBranch (n : Nat) (bound : n=768 ∨ n=4096) :
   same := by intro a b _ _ p; rw [p.1.2.2.2.2.2.2.2.2.2 0 (by decide)]
   trace := by
     intro a b _ _ pub
-    exact rel_taint [] pub.1.2.2.2.2.2.2.2.2.1 (by agree_tac []) ⟨_,by rcases bound with rfl|rfl <;> taint_decide⟩
+    rcases bound with rfl | rfl <;> exact rel_taint [] pub.1.2.2.2.2.2.2.2.2.1 (by agree_tac []) ⟨_,by taint_decide⟩
   residue := Residue.noResidue_of_blind (by rcases bound with rfl|rfl <;> decide +kernel) _ 0
 
 private abbrev firstCode : List Instr := .ldrSp .x10 0 :: limitCode 97
@@ -288,13 +288,12 @@ theorem selected {v : GcmImpl} {g : GhashWithImpl} (facts : BackendFacts v g) : 
   by_cases portable : (!v.calls.pmull) = true
   · simp only [select,portable,ite_true]
     exact generalLeaf facts
-  · by_cases fused : v.calls.stitch = true
-    · simp only [select,portable,fused,ite_true]
-      exact (nonceBranch standard id).checked ((shortBranch intermediate id).checked (shortLeaf facts.hash)
-        ((mediumBranch 768 (.inl rfl)).checked (preparedLeaf facts false) (preparedLeaf facts true))) (generalLeaf facts)
-    · simp only [select,portable,fused,ite_false]
-      exact (nonceBranch standard id).checked ((shortBranch intermediate id).checked (shortLeaf facts.hash)
-        ((mediumBranch 4096 (.inr rfl)).checked (preparedLeaf facts false) (preparedLeaf facts true))) (generalLeaf facts)
+  · let n := if v.calls.stitch then 768 else 4096
+    have hn : n=768 ∨ n=4096 := by cases h : v.calls.stitch <;> simp [n,h]
+    simp only [select,portable]
+    exact (nonceBranch standard id).checked ((shortBranch intermediate id).checked (shortLeaf facts.hash)
+      ((mediumBranch n hn).checked (preparedLeaf facts false) (preparedLeaf facts true))) (generalLeaf facts)
+
 
 end VG.Proof.AesGcm.AArch64.Contiguous.Guard
 
