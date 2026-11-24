@@ -1871,7 +1871,8 @@ cbnz x10, 2266b
 .inst 0x3d80013f,0x3d80053f,0x3d80093f,0x9105c3ff
 282:
 21:
-.inst 0xd65f03c0",
+.inst 0xd65f03c0
+.p2align 6",
         vg_ghash_aes = sym super::aes_gcm_siv::vg_ghash_aes::vg_ghash_aes,
         vg_aes_gcm_seal_batches_aes_sha3 = sym super::aes::vg_aes_gcm_seal_batches_aes_sha3::vg_aes_gcm_seal_batches_aes_sha3,
         vg_aes_ctr32_to_aes = sym super::aes::vg_aes_ctr32_to_aes::vg_aes_ctr32_to_aes,
@@ -9050,7 +9051,8 @@ cbnz x10, 2266b
 .inst 0x3d80013f,0x3d80053f,0x3d80093f,0x9105c3ff
 282:
 21:
-.inst 0xd65f03c0",
+.inst 0xd65f03c0
+.p2align 6",
         vg_ghash_aes = sym super::aes_gcm_siv::vg_ghash_aes::vg_ghash_aes,
         vg_aes_gcm_seal_batches_aes = sym super::aes::vg_aes_gcm_seal_batches_aes::vg_aes_gcm_seal_batches_aes,
         vg_aes_ctr32_to_aes = sym super::aes::vg_aes_ctr32_to_aes::vg_aes_ctr32_to_aes,
