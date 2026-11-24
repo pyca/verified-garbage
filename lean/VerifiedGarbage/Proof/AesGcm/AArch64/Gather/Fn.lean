@@ -102,12 +102,12 @@ end
 abbrev kR (C : CtxSpec) (s : State) : Region := ⟨K s, C.len⟩
 
 /-- What the code of `vg_aes_gcm_seal_gather` needs, of the regions. -/
-def gatherPre (C : CtxSpec) (s : State) : Prop :=
+def gatherPreFor (C : CtxSpec) (s : State) (sourceOK : Region → Prop) : Prop :=
   s.rd = [kR C s, nR s, aR s, dsR s] ++ lsR s ++ [argR s] ∧ s.wr = [dR s, tgR s] ∧
     (kR C s).Disjoint (dR s) ∧ (kR C s).Disjoint (tgR s) ∧ (nR s).Disjoint (dR s) ∧
     (nR s).Disjoint (tgR s) ∧ (aR s).Disjoint (dR s) ∧ (aR s).Disjoint (tgR s) ∧
     (dsR s).Disjoint (dR s) ∧ (dsR s).Disjoint (tgR s) ∧
-    (∀ r ∈ lsR s, r.Disjoint (dR s) ∧ r.Disjoint (tgR s)) ∧
+    (∀ r ∈ lsR s, sourceOK r ∧ r.Disjoint (tgR s)) ∧
     (dR s).Disjoint (tgR s) ∧ (dR s).Disjoint (argR s) ∧ (tgR s).Disjoint (argR s) ∧
     (stkR s).Disjoint (kR C s) ∧ (stkR s).Disjoint (nR s) ∧ (stkR s).Disjoint (aR s) ∧
     (stkR s).Disjoint (dsR s) ∧ (∀ r ∈ lsR s, (stkR s).Disjoint r) ∧ (stkR s).Disjoint (argR s) ∧
@@ -117,6 +117,13 @@ def gatherPre (C : CtxSpec) (s : State) : Prop :=
     (Dst s).toNat + L s ≤ 2 ^ 64 ∧ (Tg s).toNat + 16 ≤ 2 ^ 64 ∧
     2592 ≤ s.sp.toNat ∧ s.sp.toNat + 24 ≤ 2 ^ 64 ∧
     ((s.gpr .x1).toNat = 10 ∨ (s.gpr .x1).toNat = 12 ∨ (s.gpr .x1).toNat = 14) ∧ gl s (Cnt s) = L s
+
+/-- The public gather API accepts disjoint descriptors. A contiguous adapter
+may instead give a single descriptor naming its destination. -/
+abbrev gatherPre (C : CtxSpec) (s : State) := gatherPreFor C s (fun r => r.Disjoint (dR s))
+
+abbrev sharedSource (s : State) (r : Region) : Prop :=
+  r.Disjoint (dR s) ∨ (Cnt s = 1 ∧ r.base = Dst s)
 
 /-- What two runs agree on: the arguments and the descriptors. -/
 def gatherPub (s₁ s₂ : State) : Prop :=
@@ -419,8 +426,8 @@ abbrev wrC : List Region := [dR s, tgR s]
 end
 
 /-- What `gatherPre` gives, with the stack below the stack pointer at `Bs s`. -/
-structure Lay (C : CtxSpec) (s : State) : Prop where
-  pre : gatherPre C s
+structure Lay (C : CtxSpec) (s : State) (sourceOK : Region → Prop := fun r => r.Disjoint (dR s)) : Prop where
+  pre : gatherPreFor C s sourceOK
   hB : s.sp = Bs s + BitVec.ofNat 64 2592
   hBn : (Bs s).toNat + 2616 ≤ 2 ^ 64
   bk : (⟨Bs s, 2592⟩ : Region).Disjoint (kR C s)
@@ -436,7 +443,7 @@ structure Lay (C : CtxSpec) (s : State) : Prop where
   hgl : gl s (Cnt s) = L s
   ods : (Src s).toNat + Cnt s * 16 ≤ 2 ^ 64
 
-theorem lay {s : State} (hs : gatherPre C s) : Lay C s := by
+theorem lay {s : State} {sourceOK : Region → Prop} (hs : gatherPreFor C s sourceOK) : Lay C s sourceOK := by
   sig_split hs
   rename_i rd wr kd kt nd nt ad at_ dsd dst lsdt dt darg targ bk bn ba bds bl barg bd bt ok on oa ods ol od ot
     w₁ w₂ hR
@@ -452,6 +459,11 @@ theorem lay {s : State} (hs : gatherPre C s) : Lay C s := by
     ok, on, oa, ods, ol, od, ot, w₁, w₂, hR, hgl⟩, hB, hBn, bk, bn, ba, bds, bl, bd, bt,
     by simp only [argR, stackArgAddr_eq s hB, Nat.mul_zero, Nat.add_zero], w₁, hR, hgl, ods⟩
 
+theorem Lay.shared {s : State} (l : Lay C s) : Lay C s (sharedSource s) := by
+  obtain ⟨rd,wr,kd,kt,nd,nt,ad,atg,dsd,dst,src,rest⟩ := l.pre
+  exact lay ⟨rd,wr,kd,kt,nd,nt,ad,atg,dsd,dst,
+    fun r hr => ⟨Or.inl (src r hr).1,(src r hr).2⟩,rest⟩
+
 /-- Parts of the stack below the stack pointer. -/
 theorem stk_sub (s : State) (d n : Nat) (h' : d + n ≤ 2592) :
     (⟨Bs s + BitVec.ofNat 64 d, n⟩ : Region).Sub ⟨Bs s, 2592⟩ :=
@@ -464,7 +476,8 @@ theorem frame_eMem (s : State) : Frame [FR s] s.mem (eMem s) :=
 
 namespace Lay
 
-variable {s : State} (h : Lay C s)
+section
+variable {s : State} {sourceOK : Region → Prop} (h : Lay C s sourceOK)
 include h
 
 theorem hA (i : Nat) : stackArgAddr s i = Bs s + BitVec.ofNat 64 (2592 + 8 * i) := stackArgAddr_eq s h.hB i
@@ -474,6 +487,11 @@ theorem argIn : argR s ∈ s.rd := by rw [h.pre.1]; simp
 theorem inArg (d : Nat) (h₁ : 2592 ≤ d) (h₂ : d + 8 ≤ 2616) (rs : List Region) :
     InRegions (s.rd ++ rs) (Bs s + BitVec.ofNat 64 d) 8 :=
   ⟨_, List.mem_append_left _ h.argIn, by rw [h.hargR]; exact contains_off _ h₁ (by omega_arith) (by omega_arith)⟩
+
+end
+
+variable {s : State} (h : Lay C s)
+include h
 
 theorem sa (i : Nat) : s.mem.read (Bs s + BitVec.ofNat 64 (2592 + 8 * i)) 8 = stackArg s i := by
   rw [← h.hA]; rfl

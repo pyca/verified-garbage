@@ -277,19 +277,27 @@ theorem PieceAt.inputs (p : PieceAt a s i j h t) (pr : PiecesPre a s) (hi : i < 
   have ok := (pr.source i hi).drop p.le
   have od := (pr.dst.drop (by dsimp [pos]; omega_arith : pos a s i j ≤ a.total s)).take
     (k := len a s i-j) (by dsimp [pos]; omega_arith)
-  have apart := ((pr.sourceApart i hi).sub_left (Offset.sub_base (frag a s i) (d := j) (n := len a s i-j)
-      (by change j+(len a s i-j) ≤ len a s i; omega_arith))).sub_right (Offset.sub_base a.dst (d := pos a s i j) (n := len a s i-j)
-      (by dsimp [pos]; omega_arith))
+  have layout : BufferLayout (atOff (frag a s i) j) (atOff a.dst (pos a s i j)) (len a s i-j) := by
+    rcases pr.sourceLayout i hi with same | apart
+    · left
+      simp only [frag,same,pos,atOff,Offset.add_add]
+    · right
+      exact (apart.sub_left (Offset.sub_base _ (d := j) (n := len a s i-j)
+        (by change j+(len a s i-j) ≤ len a s i; omega_arith))).sub_right (Offset.sub_base _ (d := pos a s i j) (by dsimp [pos]; omega_arith))
   exact ⟨p.env,fun _ _ => rfl,p.x22,pr.rounds,p.src,p.rest,p.offset,ok.of_eq p.rd p.wr,
-    OutAt.mkTo (od.of_eq p.rd p.wr) apart (by simpa using p.dst)⟩
+    ⟨od.of_eq p.rd p.wr, layout, by simpa using p.dst⟩⟩
 
 theorem PieceAt.sourceBytes (p : PieceAt a s i j h t) (pr : PiecesPre a s) (hi : i < a.count)
     (hstep : j+b ≤ len a s i) :
     bytesAt t.mem (atOff (frag a s i) j) b = bytesAt s.mem (atOff (frag a s i) j) b := by
   have lim := pieceBound a s hi
   have bound := p.le
-  exact p.data pr (by dsimp [pos]; omega_arith) (((pr.source i hi).drop bound).take (by change b ≤ len a s i-j; omega_arith))
-    ((pr.sourceApart i hi).sub_left (Offset.sub_base _ hstep))
+  have data := ((pr.source i hi).drop bound).take (k := b) (by change b ≤ len a s i-j; omega_arith)
+  apply bytesAt_frame p.frame (textApart pr ?_ data.st data.w) (Nat.le_of_lt data.lt)
+  rcases pr.sourceLayout i hi with same | apart
+  · simp only [same,pos,atOff,Offset.add_add]
+    exact Offset.disjoint_base _ (Nat.le_refl _) (by have := pr.dst.ok.lt; omega_arith)
+  · exact (apart.sub_left (Offset.sub_base _ hstep)).sub_right (Region.sub_prefix (by dsimp [pos]; omega_arith))
 
 theorem PieceAt.advance (p : PieceAt a s i j h t) (pr : PiecesPre a s) (hi : i < a.count)
     {nh : Nat} (hstep : j+b ≤ len a s i)

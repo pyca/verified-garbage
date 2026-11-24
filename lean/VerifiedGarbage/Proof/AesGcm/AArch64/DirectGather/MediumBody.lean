@@ -18,15 +18,15 @@ open VG.Spec.Aes (bytesAt)
 open VG.Spec.Gcm (blockAt inc32 zeros)
 open VG.AArch64.Scrub
 
-theorem preKeys {o s : State} (l : Gather.Lay .plain o) (iv : NL o = 12) (hn : L o ≤ 224)
+theorem preKeys {o s : State} (l : BoundedLay o) (iv : NL o = 12) (hn : L o ≤ 224)
     (h : Header o s) (zero : bytesAt s.mem (base o+224) 256 = zeros 256) :
     MediumKeysPre (base o) (K o) (o.gpr .x1).toNat (blocks o) s := by
   have bound : blocks o ≤ 14 := by unfold blocks; omega
   have keyR : Covers [kR .plain o] (s.rd ++ s.wr) := Covers.of_mem fun r hr => by
-    rw [h.rd,l.pre.1,List.mem_singleton.mp hr]; simp
+    rw [h.rd,l.rd,List.mem_singleton.mp hr]; simp
   have nonceR : Covers [⟨Nn o,12⟩] (s.rd ++ s.wr) := by
     rw [h.rd,← iv]; exact Covers.of_mem fun r hr => List.mem_append_left _ (by
-      rw [l.pre.1,List.mem_singleton.mp hr]; simp [nR])
+      rw [l.rd,List.mem_singleton.mp hr]; simp [nR])
   refine ⟨h.x19,h.x21,by simpa using h.x22,h.x25,l.hR,by omega,?_,h.scratchWr,
     covers_prefix keyR (by decide),(l.bk.sub_left (scratch_sub o)).symm.sub_left (Region.sub_prefix (by decide)),?_,?_,?_⟩
   · have le : 752 ≤ o.sp.toNat := by have := l.w₁; omega
@@ -41,7 +41,7 @@ theorem preKeys {o s : State} (l : Gather.Lay .plain o) (iv : NL o = 12) (hn : L
     simp only [zeros,List.drop_replicate,List.take_replicate,Nat.min_eq_left (show 16 ≤ 256-16*i by omega)]
     exact Proof.Gcm.ofBytes_zeros16
 
-private theorem keyCipher {o s : State} (l : Gather.Lay .plain o) (h : LocalMem o s) :
+private theorem keyCipher {o s : State} (l : BoundedLay o) (h : LocalMem o s) :
     ciphOf s.mem (K o) (o.gpr .x1).toNat = shortCipher o := by
   let n := (o.gpr .x1).toNat
   have small : n ≤ 14 := by rcases l.hR with e|e|e <;> simp only [n,e] <;> decide
@@ -51,14 +51,14 @@ private theorem keyCipher {o s : State} (l : Gather.Lay .plain o) (h : LocalMem 
     (l.bk.sub_left (scratch_sub o)).symm.sub_left sub) (by change 16*(n+1) ≤ 2^64; omega)]
   rfl
 
-private theorem keyNonce {o s : State} (l : Gather.Lay .plain o) (iv : NL o = 12) (h : Header o s) :
+private theorem keyNonce {o s : State} (l : BoundedLay o) (iv : NL o = 12) (h : Header o s) :
     Counters.jZero s = shortJ0 o := by
   unfold Counters.jZero Counters.nonce shortJ0
   rw [h.x23,Proof.Gcm.j0_12 _ (by rw [Proof.Cmac.bytesAt_length,iv]),← iv]
   rw [bytesAt_frame h.frame (by simpa only [List.mem_singleton,forall_eq] using
     (l.bn.sub_left (scratch_sub o)).symm) (Nat.le_of_lt (o.gpr .x3).isLt)]
 
-theorem ready {o s : State} (v : GcmImpl) (v0 : v.ctr.scratch = 0) (l : Gather.Lay .plain o)
+theorem ready {o s : State} (v : GcmImpl) (v0 : v.ctr.scratch = 0) (l : BoundedLay o)
     (iv : NL o = 12) (hn : L o ≤ 224) (h : Header o s)
     (input : bytesAt s.mem (ghBase o) 256 = aadLayout o)
     (zero : bytesAt s.mem (base o+224) 256 = zeros 256)
@@ -105,7 +105,7 @@ theorem ready {o s : State} (v : GcmImpl) (v0 : v.ctr.scratch = 0) (l : Gather.L
       · obtain rfl := List.mem_singleton.mp hr; exact Offset.disjoint _ (.inr (by decide)) (by decide) (by decide)) (by decide),acc,Proof.Gcm.ofBytes_zeros16]
 
 theorem body_ok (v : GcmImpl) (v0 : v.ctr.scratch = 0) (hash : Hash16Ok) (s : State)
-    (l : Gather.Lay .plain s) (iv : NL s = 12) (al : AL s ≤ 16) (hn : L s ≤ 224) :
+    (l : BoundedLay s) (iv : NL s = 12) (al : AL s ≤ 16) (hn : L s ≤ 224) :
     WP isa (Medium.body v.callees) (allocated Medium.work s) fun t => gatherPost s t ∧
       (∀ r ∈ preserved, t.gpr r = s.gpr r) ∧ t.sp = base s := by
   have front := prefix_ok l hn al
