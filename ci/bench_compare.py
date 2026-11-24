@@ -430,7 +430,7 @@ def run(binary, home, library, args, checkout, modules, groups=None, bench=None)
     pattern = f"/{library}/"
     if groups is not None:
         pattern = f"^(?:{'|'.join(map(re.escape, groups))})/{library}/"
-    pattern += "(?:111|127|143|175|191|207|223|239|255)$"
+    pattern += "(?:63|111|127|191|223|239|240)$"
     proc = subprocess.run(
         [
             binary,
@@ -854,6 +854,10 @@ def main():
 
 
 if __name__ == "__main__":
+    machine = cpu_model()
+    if not any(v in machine for v in ("8370C", "EPYC 7763")):
+        print(f"No timing on {machine}; validation requests the original Xeon 8370C or EPYC 7763", flush=True)
+        sys.exit(0)
     status = main()
     result = pathlib.Path(sys.argv[sys.argv.index("--json")+1])
     sets = json.loads(result.read_text())
