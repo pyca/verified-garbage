@@ -194,6 +194,17 @@ theorem addRoundKey_check :
     check (lanes 64 10) arkCfg (linExt 8) addRoundKey (linEnv qIns) (linPost 10 (qOuts arkG)) = true := by
   decide +kernel
 
+/-- Bits of the state and the prepared round key consumed by the fused layer. -/
+def mixKeyG (j p : Nat) : List Nat := (64 * (8 + j) + p) :: mcG j p
+
+theorem shiftFast_check :
+    check (lanes 64 9) srCfg (kExt srKs) shiftFast (linEnv qIns) (linPost 9 (qOuts srG)) = true := by
+  decide +kernel
+
+theorem mixAdd_check :
+    check (lanes 64 10) arkCfg (linExt 8) mixAdd (linEnv qIns) (linPost 10 (qOuts mixKeyG)) = true := by
+  decide +kernel
+
 /-! ## On the machine -/
 
 theorem q_linear {k : Nat} {c : Cfg} {is : List Instr} {ext : Nat → Option (Nat × Nat)}
@@ -254,6 +265,15 @@ theorem shiftRows_ok {s : State} (hok : Ok srCfg s) (hks : MasksAt s.mem (s.gpr 
   rw [hout j hj p hp, srG, xorBits_cons, xorBits_nil, Bool.xor_false,
     bitOf_word _ _ _ (by simp only [srSrc]; omega_arith)]
 
+theorem shiftFast_ok {s : State} (hok : Ok srCfg s) (hks : MasksAt s.mem (s.gpr sb) srKs) :
+    ∃ s', runBlock isa shiftFast s = some s' ∧
+      (∀ j < 8, ∀ p < 64, (Q s' j).getLsbD p = (Q s j).getLsbD (srSrc p)) ∧ Rest srCfg s s' := by
+  obtain ⟨s', hs', hout, rest⟩ := q_linear shiftFast_check (by decide) (by decide +kernel) hok
+    (Q s) (fun _ _ => rfl) (kExt_rel hks)
+  refine ⟨s', hs', fun j hj p hp => ?_, rest⟩
+  rw [hout j hj p hp, srG, xorBits_cons, xorBits_nil, Bool.xor_false,
+    bitOf_word _ _ _ (by simp only [srSrc]; omega_arith)]
+
 theorem mixColumns_ok {s : State} (hok : Ok bsCfg s) :
     ∃ s', runBlock isa mixColumns s = some s' ∧
       (∀ j < 8, ∀ p < 64, (Q s' j).getLsbD p = termsXor (Q s) (mcTerms j p)) ∧ Rest bsCfg s s' := by
@@ -267,6 +287,24 @@ theorem mixColumns_ok {s : State} (hok : Ok bsCfg s) :
 
 /-- Word `j` of the bitsliced round key at `kp`. -/
 abbrev keyWord (s : State) (j : Nat) : BitVec 64 := s.mem.readW (wordAddr (s.gpr kp) j) 64
+
+theorem mixAdd_ok {s : State} (hok : Ok arkCfg s) :
+    ∃ s', runBlock isa mixAdd s = some s' ∧
+      (∀ j < 8, ∀ p < 64, (Q s' j).getLsbD p = (termsXor (Q s) (mcTerms j p) ^^ (keyWord s j).getLsbD p)) ∧
+      Rest arkCfg s s' := by
+  let W : Nat → BitVec 64 := fun i => if i < 8 then Q s i else keyWord s (i - 8)
+  obtain ⟨s', run, out, rest⟩ := q_linear mixAdd_check (by decide) (by decide +kernel) hok
+    W (fun i hi => by simp [W,hi]) (linExt_rel fun j hj => by
+      simp only [arkCfg] at hj ⊢
+      exact ⟨by omega_arith,by simp [W,show ¬ 8+j<8 by omega_arith]⟩)
+  refine ⟨s',run,fun j hj p hp => ?_,rest⟩
+  have bound : ∀ a ∈ mcTerms j p,a.2<64 := by
+    intro a ha
+    obtain ⟨b,_,rfl⟩ := List.mem_map.mp ha
+    exact Nat.mod_lt _ (by decide)
+  rw [out j hj p hp,mixKeyG,xorBits_cons,bitOf_word _ _ _ hp,mcG,xorBits_map W _ bound,
+    termsXor_mc,termsXor_mc]
+  simp [W,hj,show j-1<8 by omega_arith,show ¬ 8+j<8 by omega_arith,Bool.xor_comm]
 
 theorem addRoundKey_ok {s : State} (hok : Ok arkCfg s) :
     ∃ s', runBlock isa addRoundKey s = some s' ∧

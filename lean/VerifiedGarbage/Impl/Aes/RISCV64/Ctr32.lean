@@ -123,23 +123,31 @@ def ctrBlocks : List Instr :=
   ctrBlock 0 ++ ctrBlock 1 ++ ctrBlock 2 ++ ctrBlock 3 ++
   ([ldS t0 cNum, .addi t0 t0 4, stS cNum t0] : List Instr)
 
+/-- The prepared schedule uses paired key loads while writing the MixColumns outputs. -/
+def roundCoreK (kb : Reg) : List Instr :=
+  if kb = .ra then mixAdd else mixColumns ++ addRoundKey
+
+def shiftRowsK (kb : Reg) : List Instr := if kb = .ra then shiftFast else shiftRows
+
 /-- A middle round, with `kp` at the previous round key; loops until `kp`
 is at the last round key but one, which is at byte `lastKey - 64` from `kb`
 (`sb`, or `ra` when the round keys are given bitsliced). -/
 def roundBodyK (kb : Reg) : List Instr :=
-  ([.addi kp kp 64] : List Instr) ++ sboxCode ++ shiftRows ++ mixColumns ++ addRoundKey ++
+  ([.addi kp kp 64] : List Instr) ++ sboxCode ++ shiftRowsK kb ++ roundCoreK kb ++
   [.sub t0 kp kb, .addi t0 t0 (-((lastKey - 64 : Nat) : Int))]
 
 def roundBody : List Instr := roundBodyK sb
 
 /-- The last round. -/
-def lastRound : List Instr := ([.addi kp kp 64] : List Instr) ++ sboxCode ++ shiftRows ++ addRoundKey
+def lastRoundK (kb : Reg) : List Instr := ([.addi kp kp 64] : List Instr) ++ sboxCode ++ shiftRowsK kb ++ addRoundKey
+
+def lastRound : List Instr := lastRoundK sb
 
 /-- Encrypt the four blocks in `q 0 … q 7` (as `toBs` takes them), with the
 round keys from `a0` on, the last at byte `lastKey` from `kb`. -/
 def encrypt4K (kb : Reg) : Prog isa :=
   .seq (.block (toBs ++ [movR kp .a0] ++ addRoundKey))
-    (.seq (.loop (.block (roundBodyK kb)) (.nonzero t0)) (.block (lastRound ++ fromBs)))
+    (.seq (.loop (.block (roundBodyK kb)) (.nonzero t0)) (.block (lastRoundK kb ++ fromBs)))
 
 def encrypt4 : Prog isa := encrypt4K sb
 
