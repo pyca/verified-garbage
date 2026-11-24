@@ -15,15 +15,18 @@ functions use the `64 k` bytes below byte 4096 of `ws` for themselves
 `tmpAt`) and the saved registers (`saveAt`). The
 modulus is in the code (immediates), so it is not stored.
 
-* `mulFn`: Montgomery's product by coarsely integrated operand scanning, as
-  `Impl/Mont/X86.lean`'s `mul`, but with its rows unrolled: `ebx`, `esi`,
+* `mulFn`: Montgomery's product: `ebx`, `esi`,
   `edi` and `ebp` are saved in the own working space, `ebp` holds `ws`,
-  `esi` points to `[b]` and `edi` to `[a]`; row `i` adds `a_i [b]`
-  (`mulRowB`) and `q m` (`redRowI`: P-256's
+  `esi` points to `[b]` and `edi` to `[a]`. Modulo P-256's `p`, P-521's, and
+  moduli of three words, it is coarsely integrated operand scanning, as
+  `Impl/Mont/X86.lean`'s `mul`, but with its rows unrolled: row `i` adds
+  `a_i [b]` (`mulRowB`) and `q m` (`redRowI`: P-256's
   sparse reduction for its `p`; for P-521's `p = 2⁵²¹ - 1`, whose `q` is the
   low word, that word cleared and `2⁹ q` added at word 16, `p521Red`; else a
   row of the modulus's words as immediates) to the accumulator's words from
-  `i`, whose low word becomes zero. The accumulator's words from `N` are
+  `i`, whose low word becomes zero. Modulo any other, it is by columns
+  (`colsMul`), and a square, at equal public operand pointers, has its own
+  (`colsSquare`). The accumulator's words from `N` are
   then below `2m`, reduced by a conditional subtraction (`diffsI`, `maskTop`,
   `selectsP`) into `[o]`, through `ecx`. `esi` and `edi` are restored
   before the result is stored, `ebx` and `ebp` after. For P-256 field
@@ -242,12 +245,11 @@ def squareRounds : Nat → List Instr
   | 0 => []
   | r + 1 => squareRounds r ++ squareRound r
 
-/-- Copy the operand through `esi` into the temporary words before Comba
-uses the general-purpose registers for its accumulator. -/
-def squareCopy : Nat → List Instr
+/-- Words `0 … j - 1` of the operand at `[r]` copied to `[ebp + d]`, before
+Comba uses the general-purpose registers for its accumulator. -/
+def copyWords (r : Reg) (d : Nat) : Nat → List Instr
   | 0 => []
-  | j + 1 => squareCopy j ++
-    [.mov .eax (.mem (at_ .esi (4 * j))), .store (bp (tmpAt 4 + 4 * j)) .eax]
+  | j + 1 => copyWords r d j ++ [.mov .eax (.mem (at_ r (4 * j))), .store (bp (d + 4 * j)) .eax]
 
 /-- The sixteen Comba columns, before modular reduction. -/
 def squareProduct : List Instr :=
@@ -259,7 +261,7 @@ def squareProductBase : List Instr := squareProduct ++ [.mov .ebp (.reg .edi)]
 
 /-- Copy, square, and initialize the extra high word for REDC. -/
 def squareInit : List Instr :=
-  squareCopy 8 ++ [.mov .edi (.reg .ebp)] ++ squareProductBase ++
+  copyWords .esi (tmpAt 4) 8 ++ [.mov .edi (.reg .ebp)] ++ squareProductBase ++
     [.store (bp (own 4 + 64)) .ebx]
 
 /-- The square before the common final conditional subtraction. -/
@@ -327,8 +329,74 @@ def p521Square : List Instr :=
   zeroWords (own 9) 37 ++ sqRows (own 9) 16 ++ dblWords (own 9) 34 ++
     ([.mov .ebx (.imm 0)] : List Instr) ++ diagSteps (own 9) 17 ++ p521Fold (own 9)
 
+/-! ## Any other modulus's product, by columns
+
+The product of `N` words `[a] [b]` and its Montgomery reduction together, a
+column at a time, in the accumulator `ebx:ecx:ebp` (Comba's method): `edi`
+holds `ws`, and the operands are copied below it first (a square, at equal
+pointers, copies one, and adds the products of different words once,
+doubled). Column `c < N` adds the products `a_i b_{c-i}` and
+`q_i m_{c-i}`, and then `q_c m_0` for its digit `q_c`, which clears the
+column's low word. The columns from `N` are the result's words, which
+overwrite the digits as they are no longer needed. Products by a zero word
+of `m` are left out. -/
+
+/-- Column `c` of `[A] [B]`, `N` words each. -/
+def mulTerms (A B N c : Nat) : List Impl.X25519.X86.Term :=
+  (List.range (c + 1)).filterMap fun i =>
+    if i < N ∧ c - i < N then some (.mulM (A + 4 * i) (B + 4 * (c - i))) else none
+
+/-- Column `c` of `[A]²`, `N` words. -/
+def sqTerms (A N c : Nat) : List Impl.X25519.X86.Term :=
+  (List.range (c + 1)).filterMap fun i =>
+    if c - i < N ∧ 2 * i ≤ c then
+      some (if 2 * i = c then .mulM (A + 4 * i) (A + 4 * i) else .mulM2 (A + 4 * i) (A + 4 * (c - i)))
+    else none
+
+/-- Column `c` of `[Q] m`, `N` words each, without `q_c m_0`. -/
+def redTerms (Q m N c : Nat) : List Impl.X25519.X86.Term :=
+  (List.range c).filterMap fun i =>
+    if i < N ∧ c - i < N ∧ mw m (c - i) ≠ 0 then some (.mulI (Q + 4 * i) (mw m (c - i))) else none
+
+/-- The digit `q = ebx m' mod 2³²`, stored at `[edi + o]`, and the
+accumulator `+= q m_0`, whose low word becomes zero, shifted down a word. -/
+def colDigit (k m o : Nat) : List Instr :=
+  .mov .eax (.reg .ebx) ::
+    ((if minv32 (mod k m) = 1 then [] else [.mov .edx (.imm (minv32 (mod k m))), .mul .edx]) ++
+      .store (Impl.X25519.X86.sc o) .eax :: (Impl.X25519.X86.accMul (.imm (mw m 0)) ++
+        [.mov .ebx (.reg .ecx), .mov .ecx (.reg .ebp), .mov .ebp (.imm 0)]))
+
+/-- Columns `0 … n - 1` (below `N`), for the product's terms `ts`. -/
+def lowCols (k m Q : Nat) (ts : Nat → List Impl.X25519.X86.Term) : Nat → List Instr
+  | 0 => []
+  | n + 1 => lowCols k m Q ts n ++ ((ts n ++ redTerms Q m (2 * k) n).flatMap Impl.X25519.X86.Term.code ++
+      colDigit k m (Q + 4 * n))
+
+/-- The columns from `N`: the result's `N` words at `[edi + Q]`, and the
+carry in the accumulator. -/
+def highCols (k m Q : Nat) (ts : Nat → List Impl.X25519.X86.Term) : List Instr :=
+  Impl.X25519.X86.cols Q (2 * k) fun j => ts (2 * k + j) ++ redTerms Q m (2 * k) (2 * k + j)
+
+/-- The columns of the copied operands, and the result's top word. `ebp` is
+`ws` before and after. -/
+def montCols (k m : Nat) (ts : Nat → List Impl.X25519.X86.Term) : List Instr :=
+  .mov .edi (.reg .ebp) :: (Impl.X25519.X86.zeroAcc ++
+    (lowCols k m (own k + 4 * (2 * k)) ts (2 * k) ++
+      (highCols k m (own k + 4 * (2 * k)) ts ++
+        [.store (Impl.X25519.X86.sc (own k + 16 * k)) .ebx, .mov .ebp (.reg .edi)])))
+
+/-- The product by columns. -/
+def colsMul (k m : Nat) : List Instr :=
+  copyWords .edi (own k) (2 * k) ++ (copyWords .esi (tmpAt k) (2 * k) ++
+    montCols k m (mulTerms (own k) (tmpAt k) (2 * k)))
+
+/-- The square by columns. -/
+def colsSquare (k m : Nat) : List Instr :=
+  copyWords .edi (own k) (2 * k) ++ montCols k m (sqTerms (own k) (2 * k))
+
 /-- Public operand-pointer equality selects the dedicated P-256 square, or
-P-521's. -/
+P-521's, or the square by columns of any other modulus of four words or more
+(for fewer, the rows are as fast). -/
 def mulBody (k m : Nat) : Prog isa :=
   if k = 4 ∧ m = p256Prime then
     .seq (.block [.alu .cmp .edi (.reg .esi)])
@@ -336,6 +404,9 @@ def mulBody (k m : Nat) : Prog isa :=
   else if k = 9 ∧ m = p521Prime then
     .seq (.block [.alu .cmp .edi (.reg .esi)])
       (.ite .e (.block p521Square) (.block (rowsF k m (2 * k))))
+  else if 4 ≤ k ∧ k ≤ 9 then
+    .seq (.block [.alu .cmp .edi (.reg .esi)])
+      (.ite .e (.block (colsSquare k m)) (.block (colsMul k m)))
   else .block (rowsF k m (2 * k))
 
 /-- `vg_<curve>_mul_mod_<p|n>`. -/

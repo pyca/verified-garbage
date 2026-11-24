@@ -274,9 +274,7 @@ theorem mulCallB_ok (hB : wordsVal s.mem base (enc b) S.k < S.m) :
       wordsVal s'.mem base (enc o) S.k * 2 ^ (64 * S.k) % S.m =
         wordsVal s.mem base (enc a) S.k * wordsVal s.mem base (enc b) S.k % S.m := by
   obtain hown := (saveAt_le hF.mul.k0 hF.k9).2
-  refine WP.mono (callB_ok hF.nsMul (by
-    unfold mulFn mulBody
-    split <;> [rfl; (split <;> rfl)]) hF.mul.k0 hF.k9 hs ho ha hb
+  refine WP.mono (callB_ok hF.nsMul (mulFn_stackUse _ _) hF.mul.k0 hF.k9 hs ho ha hb
     (V := fun m m' => val32 m' base (enc o) (2 * S.k) < S.m ∧
       val32 m' base (enc o) (2 * S.k) * 2 ^ (64 * S.k) % S.m =
         val32 m base (enc a) (2 * S.k) * val32 m base (enc b) (2 * S.k) % S.m)
@@ -906,10 +904,6 @@ theorem stackUse_progs_le {n : Nat} : ∀ (ps : List (Prog isa)), (∀ p ∈ ps,
     simp only [progs, stackUse]
     exact Nat.max_le.mpr ⟨h p (List.mem_cons_self ..),
       stackUse_progs_le (q :: ps) fun r hr => h r (List.mem_cons_of_mem _ hr)⟩
-
-theorem mulFn_stackUse (k m : Nat) : stackUse (mulFn k m) = 0 := by
-  unfold mulFn mulBody
-  split <;> [rfl; (split <;> rfl)]
 
 theorem noSp_callB {enc : Nat → Nat} {f : String} {body : Prog isa} (h : NoSp body) {o a b : Nat} :
     NoSp (callB enc f body o a b) := by
