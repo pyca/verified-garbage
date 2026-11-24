@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.X86.ScrubCall
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.AesCfb8.X86.Groups
 public import VerifiedGarbage.Proof.AesCfb8.X86.Verified
 public import VerifiedGarbage.Spec.Cfb8.Contract
 public import VerifiedGarbage.Proof.Framework.X86.ScrubProved
@@ -11,6 +12,7 @@ import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.X86.Lit
 meta import VerifiedGarbage.Proof.Framework.X86.ScrubCall
 meta import VerifiedGarbage.Proof.Framework.Registration
+meta import VerifiedGarbage.Proof.AesCfb8.X86.Groups
 meta import VerifiedGarbage.Proof.AesCfb8.X86.Verified
 meta import VerifiedGarbage.Spec.Cfb8.Contract
 meta import VerifiedGarbage.Proof.Aes.ScrubLocal
@@ -27,8 +29,8 @@ only within the data and the IV (`encryptOut`, `decryptOut`), as on PPC64LE
 (`Proof/Aes/PPC64LE/Scrub.lean`): what the scrub of their frames and calls
 needs (`X86.Scrub.PostOut`).
 
-Each as emitted (`Impl.AesCfb8.X86.Fn`) zeroes its 24 bytes of stack below
-`esp` and clears the registers, and returns without secret residue
+Each as emitted (`Impl.AesCfb8.X86.Fn`) zeroes its bytes of stack below `esp`
+(24 encrypting, 1108 decrypting) and clears the registers, and returns without secret residue
 (`X86.Scrub.verifiedScrubbedAll`: `encrypt_scrubbed`, `decrypt_scrubbed`).
 What that needs of the code (`scrubFSide`) holds whatever the implementation
 of the block function (`encrypt_scrub`, `decrypt_scrub`): from CFB8's code
@@ -89,7 +91,7 @@ materialize_code decryptStub := Impl.AesCfb8.X86.decrypt stubBlocks
 theorem encrypt_side : scrubFSide (Impl.AesCfb8.X86.encrypt stubBlocks) [] 24 = true := by
   lit_decide
 
-theorem decrypt_side : scrubFSide (Impl.AesCfb8.X86.decrypt stubBlocks) [] 24 = true := by
+theorem decrypt_side : scrubFSide (Impl.AesCfb8.X86.decrypt stubBlocks) [] 1108 = true := by
   lit_decide
 
 theorem encrypt_fill (b : Impl.Aes.X86.Blocks) (hb : calleeSide b.code 0 = true) :
@@ -105,7 +107,7 @@ theorem encrypt_scrub (v : BlocksImpl) : scrubFSide (Impl.AesCfb8.X86.encrypt v.
   scrubFSide_of_fill (encrypt_fill _ (calleeSide_of_eq v.encStack v.encScrub)) encrypt_side
 
 /-- `scrubFSide` of `vg_aes_cfb8_decrypt`, whatever the implementation. -/
-theorem decrypt_scrub (v : BlocksImpl) : scrubFSide (Impl.AesCfb8.X86.decrypt v.enc) [] 24 = true :=
+theorem decrypt_scrub (v : BlocksImpl) : scrubFSide (Impl.AesCfb8.X86.decrypt v.enc) [] 1108 = true :=
   scrubFSide_of_fill (decrypt_fill _ (calleeSide_of_eq v.encStack v.encScrub)) decrypt_side
 
 /-! ## The functions as emitted -/
@@ -126,13 +128,13 @@ theorem encrypt_scrubbed (v : BlocksImpl) :
 meets its contract in constant time and returns without secret residue. -/
 theorem decrypt_scrubbed (v : BlocksImpl) :
     VerifiedScrubbed X86.target (Impl.AesCfb8.X86.Fn.decrypt v.enc)
-      (Spec.Cfb8.aesDecryptContract X86.abi 24) 0 :=
+      (Spec.Cfb8.aesDecryptContract X86.abi 1108) 0 :=
   verifiedScrubbedAll (api := Spec.Cfb8.aesDecryptApi) {
       suffix := v.suffix
       code := Impl.AesCfb8.X86.decrypt v.enc
-      verified := Proof.AesCfb8.decrypt_keyed (decrypt_verified v)
-      spSafe := decrypt_spSafe v }
-    (decryptOut _) (W := 24) (hs := decrypt_scrub v)
+      verified := Groups.decrypt_verified v
+      spSafe := Groups.decrypt_spSafe v }
+    (decryptOut _) (W := 1108) (hs := decrypt_scrub v)
 
 /-- `Impl.AesCfb8.X86.Fn.encrypt` writes `esp` only in its frames and calls. -/
 theorem encrypt_fnSpSafe (v : BlocksImpl) :
@@ -142,6 +144,6 @@ theorem encrypt_fnSpSafe (v : BlocksImpl) :
 /-- `Impl.AesCfb8.X86.Fn.decrypt` writes `esp` only in its frames and calls. -/
 theorem decrypt_fnSpSafe (v : BlocksImpl) :
     (Impl.AesCfb8.X86.Fn.decrypt v.enc).all (fun i => !X86.isa.writesSp i) = true :=
-  scrubAll_spSafe (decrypt_spSafe v)
+  scrubAll_spSafe (Groups.decrypt_spSafe v)
 
 end VG.Proof.AesCfb8.X86.Scrub

@@ -54,8 +54,8 @@ section
 # AES-CFB8 on x86: the code after the call
 
 The straight-line pieces after a call, run once each: the data byte XORed
-with the first byte of the enciphered block (`encByte`, `decByte`), and the
-input block shifted (`shift`), with their memories as explicit writes
+with the first byte of the enciphered block (`encByte`), and the input
+block shifted (`shift`), with their memories as explicit writes
 (`shiftMem32`, `Proof/AesCfb8/Mem.lean`).
 -/
 
@@ -72,14 +72,7 @@ open VG.Proof.CmacAes.X86 (ea_at')
 def encByte : List Instr :=
   [.movzx8 .eax (at_ .esi 0), .movzx8 .ecx (at_ .ebp cOff), .alu .xor .eax (.reg .ecx), .store8 (at_ .esi 0) .al]
 
-/-- The byte instructions of `decPost`. -/
-def decByte : List Instr :=
-  [.movzx8 .eax (at_ .esi 0), .movzx8 .ecx (at_ .ebp cOff), .alu .xor .ecx (.reg .eax), .store8 (at_ .esi 0) .cl]
-
 theorem encPost_eq : encPost = .mov .ebp (argOp 5) :: (encByte ++ (.mov .ebx (argOp 2) ::
-    (shift ++ Impl.AesCfb8.X86.advance))) := rfl
-
-theorem decPost_eq : decPost = .mov .ebp (argOp 5) :: (decByte ++ (.mov .ebx (argOp 2) ::
     (shift ++ Impl.AesCfb8.X86.advance))) := rfl
 
 theorem low_xor (a b : Byte) : (a.setWidth 32 ^^^ b.setWidth 32).setWidth 8 = a ^^^ b := by
@@ -92,22 +85,6 @@ theorem encByte_ok (s : State) {P T : Addr} (hp : addr (s.gpr .esi) 0 = P) (ht :
       s'.mem = s.mem.writeW P (s.mem P ^^^ s.mem T) ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   refine ⟨_, by
     simp only [reduceCtorEq, ↓reduceIte, encByte, cOff, runBlock_cons, runStep_some, runBlock_nil, exec,
-      readSrc, State.load8, State.store8, ea_at', execAlu, Option.bind_some, Option.map_some, Reg8.reg,
-      gpr_setReg, gpr_arithFlags, mem_setReg, mem_arithFlags, rd_setReg, rd_arithFlags, wr_setReg,
-      wr_arithFlags, hp, ht, rP, rT, wP]
-    rfl, ?_⟩
-  refine ⟨?_, fun r h₁ h₂ => ?_, ?_, rfl, rfl⟩
-  · simp [gpr_setReg]
-  · simp [gpr_setReg, h₁, h₂]
-  · simp only [low_xor]
-
-theorem decByte_ok (s : State) {P T : Addr} (hp : addr (s.gpr .esi) 0 = P) (ht : addr (s.gpr .ebp) 2048 = T)
-    (rP : InRegions (s.rd ++ s.wr) P 1) (rT : InRegions (s.rd ++ s.wr) T 1) (wP : InRegions s.wr P 1) :
-    ∃ s', runBlock isa decByte s = some s' ∧ (s'.gpr .eax).setWidth 8 = s.mem P ∧
-      (∀ r, r ≠ .eax → r ≠ .ecx → s'.gpr r = s.gpr r) ∧
-      s'.mem = s.mem.writeW P (s.mem T ^^^ s.mem P) ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
-  refine ⟨_, by
-    simp only [reduceCtorEq, ↓reduceIte, decByte, cOff, runBlock_cons, runStep_some, runBlock_nil, exec,
       readSrc, State.load8, State.store8, ea_at', execAlu, Option.bind_some, Option.map_some, Reg8.reg,
       gpr_setReg, gpr_arithFlags, mem_setReg, mem_arithFlags, rd_setReg, rd_arithFlags, wr_setReg,
       wr_arithFlags, hp, ht, rP, rT, wP]
@@ -152,10 +129,10 @@ section
 # AES-CFB8 on x86: the contracts, and the loop
 
 The artifacts' contracts are the shared ones of `Spec/Cfb8/Contract.lean`,
-which imply these (`Verified.lean`): `cfb8X86 enc`, for encryption
-(`enc = true`) and decryption. The functions have AES-CBC's arguments, with
+which imply these (`Verified.lean`): `cfb8X86`. The function has AES-CBC's arguments, with
 `len` counting bytes, and its prologue and epilogue
 (`Proof/AesCbc/X86/Body.lean`), whose stride-free definitions this reuses.
+Decryption's, several bytes a call, is in `Groups.lean`.
 
 The invariant after `k` bytes (`LInv`): `esi` points at the next byte,
 `esp` is unchanged, only the input block, the data, the first 2064 bytes of
@@ -183,8 +160,8 @@ open VG.Proof.AesCbc.X86 (E W R Iv Dp N S schR ivR scrR argsR retR stkR iv0 wK s
   savedMem_slot savedMem_big)
 open VG.Spec.Aes (bytesAt)
 
-/-- `vg_aes_cfb8_encrypt` (`enc`) or `vg_aes_cfb8_decrypt` `(schedule, rounds, iv, data, len, scratch)`. -/
-def cfb8X86 (enc : Bool) : Contract isa where
+/-- `vg_aes_cfb8_encrypt` `(schedule, rounds, iv, data, len, scratch)`. -/
+def cfb8X86 : Contract isa where
   pre s :=
     let sched : Region := ⟨(arg s 0).setWidth 64, 240⟩
     let iv : Region := ⟨(arg s 2).setWidth 64, 16⟩
@@ -207,8 +184,8 @@ def cfb8X86 (enc : Bool) : Contract isa where
       (bytesAt s.mem ((arg s 0).setWidth 64) (16 * ((arg s 1).toNat + 1)))
     let iv := bytesAt s.mem ((arg s 2).setWidth 64) 16
     let xs := bytesAt s.mem ((arg s 3).setWidth 64) (arg s 4).toNat
-    bytesAt s'.mem ((arg s 3).setWidth 64) (arg s 4).toNat = cfb8 enc ciph iv xs ∧
-      bytesAt s'.mem ((arg s 2).setWidth 64) 16 = inK enc ciph iv xs
+    bytesAt s'.mem ((arg s 3).setWidth 64) (arg s 4).toNat = cfb8 true ciph iv xs ∧
+      bytesAt s'.mem ((arg s 2).setWidth 64) 16 = inK true ciph iv xs
   pub s₁ s₂ := s₁.gpr .esp = s₂.gpr .esp ∧ ∀ i < 6, arg s₁ i = arg s₂ i
 
 section
@@ -226,10 +203,10 @@ abbrev bs : List Byte := bytesAt s₀.mem ((Dp s₀).setWidth 64) (N s₀)
 abbrev byt (k : Nat) : Addr := (Dp s₀).setWidth 64 + BitVec.ofNat 64 k
 
 /-- The first `k` bytes after CFB8. -/
-abbrev outK (enc : Bool) (k : Nat) : List Byte := cfb8 enc (ciph s₀) (iv0 s₀) ((bs s₀).take k)
+abbrev outK (k : Nat) : List Byte := cfb8 true (ciph s₀) (iv0 s₀) ((bs s₀).take k)
 
 /-- The input block after the first `k` bytes. -/
-abbrev inKk (enc : Bool) (k : Nat) : List Byte := inK enc (ciph s₀) (iv0 s₀) ((bs s₀).take k)
+abbrev inKk (k : Nat) : List Byte := inK true (ciph s₀) (iv0 s₀) ((bs s₀).take k)
 
 end
 
@@ -261,19 +238,19 @@ structure UPre (s₀ : State) : Prop where
   esp_fit : (E s₀).toNat + 28 ≤ 2 ^ 32
   rounds : R s₀ = 10 ∨ R s₀ = 12 ∨ R s₀ = 14
 
-theorem UPre.of {enc : Bool} {s₀ : State} (h : (cfb8X86 enc).pre s₀) : UPre s₀ :=
+theorem UPre.of {s₀ : State} (h : (cfb8X86).pre s₀) : UPre s₀ :=
   let ⟨a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, t, u, v, w, x, y, z⟩ := h
   ⟨a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, t, u, v, w, x, y, z⟩
 
 /-- The loop invariant, after `k` bytes. -/
-structure LInv (enc : Bool) (s₀ : State) (k : Nat) (s : State) : Prop where
+structure LInv (s₀ : State) (k : Nat) (s : State) : Prop where
   esi : s.gpr .esi = Dp s₀ + BitVec.ofNat 32 k
   esp : s.gpr .esp = E s₀
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
   frame : Frame [ivR s₀, dataR s₀, ⟨(S s₀).setWidth 64, 2064⟩, stkR s₀] (savedMem s₀) s.mem
-  data : bytesAt s.mem ((Dp s₀).setWidth 64) (N s₀) = outK s₀ enc k ++ (bs s₀).drop k
-  iv : bytesAt s.mem ((Iv s₀).setWidth 64) 16 = inKk s₀ enc k
+  data : bytesAt s.mem ((Dp s₀).setWidth 64) (N s₀) = outK s₀ k ++ (bs s₀).drop k
+  iv : bytesAt s.mem ((Iv s₀).setWidth 64) 16 = inKk s₀ k
 
 /-! ## Addresses and regions -/
 
@@ -382,12 +359,12 @@ end
 theorem length_bs (s₀ : State) : (bs s₀).length = N s₀ := by simp [bytesAt]
 
 /-- Byte `k` before the step, from the invariant. -/
-theorem LInv.byte {enc : Bool} {s₀ : State} {k : Nat} {s : State} (h : LInv enc s₀ k s) (hk : k < N s₀) :
+theorem LInv.byte {s₀ : State} {k : Nat} {s : State} (h : LInv s₀ k s) (hk : k < N s₀) :
     s.mem (byt s₀ k) = (bs s₀)[k]'(by rw [length_bs]; exact hk) := by
-  obtain hl : (outK s₀ enc k).length = k := by
+  obtain hl : (outK s₀ k).length = k := by
     rw [outK, length_cfb8, List.length_take, length_bs]; omega_using [hk]
   have := congrArg (·[k]?) h.data
-  simp only [List.getElem?_append_right (show (outK s₀ enc k).length ≤ k by omega_using [hl]), hl, Nat.sub_self,
+  simp only [List.getElem?_append_right (show (outK s₀ k).length ≤ k by omega_using [hl]), hl, Nat.sub_self,
     List.getElem?_drop, Nat.add_zero] at this
   rw [List.getElem?_eq_getElem (by simp [bytesAt]; exact hk),
     List.getElem?_eq_getElem (by rw [length_bs]; exact hk)] at this
@@ -400,8 +377,8 @@ theorem take_succ_bs (s₀ : State) {k : Nat} (hk : k < N s₀) :
 
 /-! ## The prologue -/
 
-theorem prologue_wp {enc : Bool} {s₀ : State} (hp : UPre s₀) :
-    WP isa (.block setup) s₀ fun s => LInv enc s₀ 0 s ∧ s.zf = some (decide (N s₀ = 0)) := by
+theorem prologue_wp {s₀ : State} (hp : UPre s₀) :
+    WP isa (.block setup) s₀ fun s => LInv s₀ 0 s ∧ s.zf = some (decide (N s₀ = 0)) := by
   have hsc := hp.scr_fit
   rw [setup_eq]
   refine wp_arg (s₀ := s₀) rfl (hp.arg_in (by decide)) rfl fun s₁ u₁ => ?_
@@ -482,14 +459,14 @@ theorem advance_wp {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k < N s₀) {
 
 /-- One run of `body` takes the invariant from `k` bytes to `k + 1`, and sets
 ZF if no bytes are left. -/
-def BodyOk (enc : Bool) (body : Prog isa) : Prop :=
-  ∀ {s₀ : State}, UPre s₀ → ∀ {k : Nat}, k < N s₀ → ∀ {s : State}, LInv enc s₀ k s →
-    WP isa body s fun s' => LInv enc s₀ (k + 1) s' ∧ s'.zf = some (decide (k + 1 = N s₀))
+def BodyOk (body : Prog isa) : Prop :=
+  ∀ {s₀ : State}, UPre s₀ → ∀ {k : Nat}, k < N s₀ → ∀ {s : State}, LInv s₀ k s →
+    WP isa body s fun s' => LInv s₀ (k + 1) s' ∧ s'.zf = some (decide (k + 1 = N s₀))
 
-theorem loop_ok {enc : Bool} {body : Prog isa} (hb : BodyOk enc body) {s₀ : State} (hp : UPre s₀) {k : Nat}
-    (hk : k < N s₀) {s : State} (h : LInv enc s₀ k s) : WP isa (.loop body .ne) s (LInv enc s₀ (N s₀)) := by
-  refine WP.loop (M := isa) (body := body) (c := .ne) (Q := LInv enc s₀ (N s₀))
-    (fun (n : Nat) (t : State) => ∃ j, n = N s₀ - j ∧ j < N s₀ ∧ LInv enc s₀ j t) ?_ (N s₀ - k) s
+theorem loop_ok {body : Prog isa} (hb : BodyOk body) {s₀ : State} (hp : UPre s₀) {k : Nat}
+    (hk : k < N s₀) {s : State} (h : LInv s₀ k s) : WP isa (.loop body .ne) s (LInv s₀ (N s₀)) := by
+  refine WP.loop (M := isa) (body := body) (c := .ne) (Q := LInv s₀ (N s₀))
+    (fun (n : Nat) (t : State) => ∃ j, n = N s₀ - j ∧ j < N s₀ ∧ LInv s₀ j t) ?_ (N s₀ - k) s
     ⟨k, rfl, hk, h⟩
   rintro n s ⟨k, rfl, hk, h⟩
   refine WP.mono (hb hp hk h) fun s' ⟨h', hz⟩ => ?_
@@ -502,9 +479,9 @@ theorem loop_ok {enc : Bool} {body : Prog isa} (hb : BodyOk enc body) {s₀ : St
   · right
     refine ⟨by rw [ev]; simp [hz'], N s₀ - (k + 1), by omega_using [hk], k + 1, rfl, by omega_using [hk, hz'], h'⟩
 
-theorem mid_wp {enc : Bool} {body : Prog isa} (hb : BodyOk enc body) {s₀ : State} (hp : UPre s₀) {s₁ : State}
-    (h : LInv enc s₀ 0 s₁) (hz : s₁.zf = some (decide (N s₀ = 0))) :
-    WP isa (.ite .e (.block []) (.loop body .ne)) s₁ (LInv enc s₀ (N s₀)) := by
+theorem mid_wp {body : Prog isa} (hb : BodyOk body) {s₀ : State} (hp : UPre s₀) {s₁ : State}
+    (h : LInv s₀ 0 s₁) (hz : s₁.zf = some (decide (N s₀ = 0))) :
+    WP isa (.ite .e (.block []) (.loop body .ne)) s₁ (LInv s₀ (N s₀)) := by
   obtain ev : isa.eval .e s₁ = some (decide (N s₀ = 0)) := by
     show VG.X86.eval .e s₁ = _; rw [eval_e, hz]
   by_cases hn : N s₀ = 0
@@ -545,8 +522,8 @@ theorem ret_read {s₀ : State} (hp : UPre s₀) {m : Mem}
     · exact hp.ret_scr
     · exact hp.ret_stk) (by decide)
 
-theorem epilogue_wp {enc : Bool} {s₀ : State} (hp : UPre s₀) {s : State} (h : LInv enc s₀ (N s₀) s) :
-    WP isa (.block (restore 5)) s fun s' => abiPreserved s₀ s' ∧ (cfb8X86 enc).post s₀ s' := by
+theorem epilogue_wp {s₀ : State} (hp : UPre s₀) {s : State} (h : LInv s₀ (N s₀) s) :
+    WP isa (.block (restore 5)) s fun s' => abiPreserved s₀ s' ∧ (cfb8X86).post s₀ s' := by
   have hsc : (arg s₀ 5).toNat + 2176 ≤ 2 ^ 32 := hp.scr_fit
   obtain rdwr : s.rd ++ s.wr = [schR s₀, argsR s₀, ivR s₀, dataR s₀, scrR s₀] := by
     rw [h.rd, h.wr, hp.rd, hp.wr]; rfl
@@ -572,8 +549,8 @@ theorem epilogue_wp {enc : Bool} {s₀ : State} (hp : UPre s₀) {s : State} (h 
   · show bytesAt s₂.mem ((Iv s₀).setWidth 64) 16 = _
     rw [r₂.mem, u₁.mem, h.iv]; simp only [inKk, hall]
 
-theorem whole_wp {enc : Bool} {body : Prog isa} (hb : BodyOk enc body) {s₀ : State} (h0 : (cfb8X86 enc).pre s₀) :
-    WP isa (whole body) s₀ fun s' => abiPreserved s₀ s' ∧ (cfb8X86 enc).post s₀ s' := by
+theorem whole_wp {body : Prog isa} (hb : BodyOk body) {s₀ : State} (h0 : (cfb8X86).pre s₀) :
+    WP isa (whole body) s₀ fun s' => abiPreserved s₀ s' ∧ (cfb8X86).post s₀ s' := by
   obtain hp := UPre.of h0
   exact WP.seq (WP.mono (prologue_wp hp) fun s₁ ⟨h₁, hz⟩ =>
     WP.seq (WP.mono (mid_wp hb hp h₁ hz) fun _ h₂ => epilogue_wp hp h₂))
@@ -588,7 +565,7 @@ end
 /-!
 # AES-CFB8 on x86: one byte
 
-`encBody_ok` and `decBody_ok`: one run of `body` takes the loop invariant
+`encBody_ok`: one run of `body` takes the loop invariant
 (`Loop.lean`) from `k` bytes to `k + 1` (`BodyOk`), for any implementation
 of the block functions (`BlocksImpl`). The input block is copied to the
 scratch buffer and enciphered there (`call_ok`), the data byte is replaced,
@@ -706,7 +683,7 @@ theorem pre_eq : pre = .mov .ebp (argOp 5) :: .mov .ebx (argOp 2) :: (zero4 .ebp
     (xor4 .ebp .ebx .ebp cOff 0 cOff ++ (.mov .eax (argOp 0) :: .mov .ecx (argOp 1) :: .mov .ebx (.reg .ebp) ::
       .alu .add .ebx (.imm 2048) :: .mov .edi (.imm 1) :: []))) := rfl
 
-theorem pre_wp {enc : Bool} {s₀ : State} (hp : UPre s₀) {k : Nat} {s : State} (h : LInv enc s₀ k s) :
+theorem pre_wp {s₀ : State} (hp : UPre s₀) {k : Nat} {s : State} (h : LInv s₀ k s) :
     WP isa (.block pre) s (PreA s₀ s) := by
   obtain hrw : s.rd ++ s.wr = s₀.rd ++ s₀.wr := by rw [h.rd, h.wr]
   obtain big := UPre.big_of h.frame
@@ -772,18 +749,18 @@ theorem pre_wp {enc : Bool} {s₀ : State} (hp : UPre s₀) {k : Nat} {s : State
 
 /-- What the code before the call and the call leave, for either
 direction. -/
-structure AfterCall (enc : Bool) (s₀ : State) (k : Nat) (s s₂ : State) : Prop where
+structure AfterCall (s₀ : State) (k : Nat) (s s₂ : State) : Prop where
   esi : s₂.gpr .esi = Dp s₀ + BitVec.ofNat 32 k
   esp : s₂.gpr .esp = E s₀
   rd : s₂.rd = s.rd
   wr : s₂.wr = s.wr
   frame : Frame [⟨(S s₀).setWidth 64, 2064⟩, stkR s₀] s.mem s₂.mem
-  out : s₂.mem (Sv s₀) = (ciph s₀ (inKk s₀ enc k)).headD 0
+  out : s₂.mem (Sv s₀) = (ciph s₀ (inKk s₀ k)).headD 0
 
-theorem call_ok {enc : Bool} (v : BlocksImpl) {s₀ : State} (hp : UPre s₀) {k : Nat} {s : State}
-    (h : LInv enc s₀ k s) (post : List Instr) {Q : State → Prop}
-    (hq : ∀ s₂, AfterCall enc s₀ k s s₂ → WP isa (.block post) s₂ Q) :
-    WP isa (body v.enc post) s Q := by
+theorem call_ok (v : BlocksImpl) {s₀ : State} (hp : UPre s₀) {k : Nat} {s : State}
+    (h : LInv s₀ k s) {Q : State → Prop}
+    (hq : ∀ s₂, AfterCall s₀ k s s₂ → WP isa (.block encPost) s₂ Q) :
+    WP isa (body v.enc) s Q := by
   refine WP.seq (WP.mono (pre_wp hp h) fun s₁ a => ?_)
   refine WP.seq (WP.mono (blk_call v.encOk v.encNosp v.encStack a.pre) fun s₂ c => hq s₂ ?_)
   obtain esp₁ : s₁.gpr .esp = E s₀ := by rw [a.esp, h.esp]
@@ -811,14 +788,14 @@ theorem call_ok {enc : Bool} (v : BlocksImpl) {s₀ : State} (hp : UPre s₀) {k
 /-- After the byte operation (`v` the new data byte, `c` the byte to shift
 in, in `al`), the input block reloaded, the shift and `advance` take the
 invariant to `k + 1`. -/
-theorem finish_wp {enc : Bool} {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k < N s₀) {s s₂ s₃ : State}
-    (h : LInv enc s₀ k s) (a : AfterCall enc s₀ k s s₂) {v : Byte}
+theorem finish_wp {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k < N s₀) {s s₂ s₃ : State}
+    (h : LInv s₀ k s) (a : AfterCall s₀ k s s₂) {v : Byte}
     (esi₃ : s₃.gpr .esi = s₂.gpr .esi) (esp₃ : s₃.gpr .esp = s₂.gpr .esp)
     (mem₃ : s₃.mem = s₂.mem.writeW (byt s₀ k) v) (rd₃ : s₃.rd = s₂.rd) (wr₃ : s₃.wr = s₂.wr)
-    (hv : v = (bs s₀)[k]'(by rw [length_bs]; exact hk) ^^^ (ciph s₀ (inKk s₀ enc k)).headD 0)
-    (hc : (s₃.gpr .eax).setWidth 8 = if enc then v else (bs s₀)[k]'(by rw [length_bs]; exact hk)) :
+    (hv : v = (bs s₀)[k]'(by rw [length_bs]; exact hk) ^^^ (ciph s₀ (inKk s₀ k)).headD 0)
+    (hc : (s₃.gpr .eax).setWidth 8 = v) :
     WP isa (.block (.mov .ebx (argOp 2) :: (shift ++ Impl.AesCfb8.X86.advance))) s₃
-      fun s' => LInv enc s₀ (k + 1) s' ∧ s'.zf = some (decide (k + 1 = N s₀)) := by
+      fun s' => LInv s₀ (k + 1) s' ∧ s'.zf = some (decide (k + 1 = N s₀)) := by
   have hiv := hp.iv_fit
   have one (r : Region) (P : Addr) (n : Nat) (hd : (⟨P, n⟩ : Region).Disjoint r) :
       ∀ r' ∈ [r], (⟨P, n⟩ : Region).Disjoint r' := fun r' hr' => by
@@ -879,31 +856,31 @@ theorem finish_wp {enc : Bool} {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k
   obtain newByte : s₆.mem (byt s₀ k) = v := by
     rw [mem₆, mem₅, byte_frame (AesCfb8.shiftMem32_frame _ _ _) (one _ _ _ (hp.byt_iv hk)), u₄.mem, mem₃,
       writeW8_self]
-  obtain ivIn : bytesAt s₄.mem ((Iv s₀).setWidth 64) 16 = inKk s₀ enc k := by
+  obtain ivIn : bytesAt s₄.mem ((Iv s₀).setWidth 64) 16 = inKk s₀ k := by
     rw [u₄.mem, mem₃, Proof.Cmac.bytesAt_frame (frame_write8 _ _ _) (one _ _ _ (hp.byt_iv hk).symm) (by decide),
       Proof.Cmac.bytesAt_frame a.frame (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl
         · exact hp.iv_scr.sub_right (Region.sub_prefix (by decide))
         · exact hp.b_iv.symm) (by decide), h.iv]
-  obtain hl : (outK s₀ enc k).length = k := by
+  obtain hl : (outK s₀ k).length = k := by
     rw [outK, length_cfb8, List.length_take, length_bs]; omega_using [hk]
   obtain iv_ne : iv0 s₀ ≠ [] := by simp [iv0, bytesAt]
-  obtain eax₄ : (s₄.gpr .eax).setWidth 8 = if enc then v else (bs s₀)[k]'(by rw [length_bs]; exact hk) := by
+  obtain eax₄ : (s₄.gpr .eax).setWidth 8 = v := by
     rw [u₄.other _ (by decide), hc]
   refine ⟨esi₆, esp₆, by rw [rd₆, rd₅, u₄.rd, rd₃, a.rd, h.rd], by rw [wr₆, wr₅, u₄.wr, wr₃, a.wr, h.wr],
     by rw [mem₆]; exact h.frame.trans (stepOf fStep), ?_, ?_⟩
   · rw [mem₆, hp.bytes_step hk fStep, h.data, ← mem₆, newByte, set_prefix _ _ _ hl (by rw [length_bs]; exact hk),
       hv]
-    simp only [outK, take_succ_bs s₀ hk, cfb8_snoc enc _ iv_ne, inKk]
+    simp only [outK, take_succ_bs s₀ hk, cfb8_snoc true _ iv_ne, inKk]
   · rw [mem₆, mem₅, AesCfb8.shiftMem32_bytes, ivIn, eax₄]
-    simp only [inKk, take_succ_bs s₀ hk, inK_snoc enc _ iv_ne, ← hv]
+    simp only [inKk, take_succ_bs s₀ hk, inK_snoc true _ iv_ne, ↓reduceIte, ← hv]
 
 /-! ## One byte -/
 
 /-- The data byte before the byte operation. -/
-theorem AfterCall.byte {enc : Bool} {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k < N s₀) {s s₂ : State}
-    (h : LInv enc s₀ k s) (a : AfterCall enc s₀ k s s₂) :
+theorem AfterCall.byte {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k < N s₀) {s s₂ : State}
+    (h : LInv s₀ k s) (a : AfterCall s₀ k s s₂) :
     s₂.mem (byt s₀ k) = (bs s₀)[k]'(by rw [length_bs]; exact hk) := by
   rw [byte_frame a.frame (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -912,8 +889,8 @@ theorem AfterCall.byte {enc : Bool} {s₀ : State} (hp : UPre s₀) {k : Nat} (h
     · exact hp.byt_stk hk), h.byte hk]
 
 /-- The registers and regions the byte operation needs. -/
-theorem AfterCall.regs {enc : Bool} {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k < N s₀) {s s₂ s₃ : State}
-    (h : LInv enc s₀ k s) (a : AfterCall enc s₀ k s s₂) (u : Upd s₂ s₃ .ebp (arg s₀ 5)) :
+theorem AfterCall.regs {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k < N s₀) {s s₂ s₃ : State}
+    (h : LInv s₀ k s) (a : AfterCall s₀ k s s₂) (u : Upd s₂ s₃ .ebp (arg s₀ 5)) :
     addr (s₃.gpr .esi) 0 = byt s₀ k ∧ addr (s₃.gpr .ebp) 2048 = Sv s₀ ∧
       InRegions (s₃.rd ++ s₃.wr) (byt s₀ k) 1 ∧ InRegions (s₃.rd ++ s₃.wr) (Sv s₀) 1 ∧
       InRegions s₃.wr (byt s₀ k) 1 := by
@@ -926,9 +903,9 @@ theorem AfterCall.regs {enc : Bool} {s₀ : State} (hp : UPre s₀) {k : Nat} (h
   · rw [rl]; exact ⟨scrR s₀, by simp, Offset.contains_base _ (by decide) (by decide)⟩
   · rw [u.wr, a.wr, h.wr, hp.wr]; exact ⟨dataR s₀, by simp, hp.cByt hk⟩
 
-theorem encBody_ok (v : BlocksImpl) : BodyOk true (body v.enc encPost) := by
+theorem encBody_ok (v : BlocksImpl) : BodyOk (body v.enc) := by
   intro s₀ hp k hk s h
-  refine call_ok v hp h encPost fun s₂ a => ?_
+  refine call_ok v hp h fun s₂ a => ?_
   obtain big₂ : Frame (Big s₀) s₀.mem s₂.mem := (UPre.big_of h.frame).trans (a.frame.sub fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
@@ -943,26 +920,7 @@ theorem encBody_ok (v : BlocksImpl) : BodyOk true (body v.enc encPost) := by
   refine WP.of_runBlock ⟨s₄, run₄, finish_wp hp hk h a (by rw [g₄ _ (by decide) (by decide), u₃.other _ (by decide)])
     (by rw [g₄ _ (by decide) (by decide), u₃.other _ (by decide)]) (by rw [mem₄, u₃.mem])
     (by rw [rd₄, u₃.rd]) (by rw [wr₄, u₃.wr]) (by rw [a.byte hp hk h, a.out]) ?_⟩
-  rw [rax₄, u₃.mem, a.byte hp hk h, a.out]; rfl
-
-theorem decBody_ok (v : BlocksImpl) : BodyOk false (body v.enc decPost) := by
-  intro s₀ hp k hk s h
-  refine call_ok v hp h decPost fun s₂ a => ?_
-  obtain big₂ : Frame (Big s₀) s₀.mem s₂.mem := (UPre.big_of h.frame).trans (a.frame.sub fun r hr => by
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl
-    · exact ⟨scrR s₀, by simp, Region.sub_prefix (by decide)⟩
-    · exact ⟨stkR s₀, by simp, fun _ h => h⟩)
-  rw [decPost_eq]
-  refine wp_arg (s₀ := s₀) a.esp (by rw [a.rd, a.wr, h.rd, h.wr]; exact hp.arg_in (by decide))
-    (hp.args_of big₂ 5 (by decide)) fun s₃ u₃ => ?_
-  obtain ⟨eP, eT, rP, rT, wP⟩ := a.regs hp hk h u₃
-  obtain ⟨s₄, run₄, rax₄, g₄, mem₄, rd₄, wr₄⟩ := decByte_ok s₃ eP eT rP rT wP
-  rw [WP.block_append_iff]
-  refine WP.of_runBlock ⟨s₄, run₄, finish_wp hp hk h a (by rw [g₄ _ (by decide) (by decide), u₃.other _ (by decide)])
-    (by rw [g₄ _ (by decide) (by decide), u₃.other _ (by decide)]) (by rw [mem₄, u₃.mem])
-    (by rw [rd₄, u₃.rd]) (by rw [wr₄, u₃.wr]) (by rw [a.byte hp hk h, a.out, BitVec.xor_comm]) ?_⟩
-  rw [rax₄, u₃.mem, a.byte hp hk h]; rfl
+  rw [rax₄, u₃.mem, a.byte hp hk h, a.out]
 
 end VG.Proof.AesCfb8.X86
 
@@ -1022,7 +980,7 @@ structure Pt (s₀ : State) (s : State) : Prop where
   args : ∀ i < 6, s.mem.readW (argAddr s₀ i) 32 = arg s₀ i
 
 section
-variable {enc : Bool} {s₀ s₀' : State} (hq : (cfb8X86 enc).pub s₀ s₀')
+variable {s₀ s₀' : State} (hq : (cfb8X86).pub s₀ s₀')
 include hq
 
 theorem pub_E : E s₀ = E s₀' := hq.1
@@ -1044,13 +1002,13 @@ theorem Pt.agree (hp : UPre s₀) (hp' : UPre s₀') {rs : List Reg} {s₁ s₂ 
 
 end
 
-theorem LInv.pt {enc : Bool} {s₀ : State} (hp : UPre s₀) {k : Nat} {s : State} (h : LInv enc s₀ k s) : Pt s₀ s :=
+theorem LInv.pt {s₀ : State} (hp : UPre s₀) {k : Nat} {s : State} (h : LInv s₀ k s) : Pt s₀ s :=
   ⟨h.esp, h.wr, fun _ hi => hp.arg_keep (UPre.big_of h.frame) hi⟩
 
 /-- One run of `body` from `k` bytes is constant time. -/
-def BodyCt (enc : Bool) (body : Prog isa) : Prop :=
-  ∀ {s₀ s₀' : State}, UPre s₀ → UPre s₀' → (cfb8X86 enc).pub s₀ s₀' → ∀ k : Nat,
-    RelCT isa (fun s₁ s₂ => (k < N s₀ ∧ LInv enc s₀ k s₁) ∧ (k < N s₀' ∧ LInv enc s₀' k s₂)) body
+def BodyCt (body : Prog isa) : Prop :=
+  ∀ {s₀ s₀' : State}, UPre s₀ → UPre s₀' → (cfb8X86).pub s₀ s₀' → ∀ k : Nat,
+    RelCT isa (fun s₁ s₂ => (k < N s₀ ∧ LInv s₀ k s₁) ∧ (k < N s₀' ∧ LInv s₀' k s₂)) body
       fun _ _ => True
 
 /-! ## One byte -/
@@ -1094,8 +1052,8 @@ theorem call_after {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State}
 /-- A body: code before the call (`pre`), the call of `b` on the block at
 `D s₀ k` (public), and code after it (`post`), whose addresses and branches
 depend only on `esp`, the stack arguments and `esi`. -/
-theorem body_ct {enc : Bool} {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State} {D : State → Nat → BitVec 32}
-    (pubD : ∀ {s₀ s₀' : State}, (cfb8X86 enc).pub s₀ s₀' → ∀ k, D s₀ k = D s₀' k)
+theorem body_ct {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State} {D : State → Nat → BitVec 32}
+    (pubD : ∀ {s₀ s₀' : State}, (cfb8X86).pub s₀ s₀' → ∀ k, D s₀ k = D s₀' k)
     {b : Impl.Aes.X86.Blocks} {pre post : List Instr}
     (ok : ∀ s, (Proof.Aes.blocksX86 f).pre s →
       ∃ t s', Exec isa b.code s t s' ∧ abiPreserved s s' ∧ (Proof.Aes.blocksX86 f).post s s')
@@ -1103,15 +1061,15 @@ theorem body_ct {enc : Bool} {f : Nat → List Byte → Spec.Aes.State → Spec.
     (nosp : NoSp b.code) (stack : stackUse b.code = 0)
     (hA : ∃ h, (taint.check (argTaint [.esi] (4 + 4 * 6)) (.block pre) h).isSome = true)
     (hB : ∃ h, (taint.check (argTaint [.esi] (4 + 4 * 6)) (.block post) h).isSome = true)
-    (wpA : ∀ {s₀ : State}, UPre s₀ → ∀ {k : Nat}, k < N s₀ → ∀ {s : State}, LInv enc s₀ k s →
+    (wpA : ∀ {s₀ : State}, UPre s₀ → ∀ {k : Nat}, k < N s₀ → ∀ {s : State}, LInv s₀ k s →
       WP isa (.block pre) s (Mid s₀ k (D s₀ k)))
-    {s₀ s₀' : State} (hp : UPre s₀) (hp' : UPre s₀') (hq : (cfb8X86 enc).pub s₀ s₀') (k : Nat) :
-    RelCT isa (fun s₁ s₂ => (k < N s₀ ∧ LInv enc s₀ k s₁) ∧ (k < N s₀' ∧ LInv enc s₀' k s₂))
+    {s₀ s₀' : State} (hp : UPre s₀) (hp' : UPre s₀') (hq : (cfb8X86).pub s₀ s₀') (k : Nat) :
+    RelCT isa (fun s₁ s₂ => (k < N s₀ ∧ LInv s₀ k s₁) ∧ (k < N s₀' ∧ LInv s₀' k s₂))
       (.seq (.block pre) (.seq (blkCall b) (.block post))) fun _ _ => True := by
   obtain ⟨_, hA⟩ := hA
   obtain ⟨_, hB⟩ := hB
   have a := ((RelCT.taint (A := taint)
-    (P := fun s₁ s₂ => (k < N s₀ ∧ LInv enc s₀ k s₁) ∧ (k < N s₀' ∧ LInv enc s₀' k s₂))
+    (P := fun s₁ s₂ => (k < N s₀ ∧ LInv s₀ k s₁) ∧ (k < N s₀' ∧ LInv s₀' k s₂))
     (argTaint [.esi] (4 + 4 * 6))
     (fun _ _ h => Pt.agree hq hp hp' (h.1.2.pt hp) (h.2.2.pt hp') fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; rw [h.1.2.esi, h.2.2.esi, pub_Dp hq]) hA).wp
@@ -1130,8 +1088,8 @@ theorem body_ct {enc : Bool} {f : Nat → List Byte → Spec.Aes.State → Spec.
   exact a.seq (c.seq b)
 
 /-- What the code before the call leaves, as `Mid`. -/
-theorem Mid.of {enc : Bool} {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k < N s₀) {s s₁ : State}
-    (h : LInv enc s₀ k s) (a : PreA s₀ s s₁) : Mid s₀ k (Sv32 s₀) s₁ := by
+theorem Mid.of {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k < N s₀) {s s₁ : State}
+    (h : LInv s₀ k s) (a : PreA s₀ s s₁) : Mid s₀ k (Sv32 s₀) s₁ := by
   have big : Frame (Big s₀) s₀.mem s₁.mem := (UPre.big_of h.frame).trans (by
     rw [a.mem]
     exact (VG.Proof.AesCbc.copy4Mem_frame _ _ _).sub fun r hr => by
@@ -1146,39 +1104,31 @@ theorem pre_taint : ∃ h, (taint.check (argTaint [.esi] (4 + 4 * 6)) (.block pr
 theorem encPost_taint : ∃ h, (taint.check (argTaint [.esi] (4 + 4 * 6)) (.block encPost) h).isSome = true :=
   ⟨_, by taint_decide⟩
 
-theorem decPost_taint : ∃ h, (taint.check (argTaint [.esi] (4 + 4 * 6)) (.block decPost) h).isSome = true :=
-  ⟨_, by taint_decide⟩
-
-theorem encBody_ct (v : BlocksImpl) : BodyCt true (body v.enc encPost) :=
+theorem encBody_ct (v : BlocksImpl) : BodyCt (body v.enc) :=
   fun hp hp' hq k => body_ct (D := fun s₀ _ => Sv32 s₀) (fun hq _ => pub_Sv32 hq) v.encOk v.encCt v.encNosp
     v.encStack pre_taint encPost_taint
-    (@fun _ hp _ hk _ h => WP.mono (pre_wp hp h) fun _ a => Mid.of hp hk h a) hp hp' hq k
-
-theorem decBody_ct (v : BlocksImpl) : BodyCt false (body v.enc decPost) :=
-  fun hp hp' hq k => body_ct (D := fun s₀ _ => Sv32 s₀) (fun hq _ => pub_Sv32 hq) v.encOk v.encCt v.encNosp
-    v.encStack pre_taint decPost_taint
     (@fun _ hp _ hk _ h => WP.mono (pre_wp hp h) fun _ a => Mid.of hp hk h a) hp hp' hq k
 
 /-! ## The loop -/
 
 /-- The loop's relation, with the number of iterations left. -/
-def LRel (enc : Bool) (s₀ s₀' : State) (n : Nat) (s₁ s₂ : State) : Prop :=
-  ∃ k, n = N s₀ - k ∧ (k < N s₀ ∧ LInv enc s₀ k s₁) ∧ (k < N s₀' ∧ LInv enc s₀' k s₂)
+def LRel (s₀ s₀' : State) (n : Nat) (s₁ s₂ : State) : Prop :=
+  ∃ k, n = N s₀ - k ∧ (k < N s₀ ∧ LInv s₀ k s₁) ∧ (k < N s₀' ∧ LInv s₀' k s₂)
 
-theorem loop_ct {enc : Bool} {body : Prog isa} (hb : BodyOk enc body) (hc : BodyCt enc body)
-    {s₀ s₀' : State} (hp : UPre s₀) (hp' : UPre s₀') (hq : (cfb8X86 enc).pub s₀ s₀') (n : Nat) :
-    RelCT isa (LRel enc s₀ s₀' n) (.loop body .ne)
-      fun s₁ s₂ => LInv enc s₀ (N s₀) s₁ ∧ LInv enc s₀' (N s₀') s₂ := by
-  refine RelCT.loop (M := isa) (LRel enc s₀ s₀') (fun n => ?_) n
+theorem loop_ct {body : Prog isa} (hb : BodyOk body) (hc : BodyCt body)
+    {s₀ s₀' : State} (hp : UPre s₀) (hp' : UPre s₀') (hq : (cfb8X86).pub s₀ s₀') (n : Nat) :
+    RelCT isa (LRel s₀ s₀' n) (.loop body .ne)
+      fun s₁ s₂ => LInv s₀ (N s₀) s₁ ∧ LInv s₀' (N s₀') s₂ := by
+  refine RelCT.loop (M := isa) (LRel s₀ s₀') (fun n => ?_) n
   have hN := pub_N hq
-  refine (RelCT.exists_ fun k => ?_).mono (fun s₁ s₂ (h : LRel enc s₀ s₀' n s₁ s₂) => h) fun _ _ h => h
+  refine (RelCT.exists_ fun k => ?_).mono (fun s₁ s₂ (h : LRel s₀ s₀' n s₁ s₂) => h) fun _ _ h => h
   by_cases hn : n = N s₀ - k
   swap
   · exact RelCT.of_false fun _ _ h => hn h.1
   subst hn
   have ct := (hc hp hp' hq k).wp
-    (F₁ := fun (s : State) => (LInv enc s₀ (k + 1) s ∧ s.zf = some (decide (k + 1 = N s₀))) ∧ k < N s₀)
-    (F₂ := fun (s : State) => LInv enc s₀' (k + 1) s ∧ s.zf = some (decide (k + 1 = N s₀')))
+    (F₁ := fun (s : State) => (LInv s₀ (k + 1) s ∧ s.zf = some (decide (k + 1 = N s₀))) ∧ k < N s₀)
+    (F₂ := fun (s : State) => LInv s₀' (k + 1) s ∧ s.zf = some (decide (k + 1 = N s₀')))
     fun _ _ h => ⟨WP.mono (hb hp h.1.1 h.1.2) fun _ r => ⟨r, h.1.1⟩, hb hp' h.2.1 h.2.2⟩
   refine ct.mono (fun _ _ h => h.2) fun s₁ s₂ ⟨_, ⟨⟨l₁, z₁⟩, hk⟩, ⟨l₂, z₂⟩⟩ => ?_
   have e₁ : isa.eval .ne s₁ = some !decide (k + 1 = N s₀) := by
@@ -1195,9 +1145,9 @@ theorem loop_ct {enc : Bool} {body : Prog isa} (hb : BodyOk enc body) (hc : Body
 
 /-! ## The whole function -/
 
-theorem whole_rel {enc : Bool} {body : Prog isa} (hb : BodyOk enc body) (hc : BodyCt enc body)
-    {s₀ s₀' : State} (h0 : (cfb8X86 enc).pre s₀) (h0' : (cfb8X86 enc).pre s₀')
-    (hq : (cfb8X86 enc).pub s₀ s₀') :
+theorem whole_rel {body : Prog isa} (hb : BodyOk body) (hc : BodyCt body)
+    {s₀ s₀' : State} (h0 : (cfb8X86).pre s₀) (h0' : (cfb8X86).pre s₀')
+    (hq : (cfb8X86).pub s₀ s₀') :
     RelCT isa (fun a b => a = s₀ ∧ b = s₀') (whole body) fun _ _ => True := by
   have hp := UPre.of h0
   have hp' := UPre.of h0'
@@ -1208,8 +1158,8 @@ theorem whole_rel {enc : Bool} {body : Prog isa} (hb : BodyOk enc body) (hc : Bo
       obtain ⟨rfl, rfl⟩ := h
       exact Pt.agree hq hp hp' (pt₀ hp) (pt₀ hp') fun r hr => by simp at hr)
     (c := .block setup) (by taint_decide)).wp
-    (F₁ := fun (s : State) => LInv enc s₀ 0 s ∧ s.zf = some (decide (N s₀ = 0)))
-    (F₂ := fun (s : State) => LInv enc s₀' 0 s ∧ s.zf = some (decide (N s₀' = 0)))
+    (F₁ := fun (s : State) => LInv s₀ 0 s ∧ s.zf = some (decide (N s₀ = 0)))
+    (F₂ := fun (s : State) => LInv s₀' 0 s ∧ s.zf = some (decide (N s₀' = 0)))
     fun a b h => by obtain ⟨rfl, rfl⟩ := h; exact ⟨prologue_wp hp, prologue_wp hp'⟩).mono (fun _ _ h => h)
     fun _ _ h => h.2
   have ev {s : State} (h : s.zf = some (decide (N s₀ = 0))) : isa.eval .e s = some (decide (N s₀ = 0)) := by
@@ -1217,16 +1167,16 @@ theorem whole_rel {enc : Bool} {body : Prog isa} (hb : BodyOk enc body) (hc : Bo
   have ev' {s : State} (h : s.zf = some (decide (N s₀' = 0))) : isa.eval .e s = some (decide (N s₀ = 0)) := by
     show VG.X86.eval .e s = _; rw [eval_e, h, hN]
   have nil := RelCT.taint (A := taint)
-    (P := fun a b => ((LInv enc s₀ 0 a ∧ a.zf = some (decide (N s₀ = 0))) ∧
-      (LInv enc s₀' 0 b ∧ b.zf = some (decide (N s₀' = 0)))) ∧ isa.eval .e a = some true)
+    (P := fun a b => ((LInv s₀ 0 a ∧ a.zf = some (decide (N s₀ = 0))) ∧
+      (LInv s₀' 0 b ∧ b.zf = some (decide (N s₀' = 0)))) ∧ isa.eval .e a = some true)
     (argTaint [] (4 + 4 * 6))
     (fun _ _ h => Pt.agree hq hp hp' (h.1.1.1.pt hp) (h.1.2.1.pt hp') fun r hr => by simp at hr)
     (c := .block []) (by taint_decide)
-  have mid : RelCT isa (fun a b => (LInv enc s₀ 0 a ∧ a.zf = some (decide (N s₀ = 0))) ∧
-      (LInv enc s₀' 0 b ∧ b.zf = some (decide (N s₀' = 0))))
-      (.ite .e (.block []) (.loop body .ne)) (fun a b => LInv enc s₀ (N s₀) a ∧ LInv enc s₀' (N s₀') b) := by
+  have mid : RelCT isa (fun a b => (LInv s₀ 0 a ∧ a.zf = some (decide (N s₀ = 0))) ∧
+      (LInv s₀' 0 b ∧ b.zf = some (decide (N s₀' = 0))))
+      (.ite .e (.block []) (.loop body .ne)) (fun a b => LInv s₀ (N s₀) a ∧ LInv s₀' (N s₀') b) := by
     refine RelCT.ite (fun a b h => by rw [ev h.1.2, ev' h.2.2]) ?_ ?_
-    · refine (nil.wp (F₁ := LInv enc s₀ (N s₀)) (F₂ := LInv enc s₀' (N s₀')) fun a b h => ?_).mono
+    · refine (nil.wp (F₁ := LInv s₀ (N s₀)) (F₂ := LInv s₀' (N s₀')) fun a b h => ?_).mono
         (fun _ _ h => h) fun _ _ h => h.2
       have h0 : N s₀ = 0 := by
         have := h.2; rw [ev h.1.1.2] at this; simpa using this
@@ -1237,13 +1187,13 @@ theorem whole_rel {enc : Bool} {body : Prog isa} (hb : BodyOk enc body) (hc : Bo
         have := h.2; rw [ev h.1.1.2] at this
         have : N s₀ ≠ 0 := by simpa using this
         omega
-  have epi := RelCT.taint (A := taint) (P := fun a b => LInv enc s₀ (N s₀) a ∧ LInv enc s₀' (N s₀') b)
+  have epi := RelCT.taint (A := taint) (P := fun a b => LInv s₀ (N s₀) a ∧ LInv s₀' (N s₀') b)
     (argTaint [] (4 + 4 * 6)) (fun _ _ h => Pt.agree hq hp hp' (h.1.pt hp) (h.2.pt hp') fun r hr => by simp at hr)
     (c := .block (restore 5)) (by taint_decide)
   exact pro.seq (mid.seq epi)
 
-theorem whole_ct {enc : Bool} {body : Prog isa} (hb : BodyOk enc body) (hc : BodyCt enc body) :
-    ConstantTime isa (cfb8X86 enc).pre (cfb8X86 enc).pub (whole body) :=
+theorem whole_ct {body : Prog isa} (hb : BodyOk body) (hc : BodyCt body) :
+    ConstantTime isa (cfb8X86).pre (cfb8X86).pub (whole body) :=
   fun _ _ _ _ _ _ h₁ h₂ hq e₁ e₂ => (whole_rel hb hc h₁ h₂ hq _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1
 
 end VG.Proof.AesCfb8.X86
@@ -1275,10 +1225,6 @@ theorem encrypt_spSafe (v : BlocksImpl) : (encrypt v.enc).all (fun i => !isa.wri
   simp only [encrypt, whole, body, blkCall, Code.all, v.encSpSafe]
   decide +kernel
 
-theorem decrypt_spSafe (v : BlocksImpl) : (decrypt v.enc).all (fun i => !isa.writesSp i) = true := by
-  simp only [decrypt, whole, body, blkCall, Code.all, v.encSpSafe]
-  decide +kernel
-
 theorem encrypt_verified (v : BlocksImpl) :
     Verified X86.target (encrypt v.enc) (Proof.AesCfb8.encryptRoundsContract X86.abi 24) :=
   Verified.of_correct (fun _ hs => whole_wp (encBody_ok v) hs) (whole_ct (encBody_ok v) (encBody_ct v)) (by
@@ -1291,20 +1237,6 @@ theorem encrypt_verified (v : BlocksImpl) :
     have e : argAddr sat 0 = 0x8004 := by decide
     have esp : sat.gpr .esp = 0x8000 := rfl
     sig_implies [Proof.AesCfb8.encryptRoundsContract, Spec.Cfb8.aesSig, X86.abi, X86.argSlots,
-      X86.argVal, X86.argBytes, cfb8X86, cfb8, cts, inK] [a0, a1, a2, a3, a4, a5, e, esp] using sat)
-
-theorem decrypt_verified (v : BlocksImpl) :
-    Verified X86.target (decrypt v.enc) (Proof.AesCfb8.decryptRoundsContract X86.abi 24) :=
-  Verified.of_correct (fun _ hs => whole_wp (decBody_ok v) hs) (whole_ct (decBody_ok v) (decBody_ct v)) (by
-    have a0 : arg sat 0 = 0x1000 := by decide
-    have a1 : arg sat 1 = 10 := by decide
-    have a2 : arg sat 2 = 0x2000 := by decide
-    have a3 : arg sat 3 = 0x3000 := by decide
-    have a4 : arg sat 4 = 0 := by decide
-    have a5 : arg sat 5 = 0x4000 := by decide
-    have e : argAddr sat 0 = 0x8004 := by decide
-    have esp : sat.gpr .esp = 0x8000 := rfl
-    sig_implies [Proof.AesCfb8.decryptRoundsContract, Spec.Cfb8.aesSig, X86.abi, X86.argSlots,
       X86.argVal, X86.argBytes, cfb8X86, cfb8, cts, inK] [a0, a1, a2, a3, a4, a5, e, esp] using sat)
 
 end VG.Proof.AesCfb8.X86
