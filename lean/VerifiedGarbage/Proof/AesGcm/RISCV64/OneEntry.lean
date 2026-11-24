@@ -61,7 +61,7 @@ structure SO1 (W T : Addr) (s₀ s₁ : State) : Prop where
   t1 : s₁.gpr .t1 = s₀.sp
 
 theorem one1At_args_wp {s₀ : State} {off tagO : Nat} {W T : Addr} (hoff : off % 8 = 0 ∧ off < 2048)
-    (htag : tagO = 0 ∨ tagO = 16)
+    (htag : tagO % 8 = 0 ∧ tagO < 2048)
     (hW : Covers [⟨W, 2560⟩] s₀.wr) (hWa : W.toNat % 8 = 0) (hsa : s₀.sp.toNat % 16 = 0)
     (hWi : InRegions (s₀.rd ++ s₀.wr) (s₀.sp + BitVec.ofNat 64 off) 8)
     (hWv : s₀.mem.readW (s₀.sp + BitVec.ofNat 64 off) 64 = W)
@@ -164,7 +164,7 @@ theorem one1At_wp {s₀ : State} {off tagO : Nat} {W T : Addr} (hoff : off % 8 =
     (hTv : s₀.mem.readW (s₀.sp + BitVec.ofNat 64 tagO) 64 = T)
     (hTd : (⟨s₀.sp + BitVec.ofNat 64 tagO, 8⟩ : Region).Disjoint (oneR W)) :
     WP isa (.block (oneEntryAt off tagO)) s₀ (SO1 W T s₀) :=
-  WP.mono (one1At_args_wp hoff htag hW hWa hsa hWi hWv hTi hTv hTd) fun _ h => h.1
+  WP.mono (one1At_args_wp hoff (by rcases htag with rfl | rfl <;> decide) hW hWa hsa hWi hWv hTi hTv hTd) fun _ h => h.1
 
 /-- `one1At_wp` with the tag at `sp`. -/
 theorem one1_wp {s₀ : State} {off : Nat} {W T : Addr} (hoff : off = 8 ∨ off = 16)

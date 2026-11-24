@@ -154,9 +154,11 @@ def minLen : Prog isa :=
 /-! ## GHASH -/
 
 /-- `vg_ghash` of the block at `b + o` into the accumulator at `s1 + yo`. -/
-def ghash1 (yo : Nat) (b : Reg) (o : Nat) : Prog isa :=
+def ghash1With (call : Prog isa) (yo : Nat) (b : Reg) (o : Nat) : Prog isa :=
   .seq (.block [.addi .a0 .s2 240, .addi .a1 .s1 yo, .addi .a2 b o, .li .a3 1, .addi .a4 .s0 scrO])
-    ghCall
+    call
+
+def ghash1 (yo : Nat) (b : Reg) (o : Nat) : Prog isa := ghash1With ghCall yo b o
 
 /-- Before the buffer is absorbed: the buffer filled from `s4` (`a2`
 bytes), the arguments advanced, and `a3` zero if the buffer is full. -/
@@ -167,8 +169,10 @@ def headPre : Prog isa :=
   (.seq copyLoop (.block [.addi .a3 .s6 (-16)])))
 
 /-- The buffer filled from `s4`, and absorbed if full. -/
-def absorbHead (yo : Nat) : Prog isa :=
-  .seq headPre (.ite (.zero .a3) (ghash1 yo .s1 32) (.block []))
+def absorbHeadWith (invoke : Prog isa) (yo : Nat) : Prog isa :=
+  .seq headPre (.ite (.zero .a3) (ghash1With invoke yo .s1 32) (.block []))
+
+def absorbHead (yo : Nat) : Prog isa := absorbHeadWith ghCall yo
 
 /-- The whole blocks at `s4` split off: their address in `a2` and number in
 `a3`, `s4` and `s5` the rest. -/
@@ -177,10 +181,12 @@ def splitWhole : List Instr :=
    .add .s4 .s4 .a6, mov .s5 .a5]
 
 /-- The whole blocks at `s4` absorbed. -/
-def absorbWhole (yo : Nat) : Prog isa :=
+def absorbWholeWith (call : Prog isa) (yo : Nat) : Prog isa :=
   .seq (.block splitWhole)
     (.ite (.zero .a3) (.block [])
-      (.seq (.block [.addi .a0 .s2 240, .addi .a1 .s1 yo, .addi .a4 .s0 scrO]) ghCall))
+      (.seq (.block [.addi .a0 .s2 240, .addi .a1 .s1 yo, .addi .a4 .s0 scrO]) call))
+
+def absorbWhole (yo : Nat) : Prog isa := absorbWholeWith ghCall yo
 
 /-- The last `s5` bytes at `s4` buffered. -/
 def absorbTail : Prog isa :=
@@ -188,11 +194,15 @@ def absorbTail : Prog isa :=
     (.seq (.block [mov .a0 .s4, .addi .a1 .s1 32, mov .a2 .s5]) copyLoop)
 
 /-- The buffer filled first, if it holds bytes. -/
-def absorbFill (yo : Nat) : Prog isa :=
-  .ite (.zero .s6) (.block []) (absorbHead yo)
+def absorbFillWith (invoke : Prog isa) (yo : Nat) : Prog isa :=
+  .ite (.zero .s6) (.block []) (absorbHeadWith invoke yo)
 
-def absorb (yo : Nat) : Prog isa :=
-  .ite (.zero .s5) (.block []) (.seq (absorbFill yo) (.seq (absorbWhole yo) absorbTail))
+def absorbFill (yo : Nat) : Prog isa := absorbFillWith ghCall yo
+
+def absorbWith (invoke : Prog isa) (yo : Nat) : Prog isa :=
+  .ite (.zero .s5) (.block []) (.seq (absorbFillWith invoke yo) (.seq (absorbWholeWith invoke yo) absorbTail))
+
+def absorb (yo : Nat) : Prog isa := absorbWith ghCall yo
 
 /-- `T` zeroed, and the arguments of the copy of the `s6` buffered bytes to it. -/
 def flushPre : List Instr :=
@@ -200,8 +210,10 @@ def flushPre : List Instr :=
    .addi .a1 .s0 tO, mov .a2 .s6]
 
 /-- The `s6` buffered bytes, padded with zeros in `T`, absorbed. -/
-def flush (yo : Nat) : Prog isa :=
-  .ite (.zero .s6) (.block []) (.seq (.seq (.block flushPre) copyLoop) (ghash1 yo .s0 tO))
+def flushWith (invoke : Prog isa) (yo : Nat) : Prog isa :=
+  .ite (.zero .s6) (.block []) (.seq (.seq (.block flushPre) copyLoop) (ghash1With invoke yo .s0 tO))
+
+def flush (yo : Nat) : Prog isa := flushWith ghCall yo
 
 /-- The lengths block of `s4` and `s6` bytes (in bits, big-endian), in `T`. -/
 def lensBlock : List Instr :=
@@ -209,8 +221,10 @@ def lensBlock : List Instr :=
     storeBE 8 .a0 .t0 .s0 tO ++ storeBE 8 .a1 .t0 .s0 (tO + 8)
 
 /-- The lengths block of `s4` and `s6` bytes, absorbed. -/
-def lens (yo : Nat) : Prog isa :=
-  .seq (.block lensBlock) (ghash1 yo .s0 tO)
+def lensWith (invoke : Prog isa) (yo : Nat) : Prog isa :=
+  .seq (.block lensBlock) (ghash1With invoke yo .s0 tO)
+
+def lens (yo : Nat) : Prog isa := lensWith ghCall yo
 
 /-! ## Counter mode
 
@@ -298,8 +312,10 @@ def tagArgsB (bs : Bool) (o : Nat) : List Instr :=
 def tagArgs (o : Nat) : List Instr := tagArgsB false o
 
 /-- The tag into `W + o`, after the lengths block of `s4` and `s6` bytes. -/
-def tagB (bs : Bool) (o : Nat) : Prog isa :=
-  .seq (lens 16) (.seq (.block (tagArgsB bs o)) (ctrCallB bs))
+def tagBWith (invoke : Prog isa) (bs : Bool) (o : Nat) : Prog isa :=
+  .seq (lensWith invoke 16) (.seq (.block (tagArgsB bs o)) (ctrCallB bs))
+
+def tagB (bs : Bool) (o : Nat) : Prog isa := tagBWith ghCall bs o
 
 /-- The buffered bytes padded and absorbed, and the tag into `W + o`, for
 `aad_len` (`s10`) bytes of additional data and `text_len` (`s11`) of text. -/
@@ -347,13 +363,15 @@ def j012 : List Instr := copyBytes .t0 .s4 .s1 0 0 12 ++ storeBytes .t0 .s1 12 [
 
 /-- `J₀` of any other nonce: GHASH of the nonce padded, then of the lengths
 block of no additional data and the nonce, from a zero block at the state. -/
-def j0hash : Prog isa :=
+def j0hashWith (invoke : Prog isa) : Prog isa :=
   .seq (.block [.li .t0 0, .store .d .t0 .s1 0, .store .d .t0 .s1 8, .li .s6 0])
-  (.seq (absorb 0)
+  (.seq (absorbWith invoke 0)
   (.seq (.block [.logicImm .and .s6 .s7 15])
-  (.seq (flush 0)
+  (.seq (flushWith invoke 0)
   (.seq (.block [.li .s4 0, mov .s6 .s7])
-    (lens 0)))))
+    (lensWith invoke 0)))))
+
+def j0hash : Prog isa := j0hashWith ghCall
 
 /-- The first counter block `inc₃₂(J₀)`, and the accumulator zeroed. -/
 def initState : List Instr :=
@@ -363,8 +381,10 @@ def initState : List Instr :=
     ([.li .t0 0, .store .d .t0 .s1 16, .store .d .t0 .s1 24] : List Instr)
 
 /-- The streaming state for the `s5`-byte nonce at `s4`. -/
-def j0 : Prog isa :=
-  .seq (.block [.addi .a2 .s5 (-12)]) (.seq (.ite (.zero .a2) (.block j012) j0hash) (.block initState))
+def j0With (invoke : Prog isa) : Prog isa :=
+  .seq (.block [.addi .a2 .s5 (-12)]) (.seq (.ite (.zero .a2) (.block j012) (j0hashWith invoke)) (.block initState))
+
+def j0 : Prog isa := j0With ghCall
 
 /-! ## The functions -/
 
@@ -511,12 +531,14 @@ def oneEntryAt (off tagO : Nat) : List Instr :=
 def oneEntry (off : Nat) : List Instr := oneEntryAt off 0
 
 /-- `J₀`, then the additional data absorbed and padded. -/
-def oneAad : Prog isa :=
-  .seq j0
+def oneAadWith (invoke : Prog isa) : Prog isa :=
+  .seq (j0With invoke)
   (.seq (.block [.load .d .s4 .s0 aadO, mov .s5 .s10, .li .s6 0])
-  (.seq (absorb 16)
+  (.seq (absorbWith invoke 16)
   (.seq (.block [.logicImm .and .s6 .s10 15])
-    (flush 16))))
+    (flushWith invoke 16))))
+
+def oneAad : Prog isa := oneAadWith ghCall
 
 /-- The arguments of `crypt` or `absorb` for the data, from its start. -/
 def dataArgs : List Instr := [.load .d .s4 .s0 dataO, mov .s5 .s11, .li .s6 0]
@@ -526,13 +548,15 @@ or (`o`, with the distance to the destination in `s9`) to the destination. -/
 def oneCryptB (bs o : Bool) : Prog isa := .seq (.block dataArgs) (cryptB bs o)
 
 /-- The data (as ciphertext) absorbed and padded, and the tag into `W + o`. -/
-def oneTagB (bs : Bool) (o : Nat) : Prog isa :=
+def oneTagBWith (invoke : Prog isa) (bs : Bool) (o : Nat) : Prog isa :=
   .seq (.block dataArgs)
-  (.seq (absorb 16)
+  (.seq (absorbWith invoke 16)
   (.seq (.block [.logicImm .and .s6 .s11 15])
-  (.seq (flush 16)
+  (.seq (flushWith invoke 16)
   (.seq (.block [mov .s4 .s10, mov .s6 .s11])
-    (tagB bs o)))))
+    (tagBWith invoke bs o)))))
+
+def oneTagB (bs : Bool) (o : Nat) : Prog isa := oneTagBWith ghCall bs o
 
 /-- `s7 := [sp + off]`, the buffer of the bitsliced round keys, a stack
 argument, once `J₀` (which reads the nonce's length in `s7`) is done. -/

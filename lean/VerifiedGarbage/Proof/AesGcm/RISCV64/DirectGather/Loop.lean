@@ -416,7 +416,7 @@ theorem cryptReady (h : LoopInput a e) (hi : i < a.count) (u : LoopAt a e i s) (
   refine ⟨regs,v.source,v.size,?_,h.s3,h.rounds,
     data.of_eq (v.keep.rd.trans u.rd) (v.keep.wr.trans u.wr) (v.keep.sp.trans u.sp),
     (h.sources i hi).of_eq (v.keep.rd.trans u.rd) (v.keep.wr.trans u.wr) (v.keep.sp.trans u.sp),
-    (h.srcApart i hi _ (.head _)).sub_right (Offset.sub_base _ (LoopInput.bound hi)),fun _ => rfl⟩
+    .inr ((h.srcApart i hi _ (.head _)).sub_right (Offset.sub_base _ (LoopInput.bound hi))),fun _ => rfl⟩
   rw [v.offset,BitVec.toNat_ofNat,Nat.mod_eq_of_lt less]
 
 theorem cryptCtr (h : LoopInput a e) (u : LoopAt a e i s) (v : ArgsAfter a i s z) :
