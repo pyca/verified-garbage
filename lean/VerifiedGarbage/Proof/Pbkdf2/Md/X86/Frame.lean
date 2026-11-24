@@ -177,7 +177,7 @@ theorem sha1_finFrameSat :
     using finFrameSat 84 20
 
 theorem sha224_initFitSat :
-    ∃ s, (Spec.Hmac.sha224I.initContract X86.abi (48 + (8 + 16 + 8 * 22))).pre s := by
+    ∃ s, (Spec.Hmac.sha224I.initContract X86.abi (48 + (8 + 16 + 8 * 24))).pre s := by
   implies_sat [Spec.Hmac.Instance.initContract, Spec.Hmac.initContract, Spec.Hmac.initSig,
       Spec.Hmac.initPre, Spec.Hmac.initPost, Spec.Hmac.sha224I, Spec.Hmac.sha224S, Spec.Hmac.sha224,
       X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
@@ -185,7 +185,7 @@ theorem sha224_initFitSat :
     using initFrameSat 96
 
 theorem sha224_finFitSat :
-    ∃ s, (Spec.Hmac.sha224I.finalizeContract X86.abi (48 + (8 + 20 + 8 * 26))).pre s := by
+    ∃ s, (Spec.Hmac.sha224I.finalizeContract X86.abi (48 + (8 + 20 + 8 * 32))).pre s := by
   implies_sat [Spec.Hmac.Instance.finalizeContract, Spec.Hmac.finalizeContract, Spec.Hmac.finalizeSig,
       Spec.Hmac.finalizePost, Spec.Hmac.sha224I, Spec.Hmac.sha224S, Spec.Hmac.sha224,
       X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
@@ -193,7 +193,7 @@ theorem sha224_finFitSat :
     using finFrameSat 96 28
 
 theorem sha256_initFitSat :
-    ∃ s, (Spec.Hmac.sha256I.initContract X86.abi (48 + (8 + 16 + 8 * 22))).pre s := by
+    ∃ s, (Spec.Hmac.sha256I.initContract X86.abi (48 + (8 + 16 + 8 * 24))).pre s := by
   implies_sat [Spec.Hmac.Instance.initContract, Spec.Hmac.initContract, Spec.Hmac.initSig,
       Spec.Hmac.initPre, Spec.Hmac.initPost, Spec.Hmac.sha256I, Spec.Hmac.sha256S, Spec.Hmac.sha256,
       X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
@@ -201,7 +201,7 @@ theorem sha256_initFitSat :
     using initFrameSat 96
 
 theorem sha256_finFitSat :
-    ∃ s, (Spec.Hmac.sha256I.finalizeContract X86.abi (48 + (8 + 20 + 8 * 26))).pre s := by
+    ∃ s, (Spec.Hmac.sha256I.finalizeContract X86.abi (48 + (8 + 20 + 8 * 32))).pre s := by
   implies_sat [Spec.Hmac.Instance.finalizeContract, Spec.Hmac.finalizeContract, Spec.Hmac.finalizeSig,
       Spec.Hmac.finalizePost, Spec.Hmac.sha256I, Spec.Hmac.sha256S, Spec.Hmac.sha256,
       X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
