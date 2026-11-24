@@ -760,14 +760,28 @@ impl AesGcm {
         plaintext: &[&[u8]],
         out: &mut [MaybeUninit<u8>],
     ) -> Block {
-        let dst = out.as_mut_ptr().cast();
-        let len = out.len();
         #[cfg(target_arch = "x86_64")]
         if let [input] = plaintext {
             // SAFETY: the checked length equals input.len(). The exclusive
             // output slice is disjoint from the plaintext and other inputs.
-            return unsafe { self.seal_contiguous(dit, nonce, aad, input.as_ptr(), dst, len) };
+            return unsafe { self.seal_contiguous(dit, nonce, aad, input.as_ptr(), out.as_mut_ptr().cast(), out.len()) };
         }
+        self.seal_gather(dit, nonce, aad, plaintext, out)
+    }
+
+    // Keep the large descriptor scratch space out of the singleton caller's frame.
+    #[cfg_attr(target_arch = "x86_64", inline(never))]
+    #[cfg_attr(not(target_arch = "x86_64"), inline(always))]
+    fn seal_gather(
+        &self,
+        dit: crate::dit::Dit<'_>,
+        nonce: &[u8],
+        aad: &[u8],
+        plaintext: &[&[u8]],
+        out: &mut [MaybeUninit<u8>],
+    ) -> Block {
+        let dst = out.as_mut_ptr().cast();
+        let len = out.len();
         // The descriptors of the pieces, as `vg_aes_gcm_seal_gather` takes
         // them: each its address and its length. Only the first
         // `plaintext.len()` are written, and the function reads only those.
