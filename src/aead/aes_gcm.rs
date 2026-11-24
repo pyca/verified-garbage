@@ -750,10 +750,11 @@ impl AesGcm {
             return Err(Error::TooManyPieces);
         }
         check_nonce(nonce)?;
-        let mut len = 0;
-        for p in plaintext {
-            len = add_len(len, p.len(), MAX_TEXT).map_err(|()| Error::InvalidTextLength)?;
-        }
+        let len = match plaintext {
+            [input] => add_len(0, input.len(), MAX_TEXT),
+            [head, tail] => add_len(head.len() as u64, tail.len(), MAX_TEXT),
+            pieces => pieces.iter().try_fold(0, |len, p| add_len(len, p.len(), MAX_TEXT)),
+        }.map_err(|()| Error::InvalidTextLength)?;
         if len != out.len() as u64 {
             return Err(Error::InvalidOutputLength);
         }
@@ -771,14 +772,27 @@ impl AesGcm {
         plaintext: &[&[u8]],
         out: &mut [MaybeUninit<u8>],
     ) -> Block {
-        let dst = out.as_mut_ptr().cast();
-        let len = out.len();
         #[cfg(target_arch = "x86_64")]
         if let [input] = plaintext {
+            let dst = out.as_mut_ptr().cast();
+            let len = out.len();
             // SAFETY: the checked length equals input.len(). The exclusive
             // output slice is disjoint from the plaintext and other inputs.
             return unsafe { self.seal_contiguous(dit, nonce, aad, input.as_ptr(), dst, len) };
         }
+        #[cfg(target_arch = "x86_64")]
+        if let [head, tail] = plaintext {
+            let descs = [[head.as_ptr() as usize, head.len()], [tail.as_ptr() as usize, tail.len()]];
+            // SAFETY: both descriptors come from the checked plaintext slices.
+            return unsafe { self.seal_descriptors(dit, nonce, aad, &descs, out) };
+        }
+        self.seal_many(dit, nonce, aad, plaintext, out)
+    }
+
+    #[cfg_attr(target_arch = "x86_64", inline(never))]
+    #[cfg_attr(not(target_arch = "x86_64"), inline(always))]
+    fn seal_many(&self, dit: crate::dit::Dit<'_>, nonce: &[u8], aad: &[u8],
+        plaintext: &[&[u8]], out: &mut [MaybeUninit<u8>]) -> Block {
         // The descriptors of the pieces, as `vg_aes_gcm_seal_gather` takes
         // them: each its address and its length. Only the first
         // `plaintext.len()` are written, and the function reads only those.
@@ -786,10 +800,21 @@ impl AesGcm {
         for (d, p) in descs.iter_mut().zip(plaintext) {
             d.write([p.as_ptr() as usize, p.len()]);
         }
-        let src: *const [usize; 2] = descs.as_ptr().cast();
+        // SAFETY: every used descriptor was initialized above.
+        let init = unsafe { descs[..plaintext.len()].assume_init_ref() };
+        // SAFETY: the descriptors describe the checked input slices.
+        unsafe { self.seal_descriptors(dit, nonce, aad, init, out) }
+    }
+
+    #[inline(always)]
+    unsafe fn seal_descriptors(&self, dit: crate::dit::Dit<'_>, nonce: &[u8], aad: &[u8],
+        descs: &[[usize; 2]], out: &mut [MaybeUninit<u8>]) -> Block {
+        let src = descs.as_ptr();
+        let dst = out.as_mut_ptr().cast();
+        let len = out.len();
         let mut tag: Block = [0; 16];
         // SAFETY: as in `seal`, with `dst` writable for
-        // `len` bytes; `src` points to `plaintext.len()` initialized
+        // `len` bytes; `src` points to `descs.len()` initialized
         // descriptors (in `descs`, a local), each the address and the length
         // of a piece valid for reads, which are `len` bytes in all.
         // The pieces and the descriptors are read only, and overlap neither
@@ -806,7 +831,7 @@ impl AesGcm {
                 aad.as_ptr(),
                 aad.len(),
                 src,
-                plaintext.len(),
+                descs.len(),
                 dst,
                 len,
                 &mut tag,
@@ -821,7 +846,7 @@ impl AesGcm {
                 aad.as_ptr(),
                 aad.len(),
                 src,
-                plaintext.len(),
+                descs.len(),
                 dst,
                 len,
                 &mut tag,
@@ -837,7 +862,7 @@ impl AesGcm {
                 aad.as_ptr(),
                 aad.len(),
                 src,
-                plaintext.len(),
+                descs.len(),
                 dst,
                 len,
                 &mut tag,
