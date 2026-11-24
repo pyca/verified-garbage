@@ -46,6 +46,24 @@ structure EntryPre (M : CtxMode) (s : State) : Prop where
   tW : (⟨T s,16⟩ : Region).Disjoint ⟨W s,2560⟩
   rt : (⟨SP s,8⟩ : Region).Disjoint ⟨T s,16⟩
 
+/-- Ordinary one-shot layout, extended by the two possible source/destination
+geometries. Incoming ABI permissions provide read coverage for the source in
+either the readable list or the writable destination. -/
+theorem EntryPre.ofLayout {M : CtxMode} {s : State} (lay : Proof.AesGcm.oneLay M.len 4 5 s 1 2)
+    (ctx : Covers [⟨K s,M.len⟩] (s.rd++s.wr)) (nonce : Covers [⟨s.gpr .rdx,(s.gpr .rcx).toNat⟩] (s.rd++s.wr))
+    (aad : Covers [⟨s.gpr .r8,(s.gpr .r9).toNat⟩] (s.rd++s.wr)) (args : Covers [⟨SP s+8#64,40⟩] (s.rd++s.wr))
+    (dst : Covers [⟨D s,N s⟩] s.wr) (work : Covers [⟨W s,2560⟩] s.wr) (ok : M.ok s.mem (K s))
+    (src : Covers [⟨S s,N s⟩] (s.rd++s.wr)) (alias : S s=D s ∨ (⟨S s,N s⟩ : Region).Disjoint ⟨D s,N s⟩)
+    (sw : (⟨S s,N s⟩ : Region).Disjoint ⟨W s,2560⟩) (ss : (⟨S s,N s⟩ : Region).Disjoint (below (SP s) 24))
+    (wrap : (S s).toNat+N s≤2^64) (tag : Covers [⟨T s,16⟩] s.wr)
+    (td : (⟨T s,16⟩ : Region).Disjoint ⟨D s,N s⟩) (tw : (⟨T s,16⟩ : Region).Disjoint ⟨W s,2560⟩)
+    (rt : (⟨SP s,8⟩ : Region).Disjoint ⟨T s,16⟩) : EntryPre M s := by
+  refine ⟨OneCtx.ofAt lay M.ge ctx nonce aad args dst work,?_,?_,wrap,tag,td,tw,rt⟩
+  · obtain ⟨cd,cw,_,_,_,_,_,_,_,_,_,ct,_,_,_,_,ww,_⟩ := lay
+    exact ⟨ww,cw.sub_right (Lay.wSub (by decide)),cw,cd,ct,ctx,ok⟩
+  · exact ⟨Nat.le_refl _,src,alias,sw,ss,fun h => (Nat.lt_irrefl _ h).elim,fun h => (Nat.lt_irrefl _ h).elim,
+      fun h => (Nat.lt_irrefl _ h).elim,fun h => (Nat.lt_irrefl _ h).elim⟩
+
 def EntryPost (s t : State) : Prop :=
   encryptWith (ctxCiph s.mem (K s) (s.gpr .rsi).toNat) (ctxH s.mem (K s)) 16
     (bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat) (bytesAt s.mem (S s) (N s))
