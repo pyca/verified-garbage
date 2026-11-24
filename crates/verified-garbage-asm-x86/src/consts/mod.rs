@@ -35,6 +35,10 @@ mod vg_camellia_aesni_wide;
 pub use vg_camellia_aesni_wide::VG_CAMELLIA_AESNI_WIDE;
 
 #[rustfmt::skip]
+mod vg_camellia_sse2;
+pub use vg_camellia_sse2::VG_CAMELLIA_SSE2;
+
+#[rustfmt::skip]
 mod vg_cast5_s1234_steps;
 pub use vg_cast5_s1234_steps::VG_CAST5_S1234_STEPS;
 

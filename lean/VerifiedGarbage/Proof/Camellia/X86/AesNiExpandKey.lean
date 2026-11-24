@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Camellia.X86.AesNiCore
 meta import VerifiedGarbage.Proof.Camellia.X86.AesNiMaps
 meta import VerifiedGarbage.Proof.Framework.X86.ByteMap
 public import VerifiedGarbage.Proof.Camellia.X86.ExpandKey
+meta import VerifiedGarbage.Proof.Camellia.X86.ExpandKey
 meta import VerifiedGarbage.Proof.Camellia.Common
 import VerifiedGarbage.Proof.Camellia.Common
 import VerifiedGarbage.Proof.Framework.Lit
@@ -16,7 +17,6 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.X86.SseDword
 import VerifiedGarbage.Proof.Framework.X86.Syms
 public import VerifiedGarbage.Proof.Camellia.Scratch
-public import VerifiedGarbage.Proof.Camellia.X86.KeyVerified
 import VerifiedGarbage.Proof.Camellia.X86.AesNiKeyLit
 import VerifiedGarbage.Proof.Framework.X86.Lit
 import VerifiedGarbage.Proof.Framework.X86.SseTaint
@@ -40,14 +40,12 @@ meta import VerifiedGarbage.Proof.Framework.X86.ScrubSel
 /-!
 # Camellia's key schedule on x86 (32-bit), its rounds by `aesenclast`
 
-`expandKey_wp`: `expandKey` (`Impl/Camellia/X86/AesNiExpandKey.lean`) meets
-the bitsliced code's contract (`ExpandKey.lean`) in its own, smaller working
-space. `pairX_wp`: a pair of rounds on the value in `xmm0` is the
+`mid_ok`: the block for `KA` and `KB` (`Impl/Camellia/X86/AesNiExpandKey.lean`)
+leaves what the key schedule's proof (`ExpandKey.lean`) needs. `pairX_wp`: a pair of rounds on the value in `xmm0` is the
 specification's, with the last pair of a group of the one-block code
 (`lastpair_wp`, `AesNiCore.lean`) between the conversions, under the keys
 `keysIn` copies, which the kernel checks are those of the constants
-(`sig_all`); `kaKb_wp` composes three. The loads of the key, the byte swaps
-and the subkeys' stores are the bitsliced code's, with its proofs.
+(`sig_all`); `kaKb_wp` composes three.
 -/
 
 @[expose] public section
@@ -459,12 +457,13 @@ theorem kaKb_disj {k : Nat} (h : k < 84 ∨ 92 ≤ k) (hk : k < 96) :
 /-- The keys' copy, then `KA` and `KB`. -/
 theorem rounds_wp {s : State} (hb : s.gpr sb = b) (ht : s.gpr .edx = s.syms tableName) (hw : ScrInN 96 s.wr b)
     {KL KR : BitVec 64 × BitVec 64} (hl : VW s klSlot KL) (hr : VW s krSlot KR) :
-    WP isa (.block (.mov tbr (.reg .edx) :: .mov kr (.reg sb) :: (keysIn ++ kaKb))) s fun s' =>
+    WP isa (.block mid) s fun s' =>
       s'.gpr sb = b ∧ s'.gpr .esp = s.gpr .esp ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
       VW s' klSlot KL ∧ VW s' krSlot KR ∧ VW s' kaSlot (kaD2 KL KR) ∧ VW s' kbSlot (kaD3 KL KR) ∧
       (∀ k, 92 ≤ k → k < 96 → s'.mem.readW (wordAddr b k) 32 = s.mem.readW (wordAddr b k) 32) ∧
       Frame [⟨b.setWidth 64, 4 * 96⟩] s.mem s'.mem := by
   have hf := hw.fit
+  show WP isa (.block (.mov tbr (.reg .edx) :: .mov kr (.reg sb) :: (keysIn ++ kaKb))) s _
   rw [show keysIn ++ kaKb = keysOne 0 ++ (keysOne 1 ++ (keysOne 2 ++ kaKb)) by simp only [keysIn, List.append_assoc]]
   refine Wp.wp_mov fun s₁ u₁ => ?_
   refine Wp.wp_mov fun s₂ u₂ => ?_
@@ -504,185 +503,14 @@ theorem rounds_wp {s : State} (hb : s.gpr sb = b) (ht : s.gpr .edx = s.syms tabl
     · exact ⟨_, List.mem_singleton_self _, Region.sub_prefix (by decide)⟩
     · exact ⟨_, List.mem_singleton_self _, Offset.sub_base _ (by decide)⟩
 
-theorem saved_not_rev : ∀ i < 4, Impl.Camellia.X86.AesNiKey.savedSlot + i ∉ revSlots := by decide +kernel
-
-/-- The function after the table's address is in `edx`. -/
-theorem main_wp (hp : (expandKeyX86N 96).pre s₀) (ht : s₀.gpr .edx = s₀.syms tableName) :
-    WP isa main s₀ fun s' => abiPreserved s₀ s' ∧ (expandKeyX86N 96).post s₀ s' := by
-  obtain ⟨hrd, hwr, dKS, dKB, dSB, dAS, dAB, dRS, dRB, fitK, fitS, fitB, fitE, hlen⟩ := id hp
-  let K := arg s₀ 0
-  let len := (arg s₀ 1).toNat
-  let b := arg s₀ 3
-  obtain hw : ScrInN 96 s₀.wr b := .exact (by rw [hwr]; simp [b]) fitB
-  obtain hrA : (⟨argAddr s₀ 0, 16⟩ : Region) ∈ s₀.rd := by rw [hrd]; simp
-  obtain argIn : ∀ {s : State}, s.rd = s₀.rd → s.wr = s₀.wr → s.gpr .esp = s₀.gpr .esp → ∀ i < 4,
-      InRegions (s.rd ++ s.wr) (s.ea (argOp i)) 4 := fun h1 h2 h3 i hi => by
-    rw [h1, h2, ea_arg h3]; exact ⟨_, List.mem_append_left _ hrA, ekArg_contains s₀ fitE hi⟩
-  obtain argR : ∀ {m : Mem}, Frame [⟨b.setWidth 64, 4 * 96⟩] s₀.mem m → ∀ i < 4,
-      m.readW (argAddr s₀ i) 32 = arg s₀ i := fun hf i hi =>
-    hf.readW (ekArg_contains s₀ fitE hi) (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact dAB) (by decide)
-  -- The registers saved.
-  obtain ⟨s₁, e₁, b₁, g₁, sv₁, rd₁, wr₁, f₁, k₁⟩ := saveAt_ok (j := Impl.Camellia.X86.AesNiKey.savedSlot) (by decide) hw
-    (argIn rfl rfl rfl 3 (by decide)) (by rw [ea_arg rfl]; rfl)
-  refine WP.seq (WP.mono_syms (WP.of_runBlock (Q := fun s => s = s₁) ⟨s₁, e₁, rfl⟩) fun s h y₁ => ?_)
-  subst h
-  obtain esp₁ : s.gpr .esp = s₀.gpr .esp := g₁ _ (by decide) (by decide)
-  obtain hkey : Spec.Camellia.bytesAt s.mem (K.setWidth 64) len = Spec.Camellia.bytesAt s₀.mem (K.setWidth 64) len :=
-    Proof.Camellia.bytesAt_congr fun i hi => f₁.bytes (R := ⟨K.setWidth 64, len⟩)
-      (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact dKB) (by simp only; omega_using []) hi
-  -- `KL` and `KR`.
-  obtain hl₁ : LoadPre 96 s b K len :=
-    { base := b₁, scr := by rw [wr₁]; exact hw, rd := by rw [rd₁, hrd]; simp [K, len],
-      fit := fitK, sep := dKB, hlen := hlen,
-      arg0 := argIn rd₁ wr₁ esp₁ 0 (by decide), arg0V := by rw [ea_arg esp₁, argR f₁ 0 (by decide)],
-      arg1 := argIn rd₁ wr₁ esp₁ 1 (by decide),
-      arg1V := by rw [ea_arg esp₁, argR f₁ 1 (by decide)]; simp [len],
-      arg1Sep := by rw [ea_arg esp₁]; exact dAB.sub_left (ekArg_sub s₀ fitE (by decide)) }
-  refine WP.seq (WP.mono_syms (loadKey_wp hl₁) fun s₂ h₂ y₂ => ?_)
-  obtain hb₂ : s₂.gpr sb = b := by rw [h₂.regs _ (by decide) (by decide)]; exact b₁
-  -- `KA` and `KB`.
-  let key := Spec.Camellia.bytesAt s.mem (K.setWidth 64) len
-  obtain ⟨hKL1, hKL2, hKR1, hKR2⟩ := Proof.Camellia.klkr_halves s.mem (K.setWidth 64) hlen
-  obtain vl : VW s₂ klSlot (Proof.Camellia.hiW (Spec.Camellia.klkr key).1, Proof.Camellia.loW (Spec.Camellia.klkr key).1) := by
-    rw [hKL1, hKL2]; exact h₂.kl
-  obtain vr : VW s₂ krSlot (Proof.Camellia.hiW (Spec.Camellia.klkr key).2, Proof.Camellia.loW (Spec.Camellia.klkr key).2) := by
-    rw [hKR1, hKR2]; exact h₂.kr
-  refine WP.seq (WP.mono (rounds_wp hb₂ ?_ (by rw [h₂.wr, wr₁]; exact hw) vl vr)
-    fun s₃ ⟨b₃, e₃, rd₃, wr₃, kl₃, kr₃, ka₃, kb₃, sv₃, f₃⟩ => ?_)
-  · rw [h₂.regs _ (by decide) (by decide), g₁ _ (by decide) (by decide), ht, y₂, y₁]
-  obtain hka := Proof.Camellia.kaD_eq (Spec.Camellia.klkr key).1 (Spec.Camellia.klkr key).2
-  refine ekTail_wp hp (by decide) saved_not_rev ?_
-  rw [← show key = Spec.Camellia.bytesAt s₀.mem (K.setWidth 64) len from hkey]
-  refine ⟨b₃, by rw [e₃, h₂.regs _ (by decide) (by decide), esp₁], by rw [wr₃, h₂.wr, wr₁]; exact hw, fun v hv => ?_,
-    fun i hi => ?_, f₁.trans (h₂.frame.trans f₃), by rw [rd₃, h₂.rd, rd₁], by rw [wr₃, h₂.wr, wr₁]⟩
-  · rcases (show v = 0 ∨ v = 1 ∨ v = 2 ∨ v = 3 by omega_using [hv]) with rfl | rfl | rfl | rfl
-    · exact kl₃
-    · exact kr₃
-    · rw [hka.1] at ka₃; exact ka₃
-    · rw [hka.2] at kb₃; exact kb₃
-  · have h92 : Impl.Camellia.X86.AesNiKey.savedSlot = 92 := rfl
-    rw [sv₃ _ (by omega_arith) (by omega_arith), h₂.keep _ (by omega_arith) (.inr (by rw [klSlot_eq]; omega_arith))]
-    exact sv₁ i hi
-
 end
 
 /-! ## The contract, and constant time -/
 
-/-- What the frame that gets the table's address needs: the four bytes below
-`esp` apart from everything else. -/
-structure Below (s : State) : Prop where
-  key : Region.Disjoint (below (s.gpr .esp) 4) ⟨(arg s 0).setWidth 64, (arg s 1).toNat⟩
-  sched : Region.Disjoint ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 4, 4⟩ ⟨(arg s 2).setWidth 64, 272⟩
-  scr : Region.Disjoint ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 4, 4⟩ ⟨(arg s 3).setWidth 64, 384⟩
-  esp : 4 ≤ (s.gpr .esp).toNat
+theorem mid_ok : MidOk 96 tableName mid := fun hb ht hw hl hr => rounds_wp hb ht hw hl hr
 
-/-- The key schedule with its working space as the fourth argument, and four
-bytes of stack. -/
-def expandKeyAes : Contract X86.isa where
-  pre s :=
-    let key : Region := ⟨(arg s 0).setWidth 64, (arg s 1).toNat⟩
-    let sched : Region := ⟨(arg s 2).setWidth 64, 272⟩
-    let scratch : Region := ⟨(arg s 3).setWidth 64, 4 * 96⟩
-    let args : Region := ⟨argAddr s 0, 16⟩
-    let ret : Region := ⟨(s.gpr .esp).setWidth 64, 4⟩
-    let stk : Region := ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 4, 4⟩
-    s.rd = [key, args] ∧ s.wr = [sched, scratch] ∧
-    key.Disjoint sched ∧ key.Disjoint scratch ∧ sched.Disjoint scratch ∧
-    args.Disjoint sched ∧ args.Disjoint scratch ∧ ret.Disjoint sched ∧ ret.Disjoint scratch ∧
-    (arg s 0).toNat + (arg s 1).toNat ≤ 2 ^ 32 ∧ (arg s 2).toNat + 272 ≤ 2 ^ 32 ∧
-    (arg s 3).toNat + 4 * 96 ≤ 2 ^ 32 ∧ (s.gpr .esp).toNat + 20 ≤ 2 ^ 32 ∧
-    ((arg s 1).toNat = 16 ∨ (arg s 1).toNat = 24 ∨ (arg s 1).toNat = 32) ∧
-    stk.Disjoint key ∧ stk.Disjoint sched ∧ stk.Disjoint scratch ∧ 4 ≤ (s.gpr .esp).toNat
-  post := (expandKeyX86N 96).post
-  pub := (expandKeyX86N 96).pub
-
-theorem below_eq {s : State} (h : 4 ≤ (s.gpr .esp).toNat) :
-    below (s.gpr .esp) 4 = ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 4, 4⟩ := by
-  rw [below, VG.X86.Taint.sub_setWidth h]
-
-theorem pre_split {s : State} (h : expandKeyAes.pre s) : (expandKeyX86N 96).pre s ∧ Below s := by
-  obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, k, d, b, e⟩ := h
-  exact ⟨⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14⟩, ⟨by rw [below_eq e]; exact k, d, b, e⟩⟩
-
-theorem expandKey_wp {s₀ : State} (h : expandKeyAes.pre s₀) :
-    WP isa expandKey s₀ fun s' => abiPreserved s₀ s' ∧ expandKeyAes.post s₀ s' := by
-  obtain ⟨hp, hB⟩ := pre_split h
-  obtain ⟨hrd, hwr, dKS, dKB, dSB, dAS, dAB, dRS, dRB, fitK, fitS, fitB, fitE, hlen⟩ := id hp
-  unfold expandKey
-  refine WP.seq (WP.mono (symFrame_ok tableName s₀ hB.esp) fun s₁ a₁ => ?_)
-  have args : ∀ i < 4, arg s₁ i = arg s₀ i := fun i hi => a₁.arg hB.esp (by omega_arith)
-  refine WP.seq (Wp.wp_mov fun s₂ u₂ => WP.block_nil ?_)
-  have esp₂ : s₂.gpr .esp = s₀.gpr .esp := by rw [u₂.other _ (by decide), a₁.gpr _ (by decide)]
-  have args₂ : ∀ i < 4, arg s₂ i = arg s₀ i := fun i hi => by
-    rw [← args i hi, arg, arg, argAddr, argAddr, u₂.mem, u₂.other _ (by decide)]
-  have adr₂ : argAddr s₂ 0 = argAddr s₀ 0 := by rw [argAddr, argAddr, esp₂]
-  have hp₂ : (expandKeyX86N 96).pre s₂ := by
-    simp only [expandKeyX86N, args₂ 0 (by decide), args₂ 1 (by decide), args₂ 2 (by decide), args₂ 3 (by decide), adr₂, esp₂,
-      u₂.rd, u₂.wr, a₁.rd, a₁.wr]
-    exact hp
-  refine WP.mono (main_wp hp₂ (by rw [u₂.gpr, a₁.addr, u₂.syms, a₁.syms])) fun s' ⟨⟨hr, hm⟩, hpost⟩ => ⟨⟨fun r hr' => ?_, ?_⟩, ?_⟩
-  · rw [hr r hr']
-    simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr'
-    rcases hr' with rfl | rfl | rfl | rfl | rfl <;> rw [u₂.other _ (by decide), a₁.gpr _ (by decide)]
-  · rw [esp₂, u₂.mem, a₁.ret hB.esp (by omega_arith)] at hm
-    exact hm
-  · have hkey : Spec.Camellia.bytesAt s₂.mem ((arg s₀ 0).setWidth 64) (arg s₀ 1).toNat =
-        Spec.Camellia.bytesAt s₀.mem ((arg s₀ 0).setWidth 64) (arg s₀ 1).toNat := by
-      rw [u₂.mem]
-      exact Proof.Camellia.bytesAt_congr fun i hi => a₁.frame.bytes (R := ⟨(arg s₀ 0).setWidth 64, (arg s₀ 1).toNat⟩)
-        (fun r hr => by rw [List.mem_singleton] at hr; subst hr; exact hB.key.symm) (by simp only; omega_arith) hi
-    simp only [expandKeyX86N, args₂ 0 (by decide), args₂ 1 (by decide), args₂ 2 (by decide), hkey] at hpost
-    exact hpost
-
-/-- The initial taint: `esp` public, and the words holding `schedule` and
-`scratch` known to be the base addresses of the writable regions. -/
-def taint : VG.X86.Taint.T :=
-  { regs := .ofList [.esp], flags := false, lens := [272, 384], argLen := 20, argBases := [(12, 0), (16, 1)], room := 4 }
-
-theorem taint_wf {s : State} (h : expandKeyAes.pre s) : VG.X86.Taint.Wf taint s := by
-  obtain ⟨⟨hrd, hwr, dKS, dKB, dSB, dAS, dAB, dRS, dRB, fitK, fitS, fitB, fitE, hlen⟩, hB⟩ := pre_split h
-  refine VG.X86.Taint.Wf.entryRoom rfl ⟨fun _ => ⟨?_, ?_, ?_⟩,
-    fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim,
-    fun _ => ⟨by simp only [taint]; omega_using [fitE], ?_⟩, ?_⟩ fun _ => ⟨hB.esp, ?_⟩
-  · rw [hwr]
-    exact .cons (Nat.le_refl _) (.cons (Nat.le_refl _) .nil)
-  · simp only [hwr, List.pairwise_cons, List.mem_cons, List.not_mem_nil, or_false, forall_eq,
-      List.Pairwise.nil, and_true]
-    exact ⟨dSB, fun _ h => h.elim⟩
-  · simp only [hwr, List.mem_cons, List.not_mem_nil, or_false]
-    rintro r (rfl | rfl) <;> simp only [setWidth_toNat] <;> omega_arith
-  · simp only [hwr, List.mem_cons, List.not_mem_nil, or_false]
-    rintro r (rfl | rfl)
-    · exact VG.X86.Taint.frame_disjoint (n := 16) (by omega_using [fitE]) dRS dAS
-    · exact VG.X86.Taint.frame_disjoint (n := 16) (by omega_using [fitE]) dRB dAB
-  · intro p hp'
-    simp only [taint, List.mem_cons, List.not_mem_nil, or_false] at hp'
-    rcases hp' with rfl | rfl <;> refine ⟨by decide, ?_⟩ <;>
-      simp [VG.X86.Taint.region, hwr, addr, arg, argAddr]
-  · simp only [hwr, List.mem_cons, List.not_mem_nil, or_false]
-    rintro r (rfl | rfl)
-    · exact hB.sched
-    · exact hB.scr
-
-theorem taint_agree {s₁ s₂ : State} (h₁ : expandKeyAes.pre s₁) (h₂ : expandKeyAes.pre s₂)
-    (hpub : expandKeyAes.pub s₁ s₂) : VG.X86.Taint.Agree taint s₁ s₂ := by
-  obtain ⟨hesp, ha⟩ := hpub
-  have hwr₁ := (pre_split h₁).1.2.1; have hwr₂ := (pre_split h₂).1.2.1
-  have fE₁ := (pre_split h₁).1.2.2.2.2.2.2.2.2.2.2.2.2.1; have fE₂ := (pre_split h₂).1.2.2.2.2.2.2.2.2.2.2.2.2.1
-  refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun _ => ?_, taint_wf h₁, taint_wf h₂,
-    VG.X86.Taint.slotsOk_empty, VG.X86.Taint.slotsAgree_empty, fun _ => hesp, fun k h4 hk => ?_⟩
-  · simp only [taint, RegSet.mem_ofList, List.mem_cons, List.not_mem_nil, or_false] at hr
-    subst hr; exact hesp
-  · rw [hwr₁, hwr₂, ha 2 (by omega_using []), ha 3 (by omega_using [])]
-  · simp only [taint] at hk
-    rw [show VG.X86.Taint.depth taint.stk = 0 from rfl, Nat.zero_add]
-    rw [VG.X86.Taint.argByte_eq (n := 20) fE₁ h4 hk, VG.X86.Taint.argByte_eq (n := 20) fE₂ h4 hk,
-      Mem.readW_byte s₁.mem _ (Nat.mod_lt _ (by omega_using [])), Mem.readW_byte s₂.mem _ (Nat.mod_lt _ (by omega_using []))]
-    exact congrArg _ (ha _ (by omega_using [hk]))
-
-theorem expandKey_ct : ConstantTime isa expandKeyAes.pre expandKeyAes.pub expandKey :=
-  VG.Taint.constantTime (A := VG.X86.sseTaint) taint (fun _ _ h₁ h₂ hp => taint_agree h₁ h₂ hp) (by taint_decide)
+theorem expandKey_ct : ConstantTime isa (expandKeyC 96).pre (expandKeyC 96).pub expandKey :=
+  VG.Taint.constantTime (A := VG.X86.sseTaint) (ekTaint 96) (fun _ _ h₁ h₂ hp => ekTaint_agree h₁ h₂ hp) (by taint_decide)
 
 /-- Memory holding the arguments `0x1000, 16, 0x2000, 0x3000` at `0x8004`. -/
 def sat : State where
@@ -698,9 +526,9 @@ def sat : State where
 
 theorem expandKey_verified :
     Verified X86.target expandKey (Proof.Camellia.expandKeyScratchContract X86.abi 48 4) :=
-  Verified.of_correct (fun _ hs => expandKey_wp hs) expandKey_ct (by
+  Verified.of_correct (fun _ hs => expandKey_wp (by decide) mid_ok hs) expandKey_ct (by
     sig_implies [Proof.Camellia.expandKeyScratchContract, Proof.Camellia.expandKeyScratchSig,
-      Spec.Camellia.expandKeySig, Spec.Camellia.expandKeyPre, Spec.Camellia.expandKeyPost, expandKeyAes, expandKeyX86N,
+      Spec.Camellia.expandKeySig, Spec.Camellia.expandKeyPre, Spec.Camellia.expandKeyPost, expandKeyC, expandKeyX86N,
       X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
       [sat, arg, argAddr, Mem.readW, Mem.read] using sat)
 

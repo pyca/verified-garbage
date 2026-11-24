@@ -2,11 +2,13 @@ module
 
 public import VerifiedGarbage.Proof.Camellia.X86.Scrub
 public import VerifiedGarbage.Impl.Camellia.X86.Fn
+public import VerifiedGarbage.Proof.Camellia.X86.SseScrub
+public import VerifiedGarbage.Impl.Camellia.X86.SseFn
 public import VerifiedGarbage.Proof.Camellia.X86.AesNiWideScrub
 public import VerifiedGarbage.Impl.Camellia.X86.AesNiWideFn
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86.Print
-import VerifiedGarbage.Proof.Camellia.X86.CtrLit
+import VerifiedGarbage.Proof.Camellia.X86.SseLit
 import VerifiedGarbage.Proof.Camellia.X86.AesNiWideLit
 public import VerifiedGarbage.Proof.Variants.CamelliaCtr.X86
 
@@ -31,7 +33,7 @@ def artifacts : List Artifact := [
     code := Impl.Camellia.X86.AesNiWide.Fn.ctr
     verified := Proof.Camellia.X86.AesNiWide.Scrub.ctr_scrubbed },
   Spec.Camellia.ctrApi.artifact X86.target {
-    code := Impl.Camellia.X86.Fn.ctr
-    verified := Proof.Camellia.X86.Scrub.ctr_scrubbed }] ++ finals
+    code := Impl.Camellia.X86.Sse.Fn.ctr
+    verified := Proof.Camellia.X86.Sse.Scrub.ctr_scrubbed }] ++ finals
 
 end VG.Artifacts.CamelliaCtr.X86

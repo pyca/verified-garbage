@@ -41,11 +41,11 @@ of its working space's frame, and the frame's last doubleword, which
 nothing writes. -/
 def modeWords : List Nat := [1, 2, 3, 4, 5, 6, 7, 222]
 
-/-- And of the 2856 bytes of `vg_camellia_ctr_final` calling `ctrFramed`:
-the header of that call's frame, and what the baseline's leaves of its
-own. -/
+/-- And of the 1660 bytes of `vg_camellia_ctr_final` calling `ctrFramed`:
+the header of that call's frame, and that call's frame and
+`vg_camellia_ctr_final`'s own above it. -/
 def ctrFinalWords : List Nat :=
-  [472, 473, 474, 475, 476, 477, 478, 693, 694, 695, 696, 697, 698, 699, 700, 701, 702, 703, 704, 705]
+  [173, 174, 175, 176, 177, 178, 179, 394, 395, 396, 397, 398, 399, 400, 401, 402, 403, 404, 405, 406]
 
 /-- `Spec.Camellia.cbcDecryptChainedApi`'s function as emitted. -/
 def cbcDecryptChained : Prog isa :=

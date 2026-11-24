@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Camellia.X86.AesNiWideMaps
 public import VerifiedGarbage.Proof.Camellia.X86.AesNiCore
-public import VerifiedGarbage.Proof.Camellia.X86.ModeCore
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.X86.Sse
 import VerifiedGarbage.Proof.Framework.X86.SseDword
@@ -39,6 +38,28 @@ arguments, and its cipher `Spec.Camellia.cipher` or, for decryption,
 -/
 
 @[expose] public section
+
+/-! ## The directions -/
+
+section
+
+namespace VG.Proof.Camellia.X86
+
+open VG.Impl.Camellia.X86 (Dir)
+
+/-- The specification's direction. -/
+def specDir : Dir → Spec.Camellia.Direction
+  | .encrypt => .encrypt
+  | .decrypt => .decrypt
+
+/-- The cipher of the direction `d`. -/
+def dirCipher : Dir → Spec.Camellia.Subkeys → Spec.Cbc.Cipher
+  | .encrypt => Spec.Camellia.cipher
+  | .decrypt => Spec.Camellia.invCipher
+
+end VG.Proof.Camellia.X86
+
+end
 
 namespace VG.Proof.Camellia.X86.AesNiWide
 

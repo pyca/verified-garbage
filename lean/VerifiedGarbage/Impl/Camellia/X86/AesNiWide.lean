@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Camellia.X86.AesNi
-public import VerifiedGarbage.Impl.Camellia.X86.Crypt8
+public import VerifiedGarbage.Impl.Camellia.X86.Dir
 public import VerifiedGarbage.Impl.Modes.X86.Wide
 
 /-!
