@@ -20,9 +20,9 @@ from byte `P` of the text on, into the `r5` bytes at `r4`, where `r6` is
 whole blocks with `vg_aes_ctr32` (`cryptWhole`), then a new keystream block
 for the last bytes (`cryptTail`). The number of rounds is in `r8`.
 
-The pieces after the first (`cryptWholeG`, `cryptTailG`) also decrypt out
-of place (`to`): from the source `S` at `r4` to the destination `T` at
-`r6`, which are apart (`CrMode`); in place `S = T`. Out of place the call
+The pieces after the first (`cryptWholeG`, `cryptTailG`) also take two pointers
+(`to`), the source `S` in `r4` and destination `T` in `r6`. Their ranges
+can be identical or disjoint (`CrMode`). The two-pointer call
 of `vg_aes_ctr32_to` pushes 12 bytes below the stack pointer
 (`below12`), apart from everything else.
 -/
@@ -78,12 +78,12 @@ def crFrameG : Bool → BitVec 32 → BitVec 32 → BitVec 32 → BitVec 32 → 
     crFrameG false st w sp D n = crFrame st w sp D n := rfl
 
 /-- Where the source `S` and the destination `T` lie: the same in place;
-out of place, apart, with the 12 bytes below the stack pointer apart from
+with two pointers, identical or apart, with the 12 bytes below the stack pointer apart from
 everything. -/
 def CrMode : Bool → BitVec 32 → BitVec 32 → BitVec 32 → BitVec 32 → BitVec 32 → BitVec 32 → Nat → Prop
   | false, _, _, _, _, S, T, _ => S = T
   | true, c, st, w, sp, S, T, n =>
-    (⟨State.addr S, n⟩ : Region).Disjoint ⟨State.addr T, n⟩ ∧ 12 ≤ sp.toNat ∧
+    (S = T ∨ (⟨State.addr S, n⟩ : Region).Disjoint ⟨State.addr T, n⟩) ∧ 12 ≤ sp.toNat ∧
       (below12 sp).Disjoint ⟨State.addr c, 256⟩ ∧ (below12 sp).Disjoint ⟨State.addr st, 80⟩ ∧
       (below12 sp).Disjoint ⟨State.addr w, 2560⟩ ∧ (below12 sp).Disjoint ⟨State.addr S, n⟩ ∧
       (below12 sp).Disjoint ⟨State.addr T, n⟩

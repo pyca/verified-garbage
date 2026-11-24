@@ -51,6 +51,29 @@ pub unsafe fn vg_aes_gcm_seal_auto(_dit: verified_garbage_cpu::Dit<'_>, ctx: *co
     unsafe { crate::gcm::vg_aes_gcm_seal(ctx, rounds, nonce, nonce_len, aad, aad_len, data, len, tag) }
 }
 
+/// AES-GCM authenticated encryption (NIST SP 800-38D §7.1), with the key context, public rounds, IV and additional data of `vg_aes_gcm_seal`. Encrypts the initial `len` bytes at `src` into `dst` and writes the 16-byte tag to `tag`. As for `vg_aes_gcm_seal`, callers must use a fresh nonce for each encryption under a key and enforce the GCM input length limits (§5.2.1.1). Only pointers, lengths and the round count may affect timing. Contract: `VG.Spec.Gcm.sealContiguousContract`.
+///
+/// It runs `vg_aes_gcm_seal_contiguous`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `src` must be valid for reads of `len` bytes, and `dst` for reads and writes of `len` bytes. The two pointers must be identical or their regions disjoint.
+/// * `tag` must be valid for reads and writes of 16 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `dst` and `tag` must not overlap each other, `ctx`, `nonce`, `aad`, `src` when distinct from `dst` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `src` when distinct from `dst`, `dst` and `tag` may overlap the 2608 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_aes_gcm_seal_contiguous_auto(_dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::gcm::vg_aes_gcm_seal_contiguous(ctx, rounds, nonce, nonce_len, aad, aad_len, src, dst, len, tag) }
+}
+
 /// AES-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, returns 1 if `tag_len` is between 4 and 16 and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then decrypted the ciphertext in place; otherwise returns 0, and the bytes at `data` are unchanged. The tags are compared without a branch.
 ///
 /// The function checks no other length: GCM requires a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of ciphertext and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
