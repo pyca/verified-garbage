@@ -145,4 +145,19 @@ def kp : Reg := .a1
 def addRoundKey : List Instr :=
   (List.range 8).flatMap fun j => [.load .d t0 kp (8 * j), xorR (q j) (q j) t0]
 
+/-- ShiftRows exchanges the upper halves of rows two and three with a delta swap. -/
+def srWordFast (x : Reg) : List Instr :=
+  [shrI t0 x 4,andR t0 t0 (m 2),shlI t1 x 12,andR t1 t1 (m 3),
+   andR x x (m 1),xorR x x t0,xorR x x t1] ++ swapIn x 5 8
+def shiftFast : List Instr :=
+  loadMasks srSlot (srMasks.filter fun x => x.1 == 1 || x.1 == 2 || x.1 == 3 || x.1 == 5) ++
+    (List.range 8).flatMap fun j => srWordFast (q j)
+/-- Add the round key while moving the eight MixColumns outputs to the next round. -/
+def mixAdd : List Instr := rorI u7 (q 7) 16 ++ [xorR u7 u7 (q 7)] ++
+  (List.range 8).flatMap mcWord ++
+  (List.range 4).flatMap fun i =>
+    let j := 7 - 2*i
+    [.load .d .t3 kp (8*j),.load .d .t4 kp (8*(j-1)),
+     xorR (q j) (mcOut j) .t3,xorR (q (j-1)) (mcOut (j-1)) .t4]
+
 end VG.Impl.Aes.RISCV64

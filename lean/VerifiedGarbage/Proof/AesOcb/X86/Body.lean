@@ -26,7 +26,7 @@ import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Aes.X86.AesNi.BlocksMain
 import VerifiedGarbage.Proof.AesCbc.X86.Decrypt
-import VerifiedGarbage.Proof.CmacAes.X86.UpdateCorrect
+import VerifiedGarbage.Proof.Aes.X86.Chain
 public import VerifiedGarbage.Proof.Aes.X86.AesNi.BlocksLoop
 
 /-! ### `AesOcb.X86.RestTag`, which this module and modules that import it used -/
@@ -1807,7 +1807,7 @@ open VG.Proof.Aes.X86 (in_rd reg32)
 open VG.Proof.Aes.X86.AesNi (Keys DKeys XFrame aes_ok aesDec_ok st st_ext st_toList ea_at imcKeys_ok dKeys_of_imc
   ImcSetup ImcDone ImcInv byte_roundKey getD_ofFn getD_st
   ofInt_natCast)
-open VG.Proof.CmacAes.X86 (st_getD st_readW)
+open VG.Proof.Aes.X86.Chain (st_getD st_readW)
 open VG.Impl.AesGcm.X86 (at_ imm slot)
 open VG.Proof.AesGcm.X86 (w64 w64_add slotv slotv_eq runBlock_app_of toNat_ofNat32 toNat_add32 covers_off in_off
   in_left toNat_w64 add_ofNat_assoc32)
@@ -2600,7 +2600,7 @@ theorem imcNi_ok {t : State} (E : Env p t) {w : List Byte}
         exact (L.k_w' (by decide)).sub_left (Region.sub_prefix (by decide)) }
   obtain hb := L.rounds_le
   obtain hK : Keys p.R w (s.withRegions rd wr) := by
-    obtain k := Proof.CmacAes.X86.niKeys (s := s.withRegions rd wr) (P := p.K) (nr := p.R) (by omega_using [hb])
+    obtain k := Proof.Aes.X86.Chain.niKeys (s := s.withRegions rd wr) (P := p.K) (nr := p.R) (by omega_using [hb])
       (by omega_using [hKw]) (by rw [State.withRegions_gpr]; exact ax) List.mem_cons_self
     rw [State.withRegions_mem, mm] at k
     rw [← hw]; exact k

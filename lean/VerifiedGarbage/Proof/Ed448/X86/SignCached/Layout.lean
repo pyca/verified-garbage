@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.X86.Shake.Entry
+public import VerifiedGarbage.Proof.Ed448.X86.Shake.Tbl
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Sha512.X86.Lit
@@ -22,7 +23,8 @@ are its separation and bounds, and `kit` the layout facts the calls need.
 namespace VG.Proof.Ed448.X86.SignCached
 
 open VG VG.X86
-open VG.Proof.Ed448.X86.Shake (base ARGS RET Kit SCR)
+open VG.Proof.Ed448.X86.Shake (base ARGS RET Kit SCR TblIn)
+open VG.Impl.Ed448.X86 (combSym)
 
 abbrev OUT (s : State) : Region := ⟨(arg s 0).setWidth 64, 114⟩
 abbrev SEED (s : State) : Region := ⟨(arg s 1).setWidth 64, 57⟩
@@ -30,7 +32,9 @@ abbrev PK (s : State) : Region := ⟨(arg s 2).setWidth 64, 57⟩
 abbrev CTX (s : State) : Region := ⟨(arg s 3).setWidth 64, (arg s 4).toNat⟩
 abbrev MSG (s : State) : Region := ⟨(arg s 5).setWidth 64, (arg s 6).toNat⟩
 
-def scRd (s : State) : List Region := [SEED s, PK s, CTX s, MSG s, ⟨argAddr s 0, 32⟩]
+/-- The inputs, the arguments and the comb's tables (which `vg_ed448_scalar_base` reads). -/
+def scRd (s : State) : List Region :=
+  [SEED s, PK s, CTX s, MSG s, ⟨argAddr s 0, 32⟩, TblR ((s.syms combSym).setWidth 64)]
 def scWr (s : State) : List Region := [OUT s, ⟨(arg s 7).setWidth 64, 8192⟩]
 
 def scLocal : Contract isa where
@@ -55,13 +59,14 @@ def scLocal : Contract isa where
       (arg s 7).toNat + 8192 ≤ 2 ^ 32 ∧ 280 ≤ (s.gpr .esp).toNat ∧ (s.gpr .esp).toNat + 36 ≤ 2 ^ 32 ∧
       Spec.Ed448.bytesAt s.mem ((arg s 2).setWidth 64) 57 =
         Spec.Ed448.publicKey (Spec.Ed448.bytesAt s.mem ((arg s 1).setWidth 64) 57) ∧
-      (arg s 4).toNat ≤ 255
+      (arg s 4).toNat ≤ 255 ∧ CombHeld s [out, scr, stk]
   post s t := Spec.Ed448.bytesAt t.mem ((arg s 0).setWidth 64) 114 = Spec.Ed448.sign
     (Spec.Ed448.bytesAt s.mem ((arg s 1).setWidth 64) 57)
     (Spec.Ed448.bytesAt s.mem ((arg s 3).setWidth 64) (arg s 4).toNat)
     (Spec.Ed448.bytesAt s.mem ((arg s 5).setWidth 64) (arg s 6).toNat)
   pub s t := s.gpr .esp = t.gpr .esp ∧ arg s 0 = arg t 0 ∧ arg s 1 = arg t 1 ∧ arg s 2 = arg t 2 ∧
-    arg s 3 = arg t 3 ∧ arg s 4 = arg t 4 ∧ arg s 5 = arg t 5 ∧ arg s 6 = arg t 6 ∧ arg s 7 = arg t 7
+    arg s 3 = arg t 3 ∧ arg s 4 = arg t 4 ∧ arg s 5 = arg t 5 ∧ arg s 6 = arg t 6 ∧ arg s 7 = arg t 7 ∧
+    s.syms combSym = t.syms combSym
 
 structure Facts (s : State) : Prop where
   os : (OUT s).Disjoint (SEED s)
@@ -94,11 +99,12 @@ structure Facts (s : State) : Prop where
   key : Spec.Ed448.bytesAt s.mem ((arg s 2).setWidth 64) 57 =
     Spec.Ed448.publicKey (Spec.Ed448.bytesAt s.mem ((arg s 1).setWidth 64) 57)
   ctxlen : (arg s 4).toNat ≤ 255
+  held : CombHeld s [OUT s, SCR (arg s 7), VG.X86.below (s.gpr .esp) 280]
 
 theorem facts {s : State} (h : scLocal.pre s) : Facts s := by
   obtain ⟨_, _, os, op, ox, om, oa, oc, ko, ro, sc, pc, xc, mc, ac, rc, ks, kp, kx, km, kc,
-    a, b, c, d, e, f, g, i, j, k⟩ := h
-  exact ⟨os, op, ox, om, oa, oc, ko, ro, sc, pc, xc, mc, ac, rc, ks, kp, kx, km, kc, a, b, c, d, e, f, g, i, j, k⟩
+    a, b, c, d, e, f, g, i, j, k, l⟩ := h
+  exact ⟨os, op, ox, om, oa, oc, ko, ro, sc, pc, xc, mc, ac, rc, ks, kp, kx, km, kc, a, b, c, d, e, f, g, i, j, k, l⟩
 
 theorem seed_in (s : State) : SEED s ∈ scRd s := List.mem_cons_self
 theorem pk_in (s : State) : PK s ∈ scRd s := List.mem_cons_of_mem _ List.mem_cons_self
@@ -109,6 +115,7 @@ theorem msg_in (s : State) : MSG s ∈ scRd s :=
 theorem args_in (s : State) : ARGS s 8 ∈ scRd s :=
   List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _
     List.mem_cons_self)))
+theorem tbl_in (s : State) : TblR ((s.syms combSym).setWidth 64) ∈ scRd s := by simp [scRd]
 theorem out_in (s : State) : OUT s ∈ scWr s := List.mem_cons_self
 theorem scr_in (s : State) : SCR (arg s 7) ∈ scWr s := List.mem_cons_of_mem _ List.mem_cons_self
 
@@ -120,13 +127,18 @@ theorem kit {s : State} (h : Facts s) : Kit (base s) (arg s 7) 8 (scRd s) (scWr 
     exacts [h.ko, h.kc]
   · intro r hr R hR
     simp only [scRd, scWr, List.mem_cons, List.not_mem_nil, or_false] at hr hR
-    rcases hR with rfl | rfl <;> rcases hr with rfl | rfl | rfl | rfl | rfl
-    exacts [h.os.symm, h.op.symm, h.ox.symm, h.om.symm, h.oa.symm, h.sc, h.pc, h.xc, h.mc, h.ac]
+    rcases hR with rfl | rfl <;> rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
+    exacts [h.os.symm, h.op.symm, h.ox.symm, h.om.symm, h.oa.symm, h.held.2.2 _ (by simp), h.sc, h.pc, h.xc, h.mc, h.ac,
+      h.held.2.2 _ (by simp)]
   · intro r hr
     simp only [scRd, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl | rfl
+    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
     exacts [h.ks.symm, h.kp.symm, h.kx.symm, h.km.symm,
-      Shake.args_stack (n := 8) h.below (by have := h.above; omega_using [this]) (by decide)]
+      Shake.args_stack (n := 8) h.below (by have := h.above; omega_using [this]) (by decide), h.held.2.2 _ (by simp)]
+
+/-- The comb's tables, among the inputs. -/
+theorem tblIn {s : State} (h : Facts s) : TblIn (s.syms combSym) (scRd s) s.mem :=
+  ⟨h.held.2.1, tbl_in s, h.held.1⟩
 
 theorem ret_out {s : State} (h : Facts s) : ∀ R ∈ scWr s, (RET s).Disjoint R := by
   intro R hR

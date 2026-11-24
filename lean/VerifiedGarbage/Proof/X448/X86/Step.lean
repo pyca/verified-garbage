@@ -55,25 +55,10 @@ theorem carryRaw_ok {s : State} {rb : Reg} {d : Nat} {a : Addr}
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, RegUpd.gpr_setFlags, hr.2.1, hr.2.2, ite_false]
 
-/-- Load a coefficient and propagate its carry. -/
-def carryBlock (o a i : Nat) : List Instr :=
-  [ld .eax (a + 4 * i)] ++ VG.Impl.X448.X86.carryStep .edi (o + 4 * i)
-
-theorem carryStep_ok {s : State} {base : Addr} (hs : Scr s base) {o a i : Nat}
-    (ho : o + 4 * i + 4 ≤ 4096) (ha : a + 4 * i + 4 ≤ 4096)
-    (hb : (word s.mem base (a + 4 * i)).toNat + (s.gpr .ebx).toNat < 2 ^ 32) :
-    let v := (word s.mem base (a + 4 * i)).toNat + (s.gpr .ebx).toNat
-    WP isa (.block (carryBlock o a i)) s fun t =>
-      (t.gpr .ebx).toNat = v / radix ∧
-      t.mem = s.mem.writeW (off base (o + 4 * i)) (BitVec.ofNat 32 (v % radix)) ∧
-      Keeps [.eax, .ebx, .edx] s t := by
-  intro v
-  unfold carryBlock
-  refine load_ok hs (by omega_using [ha]) fun t ht => ?_
-  have ts := hs.of_upd ht (by decide)
-  refine WP.mono (carryRaw_ok (by decide) (ts.ea (by omega_using [ho])) (ts.write (by omega_using [ho]))
-    (by rw [ht.gpr, ht.other .ebx (by decide)]; exact hb)) fun u ⟨uc, um, uk⟩ => ?_
-  rw [ht.gpr, ht.other .ebx (by decide)] at uc um
-  exact ⟨uc, by rw [um, ht.mem], (ht.rest (by decide)).trans uk⟩
+theorem zeroCarry_ok (s : State) :
+    WP isa (.block [.mov .ebx (.imm 0)]) s fun t =>
+      t.gpr .ebx = 0 ∧ t.mem = s.mem ∧ Keeps [.eax, .ebx, .edx] s t := by
+  refine wp_mov rfl fun t ht => WP.block_nil
+    ⟨ht.gpr, ht.mem, ht.rest (by decide)⟩
 
 end VG.Proof.X448.X86

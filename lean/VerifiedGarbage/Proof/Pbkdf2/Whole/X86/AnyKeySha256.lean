@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.AnyKeyEntry
 public import VerifiedGarbage.Proof.Hmac.Contract
+public import VerifiedGarbage.Impl.Hmac.X86
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Sha224
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Sha256
 import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Instances
@@ -77,15 +78,20 @@ theorem sha256_anySp (v : Backend) :
       v.F.hmacInitAny).all (fun i => !isa.writesSp i) = true :=
   withStackScratchWiped_spSafe (by rw [all_writesSp_eq]; exact sha256_anyNoEsp v)
 
-/-- `vg_hmac_sha256_init` with the backend `v`: `init` for a key of at most a
-block, or (cold) for any key, wiped. -/
+/-- `vg_hmac_sha256_init` with the backend `v`, before its cleanup
+(`Impl.Hmac.X86.Fn.sha256InitBody`): `init` for a key of at most a block in a
+frame of the working space its code uses, which it zeroes, or (cold) for any
+key, in its own. -/
 theorem sha256_initF (v : Backend) :
-    Verified X86.target (initCode Spec.Hmac.sha256I v.M.hmacInit v.F) (Spec.Hmac.sha256I.initAnyKeyContract X86.abi (76 + anyFrame Spec.Hmac.sha256I)) :=
-  initCode_verified (Md.X86.initFramed v.hmacInit Proof.Hmac.sha256_local Md.X86.sha256_initFrameSat (Md.X86.noEsp_of v.initNoSp) v.initStack)
-    (sha256_anyFramed v) (by decide) sha256_anyFrameSat
+    Verified X86.target (Impl.Hmac.X86.Fn.sha256InitBody v.M v.F)
+      (Spec.Hmac.sha256I.initAnyKeyContract X86.abi (76 + anyFrame Spec.Hmac.sha256I)) :=
+  initEntry_verified (I := Spec.Hmac.sha256I)
+    (initFramedWipedW 24 48 v.hmacInitFit Proof.Hmac.sha256_local Md.X86.sha256_initFitSat (Md.X86.noEsp_of v.initNoSp) v.initStack)
+    (sha256_anyFramed v) (by decide) (by decide) (by decide) sha256_anyFrameSat
 
-theorem sha256_initSp (v : Backend) : (initCode Spec.Hmac.sha256I v.M.hmacInit v.F).all (fun i => !isa.writesSp i) = true :=
-  initCode_spSafe v.initSp (by decide +kernel) (sha256_anySp v)
+theorem sha256_initSp (v : Backend) :
+    (Impl.Hmac.X86.Fn.sha256InitBody v.M v.F).all (fun i => !isa.writesSp i) = true :=
+  initEntry_spSafe (withStackScratchWiped_spSafe v.initSp) (sha256_anySp v)
 
 /-! ## sha224 -/
 
@@ -135,14 +141,19 @@ theorem sha224_anySp (v : Backend) :
       v.F224.hmacInitAny).all (fun i => !isa.writesSp i) = true :=
   withStackScratchWiped_spSafe (by rw [all_writesSp_eq]; exact sha224_anyNoEsp v)
 
-/-- `vg_hmac_sha224_init` with the backend `v`: `init` for a key of at most a
-block, or (cold) for any key, wiped. -/
+/-- `vg_hmac_sha224_init` with the backend `v`, before its cleanup
+(`Impl.Hmac.X86.Fn.sha256InitBody`): `init` for a key of at most a block in a
+frame of the working space its code uses, which it zeroes, or (cold) for any
+key, in its own. -/
 theorem sha224_initF (v : Backend) :
-    Verified X86.target (initCode Spec.Hmac.sha224I v.M224.hmacInit v.F224) (Spec.Hmac.sha224I.initAnyKeyContract X86.abi (76 + anyFrame Spec.Hmac.sha224I)) :=
-  initCode_verified (Md.X86.initFramed v.hmacInit224 Proof.Hmac.sha224_local Md.X86.sha224_initFrameSat (Md.X86.noEsp_of v.init224NoSp) v.init224Stack)
-    (sha224_anyFramed v) (by decide) sha224_anyFrameSat
+    Verified X86.target (Impl.Hmac.X86.Fn.sha256InitBody v.M224 v.F224)
+      (Spec.Hmac.sha224I.initAnyKeyContract X86.abi (76 + anyFrame Spec.Hmac.sha224I)) :=
+  initEntry_verified (I := Spec.Hmac.sha224I)
+    (initFramedWipedW 24 48 v.hmacInit224Fit Proof.Hmac.sha224_local Md.X86.sha224_initFitSat (Md.X86.noEsp_of v.init224NoSp) v.init224Stack)
+    (sha224_anyFramed v) (by decide) (by decide) (by decide) sha224_anyFrameSat
 
-theorem sha224_initSp (v : Backend) : (initCode Spec.Hmac.sha224I v.M224.hmacInit v.F224).all (fun i => !isa.writesSp i) = true :=
-  initCode_spSafe v.init224Sp (by decide +kernel) (sha224_anySp v)
+theorem sha224_initSp (v : Backend) :
+    (Impl.Hmac.X86.Fn.sha256InitBody v.M224 v.F224).all (fun i => !isa.writesSp i) = true :=
+  initEntry_spSafe (withStackScratchWiped_spSafe v.init224Sp) (sha224_anySp v)
 
 end VG.Proof.Pbkdf2.Whole.X86.Any

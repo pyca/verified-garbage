@@ -8,7 +8,7 @@ public import VerifiedGarbage.Impl.Cast5.X86.Ssse3Wide
 Key expansion (RFC 2144 §2.4) makes 320 look-ups in S5 to S8: each of its 64
 lines, which give a quadruple of `x` or `z` or a subkey, is the exclusive or
 of five. The baseline (`Impl/Cast5/X86.lean`) makes them four at a time by a
-scan of the static table `VG_CAST5_S5678`, 80 scans a key.
+scan of the static table `VG_CAST5_S5678_STEPS`, 80 scans a key.
 
 A look-up by `pshufb` reads a plane's sixteen rows for the sixteen bytes of
 a register at once (`Ssse3.lean`), and the sixteen bytes of `x`, or of `z`,

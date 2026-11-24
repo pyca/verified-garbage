@@ -35,7 +35,7 @@ without secret residue (`X86.Scrub.verifiedScrubbedAll`: `seal_scrubbed`,
 `open_scrubbed`). What that needs of the code (`scrubFSide`) holds
 whatever the implementation of AES (`seal_scrub`, `open_scrub`): from CCM's
 code with a stub, whose code is `.block []`, which the kernel evaluates once
-for each way `vg_cmac_aes_update` chains (`Impl.CmacAes.X86.hardware`:
+for each way `vg_cmac_aes_update` chains (`Impl.Aes.X86.Chain.choose`:
 `seal_side`, `sealNi_side`, …), the implementation's own facts
 (`Ctr32Impl.scrub`, its stack), and `Fill`, which `fill_calls` proves by
 walking only CCM's code.
@@ -96,23 +96,32 @@ open Impl.StackScratch.X86 (withStackScratch)
 open Proof.Aes.X86 (Ctr32Impl)
 
 /-- AES in counter mode with no code, by a name that chooses the chaining
-of `vg_cmac_aes_update` by calls (`Impl.CmacAes.X86.hardware`). -/
+of `vg_cmac_aes_update` by calls (`Impl.Aes.X86.Chain.choose`). -/
 def stubCtr : Impl.Aes.X86.Ctr32 := ⟨"", .block []⟩
 
 /-- `stubCtr` by the name that chooses the chaining with AES-NI. -/
 def stubCtrNi : Impl.Aes.X86.Ctr32 := ⟨"vg_aes_ctr32_to_aesni", .block []⟩
 
+/-- `stubCtr` by the name that chooses the chaining with SSSE3. -/
+def stubCtrSsse3 : Impl.Aes.X86.Ctr32 := ⟨"vg_aes_ctr32_to_ssse3", .block []⟩
+
 -- CCM's own code, with the stubs, as literals for the kernel's evaluation.
 materialize_code sealStub := withStackScratch 2608 10 (Impl.AesCcm.X86.«seal» stubCtr "")
 materialize_code sealStubNi := withStackScratch 2608 10 (Impl.AesCcm.X86.«seal» stubCtrNi "")
+materialize_code sealStubSsse3 := withStackScratch 2608 10 (Impl.AesCcm.X86.«seal» stubCtrSsse3 "")
 materialize_code openStub := withStackScratch 2608 10 (Impl.AesCcm.X86.«open» stubCtr "")
 materialize_code openStubNi := withStackScratch 2608 10 (Impl.AesCcm.X86.«open» stubCtrNi "")
+materialize_code openStubSsse3 := withStackScratch 2608 10 (Impl.AesCcm.X86.«open» stubCtrSsse3 "")
 
 theorem seal_side : scrubFSide (withStackScratch 2608 10 (Impl.AesCcm.X86.«seal» stubCtr "")) [] 2668 = true := by
   lit_decide
 
 theorem sealNi_side :
     scrubFSide (withStackScratch 2608 10 (Impl.AesCcm.X86.«seal» stubCtrNi "")) [] 2668 = true := by
+  lit_decide
+
+theorem sealSsse3_side :
+    scrubFSide (withStackScratch 2608 10 (Impl.AesCcm.X86.«seal» stubCtrSsse3 "")) [] 2668 = true := by
   lit_decide
 
 theorem open_side : scrubFSide (withStackScratch 2608 10 (Impl.AesCcm.X86.«open» stubCtr "")) [] 2668 = true := by
@@ -122,43 +131,67 @@ theorem openNi_side :
     scrubFSide (withStackScratch 2608 10 (Impl.AesCcm.X86.«open» stubCtrNi "")) [] 2668 = true := by
   lit_decide
 
+theorem openSsse3_side :
+    scrubFSide (withStackScratch 2608 10 (Impl.AesCcm.X86.«open» stubCtrSsse3 "")) [] 2668 = true := by
+  lit_decide
+
 theorem seal_fill (c : Impl.Aes.X86.Ctr32) (sfx : String) (hc : calleeSide c.code 0 = true)
-    (h : ¬Impl.CmacAes.X86.hardware c = true) :
+    (h : ¬Impl.Aes.X86.Chain.isAesNi c.name = true)
+    (h' : ¬Impl.Aes.X86.Chain.isSsse3 c.name = true) :
     Fill 0 (withStackScratch 2608 10 (Impl.AesCcm.X86.«seal» stubCtr ""))
       (withStackScratch 2608 10 (Impl.AesCcm.X86.«seal» c sfx)) := by
   fill_calls
 
 theorem sealNi_fill (c : Impl.Aes.X86.Ctr32) (sfx : String) (hc : calleeSide c.code 0 = true)
-    (h : Impl.CmacAes.X86.hardware c = true) :
+    (h : Impl.Aes.X86.Chain.isAesNi c.name = true) :
     Fill 0 (withStackScratch 2608 10 (Impl.AesCcm.X86.«seal» stubCtrNi ""))
       (withStackScratch 2608 10 (Impl.AesCcm.X86.«seal» c sfx)) := by
   fill_calls
 
+theorem sealSsse3_fill (c : Impl.Aes.X86.Ctr32) (sfx : String) (hc : calleeSide c.code 0 = true)
+    (h : ¬Impl.Aes.X86.Chain.isAesNi c.name = true)
+    (h' : Impl.Aes.X86.Chain.isSsse3 c.name = true) :
+    Fill 0 (withStackScratch 2608 10 (Impl.AesCcm.X86.«seal» stubCtrSsse3 ""))
+      (withStackScratch 2608 10 (Impl.AesCcm.X86.«seal» c sfx)) := by
+  fill_calls
+
 theorem open_fill (c : Impl.Aes.X86.Ctr32) (sfx : String) (hc : calleeSide c.code 0 = true)
-    (h : ¬Impl.CmacAes.X86.hardware c = true) :
+    (h : ¬Impl.Aes.X86.Chain.isAesNi c.name = true)
+    (h' : ¬Impl.Aes.X86.Chain.isSsse3 c.name = true) :
     Fill 0 (withStackScratch 2608 10 (Impl.AesCcm.X86.«open» stubCtr ""))
       (withStackScratch 2608 10 (Impl.AesCcm.X86.«open» c sfx)) := by
   fill_calls
 
 theorem openNi_fill (c : Impl.Aes.X86.Ctr32) (sfx : String) (hc : calleeSide c.code 0 = true)
-    (h : Impl.CmacAes.X86.hardware c = true) :
+    (h : Impl.Aes.X86.Chain.isAesNi c.name = true) :
     Fill 0 (withStackScratch 2608 10 (Impl.AesCcm.X86.«open» stubCtrNi ""))
+      (withStackScratch 2608 10 (Impl.AesCcm.X86.«open» c sfx)) := by
+  fill_calls
+
+theorem openSsse3_fill (c : Impl.Aes.X86.Ctr32) (sfx : String) (hc : calleeSide c.code 0 = true)
+    (h : ¬Impl.Aes.X86.Chain.isAesNi c.name = true)
+    (h' : Impl.Aes.X86.Chain.isSsse3 c.name = true) :
+    Fill 0 (withStackScratch 2608 10 (Impl.AesCcm.X86.«open» stubCtrSsse3 ""))
       (withStackScratch 2608 10 (Impl.AesCcm.X86.«open» c sfx)) := by
   fill_calls
 
 /-- `scrubFSide` of `vg_aes_ccm_seal`, whatever the implementation of AES. -/
 theorem seal_scrub (v : Ctr32Impl) :
     scrubFSide (withStackScratch 2608 10 (Impl.AesCcm.X86.«seal» v.callee v.suffix)) [] 2668 = true := by
-  by_cases h : Impl.CmacAes.X86.hardware v.callee = true
+  by_cases h : Impl.Aes.X86.Chain.isAesNi v.callee.name = true
   · exact scrubFSide_of_fill (sealNi_fill _ _ (calleeSide_of_eq v.stack v.scrub) h) sealNi_side
-  · exact scrubFSide_of_fill (seal_fill _ _ (calleeSide_of_eq v.stack v.scrub) h) seal_side
+  by_cases h' : Impl.Aes.X86.Chain.isSsse3 v.callee.name = true
+  · exact scrubFSide_of_fill (sealSsse3_fill _ _ (calleeSide_of_eq v.stack v.scrub) h h') sealSsse3_side
+  · exact scrubFSide_of_fill (seal_fill _ _ (calleeSide_of_eq v.stack v.scrub) h h') seal_side
 
 /-- `scrubFSide` of `vg_aes_ccm_open`, whatever the implementation of AES. -/
 theorem open_scrub (v : Ctr32Impl) :
     scrubFSide (withStackScratch 2608 10 (Impl.AesCcm.X86.«open» v.callee v.suffix)) [] 2668 = true := by
-  by_cases h : Impl.CmacAes.X86.hardware v.callee = true
+  by_cases h : Impl.Aes.X86.Chain.isAesNi v.callee.name = true
   · exact scrubFSide_of_fill (openNi_fill _ _ (calleeSide_of_eq v.stack v.scrub) h) openNi_side
-  · exact scrubFSide_of_fill (open_fill _ _ (calleeSide_of_eq v.stack v.scrub) h) open_side
+  by_cases h' : Impl.Aes.X86.Chain.isSsse3 v.callee.name = true
+  · exact scrubFSide_of_fill (openSsse3_fill _ _ (calleeSide_of_eq v.stack v.scrub) h h') openSsse3_side
+  · exact scrubFSide_of_fill (open_fill _ _ (calleeSide_of_eq v.stack v.scrub) h h') open_side
 
 /-! ## The functions as emitted -/
 

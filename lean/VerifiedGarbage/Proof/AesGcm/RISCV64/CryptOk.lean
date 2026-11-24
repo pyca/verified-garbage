@@ -55,8 +55,9 @@ omit L in
 theorem Alias.take {o : Bool} {S D : Addr} {n k : Nat} (h : Alias o S D n) (hk : k ≤ n) : Alias o S D k := by
   cases o
   · exact h
-  · exact (show (⟨S, n⟩ : Region).Disjoint ⟨D, n⟩ from h).sub_left (Region.sub_prefix hk)
-      |>.sub_right (Region.sub_prefix hk)
+  · rcases h.buffers with eq | apart
+    · exact .inl eq
+    · exact .inr ((apart.sub_left (Region.sub_prefix hk)).sub_right (Region.sub_prefix hk))
 
 omit L in
 /-- From byte `j` on, the source and destination alias as the whole do. -/
@@ -64,15 +65,9 @@ theorem Alias.drop {o : Bool} {S D : Addr} {n j k : Nat} (h : Alias o S D n) (hj
     Alias o (S + BitVec.ofNat 64 j) (D + BitVec.ofNat 64 j) k := by
   cases o
   · exact congrArg (· + BitVec.ofNat 64 j) (show S = D from h)
-  · exact (show (⟨S, n⟩ : Region).Disjoint ⟨D, n⟩ from h).sub_left (Offset.sub_base _ hjk)
-      |>.sub_right (Offset.sub_base _ hjk)
-
-omit L in
-theorem Alias.buffers {o : Bool} {S D : Addr} {n : Nat} (h : Alias o S D n) :
-    S = D ∨ (⟨S, n⟩ : Region).Disjoint ⟨D, n⟩ := by
-  cases o
-  · exact Or.inl h
-  · exact Or.inr h
+  · rcases h.buffers with rfl | apart
+    · exact .inl rfl
+    · exact .inr ((apart.sub_left (Offset.sub_base _ hjk)).sub_right (Offset.sub_base _ hjk))
 
 omit L in
 /-- In place, `S = D`. -/

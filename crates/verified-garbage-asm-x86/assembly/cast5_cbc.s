@@ -619,64 +619,87 @@ vg_cast5_cbc_encrypt_chained:
 2:
 	mov eax, DWORD PTR [esp]
 	.byte 0x81, 192
-	.long {VG_CAST5_S1234}
+	.long {VG_CAST5_S1234_STEPS}
 	pop ecx
 	mov ecx, eax
-	mov edx, 64
-	pxor xmm1, xmm1
-	pxor xmm2, xmm2
-	mov eax, 1
-	movd xmm3, eax
-	pshufd xmm3, xmm3, 0
+	mov edx, 16
 	mov eax, -1
-	movd xmm6, eax
-	pshufd xmm6, xmm6, 0
+	movd xmm5, eax
+	pshufd xmm5, xmm5, 0
+	movdqa xmm6, xmm0
+	pslld xmm6, 31
+	psrld xmm6, 31
+	paddd xmm6, xmm5
+	pxor xmm6, xmm5
+	movdqa xmm7, xmm0
+	pslld xmm7, 30
+	psrld xmm7, 31
+	paddd xmm7, xmm5
+	pxor xmm7, xmm5
+	psrld xmm0, 2
+	pxor xmm1, xmm1
 24:
-	movdqa xmm4, xmm0
-	pxor xmm4, xmm2
-	paddd xmm4, xmm6
-	psrld xmm4, 8
-	movdqa xmm7, xmm4
-	pslld xmm7, 8
-	por xmm4, xmm7
-	movdqu xmm5, XMMWORD PTR [ecx]
-	pand xmm5, xmm4
-	por xmm1, xmm5
-	paddd xmm2, xmm3
-	movdqa xmm4, xmm0
-	pxor xmm4, xmm2
-	paddd xmm4, xmm6
-	psrld xmm4, 8
-	movdqa xmm7, xmm4
-	pslld xmm7, 8
-	por xmm4, xmm7
-	movdqu xmm5, XMMWORD PTR [ecx+16]
-	pand xmm5, xmm4
-	por xmm1, xmm5
-	paddd xmm2, xmm3
-	movdqa xmm4, xmm0
-	pxor xmm4, xmm2
-	paddd xmm4, xmm6
-	psrld xmm4, 8
-	movdqa xmm7, xmm4
-	pslld xmm7, 8
-	por xmm4, xmm7
-	movdqu xmm5, XMMWORD PTR [ecx+32]
-	pand xmm5, xmm4
-	por xmm1, xmm5
-	paddd xmm2, xmm3
-	movdqa xmm4, xmm0
-	pxor xmm4, xmm2
-	paddd xmm4, xmm6
-	psrld xmm4, 8
-	movdqa xmm7, xmm4
-	pslld xmm7, 8
-	por xmm4, xmm7
-	movdqu xmm5, XMMWORD PTR [ecx+48]
-	pand xmm5, xmm4
-	por xmm1, xmm5
-	paddd xmm2, xmm3
-	add ecx, 64
+	movdqu xmm2, XMMWORD PTR [ecx]
+	movdqu xmm3, XMMWORD PTR [ecx+16]
+	pand xmm3, xmm6
+	pxor xmm2, xmm3
+	movdqu xmm3, XMMWORD PTR [ecx+32]
+	movdqu xmm4, XMMWORD PTR [ecx+48]
+	pand xmm4, xmm6
+	pxor xmm3, xmm4
+	pand xmm3, xmm7
+	pxor xmm2, xmm3
+	movdqa xmm3, xmm0
+	psraw xmm3, 15
+	pandn xmm3, xmm2
+	pxor xmm1, xmm3
+	paddd xmm0, xmm5
+	movdqu xmm2, XMMWORD PTR [ecx+64]
+	movdqu xmm3, XMMWORD PTR [ecx+80]
+	pand xmm3, xmm6
+	pxor xmm2, xmm3
+	movdqu xmm3, XMMWORD PTR [ecx+96]
+	movdqu xmm4, XMMWORD PTR [ecx+112]
+	pand xmm4, xmm6
+	pxor xmm3, xmm4
+	pand xmm3, xmm7
+	pxor xmm2, xmm3
+	movdqa xmm3, xmm0
+	psraw xmm3, 15
+	pandn xmm3, xmm2
+	pxor xmm1, xmm3
+	paddd xmm0, xmm5
+	movdqu xmm2, XMMWORD PTR [ecx+128]
+	movdqu xmm3, XMMWORD PTR [ecx+144]
+	pand xmm3, xmm6
+	pxor xmm2, xmm3
+	movdqu xmm3, XMMWORD PTR [ecx+160]
+	movdqu xmm4, XMMWORD PTR [ecx+176]
+	pand xmm4, xmm6
+	pxor xmm3, xmm4
+	pand xmm3, xmm7
+	pxor xmm2, xmm3
+	movdqa xmm3, xmm0
+	psraw xmm3, 15
+	pandn xmm3, xmm2
+	pxor xmm1, xmm3
+	paddd xmm0, xmm5
+	movdqu xmm2, XMMWORD PTR [ecx+192]
+	movdqu xmm3, XMMWORD PTR [ecx+208]
+	pand xmm3, xmm6
+	pxor xmm2, xmm3
+	movdqu xmm3, XMMWORD PTR [ecx+224]
+	movdqu xmm4, XMMWORD PTR [ecx+240]
+	pand xmm4, xmm6
+	pxor xmm3, xmm4
+	pand xmm3, xmm7
+	pxor xmm2, xmm3
+	movdqa xmm3, xmm0
+	psraw xmm3, 15
+	pandn xmm3, xmm2
+	pxor xmm1, xmm3
+	paddd xmm0, xmm5
+	add ecx, 256
 	sub edx, 1
 	jne 24b
 	movdqu XMMWORD PTR [esi], xmm1
@@ -758,64 +781,87 @@ vg_cast5_cbc_encrypt_chained:
 2:
 	mov eax, DWORD PTR [esp]
 	.byte 0x81, 192
-	.long {VG_CAST5_S1234}
+	.long {VG_CAST5_S1234_STEPS}
 	pop ecx
 	mov ecx, eax
-	mov edx, 64
-	pxor xmm1, xmm1
-	pxor xmm2, xmm2
-	mov eax, 1
-	movd xmm3, eax
-	pshufd xmm3, xmm3, 0
+	mov edx, 16
 	mov eax, -1
-	movd xmm6, eax
-	pshufd xmm6, xmm6, 0
+	movd xmm5, eax
+	pshufd xmm5, xmm5, 0
+	movdqa xmm6, xmm0
+	pslld xmm6, 31
+	psrld xmm6, 31
+	paddd xmm6, xmm5
+	pxor xmm6, xmm5
+	movdqa xmm7, xmm0
+	pslld xmm7, 30
+	psrld xmm7, 31
+	paddd xmm7, xmm5
+	pxor xmm7, xmm5
+	psrld xmm0, 2
+	pxor xmm1, xmm1
 25:
-	movdqa xmm4, xmm0
-	pxor xmm4, xmm2
-	paddd xmm4, xmm6
-	psrld xmm4, 8
-	movdqa xmm7, xmm4
-	pslld xmm7, 8
-	por xmm4, xmm7
-	movdqu xmm5, XMMWORD PTR [ecx]
-	pand xmm5, xmm4
-	por xmm1, xmm5
-	paddd xmm2, xmm3
-	movdqa xmm4, xmm0
-	pxor xmm4, xmm2
-	paddd xmm4, xmm6
-	psrld xmm4, 8
-	movdqa xmm7, xmm4
-	pslld xmm7, 8
-	por xmm4, xmm7
-	movdqu xmm5, XMMWORD PTR [ecx+16]
-	pand xmm5, xmm4
-	por xmm1, xmm5
-	paddd xmm2, xmm3
-	movdqa xmm4, xmm0
-	pxor xmm4, xmm2
-	paddd xmm4, xmm6
-	psrld xmm4, 8
-	movdqa xmm7, xmm4
-	pslld xmm7, 8
-	por xmm4, xmm7
-	movdqu xmm5, XMMWORD PTR [ecx+32]
-	pand xmm5, xmm4
-	por xmm1, xmm5
-	paddd xmm2, xmm3
-	movdqa xmm4, xmm0
-	pxor xmm4, xmm2
-	paddd xmm4, xmm6
-	psrld xmm4, 8
-	movdqa xmm7, xmm4
-	pslld xmm7, 8
-	por xmm4, xmm7
-	movdqu xmm5, XMMWORD PTR [ecx+48]
-	pand xmm5, xmm4
-	por xmm1, xmm5
-	paddd xmm2, xmm3
-	add ecx, 64
+	movdqu xmm2, XMMWORD PTR [ecx]
+	movdqu xmm3, XMMWORD PTR [ecx+16]
+	pand xmm3, xmm6
+	pxor xmm2, xmm3
+	movdqu xmm3, XMMWORD PTR [ecx+32]
+	movdqu xmm4, XMMWORD PTR [ecx+48]
+	pand xmm4, xmm6
+	pxor xmm3, xmm4
+	pand xmm3, xmm7
+	pxor xmm2, xmm3
+	movdqa xmm3, xmm0
+	psraw xmm3, 15
+	pandn xmm3, xmm2
+	pxor xmm1, xmm3
+	paddd xmm0, xmm5
+	movdqu xmm2, XMMWORD PTR [ecx+64]
+	movdqu xmm3, XMMWORD PTR [ecx+80]
+	pand xmm3, xmm6
+	pxor xmm2, xmm3
+	movdqu xmm3, XMMWORD PTR [ecx+96]
+	movdqu xmm4, XMMWORD PTR [ecx+112]
+	pand xmm4, xmm6
+	pxor xmm3, xmm4
+	pand xmm3, xmm7
+	pxor xmm2, xmm3
+	movdqa xmm3, xmm0
+	psraw xmm3, 15
+	pandn xmm3, xmm2
+	pxor xmm1, xmm3
+	paddd xmm0, xmm5
+	movdqu xmm2, XMMWORD PTR [ecx+128]
+	movdqu xmm3, XMMWORD PTR [ecx+144]
+	pand xmm3, xmm6
+	pxor xmm2, xmm3
+	movdqu xmm3, XMMWORD PTR [ecx+160]
+	movdqu xmm4, XMMWORD PTR [ecx+176]
+	pand xmm4, xmm6
+	pxor xmm3, xmm4
+	pand xmm3, xmm7
+	pxor xmm2, xmm3
+	movdqa xmm3, xmm0
+	psraw xmm3, 15
+	pandn xmm3, xmm2
+	pxor xmm1, xmm3
+	paddd xmm0, xmm5
+	movdqu xmm2, XMMWORD PTR [ecx+192]
+	movdqu xmm3, XMMWORD PTR [ecx+208]
+	pand xmm3, xmm6
+	pxor xmm2, xmm3
+	movdqu xmm3, XMMWORD PTR [ecx+224]
+	movdqu xmm4, XMMWORD PTR [ecx+240]
+	pand xmm4, xmm6
+	pxor xmm3, xmm4
+	pand xmm3, xmm7
+	pxor xmm2, xmm3
+	movdqa xmm3, xmm0
+	psraw xmm3, 15
+	pandn xmm3, xmm2
+	pxor xmm1, xmm3
+	paddd xmm0, xmm5
+	add ecx, 256
 	sub edx, 1
 	jne 25b
 	movdqu XMMWORD PTR [esi], xmm1
@@ -897,64 +943,87 @@ vg_cast5_cbc_encrypt_chained:
 2:
 	mov eax, DWORD PTR [esp]
 	.byte 0x81, 192
-	.long {VG_CAST5_S1234}
+	.long {VG_CAST5_S1234_STEPS}
 	pop ecx
 	mov ecx, eax
-	mov edx, 64
-	pxor xmm1, xmm1
-	pxor xmm2, xmm2
-	mov eax, 1
-	movd xmm3, eax
-	pshufd xmm3, xmm3, 0
+	mov edx, 16
 	mov eax, -1
-	movd xmm6, eax
-	pshufd xmm6, xmm6, 0
+	movd xmm5, eax
+	pshufd xmm5, xmm5, 0
+	movdqa xmm6, xmm0
+	pslld xmm6, 31
+	psrld xmm6, 31
+	paddd xmm6, xmm5
+	pxor xmm6, xmm5
+	movdqa xmm7, xmm0
+	pslld xmm7, 30
+	psrld xmm7, 31
+	paddd xmm7, xmm5
+	pxor xmm7, xmm5
+	psrld xmm0, 2
+	pxor xmm1, xmm1
 26:
-	movdqa xmm4, xmm0
-	pxor xmm4, xmm2
-	paddd xmm4, xmm6
-	psrld xmm4, 8
-	movdqa xmm7, xmm4
-	pslld xmm7, 8
-	por xmm4, xmm7
-	movdqu xmm5, XMMWORD PTR [ecx]
-	pand xmm5, xmm4
-	por xmm1, xmm5
-	paddd xmm2, xmm3
-	movdqa xmm4, xmm0
-	pxor xmm4, xmm2
-	paddd xmm4, xmm6
-	psrld xmm4, 8
-	movdqa xmm7, xmm4
-	pslld xmm7, 8
-	por xmm4, xmm7
-	movdqu xmm5, XMMWORD PTR [ecx+16]
-	pand xmm5, xmm4
-	por xmm1, xmm5
-	paddd xmm2, xmm3
-	movdqa xmm4, xmm0
-	pxor xmm4, xmm2
-	paddd xmm4, xmm6
-	psrld xmm4, 8
-	movdqa xmm7, xmm4
-	pslld xmm7, 8
-	por xmm4, xmm7
-	movdqu xmm5, XMMWORD PTR [ecx+32]
-	pand xmm5, xmm4
-	por xmm1, xmm5
-	paddd xmm2, xmm3
-	movdqa xmm4, xmm0
-	pxor xmm4, xmm2
-	paddd xmm4, xmm6
-	psrld xmm4, 8
-	movdqa xmm7, xmm4
-	pslld xmm7, 8
-	por xmm4, xmm7
-	movdqu xmm5, XMMWORD PTR [ecx+48]
-	pand xmm5, xmm4
-	por xmm1, xmm5
-	paddd xmm2, xmm3
-	add ecx, 64
+	movdqu xmm2, XMMWORD PTR [ecx]
+	movdqu xmm3, XMMWORD PTR [ecx+16]
+	pand xmm3, xmm6
+	pxor xmm2, xmm3
+	movdqu xmm3, XMMWORD PTR [ecx+32]
+	movdqu xmm4, XMMWORD PTR [ecx+48]
+	pand xmm4, xmm6
+	pxor xmm3, xmm4
+	pand xmm3, xmm7
+	pxor xmm2, xmm3
+	movdqa xmm3, xmm0
+	psraw xmm3, 15
+	pandn xmm3, xmm2
+	pxor xmm1, xmm3
+	paddd xmm0, xmm5
+	movdqu xmm2, XMMWORD PTR [ecx+64]
+	movdqu xmm3, XMMWORD PTR [ecx+80]
+	pand xmm3, xmm6
+	pxor xmm2, xmm3
+	movdqu xmm3, XMMWORD PTR [ecx+96]
+	movdqu xmm4, XMMWORD PTR [ecx+112]
+	pand xmm4, xmm6
+	pxor xmm3, xmm4
+	pand xmm3, xmm7
+	pxor xmm2, xmm3
+	movdqa xmm3, xmm0
+	psraw xmm3, 15
+	pandn xmm3, xmm2
+	pxor xmm1, xmm3
+	paddd xmm0, xmm5
+	movdqu xmm2, XMMWORD PTR [ecx+128]
+	movdqu xmm3, XMMWORD PTR [ecx+144]
+	pand xmm3, xmm6
+	pxor xmm2, xmm3
+	movdqu xmm3, XMMWORD PTR [ecx+160]
+	movdqu xmm4, XMMWORD PTR [ecx+176]
+	pand xmm4, xmm6
+	pxor xmm3, xmm4
+	pand xmm3, xmm7
+	pxor xmm2, xmm3
+	movdqa xmm3, xmm0
+	psraw xmm3, 15
+	pandn xmm3, xmm2
+	pxor xmm1, xmm3
+	paddd xmm0, xmm5
+	movdqu xmm2, XMMWORD PTR [ecx+192]
+	movdqu xmm3, XMMWORD PTR [ecx+208]
+	pand xmm3, xmm6
+	pxor xmm2, xmm3
+	movdqu xmm3, XMMWORD PTR [ecx+224]
+	movdqu xmm4, XMMWORD PTR [ecx+240]
+	pand xmm4, xmm6
+	pxor xmm3, xmm4
+	pand xmm3, xmm7
+	pxor xmm2, xmm3
+	movdqa xmm3, xmm0
+	psraw xmm3, 15
+	pandn xmm3, xmm2
+	pxor xmm1, xmm3
+	paddd xmm0, xmm5
+	add ecx, 256
 	sub edx, 1
 	jne 26b
 	movdqu XMMWORD PTR [esi], xmm1
@@ -1045,64 +1114,87 @@ vg_cast5_cbc_encrypt_chained:
 2:
 	mov eax, DWORD PTR [esp]
 	.byte 0x81, 192
-	.long {VG_CAST5_S1234}
+	.long {VG_CAST5_S1234_STEPS}
 	pop ecx
 	mov ecx, eax
-	mov edx, 64
-	pxor xmm1, xmm1
-	pxor xmm2, xmm2
-	mov eax, 1
-	movd xmm3, eax
-	pshufd xmm3, xmm3, 0
+	mov edx, 16
 	mov eax, -1
-	movd xmm6, eax
-	pshufd xmm6, xmm6, 0
+	movd xmm5, eax
+	pshufd xmm5, xmm5, 0
+	movdqa xmm6, xmm0
+	pslld xmm6, 31
+	psrld xmm6, 31
+	paddd xmm6, xmm5
+	pxor xmm6, xmm5
+	movdqa xmm7, xmm0
+	pslld xmm7, 30
+	psrld xmm7, 31
+	paddd xmm7, xmm5
+	pxor xmm7, xmm5
+	psrld xmm0, 2
+	pxor xmm1, xmm1
 29:
-	movdqa xmm4, xmm0
-	pxor xmm4, xmm2
-	paddd xmm4, xmm6
-	psrld xmm4, 8
-	movdqa xmm7, xmm4
-	pslld xmm7, 8
-	por xmm4, xmm7
-	movdqu xmm5, XMMWORD PTR [ecx]
-	pand xmm5, xmm4
-	por xmm1, xmm5
-	paddd xmm2, xmm3
-	movdqa xmm4, xmm0
-	pxor xmm4, xmm2
-	paddd xmm4, xmm6
-	psrld xmm4, 8
-	movdqa xmm7, xmm4
-	pslld xmm7, 8
-	por xmm4, xmm7
-	movdqu xmm5, XMMWORD PTR [ecx+16]
-	pand xmm5, xmm4
-	por xmm1, xmm5
-	paddd xmm2, xmm3
-	movdqa xmm4, xmm0
-	pxor xmm4, xmm2
-	paddd xmm4, xmm6
-	psrld xmm4, 8
-	movdqa xmm7, xmm4
-	pslld xmm7, 8
-	por xmm4, xmm7
-	movdqu xmm5, XMMWORD PTR [ecx+32]
-	pand xmm5, xmm4
-	por xmm1, xmm5
-	paddd xmm2, xmm3
-	movdqa xmm4, xmm0
-	pxor xmm4, xmm2
-	paddd xmm4, xmm6
-	psrld xmm4, 8
-	movdqa xmm7, xmm4
-	pslld xmm7, 8
-	por xmm4, xmm7
-	movdqu xmm5, XMMWORD PTR [ecx+48]
-	pand xmm5, xmm4
-	por xmm1, xmm5
-	paddd xmm2, xmm3
-	add ecx, 64
+	movdqu xmm2, XMMWORD PTR [ecx]
+	movdqu xmm3, XMMWORD PTR [ecx+16]
+	pand xmm3, xmm6
+	pxor xmm2, xmm3
+	movdqu xmm3, XMMWORD PTR [ecx+32]
+	movdqu xmm4, XMMWORD PTR [ecx+48]
+	pand xmm4, xmm6
+	pxor xmm3, xmm4
+	pand xmm3, xmm7
+	pxor xmm2, xmm3
+	movdqa xmm3, xmm0
+	psraw xmm3, 15
+	pandn xmm3, xmm2
+	pxor xmm1, xmm3
+	paddd xmm0, xmm5
+	movdqu xmm2, XMMWORD PTR [ecx+64]
+	movdqu xmm3, XMMWORD PTR [ecx+80]
+	pand xmm3, xmm6
+	pxor xmm2, xmm3
+	movdqu xmm3, XMMWORD PTR [ecx+96]
+	movdqu xmm4, XMMWORD PTR [ecx+112]
+	pand xmm4, xmm6
+	pxor xmm3, xmm4
+	pand xmm3, xmm7
+	pxor xmm2, xmm3
+	movdqa xmm3, xmm0
+	psraw xmm3, 15
+	pandn xmm3, xmm2
+	pxor xmm1, xmm3
+	paddd xmm0, xmm5
+	movdqu xmm2, XMMWORD PTR [ecx+128]
+	movdqu xmm3, XMMWORD PTR [ecx+144]
+	pand xmm3, xmm6
+	pxor xmm2, xmm3
+	movdqu xmm3, XMMWORD PTR [ecx+160]
+	movdqu xmm4, XMMWORD PTR [ecx+176]
+	pand xmm4, xmm6
+	pxor xmm3, xmm4
+	pand xmm3, xmm7
+	pxor xmm2, xmm3
+	movdqa xmm3, xmm0
+	psraw xmm3, 15
+	pandn xmm3, xmm2
+	pxor xmm1, xmm3
+	paddd xmm0, xmm5
+	movdqu xmm2, XMMWORD PTR [ecx+192]
+	movdqu xmm3, XMMWORD PTR [ecx+208]
+	pand xmm3, xmm6
+	pxor xmm2, xmm3
+	movdqu xmm3, XMMWORD PTR [ecx+224]
+	movdqu xmm4, XMMWORD PTR [ecx+240]
+	pand xmm4, xmm6
+	pxor xmm3, xmm4
+	pand xmm3, xmm7
+	pxor xmm2, xmm3
+	movdqa xmm3, xmm0
+	psraw xmm3, 15
+	pandn xmm3, xmm2
+	pxor xmm1, xmm3
+	paddd xmm0, xmm5
+	add ecx, 256
 	sub edx, 1
 	jne 29b
 	movdqu XMMWORD PTR [esi], xmm1
@@ -2149,64 +2241,87 @@ vg_cast5_cbc_decrypt_chained:
 2:
 	mov eax, DWORD PTR [esp]
 	.byte 0x81, 192
-	.long {VG_CAST5_S1234}
+	.long {VG_CAST5_S1234_STEPS}
 	pop ecx
 	mov ecx, eax
-	mov edx, 64
-	pxor xmm1, xmm1
-	pxor xmm2, xmm2
-	mov eax, 1
-	movd xmm3, eax
-	pshufd xmm3, xmm3, 0
+	mov edx, 16
 	mov eax, -1
-	movd xmm6, eax
-	pshufd xmm6, xmm6, 0
+	movd xmm5, eax
+	pshufd xmm5, xmm5, 0
+	movdqa xmm6, xmm0
+	pslld xmm6, 31
+	psrld xmm6, 31
+	paddd xmm6, xmm5
+	pxor xmm6, xmm5
+	movdqa xmm7, xmm0
+	pslld xmm7, 30
+	psrld xmm7, 31
+	paddd xmm7, xmm5
+	pxor xmm7, xmm5
+	psrld xmm0, 2
+	pxor xmm1, xmm1
 25:
-	movdqa xmm4, xmm0
-	pxor xmm4, xmm2
-	paddd xmm4, xmm6
-	psrld xmm4, 8
-	movdqa xmm7, xmm4
-	pslld xmm7, 8
-	por xmm4, xmm7
-	movdqu xmm5, XMMWORD PTR [ecx]
-	pand xmm5, xmm4
-	por xmm1, xmm5
-	paddd xmm2, xmm3
-	movdqa xmm4, xmm0
-	pxor xmm4, xmm2
-	paddd xmm4, xmm6
-	psrld xmm4, 8
-	movdqa xmm7, xmm4
-	pslld xmm7, 8
-	por xmm4, xmm7
-	movdqu xmm5, XMMWORD PTR [ecx+16]
-	pand xmm5, xmm4
-	por xmm1, xmm5
-	paddd xmm2, xmm3
-	movdqa xmm4, xmm0
-	pxor xmm4, xmm2
-	paddd xmm4, xmm6
-	psrld xmm4, 8
-	movdqa xmm7, xmm4
-	pslld xmm7, 8
-	por xmm4, xmm7
-	movdqu xmm5, XMMWORD PTR [ecx+32]
-	pand xmm5, xmm4
-	por xmm1, xmm5
-	paddd xmm2, xmm3
-	movdqa xmm4, xmm0
-	pxor xmm4, xmm2
-	paddd xmm4, xmm6
-	psrld xmm4, 8
-	movdqa xmm7, xmm4
-	pslld xmm7, 8
-	por xmm4, xmm7
-	movdqu xmm5, XMMWORD PTR [ecx+48]
-	pand xmm5, xmm4
-	por xmm1, xmm5
-	paddd xmm2, xmm3
-	add ecx, 64
+	movdqu xmm2, XMMWORD PTR [ecx]
+	movdqu xmm3, XMMWORD PTR [ecx+16]
+	pand xmm3, xmm6
+	pxor xmm2, xmm3
+	movdqu xmm3, XMMWORD PTR [ecx+32]
+	movdqu xmm4, XMMWORD PTR [ecx+48]
+	pand xmm4, xmm6
+	pxor xmm3, xmm4
+	pand xmm3, xmm7
+	pxor xmm2, xmm3
+	movdqa xmm3, xmm0
+	psraw xmm3, 15
+	pandn xmm3, xmm2
+	pxor xmm1, xmm3
+	paddd xmm0, xmm5
+	movdqu xmm2, XMMWORD PTR [ecx+64]
+	movdqu xmm3, XMMWORD PTR [ecx+80]
+	pand xmm3, xmm6
+	pxor xmm2, xmm3
+	movdqu xmm3, XMMWORD PTR [ecx+96]
+	movdqu xmm4, XMMWORD PTR [ecx+112]
+	pand xmm4, xmm6
+	pxor xmm3, xmm4
+	pand xmm3, xmm7
+	pxor xmm2, xmm3
+	movdqa xmm3, xmm0
+	psraw xmm3, 15
+	pandn xmm3, xmm2
+	pxor xmm1, xmm3
+	paddd xmm0, xmm5
+	movdqu xmm2, XMMWORD PTR [ecx+128]
+	movdqu xmm3, XMMWORD PTR [ecx+144]
+	pand xmm3, xmm6
+	pxor xmm2, xmm3
+	movdqu xmm3, XMMWORD PTR [ecx+160]
+	movdqu xmm4, XMMWORD PTR [ecx+176]
+	pand xmm4, xmm6
+	pxor xmm3, xmm4
+	pand xmm3, xmm7
+	pxor xmm2, xmm3
+	movdqa xmm3, xmm0
+	psraw xmm3, 15
+	pandn xmm3, xmm2
+	pxor xmm1, xmm3
+	paddd xmm0, xmm5
+	movdqu xmm2, XMMWORD PTR [ecx+192]
+	movdqu xmm3, XMMWORD PTR [ecx+208]
+	pand xmm3, xmm6
+	pxor xmm2, xmm3
+	movdqu xmm3, XMMWORD PTR [ecx+224]
+	movdqu xmm4, XMMWORD PTR [ecx+240]
+	pand xmm4, xmm6
+	pxor xmm3, xmm4
+	pand xmm3, xmm7
+	pxor xmm2, xmm3
+	movdqa xmm3, xmm0
+	psraw xmm3, 15
+	pandn xmm3, xmm2
+	pxor xmm1, xmm3
+	paddd xmm0, xmm5
+	add ecx, 256
 	sub edx, 1
 	jne 25b
 	movdqu XMMWORD PTR [esi], xmm1
@@ -2290,64 +2405,87 @@ vg_cast5_cbc_decrypt_chained:
 2:
 	mov eax, DWORD PTR [esp]
 	.byte 0x81, 192
-	.long {VG_CAST5_S1234}
+	.long {VG_CAST5_S1234_STEPS}
 	pop ecx
 	mov ecx, eax
-	mov edx, 64
-	pxor xmm1, xmm1
-	pxor xmm2, xmm2
-	mov eax, 1
-	movd xmm3, eax
-	pshufd xmm3, xmm3, 0
+	mov edx, 16
 	mov eax, -1
-	movd xmm6, eax
-	pshufd xmm6, xmm6, 0
+	movd xmm5, eax
+	pshufd xmm5, xmm5, 0
+	movdqa xmm6, xmm0
+	pslld xmm6, 31
+	psrld xmm6, 31
+	paddd xmm6, xmm5
+	pxor xmm6, xmm5
+	movdqa xmm7, xmm0
+	pslld xmm7, 30
+	psrld xmm7, 31
+	paddd xmm7, xmm5
+	pxor xmm7, xmm5
+	psrld xmm0, 2
+	pxor xmm1, xmm1
 27:
-	movdqa xmm4, xmm0
-	pxor xmm4, xmm2
-	paddd xmm4, xmm6
-	psrld xmm4, 8
-	movdqa xmm7, xmm4
-	pslld xmm7, 8
-	por xmm4, xmm7
-	movdqu xmm5, XMMWORD PTR [ecx]
-	pand xmm5, xmm4
-	por xmm1, xmm5
-	paddd xmm2, xmm3
-	movdqa xmm4, xmm0
-	pxor xmm4, xmm2
-	paddd xmm4, xmm6
-	psrld xmm4, 8
-	movdqa xmm7, xmm4
-	pslld xmm7, 8
-	por xmm4, xmm7
-	movdqu xmm5, XMMWORD PTR [ecx+16]
-	pand xmm5, xmm4
-	por xmm1, xmm5
-	paddd xmm2, xmm3
-	movdqa xmm4, xmm0
-	pxor xmm4, xmm2
-	paddd xmm4, xmm6
-	psrld xmm4, 8
-	movdqa xmm7, xmm4
-	pslld xmm7, 8
-	por xmm4, xmm7
-	movdqu xmm5, XMMWORD PTR [ecx+32]
-	pand xmm5, xmm4
-	por xmm1, xmm5
-	paddd xmm2, xmm3
-	movdqa xmm4, xmm0
-	pxor xmm4, xmm2
-	paddd xmm4, xmm6
-	psrld xmm4, 8
-	movdqa xmm7, xmm4
-	pslld xmm7, 8
-	por xmm4, xmm7
-	movdqu xmm5, XMMWORD PTR [ecx+48]
-	pand xmm5, xmm4
-	por xmm1, xmm5
-	paddd xmm2, xmm3
-	add ecx, 64
+	movdqu xmm2, XMMWORD PTR [ecx]
+	movdqu xmm3, XMMWORD PTR [ecx+16]
+	pand xmm3, xmm6
+	pxor xmm2, xmm3
+	movdqu xmm3, XMMWORD PTR [ecx+32]
+	movdqu xmm4, XMMWORD PTR [ecx+48]
+	pand xmm4, xmm6
+	pxor xmm3, xmm4
+	pand xmm3, xmm7
+	pxor xmm2, xmm3
+	movdqa xmm3, xmm0
+	psraw xmm3, 15
+	pandn xmm3, xmm2
+	pxor xmm1, xmm3
+	paddd xmm0, xmm5
+	movdqu xmm2, XMMWORD PTR [ecx+64]
+	movdqu xmm3, XMMWORD PTR [ecx+80]
+	pand xmm3, xmm6
+	pxor xmm2, xmm3
+	movdqu xmm3, XMMWORD PTR [ecx+96]
+	movdqu xmm4, XMMWORD PTR [ecx+112]
+	pand xmm4, xmm6
+	pxor xmm3, xmm4
+	pand xmm3, xmm7
+	pxor xmm2, xmm3
+	movdqa xmm3, xmm0
+	psraw xmm3, 15
+	pandn xmm3, xmm2
+	pxor xmm1, xmm3
+	paddd xmm0, xmm5
+	movdqu xmm2, XMMWORD PTR [ecx+128]
+	movdqu xmm3, XMMWORD PTR [ecx+144]
+	pand xmm3, xmm6
+	pxor xmm2, xmm3
+	movdqu xmm3, XMMWORD PTR [ecx+160]
+	movdqu xmm4, XMMWORD PTR [ecx+176]
+	pand xmm4, xmm6
+	pxor xmm3, xmm4
+	pand xmm3, xmm7
+	pxor xmm2, xmm3
+	movdqa xmm3, xmm0
+	psraw xmm3, 15
+	pandn xmm3, xmm2
+	pxor xmm1, xmm3
+	paddd xmm0, xmm5
+	movdqu xmm2, XMMWORD PTR [ecx+192]
+	movdqu xmm3, XMMWORD PTR [ecx+208]
+	pand xmm3, xmm6
+	pxor xmm2, xmm3
+	movdqu xmm3, XMMWORD PTR [ecx+224]
+	movdqu xmm4, XMMWORD PTR [ecx+240]
+	pand xmm4, xmm6
+	pxor xmm3, xmm4
+	pand xmm3, xmm7
+	pxor xmm2, xmm3
+	movdqa xmm3, xmm0
+	psraw xmm3, 15
+	pandn xmm3, xmm2
+	pxor xmm1, xmm3
+	paddd xmm0, xmm5
+	add ecx, 256
 	sub edx, 1
 	jne 27b
 	movdqu XMMWORD PTR [esi], xmm1
@@ -2429,64 +2567,87 @@ vg_cast5_cbc_decrypt_chained:
 2:
 	mov eax, DWORD PTR [esp]
 	.byte 0x81, 192
-	.long {VG_CAST5_S1234}
+	.long {VG_CAST5_S1234_STEPS}
 	pop ecx
 	mov ecx, eax
-	mov edx, 64
-	pxor xmm1, xmm1
-	pxor xmm2, xmm2
-	mov eax, 1
-	movd xmm3, eax
-	pshufd xmm3, xmm3, 0
+	mov edx, 16
 	mov eax, -1
-	movd xmm6, eax
-	pshufd xmm6, xmm6, 0
+	movd xmm5, eax
+	pshufd xmm5, xmm5, 0
+	movdqa xmm6, xmm0
+	pslld xmm6, 31
+	psrld xmm6, 31
+	paddd xmm6, xmm5
+	pxor xmm6, xmm5
+	movdqa xmm7, xmm0
+	pslld xmm7, 30
+	psrld xmm7, 31
+	paddd xmm7, xmm5
+	pxor xmm7, xmm5
+	psrld xmm0, 2
+	pxor xmm1, xmm1
 28:
-	movdqa xmm4, xmm0
-	pxor xmm4, xmm2
-	paddd xmm4, xmm6
-	psrld xmm4, 8
-	movdqa xmm7, xmm4
-	pslld xmm7, 8
-	por xmm4, xmm7
-	movdqu xmm5, XMMWORD PTR [ecx]
-	pand xmm5, xmm4
-	por xmm1, xmm5
-	paddd xmm2, xmm3
-	movdqa xmm4, xmm0
-	pxor xmm4, xmm2
-	paddd xmm4, xmm6
-	psrld xmm4, 8
-	movdqa xmm7, xmm4
-	pslld xmm7, 8
-	por xmm4, xmm7
-	movdqu xmm5, XMMWORD PTR [ecx+16]
-	pand xmm5, xmm4
-	por xmm1, xmm5
-	paddd xmm2, xmm3
-	movdqa xmm4, xmm0
-	pxor xmm4, xmm2
-	paddd xmm4, xmm6
-	psrld xmm4, 8
-	movdqa xmm7, xmm4
-	pslld xmm7, 8
-	por xmm4, xmm7
-	movdqu xmm5, XMMWORD PTR [ecx+32]
-	pand xmm5, xmm4
-	por xmm1, xmm5
-	paddd xmm2, xmm3
-	movdqa xmm4, xmm0
-	pxor xmm4, xmm2
-	paddd xmm4, xmm6
-	psrld xmm4, 8
-	movdqa xmm7, xmm4
-	pslld xmm7, 8
-	por xmm4, xmm7
-	movdqu xmm5, XMMWORD PTR [ecx+48]
-	pand xmm5, xmm4
-	por xmm1, xmm5
-	paddd xmm2, xmm3
-	add ecx, 64
+	movdqu xmm2, XMMWORD PTR [ecx]
+	movdqu xmm3, XMMWORD PTR [ecx+16]
+	pand xmm3, xmm6
+	pxor xmm2, xmm3
+	movdqu xmm3, XMMWORD PTR [ecx+32]
+	movdqu xmm4, XMMWORD PTR [ecx+48]
+	pand xmm4, xmm6
+	pxor xmm3, xmm4
+	pand xmm3, xmm7
+	pxor xmm2, xmm3
+	movdqa xmm3, xmm0
+	psraw xmm3, 15
+	pandn xmm3, xmm2
+	pxor xmm1, xmm3
+	paddd xmm0, xmm5
+	movdqu xmm2, XMMWORD PTR [ecx+64]
+	movdqu xmm3, XMMWORD PTR [ecx+80]
+	pand xmm3, xmm6
+	pxor xmm2, xmm3
+	movdqu xmm3, XMMWORD PTR [ecx+96]
+	movdqu xmm4, XMMWORD PTR [ecx+112]
+	pand xmm4, xmm6
+	pxor xmm3, xmm4
+	pand xmm3, xmm7
+	pxor xmm2, xmm3
+	movdqa xmm3, xmm0
+	psraw xmm3, 15
+	pandn xmm3, xmm2
+	pxor xmm1, xmm3
+	paddd xmm0, xmm5
+	movdqu xmm2, XMMWORD PTR [ecx+128]
+	movdqu xmm3, XMMWORD PTR [ecx+144]
+	pand xmm3, xmm6
+	pxor xmm2, xmm3
+	movdqu xmm3, XMMWORD PTR [ecx+160]
+	movdqu xmm4, XMMWORD PTR [ecx+176]
+	pand xmm4, xmm6
+	pxor xmm3, xmm4
+	pand xmm3, xmm7
+	pxor xmm2, xmm3
+	movdqa xmm3, xmm0
+	psraw xmm3, 15
+	pandn xmm3, xmm2
+	pxor xmm1, xmm3
+	paddd xmm0, xmm5
+	movdqu xmm2, XMMWORD PTR [ecx+192]
+	movdqu xmm3, XMMWORD PTR [ecx+208]
+	pand xmm3, xmm6
+	pxor xmm2, xmm3
+	movdqu xmm3, XMMWORD PTR [ecx+224]
+	movdqu xmm4, XMMWORD PTR [ecx+240]
+	pand xmm4, xmm6
+	pxor xmm3, xmm4
+	pand xmm3, xmm7
+	pxor xmm2, xmm3
+	movdqa xmm3, xmm0
+	psraw xmm3, 15
+	pandn xmm3, xmm2
+	pxor xmm1, xmm3
+	paddd xmm0, xmm5
+	add ecx, 256
 	sub edx, 1
 	jne 28b
 	movdqu XMMWORD PTR [esi], xmm1
@@ -2568,64 +2729,87 @@ vg_cast5_cbc_decrypt_chained:
 2:
 	mov eax, DWORD PTR [esp]
 	.byte 0x81, 192
-	.long {VG_CAST5_S1234}
+	.long {VG_CAST5_S1234_STEPS}
 	pop ecx
 	mov ecx, eax
-	mov edx, 64
-	pxor xmm1, xmm1
-	pxor xmm2, xmm2
-	mov eax, 1
-	movd xmm3, eax
-	pshufd xmm3, xmm3, 0
+	mov edx, 16
 	mov eax, -1
-	movd xmm6, eax
-	pshufd xmm6, xmm6, 0
+	movd xmm5, eax
+	pshufd xmm5, xmm5, 0
+	movdqa xmm6, xmm0
+	pslld xmm6, 31
+	psrld xmm6, 31
+	paddd xmm6, xmm5
+	pxor xmm6, xmm5
+	movdqa xmm7, xmm0
+	pslld xmm7, 30
+	psrld xmm7, 31
+	paddd xmm7, xmm5
+	pxor xmm7, xmm5
+	psrld xmm0, 2
+	pxor xmm1, xmm1
 29:
-	movdqa xmm4, xmm0
-	pxor xmm4, xmm2
-	paddd xmm4, xmm6
-	psrld xmm4, 8
-	movdqa xmm7, xmm4
-	pslld xmm7, 8
-	por xmm4, xmm7
-	movdqu xmm5, XMMWORD PTR [ecx]
-	pand xmm5, xmm4
-	por xmm1, xmm5
-	paddd xmm2, xmm3
-	movdqa xmm4, xmm0
-	pxor xmm4, xmm2
-	paddd xmm4, xmm6
-	psrld xmm4, 8
-	movdqa xmm7, xmm4
-	pslld xmm7, 8
-	por xmm4, xmm7
-	movdqu xmm5, XMMWORD PTR [ecx+16]
-	pand xmm5, xmm4
-	por xmm1, xmm5
-	paddd xmm2, xmm3
-	movdqa xmm4, xmm0
-	pxor xmm4, xmm2
-	paddd xmm4, xmm6
-	psrld xmm4, 8
-	movdqa xmm7, xmm4
-	pslld xmm7, 8
-	por xmm4, xmm7
-	movdqu xmm5, XMMWORD PTR [ecx+32]
-	pand xmm5, xmm4
-	por xmm1, xmm5
-	paddd xmm2, xmm3
-	movdqa xmm4, xmm0
-	pxor xmm4, xmm2
-	paddd xmm4, xmm6
-	psrld xmm4, 8
-	movdqa xmm7, xmm4
-	pslld xmm7, 8
-	por xmm4, xmm7
-	movdqu xmm5, XMMWORD PTR [ecx+48]
-	pand xmm5, xmm4
-	por xmm1, xmm5
-	paddd xmm2, xmm3
-	add ecx, 64
+	movdqu xmm2, XMMWORD PTR [ecx]
+	movdqu xmm3, XMMWORD PTR [ecx+16]
+	pand xmm3, xmm6
+	pxor xmm2, xmm3
+	movdqu xmm3, XMMWORD PTR [ecx+32]
+	movdqu xmm4, XMMWORD PTR [ecx+48]
+	pand xmm4, xmm6
+	pxor xmm3, xmm4
+	pand xmm3, xmm7
+	pxor xmm2, xmm3
+	movdqa xmm3, xmm0
+	psraw xmm3, 15
+	pandn xmm3, xmm2
+	pxor xmm1, xmm3
+	paddd xmm0, xmm5
+	movdqu xmm2, XMMWORD PTR [ecx+64]
+	movdqu xmm3, XMMWORD PTR [ecx+80]
+	pand xmm3, xmm6
+	pxor xmm2, xmm3
+	movdqu xmm3, XMMWORD PTR [ecx+96]
+	movdqu xmm4, XMMWORD PTR [ecx+112]
+	pand xmm4, xmm6
+	pxor xmm3, xmm4
+	pand xmm3, xmm7
+	pxor xmm2, xmm3
+	movdqa xmm3, xmm0
+	psraw xmm3, 15
+	pandn xmm3, xmm2
+	pxor xmm1, xmm3
+	paddd xmm0, xmm5
+	movdqu xmm2, XMMWORD PTR [ecx+128]
+	movdqu xmm3, XMMWORD PTR [ecx+144]
+	pand xmm3, xmm6
+	pxor xmm2, xmm3
+	movdqu xmm3, XMMWORD PTR [ecx+160]
+	movdqu xmm4, XMMWORD PTR [ecx+176]
+	pand xmm4, xmm6
+	pxor xmm3, xmm4
+	pand xmm3, xmm7
+	pxor xmm2, xmm3
+	movdqa xmm3, xmm0
+	psraw xmm3, 15
+	pandn xmm3, xmm2
+	pxor xmm1, xmm3
+	paddd xmm0, xmm5
+	movdqu xmm2, XMMWORD PTR [ecx+192]
+	movdqu xmm3, XMMWORD PTR [ecx+208]
+	pand xmm3, xmm6
+	pxor xmm2, xmm3
+	movdqu xmm3, XMMWORD PTR [ecx+224]
+	movdqu xmm4, XMMWORD PTR [ecx+240]
+	pand xmm4, xmm6
+	pxor xmm3, xmm4
+	pand xmm3, xmm7
+	pxor xmm2, xmm3
+	movdqa xmm3, xmm0
+	psraw xmm3, 15
+	pandn xmm3, xmm2
+	pxor xmm1, xmm3
+	paddd xmm0, xmm5
+	add ecx, 256
 	sub edx, 1
 	jne 29b
 	movdqu XMMWORD PTR [esi], xmm1

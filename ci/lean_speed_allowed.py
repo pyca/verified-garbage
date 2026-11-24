@@ -269,8 +269,6 @@ DECIDE_SIMP_ALLOWED = {
     "VerifiedGarbage/Proof/X448/Radix16.lean": 1,
     "VerifiedGarbage/Proof/X448/Wide/Fold.lean": 2,
     "VerifiedGarbage/Proof/X448/Wide/Limbs.lean": 1,
-    "VerifiedGarbage/Proof/X448/X86/Carry.lean": 2,
-    "VerifiedGarbage/Proof/X448/X86/FreezePrep.lean": 2,
     "VerifiedGarbage/Proof/X448/X86/Initial.lean": 5,
     "VerifiedGarbage/Proof/X448/X86/Inv.lean": 1,
     "VerifiedGarbage/Proof/X448/X86/Main.lean": 1,

@@ -8,6 +8,11 @@ public import VerifiedGarbage.Impl.Blowfish.X86
 public import VerifiedGarbage.Proof.Blowfish.F
 public import VerifiedGarbage.Proof.MlDsa.X86.Pack.Run
 import VerifiedGarbage.Proof.Rc4.Dword
+public import VerifiedGarbage.Proof.Framework.X86.SseLanes
+import VerifiedGarbage.Proof.Framework.X86.SseDword
+import VerifiedGarbage.Proof.Framework.X86.Sse
+import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
+import VerifiedGarbage.Proof.Rc2.PairMem
 
 /-! ### `Blowfish.X86.Cipher`, which this module and modules that import it used -/
 
@@ -33,7 +38,7 @@ flags.
 
 namespace VG.Proof.Blowfish.X86
 
-open VG VG.X86 VG.Impl.Blowfish.X86 VG.Spec.Blowfish VG.Proof.Blowfish
+open VG VG.X86 VG.X86.Lanes VG.Impl.Blowfish.X86 VG.Spec.Blowfish VG.Proof.Blowfish
 open VG.Proof.MlDsa.X86.Pack (Keep WP.keep writesOnly addr_of_fit)
 
 /-- What a lookup needs: the schedule's address `S` at `esp + sch`, its S-boxes
@@ -42,7 +47,7 @@ structure LookEnv (sch : Nat) (S : BitVec 32) (s : State) : Prop where
   schRd : InRegions (s.rd ++ s.wr) (addr (s.gpr .esp) sch) 4
   schVal : s.mem.readW (addr (s.gpr .esp) sch) 32 = S
   fit : S.toNat + 4168 ≤ 2 ^ 32
-  rd : ∀ o, o + 4 ≤ 4168 → InRegions (s.rd ++ s.wr) (S.setWidth 64 + BitVec.ofNat 64 o) 4
+  rd : ∀ {n : Nat} (o : Nat), o + n ≤ 4168 → InRegions (s.rd ++ s.wr) (S.setWidth 64 + BitVec.ofNat 64 o) n
   xl : InRegions (s.rd ++ s.wr) (addr (s.gpr .ebp) xlOff) 4
 
 /-- The registers a lookup writes. -/
@@ -80,184 +85,381 @@ theorem index_run (s : State) {j : Nat} (hj : j < 4) {x : BitVec 32}
   rcases (by omega_using [hj] : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3) with rfl | rfl | rfl | rfl <;>
     simp only [index, xlOff] at hr hx ⊢ <;> brun [hr, hx]
 
-/-! ## Rotations selected by a bit of the index -/
+/-! ## The masks -/
 
-/-- The bit `c` (1 or 2) of `q` clear. -/
+/-- All ones or nothing. -/
+def ones (p : Bool) : BitVec 128 := if p then BitVec.allOnes 128 else 0
+
+theorem ones_bcast (p : Bool) :
+    shufDwords ((0 : BitVec 96) ++ (0#32 - BitVec.setWidth 32 (BitVec.ofBool p))) 0 = ones p := by
+  cases p <;> decide
+
+theorem and_ones (x : BitVec 128) (p : Bool) : x &&& ones p = if p then x else 0 := by
+  cases p
+  · simp only [ones, Bool.false_eq_true, ite_false]; exact BitVec.and_zero
+  · simp only [ones, ite_true, BitVec.and_allOnes]
+
+/-- The bit `c` of `q` clear. -/
 def bitClr (q : BitVec 32) (c : Nat) : Bool := decide ((q &&& BitVec.ofNat 32 c).toNat < (1#32).toNat)
 
-theorem sbb_mask (p : Bool) (x r : BitVec 32) :
-    ((x ^^^ r) &&& (0#32 - BitVec.setWidth 32 (BitVec.ofBool p))) ^^^ r = if p then x else r := by
-  rw [Proof.Rc4.borrow_mask32]
+/-- `t` differs from `s` in the XMM registers `xs`, `edx` and the flags. -/
+structure XKeep (xs : List XReg) (s t : State) : Prop where
+  xmm : ∀ x, x ∉ xs → t.xmm x = s.xmm x
+  esi : t.gpr .esi = s.gpr .esi
+  mem : t.mem = s.mem
+
+theorem XKeep.trans {xs ys : List XReg} {s t u : State} (h : XKeep xs s t) (h' : XKeep ys t u) :
+    XKeep (xs ++ ys) s u :=
+  ⟨fun x hx => by
+    rw [List.mem_append, not_or] at hx
+    rw [h'.xmm x hx.2, h.xmm x hx.1], h'.esi.trans h.esi, h'.mem.trans h.mem⟩
+
+theorem mask_run (s : State) (c : Nat) :
+    WP isa (.block (bitMask c)) s fun t =>
+      t.xmm .xmm6 = ones (bitClr (s.gpr .esi) c) ∧ XKeep [.xmm6] s t := by
+  unfold bitMask
+  vrun []
+  refine ⟨?_, fun x hx => ?_, rfl, rfl⟩
+  · rw [RegUpd.xmm_setXmm_self]
+    simp only [BitVec.sub_self]
+    exact ones_bcast _
+  · simp only [List.mem_singleton] at hx
+    rw [RegUpd.xmm_setXmm_of_ne _ _ hx, RegUpd.xmm_setXmm_of_ne _ _ hx]
+    rfl
+
+theorem orElse_val (x y : BitVec 128) (p : Bool) : ((x ^^^ y) &&& ones p) ^^^ y = if p then x else y := by
+  rw [and_ones]
   cases p
-  · simp
-  · simp only [ite_true, BitVec.and_allOnes, BitVec.xor_assoc, BitVec.xor_self, BitVec.xor_zero]
+  · simp only [Bool.false_eq_true, ite_false]; exact BitVec.zero_xor
+  · simp only [ite_true, BitVec.xor_assoc, BitVec.xor_self, BitVec.xor_zero]
 
-theorem condRot_run (s : State) (x : Reg) {c a : Nat} (ha1 : 1 ≤ a) (ha : a ≤ 31)
-    (xc : x ≠ .ecx) (xd : x ≠ .edx) (xs : x ≠ .esi) :
-    WP isa (.block (condRot x c a)) s fun t =>
-      t.gpr x = (if bitClr (s.gpr .esi) c then s.gpr x else (s.gpr x).rotateRight a) ∧ t.mem = s.mem := by
-  have cx : Reg.ecx ≠ x := Ne.symm xc
-  have dx : Reg.edx ≠ x := Ne.symm xd
-  have sx : Reg.esi ≠ x := Ne.symm xs
-  unfold condRot
-  brun [xc, xd, xs, cx, dx, sx, ha1, ha]
-  rw [sbb_mask]
-  rfl
-
-theorem and_lane (q : BitVec 32) {L : Nat} (hL : q.toNat % 4 = L) {c : Nat} (hc : c = 1 ∨ c = 2) :
-    q &&& BitVec.ofNat 32 c = BitVec.ofNat 32 L &&& BitVec.ofNat 32 c := by
-  obtain e : q &&& BitVec.ofNat 32 3 = BitVec.ofNat 32 L := by
-    apply BitVec.eq_of_toNat_eq
-    simp only [BitVec.toNat_and, BitVec.toNat_ofNat]
-    rw [show (3 % 2 ^ 32 : Nat) = 2 ^ 2 - 1 from rfl, Nat.and_two_pow_sub_one_eq_mod]
-    omega_using [hL]
-  obtain e' : ∀ d : BitVec 32, d = BitVec.ofNat 32 3 &&& d → q &&& d = BitVec.ofNat 32 L &&& d := by
-    intro d hd
-    conv => lhs; rw [hd]
-    rw [← BitVec.and_assoc, e]
-  rcases hc with rfl | rfl
-  · exact e' _ (by decide)
-  · exact e' _ (by decide)
-
-theorem bitClr_lane (q : BitVec 32) {L : Nat} (hL : q.toNat % 4 = L) :
-    bitClr q 1 = !decide (L % 2 = 1) ∧ bitClr q 2 = !decide (L / 2 = 1) := by
-  obtain hl : L < 4 := by omega_using [hL]
-  unfold bitClr
-  rw [and_lane q hL (.inl rfl), and_lane q hL (.inr rfl)]
-  rcases (by omega_using [hL] : L = 0 ∨ L = 1 ∨ L = 2 ∨ L = 3) with rfl | rfl | rfl | rfl <;> decide
-
-theorem not_ite {α : Type} (b : Bool) (x y : α) : (if (!b) = true then x else y) = if b = true then y else x := by
-  cases b <;> rfl
+theorem orElse_run (s : State) {p : Bool} (h6 : s.xmm .xmm6 = ones p) {x y : XReg} (hx : x ≠ .xmm6) (hxy : x ≠ y) :
+    WP isa (.block (orElse x y)) s fun t =>
+      t.xmm x = (if p then s.xmm x else s.xmm y) ∧ XKeep [x] s t := by
+  have hx' := hx.symm
+  have hxy' := hxy.symm
+  unfold orElse
+  vrun [ne_eq, hx', hxy', h6]
+  refine ⟨?_, fun z hz => ?_, rfl, rfl⟩
+  · rw [RegUpd.xmm_setXmm_self]; exact orElse_val _ _ _
+  · simp only [List.mem_singleton] at hz
+    rw [RegUpd.xmm_setXmm_of_ne _ _ hz, RegUpd.xmm_setXmm_of_ne _ _ hz, RegUpd.xmm_setXmm_of_ne _ _ hz]
 
 /-! ## The rows -/
 
-theorem row_mask (q lm : BitVec 32) :
-    (0#32 - BitVec.setWidth 32 (BitVec.ofBool (decide (q.toNat < (4#32).toNat))) &&& lm) =
-      if q.toNat < 4 then lm else 0 := by
-  rw [Proof.Rc4.borrow_mask32, show (4#32).toNat = 4 from rfl]
-  by_cases h : q.toNat < 4
-  · simp only [h, decide_true, ite_true]; exact BitVec.allOnes_and
-  · simp [h]
+/-- Plane `b`'s 16 bytes of row `k` of S-box `j`, in the schedule at `p`. -/
+def planeRow (m : Mem) (p : Addr) (j b k : Nat) : BitVec 128 :=
+  m.readW (p + BitVec.ofNat 64 (1024 * j + 256 * b + 16 * k)) 128
 
-theorem row_run (u : State) {sch j : Nat} {q rp acc lm S : BitVec 32}
-    (hsi : u.gpr .esi = q) (hdi : u.gpr .edi = acc) (hax : u.gpr .eax = lm) (hbx : u.gpr .ebx = rp)
+/-- A plane's register once rows `0, …, k - 1` are scanned. -/
+def rowAcc (m : Mem) (p : Addr) (j b x k : Nat) : BitVec 128 :=
+  if x / 16 < k then planeRow m p j b (x / 16) else 0
+
+theorem rowAcc_succ (m : Mem) (p : Addr) (j b x k : Nat) :
+    rowAcc m p j b x k ||| (planeRow m p j b k &&& ones (decide (x / 16 = k))) = rowAcc m p j b x (k + 1) := by
+  rw [and_ones]
+  unfold rowAcc
+  by_cases h : x / 16 = k
+  · subst h
+    simp only [Nat.lt_irrefl, ite_false, decide_true, ite_true, Nat.lt_succ_self]
+    exact BitVec.zero_or
+  · by_cases h' : x / 16 < k
+    · simp only [h, h', decide_false, Bool.false_eq_true, ite_true, ite_false, show x / 16 < k + 1 by omega_using [h']]
+      exact BitVec.or_zero
+    · simp only [h, h', decide_false, Bool.false_eq_true, ite_false, show ¬ x / 16 < k + 1 by omega_using [h, h']]
+      exact BitVec.or_zero
+
+/-- The register of plane `b`. -/
+def planeReg : Nat → XReg | 0 => .xmm0 | 1 => .xmm1 | 2 => .xmm2 | _ => .xmm3
+
+theorem row_hit16 (x : Byte) {k : Nat} (hk : k < 16) :
+    decide ((x.setWidth 32 - BitVec.ofNat 32 (16 * k)).toNat < (16#32).toNat) = decide (x.toNat / 16 = k) := by
+  have := x.isLt
+  rw [BitVec.toNat_sub, BitVec.toNat_setWidth, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show x.toNat < 2 ^ 32 by omega_arith),
+    Nat.mod_eq_of_lt (show 16 * k < 2 ^ 32 by omega_arith), show (16#32).toNat = 16 from rfl]
+  congr 1; apply propext; omega_arith
+
+theorem row_run (u : State) {sch j : Nat} {q rp S : BitVec 32} {p : Bool}
+    (hdi : u.gpr .edi = q) (hp : decide (q.toNat < (16#32).toNat) = p) (hbx : u.gpr .ebx = rp)
     (hs : u.mem.readW (addr (u.gpr .esp) sch) 32 = S)
     (hrs : InRegions (u.rd ++ u.wr) (addr (u.gpr .esp) sch) 4)
-    (hr : ∀ b < 4, InRegions (u.rd ++ u.wr) (addr rp (planeOff j b)) 4) :
+    (hr : ∀ b < 4, InRegions (u.rd ++ u.wr) (addr rp (planeOff j b)) 16) :
     WP isa (.block (row sch j)) u fun t =>
-      let M := if q.toNat < 4 then lm else 0
-      let w := fun b => u.mem.readW (addr rp (planeOff j b)) 32 &&& M
-      t.gpr .edi = (((acc ||| w 0) ||| (w 1).rotateRight 24) ||| (w 2).rotateRight 16) |||
-        (w 3).rotateRight 8 ∧
-      t.gpr .esi = q - BitVec.ofNat 32 4 ∧ t.gpr .ebx = rp + BitVec.ofNat 32 4 ∧
-      t.zf = some (S - (rp + BitVec.ofNat 32 4) - BitVec.ofNat 32 (2 ^ 32 - 256) == 0) ∧ t.mem = u.mem := by
+      (∀ b < 4, t.xmm (planeReg b) = u.xmm (planeReg b) ||| (u.mem.readW (addr rp (planeOff j b)) 128 &&& ones p)) ∧
+      t.gpr .edi = q - BitVec.ofNat 32 16 ∧ t.gpr .ebx = rp + BitVec.ofNat 32 16 ∧
+      t.zf = some (S - (rp + BitVec.ofNat 32 16) - BitVec.ofNat 32 (2 ^ 32 - 256) == 0) ∧ t.mem = u.mem := by
   obtain r0 := hr 0 (by decide)
   obtain r1 := hr 1 (by decide)
   obtain r2 := hr 2 (by decide)
   obtain r3 := hr 3 (by decide)
   unfold row plane
-  brun [hsi, hdi, hax, hbx, hs, hrs, r0, r1, r2, r3]
-  simp only [row_mask, Nat.reduceMul, Nat.reduceSub]
+  vrun [hdi, hbx, hs, hrs, r0, r1, r2, r3]
+  refine ⟨fun b hb => ?_, ?_, ?_, ?_, rfl⟩
+  · rcases cases4 hb with rfl | rfl | rfl | rfl <;>
+      simp (disch := decide) only [planeReg, RegUpd.xmm_setXmm_self, RegUpd.xmm_setXmm_of_ne, RegUpd.xmm_setReg,
+        RegUpd.xmm_arithFlags, BitVec.sub_self] <;>
+      · rw [ones_bcast, hp]; rfl
+  all_goals
+    simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, RegUpd.gpr_setXmm, RegUpd.zf_arithFlags,
+      reduceCtorEq, ite_true, ite_false]
+
 theorem addr_row {S : BitVec 32} (fit : S.toNat + 4168 ≤ 2 ^ 32) {j b k : Nat} (hj : j < 4) (hb : b < 4)
-    (hk : k < 64) :
-    addr (S + BitVec.ofNat 32 (4 * k)) (planeOff j b) = S.setWidth 64 + BitVec.ofNat 64 (1024 * j + 256 * b + 4 * k) := by
+    (hk : k < 16) :
+    addr (S + BitVec.ofNat 32 (16 * k)) (planeOff j b) = S.setWidth 64 + BitVec.ofNat 64 (1024 * j + 256 * b + 16 * k) := by
   unfold addr
   rw [ofs_add, ← addr, addr_of_fit (by unfold planeOff; omega_using [fit, hj, hb, hk])]
   congr 2; unfold planeOff; omega_using []
 
-/-- The lane mask, the accumulator and the row pointer. -/
+/-- The row count, the planes' registers and the row pointer. -/
 theorem start_run (s : State) {sch : Nat} {S : BitVec 32} (hr : InRegions (s.rd ++ s.wr) (addr (s.gpr .esp) sch) 4)
-    (hv : s.mem.readW (addr (s.gpr .esp) sch) 32 = S) {L : Nat} (hL : (s.gpr .esi).toNat % 4 = L) :
+    (hv : s.mem.readW (addr (s.gpr .esp) sch) 32 = S) :
     WP isa (.block (lookupStart sch)) s fun t =>
-      t.gpr .eax = laneMask L ∧ t.gpr .edi = 0 ∧ t.gpr .ebx = S ∧ t.mem = s.mem := by
-  obtain hl : L < 4 := by omega_using [hL]
-  obtain ⟨b1, b2⟩ := bitClr_lane _ hL
+      t.gpr .edi = s.gpr .esi ∧ (∀ b < 4, t.xmm (planeReg b) = 0) ∧ t.gpr .ebx = S ∧ t.mem = s.mem := by
   unfold lookupStart
-  simp only [List.append_assoc]
-  rw [WP.block_append_iff]
-  obtain h0 : WP isa (.block [.mov .eax (imm 255)]) s fun t =>
-      t.gpr .eax = BitVec.ofNat 32 255 ∧ t.mem = s.mem := by brun
-  refine WP.mono (WP.keep [.eax] h0 (by decide)) fun t₀ ⟨⟨t7, tm⟩, tk⟩ => ?_
-  rw [WP.block_append_iff]
-  refine WP.mono (WP.keep [.eax, .ecx, .edx] (condRot_run t₀ .eax (c := 1) (a := 24) (by decide) (by decide)
-    (by decide) (by decide) (by decide)) (by decide)) fun t₁ ⟨⟨u7, um⟩, uk⟩ => ?_
-  rw [WP.block_append_iff]
-  refine WP.mono (WP.keep [.eax, .ecx, .edx] (condRot_run t₁ .eax (c := 2) (a := 16) (by decide) (by decide)
-    (by decide) (by decide) (by decide)) (by decide)) fun t₂ ⟨⟨v7, vm⟩, vk⟩ => ?_
-  obtain q1 : t₀.gpr .esi = s.gpr .esi := tk.gpr (by decide)
-  obtain q2 : t₁.gpr .esi = s.gpr .esi := (uk.gpr (by decide)).trans q1
-  obtain k2 : Keep [.eax, .ecx, .edx] s t₂ := ((tk.trans uk).trans vk).mono (by decide)
-  obtain e7 : t₂.gpr .eax = laneMask L := by
-    rw [v7, u7, q2, q1, t7, b1, b2, not_ite, not_ite]; exact laneMask_rot hl
-  obtain em : t₂.mem = s.mem := by rw [vm, um, tm]
-  obtain er : InRegions (t₂.rd ++ t₂.wr) (addr (t₂.gpr .esp) sch) 4 := by
-    rw [keep_reads k2, k2.gpr (by decide)]; exact hr
-  obtain ev : t₂.mem.readW (addr (t₂.gpr .esp) sch) 32 = S := by rw [em, k2.gpr (by decide)]; exact hv
-  obtain ev' : s.mem.readW (addr (t₂.gpr .esp) sch) 32 = S := by rw [k2.gpr (by decide)]; exact hv
-  brun [e7, em, er, ev, ev']
+  vrun [hr, hv]
+  refine ⟨rfl, fun b hb => ?_, rfl, rfl⟩
+  rcases cases4 hb with rfl | rfl | rfl | rfl <;>
+    simp (disch := decide) only [planeReg, RegUpd.xmm_setXmm_self, RegUpd.xmm_setXmm_of_ne, RegUpd.xmm_setReg,
+      XBinOp.eval, BitVec.xor_self] <;> rfl
 
 /-- After `k` rows of S-box `j` for the index `idx`, from the lookup's start `s₀`. -/
 structure RowInv (s₀ : State) (S : BitVec 32) (j : Nat) (idx : Byte) (k : Nat) (u : State) : Prop where
-  q : u.gpr .esi = idx.setWidth 32 - BitVec.ofNat 32 (4 * k)
-  acc : u.gpr .edi = scanAcc s₀.mem (S.setWidth 64) j idx.toNat k
-  lane : u.gpr .eax = laneMask (idx.toNat % 4)
-  rp : u.gpr .ebx = S + BitVec.ofNat 32 (4 * k)
+  esi : u.gpr .esi = idx.setWidth 32
+  q : u.gpr .edi = idx.setWidth 32 - BitVec.ofNat 32 (16 * k)
+  acc : ∀ b < 4, u.xmm (planeReg b) = rowAcc s₀.mem (S.setWidth 64) j b idx.toNat k
+  rp : u.gpr .ebx = S + BitVec.ofNat 32 (16 * k)
   keep : Keep lookRegs s₀ u
   mem : u.mem = s₀.mem
 
 theorem row_step {sch : Nat} {S : BitVec 32} {s₀ : State} (E : LookEnv sch S s₀) {j : Nat} (hj : j < 4)
-    (idx : Byte) {k : Nat} (hk : k < 64) {u : State} (I : RowInv s₀ S j idx k u) :
+    (idx : Byte) {k : Nat} (hk : k < 16) {u : State} (I : RowInv s₀ S j idx k u) :
     WP isa (.block (row sch j)) u fun u' =>
-      RowInv s₀ S j idx (k + 1) u' ∧ u'.zf = some (decide (k + 1 = 64)) := by
+      RowInv s₀ S j idx (k + 1) u' ∧ u'.zf = some (decide (k + 1 = 16)) := by
   have fit := E.fit
   obtain hrd : u.rd ++ u.wr = s₀.rd ++ s₀.wr := keep_reads I.keep
-  obtain hr : ∀ b < 4, InRegions (u.rd ++ u.wr) (addr (S + BitVec.ofNat 32 (4 * k)) (planeOff j b)) 4 :=
+  obtain hr : ∀ b < 4, InRegions (u.rd ++ u.wr) (addr (S + BitVec.ofNat 32 (16 * k)) (planeOff j b)) 16 :=
     fun b hb => by rw [addr_row fit hj hb hk, hrd]; exact E.rd _ (by omega_using [hj, hk, hb])
   obtain hsp : u.gpr .esp = s₀.gpr .esp := I.keep.gpr (by decide)
-  refine WP.mono (WP.keep [.ebx, .ecx, .edx, .esi, .edi] (row_run u (S := S) I.q I.acc I.lane I.rp
+  refine WP.mono (WP.keep [.ebx, .ecx, .edx, .edi] (row_run u (S := S) I.q (row_hit16 idx hk) I.rp
     (by rw [I.mem, hsp]; exact E.schVal) (by rw [hrd, hsp]; exact E.schRd) hr) (by
-      simp [writesOnly, row, plane, Code.allInstrs, Taint.clobbers, Taint.dst, VG.Proof.MlDsa.X86.Pack.allRegs]))
+      simp [writesOnly, row, plane, xb, Code.allInstrs, Taint.clobbers, Taint.dst, VG.Proof.MlDsa.X86.Pack.allRegs]))
     fun u' ⟨⟨a5, a4, a10, az, am⟩, ak⟩ => ?_
-  refine ⟨⟨?_, ?_, ?_, ?_, Keep.trans_sub I.keep ak (by decide), am.trans I.mem⟩, ?_⟩
+  refine ⟨⟨?_, ?_, fun b hb => ?_, ?_, Keep.trans_sub I.keep ak (by decide), am.trans I.mem⟩, ?_⟩
+  · rw [ak.gpr (by decide), I.esi]
   · rw [a4, BitVec.sub_sub, ← BitVec.ofNat_add]; congr 2
-  · dsimp only at a5
-    obtain e : ∀ q lm : BitVec 32, q = idx.setWidth 32 - BitVec.ofNat 32 (4 * k) →
-        (if q.toNat < 4 then lm else 0) = if idx.toNat / 4 = k then lm else 0 := by
-      intro q lm hq; subst hq
-      have := row_hit idx hk
-      by_cases h : idx.toNat / 4 = k
-      · rw [ite_eq_left (this.mpr h), ite_eq_left h]
-      · rw [ite_eq_right (fun h' => h (this.mp h')), ite_eq_right h]
-    rw [a5, e _ _ rfl, I.mem]
-    simp only [addr_row fit hj (show 0 < 4 by decide) hk, addr_row fit hj (show 1 < 4 by decide) hk,
-      addr_row fit hj (show 2 < 4 by decide) hk, addr_row fit hj (show 3 < 4 by decide) hk]
-    exact scanAcc_succ _ _ _ _ _ _ rfl
-  · rw [ak.gpr (by decide), I.lane]
+  · rw [a5 b hb, I.acc b hb, I.mem, addr_row fit hj hb hk]
+    exact rowAcc_succ _ _ _ _ _ _
   · rw [a10, ofs_add]; congr 2
-  · rw [az, show (4#32 : BitVec 32) = BitVec.ofNat 32 4 from rfl, ofs_add, ofs_neg,
-      ofNat_sub_beq' (by omega_using [hk]) (by decide)]
+  · rw [az, ofs_add, ofs_neg, ofNat_sub_beq' (by omega_using [hk]) (by decide)]
     congr 2; apply propext; omega_using [hk]
 
 theorem rows_run {sch : Nat} {S : BitVec 32} {s₀ : State} (E : LookEnv sch S s₀) {j : Nat} (hj : j < 4)
     (idx : Byte) {u : State} (I : RowInv s₀ S j idx 0 u) :
-    WP isa (.loop (.block (row sch j)) .ne) u (RowInv s₀ S j idx 64) := by
-  refine WP.loop (M := isa) (Q := RowInv s₀ S j idx 64)
-    (fun (n : Nat) (v : State) => ∃ k, k < 64 ∧ n = 64 - k ∧ RowInv s₀ S j idx k v) ?_ 64 u
+    WP isa (.loop (.block (row sch j)) .ne) u (RowInv s₀ S j idx 16) := by
+  refine WP.loop (M := isa) (Q := RowInv s₀ S j idx 16)
+    (fun (n : Nat) (v : State) => ∃ k, k < 16 ∧ n = 16 - k ∧ RowInv s₀ S j idx k v) ?_ 16 u
     ⟨0, by decide, rfl, I⟩
   intro n v ⟨k, hk, hn, J⟩
   refine WP.mono (row_step E hj idx hk J) fun v' ⟨J', hz⟩ => ?_
   rw [eval_ne, hz]
-  by_cases e : k + 1 = 64
+  by_cases e : k + 1 = 16
   · left
     exact ⟨by rw [e]; rfl, e ▸ J'⟩
   · right
     exact ⟨by simp [e], n - 1, by omega_using [hk, hn], k + 1, by omega_using [hk, e], by omega_using [hn], J'⟩
 
+/-! ## The entry's bytes -/
+
+theorem punpckldq_L (f g : Nat → BitVec 32) :
+    XBinOp.eval .punpckldq (L f) (L g) = L fun k => if k % 2 = 0 then f (k / 2) else g (k / 2) := by
+  rw [punpckldq_eq, dword_L _ (by decide), dword_L _ (by decide), dword_L _ (by decide), dword_L _ (by decide)]; rfl
+
+theorem punpckhdq_L (f g : Nat → BitVec 32) :
+    XBinOp.eval .punpckhdq (L f) (L g) = L fun k => if k % 2 = 0 then f (2 + k / 2) else g (2 + k / 2) := by
+  rw [punpckhdq_eq, dword_L _ (by decide), dword_L _ (by decide), dword_L _ (by decide), dword_L _ (by decide)]; rfl
+
+theorem punpcklqdq_L (f g : Nat → BitVec 32) :
+    XBinOp.eval .punpcklqdq (L f) (L g) = L fun k => if k < 2 then f k else g (k - 2) := by
+  rw [punpcklqdq_eq, dword_L _ (by decide), dword_L _ (by decide), dword_L _ (by decide), dword_L _ (by decide)]; rfl
+
+theorem punpckhqdq_L (f g : Nat → BitVec 32) :
+    XBinOp.eval .punpckhqdq (L f) (L g) = L fun k => if k < 2 then f (2 + k) else g k := by
+  rw [punpckhqdq_eq, dword_L _ (by decide), dword_L _ (by decide), dword_L _ (by decide), dword_L _ (by decide)]; rfl
+
+theorem ite_L (p : Bool) (f g : Nat → BitVec 32) : (if p then L f else L g) = L fun k => if p then f k else g k := by
+  cases p <;> rfl
+
+theorem shl_L (f : Nat → BitVec 32) {n : Nat} (hn : n < 32) :
+    XShiftOp.eval .pslld (L f) (BitVec.ofNat 8 n) = L fun k => f k <<< n := by
+  have e : (BitVec.ofNat 8 n).toNat = n := by rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by omega_using [hn])
+  exact L_ext fun k hk => by rw [dword_pslld _ _ (by rw [e]; exact hn) hk, dword_L _ hk, e]
+
+theorem shr_L (f : Nat → BitVec 32) {n : Nat} (hn : n < 32) :
+    XShiftOp.eval .psrld (L f) (BitVec.ofNat 8 n) = L fun k => f k >>> n := by
+  have e : (BitVec.ofNat 8 n).toNat = n := by rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by omega_using [hn])
+  exact L_ext fun k hk => by rw [dword_psrld _ _ (by rw [e]; exact hn) hk, dword_L _ hk, e]
+
+theorem shuf_F5 (f : Nat → BitVec 32) : shufDwords (L f) 0xF5 = L fun k => f (2 * (k / 2) + 1) := by
+  refine L_ext fun k hk => ?_
+  rw [dword_shufDwords _ _ hk]
+  rcases cases4 hk with rfl | rfl | rfl | rfl <;> exact dword_L f (by decide)
+
+theorem shuf_02 (f : Nat → BitVec 32) : shufDwords (L f) 0x02 = L fun k => f (if k = 0 then 2 else 0) := by
+  refine L_ext fun k hk => ?_
+  rw [dword_shufDwords _ _ hk]
+  rcases cases4 hk with rfl | rfl | rfl | rfl <;> exact dword_L f (by decide)
+
+theorem pairs_run (s : State) {a b c d : Nat → BitVec 32} (h0 : s.xmm .xmm0 = L a) (h1 : s.xmm .xmm1 = L b)
+    (h2 : s.xmm .xmm2 = L c) (h3 : s.xmm .xmm3 = L d) :
+    WP isa (.block pairs) s fun t =>
+      t.xmm .xmm4 = L (fun k => if k % 2 = 0 then a (k / 2) else b (k / 2)) ∧
+      t.xmm .xmm5 = L (fun k => if k % 2 = 0 then c (k / 2) else d (k / 2)) ∧
+      t.xmm .xmm0 = L (fun k => if k % 2 = 0 then a (2 + k / 2) else b (2 + k / 2)) ∧
+      t.xmm .xmm2 = L (fun k => if k % 2 = 0 then c (2 + k / 2) else d (2 + k / 2)) ∧
+      XKeep [.xmm0, .xmm2, .xmm4, .xmm5] s t := by
+  unfold pairs
+  vrun []
+  refine ⟨?_, ?_, ?_, ?_, fun x hx => ?_, rfl, rfl⟩
+  · simp (disch := decide) only [RegUpd.xmm_setXmm_self, RegUpd.xmm_setXmm_of_ne, movdqa_L, h0, h1, punpckldq_L]
+  · simp (disch := decide) only [RegUpd.xmm_setXmm_self, RegUpd.xmm_setXmm_of_ne, movdqa_L, h2, h3, punpckldq_L]
+  · simp (disch := decide) only [RegUpd.xmm_setXmm_self, RegUpd.xmm_setXmm_of_ne, h0, h1, punpckhdq_L]
+  · simp (disch := decide) only [RegUpd.xmm_setXmm_self, h2, h3, punpckhdq_L]
+  · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hx
+    simp only [RegUpd.xmm_setXmm_of_ne, hx, not_false_eq_true]
+
+theorem quads_run (s : State) {f g : Nat → BitVec 32} (h4 : s.xmm .xmm4 = L f) (h5 : s.xmm .xmm5 = L g) :
+    WP isa (.block quads) s fun t =>
+      t.xmm .xmm4 = L (fun k => if k < 2 then f k else g (k - 2)) ∧
+      t.xmm .xmm1 = L (fun k => if k < 2 then f (2 + k) else g k) ∧ XKeep [.xmm1, .xmm4] s t := by
+  unfold quads
+  vrun []
+  refine ⟨?_, ?_, fun x hx => ?_, rfl, rfl⟩
+  · simp (disch := decide) only [RegUpd.xmm_setXmm_self, RegUpd.xmm_setXmm_of_ne, h4, h5, punpcklqdq_L]
+  · simp (disch := decide) only [RegUpd.xmm_setXmm_self, movdqa_L, h4, h5, punpckhqdq_L]
+  · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hx
+    simp only [RegUpd.xmm_setXmm_of_ne, hx, not_false_eq_true]
+
+theorem shiftIf_run (s : State) {c n : Nat} (hn : n < 32) {f : Nat → BitVec 32} (h4 : s.xmm .xmm4 = L f) :
+    WP isa (.block (shiftIf c n)) s fun t =>
+      t.xmm .xmm4 = L (fun k => if bitClr (s.gpr .esi) c then f k else f k >>> n) ∧ XKeep [.xmm0, .xmm4, .xmm6] s t := by
+  simp only [shiftIf, List.append_assoc]
+  rw [WP.block_append_iff]
+  refine WP.mono (mask_run s c) fun t ⟨t6, tk⟩ => ?_
+  rw [WP.block_append_iff]
+  have h : WP isa (.block [xb .movdqa .xmm0 .xmm4, .xop (.shift .psrld .xmm0 (BitVec.ofNat 8 n))]) t fun u =>
+      u.xmm .xmm0 = L (fun k => f k >>> n) ∧ XKeep [.xmm0] t u := by
+    vrun []
+    refine ⟨?_, fun x hx => ?_, rfl, rfl⟩
+    · rw [RegUpd.xmm_setXmm_self, movdqa_L, tk.xmm .xmm4 (by decide), h4, shr_L _ hn]
+    · simp only [List.mem_singleton] at hx
+      rw [RegUpd.xmm_setXmm_of_ne _ _ hx, RegUpd.xmm_setXmm_of_ne _ _ hx]
+  refine WP.mono h fun u ⟨u0, uk⟩ => ?_
+  refine WP.mono (orElse_run u ((uk.xmm _ (by decide)).trans t6) (x := .xmm4) (y := .xmm0) (by decide) (by decide))
+    fun v ⟨v4, vk⟩ => ⟨?_, fun x hx => ?_, vk.esi.trans (uk.esi.trans tk.esi), vk.mem.trans (uk.mem.trans tk.mem)⟩
+  · rw [v4, u0, uk.xmm .xmm4 (by decide), tk.xmm .xmm4 (by decide), h4, ite_L]
+  · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hx
+    rw [vk.xmm _ (by simpa using hx.2.1), uk.xmm _ (by simpa using hx.1), tk.xmm _ (by simpa using hx.2.2)]
+
+/-- The bytes of `joinBytes`' doubleword. -/
+theorem join_byte (v : Nat → BitVec 32) {c : Nat} (hc : c < 4) :
+    (((v 0 <<< 24 >>> 24) ||| (v 1 <<< 24 >>> 24) <<< 8) |||
+        ((v 2 <<< 24 >>> 24) ||| (v 3 <<< 24 >>> 24) <<< 8) <<< 16).extractLsb' (8 * c) 8 = (v c).extractLsb' 0 8 := by
+  apply BitVec.eq_of_getLsbD_eq; intro i hi
+  rcases cases4 hc with rfl | rfl | rfl | rfl <;>
+    simp (disch := omega) only [BitVec.getLsbD_extractLsb', BitVec.getLsbD_or, BitVec.getLsbD_shiftLeft,
+      BitVec.getLsbD_ushiftRight, hi, decide_true, Bool.true_and, Nat.mul_zero, Nat.zero_add, Nat.reduceMul]
+  all_goals
+    first
+    | rfl
+    | (simp (disch := omega) only [decide_eq_true, decide_eq_false, Bool.not_true,
+        Bool.not_false, Bool.false_and, Bool.true_and, Bool.and_false, Bool.or_false, Bool.false_or]
+       congr 1; omega_using [hi])
+
+theorem joinBytes_run (s : State) {f : Nat → BitVec 32} (h4 : s.xmm .xmm4 = L f) :
+    WP isa (.block joinBytes) s fun t =>
+      (∀ c < 4, (dword (t.xmm .xmm4) 0).extractLsb' (8 * c) 8 = (f c).extractLsb' 0 8) ∧ t.mem = s.mem := by
+  unfold joinBytes
+  vrun []
+  refine ⟨fun c hc => ?_, by simp only [RegUpd.mem_setXmm]⟩
+  rw [← join_byte f hc]
+  simp (disch := decide) only [RegUpd.xmm_setXmm_self, h4]
+  rw [show (24 : BitVec 8) = BitVec.ofNat 8 24 from rfl, show (8 : BitVec 8) = BitVec.ofNat 8 8 from rfl,
+    show (16 : BitVec 8) = BitVec.ofNat 8 16 from rfl]
+  simp (disch := decide) only [shl_L, shr_L, shuf_F5, shuf_02, por_L, dword_L]
+  simp only [Nat.reduceDiv, Nat.reduceMul, Nat.reduceAdd, ite_true]
+
+/-- The bits of an index, from its register. -/
+theorem bitClr_idx (idx : Byte) : ∀ b < 4, bitClr (idx.setWidth 32) (2 ^ b) = !idx.getLsbD b := by
+  revert idx; decide
+
+theorem idx_bits (idx : Byte) : idx.toNat % 16 = 4 * (2 * (idx.getLsbD 3).toNat + (idx.getLsbD 2).toNat) +
+    (2 * (idx.getLsbD 1).toNat + (idx.getLsbD 0).toNat) := by
+  revert idx; decide
+
+/-- Byte `m` of doubleword `k`. -/
+theorem dword_byte (x : BitVec 128) (k : Nat) {p q : Bool} :
+    (dword x k >>> (16 * p.toNat) >>> (8 * q.toNat)).extractLsb' 0 8 =
+      x.extractLsb' (8 * (4 * k + (2 * p.toNat + q.toNat))) 8 := by
+  apply BitVec.eq_of_getLsbD_eq; intro i hi
+  have := p.toNat_le
+  have := q.toNat_le
+  rw [← BitVec.shiftRight_add, dword, BitVec.getLsbD_extractLsb', BitVec.getLsbD_ushiftRight,
+    BitVec.getLsbD_extractLsb', BitVec.getLsbD_extractLsb',
+    decide_eq_true (show 16 * p.toNat + 8 * q.toNat + (0 + i) < 32 by omega), Bool.true_and]
+  congr 2; omega
+
+theorem end_run (s : State) {idx : Byte} {A : Nat → BitVec 128} (hi : s.gpr .esi = idx.setWidth 32)
+    (hA : ∀ b < 4, s.xmm (planeReg b) = A b) :
+    WP isa (.block lookupEnd) s fun t =>
+      (∀ c < 4, (dword (t.xmm .xmm4) 0).extractLsb' (8 * c) 8 = (A c).extractLsb' (8 * (idx.toNat % 16)) 8) ∧
+        t.mem = s.mem := by
+  have L4 (b : Nat) (hb : b < 4) : s.xmm (planeReg b) = L (dword (A b) ·) := by rw [hA b hb, L_dword]
+  have bit (c : Nat) (b : Nat) (hb : b < 4) (hc : c = 2 ^ b) : bitClr (idx.setWidth 32) c = !idx.getLsbD b := by
+    rw [hc]; exact bitClr_idx idx b hb
+  unfold lookupEnd
+  rw [WP.block_append_iff]
+  refine WP.mono (pairs_run s (L4 0 (by decide)) (L4 1 (by decide)) (L4 2 (by decide)) (L4 3 (by decide)))
+    fun a ⟨a4, a5, a0, a2, ak⟩ => ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (mask_run a 8) fun b ⟨b6, bk⟩ => ?_
+  rw [ak.esi, hi, bit 8 3 (by decide) rfl] at b6
+  rw [WP.block_append_iff]
+  refine WP.mono (orElse_run b b6 (x := .xmm4) (y := .xmm0) (by decide) (by decide)) fun c ⟨c4, ck⟩ => ?_
+  rw [bk.xmm _ (by decide), bk.xmm .xmm0 (by decide), a4, a0, ite_L] at c4
+  rw [WP.block_append_iff]
+  refine WP.mono (orElse_run c ((ck.xmm _ (by decide)).trans b6) (x := .xmm5) (y := .xmm2) (by decide) (by decide))
+    fun d ⟨d5, dk⟩ => ?_
+  rw [ck.xmm .xmm5 (by decide), ck.xmm .xmm2 (by decide), bk.xmm .xmm5 (by decide), bk.xmm .xmm2 (by decide), a5, a2,
+    ite_L] at d5
+  rw [WP.block_append_iff]
+  refine WP.mono (quads_run d ((dk.xmm _ (by decide)).trans c4) d5) fun e ⟨e4, e1, ek⟩ => ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (mask_run e 4) fun f ⟨f6, fk⟩ => ?_
+  have esi : e.gpr .esi = idx.setWidth 32 :=
+    (ek.esi.trans (dk.esi.trans (ck.esi.trans (bk.esi.trans ak.esi)))).trans hi
+  rw [esi, bit 4 2 (by decide) rfl] at f6
+  rw [WP.block_append_iff]
+  refine WP.mono (orElse_run f f6 (x := .xmm4) (y := .xmm1) (by decide) (by decide)) fun g ⟨g4, gk⟩ => ?_
+  rw [fk.xmm _ (by decide), fk.xmm .xmm1 (by decide), e4, e1, ite_L] at g4
+  have gsi : g.gpr .esi = idx.setWidth 32 := (gk.esi.trans fk.esi).trans esi
+  rw [WP.block_append_iff]
+  refine WP.mono (shiftIf_run g (c := 2) (n := 16) (by decide) g4) fun h ⟨h4, hk⟩ => ?_
+  rw [gsi, bit 2 1 (by decide) rfl] at h4
+  rw [WP.block_append_iff]
+  refine WP.mono (shiftIf_run h (c := 1) (n := 8) (by decide) h4) fun i ⟨i4, ik⟩ => ?_
+  rw [hk.esi, gsi, bit 1 0 (by decide) rfl] at i4
+  refine WP.mono (joinBytes_run i i4) fun t ⟨t4, tm⟩ => ⟨fun c hc => ?_, ?_⟩
+  · rw [t4 c hc, idx_bits, ← dword_byte]
+    generalize idx.getLsbD 0 = p0, idx.getLsbD 1 = p1, idx.getLsbD 2 = p2, idx.getLsbD 3 = p3
+    congr 1
+    rcases cases4 hc with rfl | rfl | rfl | rfl <;> cases p3 <;> cases p2 <;> cases p1 <;> cases p0 <;> rfl
+  · rw [tm, ik.mem, hk.mem, gk.mem, fk.mem, ek.mem, dk.mem, ck.mem, bk.mem, ak.mem]
+
 /-- The lookup of S-box `j` for byte `3 - j` of xL, `x`. -/
 theorem lookup_run {sch : Nat} {S : BitVec 32} {s : State} (E : LookEnv sch S s) {j : Nat} (hj : j < 4)
     {x : BitVec 32} (hx : s.mem.readW (addr (s.gpr .ebp) xlOff) 32 = x) :
     WP isa (lookup sch j) s fun t =>
-      t.gpr .edi = sEntry (scheduleAt s.mem (S.setWidth 64)) j (quarter x j) ∧
+      dword (t.xmm .xmm4) 0 = sEntry (scheduleAt s.mem (S.setWidth 64)) j (quarter x j) ∧
         Keep lookRegs s t ∧ t.mem = s.mem := by
   let idx := quarter x j
   unfold lookup
@@ -266,31 +468,26 @@ theorem lookup_run {sch : Nat} {S : BitVec 32} {s : State} (E : LookEnv sch S s)
   refine WP.mono (WP.keep [.esi] (index_run s hj E.xl hx) (by
     unfold index; split <;> simp [writesOnly, Code.allInstrs, Taint.clobbers, Taint.dst,
       VG.Proof.MlDsa.X86.Pack.allRegs])) fun t ⟨⟨t4, tm⟩, tk⟩ => ?_
-  obtain hL : (t.gpr .esi).toNat % 4 = idx.toNat % 4 := by rw [t4, BitVec.toNat_setWidth]; simp [idx]
   obtain Et := E.keep tk tm (by decide) (by decide)
-  refine WP.mono (WP.keep [.eax, .ebx, .ecx, .edx, .edi] (start_run t Et.schRd Et.schVal hL) (by
-      simp [writesOnly, lookupStart, condRot, Code.allInstrs, Taint.clobbers, Taint.dst,
+  refine WP.mono (WP.keep [.ebx, .edi] (start_run t Et.schRd Et.schVal) (by
+      simp [writesOnly, lookupStart, xb, Code.allInstrs, Taint.clobbers, Taint.dst,
         VG.Proof.MlDsa.X86.Pack.allRegs]))
-    fun u ⟨⟨u7, u5, u10, um⟩, uk⟩ => ?_
+    fun u ⟨⟨u5, ux, u10, um⟩, uk⟩ => ?_
   obtain K0 : Keep lookRegs s u := (tk.trans uk).mono (by decide)
   obtain I0 : RowInv s S j idx 0 u := by
-    refine ⟨?_, by rw [u5, scanAcc_zero], u7, by rw [u10]; simp, K0, by rw [um]; exact tm⟩
-    rw [uk.gpr (by decide), t4]; simp; rfl
+    refine ⟨by rw [uk.gpr (by decide), t4], ?_, fun b hb => by rw [ux b hb]; rfl, by rw [u10]; simp, K0,
+      by rw [um]; exact tm⟩
+    rw [u5, t4]; simp; rfl
   apply WP.seq
   refine WP.mono (rows_run E hj idx I0) fun v V => ?_
-  unfold lookupEnd
-  rw [WP.block_append_iff]
-  refine WP.mono (WP.keep [.ecx, .edx, .edi] (condRot_run v .edi (c := 1) (a := 8) (by decide) (by decide)
-    (by decide) (by decide) (by decide)) (by decide))
-    fun w ⟨⟨w5, wm⟩, wk⟩ => ?_
-  refine WP.mono (WP.keep [.ecx, .edx, .edi] (condRot_run w .edi (c := 2) (a := 16) (by decide) (by decide)
-    (by decide) (by decide) (by decide)) (by decide))
-    fun y ⟨⟨y5, ym⟩, yk⟩ => ?_
-  obtain hL4 : idx.toNat % 4 < 4 := Nat.mod_lt _ (by decide)
-  obtain ⟨b1, b2⟩ := bitClr_lane _ (sub256_mod idx)
-  refine ⟨?_, ((V.keep.trans wk).trans yk).mono (by decide), by rw [ym, wm, V.mem]⟩
-  rw [y5, w5, wk.gpr (by decide), V.q, b1, b2, not_ite, not_ite, acc_rot _ hL4, V.acc, scanAcc_all]
-  exact hitWord_ror _ _ hj idx
+  refine WP.mono (WP.keep [.edx] (end_run v V.esi V.acc) (by decide)) fun w ⟨⟨w4, wm⟩, wk⟩ => ?_
+  refine ⟨word_ext fun c hc => ?_, (V.keep.trans wk).mono (by decide), by rw [wm, V.mem]⟩
+  have hx := idx.isLt
+  rw [w4 c hc, sEntry_byte _ _ hj hc, rowAcc, ite_eq_left (by omega_using [hx]), planeRow,
+    byte_readW _ _ (by omega_using []), Offset.add_add]
+  congr 3
+  change _ = 1024 * j + 256 * c + idx.toNat
+  omega_using []
 
 end VG.Proof.Blowfish.X86
 
@@ -312,10 +509,11 @@ namespace VG.Proof.Blowfish.X86
 open VG VG.X86 VG.Impl.Blowfish.X86 VG.Spec.Blowfish VG.Proof.Blowfish
 open VG.Proof.MlDsa.X86.Pack (Keep WP.keep writesOnly addr_of_fit)
 
-/-- What F needs besides a lookup's: F's slot writable, apart from the
+/-- What F needs besides a lookup's: xR's and F's slots writable, F's apart from the
 schedule, xL's slot and the schedule's address on the stack. -/
 structure FEnv (sch : Nat) (S : BitVec 32) (s : State) : Prop extends LookEnv sch S s where
-  fw : InRegions s.wr (addr (s.gpr .ebp) fOff) 4
+  fw : InRegions s.wr (addr (s.gpr .ebp) xrOff) 8
+  fit8 : addr (s.gpr .ebp) fOff = addr (s.gpr .ebp) xrOff + BitVec.ofNat 64 4
   fS : Region.Disjoint ⟨addr (s.gpr .ebp) fOff, 4⟩ ⟨S.setWidth 64, 4168⟩
   fX : Mem.Sep (addr (s.gpr .ebp) xlOff) 4 (addr (s.gpr .ebp) fOff) 4
   fA : Mem.Sep (addr (s.gpr .esp) sch) 4 (addr (s.gpr .ebp) fOff) 4
@@ -324,6 +522,7 @@ theorem FEnv.keep {sch : Nat} {S : BitVec 32} {s t : State} (E : FEnv sch S s) {
     (h : Keep rs s t) (hm : t.mem = s.mem) (hsp : Reg.esp ∉ rs) (hbp : Reg.ebp ∉ rs) : FEnv sch S t :=
   { E.toLookEnv.keep h hm hsp hbp with
     fw := by rw [h.2.2, h.gpr hbp]; exact E.fw
+    fit8 := by rw [h.gpr hbp]; exact E.fit8
     fS := by rw [h.gpr hbp]; exact E.fS
     fX := by rw [h.gpr hbp]; exact E.fX
     fA := by rw [h.gpr hbp, h.gpr hsp]; exact E.fA }
@@ -338,7 +537,7 @@ theorem FEnv.write {sch : Nat} {S : BitVec 32} {s t : State} (E : FEnv sch S s) 
   obtain r := keep_reads h
   obtain esp := h.gpr hsp
   obtain ebp := h.gpr hbp
-  refine ⟨⟨?_, ?_, E.fit, fun o ho => ?_, ?_⟩, ?_, ?_, ?_, ?_⟩
+  refine ⟨⟨?_, ?_, E.fit, fun o ho => ?_, ?_⟩, ?_, by rw [ebp]; exact E.fit8, ?_, ?_, ?_⟩
   · rw [r, esp]; exact E.schRd
   · rw [hm, esp, Mem.readW_writeW_sep E.fA (by decide)]; exact E.schVal
   · rw [r]; exact E.rd o ho
@@ -361,14 +560,55 @@ theorem scheduleAt_writeF {S F : Addr} (h : Region.Disjoint ⟨F, 4⟩ ⟨S, 416
     ((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self F 4))
     (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact h.symm)
 
-theorem combine_run (u : State) {j : Nat} (hj : j < 4) (hw : InRegions u.wr (addr (u.gpr .ebp) fOff) 4) :
+/-- Writing back what is there changes nothing. -/
+theorem writeW_readW32 (m : Mem) (a : Addr) : m.writeW a (m.readW a 32) = m := by
+  funext x
+  simp only [Mem.writeW, Mem.write]
+  split
+  · rename_i h
+    have e : x = a + BitVec.ofNat 64 (x - a).toNat := by
+      rw [BitVec.ofNat_toNat, BitVec.setWidth_eq, BitVec.add_comm, BitVec.sub_add_cancel]
+    conv => rhs; rw [e]
+    rw [Mem.readW_byte m a (i := (x - a).toNat) h]; rfl
+  · rfl
+
+/-- xR and F written together, xR as it was. -/
+theorem writeF_eq (m : Mem) (a b : Addr) (h : b = a + BitVec.ofNat 64 4) (v : BitVec 32) :
+    m.writeW a (v ++ m.readW a 32) = m.writeW b v := by
+  rw [Proof.Rc2.Word32.write64_pair, writeW_readW32, h]
+
+theorem low_dword (r : BitVec 32) : dword ((0 : BitVec 96) ++ r) 0 = r := by
+  apply BitVec.eq_of_getLsbD_eq; intro i hi
+  simp only [dword, BitVec.getLsbD_extractLsb', BitVec.getLsbD_append, Nat.mul_zero, Nat.zero_add, hi, decide_true,
+    Bool.true_and, ite_true]
+
+theorem storeVal (r : BitVec 32) (y : BitVec 128) :
+    (XBinOp.eval .punpckldq ((0 : BitVec 96) ++ r) y).extractLsb' 0 64 = dword y 0 ++ r := by
+  rw [punpckldq_eq, low_dword]
+  apply BitVec.eq_of_getLsbD_eq; intro i hi
+  simp only [getLsbD_ofDwords, BitVec.getLsbD_extractLsb', BitVec.getLsbD_append, hi, decide_true, Bool.true_and,
+    Nat.zero_add]
+  by_cases h : i < 32
+  · simp only [h, ite_true]
+  · simp only [h, ite_false, show i - 32 < 32 by omega_using [hi], ite_true]
+
+theorem combine_run (u : State) {j : Nat} (hj : j < 4) (hw : InRegions u.wr (addr (u.gpr .ebp) xrOff) 8)
+    (h8 : addr (u.gpr .ebp) fOff = addr (u.gpr .ebp) xrOff + BitVec.ofNat 64 4) :
     WP isa (.block (combine j)) u fun t =>
-      t.mem = u.mem.writeW (addr (u.gpr .ebp) fOff) (if j = 0 then u.gpr .edi
-        else if j = 2 then u.mem.readW (addr (u.gpr .ebp) fOff) 32 ^^^ u.gpr .edi
-        else u.mem.readW (addr (u.gpr .ebp) fOff) 32 + u.gpr .edi) := by
-  obtain hr := region_in (rs := u.rd) hw
+      t.mem = u.mem.writeW (addr (u.gpr .ebp) fOff) (if j = 0 then dword (u.xmm .xmm4) 0
+        else if j = 2 then u.mem.readW (addr (u.gpr .ebp) fOff) 32 ^^^ dword (u.xmm .xmm4) 0
+        else u.mem.readW (addr (u.gpr .ebp) fOff) 32 + dword (u.xmm .xmm4) 0) := by
+  have hr : InRegions (u.rd ++ u.wr) (addr (u.gpr .ebp) xrOff) 8 := region_in hw
+  have hx : InRegions (u.rd ++ u.wr) (addr (u.gpr .ebp) xrOff) 4 := inRegions_pre hr (by decide)
+  have hf : InRegions (u.rd ++ u.wr) (addr (u.gpr .ebp) fOff) 4 := by rw [h8]; exact inRegions_off hr (by decide)
+  simp only [← writeF_eq _ _ _ h8]
+  simp only [xrOff, fOff] at hw hx hf ⊢
   rcases (by omega_using [hj] : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3) with rfl | rfl | rfl | rfl <;>
-    simp only [fOff] at hw hr ⊢ <;> brun [combine, hw, hr]
+    · simp only [combine, ite_true, ite_false, reduceCtorEq, List.nil_append, Nat.reduceEqDiff]
+      vrun [hw, hx, hf]
+      simp (disch := decide) only [storeVal, dword_paddd, dword_pxor, low_dword]
+      try rw [BitVec.add_comm]
+      try rw [BitVec.xor_comm]
 
 /-- S-box `j`'s lookup, then its accumulation into F's slot, which holds
 `fAcc … (j - 1)` (or what it did, for `j = 0`). -/
@@ -396,8 +636,8 @@ theorem step_run {sch : Nat} {S : BitVec 32} {s₀ : State} (E : FEnv sch S s₀
   apply WP.seq
   refine WP.mono (lookup_run Eu.toLookEnv hj hx) fun v ⟨v7, vk, vm⟩ => ?_
   obtain vbp : v.gpr .ebp = s₀.gpr .ebp := (vk.gpr (by decide)).trans ebp
-  obtain hw : InRegions v.wr (addr (v.gpr .ebp) fOff) 4 := by rw [vk.2.2, vk.gpr (by decide)]; exact Eu.fw
-  refine WP.mono (WP.keep [.ecx] (combine_run v hj hw) (by
+  obtain hw : InRegions v.wr (addr (v.gpr .ebp) xrOff) 8 := by rw [vk.2.2, vk.gpr (by decide)]; exact Eu.fw
+  refine WP.mono (WP.keep [.ecx] (combine_run v hj hw (by rw [vk.gpr (by decide)]; exact Eu.fit8)) (by
     rcases (by omega_using [hj] : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3) with rfl | rfl | rfl | rfl <;> decide))
     fun t ⟨tm, tk⟩ => hQ t ((k.trans vk).trans tk |>.mono (by decide)) ?_
   rw [tm, vm, vbp, v7, hK]
@@ -480,7 +720,7 @@ structure CipherEnv (sch : Nat) (S B : BitVec 32) (s : State) : Prop where
   schRd : InRegions (s.rd ++ s.wr) (addr (s.gpr .esp) sch) 4
   schVal : s.mem.readW (addr (s.gpr .esp) sch) 32 = S
   fit : S.toNat + 4168 ≤ 2 ^ 32
-  rd : ∀ o, o + 4 ≤ 4168 → InRegions (s.rd ++ s.wr) (S.setWidth 64 + BitVec.ofNat 64 o) 4
+  rd : ∀ {n : Nat} (o : Nat), o + n ≤ 4168 → InRegions (s.rd ++ s.wr) (S.setWidth 64 + BitVec.ofNat 64 o) n
   sepS : Region.Disjoint ⟨B.setWidth 64, 40⟩ ⟨S.setWidth 64, 4168⟩
   sepA : Region.Disjoint ⟨B.setWidth 64, 40⟩ ⟨addr (s.gpr .esp) sch, 4⟩
 
@@ -518,7 +758,8 @@ theorem CipherEnv.fenv {sch : Nat} {S B : BitVec 32} {s : State} (E : CipherEnv 
   fit := E.fit
   rd := E.rd
   xl := by rw [E.bp, addr_slot E.bfit (by decide)]; exact E.slotR (by decide)
-  fw := by rw [E.bp, addr_slot E.bfit (by decide)]; exact E.slotW (by decide)
+  fw := by rw [E.bp, addr_slot E.bfit (by decide)]; exact inRegions_off E.bw (by decide)
+  fit8 := by rw [E.bp, addr_slot E.bfit (by decide), addr_slot E.bfit (by decide), Offset.add_add]; rfl
   fS := by
     rw [E.bp, addr_slot E.bfit (by decide)]
     exact E.sepS.sub_left (Offset.sub_base _ (by decide))

@@ -141,11 +141,17 @@ theorem copyLoop_ok (s : State) {S D : Addr} {n : Nat} (h : LoopPre s S D n) :
 
 /-! ## `xorLoop` -/
 
-/-- In place (`o` false) the data is its own destination, `S = D`; out of
-place, the `n` bytes at `S` and at `D` are apart. -/
+/-- A one-pointer loop requires equality. A two-pointer loop also admits
+disjoint ranges; equality still gives the original next input byte. -/
 def Alias : Bool → Addr → Addr → Nat → Prop
   | false, S, D, _ => S = D
-  | true, S, D, n => (⟨S, n⟩ : Region).Disjoint ⟨D, n⟩
+  | true, S, D, n => S = D ∨ (⟨S, n⟩ : Region).Disjoint ⟨D, n⟩
+
+theorem Alias.buffers {o : Bool} {S D : Addr} {n : Nat} (h : Alias o S D n) :
+    S = D ∨ (⟨S, n⟩ : Region).Disjoint ⟨D, n⟩ := by
+  cases o
+  · exact .inl h
+  · exact h
 
 /-- The body of `xorLoopWith o`. -/
 abbrev xorBodyWith (o : Bool) : List Instr :=
@@ -208,10 +214,9 @@ theorem dst_kept {m : Mem} {D : Addr} {n i : Nat} (hi : i < n) (hn : n < 2 ^ 64)
 theorem data_kept {o : Bool} {m : Mem} {X O : Addr} {n i : Nat} (ha : Alias o X O n) (hi : i < n)
     (hn : n < 2 ^ 64) (xs : List Byte) (hxs : xs.length = i) :
     writeBytes m O xs (X + BitVec.ofNat 64 i) = m (X + BitVec.ofNat 64 i) := by
-  cases o
-  · have e : X = O := ha
-    subst e; exact dst_kept hi hn xs hxs
-  · exact src_kept ha hi hn xs hxs
+  rcases ha.buffers with rfl | apart
+  · exact dst_kept hi hn xs hxs
+  · exact src_kept apart hi hn xs hxs
 
 /-- What `xorLoopWith o` needs: the keystream at `K` (`a0`), `n` (at least
 1) bytes of data at `X` (`a1`), written to `O` (`a4` out of place; in place

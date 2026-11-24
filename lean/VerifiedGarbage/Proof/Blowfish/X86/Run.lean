@@ -5,6 +5,8 @@ public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Proof.MlDsa.X86.Pack.Run
 import VerifiedGarbage.Proof.Rc4.Dword
+public import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
+public import VerifiedGarbage.Proof.Framework.X86.Reduce -- shake: keep (`vrun` simps with `reduceExec`)
 public import VerifiedGarbage.TCB.Mem
 
 /-!
@@ -29,6 +31,25 @@ tactic_template "brun" "[" ls:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(t
       xrun [eaAt, xlOff, xrOff, fOff, ppOff, ptrOff, cntOff, List.cons_append, List.nil_append, $ls,*]))
 /-- `brun` with no extra lemmas. -/
 macro "brun" : tactic => `(tactic| brun [])
+
+/-- `vrun`: a block with SSE2 instructions, run as `brun` runs the others, the
+state a chain of register, flag and memory updates. -/
+tactic_template "vrun" "[" ls:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| (
+      apply WP.of_runBlock
+      refine ⟨?_, ?_, ?_⟩
+      rotate_left
+      · set_option linter.unusedSimpArgs false in
+        simp only [runBlock_cons, runStep_some, runBlock_nil, imm, xb, xlOff, xrOff, fOff,
+          reduceExec, readSrc, eaAt, State.load32, State.store64, State.load128, execAlu, XOp.exec,
+          Option.map_some, Option.bind_some,
+          RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg, RegUpd.xmm_setReg,
+          RegUpd.gpr_setFlags, RegUpd.mem_setFlags, RegUpd.rd_setFlags, RegUpd.wr_setFlags, RegUpd.xmm_setFlags,
+          RegUpd.gpr_arithFlags, RegUpd.mem_arithFlags, RegUpd.rd_arithFlags, RegUpd.wr_arithFlags,
+          RegUpd.xmm_arithFlags, RegUpd.cf_arithFlags, RegUpd.gpr_setXmm, RegUpd.mem_setXmm, RegUpd.rd_setXmm, RegUpd.wr_setXmm,
+          RegUpd.xmm_setXmm_self, RegUpd.xmm_setXmm_of_ne,
+          Option.some.injEq, exists_eq_left', ite_true, ite_false, reduceCtorEq, ↓reduceIte, and_self,
+          eq_self_iff_true, not_false_eq_true, true_and, and_true, List.cons_append, List.nil_append, $ls,*]
+        first | done | rfl))
 
 /-- `WP.keep` for `Keep` into a larger list. -/
 theorem Keep.trans_sub {rs rs' : List Reg} {s₁ s₂ s₃ : State} (h₁ : Keep rs s₁ s₂)

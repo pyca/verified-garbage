@@ -19,7 +19,6 @@ import VerifiedGarbage.Proof.Framework.X86.Mmx
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
 import VerifiedGarbage.Proof.X25519.X86.Basic
 import VerifiedGarbage.Proof.X448.Bytes
-import VerifiedGarbage.Proof.X448.X86.Carry
 import VerifiedGarbage.Proof.X448.X86.Columns
 import VerifiedGarbage.Proof.X448.X86.Copy
 import VerifiedGarbage.Proof.X448.X86.FnVerified
@@ -41,7 +40,6 @@ meta import VerifiedGarbage.Proof.Framework.X86.Mmx
 meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
 meta import VerifiedGarbage.Proof.X25519.X86.Basic
 meta import VerifiedGarbage.Proof.X448.Bytes
-meta import VerifiedGarbage.Proof.X448.X86.Carry
 meta import VerifiedGarbage.Proof.X448.X86.Columns
 meta import VerifiedGarbage.Proof.X448.X86.Copy
 meta import VerifiedGarbage.Proof.X448.X86.FnVerified
@@ -169,9 +167,9 @@ theorem inputs_ok {s₀ s : State} (h : MulAddPre s₀) {base : Addr} (hbase : (
     (hm : Outside base 0 8192 s₀.mem s.mem) (hs : Scr s base) :
     WP isa inputs s fun t => MKeep base s t ∧
       Bounded t.mem base SK ∧ Bounded t.mem base SS ∧ Bounded t.mem base SR ∧
-      fe t.mem base SK = decodeLE (bytesAt s₀.mem ((arg s₀ 2).setWidth 64) 57) % L ∧
-      fe t.mem base SS = decodeLE (bytesAt s₀.mem ((arg s₀ 3).setWidth 64) 57) % L ∧
-      fe t.mem base SR = decodeLE (bytesAt s₀.mem ((arg s₀ 1).setWidth 64) 57) % L := by
+      fe16 t.mem base SK = decodeLE (bytesAt s₀.mem ((arg s₀ 2).setWidth 64) 57) % L ∧
+      fe16 t.mem base SS = decodeLE (bytesAt s₀.mem ((arg s₀ 3).setWidth 64) 57) % L ∧
+      fe16 t.mem base SR = decodeLE (bytesAt s₀.mem ((arg s₀ 1).setWidth 64) 57) % L := by
   have hA := h.args
   have hK := SK_eq
   have hS := SS_eq
@@ -238,9 +236,9 @@ theorem scalarMulAdd_correct {s₀ : State} (h : MulAddPre s₀) :
       (Or.inr (by omega_using [hR, hRA])) (by omega_using [hR, hj])),
       congrArg BitVec.toNat (m3.word (d := SR + 4 * j) (Or.inl (by omega_using [hR, hC, hj])) (by omega_using [hR, hj]))]
   obtain lR4 : Bounded s4.mem base SR := fun j hj => by rw [eR j hj]; exact lR j hj
-  obtain vR4 : fe s4.mem base SR = fe s2.mem base SR := valN_congr eR
-  obtain hvR : fe s4.mem base SR < L := by rw [vR4, vR]; exact Nat.mod_lt _ Proof.Ed448.L_pos
-  obtain hvA : fe s4.mem base RA < L := by rw [v4]; exact Nat.mod_lt _ Proof.Ed448.L_pos
+  obtain vR4 : fe16 s4.mem base SR = fe16 s2.mem base SR := valN_congr eR
+  obtain hvR : fe16 s4.mem base SR < L := by rw [vR4, vR]; exact Nat.mod_lt _ Proof.Ed448.L_pos
+  obtain hvA : fe16 s4.mem base RA < L := by rw [v4]; exact Nat.mod_lt _ Proof.Ed448.L_pos
   simp only [List.append_assoc]
   rw [WP.block_append_iff]
   refine WP.mono (addPass_ok hs4 l4 lR4 hvA hvR) fun s5 ⟨k5, m5, l5, v5⟩ => ?_

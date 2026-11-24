@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Impl.AesGcm.Arm
+public import VerifiedGarbage.Impl.AesGcm.Arm.FrameArgs
 public import VerifiedGarbage.Impl.StackScratch.Arm
 
 /-! # Direct gather seal for A32 and Thumb-2
@@ -19,11 +19,7 @@ open VG.Arm
 /-- The private frame takes the one-shot layout for AAD, output and tag,
 followed by the two descriptor arguments. Copy each stack word once. -/
 def frameArgs : List Instr :=
-  let copyArg := fun (slot : Nat) (i : Nat) =>
-    [Instr.ldrSp .lr (2608 + 4*i), .str .lr .r12 (4*slot)]
-  [.addSp .r12 0, .str .lr .r12 32] ++
-    (List.range 7).flatMap (fun slot => copyArg slot ([0,1,4,5,6,2,3] : List Nat)[slot]!) ++
-    [.addSp .lr 36, .str .lr .r12 28, .ldrSp .lr 32]
+  orderedFrameArgs 2608 7 fun slot => ([0, 1, 4, 5, 6, 2, 3] : List Nat)[slot]!
 
 def setup : List Instr :=
   [.ldrSp .r7 20, .ldrSp .r0 24, .str .r0 .r11 rO,

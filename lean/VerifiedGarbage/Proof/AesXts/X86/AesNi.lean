@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.AesXts.Spec
 public import VerifiedGarbage.Proof.AesXts.X86.Verified
 public import VerifiedGarbage.Proof.Aes.X86.AesNi.BlocksMain
 public import VerifiedGarbage.Proof.AesCbc.X86.Decrypt
-import VerifiedGarbage.Proof.CmacAes.X86.UpdateCorrect
+import VerifiedGarbage.Proof.Aes.X86.Chain
 import VerifiedGarbage.Proof.Aes.X86.Common
 public import VerifiedGarbage.Proof.Framework.X86.SseTaint
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
@@ -68,7 +68,7 @@ open VG.Proof.AesCbc.X86.Decrypt (x_ldm x_addi x_subi x_cmpi x_test x_load x_sto
 open VG.Proof.Aes.X86.AesNi (Keys DKeys XFrame aes_ok aesDec_ok st st_ext getD_st getD_ofFn st_toList ea_at imcKeys_ok
   dKeys_of_imc ImcSetup ImcDone ImcInv byte_roundKey)
 open VG.Proof.Aes.X86 (in_rd part_sub_reg addr_add reg32)
-open VG.Proof.CmacAes.X86 (st_getD niKeys)
+open VG.Proof.Aes.X86.Chain (st_getD niKeys)
 open VG.Impl.Aes.X86.AesNi (regs6)
 open VG.Proof.AesCbc (Mode)
 open VG.Proof.AesXts.X86 (exec_shift onesX cX bx alphaX bx_alphaX mulX_val bx_xor bytesAt_bx bytesAt_writeW_bx)

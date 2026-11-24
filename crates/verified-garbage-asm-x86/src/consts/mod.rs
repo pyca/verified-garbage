@@ -35,12 +35,12 @@ mod vg_camellia_aesni_wide;
 pub use vg_camellia_aesni_wide::VG_CAMELLIA_AESNI_WIDE;
 
 #[rustfmt::skip]
-mod vg_cast5_s1234;
-pub use vg_cast5_s1234::VG_CAST5_S1234;
+mod vg_cast5_s1234_steps;
+pub use vg_cast5_s1234_steps::VG_CAST5_S1234_STEPS;
 
 #[rustfmt::skip]
-mod vg_cast5_s5678;
-pub use vg_cast5_s5678::VG_CAST5_S5678;
+mod vg_cast5_s5678_steps;
+pub use vg_cast5_s5678_steps::VG_CAST5_S5678_STEPS;
 
 #[rustfmt::skip]
 mod vg_cast5_ssse3;
@@ -53,6 +53,10 @@ pub use vg_ed25519_comb::VG_ED25519_COMB;
 #[rustfmt::skip]
 mod vg_ed25519_verify_neg_base;
 pub use vg_ed25519_verify_neg_base::VG_ED25519_VERIFY_NEG_BASE;
+
+#[rustfmt::skip]
+mod vg_ed448_b_table;
+pub use vg_ed448_b_table::VG_ED448_B_TABLE;
 
 #[rustfmt::skip]
 mod vg_ffdh_vetted_groups_x86;
@@ -117,3 +121,7 @@ pub use vg_sm4_key_aesni::VG_SM4_KEY_AESNI;
 #[rustfmt::skip]
 mod vg_triple_des_ssse3;
 pub use vg_triple_des_ssse3::VG_TRIPLE_DES_SSSE3;
+
+#[rustfmt::skip]
+mod vg_x448_comb;
+pub use vg_x448_comb::VG_X448_COMB;

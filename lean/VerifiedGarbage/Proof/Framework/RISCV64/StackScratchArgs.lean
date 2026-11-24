@@ -305,17 +305,17 @@ theorem copiedState_mem {bytes : Nat} {u : State} :
       · obtain rfl : j = m := by omega_using [hj, hj']
         rw [Mem.readW_writeW_self64, hsrc]
 
-/-- `addi t1, t0, 8 + 8m; sd t1, 8m(t0)`: pass the buffer. -/
-theorem tail_run {m : Nat} {w : State} (ht0 : w.gpr .t0 = w.sp) (hal : w.sp.toNat % 8 = 0)
-    (hm : 8 + 8 * m < 2048) (hw : InRegions w.wr (w.sp + BitVec.ofNat 64 (8 * m)) 8) :
-    execBlock isa [.addi .t1 .t0 ((8 + 8 * m : Nat) : Int), .store .d .t1 .t0 (8 * m)] w =
-      some ({ w.write .t1 (w.sp + BitVec.ofNat 64 (8 + 8 * m)) with
+/-- Pass the scratch buffer in the stack slot following the copied arguments. -/
+theorem tail_run {m workOff : Nat} {w : State} (ht0 : w.gpr .t0 = w.sp) (hal : w.sp.toNat % 8 = 0)
+    (hm : workOff < 2048) (slot : 8*m < 2048) (hw : InRegions w.wr (w.sp + BitVec.ofNat 64 (8 * m)) 8) :
+    execBlock isa [.addi .t1 .t0 ((workOff : Nat) : Int), .store .d .t1 .t0 (8 * m)] w =
+      some ({ w.write .t1 (w.sp + BitVec.ofNat 64 (workOff)) with
           mem := w.mem.writeW (w.sp + BitVec.ofNat 64 (8 * m))
-            (w.sp + BitVec.ofNat 64 (8 + 8 * m)) },
+            (w.sp + BitVec.ofNat 64 (workOff)) },
         [.addr (w.sp + BitVec.ofNat 64 (8 * m))]) := by
-  have ha := exec_addi_nat (s := w) (d := .t1) (n := .t0) (m := 8 + 8 * m) hm
-  have hs := exec_store_d (s := w.write .t1 (w.gpr .t0 + BitVec.ofNat 64 (8 + 8 * m)))
-    (t := .t1) (n := .t0) (off := 8 * m) (by omega_using [hm])
+  have ha := exec_addi_nat (s := w) (d := .t1) (n := .t0) (m := workOff) hm
+  have hs := exec_store_d (s := w.write .t1 (w.gpr .t0 + BitVec.ofNat 64 (workOff)))
+    (t := .t1) (n := .t0) (off := 8 * m) slot
     (by simp only [State.write, reduceCtorEq, ↓reduceIte, ht0]; exact Spill.al8 hal (by omega_using []))
     (by simp only [State.write, reduceCtorEq, ↓reduceIte, ht0]; exact hw)
   simp only [execBlock, isa, ha, hs, Option.map_some, addrs, List.map_cons, List.map_nil,
@@ -326,26 +326,26 @@ theorem tail_run {m : Nat} {w : State} (ht0 : w.gpr .t0 = w.sp) (hal : w.sp.toNa
 def setArgsTrace (bytes : Nat) (sp : Addr) (m : Nat) : List Leak :=
   copyTrace bytes sp m ++ [.addr (sp + BitVec.ofNat 64 (8 * m))]
 
-/-- The state after `setArgs bytes m` from `u`, if it runs. -/
-def setArgsState (bytes m : Nat) (u : State) : State :=
-  ((execBlock isa (setArgs bytes m) u).map Prod.fst).getD u
+/-- The state after `setArgsAt bytes m workOff` from `u`, if it runs. -/
+def setArgsAtState (bytes m workOff : Nat) (u : State) : State :=
+  ((execBlock isa (setArgsAt bytes m workOff) u).map Prod.fst).getD u
 
 /-- `setArgs`: the stack arguments copied into the frame, the buffer's
 address after them; nothing else written, and only `t0` and `t1` changed. -/
-theorem setArgs_run {bytes m : Nat} {u : State} (hal : u.sp.toNat % 8 = 0)
+theorem setArgsAt_run {bytes m workOff : Nat} (off : workOff < 2048) {u : State} (hal : u.sp.toNat % 8 = 0)
     (hfit : bytes + 8 + 8 * m < 2 ^ 64) (hb : 8 + 8 * m ≤ bytes)
     (ho : bytes - argStep bytes + 8 * m < 2048) (h8 : bytes % 8 = 0)
     (hr : ∀ j < m, InRegions (u.rd ++ u.wr) (u.sp + BitVec.ofNat 64 (bytes + 8 * j)) 8)
     (hw : ∀ j ≤ m, InRegions u.wr (u.sp + BitVec.ofNat 64 (8 * j)) 8) :
-    execBlock isa (setArgs bytes m) u = some (setArgsState bytes m u, setArgsTrace bytes u.sp m) ∧
-      (setArgsState bytes m u).rd = u.rd ∧ (setArgsState bytes m u).wr = u.wr ∧
-      (setArgsState bytes m u).sp = u.sp ∧
-      (∀ q, q ≠ .t0 → q ≠ .t1 → (setArgsState bytes m u).gpr q = u.gpr q) ∧
-      Frame [⟨u.sp, 8 * (m + 1)⟩] u.mem (setArgsState bytes m u).mem ∧
-      (∀ j < m, (setArgsState bytes m u).mem.readW (u.sp + BitVec.ofNat 64 (8 * j)) 64 =
+    execBlock isa (setArgsAt bytes m workOff) u = some (setArgsAtState bytes m workOff u, setArgsTrace bytes u.sp m) ∧
+      (setArgsAtState bytes m workOff u).rd = u.rd ∧ (setArgsAtState bytes m workOff u).wr = u.wr ∧
+      (setArgsAtState bytes m workOff u).sp = u.sp ∧
+      (∀ q, q ≠ .t0 → q ≠ .t1 → (setArgsAtState bytes m workOff u).gpr q = u.gpr q) ∧
+      Frame [⟨u.sp, 8 * (m + 1)⟩] u.mem (setArgsAtState bytes m workOff u).mem ∧
+      (∀ j < m, (setArgsAtState bytes m workOff u).mem.readW (u.sp + BitVec.ofNat 64 (8 * j)) 64 =
         u.mem.readW (u.sp + BitVec.ofNat 64 (bytes + 8 * j)) 64) ∧
-      (setArgsState bytes m u).mem.readW (u.sp + BitVec.ofNat 64 (8 * m)) 64 =
-        u.sp + BitVec.ofNat 64 (8 + 8 * m) := by
+      (setArgsAtState bytes m workOff u).mem.readW (u.sp + BitVec.ofNat 64 (8 * m)) 64 =
+        u.sp + BitVec.ofNat 64 workOff := by
   have hsa : argStep bytes = min bytes 2032 := rfl
   -- `addi t0, sp, 0`.
   let u₀ := u.write .t0 (u.sp + BitVec.ofNat 64 0)
@@ -360,20 +360,20 @@ theorem setArgs_run {bytes m : Nat} {u : State} (hal : u.sp.toNat % 8 = 0)
     (by omega_using [hb])
   have ht := tail_run (m := m) (w := copiedState bytes u₀ m)
     (by rw [copiedState_gpr _ _ (by decide), copiedState_sp]; exact ht0)
-    (by rw [copiedState_sp]; exact hal) (by omega_using [hsa, ho, hb])
+    (by rw [copiedState_sp]; exact hal) off (by omega_using [hsa, ho, hb])
     (by rw [copiedState_wr, copiedState_sp]; exact hw m (Nat.le_refl _))
   have hsp₀ : u₀.sp = u.sp := rfl
   have hmem₀ : u₀.mem = u.mem := rfl
   rw [hsp₀, hmem₀] at f hv
   let w := copiedState bytes u₀ m
-  let fin : State := { w.write .t1 (u.sp + BitVec.ofNat 64 (8 + 8 * m)) with
-    mem := w.mem.writeW (u.sp + BitVec.ofNat 64 (8 * m)) (u.sp + BitVec.ofNat 64 (8 + 8 * m)) }
-  have hrun : execBlock isa (setArgs bytes m) u = some (fin, setArgsTrace bytes u.sp m) := by
-    rw [setArgs, execBlock_append, execBlock_append, h0]
+  let fin : State := { w.write .t1 (u.sp + BitVec.ofNat 64 workOff) with
+    mem := w.mem.writeW (u.sp + BitVec.ofNat 64 (8 * m)) (u.sp + BitVec.ofNat 64 workOff) }
+  have hrun : execBlock isa (setArgsAt bytes m workOff) u = some (fin, setArgsTrace bytes u.sp m) := by
+    rw [setArgsAt, execBlock_append, execBlock_append, h0]
     simp only [Option.bind_some, Option.map_some, hc, ht, copiedState_sp, setArgsTrace,
       List.nil_append]
     rfl
-  have hst : setArgsState bytes m u = fin := by simp [setArgsState, hrun]
+  have hst : setArgsAtState bytes m workOff u = fin := by simp [setArgsAtState, hrun]
   rw [hst]
   refine ⟨hrun, by simp [fin, w, u₀, State.write], by simp [fin, w, u₀, State.write],
     by simp [fin, w, u₀, State.write], fun q h₁ h₂ => ?_, ?_, fun j hj => ?_, ?_⟩
@@ -393,6 +393,26 @@ theorem setArgs_run {bytes m : Nat} {u : State} (hal : u.sp.toNat % 8 = 0)
     · decide
   · show (w.mem.writeW _ _).readW _ 64 = _
     rw [Mem.readW_writeW_self64]
+
+/-- The state for the default packed scratch layout. -/
+abbrev setArgsState (bytes m : Nat) (u : State) := setArgsAtState bytes m (8 + 8*m) u
+
+theorem setArgs_run {bytes m : Nat} {u : State} (hal : u.sp.toNat % 8 = 0)
+    (hfit : bytes + 8 + 8 * m < 2 ^ 64) (hb : 8 + 8 * m ≤ bytes)
+    (ho : bytes - argStep bytes + 8 * m < 2048) (h8 : bytes % 8 = 0)
+    (hr : ∀ j < m, InRegions (u.rd ++ u.wr) (u.sp + BitVec.ofNat 64 (bytes + 8 * j)) 8)
+    (hw : ∀ j ≤ m, InRegions u.wr (u.sp + BitVec.ofNat 64 (8 * j)) 8) :
+    execBlock isa (setArgs bytes m) u = some (setArgsState bytes m u, setArgsTrace bytes u.sp m) ∧
+      (setArgsState bytes m u).rd = u.rd ∧ (setArgsState bytes m u).wr = u.wr ∧
+      (setArgsState bytes m u).sp = u.sp ∧
+      (∀ q, q ≠ .t0 → q ≠ .t1 → (setArgsState bytes m u).gpr q = u.gpr q) ∧
+      Frame [⟨u.sp, 8 * (m + 1)⟩] u.mem (setArgsState bytes m u).mem ∧
+      (∀ j < m, (setArgsState bytes m u).mem.readW (u.sp + BitVec.ofNat 64 (8 * j)) 64 =
+        u.mem.readW (u.sp + BitVec.ofNat 64 (bytes + 8 * j)) 64) ∧
+      (setArgsState bytes m u).mem.readW (u.sp + BitVec.ofNat 64 (8 * m)) 64 =
+        u.sp + BitVec.ofNat 64 (8 + 8 * m) := by
+  have hsa : argStep bytes = min bytes 2032 := rfl
+  exact setArgsAt_run (by omega_using [hb,ho,hsa]) hal hfit hb ho h8 hr hw
 
 /-! ## The run from `narrowA` -/
 

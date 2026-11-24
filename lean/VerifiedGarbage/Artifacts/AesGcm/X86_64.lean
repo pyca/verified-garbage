@@ -1,6 +1,7 @@
 module
 
 import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.Alias
+public import VerifiedGarbage.Impl.AesGcm.X86_64.BoundedGather
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Instances
 public import VerifiedGarbage.Proof.Aes.X86_64.Variant
@@ -143,10 +144,10 @@ def artifactsR (v : GcmVariant) : List Artifact := [
     spSafe := Proof.AesGcm.X86_64.streamDecryptR_spSafeFn v },
   Spec.Gcm.sealGatherPreparedApi.artifact X86_64.target {
     suffix := v.impl.suffix
-    code := Impl.AesGcm.X86_64.DirectGather.directSeal v.lvTW v.lvT 48 v.impl.callees (DirectGather.ctrFn v)
+    code := Impl.AesGcm.X86_64.DirectGather.directSeal48 v.lvTW v.lvT v.impl.short v.impl.callees (DirectGather.ctrFn v)
       ((sealLeafF v).map (·.fn))
-    verified := Proof.AesGcm.X86_64.DirectGather.selected_verified v 48 (Or.inr rfl) (sealLeafF v) (sealLeafF_side v)
-    spSafe := Proof.AesGcm.X86_64.DirectGather.selected_spSafe v 48 (sealLeafF v) (sealLeafF_side v) }]
+    verified := Proof.AesGcm.X86_64.DirectGather.bounded_selected_verified v (sealLeafF v) (sealLeafF_side v)
+    spSafe := Proof.AesGcm.X86_64.DirectGather.bounded_selected_spSafe v (sealLeafF v) (sealLeafF_side v) }]
 
 /-- The prepared artifacts of the implementations `v`, which read only the
 key context. -/
@@ -219,10 +220,51 @@ def artifactsR16W (v : GcmVariant) (r : R16 v) : List Artifact := [
     verified := Proof.AesGcm.X86_64.DirectGather.selected_verified v 16 (Or.inl rfl) (sealLeafF16 v) (sealLeafF16_side v)
     spSafe := Proof.AesGcm.X86_64.DirectGather.selected_spSafe v 16 (sealLeafF16 v) (sealLeafF16_side v) }]
 
+/-- A single contiguous symbol per backend for in-place and disjoint writes.
+The wide prepared loop needs ZMM registers; AES-NI without AVX keeps the
+plaintext-to-ciphertext pass separate from authentication. -/
+def contiguousArtifact (v : GcmVariant) : Artifact :=
+  let masks := fun _ : Unit =>
+    let cert := ContiguousSeal.masks v
+    Spec.Gcm.sealContiguousPreparedApi.artifact X86_64.target {
+      suffix := v.impl.suffix
+      code := Impl.AesGcm.X86_64.Contiguous.preparedMasks v.lvTW v.impl.callees (DirectGather.ctrFn v)
+      verified := Proof.AesGcm.X86_64.ContiguousSeal.verified cert
+      spSafe := Proof.AesGcm.X86_64.ContiguousSeal.spSafe cert }
+  let plain := fun _ : Unit =>
+    let defer := v.impl.suffix == "_aesni" || v.impl.suffix == "_aesni_pclmul"
+    let cert := ContiguousSeal.unstitched v defer
+    Spec.Gcm.sealContiguousPreparedApi.artifact X86_64.target {
+      suffix := v.impl.suffix
+      code := Impl.AesGcm.X86_64.Contiguous.prepared v.lvTW defer false 16 v.impl.callees (DirectGather.ctrFn v) none
+      verified := Proof.AesGcm.X86_64.ContiguousSeal.verified cert
+      spSafe := Proof.AesGcm.X86_64.ContiguousSeal.spSafe cert }
+  if v.impl.suffix == "" || v.impl.suffix == "_pclmul" then masks ()
+  else if wide : v.impl.short = true ∧ v.lvT.level = 2 then
+    match h : sealLeafR v with
+    | none => plain ()
+    | some b =>
+      let cert := ContiguousSeal.stitched48 v h (Nat.le_of_eq wide.2.symm)
+      Spec.Gcm.sealContiguousPreparedApi.artifact X86_64.target {
+        suffix := v.impl.suffix
+        code := Impl.AesGcm.X86_64.Contiguous.prepared v.lvT false true 48 v.impl.callees (DirectGather.ctrFn v) (some b.fn)
+        verified := Proof.AesGcm.X86_64.ContiguousSeal.verified cert
+        spSafe := Proof.AesGcm.X86_64.ContiguousSeal.spSafe cert }
+  else
+    match h : sealLeafR16 v with
+    | none => plain ()
+    | some b =>
+      let cert := ContiguousSeal.stitched16 v h
+      Spec.Gcm.sealContiguousPreparedApi.artifact X86_64.target {
+        suffix := v.impl.suffix
+        code := Impl.AesGcm.X86_64.Contiguous.prepared v.lvT false false 16 v.impl.callees (DirectGather.ctrFn v) (some b.fn)
+        verified := Proof.AesGcm.X86_64.ContiguousSeal.verified cert
+        spSafe := Proof.AesGcm.X86_64.ContiguousSeal.spSafe cert }
+
 /-- The artifacts of a variant: its prepared ones, for what its loops read:
 16 prepared powers (`r16`), 48 (`stitchR`), or the key context alone. -/
 def artifacts (v : GcmVariant) : List Artifact :=
-  match v.r16 with
+  contiguousArtifact v :: match v.r16 with
   | some r => artifactsR16W v r.down
   | none => if v.stitchR.isSome then artifactsR v else artifactsW v
 

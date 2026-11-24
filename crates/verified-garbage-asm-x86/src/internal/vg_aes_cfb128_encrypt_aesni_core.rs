@@ -13,7 +13,7 @@ pub(crate) unsafe extern "C" fn vg_aes_cfb128_encrypt_aesni_core() {
     core::arch::naked_asm!(
         r#".base64 "i0QkGImYEAgAAImwFAgAAIm4GAgAAImoHAgAAIt0JBCLRCQUhcA="
 je 20f
-.base64 "i3wkFItEJASLTCQIi1QkDPMPbwI="
+.base64 "i0QkBItMJAiLdCQQi2wkFItUJAzzD28C"
 22:
 .base64 "8w9vMGYP78bzD29wEGYPONzG8w9vcCBmDzjcxvMPb3AwZg843MbzD29wQGYPONzG8w9vcFBmDzjcxvMPb3BgZg843MbzD29wcGYPONzG8w9vsIAAAABmDzjcxvMPb7CQAAAAZg843MaD+Qo="
 je 23f
@@ -28,9 +28,9 @@ jmp 24f
 23:
 .base64 "8w9vsKAAAABmDzjdxg=="
 24:
-.base64 "8w9vPmYP78fzD38Gg8YQg+8B"
+.base64 "8w9vDmYP78HzD38Gg8YQg+0B"
 jne 22b
-.base64 "8w9/Ag=="
+.base64 "i1QkDPMPfwI="
 jmp 21f
 20:
 21:

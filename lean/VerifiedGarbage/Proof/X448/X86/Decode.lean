@@ -2,14 +2,14 @@ module
 
 public import VerifiedGarbage.Proof.X448.Radix16Bytes
 public import VerifiedGarbage.Proof.X448.X86.Instr
+import VerifiedGarbage.Proof.X448.Bytes
 import VerifiedGarbage.Proof.Framework.X86.Exec
 import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
-# X448 on x86 (32-bit): decoding a coordinate limb
+# X448 on x86 (32-bit): decoding a coordinate word
 
-Two byte loads construct a 16-bit limb, which is written to both initial
-coordinate slots.
+A word of the coordinate is written to both initial coordinate slots.
 -/
 
 @[expose] public section
@@ -28,50 +28,35 @@ theorem byte_rotate (b : BitVec 8) : (b.setWidth 32).rotateRight 24 = b.setWidth
   exact BitVec.zero_or
 
 
-theorem decodeLimb_ok {s : State} {base p : Addr} (hs : Scr s base) {i : Nat}
-    (hi : i < 28) (hp : (s.gpr .esi).setWidth 64 = p) (hfit : (s.gpr .esi).toNat + 56 ≤ 2 ^ 32)
-    (hr : ∀ j < 56, InRegions (s.rd ++ s.wr) (off p j) 1) :
-    WP isa (.block (decodeLimb i)) s fun t =>
-      t.mem = (s.mem.writeW (off base (X1 + 4 * i)) (BitVec.ofNat 32 (decoded s.mem p i))).writeW
-        (off base (X3 + 4 * i)) (BitVec.ofNat 32 (decoded s.mem p i)) ∧ Keeps [.eax, .edx] s t := by
-  have ea0 : (s.gpr .esi + BitVec.ofNat 32 (2 * i)).setWidth 64 = off p (2 * i) := by
-    change addr (s.gpr .esi) _ = _
-    rw [VG.X86.addr_eq (by omega_using [hi, hfit]), hp]
-  have ea1 : (s.gpr .esi + BitVec.ofNat 32 (2 * i + 1)).setWidth 64 = off p (2 * i + 1) := by
-    change addr (s.gpr .esi) _ = _
-    rw [VG.X86.addr_eq (by omega_using [hi, hfit]), hp]
-  unfold decodeLimb
-  refine wp_load8 (a := off p (2 * i)) ea0 (hr _ (by omega_using [hi])) fun s1 h1 => ?_
-  refine wp_load8 (a := off p (2 * i + 1))
-    (by change addr (s1.gpr .esi) _ = _; rw [h1.other .esi (by decide)]; exact ea1)
-    (by rw [h1.rd, h1.wr]; exact hr _ (by omega_using [hi])) fun s2 h2 => ?_
-  refine wp_shift (by decide) fun sr hrot => ?_
-  refine wp_alu (by simp [plain]) rfl fun s3 h3 _ => ?_
-  have value : s3.gpr .eax = BitVec.ofNat 32 (decoded s.mem p i) := by
-    rw [h3.gpr]
-    change sr.gpr .eax + sr.gpr .edx = _
-    rw [hrot.other .eax (by decide), hrot.gpr]
-    rw [h2.other .eax (by decide), h1.gpr, h2.gpr, h1.mem, byte_rotate]
-    apply BitVec.eq_of_toNat_eq
-    have h0 := (s.mem (off p (2 * i))).isLt
-    have h1 := (s.mem (off p (2 * i + 1))).isLt
-    simp only [BitVec.toNat_add, BitVec.toNat_shiftLeft, BitVec.toNat_setWidth,
-      Nat.shiftLeft_eq, BitVec.toNat_ofNat, decoded, byteN]
-    simp only [off] at h0 h1 ⊢
-    omega_using []
+/-- A string of `4 n` bytes is the number of its `n` words. -/
+theorem bytes_num (m : Mem) (p : Addr) :
+    ∀ n, VG.Proof.X25519.leNum (Spec.X448.bytesAt m p (4 * n)) =
+      Proof.X25519.X86.num (fun k => (m.readW (off p (4 * k)) 32).toNat) n
+  | 0 => rfl
+  | n + 1 => by
+    rw [show 4 * (n + 1) = 4 * n + 4 from rfl, bytesAt_add, VG.Proof.X25519.leNum_append, bytes_num m p n,
+      length_bytesAt, Nat.pow_mul, Proof.X25519.X86.num_succ]
+    exact congrArg (_ + _ * ·) (VG.Proof.X25519.leNum_bytesAt_32bit m _)
+
+theorem decodeWord_ok {s : State} {base p : Addr} (hs : Scr s base) {i : Nat}
+    (hi : i < 14) (hp : (s.gpr .esi).setWidth 64 = p) (hfit : (s.gpr .esi).toNat + 56 ≤ 2 ^ 32)
+    (hr : ∀ k < 14, InRegions (s.rd ++ s.wr) (off p (4 * k)) 4) :
+    WP isa (.block (decodeWord i)) s fun t =>
+      t.mem = (s.mem.writeW (off base (X1 + 4 * i)) (s.mem.readW (off p (4 * i)) 32)).writeW
+        (off base (X3 + 4 * i)) (s.mem.readW (off p (4 * i)) 32) ∧ Keeps [.eax] s t := by
+  unfold decodeWord
+  refine wp_load (a := off p (4 * i)) (by
+    change addr (s.gpr .esi) (4 * i) = _
+    rw [VG.X86.addr_eq (by omega_using [hi, hfit]), hp]) (hr i hi) fun s1 h1 => ?_
   have hs1 := hs.of_upd h1 (by decide)
-  have hs2 := hs1.of_upd h2 (by decide)
-  have hsrot := hs2.of_upd hrot (by decide)
-  have hs3 := hsrot.of_upd h3 (by decide)
-  refine store_ok hs3 (by simp only [X1, slot]; omega_using [hi]) fun s4 h4 => ?_
-  have hs4 := hs3.of_keeps ((h4.rest [])) (by decide)
+  refine store_ok hs1 (by simp only [X1, slot]; omega_using [hi]) fun s4 h4 => ?_
+  have hs4 := hs1.of_keeps ((h4.rest [])) (by decide)
   refine store_ok hs4 (by simp only [X3, slot]; omega_using [hi]) fun s5 h5 => WP.block_nil ⟨?_, ?_⟩
-  · rw [h5.mem, h4.mem, h3.mem, hrot.mem, h2.mem, h1.mem, h4.gpr, value]
-  · exact ((h1.rest (by decide)).trans ((h2.rest (by decide)).trans
-      ((hrot.rest (by decide)).trans ((h3.rest (by decide)).trans ((h4.rest _).trans (h5.rest _))))))
+  · rw [h5.mem, h4.mem, h1.mem, h4.gpr, h1.gpr]
+  · exact (h1.rest (by decide)).trans ((h4.rest _).trans (h5.rest _))
 
 /-- The two coordinate words lie inside their respective slots. -/
-theorem decodeLimb_outside (m : Mem) (base : Addr) {i : Nat} (hi : i < 28) (v : BitVec 32) :
+theorem decodeWord_outside (m : Mem) (base : Addr) {i : Nat} (hi : i < 14) (v : BitVec 32) :
     Outside2 base X1 (4 * (i + 1)) X3 (4 * (i + 1)) m
       ((m.writeW (off base (X1 + 4 * i)) v).writeW (off base (X3 + 4 * i)) v) := by
   intro p hp hq

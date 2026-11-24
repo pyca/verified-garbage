@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.Piece
 import VerifiedGarbage.Proof.AesGcm.X86_64.Absorb
+import VerifiedGarbage.Proof.Gcm.StreamTo
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 public import VerifiedGarbage.Proof.AesGcm.X86_64.OneShot
@@ -321,6 +322,51 @@ theorem st_obFrame {D : Addr} {n d k : Nat} (h : (d + k ≤ 16) ∨ (32 ≤ d �
 
 /-- What `seal` and `open` know after `oneBlocks`, from what it did to the
 whole blocks (`ho`, `hc`) and the accumulator (`hy`, over `Z`). -/
+theorem ob_factsFrom {R : Nat} {D S : Addr} {n : Nat} {s s₃ : State} {M : Gcm.X86_64.Stitch.CtxMode} (h : ObPre M Ctx W SP R D n s)
+    (srcW : (⟨S,n⟩ : Region).Disjoint ⟨W,2560⟩)
+    (srcT : (below SP 24).Disjoint ⟨S,n⟩)
+    (alias : S=D ∨ (⟨S,n⟩ : Region).Disjoint ⟨D,n⟩)
+    (fr : Frame (⟨W + BitVec.ofNat 64 192, 24⟩ :: obFrame (W + BitVec.ofNat 64 16) W SP D (n / 16)) s.mem s₃.mem)
+    {H icb : Block} {x Z : List Byte}
+    (hH : blockAt s.mem (Ctx + BitVec.ofNat 64 240) = H) (hcb : blockAt s.mem (cbA W) = icb)
+    (habs : Absorbed s.mem (yA W) (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 32) H x) (hx : x.length % 16 = 0)
+    (ho : blocksAt s₃.mem D (n / 16) = ctr32 (ciphOf s.mem Ctx R) (blockAt s.mem (cbA W)) (blocksAt s.mem S (n / 16)))
+    (hc : blockAt s₃.mem (cbA W) = Nat.repeat inc32 (n / 16) (blockAt s.mem (cbA W)))
+    (hZ : Z.length % 16 = 0) (hy : blockAt s₃.mem (yA W) = ghashFrom H (blockAt s.mem (yA W)) (blocks Z)) :
+    Frame (oneFrameB W D SP n) s.mem s₃.mem ∧ RoundsAt s₃.mem W R ∧
+    blockAt s₃.mem (Ctx + BitVec.ofNat 64 240) = H ∧ ciphOf s₃.mem Ctx R = ciphOf s.mem Ctx R ∧
+    blockAt s₃.mem (W + BitVec.ofNat 64 16) = blockAt s.mem (W + BitVec.ofNat 64 16) ∧
+    bytesAt s₃.mem D (16 * (n / 16)) = xorKs (ciphOf s.mem Ctx R) icb 0 (bytesAt s.mem S (16 * (n / 16))) ∧
+    Ctr s₃.mem (cbA W) (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 64) (ciphOf s₃.mem Ctx R) icb (16 * (n / 16)) ∧
+    Absorbed s₃.mem (yA W) (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 32) H (x ++ Z) ∧
+    bytesAt s₃.mem (S + BitVec.ofNat 64 (16 * (n / 16))) (n - 16 * (n / 16)) =
+      bytesAt s.mem (S + BitVec.ofNat 64 (16 * (n / 16))) (n - 16 * (n / 16)) := by
+  have hD := h.data.ok.w
+  have hR := h.rounds.2
+  have hlt := h.data.ok.lt
+  have fB := obFrame_B fr
+  have dC := ctx_oneFrameB L h.data.ctx h.t_c
+  have hc₃ : ciphOf s₃.mem Ctx R = ciphOf s.mem Ctx R := ciph_frame fB dC hR
+  have cw := Proof.Gcm.ctr_wholeTo (ks := W + BitVec.ofNat 64 16 + BitVec.ofNat 64 64) (icb := icb) (n := 0)
+    ⟨hcb, fun h => absurd rfl h⟩ rfl ho hc
+  rw [Nat.zero_add, ← hc₃] at cw
+  refine ⟨fB, rounds_frame fB (kept_oneFrameB L hD h.t_w (.inl ⟨by decide, by decide⟩)) h.rounds,
+    by rw [blockAt_frame fB (fun r hr => (dC r hr).sub_left (Lay.ctxSub (by decide))), hH], hc₃,
+    by simpa using blockAt_frame fr (st_obFrame L (d := 0) (k := 16) (.inl (by decide)) hD h.t_w),
+    by rw [cw.1, hc₃], cw.2, Proof.Gcm.absorb_whole habs hx hZ (by rw [hy]), bytesAt_frame fr (fun r hr => ?_) (by omega_using [])⟩
+  have hs : Region.Sub ⟨S + BitVec.ofNat 64 (16 * (n / 16)), n - 16 * (n / 16)⟩ ⟨S, n⟩ := Offset.sub_base S (by omega_using [])
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
+  · exact (srcW.sub_left hs).sub_right (Lay.wSub (by decide))
+  · rw [add_ofNat_assoc]; exact (srcW.sub_left hs).sub_right (Lay.wSub (by decide))
+  · rw [add_ofNat_assoc]; exact (srcW.sub_left hs).sub_right (Lay.wSub (by decide))
+  · rcases alias with rfl|disjoint
+    · simpa using Offset.disjoint S (d := 16 * (n / 16)) (n := n - 16 * (n / 16)) (e := 0) (k := n / 16 * 16)
+        (.inr (by omega_using [])) (by omega_using [hlt]) (by omega_using [hlt])
+    · exact (disjoint.sub_left hs).sub_right (Region.sub_prefix (by omega_using []))
+  · exact (srcW.sub_left hs).sub_right (Lay.wSub (by decide))
+  · exact (srcT.sub_right hs).symm
+
 theorem ob_facts {R : Nat} {D : Addr} {n : Nat} {s s₃ : State} {M : Gcm.X86_64.Stitch.CtxMode} (h : ObPre M Ctx W SP R D n s)
     (fr : Frame (⟨W + BitVec.ofNat 64 192, 24⟩ :: obFrame (W + BitVec.ofNat 64 16) W SP D (n / 16)) s.mem s₃.mem)
     {H icb : Block} {x Z : List Byte}
@@ -337,29 +383,7 @@ theorem ob_facts {R : Nat} {D : Addr} {n : Nat} {s s₃ : State} {M : Gcm.X86_64
     Absorbed s₃.mem (yA W) (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 32) H (x ++ Z) ∧
     bytesAt s₃.mem (D + BitVec.ofNat 64 (16 * (n / 16))) (n - 16 * (n / 16)) =
       bytesAt s.mem (D + BitVec.ofNat 64 (16 * (n / 16))) (n - 16 * (n / 16)) := by
-  have hD := h.data.ok.w
-  have hR := h.rounds.2
-  have hlt := h.data.ok.lt
-  have fB := obFrame_B fr
-  have dC := ctx_oneFrameB L h.data.ctx h.t_c
-  have hc₃ : ciphOf s₃.mem Ctx R = ciphOf s.mem Ctx R := ciph_frame fB dC hR
-  have cw := Proof.Gcm.ctr_whole (ks := W + BitVec.ofNat 64 16 + BitVec.ofNat 64 64) (icb := icb) (n := 0)
-    ⟨hcb, fun h => absurd rfl h⟩ rfl ho hc
-  rw [Nat.zero_add, ← hc₃] at cw
-  refine ⟨fB, rounds_frame fB (kept_oneFrameB L hD h.t_w (.inl ⟨by decide, by decide⟩)) h.rounds,
-    by rw [blockAt_frame fB (fun r hr => (dC r hr).sub_left (Lay.ctxSub (by decide))), hH], hc₃,
-    by simpa using blockAt_frame fr (st_obFrame L (d := 0) (k := 16) (.inl (by decide)) hD h.t_w),
-    by rw [cw.1, hc₃], cw.2, Proof.Gcm.absorb_whole habs hx hZ (by rw [hy]), bytesAt_frame fr (fun r hr => ?_) (by omega_using [])⟩
-  have hs : Region.Sub ⟨D + BitVec.ofNat 64 (16 * (n / 16)), n - 16 * (n / 16)⟩ ⟨D, n⟩ := Offset.sub_base D (by omega_using [])
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
-  · exact (hD.sub_left hs).sub_right (Lay.wSub (by decide))
-  · rw [add_ofNat_assoc]; exact (hD.sub_left hs).sub_right (Lay.wSub (by decide))
-  · rw [add_ofNat_assoc]; exact (hD.sub_left hs).sub_right (Lay.wSub (by decide))
-  · simpa using Offset.disjoint D (d := 16 * (n / 16)) (n := n - 16 * (n / 16)) (e := 0) (k := n / 16 * 16)
-      (.inr (by omega_using [])) (by omega_using [hlt]) (by omega_using [hlt])
-  · exact (hD.sub_left hs).sub_right (Lay.wSub (by decide))
-  · exact (h.t_d.sub_right hs).symm
+  exact ob_factsFrom L h h.data.ok.w h.t_d (.inl rfl) fr hH hcb habs hx ho hc hZ hy
 
 end
 

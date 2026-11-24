@@ -1723,3 +1723,330 @@ call {vg_aes_ctr32_bs}
         vg_aes_ctr32_bs = sym super::aes::vg_aes_ctr32_bs::vg_aes_ctr32_bs,
     )
 }
+
+/// `vg_aes_gcm_seal_contiguous` with the bitsliced form of the key context at `*bk` (`VG.Spec.Gcm.CtxSlicedRepr`), which it may read instead of computing it. Computes the same result as `vg_aes_gcm_seal_contiguous`. The buffer is secret, as the key context is: it may not affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealContiguousBitslicedContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes, and aligned for `u64`.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `src` must be valid for reads of `len` bytes, and `dst` for reads and writes of `len` bytes. The two pointers must be identical or their regions disjoint.
+/// * `tag` must be valid for reads and writes of 16 bytes.
+/// * `bk` must be valid for reads of 1248 bytes, and aligned for `u64`.
+/// * `rounds` must be 10, 12 or 14.
+/// * `*bk` must be what `vg_aes_gcm_bitslice` wrote for the same key context (the contract's precondition: `VG.Spec.Gcm.CtxSlicedRepr` of `bk` and the key context).
+/// * `dst` and `tag` must not overlap each other, `ctx`, `nonce`, `aad`, `src` when distinct from `dst`, `bk` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `src` when distinct from `dst`, `dst`, `tag` and `bk` may overlap the 4656 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_aes_gcm_seal_contiguous_bitsliced(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, dst: *mut u8, len: usize, tag: *mut [u8; 16], bk: *const [u64; 156]) {
+    core::arch::naked_asm!(
+        r#".option push
+.option arch, +m, +c
+.base64 "EwEBgRMBAdyKghODAn8DMwMkI7BiABODAn8DM4MkI7RiABODAn8DMwMlI7hiABODggIjvGIACoMDM4MBIzCDCCM0kwgjOCMJIzwzCSMwQwsjNFMLIzhjCyM8cwsjMIMNIzSTDSM4ow0jPLMNIzATDhqEKomuiZMEBAEyiraKtot49D6NIzgED8aNCoODPIMARoyDPQMAE4ZK/w=="
+beqz a2, 20f
+.base64 "gUIjsFQAI7RUAAFL"
+beqz s5, 22f
+beqz s6, 24f
+.base64 "QUYzBmZBk9ZKAA=="
+bnez a3, 26f
+.base64 "s4bKQP2S"
+bnez a3, 28f
+j 29f
+28:
+.base64 "VoY="
+29:
+j 27f
+26:
+27:
+.base64 "k4UEAtqVUoUymrOKykAymw=="
+210:
+.base64 "g0IFACOAVQAFBYUFfRY="
+bnez a2, 210b
+.base64 "kwYL/w=="
+beqz a3, 211f
+j 212f
+211:
+.base64 "EwUJD6aFE4YEAoVGEwcEIIqCA7UCARMFBTw="
+call {vg_ghash_prepared}
+212:
+j 25f
+24:
+25:
+.base64 "UoaT1koAk/f6ADOI+kBCmr6K"
+beqz a3, 213f
+.base64 "EwUJD6aFEwcEIIqCA7UCARMFBTw="
+call {vg_ghash_prepared}
+j 214f
+213:
+214:
+beqz s5, 215f
+.base64 "UoWThQQCVoY="
+217:
+.base64 "g0IFACOAVQAFBYUFfRY="
+bnez a2, 217b
+j 216f
+215:
+216:
+j 23f
+22:
+23:
+.base64 "E/v7AA=="
+beqz s6, 218f
+.base64 "gUIjMFQGIzRUBhOFBAKTBQQGWoY="
+220:
+.base64 "g0IFACOAVQAFBYUFfRY="
+bnez a2, 220b
+.base64 "EwUJD6aFEwYEBoVGEwcEIIqCA7UCARMFBTw="
+call {vg_ghash_prepared}
+j 219f
+218:
+219:
+.base64 "AUpeixMVOgCTFTsAk1KFAyMAVAaTUgUDowBUBpNShQIjAVQGk1IFAqMBVAaTUoUBIwJUBpNSBQGjAlQGk1KFACMDVAaTUgUAowNUBpPShQMjBFQGk9IFA6MEVAaT0oUCIwVUBpPSBQKjBVQGk9KFASMGVAaT0gUBowZUBpPShQAjB1QGk9IFAKMHVAYTBQkPpoUTBgQGhUYTBwQgioIDtQIBEwUFPA=="
+call {vg_ghash_prepared}
+j 21f
+20:
+.base64 "g0IKACOAVACDQhoAo4BUAINCKgAjgVQAg0I6AKOBVACDQkoAI4JUAINCWgCjglQAg0JqACODVACDQnoAo4NUAINCigAjhFQAg0KaAKOEVACDQqoAI4VUAINCugCjhVQAgUIjhlQAgUKjhlQAgUIjh1QAhUKjh1QA"
+21:
+.base64 "g7IEACO4VAKD4oQAI6xUAgPFxABiBYPC1ADCAjNlVQCDwuQAogIzZVUAg8L0ADNlVQAFBZNShQEjjlQCk1IFAaOOVAKTUoUAI49UApNSBQCjj1QCgUIjuFQAI7xUAAM6hA7qigFL"
+beqz s5, 221f
+beqz s6, 223f
+.base64 "QUYzBmZBk9ZKAA=="
+bnez a3, 225f
+.base64 "s4bKQP2S"
+bnez a3, 227f
+j 228f
+227:
+.base64 "VoY="
+228:
+j 226f
+225:
+226:
+.base64 "k4UEAtqVUoUymrOKykAymw=="
+229:
+.base64 "g0IFACOAVQAFBYUFfRY="
+bnez a2, 229b
+.base64 "kwYL/w=="
+beqz a3, 230f
+j 231f
+230:
+.base64 "EwUJD5OFBAEThgQChUYTBwQgioIDtQIBEwUFPA=="
+call {vg_ghash_prepared}
+231:
+j 224f
+223:
+224:
+.base64 "UoaT1koAk/f6ADOI+kBCmr6K"
+beqz a3, 232f
+.base64 "EwUJD5OFBAETBwQgioIDtQIBEwUFPA=="
+call {vg_ghash_prepared}
+j 233f
+232:
+233:
+beqz s5, 234f
+.base64 "UoWThQQCVoY="
+236:
+.base64 "g0IFACOAVQAFBYUFfRY="
+bnez a2, 236b
+j 235f
+234:
+235:
+j 222f
+221:
+222:
+.base64 "E3v9AA=="
+beqz s6, 237f
+.base64 "gUIjMFQGIzRUBhOFBAKTBQQGWoY="
+239:
+.base64 "g0IFACOAVQAFBYUFfRY="
+bnez a2, 239b
+.base64 "EwUJD5OFBAETBgQGhUYTBwQgioIDtQIBEwUFPA=="
+call {vg_ghash_prepared}
+j 238f
+237:
+238:
+.base64 "ioODuwMBAzoED+6KAUuzDExBIziED5MCEA8="
+bltu s5, t0, 240f
+.base64 "s4ZMAVKIE9dKAJP3+gCziPpARpq+ig=="
+beqz a4, 242f
+.base64 "XoXOhROGBAOTBwQg"
+call {vg_aes_ctr32_bs_to}
+j 243f
+242:
+243:
+beqz s5, 244f
+.base64 "gUIjsFQEI7RUBJOGBAQFR16FzoUThgQDkwcEIA=="
+call {vg_aes_ctr32_bs}
+.base64 "E4UEBNKFM4dMAVaG"
+246:
+.base64 "g8IFAINGBQCzwtIAIwBXAAUFhQUFB30W"
+bnez a2, 246b
+j 245f
+244:
+245:
+.base64 "AzoED+6KAUs="
+beqz s5, 247f
+beqz s6, 249f
+.base64 "QUYzBmZBk9ZKAA=="
+bnez a3, 251f
+.base64 "s4bKQP2S"
+bnez a3, 253f
+j 254f
+253:
+.base64 "VoY="
+254:
+j 252f
+251:
+252:
+.base64 "k4UEAtqVUoUymrOKykAymw=="
+255:
+.base64 "g0IFACOAVQAFBYUFfRY="
+bnez a2, 255b
+.base64 "kwYL/w=="
+beqz a3, 256f
+j 257f
+256:
+.base64 "EwUJD5OFBAEThgQChUYTBwQgioIDtQIBEwUFPA=="
+call {vg_ghash_prepared}
+257:
+j 250f
+249:
+250:
+.base64 "UoaT1koAk/f6ADOI+kBCmr6K"
+beqz a3, 258f
+.base64 "EwUJD5OFBAETBwQgioIDtQIBEwUFPA=="
+call {vg_ghash_prepared}
+j 259f
+258:
+259:
+beqz s5, 260f
+.base64 "UoWThQQCVoY="
+262:
+.base64 "g0IFACOAVQAFBYUFfRY="
+bnez a2, 262b
+j 261f
+260:
+261:
+j 248f
+247:
+248:
+.base64 "E/v9AA=="
+beqz s6, 263f
+.base64 "gUIjMFQGIzRUBhOFBAKTBQQGWoY="
+265:
+.base64 "g0IFACOAVQAFBYUFfRY="
+bnez a2, 265b
+.base64 "EwUJD5OFBAETBgQGhUYTBwQgioIDtQIBEwUFPA=="
+call {vg_ghash_prepared}
+j 264f
+263:
+264:
+.base64 "aopuixMVOgCTFTsAk1KFAyMAVAaTUgUDowBUBpNShQIjAVQGk1IFAqMBVAaTUoUBIwJUBpNSBQGjAlQGk1KFACMDVAaTUgUAowNUBpPShQMjBFQGk9IFA6MEVAaT0oUCIwVUBpPSBQKjBVQGk9KFASMGVAaT0gUBowZUBpPShQAjB1QGk9IFAKMHVAYTBQkPk4UEARMGBAaFRhMHBCCKggO1AgETBQU8"
+call {vg_ghash_prepared}
+.base64 "g7IEASMwVACDsoQBIzRUAF6FzoUmhqKGBUeTBwQg"
+call {vg_aes_ctr32_bs}
+j 241f
+240:
+.base64 "gUIjMFQQIzRUECM4VBAjPFQQIzBUEiM0VBIjOFQSIzxUEiMwVBQjNFQUIzhUFCM8VBQjMFQWIzRUFiM4VBYjPFQWIzBUGCM0VBgjOFQYIzxUGCMwVBojNFQaIzhUGiM8VBojMFQcIzRUHCM4VBwjPFQcIzBUHiM0VB4jOFQeIzxUHl6FzoUmhpMGBBATh/oAEYMFB5MHBCA="
+call {vg_aes_ctr32_bs}
+beqz s5, 266f
+.base64 "EwUEEdKFYodWhrPi5QCT8nIA"
+beqz t0, 268f
+270:
+.base64 "g8IFAINGBQCzwtIAIwBXAAUFhQUFB30W"
+bnez a2, 270b
+j 269f
+268:
+.base64 "k1c2AB2K"
+beqz a5, 271f
+273:
+.base64 "g7IFABRhs8LSACMwVwAhBaEFIQf9Fw=="
+bnez a5, 273b
+j 272f
+271:
+272:
+beqz a2, 274f
+276:
+.base64 "g8IFAINGBQCzwtIAIwBXAAUFhQUFB30W"
+bnez a2, 276b
+j 275f
+274:
+275:
+269:
+j 267f
+266:
+267:
+.base64 "AzoED+6KAUs="
+beqz s5, 277f
+beqz s6, 279f
+.base64 "QUYzBmZBk9ZKAA=="
+bnez a3, 281f
+.base64 "s4bKQP2S"
+bnez a3, 283f
+j 284f
+283:
+.base64 "VoY="
+284:
+j 282f
+281:
+282:
+.base64 "k4UEAtqVUoUymrOKykAymw=="
+285:
+.base64 "g0IFACOAVQAFBYUFfRY="
+bnez a2, 285b
+.base64 "kwYL/w=="
+beqz a3, 286f
+j 287f
+286:
+.base64 "EwUJD5OFBAEThgQChUYTBwQgioIDtQIBEwUFPA=="
+call {vg_ghash_prepared}
+287:
+j 280f
+279:
+280:
+.base64 "UoaT1koAk/f6ADOI+kBCmr6K"
+beqz a3, 288f
+.base64 "EwUJD5OFBAETBwQgioIDtQIBEwUFPA=="
+call {vg_ghash_prepared}
+j 289f
+288:
+289:
+beqz s5, 290f
+.base64 "UoWThQQCVoY="
+292:
+.base64 "g0IFACOAVQAFBYUFfRY="
+bnez a2, 292b
+j 291f
+290:
+291:
+j 278f
+277:
+278:
+.base64 "E/v9AA=="
+beqz s6, 293f
+.base64 "gUIjMFQGIzRUBhOFBAKTBQQGWoY="
+295:
+.base64 "g0IFACOAVQAFBYUFfRY="
+bnez a2, 295b
+.base64 "EwUJD5OFBAETBgQGhUYTBwQgioIDtQIBEwUFPA=="
+call {vg_ghash_prepared}
+j 294f
+293:
+294:
+.base64 "aopuixMVOgCTFTsAk1KFAyMAVAaTUgUDowBUBpNShQIjAVQGk1IFAqMBVAaTUoUBIwJUBpNSBQGjAlQGk1KFACMDVAaTUgUAowNUBpPShQMjBFQGk9IFA6MEVAaT0oUCIwVUBpPSBQKjBVQGk9KFASMGVAaT0gUBowZUBpPShQAjB1QGk9IFAKMHVAYTBQkPk4UEARMGBAaFRhMHBCCKggO1AgETBQU8"
+call {vg_ghash_prepared}
+.base64 "g7IEAQMzBBCzwmIAIzBUAIOyhAEDM4QQs8JiACM0VAA="
+241:
+.base64 "CoODPIMAg0IEACOAXACDQhQAo4BcAINCJAAjgVwAg0I0AKOBXACDQkQAI4JcAINCVACjglwAg0JkACODXACDQnQAo4NcAINChAAjhFwAg0KUAKOEXACDQqQAI4VcAINCtACjhVwAg0LEACOGXACDQtQAo4ZcAINC5AAjh1wAg0L0AKOHXAAigwM0AwiDNIMIAzkDCYM5gwkDOgMKgzqDCgM7AwuDO4MLAzwDDIM8gwwDPQMNgz2DDYMwAw4TAQEkEwEBf4FCEwEBgUERCoMjMFMAIzRTACM4UwAjPFMAIzBTAiM0UwIjOFMCIzxTAiMwUwQjNFMEIzhTBCM8UwQjMFMGIzRTBiM4UwYjPFMGIzBTCCM0UwgjOFMIIzxTCCMwUwojNFMKIzhTCiM8UwojMFMMIzRTDCM4UwwjPFMMIzBTDiM0Uw4jOFMOIzxTDiMwUxAjNFMQIzhTECM8UxAjMFMSIzRTEiM4UxIjPFMSIzBTFCM0UxQjOFMUIzxTFCMwUxYjNFMWIzhTFiM8UxYjMFMYIzRTGCM4UxgjPFMYIzBTGiM0UxojOFMaIzxTGiMwUxwjNFMcIzhTHCM8UxwjMFMeIzRTHiM4Ux4jPFMeIzBTICM0UyAjOFMgIzxTICMwUyIjNFMiIzhTIiM8UyIjMFMkIzRTJCM4UyQjPFMkIzBTJiM0UyYjOFMmIzxTJiMwUygjNFMoIzhTKCM8UygjMFMqIzRTKiM4UyojPFMqIzBTLCM0UywjOFMsIzxTLCMwUy4jNFMuIzhTLiM8Uy4jMFMwIzRTMCM4UzAjPFMwIzBTMiM0UzIjOFMyIzxTMiMwUzQjNFM0IzhTNCM8UzQjMFM2IzRTNiM4UzYjPFM2IzBTOCM0UzgjOFM4IzxTOCMwUzojNFM6IzhTOiM8UzojMFM8IzRTPCM4UzwjPFM8IzBTPiM0Uz4jOFM+IzxTPiMwU0AjNFNAIzhTQCM8U0AjMFNCIzRTQiM4U0IjPFNCIzBTRCM0U0QjOFNEIzxTRCMwU0YjNFNGIzhTRiM8U0YjMFNIIzRTSCM4U0gjPFNIIzBTSiM0U0ojOFNKIzxTSiMwU0wjNFNMIzhTTCM8U0wjMFNOIzRTTiM4U04jPFNOIzBTUCM0U1AjOFNQIzxTUCMwU1IjNFNSIzhTUiM8U1IjMFNUIzRTVCM4U1QjPFNUIzBTViM0U1YjOFNWIzxTViMwU1gjNFNYIzhTWCM8U1gjMFNaIzRTWiM4U1ojPFNaIzBTXCM0U1wjOFNcIzxTXCMwU14jNFNeIzhTXiM8U14jMFNgIzRTYCM4U2AjPFNgIzBTYiM0U2IjOFNiIzxTYiMwU2QjNFNkIzhTZCM8U2QjMFNmIzRTZiM4U2YjPFNmIzBTaCM0U2gjOFNoIzxTaCMwU2ojNFNqIzhTaiM8U2ojMFNsIzRTbCM4U2wjPFNsIzBTbiM0U24jOFNuIzxTbiMwU3AjNFNwIzhTcCM8U3AjMFNyIzRTciM4U3IjPFNyIzBTdCM0U3QjOFN0IzxTdCMwU3YjNFN2IzhTdiM8U3YjMFN4IzRTeCM4U3gjPFN4IzBTeiM0U3ojOFN6IzxTeiMwU3wjNFN8IzhTfCM8U3wjMFN+IzRTfiM4U34jPFN+EwEB3QqDIzBTACM0UwAjOFMAIzxTACMwUwIjNFMCIzhTAiM8UwIjMFMEIzRTBCM4UwQjPFMEIzBTBiM0UwYjOFMGIzxTBiMwUwgjNFMIIzhTCCM8UwgjMFMKIzRTCiM4UwojPFMKIzBTDCM0UwwjOFMMIzxTDCMwUw4jNFMOIzhTDiM8Uw4jMFMQIzRTECM4UxAjPFMQIzBTEiM0UxIjOFMSIzxTEiMwUxQjNFMUIzhTFCM8UxQjMFMWIzRTFiM4UxYjPFMWIzBTGCM0UxgjOFMYIzxTGCMwUxojNFMaIzhTGiM8UxojMFMcIzRTHCM4UxwjPFMcIzBTHiM0Ux4jOFMeIzxTHiMwUyAjNFMgIzhTICM8UyAjMFMiIzRTIhMBASNBARMBAX+BRQFGgUYBR4FHAUiBSIFCAUOBQwFOgU4BT4FPAUWCgA=="
+.option pop"#,
+        vg_ghash_prepared = sym super::gcm::vg_ghash_prepared::vg_ghash_prepared,
+        vg_aes_ctr32_bs_to = sym super::aes::vg_aes_ctr32_bs_to::vg_aes_ctr32_bs_to,
+        vg_aes_ctr32_bs = sym super::aes::vg_aes_ctr32_bs::vg_aes_ctr32_bs,
+    )
+}
+
+#[rustfmt::skip]
+#[path = "internal/vg_ghash_prepared.rs"]
+pub(crate) mod vg_ghash_prepared;

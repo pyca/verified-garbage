@@ -6,8 +6,8 @@ public import VerifiedGarbage.Impl.X448.X86
 # Ed448 scalar arithmetic on x86 (32-bit)
 
 Arithmetic modulo the subgroup order `L = 2^446 - c` (`c < 2^224`), on a
-remainder of twenty-eight 16-bit limbs in 32-bit words of the working space,
-X448's representation on this target. Every product is of two 16-bit numbers
+remainder of twenty-eight 16-bit limbs in 32-bit words of the working space
+(a field element is in fourteen words instead). Every product is of two 16-bit numbers
 (`mul`, keeping the low word).
 
 Reduction consumes the input sixteen bits at a time, from the top: the
@@ -16,13 +16,13 @@ remainder `r < L` (limbs `r₀, …, r₂₇`, so `r₂₇ < 2^14`) becomes
 `h = r₂₆ >> 14 + 4 r₂₇ < 2^16` and `l` the limbs `w, r₀, …, r₂₅,
 r₂₆ mod 2^14`; so `v ≡ l + h c` (mod L) since `2^446 ≡ c`, and `l + h c`
 is below `2^446 + 2^240 < 2L` (`fold`, into `TF`). One carry pass computes
-it (X448's `carryPass`): `h` times the fourteen limbs of `c`, each product
+it (`carryPass`): `h` times the fourteen limbs of `c`, each product
 and limb below `2^32` with the carry. A conditional subtraction of `L`
 (`reduceT`) leaves `v mod L`: `K = 2^448 - L` added to `TF`, into the
 remainder, carries out of 448 bits exactly when `v ≥ L`, and the sum or
 `TF` is selected with the mask `-carry`.
 
-Multiply-add reduces its three inputs, multiplies two of them with X448's
+Multiply-add reduces its three inputs, multiplies two of them by
 rows (`row`, into X448's `ACC`), reduces the product's fifty-six limbs, and
 adds the third, with a last conditional subtraction.
 

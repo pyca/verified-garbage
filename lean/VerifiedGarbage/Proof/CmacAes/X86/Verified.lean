@@ -1478,7 +1478,7 @@ end
 Correctness and constant time, a state satisfying each precondition, and the
 shared contracts of `Spec/Cmac/Contract.lean`, with 32 bytes of stack: each
 call of `vg_aes_ctr32_to` pushes its seven arguments and the return address.
-`vg_cmac_aes_update` with AES-NI uses none of them.
+`vg_cmac_aes_update` around a chain uses none of them.
 -/
 
 namespace VG.Proof.CmacAes.X86
@@ -1508,24 +1508,25 @@ theorem subkeys_spSafe : (subkeys v.callee).all (fun i => !isa.writesSp i) = tru
   decide +kernel
 
 theorem update_nosp : NoSp (update v.callee) := by
-  unfold update
-  split
-  · exact NoSp.of_all (by lit_decide)
+  rcases update_cases v.callee with ⟨c, h, e⟩ | e <;> rw [e]
+  · rcases Proof.Aes.X86.Chain.of_cases h with rfl | rfl <;> exact NoSp.of_all (by lit_decide)
   · apply NoSp.of_all
     simp only [updateCalls, body, ctrCall, Code.allInstrs, callee_nosp_all v]
     decide +kernel
 
 theorem update_stack : stackUse (update v.callee) ≤ 32 := by
-  unfold update
-  split
-  · exact Nat.le_trans (Nat.le_of_eq (by lit_decide : stackUse updateNi = 0)) (Nat.zero_le _)
+  rcases update_cases v.callee with ⟨c, h, e⟩ | e <;> rw [e]
+  · rcases Proof.Aes.X86.Chain.of_cases h with rfl | rfl
+    · exact Nat.le_trans (Nat.le_of_eq (by lit_decide : stackUse (updateChain Impl.Aes.X86.Chain.aesNi) = 0))
+        (Nat.zero_le _)
+    · exact Nat.le_trans (Nat.le_of_eq (by lit_decide : stackUse (updateChain Impl.Aes.X86.Chain.ssse3) = 0))
+        (Nat.zero_le _)
   · simp only [updateCalls, body, ctrCall, stackUse, v.stack]
     decide +kernel
 
 theorem update_spSafe : (update v.callee).all (fun i => !isa.writesSp i) = true := by
-  unfold update
-  split
-  · exact Code.all_of_spTest (by lit_decide)
+  rcases update_cases v.callee with ⟨c, h, e⟩ | e <;> rw [e]
+  · rcases Proof.Aes.X86.Chain.of_cases h with rfl | rfl <;> exact Code.all_of_spTest (by lit_decide)
   · simp only [updateCalls, body, ctrCall, Code.all, v.spSafe]
     decide +kernel
 

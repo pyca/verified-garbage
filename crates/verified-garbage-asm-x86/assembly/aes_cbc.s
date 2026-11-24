@@ -14,14 +14,15 @@ vg_aes_cbc_encrypt_aesni:
 	mov eax, DWORD PTR [esp+20]
 	test eax, eax
 	je 20f
-	mov edi, DWORD PTR [esp+20]
 	mov eax, DWORD PTR [esp+4]
 	mov ecx, DWORD PTR [esp+8]
+	mov esi, DWORD PTR [esp+16]
+	mov ebp, DWORD PTR [esp+20]
 	mov edx, DWORD PTR [esp+12]
 	movdqu xmm0, XMMWORD PTR [edx]
 22:
-	movdqu xmm7, XMMWORD PTR [esi]
-	pxor xmm0, xmm7
+	movdqu xmm1, XMMWORD PTR [esi]
+	pxor xmm0, xmm1
 	movdqu xmm6, XMMWORD PTR [eax]
 	pxor xmm0, xmm6
 	movdqu xmm6, XMMWORD PTR [eax+16]
@@ -68,8 +69,9 @@ vg_aes_cbc_encrypt_aesni:
 24:
 	movdqu XMMWORD PTR [esi], xmm0
 	add esi, 16
-	sub edi, 1
+	sub ebp, 1
 	jne 22b
+	mov edx, DWORD PTR [esp+12]
 	movdqu XMMWORD PTR [edx], xmm0
 	jmp 21f
 20:
@@ -131,6 +133,104 @@ vg_aes_cbc_decrypt_aesni:
 	mov eax, DWORD PTR [esp+68]
 	mov DWORD PTR [esp], eax
 	mov eax, 240
+	mov DWORD PTR [esp+4], eax
+	call {vg_zeroize_core}
+	mov eax, DWORD PTR [esp+24]
+	mov edx, DWORD PTR [esp+28]
+	lea esp, [esp+44]
+	pxor xmm0, xmm0
+	mov ecx, 0
+	lea esp, [esp-72]
+	movdqu XMMWORD PTR [esp], xmm0
+	movdqu XMMWORD PTR [esp+16], xmm0
+	movdqu XMMWORD PTR [esp+32], xmm0
+	movdqu XMMWORD PTR [esp+48], xmm0
+	mov DWORD PTR [esp+64], ecx
+	mov DWORD PTR [esp+68], ecx
+	lea esp, [esp+72]
+	mov eax, 0
+	mov edx, 0
+	xor ecx, ecx
+	pxor xmm0, xmm0
+	pxor xmm1, xmm1
+	pxor xmm2, xmm2
+	pxor xmm3, xmm3
+	pxor xmm4, xmm4
+	pxor xmm5, xmm5
+	pxor xmm6, xmm6
+	pxor xmm7, xmm7
+	ret
+	.p2align 6
+
+vg_aes_cbc_encrypt_ssse3:
+	lea esp, [esp-44]
+	mov eax, DWORD PTR [esp+48]
+	mov DWORD PTR [esp], eax
+	mov eax, DWORD PTR [esp+52]
+	mov DWORD PTR [esp+4], eax
+	mov eax, DWORD PTR [esp+56]
+	mov DWORD PTR [esp+8], eax
+	mov eax, DWORD PTR [esp+60]
+	mov DWORD PTR [esp+12], eax
+	mov eax, DWORD PTR [esp+64]
+	mov DWORD PTR [esp+16], eax
+	mov eax, DWORD PTR [esp+68]
+	mov DWORD PTR [esp+20], eax
+	call {vg_aes_cbc_encrypt_unwiped_ssse3}
+	mov DWORD PTR [esp+24], eax
+	mov DWORD PTR [esp+28], edx
+	mov eax, DWORD PTR [esp+68]
+	mov DWORD PTR [esp], eax
+	mov eax, 480
+	mov DWORD PTR [esp+4], eax
+	call {vg_zeroize_core}
+	mov eax, DWORD PTR [esp+24]
+	mov edx, DWORD PTR [esp+28]
+	lea esp, [esp+44]
+	pxor xmm0, xmm0
+	mov ecx, 0
+	lea esp, [esp-72]
+	movdqu XMMWORD PTR [esp], xmm0
+	movdqu XMMWORD PTR [esp+16], xmm0
+	movdqu XMMWORD PTR [esp+32], xmm0
+	movdqu XMMWORD PTR [esp+48], xmm0
+	mov DWORD PTR [esp+64], ecx
+	mov DWORD PTR [esp+68], ecx
+	lea esp, [esp+72]
+	mov eax, 0
+	mov edx, 0
+	xor ecx, ecx
+	pxor xmm0, xmm0
+	pxor xmm1, xmm1
+	pxor xmm2, xmm2
+	pxor xmm3, xmm3
+	pxor xmm4, xmm4
+	pxor xmm5, xmm5
+	pxor xmm6, xmm6
+	pxor xmm7, xmm7
+	ret
+	.p2align 6
+
+vg_aes_cbc_decrypt_ssse3:
+	lea esp, [esp-44]
+	mov eax, DWORD PTR [esp+48]
+	mov DWORD PTR [esp], eax
+	mov eax, DWORD PTR [esp+52]
+	mov DWORD PTR [esp+4], eax
+	mov eax, DWORD PTR [esp+56]
+	mov DWORD PTR [esp+8], eax
+	mov eax, DWORD PTR [esp+60]
+	mov DWORD PTR [esp+12], eax
+	mov eax, DWORD PTR [esp+64]
+	mov DWORD PTR [esp+16], eax
+	mov eax, DWORD PTR [esp+68]
+	mov DWORD PTR [esp+20], eax
+	call {vg_aes_cbc_decrypt_unwiped_ssse3}
+	mov DWORD PTR [esp+24], eax
+	mov DWORD PTR [esp+28], edx
+	mov eax, DWORD PTR [esp+68]
+	mov DWORD PTR [esp], eax
+	mov eax, 720
 	mov DWORD PTR [esp+4], eax
 	call {vg_zeroize_core}
 	mov eax, DWORD PTR [esp+24]

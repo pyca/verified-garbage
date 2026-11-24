@@ -41,14 +41,14 @@ theorem inRd {s : State} {a : Addr} {n : Nat} (h : InRegions s.wr a n) : InRegio
   let ⟨r, hr, hc⟩ := h; ⟨r, List.mem_append_right _ hr, hc⟩
 
 /-- A slot is inside the scratch buffer. -/
-theorem slot_sub {b : BitVec 32} (hfit : b.toNat + 4 * slots ≤ 2 ^ 32) {k : Nat} (hk : k < slots) :
-    Region.Sub ⟨wordAddr b k, 4⟩ ⟨b.setWidth 64, 4 * slots⟩ := by
+theorem slot_sub {N : Nat} {b : BitVec 32} (hfit : b.toNat + 4 * N ≤ 2 ^ 32) {k : Nat} (hk : k < N) :
+    Region.Sub ⟨wordAddr b k, 4⟩ ⟨b.setWidth 64, 4 * N⟩ := by
   rw [slot_addr (by omega_using [hfit, hk])]
   exact VG.Offset.sub_base _ (by omega_using [hk])
 
 /-- A slot after a store to a slot. -/
-theorem readW_slot_write {m : Mem} {b : BitVec 32} (hfit : b.toNat + 4 * slots ≤ 2 ^ 32) {j k : Nat}
-    (v : BitVec 32) (hj : j < slots) (hk : k < slots) :
+theorem readW_slot_write {N : Nat} {m : Mem} {b : BitVec 32} (hfit : b.toNat + 4 * N ≤ 2 ^ 32) {j k : Nat}
+    (v : BitVec 32) (hj : j < N) (hk : k < N) :
     (m.writeW (wordAddr b k) v).readW (wordAddr b j) 32 = if j = k then v else m.readW (wordAddr b j) 32 := by
   split
   · rename_i h; subst h; exact Mem.readW_writeW_self32 _ _ _
@@ -98,8 +98,8 @@ theorem ctx_disj_hi {b : BitVec 32} (hfit : b.toNat + 4 * slots ≤ 2 ^ 32) :
       (by rw [grpSlot_eq]; omega_arith)
 
 /-- `mov d, [n + 4 k]`, `n` holding `b`, a slot of the scratch buffer. -/
-theorem ldSlot_ok (s : State) (d n : Reg) {b : BitVec 32} {k : Nat} (hn : s.gpr n = b) (hk : k < slots)
-    (hw : ScrIn s.wr b) :
+theorem ldSlot_ok {N : Nat} (s : State) (d n : Reg) {b : BitVec 32} {k : Nat} (hn : s.gpr n = b) (hk : k < N)
+    (hw : ScrInN N s.wr b) :
     ∃ s', runBlock isa [.mov d (.mem (slotAt n k))] s = some s' ∧ s'.gpr d = s.mem.readW (wordAddr b k) 32 ∧
       (∀ r, r ≠ d → s'.gpr r = s.gpr r) ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.zf = s.zf ∧
       s'.cf = s.cf := by
@@ -110,8 +110,8 @@ theorem ldSlot_ok (s : State) (d n : Reg) {b : BitVec 32} {k : Nat} (hn : s.gpr 
     simp [exec, readSrc, State.load32, he, inRd (hw.slot hk)], runStep_some, runBlock_nil]
 
 /-- `mov [n + 4 k], t`, `n` holding `b`, a slot of the scratch buffer. -/
-theorem stSlot_ok (s : State) (t n : Reg) {b : BitVec 32} {k : Nat} (hn : s.gpr n = b) (hk : k < slots)
-    (hw : ScrIn s.wr b) :
+theorem stSlot_ok {N : Nat} (s : State) (t n : Reg) {b : BitVec 32} {k : Nat} (hn : s.gpr n = b) (hk : k < N)
+    (hw : ScrInN N s.wr b) :
     ∃ s', runBlock isa [.store (slotAt n k) t] s = some s' ∧ s'.mem = s.mem.writeW (wordAddr b k) (s.gpr t) ∧
       s'.gpr = s.gpr ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.zf = s.zf ∧ s'.cf = s.cf ∧
       Frame [⟨wordAddr b k, 4⟩] s.mem s'.mem := by
@@ -121,12 +121,12 @@ theorem stSlot_ok (s : State) (t n : Reg) {b : BitVec 32} {k : Nat} (hn : s.gpr 
   rw [runBlock_cons]
   simp only [exec, State.store32, he, hw.slot hk, ↓reduceIte, runStep_some, runBlock_nil]
 
-/-- Stores of registers to distinct slots, through `n`, which none of them is. -/
-theorem stW_list_ok (n : Reg) {b : BitVec 32} : ∀ (L : List (Nat × Reg)) (s : State), s.gpr n = b →
-    ScrIn s.wr b → (L.map (·.1)).Nodup → (∀ x ∈ L, x.1 < slots) →
+/-- Stores of registers to distinct N, through `n`, which none of them is. -/
+theorem stW_list_ok {N : Nat} (n : Reg) {b : BitVec 32} : ∀ (L : List (Nat × Reg)) (s : State), s.gpr n = b →
+    ScrInN N s.wr b → (L.map (·.1)).Nodup → (∀ x ∈ L, x.1 < N) →
     ∃ s', runBlock isa (L.map fun x => .store (slotAt n x.1) x.2) s = some s' ∧ s'.gpr = s.gpr ∧
-      s'.rd = s.rd ∧ s'.wr = s.wr ∧ Frame [⟨b.setWidth 64, 4 * slots⟩] s.mem s'.mem ∧
-      (∀ k, k ∉ L.map (·.1) → k < slots → s'.mem.readW (wordAddr b k) 32 = s.mem.readW (wordAddr b k) 32) ∧
+      s'.rd = s.rd ∧ s'.wr = s.wr ∧ Frame [⟨b.setWidth 64, 4 * N⟩] s.mem s'.mem ∧
+      (∀ k, k ∉ L.map (·.1) → k < N → s'.mem.readW (wordAddr b k) 32 = s.mem.readW (wordAddr b k) 32) ∧
       ∀ x ∈ L, s'.mem.readW (wordAddr b x.1) 32 = s.gpr x.2
   | [], s, _, _, _, _ => ⟨s, rfl, rfl, rfl, rfl, Frame.refl _ _, fun _ _ _ => rfl,
       fun _ h => absurd h List.not_mem_nil⟩
@@ -148,9 +148,9 @@ theorem stW_list_ok (n : Reg) {b : BitVec 32} : ∀ (L : List (Nat × Reg)) (s :
       · rw [o' _ hnd.1 (hin _ List.mem_cons_self), m₁, Mem.readW_writeW_self32]
       · rw [v' y hy, g₁]
 
-/-- Loads of distinct slots into distinct registers, through `n`, which none of them is. -/
-theorem ldW_list_ok (n : Reg) {b : BitVec 32} : ∀ (L : List (Reg × Nat)) (s : State), s.gpr n = b →
-    ScrIn s.wr b → (∀ x ∈ L, x.1 ≠ n) → (L.map (·.1)).Nodup → (∀ x ∈ L, x.2 < slots) →
+/-- Loads of distinct N into distinct registers, through `n`, which none of them is. -/
+theorem ldW_list_ok {N : Nat} (n : Reg) {b : BitVec 32} : ∀ (L : List (Reg × Nat)) (s : State), s.gpr n = b →
+    ScrInN N s.wr b → (∀ x ∈ L, x.1 ≠ n) → (L.map (·.1)).Nodup → (∀ x ∈ L, x.2 < N) →
     ∃ s', runBlock isa (L.map fun x => .mov x.1 (.mem (slotAt n x.2))) s = some s' ∧ s'.mem = s.mem ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ (∀ r, r ∉ L.map (·.1) → s'.gpr r = s.gpr r) ∧
       ∀ x ∈ L, s'.gpr x.1 = s.mem.readW (wordAddr b x.2) 32
@@ -176,19 +176,19 @@ def sreg (i : Nat) : Reg := ((savedRegs.map (·.1))[i]?).getD .ebx
 
 theorem savedRegsAt_eq (j : Nat) : savedRegsAt j = (List.range 4).map fun i => (sreg i, j + i) := rfl
 
-/-- The saved registers are in their slots, from `j`. -/
+/-- The saved registers are in their N, from `j`. -/
 def SavedAt (j : Nat) (s₀ : State) (b : BitVec 32) (m : Mem) : Prop :=
   ∀ i < 4, m.readW (wordAddr b (j + i)) 32 = s₀.gpr (sreg i)
 
 /-- … from `savedSlot`. -/
 abbrev Saved : State → BitVec 32 → Mem → Prop := SavedAt savedSlot
 
-theorem saveAt_ok {s : State} {b : BitVec 32} {j k : Nat} (hj : j + 4 ≤ slots) (hw : ScrIn s.wr b)
+theorem saveAt_ok {N : Nat} {s : State} {b : BitVec 32} {j k : Nat} (hj : j + 4 ≤ N) (hw : ScrInN N s.wr b)
     (ha : InRegions (s.rd ++ s.wr) (s.ea (argOp k)) 4) (hb : s.mem.readW (s.ea (argOp k)) 32 = b) :
     ∃ s', runBlock isa (saveRegsAt j k) s = some s' ∧ s'.gpr .edi = b ∧
       (∀ r, r ≠ .eax → r ≠ .edi → s'.gpr r = s.gpr r) ∧ SavedAt j s b s'.mem ∧
-      s'.rd = s.rd ∧ s'.wr = s.wr ∧ Frame [⟨b.setWidth 64, 4 * slots⟩] s.mem s'.mem ∧
-      ∀ i, i < slots → (i < j ∨ j + 4 ≤ i) → s'.mem.readW (wordAddr b i) 32 = s.mem.readW (wordAddr b i) 32 := by
+      s'.rd = s.rd ∧ s'.wr = s.wr ∧ Frame [⟨b.setWidth 64, 4 * N⟩] s.mem s'.mem ∧
+      ∀ i, i < N → (i < j ∨ j + 4 ≤ i) → s'.mem.readW (wordAddr b i) 32 = s.mem.readW (wordAddr b i) 32 := by
   obtain ⟨s₁, e₁, v₁, o₁, m₁, rd₁, wr₁⟩ := ldArg_ok s .eax k ha
   rw [hb] at v₁
   let L : List (Nat × Reg) := (List.range 4).map fun i => (j + i, sreg i)
@@ -223,7 +223,7 @@ theorem save_ok {s : State} {b : BitVec 32} {k : Nat} (hw : ScrIn s.wr b)
   let ⟨s', e, b', g, sv, rd, wr, f, kp⟩ := saveAt_ok (j := savedSlot) (by decide) hw ha hb
   ⟨s', e, b', g, sv, rd, wr, f, fun i hi => kp i (by rw [slots_eq]; rw [savedSlot_eq] at hi; omega_using [hi]) (.inl hi)⟩
 
-theorem restoreAt_ok {s₀ s : State} {b : BitVec 32} {j : Nat} (hj : j + 4 ≤ slots) (hw : ScrIn s.wr b)
+theorem restoreAt_ok {N : Nat} {s₀ s : State} {b : BitVec 32} {j : Nat} (hj : j + 4 ≤ N) (hw : ScrInN N s.wr b)
     (hb : s.gpr .edi = b) (hs : SavedAt j s₀ b s.mem) :
     ∃ s', runBlock isa (restoreRegsAt j) s = some s' ∧ (∀ i < 4, s'.gpr (sreg i) = s₀.gpr (sreg i)) ∧
       (∀ r, (∀ i < 4, r ≠ sreg i) → s'.gpr r = s.gpr r) ∧ s'.mem = s.mem ∧
@@ -235,7 +235,7 @@ theorem restoreAt_ok {s₀ s : State} {b : BitVec 32} {j : Nat} (hj : j + 4 ≤ 
         rcases hx with rfl | rfl | rfl <;> simp only <;> decide) (by rw [hLr]; decide)
     (by intro x hx; simp only [L, List.mem_cons, List.not_mem_nil, or_false] at hx
         rcases hx with rfl | rfl | rfl <;> simp only <;> omega_using [hj])
-  obtain ⟨s₂, e₂, v₂, o₂, m₂, rd₂, wr₂, -, -⟩ := ldSlot_ok s₁ .edi .edi (k := j + 2)
+  obtain ⟨s₂, e₂, v₂, o₂, m₂, rd₂, wr₂, -, -⟩ := ldSlot_ok (N := N) s₁ .edi .edi (k := j + 2)
     (by rw [o₁ _ (by rw [hLr]; decide), hb]) (by omega_using [hj]) (by rw [wr₁]; exact hw)
   refine ⟨s₂, ?_, fun i hi => ?_, fun r hr => ?_, by rw [m₂, m₁], by rw [rd₂, rd₁], by rw [wr₂, wr₁]⟩
   · rw [show restoreRegsAt j = (L.map fun x => .mov x.1 (.mem (slotAt .edi x.2))) ++

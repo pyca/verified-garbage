@@ -142,6 +142,13 @@ theorem initEntry_verified {I : Spec.Hmac.Instance} {short long : Prog isa} {n�
       exact ⟨q0, q1, q2, q3, q4⟩
     refine ⟨by rw [argAddr_congr q0], by rw [e3], fun _ => pu, fun _ => pu⟩
 
+/-- `initEntry` writes `esp` only in the frames and calls of its two paths. -/
+theorem initEntry_spSafe {B : Nat} {short long : Prog isa}
+    (hs : short.all (fun i => !isa.writesSp i) = true) (hl : long.all (fun i => !isa.writesSp i) = true) :
+    (Impl.Pbkdf2.Whole.X86.initEntry B short long).all (fun i => !isa.writesSp i) = true := by
+  simp only [Impl.Pbkdf2.Whole.X86.initEntry, Code.iteCold, Code.all, hs, hl, Bool.and_true]
+  rfl
+
 /-- HMAC's `init` for a key of any length, `vg_hmac_<hash>_init`, of instance
 `I`: for a key of at most a block, `init_scratch` (`hmacInit`) in a frame
 holding its working space; for a longer key (cold), `F.hmacInitAny`, in a

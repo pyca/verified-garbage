@@ -1,5 +1,6 @@
 module
 
+import VerifiedGarbage.Proof.Framework.X86.SseTaint
 public import VerifiedGarbage.Proof.Blowfish.FbScratch
 import VerifiedGarbage.Proof.Modes.X86.Modes
 import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
@@ -8,6 +9,7 @@ public import VerifiedGarbage.Impl.StackScratch.X86
 public import VerifiedGarbage.Spec.Blowfish.Cfb
 public import VerifiedGarbage.Proof.Modes.X86.Seq
 import VerifiedGarbage.Proof.Blowfish.X86.ModesLit
+meta import VerifiedGarbage.Proof.Framework.X86.SseTaint
 meta import VerifiedGarbage.Proof.Blowfish.FbScratch
 meta import VerifiedGarbage.Proof.Modes.X86.Modes
 meta import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
@@ -624,15 +626,15 @@ theorem fbTaint_agree {w n : Nat} {post : State → State → Prop} {s₁ s₂ :
     exact congrArg _ (ha _ (by omega_arith))
 
 theorem ofb_ct : ConstantTime isa (fbX86 11 0 ofbPost).pre (fbX86 11 0 ofbPost).pub ofb :=
-  VG.Taint.constantTime (A := VG.X86.taint) (fbTaint 11 0) (fun _ _ h₁ h₂ hp => fbTaint_agree h₁ h₂ hp)
+  VG.Taint.constantTime (A := VG.X86.sseTaint) (fbTaint 11 0) (fun _ _ h₁ h₂ hp => fbTaint_agree h₁ h₂ hp)
     (by taint_decide)
 
 theorem cfbEncrypt_ct : ConstantTime isa (fbX86 11 0 cfbEncPost).pre (fbX86 11 0 cfbEncPost).pub cfbEncrypt :=
-  VG.Taint.constantTime (A := VG.X86.taint) (fbTaint 11 0) (fun _ _ h₁ h₂ hp => fbTaint_agree h₁ h₂ hp)
+  VG.Taint.constantTime (A := VG.X86.sseTaint) (fbTaint 11 0) (fun _ _ h₁ h₂ hp => fbTaint_agree h₁ h₂ hp)
     (by taint_decide)
 
 theorem cfbDecrypt_ct : ConstantTime isa (fbX86 11 0 cfbDecPost).pre (fbX86 11 0 cfbDecPost).pub cfbDecrypt :=
-  VG.Taint.constantTime (A := VG.X86.taint) (fbTaint 11 0) (fun _ _ h₁ h₂ hp => fbTaint_agree h₁ h₂ hp)
+  VG.Taint.constantTime (A := VG.X86.sseTaint) (fbTaint 11 0) (fun _ _ h₁ h₂ hp => fbTaint_agree h₁ h₂ hp)
     (by taint_decide)
 
 /-! ## The contracts -/

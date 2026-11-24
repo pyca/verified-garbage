@@ -55,9 +55,9 @@ open VG.Proof.Ed448.WholeLocal (bytesAt_congr)
 
 variable (stack : Nat)
 
-theorem publicKeyOut :
-    PostOut (Spec.Ed448.publicKeyContract X86.abi stack) (Spec.Ed448.publicKeySig.retBits 32) :=
-  postOut_of_local ScrubAbi.plain fun vs m m₁ m₂ r hlen hb h => by
+theorem publicKeyOut (cs : List (String × List (BitVec 64))) :
+    PostOut (Spec.Ed448.publicKeyContract (X86.abi.withConsts cs) stack) (Spec.Ed448.publicKeySig.retBits 32) :=
+  postOut_of_local (ScrubAbi.consts cs) fun vs m m₁ m₂ r hlen hb h => by
     match vs, hlen with
     | [o, sd, sc], _ =>
       simp only [Spec.Ed448.publicKeySig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
@@ -66,9 +66,9 @@ theorem publicKeyOut :
       rw [bytesAt_congr hb.1]
       exact h
 
-theorem signCachedOut :
-    PostOut (Spec.Ed448.signCachedContract X86.abi stack) (Spec.Ed448.signCachedSig.retBits 32) :=
-  postOut_of_local ScrubAbi.plain fun vs m m₁ m₂ r hlen hb h => by
+theorem signCachedOut (cs : List (String × List (BitVec 64))) :
+    PostOut (Spec.Ed448.signCachedContract (X86.abi.withConsts cs) stack) (Spec.Ed448.signCachedSig.retBits 32) :=
+  postOut_of_local (ScrubAbi.consts cs) fun vs m m₁ m₂ r hlen hb h => by
     match vs, hlen with
     | [o, sd, pk, ctx, cl, msg, len, sc], _ =>
       simp only [Spec.Ed448.signCachedSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
@@ -77,37 +77,37 @@ theorem signCachedOut :
       rw [bytesAt_congr hb.1]
       exact h
 
-theorem verifyOut :
-    PostOut (Spec.Ed448.verifyContract X86.abi stack) (Spec.Ed448.verifySig.retBits 32) :=
-  postOut_of_local ScrubAbi.plain fun vs m m₁ m₂ r hlen _ h => by
+theorem verifyOut (cs : List (String × List (BitVec 64))) :
+    PostOut (Spec.Ed448.verifyContract (X86.abi.withConsts cs) stack) (Spec.Ed448.verifySig.retBits 32) :=
+  postOut_of_local (ScrubAbi.consts cs) fun vs m m₁ m₂ r hlen _ h => by
     match vs, hlen with
     | [_, _, _, _, _, _, _], _ => exact h
 
 /-- `vg_ed448_public_key`. -/
 theorem publicKey_scrubbed :
     VerifiedScrubbed target Impl.Ed448.X86.Fn.publicKey
-      (Spec.Ed448.publicKeyContract X86.abi 280) 0 :=
+      (Spec.Ed448.publicKeyContract (X86.abi.withConsts Impl.Ed448.X86.combConsts) 280) 0 :=
   verifiedScrubbedAll (api := Spec.Ed448.publicKeyApi)
     { code := Impl.Ed448.X86.PublicKey.code Impl.Ed448.X86.scalarBase
       verified := PublicKey.publicKey_verified scalarBase_calleeOk }
-    (publicKeyOut _)
+    (publicKeyOut 280 Impl.Ed448.X86.combConsts)
 
 /-- `vg_ed448_sign_cached`. -/
 theorem signCached_scrubbed :
     VerifiedScrubbed target Impl.Ed448.X86.Fn.signCached
-      (Spec.Ed448.signCachedContract X86.abi 280) 0 :=
+      (Spec.Ed448.signCachedContract (X86.abi.withConsts Impl.Ed448.X86.combConsts) 280) 0 :=
   verifiedScrubbedAll (api := Spec.Ed448.signCachedApi)
     { code := Impl.Ed448.X86.SignCached.code Impl.Ed448.X86.scalarBase
       verified := SignCached.signCached_verified scalarBase_calleeOk }
-    (signCachedOut _)
+    (signCachedOut 280 Impl.Ed448.X86.combConsts)
 
 /-- `vg_ed448_verify`. -/
 theorem verify_scrubbed :
     VerifiedScrubbed target Impl.Ed448.X86.Fn.verify
-      (Spec.Ed448.verifyContract X86.abi 280) 32 :=
+      (Spec.Ed448.verifyContract (X86.abi.withConsts Impl.Ed448.X86.bConsts) 280) 32 :=
   verifiedScrubbedAll (api := Spec.Ed448.verifyApi)
     { code := Impl.Ed448.X86.Verify.code Impl.Ed448.X86.verifyEquation
       verified := Verify.verify_verified verifyEquation_calleeOk }
-    (verifyOut _)
+    (verifyOut 280 Impl.Ed448.X86.bConsts)
 
 end VG.Proof.Ed448.X86.Scrub

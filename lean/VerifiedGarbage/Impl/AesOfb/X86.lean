@@ -19,16 +19,14 @@ of its own that pushes the block function's five arguments. Each block, the
 block at `iv` is enciphered in place, giving the next output block, which is
 XORed into the data block a word at a time.
 
-With AES-NI the code is not around the block function (`cryptNi`): as
-AES-CBC's encryption has it (`Impl.AesCbc.X86.encryptNi`), the output block
-is loaded into `xmm0` once, enciphered there for each block with no call
-(`Impl.Aes.X86.AesNi.aes`, the round keys through `xmm6`) and XORed into the
-data block through `xmm7`, and stored at `iv` once after the last block. It
-uses no stack, and of the scratch buffer it writes only where it saves the
-registers, which it zeroes before returning.
+With an implementation that has a chain (`Impl/Aes/X86/Chain.lean`) the code
+is not around the block function (`cryptChain`): as AES-CBC's encryption has
+it (`Impl.AesCbc.X86.encryptChain`), the keys are set up once and the output
+block is loaded into `xmm0` once, enciphered there for each block with no call
+and XORed into the data block, and stored at `iv` once after the last block.
 
 Only the pointers, `rounds` and `n` can affect timing: the only branches are
-on `n` and, with AES-NI, on `rounds`.
+on `n` and, around a chain, on `rounds`.
 -/
 
 @[expose] public section
@@ -36,9 +34,9 @@ on `n` and, with AES-NI, on `rounds`.
 namespace VG.Impl.AesOfb.X86
 
 open VG.X86
-open VG.Impl.Aes.X86 (Blocks)
-open VG.Impl.CmacAes.X86 (argOp at_ advance xor4 setup restore niPre niPost)
-open VG.Impl.AesCbc.X86 (whole blkCall zeroSaved)
+open VG.Impl.Aes.X86 (Blocks Chain)
+open VG.Impl.CmacAes.X86 (argOp at_ advance xor4)
+open VG.Impl.AesCbc.X86 (whole blkCall wholeChain)
 
 /-- The arguments of the block function: the schedule and the rounds (our
 stack arguments 0 and 1), the block at `iv` (our stack argument 2), `n = 1`,
@@ -55,20 +53,7 @@ def body (b : Blocks) : Prog isa := .seq (.block ivArgs) (.seq (blkCall b) (.blo
 
 def crypt (b : Blocks) : Prog isa := whole (body b)
 
-/-- One block with AES-NI: the output block in `xmm0` enciphered there (the
-round keys through `xmm6`) and XORed into the block at `esi` (through
-`xmm7`), and on to the next block; ZF is set when none is left. -/
-def niBody : Prog isa :=
-  .seq (Impl.Aes.X86.AesNi.aes [.xmm0])
-    (.block [.movdquLoad .xmm7 (at_ .esi 0), .xop (.bin .pxor .xmm7 .xmm0), .movdquStore (at_ .esi 0) .xmm7,
-      .alu .add .esi (.imm 16), .alu .sub .edi (.imm 1)])
-
-/-- `vg_aes_ofb` with AES-NI: the output block loaded into `xmm0`, the
-blocks, and the output block stored, leaving the scratch buffer as it was
-but for the zeros where it saved the registers. -/
-def cryptNi : Prog isa :=
-  .seq (.block setup)
-    (.seq (.ite .e (.block []) (.seq (.block niPre) (.seq (.loop niBody .ne) (.block niPost))))
-      (.block (restore 5 ++ zeroSaved)))
+/-- `vg_aes_ofb` around a chain. -/
+def cryptChain (c : Chain) : Prog isa := wholeChain c Chain.ofb
 
 end VG.Impl.AesOfb.X86
