@@ -750,14 +750,18 @@ impl AesGcm {
             return Err(Error::TooManyPieces);
         }
         check_nonce(nonce)?;
-        let len = if let [first, second] = plaintext {
-            add_len(first.len() as u64, second.len(), MAX_TEXT).map_err(|()| Error::InvalidTextLength)?
-        } else {
-            let mut len = 0;
-            for p in plaintext {
-                len = add_len(len, p.len(), MAX_TEXT).map_err(|()| Error::InvalidTextLength)?;
+        let len = match plaintext {
+            // TLS 1.3 supplies its record and content type as two pieces.
+            #[cfg(target_arch = "x86_64")]
+            [first, second] => add_len(first.len() as u64, second.len(), MAX_TEXT)
+                .map_err(|()| Error::InvalidTextLength)?,
+            _ => {
+                let mut len = 0;
+                for p in plaintext {
+                    len = add_len(len, p.len(), MAX_TEXT).map_err(|()| Error::InvalidTextLength)?;
+                }
+                len
             }
-            len
         };
         if len != out.len() as u64 {
             return Err(Error::InvalidOutputLength);
