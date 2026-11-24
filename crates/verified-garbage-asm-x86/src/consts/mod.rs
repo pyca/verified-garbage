@@ -111,6 +111,10 @@ mod vg_seed_aesni_wide;
 pub use vg_seed_aesni_wide::VG_SEED_AESNI_WIDE;
 
 #[rustfmt::skip]
+mod vg_seed_sse2;
+pub use vg_seed_sse2::VG_SEED_SSE2;
+
+#[rustfmt::skip]
 mod vg_sm4_aesni;
 pub use vg_sm4_aesni::VG_SM4_AESNI;
 

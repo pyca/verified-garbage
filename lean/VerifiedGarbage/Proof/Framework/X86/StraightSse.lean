@@ -9,6 +9,8 @@ import VerifiedGarbage.Proof.Framework.X86.Sse
 import VerifiedGarbage.Proof.Framework.X86.SseDword
 import VerifiedGarbage.Proof.Framework.X86.SseWord
 import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # x86 (32-bit): straight-line SSE2 code, by evaluation
@@ -72,6 +74,8 @@ result of an unpacking is. -/
 def binSrc : XBinOp → Nat → Option (Bool × Nat)
   | .punpcklwd, p => some (decide (p / 16 % 2 = 1), 16 * (p / 32) + p % 16)
   | .punpckhwd, p => some (decide (p / 16 % 2 = 1), 64 + 16 * (p / 32) + p % 16)
+  | .punpckldq, p => some (decide (p / 32 % 2 = 1), 32 * (p / 64) + p % 32)
+  | .punpckhdq, p => some (decide (p / 32 % 2 = 1), 64 + 32 * (p / 64) + p % 32)
   | .punpcklqdq, p => some (if p < 64 then (false, p) else (true, p - 64))
   | .punpckhqdq, p => some (if p < 64 then (false, 64 + p) else (true, p))
   | _, _ => none
@@ -123,6 +127,7 @@ def unMoves : Un → Option (List (Nat × BitVec 128))
   | .shift .psllq 2 => some [(126, 0xfffffffffffffffcfffffffffffffffc)]
   | .shift .psllq 4 => some [(124, 0xfffffffffffffff0fffffffffffffff0)]
   | .shift .pslld 1 => some [(127, 0xfffffffefffffffefffffffefffffffe)]
+  | .shift .pslld 4 => some [(124, 0xfffffff0fffffff0fffffff0fffffff0)]
   | .shift .pslld 8 => some [(120, 0xffffff00ffffff00ffffff00ffffff00)]
   | .shift .pslld 9 => some [(119, 0xfffffe00fffffe00fffffe00fffffe00)]
   | .shift .pslld 10 => some [(118, 0xfffffc00fffffc00fffffc00fffffc00)]
@@ -131,6 +136,8 @@ def unMoves : Un → Option (List (Nat × BitVec 128))
   | .shift .pslld 13 => some [(115, 0xffffe000ffffe000ffffe000ffffe000)]
   | .shift .pslld 14 => some [(114, 0xffffc000ffffc000ffffc000ffffc000)]
   | .shift .pslld 15 => some [(113, 0xffff8000ffff8000ffff8000ffff8000)]
+  | .shift .pslld 24 => some [(104, 0xff000000ff000000ff000000ff000000)]
+  | .shift .psrld 4 => some [(4, 0xfffffff0fffffff0fffffff0fffffff)]
   | .shift .psrld 8 => some [(8, 0xffffff00ffffff00ffffff00ffffff)]
   | .shift .psraw 15 => some [(0, 0x80008000800080008000800080008000), (1,
       0x40004000400040004000400040004000), (2, 0x20002000200020002000200020002000), (3,
@@ -150,7 +157,10 @@ def unMoves : Un → Option (List (Nat × BitVec 128))
       0xffffffff0000000000000000)]
   | .pshuflw 0x39 => some [(0, 0xffffffffffffffff0000000000000000), (16, 0xffffffffffff), (80,
       0xffff000000000000)]
+  | .pshuflw 0xb1 => some [(0, 0xffffffffffffffff0000000000000000), (16, 0xffff0000ffff), (112, 0xffff0000ffff0000)]
   | .pshuflw 0xd8 => some [(0, 0xffffffffffffffffffff00000000ffff), (16, 0xffff0000), (112, 0xffff00000000)]
+  | .pshufhw 0xb1 => some [(0, 0xffffffffffffffff), (16, 0xffff0000ffff0000000000000000),
+      (112, 0xffff0000ffff00000000000000000000)]
   | .pshufhw 0xd8 => some [(0, 0xffff00000000ffffffffffffffffffff), (16, 0xffff00000000000000000000),
       (112, 0xffff000000000000000000000000)]
   | _ => none
@@ -165,6 +175,10 @@ def binMoves : XBinOp → Option (List (Nat × BitVec 128) × List (Nat × BitVe
       0xffff00000000), (64, 0xffff)],
   [(0, 0xffff0000000000000000000000000000), (16, 0xffff00000000000000000000), (32,
       0xffff000000000000), (48, 0xffff0000)])
+  | .punpckldq => some ([(0, 0xffffffff), (96, 0xffffffff0000000000000000)],
+      [(64, 0xffffffff000000000000000000000000), (96, 0xffffffff00000000)])
+  | .punpckhdq => some ([(32, 0xffffffff0000000000000000), (64, 0xffffffff)],
+      [(0, 0xffffffff000000000000000000000000), (32, 0xffffffff00000000)])
   | .punpcklqdq => some ([(0, 0xffffffffffffffff)],
       [(64, 0xffffffffffffffff0000000000000000)])
   | .punpckhqdq => some ([(64, 0xffffffffffffffff)],
@@ -320,6 +334,38 @@ theorem bin_bit {op : XBinOp} {s : Bool} {q p : Nat} (x y : BitVec 128) (hp : p 
       simp only [h, decide_true, ite_true]; exact congrArg _ (by omega_using [])
     · rw [ite_eq_left (by omega_using [h]), getLsbD_word _ _ _ hw]
       simp only [h, decide_false, Bool.false_eq_true, ite_false]; exact congrArg _ (by omega_using [])
+  case punpckldq =>
+    obtain ⟨rfl, rfl⟩ := h
+    rw [punpckldq_eq, bit_dword]
+    rcases cases4 (show p / 32 < 4 by omega_using [hp]) with e | e | e | e <;> rw [e]
+    · rw [dword_ofDwords_0, getLsbD_dword, decide_eq_true (Nat.mod_lt _ (by omega_using [])), Bool.true_and]
+      simp only [Nat.reduceMod, Nat.reduceEqDiff, decide_false, Bool.false_eq_true, ite_false]
+      exact congrArg _ (by omega_using [e])
+    · rw [dword_ofDwords_1, getLsbD_dword, decide_eq_true (Nat.mod_lt _ (by omega_using [])), Bool.true_and]
+      simp only [Nat.reduceMod, decide_true, ite_true]
+      exact congrArg _ (by omega_using [e])
+    · rw [dword_ofDwords_2, getLsbD_dword, decide_eq_true (Nat.mod_lt _ (by omega_using [])), Bool.true_and]
+      simp only [Nat.reduceMod, Nat.reduceEqDiff, decide_false, Bool.false_eq_true, ite_false]
+      exact congrArg _ (by omega_using [e])
+    · rw [dword_ofDwords_3, getLsbD_dword, decide_eq_true (Nat.mod_lt _ (by omega_using [])), Bool.true_and]
+      simp only [Nat.reduceMod, decide_true, ite_true]
+      exact congrArg _ (by omega_using [e])
+  case punpckhdq =>
+    obtain ⟨rfl, rfl⟩ := h
+    rw [punpckhdq_eq, bit_dword]
+    rcases cases4 (show p / 32 < 4 by omega_using [hp]) with e | e | e | e <;> rw [e]
+    · rw [dword_ofDwords_0, getLsbD_dword, decide_eq_true (Nat.mod_lt _ (by omega_using [])), Bool.true_and]
+      simp only [Nat.reduceMod, Nat.reduceEqDiff, decide_false, Bool.false_eq_true, ite_false]
+      exact congrArg _ (by omega_using [e])
+    · rw [dword_ofDwords_1, getLsbD_dword, decide_eq_true (Nat.mod_lt _ (by omega_using [])), Bool.true_and]
+      simp only [Nat.reduceMod, decide_true, ite_true]
+      exact congrArg _ (by omega_using [e])
+    · rw [dword_ofDwords_2, getLsbD_dword, decide_eq_true (Nat.mod_lt _ (by omega_using [])), Bool.true_and]
+      simp only [Nat.reduceMod, Nat.reduceEqDiff, decide_false, Bool.false_eq_true, ite_false]
+      exact congrArg _ (by omega_using [e])
+    · rw [dword_ofDwords_3, getLsbD_dword, decide_eq_true (Nat.mod_lt _ (by omega_using [])), Bool.true_and]
+      simp only [Nat.reduceMod, decide_true, ite_true]
+      exact congrArg _ (by omega_using [e])
   case punpcklqdq =>
     simp only [XBinOp.eval]
     rw [bit_qwords _ _ hp, bit_qword, bit_qword]
@@ -959,6 +1005,50 @@ theorem run_mem {is : List Instr} (h : (is.all fun | .movdquStore .. => false | 
       split at hu <;> cases hu
       rfl
     | _ => cases hi
+
+/-! ## A buffer of slots -/
+
+/-- Slot `k` (16 bytes) of the scratch buffer at `B`. -/
+def W (m : Mem) (B : BitVec 32) (k : Nat) : BitVec 128 := m.readW (addr B (16 * k)) 128
+
+/-- The `16 n` bytes of slots `[a, a + n)`. -/
+abbrev slotsR (B : BitVec 32) (a n : Nat) : Region := ⟨B.setWidth 64 + BitVec.ofNat 64 (16 * a), 16 * n⟩
+
+theorem addr16 {B : BitVec 32} {k : Nat} (h : B.toNat + 16 * k < 2 ^ 32) :
+    addr B (16 * k) = B.setWidth 64 + BitVec.ofNat 64 (16 * k) := addr_eq h
+
+/-- A slot outside the regions written keeps its value. -/
+theorem W_frame {m m' : Mem} {B : BitVec 32} {rs : List Region} (hf : Frame rs m m') {k : Nat}
+    (h : B.toNat + 16 * k < 2 ^ 32) (hd : ∀ r ∈ rs, Region.Disjoint (slotsR B k 1) r) : W m' B k = W m B k := by
+  unfold W
+  rw [addr16 h]
+  exact hf.readW (Region.contains_self _ _) hd (by decide)
+
+/-- Byte `t` of slot `k`. -/
+theorem W_bit (m : Mem) {B : BitVec 32} {k t j : Nat} (h : B.toNat + 16 * k < 2 ^ 32) (ht : t < 16) (hj : j < 8) :
+    (W m B k).getLsbD (8 * t + j) = (m (B.setWidth 64 + BitVec.ofNat 64 (16 * k + t))).getLsbD j := by
+  have e := byte_readW m (addr B (16 * k)) (w := 128) (k := t) (by omega_arith)
+  rw [addr16 h, Offset.add_ofNat_add_ofNat] at e
+  rw [← e, BitVec.getLsbD_extractLsb', decide_eq_true hj, Bool.true_and, W, addr16 h]
+
+/-- The `m` slots of 16 bytes at `B` are writable, and do not wrap around. -/
+structure SlotsIn (m : Nat) (s : State) (B : BitVec 32) : Prop where
+  acc : ∀ k < m, InRegions s.wr (addr B (16 * k)) 16
+  fit : B.toNat + 16 * m ≤ 2 ^ 32
+
+theorem xor0 (x : BitVec 128) : x ^^^ 0 = x := BitVec.xor_zero
+
+theorem xorBits2 (V : Nat → BitVec 128) {i t i' t' : Nat} (ht : t < 128) (ht' : t' < 128) :
+    xorBits V [128 * i + t, 128 * i' + t'] = ((V i).getLsbD t ^^ (V i').getLsbD t') := by
+  simp [bitOf_word V i t ht, bitOf_word V i' t' ht']
+
+theorem xorBits_map (V : Nat → BitVec 128) (f t : Nat → Nat) (l : List Nat) (ht : ∀ i ∈ l, t i < 128) :
+    xorBits V (l.map fun i => 128 * f i + t i) = l.foldr (fun i acc => (V (f i)).getLsbD (t i) ^^ acc) false := by
+  induction l with
+  | nil => rfl
+  | cons i l ih =>
+    rw [List.map_cons, xorBits_cons, List.foldr_cons, bitOf_word V _ _ (ht i List.mem_cons_self),
+      ih fun i hi => ht i (List.mem_cons_of_mem _ hi)]
 
 /-! ## Expressions -/
 
