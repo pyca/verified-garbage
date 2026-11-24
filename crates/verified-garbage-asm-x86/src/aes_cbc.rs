@@ -88,6 +88,74 @@ call {vg_zeroize_core}
     )
 }
 
+/// The CPU features `vg_aes_cbc_encrypt_ssse3` requires (`Artifact.features`).
+pub const VG_AES_CBC_ENCRYPT_SSSE3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3);
+
+/// AES-CBC encryption (NIST SP 800-38A §6.2) of whole blocks, in place: replaces the `n` 16-byte blocks `P₁ … Pₙ` at `data` with `Cⱼ = CIPH_K(Pⱼ ⊕ Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ` (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH_K` is AES (FIPS 197) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it. No padding is added.
+///
+/// Contract: `VG.Spec.Cbc.aesEncryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule, the chaining value or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `iv` must be valid for reads and writes of 16 bytes.
+/// * `data` must be valid for reads and writes of `16 * n` bytes.
+/// * `scratch` must be valid for reads and writes of 2176 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * On return each byte of `scratch` is unchanged or zero.
+/// * `iv`, `data` and `scratch` must not overlap each other, `schedule` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `schedule`, `iv`, `data` and `scratch` may overlap the return address on the stack or the 72 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `ssse3` target feature.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_aes_cbc_encrypt_ssse3(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
+    core::arch::naked_asm!(
+        r#".base64 "jWQk1ItEJDCJBCSLRCQ0iUQkBItEJDiJRCQIi0QkPIlEJAyLRCRAiUQkEItEJESJRCQU"
+call {vg_aes_cbc_encrypt_unwiped_ssse3}
+.base64 "iUQkGIlUJByLRCREiQQkuOABAACJRCQE"
+call {vg_zeroize_core}
+.base64 "i0QkGItUJByNZCQsZg/vwLkAAAAAjWQkuPMPfwQk8w9/RCQQ8w9/RCQg8w9/RCQwiUwkQIlMJESNZCRIuAAAAAC6AAAAADHJZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7//D"
+.p2align 6"#,
+        vg_aes_cbc_encrypt_unwiped_ssse3 = sym super::aes_cbc::vg_aes_cbc_encrypt_unwiped_ssse3::vg_aes_cbc_encrypt_unwiped_ssse3,
+        vg_zeroize_core = sym super::zeroize::vg_zeroize_core::vg_zeroize_core,
+    )
+}
+
+/// The CPU features `vg_aes_cbc_decrypt_ssse3` requires (`Artifact.features`).
+pub const VG_AES_CBC_DECRYPT_SSSE3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3);
+
+/// AES-CBC decryption (NIST SP 800-38A §6.2) of whole blocks, in place: replaces the `n` 16-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = CIPH⁻¹_K(Cⱼ) ⊕ Cⱼ₋₁`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ`, the last block at `data` on entry (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH⁻¹_K` is the AES inverse cipher (FIPS 197 §5.3) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it. No padding is removed.
+///
+/// Contract: `VG.Spec.Cbc.aesDecryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule, the chaining value or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `iv` must be valid for reads and writes of 16 bytes.
+/// * `data` must be valid for reads and writes of `16 * n` bytes.
+/// * `scratch` must be valid for reads and writes of 2176 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * On return each byte of `scratch` is unchanged or zero.
+/// * `iv`, `data` and `scratch` must not overlap each other, `schedule` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `schedule`, `iv`, `data` and `scratch` may overlap the return address on the stack or the 72 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `ssse3` target feature.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_aes_cbc_decrypt_ssse3(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
+    core::arch::naked_asm!(
+        r#".base64 "jWQk1ItEJDCJBCSLRCQ0iUQkBItEJDiJRCQIi0QkPIlEJAyLRCRAiUQkEItEJESJRCQU"
+call {vg_aes_cbc_decrypt_unwiped_ssse3}
+.base64 "iUQkGIlUJByLRCREiQQkuNACAACJRCQE"
+call {vg_zeroize_core}
+.base64 "i0QkGItUJByNZCQsZg/vwLkAAAAAjWQkuPMPfwQk8w9/RCQQ8w9/RCQg8w9/RCQwiUwkQIlMJESNZCRIuAAAAAC6AAAAADHJZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7//D"
+.p2align 6"#,
+        vg_aes_cbc_decrypt_unwiped_ssse3 = sym super::aes_cbc::vg_aes_cbc_decrypt_unwiped_ssse3::vg_aes_cbc_decrypt_unwiped_ssse3,
+        vg_zeroize_core = sym super::zeroize::vg_zeroize_core::vg_zeroize_core,
+    )
+}
+
 /// AES-CBC encryption (NIST SP 800-38A §6.2) of whole blocks, in place: replaces the `n` 16-byte blocks `P₁ … Pₙ` at `data` with `Cⱼ = CIPH_K(Pⱼ ⊕ Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ` (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH_K` is AES (FIPS 197) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it. No padding is added.
 ///
 /// Contract: `VG.Spec.Cbc.aesEncryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule, the chaining value or the data.
@@ -157,5 +225,13 @@ pub(crate) mod vg_aes_cbc_decrypt_unwiped;
 pub(crate) mod vg_aes_cbc_decrypt_unwiped_aesni;
 
 #[rustfmt::skip]
+#[path = "internal/vg_aes_cbc_decrypt_unwiped_ssse3.rs"]
+pub(crate) mod vg_aes_cbc_decrypt_unwiped_ssse3;
+
+#[rustfmt::skip]
 #[path = "internal/vg_aes_cbc_encrypt_unwiped.rs"]
 pub(crate) mod vg_aes_cbc_encrypt_unwiped;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_cbc_encrypt_unwiped_ssse3.rs"]
+pub(crate) mod vg_aes_cbc_encrypt_unwiped_ssse3;
