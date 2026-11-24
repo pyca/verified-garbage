@@ -1845,7 +1845,7 @@ theorem wrapGeneral {c : Calls} (h : CallsOk c) (raw : Verified target (framed c
   have sizes := generalSize h
   have hk := generalScrub sizes.2.1
   obtain ⟨wf,kp,dit,rb⟩ := keeps_of_side side
-  refine ⟨Verified.scrubAllOfV raw hk side,?_⟩
+  refine ⟨Verified.scrubAllOfV raw hk side,?_, fun ty _ h => by cases ty <;> cases h⟩
   have pos : 0 < c.pwWn+32 := by omega
   simp only [scrubSide,Nat.ne_of_gt pos,↓reduceIte,Bool.and_eq_true,decide_eq_true_eq,beq_iff_eq] at side
   refine noResidue_scrubAll wf kp raw ⟨pos,by omega,by omega⟩ hk.sp side.1.1.1.1.1.2 dit ?_ rb
@@ -1878,7 +1878,7 @@ theorem registerGather {c : Calls} (h : CallsOk c)
       exact chooseShort_scrubbed (shortLeaf_verified Proof.Gcm.AArch64.Pmull.hashEight_at)
         (chooseRecord_scrubbed (.inr rfl) (medium hzero) long)
     next => exact long
-  refine ⟨Proof.AesGcm.sealGather_keyed (result.verified.of_implies gather_implies),?_⟩
+  refine ⟨Proof.AesGcm.sealGather_keyed (result.verified.of_implies gather_implies),?_, fun ty _ h => by cases ty <;> cases h⟩
   intro a b τ υ a' b' pa pb pub
   exact result.noResidue a b τ υ a' b' ⟨gatherPre_of_spec pa,trivial⟩ ⟨gatherPre_of_spec pb,trivial⟩ (gatherPub_of pub)
 
@@ -2476,7 +2476,7 @@ theorem streamEncryptDS_scrubbed (g : GcmVariant) :
   rw [hk, hF] at h
   unfold Fn.streamEncryptDS Fn.viaDS
   rw [hF]
-  exact ⟨Proof.AesGcm.streamEncrypt_keyed h.verified, h.noResidue⟩
+  exact ⟨Proof.AesGcm.streamEncrypt_keyed h.verified, h.noResidue, fun ty _ h => by cases ty <;> cases h⟩
 
 /-- `vg_aes_gcm_stream_decrypt` of the implementations without PMULL, as emitted, cleanup
 included. -/
@@ -2502,7 +2502,7 @@ theorem streamDecryptDS_scrubbed (g : GcmVariant) :
   rw [hk, hF] at h
   unfold Fn.streamDecryptDS Fn.viaDS
   rw [hF]
-  exact ⟨Proof.AesGcm.streamDecrypt_keyed h.verified, h.noResidue⟩
+  exact ⟨Proof.AesGcm.streamDecrypt_keyed h.verified, h.noResidue, fun ty _ h => by cases ty <;> cases h⟩
 
 /-- `vg_aes_gcm_stream_finish` of the implementations without PMULL, as emitted, cleanup
 included. -/
@@ -2528,7 +2528,7 @@ theorem streamFinishDS_scrubbed (g : GcmVariant) :
   rw [hk, hF] at h
   unfold Fn.streamFinishDS Fn.viaDS
   rw [hF]
-  exact ⟨Proof.AesGcm.streamFinish_keyed h.verified, h.noResidue⟩
+  exact ⟨Proof.AesGcm.streamFinish_keyed h.verified, h.noResidue, fun ty _ h => by cases ty <;> cases h⟩
 
 /-- `vg_aes_gcm_stream_verify` of the implementations without PMULL, as emitted, cleanup
 included. -/
@@ -2554,7 +2554,7 @@ theorem streamVerifyDS_scrubbed (g : GcmVariant) :
   rw [hk, hF] at h
   unfold Fn.streamVerifyDS Fn.viaDS
   rw [hF]
-  exact ⟨Proof.AesGcm.streamVerify_keyed h.verified, h.noResidue⟩
+  exact ⟨Proof.AesGcm.streamVerify_keyed h.verified, h.noResidue, fun ty _ h => by cases ty <;> cases h⟩
 
 /-- The variant `g` if its functions call their implementations directly:
 those with PMULL, whose code differs between them. -/
