@@ -926,9 +926,9 @@ structure CDone (s t : State) : Prop where
   rbx : t.mem.readW (off (fb s) sRbx) 64 = s.gpr .rbx
   rbp : t.mem.readW (off (fb s) sRbp) 64 = s.gpr .rbp
   r12 : t.mem.readW (off (fb s) sR12) 64 = s.gpr .r12
-  out : ∀ H G, Spec.MdHashTable.hashAt 64 s.mem (stackArg s 8) = some H →
-    Spec.MdHashTable.hashAt 64 s.mem (stackArg s 9) = some G → validCache s →
-    (t.gpr .rax).setWidth 32 = if verifyOut H G s then 1 else 0
+  out : ∃ H G, Spec.MdHashTable.hashAt 64 s.mem (stackArg s 8) = some H ∧
+    Spec.MdHashTable.hashAt 64 s.mem (stackArg s 9) = some G ∧ (validCache s →
+      (t.gpr .rax).setWidth 32 = if verifyOut H G s then 1 else 0)
 
 theorem restoreC_ok {s t : State} (D : CDone s t) :
     WP isa (.block restoreRegs) t fun t' => t'.gpr .rsp = fb s ∧ t'.wr = (allocState frameBytes s).wr ∧
@@ -954,10 +954,11 @@ theorem restoreC_ok {s t : State} (D : CDone s t) :
       · rw [k.gpr (by decide)]; exact D.cs _ (by simp)
       · rw [k.gpr (by decide)]; exact D.cs _ (by simp)
       · rw [k.gpr (by decide)]; exact D.cs _ (by simp)
-  · intro H G a b hc
+  · obtain ⟨H, G, hH, hG, out⟩ := D.out
+    refine ⟨H, G, hH, hG, fun hc => ?_⟩
     show (t'.gpr .rax).setWidth 32 = _
     rw [k.gpr (show Reg.rax ∉ [Reg.rbx, .rbp, .r12] by decide)]
-    exact D.out H G a b hc
+    exact out hc
 
 /-- What verification needs of the tables in the entry state `s`: the
 index `i` of the hash function of `hash`, the functions `T` of both tables,
@@ -1078,9 +1079,6 @@ theorem codeC_ok {f : MdFns} {g : Impl.Mgf1.X86_64.Table.Fns}
   obtain hF := vfb_toNat hp.toVPre
   obtain hk1 := hp.k1; have hk2 := hp.k2
   obtain hHl : Hs.len = T.H.D := ((hp.hdl Hs E.hH).symm.trans E.hD.symm)
-  obtain hHs : ∀ H G, Spec.MdHashTable.hashAt 64 s.mem (stackArg s 8) = some H →
-      Spec.MdHashTable.hashAt 64 s.mem (stackArg s 9) = some G → H = Hs ∧ G = Gs := fun H G a b =>
-    ⟨Option.some.inj (a.symm.trans E.hH), Option.some.inj (b.symm.trans E.hG)⟩
   refine wp_frame (by have := hp.sp1; unfold verifyStack chkStack frameBytes at *; omega_arith) ?_
   rw [verifyCBody]
   simp only [seqs]
@@ -1127,10 +1125,8 @@ theorem codeC_ok {f : MdFns} {g : Impl.Mgf1.X86_64.Table.Fns}
     obtain h0 : n₀ = 0 := BitVec.eq_of_toNat_eq hb
     obtain hf : verifyOut Hs Gs s = false := by rw [verifyOut, hnB, h0]; exact RsaPss.verify_zero₂ ..
     refine WP.mono_mx (by decide) (vfail_done L3 R3 hw3 hcs3 (by simp [vproW, upd]) (by simp [vproW, upd])
-      (by simp [vproW, upd]) hf) fun _ D hm' => ⟨⟨D.L, D.wr, D.cs, D.rbx, D.rbp, D.r12, fun H G a b _ => ?_⟩,
-        by rw [hm', e3]⟩
-    obtain ⟨rfl, rfl⟩ := hHs H G a b
-    exact D.out
+      (by simp [vproW, upd]) hf) fun _ D hm' =>
+        ⟨⟨D.L, D.wr, D.cs, D.rbx, D.rbp, D.r12, Hs, Gs, E.hH, E.hG, fun _ => D.out⟩, by rw [hm', e3]⟩
   rw [decide_eq_false_iff_not] at hb
   obtain h0 : n₀ ≠ 0 := fun h => hb (by rw [h]; rfl)
   obtain hl8 := RsaPss.log2_lt8 n₀
@@ -1221,7 +1217,7 @@ theorem codeC_ok {f : MdFns} {g : Impl.Mgf1.X86_64.Table.Fns}
     rw [g4 j hj' (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)]
     simp only [vproW1, upd]; rw [ifn h47]
   refine ⟨⟨L8.congr (k9.gpr (by decide)) k9.2.2 (by rw [hm9]), k9.2.2.trans (wr8.trans (k7.2.2.trans
-      (k6'.2.2.trans (k6.2.2.trans (wr5.trans hw4))))), fun r hr => ?_, ?_, ?_, ?_, fun H G a b hc => ?_⟩, ?_⟩
+      (k6'.2.2.trans (k6.2.2.trans (wr5.trans hw4))))), fun r hr => ?_, ?_, ?_, ?_, ⟨Hs, Gs, E.hH, E.hG, fun hc => ?_⟩⟩, ?_⟩
   · have h1 : r ∈ calleeSaved := by simp at hr; rcases hr with rfl | rfl | rfl <;> decide
     rw [k9.gpr (by simp at hr ⊢; rcases hr with rfl | rfl | rfl <;> simp), cs8 r h1,
       g7 r (by simp at hr; rcases hr with rfl | rfl | rfl <;> decide),
@@ -1230,8 +1226,7 @@ theorem codeC_ok {f : MdFns} {g : Impl.Mgf1.X86_64.Table.Fns}
   · rw [R9.rd (d := sRbx) 41 rfl (by decide), w 41 (by decide) (by decide) (by decide)]; simp [vproW, upd]
   · rw [R9.rd (d := sRbp) 42 rfl (by decide), w 42 (by decide) (by decide) (by decide)]; simp [vproW, upd]
   · rw [R9.rd (d := sR12) 43 rfl (by decide), w 43 (by decide) (by decide) (by decide)]; simp [vproW, upd]
-  · obtain ⟨rfl, rfl⟩ := hHs H G a b
-    obtain hbx := written_getD (hout5 hc)
+  · obtain hbx := written_getD (hout5 hc)
     set x := (Spec.Rsa.publicOpChecked (Spec.Rsa.bytesAt s.mem (s.gpr .rdi) k)
       (Spec.Rsa.bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat) (Spec.Rsa.bytesAt s.mem (stackArg s 0) k)).getD
         (Spec.RsaPss.zeros k) with hx
@@ -1252,7 +1247,7 @@ theorem codeC_ok {f : MdFns} {g : Impl.Mgf1.X86_64.Table.Fns}
       rw [ifp (hin _ (by omega_arith))]
     rw [hem, ← hHl] at hax8
     rw [hax9, hb0, acc_out hlo (by omega_arith) hax8, verifyOut,
-      RsaPss.verify_encode₂ H G heb (by rw [bytesAt_length, bytesAt_length])
+      RsaPss.verify_encode₂ Hs Gs heb (by rw [bytesAt_length, bytesAt_length])
         (by rw [bytesAt_length]; unfold Spec.RsaPss.emLength at *; omega_arith)]
     simp only [bytesAt_length]
     rfl

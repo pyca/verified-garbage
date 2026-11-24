@@ -626,12 +626,8 @@ theorem code_ok (hc : MdHashTable.Arm.Coh mvs) (hcg : HashTable.Arm.Coh vs) (c :
       Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords,
       Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Abi.withTables, Sig.wordIndex,
       abi, argRegs, reduceClassify, Loc.val]
-    intro H G hH hG
-    rw [show BitVec.setWidth 64 (stackArg s 10) = State.addr (stackArg s 10) from rfl,
-      MdHashTable.Arm.hashAt_tableOf hfit hidx, Option.some.injEq] at hH
-    rw [show BitVec.setWidth 64 (stackArg s 11) = State.addr (stackArg s 11) from rfl,
-      Proof.HashTable.Arm.hashAt_tableOf hfitg hidxg, Option.some.injEq] at hG
-    subst hH hG
+    refine ⟨_, _, MdHashTable.Arm.hashAt_tableOf hfit hidx,
+      Proof.HashTable.Arm.hashAt_tableOf hfitg hidxg, ?_⟩
     rw [BitVec.setWidth_append_eq_right]
     have ro := fun {R : Region} (hR : R ∈ (P.lay w.h.D).ro) =>
       entered_ro (F := frameBytes) (A := 48) (argv := P.argv w.h.D) (rw := (P.lay w.h.D).rw) hin.ok hsp' hR

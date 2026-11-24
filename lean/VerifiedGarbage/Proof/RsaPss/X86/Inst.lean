@@ -1608,10 +1608,8 @@ theorem code_ok (hok : Sg.OK vs gs) (c : Ver.PublicImpl) {s : State} (hs : (vspe
       Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords,
       Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Abi.withTables, Sig.wordIndex, abi,
       argSlots, argVal, argBytes]
-    intro H G hH hG
-    rw [Proof.MdHashTable.X86.hashAt_tableOf hfitH hidxH, Option.some.injEq] at hH
-    rw [Proof.HashTable.X86.hashAt_tableOf hfit hidx, Option.some.injEq] at hG
-    subst hH hG
+    refine ⟨_, _, Proof.MdHashTable.X86.hashAt_tableOf hfitH hidxH,
+      Proof.HashTable.X86.hashAt_tableOf hfit hidx, ?_⟩
     unfold Res at res
     obtain hG : sigB (epw vs gs s s w wg) (entered frameBytes s) =
         Spec.Rsa.bytesAt s.mem ((arg s 6).setWidth 64) (arg s 1).toNat := by

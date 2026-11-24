@@ -558,12 +558,12 @@ open VG.Proof.RsaPss.AArch64.Sgn (stk)
 stack `stk K`, on the registers and the stack. -/
 def verifyK (tsH tsG : List FnTable) (K : Nat) : Contract isa where
   pre s := PreV tsH tsG K s
-  post s s' := ∀ H G, Spec.MdHashTable.hashAt 64 s.mem (stackArg s 6) = some H →
-    Spec.MdHashTable.hashAt 64 s.mem (stackArg s 7) = some G → Cons s →
+  post s s' := ∃ H G, Spec.MdHashTable.hashAt 64 s.mem (stackArg s 6) = some H ∧
+    Spec.MdHashTable.hashAt 64 s.mem (stackArg s 7) = some G ∧ (Cons s →
       (s'.gpr .x0).setWidth 32 = if Spec.RsaPss.verify H G (Spec.Rsa.bytesAt s.mem (s.gpr .x0) (s.gpr .x1).toNat)
         (Spec.Rsa.bytesAt s.mem (s.gpr .x2) (s.gpr .x3).toNat) (Spec.Rsa.bytesAt s.mem (s.gpr .x4) H.len)
         (Spec.Rsa.bytesAt s.mem (s.gpr .x6) (s.gpr .x1).toNat)
-        (Spec.RsaPss.expectedSaltLen (stackArg s 0) ((stackArg s 1).setWidth 32)) then 1 else 0
+        (Spec.RsaPss.expectedSaltLen (stackArg s 0) ((stackArg s 1).setWidth 32)) then 1 else 0)
   pub s₁ s₂ := PubV s₁ s₂ ∧
     (∀ f ∈ (tsH.map (·.fns)).flatten ++ (tsG.map (·.fns)).flatten, s₁.syms f = s₂.syms f) ∧
     (∀ T ∈ tsH, (Abi.tableHeld 64 s₁.mem (stackArg s₁ 6) (FnTable.words isa s₁ T) ↔
@@ -597,10 +597,7 @@ theorem verify_correct (s : State) (h : (verifyKV vs K).pre s) :
   obtain ⟨w, hw, w', hw', hH, hG⟩ := tabs_of h
   have E := csel_of hok hw hw' h.hsy h.hdl hH hG
   obtain ⟨t, s', he, habi, hr⟩ := code_ok c h624 hcK h E
-  refine ⟨t, s', he, habi, fun H G hH' hG' hc => ?_⟩
-  cases hH'.symm.trans E.hH
-  cases hG'.symm.trans E.hG
-  exact hr hc
+  exact ⟨t, s', he, habi, _, _, E.hH, E.hG, hr⟩
 
 /-- The index, the functions and the hash functions `x` whose
 `checkEncoding` is correct and constant time. -/
@@ -646,8 +643,7 @@ theorem verify_implies (hsat : ∃ s, (verifyCK vs K).pre s) : (verifyKV vs K).I
     Spec.MdHashTable.wordCount, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.fns,
     Spec.MdHashTable.dataWords, Abi.withTables, Sig.wordIndex, abi, argRegs,
     List.append_eq, _root_.List.range, _root_.List.range.loop]
-    intro H G hH hG hc
-    exact h H G hH hG hc
+    exact h
   pub s₁ s₂ _ _ h := by
     sig_pub [Spec.RsaPss.verifyPrecomputedMdTableContract, Spec.RsaPss.verifyPrecomputedMdTableSig,
     Spec.MdHashTable.param, Spec.MdHashTable.param,

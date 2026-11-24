@@ -85,14 +85,14 @@ def verifyK : Contract isa where
       Spec.RsaPss.publicScratchWords (s.gpr .rsi).toNat ≤ (stackArg s 5).toNat ∧
       (stackArg s 7).toNat = Spec.Rsa.precomputedWords (s.gpr .rsi).toNat ∧
       Spec.RsaPss.digestLenOk 64 s.mem (stackArg s 8) (s.gpr .r9)
-  post s s' := ∀ H G, Spec.MdHashTable.hashAt 64 s.mem (stackArg s 8) = some H →
-    Spec.MdHashTable.hashAt 64 s.mem (stackArg s 9) = some G →
-    Spec.Rsa.publicPrecompute (Spec.Rsa.bytesAt s.mem (s.gpr .rdi) (s.gpr .rsi).toNat) =
+  post s s' := ∃ H G, Spec.MdHashTable.hashAt 64 s.mem (stackArg s 8) = some H ∧
+    Spec.MdHashTable.hashAt 64 s.mem (stackArg s 9) = some G ∧
+    (Spec.Rsa.publicPrecompute (Spec.Rsa.bytesAt s.mem (s.gpr .rdi) (s.gpr .rsi).toNat) =
       some (Spec.Rsa.wordsAt s.mem (stackArg s 6) (stackArg s 7).toNat) →
     (s'.gpr .rax).setWidth 32 = if Spec.RsaPss.verify H G (Spec.Rsa.bytesAt s.mem (s.gpr .rdi) (s.gpr .rsi).toNat)
         (Spec.Rsa.bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat) (Spec.Rsa.bytesAt s.mem (s.gpr .r8) H.len)
         (Spec.Rsa.bytesAt s.mem (stackArg s 0) (s.gpr .rsi).toNat)
-        (Spec.RsaPss.expectedSaltLen (stackArg s 2) ((stackArg s 3).setWidth 32)) then 1 else 0
+        (Spec.RsaPss.expectedSaltLen (stackArg s 2) ((stackArg s 3).setWidth 32)) then 1 else 0)
   pub s₁ s₂ :=
     (∀ r ∈ [Reg.rdi, .rsi, .rdx, .rcx, .r8, .r9, .rsp], s₁.gpr r = s₂.gpr r) ∧
       stackArg s₁ 0 = stackArg s₂ 0 ∧ stackArg s₁ 1 = stackArg s₂ 1 ∧ stackArg s₁ 2 = stackArg s₂ 2 ∧

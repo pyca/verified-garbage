@@ -4,6 +4,8 @@ import Lean.Elab.Command
 meta import Lean.Elab.Command
 import VerifiedGarbage.Spec.RsaPss
 meta import VerifiedGarbage.Spec.RsaPss
+import VerifiedGarbage.Spec.RsaPss.MdTable
+import VerifiedGarbage.TCB.X86_64.Target
 import VerifiedGarbage.TCB.Audit
 meta import VerifiedGarbage.TCB.Audit
 import VerifiedGarbageTest.Memo
@@ -256,5 +258,16 @@ run_cmd do
     match ← checkFile root name last count generation with
     | .ok () => pure ()
     | .error e => throwError "{e}"
+
+/-- Neither table lookup can be skipped by the verification contract. On x86-64
+the message hash and MGF1 table pointers are stack arguments 8 and 9. -/
+example (before after : X86_64.State)
+    (missing : Spec.MdHashTable.hashAt 64 before.mem (X86_64.stackArg before 8) = none ∨
+      Spec.MdHashTable.hashAt 64 before.mem (X86_64.stackArg before 9) = none) :
+    ¬ (Spec.RsaPss.verifyPrecomputedMdTableContract X86_64.abi).post before after := by
+  rintro ⟨_, _, hash, mgf1, _⟩
+  rcases missing with h | h
+  · cases h.symm.trans hash
+  · cases h.symm.trans mgf1
 
 end VG.Test.RsaPss
