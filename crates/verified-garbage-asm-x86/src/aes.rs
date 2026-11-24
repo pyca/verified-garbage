@@ -104,12 +104,20 @@ pub(crate) mod vg_aes_cfb128_decrypt_aesni_core;
 pub(crate) mod vg_aes_cfb128_decrypt_core;
 
 #[rustfmt::skip]
+#[path = "internal/vg_aes_cfb128_decrypt_ssse3_core.rs"]
+pub(crate) mod vg_aes_cfb128_decrypt_ssse3_core;
+
+#[rustfmt::skip]
 #[path = "internal/vg_aes_cfb128_encrypt_aesni_core.rs"]
 pub(crate) mod vg_aes_cfb128_encrypt_aesni_core;
 
 #[rustfmt::skip]
 #[path = "internal/vg_aes_cfb128_encrypt_core.rs"]
 pub(crate) mod vg_aes_cfb128_encrypt_core;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_cfb128_encrypt_ssse3_core.rs"]
+pub(crate) mod vg_aes_cfb128_encrypt_ssse3_core;
 
 #[rustfmt::skip]
 #[path = "internal/vg_aes_ctr32_to.rs"]
@@ -120,6 +128,10 @@ pub(crate) mod vg_aes_ctr32_to;
 pub(crate) mod vg_aes_ctr32_to_aesni;
 
 #[rustfmt::skip]
+#[path = "internal/vg_aes_ctr32_to_ssse3.rs"]
+pub(crate) mod vg_aes_ctr32_to_ssse3;
+
+#[rustfmt::skip]
 #[path = "internal/vg_aes_decrypt_blocks.rs"]
 pub(crate) mod vg_aes_decrypt_blocks;
 
@@ -128,12 +140,20 @@ pub(crate) mod vg_aes_decrypt_blocks;
 pub(crate) mod vg_aes_decrypt_blocks_aesni;
 
 #[rustfmt::skip]
+#[path = "internal/vg_aes_decrypt_blocks_ssse3.rs"]
+pub(crate) mod vg_aes_decrypt_blocks_ssse3;
+
+#[rustfmt::skip]
 #[path = "internal/vg_aes_encrypt_blocks.rs"]
 pub(crate) mod vg_aes_encrypt_blocks;
 
 #[rustfmt::skip]
 #[path = "internal/vg_aes_encrypt_blocks_aesni.rs"]
 pub(crate) mod vg_aes_encrypt_blocks_aesni;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_encrypt_blocks_ssse3.rs"]
+pub(crate) mod vg_aes_encrypt_blocks_ssse3;
 
 #[rustfmt::skip]
 #[path = "internal/vg_aes_expand_key_scratch.rs"]
