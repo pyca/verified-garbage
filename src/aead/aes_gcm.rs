@@ -239,6 +239,7 @@ impl Drop for AesGcm {
 
 #[cfg(target_arch = "riscv64")]
 #[unsafe(no_mangle)]
+/// Diagnostic selection of the public contiguous entry for the paired benchmark.
 pub static VG_BENCH_SEAL_ENTRY: core::sync::atomic::AtomicU8 = core::sync::atomic::AtomicU8::new(1);
 #[cfg(target_arch = "riscv64")]
 fn bench_new_seal() -> bool {
