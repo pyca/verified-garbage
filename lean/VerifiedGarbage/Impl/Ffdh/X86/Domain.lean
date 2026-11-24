@@ -149,6 +149,49 @@ loaded at the top of slot 8 and raised over its `x_len` public bytes only. -/
 def powTop (b : Nat) : Prog isa :=
   .seq ctxP (.seq (copy (sl b) (sl 5) n1) (.seq (loadTop (sl 8) n1 10 11) winTopCall))
 
+/-! ### Powers to q, over its bytes from the first nonzero one
+
+q is `p_len` bytes of the domain, which the contracts of the functions that raise to it make public:
+`qScan` finds its first nonzero byte (the last one, if all are zero) and keeps that byte's address
+and the bytes from it on in two words of the header, and the power's callee takes them for its own
+arguments 10 and 11, x's, which these functions do not have. The power then runs over those bytes'
+windows only, as `powTop`'s over x's. -/
+
+/-- The header words of q's first nonzero byte's address and of the bytes from it on. -/
+def qpOff : Nat := 16
+def qlOff : Nat := 20
+
+/-- q's address (`esi`) and `p_len` (`ecx`). -/
+def qScanInit : List Instr := [.mov .esi (.mem (argAt 0 6)), .mov .ecx (.mem (argAt 0 7))]
+
+/-- One byte: if it is zero and more than one is left, on to the next (`eax` one, ZF clear); else `eax`
+zero and ZF set. -/
+def qScanStep : List Instr :=
+  [.movzx8 .eax ⟨.esi, 0⟩, .alu .add .eax (.imm 0xFFFFFFFF), .alu .sbb .eax (.reg .eax),
+    .alu .xor .eax (.imm 0xFFFFFFFF),
+    .mov .edx (.reg .ecx), .alu .add .edx (.imm 0xFFFFFFFE), .alu .sbb .edx (.reg .edx),
+    .alu .and .eax (.reg .edx), .alu .and .eax (.imm 1),
+    .alu .add .esi (.reg .eax), .alu .sub .ecx (.reg .eax), .alu .test .eax (.reg .eax)]
+
+/-- The address and the length to the header. -/
+def qScanEnd : List Instr := [.store (sc qpOff) .esi, .store (sc qlOff) .ecx]
+
+/-- q's first nonzero byte's address and the bytes from it on, into the header. -/
+def qScan : Prog isa := .seq (.block qScanInit) (.seq (.loop (.block qScanStep) .ne) (.block qScanEnd))
+
+/-- The callee's arguments 10 and 11 from the header's words. -/
+def setQ : List Instr :=
+  [.mov .eax (.mem (sc qpOff)), .store (slotOp 10) .eax, .mov .eax (.mem (sc qlOff)), .store (slotOp 11) .eax]
+
+/-- q's bytes from the first nonzero one loaded at the top of slot 8, and `windowPowerWith .wide` over
+their windows, called. -/
+def winQCall : Prog isa :=
+  argCall "vg_ffdh_window_q_wide"
+    (.seq (.block setQ) (.seq (loadTop (sl 8) n1 10 11) (windowPowerWith .wide (lenCount 11))))
+
+/-- Slot 6 the number in slot `b` to the power of q, modulo p, after `qScan`. -/
+def powQ (b : Nat) : Prog isa := .seq ctxP (.seq (copy (sl b) (sl 5) n1) winQCall)
+
 /-- `ecx` all ones if `1 < [a] < p − 1`, else zero, through the mask word. -/
 def rangeMask (a : Nat) : Prog isa :=
   .seq (lessThan (sl 14) (sl a) n1) (.seq (.block [.store (sc maskOff) .ecx])
@@ -182,8 +225,8 @@ def oddMask : List Instr :=
     [.mov .eax (.mem (at_ .eax 0)), .alu .and .eax (.imm 1), .mov .edx (.imm 0), .alu .sub .edx (.reg .eax),
       .alu .and .ecx (.reg .edx)]
 
-/-- `g^q mod p = 1`. -/
-def subgroup : Prog isa := .seq (powP 10 11) (eqStatus 6 3)
+/-- `g^q mod p = 1`, q raised over its bytes from the first nonzero one. -/
+def subgroup : Prog isa := .seq qScan (.seq (powQ 10) (eqStatus 6 3))
 
 /-- q divides `p − 1`: `(p − 1) R⁻¹ mod q` is zero, in the context of q. -/
 def divides : Prog isa :=
@@ -218,11 +261,12 @@ namespace CheckPublic
 
 def args : Args := { dom := 0, dlen := 1, plen := 2, y := some 3, ws := 5 }
 
-/-- `1 < y < p − 1`, then `y^q mod p = 1` if there is a q. -/
+/-- `1 < y < p − 1`, then `y^q mod p = 1` if there is a q, raised over its bytes from the first
+nonzero one. -/
 def body : Prog isa :=
   .seq pSetup <| .seq (load (sl 12) n1 8 9) <| .seq (rangeMask 12) <|
   .seq testMask <| .ite .e (ret 0) <| .seq (.block qTest) <| .ite .e (ret 1) <|
-  .seq (load (sl 11) n1 6 7) (.seq (powP 12 11) (eqStatus 6 3))
+  .seq qScan (.seq (powQ 12) (eqStatus 6 3))
 
 def code : Prog isa := wrap args body
 
