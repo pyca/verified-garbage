@@ -2,6 +2,7 @@ module
 public import VerifiedGarbage.Impl.Aes.X86_64.Callee
 public import VerifiedGarbage.Impl.Gcm.X86_64.Flag
 public import VerifiedGarbage.Impl.Scrub.X86_64
+public import VerifiedGarbage.Impl.AesGcm.X86_64.AlignedWipe
 public import VerifiedGarbage.Impl.AesGcm.X86_64.Fn
 
 /-! Contiguous AES-GCM seal with separate source and destination registers.
@@ -193,6 +194,8 @@ def selected (defer wide : Bool) (threshold : Nat)
 
 def prepared (level : Impl.Scrub.X86_64.VecLevel) (defer wide : Bool) (threshold : Nat)
     (c : Callees) (ctr : Fn) (blocks : Option Fn) : Prog isa :=
-  Impl.Scrub.X86_64.scrubAll level 0 2640 (selected defer wide threshold c ctr blocks)
+  let raw := selected defer wide threshold c ctr blocks
+  if wide = true ∧ level = .evex then DirectGather.AlignedWipe.scrub .contiguous raw
+  else Impl.Scrub.X86_64.scrubAll level 0 2640 raw
 
 end VG.Impl.AesGcm.X86_64.Contiguous

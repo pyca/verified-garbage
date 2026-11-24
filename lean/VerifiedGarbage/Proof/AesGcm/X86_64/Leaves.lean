@@ -2552,8 +2552,8 @@ theorem boundedSelected (v : GcmVariant) (leaf : Option (BlocksTo.SealFn (VG.Pro
         (c₂ := Impl.AesGcm.X86_64.DirectGather.plain v.impl.callees (DirectGather.ctrFn v))
         (X86_64.withStackArgScratch_spSafe rs.sp)
         (X86_64.withStackArgScratch_spSafe ws.sp)
-      exact ⟨X86_64.Scrub.GatherWipe.verified (X86_64.SpSafe.of_all sp)
-        (fun _ _ pub => pub.1.1.1) h.2.1 basic, X86_64.Scrub.GatherWipe.spSafe sp⟩
+      exact ⟨X86_64.Scrub.GatherWipe.verified .gather (X86_64.SpSafe.of_all sp)
+        (fun _ _ pub => pub.1.1.1) h.2.1 basic, X86_64.Scrub.GatherWipe.spSafe .gather sp⟩
     · exact ⟨DirectGather.prepared_verified v 48 (.inr rfl) b bt,DirectGather.prepared_spSafe v 48 b bt⟩
 
 theorem bounded_selected_verified (v : GcmVariant) (leaf : Option (BlocksTo.SealFn (CtxMode.flaggedT 48)))
@@ -2858,11 +2858,20 @@ private theorem stitched {M : CtxMode} (v : GcmVariant) (wide : Bool) (leaf : Bl
   have sp := selectedSp v.impl (ctr:=ctrFn v) (b:=some leaf.fn) false wide n v.ctrTo.spSafe (by
     intro f hf; obtain rfl : leaf.fn=f := Option.mem_some_iff.mp hf; exact leaf.spAll)
   have ct : calleeSide (ctrFn v).code v.lvT.level 8=true := calleeSide_mono (Nat.le_trans (level_join_right _ _) v.lvTW_le_lvT) (show 0≤8 by decide) v.ctrTo.side
-  exact ⟨verifiedScrubbedAllFill (api:=sealContiguousPreparedApi)
+  have basic : VerifiedScrubbed target
+      (Impl.Scrub.X86_64.scrubAll v.lvT 0 2640 (selected false wide n v.impl.callees (ctrFn v) (some leaf.fn))) apiContract 0 :=
+    verifiedScrubbedAllFill (api:=sealContiguousPreparedApi)
     {suffix:="",code:=_,stack:=2640,verified:=h,spSafe:=sp} v.lvT outputLocal
     (selectedFill (ctr:=ctrFn v) (blocks:=some leaf.fn) false wide n (callees_sideT v) ct (by
       intro f hf; obtain rfl : leaf.fn=f := Option.mem_some_iff.mp hf; exact side))
-    level (Nat.le_refl _) (ha:=vectorSide wide),scrubKs_spSafe sp⟩
+    level (Nat.le_refl _) (ha:=vectorSide wide)
+  by_cases enabled : wide = true ∧ v.lvT = .evex
+  · simp only [prepared, ite_eq_left enabled]
+    rw [enabled.2] at basic
+    exact ⟨X86_64.Scrub.GatherWipe.verified .contiguous (X86_64.SpSafe.of_all sp)
+      (fun _ _ pub => pub.1.1.1) h.2.1 basic, X86_64.Scrub.GatherWipe.spSafe .contiguous sp⟩
+  · simp only [prepared, ite_eq_right enabled]
+    exact ⟨basic,scrubKs_spSafe sp⟩
 
 theorem stitched16 (v : GcmVariant) {b} (hb : b∈sealLeafR16 v) : Certificate
     (prepared v.lvT false false 16 v.impl.callees (ctrFn v) (some b.fn)) :=
