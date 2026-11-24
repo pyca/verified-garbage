@@ -13,7 +13,7 @@ open VG VG.PPC64LE VG.Impl.AesGcm.PPC64LE
 open VG.Impl.AesGcm.PPC64LE.Contiguous (entry)
 
 structure Arguments (s : State) (w : Addr) : Prop where
-  work : Covers [⟨w,1280⟩] s.wr
+  work : Covers [⟨w,1152⟩] s.wr
   scratch : s.mem.readW (s.sp + 112) 64 = w
   slot : ∀ i < 3, InRegions (s.rd ++ s.wr) (s.sp + BitVec.ofNat 64 (96+8*i)) 8
   apart : ∀ i < 2, (⟨s.sp + BitVec.ofNat 64 (96+8*i),8⟩ : Region).Disjoint (savedR w)
@@ -40,7 +40,7 @@ theorem entry_wp {s : State} (a : Arguments s w) : WP isa (.block entry) s (Star
   refine WP.block_append (WP.block_append ?_)
   refine WP.mono (oneA_at (off := 112) (by decide) (by decide) (a.slot 2 (by decide)) a.scratch)
     fun u ⟨hw,g,k⟩ => ?_
-  refine WP.mono (save_ok (b := .r12) (n := 1280) (by decide) (by rw [hw,k.wr]; exact a.work) (by decide))
+  refine WP.mono (save_ok (b := .r12) (n := 1152) (by decide) (by rw [hw,k.wr]; exact a.work) (by decide))
     fun v ⟨vg,vw,vk,saved,frame⟩ => ?_
   rw [hw] at vw saved frame
   have ptr (i : Nat) (hi : i < 2) : InRegions (v.rd ++ v.wr) (v.sp + BitVec.ofNat 64 (96+8*i)) 8 := by

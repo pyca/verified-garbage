@@ -17,18 +17,24 @@ def entry : List Instr :=
     [mov .r29 .r3, mov .r28 .r4, .addi .r30 .r31 16, mov .r24 .r5, mov .r25 .r6,
      mov .r18 .r6, mov .r21 .r7, mov .r22 .r8, mov .r19 .r9, mov .r27 .r10,
      .addSp .r12 0, .load .d .r23 .r12 96, .load .d .r20 .r12 104]
-def fused : Prog isa :=
-  .seq (.block [mov .r3 .r29, mov .r4 .r28, .addi .r5 .r30 48, .addi .r6 .r30 16,
-     mov .r7 .r19, .lsr .d .r8 .r23 7, .lsl .r8 .r8 3, mov .r9 .r27, .addi .r10 .r31 448])
+def fusedArgs : List Instr :=
+  [mov .r3 .r29, mov .r4 .r28, .addi .r5 .r30 48, .addi .r6 .r30 16,
+     mov .r7 .r19, .lsr .d .r8 .r23 7, .lsl .r8 .r8 3, mov .r9 .r27, .addi .r10 .r31 448]
+
+def fused : Prog isa := .seq (.block fusedArgs)
     (.call "vg_aes_gcm_encrypt_blocks_buffers" SplitBlocks.encryptBuffers)
 def afterBulk : List Instr :=
   [.li .r0 127, .logic .and .r25 .r23 .r0, .sub .r11 .r23 .r25,
     .add .r24 .r19 .r11, .add .r18 .r27 .r11]
+/-- Encrypt the complete 16-byte blocks followed by a possible partial block.
+The contiguous caller has no subsequent descriptor to advance to. -/
+def cryptRest : Prog isa := .seq DirectGather.whole
+  (.seq (.block [mov .r26 .r21]) (cryptTailWith true))
+
 def remaining : Prog isa :=
   .seq (.block [mov .r21 .r18, mov .r19 .r25])
-    (.seq DirectGather.whole (.seq (.seq (.block [mov .r26 .r21]) (cryptTailWith true))
-     (.seq (.block [mov .r24 .r18, mov .r25 .r19, .li .r26 0])
-      (.seq (absorb 16) (.seq (.block [.li .r0 15, .logic .and .r26 .r19 .r0]) (flush 16))))))
+    (.seq cryptRest (.seq (.block [mov .r24 .r18, mov .r25 .r19, .li .r26 0])
+      (.seq (absorb 16) (.seq (.block [.li .r0 15, .logic .and .r26 .r19 .r0]) (flush 16)))))
 def payload : Prog isa :=
   .seq (.block [.lsr .d .r12 .r23 9])
     (.seq (.ite (.zero .d .r12) (.block [mov .r24 .r19, mov .r18 .r27, mov .r25 .r23])
@@ -60,6 +66,6 @@ def body : Prog isa := .seq (.block entry)
   (.seq nonceC (.seq aadC (.seq payload (.seq (.block tagOut) (.block restore)))))
 def code : Prog isa :=
   scrubAll 0 1280 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16, .v17, .v18, .v19]⟩
-    (withStackScratchArgs 1280 2 body)
+    (.frame (.alloc 1280) (.seq (.block (setArgsAt 1280 2 128)) body) (.free 1280))
 
 end VG.Impl.AesGcm.PPC64LE.Contiguous

@@ -404,9 +404,9 @@ theorem atHead (p : Progress V sp R icb P S E n o 0 s) (a : Range V o S E n)
 
 /-- Final state of a descriptor. The source and all previous ciphertext are
 outside its write set. r24/r25 become free as the loop reads the next descriptor. -/
-structure PieceOut (V : Reg → Addr) (sp : Addr) (R : Nat) (icb : Block) (P : Nat) (S E : Addr) (n : Nat)
-    (o t : State) : Prop where
-  env : Env (cursors V (E+BitVec.ofNat 64 n)) sp t
+structure PieceOutAt (V : Reg → Addr) (sp : Addr) (R : Nat) (icb : Block) (P : Nat) (S E : Addr) (n : Nat)
+    (o : State) (next : Addr) (t : State) : Prop where
+  env : Env (cursors V next) sp t
   rd : t.rd=o.rd
   wr : t.wr=o.wr
   ctr : Ctr t.mem (V .r30+BitVec.ofNat 64 48) (V .r30+BitVec.ofNat 64 64)
@@ -414,14 +414,46 @@ structure PieceOut (V : Reg → Addr) (sp : Addr) (R : Nat) (icb : Block) (P : N
   cipher : bytesAt t.mem E n = xorKs (ciphOf o.mem (V .r29) R) icb P (bytesAt o.mem S n)
   frame : Frame (crFrame (V .r30) (V .r31) E n) o.mem t.mem
 
+
+/-- The descriptor walk consumes its entire output range. -/
+abbrev PieceOut (V : Reg → Addr) (sp : Addr) (R : Nat) (icb : Block) (P : Nat) (S E : Addr)
+    (n : Nat) (o t : State) := PieceOutAt V sp R icb P S E n o (E+BitVec.ofNat 64 n) t
+
+theorem atTailWith (p : Progress V sp R icb P S E n o j s) (a : Range V o S E n)
+    (L : Lay (V .r29) (V .r30) (V .r31)) (rounds : R=10 ∨ R=12 ∨ R=14)
+    (hR : V .r28=BitVec.ofNat 64 R) (aligned : n-j=0 ∨ (P+j)%16=0) (tail : n-j<16)
+    {setup : List Instr} {next : Addr}
+    (prepared : WP isa (.block setup) s (fun u => u.gpr .r26 = E + BitVec.ofNat 64 j ∧
+      u.gpr .r21 = next ∧ u.gpr .r24 = s.gpr .r24 ∧ u.gpr .r25 = s.gpr .r25 ∧
+      u.mem = s.mem ∧ Keep wholeRegs s u)) :
+    WP isa (.seq (.block setup) (cryptTailWith true)) s
+      (PieceOutAt V sp R icb P S E n o next) := by
+  let k := n-j
+  have hsum : j+k=n := Nat.add_sub_of_le p.le
+  have old := p.ciph a L rounds
+  obtain ⟨tr,u,hx,h26,cursor,h24,h25,mem,keep⟩ := prepared
+  have env := advanceEnv p.env cursor keep (Exec.sp hx)
+  have ra := a.remaining p
+  have tin : TailIn true (cursors V next) sp R icb (P+j) (S+BitVec.ofNat 64 j)
+      (E+BitVec.ofNat 64 j) k (ciphOf o.mem (V .r29) R) True u :=
+    ⟨env,h24.trans p.ptr,h25.trans p.left,fun _ => h26,hR,rounds,aligned,ra.src.of_eq keep.2.1 keep.2.2,ra.dst.of_eq keep.2.1 keep.2.2,
+      (fun h => nomatch h),ra.buffers.imp_left Eq.symm,by rw [mem]; exact old,fun _ => by rw [mem]; exact p.ctr⟩
+  obtain ⟨tr',t,ex,out⟩ := cryptTailWith_ok (V := cursors V next) L tin tail
+  have cipher := out.out trivial
+  have frame := out.frame
+  rw [mem] at cipher frame
+  have joined := p.join a (k := k) (Nat.le_of_eq hsum) cipher frame
+  rw [hsum] at joined
+  have ctr := out.ctr trivial
+  rw [Nat.add_assoc,hsum] at ctr
+  exact ⟨_,t,VG.Exec.seq hx ex,out.env,(VG.PPC64LE.Exec.rdwr ex).1.trans (keep.2.1.trans p.rd),(VG.PPC64LE.Exec.rdwr ex).2.1.trans (keep.2.2.trans p.wr),ctr,joined.1,joined.2⟩
+
 theorem atTail (p : Progress V sp R icb P S E n o j s) (a : Range V o S E n)
     (L : Lay (V .r29) (V .r30) (V .r31)) (rounds : R=10 ∨ R=12 ∨ R=14)
     (hR : V .r28=BitVec.ofNat 64 R) (aligned : n-j=0 ∨ (P+j)%16=0) (tail : n-j<16) :
     WP isa (.seq (.block [mov .r26 .r21, .add .r21 .r21 .r25]) (cryptTailWith true)) s
       (PieceOut V sp R icb P S E n o) := by
-  let k := n-j
-  have hsum : j+k=n := Nat.add_sub_of_le p.le
-  have old := p.ciph a L rounds
+  apply atTailWith p a L rounds hR aligned tail
   have he : s.gpr .r21=E+BitVec.ofNat 64 j := p.env.fr _ (by decide)
   have hc := p.left
   let u := (s.write .r26 (s.gpr .r21)).write .r21 (s.gpr .r21+s.gpr .r25)
@@ -431,18 +463,7 @@ theorem atTail (p : Progress V sp R icb P S E n o j s) (a : Range V o S E n)
   have cursor : u.gpr .r21 = E + BitVec.ofNat 64 n := by
     change s.gpr .r21 + s.gpr .r25 = _
     rw [he,hc,add_ofNat_assoc,Nat.add_sub_of_le p.le]
-  have env := advanceEnv p.env cursor keep (Exec.sp hx)
-  have ra := a.remaining p
-  have tin : TailIn true (cursors V (E+BitVec.ofNat 64 n)) sp R icb (P+j) (S+BitVec.ofNat 64 j)
-      (E+BitVec.ofNat 64 j) k (ciphOf o.mem (V .r29) R) True u :=
-    ⟨env,p.ptr,p.left,fun _ => he,hR,rounds,aligned,ra.src.of_eq (s' := u) rfl rfl,ra.dst.of_eq (s' := u) rfl rfl,
-      (fun h => nomatch h),ra.buffers.imp_left Eq.symm,old,fun _ => p.ctr⟩
-  obtain ⟨tr',t,ex,out⟩ := cryptTailWith_ok (V := cursors V (E+BitVec.ofNat 64 n)) L tin tail
-  have joined := p.join a (k := k) (Nat.le_of_eq hsum) (out.out trivial) out.frame
-  rw [hsum] at joined
-  have ctr := out.ctr trivial
-  rw [Nat.add_assoc,hsum] at ctr
-  exact ⟨_,t,VG.Exec.seq hx ex,out.env,(VG.PPC64LE.Exec.rdwr ex).1.trans p.rd,(VG.PPC64LE.Exec.rdwr ex).2.1.trans p.wr,ctr,joined.1,joined.2⟩
+  exact ⟨tr,u,hx,he,cursor,rfl,rfl,rfl,keep⟩
 
 theorem afterHead (p : Progress V sp R icb P S E n o j s) (a : Range V o S E n)
     (L : Lay (V .r29) (V .r30) (V .r31)) (rounds : R=10 ∨ R=12 ∨ R=14)
