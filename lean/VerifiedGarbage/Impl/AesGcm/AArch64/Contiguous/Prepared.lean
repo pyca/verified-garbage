@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.AesGcm.AArch64.Contiguous.Standalone
 public import VerifiedGarbage.Impl.Gcm.AArch64.Forward
 public import VerifiedGarbage.Impl.AesGcm.AArch64.Contiguous.CachedFront
 public import VerifiedGarbage.Impl.AesGcm.AArch64.Contiguous.Tail
@@ -19,13 +20,14 @@ open VG.Impl.Gcm.AArch64.Pmull (loadRev Y)
 /-- The incoming stack words are length, tag and powers; the frame adds the
 working area as the fourth. The destination is retained across the front. -/
 def preparedArgs : List Instr :=
-  [mov .x11 .x7, .ldrSp .x7 0] ++ oneEntry 24 ++
-  [.str .x .x11 .x19 dstO] ++ stashArg 8
+  [.ldrSp .x9 24] ++ save .x9 ++
+    [mov .x19 .x9, ptr .x20 .x19 16, mov .x21 .x0, mov .x22 .x1,
+     .str .x .x5 .x19 alenO, .str .x .x6 .x19 dataO, .str .x .x7 .x19 dstO,
+     .ldrSp .x7 0, .str .x .x7 .x19 lenO, mov .x23 .x2, .ldrSp .x28 8]
 
 /-- Authenticate complete eight-block groups in the prepared table. x15 reads
 plaintext, x23 receives ciphertext. Reload the original source for the tail. -/
-def batchCall (forward : Bool) : Prog isa :=
-  if forward then VG.Impl.Gcm.AArch64.Stitch.forwardCall else VG.Impl.Gcm.AArch64.Stitch.sealCall
+abbrev batchCall := VG.Impl.Gcm.AArch64.Stitch.sealCallFor
 
 def batches (forward : Bool) : Prog isa :=
   Stitch.stitched [] (Stitch.pwTbl 16) <|
@@ -72,18 +74,20 @@ def preparedClear (fused forward : Bool) : Impl.Scrub.AArch64.Clear :=
 /-- The whole entry branches only on the CPU specialization and public record sizes. -/
 def select (v : Calls) (gh : Fn) : Prog isa :=
   let clear := fun n p => Impl.Scrub.AArch64.scrubAll n 0 Fn.own p
-  let fallback := clear (v.pwWn+80) (generalFrame v)
+  let fallback := Standalone.prog v
   let hardware := fun fused => Impl.Scrub.AArch64.scrubAll (v.pwWn+32) 0
     (preparedClear fused (!v.stitch)) (preparedFrame v gh fused)
-  let large := .seq (.block [imm .x9 768,.subs .x .x11 .x10 .x9,.sbc .x .x11 .x11 .x11])
-    (.ite (.nonzero .x .x11) (hardware false) (hardware true))
+  -- x10 holds the payload length plus 31. The three zero tests select lengths
+  -- below 97, 225 and 768 by comparing against powers of two.
+  let large := .seq (.block [.addImm .x .x11 .x10 225,.lsr .x .x11 .x11 10])
+    (.ite (.zero .x .x11) (hardware false) (hardware true))
   let overShort := if v.ctr.scratch = 0 then
-    .seq (.block [imm .x9 225,.subs .x .x11 .x10 .x9,.sbc .x .x11 .x11 .x11])
-      (.ite (.nonzero .x .x11) (clear 800 (mediumFrame v.callees)) large)
+    .seq (.block [.lsr .x .x11 .x10 8])
+      (.ite (.zero .x .x11) (clear 800 (mediumFrame v.callees)) large)
     else large
   if !v.pmull then fallback else
     .seq (.block standardGuard) <| .ite (.zero .x .x10)
-      (.seq (.block [.ldrSp .x10 0,imm .x9 97,.subs .x .x11 .x10 .x9,.sbc .x .x11 .x11 .x11])
-        (.ite (.nonzero .x .x11) (clear DirectGather.shortWork shortFrame) overShort)) fallback
+      (.seq (.block [.ldrSp .x10 0,.addImm .x .x10 .x10 31,.lsr .x .x11 .x10 7])
+        (.ite (.zero .x .x11) (clear DirectGather.shortWork shortFrame) overShort)) fallback
 
 end VG.Impl.AesGcm.AArch64.Contiguous

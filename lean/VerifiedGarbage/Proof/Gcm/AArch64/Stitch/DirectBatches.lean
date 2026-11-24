@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Gcm.AArch64.Stitch.Steps
+public import VerifiedGarbage.Proof.Gcm.AArch64.Stitch.ForwardCall
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.CallLay
 import VerifiedGarbage.Proof.Framework.Offset
@@ -176,14 +177,19 @@ theorem sealPrepared_ok {Wn R n : Nat} {Ctx St W SP D O : Addr} {s u : State}
     (hu : BatchArgs Wn Ctx St W SP D O R n u)
     (L : Lay Wn Ctx St W) (hash : Gh8Ok) (hp : SealToPre u)
     (F : Frame [tblR W] s.mem u.mem) (qreg : ∀ r, r ≠ .x0 → r ≠ .x5 → r ∉ kRegsT true → u.gpr r = s.gpr r)
-    (qsp : u.sp = s.sp) (qrd : u.rd = s.rd) (qwr : u.wr = s.wr) :
-    WP isa sealCall u (BatchMid Ctx St W D O R n s) := by
-  exact sealPreparedWith_ok hu L (sealCall_ok hp hash) (fun _ h => h) F qreg qsp qrd qwr
+    (qsp : u.sp = s.sp) (qrd : u.rd = s.rd) (qwr : u.wr = s.wr) (forward : Bool) :
+    WP isa (Impl.Gcm.AArch64.Stitch.sealCallFor forward) u (BatchMidWith (kRegsT true ++ borrowed) Ctx St W D O R n s) := by
+  apply sealPreparedWith_ok hu L _ (fun _ h m => h (List.mem_append_left _ m)) F qreg qsp qrd qwr
+  cases forward
+  · refine (sealCall_ok hp hash).mono fun t out => ?_
+    exact { out with gpr := fun r h => out.gpr r (by
+      simp only [List.mem_append,not_or] at h ⊢; exact ⟨h.1.1,h.2⟩) }
+  · exact forwardCall_ok hp hash
 
 theorem batchTableSeal_ok {Wn R n : Nat} {Ctx St W SP D O : Addr} {s : State}
-    (h : BatchArgs Wn Ctx St W SP D O R n s) (L : Lay Wn Ctx St W) (hn : 128 ≤ n) (gh : GatherLaws) :
-    WP isa (.seq (.block tableFromKey) sealCall) s
-      (BatchMid Ctx St W D O R n s) := by
+    (h : BatchArgs Wn Ctx St W SP D O R n s) (L : Lay Wn Ctx St W) (hn : 128 ≤ n) (gh : GatherLaws) (forward : Bool) :
+    WP isa (.seq (.block tableFromKey) (Impl.Gcm.AArch64.Stitch.sealCallFor forward)) s
+      (BatchMidWith (kRegsT true ++ borrowed) Ctx St W D O R n s) := by
   rw [WP.seq_iff]
   have hW := h.env.perm.hWn
   refine WP.mono (gh.table (by rw [h.env.x21]; exact h.env.perm.ctxR (by decide))
@@ -199,7 +205,7 @@ theorem batchTableSeal_ok {Wn R n : Nat} {Ctx St W SP D O : Addr} {s : State}
   have H : blockAt u.mem (Ctx + BitVec.ofNat 64 240) = Spec.Gcm.ctxH s.mem Ctx :=
     blockAt_frame F fun r hr => (tbl_ctx L r hr).sub_left (Lay.ctxSub (by decide))
   have hp := hu.sealPre L hn (by rw [H]; simpa only [h.env.x19, h.env.x21] using q.tbl)
-  exact sealPrepared_ok hu L gh.hash hp F (fun r h0 h5 _ => q.gpr r h0 h5) q.sp q.rd q.wr
+  exact sealPrepared_ok hu L gh.hash hp F (fun r h0 h5 _ => q.gpr r h0 h5) q.sp q.rd q.wr forward
 
 end VG.Proof.Gcm.AArch64.Stitch
 
@@ -262,9 +268,9 @@ theorem cursor_ok {s : State} (hw : InRegions s.wr (s.gpr .x19 + BitVec.ofNat 64
   · simp [Mem.writeW, hashO]
   · others_tac
 
-abbrev batchCode : Prog isa :=
+abbrev batchCode (forward : Bool := false) : Prog isa :=
   .seq (.block ([mov .x15 .x23, mov .x23 .x26, mov .x26 .x24] ++ tableFromKey))
-    (.seq VG.Impl.Gcm.AArch64.Stitch.sealCall (.block cursorCode))
+    (.seq (VG.Impl.Gcm.AArch64.Stitch.sealCallFor forward) (.block cursorCode))
 
 structure BatchOut (Ctx St W D O : Addr) (R n : Nat) (s t : State) : Prop where
   data : blocksAt t.mem O (8 * (n / 128)) = Spec.Gcm.ctr32 (ciphOf s.mem Ctx R)
@@ -286,11 +292,11 @@ structure BatchOut (Ctx St W D O : Addr) (R n : Nat) (s t : State) : Prop where
 /-- One or more complete batches, after pending ciphertext has been hashed.
 The tail of the fragment remains in the caller's cursor registers. -/
 theorem batchCode_ok {Wn R n : Nat} {Ctx St W SP D O : Addr} {s : State}
-    (h : BatchIn Wn Ctx St W SP D O R n s) (L : Lay Wn Ctx St W) (hn : 128 ≤ n) (gh : GatherLaws) :
-    WP isa batchCode s (BatchOut Ctx St W D O R n s) := by
+    (h : BatchIn Wn Ctx St W SP D O R n s) (L : Lay Wn Ctx St W) (hn : 128 ≤ n) (gh : GatherLaws) (forward : Bool) :
+    WP isa (batchCode forward) s (BatchOut Ctx St W D O R n s) := by
   rw [batchCode, WP.seq_iff, WP.block_append_iff]
   refine WP.mono (batchArgs_ok h) fun u ⟨ha, a⟩ => ?_
-  have continuation := fun t (z : BatchMid Ctx St W D O R n u t) => show
+  have continuation := fun t (z : BatchMidWith (kRegsT true ++ borrowed) Ctx St W D O R n u t) => show
       WP isa (.block cursorCode) t (BatchOut Ctx St W D O R n s) from by
     have hw : t.gpr .x19 = W := (z.gpr _ (by decide) (by decide) (by decide)).trans ha.env.x19
     have wr := z.wr.trans a.wr
@@ -327,12 +333,10 @@ theorem batchCode_ok {Wn R n : Nat} {Ctx St W SP D O : Addr} {s : State}
       rw [c.gpr, z.gpr r h0 h5 _ (preserved_not_link r hr h30), a.others]
       · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]
         exact ⟨hsmall _ (by decide), h23, h26⟩
-      · simp only [kRegsT, Bool.cond_true, kRegs, List.mem_cons, List.not_mem_nil, or_false, not_or]
-        exact ⟨hsmall _ (by decide), hsmall _ (by decide), hsmall _ (by decide), hsmall _ (by decide),
-          hsmall _ (by decide), hsmall _ (by decide), hsmall _ (by decide)⟩
+      · exact (by decide : ∀ r ∈ preserved, r ∉ kRegsT true ++ borrowed) r hr
       · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]
         exact ⟨h26, h23, hsmall _ (by decide), h24⟩
-  exact WP.mono (WP.seq_iff.mp (WP.mono (batchTableSeal_ok ha L hn gh) continuation))
+  exact WP.mono (WP.seq_iff.mp (WP.mono (batchTableSeal_ok ha L hn gh forward) continuation))
     (fun _ next => WP.seq next)
 
 end VG.Proof.Gcm.AArch64.Stitch
@@ -456,8 +460,8 @@ theorem batchGuard {Wn R n : Nat} {Ctx St W SP D O : Addr} {s : State}
 
 theorem batches_ok (v : GcmImpl) {Wn R n k : Nat} {Ctx St W SP D O P : Addr} {s : State}
     (h : BatchIn Wn Ctx St W SP D O R n s) (L : Lay Wn Ctx St W) (gh : GatherLaws)
-    (pending : batchTest n ≠ 0 → PendingIn Wn St W P O k s) :
-    WP isa (batches v.callees) s (BatchesPost Ctx St W D O P R n k s) := by
+    (pending : batchTest n ≠ 0 → PendingIn Wn St W P O k s) (forward : Bool := false) :
+    WP isa (batches v.callees forward) s (BatchesPost Ctx St W D O P R n k s) := by
   obtain ⟨a, run, test, r⟩ := batchGuard h
   have keep (j : Reg) (hj : j ∈ preserved) : a.gpr j = s.gpr j := r.others j (by
     simp only [List.mem_singleton]; intro e; subst j; contradiction)
@@ -486,6 +490,6 @@ theorem batches_ok (v : GcmImpl) {Wn R n k : Nat} {Ctx St W SP D O P : Addr} {s 
       ⟨h.env.of_saved saved g.sp rd wr, h.rounds, (saved _ (by decide) (by decide)).trans h.x22,
         (saved _ (by decide) (by decide)).trans h.x23, (saved _ (by decide) (by decide)).trans h.x24,
         (saved _ (by decide) (by decide)).trans h.x26, h.src.of_eq rd wr, h.dst.of_eq rd wr, h.apart⟩
-    exact WP.mono (batchCode_ok hu L (batchTest_len hn) gh) fun t out => .inr ⟨hn, u, g, out⟩
+    exact WP.mono (batchCode_ok hu L (batchTest_len hn) gh forward) fun t out => .inr ⟨hn, u, g, out⟩
 
 end VG.Proof.Gcm.AArch64.Stitch

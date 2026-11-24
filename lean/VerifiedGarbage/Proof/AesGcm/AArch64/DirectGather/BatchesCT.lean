@@ -21,11 +21,11 @@ open VG.Proof.Gcm.AArch64.Stitch (BatchIn PendingIn batchTest batchCode hashPend
 open VG.Proof.AesGcm.AArch64 (rel_taint rel_seq rel_ite rel_gh Eq2 TT)
 variable {Wn R n k : Nat} {Ctx St W SP D O P : Addr} {s t : State}
 
-private theorem batchCode_rel (h : BatchIn Wn Ctx St W SP D O R n s) (g : BatchIn Wn Ctx St W SP D O R n t) :
-    RelCT isa (Eq2 s t) batchCode TT :=
+private theorem batchCode_rel (forward : Bool) (h : BatchIn Wn Ctx St W SP D O R n s) (g : BatchIn Wn Ctx St W SP D O R n t) :
+    RelCT isa (Eq2 s t) (batchCode forward) TT :=
   rel_taint [.x19,.x20,.x21,.x22,.x23,.x24,.x26] (h.env.sp.trans g.env.sp.symm)
     (by agree_tac [h.env.x19,g.env.x19,h.env.x20,g.env.x20,h.env.x21,g.env.x21,
-      h.x22,g.x22,h.x23,g.x23,h.x24,g.x24,h.x26,g.x26]) ⟨_,by taint_decide⟩
+      h.x22,g.x22,h.x23,g.x23,h.x24,g.x24,h.x26,g.x26]) (by cases forward <;> exact ⟨_,by taint_decide⟩)
 
 open VG.Proof.Gcm.AArch64.Stitch (pendingCursor pendingGhArgs pendingGhCall batchGuard)
 
@@ -71,7 +71,7 @@ private theorem batchEval {a : State} (hn : a.gpr .x9 = batchTest n) :
 
 theorem batches_rel (v : GcmImpl) (h : BatchIn Wn Ctx St W SP D O R n s) (g : BatchIn Wn Ctx St W SP D O R n t)
     (L : Lay Wn Ctx St W) (_gh : GatherLaws) (ps : batchTest n ≠ 0 → PendingIn Wn St W P O k s)
-    (pt : batchTest n ≠ 0 → PendingIn Wn St W P O k t) : RelCT isa (Eq2 s t) (batches v.callees) TT := by
+    (pt : batchTest n ≠ 0 → PendingIn Wn St W P O k t) (forward : Bool := false) : RelCT isa (Eq2 s t) (batches v.callees forward) TT := by
   obtain ⟨a,ra,testA,ar⟩ := batchGuard h
   obtain ⟨b,rb,testB,br⟩ := batchGuard g
   have sp := ar.sp.trans (h.env.sp.trans (g.env.sp.symm.trans br.sp.symm))
@@ -90,6 +90,6 @@ theorem batches_rel (v : GcmImpl) (h : BatchIn Wn Ctx St W SP D O R n s) (g : Ba
   refine rel_seq (hashPending_rel v L ha hb qa qb)
     (hashPending_ok v L ha.env qa.slot (ha.x26.trans qa.stop) qa.data)
     (hashPending_ok v L hb.env qb.slot (hb.x26.trans qb.stop) qb.data) fun u z p q => ?_
-  exact batchCode_rel (batchAfter ha p.saved p.sp p.rd p.wr) (batchAfter hb q.saved q.sp q.rd q.wr)
+  exact batchCode_rel forward (batchAfter ha p.saved p.sp p.rd p.wr) (batchAfter hb q.saved q.sp q.rd q.wr)
 
 end VG.Proof.AesGcm.AArch64.DirectGather.Generic

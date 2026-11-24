@@ -11,6 +11,8 @@ import VerifiedGarbage.Proof.Gcm.Short
 
 public import VerifiedGarbage.Impl.AesGcm.AArch64.DirectGather.Medium
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Contiguous.Leaves
+import VerifiedGarbage.Proof.AesGcm.AArch64.Contiguous.StandaloneBodyCT
+import VerifiedGarbage.Proof.AesGcm.AArch64.Contiguous.StandaloneSeal
 
 import VerifiedGarbage.Proof.AesGcm.AArch64.DirectGather.MediumCT
 import VerifiedGarbage.Proof.AesGcm.AArch64.DirectGather.MediumBody
@@ -2692,19 +2694,6 @@ open VG.Impl.AesGcm.AArch64.Contiguous
 open VG.Impl.StackScratch.AArch64 (withStackArgScratch)
 open Scrubbed
 
-private def generalHoles (wn : Nat) (st : Bool) : Prog isa := Code.frame (.alloc 48)
-    (.seq (.block generalArgs) (withStackArgScratch (wn+32) 3
-      (Impl.AesGcm.AArch64.DirectGather.body holes st))) (.free 48)
-
-theorem generalSide {c : Calls} (h : CallsOk c) :
-    scrubSide (generalFrame c) (c.pwWn+80) 0 own [] = true := by
-  unfold generalFrame Impl.AesGcm.AArch64.DirectGather.framed
-  rcases pw_cases h with ⟨st,w|w⟩|⟨st,w|w⟩ <;> rw [st,w]
-  · exact side_of_holes h fnOk_nil (generalHoles 1024 true)
-  · exact side_of_holes h fnOk_nil (generalHoles 2560 true)
-  · exact side_of_holes h fnOk_nil (generalHoles 768 false)
-  · exact side_of_holes h fnOk_nil (generalHoles 2560 false)
-
 private def preparedHoles (wn : Nat) (f forward : Bool) :=
   withStackArgScratch (wn+32) 3 (preparedBody holes holeW f forward)
 
@@ -2766,13 +2755,39 @@ theorem preparedSide (v : GcmImpl) (g : GhashWithImpl) (f : Bool) :
       · rw [w]; exact forwardedSide v.callsOk hw (preparedHoles 768 true true)
       · rw [w]; exact forwardedSide v.callsOk hw (preparedHoles 2560 true true)
 
-theorem generalDepth (v : GcmImpl) :
-    16*(Impl.AesGcm.AArch64.DirectGather.framed v.calls).aarch64Depth < 2^64 := by
-  have side := DirectGather.generalSide v.callsOk
-  have h := (DirectGather.generalSize v.callsOk).2.1
-  simp only [scrubSide, Nat.ne_of_gt (show 0 < v.calls.pwWn+32 by omega), ↓reduceIte, Bool.and_eq_true, decide_eq_true_eq] at side
-  have d := side.1.1.1.1.1.2
-  omega
+private def standaloneHoles (wn : Nat) (pmull forward : Bool) :=
+  withStackArgScratch (wn+32) 2 (Impl.AesGcm.AArch64.Contiguous.Standalone.bodyUsing holes pmull forward)
+
+private theorem standaloneReferenceSide (v : GcmImpl) :
+    scrubSide (withStackArgScratch (v.calls.pwWn+32) 2 (Impl.AesGcm.AArch64.Contiguous.Standalone.bodyWith v.calls false))
+      (v.calls.pwWn+32) 0 own [] = true := by
+  unfold Impl.AesGcm.AArch64.Contiguous.Standalone.bodyWith
+  rcases pw_cases v.callsOk with ⟨_,w|w⟩|⟨_,w|w⟩ <;> rw [w] <;> cases v.calls.pmull
+  · exact side_of_holes v.callsOk fnOk_nil (standaloneHoles 1024 false false)
+  · exact side_of_holes v.callsOk fnOk_nil (standaloneHoles 1024 true false)
+  · exact side_of_holes v.callsOk fnOk_nil (standaloneHoles 2560 false false)
+  · exact side_of_holes v.callsOk fnOk_nil (standaloneHoles 2560 true false)
+  · exact side_of_holes v.callsOk fnOk_nil (standaloneHoles 768 false false)
+  · exact side_of_holes v.callsOk fnOk_nil (standaloneHoles 768 true false)
+  · exact side_of_holes v.callsOk fnOk_nil (standaloneHoles 2560 false false)
+  · exact side_of_holes v.callsOk fnOk_nil (standaloneHoles 2560 true false)
+
+private theorem standaloneSide (v : GcmImpl) :
+    scrubSide (Standalone.frame v.calls) (v.calls.pwWn+32) 0
+      (Impl.AesGcm.AArch64.Contiguous.Standalone.clear v.calls) [] = true := by
+  unfold Standalone.frame Impl.AesGcm.AArch64.Contiguous.Standalone.body
+    Impl.AesGcm.AArch64.Contiguous.Standalone.clear
+  cases st : v.calls.stitch
+  · cases pm : v.calls.pmull
+    · simpa only [Impl.AesGcm.AArch64.Contiguous.Standalone.bodyWith,pm,Bool.not_false,Bool.false_and,
+        Bool.false_eq_true,ite_false,Impl.AesGcm.AArch64.Contiguous.Standalone.bodyUsing,
+        Impl.AesGcm.AArch64.Contiguous.Standalone.encryptUsing] using standaloneReferenceSide v
+    · simp only [Bool.not_false,Bool.true_and,ite_true,Impl.AesGcm.AArch64.Contiguous.Standalone.bodyWith,pm]
+      rcases pw_cases v.callsOk with ⟨bad,_⟩|⟨_,w|w⟩
+      · simp [st] at bad
+      · rw [w]; exact forwardedSide v.callsOk fnOk_nil (standaloneHoles 768 true true)
+      · rw [w]; exact forwardedSide v.callsOk fnOk_nil (standaloneHoles 2560 true true)
+  · simpa only [Bool.not_true,Bool.and_false,Bool.false_eq_true,ite_false] using standaloneReferenceSide v
 
 theorem scratch_le (v : GcmImpl) : v.ctr.scratch ≤ v.calls.pwWn-512 := by
   rw [pwWn_eq]
@@ -2781,8 +2796,10 @@ theorem scratch_le (v : GcmImpl) : v.ctr.scratch ≤ v.calls.pwWn-512 := by
 
 /-- Discharge the arithmetic and register obligations at the concrete registration. -/
 theorem backendFacts (v : GcmImpl) (g : GhashWithImpl) : BackendFacts v g :=
-  ⟨DirectGather.generalGather_shared v,DirectGather.generalSize v.callsOk,scratch_le v,
-    generalSide v.callsOk,generalDepth v,preparedSide v g,fun f => DirectGather.keepsV_of_gatherSide (referenceSide v g f),
+  ⟨DirectGather.generalSize v.callsOk,scratch_le v,
+    Standalone.body_ok v (fun _ => Proof.Gcm.AArch64.Stitch.gatherLaws) (scratch_le v),
+    Standalone.body_rel v (fun _ => Proof.Gcm.AArch64.Stitch.gatherLaws) (scratch_le v),
+    standaloneSide v,DirectGather.keepsV_of_gatherSide (standaloneReferenceSide v),preparedSide v g,fun f => DirectGather.keepsV_of_gatherSide (referenceSide v g f),
     side_of_holes v.callsOk fnOk_nil (mediumFrame holes),
     Nat.lt_of_le_of_lt (depth_of_holes (W := 752) v.callsOk fnOk_nil (mediumInner holes)) (by decide),
     (fun s hn z init => DirectGather.trimmedHash_at s hn

@@ -32,4 +32,7 @@ def forwardSeal : Prog isa := .seq (.block forwardSave) (.seq forwardCore (.bloc
 
 def forwardCall : Prog isa := .call "vg_aes_gcm_seal_batches_aes" forwardSeal
 
+/-- Select the AES-only or SHA3 eight-block kernel at emission time. -/
+def sealCallFor (forward : Bool) : Prog isa := if forward then forwardCall else sealCall
+
 end VG.Impl.Gcm.AArch64.Stitch

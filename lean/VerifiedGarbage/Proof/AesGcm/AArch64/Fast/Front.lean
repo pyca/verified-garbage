@@ -91,7 +91,7 @@ theorem slots_frontFrame' : ∀ r ∈ frontFrame' St W, (⟨W + BitVec.ofNat 64 
 
 omit L in
 /-- `j012` writes only `x9`–`x12` of the registers. -/
-theorem j012_others {k : Reg → BitVec 64} {H : Block} {Np : Addr} {s : State} (h : J0In Wn Ctx St W SP k H Np 12 s) :
+theorem fixedNonce_others {k : Reg → BitVec 64} {H : Block} {Np : Addr} {s : State} (h : FixedNonceIn Wn Ctx St W SP k H Np s) :
     WP isa (.block j012) s fun s' => Others [.x9, .x10, .x11, .x12] s s' := by
   have he := h.env
   have hd := h.data
@@ -105,6 +105,10 @@ theorem j012_others {k : Reg → BitVec 64} {H : Block} {Np : Addr} {s : State} 
   rw [add_ofNat_zero] at r₀ w₀
   refine WP.of_runBlock ⟨_, by simp only [j012]; arun [h.x23, he.x20, r₀, r₁, r₂, w₀, w₁, w₂, w₃, add_ofNat_zero], ?_⟩
   others_tac
+
+omit L in
+theorem j012_others {k : Reg → BitVec 64} {H : Block} {Np : Addr} {s : State} (h : J0In Wn Ctx St W SP k H Np 12 s) :
+    WP isa (.block j012) s fun s' => Others [.x9, .x10, .x11, .x12] s s' := fixedNonce_others h.fixed
 
 omit L in
 /-- `initState` writes only `x9`–`x12` of the registers. -/
@@ -135,7 +139,7 @@ abbrev FrontKey (source : List Instr) (Wn : Nat) (Ctx St W SP : Addr) (H : Block
 /-- `front`, from the 12-byte nonce at `Np`, the `al` (at most 16) bytes of
 additional data at `A` (`x4`, `x5`), and the data (`x6`, `x7`). -/
 theorem frontWith_ok (source : List Instr) (hMK : MulKey) {k : Reg → BitVec 64} {H : Block} {Np A D : Addr} {al n : Nat} {s₀ : State}
-    (hJ : J0In Wn Ctx St W SP k H Np 12 s₀) (haad : DataOk Wn St W s₀ A al) (hal : al ≤ 16)
+    (hJ : FixedNonceIn Wn Ctx St W SP k H Np s₀) (haad : DataOk Wn St W s₀ A al) (hal : al ≤ 16)
     (h4 : s₀.gpr .x4 = A) (h5 : s₀.gpr .x5 = BitVec.ofNat 64 al) (h6 : s₀.gpr .x6 = D)
     (h7 : s₀.gpr .x7 = BitVec.ofNat 64 n) (key : FrontKey source Wn Ctx St W SP H s₀) :
     WP isa (Impl.AesGcm.AArch64.Fast.frontWith source) s₀
@@ -144,7 +148,7 @@ theorem frontWith_ok (source : List Instr) (hMK : MulKey) {k : Reg → BitVec 64
   simp only [List.append_assoc]
   refine WP.seq ?_
   rw [WP.block_append_iff]
-  refine WP.mono (WP.with_rdwr (WP.block_and (j012_ok L hJ) (j012_others hJ)))
+  refine WP.mono (WP.with_rdwr (WP.block_and (fixedNonce_ok L hJ) (fixedNonce_others hJ)))
     fun s₁ ⟨⟨h₁, o₁⟩, rd₁, wr₁⟩ => ?_
   rw [WP.block_append_iff]
   have he₁ := h₁.env
@@ -298,7 +302,7 @@ theorem front_ok (hMK : MulKey) {k : Reg → BitVec 64} {H : Block} {Np A D : Ad
     (h7 : s₀.gpr .x7 = BitVec.ofNat 64 n) :
     WP isa Impl.AesGcm.AArch64.Fast.front s₀
       (FFront Wn Ctx St W SP H (bytesAt s₀.mem Np 12) (bytesAt s₀.mem A al) D n s₀) := by
-  refine frontWith_ok L _ hMK hJ haad hal h4 h5 h6 h7 ?_
+  refine frontWith_ok L _ hMK hJ.fixed haad hal h4 h5 h6 h7 ?_
   intro u hu hH _ _ _ _
   rw [WP.block_append_iff]
   obtain ⟨v,runV,xv,rv⟩ : ∃ v, runBlock isa [ptr .x0 .x21 240] u = some v ∧

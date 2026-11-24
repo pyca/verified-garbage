@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.AesGcm.AArch64.Fn
+public import VerifiedGarbage.Impl.Gcm.AArch64.Forward
 
 /-!
 # AES-GCM gather sealing directly into the output buffer
@@ -60,13 +61,13 @@ def hashPending (c : Callees) : Prog isa :=
 /-- With a fresh counter block, seal whole batches of a long piece while
 authenticating them. The source and destination advance together, and the
 remaining bytes can use the ordinary out-of-place counter loop. -/
-def batches (c : Callees) : Prog isa :=
+def batches (c : Callees) (forward : Bool := false) : Prog isa :=
   .seq (.block [.addImm .x .x9 .x24 (1024 - Stitch.minLen), .lsr .x .x9 .x9 10]) <|
   .ite (.zero .x .x9) (.block []) <|
     .seq (hashPending c) <|
     .seq (.block ([mov .x15 .x23, mov .x23 .x26, mov .x26 .x24] ++
         tableFromKey)) <|
-    .seq Gcm.AArch64.Stitch.sealCall <|
+    .seq (Gcm.AArch64.Stitch.sealCallFor forward) <|
       .block ([mov .x26 .x9, mov .x23 .x15, imm .x10 127,
         .logic .and .x .x24 .x24 .x10, .str .x .x26 .x19 hashO])
 
