@@ -190,7 +190,9 @@ theorem ladderStep_ok {M : Nat} (C : CtxOk Ex base bytes len args .wide M s) {n 
     fun d k hd h1 h7 => frameR_val32 F₅ C₄.inp.room nw hd (by
       intro p hp
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hp
-      rcases hp with rfl | rfl <;> assumption) fit₅
+      rcases hp with rfl | rfl
+      · exact h1
+      · exact h7) fit₅
   obtain C₅ : CtxOk Ex base bytes len args .wide M s₅ := C₄.keepF K₅ (by decide) (by decide) F₅ fit₅
     (by intro p hp
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hp
