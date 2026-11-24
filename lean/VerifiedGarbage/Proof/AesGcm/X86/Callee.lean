@@ -249,22 +249,6 @@ structure GhashImpl where
   suffix : String
   features : List String
 
-namespace GhashImpl
-
-/-- `vg_ghash`, in the baseline ISA. -/
-def scalar : GhashImpl where
-  fn := ⟨"vg_ghash", Impl.Gcm.X86.ghash⟩
-  stack := by decide +kernel
-  ok := Proof.Gcm.X86.ghash_correct
-  ct := Proof.Gcm.X86.ghash_ct
-  nosp := NoSp.of_all (by decide +kernel)
-  spSafe := Code.all_of_spTest (by decide +kernel)
-  scrub := by lit_decide
-  suffix := ""
-  features := []
-
-end GhashImpl
-
 /-- The implementations a set of AES-GCM functions calls: of
 `vg_aes_ctr32_to` with its `vg_aes_expand_key_scratch` (`Ctr32Impl`), and of
 `vg_ghash`. -/
@@ -531,17 +515,18 @@ theorem callPre : CallPre (Proof.Aes.ctr32X86N B) ctrRegs (ctrRd (s.gpr .esp) K)
 
 end CtrCall
 
-theorem ctr_call (v : GcmImpl) {s : State} {K C D S : BitVec 32} {R n : Nat} (h : CtrCall v.ctr.scr s K C D S R n) :
-    WP isa (ctrCall v.callees) s (CtrPost v.ctr.scr s K C D S R n) := by
+/-- A call of `vg_aes_ctr32_to` in place, beside any other callees. -/
+theorem ctrOnly_call (c : Proof.Aes.X86.Ctr32Impl) {s : State} {K C D S : BitVec 32} {R n : Nat} (h : CtrCall c.scr s K C D S R n) :
+    WP isa (.frame (.push [.ebx, .ebp, .edi, .ebx, .edx, .ecx, .eax]) (.call c.callee.name c.callee.code)
+      (.pop .eax 7)) s (CtrPost c.scr s K C D S R n) := by
   have hR := toNat_rounds h.rounds
   have hn := toNat_ofNat32 h.n_lt
   have hR' : 16 * (R + 1) ≤ 240 := by rcases h.rounds with h' | h' | h' <;> omega_using [h']
-  unfold ctrCall
-  refine WP.callWith (rs := ctrRegs) (k := Proof.Aes.ctr32X86N v.ctr.scr) v.ctr.small.ok v.ctr.nosp (by simp)
-    ctrRegs_esp (by rw [v.ctr.stack]; have := h.esp; simp only [List.length_cons, List.length_nil]; omega_using [this])
+  refine WP.callWith (rs := ctrRegs) (k := Proof.Aes.ctr32X86N c.scr) c.small.ok c.nosp (by simp)
+    ctrRegs_esp (by rw [c.stack]; have := h.esp; simp only [List.length_cons, List.length_nil]; omega_using [this])
     h.callPre fun s' rd' wr' cs' f' ⟨s₂, m₂, post⟩ => ?_
   obtain ⟨a0, a1, a2, a3, a4, -, -⟩ := h.args
-  rw [v.ctr.stack] at f'
+  rw [c.stack] at f'
   have fE := callEntry_frame h.fit ctrRegs_esp
   rw [show 4 * ctrRegs.length + 4 = 32 from rfl] at fE
   obtain ⟨hdata, hctr⟩ := post
@@ -562,9 +547,10 @@ theorem ctr_call (v : GcmImpl) {s : State} {K C D S : BitVec 32} {R n : Nat} (h 
 
 /-- Calls of `vg_aes_ctr32_to` in place with the same arguments and stack pointer in
 both runs are constant time. -/
-theorem ctr_ct (v : GcmImpl) {I : State → Prop} {K C D S E : BitVec 32} {R n : Nat}
-    (h : ∀ s, I s → CtrCall v.ctr.scr s K C D S R n ∧ s.gpr .esp = E) : CT I (ctrCall v.callees) := by
-  refine CT.callWith v.ctr.small.ok v.ctr.small.ct (ctrRd E K) (ctrWr v.ctr.scr C D S n)
+theorem ctrOnly_ct (c : Proof.Aes.X86.Ctr32Impl) {I : State → Prop} {K C D S E : BitVec 32} {R n : Nat}
+    (h : ∀ s, I s → CtrCall c.scr s K C D S R n ∧ s.gpr .esp = E) : CT I (.frame (.push [.ebx, .ebp, .edi, .ebx, .edx, .ecx, .eax]) (.call c.callee.name c.callee.code)
+      (.pop .eax 7)) := by
+  refine CT.callWith c.small.ok c.small.ct (ctrRd E K) (ctrWr c.scr C D S n)
     fun s₁ s₂ i₁ i₂ => ?_
   obtain ⟨h₁, e₁⟩ := h s₁ i₁
   obtain ⟨h₂, e₂⟩ := h s₂ i₂
@@ -586,6 +572,14 @@ theorem ctr_ct (v : GcmImpl) {I : State → Prop} {K C D S E : BitVec 32} {R n :
   · rw [a4, b4]
   · rw [a5, b5]
   · rw [a6, b6]
+
+theorem ctr_call (v : GcmImpl) {s : State} {K C D S : BitVec 32} {R n : Nat} (h : CtrCall v.ctr.scr s K C D S R n) :
+    WP isa (ctrCall v.callees) s (CtrPost v.ctr.scr s K C D S R n) :=
+  ctrOnly_call v.ctr h
+
+theorem ctr_ct (v : GcmImpl) {I : State → Prop} {K C D S E : BitVec 32} {R n : Nat}
+    (h : ∀ s, I s → CtrCall v.ctr.scr s K C D S R n ∧ s.gpr .esp = E) : CT I (ctrCall v.callees) :=
+  ctrOnly_ct v.ctr h
 
 /-- A call with 2048 bytes of working space is one with the `B` first of them. -/
 theorem CtrCall.small {s : State} {K C D S : BitVec 32} {R n : Nat} (h : CtrCall 2048 s K C D S R n) {B : Nat}
@@ -617,13 +611,25 @@ theorem CtrPost.big {B : Nat} {s s' : State} {K C D S : BitVec 32} {R n : Nat} (
       · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_singleton_self _))),
           fun _ h => h⟩ }
 
+theorem ctrOnly_call2048 (c : Proof.Aes.X86.Ctr32Impl) {s : State} {K C D S : BitVec 32} {R n : Nat}
+    (h : CtrCall 2048 s K C D S R n) :
+    WP isa (.frame (.push [.ebx, .ebp, .edi, .ebx, .edx, .ecx, .eax]) (.call c.callee.name c.callee.code)
+      (.pop .eax 7)) s (CtrPost 2048 s K C D S R n) :=
+  WP.mono (ctrOnly_call c (h.small c.scr_le)) fun _ g => g.big c.scr_le
+
+theorem ctrOnly_ct2048 (c : Proof.Aes.X86.Ctr32Impl) {I : State → Prop} {K C D S E : BitVec 32} {R n : Nat}
+    (h : ∀ s, I s → CtrCall 2048 s K C D S R n ∧ s.gpr .esp = E) :
+    CT I (.frame (.push [.ebx, .ebp, .edi, .ebx, .edx, .ecx, .eax]) (.call c.callee.name c.callee.code)
+      (.pop .eax 7)) :=
+  ctrOnly_ct c fun s hs => ⟨(h s hs).1.small c.scr_le, (h s hs).2⟩
+
 theorem ctr_call2048 (v : GcmImpl) {s : State} {K C D S : BitVec 32} {R n : Nat} (h : CtrCall 2048 s K C D S R n) :
     WP isa (ctrCall v.callees) s (CtrPost 2048 s K C D S R n) :=
-  WP.mono (ctr_call v (h.small v.ctr.scr_le)) fun _ g => g.big v.ctr.scr_le
+  ctrOnly_call2048 v.ctr h
 
 theorem ctr_ct2048 (v : GcmImpl) {I : State → Prop} {K C D S E : BitVec 32} {R n : Nat}
     (h : ∀ s, I s → CtrCall 2048 s K C D S R n ∧ s.gpr .esp = E) : CT I (ctrCall v.callees) :=
-  ctr_ct v fun s hs => ⟨(h s hs).1.small v.ctr.scr_le, (h s hs).2⟩
+  ctrOnly_ct2048 v.ctr h
 
 /-! ## `vg_aes_expand_key_scratch` -/
 

@@ -438,13 +438,13 @@ theorem finCall_ct (v : Ctr32Impl) {C W SP : BitVec 32} (L : Lay C W SP) {R : Na
 
 /-! ## `vg_aes_ctr32_to`, in place -/
 
-/-- The frame and call of `vg_aes_ctr32_to`: AES-GCM's, with any implementation
-of `vg_aes_ghash` beside it. -/
+/-- The frame and call of `vg_aes_ctr32_to`: AES-GCM's, beside any
+`vg_ghash`. -/
 theorem ctrFrame_ok (v : Ctr32Impl) {s : State} {K C D S : BitVec 32} {R n : Nat} (h : CtrCall 2048 s K C D S R n) :
     WP isa (.frame (.push [.ebx, .ebp, .edi, .ebx, .edx, .ecx, .eax]) (.call v.callee.name v.callee.code)
       (.pop .eax 7)) s
       (CtrPost 2048 s K C D S R n) :=
-  Proof.AesGcm.X86.ctr_call2048 ⟨v, .scalar⟩ h
+  Proof.AesGcm.X86.ctrOnly_call2048 v h
 
 /-- `k` bytes at `D` that `vg_aes_ctr32_to` may write: apart from the key
 context, the counter block at `W + c`, the working space of the functions
@@ -584,7 +584,7 @@ theorem ctrCall_ct (v : Ctr32Impl) {C W SP : BitVec 32} (L : Lay C W SP) {R : Na
       simp only [List.mem_singleton] at hr; subst hr; rw [(hI _ h₁).1.ebp, (hI _ h₂).1.ebp]) (by taint_decide))
     (fun s hs => WP.of_runBlock ⟨_, by crun [], s, hs, by crun []⟩) ?_
   refine CT.seq (J := fun s => s.gpr .ebp = W + BitVec.ofNat 32 256)
-    ((Proof.AesGcm.X86.ctr_ct2048 ⟨v, .scalar⟩ (E := SP) fun s ⟨s₀, h₀, run⟩ => call s₀ h₀ s run :
+    ((Proof.AesGcm.X86.ctrOnly_ct2048 v (E := SP) fun s ⟨s₀, h₀, run⟩ => call s₀ h₀ s run :
       CT _ (.frame (.push [.ebx, .ebp, .edi, .ebx, .edx, .ecx, .eax]) (.call v.callee.name v.callee.code)
         (.pop .eax 7))))
     (fun s ⟨s₀, h₀, run⟩ => WP.mono (ctrFrame_ok v (call s₀ h₀ s run).1) fun s₁ g => by
