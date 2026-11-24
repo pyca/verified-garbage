@@ -1901,6 +1901,7 @@ of slices' count after it (`Param.rust`). -/
 def argsOf (sig : Sig) : String :=
   ", ".intercalate (sig.params.flatMap fun (n, p) => match p with
     | .slice _ _ len => [n, len]
+    | .inOutSlice _ dst len => [n, dst, len]
     | .slices _ count => [n, count]
     | _ => [n])
 

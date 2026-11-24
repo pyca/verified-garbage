@@ -1340,8 +1340,7 @@ vg_dsa_derive_key:
 	ld ra, 216(s6)
 	ld s6, 224(s6)
 	addi t0, zero, 0
-	slli a0, a0, 32
-	srli a0, a0, 32
+	addiw a0, a0, 0
 	addi a1, zero, 0
 	addi a2, zero, 0
 	addi a3, zero, 0
@@ -2669,8 +2668,7 @@ vg_dsa_validate_private_key:
 	ld ra, 216(s6)
 	ld s6, 224(s6)
 	addi t0, zero, 0
-	slli a0, a0, 32
-	srli a0, a0, 32
+	addiw a0, a0, 0
 	addi a1, zero, 0
 	addi a2, zero, 0
 	addi a3, zero, 0
@@ -2939,8 +2937,7 @@ vg_dsa_sign_random_prevalidated:
 	sd t0, 176(t1)
 	sd t0, 184(t1)
 	addi sp, sp, 192
-	slli a0, a0, 32
-	srli a0, a0, 32
+	addiw a0, a0, 0
 	addi a1, zero, 0
 	addi a2, zero, 0
 	addi a3, zero, 0
@@ -3217,8 +3214,7 @@ vg_dsa_generate_key:
 	sd t0, 176(t1)
 	sd t0, 184(t1)
 	addi sp, sp, 192
-	slli a0, a0, 32
-	srli a0, a0, 32
+	addiw a0, a0, 0
 	addi a1, zero, 0
 	addi a2, zero, 0
 	addi a3, zero, 0
@@ -4344,8 +4340,7 @@ vg_dsa_validate_public_key:
 	ld ra, 216(s6)
 	ld s6, 224(s6)
 	addi t0, zero, 0
-	slli a0, a0, 32
-	srli a0, a0, 32
+	addiw a0, a0, 0
 	addi a1, zero, 0
 	addi a2, zero, 0
 	addi a3, zero, 0
@@ -15839,8 +15834,7 @@ vg_dsa_verify_prevalidated:
 	ld ra, 216(s6)
 	ld s6, 224(s6)
 	addi t0, zero, 0
-	slli a0, a0, 32
-	srli a0, a0, 32
+	addiw a0, a0, 0
 	addi a1, zero, 0
 	addi a2, zero, 0
 	addi a3, zero, 0
@@ -15910,8 +15904,7 @@ vg_dsa_parameter_search_init:
 	addi a0, zero, 1
 21:
 	addi t0, zero, 0
-	slli a0, a0, 32
-	srli a0, a0, 32
+	addiw a0, a0, 0
 	addi a1, zero, 0
 	addi a2, zero, 0
 	addi a3, zero, 0
@@ -26768,8 +26761,7 @@ vg_dsa_parameter_search:
 	sd t0, 496(t1)
 	sd t0, 504(t1)
 	addi sp, sp, 512
-	slli a0, a0, 32
-	srli a0, a0, 32
+	addiw a0, a0, 0
 	addi a1, zero, 0
 	addi a2, zero, 0
 	addi a3, zero, 0

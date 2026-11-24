@@ -62,6 +62,12 @@ theorem Sig.bufs_append_slice (pb : Nat) (nm : String) (e : Elem) (ln : String) 
       List.length_nil] at h
     simp only [List.cons_append, Sig.bufs]
     exact Sig.bufs_append_slice pb nm e ln x y ps vs (by omega_using [h])
+  | (_, .inOutSlice ..) :: ps, src :: dst :: l :: vs, h => by
+    simp only [List.flatMap_cons, Param.words.eq_6, List.length_append, List.length_cons,
+      List.length_nil] at h
+    simp only [List.cons_append, Sig.bufs]
+    rw [Sig.bufs_append_slice pb nm e ln x y ps vs (by omega_using [h])]
+    split <;> rfl
   | [], _ :: _, h => by simp at h
   | (_, .int ..) :: _, [], h => by simp [Param.words.eq_1] at h
   | (_, .array ..) :: _, [], h => by simp [Param.words.eq_2] at h
@@ -70,6 +76,9 @@ theorem Sig.bufs_append_slice (pb : Nat) (nm : String) (e : Elem) (ln : String) 
   | (_, .slices ..) :: _, [], h => by simp [Param.words.eq_4] at h
   | (_, .slices ..) :: _, [_], h => by simp [Param.words.eq_4] at h
   | (_, .table _) :: _, [], h => by simp [Param.words.eq_5] at h
+  | (_, .inOutSlice ..) :: _, [], h => by simp [Param.words.eq_6] at h
+  | (_, .inOutSlice ..) :: _, [_], h => by simp [Param.words.eq_6] at h
+  | (_, .inOutSlice ..) :: _, [_, _], h => by simp [Param.words.eq_6] at h
 
 /-- The aligned buffers of the parameters followed by one more read-only slice, given
 values for the others and its address `x`: `x` too, with its element's
@@ -107,6 +116,12 @@ theorem Sig.alignedBufs_append_slice (pb : Nat) (nm : String) (e : Elem) (ln : S
       List.length_nil] at h
     simp only [List.cons_append, Sig.alignedBufs]
     rw [Sig.alignedBufs_append_slice pb nm e ln x y ps vs (by omega_using [h])]
+  | (_, .inOutSlice ..) :: ps, src :: dst :: l :: vs, h => by
+    simp only [List.flatMap_cons, Param.words.eq_6, List.length_append, List.length_cons,
+      List.length_nil] at h
+    simp only [List.cons_append, Sig.alignedBufs]
+    rw [Sig.alignedBufs_append_slice pb nm e ln x y ps vs (by omega_using [h])]
+    split <;> rfl
   | [], _ :: _, h => by simp at h
   | (_, .int ..) :: _, [], h => by simp [Param.words.eq_1] at h
   | (_, .array ..) :: _, [], h => by simp [Param.words.eq_2] at h
@@ -115,6 +130,9 @@ theorem Sig.alignedBufs_append_slice (pb : Nat) (nm : String) (e : Elem) (ln : S
   | (_, .slices ..) :: _, [], h => by simp [Param.words.eq_4] at h
   | (_, .slices ..) :: _, [_], h => by simp [Param.words.eq_4] at h
   | (_, .table _) :: _, [], h => by simp [Param.words.eq_5] at h
+  | (_, .inOutSlice ..) :: _, [], h => by simp [Param.words.eq_6] at h
+  | (_, .inOutSlice ..) :: _, [_], h => by simp [Param.words.eq_6] at h
+  | (_, .inOutSlice ..) :: _, [_, _], h => by simp [Param.words.eq_6] at h
 
 /-- The lists of slices of the parameters followed by one more read-only slice: those
 of the others. -/
@@ -148,6 +166,11 @@ theorem Sig.lists_append_slice (pb : Nat) (m : Mem) (nm : String) (e : Elem) (ln
       List.length_nil] at h
     simp only [List.cons_append, Sig.lists]
     rw [Sig.lists_append_slice pb m nm e ln x y ps vs (by omega_using [h])]
+  | (_, .inOutSlice ..) :: ps, src :: dst :: l :: vs, h => by
+    simp only [List.flatMap_cons, Param.words.eq_6, List.length_append, List.length_cons,
+      List.length_nil] at h
+    simp only [List.cons_append, Sig.lists]
+    exact Sig.lists_append_slice pb m nm e ln x y ps vs (by omega_using [h])
   | [], _ :: _, h => by simp at h
   | (_, .int ..) :: _, [], h => by simp [Param.words.eq_1] at h
   | (_, .array ..) :: _, [], h => by simp [Param.words.eq_2] at h
@@ -156,6 +179,9 @@ theorem Sig.lists_append_slice (pb : Nat) (m : Mem) (nm : String) (e : Elem) (ln
   | (_, .slices ..) :: _, [], h => by simp [Param.words.eq_4] at h
   | (_, .slices ..) :: _, [_], h => by simp [Param.words.eq_4] at h
   | (_, .table _) :: _, [], h => by simp [Param.words.eq_5] at h
+  | (_, .inOutSlice ..) :: _, [], h => by simp [Param.words.eq_6] at h
+  | (_, .inOutSlice ..) :: _, [_], h => by simp [Param.words.eq_6] at h
+  | (_, .inOutSlice ..) :: _, [_, _], h => by simp [Param.words.eq_6] at h
 
 /-- The descriptors of the parameters followed by one more read-only slice: those of
 the others. -/
@@ -189,6 +215,11 @@ theorem Sig.descs_append_slice (pb : Nat) (nm : String) (e : Elem) (ln : String)
       List.length_nil] at h
     simp only [List.cons_append, Sig.descs]
     exact Sig.descs_append_slice pb nm e ln x y ps vs (by omega_using [h])
+  | (_, .inOutSlice ..) :: ps, src :: dst :: l :: vs, h => by
+    simp only [List.flatMap_cons, Param.words.eq_6, List.length_append, List.length_cons,
+      List.length_nil] at h
+    simp only [List.cons_append, Sig.descs]
+    exact Sig.descs_append_slice pb nm e ln x y ps vs (by omega_using [h])
   | [], _ :: _, h => by simp at h
   | (_, .int ..) :: _, [], h => by simp [Param.words.eq_1] at h
   | (_, .array ..) :: _, [], h => by simp [Param.words.eq_2] at h
@@ -197,6 +228,9 @@ theorem Sig.descs_append_slice (pb : Nat) (nm : String) (e : Elem) (ln : String)
   | (_, .slices ..) :: _, [], h => by simp [Param.words.eq_4] at h
   | (_, .slices ..) :: _, [_], h => by simp [Param.words.eq_4] at h
   | (_, .table _) :: _, [], h => by simp [Param.words.eq_5] at h
+  | (_, .inOutSlice ..) :: _, [], h => by simp [Param.words.eq_6] at h
+  | (_, .inOutSlice ..) :: _, [_], h => by simp [Param.words.eq_6] at h
+  | (_, .inOutSlice ..) :: _, [_, _], h => by simp [Param.words.eq_6] at h
 
 
 /-! ## Contracts -/

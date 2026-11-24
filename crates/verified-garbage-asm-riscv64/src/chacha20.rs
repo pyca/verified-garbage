@@ -107,7 +107,7 @@ j 21f
 20:
 .base64 "AUU="
 21:
-.base64 "gUICFQGRgUUBRoFGAUeBRwFIgUiBQgFDgUMBToFOAU+BT4KA"
+.base64 "gUIBJYFFAUaBRgFHgUcBSIFIgUIBQ4FDAU6BTgFPgU+CgA=="
 .option pop"#,
         vg_chacha20_xor = sym super::chacha20::vg_chacha20_xor::vg_chacha20_xor,
         vg_chacha20_block = sym super::chacha20::vg_chacha20_block::vg_chacha20_block,

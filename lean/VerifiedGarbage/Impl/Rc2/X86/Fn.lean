@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Rc2.X86.Stream
+public import VerifiedGarbage.Impl.Rc2.X86.Ssse3
 public import VerifiedGarbage.Impl.Rc2.X86.Cbc
 public import VerifiedGarbage.Impl.StackScratch.X86
 public import VerifiedGarbage.Impl.Scrub.X86
@@ -22,6 +23,11 @@ open VG.X86
 /-- `Spec.Rc2.cbcInitApi`'s function as emitted. -/
 def cbcInit : Prog isa :=
   Impl.Scrub.X86.scrubAll 32 632 (Impl.StackScratch.X86.withStackScratch 608 6 Impl.Rc2.X86.Stream.init)
+
+/-- `Spec.Rc2.cbcInitApi`'s function with PITABLE read by `pshufb`
+(`Impl.Rc2.X86.Ssse3.init`), as emitted. -/
+def cbcInitSsse3 : Prog isa :=
+  Impl.Scrub.X86.scrubAll 32 636 (Impl.StackScratch.X86.withStackScratch 608 6 Impl.Rc2.X86.Ssse3.init)
 
 /-- `Spec.Rc2.cbcEncryptChainedApi`'s function as emitted. -/
 def cbcEncryptChained : Prog isa :=

@@ -34,7 +34,7 @@ def fail : Prog isa :=
 
 /-- `y = g^x mod p` (slot 6), its range as the acceptance; y written, and `3 − 2 flag` returned. -/
 def tail : Prog isa :=
-  .seq (powTop 10) <| .seq (rangeMask 6) <| .seq (.block [.store (sc accOff) .ecx]) <|
+  .seq powTopG <| .seq (rangeMask 6) <| .seq (.block [.store (sc accOff) .ecx]) <|
   .seq (copy (sl 6) (sl 19) n1) <| .seq (exportTo 0 1)
     (.block [.alu .add .eax (.reg .eax), .mov .ecx (.imm 3), .alu .sub .ecx (.reg .eax), .mov .eax (.reg .ecx)])
 

@@ -260,7 +260,6 @@ vg_aes_ctr_final:
 	sd t6, 72(t5)
 	addi sp, sp, 80
 	addi t0, zero, 0
-	addi a0, zero, 0
 	addi a1, zero, 0
 	addi a2, zero, 0
 	addi a3, zero, 0
@@ -275,5 +274,6 @@ vg_aes_ctr_final:
 	addi t4, zero, 0
 	addi t5, zero, 0
 	addi t6, zero, 0
+	addi a0, zero, 0
 	ret
 	.option pop

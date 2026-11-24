@@ -4,7 +4,7 @@ public import VerifiedGarbage.TCB.Sig
 import VerifiedGarbage.Proof.Framework.Scratch
 import VerifiedGarbage.Proof.Framework.Omega
 
--- separate module: every target's `Proof/Framework/<ISA>/CallWipe.lean` imports it (x86-64's so far).
+-- separate module: every target's `Proof/Framework/<ISA>/CallWipe.lean` imports it.
 
 /-!
 # A call that wipes part of a buffer afterwards: what every target shares
@@ -58,6 +58,16 @@ theorem Sig.bufs_mem_array {pb : Nat} {w : Bool} {e : Elem} {k : Nat} {nm : Stri
     simp only [List.cons_append, Sig.bufs, show 0 + 1 + (ps.flatMap fun p => p.2.words pb).length =
       (ps.flatMap fun p => p.2.words pb).length + 1 by omega_using [], List.getD_cons_succ]
     exact Sig.bufs_mem_array (pb := pb) ps₂ ps vs (by omega_using [h])
+  | (_, .inOutSlice ..) :: ps, src :: dst :: l :: vs, h => by
+    simp only [List.flatMap_cons, Param.words.eq_6, List.length_append, List.length_cons,
+      List.length_nil] at h ⊢
+    simp only [List.cons_append, Sig.bufs, show 0 + 1 + 1 + 1 + (ps.flatMap fun p => p.2.words pb).length =
+      (ps.flatMap fun p => p.2.words pb).length + 1 + 1 + 1 by omega_using [], List.getD_cons_succ]
+    have hm := Sig.bufs_mem_array (pb := pb) (w := w) (e := e) (k := k) (nm := nm)
+      ps₂ ps vs (by omega_using [h])
+    split
+    · exact List.mem_cons_of_mem _ hm
+    · exact List.mem_cons_of_mem _ (List.mem_cons_of_mem _ hm)
   | [], [], h => by simp at h
   | (_, .int ..) :: _, [], h => by simp at h
   | (_, .array ..) :: _, [], h => by simp at h
@@ -66,6 +76,11 @@ theorem Sig.bufs_mem_array {pb : Nat} {w : Bool} {e : Elem} {k : Nat} {nm : Stri
   | (_, .slices ..) :: _, [], h => by simp at h
   | (_, .slices ..) :: _, [_], h => by simp [Param.words.eq_4] at h
   | (_, .table _) :: _, [], h => by simp at h
+  | (_, .inOutSlice ..) :: _, [], h => by simp at h
+  | (_, .inOutSlice ..) :: _, [_], h => by simp [Param.words.eq_6] at h
+  | (_, .inOutSlice ..) :: _, [_, _], h => by
+    simp [Param.words.eq_6] at h
+    omega_using [h]
 
 /-- The array's address is a public argument, of a pointer's `pb` bits. -/
 theorem Sig.pub_array {pb : Nat} {w : Bool} {e : Elem} {k : Nat} {nm : String} (ps₁ ps₂ : List (String × Param)) :

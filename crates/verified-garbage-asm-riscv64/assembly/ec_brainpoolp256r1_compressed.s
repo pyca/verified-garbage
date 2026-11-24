@@ -631,8 +631,7 @@ vg_ec_brainpoolp256r1_compress_public_key:
 	ld s3, 32(s0)
 	ld s0, 0(s0)
 	addi t0, zero, 0
-	slli a0, a0, 32
-	srli a0, a0, 32
+	addiw a0, a0, 0
 	addi a1, zero, 0
 	addi a2, zero, 0
 	addi a3, zero, 0
@@ -1477,8 +1476,7 @@ vg_ec_brainpoolp256r1_decompress_public_key:
 	ld s3, 32(s0)
 	ld s0, 0(s0)
 	addi t0, zero, 0
-	slli a0, a0, 32
-	srli a0, a0, 32
+	addiw a0, a0, 0
 	addi a1, zero, 0
 	addi a2, zero, 0
 	addi a3, zero, 0

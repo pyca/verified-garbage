@@ -1305,7 +1305,6 @@ vg_seed_expand_key:
 	addi t1, sp, 0
 	sd t0, 1032(t1)
 	addi sp, sp, 1040
-	addi a0, zero, 0
 	addi a1, zero, 0
 	addi a2, zero, 0
 	addi a3, zero, 0
@@ -1320,6 +1319,7 @@ vg_seed_expand_key:
 	addi t4, zero, 0
 	addi t5, zero, 0
 	addi t6, zero, 0
+	addi a0, zero, 0
 	ret
 	.option pop
 
@@ -4023,7 +4023,6 @@ vg_seed_ecb_encrypt:
 	addi t1, sp, 0
 	sd t0, 1032(t1)
 	addi sp, sp, 1040
-	addi a0, zero, 0
 	addi a1, zero, 0
 	addi a2, zero, 0
 	addi a3, zero, 0
@@ -4038,6 +4037,7 @@ vg_seed_ecb_encrypt:
 	addi t4, zero, 0
 	addi t5, zero, 0
 	addi t6, zero, 0
+	addi a0, zero, 0
 	ret
 	.option pop
 
@@ -6741,7 +6741,6 @@ vg_seed_ecb_decrypt:
 	addi t1, sp, 0
 	sd t0, 1032(t1)
 	addi sp, sp, 1040
-	addi a0, zero, 0
 	addi a1, zero, 0
 	addi a2, zero, 0
 	addi a3, zero, 0
@@ -6756,5 +6755,6 @@ vg_seed_ecb_decrypt:
 	addi t4, zero, 0
 	addi t5, zero, 0
 	addi t6, zero, 0
+	addi a0, zero, 0
 	ret
 	.option pop

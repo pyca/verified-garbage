@@ -301,47 +301,54 @@ wipes (`withStackScratchWiped`), then its cleanup
 (`Impl.Scrub.X86.scrubSel rb W ws`): of the `W` bytes of stack below `esp`
 that its contract reserves, the doublewords `ws` its code may leave
 different in two runs zeroed, and the registers a callee may change
-cleared, so that it returns without secret residue. -/
+cleared, so that it returns without secret residue.
+
+The frame is larger than its working space and header need (980 bytes for
+968), so that the working space, which `withStackScratchWiped` puts 24
+bytes above the frame's base for four arguments, is at a multiple of 16
+when `esp` is one at the call: the block function's two 16-byte slots, at
+bytes 16 and 32 of it, then cross no page, or line of the cache. -/
 
 namespace Fn
 
-/-- The doublewords of the 984 bytes of stack below `esp` that the residue
+/-- The doublewords of the 996 bytes of stack below `esp` that the residue
 analysis finds each function may leave different in two runs: the header of
-its working space's frame. -/
-def words : List Nat := [4, 5, 6, 7, 8, 9]
+its working space's frame, and the frame's last three doublewords, which
+nothing writes. -/
+def words : List Nat := [4, 5, 6, 7, 8, 9, 246, 247, 248]
 
 /-- `Spec.TripleDes.cbcEncryptChainedApi`'s function as emitted. -/
 def cbcEncryptChained : Prog isa :=
-  Impl.Scrub.X86.scrubSel 0 984 words
-    (Impl.StackScratch.X86.withStackScratchWiped 968 4 236 Ssse3.cbcEncryptChained)
+  Impl.Scrub.X86.scrubSel 0 996 words
+    (Impl.StackScratch.X86.withStackScratchWiped 980 4 236 Ssse3.cbcEncryptChained)
 
 /-- `Spec.TripleDes.ofbApi`'s function as emitted. -/
 def ofb : Prog isa :=
-  Impl.Scrub.X86.scrubSel 0 984 words (Impl.StackScratch.X86.withStackScratchWiped 968 4 236 Ssse3.ofb)
+  Impl.Scrub.X86.scrubSel 0 996 words (Impl.StackScratch.X86.withStackScratchWiped 980 4 236 Ssse3.ofb)
 
 /-- `Spec.TripleDes.cfbEncryptApi`'s function as emitted. -/
 def cfbEncrypt : Prog isa :=
-  Impl.Scrub.X86.scrubSel 0 984 words (Impl.StackScratch.X86.withStackScratchWiped 968 4 236 Ssse3.cfbEncrypt)
+  Impl.Scrub.X86.scrubSel 0 996 words (Impl.StackScratch.X86.withStackScratchWiped 980 4 236 Ssse3.cfbEncrypt)
 
 /-- `Spec.TripleDes.cfb8EncryptApi`'s function as emitted. -/
 def cfb8Encrypt : Prog isa :=
-  Impl.Scrub.X86.scrubSel 0 984 words (Impl.StackScratch.X86.withStackScratchWiped 968 4 236 Ssse3.cfb8Encrypt)
+  Impl.Scrub.X86.scrubSel 0 996 words (Impl.StackScratch.X86.withStackScratchWiped 980 4 236 Ssse3.cfb8Encrypt)
 
 /-- `Spec.TripleDes.cfb8DecryptApi`'s function as emitted. -/
 def cfb8Decrypt : Prog isa :=
-  Impl.Scrub.X86.scrubSel 0 984 words (Impl.StackScratch.X86.withStackScratchWiped 968 4 236 Ssse3.cfb8Decrypt)
+  Impl.Scrub.X86.scrubSel 0 996 words (Impl.StackScratch.X86.withStackScratchWiped 980 4 236 Ssse3.cfb8Decrypt)
 
 /-- `Spec.TripleDes.cfbEncryptFinalApi`'s function as emitted. -/
 def cfbEncryptFinal : Prog isa :=
-  Impl.Scrub.X86.scrubSel 0 984 words (Impl.StackScratch.X86.withStackScratchWiped 968 4 236 Ssse3.cfbEncryptFinal)
+  Impl.Scrub.X86.scrubSel 0 996 words (Impl.StackScratch.X86.withStackScratchWiped 980 4 236 Ssse3.cfbEncryptFinal)
 
 /-- `Spec.TripleDes.cfbDecryptFinalApi`'s function as emitted. -/
 def cfbDecryptFinal : Prog isa :=
-  Impl.Scrub.X86.scrubSel 0 984 words (Impl.StackScratch.X86.withStackScratchWiped 968 4 236 Ssse3.cfbDecryptFinal)
+  Impl.Scrub.X86.scrubSel 0 996 words (Impl.StackScratch.X86.withStackScratchWiped 980 4 236 Ssse3.cfbDecryptFinal)
 
 /-- `Spec.TripleDes.ofbFinalApi`'s function as emitted. -/
 def ofbFinal : Prog isa :=
-  Impl.Scrub.X86.scrubSel 0 984 words (Impl.StackScratch.X86.withStackScratchWiped 968 4 236 Ssse3.ofbFinal)
+  Impl.Scrub.X86.scrubSel 0 996 words (Impl.StackScratch.X86.withStackScratchWiped 980 4 236 Ssse3.ofbFinal)
 
 end Fn
 

@@ -41,7 +41,7 @@ call {vg_poly1305_update_core}
 call {vg_poly1305_update_core}
 .base64 "kwX8AMGZkwL9AJPyAv+WlcEFboY="
 call {vg_poly1305_finalize_core}
-.base64 "kwIF6IO7AiMDvIIjg7wCJAO9giSDvQIlg7CCJQO7AiYKj4FPIzD/ASM0/wEjOP8BIzz/ASMw/wMjNP8DIzj/AyM8/wMjMP8FIzT/BSM4/wUjPP8FIzD/ByM0/wcjOP8HIzz/ByMw/wkjNP8JIzj/CSM8/wkjMP8LIzT/CyM4/wsjPP8LIzD/DSM0/w0jOP8NIzz/DSMw/w8jNP8PIzj/DyM8/w8jMP8RIzT/ESM4/xEjPP8RIzD/EyM0/xMjOP8TIzz/EyMw/xUjNP8VIzj/FSM8/xUjMP8XIzT/FyM4/xcjPP8XIzD/GSM0/xkjOP8ZIzz/GSMw/xsjNP8bIzj/GyM8/xsjMP8dIzT/HSM4/x0jPP8dIzD/HyM0/x8jOP8fIzz/HyMw/yEjNP8hIzj/ISM8/yEjMP8jIzT/IyM4/yMjPP8jIzD/JSM0/yUjOP8lIzz/JSMw/ycjNP8nEwEBJ4FCAUWBRQFGgUYBR4FHAUiBSIFCAUOBQwFOgU4BT4FPgoA="
+.base64 "kwIF6IO7AiMDvIIjg7wCJAO9giSDvQIlg7CCJQO7AiYKj4FPIzD/ASM0/wEjOP8BIzz/ASMw/wMjNP8DIzj/AyM8/wMjMP8FIzT/BSM4/wUjPP8FIzD/ByM0/wcjOP8HIzz/ByMw/wkjNP8JIzj/CSM8/wkjMP8LIzT/CyM4/wsjPP8LIzD/DSM0/w0jOP8NIzz/DSMw/w8jNP8PIzj/DyM8/w8jMP8RIzT/ESM4/xEjPP8RIzD/EyM0/xMjOP8TIzz/EyMw/xUjNP8VIzj/FSM8/xUjMP8XIzT/FyM4/xcjPP8XIzD/GSM0/xkjOP8ZIzz/GSMw/xsjNP8bIzj/GyM8/xsjMP8dIzT/HSM4/x0jPP8dIzD/HyM0/x8jOP8fIzz/HyMw/yEjNP8hIzj/ISM8/yEjMP8jIzT/IyM4/yMjPP8jIzD/JSM0/yUjOP8lIzz/JSMw/ycjNP8nEwEBJ4FCgUUBRoFGAUeBRwFIgUiBQgFDgUMBToFOAU+BTwFFgoA="
 .option pop"#,
         vg_chacha20_block = sym super::chacha20::vg_chacha20_block::vg_chacha20_block,
         vg_poly1305_init_core = sym super::poly1305::vg_poly1305_init_core::vg_poly1305_init_core,
@@ -102,7 +102,7 @@ j 23f
 22:
 23:
 21:
-.base64 "g7sCIwO8giODvAIkA72CJIO9AiWDsIIlA7sCJhqFCo+BTyMw/wEjNP8BIzj/ASM8/wEjMP8DIzT/AyM4/wMjPP8DIzD/BSM0/wUjOP8FIzz/BSMw/wcjNP8HIzj/ByM8/wcjMP8JIzT/CSM4/wkjPP8JIzD/CyM0/wsjOP8LIzz/CyMw/w0jNP8NIzj/DSM8/w0jMP8PIzT/DyM4/w8jPP8PIzD/ESM0/xEjOP8RIzz/ESMw/xMjNP8TIzj/EyM8/xMjMP8VIzT/FSM4/xUjPP8VIzD/FyM0/xcjOP8XIzz/FyMw/xkjNP8ZIzj/GSM8/xkjMP8bIzT/GyM4/xsjPP8bIzD/HSM0/x0jOP8dIzz/HSMw/x8jNP8fIzj/HyM8/x8jMP8hIzT/ISM4/yEjPP8hIzD/IyM0/yMjOP8jIzz/IyMw/yUjNP8lIzj/JSM8/yUjMP8nIzT/JxMBASeBQgIVAZGBRQFGgUYBR4FHAUiBSIFCAUOBQwFOgU4BT4FPgoA="
+.base64 "g7sCIwO8giODvAIkA72CJIO9AiWDsIIlA7sCJhqFCo+BTyMw/wEjNP8BIzj/ASM8/wEjMP8DIzT/AyM4/wMjPP8DIzD/BSM0/wUjOP8FIzz/BSMw/wcjNP8HIzj/ByM8/wcjMP8JIzT/CSM4/wkjPP8JIzD/CyM0/wsjOP8LIzz/CyMw/w0jNP8NIzj/DSM8/w0jMP8PIzT/DyM4/w8jPP8PIzD/ESM0/xEjOP8RIzz/ESMw/xMjNP8TIzj/EyM8/xMjMP8VIzT/FSM4/xUjPP8VIzD/FyM0/xcjOP8XIzz/FyMw/xkjNP8ZIzj/GSM8/xkjMP8bIzT/GyM4/xsjPP8bIzD/HSM0/x0jOP8dIzz/HSMw/x8jNP8fIzj/HyM8/x8jMP8hIzT/ISM4/yEjPP8hIzD/IyM0/yMjOP8jIzz/IyMw/yUjNP8lIzj/JSM8/yUjMP8nIzT/JxMBASeBQoFFAUaBRgFHgUcBSIFIgUIBQ4FDAU6BTgFPgU8BJYKA"
 .option pop"#,
         vg_chacha20_block = sym super::chacha20::vg_chacha20_block::vg_chacha20_block,
         vg_poly1305_init_core = sym super::poly1305::vg_poly1305_init_core::vg_poly1305_init_core,
@@ -166,7 +166,7 @@ j 23f
 22:
 23:
 21:
-.base64 "g7sCIwO8giODvAIkA72CJIO9AiWDsIIlA7sCJhqFEw8BAYFPIzD/ASM0/wEjOP8BIzz/ASMw/wMjNP8DIzj/AyM8/wMjMP8FIzT/BSM4/wUjPP8FIzD/ByM0/wcjOP8HIzz/ByMw/wkjNP8JIzj/CSM8/wkjMP8LIzT/CyM4/wsjPP8LIzD/DSM0/w0jOP8NIzz/DSMw/w8jNP8PIzj/DyM8/w8jMP8RIzT/ESM4/xEjPP8RIzD/EyM0/xMjOP8TIzz/EyMw/xUjNP8VIzj/FSM8/xUjMP8XIzT/FyM4/xcjPP8XIzD/GSM0/xkjOP8ZIzz/GSMw/xsjNP8bIzj/GyM8/xsjMP8dIzT/HSM4/x0jPP8dIzD/HyM0/x8jOP8fIzz/HyMw/yEjNP8hIzj/ISM8/yEjMP8jIzT/IyM4/yMjPP8jIzD/JSM0/yUjOP8lIzz/JSMw/ycjNP8nEwEBKIFCEwEB2AqDIzBTACM0UwATAQEoAhUBkYFFAUaBRgFHgUcBSIFIgUIBQ4FDAU6BTgFPgU+CgA=="
+.base64 "g7sCIwO8giODvAIkA72CJIO9AiWDsIIlA7sCJhqFEw8BAYFPIzD/ASM0/wEjOP8BIzz/ASMw/wMjNP8DIzj/AyM8/wMjMP8FIzT/BSM4/wUjPP8FIzD/ByM0/wcjOP8HIzz/ByMw/wkjNP8JIzj/CSM8/wkjMP8LIzT/CyM4/wsjPP8LIzD/DSM0/w0jOP8NIzz/DSMw/w8jNP8PIzj/DyM8/w8jMP8RIzT/ESM4/xEjPP8RIzD/EyM0/xMjOP8TIzz/EyMw/xUjNP8VIzj/FSM8/xUjMP8XIzT/FyM4/xcjPP8XIzD/GSM0/xkjOP8ZIzz/GSMw/xsjNP8bIzj/GyM8/xsjMP8dIzT/HSM4/x0jPP8dIzD/HyM0/x8jOP8fIzz/HyMw/yEjNP8hIzj/ISM8/yEjMP8jIzT/IyM4/yMjPP8jIzD/JSM0/yUjOP8lIzz/JSMw/ycjNP8nEwEBKIFCEwEB2AqDIzBTACM0UwATAQEogUUBRoFGAUeBRwFIgUiBQgFDgUMBToFOAU+BTwElgoA="
 .option pop"#,
         vg_chacha20_block = sym super::chacha20::vg_chacha20_block::vg_chacha20_block,
         vg_poly1305_init_core = sym super::poly1305::vg_poly1305_init_core::vg_poly1305_init_core,
@@ -217,7 +217,7 @@ j 21f
 21:
 .base64 "fofGh3qI"
 call {vg_chacha20_poly1305_seal_core}
-.base64 "omBBAYFCEwEB2AqDIzhTJiM8UyYTAQEoAUWBRQFGgUYBR4FHAUiBSIFCAUOBQwFOgU4BT4FPgoA="
+.base64 "omBBAYFCEwEB2AqDIzhTJiM8UyYTAQEogUUBRoFGAUeBRwFIgUiBQgFDgUMBToFOAU+BTwFFgoA="
 .option pop"#,
         vg_chacha20_poly1305_seal_core = sym super::chacha20::vg_chacha20_poly1305_seal_core::vg_chacha20_poly1305_seal_core,
     )

@@ -1192,7 +1192,6 @@ vg_aes_gcm_stream_init:
 	addi sp, sp, 2032
 	addi sp, sp, 16
 	addi sp, sp, 2032
-	addi a0, zero, 0
 	addi a1, zero, 0
 	addi a2, zero, 0
 	addi a3, zero, 0
@@ -1207,6 +1206,7 @@ vg_aes_gcm_stream_init:
 	addi t4, zero, 0
 	addi t5, zero, 0
 	addi t6, zero, 0
+	addi a0, zero, 0
 	ret
 	.option pop
 
@@ -1865,7 +1865,6 @@ vg_aes_gcm_stream_aad:
 	addi sp, sp, 2032
 	addi sp, sp, 16
 	addi sp, sp, 2032
-	addi a0, zero, 0
 	addi a1, zero, 0
 	addi a2, zero, 0
 	addi a3, zero, 0
@@ -1880,6 +1879,7 @@ vg_aes_gcm_stream_aad:
 	addi t4, zero, 0
 	addi t5, zero, 0
 	addi t6, zero, 0
+	addi a0, zero, 0
 	ret
 	.option pop
 
@@ -2771,7 +2771,6 @@ vg_aes_gcm_bitslice:
 	sd t0, 2040(t1)
 	addi sp, sp, 16
 	addi sp, sp, 2032
-	addi a0, zero, 0
 	addi a1, zero, 0
 	addi a2, zero, 0
 	addi a3, zero, 0
@@ -2786,6 +2785,7 @@ vg_aes_gcm_bitslice:
 	addi t4, zero, 0
 	addi t5, zero, 0
 	addi t6, zero, 0
+	addi a0, zero, 0
 	ret
 	.option pop
 
@@ -3570,7 +3570,6 @@ vg_aes_gcm_stream_encrypt_bitsliced:
 	addi sp, sp, 2032
 	addi sp, sp, 16
 	addi sp, sp, 2032
-	addi a0, zero, 0
 	addi a1, zero, 0
 	addi a2, zero, 0
 	addi a3, zero, 0
@@ -3585,6 +3584,7 @@ vg_aes_gcm_stream_encrypt_bitsliced:
 	addi t4, zero, 0
 	addi t5, zero, 0
 	addi t6, zero, 0
+	addi a0, zero, 0
 	ret
 	.option pop
 
@@ -4369,7 +4369,6 @@ vg_aes_gcm_stream_decrypt_bitsliced:
 	addi sp, sp, 2032
 	addi sp, sp, 16
 	addi sp, sp, 2032
-	addi a0, zero, 0
 	addi a1, zero, 0
 	addi a2, zero, 0
 	addi a3, zero, 0
@@ -4384,6 +4383,7 @@ vg_aes_gcm_stream_decrypt_bitsliced:
 	addi t4, zero, 0
 	addi t5, zero, 0
 	addi t6, zero, 0
+	addi a0, zero, 0
 	ret
 	.option pop
 
@@ -5086,7 +5086,6 @@ vg_aes_gcm_stream_finish_bitsliced:
 	addi sp, sp, 2032
 	addi sp, sp, 16
 	addi sp, sp, 2032
-	addi a0, zero, 0
 	addi a1, zero, 0
 	addi a2, zero, 0
 	addi a3, zero, 0
@@ -5101,6 +5100,7 @@ vg_aes_gcm_stream_finish_bitsliced:
 	addi t4, zero, 0
 	addi t5, zero, 0
 	addi t6, zero, 0
+	addi a0, zero, 0
 	ret
 	.option pop
 
@@ -5839,8 +5839,6 @@ vg_aes_gcm_stream_verify_bitsliced:
 	addi sp, sp, 2032
 	addi sp, sp, 16
 	addi sp, sp, 2032
-	slli a0, a0, 32
-	srli a0, a0, 32
 	addi a1, zero, 0
 	addi a2, zero, 0
 	addi a3, zero, 0
@@ -5855,6 +5853,7 @@ vg_aes_gcm_stream_verify_bitsliced:
 	addi t4, zero, 0
 	addi t5, zero, 0
 	addi t6, zero, 0
+	addiw a0, a0, 0
 	ret
 	.option pop
 
@@ -7037,7 +7036,6 @@ vg_aes_gcm_seal_bitsliced:
 	addi sp, sp, 2032
 	addi sp, sp, 16
 	addi sp, sp, 2032
-	addi a0, zero, 0
 	addi a1, zero, 0
 	addi a2, zero, 0
 	addi a3, zero, 0
@@ -7052,6 +7050,7 @@ vg_aes_gcm_seal_bitsliced:
 	addi t4, zero, 0
 	addi t5, zero, 0
 	addi t6, zero, 0
+	addi a0, zero, 0
 	ret
 	.option pop
 
@@ -8275,8 +8274,6 @@ vg_aes_gcm_open_bitsliced:
 	addi sp, sp, 2032
 	addi sp, sp, 16
 	addi sp, sp, 2032
-	slli a0, a0, 32
-	srli a0, a0, 32
 	addi a1, zero, 0
 	addi a2, zero, 0
 	addi a3, zero, 0
@@ -8291,6 +8288,7 @@ vg_aes_gcm_open_bitsliced:
 	addi t4, zero, 0
 	addi t5, zero, 0
 	addi t6, zero, 0
+	addiw a0, a0, 0
 	ret
 	.option pop
 
@@ -9548,8 +9546,6 @@ vg_aes_gcm_open_to_bitsliced:
 	addi sp, sp, 2032
 	addi sp, sp, 16
 	addi sp, sp, 2032
-	slli a0, a0, 32
-	srli a0, a0, 32
 	addi a1, zero, 0
 	addi a2, zero, 0
 	addi a3, zero, 0
@@ -9564,6 +9560,7 @@ vg_aes_gcm_open_to_bitsliced:
 	addi t4, zero, 0
 	addi t5, zero, 0
 	addi t6, zero, 0
+	addiw a0, a0, 0
 	ret
 	.option pop
 
@@ -10826,7 +10823,6 @@ vg_aes_gcm_seal_gather_bitsliced:
 	addi sp, sp, 2032
 	addi sp, sp, 16
 	addi sp, sp, 2032
-	addi a0, zero, 0
 	addi a1, zero, 0
 	addi a2, zero, 0
 	addi a3, zero, 0
@@ -10841,5 +10837,6 @@ vg_aes_gcm_seal_gather_bitsliced:
 	addi t4, zero, 0
 	addi t5, zero, 0
 	addi t6, zero, 0
+	addi a0, zero, 0
 	ret
 	.option pop

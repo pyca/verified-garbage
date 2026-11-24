@@ -20,12 +20,12 @@ pub const VG_SEED_CBC_ENCRYPT_CHAINED_AESNI_FEATURES: verified_garbage_cpu::Feat
 /// * `iv` must be valid for reads and writes of 16 bytes.
 /// * `data` must be valid for reads and writes of `16 * n` bytes.
 /// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
-/// * None of `schedule`, `iv` and `data` may overlap the arguments on the stack, overlap the return address on the stack or the 676 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `schedule`, `iv` and `data` may overlap the arguments on the stack, overlap the return address on the stack or the 680 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `ssse3` and `aes` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_seed_cbc_encrypt_chained_aesni(schedule: *const [u8; 128], iv: *mut [u8; 16], data: *mut [u8; 16], n: usize) {
     core::arch::naked_asm!(
-        r#".base64 "jaQkYP3//4uEJKQCAACJRCQEi4QkqAIAAIlEJAiLhCSsAgAAiUQkDIuEJLACAACJRCQQieCDwBiJRCQUi0QkFImYYAIAAImwZAIAAIm4aAIAAImobAIAAInHi3QkCIsGiYd4AgAAi0YEiYd8AgAAi0YIiYeAAgAAi0YMiYeEAgAA"
+        r#".base64 "jaQkXP3//4uEJKgCAACJRCQEi4QkrAIAAIlEJAiLhCSwAgAAiUQkDIuEJLQCAACJRCQQieCDwBiJRCQUi0QkFImYYAIAAImwZAIAAIm4aAIAAImobAIAAInHi3QkCIsGiYd4AgAAi0YEiYd8AgAAi0YIiYeAAgAAi0YMiYeEAgAA"
 call 2f
 2:
 mov eax, DWORD PTR [esp]
@@ -38,16 +38,16 @@ jne 20b
 .base64 "i0QkDImHcAIAAItEJBCJh3QCAACFwA=="
 je 21f
 23:
-.base64 "i7dwAgAAi690AgAAiwYzh3gCAACJRwiLRgQzh3wCAACJRwyLRggzh4ACAACJRxCLRgwzh4QCAACJRxSLH4n+g8ZguAgAAADzD29HCPMPbzvzD2+joAAAAGYPOADEZg9wyADzD39PIGYPcMhV8w9/TzBmD3DoqmYPcMD/"
+.base64 "i7dwAgAAi690AgAAiwYzh3gCAACJRxCLRgQzh3wCAACJRxSLRggzh4ACAACJRxiLRgwzh4QCAACJRxyLH4n+g8ZguAgAAADzD29HEPMPbzvzD2+joAAAAGYPOADEZg9wyADzD39PIGYPcMhV8w9/TzBmD3DoqmYPcMD/"
 24:
 .base64 "8w9/b0DzD39HUPMPbw5mD+/p8w9vThBmD+/BZg/vxWYPb8hmD3LRBGYP289mD9vH8w9vUxBmDzgA0PMPb1sgZg84ANlmD+/T8w9vm5AAAABmDzgA02YPON3XZg9vymYPctEEZg/bz2YP29fzD29DMGYPOADC8w9vW0BmDzgA2WYP78PzD29jUGYPOADi8w9vW2BmDzgA2WYP7+PzD29bcGYP28PzD2+bgAAAAGYP2+NmD+/EZg9wyDlmD3DQTmYPcNiTZg/vwWYP79NmD+/CZg9v8GYP/sVmD2/IZg9y0QRmD9vPZg/bx/MPb1MQZg84ANDzD29bIGYPOADZZg/v0/MPb5uQAAAAZg84ANNmDzjd12YPb8pmD3LRBGYP289mD9vX8w9vQzBmDzgAwvMPb1tAZg84ANlmD+/D8w9vY1BmDzgA4vMPb1tgZg84ANlmD+/j8w9vW3BmD9vD8w9vm4AAAABmD9vjZg/vxGYPcMg5Zg9w0E5mD3DYk2YP78FmD+/TZg/vwmYPb+hmD/7GZg9vyGYPctEEZg/bz2YP28fzD29TEGYPOADQ8w9vWyBmDzgA2WYP79PzD2+bkAAAAGYPOADTZg843ddmD2/KZg9y0QRmD9vPZg/b1/MPb0MwZg84AMLzD29bQGYPOADZZg/vw/MPb2NQZg84AOLzD29bYGYPOADZZg/v4/MPb1twZg/bw/MPb5uAAAAAZg/b42YP78RmD3DIOWYPcNBOZg9w2JNmD+/BZg/v02YP78JmD/7o8w9vTyBmD+/p8w9vTzBmD+/B8w9/byDzD39HMPMPb04gZg/v6fMPb04wZg/vwWYP78VmD2/IZg9y0QRmD9vPZg/bx/MPb1MQZg84ANDzD29bIGYPOADZZg/v0/MPb5uQAAAAZg84ANNmDzjd12YPb8pmD3LRBGYP289mD9vX8w9vQzBmDzgAwvMPb1tAZg84ANlmD+/D8w9vY1BmDzgA4vMPb1tgZg84ANlmD+/j8w9vW3BmD9vD8w9vm4AAAABmD9vjZg/vxGYPcMg5Zg9w0E5mD3DYk2YP78FmD+/TZg/vwmYPb/BmD/7FZg9vyGYPctEEZg/bz2YP28fzD29TEGYPOADQ8w9vWyBmDzgA2WYP79PzD2+bkAAAAGYPOADTZg843ddmD2/KZg9y0QRmD9vPZg/b1/MPb0MwZg84AMLzD29bQGYPOADZZg/vw/MPb2NQZg84AOLzD29bYGYPOADZZg/v4/MPb1twZg/bw/MPb5uAAAAAZg/b42YP78RmD3DIOWYPcNBOZg9w2JNmD+/BZg/v02YP78JmD2/oZg/+xmYPb8hmD3LRBGYP289mD9vH8w9vUxBmDzgA0PMPb1sgZg84ANlmD+/T8w9vm5AAAABmDzgA02YPON3XZg9vymYPctEEZg/bz2YP29fzD29DMGYPOADC8w9vW0BmDzgA2WYP78PzD29jUGYPOADi8w9vW2BmDzgA2WYP7+PzD29bcGYP28PzD2+bgAAAAGYP2+NmD+/EZg9wyDlmD3DQTmYPcNiTZg/vwWYP79NmD+/CZg/+6PMPb09AZg/v6fMPb09QZg/vwYPGQIPoAQ=="
 jne 24b
-.base64 "Zg9s6GYPcO2I8w9vTyDzD29XMGYPbMpmD3DJiGYPbOnzD2+joAAAAGYPOADs8w9/bwiLt3ACAACLr3QCAACLRwiJh3gCAACLRwyJh3wCAACLRxCJh4ACAACLRxSJh4QCAACLRwiJBotHDIlGBItHEIlGCItHFIlGDIPGEIPtAYm3cAIAAImvdAIAAA=="
+.base64 "Zg9s6GYPcO2I8w9vTyDzD29XMGYPbMpmD3DJiGYPbOnzD2+joAAAAGYPOADs8w9/bxCLt3ACAACLr3QCAACLRxCJh3gCAACLRxSJh3wCAACLRxiJh4ACAACLRxyJh4QCAACLRxCJBotHFIlGBItHGIlGCItHHIlGDIPGEIPtAYm3cAIAAImvdAIAAA=="
 jne 23b
 jmp 22f
 21:
 22:
-.base64 "i3QkCIuHeAIAAIkGi4d8AgAAiUYEi4eAAgAAiUYIi4eEAgAAiUYMi59gAgAAi7dkAgAAi69sAgAAi79oAgAAZg/vwLkAAAAA8w9/RCQY8w9/RCQo8w9/RCQ48w9/RCRI8w9/RCRY8w9/RCRo8w9/RCR48w9/hCSIAAAA8w9/hCSYAAAA8w9/hCSoAAAA8w9/hCS4AAAA8w9/hCTIAAAA8w9/hCTYAAAA8w9/hCToAAAA8w9/hCT4AAAA8w9/hCQIAQAA8w9/hCQYAQAA8w9/hCQoAQAA8w9/hCQ4AQAA8w9/hCRIAQAA8w9/hCRYAQAA8w9/hCRoAQAA8w9/hCR4AQAA8w9/hCSIAQAA8w9/hCSYAQAA8w9/hCSoAQAA8w9/hCS4AQAA8w9/hCTIAQAA8w9/hCTYAQAA8w9/hCToAQAA8w9/hCT4AQAA8w9/hCQIAgAA8w9/hCQYAgAA8w9/hCQoAgAA8w9/hCQ4AgAA8w9/hCRIAgAA8w9/hCRYAgAA8w9/hCRoAgAA8w9/hCR4AgAA8w9/hCSIAgAAiYwkmAIAAImMJJwCAACNpCSgAgAAjaQkXP3//7kAAAAAiUwkBIlMJAiJTCQMiUwkEIlMJBSJTCQYjaQkpAIAALgAAAAAugAAAAAxyWYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ww=="
+.base64 "i3QkCIuHeAIAAIkGi4d8AgAAiUYEi4eAAgAAiUYIi4eEAgAAiUYMi59gAgAAi7dkAgAAi69sAgAAi79oAgAAZg/vwLkAAAAA8w9/RCQY8w9/RCQo8w9/RCQ48w9/RCRI8w9/RCRY8w9/RCRo8w9/RCR48w9/hCSIAAAA8w9/hCSYAAAA8w9/hCSoAAAA8w9/hCS4AAAA8w9/hCTIAAAA8w9/hCTYAAAA8w9/hCToAAAA8w9/hCT4AAAA8w9/hCQIAQAA8w9/hCQYAQAA8w9/hCQoAQAA8w9/hCQ4AQAA8w9/hCRIAQAA8w9/hCRYAQAA8w9/hCRoAQAA8w9/hCR4AQAA8w9/hCSIAQAA8w9/hCSYAQAA8w9/hCSoAQAA8w9/hCS4AQAA8w9/hCTIAQAA8w9/hCTYAQAA8w9/hCToAQAA8w9/hCT4AQAA8w9/hCQIAgAA8w9/hCQYAgAA8w9/hCQoAgAA8w9/hCQ4AgAA8w9/hCRIAgAA8w9/hCRYAgAA8w9/hCRoAgAA8w9/hCR4AgAA8w9/hCSIAgAAiYwkmAIAAImMJJwCAACNpCSkAgAAjaQkWP3//7kAAAAAiUwkBIlMJAiJTCQMiUwkEIlMJBSJTCQYiYwkpAIAAI2kJKgCAAC4AAAAALoAAAAAMclmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/8M="
 .p2align 6"#,
         VG_SEED_AESNI = sym super::consts::VG_SEED_AESNI,
     )
@@ -104,12 +104,12 @@ pub const VG_SEED_CBC_DECRYPT_CHAINED_AESNI_FEATURES: verified_garbage_cpu::Feat
 /// * `iv` must be valid for reads and writes of 16 bytes.
 /// * `data` must be valid for reads and writes of `16 * n` bytes.
 /// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
-/// * None of `schedule`, `iv` and `data` may overlap the arguments on the stack, overlap the return address on the stack or the 740 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `schedule`, `iv` and `data` may overlap the arguments on the stack, overlap the return address on the stack or the 744 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `ssse3` and `aes` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_seed_cbc_decrypt_chained_aesni(schedule: *const [u8; 128], iv: *mut [u8; 16], data: *mut [u8; 16], n: usize) {
     core::arch::naked_asm!(
-        r#".base64 "jaQkIP3//4uEJOQCAACJRCQEi4Qk6AIAAIlEJAiLhCTsAgAAiUQkDIuEJPACAACJRCQQieCDwBiJRCQUi0QkFImYoAIAAImwpAIAAIm4qAIAAImorAIAAInHi3QkCIsGiYe4AgAAi0YEiYe8AgAAi0YIiYfAAgAAi0YMiYfEAgAA"
+        r#".base64 "jaQkHP3//4uEJOgCAACJRCQEi4Qk7AIAAIlEJAiLhCTwAgAAiUQkDIuEJPQCAACJRCQQieCDwBiJRCQUi0QkFImYoAIAAImwpAIAAIm4qAIAAImorAIAAInHi3QkCIsGiYe4AgAAi0YEiYe8AgAAi0YIiYfAAgAAi0YMiYfEAgAA"
 call 2f
 2:
 mov eax, DWORD PTR [esp]
@@ -155,7 +155,7 @@ jne 211b
 jmp 210f
 29:
 210:
-.base64 "i3QkCIuHuAIAAIkGi4e8AgAAiUYEi4fAAgAAiUYIi4fEAgAAiUYMi5+gAgAAi7ekAgAAi6+sAgAAi7+oAgAAZg/vwLkAAAAA8w9/RCQY8w9/RCQo8w9/RCQ48w9/RCRI8w9/RCRY8w9/RCRo8w9/RCR48w9/hCSIAAAA8w9/hCSYAAAA8w9/hCSoAAAA8w9/hCS4AAAA8w9/hCTIAAAA8w9/hCTYAAAA8w9/hCToAAAA8w9/hCT4AAAA8w9/hCQIAQAA8w9/hCQYAQAA8w9/hCQoAQAA8w9/hCQ4AQAA8w9/hCRIAQAA8w9/hCRYAQAA8w9/hCRoAQAA8w9/hCR4AQAA8w9/hCSIAQAA8w9/hCSYAQAA8w9/hCSoAQAA8w9/hCS4AQAA8w9/hCTIAQAA8w9/hCTYAQAA8w9/hCToAQAA8w9/hCT4AQAA8w9/hCQIAgAA8w9/hCQYAgAA8w9/hCQoAgAA8w9/hCQ4AgAA8w9/hCRIAgAA8w9/hCRYAgAA8w9/hCRoAgAA8w9/hCR4AgAA8w9/hCSIAgAA8w9/hCSYAgAA8w9/hCSoAgAA8w9/hCS4AgAA8w9/hCTIAgAAiYwk2AIAAImMJNwCAACNpCTgAgAAjaQkHP3//7kAAAAAiUwkBIlMJAiJTCQMiUwkEIlMJBSJTCQYjaQk5AIAALgAAAAAugAAAAAxyWYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ww=="
+.base64 "i3QkCIuHuAIAAIkGi4e8AgAAiUYEi4fAAgAAiUYIi4fEAgAAiUYMi5+gAgAAi7ekAgAAi6+sAgAAi7+oAgAAZg/vwLkAAAAA8w9/RCQY8w9/RCQo8w9/RCQ48w9/RCRI8w9/RCRY8w9/RCRo8w9/RCR48w9/hCSIAAAA8w9/hCSYAAAA8w9/hCSoAAAA8w9/hCS4AAAA8w9/hCTIAAAA8w9/hCTYAAAA8w9/hCToAAAA8w9/hCT4AAAA8w9/hCQIAQAA8w9/hCQYAQAA8w9/hCQoAQAA8w9/hCQ4AQAA8w9/hCRIAQAA8w9/hCRYAQAA8w9/hCRoAQAA8w9/hCR4AQAA8w9/hCSIAQAA8w9/hCSYAQAA8w9/hCSoAQAA8w9/hCS4AQAA8w9/hCTIAQAA8w9/hCTYAQAA8w9/hCToAQAA8w9/hCT4AQAA8w9/hCQIAgAA8w9/hCQYAgAA8w9/hCQoAgAA8w9/hCQ4AgAA8w9/hCRIAgAA8w9/hCRYAgAA8w9/hCRoAgAA8w9/hCR4AgAA8w9/hCSIAgAA8w9/hCSYAgAA8w9/hCSoAgAA8w9/hCS4AgAA8w9/hCTIAgAAiYwk2AIAAImMJNwCAACNpCTkAgAAjaQkGP3//7kAAAAAiUwkBIlMJAiJTCQMiUwkEIlMJBSJTCQYiYwk5AIAAI2kJOgCAAC4AAAAALoAAAAAMclmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/8M="
 .p2align 6"#,
         VG_SEED_AESNI_WIDE = sym super::consts::VG_SEED_AESNI_WIDE,
     )

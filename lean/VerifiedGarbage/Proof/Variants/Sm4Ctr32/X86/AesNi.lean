@@ -37,7 +37,7 @@ meta import VerifiedGarbage.Proof.Framework.Omega
 frame, as the internal function `vg_sm4_ctr32_aesni`: `ctr32_wp_x86`,
 constant time by the taint analysis of its code (`X86.sseTaint`), and its
 contract with the stack that SM4-GCM's functions leave the code they call
-(`Proof.Sm4Gcm.X86.ctrK`): the frame of 752 bytes, and 764 below it, of
+(`Proof.Sm4Gcm.X86.ctrK`): the frame of 760 bytes, and 756 below it, of
 which the code uses four.
 -/
 
@@ -72,8 +72,18 @@ theorem ctr32_ct : ConstantTime isa (fbX86 ctr32Post).pre (fbX86 ctr32Post).pub 
   VG.Taint.constantTime (A := VG.X86.sseTaint) fbTaint (fun _ _ h₁ h₂ hp => fbTaint_agree h₁ h₂ hp)
     (by taint_decide)
 
+/-- The four bytes below `esp` are apart from what the 756 below it are. -/
+theorem below4_of_756 {E : BitVec 32} {R : Region} (hlo : 756 ≤ E.toNat)
+    (h : Region.Disjoint ⟨E.setWidth 64 - 756#64, 756⟩ R) : Region.Disjoint ⟨(E - 4#32).setWidth 64, 4⟩ R := by
+  have hs := VG.X86.below_sub (sp := E) (a := 4) (b := 756) (by decide) hlo
+  have e : below E 756 = ⟨E.setWidth 64 - 756#64, 756⟩ := by
+    show (⟨(E - BitVec.ofNat 32 756).setWidth 64, 756⟩ : Region) = _
+    rw [VG.X86.Taint.sub_setWidth hlo]
+  rw [e] at hs
+  exact h.sub_left hs
+
 theorem wide_implies_ctr32 :
-    (wideContract ctr32Post).Implies (Proof.Sm4.ctr32ScratchContract X86.abi 91 764) := by
+    (wideContract ctr32Post).Implies (Proof.Sm4.ctr32ScratchContract X86.abi 91 756) := by
   refine { pre := ?_, post := ?_, pub := ?_, sat := ?_ }
   · intro s h
     sig_pre [Proof.Sm4.ctr32ScratchContract, Proof.Sm4.ctr32ScratchSig, Proof.Sm4.ctr32Sig, Proof.Sm4.ctr32Post, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, wideContract, fbX86, below, ctr32Post] at h
@@ -85,12 +95,12 @@ theorem wide_implies_ctr32 :
       | with_reducible assumption
       | with_reducible exact Region.Disjoint.symm ‹_›
       | omega_arith
-      | with_reducible (refine below4_of_764 (by assumption) ?_; assumption)
+      | with_reducible (refine below4_of_756 (by assumption) ?_; assumption)
       | (simp only [Nat.mul_comm] at *
          first
            | with_reducible assumption
            | with_reducible exact Region.Disjoint.symm ‹_›
-           | with_reducible (refine below4_of_764 (by assumption) ?_; assumption))
+           | with_reducible (refine below4_of_756 (by assumption) ?_; assumption))
   · sig_implies_post [Proof.Sm4.ctr32ScratchContract, Proof.Sm4.ctr32ScratchSig, Proof.Sm4.ctr32Sig, Proof.Sm4.ctr32Post, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, wideContract, fbX86, below, ctr32Post]
   · sig_implies_pub [Proof.Sm4.ctr32ScratchContract, Proof.Sm4.ctr32ScratchSig, Proof.Sm4.ctr32Sig, Proof.Sm4.ctr32Post, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, wideContract, fbX86, below, ctr32Post]
   · sig_implies_sat [Proof.Sm4.ctr32ScratchContract, Proof.Sm4.ctr32ScratchSig, Proof.Sm4.ctr32Sig, Proof.Sm4.ctr32Post, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, wideContract, fbX86, below, ctr32Post]
@@ -101,14 +111,14 @@ theorem frameSat_ctr32 (post : Proof.Sm4.ctr32Sig.Post X86.abi.ptrBits) :
   implies_sat [Proof.Sm4.ctr32Sig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     [frameSat, X86.arg, X86.argAddr, Mem.readW, Mem.read] using frameSat
 
-theorem ctr32_verified : Verified X86.target ctr32 (Proof.Sm4.ctr32ScratchContract X86.abi 91 764) :=
+theorem ctr32_verified : Verified X86.target ctr32 (Proof.Sm4.ctr32ScratchContract X86.abi 91 756) :=
   fb_verified (fun _ hs => ctr32_wp_x86 hs) ctr32_ct (fun _ _ _ _ _ _ h => h) wide_implies_ctr32
 
 /-- `ctr32` with its working space on the stack, wiped before returning. -/
 theorem ctr32_framed : Verified X86.target ctr32Framed (Proof.Sm4.ctr32Contract X86.abi 1516) :=
   X86.Verified.stackScratchWiped (sig := Proof.Sm4.ctr32Sig) (nm := "scratch") (e := .u64)
-    (n := 91) (post := Proof.Sm4.ctr32Post X86.abi.ptrBits) (wa := true) (stack := 764)
-    (bytes := 752) ctr32_verified (by decide) (by lit_decide) (by lit_decide) (by decide)
+    (n := 91) (post := Proof.Sm4.ctr32Post X86.abi.ptrBits) (wa := true) (stack := 756)
+    (bytes := 760) ctr32_verified (by decide) (by lit_decide) (by lit_decide) (by decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial)
     (Proof.Sm4.ctr32Post_local _) (Proof.Sm4.ctr32PostOut_local _) (frameSat_ctr32 _)
 

@@ -1332,7 +1332,6 @@ vg_aes_expand_key:
 	sd t6, 504(t5)
 	addi sp, sp, 512
 	addi t0, zero, 0
-	addi a0, zero, 0
 	addi a1, zero, 0
 	addi a2, zero, 0
 	addi a3, zero, 0
@@ -1347,5 +1346,6 @@ vg_aes_expand_key:
 	addi t4, zero, 0
 	addi t5, zero, 0
 	addi t6, zero, 0
+	addi a0, zero, 0
 	ret
 	.option pop

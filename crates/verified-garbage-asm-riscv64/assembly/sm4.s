@@ -4721,7 +4721,6 @@ vg_sm4_expand_key:
 	addi sp, sp, 1136
 	addi sp, sp, 2032
 	addi t0, zero, 0
-	addi a0, zero, 0
 	addi a1, zero, 0
 	addi a2, zero, 0
 	addi a3, zero, 0
@@ -4736,6 +4735,7 @@ vg_sm4_expand_key:
 	addi t4, zero, 0
 	addi t5, zero, 0
 	addi t6, zero, 0
+	addi a0, zero, 0
 	ret
 	.option pop
 
@@ -10649,7 +10649,6 @@ vg_sm4_ecb_encrypt:
 	addi sp, sp, 1136
 	addi sp, sp, 2032
 	addi t0, zero, 0
-	addi a0, zero, 0
 	addi a1, zero, 0
 	addi a2, zero, 0
 	addi a3, zero, 0
@@ -10664,6 +10663,7 @@ vg_sm4_ecb_encrypt:
 	addi t4, zero, 0
 	addi t5, zero, 0
 	addi t6, zero, 0
+	addi a0, zero, 0
 	ret
 	.option pop
 
@@ -16578,7 +16578,6 @@ vg_sm4_ecb_decrypt:
 	addi sp, sp, 1136
 	addi sp, sp, 2032
 	addi t0, zero, 0
-	addi a0, zero, 0
 	addi a1, zero, 0
 	addi a2, zero, 0
 	addi a3, zero, 0
@@ -16593,5 +16592,6 @@ vg_sm4_ecb_decrypt:
 	addi t4, zero, 0
 	addi t5, zero, 0
 	addi t6, zero, 0
+	addi a0, zero, 0
 	ret
 	.option pop
