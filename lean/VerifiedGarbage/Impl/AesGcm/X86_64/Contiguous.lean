@@ -128,11 +128,16 @@ def xorOne : List Instr :=
   [.movdquLoad .xmm0 (maskIndex .rdi .r10), .movdquLoad .xmm1 (maskIndex .r15 .r10 272),
    .xop (.bin .pxor .xmm0 .xmm1), .movdquStore (maskIndex .rsi .r10) .xmm0]
 
-def batchMasks (c : Callees) (enc : Fn) : Prog isa :=
-  .seq (.block startMasks) (.seq (.loop (.block (packOne++bumpMask)) .ne) (.seq (.block batchAESArgs)
-    (.seq (call enc) (.seq (.block maskPtrs) (.seq (.loop (.block (xorOne++bumpMask)) .ne)
-    (.seq (.block hashArgs) (.seq (call c.gh)
-    (.seq (.block authLens) (.seq (lens c 16) (.block mixMasks))))))))))
+def batchKeys (enc : Fn) : Prog isa :=
+  .seq (.block startMasks) (.seq (.loop (.block (packOne++bumpMask)) .ne)
+    (.seq (.block batchAESArgs) (call enc)))
+
+def batchText : Prog isa := .seq (.block maskPtrs) (.loop (.block (xorOne++bumpMask)) .ne)
+
+def batchAuth (c : Callees) : Prog isa :=
+  .seq (.block hashArgs) (.seq (call c.gh) (.seq (.block authLens) (.seq (lens c 16) (.block mixMasks))))
+
+def batchMasks (c : Callees) (enc : Fn) : Prog isa := .seq (batchKeys enc) (.seq batchText (batchAuth c))
 
 /-- Rotating the byte count minus one block moves any partial byte count above
 the bound. The mask workspace can hold J0 and one to fifteen payload counters. -/
