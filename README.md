@@ -2922,11 +2922,9 @@ algorithms it does part of the cryptography:
   `-z force-bti` or `-z force-ibt`: on a CPU that enforces BTI or IBT, those
   calls fault. (`-Zbranch-protection=pac-ret` does not break them, but the
   return addresses they save are not signed.)
-* **Stacks whose unwritten pages change.** The functions may read stack memory
-  nobody has written, whose value cannot matter, but the proofs assume that it
-  does not change between two reads. Do not call them on a stack to which
-  `MADV_FREE` was applied, or the like, unless its pages were written since
-  ([Memory nobody has written](lean/README.md#memory-nobody-has-written)).
+* **`MADV_FREE` on a stack.** The proofs assume that stack memory
+  [reads the same twice](lean/README.md#memory-nobody-has-written), even if
+  nobody has written it.
 
 ## Development
 

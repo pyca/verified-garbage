@@ -177,9 +177,8 @@ implementation it may choose is proven against the same contract.
 * Lean's kernel, and the assembler in `rustc`/LLVM for what is printed as
   text: ARM's code, and the branches, calls, addresses of statics and
   directives of the others.
-* That memory a function may access keeps its value until the function writes
-  it, whether or not anything wrote it before
-  ([Memory nobody has written](#memory-nobody-has-written)).
+* That memory keeps its value until it is written
+  ([even if it never was](#memory-nobody-has-written)).
 
 Everything in `Impl/` and `Proof/` is checked by Lean and need not be read.
 
@@ -189,59 +188,36 @@ only proven against a spec and TCB that were reviewed and merged beforehand.
 
 ### What enforces what
 
-An artifact cannot be constructed without proofs of the properties below
-(`Artifact`, `TCB/Registration.lean`). Some are fully stated in `TCB/` and hold
-of every function. Others say only what the function's own contract in `Spec/`
-says, so reviewing that contract is what makes them mean anything.
+| Property | Enforced by |
+| --- | --- |
+| Terminates, never faults, accesses only the memory it may | `TCB/` (`Verified`) |
+| Keeps callee-saved registers, the stack pointer and the return address | `TCB/` (`Verified`, `Artifact.spSafe`) |
+| Branches and addresses depend only on public data and the contract's `leak` | `TCB/` (`ConstantTime`) |
+| Leaves no secrets in registers, flags or its stack | `TCB/` (`NoResidue`) |
+| What it returns and writes to its buffers | **The contract's postcondition only** |
+| Instructions take the same time whatever their operands | [Assumed](../README.md#what-the-constant-time-guarantee-assumes) |
+| The Rust code around it | [Tests](../README.md#what-is-not-verified) |
 
-| What | Enforced by | How far it goes |
-| --- | --- | --- |
-| It terminates without faulting, and accesses only its buffers, its arguments in memory, its tables and the stack its frames and calls use | `TCB/`: `Verified` | Every function, from every state meeting its precondition |
-| Callee-saved registers, the stack pointer and the return address are kept; the result register is extended as the calling convention requires | `TCB/`: `Target.abiPreserved`, `RetAbi`; `Artifact.spSafe` | Every function |
-| Its branches, and the addresses it accesses, depend on public data only | `TCB/`: `ConstantTime` | Every function. Public is what `Sig.contract` says (pointers, lengths, public integers, the descriptors of lists of slices, the stack pointer and what else the target's `Abi.pub` lists) and what the contract's `leak` declares. No other memory is, so they do not depend on it; `leak` is to be reviewed |
-| What it leaves in the registers, the flags and the stack below the caller's depends on public data, and on what the caller left there, only | `TCB/`: `NoResidue` (`TCB/<ISA>/Residue.lean`) | Every function. Not its buffers: what it leaves in those is the contract's to say |
-| What it writes to its buffers, and returns | `Spec/`: the contract's postcondition | **Only what the postcondition says.** A byte of a writable buffer it does not mention, on some path, may hold anything, a copy of other memory the function can read included. Nothing checks that a postcondition mentions them all |
-| Its precondition is satisfiable | `TCB/`: `Verified` | Every function; that callers meet it is the Rust code's to ensure |
-| Each instruction's time does not depend on its operands | Not proven | An assumption about the CPU, recorded in each `TCB/<ISA>/Isa.lean` ([what the constant-time guarantee assumes](../README.md#what-the-constant-time-guarantee-assumes)) |
-| The Rust code around the functions | Not proven | Tested ([what is not verified](../README.md#what-is-not-verified)) |
-
-Writable bytes that postconditions leave free on purpose include working space
-(`scratch`), the part of a buffer an input does not use (the end of an AES-128
-key schedule, which is as long as AES-256's), a state that has been consumed
-(a hash's, after `finalize`), and an output of a call that failed, where the
-contract does not say that it is zeroed. The Rust code must not read them, nor
-return them.
+`TCB/` enforces its rows for every function called with its precondition met.
+For the postcondition's row, review the contract: a writable byte it does not
+mention may end up holding anything, and nothing checks that it mentions them
+all.
 
 ### Memory nobody has written
 
-A fresh stack frame (`alloc`), and working space Rust passes as `MaybeUninit`,
-hold whatever was there. The models have no notion of uninitialized memory: a
-byte has some value, about which a contract says nothing, so every proof is of
-all its values. Code may read it, and some does: a bitsliced cipher given fewer
-blocks than it has lanes runs the other lanes on whatever their slots hold, and
-drops their results. From the table above:
+Functions may read stack or `MaybeUninit` memory that nobody has written. The
+proofs hold whatever it contains, so it cannot affect:
 
-* its value cannot change which instructions run, or the addresses accessed,
-  or make the function fault, as long as neither the contract's further
-  precondition nor its `leak` depends on it: what `Sig.contract` adds does
-  not, but nothing checks these two, which are reviewed;
-* it cannot change what the postcondition says of the outputs, if what the
-  postcondition gives them depends on the inputs alone; but nothing keeps it
-  out of the bytes the postcondition leaves free.
+* branches, addresses or faults, unless the contract's precondition or `leak`
+  mentions it;
+* any output that the postcondition makes a function of the inputs.
 
-So this is not checked, on purpose: that memory is written before it is read.
-Tools that track whether a value is initialized do not see that the lanes are
-independent, and may report it, and the outputs computed beside it, as
-uninitialized (Valgrind's Memcheck does,
-[#6435](https://github.com/pyca/verified-garbage/issues/6435)): that alone is
-not a bug. An output that really depends on it is one.
+Valgrind may report such reads
+([#6435](https://github.com/pyca/verified-garbage/issues/6435)). That is a bug
+only if an output really depends on the value.
 
-A model's memory keeps its values, so a proof may rely on two reads of a byte
-nobody wrote agreeing. On the stack of a running thread they do, unless
-something makes the kernel take the page away meanwhile: Linux's
-`MADV_FREE`, applied to a stack, lets a page that has not been written since
-read as zeros from some point on. Do not run these functions on a stack used
-so, unless its pages are written first.
+The proofs assume that this memory reads the same twice, which `MADV_FREE` on a
+stack would break.
 
 ## Building
 
