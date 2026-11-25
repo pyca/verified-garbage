@@ -255,3 +255,16 @@ Experiment 10, NEON:
      In two passes: LL and HH from a, b, 19 b (14 registers, 10 sums), then
      a, b, 19 b become lo + hi in place, and K (5 sums).
  (c) the other split: NEON AA|BB then x3|t; scalar DA CB then E, F, x2, z2, and z3.
+
+## 13. Experiment 10's result (run 45683118899)
+
+Cycles: sn1 341 (as before), sn2 (a) 333, sn3 (a, b) 318, sn4 (a, b, c) 313; pair
+of squares 122.8 with Karatsuba (116 without), of products 160 (173).
+Projected: 313 x 255 + 4.9k = 84.7k cycles, 24.9 us, against 26.93.
+
+Split (c) is kept: it also needs no pair of products on NEON, so one vector
+kernel to prove (the pair of squares) and one scalar one (the product).
+
+Experiment 11: in split (c), sn5: the plain pair of squares; sn6: and 2^51 - 1,
+19 and 2p's limb kept in x25-x27 (six instructions less an operation); sn7: and a
+sequential carry (26 instructions for 32, 5 more setters).
