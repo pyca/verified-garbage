@@ -60,6 +60,21 @@ class Targets(unittest.TestCase):
         self.assertEqual([build[i + 1] for i, a in enumerate(build) if a == "--target"],
                          [e["target"] for e in LINT])
 
+    def test_the_library_is_documented_for_every_target(self):
+        calls = []
+        with mock.patch.dict(os.environ, LINT=json.dumps(LINT)), \
+                mock.patch.object(rust_lint, "cargo", lambda args, cwd: calls.append((args, cwd))):
+            rust_lint.run("library")
+        ((doc, cwd),) = [c for c in calls if c[0][0] == "doc"]
+        self.assertEqual(cwd, CI.parent)
+        self.assertEqual([doc[i + 1] for i, a in enumerate(doc) if a == "--target"],
+                         [e["target"] for e in LINT])
+        # Where a broken link fails.
+        ci = (CI.parent / ".github" / "workflows" / "ci.yml").read_text()
+        for job in ("rust-lint", "rustls-provider"):
+            text = ci[ci.index(f"\n  {job}:\n"):]
+            self.assertIn("RUSTDOCFLAGS: -D warnings", text[:text.index("\n    steps:")])
+
     def test_the_image_has_every_targets_standard_library(self):
         # The lint image's toolchain (ci/runner.Dockerfile's amd64 case), so
         # that its jobs download nothing until stable changes.

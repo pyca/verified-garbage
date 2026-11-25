@@ -52,7 +52,7 @@ pub mod feature {
     pub const SB: u32 = 1 << 22;
     pub const AVX512FP16: u32 = 1 << 23;
     /// AMD's Zen 5 cores (`detect::decode`). Not an instruction set
-    /// feature, so no code needs it ([`TUNING`]).
+    /// feature, so no code needs it ([`TUNING`](crate::TUNING)).
     pub const ZEN5: u32 = 1 << 24;
     pub const SM4: u32 = 1 << 25;
 }

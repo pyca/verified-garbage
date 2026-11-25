@@ -24,5 +24,10 @@ path = "src/lib.rs"
 [dependencies]
 verified-garbage-cpu = { path = "../verified-garbage-cpu" }
 
+# The crate is empty for every other architecture.
+[package.metadata.docs.rs]
+default-target = "powerpc64le-unknown-linux-gnu"
+targets = []
+
 [lints]
 workspace = true

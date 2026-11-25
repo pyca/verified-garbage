@@ -19,7 +19,10 @@ Clippy and the tests build it unoptimized, and an optimized build with
 several codegen units is where rustc has assembled naked functions without
 the target's features (RISC-V's M extension, which `Rust.funcOptions` in
 lean/VerifiedGarbage/TCB/Rust.lean now enables). `--lib` builds an rlib,
-which needs no linker either.
+which needs no linker either. And its documentation is built for every target,
+as docs.rs builds it, as the provider's is: a broken link fails
+(`RUSTDOCFLAGS`, which ci.yml's jobs set). The crates of generated code's is
+not: their contracts' text is not written for rustdoc.
 
   rust_lint.py targets library|benchmarks
       the crate's targets, comma-separated, for rustup
@@ -65,6 +68,7 @@ def run(crate):
         # (rustls's defaults, `std`), which hid a missing `rustls/std`.
         cargo(["clippy", "--lib", "--locked", *package], ROOT)
         cargo(["clippy", "--lib", "--locked", "--no-default-features", *package], ROOT)
+        cargo(["doc", "--no-deps", "--locked", *package], ROOT)
         return
     if crate == "library":
         targets = [arg for e in entries(crate) for arg in ("--target", e["target"])]
@@ -72,6 +76,8 @@ def run(crate):
         for features in FEATURES:
             cargo(["clippy", "--all-targets", "--locked", *targets, *features], ROOT)
         cargo(["build", "--release", "--lib", "--locked", *targets], ROOT)
+        cargo(["doc", "--no-deps", "--locked", "-p", "verified-garbage", "-p", "verified-garbage-cpu",
+               *targets], ROOT)
         return
     cargo(["fmt", "--check"], ROOT / "bench")
     for e in entries(crate):
