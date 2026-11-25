@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.MlKem.AArch64.Kem
 public import VerifiedGarbage.Impl.CallWipe.AArch64
 public import VerifiedGarbage.Impl.Zeroize.AArch64Wide
 public import VerifiedGarbage.Impl.Sha3.AArch64.ViaD8
@@ -11,10 +12,10 @@ Each function of ML-KEM-768 and ML-KEM-1024 taking `scratch` calls the
 function named for it and `sfx` (the suffix of its instance), then
 `vg_zeroize` on all of `scratch` (`callWipe`): 32768 bytes for ML-KEM-768
 and 49152 for ML-KEM-1024, none of whose implementations has a smaller bound
-on what it writes there. That function calls its code `body`, named for the
-function and `xsfx` (the suffix of the two-state permutation it calls), with
-the address of the single-state permutation `n` in `d8` (`entryD8`): `body`
-is the same code for every single-state permutation.
+on what it writes there. Each body calls its core with the address of the single-state permutation
+`n` in `d8` (`entryD8`), sharing that core across single-state permutations.
+The prehashed encapsulation entry shuffles its arguments before this frame
+and calls the ordinary encapsulation core.
 -/
 
 @[expose] public section
@@ -30,11 +31,23 @@ def wiped (r : Reg) (n : Nat) (fn sfx xsfx p : String) (body : Prog isa) : Prog 
   callWipe r n (fn ++ "_body" ++ sfx) (Impl.Sha3.AArch64.entryD8 p (fn ++ "_core" ++ xsfx) body) "vg_zeroize"
     Impl.Zeroize.AArch64.zeroizeWide
 
+/-- Recognize the canonical argument shuffle at generation time and place it
+before the existing d8 frame to share the ordinary encapsulation core. -/
+def wipedH (n : Nat) (fn sfx xsfx p : String) (body : Prog isa) : Prog isa :=
+  match body with
+  | .seq (.block is) rest =>
+    if is = hArgs then
+      callWipe .x5 n ((fn ++ "_h") ++ "_body" ++ sfx)
+        (.seq (.block hArgs) (Impl.Sha3.AArch64.entryD8 p (fn ++ "_core" ++ xsfx) rest))
+        "vg_zeroize" Impl.Zeroize.AArch64.zeroizeWide
+    else wiped .x5 n (fn ++ "_h") sfx xsfx p body
+  | _ => wiped .x5 n (fn ++ "_h") sfx xsfx p body
+
 /-- `vg_mlkem768_keygen`. -/
 def keyGen (sfx xsfx p : String) (body : Prog isa) : Prog isa := wiped .x3 32768 "vg_mlkem768_keygen" sfx xsfx p body
 
 /-- `vg_mlkem768_encaps_h`. -/
-def encapsH (sfx xsfx p : String) (body : Prog isa) : Prog isa := wiped .x5 32768 "vg_mlkem768_encaps_h" sfx xsfx p body
+def encapsH (sfx xsfx p : String) (body : Prog isa) : Prog isa := wipedH 32768 "vg_mlkem768_encaps" sfx xsfx p body
 
 /-- `vg_mlkem768_encaps`. -/
 def encaps (sfx xsfx p : String) (body : Prog isa) : Prog isa := wiped .x4 32768 "vg_mlkem768_encaps" sfx xsfx p body
@@ -47,7 +60,7 @@ def keyGen1024 (sfx xsfx p : String) (body : Prog isa) : Prog isa := wiped .x3 4
 
 /-- `vg_mlkem1024_encaps_h`. -/
 def encapsH1024 (sfx xsfx p : String) (body : Prog isa) : Prog isa :=
-  wiped .x5 49152 "vg_mlkem1024_encaps_h" sfx xsfx p body
+  wipedH 49152 "vg_mlkem1024_encaps" sfx xsfx p body
 
 /-- `vg_mlkem1024_encaps`. -/
 def encaps1024 (sfx xsfx p : String) (body : Prog isa) : Prog isa := wiped .x4 49152 "vg_mlkem1024_encaps" sfx xsfx p body

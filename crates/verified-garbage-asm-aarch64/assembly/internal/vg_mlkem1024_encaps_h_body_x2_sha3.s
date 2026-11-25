@@ -5,6 +5,10 @@
 // gives.
 
 vg_mlkem1024_encaps_h_body_x2_sha3:
+	add x1, x2, #0
+	add x2, x3, #0
+	add x3, x4, #0
+	add x4, x5, #0
 	sub sp, sp, #16
 	umov x16, v8.d[0]
 	str x30, [sp, #0]
@@ -12,7 +16,7 @@ vg_mlkem1024_encaps_h_body_x2_sha3:
 	adrp x16, {vg_keccak_f1600}
 	add x16, x16, {vg_keccak_f1600}
 	mov v8.d[0], x16
-	bl {vg_mlkem1024_encaps_h_core_x2_sha3}
+	bl {vg_mlkem1024_encaps_core_x2_sha3}
 	ldr x16, [sp, #8]
 	mov v8.d[0], x16
 	ldr x30, [sp, #0]
