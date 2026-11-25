@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Ed25519.Arm.CombCall
+
 public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTMul
 import VerifiedGarbage.Proof.Ed25519.Arm.ScalarPass
 public import VerifiedGarbage.Impl.Ed25519.Arm.Verify
@@ -168,7 +170,7 @@ open VG VG.Arm VG.Impl.Ed25519.Arm VG.Proof.X25519.Arm
 abbrev verifyRegion (b : BitVec 32) : Region := ⟨State.addr b + BitVec.ofNat 64 32, 8128⟩
 structure VerifyKeep (b : BitVec 32) (s t : State) : Prop where
   rest : Rest powersClob s t
-  frame : Frame [verifyRegion b] s.mem t.mem
+  frame : Frame [verifyRegion b, combReturnRegion b] s.mem t.mem
 
 theorem VerifyKeep.ctx {b : BitVec 32} {s t : State} (h : VerifyKeep b s t) (hc : Ctx b s) : Ctx b t :=
   hc.of_rest h.rest (by decide)
@@ -177,19 +179,19 @@ theorem VerifyKeep.trans {b : BitVec 32} {s t u : State} (h : VerifyKeep b s t) 
 theorem VerifyKeep.of_small {b : BitVec 32} {s t : State} {o n : Nat} {ws : List Reg}
     (hr : Rest ws s t) (hw : ∀ r ∈ ws, r ∈ powersClob)
     (hf : Frame [⟨State.addr b + BitVec.ofNat 64 o, n⟩] s.mem t.mem) (ho : 32 ≤ o) (hn : o + n ≤ 8160) :
-    VerifyKeep b s t := ⟨hr.mono hw, hf.sub fun r hm => ⟨_, List.mem_singleton_self _, by
+    VerifyKeep b s t := ⟨hr.mono hw, hf.sub fun r hm => ⟨_, List.mem_cons_self .., by
       rw [List.mem_singleton.mp hm]; exact Offset.sub _ ho hn⟩⟩
 theorem VerifyKeep.of_point {b : BitVec 32} {s t : State} (h : PointKeep b s t) : VerifyKeep b s t := by
   refine ⟨h.rest, h.frame.sub fun r hr => ?_⟩
   simp only [pointRegions, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl <;> exact ⟨_, List.mem_singleton_self _, Offset.sub _ (by decide) (by decide)⟩
+  rcases hr with rfl | rfl <;> exact ⟨_, List.mem_cons_self .., Offset.sub _ (by decide) (by decide)⟩
 theorem VerifyKeep.of_powers {b : BitVec 32} {o n : Nat} {s t : State}
     (h : PowersKeep b o n s t) (ho : 32 ≤ o) (hn : o + n ≤ 8160) : VerifyKeep b s t := by
   refine ⟨h.rest, h.frame.sub fun r hr => ?_⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
-  · exact ⟨_, List.mem_singleton_self _, Offset.sub _ (by decide) (by decide)⟩
-  · exact ⟨_, List.mem_singleton_self _, Offset.sub _ ho hn⟩
+  · exact ⟨_, List.mem_cons_self .., Offset.sub _ (by decide) (by decide)⟩
+  · exact ⟨_, List.mem_cons_self .., Offset.sub _ ho hn⟩
 theorem VerifyKeep.of_keep {b : BitVec 32} {s t : State} (h : Keep b s t) : VerifyKeep b s t :=
   VerifyKeep.of_point (PointKeep.of_keep h)
 theorem VerifyKeep.of_acc {b : BitVec 32} {s t : State} (h : AccKeep b s t) : VerifyKeep b s t :=
@@ -197,18 +199,28 @@ theorem VerifyKeep.of_acc {b : BitVec 32} {s t : State} (h : AccKeep b s t) : Ve
 theorem VerifyKeep.of_decode {b : BitVec 32} {s t : State} (h : DecodeKeep b s t) : VerifyKeep b s t := by
   refine ⟨h.rest.mono (by decide), h.frame.sub fun r hr => ?_⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl <;> exact ⟨_, List.mem_singleton_self _, Offset.sub _ (by decide) (by decide)⟩
+  rcases hr with rfl | rfl <;> exact ⟨_, List.mem_cons_self .., Offset.sub _ (by decide) (by decide)⟩
 theorem VerifyKeep.of_rest {b : BitVec 32} {s t : State} {ws : List Reg}
     (hr : Rest ws s t) (hw : ∀ r ∈ ws, r ∈ powersClob) (hm : t.mem = s.mem) : VerifyKeep b s t :=
   ⟨hr.mono hw, by rw [hm]; exact Frame.refl _ _⟩
 
 theorem VerifyKeep.header {b : BitVec 32} {s t : State} (h : VerifyKeep b s t)
-    (d : Nat) (hd : 8160 ≤ d) (hn : d + 4 ≤ 8192) :
+    (d : Nat) (hd : 8160 ≤ d) (hn : d + 4 ≤ 8192)
+    (hs : d + 4 ≤ combReturn ∨ combReturn + 4 ≤ d := by decide) :
     t.mem.readW (State.addr b + BitVec.ofNat 64 d) 32 = s.mem.readW (State.addr b + BitVec.ofNat 64 d) 32 := by
   apply BitVec.eq_of_toNat_eq
   exact wd_frame h.frame fun r hr => by
-    rw [List.mem_singleton.mp hr]
-    exact Offset.disjoint _ (.inr (by omega_using [hd])) (by omega_using [hn]) (by decide)
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact Offset.disjoint _ (.inr (by omega_using [hd])) (by omega_using [hn]) (by decide)
+    · exact Offset.disjoint _ hs (by omega_using [hn]) (by decide)
+
+theorem VerifyKeep.of_comb {b : BitVec 32} {s t : State} (h : CombKeep b s t) : VerifyKeep b s t := by
+  refine ⟨h.rest, h.frame.sub fun r hr => ?_⟩
+  simp only [combRegions, pointRegions, List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl
+  · exact ⟨_, List.mem_cons_of_mem _ (List.mem_singleton_self _), fun _ h => h⟩
+  all_goals exact ⟨_, List.mem_cons_self .., Offset.sub _ (by decide) (by decide)⟩
 
 end VG.Proof.Ed25519.Arm
 end
@@ -232,8 +244,8 @@ theorem VerifyInput.bytes {b ptr : BitVec 32} {len : Nat} {s t : State}
   unfold Spec.Ed25519.bytesAt
   refine List.map_congr_left fun i hi => hk.frame.bytes (R := ⟨State.addr ptr, len⟩)
     (fun r hr => ?_) (by have := h.fit; omega_using [this] : len ≤ 2 ^ 64) (List.mem_range.mp hi)
-  rw [List.mem_singleton.mp hr]
-  exact h.separate.sub_right (Offset.sub_base _ (by decide))
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl <;> exact h.separate.sub_right (Offset.sub_base _ (by decide))
 
 theorem VerifyInput.prefix {b ptr : BitVec 32} {len n : Nat} {s : State}
     (h : VerifyInput b ptr len s) (hn : n ≤ len) : VerifyInput b ptr n s :=
@@ -279,7 +291,8 @@ structure VerifyTbl (b T : BitVec 32) (s : State) : Prop where
 theorem VerifyTbl.keep {b T : BitVec 32} {s t : State} (h : VerifyTbl b T s) (hk : VerifyKeep b s t)
     (hsy : t.syms = s.syms) : VerifyTbl b T t :=
   ⟨h.tbl.of_frame (by rw [hk.rest.rd, hk.rest.wr]) hk.frame fun r hr => by
-      rw [List.mem_singleton.mp hr]; exact h.apart.sub_right (Offset.sub_base _ (by decide)),
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl <;> exact h.apart.sub_right (Offset.sub_base _ (by decide)),
     h.apart, (congrFun hsy _).trans h.sym⟩
 
 /-- The projective comparison's first test reads only what `p` represents. -/
@@ -1577,11 +1590,11 @@ theorem verifyLhs_ok {b pk sig challenge T : BitVec 32} {s : State}
     (by rw [cm, am]; exact Frame.refl _ _) (fun _ hr => absurd hr List.not_mem_nil)
   refine WP.seq (WP.mono (combMultiply_ok cc.ctx (by rw [cm, am]; exact hl) cp' ci.fit ci.readable ci.separate
     cT ((congrFun (syc.trans sya) _).trans ht.sym) ht.apart) fun e ⟨ek, el, ep⟩ => ?_)
-  obtain ke := kc.trans ek
+  obtain ke := kc.toCombKeep.trans ek
   rw [(hc.sigInput.suffix32).bytes (VerifyKeep.of_point kc)] at ep
   refine WP.mono (pointTableWrite_ok (ke.ctx hc.ctx) el 8032 (by decide) (by decide))
     fun t ⟨tk, tl, _, tp⟩ => ?_
-  refine ⟨(VerifyKeep.of_point ke).trans (VerifyKeep.of_powers tk (by decide) (by decide)), tl,
+  refine ⟨(VerifyKeep.of_comb ke).trans (VerifyKeep.of_powers tk (by decide) (by decide)), tl,
     tp ▸ ep, ?_, ?_⟩
   · exact (tk.frame.point (by decide) (.inl (by decide)) (by decide) (by decide)).trans
       (ke.table (by decide) (by decide))
@@ -2338,11 +2351,14 @@ theorem verifyEquation_correct {s : State} (h : VerifyPre s) :
       h.tbl_ws, congrFun syu _⟩
   refine WP.seq (WP.mono (verifyBody_ok uc ut) fun v ⟨vk, vv⟩ => ?_)
   obtain vs : ScalarSaved (State.addr (s.gpr .r3)) s.gpr v.mem := us.frame vk.frame fun r hr i hi => by
-    rw [List.mem_singleton.mp hr]
-    exact Offset.disjoint _ (.inl (by omega_arith)) (by omega_arith) (by decide)
+    simp only [combReturnRegion, combReturn, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl <;> exact Offset.disjoint _ (.inl (by omega_arith)) (by omega_arith) (by decide)
   obtain lv : v.mem.readW (State.addr (s.gpr .r3) + BitVec.ofNat 64 LRS) 32 = s.gpr .lr := by
     refine (BitVec.eq_of_toNat_eq (wd_frame vk.frame fun r hr => ?_)).trans ul
-    rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (.inr (by decide)) (by decide) (by decide)
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact Offset.disjoint _ (.inr (by decide)) (by decide) (by decide)
+    · exact Offset.disjoint _ (.inl (by decide)) (by decide) (by decide)
   refine WP.mono (verifyFinish_ok (vk.ctx uc.ctx) vs) fun t ⟨tg, tk, _, tv, tl⟩ => ?_
   refine ⟨⟨fun r hr => ?_, by rw [tk.sp, vk.rest.sp, uk.sp]⟩, ?_⟩
   · simp only [preserved, List.mem_cons, List.not_mem_nil, or_false] at hr

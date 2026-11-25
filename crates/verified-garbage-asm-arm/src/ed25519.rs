@@ -1458,6 +1458,14 @@ bx lr",
 }
 
 #[rustfmt::skip]
+#[path = "internal/vg_ed25519_comb_multiply.rs"]
+pub(crate) mod vg_ed25519_comb_multiply;
+
+#[rustfmt::skip]
+#[path = "internal/vg_ed25519_comb_multiply_umaal.rs"]
+pub(crate) mod vg_ed25519_comb_multiply_umaal;
+
+#[rustfmt::skip]
 #[path = "internal/vg_ed25519_public_key_expanded.rs"]
 pub(crate) mod vg_ed25519_public_key_expanded;
 

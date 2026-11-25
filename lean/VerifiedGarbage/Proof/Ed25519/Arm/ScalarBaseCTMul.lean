@@ -1051,15 +1051,15 @@ theorem combFrom_ok {w : State} {b p T : BitVec 32} {S : Nat} (E : CombEnv w b p
   rw [comb64_total hS, natCast_zsmul] at this
   exact this
 
-theorem combMultiply_ok {s : State} {b P T : BitVec 32} (hc : Ctx b s) (hl : AllLim s.mem b)
+theorem combMultiplyInline_ok {s : State} {b P T : BitVec 32} (hc : Ctx b s) (hl : AllLim s.mem b)
     (hp : s.gpr .r12 = P) (hfit : P.toNat + 32 ≤ 2 ^ 32)
     (hr : ∀ k < 32, InRegions (s.rd ++ s.wr) (State.addr P + BitVec.ofNat 64 k) 1)
     (hsep : (⟨State.addr P, 32⟩ : Region).Disjoint ⟨State.addr b, 8192⟩)
     (hT : TblAt s T) (hsym : s.syms combSym = T) (apart : (TBL T).Disjoint ⟨State.addr b, 8192⟩) :
-    WP isa (combMultiply umaal) s fun t => PointKeep b s t ∧ AllLim t.mem b ∧
+    WP isa (combMultiplyInline umaal) s fun t => PointKeep b s t ∧ AllLim t.mem b ∧
       Rep (point (env t.mem b) 0 1 2 3)
         (Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem (State.addr P) 32) • baseAff) := by
-  rw [combMultiply]
+  rw [combMultiplyInline]
   refine WP.seq (WP.mono (combPrepare_ok hc hl hp hfit hr hsep hT hsym apart) fun w ⟨kw, E, I⟩ => ?_)
   obtain hS := decodeLE_lt32 s.mem (State.addr P)
   refine WP.mono (combFrom_ok E I (by simpa using hS)) fun t ⟨kt, lt, rt⟩ => ⟨kw.trans kt, lt, rt⟩
