@@ -276,10 +276,13 @@ def baseline : Field where
   sqr := sqr
   a24 o a := mulSmall o a a24
 
-/-- `[o] = [a]^(2^n)`, for `n ≥ 1`: a square, then `n - 1` in place. -/
+/-- `[o] = [a]^(2^n)`, for `n ≥ 1`. In-place squarings share one loop
+body; otherwise the first square writes `o` before the remaining iterations. -/
 def sqn (F : Field) (o a n : Nat) : Prog isa :=
-  if n = 1 then .block (F.sqr o a) else
-  .seq (.block (F.sqr o a ++ [.mov32 .rbx (.imm (BitVec.ofNat 32 (n - 1)))]))
+  if n = 1 then .block (F.sqr o a) else if o = a then
+    .seq (.block [.mov32 .rbx (.imm (BitVec.ofNat 32 n))])
+      (.loop (.block (F.sqr o o ++ [.alu .sub .rbx (.imm 1)])) .ne)
+  else .seq (.block (F.sqr o a ++ [.mov32 .rbx (.imm (BitVec.ofNat 32 (n - 1)))]))
     (.loop (.block (F.sqr o o ++ [.alu .sub .rbx (.imm 1)])) .ne)
 
 /-! ## The ladder -/
