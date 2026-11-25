@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Aes.X86_64.Blocks
-public import VerifiedGarbage.Proof.Aes.X86_64.Sse.Copy
+public import VerifiedGarbage.Proof.Aes.X86_64.Sse.Engine
 public import VerifiedGarbage.Proof.Aes.Rounds
 public import VerifiedGarbage.Proof.Framework.X86_64.Abi
 import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
@@ -29,7 +29,7 @@ meta import VerifiedGarbage.Proof.Framework.Lit
 `encryptBlocks_verified` and `decryptBlocks_verified` prove
 `Impl.Aes.X86_64.encryptBlocks` and `decryptBlocks` against the contracts of
 `Spec/Aes/Contract.lean`, through `blocksX86_64`. The blocks go in batches of
-up to eight, through the buffer (`Sse/Copy.lean`, `Sse/Batch.lean`).
+up to eight, through the buffer (`Sse/Engine.lean`).
 -/
 
 @[expose] public section

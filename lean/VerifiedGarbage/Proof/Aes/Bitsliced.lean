@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
 public import VerifiedGarbage.Proof.Framework.Bitslice.Table
 public import VerifiedGarbage.Proof.Aes.InvRounds
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.PowLit
 
 /-!
 # Bitsliced words and AES states

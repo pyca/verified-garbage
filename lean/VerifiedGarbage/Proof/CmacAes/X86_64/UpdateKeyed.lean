@@ -18,7 +18,6 @@ meta import VerifiedGarbage.Proof.CmacAes.X86_64.UpdateCorrect
 meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
 public import VerifiedGarbage.Proof.Aes.X86_64.Ctr32
 public import VerifiedGarbage.Impl.CmacAes.X86_64.Keyed
-import VerifiedGarbage.Proof.Aes.X86_64.Sse.Ctr
 import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Aes.X86_64.Ctr32
