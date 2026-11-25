@@ -97,16 +97,23 @@ theorem half_bit {m : Mem} {b : Addr} {S : Nat → Spec.Aes.State} (h : BufIs m 
     BitVec.add_assoc, ← BitVec.ofNat_add, show 8 * (n / 8) + (8 * (n % 8) + j) / 8 = n by omega, h i hi n hn,
     show (8 * (n % 8) + j) % 8 = j by omega]
 
-theorem toBs_holds {s : State} (he : Env0 s) {m : Mem} {b : Addr} {S : Nat → Spec.Aes.State} (hB : BufIs m b S)
-    (hq : ∀ l < 2, ∀ k < 4, ∀ h < 2, lane q s l (k + 4 * h) =
-      m.readW (bufAddr b (k + 4 * l) + BitVec.ofNat 64 (8 * h)) 64) :
+theorem toBs_bits {s : State} (he : Env0 s) {S : Nat → Spec.Aes.State}
+    (hq : ∀ l < 2, ∀ k < 4, ∀ n < 16, ∀ j < 8,
+      (lane q s l (k + 4 * (n / 8))).getLsbD (8 * (n % 8) + j) = ((S (4 * l + k)).getD n 0).getLsbD j) :
     ∃ s', runBlock isa toBs s = some s' ∧ Keep s s' ∧ Holds false q s' S := by
   obtain ⟨s', e, k, h⟩ := layer_ok toBs_check (by decide +kernel) (by decide) he
   refine ⟨s', e, k, fun l hl j hj n hn k hk => ?_⟩
   rw [h l hl j hj _ (Nat.lt_of_lt_of_le (posAt_lt false hn hk) (by decide))]
   simp only [toBsT, termsXor, List.foldr_cons, List.foldr_nil, Bool.xor_false, byteAt_posAt false hn hk,
     posAt_mod false n hk]
-  rw [hq l hl k hk _ (by omega), half_bit hB (by omega) hn hj, Nat.add_comm k]
+  exact hq l hl k hk n hn j hj
+
+theorem toBs_holds {s : State} (he : Env0 s) {m : Mem} {b : Addr} {S : Nat → Spec.Aes.State} (hB : BufIs m b S)
+    (hq : ∀ l < 2, ∀ k < 4, ∀ h < 2, lane q s l (k + 4 * h) =
+      m.readW (bufAddr b (k + 4 * l) + BitVec.ofNat 64 (8 * h)) 64) :
+    ∃ s', runBlock isa toBs s = some s' ∧ Keep s s' ∧ Holds false q s' S :=
+  toBs_bits he fun l hl k hk n hn j hj => by
+    rw [hq l hl k hk _ (by omega), half_bit hB (by omega) hn hj, Nat.add_comm k]
 
 theorem fromBs_bits {s : State} (he : Env0 s) {S : Nat → Spec.Aes.State} (hS : Holds false q s S) :
     ∃ s', runBlock isa fromBs s = some s' ∧ Keep s s' ∧ ∀ l < 2, ∀ k < 4, ∀ n < 16, ∀ j < 8,
