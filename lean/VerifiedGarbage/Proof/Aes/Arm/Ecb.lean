@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Aes.Arm.Blocks
 public import VerifiedGarbage.Proof.Aes.Arm.Group
+public import VerifiedGarbage.Proof.Aes.Arm.Layers
 public import VerifiedGarbage.Spec.Aes.Contract
 import VerifiedGarbage.Proof.Framework.Arm.Bytes
 import VerifiedGarbage.Proof.Framework.Arm.Exec
