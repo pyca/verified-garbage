@@ -39,6 +39,8 @@ theorem before_ct : ConstantTime isa (fun _=>True)
     (by taint_decide_sum [P521.mulPSum, P521.mulNSum, P521.prodPSum, P521.sqrPSum, P521.validateSum, P521.scalarsSum,
       P521.nPowSum, P521.uvSum])
 
+theorem double_ct : FieldCT P521Joint.double := by reg_ct [.x0]
+
 theorem tail_ct : FieldCT (VG.Impl.Ecdsa.Verify.AArch64.Cfg.tail p521) := by reg_ct [.x0]
 theorem mixed_checks : JacMixedChecks P521Joint.K P521Joint.K.R P521Joint.K.E P521Joint.K.D where
   zero := by
