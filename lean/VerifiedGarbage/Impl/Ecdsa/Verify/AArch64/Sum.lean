@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64
+public import VerifiedGarbage.Spec.Secp256k1
 
 /-! General complete addition for the public joint verification loops. The
 five-word curve shares this large kernel across table setup and both doublings. -/
@@ -18,8 +19,16 @@ def inlineSum (c : Ecdsa.AArch64.Cfg) : Prog isa :=
     (.block (copy c.n (c.sl RX) (c.sl DX) ++
       (copy c.n (c.sl RY) (c.sl DY) ++ copy c.n (c.sl RZ) (c.sl DZ))))
 
-/-- Share the five-word kernel; the other measured layouts remain inline. -/
+/-- The measured kernels large enough to share across the public loop. -/
+def sharedName (c : Ecdsa.AArch64.Cfg) : Option String :=
+  if c.n = 5 then some "vg_brainpoolp320r1_verify_add"
+  else if c.C.p = Spec.Secp256k1.p then some "vg_secp256k1_verify_add"
+  else none
+
+/-- Share the selected kernels across table setup and the joint loop. -/
 def sum (c : Ecdsa.AArch64.Cfg) : Prog isa :=
-  if c.n = 5 then .call "vg_brainpoolp320r1_verify_add" (inlineSum c) else inlineSum c
+  match sharedName c with
+  | some name => .call name (inlineSum c)
+  | none => inlineSum c
 
 end VG.Impl.Ecdsa.Verify.AArch64.GeneralSum
