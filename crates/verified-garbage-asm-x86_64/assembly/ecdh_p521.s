@@ -14686,36 +14686,130 @@ vg_ecdh_p521_adx:
 	mov ebx, 131
 217:
 	sub rbx, 1
+	mov rbp, QWORD PTR [rdi+1144]
+	mov r8, QWORD PTR [rdi+1152]
+	mov r9, QWORD PTR [rdi+1160]
+	mov r10, QWORD PTR [rdi+1168]
+	mov r11, QWORD PTR [rdi+1176]
+	mov r12, QWORD PTR [rdi+1184]
+	mov r13, QWORD PTR [rdi+1192]
+	mov r14, QWORD PTR [rdi+1200]
+	mov r15, QWORD PTR [rdi+1208]
+	add rbp, QWORD PTR [rdi+1144]
+	adc r8, QWORD PTR [rdi+1152]
+	adc r9, QWORD PTR [rdi+1160]
+	adc r10, QWORD PTR [rdi+1168]
+	adc r11, QWORD PTR [rdi+1176]
+	adc r12, QWORD PTR [rdi+1184]
+	adc r13, QWORD PTR [rdi+1192]
+	adc r14, QWORD PTR [rdi+1200]
+	adc r15, QWORD PTR [rdi+1208]
+	mov QWORD PTR [rdi+1144], rbp
+	mov QWORD PTR [rdi+1152], r8
+	mov QWORD PTR [rdi+1160], r9
+	mov QWORD PTR [rdi+1168], r10
+	mov QWORD PTR [rdi+1176], r11
+	mov QWORD PTR [rdi+1184], r12
+	mov QWORD PTR [rdi+1192], r13
+	mov QWORD PTR [rdi+1200], r14
+	mov QWORD PTR [rdi+1208], r15
 	add rbx, 8192
 218:
-	mov r12, rsi
-	mov esi, 1720
-	mov edx, 1216
-	mov ecx, 1216
-	call {vg_p521_mul_mod_p_adx}
-	mov rsi, r12
-	add rdi, 1072
-	mov rbp, QWORD PTR [rdi]
-	mov r8, QWORD PTR [rdi+8]
-	mov r9, QWORD PTR [rdi+16]
-	mov r10, QWORD PTR [rdi+24]
-	mov r11, QWORD PTR [rdi+32]
-	mov r12, QWORD PTR [rdi+40]
-	mov r13, QWORD PTR [rdi+48]
-	mov r14, QWORD PTR [rdi+56]
-	mov r15, QWORD PTR [rdi+64]
-	add rdi, 648
-	sub rbp, QWORD PTR [rdi]
-	sbb r8, QWORD PTR [rdi+8]
-	sbb r9, QWORD PTR [rdi+16]
-	sbb r10, QWORD PTR [rdi+24]
-	sbb r11, QWORD PTR [rdi+32]
-	sbb r12, QWORD PTR [rdi+40]
-	sbb r13, QWORD PTR [rdi+48]
-	sbb r14, QWORD PTR [rdi+56]
-	sbb r15, QWORD PTR [rdi+64]
+	movq xmm7, rbx
+	mov rbx, rdi
+	add rbx, 1216
+	call {vg_p521_win_sqr_adx}
+	mov rax, r15
+	shr rax, 9
+	xor rax, 1
+	sub rbp, rax
+	sbb r8, 0
+	sbb r9, 0
+	sbb r10, 0
+	sbb r11, 0
+	sbb r12, 0
+	sbb r13, 0
+	sbb r14, 0
+	sbb r15, 0
+	and r15, 511
+	mov QWORD PTR [rdi+1720], rbp
+	mov QWORD PTR [rdi+1728], r8
+	mov QWORD PTR [rdi+1736], r9
+	mov QWORD PTR [rdi+1744], r10
+	mov QWORD PTR [rdi+1752], r11
+	mov QWORD PTR [rdi+1760], r12
+	mov QWORD PTR [rdi+1768], r13
+	mov QWORD PTR [rdi+1776], r14
+	mov QWORD PTR [rdi+1784], r15
+	movq rbx, xmm7
+	mov rbp, QWORD PTR [rdi+1720]
+	mov r8, QWORD PTR [rdi+1728]
+	mov r9, QWORD PTR [rdi+1736]
+	mov r10, QWORD PTR [rdi+1744]
+	mov r11, QWORD PTR [rdi+1752]
+	mov r12, QWORD PTR [rdi+1760]
+	mov r13, QWORD PTR [rdi+1768]
+	mov r14, QWORD PTR [rdi+1776]
+	mov r15, QWORD PTR [rdi+1784]
+	xor rbp, -1
+	xor r8, -1
+	xor r9, -1
+	xor r10, -1
+	xor r11, -1
+	xor r12, -1
+	xor r13, -1
+	xor r14, -1
+	xor r15, -1
+	add rbp, QWORD PTR [rdi+1072]
+	adc r8, QWORD PTR [rdi+1080]
+	adc r9, QWORD PTR [rdi+1088]
+	adc r10, QWORD PTR [rdi+1096]
+	adc r11, QWORD PTR [rdi+1104]
+	adc r12, QWORD PTR [rdi+1112]
+	adc r13, QWORD PTR [rdi+1120]
+	adc r14, QWORD PTR [rdi+1128]
+	adc r15, QWORD PTR [rdi+1136]
 	add r15, 512
-	add rdi, 216
+	mov QWORD PTR [rdi+1792], rbp
+	mov QWORD PTR [rdi+1800], r8
+	mov QWORD PTR [rdi+1808], r9
+	mov QWORD PTR [rdi+1816], r10
+	mov QWORD PTR [rdi+1824], r11
+	mov QWORD PTR [rdi+1832], r12
+	mov QWORD PTR [rdi+1840], r13
+	mov QWORD PTR [rdi+1848], r14
+	mov QWORD PTR [rdi+1856], r15
+	mov rbp, QWORD PTR [rdi+1072]
+	mov r8, QWORD PTR [rdi+1080]
+	mov r9, QWORD PTR [rdi+1088]
+	mov r10, QWORD PTR [rdi+1096]
+	mov r11, QWORD PTR [rdi+1104]
+	mov r12, QWORD PTR [rdi+1112]
+	mov r13, QWORD PTR [rdi+1120]
+	mov r14, QWORD PTR [rdi+1128]
+	mov r15, QWORD PTR [rdi+1136]
+	add rbp, QWORD PTR [rdi+1720]
+	adc r8, QWORD PTR [rdi+1728]
+	adc r9, QWORD PTR [rdi+1736]
+	adc r10, QWORD PTR [rdi+1744]
+	adc r11, QWORD PTR [rdi+1752]
+	adc r12, QWORD PTR [rdi+1760]
+	adc r13, QWORD PTR [rdi+1768]
+	adc r14, QWORD PTR [rdi+1776]
+	adc r15, QWORD PTR [rdi+1784]
+	mov QWORD PTR [rdi+1720], rbp
+	mov QWORD PTR [rdi+1728], r8
+	mov QWORD PTR [rdi+1736], r9
+	mov QWORD PTR [rdi+1744], r10
+	mov QWORD PTR [rdi+1752], r11
+	mov QWORD PTR [rdi+1760], r12
+	mov QWORD PTR [rdi+1768], r13
+	mov QWORD PTR [rdi+1776], r14
+	mov QWORD PTR [rdi+1784], r15
+	movq xmm7, rbx
+	mov rbx, rdi
+	add rbx, 1144
+	call {vg_p521_win_sqr_adx}
 	mov rax, r15
 	shr rax, 9
 	xor rax, 1
@@ -14729,39 +14823,23 @@ vg_ecdh_p521_adx:
 	sbb r14, 0
 	sbb r15, 0
 	and r15, 511
-	mov QWORD PTR [rdi], rbp
-	mov QWORD PTR [rdi+8], r8
-	mov QWORD PTR [rdi+16], r9
-	mov QWORD PTR [rdi+24], r10
-	mov QWORD PTR [rdi+32], r11
-	mov QWORD PTR [rdi+40], r12
-	mov QWORD PTR [rdi+48], r13
-	mov QWORD PTR [rdi+56], r14
-	mov QWORD PTR [rdi+64], r15
-	sub rdi, 1936
-	add rdi, 1072
-	mov rbp, QWORD PTR [rdi]
-	mov r8, QWORD PTR [rdi+8]
-	mov r9, QWORD PTR [rdi+16]
-	mov r10, QWORD PTR [rdi+24]
-	mov r11, QWORD PTR [rdi+32]
-	mov r12, QWORD PTR [rdi+40]
-	mov r13, QWORD PTR [rdi+48]
-	mov r14, QWORD PTR [rdi+56]
-	mov r15, QWORD PTR [rdi+64]
-	add rdi, 648
-	xor eax, eax
-	cmp rax, -1
-	adc rbp, QWORD PTR [rdi]
-	adc r8, QWORD PTR [rdi+8]
-	adc r9, QWORD PTR [rdi+16]
-	adc r10, QWORD PTR [rdi+24]
-	adc r11, QWORD PTR [rdi+32]
-	adc r12, QWORD PTR [rdi+40]
-	adc r13, QWORD PTR [rdi+48]
-	adc r14, QWORD PTR [rdi+56]
-	adc r15, QWORD PTR [rdi+64]
-	add rdi, -432
+	mov QWORD PTR [rdi+1864], rbp
+	mov QWORD PTR [rdi+1872], r8
+	mov QWORD PTR [rdi+1880], r9
+	mov QWORD PTR [rdi+1888], r10
+	mov QWORD PTR [rdi+1896], r11
+	mov QWORD PTR [rdi+1904], r12
+	mov QWORD PTR [rdi+1912], r13
+	mov QWORD PTR [rdi+1920], r14
+	mov QWORD PTR [rdi+1928], r15
+	movq rbx, xmm7
+	movq xmm7, rbx
+	movq xmm6, rsi
+	mov rsi, rdi
+	add rsi, 1792
+	mov rbx, rdi
+	add rbx, 1720
+	call {vg_p521_win_mul_adx}
 	mov rax, r15
 	shr rax, 9
 	xor rax, 1
@@ -14775,39 +14853,21 @@ vg_ecdh_p521_adx:
 	sbb r14, 0
 	sbb r15, 0
 	and r15, 511
-	mov QWORD PTR [rdi], rbp
-	mov QWORD PTR [rdi+8], r8
-	mov QWORD PTR [rdi+16], r9
-	mov QWORD PTR [rdi+24], r10
-	mov QWORD PTR [rdi+32], r11
-	mov QWORD PTR [rdi+40], r12
-	mov QWORD PTR [rdi+48], r13
-	mov QWORD PTR [rdi+56], r14
-	mov QWORD PTR [rdi+64], r15
-	sub rdi, 1288
-	add rdi, 1144
-	mov rbp, QWORD PTR [rdi]
-	mov r8, QWORD PTR [rdi+8]
-	mov r9, QWORD PTR [rdi+16]
-	mov r10, QWORD PTR [rdi+24]
-	mov r11, QWORD PTR [rdi+32]
-	mov r12, QWORD PTR [rdi+40]
-	mov r13, QWORD PTR [rdi+48]
-	mov r14, QWORD PTR [rdi+56]
-	mov r15, QWORD PTR [rdi+64]
-	add rdi, 72
-	xor eax, eax
-	cmp rax, -1
-	adc rbp, QWORD PTR [rdi]
-	adc r8, QWORD PTR [rdi+8]
-	adc r9, QWORD PTR [rdi+16]
-	adc r10, QWORD PTR [rdi+24]
-	adc r11, QWORD PTR [rdi+32]
-	adc r12, QWORD PTR [rdi+40]
-	adc r13, QWORD PTR [rdi+48]
-	adc r14, QWORD PTR [rdi+56]
-	adc r15, QWORD PTR [rdi+64]
-	add rdi, 216
+	mov QWORD PTR [rdi+1792], rbp
+	mov QWORD PTR [rdi+1800], r8
+	mov QWORD PTR [rdi+1808], r9
+	mov QWORD PTR [rdi+1816], r10
+	mov QWORD PTR [rdi+1824], r11
+	mov QWORD PTR [rdi+1832], r12
+	mov QWORD PTR [rdi+1840], r13
+	mov QWORD PTR [rdi+1848], r14
+	mov QWORD PTR [rdi+1856], r15
+	movq rbx, xmm7
+	movq rsi, xmm6
+	movq xmm7, rbx
+	mov rbx, rdi
+	add rbx, 1864
+	call {vg_p521_win_sqr_adx}
 	mov rax, r15
 	shr rax, 9
 	xor rax, 1
@@ -14821,44 +14881,25 @@ vg_ecdh_p521_adx:
 	sbb r14, 0
 	sbb r15, 0
 	and r15, 511
-	mov QWORD PTR [rdi], rbp
-	mov QWORD PTR [rdi+8], r8
-	mov QWORD PTR [rdi+16], r9
-	mov QWORD PTR [rdi+24], r10
-	mov QWORD PTR [rdi+32], r11
-	mov QWORD PTR [rdi+40], r12
-	mov QWORD PTR [rdi+48], r13
-	mov QWORD PTR [rdi+56], r14
-	mov QWORD PTR [rdi+64], r15
-	sub rdi, 1432
-	mov r12, rsi
-	mov esi, 1792
-	mov edx, 1144
-	mov ecx, 1144
-	call {vg_p521_mul_mod_p_adx}
-	mov rsi, r12
-	mov r12, rsi
-	mov esi, 1936
-	mov edx, 1936
-	mov ecx, 1288
-	call {vg_p521_mul_mod_p_adx}
-	mov rsi, r12
-	mov r12, rsi
-	mov esi, 1864
-	mov edx, 1072
-	mov ecx, 1792
-	call {vg_p521_mul_mod_p_adx}
-	mov rsi, r12
-	add rdi, 1936
-	mov rbp, QWORD PTR [rdi]
-	mov r8, QWORD PTR [rdi+8]
-	mov r9, QWORD PTR [rdi+16]
-	mov r10, QWORD PTR [rdi+24]
-	mov r11, QWORD PTR [rdi+32]
-	mov r12, QWORD PTR [rdi+40]
-	mov r13, QWORD PTR [rdi+48]
-	mov r14, QWORD PTR [rdi+56]
-	mov r15, QWORD PTR [rdi+64]
+	mov QWORD PTR [rdi+1720], rbp
+	mov QWORD PTR [rdi+1728], r8
+	mov QWORD PTR [rdi+1736], r9
+	mov QWORD PTR [rdi+1744], r10
+	mov QWORD PTR [rdi+1752], r11
+	mov QWORD PTR [rdi+1760], r12
+	mov QWORD PTR [rdi+1768], r13
+	mov QWORD PTR [rdi+1776], r14
+	mov QWORD PTR [rdi+1784], r15
+	movq rbx, xmm7
+	mov rbp, QWORD PTR [rdi+1792]
+	mov r8, QWORD PTR [rdi+1800]
+	mov r9, QWORD PTR [rdi+1808]
+	mov r10, QWORD PTR [rdi+1816]
+	mov r11, QWORD PTR [rdi+1824]
+	mov r12, QWORD PTR [rdi+1832]
+	mov r13, QWORD PTR [rdi+1840]
+	mov r14, QWORD PTR [rdi+1848]
+	mov r15, QWORD PTR [rdi+1856]
 	add rbp, rbp
 	adc r8, r8
 	adc r9, r9
@@ -14868,44 +14909,31 @@ vg_ecdh_p521_adx:
 	adc r13, r13
 	adc r14, r14
 	adc r15, r15
-	mov rax, r15
-	shr rax, 9
-	add rbp, rax
-	and r15, 511
-	add rdi, -648
-	mov QWORD PTR [rdi], rbp
-	mov QWORD PTR [rdi+8], r8
-	mov QWORD PTR [rdi+16], r9
-	mov QWORD PTR [rdi+24], r10
-	mov QWORD PTR [rdi+32], r11
-	mov QWORD PTR [rdi+40], r12
-	mov QWORD PTR [rdi+48], r13
-	mov QWORD PTR [rdi+56], r14
-	mov QWORD PTR [rdi+64], r15
-	sub rdi, 1288
-	add rdi, 1288
-	mov rbp, QWORD PTR [rdi]
-	mov r8, QWORD PTR [rdi+8]
-	mov r9, QWORD PTR [rdi+16]
-	mov r10, QWORD PTR [rdi+24]
-	mov r11, QWORD PTR [rdi+32]
-	mov r12, QWORD PTR [rdi+40]
-	mov r13, QWORD PTR [rdi+48]
-	mov r14, QWORD PTR [rdi+56]
-	mov r15, QWORD PTR [rdi+64]
-	add rdi, 648
-	xor eax, eax
-	cmp rax, -1
-	adc rbp, QWORD PTR [rdi]
-	adc r8, QWORD PTR [rdi+8]
-	adc r9, QWORD PTR [rdi+16]
-	adc r10, QWORD PTR [rdi+24]
-	adc r11, QWORD PTR [rdi+32]
-	adc r12, QWORD PTR [rdi+40]
-	adc r13, QWORD PTR [rdi+48]
-	adc r14, QWORD PTR [rdi+56]
-	adc r15, QWORD PTR [rdi+64]
-	add rdi, 0
+	add rbp, QWORD PTR [rdi+1792]
+	adc r8, QWORD PTR [rdi+1800]
+	adc r9, QWORD PTR [rdi+1808]
+	adc r10, QWORD PTR [rdi+1816]
+	adc r11, QWORD PTR [rdi+1824]
+	adc r12, QWORD PTR [rdi+1832]
+	adc r13, QWORD PTR [rdi+1840]
+	adc r14, QWORD PTR [rdi+1848]
+	adc r15, QWORD PTR [rdi+1856]
+	mov QWORD PTR [rdi+1792], rbp
+	mov QWORD PTR [rdi+1800], r8
+	mov QWORD PTR [rdi+1808], r9
+	mov QWORD PTR [rdi+1816], r10
+	mov QWORD PTR [rdi+1824], r11
+	mov QWORD PTR [rdi+1832], r12
+	mov QWORD PTR [rdi+1840], r13
+	mov QWORD PTR [rdi+1848], r14
+	mov QWORD PTR [rdi+1856], r15
+	movq xmm7, rbx
+	movq xmm6, rsi
+	mov rsi, rdi
+	add rsi, 1072
+	mov rbx, rdi
+	add rbx, 1864
+	call {vg_p521_win_mul_adx}
 	mov rax, r15
 	shr rax, 9
 	xor rax, 1
@@ -14919,32 +14947,62 @@ vg_ecdh_p521_adx:
 	sbb r14, 0
 	sbb r15, 0
 	and r15, 511
-	mov QWORD PTR [rdi], rbp
-	mov QWORD PTR [rdi+8], r8
-	mov QWORD PTR [rdi+16], r9
-	mov QWORD PTR [rdi+24], r10
-	mov QWORD PTR [rdi+32], r11
-	mov QWORD PTR [rdi+40], r12
-	mov QWORD PTR [rdi+48], r13
-	mov QWORD PTR [rdi+56], r14
-	mov QWORD PTR [rdi+64], r15
-	sub rdi, 1936
-	mov r12, rsi
-	mov esi, 1432
-	mov edx, 1432
-	mov ecx, 1432
-	call {vg_p521_mul_mod_p_adx}
-	mov rsi, r12
-	add rdi, 1864
-	mov rbp, QWORD PTR [rdi]
-	mov r8, QWORD PTR [rdi+8]
-	mov r9, QWORD PTR [rdi+16]
-	mov r10, QWORD PTR [rdi+24]
-	mov r11, QWORD PTR [rdi+32]
-	mov r12, QWORD PTR [rdi+40]
-	mov r13, QWORD PTR [rdi+48]
-	mov r14, QWORD PTR [rdi+56]
-	mov r15, QWORD PTR [rdi+64]
+	mov QWORD PTR [rdi+1864], rbp
+	mov QWORD PTR [rdi+1872], r8
+	mov QWORD PTR [rdi+1880], r9
+	mov QWORD PTR [rdi+1888], r10
+	mov QWORD PTR [rdi+1896], r11
+	mov QWORD PTR [rdi+1904], r12
+	mov QWORD PTR [rdi+1912], r13
+	mov QWORD PTR [rdi+1920], r14
+	mov QWORD PTR [rdi+1928], r15
+	movq rbx, xmm7
+	movq rsi, xmm6
+	movq xmm7, rbx
+	mov rbx, rdi
+	add rbx, 1792
+	call {vg_p521_win_sqr_adx}
+	mov rax, r15
+	shr rax, 9
+	xor rax, 1
+	sub rbp, rax
+	sbb r8, 0
+	sbb r9, 0
+	sbb r10, 0
+	sbb r11, 0
+	sbb r12, 0
+	sbb r13, 0
+	sbb r14, 0
+	sbb r15, 0
+	and r15, 511
+	mov QWORD PTR [rdi+1936], rbp
+	mov QWORD PTR [rdi+1944], r8
+	mov QWORD PTR [rdi+1952], r9
+	mov QWORD PTR [rdi+1960], r10
+	mov QWORD PTR [rdi+1968], r11
+	mov QWORD PTR [rdi+1976], r12
+	mov QWORD PTR [rdi+1984], r13
+	mov QWORD PTR [rdi+1992], r14
+	mov QWORD PTR [rdi+2000], r15
+	movq rbx, xmm7
+	mov rbp, QWORD PTR [rdi+1864]
+	mov r8, QWORD PTR [rdi+1872]
+	mov r9, QWORD PTR [rdi+1880]
+	mov r10, QWORD PTR [rdi+1888]
+	mov r11, QWORD PTR [rdi+1896]
+	mov r12, QWORD PTR [rdi+1904]
+	mov r13, QWORD PTR [rdi+1912]
+	mov r14, QWORD PTR [rdi+1920]
+	mov r15, QWORD PTR [rdi+1928]
+	xor rbp, -1
+	xor r8, -1
+	xor r9, -1
+	xor r10, -1
+	xor r11, -1
+	xor r12, -1
+	xor r13, -1
+	xor r14, -1
+	xor r15, -1
 	add rbp, rbp
 	adc r8, r8
 	adc r9, r9
@@ -14954,37 +15012,405 @@ vg_ecdh_p521_adx:
 	adc r13, r13
 	adc r14, r14
 	adc r15, r15
+	add rbp, QWORD PTR [rdi+1936]
+	adc r8, QWORD PTR [rdi+1944]
+	adc r9, QWORD PTR [rdi+1952]
+	adc r10, QWORD PTR [rdi+1960]
+	adc r11, QWORD PTR [rdi+1968]
+	adc r12, QWORD PTR [rdi+1976]
+	adc r13, QWORD PTR [rdi+1984]
+	adc r14, QWORD PTR [rdi+1992]
+	adc r15, QWORD PTR [rdi+2000]
+	add r15, 1024
 	mov rax, r15
 	shr rax, 9
-	add rbp, rax
 	and r15, 511
-	add rdi, 0
-	mov QWORD PTR [rdi], rbp
-	mov QWORD PTR [rdi+8], r8
-	mov QWORD PTR [rdi+16], r9
-	mov QWORD PTR [rdi+24], r10
-	mov QWORD PTR [rdi+32], r11
-	mov QWORD PTR [rdi+40], r12
-	mov QWORD PTR [rdi+48], r13
-	mov QWORD PTR [rdi+56], r14
-	mov QWORD PTR [rdi+64], r15
-	sub rdi, 1864
-	mov r12, rsi
-	mov esi, 1288
-	mov edx, 1936
-	mov ecx, 1936
-	call {vg_p521_mul_mod_p_adx}
-	mov rsi, r12
-	add rdi, 1864
-	mov rbp, QWORD PTR [rdi]
-	mov r8, QWORD PTR [rdi+8]
-	mov r9, QWORD PTR [rdi+16]
-	mov r10, QWORD PTR [rdi+24]
-	mov r11, QWORD PTR [rdi+32]
-	mov r12, QWORD PTR [rdi+40]
-	mov r13, QWORD PTR [rdi+48]
-	mov r14, QWORD PTR [rdi+56]
-	mov r15, QWORD PTR [rdi+64]
+	add rbp, rax
+	adc r8, 0
+	adc r9, 0
+	adc r10, 0
+	adc r11, 0
+	adc r12, 0
+	adc r13, 0
+	adc r14, 0
+	adc r15, 0
+	mov rax, r15
+	shr rax, 9
+	and r15, 511
+	add rbp, rax
+	mov QWORD PTR [rdi+1072], rbp
+	mov QWORD PTR [rdi+1080], r8
+	mov QWORD PTR [rdi+1088], r9
+	mov QWORD PTR [rdi+1096], r10
+	mov QWORD PTR [rdi+1104], r11
+	mov QWORD PTR [rdi+1112], r12
+	mov QWORD PTR [rdi+1120], r13
+	mov QWORD PTR [rdi+1128], r14
+	mov QWORD PTR [rdi+1136], r15
+	movq xmm7, rbx
+	movq xmm6, rsi
+	mov rsi, rdi
+	add rsi, 1144
+	mov rbx, rdi
+	add rbx, 1216
+	call {vg_p521_win_mul_adx}
+	mov rax, r15
+	shr rax, 9
+	xor rax, 1
+	sub rbp, rax
+	sbb r8, 0
+	sbb r9, 0
+	sbb r10, 0
+	sbb r11, 0
+	sbb r12, 0
+	sbb r13, 0
+	sbb r14, 0
+	sbb r15, 0
+	and r15, 511
+	mov QWORD PTR [rdi+1216], rbp
+	mov QWORD PTR [rdi+1224], r8
+	mov QWORD PTR [rdi+1232], r9
+	mov QWORD PTR [rdi+1240], r10
+	mov QWORD PTR [rdi+1248], r11
+	mov QWORD PTR [rdi+1256], r12
+	mov QWORD PTR [rdi+1264], r13
+	mov QWORD PTR [rdi+1272], r14
+	mov QWORD PTR [rdi+1280], r15
+	movq rbx, xmm7
+	movq rsi, xmm6
+	mov rbp, QWORD PTR [rdi+1072]
+	mov r8, QWORD PTR [rdi+1080]
+	mov r9, QWORD PTR [rdi+1088]
+	mov r10, QWORD PTR [rdi+1096]
+	mov r11, QWORD PTR [rdi+1104]
+	mov r12, QWORD PTR [rdi+1112]
+	mov r13, QWORD PTR [rdi+1120]
+	mov r14, QWORD PTR [rdi+1128]
+	mov r15, QWORD PTR [rdi+1136]
+	xor rbp, -1
+	xor r8, -1
+	xor r9, -1
+	xor r10, -1
+	xor r11, -1
+	xor r12, -1
+	xor r13, -1
+	xor r14, -1
+	xor r15, -1
+	add rbp, QWORD PTR [rdi+1864]
+	adc r8, QWORD PTR [rdi+1872]
+	adc r9, QWORD PTR [rdi+1880]
+	adc r10, QWORD PTR [rdi+1888]
+	adc r11, QWORD PTR [rdi+1896]
+	adc r12, QWORD PTR [rdi+1904]
+	adc r13, QWORD PTR [rdi+1912]
+	adc r14, QWORD PTR [rdi+1920]
+	adc r15, QWORD PTR [rdi+1928]
+	add r15, 512
+	mov QWORD PTR [rdi+1864], rbp
+	mov QWORD PTR [rdi+1872], r8
+	mov QWORD PTR [rdi+1880], r9
+	mov QWORD PTR [rdi+1888], r10
+	mov QWORD PTR [rdi+1896], r11
+	mov QWORD PTR [rdi+1904], r12
+	mov QWORD PTR [rdi+1912], r13
+	mov QWORD PTR [rdi+1920], r14
+	mov QWORD PTR [rdi+1928], r15
+	mov rbp, QWORD PTR [rdi+1792]
+	mov r8, QWORD PTR [rdi+1800]
+	mov r9, QWORD PTR [rdi+1808]
+	mov r10, QWORD PTR [rdi+1816]
+	mov r11, QWORD PTR [rdi+1824]
+	mov r12, QWORD PTR [rdi+1832]
+	mov r13, QWORD PTR [rdi+1840]
+	mov r14, QWORD PTR [rdi+1848]
+	mov r15, QWORD PTR [rdi+1856]
+	add rbp, QWORD PTR [rdi+1792]
+	adc r8, QWORD PTR [rdi+1800]
+	adc r9, QWORD PTR [rdi+1808]
+	adc r10, QWORD PTR [rdi+1816]
+	adc r11, QWORD PTR [rdi+1824]
+	adc r12, QWORD PTR [rdi+1832]
+	adc r13, QWORD PTR [rdi+1840]
+	adc r14, QWORD PTR [rdi+1848]
+	adc r15, QWORD PTR [rdi+1856]
+	mov QWORD PTR [rdi+1792], rbp
+	mov QWORD PTR [rdi+1800], r8
+	mov QWORD PTR [rdi+1808], r9
+	mov QWORD PTR [rdi+1816], r10
+	mov QWORD PTR [rdi+1824], r11
+	mov QWORD PTR [rdi+1832], r12
+	mov QWORD PTR [rdi+1840], r13
+	mov QWORD PTR [rdi+1848], r14
+	mov QWORD PTR [rdi+1856], r15
+	movq xmm7, rbx
+	movq xmm6, rsi
+	mov rsi, rdi
+	add rsi, 1792
+	mov rbx, rdi
+	add rbx, 1864
+	call {vg_p521_win_mul_adx}
+	mov rax, r15
+	shr rax, 9
+	xor rax, 1
+	sub rbp, rax
+	sbb r8, 0
+	sbb r9, 0
+	sbb r10, 0
+	sbb r11, 0
+	sbb r12, 0
+	sbb r13, 0
+	sbb r14, 0
+	sbb r15, 0
+	and r15, 511
+	mov QWORD PTR [rdi+1864], rbp
+	mov QWORD PTR [rdi+1872], r8
+	mov QWORD PTR [rdi+1880], r9
+	mov QWORD PTR [rdi+1888], r10
+	mov QWORD PTR [rdi+1896], r11
+	mov QWORD PTR [rdi+1904], r12
+	mov QWORD PTR [rdi+1912], r13
+	mov QWORD PTR [rdi+1920], r14
+	mov QWORD PTR [rdi+1928], r15
+	movq rbx, xmm7
+	movq rsi, xmm6
+	mov rbp, QWORD PTR [rdi+1720]
+	mov r8, QWORD PTR [rdi+1728]
+	mov r9, QWORD PTR [rdi+1736]
+	mov r10, QWORD PTR [rdi+1744]
+	mov r11, QWORD PTR [rdi+1752]
+	mov r12, QWORD PTR [rdi+1760]
+	mov r13, QWORD PTR [rdi+1768]
+	mov r14, QWORD PTR [rdi+1776]
+	mov r15, QWORD PTR [rdi+1784]
+	xor rbp, -1
+	xor r8, -1
+	xor r9, -1
+	xor r10, -1
+	xor r11, -1
+	xor r12, -1
+	xor r13, -1
+	xor r14, -1
+	xor r15, -1
+	add rbp, QWORD PTR [rdi+1864]
+	adc r8, QWORD PTR [rdi+1872]
+	adc r9, QWORD PTR [rdi+1880]
+	adc r10, QWORD PTR [rdi+1888]
+	adc r11, QWORD PTR [rdi+1896]
+	adc r12, QWORD PTR [rdi+1904]
+	adc r13, QWORD PTR [rdi+1912]
+	adc r14, QWORD PTR [rdi+1920]
+	adc r15, QWORD PTR [rdi+1928]
+	add r15, 512
+	mov rax, r15
+	shr rax, 9
+	and r15, 511
+	add rbp, rax
+	adc r8, 0
+	adc r9, 0
+	adc r10, 0
+	adc r11, 0
+	adc r12, 0
+	adc r13, 0
+	adc r14, 0
+	adc r15, 0
+	mov rax, r15
+	shr rax, 9
+	and r15, 511
+	add rbp, rax
+	mov QWORD PTR [rdi+1144], rbp
+	mov QWORD PTR [rdi+1152], r8
+	mov QWORD PTR [rdi+1160], r9
+	mov QWORD PTR [rdi+1168], r10
+	mov QWORD PTR [rdi+1176], r11
+	mov QWORD PTR [rdi+1184], r12
+	mov QWORD PTR [rdi+1192], r13
+	mov QWORD PTR [rdi+1200], r14
+	mov QWORD PTR [rdi+1208], r15
+	movq xmm7, rbx
+	mov rbx, rdi
+	add rbx, 1216
+	call {vg_p521_win_sqr_adx}
+	mov rax, r15
+	shr rax, 9
+	xor rax, 1
+	sub rbp, rax
+	sbb r8, 0
+	sbb r9, 0
+	sbb r10, 0
+	sbb r11, 0
+	sbb r12, 0
+	sbb r13, 0
+	sbb r14, 0
+	sbb r15, 0
+	and r15, 511
+	mov QWORD PTR [rdi+1720], rbp
+	mov QWORD PTR [rdi+1728], r8
+	mov QWORD PTR [rdi+1736], r9
+	mov QWORD PTR [rdi+1744], r10
+	mov QWORD PTR [rdi+1752], r11
+	mov QWORD PTR [rdi+1760], r12
+	mov QWORD PTR [rdi+1768], r13
+	mov QWORD PTR [rdi+1776], r14
+	mov QWORD PTR [rdi+1784], r15
+	movq rbx, xmm7
+	mov rbp, QWORD PTR [rdi+1720]
+	mov r8, QWORD PTR [rdi+1728]
+	mov r9, QWORD PTR [rdi+1736]
+	mov r10, QWORD PTR [rdi+1744]
+	mov r11, QWORD PTR [rdi+1752]
+	mov r12, QWORD PTR [rdi+1760]
+	mov r13, QWORD PTR [rdi+1768]
+	mov r14, QWORD PTR [rdi+1776]
+	mov r15, QWORD PTR [rdi+1784]
+	xor rbp, -1
+	xor r8, -1
+	xor r9, -1
+	xor r10, -1
+	xor r11, -1
+	xor r12, -1
+	xor r13, -1
+	xor r14, -1
+	xor r15, -1
+	add rbp, QWORD PTR [rdi+1072]
+	adc r8, QWORD PTR [rdi+1080]
+	adc r9, QWORD PTR [rdi+1088]
+	adc r10, QWORD PTR [rdi+1096]
+	adc r11, QWORD PTR [rdi+1104]
+	adc r12, QWORD PTR [rdi+1112]
+	adc r13, QWORD PTR [rdi+1120]
+	adc r14, QWORD PTR [rdi+1128]
+	adc r15, QWORD PTR [rdi+1136]
+	add r15, 512
+	mov QWORD PTR [rdi+1792], rbp
+	mov QWORD PTR [rdi+1800], r8
+	mov QWORD PTR [rdi+1808], r9
+	mov QWORD PTR [rdi+1816], r10
+	mov QWORD PTR [rdi+1824], r11
+	mov QWORD PTR [rdi+1832], r12
+	mov QWORD PTR [rdi+1840], r13
+	mov QWORD PTR [rdi+1848], r14
+	mov QWORD PTR [rdi+1856], r15
+	mov rbp, QWORD PTR [rdi+1072]
+	mov r8, QWORD PTR [rdi+1080]
+	mov r9, QWORD PTR [rdi+1088]
+	mov r10, QWORD PTR [rdi+1096]
+	mov r11, QWORD PTR [rdi+1104]
+	mov r12, QWORD PTR [rdi+1112]
+	mov r13, QWORD PTR [rdi+1120]
+	mov r14, QWORD PTR [rdi+1128]
+	mov r15, QWORD PTR [rdi+1136]
+	add rbp, QWORD PTR [rdi+1720]
+	adc r8, QWORD PTR [rdi+1728]
+	adc r9, QWORD PTR [rdi+1736]
+	adc r10, QWORD PTR [rdi+1744]
+	adc r11, QWORD PTR [rdi+1752]
+	adc r12, QWORD PTR [rdi+1760]
+	adc r13, QWORD PTR [rdi+1768]
+	adc r14, QWORD PTR [rdi+1776]
+	adc r15, QWORD PTR [rdi+1784]
+	mov QWORD PTR [rdi+1720], rbp
+	mov QWORD PTR [rdi+1728], r8
+	mov QWORD PTR [rdi+1736], r9
+	mov QWORD PTR [rdi+1744], r10
+	mov QWORD PTR [rdi+1752], r11
+	mov QWORD PTR [rdi+1760], r12
+	mov QWORD PTR [rdi+1768], r13
+	mov QWORD PTR [rdi+1776], r14
+	mov QWORD PTR [rdi+1784], r15
+	movq xmm7, rbx
+	mov rbx, rdi
+	add rbx, 1144
+	call {vg_p521_win_sqr_adx}
+	mov rax, r15
+	shr rax, 9
+	xor rax, 1
+	sub rbp, rax
+	sbb r8, 0
+	sbb r9, 0
+	sbb r10, 0
+	sbb r11, 0
+	sbb r12, 0
+	sbb r13, 0
+	sbb r14, 0
+	sbb r15, 0
+	and r15, 511
+	mov QWORD PTR [rdi+1864], rbp
+	mov QWORD PTR [rdi+1872], r8
+	mov QWORD PTR [rdi+1880], r9
+	mov QWORD PTR [rdi+1888], r10
+	mov QWORD PTR [rdi+1896], r11
+	mov QWORD PTR [rdi+1904], r12
+	mov QWORD PTR [rdi+1912], r13
+	mov QWORD PTR [rdi+1920], r14
+	mov QWORD PTR [rdi+1928], r15
+	movq rbx, xmm7
+	movq xmm7, rbx
+	movq xmm6, rsi
+	mov rsi, rdi
+	add rsi, 1792
+	mov rbx, rdi
+	add rbx, 1720
+	call {vg_p521_win_mul_adx}
+	mov rax, r15
+	shr rax, 9
+	xor rax, 1
+	sub rbp, rax
+	sbb r8, 0
+	sbb r9, 0
+	sbb r10, 0
+	sbb r11, 0
+	sbb r12, 0
+	sbb r13, 0
+	sbb r14, 0
+	sbb r15, 0
+	and r15, 511
+	mov QWORD PTR [rdi+1792], rbp
+	mov QWORD PTR [rdi+1800], r8
+	mov QWORD PTR [rdi+1808], r9
+	mov QWORD PTR [rdi+1816], r10
+	mov QWORD PTR [rdi+1824], r11
+	mov QWORD PTR [rdi+1832], r12
+	mov QWORD PTR [rdi+1840], r13
+	mov QWORD PTR [rdi+1848], r14
+	mov QWORD PTR [rdi+1856], r15
+	movq rbx, xmm7
+	movq rsi, xmm6
+	movq xmm7, rbx
+	mov rbx, rdi
+	add rbx, 1864
+	call {vg_p521_win_sqr_adx}
+	mov rax, r15
+	shr rax, 9
+	xor rax, 1
+	sub rbp, rax
+	sbb r8, 0
+	sbb r9, 0
+	sbb r10, 0
+	sbb r11, 0
+	sbb r12, 0
+	sbb r13, 0
+	sbb r14, 0
+	sbb r15, 0
+	and r15, 511
+	mov QWORD PTR [rdi+1720], rbp
+	mov QWORD PTR [rdi+1728], r8
+	mov QWORD PTR [rdi+1736], r9
+	mov QWORD PTR [rdi+1744], r10
+	mov QWORD PTR [rdi+1752], r11
+	mov QWORD PTR [rdi+1760], r12
+	mov QWORD PTR [rdi+1768], r13
+	mov QWORD PTR [rdi+1776], r14
+	mov QWORD PTR [rdi+1784], r15
+	movq rbx, xmm7
+	mov rbp, QWORD PTR [rdi+1792]
+	mov r8, QWORD PTR [rdi+1800]
+	mov r9, QWORD PTR [rdi+1808]
+	mov r10, QWORD PTR [rdi+1816]
+	mov r11, QWORD PTR [rdi+1824]
+	mov r12, QWORD PTR [rdi+1832]
+	mov r13, QWORD PTR [rdi+1840]
+	mov r14, QWORD PTR [rdi+1848]
+	mov r15, QWORD PTR [rdi+1856]
 	add rbp, rbp
 	adc r8, r8
 	adc r9, r9
@@ -14994,43 +15420,31 @@ vg_ecdh_p521_adx:
 	adc r13, r13
 	adc r14, r14
 	adc r15, r15
-	mov rax, r15
-	shr rax, 9
-	add rbp, rax
-	and r15, 511
-	add rdi, 0
-	mov QWORD PTR [rdi], rbp
-	mov QWORD PTR [rdi+8], r8
-	mov QWORD PTR [rdi+16], r9
-	mov QWORD PTR [rdi+24], r10
-	mov QWORD PTR [rdi+32], r11
-	mov QWORD PTR [rdi+40], r12
-	mov QWORD PTR [rdi+48], r13
-	mov QWORD PTR [rdi+56], r14
-	mov QWORD PTR [rdi+64], r15
-	sub rdi, 1864
-	add rdi, 1432
-	mov rbp, QWORD PTR [rdi]
-	mov r8, QWORD PTR [rdi+8]
-	mov r9, QWORD PTR [rdi+16]
-	mov r10, QWORD PTR [rdi+24]
-	mov r11, QWORD PTR [rdi+32]
-	mov r12, QWORD PTR [rdi+40]
-	mov r13, QWORD PTR [rdi+48]
-	mov r14, QWORD PTR [rdi+56]
-	mov r15, QWORD PTR [rdi+64]
-	add rdi, 360
-	sub rbp, QWORD PTR [rdi]
-	sbb r8, QWORD PTR [rdi+8]
-	sbb r9, QWORD PTR [rdi+16]
-	sbb r10, QWORD PTR [rdi+24]
-	sbb r11, QWORD PTR [rdi+32]
-	sbb r12, QWORD PTR [rdi+40]
-	sbb r13, QWORD PTR [rdi+48]
-	sbb r14, QWORD PTR [rdi+56]
-	sbb r15, QWORD PTR [rdi+64]
-	add r15, 512
-	add rdi, -360
+	add rbp, QWORD PTR [rdi+1792]
+	adc r8, QWORD PTR [rdi+1800]
+	adc r9, QWORD PTR [rdi+1808]
+	adc r10, QWORD PTR [rdi+1816]
+	adc r11, QWORD PTR [rdi+1824]
+	adc r12, QWORD PTR [rdi+1832]
+	adc r13, QWORD PTR [rdi+1840]
+	adc r14, QWORD PTR [rdi+1848]
+	adc r15, QWORD PTR [rdi+1856]
+	mov QWORD PTR [rdi+1792], rbp
+	mov QWORD PTR [rdi+1800], r8
+	mov QWORD PTR [rdi+1808], r9
+	mov QWORD PTR [rdi+1816], r10
+	mov QWORD PTR [rdi+1824], r11
+	mov QWORD PTR [rdi+1832], r12
+	mov QWORD PTR [rdi+1840], r13
+	mov QWORD PTR [rdi+1848], r14
+	mov QWORD PTR [rdi+1856], r15
+	movq xmm7, rbx
+	movq xmm6, rsi
+	mov rsi, rdi
+	add rsi, 1072
+	mov rbx, rdi
+	add rbx, 1864
+	call {vg_p521_win_mul_adx}
 	mov rax, r15
 	shr rax, 9
 	xor rax, 1
@@ -15044,38 +15458,21 @@ vg_ecdh_p521_adx:
 	sbb r14, 0
 	sbb r15, 0
 	and r15, 511
-	mov QWORD PTR [rdi], rbp
-	mov QWORD PTR [rdi+8], r8
-	mov QWORD PTR [rdi+16], r9
-	mov QWORD PTR [rdi+24], r10
-	mov QWORD PTR [rdi+32], r11
-	mov QWORD PTR [rdi+40], r12
-	mov QWORD PTR [rdi+48], r13
-	mov QWORD PTR [rdi+56], r14
-	mov QWORD PTR [rdi+64], r15
-	sub rdi, 1432
-	add rdi, 1288
-	mov rbp, QWORD PTR [rdi]
-	mov r8, QWORD PTR [rdi+8]
-	mov r9, QWORD PTR [rdi+16]
-	mov r10, QWORD PTR [rdi+24]
-	mov r11, QWORD PTR [rdi+32]
-	mov r12, QWORD PTR [rdi+40]
-	mov r13, QWORD PTR [rdi+48]
-	mov r14, QWORD PTR [rdi+56]
-	mov r15, QWORD PTR [rdi+64]
-	add rdi, 576
-	sub rbp, QWORD PTR [rdi]
-	sbb r8, QWORD PTR [rdi+8]
-	sbb r9, QWORD PTR [rdi+16]
-	sbb r10, QWORD PTR [rdi+24]
-	sbb r11, QWORD PTR [rdi+32]
-	sbb r12, QWORD PTR [rdi+40]
-	sbb r13, QWORD PTR [rdi+48]
-	sbb r14, QWORD PTR [rdi+56]
-	sbb r15, QWORD PTR [rdi+64]
-	add r15, 512
-	add rdi, -576
+	mov QWORD PTR [rdi+1864], rbp
+	mov QWORD PTR [rdi+1872], r8
+	mov QWORD PTR [rdi+1880], r9
+	mov QWORD PTR [rdi+1888], r10
+	mov QWORD PTR [rdi+1896], r11
+	mov QWORD PTR [rdi+1904], r12
+	mov QWORD PTR [rdi+1912], r13
+	mov QWORD PTR [rdi+1920], r14
+	mov QWORD PTR [rdi+1928], r15
+	movq rbx, xmm7
+	movq rsi, xmm6
+	movq xmm7, rbx
+	mov rbx, rdi
+	add rbx, 1792
+	call {vg_p521_win_sqr_adx}
 	mov rax, r15
 	shr rax, 9
 	xor rax, 1
@@ -15089,122 +15486,34 @@ vg_ecdh_p521_adx:
 	sbb r14, 0
 	sbb r15, 0
 	and r15, 511
-	mov QWORD PTR [rdi], rbp
-	mov QWORD PTR [rdi+8], r8
-	mov QWORD PTR [rdi+16], r9
-	mov QWORD PTR [rdi+24], r10
-	mov QWORD PTR [rdi+32], r11
-	mov QWORD PTR [rdi+40], r12
-	mov QWORD PTR [rdi+48], r13
-	mov QWORD PTR [rdi+56], r14
-	mov QWORD PTR [rdi+64], r15
-	sub rdi, 1288
-	mov r12, rsi
-	mov esi, 1792
-	mov edx, 1792
-	mov ecx, 1792
-	call {vg_p521_mul_mod_p_adx}
-	mov rsi, r12
-	add rdi, 1288
-	mov rbp, QWORD PTR [rdi]
-	mov r8, QWORD PTR [rdi+8]
-	mov r9, QWORD PTR [rdi+16]
-	mov r10, QWORD PTR [rdi+24]
-	mov r11, QWORD PTR [rdi+32]
-	mov r12, QWORD PTR [rdi+40]
-	mov r13, QWORD PTR [rdi+48]
-	mov r14, QWORD PTR [rdi+56]
-	mov r15, QWORD PTR [rdi+64]
-	add rdi, 576
-	sub rbp, QWORD PTR [rdi]
-	sbb r8, QWORD PTR [rdi+8]
-	sbb r9, QWORD PTR [rdi+16]
-	sbb r10, QWORD PTR [rdi+24]
-	sbb r11, QWORD PTR [rdi+32]
-	sbb r12, QWORD PTR [rdi+40]
-	sbb r13, QWORD PTR [rdi+48]
-	sbb r14, QWORD PTR [rdi+56]
-	sbb r15, QWORD PTR [rdi+64]
-	add r15, 512
-	add rdi, -576
-	mov rax, r15
-	shr rax, 9
-	xor rax, 1
-	sub rbp, rax
-	sbb r8, 0
-	sbb r9, 0
-	sbb r10, 0
-	sbb r11, 0
-	sbb r12, 0
-	sbb r13, 0
-	sbb r14, 0
-	sbb r15, 0
-	and r15, 511
-	mov QWORD PTR [rdi], rbp
-	mov QWORD PTR [rdi+8], r8
-	mov QWORD PTR [rdi+16], r9
-	mov QWORD PTR [rdi+24], r10
-	mov QWORD PTR [rdi+32], r11
-	mov QWORD PTR [rdi+40], r12
-	mov QWORD PTR [rdi+48], r13
-	mov QWORD PTR [rdi+56], r14
-	mov QWORD PTR [rdi+64], r15
-	sub rdi, 1288
-	add rdi, 1432
-	mov rbp, QWORD PTR [rdi]
-	mov r8, QWORD PTR [rdi+8]
-	mov r9, QWORD PTR [rdi+16]
-	mov r10, QWORD PTR [rdi+24]
-	mov r11, QWORD PTR [rdi+32]
-	mov r12, QWORD PTR [rdi+40]
-	mov r13, QWORD PTR [rdi+48]
-	mov r14, QWORD PTR [rdi+56]
-	mov r15, QWORD PTR [rdi+64]
-	add rdi, 288
-	sub rbp, QWORD PTR [rdi]
-	sbb r8, QWORD PTR [rdi+8]
-	sbb r9, QWORD PTR [rdi+16]
-	sbb r10, QWORD PTR [rdi+24]
-	sbb r11, QWORD PTR [rdi+32]
-	sbb r12, QWORD PTR [rdi+40]
-	sbb r13, QWORD PTR [rdi+48]
-	sbb r14, QWORD PTR [rdi+56]
-	sbb r15, QWORD PTR [rdi+64]
-	add r15, 512
-	add rdi, -288
-	mov rax, r15
-	shr rax, 9
-	xor rax, 1
-	sub rbp, rax
-	sbb r8, 0
-	sbb r9, 0
-	sbb r10, 0
-	sbb r11, 0
-	sbb r12, 0
-	sbb r13, 0
-	sbb r14, 0
-	sbb r15, 0
-	and r15, 511
-	mov QWORD PTR [rdi], rbp
-	mov QWORD PTR [rdi+8], r8
-	mov QWORD PTR [rdi+16], r9
-	mov QWORD PTR [rdi+24], r10
-	mov QWORD PTR [rdi+32], r11
-	mov QWORD PTR [rdi+40], r12
-	mov QWORD PTR [rdi+48], r13
-	mov QWORD PTR [rdi+56], r14
-	mov QWORD PTR [rdi+64], r15
-	sub rdi, 1432
-	add rdi, 1792
-	mov rbp, QWORD PTR [rdi]
-	mov r8, QWORD PTR [rdi+8]
-	mov r9, QWORD PTR [rdi+16]
-	mov r10, QWORD PTR [rdi+24]
-	mov r11, QWORD PTR [rdi+32]
-	mov r12, QWORD PTR [rdi+40]
-	mov r13, QWORD PTR [rdi+48]
-	mov r14, QWORD PTR [rdi+56]
-	mov r15, QWORD PTR [rdi+64]
+	mov QWORD PTR [rdi+1936], rbp
+	mov QWORD PTR [rdi+1944], r8
+	mov QWORD PTR [rdi+1952], r9
+	mov QWORD PTR [rdi+1960], r10
+	mov QWORD PTR [rdi+1968], r11
+	mov QWORD PTR [rdi+1976], r12
+	mov QWORD PTR [rdi+1984], r13
+	mov QWORD PTR [rdi+1992], r14
+	mov QWORD PTR [rdi+2000], r15
+	movq rbx, xmm7
+	mov rbp, QWORD PTR [rdi+1864]
+	mov r8, QWORD PTR [rdi+1872]
+	mov r9, QWORD PTR [rdi+1880]
+	mov r10, QWORD PTR [rdi+1888]
+	mov r11, QWORD PTR [rdi+1896]
+	mov r12, QWORD PTR [rdi+1904]
+	mov r13, QWORD PTR [rdi+1912]
+	mov r14, QWORD PTR [rdi+1920]
+	mov r15, QWORD PTR [rdi+1928]
+	xor rbp, -1
+	xor r8, -1
+	xor r9, -1
+	xor r10, -1
+	xor r11, -1
+	xor r12, -1
+	xor r13, -1
+	xor r14, -1
+	xor r15, -1
 	add rbp, rbp
 	adc r8, r8
 	adc r9, r9
@@ -15214,893 +15523,347 @@ vg_ecdh_p521_adx:
 	adc r13, r13
 	adc r14, r14
 	adc r15, r15
+	add rbp, QWORD PTR [rdi+1936]
+	adc r8, QWORD PTR [rdi+1944]
+	adc r9, QWORD PTR [rdi+1952]
+	adc r10, QWORD PTR [rdi+1960]
+	adc r11, QWORD PTR [rdi+1968]
+	adc r12, QWORD PTR [rdi+1976]
+	adc r13, QWORD PTR [rdi+1984]
+	adc r14, QWORD PTR [rdi+1992]
+	adc r15, QWORD PTR [rdi+2000]
+	add r15, 1024
 	mov rax, r15
 	shr rax, 9
+	and r15, 511
 	add rbp, rax
-	and r15, 511
-	add rdi, 0
-	mov QWORD PTR [rdi], rbp
-	mov QWORD PTR [rdi+8], r8
-	mov QWORD PTR [rdi+16], r9
-	mov QWORD PTR [rdi+24], r10
-	mov QWORD PTR [rdi+32], r11
-	mov QWORD PTR [rdi+40], r12
-	mov QWORD PTR [rdi+48], r13
-	mov QWORD PTR [rdi+56], r14
-	mov QWORD PTR [rdi+64], r15
-	sub rdi, 1792
-	add rdi, 1864
-	mov rbp, QWORD PTR [rdi]
-	mov r8, QWORD PTR [rdi+8]
-	mov r9, QWORD PTR [rdi+16]
-	mov r10, QWORD PTR [rdi+24]
-	mov r11, QWORD PTR [rdi+32]
-	mov r12, QWORD PTR [rdi+40]
-	mov r13, QWORD PTR [rdi+48]
-	mov r14, QWORD PTR [rdi+56]
-	mov r15, QWORD PTR [rdi+64]
-	add rdi, -576
-	sub rbp, QWORD PTR [rdi]
-	sbb r8, QWORD PTR [rdi+8]
-	sbb r9, QWORD PTR [rdi+16]
-	sbb r10, QWORD PTR [rdi+24]
-	sbb r11, QWORD PTR [rdi+32]
-	sbb r12, QWORD PTR [rdi+40]
-	sbb r13, QWORD PTR [rdi+48]
-	sbb r14, QWORD PTR [rdi+56]
-	sbb r15, QWORD PTR [rdi+64]
-	add r15, 512
-	add rdi, 72
+	adc r8, 0
+	adc r9, 0
+	adc r10, 0
+	adc r11, 0
+	adc r12, 0
+	adc r13, 0
+	adc r14, 0
+	adc r15, 0
 	mov rax, r15
 	shr rax, 9
-	xor rax, 1
-	sub rbp, rax
-	sbb r8, 0
-	sbb r9, 0
-	sbb r10, 0
-	sbb r11, 0
-	sbb r12, 0
-	sbb r13, 0
-	sbb r14, 0
-	sbb r15, 0
 	and r15, 511
-	mov QWORD PTR [rdi], rbp
-	mov QWORD PTR [rdi+8], r8
-	mov QWORD PTR [rdi+16], r9
-	mov QWORD PTR [rdi+24], r10
-	mov QWORD PTR [rdi+32], r11
-	mov QWORD PTR [rdi+40], r12
-	mov QWORD PTR [rdi+48], r13
-	mov QWORD PTR [rdi+56], r14
-	mov QWORD PTR [rdi+64], r15
-	sub rdi, 1360
-	add rdi, 1792
-	mov rbp, QWORD PTR [rdi]
-	mov r8, QWORD PTR [rdi+8]
-	mov r9, QWORD PTR [rdi+16]
-	mov r10, QWORD PTR [rdi+24]
-	mov r11, QWORD PTR [rdi+32]
-	mov r12, QWORD PTR [rdi+40]
-	mov r13, QWORD PTR [rdi+48]
-	mov r14, QWORD PTR [rdi+56]
-	mov r15, QWORD PTR [rdi+64]
-	add rbp, rbp
-	adc r8, r8
-	adc r9, r9
-	adc r10, r10
-	adc r11, r11
-	adc r12, r12
-	adc r13, r13
-	adc r14, r14
-	adc r15, r15
-	mov rax, r15
-	shr rax, 9
 	add rbp, rax
-	and r15, 511
-	add rdi, 0
-	mov QWORD PTR [rdi], rbp
-	mov QWORD PTR [rdi+8], r8
-	mov QWORD PTR [rdi+16], r9
-	mov QWORD PTR [rdi+24], r10
-	mov QWORD PTR [rdi+32], r11
-	mov QWORD PTR [rdi+40], r12
-	mov QWORD PTR [rdi+48], r13
-	mov QWORD PTR [rdi+56], r14
-	mov QWORD PTR [rdi+64], r15
-	sub rdi, 1792
-	add rdi, 1792
-	mov rbp, QWORD PTR [rdi]
-	mov r8, QWORD PTR [rdi+8]
-	mov r9, QWORD PTR [rdi+16]
-	mov r10, QWORD PTR [rdi+24]
-	mov r11, QWORD PTR [rdi+32]
-	mov r12, QWORD PTR [rdi+40]
-	mov r13, QWORD PTR [rdi+48]
-	mov r14, QWORD PTR [rdi+56]
-	mov r15, QWORD PTR [rdi+64]
-	add rbp, rbp
-	adc r8, r8
-	adc r9, r9
-	adc r10, r10
-	adc r11, r11
-	adc r12, r12
-	adc r13, r13
-	adc r14, r14
-	adc r15, r15
+	mov QWORD PTR [rdi+1072], rbp
+	mov QWORD PTR [rdi+1080], r8
+	mov QWORD PTR [rdi+1088], r9
+	mov QWORD PTR [rdi+1096], r10
+	mov QWORD PTR [rdi+1104], r11
+	mov QWORD PTR [rdi+1112], r12
+	mov QWORD PTR [rdi+1120], r13
+	mov QWORD PTR [rdi+1128], r14
+	mov QWORD PTR [rdi+1136], r15
+	movq xmm7, rbx
+	movq xmm6, rsi
+	mov rsi, rdi
+	add rsi, 1144
+	mov rbx, rdi
+	add rbx, 1216
+	call {vg_p521_win_mul_adx}
 	mov rax, r15
 	shr rax, 9
+	xor rax, 1
+	sub rbp, rax
+	sbb r8, 0
+	sbb r9, 0
+	sbb r10, 0
+	sbb r11, 0
+	sbb r12, 0
+	sbb r13, 0
+	sbb r14, 0
+	sbb r15, 0
+	and r15, 511
+	mov QWORD PTR [rdi+1216], rbp
+	mov QWORD PTR [rdi+1224], r8
+	mov QWORD PTR [rdi+1232], r9
+	mov QWORD PTR [rdi+1240], r10
+	mov QWORD PTR [rdi+1248], r11
+	mov QWORD PTR [rdi+1256], r12
+	mov QWORD PTR [rdi+1264], r13
+	mov QWORD PTR [rdi+1272], r14
+	mov QWORD PTR [rdi+1280], r15
+	movq rbx, xmm7
+	movq rsi, xmm6
+	mov rbp, QWORD PTR [rdi+1072]
+	mov r8, QWORD PTR [rdi+1080]
+	mov r9, QWORD PTR [rdi+1088]
+	mov r10, QWORD PTR [rdi+1096]
+	mov r11, QWORD PTR [rdi+1104]
+	mov r12, QWORD PTR [rdi+1112]
+	mov r13, QWORD PTR [rdi+1120]
+	mov r14, QWORD PTR [rdi+1128]
+	mov r15, QWORD PTR [rdi+1136]
+	xor rbp, -1
+	xor r8, -1
+	xor r9, -1
+	xor r10, -1
+	xor r11, -1
+	xor r12, -1
+	xor r13, -1
+	xor r14, -1
+	xor r15, -1
+	add rbp, QWORD PTR [rdi+1864]
+	adc r8, QWORD PTR [rdi+1872]
+	adc r9, QWORD PTR [rdi+1880]
+	adc r10, QWORD PTR [rdi+1888]
+	adc r11, QWORD PTR [rdi+1896]
+	adc r12, QWORD PTR [rdi+1904]
+	adc r13, QWORD PTR [rdi+1912]
+	adc r14, QWORD PTR [rdi+1920]
+	adc r15, QWORD PTR [rdi+1928]
+	add r15, 512
+	mov QWORD PTR [rdi+1864], rbp
+	mov QWORD PTR [rdi+1872], r8
+	mov QWORD PTR [rdi+1880], r9
+	mov QWORD PTR [rdi+1888], r10
+	mov QWORD PTR [rdi+1896], r11
+	mov QWORD PTR [rdi+1904], r12
+	mov QWORD PTR [rdi+1912], r13
+	mov QWORD PTR [rdi+1920], r14
+	mov QWORD PTR [rdi+1928], r15
+	mov rbp, QWORD PTR [rdi+1792]
+	mov r8, QWORD PTR [rdi+1800]
+	mov r9, QWORD PTR [rdi+1808]
+	mov r10, QWORD PTR [rdi+1816]
+	mov r11, QWORD PTR [rdi+1824]
+	mov r12, QWORD PTR [rdi+1832]
+	mov r13, QWORD PTR [rdi+1840]
+	mov r14, QWORD PTR [rdi+1848]
+	mov r15, QWORD PTR [rdi+1856]
+	add rbp, QWORD PTR [rdi+1792]
+	adc r8, QWORD PTR [rdi+1800]
+	adc r9, QWORD PTR [rdi+1808]
+	adc r10, QWORD PTR [rdi+1816]
+	adc r11, QWORD PTR [rdi+1824]
+	adc r12, QWORD PTR [rdi+1832]
+	adc r13, QWORD PTR [rdi+1840]
+	adc r14, QWORD PTR [rdi+1848]
+	adc r15, QWORD PTR [rdi+1856]
+	mov QWORD PTR [rdi+1792], rbp
+	mov QWORD PTR [rdi+1800], r8
+	mov QWORD PTR [rdi+1808], r9
+	mov QWORD PTR [rdi+1816], r10
+	mov QWORD PTR [rdi+1824], r11
+	mov QWORD PTR [rdi+1832], r12
+	mov QWORD PTR [rdi+1840], r13
+	mov QWORD PTR [rdi+1848], r14
+	mov QWORD PTR [rdi+1856], r15
+	movq xmm7, rbx
+	movq xmm6, rsi
+	mov rsi, rdi
+	add rsi, 1792
+	mov rbx, rdi
+	add rbx, 1864
+	call {vg_p521_win_mul_adx}
+	mov rax, r15
+	shr rax, 9
+	xor rax, 1
+	sub rbp, rax
+	sbb r8, 0
+	sbb r9, 0
+	sbb r10, 0
+	sbb r11, 0
+	sbb r12, 0
+	sbb r13, 0
+	sbb r14, 0
+	sbb r15, 0
+	and r15, 511
+	mov QWORD PTR [rdi+1864], rbp
+	mov QWORD PTR [rdi+1872], r8
+	mov QWORD PTR [rdi+1880], r9
+	mov QWORD PTR [rdi+1888], r10
+	mov QWORD PTR [rdi+1896], r11
+	mov QWORD PTR [rdi+1904], r12
+	mov QWORD PTR [rdi+1912], r13
+	mov QWORD PTR [rdi+1920], r14
+	mov QWORD PTR [rdi+1928], r15
+	movq rbx, xmm7
+	movq rsi, xmm6
+	mov rbp, QWORD PTR [rdi+1720]
+	mov r8, QWORD PTR [rdi+1728]
+	mov r9, QWORD PTR [rdi+1736]
+	mov r10, QWORD PTR [rdi+1744]
+	mov r11, QWORD PTR [rdi+1752]
+	mov r12, QWORD PTR [rdi+1760]
+	mov r13, QWORD PTR [rdi+1768]
+	mov r14, QWORD PTR [rdi+1776]
+	mov r15, QWORD PTR [rdi+1784]
+	xor rbp, -1
+	xor r8, -1
+	xor r9, -1
+	xor r10, -1
+	xor r11, -1
+	xor r12, -1
+	xor r13, -1
+	xor r14, -1
+	xor r15, -1
+	add rbp, QWORD PTR [rdi+1864]
+	adc r8, QWORD PTR [rdi+1872]
+	adc r9, QWORD PTR [rdi+1880]
+	adc r10, QWORD PTR [rdi+1888]
+	adc r11, QWORD PTR [rdi+1896]
+	adc r12, QWORD PTR [rdi+1904]
+	adc r13, QWORD PTR [rdi+1912]
+	adc r14, QWORD PTR [rdi+1920]
+	adc r15, QWORD PTR [rdi+1928]
+	add r15, 512
+	mov rax, r15
+	shr rax, 9
+	and r15, 511
 	add rbp, rax
-	and r15, 511
-	add rdi, 0
-	mov QWORD PTR [rdi], rbp
-	mov QWORD PTR [rdi+8], r8
-	mov QWORD PTR [rdi+16], r9
-	mov QWORD PTR [rdi+24], r10
-	mov QWORD PTR [rdi+32], r11
-	mov QWORD PTR [rdi+40], r12
-	mov QWORD PTR [rdi+48], r13
-	mov QWORD PTR [rdi+56], r14
-	mov QWORD PTR [rdi+64], r15
-	sub rdi, 1792
-	mov r12, rsi
-	mov esi, 1360
-	mov edx, 1936
-	mov ecx, 1360
-	call {vg_p521_mul_mod_p_adx}
-	mov rsi, r12
-	add rdi, 1360
-	mov rbp, QWORD PTR [rdi]
-	mov r8, QWORD PTR [rdi+8]
-	mov r9, QWORD PTR [rdi+16]
-	mov r10, QWORD PTR [rdi+24]
-	mov r11, QWORD PTR [rdi+32]
-	mov r12, QWORD PTR [rdi+40]
-	mov r13, QWORD PTR [rdi+48]
-	mov r14, QWORD PTR [rdi+56]
-	mov r15, QWORD PTR [rdi+64]
-	add rdi, 432
-	sub rbp, QWORD PTR [rdi]
-	sbb r8, QWORD PTR [rdi+8]
-	sbb r9, QWORD PTR [rdi+16]
-	sbb r10, QWORD PTR [rdi+24]
-	sbb r11, QWORD PTR [rdi+32]
-	sbb r12, QWORD PTR [rdi+40]
-	sbb r13, QWORD PTR [rdi+48]
-	sbb r14, QWORD PTR [rdi+56]
-	sbb r15, QWORD PTR [rdi+64]
-	add r15, 512
-	add rdi, -432
+	adc r8, 0
+	adc r9, 0
+	adc r10, 0
+	adc r11, 0
+	adc r12, 0
+	adc r13, 0
+	adc r14, 0
+	adc r15, 0
 	mov rax, r15
 	shr rax, 9
-	xor rax, 1
-	sub rbp, rax
-	sbb r8, 0
-	sbb r9, 0
-	sbb r10, 0
-	sbb r11, 0
-	sbb r12, 0
-	sbb r13, 0
-	sbb r14, 0
-	sbb r15, 0
 	and r15, 511
-	mov QWORD PTR [rdi], rbp
-	mov QWORD PTR [rdi+8], r8
-	mov QWORD PTR [rdi+16], r9
-	mov QWORD PTR [rdi+24], r10
-	mov QWORD PTR [rdi+32], r11
-	mov QWORD PTR [rdi+40], r12
-	mov QWORD PTR [rdi+48], r13
-	mov QWORD PTR [rdi+56], r14
-	mov QWORD PTR [rdi+64], r15
-	sub rdi, 1360
-	mov r12, rsi
-	mov esi, 1720
-	mov edx, 1432
-	mov ecx, 1432
-	call {vg_p521_mul_mod_p_adx}
-	mov rsi, r12
-	add rdi, 1288
-	mov rbp, QWORD PTR [rdi]
-	mov r8, QWORD PTR [rdi+8]
-	mov r9, QWORD PTR [rdi+16]
-	mov r10, QWORD PTR [rdi+24]
-	mov r11, QWORD PTR [rdi+32]
-	mov r12, QWORD PTR [rdi+40]
-	mov r13, QWORD PTR [rdi+48]
-	mov r14, QWORD PTR [rdi+56]
-	mov r15, QWORD PTR [rdi+64]
-	add rdi, 432
-	sub rbp, QWORD PTR [rdi]
-	sbb r8, QWORD PTR [rdi+8]
-	sbb r9, QWORD PTR [rdi+16]
-	sbb r10, QWORD PTR [rdi+24]
-	sbb r11, QWORD PTR [rdi+32]
-	sbb r12, QWORD PTR [rdi+40]
-	sbb r13, QWORD PTR [rdi+48]
-	sbb r14, QWORD PTR [rdi+56]
-	sbb r15, QWORD PTR [rdi+64]
-	add r15, 512
-	add rdi, 216
-	mov rax, r15
-	shr rax, 9
-	xor rax, 1
-	sub rbp, rax
-	sbb r8, 0
-	sbb r9, 0
-	sbb r10, 0
-	sbb r11, 0
-	sbb r12, 0
-	sbb r13, 0
-	sbb r14, 0
-	sbb r15, 0
-	and r15, 511
-	mov QWORD PTR [rdi], rbp
-	mov QWORD PTR [rdi+8], r8
-	mov QWORD PTR [rdi+16], r9
-	mov QWORD PTR [rdi+24], r10
-	mov QWORD PTR [rdi+32], r11
-	mov QWORD PTR [rdi+40], r12
-	mov QWORD PTR [rdi+48], r13
-	mov QWORD PTR [rdi+56], r14
-	mov QWORD PTR [rdi+64], r15
-	sub rdi, 1936
-	add rdi, 1288
-	mov rbp, QWORD PTR [rdi]
-	mov r8, QWORD PTR [rdi+8]
-	mov r9, QWORD PTR [rdi+16]
-	mov r10, QWORD PTR [rdi+24]
-	mov r11, QWORD PTR [rdi+32]
-	mov r12, QWORD PTR [rdi+40]
-	mov r13, QWORD PTR [rdi+48]
-	mov r14, QWORD PTR [rdi+56]
-	mov r15, QWORD PTR [rdi+64]
-	add rdi, 432
-	xor eax, eax
-	cmp rax, -1
-	adc rbp, QWORD PTR [rdi]
-	adc r8, QWORD PTR [rdi+8]
-	adc r9, QWORD PTR [rdi+16]
-	adc r10, QWORD PTR [rdi+24]
-	adc r11, QWORD PTR [rdi+32]
-	adc r12, QWORD PTR [rdi+40]
-	adc r13, QWORD PTR [rdi+48]
-	adc r14, QWORD PTR [rdi+56]
-	adc r15, QWORD PTR [rdi+64]
-	add rdi, -648
-	mov rax, r15
-	shr rax, 9
-	xor rax, 1
-	sub rbp, rax
-	sbb r8, 0
-	sbb r9, 0
-	sbb r10, 0
-	sbb r11, 0
-	sbb r12, 0
-	sbb r13, 0
-	sbb r14, 0
-	sbb r15, 0
-	and r15, 511
-	mov QWORD PTR [rdi], rbp
-	mov QWORD PTR [rdi+8], r8
-	mov QWORD PTR [rdi+16], r9
-	mov QWORD PTR [rdi+24], r10
-	mov QWORD PTR [rdi+32], r11
-	mov QWORD PTR [rdi+40], r12
-	mov QWORD PTR [rdi+48], r13
-	mov QWORD PTR [rdi+56], r14
-	mov QWORD PTR [rdi+64], r15
-	sub rdi, 1072
-	add rdi, 1360
-	mov rbp, QWORD PTR [rdi]
-	mov r8, QWORD PTR [rdi+8]
-	mov r9, QWORD PTR [rdi+16]
-	mov r10, QWORD PTR [rdi+24]
-	mov r11, QWORD PTR [rdi+32]
-	mov r12, QWORD PTR [rdi+40]
-	mov r13, QWORD PTR [rdi+48]
-	mov r14, QWORD PTR [rdi+56]
-	mov r15, QWORD PTR [rdi+64]
-	add rdi, 72
-	xor eax, eax
-	cmp rax, -1
-	adc rbp, QWORD PTR [rdi]
-	adc r8, QWORD PTR [rdi+8]
-	adc r9, QWORD PTR [rdi+16]
-	adc r10, QWORD PTR [rdi+24]
-	adc r11, QWORD PTR [rdi+32]
-	adc r12, QWORD PTR [rdi+40]
-	adc r13, QWORD PTR [rdi+48]
-	adc r14, QWORD PTR [rdi+56]
-	adc r15, QWORD PTR [rdi+64]
-	add rdi, -216
-	mov rax, r15
-	shr rax, 9
-	xor rax, 1
-	sub rbp, rax
-	sbb r8, 0
-	sbb r9, 0
-	sbb r10, 0
-	sbb r11, 0
-	sbb r12, 0
-	sbb r13, 0
-	sbb r14, 0
-	sbb r15, 0
-	and r15, 511
-	mov QWORD PTR [rdi], rbp
-	mov QWORD PTR [rdi+8], r8
-	mov QWORD PTR [rdi+16], r9
-	mov QWORD PTR [rdi+24], r10
-	mov QWORD PTR [rdi+32], r11
-	mov QWORD PTR [rdi+40], r12
-	mov QWORD PTR [rdi+48], r13
-	mov QWORD PTR [rdi+56], r14
-	mov QWORD PTR [rdi+64], r15
-	sub rdi, 1216
-	mov r12, rsi
-	mov esi, 1792
-	mov edx, 1360
-	mov ecx, 1360
-	call {vg_p521_mul_mod_p_adx}
-	mov rsi, r12
-	mov r12, rsi
-	mov esi, 1936
-	mov edx, 1936
-	mov ecx, 1072
-	call {vg_p521_mul_mod_p_adx}
-	mov rsi, r12
-	mov r12, rsi
-	mov esi, 1864
-	mov edx, 1288
-	mov ecx, 1792
-	call {vg_p521_mul_mod_p_adx}
-	mov rsi, r12
-	add rdi, 1936
-	mov rbp, QWORD PTR [rdi]
-	mov r8, QWORD PTR [rdi+8]
-	mov r9, QWORD PTR [rdi+16]
-	mov r10, QWORD PTR [rdi+24]
-	mov r11, QWORD PTR [rdi+32]
-	mov r12, QWORD PTR [rdi+40]
-	mov r13, QWORD PTR [rdi+48]
-	mov r14, QWORD PTR [rdi+56]
-	mov r15, QWORD PTR [rdi+64]
-	add rbp, rbp
-	adc r8, r8
-	adc r9, r9
-	adc r10, r10
-	adc r11, r11
-	adc r12, r12
-	adc r13, r13
-	adc r14, r14
-	adc r15, r15
-	mov rax, r15
-	shr rax, 9
 	add rbp, rax
-	and r15, 511
-	add rdi, -864
-	mov QWORD PTR [rdi], rbp
-	mov QWORD PTR [rdi+8], r8
-	mov QWORD PTR [rdi+16], r9
-	mov QWORD PTR [rdi+24], r10
-	mov QWORD PTR [rdi+32], r11
-	mov QWORD PTR [rdi+40], r12
-	mov QWORD PTR [rdi+48], r13
-	mov QWORD PTR [rdi+56], r14
-	mov QWORD PTR [rdi+64], r15
-	sub rdi, 1072
-	add rdi, 1072
-	mov rbp, QWORD PTR [rdi]
-	mov r8, QWORD PTR [rdi+8]
-	mov r9, QWORD PTR [rdi+16]
-	mov r10, QWORD PTR [rdi+24]
-	mov r11, QWORD PTR [rdi+32]
-	mov r12, QWORD PTR [rdi+40]
-	mov r13, QWORD PTR [rdi+48]
-	mov r14, QWORD PTR [rdi+56]
-	mov r15, QWORD PTR [rdi+64]
-	add rdi, 864
-	xor eax, eax
-	cmp rax, -1
-	adc rbp, QWORD PTR [rdi]
-	adc r8, QWORD PTR [rdi+8]
-	adc r9, QWORD PTR [rdi+16]
-	adc r10, QWORD PTR [rdi+24]
-	adc r11, QWORD PTR [rdi+32]
-	adc r12, QWORD PTR [rdi+40]
-	adc r13, QWORD PTR [rdi+48]
-	adc r14, QWORD PTR [rdi+56]
-	adc r15, QWORD PTR [rdi+64]
-	add rdi, 0
-	mov rax, r15
-	shr rax, 9
-	xor rax, 1
-	sub rbp, rax
-	sbb r8, 0
-	sbb r9, 0
-	sbb r10, 0
-	sbb r11, 0
-	sbb r12, 0
-	sbb r13, 0
-	sbb r14, 0
-	sbb r15, 0
-	and r15, 511
-	mov QWORD PTR [rdi], rbp
-	mov QWORD PTR [rdi+8], r8
-	mov QWORD PTR [rdi+16], r9
-	mov QWORD PTR [rdi+24], r10
-	mov QWORD PTR [rdi+32], r11
-	mov QWORD PTR [rdi+40], r12
-	mov QWORD PTR [rdi+48], r13
-	mov QWORD PTR [rdi+56], r14
-	mov QWORD PTR [rdi+64], r15
-	sub rdi, 1936
-	mov r12, rsi
-	mov esi, 1216
-	mov edx, 1216
-	mov ecx, 1216
-	call {vg_p521_mul_mod_p_adx}
-	mov rsi, r12
-	add rdi, 1864
-	mov rbp, QWORD PTR [rdi]
-	mov r8, QWORD PTR [rdi+8]
-	mov r9, QWORD PTR [rdi+16]
-	mov r10, QWORD PTR [rdi+24]
-	mov r11, QWORD PTR [rdi+32]
-	mov r12, QWORD PTR [rdi+40]
-	mov r13, QWORD PTR [rdi+48]
-	mov r14, QWORD PTR [rdi+56]
-	mov r15, QWORD PTR [rdi+64]
-	add rbp, rbp
-	adc r8, r8
-	adc r9, r9
-	adc r10, r10
-	adc r11, r11
-	adc r12, r12
-	adc r13, r13
-	adc r14, r14
-	adc r15, r15
-	mov rax, r15
-	shr rax, 9
-	add rbp, rax
-	and r15, 511
-	add rdi, 0
-	mov QWORD PTR [rdi], rbp
-	mov QWORD PTR [rdi+8], r8
-	mov QWORD PTR [rdi+16], r9
-	mov QWORD PTR [rdi+24], r10
-	mov QWORD PTR [rdi+32], r11
-	mov QWORD PTR [rdi+40], r12
-	mov QWORD PTR [rdi+48], r13
-	mov QWORD PTR [rdi+56], r14
-	mov QWORD PTR [rdi+64], r15
-	sub rdi, 1864
-	mov r12, rsi
-	mov esi, 1072
-	mov edx, 1936
-	mov ecx, 1936
-	call {vg_p521_mul_mod_p_adx}
-	mov rsi, r12
-	add rdi, 1864
-	mov rbp, QWORD PTR [rdi]
-	mov r8, QWORD PTR [rdi+8]
-	mov r9, QWORD PTR [rdi+16]
-	mov r10, QWORD PTR [rdi+24]
-	mov r11, QWORD PTR [rdi+32]
-	mov r12, QWORD PTR [rdi+40]
-	mov r13, QWORD PTR [rdi+48]
-	mov r14, QWORD PTR [rdi+56]
-	mov r15, QWORD PTR [rdi+64]
-	add rbp, rbp
-	adc r8, r8
-	adc r9, r9
-	adc r10, r10
-	adc r11, r11
-	adc r12, r12
-	adc r13, r13
-	adc r14, r14
-	adc r15, r15
-	mov rax, r15
-	shr rax, 9
-	add rbp, rax
-	and r15, 511
-	add rdi, 0
-	mov QWORD PTR [rdi], rbp
-	mov QWORD PTR [rdi+8], r8
-	mov QWORD PTR [rdi+16], r9
-	mov QWORD PTR [rdi+24], r10
-	mov QWORD PTR [rdi+32], r11
-	mov QWORD PTR [rdi+40], r12
-	mov QWORD PTR [rdi+48], r13
-	mov QWORD PTR [rdi+56], r14
-	mov QWORD PTR [rdi+64], r15
-	sub rdi, 1864
-	add rdi, 1216
-	mov rbp, QWORD PTR [rdi]
-	mov r8, QWORD PTR [rdi+8]
-	mov r9, QWORD PTR [rdi+16]
-	mov r10, QWORD PTR [rdi+24]
-	mov r11, QWORD PTR [rdi+32]
-	mov r12, QWORD PTR [rdi+40]
-	mov r13, QWORD PTR [rdi+48]
-	mov r14, QWORD PTR [rdi+56]
-	mov r15, QWORD PTR [rdi+64]
-	add rdi, 576
-	sub rbp, QWORD PTR [rdi]
-	sbb r8, QWORD PTR [rdi+8]
-	sbb r9, QWORD PTR [rdi+16]
-	sbb r10, QWORD PTR [rdi+24]
-	sbb r11, QWORD PTR [rdi+32]
-	sbb r12, QWORD PTR [rdi+40]
-	sbb r13, QWORD PTR [rdi+48]
-	sbb r14, QWORD PTR [rdi+56]
-	sbb r15, QWORD PTR [rdi+64]
-	add r15, 512
-	add rdi, -576
-	mov rax, r15
-	shr rax, 9
-	xor rax, 1
-	sub rbp, rax
-	sbb r8, 0
-	sbb r9, 0
-	sbb r10, 0
-	sbb r11, 0
-	sbb r12, 0
-	sbb r13, 0
-	sbb r14, 0
-	sbb r15, 0
-	and r15, 511
-	mov QWORD PTR [rdi], rbp
-	mov QWORD PTR [rdi+8], r8
-	mov QWORD PTR [rdi+16], r9
-	mov QWORD PTR [rdi+24], r10
-	mov QWORD PTR [rdi+32], r11
-	mov QWORD PTR [rdi+40], r12
-	mov QWORD PTR [rdi+48], r13
-	mov QWORD PTR [rdi+56], r14
-	mov QWORD PTR [rdi+64], r15
-	sub rdi, 1216
-	add rdi, 1072
-	mov rbp, QWORD PTR [rdi]
-	mov r8, QWORD PTR [rdi+8]
-	mov r9, QWORD PTR [rdi+16]
-	mov r10, QWORD PTR [rdi+24]
-	mov r11, QWORD PTR [rdi+32]
-	mov r12, QWORD PTR [rdi+40]
-	mov r13, QWORD PTR [rdi+48]
-	mov r14, QWORD PTR [rdi+56]
-	mov r15, QWORD PTR [rdi+64]
-	add rdi, 792
-	sub rbp, QWORD PTR [rdi]
-	sbb r8, QWORD PTR [rdi+8]
-	sbb r9, QWORD PTR [rdi+16]
-	sbb r10, QWORD PTR [rdi+24]
-	sbb r11, QWORD PTR [rdi+32]
-	sbb r12, QWORD PTR [rdi+40]
-	sbb r13, QWORD PTR [rdi+48]
-	sbb r14, QWORD PTR [rdi+56]
-	sbb r15, QWORD PTR [rdi+64]
-	add r15, 512
-	add rdi, -792
-	mov rax, r15
-	shr rax, 9
-	xor rax, 1
-	sub rbp, rax
-	sbb r8, 0
-	sbb r9, 0
-	sbb r10, 0
-	sbb r11, 0
-	sbb r12, 0
-	sbb r13, 0
-	sbb r14, 0
-	sbb r15, 0
-	and r15, 511
-	mov QWORD PTR [rdi], rbp
-	mov QWORD PTR [rdi+8], r8
-	mov QWORD PTR [rdi+16], r9
-	mov QWORD PTR [rdi+24], r10
-	mov QWORD PTR [rdi+32], r11
-	mov QWORD PTR [rdi+40], r12
-	mov QWORD PTR [rdi+48], r13
-	mov QWORD PTR [rdi+56], r14
-	mov QWORD PTR [rdi+64], r15
-	sub rdi, 1072
-	mov r12, rsi
-	mov esi, 1792
-	mov edx, 1792
-	mov ecx, 1792
-	call {vg_p521_mul_mod_p_adx}
-	mov rsi, r12
-	add rdi, 1072
-	mov rbp, QWORD PTR [rdi]
-	mov r8, QWORD PTR [rdi+8]
-	mov r9, QWORD PTR [rdi+16]
-	mov r10, QWORD PTR [rdi+24]
-	mov r11, QWORD PTR [rdi+32]
-	mov r12, QWORD PTR [rdi+40]
-	mov r13, QWORD PTR [rdi+48]
-	mov r14, QWORD PTR [rdi+56]
-	mov r15, QWORD PTR [rdi+64]
-	add rdi, 792
-	sub rbp, QWORD PTR [rdi]
-	sbb r8, QWORD PTR [rdi+8]
-	sbb r9, QWORD PTR [rdi+16]
-	sbb r10, QWORD PTR [rdi+24]
-	sbb r11, QWORD PTR [rdi+32]
-	sbb r12, QWORD PTR [rdi+40]
-	sbb r13, QWORD PTR [rdi+48]
-	sbb r14, QWORD PTR [rdi+56]
-	sbb r15, QWORD PTR [rdi+64]
-	add r15, 512
-	add rdi, -792
-	mov rax, r15
-	shr rax, 9
-	xor rax, 1
-	sub rbp, rax
-	sbb r8, 0
-	sbb r9, 0
-	sbb r10, 0
-	sbb r11, 0
-	sbb r12, 0
-	sbb r13, 0
-	sbb r14, 0
-	sbb r15, 0
-	and r15, 511
-	mov QWORD PTR [rdi], rbp
-	mov QWORD PTR [rdi+8], r8
-	mov QWORD PTR [rdi+16], r9
-	mov QWORD PTR [rdi+24], r10
-	mov QWORD PTR [rdi+32], r11
-	mov QWORD PTR [rdi+40], r12
-	mov QWORD PTR [rdi+48], r13
-	mov QWORD PTR [rdi+56], r14
-	mov QWORD PTR [rdi+64], r15
-	sub rdi, 1072
-	add rdi, 1216
-	mov rbp, QWORD PTR [rdi]
-	mov r8, QWORD PTR [rdi+8]
-	mov r9, QWORD PTR [rdi+16]
-	mov r10, QWORD PTR [rdi+24]
-	mov r11, QWORD PTR [rdi+32]
-	mov r12, QWORD PTR [rdi+40]
-	mov r13, QWORD PTR [rdi+48]
-	mov r14, QWORD PTR [rdi+56]
-	mov r15, QWORD PTR [rdi+64]
-	add rdi, 504
-	sub rbp, QWORD PTR [rdi]
-	sbb r8, QWORD PTR [rdi+8]
-	sbb r9, QWORD PTR [rdi+16]
-	sbb r10, QWORD PTR [rdi+24]
-	sbb r11, QWORD PTR [rdi+32]
-	sbb r12, QWORD PTR [rdi+40]
-	sbb r13, QWORD PTR [rdi+48]
-	sbb r14, QWORD PTR [rdi+56]
-	sbb r15, QWORD PTR [rdi+64]
-	add r15, 512
-	add rdi, -504
-	mov rax, r15
-	shr rax, 9
-	xor rax, 1
-	sub rbp, rax
-	sbb r8, 0
-	sbb r9, 0
-	sbb r10, 0
-	sbb r11, 0
-	sbb r12, 0
-	sbb r13, 0
-	sbb r14, 0
-	sbb r15, 0
-	and r15, 511
-	mov QWORD PTR [rdi], rbp
-	mov QWORD PTR [rdi+8], r8
-	mov QWORD PTR [rdi+16], r9
-	mov QWORD PTR [rdi+24], r10
-	mov QWORD PTR [rdi+32], r11
-	mov QWORD PTR [rdi+40], r12
-	mov QWORD PTR [rdi+48], r13
-	mov QWORD PTR [rdi+56], r14
-	mov QWORD PTR [rdi+64], r15
-	sub rdi, 1216
-	add rdi, 1792
-	mov rbp, QWORD PTR [rdi]
-	mov r8, QWORD PTR [rdi+8]
-	mov r9, QWORD PTR [rdi+16]
-	mov r10, QWORD PTR [rdi+24]
-	mov r11, QWORD PTR [rdi+32]
-	mov r12, QWORD PTR [rdi+40]
-	mov r13, QWORD PTR [rdi+48]
-	mov r14, QWORD PTR [rdi+56]
-	mov r15, QWORD PTR [rdi+64]
-	add rbp, rbp
-	adc r8, r8
-	adc r9, r9
-	adc r10, r10
-	adc r11, r11
-	adc r12, r12
-	adc r13, r13
-	adc r14, r14
-	adc r15, r15
-	mov rax, r15
-	shr rax, 9
-	add rbp, rax
-	and r15, 511
-	add rdi, 0
-	mov QWORD PTR [rdi], rbp
-	mov QWORD PTR [rdi+8], r8
-	mov QWORD PTR [rdi+16], r9
-	mov QWORD PTR [rdi+24], r10
-	mov QWORD PTR [rdi+32], r11
-	mov QWORD PTR [rdi+40], r12
-	mov QWORD PTR [rdi+48], r13
-	mov QWORD PTR [rdi+56], r14
-	mov QWORD PTR [rdi+64], r15
-	sub rdi, 1792
-	add rdi, 1864
-	mov rbp, QWORD PTR [rdi]
-	mov r8, QWORD PTR [rdi+8]
-	mov r9, QWORD PTR [rdi+16]
-	mov r10, QWORD PTR [rdi+24]
-	mov r11, QWORD PTR [rdi+32]
-	mov r12, QWORD PTR [rdi+40]
-	mov r13, QWORD PTR [rdi+48]
-	mov r14, QWORD PTR [rdi+56]
-	mov r15, QWORD PTR [rdi+64]
-	add rdi, -792
-	sub rbp, QWORD PTR [rdi]
-	sbb r8, QWORD PTR [rdi+8]
-	sbb r9, QWORD PTR [rdi+16]
-	sbb r10, QWORD PTR [rdi+24]
-	sbb r11, QWORD PTR [rdi+32]
-	sbb r12, QWORD PTR [rdi+40]
-	sbb r13, QWORD PTR [rdi+48]
-	sbb r14, QWORD PTR [rdi+56]
-	sbb r15, QWORD PTR [rdi+64]
-	add r15, 512
-	add rdi, 72
-	mov rax, r15
-	shr rax, 9
-	xor rax, 1
-	sub rbp, rax
-	sbb r8, 0
-	sbb r9, 0
-	sbb r10, 0
-	sbb r11, 0
-	sbb r12, 0
-	sbb r13, 0
-	sbb r14, 0
-	sbb r15, 0
-	and r15, 511
-	mov QWORD PTR [rdi], rbp
-	mov QWORD PTR [rdi+8], r8
-	mov QWORD PTR [rdi+16], r9
-	mov QWORD PTR [rdi+24], r10
-	mov QWORD PTR [rdi+32], r11
-	mov QWORD PTR [rdi+40], r12
-	mov QWORD PTR [rdi+48], r13
-	mov QWORD PTR [rdi+56], r14
-	mov QWORD PTR [rdi+64], r15
-	sub rdi, 1144
-	add rdi, 1792
-	mov rbp, QWORD PTR [rdi]
-	mov r8, QWORD PTR [rdi+8]
-	mov r9, QWORD PTR [rdi+16]
-	mov r10, QWORD PTR [rdi+24]
-	mov r11, QWORD PTR [rdi+32]
-	mov r12, QWORD PTR [rdi+40]
-	mov r13, QWORD PTR [rdi+48]
-	mov r14, QWORD PTR [rdi+56]
-	mov r15, QWORD PTR [rdi+64]
-	add rbp, rbp
-	adc r8, r8
-	adc r9, r9
-	adc r10, r10
-	adc r11, r11
-	adc r12, r12
-	adc r13, r13
-	adc r14, r14
-	adc r15, r15
-	mov rax, r15
-	shr rax, 9
-	add rbp, rax
-	and r15, 511
-	add rdi, 0
-	mov QWORD PTR [rdi], rbp
-	mov QWORD PTR [rdi+8], r8
-	mov QWORD PTR [rdi+16], r9
-	mov QWORD PTR [rdi+24], r10
-	mov QWORD PTR [rdi+32], r11
-	mov QWORD PTR [rdi+40], r12
-	mov QWORD PTR [rdi+48], r13
-	mov QWORD PTR [rdi+56], r14
-	mov QWORD PTR [rdi+64], r15
-	sub rdi, 1792
-	add rdi, 1792
-	mov rbp, QWORD PTR [rdi]
-	mov r8, QWORD PTR [rdi+8]
-	mov r9, QWORD PTR [rdi+16]
-	mov r10, QWORD PTR [rdi+24]
-	mov r11, QWORD PTR [rdi+32]
-	mov r12, QWORD PTR [rdi+40]
-	mov r13, QWORD PTR [rdi+48]
-	mov r14, QWORD PTR [rdi+56]
-	mov r15, QWORD PTR [rdi+64]
-	add rbp, rbp
-	adc r8, r8
-	adc r9, r9
-	adc r10, r10
-	adc r11, r11
-	adc r12, r12
-	adc r13, r13
-	adc r14, r14
-	adc r15, r15
-	mov rax, r15
-	shr rax, 9
-	add rbp, rax
-	and r15, 511
-	add rdi, 0
-	mov QWORD PTR [rdi], rbp
-	mov QWORD PTR [rdi+8], r8
-	mov QWORD PTR [rdi+16], r9
-	mov QWORD PTR [rdi+24], r10
-	mov QWORD PTR [rdi+32], r11
-	mov QWORD PTR [rdi+40], r12
-	mov QWORD PTR [rdi+48], r13
-	mov QWORD PTR [rdi+56], r14
-	mov QWORD PTR [rdi+64], r15
-	sub rdi, 1792
-	mov r12, rsi
-	mov esi, 1144
-	mov edx, 1936
-	mov ecx, 1144
-	call {vg_p521_mul_mod_p_adx}
-	mov rsi, r12
-	add rdi, 1144
-	mov rbp, QWORD PTR [rdi]
-	mov r8, QWORD PTR [rdi+8]
-	mov r9, QWORD PTR [rdi+16]
-	mov r10, QWORD PTR [rdi+24]
-	mov r11, QWORD PTR [rdi+32]
-	mov r12, QWORD PTR [rdi+40]
-	mov r13, QWORD PTR [rdi+48]
-	mov r14, QWORD PTR [rdi+56]
-	mov r15, QWORD PTR [rdi+64]
-	add rdi, 648
-	sub rbp, QWORD PTR [rdi]
-	sbb r8, QWORD PTR [rdi+8]
-	sbb r9, QWORD PTR [rdi+16]
-	sbb r10, QWORD PTR [rdi+24]
-	sbb r11, QWORD PTR [rdi+32]
-	sbb r12, QWORD PTR [rdi+40]
-	sbb r13, QWORD PTR [rdi+48]
-	sbb r14, QWORD PTR [rdi+56]
-	sbb r15, QWORD PTR [rdi+64]
-	add r15, 512
-	add rdi, -648
-	mov rax, r15
-	shr rax, 9
-	xor rax, 1
-	sub rbp, rax
-	sbb r8, 0
-	sbb r9, 0
-	sbb r10, 0
-	sbb r11, 0
-	sbb r12, 0
-	sbb r13, 0
-	sbb r14, 0
-	sbb r15, 0
-	and r15, 511
-	mov QWORD PTR [rdi], rbp
-	mov QWORD PTR [rdi+8], r8
-	mov QWORD PTR [rdi+16], r9
-	mov QWORD PTR [rdi+24], r10
-	mov QWORD PTR [rdi+32], r11
-	mov QWORD PTR [rdi+40], r12
-	mov QWORD PTR [rdi+48], r13
-	mov QWORD PTR [rdi+56], r14
-	mov QWORD PTR [rdi+64], r15
-	sub rdi, 1144
+	mov QWORD PTR [rdi+1144], rbp
+	mov QWORD PTR [rdi+1152], r8
+	mov QWORD PTR [rdi+1160], r9
+	mov QWORD PTR [rdi+1168], r10
+	mov QWORD PTR [rdi+1176], r11
+	mov QWORD PTR [rdi+1184], r12
+	mov QWORD PTR [rdi+1192], r13
+	mov QWORD PTR [rdi+1200], r14
+	mov QWORD PTR [rdi+1208], r15
 	sub rbx, 4096
 	cmp rbx, 4096
 	jae 218b
+	mov rbp, QWORD PTR [rdi+1144]
+	mov r8, QWORD PTR [rdi+1152]
+	mov r9, QWORD PTR [rdi+1160]
+	mov r10, QWORD PTR [rdi+1168]
+	mov r11, QWORD PTR [rdi+1176]
+	mov r12, QWORD PTR [rdi+1184]
+	mov r13, QWORD PTR [rdi+1192]
+	mov r14, QWORD PTR [rdi+1200]
+	mov r15, QWORD PTR [rdi+1208]
+	mov rax, rbp
+	and rax, 1
+	shl rax, 8
+	mov rcx, r15
+	shr rcx, 1
+	add rcx, rax
+	shld r15, r14, 63
+	shld r14, r13, 63
+	shld r13, r12, 63
+	shld r12, r11, 63
+	shld r11, r10, 63
+	shld r10, r9, 63
+	shld r9, r8, 63
+	shld r8, rbp, 63
+	mov QWORD PTR [rdi+1144], r8
+	mov QWORD PTR [rdi+1152], r9
+	mov QWORD PTR [rdi+1160], r10
+	mov QWORD PTR [rdi+1168], r11
+	mov QWORD PTR [rdi+1176], r12
+	mov QWORD PTR [rdi+1184], r13
+	mov QWORD PTR [rdi+1192], r14
+	mov QWORD PTR [rdi+1200], r15
+	mov QWORD PTR [rdi+1208], rcx
+	add rdi, 1144
+	mov rbp, QWORD PTR [rdi]
+	mov r8, QWORD PTR [rdi+8]
+	mov r9, QWORD PTR [rdi+16]
+	mov r10, QWORD PTR [rdi+24]
+	mov r11, QWORD PTR [rdi+32]
+	mov r12, QWORD PTR [rdi+40]
+	mov r13, QWORD PTR [rdi+48]
+	mov r14, QWORD PTR [rdi+56]
+	mov r15, QWORD PTR [rdi+64]
+	add rdi, -864
+	xor eax, eax
+	cmp rax, -1
+	adc rbp, QWORD PTR [rdi]
+	adc r8, QWORD PTR [rdi+8]
+	adc r9, QWORD PTR [rdi+16]
+	adc r10, QWORD PTR [rdi+24]
+	adc r11, QWORD PTR [rdi+32]
+	adc r12, QWORD PTR [rdi+40]
+	adc r13, QWORD PTR [rdi+48]
+	adc r14, QWORD PTR [rdi+56]
+	adc r15, QWORD PTR [rdi+64]
+	add rdi, 864
+	mov rax, r15
+	shr rax, 9
+	xor rax, 1
+	sub rbp, rax
+	sbb r8, 0
+	sbb r9, 0
+	sbb r10, 0
+	sbb r11, 0
+	sbb r12, 0
+	sbb r13, 0
+	sbb r14, 0
+	sbb r15, 0
+	and r15, 511
+	mov QWORD PTR [rdi], rbp
+	mov QWORD PTR [rdi+8], r8
+	mov QWORD PTR [rdi+16], r9
+	mov QWORD PTR [rdi+24], r10
+	mov QWORD PTR [rdi+32], r11
+	mov QWORD PTR [rdi+40], r12
+	mov QWORD PTR [rdi+48], r13
+	mov QWORD PTR [rdi+56], r14
+	mov QWORD PTR [rdi+64], r15
+	sub rdi, 1144
+	add rdi, 1072
+	mov rbp, QWORD PTR [rdi]
+	mov r8, QWORD PTR [rdi+8]
+	mov r9, QWORD PTR [rdi+16]
+	mov r10, QWORD PTR [rdi+24]
+	mov r11, QWORD PTR [rdi+32]
+	mov r12, QWORD PTR [rdi+40]
+	mov r13, QWORD PTR [rdi+48]
+	mov r14, QWORD PTR [rdi+56]
+	mov r15, QWORD PTR [rdi+64]
+	add rdi, -792
+	xor eax, eax
+	cmp rax, -1
+	adc rbp, QWORD PTR [rdi]
+	adc r8, QWORD PTR [rdi+8]
+	adc r9, QWORD PTR [rdi+16]
+	adc r10, QWORD PTR [rdi+24]
+	adc r11, QWORD PTR [rdi+32]
+	adc r12, QWORD PTR [rdi+40]
+	adc r13, QWORD PTR [rdi+48]
+	adc r14, QWORD PTR [rdi+56]
+	adc r15, QWORD PTR [rdi+64]
+	add rdi, 792
+	mov rax, r15
+	shr rax, 9
+	xor rax, 1
+	sub rbp, rax
+	sbb r8, 0
+	sbb r9, 0
+	sbb r10, 0
+	sbb r11, 0
+	sbb r12, 0
+	sbb r13, 0
+	sbb r14, 0
+	sbb r15, 0
+	and r15, 511
+	mov QWORD PTR [rdi], rbp
+	mov QWORD PTR [rdi+8], r8
+	mov QWORD PTR [rdi+16], r9
+	mov QWORD PTR [rdi+24], r10
+	mov QWORD PTR [rdi+32], r11
+	mov QWORD PTR [rdi+40], r12
+	mov QWORD PTR [rdi+48], r13
+	mov QWORD PTR [rdi+56], r14
+	mov QWORD PTR [rdi+64], r15
+	sub rdi, 1072
 	mov rax, rbx
 	mov ecx, 4
 	mul rcx
@@ -16685,52 +16448,10 @@ vg_ecdh_p521_adx:
 	and rdx, rcx
 	xor rax, rdx
 	mov QWORD PTR [rdi+1640], rax
-	mov r12, rsi
-	mov esi, 1720
-	mov edx, 1216
-	mov ecx, 1216
-	call {vg_p521_mul_mod_p_adx}
-	mov rsi, r12
-	mov r12, rsi
-	mov esi, 1792
-	mov edx, 1504
-	mov ecx, 1720
-	call {vg_p521_mul_mod_p_adx}
-	mov rsi, r12
-	mov r12, rsi
-	mov esi, 1864
-	mov edx, 1216
-	mov ecx, 1720
-	call {vg_p521_mul_mod_p_adx}
-	mov rsi, r12
-	mov r12, rsi
-	mov esi, 1864
-	mov edx, 1576
-	mov ecx, 1864
-	call {vg_p521_mul_mod_p_adx}
-	mov rsi, r12
-	add rdi, 1792
-	mov rbp, QWORD PTR [rdi]
-	mov r8, QWORD PTR [rdi+8]
-	mov r9, QWORD PTR [rdi+16]
-	mov r10, QWORD PTR [rdi+24]
-	mov r11, QWORD PTR [rdi+32]
-	mov r12, QWORD PTR [rdi+40]
-	mov r13, QWORD PTR [rdi+48]
-	mov r14, QWORD PTR [rdi+56]
-	mov r15, QWORD PTR [rdi+64]
-	add rdi, -720
-	sub rbp, QWORD PTR [rdi]
-	sbb r8, QWORD PTR [rdi+8]
-	sbb r9, QWORD PTR [rdi+16]
-	sbb r10, QWORD PTR [rdi+24]
-	sbb r11, QWORD PTR [rdi+32]
-	sbb r12, QWORD PTR [rdi+40]
-	sbb r13, QWORD PTR [rdi+48]
-	sbb r14, QWORD PTR [rdi+56]
-	sbb r15, QWORD PTR [rdi+64]
-	add r15, 512
-	add rdi, 720
+	movq xmm7, rbx
+	mov rbx, rdi
+	add rbx, 1216
+	call {vg_p521_win_sqr_adx}
 	mov rax, r15
 	shr rax, 9
 	xor rax, 1
@@ -16744,38 +16465,23 @@ vg_ecdh_p521_adx:
 	sbb r14, 0
 	sbb r15, 0
 	and r15, 511
-	mov QWORD PTR [rdi], rbp
-	mov QWORD PTR [rdi+8], r8
-	mov QWORD PTR [rdi+16], r9
-	mov QWORD PTR [rdi+24], r10
-	mov QWORD PTR [rdi+32], r11
-	mov QWORD PTR [rdi+40], r12
-	mov QWORD PTR [rdi+48], r13
-	mov QWORD PTR [rdi+56], r14
-	mov QWORD PTR [rdi+64], r15
-	sub rdi, 1792
-	add rdi, 1864
-	mov rbp, QWORD PTR [rdi]
-	mov r8, QWORD PTR [rdi+8]
-	mov r9, QWORD PTR [rdi+16]
-	mov r10, QWORD PTR [rdi+24]
-	mov r11, QWORD PTR [rdi+32]
-	mov r12, QWORD PTR [rdi+40]
-	mov r13, QWORD PTR [rdi+48]
-	mov r14, QWORD PTR [rdi+56]
-	mov r15, QWORD PTR [rdi+64]
-	add rdi, -720
-	sub rbp, QWORD PTR [rdi]
-	sbb r8, QWORD PTR [rdi+8]
-	sbb r9, QWORD PTR [rdi+16]
-	sbb r10, QWORD PTR [rdi+24]
-	sbb r11, QWORD PTR [rdi+32]
-	sbb r12, QWORD PTR [rdi+40]
-	sbb r13, QWORD PTR [rdi+48]
-	sbb r14, QWORD PTR [rdi+56]
-	sbb r15, QWORD PTR [rdi+64]
-	add r15, 512
-	add rdi, 720
+	mov QWORD PTR [rdi+1720], rbp
+	mov QWORD PTR [rdi+1728], r8
+	mov QWORD PTR [rdi+1736], r9
+	mov QWORD PTR [rdi+1744], r10
+	mov QWORD PTR [rdi+1752], r11
+	mov QWORD PTR [rdi+1760], r12
+	mov QWORD PTR [rdi+1768], r13
+	mov QWORD PTR [rdi+1776], r14
+	mov QWORD PTR [rdi+1784], r15
+	movq rbx, xmm7
+	movq xmm7, rbx
+	movq xmm6, rsi
+	mov rsi, rdi
+	add rsi, 1504
+	mov rbx, rdi
+	add rbx, 1720
+	call {vg_p521_win_mul_adx}
 	mov rax, r15
 	shr rax, 9
 	xor rax, 1
@@ -16789,40 +16495,269 @@ vg_ecdh_p521_adx:
 	sbb r14, 0
 	sbb r15, 0
 	and r15, 511
-	mov QWORD PTR [rdi], rbp
-	mov QWORD PTR [rdi+8], r8
-	mov QWORD PTR [rdi+16], r9
-	mov QWORD PTR [rdi+24], r10
-	mov QWORD PTR [rdi+32], r11
-	mov QWORD PTR [rdi+40], r12
-	mov QWORD PTR [rdi+48], r13
-	mov QWORD PTR [rdi+56], r14
-	mov QWORD PTR [rdi+64], r15
-	sub rdi, 1864
-	mov r12, rsi
-	mov esi, 1936
-	mov edx, 1792
-	mov ecx, 1792
-	call {vg_p521_mul_mod_p_adx}
-	mov rsi, r12
-	mov r12, rsi
-	mov esi, 2008
-	mov edx, 1792
-	mov ecx, 1936
-	call {vg_p521_mul_mod_p_adx}
-	mov rsi, r12
-	mov r12, rsi
-	mov esi, 1936
-	mov edx, 1072
-	mov ecx, 1936
-	call {vg_p521_mul_mod_p_adx}
-	mov rsi, r12
-	mov r12, rsi
-	mov esi, 1288
-	mov edx, 1864
-	mov ecx, 1864
-	call {vg_p521_mul_mod_p_adx}
-	mov rsi, r12
+	mov QWORD PTR [rdi+1792], rbp
+	mov QWORD PTR [rdi+1800], r8
+	mov QWORD PTR [rdi+1808], r9
+	mov QWORD PTR [rdi+1816], r10
+	mov QWORD PTR [rdi+1824], r11
+	mov QWORD PTR [rdi+1832], r12
+	mov QWORD PTR [rdi+1840], r13
+	mov QWORD PTR [rdi+1848], r14
+	mov QWORD PTR [rdi+1856], r15
+	movq rbx, xmm7
+	movq rsi, xmm6
+	movq xmm7, rbx
+	movq xmm6, rsi
+	mov rsi, rdi
+	add rsi, 1216
+	mov rbx, rdi
+	add rbx, 1720
+	call {vg_p521_win_mul_adx}
+	mov rax, r15
+	shr rax, 9
+	xor rax, 1
+	sub rbp, rax
+	sbb r8, 0
+	sbb r9, 0
+	sbb r10, 0
+	sbb r11, 0
+	sbb r12, 0
+	sbb r13, 0
+	sbb r14, 0
+	sbb r15, 0
+	and r15, 511
+	mov QWORD PTR [rdi+1864], rbp
+	mov QWORD PTR [rdi+1872], r8
+	mov QWORD PTR [rdi+1880], r9
+	mov QWORD PTR [rdi+1888], r10
+	mov QWORD PTR [rdi+1896], r11
+	mov QWORD PTR [rdi+1904], r12
+	mov QWORD PTR [rdi+1912], r13
+	mov QWORD PTR [rdi+1920], r14
+	mov QWORD PTR [rdi+1928], r15
+	movq rbx, xmm7
+	movq rsi, xmm6
+	movq xmm7, rbx
+	movq xmm6, rsi
+	mov rsi, rdi
+	add rsi, 1576
+	mov rbx, rdi
+	add rbx, 1864
+	call {vg_p521_win_mul_adx}
+	mov rax, r15
+	shr rax, 9
+	xor rax, 1
+	sub rbp, rax
+	sbb r8, 0
+	sbb r9, 0
+	sbb r10, 0
+	sbb r11, 0
+	sbb r12, 0
+	sbb r13, 0
+	sbb r14, 0
+	sbb r15, 0
+	and r15, 511
+	mov QWORD PTR [rdi+1864], rbp
+	mov QWORD PTR [rdi+1872], r8
+	mov QWORD PTR [rdi+1880], r9
+	mov QWORD PTR [rdi+1888], r10
+	mov QWORD PTR [rdi+1896], r11
+	mov QWORD PTR [rdi+1904], r12
+	mov QWORD PTR [rdi+1912], r13
+	mov QWORD PTR [rdi+1920], r14
+	mov QWORD PTR [rdi+1928], r15
+	movq rbx, xmm7
+	movq rsi, xmm6
+	mov rbp, QWORD PTR [rdi+1072]
+	mov r8, QWORD PTR [rdi+1080]
+	mov r9, QWORD PTR [rdi+1088]
+	mov r10, QWORD PTR [rdi+1096]
+	mov r11, QWORD PTR [rdi+1104]
+	mov r12, QWORD PTR [rdi+1112]
+	mov r13, QWORD PTR [rdi+1120]
+	mov r14, QWORD PTR [rdi+1128]
+	mov r15, QWORD PTR [rdi+1136]
+	xor rbp, -1
+	xor r8, -1
+	xor r9, -1
+	xor r10, -1
+	xor r11, -1
+	xor r12, -1
+	xor r13, -1
+	xor r14, -1
+	xor r15, -1
+	add rbp, QWORD PTR [rdi+1792]
+	adc r8, QWORD PTR [rdi+1800]
+	adc r9, QWORD PTR [rdi+1808]
+	adc r10, QWORD PTR [rdi+1816]
+	adc r11, QWORD PTR [rdi+1824]
+	adc r12, QWORD PTR [rdi+1832]
+	adc r13, QWORD PTR [rdi+1840]
+	adc r14, QWORD PTR [rdi+1848]
+	adc r15, QWORD PTR [rdi+1856]
+	add r15, 512
+	mov QWORD PTR [rdi+1792], rbp
+	mov QWORD PTR [rdi+1800], r8
+	mov QWORD PTR [rdi+1808], r9
+	mov QWORD PTR [rdi+1816], r10
+	mov QWORD PTR [rdi+1824], r11
+	mov QWORD PTR [rdi+1832], r12
+	mov QWORD PTR [rdi+1840], r13
+	mov QWORD PTR [rdi+1848], r14
+	mov QWORD PTR [rdi+1856], r15
+	mov rbp, QWORD PTR [rdi+1144]
+	mov r8, QWORD PTR [rdi+1152]
+	mov r9, QWORD PTR [rdi+1160]
+	mov r10, QWORD PTR [rdi+1168]
+	mov r11, QWORD PTR [rdi+1176]
+	mov r12, QWORD PTR [rdi+1184]
+	mov r13, QWORD PTR [rdi+1192]
+	mov r14, QWORD PTR [rdi+1200]
+	mov r15, QWORD PTR [rdi+1208]
+	xor rbp, -1
+	xor r8, -1
+	xor r9, -1
+	xor r10, -1
+	xor r11, -1
+	xor r12, -1
+	xor r13, -1
+	xor r14, -1
+	xor r15, -1
+	add rbp, QWORD PTR [rdi+1864]
+	adc r8, QWORD PTR [rdi+1872]
+	adc r9, QWORD PTR [rdi+1880]
+	adc r10, QWORD PTR [rdi+1888]
+	adc r11, QWORD PTR [rdi+1896]
+	adc r12, QWORD PTR [rdi+1904]
+	adc r13, QWORD PTR [rdi+1912]
+	adc r14, QWORD PTR [rdi+1920]
+	adc r15, QWORD PTR [rdi+1928]
+	add r15, 512
+	mov QWORD PTR [rdi+1864], rbp
+	mov QWORD PTR [rdi+1872], r8
+	mov QWORD PTR [rdi+1880], r9
+	mov QWORD PTR [rdi+1888], r10
+	mov QWORD PTR [rdi+1896], r11
+	mov QWORD PTR [rdi+1904], r12
+	mov QWORD PTR [rdi+1912], r13
+	mov QWORD PTR [rdi+1920], r14
+	mov QWORD PTR [rdi+1928], r15
+	movq xmm7, rbx
+	mov rbx, rdi
+	add rbx, 1792
+	call {vg_p521_win_sqr_adx}
+	mov rax, r15
+	shr rax, 9
+	xor rax, 1
+	sub rbp, rax
+	sbb r8, 0
+	sbb r9, 0
+	sbb r10, 0
+	sbb r11, 0
+	sbb r12, 0
+	sbb r13, 0
+	sbb r14, 0
+	sbb r15, 0
+	and r15, 511
+	mov QWORD PTR [rdi+1936], rbp
+	mov QWORD PTR [rdi+1944], r8
+	mov QWORD PTR [rdi+1952], r9
+	mov QWORD PTR [rdi+1960], r10
+	mov QWORD PTR [rdi+1968], r11
+	mov QWORD PTR [rdi+1976], r12
+	mov QWORD PTR [rdi+1984], r13
+	mov QWORD PTR [rdi+1992], r14
+	mov QWORD PTR [rdi+2000], r15
+	movq rbx, xmm7
+	movq xmm7, rbx
+	movq xmm6, rsi
+	mov rsi, rdi
+	add rsi, 1792
+	mov rbx, rdi
+	add rbx, 1936
+	call {vg_p521_win_mul_adx}
+	mov rax, r15
+	shr rax, 9
+	xor rax, 1
+	sub rbp, rax
+	sbb r8, 0
+	sbb r9, 0
+	sbb r10, 0
+	sbb r11, 0
+	sbb r12, 0
+	sbb r13, 0
+	sbb r14, 0
+	sbb r15, 0
+	and r15, 511
+	mov QWORD PTR [rdi+2008], rbp
+	mov QWORD PTR [rdi+2016], r8
+	mov QWORD PTR [rdi+2024], r9
+	mov QWORD PTR [rdi+2032], r10
+	mov QWORD PTR [rdi+2040], r11
+	mov QWORD PTR [rdi+2048], r12
+	mov QWORD PTR [rdi+2056], r13
+	mov QWORD PTR [rdi+2064], r14
+	mov QWORD PTR [rdi+2072], r15
+	movq rbx, xmm7
+	movq rsi, xmm6
+	movq xmm7, rbx
+	movq xmm6, rsi
+	mov rsi, rdi
+	add rsi, 1072
+	mov rbx, rdi
+	add rbx, 1936
+	call {vg_p521_win_mul_adx}
+	mov rax, r15
+	shr rax, 9
+	xor rax, 1
+	sub rbp, rax
+	sbb r8, 0
+	sbb r9, 0
+	sbb r10, 0
+	sbb r11, 0
+	sbb r12, 0
+	sbb r13, 0
+	sbb r14, 0
+	sbb r15, 0
+	and r15, 511
+	mov QWORD PTR [rdi+1936], rbp
+	mov QWORD PTR [rdi+1944], r8
+	mov QWORD PTR [rdi+1952], r9
+	mov QWORD PTR [rdi+1960], r10
+	mov QWORD PTR [rdi+1968], r11
+	mov QWORD PTR [rdi+1976], r12
+	mov QWORD PTR [rdi+1984], r13
+	mov QWORD PTR [rdi+1992], r14
+	mov QWORD PTR [rdi+2000], r15
+	movq rbx, xmm7
+	movq rsi, xmm6
+	movq xmm7, rbx
+	mov rbx, rdi
+	add rbx, 1864
+	call {vg_p521_win_sqr_adx}
+	mov rax, r15
+	shr rax, 9
+	xor rax, 1
+	sub rbp, rax
+	sbb r8, 0
+	sbb r9, 0
+	sbb r10, 0
+	sbb r11, 0
+	sbb r12, 0
+	sbb r13, 0
+	sbb r14, 0
+	sbb r15, 0
+	and r15, 511
+	mov QWORD PTR [rdi+1288], rbp
+	mov QWORD PTR [rdi+1296], r8
+	mov QWORD PTR [rdi+1304], r9
+	mov QWORD PTR [rdi+1312], r10
+	mov QWORD PTR [rdi+1320], r11
+	mov QWORD PTR [rdi+1328], r12
+	mov QWORD PTR [rdi+1336], r13
+	mov QWORD PTR [rdi+1344], r14
+	mov QWORD PTR [rdi+1352], r15
+	movq rbx, xmm7
 	add rdi, 1288
 	mov rbp, QWORD PTR [rdi]
 	mov r8, QWORD PTR [rdi+8]
@@ -16947,28 +16882,50 @@ vg_ecdh_p521_adx:
 	mov QWORD PTR [rdi+56], r14
 	mov QWORD PTR [rdi+64], r15
 	sub rdi, 1288
-	add rdi, 1936
-	mov rbp, QWORD PTR [rdi]
-	mov r8, QWORD PTR [rdi+8]
-	mov r9, QWORD PTR [rdi+16]
-	mov r10, QWORD PTR [rdi+24]
-	mov r11, QWORD PTR [rdi+32]
-	mov r12, QWORD PTR [rdi+40]
-	mov r13, QWORD PTR [rdi+48]
-	mov r14, QWORD PTR [rdi+56]
-	mov r15, QWORD PTR [rdi+64]
-	add rdi, -648
-	sub rbp, QWORD PTR [rdi]
-	sbb r8, QWORD PTR [rdi+8]
-	sbb r9, QWORD PTR [rdi+16]
-	sbb r10, QWORD PTR [rdi+24]
-	sbb r11, QWORD PTR [rdi+32]
-	sbb r12, QWORD PTR [rdi+40]
-	sbb r13, QWORD PTR [rdi+48]
-	sbb r14, QWORD PTR [rdi+56]
-	sbb r15, QWORD PTR [rdi+64]
+	mov rbp, QWORD PTR [rdi+1288]
+	mov r8, QWORD PTR [rdi+1296]
+	mov r9, QWORD PTR [rdi+1304]
+	mov r10, QWORD PTR [rdi+1312]
+	mov r11, QWORD PTR [rdi+1320]
+	mov r12, QWORD PTR [rdi+1328]
+	mov r13, QWORD PTR [rdi+1336]
+	mov r14, QWORD PTR [rdi+1344]
+	mov r15, QWORD PTR [rdi+1352]
+	xor rbp, -1
+	xor r8, -1
+	xor r9, -1
+	xor r10, -1
+	xor r11, -1
+	xor r12, -1
+	xor r13, -1
+	xor r14, -1
+	xor r15, -1
+	add rbp, QWORD PTR [rdi+1936]
+	adc r8, QWORD PTR [rdi+1944]
+	adc r9, QWORD PTR [rdi+1952]
+	adc r10, QWORD PTR [rdi+1960]
+	adc r11, QWORD PTR [rdi+1968]
+	adc r12, QWORD PTR [rdi+1976]
+	adc r13, QWORD PTR [rdi+1984]
+	adc r14, QWORD PTR [rdi+1992]
+	adc r15, QWORD PTR [rdi+2000]
 	add r15, 512
-	add rdi, 648
+	mov QWORD PTR [rdi+1936], rbp
+	mov QWORD PTR [rdi+1944], r8
+	mov QWORD PTR [rdi+1952], r9
+	mov QWORD PTR [rdi+1960], r10
+	mov QWORD PTR [rdi+1968], r11
+	mov QWORD PTR [rdi+1976], r12
+	mov QWORD PTR [rdi+1984], r13
+	mov QWORD PTR [rdi+1992], r14
+	mov QWORD PTR [rdi+2000], r15
+	movq xmm7, rbx
+	movq xmm6, rsi
+	mov rsi, rdi
+	add rsi, 1864
+	mov rbx, rdi
+	add rbx, 1936
+	call {vg_p521_win_mul_adx}
 	mov rax, r15
 	shr rax, 9
 	xor rax, 1
@@ -16982,28 +16939,48 @@ vg_ecdh_p521_adx:
 	sbb r14, 0
 	sbb r15, 0
 	and r15, 511
-	mov QWORD PTR [rdi], rbp
-	mov QWORD PTR [rdi+8], r8
-	mov QWORD PTR [rdi+16], r9
-	mov QWORD PTR [rdi+24], r10
-	mov QWORD PTR [rdi+32], r11
-	mov QWORD PTR [rdi+40], r12
-	mov QWORD PTR [rdi+48], r13
-	mov QWORD PTR [rdi+56], r14
-	mov QWORD PTR [rdi+64], r15
-	sub rdi, 1936
-	mov r12, rsi
-	mov esi, 1936
-	mov edx, 1864
-	mov ecx, 1936
-	call {vg_p521_mul_mod_p_adx}
-	mov rsi, r12
-	mov r12, rsi
-	mov esi, 2008
-	mov edx, 1144
-	mov ecx, 2008
-	call {vg_p521_mul_mod_p_adx}
-	mov rsi, r12
+	mov QWORD PTR [rdi+1936], rbp
+	mov QWORD PTR [rdi+1944], r8
+	mov QWORD PTR [rdi+1952], r9
+	mov QWORD PTR [rdi+1960], r10
+	mov QWORD PTR [rdi+1968], r11
+	mov QWORD PTR [rdi+1976], r12
+	mov QWORD PTR [rdi+1984], r13
+	mov QWORD PTR [rdi+1992], r14
+	mov QWORD PTR [rdi+2000], r15
+	movq rbx, xmm7
+	movq rsi, xmm6
+	movq xmm7, rbx
+	movq xmm6, rsi
+	mov rsi, rdi
+	add rsi, 1144
+	mov rbx, rdi
+	add rbx, 2008
+	call {vg_p521_win_mul_adx}
+	mov rax, r15
+	shr rax, 9
+	xor rax, 1
+	sub rbp, rax
+	sbb r8, 0
+	sbb r9, 0
+	sbb r10, 0
+	sbb r11, 0
+	sbb r12, 0
+	sbb r13, 0
+	sbb r14, 0
+	sbb r15, 0
+	and r15, 511
+	mov QWORD PTR [rdi+2008], rbp
+	mov QWORD PTR [rdi+2016], r8
+	mov QWORD PTR [rdi+2024], r9
+	mov QWORD PTR [rdi+2032], r10
+	mov QWORD PTR [rdi+2040], r11
+	mov QWORD PTR [rdi+2048], r12
+	mov QWORD PTR [rdi+2056], r13
+	mov QWORD PTR [rdi+2064], r14
+	mov QWORD PTR [rdi+2072], r15
+	movq rbx, xmm7
+	movq rsi, xmm6
 	add rdi, 1936
 	mov rbp, QWORD PTR [rdi]
 	mov r8, QWORD PTR [rdi+8]
@@ -17049,12 +17026,37 @@ vg_ecdh_p521_adx:
 	mov QWORD PTR [rdi+56], r14
 	mov QWORD PTR [rdi+64], r15
 	sub rdi, 1360
-	mov r12, rsi
-	mov esi, 1432
-	mov edx, 1216
-	mov ecx, 1792
-	call {vg_p521_mul_mod_p_adx}
-	mov rsi, r12
+	movq xmm7, rbx
+	movq xmm6, rsi
+	mov rsi, rdi
+	add rsi, 1216
+	mov rbx, rdi
+	add rbx, 1792
+	call {vg_p521_win_mul_adx}
+	mov rax, r15
+	shr rax, 9
+	xor rax, 1
+	sub rbp, rax
+	sbb r8, 0
+	sbb r9, 0
+	sbb r10, 0
+	sbb r11, 0
+	sbb r12, 0
+	sbb r13, 0
+	sbb r14, 0
+	sbb r15, 0
+	and r15, 511
+	mov QWORD PTR [rdi+1432], rbp
+	mov QWORD PTR [rdi+1440], r8
+	mov QWORD PTR [rdi+1448], r9
+	mov QWORD PTR [rdi+1456], r10
+	mov QWORD PTR [rdi+1464], r11
+	mov QWORD PTR [rdi+1472], r12
+	mov QWORD PTR [rdi+1480], r13
+	mov QWORD PTR [rdi+1488], r14
+	mov QWORD PTR [rdi+1496], r15
+	movq rbx, xmm7
+	movq rsi, xmm6
 	mov rdx, QWORD PTR [rdi+1648]
 	or rdx, QWORD PTR [rdi+1656]
 	or rdx, QWORD PTR [rdi+1664]
@@ -17406,36 +17408,130 @@ vg_ecdh_p521_adx:
 	cmp rbx, 1
 	jne 217b
 	sub rbx, 1
+	mov rbp, QWORD PTR [rdi+1144]
+	mov r8, QWORD PTR [rdi+1152]
+	mov r9, QWORD PTR [rdi+1160]
+	mov r10, QWORD PTR [rdi+1168]
+	mov r11, QWORD PTR [rdi+1176]
+	mov r12, QWORD PTR [rdi+1184]
+	mov r13, QWORD PTR [rdi+1192]
+	mov r14, QWORD PTR [rdi+1200]
+	mov r15, QWORD PTR [rdi+1208]
+	add rbp, QWORD PTR [rdi+1144]
+	adc r8, QWORD PTR [rdi+1152]
+	adc r9, QWORD PTR [rdi+1160]
+	adc r10, QWORD PTR [rdi+1168]
+	adc r11, QWORD PTR [rdi+1176]
+	adc r12, QWORD PTR [rdi+1184]
+	adc r13, QWORD PTR [rdi+1192]
+	adc r14, QWORD PTR [rdi+1200]
+	adc r15, QWORD PTR [rdi+1208]
+	mov QWORD PTR [rdi+1144], rbp
+	mov QWORD PTR [rdi+1152], r8
+	mov QWORD PTR [rdi+1160], r9
+	mov QWORD PTR [rdi+1168], r10
+	mov QWORD PTR [rdi+1176], r11
+	mov QWORD PTR [rdi+1184], r12
+	mov QWORD PTR [rdi+1192], r13
+	mov QWORD PTR [rdi+1200], r14
+	mov QWORD PTR [rdi+1208], r15
 	add rbx, 8192
 219:
-	mov r12, rsi
-	mov esi, 1720
-	mov edx, 1216
-	mov ecx, 1216
-	call {vg_p521_mul_mod_p_adx}
-	mov rsi, r12
-	add rdi, 1072
-	mov rbp, QWORD PTR [rdi]
-	mov r8, QWORD PTR [rdi+8]
-	mov r9, QWORD PTR [rdi+16]
-	mov r10, QWORD PTR [rdi+24]
-	mov r11, QWORD PTR [rdi+32]
-	mov r12, QWORD PTR [rdi+40]
-	mov r13, QWORD PTR [rdi+48]
-	mov r14, QWORD PTR [rdi+56]
-	mov r15, QWORD PTR [rdi+64]
-	add rdi, 648
-	sub rbp, QWORD PTR [rdi]
-	sbb r8, QWORD PTR [rdi+8]
-	sbb r9, QWORD PTR [rdi+16]
-	sbb r10, QWORD PTR [rdi+24]
-	sbb r11, QWORD PTR [rdi+32]
-	sbb r12, QWORD PTR [rdi+40]
-	sbb r13, QWORD PTR [rdi+48]
-	sbb r14, QWORD PTR [rdi+56]
-	sbb r15, QWORD PTR [rdi+64]
+	movq xmm7, rbx
+	mov rbx, rdi
+	add rbx, 1216
+	call {vg_p521_win_sqr_adx}
+	mov rax, r15
+	shr rax, 9
+	xor rax, 1
+	sub rbp, rax
+	sbb r8, 0
+	sbb r9, 0
+	sbb r10, 0
+	sbb r11, 0
+	sbb r12, 0
+	sbb r13, 0
+	sbb r14, 0
+	sbb r15, 0
+	and r15, 511
+	mov QWORD PTR [rdi+1720], rbp
+	mov QWORD PTR [rdi+1728], r8
+	mov QWORD PTR [rdi+1736], r9
+	mov QWORD PTR [rdi+1744], r10
+	mov QWORD PTR [rdi+1752], r11
+	mov QWORD PTR [rdi+1760], r12
+	mov QWORD PTR [rdi+1768], r13
+	mov QWORD PTR [rdi+1776], r14
+	mov QWORD PTR [rdi+1784], r15
+	movq rbx, xmm7
+	mov rbp, QWORD PTR [rdi+1720]
+	mov r8, QWORD PTR [rdi+1728]
+	mov r9, QWORD PTR [rdi+1736]
+	mov r10, QWORD PTR [rdi+1744]
+	mov r11, QWORD PTR [rdi+1752]
+	mov r12, QWORD PTR [rdi+1760]
+	mov r13, QWORD PTR [rdi+1768]
+	mov r14, QWORD PTR [rdi+1776]
+	mov r15, QWORD PTR [rdi+1784]
+	xor rbp, -1
+	xor r8, -1
+	xor r9, -1
+	xor r10, -1
+	xor r11, -1
+	xor r12, -1
+	xor r13, -1
+	xor r14, -1
+	xor r15, -1
+	add rbp, QWORD PTR [rdi+1072]
+	adc r8, QWORD PTR [rdi+1080]
+	adc r9, QWORD PTR [rdi+1088]
+	adc r10, QWORD PTR [rdi+1096]
+	adc r11, QWORD PTR [rdi+1104]
+	adc r12, QWORD PTR [rdi+1112]
+	adc r13, QWORD PTR [rdi+1120]
+	adc r14, QWORD PTR [rdi+1128]
+	adc r15, QWORD PTR [rdi+1136]
 	add r15, 512
-	add rdi, 216
+	mov QWORD PTR [rdi+1792], rbp
+	mov QWORD PTR [rdi+1800], r8
+	mov QWORD PTR [rdi+1808], r9
+	mov QWORD PTR [rdi+1816], r10
+	mov QWORD PTR [rdi+1824], r11
+	mov QWORD PTR [rdi+1832], r12
+	mov QWORD PTR [rdi+1840], r13
+	mov QWORD PTR [rdi+1848], r14
+	mov QWORD PTR [rdi+1856], r15
+	mov rbp, QWORD PTR [rdi+1072]
+	mov r8, QWORD PTR [rdi+1080]
+	mov r9, QWORD PTR [rdi+1088]
+	mov r10, QWORD PTR [rdi+1096]
+	mov r11, QWORD PTR [rdi+1104]
+	mov r12, QWORD PTR [rdi+1112]
+	mov r13, QWORD PTR [rdi+1120]
+	mov r14, QWORD PTR [rdi+1128]
+	mov r15, QWORD PTR [rdi+1136]
+	add rbp, QWORD PTR [rdi+1720]
+	adc r8, QWORD PTR [rdi+1728]
+	adc r9, QWORD PTR [rdi+1736]
+	adc r10, QWORD PTR [rdi+1744]
+	adc r11, QWORD PTR [rdi+1752]
+	adc r12, QWORD PTR [rdi+1760]
+	adc r13, QWORD PTR [rdi+1768]
+	adc r14, QWORD PTR [rdi+1776]
+	adc r15, QWORD PTR [rdi+1784]
+	mov QWORD PTR [rdi+1720], rbp
+	mov QWORD PTR [rdi+1728], r8
+	mov QWORD PTR [rdi+1736], r9
+	mov QWORD PTR [rdi+1744], r10
+	mov QWORD PTR [rdi+1752], r11
+	mov QWORD PTR [rdi+1760], r12
+	mov QWORD PTR [rdi+1768], r13
+	mov QWORD PTR [rdi+1776], r14
+	mov QWORD PTR [rdi+1784], r15
+	movq xmm7, rbx
+	mov rbx, rdi
+	add rbx, 1144
+	call {vg_p521_win_sqr_adx}
 	mov rax, r15
 	shr rax, 9
 	xor rax, 1
@@ -17449,39 +17545,23 @@ vg_ecdh_p521_adx:
 	sbb r14, 0
 	sbb r15, 0
 	and r15, 511
-	mov QWORD PTR [rdi], rbp
-	mov QWORD PTR [rdi+8], r8
-	mov QWORD PTR [rdi+16], r9
-	mov QWORD PTR [rdi+24], r10
-	mov QWORD PTR [rdi+32], r11
-	mov QWORD PTR [rdi+40], r12
-	mov QWORD PTR [rdi+48], r13
-	mov QWORD PTR [rdi+56], r14
-	mov QWORD PTR [rdi+64], r15
-	sub rdi, 1936
-	add rdi, 1072
-	mov rbp, QWORD PTR [rdi]
-	mov r8, QWORD PTR [rdi+8]
-	mov r9, QWORD PTR [rdi+16]
-	mov r10, QWORD PTR [rdi+24]
-	mov r11, QWORD PTR [rdi+32]
-	mov r12, QWORD PTR [rdi+40]
-	mov r13, QWORD PTR [rdi+48]
-	mov r14, QWORD PTR [rdi+56]
-	mov r15, QWORD PTR [rdi+64]
-	add rdi, 648
-	xor eax, eax
-	cmp rax, -1
-	adc rbp, QWORD PTR [rdi]
-	adc r8, QWORD PTR [rdi+8]
-	adc r9, QWORD PTR [rdi+16]
-	adc r10, QWORD PTR [rdi+24]
-	adc r11, QWORD PTR [rdi+32]
-	adc r12, QWORD PTR [rdi+40]
-	adc r13, QWORD PTR [rdi+48]
-	adc r14, QWORD PTR [rdi+56]
-	adc r15, QWORD PTR [rdi+64]
-	add rdi, -432
+	mov QWORD PTR [rdi+1864], rbp
+	mov QWORD PTR [rdi+1872], r8
+	mov QWORD PTR [rdi+1880], r9
+	mov QWORD PTR [rdi+1888], r10
+	mov QWORD PTR [rdi+1896], r11
+	mov QWORD PTR [rdi+1904], r12
+	mov QWORD PTR [rdi+1912], r13
+	mov QWORD PTR [rdi+1920], r14
+	mov QWORD PTR [rdi+1928], r15
+	movq rbx, xmm7
+	movq xmm7, rbx
+	movq xmm6, rsi
+	mov rsi, rdi
+	add rsi, 1792
+	mov rbx, rdi
+	add rbx, 1720
+	call {vg_p521_win_mul_adx}
 	mov rax, r15
 	shr rax, 9
 	xor rax, 1
@@ -17495,39 +17575,21 @@ vg_ecdh_p521_adx:
 	sbb r14, 0
 	sbb r15, 0
 	and r15, 511
-	mov QWORD PTR [rdi], rbp
-	mov QWORD PTR [rdi+8], r8
-	mov QWORD PTR [rdi+16], r9
-	mov QWORD PTR [rdi+24], r10
-	mov QWORD PTR [rdi+32], r11
-	mov QWORD PTR [rdi+40], r12
-	mov QWORD PTR [rdi+48], r13
-	mov QWORD PTR [rdi+56], r14
-	mov QWORD PTR [rdi+64], r15
-	sub rdi, 1288
-	add rdi, 1144
-	mov rbp, QWORD PTR [rdi]
-	mov r8, QWORD PTR [rdi+8]
-	mov r9, QWORD PTR [rdi+16]
-	mov r10, QWORD PTR [rdi+24]
-	mov r11, QWORD PTR [rdi+32]
-	mov r12, QWORD PTR [rdi+40]
-	mov r13, QWORD PTR [rdi+48]
-	mov r14, QWORD PTR [rdi+56]
-	mov r15, QWORD PTR [rdi+64]
-	add rdi, 72
-	xor eax, eax
-	cmp rax, -1
-	adc rbp, QWORD PTR [rdi]
-	adc r8, QWORD PTR [rdi+8]
-	adc r9, QWORD PTR [rdi+16]
-	adc r10, QWORD PTR [rdi+24]
-	adc r11, QWORD PTR [rdi+32]
-	adc r12, QWORD PTR [rdi+40]
-	adc r13, QWORD PTR [rdi+48]
-	adc r14, QWORD PTR [rdi+56]
-	adc r15, QWORD PTR [rdi+64]
-	add rdi, 216
+	mov QWORD PTR [rdi+1792], rbp
+	mov QWORD PTR [rdi+1800], r8
+	mov QWORD PTR [rdi+1808], r9
+	mov QWORD PTR [rdi+1816], r10
+	mov QWORD PTR [rdi+1824], r11
+	mov QWORD PTR [rdi+1832], r12
+	mov QWORD PTR [rdi+1840], r13
+	mov QWORD PTR [rdi+1848], r14
+	mov QWORD PTR [rdi+1856], r15
+	movq rbx, xmm7
+	movq rsi, xmm6
+	movq xmm7, rbx
+	mov rbx, rdi
+	add rbx, 1864
+	call {vg_p521_win_sqr_adx}
 	mov rax, r15
 	shr rax, 9
 	xor rax, 1
@@ -17541,44 +17603,25 @@ vg_ecdh_p521_adx:
 	sbb r14, 0
 	sbb r15, 0
 	and r15, 511
-	mov QWORD PTR [rdi], rbp
-	mov QWORD PTR [rdi+8], r8
-	mov QWORD PTR [rdi+16], r9
-	mov QWORD PTR [rdi+24], r10
-	mov QWORD PTR [rdi+32], r11
-	mov QWORD PTR [rdi+40], r12
-	mov QWORD PTR [rdi+48], r13
-	mov QWORD PTR [rdi+56], r14
-	mov QWORD PTR [rdi+64], r15
-	sub rdi, 1432
-	mov r12, rsi
-	mov esi, 1792
-	mov edx, 1144
-	mov ecx, 1144
-	call {vg_p521_mul_mod_p_adx}
-	mov rsi, r12
-	mov r12, rsi
-	mov esi, 1936
-	mov edx, 1936
-	mov ecx, 1288
-	call {vg_p521_mul_mod_p_adx}
-	mov rsi, r12
-	mov r12, rsi
-	mov esi, 1864
-	mov edx, 1072
-	mov ecx, 1792
-	call {vg_p521_mul_mod_p_adx}
-	mov rsi, r12
-	add rdi, 1936
-	mov rbp, QWORD PTR [rdi]
-	mov r8, QWORD PTR [rdi+8]
-	mov r9, QWORD PTR [rdi+16]
-	mov r10, QWORD PTR [rdi+24]
-	mov r11, QWORD PTR [rdi+32]
-	mov r12, QWORD PTR [rdi+40]
-	mov r13, QWORD PTR [rdi+48]
-	mov r14, QWORD PTR [rdi+56]
-	mov r15, QWORD PTR [rdi+64]
+	mov QWORD PTR [rdi+1720], rbp
+	mov QWORD PTR [rdi+1728], r8
+	mov QWORD PTR [rdi+1736], r9
+	mov QWORD PTR [rdi+1744], r10
+	mov QWORD PTR [rdi+1752], r11
+	mov QWORD PTR [rdi+1760], r12
+	mov QWORD PTR [rdi+1768], r13
+	mov QWORD PTR [rdi+1776], r14
+	mov QWORD PTR [rdi+1784], r15
+	movq rbx, xmm7
+	mov rbp, QWORD PTR [rdi+1792]
+	mov r8, QWORD PTR [rdi+1800]
+	mov r9, QWORD PTR [rdi+1808]
+	mov r10, QWORD PTR [rdi+1816]
+	mov r11, QWORD PTR [rdi+1824]
+	mov r12, QWORD PTR [rdi+1832]
+	mov r13, QWORD PTR [rdi+1840]
+	mov r14, QWORD PTR [rdi+1848]
+	mov r15, QWORD PTR [rdi+1856]
 	add rbp, rbp
 	adc r8, r8
 	adc r9, r9
@@ -17588,44 +17631,31 @@ vg_ecdh_p521_adx:
 	adc r13, r13
 	adc r14, r14
 	adc r15, r15
-	mov rax, r15
-	shr rax, 9
-	add rbp, rax
-	and r15, 511
-	add rdi, -648
-	mov QWORD PTR [rdi], rbp
-	mov QWORD PTR [rdi+8], r8
-	mov QWORD PTR [rdi+16], r9
-	mov QWORD PTR [rdi+24], r10
-	mov QWORD PTR [rdi+32], r11
-	mov QWORD PTR [rdi+40], r12
-	mov QWORD PTR [rdi+48], r13
-	mov QWORD PTR [rdi+56], r14
-	mov QWORD PTR [rdi+64], r15
-	sub rdi, 1288
-	add rdi, 1288
-	mov rbp, QWORD PTR [rdi]
-	mov r8, QWORD PTR [rdi+8]
-	mov r9, QWORD PTR [rdi+16]
-	mov r10, QWORD PTR [rdi+24]
-	mov r11, QWORD PTR [rdi+32]
-	mov r12, QWORD PTR [rdi+40]
-	mov r13, QWORD PTR [rdi+48]
-	mov r14, QWORD PTR [rdi+56]
-	mov r15, QWORD PTR [rdi+64]
-	add rdi, 648
-	xor eax, eax
-	cmp rax, -1
-	adc rbp, QWORD PTR [rdi]
-	adc r8, QWORD PTR [rdi+8]
-	adc r9, QWORD PTR [rdi+16]
-	adc r10, QWORD PTR [rdi+24]
-	adc r11, QWORD PTR [rdi+32]
-	adc r12, QWORD PTR [rdi+40]
-	adc r13, QWORD PTR [rdi+48]
-	adc r14, QWORD PTR [rdi+56]
-	adc r15, QWORD PTR [rdi+64]
-	add rdi, 0
+	add rbp, QWORD PTR [rdi+1792]
+	adc r8, QWORD PTR [rdi+1800]
+	adc r9, QWORD PTR [rdi+1808]
+	adc r10, QWORD PTR [rdi+1816]
+	adc r11, QWORD PTR [rdi+1824]
+	adc r12, QWORD PTR [rdi+1832]
+	adc r13, QWORD PTR [rdi+1840]
+	adc r14, QWORD PTR [rdi+1848]
+	adc r15, QWORD PTR [rdi+1856]
+	mov QWORD PTR [rdi+1792], rbp
+	mov QWORD PTR [rdi+1800], r8
+	mov QWORD PTR [rdi+1808], r9
+	mov QWORD PTR [rdi+1816], r10
+	mov QWORD PTR [rdi+1824], r11
+	mov QWORD PTR [rdi+1832], r12
+	mov QWORD PTR [rdi+1840], r13
+	mov QWORD PTR [rdi+1848], r14
+	mov QWORD PTR [rdi+1856], r15
+	movq xmm7, rbx
+	movq xmm6, rsi
+	mov rsi, rdi
+	add rsi, 1072
+	mov rbx, rdi
+	add rbx, 1864
+	call {vg_p521_win_mul_adx}
 	mov rax, r15
 	shr rax, 9
 	xor rax, 1
@@ -17639,32 +17669,62 @@ vg_ecdh_p521_adx:
 	sbb r14, 0
 	sbb r15, 0
 	and r15, 511
-	mov QWORD PTR [rdi], rbp
-	mov QWORD PTR [rdi+8], r8
-	mov QWORD PTR [rdi+16], r9
-	mov QWORD PTR [rdi+24], r10
-	mov QWORD PTR [rdi+32], r11
-	mov QWORD PTR [rdi+40], r12
-	mov QWORD PTR [rdi+48], r13
-	mov QWORD PTR [rdi+56], r14
-	mov QWORD PTR [rdi+64], r15
-	sub rdi, 1936
-	mov r12, rsi
-	mov esi, 1432
-	mov edx, 1432
-	mov ecx, 1432
-	call {vg_p521_mul_mod_p_adx}
-	mov rsi, r12
-	add rdi, 1864
-	mov rbp, QWORD PTR [rdi]
-	mov r8, QWORD PTR [rdi+8]
-	mov r9, QWORD PTR [rdi+16]
-	mov r10, QWORD PTR [rdi+24]
-	mov r11, QWORD PTR [rdi+32]
-	mov r12, QWORD PTR [rdi+40]
-	mov r13, QWORD PTR [rdi+48]
-	mov r14, QWORD PTR [rdi+56]
-	mov r15, QWORD PTR [rdi+64]
+	mov QWORD PTR [rdi+1864], rbp
+	mov QWORD PTR [rdi+1872], r8
+	mov QWORD PTR [rdi+1880], r9
+	mov QWORD PTR [rdi+1888], r10
+	mov QWORD PTR [rdi+1896], r11
+	mov QWORD PTR [rdi+1904], r12
+	mov QWORD PTR [rdi+1912], r13
+	mov QWORD PTR [rdi+1920], r14
+	mov QWORD PTR [rdi+1928], r15
+	movq rbx, xmm7
+	movq rsi, xmm6
+	movq xmm7, rbx
+	mov rbx, rdi
+	add rbx, 1792
+	call {vg_p521_win_sqr_adx}
+	mov rax, r15
+	shr rax, 9
+	xor rax, 1
+	sub rbp, rax
+	sbb r8, 0
+	sbb r9, 0
+	sbb r10, 0
+	sbb r11, 0
+	sbb r12, 0
+	sbb r13, 0
+	sbb r14, 0
+	sbb r15, 0
+	and r15, 511
+	mov QWORD PTR [rdi+1936], rbp
+	mov QWORD PTR [rdi+1944], r8
+	mov QWORD PTR [rdi+1952], r9
+	mov QWORD PTR [rdi+1960], r10
+	mov QWORD PTR [rdi+1968], r11
+	mov QWORD PTR [rdi+1976], r12
+	mov QWORD PTR [rdi+1984], r13
+	mov QWORD PTR [rdi+1992], r14
+	mov QWORD PTR [rdi+2000], r15
+	movq rbx, xmm7
+	mov rbp, QWORD PTR [rdi+1864]
+	mov r8, QWORD PTR [rdi+1872]
+	mov r9, QWORD PTR [rdi+1880]
+	mov r10, QWORD PTR [rdi+1888]
+	mov r11, QWORD PTR [rdi+1896]
+	mov r12, QWORD PTR [rdi+1904]
+	mov r13, QWORD PTR [rdi+1912]
+	mov r14, QWORD PTR [rdi+1920]
+	mov r15, QWORD PTR [rdi+1928]
+	xor rbp, -1
+	xor r8, -1
+	xor r9, -1
+	xor r10, -1
+	xor r11, -1
+	xor r12, -1
+	xor r13, -1
+	xor r14, -1
+	xor r15, -1
 	add rbp, rbp
 	adc r8, r8
 	adc r9, r9
@@ -17674,37 +17734,405 @@ vg_ecdh_p521_adx:
 	adc r13, r13
 	adc r14, r14
 	adc r15, r15
+	add rbp, QWORD PTR [rdi+1936]
+	adc r8, QWORD PTR [rdi+1944]
+	adc r9, QWORD PTR [rdi+1952]
+	adc r10, QWORD PTR [rdi+1960]
+	adc r11, QWORD PTR [rdi+1968]
+	adc r12, QWORD PTR [rdi+1976]
+	adc r13, QWORD PTR [rdi+1984]
+	adc r14, QWORD PTR [rdi+1992]
+	adc r15, QWORD PTR [rdi+2000]
+	add r15, 1024
 	mov rax, r15
 	shr rax, 9
-	add rbp, rax
 	and r15, 511
-	add rdi, 0
-	mov QWORD PTR [rdi], rbp
-	mov QWORD PTR [rdi+8], r8
-	mov QWORD PTR [rdi+16], r9
-	mov QWORD PTR [rdi+24], r10
-	mov QWORD PTR [rdi+32], r11
-	mov QWORD PTR [rdi+40], r12
-	mov QWORD PTR [rdi+48], r13
-	mov QWORD PTR [rdi+56], r14
-	mov QWORD PTR [rdi+64], r15
-	sub rdi, 1864
-	mov r12, rsi
-	mov esi, 1288
-	mov edx, 1936
-	mov ecx, 1936
-	call {vg_p521_mul_mod_p_adx}
-	mov rsi, r12
-	add rdi, 1864
-	mov rbp, QWORD PTR [rdi]
-	mov r8, QWORD PTR [rdi+8]
-	mov r9, QWORD PTR [rdi+16]
-	mov r10, QWORD PTR [rdi+24]
-	mov r11, QWORD PTR [rdi+32]
-	mov r12, QWORD PTR [rdi+40]
-	mov r13, QWORD PTR [rdi+48]
-	mov r14, QWORD PTR [rdi+56]
-	mov r15, QWORD PTR [rdi+64]
+	add rbp, rax
+	adc r8, 0
+	adc r9, 0
+	adc r10, 0
+	adc r11, 0
+	adc r12, 0
+	adc r13, 0
+	adc r14, 0
+	adc r15, 0
+	mov rax, r15
+	shr rax, 9
+	and r15, 511
+	add rbp, rax
+	mov QWORD PTR [rdi+1072], rbp
+	mov QWORD PTR [rdi+1080], r8
+	mov QWORD PTR [rdi+1088], r9
+	mov QWORD PTR [rdi+1096], r10
+	mov QWORD PTR [rdi+1104], r11
+	mov QWORD PTR [rdi+1112], r12
+	mov QWORD PTR [rdi+1120], r13
+	mov QWORD PTR [rdi+1128], r14
+	mov QWORD PTR [rdi+1136], r15
+	movq xmm7, rbx
+	movq xmm6, rsi
+	mov rsi, rdi
+	add rsi, 1144
+	mov rbx, rdi
+	add rbx, 1216
+	call {vg_p521_win_mul_adx}
+	mov rax, r15
+	shr rax, 9
+	xor rax, 1
+	sub rbp, rax
+	sbb r8, 0
+	sbb r9, 0
+	sbb r10, 0
+	sbb r11, 0
+	sbb r12, 0
+	sbb r13, 0
+	sbb r14, 0
+	sbb r15, 0
+	and r15, 511
+	mov QWORD PTR [rdi+1216], rbp
+	mov QWORD PTR [rdi+1224], r8
+	mov QWORD PTR [rdi+1232], r9
+	mov QWORD PTR [rdi+1240], r10
+	mov QWORD PTR [rdi+1248], r11
+	mov QWORD PTR [rdi+1256], r12
+	mov QWORD PTR [rdi+1264], r13
+	mov QWORD PTR [rdi+1272], r14
+	mov QWORD PTR [rdi+1280], r15
+	movq rbx, xmm7
+	movq rsi, xmm6
+	mov rbp, QWORD PTR [rdi+1072]
+	mov r8, QWORD PTR [rdi+1080]
+	mov r9, QWORD PTR [rdi+1088]
+	mov r10, QWORD PTR [rdi+1096]
+	mov r11, QWORD PTR [rdi+1104]
+	mov r12, QWORD PTR [rdi+1112]
+	mov r13, QWORD PTR [rdi+1120]
+	mov r14, QWORD PTR [rdi+1128]
+	mov r15, QWORD PTR [rdi+1136]
+	xor rbp, -1
+	xor r8, -1
+	xor r9, -1
+	xor r10, -1
+	xor r11, -1
+	xor r12, -1
+	xor r13, -1
+	xor r14, -1
+	xor r15, -1
+	add rbp, QWORD PTR [rdi+1864]
+	adc r8, QWORD PTR [rdi+1872]
+	adc r9, QWORD PTR [rdi+1880]
+	adc r10, QWORD PTR [rdi+1888]
+	adc r11, QWORD PTR [rdi+1896]
+	adc r12, QWORD PTR [rdi+1904]
+	adc r13, QWORD PTR [rdi+1912]
+	adc r14, QWORD PTR [rdi+1920]
+	adc r15, QWORD PTR [rdi+1928]
+	add r15, 512
+	mov QWORD PTR [rdi+1864], rbp
+	mov QWORD PTR [rdi+1872], r8
+	mov QWORD PTR [rdi+1880], r9
+	mov QWORD PTR [rdi+1888], r10
+	mov QWORD PTR [rdi+1896], r11
+	mov QWORD PTR [rdi+1904], r12
+	mov QWORD PTR [rdi+1912], r13
+	mov QWORD PTR [rdi+1920], r14
+	mov QWORD PTR [rdi+1928], r15
+	mov rbp, QWORD PTR [rdi+1792]
+	mov r8, QWORD PTR [rdi+1800]
+	mov r9, QWORD PTR [rdi+1808]
+	mov r10, QWORD PTR [rdi+1816]
+	mov r11, QWORD PTR [rdi+1824]
+	mov r12, QWORD PTR [rdi+1832]
+	mov r13, QWORD PTR [rdi+1840]
+	mov r14, QWORD PTR [rdi+1848]
+	mov r15, QWORD PTR [rdi+1856]
+	add rbp, QWORD PTR [rdi+1792]
+	adc r8, QWORD PTR [rdi+1800]
+	adc r9, QWORD PTR [rdi+1808]
+	adc r10, QWORD PTR [rdi+1816]
+	adc r11, QWORD PTR [rdi+1824]
+	adc r12, QWORD PTR [rdi+1832]
+	adc r13, QWORD PTR [rdi+1840]
+	adc r14, QWORD PTR [rdi+1848]
+	adc r15, QWORD PTR [rdi+1856]
+	mov QWORD PTR [rdi+1792], rbp
+	mov QWORD PTR [rdi+1800], r8
+	mov QWORD PTR [rdi+1808], r9
+	mov QWORD PTR [rdi+1816], r10
+	mov QWORD PTR [rdi+1824], r11
+	mov QWORD PTR [rdi+1832], r12
+	mov QWORD PTR [rdi+1840], r13
+	mov QWORD PTR [rdi+1848], r14
+	mov QWORD PTR [rdi+1856], r15
+	movq xmm7, rbx
+	movq xmm6, rsi
+	mov rsi, rdi
+	add rsi, 1792
+	mov rbx, rdi
+	add rbx, 1864
+	call {vg_p521_win_mul_adx}
+	mov rax, r15
+	shr rax, 9
+	xor rax, 1
+	sub rbp, rax
+	sbb r8, 0
+	sbb r9, 0
+	sbb r10, 0
+	sbb r11, 0
+	sbb r12, 0
+	sbb r13, 0
+	sbb r14, 0
+	sbb r15, 0
+	and r15, 511
+	mov QWORD PTR [rdi+1864], rbp
+	mov QWORD PTR [rdi+1872], r8
+	mov QWORD PTR [rdi+1880], r9
+	mov QWORD PTR [rdi+1888], r10
+	mov QWORD PTR [rdi+1896], r11
+	mov QWORD PTR [rdi+1904], r12
+	mov QWORD PTR [rdi+1912], r13
+	mov QWORD PTR [rdi+1920], r14
+	mov QWORD PTR [rdi+1928], r15
+	movq rbx, xmm7
+	movq rsi, xmm6
+	mov rbp, QWORD PTR [rdi+1720]
+	mov r8, QWORD PTR [rdi+1728]
+	mov r9, QWORD PTR [rdi+1736]
+	mov r10, QWORD PTR [rdi+1744]
+	mov r11, QWORD PTR [rdi+1752]
+	mov r12, QWORD PTR [rdi+1760]
+	mov r13, QWORD PTR [rdi+1768]
+	mov r14, QWORD PTR [rdi+1776]
+	mov r15, QWORD PTR [rdi+1784]
+	xor rbp, -1
+	xor r8, -1
+	xor r9, -1
+	xor r10, -1
+	xor r11, -1
+	xor r12, -1
+	xor r13, -1
+	xor r14, -1
+	xor r15, -1
+	add rbp, QWORD PTR [rdi+1864]
+	adc r8, QWORD PTR [rdi+1872]
+	adc r9, QWORD PTR [rdi+1880]
+	adc r10, QWORD PTR [rdi+1888]
+	adc r11, QWORD PTR [rdi+1896]
+	adc r12, QWORD PTR [rdi+1904]
+	adc r13, QWORD PTR [rdi+1912]
+	adc r14, QWORD PTR [rdi+1920]
+	adc r15, QWORD PTR [rdi+1928]
+	add r15, 512
+	mov rax, r15
+	shr rax, 9
+	and r15, 511
+	add rbp, rax
+	adc r8, 0
+	adc r9, 0
+	adc r10, 0
+	adc r11, 0
+	adc r12, 0
+	adc r13, 0
+	adc r14, 0
+	adc r15, 0
+	mov rax, r15
+	shr rax, 9
+	and r15, 511
+	add rbp, rax
+	mov QWORD PTR [rdi+1144], rbp
+	mov QWORD PTR [rdi+1152], r8
+	mov QWORD PTR [rdi+1160], r9
+	mov QWORD PTR [rdi+1168], r10
+	mov QWORD PTR [rdi+1176], r11
+	mov QWORD PTR [rdi+1184], r12
+	mov QWORD PTR [rdi+1192], r13
+	mov QWORD PTR [rdi+1200], r14
+	mov QWORD PTR [rdi+1208], r15
+	movq xmm7, rbx
+	mov rbx, rdi
+	add rbx, 1216
+	call {vg_p521_win_sqr_adx}
+	mov rax, r15
+	shr rax, 9
+	xor rax, 1
+	sub rbp, rax
+	sbb r8, 0
+	sbb r9, 0
+	sbb r10, 0
+	sbb r11, 0
+	sbb r12, 0
+	sbb r13, 0
+	sbb r14, 0
+	sbb r15, 0
+	and r15, 511
+	mov QWORD PTR [rdi+1720], rbp
+	mov QWORD PTR [rdi+1728], r8
+	mov QWORD PTR [rdi+1736], r9
+	mov QWORD PTR [rdi+1744], r10
+	mov QWORD PTR [rdi+1752], r11
+	mov QWORD PTR [rdi+1760], r12
+	mov QWORD PTR [rdi+1768], r13
+	mov QWORD PTR [rdi+1776], r14
+	mov QWORD PTR [rdi+1784], r15
+	movq rbx, xmm7
+	mov rbp, QWORD PTR [rdi+1720]
+	mov r8, QWORD PTR [rdi+1728]
+	mov r9, QWORD PTR [rdi+1736]
+	mov r10, QWORD PTR [rdi+1744]
+	mov r11, QWORD PTR [rdi+1752]
+	mov r12, QWORD PTR [rdi+1760]
+	mov r13, QWORD PTR [rdi+1768]
+	mov r14, QWORD PTR [rdi+1776]
+	mov r15, QWORD PTR [rdi+1784]
+	xor rbp, -1
+	xor r8, -1
+	xor r9, -1
+	xor r10, -1
+	xor r11, -1
+	xor r12, -1
+	xor r13, -1
+	xor r14, -1
+	xor r15, -1
+	add rbp, QWORD PTR [rdi+1072]
+	adc r8, QWORD PTR [rdi+1080]
+	adc r9, QWORD PTR [rdi+1088]
+	adc r10, QWORD PTR [rdi+1096]
+	adc r11, QWORD PTR [rdi+1104]
+	adc r12, QWORD PTR [rdi+1112]
+	adc r13, QWORD PTR [rdi+1120]
+	adc r14, QWORD PTR [rdi+1128]
+	adc r15, QWORD PTR [rdi+1136]
+	add r15, 512
+	mov QWORD PTR [rdi+1792], rbp
+	mov QWORD PTR [rdi+1800], r8
+	mov QWORD PTR [rdi+1808], r9
+	mov QWORD PTR [rdi+1816], r10
+	mov QWORD PTR [rdi+1824], r11
+	mov QWORD PTR [rdi+1832], r12
+	mov QWORD PTR [rdi+1840], r13
+	mov QWORD PTR [rdi+1848], r14
+	mov QWORD PTR [rdi+1856], r15
+	mov rbp, QWORD PTR [rdi+1072]
+	mov r8, QWORD PTR [rdi+1080]
+	mov r9, QWORD PTR [rdi+1088]
+	mov r10, QWORD PTR [rdi+1096]
+	mov r11, QWORD PTR [rdi+1104]
+	mov r12, QWORD PTR [rdi+1112]
+	mov r13, QWORD PTR [rdi+1120]
+	mov r14, QWORD PTR [rdi+1128]
+	mov r15, QWORD PTR [rdi+1136]
+	add rbp, QWORD PTR [rdi+1720]
+	adc r8, QWORD PTR [rdi+1728]
+	adc r9, QWORD PTR [rdi+1736]
+	adc r10, QWORD PTR [rdi+1744]
+	adc r11, QWORD PTR [rdi+1752]
+	adc r12, QWORD PTR [rdi+1760]
+	adc r13, QWORD PTR [rdi+1768]
+	adc r14, QWORD PTR [rdi+1776]
+	adc r15, QWORD PTR [rdi+1784]
+	mov QWORD PTR [rdi+1720], rbp
+	mov QWORD PTR [rdi+1728], r8
+	mov QWORD PTR [rdi+1736], r9
+	mov QWORD PTR [rdi+1744], r10
+	mov QWORD PTR [rdi+1752], r11
+	mov QWORD PTR [rdi+1760], r12
+	mov QWORD PTR [rdi+1768], r13
+	mov QWORD PTR [rdi+1776], r14
+	mov QWORD PTR [rdi+1784], r15
+	movq xmm7, rbx
+	mov rbx, rdi
+	add rbx, 1144
+	call {vg_p521_win_sqr_adx}
+	mov rax, r15
+	shr rax, 9
+	xor rax, 1
+	sub rbp, rax
+	sbb r8, 0
+	sbb r9, 0
+	sbb r10, 0
+	sbb r11, 0
+	sbb r12, 0
+	sbb r13, 0
+	sbb r14, 0
+	sbb r15, 0
+	and r15, 511
+	mov QWORD PTR [rdi+1864], rbp
+	mov QWORD PTR [rdi+1872], r8
+	mov QWORD PTR [rdi+1880], r9
+	mov QWORD PTR [rdi+1888], r10
+	mov QWORD PTR [rdi+1896], r11
+	mov QWORD PTR [rdi+1904], r12
+	mov QWORD PTR [rdi+1912], r13
+	mov QWORD PTR [rdi+1920], r14
+	mov QWORD PTR [rdi+1928], r15
+	movq rbx, xmm7
+	movq xmm7, rbx
+	movq xmm6, rsi
+	mov rsi, rdi
+	add rsi, 1792
+	mov rbx, rdi
+	add rbx, 1720
+	call {vg_p521_win_mul_adx}
+	mov rax, r15
+	shr rax, 9
+	xor rax, 1
+	sub rbp, rax
+	sbb r8, 0
+	sbb r9, 0
+	sbb r10, 0
+	sbb r11, 0
+	sbb r12, 0
+	sbb r13, 0
+	sbb r14, 0
+	sbb r15, 0
+	and r15, 511
+	mov QWORD PTR [rdi+1792], rbp
+	mov QWORD PTR [rdi+1800], r8
+	mov QWORD PTR [rdi+1808], r9
+	mov QWORD PTR [rdi+1816], r10
+	mov QWORD PTR [rdi+1824], r11
+	mov QWORD PTR [rdi+1832], r12
+	mov QWORD PTR [rdi+1840], r13
+	mov QWORD PTR [rdi+1848], r14
+	mov QWORD PTR [rdi+1856], r15
+	movq rbx, xmm7
+	movq rsi, xmm6
+	movq xmm7, rbx
+	mov rbx, rdi
+	add rbx, 1864
+	call {vg_p521_win_sqr_adx}
+	mov rax, r15
+	shr rax, 9
+	xor rax, 1
+	sub rbp, rax
+	sbb r8, 0
+	sbb r9, 0
+	sbb r10, 0
+	sbb r11, 0
+	sbb r12, 0
+	sbb r13, 0
+	sbb r14, 0
+	sbb r15, 0
+	and r15, 511
+	mov QWORD PTR [rdi+1720], rbp
+	mov QWORD PTR [rdi+1728], r8
+	mov QWORD PTR [rdi+1736], r9
+	mov QWORD PTR [rdi+1744], r10
+	mov QWORD PTR [rdi+1752], r11
+	mov QWORD PTR [rdi+1760], r12
+	mov QWORD PTR [rdi+1768], r13
+	mov QWORD PTR [rdi+1776], r14
+	mov QWORD PTR [rdi+1784], r15
+	movq rbx, xmm7
+	mov rbp, QWORD PTR [rdi+1792]
+	mov r8, QWORD PTR [rdi+1800]
+	mov r9, QWORD PTR [rdi+1808]
+	mov r10, QWORD PTR [rdi+1816]
+	mov r11, QWORD PTR [rdi+1824]
+	mov r12, QWORD PTR [rdi+1832]
+	mov r13, QWORD PTR [rdi+1840]
+	mov r14, QWORD PTR [rdi+1848]
+	mov r15, QWORD PTR [rdi+1856]
 	add rbp, rbp
 	adc r8, r8
 	adc r9, r9
@@ -17714,43 +18142,31 @@ vg_ecdh_p521_adx:
 	adc r13, r13
 	adc r14, r14
 	adc r15, r15
-	mov rax, r15
-	shr rax, 9
-	add rbp, rax
-	and r15, 511
-	add rdi, 0
-	mov QWORD PTR [rdi], rbp
-	mov QWORD PTR [rdi+8], r8
-	mov QWORD PTR [rdi+16], r9
-	mov QWORD PTR [rdi+24], r10
-	mov QWORD PTR [rdi+32], r11
-	mov QWORD PTR [rdi+40], r12
-	mov QWORD PTR [rdi+48], r13
-	mov QWORD PTR [rdi+56], r14
-	mov QWORD PTR [rdi+64], r15
-	sub rdi, 1864
-	add rdi, 1432
-	mov rbp, QWORD PTR [rdi]
-	mov r8, QWORD PTR [rdi+8]
-	mov r9, QWORD PTR [rdi+16]
-	mov r10, QWORD PTR [rdi+24]
-	mov r11, QWORD PTR [rdi+32]
-	mov r12, QWORD PTR [rdi+40]
-	mov r13, QWORD PTR [rdi+48]
-	mov r14, QWORD PTR [rdi+56]
-	mov r15, QWORD PTR [rdi+64]
-	add rdi, 360
-	sub rbp, QWORD PTR [rdi]
-	sbb r8, QWORD PTR [rdi+8]
-	sbb r9, QWORD PTR [rdi+16]
-	sbb r10, QWORD PTR [rdi+24]
-	sbb r11, QWORD PTR [rdi+32]
-	sbb r12, QWORD PTR [rdi+40]
-	sbb r13, QWORD PTR [rdi+48]
-	sbb r14, QWORD PTR [rdi+56]
-	sbb r15, QWORD PTR [rdi+64]
-	add r15, 512
-	add rdi, -360
+	add rbp, QWORD PTR [rdi+1792]
+	adc r8, QWORD PTR [rdi+1800]
+	adc r9, QWORD PTR [rdi+1808]
+	adc r10, QWORD PTR [rdi+1816]
+	adc r11, QWORD PTR [rdi+1824]
+	adc r12, QWORD PTR [rdi+1832]
+	adc r13, QWORD PTR [rdi+1840]
+	adc r14, QWORD PTR [rdi+1848]
+	adc r15, QWORD PTR [rdi+1856]
+	mov QWORD PTR [rdi+1792], rbp
+	mov QWORD PTR [rdi+1800], r8
+	mov QWORD PTR [rdi+1808], r9
+	mov QWORD PTR [rdi+1816], r10
+	mov QWORD PTR [rdi+1824], r11
+	mov QWORD PTR [rdi+1832], r12
+	mov QWORD PTR [rdi+1840], r13
+	mov QWORD PTR [rdi+1848], r14
+	mov QWORD PTR [rdi+1856], r15
+	movq xmm7, rbx
+	movq xmm6, rsi
+	mov rsi, rdi
+	add rsi, 1072
+	mov rbx, rdi
+	add rbx, 1864
+	call {vg_p521_win_mul_adx}
 	mov rax, r15
 	shr rax, 9
 	xor rax, 1
@@ -17764,38 +18180,21 @@ vg_ecdh_p521_adx:
 	sbb r14, 0
 	sbb r15, 0
 	and r15, 511
-	mov QWORD PTR [rdi], rbp
-	mov QWORD PTR [rdi+8], r8
-	mov QWORD PTR [rdi+16], r9
-	mov QWORD PTR [rdi+24], r10
-	mov QWORD PTR [rdi+32], r11
-	mov QWORD PTR [rdi+40], r12
-	mov QWORD PTR [rdi+48], r13
-	mov QWORD PTR [rdi+56], r14
-	mov QWORD PTR [rdi+64], r15
-	sub rdi, 1432
-	add rdi, 1288
-	mov rbp, QWORD PTR [rdi]
-	mov r8, QWORD PTR [rdi+8]
-	mov r9, QWORD PTR [rdi+16]
-	mov r10, QWORD PTR [rdi+24]
-	mov r11, QWORD PTR [rdi+32]
-	mov r12, QWORD PTR [rdi+40]
-	mov r13, QWORD PTR [rdi+48]
-	mov r14, QWORD PTR [rdi+56]
-	mov r15, QWORD PTR [rdi+64]
-	add rdi, 576
-	sub rbp, QWORD PTR [rdi]
-	sbb r8, QWORD PTR [rdi+8]
-	sbb r9, QWORD PTR [rdi+16]
-	sbb r10, QWORD PTR [rdi+24]
-	sbb r11, QWORD PTR [rdi+32]
-	sbb r12, QWORD PTR [rdi+40]
-	sbb r13, QWORD PTR [rdi+48]
-	sbb r14, QWORD PTR [rdi+56]
-	sbb r15, QWORD PTR [rdi+64]
-	add r15, 512
-	add rdi, -576
+	mov QWORD PTR [rdi+1864], rbp
+	mov QWORD PTR [rdi+1872], r8
+	mov QWORD PTR [rdi+1880], r9
+	mov QWORD PTR [rdi+1888], r10
+	mov QWORD PTR [rdi+1896], r11
+	mov QWORD PTR [rdi+1904], r12
+	mov QWORD PTR [rdi+1912], r13
+	mov QWORD PTR [rdi+1920], r14
+	mov QWORD PTR [rdi+1928], r15
+	movq rbx, xmm7
+	movq rsi, xmm6
+	movq xmm7, rbx
+	mov rbx, rdi
+	add rbx, 1792
+	call {vg_p521_win_sqr_adx}
 	mov rax, r15
 	shr rax, 9
 	xor rax, 1
@@ -17809,122 +18208,34 @@ vg_ecdh_p521_adx:
 	sbb r14, 0
 	sbb r15, 0
 	and r15, 511
-	mov QWORD PTR [rdi], rbp
-	mov QWORD PTR [rdi+8], r8
-	mov QWORD PTR [rdi+16], r9
-	mov QWORD PTR [rdi+24], r10
-	mov QWORD PTR [rdi+32], r11
-	mov QWORD PTR [rdi+40], r12
-	mov QWORD PTR [rdi+48], r13
-	mov QWORD PTR [rdi+56], r14
-	mov QWORD PTR [rdi+64], r15
-	sub rdi, 1288
-	mov r12, rsi
-	mov esi, 1792
-	mov edx, 1792
-	mov ecx, 1792
-	call {vg_p521_mul_mod_p_adx}
-	mov rsi, r12
-	add rdi, 1288
-	mov rbp, QWORD PTR [rdi]
-	mov r8, QWORD PTR [rdi+8]
-	mov r9, QWORD PTR [rdi+16]
-	mov r10, QWORD PTR [rdi+24]
-	mov r11, QWORD PTR [rdi+32]
-	mov r12, QWORD PTR [rdi+40]
-	mov r13, QWORD PTR [rdi+48]
-	mov r14, QWORD PTR [rdi+56]
-	mov r15, QWORD PTR [rdi+64]
-	add rdi, 576
-	sub rbp, QWORD PTR [rdi]
-	sbb r8, QWORD PTR [rdi+8]
-	sbb r9, QWORD PTR [rdi+16]
-	sbb r10, QWORD PTR [rdi+24]
-	sbb r11, QWORD PTR [rdi+32]
-	sbb r12, QWORD PTR [rdi+40]
-	sbb r13, QWORD PTR [rdi+48]
-	sbb r14, QWORD PTR [rdi+56]
-	sbb r15, QWORD PTR [rdi+64]
-	add r15, 512
-	add rdi, -576
-	mov rax, r15
-	shr rax, 9
-	xor rax, 1
-	sub rbp, rax
-	sbb r8, 0
-	sbb r9, 0
-	sbb r10, 0
-	sbb r11, 0
-	sbb r12, 0
-	sbb r13, 0
-	sbb r14, 0
-	sbb r15, 0
-	and r15, 511
-	mov QWORD PTR [rdi], rbp
-	mov QWORD PTR [rdi+8], r8
-	mov QWORD PTR [rdi+16], r9
-	mov QWORD PTR [rdi+24], r10
-	mov QWORD PTR [rdi+32], r11
-	mov QWORD PTR [rdi+40], r12
-	mov QWORD PTR [rdi+48], r13
-	mov QWORD PTR [rdi+56], r14
-	mov QWORD PTR [rdi+64], r15
-	sub rdi, 1288
-	add rdi, 1432
-	mov rbp, QWORD PTR [rdi]
-	mov r8, QWORD PTR [rdi+8]
-	mov r9, QWORD PTR [rdi+16]
-	mov r10, QWORD PTR [rdi+24]
-	mov r11, QWORD PTR [rdi+32]
-	mov r12, QWORD PTR [rdi+40]
-	mov r13, QWORD PTR [rdi+48]
-	mov r14, QWORD PTR [rdi+56]
-	mov r15, QWORD PTR [rdi+64]
-	add rdi, 288
-	sub rbp, QWORD PTR [rdi]
-	sbb r8, QWORD PTR [rdi+8]
-	sbb r9, QWORD PTR [rdi+16]
-	sbb r10, QWORD PTR [rdi+24]
-	sbb r11, QWORD PTR [rdi+32]
-	sbb r12, QWORD PTR [rdi+40]
-	sbb r13, QWORD PTR [rdi+48]
-	sbb r14, QWORD PTR [rdi+56]
-	sbb r15, QWORD PTR [rdi+64]
-	add r15, 512
-	add rdi, -288
-	mov rax, r15
-	shr rax, 9
-	xor rax, 1
-	sub rbp, rax
-	sbb r8, 0
-	sbb r9, 0
-	sbb r10, 0
-	sbb r11, 0
-	sbb r12, 0
-	sbb r13, 0
-	sbb r14, 0
-	sbb r15, 0
-	and r15, 511
-	mov QWORD PTR [rdi], rbp
-	mov QWORD PTR [rdi+8], r8
-	mov QWORD PTR [rdi+16], r9
-	mov QWORD PTR [rdi+24], r10
-	mov QWORD PTR [rdi+32], r11
-	mov QWORD PTR [rdi+40], r12
-	mov QWORD PTR [rdi+48], r13
-	mov QWORD PTR [rdi+56], r14
-	mov QWORD PTR [rdi+64], r15
-	sub rdi, 1432
-	add rdi, 1792
-	mov rbp, QWORD PTR [rdi]
-	mov r8, QWORD PTR [rdi+8]
-	mov r9, QWORD PTR [rdi+16]
-	mov r10, QWORD PTR [rdi+24]
-	mov r11, QWORD PTR [rdi+32]
-	mov r12, QWORD PTR [rdi+40]
-	mov r13, QWORD PTR [rdi+48]
-	mov r14, QWORD PTR [rdi+56]
-	mov r15, QWORD PTR [rdi+64]
+	mov QWORD PTR [rdi+1936], rbp
+	mov QWORD PTR [rdi+1944], r8
+	mov QWORD PTR [rdi+1952], r9
+	mov QWORD PTR [rdi+1960], r10
+	mov QWORD PTR [rdi+1968], r11
+	mov QWORD PTR [rdi+1976], r12
+	mov QWORD PTR [rdi+1984], r13
+	mov QWORD PTR [rdi+1992], r14
+	mov QWORD PTR [rdi+2000], r15
+	movq rbx, xmm7
+	mov rbp, QWORD PTR [rdi+1864]
+	mov r8, QWORD PTR [rdi+1872]
+	mov r9, QWORD PTR [rdi+1880]
+	mov r10, QWORD PTR [rdi+1888]
+	mov r11, QWORD PTR [rdi+1896]
+	mov r12, QWORD PTR [rdi+1904]
+	mov r13, QWORD PTR [rdi+1912]
+	mov r14, QWORD PTR [rdi+1920]
+	mov r15, QWORD PTR [rdi+1928]
+	xor rbp, -1
+	xor r8, -1
+	xor r9, -1
+	xor r10, -1
+	xor r11, -1
+	xor r12, -1
+	xor r13, -1
+	xor r14, -1
+	xor r15, -1
 	add rbp, rbp
 	adc r8, r8
 	adc r9, r9
@@ -17934,893 +18245,347 @@ vg_ecdh_p521_adx:
 	adc r13, r13
 	adc r14, r14
 	adc r15, r15
+	add rbp, QWORD PTR [rdi+1936]
+	adc r8, QWORD PTR [rdi+1944]
+	adc r9, QWORD PTR [rdi+1952]
+	adc r10, QWORD PTR [rdi+1960]
+	adc r11, QWORD PTR [rdi+1968]
+	adc r12, QWORD PTR [rdi+1976]
+	adc r13, QWORD PTR [rdi+1984]
+	adc r14, QWORD PTR [rdi+1992]
+	adc r15, QWORD PTR [rdi+2000]
+	add r15, 1024
 	mov rax, r15
 	shr rax, 9
+	and r15, 511
 	add rbp, rax
-	and r15, 511
-	add rdi, 0
-	mov QWORD PTR [rdi], rbp
-	mov QWORD PTR [rdi+8], r8
-	mov QWORD PTR [rdi+16], r9
-	mov QWORD PTR [rdi+24], r10
-	mov QWORD PTR [rdi+32], r11
-	mov QWORD PTR [rdi+40], r12
-	mov QWORD PTR [rdi+48], r13
-	mov QWORD PTR [rdi+56], r14
-	mov QWORD PTR [rdi+64], r15
-	sub rdi, 1792
-	add rdi, 1864
-	mov rbp, QWORD PTR [rdi]
-	mov r8, QWORD PTR [rdi+8]
-	mov r9, QWORD PTR [rdi+16]
-	mov r10, QWORD PTR [rdi+24]
-	mov r11, QWORD PTR [rdi+32]
-	mov r12, QWORD PTR [rdi+40]
-	mov r13, QWORD PTR [rdi+48]
-	mov r14, QWORD PTR [rdi+56]
-	mov r15, QWORD PTR [rdi+64]
-	add rdi, -576
-	sub rbp, QWORD PTR [rdi]
-	sbb r8, QWORD PTR [rdi+8]
-	sbb r9, QWORD PTR [rdi+16]
-	sbb r10, QWORD PTR [rdi+24]
-	sbb r11, QWORD PTR [rdi+32]
-	sbb r12, QWORD PTR [rdi+40]
-	sbb r13, QWORD PTR [rdi+48]
-	sbb r14, QWORD PTR [rdi+56]
-	sbb r15, QWORD PTR [rdi+64]
-	add r15, 512
-	add rdi, 72
+	adc r8, 0
+	adc r9, 0
+	adc r10, 0
+	adc r11, 0
+	adc r12, 0
+	adc r13, 0
+	adc r14, 0
+	adc r15, 0
 	mov rax, r15
 	shr rax, 9
-	xor rax, 1
-	sub rbp, rax
-	sbb r8, 0
-	sbb r9, 0
-	sbb r10, 0
-	sbb r11, 0
-	sbb r12, 0
-	sbb r13, 0
-	sbb r14, 0
-	sbb r15, 0
 	and r15, 511
-	mov QWORD PTR [rdi], rbp
-	mov QWORD PTR [rdi+8], r8
-	mov QWORD PTR [rdi+16], r9
-	mov QWORD PTR [rdi+24], r10
-	mov QWORD PTR [rdi+32], r11
-	mov QWORD PTR [rdi+40], r12
-	mov QWORD PTR [rdi+48], r13
-	mov QWORD PTR [rdi+56], r14
-	mov QWORD PTR [rdi+64], r15
-	sub rdi, 1360
-	add rdi, 1792
-	mov rbp, QWORD PTR [rdi]
-	mov r8, QWORD PTR [rdi+8]
-	mov r9, QWORD PTR [rdi+16]
-	mov r10, QWORD PTR [rdi+24]
-	mov r11, QWORD PTR [rdi+32]
-	mov r12, QWORD PTR [rdi+40]
-	mov r13, QWORD PTR [rdi+48]
-	mov r14, QWORD PTR [rdi+56]
-	mov r15, QWORD PTR [rdi+64]
-	add rbp, rbp
-	adc r8, r8
-	adc r9, r9
-	adc r10, r10
-	adc r11, r11
-	adc r12, r12
-	adc r13, r13
-	adc r14, r14
-	adc r15, r15
-	mov rax, r15
-	shr rax, 9
 	add rbp, rax
-	and r15, 511
-	add rdi, 0
-	mov QWORD PTR [rdi], rbp
-	mov QWORD PTR [rdi+8], r8
-	mov QWORD PTR [rdi+16], r9
-	mov QWORD PTR [rdi+24], r10
-	mov QWORD PTR [rdi+32], r11
-	mov QWORD PTR [rdi+40], r12
-	mov QWORD PTR [rdi+48], r13
-	mov QWORD PTR [rdi+56], r14
-	mov QWORD PTR [rdi+64], r15
-	sub rdi, 1792
-	add rdi, 1792
-	mov rbp, QWORD PTR [rdi]
-	mov r8, QWORD PTR [rdi+8]
-	mov r9, QWORD PTR [rdi+16]
-	mov r10, QWORD PTR [rdi+24]
-	mov r11, QWORD PTR [rdi+32]
-	mov r12, QWORD PTR [rdi+40]
-	mov r13, QWORD PTR [rdi+48]
-	mov r14, QWORD PTR [rdi+56]
-	mov r15, QWORD PTR [rdi+64]
-	add rbp, rbp
-	adc r8, r8
-	adc r9, r9
-	adc r10, r10
-	adc r11, r11
-	adc r12, r12
-	adc r13, r13
-	adc r14, r14
-	adc r15, r15
+	mov QWORD PTR [rdi+1072], rbp
+	mov QWORD PTR [rdi+1080], r8
+	mov QWORD PTR [rdi+1088], r9
+	mov QWORD PTR [rdi+1096], r10
+	mov QWORD PTR [rdi+1104], r11
+	mov QWORD PTR [rdi+1112], r12
+	mov QWORD PTR [rdi+1120], r13
+	mov QWORD PTR [rdi+1128], r14
+	mov QWORD PTR [rdi+1136], r15
+	movq xmm7, rbx
+	movq xmm6, rsi
+	mov rsi, rdi
+	add rsi, 1144
+	mov rbx, rdi
+	add rbx, 1216
+	call {vg_p521_win_mul_adx}
 	mov rax, r15
 	shr rax, 9
+	xor rax, 1
+	sub rbp, rax
+	sbb r8, 0
+	sbb r9, 0
+	sbb r10, 0
+	sbb r11, 0
+	sbb r12, 0
+	sbb r13, 0
+	sbb r14, 0
+	sbb r15, 0
+	and r15, 511
+	mov QWORD PTR [rdi+1216], rbp
+	mov QWORD PTR [rdi+1224], r8
+	mov QWORD PTR [rdi+1232], r9
+	mov QWORD PTR [rdi+1240], r10
+	mov QWORD PTR [rdi+1248], r11
+	mov QWORD PTR [rdi+1256], r12
+	mov QWORD PTR [rdi+1264], r13
+	mov QWORD PTR [rdi+1272], r14
+	mov QWORD PTR [rdi+1280], r15
+	movq rbx, xmm7
+	movq rsi, xmm6
+	mov rbp, QWORD PTR [rdi+1072]
+	mov r8, QWORD PTR [rdi+1080]
+	mov r9, QWORD PTR [rdi+1088]
+	mov r10, QWORD PTR [rdi+1096]
+	mov r11, QWORD PTR [rdi+1104]
+	mov r12, QWORD PTR [rdi+1112]
+	mov r13, QWORD PTR [rdi+1120]
+	mov r14, QWORD PTR [rdi+1128]
+	mov r15, QWORD PTR [rdi+1136]
+	xor rbp, -1
+	xor r8, -1
+	xor r9, -1
+	xor r10, -1
+	xor r11, -1
+	xor r12, -1
+	xor r13, -1
+	xor r14, -1
+	xor r15, -1
+	add rbp, QWORD PTR [rdi+1864]
+	adc r8, QWORD PTR [rdi+1872]
+	adc r9, QWORD PTR [rdi+1880]
+	adc r10, QWORD PTR [rdi+1888]
+	adc r11, QWORD PTR [rdi+1896]
+	adc r12, QWORD PTR [rdi+1904]
+	adc r13, QWORD PTR [rdi+1912]
+	adc r14, QWORD PTR [rdi+1920]
+	adc r15, QWORD PTR [rdi+1928]
+	add r15, 512
+	mov QWORD PTR [rdi+1864], rbp
+	mov QWORD PTR [rdi+1872], r8
+	mov QWORD PTR [rdi+1880], r9
+	mov QWORD PTR [rdi+1888], r10
+	mov QWORD PTR [rdi+1896], r11
+	mov QWORD PTR [rdi+1904], r12
+	mov QWORD PTR [rdi+1912], r13
+	mov QWORD PTR [rdi+1920], r14
+	mov QWORD PTR [rdi+1928], r15
+	mov rbp, QWORD PTR [rdi+1792]
+	mov r8, QWORD PTR [rdi+1800]
+	mov r9, QWORD PTR [rdi+1808]
+	mov r10, QWORD PTR [rdi+1816]
+	mov r11, QWORD PTR [rdi+1824]
+	mov r12, QWORD PTR [rdi+1832]
+	mov r13, QWORD PTR [rdi+1840]
+	mov r14, QWORD PTR [rdi+1848]
+	mov r15, QWORD PTR [rdi+1856]
+	add rbp, QWORD PTR [rdi+1792]
+	adc r8, QWORD PTR [rdi+1800]
+	adc r9, QWORD PTR [rdi+1808]
+	adc r10, QWORD PTR [rdi+1816]
+	adc r11, QWORD PTR [rdi+1824]
+	adc r12, QWORD PTR [rdi+1832]
+	adc r13, QWORD PTR [rdi+1840]
+	adc r14, QWORD PTR [rdi+1848]
+	adc r15, QWORD PTR [rdi+1856]
+	mov QWORD PTR [rdi+1792], rbp
+	mov QWORD PTR [rdi+1800], r8
+	mov QWORD PTR [rdi+1808], r9
+	mov QWORD PTR [rdi+1816], r10
+	mov QWORD PTR [rdi+1824], r11
+	mov QWORD PTR [rdi+1832], r12
+	mov QWORD PTR [rdi+1840], r13
+	mov QWORD PTR [rdi+1848], r14
+	mov QWORD PTR [rdi+1856], r15
+	movq xmm7, rbx
+	movq xmm6, rsi
+	mov rsi, rdi
+	add rsi, 1792
+	mov rbx, rdi
+	add rbx, 1864
+	call {vg_p521_win_mul_adx}
+	mov rax, r15
+	shr rax, 9
+	xor rax, 1
+	sub rbp, rax
+	sbb r8, 0
+	sbb r9, 0
+	sbb r10, 0
+	sbb r11, 0
+	sbb r12, 0
+	sbb r13, 0
+	sbb r14, 0
+	sbb r15, 0
+	and r15, 511
+	mov QWORD PTR [rdi+1864], rbp
+	mov QWORD PTR [rdi+1872], r8
+	mov QWORD PTR [rdi+1880], r9
+	mov QWORD PTR [rdi+1888], r10
+	mov QWORD PTR [rdi+1896], r11
+	mov QWORD PTR [rdi+1904], r12
+	mov QWORD PTR [rdi+1912], r13
+	mov QWORD PTR [rdi+1920], r14
+	mov QWORD PTR [rdi+1928], r15
+	movq rbx, xmm7
+	movq rsi, xmm6
+	mov rbp, QWORD PTR [rdi+1720]
+	mov r8, QWORD PTR [rdi+1728]
+	mov r9, QWORD PTR [rdi+1736]
+	mov r10, QWORD PTR [rdi+1744]
+	mov r11, QWORD PTR [rdi+1752]
+	mov r12, QWORD PTR [rdi+1760]
+	mov r13, QWORD PTR [rdi+1768]
+	mov r14, QWORD PTR [rdi+1776]
+	mov r15, QWORD PTR [rdi+1784]
+	xor rbp, -1
+	xor r8, -1
+	xor r9, -1
+	xor r10, -1
+	xor r11, -1
+	xor r12, -1
+	xor r13, -1
+	xor r14, -1
+	xor r15, -1
+	add rbp, QWORD PTR [rdi+1864]
+	adc r8, QWORD PTR [rdi+1872]
+	adc r9, QWORD PTR [rdi+1880]
+	adc r10, QWORD PTR [rdi+1888]
+	adc r11, QWORD PTR [rdi+1896]
+	adc r12, QWORD PTR [rdi+1904]
+	adc r13, QWORD PTR [rdi+1912]
+	adc r14, QWORD PTR [rdi+1920]
+	adc r15, QWORD PTR [rdi+1928]
+	add r15, 512
+	mov rax, r15
+	shr rax, 9
+	and r15, 511
 	add rbp, rax
-	and r15, 511
-	add rdi, 0
-	mov QWORD PTR [rdi], rbp
-	mov QWORD PTR [rdi+8], r8
-	mov QWORD PTR [rdi+16], r9
-	mov QWORD PTR [rdi+24], r10
-	mov QWORD PTR [rdi+32], r11
-	mov QWORD PTR [rdi+40], r12
-	mov QWORD PTR [rdi+48], r13
-	mov QWORD PTR [rdi+56], r14
-	mov QWORD PTR [rdi+64], r15
-	sub rdi, 1792
-	mov r12, rsi
-	mov esi, 1360
-	mov edx, 1936
-	mov ecx, 1360
-	call {vg_p521_mul_mod_p_adx}
-	mov rsi, r12
-	add rdi, 1360
-	mov rbp, QWORD PTR [rdi]
-	mov r8, QWORD PTR [rdi+8]
-	mov r9, QWORD PTR [rdi+16]
-	mov r10, QWORD PTR [rdi+24]
-	mov r11, QWORD PTR [rdi+32]
-	mov r12, QWORD PTR [rdi+40]
-	mov r13, QWORD PTR [rdi+48]
-	mov r14, QWORD PTR [rdi+56]
-	mov r15, QWORD PTR [rdi+64]
-	add rdi, 432
-	sub rbp, QWORD PTR [rdi]
-	sbb r8, QWORD PTR [rdi+8]
-	sbb r9, QWORD PTR [rdi+16]
-	sbb r10, QWORD PTR [rdi+24]
-	sbb r11, QWORD PTR [rdi+32]
-	sbb r12, QWORD PTR [rdi+40]
-	sbb r13, QWORD PTR [rdi+48]
-	sbb r14, QWORD PTR [rdi+56]
-	sbb r15, QWORD PTR [rdi+64]
-	add r15, 512
-	add rdi, -432
+	adc r8, 0
+	adc r9, 0
+	adc r10, 0
+	adc r11, 0
+	adc r12, 0
+	adc r13, 0
+	adc r14, 0
+	adc r15, 0
 	mov rax, r15
 	shr rax, 9
-	xor rax, 1
-	sub rbp, rax
-	sbb r8, 0
-	sbb r9, 0
-	sbb r10, 0
-	sbb r11, 0
-	sbb r12, 0
-	sbb r13, 0
-	sbb r14, 0
-	sbb r15, 0
 	and r15, 511
-	mov QWORD PTR [rdi], rbp
-	mov QWORD PTR [rdi+8], r8
-	mov QWORD PTR [rdi+16], r9
-	mov QWORD PTR [rdi+24], r10
-	mov QWORD PTR [rdi+32], r11
-	mov QWORD PTR [rdi+40], r12
-	mov QWORD PTR [rdi+48], r13
-	mov QWORD PTR [rdi+56], r14
-	mov QWORD PTR [rdi+64], r15
-	sub rdi, 1360
-	mov r12, rsi
-	mov esi, 1720
-	mov edx, 1432
-	mov ecx, 1432
-	call {vg_p521_mul_mod_p_adx}
-	mov rsi, r12
-	add rdi, 1288
-	mov rbp, QWORD PTR [rdi]
-	mov r8, QWORD PTR [rdi+8]
-	mov r9, QWORD PTR [rdi+16]
-	mov r10, QWORD PTR [rdi+24]
-	mov r11, QWORD PTR [rdi+32]
-	mov r12, QWORD PTR [rdi+40]
-	mov r13, QWORD PTR [rdi+48]
-	mov r14, QWORD PTR [rdi+56]
-	mov r15, QWORD PTR [rdi+64]
-	add rdi, 432
-	sub rbp, QWORD PTR [rdi]
-	sbb r8, QWORD PTR [rdi+8]
-	sbb r9, QWORD PTR [rdi+16]
-	sbb r10, QWORD PTR [rdi+24]
-	sbb r11, QWORD PTR [rdi+32]
-	sbb r12, QWORD PTR [rdi+40]
-	sbb r13, QWORD PTR [rdi+48]
-	sbb r14, QWORD PTR [rdi+56]
-	sbb r15, QWORD PTR [rdi+64]
-	add r15, 512
-	add rdi, 216
-	mov rax, r15
-	shr rax, 9
-	xor rax, 1
-	sub rbp, rax
-	sbb r8, 0
-	sbb r9, 0
-	sbb r10, 0
-	sbb r11, 0
-	sbb r12, 0
-	sbb r13, 0
-	sbb r14, 0
-	sbb r15, 0
-	and r15, 511
-	mov QWORD PTR [rdi], rbp
-	mov QWORD PTR [rdi+8], r8
-	mov QWORD PTR [rdi+16], r9
-	mov QWORD PTR [rdi+24], r10
-	mov QWORD PTR [rdi+32], r11
-	mov QWORD PTR [rdi+40], r12
-	mov QWORD PTR [rdi+48], r13
-	mov QWORD PTR [rdi+56], r14
-	mov QWORD PTR [rdi+64], r15
-	sub rdi, 1936
-	add rdi, 1288
-	mov rbp, QWORD PTR [rdi]
-	mov r8, QWORD PTR [rdi+8]
-	mov r9, QWORD PTR [rdi+16]
-	mov r10, QWORD PTR [rdi+24]
-	mov r11, QWORD PTR [rdi+32]
-	mov r12, QWORD PTR [rdi+40]
-	mov r13, QWORD PTR [rdi+48]
-	mov r14, QWORD PTR [rdi+56]
-	mov r15, QWORD PTR [rdi+64]
-	add rdi, 432
-	xor eax, eax
-	cmp rax, -1
-	adc rbp, QWORD PTR [rdi]
-	adc r8, QWORD PTR [rdi+8]
-	adc r9, QWORD PTR [rdi+16]
-	adc r10, QWORD PTR [rdi+24]
-	adc r11, QWORD PTR [rdi+32]
-	adc r12, QWORD PTR [rdi+40]
-	adc r13, QWORD PTR [rdi+48]
-	adc r14, QWORD PTR [rdi+56]
-	adc r15, QWORD PTR [rdi+64]
-	add rdi, -648
-	mov rax, r15
-	shr rax, 9
-	xor rax, 1
-	sub rbp, rax
-	sbb r8, 0
-	sbb r9, 0
-	sbb r10, 0
-	sbb r11, 0
-	sbb r12, 0
-	sbb r13, 0
-	sbb r14, 0
-	sbb r15, 0
-	and r15, 511
-	mov QWORD PTR [rdi], rbp
-	mov QWORD PTR [rdi+8], r8
-	mov QWORD PTR [rdi+16], r9
-	mov QWORD PTR [rdi+24], r10
-	mov QWORD PTR [rdi+32], r11
-	mov QWORD PTR [rdi+40], r12
-	mov QWORD PTR [rdi+48], r13
-	mov QWORD PTR [rdi+56], r14
-	mov QWORD PTR [rdi+64], r15
-	sub rdi, 1072
-	add rdi, 1360
-	mov rbp, QWORD PTR [rdi]
-	mov r8, QWORD PTR [rdi+8]
-	mov r9, QWORD PTR [rdi+16]
-	mov r10, QWORD PTR [rdi+24]
-	mov r11, QWORD PTR [rdi+32]
-	mov r12, QWORD PTR [rdi+40]
-	mov r13, QWORD PTR [rdi+48]
-	mov r14, QWORD PTR [rdi+56]
-	mov r15, QWORD PTR [rdi+64]
-	add rdi, 72
-	xor eax, eax
-	cmp rax, -1
-	adc rbp, QWORD PTR [rdi]
-	adc r8, QWORD PTR [rdi+8]
-	adc r9, QWORD PTR [rdi+16]
-	adc r10, QWORD PTR [rdi+24]
-	adc r11, QWORD PTR [rdi+32]
-	adc r12, QWORD PTR [rdi+40]
-	adc r13, QWORD PTR [rdi+48]
-	adc r14, QWORD PTR [rdi+56]
-	adc r15, QWORD PTR [rdi+64]
-	add rdi, -216
-	mov rax, r15
-	shr rax, 9
-	xor rax, 1
-	sub rbp, rax
-	sbb r8, 0
-	sbb r9, 0
-	sbb r10, 0
-	sbb r11, 0
-	sbb r12, 0
-	sbb r13, 0
-	sbb r14, 0
-	sbb r15, 0
-	and r15, 511
-	mov QWORD PTR [rdi], rbp
-	mov QWORD PTR [rdi+8], r8
-	mov QWORD PTR [rdi+16], r9
-	mov QWORD PTR [rdi+24], r10
-	mov QWORD PTR [rdi+32], r11
-	mov QWORD PTR [rdi+40], r12
-	mov QWORD PTR [rdi+48], r13
-	mov QWORD PTR [rdi+56], r14
-	mov QWORD PTR [rdi+64], r15
-	sub rdi, 1216
-	mov r12, rsi
-	mov esi, 1792
-	mov edx, 1360
-	mov ecx, 1360
-	call {vg_p521_mul_mod_p_adx}
-	mov rsi, r12
-	mov r12, rsi
-	mov esi, 1936
-	mov edx, 1936
-	mov ecx, 1072
-	call {vg_p521_mul_mod_p_adx}
-	mov rsi, r12
-	mov r12, rsi
-	mov esi, 1864
-	mov edx, 1288
-	mov ecx, 1792
-	call {vg_p521_mul_mod_p_adx}
-	mov rsi, r12
-	add rdi, 1936
-	mov rbp, QWORD PTR [rdi]
-	mov r8, QWORD PTR [rdi+8]
-	mov r9, QWORD PTR [rdi+16]
-	mov r10, QWORD PTR [rdi+24]
-	mov r11, QWORD PTR [rdi+32]
-	mov r12, QWORD PTR [rdi+40]
-	mov r13, QWORD PTR [rdi+48]
-	mov r14, QWORD PTR [rdi+56]
-	mov r15, QWORD PTR [rdi+64]
-	add rbp, rbp
-	adc r8, r8
-	adc r9, r9
-	adc r10, r10
-	adc r11, r11
-	adc r12, r12
-	adc r13, r13
-	adc r14, r14
-	adc r15, r15
-	mov rax, r15
-	shr rax, 9
 	add rbp, rax
-	and r15, 511
-	add rdi, -864
-	mov QWORD PTR [rdi], rbp
-	mov QWORD PTR [rdi+8], r8
-	mov QWORD PTR [rdi+16], r9
-	mov QWORD PTR [rdi+24], r10
-	mov QWORD PTR [rdi+32], r11
-	mov QWORD PTR [rdi+40], r12
-	mov QWORD PTR [rdi+48], r13
-	mov QWORD PTR [rdi+56], r14
-	mov QWORD PTR [rdi+64], r15
-	sub rdi, 1072
-	add rdi, 1072
-	mov rbp, QWORD PTR [rdi]
-	mov r8, QWORD PTR [rdi+8]
-	mov r9, QWORD PTR [rdi+16]
-	mov r10, QWORD PTR [rdi+24]
-	mov r11, QWORD PTR [rdi+32]
-	mov r12, QWORD PTR [rdi+40]
-	mov r13, QWORD PTR [rdi+48]
-	mov r14, QWORD PTR [rdi+56]
-	mov r15, QWORD PTR [rdi+64]
-	add rdi, 864
-	xor eax, eax
-	cmp rax, -1
-	adc rbp, QWORD PTR [rdi]
-	adc r8, QWORD PTR [rdi+8]
-	adc r9, QWORD PTR [rdi+16]
-	adc r10, QWORD PTR [rdi+24]
-	adc r11, QWORD PTR [rdi+32]
-	adc r12, QWORD PTR [rdi+40]
-	adc r13, QWORD PTR [rdi+48]
-	adc r14, QWORD PTR [rdi+56]
-	adc r15, QWORD PTR [rdi+64]
-	add rdi, 0
-	mov rax, r15
-	shr rax, 9
-	xor rax, 1
-	sub rbp, rax
-	sbb r8, 0
-	sbb r9, 0
-	sbb r10, 0
-	sbb r11, 0
-	sbb r12, 0
-	sbb r13, 0
-	sbb r14, 0
-	sbb r15, 0
-	and r15, 511
-	mov QWORD PTR [rdi], rbp
-	mov QWORD PTR [rdi+8], r8
-	mov QWORD PTR [rdi+16], r9
-	mov QWORD PTR [rdi+24], r10
-	mov QWORD PTR [rdi+32], r11
-	mov QWORD PTR [rdi+40], r12
-	mov QWORD PTR [rdi+48], r13
-	mov QWORD PTR [rdi+56], r14
-	mov QWORD PTR [rdi+64], r15
-	sub rdi, 1936
-	mov r12, rsi
-	mov esi, 1216
-	mov edx, 1216
-	mov ecx, 1216
-	call {vg_p521_mul_mod_p_adx}
-	mov rsi, r12
-	add rdi, 1864
-	mov rbp, QWORD PTR [rdi]
-	mov r8, QWORD PTR [rdi+8]
-	mov r9, QWORD PTR [rdi+16]
-	mov r10, QWORD PTR [rdi+24]
-	mov r11, QWORD PTR [rdi+32]
-	mov r12, QWORD PTR [rdi+40]
-	mov r13, QWORD PTR [rdi+48]
-	mov r14, QWORD PTR [rdi+56]
-	mov r15, QWORD PTR [rdi+64]
-	add rbp, rbp
-	adc r8, r8
-	adc r9, r9
-	adc r10, r10
-	adc r11, r11
-	adc r12, r12
-	adc r13, r13
-	adc r14, r14
-	adc r15, r15
-	mov rax, r15
-	shr rax, 9
-	add rbp, rax
-	and r15, 511
-	add rdi, 0
-	mov QWORD PTR [rdi], rbp
-	mov QWORD PTR [rdi+8], r8
-	mov QWORD PTR [rdi+16], r9
-	mov QWORD PTR [rdi+24], r10
-	mov QWORD PTR [rdi+32], r11
-	mov QWORD PTR [rdi+40], r12
-	mov QWORD PTR [rdi+48], r13
-	mov QWORD PTR [rdi+56], r14
-	mov QWORD PTR [rdi+64], r15
-	sub rdi, 1864
-	mov r12, rsi
-	mov esi, 1072
-	mov edx, 1936
-	mov ecx, 1936
-	call {vg_p521_mul_mod_p_adx}
-	mov rsi, r12
-	add rdi, 1864
-	mov rbp, QWORD PTR [rdi]
-	mov r8, QWORD PTR [rdi+8]
-	mov r9, QWORD PTR [rdi+16]
-	mov r10, QWORD PTR [rdi+24]
-	mov r11, QWORD PTR [rdi+32]
-	mov r12, QWORD PTR [rdi+40]
-	mov r13, QWORD PTR [rdi+48]
-	mov r14, QWORD PTR [rdi+56]
-	mov r15, QWORD PTR [rdi+64]
-	add rbp, rbp
-	adc r8, r8
-	adc r9, r9
-	adc r10, r10
-	adc r11, r11
-	adc r12, r12
-	adc r13, r13
-	adc r14, r14
-	adc r15, r15
-	mov rax, r15
-	shr rax, 9
-	add rbp, rax
-	and r15, 511
-	add rdi, 0
-	mov QWORD PTR [rdi], rbp
-	mov QWORD PTR [rdi+8], r8
-	mov QWORD PTR [rdi+16], r9
-	mov QWORD PTR [rdi+24], r10
-	mov QWORD PTR [rdi+32], r11
-	mov QWORD PTR [rdi+40], r12
-	mov QWORD PTR [rdi+48], r13
-	mov QWORD PTR [rdi+56], r14
-	mov QWORD PTR [rdi+64], r15
-	sub rdi, 1864
-	add rdi, 1216
-	mov rbp, QWORD PTR [rdi]
-	mov r8, QWORD PTR [rdi+8]
-	mov r9, QWORD PTR [rdi+16]
-	mov r10, QWORD PTR [rdi+24]
-	mov r11, QWORD PTR [rdi+32]
-	mov r12, QWORD PTR [rdi+40]
-	mov r13, QWORD PTR [rdi+48]
-	mov r14, QWORD PTR [rdi+56]
-	mov r15, QWORD PTR [rdi+64]
-	add rdi, 576
-	sub rbp, QWORD PTR [rdi]
-	sbb r8, QWORD PTR [rdi+8]
-	sbb r9, QWORD PTR [rdi+16]
-	sbb r10, QWORD PTR [rdi+24]
-	sbb r11, QWORD PTR [rdi+32]
-	sbb r12, QWORD PTR [rdi+40]
-	sbb r13, QWORD PTR [rdi+48]
-	sbb r14, QWORD PTR [rdi+56]
-	sbb r15, QWORD PTR [rdi+64]
-	add r15, 512
-	add rdi, -576
-	mov rax, r15
-	shr rax, 9
-	xor rax, 1
-	sub rbp, rax
-	sbb r8, 0
-	sbb r9, 0
-	sbb r10, 0
-	sbb r11, 0
-	sbb r12, 0
-	sbb r13, 0
-	sbb r14, 0
-	sbb r15, 0
-	and r15, 511
-	mov QWORD PTR [rdi], rbp
-	mov QWORD PTR [rdi+8], r8
-	mov QWORD PTR [rdi+16], r9
-	mov QWORD PTR [rdi+24], r10
-	mov QWORD PTR [rdi+32], r11
-	mov QWORD PTR [rdi+40], r12
-	mov QWORD PTR [rdi+48], r13
-	mov QWORD PTR [rdi+56], r14
-	mov QWORD PTR [rdi+64], r15
-	sub rdi, 1216
-	add rdi, 1072
-	mov rbp, QWORD PTR [rdi]
-	mov r8, QWORD PTR [rdi+8]
-	mov r9, QWORD PTR [rdi+16]
-	mov r10, QWORD PTR [rdi+24]
-	mov r11, QWORD PTR [rdi+32]
-	mov r12, QWORD PTR [rdi+40]
-	mov r13, QWORD PTR [rdi+48]
-	mov r14, QWORD PTR [rdi+56]
-	mov r15, QWORD PTR [rdi+64]
-	add rdi, 792
-	sub rbp, QWORD PTR [rdi]
-	sbb r8, QWORD PTR [rdi+8]
-	sbb r9, QWORD PTR [rdi+16]
-	sbb r10, QWORD PTR [rdi+24]
-	sbb r11, QWORD PTR [rdi+32]
-	sbb r12, QWORD PTR [rdi+40]
-	sbb r13, QWORD PTR [rdi+48]
-	sbb r14, QWORD PTR [rdi+56]
-	sbb r15, QWORD PTR [rdi+64]
-	add r15, 512
-	add rdi, -792
-	mov rax, r15
-	shr rax, 9
-	xor rax, 1
-	sub rbp, rax
-	sbb r8, 0
-	sbb r9, 0
-	sbb r10, 0
-	sbb r11, 0
-	sbb r12, 0
-	sbb r13, 0
-	sbb r14, 0
-	sbb r15, 0
-	and r15, 511
-	mov QWORD PTR [rdi], rbp
-	mov QWORD PTR [rdi+8], r8
-	mov QWORD PTR [rdi+16], r9
-	mov QWORD PTR [rdi+24], r10
-	mov QWORD PTR [rdi+32], r11
-	mov QWORD PTR [rdi+40], r12
-	mov QWORD PTR [rdi+48], r13
-	mov QWORD PTR [rdi+56], r14
-	mov QWORD PTR [rdi+64], r15
-	sub rdi, 1072
-	mov r12, rsi
-	mov esi, 1792
-	mov edx, 1792
-	mov ecx, 1792
-	call {vg_p521_mul_mod_p_adx}
-	mov rsi, r12
-	add rdi, 1072
-	mov rbp, QWORD PTR [rdi]
-	mov r8, QWORD PTR [rdi+8]
-	mov r9, QWORD PTR [rdi+16]
-	mov r10, QWORD PTR [rdi+24]
-	mov r11, QWORD PTR [rdi+32]
-	mov r12, QWORD PTR [rdi+40]
-	mov r13, QWORD PTR [rdi+48]
-	mov r14, QWORD PTR [rdi+56]
-	mov r15, QWORD PTR [rdi+64]
-	add rdi, 792
-	sub rbp, QWORD PTR [rdi]
-	sbb r8, QWORD PTR [rdi+8]
-	sbb r9, QWORD PTR [rdi+16]
-	sbb r10, QWORD PTR [rdi+24]
-	sbb r11, QWORD PTR [rdi+32]
-	sbb r12, QWORD PTR [rdi+40]
-	sbb r13, QWORD PTR [rdi+48]
-	sbb r14, QWORD PTR [rdi+56]
-	sbb r15, QWORD PTR [rdi+64]
-	add r15, 512
-	add rdi, -792
-	mov rax, r15
-	shr rax, 9
-	xor rax, 1
-	sub rbp, rax
-	sbb r8, 0
-	sbb r9, 0
-	sbb r10, 0
-	sbb r11, 0
-	sbb r12, 0
-	sbb r13, 0
-	sbb r14, 0
-	sbb r15, 0
-	and r15, 511
-	mov QWORD PTR [rdi], rbp
-	mov QWORD PTR [rdi+8], r8
-	mov QWORD PTR [rdi+16], r9
-	mov QWORD PTR [rdi+24], r10
-	mov QWORD PTR [rdi+32], r11
-	mov QWORD PTR [rdi+40], r12
-	mov QWORD PTR [rdi+48], r13
-	mov QWORD PTR [rdi+56], r14
-	mov QWORD PTR [rdi+64], r15
-	sub rdi, 1072
-	add rdi, 1216
-	mov rbp, QWORD PTR [rdi]
-	mov r8, QWORD PTR [rdi+8]
-	mov r9, QWORD PTR [rdi+16]
-	mov r10, QWORD PTR [rdi+24]
-	mov r11, QWORD PTR [rdi+32]
-	mov r12, QWORD PTR [rdi+40]
-	mov r13, QWORD PTR [rdi+48]
-	mov r14, QWORD PTR [rdi+56]
-	mov r15, QWORD PTR [rdi+64]
-	add rdi, 504
-	sub rbp, QWORD PTR [rdi]
-	sbb r8, QWORD PTR [rdi+8]
-	sbb r9, QWORD PTR [rdi+16]
-	sbb r10, QWORD PTR [rdi+24]
-	sbb r11, QWORD PTR [rdi+32]
-	sbb r12, QWORD PTR [rdi+40]
-	sbb r13, QWORD PTR [rdi+48]
-	sbb r14, QWORD PTR [rdi+56]
-	sbb r15, QWORD PTR [rdi+64]
-	add r15, 512
-	add rdi, -504
-	mov rax, r15
-	shr rax, 9
-	xor rax, 1
-	sub rbp, rax
-	sbb r8, 0
-	sbb r9, 0
-	sbb r10, 0
-	sbb r11, 0
-	sbb r12, 0
-	sbb r13, 0
-	sbb r14, 0
-	sbb r15, 0
-	and r15, 511
-	mov QWORD PTR [rdi], rbp
-	mov QWORD PTR [rdi+8], r8
-	mov QWORD PTR [rdi+16], r9
-	mov QWORD PTR [rdi+24], r10
-	mov QWORD PTR [rdi+32], r11
-	mov QWORD PTR [rdi+40], r12
-	mov QWORD PTR [rdi+48], r13
-	mov QWORD PTR [rdi+56], r14
-	mov QWORD PTR [rdi+64], r15
-	sub rdi, 1216
-	add rdi, 1792
-	mov rbp, QWORD PTR [rdi]
-	mov r8, QWORD PTR [rdi+8]
-	mov r9, QWORD PTR [rdi+16]
-	mov r10, QWORD PTR [rdi+24]
-	mov r11, QWORD PTR [rdi+32]
-	mov r12, QWORD PTR [rdi+40]
-	mov r13, QWORD PTR [rdi+48]
-	mov r14, QWORD PTR [rdi+56]
-	mov r15, QWORD PTR [rdi+64]
-	add rbp, rbp
-	adc r8, r8
-	adc r9, r9
-	adc r10, r10
-	adc r11, r11
-	adc r12, r12
-	adc r13, r13
-	adc r14, r14
-	adc r15, r15
-	mov rax, r15
-	shr rax, 9
-	add rbp, rax
-	and r15, 511
-	add rdi, 0
-	mov QWORD PTR [rdi], rbp
-	mov QWORD PTR [rdi+8], r8
-	mov QWORD PTR [rdi+16], r9
-	mov QWORD PTR [rdi+24], r10
-	mov QWORD PTR [rdi+32], r11
-	mov QWORD PTR [rdi+40], r12
-	mov QWORD PTR [rdi+48], r13
-	mov QWORD PTR [rdi+56], r14
-	mov QWORD PTR [rdi+64], r15
-	sub rdi, 1792
-	add rdi, 1864
-	mov rbp, QWORD PTR [rdi]
-	mov r8, QWORD PTR [rdi+8]
-	mov r9, QWORD PTR [rdi+16]
-	mov r10, QWORD PTR [rdi+24]
-	mov r11, QWORD PTR [rdi+32]
-	mov r12, QWORD PTR [rdi+40]
-	mov r13, QWORD PTR [rdi+48]
-	mov r14, QWORD PTR [rdi+56]
-	mov r15, QWORD PTR [rdi+64]
-	add rdi, -792
-	sub rbp, QWORD PTR [rdi]
-	sbb r8, QWORD PTR [rdi+8]
-	sbb r9, QWORD PTR [rdi+16]
-	sbb r10, QWORD PTR [rdi+24]
-	sbb r11, QWORD PTR [rdi+32]
-	sbb r12, QWORD PTR [rdi+40]
-	sbb r13, QWORD PTR [rdi+48]
-	sbb r14, QWORD PTR [rdi+56]
-	sbb r15, QWORD PTR [rdi+64]
-	add r15, 512
-	add rdi, 72
-	mov rax, r15
-	shr rax, 9
-	xor rax, 1
-	sub rbp, rax
-	sbb r8, 0
-	sbb r9, 0
-	sbb r10, 0
-	sbb r11, 0
-	sbb r12, 0
-	sbb r13, 0
-	sbb r14, 0
-	sbb r15, 0
-	and r15, 511
-	mov QWORD PTR [rdi], rbp
-	mov QWORD PTR [rdi+8], r8
-	mov QWORD PTR [rdi+16], r9
-	mov QWORD PTR [rdi+24], r10
-	mov QWORD PTR [rdi+32], r11
-	mov QWORD PTR [rdi+40], r12
-	mov QWORD PTR [rdi+48], r13
-	mov QWORD PTR [rdi+56], r14
-	mov QWORD PTR [rdi+64], r15
-	sub rdi, 1144
-	add rdi, 1792
-	mov rbp, QWORD PTR [rdi]
-	mov r8, QWORD PTR [rdi+8]
-	mov r9, QWORD PTR [rdi+16]
-	mov r10, QWORD PTR [rdi+24]
-	mov r11, QWORD PTR [rdi+32]
-	mov r12, QWORD PTR [rdi+40]
-	mov r13, QWORD PTR [rdi+48]
-	mov r14, QWORD PTR [rdi+56]
-	mov r15, QWORD PTR [rdi+64]
-	add rbp, rbp
-	adc r8, r8
-	adc r9, r9
-	adc r10, r10
-	adc r11, r11
-	adc r12, r12
-	adc r13, r13
-	adc r14, r14
-	adc r15, r15
-	mov rax, r15
-	shr rax, 9
-	add rbp, rax
-	and r15, 511
-	add rdi, 0
-	mov QWORD PTR [rdi], rbp
-	mov QWORD PTR [rdi+8], r8
-	mov QWORD PTR [rdi+16], r9
-	mov QWORD PTR [rdi+24], r10
-	mov QWORD PTR [rdi+32], r11
-	mov QWORD PTR [rdi+40], r12
-	mov QWORD PTR [rdi+48], r13
-	mov QWORD PTR [rdi+56], r14
-	mov QWORD PTR [rdi+64], r15
-	sub rdi, 1792
-	add rdi, 1792
-	mov rbp, QWORD PTR [rdi]
-	mov r8, QWORD PTR [rdi+8]
-	mov r9, QWORD PTR [rdi+16]
-	mov r10, QWORD PTR [rdi+24]
-	mov r11, QWORD PTR [rdi+32]
-	mov r12, QWORD PTR [rdi+40]
-	mov r13, QWORD PTR [rdi+48]
-	mov r14, QWORD PTR [rdi+56]
-	mov r15, QWORD PTR [rdi+64]
-	add rbp, rbp
-	adc r8, r8
-	adc r9, r9
-	adc r10, r10
-	adc r11, r11
-	adc r12, r12
-	adc r13, r13
-	adc r14, r14
-	adc r15, r15
-	mov rax, r15
-	shr rax, 9
-	add rbp, rax
-	and r15, 511
-	add rdi, 0
-	mov QWORD PTR [rdi], rbp
-	mov QWORD PTR [rdi+8], r8
-	mov QWORD PTR [rdi+16], r9
-	mov QWORD PTR [rdi+24], r10
-	mov QWORD PTR [rdi+32], r11
-	mov QWORD PTR [rdi+40], r12
-	mov QWORD PTR [rdi+48], r13
-	mov QWORD PTR [rdi+56], r14
-	mov QWORD PTR [rdi+64], r15
-	sub rdi, 1792
-	mov r12, rsi
-	mov esi, 1144
-	mov edx, 1936
-	mov ecx, 1144
-	call {vg_p521_mul_mod_p_adx}
-	mov rsi, r12
-	add rdi, 1144
-	mov rbp, QWORD PTR [rdi]
-	mov r8, QWORD PTR [rdi+8]
-	mov r9, QWORD PTR [rdi+16]
-	mov r10, QWORD PTR [rdi+24]
-	mov r11, QWORD PTR [rdi+32]
-	mov r12, QWORD PTR [rdi+40]
-	mov r13, QWORD PTR [rdi+48]
-	mov r14, QWORD PTR [rdi+56]
-	mov r15, QWORD PTR [rdi+64]
-	add rdi, 648
-	sub rbp, QWORD PTR [rdi]
-	sbb r8, QWORD PTR [rdi+8]
-	sbb r9, QWORD PTR [rdi+16]
-	sbb r10, QWORD PTR [rdi+24]
-	sbb r11, QWORD PTR [rdi+32]
-	sbb r12, QWORD PTR [rdi+40]
-	sbb r13, QWORD PTR [rdi+48]
-	sbb r14, QWORD PTR [rdi+56]
-	sbb r15, QWORD PTR [rdi+64]
-	add r15, 512
-	add rdi, -648
-	mov rax, r15
-	shr rax, 9
-	xor rax, 1
-	sub rbp, rax
-	sbb r8, 0
-	sbb r9, 0
-	sbb r10, 0
-	sbb r11, 0
-	sbb r12, 0
-	sbb r13, 0
-	sbb r14, 0
-	sbb r15, 0
-	and r15, 511
-	mov QWORD PTR [rdi], rbp
-	mov QWORD PTR [rdi+8], r8
-	mov QWORD PTR [rdi+16], r9
-	mov QWORD PTR [rdi+24], r10
-	mov QWORD PTR [rdi+32], r11
-	mov QWORD PTR [rdi+40], r12
-	mov QWORD PTR [rdi+48], r13
-	mov QWORD PTR [rdi+56], r14
-	mov QWORD PTR [rdi+64], r15
-	sub rdi, 1144
+	mov QWORD PTR [rdi+1144], rbp
+	mov QWORD PTR [rdi+1152], r8
+	mov QWORD PTR [rdi+1160], r9
+	mov QWORD PTR [rdi+1168], r10
+	mov QWORD PTR [rdi+1176], r11
+	mov QWORD PTR [rdi+1184], r12
+	mov QWORD PTR [rdi+1192], r13
+	mov QWORD PTR [rdi+1200], r14
+	mov QWORD PTR [rdi+1208], r15
 	sub rbx, 4096
 	cmp rbx, 4096
 	jae 219b
+	mov rbp, QWORD PTR [rdi+1144]
+	mov r8, QWORD PTR [rdi+1152]
+	mov r9, QWORD PTR [rdi+1160]
+	mov r10, QWORD PTR [rdi+1168]
+	mov r11, QWORD PTR [rdi+1176]
+	mov r12, QWORD PTR [rdi+1184]
+	mov r13, QWORD PTR [rdi+1192]
+	mov r14, QWORD PTR [rdi+1200]
+	mov r15, QWORD PTR [rdi+1208]
+	mov rax, rbp
+	and rax, 1
+	shl rax, 8
+	mov rcx, r15
+	shr rcx, 1
+	add rcx, rax
+	shld r15, r14, 63
+	shld r14, r13, 63
+	shld r13, r12, 63
+	shld r12, r11, 63
+	shld r11, r10, 63
+	shld r10, r9, 63
+	shld r9, r8, 63
+	shld r8, rbp, 63
+	mov QWORD PTR [rdi+1144], r8
+	mov QWORD PTR [rdi+1152], r9
+	mov QWORD PTR [rdi+1160], r10
+	mov QWORD PTR [rdi+1168], r11
+	mov QWORD PTR [rdi+1176], r12
+	mov QWORD PTR [rdi+1184], r13
+	mov QWORD PTR [rdi+1192], r14
+	mov QWORD PTR [rdi+1200], r15
+	mov QWORD PTR [rdi+1208], rcx
+	add rdi, 1144
+	mov rbp, QWORD PTR [rdi]
+	mov r8, QWORD PTR [rdi+8]
+	mov r9, QWORD PTR [rdi+16]
+	mov r10, QWORD PTR [rdi+24]
+	mov r11, QWORD PTR [rdi+32]
+	mov r12, QWORD PTR [rdi+40]
+	mov r13, QWORD PTR [rdi+48]
+	mov r14, QWORD PTR [rdi+56]
+	mov r15, QWORD PTR [rdi+64]
+	add rdi, -864
+	xor eax, eax
+	cmp rax, -1
+	adc rbp, QWORD PTR [rdi]
+	adc r8, QWORD PTR [rdi+8]
+	adc r9, QWORD PTR [rdi+16]
+	adc r10, QWORD PTR [rdi+24]
+	adc r11, QWORD PTR [rdi+32]
+	adc r12, QWORD PTR [rdi+40]
+	adc r13, QWORD PTR [rdi+48]
+	adc r14, QWORD PTR [rdi+56]
+	adc r15, QWORD PTR [rdi+64]
+	add rdi, 864
+	mov rax, r15
+	shr rax, 9
+	xor rax, 1
+	sub rbp, rax
+	sbb r8, 0
+	sbb r9, 0
+	sbb r10, 0
+	sbb r11, 0
+	sbb r12, 0
+	sbb r13, 0
+	sbb r14, 0
+	sbb r15, 0
+	and r15, 511
+	mov QWORD PTR [rdi], rbp
+	mov QWORD PTR [rdi+8], r8
+	mov QWORD PTR [rdi+16], r9
+	mov QWORD PTR [rdi+24], r10
+	mov QWORD PTR [rdi+32], r11
+	mov QWORD PTR [rdi+40], r12
+	mov QWORD PTR [rdi+48], r13
+	mov QWORD PTR [rdi+56], r14
+	mov QWORD PTR [rdi+64], r15
+	sub rdi, 1144
+	add rdi, 1072
+	mov rbp, QWORD PTR [rdi]
+	mov r8, QWORD PTR [rdi+8]
+	mov r9, QWORD PTR [rdi+16]
+	mov r10, QWORD PTR [rdi+24]
+	mov r11, QWORD PTR [rdi+32]
+	mov r12, QWORD PTR [rdi+40]
+	mov r13, QWORD PTR [rdi+48]
+	mov r14, QWORD PTR [rdi+56]
+	mov r15, QWORD PTR [rdi+64]
+	add rdi, -792
+	xor eax, eax
+	cmp rax, -1
+	adc rbp, QWORD PTR [rdi]
+	adc r8, QWORD PTR [rdi+8]
+	adc r9, QWORD PTR [rdi+16]
+	adc r10, QWORD PTR [rdi+24]
+	adc r11, QWORD PTR [rdi+32]
+	adc r12, QWORD PTR [rdi+40]
+	adc r13, QWORD PTR [rdi+48]
+	adc r14, QWORD PTR [rdi+56]
+	adc r15, QWORD PTR [rdi+64]
+	add rdi, 792
+	mov rax, r15
+	shr rax, 9
+	xor rax, 1
+	sub rbp, rax
+	sbb r8, 0
+	sbb r9, 0
+	sbb r10, 0
+	sbb r11, 0
+	sbb r12, 0
+	sbb r13, 0
+	sbb r14, 0
+	sbb r15, 0
+	and r15, 511
+	mov QWORD PTR [rdi], rbp
+	mov QWORD PTR [rdi+8], r8
+	mov QWORD PTR [rdi+16], r9
+	mov QWORD PTR [rdi+24], r10
+	mov QWORD PTR [rdi+32], r11
+	mov QWORD PTR [rdi+40], r12
+	mov QWORD PTR [rdi+48], r13
+	mov QWORD PTR [rdi+56], r14
+	mov QWORD PTR [rdi+64], r15
+	sub rdi, 1072
 	mov r12, rsi
 	mov esi, 1288
 	mov edx, 1072
