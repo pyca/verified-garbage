@@ -16,7 +16,7 @@ callee-saved registers in their slots (384–389), transforms the sixteen
 blocks of the tail buffer (`crypt16`) under the table and the masks, and
 restores the registers.
 
-The working space is ECB's 392 slots (`slots`). The masks and the table are
+The working space is ECB's 390 slots (`slots`). The masks and the table are
 what `vg_sm4_crypt_prepared` reads (`layout`): each plane of a round key is
 a 64-bit word whose bit `16 i + b` is bit `j` of the key's byte `i`
 (`planeOf`), for every block `b`.
@@ -65,5 +65,16 @@ def preparedWord (k : Spec.Sm4.Schedule) (d : Dir) (w : Nat) : BitVec 64 :=
 def cryptCall : Prog isa :=
   .seq (.block [movR .rdi sb, .movImm64 .rsi (BitVec.ofNat 64 slots)])
     (.call "vg_sm4_crypt_prepared" cryptPrepared)
+
+/-! ## ECB through the prepared-block helper -/
+
+/-- Restore the saved ABI values before the helper saves them again. The
+copy loops may use these registers, but their original values stay in the
+same slots throughout ECB. -/
+def cryptShared : Prog isa :=
+  .seq (.block restoreRegs) (.seq cryptCall (.block (slotAddr .rdi tableEnd)))
+
+/-- ECB reuses the prepared-block helper, with the same key setup and copies. -/
+def ecbShared (dir : Dir) : Prog isa := ecbWith cryptShared dir
 
 end VG.Impl.Sm4.X86_64

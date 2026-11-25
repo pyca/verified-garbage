@@ -784,7 +784,7 @@ def expandKeySat : State where
   of := none
   mem _ := 0
   rd := [⟨0x1000, 16⟩]
-  wr := [⟨0x2000, 128⟩, ⟨0x3000, 8 * 392⟩]
+  wr := [⟨0x2000, 128⟩, ⟨0x3000, 8 * 390⟩]
 
 theorem expandKey_verified :
     Verified X86_64.target expandKey (Proof.Sm4.expandKeyScratchContract X86_64.abi slots) :=
@@ -795,10 +795,10 @@ theorem expandKey_verified :
 
 /-- Key expansion, with its working space on the stack. -/
 theorem expandKey_framed :
-    Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratchWiped 3144 .rdx 392 expandKey)
+    Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratchWiped 3144 .rdx 390 expandKey)
       (Spec.Sm4.expandKeyContract X86_64.abi 3144) :=
   X86_64.Verified.stackScratchWiped (sig := Spec.Sm4.expandKeySig) (nm := "scratch") (e := .u64)
-    (n := 392) (post := Proof.Sm4.expandKeyPost X86_64.abi.ptrBits) (wa := false) (stack := 0)
+    (n := 390) (post := Proof.Sm4.expandKeyPost X86_64.abi.ptrBits) (wa := false) (stack := 0)
     (bytes := 3144) expandKey_verified (by decide) (by decide) (by decide)
     (Code.all_of_spTest (by lit_decide)) (by lit_decide) (by decide)
     (Proof.Sm4.expandKeyPostOut_local _)
@@ -810,7 +810,7 @@ theorem expandKey_framedU :
     Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratch 3144 .rdx expandKey)
       (Spec.Sm4.expandKeyContract X86_64.abi 3144) :=
   X86_64.Verified.stackScratch (hpostOut := Proof.Sm4.expandKeyPostOut_local _) (sig := Spec.Sm4.expandKeySig) (nm := "scratch") (e := .u64)
-    (n := 392) (post := Proof.Sm4.expandKeyPost X86_64.abi.ptrBits) (wa := false) (stack := 0)
+    (n := 390) (post := Proof.Sm4.expandKeyPost X86_64.abi.ptrBits) (wa := false) (stack := 0)
     (bytes := 3144) expandKey_verified (by decide) (by decide) (by decide)
     (Code.all_of_allInstrs (by lit_decide)) (by lit_decide)
     (X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))

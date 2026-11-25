@@ -498,7 +498,7 @@ vg_sm4_cbc_encrypt_chained:
 	mov rax, QWORD PTR [rdx+8]
 	mov QWORD PTR [r9+776], rax
 	mov rdi, r9
-	movabs rsi, 392
+	movabs rsi, 390
 	call {vg_sm4_crypt_prepared}
 	mov rax, QWORD PTR [r9+768]
 	mov QWORD PTR [rdx], rax
@@ -1283,7 +1283,7 @@ vg_sm4_cbc_decrypt_chained:
 	sub rcx, 1
 	jne 28b
 	mov rdi, r9
-	movabs rsi, 392
+	movabs rsi, 390
 	call {vg_sm4_crypt_prepared}
 	movabs rcx, 16
 	cmp r8, 16

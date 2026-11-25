@@ -678,7 +678,7 @@ vg_sm4_ctr32:
 	mov QWORD PTR [r9+3184], rax
 	mov QWORD PTR [r9+3192], rbx
 	mov rdi, r9
-	movabs rsi, 392
+	movabs rsi, 390
 	call {vg_sm4_crypt_prepared}
 	movabs rcx, 16
 	cmp r8, 16
