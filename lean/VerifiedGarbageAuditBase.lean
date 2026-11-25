@@ -85,7 +85,6 @@ import Mathlib.Algebra.Order.Field.Basic
 import Mathlib.Algebra.Order.Field.Rat
 import Mathlib.Algebra.Order.Group.Abs
 import Mathlib.Algebra.Order.Group.Int
-import Mathlib.Algebra.Order.Group.Nat
 import Mathlib.Algebra.Order.Group.Unbundled.Abs
 import Mathlib.Algebra.Order.Ring.Abs
 import Mathlib.Algebra.Order.Ring.Basic
@@ -168,7 +167,6 @@ import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Module
 import Mathlib.Tactic.NormNum
 import Mathlib.Tactic.NormNum.Abs
-import Mathlib.Tactic.NormNum.Core
 import Mathlib.Tactic.NormNum.DivMod
 import Mathlib.Tactic.NormNum.GCD
 import Mathlib.Tactic.NormNum.Ineq
@@ -196,7 +194,6 @@ import Std.Data.DTreeMap.Internal.Balancing
 import Std.Data.DTreeMap.Internal.Operations
 import Std.Do.Triple.SpecLemmas
 import Std.Tactic.BVDecide.Normalize.BitVec
-import Std.Tactic.BVDecide.Normalize.Bool
 import Std.Tactic.BVDecide.Normalize.Prop
 
 /-!

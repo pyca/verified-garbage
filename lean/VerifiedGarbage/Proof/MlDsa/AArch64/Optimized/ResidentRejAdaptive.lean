@@ -187,14 +187,14 @@ open VG.Proof.Sha3.AArch64.Neon
 open VG.Proof.MlDsa.AArch64.Optimized.Resident (RateBlock originalCore)
 
 /-- The registers the sixth block's pair changes. -/
-def blockRegs : List Reg := [.x0,.x1,.x16,.x17,.x6,.x7]
+def blockRegs : List Reg := X2.volatile
 
 /-- The adaptive sixth block: a call, the states loaded back, and the same vector
 serialization as the resident path. -/
 theorem pair_ok {s : State} {p a b w : Addr} {rp ra rb : Reg} {A B : Spec.Sha3.State}
     (hp : s.gpr rp=p) (ha : s.gpr ra=a) (hb : s.gpr rb=b)
     (hw : s.gpr .x19+BitVec.ofNat 64 Impl.MlDsa.AArch64.Sample.Rej4.oX2=w)
-    (hp1 : rp≠.x1) (hpc : rp∉X2.clobbered) (hac : ra∉X2.clobbered) (hbc : rb∉X2.clobbered)
+    (hp1 : rp≠.x1) (hpc : rp∉X2.volatile) (hac : ra∉X2.volatile) (hbc : rb∉X2.volatile)
     (ha6 : ra≠.x6) (ha7 : ra≠.x7) (hb6 : rb≠.x6) (hb7 : rb≠.x7)
     (hpair : PairAt s.mem p A B)
     (hin : ∀i<25,InRegions (s.rd++s.wr) (wordAddr p i) 16)
@@ -211,8 +211,8 @@ theorem pair_ok {s : State} {p a b w : Addr} {rp ra rb : Reg} {A B : Spec.Sha3.S
       RateBlock t.mem b 10 (Spec.Sha3.keccakF B) ∧
       Frame [pairR p,⟨a,168⟩,⟨b,168⟩,X2.callR w] s.mem t.mem := by
   unfold Impl.MlDsa.AArch64.Optimized.ResidentRej.pair
-  refine WP.seq (WP.mono (X2.call_ok (by decide) hp1 hp hw hpw hpair hcov) fun t ⟨hk,hf,hpt⟩ => ?_)
-  have hkt : RegKeep X2.clobbered s t := ⟨hk.gpr,hk.rd,hk.wr,hk.sp⟩
+  refine WP.seq (WP.mono (X2.callAny_ok true (by decide) (by decide) hp1 (by decide) (by decide) hp hw hpw hpair hcov) fun t ⟨hk,_,hf,hpt⟩ => ?_)
+  have hkt : RegKeep X2.volatile s t := ⟨hk.gpr,hk.rd,hk.wr,hk.sp⟩
   rw [WP.block_append_iff]
   refine WP.mono (load_ok ((hkt.gpr _ hpc).trans hp) hpt (fun i hi => by rw [hk.rd,hk.wr]; exact hin i hi))
     fun s1 ⟨h1,hpair1⟩ => ?_
@@ -280,7 +280,7 @@ theorem lastPtr_eq (σ : State) (k : Nat) : lastPtr σ k=scr σ+BitVec.ofNat 64 
   rw [Offset.add_add,show 840+1008*k+840=1680+1008*k by omega_using []]
 
 /-- The registers of a pair's call: not those the call changes. -/
-def CallRegs (rp ra rb : Reg) : Prop := rp≠.x1 ∧ rp∉X2.clobbered ∧ ra∉X2.clobbered ∧ rb∉X2.clobbered
+def CallRegs (rp ra rb : Reg) : Prop := rp≠.x1 ∧ rp∉X2.volatile ∧ ra∉X2.volatile ∧ rb∉X2.volatile
 
 theorem callRegs0 : CallRegs .x22 .x24 .x25 := by unfold CallRegs; decide
 theorem callRegs1 : CallRegs .x23 .x26 .x27 := by unfold CallRegs; decide

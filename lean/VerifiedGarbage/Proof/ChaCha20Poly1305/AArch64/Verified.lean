@@ -1,5 +1,8 @@
 module
 
+import VerifiedGarbage.Proof.Framework.AArch64.LaneSave
+import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+
 import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitched.Open
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Short.Rest
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Xor
@@ -2083,12 +2086,157 @@ theorem preIn_body {s u : State} (h : preInAArch64 s) (hg : ∀ r, r ≠ .x8 →
   exact ⟨hk, hn, ha, ht, List.mem_append_right _ (by rw [hw]; simp), hw, ck, cn, ca, cd, ct, cd, dk, dn, da, dt,
     .inl rfl, sk, sn, sa, sd, st, sd, wc, wa, wd, wd, wt, wk, wn⟩
 
+/-! ## The shared opening body -/
+
+private theorem openArgs_not_link : ∀ r ∈ [Reg.x0, .x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8],
+    r ∉ linkRegs := by decide
+
+private theorem openPre_congr {s t : State} (hp : preOpenAArch64 s)
+    (hg : ∀ r ∈ [Reg.x0, .x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8], t.gpr r = s.gpr r)
+    (hrd : t.rd = s.rd) (hwr : t.wr = s.wr) : preOpenAArch64 t := by
+  simpa only [preOpenAArch64, hg .x0 (by decide), hg .x1 (by decide), hg .x2 (by decide),
+    hg .x3 (by decide), hg .x4 (by decide), hg .x5 (by decide), hg .x6 (by decide),
+    hg .x7 (by decide), hg .x8 (by decide), hrd, hwr] using hp
+
+private theorem openSave_ok (s : State) : WP isa (.block openSave) s fun t =>
+    t.gpr = s.gpr ∧ t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.sp = s.sp ∧
+    (t.v .v15).extractLsb' 64 64 = s.gpr .x30 ∧
+    ∀ r, (t.v r).extractLsb' 0 64 = (s.v r).extractLsb' 0 64 := by
+  refine WP.mono (insOf_ok [(.x30, .v15, 1)] s (by simp) (by decide)) ?_
+  intro t ⟨g, m, rd, wr, sp, lane, other⟩
+  refine ⟨g, m, rd, wr, sp, ?_, fun r => ?_⟩
+  · simpa only [laneOf, Nat.mul_one] using lane (.x30, .v15, 1) (by simp)
+  · simpa only [laneOf, Nat.mul_zero] using other r 0 (by decide) (by simp)
+
+private theorem openRestore_ok (s : State) : WP isa (.block openRestore) s fun t =>
+    t.mem = s.mem ∧ t.sp = s.sp ∧ t.v = s.v ∧
+    t.gpr .x30 = (s.v .v15).extractLsb' 64 64 ∧
+    ∀ r, r ≠ .x30 → t.gpr r = s.gpr r := by
+  obtain ⟨tr, t, he, m, -, -, sp, lane, other⟩ :=
+    umovOf_ok [(.x30, .v15, 1)] s (by simp) (by decide)
+  refine ⟨tr, t, he, m, sp, funext (fun r => Exec.vec ?_ he), ?_, fun r hr => other r (by simpa using hr)⟩
+  · intro i hi
+    simp only [umovOf, List.map_cons, List.map_nil, instrs, List.mem_singleton] at hi
+    subst hi; simp only [vdstOf, reduceCtorEq, ne_eq, not_false_eq_true]
+  · simpa only [laneOf, Nat.mul_one] using lane (.x30, .v15, 1) (by simp)
+
+/-- The outlined body, with the return address kept in the unused upper
+lane of `v15`, preserves the ABI and the original opening postcondition. -/
+theorem openShared_ok (v : Proof.ChaCha20.AArch64.XorImpl) (s : State) (hs : preOpenAArch64 s) :
+    WP isa (openShared v.callee v.stitched) s fun t => abiPreserved s t ∧ openAArch64.post s t := by
+  unfold openShared
+  refine WP.seq (WP.mono (openSave_ok s) fun u ⟨g, m, rd, wr, sp, lr, low⟩ => ?_)
+  have args : ∀ r ∈ [Reg.x0, .x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8], u.callEntry.gpr r = s.gpr r :=
+    fun r hr => (State.callEntry_gpr u (openArgs_not_link r hr)).trans (congrFun g r)
+  have hp := openPre_congr hs args rd wr
+  obtain ⟨tr, t, he, ha, hq⟩ := openBody_ok v u.callEntry hp
+  have hret : isa.ret u.callEntry t = some t := by
+    simp only [isa, ret, ha.1 .x30 (by decide), ite_true]
+  have ec := Exec.call (name := "vg_chacha20_poly1305_open_core" ++ v.callee.suffix)
+    (call_callEntry u) he hret
+  have keep15 : t.v .v15 = u.v .v15 := by
+    apply (Exec.vec (c := openCode v.callee v.stitched) ?_ he).trans rfl
+    intro i hi
+    have h := v.openNoV15
+    rw [Code.allInstrs_eq] at h
+    simpa using List.all_eq_true.mp h i hi
+  refine WP.seq (show WP isa (.call ("vg_chacha20_poly1305_open_core" ++ v.callee.suffix)
+    (openCode v.callee v.stitched)) u _ from ⟨_, t, ec, ?_⟩)
+  refine WP.mono (openRestore_ok t) fun z ⟨mz, sz, vz, rz, oz⟩ => ⟨⟨?_, ?_, ?_⟩, ?_⟩
+  · intro r hr
+    by_cases h30 : r = .x30
+    · subst r; rw [rz, keep15, lr]
+    · rw [oz r h30, ha.1 r hr, State.callEntry_gpr u (preserved_not_link r hr h30), g]
+  · rw [sz, ha.2.1, State.callEntry_sp, sp]
+  · intro r hr
+    rw [vz, ha.2.2 r hr, State.callEntry_v, low r]
+  · simp only [openAArch64, Contract.post_mk] at hq ⊢
+    rw [mz, oz .x0 (by decide)]
+    simp only [State.callEntry_mem, m, args .x0 (by decide), args .x1 (by decide),
+      args .x2 (by decide), args .x3 (by decide), args .x4 (by decide), args .x5 (by decide),
+      args .x6 (by decide), args .x8 (by decide)] at hq
+    exact hq
+
+private theorem openBody_ct (v : Proof.ChaCha20.AArch64.XorImpl) :
+    ConstantTime isa openAArch64.pre openAArch64.pub (openCode v.callee v.stitched) := by
+  intro s t ts tt s' t' hs ht hpub es et
+  obtain ⟨⟨p0, p1, p2, p3, p4, p5, p6, p7, psp⟩, p8, hl⟩ := hpub
+  have args : ∀ r ∈ [Reg.x0, .x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8], s.gpr r = t.gpr r := by
+    intro r hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+    exacts [p0, p1, p2, p3, p4, p5, p6, p7, p8]
+  exact (openBody_rel v hs ht args psp (leak_bool hl) _ _ _ _ _ _ ⟨rfl, rfl⟩ es et).1
+
+private theorem openSave_taint : ∃ h, (taint.check (Taint.ofRegs []) (.block openSave) h).isSome = true :=
+  ⟨_, by taint_decide⟩
+
+private theorem openRestore_taint : ∃ h, (taint.check (Taint.ofRegs []) (.block openRestore) h).isSome = true :=
+  ⟨_, by taint_decide⟩
+
+theorem openShared_rel (v : Proof.ChaCha20.AArch64.XorImpl) {s t : State} (hs : preOpenAArch64 s)
+    (ht : preOpenAArch64 t)
+    (hargs : ∀ r ∈ [Reg.x0, .x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8], s.gpr r = t.gpr r)
+    (hsp : s.sp = t.sp) (hok : okAArch64 s = okAArch64 t) :
+    RelCT isa (Eq2 s t) (openShared v.callee v.stitched) TT := by
+  unfold openShared
+  refine rel_seq (rel_taint [] hsp (by simp) openSave_taint) (openSave_ok s) (openSave_ok t) ?_
+  rintro u w ⟨gu, mu, rdu, wru, spu, -, -⟩ ⟨gw, mw, rdw, wrw, spw, -, -⟩
+  have au : ∀ r ∈ [Reg.x0, .x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8], u.callEntry.gpr r = s.gpr r :=
+    fun r hr => (State.callEntry_gpr u (openArgs_not_link r hr)).trans (congrFun gu r)
+  have aw : ∀ r ∈ [Reg.x0, .x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8], w.callEntry.gpr r = t.gpr r :=
+    fun r hr => (State.callEntry_gpr w (openArgs_not_link r hr)).trans (congrFun gw r)
+  have pu := openPre_congr hs au rdu wru
+  have pw := openPre_congr ht aw rdw wrw
+  have hc : RelCT isa (Eq2 u w)
+      (.call ("vg_chacha20_poly1305_open_core" ++ v.callee.suffix) (openCode v.callee v.stitched)) TT := by
+    apply RelCT.callEx (k := openAArch64) (fun s hs => openBody_ok v s hs) (openBody_ct v)
+    intro a b hab
+    obtain ⟨ha, hb⟩ := hab
+    subst a; subst b
+    refine ⟨u.rd, u.wr, w.rd, w.wr, pu, pw, ?_, Covers.refl _, Covers.refl _, Covers.refl _, Covers.refl _⟩
+    change openAArch64.pub u.callEntry w.callEntry
+    refine ⟨?_, ?_, ?_⟩
+    · unfold pubAArch64
+      exact ⟨by rw [au .x0 (by decide), aw .x0 (by decide), hargs .x0 (by decide)],
+        by rw [au .x1 (by decide), aw .x1 (by decide), hargs .x1 (by decide)],
+        by rw [au .x2 (by decide), aw .x2 (by decide), hargs .x2 (by decide)],
+        by rw [au .x3 (by decide), aw .x3 (by decide), hargs .x3 (by decide)],
+        by rw [au .x4 (by decide), aw .x4 (by decide), hargs .x4 (by decide)],
+        by rw [au .x5 (by decide), aw .x5 (by decide), hargs .x5 (by decide)],
+        by rw [au .x6 (by decide), aw .x6 (by decide), hargs .x6 (by decide)],
+        by rw [au .x7 (by decide), aw .x7 (by decide), hargs .x7 (by decide)],
+        by rw [State.callEntry_sp, State.callEntry_sp, spu, spw, hsp]⟩
+    · rw [au .x8 (by decide), aw .x8 (by decide), hargs .x8 (by decide)]
+    · simp only [openLeakAArch64, State.callEntry_mem, mu, mw,
+        au .x0 (by decide), au .x1 (by decide), au .x2 (by decide), au .x3 (by decide),
+        au .x4 (by decide), au .x5 (by decide), au .x6 (by decide),
+        aw .x0 (by decide), aw .x1 (by decide), aw .x2 (by decide), aw .x3 (by decide),
+        aw .x4 (by decide), aw .x5 (by decide), aw .x6 (by decide)]
+      rw [show (decrypt (bytesAt s.mem (s.gpr .x0) 32) (bytesAt s.mem (s.gpr .x1) 12)
+        (bytesAt s.mem (s.gpr .x2) (s.gpr .x3).toNat) (bytesAt s.mem (s.gpr .x4) (s.gpr .x5).toNat)
+        (bytesAt s.mem (s.gpr .x6) 16)).isSome = okAArch64 s from rfl,
+        show (decrypt (bytesAt t.mem (t.gpr .x0) 32) (bytesAt t.mem (t.gpr .x1) 12)
+        (bytesAt t.mem (t.gpr .x2) (t.gpr .x3).toNat) (bytesAt t.mem (t.gpr .x4) (t.gpr .x5).toNat)
+        (bytesAt t.mem (t.gpr .x6) 16)).isSome = okAArch64 t from rfl, hok]
+  obtain ⟨tr1, z1, he1, ha1, -⟩ := openBody_ok v u.callEntry pu
+  obtain ⟨tr2, z2, he2, ha2, -⟩ := openBody_ok v w.callEntry pw
+  have er1 : isa.ret u.callEntry z1 = some z1 := by simp only [isa, ret, ha1.1 .x30 (by decide), ite_true]
+  have er2 : isa.ret w.callEntry z2 = some z2 := by simp only [isa, ret, ha2.1 .x30 (by decide), ite_true]
+  refine rel_seq hc (show WP isa (.call _ (openCode v.callee v.stitched)) u (fun z => abiPreserved u.callEntry z) from
+    ⟨_, z1, Exec.call (call_callEntry u) he1 er1, ha1⟩)
+    (show WP isa (.call _ (openCode v.callee v.stitched)) w (fun z => abiPreserved w.callEntry z) from
+    ⟨_, z2, Exec.call (call_callEntry w) he2 er2, ha2⟩) ?_
+  intro z1 z2 ha1 ha2
+  exact rel_taint [] (by rw [ha1.2.1, ha2.2.1, State.callEntry_sp, State.callEntry_sp, spu, spw, hsp])
+    (by simp) openRestore_taint
+
 theorem openIn_ok (v : Proof.ChaCha20.AArch64.XorImpl) (s : State) (hs : openInAArch64.pre s) :
     ∃ t s', Exec isa (openInPlace v.callee v.stitched) s t s' ∧
       abiPreserved s s' ∧ openInAArch64.post s s' := by
-  show WP isa (.seq (.block [mov .x8 .x4]) (openCode v.callee v.stitched)) s _
+  show WP isa (.seq (.block [mov .x8 .x4]) (openShared v.callee v.stitched)) s _
   refine WP.seq (WP.mono (movIn_ok s) fun u ⟨hg, h8, hm, hrd, hwr, hsp, hv⟩ => ?_)
-  refine WP.mono (openBody_ok v u (preIn_body hs hg h8 hrd hwr)) fun s' ⟨ha, hq⟩ => ⟨?_, ?_⟩
+  refine WP.mono (openShared_ok v u (preIn_body hs hg h8 hrd hwr)) fun s' ⟨ha, hq⟩ => ⟨?_, ?_⟩
   · exact ⟨fun r hr => by rw [ha.1 r hr, hg r (by rintro rfl; simp [preserved] at hr)], by rw [ha.2.1, hsp],
       fun r hr => by rw [ha.2.2 r hr, hv]⟩
   · rw [openAArch64, Contract.post_mk] at hq
@@ -2099,7 +2247,7 @@ theorem openIn_ok (v : Proof.ChaCha20.AArch64.XorImpl) (s : State) (hs : openInA
 
 theorem openIn_ct (v : Proof.ChaCha20.AArch64.XorImpl) :
     ConstantTime isa openInAArch64.pre openInAArch64.pub (openInPlace v.callee v.stitched) := by
-  show ConstantTime isa _ _ (.seq (.block [mov .x8 .x4]) (openCode v.callee v.stitched))
+  show ConstantTime isa _ _ (.seq (.block [mov .x8 .x4]) (openShared v.callee v.stitched))
   intro σ₁ σ₂ t₁ t₂ s₁' s₂' h₁ h₂ hq e₁ e₂
   obtain ⟨hq, hl⟩ := hq
   obtain hr := pub_regs hq
@@ -2110,7 +2258,7 @@ theorem openIn_ct (v : Proof.ChaCha20.AArch64.XorImpl) :
   rintro u₁ u₂ ⟨g₁, x8₁, m₁, rd₁, wr₁, sp₁, -⟩ ⟨g₂, x8₂, m₂, rd₂, wr₂, sp₂, -⟩
   obtain hs : ∀ r ∈ [Reg.x0, .x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8], r ≠ .x8 →
       r ∈ [Reg.x0, .x1, .x2, .x3, .x4, .x5, .x6, .x7] := by decide
-  refine openBody_rel v (preIn_body h₁ g₁ x8₁ rd₁ wr₁) (preIn_body h₂ g₂ x8₂ rd₂ wr₂) (fun r hr' => ?_)
+  refine openShared_rel v (preIn_body h₁ g₁ x8₁ rd₁ wr₁) (preIn_body h₂ g₂ x8₂ rd₂ wr₂) (fun r hr' => ?_)
     (by rw [sp₁, sp₂, psp]) ?_
   · by_cases h8 : r = .x8
     · subst h8; rw [x8₁, x8₂]; exact hr .x4 (by simp)
@@ -2236,9 +2384,9 @@ theorem openTo_ok (v : Proof.ChaCha20.AArch64.XorImpl) (s : State) (hs : openToN
   have hs' := hs
   obtain ⟨-, -, -, -, -, ha, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -,
     hsp⟩ := hs'
-  show WP isa (.seq (.block [mov .x8 .x6, .ldrSp .x6 0, .ldrSp .x7 8]) (openCode v.callee v.stitched)) s _
+  show WP isa (.seq (.block [mov .x8 .x6, .ldrSp .x6 0, .ldrSp .x7 8]) (openShared v.callee v.stitched)) s _
   refine WP.seq (WP.mono (toEntry_ok ha hsp) fun u ⟨hg, h8, h6, h7, hm, hrd, hwr, hsp', hv⟩ => ?_)
-  refine WP.mono (openBody_ok v u (preTo_body hs hg h8 h6 h7 hrd hwr)) fun s' ⟨ha', hq⟩ => ⟨?_, ?_⟩
+  refine WP.mono (openShared_ok v u (preTo_body hs hg h8 h6 h7 hrd hwr)) fun s' ⟨ha', hq⟩ => ⟨?_, ?_⟩
   · exact ⟨fun r hr => by
       rw [ha'.1 r hr, hg r (by rintro rfl; simp [preserved] at hr) (by rintro rfl; simp [preserved] at hr)
         (by rintro rfl; simp [preserved] at hr)], by rw [ha'.2.1, hsp'], fun r hr => by rw [ha'.2.2 r hr, hv]⟩
@@ -2251,7 +2399,7 @@ theorem openTo_ok (v : Proof.ChaCha20.AArch64.XorImpl) (s : State) (hs : openToN
 
 theorem openTo_ct (v : Proof.ChaCha20.AArch64.XorImpl) :
     ConstantTime isa openToN.pre openToN.pub (openTo v.callee v.stitched) := by
-  show ConstantTime isa _ _ (.seq (.block [mov .x8 .x6, .ldrSp .x6 0, .ldrSp .x7 8]) (openCode v.callee v.stitched))
+  show ConstantTime isa _ _ (.seq (.block [mov .x8 .x6, .ldrSp .x6 0, .ldrSp .x7 8]) (openShared v.callee v.stitched))
   intro σ₁ σ₂ t₁ t₂ s₁' s₂' h₁ h₂ hq e₁ e₂
   obtain ⟨⟨psp, p0, p1, p2, p3, p4, p5, p6, p7, a0, a1⟩, hl⟩ := hq
   obtain hok : (openToRes σ₁).isSome = (openToRes σ₂).isSome := leak_bool hl
@@ -2269,7 +2417,7 @@ theorem openTo_ct (v : Proof.ChaCha20.AArch64.XorImpl) :
     rw [g₁ r h'.1 h'.2.1 h'.2.2, g₂ r h'.1 h'.2.1 h'.2.2]
     simp only [List.mem_cons, List.not_mem_nil, or_false] at h
     rcases h with rfl | rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
-  refine openBody_rel v (preTo_body h₁ g₁ x8₁ x6₁ x7₁ rd₁ wr₁) (preTo_body h₂ g₂ x8₂ x6₂ x7₂ rd₂ wr₂)
+  refine openShared_rel v (preTo_body h₁ g₁ x8₁ x6₁ x7₁ rd₁ wr₁) (preTo_body h₂ g₂ x8₂ x6₂ x7₂ rd₂ wr₂)
     (fun r hr => ?_) (by rw [sp₁, sp₂, psp]) ?_
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl

@@ -5,57 +5,69 @@ public import VerifiedGarbage.Impl.P384.Ops
 /-!
 # P-384's small linear combinations on AArch64
 
-`lin o a b c d` is `[o] = c [a] - d [b] mod p`, with one reduction, as
-s2n-bignum's `cmsub_p384` (`arm/p384/p384_montjdouble_alt.S`) computes it:
-`p - [b]` (from the modulus's slot), times `d` (`rowInit`), plus `c [a]`
-(`row`), is `V < (c + d) p`, which one quotient estimate `q`, the top word
-plus one, reduces: `V - q p` is in `[-p, p)`, so `p` is added back where it
-is negative. The words of `q (2^384 - p)` and of `p` under a mask are
-computed, as the allocator follows only loads, `movz` and register
-operations. The doubling's `12 a - 9 b`, `4 a - b` and `3 a - 8 b` are
-instances.
+`lin98`, `lin41` and `lin38` write `9A - 8B`, `4A - B` and `3A - 8B` modulo `p`,
+for `A` and `B` below `p` in slots, without multiplications. With `B' = p - B`
+the sum `cA + dB'` is at least zero, and is built from shifts and additions in
+seven words, as `8(A + B') + A`, `4A + B'` and `2(4B' + A) + A`. Its top word
+`t` is small, and `2^384 = p + c` with `c = 2^128 + 2^96 - 2^32 + 1`: the words
+of `t c`, added to the low six, leave less than `2p` (`fold`).
 -/
 
 @[expose] public section
 
 namespace VG.Impl.P384.Linear
-open VG VG.AArch64 VG.Impl.Mont.AArch64
+open VG.AArch64 VG.Impl.Mont VG.Impl.Mont.AArch64
+open VG.Impl.P384.Ops (M)
 
-/-- `p - [b]`, then `d (p - [b])`. -/
-def qRegs : List Reg := [.x8, .x9, .x10, .x11, .x12, .x13]
+/-- `A`'s words. -/
+abbrev aw : List Reg := [.x1, .x3, .x4, .x5, .x6, .x16]
+/-- `B`'s words, and then `p - B`'s. -/
+abbrev bw : List Reg := [.x17, .x21, .x22, .x23, .x24, .x25]
+/-- The sum's low six words; `x14` is the seventh. -/
+abbrev sw : List Reg := [.x8, .x9, .x10, .x11, .x12, .x13]
 
-/-- The sum `V`, then (its low words) the result. -/
-def rRegs : List Reg := [.x1, .x4, .x5, .x6, .x14, .x15, .x16]
+/-- The words above a word `b` of a number shifted left by `k`, high ones first:
+`ds` may be `ss`. The words past the end of `ss` are the bits shifted out. -/
+def shlUp (k : Nat) : Reg → List Reg → List Reg → List Instr
+  | b, d :: ds, s :: ss => shlUp k s ds ss ++ [.extr .x d s b (64 - k)]
+  | b, d :: _, [] => [.lsr .x d b (64 - k)]
+  | _, [], _ => []
 
-/-- The low words of `rRegs`. -/
-def lowRegs : List Reg := [.x1, .x4, .x5, .x6, .x14, .x15]
+/-- `ds = 2^k ss`. -/
+def shl (k : Nat) : List Reg → List Reg → List Instr
+  | d :: ds, s :: ss => shlUp k s ds ss ++ [.lsl .x d s k]
+  | _, _ => []
 
-/-- `rRegs = d (p - [b])`. -/
-def scaleB (b d : Nat) : List Instr :=
-  zero7 :: loads qRegs Ops.M.mo ++ chain (.subs .x) (.sbcs .x) qRegs b ++
-    ([.movz .x .x17 (BitVec.ofNat 16 d) 0, .movz .x .x16 0 0] : List Instr) ++
-    rowInit .x0 .x17 rRegs qRegs
+/-- `A` and `p - B`, and `x7 = 0`. -/
+def operands (a b : Nat) : List Instr :=
+  zero7 :: loads aw a ++ loads bw b ++ loads sw M.mo ++ P384Field.subs true bw sw bw
 
-/-- `rRegs += c [a]`. -/
-def addA (a c : Nat) : List Instr :=
-  .movz .x .x17 (BitVec.ofNat 16 c) 0 :: row .x0 .x17 rRegs (mWords a 0 6)
+/-- `sw + x14 2^384 += xs`. -/
+def more (xs : List Reg) : List Instr :=
+  P384Field.adds true sw sw xs ++ ([.adc .x .x14 .x14 .x7] : List Instr)
 
-/-- `q = top + 1`, and `lowRegs += q (2^384 - p) = q (2^128 + 2^96 - 2^32 + 1)`,
-with the carry out: whether `V ≥ q p`. -/
+/-- `sw + x14 2^384 = xs + ys`. -/
+def sum (xs ys : List Reg) : List Instr :=
+  P384Field.adds true sw xs ys ++ ([.adc .x .x14 .x7 .x7] : List Instr)
+
+/-- `sw + x14 2^384` modulo `p`, below `2p`, for a small `x14`. -/
 def fold : List Instr :=
-  ([.movz .x .x2 1 0, .add .x .x16 .x16 .x2, .lsl .x .x3 .x16 32, .subs .x .x2 .x16 .x3,
-    .sbc .x .x3 .x3 .x7] : List Instr) ++
-  Mont.AArch64.P384Mul.addsIn true lowRegs [.x2, .x3, .x16, .x7, .x7, .x7]
+  ([.lsl .x .x1 .x14 32, .sub .x .x2 .x1 .x14, .subs .x .x3 .x7 .x2, .sbc .x .x4 .x1 .x7] : List Instr) ++
+    P384Field.adds true sw sw [.x3, .x4, .x14, .x7, .x7, .x7] ++ ([.adc .x .x14 .x7 .x7] : List Instr)
 
-/-- `lowRegs += p` where the fold did not carry, modulo `2^384`: `p`'s words
-from the mask `m` (`x17`), `m >> 32`, `m ^ (m >> 32)`, `m << 1` and `m`. -/
-def correct : List Instr :=
-  ([.sbc .x .x17 .x7 .x7, .lsr .x .x2 .x17 32, .logic .eor .x .x3 .x17 .x2,
-    .lsl .x .x16 .x17 1] : List Instr) ++
-  Mont.AArch64.P384Mul.addsIn true lowRegs [.x2, .x3, .x16, .x17, .x17, .x17]
+/-- The sum modulo `p`, stored. -/
+def finish (o : Nat) : List Instr := fold ++ csubR M sw .x14 ++ stores sw o
 
-/-- `[o] = c [a] - d [b] mod p` (`o` may be `a` or `b`). -/
-def lin (o a b c d : Nat) : List Instr :=
-  scaleB b d ++ addA a c ++ fold ++ correct ++ stores lowRegs o
+/-- `[o] = 9 [a] - 8 [b]`. -/
+def lin98 (o a b : Nat) : List Instr :=
+  operands a b ++ sum aw bw ++ shl 3 (sw ++ [.x14]) (sw ++ [.x14]) ++ more aw ++ finish o
+
+/-- `[o] = 4 [a] - [b]`. -/
+def lin41 (o a b : Nat) : List Instr :=
+  operands a b ++ shl 2 (sw ++ [.x14]) aw ++ more bw ++ finish o
+
+/-- `[o] = 3 [a] - 8 [b]`. -/
+def lin38 (o a b : Nat) : List Instr :=
+  operands a b ++ shl 2 (sw ++ [.x14]) bw ++ more aw ++ shl 1 (sw ++ [.x14]) (sw ++ [.x14]) ++ more aw ++ finish o
 
 end VG.Impl.P384.Linear

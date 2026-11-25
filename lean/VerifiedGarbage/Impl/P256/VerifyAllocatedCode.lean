@@ -12,720 +12,6 @@ the checked arithmetic certificates. -/
 namespace VG.Impl.P256.VerifyAllocatedCode
 open VG VG.AArch64
 
-def inverseUpdate : List Instr :=
-aarch64_instrs% [.ldr .x .x2 .x0 2272,
- .ldr .x .x3 .x0 2280,
- .ldr .x .x8 .x0 2288,
- .umulh .x9 .x4 .x2,
- .mul .x .x10 .x4 .x3,
- .ldr .x .x11 .x0 2296,
- .umulh .x12 .x4 .x3,
- .mul .x .x13 .x4 .x8,
- .ldr .x .x14 .x0 2304,
- .umulh .x15 .x4 .x8,
- .movz .x .x16 0x0000#16 0,
- .adds .x .x9 .x10 .x9,
- .mul .x .x10 .x4 .x11,
- .ldr .x .x17 .x0 2312,
- .adc .x .x12 .x12 .x16,
- .umulh .x20 .x4 .x11,
- .adds .x .x12 .x13 .x12,
- .mul .x .x13 .x4 .x14,
- .adc .x .x15 .x15 .x16,
- .umulh .x21 .x4 .x14,
- .adds .x .x10 .x10 .x15,
- .mul .x .x15 .x5 .x17,
- .ldr .x .x22 .x0 2320,
- .adc .x .x20 .x20 .x16,
- .umulh .x23 .x5 .x17,
- .mul .x .x24 .x4 .x2,
- .adds .x .x13 .x13 .x20,
- .adc .x .x20 .x21 .x16,
- .adds .x .x15 .x15 .x16,
- .mul .x .x20 .x5 .x22,
- .ldr .x .x21 .x0 2328,
- .adc .x .x23 .x23 .x16,
- .umulh .x25 .x5 .x22,
- .adds .x .x15 .x24 .x15,
- .adc .x .x23 .x23 .x16,
- .adds .x .x20 .x20 .x23,
- .mul .x .x23 .x5 .x21,
- .ldr .x .x24 .x0 2336,
- .adc .x .x25 .x25 .x16,
- .umulh .x26 .x5 .x21,
- .adds .x .x9 .x9 .x20,
- .adc .x .x20 .x25 .x16,
- .adds .x .x20 .x23 .x20,
- .mul .x .x23 .x5 .x24,
- .ldr .x .x25 .x0 2344,
- .adc .x .x26 .x26 .x16,
- .umulh .x27 .x5 .x24,
- .adds .x .x12 .x12 .x20,
- .adc .x .x20 .x26 .x16,
- .adds .x .x20 .x23 .x20,
- .mul .x .x23 .x5 .x25,
- .adc .x .x26 .x27 .x16,
- .umulh .x27 .x5 .x25,
- .adds .x .x10 .x10 .x20,
- .adc .x .x20 .x26 .x16,
- .adds .x .x20 .x23 .x20,
- .lsr .x .x23 .x4 63,
- .adc .x .x26 .x27 .x16,
- .sub .x .x23 .x16 .x23,
- .adds .x .x13 .x13 .x20,
- .adc .x .x20 .x26 .x16,
- .logic
-   .and
-   .x
-   .x20
-   .x2
-   .x23,
- .subs .x .x9 .x9 .x20,
- .logic
-   .and
-   .x
-   .x20
-   .x3
-   .x23,
- .lsr .x .x26 .x5 63,
- .sbcs .x .x12 .x12 .x20,
- .logic
-   .and
-   .x
-   .x20
-   .x8
-   .x23,
- .sub .x .x26 .x16 .x26,
- .sbcs .x .x10 .x10 .x20,
- .logic
-   .and
-   .x
-   .x20
-   .x11
-   .x23,
- .sbcs .x .x13 .x13 .x20,
- .logic
-   .and
-   .x
-   .x20
-   .x17
-   .x26,
- .subs .x .x9 .x9 .x20,
- .logic
-   .and
-   .x
-   .x20
-   .x22
-   .x26,
- .umulh .x23 .x6 .x2,
- .mul .x .x27 .x6 .x3,
- .sbcs .x .x12 .x12 .x20,
- .logic
-   .and
-   .x
-   .x20
-   .x21
-   .x26,
- .umulh .x28 .x6 .x3,
- .sbcs .x .x10 .x10 .x20,
- .logic
-   .and
-   .x
-   .x20
-   .x24
-   .x26,
- .mul .x .x26 .x6 .x8,
- .sbcs .x .x13 .x13 .x20,
- .umulh .x20 .x6 .x8,
- .adds .x .x23 .x27 .x23,
- .mul .x .x27 .x6 .x11,
- .adc .x .x28 .x28 .x16,
- .umulh .x30 .x6 .x11,
- .adds .x .x26 .x26 .x28,
- .mul .x .x28 .x6 .x14,
- .adc .x .x20 .x20 .x16,
- .umulh .x14 .x6 .x14,
- .adds .x .x20 .x27 .x20,
- .mul .x .x27 .x7 .x17,
- .adc .x .x30 .x30 .x16,
- .str .x .x13 .x0 7104,
- .umulh .x13 .x7 .x17,
- .str .x .x10 .x0 7112,
- .mul .x .x10 .x6 .x2,
- .adds .x .x28 .x28 .x30,
- .adc .x .x14 .x14 .x16,
- .adds .x .x14 .x27 .x16,
- .mul .x .x27 .x7 .x22,
- .adc .x .x13 .x13 .x16,
- .umulh .x30 .x7 .x22,
- .adds .x .x10 .x10 .x14,
- .adc .x .x13 .x13 .x16,
- .adds .x .x13 .x27 .x13,
- .mul .x .x14 .x7 .x21,
- .adc .x .x27 .x30 .x16,
- .umulh .x30 .x7 .x21,
- .adds .x .x13 .x23 .x13,
- .adc .x .x23 .x27 .x16,
- .adds .x .x14 .x14 .x23,
- .mul .x .x23 .x7 .x24,
- .adc .x .x27 .x30 .x16,
- .umulh .x30 .x7 .x24,
- .adds .x .x14 .x26 .x14,
- .adc .x .x26 .x27 .x16,
- .adds .x .x23 .x23 .x26,
- .mul .x .x26 .x7 .x25,
- .adc .x .x27 .x30 .x16,
- .umulh .x25 .x7 .x25,
- .adds .x .x20 .x20 .x23,
- .adc .x .x23 .x27 .x16,
- .adds .x .x23 .x26 .x23,
- .lsr .x .x26 .x6 63,
- .adc .x .x25 .x25 .x16,
- .sub .x .x26 .x16 .x26,
- .adds .x .x23 .x28 .x23,
- .adc .x .x25 .x25 .x16,
- .logic
-   .and
-   .x
-   .x2
-   .x2
-   .x26,
- .subs .x .x2 .x13 .x2,
- .logic
-   .and
-   .x
-   .x3
-   .x3
-   .x26,
- .ldr .x .x13 .x0 2352,
- .ldr .x .x25 .x0 2360,
- .lsr .x .x27 .x7 63,
- .sbcs .x .x3 .x14 .x3,
- .logic
-   .and
-   .x
-   .x8
-   .x8
-   .x26,
- .sub .x .x14 .x16 .x27,
- .sbcs .x .x8 .x20 .x8,
- .logic
-   .and
-   .x
-   .x11
-   .x11
-   .x26,
- .ldr .x .x20 .x0 2368,
- .sbcs .x .x11 .x23 .x11,
- .logic
-   .and
-   .x
-   .x17
-   .x17
-   .x14,
- .subs .x .x2 .x2 .x17,
- .logic
-   .and
-   .x
-   .x17
-   .x22
-   .x14,
- .umulh .x22 .x4 .x13,
- .mul .x .x23 .x4 .x25,
- .ldr .x .x26 .x0 2376,
- .sbcs .x .x3 .x3 .x17,
- .logic
-   .and
-   .x
-   .x17
-   .x21
-   .x14,
- .umulh .x21 .x4 .x25,
- .sbcs .x .x8 .x8 .x17,
- .logic
-   .and
-   .x
-   .x14
-   .x24
-   .x14,
- .mul .x .x17 .x4 .x20,
- .ldr .x .x24 .x0 2384,
- .sbcs .x .x11 .x11 .x14,
- .umulh .x14 .x4 .x20,
- .adds .x .x22 .x23 .x22,
- .mul .x .x23 .x4 .x26,
- .adc .x .x21 .x21 .x16,
- .umulh .x27 .x4 .x26,
- .adds .x .x17 .x17 .x21,
- .mul .x .x21 .x5 .x24,
- .ldr .x .x28 .x0 2392,
- .adc .x .x14 .x14 .x16,
- .umulh .x30 .x5 .x24,
- .str .x .x7 .x0 7120,
- .mul .x .x7 .x4 .x13,
- .adds .x .x14 .x23 .x14,
- .adc .x .x23 .x27 .x16,
- .adds .x .x21 .x21 .x16,
- .mul .x .x27 .x5 .x28,
- .str .x .x6 .x0 7128,
- .ldr .x .x6 .x0 2400,
- .adc .x .x30 .x30 .x16,
- .str .x .x24 .x0 7136,
- .umulh .x24 .x5 .x28,
- .adds .x .x7 .x7 .x21,
- .adc .x .x21 .x30 .x16,
- .adds .x .x21 .x27 .x21,
- .mul .x .x27 .x5 .x6,
- .ldr .x .x30 .x0 2408,
- .adc .x .x24 .x24 .x16,
- .adds .x .x21 .x22 .x21,
- .umulh .x22 .x5 .x6,
- .adc .x .x24 .x24 .x16,
- .adds .x .x24 .x27 .x24,
- .mul .x .x27 .x5 .x30,
- .adc .x .x22 .x22 .x16,
- .adds .x .x17 .x17 .x24,
- .umulh .x24 .x5 .x30,
- .adc .x .x22 .x22 .x16,
- .adds .x .x22 .x27 .x22,
- .adc .x .x24 .x24 .x16,
- .movz .x .x27 0xbc4f#16 0,
- .lsr .x .x4 .x4 63,
- .adds .x .x14 .x14 .x22,
- .sub .x .x4 .x16 .x4,
- .adc .x .x22 .x24 .x16,
- .adds .x .x22 .x23 .x22,
- .logic
-   .orr
-   .x
-   .x23
-   .x27
-   .x27,
- .movk .x .x23 0xee00#16 1,
- .movk .x .x23 0xc8aa#16 2,
- .movk .x .x23 0xccd1#16 3,
- .mul .x .x23 .x7 .x23,
- .lsr .x .x5 .x5 63,
- .sub .x .x5 .x16 .x5,
- .movk .x .x27 0xee00#16 1,
- .movk .x .x27 0xc8aa#16 2,
- .movk .x .x27 0xccd1#16 3,
- .extr .x .x15 .x9 .x15 59,
- .str .x .x15 .x0 2272,
- .extr .x .x9 .x12 .x9 59,
- .ldr .x .x15 .x0 7112,
- .extr .x .x12 .x15 .x12 59,
- .ldr .x .x24 .x0 7104,
- .extr .x .x15 .x24 .x15 59,
- .extr .x .x10 .x2 .x10 59,
- .extr .x .x2 .x3 .x2 59,
- .extr .x .x3 .x8 .x3 59,
- .extr .x .x8 .x11 .x8 59,
- .str .x .x10 .x0 2456,
- .str .x .x2 .x0 2464,
- .str .x .x3 .x0 2472,
- .str .x .x8 .x0 2480,
- .str .x .x9 .x0 2280,
- .logic
-   .and
-   .x
-   .x9
-   .x13
-   .x4,
- .subs .x .x9 .x21 .x9,
- .logic
-   .and
-   .x
-   .x21
-   .x25
-   .x4,
- .sbcs .x .x17 .x17 .x21,
- .ldr .x .x21 .x0 96,
- .str .x .x12 .x0 2288,
- .logic
-   .and
-   .x
-   .x12
-   .x20
-   .x4,
- .sbcs .x .x12 .x14 .x12,
- .logic
-   .and
-   .x
-   .x4
-   .x26
-   .x4,
- .sbcs .x .x4 .x22 .x4,
- .ldr .x .x14 .x0 7136,
- .logic
-   .and
-   .x
-   .x22
-   .x14
-   .x5,
- .subs .x .x9 .x9 .x22,
- .logic
-   .and
-   .x
-   .x22
-   .x28
-   .x5,
- .str .x .x11 .x0 7112,
- .mul .x .x11 .x23 .x21,
- .sbcs .x .x17 .x17 .x22,
- .ldr .x .x22 .x0 104,
- .str .x .x15 .x0 2296,
- .logic
-   .and
-   .x
-   .x15
-   .x6
-   .x5,
- .sbcs .x .x12 .x12 .x15,
- .umulh .x15 .x23 .x21,
- .logic
-   .and
-   .x
-   .x5
-   .x30
-   .x5,
- .sbcs .x .x4 .x4 .x5,
- .adds .x .x5 .x11 .x16,
- .mul .x .x11 .x23 .x22,
- .adc .x .x15 .x15 .x16,
- .adds .x .x5 .x7 .x5,
- .ldr .x .x5 .x0 112,
- .umulh .x7 .x23 .x22,
- .adc .x .x15 .x15 .x16,
- .adds .x .x11 .x11 .x15,
- .mul .x .x15 .x23 .x5,
- .adc .x .x7 .x7 .x16,
- .adds .x .x9 .x9 .x11,
- .ldr .x .x11 .x0 120,
- .adc .x .x7 .x7 .x16,
- .adds .x .x7 .x15 .x7,
- .umulh .x15 .x23 .x5,
- .adc .x .x15 .x15 .x16,
- .adds .x .x7 .x17 .x7,
- .mul .x .x17 .x23 .x11,
- .umulh .x23 .x23 .x11,
- .adc .x .x15 .x15 .x16,
- .adds .x .x15 .x17 .x15,
- .adc .x .x17 .x23 .x16,
- .adds .x .x12 .x12 .x15,
- .lsr .x .x15 .x4 63,
- .adc .x .x17 .x17 .x16,
- .sub .x .x15 .x16 .x15,
- .adds .x .x4 .x4 .x17,
- .adcs .x .x15 .x15 .x16,
- .lsr .x .x17 .x15 63,
- .sub .x .x17 .x16 .x17,
- .logic
-   .and
-   .x
-   .x23
-   .x21
-   .x17,
- .adds .x .x9 .x9 .x23,
- .logic
-   .and
-   .x
-   .x23
-   .x22
-   .x17,
- .adcs .x .x7 .x7 .x23,
- .logic
-   .and
-   .x
-   .x23
-   .x5
-   .x17,
- .adcs .x .x12 .x12 .x23,
- .logic
-   .and
-   .x
-   .x17
-   .x11
-   .x17,
- .adcs .x .x4 .x4 .x17,
- .add .x .x17 .x16 .x16,
- .adcs .x .x15 .x15 .x17,
- .subs .x .x9 .x9 .x21,
- .sbcs .x .x7 .x7 .x22,
- .sbcs .x .x12 .x12 .x5,
- .sbcs .x .x4 .x4 .x11,
- .add .x .x17 .x16 .x16,
- .sbcs .x .x15 .x15 .x17,
- .lsr .x .x17 .x15 63,
- .sub .x .x17 .x16 .x17,
- .logic
-   .and
-   .x
-   .x23
-   .x21
-   .x17,
- .adds .x .x9 .x9 .x23,
- .logic
-   .and
-   .x
-   .x23
-   .x22
-   .x17,
- .adcs .x .x7 .x7 .x23,
- .logic
-   .and
-   .x
-   .x23
-   .x5
-   .x17,
- .adcs .x .x12 .x12 .x23,
- .ldr .x .x23 .x0 7128,
- .str .x .x12 .x0 7144,
- .umulh .x12 .x23 .x13,
- .logic
-   .and
-   .x
-   .x17
-   .x11
-   .x17,
- .adcs .x .x4 .x4 .x17,
- .mul .x .x17 .x23 .x25,
- .str .x .x10 .x0 2312,
- .umulh .x10 .x23 .x25,
- .str .x .x2 .x0 2320,
- .add .x .x2 .x16 .x16,
- .adcs .x .x2 .x15 .x2,
- .mul .x .x2 .x23 .x20,
- .umulh .x15 .x23 .x20,
- .adds .x .x12 .x17 .x12,
- .mul .x .x17 .x23 .x26,
- .adc .x .x10 .x10 .x16,
- .adds .x .x2 .x2 .x10,
- .umulh .x10 .x23 .x26,
- .adc .x .x15 .x15 .x16,
- .adds .x .x15 .x17 .x15,
- .ldr .x .x17 .x0 7120,
- .str .x .x4 .x0 7152,
- .mul .x .x4 .x17 .x14,
- .adc .x .x10 .x10 .x16,
- .adds .x .x4 .x4 .x16,
- .str .x .x3 .x0 2328,
- .umulh .x3 .x17 .x14,
- .adc .x .x3 .x3 .x16,
- .str .x .x8 .x0 2336,
- .mul .x .x8 .x23 .x13,
- .adds .x .x4 .x8 .x4,
- .mul .x .x8 .x17 .x28,
- .adc .x .x3 .x3 .x16,
- .adds .x .x3 .x8 .x3,
- .umulh .x8 .x17 .x28,
- .adc .x .x8 .x8 .x16,
- .adds .x .x3 .x12 .x3,
- .mul .x .x12 .x17 .x6,
- .adc .x .x8 .x8 .x16,
- .adds .x .x8 .x12 .x8,
- .umulh .x12 .x17 .x6,
- .adc .x .x12 .x12 .x16,
- .adds .x .x2 .x2 .x8,
- .mul .x .x8 .x17 .x30,
- .adc .x .x12 .x12 .x16,
- .adds .x .x8 .x8 .x12,
- .umulh .x12 .x17 .x30,
- .adc .x .x12 .x12 .x16,
- .lsr .x .x23 .x23 63,
- .adds .x .x8 .x15 .x8,
- .sub .x .x15 .x16 .x23,
- .adc .x .x12 .x12 .x16,
- .adds .x .x10 .x10 .x12,
- .logic
-   .and
-   .x
-   .x12
-   .x13
-   .x15,
- .subs .x .x3 .x3 .x12,
- .logic
-   .and
-   .x
-   .x12
-   .x25
-   .x15,
- .mul .x .x13 .x4 .x27,
- .lsr .x .x17 .x17 63,
- .sbcs .x .x2 .x2 .x12,
- .logic
-   .and
-   .x
-   .x12
-   .x20
-   .x15,
- .sub .x .x17 .x16 .x17,
- .sbcs .x .x8 .x8 .x12,
- .logic
-   .and
-   .x
-   .x12
-   .x26
-   .x15,
- .sbcs .x .x10 .x10 .x12,
- .logic
-   .and
-   .x
-   .x12
-   .x14
-   .x17,
- .subs .x .x3 .x3 .x12,
- .logic
-   .and
-   .x
-   .x12
-   .x28
-   .x17,
- .mul .x .x14 .x13 .x21,
- .sbcs .x .x2 .x2 .x12,
- .logic
-   .and
-   .x
-   .x6
-   .x6
-   .x17,
- .umulh .x12 .x13 .x21,
- .sbcs .x .x6 .x8 .x6,
- .logic
-   .and
-   .x
-   .x8
-   .x30
-   .x17,
- .sbcs .x .x8 .x10 .x8,
- .adds .x .x10 .x14 .x16,
- .mul .x .x14 .x13 .x22,
- .adc .x .x12 .x12 .x16,
- .umulh .x15 .x13 .x22,
- .adds .x .x4 .x4 .x10,
- .adc .x .x10 .x12 .x16,
- .adds .x .x10 .x14 .x10,
- .mul .x .x12 .x13 .x5,
- .adc .x .x14 .x15 .x16,
- .umulh .x15 .x13 .x5,
- .adds .x .x3 .x3 .x10,
- .adc .x .x10 .x14 .x16,
- .adds .x .x10 .x12 .x10,
- .mul .x .x12 .x13 .x11,
- .adc .x .x14 .x15 .x16,
- .umulh .x13 .x13 .x11,
- .adds .x .x2 .x2 .x10,
- .adc .x .x10 .x14 .x16,
- .adds .x .x10 .x12 .x10,
- .adc .x .x12 .x13 .x16,
- .adds .x .x6 .x6 .x10,
- .lsr .x .x10 .x8 63,
- .adc .x .x12 .x12 .x16,
- .sub .x .x10 .x16 .x10,
- .adds .x .x8 .x8 .x12,
- .adcs .x .x10 .x10 .x16,
- .lsr .x .x12 .x10 63,
- .sub .x .x12 .x16 .x12,
- .logic
-   .and
-   .x
-   .x13
-   .x21
-   .x12,
- .adds .x .x3 .x3 .x13,
- .logic
-   .and
-   .x
-   .x13
-   .x22
-   .x12,
- .adcs .x .x2 .x2 .x13,
- .logic
-   .and
-   .x
-   .x13
-   .x5
-   .x12,
- .adcs .x .x6 .x6 .x13,
- .logic
-   .and
-   .x
-   .x12
-   .x11
-   .x12,
- .adcs .x .x8 .x8 .x12,
- .add .x .x12 .x16 .x16,
- .adcs .x .x10 .x10 .x12,
- .subs .x .x3 .x3 .x21,
- .sbcs .x .x2 .x2 .x22,
- .sbcs .x .x6 .x6 .x5,
- .sbcs .x .x8 .x8 .x11,
- .add .x .x12 .x16 .x16,
- .sbcs .x .x10 .x10 .x12,
- .lsr .x .x12 .x10 63,
- .sub .x .x12 .x16 .x12,
- .logic
-   .and
-   .x
-   .x13
-   .x21
-   .x12,
- .adds .x .x3 .x3 .x13,
- .logic
-   .and
-   .x
-   .x13
-   .x22
-   .x12,
- .adcs .x .x2 .x2 .x13,
- .logic
-   .and
-   .x
-   .x5
-   .x5
-   .x12,
- .lsr .x .x13 .x24 63,
- .ldr .x .x14 .x0 7112,
- .lsr .x .x15 .x14 63,
- .adcs .x .x5 .x6 .x5,
- .logic
-   .and
-   .x
-   .x6
-   .x11
-   .x12,
- .sub .x .x11 .x16 .x13,
- .sub .x .x12 .x16 .x15,
- .adcs .x .x6 .x8 .x6,
- .add .x .x8 .x16 .x16,
- .extr .x .x11 .x11 .x24 59,
- .extr .x .x12 .x12 .x14 59,
- .adcs .x .x8 .x10 .x8,
- .str .x .x11 .x0 2448,
- .str .x .x12 .x0 2488,
- .str .x .x11 .x0 2304,
- .str .x .x12 .x0 2344,
- .str .x .x9 .x0 2416,
- .str .x .x7 .x0 2424,
- .ldr .x .x10 .x0 7144,
- .str .x .x10 .x0 2432,
- .ldr .x .x11 .x0 7152,
- .str .x .x11 .x0 2440,
- .str .x .x4 .x0 2496,
- .str .x .x3 .x0 2504,
- .str .x .x2 .x0 2512,
- .str .x .x5 .x0 2520,
- .str .x .x6 .x0 2528,
- .str .x .x8 .x0 2536,
- .str .x .x3 .x0 2384,
- .str .x .x2 .x0 2392,
- .str .x .x5 .x0 2400,
- .str .x .x6 .x0 2408,
- .str .x .x9 .x0 2352,
- .str .x .x7 .x0 2360,
- .str .x .x10 .x0 2368,
- .str .x .x11 .x0 2376]
-
 def mixedHead : List Instr :=
   aarch64_instrs%
    [.ldr .x .x1 .x0 576,
@@ -3745,5 +3031,418 @@ def cachedHead : List Instr :=
     .adc .x .x15 .x15 .x3,
     .str .x .x13 .x0 976,
     .str .x .x15 .x0 984]
+
+def inverseUpdate : List Instr :=
+  aarch64_instrs%
+   [.lsr .x .x2 .x4 63,
+    .lsr .x .x3 .x5 63,
+    .ldr .x .x8 .x0 2312,
+    .mul .x .x9 .x5 .x8,
+    .ldr .x .x10 .x0 2272,
+    .mul .x .x11 .x4 .x10,
+    .umulh .x12 .x4 .x10,
+    .umulh .x13 .x5 .x8,
+    .ldr .x .x14 .x0 2280,
+    .mul .x .x15 .x4 .x14,
+    .movz .x .x16 0 0,
+    .sub .x .x2 .x16 .x2,
+    .sub .x .x3 .x16 .x3,
+    .ldr .x .x17 .x0 2320,
+    .umulh .x20 .x5 .x17,
+    .mul .x .x21 .x5 .x17,
+    .umulh .x22 .x4 .x14,
+    .ldr .x .x23 .x0 2328,
+    .mul .x .x24 .x5 .x23,
+    .ldr .x .x25 .x0 2288,
+    .mul .x .x26 .x4 .x25,
+    .umulh .x27 .x5 .x23,
+    .adds .x .x15 .x15 .x12,
+    .umulh .x28 .x4 .x25,
+    .adc .x .x22 .x22 .x16,
+    .adds .x .x26 .x26 .x22,
+    .ldr .x .x30 .x0 2296,
+    .mul .x .x12 .x4 .x30,
+    .adc .x .x28 .x28 .x16,
+    .adds .x .x12 .x12 .x28,
+    .umulh .x22 .x4 .x30,
+    .adc .x .x22 .x22 .x16,
+    .adds .x .x9 .x9 .x16,
+    .adc .x .x13 .x13 .x16,
+    .adds .x .x9 .x11 .x9,
+    .adc .x .x13 .x13 .x16,
+    .adds .x .x13 .x21 .x13,
+    .ldr .x .x28 .x0 2336,
+    .umulh .x11 .x5 .x28,
+    .adc .x .x20 .x20 .x16,
+    .adds .x .x15 .x15 .x13,
+    .adc .x .x20 .x20 .x16,
+    .adds .x .x24 .x24 .x20,
+    .mul .x .x21 .x5 .x28,
+    .adc .x .x27 .x27 .x16,
+    .adds .x .x26 .x26 .x24,
+    .ldr .x .x13 .x0 2344,
+    .mul .x .x20 .x5 .x13,
+    .adc .x .x27 .x27 .x16,
+    .adds .x .x21 .x21 .x27,
+    .adc .x .x11 .x11 .x16,
+    .adds .x .x12 .x12 .x21,
+    .logic .and .x .x24 .x10 .x2,
+    .adc .x .x11 .x11 .x16,
+    .adds .x .x20 .x20 .x11,
+    .ldr .x .x27 .x0 2304,
+    .mul .x .x21 .x4 .x27,
+    .adds .x .x21 .x21 .x22,
+    .adds .x .x20 .x21 .x20,
+    .lsr .x .x11 .x6 63,
+    .subs .x .x15 .x15 .x24,
+    .lsr .x .x22 .x7 63,
+    .mul .x .x27 .x6 .x27,
+    .sub .x .x11 .x16 .x11,
+    .sub .x .x22 .x16 .x22,
+    .logic .and .x .x21 .x14 .x2,
+    .sbcs .x .x21 .x26 .x21,
+    .logic .and .x .x24 .x25 .x2,
+    .sbcs .x .x24 .x12 .x24,
+    .logic .and .x .x26 .x30 .x2,
+    .sbcs .x .x20 .x20 .x26,
+    .logic .and .x .x12 .x8 .x3,
+    .subs .x .x15 .x15 .x12,
+    .extr .x .x9 .x15 .x9 59,
+    .logic .and .x .x26 .x17 .x3,
+    .sbcs .x .x21 .x21 .x26,
+    .mul .x .x13 .x7 .x13,
+    .extr .x .x15 .x21 .x15 59,
+    .logic .and .x .x12 .x23 .x3,
+    .sbcs .x .x12 .x24 .x12,
+    .extr .x .x21 .x12 .x21 59,
+    .logic .and .x .x26 .x28 .x3,
+    .sbcs .x .x20 .x20 .x26,
+    .extr .x .x12 .x20 .x12 59,
+    .lsr .x .x24 .x20 63,
+    .sub .x .x24 .x16 .x24,
+    .extr .x .x20 .x24 .x20 59,
+    .str .x .x20 .x0 2304,
+    .umulh .x26 .x7 .x8,
+    .mul .x .x24 .x6 .x10,
+    .umulh .x20 .x6 .x10,
+    .logic .and .x .x10 .x10 .x11,
+    .str .x .x9 .x0 2272,
+    .mul .x .x9 .x6 .x14,
+    .adds .x .x20 .x9 .x20,
+    .umulh .x9 .x6 .x14,
+    .logic .and .x .x14 .x14 .x11,
+    .str .x .x15 .x0 2280,
+    .adc .x .x9 .x9 .x16,
+    .mul .x .x15 .x6 .x25,
+    .adds .x .x15 .x15 .x9,
+    .umulh .x9 .x6 .x25,
+    .adc .x .x9 .x9 .x16,
+    .str .x .x3 .x0 7104,
+    .mul .x .x3 .x6 .x30,
+    .adds .x .x9 .x3 .x9,
+    .umulh .x3 .x6 .x30,
+    .adc .x .x3 .x3 .x16,
+    .adds .x .x27 .x27 .x3,
+    .mul .x .x3 .x7 .x8,
+    .adds .x .x3 .x3 .x16,
+    .adc .x .x26 .x26 .x16,
+    .adds .x .x24 .x24 .x3,
+    .adc .x .x26 .x26 .x16,
+    .mul .x .x3 .x7 .x17,
+    .adds .x .x3 .x3 .x26,
+    .umulh .x26 .x7 .x17,
+    .adc .x .x26 .x26 .x16,
+    .adds .x .x20 .x20 .x3,
+    .adc .x .x26 .x26 .x16,
+    .mul .x .x3 .x7 .x23,
+    .adds .x .x3 .x3 .x26,
+    .umulh .x26 .x7 .x23,
+    .adc .x .x26 .x26 .x16,
+    .adds .x .x15 .x15 .x3,
+    .adc .x .x26 .x26 .x16,
+    .mul .x .x3 .x7 .x28,
+    .adds .x .x3 .x3 .x26,
+    .umulh .x26 .x7 .x28,
+    .adc .x .x26 .x26 .x16,
+    .adds .x .x3 .x9 .x3,
+    .adc .x .x26 .x26 .x16,
+    .adds .x .x26 .x13 .x26,
+    .adds .x .x27 .x27 .x26,
+    .subs .x .x10 .x20 .x10,
+    .sbcs .x .x14 .x15 .x14,
+    .logic .and .x .x25 .x25 .x11,
+    .str .x .x21 .x0 2288,
+    .sbcs .x .x3 .x3 .x25,
+    .logic .and .x .x30 .x30 .x11,
+    .str .x .x12 .x0 2296,
+    .ldr .x .x9 .x0 2352,
+    .mul .x .x13 .x4 .x9,
+    .ldr .x .x26 .x0 2384,
+    .mul .x .x20 .x5 .x26,
+    .umulh .x15 .x5 .x26,
+    .sbcs .x .x27 .x27 .x30,
+    .ldr .x .x21 .x0 2360,
+    .mul .x .x25 .x4 .x21,
+    .logic .and .x .x23 .x23 .x22,
+    .logic .and .x .x17 .x17 .x22,
+    .logic .and .x .x8 .x8 .x22,
+    .subs .x .x10 .x10 .x8,
+    .sbcs .x .x14 .x14 .x17,
+    .umulh .x12 .x4 .x9,
+    .sbcs .x .x3 .x3 .x23,
+    .ldr .x .x30 .x0 2392,
+    .umulh .x8 .x5 .x30,
+    .logic .and .x .x28 .x28 .x22,
+    .sbcs .x .x27 .x27 .x28,
+    .adds .x .x12 .x25 .x12,
+    .umulh .x17 .x4 .x21,
+    .extr .x .x24 .x10 .x24 59,
+    .str .x .x24 .x0 2312,
+    .mul .x .x23 .x5 .x30,
+    .adc .x .x17 .x17 .x16,
+    .adds .x .x20 .x20 .x16,
+    .adc .x .x15 .x15 .x16,
+    .adds .x .x13 .x13 .x20,
+    .ldr .x .x28 .x0 2400,
+    .umulh .x25 .x5 .x28,
+    .adc .x .x15 .x15 .x16,
+    .adds .x .x23 .x23 .x15,
+    .extr .x .x10 .x14 .x10 59,
+    .str .x .x10 .x0 2320,
+    .ldr .x .x24 .x0 2368,
+    .mul .x .x20 .x4 .x24,
+    .adc .x .x8 .x8 .x16,
+    .adds .x .x20 .x20 .x17,
+    .extr .x .x14 .x3 .x14 59,
+    .str .x .x14 .x0 2328,
+    .mul .x .x15 .x5 .x28,
+    .extr .x .x3 .x27 .x3 59,
+    .str .x .x3 .x0 2336,
+    .logic .and .x .x10 .x9 .x2,
+    .lsr .x .x17 .x27 63,
+    .sub .x .x17 .x16 .x17,
+    .extr .x .x27 .x17 .x27 59,
+    .str .x .x27 .x0 2344,
+    .movz .x .x14 48207 0,
+    .movk .x .x14 60928 1,
+    .movk .x .x14 51370 2,
+    .movk .x .x14 52433 3,
+    .umulh .x3 .x4 .x24,
+    .adc .x .x3 .x3 .x16,
+    .adds .x .x12 .x12 .x23,
+    .adc .x .x8 .x8 .x16,
+    .adds .x .x15 .x15 .x8,
+    .ldr .x .x17 .x0 7104,
+    .logic .and .x .x27 .x26 .x17,
+    .adc .x .x25 .x25 .x16,
+    .adds .x .x15 .x20 .x15,
+    .ldr .x .x23 .x0 2408,
+    .mul .x .x8 .x5 .x23,
+    .umulh .x5 .x5 .x23,
+    .adc .x .x25 .x25 .x16,
+    .adds .x .x8 .x8 .x25,
+    .adc .x .x5 .x5 .x16,
+    .ldr .x .x20 .x0 2376,
+    .mul .x .x25 .x4 .x20,
+    .adds .x .x25 .x25 .x3,
+    .umulh .x4 .x4 .x20,
+    .adc .x .x4 .x4 .x16,
+    .adds .x .x8 .x25 .x8,
+    .adc .x .x5 .x5 .x16,
+    .adds .x .x4 .x4 .x5,
+    .mul .x .x3 .x13 .x14,
+    .subs .x .x10 .x12 .x10,
+    .logic .and .x .x25 .x30 .x17,
+    .logic .and .x .x5 .x21 .x2,
+    .sbcs .x .x5 .x15 .x5,
+    .logic .and .x .x12 .x24 .x2,
+    .sbcs .x .x8 .x8 .x12,
+    .logic .and .x .x2 .x20 .x2,
+    .sbcs .x .x4 .x4 .x2,
+    .subs .x .x10 .x10 .x27,
+    .logic .and .x .x15 .x28 .x17,
+    .logic .and .x .x17 .x23 .x17,
+    .add .x .x12 .x16 .x16,
+    .sbcs .x .x5 .x5 .x25,
+    .ldr .x .x2 .x0 96,
+    .mul .x .x27 .x3 .x2,
+    .sbcs .x .x8 .x8 .x15,
+    .sbcs .x .x4 .x4 .x17,
+    .umulh .x25 .x3 .x2,
+    .adds .x .x27 .x27 .x16,
+    .adc .x .x25 .x25 .x16,
+    .adds .x .x27 .x13 .x27,
+    .ldr .x .x15 .x0 104,
+    .umulh .x17 .x3 .x15,
+    .adc .x .x25 .x25 .x16,
+    .lsr .x .x13 .x4 63,
+    .sub .x .x13 .x16 .x13,
+    .mul .x .x27 .x3 .x15,
+    .adds .x .x27 .x27 .x25,
+    .adc .x .x17 .x17 .x16,
+    .adds .x .x10 .x10 .x27,
+    .adc .x .x17 .x17 .x16,
+    .ldr .x .x25 .x0 112,
+    .mul .x .x27 .x3 .x25,
+    .adds .x .x27 .x27 .x17,
+    .umulh .x17 .x3 .x25,
+    .adc .x .x17 .x17 .x16,
+    .adds .x .x5 .x5 .x27,
+    .adc .x .x17 .x17 .x16,
+    .ldr .x .x27 .x0 120,
+    .mul .x .x23 .x3 .x27,
+    .adds .x .x17 .x23 .x17,
+    .umulh .x3 .x3 .x27,
+    .adc .x .x3 .x3 .x16,
+    .adds .x .x17 .x8 .x17,
+    .adc .x .x3 .x3 .x16,
+    .adds .x .x3 .x4 .x3,
+    .adcs .x .x13 .x13 .x16,
+    .lsr .x .x23 .x13 63,
+    .sub .x .x23 .x16 .x23,
+    .logic .and .x .x8 .x2 .x23,
+    .adds .x .x10 .x10 .x8,
+    .logic .and .x .x4 .x15 .x23,
+    .adcs .x .x5 .x5 .x4,
+    .logic .and .x .x8 .x25 .x23,
+    .adcs .x .x8 .x17 .x8,
+    .logic .and .x .x23 .x27 .x23,
+    .adcs .x .x3 .x3 .x23,
+    .adcs .x .x13 .x13 .x12,
+    .subs .x .x10 .x10 .x2,
+    .sbcs .x .x5 .x5 .x15,
+    .sbcs .x .x8 .x8 .x25,
+    .sbcs .x .x3 .x3 .x27,
+    .sbcs .x .x13 .x13 .x12,
+    .lsr .x .x13 .x13 63,
+    .sub .x .x13 .x16 .x13,
+    .logic .and .x .x4 .x2 .x13,
+    .adds .x .x10 .x10 .x4,
+    .logic .and .x .x17 .x15 .x13,
+    .adcs .x .x17 .x5 .x17,
+    .logic .and .x .x23 .x25 .x13,
+    .adcs .x .x8 .x8 .x23,
+    .logic .and .x .x13 .x27 .x13,
+    .adcs .x .x13 .x3 .x13,
+    .mul .x .x4 .x7 .x26,
+    .adds .x .x4 .x4 .x16,
+    .mul .x .x5 .x6 .x9,
+    .umulh .x23 .x6 .x9,
+    .logic .and .x .x9 .x9 .x11,
+    .str .x .x10 .x0 2352,
+    .mul .x .x3 .x6 .x21,
+    .umulh .x10 .x6 .x21,
+    .logic .and .x .x21 .x21 .x11,
+    .str .x .x17 .x0 2360,
+    .mul .x .x17 .x6 .x24,
+    .umulh .x27 .x6 .x24,
+    .logic .and .x .x24 .x24 .x11,
+    .str .x .x8 .x0 2368,
+    .logic .and .x .x11 .x20 .x11,
+    .mul .x .x8 .x6 .x20,
+    .umulh .x6 .x6 .x20,
+    .str .x .x13 .x0 2376,
+    .umulh .x20 .x7 .x26,
+    .logic .and .x .x26 .x26 .x22,
+    .adc .x .x20 .x20 .x16,
+    .adds .x .x5 .x5 .x4,
+    .adc .x .x20 .x20 .x16,
+    .adds .x .x3 .x3 .x23,
+    .mul .x .x14 .x5 .x14,
+    .adc .x .x10 .x10 .x16,
+    .adds .x .x17 .x17 .x10,
+    .adc .x .x27 .x27 .x16,
+    .adds .x .x8 .x8 .x27,
+    .umulh .x13 .x7 .x30,
+    .adc .x .x6 .x6 .x16,
+    .mul .x .x4 .x7 .x30,
+    .adds .x .x4 .x4 .x20,
+    .logic .and .x .x30 .x30 .x22,
+    .adc .x .x13 .x13 .x16,
+    .adds .x .x4 .x3 .x4,
+    .mul .x .x23 .x7 .x28,
+    .adc .x .x13 .x13 .x16,
+    .adds .x .x23 .x23 .x13,
+    .umulh .x10 .x7 .x28,
+    .logic .and .x .x28 .x28 .x22,
+    .ldr .x .x27 .x0 2408,
+    .logic .and .x .x22 .x27 .x22,
+    .adc .x .x10 .x10 .x16,
+    .adds .x .x17 .x17 .x23,
+    .mul .x .x20 .x14 .x2,
+    .adc .x .x10 .x10 .x16,
+    .adds .x .x20 .x20 .x16,
+    .mul .x .x3 .x7 .x27,
+    .umulh .x27 .x7 .x27,
+    .umulh .x13 .x14 .x2,
+    .adc .x .x13 .x13 .x16,
+    .adds .x .x5 .x5 .x20,
+    .mul .x .x23 .x14 .x15,
+    .adc .x .x13 .x13 .x16,
+    .adds .x .x23 .x23 .x13,
+    .umulh .x7 .x14 .x15,
+    .adc .x .x7 .x7 .x16,
+    .adds .x .x3 .x3 .x10,
+    .mul .x .x20 .x14 .x25,
+    .adc .x .x27 .x27 .x16,
+    .adds .x .x3 .x8 .x3,
+    .umulh .x5 .x14 .x25,
+    .adc .x .x27 .x27 .x16,
+    .adds .x .x27 .x6 .x27,
+    .subs .x .x4 .x4 .x9,
+    .ldr .x .x13 .x0 120,
+    .umulh .x10 .x14 .x13,
+    .mul .x .x14 .x14 .x13,
+    .sbcs .x .x21 .x17 .x21,
+    .sbcs .x .x3 .x3 .x24,
+    .sbcs .x .x27 .x27 .x11,
+    .subs .x .x4 .x4 .x26,
+    .sbcs .x .x21 .x21 .x30,
+    .sbcs .x .x3 .x3 .x28,
+    .sbcs .x .x27 .x27 .x22,
+    .adds .x .x23 .x4 .x23,
+    .adc .x .x7 .x7 .x16,
+    .adds .x .x20 .x20 .x7,
+    .adc .x .x5 .x5 .x16,
+    .adds .x .x21 .x21 .x20,
+    .adc .x .x5 .x5 .x16,
+    .adds .x .x14 .x14 .x5,
+    .lsr .x .x8 .x27 63,
+    .adc .x .x10 .x10 .x16,
+    .adds .x .x14 .x3 .x14,
+    .sub .x .x8 .x16 .x8,
+    .adc .x .x10 .x10 .x16,
+    .adds .x .x10 .x27 .x10,
+    .adcs .x .x8 .x8 .x16,
+    .lsr .x .x6 .x8 63,
+    .sub .x .x6 .x16 .x6,
+    .logic .and .x .x9 .x2 .x6,
+    .logic .and .x .x17 .x15 .x6,
+    .logic .and .x .x24 .x13 .x6,
+    .logic .and .x .x6 .x25 .x6,
+    .adds .x .x9 .x23 .x9,
+    .adcs .x .x21 .x21 .x17,
+    .adcs .x .x6 .x14 .x6,
+    .adcs .x .x10 .x10 .x24,
+    .adcs .x .x8 .x8 .x12,
+    .subs .x .x9 .x9 .x2,
+    .sbcs .x .x21 .x21 .x15,
+    .sbcs .x .x6 .x6 .x25,
+    .sbcs .x .x10 .x10 .x13,
+    .sbcs .x .x8 .x8 .x12,
+    .lsr .x .x8 .x8 63,
+    .sub .x .x16 .x16 .x8,
+    .logic .and .x .x2 .x2 .x16,
+    .logic .and .x .x15 .x15 .x16,
+    .logic .and .x .x25 .x25 .x16,
+    .logic .and .x .x16 .x13 .x16,
+    .adds .x .x9 .x9 .x2,
+    .adcs .x .x15 .x21 .x15,
+    .str .x .x9 .x0 2384,
+    .adcs .x .x25 .x6 .x25,
+    .str .x .x15 .x0 2392,
+    .adcs .x .x10 .x10 .x16,
+    .str .x .x25 .x0 2400,
+    .str .x .x10 .x0 2408]
 
 end VG.Impl.P256.VerifyAllocatedCode

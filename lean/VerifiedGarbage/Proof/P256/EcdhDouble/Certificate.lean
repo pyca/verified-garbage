@@ -17,6 +17,8 @@ meta import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
+/-! The allocated doubling has its raw program's effect on the observed words. -/
+
 @[expose] public section
 
 namespace VG.Proof.P256.EcdhDouble.Certificate
@@ -56,22 +58,6 @@ instance (off : Nat) : Decidable (observe off) := by unfold observe; infer_insta
 theorem same : ∀ off,observe off → off%8=0 → off+8≤8192 → left.slot off=right.slot off :=
   fun off hv _ _ => same_of_sameK observe (by decide +kernel) off hv
 
-theorem leftBound : ∀ i∈original,instrBound i≤8192 := by
-  rw [original_lit]; exact bound_of_listAllK (by decide +kernel)
-
-private theorem rightOk : listAllK (instrOkK 8192 (RegSet.ofList (VG.Proof.Weierstrass.AArch64.allocatedRegs))
-    VG.Proof.P256.VerifyAllocated.work) rightCode.lit=true := by decide +kernel
-
-theorem rightBound : ∀ i∈optimized,instrBound i≤8192 := by
-  rw [optimized_lit]; exact bound_of_instrOk rightOk
-
-theorem clob : ∀ r∈optimized.flatMap instrClob,r∈VG.Proof.Weierstrass.AArch64.allocatedRegs := by
-  rw [optimized_lit]; exact clob_of_instrOk rightOk
-
-theorem writes : ∀ w∈optimized.flatMap instrWrites,
-    ∃ w'∈VG.Proof.P256.VerifyAllocated.work,w'.1≤w.1 ∧ w.1+w.2≤w'.1+w'.2 := by
-  rw [optimized_lit]; exact cover_of_instrOk rightOk
-
 noncomputable def checked : CheckedObserved 8192 observe original optimized where
   nodes := nodes
   valid := valid
@@ -82,6 +68,23 @@ noncomputable def checked : CheckedObserved 8192 observe original optimized wher
   evalRight := evalRight
   same := same
 
+theorem leftBound : ∀ i∈original,instrBound i≤8192 := by
+  rw [original_lit]; exact bound_of_listAllK (by decide +kernel)
+
+private theorem rightOk : listAllK (instrOkK 8192 (RegSet.ofList VG.Proof.Weierstrass.AArch64.allocatedRegs)
+    VG.Proof.P256.VerifyAllocated.work) rightCode.lit=true := by decide +kernel
+
+theorem rightBound : ∀ i∈optimized,instrBound i≤8192 := by
+  rw [optimized_lit]; exact bound_of_instrOk rightOk
+
+theorem clob : ∀ r∈optimized.flatMap instrClob,
+    r∈VG.Proof.Weierstrass.AArch64.allocatedRegs := by
+  rw [optimized_lit]; exact clob_of_instrOk rightOk
+
+theorem writes : ∀ w∈optimized.flatMap instrWrites,
+    ∃ w'∈VG.Proof.P256.VerifyAllocated.work,w'.1≤w.1 ∧ w.1+w.2≤w'.1+w'.2 := by
+  rw [optimized_lit]; exact cover_of_instrOk rightOk
+
 open VG.Proof.Mont VG.Proof.Mont.AArch64 VG.Proof.Weierstrass.AArch64
 
 theorem refine {base : Addr} {s : State} (hs : Scr s base 8192) {Q : State → Prop}
@@ -89,7 +92,7 @@ theorem refine {base : Addr} {s : State} (hs : Scr s base 8192) {Q : State → P
     WP isa Impl.P256.EcdhDouble.program s fun t => ∃ u,Q u ∧
       (∀ off,observe off → off%8=0 → off+8≤8192 →
         word t.mem base off=word u.mem base off) ∧
-      AllocatedFrame allocatedRegs base VerifyAllocated.work s t := by
+      AllocatedFrame allocatedRegs base VG.Proof.P256.VerifyAllocated.work s t := by
   exact WP.mono (checked.refine (word s.mem base) (by decide) hs (initial_rel inputs s base)
     leftBound rightBound hq) fun _ ⟨u,hu,hw,hk,hm⟩ => ⟨u,hu,hw,hk.mono clob,hm.cover writes⟩
 

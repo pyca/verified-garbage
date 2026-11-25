@@ -33,8 +33,8 @@ open VG.X86_64 VG.Impl.Aes.X86_64
 def dirCore (d : Dir) : Impl.Modes.X86_64.Core where
   prepare := .seq (.block (setMasks keyMasks)) (keys d)
   crypt := cryptCall
-  slots := slots
-  total := slots + 8
+  slots := 392
+  total := 400
   buf := tailSlot
   G := 16
   keyRegs := [.rdi, .rsp]

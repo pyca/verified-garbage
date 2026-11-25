@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Impl.Weierstrass.X86_64.Window
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.LazyP521
 
 /-!
 # Short Weierstrass curves on x86-64: windows in Jacobian coordinates
@@ -96,7 +96,11 @@ def jacPairOn (a b : Pt) : Prog isa :=
 
 /-- `R = 16 R` in Jacobian coordinates: two pairs of doublings between `R`
 and `D`. -/
-def quadJ : Prog isa := .seq (.block [.alu .add .rbx (.imm 8192)]) (.loop (jacPairOn K K.R K.D) .ae)
+def quadG : Prog isa := .seq (.block [.alu .add .rbx (.imm 8192)]) (.loop (jacPairOn K K.R K.D) .ae)
+
+/-- `R = 16 R` in Jacobian coordinates: `quadLazy` for P-521 with BMI2 and ADX,
+else `quadG`. -/
+def quadJ : Prog isa := if lazyOk K then quadLazy K else quadG K
 
 /-- The mask `rdx` of `[z] = 0` (all ones if it is), as `zeroMask`. -/
 def zmask (z : Nat) : List Instr :=
@@ -112,7 +116,7 @@ def selSum : List Instr :=
 /-- `R = R + E` for an affine `E`, by the mixed addition, unless `R` and `E`
 are equal but not `O`. -/
 def sumJ : Prog isa :=
-  .seq (fprogB K.M (maddJ K.S K.R K.E K.D)) (.block (selSum K))
+  .seq (maddP K) (.block (selSum K))
 
 /-- Iteration `j = rbx - 1 ≥ 1` (with `rbx` counting down from `J`):
 `R = 16 R + [d_j]P` in Jacobian coordinates; then `ZF` of `rbx = 1`. -/

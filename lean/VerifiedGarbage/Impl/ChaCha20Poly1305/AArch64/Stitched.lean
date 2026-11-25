@@ -665,15 +665,26 @@ destination, `len` and `x28` saved after the context first, for `openTail`. -/
 def openCode (c : XorCallee) (stitched : Bool) : Prog isa :=
   .seq (.block saveData) (.seq (openMainCode c stitched) openTail)
 
+/-- Keep the return address in the unused upper half of `v15`. Its ABI
+preserved lower half is unchanged. -/
+def openSave : List Instr := [.vop (.ins .d2 .v15 1 .x30)]
+def openRestore : List Instr := [.umov .x .x30 .v15 1]
+
+/-- Opening in place and out of place share the same body. -/
+def openShared (c : XorCallee) (stitched : Bool) : Prog isa :=
+  .seq (.block openSave)
+    (.seq (.call ("vg_chacha20_poly1305_open_core" ++ c.suffix) (openCode c stitched))
+      (.block openRestore))
+
 /-- `vg_chacha20_poly1305_open(key, nonce, aad, aad_len, data, len, tag, work)`:
 the body, in place (the destination the data). -/
 def openInPlace (c : XorCallee) (stitched : Bool) : Prog isa :=
-  .seq (.block [mov .x8 .x4]) (openCode c stitched)
+  .seq (.block [mov .x8 .x4]) (openShared c stitched)
 
 /-- `vg_chacha20_poly1305_open_to(key, nonce, aad, aad_len, src, len, dst, dst_len, tag, work)`,
 `tag` and `work` on the stack: the body, with the destination moved to `x8`,
 and `tag` and `work` loaded into `x6` and `x7`. -/
 def openTo (c : XorCallee) (stitched : Bool) : Prog isa :=
-  .seq (.block [mov .x8 .x6, .ldrSp .x6 0, .ldrSp .x7 8]) (openCode c stitched)
+  .seq (.block [mov .x8 .x6, .ldrSp .x6 0, .ldrSp .x7 8]) (openShared c stitched)
 
 end VG.Impl.ChaCha20Poly1305.AArch64

@@ -3,7 +3,7 @@ module
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Env
 public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Call
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Base
-public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Keep
+public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Pair
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Contract

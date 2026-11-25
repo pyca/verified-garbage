@@ -1,13 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallLoop
-public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Keep
-public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Load
+public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Pair
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Sponge
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallFirst
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallFrame
 import VerifiedGarbage.Proof.Framework.Range
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Store
 import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 import VerifiedGarbage.Proof.MlKem.Mem
 import VerifiedGarbage.Proof.Framework.Offset

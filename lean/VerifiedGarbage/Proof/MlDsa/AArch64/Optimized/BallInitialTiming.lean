@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Backend
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallFirst
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallInitial
 import VerifiedGarbage.Proof.MlKem.AArch64.Sample
-import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Lit
+import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Lit
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.RejNttCT
 import Std.Tactic.BVDecide.Normalize.Prop
 import VerifiedGarbage.TCB.Axioms
@@ -12,30 +12,14 @@ meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Backend
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallFirst
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallInitial
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Sample
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Lit
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Lit
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.RejNttCT
 meta import Std.Tactic.BVDecide.Normalize.Prop
 meta import VerifiedGarbage.TCB.Axioms
 import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Offset
 
-/-! ## From `BallChecks.lean` -/
-
 @[expose] public section
-
-section
-
-namespace VG.Proof.MlDsa.AArch64.Optimized.Ball
-open VG VG.AArch64
-open VG.Proof.Sha3.AArch64.Sha3
-
-taint_summary firstSponge : VectorTaint.taint (VectorTaint.ofRegs [.x25,.x26,.x27,.x3,.x4])
-  (Impl.MlDsa.AArch64.Sample.spongeWith callee 136 136)
-  using Sha3Sums.absorb Sha3Sums.pad Sha3Sums.squeeze
-
-end VG.Proof.MlDsa.AArch64.Optimized.Ball
-
-end
 
 /-! ## From `BallFirstTiming.lean` -/
 

@@ -1,57 +1,58 @@
 module
 
 public import VerifiedGarbage.Impl.P384.EcdhDouble
-public import VerifiedGarbage.Impl.Weierstrass.AArch64.Comb
-import VerifiedGarbage.Impl.Weierstrass.AArch64.WindowJ
+public import VerifiedGarbage.Impl.Weierstrass.AArch64.TComb
 
 /-!
-# P-384's entry selection for ECDH's window on AArch64
+# P-384's table entry for ECDH's window on AArch64, selected by vectors
 
-`sel` selects digit `x19`'s entry of the window's table into `E` as
-s2n-bignum's `p384_montjscalarmul_alt` selects: from the digit's magnitude
-`|d|` (in `x2`), every candidate `m` of the table is compared with `|d|` once
-(`subs`), its 18 words loaded in pairs (`ldp`) and kept in the accumulators
-where they are equal (`csel`), starting from `(0 : R : 0)` for `|d| = 0`; the
-accumulators are stored to `E` once. The window negates `y` after it
-(`WinCfg.entry`).
+An entry of the window's table is three coordinates of six words, so nine
+vector registers hold one: `sel` keeps the entry selected so far in nine
+accumulators, which start as `(0 : R : 0)`, the entry of a digit of magnitude
+zero. It reads the eight entries in turn, at addresses that depend on no digit,
+and inserts each under a mask which is all ones only for the entry whose number,
+counted in both lanes of `v30`, is the digit's magnitude, then stores the
+accumulators into `E`, whose coordinates are consecutive. It writes 22 of the
+vector registers the calling convention does not preserve, all but `v18` and
+`v29`.
 -/
 
 @[expose] public section
 
 namespace VG.Impl.P384.EcdhSelect
-open VG VG.AArch64 VG.Impl.Mont.AArch64 VG.Impl.Weierstrass VG.Impl.Weierstrass.AArch64
-open VG.Impl.P384.EcdhDouble
+open VG VG.AArch64 VG.Impl.Weierstrass.AArch64 VG.Impl.P384.EcdhDouble
 
-/-- The accumulators of coordinate `c` (`X`, `Y`, `Z`). -/
-def acc : Nat → List Reg
-  | 0 => [.x1, .x3, .x4, .x5, .x6, .x7]
-  | 1 => [.x8, .x10, .x11, .x12, .x13, .x14]
-  | _ => [.x15, .x21, .x22, .x23, .x24, .x25]
+/-- The accumulators (three to a coordinate),
+the registers an entry is loaded into, its number and its mask. -/
+def bank : SelGroup :=
+  ⟨[.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v16],
+   [.v17, .v20, .v21, .v22, .v23, .v24, .v25, .v26, .v27], .v30, .v31⟩
 
-/-- The accumulator of word `w` of coordinate `c`. -/
-def accReg (c w : Nat) : Reg := (acc c).getD w .x1
+/-- Accumulator `i`, and the register pair `i` of an entry is loaded into. -/
+def acc (i : Nat) : VReg := bank.acc.getD i .v0
+def ld (i : Nat) : VReg := bank.ld.getD i .v20
 
-/-- The entry of magnitude zero, `(0 : R : 0)`, in the accumulators. -/
-def init : List Instr :=
-  zeros (acc 0 ++ acc 2) ++
-    (List.range 6).flatMap fun w => const64 (accReg 1 w) (wordOf K.one w)
+/-- The magnitude in both lanes of `v19`, `1` in both of `v28`, and no entry
+counted yet. -/
+def count : List Instr :=
+  [.movz .x .x5 1 0, .vop (.dup .d2 .v19 .x2), .vop (.dup .d2 .v28 .x5), .vop (.movi0 bank.idx)]
 
-/-- `x9` = the address of the table's first entry. -/
-def tblBase : List Instr := [.movz .x .x9 (BitVec.ofNat 16 K.tbl) 0, .add .x .x9 .x0 .x9]
+/-- The accumulators `(0 : R : 0)`: for P-384, `R mod p = 2^128 + 2^96 - 2^32 + 1`,
+whose words are `2^64 - (2^32 - 1)`, `2^32 - 1` and `1`, from `x5 = 1`. -/
+def start : List Instr :=
+  bank.acc.map (fun v => .vop (.movi0 v)) ++
+  ([.lsl .x .x4 .x5 32, .sub .x .x6 .x4 .x5, .sub .x .x4 .x5 .x4,
+    .vop (.ins .d2 .v3 0 .x4), .vop (.ins .d2 .v3 1 .x6), .vop (.ins .d2 .v4 0 .x5)] : List Instr)
 
-/-- Candidate `m + 1`, at `x9` (moved on to it from candidate `m`'s), kept where
-`|d| = m + 1`. -/
-def cand (m : Nat) : List Instr :=
-  (if m = 0 then [] else [.addImm .x .x9 .x9 (24 * K.M.n)]) ++
-  [.movz .x .x16 (BitVec.ofNat 16 (m + 1)) 0, .subs .x .x16 .x2 .x16] ++
-  (List.range 9).flatMap fun p =>
-    [.ldp .x16 .x17 .x9 (16 * p), .cselc .x (accReg (p / 3) (2 * (p % 3))) .x16 (accReg (p / 3) (2 * (p % 3))) .eq,
-      .cselc .x (accReg (p / 3) (2 * (p % 3) + 1)) .x17 (accReg (p / 3) (2 * (p % 3) + 1)) .eq]
+/-- Entry `m + 1` inserted if it is the magnitude's. -/
+def entry (m : Nat) : List Instr :=
+  [.vop (.add .d2 bank.idx bank.idx .v28), .vop (.cmeq .d2 bank.mask bank.idx .v19)] ++
+  (((List.range 9).map fun i => .ldrq (ld i) .x0 (K.tbl + 144 * m + 16 * i) : List Instr) ++
+  ((List.range 9).map fun i => .vop (.bsel .bit (acc i) (ld i) bank.mask) : List Instr))
 
-/-- Digit `x19`'s entry into `E`: its magnitude (`nibble`, `magnitude`), the
-candidates, and the accumulators stored. -/
+/-- The entry of digit `x19` into `E`. -/
 def sel : List Instr :=
-  nibble K.bits ++ magnitude ++ tblBase ++ init ++ (List.range 8).flatMap cand ++
-    stores (acc 0) K.E.x ++ stores (acc 1) K.E.y ++ stores (acc 2) K.E.z
+  nibble K.bits ++ (magnitude ++ (count ++ (start ++ ((List.range 8).flatMap entry ++
+    ((List.range 9).map fun i => .strq (acc i) .x0 (K.E.x + 16 * i) : List Instr)))))
 
 end VG.Impl.P384.EcdhSelect

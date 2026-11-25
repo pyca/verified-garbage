@@ -141,17 +141,17 @@ structure FiveRegisters (rp ra rb : Reg) : Prop where
   p28 : rp≠.x28
   p6 : rp≠.x6
   p7 : rp≠.x7
-  p16 : rp≠.x16
+  p16 : (rp ≠ .x16 ∧ rp ≠ .x17)
   p15 : rp≠.x15
   a15 : ra≠.x15
   b15 : rb≠.x15
   a6 : ra≠.x6
   a7 : ra≠.x7
-  a16 : ra≠.x16
+  a16 : (ra ≠ .x16 ∧ ra ≠ .x17)
   a28 : ra≠.x28
   b6 : rb≠.x6
   b7 : rb≠.x7
-  b16 : rb≠.x16
+  b16 : (rb ≠ .x16 ∧ rb ≠ .x17)
   b28 : rb≠.x28
   ab : ra≠rb
   safe : ∀r∈[Reg.x19,.x20,.x21,.x30],r≠ra ∧ r≠rb
@@ -173,7 +173,7 @@ theorem fiveEnv_ok {v p : Nat} {σ s : State} {rp ra rb : Reg}
       StreamOutput t.mem (bufP σ (2*p)) 10 5 (A0 σ (2*p)) ∧
       StreamOutput t.mem (bufP σ (2*p+1)) 10 5 (A0 σ (2*p+1)) ∧
       Frame (fiveWrites σ p) s.mem t.mem ∧
-      (∀r,r≠ra → r≠rb → r≠.x28 → r≠.x6 → r≠.x7 → r≠.x16 → r≠.x15 → t.gpr r=s.gpr r) := by
+      (∀r,r≠ra → r≠rb → r≠.x28 → r≠.x6 → r≠.x7 → (r ≠ .x16 ∧ r ≠ .x17) → r≠.x15 → t.gpr r=s.gpr r) := by
   have hp2 : p<2 := by have:=hp.streams; omega_arith
   have hword (i : Nat) (hi : i<25) :
       InRegions s.wr (wordAddr (stateP σ p) i) 16 := by
@@ -202,7 +202,6 @@ theorem fiveEnv_ok {v p : Nat} {σ s : State} {rp ra rb : Reg}
     (fun j hj => hbuf (2*p) (by omega_arith) j 160 8 hj (by decide))
     (fun j hj => hbuf (2*p+1) (by omega_arith) j 160 8 hj (by decide))
     hr.p15 hr.a15 hr.b15 (by decide) (by rw [he.x19])
-    (fun i hi => by rw [Offset.add_add]; exact in_scr hp he.wr (by omega_arith))
     (fun r hr => by rw [Offset.add_add]; exact in_scr hp he.wr (by omega_arith))
     (Offset.disjoint (scr σ) (d := 7296) (e := 840+1008*(2*p))
       (n := 384) (k := 840) (by omega_arith) (by omega_arith) (by omega_arith))
