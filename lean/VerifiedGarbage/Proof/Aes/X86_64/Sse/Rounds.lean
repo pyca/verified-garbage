@@ -72,15 +72,15 @@ def KeyAt (m : Mem) (a : Addr) (f : Bool) (rk : List Byte) : Prop :=
 theorem arkStep (r0 r1 t u : XReg) (i : Nat) (s : State)
     (h : r0 ≠ t ∧ r0 ≠ u ∧ r1 ≠ t ∧ r1 ≠ u ∧ t ≠ u ∧ r0 ≠ r1)
     (hin : InRegions (s.rd ++ s.wr) (s.gpr kp + BitVec.ofNat 64 (16 * i)) 16) :
-    ∃ s', runBlock isa [.movdquLoad t (at_ kp (16 * i)), dupLow u t, dupHigh t t, px r0 u, px r1 t] s = some s' ∧
+    ∃ s', runBlock isa [.movdquLoad t (Impl.Aes.X86_64.at_ kp (16 * i)), dupLow u t, dupHigh t t, px r0 u, px r1 t] s = some s' ∧
       (∀ l < 2, qword (s'.xmm r0) l = qword (s.xmm r0) l ^^^ s.mem.readW (s.gpr kp + BitVec.ofNat 64 (16 * i)) 64) ∧
       (∀ l < 2, qword (s'.xmm r1) l = qword (s.xmm r1) l ^^^ s.mem.readW (s.gpr kp + BitVec.ofNat 64 (16 * i + 8)) 64) ∧
       (∀ x, x ≠ r0 → x ≠ r1 → x ≠ t → x ≠ u → s'.xmm x = s.xmm x) ∧
       s'.gpr = s.gpr ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   obtain ⟨h1, h2, h3, h4, h5, h6⟩ := h
-  have hea : s.ea (at_ kp (16 * i)) = s.gpr kp + BitVec.ofNat 64 (16 * i) := by
-    simp only [State.ea, at_, BitVec.ofInt_natCast]
-  have hrun : runBlock isa [.movdquLoad t (at_ kp (16 * i)), dupLow u t, dupHigh t t, px r0 u, px r1 t] s =
+  have hea : s.ea (Impl.Aes.X86_64.at_ kp (16 * i)) = s.gpr kp + BitVec.ofNat 64 (16 * i) := by
+    simp only [State.ea, Impl.Aes.X86_64.at_, BitVec.ofInt_natCast]
+  have hrun : runBlock isa [.movdquLoad t (Impl.Aes.X86_64.at_ kp (16 * i)), dupLow u t, dupHigh t t, px r0 u, px r1 t] s =
       some ((XOp.bin XBinOp.pxor r1 t).exec ((XOp.bin XBinOp.pxor r0 u).exec ((XOp.pshufd t t 0xee).exec
         ((XOp.pshufd u t 0x44).exec (s.setXmm t (s.mem.readW (s.gpr kp + BitVec.ofNat 64 (16 * i)) 128)))))) := by
     simp only [dupLow, dupHigh, px, runBlock_cons, runStep_some, runBlock_nil, isa, reduceExec, State.load128, hea,
@@ -106,7 +106,7 @@ theorem regs_p : Regs p .xmm0 .xmm1 := ⟨by decide, by decide, by decide⟩
 theorem ark_steps {r : Nat → XReg} {t u : XReg} (hr : Regs r t u) (s : State)
     (hin : ∀ i < 4, InRegions (s.rd ++ s.wr) (s.gpr kp + BitVec.ofNat 64 (16 * i)) 16) :
     ∀ n ≤ 4, ∃ s', runBlock isa ((List.range n).flatMap fun i =>
-        [.movdquLoad t (at_ kp (16 * i)), dupLow u t, dupHigh t t, px (r (2 * i)) u, px (r (2 * i + 1)) t]) s = some s' ∧
+        [.movdquLoad t (Impl.Aes.X86_64.at_ kp (16 * i)), dupLow u t, dupHigh t t, px (r (2 * i)) u, px (r (2 * i + 1)) t]) s = some s' ∧
       (∀ l < 2, ∀ j < 8, lane r s' l j = if j < 2 * n then lane r s l j ^^^ s.mem.readW (s.gpr kp + BitVec.ofNat 64 (8 * j)) 64
         else lane r s l j) ∧
       s'.gpr = s.gpr ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by

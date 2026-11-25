@@ -251,8 +251,6 @@ def invMixColumns (f : Bool) : List Instr :=
 /-- The register of the round key's address. -/
 def kp : Reg := .rax
 
-def at_ (b : Reg) (d : Nat) : MemOp := { base := b, disp := (d : Int) }
-
 def dupLow (d s : XReg) : Instr := .xop (.pshufd d s 0x44)
 def dupHigh (d s : XReg) : Instr := .xop (.pshufd d s 0xee)
 def unpckl (d s : XReg) : Instr := .xop (.bin .punpcklqdq d s)
@@ -416,9 +414,6 @@ def blocks (crypt8 : Prog isa) : Prog isa :=
   .seq (.block [.mov .r9 (.reg .r8), .mov .r8 (.reg .rcx), .mov .rcx (.reg .rdx), .alu .test .r8 (.reg .r8)])
     (.ite .e (.block []) (.seq keys (.loop (blocksBatch crypt8) .ne)))
 
-def encryptBlocks : Prog isa := blocks encrypt8
-def decryptBlocks : Prog isa := blocks decrypt8
-
 /-! ## Counter mode -/
 
 /-- Counter block `i` of the batch to the buffer: the block in `xmm0` with the
@@ -457,8 +452,5 @@ scratch = r9)`, and (`to`) `vg_aes_ctr32_to`, whose output is at `r11`. -/
 def ctr32G (to : Bool) : Prog isa :=
   .seq (.block ((if to then [] else [.mov .r11 (.reg .rcx)]) ++ ([.alu .test .r8 (.reg .r8)] : List Instr)))
     (.ite .e (.block []) (.seq keys ctrLoop))
-
-def ctr32 : Prog isa := ctr32G false
-def ctr32To : Prog isa := ctr32G true
 
 end VG.Impl.Aes.X86_64.Sse
