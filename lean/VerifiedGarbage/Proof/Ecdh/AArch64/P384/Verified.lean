@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ecdh.AArch64.Main
 public import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
+import VerifiedGarbage.Proof.P384.EcdhDouble
 import VerifiedGarbage.Proof.Ecdsa.AArch64.P384.Verified
 import VerifiedGarbage.Proof.Ecdh.AArch64.MulJ4
 import VerifiedGarbage.Proof.Ecdh.AArch64.WithMul

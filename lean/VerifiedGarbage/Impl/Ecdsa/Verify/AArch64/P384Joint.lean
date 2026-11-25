@@ -11,7 +11,7 @@ public import VerifiedGarbage.Impl.Weierstrass.AArch64.PubNaf
 /-! # ECDSA verification over P-384 on AArch64: one loop for `[u]G + [v]Q`
 
 The public width-five NAF of `v` (`PubNaf`) and the width-nine NAF of `u`, as sixteen-bit words
-(`PubNafWide.prep9`), share their doublings (the register-allocated ones of ECDH's window); each
+(`PubNafWide.prep9`), share their doublings (those of ECDH's window); each
 digit of `u` other than 0 adds `[m]G` by a mixed addition, from the static `VG_P384_GTAB` of
 `[m]G` for `m = 1 … 256`, read directly at the digit. -/
 

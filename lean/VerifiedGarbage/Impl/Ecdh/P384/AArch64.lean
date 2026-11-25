@@ -9,7 +9,7 @@ public import VerifiedGarbage.Impl.Scrub.AArch64.Scrub
 
 /-! # ECDH over P-384 on AArch64: six-word field elements and scalars, by
 windows with a Jacobian accumulator and an affine table (`Cfg.exchangeJ4`),
-the window's doublings register-allocated (`Impl/P384/EcdhDouble.lean`) and its
+the window's doublings in a straight line (`Impl/P384/EcdhDouble.lean`) and its
 mixed additions inline (`Impl/P384/EcdhMadd.lean`), its entries selected in
 registers (`Impl/P384/EcdhSelect.lean`) -/
 
