@@ -73,3 +73,30 @@ into data, partial last batch by whole-block loop.
 x86_64, x86: one SSE2 engine (8 blocks) for CTR and blocks; aarch64: NEON; arm: 32-bit;
 riscv64: 64-bit; powerpc64le: only the byte<->slice transpose and circuit (for SM4, Camellia,
 SEED), AES itself uses vector crypto there.
+
+# x86-64 engine (SSE2, 8 blocks), decided before its code
+
+Model limits: no pshufb/pshuflw/punpcklbw/pcmpgtb in the baseline set modelled; pshufd, word/qword
+shifts and punpck{l,h}qdq are there. The repository's SSE evaluator works quadword by quadword, so:
+two independent 64-bit lanes of 4 blocks, with the 64-bit layout above ([k k c0 c1 r0 r1]).
+ * Load: block b and b+4 -> punpcklqdq / punpckhqdq: register i = k + 4*c1 holds half c1 of block k
+   (lane 0) and of block k+4 (lane 1). Then exchanges of the register number's bits with in-word
+   positions, hub R2: (R2,P3) (R2,P4) (R2,P5) (R2,P2), then (R0,P0) (R1,P1). 24 swapmoves.
+ * row rotate by one = quadword rotate 16: 4 ops + 1 copy; by two = pshufd 0xB1: 1 op.
+ * column rotate (all rows) by one = word rotate 4: 5 ops; by two = word rotate 8: 5 ops.
+ * MC, plain: r=rot1 a (5), a^=r (1), o = rot2(a)^r (2), o^=b_{j-1} (1): 9 a slice + 3 = 75 a state.
+   Out in other registers: state in xmm0-7 before SubBytes, xmm8-15 after it, back by MC.
+ * MC, rep 1: r = colrot1 (5) then ror16 (4); rot2 = pshufd, word rotate 8: 17 a slice + 3 = 139.
+ * SR^2: t=(x ^ x>>8w) & m, x ^= t ^ t<<8w: 7 a slice, every second round.
+ * linear total avg 135 a round; literal ShiftRows would make it about 211.
+ * Round keys: 8 quadwords each (64 bytes); a 16-byte load gives two slices, pshufd 0x44/0xEE
+   copies each to both lanes: 5 ops for 2 slices, 20 a round.
+ * Constant 0x63 of the S-box: MixColumns fixes the vector of equal bytes (2+3+1+1=1), ShiftRows
+   too, so S(x)=S0(x)^63 can add 63 to round keys 1..Nr instead: S0 needs no NOT. Decryption:
+   InvS(x)=I0(x^63), InvMC fixes 63 as well, so the same keys 1..Nr with 63 added serve. (I
+   recognise this as something other bitsliced code does too; it follows from FIPS 197 5.1.)
+ * Key setup: keys in pairs, one a lane, through the same transpose; odd keys to rep 1 (row r
+   rotated r columns); complement slices 0,1,5,6; transposed store.
+ * Function shape: `batch` enciphers the 8 blocks in a buffer in the scratch space; blocks and CTR
+   copy into / XOR out of it, whole blocks at a time, so partial batches need no special code.
+S-boxes: forward 112-gate circuit without its 4 complements; inverse without constants: 113 gates.

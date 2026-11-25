@@ -98,6 +98,7 @@ int main(int argc,char**argv){
     u lt[4]={0};for(int i=0;i<8;i++){u v=co[pre(i)];b x=0;b aa=0,bb=0;for(int k=0;k<4;k++){if(v>>k&1)aa^=qq[k];if(v>>(k+4)&1)bb^=qq[k];}
       b n=M[M[aa][aa]][M[Y1][conj(Y1)]]^M[M[bb][bb]][M[Y2][conj(Y2)]];u w=cp[n];for(int l=0;l<4;l++)if(w>>l&1)lt[l]|=1u<<i;}
     vector<u>UT(fa,fa+9);UT.insert(UT.end(),fb,fb+9);UT.insert(UT.end(),lt,lt+4);
+    if(inverse){bool no=false;for(u t:UT)if(__builtin_popcount(t)==1&&(t&0x63))no=true;if(no)continue;} // would need a NOT on an AND's input
     u bt[8]={0};for(int k=0;k<18;k++){b v=M[cc[k%9]][conj(k<9?Y1:Y2)];if(!inverse)v=affl(v);for(int l=0;l<8;l++)if(v>>l&1)bt[l]|=1u<<k;}
     vector<Op>ou,ob,op;int cu=99;for(int it=0;it<2;it++){vector<Op>o;int x=lin8(UT,inverse?26:25,o);if(x<cu){cu=x;ou=o;}}
     if(cu>(inverse?24:24))continue;
