@@ -126,6 +126,28 @@ open VG VG.X86_64 VG.X86_64.RegUpd VG.Impl.Aes.X86_64 VG.Impl.Aes.X86_64.Sse VG.
 open VG.Proof.Aes.Memory (Processed)
 open VG.Spec.Gcm (blockAt inc32 toBytes Block)
 
+/-! ## The counter block's bytes -/
+
+/-- The counter, as `bswap32` gives it. -/
+theorem icb_lo (m : Mem) (ctr : Addr) :
+    bswap32 (m.readW (ctr + BitVec.ofNat 64 12) 32) = (Spec.Gcm.blockAt m ctr).extractLsb' 0 32 := Sse.icb_lo m ctr
+
+theorem ctr_after {m m' : Mem} {ctr : Addr} {n : Nat}
+    (h : ∀ k < 16, m' (ctr + BitVec.ofNat 64 k) = if k < 12 then m (ctr + BitVec.ofNat 64 k)
+      else (bswap32 (bswap32 (m.readW (ctr + BitVec.ofNat 64 12) 32) +
+        (BitVec.ofNat 64 n).setWidth 32)).extractLsb' (8 * (k - 12)) 8) :
+    Spec.Gcm.blockAt m' ctr = Nat.repeat Spec.Gcm.inc32 n (Spec.Gcm.blockAt m ctr) := by
+  refine block_ext fun k hk => ?_
+  rw [toBytes_blockAt _ _ hk, h k hk, ctrBlock_byte _ _ hk]
+  split
+  · rw [toBytes_blockAt _ _ hk]
+  · rw [Sse.icb_lo, show (BitVec.ofNat 64 n).setWidth 32 = BitVec.ofNat 32 n by
+      apply BitVec.eq_of_toNat_eq; simp]
+    refine byte_ext fun j hj => ?_
+    rw [BitVec.getLsbD_extractLsb', BitVec.getLsbD_extractLsb', bswap32_bit _ (by omega) hj]
+    simp only [hj, decide_true, Bool.true_and]
+    congr 1; omega
+
 /-! ## The loop over batches -/
 
 /-- The registers the loop writes are not these. -/

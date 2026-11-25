@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Aes.X86_64.ExpandKey
 public import VerifiedGarbage.Impl.Aes.X86_64.Blocks
-public import VerifiedGarbage.Impl.Aes.X86_64.Sse
+public import VerifiedGarbage.Impl.Aes.X86_64.Ctr32
 public import VerifiedGarbage.Impl.Aes.X86_64.VaesBlocks
 
 /-!
@@ -34,7 +34,7 @@ structure Ctr32 where
   code : Prog isa
   scrOff : Nat := 0
 
-/-- The bitsliced implementation uses the first 1480 bytes of its scratch
+/-- The bitsliced implementation needs the first 1480 bytes of its scratch
 buffer: 512 bytes into a buffer of 2048, it leaves the first 512 unused. -/
 def Ctr32.scalar : Ctr32 := { name := "vg_aes_ctr32", code := ctr32, scrOff := 512 }
 def Ctr32.aesni : Ctr32 := { name := "vg_aes_ctr32_aesni", code := AesNi.ctr32 }
