@@ -206,3 +206,33 @@ E2. Scalar, `mul`: 144 x (load, load, mul of 3 micro-ops, 2 xor) is bound by
 
 If J (about 165 cycles on paper) is not well under the scalar code's 230 when
 measured, stop there.
+
+## x86: J, measured, and the whole design
+
+The core of J (96 steps and a stand-in for the recombination) as intrinsics on
+i686: about 55 ns a block where the scalar code takes 92 and main 62. Go on.
+
+Dwords of y: d0..d3 (d0 the low one). Nine dword products (Karatsuba twice):
+d0..d3 (vector U0, as 8 words), and U1 = (d0+d2, d1+d3, d0+d1, d2+d3) =
+pshufd(y,[0,1,0,2]) ^ pshufd(y,[2,3,1,3]), and all = d0+d1+d2+d3. A dword
+product is three products of words: the two halves, lanes of U0 and U1, and
+the sum: U2 = the sums of U0's halves in the even lanes, of U1's in the odd
+ones. That is 24 lanes, three vectors exactly; `all` would take a fourth for
+its three lanes, so it goes to the scalar code (16 `mul`, which use ports the
+vectors leave idle).
+
+A vector of eight 16x16 products: three times eight steps as above (high byte,
+low byte, sum), mid ^= hi ^ lo; l = lo ^ (mid & ff) << 8; h = hi ^ (mid >> 8).
+punpcklwd(l,h), punpckhwd(l,h): 32-bit products, pairs of them in a quadword as
+P_lo + P_hi x^32, so X = [d0,d1], Y = [d2,d3], Z, W = [d0+d1, d2+d3]. U2's are
+[d0,c0,d1,c1], [d2,w0,d3,w1] (dwords). fix(Q,S) = Q ^ (((Q ^ Q>>32 ^ S) << 32)
+>> 16) by quadwords, S in the low dwords.
+T = [X0+X1, Y0+Y1] + W; R0 = X ^ T0<<32, R1 = Y ^ T1<<32, mid = X^Y^Z ^
+(T0^T1^Z0^Z1^V)<<32; R0 ^= mid<<64, R1 ^= mid>>64.
+Reduction by quadwords: R0 ^= pslldq(dn R0, 8); out = R1 ^ R0 ^ up R0 ^
+psrldq(dn R0, 8).
+Scratch, 16 vectors: key bytes lo and hi of U0, U1, U2 (6; the sum's byte is
+their XOR), key classes of `all` (1), y's classes (1), y (1), X Y Z W (4),
+saved registers (1), pointer and count (1): 15.
+Reversal of the bytes without pshufb: bytes of words by shifts of quadwords
+and the mask 00ff, then pshuflw, pshufhw, pshufd: 9.
