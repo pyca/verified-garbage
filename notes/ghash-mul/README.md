@@ -244,3 +244,8 @@ hi of U0, U1, U2), classes of `all` 24-27, y's classes 28-31, y 32-35, X 36,
 Y 40, Z (first U1) 44, U2 48, saved 52-55, pointer 56, count 57, V 58-59, W 60.
 Registers in a product of vectors: w xmm0, s xmm1, h xmm2, l xmm3, k xmm4,
 xmm5, mask xmm6, 00ff xmm7.
+
+J, as written: the scalar product stays in edi and ebp (no vector instruction
+touches them) and goes to xmm6 by two movd and punpckldq before Karatsuba's
+sums, rather than through memory, whose two stores a load of 16 bytes could not
+be forwarded from. Pointer and count: words 56 and 57.
