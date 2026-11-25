@@ -143,16 +143,8 @@ theorem scalar_ok (s : State) (hp : x2K.pre s) : WP isa scalar s fun t => abiPre
         (∀ i < 25, u.mem.readW (s.gpr .x0 + BitVec.ofNat 64 (16 * i + 8 * k)) 64 = A[i]!) →
         Frame (Scalar.laneRs (s.gpr .x0) 16 (8 * k)) t.mem u.mem → WP isa (.block is) u Q) →
       WP isa (.block (.umov .x .x16 .v29 0 :: (Impl.Sha3.AArch64.Scalar.store .x16 16 (8 * k) ++ is))) t Q :=
-    fun {t A k is Q} hk c l v h => by
-      refine Scalar.wp_umov fun u d => ?_
-      have hx : u.gpr .x16 = s.gpr .x0 := by rw [d.gpr, v]
-      have cu := c.upd d
-      rw [WP.block_append_iff]
-      refine WP.mono (Scalar.store_ok Scalar.b16 (stride := 16) (off := 8 * k) (by decide) (by omega) (by decide) (by decide)
-        (by omega) (Scalar.lanes_upd l d) fun i hi => iS cu hx i hi k hk) fun w ⟨r, f, g, vw, e⟩ => ?_
-      rw [hx] at r f
-      refine h w (cu.ofV vw e) (vw.trans d.vec) ?_ r (by rw [← d.mem]; exact f)
-      rw [g _ Scalar.b16]; exact hx
+    fun hk c l v h => Scalar.put_ok c l v (stride := 16) (by decide) (by omega) (by decide) (by decide) (by omega)
+      (fun i hi => by rw [c.env.wr]; exact inS i hi _ hk) h
   have keep : ∀ {m m' : Mem} {k : Nat}, k < 2 → Frame (Scalar.laneRs (s.gpr .x0) 16 (8 * (1 - k))) m m' → ∀ i < 25,
       m'.readW (s.gpr .x0 + BitVec.ofNat 64 (16 * i + 8 * k)) 64 = m.readW (s.gpr .x0 + BitVec.ofNat 64 (16 * i + 8 * k)) 64 :=
     fun {m m' k} hk f i hi => f.readW (r := ⟨s.gpr .x0 + BitVec.ofNat 64 (16 * i + 8 * k), 8⟩) (Region.contains_self _ _)

@@ -97,13 +97,13 @@ theorem runBlock_append (a b : List Instr) {s t : State} (h : runBlock isa a s =
     · rw [hi, runStep_some] at h
       rw [runStep_some]; exact ih h
 
-/-- ι, in general registers: lane 0 XORed with a word that is `RC r`. -/
-theorem iota_lanes {r : Nat} {A : Spec.Sha3.State} {pd : Nat → Nat} (h0 : pd 0 = 0) {s t : State}
-    (hl : Gen.Lanes pd (r + 1) s (core A)) (hx : t.gpr .x0 = s.gpr .x0 ^^^ RC r)
-    (ho : ∀ q, q ≠ .x0 → q ≠ .x16 → t.gpr q = s.gpr q) : Gen.Lanes pd (r + 1) t (rnd A r) := by
+/-- ι, in general registers: lane 0 XORed with a word that is `RC n`. -/
+theorem iota_lanes {r n : Nat} {A : Spec.Sha3.State} {pd : Nat → Nat} (h0 : pd 0 = 0) {s t : State}
+    (hl : Gen.Lanes pd (r + 1) s (core A)) (hx : t.gpr .x0 = s.gpr .x0 ^^^ RC n)
+    (ho : ∀ q, q ≠ .x0 → q ≠ .x16 → t.gpr q = s.gpr q) : Gen.Lanes pd (r + 1) t (rnd A n) := by
   intro i hi
   have hn := reg_ne' (r + 1) hi
-  rw [Forms.rnd_core A r hi]
+  rw [Forms.rnd_core A n hi]
   by_cases hi0 : i = 0
   · subst hi0
     have h := hl 0 hi

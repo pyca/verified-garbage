@@ -34,6 +34,25 @@ theorem run_ok {o s : State} (hc : Ctx o s) {stride off : Nat} (hd : stride % 8 
     rw [h28, d.mem, h.mem] at this
     exact this
 
+/-- Storing the lanes the rounds leave, at the pointer in the low doubleword of `n`. -/
+theorem put_ok {o t : State} (c : Ctx o t) {A : Spec.Sha3.State} (l : Lanes t A) {n : VReg} {p : Addr}
+    (hv : vdword (t.v n) 0 = p) {stride off : Nat} (hd : stride % 8 = 0) (ho : off % 8 = 0) (hs : stride ≤ 16)
+    (h8 : 8 ≤ stride) (hoff : off < 16) (hin : ∀ i < 25, InRegions t.wr (p + BitVec.ofNat 64 (stride * i + off)) 8)
+    {is : List Instr} {Q : State → Prop}
+    (h : ∀ u, Ctx o u → u.v = t.v → u.gpr .x16 = p →
+      (∀ i < 25, u.mem.readW (p + BitVec.ofNat 64 (stride * i + off)) 64 = A[i]!) →
+      Frame (laneRs p stride off) t.mem u.mem → WP isa (.block is) u Q) :
+    WP isa (.block (.umov .x .x16 n 0 :: (store .x16 stride off ++ is))) t Q := by
+  refine wp_umov fun u d => ?_
+  have hx : u.gpr .x16 = p := by rw [d.gpr, hv]
+  have cu := c.upd d
+  rw [WP.block_append_iff]
+  refine WP.mono (store_ok b16 hd ho hs h8 hoff (lanes_upd l d) fun i hi => by
+    rw [hx, d.wr]; exact hin i hi) fun w ⟨r, f, g, vw, e⟩ => ?_
+  rw [hx] at r f
+  refine h w (cu.ofV vw e) (vw.trans d.vec) ?_ r (by rw [← d.mem]; exact f)
+  rw [g _ b16]; exact hx
+
 theorem permute_ok (s : State) (hp : Proof.Sha3.permuteAArch64.pre s) :
     WP isa permute s fun t => abiPreserved s t ∧ Proof.Sha3.permuteAArch64.post s t := by
   obtain ⟨hrd, hwr, hdis⟩ := hp
