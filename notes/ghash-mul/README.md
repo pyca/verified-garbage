@@ -274,3 +274,8 @@ classes are plain `and`s: 4 more instructions a 32-bit product (36 a block), 90
 fewer operations for the M pipes. Other cores (Cortex-A53, A72): shifted
 operands cost one more cycle of latency there too. Not done: storing the key's
 classes (no scratch).
+(arm, as written: the shift is the first instruction of `classes`, 27 more
+instructions a block, 81 fewer for the M pipes; the sum's 9 shifted `eor`s stay.)
+x86, J measured as emitted: 54 to 66 ns a block where main takes 51 to 66 on a
+noisy host (the runs of both cluster at the same two frequencies); the alignment
+of `scratch` changes 3%. The Benchmarks run decides.
