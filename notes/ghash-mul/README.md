@@ -53,3 +53,35 @@ multiplication with separated bits, as a published technique; the bounds
 above are my own derivation, which the rules ask to keep. The trick of
 bit-reversing the operands to get a product's high half, and any code
 from a library, is not used.
+
+## The other targets (written before their code; x86-64's is A, done)
+
+Operation counts are per block, without loads of the key's words.
+
+RISC-V (RV64IM; `mul` and `mulhu` are two instructions). A costs 75 of each.
+B costs 144 `mul` and no `mulhu`: the 32-bit words' classes have at most 8
+bits and the product fits 64 bits. B per 32-bit operand: 4 and, 16 mul,
+12 xor, 4 and, 3 or = 39, nine operands: 351, plus the Karatsuba sums. C
+saves 63 mul and adds about 25 xor and shifts per operand: more in all. The
+key layout of `Spec/Gcm/Bitsliced.lean` (nine 32-bit operands, four classes)
+is B's key, and is fixed. B, for `vg_ghash` and for the prepared form.
+
+AArch64. A: 75 `mul` + 75 `umulh`; B: 144 `mul`, masks of 32-bit words are
+logical immediates in the ISA but not in the model, so masks stay in
+registers (5 or 4 of 28). NEON `umull` does two 32-bit products: D, 72.
+`vg_ghash_neon` (byte `pmull`, which stays) is what AES-GCM runs without
+PMULL, so this code only serves the forced baseline, SM4 without PMULL and
+`store_powers`: A, whose algebra is proven, with masks in registers.
+
+ARM (A32, no 64-bit registers). `umaal` with a zeroed pair is the only
+32x32->64 product in the model; `mul` gives 32 bits. B with `umaal`: 144 x
+(2 mov, umaal, 2 eor) = 720. With `mul` of 16-bit halves, k=3 (16 bits: at
+most 6 per column, < 8): 27 products of 16x16 (Karatsuba three deep), each
+9 mul, 6 eor, 3 and, 2 orr: 540, plus three levels of Karatsuba and the
+splits (27*3 and) about 250: no better, and more to prove. Adding instead of
+XORing (`mla`, k=5: 16 pairs < 32) is 27*(25 mul/mla) = 675. B.
+
+x86 (32-bit, 8 GPRs, SSE2). Scalar `mul` ties up eax and edx: 144 x (2 mov,
+mul, 2 xor) = 720, with spills. SSE2 `pmuludq` does two products: D, 72
+pmuludq, 72 movdqa, 72 pxor and about 60 and/or, half the work. It needs
+the MXCSR sequence around it (the rule in CLAUDE.md), once per call. D.
