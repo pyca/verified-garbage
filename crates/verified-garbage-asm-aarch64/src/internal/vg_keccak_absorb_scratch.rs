@@ -11,20 +11,20 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_keccak_absorb_scratch() {
     core::arch::naked_asm!(
-        r"cbz x2, 20f
-b 21f
-20:
-.inst 0x91000026,0xcb060087,0xd37ffce7
-cbz x7, 22f
+        r".inst 0xf81f0ffe,0xf90100b3,0xf90104b4,0xf90108b5,0xf9010cb6,0xf90110b7,0xf90114b8,0x91000013
+.inst 0x910000b4,0x91000035,0x91000056,0x91000077,0x91000098
+cbnz x22, 20f
+.inst 0xcb150309,0xd37ffd29
+cbnz x9, 22f
+.inst 0x91000260,0x910002a1,0x910002e2,0x91000303,0x91000284
+bl {vg_keccak_absorb_blocks}
+.inst 0xcb000309,0x8b0902f7,0x91000018
 b 23f
 22:
-.inst 0x910000a1,0x4e080fdd
-bl {vg_keccak_scalar_absorb_blocks}
-.inst 0x4e083fbe,0x910000c1
 23:
+b 21f
+20:
 21:
-.inst 0xf81f0ffe,0xf90100b3,0xf90104b4,0xf90108b5,0xf9010cb6,0xf90110b7,0xf90114b8,0x91000013
-.inst 0x910000b4,0x91000035,0x91000056,0x91000077,0x91000098
 cbz x24, 24f
 26:
 .inst 0xd28000ea,0x8a0a02ca,0xd100230b,0xd37ffd6b,0xaa0b014a
@@ -42,6 +42,18 @@ b 210f
 .inst 0xd2800016,0x91000260,0x91000281
 bl {vg_keccak_f1600}
 210:
+cbnz x22, 211f
+.inst 0xcb150309,0xd37ffd29
+cbnz x9, 213f
+.inst 0x91000260,0x910002a1,0x910002e2,0x91000303,0x91000284
+bl {vg_keccak_absorb_blocks}
+.inst 0xcb000309,0x8b0902f7,0x91000018
+b 214f
+213:
+214:
+b 212f
+211:
+212:
 cbnz x24, 26b
 b 25f
 24:
@@ -49,7 +61,7 @@ b 25f
 .inst 0x910002c0,0xf9410293,0xf9410a95,0xf9410e96,0xf9411297,0xf9411698,0xf9410694,0xf84107fe
 .inst 0xd65f03c0
 .p2align 6",
-        vg_keccak_scalar_absorb_blocks = sym crate::ed448::vg_keccak_scalar_absorb_blocks::vg_keccak_scalar_absorb_blocks,
+        vg_keccak_absorb_blocks = sym crate::ed448::vg_keccak_absorb_blocks::vg_keccak_absorb_blocks,
         vg_keccak_f1600 = sym crate::ed448::vg_keccak_f1600::vg_keccak_f1600,
     )
 }

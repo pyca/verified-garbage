@@ -45,8 +45,7 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Lit
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseA
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Samp
 public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
-public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Lit
-public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.ResidentLit
+public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Lit
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.StaticRoots
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.StaticRootsExecution
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseA4
@@ -60,8 +59,7 @@ meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Lit
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseA
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Samp
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Lit
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.ResidentLit
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Lit
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.StaticRoots
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.StaticRootsExecution
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseA4

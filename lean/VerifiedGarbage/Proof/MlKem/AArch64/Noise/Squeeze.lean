@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Call
-public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Keep
+public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Pair
 
 /-! # Paired noise PRF permutation and serialization -/
 

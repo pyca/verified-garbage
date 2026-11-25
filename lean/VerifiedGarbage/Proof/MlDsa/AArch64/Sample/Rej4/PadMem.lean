@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Words
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Seed
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Store
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Pair
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub

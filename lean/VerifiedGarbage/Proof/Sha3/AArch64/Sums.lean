@@ -121,7 +121,7 @@ permutation that writes the callee-saved registers (restoring them): no
 summary keeps anything, so each function has a summary for each set of
 callee-saved registers public at some call (the larger first). The
 summaries `permUsing` (e.g. of the permutation's rounds) are used in those of
-the permutation. -/
+the permutation and of `absorb`, which may absorb blocks with them too. -/
 meta def spongeSumSavingCmds (ns c : String) (permUsing : List String := []) : List String := Id.run do
   let perm := s!"(.call {c}.name {c}.code)"
   let fn (f n : String) :=
@@ -141,7 +141,7 @@ meta def spongeSumSavingCmds (ns c : String) (permUsing : List String := []) : L
       s!"taint_summary {ns}.{n} : VectorTaint.taint {ofRegs rs} {perm}{permUsingS}") ++
     (absorbs.map fun (n, rs) =>
       s!"taint_summary {ns}.{n} : VectorTaint.taint {ofRegs (args ++ ", " ++ rs)} " ++
-        s!"{fn "absorb" "absorb"} using {usingS}") ++
+        s!"{fn "absorb" "absorb"} using {" ".intercalate (usingS :: permUsing)}") ++
     (spongeSaved.map fun (n, rs) =>
       s!"taint_summary {ns}.pad{n} : VectorTaint.taint {ofRegs (".x0, .x1, .x2, .x4, " ++ rs)} " ++
         s!"{fn "pad" "pad"} using {usingS}") ++

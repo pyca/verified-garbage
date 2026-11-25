@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Resume
-import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Semantics
+import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Boundary
 public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Saved
 import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Cover
 import VerifiedGarbage.Proof.Rc4.AArch64.Vec

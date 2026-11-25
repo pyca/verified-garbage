@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Ecdh.AArch64.WindowJ
 public import VerifiedGarbage.Impl.Ecdsa.P521.AArch64
-public import VerifiedGarbage.Impl.Weierstrass.AArch64.P521Double
+public import VerifiedGarbage.Impl.Weierstrass.AArch64.P521Point
 
 /-! # P-521 ECDH with a bounded scalar and Jacobian accumulator
 
@@ -36,16 +36,18 @@ def prepFor (C : VG.Impl.Ecdsa.AArch64.Cfg) : Prog isa :=
   .seq (.block (WinCfg.addConst C.n (C.sl K) 3944 (WinCfg.offset 131)))
     (bits 3944 3304 (8*(C.n+1)))
 
+/-- The window's doublings, with their products inline. -/
 def doublesFor (C : VG.Impl.Ecdsa.AArch64.Cfg) : Prog isa × Prog isa :=
   let k := config C
-  if P521Linear.supported k.M then
-    (P521Double.double k.M k.S k.R k.D,P521Double.double k.M k.S k.D k.R)
-  else
-    (fprogB k.M (VG.Impl.Weierstrass.dblJS k.S k.R k.D),
-     fprogB k.M (VG.Impl.Weierstrass.dblJS k.S k.D k.R))
+  (P521.double k.M k.S k.R k.D, P521.double k.M k.S k.D k.R)
+
+/-- The window's mixed addition, with its products inline. -/
+def maddFor (C : VG.Impl.Ecdsa.AArch64.Cfg) : Prog isa :=
+  let k := config C
+  P521.madd k.M k.S k.R k.E k.D
 
 def coreFor (C : VG.Impl.Ecdsa.AArch64.Cfg) : Prog isa :=
-  .seq (prepFor C) (WinCfg.windowJ (config C) (Cfg.invJ C) C.padd (some (doublesFor C)))
+  .seq (prepFor C) (WinCfg.windowJ (config C) (Cfg.invJ C) C.padd (some (doublesFor C)) (some (maddFor C)))
 
 abbrev core := coreFor c
 

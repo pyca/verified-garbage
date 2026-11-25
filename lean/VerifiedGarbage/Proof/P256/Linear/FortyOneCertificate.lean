@@ -20,7 +20,7 @@ meta import VerifiedGarbage.Proof.Weierstrass.PointContract
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Kernel
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Step
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Mont.AArch64.P256Square.Arithmetic
+import VerifiedGarbage.Proof.Mont.AArch64.P256Square
 public import VerifiedGarbage.Proof.Mont.AArch64.Ops
 import VerifiedGarbage.Proof.Framework.GetElem
 import VerifiedGarbage.Proof.Framework.Mem
@@ -33,7 +33,7 @@ import Std.Data.DTreeMap.Internal.Operations
 import VerifiedGarbage.TCB.AArch64.Simd
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.Step
 meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
-meta import VerifiedGarbage.Proof.Mont.AArch64.P256Square.Arithmetic
+meta import VerifiedGarbage.Proof.Mont.AArch64.P256Square
 meta import VerifiedGarbage.Proof.Mont.AArch64.Ops
 meta import VerifiedGarbage.Proof.Framework.GetElem
 meta import VerifiedGarbage.Proof.Framework.Mem
