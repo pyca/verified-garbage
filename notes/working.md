@@ -58,3 +58,12 @@ Ideas, in the order to try:
 3. the first iteration is known (k_254 = 1, so swap = 1, x2 = 1, z2 = 0): 0.2%;
 4. shorter folds: products are below 2^255 + 2^12, so a sum's carry can be folded into its low
    word alone (3 instructions of 23), if mul's bound is stated so.
+
+Results of 1-4: climbing on the hardware (climb.py) gives
+  D A C B UV P BB AA E Q w d x2 s dd z2 x3 z3
+2.0-2.6% (base) and 2-5% (adx) faster than the model's (fin.py): the doubling, the longer of the
+two chains through latency-heavy pieces (sqr, sub, a24add, mul), starts early. One block for A, B, U, V:
+slower on base, no better on adx. Short folds (fin2.py): at most 0.7% on base, 0.2% on adx.
+Reusing registers for E or s: nothing. Not worth their proofs; left out. 3 not tried.
+Slots for this order: P in D, BB in DV, AA in DU, E in A, Q in C, w in B, d and dd in Z3 (z3's old
+value is dead after D and C), s in D. Slots 2-12.
