@@ -113,4 +113,15 @@ def g8Out : List Instr :=
 /-- `G` of the eight words in `tSlot 0 … tSlot 7`, in place. -/
 def g8 : List Instr := g8In ++ sboxCode ++ g8Out
 
+/-- The last padding word between G's 53 working slots and the arrays at slot 56. -/
+def g8LinkSlot : Nat := 55
+
+/-- The shared G kernel. Its own link is outside the slots G writes. -/
+def g8Fn : Prog isa :=
+  .seq (.block [.str .lr sb (4 * g8LinkSlot)])
+    (.seq (.block g8) (.block [.ldr .lr sb (4 * g8LinkSlot)]))
+
+/-- G of the eight words, shared by key setup and both ECB directions. -/
+def g8Call : Prog isa := .call "vg_seed_g8" g8Fn
+
 end VG.Impl.Seed.Arm

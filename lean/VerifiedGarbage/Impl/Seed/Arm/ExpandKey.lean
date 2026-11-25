@@ -56,12 +56,17 @@ def keyLoad : List Instr :=
 
 /-- `G` of the inputs `8c … 8c + 7`, stored to the schedule's words from `8c`
 (the schedule at `kp`). -/
-def keyChunk (c : Nat) : List Instr :=
-  (List.range 8).flatMap (fun w => [ldS t0 (uSlot (8 * c + w)), stS (tSlot w) t0]) ++ g8 ++
-    (List.range 8).flatMap fun w => [ldS t0 (tSlot w), .str t0 kp (4 * (8 * c + w))]
+def keyChunk (c : Nat) : Prog isa :=
+  .seq (.block ((List.range 8).flatMap (fun w => [ldS t0 (uSlot (8 * c + w)), stS (tSlot w) t0])))
+    (.seq g8Call (.block ((List.range 8).flatMap fun w => [ldS t0 (tSlot w), .str t0 kp (4 * (8 * c + w))])))
+
+/-- The first `n` groups of eight schedule words. -/
+def keyChunks : Nat → Prog isa
+  | 0 => .block []
+  | n + 1 => .seq (keyChunks n) (keyChunk n)
 
 def expandKey : Prog isa :=
-  .block (saveRegs .r2 ++ [movR sb .r2, movR kp .r1] ++ keyLoad ++ (List.range 16).flatMap keyRound ++
-    (List.range 4).flatMap keyChunk ++ [movR .r12 sb] ++ restoreRegs .r12)
+  .seq (.block (saveRegs .r2 ++ [movR sb .r2, movR kp .r1] ++ keyLoad ++ (List.range 16).flatMap keyRound))
+    (.seq (keyChunks 4) (.block ([movR .r12 sb] ++ restoreRegs .r12)))
 
 end VG.Impl.Seed.Arm

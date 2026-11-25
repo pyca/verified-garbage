@@ -2,6 +2,7 @@ module
 
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Arm.Call
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Impl.Seed.Arm.Ecb
@@ -675,6 +676,71 @@ theorem g8_lanes {s : State} (h : Room s) :
     simp only [List.mem_singleton] at hr; subst hr
     exact ⟨workR s, List.mem_singleton_self _, Region.sub_prefix (by simp [gCfg, tailSlot])⟩
 
+/-- Sharing G writes only the existing work area, including its padding word
+for the helper's return address. The narrower G frame protects that word. -/
+theorem g8Call_lanes {s : State} (h : Room s) :
+    WP isa g8Call s fun t =>
+      (∀ w < 8, lv t (tSlot 0) w = Spec.Seed.g (lv s (tSlot 0) w)) ∧
+      (∀ k, 56 ≤ k → k < slots → slotW t k = slotW s k) ∧
+      Room t ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.sp = s.sp ∧
+      (∀ r, r ∉ layerWrites → t.gpr r = s.gpr r) ∧ Frame [workR s] s.mem t.mem := by
+  let e := s.callEntry
+  have eg : ∀ r, r ∉ layerWrites → e.gpr r = s.gpr r := fun r hr =>
+    State.callEntry_gpr s (by revert hr; cases r <;> decide)
+  have eb : e.gpr sb = s.gpr sb := eg _ (by decide)
+  have eh : Room e := h.congr eb rfl
+  let u := setMem e (e.mem.writeW (slotA e g8LinkSlot) (e.gpr .lr))
+  have uh : Room u := eh.congr rfl rfl
+  have ein : runBlock isa [stS g8LinkSlot .lr] e = some u := by
+    rw [runBlock_cons, exec_stS eh (by decide), runStep_some, runBlock_nil]
+  have uk : ∀ k < slots, k ≠ g8LinkSlot → slotW u k = slotW s k := by
+    intro k hk hne
+    rw [slotW_setMem_write eh (by decide) hk, ite_eq_right hne]
+    simp only [slotW, eb, e, State.callEntry_mem]
+  obtain ⟨v, ev, gv, kv, vh, rdv, wrv, spv, rgv, fv⟩ := g8_lanes uh
+  obtain ⟨v', ev', -, -, -, -, -, fprecise⟩ := g8_ok (room_ok_gCfg uh)
+  have vv : v' = v := by rw [ev] at ev'; exact Option.some.inj ev'.symm
+  subst v'
+  have vb : v.gpr sb = u.gpr sb := rgv _ (by decide)
+  have link : slotW v g8LinkSlot = e.gpr .lr := by
+    have hf := uh.fit
+    rw [slots_eq] at hf
+    have keep : slotW v g8LinkSlot = slotW u g8LinkSlot := by
+      simp only [slotW, vb]
+      refine fprecise.readW (r := ⟨wordAddr (u.gpr sb) g8LinkSlot, 4⟩) (Region.contains_self _ _) ?_ (by decide)
+      intro r hr
+      rw [List.mem_singleton.mp hr]
+      rw [slot_addr (by simp only [g8LinkSlot]; omega_arith)]
+      exact Offset.disjoint_base _ (by simp [gCfg, g8LinkSlot]) (by simp only [g8LinkSlot]; omega_arith)
+    rw [keep, slotW_setMem_write eh (by decide) (by decide), ite_eq_left rfl]
+  let t := v.setReg .lr (slotW v g8LinkSlot)
+  have et : runBlock isa [ldS .lr g8LinkSlot] v = some t := by
+    rw [runBlock_cons, exec_ldS vh (by decide), runStep_some, runBlock_nil]
+  obtain ⟨tr, _, he, ht⟩ : WP isa g8Fn e (fun t => t = v.setReg .lr (slotW v g8LinkSlot)) := by
+    rw [g8Fn]
+    exact WP.seq (WP.of_runBlock ⟨u, ein, WP.seq (WP.of_runBlock ⟨v, ev, WP.of_runBlock ⟨t, et, rfl⟩⟩)⟩)
+  subst ht
+  refine ⟨_, t, Exec.call (call_callEntry s) he ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · simp only [isa, ret, t, gpr_setReg_self, link, e, eq_self, ite_true]
+  · intro w hw
+    rw [lv, slotW_setReg _ (by decide), ← lv, gv w hw, lv, uk _ (by simp [tSlot, slots_eq]; omega_arith) (by simp [tSlot, g8LinkSlot]; omega_arith)]
+    exact congrArg Spec.Seed.g rfl
+  · intro k hk hk'
+    rw [slotW_setReg _ (by decide), kv k hk hk', uk k hk' (by simp only [g8LinkSlot]; omega_arith)]
+  · exact vh.congr (gpr_setReg_of_ne _ _ (by decide)) rfl
+  · exact rdv
+  · exact wrv
+  · exact spv
+  · intro r hr
+    rw [gpr_setReg_of_ne _ _ (by revert hr; cases r <;> decide), rgv r hr]
+    exact eg r hr
+  · have fw : Frame [workR e] e.mem u.mem := by
+      apply (Frame.refl _ _).writeW (List.mem_singleton_self _)
+      rw [slotA, slot_addr (by have hf := eh.fit; rw [slots_eq] at hf; simp only [g8LinkSlot]; omega_arith)]
+      exact Offset.contains_base _ (by simp [tailSlot, g8LinkSlot]) (by simp [g8LinkSlot])
+    have ff := fw.trans (by simpa only [workR, u, gpr_setMem] using fv)
+    simpa only [workR, eb, e, State.callEntry_mem, t, mem_setReg] using ff
+
 /-! ## The round -/
 
 /-- Lane `b` of the blocks' state, `L` at `l` and `R` at `r`: `(L0, L1, R0, R1)`. -/
@@ -766,7 +832,7 @@ def KeyAt (s : State) (k : Nat) : Prop := s.gpr kp = s.gpr sb + BitVec.ofNat 32 
 
 theorem round_ok {l r : Nat} (hl : l ∈ halves) (hr : r ∈ halves) (hlr : l ≠ r) {s : State} (h : Room s)
     {k : Nat} (hk2 : k + 1 < slots) (hkp : KeyAt s k) :
-    ∃ s', runBlock isa (round l r) s = some s' ∧
+    WP isa (round l r) s fun s' =>
       (∀ b < 8, quadAt s' r l b = Spec.Seed.round (slotW s k, slotW s (k + 1)) (quadAt s l r b)) ∧
       Room s' ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧
       s'.gpr kp = s.gpr kp + 8 ∧ s'.gpr sb = s.gpr sb ∧
@@ -811,13 +877,13 @@ theorem round_ok {l r : Nat} (hl : l ∈ halves) (hr : r ∈ halves) (hlr : l �
       by rw [hok.regs _ (by decide) (by decide)]; exact hP.2.1,
       by rw [hok.regs _ (by decide) (by decide)]; exact hP.2.2⟩)
     (fun _ h => h.1) (fun b hb s hs => step1_ok hr K0 K1 hb s hs) hkeys 8 (Nat.le_refl _)
-  obtain ⟨s4, hs4, hg4, hk4, h4, rd4, wr4, spp4, rg4, fr4⟩ := g8_lanes hP3.1
+  obtain ⟨tr4, s4, hs4, hg4, hk4, h4, rd4, wr4, spp4, rg4, fr4⟩ := g8Call_lanes hP3.1
   obtain ⟨s5, hs5, h5, hv5, fr5, rd5, wr5, spp5, rg5⟩ :=
     lanes8_room dests2 reads2 (fun b hb s hs => step2_ok hb s hs) h4
-  obtain ⟨s6, hs6, hg6, hk6, h6, rd6, wr6, spp6, rg6, fr6⟩ := g8_lanes h5
+  obtain ⟨tr6, s6, hs6, hg6, hk6, h6, rd6, wr6, spp6, rg6, fr6⟩ := g8Call_lanes h5
   obtain ⟨s7, hs7, h7, hv7, fr7, rd7, wr7, spp7, rg7⟩ :=
     lanes8_room dests3 reads3 (fun b hb s hs => step3_ok hb s hs) h6
-  obtain ⟨s8, hs8, hg8, hk8, h8, rd8, wr8, spp8, rg8, fr8⟩ := g8_lanes h7
+  obtain ⟨tr8, s8, hs8, hg8, hk8, h8, rd8, wr8, spp8, rg8, fr8⟩ := g8Call_lanes h7
   obtain ⟨s9, hs9, h9, hv9, fr9, rd9, wr9, spp9, rg9⟩ :=
     lanes8_room (dests4 hl) (reads4 hl) (fun b hb s hs => step4_ok hl hb s hs) h8
   let s10 := s9.setReg kp (s9.gpr kp + 8)
@@ -852,9 +918,15 @@ theorem round_ok {l r : Nat} (hl : l ∈ halves) (hr : r ∈ halves) (hlr : l �
     refine (fc sb6 (work_of_arrays fr7)).trans ?_
     refine (fc sb7 fr8).trans ?_
     exact fc sb8 (work_of_arrays fr9)
-  refine ⟨s10, ?_, fun b hb => ?_, h9.congr (gpr_setReg_of_ne _ _ (by decide)) rfl, ?_, ?_, ?_, ?_, sb10, fun j hj1 hj2 => ?_, frame⟩
-  · exact runBlock_trans (runBlock_trans (runBlock_trans (runBlock_trans (runBlock_trans
-      (runBlock_trans (runBlock_trans (runBlock_trans hrun2 hs3) hs4) hs5) hs6) hs7) hs8) hs9) hrun
+  rw [round]
+  refine WP.seq (WP.of_runBlock ⟨s3, runBlock_trans hrun2 hs3, ?_⟩)
+  refine WP.seq ⟨tr4, s4, hs4, ?_⟩
+  refine WP.seq (WP.of_runBlock ⟨s5, hs5, ?_⟩)
+  refine WP.seq ⟨tr6, s6, hs6, ?_⟩
+  refine WP.seq (WP.of_runBlock ⟨s7, hs7, ?_⟩)
+  refine WP.seq ⟨tr8, s8, hs8, ?_⟩
+  refine WP.of_runBlock ⟨s10, runBlock_trans hs9 hrun, ?_⟩
+  refine ⟨fun b hb => ?_, h9.congr (gpr_setReg_of_ne _ _ (by decide)) rfl, ?_, ?_, ?_, ?_, sb10, fun j hj1 hj2 => ?_, frame⟩
   · -- The values, stage by stage.
     obtain t3 : lv s3 (tSlot 0) b = (lv s r b ^^^ K0) ^^^ (lv s (r + 8) b ^^^ K1) := by
       rw [hv3 _ mem_tA b hb, ite_eq_left hb]
@@ -1116,7 +1188,7 @@ theorem halves2 : arrSlot 2 ∈ halves := by decide
 /-- Two rounds, the round keys in the slots from `k`, and the end test. -/
 theorem roundPair_ok {s : State} (h : Room s) {k : Nat} (hk : k + 4 ≤ tableEnd) (hk0 : tableSlot ≤ k)
     (hkp : KeyAt s k) :
-    ∃ s', runBlock isa roundPair s = some s' ∧
+    WP isa roundPair s fun s' =>
       (∀ b < 8, quadAt s' (arrSlot 0) (arrSlot 2) b = Spec.Seed.round (slotW s (k + 2), slotW s (k + 3))
         (Spec.Seed.round (slotW s k, slotW s (k + 1)) (quadAt s (arrSlot 0) (arrSlot 2) b))) ∧
       Room s' ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧ KeyAt s' (k + 4) ∧ s'.gpr sb = s.gpr sb ∧
@@ -1124,12 +1196,12 @@ theorem roundPair_ok {s : State} (h : Room s) {k : Nat} (hk : k + 4 ≤ tableEnd
       s'.z = decide (k + 4 = tableEnd) := by
   have hT : tableEnd = 176 := rfl
   have hS : tableSlot = 144 := rfl
-  obtain ⟨s₁, e₁, q₁, h₁, rd₁, wr₁, sp₁, kp₁, sb₁, sl₁, f₁⟩ :=
+  obtain ⟨tr₁, s₁, e₁, q₁, h₁, rd₁, wr₁, sp₁, kp₁, sb₁, sl₁, f₁⟩ :=
     round_ok halves0 halves2 (by decide) h (k := k) (by rw [slots_eq]; omega_arith) hkp
   have hkp₁ : KeyAt s₁ (k + 2) := by
     rw [KeyAt, kp₁, hkp, sb₁, show (8 : BitVec 32) = BitVec.ofNat 32 8 from rfl, add_ofNat_ofNat]
     rfl
-  obtain ⟨s₂, e₂, q₂, h₂, rd₂, wr₂, sp₂, kp₂, sb₂, sl₂, f₂⟩ :=
+  obtain ⟨tr₂, s₂, e₂, q₂, h₂, rd₂, wr₂, sp₂, kp₂, sb₂, sl₂, f₂⟩ :=
     round_ok halves2 halves0 (by decide) h₁ (k := k + 2) (by rw [slots_eq]; omega_arith) hkp₁
   obtain ⟨s₃, e₃, z₃, g₃, m₃, rd₃, wr₃, sp₃⟩ := endTest_ok s₂ (BitVec.ofNat 32 (4 * tableEnd)) (by decide)
   have sb₃ : s₃.gpr sb = s.gpr sb := by rw [g₃ _ (by decide), sb₂, sb₁]
@@ -1139,9 +1211,12 @@ theorem roundPair_ok {s : State} (h : Room s) {k : Nat} (hk : k + 4 ≤ tableEnd
   have sl₃ : ∀ j, slotW s₃ j = slotW s₂ j := fun j => by simp only [slotW, m₃, g₃ sb (by decide)]
   have hfit := h.fit
   rw [slots_eq] at hfit
-  refine ⟨s₃, ?_, fun b hb => ?_, h₂.congr (g₃ _ (by decide)) wr₃, by rw [rd₃, rd₂, rd₁],
+  rw [roundPair]
+  refine WP.seq ⟨tr₁, s₁, e₁, ?_⟩
+  refine WP.seq ⟨tr₂, s₂, e₂, ?_⟩
+  refine WP.of_runBlock ⟨s₃, e₃, ?_⟩
+  refine ⟨fun b hb => ?_, h₂.congr (g₃ _ (by decide)) wr₃, by rw [rd₃, rd₂, rd₁],
     by rw [wr₃, wr₂, wr₁], by rw [sp₃, sp₂, sp₁], ?_, sb₃, fun j hj1 hj2 => ?_, ?_, ?_⟩
-  · rw [roundPair, runBlock_append, runBlock_append, e₁, Option.bind_some, e₂, Option.bind_some, e₃]
   · have e : quadAt s₃ (arrSlot 0) (arrSlot 2) b = quadAt s₂ (arrSlot 0) (arrSlot 2) b := by
       simp only [quadAt, lv, sl₃]
     rw [e, q₂ b hb, q₁ b hb, sl₁ _ (by simp [tailSlot]; omega_arith) (by rw [slots_eq]; omega_arith),
@@ -1176,7 +1251,7 @@ theorem rounds_wp {s₀ : State} (h : Room s₀) :
       fun b _ => by simp only [quadAt, lv, sl₁]; rfl, rd₁, wr₁, sp₁, fun j _ _ => sl₁ j,
       by rw [m₁]; exact Frame.refl _ _⟩
   obtain ⟨m, rfl, hm8, hR, hsb, hkp, hq, hrd, hwr, hsp, hsl, hf⟩ := hs
-  obtain ⟨s', e', q', R', rd', wr', sp', kp', sb', sl', f', z'⟩ :=
+  obtain ⟨tr', s', e', q', R', rd', wr', sp', kp', sb', sl', f', z'⟩ :=
     roundPair_ok hR (k := tableSlot + 4 * m) (by simp [tableEnd]; omega_arith) (by omega_arith) hkp
   have hkeys : ∀ i < 4, slotW s (tableSlot + 4 * m + i) = slotW s₀ (tableSlot + 4 * m + i) := fun i hi =>
     hsl _ (by simp [tailSlot, tableSlot]; omega_arith) (by rw [slots_eq]; simp [tableSlot]; omega_arith)
@@ -1191,7 +1266,7 @@ theorem rounds_wp {s₀ : State} (h : Room s₀) :
       show tableSlot + 2 * (2 * m + 1) = tableSlot + 4 * m + 2 by omega_arith,
       show tableSlot + 4 * m + 0 + 1 = tableSlot + 4 * m + 1 by omega_arith,
       show tableSlot + 4 * m + 2 + 1 = tableSlot + 4 * m + 3 by omega_arith]
-  refine WP.of_runBlock ⟨s', e', ?_⟩
+  refine ⟨tr', s', e', ?_⟩
   have hf' : Frame [workR s₀] s₀.mem s'.mem := hf.trans (by simpa [workR, hsb] using f')
   have hsl' : ∀ j, tailSlot ≤ j → j < slots → slotW s' j = slotW s₀ j := fun j h1 h2 => by
     rw [sl' j h1 h2, hsl j h1 h2]
