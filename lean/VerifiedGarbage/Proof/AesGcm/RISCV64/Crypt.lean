@@ -181,15 +181,16 @@ theorem keysIn960 (B : Addr) {R : Nat} (hR : R = 10 ∨ R = 12 ∨ R = 14) :
 /-- The round keys of the bitsliced form of a key context (`Spec.Gcm.CtxSlicedRepr`), for up to 14 rounds. -/
 theorem keysAt_of_sliced {m : Mem} {bk ctx : Addr} {R : Nat} (hR : R ≤ 14) (h : Spec.Gcm.CtxSlicedRepr m bk ctx) :
     Proof.Aes.RISCV64.KeysAt m bk R (bytesAt m ctx (16 * (R + 1))) := by
-  intro j hj b hb i hi
-  refine Proof.Aes.byte_ext fun t ht => ?_
+  intro j hj t ht i hi b hb
   have e := h.1 j (by omega_using [hR, hj]) t ht b hb i hi
   rw [Proof.Aes.RISCV64.roundKey_getD hi] at e
-  rw [Proof.Aes.getLsbD_bsByte _ _ ht, Proof.Aes.RISCV64.roundKey_getD hi]
+  rw [Proof.Aes.getD_rkState _ hi, Proof.Aes.RISCV64.roundKey_getD hi]
   have hl₁ : 16 * j + i < 240 := by omega_using [hR, hj, hi]
   have hl₂ : 16 * j + i < 16 * (R + 1) := by omega_using [hj, hi]
   simp only [bytesAt, List.getD_eq_getElem?_getD, List.getElem?_map, List.getElem?_range, hl₁, hl₂,
     Option.map_some, Option.getD_some] at e ⊢
+  rw [show Proof.Aes.at_ 4 false i b = Spec.Gcm.slicePos b i by
+    simp only [Spec.Gcm.slicePos, Proof.Aes.at_, Bool.false_eq_true, ite_false]; omega_using []]
   exact e
 
 /-- A frame apart from the buffer and the context keeps the round keys. -/
