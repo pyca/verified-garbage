@@ -133,13 +133,13 @@ theorem sqrDouble_ok (s : State) (hz : s.gpr .x10 = 0) :
       Keeps [.x5, .x6, .x7, .x21, .x22, .x23, .x24] s t := by
   apply WP.of_runBlock
   simp only [sqrDouble, runBlock_cons, runStep_some, runBlock_nil, exec, read_x,
-    RegUpd.gpr_addWithCarry, RegUpd.c_addWithCarry,
+    RegUpd.gpr_write, RegUpd.gpr_addWithCarry, RegUpd.c_addWithCarry,
     BitVec.setWidth_eq, ite_true, ite_false, reduceCtorEq, hz,
     Option.some.injEq, exists_eq_left']
-  refine ⟨?_, ⟨?_, by simp only [RegUpd.mem_addWithCarry],
-      by simp only [RegUpd.rd_addWithCarry],
-      by simp only [RegUpd.wr_addWithCarry],
-      by simp only [RegUpd.sp_addWithCarry]⟩⟩
+  refine ⟨?_, ⟨?_, by simp only [RegUpd.mem_write, RegUpd.mem_addWithCarry],
+      by simp only [RegUpd.rd_write, RegUpd.rd_addWithCarry],
+      by simp only [RegUpd.wr_write, RegUpd.wr_addWithCarry],
+      by simp only [RegUpd.sp_write, RegUpd.sp_addWithCarry]⟩⟩
   · have h := sqrDouble_value (s.gpr .x5) (s.gpr .x6) (s.gpr .x7) (s.gpr .x21) (s.gpr .x22)
       (s.gpr .x23)
     dsimp only [addCarry, carryOut, Size.bits] at h ⊢

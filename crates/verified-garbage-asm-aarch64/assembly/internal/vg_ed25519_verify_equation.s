@@ -135,27 +135,27 @@ vg_ed25519_verify_equation:
 	umulh x9, x12, x15
 	adds x6, x6, x2
 	adcs x7, x7, x8
-	adcs x21, x9, x10
+	adc x21, x9, x10
 	mul x2, x13, x14
 	mul x8, x13, x15
 	umulh x9, x13, x14
 	umulh x16, x13, x15
 	adds x7, x7, x2
 	adcs x21, x21, x8
-	adcs x22, x16, x10
+	adc x22, x16, x10
 	adds x21, x21, x9
-	adcs x22, x22, x10
+	adc x22, x22, x10
 	mul x2, x14, x15
 	umulh x8, x14, x15
 	adds x22, x22, x2
-	adcs x23, x8, x10
+	adc x23, x8, x10
 	adds x5, x5, x5
 	adcs x6, x6, x6
 	adcs x7, x7, x7
 	adcs x21, x21, x21
 	adcs x22, x22, x22
 	adcs x23, x23, x23
-	adcs x24, x10, x10
+	adc x24, x10, x10
 	mul x4, x12, x12
 	umulh x2, x12, x12
 	mul x8, x13, x13
@@ -170,7 +170,7 @@ vg_ed25519_verify_equation:
 	adcs x21, x21, x16
 	adcs x22, x22, x17
 	adcs x23, x23, x3
-	adcs x24, x24, x11
+	adc x24, x24, x11
 	movz w11, #38, lsl #0
 	mul x2, x11, x21
 	adds x4, x4, x2
@@ -180,13 +180,13 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x9
 	mul x16, x11, x24
 	adcs x7, x7, x16
-	adcs x20, x10, x10
+	adc x20, x10, x10
 	umulh x2, x11, x21
 	umulh x8, x11, x22
 	umulh x9, x11, x23
 	umulh x16, x11, x24
 	adds x7, x7, x9
-	adcs x20, x20, x16
+	adc x20, x20, x16
 	adds x16, x7, x7
 	adc x9, x20, x20
 	lsr x7, x16, #1
@@ -195,7 +195,7 @@ vg_ed25519_verify_equation:
 	adds x4, x4, x9
 	adcs x5, x5, x2
 	adcs x6, x6, x8
-	adcs x7, x7, x10
+	adc x7, x7, x10
 	str x4, [x0, #224]
 	str x5, [x0, #232]
 	str x6, [x0, #240]
@@ -241,7 +241,7 @@ vg_ed25519_verify_equation:
 	adds x5, x5, x2
 	adcs x6, x6, x8
 	adcs x7, x7, x9
-	adcs x21, x16, x10
+	adc x21, x16, x10
 	ldr x3, [x0, #584]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -251,7 +251,7 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x8
 	adcs x7, x7, x9
 	adcs x21, x21, x16
-	adcs x22, x10, x10
+	adc x22, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -259,7 +259,7 @@ vg_ed25519_verify_equation:
 	adds x6, x6, x2
 	adcs x7, x7, x8
 	adcs x21, x21, x9
-	adcs x22, x22, x16
+	adc x22, x22, x16
 	ldr x3, [x0, #592]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -269,7 +269,7 @@ vg_ed25519_verify_equation:
 	adcs x7, x7, x8
 	adcs x21, x21, x9
 	adcs x22, x22, x16
-	adcs x23, x10, x10
+	adc x23, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -277,7 +277,7 @@ vg_ed25519_verify_equation:
 	adds x7, x7, x2
 	adcs x21, x21, x8
 	adcs x22, x22, x9
-	adcs x23, x23, x16
+	adc x23, x23, x16
 	ldr x3, [x0, #600]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -287,7 +287,7 @@ vg_ed25519_verify_equation:
 	adcs x21, x21, x8
 	adcs x22, x22, x9
 	adcs x23, x23, x16
-	adcs x24, x10, x10
+	adc x24, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -295,7 +295,7 @@ vg_ed25519_verify_equation:
 	adds x21, x21, x2
 	adcs x22, x22, x8
 	adcs x23, x23, x9
-	adcs x24, x24, x16
+	adc x24, x24, x16
 	movz w11, #38, lsl #0
 	mul x2, x11, x21
 	adds x4, x4, x2
@@ -305,13 +305,13 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x9
 	mul x16, x11, x24
 	adcs x7, x7, x16
-	adcs x20, x10, x10
+	adc x20, x10, x10
 	umulh x2, x11, x21
 	umulh x8, x11, x22
 	umulh x9, x11, x23
 	umulh x16, x11, x24
 	adds x7, x7, x9
-	adcs x20, x20, x16
+	adc x20, x20, x16
 	adds x16, x7, x7
 	adc x9, x20, x20
 	lsr x7, x16, #1
@@ -320,7 +320,7 @@ vg_ed25519_verify_equation:
 	adds x4, x4, x9
 	adcs x5, x5, x2
 	adcs x6, x6, x8
-	adcs x7, x7, x10
+	adc x7, x7, x10
 	str x4, [x0, #288]
 	str x5, [x0, #296]
 	str x6, [x0, #304]
@@ -342,7 +342,7 @@ vg_ed25519_verify_equation:
 	adds x5, x5, x2
 	adcs x6, x6, x8
 	adcs x7, x7, x9
-	adcs x21, x16, x10
+	adc x21, x16, x10
 	ldr x3, [x0, #296]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -352,7 +352,7 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x8
 	adcs x7, x7, x9
 	adcs x21, x21, x16
-	adcs x22, x10, x10
+	adc x22, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -360,7 +360,7 @@ vg_ed25519_verify_equation:
 	adds x6, x6, x2
 	adcs x7, x7, x8
 	adcs x21, x21, x9
-	adcs x22, x22, x16
+	adc x22, x22, x16
 	ldr x3, [x0, #304]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -370,7 +370,7 @@ vg_ed25519_verify_equation:
 	adcs x7, x7, x8
 	adcs x21, x21, x9
 	adcs x22, x22, x16
-	adcs x23, x10, x10
+	adc x23, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -378,7 +378,7 @@ vg_ed25519_verify_equation:
 	adds x7, x7, x2
 	adcs x21, x21, x8
 	adcs x22, x22, x9
-	adcs x23, x23, x16
+	adc x23, x23, x16
 	ldr x3, [x0, #312]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -388,7 +388,7 @@ vg_ed25519_verify_equation:
 	adcs x21, x21, x8
 	adcs x22, x22, x9
 	adcs x23, x23, x16
-	adcs x24, x10, x10
+	adc x24, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -396,7 +396,7 @@ vg_ed25519_verify_equation:
 	adds x21, x21, x2
 	adcs x22, x22, x8
 	adcs x23, x23, x9
-	adcs x24, x24, x16
+	adc x24, x24, x16
 	movz w11, #38, lsl #0
 	mul x2, x11, x21
 	adds x4, x4, x2
@@ -406,13 +406,13 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x9
 	mul x16, x11, x24
 	adcs x7, x7, x16
-	adcs x20, x10, x10
+	adc x20, x10, x10
 	umulh x2, x11, x21
 	umulh x8, x11, x22
 	umulh x9, x11, x23
 	umulh x16, x11, x24
 	adds x7, x7, x9
-	adcs x20, x20, x16
+	adc x20, x20, x16
 	adds x16, x7, x7
 	adc x9, x20, x20
 	lsr x7, x16, #1
@@ -421,7 +421,7 @@ vg_ed25519_verify_equation:
 	adds x4, x4, x9
 	adcs x5, x5, x2
 	adcs x6, x6, x8
-	adcs x7, x7, x10
+	adc x7, x7, x10
 	str x4, [x0, #288]
 	str x5, [x0, #296]
 	str x6, [x0, #304]
@@ -462,27 +462,27 @@ vg_ed25519_verify_equation:
 	umulh x9, x12, x15
 	adds x6, x6, x2
 	adcs x7, x7, x8
-	adcs x21, x9, x10
+	adc x21, x9, x10
 	mul x2, x13, x14
 	mul x8, x13, x15
 	umulh x9, x13, x14
 	umulh x16, x13, x15
 	adds x7, x7, x2
 	adcs x21, x21, x8
-	adcs x22, x16, x10
+	adc x22, x16, x10
 	adds x21, x21, x9
-	adcs x22, x22, x10
+	adc x22, x22, x10
 	mul x2, x14, x15
 	umulh x8, x14, x15
 	adds x22, x22, x2
-	adcs x23, x8, x10
+	adc x23, x8, x10
 	adds x5, x5, x5
 	adcs x6, x6, x6
 	adcs x7, x7, x7
 	adcs x21, x21, x21
 	adcs x22, x22, x22
 	adcs x23, x23, x23
-	adcs x24, x10, x10
+	adc x24, x10, x10
 	mul x4, x12, x12
 	umulh x2, x12, x12
 	mul x8, x13, x13
@@ -497,7 +497,7 @@ vg_ed25519_verify_equation:
 	adcs x21, x21, x16
 	adcs x22, x22, x17
 	adcs x23, x23, x3
-	adcs x24, x24, x11
+	adc x24, x24, x11
 	movz w11, #38, lsl #0
 	mul x2, x11, x21
 	adds x4, x4, x2
@@ -507,13 +507,13 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x9
 	mul x16, x11, x24
 	adcs x7, x7, x16
-	adcs x20, x10, x10
+	adc x20, x10, x10
 	umulh x2, x11, x21
 	umulh x8, x11, x22
 	umulh x9, x11, x23
 	umulh x16, x11, x24
 	adds x7, x7, x9
-	adcs x20, x20, x16
+	adc x20, x20, x16
 	adds x16, x7, x7
 	adc x9, x20, x20
 	lsr x7, x16, #1
@@ -522,7 +522,7 @@ vg_ed25519_verify_equation:
 	adds x4, x4, x9
 	adcs x5, x5, x2
 	adcs x6, x6, x8
-	adcs x7, x7, x10
+	adc x7, x7, x10
 	str x4, [x0, #320]
 	str x5, [x0, #328]
 	str x6, [x0, #336]
@@ -544,7 +544,7 @@ vg_ed25519_verify_equation:
 	adds x5, x5, x2
 	adcs x6, x6, x8
 	adcs x7, x7, x9
-	adcs x21, x16, x10
+	adc x21, x16, x10
 	ldr x3, [x0, #328]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -554,7 +554,7 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x8
 	adcs x7, x7, x9
 	adcs x21, x21, x16
-	adcs x22, x10, x10
+	adc x22, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -562,7 +562,7 @@ vg_ed25519_verify_equation:
 	adds x6, x6, x2
 	adcs x7, x7, x8
 	adcs x21, x21, x9
-	adcs x22, x22, x16
+	adc x22, x22, x16
 	ldr x3, [x0, #336]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -572,7 +572,7 @@ vg_ed25519_verify_equation:
 	adcs x7, x7, x8
 	adcs x21, x21, x9
 	adcs x22, x22, x16
-	adcs x23, x10, x10
+	adc x23, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -580,7 +580,7 @@ vg_ed25519_verify_equation:
 	adds x7, x7, x2
 	adcs x21, x21, x8
 	adcs x22, x22, x9
-	adcs x23, x23, x16
+	adc x23, x23, x16
 	ldr x3, [x0, #344]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -590,7 +590,7 @@ vg_ed25519_verify_equation:
 	adcs x21, x21, x8
 	adcs x22, x22, x9
 	adcs x23, x23, x16
-	adcs x24, x10, x10
+	adc x24, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -598,7 +598,7 @@ vg_ed25519_verify_equation:
 	adds x21, x21, x2
 	adcs x22, x22, x8
 	adcs x23, x23, x9
-	adcs x24, x24, x16
+	adc x24, x24, x16
 	movz w11, #38, lsl #0
 	mul x2, x11, x21
 	adds x4, x4, x2
@@ -608,13 +608,13 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x9
 	mul x16, x11, x24
 	adcs x7, x7, x16
-	adcs x20, x10, x10
+	adc x20, x10, x10
 	umulh x2, x11, x21
 	umulh x8, x11, x22
 	umulh x9, x11, x23
 	umulh x16, x11, x24
 	adds x7, x7, x9
-	adcs x20, x20, x16
+	adc x20, x20, x16
 	adds x16, x7, x7
 	adc x9, x20, x20
 	lsr x7, x16, #1
@@ -623,7 +623,7 @@ vg_ed25519_verify_equation:
 	adds x4, x4, x9
 	adcs x5, x5, x2
 	adcs x6, x6, x8
-	adcs x7, x7, x10
+	adc x7, x7, x10
 	str x4, [x0, #352]
 	str x5, [x0, #360]
 	str x6, [x0, #368]
@@ -641,27 +641,27 @@ vg_ed25519_verify_equation:
 	umulh x9, x12, x15
 	adds x6, x6, x2
 	adcs x7, x7, x8
-	adcs x21, x9, x10
+	adc x21, x9, x10
 	mul x2, x13, x14
 	mul x8, x13, x15
 	umulh x9, x13, x14
 	umulh x16, x13, x15
 	adds x7, x7, x2
 	adcs x21, x21, x8
-	adcs x22, x16, x10
+	adc x22, x16, x10
 	adds x21, x21, x9
-	adcs x22, x22, x10
+	adc x22, x22, x10
 	mul x2, x14, x15
 	umulh x8, x14, x15
 	adds x22, x22, x2
-	adcs x23, x8, x10
+	adc x23, x8, x10
 	adds x5, x5, x5
 	adcs x6, x6, x6
 	adcs x7, x7, x7
 	adcs x21, x21, x21
 	adcs x22, x22, x22
 	adcs x23, x23, x23
-	adcs x24, x10, x10
+	adc x24, x10, x10
 	mul x4, x12, x12
 	umulh x2, x12, x12
 	mul x8, x13, x13
@@ -676,7 +676,7 @@ vg_ed25519_verify_equation:
 	adcs x21, x21, x16
 	adcs x22, x22, x17
 	adcs x23, x23, x3
-	adcs x24, x24, x11
+	adc x24, x24, x11
 	movz w11, #38, lsl #0
 	mul x2, x11, x21
 	adds x4, x4, x2
@@ -686,13 +686,13 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x9
 	mul x16, x11, x24
 	adcs x7, x7, x16
-	adcs x20, x10, x10
+	adc x20, x10, x10
 	umulh x2, x11, x21
 	umulh x8, x11, x22
 	umulh x9, x11, x23
 	umulh x16, x11, x24
 	adds x7, x7, x9
-	adcs x20, x20, x16
+	adc x20, x20, x16
 	adds x16, x7, x7
 	adc x9, x20, x20
 	lsr x7, x16, #1
@@ -701,7 +701,7 @@ vg_ed25519_verify_equation:
 	adds x4, x4, x9
 	adcs x5, x5, x2
 	adcs x6, x6, x8
-	adcs x7, x7, x10
+	adc x7, x7, x10
 	str x4, [x0, #384]
 	str x5, [x0, #392]
 	str x6, [x0, #400]
@@ -723,7 +723,7 @@ vg_ed25519_verify_equation:
 	adds x5, x5, x2
 	adcs x6, x6, x8
 	adcs x7, x7, x9
-	adcs x21, x16, x10
+	adc x21, x16, x10
 	ldr x3, [x0, #392]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -733,7 +733,7 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x8
 	adcs x7, x7, x9
 	adcs x21, x21, x16
-	adcs x22, x10, x10
+	adc x22, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -741,7 +741,7 @@ vg_ed25519_verify_equation:
 	adds x6, x6, x2
 	adcs x7, x7, x8
 	adcs x21, x21, x9
-	adcs x22, x22, x16
+	adc x22, x22, x16
 	ldr x3, [x0, #400]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -751,7 +751,7 @@ vg_ed25519_verify_equation:
 	adcs x7, x7, x8
 	adcs x21, x21, x9
 	adcs x22, x22, x16
-	adcs x23, x10, x10
+	adc x23, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -759,7 +759,7 @@ vg_ed25519_verify_equation:
 	adds x7, x7, x2
 	adcs x21, x21, x8
 	adcs x22, x22, x9
-	adcs x23, x23, x16
+	adc x23, x23, x16
 	ldr x3, [x0, #408]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -769,7 +769,7 @@ vg_ed25519_verify_equation:
 	adcs x21, x21, x8
 	adcs x22, x22, x9
 	adcs x23, x23, x16
-	adcs x24, x10, x10
+	adc x24, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -777,7 +777,7 @@ vg_ed25519_verify_equation:
 	adds x21, x21, x2
 	adcs x22, x22, x8
 	adcs x23, x23, x9
-	adcs x24, x24, x16
+	adc x24, x24, x16
 	movz w11, #38, lsl #0
 	mul x2, x11, x21
 	adds x4, x4, x2
@@ -787,13 +787,13 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x9
 	mul x16, x11, x24
 	adcs x7, x7, x16
-	adcs x20, x10, x10
+	adc x20, x10, x10
 	umulh x2, x11, x21
 	umulh x8, x11, x22
 	umulh x9, x11, x23
 	umulh x16, x11, x24
 	adds x7, x7, x9
-	adcs x20, x20, x16
+	adc x20, x20, x16
 	adds x16, x7, x7
 	adc x9, x20, x20
 	lsr x7, x16, #1
@@ -802,7 +802,7 @@ vg_ed25519_verify_equation:
 	adds x4, x4, x9
 	adcs x5, x5, x2
 	adcs x6, x6, x8
-	adcs x7, x7, x10
+	adc x7, x7, x10
 	str x4, [x0, #384]
 	str x5, [x0, #392]
 	str x6, [x0, #400]
@@ -824,7 +824,7 @@ vg_ed25519_verify_equation:
 	adds x5, x5, x2
 	adcs x6, x6, x8
 	adcs x7, x7, x9
-	adcs x21, x16, x10
+	adc x21, x16, x10
 	ldr x3, [x0, #264]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -834,7 +834,7 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x8
 	adcs x7, x7, x9
 	adcs x21, x21, x16
-	adcs x22, x10, x10
+	adc x22, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -842,7 +842,7 @@ vg_ed25519_verify_equation:
 	adds x6, x6, x2
 	adcs x7, x7, x8
 	adcs x21, x21, x9
-	adcs x22, x22, x16
+	adc x22, x22, x16
 	ldr x3, [x0, #272]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -852,7 +852,7 @@ vg_ed25519_verify_equation:
 	adcs x7, x7, x8
 	adcs x21, x21, x9
 	adcs x22, x22, x16
-	adcs x23, x10, x10
+	adc x23, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -860,7 +860,7 @@ vg_ed25519_verify_equation:
 	adds x7, x7, x2
 	adcs x21, x21, x8
 	adcs x22, x22, x9
-	adcs x23, x23, x16
+	adc x23, x23, x16
 	ldr x3, [x0, #280]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -870,7 +870,7 @@ vg_ed25519_verify_equation:
 	adcs x21, x21, x8
 	adcs x22, x22, x9
 	adcs x23, x23, x16
-	adcs x24, x10, x10
+	adc x24, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -878,7 +878,7 @@ vg_ed25519_verify_equation:
 	adds x21, x21, x2
 	adcs x22, x22, x8
 	adcs x23, x23, x9
-	adcs x24, x24, x16
+	adc x24, x24, x16
 	movz w11, #38, lsl #0
 	mul x2, x11, x21
 	adds x4, x4, x2
@@ -888,13 +888,13 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x9
 	mul x16, x11, x24
 	adcs x7, x7, x16
-	adcs x20, x10, x10
+	adc x20, x10, x10
 	umulh x2, x11, x21
 	umulh x8, x11, x22
 	umulh x9, x11, x23
 	umulh x16, x11, x24
 	adds x7, x7, x9
-	adcs x20, x20, x16
+	adc x20, x20, x16
 	adds x16, x7, x7
 	adc x9, x20, x20
 	lsr x7, x16, #1
@@ -903,7 +903,7 @@ vg_ed25519_verify_equation:
 	adds x4, x4, x9
 	adcs x5, x5, x2
 	adcs x6, x6, x8
-	adcs x7, x7, x10
+	adc x7, x7, x10
 	str x4, [x0, #128]
 	str x5, [x0, #136]
 	str x6, [x0, #144]
@@ -924,27 +924,27 @@ vg_ed25519_verify_equation:
 	umulh x9, x12, x15
 	adds x6, x6, x2
 	adcs x7, x7, x8
-	adcs x21, x9, x10
+	adc x21, x9, x10
 	mul x2, x13, x14
 	mul x8, x13, x15
 	umulh x9, x13, x14
 	umulh x16, x13, x15
 	adds x7, x7, x2
 	adcs x21, x21, x8
-	adcs x22, x16, x10
+	adc x22, x16, x10
 	adds x21, x21, x9
-	adcs x22, x22, x10
+	adc x22, x22, x10
 	mul x2, x14, x15
 	umulh x8, x14, x15
 	adds x22, x22, x2
-	adcs x23, x8, x10
+	adc x23, x8, x10
 	adds x5, x5, x5
 	adcs x6, x6, x6
 	adcs x7, x7, x7
 	adcs x21, x21, x21
 	adcs x22, x22, x22
 	adcs x23, x23, x23
-	adcs x24, x10, x10
+	adc x24, x10, x10
 	mul x4, x12, x12
 	umulh x2, x12, x12
 	mul x8, x13, x13
@@ -959,7 +959,7 @@ vg_ed25519_verify_equation:
 	adcs x21, x21, x16
 	adcs x22, x22, x17
 	adcs x23, x23, x3
-	adcs x24, x24, x11
+	adc x24, x24, x11
 	movz w11, #38, lsl #0
 	mul x2, x11, x21
 	adds x4, x4, x2
@@ -969,13 +969,13 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x9
 	mul x16, x11, x24
 	adcs x7, x7, x16
-	adcs x20, x10, x10
+	adc x20, x10, x10
 	umulh x2, x11, x21
 	umulh x8, x11, x22
 	umulh x9, x11, x23
 	umulh x16, x11, x24
 	adds x7, x7, x9
-	adcs x20, x20, x16
+	adc x20, x20, x16
 	adds x16, x7, x7
 	adc x9, x20, x20
 	lsr x7, x16, #1
@@ -984,7 +984,7 @@ vg_ed25519_verify_equation:
 	adds x4, x4, x9
 	adcs x5, x5, x2
 	adcs x6, x6, x8
-	adcs x7, x7, x10
+	adc x7, x7, x10
 	str x4, [x0, #544]
 	str x5, [x0, #552]
 	str x6, [x0, #560]
@@ -1007,27 +1007,27 @@ vg_ed25519_verify_equation:
 	umulh x9, x12, x15
 	adds x6, x6, x2
 	adcs x7, x7, x8
-	adcs x21, x9, x10
+	adc x21, x9, x10
 	mul x2, x13, x14
 	mul x8, x13, x15
 	umulh x9, x13, x14
 	umulh x16, x13, x15
 	adds x7, x7, x2
 	adcs x21, x21, x8
-	adcs x22, x16, x10
+	adc x22, x16, x10
 	adds x21, x21, x9
-	adcs x22, x22, x10
+	adc x22, x22, x10
 	mul x2, x14, x15
 	umulh x8, x14, x15
 	adds x22, x22, x2
-	adcs x23, x8, x10
+	adc x23, x8, x10
 	adds x5, x5, x5
 	adcs x6, x6, x6
 	adcs x7, x7, x7
 	adcs x21, x21, x21
 	adcs x22, x22, x22
 	adcs x23, x23, x23
-	adcs x24, x10, x10
+	adc x24, x10, x10
 	mul x4, x12, x12
 	umulh x2, x12, x12
 	mul x8, x13, x13
@@ -1042,7 +1042,7 @@ vg_ed25519_verify_equation:
 	adcs x21, x21, x16
 	adcs x22, x22, x17
 	adcs x23, x23, x3
-	adcs x24, x24, x11
+	adc x24, x24, x11
 	movz w11, #38, lsl #0
 	mul x2, x11, x21
 	adds x4, x4, x2
@@ -1052,13 +1052,13 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x9
 	mul x16, x11, x24
 	adcs x7, x7, x16
-	adcs x20, x10, x10
+	adc x20, x10, x10
 	umulh x2, x11, x21
 	umulh x8, x11, x22
 	umulh x9, x11, x23
 	umulh x16, x11, x24
 	adds x7, x7, x9
-	adcs x20, x20, x16
+	adc x20, x20, x16
 	adds x16, x7, x7
 	adc x9, x20, x20
 	lsr x7, x16, #1
@@ -1067,7 +1067,7 @@ vg_ed25519_verify_equation:
 	adds x4, x4, x9
 	adcs x5, x5, x2
 	adcs x6, x6, x8
-	adcs x7, x7, x10
+	adc x7, x7, x10
 	str x4, [x0, #544]
 	str x5, [x0, #552]
 	str x6, [x0, #560]
@@ -1091,7 +1091,7 @@ vg_ed25519_verify_equation:
 	adds x5, x5, x2
 	adcs x6, x6, x8
 	adcs x7, x7, x9
-	adcs x21, x16, x10
+	adc x21, x16, x10
 	ldr x3, [x0, #552]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -1101,7 +1101,7 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x8
 	adcs x7, x7, x9
 	adcs x21, x21, x16
-	adcs x22, x10, x10
+	adc x22, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -1109,7 +1109,7 @@ vg_ed25519_verify_equation:
 	adds x6, x6, x2
 	adcs x7, x7, x8
 	adcs x21, x21, x9
-	adcs x22, x22, x16
+	adc x22, x22, x16
 	ldr x3, [x0, #560]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -1119,7 +1119,7 @@ vg_ed25519_verify_equation:
 	adcs x7, x7, x8
 	adcs x21, x21, x9
 	adcs x22, x22, x16
-	adcs x23, x10, x10
+	adc x23, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -1127,7 +1127,7 @@ vg_ed25519_verify_equation:
 	adds x7, x7, x2
 	adcs x21, x21, x8
 	adcs x22, x22, x9
-	adcs x23, x23, x16
+	adc x23, x23, x16
 	ldr x3, [x0, #568]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -1137,7 +1137,7 @@ vg_ed25519_verify_equation:
 	adcs x21, x21, x8
 	adcs x22, x22, x9
 	adcs x23, x23, x16
-	adcs x24, x10, x10
+	adc x24, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -1145,7 +1145,7 @@ vg_ed25519_verify_equation:
 	adds x21, x21, x2
 	adcs x22, x22, x8
 	adcs x23, x23, x9
-	adcs x24, x24, x16
+	adc x24, x24, x16
 	movz w11, #38, lsl #0
 	mul x2, x11, x21
 	adds x4, x4, x2
@@ -1155,13 +1155,13 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x9
 	mul x16, x11, x24
 	adcs x7, x7, x16
-	adcs x20, x10, x10
+	adc x20, x10, x10
 	umulh x2, x11, x21
 	umulh x8, x11, x22
 	umulh x9, x11, x23
 	umulh x16, x11, x24
 	adds x7, x7, x9
-	adcs x20, x20, x16
+	adc x20, x20, x16
 	adds x16, x7, x7
 	adc x9, x20, x20
 	lsr x7, x16, #1
@@ -1170,7 +1170,7 @@ vg_ed25519_verify_equation:
 	adds x4, x4, x9
 	adcs x5, x5, x2
 	adcs x6, x6, x8
-	adcs x7, x7, x10
+	adc x7, x7, x10
 	str x4, [x0, #544]
 	str x5, [x0, #552]
 	str x6, [x0, #560]
@@ -1239,7 +1239,7 @@ vg_ed25519_verify_equation:
 	adds x5, x5, x2
 	adcs x6, x6, x8
 	adcs x7, x7, x9
-	adcs x21, x16, x10
+	adc x21, x16, x10
 	ldr x3, [x0, #264]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -1249,7 +1249,7 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x8
 	adcs x7, x7, x9
 	adcs x21, x21, x16
-	adcs x22, x10, x10
+	adc x22, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -1257,7 +1257,7 @@ vg_ed25519_verify_equation:
 	adds x6, x6, x2
 	adcs x7, x7, x8
 	adcs x21, x21, x9
-	adcs x22, x22, x16
+	adc x22, x22, x16
 	ldr x3, [x0, #272]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -1267,7 +1267,7 @@ vg_ed25519_verify_equation:
 	adcs x7, x7, x8
 	adcs x21, x21, x9
 	adcs x22, x22, x16
-	adcs x23, x10, x10
+	adc x23, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -1275,7 +1275,7 @@ vg_ed25519_verify_equation:
 	adds x7, x7, x2
 	adcs x21, x21, x8
 	adcs x22, x22, x9
-	adcs x23, x23, x16
+	adc x23, x23, x16
 	ldr x3, [x0, #280]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -1285,7 +1285,7 @@ vg_ed25519_verify_equation:
 	adcs x21, x21, x8
 	adcs x22, x22, x9
 	adcs x23, x23, x16
-	adcs x24, x10, x10
+	adc x24, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -1293,7 +1293,7 @@ vg_ed25519_verify_equation:
 	adds x21, x21, x2
 	adcs x22, x22, x8
 	adcs x23, x23, x9
-	adcs x24, x24, x16
+	adc x24, x24, x16
 	movz w11, #38, lsl #0
 	mul x2, x11, x21
 	adds x4, x4, x2
@@ -1303,13 +1303,13 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x9
 	mul x16, x11, x24
 	adcs x7, x7, x16
-	adcs x20, x10, x10
+	adc x20, x10, x10
 	umulh x2, x11, x21
 	umulh x8, x11, x22
 	umulh x9, x11, x23
 	umulh x16, x11, x24
 	adds x7, x7, x9
-	adcs x20, x20, x16
+	adc x20, x20, x16
 	adds x16, x7, x7
 	adc x9, x20, x20
 	lsr x7, x16, #1
@@ -1318,7 +1318,7 @@ vg_ed25519_verify_equation:
 	adds x4, x4, x9
 	adcs x5, x5, x2
 	adcs x6, x6, x8
-	adcs x7, x7, x10
+	adc x7, x7, x10
 	str x4, [x0, #64]
 	str x5, [x0, #72]
 	str x6, [x0, #80]
@@ -1340,7 +1340,7 @@ vg_ed25519_verify_equation:
 	adds x5, x5, x2
 	adcs x6, x6, x8
 	adcs x7, x7, x9
-	adcs x21, x16, x10
+	adc x21, x16, x10
 	ldr x3, [x0, #72]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -1350,7 +1350,7 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x8
 	adcs x7, x7, x9
 	adcs x21, x21, x16
-	adcs x22, x10, x10
+	adc x22, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -1358,7 +1358,7 @@ vg_ed25519_verify_equation:
 	adds x6, x6, x2
 	adcs x7, x7, x8
 	adcs x21, x21, x9
-	adcs x22, x22, x16
+	adc x22, x22, x16
 	ldr x3, [x0, #80]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -1368,7 +1368,7 @@ vg_ed25519_verify_equation:
 	adcs x7, x7, x8
 	adcs x21, x21, x9
 	adcs x22, x22, x16
-	adcs x23, x10, x10
+	adc x23, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -1376,7 +1376,7 @@ vg_ed25519_verify_equation:
 	adds x7, x7, x2
 	adcs x21, x21, x8
 	adcs x22, x22, x9
-	adcs x23, x23, x16
+	adc x23, x23, x16
 	ldr x3, [x0, #88]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -1386,7 +1386,7 @@ vg_ed25519_verify_equation:
 	adcs x21, x21, x8
 	adcs x22, x22, x9
 	adcs x23, x23, x16
-	adcs x24, x10, x10
+	adc x24, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -1394,7 +1394,7 @@ vg_ed25519_verify_equation:
 	adds x21, x21, x2
 	adcs x22, x22, x8
 	adcs x23, x23, x9
-	adcs x24, x24, x16
+	adc x24, x24, x16
 	movz w11, #38, lsl #0
 	mul x2, x11, x21
 	adds x4, x4, x2
@@ -1404,13 +1404,13 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x9
 	mul x16, x11, x24
 	adcs x7, x7, x16
-	adcs x20, x10, x10
+	adc x20, x10, x10
 	umulh x2, x11, x21
 	umulh x8, x11, x22
 	umulh x9, x11, x23
 	umulh x16, x11, x24
 	adds x7, x7, x9
-	adcs x20, x20, x16
+	adc x20, x20, x16
 	adds x16, x7, x7
 	adc x9, x20, x20
 	lsr x7, x16, #1
@@ -1419,7 +1419,7 @@ vg_ed25519_verify_equation:
 	adds x4, x4, x9
 	adcs x5, x5, x2
 	adcs x6, x6, x8
-	adcs x7, x7, x10
+	adc x7, x7, x10
 	str x4, [x0, #64]
 	str x5, [x0, #72]
 	str x6, [x0, #80]
@@ -1441,7 +1441,7 @@ vg_ed25519_verify_equation:
 	adds x5, x5, x2
 	adcs x6, x6, x8
 	adcs x7, x7, x9
-	adcs x21, x16, x10
+	adc x21, x16, x10
 	ldr x3, [x0, #296]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -1451,7 +1451,7 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x8
 	adcs x7, x7, x9
 	adcs x21, x21, x16
-	adcs x22, x10, x10
+	adc x22, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -1459,7 +1459,7 @@ vg_ed25519_verify_equation:
 	adds x6, x6, x2
 	adcs x7, x7, x8
 	adcs x21, x21, x9
-	adcs x22, x22, x16
+	adc x22, x22, x16
 	ldr x3, [x0, #304]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -1469,7 +1469,7 @@ vg_ed25519_verify_equation:
 	adcs x7, x7, x8
 	adcs x21, x21, x9
 	adcs x22, x22, x16
-	adcs x23, x10, x10
+	adc x23, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -1477,7 +1477,7 @@ vg_ed25519_verify_equation:
 	adds x7, x7, x2
 	adcs x21, x21, x8
 	adcs x22, x22, x9
-	adcs x23, x23, x16
+	adc x23, x23, x16
 	ldr x3, [x0, #312]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -1487,7 +1487,7 @@ vg_ed25519_verify_equation:
 	adcs x21, x21, x8
 	adcs x22, x22, x9
 	adcs x23, x23, x16
-	adcs x24, x10, x10
+	adc x24, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -1495,7 +1495,7 @@ vg_ed25519_verify_equation:
 	adds x21, x21, x2
 	adcs x22, x22, x8
 	adcs x23, x23, x9
-	adcs x24, x24, x16
+	adc x24, x24, x16
 	movz w11, #38, lsl #0
 	mul x2, x11, x21
 	adds x4, x4, x2
@@ -1505,13 +1505,13 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x9
 	mul x16, x11, x24
 	adcs x7, x7, x16
-	adcs x20, x10, x10
+	adc x20, x10, x10
 	umulh x2, x11, x21
 	umulh x8, x11, x22
 	umulh x9, x11, x23
 	umulh x16, x11, x24
 	adds x7, x7, x9
-	adcs x20, x20, x16
+	adc x20, x20, x16
 	adds x16, x7, x7
 	adc x9, x20, x20
 	lsr x7, x16, #1
@@ -1520,7 +1520,7 @@ vg_ed25519_verify_equation:
 	adds x4, x4, x9
 	adcs x5, x5, x2
 	adcs x6, x6, x8
-	adcs x7, x7, x10
+	adc x7, x7, x10
 	str x4, [x0, #416]
 	str x5, [x0, #424]
 	str x6, [x0, #432]
@@ -1542,7 +1542,7 @@ vg_ed25519_verify_equation:
 	adds x5, x5, x2
 	adcs x6, x6, x8
 	adcs x7, x7, x9
-	adcs x21, x16, x10
+	adc x21, x16, x10
 	ldr x3, [x0, #424]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -1552,7 +1552,7 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x8
 	adcs x7, x7, x9
 	adcs x21, x21, x16
-	adcs x22, x10, x10
+	adc x22, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -1560,7 +1560,7 @@ vg_ed25519_verify_equation:
 	adds x6, x6, x2
 	adcs x7, x7, x8
 	adcs x21, x21, x9
-	adcs x22, x22, x16
+	adc x22, x22, x16
 	ldr x3, [x0, #432]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -1570,7 +1570,7 @@ vg_ed25519_verify_equation:
 	adcs x7, x7, x8
 	adcs x21, x21, x9
 	adcs x22, x22, x16
-	adcs x23, x10, x10
+	adc x23, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -1578,7 +1578,7 @@ vg_ed25519_verify_equation:
 	adds x7, x7, x2
 	adcs x21, x21, x8
 	adcs x22, x22, x9
-	adcs x23, x23, x16
+	adc x23, x23, x16
 	ldr x3, [x0, #440]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -1588,7 +1588,7 @@ vg_ed25519_verify_equation:
 	adcs x21, x21, x8
 	adcs x22, x22, x9
 	adcs x23, x23, x16
-	adcs x24, x10, x10
+	adc x24, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -1596,7 +1596,7 @@ vg_ed25519_verify_equation:
 	adds x21, x21, x2
 	adcs x22, x22, x8
 	adcs x23, x23, x9
-	adcs x24, x24, x16
+	adc x24, x24, x16
 	movz w11, #38, lsl #0
 	mul x2, x11, x21
 	adds x4, x4, x2
@@ -1606,13 +1606,13 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x9
 	mul x16, x11, x24
 	adcs x7, x7, x16
-	adcs x20, x10, x10
+	adc x20, x10, x10
 	umulh x2, x11, x21
 	umulh x8, x11, x22
 	umulh x9, x11, x23
 	umulh x16, x11, x24
 	adds x7, x7, x9
-	adcs x20, x20, x16
+	adc x20, x20, x16
 	adds x16, x7, x7
 	adc x9, x20, x20
 	lsr x7, x16, #1
@@ -1621,7 +1621,7 @@ vg_ed25519_verify_equation:
 	adds x4, x4, x9
 	adcs x5, x5, x2
 	adcs x6, x6, x8
-	adcs x7, x7, x10
+	adc x7, x7, x10
 	str x4, [x0, #416]
 	str x5, [x0, #424]
 	str x6, [x0, #432]
@@ -1800,7 +1800,7 @@ vg_ed25519_verify_equation:
 	adds x5, x5, x2
 	adcs x6, x6, x8
 	adcs x7, x7, x9
-	adcs x21, x16, x10
+	adc x21, x16, x10
 	ldr x3, [x0, #72]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -1810,7 +1810,7 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x8
 	adcs x7, x7, x9
 	adcs x21, x21, x16
-	adcs x22, x10, x10
+	adc x22, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -1818,7 +1818,7 @@ vg_ed25519_verify_equation:
 	adds x6, x6, x2
 	adcs x7, x7, x8
 	adcs x21, x21, x9
-	adcs x22, x22, x16
+	adc x22, x22, x16
 	ldr x3, [x0, #80]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -1828,7 +1828,7 @@ vg_ed25519_verify_equation:
 	adcs x7, x7, x8
 	adcs x21, x21, x9
 	adcs x22, x22, x16
-	adcs x23, x10, x10
+	adc x23, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -1836,7 +1836,7 @@ vg_ed25519_verify_equation:
 	adds x7, x7, x2
 	adcs x21, x21, x8
 	adcs x22, x22, x9
-	adcs x23, x23, x16
+	adc x23, x23, x16
 	ldr x3, [x0, #88]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -1846,7 +1846,7 @@ vg_ed25519_verify_equation:
 	adcs x21, x21, x8
 	adcs x22, x22, x9
 	adcs x23, x23, x16
-	adcs x24, x10, x10
+	adc x24, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -1854,7 +1854,7 @@ vg_ed25519_verify_equation:
 	adds x21, x21, x2
 	adcs x22, x22, x8
 	adcs x23, x23, x9
-	adcs x24, x24, x16
+	adc x24, x24, x16
 	movz w11, #38, lsl #0
 	mul x2, x11, x21
 	adds x4, x4, x2
@@ -1864,13 +1864,13 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x9
 	mul x16, x11, x24
 	adcs x7, x7, x16
-	adcs x20, x10, x10
+	adc x20, x10, x10
 	umulh x2, x11, x21
 	umulh x8, x11, x22
 	umulh x9, x11, x23
 	umulh x16, x11, x24
 	adds x7, x7, x9
-	adcs x20, x20, x16
+	adc x20, x20, x16
 	adds x16, x7, x7
 	adc x9, x20, x20
 	lsr x7, x16, #1
@@ -1879,7 +1879,7 @@ vg_ed25519_verify_equation:
 	adds x4, x4, x9
 	adcs x5, x5, x2
 	adcs x6, x6, x8
-	adcs x7, x7, x10
+	adc x7, x7, x10
 	str x4, [x0, #64]
 	str x5, [x0, #72]
 	str x6, [x0, #80]
@@ -2051,7 +2051,7 @@ vg_ed25519_verify_equation:
 	adds x5, x5, x2
 	adcs x6, x6, x8
 	adcs x7, x7, x9
-	adcs x21, x16, x10
+	adc x21, x16, x10
 	ldr x3, [x0, #72]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -2061,7 +2061,7 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x8
 	adcs x7, x7, x9
 	adcs x21, x21, x16
-	adcs x22, x10, x10
+	adc x22, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -2069,7 +2069,7 @@ vg_ed25519_verify_equation:
 	adds x6, x6, x2
 	adcs x7, x7, x8
 	adcs x21, x21, x9
-	adcs x22, x22, x16
+	adc x22, x22, x16
 	ldr x3, [x0, #80]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -2079,7 +2079,7 @@ vg_ed25519_verify_equation:
 	adcs x7, x7, x8
 	adcs x21, x21, x9
 	adcs x22, x22, x16
-	adcs x23, x10, x10
+	adc x23, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -2087,7 +2087,7 @@ vg_ed25519_verify_equation:
 	adds x7, x7, x2
 	adcs x21, x21, x8
 	adcs x22, x22, x9
-	adcs x23, x23, x16
+	adc x23, x23, x16
 	ldr x3, [x0, #88]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -2097,7 +2097,7 @@ vg_ed25519_verify_equation:
 	adcs x21, x21, x8
 	adcs x22, x22, x9
 	adcs x23, x23, x16
-	adcs x24, x10, x10
+	adc x24, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -2105,7 +2105,7 @@ vg_ed25519_verify_equation:
 	adds x21, x21, x2
 	adcs x22, x22, x8
 	adcs x23, x23, x9
-	adcs x24, x24, x16
+	adc x24, x24, x16
 	movz w11, #38, lsl #0
 	mul x2, x11, x21
 	adds x4, x4, x2
@@ -2115,13 +2115,13 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x9
 	mul x16, x11, x24
 	adcs x7, x7, x16
-	adcs x20, x10, x10
+	adc x20, x10, x10
 	umulh x2, x11, x21
 	umulh x8, x11, x22
 	umulh x9, x11, x23
 	umulh x16, x11, x24
 	adds x7, x7, x9
-	adcs x20, x20, x16
+	adc x20, x20, x16
 	adds x16, x7, x7
 	adc x9, x20, x20
 	lsr x7, x16, #1
@@ -2130,7 +2130,7 @@ vg_ed25519_verify_equation:
 	adds x4, x4, x9
 	adcs x5, x5, x2
 	adcs x6, x6, x8
-	adcs x7, x7, x10
+	adc x7, x7, x10
 	str x4, [x0, #160]
 	str x5, [x0, #168]
 	str x6, [x0, #176]
@@ -2266,7 +2266,7 @@ vg_ed25519_verify_equation:
 	adds x5, x5, x2
 	adcs x6, x6, x8
 	adcs x7, x7, x9
-	adcs x21, x16, x10
+	adc x21, x16, x10
 	ldr x3, [x0, #72]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -2276,7 +2276,7 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x8
 	adcs x7, x7, x9
 	adcs x21, x21, x16
-	adcs x22, x10, x10
+	adc x22, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -2284,7 +2284,7 @@ vg_ed25519_verify_equation:
 	adds x6, x6, x2
 	adcs x7, x7, x8
 	adcs x21, x21, x9
-	adcs x22, x22, x16
+	adc x22, x22, x16
 	ldr x3, [x0, #80]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -2294,7 +2294,7 @@ vg_ed25519_verify_equation:
 	adcs x7, x7, x8
 	adcs x21, x21, x9
 	adcs x22, x22, x16
-	adcs x23, x10, x10
+	adc x23, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -2302,7 +2302,7 @@ vg_ed25519_verify_equation:
 	adds x7, x7, x2
 	adcs x21, x21, x8
 	adcs x22, x22, x9
-	adcs x23, x23, x16
+	adc x23, x23, x16
 	ldr x3, [x0, #88]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -2312,7 +2312,7 @@ vg_ed25519_verify_equation:
 	adcs x21, x21, x8
 	adcs x22, x22, x9
 	adcs x23, x23, x16
-	adcs x24, x10, x10
+	adc x24, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -2320,7 +2320,7 @@ vg_ed25519_verify_equation:
 	adds x21, x21, x2
 	adcs x22, x22, x8
 	adcs x23, x23, x9
-	adcs x24, x24, x16
+	adc x24, x24, x16
 	movz w11, #38, lsl #0
 	mul x2, x11, x21
 	adds x4, x4, x2
@@ -2330,13 +2330,13 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x9
 	mul x16, x11, x24
 	adcs x7, x7, x16
-	adcs x20, x10, x10
+	adc x20, x10, x10
 	umulh x2, x11, x21
 	umulh x8, x11, x22
 	umulh x9, x11, x23
 	umulh x16, x11, x24
 	adds x7, x7, x9
-	adcs x20, x20, x16
+	adc x20, x20, x16
 	adds x16, x7, x7
 	adc x9, x20, x20
 	lsr x7, x16, #1
@@ -2345,7 +2345,7 @@ vg_ed25519_verify_equation:
 	adds x4, x4, x9
 	adcs x5, x5, x2
 	adcs x6, x6, x8
-	adcs x7, x7, x10
+	adc x7, x7, x10
 	str x4, [x0, #160]
 	str x5, [x0, #168]
 	str x6, [x0, #176]
@@ -2526,7 +2526,7 @@ vg_ed25519_verify_equation:
 	adds x5, x5, x2
 	adcs x6, x6, x8
 	adcs x7, x7, x9
-	adcs x21, x16, x10
+	adc x21, x16, x10
 	ldr x3, [x0, #72]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -2536,7 +2536,7 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x8
 	adcs x7, x7, x9
 	adcs x21, x21, x16
-	adcs x22, x10, x10
+	adc x22, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -2544,7 +2544,7 @@ vg_ed25519_verify_equation:
 	adds x6, x6, x2
 	adcs x7, x7, x8
 	adcs x21, x21, x9
-	adcs x22, x22, x16
+	adc x22, x22, x16
 	ldr x3, [x0, #80]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -2554,7 +2554,7 @@ vg_ed25519_verify_equation:
 	adcs x7, x7, x8
 	adcs x21, x21, x9
 	adcs x22, x22, x16
-	adcs x23, x10, x10
+	adc x23, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -2562,7 +2562,7 @@ vg_ed25519_verify_equation:
 	adds x7, x7, x2
 	adcs x21, x21, x8
 	adcs x22, x22, x9
-	adcs x23, x23, x16
+	adc x23, x23, x16
 	ldr x3, [x0, #88]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -2572,7 +2572,7 @@ vg_ed25519_verify_equation:
 	adcs x21, x21, x8
 	adcs x22, x22, x9
 	adcs x23, x23, x16
-	adcs x24, x10, x10
+	adc x24, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -2580,7 +2580,7 @@ vg_ed25519_verify_equation:
 	adds x21, x21, x2
 	adcs x22, x22, x8
 	adcs x23, x23, x9
-	adcs x24, x24, x16
+	adc x24, x24, x16
 	movz w11, #38, lsl #0
 	mul x2, x11, x21
 	adds x4, x4, x2
@@ -2590,13 +2590,13 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x9
 	mul x16, x11, x24
 	adcs x7, x7, x16
-	adcs x20, x10, x10
+	adc x20, x10, x10
 	umulh x2, x11, x21
 	umulh x8, x11, x22
 	umulh x9, x11, x23
 	umulh x16, x11, x24
 	adds x7, x7, x9
-	adcs x20, x20, x16
+	adc x20, x20, x16
 	adds x16, x7, x7
 	adc x9, x20, x20
 	lsr x7, x16, #1
@@ -2605,7 +2605,7 @@ vg_ed25519_verify_equation:
 	adds x4, x4, x9
 	adcs x5, x5, x2
 	adcs x6, x6, x8
-	adcs x7, x7, x10
+	adc x7, x7, x10
 	str x4, [x0, #160]
 	str x5, [x0, #168]
 	str x6, [x0, #176]
@@ -2741,7 +2741,7 @@ vg_ed25519_verify_equation:
 	adds x5, x5, x2
 	adcs x6, x6, x8
 	adcs x7, x7, x9
-	adcs x21, x16, x10
+	adc x21, x16, x10
 	ldr x3, [x0, #72]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -2751,7 +2751,7 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x8
 	adcs x7, x7, x9
 	adcs x21, x21, x16
-	adcs x22, x10, x10
+	adc x22, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -2759,7 +2759,7 @@ vg_ed25519_verify_equation:
 	adds x6, x6, x2
 	adcs x7, x7, x8
 	adcs x21, x21, x9
-	adcs x22, x22, x16
+	adc x22, x22, x16
 	ldr x3, [x0, #80]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -2769,7 +2769,7 @@ vg_ed25519_verify_equation:
 	adcs x7, x7, x8
 	adcs x21, x21, x9
 	adcs x22, x22, x16
-	adcs x23, x10, x10
+	adc x23, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -2777,7 +2777,7 @@ vg_ed25519_verify_equation:
 	adds x7, x7, x2
 	adcs x21, x21, x8
 	adcs x22, x22, x9
-	adcs x23, x23, x16
+	adc x23, x23, x16
 	ldr x3, [x0, #88]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -2787,7 +2787,7 @@ vg_ed25519_verify_equation:
 	adcs x21, x21, x8
 	adcs x22, x22, x9
 	adcs x23, x23, x16
-	adcs x24, x10, x10
+	adc x24, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -2795,7 +2795,7 @@ vg_ed25519_verify_equation:
 	adds x21, x21, x2
 	adcs x22, x22, x8
 	adcs x23, x23, x9
-	adcs x24, x24, x16
+	adc x24, x24, x16
 	movz w11, #38, lsl #0
 	mul x2, x11, x21
 	adds x4, x4, x2
@@ -2805,13 +2805,13 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x9
 	mul x16, x11, x24
 	adcs x7, x7, x16
-	adcs x20, x10, x10
+	adc x20, x10, x10
 	umulh x2, x11, x21
 	umulh x8, x11, x22
 	umulh x9, x11, x23
 	umulh x16, x11, x24
 	adds x7, x7, x9
-	adcs x20, x20, x16
+	adc x20, x20, x16
 	adds x16, x7, x7
 	adc x9, x20, x20
 	lsr x7, x16, #1
@@ -2820,7 +2820,7 @@ vg_ed25519_verify_equation:
 	adds x4, x4, x9
 	adcs x5, x5, x2
 	adcs x6, x6, x8
-	adcs x7, x7, x10
+	adc x7, x7, x10
 	str x4, [x0, #160]
 	str x5, [x0, #168]
 	str x6, [x0, #176]
@@ -3074,7 +3074,7 @@ vg_ed25519_verify_equation:
 	adds x5, x5, x2
 	adcs x6, x6, x8
 	adcs x7, x7, x9
-	adcs x21, x16, x10
+	adc x21, x16, x10
 	ldr x3, [x0, #136]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -3084,7 +3084,7 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x8
 	adcs x7, x7, x9
 	adcs x21, x21, x16
-	adcs x22, x10, x10
+	adc x22, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -3092,7 +3092,7 @@ vg_ed25519_verify_equation:
 	adds x6, x6, x2
 	adcs x7, x7, x8
 	adcs x21, x21, x9
-	adcs x22, x22, x16
+	adc x22, x22, x16
 	ldr x3, [x0, #144]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -3102,7 +3102,7 @@ vg_ed25519_verify_equation:
 	adcs x7, x7, x8
 	adcs x21, x21, x9
 	adcs x22, x22, x16
-	adcs x23, x10, x10
+	adc x23, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -3110,7 +3110,7 @@ vg_ed25519_verify_equation:
 	adds x7, x7, x2
 	adcs x21, x21, x8
 	adcs x22, x22, x9
-	adcs x23, x23, x16
+	adc x23, x23, x16
 	ldr x3, [x0, #152]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -3120,7 +3120,7 @@ vg_ed25519_verify_equation:
 	adcs x21, x21, x8
 	adcs x22, x22, x9
 	adcs x23, x23, x16
-	adcs x24, x10, x10
+	adc x24, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -3128,7 +3128,7 @@ vg_ed25519_verify_equation:
 	adds x21, x21, x2
 	adcs x22, x22, x8
 	adcs x23, x23, x9
-	adcs x24, x24, x16
+	adc x24, x24, x16
 	movz w11, #38, lsl #0
 	mul x2, x11, x21
 	adds x4, x4, x2
@@ -3138,13 +3138,13 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x9
 	mul x16, x11, x24
 	adcs x7, x7, x16
-	adcs x20, x10, x10
+	adc x20, x10, x10
 	umulh x2, x11, x21
 	umulh x8, x11, x22
 	umulh x9, x11, x23
 	umulh x16, x11, x24
 	adds x7, x7, x9
-	adcs x20, x20, x16
+	adc x20, x20, x16
 	adds x16, x7, x7
 	adc x9, x20, x20
 	lsr x7, x16, #1
@@ -3153,7 +3153,7 @@ vg_ed25519_verify_equation:
 	adds x4, x4, x9
 	adcs x5, x5, x2
 	adcs x6, x6, x8
-	adcs x7, x7, x10
+	adc x7, x7, x10
 	str x4, [x0, #128]
 	str x5, [x0, #136]
 	str x6, [x0, #144]
@@ -3339,7 +3339,7 @@ vg_ed25519_verify_equation:
 	adds x5, x5, x2
 	adcs x6, x6, x8
 	adcs x7, x7, x9
-	adcs x21, x16, x10
+	adc x21, x16, x10
 	ldr x3, [x0, #328]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -3349,7 +3349,7 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x8
 	adcs x7, x7, x9
 	adcs x21, x21, x16
-	adcs x22, x10, x10
+	adc x22, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -3357,7 +3357,7 @@ vg_ed25519_verify_equation:
 	adds x6, x6, x2
 	adcs x7, x7, x8
 	adcs x21, x21, x9
-	adcs x22, x22, x16
+	adc x22, x22, x16
 	ldr x3, [x0, #336]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -3367,7 +3367,7 @@ vg_ed25519_verify_equation:
 	adcs x7, x7, x8
 	adcs x21, x21, x9
 	adcs x22, x22, x16
-	adcs x23, x10, x10
+	adc x23, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -3375,7 +3375,7 @@ vg_ed25519_verify_equation:
 	adds x7, x7, x2
 	adcs x21, x21, x8
 	adcs x22, x22, x9
-	adcs x23, x23, x16
+	adc x23, x23, x16
 	ldr x3, [x0, #344]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -3385,7 +3385,7 @@ vg_ed25519_verify_equation:
 	adcs x21, x21, x8
 	adcs x22, x22, x9
 	adcs x23, x23, x16
-	adcs x24, x10, x10
+	adc x24, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -3393,7 +3393,7 @@ vg_ed25519_verify_equation:
 	adds x21, x21, x2
 	adcs x22, x22, x8
 	adcs x23, x23, x9
-	adcs x24, x24, x16
+	adc x24, x24, x16
 	movz w11, #38, lsl #0
 	mul x2, x11, x21
 	adds x4, x4, x2
@@ -3403,13 +3403,13 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x9
 	mul x16, x11, x24
 	adcs x7, x7, x16
-	adcs x20, x10, x10
+	adc x20, x10, x10
 	umulh x2, x11, x21
 	umulh x8, x11, x22
 	umulh x9, x11, x23
 	umulh x16, x11, x24
 	adds x7, x7, x9
-	adcs x20, x20, x16
+	adc x20, x20, x16
 	adds x16, x7, x7
 	adc x9, x20, x20
 	lsr x7, x16, #1
@@ -3418,7 +3418,7 @@ vg_ed25519_verify_equation:
 	adds x4, x4, x9
 	adcs x5, x5, x2
 	adcs x6, x6, x8
-	adcs x7, x7, x10
+	adc x7, x7, x10
 	str x4, [x0, #320]
 	str x5, [x0, #328]
 	str x6, [x0, #336]
@@ -3465,7 +3465,7 @@ vg_ed25519_verify_equation:
 	adds x5, x5, x2
 	adcs x6, x6, x8
 	adcs x7, x7, x9
-	adcs x21, x16, x10
+	adc x21, x16, x10
 	ldr x3, [x0, #360]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -3475,7 +3475,7 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x8
 	adcs x7, x7, x9
 	adcs x21, x21, x16
-	adcs x22, x10, x10
+	adc x22, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -3483,7 +3483,7 @@ vg_ed25519_verify_equation:
 	adds x6, x6, x2
 	adcs x7, x7, x8
 	adcs x21, x21, x9
-	adcs x22, x22, x16
+	adc x22, x22, x16
 	ldr x3, [x0, #368]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -3493,7 +3493,7 @@ vg_ed25519_verify_equation:
 	adcs x7, x7, x8
 	adcs x21, x21, x9
 	adcs x22, x22, x16
-	adcs x23, x10, x10
+	adc x23, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -3501,7 +3501,7 @@ vg_ed25519_verify_equation:
 	adds x7, x7, x2
 	adcs x21, x21, x8
 	adcs x22, x22, x9
-	adcs x23, x23, x16
+	adc x23, x23, x16
 	ldr x3, [x0, #376]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -3511,7 +3511,7 @@ vg_ed25519_verify_equation:
 	adcs x21, x21, x8
 	adcs x22, x22, x9
 	adcs x23, x23, x16
-	adcs x24, x10, x10
+	adc x24, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -3519,7 +3519,7 @@ vg_ed25519_verify_equation:
 	adds x21, x21, x2
 	adcs x22, x22, x8
 	adcs x23, x23, x9
-	adcs x24, x24, x16
+	adc x24, x24, x16
 	movz w11, #38, lsl #0
 	mul x2, x11, x21
 	adds x4, x4, x2
@@ -3529,13 +3529,13 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x9
 	mul x16, x11, x24
 	adcs x7, x7, x16
-	adcs x20, x10, x10
+	adc x20, x10, x10
 	umulh x2, x11, x21
 	umulh x8, x11, x22
 	umulh x9, x11, x23
 	umulh x16, x11, x24
 	adds x7, x7, x9
-	adcs x20, x20, x16
+	adc x20, x20, x16
 	adds x16, x7, x7
 	adc x9, x20, x20
 	lsr x7, x16, #1
@@ -3544,7 +3544,7 @@ vg_ed25519_verify_equation:
 	adds x4, x4, x9
 	adcs x5, x5, x2
 	adcs x6, x6, x8
-	adcs x7, x7, x10
+	adc x7, x7, x10
 	str x4, [x0, #352]
 	str x5, [x0, #360]
 	str x6, [x0, #368]
@@ -3566,7 +3566,7 @@ vg_ed25519_verify_equation:
 	adds x5, x5, x2
 	adcs x6, x6, x8
 	adcs x7, x7, x9
-	adcs x21, x16, x10
+	adc x21, x16, x10
 	ldr x3, [x0, #168]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -3576,7 +3576,7 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x8
 	adcs x7, x7, x9
 	adcs x21, x21, x16
-	adcs x22, x10, x10
+	adc x22, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -3584,7 +3584,7 @@ vg_ed25519_verify_equation:
 	adds x6, x6, x2
 	adcs x7, x7, x8
 	adcs x21, x21, x9
-	adcs x22, x22, x16
+	adc x22, x22, x16
 	ldr x3, [x0, #176]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -3594,7 +3594,7 @@ vg_ed25519_verify_equation:
 	adcs x7, x7, x8
 	adcs x21, x21, x9
 	adcs x22, x22, x16
-	adcs x23, x10, x10
+	adc x23, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -3602,7 +3602,7 @@ vg_ed25519_verify_equation:
 	adds x7, x7, x2
 	adcs x21, x21, x8
 	adcs x22, x22, x9
-	adcs x23, x23, x16
+	adc x23, x23, x16
 	ldr x3, [x0, #184]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -3612,7 +3612,7 @@ vg_ed25519_verify_equation:
 	adcs x21, x21, x8
 	adcs x22, x22, x9
 	adcs x23, x23, x16
-	adcs x24, x10, x10
+	adc x24, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -3620,7 +3620,7 @@ vg_ed25519_verify_equation:
 	adds x21, x21, x2
 	adcs x22, x22, x8
 	adcs x23, x23, x9
-	adcs x24, x24, x16
+	adc x24, x24, x16
 	movz w11, #38, lsl #0
 	mul x2, x11, x21
 	adds x4, x4, x2
@@ -3630,13 +3630,13 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x9
 	mul x16, x11, x24
 	adcs x7, x7, x16
-	adcs x20, x10, x10
+	adc x20, x10, x10
 	umulh x2, x11, x21
 	umulh x8, x11, x22
 	umulh x9, x11, x23
 	umulh x16, x11, x24
 	adds x7, x7, x9
-	adcs x20, x20, x16
+	adc x20, x20, x16
 	adds x16, x7, x7
 	adc x9, x20, x20
 	lsr x7, x16, #1
@@ -3645,7 +3645,7 @@ vg_ed25519_verify_equation:
 	adds x4, x4, x9
 	adcs x5, x5, x2
 	adcs x6, x6, x8
-	adcs x7, x7, x10
+	adc x7, x7, x10
 	str x4, [x0, #384]
 	str x5, [x0, #392]
 	str x6, [x0, #400]
@@ -3667,7 +3667,7 @@ vg_ed25519_verify_equation:
 	adds x5, x5, x2
 	adcs x6, x6, x8
 	adcs x7, x7, x9
-	adcs x21, x16, x10
+	adc x21, x16, x10
 	ldr x3, [x0, #136]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -3677,7 +3677,7 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x8
 	adcs x7, x7, x9
 	adcs x21, x21, x16
-	adcs x22, x10, x10
+	adc x22, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -3685,7 +3685,7 @@ vg_ed25519_verify_equation:
 	adds x6, x6, x2
 	adcs x7, x7, x8
 	adcs x21, x21, x9
-	adcs x22, x22, x16
+	adc x22, x22, x16
 	ldr x3, [x0, #144]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -3695,7 +3695,7 @@ vg_ed25519_verify_equation:
 	adcs x7, x7, x8
 	adcs x21, x21, x9
 	adcs x22, x22, x16
-	adcs x23, x10, x10
+	adc x23, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -3703,7 +3703,7 @@ vg_ed25519_verify_equation:
 	adds x7, x7, x2
 	adcs x21, x21, x8
 	adcs x22, x22, x9
-	adcs x23, x23, x16
+	adc x23, x23, x16
 	ldr x3, [x0, #152]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -3713,7 +3713,7 @@ vg_ed25519_verify_equation:
 	adcs x21, x21, x8
 	adcs x22, x22, x9
 	adcs x23, x23, x16
-	adcs x24, x10, x10
+	adc x24, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -3721,7 +3721,7 @@ vg_ed25519_verify_equation:
 	adds x21, x21, x2
 	adcs x22, x22, x8
 	adcs x23, x23, x9
-	adcs x24, x24, x16
+	adc x24, x24, x16
 	movz w11, #38, lsl #0
 	mul x2, x11, x21
 	adds x4, x4, x2
@@ -3731,13 +3731,13 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x9
 	mul x16, x11, x24
 	adcs x7, x7, x16
-	adcs x20, x10, x10
+	adc x20, x10, x10
 	umulh x2, x11, x21
 	umulh x8, x11, x22
 	umulh x9, x11, x23
 	umulh x16, x11, x24
 	adds x7, x7, x9
-	adcs x20, x20, x16
+	adc x20, x20, x16
 	adds x16, x7, x7
 	adc x9, x20, x20
 	lsr x7, x16, #1
@@ -3746,7 +3746,7 @@ vg_ed25519_verify_equation:
 	adds x4, x4, x9
 	adcs x5, x5, x2
 	adcs x6, x6, x8
-	adcs x7, x7, x10
+	adc x7, x7, x10
 	str x4, [x0, #416]
 	str x5, [x0, #424]
 	str x6, [x0, #432]
@@ -3862,7 +3862,7 @@ vg_ed25519_verify_equation:
 	adds x5, x5, x2
 	adcs x6, x6, x8
 	adcs x7, x7, x9
-	adcs x21, x16, x10
+	adc x21, x16, x10
 	ldr x3, [x0, #456]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -3872,7 +3872,7 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x8
 	adcs x7, x7, x9
 	adcs x21, x21, x16
-	adcs x22, x10, x10
+	adc x22, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -3880,7 +3880,7 @@ vg_ed25519_verify_equation:
 	adds x6, x6, x2
 	adcs x7, x7, x8
 	adcs x21, x21, x9
-	adcs x22, x22, x16
+	adc x22, x22, x16
 	ldr x3, [x0, #464]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -3890,7 +3890,7 @@ vg_ed25519_verify_equation:
 	adcs x7, x7, x8
 	adcs x21, x21, x9
 	adcs x22, x22, x16
-	adcs x23, x10, x10
+	adc x23, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -3898,7 +3898,7 @@ vg_ed25519_verify_equation:
 	adds x7, x7, x2
 	adcs x21, x21, x8
 	adcs x22, x22, x9
-	adcs x23, x23, x16
+	adc x23, x23, x16
 	ldr x3, [x0, #472]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -3908,7 +3908,7 @@ vg_ed25519_verify_equation:
 	adcs x21, x21, x8
 	adcs x22, x22, x9
 	adcs x23, x23, x16
-	adcs x24, x10, x10
+	adc x24, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -3916,7 +3916,7 @@ vg_ed25519_verify_equation:
 	adds x21, x21, x2
 	adcs x22, x22, x8
 	adcs x23, x23, x9
-	adcs x24, x24, x16
+	adc x24, x24, x16
 	movz w11, #38, lsl #0
 	mul x2, x11, x21
 	adds x4, x4, x2
@@ -3926,13 +3926,13 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x9
 	mul x16, x11, x24
 	adcs x7, x7, x16
-	adcs x20, x10, x10
+	adc x20, x10, x10
 	umulh x2, x11, x21
 	umulh x8, x11, x22
 	umulh x9, x11, x23
 	umulh x16, x11, x24
 	adds x7, x7, x9
-	adcs x20, x20, x16
+	adc x20, x20, x16
 	adds x16, x7, x7
 	adc x9, x20, x20
 	lsr x7, x16, #1
@@ -3941,7 +3941,7 @@ vg_ed25519_verify_equation:
 	adds x4, x4, x9
 	adcs x5, x5, x2
 	adcs x6, x6, x8
-	adcs x7, x7, x10
+	adc x7, x7, x10
 	str x4, [x0, #64]
 	str x5, [x0, #72]
 	str x6, [x0, #80]
@@ -3963,7 +3963,7 @@ vg_ed25519_verify_equation:
 	adds x5, x5, x2
 	adcs x6, x6, x8
 	adcs x7, x7, x9
-	adcs x21, x16, x10
+	adc x21, x16, x10
 	ldr x3, [x0, #520]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -3973,7 +3973,7 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x8
 	adcs x7, x7, x9
 	adcs x21, x21, x16
-	adcs x22, x10, x10
+	adc x22, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -3981,7 +3981,7 @@ vg_ed25519_verify_equation:
 	adds x6, x6, x2
 	adcs x7, x7, x8
 	adcs x21, x21, x9
-	adcs x22, x22, x16
+	adc x22, x22, x16
 	ldr x3, [x0, #528]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -3991,7 +3991,7 @@ vg_ed25519_verify_equation:
 	adcs x7, x7, x8
 	adcs x21, x21, x9
 	adcs x22, x22, x16
-	adcs x23, x10, x10
+	adc x23, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -3999,7 +3999,7 @@ vg_ed25519_verify_equation:
 	adds x7, x7, x2
 	adcs x21, x21, x8
 	adcs x22, x22, x9
-	adcs x23, x23, x16
+	adc x23, x23, x16
 	ldr x3, [x0, #536]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -4009,7 +4009,7 @@ vg_ed25519_verify_equation:
 	adcs x21, x21, x8
 	adcs x22, x22, x9
 	adcs x23, x23, x16
-	adcs x24, x10, x10
+	adc x24, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -4017,7 +4017,7 @@ vg_ed25519_verify_equation:
 	adds x21, x21, x2
 	adcs x22, x22, x8
 	adcs x23, x23, x9
-	adcs x24, x24, x16
+	adc x24, x24, x16
 	movz w11, #38, lsl #0
 	mul x2, x11, x21
 	adds x4, x4, x2
@@ -4027,13 +4027,13 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x9
 	mul x16, x11, x24
 	adcs x7, x7, x16
-	adcs x20, x10, x10
+	adc x20, x10, x10
 	umulh x2, x11, x21
 	umulh x8, x11, x22
 	umulh x9, x11, x23
 	umulh x16, x11, x24
 	adds x7, x7, x9
-	adcs x20, x20, x16
+	adc x20, x20, x16
 	adds x16, x7, x7
 	adc x9, x20, x20
 	lsr x7, x16, #1
@@ -4042,7 +4042,7 @@ vg_ed25519_verify_equation:
 	adds x4, x4, x9
 	adcs x5, x5, x2
 	adcs x6, x6, x8
-	adcs x7, x7, x10
+	adc x7, x7, x10
 	str x4, [x0, #96]
 	str x5, [x0, #104]
 	str x6, [x0, #112]
@@ -4064,7 +4064,7 @@ vg_ed25519_verify_equation:
 	adds x5, x5, x2
 	adcs x6, x6, x8
 	adcs x7, x7, x9
-	adcs x21, x16, x10
+	adc x21, x16, x10
 	ldr x3, [x0, #488]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -4074,7 +4074,7 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x8
 	adcs x7, x7, x9
 	adcs x21, x21, x16
-	adcs x22, x10, x10
+	adc x22, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -4082,7 +4082,7 @@ vg_ed25519_verify_equation:
 	adds x6, x6, x2
 	adcs x7, x7, x8
 	adcs x21, x21, x9
-	adcs x22, x22, x16
+	adc x22, x22, x16
 	ldr x3, [x0, #496]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -4092,7 +4092,7 @@ vg_ed25519_verify_equation:
 	adcs x7, x7, x8
 	adcs x21, x21, x9
 	adcs x22, x22, x16
-	adcs x23, x10, x10
+	adc x23, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -4100,7 +4100,7 @@ vg_ed25519_verify_equation:
 	adds x7, x7, x2
 	adcs x21, x21, x8
 	adcs x22, x22, x9
-	adcs x23, x23, x16
+	adc x23, x23, x16
 	ldr x3, [x0, #504]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -4110,7 +4110,7 @@ vg_ed25519_verify_equation:
 	adcs x21, x21, x8
 	adcs x22, x22, x9
 	adcs x23, x23, x16
-	adcs x24, x10, x10
+	adc x24, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -4118,7 +4118,7 @@ vg_ed25519_verify_equation:
 	adds x21, x21, x2
 	adcs x22, x22, x8
 	adcs x23, x23, x9
-	adcs x24, x24, x16
+	adc x24, x24, x16
 	movz w11, #38, lsl #0
 	mul x2, x11, x21
 	adds x4, x4, x2
@@ -4128,13 +4128,13 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x9
 	mul x16, x11, x24
 	adcs x7, x7, x16
-	adcs x20, x10, x10
+	adc x20, x10, x10
 	umulh x2, x11, x21
 	umulh x8, x11, x22
 	umulh x9, x11, x23
 	umulh x16, x11, x24
 	adds x7, x7, x9
-	adcs x20, x20, x16
+	adc x20, x20, x16
 	adds x16, x7, x7
 	adc x9, x20, x20
 	lsr x7, x16, #1
@@ -4143,7 +4143,7 @@ vg_ed25519_verify_equation:
 	adds x4, x4, x9
 	adcs x5, x5, x2
 	adcs x6, x6, x8
-	adcs x7, x7, x10
+	adc x7, x7, x10
 	str x4, [x0, #128]
 	str x5, [x0, #136]
 	str x6, [x0, #144]
@@ -4165,7 +4165,7 @@ vg_ed25519_verify_equation:
 	adds x5, x5, x2
 	adcs x6, x6, x8
 	adcs x7, x7, x9
-	adcs x21, x16, x10
+	adc x21, x16, x10
 	ldr x3, [x0, #456]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -4175,7 +4175,7 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x8
 	adcs x7, x7, x9
 	adcs x21, x21, x16
-	adcs x22, x10, x10
+	adc x22, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -4183,7 +4183,7 @@ vg_ed25519_verify_equation:
 	adds x6, x6, x2
 	adcs x7, x7, x8
 	adcs x21, x21, x9
-	adcs x22, x22, x16
+	adc x22, x22, x16
 	ldr x3, [x0, #464]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -4193,7 +4193,7 @@ vg_ed25519_verify_equation:
 	adcs x7, x7, x8
 	adcs x21, x21, x9
 	adcs x22, x22, x16
-	adcs x23, x10, x10
+	adc x23, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -4201,7 +4201,7 @@ vg_ed25519_verify_equation:
 	adds x7, x7, x2
 	adcs x21, x21, x8
 	adcs x22, x22, x9
-	adcs x23, x23, x16
+	adc x23, x23, x16
 	ldr x3, [x0, #472]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -4211,7 +4211,7 @@ vg_ed25519_verify_equation:
 	adcs x21, x21, x8
 	adcs x22, x22, x9
 	adcs x23, x23, x16
-	adcs x24, x10, x10
+	adc x24, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -4219,7 +4219,7 @@ vg_ed25519_verify_equation:
 	adds x21, x21, x2
 	adcs x22, x22, x8
 	adcs x23, x23, x9
-	adcs x24, x24, x16
+	adc x24, x24, x16
 	movz w11, #38, lsl #0
 	mul x2, x11, x21
 	adds x4, x4, x2
@@ -4229,13 +4229,13 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x9
 	mul x16, x11, x24
 	adcs x7, x7, x16
-	adcs x20, x10, x10
+	adc x20, x10, x10
 	umulh x2, x11, x21
 	umulh x8, x11, x22
 	umulh x9, x11, x23
 	umulh x16, x11, x24
 	adds x7, x7, x9
-	adcs x20, x20, x16
+	adc x20, x20, x16
 	adds x16, x7, x7
 	adc x9, x20, x20
 	lsr x7, x16, #1
@@ -4244,7 +4244,7 @@ vg_ed25519_verify_equation:
 	adds x4, x4, x9
 	adcs x5, x5, x2
 	adcs x6, x6, x8
-	adcs x7, x7, x10
+	adc x7, x7, x10
 	str x4, [x0, #160]
 	str x5, [x0, #168]
 	str x6, [x0, #176]
@@ -4375,7 +4375,7 @@ vg_ed25519_verify_equation:
 	adds x5, x5, x2
 	adcs x6, x6, x8
 	adcs x7, x7, x9
-	adcs x21, x16, x10
+	adc x21, x16, x10
 	ldr x3, [x0, #136]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -4385,7 +4385,7 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x8
 	adcs x7, x7, x9
 	adcs x21, x21, x16
-	adcs x22, x10, x10
+	adc x22, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -4393,7 +4393,7 @@ vg_ed25519_verify_equation:
 	adds x6, x6, x2
 	adcs x7, x7, x8
 	adcs x21, x21, x9
-	adcs x22, x22, x16
+	adc x22, x22, x16
 	ldr x3, [x0, #144]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -4403,7 +4403,7 @@ vg_ed25519_verify_equation:
 	adcs x7, x7, x8
 	adcs x21, x21, x9
 	adcs x22, x22, x16
-	adcs x23, x10, x10
+	adc x23, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -4411,7 +4411,7 @@ vg_ed25519_verify_equation:
 	adds x7, x7, x2
 	adcs x21, x21, x8
 	adcs x22, x22, x9
-	adcs x23, x23, x16
+	adc x23, x23, x16
 	ldr x3, [x0, #152]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -4421,7 +4421,7 @@ vg_ed25519_verify_equation:
 	adcs x21, x21, x8
 	adcs x22, x22, x9
 	adcs x23, x23, x16
-	adcs x24, x10, x10
+	adc x24, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -4429,7 +4429,7 @@ vg_ed25519_verify_equation:
 	adds x21, x21, x2
 	adcs x22, x22, x8
 	adcs x23, x23, x9
-	adcs x24, x24, x16
+	adc x24, x24, x16
 	movz w11, #38, lsl #0
 	mul x2, x11, x21
 	adds x4, x4, x2
@@ -4439,13 +4439,13 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x9
 	mul x16, x11, x24
 	adcs x7, x7, x16
-	adcs x20, x10, x10
+	adc x20, x10, x10
 	umulh x2, x11, x21
 	umulh x8, x11, x22
 	umulh x9, x11, x23
 	umulh x16, x11, x24
 	adds x7, x7, x9
-	adcs x20, x20, x16
+	adc x20, x20, x16
 	adds x16, x7, x7
 	adc x9, x20, x20
 	lsr x7, x16, #1
@@ -4454,7 +4454,7 @@ vg_ed25519_verify_equation:
 	adds x4, x4, x9
 	adcs x5, x5, x2
 	adcs x6, x6, x8
-	adcs x7, x7, x10
+	adc x7, x7, x10
 	str x4, [x0, #128]
 	str x5, [x0, #136]
 	str x6, [x0, #144]
@@ -4773,27 +4773,27 @@ vg_ed25519_verify_equation:
 	umulh x9, x12, x15
 	adds x6, x6, x2
 	adcs x7, x7, x8
-	adcs x21, x9, x10
+	adc x21, x9, x10
 	mul x2, x13, x14
 	mul x8, x13, x15
 	umulh x9, x13, x14
 	umulh x16, x13, x15
 	adds x7, x7, x2
 	adcs x21, x21, x8
-	adcs x22, x16, x10
+	adc x22, x16, x10
 	adds x21, x21, x9
-	adcs x22, x22, x10
+	adc x22, x22, x10
 	mul x2, x14, x15
 	umulh x8, x14, x15
 	adds x22, x22, x2
-	adcs x23, x8, x10
+	adc x23, x8, x10
 	adds x5, x5, x5
 	adcs x6, x6, x6
 	adcs x7, x7, x7
 	adcs x21, x21, x21
 	adcs x22, x22, x22
 	adcs x23, x23, x23
-	adcs x24, x10, x10
+	adc x24, x10, x10
 	mul x4, x12, x12
 	umulh x2, x12, x12
 	mul x8, x13, x13
@@ -4808,7 +4808,7 @@ vg_ed25519_verify_equation:
 	adcs x21, x21, x16
 	adcs x22, x22, x17
 	adcs x23, x23, x3
-	adcs x24, x24, x11
+	adc x24, x24, x11
 	movz w11, #38, lsl #0
 	mul x2, x11, x21
 	adds x4, x4, x2
@@ -4818,13 +4818,13 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x9
 	mul x16, x11, x24
 	adcs x7, x7, x16
-	adcs x20, x10, x10
+	adc x20, x10, x10
 	umulh x2, x11, x21
 	umulh x8, x11, x22
 	umulh x9, x11, x23
 	umulh x16, x11, x24
 	adds x7, x7, x9
-	adcs x20, x20, x16
+	adc x20, x20, x16
 	adds x16, x7, x7
 	adc x9, x20, x20
 	lsr x7, x16, #1
@@ -4833,7 +4833,7 @@ vg_ed25519_verify_equation:
 	adds x4, x4, x9
 	adcs x5, x5, x2
 	adcs x6, x6, x8
-	adcs x7, x7, x10
+	adc x7, x7, x10
 	str x4, [x0, #320]
 	str x5, [x0, #328]
 	str x6, [x0, #336]
@@ -4851,27 +4851,27 @@ vg_ed25519_verify_equation:
 	umulh x9, x12, x15
 	adds x6, x6, x2
 	adcs x7, x7, x8
-	adcs x21, x9, x10
+	adc x21, x9, x10
 	mul x2, x13, x14
 	mul x8, x13, x15
 	umulh x9, x13, x14
 	umulh x16, x13, x15
 	adds x7, x7, x2
 	adcs x21, x21, x8
-	adcs x22, x16, x10
+	adc x22, x16, x10
 	adds x21, x21, x9
-	adcs x22, x22, x10
+	adc x22, x22, x10
 	mul x2, x14, x15
 	umulh x8, x14, x15
 	adds x22, x22, x2
-	adcs x23, x8, x10
+	adc x23, x8, x10
 	adds x5, x5, x5
 	adcs x6, x6, x6
 	adcs x7, x7, x7
 	adcs x21, x21, x21
 	adcs x22, x22, x22
 	adcs x23, x23, x23
-	adcs x24, x10, x10
+	adc x24, x10, x10
 	mul x4, x12, x12
 	umulh x2, x12, x12
 	mul x8, x13, x13
@@ -4886,7 +4886,7 @@ vg_ed25519_verify_equation:
 	adcs x21, x21, x16
 	adcs x22, x22, x17
 	adcs x23, x23, x3
-	adcs x24, x24, x11
+	adc x24, x24, x11
 	movz w11, #38, lsl #0
 	mul x2, x11, x21
 	adds x4, x4, x2
@@ -4896,13 +4896,13 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x9
 	mul x16, x11, x24
 	adcs x7, x7, x16
-	adcs x20, x10, x10
+	adc x20, x10, x10
 	umulh x2, x11, x21
 	umulh x8, x11, x22
 	umulh x9, x11, x23
 	umulh x16, x11, x24
 	adds x7, x7, x9
-	adcs x20, x20, x16
+	adc x20, x20, x16
 	adds x16, x7, x7
 	adc x9, x20, x20
 	lsr x7, x16, #1
@@ -4911,7 +4911,7 @@ vg_ed25519_verify_equation:
 	adds x4, x4, x9
 	adcs x5, x5, x2
 	adcs x6, x6, x8
-	adcs x7, x7, x10
+	adc x7, x7, x10
 	str x4, [x0, #352]
 	str x5, [x0, #360]
 	str x6, [x0, #368]
@@ -4929,27 +4929,27 @@ vg_ed25519_verify_equation:
 	umulh x9, x12, x15
 	adds x6, x6, x2
 	adcs x7, x7, x8
-	adcs x21, x9, x10
+	adc x21, x9, x10
 	mul x2, x13, x14
 	mul x8, x13, x15
 	umulh x9, x13, x14
 	umulh x16, x13, x15
 	adds x7, x7, x2
 	adcs x21, x21, x8
-	adcs x22, x16, x10
+	adc x22, x16, x10
 	adds x21, x21, x9
-	adcs x22, x22, x10
+	adc x22, x22, x10
 	mul x2, x14, x15
 	umulh x8, x14, x15
 	adds x22, x22, x2
-	adcs x23, x8, x10
+	adc x23, x8, x10
 	adds x5, x5, x5
 	adcs x6, x6, x6
 	adcs x7, x7, x7
 	adcs x21, x21, x21
 	adcs x22, x22, x22
 	adcs x23, x23, x23
-	adcs x24, x10, x10
+	adc x24, x10, x10
 	mul x4, x12, x12
 	umulh x2, x12, x12
 	mul x8, x13, x13
@@ -4964,7 +4964,7 @@ vg_ed25519_verify_equation:
 	adcs x21, x21, x16
 	adcs x22, x22, x17
 	adcs x23, x23, x3
-	adcs x24, x24, x11
+	adc x24, x24, x11
 	movz w11, #38, lsl #0
 	mul x2, x11, x21
 	adds x4, x4, x2
@@ -4974,13 +4974,13 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x9
 	mul x16, x11, x24
 	adcs x7, x7, x16
-	adcs x20, x10, x10
+	adc x20, x10, x10
 	umulh x2, x11, x21
 	umulh x8, x11, x22
 	umulh x9, x11, x23
 	umulh x16, x11, x24
 	adds x7, x7, x9
-	adcs x20, x20, x16
+	adc x20, x20, x16
 	adds x16, x7, x7
 	adc x9, x20, x20
 	lsr x7, x16, #1
@@ -4989,7 +4989,7 @@ vg_ed25519_verify_equation:
 	adds x4, x4, x9
 	adcs x5, x5, x2
 	adcs x6, x6, x8
-	adcs x7, x7, x10
+	adc x7, x7, x10
 	str x4, [x0, #384]
 	str x5, [x0, #392]
 	str x6, [x0, #400]
@@ -5034,7 +5034,7 @@ vg_ed25519_verify_equation:
 	adds x5, x5, x2
 	adcs x6, x6, x8
 	adcs x7, x7, x9
-	adcs x21, x16, x10
+	adc x21, x16, x10
 	ldr x3, [x0, #72]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -5044,7 +5044,7 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x8
 	adcs x7, x7, x9
 	adcs x21, x21, x16
-	adcs x22, x10, x10
+	adc x22, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -5052,7 +5052,7 @@ vg_ed25519_verify_equation:
 	adds x6, x6, x2
 	adcs x7, x7, x8
 	adcs x21, x21, x9
-	adcs x22, x22, x16
+	adc x22, x22, x16
 	ldr x3, [x0, #80]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -5062,7 +5062,7 @@ vg_ed25519_verify_equation:
 	adcs x7, x7, x8
 	adcs x21, x21, x9
 	adcs x22, x22, x16
-	adcs x23, x10, x10
+	adc x23, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -5070,7 +5070,7 @@ vg_ed25519_verify_equation:
 	adds x7, x7, x2
 	adcs x21, x21, x8
 	adcs x22, x22, x9
-	adcs x23, x23, x16
+	adc x23, x23, x16
 	ldr x3, [x0, #88]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -5080,7 +5080,7 @@ vg_ed25519_verify_equation:
 	adcs x21, x21, x8
 	adcs x22, x22, x9
 	adcs x23, x23, x16
-	adcs x24, x10, x10
+	adc x24, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -5088,7 +5088,7 @@ vg_ed25519_verify_equation:
 	adds x21, x21, x2
 	adcs x22, x22, x8
 	adcs x23, x23, x9
-	adcs x24, x24, x16
+	adc x24, x24, x16
 	movz w11, #38, lsl #0
 	mul x2, x11, x21
 	adds x4, x4, x2
@@ -5098,13 +5098,13 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x9
 	mul x16, x11, x24
 	adcs x7, x7, x16
-	adcs x20, x10, x10
+	adc x20, x10, x10
 	umulh x2, x11, x21
 	umulh x8, x11, x22
 	umulh x9, x11, x23
 	umulh x16, x11, x24
 	adds x7, x7, x9
-	adcs x20, x20, x16
+	adc x20, x20, x16
 	adds x16, x7, x7
 	adc x9, x20, x20
 	lsr x7, x16, #1
@@ -5113,7 +5113,7 @@ vg_ed25519_verify_equation:
 	adds x4, x4, x9
 	adcs x5, x5, x2
 	adcs x6, x6, x8
-	adcs x7, x7, x10
+	adc x7, x7, x10
 	str x4, [x0, #416]
 	str x5, [x0, #424]
 	str x6, [x0, #432]
@@ -5232,7 +5232,7 @@ vg_ed25519_verify_equation:
 	adds x5, x5, x2
 	adcs x6, x6, x8
 	adcs x7, x7, x9
-	adcs x21, x16, x10
+	adc x21, x16, x10
 	ldr x3, [x0, #424]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -5242,7 +5242,7 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x8
 	adcs x7, x7, x9
 	adcs x21, x21, x16
-	adcs x22, x10, x10
+	adc x22, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -5250,7 +5250,7 @@ vg_ed25519_verify_equation:
 	adds x6, x6, x2
 	adcs x7, x7, x8
 	adcs x21, x21, x9
-	adcs x22, x22, x16
+	adc x22, x22, x16
 	ldr x3, [x0, #432]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -5260,7 +5260,7 @@ vg_ed25519_verify_equation:
 	adcs x7, x7, x8
 	adcs x21, x21, x9
 	adcs x22, x22, x16
-	adcs x23, x10, x10
+	adc x23, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -5268,7 +5268,7 @@ vg_ed25519_verify_equation:
 	adds x7, x7, x2
 	adcs x21, x21, x8
 	adcs x22, x22, x9
-	adcs x23, x23, x16
+	adc x23, x23, x16
 	ldr x3, [x0, #440]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -5278,7 +5278,7 @@ vg_ed25519_verify_equation:
 	adcs x21, x21, x8
 	adcs x22, x22, x9
 	adcs x23, x23, x16
-	adcs x24, x10, x10
+	adc x24, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -5286,7 +5286,7 @@ vg_ed25519_verify_equation:
 	adds x21, x21, x2
 	adcs x22, x22, x8
 	adcs x23, x23, x9
-	adcs x24, x24, x16
+	adc x24, x24, x16
 	movz w11, #38, lsl #0
 	mul x2, x11, x21
 	adds x4, x4, x2
@@ -5296,13 +5296,13 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x9
 	mul x16, x11, x24
 	adcs x7, x7, x16
-	adcs x20, x10, x10
+	adc x20, x10, x10
 	umulh x2, x11, x21
 	umulh x8, x11, x22
 	umulh x9, x11, x23
 	umulh x16, x11, x24
 	adds x7, x7, x9
-	adcs x20, x20, x16
+	adc x20, x20, x16
 	adds x16, x7, x7
 	adc x9, x20, x20
 	lsr x7, x16, #1
@@ -5311,7 +5311,7 @@ vg_ed25519_verify_equation:
 	adds x4, x4, x9
 	adcs x5, x5, x2
 	adcs x6, x6, x8
-	adcs x7, x7, x10
+	adc x7, x7, x10
 	str x4, [x0, #64]
 	str x5, [x0, #72]
 	str x6, [x0, #80]
@@ -5333,7 +5333,7 @@ vg_ed25519_verify_equation:
 	adds x5, x5, x2
 	adcs x6, x6, x8
 	adcs x7, x7, x9
-	adcs x21, x16, x10
+	adc x21, x16, x10
 	ldr x3, [x0, #456]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -5343,7 +5343,7 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x8
 	adcs x7, x7, x9
 	adcs x21, x21, x16
-	adcs x22, x10, x10
+	adc x22, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -5351,7 +5351,7 @@ vg_ed25519_verify_equation:
 	adds x6, x6, x2
 	adcs x7, x7, x8
 	adcs x21, x21, x9
-	adcs x22, x22, x16
+	adc x22, x22, x16
 	ldr x3, [x0, #464]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -5361,7 +5361,7 @@ vg_ed25519_verify_equation:
 	adcs x7, x7, x8
 	adcs x21, x21, x9
 	adcs x22, x22, x16
-	adcs x23, x10, x10
+	adc x23, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -5369,7 +5369,7 @@ vg_ed25519_verify_equation:
 	adds x7, x7, x2
 	adcs x21, x21, x8
 	adcs x22, x22, x9
-	adcs x23, x23, x16
+	adc x23, x23, x16
 	ldr x3, [x0, #472]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -5379,7 +5379,7 @@ vg_ed25519_verify_equation:
 	adcs x21, x21, x8
 	adcs x22, x22, x9
 	adcs x23, x23, x16
-	adcs x24, x10, x10
+	adc x24, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -5387,7 +5387,7 @@ vg_ed25519_verify_equation:
 	adds x21, x21, x2
 	adcs x22, x22, x8
 	adcs x23, x23, x9
-	adcs x24, x24, x16
+	adc x24, x24, x16
 	movz w11, #38, lsl #0
 	mul x2, x11, x21
 	adds x4, x4, x2
@@ -5397,13 +5397,13 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x9
 	mul x16, x11, x24
 	adcs x7, x7, x16
-	adcs x20, x10, x10
+	adc x20, x10, x10
 	umulh x2, x11, x21
 	umulh x8, x11, x22
 	umulh x9, x11, x23
 	umulh x16, x11, x24
 	adds x7, x7, x9
-	adcs x20, x20, x16
+	adc x20, x20, x16
 	adds x16, x7, x7
 	adc x9, x20, x20
 	lsr x7, x16, #1
@@ -5412,7 +5412,7 @@ vg_ed25519_verify_equation:
 	adds x4, x4, x9
 	adcs x5, x5, x2
 	adcs x6, x6, x8
-	adcs x7, x7, x10
+	adc x7, x7, x10
 	str x4, [x0, #96]
 	str x5, [x0, #104]
 	str x6, [x0, #112]
@@ -5434,7 +5434,7 @@ vg_ed25519_verify_equation:
 	adds x5, x5, x2
 	adcs x6, x6, x8
 	adcs x7, x7, x9
-	adcs x21, x16, x10
+	adc x21, x16, x10
 	ldr x3, [x0, #488]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -5444,7 +5444,7 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x8
 	adcs x7, x7, x9
 	adcs x21, x21, x16
-	adcs x22, x10, x10
+	adc x22, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -5452,7 +5452,7 @@ vg_ed25519_verify_equation:
 	adds x6, x6, x2
 	adcs x7, x7, x8
 	adcs x21, x21, x9
-	adcs x22, x22, x16
+	adc x22, x22, x16
 	ldr x3, [x0, #496]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -5462,7 +5462,7 @@ vg_ed25519_verify_equation:
 	adcs x7, x7, x8
 	adcs x21, x21, x9
 	adcs x22, x22, x16
-	adcs x23, x10, x10
+	adc x23, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -5470,7 +5470,7 @@ vg_ed25519_verify_equation:
 	adds x7, x7, x2
 	adcs x21, x21, x8
 	adcs x22, x22, x9
-	adcs x23, x23, x16
+	adc x23, x23, x16
 	ldr x3, [x0, #504]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -5480,7 +5480,7 @@ vg_ed25519_verify_equation:
 	adcs x21, x21, x8
 	adcs x22, x22, x9
 	adcs x23, x23, x16
-	adcs x24, x10, x10
+	adc x24, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -5488,7 +5488,7 @@ vg_ed25519_verify_equation:
 	adds x21, x21, x2
 	adcs x22, x22, x8
 	adcs x23, x23, x9
-	adcs x24, x24, x16
+	adc x24, x24, x16
 	movz w11, #38, lsl #0
 	mul x2, x11, x21
 	adds x4, x4, x2
@@ -5498,13 +5498,13 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x9
 	mul x16, x11, x24
 	adcs x7, x7, x16
-	adcs x20, x10, x10
+	adc x20, x10, x10
 	umulh x2, x11, x21
 	umulh x8, x11, x22
 	umulh x9, x11, x23
 	umulh x16, x11, x24
 	adds x7, x7, x9
-	adcs x20, x20, x16
+	adc x20, x20, x16
 	adds x16, x7, x7
 	adc x9, x20, x20
 	lsr x7, x16, #1
@@ -5513,7 +5513,7 @@ vg_ed25519_verify_equation:
 	adds x4, x4, x9
 	adcs x5, x5, x2
 	adcs x6, x6, x8
-	adcs x7, x7, x10
+	adc x7, x7, x10
 	str x4, [x0, #128]
 	str x5, [x0, #136]
 	str x6, [x0, #144]
@@ -5537,7 +5537,7 @@ vg_ed25519_verify_equation:
 	adds x5, x5, x2
 	adcs x6, x6, x8
 	adcs x7, x7, x9
-	adcs x21, x16, x10
+	adc x21, x16, x10
 	ldr x3, [x0, #424]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -5547,7 +5547,7 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x8
 	adcs x7, x7, x9
 	adcs x21, x21, x16
-	adcs x22, x10, x10
+	adc x22, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -5555,7 +5555,7 @@ vg_ed25519_verify_equation:
 	adds x6, x6, x2
 	adcs x7, x7, x8
 	adcs x21, x21, x9
-	adcs x22, x22, x16
+	adc x22, x22, x16
 	ldr x3, [x0, #432]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -5565,7 +5565,7 @@ vg_ed25519_verify_equation:
 	adcs x7, x7, x8
 	adcs x21, x21, x9
 	adcs x22, x22, x16
-	adcs x23, x10, x10
+	adc x23, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -5573,7 +5573,7 @@ vg_ed25519_verify_equation:
 	adds x7, x7, x2
 	adcs x21, x21, x8
 	adcs x22, x22, x9
-	adcs x23, x23, x16
+	adc x23, x23, x16
 	ldr x3, [x0, #440]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -5583,7 +5583,7 @@ vg_ed25519_verify_equation:
 	adcs x21, x21, x8
 	adcs x22, x22, x9
 	adcs x23, x23, x16
-	adcs x24, x10, x10
+	adc x24, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -5591,7 +5591,7 @@ vg_ed25519_verify_equation:
 	adds x21, x21, x2
 	adcs x22, x22, x8
 	adcs x23, x23, x9
-	adcs x24, x24, x16
+	adc x24, x24, x16
 	movz w11, #38, lsl #0
 	mul x2, x11, x21
 	adds x4, x4, x2
@@ -5601,13 +5601,13 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x9
 	mul x16, x11, x24
 	adcs x7, x7, x16
-	adcs x20, x10, x10
+	adc x20, x10, x10
 	umulh x2, x11, x21
 	umulh x8, x11, x22
 	umulh x9, x11, x23
 	umulh x16, x11, x24
 	adds x7, x7, x9
-	adcs x20, x20, x16
+	adc x20, x20, x16
 	adds x16, x7, x7
 	adc x9, x20, x20
 	lsr x7, x16, #1
@@ -5616,7 +5616,7 @@ vg_ed25519_verify_equation:
 	adds x4, x4, x9
 	adcs x5, x5, x2
 	adcs x6, x6, x8
-	adcs x7, x7, x10
+	adc x7, x7, x10
 	str x4, [x0, #160]
 	str x5, [x0, #168]
 	str x6, [x0, #176]
@@ -5711,7 +5711,7 @@ vg_ed25519_verify_equation:
 	adds x5, x5, x2
 	adcs x6, x6, x8
 	adcs x7, x7, x9
-	adcs x21, x16, x10
+	adc x21, x16, x10
 	ldr x3, [x0, #328]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -5721,7 +5721,7 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x8
 	adcs x7, x7, x9
 	adcs x21, x21, x16
-	adcs x22, x10, x10
+	adc x22, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -5729,7 +5729,7 @@ vg_ed25519_verify_equation:
 	adds x6, x6, x2
 	adcs x7, x7, x8
 	adcs x21, x21, x9
-	adcs x22, x22, x16
+	adc x22, x22, x16
 	ldr x3, [x0, #336]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -5739,7 +5739,7 @@ vg_ed25519_verify_equation:
 	adcs x7, x7, x8
 	adcs x21, x21, x9
 	adcs x22, x22, x16
-	adcs x23, x10, x10
+	adc x23, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -5747,7 +5747,7 @@ vg_ed25519_verify_equation:
 	adds x7, x7, x2
 	adcs x21, x21, x8
 	adcs x22, x22, x9
-	adcs x23, x23, x16
+	adc x23, x23, x16
 	ldr x3, [x0, #344]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -5757,7 +5757,7 @@ vg_ed25519_verify_equation:
 	adcs x21, x21, x8
 	adcs x22, x22, x9
 	adcs x23, x23, x16
-	adcs x24, x10, x10
+	adc x24, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -5765,7 +5765,7 @@ vg_ed25519_verify_equation:
 	adds x21, x21, x2
 	adcs x22, x22, x8
 	adcs x23, x23, x9
-	adcs x24, x24, x16
+	adc x24, x24, x16
 	movz w11, #38, lsl #0
 	mul x2, x11, x21
 	adds x4, x4, x2
@@ -5775,13 +5775,13 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x9
 	mul x16, x11, x24
 	adcs x7, x7, x16
-	adcs x20, x10, x10
+	adc x20, x10, x10
 	umulh x2, x11, x21
 	umulh x8, x11, x22
 	umulh x9, x11, x23
 	umulh x16, x11, x24
 	adds x7, x7, x9
-	adcs x20, x20, x16
+	adc x20, x20, x16
 	adds x16, x7, x7
 	adc x9, x20, x20
 	lsr x7, x16, #1
@@ -5790,7 +5790,7 @@ vg_ed25519_verify_equation:
 	adds x4, x4, x9
 	adcs x5, x5, x2
 	adcs x6, x6, x8
-	adcs x7, x7, x10
+	adc x7, x7, x10
 	str x4, [x0, #320]
 	str x5, [x0, #328]
 	str x6, [x0, #336]
@@ -5837,7 +5837,7 @@ vg_ed25519_verify_equation:
 	adds x5, x5, x2
 	adcs x6, x6, x8
 	adcs x7, x7, x9
-	adcs x21, x16, x10
+	adc x21, x16, x10
 	ldr x3, [x0, #360]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -5847,7 +5847,7 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x8
 	adcs x7, x7, x9
 	adcs x21, x21, x16
-	adcs x22, x10, x10
+	adc x22, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -5855,7 +5855,7 @@ vg_ed25519_verify_equation:
 	adds x6, x6, x2
 	adcs x7, x7, x8
 	adcs x21, x21, x9
-	adcs x22, x22, x16
+	adc x22, x22, x16
 	ldr x3, [x0, #368]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -5865,7 +5865,7 @@ vg_ed25519_verify_equation:
 	adcs x7, x7, x8
 	adcs x21, x21, x9
 	adcs x22, x22, x16
-	adcs x23, x10, x10
+	adc x23, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -5873,7 +5873,7 @@ vg_ed25519_verify_equation:
 	adds x7, x7, x2
 	adcs x21, x21, x8
 	adcs x22, x22, x9
-	adcs x23, x23, x16
+	adc x23, x23, x16
 	ldr x3, [x0, #376]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -5883,7 +5883,7 @@ vg_ed25519_verify_equation:
 	adcs x21, x21, x8
 	adcs x22, x22, x9
 	adcs x23, x23, x16
-	adcs x24, x10, x10
+	adc x24, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -5891,7 +5891,7 @@ vg_ed25519_verify_equation:
 	adds x21, x21, x2
 	adcs x22, x22, x8
 	adcs x23, x23, x9
-	adcs x24, x24, x16
+	adc x24, x24, x16
 	movz w11, #38, lsl #0
 	mul x2, x11, x21
 	adds x4, x4, x2
@@ -5901,13 +5901,13 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x9
 	mul x16, x11, x24
 	adcs x7, x7, x16
-	adcs x20, x10, x10
+	adc x20, x10, x10
 	umulh x2, x11, x21
 	umulh x8, x11, x22
 	umulh x9, x11, x23
 	umulh x16, x11, x24
 	adds x7, x7, x9
-	adcs x20, x20, x16
+	adc x20, x20, x16
 	adds x16, x7, x7
 	adc x9, x20, x20
 	lsr x7, x16, #1
@@ -5916,7 +5916,7 @@ vg_ed25519_verify_equation:
 	adds x4, x4, x9
 	adcs x5, x5, x2
 	adcs x6, x6, x8
-	adcs x7, x7, x10
+	adc x7, x7, x10
 	str x4, [x0, #352]
 	str x5, [x0, #360]
 	str x6, [x0, #368]
@@ -5938,7 +5938,7 @@ vg_ed25519_verify_equation:
 	adds x5, x5, x2
 	adcs x6, x6, x8
 	adcs x7, x7, x9
-	adcs x21, x16, x10
+	adc x21, x16, x10
 	ldr x3, [x0, #168]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -5948,7 +5948,7 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x8
 	adcs x7, x7, x9
 	adcs x21, x21, x16
-	adcs x22, x10, x10
+	adc x22, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -5956,7 +5956,7 @@ vg_ed25519_verify_equation:
 	adds x6, x6, x2
 	adcs x7, x7, x8
 	adcs x21, x21, x9
-	adcs x22, x22, x16
+	adc x22, x22, x16
 	ldr x3, [x0, #176]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -5966,7 +5966,7 @@ vg_ed25519_verify_equation:
 	adcs x7, x7, x8
 	adcs x21, x21, x9
 	adcs x22, x22, x16
-	adcs x23, x10, x10
+	adc x23, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -5974,7 +5974,7 @@ vg_ed25519_verify_equation:
 	adds x7, x7, x2
 	adcs x21, x21, x8
 	adcs x22, x22, x9
-	adcs x23, x23, x16
+	adc x23, x23, x16
 	ldr x3, [x0, #184]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -5984,7 +5984,7 @@ vg_ed25519_verify_equation:
 	adcs x21, x21, x8
 	adcs x22, x22, x9
 	adcs x23, x23, x16
-	adcs x24, x10, x10
+	adc x24, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -5992,7 +5992,7 @@ vg_ed25519_verify_equation:
 	adds x21, x21, x2
 	adcs x22, x22, x8
 	adcs x23, x23, x9
-	adcs x24, x24, x16
+	adc x24, x24, x16
 	movz w11, #38, lsl #0
 	mul x2, x11, x21
 	adds x4, x4, x2
@@ -6002,13 +6002,13 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x9
 	mul x16, x11, x24
 	adcs x7, x7, x16
-	adcs x20, x10, x10
+	adc x20, x10, x10
 	umulh x2, x11, x21
 	umulh x8, x11, x22
 	umulh x9, x11, x23
 	umulh x16, x11, x24
 	adds x7, x7, x9
-	adcs x20, x20, x16
+	adc x20, x20, x16
 	adds x16, x7, x7
 	adc x9, x20, x20
 	lsr x7, x16, #1
@@ -6017,7 +6017,7 @@ vg_ed25519_verify_equation:
 	adds x4, x4, x9
 	adcs x5, x5, x2
 	adcs x6, x6, x8
-	adcs x7, x7, x10
+	adc x7, x7, x10
 	str x4, [x0, #384]
 	str x5, [x0, #392]
 	str x6, [x0, #400]
@@ -6039,7 +6039,7 @@ vg_ed25519_verify_equation:
 	adds x5, x5, x2
 	adcs x6, x6, x8
 	adcs x7, x7, x9
-	adcs x21, x16, x10
+	adc x21, x16, x10
 	ldr x3, [x0, #136]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -6049,7 +6049,7 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x8
 	adcs x7, x7, x9
 	adcs x21, x21, x16
-	adcs x22, x10, x10
+	adc x22, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -6057,7 +6057,7 @@ vg_ed25519_verify_equation:
 	adds x6, x6, x2
 	adcs x7, x7, x8
 	adcs x21, x21, x9
-	adcs x22, x22, x16
+	adc x22, x22, x16
 	ldr x3, [x0, #144]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -6067,7 +6067,7 @@ vg_ed25519_verify_equation:
 	adcs x7, x7, x8
 	adcs x21, x21, x9
 	adcs x22, x22, x16
-	adcs x23, x10, x10
+	adc x23, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -6075,7 +6075,7 @@ vg_ed25519_verify_equation:
 	adds x7, x7, x2
 	adcs x21, x21, x8
 	adcs x22, x22, x9
-	adcs x23, x23, x16
+	adc x23, x23, x16
 	ldr x3, [x0, #152]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -6085,7 +6085,7 @@ vg_ed25519_verify_equation:
 	adcs x21, x21, x8
 	adcs x22, x22, x9
 	adcs x23, x23, x16
-	adcs x24, x10, x10
+	adc x24, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -6093,7 +6093,7 @@ vg_ed25519_verify_equation:
 	adds x21, x21, x2
 	adcs x22, x22, x8
 	adcs x23, x23, x9
-	adcs x24, x24, x16
+	adc x24, x24, x16
 	movz w11, #38, lsl #0
 	mul x2, x11, x21
 	adds x4, x4, x2
@@ -6103,13 +6103,13 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x9
 	mul x16, x11, x24
 	adcs x7, x7, x16
-	adcs x20, x10, x10
+	adc x20, x10, x10
 	umulh x2, x11, x21
 	umulh x8, x11, x22
 	umulh x9, x11, x23
 	umulh x16, x11, x24
 	adds x7, x7, x9
-	adcs x20, x20, x16
+	adc x20, x20, x16
 	adds x16, x7, x7
 	adc x9, x20, x20
 	lsr x7, x16, #1
@@ -6118,7 +6118,7 @@ vg_ed25519_verify_equation:
 	adds x4, x4, x9
 	adcs x5, x5, x2
 	adcs x6, x6, x8
-	adcs x7, x7, x10
+	adc x7, x7, x10
 	str x4, [x0, #416]
 	str x5, [x0, #424]
 	str x6, [x0, #432]
@@ -6234,7 +6234,7 @@ vg_ed25519_verify_equation:
 	adds x5, x5, x2
 	adcs x6, x6, x8
 	adcs x7, x7, x9
-	adcs x21, x16, x10
+	adc x21, x16, x10
 	ldr x3, [x0, #456]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -6244,7 +6244,7 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x8
 	adcs x7, x7, x9
 	adcs x21, x21, x16
-	adcs x22, x10, x10
+	adc x22, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -6252,7 +6252,7 @@ vg_ed25519_verify_equation:
 	adds x6, x6, x2
 	adcs x7, x7, x8
 	adcs x21, x21, x9
-	adcs x22, x22, x16
+	adc x22, x22, x16
 	ldr x3, [x0, #464]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -6262,7 +6262,7 @@ vg_ed25519_verify_equation:
 	adcs x7, x7, x8
 	adcs x21, x21, x9
 	adcs x22, x22, x16
-	adcs x23, x10, x10
+	adc x23, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -6270,7 +6270,7 @@ vg_ed25519_verify_equation:
 	adds x7, x7, x2
 	adcs x21, x21, x8
 	adcs x22, x22, x9
-	adcs x23, x23, x16
+	adc x23, x23, x16
 	ldr x3, [x0, #472]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -6280,7 +6280,7 @@ vg_ed25519_verify_equation:
 	adcs x21, x21, x8
 	adcs x22, x22, x9
 	adcs x23, x23, x16
-	adcs x24, x10, x10
+	adc x24, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -6288,7 +6288,7 @@ vg_ed25519_verify_equation:
 	adds x21, x21, x2
 	adcs x22, x22, x8
 	adcs x23, x23, x9
-	adcs x24, x24, x16
+	adc x24, x24, x16
 	movz w11, #38, lsl #0
 	mul x2, x11, x21
 	adds x4, x4, x2
@@ -6298,13 +6298,13 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x9
 	mul x16, x11, x24
 	adcs x7, x7, x16
-	adcs x20, x10, x10
+	adc x20, x10, x10
 	umulh x2, x11, x21
 	umulh x8, x11, x22
 	umulh x9, x11, x23
 	umulh x16, x11, x24
 	adds x7, x7, x9
-	adcs x20, x20, x16
+	adc x20, x20, x16
 	adds x16, x7, x7
 	adc x9, x20, x20
 	lsr x7, x16, #1
@@ -6313,7 +6313,7 @@ vg_ed25519_verify_equation:
 	adds x4, x4, x9
 	adcs x5, x5, x2
 	adcs x6, x6, x8
-	adcs x7, x7, x10
+	adc x7, x7, x10
 	str x4, [x0, #64]
 	str x5, [x0, #72]
 	str x6, [x0, #80]
@@ -6335,7 +6335,7 @@ vg_ed25519_verify_equation:
 	adds x5, x5, x2
 	adcs x6, x6, x8
 	adcs x7, x7, x9
-	adcs x21, x16, x10
+	adc x21, x16, x10
 	ldr x3, [x0, #520]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -6345,7 +6345,7 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x8
 	adcs x7, x7, x9
 	adcs x21, x21, x16
-	adcs x22, x10, x10
+	adc x22, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -6353,7 +6353,7 @@ vg_ed25519_verify_equation:
 	adds x6, x6, x2
 	adcs x7, x7, x8
 	adcs x21, x21, x9
-	adcs x22, x22, x16
+	adc x22, x22, x16
 	ldr x3, [x0, #528]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -6363,7 +6363,7 @@ vg_ed25519_verify_equation:
 	adcs x7, x7, x8
 	adcs x21, x21, x9
 	adcs x22, x22, x16
-	adcs x23, x10, x10
+	adc x23, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -6371,7 +6371,7 @@ vg_ed25519_verify_equation:
 	adds x7, x7, x2
 	adcs x21, x21, x8
 	adcs x22, x22, x9
-	adcs x23, x23, x16
+	adc x23, x23, x16
 	ldr x3, [x0, #536]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -6381,7 +6381,7 @@ vg_ed25519_verify_equation:
 	adcs x21, x21, x8
 	adcs x22, x22, x9
 	adcs x23, x23, x16
-	adcs x24, x10, x10
+	adc x24, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -6389,7 +6389,7 @@ vg_ed25519_verify_equation:
 	adds x21, x21, x2
 	adcs x22, x22, x8
 	adcs x23, x23, x9
-	adcs x24, x24, x16
+	adc x24, x24, x16
 	movz w11, #38, lsl #0
 	mul x2, x11, x21
 	adds x4, x4, x2
@@ -6399,13 +6399,13 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x9
 	mul x16, x11, x24
 	adcs x7, x7, x16
-	adcs x20, x10, x10
+	adc x20, x10, x10
 	umulh x2, x11, x21
 	umulh x8, x11, x22
 	umulh x9, x11, x23
 	umulh x16, x11, x24
 	adds x7, x7, x9
-	adcs x20, x20, x16
+	adc x20, x20, x16
 	adds x16, x7, x7
 	adc x9, x20, x20
 	lsr x7, x16, #1
@@ -6414,7 +6414,7 @@ vg_ed25519_verify_equation:
 	adds x4, x4, x9
 	adcs x5, x5, x2
 	adcs x6, x6, x8
-	adcs x7, x7, x10
+	adc x7, x7, x10
 	str x4, [x0, #96]
 	str x5, [x0, #104]
 	str x6, [x0, #112]
@@ -6436,7 +6436,7 @@ vg_ed25519_verify_equation:
 	adds x5, x5, x2
 	adcs x6, x6, x8
 	adcs x7, x7, x9
-	adcs x21, x16, x10
+	adc x21, x16, x10
 	ldr x3, [x0, #488]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -6446,7 +6446,7 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x8
 	adcs x7, x7, x9
 	adcs x21, x21, x16
-	adcs x22, x10, x10
+	adc x22, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -6454,7 +6454,7 @@ vg_ed25519_verify_equation:
 	adds x6, x6, x2
 	adcs x7, x7, x8
 	adcs x21, x21, x9
-	adcs x22, x22, x16
+	adc x22, x22, x16
 	ldr x3, [x0, #496]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -6464,7 +6464,7 @@ vg_ed25519_verify_equation:
 	adcs x7, x7, x8
 	adcs x21, x21, x9
 	adcs x22, x22, x16
-	adcs x23, x10, x10
+	adc x23, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -6472,7 +6472,7 @@ vg_ed25519_verify_equation:
 	adds x7, x7, x2
 	adcs x21, x21, x8
 	adcs x22, x22, x9
-	adcs x23, x23, x16
+	adc x23, x23, x16
 	ldr x3, [x0, #504]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -6482,7 +6482,7 @@ vg_ed25519_verify_equation:
 	adcs x21, x21, x8
 	adcs x22, x22, x9
 	adcs x23, x23, x16
-	adcs x24, x10, x10
+	adc x24, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -6490,7 +6490,7 @@ vg_ed25519_verify_equation:
 	adds x21, x21, x2
 	adcs x22, x22, x8
 	adcs x23, x23, x9
-	adcs x24, x24, x16
+	adc x24, x24, x16
 	movz w11, #38, lsl #0
 	mul x2, x11, x21
 	adds x4, x4, x2
@@ -6500,13 +6500,13 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x9
 	mul x16, x11, x24
 	adcs x7, x7, x16
-	adcs x20, x10, x10
+	adc x20, x10, x10
 	umulh x2, x11, x21
 	umulh x8, x11, x22
 	umulh x9, x11, x23
 	umulh x16, x11, x24
 	adds x7, x7, x9
-	adcs x20, x20, x16
+	adc x20, x20, x16
 	adds x16, x7, x7
 	adc x9, x20, x20
 	lsr x7, x16, #1
@@ -6515,7 +6515,7 @@ vg_ed25519_verify_equation:
 	adds x4, x4, x9
 	adcs x5, x5, x2
 	adcs x6, x6, x8
-	adcs x7, x7, x10
+	adc x7, x7, x10
 	str x4, [x0, #128]
 	str x5, [x0, #136]
 	str x6, [x0, #144]
@@ -6544,27 +6544,27 @@ vg_ed25519_verify_equation:
 	umulh x9, x12, x15
 	adds x6, x6, x2
 	adcs x7, x7, x8
-	adcs x21, x9, x10
+	adc x21, x9, x10
 	mul x2, x13, x14
 	mul x8, x13, x15
 	umulh x9, x13, x14
 	umulh x16, x13, x15
 	adds x7, x7, x2
 	adcs x21, x21, x8
-	adcs x22, x16, x10
+	adc x22, x16, x10
 	adds x21, x21, x9
-	adcs x22, x22, x10
+	adc x22, x22, x10
 	mul x2, x14, x15
 	umulh x8, x14, x15
 	adds x22, x22, x2
-	adcs x23, x8, x10
+	adc x23, x8, x10
 	adds x5, x5, x5
 	adcs x6, x6, x6
 	adcs x7, x7, x7
 	adcs x21, x21, x21
 	adcs x22, x22, x22
 	adcs x23, x23, x23
-	adcs x24, x10, x10
+	adc x24, x10, x10
 	mul x4, x12, x12
 	umulh x2, x12, x12
 	mul x8, x13, x13
@@ -6579,7 +6579,7 @@ vg_ed25519_verify_equation:
 	adcs x21, x21, x16
 	adcs x22, x22, x17
 	adcs x23, x23, x3
-	adcs x24, x24, x11
+	adc x24, x24, x11
 	movz w11, #38, lsl #0
 	mul x2, x11, x21
 	adds x4, x4, x2
@@ -6589,13 +6589,13 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x9
 	mul x16, x11, x24
 	adcs x7, x7, x16
-	adcs x20, x10, x10
+	adc x20, x10, x10
 	umulh x2, x11, x21
 	umulh x8, x11, x22
 	umulh x9, x11, x23
 	umulh x16, x11, x24
 	adds x7, x7, x9
-	adcs x20, x20, x16
+	adc x20, x20, x16
 	adds x16, x7, x7
 	adc x9, x20, x20
 	lsr x7, x16, #1
@@ -6604,7 +6604,7 @@ vg_ed25519_verify_equation:
 	adds x4, x4, x9
 	adcs x5, x5, x2
 	adcs x6, x6, x8
-	adcs x7, x7, x10
+	adc x7, x7, x10
 	str x4, [x0, #320]
 	str x5, [x0, #328]
 	str x6, [x0, #336]
@@ -6622,27 +6622,27 @@ vg_ed25519_verify_equation:
 	umulh x9, x12, x15
 	adds x6, x6, x2
 	adcs x7, x7, x8
-	adcs x21, x9, x10
+	adc x21, x9, x10
 	mul x2, x13, x14
 	mul x8, x13, x15
 	umulh x9, x13, x14
 	umulh x16, x13, x15
 	adds x7, x7, x2
 	adcs x21, x21, x8
-	adcs x22, x16, x10
+	adc x22, x16, x10
 	adds x21, x21, x9
-	adcs x22, x22, x10
+	adc x22, x22, x10
 	mul x2, x14, x15
 	umulh x8, x14, x15
 	adds x22, x22, x2
-	adcs x23, x8, x10
+	adc x23, x8, x10
 	adds x5, x5, x5
 	adcs x6, x6, x6
 	adcs x7, x7, x7
 	adcs x21, x21, x21
 	adcs x22, x22, x22
 	adcs x23, x23, x23
-	adcs x24, x10, x10
+	adc x24, x10, x10
 	mul x4, x12, x12
 	umulh x2, x12, x12
 	mul x8, x13, x13
@@ -6657,7 +6657,7 @@ vg_ed25519_verify_equation:
 	adcs x21, x21, x16
 	adcs x22, x22, x17
 	adcs x23, x23, x3
-	adcs x24, x24, x11
+	adc x24, x24, x11
 	movz w11, #38, lsl #0
 	mul x2, x11, x21
 	adds x4, x4, x2
@@ -6667,13 +6667,13 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x9
 	mul x16, x11, x24
 	adcs x7, x7, x16
-	adcs x20, x10, x10
+	adc x20, x10, x10
 	umulh x2, x11, x21
 	umulh x8, x11, x22
 	umulh x9, x11, x23
 	umulh x16, x11, x24
 	adds x7, x7, x9
-	adcs x20, x20, x16
+	adc x20, x20, x16
 	adds x16, x7, x7
 	adc x9, x20, x20
 	lsr x7, x16, #1
@@ -6682,7 +6682,7 @@ vg_ed25519_verify_equation:
 	adds x4, x4, x9
 	adcs x5, x5, x2
 	adcs x6, x6, x8
-	adcs x7, x7, x10
+	adc x7, x7, x10
 	str x4, [x0, #352]
 	str x5, [x0, #360]
 	str x6, [x0, #368]
@@ -6700,27 +6700,27 @@ vg_ed25519_verify_equation:
 	umulh x9, x12, x15
 	adds x6, x6, x2
 	adcs x7, x7, x8
-	adcs x21, x9, x10
+	adc x21, x9, x10
 	mul x2, x13, x14
 	mul x8, x13, x15
 	umulh x9, x13, x14
 	umulh x16, x13, x15
 	adds x7, x7, x2
 	adcs x21, x21, x8
-	adcs x22, x16, x10
+	adc x22, x16, x10
 	adds x21, x21, x9
-	adcs x22, x22, x10
+	adc x22, x22, x10
 	mul x2, x14, x15
 	umulh x8, x14, x15
 	adds x22, x22, x2
-	adcs x23, x8, x10
+	adc x23, x8, x10
 	adds x5, x5, x5
 	adcs x6, x6, x6
 	adcs x7, x7, x7
 	adcs x21, x21, x21
 	adcs x22, x22, x22
 	adcs x23, x23, x23
-	adcs x24, x10, x10
+	adc x24, x10, x10
 	mul x4, x12, x12
 	umulh x2, x12, x12
 	mul x8, x13, x13
@@ -6735,7 +6735,7 @@ vg_ed25519_verify_equation:
 	adcs x21, x21, x16
 	adcs x22, x22, x17
 	adcs x23, x23, x3
-	adcs x24, x24, x11
+	adc x24, x24, x11
 	movz w11, #38, lsl #0
 	mul x2, x11, x21
 	adds x4, x4, x2
@@ -6745,13 +6745,13 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x9
 	mul x16, x11, x24
 	adcs x7, x7, x16
-	adcs x20, x10, x10
+	adc x20, x10, x10
 	umulh x2, x11, x21
 	umulh x8, x11, x22
 	umulh x9, x11, x23
 	umulh x16, x11, x24
 	adds x7, x7, x9
-	adcs x20, x20, x16
+	adc x20, x20, x16
 	adds x16, x7, x7
 	adc x9, x20, x20
 	lsr x7, x16, #1
@@ -6760,7 +6760,7 @@ vg_ed25519_verify_equation:
 	adds x4, x4, x9
 	adcs x5, x5, x2
 	adcs x6, x6, x8
-	adcs x7, x7, x10
+	adc x7, x7, x10
 	str x4, [x0, #384]
 	str x5, [x0, #392]
 	str x6, [x0, #400]
@@ -6805,7 +6805,7 @@ vg_ed25519_verify_equation:
 	adds x5, x5, x2
 	adcs x6, x6, x8
 	adcs x7, x7, x9
-	adcs x21, x16, x10
+	adc x21, x16, x10
 	ldr x3, [x0, #72]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -6815,7 +6815,7 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x8
 	adcs x7, x7, x9
 	adcs x21, x21, x16
-	adcs x22, x10, x10
+	adc x22, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -6823,7 +6823,7 @@ vg_ed25519_verify_equation:
 	adds x6, x6, x2
 	adcs x7, x7, x8
 	adcs x21, x21, x9
-	adcs x22, x22, x16
+	adc x22, x22, x16
 	ldr x3, [x0, #80]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -6833,7 +6833,7 @@ vg_ed25519_verify_equation:
 	adcs x7, x7, x8
 	adcs x21, x21, x9
 	adcs x22, x22, x16
-	adcs x23, x10, x10
+	adc x23, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -6841,7 +6841,7 @@ vg_ed25519_verify_equation:
 	adds x7, x7, x2
 	adcs x21, x21, x8
 	adcs x22, x22, x9
-	adcs x23, x23, x16
+	adc x23, x23, x16
 	ldr x3, [x0, #88]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -6851,7 +6851,7 @@ vg_ed25519_verify_equation:
 	adcs x21, x21, x8
 	adcs x22, x22, x9
 	adcs x23, x23, x16
-	adcs x24, x10, x10
+	adc x24, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -6859,7 +6859,7 @@ vg_ed25519_verify_equation:
 	adds x21, x21, x2
 	adcs x22, x22, x8
 	adcs x23, x23, x9
-	adcs x24, x24, x16
+	adc x24, x24, x16
 	movz w11, #38, lsl #0
 	mul x2, x11, x21
 	adds x4, x4, x2
@@ -6869,13 +6869,13 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x9
 	mul x16, x11, x24
 	adcs x7, x7, x16
-	adcs x20, x10, x10
+	adc x20, x10, x10
 	umulh x2, x11, x21
 	umulh x8, x11, x22
 	umulh x9, x11, x23
 	umulh x16, x11, x24
 	adds x7, x7, x9
-	adcs x20, x20, x16
+	adc x20, x20, x16
 	adds x16, x7, x7
 	adc x9, x20, x20
 	lsr x7, x16, #1
@@ -6884,7 +6884,7 @@ vg_ed25519_verify_equation:
 	adds x4, x4, x9
 	adcs x5, x5, x2
 	adcs x6, x6, x8
-	adcs x7, x7, x10
+	adc x7, x7, x10
 	str x4, [x0, #416]
 	str x5, [x0, #424]
 	str x6, [x0, #432]
@@ -7003,7 +7003,7 @@ vg_ed25519_verify_equation:
 	adds x5, x5, x2
 	adcs x6, x6, x8
 	adcs x7, x7, x9
-	adcs x21, x16, x10
+	adc x21, x16, x10
 	ldr x3, [x0, #424]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -7013,7 +7013,7 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x8
 	adcs x7, x7, x9
 	adcs x21, x21, x16
-	adcs x22, x10, x10
+	adc x22, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -7021,7 +7021,7 @@ vg_ed25519_verify_equation:
 	adds x6, x6, x2
 	adcs x7, x7, x8
 	adcs x21, x21, x9
-	adcs x22, x22, x16
+	adc x22, x22, x16
 	ldr x3, [x0, #432]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -7031,7 +7031,7 @@ vg_ed25519_verify_equation:
 	adcs x7, x7, x8
 	adcs x21, x21, x9
 	adcs x22, x22, x16
-	adcs x23, x10, x10
+	adc x23, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -7039,7 +7039,7 @@ vg_ed25519_verify_equation:
 	adds x7, x7, x2
 	adcs x21, x21, x8
 	adcs x22, x22, x9
-	adcs x23, x23, x16
+	adc x23, x23, x16
 	ldr x3, [x0, #440]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -7049,7 +7049,7 @@ vg_ed25519_verify_equation:
 	adcs x21, x21, x8
 	adcs x22, x22, x9
 	adcs x23, x23, x16
-	adcs x24, x10, x10
+	adc x24, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -7057,7 +7057,7 @@ vg_ed25519_verify_equation:
 	adds x21, x21, x2
 	adcs x22, x22, x8
 	adcs x23, x23, x9
-	adcs x24, x24, x16
+	adc x24, x24, x16
 	movz w11, #38, lsl #0
 	mul x2, x11, x21
 	adds x4, x4, x2
@@ -7067,13 +7067,13 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x9
 	mul x16, x11, x24
 	adcs x7, x7, x16
-	adcs x20, x10, x10
+	adc x20, x10, x10
 	umulh x2, x11, x21
 	umulh x8, x11, x22
 	umulh x9, x11, x23
 	umulh x16, x11, x24
 	adds x7, x7, x9
-	adcs x20, x20, x16
+	adc x20, x20, x16
 	adds x16, x7, x7
 	adc x9, x20, x20
 	lsr x7, x16, #1
@@ -7082,7 +7082,7 @@ vg_ed25519_verify_equation:
 	adds x4, x4, x9
 	adcs x5, x5, x2
 	adcs x6, x6, x8
-	adcs x7, x7, x10
+	adc x7, x7, x10
 	str x4, [x0, #64]
 	str x5, [x0, #72]
 	str x6, [x0, #80]
@@ -7104,7 +7104,7 @@ vg_ed25519_verify_equation:
 	adds x5, x5, x2
 	adcs x6, x6, x8
 	adcs x7, x7, x9
-	adcs x21, x16, x10
+	adc x21, x16, x10
 	ldr x3, [x0, #456]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -7114,7 +7114,7 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x8
 	adcs x7, x7, x9
 	adcs x21, x21, x16
-	adcs x22, x10, x10
+	adc x22, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -7122,7 +7122,7 @@ vg_ed25519_verify_equation:
 	adds x6, x6, x2
 	adcs x7, x7, x8
 	adcs x21, x21, x9
-	adcs x22, x22, x16
+	adc x22, x22, x16
 	ldr x3, [x0, #464]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -7132,7 +7132,7 @@ vg_ed25519_verify_equation:
 	adcs x7, x7, x8
 	adcs x21, x21, x9
 	adcs x22, x22, x16
-	adcs x23, x10, x10
+	adc x23, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -7140,7 +7140,7 @@ vg_ed25519_verify_equation:
 	adds x7, x7, x2
 	adcs x21, x21, x8
 	adcs x22, x22, x9
-	adcs x23, x23, x16
+	adc x23, x23, x16
 	ldr x3, [x0, #472]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -7150,7 +7150,7 @@ vg_ed25519_verify_equation:
 	adcs x21, x21, x8
 	adcs x22, x22, x9
 	adcs x23, x23, x16
-	adcs x24, x10, x10
+	adc x24, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -7158,7 +7158,7 @@ vg_ed25519_verify_equation:
 	adds x21, x21, x2
 	adcs x22, x22, x8
 	adcs x23, x23, x9
-	adcs x24, x24, x16
+	adc x24, x24, x16
 	movz w11, #38, lsl #0
 	mul x2, x11, x21
 	adds x4, x4, x2
@@ -7168,13 +7168,13 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x9
 	mul x16, x11, x24
 	adcs x7, x7, x16
-	adcs x20, x10, x10
+	adc x20, x10, x10
 	umulh x2, x11, x21
 	umulh x8, x11, x22
 	umulh x9, x11, x23
 	umulh x16, x11, x24
 	adds x7, x7, x9
-	adcs x20, x20, x16
+	adc x20, x20, x16
 	adds x16, x7, x7
 	adc x9, x20, x20
 	lsr x7, x16, #1
@@ -7183,7 +7183,7 @@ vg_ed25519_verify_equation:
 	adds x4, x4, x9
 	adcs x5, x5, x2
 	adcs x6, x6, x8
-	adcs x7, x7, x10
+	adc x7, x7, x10
 	str x4, [x0, #96]
 	str x5, [x0, #104]
 	str x6, [x0, #112]
@@ -7205,7 +7205,7 @@ vg_ed25519_verify_equation:
 	adds x5, x5, x2
 	adcs x6, x6, x8
 	adcs x7, x7, x9
-	adcs x21, x16, x10
+	adc x21, x16, x10
 	ldr x3, [x0, #488]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -7215,7 +7215,7 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x8
 	adcs x7, x7, x9
 	adcs x21, x21, x16
-	adcs x22, x10, x10
+	adc x22, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -7223,7 +7223,7 @@ vg_ed25519_verify_equation:
 	adds x6, x6, x2
 	adcs x7, x7, x8
 	adcs x21, x21, x9
-	adcs x22, x22, x16
+	adc x22, x22, x16
 	ldr x3, [x0, #496]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -7233,7 +7233,7 @@ vg_ed25519_verify_equation:
 	adcs x7, x7, x8
 	adcs x21, x21, x9
 	adcs x22, x22, x16
-	adcs x23, x10, x10
+	adc x23, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -7241,7 +7241,7 @@ vg_ed25519_verify_equation:
 	adds x7, x7, x2
 	adcs x21, x21, x8
 	adcs x22, x22, x9
-	adcs x23, x23, x16
+	adc x23, x23, x16
 	ldr x3, [x0, #504]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -7251,7 +7251,7 @@ vg_ed25519_verify_equation:
 	adcs x21, x21, x8
 	adcs x22, x22, x9
 	adcs x23, x23, x16
-	adcs x24, x10, x10
+	adc x24, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -7259,7 +7259,7 @@ vg_ed25519_verify_equation:
 	adds x21, x21, x2
 	adcs x22, x22, x8
 	adcs x23, x23, x9
-	adcs x24, x24, x16
+	adc x24, x24, x16
 	movz w11, #38, lsl #0
 	mul x2, x11, x21
 	adds x4, x4, x2
@@ -7269,13 +7269,13 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x9
 	mul x16, x11, x24
 	adcs x7, x7, x16
-	adcs x20, x10, x10
+	adc x20, x10, x10
 	umulh x2, x11, x21
 	umulh x8, x11, x22
 	umulh x9, x11, x23
 	umulh x16, x11, x24
 	adds x7, x7, x9
-	adcs x20, x20, x16
+	adc x20, x20, x16
 	adds x16, x7, x7
 	adc x9, x20, x20
 	lsr x7, x16, #1
@@ -7284,7 +7284,7 @@ vg_ed25519_verify_equation:
 	adds x4, x4, x9
 	adcs x5, x5, x2
 	adcs x6, x6, x8
-	adcs x7, x7, x10
+	adc x7, x7, x10
 	str x4, [x0, #128]
 	str x5, [x0, #136]
 	str x6, [x0, #144]
@@ -7308,7 +7308,7 @@ vg_ed25519_verify_equation:
 	adds x5, x5, x2
 	adcs x6, x6, x8
 	adcs x7, x7, x9
-	adcs x21, x16, x10
+	adc x21, x16, x10
 	ldr x3, [x0, #424]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -7318,7 +7318,7 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x8
 	adcs x7, x7, x9
 	adcs x21, x21, x16
-	adcs x22, x10, x10
+	adc x22, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -7326,7 +7326,7 @@ vg_ed25519_verify_equation:
 	adds x6, x6, x2
 	adcs x7, x7, x8
 	adcs x21, x21, x9
-	adcs x22, x22, x16
+	adc x22, x22, x16
 	ldr x3, [x0, #432]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -7336,7 +7336,7 @@ vg_ed25519_verify_equation:
 	adcs x7, x7, x8
 	adcs x21, x21, x9
 	adcs x22, x22, x16
-	adcs x23, x10, x10
+	adc x23, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -7344,7 +7344,7 @@ vg_ed25519_verify_equation:
 	adds x7, x7, x2
 	adcs x21, x21, x8
 	adcs x22, x22, x9
-	adcs x23, x23, x16
+	adc x23, x23, x16
 	ldr x3, [x0, #440]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -7354,7 +7354,7 @@ vg_ed25519_verify_equation:
 	adcs x21, x21, x8
 	adcs x22, x22, x9
 	adcs x23, x23, x16
-	adcs x24, x10, x10
+	adc x24, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -7362,7 +7362,7 @@ vg_ed25519_verify_equation:
 	adds x21, x21, x2
 	adcs x22, x22, x8
 	adcs x23, x23, x9
-	adcs x24, x24, x16
+	adc x24, x24, x16
 	movz w11, #38, lsl #0
 	mul x2, x11, x21
 	adds x4, x4, x2
@@ -7372,13 +7372,13 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x9
 	mul x16, x11, x24
 	adcs x7, x7, x16
-	adcs x20, x10, x10
+	adc x20, x10, x10
 	umulh x2, x11, x21
 	umulh x8, x11, x22
 	umulh x9, x11, x23
 	umulh x16, x11, x24
 	adds x7, x7, x9
-	adcs x20, x20, x16
+	adc x20, x20, x16
 	adds x16, x7, x7
 	adc x9, x20, x20
 	lsr x7, x16, #1
@@ -7387,7 +7387,7 @@ vg_ed25519_verify_equation:
 	adds x4, x4, x9
 	adcs x5, x5, x2
 	adcs x6, x6, x8
-	adcs x7, x7, x10
+	adc x7, x7, x10
 	str x4, [x0, #160]
 	str x5, [x0, #168]
 	str x6, [x0, #176]
@@ -7482,7 +7482,7 @@ vg_ed25519_verify_equation:
 	adds x5, x5, x2
 	adcs x6, x6, x8
 	adcs x7, x7, x9
-	adcs x21, x16, x10
+	adc x21, x16, x10
 	ldr x3, [x0, #328]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -7492,7 +7492,7 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x8
 	adcs x7, x7, x9
 	adcs x21, x21, x16
-	adcs x22, x10, x10
+	adc x22, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -7500,7 +7500,7 @@ vg_ed25519_verify_equation:
 	adds x6, x6, x2
 	adcs x7, x7, x8
 	adcs x21, x21, x9
-	adcs x22, x22, x16
+	adc x22, x22, x16
 	ldr x3, [x0, #336]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -7510,7 +7510,7 @@ vg_ed25519_verify_equation:
 	adcs x7, x7, x8
 	adcs x21, x21, x9
 	adcs x22, x22, x16
-	adcs x23, x10, x10
+	adc x23, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -7518,7 +7518,7 @@ vg_ed25519_verify_equation:
 	adds x7, x7, x2
 	adcs x21, x21, x8
 	adcs x22, x22, x9
-	adcs x23, x23, x16
+	adc x23, x23, x16
 	ldr x3, [x0, #344]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -7528,7 +7528,7 @@ vg_ed25519_verify_equation:
 	adcs x21, x21, x8
 	adcs x22, x22, x9
 	adcs x23, x23, x16
-	adcs x24, x10, x10
+	adc x24, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -7536,7 +7536,7 @@ vg_ed25519_verify_equation:
 	adds x21, x21, x2
 	adcs x22, x22, x8
 	adcs x23, x23, x9
-	adcs x24, x24, x16
+	adc x24, x24, x16
 	movz w11, #38, lsl #0
 	mul x2, x11, x21
 	adds x4, x4, x2
@@ -7546,13 +7546,13 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x9
 	mul x16, x11, x24
 	adcs x7, x7, x16
-	adcs x20, x10, x10
+	adc x20, x10, x10
 	umulh x2, x11, x21
 	umulh x8, x11, x22
 	umulh x9, x11, x23
 	umulh x16, x11, x24
 	adds x7, x7, x9
-	adcs x20, x20, x16
+	adc x20, x20, x16
 	adds x16, x7, x7
 	adc x9, x20, x20
 	lsr x7, x16, #1
@@ -7561,7 +7561,7 @@ vg_ed25519_verify_equation:
 	adds x4, x4, x9
 	adcs x5, x5, x2
 	adcs x6, x6, x8
-	adcs x7, x7, x10
+	adc x7, x7, x10
 	str x4, [x0, #320]
 	str x5, [x0, #328]
 	str x6, [x0, #336]
@@ -7608,7 +7608,7 @@ vg_ed25519_verify_equation:
 	adds x5, x5, x2
 	adcs x6, x6, x8
 	adcs x7, x7, x9
-	adcs x21, x16, x10
+	adc x21, x16, x10
 	ldr x3, [x0, #360]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -7618,7 +7618,7 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x8
 	adcs x7, x7, x9
 	adcs x21, x21, x16
-	adcs x22, x10, x10
+	adc x22, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -7626,7 +7626,7 @@ vg_ed25519_verify_equation:
 	adds x6, x6, x2
 	adcs x7, x7, x8
 	adcs x21, x21, x9
-	adcs x22, x22, x16
+	adc x22, x22, x16
 	ldr x3, [x0, #368]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -7636,7 +7636,7 @@ vg_ed25519_verify_equation:
 	adcs x7, x7, x8
 	adcs x21, x21, x9
 	adcs x22, x22, x16
-	adcs x23, x10, x10
+	adc x23, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -7644,7 +7644,7 @@ vg_ed25519_verify_equation:
 	adds x7, x7, x2
 	adcs x21, x21, x8
 	adcs x22, x22, x9
-	adcs x23, x23, x16
+	adc x23, x23, x16
 	ldr x3, [x0, #376]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -7654,7 +7654,7 @@ vg_ed25519_verify_equation:
 	adcs x21, x21, x8
 	adcs x22, x22, x9
 	adcs x23, x23, x16
-	adcs x24, x10, x10
+	adc x24, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -7662,7 +7662,7 @@ vg_ed25519_verify_equation:
 	adds x21, x21, x2
 	adcs x22, x22, x8
 	adcs x23, x23, x9
-	adcs x24, x24, x16
+	adc x24, x24, x16
 	movz w11, #38, lsl #0
 	mul x2, x11, x21
 	adds x4, x4, x2
@@ -7672,13 +7672,13 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x9
 	mul x16, x11, x24
 	adcs x7, x7, x16
-	adcs x20, x10, x10
+	adc x20, x10, x10
 	umulh x2, x11, x21
 	umulh x8, x11, x22
 	umulh x9, x11, x23
 	umulh x16, x11, x24
 	adds x7, x7, x9
-	adcs x20, x20, x16
+	adc x20, x20, x16
 	adds x16, x7, x7
 	adc x9, x20, x20
 	lsr x7, x16, #1
@@ -7687,7 +7687,7 @@ vg_ed25519_verify_equation:
 	adds x4, x4, x9
 	adcs x5, x5, x2
 	adcs x6, x6, x8
-	adcs x7, x7, x10
+	adc x7, x7, x10
 	str x4, [x0, #352]
 	str x5, [x0, #360]
 	str x6, [x0, #368]
@@ -7709,7 +7709,7 @@ vg_ed25519_verify_equation:
 	adds x5, x5, x2
 	adcs x6, x6, x8
 	adcs x7, x7, x9
-	adcs x21, x16, x10
+	adc x21, x16, x10
 	ldr x3, [x0, #168]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -7719,7 +7719,7 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x8
 	adcs x7, x7, x9
 	adcs x21, x21, x16
-	adcs x22, x10, x10
+	adc x22, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -7727,7 +7727,7 @@ vg_ed25519_verify_equation:
 	adds x6, x6, x2
 	adcs x7, x7, x8
 	adcs x21, x21, x9
-	adcs x22, x22, x16
+	adc x22, x22, x16
 	ldr x3, [x0, #176]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -7737,7 +7737,7 @@ vg_ed25519_verify_equation:
 	adcs x7, x7, x8
 	adcs x21, x21, x9
 	adcs x22, x22, x16
-	adcs x23, x10, x10
+	adc x23, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -7745,7 +7745,7 @@ vg_ed25519_verify_equation:
 	adds x7, x7, x2
 	adcs x21, x21, x8
 	adcs x22, x22, x9
-	adcs x23, x23, x16
+	adc x23, x23, x16
 	ldr x3, [x0, #184]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -7755,7 +7755,7 @@ vg_ed25519_verify_equation:
 	adcs x21, x21, x8
 	adcs x22, x22, x9
 	adcs x23, x23, x16
-	adcs x24, x10, x10
+	adc x24, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -7763,7 +7763,7 @@ vg_ed25519_verify_equation:
 	adds x21, x21, x2
 	adcs x22, x22, x8
 	adcs x23, x23, x9
-	adcs x24, x24, x16
+	adc x24, x24, x16
 	movz w11, #38, lsl #0
 	mul x2, x11, x21
 	adds x4, x4, x2
@@ -7773,13 +7773,13 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x9
 	mul x16, x11, x24
 	adcs x7, x7, x16
-	adcs x20, x10, x10
+	adc x20, x10, x10
 	umulh x2, x11, x21
 	umulh x8, x11, x22
 	umulh x9, x11, x23
 	umulh x16, x11, x24
 	adds x7, x7, x9
-	adcs x20, x20, x16
+	adc x20, x20, x16
 	adds x16, x7, x7
 	adc x9, x20, x20
 	lsr x7, x16, #1
@@ -7788,7 +7788,7 @@ vg_ed25519_verify_equation:
 	adds x4, x4, x9
 	adcs x5, x5, x2
 	adcs x6, x6, x8
-	adcs x7, x7, x10
+	adc x7, x7, x10
 	str x4, [x0, #384]
 	str x5, [x0, #392]
 	str x6, [x0, #400]
@@ -7810,7 +7810,7 @@ vg_ed25519_verify_equation:
 	adds x5, x5, x2
 	adcs x6, x6, x8
 	adcs x7, x7, x9
-	adcs x21, x16, x10
+	adc x21, x16, x10
 	ldr x3, [x0, #136]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -7820,7 +7820,7 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x8
 	adcs x7, x7, x9
 	adcs x21, x21, x16
-	adcs x22, x10, x10
+	adc x22, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -7828,7 +7828,7 @@ vg_ed25519_verify_equation:
 	adds x6, x6, x2
 	adcs x7, x7, x8
 	adcs x21, x21, x9
-	adcs x22, x22, x16
+	adc x22, x22, x16
 	ldr x3, [x0, #144]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -7838,7 +7838,7 @@ vg_ed25519_verify_equation:
 	adcs x7, x7, x8
 	adcs x21, x21, x9
 	adcs x22, x22, x16
-	adcs x23, x10, x10
+	adc x23, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -7846,7 +7846,7 @@ vg_ed25519_verify_equation:
 	adds x7, x7, x2
 	adcs x21, x21, x8
 	adcs x22, x22, x9
-	adcs x23, x23, x16
+	adc x23, x23, x16
 	ldr x3, [x0, #152]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -7856,7 +7856,7 @@ vg_ed25519_verify_equation:
 	adcs x21, x21, x8
 	adcs x22, x22, x9
 	adcs x23, x23, x16
-	adcs x24, x10, x10
+	adc x24, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -7864,7 +7864,7 @@ vg_ed25519_verify_equation:
 	adds x21, x21, x2
 	adcs x22, x22, x8
 	adcs x23, x23, x9
-	adcs x24, x24, x16
+	adc x24, x24, x16
 	movz w11, #38, lsl #0
 	mul x2, x11, x21
 	adds x4, x4, x2
@@ -7874,13 +7874,13 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x9
 	mul x16, x11, x24
 	adcs x7, x7, x16
-	adcs x20, x10, x10
+	adc x20, x10, x10
 	umulh x2, x11, x21
 	umulh x8, x11, x22
 	umulh x9, x11, x23
 	umulh x16, x11, x24
 	adds x7, x7, x9
-	adcs x20, x20, x16
+	adc x20, x20, x16
 	adds x16, x7, x7
 	adc x9, x20, x20
 	lsr x7, x16, #1
@@ -7889,7 +7889,7 @@ vg_ed25519_verify_equation:
 	adds x4, x4, x9
 	adcs x5, x5, x2
 	adcs x6, x6, x8
-	adcs x7, x7, x10
+	adc x7, x7, x10
 	str x4, [x0, #416]
 	str x5, [x0, #424]
 	str x6, [x0, #432]
@@ -8005,7 +8005,7 @@ vg_ed25519_verify_equation:
 	adds x5, x5, x2
 	adcs x6, x6, x8
 	adcs x7, x7, x9
-	adcs x21, x16, x10
+	adc x21, x16, x10
 	ldr x3, [x0, #456]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -8015,7 +8015,7 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x8
 	adcs x7, x7, x9
 	adcs x21, x21, x16
-	adcs x22, x10, x10
+	adc x22, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -8023,7 +8023,7 @@ vg_ed25519_verify_equation:
 	adds x6, x6, x2
 	adcs x7, x7, x8
 	adcs x21, x21, x9
-	adcs x22, x22, x16
+	adc x22, x22, x16
 	ldr x3, [x0, #464]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -8033,7 +8033,7 @@ vg_ed25519_verify_equation:
 	adcs x7, x7, x8
 	adcs x21, x21, x9
 	adcs x22, x22, x16
-	adcs x23, x10, x10
+	adc x23, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -8041,7 +8041,7 @@ vg_ed25519_verify_equation:
 	adds x7, x7, x2
 	adcs x21, x21, x8
 	adcs x22, x22, x9
-	adcs x23, x23, x16
+	adc x23, x23, x16
 	ldr x3, [x0, #472]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -8051,7 +8051,7 @@ vg_ed25519_verify_equation:
 	adcs x21, x21, x8
 	adcs x22, x22, x9
 	adcs x23, x23, x16
-	adcs x24, x10, x10
+	adc x24, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -8059,7 +8059,7 @@ vg_ed25519_verify_equation:
 	adds x21, x21, x2
 	adcs x22, x22, x8
 	adcs x23, x23, x9
-	adcs x24, x24, x16
+	adc x24, x24, x16
 	movz w11, #38, lsl #0
 	mul x2, x11, x21
 	adds x4, x4, x2
@@ -8069,13 +8069,13 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x9
 	mul x16, x11, x24
 	adcs x7, x7, x16
-	adcs x20, x10, x10
+	adc x20, x10, x10
 	umulh x2, x11, x21
 	umulh x8, x11, x22
 	umulh x9, x11, x23
 	umulh x16, x11, x24
 	adds x7, x7, x9
-	adcs x20, x20, x16
+	adc x20, x20, x16
 	adds x16, x7, x7
 	adc x9, x20, x20
 	lsr x7, x16, #1
@@ -8084,7 +8084,7 @@ vg_ed25519_verify_equation:
 	adds x4, x4, x9
 	adcs x5, x5, x2
 	adcs x6, x6, x8
-	adcs x7, x7, x10
+	adc x7, x7, x10
 	str x4, [x0, #64]
 	str x5, [x0, #72]
 	str x6, [x0, #80]
@@ -8106,7 +8106,7 @@ vg_ed25519_verify_equation:
 	adds x5, x5, x2
 	adcs x6, x6, x8
 	adcs x7, x7, x9
-	adcs x21, x16, x10
+	adc x21, x16, x10
 	ldr x3, [x0, #520]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -8116,7 +8116,7 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x8
 	adcs x7, x7, x9
 	adcs x21, x21, x16
-	adcs x22, x10, x10
+	adc x22, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -8124,7 +8124,7 @@ vg_ed25519_verify_equation:
 	adds x6, x6, x2
 	adcs x7, x7, x8
 	adcs x21, x21, x9
-	adcs x22, x22, x16
+	adc x22, x22, x16
 	ldr x3, [x0, #528]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -8134,7 +8134,7 @@ vg_ed25519_verify_equation:
 	adcs x7, x7, x8
 	adcs x21, x21, x9
 	adcs x22, x22, x16
-	adcs x23, x10, x10
+	adc x23, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -8142,7 +8142,7 @@ vg_ed25519_verify_equation:
 	adds x7, x7, x2
 	adcs x21, x21, x8
 	adcs x22, x22, x9
-	adcs x23, x23, x16
+	adc x23, x23, x16
 	ldr x3, [x0, #536]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -8152,7 +8152,7 @@ vg_ed25519_verify_equation:
 	adcs x21, x21, x8
 	adcs x22, x22, x9
 	adcs x23, x23, x16
-	adcs x24, x10, x10
+	adc x24, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -8160,7 +8160,7 @@ vg_ed25519_verify_equation:
 	adds x21, x21, x2
 	adcs x22, x22, x8
 	adcs x23, x23, x9
-	adcs x24, x24, x16
+	adc x24, x24, x16
 	movz w11, #38, lsl #0
 	mul x2, x11, x21
 	adds x4, x4, x2
@@ -8170,13 +8170,13 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x9
 	mul x16, x11, x24
 	adcs x7, x7, x16
-	adcs x20, x10, x10
+	adc x20, x10, x10
 	umulh x2, x11, x21
 	umulh x8, x11, x22
 	umulh x9, x11, x23
 	umulh x16, x11, x24
 	adds x7, x7, x9
-	adcs x20, x20, x16
+	adc x20, x20, x16
 	adds x16, x7, x7
 	adc x9, x20, x20
 	lsr x7, x16, #1
@@ -8185,7 +8185,7 @@ vg_ed25519_verify_equation:
 	adds x4, x4, x9
 	adcs x5, x5, x2
 	adcs x6, x6, x8
-	adcs x7, x7, x10
+	adc x7, x7, x10
 	str x4, [x0, #96]
 	str x5, [x0, #104]
 	str x6, [x0, #112]
@@ -8207,7 +8207,7 @@ vg_ed25519_verify_equation:
 	adds x5, x5, x2
 	adcs x6, x6, x8
 	adcs x7, x7, x9
-	adcs x21, x16, x10
+	adc x21, x16, x10
 	ldr x3, [x0, #488]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -8217,7 +8217,7 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x8
 	adcs x7, x7, x9
 	adcs x21, x21, x16
-	adcs x22, x10, x10
+	adc x22, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -8225,7 +8225,7 @@ vg_ed25519_verify_equation:
 	adds x6, x6, x2
 	adcs x7, x7, x8
 	adcs x21, x21, x9
-	adcs x22, x22, x16
+	adc x22, x22, x16
 	ldr x3, [x0, #496]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -8235,7 +8235,7 @@ vg_ed25519_verify_equation:
 	adcs x7, x7, x8
 	adcs x21, x21, x9
 	adcs x22, x22, x16
-	adcs x23, x10, x10
+	adc x23, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -8243,7 +8243,7 @@ vg_ed25519_verify_equation:
 	adds x7, x7, x2
 	adcs x21, x21, x8
 	adcs x22, x22, x9
-	adcs x23, x23, x16
+	adc x23, x23, x16
 	ldr x3, [x0, #504]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -8253,7 +8253,7 @@ vg_ed25519_verify_equation:
 	adcs x21, x21, x8
 	adcs x22, x22, x9
 	adcs x23, x23, x16
-	adcs x24, x10, x10
+	adc x24, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -8261,7 +8261,7 @@ vg_ed25519_verify_equation:
 	adds x21, x21, x2
 	adcs x22, x22, x8
 	adcs x23, x23, x9
-	adcs x24, x24, x16
+	adc x24, x24, x16
 	movz w11, #38, lsl #0
 	mul x2, x11, x21
 	adds x4, x4, x2
@@ -8271,13 +8271,13 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x9
 	mul x16, x11, x24
 	adcs x7, x7, x16
-	adcs x20, x10, x10
+	adc x20, x10, x10
 	umulh x2, x11, x21
 	umulh x8, x11, x22
 	umulh x9, x11, x23
 	umulh x16, x11, x24
 	adds x7, x7, x9
-	adcs x20, x20, x16
+	adc x20, x20, x16
 	adds x16, x7, x7
 	adc x9, x20, x20
 	lsr x7, x16, #1
@@ -8286,7 +8286,7 @@ vg_ed25519_verify_equation:
 	adds x4, x4, x9
 	adcs x5, x5, x2
 	adcs x6, x6, x8
-	adcs x7, x7, x10
+	adc x7, x7, x10
 	str x4, [x0, #128]
 	str x5, [x0, #136]
 	str x6, [x0, #144]
@@ -8308,7 +8308,7 @@ vg_ed25519_verify_equation:
 	adds x5, x5, x2
 	adcs x6, x6, x8
 	adcs x7, x7, x9
-	adcs x21, x16, x10
+	adc x21, x16, x10
 	ldr x3, [x0, #456]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -8318,7 +8318,7 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x8
 	adcs x7, x7, x9
 	adcs x21, x21, x16
-	adcs x22, x10, x10
+	adc x22, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -8326,7 +8326,7 @@ vg_ed25519_verify_equation:
 	adds x6, x6, x2
 	adcs x7, x7, x8
 	adcs x21, x21, x9
-	adcs x22, x22, x16
+	adc x22, x22, x16
 	ldr x3, [x0, #464]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -8336,7 +8336,7 @@ vg_ed25519_verify_equation:
 	adcs x7, x7, x8
 	adcs x21, x21, x9
 	adcs x22, x22, x16
-	adcs x23, x10, x10
+	adc x23, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -8344,7 +8344,7 @@ vg_ed25519_verify_equation:
 	adds x7, x7, x2
 	adcs x21, x21, x8
 	adcs x22, x22, x9
-	adcs x23, x23, x16
+	adc x23, x23, x16
 	ldr x3, [x0, #472]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -8354,7 +8354,7 @@ vg_ed25519_verify_equation:
 	adcs x21, x21, x8
 	adcs x22, x22, x9
 	adcs x23, x23, x16
-	adcs x24, x10, x10
+	adc x24, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -8362,7 +8362,7 @@ vg_ed25519_verify_equation:
 	adds x21, x21, x2
 	adcs x22, x22, x8
 	adcs x23, x23, x9
-	adcs x24, x24, x16
+	adc x24, x24, x16
 	movz w11, #38, lsl #0
 	mul x2, x11, x21
 	adds x4, x4, x2
@@ -8372,13 +8372,13 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x9
 	mul x16, x11, x24
 	adcs x7, x7, x16
-	adcs x20, x10, x10
+	adc x20, x10, x10
 	umulh x2, x11, x21
 	umulh x8, x11, x22
 	umulh x9, x11, x23
 	umulh x16, x11, x24
 	adds x7, x7, x9
-	adcs x20, x20, x16
+	adc x20, x20, x16
 	adds x16, x7, x7
 	adc x9, x20, x20
 	lsr x7, x16, #1
@@ -8387,7 +8387,7 @@ vg_ed25519_verify_equation:
 	adds x4, x4, x9
 	adcs x5, x5, x2
 	adcs x6, x6, x8
-	adcs x7, x7, x10
+	adc x7, x7, x10
 	str x4, [x0, #160]
 	str x5, [x0, #168]
 	str x6, [x0, #176]
@@ -8483,7 +8483,7 @@ vg_ed25519_verify_equation:
 	adds x5, x5, x2
 	adcs x6, x6, x8
 	adcs x7, x7, x9
-	adcs x21, x16, x10
+	adc x21, x16, x10
 	ldr x3, [x0, #328]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -8493,7 +8493,7 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x8
 	adcs x7, x7, x9
 	adcs x21, x21, x16
-	adcs x22, x10, x10
+	adc x22, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -8501,7 +8501,7 @@ vg_ed25519_verify_equation:
 	adds x6, x6, x2
 	adcs x7, x7, x8
 	adcs x21, x21, x9
-	adcs x22, x22, x16
+	adc x22, x22, x16
 	ldr x3, [x0, #336]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -8511,7 +8511,7 @@ vg_ed25519_verify_equation:
 	adcs x7, x7, x8
 	adcs x21, x21, x9
 	adcs x22, x22, x16
-	adcs x23, x10, x10
+	adc x23, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -8519,7 +8519,7 @@ vg_ed25519_verify_equation:
 	adds x7, x7, x2
 	adcs x21, x21, x8
 	adcs x22, x22, x9
-	adcs x23, x23, x16
+	adc x23, x23, x16
 	ldr x3, [x0, #344]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -8529,7 +8529,7 @@ vg_ed25519_verify_equation:
 	adcs x21, x21, x8
 	adcs x22, x22, x9
 	adcs x23, x23, x16
-	adcs x24, x10, x10
+	adc x24, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -8537,7 +8537,7 @@ vg_ed25519_verify_equation:
 	adds x21, x21, x2
 	adcs x22, x22, x8
 	adcs x23, x23, x9
-	adcs x24, x24, x16
+	adc x24, x24, x16
 	movz w11, #38, lsl #0
 	mul x2, x11, x21
 	adds x4, x4, x2
@@ -8547,13 +8547,13 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x9
 	mul x16, x11, x24
 	adcs x7, x7, x16
-	adcs x20, x10, x10
+	adc x20, x10, x10
 	umulh x2, x11, x21
 	umulh x8, x11, x22
 	umulh x9, x11, x23
 	umulh x16, x11, x24
 	adds x7, x7, x9
-	adcs x20, x20, x16
+	adc x20, x20, x16
 	adds x16, x7, x7
 	adc x9, x20, x20
 	lsr x7, x16, #1
@@ -8562,7 +8562,7 @@ vg_ed25519_verify_equation:
 	adds x4, x4, x9
 	adcs x5, x5, x2
 	adcs x6, x6, x8
-	adcs x7, x7, x10
+	adc x7, x7, x10
 	str x4, [x0, #320]
 	str x5, [x0, #328]
 	str x6, [x0, #336]
@@ -8609,7 +8609,7 @@ vg_ed25519_verify_equation:
 	adds x5, x5, x2
 	adcs x6, x6, x8
 	adcs x7, x7, x9
-	adcs x21, x16, x10
+	adc x21, x16, x10
 	ldr x3, [x0, #360]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -8619,7 +8619,7 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x8
 	adcs x7, x7, x9
 	adcs x21, x21, x16
-	adcs x22, x10, x10
+	adc x22, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -8627,7 +8627,7 @@ vg_ed25519_verify_equation:
 	adds x6, x6, x2
 	adcs x7, x7, x8
 	adcs x21, x21, x9
-	adcs x22, x22, x16
+	adc x22, x22, x16
 	ldr x3, [x0, #368]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -8637,7 +8637,7 @@ vg_ed25519_verify_equation:
 	adcs x7, x7, x8
 	adcs x21, x21, x9
 	adcs x22, x22, x16
-	adcs x23, x10, x10
+	adc x23, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -8645,7 +8645,7 @@ vg_ed25519_verify_equation:
 	adds x7, x7, x2
 	adcs x21, x21, x8
 	adcs x22, x22, x9
-	adcs x23, x23, x16
+	adc x23, x23, x16
 	ldr x3, [x0, #376]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -8655,7 +8655,7 @@ vg_ed25519_verify_equation:
 	adcs x21, x21, x8
 	adcs x22, x22, x9
 	adcs x23, x23, x16
-	adcs x24, x10, x10
+	adc x24, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -8663,7 +8663,7 @@ vg_ed25519_verify_equation:
 	adds x21, x21, x2
 	adcs x22, x22, x8
 	adcs x23, x23, x9
-	adcs x24, x24, x16
+	adc x24, x24, x16
 	movz w11, #38, lsl #0
 	mul x2, x11, x21
 	adds x4, x4, x2
@@ -8673,13 +8673,13 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x9
 	mul x16, x11, x24
 	adcs x7, x7, x16
-	adcs x20, x10, x10
+	adc x20, x10, x10
 	umulh x2, x11, x21
 	umulh x8, x11, x22
 	umulh x9, x11, x23
 	umulh x16, x11, x24
 	adds x7, x7, x9
-	adcs x20, x20, x16
+	adc x20, x20, x16
 	adds x16, x7, x7
 	adc x9, x20, x20
 	lsr x7, x16, #1
@@ -8688,7 +8688,7 @@ vg_ed25519_verify_equation:
 	adds x4, x4, x9
 	adcs x5, x5, x2
 	adcs x6, x6, x8
-	adcs x7, x7, x10
+	adc x7, x7, x10
 	str x4, [x0, #352]
 	str x5, [x0, #360]
 	str x6, [x0, #368]
@@ -8710,7 +8710,7 @@ vg_ed25519_verify_equation:
 	adds x5, x5, x2
 	adcs x6, x6, x8
 	adcs x7, x7, x9
-	adcs x21, x16, x10
+	adc x21, x16, x10
 	ldr x3, [x0, #168]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -8720,7 +8720,7 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x8
 	adcs x7, x7, x9
 	adcs x21, x21, x16
-	adcs x22, x10, x10
+	adc x22, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -8728,7 +8728,7 @@ vg_ed25519_verify_equation:
 	adds x6, x6, x2
 	adcs x7, x7, x8
 	adcs x21, x21, x9
-	adcs x22, x22, x16
+	adc x22, x22, x16
 	ldr x3, [x0, #176]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -8738,7 +8738,7 @@ vg_ed25519_verify_equation:
 	adcs x7, x7, x8
 	adcs x21, x21, x9
 	adcs x22, x22, x16
-	adcs x23, x10, x10
+	adc x23, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -8746,7 +8746,7 @@ vg_ed25519_verify_equation:
 	adds x7, x7, x2
 	adcs x21, x21, x8
 	adcs x22, x22, x9
-	adcs x23, x23, x16
+	adc x23, x23, x16
 	ldr x3, [x0, #184]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -8756,7 +8756,7 @@ vg_ed25519_verify_equation:
 	adcs x21, x21, x8
 	adcs x22, x22, x9
 	adcs x23, x23, x16
-	adcs x24, x10, x10
+	adc x24, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -8764,7 +8764,7 @@ vg_ed25519_verify_equation:
 	adds x21, x21, x2
 	adcs x22, x22, x8
 	adcs x23, x23, x9
-	adcs x24, x24, x16
+	adc x24, x24, x16
 	movz w11, #38, lsl #0
 	mul x2, x11, x21
 	adds x4, x4, x2
@@ -8774,13 +8774,13 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x9
 	mul x16, x11, x24
 	adcs x7, x7, x16
-	adcs x20, x10, x10
+	adc x20, x10, x10
 	umulh x2, x11, x21
 	umulh x8, x11, x22
 	umulh x9, x11, x23
 	umulh x16, x11, x24
 	adds x7, x7, x9
-	adcs x20, x20, x16
+	adc x20, x20, x16
 	adds x16, x7, x7
 	adc x9, x20, x20
 	lsr x7, x16, #1
@@ -8789,7 +8789,7 @@ vg_ed25519_verify_equation:
 	adds x4, x4, x9
 	adcs x5, x5, x2
 	adcs x6, x6, x8
-	adcs x7, x7, x10
+	adc x7, x7, x10
 	str x4, [x0, #384]
 	str x5, [x0, #392]
 	str x6, [x0, #400]
@@ -8811,7 +8811,7 @@ vg_ed25519_verify_equation:
 	adds x5, x5, x2
 	adcs x6, x6, x8
 	adcs x7, x7, x9
-	adcs x21, x16, x10
+	adc x21, x16, x10
 	ldr x3, [x0, #136]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -8821,7 +8821,7 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x8
 	adcs x7, x7, x9
 	adcs x21, x21, x16
-	adcs x22, x10, x10
+	adc x22, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -8829,7 +8829,7 @@ vg_ed25519_verify_equation:
 	adds x6, x6, x2
 	adcs x7, x7, x8
 	adcs x21, x21, x9
-	adcs x22, x22, x16
+	adc x22, x22, x16
 	ldr x3, [x0, #144]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -8839,7 +8839,7 @@ vg_ed25519_verify_equation:
 	adcs x7, x7, x8
 	adcs x21, x21, x9
 	adcs x22, x22, x16
-	adcs x23, x10, x10
+	adc x23, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -8847,7 +8847,7 @@ vg_ed25519_verify_equation:
 	adds x7, x7, x2
 	adcs x21, x21, x8
 	adcs x22, x22, x9
-	adcs x23, x23, x16
+	adc x23, x23, x16
 	ldr x3, [x0, #152]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -8857,7 +8857,7 @@ vg_ed25519_verify_equation:
 	adcs x21, x21, x8
 	adcs x22, x22, x9
 	adcs x23, x23, x16
-	adcs x24, x10, x10
+	adc x24, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -8865,7 +8865,7 @@ vg_ed25519_verify_equation:
 	adds x21, x21, x2
 	adcs x22, x22, x8
 	adcs x23, x23, x9
-	adcs x24, x24, x16
+	adc x24, x24, x16
 	movz w11, #38, lsl #0
 	mul x2, x11, x21
 	adds x4, x4, x2
@@ -8875,13 +8875,13 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x9
 	mul x16, x11, x24
 	adcs x7, x7, x16
-	adcs x20, x10, x10
+	adc x20, x10, x10
 	umulh x2, x11, x21
 	umulh x8, x11, x22
 	umulh x9, x11, x23
 	umulh x16, x11, x24
 	adds x7, x7, x9
-	adcs x20, x20, x16
+	adc x20, x20, x16
 	adds x16, x7, x7
 	adc x9, x20, x20
 	lsr x7, x16, #1
@@ -8890,7 +8890,7 @@ vg_ed25519_verify_equation:
 	adds x4, x4, x9
 	adcs x5, x5, x2
 	adcs x6, x6, x8
-	adcs x7, x7, x10
+	adc x7, x7, x10
 	str x4, [x0, #416]
 	str x5, [x0, #424]
 	str x6, [x0, #432]
@@ -9006,7 +9006,7 @@ vg_ed25519_verify_equation:
 	adds x5, x5, x2
 	adcs x6, x6, x8
 	adcs x7, x7, x9
-	adcs x21, x16, x10
+	adc x21, x16, x10
 	ldr x3, [x0, #456]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -9016,7 +9016,7 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x8
 	adcs x7, x7, x9
 	adcs x21, x21, x16
-	adcs x22, x10, x10
+	adc x22, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -9024,7 +9024,7 @@ vg_ed25519_verify_equation:
 	adds x6, x6, x2
 	adcs x7, x7, x8
 	adcs x21, x21, x9
-	adcs x22, x22, x16
+	adc x22, x22, x16
 	ldr x3, [x0, #464]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -9034,7 +9034,7 @@ vg_ed25519_verify_equation:
 	adcs x7, x7, x8
 	adcs x21, x21, x9
 	adcs x22, x22, x16
-	adcs x23, x10, x10
+	adc x23, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -9042,7 +9042,7 @@ vg_ed25519_verify_equation:
 	adds x7, x7, x2
 	adcs x21, x21, x8
 	adcs x22, x22, x9
-	adcs x23, x23, x16
+	adc x23, x23, x16
 	ldr x3, [x0, #472]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -9052,7 +9052,7 @@ vg_ed25519_verify_equation:
 	adcs x21, x21, x8
 	adcs x22, x22, x9
 	adcs x23, x23, x16
-	adcs x24, x10, x10
+	adc x24, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -9060,7 +9060,7 @@ vg_ed25519_verify_equation:
 	adds x21, x21, x2
 	adcs x22, x22, x8
 	adcs x23, x23, x9
-	adcs x24, x24, x16
+	adc x24, x24, x16
 	movz w11, #38, lsl #0
 	mul x2, x11, x21
 	adds x4, x4, x2
@@ -9070,13 +9070,13 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x9
 	mul x16, x11, x24
 	adcs x7, x7, x16
-	adcs x20, x10, x10
+	adc x20, x10, x10
 	umulh x2, x11, x21
 	umulh x8, x11, x22
 	umulh x9, x11, x23
 	umulh x16, x11, x24
 	adds x7, x7, x9
-	adcs x20, x20, x16
+	adc x20, x20, x16
 	adds x16, x7, x7
 	adc x9, x20, x20
 	lsr x7, x16, #1
@@ -9085,7 +9085,7 @@ vg_ed25519_verify_equation:
 	adds x4, x4, x9
 	adcs x5, x5, x2
 	adcs x6, x6, x8
-	adcs x7, x7, x10
+	adc x7, x7, x10
 	str x4, [x0, #64]
 	str x5, [x0, #72]
 	str x6, [x0, #80]
@@ -9107,7 +9107,7 @@ vg_ed25519_verify_equation:
 	adds x5, x5, x2
 	adcs x6, x6, x8
 	adcs x7, x7, x9
-	adcs x21, x16, x10
+	adc x21, x16, x10
 	ldr x3, [x0, #520]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -9117,7 +9117,7 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x8
 	adcs x7, x7, x9
 	adcs x21, x21, x16
-	adcs x22, x10, x10
+	adc x22, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -9125,7 +9125,7 @@ vg_ed25519_verify_equation:
 	adds x6, x6, x2
 	adcs x7, x7, x8
 	adcs x21, x21, x9
-	adcs x22, x22, x16
+	adc x22, x22, x16
 	ldr x3, [x0, #528]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -9135,7 +9135,7 @@ vg_ed25519_verify_equation:
 	adcs x7, x7, x8
 	adcs x21, x21, x9
 	adcs x22, x22, x16
-	adcs x23, x10, x10
+	adc x23, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -9143,7 +9143,7 @@ vg_ed25519_verify_equation:
 	adds x7, x7, x2
 	adcs x21, x21, x8
 	adcs x22, x22, x9
-	adcs x23, x23, x16
+	adc x23, x23, x16
 	ldr x3, [x0, #536]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -9153,7 +9153,7 @@ vg_ed25519_verify_equation:
 	adcs x21, x21, x8
 	adcs x22, x22, x9
 	adcs x23, x23, x16
-	adcs x24, x10, x10
+	adc x24, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -9161,7 +9161,7 @@ vg_ed25519_verify_equation:
 	adds x21, x21, x2
 	adcs x22, x22, x8
 	adcs x23, x23, x9
-	adcs x24, x24, x16
+	adc x24, x24, x16
 	movz w11, #38, lsl #0
 	mul x2, x11, x21
 	adds x4, x4, x2
@@ -9171,13 +9171,13 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x9
 	mul x16, x11, x24
 	adcs x7, x7, x16
-	adcs x20, x10, x10
+	adc x20, x10, x10
 	umulh x2, x11, x21
 	umulh x8, x11, x22
 	umulh x9, x11, x23
 	umulh x16, x11, x24
 	adds x7, x7, x9
-	adcs x20, x20, x16
+	adc x20, x20, x16
 	adds x16, x7, x7
 	adc x9, x20, x20
 	lsr x7, x16, #1
@@ -9186,7 +9186,7 @@ vg_ed25519_verify_equation:
 	adds x4, x4, x9
 	adcs x5, x5, x2
 	adcs x6, x6, x8
-	adcs x7, x7, x10
+	adc x7, x7, x10
 	str x4, [x0, #96]
 	str x5, [x0, #104]
 	str x6, [x0, #112]
@@ -9208,7 +9208,7 @@ vg_ed25519_verify_equation:
 	adds x5, x5, x2
 	adcs x6, x6, x8
 	adcs x7, x7, x9
-	adcs x21, x16, x10
+	adc x21, x16, x10
 	ldr x3, [x0, #488]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -9218,7 +9218,7 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x8
 	adcs x7, x7, x9
 	adcs x21, x21, x16
-	adcs x22, x10, x10
+	adc x22, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -9226,7 +9226,7 @@ vg_ed25519_verify_equation:
 	adds x6, x6, x2
 	adcs x7, x7, x8
 	adcs x21, x21, x9
-	adcs x22, x22, x16
+	adc x22, x22, x16
 	ldr x3, [x0, #496]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -9236,7 +9236,7 @@ vg_ed25519_verify_equation:
 	adcs x7, x7, x8
 	adcs x21, x21, x9
 	adcs x22, x22, x16
-	adcs x23, x10, x10
+	adc x23, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -9244,7 +9244,7 @@ vg_ed25519_verify_equation:
 	adds x7, x7, x2
 	adcs x21, x21, x8
 	adcs x22, x22, x9
-	adcs x23, x23, x16
+	adc x23, x23, x16
 	ldr x3, [x0, #504]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -9254,7 +9254,7 @@ vg_ed25519_verify_equation:
 	adcs x21, x21, x8
 	adcs x22, x22, x9
 	adcs x23, x23, x16
-	adcs x24, x10, x10
+	adc x24, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -9262,7 +9262,7 @@ vg_ed25519_verify_equation:
 	adds x21, x21, x2
 	adcs x22, x22, x8
 	adcs x23, x23, x9
-	adcs x24, x24, x16
+	adc x24, x24, x16
 	movz w11, #38, lsl #0
 	mul x2, x11, x21
 	adds x4, x4, x2
@@ -9272,13 +9272,13 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x9
 	mul x16, x11, x24
 	adcs x7, x7, x16
-	adcs x20, x10, x10
+	adc x20, x10, x10
 	umulh x2, x11, x21
 	umulh x8, x11, x22
 	umulh x9, x11, x23
 	umulh x16, x11, x24
 	adds x7, x7, x9
-	adcs x20, x20, x16
+	adc x20, x20, x16
 	adds x16, x7, x7
 	adc x9, x20, x20
 	lsr x7, x16, #1
@@ -9287,7 +9287,7 @@ vg_ed25519_verify_equation:
 	adds x4, x4, x9
 	adcs x5, x5, x2
 	adcs x6, x6, x8
-	adcs x7, x7, x10
+	adc x7, x7, x10
 	str x4, [x0, #128]
 	str x5, [x0, #136]
 	str x6, [x0, #144]
@@ -9426,7 +9426,7 @@ vg_ed25519_verify_equation:
 	adds x5, x5, x2
 	adcs x6, x6, x8
 	adcs x7, x7, x9
-	adcs x21, x16, x10
+	adc x21, x16, x10
 	ldr x3, [x0, #72]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -9436,7 +9436,7 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x8
 	adcs x7, x7, x9
 	adcs x21, x21, x16
-	adcs x22, x10, x10
+	adc x22, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -9444,7 +9444,7 @@ vg_ed25519_verify_equation:
 	adds x6, x6, x2
 	adcs x7, x7, x8
 	adcs x21, x21, x9
-	adcs x22, x22, x16
+	adc x22, x22, x16
 	ldr x3, [x0, #80]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -9454,7 +9454,7 @@ vg_ed25519_verify_equation:
 	adcs x7, x7, x8
 	adcs x21, x21, x9
 	adcs x22, x22, x16
-	adcs x23, x10, x10
+	adc x23, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -9462,7 +9462,7 @@ vg_ed25519_verify_equation:
 	adds x7, x7, x2
 	adcs x21, x21, x8
 	adcs x22, x22, x9
-	adcs x23, x23, x16
+	adc x23, x23, x16
 	ldr x3, [x0, #88]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -9472,7 +9472,7 @@ vg_ed25519_verify_equation:
 	adcs x21, x21, x8
 	adcs x22, x22, x9
 	adcs x23, x23, x16
-	adcs x24, x10, x10
+	adc x24, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -9480,7 +9480,7 @@ vg_ed25519_verify_equation:
 	adds x21, x21, x2
 	adcs x22, x22, x8
 	adcs x23, x23, x9
-	adcs x24, x24, x16
+	adc x24, x24, x16
 	movz w11, #38, lsl #0
 	mul x2, x11, x21
 	adds x4, x4, x2
@@ -9490,13 +9490,13 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x9
 	mul x16, x11, x24
 	adcs x7, x7, x16
-	adcs x20, x10, x10
+	adc x20, x10, x10
 	umulh x2, x11, x21
 	umulh x8, x11, x22
 	umulh x9, x11, x23
 	umulh x16, x11, x24
 	adds x7, x7, x9
-	adcs x20, x20, x16
+	adc x20, x20, x16
 	adds x16, x7, x7
 	adc x9, x20, x20
 	lsr x7, x16, #1
@@ -9505,7 +9505,7 @@ vg_ed25519_verify_equation:
 	adds x4, x4, x9
 	adcs x5, x5, x2
 	adcs x6, x6, x8
-	adcs x7, x7, x10
+	adc x7, x7, x10
 	str x4, [x0, #320]
 	str x5, [x0, #328]
 	str x6, [x0, #336]
@@ -9527,7 +9527,7 @@ vg_ed25519_verify_equation:
 	adds x5, x5, x2
 	adcs x6, x6, x8
 	adcs x7, x7, x9
-	adcs x21, x16, x10
+	adc x21, x16, x10
 	ldr x3, [x0, #200]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -9537,7 +9537,7 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x8
 	adcs x7, x7, x9
 	adcs x21, x21, x16
-	adcs x22, x10, x10
+	adc x22, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -9545,7 +9545,7 @@ vg_ed25519_verify_equation:
 	adds x6, x6, x2
 	adcs x7, x7, x8
 	adcs x21, x21, x9
-	adcs x22, x22, x16
+	adc x22, x22, x16
 	ldr x3, [x0, #208]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -9555,7 +9555,7 @@ vg_ed25519_verify_equation:
 	adcs x7, x7, x8
 	adcs x21, x21, x9
 	adcs x22, x22, x16
-	adcs x23, x10, x10
+	adc x23, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -9563,7 +9563,7 @@ vg_ed25519_verify_equation:
 	adds x7, x7, x2
 	adcs x21, x21, x8
 	adcs x22, x22, x9
-	adcs x23, x23, x16
+	adc x23, x23, x16
 	ldr x3, [x0, #216]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -9573,7 +9573,7 @@ vg_ed25519_verify_equation:
 	adcs x21, x21, x8
 	adcs x22, x22, x9
 	adcs x23, x23, x16
-	adcs x24, x10, x10
+	adc x24, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -9581,7 +9581,7 @@ vg_ed25519_verify_equation:
 	adds x21, x21, x2
 	adcs x22, x22, x8
 	adcs x23, x23, x9
-	adcs x24, x24, x16
+	adc x24, x24, x16
 	movz w11, #38, lsl #0
 	mul x2, x11, x21
 	adds x4, x4, x2
@@ -9591,13 +9591,13 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x9
 	mul x16, x11, x24
 	adcs x7, x7, x16
-	adcs x20, x10, x10
+	adc x20, x10, x10
 	umulh x2, x11, x21
 	umulh x8, x11, x22
 	umulh x9, x11, x23
 	umulh x16, x11, x24
 	adds x7, x7, x9
-	adcs x20, x20, x16
+	adc x20, x20, x16
 	adds x16, x7, x7
 	adc x9, x20, x20
 	lsr x7, x16, #1
@@ -9606,7 +9606,7 @@ vg_ed25519_verify_equation:
 	adds x4, x4, x9
 	adcs x5, x5, x2
 	adcs x6, x6, x8
-	adcs x7, x7, x10
+	adc x7, x7, x10
 	str x4, [x0, #352]
 	str x5, [x0, #360]
 	str x6, [x0, #368]
@@ -9628,7 +9628,7 @@ vg_ed25519_verify_equation:
 	adds x5, x5, x2
 	adcs x6, x6, x8
 	adcs x7, x7, x9
-	adcs x21, x16, x10
+	adc x21, x16, x10
 	ldr x3, [x0, #104]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -9638,7 +9638,7 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x8
 	adcs x7, x7, x9
 	adcs x21, x21, x16
-	adcs x22, x10, x10
+	adc x22, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -9646,7 +9646,7 @@ vg_ed25519_verify_equation:
 	adds x6, x6, x2
 	adcs x7, x7, x8
 	adcs x21, x21, x9
-	adcs x22, x22, x16
+	adc x22, x22, x16
 	ldr x3, [x0, #112]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -9656,7 +9656,7 @@ vg_ed25519_verify_equation:
 	adcs x7, x7, x8
 	adcs x21, x21, x9
 	adcs x22, x22, x16
-	adcs x23, x10, x10
+	adc x23, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -9664,7 +9664,7 @@ vg_ed25519_verify_equation:
 	adds x7, x7, x2
 	adcs x21, x21, x8
 	adcs x22, x22, x9
-	adcs x23, x23, x16
+	adc x23, x23, x16
 	ldr x3, [x0, #120]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -9674,7 +9674,7 @@ vg_ed25519_verify_equation:
 	adcs x21, x21, x8
 	adcs x22, x22, x9
 	adcs x23, x23, x16
-	adcs x24, x10, x10
+	adc x24, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -9682,7 +9682,7 @@ vg_ed25519_verify_equation:
 	adds x21, x21, x2
 	adcs x22, x22, x8
 	adcs x23, x23, x9
-	adcs x24, x24, x16
+	adc x24, x24, x16
 	movz w11, #38, lsl #0
 	mul x2, x11, x21
 	adds x4, x4, x2
@@ -9692,13 +9692,13 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x9
 	mul x16, x11, x24
 	adcs x7, x7, x16
-	adcs x20, x10, x10
+	adc x20, x10, x10
 	umulh x2, x11, x21
 	umulh x8, x11, x22
 	umulh x9, x11, x23
 	umulh x16, x11, x24
 	adds x7, x7, x9
-	adcs x20, x20, x16
+	adc x20, x20, x16
 	adds x16, x7, x7
 	adc x9, x20, x20
 	lsr x7, x16, #1
@@ -9707,7 +9707,7 @@ vg_ed25519_verify_equation:
 	adds x4, x4, x9
 	adcs x5, x5, x2
 	adcs x6, x6, x8
-	adcs x7, x7, x10
+	adc x7, x7, x10
 	str x4, [x0, #384]
 	str x5, [x0, #392]
 	str x6, [x0, #400]
@@ -9729,7 +9729,7 @@ vg_ed25519_verify_equation:
 	adds x5, x5, x2
 	adcs x6, x6, x8
 	adcs x7, x7, x9
-	adcs x21, x16, x10
+	adc x21, x16, x10
 	ldr x3, [x0, #232]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -9739,7 +9739,7 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x8
 	adcs x7, x7, x9
 	adcs x21, x21, x16
-	adcs x22, x10, x10
+	adc x22, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -9747,7 +9747,7 @@ vg_ed25519_verify_equation:
 	adds x6, x6, x2
 	adcs x7, x7, x8
 	adcs x21, x21, x9
-	adcs x22, x22, x16
+	adc x22, x22, x16
 	ldr x3, [x0, #240]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -9757,7 +9757,7 @@ vg_ed25519_verify_equation:
 	adcs x7, x7, x8
 	adcs x21, x21, x9
 	adcs x22, x22, x16
-	adcs x23, x10, x10
+	adc x23, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -9765,7 +9765,7 @@ vg_ed25519_verify_equation:
 	adds x7, x7, x2
 	adcs x21, x21, x8
 	adcs x22, x22, x9
-	adcs x23, x23, x16
+	adc x23, x23, x16
 	ldr x3, [x0, #248]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -9775,7 +9775,7 @@ vg_ed25519_verify_equation:
 	adcs x21, x21, x8
 	adcs x22, x22, x9
 	adcs x23, x23, x16
-	adcs x24, x10, x10
+	adc x24, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -9783,7 +9783,7 @@ vg_ed25519_verify_equation:
 	adds x21, x21, x2
 	adcs x22, x22, x8
 	adcs x23, x23, x9
-	adcs x24, x24, x16
+	adc x24, x24, x16
 	movz w11, #38, lsl #0
 	mul x2, x11, x21
 	adds x4, x4, x2
@@ -9793,13 +9793,13 @@ vg_ed25519_verify_equation:
 	adcs x6, x6, x9
 	mul x16, x11, x24
 	adcs x7, x7, x16
-	adcs x20, x10, x10
+	adc x20, x10, x10
 	umulh x2, x11, x21
 	umulh x8, x11, x22
 	umulh x9, x11, x23
 	umulh x16, x11, x24
 	adds x7, x7, x9
-	adcs x20, x20, x16
+	adc x20, x20, x16
 	adds x16, x7, x7
 	adc x9, x20, x20
 	lsr x7, x16, #1
@@ -9808,7 +9808,7 @@ vg_ed25519_verify_equation:
 	adds x4, x4, x9
 	adcs x5, x5, x2
 	adcs x6, x6, x8
-	adcs x7, x7, x10
+	adc x7, x7, x10
 	str x4, [x0, #416]
 	str x5, [x0, #424]
 	str x6, [x0, #432]

@@ -478,28 +478,15 @@ theorem sumSqr_ok {s : State} {base : Addr} (hs : Scr s base large) (hz : s.gpr 
     fun t ⟨p, h, l⟩ => ?_
   exact ⟨Put.of_keeps k (fun _ h => h) p, by rw [h, e], l⟩
 
-theorem diffSqrMul_ok {s : State} {base : Addr} (hs : Scr s base large) (hz : s.gpr .x10 = 0) (hb : Sm s.mem base 13) :
-    WP isa (.block (diffDACB ++ squareRegs ++ reduceWide ++
-        ([mov .x12 .x4, mov .x13 .x5, mov .x14 .x6, mov .x15 .x7] : List Instr) ++ mulInto 4 0)) s fun t =>
-      Put base 4 s t ∧ F t.mem base (offset 4) = env s.mem base 0 *
-        ((env s.mem base 12 - env s.mem base 13) * (env s.mem base 12 - env s.mem base 13)) ∧
+theorem diffSqr_ok {s : State} {base : Addr} (hs : Scr s base large) (hz : s.gpr .x10 = 0) (hb : Sm s.mem base 13) :
+    WP isa (.block (diffDACB ++ squareRegs ++ toSlot 4)) s fun t => Put base 4 s t ∧
+      F t.mem base (offset 4) = (env s.mem base 12 - env s.mem base 13) * (env s.mem base 12 - env s.mem base 13) ∧
       fe t.mem base (offset 4) < 2 ^ 255 + 2 ^ 135 := by
-  simp only [List.append_assoc]
-  rw [WP.block_append_iff]
+  rw [List.append_assoc, WP.block_append_iff]
   refine WP.mono (diffRegs_ok hs hz 12 13 (by decide) (by decide) hb) fun u ⟨e, k⟩ => ?_
-  obtain zu := (k.gpr .x10 (by decide)).trans hz
-  rw [WP.block_append_iff]
-  refine WP.mono (squareRegs_ok u zu) fun v ⟨ev, kv⟩ => ?_
-  obtain zv := (kv.gpr .x10 (by decide)).trans zu
-  rw [WP.block_append_iff]
-  refine WP.mono (reduceWide_ok v zv) fun w ⟨ew, zw, kw, _⟩ => ?_
-  rw [WP.block_append_iff]
-  refine WP.mono (movs_ok w) fun x ⟨ex, kx⟩ => ?_
-  obtain kk : Keeps lclob s x := k.trans ((kv.mono (by decide)).trans ((kw.mono (by decide)).trans (kx.mono (by decide))))
-  refine WP.mono (mulInto_ok (hs.of_keeps kk (by decide)) ((kk.gpr _ (by decide)).trans hz) 4 0 (by decide))
+  refine WP.mono (squareTo_ok (hs.of_keeps k (by decide)) ((k.gpr _ (by decide)).trans hz) 4 (by decide))
     fun t ⟨p, h, l⟩ => ?_
-  refine ⟨Put.of_keeps kk (fun _ h => h) p, ?_, l⟩
-  rw [h, kk.mem, ex, show toFe (v4 w .x4 .x5 .x6 .x7) = toFe (wide v) from ew, ev, toFe_mul rfl, e]
+  exact ⟨Put.of_keeps k (fun _ h => h) p, by rw [h, e], l⟩
 
 theorem mulE_ok {s : State} {base : Addr} (hs : Scr s base large) (hz : s.gpr .x10 = 0) :
     WP isa (.block (loadPairs (offset 9) .x4 .x5 .x6 .x7 ++ loadPairs (offset 11) .x12 .x13 .x14 .x15 ++
@@ -548,29 +535,38 @@ theorem back_ok {s : State} {base : Addr} (hs : Scr s base large) (hz : s.gpr .x
   obtain hsb := pb.scr hsa
   obtain zb := pb.zero za
   rw [WP.block_append_iff]
-  refine WP.mono (diffE_ok hsb zb (by rw [Sm]; omega_using [bb])) fun c ⟨pc, fc⟩ => ?_
+  refine WP.mono (mulSlots_ok hsb zb 12 8 5 (by decide) (by decide)) fun c ⟨pc, fc, bc⟩ => ?_
   obtain hsc := pc.scr hsb
   obtain zc := pc.zero zb
   rw [WP.block_append_iff]
-  refine WP.mono (mulSlots_ok hsc zc 12 8 5 (by decide) (by decide)) fun d ⟨pd, fd, bd⟩ => ?_
+  refine WP.mono (mulSlots_ok hsc zc 13 7 6 (by decide) (by decide)) fun d ⟨pd, fd, bd⟩ => ?_
   obtain hsd := pd.scr hsc
   obtain zd := pd.zero zc
   rw [WP.block_append_iff]
-  refine WP.mono (mulSlots_ok hsd zd 13 7 6 (by decide) (by decide)) fun e ⟨pe, fe', be⟩ => ?_
+  refine WP.mono (diffE_ok hsd zd (by rw [Sm, pd.fe (by decide), pc.fe (by decide)]; omega_using [bb]))
+    fun e ⟨pe, fe'⟩ => ?_
   obtain hse := pe.scr hsd
   obtain ze := pe.zero zd
   rw [WP.block_append_iff]
-  refine WP.mono (sumSqr_ok hse ze (by rw [Sm, pe.fe (by decide)]; omega_using [bd]) (by rw [Sm]; omega_using [be]))
-    fun f ⟨pf, ff, bf⟩ => ?_
+  refine WP.mono (mulSlots_ok hse ze 1 9 10 (by decide) (by decide)) fun f ⟨pf, ff, bf⟩ => ?_
   obtain hsf := pf.scr hse
   obtain zf := pf.zero ze
   rw [WP.block_append_iff]
-  refine WP.mono (diffSqrMul_ok hsf zf (by rw [Sm, pf.fe (by decide)]; omega_using [be])) fun g ⟨pg, fg, bg⟩ => ?_
+  refine WP.mono (mulE_ok hsf zf) fun g ⟨pg, fg, bg⟩ => ?_
   obtain hsg := pg.scr hsf
   obtain zg := pg.zero zf
+  obtain m12 : Sm g.mem base 12 := by
+    rw [Sm, pg.fe (by decide), pf.fe (by decide), pe.fe (by decide), pd.fe (by decide)]; omega_using [bc]
+  obtain m13 : Sm g.mem base 13 := by
+    rw [Sm, pg.fe (by decide), pf.fe (by decide), pe.fe (by decide)]; omega_using [bd]
   rw [WP.block_append_iff]
-  refine WP.mono (mulSlots_ok hsg zg 1 9 10 (by decide) (by decide)) fun h ⟨ph, fh, bh⟩ => ?_
-  refine WP.mono (mulE_ok (ph.scr hsg) (ph.zero zg)) fun t ⟨pt, ft, bt⟩ => ?_
+  refine WP.mono (diffSqr_ok hsg zg m13) fun h ⟨ph, fh, bh⟩ => ?_
+  obtain hsh := ph.scr hsg
+  obtain zh := ph.zero zg
+  rw [WP.block_append_iff]
+  refine WP.mono (sumSqr_ok hsh zh (by rw [Sm, ph.fe (by decide)]; exact m12) (by rw [Sm, ph.fe (by decide)]; exact m13))
+    fun i ⟨pi, fi, bi⟩ => ?_
+  refine WP.mono (mulSlots_ok (pi.scr hsh) (pi.zero zh) 4 0 4 (by decide) (by decide)) fun t ⟨pt, ft, bt⟩ => ?_
   obtain ea := pa.env
   obtain eb := pb.env
   obtain ec := pc.env
@@ -579,6 +575,7 @@ theorem back_ok {s : State} {base : Addr} (hs : Scr s base large) (hz : s.gpr .x
   obtain ef := pf.env
   obtain eg := pg.env
   obtain eh := ph.env
+  obtain ei := pi.env
   obtain et := pt.env
   simp only [fa] at ea
   simp only [fb] at eb
@@ -588,15 +585,16 @@ theorem back_ok {s : State} {base : Addr} (hs : Scr s base large) (hz : s.gpr .x
   simp only [ff] at ef
   simp only [fg] at eg
   simp only [fh] at eh
+  simp only [fi] at ei
   simp only [ft] at et
-  simp only [et, eh, eg, ef, ee, ed, ec, eb, ea, Function.update_apply, Fin.reduceEq, ite_true, ite_false]
+  simp only [et, ei, eh, eg, ef, ee, ed, ec, eb, ea, Function.update_apply, Fin.reduceEq, ite_true, ite_false]
   refine ⟨trivial, trivial, trivial, trivial, trivial, ⟨?_, ?_, ?_, ?_⟩, ?_⟩
-  · rw [Sm, pt.fe (by decide)]; omega_using [bh]
+  · rw [Sm, pt.fe (by decide), pi.fe (by decide), ph.fe (by decide), pg.fe (by decide)]; omega_using [bf]
+  · rw [Sm, pt.fe (by decide), pi.fe (by decide), ph.fe (by decide)]; omega_using [bg]
+  · rw [Sm, pt.fe (by decide)]; omega_using [bi]
   · rw [Sm]; omega_using [bt]
-  · rw [Sm, pt.fe (by decide), ph.fe (by decide), pg.fe (by decide)]; omega_using [bf]
-  · rw [Sm, pt.fe (by decide), ph.fe (by decide)]; omega_using [bg]
   · exact (pa.lf (by decide)).trans ((pb.lf (by decide)).trans ((pc.lf (by decide)).trans ((pd.lf (by decide)).trans
       ((pe.lf (by decide)).trans ((pf.lf (by decide)).trans ((pg.lf (by decide)).trans ((ph.lf (by decide)).trans
-      (pt.lf (by decide)))))))))
+      ((pi.lf (by decide)).trans (pt.lf (by decide))))))))))
 
 end VG.Proof.X25519.AArch64.Ladder

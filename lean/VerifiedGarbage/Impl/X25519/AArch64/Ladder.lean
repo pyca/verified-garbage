@@ -28,7 +28,7 @@ What an iteration keeps in registers:
 * a sum or difference that only one product takes is left where that product
   reads an operand (`x12`–`x15`): `DA + CB` and `DA - CB`, which are squared, and
   `AA + a24 E`, a product's other operand;
-* every product but the last of `z_3`'s two is stored.
+* every product is stored.
 
 Products and squares are below `2²⁵⁵ + 2¹³⁵` (`fold255`), so the sums fold their
 carry once, and `A` and `C`, at most `2²⁵⁶ + 2¹³⁶`, into three words; `AA +
@@ -125,15 +125,17 @@ def diffDACB : List Instr :=
 /-- The swaps, and the sums and differences of the swapped elements. -/
 def front : List Instr := loadAll ++ (swapTest ++ (swapRegs ++ (sumsAB ++ sumsCD)))
 
-/-- The products of an iteration. -/
+/-- The products of an iteration, those that need each other apart: an operation's carry chains
+wait in the core's window for what they need, and the operations after it wait behind them. -/
 def back : List (List Instr) := [
-  sqrSlots 9 5, sqrSlots 10 6, diffE,
+  sqrSlots 9 5, sqrSlots 10 6,
   mulSlots 12 8 5, mulSlots 13 7 6,
-  sumDACB ++ squareRegs ++ toSlot 3,
-  diffDACB ++ squareRegs ++ reduceWide ++ [mov .x12 .x4, mov .x13 .x5, mov .x14 .x6, mov .x15 .x7] ++ mulInto 4 0,
-  mulSlots 1 9 10,
+  diffE, mulSlots 1 9 10,
   loadPairs (offset 9) .x4 .x5 .x6 .x7 ++ loadPairs (offset 11) .x12 .x13 .x14 .x15 ++
-    a24Const ++ a24Low ++ a24High ++ a24Sum ++ mulInto 2 11]
+    a24Const ++ a24Low ++ a24High ++ a24Sum ++ mulInto 2 11,
+  diffDACB ++ squareRegs ++ toSlot 4,
+  sumDACB ++ squareRegs ++ toSlot 3,
+  mulSlots 4 0 4]
 
 /-- One iteration. -/
 def step : List Instr := front ++ back.flatten

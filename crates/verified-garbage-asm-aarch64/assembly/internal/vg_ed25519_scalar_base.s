@@ -498,7 +498,7 @@ vg_ed25519_scalar_base:
 	adds x5, x5, x2
 	adcs x6, x6, x8
 	adcs x7, x7, x9
-	adcs x21, x16, x10
+	adc x21, x16, x10
 	ldr x3, [x0, #200]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -508,7 +508,7 @@ vg_ed25519_scalar_base:
 	adcs x6, x6, x8
 	adcs x7, x7, x9
 	adcs x21, x21, x16
-	adcs x22, x10, x10
+	adc x22, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -516,7 +516,7 @@ vg_ed25519_scalar_base:
 	adds x6, x6, x2
 	adcs x7, x7, x8
 	adcs x21, x21, x9
-	adcs x22, x22, x16
+	adc x22, x22, x16
 	ldr x3, [x0, #208]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -526,7 +526,7 @@ vg_ed25519_scalar_base:
 	adcs x7, x7, x8
 	adcs x21, x21, x9
 	adcs x22, x22, x16
-	adcs x23, x10, x10
+	adc x23, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -534,7 +534,7 @@ vg_ed25519_scalar_base:
 	adds x7, x7, x2
 	adcs x21, x21, x8
 	adcs x22, x22, x9
-	adcs x23, x23, x16
+	adc x23, x23, x16
 	ldr x3, [x0, #216]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -544,7 +544,7 @@ vg_ed25519_scalar_base:
 	adcs x21, x21, x8
 	adcs x22, x22, x9
 	adcs x23, x23, x16
-	adcs x24, x10, x10
+	adc x24, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -552,7 +552,7 @@ vg_ed25519_scalar_base:
 	adds x21, x21, x2
 	adcs x22, x22, x8
 	adcs x23, x23, x9
-	adcs x24, x24, x16
+	adc x24, x24, x16
 	movz w11, #38, lsl #0
 	mul x2, x11, x21
 	adds x4, x4, x2
@@ -562,13 +562,13 @@ vg_ed25519_scalar_base:
 	adcs x6, x6, x9
 	mul x16, x11, x24
 	adcs x7, x7, x16
-	adcs x20, x10, x10
+	adc x20, x10, x10
 	umulh x2, x11, x21
 	umulh x8, x11, x22
 	umulh x9, x11, x23
 	umulh x16, x11, x24
 	adds x7, x7, x9
-	adcs x20, x20, x16
+	adc x20, x20, x16
 	adds x16, x7, x7
 	adc x9, x20, x20
 	lsr x7, x16, #1
@@ -577,7 +577,7 @@ vg_ed25519_scalar_base:
 	adds x4, x4, x9
 	adcs x5, x5, x2
 	adcs x6, x6, x8
-	adcs x7, x7, x10
+	adc x7, x7, x10
 	stp x4, x5, [x0, #320]
 	stp x6, x7, [x0, #336]
 	ldp x4, x5, [x0, #96]
@@ -605,7 +605,7 @@ vg_ed25519_scalar_base:
 	adds x5, x5, x2
 	adcs x6, x6, x8
 	adcs x7, x7, x9
-	adcs x21, x16, x10
+	adc x21, x16, x10
 	ldr x3, [x0, #232]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -615,7 +615,7 @@ vg_ed25519_scalar_base:
 	adcs x6, x6, x8
 	adcs x7, x7, x9
 	adcs x21, x21, x16
-	adcs x22, x10, x10
+	adc x22, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -623,7 +623,7 @@ vg_ed25519_scalar_base:
 	adds x6, x6, x2
 	adcs x7, x7, x8
 	adcs x21, x21, x9
-	adcs x22, x22, x16
+	adc x22, x22, x16
 	ldr x3, [x0, #240]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -633,7 +633,7 @@ vg_ed25519_scalar_base:
 	adcs x7, x7, x8
 	adcs x21, x21, x9
 	adcs x22, x22, x16
-	adcs x23, x10, x10
+	adc x23, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -641,7 +641,7 @@ vg_ed25519_scalar_base:
 	adds x7, x7, x2
 	adcs x21, x21, x8
 	adcs x22, x22, x9
-	adcs x23, x23, x16
+	adc x23, x23, x16
 	ldr x3, [x0, #248]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -651,7 +651,7 @@ vg_ed25519_scalar_base:
 	adcs x21, x21, x8
 	adcs x22, x22, x9
 	adcs x23, x23, x16
-	adcs x24, x10, x10
+	adc x24, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -659,7 +659,7 @@ vg_ed25519_scalar_base:
 	adds x21, x21, x2
 	adcs x22, x22, x8
 	adcs x23, x23, x9
-	adcs x24, x24, x16
+	adc x24, x24, x16
 	movz w11, #38, lsl #0
 	mul x2, x11, x21
 	adds x4, x4, x2
@@ -669,13 +669,13 @@ vg_ed25519_scalar_base:
 	adcs x6, x6, x9
 	mul x16, x11, x24
 	adcs x7, x7, x16
-	adcs x20, x10, x10
+	adc x20, x10, x10
 	umulh x2, x11, x21
 	umulh x8, x11, x22
 	umulh x9, x11, x23
 	umulh x16, x11, x24
 	adds x7, x7, x9
-	adcs x20, x20, x16
+	adc x20, x20, x16
 	adds x16, x7, x7
 	adc x9, x20, x20
 	lsr x7, x16, #1
@@ -684,7 +684,7 @@ vg_ed25519_scalar_base:
 	adds x4, x4, x9
 	adcs x5, x5, x2
 	adcs x6, x6, x8
-	adcs x7, x7, x10
+	adc x7, x7, x10
 	stp x4, x5, [x0, #352]
 	stp x6, x7, [x0, #368]
 	ldp x12, x13, [x0, #256]
@@ -701,7 +701,7 @@ vg_ed25519_scalar_base:
 	adds x5, x5, x2
 	adcs x6, x6, x8
 	adcs x7, x7, x9
-	adcs x21, x16, x10
+	adc x21, x16, x10
 	ldr x3, [x0, #168]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -711,7 +711,7 @@ vg_ed25519_scalar_base:
 	adcs x6, x6, x8
 	adcs x7, x7, x9
 	adcs x21, x21, x16
-	adcs x22, x10, x10
+	adc x22, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -719,7 +719,7 @@ vg_ed25519_scalar_base:
 	adds x6, x6, x2
 	adcs x7, x7, x8
 	adcs x21, x21, x9
-	adcs x22, x22, x16
+	adc x22, x22, x16
 	ldr x3, [x0, #176]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -729,7 +729,7 @@ vg_ed25519_scalar_base:
 	adcs x7, x7, x8
 	adcs x21, x21, x9
 	adcs x22, x22, x16
-	adcs x23, x10, x10
+	adc x23, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -737,7 +737,7 @@ vg_ed25519_scalar_base:
 	adds x7, x7, x2
 	adcs x21, x21, x8
 	adcs x22, x22, x9
-	adcs x23, x23, x16
+	adc x23, x23, x16
 	ldr x3, [x0, #184]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -747,7 +747,7 @@ vg_ed25519_scalar_base:
 	adcs x21, x21, x8
 	adcs x22, x22, x9
 	adcs x23, x23, x16
-	adcs x24, x10, x10
+	adc x24, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -755,7 +755,7 @@ vg_ed25519_scalar_base:
 	adds x21, x21, x2
 	adcs x22, x22, x8
 	adcs x23, x23, x9
-	adcs x24, x24, x16
+	adc x24, x24, x16
 	movz w11, #38, lsl #0
 	mul x2, x11, x21
 	adds x4, x4, x2
@@ -765,13 +765,13 @@ vg_ed25519_scalar_base:
 	adcs x6, x6, x9
 	mul x16, x11, x24
 	adcs x7, x7, x16
-	adcs x20, x10, x10
+	adc x20, x10, x10
 	umulh x2, x11, x21
 	umulh x8, x11, x22
 	umulh x9, x11, x23
 	umulh x16, x11, x24
 	adds x7, x7, x9
-	adcs x20, x20, x16
+	adc x20, x20, x16
 	adds x16, x7, x7
 	adc x9, x20, x20
 	lsr x7, x16, #1
@@ -780,7 +780,7 @@ vg_ed25519_scalar_base:
 	adds x4, x4, x9
 	adcs x5, x5, x2
 	adcs x6, x6, x8
-	adcs x7, x7, x10
+	adc x7, x7, x10
 	stp x4, x5, [x0, #384]
 	stp x6, x7, [x0, #400]
 	ldp x4, x5, [x0, #352]
@@ -857,7 +857,7 @@ vg_ed25519_scalar_base:
 	adds x5, x5, x2
 	adcs x6, x6, x8
 	adcs x7, x7, x9
-	adcs x21, x16, x10
+	adc x21, x16, x10
 	ldr x3, [x0, #488]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -867,7 +867,7 @@ vg_ed25519_scalar_base:
 	adcs x6, x6, x8
 	adcs x7, x7, x9
 	adcs x21, x21, x16
-	adcs x22, x10, x10
+	adc x22, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -875,7 +875,7 @@ vg_ed25519_scalar_base:
 	adds x6, x6, x2
 	adcs x7, x7, x8
 	adcs x21, x21, x9
-	adcs x22, x22, x16
+	adc x22, x22, x16
 	ldr x3, [x0, #496]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -885,7 +885,7 @@ vg_ed25519_scalar_base:
 	adcs x7, x7, x8
 	adcs x21, x21, x9
 	adcs x22, x22, x16
-	adcs x23, x10, x10
+	adc x23, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -893,7 +893,7 @@ vg_ed25519_scalar_base:
 	adds x7, x7, x2
 	adcs x21, x21, x8
 	adcs x22, x22, x9
-	adcs x23, x23, x16
+	adc x23, x23, x16
 	ldr x3, [x0, #504]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -903,7 +903,7 @@ vg_ed25519_scalar_base:
 	adcs x21, x21, x8
 	adcs x22, x22, x9
 	adcs x23, x23, x16
-	adcs x24, x10, x10
+	adc x24, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -911,7 +911,7 @@ vg_ed25519_scalar_base:
 	adds x21, x21, x2
 	adcs x22, x22, x8
 	adcs x23, x23, x9
-	adcs x24, x24, x16
+	adc x24, x24, x16
 	movz w11, #38, lsl #0
 	mul x2, x11, x21
 	adds x4, x4, x2
@@ -921,13 +921,13 @@ vg_ed25519_scalar_base:
 	adcs x6, x6, x9
 	mul x16, x11, x24
 	adcs x7, x7, x16
-	adcs x20, x10, x10
+	adc x20, x10, x10
 	umulh x2, x11, x21
 	umulh x8, x11, x22
 	umulh x9, x11, x23
 	umulh x16, x11, x24
 	adds x7, x7, x9
-	adcs x20, x20, x16
+	adc x20, x20, x16
 	adds x16, x7, x7
 	adc x9, x20, x20
 	lsr x7, x16, #1
@@ -936,7 +936,7 @@ vg_ed25519_scalar_base:
 	adds x4, x4, x9
 	adcs x5, x5, x2
 	adcs x6, x6, x8
-	adcs x7, x7, x10
+	adc x7, x7, x10
 	stp x4, x5, [x0, #128]
 	stp x6, x7, [x0, #144]
 	ldr x3, [x0, #288]
@@ -951,7 +951,7 @@ vg_ed25519_scalar_base:
 	adds x5, x5, x2
 	adcs x6, x6, x8
 	adcs x7, x7, x9
-	adcs x21, x16, x10
+	adc x21, x16, x10
 	ldr x3, [x0, #296]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -961,7 +961,7 @@ vg_ed25519_scalar_base:
 	adcs x6, x6, x8
 	adcs x7, x7, x9
 	adcs x21, x21, x16
-	adcs x22, x10, x10
+	adc x22, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -969,7 +969,7 @@ vg_ed25519_scalar_base:
 	adds x6, x6, x2
 	adcs x7, x7, x8
 	adcs x21, x21, x9
-	adcs x22, x22, x16
+	adc x22, x22, x16
 	ldr x3, [x0, #304]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -979,7 +979,7 @@ vg_ed25519_scalar_base:
 	adcs x7, x7, x8
 	adcs x21, x21, x9
 	adcs x22, x22, x16
-	adcs x23, x10, x10
+	adc x23, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -987,7 +987,7 @@ vg_ed25519_scalar_base:
 	adds x7, x7, x2
 	adcs x21, x21, x8
 	adcs x22, x22, x9
-	adcs x23, x23, x16
+	adc x23, x23, x16
 	ldr x3, [x0, #312]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -997,7 +997,7 @@ vg_ed25519_scalar_base:
 	adcs x21, x21, x8
 	adcs x22, x22, x9
 	adcs x23, x23, x16
-	adcs x24, x10, x10
+	adc x24, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -1005,7 +1005,7 @@ vg_ed25519_scalar_base:
 	adds x21, x21, x2
 	adcs x22, x22, x8
 	adcs x23, x23, x9
-	adcs x24, x24, x16
+	adc x24, x24, x16
 	movz w11, #38, lsl #0
 	mul x2, x11, x21
 	adds x4, x4, x2
@@ -1015,13 +1015,13 @@ vg_ed25519_scalar_base:
 	adcs x6, x6, x9
 	mul x16, x11, x24
 	adcs x7, x7, x16
-	adcs x20, x10, x10
+	adc x20, x10, x10
 	umulh x2, x11, x21
 	umulh x8, x11, x22
 	umulh x9, x11, x23
 	umulh x16, x11, x24
 	adds x7, x7, x9
-	adcs x20, x20, x16
+	adc x20, x20, x16
 	adds x16, x7, x7
 	adc x9, x20, x20
 	lsr x7, x16, #1
@@ -1030,7 +1030,7 @@ vg_ed25519_scalar_base:
 	adds x4, x4, x9
 	adcs x5, x5, x2
 	adcs x6, x6, x8
-	adcs x7, x7, x10
+	adc x7, x7, x10
 	stp x4, x5, [x0, #64]
 	stp x6, x7, [x0, #80]
 	ldp x12, x13, [x0, #416]
@@ -1047,7 +1047,7 @@ vg_ed25519_scalar_base:
 	adds x5, x5, x2
 	adcs x6, x6, x8
 	adcs x7, x7, x9
-	adcs x21, x16, x10
+	adc x21, x16, x10
 	ldr x3, [x0, #488]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -1057,7 +1057,7 @@ vg_ed25519_scalar_base:
 	adcs x6, x6, x8
 	adcs x7, x7, x9
 	adcs x21, x21, x16
-	adcs x22, x10, x10
+	adc x22, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -1065,7 +1065,7 @@ vg_ed25519_scalar_base:
 	adds x6, x6, x2
 	adcs x7, x7, x8
 	adcs x21, x21, x9
-	adcs x22, x22, x16
+	adc x22, x22, x16
 	ldr x3, [x0, #496]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -1075,7 +1075,7 @@ vg_ed25519_scalar_base:
 	adcs x7, x7, x8
 	adcs x21, x21, x9
 	adcs x22, x22, x16
-	adcs x23, x10, x10
+	adc x23, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -1083,7 +1083,7 @@ vg_ed25519_scalar_base:
 	adds x7, x7, x2
 	adcs x21, x21, x8
 	adcs x22, x22, x9
-	adcs x23, x23, x16
+	adc x23, x23, x16
 	ldr x3, [x0, #504]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -1093,7 +1093,7 @@ vg_ed25519_scalar_base:
 	adcs x21, x21, x8
 	adcs x22, x22, x9
 	adcs x23, x23, x16
-	adcs x24, x10, x10
+	adc x24, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -1101,7 +1101,7 @@ vg_ed25519_scalar_base:
 	adds x21, x21, x2
 	adcs x22, x22, x8
 	adcs x23, x23, x9
-	adcs x24, x24, x16
+	adc x24, x24, x16
 	movz w11, #38, lsl #0
 	mul x2, x11, x21
 	adds x4, x4, x2
@@ -1111,13 +1111,13 @@ vg_ed25519_scalar_base:
 	adcs x6, x6, x9
 	mul x16, x11, x24
 	adcs x7, x7, x16
-	adcs x20, x10, x10
+	adc x20, x10, x10
 	umulh x2, x11, x21
 	umulh x8, x11, x22
 	umulh x9, x11, x23
 	umulh x16, x11, x24
 	adds x7, x7, x9
-	adcs x20, x20, x16
+	adc x20, x20, x16
 	adds x16, x7, x7
 	adc x9, x20, x20
 	lsr x7, x16, #1
@@ -1126,7 +1126,7 @@ vg_ed25519_scalar_base:
 	adds x4, x4, x9
 	adcs x5, x5, x2
 	adcs x6, x6, x8
-	adcs x7, x7, x10
+	adc x7, x7, x10
 	stp x4, x5, [x0, #96]
 	stp x6, x7, [x0, #112]
 	ldr x3, [x0, #288]
@@ -1141,7 +1141,7 @@ vg_ed25519_scalar_base:
 	adds x5, x5, x2
 	adcs x6, x6, x8
 	adcs x7, x7, x9
-	adcs x21, x16, x10
+	adc x21, x16, x10
 	ldr x3, [x0, #296]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -1151,7 +1151,7 @@ vg_ed25519_scalar_base:
 	adcs x6, x6, x8
 	adcs x7, x7, x9
 	adcs x21, x21, x16
-	adcs x22, x10, x10
+	adc x22, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -1159,7 +1159,7 @@ vg_ed25519_scalar_base:
 	adds x6, x6, x2
 	adcs x7, x7, x8
 	adcs x21, x21, x9
-	adcs x22, x22, x16
+	adc x22, x22, x16
 	ldr x3, [x0, #304]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -1169,7 +1169,7 @@ vg_ed25519_scalar_base:
 	adcs x7, x7, x8
 	adcs x21, x21, x9
 	adcs x22, x22, x16
-	adcs x23, x10, x10
+	adc x23, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -1177,7 +1177,7 @@ vg_ed25519_scalar_base:
 	adds x7, x7, x2
 	adcs x21, x21, x8
 	adcs x22, x22, x9
-	adcs x23, x23, x16
+	adc x23, x23, x16
 	ldr x3, [x0, #312]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -1187,7 +1187,7 @@ vg_ed25519_scalar_base:
 	adcs x21, x21, x8
 	adcs x22, x22, x9
 	adcs x23, x23, x16
-	adcs x24, x10, x10
+	adc x24, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -1195,7 +1195,7 @@ vg_ed25519_scalar_base:
 	adds x21, x21, x2
 	adcs x22, x22, x8
 	adcs x23, x23, x9
-	adcs x24, x24, x16
+	adc x24, x24, x16
 	movz w11, #38, lsl #0
 	mul x2, x11, x21
 	adds x4, x4, x2
@@ -1205,13 +1205,13 @@ vg_ed25519_scalar_base:
 	adcs x6, x6, x9
 	mul x16, x11, x24
 	adcs x7, x7, x16
-	adcs x20, x10, x10
+	adc x20, x10, x10
 	umulh x2, x11, x21
 	umulh x8, x11, x22
 	umulh x9, x11, x23
 	umulh x16, x11, x24
 	adds x7, x7, x9
-	adcs x20, x20, x16
+	adc x20, x20, x16
 	adds x16, x7, x7
 	adc x9, x20, x20
 	lsr x7, x16, #1
@@ -1220,7 +1220,7 @@ vg_ed25519_scalar_base:
 	adds x4, x4, x9
 	adcs x5, x5, x2
 	adcs x6, x6, x8
-	adcs x7, x7, x10
+	adc x7, x7, x10
 	stp x4, x5, [x0, #160]
 	stp x6, x7, [x0, #176]
 	add x19, x19, #1
@@ -2646,7 +2646,7 @@ vg_ed25519_scalar_base:
 	adds x5, x5, x2
 	adcs x6, x6, x8
 	adcs x7, x7, x9
-	adcs x21, x16, x10
+	adc x21, x16, x10
 	ldr x3, [x0, #72]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -2656,7 +2656,7 @@ vg_ed25519_scalar_base:
 	adcs x6, x6, x8
 	adcs x7, x7, x9
 	adcs x21, x21, x16
-	adcs x22, x10, x10
+	adc x22, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -2664,7 +2664,7 @@ vg_ed25519_scalar_base:
 	adds x6, x6, x2
 	adcs x7, x7, x8
 	adcs x21, x21, x9
-	adcs x22, x22, x16
+	adc x22, x22, x16
 	ldr x3, [x0, #80]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -2674,7 +2674,7 @@ vg_ed25519_scalar_base:
 	adcs x7, x7, x8
 	adcs x21, x21, x9
 	adcs x22, x22, x16
-	adcs x23, x10, x10
+	adc x23, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -2682,7 +2682,7 @@ vg_ed25519_scalar_base:
 	adds x7, x7, x2
 	adcs x21, x21, x8
 	adcs x22, x22, x9
-	adcs x23, x23, x16
+	adc x23, x23, x16
 	ldr x3, [x0, #88]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -2692,7 +2692,7 @@ vg_ed25519_scalar_base:
 	adcs x21, x21, x8
 	adcs x22, x22, x9
 	adcs x23, x23, x16
-	adcs x24, x10, x10
+	adc x24, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -2700,7 +2700,7 @@ vg_ed25519_scalar_base:
 	adds x21, x21, x2
 	adcs x22, x22, x8
 	adcs x23, x23, x9
-	adcs x24, x24, x16
+	adc x24, x24, x16
 	movz w11, #38, lsl #0
 	mul x2, x11, x21
 	adds x4, x4, x2
@@ -2710,13 +2710,13 @@ vg_ed25519_scalar_base:
 	adcs x6, x6, x9
 	mul x16, x11, x24
 	adcs x7, x7, x16
-	adcs x20, x10, x10
+	adc x20, x10, x10
 	umulh x2, x11, x21
 	umulh x8, x11, x22
 	umulh x9, x11, x23
 	umulh x16, x11, x24
 	adds x7, x7, x9
-	adcs x20, x20, x16
+	adc x20, x20, x16
 	adds x16, x7, x7
 	adc x9, x20, x20
 	lsr x7, x16, #1
@@ -2725,7 +2725,7 @@ vg_ed25519_scalar_base:
 	adds x4, x4, x9
 	adcs x5, x5, x2
 	adcs x6, x6, x8
-	adcs x7, x7, x10
+	adc x7, x7, x10
 	str x4, [x0, #64]
 	str x5, [x0, #72]
 	str x6, [x0, #80]
@@ -2747,7 +2747,7 @@ vg_ed25519_scalar_base:
 	adds x5, x5, x2
 	adcs x6, x6, x8
 	adcs x7, x7, x9
-	adcs x21, x16, x10
+	adc x21, x16, x10
 	ldr x3, [x0, #104]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -2757,7 +2757,7 @@ vg_ed25519_scalar_base:
 	adcs x6, x6, x8
 	adcs x7, x7, x9
 	adcs x21, x21, x16
-	adcs x22, x10, x10
+	adc x22, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -2765,7 +2765,7 @@ vg_ed25519_scalar_base:
 	adds x6, x6, x2
 	adcs x7, x7, x8
 	adcs x21, x21, x9
-	adcs x22, x22, x16
+	adc x22, x22, x16
 	ldr x3, [x0, #112]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -2775,7 +2775,7 @@ vg_ed25519_scalar_base:
 	adcs x7, x7, x8
 	adcs x21, x21, x9
 	adcs x22, x22, x16
-	adcs x23, x10, x10
+	adc x23, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -2783,7 +2783,7 @@ vg_ed25519_scalar_base:
 	adds x7, x7, x2
 	adcs x21, x21, x8
 	adcs x22, x22, x9
-	adcs x23, x23, x16
+	adc x23, x23, x16
 	ldr x3, [x0, #120]
 	mul x2, x3, x12
 	mul x8, x3, x13
@@ -2793,7 +2793,7 @@ vg_ed25519_scalar_base:
 	adcs x21, x21, x8
 	adcs x22, x22, x9
 	adcs x23, x23, x16
-	adcs x24, x10, x10
+	adc x24, x10, x10
 	umulh x2, x3, x12
 	umulh x8, x3, x13
 	umulh x9, x3, x14
@@ -2801,7 +2801,7 @@ vg_ed25519_scalar_base:
 	adds x21, x21, x2
 	adcs x22, x22, x8
 	adcs x23, x23, x9
-	adcs x24, x24, x16
+	adc x24, x24, x16
 	movz w11, #38, lsl #0
 	mul x2, x11, x21
 	adds x4, x4, x2
@@ -2811,13 +2811,13 @@ vg_ed25519_scalar_base:
 	adcs x6, x6, x9
 	mul x16, x11, x24
 	adcs x7, x7, x16
-	adcs x20, x10, x10
+	adc x20, x10, x10
 	umulh x2, x11, x21
 	umulh x8, x11, x22
 	umulh x9, x11, x23
 	umulh x16, x11, x24
 	adds x7, x7, x9
-	adcs x20, x20, x16
+	adc x20, x20, x16
 	adds x16, x7, x7
 	adc x9, x20, x20
 	lsr x7, x16, #1
@@ -2826,7 +2826,7 @@ vg_ed25519_scalar_base:
 	adds x4, x4, x9
 	adcs x5, x5, x2
 	adcs x6, x6, x8
-	adcs x7, x7, x10
+	adc x7, x7, x10
 	str x4, [x0, #96]
 	str x5, [x0, #104]
 	str x6, [x0, #112]
