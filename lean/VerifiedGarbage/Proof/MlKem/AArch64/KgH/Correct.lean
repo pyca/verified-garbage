@@ -396,10 +396,9 @@ open VG.Spec.Sha3 (bytesAt)
 
 /-- One noise output with 16-bit coefficients, transformed (`nttAtWithW`) if `transform`. -/
 theorem readonly_out_okW {s : State} {off ns buf : Nat} {b f w : Addr} (transform : Bool)
- (hoff : off<65536) (hns : ns<65536) (hbuf : buf<4096)
+ (hoff : off<65536) (hbuf : buf<4096)
  (hb : s.gpr .x19+BitVec.ofNat 64 buf=b) (hf : s.gpr .x28+BitVec.ofNat 64 off=f)
- (hw : s.gpr .x28+BitVec.ofNat 64 ns=w)
- (hbf : (Region.mk b 128).Disjoint ⟨f,1024⟩) (hfw : (polyRegion f).Disjoint (polyRegion w))
+ (hbf : (Region.mk b 128).Disjoint ⟨f,1024⟩)
  (hc : Covers [⟨b,128⟩,⟨f,1024⟩] (s.rd++s.wr))
  (hcw : Covers [⟨f,1024⟩,⟨w,1024⟩] s.wr)
  (ht : Ntt16.FwdReady s f w) :
@@ -412,8 +411,8 @@ theorem readonly_out_okW {s : State} {off ns buf : Nat} {b f w : Addr} (transfor
    intro r hr
    simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
    rcases hr with rfl|rfl
-   · exact ht.output.symm
-   · exact ht.scratch.symm)
+   · exact ht.output
+   · exact ht.scratch)
  obtain sub : ∀ x ∈ [Region.mk f 512], ∃ r ∈ [Region.mk f 1024, ⟨w,1024⟩], Region.Sub x r := by
    intro x hx
    rw [List.mem_singleton.1 hx]
@@ -438,12 +437,11 @@ open VG.Spec.MlKem
 open VG.Spec.Sha3 (bytesAt)
 
 theorem readonly_pair_tail_ok {initial s : State} {p a f g w : Addr} {off0 off1 ns n : Nat}
-    (tr0 tr1 : Bool) (hn : n+1<256) (h0 : off0<65536) (h1 : off1<65536) (hns : ns<65536)
+    (tr0 tr1 : Bool) (hn : n+1<256) (h0 : off0<65536) (h1 : off1<65536)
     (hk : Partial (pairWrites p f g w) initial s) (sv : Saved p initial s.mem)
     (hp : s.gpr .x19=p) (ha : s.gpr .x20=p+400) (hb : s.gpr .x21=p+528)
     (hf : s.gpr .x28+BitVec.ofNat 64 off0=f)
     (hg : s.gpr .x28+BitVec.ofNat 64 off1=g)
-    (hw : s.gpr .x28+BitVec.ofNat 64 ns=w)
     (hs : TailSetup s p f g w)
     (hpair : PairAt s.mem p (seedState initial.mem a n) (seedState initial.mem a (n+1)))
     (ht0 : Ntt16.FwdReady s f w)
@@ -477,11 +475,10 @@ theorem readonly_pair_tail_ok {initial s : State} {p a f g w : Addr} {off0 off1 
     intro r hr; exact hfar r (by simp only [pairWrites,List.mem_cons,List.not_mem_nil,or_false] at hr ⊢; grind))
   obtain r0 := output_prf (by omega_using [hn] : n<256) ra
   obtain r1 := output_prf hn rb
-  refine WP.seq (WP.mono_syms (readonly_out_okW tr0 h0 hns (by decide)
+  refine WP.seq (WP.mono_syms (readonly_out_okW tr0 h0 (by decide)
     (by rw [ku.gpr .x19 (by decide),hp]; rfl)
     (by rw [ku.gpr .x28 (by decide)]; exact hf)
-    (by rw [ku.gpr .x28 (by decide)]; exact hw)
-    hs.bufA hs.fw (by rw [ku.rd,ku.wr]; exact hs.cbdA)
+    hs.bufA (by rw [ku.rd,ku.wr]; exact hs.cbdA)
     (by rw [ku.wr]; exact hs.nttA) tab0) fun v ⟨kv,pv⟩ vuSym => ?_)
   obtain pvv : PolyIsW (cw true) v.mem f (sampled initial.mem a n tr0) := by simpa only [r0,sampled] using pv
   obtain pkeep : Partial (pairWrites p f g w) initial v := pu.trans ((Partial.of_kept kv).mono (by simp [pairWrites]))
@@ -497,11 +494,10 @@ theorem readonly_pair_tail_ok {initial s : State} {p a f g w : Addr} {off0 off1 
     intro r hr
     rw [su]
     exact hfar r (by simp only [pairWrites,List.mem_cons,List.not_mem_nil,or_false] at hr ⊢; grind))
-  refine WP.seq (WP.mono (readonly_out_okW tr1 h1 hns (by decide)
+  refine WP.seq (WP.mono (readonly_out_okW tr1 h1 (by decide)
     (by rw [kv.cs .x19 (by decide) (by decide),ku.gpr .x19 (by decide),hp]; rfl)
     (by rw [kv.cs .x28 (by decide) (by decide),ku.gpr .x28 (by decide)]; exact hg)
-    (by rw [kv.cs .x28 (by decide) (by decide),ku.gpr .x28 (by decide)]; exact hw)
-    hs.bufB hs.gw (by rw [kv.rd,kv.wr,ku.rd,ku.wr]; exact hs.cbdB)
+    hs.bufB (by rw [kv.rd,kv.wr,ku.rd,ku.wr]; exact hs.cbdB)
     (by rw [kv.wr,ku.wr]; exact hs.nttB) tab1v) fun z ⟨kz,pz⟩ => ?_)
   obtain pzz : PolyIsW (cw true) z.mem g (sampled initial.mem a (n+1) tr1) := by simpa only [r1v,sampled] using pz
   obtain pfz : PolyIsW (cw true) z.mem f (sampled initial.mem a n tr0) :=
@@ -571,10 +567,9 @@ theorem readonly_noisePair_ok {s : State} {L : KemLay} (kg : Bool) {n : Nat} {p 
   obtain t1 := ht1.frame us ku.rd ku.wr fu (by
     intro r hr; exact hfar r (by simp only [pairWrites,List.mem_cons,List.not_mem_nil,or_false] at hr ⊢; grind))
   exact readonly_pair_tail_ok (transformed L kg n) (transformed L kg (n+1)) hn h0 h1
-    (by cases kg <;> decide) pu sv h19 h20 h21
+    pu sv h19 h20 h21
     (by rw [ku.gpr .x28 (by decide)]; exact hf)
     (by rw [ku.gpr .x28 (by decide)]; exact hg)
-    (by rw [ku.gpr .x28 (by decide)]; exact hw)
     (hs.regions ku.rd ku.wr) pair t0 t1 (by simpa only [Ntt16.fwdRegion, us] using hfar)
 
 end VG.Proof.MlKem.AArch64.Noise
