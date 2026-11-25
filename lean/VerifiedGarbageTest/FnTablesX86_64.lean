@@ -227,10 +227,9 @@ those is part of, is the same. -/
 def artifactOf (name : String) (fns : Nat) (ifaceTables : List (String × List (BitVec 64))) :
     EmitArtifact where
   target := .of (renderOnly target) emitter
-  module := "test"
-  name := "vg_test_fn_tables"
-  sig := sigOf { name := name, words := 2, fns := fns, tables := ifaceTables }
-  doc := "Returns the word of data of its table, which the table's function returns.\n\n# Safety\n\n"
+  api := { module := "test", name := "vg_test_fn_tables", safety := []
+           sig := sigOf { name := name, words := 2, fns := fns, tables := ifaceTables }
+           summary := "Returns the word of data of its table, which the table's function returns." }
   tables := tables
   code := code
   contract := contract
@@ -254,10 +253,8 @@ theorem untabledVerified : Verified target (.block []) untabledContract := by
 /-- An artifact that lists no tables for its table parameter. -/
 def untabled : EmitArtifact where
   target := .of (renderOnly target) emitter
-  module := "test"
-  name := "vg_test_fn_untabled"
-  sig := sig
-  doc := "Does nothing.\n\n# Safety\n\n"
+  api := { module := "test", name := "vg_test_fn_untabled", sig := sig, safety := []
+           summary := "Does nothing." }
   code := .block []
   contract := untabledContract
   verified := renderOnly_verified untabledVerified

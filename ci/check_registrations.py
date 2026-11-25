@@ -60,9 +60,8 @@ Two shapes are accepted explicitly, each for the reason given:
     record binds exactly the cleanup form `StreamFnS.scrubbed` states, of
     the function's own fields (`STREAM_CODE`), and that theorem.
   * The emitter's self-test (`SELFTEST`), which builds its one `Artifact`
-    by hand: it tests the emitter on code and a contract of its own and
-    registers no implementation of an `Api`. The rules above for every
-    file reviewed by hand still apply to it.
+    by hand: it tests the emitter on code defined under `Proof/`. The rules
+    above for every file reviewed by hand still apply to it.
 """
 
 import pathlib
@@ -110,8 +109,7 @@ SCRUB_FORM = re.compile(r"\(?\s*Impl\.Scrub\.")
 STREAM_CODE = re.compile(r"Impl\.Scrub\.X86_64\.scrubSel ([\w.']+)\.sel\.level \1\.f\.retBits "
                          r"\1\.f\.stack \1\.sel\.runs\s+\1\.f\.code")
 # The emitter's self-test, which builds its one `Artifact` by hand: it tests
-# the emitter on code and a contract of its own, and registers no
-# implementation of an `Api`.
+# the emitter on code defined under `Proof/`.
 SELFTEST = "VerifiedGarbage/Artifacts/Selftest/"
 CHOICE = re.compile(r"\(\s*(?:match|if)(?![\w'])")
 ARM = re.compile(r"=>|(?<![\w'])(?:then|else)(?![\w'])")

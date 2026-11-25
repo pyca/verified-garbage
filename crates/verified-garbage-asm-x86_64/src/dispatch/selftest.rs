@@ -5,7 +5,14 @@
 /// Pipeline self-test: returns `a.wrapping_add(b)`.
 ///
 /// Contract: `VG.Spec.Selftest.addContract`. No safety requirements.
-#[allow(clippy::missing_safety_doc)]
+///
+/// It runs `vg_selftest_add`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// # Safety
+///
+///
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_selftest_add_auto(_dit: verified_garbage_cpu::Dit<'_>, a: u64, b: u64) -> u64 {

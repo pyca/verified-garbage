@@ -35,8 +35,9 @@ VerifiedGarbage/
                     returns the best of its tables
     Axioms.lean     `#assert_standard_axioms`
     Audit.lean      `#assert_no_compiler_overrides` (the compiled code the emitter
-                    runs is what the kernel checked) and `#assert_spec_origin`
-                    (`VG.Spec` definitions are declared in `Spec/`)
+                    runs is what the kernel checked), `#assert_spec_origin`
+                    (`VG.Spec` definitions are declared in `Spec/`) and
+                    `#assert_spec_apis` (so is every artifact's `Api`)
     Emit.lean       what is emitted (every registration file under
                     `Artifacts/`, each function's implementations from one of
                     them), and writing or checking the generated crates
@@ -89,12 +90,14 @@ never import proofs.
    chooses (`Api.artifact`, `TCB/Registration.lean`): the target, the code
    and its proof, and the suffix of its name; the stack its calls and frames
    use (`stack`) is the one the proof's contract is for. An artifact
-   made from an `Api` takes the contract from it with the name and signature
-   (`Api.contracts`), and must be proven against exactly that contract on its
-   target (`Artifact.ofApi`), so a registration file, or a proof building
-   artifacts for a generic caller, cannot pair a function's name with another
-   function's contract; the emitter refuses an artifact that is not made from
-   an `Api` with a contract. Nor can it choose the target model the proof is
+   carries its `Api` (`Artifact.api`), which gives its contract with its name
+   and signature (`Api.contracts`), and must be proven against exactly that
+   contract on its target (`Artifact.ofApi`), so a registration file, or a proof
+   building artifacts for a generic caller, cannot pair a function's name with
+   another function's contract. Nor can it make an `Api` of its own: the emitter's
+   `#assert_spec_apis` has the kernel check that each artifact's is one that
+   `Spec/` declares, whatever a registration calls it, and the emitter refuses an
+   `Api` with no contract. Nor can it choose the target model the proof is
    on, or how the code is printed: the emitter's driver (`Emit.driver`) takes
    the list of `Artifacts/<Alg>/<T>.lean` as a `List (Artifact VG.<T>.target)`,
    of the target `TCB/<T>/Target.lean` defines, and prints it with
@@ -105,9 +108,9 @@ never import proofs.
    compiler run other code than the definitions the kernel checked, in what
    it runs (`implemented_by`, `extern`, `export`) or anywhere in the project
    (`csimp`, `initialize`), and any `VG.Spec` definition declared outside
-   `Spec/`. Each audit reads the records every module writes when it is
-   built (`TCB/AuditRecords.lean`), not the proofs, which a module does not
-   see in what it imports.
+   `Spec/`. The axiom, override and `VG.Spec` audits read the records every
+   module writes when it is built (`TCB/AuditRecords.lean`), not the proofs,
+   which a module does not see in what it imports.
 5. **Emit** — `Emit.lean` renders the registry into `crates/verified-garbage-asm-<target>/src/<module>.rs`,
    adding to each function's `# Safety` section what its contract requires of
    the memory each buffer is valid for (`Sig.validDoc`) and of where its

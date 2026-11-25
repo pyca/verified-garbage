@@ -11,8 +11,7 @@ public import VerifiedGarbage.TCB.Registration
 namespace VG.Artifacts.Selftest.X86_64
 
 def artifacts : List (Artifact X86_64.target) := [
-  { Spec.Selftest.addApi with
-    doc := Spec.Selftest.addApi.summary
+  { api := Spec.Selftest.addApi
     code := Proof.Selftest.X86_64.addScrubbed
     contract := Spec.Selftest.addContract X86_64.abi
     verified := ⟨Proof.Selftest.X86_64.addScrubbed_verified,

@@ -17,6 +17,16 @@ public import VerifiedGarbage.Proof.Framework.Registration
 public meta import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Spec.Selftest.Contract
 public meta import VerifiedGarbage.Spec.Selftest.Contract
+public import VerifiedGarbage.Spec.Hmac.Generic
+public meta import VerifiedGarbage.Spec.Hmac.Generic
+public import VerifiedGarbage.Spec.Pbkdf2.Generic
+public meta import VerifiedGarbage.Spec.Pbkdf2.Generic
+public import VerifiedGarbage.Spec.MlDsa.Contract
+public meta import VerifiedGarbage.Spec.MlDsa.Contract
+import VerifiedGarbage.Proof.Framework.AArch64.ResidueTaint
+meta import VerifiedGarbage.Proof.Framework.AArch64.ResidueTaint
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
 import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Semantics
@@ -27,8 +37,13 @@ meta import VerifiedGarbage.Proof.Framework.Semantics
 
 `Emit.driver` writes the program that emits every artifact: these tests pin
 down which modules it imports and how it lists their artifacts, and run it on
-registrations of a target that is not the one `TCB/` defines (#6330).
+registrations of a target that is not the one `TCB/` defines (#6330), or of an
+`Api` that is not one `Spec/` does.
 -/
+
+-- `#guard_msgs` compares every message of its command, which would include
+-- the lakefile's profile of it (`ci/lean_profile.py`).
+set_option profiler false
 
 namespace VG.Test.Emit
 
@@ -69,6 +84,9 @@ open VG.Emit
   #assert_standard_axioms all\n\
   #assert_no_compiler_overrides all run\n\
   #assert_spec_origin\n\
+  #assert_spec_apis\n  \
+    _root_.VG.Artifacts.Sha3.X86_64.artifacts\n  \
+    _root_.VG.Artifacts.Sha3.AArch64.artifacts\n\
   \n\
   end VG.Emit\n\
   \n\
@@ -107,11 +125,11 @@ def args (as : List String) : Option (Bool × Option String × String) :=
 
 end VG.Test.Emit
 
-/-! ## Artifacts of another target, and another printer
+/-! ## Artifacts of another target, another printer, and another contract
 
 The commands of the driver (`driverBody`), run on registrations of this module
 that each declare what a module a registration imports could: a target of
-their own, or an emitter. -/
+their own, an emitter, or an `Api`. -/
 
 -- Public, as the driver's commands are.
 public section
@@ -181,6 +199,43 @@ def VG.Emit.VG.AArch64.target : Target := VG.Artifacts.TestAbi.AArch64.target
 def VG.Artifacts.TestPrinter.AArch64.artifacts : List EmitArtifact :=
   EmitArtifact.ofList VG.AArch64.target VG.Test.Emit.swapped VG.Artifacts.Ct.AArch64.artifacts
 
+namespace VG.Artifacts.TestApi.AArch64
+open VG.AArch64
+
+/-- A contract that says nothing of the result. -/
+@[expose] def weakContract {M : ISA} (A : Abi M) : Contract M :=
+  VG.Spec.Selftest.addSig.contract A (post := fun _ _ m m' _ => m' = m)
+
+/-- `vg_selftest_add`, but for that contract. A registration file in this
+namespace would mean it by `Spec.Selftest.addApi`. -/
+@[expose] def Spec.Selftest.addApi : Api :=
+  { VG.Spec.Selftest.addApi with contracts := some fun A _ => weakContract A }
+
+/-- No code, which returns the first argument. -/
+@[expose] def code : Prog isa := .block []
+
+def contract : Contract isa where
+  pre _ := True
+  post s s' := s'.mem = s.mem
+  pub _ _ := True
+
+/-- It meets that contract, on the target `TCB/` defines. -/
+theorem verified :
+    VerifiedScrubbed VG.AArch64.target code (weakContract VG.AArch64.abi) 64 where
+  verified := Verified.of_correct (T := VG.AArch64.target) (k := contract)
+    (fun s _ => ⟨[], s, .block rfl, ⟨fun _ _ => rfl, rfl, fun _ _ => rfl⟩, rfl⟩)
+    (ConstantTime.of_silent fun _ _ _ _ e => by cases e with | block e => cases e; rfl)
+    (by sig_implies [weakContract, VG.Spec.Selftest.addSig, contract, VG.AArch64.abi, argRegs]
+      [VG.Artifacts.TestAbi.AArch64.sat] using VG.Artifacts.TestAbi.AArch64.sat)
+  noResidue := RTaint.noResidue_of_check ⟨_, by taint_decide⟩ _
+  retAbi ty _ h := by cases ty <;> cases h
+
+/-- Its registration, whose proofs the kernel accepts. -/
+def artifacts : List (Artifact VG.AArch64.target) :=
+  [Spec.Selftest.addApi.artifact VG.AArch64.target { code := code, verified := verified }]
+
+end VG.Artifacts.TestApi.AArch64
+
 namespace VG.Test.Emit
 
 open Lean Elab Command
@@ -242,6 +297,48 @@ run_cmd do
 -- So does a registration that chooses its printer.
 run_cmd do
   fails (← driverErrors "VerifiedGarbage.Artifacts.TestPrinter.AArch64") "type mismatch"
+
+-- So does an `Api` that is not `Spec/`'s, whatever name the registration has for it.
+run_cmd do
+  fails (← driverErrors "VerifiedGarbage.Artifacts.TestApi.AArch64")
+    "these artifacts' `Api`s are not ones `Spec/` declares"
+
+/-! ## What an `Api` of `Spec/` is (`#assert_spec_apis`) -/
+
+/-- A hash function's instance that is not `Spec/`'s. -/
+def fakeInstance : VG.Spec.Hmac.Instance := { VG.Spec.Hmac.sha256I with rust := "sha512" }
+
+/-- A value that a proof builds artifacts with. -/
+structure Variant where
+  I : VG.Spec.Hmac.Instance
+
+def variants : List Variant := [⟨VG.Spec.Hmac.sha256I⟩, ⟨VG.Spec.Hmac.sha512I⟩]
+
+-- Constants of `Spec/`, and functions of `Spec/` of one, however they are reached.
+/-- info: every artifact's `Api` is one `Spec/` declares -/
+#guard_msgs in
+#assert_spec_apis [VG.Spec.Selftest.addApi, VG.Spec.Hmac.sha256I.pbkdf2Api]
+  (variants.map fun v => v.I.pbkdf2Api)
+
+-- Both branches of a decision that need not be made.
+#guard_msgs (drop info) in
+#assert_spec_apis (if 2 ^ 400 % 7 = 2 then [VG.Spec.Selftest.addApi] else
+  variants.flatMap fun v => [v.I.pbkdf2Api] ++ if v.I.scratch = 0 then [] else [v.I.finalizeApi])
+run_cmd do
+  fails (← errorsOf "#assert_spec_apis (if 0 = 1 then [VG.Test.Emit.fakeInstance.pbkdf2Api] else [])")
+    "not ones `Spec/` declares"
+
+-- A function of `Spec/` of something that is not `Spec/`'s.
+run_cmd do
+  fails (← errorsOf "#assert_spec_apis [VG.Spec.Selftest.addApi] [VG.Test.Emit.fakeInstance.pbkdf2Api]")
+    "not ones `Spec/` declares"
+
+-- A function of `Spec/` given a name: that of another parameter set.
+run_cmd do
+  fails (← errorsOf "#assert_spec_apis [VG.Spec.MlDsa.keyGenApi VG.Spec.MlDsa.mlDsa44 \"mldsa87\" \"ML-DSA-87\"]")
+    "not ones `Spec/` declares"
+#guard_msgs (drop info) in
+#assert_spec_apis [VG.Spec.MlDsa.keyGen44Api]
 
 end VG.Test.Emit
 

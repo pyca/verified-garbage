@@ -6,7 +6,12 @@
 /// Pipeline self-test: returns `a.wrapping_add(b)`.
 ///
 /// Contract: `VG.Spec.Selftest.addContract`. No safety requirements.
-#[allow(clippy::missing_safety_doc)]
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// # Safety
+///
+///
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_selftest_add(a: u64, b: u64) -> u64 {
     core::arch::naked_asm!(
