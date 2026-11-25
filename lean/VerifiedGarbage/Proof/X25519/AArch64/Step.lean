@@ -428,7 +428,7 @@ theorem front_ok {s : State} {base : Addr} (hs : Scr s base large) (hz : s.gpr .
       rw [← a4, v4, k4 _ (by decide), k4 _ (by decide), k4 _ (by decide), k4 _ (by decide)]] at dz2 dz3
   generalize decide (b n = b (n + 1)) = z at *
   obtain lt : ∀ {x y : Nat}, x < 2 ^ 255 + 2 ^ 136 → y < 2 ^ 255 + 2 ^ 136 →
-      (if z = true then x else y) < 2 ^ 255 + 2 ^ 136 := fun hx hy => by cases z <;> with_reducible assumption
+      (if z = true then x else y) < 2 ^ 255 + 2 ^ 136 := fun hx hy => by cases z; exact hy; exact hx
   obtain tf : ∀ x y : Nat, toFe (if z = true then x else y) = if z = true then toFe x else toFe y :=
     fun x y => by cases z <;> rfl
   rw [WP.block_append_iff]
