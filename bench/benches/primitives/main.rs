@@ -155,6 +155,7 @@ mod triple_des_cfb8;
 mod triple_des_ecb;
 mod triple_des_ofb;
 mod x25519;
+mod lab;
 mod x448;
 
 const SIZES: [usize; 3] = [64, 1024, 16384];
@@ -719,6 +720,7 @@ benches! {
     (sha512_256::USES, sha512_256::bench),
     (sm3::USES, sm3::bench),
     (x25519::USES, x25519::bench),
+    (lab::USES, lab::bench),
     (x448::USES, x448::bench),
     (ed25519::USES, ed25519::bench),
     (ed448::USES, ed448::bench),
