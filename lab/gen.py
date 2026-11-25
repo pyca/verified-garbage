@@ -195,8 +195,50 @@ def retree(body):
         else: out.append(body[i]); i += 1
     return out
 B['step_tree'] = ['mov w10, #0', 'mov x19, #100'] + minflags(retree(S))
+
+W8 = ['x4','x5','x6','x7','x21','x22','x23','x24']
+def sqrR(o, ext=True):
+    """x12..x15 squared into [o] (o a list: registers kept in x4..x7)."""
+    r = ['mul x5, x12, x13','mul x6, x12, x14','mul x7, x12, x15','umulh x2, x12, x13','umulh x8, x12, x14','umulh x9, x12, x15',
+         'mul x16, x13, x14','mul x17, x13, x15','umulh x3, x13, x14','umulh x11, x13, x15','mul x20, x14, x15','umulh x23, x14, x15',
+         'adds x6, x6, x2','adcs x7, x7, x8','adc x21, x9, x10',
+         'adds x7, x7, x16','adcs x21, x21, x17','adc x22, x11, x10',
+         'adds x21, x21, x3','adcs x22, x22, x20','adc x23, x23, x10']
+    if ext: r += ['lsr x24, x23, #63','extr x23, x23, x22, #63','extr x22, x22, x21, #63','extr x21, x21, x7, #63','extr x7, x7, x6, #63','extr x6, x6, x5, #63','lsl x5, x5, #1']
+    else: r += ['adds x5, x5, x5'] + [f'adcs {w}, {w}, {w}' for w in ('x6','x7','x21','x22','x23')] + ['adc x24, x10, x10']
+    r += ['mul x4, x12, x12','umulh x2, x12, x12','mul x8, x13, x13','umulh x9, x13, x13','mul x16, x14, x14','umulh x17, x14, x14','mul x3, x15, x15','umulh x11, x15, x15',
+          'adds x5, x5, x2','adcs x6, x6, x8','adcs x7, x7, x9','adcs x21, x21, x16','adcs x22, x22, x17','adcs x23, x23, x3','adc x24, x24, x11']
+    return r + foldR(['x4','x5','x6','x7'], ['x21','x22','x23','x24'], o)
+def ldw(o, rs): return [f'ldp {rs[0]}, {rs[1]}, [x0, #{o}]', f'ldp {rs[2]}, {rs[3]}, [x0, #{o+16}]']
+def stw(o, rs): return [f'stp {rs[0]}, {rs[1]}, [x0, #{o}]', f'stp {rs[2]}, {rs[3]}, [x0, #{o+16}]']
+R1, R2 = ['x4','x5','x6','x7'], ['x21','x22','x23','x24']
+def add3(d, a, b): return [f'adds {d[0]}, {a[0]}, {b[0]}', f'adcs {d[1]}, {a[1]}, {b[1]}', 'mov w2, #38', f'adcs {d[2]}, {a[2]}, {b[2]}', f'adcs {d[3]}, {a[3]}, {b[3]}', 'csel x3, x2, x10, hs', f'adds {d[0]}, {d[0]}, x3', f'adcs {d[1]}, {d[1]}, x10', f'adc {d[2]}, {d[2]}, x10']
+def sub4(d, a, b): return [f'subs {d[0]}, {a[0]}, {b[0]}', f'sbcs {d[1]}, {a[1]}, {b[1]}', 'mov w2, #38', f'sbcs {d[2]}, {a[2]}, {b[2]}', f'sbcs {d[3]}, {a[3]}, {b[3]}', 'csel x3, x10, x2, hs', f'subs {d[0]}, {d[0]}, x3', f'sbcs {d[1]}, {d[1]}, x10', f'sbcs {d[2]}, {d[2]}, x10', f'sbc {d[3]}, {d[3]}, x10']
+def slot(n): return 64 + 32 * n
+FR = minflags(S[:b0])
+def step_order(order, ext=True):
+    """order: names; E (E and AA + a24 E) is put where first needed."""
+    D = ['x12','x13','x14','x15']
+    def sq(o, a): return ldw(slot(a), D) + sqrR(slot(o), ext)
+    ops = {
+      'AA': lambda: sq(9, 5), 'BB': lambda: sq(10, 6), 'DA': lambda: mulA(slot(12), slot(8), slot(5)), 'CB': lambda: mulA(slot(13), slot(7), slot(6)),
+      'E': lambda: ldw(slot(9), R1) + ldw(slot(10), R2) + sub4(D, R1, R2) + stw(slot(11), D),
+      'x3': lambda: ldw(slot(12), R1) + ldw(slot(13), R2) + add3(D, R1, R2) + sqrR(slot(3), ext),
+      't': lambda: ldw(slot(12), R1) + ldw(slot(13), R2) + sub4(D, R1, R2) + sqrR(slot(4), ext),
+      'z3': lambda: mulA(slot(4), slot(0), slot(4)),
+      'x2': lambda: mulA(slot(1), slot(9), slot(10)),
+      'z2': lambda: ldw(slot(9), R1) + ldw(slot(11), D) + a24 + stw(slot(2), D) + mulA(slot(2), slot(11), slot(2)),
+    }
+    return sum((ops[k]() for k in order.split()), [])
+ia = next(i for i, l in enumerate(S) if l.startswith('mov') and '56129' in l or l.startswith('movz x11, #') or ('0xdb41' in l))
+ja = next(i for i in range(ia, len(S)) if S[i].startswith('adc x15'))
+a24 = minflags(S[ia:ja+1])
+ORD = {'o0': 'AA BB E DA CB x3 t z3 x2 z2', 'o1': 'DA CB AA BB t x3 z3 E x2 z2', 'o2': 'DA CB AA BB t x3 E x2 z3 z2', 'o3': 'AA BB DA CB E x2 z2 t x3 z3'}
+for k, v in ORD.items(): B['st_' + k] = ['mov w10, #0', 'mov x19, #100'] + minflags(FR + step_order(v))
+B['st_o1n'] = ['mov w10, #0', 'mov x19, #100'] + minflags(FR + step_order(ORD['o1'], False))
+B['sqrR'] = ['mov w10, #0'] + ldw(224, ['x12','x13','x14','x15']) + minflags(sqrR(448))
 if __name__ == '__main__':
-    for k in ('step','step_min','step_tree','mul','mul_min','mulA','mulT','sqr','sqr_min'): print(k, len(B[k]), setters(B[k]))
+    for k in ('step','step_min','step_tree','mul','mul_min','mulA','mulT','sqr','sqr_min','sqrR','st_o0','st_o1'): print(k, len(B[k]), setters(B[k]))
 ALL = dict(B)
 KEEP = sys.argv[1].split() if len(sys.argv) > 1 else None
 if KEEP: B = {k: v for k, v in B.items() if k in KEEP}
