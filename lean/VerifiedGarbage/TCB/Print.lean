@@ -238,5 +238,11 @@ structure Emitter (M : ISA) where
   /-- How documentation names the calling convention's `reserved n`: `none`
   if it is empty on every state. -/
   reservedDoc : Nat → Option String
+  /-- The bytes of stack a call instruction takes (`ISA.call`): those of the
+  return address it stores there, or 0 if it leaves it in a register. -/
+  callBytes : Nat
+  /-- The bytes of stack the push of a frame takes (`ISA.push`): by how many
+  it moves the stack pointer down. -/
+  frameBytes : M.Instr → Nat
 
 end VG

@@ -205,5 +205,12 @@ def emitter : Emitter isa where
   argAreaDoc ws := if argBytes ws = 0 then none else some ("the arguments on the stack", true)
   reservedDoc n := some (if n = 0 then "the return address on the stack" else
     s!"the return address on the stack or the {n} bytes of stack below it")
+  callBytes := 4
+  frameBytes
+    | .push rs => 4 * rs.length
+    | .alloc bytes => bytes
+    | .symPush .. => 4
+    | .mcdtEnter _ => 12
+    | _ => 0
 
 end VG.X86

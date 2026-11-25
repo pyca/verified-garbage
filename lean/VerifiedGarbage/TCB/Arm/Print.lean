@@ -112,5 +112,10 @@ def emitter : Emitter isa where
   argAreaDoc ws := if (classify ws 0 0).2 = 0 then none else
     some ("the arguments on the stack", false)
   reservedDoc n := if n = 0 then none else some s!"the {n} bytes of stack below the stack pointer"
+  callBytes := 0
+  frameBytes
+    | .push rs => 4 * rs.length
+    | .alloc bytes => bytes
+    | _ => 0
 
 end VG.Arm
