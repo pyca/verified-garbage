@@ -1,10 +1,8 @@
 module
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.RejNtt4
-public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Keep
-public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Load
+public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Pair
 
 import VerifiedGarbage.Proof.Framework.Range
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Store
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Contract

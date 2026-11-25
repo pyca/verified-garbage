@@ -10,7 +10,7 @@ public import VerifiedGarbage.Impl.MlDsa.AArch64.Pack.Encode
 
 namespace VG.Impl.MlDsa.AArch64.Sign.CommitTail
 open VG VG.AArch64
-open VG.Impl.Sha3.AArch64.Sha3.Vector (vreg rounds)
+open VG.Impl.Sha3.AArch64.Sha3.Vector (vreg unrolled)
 open VG.Impl.MlKem.AArch64 (mov)
 
 def save : List Instr := (List.range 8).map (fun i => .strq (vreg (8+i)) .x3 (16*i))
@@ -61,7 +61,7 @@ five also squeeze a mask block. -/
 def coreFor (wlen : Nat) : Prog isa :=
  .seq (.block [.movz .x .x11 (BitVec.ofNat 16 ((64+wlen)/136+1)) 0,.movz .x .x12 5 0,
   .addImm .x .x10 .x19 256])
- (.loop (.seq (.block rounds) (.seq (.ite (.zero .x .x12) (.block []) (.block squeezeNext))
+ (.loop (.seq (.block unrolled) (.seq (.ite (.zero .x .x12) (.block []) (.block squeezeNext))
   (.seq (absorbNext wlen) (.block [.subImm .x .x11 .x11 1])))) (.nonzero .x .x11))
 def code (wlen olen : Nat) : Prog isa :=
  .seq (.block (pro ++ first ++ upperInit ++ ([.addImm .x .x5 .x1 72] : List Instr)))

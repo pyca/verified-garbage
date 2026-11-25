@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.ChaCha20.AArch64.Xor
+public import VerifiedGarbage.Impl.Scrub.AArch64.Writes
 public import VerifiedGarbage.Impl.Scrub.AArch64.Scrub
 public import VerifiedGarbage.Proof.Framework.AArch64.ScrubSide
 public import VerifiedGarbage.Impl.ChaCha20Poly1305.AArch64.Stitched
@@ -76,6 +77,9 @@ structure XorImpl where
   sealSide : (AArch64.Scrub.calleeSide (Impl.ChaCha20Poly1305.AArch64.Fn.sealBody callee stitched)
       (Impl.ChaCha20Poly1305.AArch64.Fn.sealOwn.union callee.clear) &&
     decide (16 * (Impl.ChaCha20Poly1305.AArch64.Fn.sealBody callee stitched).aarch64Depth ≤ 1280)) = true
+  /-- The shared opening body leaves the return-address lane untouched. -/
+  openNoV15 : (Impl.ChaCha20Poly1305.AArch64.openCode callee stitched).allInstrs
+    (fun i => vdstOf i != some .v15) = true
   openSide : (AArch64.Scrub.calleeSide (Impl.ChaCha20Poly1305.AArch64.Fn.openBody callee stitched)
       (Impl.ChaCha20Poly1305.AArch64.Fn.openOwn.union callee.clear) &&
     decide (16 * (Impl.ChaCha20Poly1305.AArch64.Fn.openBody callee stitched).aarch64Depth ≤ 1312)) = true

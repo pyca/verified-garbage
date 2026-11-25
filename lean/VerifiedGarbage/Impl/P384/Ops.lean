@@ -5,14 +5,12 @@ public import VerifiedGarbage.Impl.Ecdsa.P384.AArch64.Cfg
 /-!
 # P-384's field operations inline on AArch64
 
-`op` is one field operation (`FOp`) on slots of the working space at `x0`,
-in a straight line, whose registers are then allocated (`EcdhAllocatedCode.lean`):
-a product or square by the cores of `vg_p384_mul_mod_p` and `vg_p384_sqr_mod_p`
-(`Impl/Mont/AArch64/P384Mul.lean`, `P384Sqr.lean`, adapted from s2n-bignum's
-`bignum_montmul_p384_alt` and `bignum_montsqr_p384_alt`), with the operands
-loaded from their slots in place of the functions' pointers, and a sum or
-difference by `opCode`. Every constant is loaded from the modulus's slot or
-computed by register operations, as the allocator follows only those.
+`op` is one field operation (`FOp`) on slots of the working space at `x0`, in a
+straight line: a product or square by the code of the functions
+`vg_p384_mul_mod_p` and `vg_p384_sqr_mod_p` (`Impl/Mont/AArch64/P384Field.lean`),
+its operands loaded from their slots, and a sum or difference by `opCode`. It
+loads every constant from the modulus's slot or computes it in registers, and
+its loads and stores are all of words at `x0`.
 -/
 
 @[expose] public section
@@ -20,28 +18,20 @@ computed by register operations, as the allocator follows only those.
 namespace VG.Impl.P384.Ops
 open VG.AArch64 VG.Impl.Mont VG.Impl.Mont.AArch64 VG.Impl.Weierstrass VG.Impl.Weierstrass.AArch64
 
-/-- P-384's field prime's modulus, as ECDH and ECDSA lay it out. -/
+/-- P-384's field modulus, as ECDH, ECDSA and key generation keep it. -/
 def M : Mod := Impl.Ecdsa.AArch64.p384.MP'
 
-/-- The reductions' constants (`P384Mul.redConsts`), from `x7 = 0`: `x17` the
-low word of `p`, `0x00000000ffffffff`, and `x16 = 2^64 - x17`. -/
-def redLoad : List Instr := [ld .x17 M.mo, .sub .x .x16 .x7 .x17]
-
-/-- After the product or square in `P384Mul.accRegs`: the six reductions of
-its low half, the high half added, the sum reduced below `p` and stored at `o`. -/
+/-- The reduction of `T`, the conditional subtraction and the store. -/
 def finish (o : Nat) : List Instr :=
-  redLoad ++ ((List.range 6).flatMap P384Mul.red ++ (P384Mul.addHigh ++
-    (csubR M P384Mul.lowRegs .x21 ++ stores P384Mul.lowRegs o)))
+  P384Field.reduce ++ csubR M P384Field.rs .x13 ++ stores P384Field.rs o
 
-/-- `[o] = [a] [b] 2^-384 mod p`. -/
-def mul (o a b : Nat) : List Instr :=
-  loads P384Mul.bRegs384 b ++ ((zero7 :: P384Mul.prodAt .x0 a) ++ finish o)
+/-- `[o] = [a] [b] R⁻¹ mod p`, for `[b]` below `p`. -/
+def mul (o a b : Nat) : List Instr := zero7 :: P384Field.prod .x0 .x0 a b ++ finish o
 
-/-- `[o] = [a]^2 2^-384 mod p`. -/
-def sqr (o a : Nat) : List Instr :=
-  loads P384Sqr.aRegs a ++ ((zero7 :: P384Sqr.sq) ++ finish o)
+/-- `[o] = [a]² R⁻¹ mod p`, for `[a]` below `p`. -/
+def sqr (o a : Nat) : List Instr := zero7 :: P384Field.sqr .x0 a ++ finish o
 
-/-- One field operation. -/
+/-- A field operation. -/
 def op : FOp → List Instr
   | .mul o a b => if a == b then sqr o a else mul o a b
   | f => opCode M f

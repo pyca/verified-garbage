@@ -2,11 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallCorrect
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallInitialTiming
-public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.ResidentBackend
+public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Backend
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.BallDispatch
-import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.ResidentLit
+import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Lit
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Lit
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallFrame
 import VerifiedGarbage.Proof.MlKem.AArch64.Common
 import VerifiedGarbage.Proof.MlKem.Bits
@@ -14,11 +13,10 @@ import Std.Tactic.BVDecide.Normalize.Prop
 import VerifiedGarbage.TCB.Axioms
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallCorrect
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallInitialTiming
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.ResidentBackend
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Backend
 meta import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.BallDispatch
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.ResidentLit
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Lit
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Lit
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallFrame
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Common
 meta import VerifiedGarbage.Proof.MlKem.Bits
@@ -397,11 +395,12 @@ section
 
 namespace VG.Proof.MlDsa.AArch64.Optimized.Ball
 open VG VG.AArch64
-open VG.Proof.Sha3.AArch64.Sha3.ResidentBackend
+open VG.Proof.Sha3.AArch64.Sha3.Vector
+open VG.Impl.Sha3.AArch64.Sha3.Vector (callee)
 
 taint_summary residentFirstSponge : VectorTaint.taint SpongePublic
   (Impl.MlDsa.AArch64.Sample.spongeWith callee 136 136)
-  using RSums.absorb RSums.pad RSums.squeeze
+  using Sums.absorb Sums.pad Sums.squeeze
 
 theorem resident_spongeCursor : SpongeCursor callee := by
   obtain ⟨hint,τ,hcheck,hpost,_⟩ := residentFirstSponge SpongePublic (by decide)
@@ -413,12 +412,12 @@ theorem resident_spongeCursor : SpongeCursor callee := by
   exact ⟨he,hh.1.2 .x0 (by decide)⟩
 
 theorem resident_prefixTiming : PrefixTiming callee := by
-  have hh : ∃hint,(VectorTaint.taint.check (VectorTaint.ofRegs [.x0,.x25]) (secondPrefix callee) hint).isSome=true := by sponge_taint_decide RSums
+  have hh : ∃hint,(VectorTaint.taint.check (VectorTaint.ofRegs [.x0,.x25]) (secondPrefix callee) hint).isSome=true := by sponge_taint_decide Sums
   obtain ⟨hint,hh⟩ := hh
   exact RelCT.taint (A := VectorTaint.taint) _ (fun _ _ h => h) hh
 
 theorem resident_verified : Verified AArch64.target
-    (Impl.MlDsa.AArch64.Optimized.Ball.codeWith Impl.MlDsa.AArch64.Optimized.Ball.residentCallee)
+    (Impl.MlDsa.AArch64.Optimized.Ball.codeWith callee)
     (Proof.MlDsa.sampleInBallContract AArch64.abi 16) :=
   sampleInBall_verifiedWith backend resident_spongeCursor resident_prefixTiming
 end VG.Proof.MlDsa.AArch64.Optimized.Ball

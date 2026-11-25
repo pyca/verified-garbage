@@ -5,22 +5,6 @@
 // gives.
 
 vg_keccak_absorb_scratch:
-	cbz x2, 20f
-	b 21f
-20:
-	add x6, x1, #0
-	sub x7, x4, x6
-	lsr x7, x7, #63
-	cbz x7, 22f
-	b 23f
-22:
-	add x1, x5, #0
-	dup v29.2d, x30
-	bl {vg_keccak_scalar_absorb_blocks}
-	umov x30, v29.d[0]
-	add x1, x6, #0
-23:
-21:
 	str x30, [sp, #-16]!
 	str x19, [x5, #512]
 	str x20, [x5, #520]
@@ -34,6 +18,25 @@ vg_keccak_absorb_scratch:
 	add x22, x2, #0
 	add x23, x3, #0
 	add x24, x4, #0
+	cbnz x22, 20f
+	sub x9, x24, x21
+	lsr x9, x9, #63
+	cbnz x9, 22f
+	add x0, x19, #0
+	add x1, x21, #0
+	add x2, x23, #0
+	add x3, x24, #0
+	add x4, x20, #0
+	bl {vg_keccak_absorb_blocks}
+	sub x9, x24, x0
+	add x23, x23, x9
+	add x24, x0, #0
+	b 23f
+22:
+23:
+	b 21f
+20:
+21:
 	cbz x24, 24f
 26:
 	movz x10, #7, lsl #0
@@ -71,6 +74,25 @@ vg_keccak_absorb_scratch:
 	add x1, x20, #0
 	bl {vg_keccak_f1600}
 210:
+	cbnz x22, 211f
+	sub x9, x24, x21
+	lsr x9, x9, #63
+	cbnz x9, 213f
+	add x0, x19, #0
+	add x1, x21, #0
+	add x2, x23, #0
+	add x3, x24, #0
+	add x4, x20, #0
+	bl {vg_keccak_absorb_blocks}
+	sub x9, x24, x0
+	add x23, x23, x9
+	add x24, x0, #0
+	b 214f
+213:
+214:
+	b 212f
+211:
+212:
 	cbnz x24, 26b
 	b 25f
 24:

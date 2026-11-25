@@ -1,8 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.State
-public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Load
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Store
+public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Pair
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Lit

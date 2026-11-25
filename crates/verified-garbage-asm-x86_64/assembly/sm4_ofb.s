@@ -488,7 +488,7 @@ vg_sm4_ofb:
 	je 21f
 23:
 	mov rdi, r9
-	movabs rsi, 392
+	movabs rsi, 390
 	call {vg_sm4_crypt_prepared}
 	mov rax, QWORD PTR [rdx]
 	xor rax, QWORD PTR [r9+768]
@@ -1233,7 +1233,7 @@ vg_sm4_ofb_final:
 	je 21f
 23:
 	mov rdi, r9
-	movabs rsi, 392
+	movabs rsi, 390
 	call {vg_sm4_crypt_prepared}
 	cmp r8, 16
 	jb 24f

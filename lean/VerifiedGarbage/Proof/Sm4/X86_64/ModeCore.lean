@@ -80,7 +80,7 @@ theorem word_disjoint {dir : Dir} {B : Addr} {d : Nat} (hd : d + 8 ≤ 8 * table
     (hr : Region.Disjoint (coreRegion (dirCore dir) B) r ∨ Region.Sub r (bufRegion (dirCore dir) B)) :
     Region.Disjoint ⟨B + BitVec.ofNat 64 d, 8⟩ r := by
   rcases hr with h | h
-  · exact h.sub_left (VG.Offset.sub_base B (by simp only [dirCore, slots_eq]; rw [tableEnd_eq] at hd; omega_using [hd]))
+  · exact h.sub_left (VG.Offset.sub_base B (by simp only [dirCore]; rw [tableEnd_eq] at hd; omega_using [hd]))
   · refine Region.Disjoint.sub_right ?_ h
     exact VG.Offset.disjoint B (by simp only [dirCore, tailSlot_eq] at hout ⊢; omega_using [hout])
       (by simp only [tableEnd_eq] at hd; omega_using [hd]) (by simp only [dirCore, tailSlot_eq]; omega_using [])
@@ -216,7 +216,7 @@ theorem prepare_wp (d : Dir) {s : State} {B : Addr} {rs : List Region} {k : Spec
   refine ⟨⟨hr', by rw [rsp']; exact hst, by rw [rsp', ← dirCore_total d]; exact hsdis _ hR⟩, b', rsp', rdx', r8',
     f'.sub fun r hr => ?_, rfl, rfl⟩
   simp only [List.mem_singleton] at hr; subst hr
-  exact ⟨_, List.mem_cons_self, Region.sub_prefix (by simp only [dirCore, tableEnd_eq, slots_eq]; omega_using [])⟩
+  exact ⟨_, List.mem_cons_self, Region.sub_prefix (by simp only [dirCore, tableEnd_eq]; omega_using [])⟩
 
 /-- A register `vg_sm4_crypt_prepared` never writes. -/
 theorem crypt_keeps {r : Reg} (h : cryptPrepared.allInstrs (fun i => !Taint.clobbers i r) = true) :
@@ -312,7 +312,7 @@ theorem crypt_wp (d : Dir) {s : State} {B : Addr} {k : Spec.Sm4.Schedule} (hB : 
   · refine frame'.sub fun r hr => ?_
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact ⟨_, List.mem_cons_self, Region.sub_prefix (by simp only [dirCore]; omega_using [])⟩
+    · exact ⟨_, List.mem_cons_self, Region.sub_prefix (by simp only [dirCore, slots_eq]; omega_using [])⟩
     · exact ⟨_, List.mem_cons_of_mem _ (by rw [stkList_dirCore]; exact List.mem_singleton_self _), fun _ h => h⟩
   · have hj' : j < 16 := hj
     obtain ha : bufAddr (dirCore d) B j = B + BitVec.ofNat 64 layout.buf + BitVec.ofNat 64 (16 * j) := by

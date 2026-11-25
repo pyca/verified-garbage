@@ -839,7 +839,7 @@ vg_mlkem768_encaps_core_x2_sha3:
 	str x30, [x1, #128]
 	add x0, x19, #0
 	bl {vg_keccak_f1600_x2_sha3}
-	ldr x30, [x1, #128]
+	ldr x30, [x19, #1664]
 	ldr x6, [x19, #0]
 	ldr x7, [x19, #8]
 	str x6, [x20, #0]
@@ -1969,7 +1969,7 @@ vg_mlkem768_encaps_core_x2_sha3:
 	str x30, [x1, #128]
 	add x0, x19, #0
 	bl {vg_keccak_f1600_x2_sha3}
-	ldr x30, [x1, #128]
+	ldr x30, [x19, #1664]
 	ldr x6, [x19, #0]
 	ldr x7, [x19, #8]
 	str x6, [x20, #0]
@@ -3087,7 +3087,7 @@ vg_mlkem768_encaps_core_x2_sha3:
 	str x30, [x1, #128]
 	add x0, x19, #0
 	bl {vg_keccak_f1600_x2_sha3}
-	ldr x30, [x1, #128]
+	ldr x30, [x19, #1664]
 	ldr x6, [x19, #0]
 	ldr x7, [x19, #8]
 	str x6, [x20, #0]
@@ -3667,7 +3667,7 @@ vg_mlkem768_encaps_core_x2_sha3:
 	str x30, [x1, #128]
 	add x0, x19, #0
 	bl {vg_keccak_f1600_x2_sha3}
-	ldr x30, [x1, #128]
+	ldr x30, [x19, #1664]
 	ldr x6, [x19, #0]
 	ldr x7, [x19, #8]
 	str x6, [x20, #0]
@@ -3809,7 +3809,7 @@ vg_mlkem768_encaps_core_x2_sha3:
 	str x30, [x1, #128]
 	add x0, x19, #0
 	bl {vg_keccak_f1600_x2_sha3}
-	ldr x30, [x1, #128]
+	ldr x30, [x19, #1664]
 	ldr x6, [x19, #0]
 	ldr x7, [x19, #8]
 	str x6, [x20, #0]
@@ -3951,7 +3951,7 @@ vg_mlkem768_encaps_core_x2_sha3:
 	str x30, [x1, #128]
 	add x0, x19, #0
 	bl {vg_keccak_f1600_x2_sha3}
-	ldr x30, [x1, #128]
+	ldr x30, [x19, #1664]
 	ldr x6, [x19, #0]
 	ldr x7, [x19, #8]
 	str x6, [x20, #0]
@@ -4316,7 +4316,7 @@ vg_mlkem768_encaps_core_x2_sha3:
 	str x30, [x1, #128]
 	add x0, x19, #0
 	bl {vg_keccak_f1600_x2_sha3}
-	ldr x30, [x1, #128]
+	ldr x30, [x19, #1664]
 	ldr x6, [x19, #0]
 	str x6, [x20, #0]
 	ldr x6, [x19, #16]

@@ -2,9 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.Env
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.MontFnG
-import VerifiedGarbage.Proof.Mont.AArch64.P521Linear
-import VerifiedGarbage.Proof.Weierstrass.AArch64.MontCall521
 import VerifiedGarbage.Proof.Weierstrass.AArch64.MontCall
+import VerifiedGarbage.Proof.Weierstrass.AArch64.P521Call
+import VerifiedGarbage.Proof.Mont.AArch64.P521
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.Taint
@@ -190,27 +190,36 @@ theorem mulOp_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {
     exact ⟨hk.toOpKeep hn, by simpa only [hn] using hlt, by rw [hn]; exact he⟩
   · exact mul_ok hs hM hA ho ha hb ho8 ha8 hb8 hB
 
-private theorem linearKeep {M : Mod} {base : Addr} {o : Nat} {s t : State}
-    (hn : M.n = 9) (k : KeepRegs (clob 9) s t) (O : Outside base o 72 s.mem t.mem) :
-    OpKeep M base o s t :=
-  ⟨fun r hr => k.gpr r (by simpa only [hn] using hr),k.rd,k.wr,k.sp,
-    fun x hx _ => O x (by simpa only [hn] using hx)⟩
+/-- The modulus P-521's operations are for. -/
+theorem P521.supported_mod {M : Mod} {m : Nat} (h : P521.supported M = true) (hr : M.ok m = true) :
+    M.n = 9 ∧ m = Impl.Mont.AArch64.P521.prime := by
+  simp only [P521.supported, Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at h
+  refine ⟨h.1, ?_⟩
+  have hk := Mod.ok_red hr
+  rw [h.1, h.2, show Red.ofModulus 9 Impl.Mont.AArch64.P521.prime =
+    .friendly [.zero, .zero, .zero, .zero, .zero, .zero, .zero, .pow2 9, .zero] by decide +kernel] at hk
+  simp only [Red.ok, Bool.and_eq_true, beq_iff_eq] at hk
+  have hv := hk.1.2
+  rw [show mwVal [.zero, .zero, .zero, .zero, .zero, .zero, .zero, .pow2 9, .zero] = 2 ^ 457 by decide +kernel] at hv
+  have hp : Impl.Mont.AArch64.P521.prime = 2 ^ 64 * 2 ^ 457 - 1 := by decide +kernel
+  have hm := hk.1.1.2
+  rw [hp, hv]
+  omega_using [hm]
 
 theorem addOp_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M : Mod} {m : Nat}
     (hM : ModOkA M size m s.mem base) (hA : ModA M) {o a b : Nat}
     (ho : o+8*M.n ≤ size) (ha : a+8*M.n ≤ size) (hb : b+8*M.n ≤ size)
     (ho8 : o%8 = 0) (ha8 : a%8 = 0) (hb8 : b%8 = 0)
-    (hAB : wordsVal s.mem base a M.n+wordsVal s.mem base b M.n < 2*m) :
+    (hAlt : wordsVal s.mem base a M.n < m) (hBlt : wordsVal s.mem base b M.n < m) :
     WP isa (.block (opCode M (.add o a b))) s fun t => OpKeep M base o s t ∧
       wordsVal t.mem base o M.n = (wordsVal s.mem base a M.n+wordsVal s.mem base b M.n)%m := by
   rw [opCode]
   split
   · rename_i h
-    obtain ⟨hn,hm⟩ := P521Linear.supported_mod h hM.red
-    simp only [hn] at ho ha hb hAB ⊢
-    refine WP.mono (P521Linear.add_ok hs ho ha hb ho8 ha8 hb8 hm hAB)
-      fun t ⟨he,_,hk,O⟩ => ⟨linearKeep hn hk O,he⟩
-  · exact add_ok hs hM hA ho ha hb ho8 ha8 hb8 hAB
+    obtain ⟨hn,hm⟩ := P521.supported_mod h hM.red
+    simp only [hn, hm] at ho ha hb hAlt hBlt ⊢
+    exact WP.mono (Mont.AArch64.P521.add_ok hs ho ha hb ho8 ha8 hb8 hAlt hBlt) fun t ⟨hk,he⟩ => ⟨Mont.AArch64.P521.toOpKeep hn hk,he⟩
+  · exact add_ok hs hM hA ho ha hb ho8 ha8 hb8 (by omega_arith)
 
 theorem subOp_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M : Mod} {m : Nat}
     (hM : ModOkA M size m s.mem base) (hMA : ModA M) {o a b : Nat}
@@ -222,10 +231,9 @@ theorem subOp_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {
   rw [opCode]
   split
   · rename_i h
-    obtain ⟨hn,hm⟩ := P521Linear.supported_mod h hM.red
-    simp only [hn] at ho ha hb hA hB ⊢
-    refine WP.mono (P521Linear.sub_ok hs ho ha hb ho8 ha8 hb8 hm hA hB)
-      fun t ⟨he,_,hk,O⟩ => ⟨linearKeep hn hk O,he⟩
+    obtain ⟨hn,hm⟩ := P521.supported_mod h hM.red
+    simp only [hn, hm] at ho ha hb hA hB ⊢
+    exact WP.mono (Mont.AArch64.P521.sub_ok hs ho ha hb ho8 ha8 hb8 hA hB) fun t ⟨hk,he⟩ => ⟨Mont.AArch64.P521.toOpKeep hn hk,he⟩
   · exact sub_ok hs hM hMA ho ha hb ho8 ha8 hb8 hA hB
 
 /-- Hand-composed negation blocks use the general subtraction directly. -/
@@ -266,7 +274,7 @@ theorem fop_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat → P
     have hA := hI.lt a hR.1
     have hB := hI.lt b hR.2
     refine WP.mono (addOp_ok hI.scr hI.mod hAl.mod (hL.le o hS.1) (hL.le a hS.2.1) (hL.le b hS.2.2)
-      (hAl.sl o hS.1) (hAl.sl a hS.2.1) (hAl.sl b hS.2.2) (by omega_arith)) fun s' ⟨hk, heq⟩ => ⟨hk, hI.update hL hS.1 hk ?_ ?_⟩
+      (hAl.sl o hS.1) (hAl.sl a hS.2.1) (hAl.sl b hS.2.2) hA hB) fun s' ⟨hk, heq⟩ => ⟨hk, hI.update hL hS.1 hk ?_ ?_⟩
     · rw [heq]; exact Nat.mod_lt _ (by omega_arith)
     · rw [heq, toM_add, hI.val a hR.1, hI.val b hR.2]
   | sub o a b =>
@@ -344,17 +352,13 @@ theorem opProg_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat �
         rw [toM_mul hm heq, hI.val a hR.1]
       · simp only [Bool.not_eq_true] at hsq
         simp only [hsq, Bool.false_eq_true, ↓reduceIte]
-        by_cases hsq521 : (a == b && sqr521Ok M.n m') = true
-        · simp only [Bool.and_eq_true, beq_iff_eq] at hsq521
-          obtain ⟨rfl, hsp⟩ := hsq521
-          obtain ⟨hn9, hm'⟩ := Mont.sqr521Ok_eq hsp
-          subst hm'
-          simp only [hsp, beq_self_eq_true, Bool.and_self, ↓reduceIte]
-          refine WP.mono (Mont.sqrCall521_ok hI.scr hI.mod hn9 ht hown.1 hown.2.1 (hI.lt a hR.1))
+        by_cases hf : P521.isField M.n m' = true
+        · simp only [hf, ↓reduceIte]
+          refine WP.mono (Mont.fieldCall521_ok hI.scr hI.mod hf ht hown.1 hown.2.1 hown.2.2 (hI.lt a hR.1) (hI.lt b hR.2))
             fun s' ⟨hk, hlt, heq⟩ => ⟨hk, hI.update hL hS.1 hk hlt ?_⟩
-          rw [toM_mul hm heq, hI.val a hR.1]
-        · simp only [Bool.not_eq_true] at hsq521
-          simp only [hsq521, Bool.false_eq_true, ↓reduceIte]
+          rw [toM_mul hm heq, hI.val a hR.1, hI.val b hR.2]
+        · simp only [Bool.not_eq_true] at hf
+          simp only [hf, Bool.false_eq_true, ↓reduceIte]
           refine WP.mono (Mont.mulCall_ok hI.scr hI.mod hH ht hown.1 hown.2.1 hown.2.2
             (hI.lt b hR.2)) fun s' ⟨hk, hlt, heq⟩ => ⟨hk, hI.update hL hS.1 hk hlt ?_⟩
           rw [toM_mul hm heq, hI.val a hR.1, hI.val b hR.2]

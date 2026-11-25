@@ -17,7 +17,7 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.Unch
 import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Proof.P256.EcdhJac.Masks
 public import VerifiedGarbage.Proof.P256.EcdhDouble.Certificate
-public import VerifiedGarbage.Proof.P256.Linear.WeakCertificate
+public import VerifiedGarbage.Proof.P256.EcdhDouble.Verified
 public import VerifiedGarbage.Proof.P256.VerifyAllocated.CachedHead
 public import VerifiedGarbage.Proof.P256.VerifyAllocated.JacTail
 public import VerifiedGarbage.Proof.P256.VerifyAllocated.MixedHead
@@ -866,7 +866,7 @@ theorem hotField_all_ok {k : Kind} (cert : VerifyAllocated.Case k) (hk : k≠.do
       AllocatedFrame allocatedRegs base work s t ∧ Inv M base 8192 C.p Sl live (runOps (operations .doubleRR) E) t ∧
       InvJ C (runOps (operations .doubleRR) E K.R.x) (runOps (operations .doubleRR) E K.R.y)
         (runOps (operations .doubleRR) E K.R.z) (add P P) := by
-  exact EcdhDouble.Verified.double_ok hC ha hi hp hj
+  exact EcdhDouble.double_ok hC ha hi hp hj
 
 end VG.Proof.P256.EcdhJac
 

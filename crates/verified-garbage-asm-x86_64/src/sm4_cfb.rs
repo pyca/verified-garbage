@@ -26,7 +26,7 @@ jne 20b
 .base64 "TInPSIHHAAwAAGZMD374SIsoSYmpAAMAAEiLaAhJiakIAwAATYXA"
 je 21f
 23:
-.base64 "TInPSL6IAQAAAAAAAA=="
+.base64 "TInPSL6GAQAAAAAAAA=="
 call {vg_sm4_crypt_prepared}
 .base64 "SIsCSTOBAAMAAEiJAkiLQghJM4EIAwAASIlCCEiLAkmJgQADAABIi0IISYmBCAMAAEiDwhBJg+gB"
 jne 23b
@@ -82,7 +82,7 @@ jne 210b
 jmp 29f
 28:
 29:
-.base64 "SIsrSYmpcAwAAEiLawhJial4DAAATInPSL6IAQAAAAAAAA=="
+.base64 "SIsrSYmpcAwAAEiLawhJial4DAAATInPSL6GAQAAAAAAAA=="
 call {vg_sm4_crypt_prepared}
 .base64 "SLkQAAAAAAAAAEmD+BA="
 jb 211f
@@ -128,7 +128,7 @@ jne 20b
 .base64 "TInPSIHHAAwAAGZMD374SIsoSYmpAAMAAEiLaAhJiakIAwAATYXA"
 je 21f
 23:
-.base64 "TInPSL6IAQAAAAAAAA=="
+.base64 "TInPSL6GAQAAAAAAAA=="
 call {vg_sm4_crypt_prepared}
 .base64 "SYP4EA=="
 jb 24f
@@ -173,7 +173,7 @@ jne 20b
 .base64 "TInPSIHHAAwAAGZMD374SIsoSYmpAAMAAEiLaAhJiakIAwAATYXA"
 je 21f
 23:
-.base64 "TInPSL6IAQAAAAAAAA=="
+.base64 "TInPSL6GAQAAAAAAAA=="
 call {vg_sm4_crypt_prepared}
 .base64 "SYP4EA=="
 jb 24f

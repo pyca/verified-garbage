@@ -936,27 +936,28 @@ theorem setCF_ok (s : State) :
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   simp only [RegUpd.gpr_setReg_of_ne _ _ hr]
 
-/-- The reduction: for `P` with its low words at `[tmp]` and its high words
-`H` in `xWin 9`, `U + 2⁵⁷⁶ W + 2¹¹⁵² acc = P + 512 · 2⁵¹² U + 2⁵⁷⁶`, for `U`
-the words left at `[tmp]` (`P`'s but `u₈` over `P₈`) and `W` those in
-`xWin 9` (the carry of one in at word 9 for `xCanon`). -/
-theorem xRed_ok {s : State} {base : Addr} {size c₀ : Nat} (hs : ScrC s base size c₀) {M : Mod}
+/-- The reduction, after code `clr` that clears the carries (or sets CF). -/
+def xRedC (clr : List Instr) (M : Mod) (c₀ : Nat) : List Instr :=
+  [.mov32 .rdx (.imm 512)] ++ (clr ++ ([.mulx .rcx .rax (.mem (rc c₀ M.tmp)),
+    .adox .rax (.mem (rc c₀ (M.tmp + 64))), .store (rc c₀ (M.tmp + 64)) .rax, .adcx (xAcc 9) (.reg .rcx)] ++
+    (maddStepsC .rdi c₀ 8 (xWin 9) (M.tmp + 8) ++ xTail (xAcc 17))))
+
+/-- `xRed_ok`, with the carry in that `clr` leaves in CF. -/
+theorem xRedC_ok {clr : List Instr} {cin : Bool} (hclr : ∀ s, WP isa (.block clr) s fun s' => s'.cf = some cin ∧
+    s'.of = some false ∧ Keeps [.rax] s s') {s : State} {base : Addr} {size c₀ : Nat} (hs : ScrC s base size c₀) {M : Mod}
     (ht : M.tmp + 72 ≤ size) :
-    WP isa (.block (xRed M c₀)) s fun s' => ∃ acc : Nat,
+    WP isa (.block (xRedC clr M c₀)) s fun s' => ∃ acc : Nat,
       wordsVal s'.mem base M.tmp 9 + (2 ^ 64) ^ 9 * hval (xg s') 9 9 + (2 ^ 64) ^ 9 * (2 ^ 64) ^ 9 * acc =
         wordsVal s.mem base M.tmp 9 + (2 ^ 64) ^ 9 * hval (xg s) 9 9 +
-          512 * (2 ^ 64) ^ 8 * wordsVal s'.mem base M.tmp 9 + (2 ^ 64) ^ 9 ∧
+          512 * (2 ^ 64) ^ 8 * wordsVal s'.mem base M.tmp 9 + (2 ^ 64) ^ 9 * cin.toNat ∧
       KeepRegs (.rax :: .rcx :: .rdx :: xRegs) s s' ∧ Outside base (M.tmp + 64) 8 s.mem s'.mem := by
   have hnw := hs.nowrap
   obtain ⟨h9a, h9c, h9d, h9i, -⟩ := xAcc_ne 9
-  rw [show xRed M c₀ = [.mov32 .rdx (.imm 512)] ++ (setCF ++ ([.mulx .rcx .rax (.mem (rc c₀ M.tmp)),
-      .adox .rax (.mem (rc c₀ (M.tmp + 64))), .store (rc c₀ (M.tmp + 64)) .rax, .adcx (xAcc 9) (.reg .rcx)] ++
-      (maddStepsC .rdi c₀ 8 (xWin 9) (M.tmp + 8) ++ xTail (xAcc 17)))) by simp only [xRed, List.append_assoc],
-    WP.block_append_iff]
+  rw [xRedC, WP.block_append_iff]
   refine WP.mono (movRdxImm_ok s 512) fun s₁ ⟨d₁, _, _, k₁⟩ => ?_
   obtain hs₁ := hs.of_keeps k₁ (by decide)
   rw [WP.block_append_iff]
-  refine WP.mono (setCF_ok s₁) fun s₂ ⟨c₂, o₂, k₂⟩ => ?_
+  refine WP.mono (hclr s₁) fun s₂ ⟨c₂, o₂, k₂⟩ => ?_
   rw [WP.block_append_iff, ← List.singleton_append, WP.block_append_iff]
   obtain hs₂ := hs₁.of_keeps k₂ (by decide)
   refine WP.mono (VG.Proof.X25519.X86_64.mulx_ok s₂ (readSrc_rc hs₂ (d := M.tmp) (by omega_arith))
@@ -1032,7 +1033,7 @@ theorem xRed_ok {s : State} {base : Addr} {size c₀ : Nat} (hs : ScrC s base si
     rw [hval_succ_last, hval_congr (g := xg s₇) (fun c h1 h2 => h₈ c (by omega_arith) (by omega_arith))]
   have hH : hval (xg s) 9 9 = xg s 9 + 2 ^ 64 * hval (xg s) 10 8 := rfl
   rw [hT₇, hT₆, hdx, hUhi] at e₇
-  change xg s₆ 9 + 2 ^ 64 * c₆.toNat = xg s₅ 9 + (s₅.gpr .rcx).toNat + true.toNat at e₆
+  change xg s₆ 9 + 2 ^ 64 * c₆.toNat = xg s₅ 9 + (s₅.gpr .rcx).toNat + cin.toNat at e₆
   change xg s₈ 17 + 2 ^ 64 * o₈.toNat = xg s₇ 17 + o₇.toNat at e₈
   rw [hdx₂, show word s₂.mem base M.tmp = word s.mem base M.tmp by
     rw [k₂.2.1, k₁.2.1]] at e₃
@@ -1040,7 +1041,8 @@ theorem xRed_ok {s : State} {base : Addr} {size c₀ : Nat} (hs : ScrC s base si
     rw [k₃.2.1, k₂.2.1, k₁.2.1]] at e₄
   rw [hrcx, h9₅] at e₆
   rw [hm₈, hU, hP, hT₈, hH]
-  simp only [Bool.toNat_false, Bool.toNat_true, Nat.add_zero] at e₄ e₆
+  simp only [Bool.toNat_false, Nat.add_zero] at e₄
+  generalize cin.toNat = cv at *
   generalize (word s.mem base M.tmp).toNat = P0 at *
   generalize (word s.mem base (M.tmp + 64)).toNat = P8 at *
   generalize wordsVal s.mem base (M.tmp + 8) 7 = L at *
@@ -1068,6 +1070,21 @@ theorem xRed_ok {s : State} {base : Addr} {size c₀ : Nat} (hs : ScrC s base si
     · rw [k₈.2.2.1, k₇.2.2.1, k₆.2.2.1, rd₅, k₄.2.2.1, k₃.2.2.1, k₂.2.2.1, k₁.2.2.1]
     · rw [k₈.2.2.2, k₇.2.2.2, k₆.2.2.2, wr₅, k₄.2.2.2, k₃.2.2.2, k₂.2.2.2, k₁.2.2.2]
   · rw [hm₈]; exact O₅
+
+/-- The reduction: for `P` with its low words at `[tmp]` and its high words
+`H` in `xWin 9`, `U + 2⁵⁷⁶ W + 2¹¹⁵² acc = P + 512 · 2⁵¹² U + 2⁵⁷⁶`, for `U`
+the words left at `[tmp]` (`P`'s but `u₈` over `P₈`) and `W` those in
+`xWin 9` (the carry of one in at word 9 for `xCanon`). -/
+theorem xRed_ok {s : State} {base : Addr} {size c₀ : Nat} (hs : ScrC s base size c₀) {M : Mod}
+    (ht : M.tmp + 72 ≤ size) :
+    WP isa (.block (xRed M c₀)) s fun s' => ∃ acc : Nat,
+      wordsVal s'.mem base M.tmp 9 + (2 ^ 64) ^ 9 * hval (xg s') 9 9 + (2 ^ 64) ^ 9 * (2 ^ 64) ^ 9 * acc =
+        wordsVal s.mem base M.tmp 9 + (2 ^ 64) ^ 9 * hval (xg s) 9 9 +
+          512 * (2 ^ 64) ^ 8 * wordsVal s'.mem base M.tmp 9 + (2 ^ 64) ^ 9 ∧
+      KeepRegs (.rax :: .rcx :: .rdx :: xRegs) s s' ∧ Outside base (M.tmp + 64) 8 s.mem s'.mem := by
+  rw [show xRed M c₀ = xRedC setCF M c₀ by simp only [xRed, xRedC, List.append_assoc]]
+  have h := xRedC_ok setCF_ok hs ht
+  rwa [Bool.toNat_true, Nat.mul_one] at h
 
 /-! ## The final reduction -/
 
@@ -1490,6 +1507,18 @@ theorem xCanon_ok {s : State} {base : Addr} {size c₀ : Nat} (hs : ScrC s base 
   · rw [← hK.2.1]; exact O₇.mono (by omega_arith) (by simp [xWin])
 
 /-! ## The multiplication -/
+
+/-- `mulP_arith` for any operands whose product is below `2⁵⁷⁶ m`. -/
+theorem mulP_arithP {A B U W m acc : Nat} (hm : m + 1 = 512 * (2 ^ 64) ^ 8)
+    (hAB : A * B < (2 ^ 64) ^ 9 * m) (hU : U < (2 ^ 64) ^ 9)
+    (e : A * B + 512 * (2 ^ 64) ^ 8 * U = U + (2 ^ 64) ^ 9 * W + (2 ^ 64) ^ 9 * (2 ^ 64) ^ 9 * acc) :
+    W ≤ 2 * m ∧ (2 ^ 64) ^ 9 * W = A * B + U * m := by
+  obtain hm' : m = 512 * (2 ^ 64) ^ 8 - 1 := by omega_arith
+  subst hm'
+  generalize A * B = P at *
+  obtain hacc : acc = 0 := by omega_arith
+  subst hacc
+  refine ⟨by omega_arith, by omega_arith⟩
 
 /-- `mulP_arith` for a result plus one, `W`, from the reduction's carry in. -/
 theorem mulP_arith1 {A B U W m acc : Nat} (hm : m + 1 = 512 * (2 ^ 64) ^ 8)

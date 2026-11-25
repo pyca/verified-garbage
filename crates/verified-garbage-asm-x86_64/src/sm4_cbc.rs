@@ -32,7 +32,7 @@ jne 22b
 .base64 "TInPSIHHAAwAAE2FwA=="
 je 23f
 25:
-.base64 "SIsCSYmBAAMAAEiLQghJiYEIAwAATInPSL6IAQAAAAAAAA=="
+.base64 "SIsCSYmBAAMAAEiLQghJiYEIAwAATInPSL6GAQAAAAAAAA=="
 call {vg_sm4_crypt_prepared}
 .base64 "SYuBAAMAAEiJAkmLgQgDAABIiUIISYPoAQ=="
 je 26f
@@ -91,7 +91,7 @@ jmp 27f
 28:
 .base64 "SIsrSIkoSItrCEiJaAhIg8AQSIPDEEiD6QE="
 jne 28b
-.base64 "TInPSL6IAQAAAAAAAA=="
+.base64 "TInPSL6GAQAAAAAAAA=="
 call {vg_sm4_crypt_prepared}
 .base64 "SLkQAAAAAAAAAEmD+BA="
 jb 29f

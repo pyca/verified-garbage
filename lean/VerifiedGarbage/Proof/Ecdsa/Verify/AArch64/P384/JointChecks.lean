@@ -1,7 +1,6 @@
 module
 
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P384.Checks
-import VerifiedGarbage.Proof.P384.EcdhDouble.Certificate
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.WindowTiming
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedPrefix
 public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.P384Joint
@@ -589,8 +588,7 @@ theorem prep5_checks : PubNaf.PrepChecks P384Joint.K (p384.sl V) :=
 theorem window_checks : PubNaf.WindowChecks P384Joint.K := P384.window_checks
 
 theorem double_ct : ConstantTime isa (fun _ => True) (AArch64.Taint.Agree (Taint.ofRegs [.x0]))
-    P384Joint.double :=
-  P384.EcdhDouble.Certificate.ctRD
+    P384Joint.double := by reg_ct [.x0]
 
 /-! The code before the joint loop, as a literal: its check (`taint_decide`) reads the literals
 of the field's functions (`P384Literals`) only through it, since those are literals of

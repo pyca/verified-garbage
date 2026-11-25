@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ecdh.AArch64.Main
 public import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
+import VerifiedGarbage.Proof.P384.EcdhDouble
 import VerifiedGarbage.Proof.Ecdsa.AArch64.P384.Verified
 import VerifiedGarbage.Proof.Ecdh.AArch64.MulJ4
 import VerifiedGarbage.Proof.Ecdh.AArch64.WithMul
@@ -28,20 +29,20 @@ meta import VerifiedGarbage.Proof.P384.Ops
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowQuad
 public import VerifiedGarbage.Impl.P384.EcdhSelect
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowEntry
-import VerifiedGarbage.Proof.Ed25519.AArch64.CombEntry
-import VerifiedGarbage.Proof.Mont.AArch64.Blocks
-import VerifiedGarbage.Proof.Mont.AArch64.Chain
-import VerifiedGarbage.Proof.Mont.AArch64.Rounds
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombSelectV
+meta import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombSelectV
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Weierstrass.Words
+import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.AArch64.Simd64
+import VerifiedGarbage.Proof.Framework.AArch64.SimdMem64
+import VerifiedGarbage.Proof.Framework.AArch64.Reduce
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 public import VerifiedGarbage.Proof.Weierstrass.PointOpsContract
 public import VerifiedGarbage.Proof.Weierstrass.CheckPointContract
 public import VerifiedGarbage.Proof.Weierstrass.InverseContract
 meta import VerifiedGarbage.Impl.P384.EcdhSelect
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowEntry
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.CombEntry
-meta import VerifiedGarbage.Proof.Mont.AArch64.Blocks
-meta import VerifiedGarbage.Proof.Mont.AArch64.Chain
-meta import VerifiedGarbage.Proof.Mont.AArch64.Rounds
 meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
 meta import VerifiedGarbage.Proof.Weierstrass.PointOpsContract
 meta import VerifiedGarbage.Proof.Weierstrass.CheckPointContract
@@ -144,403 +145,266 @@ end
 section
 
 /-!
-# P-384's entry selection in registers
+# P-384's table entry for ECDH's window, selected by vectors
 
-`sel_ok`: P-384's selection of a digit's entry (`Impl/P384/EcdhSelect.lean`)
-does what the window's must (`SelOk`). Candidate `m + 1`'s nine pairs of words
-are kept in the accumulators where `|d| = m + 1` (`cand_ok`, by `pair_ok`), so
-after the eight candidates the accumulators hold entry `|d|`'s words, or
-`(0 : R : 0)`'s for `|d| = 0` (`Acc`), which are stored to `E`.
+`sel_ok`: the selection (`Impl/P384/EcdhSelect.lean`) does what the window's
+must (`SelOk`). The accumulators hold `(0 : R : 0)` at the start (`start_ok`),
+and after `q` entries of the table still do unless the magnitude is among
+`1 … q`, when they hold its entry (`entry_ok`, `scan_ok`); so the words stored
+are the magnitude's (`words_ok`).
 -/
 
 @[expose] public section
 
--- Powers of two up to `2^384` are evaluated.
-set_option exponentiation.threshold 512
-
 namespace VG.Proof.P384.EcdhSelect
-open VG VG.AArch64 VG.Impl.Mont VG.Impl.Mont.AArch64 VG.Impl.Weierstrass VG.Impl.Weierstrass.AArch64
-open VG.Impl.P384.EcdhDouble VG.Impl.P384.EcdhSelect
+open VG VG.AArch64 VG.Impl.Mont VG.Impl.Weierstrass VG.Impl.Weierstrass.AArch64 VG.Impl.P384.EcdhDouble
+open VG.Impl.P384.EcdhSelect
 open VG.Proof.Mont VG.Proof.Mont.AArch64 VG.Proof.Weierstrass VG.Proof.Weierstrass.AArch64
-open VG.Proof.Ed25519.AArch64 (Keeps Keeps.trans Keeps.mono pair_ok cmp_ok read_x)
+open VG.Proof.Ed25519.AArch64 (Keeps Keeps.trans Keeps.mono read_x)
 
-/-- The accumulator of word `q` (`6 c + w`) of the entry. -/
-def wReg (q : Nat) : Reg := accReg (q / 6) (q % 6)
+/-- The registers of the selection are apart. -/
+theorem bank_ok : GOk bank 9 := by
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> decide
 
-theorem wReg_inj : ∀ q < 18, ∀ q' < 18, wReg q = wReg q' → q = q' := by decide
+/-- Word `j` of `(0 : R : 0)`. -/
+def zeroW (j : Nat) : BitVec 64 := if 6 ≤ j ∧ j < 12 then wordOf K.one (j - 6) else 0
 
-theorem wReg_ne : ∀ q < 18, wReg q ≠ .x0 ∧ wReg q ≠ .x2 ∧ wReg q ≠ .x9 ∧ wReg q ≠ .x16 ∧
-    wReg q ≠ .x17 ∧ wReg q ≠ .x19 := by decide
+/-- What accumulator `i` starts as. -/
+def zeroV (i : Nat) : BitVec 128 := ofVDwords (zeroW (2 * i)) (zeroW (2 * i + 1))
 
-theorem pair_regs : ∀ p < 9, accReg (p / 3) (2 * (p % 3)) = wReg (2 * p) ∧
-    accReg (p / 3) (2 * (p % 3) + 1) = wReg (2 * p + 1) := by decide
+theorem vdword_zeroV : ∀ j < 18, vdword (zeroV (j / 2)) (j % 2) = zeroW j := by decide +kernel
 
-/-- The accumulators. -/
-def wRegs : List Reg := (List.range 18).map wReg
-
-theorem mem_wRegs {q : Nat} (hq : q < 18) : wReg q ∈ wRegs := List.mem_map.mpr ⟨q, List.mem_range.mpr hq, rfl⟩
-
-/-- Word `q` of `(0 : R : 0)`. -/
-def initW (q : Nat) : BitVec 64 := if q / 6 = 1 then wordOf K.one (q % 6) else 0
-
-/-- The accumulators after the candidates `1 … n`: entry `a`'s words at `d`
-(`a ≤ n`), else `(0 : R : 0)`'s. -/
-def Acc (m0 : Mem) (base : Addr) (d a n : Nat) (s : State) : Prop :=
-  ∀ q < 18, s.gpr (wReg q) =
-    if 1 ≤ a ∧ a ≤ n then word m0 base (d + 144 * (a - 1) + 8 * q) else initW q
-
-theorem off_add (b : Addr) (x y : Nat) : off b x + BitVec.ofNat 64 y = off b (x + y) := by
-  rw [off, off, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
-
-theorem x9_not_pairRegs : Reg.x9 ∉ Reg.x16 :: Reg.x17 :: wRegs := by
-  simp only [wRegs, List.mem_cons, List.mem_map, List.mem_range, not_or, reduceCtorEq]
-  refine ⟨id, id, ?_⟩
-  rintro ⟨q, hq, e⟩
-  exact (wReg_ne q hq).2.2.1 e
-
-/-- The pairs `0 … k - 1` of the candidate at `x9 = base + e`, kept where `Z` is set. -/
-theorem pairs_ok {s : State} {base : Addr} {size e : Nat} (hs : Scr s base size)
-    (h9 : s.gpr .x9 = off base e) (he : e + 144 ≤ size) :
-    ∀ k ≤ 9, WP isa (.block ((List.range k).flatMap fun p =>
-      [.ldp .x16 .x17 .x9 (16 * p), .cselc .x (accReg (p / 3) (2 * (p % 3))) .x16 (accReg (p / 3) (2 * (p % 3))) .eq,
-        .cselc .x (accReg (p / 3) (2 * (p % 3) + 1)) .x17 (accReg (p / 3) (2 * (p % 3) + 1)) .eq])) s
-      fun t => t.zf = s.zf ∧ Keeps (.x16 :: .x17 :: wRegs) s t ∧
-        ∀ q < 18, t.gpr (wReg q) =
-          if q < 2 * k ∧ s.zf then word s.mem base (e + 8 * q) else s.gpr (wReg q) := by
-  intro k hk
-  refine wp_range_flatMap (M := isa) (N := 9) (fun k t => t.zf = s.zf ∧ Keeps (.x16 :: .x17 :: wRegs) s t ∧
-      ∀ q < 18, t.gpr (wReg q) = if q < 2 * k ∧ s.zf then word s.mem base (e + 8 * q) else s.gpr (wReg q))
-    (fun p t hp ⟨tz, kt, ta⟩ => ?_) k hk s ?_
-  · obtain ⟨r1, r2⟩ := pair_regs p hp
-    rw [r1, r2]
-    have n1 := wReg_ne (2 * p) (by omega_arith)
-    have n2 := wReg_ne (2 * p + 1) (by omega_arith)
-    have nx9 : Reg.x9 ∉ Reg.x16 :: Reg.x17 :: wRegs := by
-      simp only [wRegs, List.mem_cons, List.mem_map, List.mem_range, not_or, reduceCtorEq]
-      refine ⟨id, id, ?_⟩
-      rintro ⟨q, hq, e⟩
-      exact (wReg_ne q hq).2.2.1 e
-    have t9 : t.gpr .x9 = off base e := by rw [kt.gpr _ nx9]; exact h9
-    have i1 : InRegions (t.rd ++ t.wr) (t.gpr .x9 + BitVec.ofNat 64 (16 * p)) 8 := by
-      rw [t9, off_add, kt.rd, kt.wr]
-      have := hs.ld (d := e + 16 * p) (by omega_arith)
-      rwa [hs.x0] at this
-    have i2 : InRegions (t.rd ++ t.wr) (t.gpr .x9 + BitVec.ofNat 64 (16 * p) + 8) 8 := by
-      rw [t9, off_add, show (8 : BitVec 64) = BitVec.ofNat 64 8 from rfl, off_add, kt.rd, kt.wr]
-      have := hs.ld (d := e + 16 * p + 8) (by omega_arith)
-      rwa [hs.x0] at this
-    have h12 : wReg (2 * p) ≠ wReg (2 * p + 1) := fun h => by
-      have := wReg_inj _ (by omega_arith) _ (by omega_arith) h; omega_arith
-    refine WP.mono (pair_ok h12 ⟨n1.2.2.2.1, n1.2.2.2.2.1⟩ ⟨n2.2.2.2.1, n2.2.2.2.2.1⟩
-      ⟨by omega_arith, by omega_arith⟩ i1 i2) fun u ⟨u1, u2, uz, ku⟩ => ?_
-    have m : t.mem = s.mem := kt.mem
-    refine ⟨uz.trans tz, kt.trans (ku.mono ?_), fun q hq => ?_⟩
-    · intro r hr
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl
-      · simp
-      · simp
-      · exact List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (mem_wRegs (by omega_arith)))
-      · exact List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (mem_wRegs (by omega_arith)))
-    · have ta' := ta q hq
-      by_cases e1 : q = 2 * p
-      · subst e1
-        rw [u1, t9, off_add, tz, m, show e + 16 * p = e + 8 * (2 * p) by omega_arith,
-          ta (2 * p) hq]
-        by_cases hz : s.zf <;> simp [hz, show 2 * p < 2 * (p + 1) by omega_arith]
-      · by_cases e2 : q = 2 * p + 1
-        · subst e2
-          rw [u2, t9, off_add, show (8 : BitVec 64) = BitVec.ofNat 64 8 from rfl, off_add, tz, m,
-            show e + 16 * p + 8 = e + 8 * (2 * p + 1) by omega_arith, ta (2 * p + 1) hq]
-          by_cases hz : s.zf <;> simp [hz, show 2 * p + 1 < 2 * (p + 1) by omega_arith,
-            show ¬ 2 * p + 1 < 2 * p by omega_arith]
-        · have nq : wReg q ∉ [Reg.x16, .x17, wReg (2 * p), wReg (2 * p + 1)] := by
-            simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]
-            exact ⟨(wReg_ne q hq).2.2.2.1, (wReg_ne q hq).2.2.2.2.1,
-              fun h => e1 (wReg_inj _ hq _ (by omega_arith) h), fun h => e2 (wReg_inj _ hq _ (by omega_arith) h)⟩
-          rw [ku.gpr _ nq, ta']
-          by_cases hz : s.zf
-          · simp only [hz, and_true]
-            by_cases hl : q < 2 * p
-            · simp [hl, show q < 2 * (p + 1) by omega_arith]
-            · simp [hl, show ¬ q < 2 * (p + 1) by omega_arith]
-          · simp [hz]
-  · exact ⟨rfl, ⟨fun _ _ => rfl, rfl, rfl, rfl, rfl⟩, fun q _ => by simp⟩
-
-theorem addImm144_ok (s : State) :
-    WP isa (.block [.addImm .x .x9 .x9 (24 * K.M.n)]) s fun t =>
-      t.gpr .x9 = s.gpr .x9 + BitVec.ofNat 64 144 ∧ Keeps [.x9] s t := by
+/-- The magnitude and `1` in the lanes, and the count zero. -/
+theorem count_ok (s : State) : WP isa (.block count) s fun t =>
+    t.gpr .x5 = 1 ∧ t.v .v19 = dup2 (s.gpr .x2) ∧ t.v .v28 = dup2 1 ∧ t.v bank.idx = dup2 0 ∧
+      VKeep [.x5] [.v19, .v28, bank.idx] s t := by
   apply WP.of_runBlock
-  simp only [show 24 * K.M.n = 144 from rfl, runBlock_cons, runStep_some, runBlock_nil,
-    exec_addImm_x (show 144 < 4096 by decide), read_x,
-    RegUpd.gpr_write_self, BitVec.setWidth_eq, Option.some.injEq, exists_eq_left']
-  refine ⟨trivial, ⟨fun r hr => ?_, rfl, rfl, rfl, rfl⟩⟩
-  exact RegUpd.gpr_write_of_ne _ _ _ (by simpa using hr)
+  simp only [count, show bank.idx = .v30 from rfl, runBlock_cons, runStep_some, runBlock_nil, exec, reduceVOpEval, Option.map_some,
+    show 16 * 0 < Size.x.bits from by decide, RegUpd.v_setV, RegUpd.gpr_setV, RegUpd.gpr_write,
+    reduceCtorEq, ↓reduceIte, Option.some.injEq, exists_eq_left']
+  refine ⟨by decide, trivial, by decide, by decide, fun r hr => ?_, rfl, rfl, rfl, rfl, fun r hr => ?_⟩
+  · simp only [List.mem_singleton] at hr
+    simp only [RegUpd.gpr_setV, RegUpd.gpr_write, hr, ite_false]
+  · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+    simp only [RegUpd.v_setV, RegUpd.v_write, hr.1, hr.2.1, hr.2.2, ite_false]
 
-/-- The registers the candidates change. -/
-def candRegs : List Reg := .x9 :: .x16 :: .x17 :: wRegs
+private theorem zero_words :
+    ofVDwords ((1 : BitVec 64) - (1 : BitVec 64) <<< 32) ((1 : BitVec 64) <<< 32 - 1) = zeroV 3 ∧
+      setLane 0 64 0 (1 : BitVec 64) = zeroV 4 ∧ ∀ i < 9, i ≠ 3 → i ≠ 4 → zeroV i = 0 := by
+  decide +kernel
 
-/-- Candidate `m + 1`, at `d + 144 m`. -/
-theorem cand_ok {s : State} {base : Addr} {size d a m : Nat} {m0 : Mem} (hs : Scr s base size)
-    (hm : m < 8) (ha : a < 9) (hd : d + 144 * 8 ≤ size) (h9 : s.gpr .x9 = off base (d + 144 * (m - 1)))
-    (h2 : s.gpr .x2 = BitVec.ofNat 64 a) (hmem : s.mem = m0) (hA : Acc m0 base d a m s) :
-    WP isa (.block (cand m)) s fun t => Acc m0 base d a (m + 1) t ∧
-      t.gpr .x9 = off base (d + 144 * m) ∧ Keeps candRegs s t := by
-  rw [cand, List.append_assoc, WP.block_append_iff]
-  -- `x9` on to candidate `m + 1`.
-  have step : WP isa (.block (if m = 0 then [] else [.addImm .x .x9 .x9 (24 * K.M.n)])) s fun t =>
-      t.gpr .x9 = off base (d + 144 * m) ∧ Keeps [.x9] s t := by
-    by_cases h0 : m = 0
-    · subst h0
-      simp only [↓reduceIte]
-      exact WP.block_nil ⟨by rw [h9], ⟨fun _ _ => rfl, rfl, rfl, rfl, rfl⟩⟩
-    · simp only [h0, ↓reduceIte]
-      refine WP.mono (addImm144_ok s) fun t ⟨t9, kt⟩ => ⟨?_, kt⟩
-      rw [t9, h9, off_add, show d + 144 * (m - 1) + 144 = d + 144 * m by omega_arith]
-  refine WP.mono step fun b ⟨b9, kb⟩ => ?_
-  rw [WP.block_append_iff]
-  refine WP.mono (cmp_ok b ha hm (by rw [kb.gpr _ (by decide)]; exact h2)) fun c ⟨cz, kc⟩ => ?_
-  have c9 : c.gpr .x9 = off base (d + 144 * m) := by rw [kc.gpr _ (by decide)]; exact b9
-  have hc : Scr c base size := (hs.of_keeps kb (by decide)).of_keeps kc (by decide)
-  refine WP.mono (pairs_ok hc c9 (by omega_arith) 9 (Nat.le_refl _)) fun t ⟨tz, kt, ta⟩ => ?_
-  have mc : c.mem = m0 := by rw [kc.mem, kb.mem, hmem]
-  refine ⟨fun q hq => ?_, ?_, ?_⟩
-  · have hq' : ¬ (wReg q = .x9 ∨ wReg q = .x16) := fun h =>
-      h.elim (wReg_ne q hq).2.2.1 (wReg_ne q hq).2.2.2.1
-    rw [ta q hq, cz, mc, kc.gpr _ (by simpa using (wReg_ne q hq).2.2.2.1),
-      kb.gpr _ (by simpa using (wReg_ne q hq).2.2.1), hA q hq]
-    by_cases e : a = m + 1
-    · subst e
-      simp [hq, show d + 144 * m + 8 * q = d + 144 * (m + 1 - 1) + 8 * q by omega_arith]
-    · have : (1 ≤ a ∧ a ≤ m + 1) ↔ (1 ≤ a ∧ a ≤ m) := by omega_arith
-      simp [e, this]
-  · rw [kt.gpr _ x9_not_pairRegs]; exact c9
-  · refine ((kb.mono ?_).trans (kc.mono ?_)).trans (kt.mono ?_)
-    · intro r hr; simp only [List.mem_singleton] at hr; subst hr; simp [candRegs]
-    · intro r hr; simp only [List.mem_singleton] at hr; subst hr; simp [candRegs]
-    · intro r hr; exact List.mem_cons_of_mem _ hr
-
-/-- The eight candidates. -/
-theorem scan_ok {s : State} {base : Addr} {size d a : Nat} (hs : Scr s base size)
-    (ha : a < 9) (hd : d + 144 * 8 ≤ size) (h9 : s.gpr .x9 = off base d)
-    (h2 : s.gpr .x2 = BitVec.ofNat 64 a) (hA : Acc s.mem base d a 0 s) :
-    WP isa (.block ((List.range 8).flatMap cand)) s fun t => Acc s.mem base d a 8 t ∧ Keeps candRegs s t := by
-  refine WP.mono (wp_range_flatMap (M := isa) (N := 8) (fun n t => Acc s.mem base d a n t ∧
-      t.gpr .x9 = off base (d + 144 * (n - 1)) ∧ Keeps candRegs s t)
-    (fun m t hm ⟨tA, t9, kt⟩ => ?_) 8 (Nat.le_refl _) s ⟨hA, by rw [h9]; simp, ⟨fun _ _ => rfl, rfl, rfl, rfl, rfl⟩⟩)
-    fun t ⟨tA, _, kt⟩ => ⟨tA, kt⟩
-  have n2 : Reg.x2 ∉ candRegs := by
-    simp only [candRegs, wRegs, List.mem_cons, List.mem_map, List.mem_range, not_or, reduceCtorEq]
-    refine ⟨id, id, id, ?_⟩
-    rintro ⟨q, hq, e⟩
-    exact (wReg_ne q hq).2.1 e
-  refine WP.mono (cand_ok (hs.of_keeps kt (by decide)) hm ha hd t9 (by rw [kt.gpr _ n2]; exact h2) kt.mem tA)
-    fun u ⟨uA, u9, ku⟩ => ⟨uA, by rw [u9, Nat.add_sub_cancel], kt.trans ku⟩
-
-/-- `x9` = the table's address. -/
-theorem tblBase_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) :
-    WP isa (.block tblBase) s fun t => t.gpr .x9 = off base K.tbl ∧ Keeps [.x9] s t := by
-  apply WP.of_runBlock
-  simp only [tblBase, runBlock_cons, runStep_some, runBlock_nil, exec, read_x, Size.bits,
-    Nat.mul_zero, show (0 : Nat) < 64 from by decide, ite_true, BitVec.shiftLeft_zero,
-    RegUpd.gpr_write, BitVec.setWidth_eq, reduceCtorEq, ite_false, hs.x0, Option.some.injEq,
-    exists_eq_left']
-  refine ⟨by rfl, ⟨fun r hr => ?_, rfl, rfl, rfl, rfl⟩⟩
-  simp only [List.mem_singleton] at hr
-  simp only [RegUpd.gpr_write, hr, ite_false]
-
-theorem init_regs : (∀ q < 18, q / 6 ≠ 1 → wReg q ∈ Impl.P384.EcdhSelect.acc 0 ++ Impl.P384.EcdhSelect.acc 2) ∧
-    (∀ q < 18, q / 6 = 1 → wReg q = accReg 1 (q % 6)) ∧ (∀ w < 6, accReg 1 w ∉ Impl.P384.EcdhSelect.acc 0 ++ Impl.P384.EcdhSelect.acc 2) ∧
-    (∀ r ∈ Impl.P384.EcdhSelect.acc 0 ++ Impl.P384.EcdhSelect.acc 2, r ∈ wRegs) ∧ (∀ w < 6, accReg 1 w ∈ wRegs) := by
-  refine ⟨by decide, by decide, by decide, ?_, ?_⟩
-  · intro r hr
-    simp only [Impl.P384.EcdhSelect.acc, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
-    · exact mem_wRegs (q := 0) (by decide)
-    · exact mem_wRegs (q := 1) (by decide)
-    · exact mem_wRegs (q := 2) (by decide)
-    · exact mem_wRegs (q := 3) (by decide)
-    · exact mem_wRegs (q := 4) (by decide)
-    · exact mem_wRegs (q := 5) (by decide)
-    · exact mem_wRegs (q := 12) (by decide)
-    · exact mem_wRegs (q := 13) (by decide)
-    · exact mem_wRegs (q := 14) (by decide)
-    · exact mem_wRegs (q := 15) (by decide)
-    · exact mem_wRegs (q := 16) (by decide)
-    · exact mem_wRegs (q := 17) (by decide)
-  · intro w hw
-    have : accReg 1 w = wReg (6 + w) := by
-      unfold wReg; rw [show (6 + w) / 6 = 1 by omega_arith, show (6 + w) % 6 = w by omega_arith]
-    rw [this]; exact mem_wRegs (by omega_arith)
-
-/-- `(0 : R : 0)` in the accumulators. -/
-theorem init_ok (s : State) (m0 : Mem) (base : Addr) (d a : Nat) :
-    WP isa (.block init) s fun t => Acc m0 base d a 0 t ∧ Keeps wRegs s t := by
-  obtain ⟨i1, i2, i3, i4, i5⟩ := init_regs
-  rw [init, WP.block_append_iff]
-  refine WP.mono (zeros_ok s _) fun b ⟨bz, kb⟩ => ?_
-  refine WP.mono (wp_range_flatMap (M := isa) (N := 6) (fun k t =>
-      (∀ w < k, t.gpr (accReg 1 w) = wordOf K.one w) ∧ Keeps ((List.range 6).map (accReg 1)) b t)
-    (fun w t hw ⟨tw, kt⟩ => ?_) 6 (Nat.le_refl _) b
-    ⟨fun _ h => absurd h (Nat.not_lt_zero _), ⟨fun _ _ => rfl, rfl, rfl, rfl, rfl⟩⟩) fun t ⟨tw, kt⟩ => ?_
-  · refine WP.mono (const64_ok t (accReg 1 w) (wordOf K.one w)) fun u ⟨u1, ku⟩ => ⟨fun w' hw' => ?_,
-      kt.trans (ku.mono fun r hr => by
-        simp only [List.mem_singleton] at hr; subst hr
-        exact List.mem_map.mpr ⟨w, List.mem_range.mpr hw, rfl⟩)⟩
-    by_cases e : w' = w
-    · subst e; exact u1
-    · have : accReg 1 w' ≠ accReg 1 w := by
-        have := (show ∀ i < 6, ∀ j < 6, accReg 1 i = accReg 1 j → i = j by decide) w' (by omega_arith) w hw
-        exact fun h => e (this h)
-      rw [ku.gpr _ (by simpa using this)]
-      exact tw w' (by omega_arith)
-  · refine ⟨fun q hq => ?_, (kb.mono i4).trans (kt.mono fun r hr => by
-      obtain ⟨w, hw, rfl⟩ := List.mem_map.mp hr; exact i5 w (List.mem_range.mp hw))⟩
-    have h0 : ¬ (1 ≤ a ∧ a ≤ 0) := by omega_arith
-    simp only [h0, ↓reduceIte, initW]
-    by_cases h1 : q / 6 = 1
-    · simp only [h1, ↓reduceIte]
-      rw [i2 q hq h1]; exact tw _ (Nat.mod_lt _ (by decide))
-    · simp only [h1, ↓reduceIte]
-      have hm := i1 q hq h1
-      rw [kt.gpr _ (fun h => by
-        obtain ⟨w, hw, e⟩ := List.mem_map.mp h
-        exact i3 w (List.mem_range.mp hw) (e ▸ hm))]
-      exact bz _ hm
-
-theorem acc_words : ∀ c < 3, ∀ j < 6, (Impl.P384.EcdhSelect.acc c)[j]? = some (wReg (6 * c + j)) := by
+private theorem acc_34 : ∀ i < 9, (acc i = .v3 ↔ i = 3) ∧ (acc i = .v4 ↔ i = 4) ∧ acc i ∈ bank.acc := by
   decide
 
-theorem acc_len (c : Nat) : (Impl.P384.EcdhSelect.acc c).length = 6 := by
-  unfold Impl.P384.EcdhSelect.acc; split <;> rfl
+theorem start_ok {s : State} (h5 : s.gpr .x5 = 1) : WP isa (.block start) s fun t =>
+    (∀ i < 9, t.v (acc i) = zeroV i) ∧ VKeep [.x4, .x6] bank.acc s t := by
+  rw [start, WP.block_append_iff]
+  refine WP.mono (movisV_ok s bank.acc) fun a ⟨z, k⟩ => ?_
+  have a5 : a.gpr .x5 = 1 := by rw [k.gpr _ List.not_mem_nil, h5]
+  have z3 : a.v .v3 = 0 := z _ (by decide)
+  have z4 : a.v .v4 = 0 := z _ (by decide)
+  obtain ⟨w3, w4, w0⟩ := zero_words
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, read_x, reduceVOpEval, Option.map_some,
+    Size.bits, show (32 : Nat) < 64 from by decide, Nat.zero_lt_two, Nat.one_lt_two, RegUpd.v_setV,
+    RegUpd.gpr_setV, RegUpd.gpr_write, RegUpd.v_write, BitVec.setWidth_eq, a5, z3, z4, setLane_two, w3, w4,
+    reduceCtorEq, ↓reduceIte, Option.some.injEq, exists_eq_left']
+  refine ⟨fun i hi => ?_, fun r hr => ?_, k.mem, k.rd, k.wr, k.sp, fun r hr => ?_⟩
+  · obtain ⟨e3, e4, hm⟩ := acc_34 i hi
+    simp only [e3, e4]
+    split
+    · rename_i h; rw [h]
+    · split
+      · rename_i h; rw [h]
+      · rename_i h4 h3; rw [z _ hm, w0 i hi h3 h4]
+  · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+    simp only [RegUpd.gpr_setV, RegUpd.gpr_write, hr.1, hr.2, ite_false]
+    exact k.gpr _ List.not_mem_nil
+  · have n3 : r ≠ .v3 := fun e => hr (by rw [e]; decide)
+    have n4 : r ≠ .v4 := fun e => hr (by rw [e]; decide)
+    simp only [RegUpd.v_setV, RegUpd.v_write, n3, n4, ite_false]
+    exact k.v _ hr
 
-theorem acc_nodup : ∀ c < 3, (Impl.P384.EcdhSelect.acc c).Nodup := by decide
+/-- Pair `i` of entry `m + 1`. -/
+abbrev pairAt (s : State) (m i : Nat) : BitVec 128 :=
+  s.mem.read (s.gpr .x0 + BitVec.ofNat 64 (K.tbl + 144 * m + 16 * i)) 16
 
-theorem acc1_eq : Impl.P384.EcdhSelect.acc 1 = (List.range' 0 6).map (accReg 1) := rfl
+/-- Entry `m + 1`: into the accumulators if it is the magnitude `a`'s. -/
+theorem entry_ok {s : State} {base : Addr} {a m : Nat} (hs : Scr s base 8192) (ha : a ≤ 8) (hm : m < 8)
+    (hi : s.v bank.idx = dup2 (BitVec.ofNat 64 m)) (h28 : s.v .v28 = dup2 1)
+    (h19 : s.v .v19 = dup2 (BitVec.ofNat 64 a)) :
+    WP isa (.block (entry m)) s fun t =>
+      t.v bank.idx = dup2 (BitVec.ofNat 64 (m + 1)) ∧
+      (∀ i < 9, t.v (acc i) = if a = m + 1 then pairAt s m i else s.v (acc i)) ∧
+      VKeep [] bank.wr s t := by
+  have hG := bank_ok
+  have hK : K.tbl = 4240 := by decide
+  rw [entry]
+  simp only [List.cons_append, List.nil_append]
+  refine wp_vop (d := bank.idx) (x := dup2 (BitVec.ofNat 64 (m + 1)))
+    (by simp only [reduceVOpEval, hi, h28, map2_dup2, BitVec.ofNat_add]; rfl) ?_
+  refine wp_vop (d := bank.mask) (x := if a = m + 1 then BitVec.allOnes 128 else 0)
+    (by simp only [reduceVOpEval, RegUpd.v_setV_self,
+      RegUpd.v_setV_of_ne _ _ (show VReg.v19 ≠ bank.idx by decide), h19, cmeq_dup2,
+      ofNat_eq_iff (a := a) (m := m + 1) (by omega_using [ha]) (by omega_using [hm])]) ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (ldsV_ok 9 hG (tb := .x0) (o := K.tbl + 144 * m)
+    (s := (s.setV bank.idx (dup2 (BitVec.ofNat 64 (m + 1)))).setV bank.mask
+      (if a = m + 1 then BitVec.allOnes 128 else 0))
+    (by omega_using [hK, hm]) (by omega_using [hK])
+    (fun i hi => by
+      show InRegions (s.rd ++ s.wr) (s.gpr .x0 + _) 16
+      rw [hs.x0]
+      exact ⟨_, List.mem_append_right _ hs.wr, hs.contains (by omega_using [hK, hm, hi]) (by decide)⟩)
+    9 (Nat.le_refl _)) fun u ⟨l, ku⟩ => ?_
+  refine WP.mono (bselsV_ok 9 hG (s := u) 9 (Nat.le_refl _)) fun t ⟨b, kt⟩ => ?_
+  have nl : ∀ r, (∀ i < 9, bank.ld.getD i .v20 ≠ r) → r ∉ (List.range 9).map fun i => bank.ld.getD i .v20 :=
+    fun _ h => not_mem_map_range h
+  have na : ∀ r, (∀ i < 9, bank.acc.getD i .v0 ≠ r) → r ∉ (List.range 9).map fun i => bank.acc.getD i .v0 :=
+    fun _ h => not_mem_map_range h
+  refine ⟨?_, fun i hi' => ?_, ?_⟩
+  · rw [kt.v _ (na _ (by decide)), ku.v _ (nl _ (by decide)),
+      RegUpd.v_setV_of_ne _ _ (show bank.idx ≠ bank.mask by decide), RegUpd.v_setV_self]
+  · have um : u.v bank.mask = if a = m + 1 then BitVec.allOnes 128 else 0 := by
+      rw [ku.v _ (nl _ (by decide)), RegUpd.v_setV_self]
+    have ua : u.v (bank.acc.getD i .v0) = s.v (bank.acc.getD i .v0) := by
+      rw [ku.v _ (nl _ fun j hj e => hG.acc_ld i hi' j hj e.symm),
+        RegUpd.v_setV_of_ne _ _ fun e => hG.acc_o i hi' (by rw [e]; simp),
+        RegUpd.v_setV_of_ne _ _ fun e => hG.acc_o i hi' (by rw [e]; simp)]
+    have e := b i hi'
+    rw [ua, l i hi', um, bit_mask] at e
+    exact e
+  · have w1 : VKeep [] bank.wr s (s.setV bank.idx (dup2 (BitVec.ofNat 64 (m + 1)))) :=
+      VKeep.setV' _ _ (by decide)
+    exact ((w1.trans (VKeep.setV' _ _ (by decide))).trans
+      (ku.mono (fun _ h => h) (map_range_sub hG.ld_wr))).trans
+      (kt.mono (fun _ h => h) (map_range_sub hG.acc_wr))
 
-theorem sel_regs : (∀ r ∈ (.x2 :: .x3 :: .x4 :: .x9 :: .x16 :: candRegs : List Reg), r ∈ combClob K.M.n) ∧
-    Reg.x0 ∉ (.x2 :: .x3 :: .x4 :: .x9 :: .x16 :: candRegs : List Reg) ∧
-    Reg.x19 ∉ (.x2 :: .x3 :: .x4 :: .x9 :: .x16 :: candRegs : List Reg) := by
-  refine ⟨?_, ?_, ?_⟩ <;> decide
+private theorem acc_wr : ∀ i < 9, acc i ∉ [VReg.v19, .v28, bank.idx] := by decide
 
-/-- The accumulators of coordinate `c` stored at `o`: the entry's coordinate, or `(0 : R : 0)`'s. -/
-theorem coord_val {u : State} {m0 : Mem} {base : Addr} {a c : Nat} (hc : c < 3) (ha : a ≤ 8)
-    (hA : Acc m0 base K.tbl a 8 u) :
-    regsVal u (Impl.P384.EcdhSelect.acc c) = if a = 0 then (if c = 1 then K.one else 0) else
-      wordsVal m0 base (tblSlot K c (a - 1)) K.M.n := by
-  by_cases h0 : a = 0
-  · subst h0
-    simp only [↓reduceIte]
-    have hz : ∀ j < 6, u.gpr (wReg (6 * c + j)) = initW (6 * c + j) := fun j hj => by
-      rw [hA _ (by omega_arith)]; simp
-    by_cases h1 : c = 1
-    · subst h1
-      simp only [↓reduceIte]
-      rw [acc1_eq]
-      refine Mont.regsVal_of_shifts u (accReg 1) 0 6 K.one (by decide) fun k hk => ?_
-      have := hz k hk
-      simp only [initW, show (6 * 1 + k) / 6 = 1 by omega_arith, show (6 * 1 + k) % 6 = k by omega_arith,
-        ↓reduceIte] at this
-      rw [Nat.zero_add, show accReg 1 k = wReg (6 * 1 + k) by
-        unfold wReg; rw [show (6 * 1 + k) / 6 = 1 by omega_arith, show (6 * 1 + k) % 6 = k by omega_arith], this]
-      rfl
-    · simp only [h1, ↓reduceIte]
-      refine regsVal_eq_zero fun r hr => ?_
-      obtain ⟨j, hj⟩ := List.getElem?_of_mem hr
-      have hj6 : j < 6 := by
-        have := (List.getElem?_eq_some_iff.mp hj).1; rwa [acc_len] at this
-      rw [acc_words c hc j hj6] at hj
-      cases hj
-      rw [hz j hj6]
-      simp [initW, show (6 * c + j) / 6 = c by omega_arith, h1]
-  · simp only [h0, ↓reduceIte]
-    rw [Mont.regsVal_of_loads (mem := m0) (p := base) _ (tblSlot K c (a - 1)) ?_, acc_len]
-    · rfl
-    intro j r hr
-    have hj6 : j < 6 := by
-      have := (List.getElem?_eq_some_iff.mp hr).1; rwa [acc_len] at this
-    rw [acc_words c hc j hj6] at hr
-    cases hr
-    have hc' : 1 ≤ a ∧ a ≤ 8 := ⟨by omega_arith, ha⟩
-    rw [hA _ (by omega_arith), tblSlot_eq]
-    simp only [hc', and_self, ↓reduceIte]
-    congr 1
-    show K.tbl + 144 * (a - 1) + 8 * (6 * c + j) = K.tbl + 8 * 6 * (3 * (a - 1) + c) + 8 * j
-    omega_arith
+/-- Every entry. -/
+theorem scan_ok {s : State} {base : Addr} {a : Nat} (hs : Scr s base 8192) (ha : a ≤ 8)
+    (hi : s.v bank.idx = dup2 0) (h28 : s.v .v28 = dup2 1) (h19 : s.v .v19 = dup2 (BitVec.ofNat 64 a)) :
+    WP isa (.block ((List.range 8).flatMap entry)) s fun t =>
+      (∀ i < 9, t.v (acc i) = if a = 0 then s.v (acc i) else pairAt s (a - 1) i) ∧
+      VKeep [] bank.wr s t := by
+  refine WP.mono (wp_range_flatMap (M := isa) (N := 8)
+    (fun q t => t.v bank.idx = dup2 (BitVec.ofNat 64 q) ∧
+      (∀ i < 9, t.v (acc i) = if 1 ≤ a ∧ a ≤ q then pairAt s (a - 1) i else s.v (acc i)) ∧
+      VKeep [] bank.wr s t) (fun q t hq ⟨ti, ta, k⟩ => ?_) 8 (Nat.le_refl _) s
+    ⟨hi, fun i _ => by rw [ite_eq_right (by omega_using [])], VKeep.refl _ _ _⟩) fun t ⟨_, ta, k⟩ => ⟨fun i hi => ?_, k⟩
+  · refine WP.mono (entry_ok (hs.of_keeps k.keeps List.not_mem_nil) ha hq ti
+      (by rw [k.v _ (by decide), h28]) (by rw [k.v _ (by decide), h19]))
+      fun u ⟨ui, ua, ku⟩ => ⟨ui, fun i hi => ?_, k.trans ku⟩
+    rw [ua i hi, ta i hi]
+    have hp : pairAt t q i = pairAt s q i := by
+      show t.mem.read (t.gpr .x0 + _) 16 = _
+      rw [k.mem, k.gpr _ List.not_mem_nil]
+    by_cases h1 : a = q + 1
+    · rw [ite_eq_left h1, ite_eq_left (by omega_using [h1]), hp, show a - 1 = q by omega_using [h1]]
+    · rw [ite_eq_right h1]
+      by_cases h2 : 1 ≤ a ∧ a ≤ q
+      · rw [ite_eq_left h2, ite_eq_left (by omega_using [h2])]
+      · rw [ite_eq_right h2, ite_eq_right (by omega_using [h1, h2])]
+  · rw [ta i hi]
+    by_cases h : a = 0
+    · rw [ite_eq_left h, ite_eq_right (by omega_using [h])]
+    · rw [ite_eq_right h, ite_eq_left (by omega_using [h, ha])]
 
-/-- P-384's selection does what the window's must. -/
-theorem sel_ok : SelOk K 8192 (WinCfg.selOf K (some sel)) := by
+private theorem wr_sub : (∀ r ∈ [Reg.x2, .x4, .x16], r ∈ combClob 6) ∧
+    (∀ r ∈ [Reg.x2, .x3, .x4, .x9], r ∈ combClob 6) ∧ (∀ r ∈ [Reg.x5], r ∈ combClob 6) ∧
+    ∀ r ∈ [Reg.x4, .x6], r ∈ combClob 6 := by decide
+
+/-- `wordsVal_of_shifts`, of a number of at most `k` bits. -/
+private theorem wordsVal_of_shifts' {m : Mem} {base : Addr} {o n x k : Nat} (hx : x < 2 ^ k) (hk : k ≤ 64 * n)
+    (h : ∀ j < n, word m base (o + 8 * j) = BitVec.ofNat 64 (x >>> (64 * j))) : wordsVal m base o n = x :=
+  wordsVal_of_shifts m base o n x (Nat.lt_of_lt_of_le hx (Nat.pow_le_pow_right (by decide) hk)) h
+
+/-- The coordinates' words at `K.E.x`, from those of `j < 18`. -/
+theorem coord_ok {m m' : Mem} {base : Addr} {a : Nat} (c : Nat) (hc : c < 3)
+    (h : ∀ j < 18, word m' base (1024 + 8 * j) =
+      if a = 0 then zeroW j else word m base (4240 + 144 * (a - 1) + 8 * j)) :
+    wordsVal m' base (1024 + 48 * c) 6 =
+      if a = 0 then (if c = 1 then K.one else 0) else wordsVal m base (tblSlot K c (a - 1)) 6 := by
+  have hj : ∀ j < 6, word m' base (1024 + 48 * c + 8 * j) =
+      if a = 0 then zeroW (6 * c + j) else word m base (4240 + 144 * (a - 1) + 48 * c + 8 * j) := by
+    intro j hj
+    have := h (6 * c + j) (by omega_using [hc, hj])
+    rw [show 1024 + 8 * (6 * c + j) = 1024 + 48 * c + 8 * j by omega_using [],
+      show 4240 + 144 * (a - 1) + 8 * (6 * c + j) = 4240 + 144 * (a - 1) + 48 * c + 8 * j by omega_using []] at this
+    exact this
+  by_cases ha : a = 0
+  · simp only [ha, ↓reduceIte] at hj ⊢
+    have hz : ∀ c < 3, (if c = 1 then K.one else 0) < 2 ^ 129 ∧ ∀ j < 6, zeroW (6 * c + j) =
+        BitVec.ofNat 64 ((if c = 1 then K.one else 0) >>> (64 * j)) := by decide +kernel
+    exact wordsVal_of_shifts' (hz c hc).1 (by decide)
+      fun j h' => by rw [hj j h', (hz c hc).2 j h']
+  · simp only [ha, ↓reduceIte] at hj ⊢
+    have ht : tblSlot K c (a - 1) = 4240 + 144 * (a - 1) + 48 * c := by
+      have h1 : K.tbl = 4240 := by decide
+      have h2 : K.M.n = 6 := rfl
+      rw [tblSlot, h1, h2]
+    rw [ht]
+    exact wordsVal_of_words _ _ _ _ _ _ hj
+
+/-- P-384's selection, as the window's. -/
+theorem sel_ok : SelOk K 8192 (WinCfg.selOf K (some Impl.P384.EcdhSelect.sel)) := by
   intro base k i s hL hA hs hi hx hbits
-  have hn := hs.nowrap
   have hmag := mag_le (nib_lt k i)
-  show WP isa (.block sel) s _
-  simp only [Impl.P384.EcdhSelect.sel, List.append_assoc]
+  have hKs : K.tbl = 4240 ∧ K.E.x = 1024 ∧ K.E.y = 1072 ∧ K.E.z = 1120 ∧ K.M.n = 6 := by decide
+  obtain ⟨hKt, hKx, hKy, hKz, hKn⟩ := hKs
+  obtain ⟨c1, c2, c3, c4⟩ := wr_sub
+  show WP isa (.block Impl.P384.EcdhSelect.sel) s _
+  rw [Impl.P384.EcdhSelect.sel, WP.block_append_iff]
+  refine WP.mono (nibble_ok hs K.bits (k := k) (j := i) (N := 4 * K.J) (by omega_using [hi]) hL.bits hA.bits4 hx
+    hbits) fun s₁ ⟨x₁, k₁⟩ => ?_
   rw [WP.block_append_iff]
-  refine WP.mono (nibble_ok hs K.bits (k := k) (j := i) (N := 4 * K.J) (by omega_arith) hL.bits hA.bits4 hx hbits)
-    fun s₁ ⟨a₁, k₁⟩ => ?_
-  have hs₁ := hs.of_keeps k₁ (by decide)
+  refine WP.mono (magnitude_ok s₁ (nib_lt k i) x₁) fun s₂ ⟨x₂, _, k₂⟩ => ?_
   rw [WP.block_append_iff]
-  refine WP.mono (magnitude_ok s₁ (nib_lt k i) a₁) fun s₂ ⟨a₂, _, k₂⟩ => ?_
-  have hs₂ := hs₁.of_keeps k₂ (by decide)
+  refine WP.mono (count_ok s₂) fun s₃ ⟨x₃, a₃, b₃, i₃, k₃⟩ => ?_
   rw [WP.block_append_iff]
-  refine WP.mono (tblBase_ok hs₂) fun s₃ ⟨b₃, k₃⟩ => ?_
-  have hs₃ := hs₂.of_keeps k₃ (by decide)
+  refine WP.mono (start_ok x₃) fun s₄ ⟨z₄, k₄⟩ => ?_
+  have K₄ : Keeps (combClob 6) s s₄ := (((k₁.mono c1).trans (k₂.mono c2)).trans
+    (k₃.keeps.mono c3)).trans (k₄.keeps.mono c4)
+  have hx0 : Reg.x0 ∉ combClob 6 := by decide
+  have hs₄ := hs.of_keeps K₄ hx0
   rw [WP.block_append_iff]
-  refine WP.mono (init_ok s₃ s₃.mem base K.tbl (mag (nib k i))) fun s₄ ⟨A₄, k₄⟩ => ?_
-  have hs₄ := hs₃.of_keeps k₄ (by decide)
-  have m₄ : s₄.mem = s₃.mem := k₄.mem
-  have x2₄ : s₄.gpr .x2 = BitVec.ofNat 64 (mag (nib k i)) := by
-    rw [k₄.gpr _ (by decide), k₃.gpr _ (by decide)]; exact a₂
-  have x9₄ : s₄.gpr .x9 = off base K.tbl := by rw [k₄.gpr _ (by decide)]; exact b₃
-  rw [WP.block_append_iff]
-  refine WP.mono (scan_ok hs₄ (by omega_arith) (by decide) x9₄ x2₄ (m₄ ▸ A₄)) fun s₅ ⟨A₅, k₅⟩ => ?_
-  have hs₅ := hs₄.of_keeps k₅ (by decide)
-  have m₅ : s₅.mem = s.mem := by rw [k₅.mem, m₄, k₃.mem, k₂.mem, k₁.mem]
-  rw [m₄, k₃.mem, k₂.mem, k₁.mem] at A₅
-  -- The stores.
-  rw [WP.block_append_iff]
-  refine WP.mono (stores_ok _ hs₅ (o := K.E.x) (by rw [acc_len]; decide) (by decide) (acc_nodup 0 (by decide)))
-    fun s₆ ⟨v₆, k₆, O₆⟩ => ?_
-  have hs₆ := hs₅.of_keepRegs k₆ (by decide)
-  rw [WP.block_append_iff]
-  refine WP.mono (stores_ok _ hs₆ (o := K.E.y) (by rw [acc_len]; decide) (by decide) (acc_nodup 1 (by decide)))
-    fun s₇ ⟨v₇, k₇, O₇⟩ => ?_
-  have hs₇ := hs₆.of_keepRegs k₇ (by decide)
-  refine WP.mono (stores_ok _ hs₇ (o := K.E.z) (by rw [acc_len]; decide) (by decide) (acc_nodup 2 (by decide)))
-    fun t ⟨v₈, k₈, O₈⟩ => ?_
-  obtain ⟨cR, c0, c19⟩ := sel_regs
-  have kk : Keeps (.x2 :: .x3 :: .x4 :: .x9 :: .x16 :: candRegs) s s₅ :=
-    ((((k₁.mono (by decide)).trans (k₂.mono (by decide))).trans (k₃.mono (by decide))).trans
-      (k₄.mono fun r hr => by simp only [List.mem_cons]; exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr
-        (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ hr))))))))).trans
-      (k₅.mono fun r hr => by simp only [List.mem_cons]; exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr hr)))))
-  have g : ∀ r, t.gpr r = s₅.gpr r := fun r => by
-    rw [k₈.gpr r (by simp), k₇.gpr r (by simp), k₆.gpr r (by simp)]
-  have r₅ : ∀ c, regsVal s₇ (Impl.P384.EcdhSelect.acc c) = regsVal s₅ (Impl.P384.EcdhSelect.acc c) ∧
-      regsVal s₆ (Impl.P384.EcdhSelect.acc c) = regsVal s₅ (Impl.P384.EcdhSelect.acc c) := fun c =>
-    ⟨regsVal_congr fun r _ => by rw [k₇.gpr r (by simp), k₆.gpr r (by simp)],
-      regsVal_congr fun r _ => by rw [k₆.gpr r (by simp)]⟩
-  refine ⟨⟨fun r hr => ?_, ?_, ?_, ?_⟩, by rw [g, kk.gpr _ c0], by rw [g, kk.gpr _ c19], ?_, ?_, ?_, ?_⟩
-  · rw [g, kk.gpr r fun h => hr (cR r h)]
-  · rw [k₈.rd, k₇.rd, k₆.rd, kk.rd]
-  · rw [k₈.wr, k₇.wr, k₆.wr, kk.wr]
-  · rw [k₈.sp, k₇.sp, k₆.sp, kk.sp]
-  · rw [acc_len] at O₆ O₇ O₈
-    rw [← m₅]; exact (O₆.unch.trans (O₇.unch.trans O₈.unch)).mono (by decide)
-  · rw [acc_len] at O₇ O₈ v₆
-    rw [O₈.wordsVal (by decide) (by decide), O₇.wordsVal (by decide) (by decide)]
-    show wordsVal s₆.mem base K.E.x 6 = _
-    rw [v₆, coord_val (c := 0) (by decide) hmag A₅]
-    simp
-  · rw [acc_len] at O₈ v₇
-    rw [O₈.wordsVal (by decide) (by decide)]
-    show wordsVal s₇.mem base K.E.y 6 = _
-    rw [v₇, (r₅ 1).2, coord_val (c := 1) (by decide) hmag A₅]
-    simp
-  · rw [acc_len] at v₈
-    show wordsVal t.mem base K.E.z 6 = _
-    rw [v₈, (r₅ 2).1, coord_val (c := 2) (by decide) hmag A₅]
-    simp
+  refine WP.mono (scan_ok hs₄ hmag (by rw [k₄.v _ (by decide), i₃]) (by rw [k₄.v _ (by decide), b₃])
+    (by rw [k₄.v _ (by decide), a₃, x₂])) fun s₅ ⟨v₅, k₅⟩ => ?_
+  have K₅ := K₄.trans (k₅.keeps.mono fun _ h => absurd h List.not_mem_nil)
+  refine WP.mono (qstoresV_ok acc (o := K.E.x) (hs.of_keeps K₅ hx0) (by rw [hKx]) 9
+    (by rw [hKx]; decide)) fun t ⟨w, kt, _, O⟩ => ?_
+  have hw : ∀ j < 18, word t.mem base (1024 + 8 * j) = if mag (nib k i) = 0 then zeroW j else
+      word s.mem base (4240 + 144 * (mag (nib k i) - 1) + 8 * j) := by
+    intro j hj
+    have e := w j hj
+    rw [hKx] at e
+    rw [e, v₅ _ (by omega_using [hj])]
+    by_cases h : mag (nib k i) = 0
+    · rw [ite_eq_left h, ite_eq_left h, z₄ _ (by omega_using [hj]), vdword_zeroV j hj]
+    · rw [ite_eq_right h, ite_eq_right h, pairAt, vdword_read16 _ _ (by omega_using []), hs₄.x0, K₄.mem,
+        BitVec.add_assoc, BitVec.ofNat_add_ofNat, hKt]
+      exact congrArg (word s.mem base) (by omega_using [])
+  have hc := fun c hc => coord_ok c hc hw
+  have KR : KeepRegs (combClob 6) s t := (Keeps.regs K₅).trans (kt.mono fun _ h => absurd h List.not_mem_nil)
+  refine ⟨KR, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · exact KR.gpr _ hx0
+  · rw [kt.gpr _ List.not_mem_nil, k₅.gpr _ List.not_mem_nil, k₄.gpr _ (by decide), k₃.gpr _ (by decide),
+      k₂.gpr _ (by decide), k₁.gpr _ (by decide)]
+  · rw [← K₅.mem]
+    refine fun x hx => O x ?_
+    rw [hKn, hKx, hKy, hKz] at hx
+    have h1 := hx (1024, 48) (by decide)
+    have h2 := hx (1072, 48) (by decide)
+    have h3 := hx (1120, 48) (by decide)
+    rw [hKx]
+    omega_using [h1, h2, h3]
+  · have := hc 0 (by decide)
+    rw [hKx, hKn]; exact this
+  · have := hc 1 (by decide)
+    rw [hKy, hKn]; exact this
+  · have := hc 2 (by decide)
+    rw [hKz, hKn]; exact this
 
 end VG.Proof.P384.EcdhSelect
 
@@ -663,7 +527,7 @@ theorem ecdh_a64 (hL : Weierstrass.Law Spec.P384.curve) (hI : Weierstrass.AArch6
   have hmu : KeepsUntouched (Impl.Ecdh.AArch64.Cfg.middle p384) :=
     keepsUntouched_ofK (c := Impl.Ecdh.AArch64.Cfg.middle p384) (by lit_decide)
   have hm : Ecdh.AArch64.MulOk p384 (Cfg.mulJ4 p384
-      (some (.block Impl.P384.EcdhAllocatedCode.doubleRD, .block Impl.P384.EcdhAllocatedCode.doubleDR))
+      (some (.block Impl.P384.EcdhDouble.doubleRD, .block Impl.P384.EcdhDouble.doubleDR))
       (some (.block Impl.P384.EcdhMadd.madd)) (some Impl.P384.EcdhSelect.sel)) :=
     Ecdh.AArch64.mulJ4_ok (p384_ok hI) hL hO rfl (by decide +kernel) (by decide +kernel)
       (by decide +kernel) (by decide +kernel)

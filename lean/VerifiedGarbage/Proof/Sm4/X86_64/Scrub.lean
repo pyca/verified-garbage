@@ -129,11 +129,11 @@ abbrev expandKeyCode : Prog isa := Impl.Sm4.X86_64.Fn.keyCall
 
 /-- `vg_sm4_ecb_encrypt`'s code. -/
 abbrev ecbEncryptCode : Prog isa :=
-  Impl.StackScratch.X86_64.withStackScratchWiped 3144 .rcx 392 (Impl.Sm4.X86_64.ecb .encrypt)
+  Impl.StackScratch.X86_64.withStackScratchWiped 3128 .rcx 390 (Impl.Sm4.X86_64.ecbShared .encrypt)
 
 /-- `vg_sm4_ecb_decrypt`'s code. -/
 abbrev ecbDecryptCode : Prog isa :=
-  Impl.StackScratch.X86_64.withStackScratchWiped 3144 .rcx 392 (Impl.Sm4.X86_64.ecb .decrypt)
+  Impl.StackScratch.X86_64.withStackScratchWiped 3128 .rcx 390 (Impl.Sm4.X86_64.ecbShared .decrypt)
 
 /-- `vg_sm4_cbc_encrypt_chained`'s code. -/
 abbrev cbcEncryptCode : Prog isa :=
@@ -186,7 +186,7 @@ theorem expandKey_scrubbed :
 theorem expandKey_spSafe : Impl.Sm4.X86_64.Fn.expandKey.all (fun i => !isa.writesSp i) = true :=
   scrubKs_spSafe keyCall_spSafe
 
-theorem ecbEncrypt_codeSp : (Impl.StackScratch.X86_64.withStackScratchWiped 3144 .rcx 392 (Impl.Sm4.X86_64.ecb .encrypt)).all (fun i => !VG.X86_64.isa.writesSp i) = true := by
+theorem ecbEncrypt_codeSp : (Impl.StackScratch.X86_64.withStackScratchWiped 3128 .rcx 390 (Impl.Sm4.X86_64.ecbShared .encrypt)).all (fun i => !VG.X86_64.isa.writesSp i) = true := by
   sp_safe
 
 /-- `Spec.Sm4.ecbEncryptApi`'s function as emitted (`Impl.Sm4.X86_64.Fn.ecbEncrypt`) meets its contract in
@@ -196,14 +196,14 @@ theorem ecbEncrypt_scrubbed :
   verifiedScrubbedSel (api := Spec.Sm4.ecbEncryptApi)
     { code := ecbEncryptCode
       stack := 3144
-      verified := Proof.Sm4.X86_64.ecb_framed .encrypt
+      verified := Proof.Sm4.X86_64.ecbShared_framed .encrypt
       spSafe := ecbEncrypt_codeSp }
-    .sse [(0, 1)] ecbEncryptOut (RScrub.pubOk_nil _) (by taint_decide)
+    .sse [(0, 2)] ecbEncryptOut (RScrub.pubOk_nil _) (by taint_decide)
 
 theorem ecbEncrypt_spSafe : Impl.Sm4.X86_64.Fn.ecbEncrypt.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
   scrubKs_spSafe ecbEncrypt_codeSp
 
-theorem ecbDecrypt_codeSp : (Impl.StackScratch.X86_64.withStackScratchWiped 3144 .rcx 392 (Impl.Sm4.X86_64.ecb .decrypt)).all (fun i => !VG.X86_64.isa.writesSp i) = true := by
+theorem ecbDecrypt_codeSp : (Impl.StackScratch.X86_64.withStackScratchWiped 3128 .rcx 390 (Impl.Sm4.X86_64.ecbShared .decrypt)).all (fun i => !VG.X86_64.isa.writesSp i) = true := by
   sp_safe
 
 /-- `Spec.Sm4.ecbDecryptApi`'s function as emitted (`Impl.Sm4.X86_64.Fn.ecbDecrypt`) meets its contract in
@@ -213,9 +213,9 @@ theorem ecbDecrypt_scrubbed :
   verifiedScrubbedSel (api := Spec.Sm4.ecbDecryptApi)
     { code := ecbDecryptCode
       stack := 3144
-      verified := Proof.Sm4.X86_64.ecb_framed .decrypt
+      verified := Proof.Sm4.X86_64.ecbShared_framed .decrypt
       spSafe := ecbDecrypt_codeSp }
-    .sse [(0, 1)] ecbDecryptOut (RScrub.pubOk_nil _) (by taint_decide)
+    .sse [(0, 2)] ecbDecryptOut (RScrub.pubOk_nil _) (by taint_decide)
 
 theorem ecbDecrypt_spSafe : Impl.Sm4.X86_64.Fn.ecbDecrypt.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
   scrubKs_spSafe ecbDecrypt_codeSp

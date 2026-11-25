@@ -20,7 +20,7 @@ import VerifiedGarbage.Proof.Framework.AArch64.SimdMem64
 import VerifiedGarbage.Proof.Framework.AArch64.Tbl
 import VerifiedGarbage.Proof.MlKem.AArch64.Vec
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourRead
-public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Load
+public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Pair
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejState
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentSeed
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejPro
@@ -32,7 +32,7 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Absorb
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.SeedFrame
 import VerifiedGarbage.Proof.MlKem.Arith
-import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Semantics
+import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Boundary
 import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! ### `MlDsa.AArch64.Optimized.BoundedFourInitialized`, which the modules that import this one used -/

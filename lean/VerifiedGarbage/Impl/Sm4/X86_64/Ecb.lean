@@ -97,13 +97,18 @@ def advance : Prog isa :=
     (.ite .b (.block [.alu .sub .r8 (.reg .r8)]) (.block [.alu .add .rdx (.imm 256), .alu .sub .r8 (.imm 16)]))
 
 /-- Sixteen blocks, or the last one to fifteen (and none left: ZF set). -/
-def group : Prog isa := .seq copyIn (.seq crypt16 (.seq copyOut advance))
+def groupWith (crypt : Prog isa) : Prog isa := .seq copyIn (.seq crypt (.seq copyOut advance))
 
 /-- The whole function: the table, then the groups. -/
-def ecb (dir : Dir) : Prog isa :=
+def ecbWith (crypt : Prog isa) (dir : Dir) : Prog isa :=
   .seq (.block ([movR sb .rcx, movR .r8 .rdx, movR .rdx .rsi] ++ saveRegs ++ setMasks keyMasks))
     (.seq (keys dir)
       (.seq (.block [.alu .test .r8 (.reg .r8)])
-        (.seq (.ite .e (.block []) (.loop group .ne)) (.block restoreRegs))))
+        (.seq (.ite .e (.block []) (.loop (groupWith crypt) .ne)) (.block restoreRegs))))
+
+/-- The inline form used by the original ECB proof. -/
+def group : Prog isa := groupWith crypt16
+
+def ecb (dir : Dir) : Prog isa := ecbWith crypt16 dir
 
 end VG.Impl.Sm4.X86_64

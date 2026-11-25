@@ -64,33 +64,34 @@ theorem xofSqueezeOk (X : Xof) (W : Nat) (hW : 0 < W := by decide) :
 /-! ## What the cleanup needs of the code
 
 Of each function with any permutation `c`, from the same of the function
-with `stub` (its own instructions), of `c`'s code, and of `c`'s absorb if it
-gives one. -/
+with `stub` (its own instructions), of `c`'s code, and of `c`'s function for
+whole blocks if it has one. -/
 
 /-- A permutation that does nothing: a function's code with it has the
 function's own instructions only. -/
 def stub : Impl.Sha3.AArch64.Callee :=
-  { name := "", code := .block [], suffix := "", clear := ⟨[], [], []⟩ }
+  { name := "", code := .block [], suffix := "", clear := ⟨[], [], []⟩, blocks := some ("", .block []) }
+
+private theorem tryBlocks_all {p : Instr → Bool} (c : Impl.Sha3.AArch64.Callee)
+    (h0 : sideAll p (Impl.Sha3.AArch64.Stream.tryBlocks stub) = true)
+    (ho : ∀ n code, c.blocks = some (n, code) → sideAll p code = true) :
+    sideAll p (Impl.Sha3.AArch64.Stream.tryBlocks c) = true := by
+  rcases h : c.blocks with _ | ⟨n, code⟩
+  · simp only [Impl.Sha3.AArch64.Stream.tryBlocks, h]; rfl
+  · simp only [Impl.Sha3.AArch64.Stream.tryBlocks, stub, h, sideAll, Bool.and_eq_true] at h0 ⊢
+    simp only [h0, ho n code h, and_self]
 
 private theorem absorb_all {p : Instr → Bool} (c : Impl.Sha3.AArch64.Callee) (rate : Nat)
     (h0 : sideAll p (Impl.Sha3.AArch64.Instances.absorb stub rate) = true) (hc : sideAll p c.code = true)
-    (ho : ∀ code, c.absorbOverride = some code → sideAll p code = true) :
+    (ho : ∀ n code, c.blocks = some (n, code) → sideAll p code = true) :
     sideAll p (Impl.Sha3.AArch64.Instances.absorb c rate) = true := by
-  cases h : c.absorbOverride with
-  | none =>
-    simp only [Impl.Sha3.AArch64.Instances.absorb, Impl.Sha3.AArch64.Instances.update,
-      Impl.StackScratch.AArch64.withStackScratch, Impl.Sha3.AArch64.Stream.absorbWith, stub, h,
-      Impl.Sha3.AArch64.Stream.absorbGenericWith, Impl.Sha3.AArch64.Stream.absorbMainWith,
-      Impl.Sha3.AArch64.Stream.absorbBodyWith, Impl.Sha3.AArch64.Stream.permuteAtWith, sideAll,
-      Bool.and_eq_true] at h0 ⊢
-    simp only [h0, hc, and_self]
-  | some code =>
-    simp only [Impl.Sha3.AArch64.Instances.absorb, Impl.Sha3.AArch64.Instances.update,
-      Impl.StackScratch.AArch64.withStackScratch, Impl.Sha3.AArch64.Stream.absorbWith, stub, h,
-      Impl.Sha3.AArch64.Stream.absorbGenericWith, Impl.Sha3.AArch64.Stream.absorbMainWith,
-      Impl.Sha3.AArch64.Stream.absorbBodyWith, Impl.Sha3.AArch64.Stream.permuteAtWith, sideAll,
-      Bool.and_eq_true] at h0 ⊢
-    simp only [h0, ho code h, and_self]
+  simp only [Impl.Sha3.AArch64.Instances.absorb, Impl.Sha3.AArch64.Instances.update,
+    Impl.StackScratch.AArch64.withStackScratch, Impl.Sha3.AArch64.Stream.absorbWith,
+    Impl.Sha3.AArch64.Stream.absorbMainWith,
+    Impl.Sha3.AArch64.Stream.absorbBodyWith, Impl.Sha3.AArch64.Stream.permuteAtWith, sideAll,
+    Bool.and_eq_true] at h0 ⊢
+  have ht := tryBlocks_all c (by simp only [h0]) ho
+  simp only [h0, hc, ht, and_self]
 
 private theorem finalize_all {p : Instr → Bool} (c : Impl.Sha3.AArch64.Callee) (rate len : Nat)
     (h0 : sideAll p (Impl.Sha3.AArch64.Instances.finalize stub rate len) = true) (hc : sideAll p c.code = true) :
@@ -143,7 +144,7 @@ theorem update_side (v : Permutation) (rate : Nat) :
       (Impl.Sha3.AArch64.Fn.updateOwn.union v.callee.clear) [] = true := by
   refine scrubSide_union (by decide) ?_ (by decide)
     (absorb_all v.callee rate (sideAll_union_left (absorb_own rate)) (sideAll_union_right v.scrub)
-      v.absorbOverrideScrub) (by decide)
+      fun n code h => sideAll_union_right (v.blocksScrub n code h)) (by decide)
   simp only [Impl.Sha3.AArch64.Instances.absorb, Impl.Sha3.AArch64.Instances.update,
     Impl.StackScratch.AArch64.withStackScratch, Code.aarch64Depth, Instr.frameUnits,
     v.absorb_depth]
@@ -190,18 +191,13 @@ to include, and `v`'s own proof. -/
 
 private theorem absorbWith_all {p : Instr → Bool} (c : Impl.Sha3.AArch64.Callee)
     (h0 : sideAll p (Impl.Sha3.AArch64.Stream.absorbWith stub) = true) (hc : sideAll p c.code = true)
-    (ho : ∀ code, c.absorbOverride = some code → sideAll p code = true) :
+    (ho : ∀ n code, c.blocks = some (n, code) → sideAll p code = true) :
     sideAll p (Impl.Sha3.AArch64.Stream.absorbWith c) = true := by
-  cases h : c.absorbOverride with
-  | none =>
-    simp only [Impl.Sha3.AArch64.Stream.absorbWith, stub, h,
-      Impl.Sha3.AArch64.Stream.absorbGenericWith, Impl.Sha3.AArch64.Stream.absorbMainWith,
-      Impl.Sha3.AArch64.Stream.absorbBodyWith, Impl.Sha3.AArch64.Stream.permuteAtWith, sideAll,
-      Bool.and_eq_true] at h0 ⊢
-    simp only [h0, hc, and_self]
-  | some code =>
-    simp only [Impl.Sha3.AArch64.Stream.absorbWith, h]
-    exact ho code h
+  simp only [Impl.Sha3.AArch64.Stream.absorbWith, Impl.Sha3.AArch64.Stream.absorbMainWith,
+    Impl.Sha3.AArch64.Stream.absorbBodyWith, Impl.Sha3.AArch64.Stream.permuteAtWith, sideAll,
+    Bool.and_eq_true] at h0 ⊢
+  have ht := tryBlocks_all c (by simp only [h0]) ho
+  simp only [h0, hc, ht, and_self]
 
 private theorem padWith_all {p : Instr → Bool} (c : Impl.Sha3.AArch64.Callee)
     (h0 : sideAll p (Impl.Sha3.AArch64.Stream.padWith stub) = true) (hc : sideAll p c.code = true) :
@@ -236,7 +232,7 @@ theorem absorbWith_side (v : Permutation) {own : Impl.Scrub.AArch64.Clear}
       Impl.Sha3.AArch64.Fn.updateOwn.his.all own.his.contains) = true) :
     calleeSide (Impl.Sha3.AArch64.Stream.absorbWith v.callee) (own.union v.callee.clear) = true :=
   absorbWith_all v.callee (calleeSide_union_mono hs (sideAll_union_left absorbWith_own))
-    (sideAll_union_right v.scrub) fun code h => calleeSide_union_mono hs (v.absorbOverrideScrub code h)
+    (sideAll_union_right v.scrub) fun n code h => sideAll_union_right (v.blocksScrub n code h)
 
 theorem padWith_side (v : Permutation) {own : Impl.Scrub.AArch64.Clear}
     (hs : (Impl.Sha3.AArch64.Fn.xofFinalizeOwn.gprs.all own.gprs.contains &&

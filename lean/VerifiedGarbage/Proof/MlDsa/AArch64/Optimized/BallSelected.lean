@@ -27,7 +27,7 @@ theorem selected_correct (v : Proof.Sha3.AArch64.Permutation) (σ : State) (hp :
     WP isa (selected v.callee) σ (fun u => abiPreserved σ u ∧ sbK.post σ u) := by
   unfold selected
   split
-  · exact correctWith Proof.Sha3.AArch64.Sha3.ResidentBackend.backend σ hp
+  · exact correctWith Proof.Sha3.AArch64.Sha3.Vector.backend σ hp
   · exact Sample.Ball.correctWith v σ hp
 
 theorem codeWith_depth (v : Proof.Sha3.AArch64.Permutation) : (codeWith v.callee).aarch64Depth=1 := by
@@ -37,7 +37,7 @@ theorem codeWith_depth (v : Proof.Sha3.AArch64.Permutation) : (codeWith v.callee
 theorem selected_depth (v : Proof.Sha3.AArch64.Permutation) : (selected v.callee).aarch64Depth=1 := by
   unfold selected
   split
-  · exact codeWith_depth Proof.Sha3.AArch64.Sha3.ResidentBackend.backend
+  · exact codeWith_depth Proof.Sha3.AArch64.Sha3.Vector.backend
   · exact Sample.ball_depth v
 
 theorem codeWith_noDit (v : Proof.Sha3.AArch64.Permutation) :
@@ -50,6 +50,6 @@ theorem selected_noDit (v : Proof.Sha3.AArch64.Permutation) :
     (selected v.callee).all (fun i => !i.touchesDit) = true := by
   unfold selected
   split
-  · exact codeWith_noDit Proof.Sha3.AArch64.Sha3.ResidentBackend.backend
+  · exact codeWith_noDit Proof.Sha3.AArch64.Sha3.Vector.backend
   · exact Sample.ball_noDit v
 end VG.Proof.MlDsa.AArch64.Optimized.Ball

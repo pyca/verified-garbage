@@ -12,6 +12,9 @@ import Mathlib.Tactic.ClearExcept
 public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.P521Joint
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Loop
+import VerifiedGarbage.Proof.Weierstrass.AArch64.P521Window
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.WinJStep
+import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.Table
 import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.Digit
 
 /-! ### `Ecdsa.Verify.AArch64.P521.JointLoop`, which this module and modules that import it used -/
@@ -20,10 +23,61 @@ section
 
 @[expose] public section
 namespace VG.Proof.Ecdsa.Verify.AArch64.P521.Joint
+open VG.Impl.Weierstrass.AArch64.PubNaf
 open VG VG.AArch64 VG.Impl.Mont VG.Impl.Mont.AArch64 VG.Impl.Weierstrass VG.Impl.Weierstrass.AArch64
 open VG.Impl.Ecdsa.Verify.AArch64 VG.Proof.Mont VG.Proof.Mont.AArch64
 open VG.Proof.Weierstrass VG.Proof.Weierstrass.AArch64 VG.Proof.Weierstrass.AArch64.PubNaf
 open Spec.Weierstrass
+
+/-- The joint loop's shared doubling, by a doubling that does what the window's does. -/
+private theorem jointDoubleBy_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : NafLay K size)
+    (hC : Law C) (hM3 : AM3 C)
+    {P : Point C} {s₀ s : State} (hF : NafFixed K C base s₀ P k) {A : Point C} (hA : onCurve C A=true)
+    {d : Prog isa} (hd : DblSpec K C base size d K.R K.D (dblVR K)) {j : Nat}
+    (hj : j < 64 * K.M.n + 1) (h : JointDigitPost K C base size P s₀ s (j + 1) A) :
+    WP isa (.seq (.block [decCounter]) d) s fun t =>
+      JointDoublePost K C base size P s₀ t j (Spec.Weierstrass.add A A) := by
+  have hW := hL.win
+  refine WP.seq (WP.mono (decCounter_ok s (by omega_using []) (by have := hL.n6; omega_using [hj, this]) h.x19)
+    fun s₁ ⟨x₁, k₁⟩ => ?_)
+  have S₁ := h.st.regs hW k₁ (fun r hr => nafClob_mem (by
+    simp only [List.mem_singleton] at hr; subst hr; simp)) (by decide)
+  have t₁ : ∀ x, tmv C K.M.n base s₁ x = tmv C K.M.n base s x := fun x => by
+    show toM _ _ _ = toM _ _ _; rw [k₁.mem]
+  have V0 : ∀ x ∈ dblVR K, x ∈ winSlots K ∧ wordsVal s₁.mem base x K.M.n < C.p := by
+    intro x hx
+    simp only [dblVR, List.mem_cons, List.not_mem_nil, or_false] at hx
+    rcases hx with rfl | rfl | rfl | rfl | rfl | rfl
+    · exact ⟨winOther_mem (R_other K _ (by simp)), by rw [k₁.mem]; exact h.rlt _ (by simp)⟩
+    · exact ⟨winOther_mem (R_other K _ (by simp)), by rw [k₁.mem]; exact h.rlt _ (by simp)⟩
+    · exact ⟨winOther_mem (R_other K _ (by simp)), by rw [k₁.mem]; exact h.rlt _ (by simp)⟩
+    all_goals exact ⟨winRo_slots K _ (by simp [winRo]), (S₁.ro hW hF).1 _ (by simp [winRo])⟩
+  have I₁ : Inv K.M base size C.p (· ∈ winSlots K) (dblVR K) (tmv C K.M.n base s₁) s₁ :=
+    inv_of S₁.scr S₁.mod (fun x hx => (V0 x hx).1) (fun x hx => (V0 x hx).2)
+  have RJ₁ : InvJ C (tmv C K.M.n base s₁ K.R.x) (tmv C K.M.n base s₁ K.R.y) (tmv C K.M.n base s₁ K.R.z)
+      A := by rw [t₁, t₁, t₁]; exact h.r
+  refine WP.mono (hd _ s₁ I₁) fun s₂ ⟨k₂, U₂, E₂, I₂, v₂⟩ => ?_
+  have dJ := InvJ.dbl' hC hM3 hA RJ₁ (v₂.trans (dblJChoiceN_run (K.M.n == 4) _))
+  have S₂ := S₁.next hW I₂.scr (k₂.mono fun _ h => List.mem_cons_of_mem _ (winSaved_combClob h)) U₂
+  have x₂ : s₂.gpr .x19 = BitVec.ofNat 64 j := by
+    have n19 : Reg.x19 ∉ clob K.M.n ++ winSaved K.M.n := fun h =>
+      (List.mem_append.mp h).elim (x19_not_clob _) (not_mem_winSaved (by decide))
+    rw [k₂.gpr _ n19, x₁, Nat.add_sub_cancel]
+  have Dl : ∀ x ∈ [K.D.x, K.D.y, K.D.z], wordsVal s₂.mem base x K.M.n < C.p :=
+    fun x hx => I₂.lt x (List.mem_append_left _ hx)
+  have DJ : InvJ C (tmv C K.M.n base s₂ K.D.x) (tmv C K.M.n base s₂ K.D.y) (tmv C K.M.n base s₂ K.D.z)
+      (Spec.Weierstrass.add A A) := by
+    rw [show tmv C K.M.n base s₂ K.D.x = E₂ K.D.x from I₂.val _ (by simp),
+      show tmv C K.M.n base s₂ K.D.y = E₂ K.D.y from I₂.val _ (by simp),
+      show tmv C K.M.n base s₂ K.D.z = E₂ K.D.z from I₂.val _ (by simp)]
+    exact dJ
+  exact ⟨S₂, x₂, Dl, DJ, CacheOk.unch hW hL.cache (CacheUpTo.ofMem k₁.mem h.cache) U₂ S₁.scr.nowrap⟩
+
+/-- The joint loop's doubling, inline. -/
+theorem dbl_spec {C : Curve} {base : Addr} (hL : NafLay P521Joint.K 8192)
+ (hp : UnitMod C.p (2^(64*P521Joint.K.M.n))) :
+ DblSpec P521Joint.K C base 8192 P521Joint.double P521Joint.K.R P521Joint.K.D (dblVR P521Joint.K) :=
+ (P521.doubles_ok (by decide +kernel) hL.win hL.al hp _ rfl).1
 
 /-- Fixed-generator arithmetic is independent of the joint loop's group recurrence. -/
 def FixedStep (C : Curve) (base : Addr) (P G : Point C) (s₀ : State) (u : Nat) : Prop :=
@@ -56,25 +110,25 @@ theorem step_ok {C : Curve} {base : Addr} {P G : Point C} {s₀ s : State} {u v 
   JointDigitPost P521Joint.K C base 8192 P s₀ t j (jointPoint G P u v j) := by
  rw [P521Joint.step]
  apply WP.assoc
- refine WP.seq (WP.mono_syms (jointDouble_ok hL hp hC hM3 hF
-  (jointPoint_curve hC hG hP u v (j+1)) (by change j<577; omega_using [hj]) h) fun a ha sy=>?_) 
+ refine WP.seq (WP.mono_syms (jointDoubleBy_ok hL hC hM3 hF
+  (jointPoint_curve hC hG hP u v (j+1)) (dbl_spec hL hp) (by change j<577; omega_using [hj]) h) fun a ha sy=>?_) 
  refine WP.mono (digits_ok hL hp hC hM3 hone hP
   (hC.onCurve_add (jointPoint_curve hC hG hP u v (j+1)) (jointPoint_curve hC hG hP u v (j+1)))
   hF fixed (by omega_using [hj]) (sy.trans sym) ha) fun t ht=>?_
  rw [jointPoint_step hC hG hP] at ht
  exact ht
 
-/-- The original public NAF iteration also works on a joint accumulator. -/
+/-- The public NAF's iteration with the inline doubling also works on a joint accumulator. -/
 theorem peerStep_ok {C : Curve} {base : Addr} {P A : Point C} {s₀ s : State} {v j : Nat}
  (hL : NafLay P521Joint.K 8192) (hp : UnitMod C.p (2^(64*P521Joint.K.M.n))) (hC : Law C)
  (hM3 : AM3 C) (hone : P521Joint.K.one<C.p) (hP : onCurve C P=true) (hA : onCurve C A=true)
  (hF : NafFixed P521Joint.K C base s₀ P v) (hj : j<576)
  (h : JointDigitPost P521Joint.K C base 8192 P s₀ s (j+1) A) :
- WP isa (PubNaf.step P521Joint.K) s fun t=>
+ WP isa (PubNaf.stepD P521Joint.K P521Joint.double) s fun t=>
   JointDigitPost P521Joint.K C base 8192 P s₀ t j (add (add A A) (Naf5.point C P v j)) := by
- rw [PubNaf.step]
+ rw [PubNaf.stepD]
  apply WP.assoc
- refine WP.seq (WP.mono (jointDouble_ok hL hp hC hM3 hF hA (by change j<577; omega_using [hj]) h) fun a ha=>?_)
+ refine WP.seq (WP.mono (jointDoubleBy_ok hL hC hM3 hF hA (dbl_spec hL hp) (by change j<577; omega_using [hj]) h) fun a ha=>?_)
  exact jointDigit_ok hL hp hC hM3 hone hP (hC.onCurve_add hA hA) ha.st hF ha.cache
   (by change j<577; omega_using [hj]) ha.x19 ha.dlt ha.d
 
