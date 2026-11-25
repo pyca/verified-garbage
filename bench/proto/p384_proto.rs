@@ -2344,7 +2344,7 @@ core::arch::global_asm!(".globl p_K_lat8",".p2align 6","p_K_lat8:",
 "ldp x19,x20,[sp],#96",
 "ret",
 );
-extern "C" { fn p_K_lat8(x: *mut u64); }
+unsafe extern "C" { fn p_K_lat8(x: *mut u64); }
 core::arch::global_asm!(".globl p_K_ind8",".p2align 6","p_K_ind8:",
 "stp x19,x20,[sp,#-96]!",
 "stp x21,x22,[sp,#16]",
@@ -4712,7 +4712,7 @@ core::arch::global_asm!(".globl p_K_ind8",".p2align 6","p_K_ind8:",
 "ldp x19,x20,[sp],#96",
 "ret",
 );
-extern "C" { fn p_K_ind8(x: *mut u64); }
+unsafe extern "C" { fn p_K_ind8(x: *mut u64); }
 core::arch::global_asm!(".globl p_S_lat8",".p2align 6","p_S_lat8:",
 "stp x19,x20,[sp,#-96]!",
 "stp x21,x22,[sp,#16]",
@@ -6771,7 +6771,7 @@ core::arch::global_asm!(".globl p_S_lat8",".p2align 6","p_S_lat8:",
 "ldp x19,x20,[sp],#96",
 "ret",
 );
-extern "C" { fn p_S_lat8(x: *mut u64); }
+unsafe extern "C" { fn p_S_lat8(x: *mut u64); }
 core::arch::global_asm!(".globl p_S_ind8",".p2align 6","p_S_ind8:",
 "stp x19,x20,[sp,#-96]!",
 "stp x21,x22,[sp,#16]",
@@ -8851,7 +8851,7 @@ core::arch::global_asm!(".globl p_S_ind8",".p2align 6","p_S_ind8:",
 "ldp x19,x20,[sp],#96",
 "ret",
 );
-extern "C" { fn p_S_ind8(x: *mut u64); }
+unsafe extern "C" { fn p_S_ind8(x: *mut u64); }
 core::arch::global_asm!(".globl p_Q_lat8",".p2align 6","p_Q_lat8:",
 "stp x19,x20,[sp,#-96]!",
 "stp x21,x22,[sp,#16]",
@@ -10454,7 +10454,7 @@ core::arch::global_asm!(".globl p_Q_lat8",".p2align 6","p_Q_lat8:",
 "ldp x19,x20,[sp],#96",
 "ret",
 );
-extern "C" { fn p_Q_lat8(x: *mut u64); }
+unsafe extern "C" { fn p_Q_lat8(x: *mut u64); }
 core::arch::global_asm!(".globl p_Q_ind8",".p2align 6","p_Q_ind8:",
 "stp x19,x20,[sp,#-96]!",
 "stp x21,x22,[sp,#16]",
@@ -12078,7 +12078,7 @@ core::arch::global_asm!(".globl p_Q_ind8",".p2align 6","p_Q_ind8:",
 "ldp x19,x20,[sp],#96",
 "ret",
 );
-extern "C" { fn p_Q_ind8(x: *mut u64); }
+unsafe extern "C" { fn p_Q_ind8(x: *mut u64); }
 core::arch::global_asm!(".globl p_mul64",".p2align 6","p_mul64:",
 "stp x19,x20,[sp,#-96]!",
 "stp x21,x22,[sp,#16]",
@@ -12161,7 +12161,7 @@ core::arch::global_asm!(".globl p_mul64",".p2align 6","p_mul64:",
 "ldp x19,x20,[sp],#96",
 "ret",
 );
-extern "C" { fn p_mul64(x: *mut u64); }
+unsafe extern "C" { fn p_mul64(x: *mut u64); }
 core::arch::global_asm!(".globl p_umulh64",".p2align 6","p_umulh64:",
 "stp x19,x20,[sp,#-96]!",
 "stp x21,x22,[sp,#16]",
@@ -12244,7 +12244,7 @@ core::arch::global_asm!(".globl p_umulh64",".p2align 6","p_umulh64:",
 "ldp x19,x20,[sp],#96",
 "ret",
 );
-extern "C" { fn p_umulh64(x: *mut u64); }
+unsafe extern "C" { fn p_umulh64(x: *mut u64); }
 core::arch::global_asm!(".globl p_mullat64",".p2align 6","p_mullat64:",
 "stp x19,x20,[sp,#-96]!",
 "stp x21,x22,[sp,#16]",
@@ -12327,7 +12327,7 @@ core::arch::global_asm!(".globl p_mullat64",".p2align 6","p_mullat64:",
 "ldp x19,x20,[sp],#96",
 "ret",
 );
-extern "C" { fn p_mullat64(x: *mut u64); }
+unsafe extern "C" { fn p_mullat64(x: *mut u64); }
 core::arch::global_asm!(".globl p_umulhlat64",".p2align 6","p_umulhlat64:",
 "stp x19,x20,[sp,#-96]!",
 "stp x21,x22,[sp,#16]",
@@ -12410,7 +12410,7 @@ core::arch::global_asm!(".globl p_umulhlat64",".p2align 6","p_umulhlat64:",
 "ldp x19,x20,[sp],#96",
 "ret",
 );
-extern "C" { fn p_umulhlat64(x: *mut u64); }
+unsafe extern "C" { fn p_umulhlat64(x: *mut u64); }
 core::arch::global_asm!(".globl p_adcs64",".p2align 6","p_adcs64:",
 "stp x19,x20,[sp,#-96]!",
 "stp x21,x22,[sp,#16]",
@@ -12493,7 +12493,7 @@ core::arch::global_asm!(".globl p_adcs64",".p2align 6","p_adcs64:",
 "ldp x19,x20,[sp],#96",
 "ret",
 );
-extern "C" { fn p_adcs64(x: *mut u64); }
+unsafe extern "C" { fn p_adcs64(x: *mut u64); }
 core::arch::global_asm!(".globl p_add64",".p2align 6","p_add64:",
 "stp x19,x20,[sp,#-96]!",
 "stp x21,x22,[sp,#16]",
@@ -12576,7 +12576,7 @@ core::arch::global_asm!(".globl p_add64",".p2align 6","p_add64:",
 "ldp x19,x20,[sp],#96",
 "ret",
 );
-extern "C" { fn p_add64(x: *mut u64); }
+unsafe extern "C" { fn p_add64(x: *mut u64); }
 core::arch::global_asm!(".globl p_adcslat64",".p2align 6","p_adcslat64:",
 "stp x19,x20,[sp,#-96]!",
 "stp x21,x22,[sp,#16]",
@@ -12659,7 +12659,7 @@ core::arch::global_asm!(".globl p_adcslat64",".p2align 6","p_adcslat64:",
 "ldp x19,x20,[sp],#96",
 "ret",
 );
-extern "C" { fn p_adcslat64(x: *mut u64); }
+unsafe extern "C" { fn p_adcslat64(x: *mut u64); }
 core::arch::global_asm!(".globl p_extr64",".p2align 6","p_extr64:",
 "stp x19,x20,[sp,#-96]!",
 "stp x21,x22,[sp,#16]",
@@ -12742,7 +12742,7 @@ core::arch::global_asm!(".globl p_extr64",".p2align 6","p_extr64:",
 "ldp x19,x20,[sp],#96",
 "ret",
 );
-extern "C" { fn p_extr64(x: *mut u64); }
+unsafe extern "C" { fn p_extr64(x: *mut u64); }
 core::arch::global_asm!(".globl p_mix64",".p2align 6","p_mix64:",
 "stp x19,x20,[sp,#-96]!",
 "stp x21,x22,[sp,#16]",
@@ -12824,7 +12824,7 @@ core::arch::global_asm!(".globl p_mix64",".p2align 6","p_mix64:",
 "ldp x19,x20,[sp],#96",
 "ret",
 );
-extern "C" { fn p_mix64(x: *mut u64); }
+unsafe extern "C" { fn p_mix64(x: *mut u64); }
 
 pub static PROTOS: &[(&str, unsafe extern "C" fn(*mut u64))] = &[
 ("p_K_lat8", p_K_lat8),

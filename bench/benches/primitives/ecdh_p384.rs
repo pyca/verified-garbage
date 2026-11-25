@@ -3,7 +3,7 @@
 use criterion::Criterion;
 
 #[cfg(target_arch = "aarch64")]
-#[path = "p384_proto.rs"]
+#[path = "../../proto/p384_proto.rs"]
 mod proto;
 pub const USES: &[&str] = &["ecdh_p384", "ec_p384", "ec_p384_validate"];
 
