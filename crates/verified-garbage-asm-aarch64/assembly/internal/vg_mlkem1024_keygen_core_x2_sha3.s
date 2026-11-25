@@ -2471,7 +2471,6 @@ vg_mlkem1024_keygen_core_x2_sha3:
 	bl {vg_mlkem16_cbd2}
 	movz x0, #20512, lsl #0
 	add x0, x28, x0
-	add x1, x28, #3104
 	bl {vg_mlkem16_ntt}
 	movz x0, #25800, lsl #0
 	add x0, x28, x0
@@ -2480,7 +2479,6 @@ vg_mlkem1024_keygen_core_x2_sha3:
 	bl {vg_mlkem16_cbd2}
 	movz x0, #21536, lsl #0
 	add x0, x28, x0
-	add x1, x28, #3104
 	bl {vg_mlkem16_ntt}
 	movz x0, #25968, lsl #0
 	add x0, x28, x0
@@ -2489,7 +2487,6 @@ vg_mlkem1024_keygen_core_x2_sha3:
 	bl {vg_mlkem16_cbd2}
 	movz x0, #22560, lsl #0
 	add x0, x28, x0
-	add x1, x28, #3104
 	bl {vg_mlkem16_ntt}
 	movz x0, #26136, lsl #0
 	add x0, x28, x0
@@ -2498,7 +2495,6 @@ vg_mlkem1024_keygen_core_x2_sha3:
 	bl {vg_mlkem16_cbd2}
 	movz x0, #23584, lsl #0
 	add x0, x28, x0
-	add x1, x28, #3104
 	bl {vg_mlkem16_ntt}
 	movz x0, #26304, lsl #0
 	add x0, x28, x0
@@ -2507,7 +2503,6 @@ vg_mlkem1024_keygen_core_x2_sha3:
 	bl {vg_mlkem16_cbd2}
 	movz x0, #45056, lsl #0
 	add x0, x28, x0
-	add x1, x28, #3104
 	bl {vg_mlkem16_ntt}
 	movz x0, #26472, lsl #0
 	add x0, x28, x0
@@ -2516,7 +2511,6 @@ vg_mlkem1024_keygen_core_x2_sha3:
 	bl {vg_mlkem16_cbd2}
 	movz x0, #46080, lsl #0
 	add x0, x28, x0
-	add x1, x28, #3104
 	bl {vg_mlkem16_ntt}
 	add x2, x28, #1056
 	str x19, [x2, #1800]
@@ -2650,7 +2644,6 @@ vg_mlkem1024_keygen_core_x2_sha3:
 	bl {vg_mlkem16_cbd2}
 	movz x0, #47104, lsl #0
 	add x0, x28, x0
-	add x1, x28, #3104
 	bl {vg_mlkem16_ntt}
 	add x0, x19, #528
 	movz x1, #48128, lsl #0
@@ -2658,7 +2651,6 @@ vg_mlkem1024_keygen_core_x2_sha3:
 	bl {vg_mlkem16_cbd2}
 	movz x0, #48128, lsl #0
 	add x0, x28, x0
-	add x1, x28, #3104
 	bl {vg_mlkem16_ntt}
 	ldr x30, [x19, #1840]
 	ldr x23, [x19, #1832]

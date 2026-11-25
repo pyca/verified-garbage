@@ -12,7 +12,7 @@ public import VerifiedGarbage.Proof.MlKem.CoeffW
 import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
 public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Table
-import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Mem
+import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Halves
 
 /-! ### `MlKem.AArch64.Rej8Advance`, which this module and modules that import it used -/
 

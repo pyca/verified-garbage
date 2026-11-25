@@ -193,13 +193,12 @@ variable {P : KemLay} {prf : Nat→Nat→Prog isa}
 structure TStk (s : State) : Prop where
   shuffle : (Region.mk (s.syms "VG_MLKEM_REJ_SHUFFLE") 4096).Disjoint (frame s.sp)
   gamma : (Region.mk (s.syms "VG_MLKEM_GAMMA") 512).Disjoint (frame s.sp)
-  forward : (Region.mk (s.syms "VG_MLKEM_NTT16_ZETAS") 512).Disjoint (frame s.sp)
-  inverse : (NttR.fastInvRegion s).Disjoint (frame s.sp)
-  fast : (NttR.fastRegion s).Disjoint (frame s.sp)
+  forward : (Ntt16.fwdRegion s).Disjoint (frame s.sp)
+  inverse : (Ntt16.invRegion s).Disjoint (frame s.sp)
 
 theorem TStk.of {s t : State} (h : TStk s) (hs : t.syms = s.syms) (hp : t.sp = s.sp) : TStk t := by
-  refine ⟨?_, ?_, ?_, ?_, ?_⟩ <;> simp only [NttR.fastRegion, NttR.fastInvRegion, NttR.sRegion, hs, hp]
-  exacts [h.shuffle, h.gamma, h.forward, h.inverse, h.fast]
+  refine ⟨?_, ?_, ?_, ?_⟩ <;> simp only [Ntt16.fwdRegion, Ntt16.invRegion, hs, hp]
+  exacts [h.shuffle, h.gamma, h.forward, h.inverse]
 
 theorem tables_frame128 {s t : State} (h : Tables s) (hk : TStk s)
     (hs : t.syms=s.syms) (hr : t.rd=s.rd) (hw : t.wr=s.wr) (hp : t.sp=s.sp)
@@ -213,29 +212,21 @@ theorem tables_frame128 {s t : State} (h : Tables s) (hk : TStk s)
   have ga := ext h.gammaApart hk.gamma
   have fw := ext h.transforms.forward.2.2 hk.forward
   have iv := ext h.transforms.inverse.2.2 hk.inverse
-  have fa := ext h.transforms.fast.2.2 hk.fast
   refine ⟨?_,by simpa only [hs,hr,hw] using h.shuffleRead,
     by simpa only [hs,hw] using h.shuffleApart,
     by simpa only [hs,hp] using h.shuffleStack,?_,
     by simpa only [hs,hr,hw] using h.gammaRead,
     by simpa only [hs,hw] using h.gammaApart,
     by simpa only [hs,hp] using h.gammaStack,
-    ⟨⟨?_,by simpa only [hs,hr,hw] using h.transforms.forward.2.1,
-      by simpa only [hs,hw] using h.transforms.forward.2.2⟩,
+    ⟨h.transforms.forward.frameFar hs hr hw hf fw,
      h.transforms.inverse.frameFar hs hr hw hf iv,
-     by simpa only [hs,hp] using h.transforms.forwardStack,
-     by simpa only [NttR.fastInvRegion,NttR.sRegion,hs,hp] using h.transforms.inverseStack,
-     h.transforms.fast.frameFar hs hr hw hf fa,
-     by simpa only [NttR.fastRegion,NttR.sRegion,hs,hp] using h.transforms.fastStack⟩⟩
+     by simpa only [Ntt16.fwdRegion,hs,hp] using h.transforms.forwardStack,
+     by simpa only [Ntt16.invRegion,hs,hp] using h.transforms.inverseStack⟩⟩
   · rw [hs]; exact h.shuffle.frame hf sh
   · rw [hs]; intro i hi
     rw [hf.readW (r:=⟨s.syms "VG_MLKEM_GAMMA",512⟩)
       (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])) ga (by decide)]
     exact h.gamma i hi
-  · rw [hs]; intro i hi
-    rw [hf.readW (r:=⟨s.syms "VG_MLKEM_NTT16_ZETAS",512⟩)
-      (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])) fw (by decide)]
-    exact h.transforms.forward.1 i hi
 
 theorem WP.tables128 {s : State} {c : Prog isa} {Q : State→Prop}
     (h : WP isa c s Q) (ht : Tables s) (hk : TStk s) (hn : c.aarch64Depth≤8) :

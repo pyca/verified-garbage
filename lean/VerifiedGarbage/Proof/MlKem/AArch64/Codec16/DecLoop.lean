@@ -12,7 +12,7 @@ import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.MlKem.Encode
 public import VerifiedGarbage.Proof.MlKem.AArch64.Codec16.Lanes
 import VerifiedGarbage.Proof.MlKem.AArch64.Cbd16.Lanes
-import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Mem
+import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Halves
 import VerifiedGarbage.Proof.Framework.AArch64.Simd
 
 /-! ### `MlKem.AArch64.Codec16.DecInput`, which this module and modules that import it used -/
