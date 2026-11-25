@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Impl.Aes.AArch64.Ctr32
-public import VerifiedGarbage.Impl.Aes.AArch64.Inv
 public import VerifiedGarbage.Impl.Aes.AArch64.Vperm
 
 /-!
