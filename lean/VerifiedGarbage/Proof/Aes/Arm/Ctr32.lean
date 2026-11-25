@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Aes.Arm.Group
+public import VerifiedGarbage.Proof.Aes.Arm.Layers
 public import VerifiedGarbage.Spec.Gcm.Contract
 public import VerifiedGarbage.Proof.Gcm.Contract
 meta import VerifiedGarbage.Proof.Gcm.Contract
