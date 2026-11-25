@@ -38,6 +38,16 @@ def rol1 (d : Reg) : Instr := rorI d 31
 def slices : List Instr :=
   st 0 .eax :: (List.range 7).flatMap fun j => [shrI .eax 1, st (j + 1) .eax]
 
+/-- A register or a slot. -/
+inductive Loc
+  | r (r : Reg)
+  | m (k : Nat)
+  deriving DecidableEq
+
+/-- Where `subSlices` leaves slice `j`. -/
+def subOut : Nat → Loc
+  | 0 => .r .ebp | 1 => .m 4 | 2 => .m 1 | 3 => .r .edx | 4 => .r .ebx | 5 => .m 2 | 6 => .r .eax | _ => .r .ecx
+
 /-- The S-box without its constant, from slots `0 … 7` to `subOut j`. -/
 def subSlices : List Instr := [
   movS .eax 2, xorS .eax 5, movS .ebx 1, xorR .ebx .eax, movS .ecx 6, xorR .ecx .ebx, movS .edx 0,

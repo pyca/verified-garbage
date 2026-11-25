@@ -18,14 +18,12 @@ public import VerifiedGarbage.Spec.Aes.Contract
 public import VerifiedGarbage.Proof.Aes.Contract
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Aes.X86.AesNi.Lit
-public import VerifiedGarbage.Proof.Aes.X86.Sbox
 public import VerifiedGarbage.Proof.Framework.X86.Linear
-public import VerifiedGarbage.Proof.Aes.Ct32.Layers
+public import VerifiedGarbage.Proof.Aes.Sbox0
 public import VerifiedGarbage.Proof.Framework.X86.Wp
 public import VerifiedGarbage.Proof.Framework.X86.Spill
 import VerifiedGarbage.Proof.Aes.X86.Ctr32
 public import VerifiedGarbage.Proof.Aes.KeyExp
-public import VerifiedGarbage.Proof.Aes.Ct32.Bitsliced
 import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! ### `Aes.X86.AesNi.KeyVerified`, which the modules that import this one used -/
@@ -37,92 +35,11 @@ section
 section
 
 /-!
-# `ortho` on x86 (32-bit)
-
-It is checked by evaluation over the lane domain (`Framework/X86/Linear.lean`):
-the kernel runs it on the input words (the slots `0 … 7`) as atoms and
-compares every output bit with the input bit given in
-`Proof/Aes/Ct32/Layers.lean`. Position `p = 8r + 2c + b` of a word of the
-bitsliced state is byte `r + 4c` of block `b`.
--/
-
-@[expose] public section
-
-namespace VG.Proof.Aes.X86
-
-open VG VG.X86 VG.X86.Straight VG.Bitslice VG.Impl.Aes.X86 VG.Proof.Aes VG.Proof.Aes.Ct32
-
-/-- The state slots hold input words `0 … 7`. -/
-def qIns : List (Nat × Nat) := (List.range 8).map fun k => (k, k)
-
-/-- The output slots `j`, bit `p` the XOR of the input bits `g j p`. -/
-def qOuts (g : Nat → Nat → List Nat) : List (Nat × (Nat → List Nat)) :=
-  (List.range 8).map fun j => (j, g j)
-
-theorem ortho_toBs_check :
-    check (lanes 32 8) linCfg (linExt 0) ortho (linEnv qIns) (linPost 64 8 (qOuts toBsG)) = true := by
-  decide +kernel
-
-theorem ortho_fromBs_check :
-    check (lanes 32 8) linCfg (linExt 0) ortho (linEnv qIns) (linPost 64 8 (qOuts fromBsG)) = true := by
-  decide +kernel
-
-theorem q_linear {k xb : Nat} {c : Cfg} {is : List Instr} {g : Nat → Nat → List Nat}
-    (hchk : check (lanes 32 k) c (linExt xb) is (linEnv qIns) (linPost c.slots k (qOuts g)) = true)
-    (hk : 256 ≤ 2 ^ k) (hcb : c.base = sb)
-    (hw : [Reg.esp, .esi, .edi].all (fun r => is.all fun i => i.dst != some r) = true)
-    {s : State} (hok : Ok c s) (W : Nat → BitVec 32) (hW : ∀ i < 8, W i = Q s i)
-    (hext : ∀ j < c.exts,
-      32 * (xb + j) + 32 ≤ 2 ^ k ∧ W (xb + j) = s.mem.readW (wordAddr (s.gpr c.ext) j) 32) :
-    ∃ s', runBlock isa is s = some s' ∧
-      (∀ j < 8, ∀ p < 32, (Q s' j).getLsbD p = xorBits W (g j p)) ∧
-      s'.rd = s.rd ∧ s'.wr = s.wr ∧ (∀ r, r ∉ tmpRegs → s'.gpr r = s.gpr r) ∧
-      Frame [slotRegion c s] s.mem s'.mem := by
-  obtain ⟨s', hs', hout, hrd, hwr, hoth, hfr⟩ := linear_ok hchk hok W (fun j i hji _ => by
-    simp only [qIns, List.mem_map, List.mem_range, Prod.mk.injEq] at hji
-    obtain ⟨i, hi, rfl, rfl⟩ := hji
-    exact ⟨by omega_using [hk, hi], by rw [hW i hi, hcb]⟩) hext
-  have hmem : ∀ j < 8, (j, g j) ∈ qOuts g := fun j hj => by
-    simp only [qOuts, List.mem_map, List.mem_range]; exact ⟨j, hj, rfl⟩
-  have hsb : s'.gpr sb = s.gpr sb := hoth sb (keeps_rest hw sb (by decide))
-  refine ⟨s', hs', fun j hj p hp => ?_, hrd, hwr, fun r hr => hoth r (keeps_rest hw r hr), hfr⟩
-  have := hout j (g j) (hmem j hj) p hp
-  rw [hcb] at this
-  rw [Q, hsb]; exact this
-
-theorem toBs_ok {s : State} (hok : Ok linCfg s) :
-    ∃ s', runBlock isa ortho s = some s' ∧
-      (∀ j < 8, ∀ p < 32, (Q s' j).getLsbD p =
-        (Q s (p % 2 + 2 * (idx p / 4))).getLsbD (8 * (idx p % 4) + j)) ∧
-      s'.rd = s.rd ∧ s'.wr = s.wr ∧ (∀ r, r ∉ tmpRegs → s'.gpr r = s.gpr r) ∧
-      Frame [slotRegion linCfg s] s.mem s'.mem := by
-  obtain ⟨s', hs', hout, rest⟩ := q_linear ortho_toBs_check (by decide) rfl
-    (by decide +kernel) hok (Q s) (fun _ _ => rfl) (fun j hj => by simp [linCfg] at hj)
-  refine ⟨s', hs', fun j hj p hp => ?_, rest⟩
-  rw [hout j hj p hp, toBsG, xorBits_cons, xorBits_nil, Bool.xor_false,
-    bitOf_word _ _ _ (by omega_using [hj])]
-
-theorem fromBs_ok {s : State} (hok : Ok linCfg s) :
-    ∃ s', runBlock isa ortho s = some s' ∧
-      (∀ k < 8, ∀ t < 32, (Q s' k).getLsbD t = (Q s (t % 8)).getLsbD (pos (k % 2) (t / 8 + 4 * (k / 2)))) ∧
-      s'.rd = s.rd ∧ s'.wr = s.wr ∧ (∀ r, r ∉ tmpRegs → s'.gpr r = s.gpr r) ∧
-      Frame [slotRegion linCfg s] s.mem s'.mem := by
-  obtain ⟨s', hs', hout, rest⟩ := q_linear ortho_fromBs_check (by decide) rfl
-    (by decide +kernel) hok (Q s) (fun _ _ => rfl) (fun j hj => by simp [linCfg] at hj)
-  refine ⟨s', hs', fun j hj p hp => ?_, rest⟩
-  rw [hout j hj p hp, fromBsG, xorBits_cons, xorBits_nil, Bool.xor_false,
-    bitOf_word _ _ _ (by simp only [pos]; omega_using [hj, hp])]
-
-end VG.Proof.Aes.X86
-
-end
-
-/-!
 # The AES key expansion on x86 (32-bit)
 
-`subWordCode` (the word in slot 0, the other slots zero, `ortho`, the S-box,
-`ortho`) applies the S-box to every byte of `eax` (`subWord_wp`, from the
-bitsliced layers' lemmas); each word of the schedule is then a few scalar
+`subWordCode` (the word's slices, the S-box, and the bytes gathered from the
+slices) applies the S-box to every byte of `eax` (`subWord_wp`, from its parts'
+evaluation); each word of the schedule is then a few scalar
 instructions around it (`word_ok`), and the loop over the words keeps the
 schedule's bytes so far equal to the specification's (`WInv`). Constant
 time is `ExpandKeyCT.lean`.
@@ -132,7 +49,7 @@ time is `ExpandKeyCT.lean`.
 
 namespace VG.Proof.Aes.X86
 
-open VG VG.X86 VG.X86.Straight VG.Bitslice VG.Impl.Aes.X86 VG.Proof.Aes VG.Proof.Aes.Ct32
+open VG VG.X86 VG.X86.Straight VG.Bitslice VG.Impl.Aes.X86 VG.Proof.Aes
 open VG.Spec.Aes (sbox xtimes subBytes subWord rotWord rcon xorWord)
 open VG.X86.Wp (Upd Mupd Fupd wp_mov wp_movi wp_addi wp_add wp_addm wp_sub wp_subi wp_cmp wp_cmpi wp_test
   wp_ldm wp_xorm wp_stm wp_shr wp_ror wp_andi wp_xor sub_beq sub_ofNat toNat_ofNat_lt ofNat_pred
@@ -152,19 +69,131 @@ theorem restore_ok {s : State} {B : BitVec 32} {N : Nat} {g : Reg → BitVec 32}
 
 /-! ## The S-box on every byte -/
 
-/-- The two states that the words hold, as `InRel` relates them. -/
-def stOf (Q : Nat → BitVec 32) (b : Nat) : Spec.Aes.State :=
-  Vector.ofFn fun i => (Q (b + 2 * (i.1 / 4))).extractLsb' (8 * (i.1 % 4)) 8
+/-- The slots that `subWordCode` uses. -/
+def swCfg : Cfg := { base := .edi, slots := 64, ext := .edi, exts := 0 }
 
-theorem inRel_stOf (Q : Nat → BitVec 32) : InRel Q (stOf Q) := by
-  intro b hb i hi j hj
-  rw [getD_eq _ hi, stOf, Vector.getElem_ofFn, BitVec.getLsbD_extractLsb']
-  simp [hj]
+/-- What is at `l`. -/
+def gval (s : State) : Loc → BitVec 32
+  | .r r => s.gpr r
+  | .m k => s.mem.readW (wordAddr (s.gpr .edi) k) 32
 
-theorem subWordCode_eq : subWordCode = ((([st 0 .eax, movI .eax 0, st 1 .eax, st 2 .eax, st 3 .eax,
-    st 4 .eax, st 5 .eax, st 6 .eax, st 7 .eax] : List Instr) ++ ortho) ++ sboxCode) ++ ortho ++
-    ([movS .eax 0] : List Instr) := by
-  simp only [subWordCode, List.append_assoc]; rfl
+def gat {α : Type} (e : Env α) : Loc → Option α
+  | .r r => e.reg r
+  | .m k => e.slot k
+
+def gok : Loc → Bool
+  | .r _ => true
+  | .m k => decide (k < 64)
+
+def genv {α : Type} (l : List (Loc × α)) : Env α :=
+  { reg := fun r => (l.find? (·.1 == .r r)).map (·.2)
+    slot := fun k => (l.find? (·.1 == .m k)).map (·.2) }
+
+theorem rel_genv {α : Type} {R : α → BitVec 32 → Prop} {l : List (Loc × α)} {s : State}
+    (hin : ∀ p ∈ l, R p.2 (gval s p.1)) : Rel R swCfg (fun _ => none) (genv l) s where
+  reg r a h := by
+    simp only [genv, Option.map_eq_some_iff] at h
+    obtain ⟨⟨l', b⟩, hf, rfl⟩ := h
+    have hl : l' = .r r := by simpa using List.find?_some hf
+    subst hl
+    exact hin _ (List.mem_of_find?_eq_some hf)
+  slot k a _ h := by
+    simp only [genv, Option.map_eq_some_iff] at h
+    obtain ⟨⟨l', b⟩, hf, rfl⟩ := h
+    have hl : l' = .m k := by simpa using List.find?_some hf
+    subst hl
+    exact hin _ (List.mem_of_find?_eq_some hf)
+  ext _ _ h _ := absurd h (Nat.not_lt_zero _)
+
+theorem post_gat {α : Type} {R : α → BitVec 32 → Prop} {e : Env α} {s s' : State} {W : Reg → Prop}
+    (p : Post R swCfg (fun _ => none) e s s' W) {l : Loc} (hl : gok l = true) {a : α} (h : gat e l = some a) :
+    R a (gval s' l) := by
+  cases l with
+  | r r => exact p.rel.reg r a h
+  | m k =>
+    have := p.rel.slot k a (of_decide_eq_true hl) h
+    exact this
+
+/-- The slices: the word shifted. -/
+def slicesCheck : Bool :=
+  check (lanes 32 5) swCfg (fun _ => none) slices (genv [(.r .eax, inWordW 32 0)]) fun e =>
+    (List.range 8).all fun j => outOkW 32 5 (e.slot j) fun p => if p + j < 32 then [p + j] else []
+theorem slices_check : slicesCheck = true := by decide +kernel
+
+def subSlicesCheck : Bool :=
+  check (table 32 256) swCfg (fun _ => none) subSlices (genv ((List.range 8).map fun j => (.m j, sbIn j))) fun e =>
+    (List.range 8).all fun j => gok (subOut j) && gat e (subOut j) == some (sbox0T.getD j 0)
+theorem subSlices_check : subSlicesCheck = true := by decide +kernel
+
+def gatherCheck : Bool :=
+  check (lanes 32 8) swCfg (fun _ => none) gather (genv ((List.range 8).map fun j => (subOut j, inWordW 32 j))) fun e =>
+    outOkW 32 8 (e.reg .eax) fun p => [32 * (p % 8) + 8 * (p / 8)]
+theorem gather_check : gatherCheck = true := by decide +kernel
+
+/-- What the parts of `subWordCode` keep. -/
+structure SwKeep (s s' : State) : Prop where
+  rd : s'.rd = s.rd
+  wr : s'.wr = s.wr
+  other : ∀ r, r ∉ tmpRegs → s'.gpr r = s.gpr r
+  frame : Frame [⟨(s.gpr .edi).setWidth 64, 256⟩] s.mem s'.mem
+
+theorem swKeep_of {α : Type} {R : α → BitVec 32 → Prop} {e : Env α} {s s' : State} {is : List Instr}
+    (p : Post R swCfg (fun _ => none) e s s' fun r => (is.all fun i => i.dst != some r) = false)
+    (h : ∀ r, r ∉ tmpRegs → (is.all fun i => i.dst != some r) = true) : SwKeep s s' :=
+  ⟨p.rd, p.wr, fun r hr => p.other r (by simp [h r hr]), p.frame⟩
+
+theorem slices_run {s : State} (hok : Ok swCfg s) : ∃ s', runBlock isa slices s = some s' ∧ SwKeep s s' ∧
+    ∀ j < 8, ∀ t < 4, (gval s' (.m j)).getLsbD (8 * t) = (s.gpr .eax).getLsbD (8 * t + j) := by
+  obtain ⟨e', he, hpost⟩ := of_check _ _ _ slices_check
+  let W : Nat → BitVec 32 := fun _ => s.gpr .eax
+  obtain ⟨s', hs', p⟩ := run (R := LaneRel 5 (assign W (2 ^ 5))) lanes_sound hok (rel_genv fun q hq => by
+    simp only [List.mem_singleton] at hq; subst hq
+    exact inWordW_rel W (by decide)) he
+  refine ⟨s', hs', swKeep_of p (fun r => by cases r <;> decide), fun j hj t ht => ?_⟩
+  obtain ⟨h1, h2⟩ := outOkW_spec (List.all_eq_true.mp hpost j (List.mem_range.mpr hj))
+  have := outWordW_rel_of_lt h2 (post_gat p (l := .m j) (by simp only [gok, decide_eq_true_eq]; omega_using [hj]) h1)
+    (8 * t) (by omega_using [ht])
+  rw [this, ite_eq_left (by omega_using [hj, ht]), xorBits_cons, xorBits_nil, Bool.xor_false]
+  have := bitOf_word W 0 (8 * t + j) (by omega_using [hj, ht])
+  rwa [Nat.mul_zero, Nat.zero_add] at this
+
+theorem subSlices_run {s : State} (hok : Ok swCfg s) : ∃ s', runBlock isa subSlices s = some s' ∧ SwKeep s s' ∧
+    ∀ j < 8, ∀ p < 32, (gval s' (subOut j)).getLsbD p =
+      (sbox0 (bsByte (fun j => gval s (.m j)) p)).getLsbD j := by
+  obtain ⟨e', he, hpost⟩ := of_check _ _ _ subSlices_check
+  have key : ∀ p < 32, ∃ s', runBlock isa subSlices s = some s' ∧
+      Post (TableRel p (bsByte (fun j => gval s (.m j)) p).toNat) swCfg (fun _ => none) e' s s'
+        fun r => (subSlices.all fun i => i.dst != some r) = false := by
+    intro p hp
+    refine run (table_sound hp (bsByte _ p).isLt) hok (rel_genv fun q hq => ?_) he
+    simp only [List.mem_map, List.mem_range] at hq
+    obtain ⟨j, hj, rfl⟩ := hq
+    simp only [TableRel, sbIn, testBit_tableOf, (bsByte _ p).isLt, decide_true, Bool.true_and,
+      BitVec.testBit_toNat, getLsbD_bsByte _ _ hj]
+  obtain ⟨s', hs', p₀⟩ := key 0 (by decide)
+  refine ⟨s', hs', swKeep_of p₀ (fun r => by cases r <;> decide), fun j hj q hq => ?_⟩
+  obtain ⟨s'', hs'', p⟩ := key q hq
+  obtain rfl : s'' = s' := Option.some.inj (hs''.symm.trans hs')
+  have h := List.all_eq_true.mp hpost j (List.mem_range.mpr hj)
+  simp only [Bool.and_eq_true, beq_iff_eq] at h
+  have h2 := post_gat p h.1 h.2
+  simp only [TableRel] at h2
+  rw [← h2, sbox0T_bit (bsByte _ q).isLt hj, BitVec.ofNat_toNat, BitVec.setWidth_eq]
+
+theorem gather_run {s : State} (hok : Ok swCfg s) : ∃ s', runBlock isa gather s = some s' ∧ SwKeep s s' ∧
+    ∀ t < 4, ∀ j < 8, (s'.gpr .eax).getLsbD (8 * t + j) = (gval s (subOut j)).getLsbD (8 * t) := by
+  obtain ⟨e', he, hpost⟩ := of_check _ _ _ gather_check
+  let W : Nat → BitVec 32 := fun j => gval s (subOut j)
+  obtain ⟨s', hs', p⟩ := run (R := LaneRel 8 (assign W (2 ^ 8))) lanes_sound hok (rel_genv fun q hq => by
+    simp only [List.mem_map, List.mem_range] at hq
+    obtain ⟨j, hj, rfl⟩ := hq
+    exact inWordW_rel W (by omega)) he
+  refine ⟨s', hs', swKeep_of p (fun r => by cases r <;> decide), fun t ht j hj => ?_⟩
+  obtain ⟨h1, h2⟩ := outOkW_spec hpost
+  have := outWordW_rel_of_lt h2 (post_gat p (l := .r .eax) rfl h1) (8 * t + j) (by omega_using [ht, hj])
+  rw [show s'.gpr .eax = gval s' (.r .eax) from rfl, this, xorBits_cons, xorBits_nil, Bool.xor_false,
+    show (8 * t + j) % 8 = j by omega_using [hj], show (8 * t + j) / 8 = t by omega_using [hj],
+    bitOf_word W j (8 * t) (by omega_using [ht])]
 
 /-- `SUBWORD` of `eax`. -/
 theorem subWord_wp {s : State} {B : BitVec 32} (hb : s.gpr sb = B) (fit : B.toNat + 512 ≤ 2 ^ 32)
@@ -173,91 +202,45 @@ theorem subWord_wp {s : State} {B : BitVec 32} (hb : s.gpr sb = B) (fit : B.toNa
       s'.rd = s.rd → s'.wr = s.wr → (∀ r, r ∉ tmpRegs → s'.gpr r = s.gpr r) →
       Frame [reg32 B 256] s.mem s'.mem → P s') :
     WP isa (.block subWordCode) s P := by
-  obtain hin : ∀ (t : State), t.wr = s.wr → ∀ o, o + 4 ≤ 512 → InRegions t.wr (addr B o) 4 :=
-    fun t ht o ho => by rw [ht]; exact in_reg hw fit ho (by decide)
-  obtain hok : ∀ (t : State), t.gpr sb = B → t.wr = s.wr → t.rd = s.rd → Ok linCfg t := fun t hb' hw' hr' =>
-    Ok.of_off (r := reg32 B 512) (r' := reg32 B 512) (b := B) (b' := B) (off := 0) (off' := 0)
-      (n := 512) (n' := 512) (by rw [hw']; exact hw) rfl fit (Nat.le_refl _)
-      (by show t.gpr sb = _; rw [hb']; simp) (by simp [linCfg])
-      (by rw [hr', hw']; exact List.mem_append_right _ hw) rfl fit (Nat.le_refl _)
-      (by show t.gpr sb = _; rw [hb']; simp) (by simp [linCfg]) (.inr (.inl rfl))
-  rw [subWordCode_eq]
-  repeat rw [WP.block_append_iff (M := isa)]
-  obtain hm := List.mem_singleton_self (reg32 B 256)
-  obtain c256 : ∀ k < 8, (reg32 B 256).Contains (addr B (4 * k)) (32 / 8) := fun k hk =>
-    reg_contains (by omega_arith) (by omega_arith) (by decide)
-  refine wp_stm hb (hin _ rfl 0 (by omega_arith)) fun s₁ u₁ => wp_movi fun s₂ u₂ => ?_
-  obtain b₂ : s₂.gpr .edi = B := by rw [u₂.other _ (by decide), u₁.gpr]; exact hb
-  obtain w₂ : s₂.wr = s.wr := by rw [u₂.wr, u₁.wr]
-  refine wp_stm b₂ (hin _ w₂ 4 (by omega_arith)) fun s₃ u₃ => ?_
-  refine wp_stm (by rw [u₃.gpr]; exact b₂) (hin _ (by rw [u₃.wr, w₂]) 8 (by omega_arith)) fun s₄ u₄ => ?_
-  refine wp_stm (by rw [u₄.gpr, u₃.gpr]; exact b₂) (hin _ (by rw [u₄.wr, u₃.wr, w₂]) 12 (by omega_arith))
-    fun s₅ u₅ => ?_
-  refine wp_stm (by rw [u₅.gpr, u₄.gpr, u₃.gpr]; exact b₂) (hin _ (by rw [u₅.wr, u₄.wr, u₃.wr, w₂]) 16
-    (by omega_arith)) fun s₆ u₆ => ?_
-  refine wp_stm (by rw [u₆.gpr, u₅.gpr, u₄.gpr, u₃.gpr]; exact b₂)
-    (hin _ (by rw [u₆.wr, u₅.wr, u₄.wr, u₃.wr, w₂]) 20 (by omega_arith)) fun s₇ u₇ => ?_
-  refine wp_stm (by rw [u₇.gpr, u₆.gpr, u₅.gpr, u₄.gpr, u₃.gpr]; exact b₂)
-    (hin _ (by rw [u₇.wr, u₆.wr, u₅.wr, u₄.wr, u₃.wr, w₂]) 24 (by omega_arith)) fun s₈ u₈ => ?_
-  refine wp_stm (by rw [u₈.gpr, u₇.gpr, u₆.gpr, u₅.gpr, u₄.gpr, u₃.gpr]; exact b₂)
-    (hin _ (by rw [u₈.wr, u₇.wr, u₆.wr, u₅.wr, u₄.wr, u₃.wr, w₂]) 28 (by omega_arith)) fun s₉ u₉ =>
-    WP.block_nil ?_
-  obtain g₉ : ∀ r, r ≠ .eax → s₉.gpr r = s.gpr r := fun r hr => by
-    rw [u₉.gpr, u₈.gpr, u₇.gpr, u₆.gpr, u₅.gpr, u₄.gpr, u₃.gpr, u₂.other r hr, u₁.gpr]
-  obtain b₉ : s₉.gpr sb = B := by rw [g₉ _ (by decide)]; exact hb
-  have e₂ : s₂.gpr .eax = 0 := u₂.gpr
-  let M := ((((((((s.mem.writeW (addr B 0) (s.gpr .eax)).writeW (addr B 4) (0 : BitVec 32)).writeW
-    (addr B 8) (0 : BitVec 32)).writeW (addr B 12) (0 : BitVec 32)).writeW (addr B 16) (0 : BitVec 32)).writeW
-    (addr B 20) (0 : BitVec 32)).writeW (addr B 24) (0 : BitVec 32)).writeW (addr B 28) (0 : BitVec 32))
-  obtain m₉ : s₉.mem = M := by
-    simp only [u₉.mem, u₈.mem, u₇.mem, u₆.mem, u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₈.gpr, u₇.gpr,
-      u₆.gpr, u₅.gpr, u₄.gpr, u₃.gpr, e₂, Nat.reduceMul]
-    rw [u₁.mem]
-  obtain q₉ : ∀ k < 8, Q s₉ k = if k = 0 then s.gpr .eax else 0 := by
-    intro k hk
-    simp only [Q, wordAddr, b₉, m₉]
-    rcases (by omega_arith : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 ∨ k = 4 ∨ k = 5 ∨ k = 6 ∨ k = 7) with
-      rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-    simp (disch := decide) only [M, Nat.reduceMul, rd_wr_ne fit, Mem.readW_writeW_self32,
-      ↓reduceIte, Nat.reduceEqDiff]
-  obtain f₉ : Frame [reg32 B 256] s.mem s₉.mem := by
-    rw [m₉]
-    exact (((((((Frame.refl _ _).writeW hm _ (c256 0 (by omega_arith))).writeW hm _ (c256 1 (by omega_arith))).writeW
-      hm _ (c256 2 (by omega_arith))).writeW hm _ (c256 3 (by omega_arith))).writeW hm _ (c256 4 (by omega_arith))).writeW hm _
-      (c256 5 (by omega_arith))).writeW hm _ (c256 6 (by omega_arith)) |>.writeW hm _ (c256 7 (by omega_arith))
-  obtain rd₉ : s₉.rd = s.rd := by rw [u₉.rd, u₈.rd, u₇.rd, u₆.rd, u₅.rd, u₄.rd, u₃.rd, u₂.rd, u₁.rd]
-  obtain wr₉ : s₉.wr = s.wr := by rw [u₉.wr, u₈.wr, u₇.wr, u₆.wr, u₅.wr, u₄.wr, u₃.wr, u₂.wr, u₁.wr]
-  obtain ⟨s₁₀, hs₁₀, h₁₀, rd₁₀, wr₁₀, o₁₀, f₁₀⟩ := toBs_ok (hok s₉ b₉ wr₉ rd₉)
-  refine WP.of_runBlock ⟨s₁₀, hs₁₀, ?_⟩
-  obtain b₁₀ : s₁₀.gpr sb = B := (o₁₀ sb (by decide)).trans b₉
-  obtain ⟨s₁₁, hs₁₁, h₁₁, rd₁₁, wr₁₁, o₁₁, f₁₁⟩ :=
-    sbox_ok (hok s₁₀ b₁₀ (wr₁₀.trans wr₉) (rd₁₀.trans rd₉))
-  refine WP.of_runBlock ⟨s₁₁, hs₁₁, ?_⟩
-  obtain b₁₁ : s₁₁.gpr sb = B := (o₁₁ sb (by decide)).trans b₁₀
-  obtain ⟨s₁₂, hs₁₂, h₁₂, rd₁₂, wr₁₂, o₁₂, f₁₂⟩ :=
-    fromBs_ok (hok s₁₁ b₁₁ (wr₁₁.trans (wr₁₀.trans wr₉)) (rd₁₁.trans (rd₁₀.trans rd₉)))
-  refine WP.of_runBlock ⟨s₁₂, hs₁₂, ?_⟩
-  obtain b₁₂ : s₁₂.gpr sb = B := (o₁₂ sb (by decide)).trans b₁₁
-  obtain hin' := in_of_bs h₁₂ (bs_subBytes h₁₁ (bs_of_in h₁₀ (inRel_stOf (Q s₉))))
-  refine wp_ldm b₁₂ (in_rd (hin _ (wr₁₂.trans (wr₁₁.trans (wr₁₀.trans wr₉))) 0 (by omega_arith)))
-    fun s₁₃ u₁₃ => WP.block_nil ?_
-  refine h s₁₃ (fun t ht => ?_) (by rw [u₁₃.rd, rd₁₂, rd₁₁, rd₁₀, rd₉])
-    (by rw [u₁₃.wr, wr₁₂, wr₁₁, wr₁₀, wr₉]) (fun r hr => ?_) ?_
+  have hok : ∀ t : State, t.gpr .edi = B → t.wr = s.wr → Ok swCfg t := fun t hb' hw' =>
+    ⟨fun k hk => by
+      show InRegions t.wr (addr (t.gpr .edi) (4 * k)) 4
+      rw [hb', hw']; exact in_reg hw fit (by simp only [swCfg] at hk; omega_using [hk]) (by decide),
+     fun _ hk => absurd hk (Nat.not_lt_zero _),
+     by show (t.gpr .edi).toNat + 4 * 64 ≤ _; rw [hb']; omega_using [fit],
+     fun _ _ _ hj => absurd hj (Nat.not_lt_zero _)⟩
+  rw [subWordCode, WP.block_append_iff, WP.block_append_iff, WP.block_append_iff]
+  obtain ⟨s₁, hs₁, k₁, v₁⟩ := slices_run (hok s hb rfl)
+  have b₁ : s₁.gpr .edi = B := (k₁.other _ (by decide)).trans hb
+  refine WP.of_runBlock ⟨s₁, hs₁, ?_⟩
+  obtain ⟨s₂, hs₂, k₂, v₂⟩ := subSlices_run (hok s₁ b₁ k₁.wr)
+  have b₂ : s₂.gpr .edi = B := (k₂.other _ (by decide)).trans b₁
+  refine WP.of_runBlock ⟨s₂, hs₂, ?_⟩
+  obtain ⟨s₃, hs₃, k₃, v₃⟩ := gather_run (hok s₂ b₂ (k₂.wr.trans k₁.wr))
+  refine WP.of_runBlock ⟨s₃, hs₃, ?_⟩
+  refine Wp.cons rfl (WP.block_nil (h _ (fun t ht => ?_) (k₃.rd.trans (k₂.rd.trans k₁.rd))
+    (k₃.wr.trans (k₂.wr.trans k₁.wr)) (fun r hr => ?_) ?_))
   · refine byte_ext fun j hj => ?_
-    have := hin' 0 (by omega_arith) t (by omega_arith) j hj
-    rw [show 0 + 2 * (t / 4) = 0 by omega_arith, show t % 4 = t by omega_arith] at this
-    obtain e₁₃ : s₁₃.gpr .eax = Q s₁₂ 0 := by rw [u₁₃.gpr]; simp only [Q, wordAddr, b₁₂]
-    rw [BitVec.getLsbD_extractLsb', decide_eq_true hj, Bool.true_and, e₁₃, this, getD_eq _ (by omega_arith)]
-    simp only [subBytes, Vector.getElem_map, stOf, Vector.getElem_ofFn]
-    rw [show 0 + 2 * (t / 4) = 0 by omega_arith, show t % 4 = t by omega_arith, q₉ 0 (by omega_arith), ite_eq_left rfl]
+    rw [BitVec.getLsbD_extractLsb', decide_eq_true hj, Bool.true_and]
+    show (s₃.gpr .eax ^^^ 0x63636363).getLsbD (8 * t + j) = _
+    have hb0 : bsByte (fun j => gval s₁ (.m j)) (8 * t) = (s.gpr .eax).extractLsb' (8 * t) 8 := by
+      refine byte_ext fun i hi => ?_
+      rw [getLsbD_bsByte _ _ hi, v₁ i hi t ht, BitVec.getLsbD_extractLsb', decide_eq_true hi, Bool.true_and]
+    rw [BitVec.getLsbD_xor, v₃ t ht j hj, v₂ j hj _ (by omega_using [ht]), hb0, sbox0, BitVec.getLsbD_xor,
+      (by decide : ∀ t < 4, ∀ j < 8, (0x63636363 : BitVec 32).getLsbD (8 * t + j) = (0x63 : Byte).getLsbD j) t ht j hj,
+      Bool.xor_assoc, Bool.xor_self, Bool.xor_false]
   · have hne : r ≠ .eax := fun h => hr (h ▸ by decide)
-    rw [u₁₃.other r hne, o₁₂ r hr, o₁₁ r hr, o₁₀ r hr, g₉ r hne]
-  · rw [u₁₃.mem]
-    obtain e₁ : slotRegion linCfg s₉ = reg32 B 256 := by simp only [slotRegion, linCfg, b₉]
-    obtain e₂ : slotRegion linCfg s₁₀ = reg32 B 256 := by simp only [slotRegion, linCfg, b₁₀]
-    obtain e₃ : slotRegion linCfg s₁₁ = reg32 B 256 := by simp only [slotRegion, linCfg, b₁₁]
-    rw [e₁] at f₁₀; rw [e₂] at f₁₁; rw [e₃] at f₁₂
-    exact ((f₉.trans f₁₀).trans f₁₁).trans f₁₂
+    show (State.setReg _ .eax _).gpr r = _
+    rw [show (State.setReg (arithFlags s₃ (s₃.gpr .eax ^^^ 0x63636363) false false) .eax
+      (s₃.gpr .eax ^^^ 0x63636363)).gpr r = s₃.gpr r by simp [State.setReg, hne, arithFlags, State.setFlags],
+      k₃.other r hr, k₂.other r hr, k₁.other r hr]
+  · have f₁ := k₁.frame
+    have f₂ := k₂.frame
+    have f₃ := k₃.frame
+    rw [show s.gpr .edi = B from hb] at f₁
+    rw [b₁] at f₂
+    rw [b₂] at f₃
+    exact (f₁.trans f₂).trans f₃
 
 /-! ## Bytes -/
 
