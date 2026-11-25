@@ -452,8 +452,8 @@ theorem reduce_ok {a : A} {l h c : W4} (hl : At a 36 l) (hh : At a 40 h) (hc : A
       b.g .r8 = h.w0 ∧ b.g .r9 = h.w1 ∧ b.g .r10 = c.w0 ^^^ l.w0 ^^^ h.w0 ^^^ l.w2 ∧
       b.g .r11 = c.w1 ^^^ l.w1 ^^^ h.w1 ^^^ l.w3) ∧ Keeps workLr a b ∧ b.m = a.m) ?_
       fun b₁ ⟨⟨g4, g5, g6, g7, g8, g9, g10, g11⟩, k₁, m₁⟩ => ?_)
-  · simp (config := {decide := true}) only [WA, ld, eor, lS, hS, cS, evalA, stepA, opA, dpA, slotOf_slot, Option.map_some,
-      Option.bind_some, A.g_set, A.m_set, ite_false, ite_true, Option.some.injEq, exists_eq_left', l0, l1, l2, l3, h0, h1,
+  · simp only [reduceCtorEq, Nat.reduceLT, Nat.reduceAdd, and_self, ↓reduceIte, WA, ld, eor, lS, hS, cS, evalA, stepA, opA, dpA, slotOf_slot, Option.map_some,
+      Option.bind_some, A.g_set, A.m_set, Option.some.injEq, exists_eq_left', l0, l1, l2, l3, h0, h1,
       c0, c1]
     refine ⟨trivial, fun r hr => ?_, trivial⟩
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
@@ -465,8 +465,8 @@ theorem reduce_ok {a : A} {l h c : W4} (hl : At a 36 l) (hh : At a 40 h) (hc : A
   · have e8 : b₂.g .r8 = h.w0 := by rw [k₂ _ (by decide), g8]
     have e6 : b₂.g .r6 = l.w2 := by rw [k₂ _ (by decide), g6]
     have e4 : b₂.g .r4 = l.w0 := by rw [k₂ _ (by decide), g4]
-    simp (config := {decide := true}) only [WA, ld, eor, hS, cS, evalA, stepA, opA, dpA, slotOf_slot, Option.map_some,
-      Option.bind_some, A.g_set, A.m_set, ite_false, ite_true, Option.some.injEq, exists_eq_left', m₂, m₁, h2, c2, e8, e6, e4]
+    simp only [reduceCtorEq, Nat.reduceLT, Nat.reduceAdd, and_self, ↓reduceIte, WA, ld, eor, hS, cS, evalA, stepA, opA, dpA, slotOf_slot, Option.map_some,
+      Option.bind_some, A.g_set, A.m_set, Option.some.injEq, exists_eq_left', m₂, m₁, h2, c2, e8, e6, e4]
     refine ⟨trivial, fun r hr => ?_, trivial⟩
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [A.g_set, hr, ite_false]
@@ -479,8 +479,8 @@ theorem reduce_ok {a : A} {l h c : W4} (hl : At a 36 l) (hh : At a 40 h) (hc : A
   · have e9 : b₅.g .r9 = h.w1 := by rw [k₅ _ (by decide), k₄ _ (by decide), k₃ _ (by decide), k₂ _ (by decide), g9]
     have e7 : b₅.g .r7 = l.w3 := by rw [k₅ _ (by decide), k₄ _ (by decide), k₃ _ (by decide), k₂ _ (by decide), g7]
     have e5 : b₅.g .r5 = l.w1 := by rw [k₅ _ (by decide), k₄ _ (by decide), k₃ _ (by decide), k₂ _ (by decide), g5]
-    simp (config := {decide := true}) only [WA, ld, eor, hS, cS, evalA, stepA, opA, dpA, slotOf_slot, Option.map_some,
-      Option.bind_some, A.g_set, A.m_set, ite_false, ite_true, Option.some.injEq, exists_eq_left', m₅, m₄, m₃, h3, c3, e9,
+    simp only [reduceCtorEq, Nat.reduceLT, Nat.reduceAdd, and_self, ↓reduceIte, WA, ld, eor, hS, cS, evalA, stepA, opA, dpA, slotOf_slot, Option.map_some,
+      Option.bind_some, A.g_set, A.m_set, Option.some.injEq, exists_eq_left', m₅, m₄, m₃, h3, c3, e9,
       e7, e5]
     refine ⟨trivial, fun r hr => ?_, trivial⟩
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
@@ -520,8 +520,8 @@ theorem reduce_ok {a : A} {l h c : W4} (hl : At a 36 l) (hh : At a 40 h) (hc : A
     (k₅.mono (by decide)).trans <| (k₆.mono (by decide)).trans <| (k₇.mono (by decide)).trans <|
     (k₈.mono (by decide)).trans <| (k₉.mono (by decide)).trans <| (k₁₀.mono (by decide)).trans <|
     (k₁₁.mono (by decide)).trans <| (k₁₂.mono (by decide)).trans <| k₁₃.mono (by decide)
-  simp (config := {decide := true}) only [WA, st, y0S, y1S, y2S, y3S, evalA, stepA, slotOf_slot, Option.map_some,
-    Option.bind_some, A.g_put, A.m_put, ite_false, ite_true, Option.some.injEq, exists_eq_left', y8, y9, ylr, y7, hm]
+  simp only [Nat.reduceEqDiff, Nat.reduceLT, and_self, ↓reduceIte, WA, st, y0S, y1S, y2S, y3S, evalA, stepA, slotOf_slot, Option.map_some,
+    Option.bind_some, A.g_put, A.m_put, Option.some.injEq, exists_eq_left', y8, y9, ylr, y7, hm]
   refine ⟨trivial, fun k h1 h2 h3 h4 => ?_, hk⟩
   rw [ite_eq_right h4, ite_eq_right h3, ite_eq_right h2, ite_eq_right h1]
 
@@ -532,9 +532,9 @@ theorem addX_ok (a : A) :
       (a'.m 29 = a'.m 27 ^^^ a'.m 28 ∧ a'.m 32 = a'.m 30 ^^^ a'.m 31 ∧ a'.m 33 = a'.m 27 ^^^ a'.m 30 ∧
         a'.m 34 = a'.m 28 ^^^ a'.m 31 ∧ a'.m 35 = a'.m 33 ^^^ a'.m 34) ∧
       (∀ k, k < 27 ∨ 36 ≤ k → a'.m k = a.m k) ∧ Keeps workLr a a' := by
-  simp (config := {decide := true}) only [WA, addX, revBlk, List.cons_append, List.nil_append, ld, st, eor, y0S, y1S, y2S,
+  simp only [reduceCtorEq, Nat.reduceEqDiff, Nat.reduceLT, Nat.reduceAdd, and_self, ↓reduceIte, WA, addX, revBlk, List.cons_append, List.nil_append, ld, st, eor, y0S, y1S, y2S,
     y3S, opS, evalA, stepA, opA, dpA, slotOf_slot, Option.map_some, Option.bind_some, A.g_set, A.m_set, A.g_put, A.m_put,
-    ite_false, ite_true, Option.some.injEq, exists_eq_left', and_self]
+    Option.some.injEq, exists_eq_left', and_self]
   refine ⟨trivial, trivial, fun k hk => ?_, fun r hr => ?_⟩
   · simp only [show ¬ k = 35 by omega, show ¬ k = 34 by omega, show ¬ k = 33 by omega, show ¬ k = 32 by omega,
       show ¬ k = 29 by omega, show ¬ k = 27 by omega, show ¬ k = 28 by omega, show ¬ k = 30 by omega,
@@ -554,8 +554,8 @@ theorem adjust_ok (a : A) :
       b.g .r5 = a.g .r5 <<< 1 ^^^ a.g .r6 >>> 31 ∧ b.g .r6 = a.g .r6 <<< 1 ^^^ a.g .r7 >>> 31 ∧
       b.g .r7 = a.g .r7 <<< 1 ^^^ a.g .r4 >>> 31 ∧ b.g .r8 = a.g .r4 >>> 31) ∧ Keeps workLr a b ∧ b.m = a.m) ?_
       fun b ⟨⟨e4, e5, e6, e7, e8⟩, kb, mb⟩ => ?_)
-  · simp (config := {decide := true}) only [WA, lslI, lsrI, evalA, stepA, opA, dpA, shiftA, Option.map_some,
-      Option.bind_some, A.g_set, A.m_set, ite_false, ite_true, Option.some.injEq, exists_eq_left', and_self]
+  · simp only [reduceCtorEq, Nat.reduceLeDiff, and_self, ↓reduceIte, WA, lslI, lsrI, evalA, stepA, opA, dpA, shiftA, Option.map_some,
+      Option.bind_some, A.g_set, A.m_set, Option.some.injEq, exists_eq_left', and_self]
     refine ⟨trivial, fun r hr => ?_, trivial⟩
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [A.g_set, hr, ite_false]
@@ -942,10 +942,10 @@ theorem body_ok {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i < nb s₀) {s :
 theorem save_ok (a : A) :
     WA (save ++ [st .r1 ypS, st .r2 dpS, st .r3 nS]) a fun a' => (∀ q ∈ saved, a'.m q.2 = a.g q.1) ∧
       a'.m ypS = a.g .r1 ∧ a'.m dpS = a.g .r2 ∧ a'.m nS = a.g .r3 ∧ a'.g = a.g := by
-  simp (config := {decide := true}) only [WA, save, saved, ypS, dpS, nS, st, List.map_cons, List.map_nil, List.cons_append,
+  simp only [Nat.reduceEqDiff, Nat.reduceLT, and_self, ↓reduceIte, WA, save, saved, ypS, dpS, nS, st, List.map_cons, List.map_nil, List.cons_append,
     List.nil_append, evalA, stepA, slotOf_slot,
     Option.map_some, Option.bind_some, A.g_put, A.m_put, Option.some.injEq, exists_eq_left', List.mem_cons,
-    List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq, ite_true, ite_false, and_self]
+    List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq, and_self]
 
 theorem rev_ok (a : A) :
     WA revBlk a fun a' => (a'.g .r4 = rev (a.g .r4) ∧ a'.g .r5 = rev (a.g .r5) ∧ a'.g .r6 = rev (a.g .r6) ∧
@@ -959,8 +959,8 @@ theorem rev_ok (a : A) :
 theorem storeYs_ok (a : A) :
     WA storeYs a fun a' => yOf a' = w4 (a.g .r4) (a.g .r5) (a.g .r6) (a.g .r7) ∧
       (∀ k, k < 27 ∨ 32 ≤ k → a'.m k = a.m k) ∧ a'.g = a.g := by
-  simp (config := {decide := true}) only [WA, storeYs, yOf, st, y0S, y1S, y2S, y3S, evalA, stepA, slotOf_slot,
-    Option.map_some, Option.bind_some, A.g_put, A.m_put, ite_false, ite_true, Option.some.injEq, exists_eq_left']
+  simp only [Nat.reduceEqDiff, Nat.reduceLT, ↓reduceIte, WA, storeYs, yOf, st, y0S, y1S, y2S, y3S, evalA, stepA, slotOf_slot,
+    Option.map_some, Option.bind_some, A.g_put, A.m_put, Option.some.injEq, exists_eq_left']
   refine ⟨trivial, fun k hk => ?_, trivial⟩
   rw [ite_eq_right (by omega), ite_eq_right (by omega), ite_eq_right (by omega), ite_eq_right (by omega)]
 
@@ -1047,9 +1047,9 @@ theorem restore_ok (a : A) :
         restore) a
       fun a' => (a'.g .r0 = rev (a.m 31) ∧ a'.g .r1 = rev (a.m 30) ∧ a'.g .r2 = rev (a.m 28) ∧ a'.g .r3 = rev (a.m 27)) ∧
         (∀ q ∈ saved, a'.g q.1 = a.m q.2) ∧ a'.m = a.m := by
-  simp (config := {decide := true}) only [WA, restore, saved, ld, y0S, y1S, y2S, y3S, List.map_cons, List.map_nil,
+  simp only [reduceCtorEq, Nat.reduceLT, and_self, ↓reduceIte, WA, restore, saved, ld, y0S, y1S, y2S, y3S, List.map_cons, List.map_nil,
     List.cons_append, List.nil_append, evalA, stepA, slotOf_slot, Option.map_some, Option.bind_some, A.g_set, A.m_set,
-    ite_false, ite_true, Option.some.injEq, exists_eq_left', List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+    Option.some.injEq, exists_eq_left', List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
     forall_eq, and_self]
 
 theorem epilogue_ok {s₀ : State} (hp : Pre s₀) {s : State} (hI : Inv s₀ (nb s₀) s) :

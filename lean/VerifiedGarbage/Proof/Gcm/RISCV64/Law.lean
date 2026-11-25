@@ -218,8 +218,8 @@ theorem xor_rev (d a b c : BitVec 64) : d ^^^ a ^^^ b ^^^ c = d ^^^ (a ^^^ b ^^^
 
 theorem foldDn_ok (b : Reg) (w : Bool) (d q t : Reg) (hd : d ≠ b) (ht : t ≠ b) (hdq : q ≠ d) (hdt : d ≠ t) (hqt : q ≠ t) (a : A) :
     WA b w (foldDn d q t) a fun a' => a'.g d = a.g d ^^^ dn (a.g q) ∧ Keeps [d, t] a a' ∧ a'.m = a.m := by
-  simp (config := {decide := true}) only [WA, foldDn, sll, xorI, evalA, stepA, logicV, Option.bind_some, A.g_set, hd, ht,
-    hdq, hdt, hqt, ite_false, ite_true, or_self, Option.some.injEq, exists_eq_left']
+  simp only [Nat.reduceLT, or_self, not_true_eq_false, ↓reduceIte, WA, foldDn, sll, xorI, evalA, stepA, logicV, Option.bind_some, A.g_set, hd, ht,
+    hdq, hdt, hqt, or_self, Option.some.injEq, exists_eq_left']
   refine ⟨?_, fun r hr => ?_, by first | exact trivial | rfl⟩
   · rw [dn, xor_rev]
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
@@ -227,8 +227,8 @@ theorem foldDn_ok (b : Reg) (w : Bool) (d q t : Reg) (hd : d ≠ b) (ht : t ≠ 
 
 theorem foldUp_ok (b : Reg) (w : Bool) (d q t : Reg) (hd : d ≠ b) (ht : t ≠ b) (hdq : q ≠ d) (hdt : d ≠ t) (hqt : q ≠ t) (a : A) :
     WA b w (foldUp d q t) a fun a' => a'.g d = a.g d ^^^ up (a.g q) ∧ Keeps [d, t] a a' ∧ a'.m = a.m := by
-  simp (config := {decide := true}) only [WA, foldUp, srl, xorI, evalA, stepA, logicV, Option.bind_some, A.g_set, hd, ht,
-    hdq, hdt, hqt, ite_false, ite_true, or_self, Option.some.injEq, exists_eq_left']
+  simp only [Nat.reduceLT, or_self, not_true_eq_false, ↓reduceIte, WA, foldUp, srl, xorI, evalA, stepA, logicV, Option.bind_some, A.g_set, hd, ht,
+    hdq, hdt, hqt, or_self, Option.some.injEq, exists_eq_left']
   refine ⟨?_, fun r hr => ?_, by first | exact trivial | rfl⟩
   · rw [up, xor_rev]
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
@@ -352,7 +352,7 @@ theorem mul_ok (r : Reg) (t : Nat) (ht : t < 3) (hr : r ∉ mulRegs) {kx kd : Na
   simp only [mulRegs, cmRegs, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false, not_or] at hr'
   rw [mul, List.append_assoc, List.append_assoc, List.append_assoc, List.append_assoc, List.append_assoc]
   refine WA.append (WA.mono (Q := fun a' => a'.g .s10 = lo32 (a.g r) ∧ Keeps mulRegs a a' ∧ a'.m = a.m) ?_ ?_)
-  · simp (config := {decide := true}) only [WA, sll, srl, evalA, stepA, Option.bind_some, A.g_set, ite_false, ite_true,
+  · simp only [reduceCtorEq, Nat.reduceLT, or_self, not_true_eq_false, ↓reduceIte, WA, sll, srl, evalA, stepA, Option.bind_some, A.g_set,
       Option.some.injEq, exists_eq_left']
     refine ⟨rfl, fun q hq => ?_, by first | exact trivial | rfl⟩
     simp only [mulRegs, List.cons_append, List.mem_cons, not_or] at hq
@@ -362,7 +362,7 @@ theorem mul_ok (r : Reg) (t : Nat) (ht : t < 3) (hr : r ∉ mulRegs) {kx kd : Na
       (fun i hi j hj => by rw [m₁]; exact hK i hi j hj)).mono fun a₂ ⟨e₂, k₂, m₂⟩ => ?_)
     have K₂ : Keeps mulRegs a a₂ := k₁.trans (k₂.mono (by decide))
     refine WA.append (WA.mono (Q := fun a' => a'.g .s11 = hi32 (a.g r) ∧ Keeps [.s11] a₂ a' ∧ a'.m = a₂.m) ?_ ?_)
-    · simp (config := {decide := true}) only [WA, srl, evalA, stepA, Option.bind_some, A.g_set, ite_false, ite_true,
+    · simp only [reduceCtorEq, Nat.reduceLT, or_self, not_true_eq_false, ↓reduceIte, WA, srl, evalA, stepA, Option.bind_some, A.g_set,
         Option.some.injEq, exists_eq_left']
       refine ⟨by rw [K₂ r hr]; rfl, fun q hq => ?_, by first | exact trivial | rfl⟩
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
@@ -374,8 +374,8 @@ theorem mul_ok (r : Reg) (t : Nat) (ht : t < 3) (hr : r ∉ mulRegs) {kx kd : Na
       have K₄ : Keeps mulRegs a a₄ := K₃.trans (k₄.mono (by decide))
       refine WA.append (WA.mono (Q := fun a' => a'.g .s10 = lo32 (a.g r) ^^^ hi32 (a.g r) ∧ Keeps [.s10] a₄ a' ∧
         a'.m = a₄.m) ?_ ?_)
-      · simp (config := {decide := true}) only [WA, xorI, evalA, stepA, logicV, Option.bind_some, A.g_set, ite_false,
-          ite_true, Option.some.injEq, exists_eq_left']
+      · simp only [reduceCtorEq, ↓reduceIte, WA, xorI, evalA, stepA, logicV, Option.bind_some, A.g_set,
+          Option.some.injEq, exists_eq_left']
         refine ⟨by rw [k₄ .s10 (by decide), k₃ .s10 (by decide), k₂ .s10 (by decide), e₁, k₄ .s11 (by decide), e₃],
           fun q hq => ?_, by first | exact trivial | rfl⟩
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
@@ -393,8 +393,8 @@ theorem mul_ok (r : Reg) (t : Nat) (ht : t < 3) (hr : r ∉ mulRegs) {kx kd : Na
         have p2 : a₆.g .s8 = mul4 (lo32 (a.g r) ^^^ hi32 (a.g r)) (lo32 (kd t) ^^^ hi32 (kd t)) := by
           rw [e₆, e₅, hk.sum t ht]
         have hres := Spread.mul64_eq (a.g r) (kd t)
-        simp (config := {decide := true}) only [WA, xorI, sll, srl, evalA, stepA, logicV, Option.bind_some, A.g_set,
-          ite_false, ite_true, Option.some.injEq, exists_eq_left', p0, p1, p2]
+        simp only [reduceCtorEq, Nat.reduceLT, or_self, not_true_eq_false, ↓reduceIte, WA, xorI, sll, srl, evalA, stepA, logicV, Option.bind_some, A.g_set,
+          Option.some.injEq, exists_eq_left', p0, p1, p2]
         refine ⟨congrArg _root_.Prod.fst hres, congrArg _root_.Prod.snd hres, K₆.trans fun q hq => ?_, ?_⟩
         · simp only [mulRegs, List.cons_append, List.mem_cons, not_or] at hq
           simp only [A.g_set, hq, ite_false]
@@ -582,8 +582,8 @@ theorem operands_ok (t : Nat) (r : Reg) (ht : t < 3) (hr : r ∉ opRegs) {a : A}
   rw [operands, List.append_assoc, List.append_assoc]
   refine WA.append (WA.mono (Q := fun a' => a'.g .t5 = lo32 (a.g r) ∧ a'.g .t6 = hi32 (a.g r) ∧
     a'.g .t0 = lo32 (a.g r) ^^^ hi32 (a.g r) ∧ Keeps opRegs a a' ∧ a'.m = a.m) ?_ ?_)
-  · simp (config := {decide := true}) only [WA, sll, srl, xorI, evalA, stepA, logicV, Option.bind_some, A.g_set, hr',
-      ite_false, ite_true, Option.some.injEq, exists_eq_left']
+  · simp only [reduceCtorEq, Nat.reduceLT, or_self, not_true_eq_false, ↓reduceIte, WA, sll, srl, xorI, evalA, stepA, logicV, Option.bind_some, A.g_set, hr',
+      Option.some.injEq, exists_eq_left']
     refine ⟨rfl, rfl, rfl, fun q hq => ?_, by first | exact trivial | rfl⟩
     simp only [opRegs, List.mem_cons, List.not_mem_nil, or_false, not_or] at hq
     simp only [A.g_set, hq, ite_false]
