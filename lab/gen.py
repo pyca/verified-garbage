@@ -164,6 +164,39 @@ B['mulA'] = ['mov w10, #0'] + mulA(448, 320, 224)
 B['mulA_dep'] = ['mov w10, #0'] + mulA(224, 224, 224)
 B['mulT'] = ['mov w10, #0'] + mulT(448, 320, 224)
 B['mulT_dep'] = ['mov w10, #0'] + mulT(224, 224, 224)
+
+def minflags(body):
+    """Flag writes that nothing reads before the next become plain operations."""
+    READ = ('adcs','adc','sbcs','sbc','csel'); WRITE = ('adds','adcs','subs','sbcs','tst','cmp')
+    out, live = [], False
+    for l in reversed(body):
+        op, _, r = l.partition(' ')
+        w = op in WRITE
+        if w and not live and op in ('adds','adcs','subs','sbcs'): op = op[:-1]
+        elif w: live = False
+        if op in READ: live = True
+        out.append((op + ' ' + r).strip())
+    return out[::-1]
+def setters(b): return sum(l.split()[0] in ('adds','adcs','subs','sbcs','tst','cmp') for l in b)
+B['step_min'] = ['mov w10, #0', 'mov x19, #100'] + minflags(S)
+B['mul_min'] = ['mov w10, #0'] + minflags(mulx)
+B['sqr_min'] = ['mov w10, #0'] + minflags(sqr)
+B['mulA'] = minflags(B['mulA']); B['mulT'] = minflags(B['mulT'])
+# the step's products as the tree
+def retree(body):
+    out, i = [], 0
+    L = ['ldp x12, x13', 'ldp x14, x15', 'ldr x3']
+    while i < len(body):
+        m = [body[i+k].startswith(L[k]) for k in range(3)] if i + 3 < len(body) else [False]
+        if all(m):
+            b = int(body[i].split('#')[1][:-1]); a = int(body[i+2].split('#')[1][:-1])
+            j = next(k for k in range(i, len(body)) if body[k].startswith('stp x4, x5')); o = int(body[j].split('#')[1][:-1])
+            out += mulT(o, a, b); i = j + 2
+        else: out.append(body[i]); i += 1
+    return out
+B['step_tree'] = ['mov w10, #0', 'mov x19, #100'] + minflags(retree(S))
+if __name__ == '__main__':
+    for k in ('step','step_min','step_tree','mul','mul_min','mulA','mulT','sqr','sqr_min'): print(k, len(B[k]), setters(B[k]))
 ALL = dict(B)
 KEEP = sys.argv[1].split() if len(sys.argv) > 1 else None
 if KEEP: B = {k: v for k, v in B.items() if k in KEEP}
