@@ -23,6 +23,7 @@ import VerifiedGarbage.Proof.AesGcm.RISCV64.J0
 import VerifiedGarbage.Proof.AesGcm.RISCV64.Tag
 import VerifiedGarbage.Proof.Gcm.Compose
 import VerifiedGarbage.Proof.Framework.RISCV64.Steps
+import VerifiedGarbage.Proof.Framework.RISCV64.Keep
 import VerifiedGarbage.Proof.Framework.RISCV64.Spill
 import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 import VerifiedGarbage.Proof.Framework.Offset

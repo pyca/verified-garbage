@@ -2346,154 +2346,155 @@ vg_aes_gcm_bitslice:
 	bnez a2, 21b
 	addi a0, a3, 240
 	addi s9, a4, 960
-	lbu t0, 0(a0)
-	slli t0, t0, 8
-	lbu t2, 1(a0)
-	or t0, t0, t2
-	slli t0, t0, 8
-	lbu t2, 2(a0)
-	or t0, t0, t2
-	slli t0, t0, 8
-	lbu t2, 3(a0)
-	or t0, t0, t2
-	slli t0, t0, 8
-	lbu t2, 4(a0)
-	or t0, t0, t2
-	slli t0, t0, 8
-	lbu t2, 5(a0)
-	or t0, t0, t2
-	slli t0, t0, 8
-	lbu t2, 6(a0)
-	or t0, t0, t2
-	slli t0, t0, 8
-	lbu t2, 7(a0)
-	or t0, t0, t2
-	lbu t1, 8(a0)
+	lbu t1, 0(a0)
 	slli t1, t1, 8
-	lbu t2, 9(a0)
-	or t1, t1, t2
+	lbu t0, 1(a0)
+	or t1, t1, t0
 	slli t1, t1, 8
-	lbu t2, 10(a0)
-	or t1, t1, t2
+	lbu t0, 2(a0)
+	or t1, t1, t0
 	slli t1, t1, 8
-	lbu t2, 11(a0)
-	or t1, t1, t2
+	lbu t0, 3(a0)
+	or t1, t1, t0
 	slli t1, t1, 8
-	lbu t2, 12(a0)
-	or t1, t1, t2
+	lbu t0, 4(a0)
+	or t1, t1, t0
 	slli t1, t1, 8
-	lbu t2, 13(a0)
-	or t1, t1, t2
+	lbu t0, 5(a0)
+	or t1, t1, t0
 	slli t1, t1, 8
-	lbu t2, 14(a0)
-	or t1, t1, t2
+	lbu t0, 6(a0)
+	or t1, t1, t0
 	slli t1, t1, 8
-	lbu t2, 15(a0)
-	or t1, t1, t2
-	slli t3, t0, 1
-	srli t4, t1, 63
-	xor t3, t3, t4
-	srli t4, t0, 63
-	addi t2, zero, 0
-	sub t4, t2, t4
-	addi t5, zero, -62
-	slli t5, t5, 56
-	and t5, t4, t5
-	xor t3, t3, t5
-	slli t5, t1, 1
-	andi t6, t4, 1
-	xor t5, t5, t6
+	lbu t0, 7(a0)
+	or t1, t1, t0
+	lbu t2, 8(a0)
+	slli t2, t2, 8
+	lbu t0, 9(a0)
+	or t2, t2, t0
+	slli t2, t2, 8
+	lbu t0, 10(a0)
+	or t2, t2, t0
+	slli t2, t2, 8
+	lbu t0, 11(a0)
+	or t2, t2, t0
+	slli t2, t2, 8
+	lbu t0, 12(a0)
+	or t2, t2, t0
+	slli t2, t2, 8
+	lbu t0, 13(a0)
+	or t2, t2, t0
+	slli t2, t2, 8
+	lbu t0, 14(a0)
+	or t2, t2, t0
+	slli t2, t2, 8
+	lbu t0, 15(a0)
+	or t2, t2, t0
 	lui s0, 69905
-	addi s0, s0, 273
-	slli a7, s0, 32
-	or s0, s0, a7
+	addiw s0, s0, 273
+	slli s0, s0, 32
+	lui t0, 69905
+	addiw t0, t0, 273
+	add s0, s0, t0
 	slli s1, s0, 1
 	slli s2, s0, 2
 	slli s3, s0, 3
-	slli t6, t3, 32
-	srli t6, t6, 32
-	srli a6, t3, 32
-	xor s4, t6, a6
-	and a7, t6, s0
+	srli t5, t1, 63
+	srli t6, t2, 63
+	slli t4, t1, 1
+	xor t4, t4, t6
+	slli t2, t2, 1
+	xor t2, t2, t5
+	slli t6, t5, 63
+	xor t4, t4, t6
+	slli t6, t5, 62
+	xor t4, t4, t6
+	slli t6, t5, 57
+	xor t4, t4, t6
+	xor t3, t4, t2
+	slli t5, t4, 32
+	srli t5, t5, 32
+	srli t6, t4, 32
+	xor t0, t5, t6
+	and a7, t5, s0
 	sd a7, 0(s9)
-	and a7, t6, s1
+	and a7, t5, s1
 	sd a7, 8(s9)
-	and a7, t6, s2
+	and a7, t5, s2
 	sd a7, 16(s9)
-	and a7, t6, s3
+	and a7, t5, s3
 	sd a7, 24(s9)
-	and a7, a6, s0
+	and a7, t6, s0
 	sd a7, 32(s9)
-	and a7, a6, s1
+	and a7, t6, s1
 	sd a7, 40(s9)
-	and a7, a6, s2
+	and a7, t6, s2
 	sd a7, 48(s9)
-	and a7, a6, s3
+	and a7, t6, s3
 	sd a7, 56(s9)
-	and a7, s4, s0
+	and a7, t0, s0
 	sd a7, 64(s9)
-	and a7, s4, s1
+	and a7, t0, s1
 	sd a7, 72(s9)
-	and a7, s4, s2
+	and a7, t0, s2
 	sd a7, 80(s9)
-	and a7, s4, s3
+	and a7, t0, s3
 	sd a7, 88(s9)
-	slli t6, t5, 32
-	srli t6, t6, 32
-	srli a6, t5, 32
-	xor s4, t6, a6
-	and a7, t6, s0
+	slli t5, t2, 32
+	srli t5, t5, 32
+	srli t6, t2, 32
+	xor t0, t5, t6
+	and a7, t5, s0
 	sd a7, 96(s9)
-	and a7, t6, s1
+	and a7, t5, s1
 	sd a7, 104(s9)
-	and a7, t6, s2
+	and a7, t5, s2
 	sd a7, 112(s9)
-	and a7, t6, s3
+	and a7, t5, s3
 	sd a7, 120(s9)
-	and a7, a6, s0
-	sd a7, 128(s9)
-	and a7, a6, s1
-	sd a7, 136(s9)
-	and a7, a6, s2
-	sd a7, 144(s9)
-	and a7, a6, s3
-	sd a7, 152(s9)
-	and a7, s4, s0
-	sd a7, 160(s9)
-	and a7, s4, s1
-	sd a7, 168(s9)
-	and a7, s4, s2
-	sd a7, 176(s9)
-	and a7, s4, s3
-	sd a7, 184(s9)
-	xor t4, t3, t5
-	slli t6, t4, 32
-	srli t6, t6, 32
-	srli a6, t4, 32
-	xor s4, t6, a6
 	and a7, t6, s0
-	sd a7, 192(s9)
+	sd a7, 128(s9)
 	and a7, t6, s1
-	sd a7, 200(s9)
+	sd a7, 136(s9)
 	and a7, t6, s2
-	sd a7, 208(s9)
+	sd a7, 144(s9)
 	and a7, t6, s3
+	sd a7, 152(s9)
+	and a7, t0, s0
+	sd a7, 160(s9)
+	and a7, t0, s1
+	sd a7, 168(s9)
+	and a7, t0, s2
+	sd a7, 176(s9)
+	and a7, t0, s3
+	sd a7, 184(s9)
+	slli t5, t3, 32
+	srli t5, t5, 32
+	srli t6, t3, 32
+	xor t0, t5, t6
+	and a7, t5, s0
+	sd a7, 192(s9)
+	and a7, t5, s1
+	sd a7, 200(s9)
+	and a7, t5, s2
+	sd a7, 208(s9)
+	and a7, t5, s3
 	sd a7, 216(s9)
-	and a7, a6, s0
+	and a7, t6, s0
 	sd a7, 224(s9)
-	and a7, a6, s1
+	and a7, t6, s1
 	sd a7, 232(s9)
-	and a7, a6, s2
+	and a7, t6, s2
 	sd a7, 240(s9)
-	and a7, a6, s3
+	and a7, t6, s3
 	sd a7, 248(s9)
-	and a7, s4, s0
+	and a7, t0, s0
 	sd a7, 256(s9)
-	and a7, s4, s1
+	and a7, t0, s1
 	sd a7, 264(s9)
-	and a7, s4, s2
+	and a7, t0, s2
 	sd a7, 272(s9)
-	and a7, s4, s3
+	and a7, t0, s3
 	sd a7, 280(s9)
 	ld s0, 320(a5)
 	ld s1, 328(a5)
@@ -12008,7 +12009,7 @@ vg_aes_gcm_seal_contiguous_bitsliced:
 	sd t0, 2024(t1)
 	sd t0, 2032(t1)
 	sd t0, 2040(t1)
-	addi sp, sp, -560
+	addi sp, sp, -672
 	addi t1, sp, 0
 	sd t0, 0(t1)
 	sd t0, 8(t1)
@@ -12080,7 +12081,21 @@ vg_aes_gcm_seal_contiguous_bitsliced:
 	sd t0, 536(t1)
 	sd t0, 544(t1)
 	sd t0, 552(t1)
-	addi sp, sp, 560
+	sd t0, 560(t1)
+	sd t0, 568(t1)
+	sd t0, 576(t1)
+	sd t0, 584(t1)
+	sd t0, 592(t1)
+	sd t0, 600(t1)
+	sd t0, 608(t1)
+	sd t0, 616(t1)
+	sd t0, 624(t1)
+	sd t0, 632(t1)
+	sd t0, 640(t1)
+	sd t0, 648(t1)
+	sd t0, 656(t1)
+	sd t0, 664(t1)
+	addi sp, sp, 672
 	addi sp, sp, 16
 	addi sp, sp, 2032
 	addi a1, zero, 0

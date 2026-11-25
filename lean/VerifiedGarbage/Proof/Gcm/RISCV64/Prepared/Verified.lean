@@ -59,7 +59,7 @@ theorem preparedHash_law {H : Block} (s₀ : State) (h : CachedPre H s₀) (hsp 
   have hBt : B.toNat = s₀.sp.toNat - 112 := by rw [← hBd]; exact toNat_sub_ofNat' hsp
   have hB : B.toNat % 16 = 0 := by omega
   have hfr : (⟨B, 112⟩ : Region) ∈ (allocd 112 s₀).wr := by rw [← hBd]; exact List.mem_cons_self ..
-  refine frame_ok (F := 112) (by decide) hsp (yp := s₀.gpr .a1) (hBd ▸ hfy) ?_
+  refine frame_ok (F := 112) (by decide) hsp (by rw [hwr]; exact List.mem_cons_self ..) ?_
   rw [hBd]
   refine WP.seq (WP.mono (Q := fun t => ∃ s₁, InvL s₁ h1 h0 (blockAt s₀.mem (s₀.gpr .a1)) (s₀.gpr .a2)
       (s₀.gpr .a3).toNat 0 t ∧ Words .a0 false s₁ ∧ s₁.gpr .a1 = s₀.gpr .a1 ∧ s₁.gpr .ra = s₀.gpr .ra ∧ s₁.sp = B ∧
@@ -103,13 +103,12 @@ theorem preparedHash_law {H : Block} (s₀ : State) (h : CachedPre H s₀) (hsp 
       · rw [rd₁]; show _ ∈ s₀.rd; rw [hrd]; exact List.mem_cons_self ..
   · intro t ⟨s₁, hI, hw, h1, hra, hsp₁, hrd₁, hwr₁, F₁, sv⟩
     refine WP.mono (rest_ok (F := 112) (o := 0) hw hnlt ?_ hB hsp₁ (by decide) (.inl rfl) (by decide) (by rw [hwr₁]; exact hfr)
-      (by rw [h1, hwr₁]; show _ ∈ _ :: s₀.wr; rw [hwr]; simp) sv hI) fun u ⟨g, ra, sp, wr, rd, hb⟩ =>
-        ⟨g, ra.trans hra, sp, wr.trans hwr₁, rd.trans hrd₁, ?_⟩
+      sv hI) fun u ⟨g, ra, a1, sp, wr, rd, hb⟩ =>
+        ⟨g, ra.trans hra, a1.trans h1, sp, wr.trans hwr₁, rd.trans hrd₁, ?_⟩
     · intro i hi
       refine ⟨⟨s₀.gpr .a2, 16 * (s₀.gpr .a3).toNat⟩, List.mem_append_left _ (by rw [hrd₁, hrd]; simp), ?_⟩
       exact Offset.contains_base _ (by omega) (by omega)
-    · rw [h1] at hb
-      rw [hb, blocksAt_frame F₁ hnlt]
+    · rw [hb, blocksAt_frame F₁ hnlt]
       intro r hr
       rw [List.mem_singleton] at hr; subst hr; exact hfd.symm
 

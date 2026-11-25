@@ -66,7 +66,7 @@ def preparedFrame : Prog isa :=
 
 /-- The prepared GHASH helper uses 112 frame bytes. Erase its spills,
 the contiguous body's local region and the called AES scratch. -/
-def scrubFrames : List (Nat × List (Nat × Nat)) := [(2048,[(0,256)]),(560,[(0,70)])]
+def scrubFrames : List (Nat × List (Nat × Nat)) := [(2048,[(0,256)]),(672,[(0,84)])]
 
 def code : Prog isa := scrubSel 0 scrubFrames preparedFrame
 

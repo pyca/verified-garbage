@@ -85,3 +85,14 @@ x86 (32-bit, 8 GPRs, SSE2). Scalar `mul` ties up eax and edx: 144 x (2 mov,
 mul, 2 xor) = 720, with spills. SSE2 `pmuludq` does two products: D, 72
 pmuludq, 72 movdqa, 72 pxor and about 60 and/or, half the work. It needs
 the MXCSR sequence around it (the rule in CLAUDE.md), once per call. D.
+
+## AArch64, changed before its code
+
+The model's baseline AdvSIMD has `pmull` of bytes (no FEAT_PMULL), and the
+repository already has `vg_ghash_neon` with it, which stays and is what
+AES-GCM chooses without PMULL. Per block: 45 `pmull` of 8 products each
+against A's 150 integer multiplications plus some 250 other operations. A
+separate integer `vg_ghash` can only be slower, and needs no less of the ISA.
+So no integer code on AArch64: the baseline variants call `vg_ghash_neon`,
+and `store_powers` multiplies with its `mul`, seven times in a row
+(`H^(k+1) = H^k * H`), without a stack frame.

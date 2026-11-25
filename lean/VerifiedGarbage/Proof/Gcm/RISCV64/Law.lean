@@ -868,17 +868,17 @@ theorem loop_ok (hw : Words .a0 false s₁) (hn : 16 * n < 2 ^ 64)
 registers at `o`. -/
 theorem rest_ok {s₀ : State} (hw : Words .a0 false s₁) (hn : 16 * n < 2 ^ 64)
     (hD : ∀ i < n, InRegions (s₁.rd ++ s₁.wr) (D + BitVec.ofNat 64 (16 * i)) 16) {B : Addr} {F o : Nat}
-    (hB : B.toNat % 16 = 0) (hsp : s₁.sp = B) (hF : F ≤ 2048) (ho : o = 0 ∨ o = 288) (hoF : o + 96 ≤ F)
-    (hfr : (⟨B, F⟩ : Region) ∈ s₁.wr) (hy : (⟨s₁.gpr .a1, 16⟩ : Region) ∈ s₁.wr)
+    (hB : B.toNat % 16 = 0) (hsp : s₁.sp = B) (hF : F ≤ 2048) (ho : o = 0 ∨ o = 1952) (hoF : o + 96 ≤ F)
+    (hfr : (⟨B, F⟩ : Region) ∈ s₁.wr)
     (hsv : Spill.Saved B s₀.gpr (savedAt o) s₁.mem) {s : State} (hI : InvL s₁ h1 h0 Y D n 0 s) :
     WP isa (.seq loopCode (.block (finish o))) s fun t =>
-      (∀ r ∈ preserved, t.gpr r = s₀.gpr r) ∧ t.gpr .ra = s₁.gpr .ra ∧ t.sp = B ∧ t.wr = s₁.wr ∧ t.rd = s₁.rd ∧
-      blockAt t.mem (s₁.gpr .a1) = ghashFrom (w2 h1 h0) Y (blocksAt s₁.mem D n) := by
+      (∀ r ∈ preserved, t.gpr r = s₀.gpr r) ∧ t.gpr .ra = s₁.gpr .ra ∧ t.gpr .a1 = s₁.gpr .a1 ∧ t.sp = B ∧
+      t.wr = s₁.wr ∧ t.rd = s₁.rd ∧
+      t.gpr .t1 ++ t.gpr .t2 = ghashFrom (w2 h1 h0) Y (blocksAt s₁.mem D n) := by
   refine WP.seq (WP.mono (loop_ok hw hn hD hI) fun s₂ ⟨_, a, r, _, _, hy₂, _, _, ha1, hra⟩ => ?_)
-  have hmem : s₂.mem = s₁.mem := r.ro rfl
   have hst : ∀ p ∈ savedAt o, p.2 % 8 = 0 ∧ p.2 < 2048 ∧ p.2 + 8 ≤ F := by
     have h1 : ∀ p ∈ savedAt 0, p.2 % 8 = 0 ∧ p.2 < 2048 ∧ p.2 + 8 ≤ 96 := by decide
-    have h2 : ∀ p ∈ savedAt 288, p.2 % 8 = 0 ∧ p.2 < 2048 ∧ p.2 + 8 ≤ 288 + 96 := by decide
+    have h2 : ∀ p ∈ savedAt 1952, p.2 % 8 = 0 ∧ p.2 < 2048 ∧ p.2 + 8 ≤ 1952 + 96 := by decide
     intro p hp
     rcases ho with rfl | rfl
     · have := h1 p hp; omega
@@ -886,8 +886,8 @@ theorem rest_ok {s₀ : State} (hw : Words .a0 false s₁) (hn : 16 * n < 2 ^ 64
   have hre : Spill.Restorable .t0 (savedAt o) := by rcases ho with rfl | rfl <;> decide
   have hfst : (savedAt o).map Prod.fst = saved := by rcases ho with rfl | rfl <;> decide
   have hfin : finish o = ([mv .t1 .s4, mv .t2 .s5] : List Instr) ++ (([.addSp .t0 0] : List Instr) ++
-      (Spill.restoreCode .t0 (savedAt o) ++ (Impl.Words.RISCV64.storeBE 8 .t1 .t3 .a1 0 ++ (Impl.Words.RISCV64.storeBE 8 .t2 .t3 .a1 8 ++ [])))) := by
-    simp only [finish, List.append_assoc, List.append_nil, List.cons_append, List.nil_append]; rfl
+      Spill.restoreCode .t0 (savedAt o)) := by
+    simp only [finish, List.cons_append, List.nil_append]; rfl
   rw [hfin, WP.block_append_iff]
   refine WP.mono (RISCV64.sound hw r (a' := (a.set .t1 (a.g .s4)).set .t2 (a.g .s5)) rfl) fun s₃ r₃ => ?_
   rw [WP.block_append_iff]
@@ -896,56 +896,61 @@ theorem rest_ok {s₀ : State} (hw : Words .a0 false s₁) (hn : 16 * n < 2 ^ 64
   rw [hB₃]
   have r₄ := r₃.set (d := .t0) (by decide) B
   have hm₃ : s₃.mem = s₁.mem := r₃.ro rfl
-  refine Spill.restore_ok (B := B) (g := s₀.gpr) (by omega) (by rw [r₄.g]; rfl) (fun p hp => ⟨(hst p hp).1, (hst p hp).2.1⟩) hre
+  refine WP.mono (Spill.restore_wp (B := B) (g := s₀.gpr) (by omega) (by rw [r₄.g]; rfl)
+    (fun p hp => ⟨(hst p hp).1, (hst p hp).2.1⟩) hre
     (fun p hp => ⟨⟨B, F⟩, List.mem_append_right _ (by rw [r₄.wr]; exact hfr),
       Offset.contains_base B (by have := hst p hp; omega) (by have := hst p hp; omega)⟩)
-    (by show Spill.Saved B s₀.gpr (savedAt o) s₃.mem; rw [hm₃]; exact hsv) fun s₅ hR => ?_
+    (by show Spill.Saved B s₀.gpr (savedAt o) s₃.mem; rw [hm₃]; exact hsv)) fun s₅ hR => ?_
   have g₅ : ∀ q, q ∉ saved → s₅.gpr q = (A.set (A.set (A.set a .t1 (a.g .s4)) .t2 (a.g .s5)) .t0 B).g q := fun q hq => by
     rw [hR.other q (by rw [hfst]; exact hq), r₄.g]
-  have a1₅ : s₅.gpr .a1 = s₁.gpr .a1 := (g₅ .a1 (by decide)).trans ha1
-  have hout : ∀ (t : State), t.wr = s₁.wr → t.gpr .a1 = s₁.gpr .a1 → ∀ k, k + 8 ≤ 16 →
-      InRegions t.wr (t.gpr .a1 + BitVec.ofNat 64 k) 8 := fun t e1 e2 k hk =>
-    ⟨⟨s₁.gpr .a1, 16⟩, by rw [e1]; exact hy, by rw [e2]; exact Offset.contains_base _ (by omega) (by omega)⟩
-  have wr₅ : s₅.wr = s₁.wr := hR.wr.trans r₄.wr
-  refine BE64.wp_storeBE8 (by decide) (by decide) (by decide) rfl (hout s₅ wr₅ a1₅ 0 (by decide)) fun s₆ s₇ m₆ u₇ => ?_
-  have a1₇ : s₇.gpr .a1 = s₁.gpr .a1 := by rw [u₇.other _ (by decide), m₆.gpr, a1₅]
-  have wr₇ : s₇.wr = s₁.wr := by rw [u₇.wr, m₆.wr, wr₅]
-  refine BE64.wp_storeBE8 (by decide) (by decide) (by decide) rfl (hout s₇ wr₇ a1₇ 8 (by decide)) fun s₈ s₉ m₈ u₉ => ?_
-  have g₉ : ∀ q, q ≠ .t3 → s₉.gpr q = s₅.gpr q := fun q hq => by
-    rw [u₉.other q hq, m₈.gpr, u₇.other q hq, m₆.gpr]
-  refine WP.block_nil ⟨fun q hq => ?_, ?_, ?_, ?_, ?_, ?_⟩
-  · have hp : ∀ q ∈ preserved, q ≠ .t3 ∧ q ∈ saved := by decide
-    rw [g₉ q (hp q hq).1]
-    have hq' := (hp q hq).2
+  refine ⟨fun q hq => ?_, ?_, ?_, ?_, hR.wr.trans r₄.wr, hR.rd.trans r₄.rd, ?_⟩
+  · have hp : ∀ q ∈ preserved, q ∈ saved := by decide
+    have hq' := hp q hq
     rw [← hfst] at hq'
     obtain ⟨p, hp, rfl⟩ := List.mem_map.mp hq'
     exact hR.gpr p hp
-  · rw [g₉ _ (by decide), g₅ _ (by decide)]; exact hra
-  · rw [u₉.sp, m₈.sp, u₇.sp, m₆.sp, hR.sp]; exact r₃.sp.trans hsp
-  · rw [u₉.wr, m₈.wr, wr₇]
-  · rw [u₉.rd, m₈.rd, u₇.rd, m₆.rd, hR.rd]; exact r₃.rd
-  · have t1 : s₅.gpr .t1 = a.g .s4 := g₅ .t1 (by decide)
-    have t2 : s₇.gpr .t2 = a.g .s5 := by rw [u₇.other _ (by decide), m₆.gpr]; exact g₅ .t2 (by decide)
-    rw [← hy₂, u₉.mem, m₈.mem, u₇.mem, m₆.mem, a1₇, a1₅, t1, t2, ← BE64.writeBytes_beBytes, ← BE64.writeBytes_beBytes,
-      blockAt_store]
-    rfl
+  · rw [g₅ _ (by decide)]; exact hra
+  · rw [g₅ _ (by decide)]; exact ha1
+  · rw [hR.sp]; exact r₃.sp.trans hsp
+  · have e1 : s₅.gpr .t1 = a.g .s4 := g₅ .t1 (by decide)
+    have e2 : s₅.gpr .t2 = a.g .s5 := g₅ .t2 (by decide)
+    rw [e1, e2, hy₂]
 
-/-- A frame's release keeps what `rest_ok` says. -/
-theorem frame_ok {s₀ : State} {F : Nat} {body : Prog isa} (hF : 0 < F ∧ F ≤ 4064 ∧ F % 16 = 0) (hsp : F ≤ s₀.sp.toNat) {yp : Addr}
-    {v : Block} (hdis : (⟨s₀.sp - BitVec.ofNat 64 F, F⟩ : Region).Disjoint ⟨yp, 16⟩)
+/-- The frame released, and `Y` stored. -/
+theorem frame_ok {s₀ : State} {F : Nat} {body : Prog isa} (hF : 0 < F ∧ F ≤ 4064 ∧ F % 16 = 0) (hsp : F ≤ s₀.sp.toNat)
+    {v : Block} (hy : (⟨s₀.gpr .a1, 16⟩ : Region) ∈ s₀.wr)
     (h : WP isa body (allocd F s₀) fun t => (∀ r ∈ preserved, t.gpr r = s₀.gpr r) ∧ t.gpr .ra = s₀.gpr .ra ∧
-      t.sp = s₀.sp - BitVec.ofNat 64 F ∧ t.wr = (allocd F s₀).wr ∧ t.rd = s₀.rd ∧ blockAt t.mem yp = v) :
-    ∃ t s', Exec isa (.frame (.alloc F) body (.free F)) s₀ t s' ∧ abiPreserved s₀ s' ∧ blockAt s'.mem yp = v := by
-  refine WP.allocLe hF hsp (Q := fun s' => abiPreserved s₀ s' ∧ blockAt s'.mem yp = v) (WP.mono h ?_)
-  intro t ⟨hg, hra, htsp, hwr, _, hb⟩ m u hf
-  refine ⟨⟨hg, ?_, hra⟩, ?_⟩
-  · show t.sp + BitVec.ofNat 64 F = s₀.sp
-    rw [htsp, BitVec.sub_add_cancel]
-  · rw [← hb]
-    refine blockAt_congr fun i hi => ?_
-    refine (hf.bytes (R := ⟨yp, 16⟩) (fun r hr => ?_) (by show 16 ≤ 2 ^ 64; decide) hi)
-    rw [List.mem_singleton] at hr; subst hr
-    exact hdis.symm
+      t.gpr .a1 = s₀.gpr .a1 ∧ t.sp = s₀.sp - BitVec.ofNat 64 F ∧ t.wr = (allocd F s₀).wr ∧ t.rd = s₀.rd ∧
+      t.gpr .t1 ++ t.gpr .t2 = v) :
+    ∃ t s', Exec isa (.seq (.frame (.alloc F) body (.free F)) (.block storeY)) s₀ t s' ∧ abiPreserved s₀ s' ∧
+      blockAt s'.mem (s₀.gpr .a1) = v := by
+  change WP isa _ s₀ fun s' => abiPreserved s₀ s' ∧ blockAt s'.mem (s₀.gpr .a1) = v
+  refine WP.seq (WP.allocLe hF hsp (WP.mono h ?_))
+  intro t ⟨hg, hra, ha1, htsp, hwr, _, hv⟩ m u _
+  have hout : ∀ (t' : State), t'.wr = s₀.wr → t'.gpr .a1 = s₀.gpr .a1 → ∀ k, k + 8 ≤ 16 →
+      InRegions t'.wr (t'.gpr .a1 + BitVec.ofNat 64 k) 8 := fun t' e1 e2 k hk =>
+    ⟨⟨s₀.gpr .a1, 16⟩, by rw [e1]; exact hy, by rw [e2]; exact Offset.contains_base _ (by omega) (by omega)⟩
+  have hwr' : (freed F t).wr = s₀.wr := by show t.wr.tail = _; rw [hwr]; rfl
+  generalize hf : ({ freed F t with mem := m, unknowns := u } : State) = f
+  have fg : f.gpr = t.gpr := by rw [← hf]; rfl
+  have fsp : f.sp = s₀.sp := by rw [← hf]; show t.sp + _ = _; rw [htsp, BitVec.sub_add_cancel]
+  have fwr : f.wr = s₀.wr := by rw [← hf]; exact hwr'
+  have fa : f.gpr .a1 = s₀.gpr .a1 := by rw [fg, ha1]
+  refine BE64.wp_storeBE8 (by decide) (by decide) (by decide) rfl (hout f fwr fa 0 (by decide)) fun s₆ s₇ m₆ u₇ => ?_
+  have a1₇ : s₇.gpr .a1 = s₀.gpr .a1 := by rw [u₇.other _ (by decide), m₆.gpr, fa]
+  have wr₇ : s₇.wr = s₀.wr := by rw [u₇.wr, m₆.wr, fwr]
+  refine BE64.wp_storeBE8 (by decide) (by decide) (by decide) rfl (hout s₇ wr₇ a1₇ 8 (by decide)) fun s₈ s₉ m₈ u₉ => ?_
+  have g₉ : ∀ q, q ≠ .t3 → s₉.gpr q = t.gpr q := fun q hq => by
+    rw [u₉.other q hq, m₈.gpr, u₇.other q hq, m₆.gpr, fg]
+  refine WP.block_nil ⟨⟨fun q hq => ?_, ?_, ?_⟩, ?_⟩
+  · have hp : ∀ q ∈ preserved, q ≠ .t3 := by decide
+    rw [g₉ q (hp q hq), hg q hq]
+  · rw [u₉.sp, m₈.sp, u₇.sp, m₆.sp, fsp]
+  · rw [g₉ _ (by decide), hra]
+  · have t1 : f.gpr .t1 = t.gpr .t1 := by rw [fg]
+    have t2 : s₇.gpr .t2 = t.gpr .t2 := by rw [u₇.other _ (by decide), m₆.gpr, fg]
+    rw [← hv, u₉.mem, m₈.mem, u₇.mem, m₆.mem, a1₇, fa, t1, t2, ← BE64.writeBytes_beBytes, ← BE64.writeBytes_beBytes,
+      blockAt_store]
 
 /-- `Y` loaded. -/
 theorem loadY_ok {s₀ s : State} {a : A} {b : Reg} {w : Bool} (r : Rel b w s₀ s a) (hb : b ∉ [Reg.t0, .s4, .s5])
@@ -975,13 +980,13 @@ theorem loadY_ok {s₀ s : State} {a : A} {b : Reg} {w : Bool} (r : Rel b w s₀
 
 /-- The registers saved, at `t0`. -/
 theorem saveAt_ok {s : State} {B : Addr} {F o : Nat} (hB : B.toNat % 16 = 0) (hsp : s.sp = B) (hF : F ≤ 2048)
-    (ho : o = 0 ∨ o = 288) (hoF : o + 96 ≤ F) (hfr : (⟨B, F⟩ : Region) ∈ s.wr) :
+    (ho : o = 0 ∨ o = 1952) (hoF : o + 96 ≤ F) (hfr : (⟨B, F⟩ : Region) ∈ s.wr) :
     WP isa (.block (([.addSp .t0 0] : List Instr) ++ saveAt o)) s fun t => t.gpr .t0 = B ∧
       (∀ r, r ≠ .t0 → t.gpr r = s.gpr r) ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.sp = s.sp ∧
       Frame [⟨B + BitVec.ofNat 64 o, 96⟩] s.mem t.mem ∧ Spill.Saved B s.gpr (savedAt o) t.mem := by
   have hst : ∀ p ∈ savedAt o, p.2 % 8 = 0 ∧ p.2 < 2048 ∧ o ≤ p.2 ∧ p.2 + 8 ≤ o + 96 := by
     have h1 : ∀ p ∈ savedAt 0, p.2 % 8 = 0 ∧ p.2 < 2048 ∧ 0 ≤ p.2 ∧ p.2 + 8 ≤ 0 + 96 := by decide
-    have h2 : ∀ p ∈ savedAt 288, p.2 % 8 = 0 ∧ p.2 < 2048 ∧ 288 ≤ p.2 ∧ p.2 + 8 ≤ 288 + 96 := by decide
+    have h2 : ∀ p ∈ savedAt 1952, p.2 % 8 = 0 ∧ p.2 < 2048 ∧ 1952 ≤ p.2 ∧ p.2 + 8 ≤ 1952 + 96 := by decide
     rcases ho with rfl | rfl
     · exact h1
     · exact h2
@@ -1038,26 +1043,31 @@ instance instGhashLaw : GhashLaw where
     have hBt : B.toNat = s₀.sp.toNat - 2048 := by rw [← hBd]; exact toNat_sub_ofNat' hsp
     have hB : B.toNat % 16 = 0 := by omega
     have hfr : (⟨B, 2048⟩ : Region) ∈ (allocd 2048 s₀).wr := by rw [← hBd]; exact List.mem_cons_self ..
-    have hcon : ∀ k < 36, (⟨B, 2048⟩ : Region).Contains (B + BitVec.ofNat 64 (8 * k)) 8 := fun k hk =>
-      Offset.contains_base B (by omega) (by omega)
-    refine frame_ok (F := 2048) (by decide) hsp (yp := s₀.gpr .a1) (hBd ▸ hfy) ?_
+    generalize hCd : B + BitVec.ofNat 64 1664 = C
+    have hC : C.toNat % 16 = 0 := by
+      rw [← hCd, BitVec.toNat_add, BitVec.toNat_ofNat]
+      omega
+    have hcon : ∀ k < 36, (⟨B, 2048⟩ : Region).Contains (C + BitVec.ofNat 64 (8 * k)) 8 := fun k hk => by
+      rw [← hCd, Offset.add_add]
+      exact Offset.contains_base B (by omega) (by omega)
+    refine frame_ok (F := 2048) (by decide) hsp (by rw [hwr]; exact List.mem_cons_self ..) ?_
     rw [hBd]
     refine WP.seq (WP.mono (Q := fun t => ∃ s₁, InvL s₁ (ByteLoad.be64 s₀.mem (s₀.gpr .a0) 0)
         (ByteLoad.be64 s₀.mem (s₀.gpr .a0) 8) (blockAt s₀.mem (s₀.gpr .a1)) (s₀.gpr .a2) (s₀.gpr .a3).toNat 0 t ∧
-      s₁.gpr .a0 = B ∧ s₁.gpr .a1 = s₀.gpr .a1 ∧ s₁.gpr .ra = s₀.gpr .ra ∧ s₁.sp = B ∧ s₁.rd = s₀.rd ∧
-      s₁.wr = (allocd 2048 s₀).wr ∧ Frame [⟨B, 2048⟩] s₀.mem s₁.mem ∧ Spill.Saved B s₀.gpr (savedAt 288) s₁.mem)
+      s₁.gpr .a0 = C ∧ s₁.gpr .a1 = s₀.gpr .a1 ∧ s₁.gpr .ra = s₀.gpr .ra ∧ s₁.sp = B ∧ s₁.rd = s₀.rd ∧
+      s₁.wr = (allocd 2048 s₀).wr ∧ Frame [⟨B, 2048⟩] s₀.mem s₁.mem ∧ Spill.Saved B s₀.gpr (savedAt 1952) s₁.mem)
       ?_ ?_)
-    · have hst : start = ([.addSp .t0 0] ++ saveAt 288 : List Instr) ++ (([mv .s9 .t0] : List Instr) ++ (prep ++
+    · have hst : start = ([.addSp .t0 0] ++ saveAt 1952 : List Instr) ++ (([.addSp .s9 1664] : List Instr) ++ (prep ++
           (([mv .a0 .s9] : List Instr) ++ loadY))) := by simp only [start, List.append_assoc]
       rw [hst, WP.block_append_iff]
-      refine WP.mono (saveAt_ok (B := B) (F := 2048) (o := 288) hB hBd (by decide) (.inr rfl) (by decide) hfr)
-        fun s₁ ⟨t0₁, g₁, rd₁, wr₁, sp₁, f₁, sv₁⟩ => ?_
+      refine WP.mono (saveAt_ok (B := B) (F := 2048) (o := 1952) hB hBd (by decide) (.inr rfl) (by decide) hfr)
+        fun s₁ ⟨_, g₁, rd₁, wr₁, sp₁, f₁, sv₁⟩ => ?_
       rw [WP.block_append_iff]
-      refine WP.block_cons_iff.mpr ⟨s₁.write .s9 (s₁.gpr .t0 + BitVec.ofInt 64 0), rfl, WP.block_nil ?_⟩
-      have e0 : s₁.gpr .t0 + BitVec.ofInt 64 0 = B := by rw [t0₁]; exact BitVec.add_zero B
+      refine WP.block_cons_iff.mpr ⟨s₁.write .s9 (s₁.sp + BitVec.ofNat 64 1664), rfl, WP.block_nil ?_⟩
+      have e0 : s₁.sp + BitVec.ofNat 64 1664 = C := by rw [sp₁]; show s₀.sp - BitVec.ofNat 64 2048 + _ = C; rw [hBd, hCd]
       rw [e0, WP.block_append_iff]
       have a0₁ : s₁.gpr .a0 = s₀.gpr .a0 := g₁ .a0 (by decide)
-      refine WP.mono (prep_ok (s₁.write .s9 B) ⟨⟨s₀.gpr .a0, 16⟩, ?_, ?_⟩ fun k hk => ⟨al_frame hB k, ⟨B, 2048⟩, ?_,
+      refine WP.mono (prep_ok (s₁.write .s9 C) ⟨⟨s₀.gpr .a0, 16⟩, ?_, ?_⟩ fun k hk => ⟨al_frame hC k, ⟨B, 2048⟩, ?_,
         hcon k hk⟩) fun s₂ ⟨tab, ms, g₂, rd₂, wr₂, sp₂, f₂⟩ => ?_
       · show _ ∈ s₁.rd ++ s₁.wr
         rw [rd₁]; show _ ∈ s₀.rd ++ _
@@ -1068,32 +1078,32 @@ instance instGhashLaw : GhashLaw where
         rw [wr₁]; exact hfr
       rw [WP.block_append_iff]
       refine WP.block_cons_iff.mpr ⟨s₂.write .a0 (s₂.gpr .s9 + BitVec.ofInt 64 0), rfl, WP.block_nil ?_⟩
-      have e1 : s₂.gpr .s9 + BitVec.ofInt 64 0 = B := by rw [g₂ .s9 (by decide)]; exact BitVec.add_zero B
+      have e1 : s₂.gpr .s9 + BitVec.ofInt 64 0 = C := by rw [g₂ .s9 (by decide)]; exact BitVec.add_zero C
       rw [e1]
-      have gg : ∀ q, q ∉ prepWrites → q ≠ .s9 → q ≠ .a0 → (s₂.write .a0 B).gpr q = s₀.gpr q := by
+      have gg : ∀ q, q ∉ prepWrites → q ≠ .s9 → q ≠ .a0 → (s₂.write .a0 C).gpr q = s₀.gpr q := by
         intro q h1 h2 h3
-        show (if q = .a0 then B else s₂.gpr q) = _
+        show (if q = .a0 then C else s₂.gpr q) = _
         rw [ite_eq_right h3, g₂ q h1]
-        show (if q = .s9 then B else s₁.gpr q) = _
+        show (if q = .s9 then C else s₁.gpr q) = _
         rw [ite_eq_right h2]
         exact g₁ q fun e => h1 (by rw [e]; decide)
       have F₂ : Frame [⟨B, 2048⟩] s₀.mem s₂.mem := by
         refine (f₁.sub fun r hr => ⟨_, List.mem_singleton.mpr rfl, ?_⟩).trans
           (f₂.sub fun r hr => ⟨_, List.mem_singleton.mpr rfl, ?_⟩)
         · rw [List.mem_singleton] at hr; subst hr; exact Offset.sub_base B (by decide)
-        · rw [List.mem_singleton] at hr; subst hr; exact Region.sub_prefix (by decide)
+        · rw [List.mem_singleton] at hr; subst hr; show Region.Sub ⟨C, 288⟩ _; rw [← hCd]; exact Offset.sub_base B (by decide)
       have hwr₂ : s₂.wr = (allocd 2048 s₀).wr := wr₂.trans wr₁
       have hbH : blockAt s₁.mem (s₁.gpr .a0) = blockAt s₀.mem (s₀.gpr .a0) := by
         rw [a0₁]
         refine blockAt_frame f₁ fun r hr => ?_
         rw [List.mem_singleton] at hr; subst hr
         exact hfh.symm.sub_right (Offset.sub_base B (by decide))
-      have r₀ : Rel .a0 false (s₂.write .a0 B) (s₂.write .a0 B) ⟨(s₂.write .a0 B).gpr, fun k =>
-          s₂.mem.readW (B + BitVec.ofNat 64 (8 * k)) 64⟩ :=
+      have r₀ : Rel .a0 false (s₂.write .a0 C) (s₂.write .a0 C) ⟨(s₂.write .a0 C).gpr, fun k =>
+          s₂.mem.readW (C + BitVec.ofNat 64 (8 * k)) 64⟩ :=
         ⟨rfl, Slots.init _ _ _, rfl, rfl, rfl, rfl, fun _ => rfl⟩
-      have hya : (s₂.write .a0 B).gpr .a1 = s₀.gpr .a1 := gg .a1 (by decide) (by decide) (by decide)
+      have hya : (s₂.write .a0 C).gpr .a1 = s₀.gpr .a1 := gg .a1 (by decide) (by decide) (by decide)
       refine WP.mono (loadY_ok r₀ (by decide) (by rw [hya]; show _ ∈ s₂.wr; rw [hwr₂]; show _ ∈ _ :: s₀.wr; rw [hwr]; simp))
-        fun t ⟨a, ra, hY, k, hm⟩ => ⟨s₂.write .a0 B, ?_, rfl, hya, gg .ra (by decide) (by decide) (by decide), ?_, ?_, hwr₂, F₂, ?_⟩
+        fun t ⟨a, ra, hY, k, hm⟩ => ⟨s₂.write .a0 C, ?_, rfl, hya, gg .ra (by decide) (by decide) (by decide), ?_, ?_, hwr₂, F₂, ?_⟩
       · refine inv_start ra ?_ ?_ ?_ ?_ ?_ (k _ (by decide)) (k _ (by decide))
         · intro j hj
           have hj' : ∀ j < 4, maskReg j ∉ [Reg.t0, .s4, .s5] ∧ maskReg j ≠ .a0 := by decide
@@ -1109,7 +1119,7 @@ instance instGhashLaw : GhashLaw where
           rw [List.mem_singleton] at hr; subst hr; exact hfy.symm
         · rw [k _ (by decide)]; exact gg .a2 (by decide) (by decide) (by decide)
         · rw [k _ (by decide)]
-          show (s₂.write .a0 B).gpr .a3 = _
+          show (s₂.write .a0 C).gpr .a3 = _
           rw [gg .a3 (by decide) (by decide) (by decide), BitVec.ofNat_toNat, BitVec.setWidth_eq]
       · show s₂.sp = B
         rw [sp₂]; show s₁.sp = B
@@ -1118,25 +1128,24 @@ instance instGhashLaw : GhashLaw where
         rw [rd₂]; exact rd₁
       · intro p hp
         show s₂.mem.readW _ _ = _
-        rw [f₂.readW (r := ⟨B + BitVec.ofNat 64 288, 96⟩) ?_ ?_ (by decide)]
+        rw [f₂.readW (r := ⟨B + BitVec.ofNat 64 1952, 96⟩) ?_ ?_ (by decide)]
         · refine (sv₁ p hp)
-        · have h2 : ∀ p ∈ savedAt 288, 288 ≤ p.2 ∧ p.2 + 8 ≤ 288 + 96 := by decide
+        · have h2 : ∀ p ∈ savedAt 1952, 1952 ≤ p.2 ∧ p.2 + 8 ≤ 1952 + 96 := by decide
           exact Offset.contains B (h2 p hp).1 (h2 p hp).2 (by decide)
         · intro r hr
           rw [List.mem_singleton] at hr; subst hr
-          exact (Offset.base_disjoint B (by decide) (by decide)).symm
+          show Region.Disjoint _ ⟨C, 288⟩; rw [← hCd]; exact Offset.disjoint B (by decide) (by decide) (by decide)
     · intro t ⟨s₁, hI, h0, h1, hra, hsp₁, hrd₁, hwr₁, F₁, sv⟩
-      have hw : Words .a0 false s₁ := ⟨fun k _ => by rw [h0]; exact al_frame hB k,
+      have hw : Words .a0 false s₁ := ⟨fun k _ => by rw [h0]; exact al_frame hC k,
         fun k hk => ⟨⟨B, 2048⟩, List.mem_append_right _ (by rw [hwr₁]; exact hfr), by rw [h0]; exact hcon k hk⟩,
         fun h => absurd h (by decide)⟩
-      refine WP.mono (rest_ok (F := 2048) (o := 288) hw hnlt ?_ hB hsp₁ (by decide) (.inr rfl) (by decide) (by rw [hwr₁]; exact hfr)
-        (by rw [h1, hwr₁]; show _ ∈ _ :: s₀.wr; rw [hwr]; simp) sv hI) fun u ⟨g, ra, sp, wr, rd, hb⟩ =>
-          ⟨g, ra.trans hra, sp, wr.trans hwr₁, rd.trans hrd₁, ?_⟩
+      refine WP.mono (rest_ok (F := 2048) (o := 1952) hw hnlt ?_ hB hsp₁ (by decide) (.inr rfl) (by decide) (by rw [hwr₁]; exact hfr)
+        sv hI) fun u ⟨g, ra, a1, sp, wr, rd, hb⟩ =>
+          ⟨g, ra.trans hra, a1.trans h1, sp, wr.trans hwr₁, rd.trans hrd₁, ?_⟩
       · intro i hi
         refine ⟨⟨s₀.gpr .a2, 16 * (s₀.gpr .a3).toNat⟩, List.mem_append_left _ (by rw [hrd₁, hrd]; simp), ?_⟩
         exact Offset.contains_base _ (by omega) (by omega)
-      · rw [h1] at hb
-        rw [hb, blocksAt_frame F₁ hnlt, blockAt_hOf s₀.mem (s₀.gpr .a0), hOf]
+      · rw [hb, blocksAt_frame F₁ hnlt, blockAt_hOf s₀.mem (s₀.gpr .a0), hOf]
         intro r hr
         rw [List.mem_singleton] at hr; subst hr; exact hfd.symm
 

@@ -12,7 +12,8 @@ public import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 import VerifiedGarbage.Proof.Gcm.RISCV64.Lit
 import VerifiedGarbage.Proof.Framework.RISCV64.BE64
 import VerifiedGarbage.Proof.Framework.RISCV64.Lit
-import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Gcm.Bits
 meta import VerifiedGarbage.Proof.Gcm.RISCV64.Lit
@@ -73,7 +74,7 @@ theorem ghash_ct : ConstantTime isa ghashX.pre ghashX.pub Impl.Gcm.RISCV64.ghash
 /-! ## Blocks as two big-endian doublewords -/
 
 /-- A block from its two doublewords, the first first. -/
-def w2 (a b : BitVec 64) : Block := a ++ b
+abbrev w2 (a b : BitVec 64) : Block := a ++ b
 
 /-- The block at `p`, as two `loadBE64`s load it. -/
 def hOf (m : Mem) (p : Addr) : Block := w2 (be64 m p 0) (be64 m p 8)

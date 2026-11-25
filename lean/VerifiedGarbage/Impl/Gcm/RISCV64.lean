@@ -154,16 +154,19 @@ def restoreAt (o : Nat) : List Instr := (savedAt o).map fun (r, d) => .load .d r
 
 def loadY : List Instr := loadBE64 .s4 .t0 .a1 0 ++ loadBE64 .s5 .t0 .a1 8
 
-/-- `Y` stored, and the registers restored. -/
+/-- `Y` out of the way, and the registers restored. -/
 def finish (o : Nat) : List Instr :=
-  ([mv .t1 .s4, mv .t2 .s5, .addSp .t0 0] : List Instr) ++ restoreAt o ++
-  storeBE 8 .t1 .t3 .a1 0 ++ storeBE 8 .t2 .t3 .a1 8
+  ([mv .t1 .s4, mv .t2 .s5, .addSp .t0 0] : List Instr) ++ restoreAt o
 
+/-- `Y` stored, once the frame is released. -/
+def storeY : List Instr := storeBE 8 .t1 .t3 .a1 0 ++ (storeBE 8 .t2 .t3 .a1 8 ++ [])
+
+/-- The frame's last 384 bytes are used: the key's words, then the registers. -/
 def start : List Instr :=
-  ([.addSp .t0 0] : List Instr) ++ saveAt 288 ++ ([mv .s9 .t0] : List Instr) ++ prep ++ ([mv .a0 .s9] : List Instr) ++
+  ([.addSp .t0 0] : List Instr) ++ saveAt 1952 ++ ([.addSp .s9 1664] : List Instr) ++ prep ++ ([mv .a0 .s9] : List Instr) ++
   loadY
 
 def ghash : Prog isa :=
-  .frame (.alloc 2048) (.seq (.block start) (.seq loopCode (.block (finish 288)))) (.free 2048)
+  .seq (.frame (.alloc 2048) (.seq (.block start) (.seq loopCode (.block (finish 1952)))) (.free 2048)) (.block storeY)
 
 end VG.Impl.Gcm.RISCV64

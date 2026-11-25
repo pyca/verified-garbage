@@ -18,7 +18,7 @@ def cachedStart : List Instr :=
   ([.addSp .t0 0] : List Instr) ++ saveAt 0 ++ maskCode ++ loadY
 
 def cachedHash : Prog isa :=
-  .frame (.alloc 112) (.seq (.block cachedStart) (.seq loopCode (.block (finish 0)))) (.free 112)
+  .seq (.frame (.alloc 112) (.seq (.block cachedStart) (.seq loopCode (.block (finish 0)))) (.free 112)) (.block storeY)
 
 /-- The key's words' address: the buffer's, which the caller keeps at
 `sp + 16`, and 960. -/
