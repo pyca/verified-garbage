@@ -137,7 +137,20 @@ def normalize : List ScalarOp := [.ror .x8 .x8 24,.ror .x17 .x17 24,.move .x26 .
 
 def permutationCore : List Instr := rounds ++ normalize.flatMap lowerVector
 
-def permute : Prog isa := Boundary.wrap (.block permutationCore)
+/-- Preserve resident lanes across a call's linker-veneer registers. -/
+def sharedCoreSave : List Instr :=
+  [.vop (.dup .d2 .v24 .x16), .vop (.dup .d2 .v25 .x17)]
+
+/-- The scalar core's return address is held outside its temporary lanes. -/
+def sharedCoreBody : Prog isa :=
+  .seq (.block [.vop (.dup .d2 .v29 .x30), .umov .x .x16 .v24 0, .umov .x .x17 .v25 0])
+    (.seq (.block permutationCore) (.block [.umov .x .x30 .v29 0]))
+
+/-- Share the register-resident core between one-, two- and three-state calls. -/
+def sharedCore : Prog isa :=
+  .seq (.block sharedCoreSave) (.call "vg_keccak_scalar_core" sharedCoreBody)
+
+def permute : Prog isa := Boundary.wrap sharedCore
 
 def residentBody : Prog isa :=
   .seq Resident.xorBlock (.seq (.block permutationCore) (.block Resident.advance))

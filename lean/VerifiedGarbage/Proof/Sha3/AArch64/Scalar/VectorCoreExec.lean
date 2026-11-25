@@ -157,7 +157,7 @@ theorem vector_step_ok (op : ScalarOp) (hg : Good op) (f : File) (s : VG.AArch64
     (hr : VectorFileRel f s) :
     ∃ s', runBlock isa (lowerVector op) s = some s' ∧ VectorFileRel (step f op) s' ∧
       s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧
-      (∀ v, v ≠ .v24 → v ≠ .v25 → v ≠ .v28 → v ≠ .v29 → s'.v v = s.v v) := by
+      (∀ v, v ≠ .v24 → v ≠ .v25 → s'.v v = s.v v) := by
   cases op with
   | spill k a =>
     have hk := hg.1
@@ -171,12 +171,12 @@ theorem vector_step_ok (op : ScalarOp) (hg : Good op) (f : File) (s : VG.AArch64
       · subst j
         simp only [ite_true, vdword_ofVDwords_0, hr.regs]
       · simp only [ite_eq_right he, ite_eq_right ((not_congr (slotV_eq hj hk)).mpr he), hr.slots j hj]
-    · intro v h24 h25 _ _
+    · intro v h24 h25
       exact RegUpd.v_setV_of_ne s _ (slotV_ne k v h24 h25)
   | reload d k =>
     have hk := hg.1
     refine ⟨s.write .x d (vdword (s.v (slotV k)) 0), ?_, ⟨?_, ?_⟩,
-      rfl, rfl, rfl, rfl, fun _ _ _ _ _ => rfl⟩
+      rfl, rfl, rfl, rfl, fun _ _ _ => rfl⟩
     · simp only [lowerVector, runBlock_cons, exec, Size.bits, Nat.zero_mul,
         show 0 < 128 from by decide, ite_true, runStep_some, runBlock_nil]
       rfl
@@ -187,7 +187,7 @@ theorem vector_step_ok (op : ScalarOp) (hg : Good op) (f : File) (s : VG.AArch64
   | _ =>
     obtain ⟨s', hs, hregs, hm, hrd, hwr, hsp, hv⟩ :=
       reg_lower_ok _ hg (by intro k r h; cases h) (by intro r k h; cases h) f s hr.regs
-    refine ⟨s', hs, ⟨hregs, ?_⟩, hm, hrd, hwr, hsp, fun v _ _ _ _ => congrFun hv v⟩
+    refine ⟨s', hs, ⟨hregs, ?_⟩, hm, hrd, hwr, hsp, fun v _ _ => congrFun hv v⟩
     · intro k hk
       rw [hv]
       exact hr.slots k hk
@@ -207,16 +207,16 @@ theorem vector_list_ok (ops : List ScalarOp) (hg : ∀ op ∈ ops, Good op)
     (f : File) (s : VG.AArch64.State) (hr : VectorFileRel f s) :
     ∃ s', runBlock isa (ops.flatMap lowerVector) s = some s' ∧ VectorFileRel (run ops f) s' ∧
       s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧
-      (∀ v, v ≠ .v24 → v ≠ .v25 → v ≠ .v28 → v ≠ .v29 → s'.v v = s.v v) := by
+      (∀ v, v ≠ .v24 → v ≠ .v25 → s'.v v = s.v v) := by
   induction ops generalizing f s with
-  | nil => exact ⟨s, rfl, hr, rfl, rfl, rfl, rfl, fun _ _ _ _ _ => rfl⟩
+  | nil => exact ⟨s, rfl, hr, rfl, rfl, rfl, rfl, fun _ _ _ => rfl⟩
   | cons op ops ih =>
     obtain ⟨s₁, hs₁, hr₁, hm₁, hrd₁, hwr₁, hsp₁, hv₁⟩ :=
       vector_step_ok op (hg op (List.mem_cons_self ..)) f s hr
     obtain ⟨s₂, hs₂, hr₂, hm₂, hrd₂, hwr₂, hsp₂, hv₂⟩ :=
       ih (fun op ho => hg op (List.mem_cons_of_mem _ ho)) (step f op) s₁ hr₁
     refine ⟨s₂, ?_, hr₂, hm₂.trans hm₁, hrd₂.trans hrd₁, hwr₂.trans hwr₁, hsp₂.trans hsp₁,
-      fun v h24 h25 h28 h29 => (hv₂ v h24 h25 h28 h29).trans (hv₁ v h24 h25 h28 h29)⟩
+      fun v h24 h25 => (hv₂ v h24 h25).trans (hv₁ v h24 h25)⟩
     simp only [List.flatMap_cons, block_append, hs₁, Option.bind_some, hs₂]
 
 end VG.Proof.Sha3.AArch64.Scalar

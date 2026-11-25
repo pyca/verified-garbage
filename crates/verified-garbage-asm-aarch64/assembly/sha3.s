@@ -14043,6 +14043,7 @@ vg_sha3_224_update:
 	movi v21.2d, #0
 	movi v24.2d, #0
 	movi v25.2d, #0
+	movi v29.2d, #0
 	movi v30.2d, #0
 	movi v31.2d, #0
 	tst x1, x1
@@ -14120,6 +14121,7 @@ vg_sha3_224_finalize:
 	movi v18.2d, #0
 	movi v24.2d, #0
 	movi v25.2d, #0
+	movi v29.2d, #0
 	movi v30.2d, #0
 	movi v31.2d, #0
 	tst x1, x1
@@ -17131,6 +17133,7 @@ vg_sha3_256_update:
 	movi v21.2d, #0
 	movi v24.2d, #0
 	movi v25.2d, #0
+	movi v29.2d, #0
 	movi v30.2d, #0
 	movi v31.2d, #0
 	tst x1, x1
@@ -17208,6 +17211,7 @@ vg_sha3_256_finalize:
 	movi v18.2d, #0
 	movi v24.2d, #0
 	movi v25.2d, #0
+	movi v29.2d, #0
 	movi v30.2d, #0
 	movi v31.2d, #0
 	tst x1, x1
@@ -20219,6 +20223,7 @@ vg_sha3_384_update:
 	movi v21.2d, #0
 	movi v24.2d, #0
 	movi v25.2d, #0
+	movi v29.2d, #0
 	movi v30.2d, #0
 	movi v31.2d, #0
 	tst x1, x1
@@ -20296,6 +20301,7 @@ vg_sha3_384_finalize:
 	movi v18.2d, #0
 	movi v24.2d, #0
 	movi v25.2d, #0
+	movi v29.2d, #0
 	movi v30.2d, #0
 	movi v31.2d, #0
 	tst x1, x1
@@ -23307,6 +23313,7 @@ vg_sha3_512_update:
 	movi v21.2d, #0
 	movi v24.2d, #0
 	movi v25.2d, #0
+	movi v29.2d, #0
 	movi v30.2d, #0
 	movi v31.2d, #0
 	tst x1, x1
@@ -23384,6 +23391,7 @@ vg_sha3_512_finalize:
 	movi v18.2d, #0
 	movi v24.2d, #0
 	movi v25.2d, #0
+	movi v29.2d, #0
 	movi v30.2d, #0
 	movi v31.2d, #0
 	tst x1, x1
@@ -26395,6 +26403,7 @@ vg_shake128_update:
 	movi v21.2d, #0
 	movi v24.2d, #0
 	movi v25.2d, #0
+	movi v29.2d, #0
 	movi v30.2d, #0
 	movi v31.2d, #0
 	tst x1, x1
@@ -26467,6 +26476,7 @@ vg_shake128_finalize:
 	movi v18.2d, #0
 	movi v24.2d, #0
 	movi v25.2d, #0
+	movi v29.2d, #0
 	movi v30.2d, #0
 	movi v31.2d, #0
 	tst x1, x1
@@ -26584,6 +26594,7 @@ vg_shake128_squeeze:
 	movi v18.2d, #0
 	movi v24.2d, #0
 	movi v25.2d, #0
+	movi v29.2d, #0
 	movi v30.2d, #0
 	movi v31.2d, #0
 	tst x1, x1
@@ -26656,6 +26667,7 @@ vg_shake256_finalize:
 	movi v18.2d, #0
 	movi v24.2d, #0
 	movi v25.2d, #0
+	movi v29.2d, #0
 	movi v30.2d, #0
 	movi v31.2d, #0
 	tst x1, x1
@@ -26773,6 +26785,7 @@ vg_shake256_squeeze:
 	movi v18.2d, #0
 	movi v24.2d, #0
 	movi v25.2d, #0
+	movi v29.2d, #0
 	movi v30.2d, #0
 	movi v31.2d, #0
 	tst x1, x1

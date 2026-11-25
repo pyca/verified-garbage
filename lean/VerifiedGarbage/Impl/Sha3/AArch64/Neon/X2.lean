@@ -54,9 +54,9 @@ def storeLanes (k : Nat) : List Instr :=
 /-- Without a CPU feature: the scalar rounds on each state in turn, in place. -/
 def scalar : Prog isa :=
   .seq (.block (Scalar.Boundary.save ++ ([.addImm .x .x30 .x0 0] : List Instr) ++ loadLanes 0))
-    (.seq (.block Scalar.Lazy.permutationCore)
+    (.seq Scalar.Lazy.sharedCore
       (.seq (.block (storeLanes 0 ++ loadLanes 1))
-        (.seq (.block Scalar.Lazy.permutationCore)
+        (.seq Scalar.Lazy.sharedCore
           (.block (storeLanes 1 ++ Scalar.Boundary.restore)))))
 
 /-- The function's code. -/

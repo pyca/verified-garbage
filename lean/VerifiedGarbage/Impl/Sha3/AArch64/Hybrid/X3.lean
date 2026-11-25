@@ -83,11 +83,11 @@ def storeThird : List Instr :=
 /-- Without a CPU feature: the scalar rounds on each state in turn, in place. -/
 def scalar : Prog isa :=
   .seq (.block (Scalar.Boundary.save ++ ([.addImm .x .x30 .x0 0] : List Instr) ++ Neon.X2.loadLanes 0))
-    (.seq (.block Scalar.Lazy.permutationCore)
+    (.seq Scalar.Lazy.sharedCore
       (.seq (.block (Neon.X2.storeLanes 0 ++ Neon.X2.loadLanes 1))
-        (.seq (.block Scalar.Lazy.permutationCore)
+        (.seq Scalar.Lazy.sharedCore
           (.seq (.block (Neon.X2.storeLanes 1 ++ loadThird))
-            (.seq (.block Scalar.Lazy.permutationCore)
+            (.seq Scalar.Lazy.sharedCore
               (.block (storeThird ++ Scalar.Boundary.restore)))))))
 
 /-- The function's code. -/
