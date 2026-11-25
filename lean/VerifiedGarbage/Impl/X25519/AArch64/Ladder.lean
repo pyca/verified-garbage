@@ -10,9 +10,9 @@ public import VerifiedGarbage.Impl.AArch64Weave
 # The X25519 ladder on AArch64
 
 `vg_x25519(out = x0, scalar = x1, point = x2, scratch = x3)`, an internal
-function: the ladder of RFC 7748 §5, its operations in the RFC's order, on four
-64-bit words an element, with the rows of products and the reduction of
-`Impl/Ed25519/AArch64/Word.lean`.
+function: the ladder of RFC 7748 §5 on four 64-bit words an element, with the
+rows of products and the reduction of `Impl/Ed25519/AArch64/Word.lean`. The
+order of an iteration's operations is `front`'s and `back`'s.
 
 The working space (`x0` from the setup on) holds the field elements in slots of
 32 bytes at `64 + 32 n` (`offset`): `x_1, x_2, z_2, x_3, z_3` in slots 0–4 and
