@@ -266,7 +266,7 @@ theorem nGroup_ok {s₀ : State} (hp : UPre s₀) {g : Nat} {s : State}
   obtain hdat : dataR s₀ ∈ s₀.wr := by rw [hp.wr]; simp
   obtain hivw : ivR s₀ ∈ s₀.wr := by rw [hp.wr]; simp
   obtain hscr : ScrIn (S s₀) s₀.wr := ⟨2176, by decide, by decide, by rw [hp.wr]; simp⟩
-  obtain d96 : ∀ r ∈ [(⟨S s₀, 96⟩ : Region)], (dataR s₀).Disjoint r := fun r hr => by
+  obtain d64 : ∀ r ∈ [(⟨S s₀, 64⟩ : Region)], (dataR s₀).Disjoint r := fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
     exact hp.data_scr.sub_right (Region.sub_prefix (by omega_using []))
   unfold decGroup
@@ -329,7 +329,7 @@ theorem nGroup_ok {s₀ : State} (hp : UPre s₀) {g : Nat} {s : State}
   obtain hb₁ : s₁.gpr sb = S s₀ := (hg₁ sb (by decide)).trans hi.x5
   obtain hpe : EncPre s₁ (R s₀) (wK s₀) :=
     ⟨by rw [hb₁, hwr₁, hi.wr]; exact hscr, hR, (hg₁ .x1 (by decide)).trans hi.x1,
-      by rw [hm₁, hb₁]; exact hi.keys⟩
+      by rw [hm₁, hb₁]; exact hi.keys, by simp [wK, Spec.Aes.bytesAt]⟩
   refine WP.seq (WP.mono (encrypt8_cryptOk hpe (inRel_st (QA s₁))) fun s₂ h₂ => ?_)
   obtain ⟨hc₂, hin₂⟩ := h₂
   obtain keep₂ : ∀ r, r ≠ .x6 → r ≠ .x7 → r ≠ kp → r ≠ cnt → s₂.gpr r = s.gpr r :=
@@ -338,11 +338,11 @@ theorem nGroup_ok {s₀ : State} (hp : UPre s₀) {g : Nat} {s : State}
     (keep₂ .x2 (by decide) (by decide) (by decide) (by decide)).trans hi.x2
   obtain rd₂ : s₂.rd = s₀.rd := by rw [hc₂.rd, hrd₁, hi.rd]
   obtain wr₂ : s₂.wr = s₀.wr := by rw [hc₂.wr, hwr₁, hi.wr]
-  obtain fr₂ : Frame [⟨S s₀, 96⟩] s.mem s₂.mem := by
+  obtain fr₂ : Frame [⟨S s₀, 64⟩] s.mem s₂.mem := by
     have := hc₂.frame
     rwa [hb₁, hm₁] at this
   obtain data₂ : EcbInv s₀.mem s₂.mem (Dp s₀) (N s₀) (8 * g) (output s₀) :=
-    ecbInv_frame fr₂ d96 n16 hi.data
+    ecbInv_frame fr₂ d64 n16 hi.data
   obtain hB : ∀ i, 0 ≤ i → i < 8 → 8 * g + i < N s₀ → ∀ t < 16, vbyte (s₂.v (B i)) t =
       (Spec.Aes.cipher (R s₀) (wK s₀) (st (chaining s₀ (8 * g + i)))).getD t 0 := by
     intro i _ hi8 hin t ht

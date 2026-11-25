@@ -56,7 +56,7 @@ open VG VG.AArch64 VG.AArch64.RegUpd VG.Bitslice VG.Impl.Aes.AArch64.Neon VG.Pro
 open VG.Impl.AesCbc.AArch64.Neon
 open VG.Proof.Aes.AArch64 (EcbInv ecbInv_frame ecbInv_orig)
 open VG.Proof.Aes.AArch64.Neon (KeysAt EncPre ScrIn decrypt8_cryptOk inRel_st vbyte_of_inRel QA QB
-  loadFrom_wp advance_wp keyLoop_ok KInv keyMasks_ok eval_nz blk_addr keysAt_frame B_inj B_ne31)
+  loadFrom_wp advance_wp keys_wp eval_nz blk_addr keysAt_frame B_inj B_ne31)
 open VG.Proof.Aes.Vector (st vbyte_xor getD_ofFn)
 open VG.Proof.AesCbc.AArch64.Decrypt (chaining output data_done chaining_bytes data_size
   original_word)
@@ -221,10 +221,10 @@ theorem nGroup_ok {s₀ : State} (hp : UPre s₀) {g : Nat} {s : State}
   obtain hdat : dataR s₀ ∈ s₀.wr := by rw [hp.wr]; simp
   obtain hivw : ivR s₀ ∈ s₀.wr := by rw [hp.wr]; simp
   obtain hscr : ScrIn (S s₀) s₀.wr := ⟨2176, by decide, by decide, by rw [hp.wr]; simp⟩
-  obtain d96 : ∀ r ∈ [(⟨S s₀, 96⟩ : Region)], (dataR s₀).Disjoint r := fun r hr => by
+  obtain d64 : ∀ r ∈ [(⟨S s₀, 64⟩ : Region)], (dataR s₀).Disjoint r := fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
     exact hp.data_scr.sub_right (Region.sub_prefix (by omega_using []))
-  obtain i96 : ∀ r ∈ [(⟨S s₀, 96⟩ : Region)], (ivR s₀).Disjoint r := fun r hr => by
+  obtain i64 : ∀ r ∈ [(⟨S s₀, 64⟩ : Region)], (ivR s₀).Disjoint r := fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
     exact hp.iv_scr.sub_right (Region.sub_prefix (by omega_using []))
   unfold decGroup
@@ -238,7 +238,7 @@ theorem nGroup_ok {s₀ : State} (hp : UPre s₀) {g : Nat} {s : State}
   obtain hb₁ : s₁.gpr sb = S s₀ := (hg₁ sb (by decide)).trans hi.x5
   obtain hpe : EncPre s₁ (R s₀) (wK s₀) :=
     ⟨by rw [hb₁, hwr₁, hi.wr]; exact hscr, hR, (hg₁ .x1 (by decide)).trans hi.x1,
-      by rw [hm₁, hb₁]; exact hi.keys⟩
+      by rw [hm₁, hb₁]; exact hi.keys, by simp [wK, Spec.Aes.bytesAt]⟩
   refine WP.seq (WP.mono (decrypt8_cryptOk hpe (inRel_st (QA s₁))) fun s₂ h₂ => ?_)
   obtain ⟨hc₂, hin₂⟩ := h₂
   obtain keep₂ : ∀ r, r ≠ .x6 → r ≠ .x7 → r ≠ kp → r ≠ cnt → s₂.gpr r = s.gpr r :=
@@ -247,13 +247,13 @@ theorem nGroup_ok {s₀ : State} (hp : UPre s₀) {g : Nat} {s : State}
     (keep₂ .x2 (by decide) (by decide) (by decide) (by decide)).trans hi.x2
   obtain rd₂ : s₂.rd = s₀.rd := by rw [hc₂.rd, hrd₁, hi.rd]
   obtain wr₂ : s₂.wr = s₀.wr := by rw [hc₂.wr, hwr₁, hi.wr]
-  obtain fr₂ : Frame [⟨S s₀, 96⟩] s.mem s₂.mem := by
+  obtain fr₂ : Frame [⟨S s₀, 64⟩] s.mem s₂.mem := by
     have := hc₂.frame
     rwa [hb₁, hm₁] at this
   obtain data₂ : EcbInv s₀.mem s₂.mem (Dp s₀) (N s₀) (8 * g) (output s₀) :=
-    ecbInv_frame fr₂ d96 n16 hi.data
+    ecbInv_frame fr₂ d64 n16 hi.data
   obtain chain₂ : s₂.mem.readW (Iv s₀) 128 = chaining s₀ (8 * g) := by
-    rw [fr₂.readW (r := ivR s₀) (Region.contains_self _ _) i96 (by decide)]
+    rw [fr₂.readW (r := ivR s₀) (Region.contains_self _ _) i64 (by decide)]
     exact hi.chain
   obtain hB : ∀ i, 0 ≤ i → i < 8 → 8 * g + i < N s₀ → ∀ t < 16, vbyte (s₂.v (B i)) t =
       (Spec.Aes.invCipher (R s₀) (wK s₀)
@@ -405,48 +405,10 @@ theorem whole_wp {ch : Nat → BitVec 128} {out : Nat → Spec.Aes.State} {G : P
   · have hn0 : N s₀ = 0 := by simpa using h0
     exact WP.block_nil ⟨by rw [hn0, hch], fun i hi => absurd hi (by omega_using [hn0])⟩
   · have hn0 : N s₀ ≠ 0 := by simpa using h0
-    -- The masks, and where the round keys go.
-    refine WP.seq ?_
-    simp only [keySetup]
-    rw [WP.block_append_iff (M := isa)]
-    obtain ⟨s₂, h₂, mask₂, -, g₂, m₂, rd₂, wr₂, sp₂⟩ := keyMasks_ok 8 (Nat.le_refl 8) s₀
-    refine WP.of_runBlock ⟨s₂, h₂, ?_⟩
-    let s₃ := s₂.write .x .x7 (s₂.read .x sb + BitVec.ofNat 64 128)
-    let s₄ := s₃.write .x kp (s₃.read .x .x1 + BitVec.ofNat 64 1)
-    refine WP.of_runBlock ⟨s₄, by
-      rw [runBlock_cons, exec_addImm_x (by decide), runStep_some, runBlock_cons,
-        exec_addImm_x (by decide), runStep_some, runBlock_nil], ?_⟩
-    obtain g₄ : ∀ r, r ≠ .x6 → r ≠ .x7 → r ≠ kp → s₄.gpr r = s₀.gpr r := fun r h6 h7 hk => by
-      simp [s₄, s₃, State.write, h7, hk, g₂ r h6]
-    obtain x7₄ : s₄.gpr .x7 = S s₀ + BitVec.ofNat 64 128 := by
-      obtain e : s₄.gpr .x7 = s₂.gpr sb + BitVec.ofNat 64 128 := by
-        simp [s₄, s₃, State.write, State.read, kp]
-      rw [e, g₂ sb (by decide)]; rfl
-    obtain kp₄ : s₄.gpr kp = BitVec.ofNat 64 (R s₀ + 1) := by
-      obtain e : s₄.gpr kp = s₂.gpr .x1 + BitVec.ofNat 64 1 := by
-        simp [s₄, s₃, State.write, State.read, kp]
-      rw [e, g₂ .x1 (by decide), BitVec.ofNat_add, BitVec.ofNat_toNat, BitVec.setWidth_eq]
-    obtain hi₀ : KInv s₄ (W s₀) (S s₀) (R s₀) (wK s₀) 0 s₄ :=
-      { hx0 := by rw [g₄ .x0 (by decide) (by decide) (by decide)]; simp
-        hx7 := x7₄
-        hkp := kp₄
-        keep := fun _ _ _ _ => rfl
-        mask := mask₂
-        rd := rfl
-        wr := rfl
-        sp := rfl
-        keys := fun i hi => absurd hi (by omega_using [])
-        frame := Frame.refl _ _ }
-    refine WP.seq (WP.mono (keyLoop_ok (S := W s₀) (b := S s₀) (R := R s₀) (w := wK s₀)
-      (by show _ ∈ s₂.rd; rw [rd₂, hp.rd]; simp) (by show ScrIn _ s₂.wr; rw [wr₂]; exact hscr)
-      (hp.sch_scr.sub_right (Region.sub_prefix (by omega_using []))) hR14
-      (by show _ = Spec.Aes.bytesAt s₂.mem _ _; rw [m₂]) hi₀) fun s₅ hk₅ => ?_)
+    refine WP.seq (keys_wp (S := W s₀) (b := S s₀) (R := R s₀) (w := wK s₀)
+      (by rw [hp.rd]; simp) hscr (hp.sch_scr.sub_right (Region.sub_prefix (by omega_using []))) hR14
+      rfl rfl rfl (by simp [R]) fun s₅ hk₅ g₅ fr₅ rd₅ wr₅ _ => ?_)
     -- The groups.
-    obtain g₅ : ∀ r, r ≠ .x0 → r ≠ .x6 → r ≠ .x7 → r ≠ kp → s₅.gpr r = s₀.gpr r :=
-      fun r h0 h6 h7 hk => (hk₅.keep r h0 h7 hk).trans (g₄ r h6 h7 hk)
-    obtain fr₅ : Frame [⟨S s₀, 2048⟩] s₀.mem s₅.mem := by
-      have := hk₅.frame
-      rwa [show s₄.mem = s₀.mem from m₂] at this
     obtain hi : NInv ch out s₀ 0 s₅ :=
       { hg := by omega_using [hn0]
         x1 := by rw [g₅ .x1 (by decide) (by decide) (by decide) (by decide)]; simp [R]
@@ -459,13 +421,13 @@ theorem whole_wp {ch : Nat → BitVec 128} {out : Nat → Spec.Aes.State} {G : P
           exact fr₅.readW (r := ivR s₀) (Region.contains_self _ _) (fun r hr => by
             simp only [List.mem_singleton] at hr; subst hr
             exact hp.iv_scr.sub_right (Region.sub_prefix (by omega_using []))) (by decide)
-        keys := fun j hj => hk₅.keys j (by omega_using [hj])
+        keys := hk₅
         data := ecbInv_frame fr₅ (fun r hr => by
           simp only [List.mem_singleton] at hr; subst hr
           exact hp.data_scr.sub_right (Region.sub_prefix (by omega_using []))) n16
           fun i hi => by simp
-        rd := hk₅.rd.trans rd₂
-        wr := hk₅.wr.trans wr₂ }
+        rd := rd₅
+        wr := wr₅ }
     exact nGroups_ok hG hi
 
 /-- One block, by vector permutations. -/
