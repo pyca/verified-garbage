@@ -341,7 +341,7 @@ OBSERVED = {
     'double': lambda o: (o < 800 or o >= 992) and spillless(o),
     'dblu': lambda o: (o < 800 or o >= 992 or 864 <= o < 928) and spillless(o),
     'zaddu': lambda o: (o < 800 or o >= 992) and spillless(o),
-    'fieldUpdate': lambda o: 2272 <= o < 2424, 'orderUpdate': lambda o: 2272 <= o < 2424,
+    'fieldUpdate': lambda o: 2272 <= o < 2416, 'orderUpdate': lambda o: 2272 <= o < 2416,
     'mixedHead': spillless, 'mixedTail': spillless, 'jacTail': spillless, 'cachedHead': spillless,
 }
 FILES = {'VerifyAllocatedCode': ['orderUpdate', 'mixedHead', 'mixedTail', 'jacTail', 'cachedHead'],
