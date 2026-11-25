@@ -78,6 +78,7 @@ NOT_RUST_FILES = {
     "AGENTS.md",
     "CLAUDE.md",
     "README.md",
+    "SECURITY.md",
     "LICENSE",
     "LICENSE.APACHE",
     "LICENSE.BSD",
