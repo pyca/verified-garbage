@@ -117,4 +117,18 @@ nk = 6: at most 44), one compare. Then xor w[i-nk] at rdx - rsi. SubWord: slice 
 S-box (spills slots 0-47), slices & 01010101, << j, xored. Callee-saved in slots 48-53.
 
 ## x86-64 SEED G16
-(to be recorded below, before its code)
+From the statement of Proof/Seed/G16.lean (which fixes where bytes and planes are: byte n of the 8
+words at bit 8(n%8)+n/8 of the planes, which is what my 8x8 transpose of the registers gives) and
+SEED's matrices mRows, p0Rows, p1Rows:
+* In: load, transpose, M on the planes in place (XORs of one plane into another; I search for a
+  short sequence up to the order of the planes; that order costs nothing, the transpose can be
+  written for any assignment of registers).
+* AES S-box.
+* P0 for even bytes, P1 for odd ones: y = P0(S) + odd & (P0+P1)(S) if P0+P1 is invertible, in
+  place, the S planes saved in slots; otherwise P0 and P1 and a blend.
+* The mixing. G keeps of byte a, in output byte a', the bits of m[(a+a')%4], each m clearing one
+  pair of bits. So output byte a', bit pair b, is the XOR of all four bytes but byte a with
+  (a+a')%4 = the index whose mask clears pair b. In planes: out = X + perm(x), X the XOR of the four
+  bytes in every byte, perm an involution of the 4 bytes per 32-bit half, a' -> c_b - a' mod 4: one
+  or two exchanges of bytes. X: fold by 16 and 8, mask, spread by 8 and 16.
+* Transpose back, add the constant, store.
