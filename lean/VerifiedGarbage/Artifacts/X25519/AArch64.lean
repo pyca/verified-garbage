@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.X25519.AArch64.Fn
 public import VerifiedGarbage.Proof.Ed25519.AArch64.DivstepSound
-public import VerifiedGarbage.Proof.X25519.AArch64.AltLadder.Verified
+public import VerifiedGarbage.Proof.X25519.AArch64.LadderVerified
 public import VerifiedGarbage.Proof.X25519.AArch64.Base.Verified
 public import VerifiedGarbage.Proof.X25519.AArch64.Base.Residue
 import Mathlib.Algebra.Order.Field.Basic

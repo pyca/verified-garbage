@@ -60,7 +60,7 @@ public import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Setup
 import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Wipe
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.HashPre
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Wrap
-public import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseMain
+public import VerifiedGarbage.Proof.Ed25519.AArch64.FixedBaseMain
 import VerifiedGarbage.Proof.Framework.OffsetBelow
 import Mathlib.Tactic.NormNum.Prime
 import Mathlib.Data.Nat.Totient
@@ -75,7 +75,7 @@ meta import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Setup
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Wipe
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.HashPre
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Wrap
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseMain
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.FixedBaseMain
 meta import VerifiedGarbage.Proof.Framework.OffsetBelow
 meta import Mathlib.Tactic.NormNum.Prime
 meta import Mathlib.Data.Nat.Totient

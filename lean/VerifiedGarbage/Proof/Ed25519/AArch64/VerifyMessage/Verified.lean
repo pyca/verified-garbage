@@ -27,7 +27,7 @@ public import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarMain
 import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Wipe
 import VerifiedGarbage.Proof.Ed25519.AArch64.Codec
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
-import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarLit
+import VerifiedGarbage.Proof.Ed25519.AArch64.FixedBaseLit
 import Mathlib.Tactic.NormNum.Prime
 import Mathlib.Data.Nat.Totient
 import Mathlib.Tactic.Positivity.Finset
@@ -49,7 +49,7 @@ meta import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarMain
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Wipe
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.Codec
 meta import VerifiedGarbage.Proof.Framework.AArch64.Syms
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarLit
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.FixedBaseLit
 meta import Mathlib.Tactic.NormNum.Prime
 meta import Mathlib.Data.Nat.Totient
 meta import Mathlib.Tactic.Positivity.Finset

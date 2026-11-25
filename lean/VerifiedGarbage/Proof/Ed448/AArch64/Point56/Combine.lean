@@ -160,8 +160,7 @@ section
 /-!
 # X448 of the base point on AArch64: the constant-time selection
 
-Untrusted: everything here is checked by Lean. As Ed25519's comb
-(`Proof/Ed25519/AArch64/CombEntry.lean`): with `oddReg m` (`evenReg m`) all
+Untrusted: everything here is checked by Lean. With `oddReg m` (`evenReg m`) all
 ones exactly for `m` the odd (even) digit's magnitude, and `x5` (`x0`) the bit
 of a zero magnitude, `selectWord` loads every candidate's limb from the table
 once, ANDs it with both digits' masks and ORs it into `x1` and `x2`, so only

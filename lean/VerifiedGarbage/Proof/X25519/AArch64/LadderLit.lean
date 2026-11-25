@@ -1,17 +1,19 @@
 module
 
-public import VerifiedGarbage.Impl.X25519.AArch64.AltLadder
+public import VerifiedGarbage.Impl.X25519.AArch64.Ladder
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.Taint
-meta import VerifiedGarbage.Impl.X25519.AArch64.AltLadder
+meta import VerifiedGarbage.Impl.X25519.AArch64.Ladder
 meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.Taint
 meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
 
-/-! # The `_alt` ladder's function as a literal, for the checks that evaluate it -/
+/-! # X25519 on AArch64: the ladder's code as a literal -/
 
 @[expose] public section
 
 namespace VG
-materialize_flat_code Impl.X25519.AArch64.AltLadder.x25519
+
+materialize_flat_code Impl.X25519.AArch64.Ladder.x25519
+
 end VG
