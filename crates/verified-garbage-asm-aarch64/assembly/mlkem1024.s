@@ -707,13 +707,6 @@ vg_mlkem1024_keygen:
 	movi v31.2d, #0
 	tst x1, x1
 	mov v8.d[1], x1
-	mov v9.d[1], x1
-	mov v10.d[1], x1
-	mov v11.d[1], x1
-	mov v12.d[1], x1
-	mov v13.d[1], x1
-	mov v14.d[1], x1
-	mov v15.d[1], x1
 	add w0, w0, #0
 	sub sp, sp, #176
 	movi v31.2d, #0
@@ -788,13 +781,6 @@ vg_mlkem1024_encaps:
 	movi v31.2d, #0
 	tst x1, x1
 	mov v8.d[1], x1
-	mov v9.d[1], x1
-	mov v10.d[1], x1
-	mov v11.d[1], x1
-	mov v12.d[1], x1
-	mov v13.d[1], x1
-	mov v14.d[1], x1
-	mov v15.d[1], x1
 	add w0, w0, #0
 	sub sp, sp, #176
 	movi v31.2d, #0
@@ -869,13 +855,6 @@ vg_mlkem1024_encaps_h:
 	movi v31.2d, #0
 	tst x1, x1
 	mov v8.d[1], x1
-	mov v9.d[1], x1
-	mov v10.d[1], x1
-	mov v11.d[1], x1
-	mov v12.d[1], x1
-	mov v13.d[1], x1
-	mov v14.d[1], x1
-	mov v15.d[1], x1
 	add w0, w0, #0
 	sub sp, sp, #176
 	movi v31.2d, #0
@@ -950,13 +929,6 @@ vg_mlkem1024_decaps:
 	movi v31.2d, #0
 	tst x1, x1
 	mov v8.d[1], x1
-	mov v9.d[1], x1
-	mov v10.d[1], x1
-	mov v11.d[1], x1
-	mov v12.d[1], x1
-	mov v13.d[1], x1
-	mov v14.d[1], x1
-	mov v15.d[1], x1
 	add w0, w0, #0
 	sub sp, sp, #176
 	movi v31.2d, #0

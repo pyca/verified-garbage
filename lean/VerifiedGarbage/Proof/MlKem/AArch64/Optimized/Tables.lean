@@ -47,29 +47,21 @@ theorem Tables.frameStack {s t : State} (h : Tables s)
  have ga := ext h.gammaApart h.gammaStack
  have fw := ext h.transforms.forward.2.2 h.transforms.forwardStack
  have iv := ext h.transforms.inverse.2.2 h.transforms.inverseStack
- have fa := ext h.transforms.fast.2.2 h.transforms.fastStack
  refine ⟨?_,by simpa only [hs,hr,hw] using h.shuffleRead,
   by simpa only [hs,hw] using h.shuffleApart,
   by simpa only [hs,hp] using h.shuffleStack,?_,
   by simpa only [hs,hr,hw] using h.gammaRead,
   by simpa only [hs,hw] using h.gammaApart,
   by simpa only [hs,hp] using h.gammaStack,
-  ⟨⟨?_,by simpa only [hs,hr,hw] using h.transforms.forward.2.1,
-    by simpa only [hs,hw] using h.transforms.forward.2.2⟩,
+  ⟨h.transforms.forward.frameFar hs hr hw hf fw,
    h.transforms.inverse.frameFar hs hr hw hf iv,
-   by simpa only [hs,hp] using h.transforms.forwardStack,
-   by simpa only [NttR.fastInvRegion,NttR.sRegion,hs,hp] using h.transforms.inverseStack,
-   h.transforms.fast.frameFar hs hr hw hf fa,
-   by simpa only [NttR.fastRegion,NttR.sRegion,hs,hp] using h.transforms.fastStack⟩⟩
+   by simpa only [Ntt16.fwdRegion,hs,hp] using h.transforms.forwardStack,
+   by simpa only [Ntt16.invRegion,hs,hp] using h.transforms.inverseStack⟩⟩
  · rw [hs]; exact h.shuffle.frame hf sh
  · rw [hs]; intro i hi
    rw [hf.readW (r:=⟨s.syms "VG_MLKEM_GAMMA",512⟩)
     (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])) ga (by decide)]
    exact h.gamma i hi
- · rw [hs]; intro i hi
-   rw [hf.readW (r:=⟨s.syms "VG_MLKEM_NTT16_ZETAS",512⟩)
-    (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])) fw (by decide)]
-   exact h.transforms.forward.1 i hi
 
 theorem Tables.execDepth {s t : State} {c : Prog isa} {tr : List Leak}
  (h : Tables s) (he : Exec isa c s tr t) (hn : c.aarch64Depth≤1) : Tables t := by

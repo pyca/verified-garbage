@@ -12,7 +12,7 @@ public import VerifiedGarbage.Proof.MlKem.Scrubbed
 public import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Top
 import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Readonly
 public import VerifiedGarbage.Proof.MlKem.AArch64.Dot.Table
-import VerifiedGarbage.Proof.MlKem.AArch64.NttR.FastTable
+import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Call
 public import VerifiedGarbage.Spec.MlKem.EncapsH
 public import VerifiedGarbage.Proof.MlKem.EncapsHSat
 import VerifiedGarbage.Proof.Framework.Contract
@@ -983,14 +983,11 @@ theorem tabMemH_held (n : Nat) : Abi.constsHeld (tabMemH n) Optimized.tableSyms 
     · decide
     split
     · decide
-    split
-    · decide
     · decide
   have hl : i < 512 := by
     simp only [constants, List.mem_cons, List.not_mem_nil, or_false] at hc
-    rcases hc with rfl | rfl | rfl | rfl | rfl <;>
-      simp only [Rej8.tableWords_length, Ntt16.Readonly.gamma_length, Ntt16.Readonly.forward_length,
-        NttR.tabWordsI_length, NttR.tabWords_length] at hi <;> omega_using [hi]
+    rcases hc with rfl | rfl | rfl | rfl <;>
+      simp only [Rej8.tableWords_length, Ntt16.Readonly.gamma_length, Ntt16.inv_length, Ntt16.fwd_length] at hi <;> omega_using [hi]
   refine Mem.readW_congr fun j hj => ?_
   simp only [tabMemH, tab_high hs hl (by omega), ite_false]
 

@@ -11,7 +11,7 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.Kem16P.Matrix
 public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.TransformTables
 import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Cbd16Call
 import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Output
-import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.W.Call
+import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Call
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 public import VerifiedGarbage.Proof.MlKem.AArch64.KemOps
 
@@ -128,17 +128,11 @@ theorem outBuf_ok {s₀ s : State} (hp : Pre P L s₀) (hr : Noise.Room P) (h : 
     have tv := htr.frame sv kv.rd kv.wr kv.sp kv.frame cT
     have cv : Covers [polyRegion (sA L s₀ T), polyRegion (sA L s₀ NS)] v.wr := by
       rw [kv.wr]; exact Covers.cons (Covers.head cT) (Covers.cons (Covers.head cN) Covers.nil)
-    refine WP.mono_syms (Ntt16.W.nttAtWithW_ok t64 (by decide) (e28 kbv T) (e28 kbv NS)
-      (dTN.sub_left (Region.sub_prefix (by decide : 512 ≤ 1024)) |>.sub_right
-        (Region.sub_prefix (by decide : 512 ≤ 1024))) pv
-      (Covers.cons (covers_prefix (by decide : 512 ≤ 1024) (Covers.head cv))
-        (Covers.cons (covers_prefix (by decide : 512 ≤ 1024) (Covers.head (Covers.tail cv))) Covers.nil))
-      (tv.fast.ready cv)) fun t ⟨kt, pt⟩ st => ?_
+    refine WP.mono_syms (Ntt16.nttAtWithW_ok t64 (e28 kbv T) pv (covers_prefix (by decide : 512 ≤ 1024) (Covers.head cv))
+      (tv.forward.ready cv)) fun t ⟨kt, pt⟩ st => ?_
     have kt' : Kept [R (kA s₀) L.sc T 1024, R (kA s₀) L.sc NS 1024] v t := kt.sub fun x hx => by
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
-      rcases hx with rfl | rfl
-      · exact ⟨_, List.mem_cons_self .., Region.sub_prefix (by decide : 512 ≤ 1024)⟩
-      · exact ⟨_, List.mem_cons_of_mem _ (List.mem_singleton_self _), Region.sub_prefix (by decide : 512 ≤ 1024)⟩
+      rw [List.mem_singleton.1 hx]
+      exact ⟨_, List.mem_cons_self .., Region.sub_prefix (by decide : 512 ≤ 1024)⟩
     refine ⟨kbv.call kt' fun r hr => ?_, (kv.frame.mono (by simp)).trans kt'.frame,
       (kt'.cs .x24 (by decide) (by decide)).trans (kv.cs .x24 (by decide) (by decide)), st.trans sv, pt⟩
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
