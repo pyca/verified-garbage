@@ -26,7 +26,7 @@ asn1 = { version = "0.24", default-features = false }
 getrandom = "0.4"
 pki-types = { package = "rustls-pki-types", version = "1.15", features = ["alloc"] }
 rustls = { version = "=0.24.0-dev.3", default-features = false }
-verified-garbage = { path = "../.." }
+verified-garbage.workspace = true
 zeroize = "1.8"
 
 [dev-dependencies]

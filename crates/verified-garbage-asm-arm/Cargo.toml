@@ -22,7 +22,7 @@ exclude = ["assembly/"]
 path = "src/lib.rs"
 
 [dependencies]
-verified-garbage-cpu = { path = "../verified-garbage-cpu" }
+verified-garbage-cpu.workspace = true
 
 [lints]
 workspace = true

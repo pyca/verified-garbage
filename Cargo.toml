@@ -50,23 +50,23 @@ getrandom = "0.4"
 # `Features`, the sets of CPU features that the generated `_FEATURES`
 # constants name, and their detection, which the generated dispatchers and
 # `src/cpu.rs` ask.
-verified-garbage-cpu = { path = "crates/verified-garbage-cpu" }
+verified-garbage-cpu.workspace = true
 
 # The verified assembly of each target, generated into
 # `crates/verified-garbage-asm-<target>/src/`: a crate per target (see
 # `lean/VerifiedGarbage/TCB/Rust.lean`).
 [target.'cfg(target_arch = "aarch64")'.dependencies]
-verified-garbage-asm-aarch64 = { path = "crates/verified-garbage-asm-aarch64" }
+verified-garbage-asm-aarch64.workspace = true
 [target.'cfg(target_arch = "arm")'.dependencies]
-verified-garbage-asm-arm = { path = "crates/verified-garbage-asm-arm" }
+verified-garbage-asm-arm.workspace = true
 [target.'cfg(target_arch = "powerpc64")'.dependencies]
-verified-garbage-asm-powerpc64le = { path = "crates/verified-garbage-asm-powerpc64le" }
+verified-garbage-asm-powerpc64le.workspace = true
 [target.'cfg(target_arch = "riscv64")'.dependencies]
-verified-garbage-asm-riscv64 = { path = "crates/verified-garbage-asm-riscv64" }
+verified-garbage-asm-riscv64.workspace = true
 [target.'cfg(target_arch = "x86")'.dependencies]
-verified-garbage-asm-x86 = { path = "crates/verified-garbage-asm-x86" }
+verified-garbage-asm-x86.workspace = true
 [target.'cfg(target_arch = "x86_64")'.dependencies]
-verified-garbage-asm-x86_64 = { path = "crates/verified-garbage-asm-x86_64" }
+verified-garbage-asm-x86_64.workspace = true
 
 [workspace]
 members = ["crates/*"]
@@ -83,7 +83,22 @@ edition = "2024"
 rust-version = "1.95"
 license = "Apache-2.0 OR BSD-3-Clause"
 repository = "https://github.com/pyca/verified-garbage"
-publish = false
+publish = ["crates-io"]
+
+# The crates that depend on each other, by exact version: the generated
+# assembly's functions, the CPU features they name and the Rust code that calls
+# them are one program, whose parts are only tested and proven together, so
+# each release's crates depend on that release's alone. These versions are
+# `[workspace.package]`'s.
+[workspace.dependencies]
+verified-garbage = { path = ".", version = "=0.0.0" }
+verified-garbage-cpu = { path = "crates/verified-garbage-cpu", version = "=0.0.0" }
+verified-garbage-asm-aarch64 = { path = "crates/verified-garbage-asm-aarch64", version = "=0.0.0" }
+verified-garbage-asm-arm = { path = "crates/verified-garbage-asm-arm", version = "=0.0.0" }
+verified-garbage-asm-powerpc64le = { path = "crates/verified-garbage-asm-powerpc64le", version = "=0.0.0" }
+verified-garbage-asm-riscv64 = { path = "crates/verified-garbage-asm-riscv64", version = "=0.0.0" }
+verified-garbage-asm-x86 = { path = "crates/verified-garbage-asm-x86", version = "=0.0.0" }
+verified-garbage-asm-x86_64 = { path = "crates/verified-garbage-asm-x86_64", version = "=0.0.0" }
 
 # The lints of every crate of the workspace (`lints.workspace = true`), the
 # generated ones too. Every import names what it imports: no glob imports
