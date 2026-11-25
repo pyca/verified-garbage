@@ -85,3 +85,6 @@ earlier). Measured by mca only: if it is 5 cycles or more better, it goes in.
 
 Results: A 260 cycles (996 instructions), C 259 (997): neither 5 cycles better; not kept. The P-256 shift reduction in the update would save about
 60 of 414 instructions per batch, ~600 in an ECDH of ~130k cycles (0.1%), for a new proof of the update's arithmetic: not done.
+
+Isolated run 45673781749 against #6494's branch (c88abaf2): ecdh 42564 -> 42666 ns (+0.2%): parity; the gains over 5698282829 are #6494's. The script that wrote the
+listings is here: main does not have it.
