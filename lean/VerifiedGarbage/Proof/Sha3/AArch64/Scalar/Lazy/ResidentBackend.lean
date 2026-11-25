@@ -1,5 +1,8 @@
 module
 
+import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+
 public import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Lazy.VectorBackend
 import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Resident
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
@@ -617,15 +620,95 @@ theorem loop_ok (b : State) (hp : BulkPre b) (A₀ : Spec.Sha3.State) (s₀ : St
       exact ⟨by simpa only [hk, decide_false] using he, c + rate b, A', h'⟩
   · exact ⟨0, A₀, h₀, by omega_using [], by simpa only [Nat.zero_add] using hp.enough⟩
 
-theorem functional (b : State) (hp : BulkPre b) :
-    WP isa VG.Impl.Sha3.AArch64.Scalar.Lazy.bulk b
+theorem inline_functional (b : State) (hp : BulkPre b) :
+    WP isa VG.Impl.Sha3.AArch64.Scalar.Lazy.bulkInline b
       (VG.Proof.Sha3.AArch64.Sha3.Vector.Resident.BulkPost b) := by
-  unfold VG.Impl.Sha3.AArch64.Scalar.Lazy.bulk
+  unfold VG.Impl.Sha3.AArch64.Scalar.Lazy.bulkInline
   rw [WP.seq_iff]
   refine (VG.Proof.Sha3.AArch64.Scalar.Resident.setup_ok b hp).mono fun s₀ h₀ => ?_
   rw [WP.seq_iff]
   refine (loop_ok b hp _ s₀ h₀).mono fun s ⟨c, A, h⟩ => ?_
   exact VG.Proof.Sha3.AArch64.Scalar.Resident.finish_ok b hp c A s h
+
+private def savedBulk (s : State) : State :=
+  s.setV .v29 (ofVDwords (s.gpr .x30) (s.gpr .x30))
+
+private def restoredBulk (s : State) : State :=
+  s.write .x .x30 (vdword (s.v .v29) 0)
+
+/-- Sharing the absorber changes no memory contract or stack depth. -/
+theorem functional (b : State) (hp : BulkPre b) :
+    WP isa VG.Impl.Sha3.AArch64.Scalar.Lazy.bulk b
+      (VG.Proof.Sha3.AArch64.Sha3.Vector.Resident.BulkPost b) := by
+  let e := (savedBulk b).callEntry
+  have eg (r : Reg) (hr : r ∉ linkRegs) : e.gpr r = b.gpr r := by
+    rw [State.callEntry_gpr _ hr, savedBulk, RegUpd.gpr_setV]
+  have e0 := eg .x0 (by decide)
+  have e1 := eg .x1 (by decide)
+  have e2 := eg .x2 (by decide)
+  have e3 := eg .x3 (by decide)
+  have e4 := eg .x4 (by decide)
+  have e5 := eg .x5 (by decide)
+  have e6 := eg .x6 (by decide)
+  have em : e.mem = b.mem := rfl
+  have er : e.rd = b.rd := rfl
+  have ew : e.wr = b.wr := rfl
+  have ep : e.sp = b.sp := rfl
+  have he : BulkPre e := by
+    refine ⟨?_,?_,?_,?_,?_,?_,?_,?_,e2.trans hp.x2,?_⟩
+    · simpa only [dataR,data,len,e3,e4,er] using hp.rd
+    · simpa only [Sha3.Vector.Resident.stateR,st,Sha3.Vector.Resident.scratchR,
+        Sha3.Vector.Resident.scratch,e0,e1,ew] using hp.wr
+    · simpa only [Sha3.Vector.Resident.stateR,st,Sha3.Vector.Resident.scratchR,
+        Sha3.Vector.Resident.scratch,e0,e1] using hp.st_scr
+    · simpa only [dataR,data,len,Sha3.Vector.Resident.stateR,st,e0,e3,e4] using hp.d_st
+    · simpa only [dataR,data,len,Sha3.Vector.Resident.scratchR,
+        Sha3.Vector.Resident.scratch,e1,e3,e4] using hp.d_scr
+    · simpa only [rate,e6] using hp.rate_mem
+    · simpa only [rate,len,e4,e6] using hp.enough
+    · simpa only [rate,len,e4,e6] using hp.len_upper
+    · simpa only [Sha3.Vector.Resident.scratch,e1,e5] using hp.x5
+  obtain ⟨tr,q,eq,hq⟩ := inline_functional e he
+  obtain ⟨c,h⟩ := hq
+  have v29 : q.v .v29 = e.v .v29 := Exec.vec (c := VG.Impl.Sha3.AArch64.Scalar.Lazy.bulkInline) (by lit_decide) eq
+  have ret : isa.ret e q = some q := by
+    have hl := h.abi.1 .x30 (by simp [preserved])
+    simp only [isa,VG.AArch64.ret,hl,ite_true]
+  let t := restoredBulk q
+  have tg (r : Reg) (hr : r ≠ .x30) : t.gpr r = q.gpr r :=
+    RegUpd.gpr_write_of_ne q .x (vdword (q.v .v29) 0) hr
+  have tm : t.mem = q.mem := rfl
+  have tp : t.sp = q.sp := rfl
+  have tv : t.v = q.v := RegUpd.v_write q .x .x30 (vdword (q.v .v29) 0)
+  have link : t.gpr .x30 = b.gpr .x30 := by
+    change (q.write .x .x30 (vdword (q.v .v29) 0)).gpr .x30 = b.gpr .x30
+    rw [RegUpd.gpr_write_self,BitVec.setWidth_eq,v29]
+    simp only [e,State.callEntry_v,savedBulk,RegUpd.v_setV,ite_true,vdword_ofVDwords_0]
+  have abi : abiPreserved b t := by
+    refine ⟨fun r hr => ?_,tp.trans (h.abi.2.1.trans ep),fun r hr => ?_⟩
+    · by_cases h30 : r = .x30
+      · subst r; exact link
+      · rw [tg r h30,h.abi.1 r hr,eg r (preserved_not_link r hr h30)]
+    · rw [tv,h.abi.2.2 r hr]
+      simp only [e,State.callEntry_v,savedBulk,RegUpd.v_setV,
+        ite_eq_right ((by decide : ∀ r ∈ preservedV,r ≠ VReg.v29) r hr)]
+  have es : Exec isa (.block [.vop (.dup .d2 .v29 .x30)]) b [] (savedBulk b) := .block rfl
+  have et : Exec isa (.block [.umov .x .x30 .v29 0]) q [] t := .block rfl
+  refine ⟨_,t,.seq es (.seq (.call (call_callEntry _) eq ret) et),c,
+    ?_,?_,abi,h.rd.trans er,h.wr.trans ew,?_,?_,?_,?_,?_,?_,?_,?_,?_⟩
+  · simpa only [len,e4] using h.c_le
+  · simpa only [rate,e6] using h.aligned
+  · simpa only [Sha3.Vector.Resident.stateR,st,Sha3.Vector.Resident.scratchR,
+      Sha3.Vector.Resident.scratch,e0,e1,em,tm] using h.frame
+  · exact (tg _ (by decide)).trans (h.x0.trans e0)
+  · exact (tg _ (by decide)).trans (h.x1.trans e1)
+  · exact (tg _ (by decide)).trans (h.x2.trans e2)
+  · simpa only [tg .x3 (by decide),data,e3] using h.x3
+  · simpa only [tg .x4 (by decide),len,e4] using h.x4
+  · exact (tg _ (by decide)).trans (h.x5.trans e5)
+  · exact (tg _ (by decide)).trans (h.x6.trans e6)
+  · simpa only [st,data,rate,e0,e3,e6,em,tm] using h.repr
+
 
 end VG.Proof.Sha3.AArch64.Scalar.Lazy.Resident
 
