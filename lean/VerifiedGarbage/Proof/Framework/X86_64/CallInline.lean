@@ -420,7 +420,7 @@ def Instr.rspFree : Instr → Bool
   | .mov d src | .mov32 d src | .alu _ d src | .alu32 _ d src | .adcx d src | .adox d src
   | .cmov _ d src => d != .rsp && src.noRsp
   | .store m r | .store32 m r => m.noRsp && r != .rsp
-  | .shift _ d _ | .shiftCl _ d => d != .rsp
+  | .shift _ d _ | .shift32 _ d _ | .shiftCl _ d => d != .rsp
   | .mul r => r != .rsp
   | .imul d r | .imul3 d r _ => d != .rsp && r != .rsp
   | .shld d r _ => d != .rsp && r != .rsp
@@ -444,6 +444,8 @@ def Instr.rspFree : Instr → Bool
   | .kLoad8 r _ m | .kStore8 m r _ => m.noRsp && r != .rsp
   | .eop op => op.rspFree
   | .evLoad _ m | .evStore m _ | .evMadd52Load _ _ _ m => m.noRsp
+  | .evCmpUq _ d .. => d != .rsp
+  | .evMaskAddQ k .. => k != .rsp
   | _ => false
 
 section
@@ -577,6 +579,12 @@ theorem exec_setRsp {i : Instr} (hi : i.rspFree = true) :
     split
     · cases op <;> simp only [Option.map_some, setFlags_setRsp, setReg_setRsp hi] <;> rfl
     · rfl
+  | shift32 op d n =>
+    simp only [Instr.rspFree, bne_iff_ne, ne_eq] at hi
+    simp only [exec, execShift32, setRsp_gpr hi]
+    split
+    · cases op <;> simp only [Option.map_some, setFlags_setRsp, State.setReg32, setReg_setRsp hi] <;> rfl
+    · rfl
   | mul r =>
     simp only [Instr.rspFree, bne_iff_ne, ne_eq] at hi
     simp only [exec, execMul, Option.map_some, setRsp_gpr hi, setRsp_gpr (show Reg.rax ≠ .rsp by decide),
@@ -688,6 +696,13 @@ theorem exec_setRsp {i : Instr} (hi : i.rspFree = true) :
     cases op <;> simp only [Instr.rspFree, EOp.rspFree, bne_iff_ne, ne_eq] at hi
     case vmovq d r => simp only [EOp.exec, setRsp_gpr hi, setVy_setRsp]
     all_goals simp only [EOp.exec, vy_setRsp, setVy_setRsp]
+  | evCmpUq gt d a b =>
+    simp only [Instr.rspFree, bne_iff_ne, ne_eq] at hi
+    simp only [exec, Option.map_some, State.setReg32, setReg_setRsp hi]
+    rfl
+  | evMaskAddQ k d a b =>
+    simp only [Instr.rspFree, bne_iff_ne, ne_eq] at hi
+    simp only [exec, Option.map_some, setRsp_gpr hi, vy_setRsp, setVy_setRsp]
   | evLoad d m =>
     simp only [Instr.rspFree] at hi
     simp only [exec, Option.map_map]; rw [ea_setRsp hi]
