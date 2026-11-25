@@ -789,7 +789,7 @@ private theorem storeCount (m : Mem) (p : Addr) (k : Nat) :
     blockAt (m.writeW (p+12#64) (bswap32 (x+(BitVec.ofNat 64 k).setWidth 32))) p = Nat.repeat Spec.Gcm.inc32 k (blockAt m p) := by
   apply VG.Proof.Aes.X86_64.ctr_after
   intro i hi
-  rw [VG.Proof.Aes.X86_64.writeW_apply,VG.Proof.Aes.X86_64.off_toNat p (by omega) (by omega)]
+  rw [VG.Proof.Aes.X86_64.writeW_apply,Offset.sub_toNat' p (show 12 < 2 ^ 64 by decide) (by omega)]
   by_cases h : i < 12
   · rw [ite_eq_right (show ¬12≤i by omega),ite_eq_right (show ¬2^64+i-12 < 32/8 by omega),ite_eq_left h]
   · rw [ite_eq_left (show 12≤i by omega),ite_eq_left (show i-12<32/8 by omega),ite_eq_right h,BitVec.setWidth_eq]

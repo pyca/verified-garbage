@@ -659,33 +659,33 @@ vg_sm4_crypt_prepared:
 	mov r12, QWORD PTR [r9+864]
 	mov r13, QWORD PTR [r9+880]
 	mov r14, rax
-	shr r14, 1
-	xor r14, rbx
-	and r14, QWORD PTR [r9+32]
-	xor rbx, r14
-	ror r14, 63
-	xor rax, r14
-	mov r14, rcx
-	shr r14, 1
-	xor r14, rbp
-	and r14, QWORD PTR [r9+32]
-	xor rbp, r14
-	ror r14, 63
-	xor rcx, r14
-	mov r14, r10
-	shr r14, 1
-	xor r14, r11
-	and r14, QWORD PTR [r9+32]
-	xor r11, r14
-	ror r14, 63
+	shr r14, 4
+	xor r14, r10
+	and r14, QWORD PTR [r9+48]
 	xor r10, r14
-	mov r14, r12
-	shr r14, 1
-	xor r14, r13
-	and r14, QWORD PTR [r9+32]
-	xor r13, r14
-	ror r14, 63
+	ror r14, 60
+	xor rax, r14
+	mov r14, rbx
+	shr r14, 4
+	xor r14, r11
+	and r14, QWORD PTR [r9+48]
+	xor r11, r14
+	ror r14, 60
+	xor rbx, r14
+	mov r14, rcx
+	shr r14, 4
+	xor r14, r12
+	and r14, QWORD PTR [r9+48]
 	xor r12, r14
+	ror r14, 60
+	xor rcx, r14
+	mov r14, rbp
+	shr r14, 4
+	xor r14, r13
+	and r14, QWORD PTR [r9+48]
+	xor r13, r14
+	ror r14, 60
+	xor rbp, r14
 	mov r14, rax
 	shr r14, 2
 	xor r14, rcx
@@ -715,33 +715,33 @@ vg_sm4_crypt_prepared:
 	ror r14, 62
 	xor r11, r14
 	mov r14, rax
-	shr r14, 4
-	xor r14, r10
-	and r14, QWORD PTR [r9+48]
-	xor r10, r14
-	ror r14, 60
-	xor rax, r14
-	mov r14, rbx
-	shr r14, 4
-	xor r14, r11
-	and r14, QWORD PTR [r9+48]
-	xor r11, r14
-	ror r14, 60
+	shr r14, 1
+	xor r14, rbx
+	and r14, QWORD PTR [r9+32]
 	xor rbx, r14
+	ror r14, 63
+	xor rax, r14
 	mov r14, rcx
-	shr r14, 4
-	xor r14, r12
-	and r14, QWORD PTR [r9+48]
-	xor r12, r14
-	ror r14, 60
-	xor rcx, r14
-	mov r14, rbp
-	shr r14, 4
-	xor r14, r13
-	and r14, QWORD PTR [r9+48]
-	xor r13, r14
-	ror r14, 60
+	shr r14, 1
+	xor r14, rbp
+	and r14, QWORD PTR [r9+32]
 	xor rbp, r14
+	ror r14, 63
+	xor rcx, r14
+	mov r14, r10
+	shr r14, 1
+	xor r14, r11
+	and r14, QWORD PTR [r9+32]
+	xor r11, r14
+	ror r14, 63
+	xor r10, r14
+	mov r14, r12
+	shr r14, 1
+	xor r14, r13
+	and r14, QWORD PTR [r9+32]
+	xor r13, r14
+	ror r14, 63
+	xor r12, r14
 	mov QWORD PTR [r9+512], rax
 	mov QWORD PTR [r9+520], rbx
 	mov QWORD PTR [r9+528], rcx
@@ -759,33 +759,33 @@ vg_sm4_crypt_prepared:
 	mov r12, QWORD PTR [r9+992]
 	mov r13, QWORD PTR [r9+1008]
 	mov r14, rax
-	shr r14, 1
-	xor r14, rbx
-	and r14, QWORD PTR [r9+32]
-	xor rbx, r14
-	ror r14, 63
-	xor rax, r14
-	mov r14, rcx
-	shr r14, 1
-	xor r14, rbp
-	and r14, QWORD PTR [r9+32]
-	xor rbp, r14
-	ror r14, 63
-	xor rcx, r14
-	mov r14, r10
-	shr r14, 1
-	xor r14, r11
-	and r14, QWORD PTR [r9+32]
-	xor r11, r14
-	ror r14, 63
+	shr r14, 4
+	xor r14, r10
+	and r14, QWORD PTR [r9+48]
 	xor r10, r14
-	mov r14, r12
-	shr r14, 1
-	xor r14, r13
-	and r14, QWORD PTR [r9+32]
-	xor r13, r14
-	ror r14, 63
+	ror r14, 60
+	xor rax, r14
+	mov r14, rbx
+	shr r14, 4
+	xor r14, r11
+	and r14, QWORD PTR [r9+48]
+	xor r11, r14
+	ror r14, 60
+	xor rbx, r14
+	mov r14, rcx
+	shr r14, 4
+	xor r14, r12
+	and r14, QWORD PTR [r9+48]
 	xor r12, r14
+	ror r14, 60
+	xor rcx, r14
+	mov r14, rbp
+	shr r14, 4
+	xor r14, r13
+	and r14, QWORD PTR [r9+48]
+	xor r13, r14
+	ror r14, 60
+	xor rbp, r14
 	mov r14, rax
 	shr r14, 2
 	xor r14, rcx
@@ -815,33 +815,33 @@ vg_sm4_crypt_prepared:
 	ror r14, 62
 	xor r11, r14
 	mov r14, rax
-	shr r14, 4
-	xor r14, r10
-	and r14, QWORD PTR [r9+48]
-	xor r10, r14
-	ror r14, 60
-	xor rax, r14
-	mov r14, rbx
-	shr r14, 4
-	xor r14, r11
-	and r14, QWORD PTR [r9+48]
-	xor r11, r14
-	ror r14, 60
+	shr r14, 1
+	xor r14, rbx
+	and r14, QWORD PTR [r9+32]
 	xor rbx, r14
+	ror r14, 63
+	xor rax, r14
 	mov r14, rcx
-	shr r14, 4
-	xor r14, r12
-	and r14, QWORD PTR [r9+48]
-	xor r12, r14
-	ror r14, 60
-	xor rcx, r14
-	mov r14, rbp
-	shr r14, 4
-	xor r14, r13
-	and r14, QWORD PTR [r9+48]
-	xor r13, r14
-	ror r14, 60
+	shr r14, 1
+	xor r14, rbp
+	and r14, QWORD PTR [r9+32]
 	xor rbp, r14
+	ror r14, 63
+	xor rcx, r14
+	mov r14, r10
+	shr r14, 1
+	xor r14, r11
+	and r14, QWORD PTR [r9+32]
+	xor r11, r14
+	ror r14, 63
+	xor r10, r14
+	mov r14, r12
+	shr r14, 1
+	xor r14, r13
+	and r14, QWORD PTR [r9+32]
+	xor r13, r14
+	ror r14, 63
+	xor r12, r14
 	mov QWORD PTR [r9+576], rax
 	mov QWORD PTR [r9+584], rbx
 	mov QWORD PTR [r9+592], rcx
@@ -859,33 +859,33 @@ vg_sm4_crypt_prepared:
 	mov r12, QWORD PTR [r9+872]
 	mov r13, QWORD PTR [r9+888]
 	mov r14, rax
-	shr r14, 1
-	xor r14, rbx
-	and r14, QWORD PTR [r9+32]
-	xor rbx, r14
-	ror r14, 63
-	xor rax, r14
-	mov r14, rcx
-	shr r14, 1
-	xor r14, rbp
-	and r14, QWORD PTR [r9+32]
-	xor rbp, r14
-	ror r14, 63
-	xor rcx, r14
-	mov r14, r10
-	shr r14, 1
-	xor r14, r11
-	and r14, QWORD PTR [r9+32]
-	xor r11, r14
-	ror r14, 63
+	shr r14, 4
+	xor r14, r10
+	and r14, QWORD PTR [r9+48]
 	xor r10, r14
-	mov r14, r12
-	shr r14, 1
-	xor r14, r13
-	and r14, QWORD PTR [r9+32]
-	xor r13, r14
-	ror r14, 63
+	ror r14, 60
+	xor rax, r14
+	mov r14, rbx
+	shr r14, 4
+	xor r14, r11
+	and r14, QWORD PTR [r9+48]
+	xor r11, r14
+	ror r14, 60
+	xor rbx, r14
+	mov r14, rcx
+	shr r14, 4
+	xor r14, r12
+	and r14, QWORD PTR [r9+48]
 	xor r12, r14
+	ror r14, 60
+	xor rcx, r14
+	mov r14, rbp
+	shr r14, 4
+	xor r14, r13
+	and r14, QWORD PTR [r9+48]
+	xor r13, r14
+	ror r14, 60
+	xor rbp, r14
 	mov r14, rax
 	shr r14, 2
 	xor r14, rcx
@@ -915,33 +915,33 @@ vg_sm4_crypt_prepared:
 	ror r14, 62
 	xor r11, r14
 	mov r14, rax
-	shr r14, 4
-	xor r14, r10
-	and r14, QWORD PTR [r9+48]
-	xor r10, r14
-	ror r14, 60
-	xor rax, r14
-	mov r14, rbx
-	shr r14, 4
-	xor r14, r11
-	and r14, QWORD PTR [r9+48]
-	xor r11, r14
-	ror r14, 60
+	shr r14, 1
+	xor r14, rbx
+	and r14, QWORD PTR [r9+32]
 	xor rbx, r14
+	ror r14, 63
+	xor rax, r14
 	mov r14, rcx
-	shr r14, 4
-	xor r14, r12
-	and r14, QWORD PTR [r9+48]
-	xor r12, r14
-	ror r14, 60
-	xor rcx, r14
-	mov r14, rbp
-	shr r14, 4
-	xor r14, r13
-	and r14, QWORD PTR [r9+48]
-	xor r13, r14
-	ror r14, 60
+	shr r14, 1
+	xor r14, rbp
+	and r14, QWORD PTR [r9+32]
 	xor rbp, r14
+	ror r14, 63
+	xor rcx, r14
+	mov r14, r10
+	shr r14, 1
+	xor r14, r11
+	and r14, QWORD PTR [r9+32]
+	xor r11, r14
+	ror r14, 63
+	xor r10, r14
+	mov r14, r12
+	shr r14, 1
+	xor r14, r13
+	and r14, QWORD PTR [r9+32]
+	xor r13, r14
+	ror r14, 63
+	xor r12, r14
 	mov QWORD PTR [r9+640], rax
 	mov QWORD PTR [r9+648], rbx
 	mov QWORD PTR [r9+656], rcx
@@ -959,33 +959,33 @@ vg_sm4_crypt_prepared:
 	mov r12, QWORD PTR [r9+1000]
 	mov r13, QWORD PTR [r9+1016]
 	mov r14, rax
-	shr r14, 1
-	xor r14, rbx
-	and r14, QWORD PTR [r9+32]
-	xor rbx, r14
-	ror r14, 63
-	xor rax, r14
-	mov r14, rcx
-	shr r14, 1
-	xor r14, rbp
-	and r14, QWORD PTR [r9+32]
-	xor rbp, r14
-	ror r14, 63
-	xor rcx, r14
-	mov r14, r10
-	shr r14, 1
-	xor r14, r11
-	and r14, QWORD PTR [r9+32]
-	xor r11, r14
-	ror r14, 63
+	shr r14, 4
+	xor r14, r10
+	and r14, QWORD PTR [r9+48]
 	xor r10, r14
-	mov r14, r12
-	shr r14, 1
-	xor r14, r13
-	and r14, QWORD PTR [r9+32]
-	xor r13, r14
-	ror r14, 63
+	ror r14, 60
+	xor rax, r14
+	mov r14, rbx
+	shr r14, 4
+	xor r14, r11
+	and r14, QWORD PTR [r9+48]
+	xor r11, r14
+	ror r14, 60
+	xor rbx, r14
+	mov r14, rcx
+	shr r14, 4
+	xor r14, r12
+	and r14, QWORD PTR [r9+48]
 	xor r12, r14
+	ror r14, 60
+	xor rcx, r14
+	mov r14, rbp
+	shr r14, 4
+	xor r14, r13
+	and r14, QWORD PTR [r9+48]
+	xor r13, r14
+	ror r14, 60
+	xor rbp, r14
 	mov r14, rax
 	shr r14, 2
 	xor r14, rcx
@@ -1015,33 +1015,33 @@ vg_sm4_crypt_prepared:
 	ror r14, 62
 	xor r11, r14
 	mov r14, rax
-	shr r14, 4
-	xor r14, r10
-	and r14, QWORD PTR [r9+48]
-	xor r10, r14
-	ror r14, 60
-	xor rax, r14
-	mov r14, rbx
-	shr r14, 4
-	xor r14, r11
-	and r14, QWORD PTR [r9+48]
-	xor r11, r14
-	ror r14, 60
+	shr r14, 1
+	xor r14, rbx
+	and r14, QWORD PTR [r9+32]
 	xor rbx, r14
+	ror r14, 63
+	xor rax, r14
 	mov r14, rcx
-	shr r14, 4
-	xor r14, r12
-	and r14, QWORD PTR [r9+48]
-	xor r12, r14
-	ror r14, 60
-	xor rcx, r14
-	mov r14, rbp
-	shr r14, 4
-	xor r14, r13
-	and r14, QWORD PTR [r9+48]
-	xor r13, r14
-	ror r14, 60
+	shr r14, 1
+	xor r14, rbp
+	and r14, QWORD PTR [r9+32]
 	xor rbp, r14
+	ror r14, 63
+	xor rcx, r14
+	mov r14, r10
+	shr r14, 1
+	xor r14, r11
+	and r14, QWORD PTR [r9+32]
+	xor r11, r14
+	ror r14, 63
+	xor r10, r14
+	mov r14, r12
+	shr r14, 1
+	xor r14, r13
+	and r14, QWORD PTR [r9+32]
+	xor r13, r14
+	ror r14, 63
+	xor r12, r14
 	mov QWORD PTR [r9+704], rax
 	mov QWORD PTR [r9+712], rbx
 	mov QWORD PTR [r9+720], rcx
@@ -2609,33 +2609,33 @@ vg_sm4_crypt_prepared:
 	mov r12, QWORD PTR [r9+752]
 	mov r13, QWORD PTR [r9+760]
 	mov r14, rax
-	shr r14, 1
-	xor r14, rbx
-	and r14, QWORD PTR [r9+32]
-	xor rbx, r14
-	ror r14, 63
-	xor rax, r14
-	mov r14, rcx
-	shr r14, 1
-	xor r14, rbp
-	and r14, QWORD PTR [r9+32]
-	xor rbp, r14
-	ror r14, 63
-	xor rcx, r14
-	mov r14, r10
-	shr r14, 1
-	xor r14, r11
-	and r14, QWORD PTR [r9+32]
-	xor r11, r14
-	ror r14, 63
+	shr r14, 4
+	xor r14, r10
+	and r14, QWORD PTR [r9+48]
 	xor r10, r14
-	mov r14, r12
-	shr r14, 1
-	xor r14, r13
-	and r14, QWORD PTR [r9+32]
-	xor r13, r14
-	ror r14, 63
+	ror r14, 60
+	xor rax, r14
+	mov r14, rbx
+	shr r14, 4
+	xor r14, r11
+	and r14, QWORD PTR [r9+48]
+	xor r11, r14
+	ror r14, 60
+	xor rbx, r14
+	mov r14, rcx
+	shr r14, 4
+	xor r14, r12
+	and r14, QWORD PTR [r9+48]
 	xor r12, r14
+	ror r14, 60
+	xor rcx, r14
+	mov r14, rbp
+	shr r14, 4
+	xor r14, r13
+	and r14, QWORD PTR [r9+48]
+	xor r13, r14
+	ror r14, 60
+	xor rbp, r14
 	mov r14, rax
 	shr r14, 2
 	xor r14, rcx
@@ -2665,33 +2665,33 @@ vg_sm4_crypt_prepared:
 	ror r14, 62
 	xor r11, r14
 	mov r14, rax
-	shr r14, 4
-	xor r14, r10
-	and r14, QWORD PTR [r9+48]
-	xor r10, r14
-	ror r14, 60
-	xor rax, r14
-	mov r14, rbx
-	shr r14, 4
-	xor r14, r11
-	and r14, QWORD PTR [r9+48]
-	xor r11, r14
-	ror r14, 60
+	shr r14, 1
+	xor r14, rbx
+	and r14, QWORD PTR [r9+32]
 	xor rbx, r14
+	ror r14, 63
+	xor rax, r14
 	mov r14, rcx
-	shr r14, 4
-	xor r14, r12
-	and r14, QWORD PTR [r9+48]
-	xor r12, r14
-	ror r14, 60
-	xor rcx, r14
-	mov r14, rbp
-	shr r14, 4
-	xor r14, r13
-	and r14, QWORD PTR [r9+48]
-	xor r13, r14
-	ror r14, 60
+	shr r14, 1
+	xor r14, rbp
+	and r14, QWORD PTR [r9+32]
 	xor rbp, r14
+	ror r14, 63
+	xor rcx, r14
+	mov r14, r10
+	shr r14, 1
+	xor r14, r11
+	and r14, QWORD PTR [r9+32]
+	xor r11, r14
+	ror r14, 63
+	xor r10, r14
+	mov r14, r12
+	shr r14, 1
+	xor r14, r13
+	and r14, QWORD PTR [r9+32]
+	xor r13, r14
+	ror r14, 63
+	xor r12, r14
 	mov QWORD PTR [r9+768], rax
 	mov QWORD PTR [r9+784], rbx
 	mov QWORD PTR [r9+800], rcx
@@ -2709,33 +2709,33 @@ vg_sm4_crypt_prepared:
 	mov r12, QWORD PTR [r9+688]
 	mov r13, QWORD PTR [r9+696]
 	mov r14, rax
-	shr r14, 1
-	xor r14, rbx
-	and r14, QWORD PTR [r9+32]
-	xor rbx, r14
-	ror r14, 63
-	xor rax, r14
-	mov r14, rcx
-	shr r14, 1
-	xor r14, rbp
-	and r14, QWORD PTR [r9+32]
-	xor rbp, r14
-	ror r14, 63
-	xor rcx, r14
-	mov r14, r10
-	shr r14, 1
-	xor r14, r11
-	and r14, QWORD PTR [r9+32]
-	xor r11, r14
-	ror r14, 63
+	shr r14, 4
+	xor r14, r10
+	and r14, QWORD PTR [r9+48]
 	xor r10, r14
-	mov r14, r12
-	shr r14, 1
-	xor r14, r13
-	and r14, QWORD PTR [r9+32]
-	xor r13, r14
-	ror r14, 63
+	ror r14, 60
+	xor rax, r14
+	mov r14, rbx
+	shr r14, 4
+	xor r14, r11
+	and r14, QWORD PTR [r9+48]
+	xor r11, r14
+	ror r14, 60
+	xor rbx, r14
+	mov r14, rcx
+	shr r14, 4
+	xor r14, r12
+	and r14, QWORD PTR [r9+48]
 	xor r12, r14
+	ror r14, 60
+	xor rcx, r14
+	mov r14, rbp
+	shr r14, 4
+	xor r14, r13
+	and r14, QWORD PTR [r9+48]
+	xor r13, r14
+	ror r14, 60
+	xor rbp, r14
 	mov r14, rax
 	shr r14, 2
 	xor r14, rcx
@@ -2765,33 +2765,33 @@ vg_sm4_crypt_prepared:
 	ror r14, 62
 	xor r11, r14
 	mov r14, rax
-	shr r14, 4
-	xor r14, r10
-	and r14, QWORD PTR [r9+48]
-	xor r10, r14
-	ror r14, 60
-	xor rax, r14
-	mov r14, rbx
-	shr r14, 4
-	xor r14, r11
-	and r14, QWORD PTR [r9+48]
-	xor r11, r14
-	ror r14, 60
+	shr r14, 1
+	xor r14, rbx
+	and r14, QWORD PTR [r9+32]
 	xor rbx, r14
+	ror r14, 63
+	xor rax, r14
 	mov r14, rcx
-	shr r14, 4
-	xor r14, r12
-	and r14, QWORD PTR [r9+48]
-	xor r12, r14
-	ror r14, 60
-	xor rcx, r14
-	mov r14, rbp
-	shr r14, 4
-	xor r14, r13
-	and r14, QWORD PTR [r9+48]
-	xor r13, r14
-	ror r14, 60
+	shr r14, 1
+	xor r14, rbp
+	and r14, QWORD PTR [r9+32]
 	xor rbp, r14
+	ror r14, 63
+	xor rcx, r14
+	mov r14, r10
+	shr r14, 1
+	xor r14, r11
+	and r14, QWORD PTR [r9+32]
+	xor r11, r14
+	ror r14, 63
+	xor r10, r14
+	mov r14, r12
+	shr r14, 1
+	xor r14, r13
+	and r14, QWORD PTR [r9+32]
+	xor r13, r14
+	ror r14, 63
+	xor r12, r14
 	mov QWORD PTR [r9+896], rax
 	mov QWORD PTR [r9+912], rbx
 	mov QWORD PTR [r9+928], rcx
@@ -2809,33 +2809,33 @@ vg_sm4_crypt_prepared:
 	mov r12, QWORD PTR [r9+624]
 	mov r13, QWORD PTR [r9+632]
 	mov r14, rax
-	shr r14, 1
-	xor r14, rbx
-	and r14, QWORD PTR [r9+32]
-	xor rbx, r14
-	ror r14, 63
-	xor rax, r14
-	mov r14, rcx
-	shr r14, 1
-	xor r14, rbp
-	and r14, QWORD PTR [r9+32]
-	xor rbp, r14
-	ror r14, 63
-	xor rcx, r14
-	mov r14, r10
-	shr r14, 1
-	xor r14, r11
-	and r14, QWORD PTR [r9+32]
-	xor r11, r14
-	ror r14, 63
+	shr r14, 4
+	xor r14, r10
+	and r14, QWORD PTR [r9+48]
 	xor r10, r14
-	mov r14, r12
-	shr r14, 1
-	xor r14, r13
-	and r14, QWORD PTR [r9+32]
-	xor r13, r14
-	ror r14, 63
+	ror r14, 60
+	xor rax, r14
+	mov r14, rbx
+	shr r14, 4
+	xor r14, r11
+	and r14, QWORD PTR [r9+48]
+	xor r11, r14
+	ror r14, 60
+	xor rbx, r14
+	mov r14, rcx
+	shr r14, 4
+	xor r14, r12
+	and r14, QWORD PTR [r9+48]
 	xor r12, r14
+	ror r14, 60
+	xor rcx, r14
+	mov r14, rbp
+	shr r14, 4
+	xor r14, r13
+	and r14, QWORD PTR [r9+48]
+	xor r13, r14
+	ror r14, 60
+	xor rbp, r14
 	mov r14, rax
 	shr r14, 2
 	xor r14, rcx
@@ -2865,33 +2865,33 @@ vg_sm4_crypt_prepared:
 	ror r14, 62
 	xor r11, r14
 	mov r14, rax
-	shr r14, 4
-	xor r14, r10
-	and r14, QWORD PTR [r9+48]
-	xor r10, r14
-	ror r14, 60
-	xor rax, r14
-	mov r14, rbx
-	shr r14, 4
-	xor r14, r11
-	and r14, QWORD PTR [r9+48]
-	xor r11, r14
-	ror r14, 60
+	shr r14, 1
+	xor r14, rbx
+	and r14, QWORD PTR [r9+32]
 	xor rbx, r14
+	ror r14, 63
+	xor rax, r14
 	mov r14, rcx
-	shr r14, 4
-	xor r14, r12
-	and r14, QWORD PTR [r9+48]
-	xor r12, r14
-	ror r14, 60
-	xor rcx, r14
-	mov r14, rbp
-	shr r14, 4
-	xor r14, r13
-	and r14, QWORD PTR [r9+48]
-	xor r13, r14
-	ror r14, 60
+	shr r14, 1
+	xor r14, rbp
+	and r14, QWORD PTR [r9+32]
 	xor rbp, r14
+	ror r14, 63
+	xor rcx, r14
+	mov r14, r10
+	shr r14, 1
+	xor r14, r11
+	and r14, QWORD PTR [r9+32]
+	xor r11, r14
+	ror r14, 63
+	xor r10, r14
+	mov r14, r12
+	shr r14, 1
+	xor r14, r13
+	and r14, QWORD PTR [r9+32]
+	xor r13, r14
+	ror r14, 63
+	xor r12, r14
 	mov QWORD PTR [r9+776], rax
 	mov QWORD PTR [r9+792], rbx
 	mov QWORD PTR [r9+808], rcx
@@ -2909,33 +2909,33 @@ vg_sm4_crypt_prepared:
 	mov r12, QWORD PTR [r9+560]
 	mov r13, QWORD PTR [r9+568]
 	mov r14, rax
-	shr r14, 1
-	xor r14, rbx
-	and r14, QWORD PTR [r9+32]
-	xor rbx, r14
-	ror r14, 63
-	xor rax, r14
-	mov r14, rcx
-	shr r14, 1
-	xor r14, rbp
-	and r14, QWORD PTR [r9+32]
-	xor rbp, r14
-	ror r14, 63
-	xor rcx, r14
-	mov r14, r10
-	shr r14, 1
-	xor r14, r11
-	and r14, QWORD PTR [r9+32]
-	xor r11, r14
-	ror r14, 63
+	shr r14, 4
+	xor r14, r10
+	and r14, QWORD PTR [r9+48]
 	xor r10, r14
-	mov r14, r12
-	shr r14, 1
-	xor r14, r13
-	and r14, QWORD PTR [r9+32]
-	xor r13, r14
-	ror r14, 63
+	ror r14, 60
+	xor rax, r14
+	mov r14, rbx
+	shr r14, 4
+	xor r14, r11
+	and r14, QWORD PTR [r9+48]
+	xor r11, r14
+	ror r14, 60
+	xor rbx, r14
+	mov r14, rcx
+	shr r14, 4
+	xor r14, r12
+	and r14, QWORD PTR [r9+48]
 	xor r12, r14
+	ror r14, 60
+	xor rcx, r14
+	mov r14, rbp
+	shr r14, 4
+	xor r14, r13
+	and r14, QWORD PTR [r9+48]
+	xor r13, r14
+	ror r14, 60
+	xor rbp, r14
 	mov r14, rax
 	shr r14, 2
 	xor r14, rcx
@@ -2965,33 +2965,33 @@ vg_sm4_crypt_prepared:
 	ror r14, 62
 	xor r11, r14
 	mov r14, rax
-	shr r14, 4
-	xor r14, r10
-	and r14, QWORD PTR [r9+48]
-	xor r10, r14
-	ror r14, 60
-	xor rax, r14
-	mov r14, rbx
-	shr r14, 4
-	xor r14, r11
-	and r14, QWORD PTR [r9+48]
-	xor r11, r14
-	ror r14, 60
+	shr r14, 1
+	xor r14, rbx
+	and r14, QWORD PTR [r9+32]
 	xor rbx, r14
+	ror r14, 63
+	xor rax, r14
 	mov r14, rcx
-	shr r14, 4
-	xor r14, r12
-	and r14, QWORD PTR [r9+48]
-	xor r12, r14
-	ror r14, 60
-	xor rcx, r14
-	mov r14, rbp
-	shr r14, 4
-	xor r14, r13
-	and r14, QWORD PTR [r9+48]
-	xor r13, r14
-	ror r14, 60
+	shr r14, 1
+	xor r14, rbp
+	and r14, QWORD PTR [r9+32]
 	xor rbp, r14
+	ror r14, 63
+	xor rcx, r14
+	mov r14, r10
+	shr r14, 1
+	xor r14, r11
+	and r14, QWORD PTR [r9+32]
+	xor r11, r14
+	ror r14, 63
+	xor r10, r14
+	mov r14, r12
+	shr r14, 1
+	xor r14, r13
+	and r14, QWORD PTR [r9+32]
+	xor r13, r14
+	ror r14, 63
+	xor r12, r14
 	mov QWORD PTR [r9+904], rax
 	mov QWORD PTR [r9+920], rbx
 	mov QWORD PTR [r9+936], rcx

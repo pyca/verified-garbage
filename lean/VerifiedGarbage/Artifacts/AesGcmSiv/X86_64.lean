@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.AesGcm.X86_64.Instances
 public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Instances
 public import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
-public import VerifiedGarbage.Proof.Aes.X86_64.Decrypt
+public import VerifiedGarbage.Proof.Aes.X86_64.Blocks
 public import VerifiedGarbage.Proof.Aes.X86_64.VaesBlocks.Dec
 public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Fn
 public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Keys

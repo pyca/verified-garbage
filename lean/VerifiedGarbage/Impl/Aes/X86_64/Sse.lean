@@ -251,8 +251,6 @@ def invMixColumns (f : Bool) : List Instr :=
 /-- The register of the round key's address. -/
 def kp : Reg := .rax
 
-def at_ (b : Reg) (d : Nat) : MemOp := { base := b, disp := (d : Int) }
-
 def dupLow (d s : XReg) : Instr := .xop (.pshufd d s 0x44)
 def dupHigh (d s : XReg) : Instr := .xop (.pshufd d s 0xee)
 def unpckl (d s : XReg) : Instr := .xop (.bin .punpcklqdq d s)
@@ -280,9 +278,29 @@ def keyLoad2 : List Instr :=
 def keyLoad1 : List Instr :=
   [.movdquLoad (q 0) (at_ .r10 0), mv (q 4) (q 0), unpckl (q 0) (q 0), unpckh (q 4) (q 4)]
 
-/-- Every block's halves are the key's. -/
-def keySpread : List Instr :=
-  [mv (q 1) (q 0), mv (q 2) (q 0), mv (q 3) (q 0), mv (q 5) (q 4), mv (q 6) (q 4), mv (q 7) (q 4)]
+/-- Exchange bit `i` of the position with the bit of the register's number
+that tells `lo` from `hi`. -/
+def exchange1 (lo hi : XReg) (i : Nat) : List Instr :=
+  ldx .xmm9 (maskSlot i) :: swapMove lo hi .xmm8 .xmm9 (2 ^ i)
+
+/-- A round key's halves, in `q 0` and `q 4`, to its bits `j` in the order of
+the slices, with `j % 4` in the place of the block and `j / 4` telling the
+two apart; and in `q 1` and `q 5` the same in form 1. -/
+def keyMid : List Instr :=
+  exchange1 (q 0) (q 4) 3 ++ exchange1 (q 0) (q 4) 4 ++ exchange1 (q 0) (q 4) 5 ++ exchange1 (q 0) (q 4) 2 ++
+  [mv (q 1) (q 0), mv (q 5) (q 4), ldx .xmm10 highSlot, ldx .xmm11 oddSlot] ++
+  toForm1 (q 1) .xmm8 .xmm9 .xmm10 .xmm11 ++ toForm1 (q 5) .xmm8 .xmm9 .xmm10 .xmm11
+
+/-- The second key in form 1. -/
+def keyPick : List Instr := [unpckh (q 1) (q 1), unpckl (q 0) (q 1), unpckh (q 5) (q 5), unpckl (q 4) (q 5)]
+
+/-- To slices, the same for every block. -/
+def keyOut : List Instr :=
+  [mv (q 2) (q 0)] ++ exchange1 (q 0) (q 2) 1 ++ [mv (q 6) (q 4)] ++ swapMove (q 4) (q 6) .xmm8 .xmm9 2 ++
+  [mv (q 1) (q 0), mv (q 3) (q 2), mv (q 5) (q 4), mv (q 7) (q 6)] ++ exchange 0 0
+
+/-- Two round keys' halves to slices, the second key's in form 1. -/
+def keyBs : List Instr := keyMid ++ keyPick ++ keyOut
 
 /-- Store the slices' low quadwords at `kp`. -/
 def storeLow : List Instr :=
@@ -294,14 +312,9 @@ def storeHigh : List Instr :=
   (List.range 4).flatMap fun i =>
     [unpckh (q (2 * i)) (q (2 * i + 1)), .movdquStore (at_ kp (64 + 16 * i)) (q (2 * i))]
 
-/-- All slices to form 1. -/
-def form1 : List Instr :=
-  [ldx .xmm10 highSlot, ldx .xmm11 oddSlot] ++
-    (List.range 8).flatMap fun j => toForm1 (q j) .xmm8 .xmm9 .xmm10 .xmm11
-
 /-- Two round keys: the first in form 0, the second in form 1. -/
 def keyBody : List Instr :=
-  keyLoad2 ++ (keySpread ++ toBs) ++ storeLow ++ form1 ++ storeHigh ++
+  keyLoad2 ++ keyBs ++ storeLow ++ storeHigh ++
     [.alu .add .r10 (.imm 32), .alu .add kp (.imm 128), .alu .sub .rdi (.imm 1)]
 
 /-- Complement the quadword of slice `j` of the round key at `kp`. -/
@@ -318,7 +331,7 @@ def keys : Prog isa :=
   .seq (.block (setMasks ++ ([.mov .r10 (.reg .rdi), .mov kp (.reg .r9),
       .alu .add kp (.imm (BitVec.ofNat 32 keysOff)), .mov .rdi (.reg .rsi), .shift .shr .rdi 1] : List Instr)))
     (.seq (.loop (.block keyBody) .ne)
-      (.seq (.block (keyLoad1 ++ (keySpread ++ toBs) ++ storeLow ++
+      (.seq (.block (keyLoad1 ++ keyBs ++ storeLow ++
           ([.mov kp (.reg .r9), .alu .add kp (.imm (BitVec.ofNat 32 (keysOff + 64))),
             .mov .rdi (.reg .rsi)] : List Instr)))
         (.loop (.block complement) .ne)))
@@ -416,9 +429,6 @@ def blocks (crypt8 : Prog isa) : Prog isa :=
   .seq (.block [.mov .r9 (.reg .r8), .mov .r8 (.reg .rcx), .mov .rcx (.reg .rdx), .alu .test .r8 (.reg .r8)])
     (.ite .e (.block []) (.seq keys (.loop (blocksBatch crypt8) .ne)))
 
-def encryptBlocks : Prog isa := blocks encrypt8
-def decryptBlocks : Prog isa := blocks decrypt8
-
 /-! ## Counter mode -/
 
 /-- Counter block `i` of the batch to the buffer: the block in `xmm0` with the
@@ -457,8 +467,5 @@ scratch = r9)`, and (`to`) `vg_aes_ctr32_to`, whose output is at `r11`. -/
 def ctr32G (to : Bool) : Prog isa :=
   .seq (.block ((if to then [] else [.mov .r11 (.reg .rcx)]) ++ ([.alu .test .r8 (.reg .r8)] : List Instr)))
     (.ite .e (.block []) (.seq keys ctrLoop))
-
-def ctr32 : Prog isa := ctr32G false
-def ctr32To : Prog isa := ctr32G true
 
 end VG.Impl.Aes.X86_64.Sse

@@ -89,23 +89,25 @@ theorem key_bit (m : Mem) (p : Addr) {nr i n j : Nat} (hi : i ≤ nr) (hn : n < 
 
 /-! ## Loading keys -/
 
-theorem ea_at (s : State) (r : Reg) (d : Nat) : s.ea (Impl.Aes.X86_64.Sse.at_ r d) = s.gpr r + BitVec.ofNat 64 d := by
-  simp only [State.ea, Impl.Aes.X86_64.Sse.at_, BitVec.ofInt_natCast]
+theorem ea_at (s : State) (r : Reg) (d : Nat) : s.ea (Impl.Aes.X86_64.at_ r d) = s.gpr r + BitVec.ofNat 64 d := by
+  simp only [State.ea, Impl.Aes.X86_64.at_, BitVec.ofInt_natCast]
 
 theorem q_eqs : q 0 = .xmm0 ∧ q 1 = .xmm1 ∧ q 2 = .xmm2 ∧ q 3 = .xmm3 ∧ q 4 = .xmm4 ∧ q 5 = .xmm5 ∧ q 6 = .xmm6 ∧
     q 7 = .xmm7 := ⟨rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩
 
-theorem spread_ok (s : State) :
-    ∃ s', runBlock isa keySpread s = some s' ∧
-      (∀ k < 4, ∀ h < 2, s'.xmm (q (k + 4 * h)) = s.xmm (q (4 * h))) ∧
+/-- The second key's halves in form 1. -/
+theorem pick_ok (s : State) :
+    ∃ s', runBlock isa keyPick s = some s' ∧
+      (∀ l < 2, ∀ h < 2, lane q s' l (4 * h) = lane q s l (4 * h + l)) ∧
       s'.gpr = s.gpr ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
-  simp only [keySpread, mv, q, runBlock_cons, runStep_some, runBlock_nil, isa, reduceExec, XOp.exec, XBinOp.eval,
-    xmm_setXmm, gpr_setXmm, mem_setXmm, rd_setXmm, wr_setXmm, reduceCtorEq, ite_false, Option.some.injEq,
+  simp only [keyPick, unpckl, unpckh, q, runBlock_cons, runStep_some, runBlock_nil, isa, reduceExec, XOp.exec,
+    xmm_setXmm, gpr_setXmm, mem_setXmm, rd_setXmm, wr_setXmm, reduceCtorEq, ite_false, ite_true, Option.some.injEq,
     exists_eq_left', and_self, and_true]
-  intro k hk h hh
-  rcases (by omega : h = 0 ∨ h = 1) with rfl | rfl <;>
-    rcases (by omega : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3) with rfl | rfl | rfl | rfl <;>
-    simp only [reduceCtorEq, ite_false, ite_true]
+  intro l hl h hh
+  rcases (by omega : h = 0 ∨ h = 1) with rfl | rfl <;> simp only [lane, q, Nat.mul_zero, Nat.mul_one, Nat.zero_add] <;>
+    rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl <;>
+    simp only [xmm_setXmm, reduceCtorEq, ite_false, ite_true, qword_unpckl _ _ (show 0 < 2 by decide),
+      qword_unpckl _ _ (show 1 < 2 by decide), qword_unpckh _ _ (show 0 < 2 by decide), Nat.one_ne_zero, Nat.reduceAdd]
 
 /-- Where a pair's or the last key's halves come from: key `l` is at `r10 + 16 (d l)`. -/
 theorem load2_ok (s : State) (h0 : InRegions (s.rd ++ s.wr) (s.gpr .r10) 16)
@@ -152,7 +154,7 @@ theorem load1_ok (s : State) (h0 : InRegions (s.rd ++ s.wr) (s.gpr .r10) 16) :
 
 theorem lowStep (q0 q1 : XReg) (i : Nat) (s : State) (h : q0 ≠ .xmm8 ∧ q1 ≠ .xmm8)
     (hin : InRegions s.wr (s.gpr kp + BitVec.ofNat 64 (16 * i)) 16) :
-    ∃ s', runBlock isa [mv .xmm8 q0, unpckl .xmm8 q1, .movdquStore (Impl.Aes.X86_64.Sse.at_ kp (16 * i)) .xmm8] s = some s' ∧
+    ∃ s', runBlock isa [mv .xmm8 q0, unpckl .xmm8 q1, .movdquStore (Impl.Aes.X86_64.at_ kp (16 * i)) .xmm8] s = some s' ∧
       s'.mem = s.mem.writeW (s.gpr kp + BitVec.ofNat 64 (16 * i)) (XBinOp.eval .punpcklqdq (s.xmm q0) (s.xmm q1)) ∧
       (∀ x, x ≠ .xmm8 → s'.xmm x = s.xmm x) ∧ s'.gpr = s.gpr ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   obtain ⟨a1, a2⟩ := h
@@ -164,7 +166,7 @@ theorem lowStep (q0 q1 : XReg) (i : Nat) (s : State) (h : q0 ≠ .xmm8 ∧ q1 �
 
 theorem highStep (q0 q1 : XReg) (i : Nat) (s : State)
     (hin : InRegions s.wr (s.gpr kp + BitVec.ofNat 64 (64 + 16 * i)) 16) :
-    ∃ s', runBlock isa [unpckh q0 q1, .movdquStore (Impl.Aes.X86_64.Sse.at_ kp (64 + 16 * i)) q0] s = some s' ∧
+    ∃ s', runBlock isa [unpckh q0 q1, .movdquStore (Impl.Aes.X86_64.at_ kp (64 + 16 * i)) q0] s = some s' ∧
       s'.mem = s.mem.writeW (s.gpr kp + BitVec.ofNat 64 (64 + 16 * i)) (XBinOp.eval .punpckhqdq (s.xmm q0) (s.xmm q1)) ∧
       (∀ x, x ≠ q0 → s'.xmm x = s.xmm x) ∧ s'.gpr = s.gpr ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   simp only [unpckh, runBlock_cons, runStep_some, runBlock_nil, isa, reduceExec, State.store128, XOp.exec, ea_at,
@@ -221,7 +223,7 @@ theorem storeLow_ok (s : State) (hin : ∀ i < 4, InRegions s.wr (s.gpr .rax + B
       (∀ j < 8, s'.xmm (q j) = s.xmm (q j)) ∧ s'.gpr = s.gpr ∧ Frame [⟨s.gpr .rax, 64⟩] s.mem s'.mem ∧
       s'.rd = s.rd ∧ s'.wr = s.wr := by
   have key := stores_ok (fun i => [mv .xmm8 (q (2 * i)), unpckl .xmm8 (q (2 * i + 1)),
-      .movdquStore (Impl.Aes.X86_64.Sse.at_ kp (16 * i)) .xmm8]) (fun s => s.gpr .rax) 0
+      .movdquStore (Impl.Aes.X86_64.at_ kp (16 * i)) .xmm8]) (fun s => s.gpr .rax) 0
     (fun i hi s h => by
       obtain ⟨s', e, hm, hx, hg, hr, hw⟩ := lowStep (q (2 * i)) (q (2 * i + 1)) i s
         ⟨(q_ne _ (by omega)).1, (q_ne _ (by omega)).1⟩ h
@@ -230,7 +232,7 @@ theorem storeLow_ok (s : State) (hin : ∀ i < 4, InRegions s.wr (s.gpr .rax + B
   -- the low store keeps every slice
   have all : ∀ n ≤ 4, ∀ s : State, (∀ i < 4, InRegions s.wr (s.gpr .rax + BitVec.ofNat 64 (16 * i)) 16) →
       ∀ s', runBlock isa ((List.range n).flatMap fun i => [mv .xmm8 (q (2 * i)), unpckl .xmm8 (q (2 * i + 1)),
-        .movdquStore (Impl.Aes.X86_64.Sse.at_ kp (16 * i)) .xmm8]) s = some s' →
+        .movdquStore (Impl.Aes.X86_64.at_ kp (16 * i)) .xmm8]) s = some s' →
         (∀ j < 8, s'.xmm (q j) = s.xmm (q j)) ∧ s'.gpr = s.gpr ∧ s'.wr = s.wr := by
     intro n
     induction n with
@@ -253,7 +255,7 @@ theorem storeHigh_ok (s : State) (hin : ∀ i < 4, InRegions s.wr (s.gpr .rax + 
       (∀ j < 8, s'.mem.readW (s.gpr .rax + BitVec.ofNat 64 64 + BitVec.ofNat 64 (8 * j)) 64 = lane q s 1 j) ∧
       s'.gpr = s.gpr ∧ Frame [⟨s.gpr .rax + BitVec.ofNat 64 64, 64⟩] s.mem s'.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   obtain ⟨s', e, h1, -, hg, hf, hr, hw⟩ := stores_ok (fun i => [unpckh (q (2 * i)) (q (2 * i + 1)),
-      .movdquStore (Impl.Aes.X86_64.Sse.at_ kp (64 + 16 * i)) (q (2 * i))]) (fun s => s.gpr .rax + BitVec.ofNat 64 64) 1
+      .movdquStore (Impl.Aes.X86_64.at_ kp (64 + 16 * i)) (q (2 * i))]) (fun s => s.gpr .rax + BitVec.ofNat 64 64) 1
     (fun i hi s h => by
       rw [BitVec.add_assoc, ← BitVec.ofNat_add] at h
       obtain ⟨s', e, hm, hx, hg, hr, hw⟩ := highStep (q (2 * i)) (q (2 * i + 1)) i s h
@@ -266,16 +268,6 @@ theorem storeHigh_ok (s : State) (hin : ∀ i < 4, InRegions s.wr (s.gpr .rax + 
   exact ⟨s', e, h1, hg, hf, hr, hw⟩
 
 /-! ## A pair of keys -/
-
-/-- Slices of a key in form 0 become slices in form 1. -/
-theorem form1_holds {s : State} (he : Env0 s) {S : Nat → Spec.Aes.State} (hS : Holds false q s S) :
-    ∃ s', runBlock isa form1 s = some s' ∧ Keep s s' ∧ Holds true q s' S := by
-  obtain ⟨s', e, k, h⟩ := layer_ok form1_check (by decide +kernel) (by decide) he
-  refine ⟨s', e, k, fun l hl j hj n hn k hk => ?_⟩
-  rw [h l hl j hj _ (Nat.lt_of_lt_of_le (posAt_lt true hn hk) (by decide))]
-  simp only [form1T, termsXor, List.foldr_cons, List.foldr_nil, Bool.xor_false, byteAt_posAt true hn hk,
-    posAt_mod true n hk]
-  exact hS l hl j hj n hn k hk
 
 /-- The invariant of the key loop: `n` keys stored, the source at `r10`. -/
 structure KS (s₀ : State) (b sch : Addr) (nr : Nat) (n : Nat) (cnt : BitVec 64) (s : State) : Prop where
@@ -354,24 +346,41 @@ theorem KPre.inScr (hp : KPre b sch nr s₀) {s : State} (hw : s.wr = s₀.wr) {
   · exact ⟨_, h, Offset.contains_base _ (by omega) (by omega)⟩
   · exact ⟨_, h, Offset.contains_base _ hd (by omega)⟩
 
-/-- From the halves in the registers, the slices. -/
-theorem spreadBs_ok (w : List Byte) (i : Nat → Nat) {s : State} (he : Env0 s)
+/-- From the halves in the registers, the slices: of key `i 0` in form 0 in the low
+quadwords, of key `i 1` in form 1 in the high ones. -/
+theorem keyBs_ok (w : List Byte) (i : Nat → Nat) {s : State} (he : Env0 s)
     (hq : ∀ l < 2, ∀ n < 16, ∀ j < 8,
       (qword (s.xmm (q (4 * (n / 8)))) l).getLsbD (8 * (n % 8) + j) = ((rkState (Spec.Aes.roundKey w (i l))).getD n 0).getLsbD j) :
-    ∃ s', runBlock isa (keySpread ++ toBs) s = some s' ∧ Keep s s' ∧
-      Holds false q s' fun x => rkState (Spec.Aes.roundKey w (i (x / 4))) := by
-  obtain ⟨s1, e1, h1, g1, m1, r1, w1⟩ := spread_ok s
-  have k1 := keep_of he g1 m1 r1 w1
-  obtain ⟨s2, e2, k2, h2⟩ := toBs_bits (S := fun x => rkState (Spec.Aes.roundKey w (i (x / 4)))) k1.env
-    fun l hl k hk n hn j hj => by
-      rw [lane, h1 k hk _ (by omega), hq l hl n hn j hj, show (4 * l + k) / 4 = l by omega]
-  exact ⟨s2, by rw [Interleave.runBlock_append, e1, Option.bind_some, e2], k1.trans k2, h2⟩
+    ∃ s', runBlock isa keyBs s = some s' ∧ Keep s s' ∧
+      ∀ l < 2, BsRel 4 (l == 1) (lane q s' l) fun _ => rkState (Spec.Aes.roundKey w (i l)) := by
+  obtain ⟨s1, e1, k1, h1⟩ := layer_ok keyMid_check (by decide +kernel) (by decide) he
+  obtain ⟨s2, e2, h2, g2, m2, r2, w2⟩ := pick_ok s1
+  have k2 := keep_of k1.env g2 m2 r2 w2
+  obtain ⟨s3, e3, k3, h3⟩ := layer_ok keyOut_check (by decide +kernel) (by decide) k2.env
+  refine ⟨s3, ?_, k1.trans (k2.trans k3), fun l hl j hj n hn k hk => ?_⟩
+  · rw [keyBs, Interleave.runBlock_append, Interleave.runBlock_append, e1, Option.bind_some, e2, Option.bind_some, e3]
+  have hp : posAt 4 (l == 1) n k < 64 := Nat.lt_of_lt_of_le (posAt_lt _ hn hk) (by decide)
+  have hp' : posAt 4 (l == 1) n (j % 4) < 64 := Nat.lt_of_lt_of_le (posAt_lt _ hn (by omega)) (by decide)
+  have e : posAt 4 (l == 1) n k - posAt 4 (l == 1) n k % 4 + j % 4 = posAt 4 (l == 1) n (j % 4) := by
+    rw [posAt_mod _ n hk]; simp only [posAt]; omega
+  rw [h3 l hl j hj _ hp]
+  simp only [keyOutT, termsXor, List.foldr_cons, List.foldr_nil, Bool.xor_false, e]
+  rw [h2 l hl _ (by omega), h1 l hl _ (by omega) _ hp']
+  have hm : keyMidT (4 * (j / 4) + l) (posAt 4 (l == 1) n (j % 4)) = midT (l == 1) (j / 4) (posAt 4 (l == 1) n (j % 4)) := by
+    rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl
+    · simp only [keyMidT, show (4 * (j / 4) + 0) % 4 = 0 by omega, ite_true, show (4 * (j / 4) + 0) / 4 = j / 4 by omega]; rfl
+    · simp only [keyMidT, show (4 * (j / 4) + 1) % 4 = 1 by omega, Nat.one_ne_zero, ite_false, ite_true,
+        show (4 * (j / 4) + 1) / 4 = j / 4 by omega]; rfl
+  rw [hm]
+  simp only [midT, termsXor, List.foldr_cons, List.foldr_nil, Bool.xor_false, byteAt_posAt _ hn (show j % 4 < 4 by omega),
+    posAt_mod _ n (show j % 4 < 4 by omega), show 4 * (j / 4) + j % 4 = j by omega]
+  exact hq l hl n hn j hj
 
 /-- The slices of a lane, stored. -/
-theorem keyAt_of {s : State} {f : Bool} {w : List Byte} {i : Nat → Nat} {l : Nat} (hl : l < 2)
-    (h : Holds f q s fun x => rkState (Spec.Aes.roundKey w (i (x / 4)))) {m : Mem} {a : Addr}
-    (hm : ∀ j < 8, m.readW (a + BitVec.ofNat 64 (8 * j)) 64 = lane q s l j) : KeyAt m a f (Spec.Aes.roundKey w (i l)) :=
-  ((h l hl).congr fun k hk => by dsimp only; rw [show (4 * l + k) / 4 = l by omega]).congrW fun j hj => (hm j hj).symm
+theorem keyAt_of {s : State} {f : Bool} {rk : List Byte} {l : Nat}
+    (h : BsRel 4 f (lane q s l) fun _ => rkState rk) {m : Mem} {a : Addr}
+    (hm : ∀ j < 8, m.readW (a + BitVec.ofNat 64 (8 * j)) 64 = lane q s l j) : KeyAt m a f rk :=
+  h.congrW fun j hj => (hm j hj).symm
 
 theorem low_sub (b : Addr) : ∀ r ∈ [(⟨b, 288⟩ : Region)], ∃ r' ∈ [(⟨b, 1480⟩ : Region)], Region.Sub r r' := fun r hr => by
   rw [List.mem_singleton.mp hr]
@@ -388,12 +397,12 @@ theorem keyBody_ok (hp : KPre b sch nr s₀) {n c : Nat} (hn : n + 2 ≤ nr) (h2
       X86_64.eval .ne s' = some (decide (c ≠ 0)) := by
   have hnr := hp.nrs
   obtain ⟨w, hw⟩ : ∃ w, w = Spec.Aes.bytesAt s₀.mem sch (16 * (nr + 1)) := ⟨_, rfl⟩
-  refine WP.block_append (WP.block_append (WP.block_append (WP.block_append (WP.block_append ?_))))
+  refine WP.block_append (WP.block_append (WP.block_append (WP.block_append ?_)))
   obtain ⟨s1, e1, q1, g1, m1, r1, w1⟩ := load2_ok s (by rw [h.r10]; exact hp.inSch h.rd (by omega))
     (by rw [h.r10, BitVec.add_assoc, ← BitVec.ofNat_add, show 16 * n + 16 = 16 * (n + 1) by omega]
         exact hp.inSch h.rd (by omega))
   have k1 := keep_of h.env g1 m1 r1 w1
-  obtain ⟨s2, e2, k2, h2s⟩ := spreadBs_ok w (fun l => n + l) k1.env fun l hl x hx j hj => by
+  obtain ⟨s2, e2, k2, h2s⟩ := keyBs_ok w (fun l => n + l) k1.env fun l hl x hx j hj => by
     rw [q1 l hl _ (by omega), h.r10, BitVec.add_assoc sch, ← BitVec.ofNat_add, show 16 * n + 16 * l = 16 * (n + l) by omega,
       h.src hp (by omega) (by omega), hw]
     exact key_bit _ _ (by omega) hx hj
@@ -406,26 +415,22 @@ theorem keyBody_ok (hp : KPre b sch nr s₀) {n c : Nat} (hn : n + 2 ≤ nr) (h2
     exact hp.inScr wr2 (by simp only [keysOff]; omega))
   rw [rax2] at q3 f3
   have he3 := k2.env.store g3 w3 f3 (by rw [r92]; exact mask_disj b (by omega))
-  have h3s : Holds false q s3 fun x => rkState (Spec.Aes.roundKey w (n + x / 4)) := fun l hl =>
-    (h2s l hl).congrW fun j hj => by rw [lane, lane, x3 j hj]
-  obtain ⟨s4, e4, k4, h4s⟩ := form1_holds he3 h3s
-  have g4 : s4.gpr = s.gpr := k4.gpr.trans (g3.trans k2'.gpr)
-  have f4 : Frame [⟨b, 288⟩] s3.mem s4.mem := by
-    have := k4.frame
-    rwa [slotRegion, show s3.gpr cfg.base = b from by rw [show cfg.base = Reg.r9 from rfl, g3, r92]] at this
-  have wr4 : s4.wr = s₀.wr := k4.wr.trans (w3.trans wr2)
-  obtain ⟨s5, e5, q5, g5, f5, r5, w5⟩ := storeHigh_ok s4 (fun i hi => by
+  have h3s : BsRel 4 true (lane q s3 1) fun _ => rkState (Spec.Aes.roundKey w (n + 1)) :=
+    (h2s 1 (by decide)).congrW fun j hj => by rw [lane, lane, x3 j hj]
+  have g4 : s3.gpr = s.gpr := g3.trans k2'.gpr
+  have wr4 : s3.wr = s₀.wr := w3.trans wr2
+  obtain ⟨s5, e5, q5, g5, f5, r5, w5⟩ := storeHigh_ok s3 (fun i hi => by
     rw [g4, h.rax, keyAddr, BitVec.add_assoc, ← BitVec.ofNat_add]
     exact hp.inScr wr4 (by simp only [keysOff]; omega))
   have e64 : keyAddr b n + BitVec.ofNat 64 64 = keyAddr b (n + 1) := by
     rw [keyAddr, keyAddr, BitVec.add_assoc, ← BitVec.ofNat_add, show keysOff + 64 * (n + 1) = keysOff + 64 * n + 64 by omega]
   rw [g4, h.rax, e64] at q5 f5
-  have he5 := k4.env.store g5 w5 f5 (by rw [g4, h.r9]; exact mask_disj b (by omega))
+  have he5 := he3.store g5 w5 f5 (by rw [g4, h.r9]; exact mask_disj b (by omega))
   have f2 : Frame [⟨b, 288⟩] s.mem s2.mem := by
     have := k2'.frame
     rwa [slotRegion, show s.gpr cfg.base = b from h.r9] at this
   have hfr : Frame [⟨b, 1480⟩] s.mem s5.mem := by
-    refine ((f2.sub (low_sub b)).trans (f3.sub fun r hr => ?_)).trans ((f4.sub (low_sub b)).trans (f5.sub fun r hr => ?_))
+    refine ((f2.sub (low_sub b)).trans (f3.sub fun r hr => ?_)).trans (f5.sub fun r hr => ?_)
     · rw [List.mem_singleton.mp hr]
       exact ⟨_, List.mem_singleton.mpr rfl, sub_scratch b (by simp only [keysOff]; omega)⟩
     · rw [List.mem_singleton.mp hr]
@@ -435,21 +440,20 @@ theorem keyBody_ok (hp : KPre b sch nr s₀) {n c : Nat} (hn : n + 2 ≤ nr) (h2
     by_cases hi1 : i = n + 1
     · subst hi1
       rw [show ((n + 1) % 2 == 1) = true by simp; omega]
-      exact keyAt_of (i := fun l => n + l) (l := 1) (by decide) h4s q5
-    have hd : KeyAt s4.mem (keyAddr b i) (i % 2 == 1) (Spec.Aes.roundKey w i) := by
-      refine KeyAt.frame ?_ f4 (key_low_disj b (by omega))
+      exact keyAt_of (l := 1) h3s q5
+    have hd : KeyAt s3.mem (keyAddr b i) (i % 2 == 1) (Spec.Aes.roundKey w i) := by
       by_cases hi0 : i = n
       · subst hi0
         rw [show (i % 2 == 1) = false by simp; omega]
-        exact keyAt_of (i := fun l => i + l) (l := 0) (by decide) h2s q3
+        exact keyAt_of (l := 0) (h2s 0 (by decide)) q3
       · refine KeyAt.frame (KeyAt.frame ?_ f2 (key_low_disj b (by omega))) f3 fun r hr => ?_
         · rw [hw]; exact h.keys i (by omega)
         · rw [List.mem_singleton.mp hr]; exact keyAddr_disj b (by omega) (by omega)
     exact hd.frame f5 fun r hr => by rw [List.mem_singleton.mp hr]; exact keyAddr_disj b (by omega) (by omega)
-  refine WP.of_runBlock ⟨s1, e1, WP.of_runBlock ⟨s2, e2, WP.of_runBlock ⟨s3, e3, WP.of_runBlock ⟨s4, e4,
-    WP.of_runBlock ⟨s5, e5, ?_⟩⟩⟩⟩⟩
+  refine WP.of_runBlock ⟨s1, e1, WP.of_runBlock ⟨s2, e2, WP.of_runBlock ⟨s3, e3,
+    WP.of_runBlock ⟨s5, e5, ?_⟩⟩⟩⟩
   have g5' : s5.gpr = s.gpr := g5.trans g4
-  have rd5 : s5.rd = s₀.rd := r5.trans (k4.rd.trans (r3.trans (k2'.rd.trans h.rd)))
+  have rd5 : s5.rd = s₀.rd := r5.trans (r3.trans (k2'.rd.trans h.rd))
   have wr5 : s5.wr = s₀.wr := w5.trans wr4
   have ecnt : s5.gpr .rdi - BitVec.signExtend 64 (1 : BitVec 32) = BitVec.ofNat 64 c := by
     rw [g5', h.rdi, show BitVec.signExtend 64 (1 : BitVec 32) = BitVec.ofNat 64 1 by decide, BitVec.ofNat_add,
@@ -478,7 +482,7 @@ theorem keyBody_ok (hp : KPre b sch nr s₀) {n c : Nat} (hn : n + 2 ≤ nr) (h2
 
 /-- The last key. -/
 theorem lastKey_ok (hp : KPre b sch nr s₀) {s : State} (h : KS s₀ b sch nr nr 0 s) :
-    WP isa (.block (keyLoad1 ++ (keySpread ++ toBs) ++ storeLow)) s fun s' => Env0 s' ∧
+    WP isa (.block (keyLoad1 ++ keyBs ++ storeLow)) s fun s' => Env0 s' ∧
       (∀ x, x ≠ .rax → x ≠ .r10 → x ≠ .rdi → s'.gpr x = s₀.gpr x) ∧ s'.rd = s₀.rd ∧ s'.wr = s₀.wr ∧
       Frame [⟨b, 1480⟩] s₀.mem s'.mem ∧
       ∀ i ≤ nr, KeyAt s'.mem (keyAddr b i) (i % 2 == 1)
@@ -487,7 +491,7 @@ theorem lastKey_ok (hp : KPre b sch nr s₀) {s : State} (h : KS s₀ b sch nr n
   obtain ⟨w, hw⟩ : ∃ w, w = Spec.Aes.bytesAt s₀.mem sch (16 * (nr + 1)) := ⟨_, rfl⟩
   obtain ⟨s1, e1, q1, g1, m1, r1, w1⟩ := load1_ok s (by rw [h.r10]; exact hp.inSch h.rd (Nat.le_refl _))
   have k1 := keep_of h.env g1 m1 r1 w1
-  obtain ⟨s2, e2, k2, h2s⟩ := spreadBs_ok w (fun _ => nr) k1.env fun l hl x hx j hj => by
+  obtain ⟨s2, e2, k2, h2s⟩ := keyBs_ok w (fun _ => nr) k1.env fun l hl x hx j hj => by
     rw [q1 l hl _ (by omega), h.r10, h.src hp (Nat.le_refl _) (by omega), hw]
     exact key_bit _ _ (Nat.le_refl _) hx hj
   have k2' := k1.trans k2
@@ -511,7 +515,7 @@ theorem lastKey_ok (hp : KPre b sch nr s₀) {s : State} (h : KS s₀ b sch nr n
     by_cases hi0 : i = nr
     · subst hi0
       rw [show (i % 2 == 1) = false by simp; omega]
-      exact keyAt_of (i := fun _ => i) (l := 0) (by decide) h2s q3
+      exact keyAt_of (l := 0) (h2s 0 (by decide)) q3
     · refine KeyAt.frame (KeyAt.frame ?_ f2 (key_low_disj b (by omega))) f3 fun r hr => ?_
       · rw [hw]; exact h.keys i (by omega)
       · rw [List.mem_singleton.mp hr]; exact keyAddr_disj b (by omega) (by omega)

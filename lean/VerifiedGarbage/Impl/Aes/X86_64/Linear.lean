@@ -27,10 +27,14 @@ namespace VG.Impl.Aes.X86_64
 
 open VG.X86_64
 
+/-- The memory operand `d` bytes from `b`. -/
+def at_ (b : Reg) (d : Nat) : MemOp := { base := b, disp := (d : Int) }
+
 def imm (d : Reg) (v : BitVec 64) : Instr := .movImm64 d v
 def rorI (d : Reg) (n : Nat) : Instr := .shift .ror d n
 def shrI (d : Reg) (n : Nat) : Instr := .shift .shr d n
-def shlI (d : Reg) (n : Nat) : Instr := .shift .shl d n
+/-- `d` rotated left by `n`: a shift left, for words whose top `n` bits are 0. -/
+def rolI (d : Reg) (n : Nat) : Instr := .shift .ror d (64 - n)
 
 /-- Constants into slots, through `t0`. -/
 def setMasks (ms : List (Nat × BitVec 64)) : List Instr :=
@@ -39,12 +43,12 @@ def setMasks (ms : List (Nat × BitVec 64)) : List Instr :=
 /-- Exchange the bits of `r` at the positions of the mask in slot `m` with
 those `n` positions above them. -/
 def swapIn (r t : Reg) (m n : Nat) : List Instr :=
-  [movR t r, shrI t n, xorR t r, andS t m, xorR r t, shlI t n, xorR r t]
+  [movR t r, shrI t n, xorR t r, andS t m, xorR r t, rolI t n, xorR r t]
 
 /-- Exchange the bits of `lo` `n` positions above those of the mask in slot
 `m` with the bits of `hi` at those positions. -/
 def swapMove (lo hi t : Reg) (m n : Nat) : List Instr :=
-  [movR t lo, shrI t n, xorR t hi, andS t m, xorR hi t, shlI t n, xorR lo t]
+  [movR t lo, shrI t n, xorR t hi, andS t m, xorR hi t, rolI t n, xorR lo t]
 
 /-- The masks, by slot: the bytes' orders' (1–3) and `ortho`'s (4–6). -/
 def bsMasks : List (Nat × BitVec 64) :=

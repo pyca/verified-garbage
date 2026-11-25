@@ -14,7 +14,7 @@ public import VerifiedGarbage.Impl.Seed.X86_64.G16
 public import VerifiedGarbage.Proof.Seed.G16
 public import VerifiedGarbage.Proof.Seed.G16Lanes
 import VerifiedGarbage.Proof.Framework.Lit
-public import VerifiedGarbage.Proof.Aes.X86_64.Encrypt
+public import VerifiedGarbage.Proof.Aes.X86_64.Sbox
 
 /-! ### `Seed.X86_64.Steps`, which this module and modules that import it used -/
 
