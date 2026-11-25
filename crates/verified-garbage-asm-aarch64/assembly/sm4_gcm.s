@@ -563,8 +563,8 @@ vg_sm4_gcm_seal_ctr32_sm4:
 	umov x16, v8.d[0]
 	str x30, [sp, #0]
 	str x16, [sp, #8]
-	adrp x16, {vg_ghash}
-	add x16, x16, {vg_ghash}
+	adrp x16, {vg_ghash_neon}
+	add x16, x16, {vg_ghash_neon}
 	mov v8.d[0], x16
 	bl {vg_sm4_gcm_seal_core_ctr32_sm4}
 	ldr x16, [sp, #8]
@@ -639,8 +639,8 @@ vg_sm4_gcm_open_ctr32_sm4:
 	str x30, [sp, #16]
 	umov x16, v8.d[0]
 	str x16, [sp, #24]
-	adrp x16, {vg_ghash}
-	add x16, x16, {vg_ghash}
+	adrp x16, {vg_ghash_neon}
+	add x16, x16, {vg_ghash_neon}
 	mov v8.d[0], x16
 	bl {vg_sm4_gcm_open_core_ctr32_sm4}
 	ldr x16, [sp, #24]
@@ -713,8 +713,8 @@ vg_sm4_gcm_stream_encrypt_ctr32_sm4:
 	umov x16, v8.d[0]
 	str x30, [sp, #0]
 	str x16, [sp, #8]
-	adrp x16, {vg_ghash}
-	add x16, x16, {vg_ghash}
+	adrp x16, {vg_ghash_neon}
+	add x16, x16, {vg_ghash_neon}
 	mov v8.d[0], x16
 	bl {vg_sm4_gcm_stream_encrypt_core_ctr32_sm4}
 	ldr x16, [sp, #8]
@@ -789,8 +789,8 @@ vg_sm4_gcm_stream_decrypt_ctr32_sm4:
 	umov x16, v8.d[0]
 	str x30, [sp, #0]
 	str x16, [sp, #8]
-	adrp x16, {vg_ghash}
-	add x16, x16, {vg_ghash}
+	adrp x16, {vg_ghash_neon}
+	add x16, x16, {vg_ghash_neon}
 	mov v8.d[0], x16
 	bl {vg_sm4_gcm_stream_decrypt_core_ctr32_sm4}
 	ldr x16, [sp, #8]
@@ -865,8 +865,8 @@ vg_sm4_gcm_stream_finish_ctr32_sm4:
 	umov x16, v8.d[0]
 	str x30, [sp, #0]
 	str x16, [sp, #8]
-	adrp x16, {vg_ghash}
-	add x16, x16, {vg_ghash}
+	adrp x16, {vg_ghash_neon}
+	add x16, x16, {vg_ghash_neon}
 	mov v8.d[0], x16
 	bl {vg_sm4_gcm_stream_finish_core_ctr32_sm4}
 	ldr x16, [sp, #8]
@@ -941,8 +941,8 @@ vg_sm4_gcm_stream_verify_ctr32_sm4:
 	umov x16, v8.d[0]
 	str x30, [sp, #0]
 	str x16, [sp, #8]
-	adrp x16, {vg_ghash}
-	add x16, x16, {vg_ghash}
+	adrp x16, {vg_ghash_neon}
+	add x16, x16, {vg_ghash_neon}
 	mov v8.d[0], x16
 	bl {vg_sm4_gcm_stream_verify_core_ctr32_sm4}
 	ldr x16, [sp, #8]
@@ -2837,8 +2837,8 @@ vg_sm4_gcm_seal:
 	umov x16, v8.d[0]
 	str x30, [sp, #0]
 	str x16, [sp, #8]
-	adrp x16, {vg_ghash}
-	add x16, x16, {vg_ghash}
+	adrp x16, {vg_ghash_neon}
+	add x16, x16, {vg_ghash_neon}
 	mov v8.d[0], x16
 	bl {vg_sm4_gcm_seal_core}
 	ldr x16, [sp, #8]
@@ -2915,8 +2915,8 @@ vg_sm4_gcm_open:
 	str x30, [sp, #16]
 	umov x16, v8.d[0]
 	str x16, [sp, #24]
-	adrp x16, {vg_ghash}
-	add x16, x16, {vg_ghash}
+	adrp x16, {vg_ghash_neon}
+	add x16, x16, {vg_ghash_neon}
 	mov v8.d[0], x16
 	bl {vg_sm4_gcm_open_core}
 	ldr x16, [sp, #24]
@@ -2991,8 +2991,8 @@ vg_sm4_gcm_stream_encrypt:
 	umov x16, v8.d[0]
 	str x30, [sp, #0]
 	str x16, [sp, #8]
-	adrp x16, {vg_ghash}
-	add x16, x16, {vg_ghash}
+	adrp x16, {vg_ghash_neon}
+	add x16, x16, {vg_ghash_neon}
 	mov v8.d[0], x16
 	bl {vg_sm4_gcm_stream_encrypt_core}
 	ldr x16, [sp, #8]
@@ -3065,8 +3065,8 @@ vg_sm4_gcm_stream_decrypt:
 	umov x16, v8.d[0]
 	str x30, [sp, #0]
 	str x16, [sp, #8]
-	adrp x16, {vg_ghash}
-	add x16, x16, {vg_ghash}
+	adrp x16, {vg_ghash_neon}
+	add x16, x16, {vg_ghash_neon}
 	mov v8.d[0], x16
 	bl {vg_sm4_gcm_stream_decrypt_core}
 	ldr x16, [sp, #8]
@@ -3139,8 +3139,8 @@ vg_sm4_gcm_stream_finish:
 	umov x16, v8.d[0]
 	str x30, [sp, #0]
 	str x16, [sp, #8]
-	adrp x16, {vg_ghash}
-	add x16, x16, {vg_ghash}
+	adrp x16, {vg_ghash_neon}
+	add x16, x16, {vg_ghash_neon}
 	mov v8.d[0], x16
 	bl {vg_sm4_gcm_stream_finish_core}
 	ldr x16, [sp, #8]
@@ -3213,8 +3213,8 @@ vg_sm4_gcm_stream_verify:
 	umov x16, v8.d[0]
 	str x30, [sp, #0]
 	str x16, [sp, #8]
-	adrp x16, {vg_ghash}
-	add x16, x16, {vg_ghash}
+	adrp x16, {vg_ghash_neon}
+	add x16, x16, {vg_ghash_neon}
 	mov v8.d[0], x16
 	bl {vg_sm4_gcm_stream_verify_core}
 	ldr x16, [sp, #8]
@@ -3317,7 +3317,7 @@ vg_sm4_gcm_stream_init:
 	add x23, x23, x9
 	movz x10, #15, lsl #0
 	and x25, x24, x10
-	bl {vg_ghash}
+	bl {vg_ghash_neon}
 	add x12, x23, #0
 	movz x9, #0, lsl #0
 	str x9, [x19, #96]
@@ -3384,7 +3384,7 @@ vg_sm4_gcm_stream_init:
 	add x1, x20, #0
 	add x4, x19, #512
 	add x2, x19, #96
-	bl {vg_ghash}
+	bl {vg_ghash_neon}
 	lsl x9, x27, #3
 	rev x9, x9
 	str x9, [x19, #96]
@@ -3396,7 +3396,7 @@ vg_sm4_gcm_stream_init:
 	add x1, x20, #0
 	add x4, x19, #512
 	add x2, x19, #96
-	bl {vg_ghash}
+	bl {vg_ghash_neon}
 	b 21f
 20:
 	ldr w9, [x23, #0]
@@ -3559,7 +3559,7 @@ vg_sm4_gcm_stream_aad:
 	add x1, x20, #16
 	add x4, x19, #512
 	add x2, x20, #32
-	bl {vg_ghash}
+	bl {vg_ghash_neon}
 	lsr x3, x24, #4
 	add x2, x23, #0
 	add x0, x21, #240
@@ -3568,7 +3568,7 @@ vg_sm4_gcm_stream_aad:
 	lsl x9, x3, #4
 	add x23, x23, x9
 	sub x24, x24, x9
-	bl {vg_ghash}
+	bl {vg_ghash_neon}
 	add x11, x20, #32
 	add x12, x23, #0
 	add x13, x24, #0

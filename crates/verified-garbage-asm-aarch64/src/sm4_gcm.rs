@@ -337,8 +337,8 @@ pub const VG_SM4_GCM_SEAL_CTR32_SM4_FEATURES: verified_garbage_cpu::Features = v
 pub(crate) unsafe extern "C" fn vg_sm4_gcm_seal_ctr32_sm4(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r".inst 0xd10043ff,0x4e083d10,0xf90003fe,0xf90007f0",
-        concat!("adrp x16, ", vg_sym_page!("{vg_ghash}")),
-        concat!("add x16, x16, ", vg_sym_pageoff!("{vg_ghash}")),
+        concat!("adrp x16, ", vg_sym_page!("{vg_ghash_neon}")),
+        concat!("add x16, x16, ", vg_sym_pageoff!("{vg_ghash_neon}")),
         r".inst 0x4e081e08
 bl {vg_sm4_gcm_seal_core_ctr32_sm4}
 .inst 0xf94007f0,0x4e081e08,0xf94003fe,0x910043ff,0xd2800001,0xd2800002,0xd2800003,0xd2800004
@@ -354,7 +354,7 @@ cbnz x10, 20b
 .inst 0x911003ff,0xd65f03c0
 .p2align 6",
         vg_sm4_gcm_seal_core_ctr32_sm4 = sym super::sm4_gcm::vg_sm4_gcm_seal_core_ctr32_sm4::vg_sm4_gcm_seal_core_ctr32_sm4,
-        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
+        vg_ghash_neon = sym super::aes_gcm_siv::vg_ghash_neon::vg_ghash_neon,
     )
 }
 
@@ -383,8 +383,8 @@ pub const VG_SM4_GCM_OPEN_CTR32_SM4_FEATURES: verified_garbage_cpu::Features = v
 pub(crate) unsafe extern "C" fn vg_sm4_gcm_open_ctr32_sm4(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r".inst 0xd10083ff,0x910003f0,0xf94013f1,0xf9000211,0xf9000bfe,0x4e083d10,0xf9000ff0",
-        concat!("adrp x16, ", vg_sym_page!("{vg_ghash}")),
-        concat!("add x16, x16, ", vg_sym_pageoff!("{vg_ghash}")),
+        concat!("adrp x16, ", vg_sym_page!("{vg_ghash_neon}")),
+        concat!("add x16, x16, ", vg_sym_pageoff!("{vg_ghash_neon}")),
         r".inst 0x4e081e08
 bl {vg_sm4_gcm_open_core_ctr32_sm4}
 .inst 0xf9400ff0,0x4e081e08,0xf9400bfe,0x910083ff,0xd2800001,0xd2800002,0xd2800003,0xd2800004
@@ -400,7 +400,7 @@ cbnz x10, 20b
 .inst 0x3d80013f,0x911043ff,0xd65f03c0
 .p2align 6",
         vg_sm4_gcm_open_core_ctr32_sm4 = sym super::sm4_gcm::vg_sm4_gcm_open_core_ctr32_sm4::vg_sm4_gcm_open_core_ctr32_sm4,
-        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
+        vg_ghash_neon = sym super::aes_gcm_siv::vg_ghash_neon::vg_ghash_neon,
     )
 }
 
@@ -427,8 +427,8 @@ pub const VG_SM4_GCM_STREAM_ENCRYPT_CTR32_SM4_FEATURES: verified_garbage_cpu::Fe
 pub(crate) unsafe extern "C" fn vg_sm4_gcm_stream_encrypt_ctr32_sm4(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r".inst 0xd10043ff,0x4e083d10,0xf90003fe,0xf90007f0",
-        concat!("adrp x16, ", vg_sym_page!("{vg_ghash}")),
-        concat!("add x16, x16, ", vg_sym_pageoff!("{vg_ghash}")),
+        concat!("adrp x16, ", vg_sym_page!("{vg_ghash_neon}")),
+        concat!("add x16, x16, ", vg_sym_pageoff!("{vg_ghash_neon}")),
         r".inst 0x4e081e08
 bl {vg_sm4_gcm_stream_encrypt_core_ctr32_sm4}
 .inst 0xf94007f0,0x4e081e08,0xf94003fe,0x910043ff,0xd2800001,0xd2800002,0xd2800003,0xd2800004
@@ -444,7 +444,7 @@ cbnz x10, 20b
 .inst 0x3d80013f,0x3d80053f,0x3d80093f,0x910fc3ff,0xd65f03c0
 .p2align 6",
         vg_sm4_gcm_stream_encrypt_core_ctr32_sm4 = sym super::sm4_gcm::vg_sm4_gcm_stream_encrypt_core_ctr32_sm4::vg_sm4_gcm_stream_encrypt_core_ctr32_sm4,
-        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
+        vg_ghash_neon = sym super::aes_gcm_siv::vg_ghash_neon::vg_ghash_neon,
     )
 }
 
@@ -471,8 +471,8 @@ pub const VG_SM4_GCM_STREAM_DECRYPT_CTR32_SM4_FEATURES: verified_garbage_cpu::Fe
 pub(crate) unsafe extern "C" fn vg_sm4_gcm_stream_decrypt_ctr32_sm4(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r".inst 0xd10043ff,0x4e083d10,0xf90003fe,0xf90007f0",
-        concat!("adrp x16, ", vg_sym_page!("{vg_ghash}")),
-        concat!("add x16, x16, ", vg_sym_pageoff!("{vg_ghash}")),
+        concat!("adrp x16, ", vg_sym_page!("{vg_ghash_neon}")),
+        concat!("add x16, x16, ", vg_sym_pageoff!("{vg_ghash_neon}")),
         r".inst 0x4e081e08
 bl {vg_sm4_gcm_stream_decrypt_core_ctr32_sm4}
 .inst 0xf94007f0,0x4e081e08,0xf94003fe,0x910043ff,0xd2800001,0xd2800002,0xd2800003,0xd2800004
@@ -488,7 +488,7 @@ cbnz x10, 20b
 .inst 0x3d80013f,0x3d80053f,0x3d80093f,0x910fc3ff,0xd65f03c0
 .p2align 6",
         vg_sm4_gcm_stream_decrypt_core_ctr32_sm4 = sym super::sm4_gcm::vg_sm4_gcm_stream_decrypt_core_ctr32_sm4::vg_sm4_gcm_stream_decrypt_core_ctr32_sm4,
-        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
+        vg_ghash_neon = sym super::aes_gcm_siv::vg_ghash_neon::vg_ghash_neon,
     )
 }
 
@@ -514,8 +514,8 @@ pub const VG_SM4_GCM_STREAM_FINISH_CTR32_SM4_FEATURES: verified_garbage_cpu::Fea
 pub(crate) unsafe extern "C" fn vg_sm4_gcm_stream_finish_ctr32_sm4(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r".inst 0xd10043ff,0x4e083d10,0xf90003fe,0xf90007f0",
-        concat!("adrp x16, ", vg_sym_page!("{vg_ghash}")),
-        concat!("add x16, x16, ", vg_sym_pageoff!("{vg_ghash}")),
+        concat!("adrp x16, ", vg_sym_page!("{vg_ghash_neon}")),
+        concat!("add x16, x16, ", vg_sym_pageoff!("{vg_ghash_neon}")),
         r".inst 0x4e081e08
 bl {vg_sm4_gcm_stream_finish_core_ctr32_sm4}
 .inst 0xf94007f0,0x4e081e08,0xf94003fe,0x910043ff,0xd2800001,0xd2800002,0xd2800003,0xd2800004
@@ -531,7 +531,7 @@ cbnz x10, 20b
 .inst 0x3d80013f,0x3d80053f,0x3d80093f,0x910fc3ff,0xd65f03c0
 .p2align 6",
         vg_sm4_gcm_stream_finish_core_ctr32_sm4 = sym super::sm4_gcm::vg_sm4_gcm_stream_finish_core_ctr32_sm4::vg_sm4_gcm_stream_finish_core_ctr32_sm4,
-        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
+        vg_ghash_neon = sym super::aes_gcm_siv::vg_ghash_neon::vg_ghash_neon,
     )
 }
 
@@ -557,8 +557,8 @@ pub const VG_SM4_GCM_STREAM_VERIFY_CTR32_SM4_FEATURES: verified_garbage_cpu::Fea
 pub(crate) unsafe extern "C" fn vg_sm4_gcm_stream_verify_ctr32_sm4(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r".inst 0xd10043ff,0x4e083d10,0xf90003fe,0xf90007f0",
-        concat!("adrp x16, ", vg_sym_page!("{vg_ghash}")),
-        concat!("add x16, x16, ", vg_sym_pageoff!("{vg_ghash}")),
+        concat!("adrp x16, ", vg_sym_page!("{vg_ghash_neon}")),
+        concat!("add x16, x16, ", vg_sym_pageoff!("{vg_ghash_neon}")),
         r".inst 0x4e081e08
 bl {vg_sm4_gcm_stream_verify_core_ctr32_sm4}
 .inst 0xf94007f0,0x4e081e08,0xf94003fe,0x910043ff,0xd2800001,0xd2800002,0xd2800003,0xd2800004
@@ -574,7 +574,7 @@ cbnz x10, 20b
 .inst 0x3d80013f,0x3d80053f,0x3d80093f,0x910fc3ff,0xd65f03c0
 .p2align 6",
         vg_sm4_gcm_stream_verify_core_ctr32_sm4 = sym super::sm4_gcm::vg_sm4_gcm_stream_verify_core_ctr32_sm4::vg_sm4_gcm_stream_verify_core_ctr32_sm4,
-        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
+        vg_ghash_neon = sym super::aes_gcm_siv::vg_ghash_neon::vg_ghash_neon,
     )
 }
 
@@ -1542,8 +1542,8 @@ cbnz x10, 20b
 pub(crate) unsafe extern "C" fn vg_sm4_gcm_seal(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r".inst 0xd10043ff,0x4e083d10,0xf90003fe,0xf90007f0",
-        concat!("adrp x16, ", vg_sym_page!("{vg_ghash}")),
-        concat!("add x16, x16, ", vg_sym_pageoff!("{vg_ghash}")),
+        concat!("adrp x16, ", vg_sym_page!("{vg_ghash_neon}")),
+        concat!("add x16, x16, ", vg_sym_pageoff!("{vg_ghash_neon}")),
         r".inst 0x4e081e08
 bl {vg_sm4_gcm_seal_core}
 .inst 0xf94007f0,0x4e081e08,0xf94003fe,0x910043ff,0xd2800001,0xd2800002,0xd2800003,0xd2800004
@@ -1559,7 +1559,7 @@ cbnz x10, 20b
 .inst 0x3d80013f,0x3d80053f,0x913f83ff,0xd65f03c0
 .p2align 6",
         vg_sm4_gcm_seal_core = sym super::sm4_gcm::vg_sm4_gcm_seal_core::vg_sm4_gcm_seal_core,
-        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
+        vg_ghash_neon = sym super::aes_gcm_siv::vg_ghash_neon::vg_ghash_neon,
     )
 }
 
@@ -1584,8 +1584,8 @@ cbnz x10, 20b
 pub(crate) unsafe extern "C" fn vg_sm4_gcm_open(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r".inst 0xd10083ff,0x910003f0,0xf94013f1,0xf9000211,0xf9000bfe,0x4e083d10,0xf9000ff0",
-        concat!("adrp x16, ", vg_sym_page!("{vg_ghash}")),
-        concat!("add x16, x16, ", vg_sym_pageoff!("{vg_ghash}")),
+        concat!("adrp x16, ", vg_sym_page!("{vg_ghash_neon}")),
+        concat!("add x16, x16, ", vg_sym_pageoff!("{vg_ghash_neon}")),
         r".inst 0x4e081e08
 bl {vg_sm4_gcm_open_core}
 .inst 0xf9400ff0,0x4e081e08,0xf9400bfe,0x910083ff,0xd2800001,0xd2800002,0xd2800003,0xd2800004
@@ -1601,7 +1601,7 @@ cbnz x10, 20b
 .inst 0x3d80013f,0x3d80053f,0x3d80093f,0x913fc3ff,0xd65f03c0
 .p2align 6",
         vg_sm4_gcm_open_core = sym super::sm4_gcm::vg_sm4_gcm_open_core::vg_sm4_gcm_open_core,
-        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
+        vg_ghash_neon = sym super::aes_gcm_siv::vg_ghash_neon::vg_ghash_neon,
     )
 }
 
@@ -1624,8 +1624,8 @@ cbnz x10, 20b
 pub(crate) unsafe extern "C" fn vg_sm4_gcm_stream_encrypt(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r".inst 0xd10043ff,0x4e083d10,0xf90003fe,0xf90007f0",
-        concat!("adrp x16, ", vg_sym_page!("{vg_ghash}")),
-        concat!("add x16, x16, ", vg_sym_pageoff!("{vg_ghash}")),
+        concat!("adrp x16, ", vg_sym_page!("{vg_ghash_neon}")),
+        concat!("add x16, x16, ", vg_sym_pageoff!("{vg_ghash_neon}")),
         r".inst 0x4e081e08
 bl {vg_sm4_gcm_stream_encrypt_core}
 .inst 0xf94007f0,0x4e081e08,0xf94003fe,0x910043ff,0xd2800001,0xd2800002,0xd2800003,0xd2800004
@@ -1641,7 +1641,7 @@ cbnz x10, 20b
 .inst 0x3d80013f,0x913f43ff,0xd65f03c0
 .p2align 6",
         vg_sm4_gcm_stream_encrypt_core = sym super::sm4_gcm::vg_sm4_gcm_stream_encrypt_core::vg_sm4_gcm_stream_encrypt_core,
-        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
+        vg_ghash_neon = sym super::aes_gcm_siv::vg_ghash_neon::vg_ghash_neon,
     )
 }
 
@@ -1664,8 +1664,8 @@ cbnz x10, 20b
 pub(crate) unsafe extern "C" fn vg_sm4_gcm_stream_decrypt(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r".inst 0xd10043ff,0x4e083d10,0xf90003fe,0xf90007f0",
-        concat!("adrp x16, ", vg_sym_page!("{vg_ghash}")),
-        concat!("add x16, x16, ", vg_sym_pageoff!("{vg_ghash}")),
+        concat!("adrp x16, ", vg_sym_page!("{vg_ghash_neon}")),
+        concat!("add x16, x16, ", vg_sym_pageoff!("{vg_ghash_neon}")),
         r".inst 0x4e081e08
 bl {vg_sm4_gcm_stream_decrypt_core}
 .inst 0xf94007f0,0x4e081e08,0xf94003fe,0x910043ff,0xd2800001,0xd2800002,0xd2800003,0xd2800004
@@ -1681,7 +1681,7 @@ cbnz x10, 20b
 .inst 0x3d80013f,0x913f43ff,0xd65f03c0
 .p2align 6",
         vg_sm4_gcm_stream_decrypt_core = sym super::sm4_gcm::vg_sm4_gcm_stream_decrypt_core::vg_sm4_gcm_stream_decrypt_core,
-        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
+        vg_ghash_neon = sym super::aes_gcm_siv::vg_ghash_neon::vg_ghash_neon,
     )
 }
 
@@ -1703,8 +1703,8 @@ cbnz x10, 20b
 pub(crate) unsafe extern "C" fn vg_sm4_gcm_stream_finish(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r".inst 0xd10043ff,0x4e083d10,0xf90003fe,0xf90007f0",
-        concat!("adrp x16, ", vg_sym_page!("{vg_ghash}")),
-        concat!("add x16, x16, ", vg_sym_pageoff!("{vg_ghash}")),
+        concat!("adrp x16, ", vg_sym_page!("{vg_ghash_neon}")),
+        concat!("add x16, x16, ", vg_sym_pageoff!("{vg_ghash_neon}")),
         r".inst 0x4e081e08
 bl {vg_sm4_gcm_stream_finish_core}
 .inst 0xf94007f0,0x4e081e08,0xf94003fe,0x910043ff,0xd2800001,0xd2800002,0xd2800003,0xd2800004
@@ -1720,7 +1720,7 @@ cbnz x10, 20b
 .inst 0x3d80013f,0x913f43ff,0xd65f03c0
 .p2align 6",
         vg_sm4_gcm_stream_finish_core = sym super::sm4_gcm::vg_sm4_gcm_stream_finish_core::vg_sm4_gcm_stream_finish_core,
-        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
+        vg_ghash_neon = sym super::aes_gcm_siv::vg_ghash_neon::vg_ghash_neon,
     )
 }
 
@@ -1742,8 +1742,8 @@ cbnz x10, 20b
 pub(crate) unsafe extern "C" fn vg_sm4_gcm_stream_verify(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r".inst 0xd10043ff,0x4e083d10,0xf90003fe,0xf90007f0",
-        concat!("adrp x16, ", vg_sym_page!("{vg_ghash}")),
-        concat!("add x16, x16, ", vg_sym_pageoff!("{vg_ghash}")),
+        concat!("adrp x16, ", vg_sym_page!("{vg_ghash_neon}")),
+        concat!("add x16, x16, ", vg_sym_pageoff!("{vg_ghash_neon}")),
         r".inst 0x4e081e08
 bl {vg_sm4_gcm_stream_verify_core}
 .inst 0xf94007f0,0x4e081e08,0xf94003fe,0x910043ff,0xd2800001,0xd2800002,0xd2800003,0xd2800004
@@ -1759,7 +1759,7 @@ cbnz x10, 20b
 .inst 0x3d80013f,0x913f43ff,0xd65f03c0
 .p2align 6",
         vg_sm4_gcm_stream_verify_core = sym super::sm4_gcm::vg_sm4_gcm_stream_verify_core::vg_sm4_gcm_stream_verify_core,
-        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
+        vg_ghash_neon = sym super::aes_gcm_siv::vg_ghash_neon::vg_ghash_neon,
     )
 }
 
@@ -1787,7 +1787,7 @@ pub(crate) unsafe extern "C" fn vg_sm4_gcm_stream_init(ctx: *const [u64; 32], no
 cbz x9, 20f
 .inst 0xd2800009,0xf9000289,0xf9000689,0xd344ff03,0x910002e2,0x9103c2a0,0x91000281,0x91080264
 .inst 0xd37cec69,0x8b0902f7,0xd28001ea,0x8a0a0319
-bl {vg_ghash}
+bl {vg_ghash_neon}
 .inst 0x910002ec,0xd2800009,0xf9003269,0xf9003669,0x9101826b,0x9100032d
 cbz x13, 22f
 .inst 0xd342fdae
@@ -1829,10 +1829,10 @@ b 216f
 .inst 0xd2800003
 216:
 .inst 0x9103c2a0,0x91000281,0x91080264,0x91018262
-bl {vg_ghash}
+bl {vg_ghash_neon}
 .inst 0xd37df369,0xdac00d29,0xf9003269,0xd37df349,0xdac00d29,0xf9003669,0xd2800023,0x9103c2a0
 .inst 0x91000281,0x91080264,0x91018262
-bl {vg_ghash}
+bl {vg_ghash_neon}
 b 21f
 20:
 .inst 0xb94002e9,0xb94006ea,0xb9400aeb,0x52a0200c,0xb9000289,0xb900068a,0xb9000a8b,0xb9000e8c
@@ -1852,7 +1852,7 @@ b 21f
 cbnz x10, 217b
 .inst 0x912803ff,0xd65f03c0
 .p2align 6",
-        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
+        vg_ghash_neon = sym super::aes_gcm_siv::vg_ghash_neon::vg_ghash_neon,
     )
 }
 
@@ -1903,9 +1903,9 @@ b 28f
 .inst 0xd2800023
 28:
 .inst 0x9103c2a0,0x91004281,0x91080264,0x91008282
-bl {vg_ghash}
+bl {vg_ghash_neon}
 .inst 0xd344ff03,0x910002e2,0x9103c2a0,0x91004281,0x91080264,0xd37cec69,0x8b0902f7,0xcb090318
-bl {vg_ghash}
+bl {vg_ghash_neon}
 .inst 0x9100828b,0x910002ec,0x9100030d
 cbz x13, 29f
 .inst 0xd342fdae
@@ -1953,7 +1953,7 @@ b 210f
 cbnz x10, 222b
 .inst 0x912803ff,0xd65f03c0
 .p2align 6",
-        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
+        vg_ghash_neon = sym super::aes_gcm_siv::vg_ghash_neon::vg_ghash_neon,
     )
 }
 

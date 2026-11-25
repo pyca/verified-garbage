@@ -2203,7 +2203,7 @@ b 25f
 .inst 0xd10005ef
 cbnz x15, 26b
 .inst 0xd37ced49,0x8b09037b,0xcb09039c,0x91010260,0x91014261,0x91178264,0x91078262,0x91000143
-bl {vg_ghash}
+bl {vg_ghash_neon}
 .inst 0xd344ff89
 cbnz x9, 23b
 b 22f
@@ -2227,7 +2227,7 @@ b 211f
 .inst 0xd10005ef
 cbnz x15, 212b
 .inst 0xd37ced49,0x8b09037b,0xcb09039c,0x91010260,0x91014261,0x91178264,0x91078262,0x91000143
-bl {vg_ghash}
+bl {vg_ghash_neon}
 .inst 0xd344ff89
 b 28f
 27:
@@ -2248,7 +2248,7 @@ b 217f
 .inst 0xd10005ef
 cbnz x15, 218b
 .inst 0xd37ced49,0x8b09037b,0xcb09039c,0x91010260,0x91014261,0x91178264,0x91078262,0x91000143
-bl {vg_ghash}
+bl {vg_ghash_neon}
 .inst 0xd344ff89
 cbnz x9, 215b
 b 214f
@@ -2272,7 +2272,7 @@ b 223f
 .inst 0xd10005ef
 cbnz x15, 224b
 .inst 0xd37ced49,0x8b09037b,0xcb09039c,0x91010260,0x91014261,0x91178264,0x91078262,0x91000143
-bl {vg_ghash}
+bl {vg_ghash_neon}
 .inst 0xd344ff89
 b 220f
 219:
@@ -2290,7 +2290,7 @@ b 226f
 .inst 0xd10005ef
 cbnz x15, 227b
 .inst 0xd37ced49,0x8b09037b,0xcb09039c,0x91010260,0x91014261,0x91178264,0x91078262,0x91000143
-bl {vg_ghash}
+bl {vg_ghash_neon}
 .inst 0xd344ff89,0xf9402e69,0xdac00d29,0xf9402a6a,0xdac00d4a,0xf940028b,0xca0b0129,0xb9400a8b
 .inst 0xca0b014a,0xd37ff94a,0xd341fd4a,0xf9003269,0xf900366a,0xf9403269,0xf9003a69,0xf9403669
 .inst 0xf9003e69,0xd2800009,0xf9000269,0xf9000669,0x9103c260,0x910002c1,0x9101c262,0xd2800024
@@ -2334,7 +2334,7 @@ cbnz x10, 234b
 .p2align 6",
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
         vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
-        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
+        vg_ghash_neon = sym super::aes_gcm_siv::vg_ghash_neon::vg_ghash_neon,
     )
 }
 
@@ -2412,7 +2412,7 @@ b 211f
 .inst 0xd10005ef
 cbnz x15, 212b
 .inst 0xd37ced49,0x8b09037b,0xcb09039c,0x91010260,0x91014261,0x91178264,0x91078262,0x91000143
-bl {vg_ghash}
+bl {vg_ghash_neon}
 .inst 0xd344ff89
 cbnz x9, 29b
 b 28f
@@ -2436,7 +2436,7 @@ b 217f
 .inst 0xd10005ef
 cbnz x15, 218b
 .inst 0xd37ced49,0x8b09037b,0xcb09039c,0x91010260,0x91014261,0x91178264,0x91078262,0x91000143
-bl {vg_ghash}
+bl {vg_ghash_neon}
 .inst 0xd344ff89
 b 214f
 213:
@@ -2457,7 +2457,7 @@ b 223f
 .inst 0xd10005ef
 cbnz x15, 224b
 .inst 0xd37ced49,0x8b09037b,0xcb09039c,0x91010260,0x91014261,0x91178264,0x91078262,0x91000143
-bl {vg_ghash}
+bl {vg_ghash_neon}
 .inst 0xd344ff89
 cbnz x9, 221b
 b 220f
@@ -2481,7 +2481,7 @@ b 229f
 .inst 0xd10005ef
 cbnz x15, 230b
 .inst 0xd37ced49,0x8b09037b,0xcb09039c,0x91010260,0x91014261,0x91178264,0x91078262,0x91000143
-bl {vg_ghash}
+bl {vg_ghash_neon}
 .inst 0xd344ff89
 b 226f
 225:
@@ -2499,7 +2499,7 @@ b 232f
 .inst 0xd10005ef
 cbnz x15, 233b
 .inst 0xd37ced49,0x8b09037b,0xcb09039c,0x91010260,0x91014261,0x91178264,0x91078262,0x91000143
-bl {vg_ghash}
+bl {vg_ghash_neon}
 .inst 0xd344ff89,0xf9402e69,0xdac00d29,0xf9402a6a,0xdac00d4a,0xf940028b,0xca0b0129,0xb9400a8b
 .inst 0xca0b014a,0xd37ff94a,0xd341fd4a,0xf9003269,0xf900366a,0xf9403269,0xf9003a69,0xf9403669
 .inst 0xf9003e69,0xd2800009,0xf9007269,0xf9007669,0x9103c260,0x910002c1,0x9101c262,0xd2800024
@@ -2537,13 +2537,9 @@ cbnz x10, 240b
 .p2align 6",
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
         vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
-        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
+        vg_ghash_neon = sym super::aes_gcm_siv::vg_ghash_neon::vg_ghash_neon,
     )
 }
-
-#[rustfmt::skip]
-#[path = "internal/vg_ghash.rs"]
-pub(crate) mod vg_ghash;
 
 #[rustfmt::skip]
 #[path = "internal/vg_ghash_aes.rs"]
