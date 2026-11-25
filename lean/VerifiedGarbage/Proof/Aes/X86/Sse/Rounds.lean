@@ -15,7 +15,7 @@ import VerifiedGarbage.Proof.Framework.X86.Reduce
 
 `encrypt8_ok` and `decrypt8_ok`: the eight blocks in the slots are replaced
 with the cipher, or the inverse cipher, of them, given the round keys as
-`KeysAt` has them, which `keys_ok` sets up (`Keys.lean`).
+`KeysAt` has them, which `keys_ok` sets up.
 -/
 
 @[expose] public section
@@ -208,18 +208,21 @@ theorem RGood.okFirst (he : Env rd wr B S E R) {s₀ s : State} (h : RGood rd wr
     exact (he.sepS.symm.sub_left (Region.sub_prefix (by decide))).sub_right
       (part_sub_reg he.fitS (by omega_using [hj]))
 
-/-- The plain round key 0, at the schedule. -/
-theorem Good.first (he : Env rd wr B S E R) {s : State} (h : Good rd wr B S E R w s) :
-    KeyWord (s.mem.readW (xAddr S 0) 128) (Spec.Aes.roundKey w 0) := fun i hi j hj => by
+/-- The plain round key `i`, in the schedule. -/
+theorem Good.raw (he : Env rd wr B S E R) {s : State} (h : Good rd wr B S E R w s) {i : Nat} (hi : i ≤ R) :
+    KeyWord (s.mem.readW (addr S (16 * i)) 128) (Spec.Aes.roundKey w i) := fun t ht j hj => by
   have fS := he.fitS
   have hR := he.hR
-  have e := Vector.vbyte_readW s.mem (xAddr S 0) hi
-  rw [xAddr, Nat.mul_zero, addr_add64 (by omega_using [fS, hi]), Nat.zero_add,
-    h.w i (by omega_using [hi, hR])] at e
+  have e := Vector.vbyte_readW s.mem (addr S (16 * i)) ht
+  rw [addr_add64 (by omega_using [fS, ht, hi, hR]), h.w _ (by omega_using [ht, hi])] at e
   have := congrArg (fun b : Byte => b.getLsbD j) e
   simp only [VectorCrypto.vbyte, BitVec.getLsbD_extractLsb', decide_eq_true hj, Bool.true_and] at this
-  rw [xAddr, Nat.mul_zero, this]
-  simp only [Spec.Aes.roundKey, Nat.mul_zero, List.drop_zero, List.getD_eq_getElem?_getD, List.getElem?_take, hi, ite_true]
+  rw [this]
+  simp only [Spec.Aes.roundKey, List.getD_eq_getElem?_getD, List.getElem?_take, ht, ite_true, List.getElem?_drop]
+
+/-- The plain round key 0, at the schedule. -/
+theorem Good.first (he : Env rd wr B S E R) {s : State} (h : Good rd wr B S E R w s) :
+    KeyWord (s.mem.readW (xAddr S 0) 128) (Spec.Aes.roundKey w 0) := h.raw he (Nat.zero_le _)
 
 theorem roundKey_length {i : Nat} (hl : w.length = 16 * (R + 1)) (hi : i ≤ R) :
     (Spec.Aes.roundKey w i).length = 16 := by
@@ -947,6 +950,369 @@ theorem decrypt8_ok (he : Env rd wr B S E R) {s₀ : State} (hg : Good rd wr B S
   rw [o₁₃ b hb i hi j hj]
   simp only [Bool.false_eq_true, ite_false, id]
   rw [show 2 * (R / 2 - 1) + 1 = R - 1 by omega_using [hR, h2], invX, invShiftRows_c63, map_invSbox0, invCipher_eq, invSt]
+
+end
+
+/-! ## The round keys -/
+
+/-- `{63}` in every byte. -/
+def all63 : BitVec 128 := 0x63636363636363636363636363636363
+
+theorem KeyWord.xor63 {v : BitVec 128} {rk : List Byte} (h : KeyWord v rk) (hl : rk.length = 16) :
+    KeyWord (v ^^^ all63) (rk63 rk) := fun i hi j hj => by
+  rw [BitVec.getLsbD_xor, h i hi j hj, getD_rk63 _ (by rw [hl]; exact hi), BitVec.getLsbD_xor]
+  congr 1
+  exact (by decide : ∀ i < 16, ∀ j < 8, all63.getLsbD (8 * i + j) = (0x63 : Byte).getLsbD j) i hi j hj
+
+section
+variable {rd wr : List Region} {B S E : BitVec 32} {R : Nat} {w : List Byte}
+
+/-- The constants of the setup are in their slots. -/
+def ConstsAt (m : Mem) (B : BitVec 32) (n : Nat) : Prop :=
+  ∀ k < n, m.readW (xAddr B k) 128 = keyWords.getD k 0
+
+theorem slot_ne (hfit : B.toNat + 2048 ≤ 2 ^ 32) (m : Mem) (v : BitVec 128) {j k : Nat} (hj : j < 19) (hk : k < 19)
+    (h : j ≠ k) : (m.writeW (xAddr B k) v).readW (xAddr B j) 128 = m.readW (xAddr B j) 128 :=
+  Mem.readW_writeW_sep (StraightSse.slot_sep B (by omega_using [hfit, hj]) (by omega_using [hfit, hk]) h) (by decide)
+
+/-- One of the constants. -/
+theorem keyMask_ok (he : Env rd wr B S E R) {s : State} (hg : Good rd wr B S E R w s) {k : Nat} {v : BitVec 32}
+    {o : BitVec 8} (hk : k < 6) (hc : shufDwords ((0 : BitVec 96) ++ v) o = keyWords.getD k 0)
+    (hcs : ConstsAt s.mem B k) {rest : List Instr} {P : State → Prop}
+    (h : ∀ s', Good rd wr B S E R w s' → ConstsAt s'.mem B (k + 1) → Frame [reg32 B 304] s.mem s'.mem →
+      WP isa (.block rest) s' P) :
+    WP isa (.block ([movI .ecx v, .xop (.movd .xmm0 .ecx), shd .xmm0 .xmm0 o, sv k .xmm0] ++ rest)) s P := by
+  have fB := he.fitB
+  refine wpx_movi fun s₁ u₁ => ?_
+  have g₁ := hg.upd he u₁.toUpd (by decide) (by decide)
+  let s₂ := (XOp.pshufd .xmm0 .xmm0 o).exec (s₁.setXmm .xmm0 ((0 : BitVec 96) ++ s₁.gpr .ecx))
+  have x₂ : s₂.xmm .xmm0 = keyWords.getD k 0 := by
+    rw [← hc, ← u₁.gpr]; simp [s₂, XOp.exec, State.setXmm]
+  refine Wp.cons rfl (Wp.cons (s' := s₂) rfl ?_)
+  have hin : InRegions s₂.wr (addr B (16 * k)) 16 := by
+    show InRegions s₁.wr _ _
+    rw [g₁.wr]; exact in_reg he.scr fB (by omega_using [hk]) (by decide)
+  have hcont : (reg32 B 304).Contains (addr B (16 * k)) (128 / 8) :=
+    reg_contains (by omega_using [fB]) (by omega_using [hk]) (by decide)
+  refine Wp.cons (s' := { s₂ with mem := s₂.mem.writeW (addr B (16 * k)) (s₂.xmm .xmm0) }) ?_ (h _ ?_ (fun j hj => ?_) ?_)
+  · have e : s₂.ea (slot k) = addr B (16 * k) := by
+      rw [slot, at_, ea_mk]; exact congrArg (fun b => addr b (16 * k)) (show s₁.gpr .edi = B from g₁.edi)
+    simp only [sv, reduceExec, State.store128, e, hin, ite_true]
+  · refine g₁.step he (rs := [reg32 B 304]) rfl rfl rfl rfl ?_ fun r hr => ?_
+    · exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ hcont
+    · simp only [List.mem_singleton] at hr; subst hr; exact Region.sub_prefix (by decide)
+  · show (s₁.mem.writeW (xAddr B k) (s₂.xmm .xmm0)).readW (xAddr B j) 128 = _
+    by_cases hjk : j = k
+    · subst hjk
+      rw [x₂]
+      exact Mem.readW_writeW_self s₁.mem (xAddr B j) 16 (keyWords.getD j 0) (by decide)
+    · rw [slot_ne fB _ _ (by omega_using [hj, hk]) (by omega_using [hk]) hjk, u₁.mem]
+      exact hcs j (by omega_using [hj, hjk])
+  · show Frame _ s.mem (s₁.mem.writeW _ _)
+    rw [u₁.mem]
+    exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ hcont
+
+theorem keyMasks_ok (he : Env rd wr B S E R) {s : State} (hg : Good rd wr B S E R w s) {rest : List Instr}
+    {P : State → Prop} (h : ∀ s', Good rd wr B S E R w s' → ConstsAt s'.mem B 6 → Frame [reg32 B 304] s.mem s'.mem →
+      WP isa (.block rest) s' P) : WP isa (.block (keyMasks ++ rest)) s P := by
+  show WP isa (.block ([movI .ecx 0x0F0F0F0F, .xop (.movd .xmm0 .ecx), shd .xmm0 .xmm0 0x00, sv 0 .xmm0] ++
+    ([movI .ecx 0x33333333, .xop (.movd .xmm0 .ecx), shd .xmm0 .xmm0 0x00, sv 1 .xmm0] ++
+    ([movI .ecx 0x55555555, .xop (.movd .xmm0 .ecx), shd .xmm0 .xmm0 0x00, sv 2 .xmm0] ++
+    ([movI .ecx 0xFF00FF00, .xop (.movd .xmm0 .ecx), shd .xmm0 .xmm0 0x44, sv 3 .xmm0] ++
+    ([movI .ecx 0xFFFFFFFF, .xop (.movd .xmm0 .ecx), shd .xmm0 .xmm0 0x11, sv 4 .xmm0] ++
+    ([movI .ecx 0x63636363, .xop (.movd .xmm0 .ecx), shd .xmm0 .xmm0 0x00, sv 5 .xmm0] ++ rest))))))) s P
+  refine keyMask_ok he hg (by decide) (by decide) (fun k hk => absurd hk (Nat.not_lt_zero k)) fun s₁ g₁ c₁ f₁ => ?_
+  refine keyMask_ok he g₁ (by decide) (by decide) c₁ fun s₂ g₂ c₂ f₂ => ?_
+  refine keyMask_ok he g₂ (by decide) (by decide) c₂ fun s₃ g₃ c₃ f₃ => ?_
+  refine keyMask_ok he g₃ (by decide) (by decide) c₃ fun s₄ g₄ c₄ f₄ => ?_
+  refine keyMask_ok he g₄ (by decide) (by decide) c₄ fun s₅ g₅ c₅ f₅ => ?_
+  refine keyMask_ok he g₅ (by decide) (by decide) c₅ fun s₆ g₆ c₆ f₆ => ?_
+  exact h s₆ g₆ c₆ ((((f₁.trans f₂).trans f₃).trans f₄).trans f₅ |>.trans f₆)
+
+/-- The setup's regions. -/
+abbrev setupRs (B : BitVec 32) : List Region := [reg32 B 304, ⟨addr B keysOff, 1664⟩]
+
+theorem setup_sub (hfit : B.toNat + 2048 ≤ 2 ^ 32) : ∀ r ∈ setupRs B, Region.Sub r (reg32 B 2048) := fun r hr => by
+  simp only [setupRs, List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl
+  · exact Region.sub_prefix (by decide)
+  · exact part_sub_reg hfit (by decide)
+
+/-- Before the round key `i`, `c` counted in `ecx`. -/
+structure KInv (rd wr : List Region) (B S E : BitVec 32) (R : Nat) (w : List Byte) (s₀ : State) (c i : Nat)
+    (s : State) : Prop where
+  good : Good rd wr B S E R w s
+  cnt : s.gpr .ecx = BitVec.ofNat 32 c
+  src : s.gpr .eax = S + BitVec.ofNat 32 (16 * i)
+  dst : s.gpr .edx = keyPtr B i
+  consts : ConstsAt s.mem B 6
+  mid : ∀ k, 1 ≤ k → k < i → BsRel 8 (k % 2 == 1) (fun j => s.mem.readW (xAddr (keyPtr B k) j) 128)
+    fun _ => rkState (key63 w k)
+  last : KeyWord (s.mem.readW (xAddr B 18) 128) (key63 w R)
+  frame : Frame (setupRs B) s₀.mem s.mem
+
+/-- A round key to slices. -/
+theorem key_run {s : State} (f : Bool) (hok : OkAt .edx 8 .edi 6 s) (hc : ∀ k < 6,
+    s.mem.readW (xAddr (s.gpr .edi) k) 128 = keyWords.getD k 0) :
+    ∃ s', runBlock isa (keyBytes f ++ keySlices) s = some s' ∧ s' = { s with xmm := s'.xmm, mem := s'.mem } ∧
+      Frame [⟨(s.gpr .edx).setWidth 64, 128⟩] s.mem s'.mem ∧
+      ∀ j < 8, ∀ p < 128, (s'.mem.readW (xAddr (s.gpr .edx) j) 128).getLsbD p =
+        (s.xmm .xmm0 ^^^ all63).getLsbD (8 * byteAt 8 f p + j) := by
+  have hchk := key_check f
+  rw [keyCheck, Bool.and_eq_true] at hchk
+  obtain ⟨hsse, hchk⟩ := hchk
+  obtain ⟨e', he, hpost⟩ := StraightSse.of_check _ _ _ hchk
+  let W : Nat → BitVec 128 := fun _ => s.xmm .xmm0 ^^^ all63
+  have hrel : StraightSse.Rel (LaneRel 7 (assign W (2 ^ 7))) (cfgAt .edx 8 .edi 6) keyExt
+      { reg := fun r => if r = .xmm0 then some (StraightSse.inX 0 all63) else none
+        slot := fun _ => none } s := by
+    refine ⟨fun r a h => ?_, (fun _ _ _ h => by cases h), fun k a hk h => ?_⟩
+    · simp only at h
+      split at h
+      · rename_i hr
+        subst hr
+        rw [← Option.some.inj h]
+        have := StraightSse.inX_rel (k := 7) W (i := 0) (by decide) all63
+        rwa [show W 0 ^^^ all63 = s.xmm .xmm0 by simp only [W, BitVec.xor_assoc, BitVec.xor_self, BitVec.xor_zero]] at this
+      · cases h
+    · simp only [keyExt, Option.map_eq_some_iff] at h
+      obtain ⟨v, hv, rfl⟩ := h
+      show LaneRel _ _ _ (s.mem.readW (xAddr (s.gpr .edi) k) 128)
+      rw [hc k hk, List.getD_eq_getElem?_getD, hv]
+      exact lanes_sound.const rfl
+  obtain ⟨s', hs', p⟩ := run' (StraightSse.ofDom_sound _ lanes_sound) hsse hok hrel he
+  refine ⟨s', hs', p.only, p.frame, fun j hj q hq => ?_⟩
+  obtain ⟨h1, h2⟩ := outOkW_spec (List.all_eq_true.mp hpost j (List.mem_range.mpr hj))
+  have := outWordW_rel_of_lt h2 (p.rel.slot j _ hj h1) q hq
+  have hg : s'.gpr = s.gpr := by rw [p.only]
+  rw [show s'.gpr (cfgAt .edx 8 .edi 6).base = s.gpr .edx from congrFun hg _] at this
+  rw [this, keyT, xorBits_cons, xorBits_nil, Bool.xor_false]
+  have hb : byteAt 8 f q < 16 := by unfold byteAt; split <;> omega
+  have := bitOf_word W 0 (8 * byteAt 8 f q + j) (by omega_using [hb, hj])
+  rwa [Nat.mul_zero, Nat.zero_add] at this
+
+/-- A round key, from the schedule to slices, and on. -/
+theorem keyOne_ok (he : Env rd wr B S E R) {s₀ s : State} {c i : Nat} {f : Bool} (hf : (i % 2 == 1) = f) (h1 : 1 ≤ i)
+    (hi : i < R)
+    (h : KInv rd wr B S E R w s₀ c i s) {rest : List Instr} {P : State → Prop}
+    (k : ∀ s', KInv rd wr B S E R w s₀ c (i + 1) s' → WP isa (.block rest) s' P) :
+    WP isa (.block (lk .xmm0 0 :: (keyBytes f ++ keySlices ++ [addI kp 16]) ++ addI dp 128 :: rest)) s P := by
+  subst hf
+  have fB := he.fitB
+  have fS := he.fitS
+  have hR := he.hR
+  show WP isa (.block (lk .xmm0 0 :: (keyBytes (i % 2 == 1) ++ keySlices ++ [addI kp 16] ++ addI dp 128 :: rest))) s P
+  have hea : s.ea (at_ kp (16 * 0)) = addr S (16 * i) := by
+    rw [at_, ea_mk, show s.gpr kp = _ from h.src, addr_add, Nat.mul_zero, Nat.add_zero]
+  have hin : InRegions (s.rd ++ s.wr) (addr S (16 * i)) 16 := by
+    rw [h.good.rd, h.good.wr]; exact in_reg he.sch fS (by omega_using [hi, hR]) (by decide)
+  refine Wp.cons (s' := s.setXmm .xmm0 (s.mem.readW (addr S (16 * i)) 128))
+    (by simp only [lk, reduceExec, State.load128, hea, hin, ite_true, Option.map_some]) ?_
+  have hok : OkAt .edx 8 .edi 6 (s.setXmm .xmm0 (s.mem.readW (addr S (16 * i)) 128)) := by
+    refine ⟨fun j hj => ?_, fun j hj => ?_, ?_, fun a ha j hj => ?_⟩
+    · show InRegions s.wr (xAddr (s.gpr .edx) j) 16
+      rw [h.dst, keyPtr_addr, h.good.wr]
+      exact in_reg he.scr fB (by simp only [keysOff]; omega_using [h1, hi, hR, hj]) (by decide)
+    · show InRegions (s.rd ++ s.wr) (xAddr (s.gpr .edi) j) 16
+      rw [h.good.edi, h.good.rd, h.good.wr]
+      exact in_rd (in_reg he.scr fB (by omega_using [hj]) (by decide))
+    · show (s.gpr .edx).toNat + 128 ≤ 2 ^ 32
+      rw [h.dst, keyPtr, Straight.toNat_add_off (by simp only [keysOff]; omega_using [fB, h1, hi, hR])]
+      simp only [keysOff]; omega_using [fB, h1, hi, hR]
+    · show Mem.Sep (xAddr (s.gpr .edx) a) 16 (xAddr (s.gpr .edi) j) 16
+      rw [h.dst, keyPtr_addr, h.good.edi]
+      exact (part_disj fB (by simp only [keysOff]; omega_using [h1, hi, hR, ha]) (by omega_using [hj])
+        (.inr (by simp only [keysOff]; omega_using [hj]))).sep (Region.contains_self _ _) (Region.contains_self _ _)
+  rw [List.append_assoc, WP.block_append_iff]
+  obtain ⟨s₁, hs₁, o₁, f₁, v₁⟩ := key_run (i % 2 == 1) hok (by
+    intro k hk
+    show s.mem.readW (xAddr (s.gpr .edi) k) 128 = _
+    rw [h.good.edi]; exact h.consts k hk)
+  refine WP.of_runBlock ⟨s₁, hs₁, wpx_addi fun s₂ u₂ => wpx_addi fun s₃ u₃ => k s₃ ?_⟩
+  -- What the slices are.
+  have g₁ : s₁.gpr = s.gpr := by rw [o₁]; rfl
+  have f₁' : Frame [⟨addr B (keysOff + 128 * (i - 1)), 128⟩] s.mem s₁.mem := by
+    have : Frame [⟨(s.gpr .edx).setWidth 64, 128⟩] s.mem s₁.mem := f₁
+    rwa [h.dst, keyPtr, ← addr_zero, addr_add, Nat.add_zero] at this
+  have hd : ∀ {o l : Nat}, o + l ≤ 2048 → (o + l ≤ keysOff + 128 * (i - 1) ∨ keysOff + 128 * i ≤ o) →
+      ∀ r ∈ [(⟨addr B (keysOff + 128 * (i - 1)), 128⟩ : Region)], Region.Disjoint ⟨addr B o, l⟩ r := fun ho hc r hr => by
+    simp only [List.mem_singleton] at hr; subst hr
+    exact part_disj fB ho (by simp only [keysOff]; omega_using [h1, hi, hR]) (by omega_using [hc, h1])
+  have hsub : ∀ r ∈ [(⟨addr B (keysOff + 128 * (i - 1)), 128⟩ : Region)], Region.Sub r (reg32 B 2048) := fun r hr => by
+    simp only [List.mem_singleton] at hr; subst hr
+    exact part_sub_reg fB (by simp only [keysOff]; omega_using [h1, hi, hR])
+  have good₁ : Good rd wr B S E R w s₁ := h.good.step he (by rw [o₁]; rfl) (by rw [o₁]; rfl) (by rw [g₁]) (by rw [g₁])
+    f₁' hsub
+  have m₃ : s₃.mem = s₁.mem := by rw [u₃.mem, u₂.mem]
+  refine
+    { good := (good₁.upd he u₂.toUpd (by decide) (by decide)).upd he u₃.toUpd (by decide) (by decide)
+      cnt := by rw [u₃.other _ (by decide), u₂.other _ (by decide), g₁, h.cnt]
+      src := by
+        rw [u₃.other _ (by decide), show s₂.gpr .eax = _ from u₂.gpr, show s₁.gpr kp = s.gpr .eax from congrFun g₁ _,
+          h.src, BitVec.add_assoc, show (16 : BitVec 32) = BitVec.ofNat 32 16 from rfl, ← BitVec.ofNat_add,
+          Nat.mul_succ]
+      dst := by
+        rw [show s₃.gpr .edx = _ from u₃.gpr, show s₂.gpr dp = s₁.gpr .edx from u₂.other _ (by decide), g₁, h.dst,
+          keyPtr_succ h1]
+      consts := fun j hj => by
+        rw [m₃, f₁'.readW (Region.contains_self _ _) (hd (o := 16 * j) (l := 16) (by omega_using [hj])
+          (.inl (by simp only [keysOff]; omega_using [hj]))) (by decide)]
+        exact h.consts j hj
+      mid := fun j hj1 hj => ?_
+      last := by
+        rw [m₃, f₁'.readW (Region.contains_self _ _) (hd (o := 288) (l := 16) (by decide)
+          (.inl (by simp only [keysOff]; omega_using []))) (by decide)]
+        exact h.last
+      frame := by
+        rw [m₃]
+        refine h.frame.trans (f₁'.sub fun r hr => ⟨⟨addr B keysOff, 1664⟩, by simp, ?_⟩)
+        simp only [List.mem_singleton] at hr; subst hr
+        exact part_sub fB (by decide) (by omega_using []) (by simp only [keysOff]; omega_using [h1, hi, hR]) }
+  rw [m₃]
+  by_cases hji : j = i
+  · subst hji
+    intro a ha n hn k hk
+    have hp := posAt_lt (B := 8) (j % 2 == 1) hn hk
+    have := v₁ a ha _ hp
+    rw [show (State.gpr (s.setXmm .xmm0 (s.mem.readW (addr S (16 * j)) 128))) .edx = keyPtr B j from h.dst,
+      byteAt_posAt _ hn hk] at this
+    rw [this]
+    have hraw := (h.good.raw he (Nat.le_of_lt hi)).xor63 (roundKey_length h.good.len (Nat.le_of_lt hi)) n hn a ha
+    rw [getD_rkState _ hn, key63, ← hraw]
+    rfl
+  · refine (h.mid j hj1 (by omega_using [hj, hji])).congrW fun a ha => ?_
+    rw [keyPtr_addr, f₁'.readW (Region.contains_self _ _) (hd (l := 16)
+      (by simp only [keysOff]; omega_using [hj1, hj, hi, hR, ha])
+      (.inl (by omega_using [hj1, hj, hji, ha]))) (by decide)]
+
+theorem keys_ok (he : Env rd wr B S E R) {s₀ : State} (hg : Good rd wr B S E R w s₀) :
+    WP isa keys s₀ fun s => Good rd wr B S E R w s ∧ Frame (setupRs B) s₀.mem s.mem ∧ KeysAt s.mem B w (R - 1) := by
+  have fB := he.fitB
+  have fS := he.fitS
+  have hR := he.hR
+  have h2 := he.half
+  unfold keys
+  refine WP.seq ?_
+  rw [List.append_assoc, List.append_assoc]
+  refine keyMasks_ok he hg fun s₁ g₁ c₁ f₁ => ?_
+  refine wpx_ldm (A := E) (o := 4) g₁.esp (by rw [g₁.rd, g₁.wr]; exact he.argIn 0 (by decide)) fun s₂ u₂ => ?_
+  have g₂ := g₁.upd he u₂.toUpd (by decide) (by decide)
+  refine wpx_ldm (A := E) (o := 8) g₂.esp (by rw [g₂.rd, g₂.wr]; exact he.argIn 1 (by decide)) fun s₃ u₃ => ?_
+  refine wpx_mov fun s₄ u₄ => wpx_add fun a₁ v₁ => wpx_add fun a₂ v₂ => wpx_add fun a₃ v₃ => wpx_add fun a₄ v₄ =>
+    wpx_add fun s₅ u₅ => ?_
+  have g₅ := (((((((g₂.upd he u₃.toUpd (by decide) (by decide)).upd he u₄.toUpd (by decide) (by decide)).upd he v₁.toUpd
+    (by decide) (by decide)).upd he v₂.toUpd (by decide) (by decide)).upd he v₃.toUpd (by decide) (by decide)).upd he
+    v₄.toUpd (by decide) (by decide)).upd he u₅.toUpd (by decide) (by decide))
+  have m₅ : s₅.mem = s₁.mem := by
+    rw [u₅.mem, v₄.mem, v₃.mem, v₂.mem, v₁.mem, u₄.mem, u₃.mem, u₂.mem]
+  have ax₅ : s₅.gpr .eax = S := by
+    rw [u₅.other _ (by decide), v₄.other _ (by decide), v₃.other _ (by decide), v₂.other _ (by decide),
+      v₁.other _ (by decide), u₄.other _ (by decide), u₃.other _ (by decide), u₂.gpr, g₁.arg0]
+  have cx₃ : s₃.gpr .ecx = BitVec.ofNat 32 R := by rw [u₃.gpr, g₂.arg1]
+  have cx₅ : s₅.gpr .ecx = BitVec.ofNat 32 R := by
+    rw [u₅.other _ (by decide), v₄.other _ (by decide), v₃.other _ (by decide), v₂.other _ (by decide),
+      v₁.other _ (by decide), u₄.other _ (by decide), cx₃]
+  have dbl2 : ∀ x : Nat, BitVec.ofNat 32 x + BitVec.ofNat 32 x = BitVec.ofNat 32 (2 * x) := fun x => by
+    rw [← BitVec.ofNat_add, Nat.two_mul]
+  have dx₅ : s₅.gpr .edx = S + BitVec.ofNat 32 (16 * R) := by
+    rw [u₅.gpr, v₄.gpr, v₃.gpr, v₂.gpr, v₁.gpr, u₄.gpr, cx₃, dbl2, dbl2, dbl2, dbl2,
+      show 2 * (2 * (2 * (2 * R))) = 16 * R by omega_using [],
+      show a₄.gpr .eax = S by rw [← ax₅, u₅.other _ (by decide)], BitVec.add_comm]
+  -- The last round key.
+  have hea : s₅.ea (at_ .edx 0) = addr S (16 * R) := by rw [at_, ea_mk, dx₅, addr_add, Nat.add_zero]
+  have hin : InRegions (s₅.rd ++ s₅.wr) (addr S (16 * R)) 16 := by
+    rw [g₅.rd, g₅.wr]; exact in_reg he.sch fS (by omega_using [hR]) (by decide)
+  let s₆ := s₅.setXmm .xmm0 (s₅.mem.readW (addr S (16 * R)) 128)
+  refine Wp.cons (s' := s₆) (by simp only [s₆, reduceExec, State.load128, hea, hin, ite_true, Option.map_some]) ?_
+  have hea5 : s₆.ea (slot 5) = addr B (16 * 5) := by
+    rw [slot, at_, ea_mk]; exact congrArg (fun b => addr b (16 * 5)) (show s₅.gpr .edi = B from g₅.edi)
+  have hin5 : InRegions (s₆.rd ++ s₆.wr) (addr B (16 * 5)) 16 := by
+    show InRegions (s₅.rd ++ s₅.wr) _ _
+    rw [g₅.rd, g₅.wr]; exact in_rd (in_reg he.scr fB (by decide) (by decide))
+  let s₇ := s₆.setXmm .xmm1 (s₆.mem.readW (addr B (16 * 5)) 128)
+  refine Wp.cons (s' := s₇) (by simp only [s₇, ld, reduceExec, State.load128, hea5, hin5, ite_true, Option.map_some]) ?_
+  let s₈ := (XOp.bin .pxor .xmm0 .xmm1).exec s₇
+  refine Wp.cons (s' := s₈) rfl ?_
+  have x₈ : s₈.xmm .xmm0 = s₅.mem.readW (addr S (16 * R)) 128 ^^^ all63 := by
+    have : s₅.mem.readW (xAddr B 5) 128 = all63 := by rw [m₅, c₁ 5 (by decide)]; rfl
+    exact congrArg (s₅.mem.readW (addr S (16 * R)) 128 ^^^ ·) this
+  have heaL : s₈.ea (slot lastSlot) = addr B (16 * 18) := by
+    rw [slot, at_, ea_mk]; exact congrArg (fun b => addr b (16 * 18)) (show s₅.gpr .edi = B from g₅.edi)
+  have hinL : InRegions s₈.wr (addr B (16 * 18)) 16 := by
+    show InRegions s₅.wr _ _
+    rw [g₅.wr]; exact in_reg he.scr fB (by decide) (by decide)
+  have hcL : (reg32 B 304).Contains (addr B (16 * 18)) (128 / 8) := reg_contains (by omega_using [fB]) (by decide) (by decide)
+  let s₉ : State := { s₈ with mem := s₈.mem.writeW (addr B (16 * 18)) (s₈.xmm .xmm0) }
+  refine Wp.cons (s' := s₉) (by simp only [s₉, sv, reduceExec, State.store128, heaL, hinL, ite_true]) ?_
+  have g₉ : Good rd wr B S E R w s₉ := by
+    refine g₅.step he (rs := [reg32 B 304]) rfl rfl rfl rfl ?_ fun r hr => ?_
+    · exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ hcL
+    · simp only [List.mem_singleton] at hr; subst hr; exact Region.sub_prefix (by decide)
+  have m₉ : s₉.mem = s₁.mem.writeW (xAddr B 18) (s₈.xmm .xmm0) := by
+    show s₅.mem.writeW _ _ = _
+    rw [m₅]
+  refine wpx_shr (by decide) fun s₁₀ u₁₀ => wpx_addi fun s₁₁ u₁₁ => wpx_mov fun s₁₂ u₁₂ => wpx_addi fun s₁₃ u₁₃ =>
+    WP.block_nil ?_
+  have m₁₃ : s₁₃.mem = s₁.mem.writeW (xAddr B 18) (s₈.xmm .xmm0) := by
+    rw [u₁₃.mem, u₁₂.mem, u₁₁.mem, u₁₀.mem, m₉]
+  have ki : KInv rd wr B S E R w s₀ (R / 2 - 0) (2 * 0 + 1) s₁₃ :=
+    { good := (((g₉.upd he u₁₀.toUpd (by decide) (by decide)).upd he u₁₁.toUpd (by decide) (by decide)).upd he u₁₂.toUpd
+        (by decide) (by decide)).upd he u₁₃.toUpd (by decide) (by decide)
+      cnt := by
+        rw [u₁₃.other _ (by decide), u₁₂.other _ (by decide), u₁₁.other _ (by decide), u₁₀.gpr,
+          show s₉.gpr .ecx = _ from cx₅]
+        rcases he.rounds with rfl | rfl | rfl <;> rfl
+      src := by
+        rw [u₁₃.other _ (by decide), u₁₂.other _ (by decide), u₁₁.gpr, u₁₀.other _ (by decide),
+          show s₉.gpr .eax = _ from ax₅]
+        rfl
+      dst := by
+        rw [u₁₃.gpr, u₁₂.gpr, u₁₁.other _ (by decide), u₁₀.other _ (by decide), show s₉.gpr .edi = _ from g₅.edi]
+        rfl
+      consts := fun j hj => by
+        rw [m₁₃, slot_ne fB _ _ (by omega_using [hj]) (by decide) (by omega_using [hj])]
+        exact c₁ j hj
+      mid := fun k h1 h2 => absurd h1 (by omega_using [h2])
+      last := by
+        rw [m₁₃, show (s₁.mem.writeW (xAddr B 18) (s₈.xmm .xmm0)).readW (xAddr B 18) 128 = s₈.xmm .xmm0 from
+          Mem.readW_writeW_self s₁.mem (xAddr B 18) 16 (s₈.xmm .xmm0) (by decide), x₈]
+        exact (g₅.raw he (Nat.le_refl R)).xor63 (roundKey_length hg.len (Nat.le_refl R))
+      frame := by
+        rw [m₁₃]
+        exact (f₁.mono (by simp)).writeW (r := reg32 B 304) (by simp) _ hcL }
+  refine WP.mono (rounds_ok (a := lk .xmm0 0 :: (keyBytes true ++ keySlices ++ [addI kp 16]))
+    (b := lk .xmm0 0 :: (keyBytes false ++ keySlices ++ [addI kp 16])) (step := addI dp 128) (h := R / 2)
+    (by omega_using [hR]) (Pr := fun i => KInv rd wr B S E R w s₀ (R / 2 - i) (2 * i + 1))
+    (M := fun i => KInv rd wr B S E R w s₀ (R / 2 - (i + 1)) (2 * i + 2)) (fun i hi s h => ?_) (fun i hi s h => ?_) ki)
+    fun s h => ⟨h.good, h.frame, ?_, ?_⟩
+  · refine keyOne_ok he (i := 2 * i + 1) (by simp <;> omega) (by omega_using []) (by omega_using [hi, h2]) h fun s₁ h₁ => ?_
+    refine wpx_subi fun s₂ u₂ hz => WP.block_nil ⟨?_, ?_⟩
+    · refine ⟨h₁.good.upd he u₂.toUpd (by decide) (by decide), ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+      · rw [u₂.gpr, h₁.cnt, cnt_sub (by omega_using [hi]), Nat.sub_sub]
+      · rw [u₂.other _ (by decide), h₁.src]
+      · rw [u₂.other _ (by decide), h₁.dst]
+      · rw [u₂.mem]; exact h₁.consts
+      · rw [u₂.mem]; exact h₁.mid
+      · rw [u₂.mem]; exact h₁.last
+      · rw [u₂.mem]; exact h₁.frame
+    · rw [hz, h₁.cnt, cnt_sub (by omega_using [hi]), Wp.ofNat_beq_zero (by omega_using [hR])]
+      exact congrArg some (decide_eq_decide.mpr (by omega_using [hi]))
+  · refine keyOne_ok he (i := 2 * i + 2) (by simp <;> omega) (by omega_using []) (by omega_using [hi, h2]) h fun s₁ h₁ => ?_
+    refine wpx_test fun s₂ u₂ _ hz => WP.block_nil ⟨?_, ?_⟩
+    · refine ⟨h₁.good.step he (rs := []) u₂.rd u₂.wr (by rw [u₂.gpr]) (by rw [u₂.gpr])
+        (by rw [u₂.mem]; exact Frame.refl _ _) (by simp), ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+      · rw [u₂.gpr, h₁.cnt]
+      · rw [u₂.gpr, h₁.src, show 2 * (i + 1) + 1 = 2 * i + 2 + 1 by omega_using []]
+      · rw [u₂.gpr, h₁.dst, show 2 * (i + 1) + 1 = 2 * i + 2 + 1 by omega_using []]
+      · rw [u₂.mem]; exact h₁.consts
+      · rw [u₂.mem, show 2 * (i + 1) + 1 = 2 * i + 2 + 1 by omega_using []]; exact h₁.mid
+      · rw [u₂.mem]; exact h₁.last
+      · rw [u₂.mem]; exact h₁.frame
+    · rw [hz, h₁.cnt, BitVec.and_self, Wp.ofNat_beq_zero (by omega_using [hR])]
+      exact congrArg some (decide_eq_false (show ¬ R / 2 - (i + 1) = 0 by omega_using [hi]))
+  · intro k hk1 hk
+    exact h.mid k hk1 (by omega_using [hk, hR, h2])
+  · rw [show R - 1 + 1 = R by omega_using [hR]]; exact h.last
 
 end
 
