@@ -75,12 +75,12 @@ def pair(o1, a1, b1, o2, a2, b2):
     c1, c2 = ['x4','x5','x6','x7'], ['x21','x22','x23','x24']
     r = []
     for i in range(4):
-        r += row(c1, a1, b1, i, 2048); r += row(c2, a2, b2, i, 2080)
+        r += row(c1, a1, b1, i, 352); r += row(c2, a2, b2, i, 384)
         if i: c1 = c1[1:] + c1[:1]; c2 = c2[1:] + c2[:1]
     return r, c1, c2
 def pairfull(o1, a1, b1, o2, a2, b2):
     r, c1, c2 = pair(o1, a1, b1, o2, a2, b2)
-    return r + fold(c1, 2048, o1) + fold(c2, 2080, o2)
+    return r + fold(c1, 352, o1) + fold(c2, 384, o2)
 B['pair'] = ['mov w10, #0'] + pairfull(448, 320, 224, 480, 256, 288)
 B['pair_dep'] = ['mov w10, #0'] + pairfull(224, 224, 224, 256, 256, 256)
 def seqpair(o1, a1, b1, o2, a2, b2):
@@ -88,9 +88,9 @@ def seqpair(o1, a1, b1, o2, a2, b2):
     for o, a, b in ((o1, a1, b1), (o2, a2, b2)):
         c = ['x4','x5','x6','x7']
         for i in range(4):
-            r += row(c, a, b, i, 2048)
+            r += row(c, a, b, i, 352)
             if i: c = c[1:] + c[:1]
-        r += fold(c, 2048, o)
+        r += fold(c, 352, o)
     return r
 B['seqpair'] = ['mov w10, #0'] + seqpair(448, 320, 224, 480, 256, 288)
 B['seqpair_dep'] = ['mov w10, #0'] + seqpair(224, 224, 224, 256, 256, 256)
