@@ -96,7 +96,7 @@ theorem Scr.okExts {s : State} {X : Addr} {N : Nat} (h : Scr s X N) {c : Cfg} (h
 /-! ## What encryption needs and keeps -/
 
 /-- All the masks. -/
-def allKs : List (Nat × BitVec 64) := bsKs ++ srKs ++ invSrKs
+def allKs : List (Nat × BitVec 64) := bsKs ++ srKs
 
 theorem allKs_slots : ∀ p ∈ allKs, 40 ≤ p.1 ∧ p.1 < 76 := by decide
 
@@ -168,14 +168,10 @@ theorem Ctx.srOk {s₀ s : State} {X : Addr} (h : Scr s₀ X 2048) (hc : Ctx s�
 
 theorem Ctx.bsKs {s₀ s : State} (hm : MasksAt s₀.mem (s₀.gpr sb) allKs) (hc : Ctx s₀ s) :
     MasksAt s.mem (s.gpr sb) bsKs :=
-  masksAt_sub (hc.masks hm) fun p hp => by simp only [allKs, List.mem_append]; exact .inl (.inl hp)
+  masksAt_sub (hc.masks hm) fun p hp => by simp only [allKs, List.mem_append]; exact .inl hp
 
 theorem Ctx.srKs {s₀ s : State} (hm : MasksAt s₀.mem (s₀.gpr sb) allKs) (hc : Ctx s₀ s) :
     MasksAt s.mem (s.gpr sb) srKs :=
-  masksAt_sub (hc.masks hm) fun p hp => by simp only [allKs, List.mem_append]; exact .inl (.inr hp)
-
-theorem Ctx.invSrKs {s₀ s : State} (hm : MasksAt s₀.mem (s₀.gpr sb) allKs) (hc : Ctx s₀ s) :
-    MasksAt s.mem (s.gpr sb) invSrKs :=
   masksAt_sub (hc.masks hm) fun p hp => by simp only [allKs, List.mem_append]; exact .inr hp
 
 /-- The key area is outside what the layers write. -/
@@ -194,10 +190,8 @@ theorem key_contains (b : Addr) {R j k : Nat} (hR : R ≤ 14) (hj : j ≤ R) (hk
   exact Offset.contains (e := 1024) b (by omega_arith) (by omega_arith) (by omega_arith)
 
 theorem keyRel_congr {K K' : Nat → BitVec 64} {rk : List Byte} (h : KeyRel K rk)
-    (he : ∀ k < 8, K' k = K k) : KeyRel K' rk := by
-  intro b hb i hi
-  rw [← h b hb i hi]
-  exact byte_ext fun j hj => by rw [getLsbD_bsByte _ _ hj, getLsbD_bsByte _ _ hj, he j hj]
+    (he : ∀ k < 8, K' k = K k) : KeyRel K' rk :=
+  h.congrW fun j hj => (he j hj).symm
 
 /-- The words `0 … 7` of round keys `0 … R`, from `K0`, are in `K`. -/
 def KeysIn (K : Region) (K0 : Addr) (R : Nat) : Prop :=
@@ -396,39 +390,6 @@ theorem ark_step {s₀ s : State} {X : Addr} {R j : Nat} {w : List Byte} {T : Na
     WP isa (.block addRoundKey) s P :=
   ark_stepK hp.toK hc hk hj hbs h
 
-private theorem shiftRowsK_ok (kb : Reg) {s : State} (hok : Ok srCfg s) (hks : MasksAt s.mem (s.gpr sb) srKs) :
-    ∃ s', runBlock isa (shiftRowsK kb) s = some s' ∧
-      (∀ j < 8, ∀ p < 64, (Q s' j).getLsbD p = (Q s j).getLsbD (srSrc p)) ∧ Rest srCfg s s' := by
-  unfold shiftRowsK
-  split
-  · exact shiftFast_ok hok hks
-  · exact shiftRows_ok hok hks
-
-private theorem mixKeyStep {s₀ s : State} {X : Addr} {kb : Reg} {K : Region}
-    {R j : Nat} {w : List Byte} {T : Nat → Spec.Aes.State} (hp : EncPreK s₀ X kb K R w)
-    (hc : Ctx s₀ s) (hk : s.gpr kp = s₀.gpr .a0 + BitVec.ofNat 64 (64*j))
-    (hj : j ≤ R) (hbs : BsRel (Q s) T) {P : State → Prop}
-    (next : ∀ t, Ctx s₀ t → t.gpr kp = s.gpr kp →
-      BsRel (Q t) (fun b => addRoundKey (mixColumns (T b)) (roundKey w j)) → P t) :
-    WP isa (.block (roundCoreK kb)) s P := by
-  unfold roundCoreK
-  split
-  · have ok := ark_cfg_okK (hc.scr hp.scr)
-      (by rw [hk,hc.rd,hc.wr]; exact hp.kin j hj)
-      (by rw [hk];exact al_add hp.kal (by decide) (by omega_arith))
-    have key : KeyRel (keyWord s) (roundKey w j) := by
-      unfold keyWord; rw [hk]; exact hp.keysAt hc j hj
-    refine layer_wp (mixAdd_ok ok) rfl (by decide) hc fun t ht bits ptr => next t ht ptr ?_
-    let mid := fun i => Q t i ^^^ keyWord s i
-    have mixed : BsRel mid (fun b => mixColumns (T b)) := by
-      refine bs_mixColumns (fun i hi p hp => ?_) hbs
-      simp [mid,BitVec.getLsbD_xor,bits i hi p hp]
-    exact bs_addRoundKey (fun i _ p _ => by simp [mid,BitVec.getLsbD_xor]) mixed key
-  · rw [WP.block_append_iff (M := isa)]
-    refine layer_wp (mixColumns_ok (hc.bsOk hp.scr)) rfl (by decide) hc fun t ht bits ptr => ?_
-    exact ark_stepK hp ht (ptr.trans hk) hj (bs_mixColumns bits hbs)
-      fun v hv pv bs => next v hv (pv.trans ptr) bs
-
 /-- A middle round. -/
 theorem round_okK {s₀ s : State} {X : Addr} {kb : Reg} {K : Region} {R m : Nat} {w : List Byte}
     {T : Nat → Spec.Aes.State} (hp : EncPreK s₀ X kb K R w) (hc : Ctx s₀ s) (hk : s.gpr kp = s₀.gpr .a0 + BitVec.ofNat 64 (64 * m))
@@ -446,11 +407,14 @@ theorem round_okK {s₀ s : State} {X : Addr} {kb : Reg} {K : Region} {R m : Nat
     rw [this]; exact hbs
   refine layer_wp (sbox_ok (hc₁.sboxOk hp.scr)) rfl (by decide) hc₁ fun s₂ hc₂ h₂ hk₂ => ?_
   have hbs₂ := bs_subBytes h₂ hbs₁
-  refine layer_wp (shiftRowsK_ok kb (hc₂.srOk hp.scr) (hc₂.srKs hp.masks)) rfl (by decide) hc₂
+  refine layer_wp (shiftRows_ok (hc₂.srOk hp.scr) (hc₂.srKs hp.masks)) rfl (by decide) hc₂
     fun s₃ hc₃ h₃ hk₃ => ?_
   have hbs₃ := bs_shiftRows h₃ hbs₂
   have hk₃' : s₃.gpr kp = s₀.gpr .a0 + BitVec.ofNat 64 (64 * (m + 1)) := by rw [hk₃,hk₂,hk₁]
-  refine mixKeyStep hp hc₃ hk₃' (by omega_arith) hbs₃ fun s₅ hc₅ hk₅ hbs₅ => ?_
+  refine layer_wp (mixColumns_ok (hc₃.bsOk hp.scr)) rfl (by decide) hc₃ fun s₄ hc₄ h₄ hk₄ => ?_
+  refine ark_stepK hp hc₄ (hk₄.trans hk₃') (by omega_arith) (bs_mixColumns h₄ hbs₃)
+    fun s₅ hc₅ hk₅' hbs₅ => ?_
+  have hk₅ := hk₅'.trans hk₄
   refine cmpLastK_wp hc₅ fun s₆ hc₆ hk₆ hq₆ hz₆ => ⟨hc₆, ?_, ?_, ?_⟩
   · rw [hk₆, hk₅, hk₃']
   · have : Q s₆ = Q s₅ := funext hq₆
@@ -510,14 +474,13 @@ theorem encrypt4K_ok {s₀ : State} {X : Addr} {kb : Reg} {K : Region} {R : Nat}
     · refine .inl ⟨by simpa [hlast] using eval_t0 hz, hc', ?_, ?_⟩
       · rw [hk']; congr 3; omega_arith
       · rw [show R - 1 = m + 1 by omega_arith]
-        intro b hb i hi
-        rw [hbs' b hb i hi]; simp only [midRounds_succ]
+        exact hbs'.congr fun b _ => (midRounds_succ w m (A b)).symm
     · refine .inr ⟨by simpa [hlast] using eval_t0 hz, R - 1 - (m + 1), by omega_arith, m + 1, rfl,
-        by omega_arith, hc', hk', fun b hb i hi => by rw [hbs' b hb i hi]; simp only [midRounds_succ]⟩
+        by omega_arith, hc', hk', hbs'.congr fun b _ => (midRounds_succ w m (A b)).symm⟩
   · -- The last round, and back to blocks.
     obtain ⟨hc, hk, hbs⟩ := h
     rw [WP.block_append_iff (M := isa)]
-    simp only [lastRoundK]
+    simp only [lastRound]
     repeat rw [WP.block_append_iff (M := isa)]
     refine addKp_wp hc fun s₁ hc₁ hk₁ hq₁ => ?_
     rw [hk, kp_step, show R - 1 + 1 = R by omega_arith] at hk₁
@@ -526,15 +489,14 @@ theorem encrypt4K_ok {s₀ : State} {X : Addr} {kb : Reg} {K : Region} {R : Nat}
       rw [this]; exact hbs
     refine layer_wp (sbox_ok (hc₁.sboxOk hp.scr)) rfl (by decide) hc₁ fun s₂ hc₂ h₂ hk₂ => ?_
     have hbs₂ := bs_subBytes h₂ hbs₁
-    refine layer_wp (shiftRowsK_ok kb (hc₂.srOk hp.scr) (hc₂.srKs hp.masks)) rfl (by decide) hc₂
+    refine layer_wp (shiftRows_ok (hc₂.srOk hp.scr) (hc₂.srKs hp.masks)) rfl (by decide) hc₂
       fun s₃ hc₃ h₃ hk₃ => ?_
     have hbs₃ := bs_shiftRows h₃ hbs₂
     refine ark_stepK hp hc₃ (by rw [hk₃, hk₂, hk₁]) (Nat.le_refl R) hbs₃ fun s₄ hc₄ _ hbs₄ => ?_
     refine layer_wp (fromBs_ok (hc₄.bsOk hp.scr) (hc₄.bsKs hp.masks)) rfl (by decide) hc₄
       fun s₅ hc₅ h₅ _ => ⟨hc₅, ?_⟩
     have := in_of_bs h₅ hbs₄
-    intro b hb i hi j hj
-    rw [this b hb i hi j hj]; simp only [cipher_eq]; rfl
+    exact this
 
 theorem encrypt4_ok {s₀ : State} {X : Addr} {R : Nat} {w : List Byte} {S : Nat → Spec.Aes.State}
     (hp : EncPre s₀ X R w) (hin : InRel (Q s₀) S) :
@@ -814,12 +776,10 @@ theorem masks_kept {m₀ m : Mem} {b : Addr} (hf : Frame (kRegions b) m₀ m) (h
   · exact Offset.disjoint b (by omega) (by omega) (by omega_using [])
 
 /-- The round key as a state. -/
-def rkv (w : List Byte) (j : Nat) : Spec.Aes.State := Vector.ofFn fun i => (roundKey w j).getD i 0
+abbrev rkv (w : List Byte) (j : Nat) : Spec.Aes.State := rkState (roundKey w j)
 
 theorem keyRel_of_bs {K : Nat → BitVec 64} {w : List Byte} {j : Nat}
-    (h : BsRel K fun _ => rkv w j) : KeyRel K (roundKey w j) := by
-  intro b hb i hi
-  rw [h b hb i hi, getD_eq _ hi, rkv, Vector.getElem_ofFn]
+    (h : BsRel K fun _ => rkv w j) : KeyRel K (roundKey w j) := h
 
 theorem keyWrites_not (r : Reg) (hr : r ∉ keyWrites) :
     r ∉ sboxWrites ∧ r ≠ .a0 ∧ r ≠ .a2 ∧ r ≠ .a1 := by
@@ -876,7 +836,7 @@ theorem keyBody_ok {s₀ : State} {X b sc : Addr} {R : Nat} {w : List Byte}
   obtain hin : InRel (Q s₁) fun _ => rkv w j := by
     intro bb hb i hi16 t ht
     obtain hbyte := hi.sched hk hi16
-    rw [getD_eq _ hi16, rkv, Vector.getElem_ofFn]
+    rw [getD_rkState _ hi16]
     simp only [Q]
     by_cases h8 : i < 8
     · rw [show bb + 4 * (i / 8) = bb by omega_arith, (hq₁ bb hb).1, show i % 8 = i by omega_arith,
@@ -893,7 +853,7 @@ theorem keyBody_ok {s₀ : State} {X b sc : Addr} {R : Nat} {w : List Byte}
   obtain hks₁ : MasksAt s₁.mem (s₁.gpr sb) bsKs := by
     rw [hm₁, hsb₁]
     exact masksAt_sub (masks_kept hi.frame hk.masks) fun p hp => by
-      simp only [allKs, List.mem_append]; exact .inl (.inl hp)
+      simp only [allKs, List.mem_append]; exact .inl hp
   obtain ⟨s₂, hs₂, hq₂, hrd₂, hwr₂, hsp₂, hoth₂, hfr₂⟩ :=
     toBs_ok (hscr₁.okExts rfl rfl rfl (by decide) (by decide)) hks₁
   refine WP.of_runBlock ⟨s₂, hs₂, ?_⟩
@@ -1093,7 +1053,7 @@ theorem keysAt_frame {m m' : Mem} {b : Addr} {R : Nat} {w : List Byte} {rs : Lis
     KeysAt m' (b + BitVec.ofNat 64 (1920 - 64 * R)) R w :=
   fun j hj => keyRel_congr (h j hj) fun k hk => hf.readW (key_contains _ hR hj hk) hd (by decide)
 
-/-- The masks' slots: 52–57 and 64–75. -/
+/-- The masks' slots: 52–57 and 64–65. -/
 theorem allKs_in : ∀ p ∈ allKs, (52 ≤ p.1 ∧ p.1 < 58) ∨ (64 ≤ p.1 ∧ p.1 < 76) := by decide
 
 /-- Memory outside both areas of masks keeps them. -/

@@ -69,7 +69,9 @@ theorem aesWith_congr {m : Mem} {K0 : Addr} {R : Nat} {w w' : List Byte} (h : Ke
   funext x
   unfold Spec.Gcm.aesWith
   rw [cipher_congr (w := w) (w' := w') (fun j hj i hi => by
-    rw [← h j hj 0 (by decide) i hi, h' j hj 0 (by decide) i hi])]
+    refine byte_ext fun t ht => ?_
+    rw [← getD_rkState _ hi, ← getD_rkState _ hi]
+    exact (h j hj t ht i hi 0 (by decide)).symm.trans (h' j hj t ht i hi 0 (by decide)))]
 
 end VG.Proof.Aes.RISCV64
 
