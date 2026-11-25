@@ -164,6 +164,39 @@ bytes of stack below the stack pointer (`Sig.contract`'s `stack`; a contract
 that does not depend on it is the one with `stack` 0). -/
 abbrev Contracts : Type 1 := {M : ISA} → Abi M → Nat → Contract M
 
+/-- Outputs of a function of signature `sig` that reveal nothing secret
+(`PublicOut.Of`), as numbers: `out`, computed from the arguments, the memory on
+entry and on return, and the result (e.g. a length the function chose, which its
+caller allocates); `given` is what the caller left there that they may depend on,
+computed from the arguments and the memory on entry (e.g. the bytes of working
+space the function may leave as they were), besides what the contract makes
+public.
+
+A postcondition, of one run, cannot say it: one that allows several values (any
+length within bounds; each byte unchanged or zero) allows a choice among them that
+depends on a secret. -/
+structure PublicOut (sig : Sig) where
+  given : ∀ ptrBits, Curry (sig.words ptrBits) (Mem → List Nat) := fun _ => Curry.const (fun _ => []) _
+  out : ∀ ptrBits, Curry (sig.words ptrBits) (Mem → Mem → BitVec (sig.retBits ptrBits) → List Nat)
+
+/-- `c`, with contract `k`, has the public outputs `o`: any two runs of `c` from
+states that satisfy `k.pre`, agree on what `k.pub` says is public and agree on
+`o.given`, end in states that agree on `o.out`. Like `ConstantTime`, a property of
+two runs; what they agree on need not be all that is public, nor do they share
+anything else (`unknowns`, the memory outside the buffers). A calling convention
+that does not model the arguments gives a precondition that no state satisfies
+(`Sig.contract`). -/
+def PublicOut.Of {M : ISA} (A : Abi M) {sig : Sig} (o : PublicOut sig) (c : Prog M) (k : Contract M) :
+    Prop :=
+  match A.args ((sig.words A.ptrBits).map (·.bits A.ptrBits)) with
+  | none => True
+  | some vals => ∀ s₁ s₂ t₁ t₂ s₁' s₂', k.pre s₁ → k.pre s₂ → k.pub s₁ s₂ →
+      Curry.apply _ (o.given A.ptrBits) (vals s₁) (A.mem s₁) =
+        Curry.apply _ (o.given A.ptrBits) (vals s₂) (A.mem s₂) →
+      Exec M c s₁ t₁ s₁' → Exec M c s₂ t₂ s₂' →
+      Curry.apply _ (o.out A.ptrBits) (vals s₁) (A.mem s₁) (A.mem s₁') ((A.ret s₁').setWidth _) =
+        Curry.apply _ (o.out A.ptrBits) (vals s₂) (A.mem s₂) (A.mem s₂') ((A.ret s₂').setWidth _)
+
 /-- What a function is on every target: its Rust module, name and signature,
 whether its contract lets it overwrite its arguments in memory
 (`Sig.contract`'s `writeArgs`), its contract on every target (`contracts`),
@@ -193,6 +226,10 @@ structure Api where
   only the arguments, the memory and the result). An `Artifact` made from the
   `Api` proves it (`Artifact.modeOk`). -/
   mode : Option (BitVec 64 → BitVec 64 → BitVec 64 → Prop) := none
+  /-- The function's outputs that must reveal nothing secret, though its contract
+  allows more than one value of them, if it has any. An `Artifact` made from the
+  `Api` proves it (`Artifact.publicOutOk`). -/
+  publicOut : Option (PublicOut sig) := none
   /-- The documentation, up to its `# Safety` section. -/
   summary : String
   /-- The items of the `# Safety` section, but for those `Sig.validDoc` and

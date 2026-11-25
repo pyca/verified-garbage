@@ -12,9 +12,11 @@ target, the code and its proof, the stack it uses, the constant tables it
 reads and the functions whose addresses its contract makes public
 (`Abi.withFns`) (which `stack_of`, `consts_of` and `fns_of` find in the
 contract the proof is of), the tables of functions it takes, how much
-of its writable arrays it writes (`written`, with its proof), the proof of
+of its writable arrays it writes (`written`, with its proof), the proofs of
 what its `Api` says it does to the mode its target's timing rests on
-(`Api.mode`), if that is what it is for, and the suffix of its name. The proof is also that the code returns without secret residue
+(`Api.mode`), if that is what it is for, and that the outputs its `Api` says
+reveal nothing secret do not (`Api.publicOut`), if it has any, and the suffix of
+its name. The proof is also that the code returns without secret residue
 (`VerifiedScrubbed`): the cleanup is part of the code it is of, like
 everything else the function does. Everything else
 comes from the `Api` (`Spec/`): the Rust module, name, signature and
@@ -311,6 +313,14 @@ structure Artifact (target : Target) where
   modeOk : ∀ q, api.mode = some q → ∀ s t s', contract.pre s → Exec target.isa code s t s' →
       q (target.abi.mode s) (target.abi.mode s') (target.abi.ret s') := by
     exact fun _ h => nomatch h
+  /-- The outputs its `Api` says reveal nothing secret (`Api.publicOut`), if it
+  has any, do not: two runs that agree on what is public agree on them
+  (`PublicOut.Of`). It reads where the target's calling convention places the
+  arguments, which the tables of constants (`Abi.withConsts`) and of functions
+  (`Abi.withTables`), and the functions of public addresses (`Abi.withFns`), leave
+  as they are. -/
+  publicOutOk : api.publicOut.elim True fun o => o.Of target.abi code contract := by
+    exact True.intro
   /-- CPU features beyond `features`, by their Rust `target_feature` names,
   without which its function's dispatcher does not choose it: those of the
   CPUs it is faster on. -/
@@ -531,6 +541,9 @@ structure Registration (api : Api) (target : Target) where
   modeOk : ∀ q, api.mode = some q → ∀ s t s', contract.pre s → Exec target.isa code s t s' →
       q (target.abi.mode s) (target.abi.mode s') (target.abi.ret s') := by
     exact fun _ h => nomatch h
+  /-- `Artifact.publicOutOk`, for `api`'s `publicOut`. -/
+  publicOutOk : api.publicOut.elim True fun o => o.Of target.abi code contract := by
+    exact True.intro
   /-- `Artifact.extra`. -/
   extra : List String := []
   /-- `Artifact.vendor`. -/
@@ -563,6 +576,7 @@ def Api.artifact (api : Api) (target : Target) (r : Registration api target) :
   written := r.written
   writtenOk := r.writtenOk
   modeOk := r.modeOk
+  publicOutOk := r.publicOutOk
   extra := r.extra
   vendor := r.vendor
   notWith := r.notWith

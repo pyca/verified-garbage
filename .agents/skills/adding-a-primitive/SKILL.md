@@ -23,7 +23,11 @@ instructions in an ISA model) go in their own PR before either.
    the arguments on it, and that none wraps around the address space:
    `Sig.layoutDoc`). Choose
    `pub` honestly: only lengths and pointers are public unless the algorithm
-   says otherwise. A secret result of variable length goes first in its
+   says otherwise. A postcondition that allows more than one value of an output
+   (any length within bounds, each byte unchanged or zero) allows a choice among
+   them that depends on a secret: where the caller reveals the output, or leaves it
+   in memory, say that it is public (`Api.publicOut`, which the registration
+   proves with `publicOutOk := Proof.…`). A secret result of variable length goes first in its
    buffer, zeros after it (as `RsaOaep.writtenDecrypt`), so that the Rust
    code returns it by truncating, never by moving it (CLAUDE.md, "The
    cryptography is in the verified code").
@@ -283,8 +287,8 @@ else. `ci/check_registrations.py` checks that shape on every target
 (x86-64, x86, AArch64, ARMv7, RISC-V64, PPC64LE): each `.artifact` is given
 a record, or a `match` or `if` between implementations whose every arm is
 one; `code` is a definition of `Impl/` but a cleanup form; `verified`,
-`spSafe` and `writtenOk` are theorems of `Proof/` named in full, not
-through an `open`; no other field but the implementation's choices
+`spSafe`, `writtenOk`, `modeOk` and `publicOutOk` are theorems of `Proof/`
+named in full, not through an `open`; no other field but the implementation's choices
 (`suffix`, `tables`, `extra`, `vendor`, `notWith`, `written`); and no tactic,
 anonymous constructor (`⟨…⟩`, a side condition's proof is a named theorem:
 `Proof.MlDsa.X86.Scrub.inst44`), `Artifact` built by hand or name of the
