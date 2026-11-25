@@ -283,26 +283,29 @@ theorem pairs_mod (r : Nat) {s : State} {A B : Spec.Sha3.State} : Vec.Pairs (r %
   simp only [Vec.Pairs, reg, home_mod r, home_mod (r % 2), Nat.mod_mod]
 
 theorem unrolled_ok {s : State} {A B : Spec.Sha3.State} (hp : Pairs s A B) :
-    WP isa (.block unrolled) s fun t => CoreKeep s t ∧ Pairs t (keccakF A) (keccakF B) := by
+    WP isa (.block unrolled) s fun t => CoreKeep s t ∧ (∀ r, r ≠ .x16 → t.gpr r = s.gpr r) ∧
+      Pairs t (keccakF A) (keccakF B) := by
   suffices h : ∀ n ≤ 24, WP isa (.block (([.adrSym .x16 sym2] : List Instr) ++ (List.range n).flatMap fun r =>
-      round 0 0 (r % 2) ++ iotaTbl r)) s fun t => CoreKeep s t ∧ t.gpr .x16 = t.syms sym2 ∧
+      round 0 0 (r % 2) ++ iotaTbl r)) s fun t => CoreKeep s t ∧ (∀ r, r ≠ .x16 → t.gpr r = s.gpr r) ∧ t.gpr .x16 = t.syms sym2 ∧
       Vec.Pairs n t ((List.range n).foldl rnd A) ((List.range n).foldl rnd B) from
-    WP.mono (h 24 (Nat.le_refl _)) fun t ⟨k, _, p⟩ => ⟨k, pairs_iff.mpr ((pairs_mod 24).mpr p)⟩
+    WP.mono (h 24 (Nat.le_refl _)) fun t ⟨k, g, _, p⟩ => ⟨k, g, pairs_iff.mpr ((pairs_mod 24).mpr p)⟩
   intro n hn
   induction n with
   | zero =>
-    refine WP.cons (s' := s.write .x .x16 (s.syms sym2)) rfl (wp_nil ⟨?_, ?_, pairs_iff.mp hp⟩)
+    refine WP.cons (s' := s.write .x .x16 (s.syms sym2)) rfl (wp_nil ⟨?_, fun r hr => ?_, ?_, pairs_iff.mp hp⟩)
     · exact .upd (Upd.write64 _ _ _) (.inl rfl)
+    · rw [RegUpd.gpr_write, ite_eq_right hr]
     · rw [RegUpd.gpr_write, ite_eq_left rfl, BitVec.setWidth_eq]; rfl
   | succ n ih =>
     rw [List.range_succ, List.flatMap_append, ← List.append_assoc, WP.block_append_iff]
-    refine WP.mono (ih (by omega)) fun t ⟨k, h16, p⟩ => ?_
+    refine WP.mono (ih (by omega)) fun t ⟨k, gk, h16, p⟩ => ?_
     simp only [List.flatMap_cons, List.flatMap_nil, List.append_nil]
     obtain ⟨u, x, pu, ou⟩ := Vec.round_ok (Nat.mod_lt n (by decide)) (pure_ok _ (Nat.mod_lt n (by decide))) ((pairs_mod n).mpr p)
     have g : u.gpr = t.gpr ∧ u.syms = t.syms := by obtain ⟨v, rfl⟩ := ou; exact ⟨rfl, rfl⟩
     obtain ⟨w, y, pw, ow⟩ := iotaTbl_run (r := n % 2 + 1) (n := n) (by omega) (by omega) pu (by rw [g.1, g.2, h16])
     have g' : w.gpr = u.gpr ∧ w.syms = u.syms := by obtain ⟨v, rfl⟩ := ow; exact ⟨rfl, rfl⟩
-    refine WP.of_runBlock (M := isa) ⟨w, by rw [runBlock_append _ _ x, y], (k.trans (.onlyV ou)).trans (.onlyV ow), ?_, ?_⟩
+    refine WP.of_runBlock (M := isa) ⟨w, by rw [runBlock_append _ _ x, y], (k.trans (.onlyV ou)).trans (.onlyV ow),
+      fun r hr => by rw [g'.1, g.1, gk r hr], ?_, ?_⟩
     · rw [g'.1, g'.2, g.1, g.2, h16]
     · rw [List.foldl_append, List.foldl_append, ← pairs_mod, show (n + 1) % 2 = (n % 2 + 1) % 2 by omega, pairs_mod]
       exact pw

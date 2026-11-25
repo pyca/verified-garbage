@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Sha3.AArch64.Blocks
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CommitTailCoreState
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentSeed66
 public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Pair
@@ -691,7 +692,6 @@ section
 namespace VG.Proof.MlDsa.AArch64.Sign.CommitTail
 open VG VG.AArch64
 open VG.Proof.Sha3.AArch64.Neon
-open VG.Proof.Sha3.AArch64.Sha3.Vector (low Lanes)
 open VG.Proof.Sha3.AArch64 (WP.cons)
 open VG.Impl.MlDsa.AArch64.Sign.CommitTail
 open VG.Impl.Sha3.AArch64.Sha3.Vector (vreg)
@@ -746,30 +746,6 @@ end
 
 end
 
--- Formerly `VerifiedGarbage/Proof/Sha3/AArch64/Neon/HwRounds.lean`, which only this module imported.
-section
-
-section
-
-namespace VG.Proof.Sha3.AArch64.Neon.Hw
-open VG VG.AArch64
-open VG.Impl.Sha3.AArch64.Sha3.Vector
-open VG.Proof.Sha3.AArch64.Sha3.Vector (CoreKeep)
-
-theorem rounds2_ok {s : State} {A B : Spec.Sha3.State} (hp : Pairs s A B) :
-    WP isa (.block rounds) s fun t => CoreKeep s t ∧ Pairs t (Spec.Sha3.keccakF A) (Spec.Sha3.keccakF B) := by
-  unfold rounds
-  refine wp_range_flatMap (M := isa)
-    (fun k t => CoreKeep s t ∧ Pairs t
-      ((List.range k).foldl Spec.Sha3.rnd A) ((List.range k).foldl Spec.Sha3.rnd B))
-    (fun k t hk ⟨ht,hpt⟩ => ?_) 24 (Nat.le_refl _) s ⟨CoreKeep.refl _,hp⟩
-  refine WP.mono (round2_ok hpt hk) fun u ⟨hu,hpu⟩ => ⟨ht.trans hu,?_⟩
-  simpa only [List.range_succ,List.foldl_append,List.foldl_cons,List.foldl_nil] using hpu
-end VG.Proof.Sha3.AArch64.Neon.Hw
-end
-
-end
-
 @[expose] public section
 
 section
@@ -780,9 +756,9 @@ open VG.Proof.Sha3.AArch64.Neon
 open VG.Proof.Sha3.AArch64 (Upd wp_addImm wp_subImm wp_movz)
 open VG.Proof.MlKem.AArch64 (eval_zero eval_nonzero)
 open VG.Proof.MlDsa.AArch64.Optimized.Resident (SqueezeKeep)
-open VG.Proof.Sha3.AArch64.Sha3.Vector (xorWords)
+open VG.Proof.Sha3.AArch64.Blocks (xorWords)
 open VG.Impl.MlDsa.AArch64.Sign.CommitTail
-open VG.Impl.Sha3.AArch64.Sha3.Vector (rounds)
+open VG.Impl.Sha3.AArch64.Sha3.Vector (unrolled)
 
 /-- Writing a core register other than the input pointer keeps the core's
 environment. -/
@@ -818,15 +794,15 @@ theorem LoopRegs.keep {wlen k i : Nat} {work : Addr} {s t : State} {rs : List Re
 /-- Each permutation advances both unrelated sponge states. -/
 theorem coreRound_ok {σ s : State} {wlen i : Nat} {w1 work : Addr}
     {A B : Spec.Sha3.State} (h : CoreState σ wlen w1 work A B i s) :
-    WP isa (.block rounds) s fun t =>
+    WP isa (.block unrolled) s fun t =>
       RoundState σ wlen w1 work A B i i t ∧ RegKeep [.x16] s t := by
-  refine WP.mono (VG.Proof.Sha3.AArch64.Neon.Hw.rounds2_ok h.pairs)
-    fun t ⟨hk,hp⟩ => ?_
+  refine WP.mono (VG.Proof.Sha3.AArch64.Sha3.Vector.unrolled_ok h.pairs)
+    fun t ⟨hk,hg,hp⟩ => ?_
   obtain hl : RegKeep [.x16] s t :=
-    ⟨fun r hr => hk.gpr r (fun he => hr (by simp [he])),hk.rd,hk.wr,hk.sp⟩
+    ⟨fun r hr => hg r (fun he => hr (by simp [he])),hk.rd,hk.wr,hk.sp⟩
   refine ⟨⟨⟨(h.keep.trans hl).mono (by simp [coreRegs]),?_,?_,?_⟩,hp⟩,hl⟩
   · rw [hk.mem]; exact h.frame
-  · rw [hk.gpr .x5 (by decide)]; exact h.ptr
+  · rw [hg .x5 (by decide)]; exact h.ptr
   · rw [hk.mem]; exact h.output
 
 /-- Only the first five permutations serialize the independent mask stream. -/
@@ -1397,7 +1373,7 @@ section
 
 namespace VG.Proof.MlDsa.AArch64.Sign.CommitTail
 open VG VG.Spec.Sha3 VG.Proof.Sha3
-open VG.Proof.Sha3.AArch64.Sha3.Vector (xorWords_eq)
+open VG.Proof.Sha3.AArch64.Blocks (xorWords_eq)
 
 theorem lowRun_full (m : Mem) (mu w1 : Addr) {wlen : Nat} (hw : 72≤wlen)
     {i : Nat} (hi : i<(64+wlen)/136) :
@@ -1417,7 +1393,7 @@ theorem lowRun_pad65 (m : Mem) (mu w1 : Addr) :
       absorb 136 (pad 136 shakeSuffix (hashMessage m mu w1 768)) := by
   obtain hf := lowRun_full m mu w1 (wlen:=768) (by decide) (i:=5) (by decide)
   obtain hr : Rep 136 (hashMessage m mu w1 768)=
-      VG.Proof.Sha3.AArch64.Sha3.Vector.xorWords (absorbN 136 (hashMessage m mu w1 768) 6)
+      VG.Proof.Sha3.AArch64.Blocks.xorWords (absorbN 136 (hashMessage m mu w1 768) 6)
         m (w1+752) 2 := by
     rw [Rep,absorb_eq,hashMessage_length,hashMessage_tail m mu w1 (n:=6) (by decide) (by decide),xorWords_eq]
     rfl

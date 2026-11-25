@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Sha3.AArch64.Blocks
+import VerifiedGarbage.Proof.Framework.AArch64.SimdMem64
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
@@ -77,7 +79,7 @@ section
 namespace VG.Proof.MlDsa.AArch64.Sign.CommitTail
 open VG VG.AArch64
 open VG.Proof.Sha3.AArch64.Neon
-open VG.Proof.Sha3.AArch64.Sha3.Vector (xorWords xorWords_get)
+open VG.Proof.Sha3.AArch64.Blocks (xorWords xorWords_get)
 open VG.Impl.Sha3.AArch64.Sha3.Vector (vreg)
 open VG.Impl.MlDsa.AArch64.Sign.CommitTail
 
@@ -171,8 +173,22 @@ namespace VG.Proof.MlDsa.AArch64.Sign.CommitTail
 open VG VG.AArch64
 open VG.Proof.Sha3.AArch64.Neon
 open VG.Proof.MlKem.AArch64 (wp_ldrq wp_vop)
-open VG.Proof.Sha3.AArch64.Sha3.Vector (low low_ext8)
 open VG.Impl.Sha3.AArch64.Sha3.Vector (vreg)
+
+/-- The low lane of a register. -/
+def low (s : State) (v : VReg) : BitVec 64 := vdword (s.v v) 0
+
+/-- The low lanes hold the state `A`. -/
+def Lanes (s : State) (A : Spec.Sha3.State) : Prop := ∀ i (hi : i < 25), low s (vreg i) = A[i]
+
+theorem pair_low (m : Mem) (p : Addr) (i : Nat) :
+    vdword (m.read (p + BitVec.ofNat 64 (16 * i)) 16) 0 = m.readW (VG.Proof.Sha3.laneAddr p (2 * i)) 64 := by
+  rw [vdword_read16 _ _ (by decide), VG.Proof.Sha3.laneAddr, show 16 * i = 8 * (2 * i) by omega_using []]; simp
+
+theorem pair_high (m : Mem) (p : Addr) (i : Nat) :
+    vdword (m.read (p + BitVec.ofNat 64 (16 * i)) 16) 1 = m.readW (VG.Proof.Sha3.laneAddr p (2 * i + 1)) 64 := by
+  rw [vdword_read16 _ _ (by decide), VG.Proof.Sha3.laneAddr, BitVec.add_assoc, ← BitVec.ofNat_add,
+    show 16 * i + 8 * 1 = 8 * (2 * i + 1) by omega_using []]
 
 /-- Loads two consecutive words into consecutive low lanes; the temporary
 high-lane values are overwritten by the independent mask initialization. -/
@@ -192,7 +208,7 @@ theorem loadPair_ok {s : State} {j off : Nat} {r : Reg}
   by_cases he : i=j+1
   · subst i
     simp only [ite_true,low,ht.v,ha.v]
-    exact low_ext8 _
+    exact VG.Proof.Sha3.AArch64.Sha3.Vector.ext8_low _
   · have he' : vreg i≠vreg (j+1) := by
       rw [ne_eq,vreg_inj i (by omega_using [hi]) (j+1) (by omega_using [hj])]; exact he
     simp only [he,ite_false,low,ht.get _ he']
@@ -215,7 +231,6 @@ section
 namespace VG.Proof.MlDsa.AArch64.Sign.CommitTail
 open VG VG.AArch64
 open VG.Proof.Sha3.AArch64.Neon
-open VG.Proof.Sha3.AArch64.Sha3.Vector (low pair_low pair_high)
 open VG.Impl.Sha3.AArch64.Sha3.Vector (vreg)
 open VG.Proof.Sha3 (laneAddr)
 
@@ -272,7 +287,6 @@ open VG VG.AArch64
 open VG.Proof.Sha3.AArch64.Neon
 open VG.Proof.MlKem.AArch64 (wp_vop)
 open VG.Proof.Sha3.AArch64 (wp_ldr)
-open VG.Proof.Sha3.AArch64.Sha3.Vector (low)
 open VG.Impl.Sha3.AArch64.Sha3.Vector (vreg)
 
 /-- Final input word of the first commitment-rate block. -/
@@ -339,7 +353,6 @@ section
 namespace VG.Proof.MlDsa.AArch64.Sign.CommitTail
 open VG VG.AArch64
 open VG.Proof.Sha3.AArch64.Neon
-open VG.Proof.Sha3.AArch64.Sha3.Vector (low Lanes)
 open VG.Impl.MlDsa.AArch64.Sign.CommitTail
 open VG.Impl.Sha3.AArch64.Sha3.Vector (vreg)
 open VG.Proof.Sha3 (laneAddr)
@@ -479,7 +492,7 @@ section
 namespace VG.Proof.MlDsa.AArch64.Sign.CommitTail
 open VG VG.AArch64
 open VG.Proof.Sha3.AArch64.Neon
-open VG.Proof.Sha3.AArch64.Sha3.Vector (xorWords)
+open VG.Proof.Sha3.AArch64.Blocks (xorWords)
 open VG.Impl.MlDsa.AArch64.Sign.CommitTail
 open VG.Impl.Sha3.AArch64.Sha3.Vector (vreg)
 
@@ -522,7 +535,7 @@ end
 
 namespace VG.Proof.MlDsa.AArch64.Sign.CommitTail
 open VG VG.AArch64
-open VG.Proof.Sha3.AArch64.Sha3.Vector (xorWords)
+open VG.Proof.Sha3.AArch64.Blocks (xorWords)
 open VG.Proof.MlDsa.AArch64.Optimized.Resident (permuted RateBlock StreamOutput)
 
 /-- Low-lane absorb performed after permutation `i`. The last permutation
@@ -564,8 +577,8 @@ theorem xorWords_congr {A : Spec.Sha3.State} {m m' : Mem} {p : Addr} {n : Nat}
     xorWords A m' p n=xorWords A m p n := by
   apply Vector.ext
   intro i hi
-  rw [VG.Proof.Sha3.AArch64.Sha3.Vector.xorWords_get,
-    VG.Proof.Sha3.AArch64.Sha3.Vector.xorWords_get]
+  rw [VG.Proof.Sha3.AArch64.Blocks.xorWords_get,
+    VG.Proof.Sha3.AArch64.Blocks.xorWords_get]
   by_cases hn : i<n
   · rw [ite_eq_left hn,ite_eq_left hn]
     exact congrArg (fun x=>A[i] ^^^ x) (h i hn)
