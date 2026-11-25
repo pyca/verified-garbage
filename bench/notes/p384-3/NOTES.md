@@ -119,3 +119,20 @@ by that of the reduction. Hence: reduce two words as soon as two rows of the
 product are in (rows 0-1, reduce, rows 2-3, reduce, rows 4-5, reduce), so that
 the reduction runs beside the next rows; only 8-9 accumulator words live.
 To be checked with a small model of the pipeline (`sim.py`) before the code.
+
+# Orders measured (run 45670680782), and the choice
+
+ns for eight, dependent / independent. Schoolbook then reduction (S) 253 / 232,
+reducing two words as soon as final, the multipliers' words kept apart (I) 241 / 228,
+Karatsuba (K) 261 / 241, square 211 / 182; extr replaced by two shifts and an
+addition: no difference. My model of depth (`sim.py`) predicted 10-15% for I;
+it is wrong about what binds. What fits all seven: about 0.6 cycle for each
+instruction that multiplies or sets flags (K 186, S 193, Q 143 of them), the
+others nearly free. So: instructions that set flags or multiply are what to
+save; the order matters little. Also seen: reducing as it goes in one
+accumulator (gen3.py's mulC) overflows a word (T < 2p and 2^128 (p) added pass
+2^512), found by the edge cases; more carries, dropped.
+
+Choice for the first version: plain schoolbook rows (S), the square as above
+(Q), the two-word rounds; simplest to prove. Fused later: final conditional
+subtractions (7 flag-setting), loads and stores, and linear steps.
