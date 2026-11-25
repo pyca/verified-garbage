@@ -296,3 +296,14 @@ proofs) kept; sn5 is 15 faster but needs every scalar proof again. h2's family
 is taken. Experiment 13 tunes it: constants 19 and 38 in registers (c), the
 order of the rest, the weave's ratio (the vector block ended earlier), and the
 Karatsuba pair.
+
+## 16. Experiment 13's result (run 45685276137), and what is landed first
+
+Cycles: h2 334; ta 331.5, tan 331 (squares doubled with `adcs`, as now: `extr` is
+not worth it), tg 331, te 333, tj 333, th 333, tb, tc, tf, ti 335-336, td 350;
+vector block ended earlier: 4/3 347, 3/2 356, 2 371; Karatsuba pair 335.
+Projected for 331: 89.3k cycles, 26.3 us, against 26.93.
+
+Order of landing: (A) dead flag writes out of the shared rows (`Word.lean`:
+`adcs` that nothing reads becomes `adc`), for every user of them; (B) the order
+of the ladder's operations; (C) the NEON pair, woven. Then measured again.
