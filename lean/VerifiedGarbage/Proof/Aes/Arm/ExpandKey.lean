@@ -72,7 +72,7 @@ namespace VG.Proof.Aes.Arm
 open VG VG.Arm VG.Arm.Straight VG.Bitslice VG.Impl.Aes.Arm
 open VG.Proof.MdStream.Arm (Upd Mupd Fupd op2_imm op2_reg op2_lsr op2_lsl wp_mov wp_add wp_sub wp_subs
   wp_cmp wp_orr wp_and wp_ldr wp_str)
-open VG.Proof.Aes (getD_eq byte_ext kw kTemp kw_step kw_key kw_length kTemp_length xorWord_getD
+open VG.Proof.Aes (kw kTemp kw_step kw_key kw_length kTemp_length xorWord_getD
   subWord_getD rotWord_getD rotWord_length rcon_getD flatten_expandWords)
 open VG.Spec.Aes (sbox xtimes subBytes subWord rotWord rcon xorWord)
 
@@ -84,7 +84,7 @@ def stOf (Q : Nat → BitVec 32) (b : Nat) : Spec.Aes.State :=
 
 theorem inRel_stOf (Q : Nat → BitVec 32) : InRel Q (stOf Q) := by
   intro b hb i hi j hj
-  rw [getD_eq _ hi, stOf, Vector.getElem_ofFn, BitVec.getLsbD_extractLsb']
+  rw [vget _ hi, stOf, Vector.getElem_ofFn, BitVec.getLsbD_extractLsb']
   simp [hj]
 
 section
@@ -169,11 +169,11 @@ theorem subAll_wp {s : State} {b : BitVec 32} (hb : s.gpr sb = b)
       have : q i ≠ .r10 ∧ q i ≠ .r11 ∧ q i ≠ .r12 ∧ q i ≠ .lr := by revert hi; revert i; decide
       simp only [Q]
       rw [u₁₁.other _ this.2.2.2, u₁₀.other _ this.2.2.1, u₉.other _ this.2.1, u₈.other _ this.1]
-    refine byte_ext fun j hj => ?_
+    refine byteExt fun j hj => ?_
     have := hin (k % 2) (by omega_arith) (4 * (k / 2) + t) (by omega_arith) j hj
     rw [show 2 * ((4 * (k / 2) + t) / 4) + k % 2 = k by omega_arith,
       show 8 * ((4 * (k / 2) + t) % 4) + j = 8 * t + j by omega_arith] at this
-    rw [BitVec.getLsbD_extractLsb', decide_eq_true hj, Bool.true_and, gq k hk, this, getD_eq _ (by omega_arith)]
+    rw [BitVec.getLsbD_extractLsb', decide_eq_true hj, Bool.true_and, gq k hk, this, vget _ (by omega_arith)]
     simp only [subBytes, Vector.getElem_map, stOf, Vector.getElem_ofFn]
     rw [show 2 * ((4 * (k / 2) + t) / 4) + k % 2 = k by omega_arith,
       show (4 * (k / 2) + t) % 4 = t by omega_arith]

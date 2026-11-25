@@ -331,7 +331,6 @@ namespace VG.Proof.Aes.Arm.Ecb
 open VG VG.Arm VG.Arm.Straight VG.Bitslice VG.Impl.Aes.Arm
 open VG.Proof.MdStream.Arm (Upd Mupd Fupd op2_imm op2_reg op2_lsr wp_mov wp_add wp_sub wp_cmp
   wp_ldr wp_str)
-open VG.Proof.Aes (getD_eq byte_ext)
 
 /-- The state made of the bytes of the words: byte `i` of block `c` is byte
 `i mod 4` of word `2 ⌊i / 4⌋ + c`, as `InRel` places them. -/
@@ -340,7 +339,7 @@ def regBlock (Q : Nat → BitVec 32) (c : Nat) : Spec.Aes.State :=
 
 theorem inRel_regBlock (Q : Nat → BitVec 32) : InRel Q (regBlock Q) := by
   intro b _ i hi j hj
-  rw [getD_eq _ hi]
+  rw [vget _ hi]
   simp [regBlock, hj]
 
 /-- What a transformation of two blocks does: `f R w` to each, with the
@@ -414,7 +413,7 @@ theorem regBlock_load {Q : Nat → BitVec 32} {m : Mem} {A : Addr} {c : Nat}
     regBlock Q c = Spec.Aes.stateAt m A := by
   apply Vector.ext
   intro i hi
-  refine byte_ext fun j hj => ?_
+  refine byteExt fun j hj => ?_
   simp only [regBlock, Spec.Aes.stateAt, Vector.getElem_ofFn, BitVec.getLsbD_extractLsb', hj,
     decide_true, Bool.true_and]
   rw [h _ (by omega_arith), readW_bit _ _ (by omega_arith) hj, Offset.add_add,
@@ -831,7 +830,7 @@ theorem group_ok {crypt2 : Prog isa} {f : Nat → List Byte → Spec.Aes.State �
       vals := fun k hk hkn t ht => by
         rw [gq₆ _ (by omega_arith)]
         obtain hcn : 2 * g + k / 4 < n := by omega_arith
-        apply byte_ext
+        apply byteExt
         intro j hj
         have := hin₃ (k / 4) (by omega_arith) (4 * (k % 4) + t) (by omega_arith) j hj
         dsimp only at this
