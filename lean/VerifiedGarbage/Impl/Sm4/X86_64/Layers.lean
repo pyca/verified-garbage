@@ -24,7 +24,7 @@ masks of the round keys' planes (48–50), the planes of the state's four
 words (64–95), the tail buffer (96–127, sixteen blocks), the table of the
 32 bitsliced round keys, eight planes each, in the order the rounds use
 them (128–383), and the callee-saved registers (384–389). The modes
-(`Impl/Modes/X86_64/`), which use slots 0–391 as SM4's core, keep their
+(`Impl/Modes/X86_64/`) leave slots 390–391 as padding and keep their
 own state in 392–399 (`Ctr.lean`).
 -/
 
@@ -56,7 +56,7 @@ def tableEnd : Nat := tableSlot + 8 * 32
 def savedSlot : Nat := tableEnd
 
 /-- The number of slots: ECB's, the callee-saved registers' after the table's. -/
-def slots : Nat := tableEnd + 8
+def slots : Nat := tableEnd + 6
 
 def keyMasks : List (Nat × BitVec 64) :=
   [(evenSlot, 0x00FF00FF00FF00FF), (oddSlot, 0xFF00FF00FF00FF00), (grpSlot, 0x0000FFFF0000FFFF)]

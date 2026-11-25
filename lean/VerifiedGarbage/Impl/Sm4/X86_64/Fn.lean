@@ -42,13 +42,13 @@ def expandKey : Prog isa := scrubAll .sse 0 3160 keyCall
 
 /-- `Spec.Sm4.ecbEncryptApi`'s function as emitted. -/
 def ecbEncrypt : Prog isa :=
-  scrubSel .sse 0 3144 [(0, 1)]
-    (Impl.StackScratch.X86_64.withStackScratchWiped 3144 .rcx 392 (Impl.Sm4.X86_64.ecb .encrypt))
+  scrubSel .sse 0 3144 [(0, 2)]
+    (Impl.StackScratch.X86_64.withStackScratchWiped 3128 .rcx 390 (Impl.Sm4.X86_64.ecbShared .encrypt))
 
 /-- `Spec.Sm4.ecbDecryptApi`'s function as emitted. -/
 def ecbDecrypt : Prog isa :=
-  scrubSel .sse 0 3144 [(0, 1)]
-    (Impl.StackScratch.X86_64.withStackScratchWiped 3144 .rcx 392 (Impl.Sm4.X86_64.ecb .decrypt))
+  scrubSel .sse 0 3144 [(0, 2)]
+    (Impl.StackScratch.X86_64.withStackScratchWiped 3128 .rcx 390 (Impl.Sm4.X86_64.ecbShared .decrypt))
 
 /-- `Spec.Sm4.cbcEncryptChainedApi`'s function as emitted. -/
 def cbcEncrypt : Prog isa :=

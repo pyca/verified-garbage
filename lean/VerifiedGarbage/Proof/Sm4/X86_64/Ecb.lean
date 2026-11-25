@@ -1163,6 +1163,14 @@ theorem crypt16_wp {s₀ : State} {E : Nat → Spec.Sm4.Word} (hp : KeyCtx s₀ 
   obtain ⟨s₃, e₃, c₃, -, -, hout⟩ := fromBs_step hp c₀₂ X₂
   exact WP.of_runBlock ⟨s₃, e₃, c₃, hout⟩
 
+/-- What ECB needs of a sixteen-block transform. -/
+def CryptCorrect (crypt : Prog isa) : Prop :=
+  ∀ {s₀ sRef : State} {E : Nat → Spec.Sm4.Word}, Saved sRef (s₀.gpr sb) s₀.mem →
+    KeyCtx s₀ E → MasksOk s₀ →
+    s₀.gpr .rdi = s₀.gpr sb + BitVec.ofNat 64 (8 * tableEnd) →
+    WP isa crypt s₀ fun s' => Ctx s₀ s' ∧
+      ∀ b < 16, tailBlock s' b = outBlock (quads .enc E 8 (ofBlock (tailBlock s₀ b)))
+
 end VG.Proof.Sm4.X86_64
 
 end
@@ -1189,9 +1197,9 @@ open VG VG.X86_64 VG.X86_64.Straight VG.Impl.Sm4.X86_64
 open VG.Impl.Aes.X86_64 (q sb t0 t1 movR movS st at_)
 open VG.Proof.Sm4 (DInv ofInt_nat quads ofBlock outBlock not_contains_off toNat_off blockAt_getD)
 
-theorem dataGroup_wp {s₀ : State} {b D : Addr} {n : Nat} {E : Nat → Spec.Sm4.Word} (hp : GPre s₀ b D n)
+theorem dataGroup_wp (crypt : Prog isa) (hcrypt : CryptCorrect crypt) {s₀ : State} {b D : Addr} {n : Nat} {E : Nat → Spec.Sm4.Word} (hp : GPre s₀ b D n)
     {k : Nat} {s : State} (hi : GInv s₀ b D n E k s) :
-    WP isa Impl.Sm4.X86_64.group s fun s' => (s'.zf = some true ∧ GDone s₀ b D n E s') ∨
+    WP isa (groupWith crypt) s fun s' => (s'.zf = some true ∧ GDone s₀ b D n E s') ∨
       (s'.zf = some false ∧ GInv s₀ b D n E (k + 1) s') := by
   have hfit := hp.fit
   have hfitD := hp.fitD
@@ -1220,7 +1228,7 @@ theorem dataGroup_wp {s₀ : State} {b D : Addr} {n : Nat} {E : Nat → Spec.Sm4
   obtain sepAT : Region.Disjoint ⟨A, 16 * c⟩ ⟨T, 16 * c⟩ :=
     (hp.sep.sub_left (VG.Offset.sub_base D (by omega_arith))).sub_right
       (VG.Offset.sub_base b (by rw [slots_eq, tailSlot_eq]; omega_arith))
-  unfold Impl.Sm4.X86_64.group copyIn
+  unfold groupWith copyIn
   -- The group's blocks to the tail buffer.
   refine WP.seq (WP.seq (WP.mono (groupCount_wp hi.r8 hv) fun s₁ ⟨c₁, o₁, m₁, rd₁, wr₁⟩ => ?_))
   obtain ⟨s₂a, e₂a, r₂a, o₂a, m₂a, rd₂a, wr₂a⟩ := movR_ok s₁ .rax .rdx
@@ -1257,7 +1265,7 @@ theorem dataGroup_wp {s₀ : State} {b D : Addr} {n : Nat} {E : Nat → Spec.Sm4
       keys := fun e he => by rw [base₃]; exact sc₃.keys e he }
   obtain hrdi₃ : s₃.gpr .rdi = s₃.gpr sb + BitVec.ofNat 64 (8 * tableEnd) := by
     rw [g₃' _ (by decide) (by decide) (by decide) (by decide), hi.rdi, base₃]
-  refine WP.seq (WP.mono (crypt16_wp hkey (sc₃.masks.ok base₃) hrdi₃) fun s₄ ⟨c₄, b₄⟩ => ?_)
+  refine WP.seq (WP.mono (hcrypt (by rw [base₃]; exact sc₃.saved) hkey (sc₃.masks.ok base₃) hrdi₃) fun s₄ ⟨c₄, b₄⟩ => ?_)
   obtain base₄ : s₄.gpr sb = b := by rw [c₄.base, base₃]
   obtain f₄ : Frame [⟨b, 8 * tableSlot⟩] s₃.mem s₄.mem := by have := c₄.frame; rw [base₃] at this; exact this
   obtain g₄ : ∀ r, r ∉ sboxWrites → r ≠ kp → s₄.gpr r = s.gpr r := fun r h1 h2 => by
@@ -1471,13 +1479,13 @@ theorem testSelf_ok (s : State) (r : Reg) :
   · simp only [runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc, Option.bind_some]
   · simp only [RegUpd.zf_arithFlags, BitVec.and_self]
 
-theorem dataLoop_wp {s₀ : State} {b D : Addr} {n : Nat} {E : Nat → Spec.Sm4.Word} (hp : GPre s₀ b D n)
+theorem dataLoop_wp (crypt : Prog isa) (hcrypt : CryptCorrect crypt) {s₀ : State} {b D : Addr} {n : Nat} {E : Nat → Spec.Sm4.Word} (hp : GPre s₀ b D n)
     {s : State} (hi : GInv s₀ b D n E 0 s) :
-    WP isa (.loop Impl.Sm4.X86_64.group .ne) s (GDone s₀ b D n E) := by
+    WP isa (.loop (groupWith crypt) .ne) s (GDone s₀ b D n E) := by
   refine WP.loop (M := isa) (fun m s => ∃ k, m = n - 16 * k ∧ GInv s₀ b D n E k s) (fun m s hs => ?_) n s
     ⟨0, by omega_using [], hi⟩
   obtain ⟨k, rfl, hk⟩ := hs
-  refine WP.mono (dataGroup_wp hp hk) fun s' h => ?_
+  refine WP.mono (dataGroup_wp crypt hcrypt hp hk) fun s' h => ?_
   rcases h with ⟨z, d⟩ | ⟨z, d⟩
   · exact .inl ⟨by simp [X86_64.eval, z], d⟩
   · exact .inr ⟨by simp [X86_64.eval, z], n - 16 * (k + 1), by have := d.lt; have := hk.lt; omega_arith,
@@ -1528,8 +1536,8 @@ theorem outF_spec (dir : Dir) (m : Mem) (sch : Spec.Sm4.Schedule) (D : Addr) (j 
   · simp only [outF, blockFn, specDir, Spec.Sm4.encryptBlock, crypt_eq]; rfl
   · simp only [outF, blockFn, specDir, Spec.Sm4.decryptBlock, crypt_eq]; rfl
 
-theorem ecb_wp (dir : Dir) {s₀ : State} (hp : (ecbX86_64 dir).pre s₀) :
-    WP isa (ecb dir) s₀ fun s' => gprPreserved s₀ s' ∧ (ecbX86_64 dir).post s₀ s' := by
+theorem ecbWith_wp (crypt : Prog isa) (hcrypt : CryptCorrect crypt) (dir : Dir) {s₀ : State} (hp : (ecbX86_64 dir).pre s₀) :
+    WP isa (ecbWith crypt dir) s₀ fun s' => gprPreserved s₀ s' ∧ (ecbX86_64 dir).post s₀ s' := by
   obtain ⟨hrd, hwr, dSD, dSS, dDS, dRD, dRS, fitK, fitD, fitB⟩ := hp
   let b := s₀.gpr .rcx
   let D := s₀.gpr .rsi
@@ -1538,7 +1546,7 @@ theorem ecb_wp (dir : Dir) {s₀ : State} (hp : (ecbX86_64 dir).pre s₀) :
   obtain hwS : (⟨b, 8 * slots⟩ : Region) ∈ s₀.wr := by rw [hwr]; simp [b]
   obtain hwD : (⟨D, 16 * n⟩ : Region) ∈ s₀.wr := by rw [hwr]; simp [D, n]
   obtain hrK : (⟨sched, 128⟩ : Region) ∈ s₀.rd := by rw [hrd]; simp [sched]
-  unfold ecb
+  unfold ecbWith
   -- The prologue.
   obtain ⟨s₁, e₁, b₁, r8₁, rdx₁, g₁, sv₁, m₁, f₁, rd₁, wr₁⟩ := prologue_ok (b := b) rfl hwS
   refine WP.seq (WP.of_runBlock ⟨s₁, e₁, ?_⟩)
@@ -1590,7 +1598,7 @@ theorem ecb_wp (dir : Dir) {s₀ : State} (hp : (ecbX86_64 dir).pre s₀) :
     exact WP.block_nil ⟨by rw [g₃, base₂], by rw [g₃, rsp₂], by rw [m₃]; exact sc₂, fun i hi => by omega,
       by rw [m₃]; exact fr₂, by rw [rd₃, rd₂], by rw [wr₃, wr₂]⟩
   · have hn0 : n ≠ 0 := by simpa using h0
-    refine dataLoop_wp ⟨hwS, hwD, dDS, fitB, fitD⟩ ⟨by rw [g₃, base₂], by rw [g₃, rsp₂],
+    refine dataLoop_wp crypt hcrypt ⟨hwS, hwD, dDS, fitB, fitD⟩ ⟨by rw [g₃, base₂], by rw [g₃, rsp₂],
       by rw [g₃, rdx₂]; simp, by rw [g₃, r8₂, Nat.mul_zero, Nat.sub_zero]; simp [n], by omega_using [hn0],
       by rw [g₃, k₂.rdi], by rw [m₃]; exact sc₂, fun i hi => ?_, by rw [m₃]; exact fr₂, by rw [rd₃, rd₂],
       by rw [wr₃, wr₂]⟩
@@ -1627,5 +1635,10 @@ theorem ecb_wp (dir : Dir) {s₀ : State} (hp : (ecbX86_64 dir).pre s₀) :
     simp only [Spec.Sm4.blocksAt, List.map_map]
     refine List.map_congr_left fun j _ => ?_
     exact outF_spec dir s₀.mem _ D j
+
+/-- The inline ECB implementation. -/
+theorem ecb_wp (dir : Dir) {s₀ : State} (hp : (ecbX86_64 dir).pre s₀) :
+    WP isa (ecb dir) s₀ fun s' => gprPreserved s₀ s' ∧ (ecbX86_64 dir).post s₀ s' :=
+  ecbWith_wp crypt16 (fun _ hp hm hrdi => crypt16_wp hp hm hrdi) dir hp
 
 end VG.Proof.Sm4.X86_64
