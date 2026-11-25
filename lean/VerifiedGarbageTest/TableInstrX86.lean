@@ -130,10 +130,8 @@ theorem verified (w : BitVec 64) : Verified target (code w) contract := by
 
 def artifactOf (fn : String) (w : BitVec 64) : EmitArtifact where
   target := .of (renderOnly target) emitter
-  module := "test"
-  name := fn
-  sig := sig
-  doc := "Loads words of its table."
+  api := { module := "test", name := fn, sig := sig, safety := []
+           summary := "Loads words of its table." }
   code := code w
   contract := contract
   verified := renderOnly_verified (verified w)

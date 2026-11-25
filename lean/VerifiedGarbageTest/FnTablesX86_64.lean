@@ -209,10 +209,8 @@ theorem verified : Verified target code contract := by
 
 def artifact : EmitArtifact where
   target := .of (renderOnly target) emitter
-  module := "test"
-  name := "vg_test_fn_tables"
-  sig := sig
-  doc := "Returns the word of data of its table, which the table's function returns.\n\n# Safety\n\n"
+  api := { module := "test", name := "vg_test_fn_tables", sig := sig, safety := []
+           summary := "Returns the word of data of its table, which the table's function returns." }
   tables := tables
   code := code
   contract := contract

@@ -126,7 +126,7 @@ def neon : List EmitArtifact :=
   arts.filter (·.name == "vg_poly1305_update_neon")
 def others : List EmitArtifact :=
   arts.filter (·.name != "vg_poly1305_update_neon")
-def neon2 : List EmitArtifact := neon.map fun a => { a with name := "vg_poly1305_update_neon2", vendor := none }
+def neon2 : List EmitArtifact := neon.map fun a => { a with suffix := "_neon2", vendor := none }
 
 /-- The dispatchers of Poly1305 with the artifacts `as`. -/
 def dispatchOf (as : List EmitArtifact) : String :=
@@ -145,7 +145,8 @@ def dispatchOf (as : List EmitArtifact) : String :=
   never run: its dispatcher tries vg_poly1305_update_neon2 before it"
 
 -- An implementation of another signature or documentation than its base's fails it.
-#guard has (dispatchOf (others ++ neon.map fun a => { a with doc := "Another function. " ++ a.doc }))
+#guard has (dispatchOf (others ++ neon.map fun a => 
+    { a with api := { a.api with summary := "Another function. " ++ a.api.summary } }))
   "vg_poly1305_update_neon, an implementation of vg_poly1305_update, has another signature or \
   documentation"
 

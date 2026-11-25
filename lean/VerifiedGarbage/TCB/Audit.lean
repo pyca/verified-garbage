@@ -6,7 +6,7 @@ public meta import VerifiedGarbage.TCB.AuditRecords
 /-!
 # Environment audit
 
-**Trusted.** Two checks the emitter runs (`Emit.driver`) on everything it
+**Trusted.** Three checks the emitter runs (`Emit.driver`) on everything it
 imports, besides the axiom audit (`TCB/Axioms.lean`):
 
 * `#assert_no_compiler_overrides all run` fails if the compiler may run
@@ -33,8 +33,18 @@ imports, besides the axiom audit (`TCB/Axioms.lean`):
   not a directory: an implementation's own files could declare such a name.
   Theorems (e.g. the equation lemmas Lean generates for a `Spec/` definition
   in the module that first unfolds it) carry no data and are exempt.
+* `#assert_spec_apis apis` fails unless the kernel checks that each `Api` of
+  `apis` (the emitted artifacts', `Artifact.api`) is one `Spec/` declares: a
+  constant declared in a module under `VerifiedGarbage.Spec`, or a function
+  declared there applied to one such constant and nothing else (as
+  `Spec.Hmac.sha256I.pbkdf2Api`). `#assert_spec_origin` says it of names; this
+  says it of what is emitted, whatever name a registration gives it: a
+  declaration that its file takes for `Spec.<Alg>.fooApi` (one in a namespace
+  that shadows `VG`'s), or a value that a proof builds artifacts with. An `Api`
+  that needs anything else, such as a string, is not `Spec/`'s: `Spec/` must
+  give it a name.
 
-Both walk the constants of the file they run in, and take what an imported
+The first two walk the constants of the file they run in, and take what an imported
 constant or module holds from the audit records its module wrote when it was
 built (`TCB/AuditRecords.lean`), which saw its proofs and the values of its
 definitions: so they run in a module too, which sees what it imports from other
@@ -93,5 +103,75 @@ elab "#assert_spec_origin" : command => do
   unless bad.isEmpty do
     throwError m!"these `VG.Spec` names are not declared in `Spec/`:\n{"\n".intercalate bad}"
   logInfo m!"every `VG.Spec` definition is declared in `Spec/`"
+
+/-- Whether the constant `c` is declared in a module under `VerifiedGarbage.Spec`. -/
+def declaredInSpec (env : Environment) (c : Name) : Bool :=
+  match env.getModuleIdxFor? c with
+  | some i => (`VerifiedGarbage.Spec).isPrefixOf env.header.moduleNames[i.toNat]!
+  | none => false
+
+/-- Whether `e` is an `Api` that `Spec/` declares: a constant of `Spec/`, or a
+function of `Spec/` applied to one. -/
+def isSpecApi (env : Environment) : Expr → Bool
+  | .const c _ => declaredInSpec env c
+  | .app (.const f _) (.const c _) => declaredInSpec env f && declaredInSpec env c
+  | _ => false
+
+/-- `e` reduced, unfolding nothing `Spec/` declares. Not trusted: the kernel checks
+what it finds. -/
+def whnfToSpec (e : Expr) : MetaM Expr := do
+  let env ← getEnv
+  Meta.withCanUnfoldPred (fun _ ci => return !declaredInSpec env ci.name) do
+    return (← Meta.whnf e).consumeMData
+
+/-- `e`, an `Api`, as `isSpecApi` wants it, if it can be. Not trusted, as `whnfToSpec`. -/
+def reduceApi (e : Expr) : MetaM Expr := do
+  match ← whnfToSpec e with
+  | .app f x => return .app f (← whnfToSpec x)
+  | e => return e
+
+/-- The elements of the list `e`, as terms. Not trusted, as `whnfToSpec`. The kernel
+reduces it, as it will to check them: a list may be one of those that a decidable
+property of many variants chooses between, which Lean's elaborator is too slow to
+decide. -/
+partial def listElems (e : Expr) : MetaM (Array Expr) := do
+  let rec go (e : Expr) (acc : Array Expr) : MetaM (Array Expr) := do
+    let e ← ofExceptKernelException (Kernel.whnf (← getEnv) {} e)
+    match e.getAppFnArgs with
+    | (``List.cons, #[_, a, as]) => go as (acc.push a)
+    | (``List.nil, _) => return acc
+    | _ => throwError "not a list of known length:{indentExpr e}"
+  go e #[]
+
+/-- `#assert_spec_apis apis`, where `apis : List (List Api)`. -/
+elab "#assert_spec_apis " t:term : command => liftTermElabM do
+  let api := mkConst `VG.Api
+  let rowTy := mkApp (mkConst ``List [1]) api
+  let ty := mkApp (mkConst ``List [1]) rowTy
+  let e ← Term.elabTermEnsuringType t ty
+  Term.synthesizeSyntheticMVarsNoPostponing
+  let e ← instantiateMVars e
+  let env ← getEnv
+  let mut bad : Array MessageData := #[]
+  let mut rows : Array Expr := #[]
+  let mut count : Nat := 0
+  for row in ← listElems e do
+    let mut apis : Array Expr := #[]
+    for a in ← listElems row do
+      let a ← reduceApi a
+      unless isSpecApi env a do bad := bad.push m!"{indentExpr a}"
+      apis := apis.push a
+      count := count + 1
+    rows := rows.push (← Meta.mkListLit api apis.toList)
+  unless bad.isEmpty do
+    throwError m!"these artifacts' `Api`s are not ones `Spec/` declares:{MessageData.joinSep bad.toList ""}"
+  let rhs ← Meta.mkListLit rowTy rows.toList
+  -- The kernel checks that those are the `Api`s of `e`.
+  addDecl <| .thmDecl {
+    name := ← mkAuxDeclName `specApis
+    levelParams := []
+    type := mkApp3 (mkConst ``Eq [2]) ty e rhs
+    value := mkApp2 (mkConst ``Eq.refl [2]) ty rhs }
+  logInfo m!"the `Api`s of the {count} artifacts are ones `Spec/` declares"
 
 end VG

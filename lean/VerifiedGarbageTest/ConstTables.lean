@@ -98,10 +98,8 @@ theorem verified : Verified target code contract := by
 
 def artifact : EmitArtifact where
   target := .of (renderOnly target) emitter
-  module := "test"
-  name := "vg_test_consts"
-  sig := sig
-  doc := "Returns word 1 of its table."
+  api := { module := "test", name := "vg_test_consts", sig := sig, safety := []
+           summary := "Returns word 1 of its table." }
   consts := consts
   code := code
   contract := contract

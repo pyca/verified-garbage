@@ -16,7 +16,7 @@ than building every module of the library as `Emit.lean` needs. Run it from
 
 It runs the same trusted printer (`VG.Emit.run`) and the same audits
 (`#assert_standard_axioms`, `#assert_no_compiler_overrides`,
-`#assert_spec_origin`) as `Emit.lean`. First, on the fast path, on these
+`#assert_spec_origin`, `#assert_spec_apis`) as `Emit.lean`. First, on the fast path, on these
 artifacts only, into `.lake/emit/one`; then it copies (or compares) each file
 it generated but the crate's root `lib.rs` and `mod.rs` files, and each
 module's assembly file (`assembly/<module>.s`). Each table of constants has a

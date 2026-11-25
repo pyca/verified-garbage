@@ -48,32 +48,32 @@ open VG.Proof.MlDsa.X86_64 (ArithImpl)
 
 def artifactsFor (v : Proof.MlDsa.X86_64.PreparedKey.Scrub.PrepImpl) :
     List (Artifact X86_64.target) := [
-  (Spec.MlDsa.preparePublicKeyApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44").artifact X86_64.target {
+  Spec.MlDsa.preparePublicKey44Api.artifact X86_64.target {
     suffix := v.arith.code.sfx
     code := Impl.MlDsa.X86_64.Fn.preparePublic v.arith.level (Proof.MlDsa.X86_64.Verify.primsWith v.arith.code) Spec.MlDsa.mlDsa44
     verified := Proof.MlDsa.X86_64.FnScrub.preparePublic44_scrubbed v.arith
     spSafe := Proof.MlDsa.X86_64.FnScrub.preparePublic44_spSafe v.arith },
-  (Spec.MlDsa.prepareSecretKeyApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44").artifact X86_64.target {
+  Spec.MlDsa.prepareSecretKey44Api.artifact X86_64.target {
     suffix := v.arith.code.sfx
     code := Impl.MlDsa.X86_64.Fn.prepareSecret v.arith.level (Proof.MlDsa.X86_64.Verify.primsWith v.arith.code) Spec.MlDsa.mlDsa44
     verified := Proof.MlDsa.X86_64.FnScrub.prepareSecret44_scrubbed v.arith
     spSafe := Proof.MlDsa.X86_64.FnScrub.prepareSecret44_spSafe v.arith },
-  (Spec.MlDsa.preparePublicKeyApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65").artifact X86_64.target {
+  Spec.MlDsa.preparePublicKey65Api.artifact X86_64.target {
     suffix := v.arith.code.sfx
     code := Impl.MlDsa.X86_64.Fn.preparePublic v.arith.level (Proof.MlDsa.X86_64.Verify.primsWith v.arith.code) Spec.MlDsa.mlDsa65
     verified := Proof.MlDsa.X86_64.FnScrub.preparePublic65_scrubbed v.arith
     spSafe := Proof.MlDsa.X86_64.FnScrub.preparePublic65_spSafe v.arith },
-  (Spec.MlDsa.prepareSecretKeyApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65").artifact X86_64.target {
+  Spec.MlDsa.prepareSecretKey65Api.artifact X86_64.target {
     suffix := v.arith.code.sfx
     code := Impl.MlDsa.X86_64.Fn.prepareSecret v.arith.level (Proof.MlDsa.X86_64.Verify.primsWith v.arith.code) Spec.MlDsa.mlDsa65
     verified := Proof.MlDsa.X86_64.FnScrub.prepareSecret65_scrubbed v.arith
     spSafe := Proof.MlDsa.X86_64.FnScrub.prepareSecret65_spSafe v.arith },
-  (Spec.MlDsa.preparePublicKeyApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87").artifact X86_64.target {
+  Spec.MlDsa.preparePublicKey87Api.artifact X86_64.target {
     suffix := v.arith.code.sfx
     code := Impl.MlDsa.X86_64.Fn.preparePublic v.arith.level (Proof.MlDsa.X86_64.Verify.primsWith v.arith.code) Spec.MlDsa.mlDsa87
     verified := Proof.MlDsa.X86_64.FnScrub.preparePublic87_scrubbed v.arith
     spSafe := Proof.MlDsa.X86_64.FnScrub.preparePublic87_spSafe v.arith },
-  (Spec.MlDsa.prepareSecretKeyApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87").artifact X86_64.target {
+  Spec.MlDsa.prepareSecretKey87Api.artifact X86_64.target {
     suffix := v.arith.code.sfx
     code := Impl.MlDsa.X86_64.Fn.prepareSecret v.arith.level (Proof.MlDsa.X86_64.Verify.primsWith v.arith.code) Spec.MlDsa.mlDsa87
     verified := Proof.MlDsa.X86_64.FnScrub.prepareSecret87_scrubbed v.arith
@@ -106,17 +106,17 @@ def artifactsFor (v : ArithImpl) : List (Artifact X86_64.target) := [
     code := Impl.MlDsa.X86_64.Fn.signEntry v.level (Proof.MlDsa.signWithCacheName "mldsa87" ++ v.code.sfx) (Proof.MlDsa.signWithCacheName "mldsa87" ++ "_body") (Proof.MlDsa.X86_64.Sign.primsWith v.code true) Spec.MlDsa.mlDsa87 0
     verified := Proof.MlDsa.X86_64.SignScrub.sign87_scrubbed v
     spSafe := Proof.MlDsa.X86_64.SignScrub.sign87_spSafe v },
-  (Spec.MlDsa.preparedSignApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44").artifact X86_64.target {
+  Spec.MlDsa.preparedSign44Api.artifact X86_64.target {
     suffix := v.code.sfx
     code := Impl.MlDsa.X86_64.Fn.signEntry v.level (Proof.MlDsa.signWithCacheName "mldsa44" ++ v.code.sfx) (Proof.MlDsa.signWithCacheName "mldsa44" ++ "_body") (Proof.MlDsa.X86_64.Sign.primsWith v.code true) Spec.MlDsa.mlDsa44 1
     verified := Proof.MlDsa.X86_64.SignScrub.preparedSign44_scrubbed v
     spSafe := Proof.MlDsa.X86_64.SignScrub.preparedSign44_spSafe v },
-  (Spec.MlDsa.preparedSignApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65").artifact X86_64.target {
+  Spec.MlDsa.preparedSign65Api.artifact X86_64.target {
     suffix := v.code.sfx
     code := Impl.MlDsa.X86_64.Fn.signEntry v.level (Proof.MlDsa.signWithCacheName "mldsa65" ++ v.code.sfx) (Proof.MlDsa.signWithCacheName "mldsa65" ++ "_body") (Proof.MlDsa.X86_64.Sign.primsWith v.code true) Spec.MlDsa.mlDsa65 1
     verified := Proof.MlDsa.X86_64.SignScrub.preparedSign65_scrubbed v
     spSafe := Proof.MlDsa.X86_64.SignScrub.preparedSign65_spSafe v },
-  (Spec.MlDsa.preparedSignApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87").artifact X86_64.target {
+  Spec.MlDsa.preparedSign87Api.artifact X86_64.target {
     suffix := v.code.sfx
     code := Impl.MlDsa.X86_64.Fn.signEntry v.level (Proof.MlDsa.signWithCacheName "mldsa87" ++ v.code.sfx) (Proof.MlDsa.signWithCacheName "mldsa87" ++ "_body") (Proof.MlDsa.X86_64.Sign.primsWith v.code true) Spec.MlDsa.mlDsa87 1
     verified := Proof.MlDsa.X86_64.SignScrub.preparedSign87_scrubbed v
@@ -149,17 +149,17 @@ def artifactsFor (v : ArithImpl) : List (Artifact X86_64.target) := [
     code := Impl.MlDsa.X86_64.Fn.signMessage v.level (Proof.MlDsa.signWithCacheName "mldsa87" ++ v.code.sfx) (Proof.MlDsa.signWithCacheName "mldsa87" ++ "_body") (Proof.MlDsa.X86_64.Sign.primsWith v.code true) Spec.MlDsa.mlDsa87 0
     verified := Proof.MlDsa.X86_64.SignScrub.signMessage87_scrubbed v
     spSafe := Proof.MlDsa.X86_64.SignScrub.signMessage87_spSafe v },
-  (Spec.MlDsa.preparedSignMessageApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44").artifact X86_64.target {
+  Spec.MlDsa.preparedSignMessage44Api.artifact X86_64.target {
     suffix := v.code.sfx
     code := Impl.MlDsa.X86_64.Fn.signMessage v.level (Proof.MlDsa.signWithCacheName "mldsa44" ++ v.code.sfx) (Proof.MlDsa.signWithCacheName "mldsa44" ++ "_body") (Proof.MlDsa.X86_64.Sign.primsWith v.code true) Spec.MlDsa.mlDsa44 1
     verified := Proof.MlDsa.X86_64.SignScrub.preparedSignMessage44_scrubbed v
     spSafe := Proof.MlDsa.X86_64.SignScrub.preparedSignMessage44_spSafe v },
-  (Spec.MlDsa.preparedSignMessageApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65").artifact X86_64.target {
+  Spec.MlDsa.preparedSignMessage65Api.artifact X86_64.target {
     suffix := v.code.sfx
     code := Impl.MlDsa.X86_64.Fn.signMessage v.level (Proof.MlDsa.signWithCacheName "mldsa65" ++ v.code.sfx) (Proof.MlDsa.signWithCacheName "mldsa65" ++ "_body") (Proof.MlDsa.X86_64.Sign.primsWith v.code true) Spec.MlDsa.mlDsa65 1
     verified := Proof.MlDsa.X86_64.SignScrub.preparedSignMessage65_scrubbed v
     spSafe := Proof.MlDsa.X86_64.SignScrub.preparedSignMessage65_spSafe v },
-  (Spec.MlDsa.preparedSignMessageApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87").artifact X86_64.target {
+  Spec.MlDsa.preparedSignMessage87Api.artifact X86_64.target {
     suffix := v.code.sfx
     code := Impl.MlDsa.X86_64.Fn.signMessage v.level (Proof.MlDsa.signWithCacheName "mldsa87" ++ v.code.sfx) (Proof.MlDsa.signWithCacheName "mldsa87" ++ "_body") (Proof.MlDsa.X86_64.Sign.primsWith v.code true) Spec.MlDsa.mlDsa87 1
     verified := Proof.MlDsa.X86_64.SignScrub.preparedSignMessage87_scrubbed v
@@ -192,17 +192,17 @@ def artifactsFor (v : ArithImpl) : List (Artifact X86_64.target) := [
     code := Impl.MlDsa.X86_64.Fn.verifyEntry v.level (Proof.MlDsa.verifyWithCacheName "mldsa87" ++ v.code.sfx) (Proof.MlDsa.X86_64.Verify.primsWith v.code) Spec.MlDsa.mlDsa87 0
     verified := Proof.MlDsa.X86_64.VerifyScrub.verify87_scrubbed v
     spSafe := Proof.MlDsa.X86_64.VerifyScrub.verify87_spSafe v },
-  (Spec.MlDsa.preparedVerifyApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44").artifact X86_64.target {
+  Spec.MlDsa.preparedVerify44Api.artifact X86_64.target {
     suffix := v.code.sfx
     code := Impl.MlDsa.X86_64.Fn.verifyEntry v.level (Proof.MlDsa.verifyWithCacheName "mldsa44" ++ v.code.sfx) (Proof.MlDsa.X86_64.Verify.primsWith v.code) Spec.MlDsa.mlDsa44 1
     verified := Proof.MlDsa.X86_64.VerifyScrub.preparedVerify44_scrubbed v
     spSafe := Proof.MlDsa.X86_64.VerifyScrub.preparedVerify44_spSafe v },
-  (Spec.MlDsa.preparedVerifyApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65").artifact X86_64.target {
+  Spec.MlDsa.preparedVerify65Api.artifact X86_64.target {
     suffix := v.code.sfx
     code := Impl.MlDsa.X86_64.Fn.verifyEntry v.level (Proof.MlDsa.verifyWithCacheName "mldsa65" ++ v.code.sfx) (Proof.MlDsa.X86_64.Verify.primsWith v.code) Spec.MlDsa.mlDsa65 1
     verified := Proof.MlDsa.X86_64.VerifyScrub.preparedVerify65_scrubbed v
     spSafe := Proof.MlDsa.X86_64.VerifyScrub.preparedVerify65_spSafe v },
-  (Spec.MlDsa.preparedVerifyApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87").artifact X86_64.target {
+  Spec.MlDsa.preparedVerify87Api.artifact X86_64.target {
     suffix := v.code.sfx
     code := Impl.MlDsa.X86_64.Fn.verifyEntry v.level (Proof.MlDsa.verifyWithCacheName "mldsa87" ++ v.code.sfx) (Proof.MlDsa.X86_64.Verify.primsWith v.code) Spec.MlDsa.mlDsa87 1
     verified := Proof.MlDsa.X86_64.VerifyScrub.preparedVerify87_scrubbed v
@@ -220,32 +220,32 @@ open VG
 open VG.Proof.MlDsa.X86_64 (ArithImpl)
 
 def artifactsFor (v : ArithImpl) : List (Artifact X86_64.target) := [
-  (Spec.MlDsa.verifyMessageCachedApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44").artifact X86_64.target {
+  Spec.MlDsa.verifyMessageCached44Api.artifact X86_64.target {
     suffix := v.code.sfx
     code := Impl.MlDsa.X86_64.Fn.verifyMessage v.level (Proof.MlDsa.verifyWithCacheName "mldsa44" ++ v.code.sfx) (Proof.MlDsa.X86_64.Verify.primsWith v.code) Spec.MlDsa.mlDsa44 0
     verified := Proof.MlDsa.X86_64.VerifyScrub.verifyMessage44_scrubbed v
     spSafe := Proof.MlDsa.X86_64.VerifyScrub.verifyMessage44_spSafe v },
-  (Spec.MlDsa.verifyMessageCachedApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65").artifact X86_64.target {
+  Spec.MlDsa.verifyMessageCached65Api.artifact X86_64.target {
     suffix := v.code.sfx
     code := Impl.MlDsa.X86_64.Fn.verifyMessage v.level (Proof.MlDsa.verifyWithCacheName "mldsa65" ++ v.code.sfx) (Proof.MlDsa.X86_64.Verify.primsWith v.code) Spec.MlDsa.mlDsa65 0
     verified := Proof.MlDsa.X86_64.VerifyScrub.verifyMessage65_scrubbed v
     spSafe := Proof.MlDsa.X86_64.VerifyScrub.verifyMessage65_spSafe v },
-  (Spec.MlDsa.verifyMessageCachedApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87").artifact X86_64.target {
+  Spec.MlDsa.verifyMessageCached87Api.artifact X86_64.target {
     suffix := v.code.sfx
     code := Impl.MlDsa.X86_64.Fn.verifyMessage v.level (Proof.MlDsa.verifyWithCacheName "mldsa87" ++ v.code.sfx) (Proof.MlDsa.X86_64.Verify.primsWith v.code) Spec.MlDsa.mlDsa87 0
     verified := Proof.MlDsa.X86_64.VerifyScrub.verifyMessage87_scrubbed v
     spSafe := Proof.MlDsa.X86_64.VerifyScrub.verifyMessage87_spSafe v },
-  (Spec.MlDsa.preparedVerifyMessageApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44").artifact X86_64.target {
+  Spec.MlDsa.preparedVerifyMessage44Api.artifact X86_64.target {
     suffix := v.code.sfx
     code := Impl.MlDsa.X86_64.Fn.verifyMessage v.level (Proof.MlDsa.verifyWithCacheName "mldsa44" ++ v.code.sfx) (Proof.MlDsa.X86_64.Verify.primsWith v.code) Spec.MlDsa.mlDsa44 1
     verified := Proof.MlDsa.X86_64.VerifyScrub.preparedVerifyMessage44_scrubbed v
     spSafe := Proof.MlDsa.X86_64.VerifyScrub.preparedVerifyMessage44_spSafe v },
-  (Spec.MlDsa.preparedVerifyMessageApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65").artifact X86_64.target {
+  Spec.MlDsa.preparedVerifyMessage65Api.artifact X86_64.target {
     suffix := v.code.sfx
     code := Impl.MlDsa.X86_64.Fn.verifyMessage v.level (Proof.MlDsa.verifyWithCacheName "mldsa65" ++ v.code.sfx) (Proof.MlDsa.X86_64.Verify.primsWith v.code) Spec.MlDsa.mlDsa65 1
     verified := Proof.MlDsa.X86_64.VerifyScrub.preparedVerifyMessage65_scrubbed v
     spSafe := Proof.MlDsa.X86_64.VerifyScrub.preparedVerifyMessage65_spSafe v },
-  (Spec.MlDsa.preparedVerifyMessageApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87").artifact X86_64.target {
+  Spec.MlDsa.preparedVerifyMessage87Api.artifact X86_64.target {
     suffix := v.code.sfx
     code := Impl.MlDsa.X86_64.Fn.verifyMessage v.level (Proof.MlDsa.verifyWithCacheName "mldsa87" ++ v.code.sfx) (Proof.MlDsa.X86_64.Verify.primsWith v.code) Spec.MlDsa.mlDsa87 1
     verified := Proof.MlDsa.X86_64.VerifyScrub.preparedVerifyMessage87_scrubbed v

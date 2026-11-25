@@ -85,10 +85,8 @@ theorem verified : Verified target code contract := by
 
 def artifact (w : List (String × Nat)) : EmitArtifact where
   target := .of (renderOnly target) emitter
-  module := "test"
-  name := "vg_test_written"
-  sig := sig
-  doc := "Writes nothing.\n\n# Safety\n\n* None."
+  api := { module := "test", name := "vg_test_written", sig := sig, safety := ["None."]
+           summary := "Writes nothing." }
   code := code
   contract := contract
   verified := renderOnly_verified verified
@@ -143,26 +141,26 @@ pub unsafe extern \"C\" fn vg_test_written(buf: *mut [u64; 4], other: *mut [u8; 
 
 #guard Rust.writtenName "vg_x25519_base" "scratch" == "VG_X25519_BASE_SCRATCH_WRITTEN"
 
-/-- The artifact, its name `name` and its module `module`. -/
-def named (name : String) (module : String := "test") : EmitArtifact :=
-  { artifact [] with name := name, module := module }
+/-- The artifact, of the suffix `suffix`, its `Api`'s module `module` and name `name`. -/
+def named (suffix : String) (module : String := "test") (name : String := "vg_test_written") :
+    EmitArtifact :=
+  { artifact [] with suffix := suffix, api := { (artifact []).api with module := module, name := name } }
 
 #guard (Rust.checkName (artifact [])).isOk
-#guard (Rust.checkName (named "vg_test_written_avx2")).isOk
-#guard (Rust.checkName (named "vg_test_written" "aes_gcm2")).isOk
+#guard (Rust.checkName (named "_avx2")).isOk
+#guard (Rust.checkName (named "" "aes_gcm2")).isOk
 -- A suffix that ends the function and starts another, which the proven code
 -- would then follow.
-#guard !(Rust.checkName (named "vg_test_written() { core::arch::naked_asm!(\"ret\") }\n\
+#guard !(Rust.checkName (named "() { core::arch::naked_asm!(\"ret\") }\n\
   pub unsafe extern \"C\" fn vg_test_written_verified")).isOk
-#guard !(Rust.checkName (named "vg_test_written;")).isOk
-#guard !(Rust.checkName (named "vg_test_written_AVX2")).isOk
-#guard !(Rust.checkName (named "vg_test_written ")).isOk
--- Not its base's name followed by a suffix.
-#guard !(Rust.checkName (named "vg_test")).isOk
-#guard !(Rust.checkName (named "vg_other")).isOk
+#guard !(Rust.checkName (named ";")).isOk
+#guard !(Rust.checkName (named "_AVX2")).isOk
+#guard !(Rust.checkName (named " ")).isOk
+-- Its `Api`'s name is not that of a function of the crate.
+#guard !(Rust.checkName (named "" (name := "test"))).isOk
 -- Its module is not a Rust module's name.
-#guard !(Rust.checkName (named "vg_test_written" "")).isOk
-#guard !(Rust.checkName (named "vg_test_written" "../test")).isOk
-#guard !(Rust.checkName (named "vg_test_written" "Test")).isOk
-#guard !(Rust.checkName (named "vg_test_written" "1test")).isOk
+#guard !(Rust.checkName (named "" "")).isOk
+#guard !(Rust.checkName (named "" "../test")).isOk
+#guard !(Rust.checkName (named "" "Test")).isOk
+#guard !(Rust.checkName (named "" "1test")).isOk
 end VG.Test.Written

@@ -67,27 +67,27 @@ open VG VG.Spec.MlDsa
 key, for each parameter set. -/
 def artifacts : List (Artifact AArch64.target) :=
   VG.Proof.Variants.Keccak.AArch64.variants.flatMap fun (v : Proof.Sha3.AArch64.Permutation) => [
-    (signApi mlDsa44 "mldsa44" "ML-DSA-44").artifact AArch64.target {
+    sign44Api.artifact AArch64.target {
       suffix := v.callee.suffix
       code := Impl.MlDsa.AArch64.Fn.sign v.callee mlDsa44 "mldsa44" false
       verified := Proof.MlDsa.AArch64.Fn.sign44 v false },
-    (preparedSignApi mlDsa44 "mldsa44" "ML-DSA-44").artifact AArch64.target {
+    preparedSign44Api.artifact AArch64.target {
       suffix := v.callee.suffix
       code := Impl.MlDsa.AArch64.Fn.sign v.callee mlDsa44 "mldsa44" true
       verified := Proof.MlDsa.AArch64.Fn.sign44 v true },
-    (signApi mlDsa65 "mldsa65" "ML-DSA-65").artifact AArch64.target {
+    sign65Api.artifact AArch64.target {
       suffix := v.callee.suffix
       code := Impl.MlDsa.AArch64.Fn.sign v.callee mlDsa65 "mldsa65" false
       verified := Proof.MlDsa.AArch64.Fn.sign65 v false },
-    (preparedSignApi mlDsa65 "mldsa65" "ML-DSA-65").artifact AArch64.target {
+    preparedSign65Api.artifact AArch64.target {
       suffix := v.callee.suffix
       code := Impl.MlDsa.AArch64.Fn.sign v.callee mlDsa65 "mldsa65" true
       verified := Proof.MlDsa.AArch64.Fn.sign65 v true },
-    (signApi mlDsa87 "mldsa87" "ML-DSA-87").artifact AArch64.target {
+    sign87Api.artifact AArch64.target {
       suffix := v.callee.suffix
       code := Impl.MlDsa.AArch64.Fn.sign v.callee mlDsa87 "mldsa87" false
       verified := Proof.MlDsa.AArch64.Fn.sign87 v false },
-    (preparedSignApi mlDsa87 "mldsa87" "ML-DSA-87").artifact AArch64.target {
+    preparedSign87Api.artifact AArch64.target {
       suffix := v.callee.suffix
       code := Impl.MlDsa.AArch64.Fn.sign v.callee mlDsa87 "mldsa87" true
       verified := Proof.MlDsa.AArch64.Fn.sign87 v true }]
@@ -102,27 +102,27 @@ open VG VG.Spec.MlDsa
 parameter set. -/
 def artifacts : List (Artifact AArch64.target) :=
   VG.Proof.Variants.Keccak.AArch64.variants.flatMap fun (v : Proof.Sha3.AArch64.Permutation) => [
-    (signMessageApi mlDsa44 "mldsa44" "ML-DSA-44").artifact AArch64.target {
+    signMessage44Api.artifact AArch64.target {
       suffix := v.callee.suffix
       code := Impl.MlDsa.AArch64.Fn.signMessage v.callee mlDsa44 "mldsa44" false
       verified := Proof.MlDsa.AArch64.Fn.signMessage44 v false },
-    (preparedSignMessageApi mlDsa44 "mldsa44" "ML-DSA-44").artifact AArch64.target {
+    preparedSignMessage44Api.artifact AArch64.target {
       suffix := v.callee.suffix
       code := Impl.MlDsa.AArch64.Fn.signMessage v.callee mlDsa44 "mldsa44" true
       verified := Proof.MlDsa.AArch64.Fn.signMessage44 v true },
-    (signMessageApi mlDsa65 "mldsa65" "ML-DSA-65").artifact AArch64.target {
+    signMessage65Api.artifact AArch64.target {
       suffix := v.callee.suffix
       code := Impl.MlDsa.AArch64.Fn.signMessage v.callee mlDsa65 "mldsa65" false
       verified := Proof.MlDsa.AArch64.Fn.signMessage65 v false },
-    (preparedSignMessageApi mlDsa65 "mldsa65" "ML-DSA-65").artifact AArch64.target {
+    preparedSignMessage65Api.artifact AArch64.target {
       suffix := v.callee.suffix
       code := Impl.MlDsa.AArch64.Fn.signMessage v.callee mlDsa65 "mldsa65" true
       verified := Proof.MlDsa.AArch64.Fn.signMessage65 v true },
-    (signMessageApi mlDsa87 "mldsa87" "ML-DSA-87").artifact AArch64.target {
+    signMessage87Api.artifact AArch64.target {
       suffix := v.callee.suffix
       code := Impl.MlDsa.AArch64.Fn.signMessage v.callee mlDsa87 "mldsa87" false
       verified := Proof.MlDsa.AArch64.Fn.signMessage87 v false },
-    (preparedSignMessageApi mlDsa87 "mldsa87" "ML-DSA-87").artifact AArch64.target {
+    preparedSignMessage87Api.artifact AArch64.target {
       suffix := v.callee.suffix
       code := Impl.MlDsa.AArch64.Fn.signMessage v.callee mlDsa87 "mldsa87" true
       verified := Proof.MlDsa.AArch64.Fn.signMessage87 v true }]
@@ -137,27 +137,27 @@ open VG VG.Spec.MlDsa
 with a prepared key, for each parameter set. -/
 def artifacts : List (Artifact AArch64.target) :=
   VG.Proof.Variants.Keccak.AArch64.variants.flatMap fun (v : Proof.Sha3.AArch64.Permutation) => [
-    (verifyApi mlDsa44 "mldsa44" "ML-DSA-44").artifact AArch64.target {
+    verify44Api.artifact AArch64.target {
       suffix := v.callee.suffix
       code := Impl.MlDsa.AArch64.Fn.verify v.callee mlDsa44 "mldsa44" false
       verified := Proof.MlDsa.AArch64.Fn.verify44 v false },
-    (preparedVerifyApi mlDsa44 "mldsa44" "ML-DSA-44").artifact AArch64.target {
+    preparedVerify44Api.artifact AArch64.target {
       suffix := v.callee.suffix
       code := Impl.MlDsa.AArch64.Fn.verify v.callee mlDsa44 "mldsa44" true
       verified := Proof.MlDsa.AArch64.Fn.verify44 v true },
-    (verifyApi mlDsa65 "mldsa65" "ML-DSA-65").artifact AArch64.target {
+    verify65Api.artifact AArch64.target {
       suffix := v.callee.suffix
       code := Impl.MlDsa.AArch64.Fn.verify v.callee mlDsa65 "mldsa65" false
       verified := Proof.MlDsa.AArch64.Fn.verify65 v false },
-    (preparedVerifyApi mlDsa65 "mldsa65" "ML-DSA-65").artifact AArch64.target {
+    preparedVerify65Api.artifact AArch64.target {
       suffix := v.callee.suffix
       code := Impl.MlDsa.AArch64.Fn.verify v.callee mlDsa65 "mldsa65" true
       verified := Proof.MlDsa.AArch64.Fn.verify65 v true },
-    (verifyApi mlDsa87 "mldsa87" "ML-DSA-87").artifact AArch64.target {
+    verify87Api.artifact AArch64.target {
       suffix := v.callee.suffix
       code := Impl.MlDsa.AArch64.Fn.verify v.callee mlDsa87 "mldsa87" false
       verified := Proof.MlDsa.AArch64.Fn.verify87 v false },
-    (preparedVerifyApi mlDsa87 "mldsa87" "ML-DSA-87").artifact AArch64.target {
+    preparedVerify87Api.artifact AArch64.target {
       suffix := v.callee.suffix
       code := Impl.MlDsa.AArch64.Fn.verify v.callee mlDsa87 "mldsa87" true
       verified := Proof.MlDsa.AArch64.Fn.verify87 v true }]
@@ -172,27 +172,27 @@ open VG VG.Spec.MlDsa
 key, for each parameter set. -/
 def artifacts : List (Artifact AArch64.target) :=
   VG.Proof.Variants.Keccak.AArch64.variants.flatMap fun (v : Proof.Sha3.AArch64.Permutation) => [
-    (verifyMessageCachedApi mlDsa44 "mldsa44" "ML-DSA-44").artifact AArch64.target {
+    verifyMessageCached44Api.artifact AArch64.target {
       suffix := v.callee.suffix
       code := Impl.MlDsa.AArch64.Fn.verifyMessage v.callee mlDsa44 "mldsa44" false
       verified := Proof.MlDsa.AArch64.Fn.verifyMessage44 v false },
-    (preparedVerifyMessageApi mlDsa44 "mldsa44" "ML-DSA-44").artifact AArch64.target {
+    preparedVerifyMessage44Api.artifact AArch64.target {
       suffix := v.callee.suffix
       code := Impl.MlDsa.AArch64.Fn.verifyMessage v.callee mlDsa44 "mldsa44" true
       verified := Proof.MlDsa.AArch64.Fn.verifyMessage44 v true },
-    (verifyMessageCachedApi mlDsa65 "mldsa65" "ML-DSA-65").artifact AArch64.target {
+    verifyMessageCached65Api.artifact AArch64.target {
       suffix := v.callee.suffix
       code := Impl.MlDsa.AArch64.Fn.verifyMessage v.callee mlDsa65 "mldsa65" false
       verified := Proof.MlDsa.AArch64.Fn.verifyMessage65 v false },
-    (preparedVerifyMessageApi mlDsa65 "mldsa65" "ML-DSA-65").artifact AArch64.target {
+    preparedVerifyMessage65Api.artifact AArch64.target {
       suffix := v.callee.suffix
       code := Impl.MlDsa.AArch64.Fn.verifyMessage v.callee mlDsa65 "mldsa65" true
       verified := Proof.MlDsa.AArch64.Fn.verifyMessage65 v true },
-    (verifyMessageCachedApi mlDsa87 "mldsa87" "ML-DSA-87").artifact AArch64.target {
+    verifyMessageCached87Api.artifact AArch64.target {
       suffix := v.callee.suffix
       code := Impl.MlDsa.AArch64.Fn.verifyMessage v.callee mlDsa87 "mldsa87" false
       verified := Proof.MlDsa.AArch64.Fn.verifyMessage87 v false },
-    (preparedVerifyMessageApi mlDsa87 "mldsa87" "ML-DSA-87").artifact AArch64.target {
+    preparedVerifyMessage87Api.artifact AArch64.target {
       suffix := v.callee.suffix
       code := Impl.MlDsa.AArch64.Fn.verifyMessage v.callee mlDsa87 "mldsa87" true
       verified := Proof.MlDsa.AArch64.Fn.verifyMessage87 v true }]
@@ -205,22 +205,22 @@ def artifacts : List (Artifact AArch64.target) :=
   KeyGen.artifacts ++
   PkTr.artifacts ++
   [
-    (Spec.MlDsa.preparePublicKeyApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44").artifact AArch64.target {
+    Spec.MlDsa.preparePublicKey44Api.artifact AArch64.target {
       code := Impl.MlDsa.AArch64.Fn.preparePublic Spec.MlDsa.mlDsa44
       verified := Proof.MlDsa.AArch64.Fn.preparePublic44 },
-    (Spec.MlDsa.prepareSecretKeyApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44").artifact AArch64.target {
+    Spec.MlDsa.prepareSecretKey44Api.artifact AArch64.target {
       code := Impl.MlDsa.AArch64.Fn.prepareSecret Spec.MlDsa.mlDsa44
       verified := Proof.MlDsa.AArch64.Fn.prepareSecret44 },
-    (Spec.MlDsa.preparePublicKeyApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65").artifact AArch64.target {
+    Spec.MlDsa.preparePublicKey65Api.artifact AArch64.target {
       code := Impl.MlDsa.AArch64.Fn.preparePublic Spec.MlDsa.mlDsa65
       verified := Proof.MlDsa.AArch64.Fn.preparePublic65 },
-    (Spec.MlDsa.prepareSecretKeyApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65").artifact AArch64.target {
+    Spec.MlDsa.prepareSecretKey65Api.artifact AArch64.target {
       code := Impl.MlDsa.AArch64.Fn.prepareSecret Spec.MlDsa.mlDsa65
       verified := Proof.MlDsa.AArch64.Fn.prepareSecret65 },
-    (Spec.MlDsa.preparePublicKeyApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87").artifact AArch64.target {
+    Spec.MlDsa.preparePublicKey87Api.artifact AArch64.target {
       code := Impl.MlDsa.AArch64.Fn.preparePublic Spec.MlDsa.mlDsa87
       verified := Proof.MlDsa.AArch64.Fn.preparePublic87 },
-    (Spec.MlDsa.prepareSecretKeyApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87").artifact AArch64.target {
+    Spec.MlDsa.prepareSecretKey87Api.artifact AArch64.target {
       code := Impl.MlDsa.AArch64.Fn.prepareSecret Spec.MlDsa.mlDsa87
       verified := Proof.MlDsa.AArch64.Fn.prepareSecret87 }] ++
   Sign.artifacts ++

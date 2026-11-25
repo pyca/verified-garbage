@@ -880,13 +880,11 @@ def checkEncodable (p : Prepared) : Except String Unit :=
   | none => pure ()
   | some e => throw s!"{a.target.name}: {a.name}: {e}"
 
-/-- The artifact carries the contract of the `Api` it is made from
-(`Artifact.contracts`), which it is proven against (`Artifact.ofApi`): so its
-name, signature and documentation are those `Spec/` gives that contract. -/
+/-- The artifact's `Api` has a contract (`Api.contracts`), which the artifact is
+proven against (`Artifact.ofApi`). -/
 def checkApi (a : EmitArtifact) : Except String Unit :=
   unless a.contracts.isSome do
-    throw s!"{a.target.name}: {a.name} is not made from an `Api` with a contract \
-      (`Api.contracts`)"
+    throw s!"{a.target.name}: {a.name} is of an `Api` with no contract (`Api.contracts`)"
 
 /-- Each bound of `a.written` names a writable array parameter of its
 signature, no parameter twice, and is at most the parameter's size in bytes:
@@ -1737,7 +1735,7 @@ def groupsOf (as : List EmitArtifact) : List Group :=
 
 /-- Every implementation of a function of `as` (`groupsOf`) has its base's
 signature and documentation, which are what its dispatcher documents and
-calls them with: those of their `Api` (`Api.artifact`). -/
+calls them with: those of their `Api` (`Artifact.api`). -/
 def checkGroups (as : List EmitArtifact) : Except String Unit :=
   (groupsOf as).forM fun g => g.members.forM fun a => do
     unless a.sig == g.base.sig && a.doc == g.base.doc do
@@ -2083,18 +2081,17 @@ def moduleName (n : String) : Bool :=
   | c :: cs => 'a' ≤ c && c ≤ 'z' && cs.all fun c => ('a' ≤ c && c ≤ 'z') || c.isDigit || c == '_'
   | [] => false
 
-/-- The artifact `a`'s name, and its base's, are named as an internal
-function's (`internalName`), its name extends its base's, and its module is
-named as `moduleName` requires. The emitter writes each into Rust code, in
+/-- The artifact `a`'s name, and its base's, which it extends, are named as an
+internal function's (`internalName`), and its module is named as `moduleName`
+requires. The emitter writes each into Rust code, in
 front of the code that `a`'s proof is of: so a registration's suffix
-(`Registration.suffix`), which `Api.artifact` appends to its `Api`'s name, can
+(`Registration.suffix`), which `Artifact.name` appends to its `Api`'s name, can
 only add letters, digits and underscores to the name of the one function. -/
 def checkName (a : EmitArtifact) : Except String Unit := do
   let t := a.target.name
-  unless internalName a.name && internalName a.base && a.name.startsWith a.base do
+  unless internalName a.name && internalName a.base do
     throw s!"{t}: the function {repr a.name} (of {repr a.base}) is not named as a Rust \
-      function starting with its base's name and `vg_` (lowercase letters, digits and \
-      underscores)"
+      function starting with `vg_` (lowercase letters, digits and underscores)"
   unless moduleName a.module do
     throw s!"{t}: {a.name}'s module {repr a.module} is not named as a Rust module (lowercase \
       letters, digits and underscores)"
@@ -2304,9 +2301,9 @@ def render (ps : List Prepared) (hs : List Internal) (moduleOf : String → Stri
 /-- The generated files, as paths relative to `crates/` and their contents:
 for each target, its crate's `lib.rs`, one `<module>.rs` per module and one
 `internal/<name>.rs` per internal function (`internalsOf`), in its `codeDir`;
-an error if an artifact is not made from an `Api` with a
+an error if an artifact's `Api` has no
 contract (`checkApi`), an artifact's name or module is not a Rust
-identifier, or its name does not extend its base's (`checkName`), two artifacts of a target have the same name
+identifier (`checkName`), two artifacts of a target have the same name
 (`checkUnique`), a call is not of the code it runs (`checkCalls`), its
 tables of constants, or an internal function's name or tables, are not as
 `checkConsts`, `checkInternal` and `checkInternalTables` require, its tables

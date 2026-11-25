@@ -65,22 +65,22 @@ def artifacts : List (Artifact Arm.target) := [
     code := Impl.MlDsa.Arm.Fn.pkTr Spec.MlDsa.mlDsa87
     verified := Proof.MlDsa.Arm.Fn.pkTr "mldsa87" "ML-DSA-87" (.inr (.inr rfl)) }] ++
   [
-    (Spec.MlDsa.preparePublicKeyApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44").artifact Arm.target {
+    Spec.MlDsa.preparePublicKey44Api.artifact Arm.target {
       code := Impl.MlDsa.Arm.Fn.preparePublic Spec.MlDsa.mlDsa44
       verified := Proof.MlDsa.Arm.Fn.preparePublic "mldsa44" "ML-DSA-44" (.inl rfl) },
-    (Spec.MlDsa.prepareSecretKeyApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44").artifact Arm.target {
+    Spec.MlDsa.prepareSecretKey44Api.artifact Arm.target {
       code := Impl.MlDsa.Arm.Fn.prepareSecret Spec.MlDsa.mlDsa44
       verified := Proof.MlDsa.Arm.Fn.prepareSecret "mldsa44" "ML-DSA-44" (.inl rfl) },
-    (Spec.MlDsa.preparePublicKeyApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65").artifact Arm.target {
+    Spec.MlDsa.preparePublicKey65Api.artifact Arm.target {
       code := Impl.MlDsa.Arm.Fn.preparePublic Spec.MlDsa.mlDsa65
       verified := Proof.MlDsa.Arm.Fn.preparePublic "mldsa65" "ML-DSA-65" (.inr (.inl rfl)) },
-    (Spec.MlDsa.prepareSecretKeyApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65").artifact Arm.target {
+    Spec.MlDsa.prepareSecretKey65Api.artifact Arm.target {
       code := Impl.MlDsa.Arm.Fn.prepareSecret Spec.MlDsa.mlDsa65
       verified := Proof.MlDsa.Arm.Fn.prepareSecret "mldsa65" "ML-DSA-65" (.inr (.inl rfl)) },
-    (Spec.MlDsa.preparePublicKeyApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87").artifact Arm.target {
+    Spec.MlDsa.preparePublicKey87Api.artifact Arm.target {
       code := Impl.MlDsa.Arm.Fn.preparePublic Spec.MlDsa.mlDsa87
       verified := Proof.MlDsa.Arm.Fn.preparePublic "mldsa87" "ML-DSA-87" (.inr (.inr rfl)) },
-    (Spec.MlDsa.prepareSecretKeyApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87").artifact Arm.target {
+    Spec.MlDsa.prepareSecretKey87Api.artifact Arm.target {
       code := Impl.MlDsa.Arm.Fn.prepareSecret Spec.MlDsa.mlDsa87
       verified := Proof.MlDsa.Arm.Fn.prepareSecret "mldsa87" "ML-DSA-87" (.inr (.inr rfl)) }] ++
   [
@@ -93,13 +93,13 @@ def artifacts : List (Artifact Arm.target) := [
     Spec.MlDsa.sign87Api.artifact Arm.target {
       code := Impl.MlDsa.Arm.Fn.sign Spec.MlDsa.mlDsa87
       verified := Proof.MlDsa.Arm.Fn.sign "mldsa87" "ML-DSA-87" (.inr (.inr rfl)) },
-    (Spec.MlDsa.preparedSignApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44").artifact Arm.target {
+    Spec.MlDsa.preparedSign44Api.artifact Arm.target {
       code := Impl.MlDsa.Arm.Fn.signPrepared Spec.MlDsa.mlDsa44
       verified := Proof.MlDsa.Arm.Fn.signPrepared "mldsa44" "ML-DSA-44" (.inl rfl) },
-    (Spec.MlDsa.preparedSignApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65").artifact Arm.target {
+    Spec.MlDsa.preparedSign65Api.artifact Arm.target {
       code := Impl.MlDsa.Arm.Fn.signPrepared Spec.MlDsa.mlDsa65
       verified := Proof.MlDsa.Arm.Fn.signPrepared "mldsa65" "ML-DSA-65" (.inr (.inl rfl)) },
-    (Spec.MlDsa.preparedSignApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87").artifact Arm.target {
+    Spec.MlDsa.preparedSign87Api.artifact Arm.target {
       code := Impl.MlDsa.Arm.Fn.signPrepared Spec.MlDsa.mlDsa87
       verified := Proof.MlDsa.Arm.Fn.signPrepared "mldsa87" "ML-DSA-87" (.inr (.inr rfl)) }] ++
   [
@@ -112,13 +112,13 @@ def artifacts : List (Artifact Arm.target) := [
     Spec.MlDsa.signMessage87Api.artifact Arm.target {
       code := Impl.MlDsa.Arm.Fn.signMessage Spec.MlDsa.mlDsa87 "mldsa87"
       verified := Proof.MlDsa.Arm.Fn.signMessage "mldsa87" "ML-DSA-87" (.inr (.inr rfl)) },
-    (Spec.MlDsa.preparedSignMessageApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44").artifact Arm.target {
+    Spec.MlDsa.preparedSignMessage44Api.artifact Arm.target {
       code := Impl.MlDsa.Arm.Fn.preparedSignMessage Spec.MlDsa.mlDsa44 "mldsa44"
       verified := Proof.MlDsa.Arm.Fn.preparedSignMessage "mldsa44" "ML-DSA-44" (.inl rfl) },
-    (Spec.MlDsa.preparedSignMessageApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65").artifact Arm.target {
+    Spec.MlDsa.preparedSignMessage65Api.artifact Arm.target {
       code := Impl.MlDsa.Arm.Fn.preparedSignMessage Spec.MlDsa.mlDsa65 "mldsa65"
       verified := Proof.MlDsa.Arm.Fn.preparedSignMessage "mldsa65" "ML-DSA-65" (.inr (.inl rfl)) },
-    (Spec.MlDsa.preparedSignMessageApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87").artifact Arm.target {
+    Spec.MlDsa.preparedSignMessage87Api.artifact Arm.target {
       code := Impl.MlDsa.Arm.Fn.preparedSignMessage Spec.MlDsa.mlDsa87 "mldsa87"
       verified := Proof.MlDsa.Arm.Fn.preparedSignMessage "mldsa87" "ML-DSA-87" (.inr (.inr rfl)) }] ++
   [
@@ -131,32 +131,32 @@ def artifacts : List (Artifact Arm.target) := [
     Spec.MlDsa.verify87Api.artifact Arm.target {
       code := Impl.MlDsa.Arm.Fn.verify Spec.MlDsa.mlDsa87
       verified := Proof.MlDsa.Arm.Fn.verify "mldsa87" "ML-DSA-87" (.inr (.inr rfl)) },
-    (Spec.MlDsa.preparedVerifyApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44").artifact Arm.target {
+    Spec.MlDsa.preparedVerify44Api.artifact Arm.target {
       code := Impl.MlDsa.Arm.Fn.verifyPrepared Spec.MlDsa.mlDsa44
       verified := Proof.MlDsa.Arm.Fn.verifyPrepared "mldsa44" "ML-DSA-44" (.inl rfl) },
-    (Spec.MlDsa.preparedVerifyApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65").artifact Arm.target {
+    Spec.MlDsa.preparedVerify65Api.artifact Arm.target {
       code := Impl.MlDsa.Arm.Fn.verifyPrepared Spec.MlDsa.mlDsa65
       verified := Proof.MlDsa.Arm.Fn.verifyPrepared "mldsa65" "ML-DSA-65" (.inr (.inl rfl)) },
-    (Spec.MlDsa.preparedVerifyApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87").artifact Arm.target {
+    Spec.MlDsa.preparedVerify87Api.artifact Arm.target {
       code := Impl.MlDsa.Arm.Fn.verifyPrepared Spec.MlDsa.mlDsa87
       verified := Proof.MlDsa.Arm.Fn.verifyPrepared "mldsa87" "ML-DSA-87" (.inr (.inr rfl)) }] ++
   [
-    (Spec.MlDsa.verifyMessageCachedApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44").artifact Arm.target {
+    Spec.MlDsa.verifyMessageCached44Api.artifact Arm.target {
       code := Impl.MlDsa.Arm.Fn.verifyMessageCached Spec.MlDsa.mlDsa44 "mldsa44"
       verified := Proof.MlDsa.Arm.Fn.verifyMessageCached "mldsa44" "ML-DSA-44" (.inl rfl) },
-    (Spec.MlDsa.verifyMessageCachedApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65").artifact Arm.target {
+    Spec.MlDsa.verifyMessageCached65Api.artifact Arm.target {
       code := Impl.MlDsa.Arm.Fn.verifyMessageCached Spec.MlDsa.mlDsa65 "mldsa65"
       verified := Proof.MlDsa.Arm.Fn.verifyMessageCached "mldsa65" "ML-DSA-65" (.inr (.inl rfl)) },
-    (Spec.MlDsa.verifyMessageCachedApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87").artifact Arm.target {
+    Spec.MlDsa.verifyMessageCached87Api.artifact Arm.target {
       code := Impl.MlDsa.Arm.Fn.verifyMessageCached Spec.MlDsa.mlDsa87 "mldsa87"
       verified := Proof.MlDsa.Arm.Fn.verifyMessageCached "mldsa87" "ML-DSA-87" (.inr (.inr rfl)) },
-    (Spec.MlDsa.preparedVerifyMessageApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44").artifact Arm.target {
+    Spec.MlDsa.preparedVerifyMessage44Api.artifact Arm.target {
       code := Impl.MlDsa.Arm.Fn.preparedVerifyMessage Spec.MlDsa.mlDsa44 "mldsa44"
       verified := Proof.MlDsa.Arm.Fn.preparedVerifyMessage "mldsa44" "ML-DSA-44" (.inl rfl) },
-    (Spec.MlDsa.preparedVerifyMessageApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65").artifact Arm.target {
+    Spec.MlDsa.preparedVerifyMessage65Api.artifact Arm.target {
       code := Impl.MlDsa.Arm.Fn.preparedVerifyMessage Spec.MlDsa.mlDsa65 "mldsa65"
       verified := Proof.MlDsa.Arm.Fn.preparedVerifyMessage "mldsa65" "ML-DSA-65" (.inr (.inl rfl)) },
-    (Spec.MlDsa.preparedVerifyMessageApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87").artifact Arm.target {
+    Spec.MlDsa.preparedVerifyMessage87Api.artifact Arm.target {
       code := Impl.MlDsa.Arm.Fn.preparedVerifyMessage Spec.MlDsa.mlDsa87 "mldsa87"
       verified := Proof.MlDsa.Arm.Fn.preparedVerifyMessage "mldsa87" "ML-DSA-87" (.inr (.inr rfl)) }]
 

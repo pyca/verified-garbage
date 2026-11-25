@@ -43,8 +43,9 @@ speed, not of correctness or safety, so the order is not trusted either.
 
 `Emit.lean` finds the registration files (`registrations`), writes a
 program that imports them all, checks that the whole list depends only on
-the standard axioms, that what it runs is what the kernel checked and that
-the `Spec/` names it uses come from `Spec/` (`TCB/Audit.lean`), and emits it
+the standard axioms, that what it runs is what the kernel checked, that the
+`Spec/` names it uses come from `Spec/` and that every artifact's `Api` is one
+`Spec/` declares (`TCB/Audit.lean`), and emits it
 (`driver`), and runs that program, whose `main` is `run`.
 -/
 
@@ -111,7 +112,8 @@ def driverBody (mods : List String) : Except String String := do
     "def all : List (String × List _root_.VG.EmitArtifact) := [" ++ ",".intercalate entries ++ "]\n\n" ++
     "#assert_standard_axioms all\n" ++
     "#assert_no_compiler_overrides all run\n" ++
-    "#assert_spec_origin\n\n" ++
+    "#assert_spec_origin\n" ++
+    "#assert_spec_apis (all.map fun p => p.2.map fun a => a.api)\n\n" ++
     "end VG.Emit\n\n" ++
     "def main (args : List String) : IO UInt32 :=\n  VG.Emit.run VG.Emit.all args\n\nend\n"
 
@@ -121,8 +123,9 @@ elaborate unless each module defines its list, unless every artifact of it is of
 the target its directory names (`Artifact`'s parameter), unless everything emitted
 depends only on the standard axioms (`#assert_standard_axioms`), unless the
 compiled code of everything emitted and of `run` is what the kernel checked
-(`#assert_no_compiler_overrides`) and unless every `VG.Spec` definition is
-declared in `Spec/` (`#assert_spec_origin`). It is a module, which does not load
+(`#assert_no_compiler_overrides`), unless every `VG.Spec` definition is
+declared in `Spec/` (`#assert_spec_origin`) and unless every artifact's `Api` is
+one `Spec/` declares (`#assert_spec_apis`). It is a module, which does not load
 the private data (`.olean.private`) of what it imports: run with Lake's setup for it
 (`lake setup-file`), Lean reads only their `.olean`, `.olean.server` and IR, and the
 audits take the rest from the audit records (`TCB/AuditRecords.lean`). -/

@@ -172,10 +172,13 @@ def Sig.layoutNote (T : EmitTarget) (sig : Sig) (writeArgs : Bool) : List String
   | _ => []
 
 /-- The documentation of `api` on a target: its summary, then its `# Safety`
-section. -/
+section, which it has none of if its `Api` gives no item of it and its
+signature has no buffer, for which the emitter would add some
+(`Sig.validDoc`, `Sig.layoutDoc`). -/
 def Api.doc (api : Api) : String :=
-  api.summary ++ "\n\n# Safety\n\n" ++
-    "\n".intercalate (api.safety.map ("* " ++ ·))
+  if api.safety.isEmpty && (Sig.bufNames api.sig.params).isEmpty then api.summary else
+    api.summary ++ "\n\n# Safety\n\n" ++
+      "\n".intercalate (api.safety.map ("* " ++ ·))
 
 /-- `c` returns its result as the calling convention requires (#6302): for
 each rule `f` the convention has for a result type (`Abi.retExt`), if `k`
@@ -213,29 +216,13 @@ def Abi.withFns {M : ISA} (A : Abi M) (fns : List String) : Abi M :=
 /-- A verified function of the target `target`, ready to be emitted into the
 Rust crate. -/
 structure Artifact (target : Target) where
-  /-- The Rust module the function is emitted into, `src/asm/<target>/<module>.rs`
-  (e.g. `sha256`). -/
-  module : String
-  /-- The Rust function name. Must be unique within the target. -/
-  name : String
-  /-- The name of the function it implements, its `Api`'s (`Api.artifact`),
-  which `name` extends with the implementation's suffix: the artifacts of a
-  target with the same `base` are the implementations of one function, which
-  its dispatcher may call in each other's place (`Rust.groupsOf`). By
-  default, its own name: an artifact not made from an `Api` is the only
-  implementation of its function. -/
-  base : String := name
-  /-- The Rust signature, rendered as the parameter list and return type
-  (`Sig.rust`). -/
-  sig : Sig
-  /-- Documentation for the generated Rust function. With what the emitter
-  adds to it (`Sig.layoutNote`, `Sig.validDoc` and `Sig.layoutDoc`, which
-  need it to end with its `# Safety` section if they add anything, and not
-  to state what they do), it must state every
-  requirement of `contract.pre` that the caller is responsible for, and
-  anything the contract declares the function may leak (`Sig.contract`'s
-  `leak`). -/
-  doc : String
+  /-- The function it implements. Its module, signature, documentation and
+  contract are this `Api`'s, and nothing else of the artifact states them. The
+  emitter's driver checks that it is one `Spec/` declares
+  (`#assert_spec_apis`). -/
+  api : Api
+  /-- What follows `api`'s name in the artifact's (`Artifact.name`). -/
+  suffix : String := ""
   /-- Tables of 64-bit constants the code reads, by name: the emitter writes
   each as a `static` of that name, from which the code forms the table's
   address (`Abi.sym`; on AArch64, ARMv7 and PPC64LE, `adrSym`; on RISC-V,
@@ -252,7 +239,7 @@ structure Artifact (target : Target) where
   `u64` of the tables' length, and that it lists every table of their
   interface on the target, of which the Rust caller may pass any
   (`Rust.checkFnTables`). So `contract` is one for the calling convention
-  `((target.abi.withConsts consts).withFns fns).withTables sig tables`. -/
+  `((target.abi.withConsts consts).withFns fns).withTables api.sig tables`. -/
   tables : List (String × List FnTable) := []
   /-- The functions whose addresses the contract makes public
   (`Abi.withFns`), each an artifact or an internal function of the target
@@ -260,32 +247,28 @@ structure Artifact (target : Target) where
   fns : List String := []
   code : Prog target.isa
   contract : Contract target.isa
-  /-- The proof, for a result of `sig.retBits` bits at the target's pointer
+  /-- The proof, for a result of `api.sig.retBits` bits at the target's pointer
   width (which `Abi.withConsts`, `Abi.withFns` and `Abi.withTables` leave as
   it is: they change only what the calling convention reads and requires). -/
-  verified : VerifiedScrubbed target code contract (sig.retBits target.abi.ptrBits)
-  /-- `Sig.contract`'s `writeArgs` and `stack` for `contract` (see `ofSig`). -/
-  writeArgs : Bool := false
+  verified : VerifiedScrubbed target code contract (api.sig.retBits target.abi.ptrBits)
+  /-- `Sig.contract`'s `stack` for `contract` (see `ofSig`). -/
   stack : Nat := 0
-  /-- `contract` is one that `Sig.contract` derives from `sig` for the
-  target's calling convention, `writeArgs` and `stack`: so it reads the
+  /-- `contract` is one that `Sig.contract` derives from `api.sig` for the
+  target's calling convention, `api.writeArgs` and `stack`: so it reads the
   arguments and writes the return value where the calling convention places
-  them for `sig`, and requires what `Sig.layoutDoc` documents of where the
+  them for `api.sig`, and requires what `Sig.layoutDoc` documents of where the
   buffers are. -/
   ofSig : ∃ pre post leak,
-      contract = sig.contract (((target.abi.withConsts consts).withFns fns).withTables sig tables)
-        pre post writeArgs stack leak := by
+      contract = api.sig.contract
+        (((target.abi.withConsts consts).withFns fns).withTables api.sig tables)
+        pre post api.writeArgs stack leak := by
     exact ⟨_, _, _, rfl⟩
-  /-- The contract of the function on every target, which an artifact made
-  from an `Api` (`{ api with … }`) takes from it with its `name` and `sig`
-  (`Api.contracts`). The emitter refuses an artifact without one
+  /-- `contract` is `api.contracts` on the target, for `stack`: an artifact is
+  proven against the contract `Spec/` gives the function, not one chosen where
+  the artifact is built. The emitter refuses one whose `Api` has none
   (`Rust.checkApi`). -/
-  contracts : Option Contracts := none
-  /-- `contract` is `contracts` on the target, for `stack`: an artifact made
-  from an `Api` is proven against the contract `Spec/` gives the function,
-  not one chosen where the artifact is built. -/
-  ofApi : contracts.elim True fun f =>
-      contract = f (((target.abi.withConsts consts).withFns fns).withTables sig tables) stack := by
+  ofApi : api.contracts.elim True fun f =>
+      contract = f (((target.abi.withConsts consts).withFns fns).withTables api.sig tables) stack := by
     first | exact True.intro | exact rfl
   /-- The code changes the stack pointer only by calls and returns and by
   the pushes and pops of frames, which are nested: no other instruction of
@@ -316,16 +299,14 @@ structure Artifact (target : Target) where
   (`Abi.withConsts`) and of functions (`Abi.withTables`), and the functions
   of public addresses (`Abi.withFns`), leave as they are. -/
   writtenOk : ∀ s t s', contract.pre s → Exec target.isa code s t s' →
-      Sig.writtenWithin target.abi sig written s s' := by
+      Sig.writtenWithin target.abi api.sig written s s' := by
     exact fun _ _ _ _ _ => True.intro
-  /-- What the function does to the mode its target's timing rests on, if it
-  is for that: its `Api`'s (`Api.mode`). -/
-  mode : Option (BitVec 64 → BitVec 64 → BitVec 64 → Prop) := none
-  /-- Every run from a state satisfying `contract.pre` does that. The tables
-  of constants (`Abi.withConsts`) and of functions (`Abi.withTables`), and the
+  /-- Every run from a state satisfying `contract.pre` does to the mode its
+  target's timing rests on what its `Api` says (`Api.mode`), if it is for that.
+  The tables of constants (`Abi.withConsts`) and of functions (`Abi.withTables`), and the
   functions of public addresses (`Abi.withFns`), leave `Abi.mode` and
   `Abi.ret` as they are. -/
-  modeOk : ∀ q, mode = some q → ∀ s t s', contract.pre s → Exec target.isa code s t s' →
+  modeOk : ∀ q, api.mode = some q → ∀ s t s', contract.pre s → Exec target.isa code s t s' →
       q (target.abi.mode s) (target.abi.mode s') (target.abi.ret s') := by
     exact fun _ h => nomatch h
   /-- CPU features beyond `features`, by their Rust `target_feature` names,
@@ -347,6 +328,43 @@ structure Artifact (target : Target) where
   implementation, and keeping one from being chosen can only leave another
   the CPU can run, the base at last, which needs no feature. -/
   notWith : List String := []
+
+namespace Artifact
+
+variable {target : Target} (a : Artifact target)
+
+/-- The Rust module the function is emitted into, `src/asm/<target>/<module>.rs`
+(e.g. `sha256`). -/
+abbrev module : String := a.api.module
+
+/-- The Rust function name. Must be unique within the target. -/
+abbrev name : String := a.api.name ++ a.suffix
+
+/-- The name of the function it implements, which `name` extends with the
+implementation's suffix: the artifacts of a target with the same `base` are the
+implementations of one function, which its dispatcher may call in each other's
+place (`Rust.groupsOf`). -/
+abbrev base : String := a.api.name
+
+/-- The Rust signature, rendered as the parameter list and return type
+(`Sig.rust`). -/
+abbrev sig : Sig := a.api.sig
+
+/-- Documentation for the generated Rust function. With what the emitter
+adds to it (`Sig.layoutNote`, `Sig.validDoc` and `Sig.layoutDoc`, which
+need it to end with its `# Safety` section if they add anything, and not
+to state what they do), it must state every requirement of `contract.pre` that
+the caller is responsible for, and anything the contract declares the function
+may leak (`Sig.contract`'s `leak`). -/
+abbrev doc : String := a.api.doc
+
+/-- `Sig.contract`'s `writeArgs` for `contract` (see `ofSig`). -/
+abbrev writeArgs : Bool := a.api.writeArgs
+
+/-- The contract of the function on every target (see `ofApi`). -/
+abbrev contracts : Option Contracts := a.api.contracts
+
+end Artifact
 
 /-- Proves `Registration.spSafe`, by default. `Proof/Framework/Registration.lean`
 implements it, with the proofs the kernel checks fastest on each ISA; how it
@@ -518,29 +536,22 @@ structure Registration (api : Api) (target : Target) where
   /-- `Artifact.notWith`. -/
   notWith : List String := []
 
-/-- The artifact of the implementation `r` of `api` on `target`: its module,
-signature and `writeArgs` are `api`'s, its name `api`'s followed by
-`r.suffix` (its `base` `api`'s), its documentation `api`'s (`Api.doc`), and its
-contract `api`'s on `target`, for `r.consts`, `r.fns`, `r.tables` and
+/-- The artifact of the implementation `r` of `api` on `target`: its name is
+`api`'s followed by `r.suffix`, and its contract `api`'s on `target`, for `r.consts`, `r.fns`, `r.tables` and
 `r.stack` (`Api.contract`); its CPU
 features those its code requires (`Code.requiresDedup`). -/
 def Api.artifact (api : Api) (target : Target) (r : Registration api target) :
     Artifact target where
-  module := api.module
-  name := api.name ++ r.suffix
-  base := api.name
-  sig := api.sig
-  doc := api.doc
+  api := api
+  suffix := r.suffix
   consts := r.consts
   tables := r.tables
   fns := r.fns
   code := r.code
   contract := r.contract
   verified := r.verified
-  writeArgs := api.writeArgs
   stack := r.stack
   ofSig := r.ofSig
-  contracts := api.contracts
   ofApi := by
     rw [r.ofApi]
     unfold Api.contract
@@ -549,7 +560,6 @@ def Api.artifact (api : Api) (target : Target) (r : Registration api target) :
   features := Code.requiresDedup target.isa r.code (FnTable.tablesFns r.tables).contains
   written := r.written
   writtenOk := r.writtenOk
-  mode := api.mode
   modeOk := r.modeOk
   extra := r.extra
   vendor := r.vendor

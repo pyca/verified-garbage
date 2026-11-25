@@ -97,8 +97,12 @@ instructions in an ISA model) go in their own PR before either.
    for code that depends on a `Bool` or an enumeration (`adx`, a field
    variant), by cases on it. Never set
    `contracts` outside `Spec/` (the emitter refuses an artifact without
-   them). The CPU features the code needs beyond the target's baseline ISA
-   are never stated: `Api.artifact` takes them from its instructions and
+   them), nor make an `Api` outside it: the emitter's `#assert_spec_apis` refuses an
+   artifact whose `Api` is not a constant of `Spec/`, or a function of `Spec/`
+   applied to one (`Spec.Hmac.sha256I.pbkdf2Api`). One that takes more, such as a
+   parameter set and a name, gets a constant for each in `Spec/`
+   (`Spec.MlDsa.preparedSign44Api`). The CPU features the code needs beyond the
+   target's baseline ISA are never stated: `Api.artifact` takes them from its instructions and
    those of the functions it calls (`Code.requiresDedup`, from the ISA
    model's `requires`).
    A function also proves that it returns without secret residue, as part
