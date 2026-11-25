@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Mont.AArch64.P521Square
-public import VerifiedGarbage.Impl.Mont.AArch64.P384Sqr
+public import VerifiedGarbage.Impl.Mont.AArch64.P384Field
 public import VerifiedGarbage.Impl.Weierstrass.Layout.Mont
 public import VerifiedGarbage.TCB.AArch64.Target
 
@@ -242,32 +242,28 @@ def mulFnG (n m : Nat) : Prog isa :=
 
 /-! ## P-384's `p`
 
-The product, then the reductions (`Impl/Mont/AArch64/P384Mul.lean`, adapted
-from s2n-bignum's `bignum_montmul_p384_alt`), rather than word-by-word
-Montgomery multiplication: each of P-384's six short reductions touches only
-the low half's six words, where word-by-word multiplication's carries
-ripple through the whole accumulator. -/
+The product of six words by six, or the square, then the reduction of its low
+half two words at a time (`Impl/Mont/AArch64/P384Field.lean`), and the
+conditional subtraction the other moduli's functions end with (`csubM`). -/
 
-/-- `vg_p384_mul_mod_p`: the entry (`mulFnS`'s registers saved, the
-pointers, `[b]` loaded, `x7 = 0`), the product and its reductions, `p` into
-its registers (`sparseLoadCode`), the sum reduced below `p` (`csubM`, its top
-word in `x21`) and stored through `ro`, the registers restored. -/
-def mulFn384 : Prog isa :=
-  .seq (.block zextCode)
-    (.block (saveCode 6 ++ [.add .x (roF 6) .x0 .x1, .add .x (raF 6) .x0 .x2, .add .x .x3 .x0 .x3] ++
-      loadsR .x3 P384Mul.bRegs384 0 ++ zero7 :: P384Mul.prod ++ P384Mul.reds ++ P384Mul.addHigh ++
-      sparseLoadCode ++ csubM 6 P384Mul.lowRegs .x21 [.x23, .x24, .x25, .x26, .x26, .x26] ++
-      storesR (roF 6) P384Mul.lowRegs 0 ++ restoreCode 6))
+/-- After the product or the square: the reduction, the modulus into its
+registers, the conditional subtraction and the store. -/
+def finish384 : List Instr :=
+  P384Field.reduce ++ sparseLoadCode ++
+    csubM 6 P384Field.rs .x13 [.x23, .x24, .x25, .x26, .x26, .x26] ++ storesR (roF 6) P384Field.rs 0
 
-/-- `vg_p384_sqr_mod_p`: `mulFn384` with `[a]` loaded through `ra` in
-place of `[b]`, and the square (`P384Sqr.sq`, adapted from s2n-bignum's
-`bignum_montsqr_p384_alt`) in place of the product. -/
-def sqrFn384 : Prog isa :=
+/-- The pointers, then `body`, between the entry and the exit (`mulFnS`'s). -/
+def fn384 (body : List Instr) : Prog isa :=
   .seq (.block zextCode)
-    (.block (saveCode 6 ++ [.add .x (roF 6) .x0 .x1, .add .x (raF 6) .x0 .x2, .add .x .x3 .x0 .x3] ++
-      loadsR (raF 6) P384Sqr.aRegs 0 ++ zero7 :: P384Sqr.sq ++ P384Mul.reds ++ P384Mul.addHigh ++
-      sparseLoadCode ++ csubM 6 P384Mul.lowRegs .x21 [.x23, .x24, .x25, .x26, .x26, .x26] ++
-      storesR (roF 6) P384Mul.lowRegs 0 ++ restoreCode 6))
+    (.block (saveCode 6 ++
+      [.add .x (roF 6) .x0 .x1, .add .x (raF 6) .x0 .x2, .add .x .x3 .x0 .x3] ++
+      (zero7 :: body ++ finish384) ++ restoreCode 6))
+
+/-- `vg_p384_mul_mod_p`: `[a]` through `ra` and `[b]` through `x3`. -/
+def mulFn384 : Prog isa := fn384 (P384Field.prod (raF 6) .x3 0 0)
+
+/-- `vg_p384_sqr_mod_p`: `[a]` through `ra`. -/
+def sqrFn384 : Prog isa := fn384 (P384Field.sqr (raF 6) 0)
 
 /-- The dedicated, alias-safe Montgomery square modulo P-521's field prime. -/
 def sqrFn521 : Prog isa := P521Square.square
