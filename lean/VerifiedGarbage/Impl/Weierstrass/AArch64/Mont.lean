@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Impl.Mont.AArch64.P521Square
 public import VerifiedGarbage.Impl.Mont.AArch64.P384Field
 public import VerifiedGarbage.Impl.Weierstrass.Layout.Mont
 public import VerifiedGarbage.TCB.AArch64.Target
@@ -264,9 +263,6 @@ def mulFn384 : Prog isa := fn384 (P384Field.prod (raF 6) .x3 0 0)
 
 /-- `vg_p384_sqr_mod_p`: `[a]` through `ra`. -/
 def sqrFn384 : Prog isa := fn384 (P384Field.sqr (raF 6) 0)
-
-/-- The dedicated, alias-safe Montgomery square modulo P-521's field prime. -/
-def sqrFn521 : Prog isa := P521Square.square
 
 /-- `vg_<curve>_mul_mod_<p|n>`. -/
 def mulFn (n m : Nat) : Prog isa :=

@@ -6,6 +6,8 @@ public import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
 public import VerifiedGarbage.Proof.Ecdh.AArch64.MulOk
 public import VerifiedGarbage.Proof.Ecdh.AArch64.MulJ4
 import VerifiedGarbage.Proof.Weierstrass.AArch64.WinJLoop
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.P521Point
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.P521Window
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.WinJStep
 public import VerifiedGarbage.Impl.Ecdh.AArch64.WindowJ
 public import VerifiedGarbage.Proof.Ecdh.AArch64.Window
@@ -42,10 +44,11 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowQuad
 public import VerifiedGarbage.Impl.Ecdsa.AArch64
 public import VerifiedGarbage.Impl.NatPairs
 public import VerifiedGarbage.Impl.Weierstrass.AArch64
-public import VerifiedGarbage.Impl.Weierstrass.AArch64.P521Double
 public import VerifiedGarbage.Impl.Weierstrass.JacMul
+public import VerifiedGarbage.Proof.EcKey.AArch64.Scrub
+import VerifiedGarbage.Proof.Framework.AArch64.ScrubProved
+public import VerifiedGarbage.Spec.Ecdh.P521
 public import VerifiedGarbage.Proof.Weierstrass.CheckPointContract
-import VerifiedGarbage.Proof.Weierstrass.AArch64.P521Double
 
 /-! ### `Ecdh.AArch64.P521.Window.Double`, which only this module used -/
 
@@ -63,117 +66,38 @@ open VG.Proof.Weierstrass VG.Proof.Weierstrass.AArch64
 open VG.Proof.Mont VG.Proof.Mont.AArch64
 open VG.Spec.Weierstrass
 
-/-- The production field configuration selects the fused arithmetic. -/
-theorem supported_field : P521Linear.supported
-    (VG.Impl.Ecdh.AArch64.P521Window.config VG.Impl.Ecdsa.AArch64.p521).M = true := by
-  decide +kernel
+open VG.Proof.Weierstrass.AArch64.P521 (unch_of_keep doubles_ok)
 
-theorem scheduled_spec {K : WinCfg} {C : Curve} {base : Addr} {size : Nat} (hL : WinLay K size)
-    (hA : WinA K) (hp : UnitMod C.p (2 ^ (64 * K.M.n))) {p o : Pt} (hAp : RcbApart K.S p p o)
-    (hw : (∀ x ∈ rcbW K.S o ++ rcbR K.S p p, x ∈ winSlots K) ∧
-      (∀ x ∈ rcbW K.S o, x ∈ winOther K) ∧
-      ∀ x ∈ rcbW K.S o ++ rcbR K.S p p, x ∈ winRo K ++ winOther K) {V : List Nat}
-    (hV : ∀ x ∈ rcbR K.S p p, x ∈ V) :
-    DblSpec K C base size (fprogB K.M (dblJS K.S p o)) p o V := by
+theorem madd_ok {K : WinCfg} {C : Curve} {base : Addr} {size : Nat}
+    (hsp : VG.Impl.Weierstrass.AArch64.P521.supported K.M = true)
+    (hL : WinLay K size) (hA : WinA K) (hp : UnitMod C.p (2^(64*K.M.n))) :
+    MaddOk K C base size (some (VG.Impl.Weierstrass.AArch64.P521.madd K.M K.S K.R K.E K.D)) := by
+  intro m hm
+  cases Option.some.inj hm
   intro E s hI
-  rw [show dblJS K.S p o = ofN (dblJSChoiceN false) K.S p p o from dblJSChoice_eq false _ _ _]
-  refine WP.mono (winN_ok hL hA hp (dblJSChoiceN_ok false) hAp hw.1 hw.2.1 hw.2.2 hI hV)
-    fun t ⟨k,U,E',I,_,v⟩ => ⟨k.mono (fun _ h => List.mem_append_left _ h),U,E',I,?_⟩
-  rw [dblJSChoiceN_run false] at v
-  rw [dblJChoiceN_run]
-  exact v
-
-theorem fused_spec {K : WinCfg} {C : Curve} {base : Addr} {size : Nat}
-    (hsp : VG.Impl.Mont.AArch64.P521Linear.supported K.M = true)
-    (hL : WinLay K size) (hA : WinA K) (hp : UnitMod C.p (2^(64*K.M.n)))
-    {p o : Pt} (hAp : RcbApart K.S p p o)
-    (hw : (∀ x ∈ rcbW K.S o ++ rcbR K.S p p, x ∈ winSlots K) ∧
-      (∀ x ∈ rcbW K.S o, x ∈ winOther K) ∧
-      ∀ x ∈ rcbW K.S o ++ rcbR K.S p p, x ∈ winRo K ++ winOther K) {V : List Nat}
-    (hV : ∀ x ∈ rcbR K.S p p, x ∈ V) :
-    DblSpec K C base size (VG.Impl.Weierstrass.AArch64.P521Double.double K.M K.S p o) p o V := by
-  intro E s hI
-  let l := VG.Impl.Weierstrass.AArch64.P521Double.steps K.S p o
-  refine WP.mono (P521Double.program_ok hsp hL.lay hA.al hp l hI
-    (P521Double.steps_small K.S p o)
-    (fun st hst x hx => hw.1 x (P521Double.steps_slots K.S p o st hst x hx))
-    (fun st hst => (hA.low hw.2.2).mono (P521Double.steps_slots K.S p o st hst))
-    (P521Double.steps_read hV)) fun t ⟨k,I⟩ => ?_
-  have kout := k.mono (fun y hy => by
-    obtain ⟨st,hst,rfl⟩ := List.mem_map.mp hy
-    exact P521Double.steps_out K.S p o st hst)
-  refine ⟨⟨fun r hr => kout.gpr r (fun h => hr (List.mem_append_left _ h)),
-    kout.rd,kout.wr,kout.sp⟩,?_,_,I.sub ?_,?_⟩
-  · exact kout.unch.mono (fun w hw' => by
-      simp only [loopW,List.mem_append,List.mem_map,List.mem_singleton] at hw' ⊢
-      rcases hw' with ⟨y,hy,rfl⟩|rfl
-      · exact Or.inl ⟨y,hw.2.1 y hy,rfl⟩
-      · exact Or.inr rfl)
-  · intro x hx
-    apply P521Double.mem_valid l V
-    simp only [List.mem_append] at hx
-    rcases hx with hx|hx
-    · apply Or.inr
-      simp only [List.mem_cons,List.not_mem_nil,or_false] at hx
-      rcases hx with rfl|rfl|rfl <;>
-        simp [l,VG.Impl.Weierstrass.AArch64.P521Double.steps,
-          VG.Impl.Weierstrass.AArch64.P521Double.Step.out,FOp.out]
+  have oR := pt_other (K := K) (p := K.R) (Or.inl rfl)
+  have oE := pt_other (K := K) (p := K.E) (Or.inr (Or.inl rfl))
+  have oD := pt_other (K := K) (p := K.D) (Or.inr (Or.inr rfl))
+  have sl := fun (P : Pt) (h : ∀ x ∈ [P.x, P.y, P.z], x ∈ winOther K) x (hx : x ∈ [P.x, P.y, P.z]) =>
+    List.mem_append_right (winRo K) (h x hx)
+  have hw := winJ_sl oD (sl _ oR) (sl _ oE)
+  have hAp := hL.rcbApart_D (Or.inr rfl)
+  rw [VG.Impl.Weierstrass.AArch64.P521.madd]
+  refine WP.mono (P521.program_ok hsp hL.lay hA.al hp _ hI (P521.maddSteps_ok K.S K.R K.E K.D)
+    (by rw [P521.madd_eq, maddJ_eq]; exact fun op hop x hx => hw.1 x (ofN_slots op hop x hx))
+    (by rw [P521.madd_eq, maddJ_eq]; exact ofN_readsOk maddJN_ok K.S K.R K.E K.D)) fun t ⟨k, I⟩ => ?_
+  rw [P521.madd_eq, maddJ_eq] at k I
+  refine ⟨⟨fun r hr => k.gpr r fun h => hr (List.mem_append_left _ h), k.rd, k.wr, k.sp⟩,
+    unch_of_keep (k.mono fun w hw' => ?_) hw.2.1, _, I.sub fun x hx => ?_,
+    fun x hx => runOps_of_not_out _ _ fun op hop h => hx (h ▸ ofN_out maddJN_ok op hop),
+    (congrArg₂ Prod.mk (ofN_run maddJN_ok hAp E 6)
+      (congrArg₂ Prod.mk (ofN_run maddJN_ok hAp E 7) (ofN_run maddJN_ok hAp E 8))).trans (maddJN_run _)⟩
+  · obtain ⟨op, hop, rfl⟩ := List.mem_map.mp hw'
+    exact ofN_out maddJN_ok op hop
+  · rw [mem_validAfter]
+    rcases List.mem_append.mp hx with hx | hx
+    · exact Or.inr (ofN_out_mem maddJN_ok hx)
     · exact Or.inl hx
-  · rw [dblJChoiceN_run]
-    exact P521Double.steps_run E hAp
-
-theorem scheduled_doubles {K : WinCfg} {C : Curve} {base : Addr} {size : Nat}
-    (hL : WinLay K size) (hA : WinA K) (hp : UnitMod C.p (2^(64*K.M.n))) :
-    DblsOk K C base size (some (fprogB K.M (dblJS K.S K.R K.D),
-      fprogB K.M (dblJS K.S K.D K.R))) := by
-  intro d hd
-  cases Option.some.inj hd
-  obtain ⟨hRD,hDR,_⟩ := hL.rcbApart_winJ
-  have hRo := pt_other (K := K) (p := K.R) (.inl rfl)
-  have hDo := pt_other (K := K) (p := K.D) (.inr (.inr rfl))
-  have hR : ∀ x ∈ [K.R.x,K.R.y,K.R.z], x ∈ winRo K ++ winOther K :=
-    fun _ h => List.mem_append_right _ (hRo _ h)
-  have hD : ∀ x ∈ [K.D.x,K.D.y,K.D.z], x ∈ winRo K ++ winOther K :=
-    fun _ h => List.mem_append_right _ (hDo _ h)
-  refine ⟨scheduled_spec hL hA hp hRD (winJ_sl hDo hR hR) ?_,
-    scheduled_spec hL hA hp hDR (winJ_sl hRo hD hD) ?_⟩
-  all_goals
-    intro x hx
-    simp only [rcbR,dblVR,List.mem_cons,List.not_mem_nil,or_false,List.mem_append] at hx ⊢
-    rcases hx with h | h | h | h | h | h | h | h <;> simp only [h,true_or,or_true]
-
-theorem fused_doubles {K : WinCfg} {C : Curve} {base : Addr} {size : Nat}
-    (hsp : P521Linear.supported K.M = true)
-    (hL : WinLay K size) (hA : WinA K) (hp : UnitMod C.p (2^(64*K.M.n))) :
-    DblsOk K C base size (some (VG.Impl.Weierstrass.AArch64.P521Double.double K.M K.S K.R K.D,
-      VG.Impl.Weierstrass.AArch64.P521Double.double K.M K.S K.D K.R)) := by
-  intro d hd
-  cases Option.some.inj hd
-  obtain ⟨hRD,hDR,_⟩ := hL.rcbApart_winJ
-  have hRo := pt_other (K := K) (p := K.R) (.inl rfl)
-  have hDo := pt_other (K := K) (p := K.D) (.inr (.inr rfl))
-  have hR : ∀ x ∈ [K.R.x,K.R.y,K.R.z], x ∈ winRo K ++ winOther K :=
-    fun _ h => List.mem_append_right _ (hRo _ h)
-  have hD : ∀ x ∈ [K.D.x,K.D.y,K.D.z], x ∈ winRo K ++ winOther K :=
-    fun _ h => List.mem_append_right _ (hDo _ h)
-  refine ⟨fused_spec hsp hL hA hp hRD (winJ_sl hDo hR hR) ?_,
-    fused_spec hsp hL hA hp hDR (winJ_sl hRo hD hD) ?_⟩
-  all_goals
-    intro x hx
-    simp only [rcbR,dblVR,List.mem_cons,List.not_mem_nil,or_false,List.mem_append] at hx ⊢
-    rcases hx with h | h | h | h | h | h | h | h <;> simp only [h,true_or,or_true]
-
-
-theorem selected_doubles {K : WinCfg} {C : Curve} {base : Addr} {size : Nat}
-    (hL : WinLay K size) (hA : WinA K) (hp : UnitMod C.p (2^(64*K.M.n))) :
-    DblsOk K C base size (some (if P521Linear.supported K.M then
-      (VG.Impl.Weierstrass.AArch64.P521Double.double K.M K.S K.R K.D,
-       VG.Impl.Weierstrass.AArch64.P521Double.double K.M K.S K.D K.R)
-      else (fprogB K.M (dblJS K.S K.R K.D),fprogB K.M (dblJS K.S K.D K.R)))) := by
-  split
-  · rename_i h
-    exact fused_doubles h hL hA hp
-  · exact scheduled_doubles hL hA hp
 
 end VG.Proof.Ecdh.AArch64.P521.Window
 
@@ -239,6 +163,7 @@ theorem recode_small {k : Nat} (hk : k < 2^521) : k+8*geom 131 < 16^131 := by
   omega_using [hk, hg]
 
 theorem core_ok (c : Cfg) (hc : CfgOk c) (h9 : c.n=9)
+    (hsp : VG.Impl.Weierstrass.AArch64.P521.supported (config c).M = true)
     (hbd : 16*((2^521+135)/256)+8 < c.C.n) (hpadd : c.padd=none)
     (hL : WinLay (config c) size) (hA : WinA (config c))
     (hInv : ∀ base, InvSpecW (config c) c.C base size (Impl.Ecdh.AArch64.Cfg.invJ c)
@@ -325,7 +250,7 @@ theorem core_ok (c : Cfg) (hc : CfgOk c) (h9 : c.n=9)
     (show toM c.C.p (2 ^ (64 * c.n)) (c.mont 1) = 1 by rw [toM_cmont hc]; rfl) (hInv base) hRC hx0
     hs₂ hM₂ hF (by rw [hJ]; exact hrec) (Nat.le_add_left _ _) hJ2
     (by rw [hJ]; exact winE_two_bound (d := wordsVal s.mem base (c.sl K) c.n) (J := 131) (b := 521) (n := c.C.n) (by decide) hk hbd) (winAddOk hc)
-    (by rw [hpadd]; trivial) (by rw [hpadd]; trivial) (by rw [hpadd]; trivial) (selected_doubles hL hA hpR) MaddOk.none (selOk_default (Nat.lt_trans (hmont 1) hc.p_lt)))
+    (by rw [hpadd]; trivial) (by rw [hpadd]; trivial) (by rw [hpadd]; trivial) (VG.Proof.Weierstrass.AArch64.P521.doubles_ok hsp hL hA hpR) (madd_ok hsp hL hA hpR) (selOk_default (Nat.lt_trans (hmont 1) hc.p_lt)))
     fun s₃ ⟨K₃, U₃, M₃, L₃, R₃⟩ => ?_)
   change Unch base (winW (winQ c) ++ invJW c) s₂.mem s₃.mem at U₃
   rw [winW_eq] at U₃
@@ -503,7 +428,7 @@ theorem multiply_ok (hc : CfgOk c) (hC : Law c.C) (hO : PrimeOrder c.C) : MulOk 
   have htv : ∀ {i}, i < 45 → i ≠ K →
       tmv c.C c.n base s₁ (c.sl i) = tmv c.C c.n base s (c.sl i) := by
     intro i hi hne; show toM _ _ (sv c base s₁ i) = toM _ _ (sv c base s i); rw [hv hi hne]
-  refine core_ok c hc rfl (by decide +kernel) rfl (layout hc) (aligned hc) (inverse_spec hc) hC hO hs₁ F₁ hP
+  refine core_ok c hc rfl (by decide +kernel) (by decide +kernel) rfl (layout hc) (aligned hc) (inverse_spec hc) hC hO hs₁ F₁ hP
     (by rw [hv (by decide) (by decide)]; exact hpx)
     (by rw [hv (by decide) (by decide)]; exact hpy)
     (by rw [htv (by decide) (by decide),htv (by decide) (by decide),htv (by decide) (by decide)]; exact hrep)
@@ -605,5 +530,16 @@ theorem ecdh_verified (hL : Weierstrass.Law Spec.P521.curve) (hI : Weierstrass.A
     Verified AArch64.target exchangeP521
       (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P521.inst AArch64.abi) :=
   Verified.of_correct (ecdh_a64 hL hI hO) ecdh_ct implies
+
+/-- ECDH over P-521 as it is emitted, its cleanup included
+(`Impl.Ecdh.AArch64.Fn.exchangeP521`), meets its contract in constant time and
+returns without secret residue. -/
+theorem exchange_scrubbed (hL : Weierstrass.Law Spec.P521.curve) (hI : Weierstrass.AArch64.InvSounds)
+    (hO : Weierstrass.PrimeOrder Spec.P521.curve) :
+    VerifiedScrubbed AArch64.target VG.Impl.Ecdh.AArch64.Fn.exchangeP521
+      (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P521.inst AArch64.abi) 32 :=
+  VG.AArch64.Scrub.verifiedScrubbedAll (api := Spec.Ecdh.P521.exchangeApi)
+    { code := exchangeP521, verified := ecdh_verified hL hI hO } _
+    (VG.Proof.EcKey.AArch64.Scrub.exchangeOk _) (by dsimp only; lit_decide)
 
 end VG.Proof.Ecdh.AArch64.P521

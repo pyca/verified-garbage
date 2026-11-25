@@ -15,7 +15,7 @@ import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Main
 public import VerifiedGarbage.Proof.P256.EcdhDouble.Certificate
-public import VerifiedGarbage.Proof.P256.Linear.WeakCertificate
+public import VerifiedGarbage.Proof.P256.EcdhDouble.Verified
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticJacHead
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticJacTail
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticMixedHead

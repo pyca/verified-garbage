@@ -10,7 +10,6 @@ public import VerifiedGarbage.Proof.P256.EcdhJac.Lit
 import VerifiedGarbage.Proof.Weierstrass.AArch64.AddConst
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Bits
 import VerifiedGarbage.Proof.P256.EcdhJac.Exchange
-import VerifiedGarbage.Proof.P256.EcdhInverse.Inverse
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Verified
 public import VerifiedGarbage.Proof.P256.EcdhDouble.Certificate
 import Mathlib.Data.BitVec
@@ -19,13 +18,13 @@ import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Positivity
 import Mathlib.Tactic.Ring
-public import VerifiedGarbage.Proof.P256.EcdhInverse.Update
+public import VerifiedGarbage.Proof.P256.EcdhInverse
 public import VerifiedGarbage.Proof.Weierstrass.InvToM
 public import VerifiedGarbage.Proof.P256.EcdhJac.DbluCertificate
 public import VerifiedGarbage.Proof.P256.EcdhJac.OutCertificate
 public import VerifiedGarbage.Proof.P256.EcdhTable.Dblu
 public import VerifiedGarbage.Proof.P256.EcdhTable.Zaddu
-public import VerifiedGarbage.Proof.P256.Linear.WeakCertificate
+public import VerifiedGarbage.Proof.P256.EcdhDouble.Verified
 public import VerifiedGarbage.Proof.P256.VerifyAllocated.CachedHead
 public import VerifiedGarbage.Proof.P256.VerifyAllocated.JacTail
 public import VerifiedGarbage.Proof.P256.VerifyAllocated.MixedHead
@@ -315,7 +314,7 @@ theorem verified (hL : Weierstrass.Law Spec.P256.curve)
     Verified AArch64.target Impl.P256.EcdhJac.exchange
       (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P256.inst AArch64.abi) :=
   verified_of_mul hL hI (mulWithInverse_of_window (p256_ok hI)
-    (W:=EcdhInverse.inverseMemory) (by unfold FixedOk; decide +kernel) (by decide +kernel) (by decide +kernel)
+    (W:=EcdhInverse.inverseWrites) (by unfold FixedOk; decide +kernel) (by decide +kernel) (by decide +kernel)
     (fun hs hm hx => EcdhInverse.inverse_ok VG.Proof.P256.p_prime hT
       (invLayP (p256_ok hI)) (by decide) (Weierstrass.unitMod_pow_two (p256_ok hI).p_odd _) hs
       (modOkA_inv (p256_ok hI) hm (.inl rfl) rfl rfl) hx
