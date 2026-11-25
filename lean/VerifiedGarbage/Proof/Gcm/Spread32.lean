@@ -198,49 +198,11 @@ theorem lp_mul32 (a b : BitVec 32) : lp (mul32 a b).1 + X ^ 32 * lp (mul32 a b).
   rw [lp_xor, lp_xor, e0, e1, lp_lo_hi16 a, lp_lo_hi16 b]
   linear_combination es + (X ^ 16 * lp (lo16 a) * lp (lo16 b) + X ^ 16 * lp (hi16 a) * lp (hi16 b)) * h2
 
-/-- The four classes' positions, in 32 bits. -/
-def c4 (r : Nat) : BitVec 32 := 0x11111111#32 <<< r
-
-/-- The product of two words from 16 integer products of 64 bits. -/
-def mul32x (a b : BitVec 32) : BitVec 32 × BitVec 32 :=
-  let p := mul4 (a.setWidth 64) (b.setWidth 64)
-  (p.extractLsb' 0 32, p.extractLsb' 32 32)
-
-theorem low_setWidth (a : BitVec 32) : Low (a.setWidth 64) := fun p hp => by
-  rw [BitVec.getLsbD_setWidth, Bool.and_eq_true] at hp
-  exact BitVec.lt_of_getLsbD hp.2
-
-theorem append_halves (v : BitVec 64) : v.extractLsb' 32 32 ++ v.extractLsb' 0 32 = v := by
-  apply BitVec.eq_of_getLsbD_eq
-  intro i hi
-  rw [BitVec.getLsbD_append, BitVec.getLsbD_extractLsb', BitVec.getLsbD_extractLsb']
-  by_cases h : i < 32
-  · simp only [h, ite_true, decide_true, Bool.true_and, Nat.zero_add]
-  · simp only [h, ite_false, show i - 32 < 32 by omega, decide_true, Bool.true_and, show 32 + (i - 32) = i by omega]
-
-theorem setWidth_c4 (a : BitVec 32) {r : Nat} (hr : r < 4) : (a &&& c4 r).setWidth 64 = a.setWidth 64 &&& m4 r := by
-  apply BitVec.eq_of_getLsbD_eq
-  intro i hi
-  simp only [BitVec.getLsbD_setWidth, BitVec.getLsbD_and, hi, decide_true, Bool.true_and]
-  by_cases h : i < 32
-  · have : ∀ r < 4, ∀ i < 32, (c4 r).getLsbD i = (m4 r).getLsbD i := by decide +kernel
-    rw [this r hr i h]
-  · rw [BitVec.getLsbD_of_ge a i (by omega), Bool.false_and, Bool.false_and]
-
-theorem m4_append {r : Nat} (hr : r < 4) : m4 r = c4 r ++ c4 r := by
-  have : ∀ r < 4, m4 r = c4 r ++ c4 r := by decide
-  exact this r hr
-
 /-- A product of two words, as two. -/
 def IsMul (f : BitVec 32 → BitVec 32 → BitVec 32 × BitVec 32) : Prop :=
   ∀ a b, lp (f a b).1 + X ^ 32 * lp (f a b).2 = lp a * lp b
 
 theorem isMul_mul32 : IsMul mul32 := lp_mul32
-
-theorem isMul_mul32x : IsMul mul32x := fun a b => by
-  show lp ((mul4 _ _).extractLsb' 0 32) + X ^ 32 * lp ((mul4 _ _).extractLsb' 32 32) = _
-  rw [← lp_append, append_halves, mul4_eq (low_setWidth a), lp_low (low_setWidth a) (low_setWidth b), lp_setWidth,
-    lp_setWidth]
 
 /-! ## 64-bit words, as two -/
 

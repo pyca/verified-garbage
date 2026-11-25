@@ -13,8 +13,8 @@ import VerifiedGarbage.Proof.Framework.GetElem
 /-!
 # GHASH on x86-64: shifting a block left, and loading blocks
 
-What `add`, `adc` and `sbb` compute on the two halves of a 128-bit value
-(`Impl.Gcm.X86_64.hInv`), and big-endian blocks as two `bswap`ped loads.
+What `add`, `adc` and `sbb` compute on the two halves of a 128-bit value, and
+big-endian blocks as two `bswap`ped loads.
 -/
 
 @[expose] public section

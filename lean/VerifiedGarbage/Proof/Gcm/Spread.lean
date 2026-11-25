@@ -128,12 +128,6 @@ theorem lp_eq_sum {w : Nat} (a : BitVec w) : lp a = ∑ i ∈ Finset.range w, if
 theorem lp_polyMul (a b : BitVec 64) : lp (polyMul a b) = lp a * lp b := by
   rw [show polyMul a b = clSteps a b 64 from rfl, lp_clSteps a b (Nat.le_refl _), lp_eq_sum a]
 
-theorem polyMul_xor_left (a b c : BitVec 64) : polyMul (a ^^^ b) c = polyMul a c ^^^ polyMul b c :=
-  lp_ext (by simp only [lp_polyMul, lp_xor, add_mul])
-
-theorem polyMul_xor_right (a b c : BitVec 64) : polyMul a (b ^^^ c) = polyMul a b ^^^ polyMul a c :=
-  lp_ext (by simp only [lp_polyMul, lp_xor, mul_add])
-
 /-! ## The product of two classes -/
 
 theorem toNat_eq_eval {w : Nat} (v : BitVec w) : v.toNat = (np v).eval 2 := by

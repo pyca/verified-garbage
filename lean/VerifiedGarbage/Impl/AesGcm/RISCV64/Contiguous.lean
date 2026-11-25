@@ -64,7 +64,7 @@ def preparedFrame : Prog isa :=
   .frame (.alloc 2608) (.seq (.block (setArgsAt 2608 3 40))
     (bodyWith VG.Impl.Gcm.RISCV64.Prepared.preparedInvocation)) (.free 2608)
 
-/-- The prepared GHASH helper uses 112 frame bytes. Erase its spills,
+/-- The prepared GHASH helper uses 112 frame bytes. Erase the registers it keeps,
 the contiguous body's local region and the called AES scratch. -/
 def scrubFrames : List (Nat × List (Nat × Nat)) := [(2048,[(0,256)]),(672,[(0,84)])]
 
