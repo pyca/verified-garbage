@@ -237,3 +237,21 @@ kept together, registers allocated again (x1-x17, x20-x28), several settings
 measured at once. Constants 19 and 38 kept in registers; DA + CB and DA - CB
 formed from one load. If it pays, equality with the plain code can be proven by
 a checked value numbering of both.
+
+## 12. Experiment 9's result (run 45682346223): scheduling rejected
+
+The step with its constants in registers (o3) 355; 28 schedules 350 to 365 (best
+`sc_o3_19_50`). Scheduling and register allocation are worth 5 cycles: the
+limit is the flag window, not order. Scalar code ends near 350; the base is 340.
+
+Experiment 10, NEON:
+ (a) `stp` for what a `ldr q` reads next (front: limbs 0-1, 2-3 stored in
+     pairs, 4 with zero; E and F likewise): a vector load does not forward from
+     two separate 8-byte stores.
+ (b) Karatsuba in the halves: LL_m, HH_m (same limbs i + j = m, 19 when they
+     wrap), K_m = (lo + hi)(lo' + hi'): X_m = K_m - LL_m - HH_m, E_m = LL_m +
+     2 HH_(m-1), E_0 = LL_0 + 38 HH_4: 75 multiplies for 100, 45 for 55. With
+     hi < 2^27: 19 (lo + hi) < 2^32; K_m < 5 x 2^27.6 x 2^31.9 < 2^62.
+     In two passes: LL and HH from a, b, 19 b (14 registers, 10 sums), then
+     a, b, 19 b become lo + hi in place, and K (5 sums).
+ (c) the other split: NEON AA|BB then x3|t; scalar DA CB then E, F, x2, z2, and z3.
