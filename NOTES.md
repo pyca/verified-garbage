@@ -61,3 +61,15 @@ No divstep code of its own. Field (ECDH, constant time, ten batches: 590 divstep
 verification, early exit, existing wrapper) use the same scheme. x0, x1 (delta), x19 (counter), x20 (ECDH's output pointer) are not allocated.
 Cost expected: 10 * (59*13 + ~60 + update) ; the update is 4 rows of 2*5 products: ~ 90 mul/umulh + ~250 other.
 Candidates after a baseline: P-256's m = -1/p mod 2^64 = 1 makes k = t0, and k p by shifts, no products (words: k(2^256-2^224+2^192+2^96-1)).
+
+## 6. After the first version (dated by this commit)
+
+Built as designed. mca (Neoverse N2, dispatch 5, one iteration): doubling raw 1154 instructions, 276 cycles; allocated 999, 260 cycles
+(945 at 4 tries, 265 cycles). Updates: 791 raw; allocated 414 (field), 432 (order). Field estimate in section 1 for the doubling (657) did not count loads,
+moves of constants or the canonical correction of every product (~18 each): that is why 945.
+Candidate improvements, in order of expected gain, decided on the first measurement:
+ (i) canonical corrections after each product: 8 x ~14 instructions. A product below 2^256 (not p) costs 5 fewer and is acceptable only as one operand
+     of a product; not with the present contract of `VerifySparse.op`.
+ (ii) the 3x: 26 -> two adds is 36; keep.
+ (iii) the first batch's P-256 reduction in `abUpdate`: m = 1, so `mul x16 = t0 * minv` is t0, and k p is 4 products (mul/umulh pairs 8); by shifts 0. 2 rows
+     per batch: 16+ products of ~ 90 in the update; about 60 instructions of 414.
