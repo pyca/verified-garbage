@@ -111,7 +111,4 @@ def invSbox0Code : List Instr := [
   xorR .t3 .a7 .t2, xorR .t6 .a6 .s6, xorR .s9 .a6 .s2, xorR .s2 .t1 .t4, xorR .s7 .s11 .t3,
   xorR .s6 .t6 .t5, xorR .s4 .s9 .s8, xorR .s1 .t3 .s6]
 
-/-- The inverse S-box. -/
-def invSboxCode : List Instr := add63 ++ invSbox0Code
-
 end VG.Impl.Aes.RISCV64

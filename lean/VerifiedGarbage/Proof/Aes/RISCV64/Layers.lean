@@ -186,30 +186,15 @@ def InRel (W : Nat → BitVec 64) (S : Nat → Spec.Aes.State) : Prop :=
 theorem sbox_check : check (table 64 256) sboxCfg (fun _ => none) sboxCode tabEnv (tabPost sboxOfT) = true := by
   decide +kernel
 
-theorem invSbox_check :
-    check (table 64 256) sboxCfg (fun _ => none) invSboxCode tabEnv (tabPost (invSboxT sbIns)) = true := by
-  decide +kernel
-
 theorem sbox_ok {s : State} (hok : Ok sboxCfg s) :
     ∃ s', runBlock isa sboxCode s = some s' ∧
       (∀ j < 8, ∀ p < 64, (Q s' j).getLsbD p = (Spec.Aes.sbox (bsByte (Q s) p)).getLsbD j) ∧
       Rest sboxCfg s s' :=
   tab_ok (fun _ _ => sboxOfT_bit) sbox_check (by decide +kernel) hok
 
-theorem invSbox_ok {s : State} (hok : Ok sboxCfg s) :
-    ∃ s', runBlock isa invSboxCode s = some s' ∧
-      (∀ j < 8, ∀ p < 64, (Q s' j).getLsbD p = (Spec.Aes.invSbox (bsByte (Q s) p)).getLsbD j) ∧
-      Rest sboxCfg s s' :=
-  tab_ok (fun c j hc hj => by rw [← getLsbD_row _ _ hj, row_invSboxT _ hc, row_sbIns hc]) invSbox_check
-    (by decide +kernel) hok
-
 theorem bs_subBytes {W W' : Nat → BitVec 64} {S : Nat → Spec.Aes.State}
     (h : ∀ j < 8, ∀ p < 64, (W' j).getLsbD p = (Spec.Aes.sbox (bsByte W p)).getLsbD j) (hS : BsRel W S) :
     BsRel W' fun b => Spec.Aes.subBytes (S b) := hS.map _ h
-
-theorem bs_invSubBytes {W W' : Nat → BitVec 64} {S : Nat → Spec.Aes.State}
-    (h : ∀ j < 8, ∀ p < 64, (W' j).getLsbD p = (Spec.Aes.invSbox (bsByte W p)).getLsbD j) (hS : BsRel W S) :
-    BsRel W' fun b => Spec.Aes.invSubBytes (S b) := hS.map _ h
 
 /-! ## Bytes to slices -/
 
@@ -325,10 +310,6 @@ theorem invMixColumns_ok {s : State} (hok : Ok bsCfg s) :
 theorem bs_mixColumns {W W' : Nat → BitVec 64} {S : Nat → Spec.Aes.State}
     (h : ∀ j < 8, ∀ p < 64, (W' j).getLsbD p = termsXor W (mixT mcCoeffs 4 false j p)) (hS : BsRel W S) :
     BsRel W' fun b => Spec.Aes.mixColumns (S b) := hS.mixColumns h
-
-theorem bs_invMixColumns {W W' : Nat → BitVec 64} {S : Nat → Spec.Aes.State}
-    (h : ∀ j < 8, ∀ p < 64, (W' j).getLsbD p = termsXor W (mixT invMcCoeffs 4 false j p)) (hS : BsRel W S) :
-    BsRel W' fun b => Spec.Aes.invMixColumns (S b) := hS.invMixColumns h
 
 /-! ## AddRoundKey -/
 
