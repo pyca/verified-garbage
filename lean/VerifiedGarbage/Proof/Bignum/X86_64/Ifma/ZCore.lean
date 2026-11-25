@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.StepU
 public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Block
+import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.CarryProof
 
 /-! ### `Bignum.X86_64.Ifma.CoreU`, which this module and modules that import it used -/
 
@@ -585,7 +586,7 @@ theorem ammCore_ok (hl : AmmOk l) {s : State} {B : Addr} {a m : Nat → Nat → 
   refine WP.seq (WP.mono (loop_ok hl e (l.S / l.R) s₁ hst.1 (Nat.le_refl _) (by rw [Nat.sub_self]; exact i₁)
       (by rw [k₁.gpr _ (by decide)]; rcases hl with (rfl | rfl | rfl | rfl) | rfl | rfl | rfl | rfl | rfl <;> rfl))
     fun s₂ₐ ⟨i₂ₐ, g₂ₐ, x₂ₐ⟩ => ?_)
-  rw [accStores_code, List.append_assoc, List.append_assoc, WP.block_append_iff]
+  rw [WP.block_append_iff]
   refine WP.mono (steps_chain hl e (l.S % l.R) (by omega_arith) (by omega_arith) s₂ₐ i₂ₐ) fun s₂ ⟨i₂, g₂', x₂'⟩ => ?_
   have g₂ : ∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .r9 → s₂.gpr r = s₁.gpr r := fun r a c n =>
     (g₂' r a).trans (g₂ₐ r a c n)
@@ -594,39 +595,85 @@ theorem ammCore_ok (hl : AmmOk l) {s : State} {B : Addr} {a m : Nat → Nat → 
     rw [g₂ _ (by decide) (by decide) (by decide), g₁ _ (by decide) (by decide)]
     exact (RegUpd.gpr_setReg_of_ne _ _ (by decide)).trans hB
   have wr₂ : s₂.wr = s.wr := by rw [i₂.wr]; rfl
-  rw [WP.block_append_iff]
-  refine WP.mono (stores_gen (accStores l) s₂ hB₂ fun x hx =>
-    wr₂ ▸ (let ⟨_, h, c⟩ := hs.region (accStores_lt x hx) (by decide); ⟨_, h, c⟩)) fun s₃ h₃ => ?_
-  subst h₃
-  rw [List.singleton_append, WP.block_cons_iff]
-  refine ⟨_, rfl, ?_⟩
-  have m₂ : s₂.mem = s.mem := i₂.mem
-  refine WP.mono (carryOut_ok hl (B := B) (L := fun p => lm l a m k bl p l.S)
-    (fun p _ q hq => lm_lt hR10 hst.2.2.2.1 hq)
-    (fun d hd => by rw [RegUpd.wr_setReg, wr₂]; exact hs.st hd)
-    (by rw [RegUpd.gpr_setReg_of_ne _ _ (by decide)]; exact hB₂)
-    (RegUpd.gpr_setReg_self _ _ _) fun p hp q hq => ?_) fun s' ⟨h, g, rd, wr, x⟩ => ?_
-  · have h1 := Nat.mod_lt q (show 0 < l.R by omega_arith)
-    have h2 : q / l.R < 4 := Nat.div_lt_of_lt_mul (by simp only [Lay.L] at hq; rw [Nat.mul_comm]; exact hq)
-    have := read_stores hl s₂.mem B s₂ hp (k := q % l.R) (t := q / l.R) h1 h2
-    rw [i₂.lanes p hp _ h1 _ h2, Nat.mod_add_div, hst.2.2.2.2.1] at this
-    rw [RegUpd.mem_setReg, show l.D * p + l.off q = l.D * p + 32 * (q % l.R) + 8 * (q / l.R) by
-      unfold Lay.off; omega_arith]
-    exact this
-  refine ⟨fun p hp q hq => by rw [h.words p hp q hq]; simp only [hq, true_or, ite_true],
-    fun p hp => by rw [h.c p hp]; simp only [Nat.not_lt_zero, ↓reduceIte], ?_,
-    fun r r1 r2 r3 r4 r5 r6 r7 => ?_, by rw [g _ (by decide) (by decide) (by decide) (by decide)]; exact RegUpd.gpr_setReg_self _ _ _,
-    by rw [rd, RegUpd.rd_setReg, i₂.rd]; rfl, by rw [wr, RegUpd.wr_setReg, wr₂],
-    by rw [x, RegUpd.mxcsr_setReg, x₂, k₁.mxcsr]; rfl⟩
-  · have o := wrList_outN (l := l) B (o := 0) (n := l.NB) (by omega_arith)
-      ((accStores l).map fun x => (x.1, s₂.vy x.2)) s₂.mem fun x hx => by
-        obtain ⟨y, hy, rfl⟩ := List.mem_map.1 hx
-        exact accStores_win y hy
-    have hf : OutN l B 0 l.NB (wrList s₂.mem B ((accStores l).map fun x => (x.1, s₂.vy x.2))) s'.mem := h.frame
-    have o' : OutN l B 0 l.NB s.mem (wrList s₂.mem B ((accStores l).map fun x => (x.1, s₂.vy x.2))) :=
-      fun x hx => (o x hx).trans (congrFun m₂ x)
-    exact o'.trans hf
-  · rw [g r r1 r2 r3 r4, RegUpd.gpr_setReg_of_ne _ _ r7, g₂ r r1 r2 r5, g₁ r r1 r2, RegUpd.gpr_setReg_of_ne _ _ r6]
+  by_cases is3072 : l = lay3072
+  · subst l
+    rw [ammCoreFinish, ite_eq_left rfl]
+    let L := fun p => lm lay3072 a m k bl p lay3072.S
+    have bound : ∀ p < 2, ∀ j < 32, L p j < 2 ^ 63 :=
+      fun _ _ _ hj => lm_lt hR10 hst.2.2.2.1 hj
+    have raw : ∀ p < 2, ∀ j < 8, ∀ k < 4,
+        qv s₂ (carryAcc3072 p j) k = BitVec.ofNat 64 (L p (j + 8 * k)) := by
+      intro p hp j hj t ht
+      have h := i₂.lanes p hp j hj t ht
+      rw [hst.2.2.2.2.1] at h
+      exact h
+    have writes : ∀ p < 2, ∀ j < 8,
+        InRegions s₂.wr (s₂.ea (at_ .r11 (lay3072.D * p + 32 * j))) 32 := by
+      intro p hp j hj
+      have hD' : lay3072.D = 10336 := by decide
+      have hNB : lay3072.NB = 256 := by decide
+      have hk : lay3072.D * p + 32 * j + 32 ≤ lay3072.D * (lay3072.nl - 1) + lay3072.NB := by
+        rw [hD', hNB]
+        change 10336 * p + 32 * j + 32 ≤ 10336 + 256
+        omega
+      change InRegions s₂.wr (s₂.gpr .r11 + BitVec.ofInt 64 (Int.ofNat (lay3072.D * p + 32 * j))) 32
+      rw [wr₂, hB₂]
+      obtain ⟨_, h, hc⟩ := hs.region hk (by decide)
+      exact ⟨_, h, hc⟩
+    obtain ⟨t, ht, hc⟩ := normalize3072_run s₂ L bound raw writes
+    apply WP.of_runBlock
+    refine ⟨t, ht, ?_, ?_, ?_, ?_, hc.mask, ?_, hc.wr.trans wr₂, ?_⟩
+    · intro p hp q hq
+      rw [← hB₂]
+      exact hc.word p q hp hq
+    · intro p hp
+      rcases (show p = 0 ∨ p = 1 by change p < 2 at hp; omega) with rfl | rfl
+      · exact hc.carry0
+      · exact hc.carry1
+    · have hm : s₂.mem = s.mem := i₂.mem
+      rw [hc.mem_pair, hB₂, hm]
+      exact wrList_outN (l := lay3072) B (o := 0) (n := lay3072.NB) (by decide)
+          (pairCarryWrites L) s.mem (fun w hw => by
+            obtain ⟨p, hp, j, hj, rfl⟩ := mem_pairCarryWrites L w hw
+            exact ⟨p, hp, by omega, by change lay3072.D * p + 32 * j + 32 ≤ lay3072.D * p + 256; omega⟩)
+    · intro r r1 r2 r3 r4 r5 r6 r7
+      rw [hc.gpr r r1 r2 r3 r4 r6 r7, g₂ r r1 r2 r5, g₁ r r1 r2, RegUpd.gpr_setReg_of_ne _ _ r6]
+    · rw [hc.rd, i₂.rd]; rfl
+    · rw [hc.mxcsr, x₂, k₁.mxcsr]; rfl
+  · rw [ammCoreFinish, ite_eq_right is3072, accStores_code, List.append_assoc]
+    rw [WP.block_append_iff]
+    refine WP.mono (stores_gen (accStores l) s₂ hB₂ fun x hx =>
+      wr₂ ▸ (let ⟨_, h, c⟩ := hs.region (accStores_lt x hx) (by decide); ⟨_, h, c⟩)) fun s₃ h₃ => ?_
+    subst h₃
+    rw [List.singleton_append, WP.block_cons_iff]
+    refine ⟨_, rfl, ?_⟩
+    have m₂ : s₂.mem = s.mem := i₂.mem
+    refine WP.mono (carryOut_ok hl (B := B) (L := fun p => lm l a m k bl p l.S)
+      (fun p _ q hq => lm_lt hR10 hst.2.2.2.1 hq)
+      (fun d hd => by rw [RegUpd.wr_setReg, wr₂]; exact hs.st hd)
+      (by rw [RegUpd.gpr_setReg_of_ne _ _ (by decide)]; exact hB₂)
+      (RegUpd.gpr_setReg_self _ _ _) fun p hp q hq => ?_) fun s' ⟨h, g, rd, wr, x⟩ => ?_
+    · have h1 := Nat.mod_lt q (show 0 < l.R by omega_arith)
+      have h2 : q / l.R < 4 := Nat.div_lt_of_lt_mul (by simp only [Lay.L] at hq; rw [Nat.mul_comm]; exact hq)
+      have := read_stores hl s₂.mem B s₂ hp (k := q % l.R) (t := q / l.R) h1 h2
+      rw [i₂.lanes p hp _ h1 _ h2, Nat.mod_add_div, hst.2.2.2.2.1] at this
+      rw [RegUpd.mem_setReg, show l.D * p + l.off q = l.D * p + 32 * (q % l.R) + 8 * (q / l.R) by
+        unfold Lay.off; omega_arith]
+      exact this
+    refine ⟨fun p hp q hq => by rw [h.words p hp q hq]; simp only [hq, true_or, ite_true],
+      fun p hp => by rw [h.c p hp]; simp only [Nat.not_lt_zero, ↓reduceIte], ?_,
+      fun r r1 r2 r3 r4 r5 r6 r7 => ?_, by rw [g _ (by decide) (by decide) (by decide) (by decide)]; exact RegUpd.gpr_setReg_self _ _ _,
+      by rw [rd, RegUpd.rd_setReg, i₂.rd]; rfl, by rw [wr, RegUpd.wr_setReg, wr₂],
+      by rw [x, RegUpd.mxcsr_setReg, x₂, k₁.mxcsr]; rfl⟩
+    · have o := wrList_outN (l := l) B (o := 0) (n := l.NB) (by omega_arith)
+        ((accStores l).map fun x => (x.1, s₂.vy x.2)) s₂.mem fun x hx => by
+          obtain ⟨y, hy, rfl⟩ := List.mem_map.1 hx
+          exact accStores_win y hy
+      have hf : OutN l B 0 l.NB (wrList s₂.mem B ((accStores l).map fun x => (x.1, s₂.vy x.2))) s'.mem := h.frame
+      have o' : OutN l B 0 l.NB s.mem (wrList s₂.mem B ((accStores l).map fun x => (x.1, s₂.vy x.2))) :=
+        fun x hx => (o x hx).trans (congrFun m₂ x)
+      exact o'.trans hf
+    · rw [g r r1 r2 r3 r4, RegUpd.gpr_setReg_of_ne _ _ r7, g₂ r r1 r2 r5, g₁ r r1 r2, RegUpd.gpr_setReg_of_ne _ _ r6]
 
 /-- What `ammCore_ok` proves of `ammCore l`, of a code `c`. -/
 def CoreOk (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (c : Prog isa) : Prop :=

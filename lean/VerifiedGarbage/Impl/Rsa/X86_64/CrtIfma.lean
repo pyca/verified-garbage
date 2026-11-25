@@ -244,6 +244,76 @@ def carryOut : List Instr :=
   (List.range l.nl).map (fun p => .mov32 (cReg p) (.imm 0)) ++
     (List.range l.L).flatMap fun j => (List.range l.nl).flatMap (carryStep l j)
 
+/-! ### Register-only carry normalization for 3072-bit keys -/
+
+/-- Lay out four mask bits at positions 0, 8, 16 and 24. The remaining
+bits of the product are discarded. -/
+def carryRowMask : BitVec 32 := 0x01010101
+
+def spreadCarryMask (gt : Bool) (r : VReg) (j : Nat) : List Instr :=
+  [.evCmpUq gt .rdx r (vreg 24), .imul3 .rdx .rdx 0x00204081,
+    .alu .and .rdx (.reg .rsi)] ++
+  (if j = 0 then [] else [.shift32 .shl .rdx j]) ++
+  [.alu32 .or (if gt then .rax else .rcx) (.reg .rdx)]
+
+/-- Separate one accumulator row into its high bits and low radix limbs. -/
+def split3072Row (r high : VReg) : List Instr :=
+  [.eop (.shift .vpsrlq high r 52), .eop (.bin .vpandq r r (vreg 24))]
+
+/-- Register of an accumulator row at the end of the 30 IFMA steps. -/
+def carryAcc3072 (p j : Nat) : VReg := acc lay3072 p j (lay3072.S % lay3072.R)
+
+/-- High parts of the eight stride rows, one register per row. -/
+def carryHigh3072 (j : Nat) : VReg := vreg (16 + j)
+
+/-- Split the first `n` rows of one prime. -/
+def split3072Rows (p n : Nat) : List Instr :=
+  (List.range n).flatMap fun j => split3072Row (carryAcc3072 p j) (carryHigh3072 j)
+
+/-- Extract one row's four incoming carry bits, add them, and store the
+normalized limbs. The mask in `rax` is already aligned for this row. -/
+def store3072Row (r : VReg) (o : Nat) : List Instr :=
+  [.mov .rdx (.reg .rax), .alu .and .rdx (.reg .rsi), .imul3 .rdx .rdx 0x01020408,
+    .shift .shr .rdx 24, .alu .and .rdx (.imm 15),
+    .evMaskAddQ .rdx r r (vreg 25), .eop (.bin .vpandq r r (vreg 24)),
+    .evStore (at_ .r11 o) r]
+
+/-- Normalize eight stride rows, containing 32 radix-2⁵² limbs. Registers
+16–23 hold the high parts; 27 holds the high part of the preceding limb
+for row zero. The low parts plus the preceding high parts generate or
+propagate single-bit carries. For disjoint generate and propagate masks
+`G` and `P`, the carry-in mask is `(P + (G << 1)) XOR P`. -/
+def normalize3072Lane (p : Nat) : List Instr :=
+  let r := carryAcc3072 p
+  let high := carryHigh3072
+  split3072Rows p 8 ++
+  [.eop (.valignq (vreg 27) (high 7) (vreg 26) 3),
+    .alu32 .xor .rax (.reg .rax), .alu32 .xor .rcx (.reg .rcx)] ++
+  (List.range 8).flatMap (fun j =>
+    [.eop (.bin .vpaddq (r j) (r j) (if j = 0 then vreg 27 else high (j - 1)))] ++
+      spreadCarryMask true (r j) j ++ spreadCarryMask false (r j) j) ++
+  [.shift .shl .rax 1, .alu .add .rax (.reg .rcx), .alu .xor .rax (.reg .rcx)] ++
+  (List.range 8).flatMap (fun j =>
+    (if j = 0 then [] else [.shift .shr .rax 1]) ++
+    store3072Row (r j) (lay3072.D * p + 32 * j)) ++
+  -- Retain the carry-out required by the Montgomery core contract. All
+  -- accumulator rows for this lane have been stored, so r(0) is now spare.
+  [.shift .shr .rax 25, .eop (.vpermq (r 0) (high 7) 0xff),
+    .movqR (cReg p) (if p = 0 then .xmm6 else .xmm14),
+    .alu .add (cReg p) (.reg .rax)] ++
+  (if p = 0 then [.mov .r10 (.reg .rdx)] else [.mov .rdx (.reg .r10)])
+
+/-- Prepare the radix mask, vector one and zero for the carry pass. -/
+def initialize3072Carry : List Instr :=
+  [.movImm64 .r12 mask52, .eop (.vmovq (vreg 24) .r12),
+    .eop (.vpbroadcastq (vreg 24) (vreg 24)), .mov32 .rax (.imm 1),
+    .eop (.vmovq (vreg 25) .rax), .eop (.vpbroadcastq (vreg 25) (vreg 25)),
+    .eop (.bin .vpxorq (vreg 26) (vreg 26) (vreg 26)), .mov32 .rsi (.imm carryRowMask)]
+
+/-- Normalize each prime and store only the final output limbs. -/
+def normalize3072 : List Instr :=
+  initialize3072Carry ++ normalize3072Lane 0 ++ normalize3072Lane 1
+
 /-! ### The multiplication with a look-ahead of `u`
 
 `ammCoreU`: `ammCore` with its `S` steps unrolled and the next step's `u`
@@ -320,6 +390,15 @@ def ammCoreU : Prog isa :=
       .evStore (at_ .r11 (l.D * p + 32 * k)) (acc l p k (l.S % l.R))) ++
     ([.movImm64 .r12 mask52] : List Instr) ++ carryOut l)
 
+/-- Normalize the 3072-bit CRT accumulators in registers. The other
+layouts use the shared scalar carry pass over their stored accumulators. -/
+def ammCoreFinish : List Instr :=
+  if l = lay3072 then normalize3072
+  else
+    ((List.range l.nl).flatMap fun p => (List.range l.R).map fun k =>
+      .evStore (at_ .r11 (l.D * p + 32 * k)) (acc l p k (l.S % l.R))) ++
+    ([.movImm64 .r12 mask52] : List Instr) ++ carryOut l
+
 /-- `[r11] := [r8] [r9] 2^(-52 S)` modulo each prime, almost (`rbx` the
 area): `S / R` blocks, then the first `S % R` steps of another, which leave
 role `k` in the register of `k + S % R`. -/
@@ -327,9 +406,7 @@ def ammCore : Prog isa :=
   .seq (.block (([.mov .r10 (.reg .rbx), .mov32 .rcx (.imm (BitVec.ofNat 32 (l.S / l.R)))] : List Instr) ++
       (List.range (l.nl * l.R + 2 * l.nl + 1)).map fun r => .eop (.bin .vpxorq (vreg r) (vreg r) (vreg r))))
     (.seq (.loop (.block (ammBlock l)) .ne)
-      (.block ((List.range (l.S % l.R)).flatMap (ammStep l) ++ ((List.range l.nl).flatMap fun p => (List.range l.R).map fun k =>
-          .evStore (at_ .r11 (l.D * p + 32 * k)) (acc l p k (l.S % l.R))) ++
-        ([.movImm64 .r12 mask52] : List Instr) ++ carryOut l)))
+      (.block ((List.range (l.S % l.R)).flatMap (ammStep l) ++ ammCoreFinish l)))
 
 /-! ### The multiplication modulo a number that is `-1` modulo `2¹⁰⁴`
 
