@@ -292,7 +292,6 @@ vg_p521_win_mul_adx:
 	adox r15, rax
 	mov edx, 512
 	xor eax, eax
-	cmp rax, -1
 	mulx rcx, rax, QWORD PTR [rdi+4024]
 	adox rax, QWORD PTR [rdi+4088]
 	mov QWORD PTR [rdi+4088], rax
