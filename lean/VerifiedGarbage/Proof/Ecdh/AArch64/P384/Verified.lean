@@ -663,7 +663,7 @@ theorem ecdh_a64 (hL : Weierstrass.Law Spec.P384.curve) (hI : Weierstrass.AArch6
   have hmu : KeepsUntouched (Impl.Ecdh.AArch64.Cfg.middle p384) :=
     keepsUntouched_ofK (c := Impl.Ecdh.AArch64.Cfg.middle p384) (by lit_decide)
   have hm : Ecdh.AArch64.MulOk p384 (Cfg.mulJ4 p384
-      (some (.block Impl.P384.EcdhAllocatedCode.doubleRD, .block Impl.P384.EcdhAllocatedCode.doubleDR))
+      (some (.block Impl.P384.EcdhDouble.doubleRD, .block Impl.P384.EcdhDouble.doubleDR))
       (some (.block Impl.P384.EcdhMadd.madd)) (some Impl.P384.EcdhSelect.sel)) :=
     Ecdh.AArch64.mulJ4_ok (p384_ok hI) hL hO rfl (by decide +kernel) (by decide +kernel)
       (by decide +kernel) (by decide +kernel)

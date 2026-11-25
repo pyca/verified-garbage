@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Ecdh.AArch64.WindowJ
 public import VerifiedGarbage.Impl.Ecdsa.P384.AArch64
-public import VerifiedGarbage.Impl.P384.EcdhAllocatedCode
+public import VerifiedGarbage.Impl.P384.EcdhDouble
 public import VerifiedGarbage.Impl.P384.EcdhMadd
 public import VerifiedGarbage.Impl.P384.EcdhSelect
 public import VerifiedGarbage.Impl.Scrub.AArch64.Scrub
@@ -22,7 +22,7 @@ open VG.AArch64
 /-- `vg_ecdh_p384`. -/
 def exchangeP384 : Prog isa :=
   Cfg.exchangeJ4 Impl.Ecdsa.AArch64.p384
-    (some (.block Impl.P384.EcdhAllocatedCode.doubleRD, .block Impl.P384.EcdhAllocatedCode.doubleDR))
+    (some (.block Impl.P384.EcdhDouble.doubleRD, .block Impl.P384.EcdhDouble.doubleDR))
     (some (.block Impl.P384.EcdhMadd.madd)) (some Impl.P384.EcdhSelect.sel)
 
 end VG.Impl.Ecdh.AArch64
