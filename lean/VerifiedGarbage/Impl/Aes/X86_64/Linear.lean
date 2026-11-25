@@ -27,6 +27,9 @@ namespace VG.Impl.Aes.X86_64
 
 open VG.X86_64
 
+/-- The memory operand `d` bytes from `b`. -/
+def at_ (b : Reg) (d : Nat) : MemOp := { base := b, disp := (d : Int) }
+
 def imm (d : Reg) (v : BitVec 64) : Instr := .movImm64 d v
 def rorI (d : Reg) (n : Nat) : Instr := .shift .ror d n
 def shrI (d : Reg) (n : Nat) : Instr := .shift .shr d n

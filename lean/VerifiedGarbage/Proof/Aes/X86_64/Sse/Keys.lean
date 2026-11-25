@@ -89,8 +89,8 @@ theorem key_bit (m : Mem) (p : Addr) {nr i n j : Nat} (hi : i ≤ nr) (hn : n < 
 
 /-! ## Loading keys -/
 
-theorem ea_at (s : State) (r : Reg) (d : Nat) : s.ea (Impl.Aes.X86_64.Sse.at_ r d) = s.gpr r + BitVec.ofNat 64 d := by
-  simp only [State.ea, Impl.Aes.X86_64.Sse.at_, BitVec.ofInt_natCast]
+theorem ea_at (s : State) (r : Reg) (d : Nat) : s.ea (Impl.Aes.X86_64.at_ r d) = s.gpr r + BitVec.ofNat 64 d := by
+  simp only [State.ea, Impl.Aes.X86_64.at_, BitVec.ofInt_natCast]
 
 theorem q_eqs : q 0 = .xmm0 ∧ q 1 = .xmm1 ∧ q 2 = .xmm2 ∧ q 3 = .xmm3 ∧ q 4 = .xmm4 ∧ q 5 = .xmm5 ∧ q 6 = .xmm6 ∧
     q 7 = .xmm7 := ⟨rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩
@@ -152,7 +152,7 @@ theorem load1_ok (s : State) (h0 : InRegions (s.rd ++ s.wr) (s.gpr .r10) 16) :
 
 theorem lowStep (q0 q1 : XReg) (i : Nat) (s : State) (h : q0 ≠ .xmm8 ∧ q1 ≠ .xmm8)
     (hin : InRegions s.wr (s.gpr kp + BitVec.ofNat 64 (16 * i)) 16) :
-    ∃ s', runBlock isa [mv .xmm8 q0, unpckl .xmm8 q1, .movdquStore (Impl.Aes.X86_64.Sse.at_ kp (16 * i)) .xmm8] s = some s' ∧
+    ∃ s', runBlock isa [mv .xmm8 q0, unpckl .xmm8 q1, .movdquStore (Impl.Aes.X86_64.at_ kp (16 * i)) .xmm8] s = some s' ∧
       s'.mem = s.mem.writeW (s.gpr kp + BitVec.ofNat 64 (16 * i)) (XBinOp.eval .punpcklqdq (s.xmm q0) (s.xmm q1)) ∧
       (∀ x, x ≠ .xmm8 → s'.xmm x = s.xmm x) ∧ s'.gpr = s.gpr ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   obtain ⟨a1, a2⟩ := h
@@ -164,7 +164,7 @@ theorem lowStep (q0 q1 : XReg) (i : Nat) (s : State) (h : q0 ≠ .xmm8 ∧ q1 �
 
 theorem highStep (q0 q1 : XReg) (i : Nat) (s : State)
     (hin : InRegions s.wr (s.gpr kp + BitVec.ofNat 64 (64 + 16 * i)) 16) :
-    ∃ s', runBlock isa [unpckh q0 q1, .movdquStore (Impl.Aes.X86_64.Sse.at_ kp (64 + 16 * i)) q0] s = some s' ∧
+    ∃ s', runBlock isa [unpckh q0 q1, .movdquStore (Impl.Aes.X86_64.at_ kp (64 + 16 * i)) q0] s = some s' ∧
       s'.mem = s.mem.writeW (s.gpr kp + BitVec.ofNat 64 (64 + 16 * i)) (XBinOp.eval .punpckhqdq (s.xmm q0) (s.xmm q1)) ∧
       (∀ x, x ≠ q0 → s'.xmm x = s.xmm x) ∧ s'.gpr = s.gpr ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   simp only [unpckh, runBlock_cons, runStep_some, runBlock_nil, isa, reduceExec, State.store128, XOp.exec, ea_at,
@@ -221,7 +221,7 @@ theorem storeLow_ok (s : State) (hin : ∀ i < 4, InRegions s.wr (s.gpr .rax + B
       (∀ j < 8, s'.xmm (q j) = s.xmm (q j)) ∧ s'.gpr = s.gpr ∧ Frame [⟨s.gpr .rax, 64⟩] s.mem s'.mem ∧
       s'.rd = s.rd ∧ s'.wr = s.wr := by
   have key := stores_ok (fun i => [mv .xmm8 (q (2 * i)), unpckl .xmm8 (q (2 * i + 1)),
-      .movdquStore (Impl.Aes.X86_64.Sse.at_ kp (16 * i)) .xmm8]) (fun s => s.gpr .rax) 0
+      .movdquStore (Impl.Aes.X86_64.at_ kp (16 * i)) .xmm8]) (fun s => s.gpr .rax) 0
     (fun i hi s h => by
       obtain ⟨s', e, hm, hx, hg, hr, hw⟩ := lowStep (q (2 * i)) (q (2 * i + 1)) i s
         ⟨(q_ne _ (by omega)).1, (q_ne _ (by omega)).1⟩ h
@@ -230,7 +230,7 @@ theorem storeLow_ok (s : State) (hin : ∀ i < 4, InRegions s.wr (s.gpr .rax + B
   -- the low store keeps every slice
   have all : ∀ n ≤ 4, ∀ s : State, (∀ i < 4, InRegions s.wr (s.gpr .rax + BitVec.ofNat 64 (16 * i)) 16) →
       ∀ s', runBlock isa ((List.range n).flatMap fun i => [mv .xmm8 (q (2 * i)), unpckl .xmm8 (q (2 * i + 1)),
-        .movdquStore (Impl.Aes.X86_64.Sse.at_ kp (16 * i)) .xmm8]) s = some s' →
+        .movdquStore (Impl.Aes.X86_64.at_ kp (16 * i)) .xmm8]) s = some s' →
         (∀ j < 8, s'.xmm (q j) = s.xmm (q j)) ∧ s'.gpr = s.gpr ∧ s'.wr = s.wr := by
     intro n
     induction n with
@@ -253,7 +253,7 @@ theorem storeHigh_ok (s : State) (hin : ∀ i < 4, InRegions s.wr (s.gpr .rax + 
       (∀ j < 8, s'.mem.readW (s.gpr .rax + BitVec.ofNat 64 64 + BitVec.ofNat 64 (8 * j)) 64 = lane q s 1 j) ∧
       s'.gpr = s.gpr ∧ Frame [⟨s.gpr .rax + BitVec.ofNat 64 64, 64⟩] s.mem s'.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   obtain ⟨s', e, h1, -, hg, hf, hr, hw⟩ := stores_ok (fun i => [unpckh (q (2 * i)) (q (2 * i + 1)),
-      .movdquStore (Impl.Aes.X86_64.Sse.at_ kp (64 + 16 * i)) (q (2 * i))]) (fun s => s.gpr .rax + BitVec.ofNat 64 64) 1
+      .movdquStore (Impl.Aes.X86_64.at_ kp (64 + 16 * i)) (q (2 * i))]) (fun s => s.gpr .rax + BitVec.ofNat 64 64) 1
     (fun i hi s h => by
       rw [BitVec.add_assoc, ← BitVec.ofNat_add] at h
       obtain ⟨s', e, hm, hx, hg, hr, hw⟩ := highStep (q (2 * i)) (q (2 * i + 1)) i s h
