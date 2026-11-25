@@ -197,6 +197,7 @@ only proven against a spec and TCB that were reviewed and merged beforehand.
 | --- | --- |
 | Terminates, never faults, accesses only the memory it may | `TCB/` (`Verified`) |
 | Keeps callee-saved registers, the stack pointer and the return address | `TCB/` (`Verified`, `Artifact.spSafe`) |
+| Takes no more stack than its contract and documentation say | `TCB/` (the emitter, `Rust.checkStack`) |
 | Branches and addresses depend only on public data and the contract's `leak` | `TCB/` (`ConstantTime`) |
 | Leaves no secrets in registers, flags or its stack | `TCB/` (`NoResidue`) |
 | What it returns and writes to its buffers | **The contract's postcondition only** |

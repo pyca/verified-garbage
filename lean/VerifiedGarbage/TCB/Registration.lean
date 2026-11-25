@@ -56,10 +56,15 @@ structure EmitTarget extends Target where
   argAreaDoc : List Nat → Option (String × Bool)
   /-- `Emitter.reservedDoc`. -/
   reservedDoc : Nat → Option String
+  /-- `Emitter.callBytes`. -/
+  callBytes : Nat
+  /-- `Emitter.frameBytes`. -/
+  frameBytes : isa.Instr → Nat
 
 /-- The target `T` with its `Emitter`. -/
 def EmitTarget.of (T : Target) (e : Emitter T.isa) : EmitTarget :=
-  ⟨T, e.printer, e.rustCfg, e.rustAbi, e.argAreaDoc, e.reservedDoc⟩
+  ⟨T, e.printer, e.rustCfg, e.rustAbi, e.argAreaDoc, e.reservedDoc, e.callBytes,
+    e.frameBytes⟩
 
 /-! ## Documenting the obligations `Sig.contract` implies
 

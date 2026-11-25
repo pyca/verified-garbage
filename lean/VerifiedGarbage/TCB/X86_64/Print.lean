@@ -493,5 +493,10 @@ def emitter : Emitter isa where
     some ("the arguments on the stack", false)
   reservedDoc n := some (if n = 0 then "the return address on the stack" else
     s!"the return address on the stack or the {n} bytes of stack below it")
+  callBytes := 8
+  frameBytes
+    | .push rs => 8 * rs.length
+    | .alloc bytes => bytes
+    | _ => 0
 
 end VG.X86_64

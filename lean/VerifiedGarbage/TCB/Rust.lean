@@ -1874,6 +1874,57 @@ does not list `a`. -/
 def needsMcdtIn (known : List ((String × String) × Bool)) (a : EmitArtifact) : Bool :=
   (known.lookup (a.target.name, a.name)).getD (needsMcdt a)
 
+/-- The most stack below the stack pointer that the calls and frames of `c`,
+and of the functions it calls or may call indirectly, take at once, in bytes
+(`Emitter.callBytes`, `Emitter.frameBytes`: a call is inside the frames around
+it, and no other instruction moves the stack pointer, `Artifact.spSafe`). With
+that of the code of each function gone through kept by the function's name:
+`seen` has those of the functions gone through before, and the result those and
+the ones `c` calls. The code of each call of a function in the artifacts of a
+target prints as that function (`checkCalls`), and what a push takes is in its
+text: so the answer for the code of one call of a function holds for the
+function as emitted, and each function's code is gone through once. -/
+def stackSeen (T : EmitTarget) : Prog T.isa → List (String × Nat) → Nat × List (String × Nat)
+  | .block _, seen => (0, seen)
+  | .seq a b, seen | .ite _ a b, seen =>
+    let (x, seen) := stackSeen T a seen
+    let (y, seen) := stackSeen T b seen
+    (max x y, seen)
+  | .loop b _, seen => stackSeen T b seen
+  | .call n b, seen =>
+    match seen.lookup n with
+    | some x => (T.callBytes + x, seen)
+    | none =>
+      let (x, seen) := stackSeen T b seen
+      (T.callBytes + x, (n, x) :: seen)
+  | .frame i b _, seen =>
+    let (x, seen) := stackSeen T b seen
+    (T.frameBytes i + x, seen)
+  | .icall _ n b next, seen =>
+    let (x, seen) := match seen.lookup n with
+      | some x => (x, seen)
+      | none =>
+        let (x, seen) := stackSeen T b seen
+        (x, (n, x) :: seen)
+    let (y, seen) := stackSeen T next seen
+    (max (T.callBytes + x) y, seen)
+
+/-- The artifacts of each target take no more stack than their contracts are for
+(`Artifact.stack`): the memory below the stack pointer that their contracts
+require no buffer to overlap (`Abi.reserved`), and that their documentation
+states (`Sig.layoutDoc`), has every byte their calls and frames may write
+(`stackSeen`). After `checkCalls`. -/
+def checkStack (as : List EmitArtifact) : Except String Unit :=
+  (distinct as (·.target.name)).forM fun t => do
+    let mut seen : List (String × Nat) := []
+    for a in as do
+      unless a.target.name == t do continue
+      let (n, s) := stackSeen a.target a.code seen
+      seen := s
+      unless n ≤ a.stack do
+        throw s!"{t}: the calls and frames of {a.name} take {n} bytes of stack, but its contract \
+          is for {a.stack}"
+
 /-- The first lines of the dispatcher of a function some of whose
 implementations need Intel's mitigation of MCDT (`needsMcdt`), or
 nothing. -/
@@ -2343,7 +2394,8 @@ of functions or functions of public address are not as `checkFnTables` and
 `checkFns` require, an
 artifact's features are not those its code requires (`checkFeatures`), its
 code has an instruction its target's printer cannot encode
-(`checkEncodable`), its doc has no `# Safety` section at its end for what
+(`checkEncodable`), its calls and frames take more stack than its contract is
+for (`checkStack`), its doc has no `# Safety` section at its end for what
 `fullDoc` adds to it (`checkLayout`), a bound on what it writes is not of a
 writable array parameter, at most its size (`checkWritten`), or its vendor
 or `extra` features are not names (`checkChoice`), an implementation of a
@@ -2379,6 +2431,7 @@ def files (as : List EmitArtifact) :
   forMPar ps checkFeatures
   forMPar ps checkEncodable
   forMPar hs checkEncodableInternal
+  checkStack as
   forMPar as checkLayout
   forMPar as checkWritten
   forMPar as checkChoice
