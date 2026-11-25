@@ -313,3 +313,13 @@ of the ladder's operations; (C) the NEON pair, woven. Then measured again.
 Dead flag writes out of `Word.lean`'s rows, and the ladder in the order o3, both
 proven. Predicted: step about 358 (o3 360 here, with `adcs` doubling), x25519
 about 28.3 us, and 5-8% less for base points and Ed25519 signing.
+
+## 18. A and B measured (run 45688134188)
+
+x25519 27.66 us (base 26.95), public key 7.71 (7.69), keygen 7.93 (8.05), sign/64
+8.33 (8.44), verify/64 42.61 (45.42). The real step is 351 cycles, better than the
+lab's 360 for the same order: `Word.lean`'s reduction, which alternates each `mul`
+with the `adcs` that takes it, does better than the lab's. So orders are searched
+on the real blocks. Experiment 14: the emitted step cut into its operations, in
+orders that respect dependences (a random sample of 24), and the sums of DA
+and CB from one load (`one`).
