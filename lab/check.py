@@ -74,7 +74,7 @@ for _ in range(60):
     x1, x2, z2, x3, z3 = (ld(m, gen.slot(n)) for n in range(5))
     if m[99+1984] != m[99+1985]: x2, z2, x3, z3 = x3, z3, x2, z2
     A, Bb, Cc, D = x2+z2, x2-z2, x3+z3, x3-z3; AA, BB, DA, CB = A*A, Bb*Bb, D*A, Cc*Bb; E = AA-BB
-    for name in ('h1', 'h1b', 'h2', 'h3', 'h4') + tuple('t' + k for k in gen.V13) + ('ta32','ta43','ta2','tak','tan','tj43','tf43'):
+    for name in ('h1', 'h1b', 'h2', 'h3', 'h4') + tuple('t' + k for k in gen.V13) + ('ta32','ta43','ta2','tak','tan','tj43','tf43','r_now') + tuple(f'r{q}' for q in range(24)):
         mm = bytearray(m); rg = {i: 0 for i in range(31)}; emu.run(gen.KC, rg, mm); emu.run(gen.ALL[name], {i: 0 for i in range(31)}, mm)
         for n, v in ((1, AA*BB), (2, E*(AA+121665*E)), (3, (DA+CB)**2), (4, x1*(DA-CB)**2)): assert ld(mm, gen.slot(n)) % P == v % P, (name, n); assert ld(mm, gen.slot(n)) < 2**255 + 2**137
 print('h ok')

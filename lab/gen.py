@@ -774,7 +774,38 @@ V13 = {'a': ('DA CB t', 'P E x3 x2 z2 z3'), 'b': ('DA CB t', 'x3 P E x2 z3 z2'),
 for k, (u, w) in V13.items(): B['t' + k] = H1 + h13(u, w)
 B['ta32'] = H1 + h13(*V13['a'], 3, 2); B['ta43'] = H1 + h13(*V13['a'], 4, 3); B['ta2'] = H1 + h13(*V13['a'], 2, 1); B['tak'] = H1 + h13(*V13['a'], kar=True); B['tan'] = H1 + h13(*V13['a'], kar='n')
 B['tj43'] = H1 + h13(*V13['j'], 4, 3); B['tf43'] = H1 + h13(*V13['f'], 4, 3)
+
+# ---- experiment 14: the emitted step's operations in other orders ----
+S2 = [l.strip() for l in open(pathlib.Path(__file__).parent / 'step2.s')]
+def blocks2():
+    # each operation ends with its stp of the last two words of its slot
+    ends = []; last = 0; out = {}
+    names = ['AA', 'BB', 'DA', 'CB', 'E', 'x2', 'z2', 't', 'x3', 'z3']; slots = [9, 10, 12, 13, 11, 1, 2, 4, 3, 4]
+    b = next(k for k, l in enumerate(S2) if l == f'ldp x12, x13, [x0, #{slot(5)}]')
+    fr = S2[:b]; pos = b
+    for n, o in zip(names, slots):
+        e = next(k for k in range(pos, len(S2)) if S2[k].startswith('stp') and S2[k].endswith(f'[x0, #{slot(o)+16}]')) + 1
+        out[n] = S2[pos:e]; pos = e
+    assert pos == len(S2), S2[pos:]
+    return fr, out
+FR2, OPS2 = blocks2()
+DEP = {'AA': '', 'BB': '', 'DA': '', 'CB': '', 'E': 'AA BB', 'x2': 'AA BB', 'z2': 'AA E', 't': 'DA CB', 'x3': 'DA CB', 'z3': 't x3'}
+DEP = {k: v.split() for k, v in DEP.items()}; DEP['z3'] = ['t']; DEP['x3'] = ['DA', 'CB']
+import random as rnd_
+def rand_order(r):
+    left = list(DEP); out = []
+    while left:
+        c = [k for k in left if all(d in out for d in DEP[k])]; k = r.choice(c); out.append(k); left.remove(k)
+    # gap rule: nothing right after what it needs, if possible
+    bad = sum(out[i] in DEP[out[i+1]] for i in range(9)); return bad, out
+_r = rnd_.Random(7); ORDS = []
+while len(ORDS) < 24:
+    bad, o = rand_order(_r)
+    if bad <= 1 and o[-1] not in ('E',) and o not in ORDS: ORDS.append(o)
+B['r_now'] = H0 + S2
+for q, o in enumerate(ORDS): B[f'r{q}'] = H0 + FR2 + sum((OPS2[k] for k in o), [])
 if __name__ == '__main__':
+    open(pathlib.Path(__file__).parent / 'orders.txt', 'w').write('\n'.join(f'r{q} ' + ' '.join(o) for q, o in enumerate(ORDS)))
     for k in ('step','step_min','step_tree','mul','mul_min','mulA','mulT','sqr','sqr_min','sqrR','st_o0','st_o1','m51','s51','st51','sq2','mu2','sn1','src','sq2k','mu2k','sn3','sn4','sn5','sn6','sn7','h1','h3','h4') + tuple(k for k in B if k.startswith('sc_')): print(k, len(B[k]), setters(B[k]))
 ALL = dict(B)
 KEEP = sys.argv[1].split() if len(sys.argv) > 1 else None
