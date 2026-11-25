@@ -256,19 +256,4 @@ theorem cswap_ok {s : State} {base : Addr} (hs : Scr s base) {x y : Nat} (hx : S
   · rw [o3.fe hxy (by omega), fx]
   · rw [m3, fe_st4 _ _ (by omega), g2, g2, g2, g2, e2]
 
-/-! ## The multiplexer -/
-
-/-- `store4`, which also keeps the flags. -/
-theorem store4Z_ok {s : State} {base : Addr} (hs : Scr s base) {o : Nat} (ho : Slot o) :
-    WP isa (.block (store4 o)) s fun s' =>
-      s'.mem = st4 s.mem base o (s.gpr .r8) (s.gpr .r9) (s.gpr .r10) (s.gpr .r11) ∧
-      (∀ r, s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.zf = s.zf := by
-  have w : ∀ d, d + 8 ≤ 4096 → InRegions s.wr (off base d) 8 :=
-    fun d hd => ⟨_, hs.wr, contains_sc hd⟩
-  apply WP.of_runBlock
-  simp only [store4, stores, runBlock_cons, runStep_some, runBlock_nil, exec, ea_sc, hs.rdi,
-    State.store64, w o (by omega), w (o + 8) (by omega), w (o + 16) (by omega),
-    w (o + 24) (by omega), ite_true, Option.some.injEq, exists_eq_left']
-  exact ⟨rfl, fun _ => trivial, trivial, trivial, trivial⟩
-
 end VG.Proof.X25519.X86_64

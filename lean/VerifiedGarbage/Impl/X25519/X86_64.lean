@@ -322,7 +322,6 @@ def baseline : Field where
   mul2 := mul2
   sqr2 := sqr2
 
-
 /-- `[rdi + 8 rbx + BITS + j]`: bit `j` of byte `rbx` of the scalar. -/
 def bitAt (j : Nat) : MemOp :=
   { base := .rdi, index := some .rbx, scale := 8, disp := ((BITS + j : Nat) : Int) }
@@ -340,6 +339,80 @@ def bits : Prog isa :=
     [.alu .add .rbx (.imm 1), .alu .cmp .rbx (.imm 32)])) .ne)
     (.block [.mov32 .rax (.imm 0), .store8 (sc BITS) .rax, .store8 (sc (BITS + 1)) .rax,
       .store8 (sc (BITS + 2)) .rax, .mov32 .rax (.imm 1), .store8 (sc (BITS + 254)) .rax]))
+
+/-! ## The ladder
+
+Swapping `(x₂, z₂)` with `(x₃, z₃)` before RFC 7748's formulas exchanges
+`(A, B) = (x₂ + z₂, x₂ - z₂)` with `(C, D) = (x₃ + z₃, x₃ - z₃)`, and so `DA`
+with `CB`: their sum stays, and their difference, which is only squared,
+changes its sign. So an iteration computes `A`, `B`, `C`, `D` and the two
+products of the state as it is, and selects only the operands of the doubling,
+`U` from `A` and `C` and `V` from `B` and `D`. The bit it selects by is the
+difference of the scalar's bits `t` and `t + 1`, which are bytes of `BITS`:
+there is no `swap` to keep.
+
+The last three bits are zero (the scalar is clamped), and so the last three
+iterations double the same point, and nothing reads their other results:
+`ladder` selects that point once, by bit 3, and doubles it. -/
+
+/-- The operands of the doubling. -/
+def DU : Nat := 352
+def DV : Nat := 384
+
+/-- `ZF` is whether the bits `t` and `t + 1` of the scalar are equal, with
+`t + 1 - d` in `rbx`. -/
+def bitsDiffer (d : Nat) : List Instr :=
+  [.movzx8 .rax { base := .rdi, index := some .rbx, disp := ((BITS + d : Nat) : Int) },
+    .movzx8 .rcx { base := .rdi, index := some .rbx, disp := ((BITS + d + 1 : Nat) : Int) },
+    .alu .xor .rax (.reg .rcx)]
+
+/-- `a, b, c, d = [rdi + x]` if `ZF` is set, else `[rdi + y]`. -/
+def choose (x y : Nat) (a b c d : Reg) : List Instr :=
+  [.mov a (.mem (sc x)), .cmov .ne a (.mem (sc y)),
+    .mov b (.mem (sc (x + 8))), .cmov .ne b (.mem (sc (y + 8))),
+    .mov c (.mem (sc (x + 16))), .cmov .ne c (.mem (sc (y + 16))),
+    .mov d (.mem (sc (x + 24))), .cmov .ne d (.mem (sc (y + 24)))]
+
+/-- `[o] = [x]` and `[p] = [y]` if `ZF` is set, else `[o] = [x']` and
+`[p] = [y']`. -/
+def choose2 (o x x' p y y' : Nat) : List Instr :=
+  choose x x' .r8 .r9 .r10 .r11 ++ choose y y' .r12 .r13 .r14 .r15 ++
+    store4 o ++ stores p .r12 .r13 .r14 .r15
+
+/-- An iteration but for its counter, for the bit `t = rbx + 2`. The
+operations of the doubling and of the differential addition alternate, so that
+one seldom waits for the one before it. -/
+def iter (F : Field) : List Instr :=
+  subCmov D X3 Z3 ++ addCmov A X2 Z2 ++ addCmov C X3 Z3 ++ subCmov B X2 Z2 ++
+    bitsDiffer 2 ++ choose2 DU A C DV B D ++
+    F.mul D D A ++ F.sqr DV DV ++ F.sqr DU DU ++ subCmov A DU DV ++ F.mul C C B ++
+    F.a24add B DU A ++ subCmov Z3 D C ++ F.mul X2 DU DV ++ addCmov D D C ++
+    F.sqr Z3 Z3 ++ F.mul Z2 A B ++ F.sqr X3 D ++ F.mul Z3 X1 Z3
+
+/-- `(X2, Z2)` doubled, but for the counter. -/
+def double (F : Field) : List Instr :=
+  addCmov A X2 Z2 ++ subCmov B X2 Z2 ++ F.sqr A A ++ F.sqr B B ++ subCmov C A B ++
+    F.mul X2 A B ++ F.a24add A A C ++ F.mul Z2 C A
+
+/-- Counts `rbx` down. -/
+def countDown : List Instr := [.alu .sub .rbx (.imm 1)]
+
+/-- Before the loop: bit 255, which clamping clears, and the counter, for the
+bits 254 down to 3. -/
+def ladderStart : List Instr :=
+  [.mov32 .rax (.imm 0), .store8 (sc (BITS + 255)) .rax, .mov32 .rbx (.imm 252)]
+
+/-- After the loop: the point that bit 3 chooses, and the counter of its
+doublings. -/
+def ladderPoint : List Instr :=
+  [.movzx8 .rax (sc (BITS + 3)), .alu .test .rax (.reg .rax)] ++ choose2 X2 X2 X3 Z2 Z2 Z3 ++
+    [.mov32 .rbx (.imm 3)]
+
+/-- The ladder: 252 iterations and three doublings. The result is in `X2` and
+`Z2`, and `SWAP` still 0. -/
+def ladder (F : Field) : Prog isa :=
+  .seq (.block ladderStart) (.seq (.loop (.block (iter F ++ countDown)) .ne)
+    (.seq (.block ladderPoint) (.loop (.block (double F ++ countDown)) .ne)))
 
 /-! ## Encoding and decoding -/
 

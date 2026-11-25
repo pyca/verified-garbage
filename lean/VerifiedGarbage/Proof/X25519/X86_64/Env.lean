@@ -55,6 +55,9 @@ theorem Keep.trans {base : Addr} {s₁ s₂ s₃ : State} (h₁ : Keep base s₁
   ⟨fun r hr => (h₂.gpr r hr).trans (h₁.gpr r hr), h₂.rd.trans h₁.rd, h₂.wr.trans h₁.wr,
     h₁.mem.trans h₂.mem⟩
 
+theorem Keep.refl (base : Addr) (s : State) : Keep base s s :=
+  ⟨fun _ _ => rfl, rfl, rfl, Outside.refl _ _ _ _⟩
+
 theorem Keep.scr {base : Addr} {s s' : State} (h : Keep base s s') (hs : Scr s base) : Scr s' base :=
   ⟨(h.gpr _ (by decide)).trans hs.rdi, h.wr ▸ hs.wr, hs.nowrap⟩
 
@@ -119,8 +122,6 @@ def opAdd (o a b : Fin 128) (e : Env) : Env := Function.update e o (e a + e b)
 def opSub (o a b : Fin 128) (e : Env) : Env := Function.update e o (e a - e b)
 def opA24Add (o b a : Fin 128) (e : Env) : Env :=
   Function.update e o (e b + Spec.X25519.a24 * e a)
-def opMux (o x y : Fin 128) (zf : Bool) (e : Env) : Env :=
-  Function.update e o (if zf then e y else e x)
 def opSwap (x y : Fin 128) (sw : Bool) (e : Env) : Env :=
   Function.update (Function.update e x (if sw then e y else e x)) y (if sw then e x else e y)
 
@@ -145,7 +146,6 @@ theorem cswapE {s : State} {base : Addr} (hs : Scr s base) (x y : Fin 128) (hx :
   rw [E_update o₂, E_update o₁]
   simp only [F, f₁, fy]
   cases sw <;> rfl
-
 
 /-! ## The ladder's operations, with the bytes they write
 
@@ -192,6 +192,5 @@ theorem a24AddEB {s : State} {base : Addr} (hs : Scr s base) (o b a : Fin 128) (
         Outside base (32 * o.val) 32 s.mem s'.mem :=
   WP.mono (hf.a24add hs (by omega_arith) (by omega_arith) (by omega_arith)) fun _ ⟨h, e⟩ =>
     ⟨h.keep (by omega) (by omega), by rw [E_update h.mem, e]; rfl, h.mem⟩
-
 
 end VG.Proof.X25519.X86_64
