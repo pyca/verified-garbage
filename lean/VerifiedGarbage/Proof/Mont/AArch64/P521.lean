@@ -307,16 +307,16 @@ private theorem subChain_kernel {inp : Nat → Nat → Nat} (hi : InB inp) {s : 
   rw [Nat.mod_eq_of_lt (by omega_using [hD, h1, hcc, hp]), Nat.mod_eq_of_lt (by omega_using [h0, hp])] at e3
   exact e3
 
-/-- `[a] + [b] + 1`. -/
+/-- `[a] + [b]`. -/
 private theorem addChain_kernel {inp : Nat → Nat → Nat} (hi : InB inp) {s : St} (hs : Ok s) :
     num (fun k => (run inp addChain s).g (linOut.getD k .x8)) 9 + pw 9 * (run inp addChain s).c =
-      num (inp 0) 9 + num (inp 1) 9 + 1 := by
+      num (inp 0) 9 + num (inp 1) 9 := by
   have hO := run_Ok (inp := inp) hi.w addChain hs
-  have e := chkL_ok (m := pw 10) (os := addChain) (B := anyB) (F := outC) (k := 1) (f := 0)
+  have e := chkL_ok (m := pw 10) (os := addChain) (B := anyB) (F := outC) (k := 0) (f := 0)
     (E := inpE 0 pw ++ inpE 1 pw) (pw_pos 10) (by decide +kernel) hi hs (anyB_ok hs)
   have e2 := (outC_ev (inp := inp) hO).symm.trans e
   rw [Nat.zero_mul, Nat.add_zero, sumL_append, inpE_ev hi, inpE_ev hi] at e2
-  have e3 : Cg (pw 10) _ (1 + (num (inp 0) 9 + num (inp 1) 9)) := e2
+  have e3 : Cg (pw 10) _ (0 + (num (inp 0) 9 + num (inp 1) 9)) := e2
   have hD := num_lt (n := 9) (f := fun k => (run inp addChain s).g (linOut.getD k .x8)) fun i _ => hO.g _
   have h0 := num_lt (n := 9) (f := inp 0) fun i _ => hi.w 0 i
   have h1 := num_lt (n := 9) (f := inp 1) fun i _ => hi.w 1 i
@@ -379,55 +379,147 @@ private theorem sub_run {inp : Nat → Nat → Nat} (hi : InB inp) {s : St} (hs 
   simp only [pw] at h hD
   rcases Nat.le_one_iff_eq_zero_or_eq_one.mp hc with rfl | rfl <;> omega_using [h, hD, hA, hB]
 
-private theorem test_run {inp : Nat → Nat → Nat} {s : St} (hs : Ok s) :
-    (∀ k < 9, (run inp addTest s).g (linOut.getD k .x8) = s.g (linOut.getD k .x8)) ∧ (run inp addTest s).g .x7 = s.g .x7 ∧
-      (run inp addTest s).c = if 512 ≤ s.g (linOut.getD 8 .x8) then 1 else 0 := by
-  have h8 := hs.g (lReg 8)
-  refine ⟨?_, rfl, ?_⟩
-  · intro k hk
-    have : ∀ k < 9, linOut.getD k .x8 ≠ .x2 ∧ linOut.getD k .x8 ≠ .x1 := by decide
+private theorem prime_run {inp : Nat → Nat → Nat} {s : St} (h7 : s.g .x7 = 0) :
+    (∀ k < 9, (run inp primeOps s).g (linOut.getD k .x8) = s.g (linOut.getD k .x8)) ∧ (run inp primeOps s).g .x7 = 0 ∧
+      (run inp primeOps s).g .x1 = 2 ^ 64 - 1 ∧ (run inp primeOps s).g .x2 = 511 := by
+  refine ⟨fun k hk => ?_, ?_, ?_, ?_⟩
+  · have : ∀ k < 9, linOut.getD k .x8 ≠ .x2 ∧ linOut.getD k .x8 ≠ .x1 := by decide
     have hk' := this k hk
-    simp only [addTest, run, step, St.set, St.setc, hk'.1, hk'.2, ite_false]
-  · show ((s.set .x2 (512 % 2 ^ 16)).g (lReg 8) + (2 ^ 64 - 1 - 512 % 2 ^ 16) + 1) / 2 ^ 64 = _
-    rw [show (s.set .x2 (512 % 2 ^ 16)).g (lReg 8) = s.g (lReg 8) from rfl, show linOut.getD 8 .x8 = lReg 8 from rfl]
-    split <;> omega_arith
+    simp only [primeOps, run, step, St.set, St.setc, hk'.1, hk'.2, ite_false]
+  · simp only [primeOps, run, step, St.set, St.setc, reduceCtorEq, ite_false]
+    exact h7
+  · simp only [primeOps, run, step, St.set, St.setc, reduceCtorEq, ite_false, ite_true, h7]
+    decide
+  · simp only [primeOps, run, step, St.set, St.setc, reduceCtorEq, ite_false, ite_true]
+
+private theorem mask_run {inp : Nat → Nat → Nat} {s : St} (hs : Ok s) (h7 : s.g .x7 = 0) (h2 : s.g .x2 = 511) :
+    (∀ k < 9, (run inp maskOps s).g (linOut.getD k .x8) = s.g (linOut.getD k .x8)) ∧
+      (run inp maskOps s).g .x1 = (2 ^ 64 - 1) * (1 - s.c) ∧ (run inp maskOps s).g .x2 = 511 * (1 - s.c) := by
+  have hc := hs.c
+  refine ⟨fun k hk => ?_, ?_, ?_⟩
+  · have : ∀ k < 9, linOut.getD k .x8 ≠ .x2 ∧ linOut.getD k .x8 ≠ .x1 := by decide
+    have hk' := this k hk
+    simp only [maskOps, run, step, St.set, St.setc, hk'.1, hk'.2, ite_false]
+  · show (s.g .x7 + (2 ^ 64 - 1 - s.g .x7) + s.c) % 2 ^ 64 = _
+    rw [h7]
+    rcases Nat.le_one_iff_eq_zero_or_eq_one.mp hc with h | h <;> rw [h] <;> decide
+  · show (s.g .x7 + (2 ^ 64 - 1 - s.g .x7) + s.c) % 2 ^ 64 &&& s.g .x2 = _
+    rw [h7, h2]
+    rcases Nat.le_one_iff_eq_zero_or_eq_one.mp hc with h | h <;> rw [h] <;> decide
+
+private theorem sub7 {inp : Nat → Nat → Nat} {s : St} (h : s.g .x7 = 0) : (run inp subPrime s).g .x7 = 0 := h
+
+private theorem sub2 {inp : Nat → Nat → Nat} {s : St} (h : s.g .x2 = 511) : (run inp subPrime s).g .x2 = 511 := h
+
+private theorem lin_ev {inp : Nat → Nat → Nat} {s : St} (hs : Ok s) :
+    sumL inp s ((List.range 9).map fun k => full (linOut.getD k .x8) (pw k)) = num (fun k => s.g (linOut.getD k .x8)) 9 := by
+  have h : ∀ n, sumL inp s ((List.range n).map fun k => full (linOut.getD k .x8) (pw k)) = num (fun k => s.g (linOut.getD k .x8)) n := by
+    intro n
+    induction n with
+    | zero => rfl
+    | succ n ih =>
+      rw [List.range_succ, List.map_append, sumL_append, ih, num_succ, List.map_cons, List.map_nil, sumL, sumL,
+        Nat.add_zero, full_ev hs]
+  exact h 9
+
+/-- The weight of `x1` in the number in `x1` and `x2`. -/
+private def lowW : Nat := (List.range 8).foldl (fun w k => w + pw k) 0
+
+private theorem pWord_sum : lowW * (2 ^ 64 - 1) + pw 8 * 511 = prime := by decide +kernel
+
+/-- The number subtracted, and the borrow. -/
+private theorem subPrime_kernel {inp : Nat → Nat → Nat} (hi : InB inp) {s : St} (hs : Ok s)
+    (h1 : s.g .x1 = 2 ^ 64 - 1) (h2 : s.g .x2 = 511) (hA : num (fun k => s.g (linOut.getD k .x8)) 9 < 2 * prime) :
+    num (fun k => (run inp subPrime s).g (linOut.getD k .x8)) 9 + pw 9 * (run inp subPrime s).c + prime =
+      pw 9 + num (fun k => s.g (linOut.getD k .x8)) 9 := by
+  have hO := run_Ok (inp := inp) hi.w subPrime hs
+  have e := chkL_ok (m := pw 10) (os := subPrime) (B := anyB) (F := outC) (k := pw 9) (f := 0)
+    (E := ((List.range 9).map fun k => full (linOut.getD k .x8) (pw k)) ++
+      [full .x1 (pw 10 - lowW), full .x2 (pw 10 - pw 8)]) (pw_pos 10) (by decide +kernel) hi hs (anyB_ok hs)
+  have e2 := (outC_ev (inp := inp) hO).symm.trans e
+  rw [Nat.zero_mul, Nat.add_zero, sumL_append, lin_ev hs] at e2
+  simp only [sumL, full_ev hs, h1, h2, Nat.add_zero] at e2
+  have e3 := e2.add (Cg.refl (pw 10) prime)
+  have hp : (pw 10 - lowW) * (2 ^ 64 - 1) + (pw 10 - pw 8) * 511 + prime = pw 10 * (2 ^ 64 - 1 + 511) := by decide +kernel
+  generalize num (fun k => s.g (linOut.getD k .x8)) 9 = A at e3 hA ⊢
+  have hD := num_lt (n := 9) (f := fun k => (run inp subPrime s).g (linOut.getD k .x8)) fun i _ => hO.g _
+  have hcc : pw 9 * (run inp subPrime s).c ≤ pw 9 := by
+    have := Nat.mul_le_mul_left (pw 9) hO.c; rwa [Nat.mul_one] at this
+  have hb : 4 * pw 9 ≤ pw 10 := by rw [pw_succ 9]; exact Nat.mul_le_mul_right _ (by decide)
+  have hb2 : 2 * prime ≤ pw 9 := by decide +kernel
+  rw [show pw 9 + (A + ((pw 10 - lowW) * (2 ^ 64 - 1) + (pw 10 - pw 8) * 511)) + prime =
+    pw 10 * (2 ^ 64 - 1 + 511) + (pw 9 + A) by rw [← hp]; omega_using []] at e3
+  unfold Cg at e3
+  rw [Nat.mul_add_mod_self_left] at e3
+  rw [Nat.mod_eq_of_lt (by omega_using [hD, hcc, hb, hb2, hA]), Nat.mod_eq_of_lt (by omega_using [hA, hb, hb2])] at e3
+  exact e3
+
+/-- The masked number added. -/
+private theorem addBack_kernel {inp : Nat → Nat → Nat} (hi : InB inp) {s : St} (hs : Ok s) {c : Nat}
+    (h1 : s.g .x1 = (2 ^ 64 - 1) * (1 - c)) (h2 : s.g .x2 = 511 * (1 - c)) :
+    num (fun k => (run inp addBack s).g (linOut.getD k .x8)) 9 =
+      (num (fun k => s.g (linOut.getD k .x8)) 9 + prime * (1 - c)) % pw 9 := by
+  have hO := run_Ok (inp := inp) hi.w addBack hs
+  have e := chkL_ok (m := pw 9) (os := addBack) (B := anyB) (F := outFn (pw 9) 0 linOut 9) (k := 0) (f := 0)
+    (E := ((List.range 9).map fun k => full (linOut.getD k .x8) (pw k)) ++ [full .x1 lowW, full .x2 (pw 8)])
+    (pw_pos 9) (by decide +kernel) hi hs (anyB_ok hs)
+  have e2 := (outFn_ev (m := pw 9) (sh := 0) (out := linOut) (inp := inp) hO 9).symm.trans e
+  rw [pw_zero, Nat.one_mul, Nat.zero_mul, Nat.zero_add, sumL_append, lin_ev hs] at e2
+  simp only [sumL, full_ev hs, h1, h2, Nat.add_zero] at e2
+  have hw : lowW * ((2 ^ 64 - 1) * (1 - c)) + pw 8 * (511 * (1 - c)) = prime * (1 - c) := by
+    have h := congrArg (· * (1 - c)) pWord_sum
+    generalize prime = p at h ⊢
+    generalize lowW = l at h ⊢
+    generalize pw 8 = q at h ⊢
+    generalize 1 - c = d at h ⊢
+    generalize 2 ^ 64 - 1 = e at h ⊢
+    generalize 511 = f at h ⊢
+    rw [← h, Nat.add_mul, Nat.mul_assoc, Nat.mul_assoc]
+  have hD := num_lt (n := 9) (f := fun k => (run inp addBack s).g (linOut.getD k .x8)) fun i _ => hO.g _
+  generalize num (fun k => (run inp addBack s).g (linOut.getD k .x8)) 9 = D at e2 hD ⊢
+  rw [hw] at e2
+  exact (Nat.mod_eq_of_lt hD).symm.trans e2
 
 private theorem add_run {inp : Nat → Nat → Nat} (hi : InB inp) {s : St} (hs : Ok s)
     (hAB : num (inp 0) 9 + num (inp 1) 9 < 2 * prime) :
     num (fun k => (run inp addOps s).g (linOut.getD k .x8)) 9 = (num (inp 0) 9 + num (inp 1) 9) % prime := by
-  have hO := run_Ok (inp := inp) hi.w addChain hs
-  have hO2 := run_Ok (inp := inp) hi.w addTest hO
-  obtain ⟨t1, t2, t3⟩ := test_run (inp := inp) hO
-  rw [addOps, run_append, run_append, dec_kernel hi hO2 (by rw [t2]; exact chk7_ok (by decide +kernel) hi hs), t3]
-  rw [show num (fun k => (run inp addTest (run inp addChain s)).g (linOut.getD k .x8)) 9 =
-    num (fun k => (run inp addChain s).g (linOut.getD k .x8)) 9 from sumTo_congr fun i hi => congrArg (pw i * ·) (t1 i hi)]
+  have hb2 : 2 * prime ≤ pw 9 := by decide +kernel
+  have o1 := run_Ok (inp := inp) hi.w addChain hs
+  have o2 := run_Ok (inp := inp) hi.w primeOps o1
+  have o3 := run_Ok (inp := inp) hi.w subPrime o2
+  have o4 := run_Ok (inp := inp) hi.w maskOps o3
+  obtain ⟨p1, p7, px1, px2⟩ := prime_run (inp := inp) (s := run inp addChain s) (chk7_ok (by decide +kernel) hi hs)
   have h := addChain_kernel hi hs
-  have hc := hO.c
-  have hl := num_lt (n := 8) (f := fun k => (run inp addChain s).g (linOut.getD k .x8)) fun i _ => hO.g _
-  rw [num_succ] at h ⊢
-  generalize num (fun k => (run inp addChain s).g (linOut.getD k .x8)) 8 = L at h hl ⊢
-  generalize (run inp addChain s).g (linOut.getD 8 .x8) = t at h ⊢
-  generalize (run inp addChain s).c = c at h hc
-  generalize num (inp 0) 9 = A at h hAB ⊢
-  generalize num (inp 1) 9 = B at h hAB ⊢
-  rw [show prime = 2 ^ 521 - 1 from rfl] at hAB ⊢
-  simp only [pw, Nat.reduceMul] at h hl ⊢
-  have hc0 : c = 0 := by
-    rcases Nat.le_one_iff_eq_zero_or_eq_one.mp hc with rfl | rfl
-    · rfl
-    · omega_using [h, hAB]
-  subst hc0
-  have hD : L + 2 ^ 512 * t = A + B + 1 := by omega_using [h]
-  have hi : 512 ≤ t ↔ 2 ^ 521 ≤ A + B + 1 := by omega_using [hD, hl]
-  rw [hD]
-  by_cases ht : 2 ^ 521 ≤ A + B + 1
-  · rw [ite_eq_left (hi.mpr ht), show A + B + 1 + (2 ^ 521 - 1) + 1 = A + B + 1 - 2 ^ 521 + 2 ^ 521 + 2 ^ 521 by omega_using [ht],
-      Nat.add_mod_right, Nat.add_mod_right, Nat.mod_eq_of_lt (by omega_using [hAB, ht]),
-      show A + B = A + B + 1 - 2 ^ 521 + (2 ^ 521 - 1) by omega_using [ht], Nat.add_mod_right,
-      Nat.mod_eq_of_lt (by omega_using [hAB, ht])]
-    omega_using [ht]
-  · rw [ite_eq_right fun h => ht (hi.mp h), show A + B + 1 + (2 ^ 521 - 1) + 0 = A + B + 2 ^ 521 by omega_using [ht],
-      Nat.add_mod_right, Nat.mod_eq_of_lt (by omega_using [ht]), Nat.mod_eq_of_lt (by omega_using [ht])]
+  have hc := o1.c
+  have hN : num (fun k => (run inp addChain s).g (linOut.getD k .x8)) 9 = num (inp 0) 9 + num (inp 1) 9 := by
+    rcases Nat.le_one_iff_eq_zero_or_eq_one.mp hc with h' | h' <;> rw [h'] at h <;> omega_using [h, hAB, hb2]
+  have eP : num (fun k => (run inp primeOps (run inp addChain s)).g (linOut.getD k .x8)) 9 =
+      num (inp 0) 9 + num (inp 1) 9 := (sumTo_congr fun i hi => congrArg (pw i * ·) (p1 i hi)).trans hN
+  have hS := subPrime_kernel hi o2 px1 px2 (by rw [eP]; exact hAB)
+  rw [eP] at hS
+  obtain ⟨q1, qx1, qx2⟩ := mask_run (inp := inp) o3 (sub7 (inp := inp) p7) (sub2 (inp := inp) px2)
+  have hF := addBack_kernel hi o4 qx1 qx2
+  rw [show num (fun k => (run inp maskOps (run inp subPrime (run inp primeOps (run inp addChain s)))).g (linOut.getD k .x8)) 9 =
+    num (fun k => (run inp subPrime (run inp primeOps (run inp addChain s))).g (linOut.getD k .x8)) 9 from
+      sumTo_congr fun i hi => congrArg (pw i * ·) (q1 i hi)] at hF
+  rw [addOps, run_append, run_append, run_append, run_append, hF]
+  have hD := num_lt (n := 9)
+    (f := fun k => (run inp subPrime (run inp primeOps (run inp addChain s))).g (linOut.getD k .x8)) fun i _ => o3.g _
+  have hc3 := o3.c
+  have hp0 : 0 < prime := prime_pos
+  generalize num (fun k => (run inp subPrime (run inp primeOps (run inp addChain s))).g (linOut.getD k .x8)) 9 = D at hS hD ⊢
+  generalize (run inp subPrime (run inp primeOps (run inp addChain s))).c = c at hS hc3 ⊢
+  generalize num (inp 0) 9 + num (inp 1) 9 = N at hS hAB ⊢
+  clear hF hN eP h
+  generalize prime = p at *
+  generalize pw 9 = w at *
+  rcases Nat.le_one_iff_eq_zero_or_eq_one.mp hc3 with rfl | rfl
+  · have e : D + p = w + N := by omega_using [hS]
+    rw [Nat.sub_zero, Nat.mul_one, e, Nat.add_mod_left, Nat.mod_eq_of_lt (by omega_using [e, hD, hAB, hb2]),
+      Nat.mod_eq_of_lt (by omega_using [e, hD])]
+  · have e : N = D + p := by omega_using [hS]
+    rw [Nat.sub_self, Nat.mul_zero, Nat.add_zero, Nat.mod_eq_of_lt hD, e, Nat.add_mod_right,
+      Nat.mod_eq_of_lt (by omega_using [e, hAB])]
 
 /-! ## Multiples by powers of two, abstractly -/
 

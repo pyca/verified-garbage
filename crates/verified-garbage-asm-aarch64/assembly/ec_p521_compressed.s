@@ -1919,9 +1919,8 @@ vg_ec_p521_decompress_public_key:
 	ldr x15, [x0, #3144]
 	ldr x21, [x0, #3152]
 	movz x7, #0, lsl #0
-	subs x1, x7, x7
 	ldr x2, [x0, #3016]
-	adcs x8, x8, x2
+	adds x8, x8, x2
 	ldr x2, [x0, #3024]
 	adcs x9, x9, x2
 	ldr x2, [x0, #3032]
@@ -1938,19 +1937,29 @@ vg_ec_p521_decompress_public_key:
 	adcs x15, x15, x2
 	ldr x2, [x0, #3080]
 	adcs x21, x21, x2
-	movz x2, #512, lsl #0
-	subs x1, x21, x2
-	sbcs x8, x8, x7
-	sbcs x9, x9, x7
-	sbcs x10, x10, x7
-	sbcs x11, x11, x7
-	sbcs x12, x12, x7
-	sbcs x13, x13, x7
-	sbcs x14, x14, x7
-	sbcs x15, x15, x7
-	sbcs x21, x21, x7
+	movz x2, #1, lsl #0
+	subs x1, x7, x2
 	movz x2, #511, lsl #0
-	and x21, x21, x2
+	subs x8, x8, x1
+	sbcs x9, x9, x1
+	sbcs x10, x10, x1
+	sbcs x11, x11, x1
+	sbcs x12, x12, x1
+	sbcs x13, x13, x1
+	sbcs x14, x14, x1
+	sbcs x15, x15, x1
+	sbcs x21, x21, x2
+	sbcs x1, x7, x7
+	and x2, x1, x2
+	adds x8, x8, x1
+	adcs x9, x9, x1
+	adcs x10, x10, x1
+	adcs x11, x11, x1
+	adcs x12, x12, x1
+	adcs x13, x13, x1
+	adcs x14, x14, x1
+	adcs x15, x15, x1
+	adcs x21, x21, x2
 	str x8, [x0, #2800]
 	str x9, [x0, #2808]
 	str x10, [x0, #2816]
@@ -1970,9 +1979,8 @@ vg_ec_p521_decompress_public_key:
 	ldr x15, [x0, #2856]
 	ldr x21, [x0, #2864]
 	movz x7, #0, lsl #0
-	subs x1, x7, x7
 	ldr x2, [x0, #2944]
-	adcs x8, x8, x2
+	adds x8, x8, x2
 	ldr x2, [x0, #2952]
 	adcs x9, x9, x2
 	ldr x2, [x0, #2960]
@@ -1989,19 +1997,29 @@ vg_ec_p521_decompress_public_key:
 	adcs x15, x15, x2
 	ldr x2, [x0, #3008]
 	adcs x21, x21, x2
-	movz x2, #512, lsl #0
-	subs x1, x21, x2
-	sbcs x8, x8, x7
-	sbcs x9, x9, x7
-	sbcs x10, x10, x7
-	sbcs x11, x11, x7
-	sbcs x12, x12, x7
-	sbcs x13, x13, x7
-	sbcs x14, x14, x7
-	sbcs x15, x15, x7
-	sbcs x21, x21, x7
+	movz x2, #1, lsl #0
+	subs x1, x7, x2
 	movz x2, #511, lsl #0
-	and x21, x21, x2
+	subs x8, x8, x1
+	sbcs x9, x9, x1
+	sbcs x10, x10, x1
+	sbcs x11, x11, x1
+	sbcs x12, x12, x1
+	sbcs x13, x13, x1
+	sbcs x14, x14, x1
+	sbcs x15, x15, x1
+	sbcs x21, x21, x2
+	sbcs x1, x7, x7
+	and x2, x1, x2
+	adds x8, x8, x1
+	adcs x9, x9, x1
+	adcs x10, x10, x1
+	adcs x11, x11, x1
+	adcs x12, x12, x1
+	adcs x13, x13, x1
+	adcs x14, x14, x1
+	adcs x15, x15, x1
+	adcs x21, x21, x2
 	str x8, [x0, #3088]
 	str x9, [x0, #3096]
 	str x10, [x0, #3104]

@@ -28,9 +28,7 @@ Modulo `p = 2^521 - 1`, on numbers below `p` of nine 64-bit words, with
   and then every word above is.
 * `addOps` and `subOps`: a difference is nine subtractions, then the borrow
   subtracted at the bottom and the top word cut to 9 bits (`2^521 = p + 1`);
-  a sum `a + b` is `a - (p - b)`, that is `a + b + 1`, reduced modulo `2^521`
-  less 1 where it does not reach it.
-
+  a sum has `p` subtracted, and added back, masked, where that borrowed.
 * `shlOps`: a multiple by `2^k` is a rotation of the 521 bits.
 
 The only registers written are those of the generic arithmetic for nine
@@ -191,16 +189,28 @@ def decOps : List Op :=
 /-- `[a] - [b] mod p`. -/
 def subOps : List Op := subChain ++ decOps
 
-/-- `[a] + [b] + 1`. -/
+/-- `[a] + [b]`, below `2^576`. -/
 def addChain : List Op :=
-  ((List.range 9).map fun k => .ld 0 k (lReg k)) ++ [.movz .x7 0, .subs .x1 .x7 .x7] ++
-    (List.range 9).flatMap fun k => [.ld 1 k .x2, .adcs (lReg k) (lReg k) .x2]
+  ((List.range 9).map fun k => .ld 0 k (lReg k)) ++ [.movz .x7 0] ++
+    (List.range 9).flatMap fun k => [.ld 1 k .x2, addc (k == 0) (lReg k) (lReg k) .x2]
 
-/-- The carry: whether the sum has reached `2^521`. -/
-def addTest : List Op := [.movz .x2 512, .subs .x1 (lReg 8) .x2]
+/-- The words of `p`: `x1` for the eight low ones, `x2` for the top one. -/
+def primeOps : List Op := [.movz .x2 1, .subs .x1 .x7 .x2, .movz .x2 511]
+
+/-- Word `k` of the number in `x1` (its eight low words) and `x2` (its top word). -/
+def pWord (k : Nat) : Reg := if k < 8 then .x1 else .x2
+
+/-- `p` subtracted, and the carry: whether it did not borrow. -/
+def subPrime : List Op := (List.range 9).map fun k => subc (k == 0) (lReg k) (lReg k) (pWord k)
+
+/-- The words of `p` if it borrowed, and of zero if not. -/
+def maskOps : List Op := [.sbcs .x1 .x7 .x7, .low .x2 .x1 .x2 9]
+
+/-- The masked words of `p` added. -/
+def addBack : List Op := (List.range 9).map fun k => addc (k == 0) (lReg k) (lReg k) (pWord k)
 
 /-- `[a] + [b] mod p`. -/
-def addOps : List Op := addChain ++ addTest ++ decOps
+def addOps : List Op := addChain ++ primeOps ++ subPrime ++ maskOps ++ addBack
 
 /-! ## Multiples by powers of two -/
 
