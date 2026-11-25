@@ -28,6 +28,11 @@ then `dataWords` words of data: the index of the hash function in
 the size of its length field, the size of its streaming state, and 1 if its
 length field and words are big-endian (0 if little-endian).
 
+A table of the hash function `G` is named `VG_MD_HASH_<G>`, with a suffix if
+there are several (`tables`): the emitter checks that its data starts with
+`G`'s (`dataOf`), and that every table a registration lists is of this
+interface (`param`, `Rust.checkFnTable`).
+
 A contract says what a function computes with the hash function its table
 names (`hashAt`). It does not say what the table's functions do, or what the
 data after the first two words hold: the proof of each function taking one
@@ -57,9 +62,6 @@ def dataWords : Nat := 6
 /-- The number of words of a table: its functions', then its data. -/
 def wordCount : Nat := fns + dataWords
 
-/-- A parameter taking a table of `MdHash`: a `*const [usize; wordCount]`. -/
-def param : Param := .table wordCount
-
 /-- The hash function that the table at `p` in the memory `m` names, on a
 target with `ptrBits`-bit pointers: that of `Mgf1.hashes` at the index in
 its first word of data (its word `fns`, `ptrBits` bits wide, as
@@ -70,5 +72,13 @@ def hashAt (ptrBits : Nat) (m : Mem) (p : Addr) : Option Hash :=
 /-- The first two words of data of a table of `G` (`HashTable.dataOf`): its
 index in `Mgf1.hashes`, and its digest length. -/
 def dataOf (G : Hash) : List (BitVec 64) := HashTable.dataOf G
+
+/-- The tables of the interface, one for each hash function of `Mgf1.hashes`:
+its name, and the data it starts with. -/
+def tables : List (String × List (BitVec 64)) :=
+  Mgf1.hashes.map fun G => (s!"VG_MD_HASH_{G.rust.toUpper}", dataOf G)
+
+/-- A parameter taking a table of `MdHash`: a `*const [usize; wordCount]`. -/
+def param : Param := .table { name := iface, words := wordCount, fns := fns, tables := tables }
 
 end VG.Spec.MdHashTable

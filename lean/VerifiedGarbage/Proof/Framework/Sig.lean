@@ -345,8 +345,8 @@ theorem Sig.alignedBufs_slice {m : Bool} {e : Elem} {len : String} :
       if 1 < e.align then (p, e.align) :: Sig.alignedBufs ps vs else Sig.alignedBufs ps vs := rfl
 theorem Sig.alignedBufs_slices {e : Elem} {c : String} :
     Sig.alignedBufs ((n, .slices e c) :: ps) (p :: l :: vs) = Sig.alignedBufs ps vs := rfl
-theorem Sig.alignedBufs_table {k : Nat} :
-    Sig.alignedBufs ((n, .table k) :: ps) (p :: vs) = (p, 8) :: Sig.alignedBufs ps vs := rfl
+theorem Sig.alignedBufs_table {I : TableIface} :
+    Sig.alignedBufs ((n, .table I) :: ps) (p :: vs) = (p, 8) :: Sig.alignedBufs ps vs := rfl
 
 theorem Sig.lists_nil {pb : Nat} {m : Mem} : Sig.lists pb m [] vs = [] := rfl
 theorem Sig.lists_int {pb : Nat} {m : Mem} {t : IntTy} {b : Bool} :

@@ -26,7 +26,10 @@ and its digest length `hLen` in octets, and HMAC's block size, in octets,
 which the caller needs for the counts the streaming `update` and HMAC's
 `finalize` take (the inner hash's input starts with a block of key). The
 table names `H` (`hashAt`) and HMAC over it with `H`'s block size
-(`hmacOf H`).
+(`hmacOf H`). It is named `VG_HMAC_<H>`, with a suffix if there are several
+(`tables`): the emitter checks that its data is `H`'s (`dataOf`), and that
+every table a registration lists is of this interface (`param`,
+`Rust.checkFnTable`).
 
 A contract says what a function computes with the HMAC its table names. It
 does not say what the table's functions do: the proof of each function
@@ -52,9 +55,6 @@ def fns : Nat := 3
 
 /-- The number of words of a table: its functions', then three of data. -/
 def wordCount : Nat := fns + 3
-
-/-- A parameter taking a table of `Hmac`: a `*const [usize; wordCount]`. -/
-def param : Param := .table wordCount
 
 /-- The hash function that the table at `p` in the memory `m` names, on a
 target with `ptrBits`-bit pointers: that of `Mgf1.hashes` at the index in
@@ -97,5 +97,15 @@ def blockSize (G : Hash) : Nat := ((hmacOf G).map (·.blockSize)).getD 0
 /-- The data of a table of HMAC over `G`: its index in `Mgf1.hashes` and its
 digest length, as a table of `Hash` of `G` holds, then HMAC's block size. -/
 def dataOf (G : Hash) : List (BitVec 64) := HashTable.dataOf G ++ [BitVec.ofNat 64 (blockSize G)]
+
+/-- The tables of the interface, one for each hash function of `Mgf1.hashes`
+that `hmacOf` gives a block size (a contract says nothing of HMAC over
+another): its name, and its data. -/
+def tables : List (String × List (BitVec 64)) :=
+  (Mgf1.hashes.filter fun G => (hmacOf G).isSome).map fun G =>
+    (s!"VG_HMAC_{G.rust.toUpper}", dataOf G)
+
+/-- A parameter taking a table of `Hmac`: a `*const [usize; wordCount]`. -/
+def param : Param := .table { name := iface, words := wordCount, fns := fns, tables := tables }
 
 end VG.Spec.HmacTable
