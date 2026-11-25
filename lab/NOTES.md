@@ -307,3 +307,9 @@ Projected for 331: 89.3k cycles, 26.3 us, against 26.93.
 Order of landing: (A) dead flag writes out of the shared rows (`Word.lean`:
 `adcs` that nothing reads becomes `adc`), for every user of them; (B) the order
 of the ladder's operations; (C) the NEON pair, woven. Then measured again.
+
+## 17. Landed on claude/cleanroom-aarch64-x25519: (A) and (B)
+
+Dead flag writes out of `Word.lean`'s rows, and the ladder in the order o3, both
+proven. Predicted: step about 358 (o3 360 here, with `adcs` doubling), x25519
+about 28.3 us, and 5-8% less for base points and Ed25519 signing.
