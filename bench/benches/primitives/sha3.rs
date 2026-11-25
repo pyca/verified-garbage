@@ -55,6 +55,8 @@ pub fn bench(c: &mut Criterion) {
         MessageDigest::sha3_512(),
         Some(&aws_lc_rs::digest::SHA3_512),
     );
+    #[cfg(target_arch = "aarch64")]
+    crate::proto_keccak::bench(c);
     xof_group(c, "shake128", Shake128::digest, MessageDigest::shake_128());
     xof_group(c, "shake256", Shake256::digest, MessageDigest::shake_256());
 }

@@ -137,6 +137,7 @@ mod seed_ofb;
 mod sha1;
 mod sha224;
 mod sha256;
+mod proto_keccak;
 mod sha3;
 mod sha384;
 mod sha512;
