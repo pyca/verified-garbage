@@ -25,8 +25,6 @@ meta import VerifiedGarbage.Proof.Weierstrass.Pow
 import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ReductionArithmetic
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Rotate
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Comb
 import VerifiedGarbage.Proof.Weierstrass.AArch64.InvEarlyCheck
 import VerifiedGarbage.Proof.Weierstrass.AArch64.InvMain
@@ -52,21 +50,6 @@ meta import VerifiedGarbage.Proof.Mont.AArch64.P256Square
 meta import VerifiedGarbage.Proof.Mont.AArch64.P384Mul.Product
 meta import VerifiedGarbage.Proof.Mont.AArch64.P384Mul.Reduce
 meta import VerifiedGarbage.Proof.Mont.AArch64.P384Sqr.Square
-meta import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Function
-meta import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Product
-meta import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductCross0
-meta import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductCross1
-meta import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductCross2
-meta import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductCross3
-meta import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductDiag
-meta import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductDouble
-meta import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductLow
-meta import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductTop
-meta import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Reduction
-meta import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ReductionArithmetic
-meta import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ReductionBits
-meta import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ReductionCorrect
-meta import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Rotate
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Bits
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Blocks
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Bytes
@@ -83,7 +66,6 @@ meta import VerifiedGarbage.Proof.Weierstrass.AArch64.InvWords
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowDouble
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Loop
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.MontCall
-meta import VerifiedGarbage.Proof.Weierstrass.AArch64.MontCall521
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.MontFn384
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.SetConst
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Unch

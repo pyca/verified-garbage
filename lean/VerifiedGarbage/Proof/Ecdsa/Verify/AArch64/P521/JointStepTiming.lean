@@ -15,6 +15,8 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTableTiming
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointFixedSignTiming
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacMixedTimingB
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.WindowTiming
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointChecks
 import VerifiedGarbage.Proof.Weierstrass.AArch64.NafNeg
 
 -- Formerly `VerifiedGarbage/Proof/Ecdsa/Verify/AArch64/P521/JointFixedLookupTiming.lean`, which only this module imported.
@@ -253,9 +255,9 @@ theorem jointStep_relCT {C : Curve} {base T : Addr} {P G : Point C} {s₀ t₀ :
        | seq dt et => cases et with
          | seq dbt et => cases et with
            | seq pt gt =>
-            have eps : Exec isa (PubNaf.step P521Joint.K) _ _ _ := .seq ds (.seq dbs ps)
-            have ept : Exec isa (PubNaf.step P521Joint.K) _ _ _ := .seq dt (.seq dbt pt)
-            obtain ⟨he,E,hpair⟩:=stepRaw_relCT hL hp hone checks hF₁ hF₂ (j:=j) (by change j<577; omega_using [hj])
+            have eps : Exec isa (PubNaf.stepD P521Joint.K P521Joint.double) _ _ _ := .seq ds (.seq dbs ps)
+            have ept : Exec isa (PubNaf.stepD P521Joint.K P521Joint.double) _ _ _ := .seq dt (.seq dbt pt)
+            obtain ⟨he,E,hpair⟩:=stepDRaw_relCT hL hp hone checks (dbl_spec hL hp) double_ct hF₁ hF₂ (j:=j) (by change j<577; omega_using [hj])
              _ _ _ _ _ _ ⟨pair,hs.st,ht.st,hs.cache,ht.cache,hs.x19,ht.x19⟩ eps ept
             have hcA:=jointPoint_curve hC hG hP u v (j+1)
             obtain ⟨_,_,e1,h1⟩:=peerStep_ok hL hp hC hM3 hone hP hcA hF₁ hj hs

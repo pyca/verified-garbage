@@ -10,15 +10,11 @@ import VerifiedGarbage.Proof.Weierstrass.Window5
 public import VerifiedGarbage.Proof.Weierstrass.CombDigitW
 public import VerifiedGarbage.Proof.Weierstrass.Window5
 public import VerifiedGarbage.Proof.Framework.AArch64.Call
-public import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ReductionArithmetic
-public import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Rotate
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.FoldOk
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
 public import VerifiedGarbage.Proof.Weierstrass.MulContract
 import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ReductionArithmetic
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Rotate
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.FoldOk
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
 import VerifiedGarbage.Proof.Weierstrass.MulContract
