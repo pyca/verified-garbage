@@ -42,8 +42,9 @@ the state of one ISA. So this contract says only what every contract says:
 the function takes no argument, writes no memory but its stack, keeps what
 the calling convention preserves (on x86-64, MXCSR's control bits), and
 takes a time that depends on nothing secret (it has no secret input). What
-it does to MXCSR, and what it returns, are proven of its code, as a theorem
-of its proofs (`Proof/Mcdt/`), against the same model.
+it does to MXCSR, and what it returns, is its `Api`'s `mode`, which every
+artifact proves (`Artifact.modeOk`), on MXCSR as the calling convention
+gives it (`Abi.mode`).
 -/
 
 @[expose] public section
@@ -66,13 +67,16 @@ def enterApi : Api where
   name := "vg_mcdt_enter"
   sig := enterSig
   contracts := some fun A stack => enterContract A stack
+  -- MXCSR's bits 31:16 are reserved, and cleared.
+  mode := some fun before after r =>
+    after = (before &&& 0xFFFF) ||| 0x3F ∧ r.setWidth 32 = if after = 0x1FBF then 1 else 0
   summary := "Unless MXCSR already holds `0x1FBF`, sets its six status flags, keeping its \
     control bits, then runs `lfence`, for Intel's mitigation of MXCSR-configuration-dependent timing, and returns 1 if \
     MXCSR then holds `0x1FBF` (its control bits were the default `0x1F80`) and 0 if not. Writes \
     no memory but its stack. Its time may depend on whether MXCSR already held `0x1FBF`, which \
     is public.\n\n\
-    Contract: `VG.Spec.Mcdt.enterContract`, and its effect on MXCSR and its result are \
-    `VG.Proof.Mcdt.X86_64.enter_mxcsr` (on x86-64)."
+    Contract: `VG.Spec.Mcdt.enterContract`, and its effect on MXCSR and its result are the \
+    `mode` of `VG.Spec.Mcdt.enterApi`."
   safety := []
 
 end VG.Spec.Mcdt

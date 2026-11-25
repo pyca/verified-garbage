@@ -22,8 +22,10 @@ and the return value (`Sig.contract`), which cannot name the mode, a part of
 the state of one ISA. So these contracts say only what every contract says:
 the functions take no argument, write no memory, keep what the calling
 convention preserves, and take a time that depends on nothing secret (they
-have no secret input). What each does to the mode is proven of its code, as
-a theorem of its proofs (`Proof/Dit/`), against the same model.
+have no secret input). What each does to the mode, and what `vg_dit_enter`
+returns, is its `Api`'s `mode`, which every artifact proves
+(`Artifact.modeOk`), on the mode as the calling convention gives it
+(`Abi.mode`: 1 if it is on, 0 if it is off).
 
 `vg_dit_enter`'s time may depend on whether the mode was on, so that it need
 not turn on a mode that already is (writing PSTATE.DIT takes tens of
@@ -50,11 +52,12 @@ def enterApi : Api where
   name := "vg_dit_enter"
   sig := enterSig
   contracts := some fun A stack => enterContract A stack
+  mode := some fun before after r => after = 1 ∧ r.setWidth 32 = before.setWidth 32
   summary := "Turns data independent timing on (on AArch64, PSTATE.DIT), and returns 1 if it \
     was already on and 0 if it was off. Writes no memory. Its time may depend on whether the \
     mode was on, which is public.\n\n\
-    Contract: `VG.Spec.Dit.enterContract`, and its effect on the mode is \
-    `VG.Proof.Dit.AArch64.enter_dit` (on AArch64)."
+    Contract: `VG.Spec.Dit.enterContract`, and its effect on the mode is the `mode` of \
+    `VG.Spec.Dit.enterApi`."
   safety := []
 
 /-- `vg_dit_clear()`. -/
@@ -71,10 +74,11 @@ def clearApi : Api where
   name := "vg_dit_clear"
   sig := clearSig
   contracts := some fun A stack => clearContract A stack
+  mode := some fun _before after _r => after = 0
   summary := "Turns data independent timing off (on AArch64, PSTATE.DIT). Writes no memory. \
     Call it only after `vg_dit_enter` returned 0, so that the mode is left as it was.\n\n\
-    Contract: `VG.Spec.Dit.clearContract`, and its effect on the mode is \
-    `VG.Proof.Dit.AArch64.clear_dit` (on AArch64)."
+    Contract: `VG.Spec.Dit.clearContract`, and its effect on the mode is the `mode` of \
+    `VG.Spec.Dit.clearApi`."
   safety := []
 
 end VG.Spec.Dit

@@ -14,6 +14,7 @@ def artifacts : List (Artifact X86_64.target) := [
   Spec.Mcdt.enterApi.artifact X86_64.target {
     code := Impl.Mcdt.X86_64.enterCall
     verified := Proof.Mcdt.X86_64.enter_scrubbed
-    spSafe := Proof.Mcdt.X86_64.enter_spSafe }]
+    spSafe := Proof.Mcdt.X86_64.enter_spSafe
+    modeOk := Proof.Mcdt.X86_64.enter_mode }]
 
 end VG.Artifacts.Mcdt.X86_64

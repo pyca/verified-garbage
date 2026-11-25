@@ -367,11 +367,13 @@ theorem enter_ct : ConstantTime isa contract.pre contract.pub enter := by
   · exact taintRel [.rsp] (fun x y h r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; subst hr; exact h.1.1) (by taint_decide)
 
+theorem pre_of : ∀ s, (Spec.Mcdt.enterContract abi 8).pre s → contract.pre s := by
+  sig_implies_pre [Spec.Mcdt.enterContract, Spec.Mcdt.enterSig, contract, abi, argRegs]
+
 theorem verified : Verified target enter (Spec.Mcdt.enterContract abi 8) := by
   apply Verified.of_correct (k := contract) enter_correct enter_ct
   · exact {
-      pre := by sig_implies_pre [Spec.Mcdt.enterContract, Spec.Mcdt.enterSig, contract, abi,
-        argRegs]
+      pre := pre_of
       -- Both postconditions are `True`.
       post := fun _ _ _ _ => trivial
       pub := by
@@ -403,5 +405,59 @@ theorem enter_scrubbed :
 
 theorem enter_spSafe : Impl.Mcdt.X86_64.enterCall.all (fun i => !X86_64.isa.writesSp i) = true := by
   sp_safe
+
+/-! ## Its effect on MXCSR and its result, as its `Api` states them (`Api.mode`) -/
+
+/-- `scrubTail` keeps MXCSR and the low half of `rax`. -/
+theorem scrubTail_keep {s s' : State} {t : List Leak}
+    (h : Exec isa Impl.Mcdt.X86_64.scrubTail s t s') :
+    s'.mxcsr = s.mxcsr ∧ (s'.gpr .rax).setWidth 32 = (s.gpr .rax).setWidth 32 := by
+  refine ⟨Exec.mxcsr (by decide +kernel) h, ?_⟩
+  unfold Impl.Mcdt.X86_64.scrubTail at h
+  obtain ⟨s₁, t₁, h₁, t₂, h⟩ : ∃ s₁ t₁, Exec isa (.block [.xop (.bin .pxor .xmm0 .xmm0),
+      .alu32 .xor .r11 (.reg .r11)]) s t₁ s₁ ∧ ∃ t₂, Exec isa _ s₁ t₂ s' := by
+    cases h with | seq a b => exact ⟨_, _, a, _, b⟩
+  obtain ⟨s₂, t₂, h₂, t₃, h⟩ : ∃ s₂ t₂, Exec isa (.block []) s₁ t₂ s₂ ∧ ∃ t₃, Exec isa _ s₂ t₃ s' := by
+    cases h with | seq a b => exact ⟨_, _, a, _, b⟩
+  obtain ⟨s₃, t₃, h₃, t₄, h₄⟩ : ∃ s₃ t₃, Exec isa (.frame (.alloc 8) (.seq (.block
+      [.store Impl.Mcdt.X86_64.slot .r11]) (.block [])) (.free 8)) s₂ t₃ s₃ ∧
+      ∃ t₄, Exec isa (.block [.mov32 .rax (.reg .rax), .alu32 .xor .rcx (.reg .rcx),
+        .alu32 .xor .rdx (.reg .rdx)]) s₃ t₄ s' := by
+    cases h with | seq a b => exact ⟨_, _, a, _, b⟩
+  have r₁ : s₁.gpr .rax = s.gpr .rax := Exec.gpr (by decide +kernel) h₁
+  have r₂ : s₂.gpr .rax = s₁.gpr .rax := Exec.gpr (by decide +kernel) h₂
+  have r₃ : s₃.gpr .rax = s₂.gpr .rax := Exec.gpr (by decide +kernel) h₃
+  have r₄ : (s'.gpr .rax).setWidth 32 = (s₃.gpr .rax).setWidth 32 := by
+    rw [Exec.block_iff] at h₄
+    simp only [execBlock, isa, exec, readSrc32, Option.map_some, execAlu32, Option.bind_some, Option.some.injEq,
+      Prod.mk.injEq] at h₄
+    obtain ⟨rfl, -⟩ := h₄
+    simp [State.setReg32, State.setReg, BitVec.setWidth_setWidth_of_le]
+  rw [r₄, r₃, r₂, r₁]
+
+/-- What every run of `vg_mcdt_enter` as emitted does to MXCSR, and its
+result (`enter_mxcsr`, which its cleanup keeps). -/
+theorem enter_mode : ∀ q, Spec.Mcdt.enterApi.mode = some q → ∀ s t s',
+    (Spec.Mcdt.enterContract abi 8).pre s → Exec isa Impl.Mcdt.X86_64.enterCall s t s' →
+      q (abi.mode s) (abi.mode s') (abi.ret s') := by
+  intro q hq s t s' hs h
+  obtain rfl := Option.some.inj hq
+  obtain ⟨s₁, t₁, t₂, h₁, h₂⟩ : ∃ s₁ t₁ t₂, Exec isa enter s t₁ s₁ ∧
+      Exec isa Impl.Mcdt.X86_64.scrubTail s₁ t₂ s' := by
+    unfold Impl.Mcdt.X86_64.enterCall at h
+    cases h with | seq a b => exact ⟨_, _, _, a, b⟩
+  obtain ⟨hm, hr⟩ := enter_mxcsr (pre_of s hs).2.2 h₁
+  obtain ⟨km, kr⟩ := scrubTail_keep h₂
+  have e : (flagged s.mxcsr).setWidth 64 = (s.mxcsr.setWidth 64 &&& 0xFFFF) ||| 0x3F := by
+    simp only [flagged]; rw [BitVec.setWidth_or, BitVec.setWidth_and]; rfl
+  refine ⟨?_, ?_⟩
+  · simp only [abi, km, hm, e]
+  · simp only [abi, km, hm, kr, hr]
+    by_cases f : flagged s.mxcsr = 0x1FBF
+    · rw [f]; rfl
+    · have : ¬ (flagged s.mxcsr).setWidth 64 = (0x1FBF : BitVec 64) := fun g => f (by
+        have := congrArg (·.setWidth 32) g
+        simpa [BitVec.setWidth_setWidth_of_le] using this)
+      rw [ite_eq_right f, ite_eq_right this]; rfl
 
 end VG.Proof.Mcdt.X86_64

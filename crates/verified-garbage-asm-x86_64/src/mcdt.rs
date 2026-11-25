@@ -5,7 +5,7 @@
 
 /// Unless MXCSR already holds `0x1FBF`, sets its six status flags, keeping its control bits, then runs `lfence`, for Intel's mitigation of MXCSR-configuration-dependent timing, and returns 1 if MXCSR then holds `0x1FBF` (its control bits were the default `0x1F80`) and 0 if not. Writes no memory but its stack. Its time may depend on whether MXCSR already held `0x1FBF`, which is public.
 ///
-/// Contract: `VG.Spec.Mcdt.enterContract`, and its effect on MXCSR and its result are `VG.Proof.Mcdt.X86_64.enter_mxcsr` (on x86-64).
+/// Contract: `VG.Spec.Mcdt.enterContract`, and its effect on MXCSR and its result are the `mode` of `VG.Spec.Mcdt.enterApi`.
 ///
 /// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
