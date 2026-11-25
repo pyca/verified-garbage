@@ -3,37 +3,42 @@ module
 public import VerifiedGarbage.TCB.X86.Isa
 
 /-!
-# GHASH on x86 (32-bit), in the baseline ISA
+# GHASH: x86 (32-bit) implementation, in SSE2
 
-`vg_ghash(h, y, data, n, scratch)`, with SSE2 and integer multiplications,
-but `pmuludq` (it runs only in an MCDT frame, and the function uses no
-stack).
+`vg_ghash(h, y, data, n, scratch)`, cdecl: the arguments are at `[esp + 4]`
+… `[esp + 20]`.
 
-A block is a 128-bit value, its first byte the most significant, so that bit
-`127 − i` is the coefficient of `xⁱ`. The key is used as `H · x⁻¹`, which
-makes up for the factor `x` of carry-less products of values read in this
-order.
+For each of the `n` blocks `X` at `data`, `Y := (Y ⊕ X) • H`, the product of
+SP 800-38D as a sum of multiples `H·xⁱ` of `H`, each under the mask of a bit
+of `Y ⊕ X`:
 
-* Karatsuba's method, twice, multiplies two blocks with nine products of
-  doublewords, of which eight are in the vectors `U₀` (the block) and `U₁`
-  (`u1`), and the last, of the sums of all the doublewords, is scalar.
-* Each of the eight is three products of words, the halves' and their sums'
-  (`U₂`, `u2`): 24 lanes, three vectors (`vecs`). A lane's product of words is
-  three products of bytes, eight steps each: a word's top bit, spread by
-  `psraw`, is the mask with which the key's byte is added to the double of the
-  sum (`eight`).
-* The scalar product (`mul32`) is the sum of 16 integer products of 64 bits:
-  each word is split into the four classes of its bit positions modulo 4. The
-  partial products of class `i` by class `j` lie at positions of class `i + j`,
-  at most 8 at each, which is less than 2⁴, so that a position's sum does not
-  carry into the next of its class. The four products that meet in a class are
-  added with XOR and masked once.
-* The product is reduced with shifts of quadwords: `x¹²⁸ = 1 + x + x² + x⁷`.
+* A block is in a register as its 128-bit value, the first byte the most
+  significant (`swap` reverses the bytes), so that its most significant bit
+  is the coefficient of `x⁰`.
+* The table, built once per call (`table`): `Tᵢ = H·xⁱ`, reduced, for
+  `i < 8`, in the slot `i` of the scratch buffer.
+* The 16 bytes of `Y ⊕ X` are taken in four groups of four, a group the even
+  or the odd bytes of one of its halves. The words of the half are each
+  duplicated into a doubleword of `xmm4`; a step (`step`) takes the top bit
+  of each word as its mask (`psraw`), shifts the words left by one bit
+  (`paddw`), and adds `Tᵢ` under each of the four masks, broadcast, to each
+  of four accumulators (`xmm0` to `xmm3`). Eight steps are a group, and the
+  eight after them the group of the other bytes.
+* `horner` adds a group's accumulators, each times a power of `x¹⁶`, without
+  reducing: the sum is `Z + x¹²⁸·O`, with `Z` in `xmm3` and `O` in `xmm5`
+  (whose lowest bits are 0, as the sum's degree is bounded). `addOdd` adds
+  the group of the odd bytes, times `x⁸`, to that of the even bytes, and
+  `addLow` the low half's sum, times `x⁶⁴`, to the high half's.
+* `reduce`: `x¹²⁸ = 1 + x + x² + x⁷`, so `Y := Z ⊕ O ⊕ O·x ⊕ O·x² ⊕ O·x⁷`,
+  where the multiples of `O` are shifts, as its lowest eight bits are 0.
 
-`scratch` (its address in `ecx`) holds the bytes of the key's vectors, the
-classes of the sum of its doublewords and of the block's, `Y`, vectors of the
-products, the callee-saved registers, the data pointer and the count. Every
-branch and every address depends only on the pointers and `n`.
+Every address is `esp` or a pointer plus a constant, and every branch
+depends only on `n`, so only the pointers and `n` can affect timing. No
+register but `eax`, `ecx` and `edx` is used, so none is saved.
+
+The slots of the scratch buffer (`slot k`, the 16 bytes at `16 k`): 0 to 7
+the table; 8 and 9 the `Z` and `O` of the even bytes' group; 10 `Y ⊕ X`; 11
+and 12 the `Z` and `O` of the low half; 13 the constant `swap` uses.
 -/
 
 @[expose] public section
@@ -43,224 +48,170 @@ namespace VG.Impl.Gcm.X86
 open VG.X86
 
 def at_ (b : Reg) (d : Nat) : MemOp := { base := b, disp := d }
+
+/-- Argument `i` on entry (cdecl). -/
 def argOp (i : Nat) : MemOp := at_ .esp (4 + 4 * i)
 
-/-- Word `k` of `scratch`. -/
-def slot (k : Nat) : MemOp := at_ .ecx (4 * k)
-def ld (d : Reg) (k : Nat) : Instr := .mov d (.mem (slot k))
-def st (k : Nat) (r : Reg) : Instr := .store (slot k) r
-def xorR (d r : Reg) : Instr := .alu .xor d (.reg r)
-def xorM (d : Reg) (k : Nat) : Instr := .alu .xor d (.mem (slot k))
-def mv (d r : Reg) : Instr := .mov d (.reg r)
-def shr (d : Reg) (n : Nat) : Instr := .shift .shr d n
-def ror (d : Reg) (n : Nat) : Instr := .shift .ror d n
+/-- The slot `k` of the scratch buffer, with `scratch` in `edx`. -/
+def slot (k : Nat) : MemOp := at_ .edx (16 * k)
 
-/-- Vector `j` of `scratch`, its words `4 j` to `4 j + 3`. -/
-def vslot (j : Nat) : MemOp := at_ .ecx (16 * j)
-def vld (d : XReg) (j : Nat) : Instr := .movdquLoad d (vslot j)
-def vst (j : Nat) (r : XReg) : Instr := .movdquStore (vslot j) r
-def vmv (d r : XReg) : Instr := .xop (.bin .movdqa d r)
-def vxor (d r : XReg) : Instr := .xop (.bin .pxor d r)
-def vand (d r : XReg) : Instr := .xop (.bin .pand d r)
-def vor (d r : XReg) : Instr := .xop (.bin .por d r)
-def vaddw (d r : XReg) : Instr := .xop (.bin .paddw d r)
-def vsh (op : XShiftOp) (d : XReg) (n : BitVec 8) : Instr := .xop (.shift op d n)
+/-- The low byte of each word. -/
+def lowBytes : BitVec 32 := 0x00ff00ff
 
-/-- The positions congruent to `j` modulo 4. -/
-def mask (j : Nat) : BitVec 32 := 0x11111111#32 <<< j
+/-- The bytes of `x` reversed, with `lowBytes` in each doubleword of `k`: the
+doublewords, then the words of each, then the bytes of each. -/
+def swap (x t k : XReg) : List Instr :=
+  [.xop (.pshufd x x 0x1b), .xop (.pshuflw x x 0xb1), .xop (.pshufhw x x 0xb1),
+   .xop (.bin .movdqa t x), .xop (.shift .psrld t 8), .xop (.bin .pand t k),
+   .xop (.bin .pand x k), .xop (.shift .pslld x 8), .xop (.bin .por x t)]
 
-/-! ## `scratch`: vectors 0 to 5 are the key's bytes -/
+/-- `V := V·x`, for `V` in `xmm0`, with `rMask` in `xmm2`: each half shifted
+right by one bit, plus the part of `rMask` in it if the other half's lowest
+bit is 1 (a mask of the top word of the half that bit was in, moved across).
+That is the bit carried into the low half, and in the high half the reduction
+of the bit shifted out of `V`. -/
+def mulX : List Instr :=
+  [.xop (.bin .movdqa .xmm1 .xmm0), .xop (.shift .psllq .xmm1 63), .xop (.shift .psraw .xmm1 15),
+   .xop (.pshufd .xmm1 .xmm1 0x4e), .xop (.bin .pand .xmm1 .xmm2), .xop (.shift .psrlq .xmm0 1),
+   .xop (.bin .pxor .xmm0 .xmm1)]
 
-/-- The word of the classes of the sum of the key's doublewords, `4 · 6`. -/
-def allT : Nat := 6
-/-- The words of the classes of the word being multiplied. -/
-def wS : Nat := 28
-/-- The word and the vector of `Y`. -/
-def yS : Nat := 32
-def yV : Nat := 8
-/-- The vectors of products (`zV` and `uV` of `U₁` and `U₂` before). -/
-def xV : Nat := 9
-def y'V : Nat := 10
-def zV : Nat := 11
-def uV : Nat := 12
-def wV : Nat := 15
-def dpS : Nat := 56
-def nS : Nat := 57
+/-- `scratch` into `edx`, and `swap`'s constant into `xmm7` and the slot 13. -/
+def start : List Instr :=
+  ([.mov .edx (.mem (argOp 4)), .mov .eax (.imm lowBytes), .xop (.movd .xmm7 .eax),
+    .xop (.pshufd .xmm7 .xmm7 0)] : List Instr) ++ ([.movdquStore (slot 13) .xmm7] : List Instr)
 
-def saved : List (Reg × Nat) := [(.ebx, 52), (.esi, 53), (.edi, 54), (.ebp, 55)]
-def save : List Instr := saved.map fun p => st p.2 p.1
-def restore : List Instr := saved.map fun p => ld p.1 p.2
+/-- `mulX`'s constant into `xmm2`: the top word of `R` in the top word, and
+the top bit of the low half. -/
+def rMask : List Instr :=
+  [.mov .eax (.imm 0xe1000000), .xop (.movd .xmm2 .eax), .mov .eax (.imm 0x80000000),
+   .xop (.movd .xmm3 .eax), .xop (.bin .punpckldq .xmm3 .xmm2), .xop (.bin .pxor .xmm2 .xmm2),
+   .xop (.bin .punpckldq .xmm2 .xmm3)]
 
-/-! ## The scalar product of two words -/
+/-- `H` into `xmm0`. -/
+def loadH : List Instr :=
+  ([.mov .eax (.mem (argOp 0)), .movdquLoad .xmm0 (at_ .eax 0)] : List Instr) ++ swap .xmm0 .xmm1 .xmm7
 
-/-- Class `j` of the word in `r`, at word `b + j`. -/
-def classStore (b : Nat) (r : Reg) (j : Nat) : List Instr :=
-  [mv .edx r, .alu .and .edx (.imm (mask j)), st (b + j) .edx]
+/-- `Tᵢ` into the slot `i`, and `xmm0` to the next. -/
+def entry (i : Nat) : List Instr := .movdquStore (slot i) .xmm0 :: mulX
 
-/-- The four classes of the word in `r`, at words `b` to `b + 3`. -/
-def split (b : Nat) (r : Reg) : List Instr :=
-  classStore b r 0 ++ classStore b r 1 ++ classStore b r 2 ++ classStore b r 3
+/-- The table, from `H` in `xmm0` (and the first one past it left there). -/
+def table : List Instr := (List.range 8).flatMap entry
 
-/-- Class `i` of the word by class `j` of the key's, at word `4 t`, in
-`edx : eax`. -/
-def part (t i j : Nat) : List Instr := [ld .eax (wS + i), ld .edx (4 * t + j), .mul .edx]
+/-- `Y` into `xmm3`, and the data pointer into `eax`. -/
+def loadY : List Instr :=
+  ([.mov .eax (.mem (argOp 1)), .movdquLoad .xmm3 (at_ .eax 0)] : List Instr) ++
+  (swap .xmm3 .xmm1 .xmm7 ++ ([.mov .eax (.mem (argOp 2))] : List Instr))
 
-def addPart : List Instr := [xorR .ebx .eax, xorR .esi .edx]
+/-- `Y ⊕ X` into `xmm4` and the slot 10. -/
+def loadX : List Instr :=
+  ([.movdquLoad .xmm4 (at_ .eax 0)] : List Instr) ++ (swap .xmm4 .xmm5 .xmm7 ++
+  ([.xop (.bin .pxor .xmm4 .xmm3), .movdquStore (slot 10) .xmm4] : List Instr))
 
-/-- The class `r` of the product, in `esi : ebx`. -/
-def classSum (t r : Nat) : List Instr :=
-  part t 0 (r % 4) ++ ([mv .ebx .eax, mv .esi .edx] : List Instr) ++ part t 1 ((r + 3) % 4) ++ addPart ++
-  part t 2 ((r + 2) % 4) ++ addPart ++ part t 3 ((r + 1) % 4) ++ addPart ++
-  ([.alu .and .ebx (.imm (mask r)), .alu .and .esi (.imm (mask r))] : List Instr)
+/-- `Tᵢ` into `xmm6`, the masks of the top bits of the words of `xmm4` into
+`xmm5`, and the words shifted. -/
+def masks (i : Nat) : List Instr :=
+  [.movdquLoad .xmm6 (slot i), .xop (.bin .movdqa .xmm5 .xmm4), .xop (.shift .psraw .xmm5 15),
+   .xop (.bin .paddw .xmm4 .xmm4)]
 
-/-- The word multiplied, the sum of words of `scratch`, in `eax`. -/
-def sumWords : List Nat → List Instr
-  | [] => []
-  | k :: ks => ld .eax k :: ks.map (xorM .eax)
+/-- The register of the accumulator `q`. -/
+def acc : Nat → XReg
+  | 0 => .xmm0 | 1 => .xmm1 | 2 => .xmm2 | _ => .xmm3
 
-/-- The words of `Y`. -/
-def yWords : List Nat := [32, 33, 34, 35]
+/-- `pshufd`'s order that broadcasts the doubleword whose mask the accumulator
+`q` takes: the accumulator 0 the top one, which holds the lowest powers. -/
+def bcast : Nat → BitVec 8
+  | 0 => 0xff | 1 => 0xaa | 2 => 0x55 | _ => 0x00
 
-/-- The product of the sum of the words `ks` and the key's word, in
-`ebp : edi`. -/
-def mul32 (ks : List Nat) (t : Nat) : List Instr :=
-  sumWords ks ++ split wS .eax ++ classSum t 0 ++ ([mv .edi .ebx, mv .ebp .esi] : List Instr) ++ classSum t 1 ++
-  ([xorR .edi .ebx, xorR .ebp .esi] : List Instr) ++ classSum t 2 ++
-  ([xorR .edi .ebx, xorR .ebp .esi] : List Instr) ++ classSum t 3 ++ ([xorR .edi .ebx, xorR .ebp .esi] : List Instr)
+/-- `A_q := Tᵢ` under its mask. -/
+def set (q : Nat) : List Instr :=
+  [.xop (.pshufd (acc q) .xmm5 (bcast q)), .xop (.bin .pand (acc q) .xmm6)]
 
-/-! ## The vectors' products -/
+/-- `A_q ⊕= Tᵢ` under its mask. -/
+def add (q : Nat) : List Instr :=
+  [.xop (.pshufd .xmm7 .xmm5 (bcast q)), .xop (.bin .pand .xmm7 .xmm6), .xop (.bin .pxor (acc q) .xmm7)]
 
-/-- A step: the top bits of `y`'s words, doubled, are the next. -/
-def step (y k a m : XReg) : List Instr :=
-  [vaddw y y, vmv m y, vsh .psraw m 15, vand m k, vaddw a a, vxor a m]
+/-- The first step of a group, which sets the accumulators. -/
+def step0 : List Instr := masks 0 ++ (set 0 ++ (set 1 ++ (set 2 ++ set 3)))
 
-def steps (y k a m : XReg) : Nat → List Instr
-  | 0 => [vmv a y, vsh .psraw a 15, vand a k]
-  | n + 1 => steps y k a m n ++ step y k a m
+/-- Step `i` of a group. -/
+def step (i : Nat) : List Instr := masks i ++ (add 0 ++ (add 1 ++ (add 2 ++ add 3)))
 
-/-- The products of the top bytes of `y`'s words and the bytes `k`, in `a`. -/
-def eight (y k a m : XReg) : List Instr := steps y k a m 7
+/-- The accumulators of eight bits of each word. -/
+def group : List Instr := step0 ++ (List.range 7).flatMap fun i => step (i + 1)
 
-/-- The products of the words of `xmm0` and of the key's vector `j`: the
-first four in `xmm4`, the last in `xmm3`. -/
-def vecs (j : Nat) : List Instr :=
-  ([vmv .xmm1 .xmm0, vsh .psllq .xmm1 8, vxor .xmm1 .xmm0, vld .xmm4 (2 * j + 1)] : List Instr) ++
-  eight .xmm0 .xmm4 .xmm2 .xmm6 ++ ([vaddw .xmm0 .xmm0, vld .xmm5 (2 * j)] : List Instr) ++
-  eight .xmm0 .xmm5 .xmm3 .xmm6 ++ ([vxor .xmm4 .xmm5] : List Instr) ++ eight .xmm1 .xmm4 .xmm5 .xmm6 ++
-  ([vxor .xmm5 .xmm2, vxor .xmm5 .xmm3, vmv .xmm4 .xmm5, vand .xmm4 .xmm7, vxor .xmm5 .xmm4,
-    vsh .psllq .xmm4 8, vsh .psrlq .xmm5 8, vxor .xmm3 .xmm4, vxor .xmm2 .xmm5,
-    vmv .xmm4 .xmm3, .xop (.bin .punpcklwd .xmm4 .xmm2), .xop (.bin .punpckhwd .xmm3 .xmm2)] : List Instr)
+/-- `(Z, O) := (Z, O)·x¹⁶ ⊕ A_q`. -/
+def shift16 (q : Nat) : List Instr :=
+  [.xop (.bin .movdqa .xmm6 .xmm3), .xop (.shift .pslldq .xmm6 14), .xop (.shift .psrldq .xmm5 2),
+   .xop (.bin .pxor .xmm5 .xmm6), .xop (.shift .psrldq .xmm3 2), .xop (.bin .pxor .xmm3 (acc q))]
 
-/-- `U₁` and `U₂` of `xmm0`, in `xmm1` and `xmm2`. -/
-def us : List Instr :=
-  [.xop (.pshufd .xmm1 .xmm0 0x84), .xop (.pshufd .xmm2 .xmm0 0xde), vxor .xmm1 .xmm2,
-   vmv .xmm2 .xmm0, vsh .pslld .xmm2 16, vxor .xmm2 .xmm0, vsh .psrld .xmm2 16,
-   vmv .xmm3 .xmm1, vsh .pslld .xmm3 16, vxor .xmm3 .xmm1, vsh .psrld .xmm3 16, vsh .pslld .xmm3 16, vor .xmm2 .xmm3]
+/-- The sum of the accumulators `A_q`, times `x^(16 q)`. -/
+def horner : List Instr :=
+  ([.xop (.bin .movdqa .xmm5 .xmm3), .xop (.shift .pslldq .xmm5 14), .xop (.shift .psrldq .xmm3 2),
+    .xop (.bin .pxor .xmm3 .xmm2)] : List Instr) ++ (shift16 1 ++ shift16 0)
 
-/-- The middle products `s` (in the low doublewords) added to `q`. -/
-def fix (q s : XReg) : List Instr :=
-  [vmv .xmm6 q, vsh .psrlq .xmm6 32, vxor .xmm6 q, vxor .xmm6 s, vsh .psllq .xmm6 32, vsh .psrlq .xmm6 16, vxor q .xmm6]
+/-- `Z` and `O` into the slots `a` and `a + 1`. -/
+def save (a : Nat) : List Instr := [.movdquStore (slot a) .xmm3, .movdquStore (slot (a + 1)) .xmm5]
 
-/-- The products, and the scalar one, the halves of the block's in `xmm0` and
-`xmm1`. -/
-def gather : List Instr :=
-  ([vld .xmm0 xV] : List Instr) ++ fix .xmm0 .xmm4 ++ ([vld .xmm1 y'V] : List Instr) ++ fix .xmm1 .xmm3 ++
-  ([vsh .psrlq .xmm4 32, vsh .psrlq .xmm3 32, vld .xmm2 zV] : List Instr) ++ fix .xmm2 .xmm4 ++
-  ([vld .xmm5 wV] : List Instr) ++ fix .xmm5 .xmm3
+/-- `(Z, O) := (Z, O)·x⁸`. -/
+def shift8 : List Instr :=
+  [.xop (.bin .movdqa .xmm6 .xmm3), .xop (.shift .pslldq .xmm6 15), .xop (.shift .psrldq .xmm3 1),
+   .xop (.shift .psrldq .xmm5 1), .xop (.bin .pxor .xmm5 .xmm6)]
 
-def asm : List Instr :=
-  [.xop (.movd .xmm6 .edi), .xop (.movd .xmm3 .ebp), .xop (.bin .punpckldq .xmm6 .xmm3),
-   .xop (.pshufd .xmm3 .xmm0 0x4e), vxor .xmm3 .xmm0, .xop (.pshufd .xmm4 .xmm1 0x4e), vxor .xmm4 .xmm1,
-   .xop (.bin .punpcklqdq .xmm3 .xmm4), vxor .xmm5 .xmm3,
-   vmv .xmm3 .xmm5, vxor .xmm3 .xmm2, .xop (.pshufd .xmm4 .xmm3 0x4e), vxor .xmm4 .xmm3, vxor .xmm4 .xmm6,
-   vsh .pslldq .xmm4 8, vsh .psrldq .xmm4 4, vxor .xmm4 .xmm2, vxor .xmm4 .xmm0, vxor .xmm4 .xmm1,
-   vmv .xmm3 .xmm5, vsh .pslldq .xmm3 8, vsh .psrldq .xmm3 4, vxor .xmm0 .xmm3,
-   vmv .xmm3 .xmm4, vsh .pslldq .xmm3 8, vxor .xmm0 .xmm3,
-   vsh .psrldq .xmm5 8, vsh .pslldq .xmm5 4, vxor .xmm1 .xmm5, vsh .psrldq .xmm4 8, vxor .xmm1 .xmm4]
+/-- The slot `k` added to `r`. -/
+def addSlot (r : XReg) (k : Nat) : List Instr := [.movdquLoad .xmm6 (slot k), .xop (.bin .pxor r .xmm6)]
 
-/-- `≪ 63`, `≪ 62` and `≪ 57` of `xmm0`'s quadwords, added, in `xmm3`. -/
-def dn : List Instr :=
-  [vmv .xmm4 .xmm0, vsh .psllq .xmm4 57, vmv .xmm3 .xmm4, vsh .psllq .xmm4 5, vxor .xmm3 .xmm4, vsh .psllq .xmm4 1,
-   vxor .xmm3 .xmm4]
+/-- The odd bytes' group in `(Z, O)`, times `x⁸`, plus the even bytes'. -/
+def addOdd : List Instr := shift8 ++ (addSlot .xmm3 8 ++ addSlot .xmm5 9)
 
-/-- The halves reduced, in `xmm1`. -/
+/-- The sum of a half, whose duplicated words are in `xmm4`. -/
+def half : List Instr := group ++ (horner ++ (save 8 ++ (group ++ (horner ++ addOdd))))
+
+/-- `(Z, O)`, plus the low half's times `x⁶⁴`. -/
+def addLow : List Instr :=
+  [.movdquLoad .xmm6 (slot 11), .movdquLoad .xmm7 (slot 12), .xop (.bin .movdqa .xmm0 .xmm6),
+   .xop (.shift .pslldq .xmm0 8), .xop (.shift .psrldq .xmm6 8), .xop (.shift .psrldq .xmm7 8),
+   .xop (.bin .pxor .xmm3 .xmm6), .xop (.bin .pxor .xmm5 .xmm0), .xop (.bin .pxor .xmm5 .xmm7)]
+
+/-- `Y := Z ⊕ O ⊕ O·x ⊕ O·x² ⊕ O·x⁷` into `xmm3`: the bits that the shifts
+carry from the high half of `O` into the low one (`xmm6`), then the shifts of
+each half. -/
 def reduce : List Instr :=
-  dn ++ ([vsh .pslldq .xmm3 8, vxor .xmm0 .xmm3] : List Instr) ++ dn ++
-  ([vsh .psrldq .xmm3 8, vxor .xmm1 .xmm3, vxor .xmm1 .xmm0, vmv .xmm4 .xmm0, vsh .psrlq .xmm4 1, vxor .xmm1 .xmm4,
-    vsh .psrlq .xmm4 1, vxor .xmm1 .xmm4, vsh .psrlq .xmm4 5, vxor .xmm1 .xmm4] : List Instr)
+  [.xop (.bin .movdqa .xmm6 .xmm5), .xop (.shift .psllq .xmm6 57), .xop (.bin .movdqa .xmm7 .xmm6),
+   .xop (.shift .psllq .xmm7 5), .xop (.bin .pxor .xmm6 .xmm7), .xop (.shift .psllq .xmm7 1),
+   .xop (.bin .pxor .xmm6 .xmm7), .xop (.shift .psrldq .xmm6 8), .xop (.bin .pxor .xmm3 .xmm6),
+   .xop (.bin .pxor .xmm3 .xmm5), .xop (.shift .psrlq .xmm5 1), .xop (.bin .pxor .xmm3 .xmm5),
+   .xop (.shift .psrlq .xmm5 1), .xop (.bin .pxor .xmm3 .xmm5), .xop (.shift .psrlq .xmm5 5),
+   .xop (.bin .pxor .xmm3 .xmm5)]
 
-/-- The vectors' part of a block, `Y` in `xmm0`. -/
-def vpart : List Instr :=
-  us ++ ([vst zV .xmm1, vst uV .xmm2] : List Instr) ++ vecs 0 ++ ([vst xV .xmm4, vst y'V .xmm3, vld .xmm0 zV] : List Instr) ++
-  vecs 1 ++ ([vst zV .xmm4, vst wV .xmm3, vld .xmm0 uV] : List Instr) ++ vecs 2 ++ gather ++ asm ++ reduce ++
-  ([vst yV .xmm1] : List Instr)
+/-- `swap`'s constant into `xmm7`, the next block, and one fewer (ZF is set
+after the last block). -/
+def next : List Instr :=
+  [.movdquLoad .xmm7 (slot 13), .alu .add .eax (.imm 16), .alu .sub .ecx (.imm 1)]
 
-/-! ## The key -/
+/-- The low half of `Y ⊕ X`. -/
+def low : List Instr := ([.xop (.bin .punpcklwd .xmm4 .xmm4)] : List Instr) ++ (half ++ save 11)
 
-/-- A block, its first word in `eax`. -/
-def loadBlk : List Instr :=
-  [.mov .eax (.mem (at_ .edx 0)), .mov .ebx (.mem (at_ .edx 4)), .mov .esi (.mem (at_ .edx 8)),
-   .mov .edi (.mem (at_ .edx 12))]
+/-- The high half of `Y ⊕ X`, and the low half's sum. -/
+def high : List Instr :=
+  ([.movdquLoad .xmm4 (slot 10), .xop (.bin .punpckhwd .xmm4 .xmm4)] : List Instr) ++ (half ++ addLow)
 
-def revBlk : List Instr := [.bswap .eax, .bswap .ebx, .bswap .esi, .bswap .edi]
+/-- One block: `Y` in `xmm3`, and the block at `eax`. -/
+def body : List Instr := loadX ++ (low ++ (high ++ (reduce ++ next)))
 
-/-- `H · x⁻¹`, from `H`'s words in `eax`, `ebx`, `esi` and `edi`. -/
-def adjust : List Instr :=
-  [mv .ebp .eax, shr .ebp 31,
-   .alu .add .eax (.reg .eax), mv .edx .ebx, shr .edx 31, xorR .eax .edx,
-   .alu .add .ebx (.reg .ebx), mv .edx .esi, shr .edx 31, xorR .ebx .edx,
-   .alu .add .esi (.reg .esi), mv .edx .edi, shr .edx 31, xorR .esi .edx,
-   .alu .add .edi (.reg .edi), xorR .edi .ebp,
-   ror .ebp 1, xorR .eax .ebp, ror .ebp 1, xorR .eax .ebp, ror .ebp 5, xorR .eax .ebp]
-
-def storeYs : List Instr := [st (yS + 3) .eax, st (yS + 2) .ebx, st (yS + 1) .esi, st yS .edi]
-
-/-- The bytes of the words of `r`, at vectors `2 j` and `2 j + 1`. -/
-def bytes (r : XReg) (j : Nat) : List Instr :=
-  [vmv .xmm3 r, vand .xmm3 .xmm7, vxor r .xmm3, vsh .psrlq r 8, vst (2 * j) .xmm3, vst (2 * j + 1) r]
-
-def setC : List Instr := [.mov .eax (.imm 0x00ff00ff), .xop (.movd .xmm7 .eax), .xop (.pshufd .xmm7 .xmm7 0)]
-
-def keyVecs : List Instr :=
-  ([vld .xmm0 yV] : List Instr) ++ us ++ bytes .xmm0 0 ++ bytes .xmm1 1 ++ bytes .xmm2 2
-
-def keyCode : List Instr :=
-  adjust ++ storeYs ++ sumWords yWords ++ split (4 * allT) .eax ++ setC ++ keyVecs
-
-/-! ## A block -/
-
-/-- The bytes of `xmm0` reversed, through `xmm1`. -/
-def rev : List Instr :=
-  [vmv .xmm1 .xmm0, vand .xmm1 .xmm7, vxor .xmm0 .xmm1, vsh .psllq .xmm1 8, vsh .psrlq .xmm0 8, vor .xmm0 .xmm1,
-   .xop (.pshuflw .xmm0 .xmm0 0x1b), .xop (.pshufhw .xmm0 .xmm0 0x1b), .xop (.pshufd .xmm0 .xmm0 0x4e)]
-
-def loadX : List Instr := [.movdquLoad .xmm0 (at_ .edx 0)]
-def advance : List Instr := [.alu .add .edx (.imm 16), st dpS .edx]
-
-/-- The block added to `Y`. -/
-def addX : List Instr := rev ++ ([vld .xmm1 yV, vxor .xmm0 .xmm1, vst yV .xmm0] : List Instr)
-
-def next : List Instr := [ld .eax nS, .alu .add .eax (.imm 0xffffffff), st nS .eax]
-def test : List Instr := [.alu .test .eax (.reg .eax)]
-
-def body : List Instr :=
-  ([ld .edx dpS] : List Instr) ++ loadX ++ advance ++ addX ++ mul32 yWords allT ++ vpart ++ next ++ test
-
-def prologue : List Instr :=
-  ([.mov .ecx (.mem (argOp 4))] : List Instr) ++ save ++ ([.mov .edx (.mem (argOp 2))] : List Instr) ++
-  ([st dpS .edx] : List Instr) ++ ([.mov .edx (.mem (argOp 3))] : List Instr) ++ ([st nS .edx] : List Instr) ++
-  ([.mov .edx (.mem (argOp 0))] : List Instr) ++ loadBlk ++ revBlk ++ keyCode ++
-  ([.mov .edx (.mem (argOp 1))] : List Instr) ++ loadBlk ++ revBlk ++ storeYs ++ ([ld .eax nS] : List Instr) ++ test
-
-/-- `Y`'s bytes in order at `yS`, and the registers restored. -/
+/-- `Y` stored. -/
 def finish : List Instr :=
-  ([ld .eax (yS + 3), ld .ebx (yS + 2), ld .esi (yS + 1), ld .edi yS] : List Instr) ++ revBlk ++
-  ([st yS .eax, st (yS + 1) .ebx, st (yS + 2) .esi, st (yS + 3) .edi] : List Instr) ++ restore
+  swap .xmm3 .xmm1 .xmm7 ++ ([.mov .eax (.mem (argOp 1)), .movdquStore (at_ .eax 0) .xmm3] : List Instr)
 
-def epilogue : List Instr :=
-  finish ++ ([.mov .edx (.mem (argOp 1)), .movdquLoad .xmm0 (slot yS), .movdquStore (at_ .edx 0) .xmm0] : List Instr)
+/-- The number of blocks (ZF is set if it is zero). -/
+def count : List Instr := [.mov .ecx (.mem (argOp 3)), .alu .test .ecx (.reg .ecx)]
 
+/-- The constants, the table, `Y` in `xmm3` and the data pointer in `eax`. -/
+def setup : List Instr := start ++ (rMask ++ (loadH ++ (table ++ loadY)))
+
+/-- If there are no blocks, `Y` is left as it is. -/
 def ghash : Prog isa :=
-  .seq (.block prologue) (.seq (.ite .e (.block []) (.loop (.block body) .ne)) (.block epilogue))
+  .seq (.block count)
+    (.ite .e (.block [])
+      (.seq (.block setup) (.seq (.loop (.block body) .ne) (.block finish))))
 
 end VG.Impl.Gcm.X86
