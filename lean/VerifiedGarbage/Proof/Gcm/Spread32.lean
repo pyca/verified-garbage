@@ -13,6 +13,8 @@ Untrusted: everything here is checked by Lean. Three classes modulo 3 of
 in 32-bit words.
 -/
 
+-- separate module: the polynomial arithmetic needs Mathlib's `ring` and algebra, which the symbolic execution (`Arm.Law`) does not.
+
 @[expose] public section
 
 namespace VG.Proof.Gcm.Spread
