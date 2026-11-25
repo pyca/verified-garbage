@@ -26,6 +26,11 @@ code again.
 
 namespace VG.Proof.Sm4.PPC64LE
 
+materialize_code encKeyPair := Impl.Sm4.PPC64LE.keyPairsInline (.addi .r10 .r10 64) 1
+materialize_code decKeyPair := Impl.Sm4.PPC64LE.keyPairsInline (.subi .r10 .r10 64) 1
+materialize_code encKeyChunk := Impl.Sm4.PPC64LE.keyPairsInline (.addi .r10 .r10 64) 2
+materialize_code decKeyChunk := Impl.Sm4.PPC64LE.keyPairsInline (.subi .r10 .r10 64) 2
+
 materialize_flat_code expandKeyCode := Impl.Sm4.PPC64LE.expandKey
 materialize_flat_code ecbEncrypt := Impl.Sm4.PPC64LE.ecb .encrypt
 materialize_flat_code ecbDecrypt := Impl.Sm4.PPC64LE.ecb .decrypt

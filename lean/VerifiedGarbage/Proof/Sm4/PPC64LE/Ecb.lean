@@ -1,5 +1,10 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.PPC64LE.CallOf
+import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
+import VerifiedGarbage.Proof.Sm4.PPC64LE.Lit
+meta import VerifiedGarbage.Proof.Sm4.PPC64LE.Lit
+
 public import VerifiedGarbage.Spec.Sm4.Contract
 public import VerifiedGarbage.Proof.Sm4.Contract
 import VerifiedGarbage.Proof.Framework.Offset
@@ -14,6 +19,69 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Sm4.Layout
 public import VerifiedGarbage.Proof.Sm4.PPC64LE.Round
 public import VerifiedGarbage.Impl.Aes.PPC64LE.Linear
+
+section
+
+/-! Internal leaf calls of the key-pair kernels, preserving the caller's link. -/
+
+@[expose] public section
+namespace VG.Proof.Sm4.PPC64LE.KeyCall
+open VG VG.PPC64LE VG.PPC64LE.RegUpd
+
+def clob : List Reg := [.r0,.r9,.r11,.r12]
+
+structure Keeps (s t : State) : Prop where
+  gpr : ∀ r, r ∉ clob → t.gpr r = s.gpr r
+  mem : t.mem = s.mem
+  rd : t.rd = s.rd
+  wr : t.wr = s.wr
+
+def Stable (P : State → Prop) : Prop := ∀ {s t}, Keeps s t → P s → P t
+
+def saved (s : State) : State := s.write .r9 s.lr
+def restored (s : State) : State := { s with lr := s.gpr .r9 }
+
+theorem entry_keeps (s : State) : Keeps s (saved s).callEntry := by
+  refine ⟨fun r hr => ?_,rfl,rfl,rfl⟩
+  rw [State.callEntry_gpr _ (by revert hr; cases r <;> decide)]
+  exact gpr_write_of_ne _ _ (by revert hr; cases r <;> decide)
+
+theorem restored_keeps (s : State) : Keeps s (restored s) :=
+  ⟨fun _ _ => rfl,rfl,rfl,rfl⟩
+
+theorem saved_exec (s : State) : Exec isa (.block [.mflr .r9]) s [] (saved s) := by
+  apply Exec.block
+  rw [execBlock,show isa.exec (.mflr .r9) s = some (saved s) from exec_mflr]
+  rfl
+
+theorem restored_exec (s : State) : Exec isa (.block [.mtlr .r9]) s [] (restored s) := by
+  apply Exec.block
+  rw [execBlock,show isa.exec (.mtlr .r9) s = some (restored s) from exec_mtlr]
+  rfl
+
+/-- The leaf keeps its own LR and r9; the caller's LR travels through r9. -/
+theorem call_wp {name : String} {body : Prog isa} {P Q : State → Prop}
+    (hp : Stable P) (hq : Stable Q)
+    (hn : body.noCalls = true) (hl : (instrs body).all (fun i => !i.writesLr) = true)
+    (h9 : ∀ i ∈ instrs body, dstOf i ≠ some .r9)
+    (hb : ∀ s, P s → WP isa body s Q) {s : State} (hs : P s) :
+    WP isa (.seq (.block [.mflr .r9]) (.seq (.call name body) (.block [.mtlr .r9]))) s
+      fun t => Q t ∧ t.lr = s.lr := by
+  let e := (saved s).callEntry
+  obtain ⟨tr,b,eb,qb⟩ := hb e (hp (entry_keeps s) hs)
+  have bl : b.lr = e.lr := Exec.lr eb hn hl
+  have b9 : b.gpr .r9 = e.gpr .r9 := Exec.gpr h9 eb (.inl hn)
+  have link : (restored b).lr = s.lr := by
+    rw [restored,b9,State.callEntry_gpr _ (by decide)]
+    change (saved s).gpr .r9 = s.lr
+    exact gpr_write_self s .r9 s.lr
+  have ret : isa.ret e b = some b := by simp only [isa,VG.PPC64LE.ret,bl,ite_true]
+  exact ⟨_,restored b,.seq (saved_exec s) (.seq (.call (call_callEntry _) eb ret) (restored_exec b)),
+    hq (restored_keeps b) qb,link⟩
+
+end VG.Proof.Sm4.PPC64LE.KeyCall
+
+end
 
 /-! ### `Sm4.PPC64LE.Group`, which this module and modules that import it used -/
 
@@ -697,7 +765,7 @@ structure KInv (s₀ : State) (b sched : Addr) (dir : Dir) (m : Nat) (s : State)
     (fun _ => (Spec.Sm4.scheduleAt s₀.mem sched).getD i 0)
   masks : MasksOk s
   frame : Frame [⟨b, 8 * tableEnd⟩] s₀.mem s.mem
-  regs : ∀ r, r ∉ sboxWrites → r ≠ kr → r ≠ .r3 → r ≠ .r11 → s.gpr r = s₀.gpr r
+  regs : ∀ r, r ∉ sboxWrites → r ≠ kr → r ≠ .r3 → r ≠ .r11 → r ≠ .r0 → r ≠ .r9 → r ≠ .r12 → s.gpr r = s₀.gpr r
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
 
@@ -789,7 +857,7 @@ theorem keyIter_ok (dir : Dir) {s₀ s : State} {b sched : Addr} {m : Nat} (hm :
     · rw [tableSlot_eq]; exact VG.Offset.sub_base b (by omega_arith)
   refine ⟨s₅, ?_, ⟨hpre₂.congr (by rw [hb₆, o₃ _ (by decide)]) (by rw [rd₅, rd₄, rd₃])
       (by rw [wr₅, wr₄, wr₃]), by rw [o₅ _ (by decide), r₄], ?_, fun i hi' => ?_,
-      fun kv hkv => ?_, by rw [hmem]; exact hf₃, fun r h1 h2 h3 h4 => ?_,
+      fun kv hkv => ?_, by rw [hmem]; exact hf₃, fun r h1 h2 h3 h4 h0 h9 h12 => ?_,
       by rw [rd₅, rd₄, rd₃, rd₂, rd₁, hi.rd], by rw [wr₅, wr₄, wr₃, wr₂, wr₁, hi.wr]⟩⟩
   · rw [runBlock_app, runBlock_app, runBlock_app, e₁, Option.bind_some, e₂, Option.bind_some, e₃,
       Option.bind_some,
@@ -809,7 +877,7 @@ theorem keyIter_ok (dir : Dir) {s₀ s : State} {b sched : Addr} {m : Nat} (hm :
     · exact E₃.congr fun j hj => by rw [hmem]
   · show s₅.mem.readW (wordAddr (s₅.gpr sb) kv.1) 64 = kv.2
     rw [hmem, hb₆]; exact m₃ kv hkv
-  · rw [o₅ r h3, o₄ r h2, o₃ r h1, o₂ r h2, o₁ r h1, hi.regs r h1 h2 h3 h4]
+  · rw [o₅ r h3, o₄ r h2, o₃ r h1, o₂ r h2, o₁ r h1, hi.regs r h1 h2 h3 h4 h0 h9 h12]
 
 theorem entOf_entOf (dir : Dir) {e : Nat} (he : e < 32) : entOf dir (entOf dir e) = e := by
   cases dir <;> simp [entOf] <;> omega_arith
@@ -824,17 +892,61 @@ structure KeysPost (s₀ : State) (b sched : Addr) (dir : Dir) (s : State) : Pro
   masks : MasksOk s
   rdi : s.gpr .r11 = b + BitVec.ofNat 64 (8 * tableEnd)
   frame : Frame [⟨b, 8 * tableEnd⟩] s₀.mem s.mem
-  regs : ∀ r, r ∉ sboxWrites → r ≠ kr → r ≠ .r3 → r ≠ .r11 → s.gpr r = s₀.gpr r
+  regs : ∀ r, r ∉ sboxWrites → r ≠ kr → r ≠ .r3 → r ≠ .r11 → r ≠ .r0 → r ≠ .r9 → r ≠ .r12 → s.gpr r = s₀.gpr r
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
+  lr : s.lr = s₀.lr
+
+/-- Public pointer and initialized-table facts ignore the call temporaries. -/
+theorem KInv.call_stable {s₀ : State} {b sched : Addr} {dir : Dir} {m : Nat} :
+    KeyCall.Stable (KInv s₀ b sched dir m) := by
+  intro s t hk hi
+  refine ⟨hi.pre.congr (hk.gpr _ (by decide)) hk.rd hk.wr,
+    by rw [hk.gpr _ (by decide)]; exact hi.rsi,
+    by rw [hk.gpr _ (by decide)]; exact hi.rdi,
+    by rw [hk.mem]; exact hi.ent,?_,by rw [hk.mem]; exact hi.frame,
+    fun r h1 h2 h3 h4 h0 h9 h12 => (hk.gpr r (by
+      simp only [KeyCall.clob,List.mem_cons,List.not_mem_nil,or_false,not_or]
+      exact ⟨h0,h9,h4,h12⟩)).trans (hi.regs r h1 h2 h3 h4 h0 h9 h12),
+    hk.rd.trans hi.rd,hk.wr.trans hi.wr⟩
+  intro kv hkv
+  show t.mem.readW (wordAddr (t.gpr sb) kv.1) 64 = kv.2
+  rw [hk.mem,hk.gpr _ (by decide)]
+  exact hi.masks kv hkv
+
+theorem keyPairsInline_steps (dir : Dir) {s₀ : State} {b sched : Addr} :
+    ∀ n m, m+n ≤ 16 → ∀ s, KInv s₀ b sched dir m s →
+      WP isa (keyPairsInline (krStep dir) n) s (KInv s₀ b sched dir (m+n))
+  | 0,m,_,s,hi => wp_nil (by simpa only [Nat.add_zero] using hi)
+  | n+1,m,h,s,hi => by
+    obtain ⟨t,et,ht⟩ := keyIter_ok dir (by omega_using [h]) hi
+    have hnext := keyPairsInline_steps dir n (m+1) (by omega_using [h]) t ht
+    rw [show (m+1)+n=m+(n+1) by omega_using []] at hnext
+    exact WP.seq (WP.of_runBlock ⟨t,et,hnext⟩)
+
+theorem block_lr_of_run {is : List Instr} {s t : State}
+    (h : runBlock isa is s = some t) (hi : is.all (fun i => !i.writesLr) = true) : t.lr=s.lr := by
+  obtain ⟨tr,u,he,hu⟩ := WP.of_runBlock (M := isa) (Q := fun u => u=t) ⟨t,h,rfl⟩
+  subst u
+  exact Exec.lr he rfl hi
 
 theorem keyPairs_wp (dir : Dir) {s₀ : State} {b sched : Addr} :
-    ∀ n m, m + n = 16 → ∀ s, KInv s₀ b sched dir m s →
-      WP isa (keyPairs (krStep dir) n) s (KInv s₀ b sched dir 16)
-  | 0, m, h, s, hi => wp_nil (by rw [show m = 16 by omega_arith] at hi; exact hi)
-  | n + 1, m, h, s, hi => by
-    obtain ⟨s', e', hi'⟩ := keyIter_ok dir (by omega_arith) hi
-    exact WP.seq (WP.of_runBlock ⟨s', e', keyPairs_wp dir n (m + 1) (by omega_arith) s' hi'⟩)
+    ∀ n m, m+n=16 → ∀ s, KInv s₀ b sched dir m s →
+      WP isa (keyPairs (krStep dir) n) s fun t => KInv s₀ b sched dir 16 t ∧ t.lr=s.lr
+  | 0,m,h,s,hi => wp_nil ⟨by rw [show m=16 by omega_using [h]] at hi; exact hi,rfl⟩
+  | 1,m,h,s,hi => by
+    obtain ⟨tr,t,he,ht⟩ := keyPairsInline_steps dir 1 m (by omega_using [h]) s hi
+    rw [h] at ht
+    exact ⟨tr,t,he,ht,Exec.lr he (by cases dir <;> rfl) (by cases dir <;> lit_decide)⟩
+  | n+2,m,h,s,hi => by
+    rw [keyPairs,keyChunk]
+    apply WP.seq
+    refine WP.mono (KeyCall.call_wp KInv.call_stable KInv.call_stable
+      (by cases dir <;> rfl) (by cases dir <;> lit_decide) (by cases dir <;> lit_decide)
+      (fun t ht => keyPairsInline_steps dir 2 m (by omega_using [h]) t ht) hi) ?_
+    intro t ⟨ht,hl⟩
+    exact WP.mono (keyPairs_wp dir n (m+2) (by omega_using [h]) t ht)
+      (fun _ ⟨hu,lu⟩ => ⟨hu,lu.trans hl⟩)
 
 theorem keysGen_wp (dir : Dir) (k : Nat) (hk : 8 * k = rsiAt dir 0) (hse : 8 * k < 2 ^ 15)
     {s₀ : State} {b sched : Addr} (hp : SchedPre s₀ b sched) (hrdi : s₀.gpr .r3 = sched) (hm : MasksOk s₀) :
@@ -845,15 +957,16 @@ theorem keysGen_wp (dir : Dir) (k : Nat) (hk : 8 * k = rsiAt dir 0) (hse : 8 * k
     refine ⟨hp.congr (by rw [o₁ _ (by decide)]) rd₁ wr₁,
       by rw [r₁, hp.base, hk], by rw [o₁ _ (by decide), hrdi]; simp,
       fun i hi => by omega_arith, fun kv hkv => ?_, by rw [m₁]; exact Frame.refl _ _,
-      fun r _ h2 _ _ => by rw [o₁ r h2], rd₁, wr₁⟩
+      fun r _ h2 _ _ _ _ _ => by rw [o₁ r h2], rd₁, wr₁⟩
     show s₁.mem.readW (wordAddr (s₁.gpr sb) kv.1) 64 = kv.2
     rw [m₁, o₁ _ (by decide)]; exact hm kv hkv
-  refine WP.seq (WP.seq (WP.of_runBlock ⟨s₁, e₁, WP.mono (keyPairs_wp dir 16 0 rfl s₁ hinv) fun s h => ?_⟩))
+  refine WP.seq (WP.seq (WP.of_runBlock ⟨s₁, e₁, WP.mono (keyPairs_wp dir 16 0 rfl s₁ hinv) fun s ⟨h,hlr⟩ => ?_⟩))
   have hfit := h.pre.fit
   obtain ⟨s₃, e₃, r₃, o₃, m₃, rd₃, wr₃⟩ := slotAddr_ok s .r11 tableEnd (by decide)
   refine WP.of_runBlock ⟨s₃, e₃, h.pre.congr (o₃ _ (by decide)) rd₃ wr₃, ⟨?_, ?_, fun e he => ?_⟩, fun kv hkv => ?_,
-    by rw [r₃, h.pre.base], by rw [m₃]; exact h.frame, fun r h1 h2 h3 h4 => by rw [o₃ r h4, h.regs r h1 h2 h3 h4],
-    by rw [rd₃, h.rd], by rw [wr₃, h.wr]⟩
+    by rw [r₃, h.pre.base], by rw [m₃]; exact h.frame, fun r h1 h2 h3 h4 h0 h9 h12 => by rw [o₃ r h4, h.regs r h1 h2 h3 h4 h0 h9 h12],
+    by rw [rd₃, h.rd], by rw [wr₃, h.wr],
+    (block_lr_of_run e₃ (by rfl)).trans (hlr.trans (block_lr_of_run e₁ (by rfl)))⟩
   · rw [wr₃, o₃ _ (by decide), h.pre.base]; exact h.pre.scr
   · rw [o₃ _ (by decide), h.pre.base]; exact hfit
   · rw [o₃ _ (by decide), h.pre.base, m₃]

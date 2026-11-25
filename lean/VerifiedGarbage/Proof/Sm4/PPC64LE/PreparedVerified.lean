@@ -200,7 +200,7 @@ theorem prepareBody_wp {s₀ : State} (hrd : s₀.rd = [⟨s₀.gpr .r3, 128⟩]
     (dSS : Region.Disjoint ⟨s₀.gpr .r3, 128⟩ ⟨s₀.gpr .r5, 8 * slots⟩)
     (fitK : (s₀.gpr .r3).toNat + 128 ≤ 2 ^ 64) (fitB : (s₀.gpr .r5).toNat + 8 * slots ≤ 2 ^ 64) :
     WP isa prepareKeys s₀ fun s' => (∀ i < 18, s'.gpr (sreg i) = s₀.gpr (sreg i)) ∧
-      WordsAt s'.mem (s₀.gpr .r5) (Spec.Sm4.scheduleAt s₀.mem (s₀.gpr .r3)) (dirOf (s₀.gpr .r4)) := by
+      WordsAt s'.mem (s₀.gpr .r5) (Spec.Sm4.scheduleAt s₀.mem (s₀.gpr .r3)) (dirOf (s₀.gpr .r4)) ∧ s'.lr=s₀.lr := by
   let b := s₀.gpr .r5
   have hwS : (⟨b, 8 * slots⟩ : Region) ∈ s₀.wr := by rw [hwr]; simp [b]
   have hrK : (⟨s₀.gpr .r3, 128⟩ : Region) ∈ s₀.rd := by rw [hrd]; simp
@@ -225,7 +225,7 @@ theorem prepareBody_wp {s₀ : State} (hrd : s₀.rd = [⟨s₀.gpr .r3, 128⟩]
       refine WP.seq (WP.ite true (by rw [eval_nonzero, r4₁]; simpa using h0) (fun _ =>
         WP.mono (keys_wp .decrypt hk₁ r3₁ m₁) fun s k => ?_) fun h => by cases h)
       have r4 : s.gpr .r4 = s₀.gpr .r4 := by
-        rw [k.regs .r4 (by decide) (by decide) (by decide) (by decide), r4₁]
+        rw [k.regs .r4 (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), r4₁]
       exact WP.ite false (by rw [eval_zero, r4]; simpa using h0) (fun h => by cases h) fun _ => WP.of_runBlock ⟨_, rfl, k⟩
   have base₂ : s₂.gpr sb = b := k₂.pre.base
   have sv₂ : Saved s₀ b s₂.mem := fun i hi => by
@@ -235,7 +235,8 @@ theorem prepareBody_wp {s₀ : State} (hrd : s₀.rd = [⟨s₀.gpr .r3, 128⟩]
     exact VG.Offset.disjoint_base b (d := 8 * (savedSlot + i)) (by rw [tableEnd_eq, savedSlot_eq]; omega_arith)
       (by rw [savedSlot_eq]; omega_arith)
   obtain ⟨s₃, e₃, rg₃, -, m₃, -, -⟩ := restore_ok (by rw [k₂.wr, wr₁]; exact hwS) base₂ sv₂
-  refine WP.of_runBlock ⟨s₃, e₃, rg₃, ?_⟩
+  refine WP.of_runBlock ⟨s₃, e₃, rg₃, ?_,
+    (block_lr_of_run e₃ (by lit_decide)).trans (k₂.lr.trans (block_lr_of_run e₁ (by lit_decide)))⟩
   rw [m₃, ← hsch]
   exact words_of_readyAt ⟨k₂.masks.at base₂, fun e he => by
     have := k₂.key.keys e he; rw [base₂] at this; exact this⟩
@@ -464,12 +465,19 @@ theorem prep_correct (s : State) (hs : prepPPC64LE.pre s) :
   have hl : 8 * slots ≤ (s.gpr .r6).toNat * 8 := by omega_using [hsz]
   have w := prepareBody_wp (s₀ := narrow s (s.gpr .r5)) hrd rfl
     (dSS.sub_right (Region.sub_prefix hl)) fitK (by show (s.gpr .r5).toNat + 8 * slots ≤ 2 ^ 64; omega_using [fitW, hsz])
-  have hn : prepareKeys.noCalls = true := by lit_decide
-  obtain ⟨t, s', he, ⟨h₁, h₂⟩, h₃⟩ := WP.keep bodyWrites w (by lit_decide) hn
+  obtain ⟨t, s', he, h₁, h₂, hlr⟩ := w
+  have hc : writesOnly bodyWrites prepareKeys = true := by lit_decide
+  have h2 := Exec.gpr (c := prepareKeys) (r := .r2) (by
+    intro i hi hd
+    unfold writesOnly at hc
+    rw [Code.allInstrs_eq,List.all_eq_true] at hc
+    have hh := hc i hi
+    rw [hd] at hh
+    exact (by decide : Reg.r2 ∉ bodyWrites) (List.contains_iff_mem.mp hh)) he (.inr (by decide))
   have f := (Exec.regions he (by lit_decide)).2.2.2
   have he' := exec_widen hwr hl he
   refine ⟨t, s'.withRegions s.rd s.wr, he',
-    helperAbi_of he' (Exec.lr he' hn (by lit_decide)) h₁ (h₃.gpr (by decide)), ?_,
+    helperAbi_of he' hlr h₁ h2, ?_,
     keeps_of_frame f fitW fun i hi => ?_⟩
   · refine holds_of_words ?_
     rw [← specDirA_dirOf, ofSpecDir_specDirA]

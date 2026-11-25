@@ -144,6 +144,14 @@ pub(crate) mod vg_sm4_crypt_prepared;
 pub(crate) mod vg_sm4_expand_key_core;
 
 #[rustfmt::skip]
+#[path = "internal/vg_sm4_key_pairs_dec.rs"]
+pub(crate) mod vg_sm4_key_pairs_dec;
+
+#[rustfmt::skip]
+#[path = "internal/vg_sm4_key_pairs_enc.rs"]
+pub(crate) mod vg_sm4_key_pairs_enc;
+
+#[rustfmt::skip]
 #[path = "internal/vg_sm4_prepare_keys.rs"]
 pub(crate) mod vg_sm4_prepare_keys;
 
