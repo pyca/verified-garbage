@@ -88,3 +88,11 @@ Results: A 260 cycles (996 instructions), C 259 (997): neither 5 cycles better; 
 
 Isolated run 45673781749 against #6494's branch (c88abaf2): ecdh 42564 -> 42666 ns (+0.2%): parity; the gains over 5698282829 are #6494's. The script that wrote the
 listings is here: main does not have it.
+
+## 8. After the audit (before the code it decides)
+
+- `f`, `g` are 5 words (2272, 2312), `a`, `b` 4 words (2352, 2384): they end at 2416, not 2424; the observed range becomes [2272, 2416).
+- Trial A (section 7) ran 1500 tries, not 3000.
+- The doubling's proof is rearranged: a doubling is one list of steps, each a field operation, 3x or x/2, with one lemma for a step and one induction over
+  the list, in place of three runs of field operations with two special blocks between them. The instructions do not change.
+- Extracting a shifted word: (2^64 hi + lo) / 2^k mod 2^64 from `extractLsb'` and `append` as numbers, proven here.
