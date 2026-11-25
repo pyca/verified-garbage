@@ -18,7 +18,7 @@ use zeroize::Zeroizing;
 ///
 /// This does not contain MLKEM768; by default MLKEM768 is only offered
 /// in hybrid with X25519.
-pub static DEFAULT_KX_GROUPS: &[&dyn SupportedKxGroup] =
+pub(crate) static DEFAULT_KX_GROUPS: &[&dyn SupportedKxGroup] =
     &[X25519MLKEM768, X25519, SECP256R1, SECP384R1];
 
 /// A list of all the key exchange groups supported by this provider.

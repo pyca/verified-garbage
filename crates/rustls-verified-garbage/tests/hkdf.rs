@@ -5,11 +5,11 @@
 //! each of the HKDF's functions gives, checked against the others.
 
 use rustls::crypto::tls13::{HkdfExpander, OkmBlock};
-use rustls_verified_garbage as provider;
+use rustls_verified_garbage::cipher_suite;
 
 #[test]
 fn short_prk() {
-    for suite in provider::ALL_TLS13_CIPHER_SUITES {
+    for suite in cipher_suite::ALL_TLS13_CIPHER_SUITES {
         let hkdf = suite.hkdf_provider;
         let len = suite.common.hash_provider.output_len();
         for prk_len in [1, len - 1, len] {
@@ -29,7 +29,7 @@ fn short_prk() {
 /// from `info` whole and in pieces, and not what its prefix gives.
 #[test]
 fn long_info() {
-    for suite in provider::ALL_TLS13_CIPHER_SUITES {
+    for suite in cipher_suite::ALL_TLS13_CIPHER_SUITES {
         let len = suite.common.hash_provider.output_len();
         let expander = suite
             .hkdf_provider
@@ -53,7 +53,7 @@ fn long_info() {
 /// of the HMAC tag does. Expanding more than 255 digests is refused.
 #[test]
 fn extract() {
-    for suite in provider::ALL_TLS13_CIPHER_SUITES {
+    for suite in cipher_suite::ALL_TLS13_CIPHER_SUITES {
         let hkdf = suite.hkdf_provider;
         let len = suite.common.hash_provider.output_len();
         let name = format!("{:?}", suite.common.suite);

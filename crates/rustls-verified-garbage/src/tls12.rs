@@ -15,9 +15,6 @@ use rustls::{CipherSuiteCommon, ConnectionTrafficSecrets, Tls12CipherSuite};
 
 use crate::aead::{self, TAG_LEN};
 
-/// The TLS1.2 cipher suite configuration that an application should use by default.
-pub static DEFAULT_TLS12_CIPHER_SUITES: &[&Tls12CipherSuite] = ALL_TLS12_CIPHER_SUITES;
-
 /// A list of all the TLS1.2 cipher suites supported by this provider.
 pub static ALL_TLS12_CIPHER_SUITES: &[&Tls12CipherSuite] = &[
     TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,

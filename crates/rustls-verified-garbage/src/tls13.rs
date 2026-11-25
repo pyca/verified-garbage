@@ -13,9 +13,6 @@ use rustls::{CipherSuiteCommon, ConnectionTrafficSecrets, Tls13CipherSuite};
 
 use crate::aead::{self, TAG_LEN};
 
-/// The TLS1.3 cipher suite configuration that an application should use by default.
-pub static DEFAULT_TLS13_CIPHER_SUITES: &[&Tls13CipherSuite] = ALL_TLS13_CIPHER_SUITES;
-
 /// A list of all the TLS1.3 cipher suites supported by this provider.
 pub static ALL_TLS13_CIPHER_SUITES: &[&Tls13CipherSuite] = &[
     TLS13_AES_128_GCM_SHA256,
