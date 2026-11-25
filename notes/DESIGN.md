@@ -100,3 +100,10 @@ two independent 64-bit lanes of 4 blocks, with the 64-bit layout above ([k k c0 
  * Function shape: `batch` enciphers the 8 blocks in a buffer in the scratch space; blocks and CTR
    copy into / XOR out of it, whole blocks at a time, so partial batches need no special code.
 S-boxes: forward 112-gate circuit without its 4 complements; inverse without constants: 113 gates.
+
+# Status at the first checkpoint
+x86-64: forward/inverse S-box (166 instructions each, 9 spills), toBs/fromBs, MixColumns in both
+forms, SR^2 written and checked by evaluation (Proof/Aes/X86_64/Sse/Layers.lean). Measured count
+differs from the estimate only by the AND masks' loads. por is not in the lane domain with two
+non-constant operands: pxor instead. Not yet: InvMixColumns, key setup, batch, block and CTR
+loops, key expansion and their proofs; the other targets' helpers and engines; SEED x86-64 G16.
