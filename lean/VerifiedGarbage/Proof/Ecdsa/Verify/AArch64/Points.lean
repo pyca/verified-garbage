@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Impl.Ecdsa.AArch64
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.AddCall
 import VerifiedGarbage.Proof.Ecdsa.AArch64.CombLays
 public import VerifiedGarbage.Proof.Ecdh.AArch64.Window
 public import VerifiedGarbage.Proof.Weierstrass.CombW
@@ -650,10 +652,28 @@ structure Pts (c : Cfg) (s₀ : State) (base : Addr) (g : Reg → BitVec 64)
   k : sv c base s K = sigR c s₀
   rx_lt : sv c base s RX < c.C.p
 
+/-- The shared additions' copy of `b`, outside the live point and scalar slots. -/
+theorem preparePadd_ok (hc : BaseCfgOk c) {s : State} {base : Addr} (hs : Scr s base size) :
+    WP isa c.preparePadd s fun t => KeepRegs [.x1] s t ∧
+      Unch base (slW c [EM]) s.mem t.mem ∧ AddReady base c.MP' t.mem c.rcbSlots c.padd := by
+  unfold Cfg.preparePadd
+  cases hp : c.padd with
+  | none => exact WP.block_nil ⟨⟨fun _ _ => rfl, rfl, rfl, rfl⟩, Unch.refl _ _ _, trivial⟩
+  | some f =>
+    obtain ⟨name, bAt⟩ := f
+    obtain rfl := padd_bAt hp
+    refine WP.mono (copySl_ok hc hs (o := EM) (a := BM) (by decide) (by decide) (by decide))
+      fun t ⟨v, k, O⟩ => ?_
+    have U : Unch base (slW c [EM]) s.mem t.mem := O.unch
+    refine ⟨k, U, ?_⟩
+    show sv c base t EM = sv c base t BM
+    rw [v]
+    exact (sv_unch U hc.n10 hs.nowrap (i := BM) (by decide) (apart_slW (by decide))).symm
+
 theorem points_eq (c : Cfg) : Impl.Ecdsa.Verify.AArch64.Cfg.points c =
     .seq (bits (c.sl U) (bitsAt c.n 0) (8 * c.n)) (.seq (TCombCfg.comb c.combCfg true)
-      (.seq (.block (Impl.Ecdsa.Verify.AArch64.Cfg.save c)) (.seq (c.winPrep (c.sl V))
-      (.seq (WinCfg.window (winQ c)) (Impl.Ecdsa.Verify.AArch64.Cfg.sum c))))) := rfl
+      (.seq (.block (Impl.Ecdsa.Verify.AArch64.Cfg.save c)) (.seq c.preparePadd (.seq (c.winPrep (c.sl V))
+      (.seq (WinCfg.window (winQ c) c.padd) (Impl.Ecdsa.Verify.AArch64.Cfg.sum c)))))) := rfl
 
 /-- The slots the comb, the window method but its table, and `save` write. -/
 abbrev ptsW : List Nat :=
@@ -720,11 +740,21 @@ theorem points_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {g : Reg → BitVe
   rw [tcombW_eq] at U₂
   obtain hs₂ := hs₁.of_keepRegs K₂ (x0_not_tcombClob hc.n10)
   -- `U = [u]G`, `R = O`.
-  refine WP.seq (WP.mono (save_ok hc hs₂) fun s₃ ⟨hs₃, k₃, U₃, ux₃, uy₃, uz₃, rx₃, ry₃, rz₃⟩ => ?_)
+  refine WP.seq (WP.mono (save_ok hc hs₂) fun s₃a ⟨hs₃a, k₃a, U₃a, ux₃a, uy₃a, uz₃a, _, _, _⟩ => ?_)
+  refine WP.seq (WP.mono (preparePadd_ok hc hs₃a) fun s₃ ⟨kp₃, Up₃, ready₃⟩ => ?_)
+  obtain hs₃ := hs₃a.of_keepRegs kp₃ (by decide)
+  obtain k₃ := k₃a.trans kp₃
+  obtain U₃ : Unch base (slW c (saveW ++ [EM])) s₂.mem s₃.mem := by
+    simpa only [slW, List.map_append] using U₃a.trans Up₃
+  obtain vp₃ : ∀ i, i < 45 → i ≠ EM → sv c base s₃ i = sv c base s₃a i :=
+    fun i hi hne => sv_unch Up₃ h7 hn hi (apart_slW (by simpa using hne))
+  obtain ux₃ : sv c base s₃ UX = sv c base s₂ RX := (vp₃ _ (by decide) (by decide)).trans ux₃a
+  obtain uy₃ : sv c base s₃ UY = sv c base s₂ RY := (vp₃ _ (by decide) (by decide)).trans uy₃a
+  obtain uz₃ : sv c base s₃ UZ = sv c base s₂ RZ := (vp₃ _ (by decide) (by decide)).trans uz₃a
   obtain F₃ := F₂.unch h7 hn (fixedOk_slW (by decide)) U₃
   obtain sub₂ : ∀ i ∈ [RX, RY, RZ, TX, TY, TZ, PT, T0, T1, T2, T3, T4, T5, DX, DY, DZ, TMP],
       i ∈ ptsW := by decide
-  obtain sub₃ : ∀ i ∈ saveW, i ∈ ptsW := by decide
+  obtain sub₃ : ∀ i ∈ saveW ++ [EM], i ∈ ptsW := by decide
   obtain W₃ : ∀ {i}, i < 45 → i ∉ ptsW → sv c base s₃ i = sv c base s i := fun hi hl =>
     ((sv_unch U₃ h7 hn hi (apart_slW (fun h => hl (sub₃ _ h)))).trans
       (sv_unch U₂ h7 hn hi (apart_append (apart_slW (fun h => hl (sub₂ _ h))) (apart_zw hi)))).trans (v₁ hi)
@@ -733,11 +763,21 @@ theorem points_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {g : Reg → BitVe
     fun hi hl => by
       show toM _ _ (sv c base s₃ _) = toM _ _ (sv c base s _)
       rw [W₃ hi hl]
+  obtain far₃ : AddFar (winQ c).M (winQ c).S (winX c ++ winW (winQ c)) c.padd := by
+    cases hp : c.padd with
+    | none => trivial
+    | some f =>
+      obtain ⟨name, bAt⟩ := f
+      obtain rfl := padd_bAt hp
+      intro w hw
+      rw [winW_eq] at hw
+      exact ⟨apart_append (apart_winX (c := c) (i := EM) (by decide)) (apart_slW (by decide)) w hw,
+        apart_append (apart_winX (c := c) (i := BM) (by decide)) (apart_slW (by decide)) w hw⟩
   refine winMul_ok hc hC hs₃ F₃ hP (by rw [W₃ (by decide) (by decide)]; exact hM.px_lt)
     (by rw [W₃ (by decide) (by decide)]; exact hM.py_lt)
     (by rw [tv₃ (by decide) (by decide), tv₃ (by decide) (by decide), tv₃ (by decide) (by decide)]
-        exact hrep) (ks := V) (by decide) (hpa := (trivial : AddOk _ _ _ _ _ _ _ none)) (hr := trivial)
-    (hfar := trivial) fun s₅ W => ?_
+        exact hrep) (ks := V) (by decide) (hpa := winAddOk hc) (hr := ready₃)
+    (hfar := far₃) fun s₅ W => ?_
   have hs₅ := W.scr
   obtain F₅ := F₃.unch h7 hn (fixedOk_winX.append (fixedOk_slW (by decide))) W.unch
   obtain nw : ∀ i < 45, i ∉ ptsW → i ∉ otherI ++ tblI ++ [TMP] := by decide

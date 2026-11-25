@@ -222,6 +222,12 @@ def combCfg : TCombCfg where
   start := (c.mont c.start.1, c.mont c.start.2)
   one := c.mont 1
 
+/-- Prepare the curve constant read by the shared complete additions. -/
+def preparePadd : Prog isa :=
+  match c.padd with
+  | none => .block []
+  | some (_, bAt) => .block (copy c.n bAt (c.sl BM))
+
 /-- The signature's and the public key's comb: for calls of the complete
 additions' function, `b` copied to where it reads it first. -/
 def combP : Prog isa :=
