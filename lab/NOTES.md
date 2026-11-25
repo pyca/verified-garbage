@@ -27,3 +27,31 @@ Measured (run 45660788674): x25519 31.16 us, base 26.93 us.
 Experiment 1 (`lab/gen.py`): time single instructions (throughput, latency)
 against a chain of dependent `add`s, which gives the clock; then the step and
 its pieces, alone.
+
+## 2. Experiment 1's result (run 45675997093) and what it decides
+
+Clock 3.4 GHz (100 dependent `add`s: 29.4 ns). Throughput a cycle: `mul`,
+`umulh` 2 (latency 2, 3); `add`, `csel`, `lsr` 4; flag setting about 3; a
+carry chain 1; `extr`, shifted `add` 2; `ldp` 1.5; `stp` 2; NEON `umull` 1;
+`madd` 1. The step: 396 cycles. A product alone, repeated with nothing
+depending on the last: 38.4 cycles (41 multiplies: a floor of 20.5, 5-wide
+dispatch about 20). A square: 30.6, dependent 43.2. 5 products + 4 squares at
+those costs are 314, the front 23.5: the step is the sum of its parts.
+
+H1 is false (multiplies would allow 165). Since even independent operations do
+not overlap, the likely limit is the issue queues: `adcs` that wait on a chain
+fill them and dispatch stops, long before the reorder buffer is full. Two carry
+chains cannot alternate instruction by instruction (one flag register), but
+they can row by row.
+
+Dependencies of a step: front; then {AA, BB, DA, CB}; then {x3 = (DA+CB)^2,
+t = (DA-CB)^2, x2 = AA BB, z2 = E(AA + a24 E)}; then z3 = x1 t. So 9 operations
+in 3 levels; they pair as DA|CB, AA|BB, x3|t, x2|z2 and z3 alone.
+Latency floor about 24 + 3 x 45 = 160.
+
+Experiment 2: two products, rows alternating. Registers: fixed x0 x10 x19 (and
+x1); a row has a, b0-b3, four low products: 9, the high products overwrite b;
+each product has 4 live words between rows (5 in one), as word i is final after
+row i and is stored. 9 + 8 + 1 = 18 of the 20. b is loaded again for each row
+(24 loads a pair, against 1.5 `ldp` a cycle). Folds one after the other.
+Compare 2 x 38.4 = 77; floor about 45.
