@@ -31,7 +31,7 @@ public import VerifiedGarbage.Proof.Framework.AArch64.Simd
 public import VerifiedGarbage.Proof.Framework.AArch64.Simd64
 public import VerifiedGarbage.Proof.Framework.AArch64.SimdMem64
 public import VerifiedGarbage.Proof.Framework.BitByte
-public import VerifiedGarbage.Proof.Mont.AArch64.P256Square.Product
+public import VerifiedGarbage.Proof.Mont.AArch64.P256Square
 public import VerifiedGarbage.Proof.Mont.AArch64.P384Mul.Product
 public import VerifiedGarbage.Proof.Mont.AArch64.P384Mul.Reduce
 public import VerifiedGarbage.Proof.Mont.AArch64.P384Sqr.Square

@@ -10,8 +10,8 @@ meta import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Framework.RelCT
-import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Vec
-meta import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Vec
+import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Halves
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Halves
 public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Invariant
 public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Probe
 public import VerifiedGarbage.Proof.Framework.AArch64.Taint

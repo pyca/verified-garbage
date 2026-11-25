@@ -91,10 +91,6 @@ mod vg_mlkem_gamma;
 pub use vg_mlkem_gamma::VG_MLKEM_GAMMA;
 
 #[rustfmt::skip]
-mod vg_mlkem_ntt16_zetas;
-pub use vg_mlkem_ntt16_zetas::VG_MLKEM_NTT16_ZETAS;
-
-#[rustfmt::skip]
 mod vg_mlkem_rej_shuffle;
 pub use vg_mlkem_rej_shuffle::VG_MLKEM_REJ_SHUFFLE;
 

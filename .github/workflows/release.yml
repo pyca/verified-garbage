@@ -1,0 +1,36 @@
+name: Release
+
+# Publishes the crates to crates.io when a tag `v/<version>` is pushed, by trusted
+# publishing: no token is stored. crates.io names this file and the environment,
+# so renaming either needs a change there.
+on:
+  push:
+    tags: ["v/*"]
+
+permissions: {}
+
+jobs:
+  publish:
+    name: Publish to crates.io
+    if: ${{ github.repository == 'pyca/verified-garbage' }}
+    runs-on: ubuntu-26.04
+    timeout-minutes: 30
+    environment: crates-io
+    permissions:
+      contents: read
+      # For crates.io's trusted publishing.
+      id-token: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Check the tag is the crates' version
+        run: grep -qx "version = \"${GITHUB_REF_NAME#v/}\"" Cargo.toml
+      - run: rustup toolchain install stable --profile minimal
+      - uses: rust-lang/crates-io-auth-action@3268eb413133e2960fa4ae0e963ca76380c54cd9 # v1.0.6
+        id: auth
+      # CI built the packages (ci/rust_lint.py): building them again would run
+      # other crates' build scripts next to the token.
+      - run: cargo +stable publish --workspace --exclude verified-garbage-test-vectors --locked --no-verify
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}

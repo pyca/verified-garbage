@@ -7,9 +7,8 @@ import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
 import VerifiedGarbage.Proof.MlKem.Arith
 import VerifiedGarbage.Proof.Sha3.AArch64.Sums
 public import VerifiedGarbage.Proof.MlKem.Ntt
-public import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Table
 import VerifiedGarbage.Proof.Framework.Lit
-import VerifiedGarbage.Proof.MlKem.AArch64.NttR.Lit
+import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Lit
 meta import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.MlKem.AArch64.Common
 public import VerifiedGarbage.Proof.MlKem.AArch64.Vec
@@ -283,10 +282,7 @@ namespace VG.Proof.MlKem.AArch64.Ntt16.Readonly
 open VG.Impl.MlKem.AArch64 VG.Impl.MlKem.AArch64.Ntt16
 open VG.Impl.MlKem.AArch64.Ntt16.Readonly
 
-theorem forward_length : (words 16 tableHalves).length = 64 := by lit_decide
 theorem gamma_length : (words 32 gammaTable).length = 64 := by lit_decide
-
-theorem forward_words : ∀ i < 64, (words 16 tableHalves).getD i 0 = hw4 tableHalves i := by lit_decide
 
 theorem gamma_low : ∀ i < 64,
     ((words 32 gammaTable).getD i 0).extractLsb' 0 32 = BitVec.ofNat 32 (gammaTable.getD (2*i) 0) := by lit_decide

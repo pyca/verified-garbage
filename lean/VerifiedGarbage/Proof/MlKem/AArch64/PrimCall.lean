@@ -17,7 +17,7 @@ import VerifiedGarbage.TCB.AArch64.Isa
 public import VerifiedGarbage.Proof.MlKem.AArch64.Common
 public import VerifiedGarbage.Proof.MlKem.AArch64.Vec
 import VerifiedGarbage.Impl.MlKem.AArch64.Ntt16
-import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Vec
+import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Halves
 
 /-!
 # ML-KEM-768 on AArch64: calling the primitives

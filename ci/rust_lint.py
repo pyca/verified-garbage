@@ -22,7 +22,9 @@ lean/VerifiedGarbage/TCB/Rust.lean now enables). `--lib` builds an rlib,
 which needs no linker either. And its documentation is built for every target,
 as docs.rs builds it, as the provider's is: a broken link fails
 (`RUSTDOCFLAGS`, which ci.yml's jobs set). The crates of generated code's is
-not: their contracts' text is not written for rustdoc.
+not: their contracts' text is not written for rustdoc. And the published crates
+are packaged, and built from their packages, so that a change that breaks
+publishing fails here rather than at a release.
 
   rust_lint.py targets library|benchmarks
       the crate's targets, comma-separated, for rustup
@@ -78,6 +80,8 @@ def run(crate):
         cargo(["build", "--release", "--lib", "--locked", *targets], ROOT)
         cargo(["doc", "--no-deps", "--locked", "-p", "verified-garbage", "-p", "verified-garbage-cpu",
                *targets], ROOT)
+        cargo(["package", "--workspace", "--exclude", "verified-garbage-test-vectors", "--locked",
+               "--allow-dirty"], ROOT)
         return
     cargo(["fmt", "--check"], ROOT / "bench")
     for e in entries(crate):

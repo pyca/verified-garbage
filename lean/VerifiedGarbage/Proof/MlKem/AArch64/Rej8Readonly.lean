@@ -3,7 +3,7 @@ public import VerifiedGarbage.Proof.Framework.Covers
 public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Table
 public import VerifiedGarbage.Proof.MlKem.Mem
 
-import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Table
+import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Halves
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Lit

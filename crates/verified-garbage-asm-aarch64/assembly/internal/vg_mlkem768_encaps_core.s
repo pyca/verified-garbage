@@ -4603,7 +4603,6 @@ vg_mlkem768_encaps_core:
 	bl {vg_mlkem16_cbd2}
 	movz x0, #13464, lsl #0
 	add x0, x28, x0
-	add x1, x28, #3224
 	bl {vg_mlkem16_ntt}
 	movz x0, #17728, lsl #0
 	add x0, x28, x0
@@ -4612,7 +4611,6 @@ vg_mlkem768_encaps_core:
 	bl {vg_mlkem16_cbd2}
 	movz x0, #14488, lsl #0
 	add x0, x28, x0
-	add x1, x28, #3224
 	bl {vg_mlkem16_ntt}
 	movz x0, #17896, lsl #0
 	add x0, x28, x0
@@ -4621,7 +4619,6 @@ vg_mlkem768_encaps_core:
 	bl {vg_mlkem16_cbd2}
 	movz x0, #15512, lsl #0
 	add x0, x28, x0
-	add x1, x28, #3224
 	bl {vg_mlkem16_ntt}
 	movz x0, #18064, lsl #0
 	add x0, x28, x0
@@ -4761,7 +4758,6 @@ vg_mlkem768_encaps_core:
 	cbnz x11, 2229b
 	movz x0, #17560, lsl #0
 	add x0, x28, x0
-	add x1, x28, #3224
 	bl {vg_mlkem16_inv_ntt}
 	movz x0, #17560, lsl #0
 	add x0, x28, x0
@@ -4927,7 +4923,6 @@ vg_mlkem768_encaps_core:
 	cbnz x11, 2232b
 	movz x0, #17560, lsl #0
 	add x0, x28, x0
-	add x1, x28, #3224
 	bl {vg_mlkem16_inv_ntt}
 	movz x0, #17560, lsl #0
 	add x0, x28, x0
@@ -5093,7 +5088,6 @@ vg_mlkem768_encaps_core:
 	cbnz x11, 2235b
 	movz x0, #17560, lsl #0
 	add x0, x28, x0
-	add x1, x28, #3224
 	bl {vg_mlkem16_inv_ntt}
 	movz x0, #17560, lsl #0
 	add x0, x28, x0
@@ -5373,7 +5367,6 @@ vg_mlkem768_encaps_core:
 	cbnz x11, 2241b
 	movz x0, #17560, lsl #0
 	add x0, x28, x0
-	add x1, x28, #3224
 	bl {vg_mlkem16_inv_ntt}
 	movz x9, #6, lsl #0
 	strb w9, [x28, #976]

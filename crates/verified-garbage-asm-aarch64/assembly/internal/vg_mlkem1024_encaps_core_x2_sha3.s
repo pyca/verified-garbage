@@ -5423,7 +5423,6 @@ vg_mlkem1024_encaps_core_x2_sha3:
 	bl {vg_mlkem16_cbd2}
 	movz x0, #20632, lsl #0
 	add x0, x28, x0
-	add x1, x28, #3224
 	bl {vg_mlkem16_ntt}
 	movz x0, #25920, lsl #0
 	add x0, x28, x0
@@ -5432,7 +5431,6 @@ vg_mlkem1024_encaps_core_x2_sha3:
 	bl {vg_mlkem16_cbd2}
 	movz x0, #21656, lsl #0
 	add x0, x28, x0
-	add x1, x28, #3224
 	bl {vg_mlkem16_ntt}
 	movz x0, #26088, lsl #0
 	add x0, x28, x0
@@ -5441,7 +5439,6 @@ vg_mlkem1024_encaps_core_x2_sha3:
 	bl {vg_mlkem16_cbd2}
 	movz x0, #22680, lsl #0
 	add x0, x28, x0
-	add x1, x28, #3224
 	bl {vg_mlkem16_ntt}
 	movz x0, #26256, lsl #0
 	add x0, x28, x0
@@ -5450,7 +5447,6 @@ vg_mlkem1024_encaps_core_x2_sha3:
 	bl {vg_mlkem16_cbd2}
 	movz x0, #23704, lsl #0
 	add x0, x28, x0
-	add x1, x28, #3224
 	bl {vg_mlkem16_ntt}
 	movz x0, #26424, lsl #0
 	add x0, x28, x0
@@ -5622,7 +5618,6 @@ vg_mlkem1024_encaps_core_x2_sha3:
 	cbnz x11, 2296b
 	movz x0, #25752, lsl #0
 	add x0, x28, x0
-	add x1, x28, #3224
 	bl {vg_mlkem16_inv_ntt}
 	movz x0, #25752, lsl #0
 	add x0, x28, x0
@@ -5810,7 +5805,6 @@ vg_mlkem1024_encaps_core_x2_sha3:
 	cbnz x11, 2299b
 	movz x0, #25752, lsl #0
 	add x0, x28, x0
-	add x1, x28, #3224
 	bl {vg_mlkem16_inv_ntt}
 	movz x0, #25752, lsl #0
 	add x0, x28, x0
@@ -5998,7 +5992,6 @@ vg_mlkem1024_encaps_core_x2_sha3:
 	cbnz x11, 2302b
 	movz x0, #25752, lsl #0
 	add x0, x28, x0
-	add x1, x28, #3224
 	bl {vg_mlkem16_inv_ntt}
 	movz x0, #25752, lsl #0
 	add x0, x28, x0
@@ -6186,7 +6179,6 @@ vg_mlkem1024_encaps_core_x2_sha3:
 	cbnz x11, 2305b
 	movz x0, #25752, lsl #0
 	add x0, x28, x0
-	add x1, x28, #3224
 	bl {vg_mlkem16_inv_ntt}
 	movz x0, #25752, lsl #0
 	add x0, x28, x0
@@ -6526,7 +6518,6 @@ vg_mlkem1024_encaps_core_x2_sha3:
 	cbnz x11, 2312b
 	movz x0, #25752, lsl #0
 	add x0, x28, x0
-	add x1, x28, #3224
 	bl {vg_mlkem16_inv_ntt}
 	movz x0, #25752, lsl #0
 	add x0, x28, x0

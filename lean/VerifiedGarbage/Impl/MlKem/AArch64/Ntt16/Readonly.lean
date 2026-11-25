@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.MlKem.AArch64.Ntt16
 
-/-! Transform kernels with immutable roots, retaining the measured instructions. -/
+/-! Tables of constants, as doublewords. -/
 
 @[expose] public section
 namespace VG.Impl.MlKem.AArch64.Ntt16.Readonly
