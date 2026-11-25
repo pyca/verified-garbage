@@ -19,7 +19,7 @@ open VG.Impl.P256
 def cfg := P256Joint.cfg
 def K := cfg.K
 
-def mixedAdd : Prog isa :=
+def mixedAddInline : Prog isa :=
   .seq (.block (zeroMask 4 K.R.z)) <|
   .ite (.nonzero .x .x2) (.block (copyPt 4 K.D K.E)) <|
   .seq (.block (copy 4 K.S.t2 K.R.x ++ copy 4 K.S.t4 K.R.y)) <|
@@ -31,17 +31,30 @@ def mixedAdd : Prog isa :=
         (.block (Jacobian.infinity K K.D)))
     (VerifyAllocated.program .mixedTail)
 
+/-- The allocated arithmetic uses x30 as data; keep the helper's link in v31. -/
+def pointFn (body : Prog isa) : Prog isa :=
+  .seq (.block [.vop (.ins .d2 .v31 0 .x30)])
+    (.seq body (.block [.umov .x .x30 .v31 0]))
+
+/-- Shared complete mixed addition, including its exceptional-point cases. -/
+def mixedAdd : Prog isa := .call "vg_p256_verify_mixed_add" (pointFn mixedAddInline)
+
 def cachedOps : CachedJac.Ops where
   head := VerifyAllocated.program .cachedHead
   tail := VerifyAllocated.program .jacTail
   double := P256Joint.cachedOps.double
+
+/-- The public peer digit, including its cached addition. -/
+def cachedDigitInline : Prog isa := CachedJac.digit K cachedOps
+
+def cachedDigit : Prog isa := .call "vg_p256_verify_cached_digit" (pointFn cachedDigitInline)
 
 /-- The odd multiples of `Q` by co-Z arithmetic, which leaves their cached
 powers too. -/
 def ops : Joint.Ops where
   table := VerifyTable.build
   cache := .block []
-  digitQ := CachedJac.digit K cachedOps
+  digitQ := cachedDigit
   double := EcdhDouble.program
   mixedAdd := mixedAdd
 
@@ -96,7 +109,7 @@ residue. -/
 def verifyHash : Prog isa :=
   Scrub.AArch64.scrubAll 80 32
     ⟨[.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x14, .x15, .x16, .x17],
-     [.v28],
+     [.v28, .v31],
      []⟩
     (Impl.Ecdsa.AArch64.VerifyHash.verifyHash Spec.Ecdsa.P256.inst.curve.len false verify)
 

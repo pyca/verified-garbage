@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedCall
+
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.P256.VerifyAllocated.Timing
@@ -40,12 +42,18 @@ open VG VG.AArch64 VG.Impl.Mont VG.Impl.Mont.AArch64 VG.Impl.Weierstrass
 open VG.Impl.Weierstrass.AArch64 VG.Proof.Mont VG.Proof.Mont.AArch64
 open VG.Proof.Weierstrass VG.Proof.Weierstrass.AArch64 Spec.Weierstrass
 
-theorem mixedAdd_relCT (raw : RawCorrect) {base : Addr}
+theorem allocatedFieldPair_stable {base : Addr} {V : List Nat} {E : Nat → Fe C} :
+    AllocatedCall.Stable₂ (FieldPair K.M base 8192 C.p Sl V E) := by
+  intro s₁ s₂ t₁ t₂ h₁ h₂ _ _ h
+  exact ⟨h.left.of_keeps h₁ allocatedRegs_x0,h.right.of_keeps h₂ allocatedRegs_x0,
+    h₁.sp.trans (h.sp.trans h₂.sp.symm)⟩
+
+theorem mixedAddInline_relCT (raw : RawCorrect) {base : Addr}
     (hm : UnitMod C.p (2^(64*K.M.n)))
     {V : List Nat} {E : Nat → Fe C} (hV : ∀ x∈rcbR K.S K.R K.E,x∈V)
     (hOne : K.one<C.p) (hc : JointMixedChecks K K.R K.E K.D) :
     RelCT isa (FieldPair K.M base 8192 C.p Sl V E)
-      VG.Impl.Ecdsa.Verify.AArch64.P256Allocated.mixedAdd
+      VG.Impl.Ecdsa.Verify.AArch64.P256Allocated.mixedAddInline
       (fun s t => ∃ E',FieldPair K.M base 8192 C.p Sl ([K.D.x,K.D.y,K.D.z]++V) E' s t) := by
   let hL := JointLayout.layout.lay
   let hAl := JointLayout.layout.aligned
@@ -63,7 +71,7 @@ theorem mixedAdd_relCT (raw : RawCorrect) {base : Addr}
     intro x hx; apply hV x
     simp only [List.mem_cons,List.not_mem_nil,or_false] at hx
     rcases hx with rfl | rfl | rfl <;> simp [rcbR]
-  rw [VG.Impl.Ecdsa.Verify.AArch64.P256Allocated.mixedAdd]
+  rw [VG.Impl.Ecdsa.Verify.AArch64.P256Allocated.mixedAddInline]
   apply fieldBranch_relCT hL hAl hm (pv K.R.z (by simp)) (hc.zero K.R.z (by simp))
   · intro _
     exact (copyPoint_relCT hL hAl os qv hc.copyQ).mono (fun _ _ h => h) (fun _ _ h => ⟨_,h⟩)
@@ -117,6 +125,19 @@ theorem mixedAdd_relCT (raw : RawCorrect) {base : Addr}
         intro s hi
         exact WP.mono (mixedTail_ok raw hi hV) fun _ ⟨hk,it,_⟩ => ⟨it,hk.regs.sp⟩
       exact ht.mono (fun _ _ h => h) (fun _ _ h => ⟨_,h⟩)
+
+
+theorem mixedAdd_relCT (raw : RawCorrect) {base : Addr}
+    (hm : UnitMod C.p (2^(64*K.M.n)))
+    {V : List Nat} {E : Nat → Fe C} (hV : ∀ x∈rcbR K.S K.R K.E,x∈V)
+    (hOne : K.one<C.p) (hc : JointMixedChecks K K.R K.E K.D) :
+    RelCT isa (FieldPair K.M base 8192 C.p Sl V E)
+      VG.Impl.Ecdsa.Verify.AArch64.P256Allocated.mixedAdd
+      (fun s t => ∃ E',FieldPair K.M base 8192 C.p Sl ([K.D.x,K.D.y,K.D.z]++V) E' s t) := by
+  apply AllocatedCall.call_relCT allocatedFieldPair_stable
+    (by intro s₁ s₂ t₁ t₂ h₁ h₂ sy₁ sy₂ ⟨E',h⟩
+        exact ⟨E',allocatedFieldPair_stable h₁ h₂ sy₁ sy₂ h⟩)
+  exact mixedAddInline_relCT raw hm hV hOne hc
 
 
 end VG.Proof.Ecdsa.Verify.AArch64.Allocated

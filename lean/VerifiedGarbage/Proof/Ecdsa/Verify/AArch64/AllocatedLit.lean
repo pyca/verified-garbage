@@ -20,5 +20,7 @@ the joint verification (`ForwardLit`). -/
 @[expose] public section
 
 namespace VG
+materialize_code Impl.Ecdsa.Verify.AArch64.P256Allocated.mixedAddInline
+materialize_code Impl.Ecdsa.Verify.AArch64.P256Allocated.cachedDigitInline
 materialize_code Impl.Ecdsa.Verify.AArch64.P256Allocated.verify
 end VG

@@ -1,5 +1,9 @@
 module
 
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedCall
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedLit
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedLit
+
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JointFixedDigit
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.AllocatedJointDigits
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedCached
@@ -305,21 +309,21 @@ open VG.Proof.Mont VG.Proof.Mont.AArch64 VG.Proof.Weierstrass VG.Proof.Weierstra
 open Spec.Weierstrass
 
 /-- Complete mixed addition preserves the infinity, doubling and opposite branches. -/
-theorem mixedAdd_ok (raw : RawCorrect) (hC : Law C) (ha : AM3 C)
+theorem mixedAddInline_ok (raw : RawCorrect) (hC : Law C) (ha : AM3 C)
     (hm : UnitMod C.p (2^(64*K.M.n))) (hOne : K.one<C.p)
     {base : Addr} {V : List Nat} {E : Nat → Fe C} {s : State}
     (hI : Inv K.M base 8192 C.p Sl V E s) (hV : ∀ x∈rcbR K.S K.R K.E,x∈V)
     {P Q : Point C} (hP : onCurve C P=true) (hQ : onCurve C Q=true)
     (hJP : InvJ C (E K.R.x) (E K.R.y) (E K.R.z) P)
     (hJQ : InvJ C (E K.E.x) (E K.E.y) (E K.E.z) Q) (hAff : E K.E.z=1) :
-    WP isa VG.Impl.Ecdsa.Verify.AArch64.P256Allocated.mixedAdd s
+    WP isa VG.Impl.Ecdsa.Verify.AArch64.P256Allocated.mixedAddInline s
       (PointPost base V K.D (add P Q) s) := by
   let hL := JointLayout.layout.lay
   let hAl := JointLayout.layout.aligned
   have hA := apart
   have hSl : ∀ x∈rcbW K.S K.D++rcbR K.S K.R K.E,Sl x := by decide +kernel
   have hsize : 8192≤8192 := Nat.le_refl _
-  rw [VG.Impl.Ecdsa.Verify.AArch64.P256Allocated.mixedAdd]
+  rw [VG.Impl.Ecdsa.Verify.AArch64.P256Allocated.mixedAddInline]
   apply fieldBranch_ok hL hAl hm hI (hV K.R.z (by simp [rcbR]))
   · intro a ia ka hz
     have hp := (hJP.z_zero_iff hC).mp hz
@@ -386,6 +390,28 @@ theorem mixedAdd_ok (raw : RawCorrect) (hC : Law C) (ha : AM3 C)
       dsimp only at jt
       rw [hAff,←ht] at jt
       exact PointPost.prefix ⟨_,kt,it,jt⟩ (hkeep.trans (liftProg kd (by simp)))
+
+
+theorem mixedAdd_ok (raw : RawCorrect) (hC : Law C) (ha : AM3 C)
+    (hm : UnitMod C.p (2^(64*K.M.n))) (hOne : K.one<C.p)
+    {base : Addr} {V : List Nat} {E : Nat → Fe C} {s : State}
+    (hI : Inv K.M base 8192 C.p Sl V E s) (hV : ∀ x∈rcbR K.S K.R K.E,x∈V)
+    {P Q : Point C} (hP : onCurve C P=true) (hQ : onCurve C Q=true)
+    (hJP : InvJ C (E K.R.x) (E K.R.y) (E K.R.z) P)
+    (hJQ : InvJ C (E K.E.x) (E K.E.y) (E K.E.z) Q) (hAff : E K.E.z=1) :
+    WP isa VG.Impl.Ecdsa.Verify.AArch64.P256Allocated.mixedAdd s
+      (PointPost base V K.D (add P Q) s) := by
+  let post := fun t => ∃ E', Inv K.M base 8192 C.p Sl ([K.D.x,K.D.y,K.D.z]++V) E' t ∧
+    InvJ C (E' K.D.x) (E' K.D.y) (E' K.D.z) (add P Q)
+  have hw := AllocatedCall.call_wp (P := Inv K.M base 8192 C.p Sl V E) (Q := post)
+    (name := "vg_p256_verify_mixed_add") (body := VG.Impl.Ecdsa.Verify.AArch64.P256Allocated.mixedAddInline)
+    (fun hk _ hi => hi.of_keeps hk allocatedRegs_x0)
+    (by intro s t hk _ ⟨E',hi,hj⟩; exact ⟨E',hi.of_keeps hk allocatedRegs_x0,hj⟩)
+    (by lit_decide)
+    (by intro t hi
+        exact WP.mono (mixedAddInline_ok raw hC ha hm hOne hi hV hP hQ hJP hJQ hAff)
+          (fun _ ⟨E',hk,hi,hj⟩ => ⟨hk,E',hi,hj⟩)) hI
+  exact WP.mono hw (fun _ ⟨hk,E',hi,hj⟩ => ⟨E',hk,hi,hj⟩)
 
 
 end VG.Proof.Ecdsa.Verify.AArch64.Allocated
@@ -552,10 +578,28 @@ theorem ops_ok (raw : RawCorrect) (hC : Law C) (ha : AM3 C)
       (external_frame hk hsym hs.external)⟩
   peer := by
     intro A j s hj hA hs h19
-    exact CachedField.allocatedCachedDigit_ok JointLayout.layout (by decide) hm hC
-      clob4_allocatedRegs work_cover hj hQ hA jointExternal_frame
-      (by intro A B s hA hB hs hi hj h2 h3
-          exact cachedSum_ok raw hC ha hm hOne external_frame hA hB hs hi hj h2 h3) hs h19
+    have stable (B : Point C) : AllocatedCall.Stable
+        (JointCore cfg C base 8192 Q u v (JointGenerator cfg C base 8192 P T) B) := by
+      intro s t hk hsym hs
+      apply hs.of_keeps hk allocatedRegs_x0
+      exact { symbol := by rw [hsym]; exact hs.external.symbol
+              read := by simpa only [hk.rd,hk.wr] using hs.external.read
+              outside := hs.external.outside
+              bounds := by simpa only [hk.mem] using hs.external.bounds
+              point := by simpa only [hk.mem] using hs.external.point }
+    apply AllocatedCall.call_wp (P := fun t =>
+      JointCore cfg C base 8192 Q u v (JointGenerator cfg C base 8192 P T) A t ∧
+      t.gpr .x19=BitVec.ofNat 64 j)
+    · intro s t hk hsym ⟨hs,h19⟩
+      exact ⟨stable A hk hsym hs,(hk.gpr _ allocatedRegs_x19).trans h19⟩
+    · exact stable _
+    · lit_decide
+    · intro t ⟨ht,h19⟩
+      exact CachedField.allocatedCachedDigit_ok JointLayout.layout (by decide) hm hC
+        clob4_allocatedRegs work_cover hj hQ hA jointExternal_frame
+        (by intro A B s hA hB hs hi hj h2 h3
+            exact cachedSum_ok raw hC ha hm hOne external_frame hA hB hs hi hj h2 h3) ht h19
+    · exact ⟨hs,h19⟩
   generator := by
     intro A j s hj hA hs h19
     exact allocatedJointFixedDigit_ok JointLayout.fixedLayout hm hC clob4_allocatedRegs work_cover hP hA
