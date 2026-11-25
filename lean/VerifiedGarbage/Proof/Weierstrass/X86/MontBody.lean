@@ -5,115 +5,28 @@ import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Weierstrass.X86.MontRow
 import VerifiedGarbage.Proof.Weierstrass.X86.MontRed
 import VerifiedGarbage.Proof.Mont.X86.Loop
-import VerifiedGarbage.Proof.Mont.X86.RedRow
 import VerifiedGarbage.Proof.Mont.X86.Row
 public import VerifiedGarbage.Proof.Weierstrass.X86.MontBase
-import VerifiedGarbage.Proof.Weierstrass.X86.MontSquareRed
-import VerifiedGarbage.Proof.Weierstrass.X86.MontSquareArithmetic
 import VerifiedGarbage.Proof.X25519.X86.Arith
 public import VerifiedGarbage.Proof.X25519.X86.Column
 import VerifiedGarbage.Proof.Framework.Offset
 
-/-! ### `Weierstrass.X86.MontSquareBody`, which this module and modules that import it used -/
+/-!
+# Montgomery arithmetic as functions on x86 (32-bit): the product
 
-section
-
-/-! ### `Weierstrass.X86.MontSquareInit`, which this module and modules that import it used -/
-
-section
-
-/-! ## `MontSquareColumns` -/
+The operands' words copied, and the numbers of X25519's column lemmas as
+numbers of the working space; then the rows of the product, P-521's square,
+and the product by columns, each up to the final subtraction (`mulBody_ok`).
+-/
 
 @[expose] public section
 
-section
-
-/-!
-# Full-width squaring columns for x86 P-256 Montgomery arithmetic
-
-Reuse the existing x86 Comba kernel, without X25519's modular folding.
-The input lies above the sixteen output words in the Montgomery workspace.
--/
-
 namespace VG.Proof.Weierstrass.X86.Mont
 
-open VG VG.X86 VG.Impl.X25519.X86 VG.Proof.X25519.X86
-
-theorem square_col_bound (s : State) (x : BitVec 32) (a k : Nat) (hk : k < 16) :
-    colv s.mem x (sqrTerms a k) < 2 ^ 68 := by
-  have hl : (sqrTerms a k).length ≤ 5 := by
-    simp only [sqrTerms, List.length_append, List.length_map]
-    have := (by decide : ∀ k < 16, ((List.range 8).filter fun i => 2 * i < k && k - i < 8).length ≤ 4) k hk
-    split <;> simp only [List.length_cons, List.length_nil] <;> omega_using [this]
-  have h1 := colv_le_len (m := s.mem) (x := x) (B := 2 ^ 65) (ts := sqrTerms a k) fun t ht => by
-    simp only [sqrTerms, List.mem_append, List.mem_map] at ht
-    rcases ht with ⟨i, -, rfl⟩ | ht
-    · have := wv_mul_le s.mem x (a + 4 * i) (a + 4 * (k - i))
-      simp only [tval]; omega_using [this]
-    · split at ht
-      · simp only [List.mem_singleton] at ht
-        subst ht
-        have := wv_mul_le s.mem x (a + 4 * (k / 2)) (a + 4 * (k / 2))
-        simp only [tval]; omega_using [this]
-      · exact absurd ht List.not_mem_nil
-  have h2 := Nat.mul_le_mul_right (2 ^ 65) hl
-  omega_using [h1, h2]
-
-theorem square_col_sum (s : State) (x : BitVec 32) (a : Nat) :
-    num (fun k => colv s.mem x (sqrTerms a k)) 16 = fe s.mem x a * fe s.mem x a := by
-  have hcol : ∀ k, colv s.mem x (sqrTerms a k) = ((((List.range 8).filter fun i => 2 * i < k && k - i < 8).map
-      fun i => 2 * (wv s.mem x (a + 4 * i) * wv s.mem x (a + 4 * (k - i)))) ++
-      if k % 2 == 0 && k < 16 then [wv s.mem x (a + 4 * (k / 2)) * wv s.mem x (a + 4 * (k / 2))]
-      else []).sum := fun k => by
-    unfold colv sqrTerms
-    rw [List.map_append, List.map_map]
-    split <;> rfl
-  simp only [hcol]
-  exact sqr_identity (fun i => wv s.mem x (a + 4 * i))
-
-/-- Full 512-bit square, with no carry beyond the output. -/
-theorem square_columns_ok {W : Nat} {c : Bool} {x : BitVec 32} {s : State}
-    (hc : Ctx W x s c) {o a : Nat} (ha : a + 32 ≤ 4096) (hoa : o + 64 ≤ a) :
-    WP isa (.block (zeroAcc ++ cols o 16 (sqrTerms a))) s fun u =>
-      Keep s u ∧ Frame [sub x o 64] s.mem u.mem ∧
-      num (fun k => wv u.mem x (o + 4 * k)) 16 = fe s.mem x a * fe s.mem x a ∧ acc u = 0 := by
-  refine WP.block_append (WP.mono zeroAcc_ok fun t ⟨K, M, Z⟩ => ?_)
-  refine WP.mono (cols_ok (K.ctx hc) (sqrTerms a) 16 (by omega_using [ha, hoa]) ?_
-    (fun k hk => square_col_bound t x a k hk) (by rw [Z]; decide)) fun u ⟨K', F, E, _⟩ => ?_
-  · intro k hk term ht d hd
-    simp only [sqrTerms, List.mem_append, List.mem_map, List.mem_filter, List.mem_range,
-      Bool.and_eq_true, decide_eq_true_eq] at ht
-    rcases ht with ⟨i, ⟨hi, -, hki⟩, rfl⟩ | ht
-    · simp only [treads, List.mem_cons, List.not_mem_nil, or_false] at hd
-      rcases hd with rfl | rfl <;> constructor <;> omega_arith
-    · split at ht
-      · simp only [List.mem_singleton] at ht
-        subst term
-        simp only [treads, List.mem_cons, List.not_mem_nil, or_false] at hd
-        rcases hd with rfl | rfl <;> constructor <;> omega_arith
-      · exact absurd ht List.not_mem_nil
-  · rw [Z, Nat.zero_add, square_col_sum, M] at E
-    have hA := fe_lt s.mem x a
-    have hAA := Nat.mul_lt_mul_of_lt_of_lt hA hA
-    have hpow : (2 ^ 32 : Nat) ^ 16 = 2 ^ 256 * 2 ^ 256 := by decide
-    rw [hpow] at E
-    have hz : acc u = 0 := by omega_using [E, hAA]
-    refine ⟨K.trans K', ?_, ?_, hz⟩
-    · simpa only [M] using F
-    · simpa only [hz, Nat.mul_zero, Nat.add_zero] using E
-
-end VG.Proof.Weierstrass.X86.Mont
-
-end
-
-/-! ## `MontSquareCopy` -/
-
-section
-
-/-! # Copying a square's operand into the existing Montgomery temporary area -/
-namespace VG.Proof.Weierstrass.X86.Mont
 open VG VG.X86 VG.X86.Wp VG.Impl.Mont.X86 VG.Impl.Weierstrass.X86.Mont
 open VG.Proof.Mont VG.Proof.Mont.X86
+
+section
 
 variable {s : State} {base : Addr} {size : Nat}
 
@@ -148,18 +61,7 @@ theorem copyWords_ok (hb : Bx s base size) {r : Reg} {a d : Nat} (hp : Ptr s r a
     · rw [U.w32 (by omega_using [hij]) (by omega_using [hj, hd, hi, hn])]
       exact V i (by omega_using [hi, hij])
 
-end VG.Proof.Weierstrass.X86.Mont
-
 end
-
-/-! ## `MontSquareProduct` -/
-
-section
-
-/-! # The Comba square in the Montgomery callee's workspace -/
-namespace VG.Proof.Weierstrass.X86.Mont
-open VG VG.X86 VG.X86.Wp VG.Impl.Weierstrass.X86.Mont
-open VG.Proof.Mont VG.Proof.Mont.X86
 
 theorem square_wv_eq (m : Mem) {x : BitVec 32} {d : Nat} (hd : x.toNat + d < 2 ^ 32) :
     VG.Proof.X25519.X86.wv m x d = w32 m (x.setWidth 64) d := by
@@ -188,53 +90,6 @@ theorem square_frame_outside {m m' : Mem} {x : BitVec 32} {o n : Nat}
   have := h (by omega_using [h'])
   omega_using [hy, h, h']
 
-/-- The copied input is squared exactly; the saved registers and input
-buffer remain outside the written product. `ebp` is restored to the base. -/
-theorem squareProduct_ok {s : State} {x : BitVec 32} (hc : VG.Proof.X25519.X86.Ctx 8192 x s false) :
-    WP isa (.block squareProductBase) s fun u =>
-      Bx u (x.setWidth 64) 8192 ∧ VG.Proof.X25519.X86.Keep s u ∧
-      Outside (x.setWidth 64) (own 4) 64 s.mem u.mem ∧
-      val32 u.mem (x.setWidth 64) (own 4) 16 =
-        val32 s.mem (x.setWidth 64) (tmpAt 4) 8 * val32 s.mem (x.setWidth 64) (tmpAt 4) 8 ∧
-      u.gpr .ebx = 0 := by
-  unfold squareProductBase
-  refine WP.block_append (WP.mono (square_columns_ok hc (o := own 4) (a := tmpAt 4)
-    (by decide) (by decide)) fun t ⟨K, F, V, Z⟩ => ?_)
-  refine wp_movS rfl fun u R _ => WP.block_nil ?_
-  have hx := hc.fit
-  have hx' : (x.setWidth 64).toNat = x.toNat := by
-    rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (Nat.lt_trans x.isLt (by decide))]
-  have E : u.gpr .ebp = x := by rw [R.gpr, K.edi, hc.edi]
-  have W : u.wr = s.wr := R.wr.trans K.wr
-  refine ⟨⟨by rw [E], by rw [W]; exact hc.wr, by rw [hx']; exact hx⟩,
-    ⟨(R.other _ (by decide)).trans K.esi, (R.other _ (by decide)).trans K.edi,
-      (R.other _ (by decide)).trans K.esp, R.rd.trans K.rd, W⟩, ?_, ?_, ?_⟩
-  · rw [R.mem]
-    exact square_frame_outside (by change x.toNat + 3840 + 64 ≤ 2 ^ 32; omega_using [hx]) (by decide) F
-  · rw [R.mem]
-    simp only [VG.Proof.X25519.X86.fe] at V
-    rw [square_num_eq _ 16 (by change x.toNat + 3840 + 4 * 16 ≤ 2 ^ 32; omega_using [hx]),
-      square_num_eq _ 8 (by change x.toNat + 3908 + 4 * 8 ≤ 2 ^ 32; omega_using [hx])] at V
-    exact V
-  · rw [R.other _ (by decide)]
-    apply BitVec.eq_of_toNat_eq
-    change (t.gpr .ebx).toNat = 0
-    simp only [VG.Proof.X25519.X86.acc, VG.Proof.X25519.X86.v] at Z
-    omega_using [Z]
-
-end VG.Proof.Weierstrass.X86.Mont
-
-end
-
-/-! ## `MontSquareInit` -/
-
-section
-
-/-! # Full-product initialization for the callable x86 P-256 square -/
-namespace VG.Proof.Weierstrass.X86.Mont
-open VG VG.X86 VG.X86.Wp VG.Impl.Weierstrass.X86.Mont
-open VG.Proof.Mont VG.Proof.Mont.X86
-
 /-- Equal words at different offsets represent equal numbers. -/
 theorem square_val_congr {m m' : Mem} {base : Addr} {d d' : Nat} : ∀ n,
     (∀ i < n, w32 m' base (d' + 4 * i) = w32 m base (d + 4 * i)) →
@@ -243,190 +98,7 @@ theorem square_val_congr {m m' : Mem} {base : Addr} {d d' : Nat} : ∀ n,
   | n + 1, h => by
     rw [val32_succ, val32_succ, square_val_congr n (fun i hi => h i (by omega_using [hi])), h n (by omega_using [])]
 
-theorem square_zero_top {mem : Mem} {base : Addr} {o n : Nat}
-    (hz : w32 mem base (o + 4 * n) = 0) : val32 mem base o (n + 1) = val32 mem base o n := by
-  rw [val32_succ, hz, Nat.mul_zero, Nat.add_zero]
-
-theorem squareInit_ok {s : State} {base : Addr} {a : Nat} (hb : Bx s base 8192)
-    (hp : Ptr s .esi a) (ha : a + 32 ≤ own 4) :
-    WP isa (.block squareInit) s fun u =>
-      Outside base (own 4) 100 s.mem u.mem ∧ Keeps [.eax, .ebx, .ecx, .edx, .edi] s u ∧
-      val32 u.mem base (own 4) 17 = val32 s.mem base a 8 * val32 s.mem base a 8 := by
-  have hn := hb.nowrap
-  have hown : own 4 = 3840 := rfl
-  have htmp : tmpAt 4 = 3908 := rfl
-  simp only [squareInit, List.append_assoc]
-  refine WP.block_append (WP.mono (copyWords_ok hb hp (by decide) (N := 8) (d := tmpAt 4)
-    (by omega_using [ha, hown, htmp]) (by decide) 8 (by decide)) fun t ⟨O, K, V⟩ => ?_)
-  have V' := square_val_congr 8 V
-  simp only [List.cons_append, List.nil_append]
-  refine wp_movS rfl fun v R _ => ?_
-  have hv : v.mem = t.mem := R.mem
-  have he : v.gpr .edi = s.gpr .ebp := by rw [R.gpr, K.1 _ (by decide)]
-  have hc : VG.Proof.X25519.X86.Ctx 8192 (s.gpr .ebp) v false :=
-    ⟨he, by rw [hb.ebp_toNat]; exact hn,
-      by change (⟨(s.gpr .ebp).setWidth 64, 8192⟩ : Region) ∈ v.wr
-         rw [R.wr, K.2.2, hb.ebp]; exact hb.wr, by decide, nofun⟩
-  refine WP.block_append (WP.mono (squareProduct_ok hc) fun w ⟨hbw, K', O', V'', Z⟩ => ?_)
-  rw [hb.ebp] at hbw O' V''
-  rw [hv, V'] at V''
-  refine wp_storeS (hbw.ea (d := own 4 + 64) (by omega_using [hown])) (hbw.write (n := 4) (by omega_using [hown]))
-    fun u M => WP.block_nil ?_
-  have hm : u.mem = w.mem.writeW (off base (own 4 + 64)) (0 : BitVec 32) := by rw [M.mem, Z]
-  have O'' := writeW32_outside w.mem base (d := own 4 + 64) (0 : BitVec 32) (by omega_using [hown])
-  rw [← hm] at O''
-  refine ⟨?_, ⟨?_, ?_, ?_⟩, ?_⟩
-  · rw [hv] at O'
-    exact ((O.mono (by omega_using [hown, htmp]) (by omega_using [hown, htmp])).trans (O'.mono (by omega_using []) (by omega_using []))).trans
-      (O''.mono (by omega_using []) (by omega_using []))
-  · intro r hr
-    have hwE : w.gpr .ebp = s.gpr .ebp := by
-      apply BitVec.eq_of_toNat_eq
-      exact hbw.ebp_toNat.trans hb.ebp_toNat.symm
-    cases r <;> simp at hr
-    · rw [M.gpr, K'.esp, R.other _ (by decide), K.1 _ (by decide)]
-    · rw [M.gpr, hwE]
-    · rw [M.gpr, K'.esi, R.other _ (by decide), K.1 _ (by decide)]
-  · rw [M.rd, K'.rd, R.rd, K.2.1]
-  · rw [M.wr, K'.wr, R.wr, K.2.2]
-  · have hz : w32 u.mem base (own 4 + 4 * 16) = 0 := by rw [hm, w32_write_self]; rfl
-    rw [square_zero_top hz, O''.val32 (by omega_using []) (by omega_using [hown])]
-    exact V''
-
-
 end VG.Proof.Weierstrass.X86.Mont
-
-end
-
-end
-
-end
-
-/-! ## `MontSquareRound` -/
-
-@[expose] public section
-
-section
-
-/-! # A REDC round on a completed x86 P-256 product -/
-namespace VG.Proof.Weierstrass.X86.Mont
-open VG VG.X86 VG.X86.Wp VG.Impl.Mont.X86 VG.Impl.Weierstrass.X86.Mont
-open VG.Proof.Mont VG.Proof.Mont.X86
-
-theorem squareRound_ok {s : State} {base : Addr} (hb : Bx s base 8192)
-    {i : Nat} (hi : i < 8)
-    (hlt : val32 s.mem base (own 4 + 4 * i) (17 - i) + (2 ^ 32 - 1) * p256Prime < 2 ^ (32 * (17 - i))) :
-    WP isa (.block (squareRound i)) s fun u =>
-      Outside base (own 4) 68 s.mem u.mem ∧ Keeps [.eax, .ecx] s u ∧
-      ∃ q, q < 2 ^ 32 ∧
-        2 ^ 32 * val32 u.mem base (own 4 + 4 * (i + 1)) (16 - i) =
-          val32 s.mem base (own 4 + 4 * i) (17 - i) + q * p256Prime := by
-  have hn := hb.nowrap
-  have ho : own 4 = 3840 := rfl
-  simp only [squareRound, List.cons_append, List.nil_append]
-  refine wp_movS (readSrc_bp hb (d := own 4 + 4 * i) (by omega_using [hi, ho])) fun t R _ => ?_
-  have hbt := hb.of_keeps R.keeps (by decide)
-  have hq : (t.gpr .ecx).toNat = w32 s.mem base (own 4 + 4 * i) := by rw [R.gpr]
-  have hqB := (t.gpr .ecx).isLt
-  have hqp : (t.gpr .ecx).toNat * p256Prime ≤ (2 ^ 32 - 1) * p256Prime :=
-    Nat.mul_le_mul_right _ (by omega_using [])
-  refine WP.mono (squareRed_ok hbt (w := own 4 + 4 * i) (extra := 7 - i) (by omega_using [])
-    (by omega_using [hi, ho]) (by rw [R.mem]; exact hq) ?_) fun u ⟨O, V, K⟩ => ?_
-  · rw [R.mem, show 10 + (7 - i) = 17 - i by omega_using [hi]]
-    exact Nat.lt_of_le_of_lt (Nat.add_le_add_left hqp _) hlt
-  · refine ⟨?_, (R.keeps.mono (by decide)).widen K (by decide), (t.gpr .ecx).toNat, hqB, ?_⟩
-    · rw [R.mem] at O
-      exact O.mono (by omega_using []) (by omega_using [hi])
-    · rw [R.mem, show 10 + (7 - i) = 17 - i by omega_using [hi]] at V
-      have he : 17 - i = (16 - i) + 1 := by omega_using [hi]
-      rw [he, val32, val32] at V
-      have hlow := (u.mem.readW (off base (own 4 + 4 * i)) 32).isLt
-      rw [← hq] at V
-      have heq : own 4 + 4 * (i + 1) = own 4 + 4 * i + 4 := by omega_using []
-      rw [heq, he, val32, ← hq]
-      simp only [p256Prime, w32] at V ⊢
-      omega_using [V, hlow]
-
-end VG.Proof.Weierstrass.X86.Mont
-
-end
-
-/-! ## `MontSquareLoop` -/
-
-section
-
-/-! # Eight REDC rounds after full-width x86 P-256 squaring -/
-namespace VG.Proof.Weierstrass.X86.Mont
-open VG VG.X86 VG.Impl.Mont.X86 VG.Impl.Weierstrass.X86.Mont
-open VG.Proof.Mont VG.Proof.Mont.X86
-
-def SquareInv (base : Addr) (T i : Nat) (mem : Mem) : Prop :=
-  val32 mem base (own 4 + 4 * i) (17 - i) < 2 ^ (32 * (16 - i)) + p256Prime ∧
-  ∃ U, U < 2 ^ (32 * i) ∧
-    2 ^ (32 * i) * val32 mem base (own 4 + 4 * i) (17 - i) = T + U * p256Prime
-
-theorem squareRounds_ok {s : State} {base : Addr} {T : Nat} (hb : Bx s base 8192)
-    (hI : SquareInv base T 0 s.mem) : ∀ r, r ≤ 8 →
-    WP isa (.block (squareRounds r)) s fun u =>
-      Outside base (own 4) 68 s.mem u.mem ∧ Keeps [.eax, .ecx] s u ∧ SquareInv base T r u.mem
-  | 0, _ => WP.block_nil ⟨Outside.refl _ _ _ _, Keeps.refl _ _, hI⟩
-  | r + 1, hr => by
-    rw [squareRounds]
-    refine WP.block_append (WP.mono (squareRounds_ok hb hI r (by omega_using [hr])) fun t ⟨O, K, H, U, hU, E⟩ => ?_)
-    have hbt := hb.of_keeps K (by decide)
-    refine WP.mono (squareRound_ok hbt (by omega_using [hr]) (square_round_room (by omega_using [hr]) H))
-      fun u ⟨O', K', q, hq, E'⟩ => ⟨O.trans O', K.trans K', ?_, ?_⟩
-    · have h := square_round_bound (by omega_using [hr] : r < 8) hq H E'
-      rwa [show 17 - (r + 1) = 16 - r by omega_using []]
-    · have h := square_round_multiple hq hU E E'
-      rwa [show 17 - (r + 1) = 16 - r by omega_using []]
-
-/-- The final nine words are below `2p` and congruent to the square times `R⁻¹`. -/
-theorem squareReduce_ok {s : State} {base : Addr} {a : Nat} (hb : Bx s base 8192)
-    (ha : a < p256Prime) (hT : val32 s.mem base (own 4) 17 = a * a) :
-    WP isa (.block (squareRounds 8)) s fun u =>
-      Outside base (own 4) 68 s.mem u.mem ∧ Keeps [.eax, .ecx] s u ∧
-      val32 u.mem base (own 4 + 32) 9 < 2 * p256Prime ∧
-      ∃ U, 2 ^ 256 * val32 u.mem base (own 4 + 32) 9 = a * a + U * p256Prime := by
-  have hp : p256Prime < 2 ^ 256 := by decide
-  have haa := Nat.mul_lt_mul_of_lt_of_lt (Nat.lt_trans ha hp) (Nat.lt_trans ha hp)
-  have hI : SquareInv base (a * a) 0 s.mem := by
-    simp only [SquareInv, Nat.mul_zero, Nat.add_zero, Nat.sub_zero, Nat.pow_zero, Nat.one_mul, hT]
-    refine ⟨?_, 0, by decide, by simp⟩
-    omega_using [haa]
-  refine WP.mono (squareRounds_ok hb hI 8 (by decide)) fun u ⟨O, K, _, U, hU, E⟩ =>
-    ⟨O, K, square_final_bound ha hU E, U, E⟩
-
-end VG.Proof.Weierstrass.X86.Mont
-
-end
-
-/-! ## `MontSquareBody` -/
-
-section
-
-/-! # The x86 P-256 square before its common final subtraction -/
-namespace VG.Proof.Weierstrass.X86.Mont
-open VG VG.X86 VG.Impl.Mont.X86 VG.Impl.Weierstrass.X86.Mont
-open VG.Proof.Mont VG.Proof.Mont.X86
-
-theorem squareBody_ok {s : State} {base : Addr} {a : Nat} (hb : Bx s base 8192)
-    (hp : Ptr s .esi a) (ha : a + 32 ≤ own 4) (hA : val32 s.mem base a 8 < p256Prime) :
-    WP isa (.block squareBody) s fun u =>
-      Outside base (own 4) 100 s.mem u.mem ∧ Keeps [.eax, .ebx, .ecx, .edx, .edi] s u ∧
-      val32 u.mem base (own 4 + 32) 9 < 2 * p256Prime ∧
-      ∃ U, 2 ^ 256 * val32 u.mem base (own 4 + 32) 9 =
-        val32 s.mem base a 8 * val32 s.mem base a 8 + U * p256Prime := by
-  unfold squareBody
-  refine WP.block_append (WP.mono (squareInit_ok hb hp ha) fun t ⟨O, K, V⟩ => ?_)
-  refine WP.mono (squareReduce_ok (hb.of_keeps K (by decide)) hA V) fun u ⟨O', K', H, E⟩ =>
-    ⟨O.trans (O'.mono (by omega_using []) (by omega_using [])), K.widen K' (by decide), H, E⟩
-
-end VG.Proof.Weierstrass.X86.Mont
-
-end
-
-end
 
 end
 
@@ -464,9 +136,7 @@ theorem MulOk.m_pos {k m : Nat} (h : MulOk k m) : 0 < m := by
   · have := h.inv; simp at this
   · exact h'
 
-theorem mod_ok (k m : Nat) : (mod k m).ok m = true := by
-  simp only [Mod.ok, mod, Option.all_none, Bool.not_false, Bool.true_or, Bool.and_true]
-  exact p256RedChoice_ok k m
+theorem mod_ok (k m : Nat) : (mod k m).ok m = true := rfl
 
 theorem minv_lt (m : Nat) : minv m < 2 ^ 64 := by unfold minv; exact Nat.mod_lt _ (by decide)
 
@@ -532,8 +202,8 @@ theorem p521_minv {x : Nat} (hx : (p521Prime * x + 1) % 2 ^ 32 = 0) (hx32 : x < 
   generalize a * x = y at hx
   omega_arith
 
-/-- The window `+= q m`, `q` in `ecx`, for `q = t₀ m'` (which P-256's sparse
-reduction and P-521's need). -/
+/-- The window `+= q m`, `q` in `ecx`, for `q = t₀ m'` (which P-521's sparse
+reduction needs). -/
 theorem redRowI_ok (hb : Bx s base size) {k m acc : Nat} (hM : MulOk k m)
     (hacc : acc + 4 * (2 * k) + 8 ≤ size)
     (hq : minv32 (mod k m) = 1 → (s.gpr .ecx).toNat = w32 s.mem base acc)
@@ -547,31 +217,21 @@ theorem redRowI_ok (hb : Bx s base size) {k m acc : Nat} (hM : MulOk k m)
   unfold redRowI
   split
   next he =>
-    obtain ⟨hn, hm', hi⟩ := p256RedEnabled_ok (mod_ok k m) he
-    have hk4 : k = 4 := hn
-    subst hk4
-    rw [hm'] at hlt ⊢
+    simp only [p521RedEnabled, Bool.and_eq_true, beq_iff_eq] at he
+    obtain ⟨hk9, hm5⟩ := he
+    have h1 : minv32 (mod k m) = 1 :=
+      BitVec.eq_of_toNat_eq (p521_minv (by rw [← hm5]; exact minv32_mod hM) (minv32 (mod k m)).isLt)
+    have hk9' : k = 9 := hk9
+    subst hk9'
+    rw [hm5] at hlt ⊢
     simp only [Nat.reduceMul, Nat.reduceAdd] at hlt hacc ⊢
-    unfold p256Prime at hlt ⊢
-    exact WP.mono (p256RedB_ok hb rfl hacc (hq hi) hlt) fun u ⟨O, V, K⟩ => ⟨O, V, K.mono (by decide)⟩
+    unfold p521Prime at hlt ⊢
+    exact WP.mono (p521RedB_ok hb rfl hacc (hq h1) hlt) fun u ⟨O, V, K⟩ => ⟨O, V, K.mono (by decide)⟩
   next _ =>
-    split
-    next he =>
-      simp only [p521RedEnabled, Bool.and_eq_true, beq_iff_eq] at he
-      obtain ⟨hk9, hm5⟩ := he
-      have h1 : minv32 (mod k m) = 1 :=
-        BitVec.eq_of_toNat_eq (p521_minv (by rw [← hm5]; exact minv32_mod hM) (minv32 (mod k m)).isLt)
-      have hk9' : k = 9 := hk9
-      subst hk9'
-      rw [hm5] at hlt ⊢
-      simp only [Nat.reduceMul, Nat.reduceAdd] at hlt hacc ⊢
-      unfold p521Prime at hlt ⊢
-      exact WP.mono (p521RedB_ok hb rfl hacc (hq h1) hlt) fun u ⟨O, V, K⟩ => ⟨O, V, K.mono (by decide)⟩
-    next _ =>
-      rw [words_mod]
-      refine WP.mono (rowG_ok hb (by omega_arith) (ysOk_m m) hacc ?_) fun u ⟨O, V, K⟩ => ⟨O, ?_, K.mono (by decide)⟩
-      · rw [yVal_mw, Nat.mod_eq_of_lt hm2]; exact hlt
-      · rw [V, yVal_mw, Nat.mod_eq_of_lt hm2]
+    rw [words_mod]
+    refine WP.mono (rowG_ok hb (by omega_arith) (ysOk_m m) hacc ?_) fun u ⟨O, V, K⟩ => ⟨O, ?_, K.mono (by decide)⟩
+    · rw [yVal_mw, Nat.mod_eq_of_lt hm2]; exact hlt
+    · rw [V, yVal_mw, Nat.mod_eq_of_lt hm2]
 
 /-- The reduction of a row: `q = t₀ m' mod 2³²`, then the window `+= q m`,
 whose low word becomes zero. -/
@@ -1328,7 +988,7 @@ end VG.Proof.Weierstrass.X86.Mont
 
 end
 
-/-! # Selecting the x86 P-256 square from public operand pointers -/
+/-! # Selecting the square from public operand pointers -/
 
 @[expose] public section
 
@@ -1779,6 +1439,270 @@ theorem num_mn (m : Nat) : ∀ n, num (mn m) n = m % 2 ^ (32 * n)
     rw [num_succ, num_mn m n, ← Nat.pow_mul]
     exact h
 
+/-! P-256's columns: those of the digits and `p + 1`. -/
+
+/-- The words of `p + 1` that are not zero: words 3 and 6 are 1 and word 7 is
+`2³² - 1`. -/
+def pVal (f : Nat → Nat) (c : Nat) : Nat :=
+  (if 7 ≤ c ∧ c < 15 then f (c - 7) * (2 ^ 32 - 1) else 0) +
+    ((if 3 ≤ c ∧ c < 11 then f (c - 3) else 0) + (if 6 ≤ c ∧ c < 14 then f (c - 6) else 0))
+
+theorem colAt_pVal (f g : Nat → Nat) (h0 : g 0 = 0) (h1 : g 1 = 0) (h2 : g 2 = 0) (h3 : g 3 = 1) (h4 : g 4 = 0)
+    (h5 : g 5 = 0) (h6 : g 6 = 1) (h7 : g 7 = 2 ^ 32 - 1) : ∀ c < 16, colAt f g 8 c = pVal f c := by
+  intro c hc
+  match c, hc with
+  | 0, _ | 1, _ | 2, _ | 3, _ | 4, _ | 5, _ | 6, _ | 7, _ | 8, _ | 9, _ | 10, _ | 11, _ | 12, _ | 13, _ | 14, _
+  | 15, _ =>
+    simp only [colAt_rows, sumTo, pVal, Nat.reduceLeDiff, Nat.reduceLT, Nat.reduceSub, and_true, and_false,
+      ite_true, ite_false, h0, h1, h2, h3, h4, h5, h6, h7, Nat.mul_zero, Nat.mul_one, Nat.zero_add,
+      Nat.add_zero] <;> omega_using []
+  | n + 16, h => exact absurd h (by omega_using [])
+
+theorem colAt_p (f : Nat → Nat) : ∀ c < 16, colAt f (mn (p256Prime + 1)) 8 c = pVal f c :=
+  colAt_pVal f _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+
+theorem pVal_congr {f f' : Nat → Nat} {c : Nat} (h3 : 3 ≤ c → c < 11 → f (c - 3) = f' (c - 3))
+    (h6 : 6 ≤ c → c < 14 → f (c - 6) = f' (c - 6)) (h7 : 7 ≤ c → c < 15 → f (c - 7) = f' (c - 7)) :
+    pVal f c = pVal f' c := by
+  have a (a b : Prop) [Decidable (a ∧ b)] (x y : Nat) (h : a → b → x = y) :
+      (if a ∧ b then x else 0) = if a ∧ b then y else 0 := by
+    split
+    next h' => exact h h'.1 h'.2
+    next => rfl
+  simp only [pVal]
+  rw [a _ _ _ _ h3, a _ _ _ _ h6, a _ _ _ _ fun h h' => congrArg (· * _) (h7 h h')]
+
+theorem pVal_le (f : Nat → Nat) (hf : ∀ i, f i < 2 ^ 32) (c : Nat) : pVal f c ≤ 2 ^ 64 := by
+  have h3 := hf (c - 3); have h6 := hf (c - 6); have h7 := hf (c - 7)
+  simp only [pVal]
+  split <;> split <;> split <;> omega_using [h3, h6, h7]
+
+/-- `edx:eax += [d]` for each `d`. -/
+theorem sideAdds_ok {W : Nat} {cl : Bool} {x : BitVec 32} : ∀ {s : State} (_ : Ctx W x s cl) (ds : List Nat),
+    (∀ d ∈ ds, d + 4 ≤ 4096) → v s .eax + 2 ^ 32 * v s .edx + (ds.map (wv s.mem x)).sum < 2 ^ 64 →
+    WP isa (.block (ds.flatMap fun d =>
+        ([.alu .add .eax (.mem (Impl.X25519.X86.sc d)), .alu .adc .edx (.imm 0)] : List Instr))) s fun u =>
+      v u .eax + 2 ^ 32 * v u .edx = v s .eax + 2 ^ 32 * v s .edx + (ds.map (wv s.mem x)).sum ∧ Keep s u ∧
+        u.mem = s.mem ∧ acc u = acc s
+  | s, _, [], _, _ => WP.block_nil ⟨by simp, Keep.refl _, rfl, rfl⟩
+  | s, hc, d :: ds, hd, hlt => by
+    rw [List.flatMap_cons, List.cons_append, List.cons_append, List.nil_append]
+    refine wp_addS (VG.Proof.X25519.X86.readSrc_sc hc (hd d List.mem_cons_self)) fun s₁ u₁ c₁ => ?_
+    refine wp_adcS rfl c₁ fun s₂ u₂ _ => ?_
+    have k₂ : Keep s s₂ := (VG.Proof.X25519.X86.updKeep u₁).trans (VG.Proof.X25519.X86.updKeep u₂)
+    have m₂ : s₂.mem = s.mem := u₂.mem.trans u₁.mem
+    simp only [List.map_cons, List.sum_cons] at hlt ⊢
+    have e₂ : v s₂ .eax + 2 ^ 32 * v s₂ .edx = v s .eax + 2 ^ 32 * v s .edx + wv s.mem x d := by
+      have ha := (s.gpr .eax).isLt; have hb := (s.gpr .edx).isLt; have hw := (wd s.mem x d).isLt
+      simp only [v, wv] at hlt ⊢
+      rw [u₂.other _ (by decide), u₁.gpr, u₂.gpr, u₁.other _ (by decide), add3_toNat, BitVec.toNat_add,
+        VG.Proof.X25519.X86.toNat_zero32]
+      by_cases h : 2 ^ 32 ≤ (s.gpr .eax).toNat + (wd s.mem x d).toNat <;>
+        simp only [h, decide_true, decide_false, Bool.toNat_true, Bool.toNat_false] <;>
+        omega_using [ha, hb, hw, hlt, h]
+    refine WP.mono (sideAdds_ok (k₂.ctx hc) ds (fun d' h => hd d' (List.mem_cons_of_mem _ h))
+      (by rw [e₂, m₂]; omega_using [hlt])) fun u ⟨e, k, m, a⟩ => ⟨?_, k₂.trans k, m.trans m₂, a.trans ?_⟩
+    · rw [e, e₂, m₂]; omega_using []
+    · simp only [acc, v, u₂.other .ebx (by decide), u₂.other .ecx (by decide), u₂.other .ebp (by decide),
+        u₁.other .ebx (by decide), u₁.other .ecx (by decide), u₁.other .ebp (by decide)]
+
+/-- `ebx:ecx:ebp += edx:eax`. -/
+theorem accSide_ok {s : State} (hlt : acc s + (v s .eax + 2 ^ 32 * v s .edx) < 2 ^ 96) :
+    WP isa (.block [.alu .add .ebx (.reg .eax), .alu .adc .ecx (.reg .edx), .alu .adc .ebp (.imm 0)]) s fun u =>
+      acc u = acc s + (v s .eax + 2 ^ 32 * v s .edx) ∧ Keep s u ∧ u.mem = s.mem := by
+  refine wp_addS rfl fun s₁ u₁ c₁ => wp_adcS rfl c₁ fun s₂ u₂ c₂ => wp_adcS rfl c₂ fun s₃ u₃ _ => WP.block_nil
+    ⟨?_, (VG.Proof.X25519.X86.updKeep u₁).trans ((VG.Proof.X25519.X86.updKeep u₂).trans
+      (VG.Proof.X25519.X86.updKeep u₃)), by rw [u₃.mem, u₂.mem, u₁.mem]⟩
+  have ha := (s.gpr .ebx).isLt; have hb := (s.gpr .ecx).isLt; have hc := (s.gpr .ebp).isLt
+  have hl := (s.gpr .eax).isLt; have hh := (s.gpr .edx).isLt
+  simp only [acc, v] at hlt ⊢
+  rw [u₃.other .ebx (by decide), u₃.other .ecx (by decide), u₂.other .ebx (by decide), u₁.gpr, u₂.gpr, u₃.gpr,
+    u₂.other .ebp (by decide), u₁.other .ebp (by decide), u₁.other .ecx (by decide), u₁.other .edx (by decide),
+    add3_toNat, add3_toNat, BitVec.toNat_add, VG.Proof.X25519.X86.toNat_zero32]
+  by_cases h₁ : 2 ^ 32 ≤ (s.gpr .ebx).toNat + (s.gpr .eax).toNat <;>
+    simp only [h₁, decide_true, decide_false, Bool.toNat_true, Bool.toNat_false] <;>
+    [by_cases h₂ : 2 ^ 32 ≤ (s.gpr .ecx).toNat + (s.gpr .edx).toNat + 1;
+      by_cases h₂ : 2 ^ 32 ≤ (s.gpr .ecx).toNat + (s.gpr .edx).toNat + 0] <;>
+    simp only [h₂, decide_true, decide_false, Bool.toNat_true, Bool.toNat_false] <;>
+    omega_using [ha, hb, hc, hl, hh, hlt, h₁, h₂]
+
+theorem pAdds_sum (mem : Mem) (x : BitVec 32) (Q c : Nat) : ((pAdds Q c).map (wv mem x)).sum =
+    (if 3 ≤ c ∧ c < 11 then qw mem x Q (c - 3) else 0) + (if 6 ≤ c ∧ c < 14 then qw mem x Q (c - 6) else 0) := by
+  simp only [pAdds]
+  split <;> split <;> simp [qw]
+
+theorem pAdds_reads {Q c d : Nat} (hd : d ∈ pAdds Q c) : d + 4 ≤ Q + 32 := by
+  simp only [pAdds, List.mem_append] at hd
+  rcases hd with hd | hd <;> split at hd
+  next h => rw [List.mem_singleton.mp hd]; omega_using [h]
+  next => exact absurd hd List.not_mem_nil
+  next h => rw [List.mem_singleton.mp hd]; omega_using [h]
+  next => exact absurd hd List.not_mem_nil
+
+/-- `0 - q` and `q` less its borrow are `(2³² - 1) q`. -/
+theorem max_digit (q : BitVec 32) : (0 - q).toNat + 2 ^ 32 * (q - 0 - (BitVec.ofBool
+    (decide ((0 : BitVec 32).toNat < q.toNat))).setWidth 32).toNat = q.toNat * (2 ^ 32 - 1) := by
+  have hq := q.isLt
+  rw [BitVec.toNat_sub, BitVec.toNat_sub, BitVec.toNat_sub, VG.Proof.X25519.X86.ofBool_toNat,
+    VG.Proof.X25519.X86.toNat_zero32]
+  by_cases h0 : 0 < q.toNat <;> simp only [h0, decide_true, decide_false, Bool.toNat_true, Bool.toNat_false] <;>
+    omega_using [h0, hq]
+
+/-- `ebx:ecx:ebp +=` the column of the digits and `p + 1`. -/
+theorem pRed_ok {W : Nat} {cl : Bool} {x : BitVec 32} {s : State} (hc : Ctx W x s cl) {Q c : Nat}
+    (hQ : Q + 32 ≤ 4096) (ha : acc s < 2 ^ 72) :
+    WP isa (.block (pRed Q c)) s fun u =>
+      acc u = acc s + pVal (qw s.mem x Q) c ∧ Keep s u ∧ u.mem = s.mem := by
+  have hr : ∀ d ∈ pAdds Q c, d + 4 ≤ 4096 := fun d hd => by have := pAdds_reads hd; omega_using [hQ, this]
+  have hs := pAdds_sum s.mem x Q c
+  unfold pRed
+  split
+  next h =>
+    simp only [List.cons_append, List.nil_append]
+    refine wp_movi fun s₁ u₁ => ?_
+    refine wp_ldm (u₁.other .edi (by decide) |>.trans hc.edi)
+      (by rw [u₁.rd, u₁.wr]; exact hc.inRW4 (d := Q + 4 * (c - 7)) (by omega_using [hQ, h]) (by decide)) fun s₂ u₂ => ?_
+    refine wp_subS rfl fun s₃ u₃ c₃ => wp_sbbS rfl c₃ fun s₄ u₄ _ => ?_
+    have k₄ : Keep s s₄ := (VG.Proof.X25519.X86.updKeep u₁).trans ((VG.Proof.X25519.X86.updKeep u₂).trans
+      ((VG.Proof.X25519.X86.updKeep u₃).trans (VG.Proof.X25519.X86.updKeep u₄)))
+    have m₄ : s₄.mem = s.mem := by rw [u₄.mem, u₃.mem, u₂.mem, u₁.mem]
+    have a₄ : acc s₄ = acc s := by
+      simp only [acc, v, u₄.other .ebx (by decide), u₄.other .ecx (by decide), u₄.other .ebp (by decide),
+        u₃.other .ebx (by decide), u₃.other .ecx (by decide), u₃.other .ebp (by decide),
+        u₂.other .ebx (by decide), u₂.other .ecx (by decide), u₂.other .ebp (by decide),
+        u₁.other .ebx (by decide), u₁.other .ecx (by decide), u₁.other .ebp (by decide)]
+    have hq := wv_lt32 s.mem x (Q + 4 * (c - 7))
+    have e₄ : v s₄ .eax + 2 ^ 32 * v s₄ .edx = qw s.mem x Q (c - 7) * (2 ^ 32 - 1) := by
+      rw [v, v, u₄.other .eax (by decide), u₄.gpr, u₃.gpr, u₃.other .edx (by decide), u₂.gpr,
+        u₂.other .eax (by decide), u₁.gpr, u₁.mem]
+      exact max_digit _
+    have hq3 := wv_lt32 s.mem x (Q + 4 * (c - 3))
+    have hq6 := wv_lt32 s.mem x (Q + 4 * (c - 6))
+    have hsum : qw s.mem x Q (c - 7) * (2 ^ 32 - 1) + ((pAdds Q c).map (wv s.mem x)).sum < 2 ^ 64 := by
+      rw [hs]
+      simp only [qw]
+      split <;> split <;> omega_using [hq, hq3, hq6]
+    refine WP.block_append (WP.mono (sideAdds_ok (k₄.ctx hc) (pAdds Q c) hr (by rw [e₄, m₄]; exact hsum))
+      fun s₅ ⟨e₅, k₅, m₅, a₅⟩ => ?_)
+    rw [e₄, m₄] at e₅
+    refine WP.mono (accSide_ok (by rw [a₅, a₄, e₅]; omega_using [ha, hsum])) fun u ⟨e, k, m⟩ =>
+      ⟨?_, k₄.trans (k₅.trans k), m.trans (m₅.trans m₄)⟩
+    rw [e, a₅, a₄, e₅, hs, pVal, ite_eq_left h]
+  next h =>
+    have hco : ((pAdds Q c).flatMap fun d => Impl.X25519.X86.accAdd (.mem (Impl.X25519.X86.sc d))) =
+        ((pAdds Q c).map Term.addM).flatMap Term.code := by
+      rw [List.flatMap_map]; rfl
+    have hcv : colv s.mem x ((pAdds Q c).map Term.addM) = ((pAdds Q c).map (wv s.mem x)).sum := by
+      rw [colv, List.map_map]; rfl
+    rw [hco]
+    refine WP.mono (VG.Proof.X25519.X86.terms_ok hc _ fun t ht d hd => ?_) fun u ⟨e, k, m⟩ => ⟨?_, k, m⟩
+    · obtain ⟨d', hd', rfl⟩ := List.mem_map.mp ht
+      rw [List.mem_singleton.mp hd]
+      exact hr d' hd'
+    · have hle := pVal_le (qw s.mem x Q) (fun i => wv_lt32 _ _ _) c
+      rw [pVal, ite_eq_right h, Nat.zero_add] at hle ⊢
+      rw [e (by rw [hcv, hs]; omega_using [ha, hle]), hcv, hs]
+
+/-- A column of the product and the digits. -/
+theorem pCol_ok {W : Nat} {cl : Bool} {x : BitVec 32} {s : State} (hc : Ctx W x s cl) {Q o c : Nat}
+    (hQ : Q + 32 ≤ 4096) (ho : o + 4 ≤ 4096) {ts : Nat → List Term} {f g : Nat → Nat}
+    (hT : TermsOk s.mem x Q 8 ts f g) (ha : acc s < 2 ^ 40) :
+    WP isa (.block (pCol Q ts o c)) s fun u => Keep s u ∧ Frame [sub x o 4] s.mem u.mem ∧ acc u < 2 ^ 40 ∧
+      wv u.mem x o + 2 ^ 32 * acc u = acc s + (colAt f g 8 c + pVal (qw s.mem x Q) c) := by
+  have hV := hT.val c
+  have hVle := colAt_le hT.hf hT.hg 8 c
+  have hPle := pVal_le (qw s.mem x Q) (fun i => wv_lt32 _ _ _) c
+  unfold pCol
+  refine WP.block_append (WP.mono (VG.Proof.X25519.X86.terms_ok hc (ts c) fun t ht d hd => (hT.reads c t ht d hd).1)
+    fun s₁ ⟨a₁, k₁, m₁⟩ => ?_)
+  rw [hV] at a₁
+  have e₁ := a₁ (by omega_using [ha, hVle])
+  refine WP.block_append (WP.mono (pRed_ok (k₁.ctx hc) (Q := Q) (c := c) hQ (by rw [e₁]; omega_using [ha, hVle]))
+    fun s₂ ⟨e₂, k₂, m₂⟩ => ?_)
+  rw [m₁, e₁] at e₂
+  have hc₂ := k₂.ctx (k₁.ctx hc)
+  refine WP.mono (VG.Proof.X25519.X86.colEnd_ok hc₂ ho) fun s₃ ⟨k₃, m₃, e₃⟩ =>
+    ⟨k₁.trans (k₂.trans k₃), ?_, ?_, ?_⟩
+  · rw [m₃, m₂, m₁]
+    exact VG.Proof.X25519.X86.frame_write1 (Frame.refl _ _) hc.fit4 ho (Nat.le_refl _) (Nat.le_refl _) _
+  · rw [e₃, e₂]; omega_using [ha, hVle, hPle]
+  · rw [m₃, wv, VG.Proof.X25519.X86.wd_write_self, e₃, ← Nat.add_assoc (acc s), ← e₂]
+    have := (s₂.gpr .ebx).isLt
+    simp only [acc, v]
+    omega_using [this]
+
+theorem TermsOk.frame {mem mem' : Mem} {x : BitVec 32} {Q N : Nat} {ts : Nat → List Term} {f g : Nat → Nat}
+    (hT : TermsOk mem x Q N ts f g) (hx : x.toNat + 4096 ≤ 2 ^ 32) (hQ : Q + 4 * N ≤ 4096)
+    (hF : Frame [sub x Q (4 * N)] mem mem') : TermsOk mem' x Q N ts f g :=
+  ⟨hT.reads, fun c => by
+    rw [← hT.val c]
+    exact VG.Proof.X25519.X86.colv_congr fun t ht d hd =>
+      VG.Proof.X25519.X86.wd_frame1 hF hx hQ (hT.reads c t ht d hd).1 (hT.reads c t ht d hd).2, hT.hf, hT.hg⟩
+
+theorem pLow_ok {W : Nat} {cl : Bool} {x : BitVec 32} {s : State} (hc : Ctx W x s cl) {Q : Nat}
+    (hQ : Q + 32 ≤ 4096) {ts : Nat → List Term} {f g : Nat → Nat} (hT : TermsOk s.mem x Q 8 ts f g)
+    (h0 : acc s = 0) : ∀ n, n ≤ 8 →
+    WP isa (.block (pLow Q ts n)) s fun u => Keep s u ∧ Frame [sub x Q (4 * n)] s.mem u.mem ∧ acc u < 2 ^ 40 ∧
+      num (qw u.mem x Q) n + (2 ^ 32) ^ n * acc u = num (fun c => colAt f g 8 c + pVal (qw u.mem x Q) c) n
+  | 0, _ => WP.block_nil ⟨Keep.refl _, Frame.refl _ _, by rw [h0]; decide, by rw [h0]; rfl⟩
+  | n + 1, hn => by
+    have hfit := hc.fit4
+    rw [pLow]
+    refine WP.block_append (WP.mono (pLow_ok hc hQ hT h0 n (by omega_using [hn])) fun s₁ ⟨k₁, f₁, b₁, e₁⟩ => ?_)
+    have hT₁ := hT.frame hfit (by omega_using [hQ]) (VG.Proof.X25519.X86.frameWiden f₁ hfit (Nat.le_refl _)
+      (by omega_using [hn]) (by omega_using [hQ]))
+    refine WP.mono (pCol_ok (k₁.ctx hc) hQ (o := Q + 4 * n) (by omega_using [hQ, hn]) hT₁ b₁)
+      fun s₂ ⟨k₂, f₂, b₂, e₂⟩ => ⟨k₁.trans k₂, ?_, b₂, ?_⟩
+    · exact (VG.Proof.X25519.X86.frameWiden f₁ hfit (Nat.le_refl _) (by omega_using []) (by omega_using [hQ, hn])).trans
+        (VG.Proof.X25519.X86.frameWiden f₂ hfit (by omega_using []) (by omega_using []) (by omega_using [hQ, hn]))
+    · have hq : ∀ i < n, qw s₂.mem x Q i = qw s₁.mem x Q i := fun i hi => congrArg BitVec.toNat
+        (VG.Proof.X25519.X86.wd_frame1 f₂ hfit (by omega_using [hQ, hn]) (by omega_using [hQ, hn, hi])
+          (by omega_using [hi]))
+      have hP : ∀ c ≤ n, pVal (qw s₂.mem x Q) c = pVal (qw s₁.mem x Q) c := fun c hc' =>
+        pVal_congr (fun h _ => hq _ (by omega_using [h, hc'])) (fun h _ => hq _ (by omega_using [h, hc']))
+          fun h _ => hq _ (by omega_using [h, hc'])
+      rw [num_succ, num_succ, num_congr fun c hc' => hq c hc', Nat.pow_succ (2 ^ 32) n,
+        num_congr (f := fun c => colAt f g 8 c + pVal (qw s₂.mem x Q) c)
+          (g := fun c => colAt f g 8 c + pVal (qw s₁.mem x Q) c)
+          (fun c hc' => congrArg _ (hP c (Nat.le_of_lt hc'))), ← e₁, hP n (Nat.le_refl _), Nat.add_assoc,
+        Nat.mul_assoc, ← Nat.mul_add, Nat.add_assoc, ← Nat.mul_add, ← e₂]
+
+theorem pHigh_ok {W : Nat} {cl : Bool} {x : BitVec 32} {s : State} (hc : Ctx W x s cl) {Q : Nat}
+    (hQ : Q + 32 ≤ 4096) {ts : Nat → List Term} {f g : Nat → Nat} (hT : TermsOk s.mem x Q 8 ts f g)
+    (ha : acc s < 2 ^ 40) : ∀ n, n ≤ 8 →
+    WP isa (.block (pHigh Q ts n)) s fun u => Keep s u ∧ Frame [sub x Q (4 * n)] s.mem u.mem ∧ acc u < 2 ^ 40 ∧
+      num (qw u.mem x Q) n + (2 ^ 32) ^ n * acc u =
+        acc s + num (fun j => colAt f g 8 (8 + j) + pVal (qw s.mem x Q) (8 + j)) n
+  | 0, _ => WP.block_nil ⟨Keep.refl _, Frame.refl _ _, ha, by simp [num]⟩
+  | n + 1, hn => by
+    have hfit := hc.fit4
+    rw [pHigh]
+    refine WP.block_append (WP.mono (pHigh_ok hc hQ hT ha n (by omega_using [hn])) fun s₁ ⟨k₁, f₁, b₁, e₁⟩ => ?_)
+    have hT₁ := hT.frame hfit (by omega_using [hQ]) (VG.Proof.X25519.X86.frameWiden f₁ hfit (Nat.le_refl _)
+      (by omega_using [hn]) (by omega_using [hQ]))
+    refine WP.mono (pCol_ok (k₁.ctx hc) hQ (o := Q + 4 * n) (c := 8 + n) (by omega_using [hQ, hn]) hT₁ b₁)
+      fun s₂ ⟨k₂, f₂, b₂, e₂⟩ => ⟨k₁.trans k₂, ?_, b₂, ?_⟩
+    · exact (VG.Proof.X25519.X86.frameWiden f₁ hfit (Nat.le_refl _) (by omega_using []) (by omega_using [hQ, hn])).trans
+        (VG.Proof.X25519.X86.frameWiden f₂ hfit (by omega_using []) (by omega_using []) (by omega_using [hQ, hn]))
+    · have hq : ∀ i < n, qw s₂.mem x Q i = qw s₁.mem x Q i := fun i hi => congrArg BitVec.toNat
+        (VG.Proof.X25519.X86.wd_frame1 f₂ hfit (by omega_using [hQ, hn]) (by omega_using [hQ, hn, hi])
+          (by omega_using [hi]))
+      have hq' : ∀ i, n < i → i < 8 → qw s₁.mem x Q i = qw s.mem x Q i := fun i hi hi' => congrArg BitVec.toNat
+        (VG.Proof.X25519.X86.wd_frame1 f₁ hfit (by omega_using [hQ, hn]) (by omega_using [hQ, hi'])
+          (by omega_using [hi]))
+      have hP : pVal (qw s₁.mem x Q) (8 + n) = pVal (qw s.mem x Q) (8 + n) :=
+        pVal_congr (fun h h' => hq' _ (by omega_using [h]) (by omega_using [h'])) (fun h h' => hq' _ (by omega_using [h])
+          (by omega_using [h'])) fun h h' => hq' _ (by omega_using [h]) (by omega_using [h'])
+      rw [hP] at e₂
+      rw [num_succ, num_succ, num_congr fun c hc' => hq c hc', Nat.pow_succ (2 ^ 32) n, Nat.add_assoc, Nat.mul_assoc,
+        ← Nat.mul_add, e₂, Nat.mul_add, ← Nat.add_assoc, e₁, Nat.add_assoc]
+
+theorem p_cols_arith {P A₁ R A₂ L H FG U p : Nat} (h1 : U + P * A₁ = L) (h2 : R + P * A₂ = A₁ + H)
+    (hs : L + P * H = FG + U * (p + 1)) : P * (R + P * A₂) = FG + U * p := by
+  rw [h2, Nat.mul_add]
+  rw [Nat.mul_add, Nat.mul_one] at hs
+  omega_using [h1, hs]
+
 theorem cols_arith {P A₁ R A₂ L H FG QM : Nat} (h1 : P * A₁ = L) (h2 : R + P * A₂ = A₁ + H)
     (hs : L + P * H = FG + QM) : P * (R + P * A₂) = FG + QM := by
   rw [h2, Nat.mul_add, h1, hs]
@@ -1795,6 +1719,45 @@ theorem cols_lt {P F G U m X : Nat} (h : P * X = F * G + U * m) (hF : F < P) (hG
 
 theorem own_le {k : Nat} (hk : k ≤ 9) : own k + 64 * k = 4096 := by
   simp only [own, Impl.Weierstrass.Mont.ownAt, Impl.Weierstrass.Mont.ownBytes]; omega_using [hk]
+
+/-- The columns: the `2k` words of the result at `[Q]`, with the carry in the
+accumulator. -/
+theorem allCols_ok {W : Nat} {cl : Bool} {x : BitVec 32} {s : State} (hc : Ctx W x s cl) {k m Q : Nat}
+    (hM : MulOk k m) (hk : k ≤ 9) (hQ : Q + 4 * (2 * k) ≤ 4096) {ts : Nat → List Term} {f g : Nat → Nat}
+    (hT : TermsOk s.mem x Q (2 * k) ts f g) (h0 : acc s = 0) :
+    WP isa (.block (allCols k m Q ts)) s fun u => Keep s u ∧ Frame [sub x Q (4 * (2 * k))] s.mem u.mem ∧
+      ∃ U, U < (2 ^ 32) ^ (2 * k) ∧
+        (2 ^ 32) ^ (2 * k) * (num (qw u.mem x Q) (2 * k) + (2 ^ 32) ^ (2 * k) * acc u) =
+          num f (2 * k) * num g (2 * k) + U * m := by
+  have hfit := hc.fit4
+  unfold allCols
+  split
+  next hp =>
+    simp only [p256Field, Bool.and_eq_true, beq_iff_eq] at hp
+    obtain ⟨rfl, rfl⟩ := hp
+    simp only [Nat.reduceMul] at hT hQ ⊢
+    refine WP.block_append (WP.mono (pLow_ok hc hQ hT h0 8 (Nat.le_refl _)) fun s₁ ⟨k₁, f₁, b₁, e₁⟩ => ?_)
+    refine WP.mono (pHigh_ok (k₁.ctx hc) hQ (hT.frame hfit hQ f₁) b₁ 8 (Nat.le_refl _))
+      fun u ⟨k₂, f₂, _, e₂⟩ => ⟨k₁.trans k₂, f₁.trans f₂, num (qw s₁.mem x Q) 8,
+        VG.Proof.X25519.X86.num_lt fun i _ => wv_lt32 _ _ _, ?_⟩
+    have hsum : num (fun c => colAt f g 8 c + pVal (qw s₁.mem x Q) c) (8 + 8) =
+        num f 8 * num g 8 + num (qw s₁.mem x Q) 8 * (p256Prime + 1) := by
+      rw [num_add, ← num_congr fun c hc' => colAt_p (qw s₁.mem x Q) c hc', num_colAt f g 8,
+        num_colAt (qw s₁.mem x Q) (mn (p256Prime + 1)) 8, num_mn]
+      rfl
+    rw [num_split] at hsum
+    exact p_cols_arith e₁ e₂ hsum
+  next =>
+    refine WP.block_append (WP.mono (lowCols_ok (f := f) (g := g) hc hM hk hQ hT h0 (2 * k) (Nat.le_refl _))
+      fun s₁ ⟨k₁, f₁, b₁, e₁⟩ => ?_)
+    refine WP.mono (highCols_ok (k₁.ctx hc) (m := m) hk hQ (hT.frame hfit hQ f₁) b₁)
+      fun u ⟨k₂, f₂, e₂⟩ => ⟨k₁.trans k₂, f₁.trans f₂, num (qw s₁.mem x Q) (2 * k),
+        VG.Proof.X25519.X86.num_lt fun i _ => wv_lt32 _ _ _, ?_⟩
+    have hsum : num (fun c => colAt f g (2 * k) c + colAt (qw s₁.mem x Q) (mn m) (2 * k) c) (2 * (2 * k)) =
+        num f (2 * k) * num g (2 * k) + num (qw s₁.mem x Q) (2 * k) * m := by
+      rw [num_add, num_colAt, num_colAt, num_mn, Nat.mod_eq_of_lt (by rw [← Nat.mul_assoc]; exact hM.m_lt)]
+    rw [Nat.two_mul (2 * k), num_split] at hsum
+    exact cols_arith e₁ e₂ hsum
 
 theorem montCols_ok {s : State} {base : Addr} (hb : Bx s base 8192) {k m : Nat} (hM : MulOk k m) (hk : k ≤ 9)
     {ts : Nat → List Term} {f g : Nat → Nat}
@@ -1819,28 +1782,13 @@ theorem montCols_ok {s : State} {base : Addr} (hb : Bx s base 8192) {k m : Nat} 
       rw [u₁.wr, hb.ebp]; exact hb.wr, by decide, nofun⟩
   refine WP.block_append (WP.mono VG.Proof.X25519.X86.zeroAcc_ok fun s₂ ⟨k₂, m₂, a₂⟩ => ?_)
   have mem₂ : s₂.mem = s.mem := m₂.trans u₁.mem
-  refine WP.block_append (WP.mono (lowCols_ok (f := f) (g := g) (k₂.ctx hc₁) hM hk (by omega_using [hQ']) (by rw [mem₂]; exact hT) a₂
-    (2 * k) (Nat.le_refl _)) fun s₃ ⟨k₃, f₃, b₃, e₃⟩ => ?_)
-  have hc₃ := k₃.ctx (k₂.ctx hc₁)
+  refine WP.block_append (WP.mono (allCols_ok (f := f) (g := g) (k₂.ctx hc₁) hM hk (by omega_using [hQ'])
+    (by rw [mem₂]; exact hT) a₂) fun s₄ ⟨k₄, f₄, U, hUlt, hres⟩ => ?_)
+  have hc₄ := k₄.ctx (k₂.ctx hc₁)
   have hfit := hc₁.fit4
-  have hT₃ : TermsOk s₃.mem (s.gpr .ebp) Q (2 * k) ts f g :=
-    ⟨hT.reads, fun c => by
-      rw [← hT.val c, ← mem₂]
-      exact VG.Proof.X25519.X86.colv_congr fun t ht d hd =>
-        VG.Proof.X25519.X86.wd_frame1 f₃ hfit (by omega_using [hQ']) (hT.reads c t ht d hd).1 (hT.reads c t ht d hd).2,
-      hT.hf, hT.hg⟩
-  refine WP.block_append (WP.mono (highCols_ok hc₃ (m := m) hk (by omega_using [hQ']) hT₃ b₃)
-    fun s₄ ⟨k₄, f₄, e₄⟩ => ?_)
-  have hc₄ := k₄.ctx hc₃
   refine wp_stm hc₄.edi (hc₄.inW4 (d := own k + 16 * k) (by omega_using [hQ, hQ']) (by decide)) fun s₅ u₅ => ?_
   refine wp_mov fun u u₆ => WP.block_nil ?_
-  have hsum : num (fun c => colAt f g (2 * k) c + colAt (qw s₃.mem (s.gpr .ebp) Q) (mn m) (2 * k) c) (2 * (2 * k)) =
-      num f (2 * k) * num g (2 * k) + num (qw s₃.mem (s.gpr .ebp) Q) (2 * k) * m := by
-    rw [num_add, num_colAt, num_colAt, num_mn, Nat.mod_eq_of_lt (by rw [← Nat.mul_assoc]; exact hM.m_lt)]
-  rw [Nat.two_mul (2 * k), num_split] at hsum
-  have hres := cols_arith e₃ e₄ hsum
   have hFlt := VG.Proof.X25519.X86.num_lt (n := 2 * k) fun i _ => hT.hf i
-  have hUlt := VG.Proof.X25519.X86.num_lt (f := qw s₃.mem (s.gpr .ebp) Q) (n := 2 * k) fun i _ => wv_lt32 _ _ _
   have hlt := cols_lt hres hFlt hg hUlt
   have hm2 : m < (2 ^ 32) ^ (2 * k) := by rw [← Nat.pow_mul, ← Nat.mul_assoc]; exact hM.m_lt
   -- The carry is the accumulator's low word.
@@ -1859,8 +1807,7 @@ theorem montCols_ok {s : State} {base : Addr} (hb : Bx s base 8192) {k m : Nat} 
     exact VG.Proof.X25519.X86.frame_write1 (Frame.refl _ _) hfit (by omega_using [hQ']) (Nat.le_refl _) (Nat.le_refl _) _
   have hF : Frame [sub (s.gpr .ebp) Q (8 * k + 4)] s.mem s₅.mem := by
     rw [← mem₂]
-    exact ((VG.Proof.X25519.X86.frameWiden f₃ hfit (Nat.le_refl _) (by omega_using []) (by omega_using [hQ'])).trans
-      (VG.Proof.X25519.X86.frameWiden f₄ hfit (Nat.le_refl _) (by omega_using []) (by omega_using [hQ']))).trans
+    exact (VG.Proof.X25519.X86.frameWiden f₄ hfit (Nat.le_refl _) (by omega_using []) (by omega_using [hQ'])).trans
       (VG.Proof.X25519.X86.frameWiden f₅ hfit (by omega_using []) (by omega_using []) (by omega_using [hQ']))
   have hval : val32 u.mem base Q (2 * k + 1) =
       num (qw s₄.mem (s.gpr .ebp) Q) (2 * k) + (2 ^ 32) ^ (2 * k) * v s₄ .ebx := by
@@ -1871,9 +1818,9 @@ theorem montCols_ok {s : State} {base : Addr} (hb : Bx s base 8192) {k m : Nat} 
     · exact congrArg BitVec.toNat (VG.Proof.X25519.X86.wd_frame1 f₅ hfit (by omega_using [hQ'])
         (by omega_using [hQ', hi]) (by omega_using [hi]))
     · rw [u₅.mem, wv, VG.Proof.X25519.X86.wd_write_self]
-  have K₁₄ : Keep s₁ s₄ := k₂.trans (k₃.trans k₄)
+  have K₁₄ : Keep s₁ s₄ := k₂.trans k₄
   have edi₅ : s₅.gpr .edi = s.gpr .ebp := by rw [u₅.gpr, K₁₄.edi, u₁.gpr]
-  refine ⟨?_, ⟨?_, ?_, ?_⟩, ?_, num (qw s₃.mem (s.gpr .ebp) Q) (2 * k), ?_⟩
+  refine ⟨?_, ⟨?_, ?_, ?_⟩, ?_, U, ?_⟩
   · rw [u₆.mem, ← hb.ebp]
     exact square_frame_outside (by omega_using [hx, hn, hQ']) (by omega_using []) hF
   · intro r hr
@@ -1998,73 +1945,50 @@ theorem mulBody_ok {s : State} {base : Addr} {k m pa pb : Nat} (hb : Bx s base 8
   unfold mulBody
   split
   next he =>
-    obtain ⟨rfl, rfl⟩ := he
+    obtain ⟨rfl, hm5⟩ := he
     refine WP.seq (wp_cmp fun t R _ Z => ?_)
     apply WP.block_nil
     refine WP.ite (s.gpr .edi - s.gpr .esi == 0) Z (fun h => ?_) (fun _ => ?_)
-    · have hpaFit := hL.pa; have hpbFit := hL.pb
-      have ho : own 4 = 3840 := rfl
-      have hab := square_pointer_eq (by omega_using [hpaFit, ho] : pa < 2 ^ 32) (by omega_using [hpbFit, ho] : pb < 2 ^ 32) hpa hpb h
+    · rewrite [hm5] at hB ⊢
+      have hpaFit := hL.pa; have hpbFit := hL.pb
+      have ho : own 9 = 3520 := rfl
+      have hab := square_pointer_eq (by omega_using [hpaFit, ho] : pa < 2 ^ 32)
+        (by omega_using [hpbFit, ho] : pb < 2 ^ 32) hpa hpb h
       subst pa
       have K := R.keeps []
-      refine WP.mono (squareBody_ok (hb.of_keeps K (by decide))
+      refine WP.mono (p521Square_ok (hb.of_keeps K (by decide))
         (hpb.of_keeps K (by decide) (by decide)) hpbFit (by rw [R.mem]; exact hB))
         fun u ⟨O, K', H, E⟩ => ?_
-      rw [R.mem] at O E
-      exact ⟨O, (K.mono (by decide)).trans K', H, E⟩
+      rewrite [R.mem] at O E
+      exact ⟨O, (K.mono (by decide)).trans (K'.mono (by decide)), H, E⟩
     · have K := R.keeps []
       refine WP.mono (rowsF_ok (hb.of_keeps K (by decide)) hM
         (hpa.of_keeps K (by decide) (by decide)) (hpb.of_keeps K (by decide) (by decide)) hL
-        (by rw [R.mem]; exact hB) 8 (by decide) (by decide)) fun u ⟨O, K', H, E⟩ => ?_
-      rw [R.mem] at O E
+        (by rw [R.mem]; exact hB) (2 * 9) (by decide) (by decide)) fun u ⟨O, K', H, E⟩ => ?_
+      rewrite [R.mem] at O E
       exact ⟨O.mono (by omega_using []) (by omega_using []), (K.mono (by decide)).widen K' (by decide), H, E⟩
   next _ =>
     split
-    next he =>
-      obtain ⟨rfl, hm5⟩ := he
+    next hk9 =>
       refine WP.seq (wp_cmp fun t R _ Z => ?_)
       apply WP.block_nil
+      have K := R.keeps []
+      have hbt := hb.of_keeps K (by decide)
+      have hpat : Ptr t .edi pa := hpa.of_keeps K (by decide) (by decide)
       refine WP.ite (s.gpr .edi - s.gpr .esi == 0) Z (fun h => ?_) (fun _ => ?_)
-      · rewrite [hm5] at hB ⊢
-        have hpaFit := hL.pa; have hpbFit := hL.pb
-        have ho : own 9 = 3520 := rfl
+      · have hpaFit := hL.pa; have hpbFit := hL.pb
+        have ho := own_le hk9.2
         have hab := square_pointer_eq (by omega_using [hpaFit, ho] : pa < 2 ^ 32)
           (by omega_using [hpbFit, ho] : pb < 2 ^ 32) hpa hpb h
         subst pa
-        have K := R.keeps []
-        refine WP.mono (p521Square_ok (hb.of_keeps K (by decide))
-          (hpb.of_keeps K (by decide) (by decide)) hpbFit (by rw [R.mem]; exact hB))
+        refine WP.mono (colsSquare_ok hbt hM hk9.2 hpat hpbFit (by rw [R.mem]; exact hB))
           fun u ⟨O, K', H, E⟩ => ?_
-        rewrite [R.mem] at O E
-        exact ⟨O, (K.mono (by decide)).trans (K'.mono (by decide)), H, E⟩
-      · have K := R.keeps []
-        refine WP.mono (rowsF_ok (hb.of_keeps K (by decide)) hM
-          (hpa.of_keeps K (by decide) (by decide)) (hpb.of_keeps K (by decide) (by decide)) hL
-          (by rw [R.mem]; exact hB) (2 * 9) (by decide) (by decide)) fun u ⟨O, K', H, E⟩ => ?_
-        rewrite [R.mem] at O E
-        exact ⟨O.mono (by omega_using []) (by omega_using []), (K.mono (by decide)).widen K' (by decide), H, E⟩
-    next _ =>
-      split
-      next hk9 =>
-        refine WP.seq (wp_cmp fun t R _ Z => ?_)
-        apply WP.block_nil
-        have K := R.keeps []
-        have hbt := hb.of_keeps K (by decide)
-        have hpat : Ptr t .edi pa := hpa.of_keeps K (by decide) (by decide)
-        refine WP.ite (s.gpr .edi - s.gpr .esi == 0) Z (fun h => ?_) (fun _ => ?_)
-        · have hpaFit := hL.pa; have hpbFit := hL.pb
-          have ho := own_le hk9.2
-          have hab := square_pointer_eq (by omega_using [hpaFit, ho] : pa < 2 ^ 32)
-            (by omega_using [hpbFit, ho] : pb < 2 ^ 32) hpa hpb h
-          subst pa
-          refine WP.mono (colsSquare_ok hbt hM hk9.2 hpat hpbFit (by rw [R.mem]; exact hB))
-            fun u ⟨O, K', H, E⟩ => ?_
-          rw [R.mem] at O E
-          exact ⟨O, (K.mono (by decide)).trans K', H, E⟩
-        · refine WP.mono (colsMul_ok hbt hM hk9.2 hpat (hpb.of_keeps K (by decide) (by decide)) hL
-            (by rw [R.mem]; exact hB)) fun u ⟨O, K', H, E⟩ => ?_
-          rw [R.mem] at O E
-          exact ⟨O, (K.mono (by decide)).trans K', H, E⟩
-      next _ => exact general
+        rw [R.mem] at O E
+        exact ⟨O, (K.mono (by decide)).trans K', H, E⟩
+      · refine WP.mono (colsMul_ok hbt hM hk9.2 hpat (hpb.of_keeps K (by decide) (by decide)) hL
+          (by rw [R.mem]; exact hB)) fun u ⟨O, K', H, E⟩ => ?_
+        rw [R.mem] at O E
+        exact ⟨O, (K.mono (by decide)).trans K', H, E⟩
+    next _ => exact general
 
 end VG.Proof.Weierstrass.X86.Mont

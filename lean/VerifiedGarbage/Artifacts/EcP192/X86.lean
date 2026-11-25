@@ -35,7 +35,6 @@ public import VerifiedGarbage.Proof.Framework.X86.Mmx
 public import VerifiedGarbage.Proof.Framework.X86.RegUpd
 public import VerifiedGarbage.Proof.Mont.X86.Csub
 public import VerifiedGarbage.Proof.Mont.X86.Instr
-public import VerifiedGarbage.Proof.Mont.X86.RedRow
 public import VerifiedGarbage.Proof.Mont.X86.Row
 public import VerifiedGarbage.Proof.Mont.X86.Step
 public import VerifiedGarbage.Proof.Rc2.Memory32
@@ -49,8 +48,6 @@ public import VerifiedGarbage.Proof.Weierstrass.X86.InvShiftMath
 public import VerifiedGarbage.Proof.Weierstrass.X86.InvUnsigned
 public import VerifiedGarbage.Proof.Weierstrass.X86.Loop
 public import VerifiedGarbage.Proof.Weierstrass.X86.MontRed
-public import VerifiedGarbage.Proof.Weierstrass.X86.MontSquareArithmetic
-public import VerifiedGarbage.Proof.Weierstrass.X86.MontSquareRed
 public import VerifiedGarbage.Proof.Weierstrass.X86.Rep
 public import VerifiedGarbage.Proof.X25519.Field
 public import VerifiedGarbage.Proof.X25519.X86.Arith

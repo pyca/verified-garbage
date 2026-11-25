@@ -1,6 +1,7 @@
 module
 
-public import VerifiedGarbage.Impl.Mont.X86.Sparse
+public import VerifiedGarbage.TCB.X86.Isa
+public import VerifiedGarbage.Impl.Mont.Mod
 
 /-!
 # Montgomery arithmetic modulo an odd multiword modulus, on x86 (32-bit)
@@ -36,6 +37,9 @@ plus a constant: nothing but `edi` may affect timing. The operations use
 namespace VG.Impl.Mont.X86
 
 open VG.X86
+
+/-- P-256's field modulus. -/
+def p256Prime : Nat := 2 ^ 256 - 2 ^ 224 + 2 ^ 192 + 2 ^ 96 - 1
 
 /-- `[r + d]`. -/
 def at_ (r : Reg) (d : Nat) : MemOp := { base := r, disp := d }

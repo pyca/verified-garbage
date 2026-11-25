@@ -34,8 +34,6 @@ public import VerifiedGarbage.Proof.Weierstrass.X86.InvFinishPrep
 public import VerifiedGarbage.Proof.Weierstrass.X86.InvShiftMath
 public import VerifiedGarbage.Proof.Weierstrass.X86.InvUnsigned
 public import VerifiedGarbage.Proof.Weierstrass.X86.Loop
-public import VerifiedGarbage.Proof.Weierstrass.X86.MontSquareArithmetic
-public import VerifiedGarbage.Proof.Weierstrass.X86.MontSquareRed
 public import VerifiedGarbage.Proof.Weierstrass.X86.Rep
 public import VerifiedGarbage.Impl.EcKey.BrainpoolP256r1.X86
 public import VerifiedGarbage.Proof.X25519.Field

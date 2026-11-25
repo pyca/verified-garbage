@@ -188,7 +188,7 @@ structure FnOk (S : Impl.Weierstrass.Mont.Modulus) : Prop where
 
 theorem mulFn_stackUse (k m : Nat) : stackUse (mulFn k m) = 0 := by
   unfold mulFn mulBody
-  split <;> [rfl; (split <;> [rfl; (split <;> rfl)])]
+  split <;> [rfl; (split <;> rfl)]
 
 /-- `[o] = [a] [b] R⁻¹ mod m` by a call of `vg_<curve>_mul_mod_<p|n>`. -/
 theorem mulCall_ok {S : Impl.Weierstrass.Mont.Modulus} (hF : FnOk S) (hs : Scr s base 8192) {o a b : Nat}
