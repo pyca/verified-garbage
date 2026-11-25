@@ -155,3 +155,7 @@ square, +50 for the sums: a tie); skipping the conditional subtractions (a carry
 fold costs 6 against 7); 3vt - 8g^2 before one reduction (-39 of 1496, for a
 thirteen-word accumulator); not propagating each round's borrow to the top but
 taking it into the next round's D (-4 of 190 a product).
+
+Measured (run 45680349635, against the proven version): ecdh -2.3%, verify -2.0%.
+Not taken: it needs two literal listings of 2077 instructions and a certificate
+the kernel checks, for 2%. The doubling stays a straight line of its steps.
