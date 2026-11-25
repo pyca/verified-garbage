@@ -313,3 +313,6 @@ rounds' medians 1.026 at 16 KiB, single estimates 1.012; 64 B 1.00 to 1.03; 1 Mi
 0.995; GCM-SIV 0.999 to 1.034. Left: 64-bit words and five classes with `mulhu`
 (about 60 fewer of 493 instructions, but another 29 registers' allocation, and the
 prepared form's table is fixed as 32-bit words). Not done.
+
+arm, third round, measured (run 45707753174, against main 65664059): 0.998 at
+16 KiB, 1.006 at 64 B; GCM-SIV 0.999 and 1.004. Kept.
