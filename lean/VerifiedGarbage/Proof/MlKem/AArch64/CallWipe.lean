@@ -1171,13 +1171,12 @@ end
 Each of ML-KEM-768's and ML-KEM-1024's functions taking `scratch` is
 `callWipe` (`Impl/CallWipe/AArch64.lean`) of its code, which zeroes all of
 `scratch` with `vg_zeroize` once that code returns, and is verified against
-the same contract with 32 more bytes of stack and `scratch` left scrubbed
+the same contract with 32 more bytes of stack and `scratch` left wiped
 (`*_scrubbed`, the contracts of `Proof/MlKem/Scrubbed.lean`), since every
 byte of it is zero (`Scrubbed.keyGen_wiped`, …): `Verified.callWipe'` for
 the instances over the sponge functions, under `abi`, and
 `Verified.callWipeC'` for the paired instances, under
-`abi.withConsts constants`. `*_verified` state them as the contracts of
-`Spec/MlKem/`.
+`abi.withConsts constants`.
 -/
 
 @[expose] public section
@@ -2065,80 +2064,40 @@ theorem keyGenP768_scrubbed (sfx xsfx : String) :
       (Scrubbed.keyGenContract ((abi.withConsts Optimized.constants).withFns [v.callee.name]) 176) :=
   keyGen_wipe callWipeD8Ok_consts sfx xsfx (Proof.MlKem.AArch64.KeyGen.keyGenP768_verified (sha3 := sha3) v) (keyGenP768_depth (sha3 := sha3) v) keyGenP768_sat144 keyGenP768_sat176
 
-theorem keyGenP768_verified (sfx xsfx : String) :
-    Verified target (Impl.MlKem.AArch64.Wipe.keyGen sfx xsfx v.callee.name (Impl.MlKem.AArch64.Kem16P.keyGen sha3 (fixedHash v.callee) v.callee Impl.MlKem.AArch64.lay768))
-      (Spec.MlKem.keyGenContract ((abi.withConsts Optimized.constants).withFns [v.callee.name]) 176) :=
-  keyGenP768_scrubbed (sha3 := sha3) v sfx xsfx
-
 theorem encapsHP768_scrubbed (sfx xsfx : String) :
     Verified target (Impl.MlKem.AArch64.Wipe.encapsH sfx xsfx v.callee.name (Impl.MlKem.AArch64.Kem16P.encapsH sha3 (fixedHash v.callee) (prfW v.callee) Impl.MlKem.AArch64.lay768))
       (Scrubbed.encapsHContract ((abi.withConsts Optimized.constants).withFns [v.callee.name]) 176) :=
   encapsH_wipe callWipeD8Ok_consts sfx xsfx (Proof.MlKem.AArch64.EncapsH.encapsHP768_verified (sha3 := sha3) v) (encapsHP768_depth (sha3 := sha3) v) encapsHP768_sat144 encapsHP768_sat176
-
-theorem encapsHP768_verified (sfx xsfx : String) :
-    Verified target (Impl.MlKem.AArch64.Wipe.encapsH sfx xsfx v.callee.name (Impl.MlKem.AArch64.Kem16P.encapsH sha3 (fixedHash v.callee) (prfW v.callee) Impl.MlKem.AArch64.lay768))
-      (Spec.MlKem.encapsHContract ((abi.withConsts Optimized.constants).withFns [v.callee.name]) 176) :=
-  encapsHP768_scrubbed (sha3 := sha3) v sfx xsfx
 
 theorem encapsP768_scrubbed (sfx xsfx : String) :
     Verified target (Impl.MlKem.AArch64.Wipe.encaps sfx xsfx v.callee.name (Impl.MlKem.AArch64.Kem16P.encaps sha3 (fixedHash v.callee) (prfW v.callee) Impl.MlKem.AArch64.lay768))
       (Scrubbed.encapsContract ((abi.withConsts Optimized.constants).withFns [v.callee.name]) 176) :=
   encaps_wipe callWipeD8Ok_consts sfx xsfx (Proof.MlKem.AArch64.Kem16P.encapsP768_verified (sha3 := sha3) v) (encapsP768_depth (sha3 := sha3) v) encapsP768_sat144 encapsP768_sat176
 
-theorem encapsP768_verified (sfx xsfx : String) :
-    Verified target (Impl.MlKem.AArch64.Wipe.encaps sfx xsfx v.callee.name (Impl.MlKem.AArch64.Kem16P.encaps sha3 (fixedHash v.callee) (prfW v.callee) Impl.MlKem.AArch64.lay768))
-      (Spec.MlKem.encapsContract ((abi.withConsts Optimized.constants).withFns [v.callee.name]) 176) :=
-  encapsP768_scrubbed (sha3 := sha3) v sfx xsfx
-
 theorem decapsP768_scrubbed (sfx xsfx : String) :
     Verified target (Impl.MlKem.AArch64.Wipe.decaps sfx xsfx v.callee.name (Impl.MlKem.AArch64.Kem16P.decaps sha3 (fixedHash v.callee) (prfW v.callee) Impl.MlKem.AArch64.lay768))
       (Scrubbed.decapsContract ((abi.withConsts Optimized.constants).withFns [v.callee.name]) 176) :=
   decaps_wipe callWipeD8Ok_consts sfx xsfx (Proof.MlKem.AArch64.Kem16P.decapsP768_verified (sha3 := sha3) v) (decapsP768_depth (sha3 := sha3) v) decapsP768_sat144 decapsP768_sat176
-
-theorem decapsP768_verified (sfx xsfx : String) :
-    Verified target (Impl.MlKem.AArch64.Wipe.decaps sfx xsfx v.callee.name (Impl.MlKem.AArch64.Kem16P.decaps sha3 (fixedHash v.callee) (prfW v.callee) Impl.MlKem.AArch64.lay768))
-      (Spec.MlKem.decapsContract ((abi.withConsts Optimized.constants).withFns [v.callee.name]) 176) :=
-  decapsP768_scrubbed (sha3 := sha3) v sfx xsfx
 
 theorem keyGenP1024_scrubbed (sfx xsfx : String) :
     Verified target (Impl.MlKem.AArch64.Wipe.keyGen1024 sfx xsfx v.callee.name (Impl.MlKem.AArch64.Kem16P.keyGen sha3 (fixedHash v.callee) v.callee Impl.MlKem1024.AArch64.lay1024))
       (Scrubbed.keyGen1024Contract ((abi.withConsts Optimized.constants).withFns [v.callee.name]) 176) :=
   keyGen1024_wipe callWipeD8Ok_consts sfx xsfx (Proof.MlKem.AArch64.KeyGen.keyGenP1024_verified (sha3 := sha3) v) (keyGenP1024_depth (sha3 := sha3) v) keyGenP1024_sat144 keyGenP1024_sat176
 
-theorem keyGenP1024_verified (sfx xsfx : String) :
-    Verified target (Impl.MlKem.AArch64.Wipe.keyGen1024 sfx xsfx v.callee.name (Impl.MlKem.AArch64.Kem16P.keyGen sha3 (fixedHash v.callee) v.callee Impl.MlKem1024.AArch64.lay1024))
-      (Spec.MlKem1024.keyGenContract ((abi.withConsts Optimized.constants).withFns [v.callee.name]) 176) :=
-  keyGenP1024_scrubbed (sha3 := sha3) v sfx xsfx
-
 theorem encapsHP1024_scrubbed (sfx xsfx : String) :
     Verified target (Impl.MlKem.AArch64.Wipe.encapsH1024 sfx xsfx v.callee.name (Impl.MlKem.AArch64.Kem16P.encapsH sha3 (fixedHash v.callee) (prfW v.callee) Impl.MlKem1024.AArch64.lay1024))
       (Scrubbed.encapsH1024Contract ((abi.withConsts Optimized.constants).withFns [v.callee.name]) 176) :=
   encapsH1024_wipe callWipeD8Ok_consts sfx xsfx (Proof.MlKem.AArch64.EncapsH.encapsHP1024_verified (sha3 := sha3) v) (encapsHP1024_depth (sha3 := sha3) v) encapsHP1024_sat144 encapsHP1024_sat176
-
-theorem encapsHP1024_verified (sfx xsfx : String) :
-    Verified target (Impl.MlKem.AArch64.Wipe.encapsH1024 sfx xsfx v.callee.name (Impl.MlKem.AArch64.Kem16P.encapsH sha3 (fixedHash v.callee) (prfW v.callee) Impl.MlKem1024.AArch64.lay1024))
-      (Spec.MlKem1024.encapsHContract ((abi.withConsts Optimized.constants).withFns [v.callee.name]) 176) :=
-  encapsHP1024_scrubbed (sha3 := sha3) v sfx xsfx
 
 theorem encapsP1024_scrubbed (sfx xsfx : String) :
     Verified target (Impl.MlKem.AArch64.Wipe.encaps1024 sfx xsfx v.callee.name (Impl.MlKem.AArch64.Kem16P.encaps sha3 (fixedHash v.callee) (prfW v.callee) Impl.MlKem1024.AArch64.lay1024))
       (Scrubbed.encaps1024Contract ((abi.withConsts Optimized.constants).withFns [v.callee.name]) 176) :=
   encaps1024_wipe callWipeD8Ok_consts sfx xsfx (Proof.MlKem.AArch64.Kem16P.encapsP1024_verified (sha3 := sha3) v) (encapsP1024_depth (sha3 := sha3) v) encapsP1024_sat144 encapsP1024_sat176
 
-theorem encapsP1024_verified (sfx xsfx : String) :
-    Verified target (Impl.MlKem.AArch64.Wipe.encaps1024 sfx xsfx v.callee.name (Impl.MlKem.AArch64.Kem16P.encaps sha3 (fixedHash v.callee) (prfW v.callee) Impl.MlKem1024.AArch64.lay1024))
-      (Spec.MlKem1024.encapsContract ((abi.withConsts Optimized.constants).withFns [v.callee.name]) 176) :=
-  encapsP1024_scrubbed (sha3 := sha3) v sfx xsfx
-
 theorem decapsP1024_scrubbed (sfx xsfx : String) :
     Verified target (Impl.MlKem.AArch64.Wipe.decaps1024 sfx xsfx v.callee.name (Impl.MlKem.AArch64.Kem16P.decaps sha3 (fixedHash v.callee) (prfW v.callee) Impl.MlKem1024.AArch64.lay1024))
       (Scrubbed.decaps1024Contract ((abi.withConsts Optimized.constants).withFns [v.callee.name]) 176) :=
   decaps1024_wipe callWipeD8Ok_consts sfx xsfx (Proof.MlKem.AArch64.Kem16P.decapsP1024_verified (sha3 := sha3) v) (decapsP1024_depth (sha3 := sha3) v) decapsP1024_sat144 decapsP1024_sat176
-
-theorem decapsP1024_verified (sfx xsfx : String) :
-    Verified target (Impl.MlKem.AArch64.Wipe.decaps1024 sfx xsfx v.callee.name (Impl.MlKem.AArch64.Kem16P.decaps sha3 (fixedHash v.callee) (prfW v.callee) Impl.MlKem1024.AArch64.lay1024))
-      (Spec.MlKem1024.decapsContract ((abi.withConsts Optimized.constants).withFns [v.callee.name]) 176) :=
-  decapsP1024_scrubbed (sha3 := sha3) v sfx xsfx
 
 end
 

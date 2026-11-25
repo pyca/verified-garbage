@@ -14,8 +14,9 @@ import VerifiedGarbage.Proof.Framework.Offset
 
 A mode's code around any implementation of AES for a chain of blocks
 (`Impl.AesCbc.X86.wholeChain`) meets the mode's contract (`modeX86`), and
-leaves the scratch buffer but the chain's bytes unchanged or zero
-(`chain_wp`), if one block's step is the mode's (`StepOk`).
+leaves the scratch buffer but the chain's bytes unchanged, or zero where it
+saved the registers (`zeroedAt`; `chain_wp`), if one block's step is the mode's
+(`StepOk`).
 -/
 
 @[expose] public section
@@ -139,13 +140,13 @@ theorem chain_mid (hc : ChainOk c) (hm : ModeOk m f g (some w)) (hM : StepOk M f
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl <;> simp
 
-/-- The whole function: the mode's contract, and every byte of the scratch
-buffer but the chain's unchanged or zero. -/
+/-- The whole function: the mode's contract, and the scratch buffer but the
+chain's bytes zero at the offsets `zeroedAt` and unchanged at the others. -/
 theorem chain_wp (hc : ChainOk c) (hm : ModeOk m f g (some w)) (hM : StepOk M f g w) (h0 : (modeX86 M).pre s₀) :
     WP isa (wholeChain c m) s₀ fun s' => abiPreserved s₀ s' ∧ (modeX86 M).post s₀ s' ∧
       ∀ i, c.written ≤ i → i < 2176 →
-        s'.mem ((S s₀).setWidth 64 + BitVec.ofNat 64 i) = s₀.mem ((S s₀).setWidth 64 + BitVec.ofNat 64 i) ∨
-          s'.mem ((S s₀).setWidth 64 + BitVec.ofNat 64 i) = 0 :=
+        s'.mem ((S s₀).setWidth 64 + BitVec.ofNat 64 i) =
+          if zeroedAt i then 0 else s₀.mem ((S s₀).setWidth 64 + BitVec.ofNat 64 i) :=
   endsZ_wp h0 fun h hn => chain_mid hc hm hM (UPre.of h0) h hn
 
 end

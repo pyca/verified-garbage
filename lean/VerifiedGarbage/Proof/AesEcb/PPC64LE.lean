@@ -28,12 +28,12 @@ theorem args_length : ∀ s vals,
   exact regArgs_length Spec.Aes.blocksSig s (by decide)
 
 theorem encrypt_verified :
-    Verified PPC64LE.target Impl.Aes.PPC64LE.encryptBlocks (Spec.AesEcb.encryptContract PPC64LE.abi) :=
+    Verified PPC64LE.target Impl.Aes.PPC64LE.encryptBlocks (wipedContract enc 0 PPC64LE.abi) :=
   Verified.ecb_of_unwritten (Proof.Aes.encryptBlocks_keyed Proof.Aes.PPC64LE.encryptBlocks_verified)
     Proof.Aes.PPC64LE.encryptBlocks_written args_length
 
 theorem decrypt_verified :
-    Verified PPC64LE.target Impl.Aes.PPC64LE.decryptBlocks (Spec.AesEcb.decryptContract PPC64LE.abi) :=
+    Verified PPC64LE.target Impl.Aes.PPC64LE.decryptBlocks (wipedContract dec 0 PPC64LE.abi) :=
   Verified.ecb_of_unwritten (Proof.Aes.decryptBlocks_keyed Proof.Aes.PPC64LE.decryptBlocks_verified)
     Proof.Aes.PPC64LE.decryptBlocks_written args_length
 

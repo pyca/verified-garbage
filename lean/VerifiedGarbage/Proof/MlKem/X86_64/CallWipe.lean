@@ -133,13 +133,11 @@ Each of ML-KEM-768's and ML-KEM-1024's functions taking `scratch` is
 `callWipe` (`Impl/CallWipe/X86_64.lean`) of its code, which zeroes the bytes
 of `scratch` that code may write once it returns, with an implementation of
 `vg_zeroize` (`ZeroizeImpl`), and is verified against the same contract with
-24 more bytes of stack and `scratch` left scrubbed (`*_scrubbed`, the
+24 more bytes of stack and `scratch` left wiped (`*_scrubbed`, the
 contracts of `Proof/MlKem/Scrubbed.lean`): ML-KEM-768's zeroes all of it
 (`Verified.callWipe'`, `Scrubbed.keyGen_wiped`, …), and ML-KEM-1024's all of
 it or, with 16-bit polynomials, the first `scr16` bytes, the others of which
 its code leaves unchanged (`Verified.callWipeTail'`, `keyGen1024_tail`, …).
-`*_verified` state them as the contracts of
-`Spec/MlKem/`.
 -/
 
 @[expose] public section
@@ -376,7 +374,7 @@ argument) is then the one `Verified.callWipeTail'` takes, which reads the
 memory on return only apart from the bytes zeroed (`tail4_out`, …), and
 with those zero, `scratch` is scrubbed (`wipedTail4`, …). -/
 
-open VG.Proof.MlKem.Scrubbed (Post4 Post5 Post6 scrub4 scrub5 scrub6 scrubbed_of_prefix)
+open VG.Proof.MlKem.Scrubbed (Post4 Post5 Post6 wipe4 wipe5 wipe6)
 
 /-- A proof against `sig.contract abi pre P …` of code that changes no byte
 of the arrays `ws` names past their bounds is one against
@@ -598,35 +596,32 @@ theorem tail6_out {P : Post6} {w len : Nat} (params : List (String × Param))
   have ht := tail_out hlen (hag _ (hbuf a b c d e f)) h.2
   exact ⟨hP' h.1, ht⟩
 
-/-- With the first `w` bytes of `scratch` zero on return, `scrub4`. -/
+/-- With the first `w` bytes of `scratch` zero on return, `wipe4`. -/
 theorem wipedTail4 (w len : Nat) (P : Post4) : ∀ vs m m' x, vs.length = 4 →
     Curry.apply [.addr, .addr, .addr, .addr] (tail4 w len P) vs m m' x →
     Spec.Zeroize.bytesAt m' (vs.getD 3 0) w = Spec.Zeroize.zeros w →
-      Curry.apply [.addr, .addr, .addr, .addr] (scrub4 len P) vs m m' x := by
+      Curry.apply [.addr, .addr, .addr, .addr] (wipe4 w len P) vs m m' x := by
   intro vs m m' x hl h hz
   obtain ⟨a, b, c, d, rfl⟩ := vs4 hl
-  have ht := scrubbed_of_prefix hz h.2
-  exact ⟨h.1, ht⟩
+  exact ⟨h.1, .of_prefix hz h.2⟩
 
-/-- With the first `w` bytes of `scratch` zero on return, `scrub5`. -/
+/-- With the first `w` bytes of `scratch` zero on return, `wipe5`. -/
 theorem wipedTail5 (w len : Nat) (P : Post5) : ∀ vs m m' x, vs.length = 5 →
     Curry.apply [.addr, .addr, .addr, .addr, .addr] (tail5 w len P) vs m m' x →
     Spec.Zeroize.bytesAt m' (vs.getD 4 0) w = Spec.Zeroize.zeros w →
-      Curry.apply [.addr, .addr, .addr, .addr, .addr] (scrub5 len P) vs m m' x := by
+      Curry.apply [.addr, .addr, .addr, .addr, .addr] (wipe5 w len P) vs m m' x := by
   intro vs m m' x hl h hz
   obtain ⟨a, b, c, d, e, rfl⟩ := vs5 hl
-  have ht := scrubbed_of_prefix hz h.2
-  exact ⟨h.1, ht⟩
+  exact ⟨h.1, .of_prefix hz h.2⟩
 
-/-- With the first `w` bytes of `scratch` zero on return, `scrub6`. -/
+/-- With the first `w` bytes of `scratch` zero on return, `wipe6`. -/
 theorem wipedTail6 (w len : Nat) (P : Post6) : ∀ vs m m' x, vs.length = 6 →
     Curry.apply [.addr, .addr, .addr, .addr, .addr, .addr] (tail6 w len P) vs m m' x →
     Spec.Zeroize.bytesAt m' (vs.getD 5 0) w = Spec.Zeroize.zeros w →
-      Curry.apply [.addr, .addr, .addr, .addr, .addr, .addr] (scrub6 len P) vs m m' x := by
+      Curry.apply [.addr, .addr, .addr, .addr, .addr, .addr] (wipe6 w len P) vs m m' x := by
   intro vs m m' x hl h hz
   obtain ⟨a, b, c, d, e, f, rfl⟩ := vs6 hl
-  have ht := scrubbed_of_prefix hz h.2
-  exact ⟨h.1, ht⟩
+  exact ⟨h.1, .of_prefix hz h.2⟩
 
 theorem wiped1024_le (c : Callee4) : wiped1024 c ≤ 49152 := by unfold wiped1024; split <;> decide
 
@@ -736,10 +731,6 @@ theorem keyGenW_scrubbed (v : Sample4Impl) (z : Proof.Zeroize.X86_64.ZeroizeImpl
       dsimp only [Curry.apply, ArgWord.ofRaw]
       rw [bytesAt_agree0 hb.1 (by decide) (n := 32) (by decide)])
 
-theorem keyGenW_verified (v : Sample4Impl) (z : Proof.Zeroize.X86_64.ZeroizeImpl) :
-    Verified X86_64.target (keyGenW v.callee v.suffix z.name z.code) (Spec.MlKem.keyGenContract X86_64.abi 56) :=
-  keyGenW_scrubbed v z
-
 /-- `vg_mlkem768_encaps_h`. -/
 theorem encapsHW_scrubbed (v : Sample4Impl) (z : Proof.Zeroize.X86_64.ZeroizeImpl) :
     Verified X86_64.target (encapsHW v.callee v.suffix z.name z.code) (Scrubbed.encapsHContract X86_64.abi 56) :=
@@ -794,10 +785,6 @@ theorem encapsHW_scrubbed (v : Sample4Impl) (z : Proof.Zeroize.X86_64.ZeroizeImp
       dsimp only [Curry.apply, ArgWord.ofRaw]
       rw [bytesAt_agree0 hb.1 (by decide) (n := 1184) (by decide)])
 
-theorem encapsHW_verified (v : Sample4Impl) (z : Proof.Zeroize.X86_64.ZeroizeImpl) :
-    Verified X86_64.target (encapsHW v.callee v.suffix z.name z.code) (Spec.MlKem.encapsHContract X86_64.abi 56) :=
-  encapsHW_scrubbed v z
-
 /-- `vg_mlkem768_encaps`. -/
 theorem encapsW_scrubbed (v : Sample4Impl) (z : Proof.Zeroize.X86_64.ZeroizeImpl) :
     Verified X86_64.target (encapsW v.callee v.suffix z.name z.code) (Scrubbed.encapsContract X86_64.abi 56) :=
@@ -844,10 +831,6 @@ theorem encapsW_scrubbed (v : Sample4Impl) (z : Proof.Zeroize.X86_64.ZeroizeImpl
       dsimp only [Curry.apply, ArgWord.ofRaw]
       rw [bytesAt_agree0 hb.1 (by decide) (n := 1184) (by decide)])
 
-theorem encapsW_verified (v : Sample4Impl) (z : Proof.Zeroize.X86_64.ZeroizeImpl) :
-    Verified X86_64.target (encapsW v.callee v.suffix z.name z.code) (Spec.MlKem.encapsContract X86_64.abi 56) :=
-  encapsW_scrubbed v z
-
 /-- `vg_mlkem768_decaps`. -/
 theorem decapsW_scrubbed (v : Sample4Impl) (z : Proof.Zeroize.X86_64.ZeroizeImpl) :
     Verified X86_64.target (decapsW v.callee v.suffix z.name z.code) (Scrubbed.decapsContract X86_64.abi 56) :=
@@ -893,13 +876,9 @@ theorem decapsW_scrubbed (v : Sample4Impl) (z : Proof.Zeroize.X86_64.ZeroizeImpl
       dsimp only [Curry.apply, ArgWord.ofRaw]
       rw [bytesAt_agree0 hb.1 (by decide) (n := 2400) (by decide)])
 
-theorem decapsW_verified (v : Sample4Impl) (z : Proof.Zeroize.X86_64.ZeroizeImpl) :
-    Verified X86_64.target (decapsW v.callee v.suffix z.name z.code) (Spec.MlKem.decapsContract X86_64.abi 56) :=
-  decapsW_scrubbed v z
-
 /-- `vg_mlkem1024_keygen`. -/
 theorem keyGen1024W_scrubbed (v : Sample4Impl) (z : Proof.Zeroize.X86_64.ZeroizeImpl) :
-    Verified X86_64.target (keyGen1024W v.callee v.suffix z.name z.code) (Scrubbed.keyGen1024Contract X86_64.abi 56) :=
+    Verified X86_64.target (keyGen1024W v.callee v.suffix z.name z.code) (Scrubbed.keyGen1024Contract X86_64.abi 56 (wiped1024 v.callee)) :=
   Verified.callWipeTail' (ps₁ := Spec.MlKem1024.keyGenSig.params.dropLast) (ps₂ := []) (i := 3) (keyGen1024_tail v) z.verified
     (by decide) (by decide) rfl rfl (by unfold wiped1024; split <;> decide) (by unfold wiped1024; split <;> decide) (by decide) (keyGen1024_spSafe v) (keyGen1024_xd v)
     z.spSafe z.noMx (by rw [z.xd]) (by decide)
@@ -946,13 +925,9 @@ theorem keyGen1024W_scrubbed (v : Sample4Impl) (z : Proof.Zeroize.X86_64.Zeroize
       dsimp only [Curry.apply, ArgWord.ofRaw]
       rw [bytesAt_agree0 hb.1 (by decide) (n := 32) (by decide)])
 
-theorem keyGen1024W_verified (v : Sample4Impl) (z : Proof.Zeroize.X86_64.ZeroizeImpl) :
-    Verified X86_64.target (keyGen1024W v.callee v.suffix z.name z.code) (Spec.MlKem1024.keyGenContract X86_64.abi 56) :=
-  keyGen1024W_scrubbed v z
-
 /-- `vg_mlkem1024_encaps_h`. -/
 theorem encapsH1024W_scrubbed (v : Sample4Impl) (z : Proof.Zeroize.X86_64.ZeroizeImpl) :
-    Verified X86_64.target (encapsH1024W v.callee v.suffix z.name z.code) (Scrubbed.encapsH1024Contract X86_64.abi 56) :=
+    Verified X86_64.target (encapsH1024W v.callee v.suffix z.name z.code) (Scrubbed.encapsH1024Contract X86_64.abi 56 (wiped1024 v.callee)) :=
   Verified.callWipeTail' (ps₁ := Spec.MlKem1024.encapsHSig.params.dropLast) (ps₂ := []) (i := 5) (encapsH1024_tail v) z.verified
     (by decide) (by decide) rfl rfl (by unfold wiped1024; split <;> decide) (by unfold wiped1024; split <;> decide) (by decide) (encapsH1024_spSafe v) (encapsH1024_xd v)
     z.spSafe z.noMx (by rw [z.xd]) (by decide)
@@ -1006,13 +981,9 @@ theorem encapsH1024W_scrubbed (v : Sample4Impl) (z : Proof.Zeroize.X86_64.Zeroiz
       dsimp only [Curry.apply, ArgWord.ofRaw]
       rw [bytesAt_agree0 hb.1 (by decide) (n := 1568) (by decide)])
 
-theorem encapsH1024W_verified (v : Sample4Impl) (z : Proof.Zeroize.X86_64.ZeroizeImpl) :
-    Verified X86_64.target (encapsH1024W v.callee v.suffix z.name z.code) (Spec.MlKem1024.encapsHContract X86_64.abi 56) :=
-  encapsH1024W_scrubbed v z
-
 /-- `vg_mlkem1024_encaps`. -/
 theorem encaps1024W_scrubbed (v : Sample4Impl) (z : Proof.Zeroize.X86_64.ZeroizeImpl) :
-    Verified X86_64.target (encaps1024W v.callee v.suffix z.name z.code) (Scrubbed.encaps1024Contract X86_64.abi 56) :=
+    Verified X86_64.target (encaps1024W v.callee v.suffix z.name z.code) (Scrubbed.encaps1024Contract X86_64.abi 56 (wipedEnc1024 v.callee)) :=
   Verified.callWipeTail' (ps₁ := Spec.MlKem1024.encapsSig.params.dropLast) (ps₂ := []) (i := 4) (encaps1024_tail v) z.verified
     (by decide) (by decide) rfl rfl (by unfold wipedEnc1024; split <;> decide) (by unfold wipedEnc1024; split <;> decide) (by decide) (encaps1024_spSafe v) (encaps1024_xd v)
     z.spSafe z.noMx (by rw [z.xd]) (by decide)
@@ -1058,13 +1029,9 @@ theorem encaps1024W_scrubbed (v : Sample4Impl) (z : Proof.Zeroize.X86_64.Zeroize
       dsimp only [Curry.apply, ArgWord.ofRaw]
       rw [bytesAt_agree0 hb.1 (by decide) (n := 1568) (by decide)])
 
-theorem encaps1024W_verified (v : Sample4Impl) (z : Proof.Zeroize.X86_64.ZeroizeImpl) :
-    Verified X86_64.target (encaps1024W v.callee v.suffix z.name z.code) (Spec.MlKem1024.encapsContract X86_64.abi 56) :=
-  encaps1024W_scrubbed v z
-
 /-- `vg_mlkem1024_decaps`. -/
 theorem decaps1024W_scrubbed (v : Sample4Impl) (z : Proof.Zeroize.X86_64.ZeroizeImpl) :
-    Verified X86_64.target (decaps1024W v.callee v.suffix z.name z.code) (Scrubbed.decaps1024Contract X86_64.abi 56) :=
+    Verified X86_64.target (decaps1024W v.callee v.suffix z.name z.code) (Scrubbed.decaps1024Contract X86_64.abi 56 (wipedEnc1024 v.callee)) :=
   Verified.callWipeTail' (ps₁ := Spec.MlKem1024.decapsSig.params.dropLast) (ps₂ := []) (i := 3) (decaps1024_tail v) z.verified
     (by decide) (by decide) rfl rfl (by unfold wipedEnc1024; split <;> decide) (by unfold wipedEnc1024; split <;> decide) (by decide) (decaps1024_spSafe v) (decaps1024_xd v)
     z.spSafe z.noMx (by rw [z.xd]) (by decide)
@@ -1108,10 +1075,6 @@ theorem decaps1024W_scrubbed (v : Sample4Impl) (z : Proof.Zeroize.X86_64.Zeroize
         Curry.apply (α := Mem → List Nat) [.addr, .addr, .addr, .addr] _ _ m₂
       dsimp only [Curry.apply, ArgWord.ofRaw]
       rw [bytesAt_agree0 hb.1 (by decide) (n := 3168) (by decide)])
-
-theorem decaps1024W_verified (v : Sample4Impl) (z : Proof.Zeroize.X86_64.ZeroizeImpl) :
-    Verified X86_64.target (decaps1024W v.callee v.suffix z.name z.code) (Spec.MlKem1024.decapsContract X86_64.abi 56) :=
-  decaps1024W_scrubbed v z
 
 
 /-! ## The stack pointer -/
@@ -1172,126 +1135,121 @@ The postconditions of the functions read the memory on return only within
 their buffers (`X86_64.Scrub.PostOut`), so that each returns with its whole
 stack, 56 bytes, wiped (`Impl.Scrub.X86_64.scrubAll`). -/
 
-/-- A buffer scrubbed in one memory on return is in another that agrees on it. -/
-theorem scrubbed_congr {m m₁ m₂ : Mem} {p : Addr} {len : Nat}
-    (hb : ∀ a, Region.Contains ⟨p, len⟩ a 1 → m₁ a = m₂ a) (h : Spec.Zeroize.scrubbed m m₁ p len) :
-    Spec.Zeroize.scrubbed m m₂ p len := fun a ha => hb a ha ▸ h a ha
-
 theorem keyGenOut (stack : Nat) :
-    Scrub.PostOut (Spec.MlKem.keyGenContract X86_64.abi stack) (Spec.MlKem.keyGenSig.retBits 64) :=
+    Scrub.PostOut (Scrubbed.keyGenContract X86_64.abi stack) (Spec.MlKem.keyGenSig.retBits 64) :=
   Scrub.postOut_of_local Scrub.ScrubAbi.plain fun vs m m₁ m₂ x hlen hb h => by
     obtain ⟨a, b, c, d, rfl⟩ := vs4 hlen
     simp only [Spec.MlKem.keyGenSig, Sig.bufs_array, Sig.bufs_nil, List.mem_cons, List.not_mem_nil, or_false,
       forall_eq_or_imp, forall_eq, Elem.size, Nat.reduceMul] at hb
     change Curry.apply (α := Mem → Mem → BitVec 32 → Prop) [.addr, .addr, .addr, .addr] _ _ m m₁ x at h
     change Curry.apply (α := Mem → Mem → BitVec 32 → Prop) [.addr, .addr, .addr, .addr] _ _ m m₂ x
-    dsimp only [Curry.apply, ArgWord.ofRaw] at h ⊢
+    dsimp only [Curry.apply, ArgWord.ofRaw, Scrubbed.wipe4, Scrubbed.keyGenPost] at h ⊢
     obtain ⟨h1, h2⟩ := h
-    refine ⟨?_, scrubbed_congr hb.2.2.2 h2⟩
+    refine ⟨?_, Scrubbed.wiped_congr hb.2.2.2 h2⟩
     rw [← bytesAt_agree0 hb.2.1 (by decide) (n := 1184) (by decide),
       ← bytesAt_agree0 hb.2.2.1 (by decide) (n := 2400) (by decide)]
     exact h1
 
 theorem encapsHOut (stack : Nat) :
-    Scrub.PostOut (Spec.MlKem.encapsHContract X86_64.abi stack) (Spec.MlKem.encapsHSig.retBits 64) :=
+    Scrub.PostOut (Scrubbed.encapsHContract X86_64.abi stack) (Spec.MlKem.encapsHSig.retBits 64) :=
   Scrub.postOut_of_local Scrub.ScrubAbi.plain fun vs m m₁ m₂ x hlen hb h => by
     obtain ⟨a, b, c, d, e, f, rfl⟩ := vs6 hlen
     simp only [Spec.MlKem.encapsHSig, Spec.MlKem.encapsHSigOf, Sig.bufs_array, Sig.bufs_nil, List.mem_cons, List.not_mem_nil, or_false,
       forall_eq_or_imp, forall_eq, Elem.size, Nat.reduceMul] at hb
     change Curry.apply (α := Mem → Mem → BitVec 32 → Prop) [.addr, .addr, .addr, .addr, .addr, .addr] _ _ m m₁ x at h
     change Curry.apply (α := Mem → Mem → BitVec 32 → Prop) [.addr, .addr, .addr, .addr, .addr, .addr] _ _ m m₂ x
-    dsimp only [Curry.apply, ArgWord.ofRaw] at h ⊢
+    dsimp only [Curry.apply, ArgWord.ofRaw, Scrubbed.wipe6, Scrubbed.encapsHPost] at h ⊢
     obtain ⟨h1, h2⟩ := h
-    refine ⟨?_, scrubbed_congr hb.2.2.2.2.2 h2⟩
+    refine ⟨?_, Scrubbed.wiped_congr hb.2.2.2.2.2 h2⟩
     rw [← bytesAt_agree0 hb.2.2.2.1 (by decide) (n := 32) (by decide),
       ← bytesAt_agree0 hb.2.2.2.2.1 (by decide) (n := 1088) (by decide)]
     exact h1
 
 theorem encapsOut (stack : Nat) :
-    Scrub.PostOut (Spec.MlKem.encapsContract X86_64.abi stack) (Spec.MlKem.encapsSig.retBits 64) :=
+    Scrub.PostOut (Scrubbed.encapsContract X86_64.abi stack) (Spec.MlKem.encapsSig.retBits 64) :=
   Scrub.postOut_of_local Scrub.ScrubAbi.plain fun vs m m₁ m₂ x hlen hb h => by
     obtain ⟨a, b, c, d, e, rfl⟩ := vs5 hlen
     simp only [Spec.MlKem.encapsSig, Sig.bufs_array, Sig.bufs_nil, List.mem_cons, List.not_mem_nil, or_false,
       forall_eq_or_imp, forall_eq, Elem.size, Nat.reduceMul] at hb
     change Curry.apply (α := Mem → Mem → BitVec 32 → Prop) [.addr, .addr, .addr, .addr, .addr] _ _ m m₁ x at h
     change Curry.apply (α := Mem → Mem → BitVec 32 → Prop) [.addr, .addr, .addr, .addr, .addr] _ _ m m₂ x
-    dsimp only [Curry.apply, ArgWord.ofRaw] at h ⊢
+    dsimp only [Curry.apply, ArgWord.ofRaw, Scrubbed.wipe5, Scrubbed.encapsPost] at h ⊢
     obtain ⟨h1, h2⟩ := h
-    refine ⟨?_, scrubbed_congr hb.2.2.2.2 h2⟩
+    refine ⟨?_, Scrubbed.wiped_congr hb.2.2.2.2 h2⟩
     rw [← bytesAt_agree0 hb.2.2.1 (by decide) (n := 32) (by decide),
       ← bytesAt_agree0 hb.2.2.2.1 (by decide) (n := 1088) (by decide)]
     exact h1
 
 theorem decapsOut (stack : Nat) :
-    Scrub.PostOut (Spec.MlKem.decapsContract X86_64.abi stack) (Spec.MlKem.decapsSig.retBits 64) :=
+    Scrub.PostOut (Scrubbed.decapsContract X86_64.abi stack) (Spec.MlKem.decapsSig.retBits 64) :=
   Scrub.postOut_of_local Scrub.ScrubAbi.plain fun vs m m₁ m₂ x hlen hb h => by
     obtain ⟨a, b, c, d, rfl⟩ := vs4 hlen
     simp only [Spec.MlKem.decapsSig, Sig.bufs_array, Sig.bufs_nil, List.mem_cons, List.not_mem_nil, or_false,
       forall_eq_or_imp, forall_eq, Elem.size, Nat.reduceMul] at hb
     change Curry.apply (α := Mem → Mem → BitVec 32 → Prop) [.addr, .addr, .addr, .addr] _ _ m m₁ x at h
     change Curry.apply (α := Mem → Mem → BitVec 32 → Prop) [.addr, .addr, .addr, .addr] _ _ m m₂ x
-    dsimp only [Curry.apply, ArgWord.ofRaw] at h ⊢
+    dsimp only [Curry.apply, ArgWord.ofRaw, Scrubbed.wipe4, Scrubbed.decapsPost] at h ⊢
     obtain ⟨h1, h2⟩ := h
-    refine ⟨?_, scrubbed_congr hb.2.2.2 h2⟩
+    refine ⟨?_, Scrubbed.wiped_congr hb.2.2.2 h2⟩
     rw [← bytesAt_agree0 hb.2.2.1 (by decide) (n := 32) (by decide)]
     exact h1
 
-theorem keyGen1024Out (stack : Nat) :
-    Scrub.PostOut (Spec.MlKem1024.keyGenContract X86_64.abi stack) (Spec.MlKem1024.keyGenSig.retBits 64) :=
+theorem keyGen1024Out (stack w : Nat) :
+    Scrub.PostOut (Scrubbed.keyGen1024Contract X86_64.abi stack w) (Spec.MlKem1024.keyGenSig.retBits 64) :=
   Scrub.postOut_of_local Scrub.ScrubAbi.plain fun vs m m₁ m₂ x hlen hb h => by
     obtain ⟨a, b, c, d, rfl⟩ := vs4 hlen
     simp only [Spec.MlKem1024.keyGenSig, Sig.bufs_array, Sig.bufs_nil, List.mem_cons, List.not_mem_nil, or_false,
       forall_eq_or_imp, forall_eq, Elem.size, Nat.reduceMul] at hb
     change Curry.apply (α := Mem → Mem → BitVec 32 → Prop) [.addr, .addr, .addr, .addr] _ _ m m₁ x at h
     change Curry.apply (α := Mem → Mem → BitVec 32 → Prop) [.addr, .addr, .addr, .addr] _ _ m m₂ x
-    dsimp only [Curry.apply, ArgWord.ofRaw] at h ⊢
+    dsimp only [Curry.apply, ArgWord.ofRaw, Scrubbed.wipe4, Scrubbed.keyGen1024Post] at h ⊢
     obtain ⟨h1, h2⟩ := h
-    refine ⟨?_, scrubbed_congr hb.2.2.2 h2⟩
+    refine ⟨?_, Scrubbed.wiped_congr hb.2.2.2 h2⟩
     rw [← bytesAt_agree0 hb.2.1 (by decide) (n := 1568) (by decide),
       ← bytesAt_agree0 hb.2.2.1 (by decide) (n := 3168) (by decide)]
     exact h1
 
-theorem encapsH1024Out (stack : Nat) :
-    Scrub.PostOut (Spec.MlKem1024.encapsHContract X86_64.abi stack) (Spec.MlKem1024.encapsHSig.retBits 64) :=
+theorem encapsH1024Out (stack w : Nat) :
+    Scrub.PostOut (Scrubbed.encapsH1024Contract X86_64.abi stack w) (Spec.MlKem1024.encapsHSig.retBits 64) :=
   Scrub.postOut_of_local Scrub.ScrubAbi.plain fun vs m m₁ m₂ x hlen hb h => by
     obtain ⟨a, b, c, d, e, f, rfl⟩ := vs6 hlen
     simp only [Spec.MlKem1024.encapsHSig, Spec.MlKem.encapsHSigOf, Sig.bufs_array, Sig.bufs_nil, List.mem_cons, List.not_mem_nil, or_false,
       forall_eq_or_imp, forall_eq, Elem.size, Nat.reduceMul] at hb
     change Curry.apply (α := Mem → Mem → BitVec 32 → Prop) [.addr, .addr, .addr, .addr, .addr, .addr] _ _ m m₁ x at h
     change Curry.apply (α := Mem → Mem → BitVec 32 → Prop) [.addr, .addr, .addr, .addr, .addr, .addr] _ _ m m₂ x
-    dsimp only [Curry.apply, ArgWord.ofRaw] at h ⊢
+    dsimp only [Curry.apply, ArgWord.ofRaw, Scrubbed.wipe6, Scrubbed.encapsH1024Post] at h ⊢
     obtain ⟨h1, h2⟩ := h
-    refine ⟨?_, scrubbed_congr hb.2.2.2.2.2 h2⟩
+    refine ⟨?_, Scrubbed.wiped_congr hb.2.2.2.2.2 h2⟩
     rw [← bytesAt_agree0 hb.2.2.2.1 (by decide) (n := 32) (by decide),
       ← bytesAt_agree0 hb.2.2.2.2.1 (by decide) (n := 1568) (by decide)]
     exact h1
 
-theorem encaps1024Out (stack : Nat) :
-    Scrub.PostOut (Spec.MlKem1024.encapsContract X86_64.abi stack) (Spec.MlKem1024.encapsSig.retBits 64) :=
+theorem encaps1024Out (stack w : Nat) :
+    Scrub.PostOut (Scrubbed.encaps1024Contract X86_64.abi stack w) (Spec.MlKem1024.encapsSig.retBits 64) :=
   Scrub.postOut_of_local Scrub.ScrubAbi.plain fun vs m m₁ m₂ x hlen hb h => by
     obtain ⟨a, b, c, d, e, rfl⟩ := vs5 hlen
     simp only [Spec.MlKem1024.encapsSig, Sig.bufs_array, Sig.bufs_nil, List.mem_cons, List.not_mem_nil, or_false,
       forall_eq_or_imp, forall_eq, Elem.size, Nat.reduceMul] at hb
     change Curry.apply (α := Mem → Mem → BitVec 32 → Prop) [.addr, .addr, .addr, .addr, .addr] _ _ m m₁ x at h
     change Curry.apply (α := Mem → Mem → BitVec 32 → Prop) [.addr, .addr, .addr, .addr, .addr] _ _ m m₂ x
-    dsimp only [Curry.apply, ArgWord.ofRaw] at h ⊢
+    dsimp only [Curry.apply, ArgWord.ofRaw, Scrubbed.wipe5, Scrubbed.encaps1024Post] at h ⊢
     obtain ⟨h1, h2⟩ := h
-    refine ⟨?_, scrubbed_congr hb.2.2.2.2 h2⟩
+    refine ⟨?_, Scrubbed.wiped_congr hb.2.2.2.2 h2⟩
     rw [← bytesAt_agree0 hb.2.2.1 (by decide) (n := 32) (by decide),
       ← bytesAt_agree0 hb.2.2.2.1 (by decide) (n := 1568) (by decide)]
     exact h1
 
-theorem decaps1024Out (stack : Nat) :
-    Scrub.PostOut (Spec.MlKem1024.decapsContract X86_64.abi stack) (Spec.MlKem1024.decapsSig.retBits 64) :=
+theorem decaps1024Out (stack w : Nat) :
+    Scrub.PostOut (Scrubbed.decaps1024Contract X86_64.abi stack w) (Spec.MlKem1024.decapsSig.retBits 64) :=
   Scrub.postOut_of_local Scrub.ScrubAbi.plain fun vs m m₁ m₂ x hlen hb h => by
     obtain ⟨a, b, c, d, rfl⟩ := vs4 hlen
     simp only [Spec.MlKem1024.decapsSig, Sig.bufs_array, Sig.bufs_nil, List.mem_cons, List.not_mem_nil, or_false,
       forall_eq_or_imp, forall_eq, Elem.size, Nat.reduceMul] at hb
     change Curry.apply (α := Mem → Mem → BitVec 32 → Prop) [.addr, .addr, .addr, .addr] _ _ m m₁ x at h
     change Curry.apply (α := Mem → Mem → BitVec 32 → Prop) [.addr, .addr, .addr, .addr] _ _ m m₂ x
-    dsimp only [Curry.apply, ArgWord.ofRaw] at h ⊢
+    dsimp only [Curry.apply, ArgWord.ofRaw, Scrubbed.wipe4, Scrubbed.decaps1024Post] at h ⊢
     obtain ⟨h1, h2⟩ := h
-    refine ⟨?_, scrubbed_congr hb.2.2.2 h2⟩
+    refine ⟨?_, Scrubbed.wiped_congr hb.2.2.2 h2⟩
     rw [← bytesAt_agree0 hb.2.2.1 (by decide) (n := 32) (by decide)]
     exact h1
 

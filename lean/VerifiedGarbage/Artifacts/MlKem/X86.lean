@@ -29,30 +29,38 @@ def artifacts : List (Artifact X86.target) := [
     verified := Proof.MlKem.X86.Scrub.checkEk_scrubbed },
   Spec.MlKem.keyGenApi.artifact X86.target {
     code := Impl.MlKem.X86.Fn.keyGen
-    verified := Proof.MlKem.X86.Scrub.keyGen_scrubbed },
+    verified := Proof.MlKem.X86.Scrub.keyGen_scrubbed
+    publicOutOk := Proof.MlKem.X86.Scrub.keyGen_public },
   Spec.MlKem.encapsApi.artifact X86.target {
     code := Impl.MlKem.X86.Fn.encaps
-    verified := Proof.MlKem.X86.Scrub.encaps_scrubbed },
+    verified := Proof.MlKem.X86.Scrub.encaps_scrubbed
+    publicOutOk := Proof.MlKem.X86.Scrub.encaps_public },
   Spec.MlKem.encapsHApi.artifact X86.target {
     code := Impl.MlKem.X86.Fn.encapsH
-    verified := Proof.MlKem.X86.Scrub.encapsH_scrubbed },
+    verified := Proof.MlKem.X86.Scrub.encapsH_scrubbed
+    publicOutOk := Proof.MlKem.X86.Scrub.encapsH_public },
   Spec.MlKem.decapsApi.artifact X86.target {
     code := Impl.MlKem.X86.Fn.decaps
-    verified := Proof.MlKem.X86.Scrub.decaps_scrubbed },
+    verified := Proof.MlKem.X86.Scrub.decaps_scrubbed
+    publicOutOk := Proof.MlKem.X86.Scrub.decaps_public },
   Spec.MlKem1024.checkEkApi.artifact X86.target {
     code := Impl.MlKem.X86.Fn.checkEk1024
     verified := Proof.MlKem.X86.Scrub.checkEk1024_scrubbed },
   Spec.MlKem1024.keyGenApi.artifact X86.target {
     code := Impl.MlKem.X86.Fn.keyGen1024
-    verified := Proof.MlKem.X86.Scrub.keyGen1024_scrubbed },
+    verified := Proof.MlKem.X86.Scrub.keyGen1024_scrubbed
+    publicOutOk := Proof.MlKem.X86.Scrub.keyGen1024_public },
   Spec.MlKem1024.encapsApi.artifact X86.target {
     code := Impl.MlKem.X86.Fn.encaps1024
-    verified := Proof.MlKem.X86.Scrub.encaps1024_scrubbed },
+    verified := Proof.MlKem.X86.Scrub.encaps1024_scrubbed
+    publicOutOk := Proof.MlKem.X86.Scrub.encaps1024_public },
   Spec.MlKem1024.encapsHApi.artifact X86.target {
     code := Impl.MlKem.X86.Fn.encapsH1024
-    verified := Proof.MlKem.X86.Scrub.encapsH1024_scrubbed },
+    verified := Proof.MlKem.X86.Scrub.encapsH1024_scrubbed
+    publicOutOk := Proof.MlKem.X86.Scrub.encapsH1024_public },
   Spec.MlKem1024.decapsApi.artifact X86.target {
     code := Impl.MlKem.X86.Fn.decaps1024
-    verified := Proof.MlKem.X86.Scrub.decaps1024_scrubbed }]
+    verified := Proof.MlKem.X86.Scrub.decaps1024_scrubbed
+    publicOutOk := Proof.MlKem.X86.Scrub.decaps1024_public }]
 
 end VG.Artifacts.MlKem.X86

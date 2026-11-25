@@ -1550,7 +1550,7 @@ theorem groups_ct {M : Mode} {cbc : Bool} {b : Impl.Aes.X86.Blocks}
 
 /-! ## `Verified`, and with `buf` on the stack -/
 
-open VG.Proof.AesCbc.Wipe (pre decPost tailZPost vs_eq bufs_eq blocksAt_congr pre_local)
+open VG.Proof.AesCbc.Wipe (pre decPost tailPost vs_eq bufs_eq blocksAt_congr pre_local)
 open VG.Proof.AesEcb (agree_of bytesAt_congr n_le)
 
 /-- The mode's postcondition, for the key schedule it is given and 10, 12 or
@@ -1760,11 +1760,11 @@ unchanged from offset `w` on, from `modePost`. -/
 theorem cbc_keyed {T : Target} {c : Prog T.isa} {A : Abi T.isa} {stack w : Nat}
     (h : Verified T c (Spec.Cbc.aesSig.contract A (pre A.ptrBits) (modePost (cbcMode false) w A.ptrBits) false stack
       none)) :
-    Verified T c (Spec.Cbc.aesSig.contract A (pre A.ptrBits) (tailZPost A.ptrBits (decPost A.ptrBits) w) false stack
+    Verified T c (Spec.Cbc.aesSig.contract A (pre A.ptrBits) (tailPost A.ptrBits w (decPost A.ptrBits)) false stack
       none) :=
   h.post_mono fun _ _ _ _ _ _ _ _ _ hp => by
     dsimp only [modePost] at hp
-    refine ⟨fun key ⟨hk, hr, hw⟩ => ?_, fun i h₁ h₂ => .inl (hp.2 i h₁ h₂)⟩
+    refine ⟨fun key ⟨hk, hr, hw⟩ => ?_, hp.2⟩
     have h' := hp.1 (by rw [hr]; rcases hk with h | h | h <;> rw [h] <;> decide)
     rw [hw, hr] at h'
     exact h'

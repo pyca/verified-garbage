@@ -61,8 +61,8 @@ the others are unchanged (`DataInv`), and `xmm7` holds ciphertext block
 
 `Impl.AesCbc.X86.encryptChain` around any chain meets the contract that the
 CBC code around a block function meets (`cbcX86 true`, `Encrypt.verified`),
-and leaves every byte of the scratch buffer but the chain's unchanged or zero
-(`Encrypt.tail`), as any serial mode's code does (`Chain.chain_wp`).
+and leaves the scratch buffer but the chain's bytes unchanged, or zero where it
+saved the registers (`Encrypt.tail`, `zeroedAt`), as any serial mode's code does (`Chain.chain_wp`).
 -/
 
 @[expose] public section
@@ -944,13 +944,13 @@ section
 variable {name : String} {c : Chain} (h : Chain.of name = some c)
 include h
 
-/-- The contract, and every byte of the scratch buffer but the chain's
-unchanged or zero. -/
+/-- The contract, and the scratch buffer but the chain's bytes zero at the
+offsets `zeroedAt` and unchanged at the others. -/
 theorem correct_wp {s₀ : State} (h0 : (cbcX86 true).pre s₀) :
     WP isa (encryptChain c) s₀ fun s' => abiPreserved s₀ s' ∧ (cbcX86 true).post s₀ s' ∧
       ∀ i, c.written ≤ i → i < 2176 →
-        s'.mem ((S s₀).setWidth 64 + BitVec.ofNat 64 i) = s₀.mem ((S s₀).setWidth 64 + BitVec.ofNat 64 i) ∨
-          s'.mem ((S s₀).setWidth 64 + BitVec.ofNat 64 i) = 0 :=
+        s'.mem ((S s₀).setWidth 64 + BitVec.ofNat 64 i) =
+          if zeroedAt i then 0 else s₀.mem ((S s₀).setWidth 64 + BitVec.ofNat 64 i) :=
   chain_wp (of_ok h) cbc_ok step h0
 
 theorem ct : ConstantTime isa (cbcX86 true).pre (cbcX86 true).pub (encryptChain c) := by
@@ -964,11 +964,12 @@ contract reserves. -/
 theorem verified : Verified X86.target (encryptChain c) (Proof.AesCbc.encryptRoundsContract X86.abi 24) :=
   Verified.of_correct (fun _ hs => (correct_wp h hs).mono fun _ h => ⟨h.1, h.2.1⟩) (ct h) enc_implies
 
-/-- It leaves each byte of the scratch buffer but the chain's unchanged or zero. -/
+/-- It leaves the scratch buffer but the chain's bytes zero at the offsets
+`zeroedAt` and unchanged at the others. -/
 theorem tail (s : State) (hs : (cbcX86 true).pre s) (t : List Leak) (s' : State)
     (he : Exec isa (encryptChain c) s t s') : ∀ i, c.written ≤ i → i < 2176 →
-      s'.mem ((arg s 5).setWidth 64 + BitVec.ofNat 64 i) = s.mem ((arg s 5).setWidth 64 + BitVec.ofNat 64 i) ∨
-        s'.mem ((arg s 5).setWidth 64 + BitVec.ofNat 64 i) = 0 := by
+      s'.mem ((arg s 5).setWidth 64 + BitVec.ofNat 64 i) =
+        if zeroedAt i then 0 else s.mem ((arg s 5).setWidth 64 + BitVec.ofNat 64 i) := by
   obtain ⟨t', s'', he', -, -, h⟩ := correct_wp h hs
   obtain ⟨-, rfl⟩ := Exec.det he he'
   exact h

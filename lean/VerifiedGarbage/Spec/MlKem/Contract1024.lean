@@ -26,7 +26,8 @@ Their documentation is that of `Contract.lean` (`Params.keyGenApi`, …), for
 
 The working space `scratch` is 48 KiB, for the 16 entries of `Â` (the
 matrix is 4 × 4) besides what ML-KEM-768 needs, and on return each of its
-bytes is unchanged or zero.
+bytes is unchanged or zero; which of them it zeroes reveals nothing
+(`Zeroize.left`; `keyGenOut`, …).
 -/
 
 @[expose] public section
@@ -58,6 +59,12 @@ def keyGenContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
     (writeArgs := true)
     (stack := stack)
     (leak := some fun seed _ek _dk _scratch m => leakRho (keyGenRho mlKem1024 (bytesAt m seed 32)))
+
+/-- Two runs of `vg_mlkem1024_keygen` that agree on what is public and on the bytes
+of `scratch` on entry leave the same bytes in it. -/
+def keyGenOut : PublicOut keyGenSig where
+  given _ := fun _seed _ek _dk scratch m => Zeroize.left m scratch 49152
+  out _ := fun _seed _ek _dk scratch _m m' _r => Zeroize.left m' scratch 49152
 
 /-- `vg_mlkem1024_check_ek(ek: *const [u8; 1568]) -> u32`. -/
 def checkEkSig : Sig where
@@ -97,6 +104,12 @@ def encapsContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
     (stack := stack)
     (leak := some fun ek _msg _key _ct _scratch m => leakRho (ekRho mlKem1024 (bytesAt m ek 1568)))
 
+/-- Two runs of `vg_mlkem1024_encaps` that agree on what is public and on the bytes
+of `scratch` on entry leave the same bytes in it. -/
+def encapsOut : PublicOut encapsSig where
+  given _ := fun _ek _msg _key _ct scratch m => Zeroize.left m scratch 49152
+  out _ := fun _ek _msg _key _ct scratch _m m' _r => Zeroize.left m' scratch 49152
+
 /-- `vg_mlkem1024_decaps(dk: *const [u8; 3168], ct: *const [u8; 1568], key: *mut [u8; 32], scratch: *mut [u64; 6144]) -> u32`.
 `scratch` is working space. -/
 def decapsSig : Sig where
@@ -120,11 +133,17 @@ def decapsContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
     (stack := stack)
     (leak := some fun dk _ct _key _scratch m => leakRho (dkRho mlKem1024 (bytesAt m dk 3168)))
 
+/-- Two runs of `vg_mlkem1024_decaps` that agree on what is public and on the bytes
+of `scratch` on entry leave the same bytes in it. -/
+def decapsOut : PublicOut decapsSig where
+  given _ := fun _dk _ct _key scratch m => Zeroize.left m scratch 49152
+  out _ := fun _dk _ct _key scratch _m m' _r => Zeroize.left m' scratch 49152
+
 /-! ## The functions on every target -/
 
 /-- `vg_mlkem1024_keygen` on every target. -/
 def keyGenApi : Api :=
-  mlKem1024.keyGenApi "VG.Spec.MlKem1024" keyGenSig fun A stack => keyGenContract A stack
+  mlKem1024.keyGenApi "VG.Spec.MlKem1024" keyGenSig (fun A stack => keyGenContract A stack) keyGenOut
 
 /-- `vg_mlkem1024_check_ek` on every target. -/
 def checkEkApi : Api :=
@@ -132,10 +151,10 @@ def checkEkApi : Api :=
 
 /-- `vg_mlkem1024_encaps` on every target. -/
 def encapsApi : Api :=
-  mlKem1024.encapsApi "VG.Spec.MlKem1024" encapsSig fun A stack => encapsContract A stack
+  mlKem1024.encapsApi "VG.Spec.MlKem1024" encapsSig (fun A stack => encapsContract A stack) encapsOut
 
 /-- `vg_mlkem1024_decaps` on every target. -/
 def decapsApi : Api :=
-  mlKem1024.decapsApi "VG.Spec.MlKem1024" decapsSig fun A stack => decapsContract A stack
+  mlKem1024.decapsApi "VG.Spec.MlKem1024" decapsSig (fun A stack => decapsContract A stack) decapsOut
 
 end VG.Spec.MlKem1024

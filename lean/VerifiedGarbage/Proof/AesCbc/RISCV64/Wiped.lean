@@ -11,9 +11,8 @@ import VerifiedGarbage.Proof.AesCbc.RISCV64.Lit
 
 `vg_aes_cbc_encrypt` and `vg_aes_cbc_decrypt` call their code, as the
 internal functions `vg_aes_cbc_{en,de}crypt_unwiped`, by `callWipe`, which
-then zeroes the whole of `scratch` with `vg_zeroize`. Each meets its contract
-and leaves each byte of `scratch` unchanged or zero (`*_scrubbed`), which
-is the contract of `Spec/Cbc/` (`*_verified`).
+then zeroes the whole of `scratch` with `vg_zeroize` (`*_verified`:
+`wipedContract`).
 -/
 
 @[expose] public section
@@ -53,7 +52,7 @@ theorem wiped_verified {P : Spec.Cbc.aesSig.Post 64} {name : String} {body : Pro
         ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
       Curry.apply (Spec.Cbc.aesSig.words 64) P vs m m₁ x → Curry.apply (Spec.Cbc.aesSig.words 64) P vs m m₂ x) :
     Verified target (wiped name body)
-      (Spec.Cbc.aesSig.contract abi (pre 64) (scrubbedPost 64 P) false 32 none) :=
+      (Spec.Cbc.aesSig.contract abi (pre 64) (wipedPost 64 P fun i => decide (i < 2176)) false 32 none) :=
   Verified.callWipe' (ps₁ := [("schedule", .array false .u8 240), ("rounds", .int .usize true),
       ("iv", .array true .u8 16), ("data", .slice true (.array .u8 16) "n")]) (ps₂ := [])
     (nm := "scratch") (e := .u64) (k := 272) (n := 2176) (i := 5) h Proof.Zeroize.RISCV64.verified
@@ -61,22 +60,16 @@ theorem wiped_verified {P : Spec.Cbc.aesSig.Post 64} {name : String} {body : Pro
     (by rw [sdepth_of_noFrames (by decide)]) (Nat.zero_le _)
     (pre_local 64) hpost hout (Wipe.wiped 64 P) (sat _)
 
-theorem encrypt_scrubbed :
+theorem encrypt_verified :
     Verified target encrypt
-      (Spec.Cbc.aesSig.contract abi (pre 64) (scrubbedPost 64 (encPost 64)) false 32 none) :=
+      (wipedContract encPost (fun i => decide (i < 2176)) abi 32) :=
   wiped_verified (Proof.AesCbc.encrypt_keyed Proof.AesCbc.RISCV64.encrypt_verified) (by lit_decide)
     (encPost_local 64) (encPost_out 64)
 
-theorem decrypt_scrubbed :
+theorem decrypt_verified :
     Verified target decrypt
-      (Spec.Cbc.aesSig.contract abi (pre 64) (scrubbedPost 64 (decPost 64)) false 32 none) :=
+      (wipedContract decPost (fun i => decide (i < 2176)) abi 32) :=
   wiped_verified (Proof.AesCbc.decrypt_keyed Proof.AesCbc.RISCV64.decrypt_verified) (by lit_decide)
     (decPost_local 64) (decPost_out 64)
-
-theorem encrypt_verified : Verified target encrypt (Spec.Cbc.aesEncryptContract abi 32) :=
-  encrypt_scrubbed
-
-theorem decrypt_verified : Verified target decrypt (Spec.Cbc.aesDecryptContract abi 32) :=
-  decrypt_scrubbed
 
 end VG.Proof.AesCbc.RISCV64.Wiped

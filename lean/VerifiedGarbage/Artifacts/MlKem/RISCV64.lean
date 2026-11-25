@@ -28,16 +28,20 @@ namespace VG.Artifacts.MlKem.RISCV64
 def artifacts : List (Artifact RISCV64.target) := [
   Spec.MlKem.keyGenApi.artifact RISCV64.target {
     code := Impl.MlKem.RISCV64.Fn.keyGen
-    verified := Proof.MlKem.RISCV64.Scrub.keyGen_scrubbed },
+    verified := Proof.MlKem.RISCV64.Scrub.keyGen_scrubbed
+    publicOutOk := Proof.MlKem.RISCV64.Scrub.keyGen_public },
   Spec.MlKem.encapsApi.artifact RISCV64.target {
     code := Impl.MlKem.RISCV64.Fn.encaps
-    verified := Proof.MlKem.RISCV64.Scrub.encaps_scrubbed },
+    verified := Proof.MlKem.RISCV64.Scrub.encaps_scrubbed
+    publicOutOk := Proof.MlKem.RISCV64.Scrub.encaps_public },
   Spec.MlKem.encapsHApi.artifact RISCV64.target {
     code := Impl.MlKem.RISCV64.Fn.encapsH
-    verified := Proof.MlKem.RISCV64.Scrub.encapsH_scrubbed },
+    verified := Proof.MlKem.RISCV64.Scrub.encapsH_scrubbed
+    publicOutOk := Proof.MlKem.RISCV64.Scrub.encapsH_public },
   Spec.MlKem.decapsApi.artifact RISCV64.target {
     code := Impl.MlKem.RISCV64.Fn.decaps
-    verified := Proof.MlKem.RISCV64.Scrub.decaps_scrubbed },
+    verified := Proof.MlKem.RISCV64.Scrub.decaps_scrubbed
+    publicOutOk := Proof.MlKem.RISCV64.Scrub.decaps_public },
   Spec.MlKem.checkEkApi.artifact RISCV64.target {
     code := Impl.MlKem.RISCV64.Fn.checkEk
     verified := Proof.MlKem.RISCV64.Scrub.checkEk_scrubbed },
@@ -46,15 +50,19 @@ def artifacts : List (Artifact RISCV64.target) := [
     verified := Proof.MlKem.RISCV64.Scrub.checkEk1024_scrubbed },
   Spec.MlKem1024.keyGenApi.artifact RISCV64.target {
     code := Impl.MlKem.RISCV64.Fn.keyGen1024
-    verified := Proof.MlKem.RISCV64.Scrub.keyGen1024_scrubbed },
+    verified := Proof.MlKem.RISCV64.Scrub.keyGen1024_scrubbed
+    publicOutOk := Proof.MlKem.RISCV64.Scrub.keyGen1024_public },
   Spec.MlKem1024.encapsApi.artifact RISCV64.target {
     code := Impl.MlKem.RISCV64.Fn.encaps1024
-    verified := Proof.MlKem.RISCV64.Scrub.encaps1024_scrubbed },
+    verified := Proof.MlKem.RISCV64.Scrub.encaps1024_scrubbed
+    publicOutOk := Proof.MlKem.RISCV64.Scrub.encaps1024_public },
   Spec.MlKem1024.encapsHApi.artifact RISCV64.target {
     code := Impl.MlKem.RISCV64.Fn.encapsH1024
-    verified := Proof.MlKem.RISCV64.Scrub.encapsH1024_scrubbed },
+    verified := Proof.MlKem.RISCV64.Scrub.encapsH1024_scrubbed
+    publicOutOk := Proof.MlKem.RISCV64.Scrub.encapsH1024_public },
   Spec.MlKem1024.decapsApi.artifact RISCV64.target {
     code := Impl.MlKem.RISCV64.Fn.decaps1024
-    verified := Proof.MlKem.RISCV64.Scrub.decaps1024_scrubbed }]
+    verified := Proof.MlKem.RISCV64.Scrub.decaps1024_scrubbed
+    publicOutOk := Proof.MlKem.RISCV64.Scrub.decaps1024_public }]
 
 end VG.Artifacts.MlKem.RISCV64

@@ -36,7 +36,9 @@ needs no more than `v`'s features); and otherwise the call wiped with each
 residue analysis (`BlocksImpl.ecbEncRes`); every other instance returns
 with its whole stack wiped (`Impl.Scrub.X86_64.scrubAll`, at most 24 bytes).
 Their postconditions read the memory on return only within the data and
-`scratch` (`encryptOut`, `decryptOut`).
+`scratch` (`wipedOut`). Each is proven to leave the bytes of `scratch` that it
+writes zero, and the others as they were (`*_wipes`), which implies its
+contract (`*_scrubbed`) and that which bytes those are is public (`*_public`).
 -/
 
 @[expose] public section
@@ -79,21 +81,21 @@ theorem wiped_spSafe {z : ZeroizeImpl} {n : Nat} {b : Impl.Aes.X86_64.Blocks}
 /-- `vg_aes_ecb_encrypt` for `v`, where its blocks function writes nothing in
 `scratch`: that function's code. -/
 theorem encrypt_free (v : BlocksImpl) (h : v.encWritten = 0) :
-    Verified target v.enc.code (Spec.AesEcb.encryptContract abi 0) :=
+    Verified target v.enc.code (wipedContract enc 0 abi 0) :=
   Verified.ecb_of_unwritten (Proof.Aes.encryptBlocks_keyed (enc_verified v)) (h ▸ v.encWrittenOk)
     args_length
 
 /-- `vg_aes_ecb_decrypt` for `v`, where its blocks function writes nothing in
 `scratch`. -/
 theorem decrypt_free (v : BlocksImpl) (h : v.decWritten = 0) :
-    Verified target v.dec.code (Spec.AesEcb.decryptContract abi 0) :=
+    Verified target v.dec.code (wipedContract dec 0 abi 0) :=
   Verified.ecb_of_unwritten (Proof.Aes.decryptBlocks_keyed (dec_verified v)) (h ▸ v.decWrittenOk)
     args_length
 
 /-- `vg_aes_ecb_encrypt` for `v`: its blocks function, then `z` on the bytes
 of `scratch` it writes. -/
 theorem encrypt_verified (v : BlocksImpl) (z : ZeroizeImpl) :
-    Verified target (wiped z v.encWritten v.enc) (Spec.AesEcb.encryptContract abi 24) :=
+    Verified target (wiped z v.encWritten v.enc) (wipedContract enc v.encWritten abi 24) :=
   Verified.callWipeTail' (ps₁ := [("schedule", .array false .u8 240), ("rounds", .int .usize true),
       ("data", .slice true (.array .u8 16) "n")]) (ps₂ := []) (nm := "scratch") (e := .u64) (k := 256)
     (i := 4)
@@ -105,7 +107,7 @@ theorem encrypt_verified (v : BlocksImpl) (z : ZeroizeImpl) :
 
 /-- `vg_aes_ecb_decrypt` for `v`, with `z`. -/
 theorem decrypt_verified (v : BlocksImpl) (z : ZeroizeImpl) :
-    Verified target (wiped z v.decWritten v.dec) (Spec.AesEcb.decryptContract abi 24) :=
+    Verified target (wiped z v.decWritten v.dec) (wipedContract dec v.decWritten abi 24) :=
   Verified.callWipeTail' (ps₁ := [("schedule", .array false .u8 240), ("rounds", .int .usize true),
       ("data", .slice true (.array .u8 16) "n")]) (ps₂ := []) (nm := "scratch") (e := .u64) (k := 256)
     (i := 4)
@@ -121,84 +123,90 @@ theorem encrypt_spSafe (v : BlocksImpl) (z : ZeroizeImpl) :
 theorem decrypt_spSafe (v : BlocksImpl) (z : ZeroizeImpl) :
     (wiped z v.decWritten v.dec).all (fun i => !isa.writesSp i) = true := wiped_spSafe v.decSpSafe
 
-/-- The postcondition of `vg_aes_ecb_encrypt` reads the memory on return only
-within the buffers. -/
-theorem encryptOut (stack : Nat) :
-    Scrub.PostOut (Spec.AesEcb.encryptContract abi stack) (Spec.Aes.blocksSig.retBits 64) := by
-  rw [encrypt_eq]
-  exact Scrub.postOut_of_local (leak := none) Scrub.ScrubAbi.plain fun vs m m₁ m₂ x hlen hb h => by
-    obtain ⟨a, b, c, d, e, rfl⟩ := vs_eq hlen
-    rw [bufs_eq] at hb
-    simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at hb
-    obtain ⟨h1, h2⟩ := h
-    refine ⟨fun key hk => ?_, fun z hz => ?_⟩
-    · show Spec.Aes.statesAt m₂ c (d.setWidth abi.ptrBits).toNat = _
-      have hd := agree_of hb.2.1
-      rw [statesAt_congr fun i hi => hd i (by have := n_le (pb := abi.ptrBits) d; omega_using [hi, this])]
-      exact h1 key hk
-    · rw [← hb.2.2 z hz]
-      exact h2 z hz
-
-/-- The postcondition of `vg_aes_ecb_decrypt` reads the memory on return only
-within the buffers. -/
-theorem decryptOut (stack : Nat) :
-    Scrub.PostOut (Spec.AesEcb.decryptContract abi stack) (Spec.Aes.blocksSig.retBits 64) := by
-  rw [decrypt_eq]
-  exact Scrub.postOut_of_local (leak := none) Scrub.ScrubAbi.plain fun vs m m₁ m₂ x hlen hb h => by
-    obtain ⟨a, b, c, d, e, rfl⟩ := vs_eq hlen
-    rw [bufs_eq] at hb
-    simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at hb
-    obtain ⟨h1, h2⟩ := h
-    refine ⟨fun key hk => ?_, fun z hz => ?_⟩
-    · show Spec.Aes.statesAt m₂ c (d.setWidth abi.ptrBits).toNat = _
-      have hd := agree_of hb.2.1
-      rw [statesAt_congr fun i hi => hd i (by have := n_le (pb := abi.ptrBits) d; omega_using [hi, this])]
-      exact h1 key hk
-    · rw [← hb.2.2 z hz]
-      exact h2 z hz
+/-- The postcondition of `vg_aes_ecb_encrypt` and `vg_aes_ecb_decrypt` reads the
+memory on return only within the buffers. -/
+theorem wipedOut (g : List Byte → Spec.Aes.State → Spec.Aes.State) (w stack : Nat) :
+    Scrub.PostOut (wipedContract g w abi stack) (Spec.Aes.blocksSig.retBits 64) :=
+  Scrub.postOut_of_local (leak := none) Scrub.ScrubAbi.plain (ecbPost_out _ g w)
 
 /-- `vg_aes_ecb_encrypt` as `v`'s encryption alone, where it writes no
 scratch space, as emitted (`Impl.AesEcb.X86_64.Fn.plain`). -/
+theorem encryptPlain_wipes (v : BlocksImpl) (h : v.encWritten = 0) :
+    VerifiedScrubbed target (Impl.AesEcb.X86_64.Fn.plain v.level v.enc) (wipedContract enc 0 abi 0) 0 :=
+  verifiedScrubbedAllSide (api := wipedApi enc 0)
+    { code := v.enc.code, verified := encrypt_free v h, spSafe := v.encSpSafe }
+    v.level (wipedOut enc 0 _) (calleeSide_mono (Nat.le_refl _) (Nat.zero_le _) v.encSide) (Nat.le_refl _)
+
 theorem encryptPlain_scrubbed (v : BlocksImpl) (h : v.encWritten = 0) :
     VerifiedScrubbed target (Impl.AesEcb.X86_64.Fn.plain v.level v.enc) (Spec.AesEcb.encryptApi.contract abi 0) 0 :=
-  verifiedScrubbedAllSide (api := Spec.AesEcb.encryptApi)
-    { code := v.enc.code, verified := encrypt_free v h, spSafe := v.encSpSafe }
-    v.level (encryptOut _) (calleeSide_mono (Nat.le_refl _) (Nat.zero_le _) v.encSide) (Nat.le_refl _)
+  encrypt_imp (encryptPlain_wipes v h) id
+
+theorem encryptPlain_public (v : BlocksImpl) (h : v.encWritten = 0) :
+    Spec.AesEcb.scratchOut.Of abi (Impl.AesEcb.X86_64.Fn.plain v.level v.enc) (Spec.AesEcb.encryptApi.contract abi 0) :=
+  scratch_public (encryptPlain_wipes v h)
 
 /-- `vg_aes_ecb_decrypt` as `v`'s decryption alone, as emitted. -/
+theorem decryptPlain_wipes (v : BlocksImpl) (h : v.decWritten = 0) :
+    VerifiedScrubbed target (Impl.AesEcb.X86_64.Fn.plain v.level v.dec) (wipedContract dec 0 abi 0) 0 :=
+  verifiedScrubbedAllSide (api := wipedApi dec 0)
+    { code := v.dec.code, verified := decrypt_free v h, spSafe := v.decSpSafe }
+    v.level (wipedOut dec 0 _) (calleeSide_mono (Nat.le_refl _) (Nat.zero_le _) v.decSide) (Nat.le_refl _)
+
 theorem decryptPlain_scrubbed (v : BlocksImpl) (h : v.decWritten = 0) :
     VerifiedScrubbed target (Impl.AesEcb.X86_64.Fn.plain v.level v.dec) (Spec.AesEcb.decryptApi.contract abi 0) 0 :=
-  verifiedScrubbedAllSide (api := Spec.AesEcb.decryptApi)
-    { code := v.dec.code, verified := decrypt_free v h, spSafe := v.decSpSafe }
-    v.level (decryptOut _) (calleeSide_mono (Nat.le_refl _) (Nat.zero_le _) v.decSide) (Nat.le_refl _)
+  decrypt_imp (decryptPlain_wipes v h) id
+
+theorem decryptPlain_public (v : BlocksImpl) (h : v.decWritten = 0) :
+    Spec.AesEcb.scratchOut.Of abi (Impl.AesEcb.X86_64.Fn.plain v.level v.dec) (Spec.AesEcb.decryptApi.contract abi 0) :=
+  scratch_public (decryptPlain_wipes v h)
 
 /-- `vg_aes_ecb_encrypt` as `v`'s encryption, then the zeroing with `z` of
 the scratch space it writes, as emitted (`Impl.AesEcb.X86_64.Fn.wiped`): its code is its code
 over a stub, with `v`'s and `z`'s where it calls them (`Fill`). -/
-theorem encryptWiped_scrubbed (v : BlocksImpl) (z : ZeroizeImpl) :
+theorem encryptWiped_wipes (v : BlocksImpl) (z : ZeroizeImpl) :
     VerifiedScrubbed target (Impl.AesEcb.X86_64.Fn.wiped (v.level.join z.level) v.encWritten v.enc z.name z.code)
-      (Spec.AesEcb.encryptApi.contract abi 24) 0 :=
+      (wipedContract enc v.encWritten abi 24) 0 :=
   have := calleeSide_mono (level_join_left v.level z.level) (Nat.le_refl _) v.encSide
   have := calleeSide_mono (level_join_right v.level z.level) (Nat.le_refl _) z.side
-  verifiedScrubbedAllFill (api := Spec.AesEcb.encryptApi) (ks := 0) (n := fun _ => 0)
+  verifiedScrubbedAllFill (api := wipedApi enc v.encWritten) (ks := 0) (n := fun _ => 0)
     (a := Impl.CallWipe.X86_64.callWipe .r8 v.encWritten "" (.block []) "" (.block []))
     { code := wiped z v.encWritten v.enc, stack := 24, verified := encrypt_verified v z,
       spSafe := encrypt_spSafe v z }
-    _ (encryptOut _) (by unfold wiped; fill_calls) (Nat.zero_le _) (Nat.le_refl _)
+    _ (wipedOut enc _ _) (by unfold wiped; fill_calls) (Nat.zero_le _) (Nat.le_refl _)
     (ha := by rcases v.writtenOk.1 with h | h <;> rw [h] <;> lit_decide)
 
+theorem encryptWiped_scrubbed (v : BlocksImpl) (z : ZeroizeImpl) :
+    VerifiedScrubbed target (Impl.AesEcb.X86_64.Fn.wiped (v.level.join z.level) v.encWritten v.enc z.name z.code)
+      (Spec.AesEcb.encryptApi.contract abi 24) 0 :=
+  encrypt_imp (encryptWiped_wipes v z) id
+
+theorem encryptWiped_public (v : BlocksImpl) (z : ZeroizeImpl) :
+    Spec.AesEcb.scratchOut.Of abi (Impl.AesEcb.X86_64.Fn.wiped (v.level.join z.level) v.encWritten v.enc z.name z.code)
+      (Spec.AesEcb.encryptApi.contract abi 24) :=
+  scratch_public (encryptWiped_wipes v z)
+
 /-- `vg_aes_ecb_decrypt` as `v`'s decryption, then the zeroing with `z`. -/
-theorem decryptWiped_scrubbed (v : BlocksImpl) (z : ZeroizeImpl) :
+theorem decryptWiped_wipes (v : BlocksImpl) (z : ZeroizeImpl) :
     VerifiedScrubbed target (Impl.AesEcb.X86_64.Fn.wiped (v.level.join z.level) v.decWritten v.dec z.name z.code)
-      (Spec.AesEcb.decryptApi.contract abi 24) 0 :=
+      (wipedContract dec v.decWritten abi 24) 0 :=
   have := calleeSide_mono (level_join_left v.level z.level) (Nat.le_refl _) v.decSide
   have := calleeSide_mono (level_join_right v.level z.level) (Nat.le_refl _) z.side
-  verifiedScrubbedAllFill (api := Spec.AesEcb.decryptApi) (ks := 0) (n := fun _ => 0)
+  verifiedScrubbedAllFill (api := wipedApi dec v.decWritten) (ks := 0) (n := fun _ => 0)
     (a := Impl.CallWipe.X86_64.callWipe .r8 v.decWritten "" (.block []) "" (.block []))
     { code := wiped z v.decWritten v.dec, stack := 24, verified := decrypt_verified v z,
       spSafe := decrypt_spSafe v z }
-    _ (decryptOut _) (by unfold wiped; fill_calls) (Nat.zero_le _) (Nat.le_refl _)
+    _ (wipedOut dec _ _) (by unfold wiped; fill_calls) (Nat.zero_le _) (Nat.le_refl _)
     (ha := by rcases v.writtenOk.2 with h | h <;> rw [h] <;> lit_decide)
+
+theorem decryptWiped_scrubbed (v : BlocksImpl) (z : ZeroizeImpl) :
+    VerifiedScrubbed target (Impl.AesEcb.X86_64.Fn.wiped (v.level.join z.level) v.decWritten v.dec z.name z.code)
+      (Spec.AesEcb.decryptApi.contract abi 24) 0 :=
+  decrypt_imp (decryptWiped_wipes v z) id
+
+theorem decryptWiped_public (v : BlocksImpl) (z : ZeroizeImpl) :
+    Spec.AesEcb.scratchOut.Of abi (Impl.AesEcb.X86_64.Fn.wiped (v.level.join z.level) v.decWritten v.dec z.name z.code)
+      (Spec.AesEcb.decryptApi.contract abi 24) :=
+  scratch_public (decryptWiped_wipes v z)
 
 /-! The code as emitted keeps `rsp`: the artifacts' `spSafe`. -/
 

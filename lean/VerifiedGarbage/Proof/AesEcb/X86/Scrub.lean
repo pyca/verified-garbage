@@ -21,9 +21,8 @@ meta import VerifiedGarbage.Impl.AesEcb.X86
 # AES-ECB on x86 (32-bit), without secret residue
 
 `vg_aes_ecb_encrypt` and `vg_aes_ecb_decrypt` read the memory on return only
-within the data and `scratch` (`encryptOut`, `decryptOut`), as on PPC64LE
-(`Proof/Aes/PPC64LE/Scrub.lean`): what the scrub of their frames and calls
-needs (`X86.Scrub.PostOut`).
+within the data and `scratch` (`wipedOut`): what the scrub of their frames and
+calls needs (`X86.Scrub.PostOut`).
 
 Which code is emitted for an implementation `v` of the block functions
 (`Impl.AesEcb.X86.Fn.crypt`), with its stack (`ecbStack`): where `v`'s
@@ -32,8 +31,11 @@ that function's code, then the clearing of the registers
 (`X86.Scrub.verifiedScrubbed`), with none; otherwise the call of it, then
 of `vg_zeroize` on the bytes of `scratch` it writes
 (`Impl.AesEcb.X86.wiped`), which also zeroes its 32 bytes of stack
-(`X86.Scrub.verifiedScrubbedAll`). `encrypt_scrubbed` and `decrypt_scrubbed`
-prove each by cases. What that needs of the code (`scrubFSide`) holds
+(`X86.Scrub.verifiedScrubbedAll`). `encrypt_wipes` and `decrypt_wipes`
+prove each by cases, to leave the bytes of `scratch` that the block function
+writes zero, and the others as they were: which implies its contract
+(`encrypt_scrubbed`, `decrypt_scrubbed`) and that which bytes those are is public
+(`encrypt_public`, `decrypt_public`). What that needs of the code (`scrubFSide`) holds
 whatever the implementation (`wiped_scrub`): from the code with a stub,
 whose block function's code and the instructions that pass `vg_zeroize`
 its length, `zeroArgs`, are `.block []` (`wipedStub`), which the kernel
@@ -52,41 +54,11 @@ open Impl.CallWipe.X86 (frameSize copyArgs zeroArgs restoreRet)
 
 /-! ## Postconditions -/
 
-/-- The postcondition of `vg_aes_ecb_encrypt` reads the memory on return only
-within the buffers. -/
-theorem encryptOut (stack : Nat) :
-    PostOut (Spec.AesEcb.encryptContract abi stack) (Spec.Aes.blocksSig.retBits 32) := by
-  rw [Proof.AesEcb.encrypt_eq]
-  exact postOut_of_local (leak := none) ScrubAbi.plain fun vs m m₁ m₂ x hlen hb h => by
-    obtain ⟨a, b, c, d, e, rfl⟩ := vs_eq hlen
-    rw [bufs_eq] at hb
-    simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at hb
-    obtain ⟨h1, h2⟩ := h
-    refine ⟨fun key hk => ?_, fun z hz => ?_⟩
-    · show Spec.Aes.statesAt m₂ c (d.setWidth abi.ptrBits).toNat = _
-      have hd := agree_of hb.2.1
-      rw [statesAt_congr fun i hi => hd i (by have := n_le (pb := abi.ptrBits) d; omega_using [hi, this])]
-      exact h1 key hk
-    · rw [← hb.2.2 z hz]
-      exact h2 z hz
-
-/-- The postcondition of `vg_aes_ecb_decrypt` reads the memory on return only
-within the buffers. -/
-theorem decryptOut (stack : Nat) :
-    PostOut (Spec.AesEcb.decryptContract abi stack) (Spec.Aes.blocksSig.retBits 32) := by
-  rw [Proof.AesEcb.decrypt_eq]
-  exact postOut_of_local (leak := none) ScrubAbi.plain fun vs m m₁ m₂ x hlen hb h => by
-    obtain ⟨a, b, c, d, e, rfl⟩ := vs_eq hlen
-    rw [bufs_eq] at hb
-    simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at hb
-    obtain ⟨h1, h2⟩ := h
-    refine ⟨fun key hk => ?_, fun z hz => ?_⟩
-    · show Spec.Aes.statesAt m₂ c (d.setWidth abi.ptrBits).toNat = _
-      have hd := agree_of hb.2.1
-      rw [statesAt_congr fun i hi => hd i (by have := n_le (pb := abi.ptrBits) d; omega_using [hi, this])]
-      exact h1 key hk
-    · rw [← hb.2.2 z hz]
-      exact h2 z hz
+/-- The postcondition of `vg_aes_ecb_encrypt` and `vg_aes_ecb_decrypt` reads the
+memory on return only within the buffers. -/
+theorem wipedOut (g : List Byte → Spec.Aes.State → Spec.Aes.State) (w stack : Nat) :
+    PostOut (wipedContract g w abi stack) (Spec.Aes.blocksSig.retBits 32) :=
+  postOut_of_local (leak := none) ScrubAbi.plain (ecbPost_out _ g w)
 
 /-! ## What the scrub needs of the code -/
 
@@ -141,49 +113,69 @@ theorem ecbFree_iff {b : Impl.Aes.X86.Blocks} {n : Nat} : ecbFree b n = true ↔
 
 /-- `vg_aes_ecb_encrypt` over `v` as emitted (`Impl.AesEcb.X86.Fn.crypt`)
 meets its contract in constant time and returns without secret residue. -/
-theorem encrypt_scrubbed (v : BlocksImpl) :
+theorem encrypt_wipes (v : BlocksImpl) :
     VerifiedScrubbed X86.target (Impl.AesEcb.X86.Fn.crypt (ecbFree v.enc v.encWritten) v.enc v.encWritten)
-      (Spec.AesEcb.encryptContract X86.abi (ecbStack v.enc v.encWritten)) 0 := by
+      (wipedContract enc v.encWritten X86.abi (ecbStack v.enc v.encWritten)) 0 := by
   unfold Impl.AesEcb.X86.Fn.crypt ecbStack
   by_cases hf : ecbFree v.enc v.encWritten = true
   · have h := ecbFree_iff.mp hf
     rw [ite_eq_left hf, ite_eq_left hf]
-    exact verifiedScrubbed (api := Spec.AesEcb.encryptApi) {
+    exact h.1.symm ▸ verifiedScrubbed (api := wipedApi enc 0) {
       suffix := v.suffix
       code := v.enc.code
       verified := encrypt_free v h.1
       spSafe := v.encSpSafe } (free_scrub _ h.2 v.encScrub)
   · rw [ite_eq_right hf, ite_eq_right hf]
-    exact verifiedScrubbedAll (api := Spec.AesEcb.encryptApi) {
+    exact verifiedScrubbedAll (api := wipedApi enc v.encWritten) {
         suffix := v.suffix
         code := Impl.AesEcb.X86.wiped v.enc v.encWritten
         stack := 32
         verified := encrypt_verified v
         spSafe := encrypt_spSafe v }
-      (encryptOut _) (W := 32) (hs := wiped_scrub _ _ v.encStack v.encScrub)
+      (wipedOut enc _ _) (W := 32) (hs := wiped_scrub _ _ v.encStack v.encScrub)
+
+theorem encrypt_scrubbed (v : BlocksImpl) :
+    VerifiedScrubbed X86.target (Impl.AesEcb.X86.Fn.crypt (ecbFree v.enc v.encWritten) v.enc v.encWritten)
+      (Spec.AesEcb.encryptContract X86.abi (ecbStack v.enc v.encWritten)) 0 :=
+  encrypt_imp (encrypt_wipes v) id
+
+theorem encrypt_public (v : BlocksImpl) :
+    Spec.AesEcb.scratchOut.Of X86.abi (Impl.AesEcb.X86.Fn.crypt (ecbFree v.enc v.encWritten) v.enc v.encWritten)
+      (Spec.AesEcb.encryptContract X86.abi (ecbStack v.enc v.encWritten)) :=
+  scratch_public (encrypt_wipes v)
 
 /-- `vg_aes_ecb_decrypt` over `v` as emitted (`Impl.AesEcb.X86.Fn.crypt`)
 meets its contract in constant time and returns without secret residue. -/
-theorem decrypt_scrubbed (v : BlocksImpl) :
+theorem decrypt_wipes (v : BlocksImpl) :
     VerifiedScrubbed X86.target (Impl.AesEcb.X86.Fn.crypt (ecbFree v.dec v.decWritten) v.dec v.decWritten)
-      (Spec.AesEcb.decryptContract X86.abi (ecbStack v.dec v.decWritten)) 0 := by
+      (wipedContract dec v.decWritten X86.abi (ecbStack v.dec v.decWritten)) 0 := by
   unfold Impl.AesEcb.X86.Fn.crypt ecbStack
   by_cases hf : ecbFree v.dec v.decWritten = true
   · have h := ecbFree_iff.mp hf
     rw [ite_eq_left hf, ite_eq_left hf]
-    exact verifiedScrubbed (api := Spec.AesEcb.decryptApi) {
+    exact h.1.symm ▸ verifiedScrubbed (api := wipedApi dec 0) {
       suffix := v.suffix
       code := v.dec.code
       verified := decrypt_free v h.1
       spSafe := v.decSpSafe } (free_scrub _ h.2 v.decScrub)
   · rw [ite_eq_right hf, ite_eq_right hf]
-    exact verifiedScrubbedAll (api := Spec.AesEcb.decryptApi) {
+    exact verifiedScrubbedAll (api := wipedApi dec v.decWritten) {
         suffix := v.suffix
         code := Impl.AesEcb.X86.wiped v.dec v.decWritten
         stack := 32
         verified := decrypt_verified v
         spSafe := decrypt_spSafe v }
-      (decryptOut _) (W := 32) (hs := wiped_scrub _ _ v.decStack v.decScrub)
+      (wipedOut dec _ _) (W := 32) (hs := wiped_scrub _ _ v.decStack v.decScrub)
+
+theorem decrypt_scrubbed (v : BlocksImpl) :
+    VerifiedScrubbed X86.target (Impl.AesEcb.X86.Fn.crypt (ecbFree v.dec v.decWritten) v.dec v.decWritten)
+      (Spec.AesEcb.decryptContract X86.abi (ecbStack v.dec v.decWritten)) 0 :=
+  decrypt_imp (decrypt_wipes v) id
+
+theorem decrypt_public (v : BlocksImpl) :
+    Spec.AesEcb.scratchOut.Of X86.abi (Impl.AesEcb.X86.Fn.crypt (ecbFree v.dec v.decWritten) v.dec v.decWritten)
+      (Spec.AesEcb.decryptContract X86.abi (ecbStack v.dec v.decWritten)) :=
+  scratch_public (decrypt_wipes v)
 
 /-- `Impl.AesEcb.X86.Fn.crypt` writes `esp` only in its frames and calls, if
 the block function and the call wiping `scratch` do. -/

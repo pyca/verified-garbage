@@ -104,7 +104,7 @@ theorem dec_written (v : BlocksImpl) : ∀ s t s',
   fun s t s' hs he => written_of (v.decWrittenOk s (dec_implies.pre s hs) t s' he)
 
 /-- A state satisfying the ECB contracts' precondition. -/
-theorem sat : ∃ s, (Spec.Aes.blocksSig.contract X86.abi (pre 32) (ecbPost 32 enc) false 32).pre s := by
+theorem sat : ∃ s, (Spec.Aes.blocksSig.contract X86.abi (pre 32) (ecbPost 32 enc 2048) false 32).pre s := by
   have a0 : arg blocksSat 0 = 0x1000 := by decide
   have a1 : arg blocksSat 1 = 10 := by decide
   have a2 : arg blocksSat 2 = 0x3000 := by decide
@@ -122,21 +122,21 @@ theorem sat' (post : Spec.Aes.blocksSig.Post 32) :
 /-- `vg_aes_ecb_encrypt` for `v`, where its blocks function writes nothing in
 `scratch`: that function's code. -/
 theorem encrypt_free (v : BlocksImpl) (h : v.encWritten = 0) :
-    Verified X86.target v.enc.code (Spec.AesEcb.encryptContract X86.abi 0) :=
+    Verified X86.target v.enc.code (wipedContract enc 0 X86.abi 0) :=
   Verified.ecb_of_unwritten (Proof.Aes.encryptBlocks_keyed (enc_verified v)) (h ▸ enc_written v) args_length
 
 /-- `vg_aes_ecb_decrypt` for `v`, where its blocks function writes nothing in
 `scratch`. -/
 theorem decrypt_free (v : BlocksImpl) (h : v.decWritten = 0) :
-    Verified X86.target v.dec.code (Spec.AesEcb.decryptContract X86.abi 0) :=
+    Verified X86.target v.dec.code (wipedContract dec 0 X86.abi 0) :=
   Verified.ecb_of_unwritten (Proof.Aes.decryptBlocks_keyed (dec_verified v)) (h ▸ dec_written v) args_length
 
 /-- `vg_aes_ecb_encrypt` for `v`: its blocks function, then the zeroize
 function on the bytes of `scratch` it writes. -/
 theorem encrypt_verified (v : BlocksImpl) :
-    Verified X86.target (Impl.AesEcb.X86.wiped v.enc v.encWritten) (Spec.AesEcb.encryptContract X86.abi 32) :=
+    Verified X86.target (Impl.AesEcb.X86.wiped v.enc v.encWritten) (wipedContract enc v.encWritten X86.abi 32) :=
   Verified.callWipeTail' (sig := Spec.Aes.blocksSig) (stack := 0) (zst := 0)
-    (pre := pre 32) (post := postTail 32 enc v.encWritten) (post' := ecbPost 32 enc)
+    (pre := pre 32) (post := postTail 32 enc v.encWritten) (post' := ecbPost 32 enc v.encWritten)
     (ps₁ := [("schedule", .array false .u8 240), ("rounds", .int .usize true),
       ("data", .slice true (.array .u8 16) "n")]) (ps₂ := []) (i := 4) (j := 4)
     (Verified.tail_of_written (Proof.Aes.encryptBlocks_keyed (enc_verified v)) (enc_written v) args_length)
@@ -147,9 +147,9 @@ theorem encrypt_verified (v : BlocksImpl) :
 
 /-- `vg_aes_ecb_decrypt` for `v`. -/
 theorem decrypt_verified (v : BlocksImpl) :
-    Verified X86.target (Impl.AesEcb.X86.wiped v.dec v.decWritten) (Spec.AesEcb.decryptContract X86.abi 32) :=
+    Verified X86.target (Impl.AesEcb.X86.wiped v.dec v.decWritten) (wipedContract dec v.decWritten X86.abi 32) :=
   Verified.callWipeTail' (sig := Spec.Aes.blocksSig) (stack := 0) (zst := 0)
-    (pre := pre 32) (post := postTail 32 dec v.decWritten) (post' := ecbPost 32 dec)
+    (pre := pre 32) (post := postTail 32 dec v.decWritten) (post' := ecbPost 32 dec v.decWritten)
     (ps₁ := [("schedule", .array false .u8 240), ("rounds", .int .usize true),
       ("data", .slice true (.array .u8 16) "n")]) (ps₂ := []) (i := 4) (j := 4)
     (Verified.tail_of_written (Proof.Aes.decryptBlocks_keyed (dec_verified v)) (dec_written v) args_length)
