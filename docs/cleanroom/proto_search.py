@@ -1,5 +1,5 @@
 import random,subprocess,sys
-exec(open('gen.py').read().split("def dbl():")[0])
+exec(open('proto_gen.py').read().split("def dbl():")[0])
 exec("""
 def cp(o,a): pass
 """)
@@ -50,7 +50,7 @@ def build(progs,fname):
     out.clear(); e(".intel_syntax noprefix"); e(".text")
     for i,p in enumerate(progs): fn(f"d{i}",lambda p=p: emit(p))
     open(fname,'w').write("\n".join(out)+"\n")
-exec("def fn"+open('gen.py').read().split("def fn")[1].split("fn(\"p_dbl\"")[0])
+exec("def fn"+open('proto_gen.py').read().split("def fn")[1].split("fn(\"p_dbl\"")[0])
 def measure(progs):
     build(progs,'s.s'); n=len(progs)
     c='#include <stdio.h>\n#include <stdint.h>\n#include <stdlib.h>\n#include <x86intrin.h>\ntypedef void F(uint64_t*,uint64_t);\n'+''.join(f'F d{i};' for i in range(n))+'static uint64_t ws[1024] __attribute__((aligned(64)));F*fs[]={'+','.join(f'd{i}' for i in range(n))+'};int main(){for(int i=0;i<'+str(n)+';i++){for(int j=0;j<1024;j++)ws[j]=rand()*0x100000001ull;for(int j=8;j<81;j+=9)ws[j]&=255;uint64_t b=-1;for(int k=0;k<150;k++){uint64_t t=__rdtsc();fs[i](ws,100);t=__rdtsc()-t;if(t<b)b=t;}printf("%.1f\\n",b/100.0);}}'

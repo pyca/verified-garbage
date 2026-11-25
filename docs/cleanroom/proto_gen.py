@@ -6,35 +6,27 @@ X,Y,Z,T0,T1,T2,T3,U,ONEP=[0+72*i for i in range(9)]
 def m(d): return f"[rdi+{d}]"
 def call(o,a,b):
     e(f"mov r12,rsi"); e(f"mov esi,{o}"); e(f"mov edx,{a}"); e(f"mov ecx,{b}"); e("call MULFN"); e("mov rsi,r12")
-def add(o,a,b):
-    for i in range(9):
-        e(f"mov rax,{m(a+8*i)}"); e(f"{'add' if i==0 else 'adc'} rax,{m(b+8*i)}"); e(f"mov {m(o+8*i)},rax")
-def sub(o,a,b): # a + (p-b)
-    for i in range(9):
-        e(f"mov rax,{m(b+8*i)}"); e("not rax"); e(f"{'add' if i==0 else 'adc'} rax,{m(a+8*i)}")
-        if i==8: e("add rax,512")
-        e(f"mov {m(o+8*i)},rax")
 REG=['rbp','r8','r9','r10','r11','r12','r13','r14','r15']
-def tri(o,a):
-    e("xor eax,eax")
-    for i in range(9):
-        e(f"mov rax,{m(a+8*i)}"); e("mov rcx,rax"); e("adcx rcx,rax"); e("adox rcx,rax"); e(f"mov {m(o+8*i)},rcx")
 def fold(): # regs REG < 4p -> <=p
     e("mov rax,r15"); e("shr rax,9"); e("and r15d,511"); e("add rbp,rax")
     for r in REG[1:]: e(f"adc {r},0")
     e("mov rax,r15"); e("shr rax,9"); e("and r15d,511"); e("add rbp,rax")
 def st(o):
     for i,r in enumerate(REG): e(f"mov {m(o+8*i)},{r}")
-def x3(o,a,s): # a+2(p-s)
-    e("xor eax,eax")
-    for i,r in enumerate(REG):
-        e(f"mov {r},{m(a+8*i)}"); e(f"mov rax,{m(s+8*i)}"); e("not rax")
-        e(f"adcx {r},rax"); e(f"adox {r},rax")
-    e("add r15,1024"); fold(); st(o)
-def subf(o,a,b):
-    for i,r in enumerate(REG):
-        e(f"mov {r},{m(b+8*i)}"); e(f"not {r}"); e(f"{'add' if i==0 else 'adc'} {r},{m(a+8*i)}")
-    e("add r15,512"); fold(); st(o)
+
+def ld(o):
+    for i,r in enumerate(REG): e(f"mov {r},{m(o+8*i)}")
+def nots():
+    for r in REG: e(f"xor {r},-1")
+def chain(b):
+    for i,r in enumerate(REG): e(f"{'add' if i==0 else 'adc'} {r},{m(b+8*i)}")
+def dblc():
+    for i,r in enumerate(REG): e(f"{'add' if i==0 else 'adc'} {r},{r}")
+def add(o,a,b): ld(a); (dblc() if a==b else chain(b)); st(o)
+def sub(o,a,b): ld(b); nots(); chain(a); e("add r15,512"); st(o)
+def tri(o,a): ld(a); dblc(); chain(a); st(o)
+def x3(o,a,s): ld(s); nots(); dblc(); chain(a); e("add r15,1024"); fold(); st(o)
+def subf(o,a,b): ld(b); nots(); chain(a); e("add r15,512"); fold(); st(o)
 def subhalf(o,a,b): # a + (p - b/2): half = rot right 1
     # regs: b>>1 with bit0 to bit 520
     e(f"mov rcx,{m(b)}"); e("mov rdx,rcx"); e("and edx,1"); e("shl rdx,8")
