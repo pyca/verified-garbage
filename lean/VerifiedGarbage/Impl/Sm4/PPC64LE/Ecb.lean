@@ -47,9 +47,20 @@ def slotAddr (r : Reg) (k : Nat) : List Instr := [.addi r sb (8 * k)]
 
 /-- `n` pairs of round keys, from the word at `r3`, to the entries at `kr`,
 which `st` moves to the next entry after each. -/
+def keyPairsInline (st : Instr) : Nat → Prog isa
+  | 0 => .block []
+  | n + 1 => .seq (.block (keyOne 0 ++ [st] ++ keyOne 1 ++ [st, .addi .r3 .r3 8])) (keyPairsInline st n)
+
+/-- The caller's link is kept in r9, which the leaf key kernel never writes. -/
+def keyChunk (st : Instr) : Prog isa :=
+  let name := if st == .addi kr kr 64 then "vg_sm4_key_pairs_enc" else "vg_sm4_key_pairs_dec"
+  .seq (.block [.mflr .r9]) (.seq (.call name (keyPairsInline st 2)) (.block [.mtlr .r9]))
+
+/-- Two pairs per shared chunk, with an inline final pair for odd counts. -/
 def keyPairs (st : Instr) : Nat → Prog isa
   | 0 => .block []
-  | n + 1 => .seq (.block (keyOne 0 ++ [st] ++ keyOne 1 ++ [st, .addi .r3 .r3 8])) (keyPairs st n)
+  | 1 => keyPairsInline st 1
+  | n + 2 => .seq (keyChunk st) (keyPairs st n)
 
 /-- Encryption's table: round keys `2 m` and `2 m + 1`, from the word at
 `r3`, to entries `2 m` and `2 m + 1`. -/
