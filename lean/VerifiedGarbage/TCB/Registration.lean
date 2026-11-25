@@ -172,13 +172,10 @@ def Sig.layoutNote (T : EmitTarget) (sig : Sig) (writeArgs : Bool) : List String
   | _ => []
 
 /-- The documentation of `api` on a target: its summary, then its `# Safety`
-section, which it has none of if its `Api` gives no item of it and its
-signature has no buffer, for which the emitter would add some
-(`Sig.validDoc`, `Sig.layoutDoc`). -/
+section. -/
 def Api.doc (api : Api) : String :=
-  if api.safety.isEmpty && (Sig.bufNames api.sig.params).isEmpty then api.summary else
-    api.summary ++ "\n\n# Safety\n\n" ++
-      "\n".intercalate (api.safety.map ("* " ++ ·))
+  api.summary ++ "\n\n# Safety\n\n" ++
+    "\n".intercalate (api.safety.map ("* " ++ ·))
 
 /-- `c` returns its result as the calling convention requires (#6302): for
 each rule `f` the convention has for a result type (`Abi.retExt`), if `k`
@@ -355,8 +352,13 @@ adds to it (`Sig.layoutNote`, `Sig.validDoc` and `Sig.layoutDoc`, which
 need it to end with its `# Safety` section if they add anything, and not
 to state what they do), it must state every requirement of `contract.pre` that
 the caller is responsible for, and anything the contract declares the function
-may leak (`Sig.contract`'s `leak`). -/
-abbrev doc : String := a.api.doc
+may leak (`Sig.contract`'s `leak`). It is its `Api`'s, without its `# Safety`
+section if nothing would be in it: the `Api` gives no item, and the emitter
+would add none, for a buffer or a CPU feature. -/
+def doc : String :=
+  if a.api.safety.isEmpty && (Sig.bufNames a.api.sig.params).isEmpty && a.features.isEmpty then
+    a.api.summary
+  else a.api.doc
 
 /-- `Sig.contract`'s `writeArgs` for `contract` (see `ofSig`). -/
 abbrev writeArgs : Bool := a.api.writeArgs

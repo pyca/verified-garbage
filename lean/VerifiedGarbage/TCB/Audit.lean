@@ -33,8 +33,8 @@ imports, besides the axiom audit (`TCB/Axioms.lean`):
   not a directory: an implementation's own files could declare such a name.
   Theorems (e.g. the equation lemmas Lean generates for a `Spec/` definition
   in the module that first unfolds it) carry no data and are exempt.
-* `#assert_spec_apis apis` fails unless the kernel checks that each `Api` of
-  `apis` (the emitted artifacts', `Artifact.api`) is one `Spec/` declares: a
+* `#assert_spec_apis as …` fails unless the kernel checks that each `Api` of
+  the lists `as …` (each registration file's artifacts', `Artifact.api`) is one `Spec/` declares: a
   constant declared in a module under `VerifiedGarbage.Spec`, or a function
   declared there applied to one such constant and nothing else (as
   `Spec.Hmac.sha256I.pbkdf2Api`). `#assert_spec_origin` says it of names; this
@@ -143,35 +143,35 @@ partial def listElems (e : Expr) : MetaM (Array Expr) := do
     | _ => throwError "not a list of known length:{indentExpr e}"
   go e #[]
 
-/-- `#assert_spec_apis apis`, where `apis : List (List Api)`. -/
-elab "#assert_spec_apis " t:term : command => liftTermElabM do
+/-- `#assert_spec_apis as …`, where each `as : List Api` is one a driver lists the
+artifacts of a registration file by. Each list is checked by a theorem of its own,
+within the limits of one command. -/
+elab "#assert_spec_apis " ts:(ppSpace colGt term:max)* : command => liftTermElabM do
   let api := mkConst `VG.Api
-  let rowTy := mkApp (mkConst ``List [1]) api
-  let ty := mkApp (mkConst ``List [1]) rowTy
-  let e ← Term.elabTermEnsuringType t ty
-  Term.synthesizeSyntheticMVarsNoPostponing
-  let e ← instantiateMVars e
+  let ty := mkApp (mkConst ``List [1]) api
   let env ← getEnv
   let mut bad : Array MessageData := #[]
-  let mut rows : Array Expr := #[]
   let mut count : Nat := 0
-  for row in ← listElems e do
-    let mut apis : Array Expr := #[]
-    for a in ← listElems row do
-      let a ← reduceApi a
-      unless isSpecApi env a do bad := bad.push m!"{indentExpr a}"
-      apis := apis.push a
-      count := count + 1
-    rows := rows.push (← Meta.mkListLit api apis.toList)
+  for t in ts do
+    let (b, n) ← withCurrHeartbeats do
+      let e ← Term.elabTermEnsuringType t ty
+      Term.synthesizeSyntheticMVarsNoPostponing
+      let e ← instantiateMVars e
+      let apis ← (← listElems e).mapM reduceApi
+      let b := (apis.filter (!isSpecApi env ·)).map fun a => m!"{indentExpr a}"
+      if b.isEmpty then
+        let rhs ← Meta.mkListLit api apis.toList
+        -- The kernel checks that those are the `Api`s of `e`.
+        addDecl <| .thmDecl {
+          name := ← mkAuxDeclName `specApis
+          levelParams := []
+          type := mkApp3 (mkConst ``Eq [2]) ty e rhs
+          value := mkApp2 (mkConst ``Eq.refl [2]) ty rhs }
+      return (b, apis.size)
+    bad := bad ++ b
+    count := count + n
   unless bad.isEmpty do
     throwError m!"these artifacts' `Api`s are not ones `Spec/` declares:{MessageData.joinSep bad.toList ""}"
-  let rhs ← Meta.mkListLit rowTy rows.toList
-  -- The kernel checks that those are the `Api`s of `e`.
-  addDecl <| .thmDecl {
-    name := ← mkAuxDeclName `specApis
-    levelParams := []
-    type := mkApp3 (mkConst ``Eq [2]) ty e rhs
-    value := mkApp2 (mkConst ``Eq.refl [2]) ty rhs }
   logInfo m!"the `Api`s of the {count} artifacts are ones `Spec/` declares"
 
 end VG

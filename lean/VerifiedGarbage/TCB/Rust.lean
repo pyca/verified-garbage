@@ -1738,7 +1738,7 @@ signature and documentation, which are what its dispatcher documents and
 calls them with: those of their `Api` (`Artifact.api`). -/
 def checkGroups (as : List EmitArtifact) : Except String Unit :=
   (groupsOf as).forM fun g => g.members.forM fun a => do
-    unless a.sig == g.base.sig && a.doc == g.base.doc do
+    unless a.sig == g.base.sig && a.api.doc == g.base.api.doc do
       throw s!"{a.target.name}: {a.name}, an implementation of {g.base.name}, has another \
         signature or documentation"
 

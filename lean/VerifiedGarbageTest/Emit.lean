@@ -84,7 +84,9 @@ open VG.Emit
   #assert_standard_axioms all\n\
   #assert_no_compiler_overrides all run\n\
   #assert_spec_origin\n\
-  #assert_spec_apis (all.map fun p => p.2.map fun a => a.api)\n\
+  #assert_spec_apis\n  \
+    (_root_.VG.Artifacts.Sha3.X86_64.artifacts.map _root_.VG.Artifact.api)\n  \
+    (_root_.VG.Artifacts.Sha3.AArch64.artifacts.map _root_.VG.Artifact.api)\n\
   \n\
   end VG.Emit\n\
   \n\
@@ -315,20 +317,20 @@ def variants : List Variant := [⟨VG.Spec.Hmac.sha256I⟩, ⟨VG.Spec.Hmac.sha5
 -- Constants of `Spec/`, and functions of `Spec/` of one, however they are reached.
 /-- info: the `Api`s of the 4 artifacts are ones `Spec/` declares -/
 #guard_msgs in
-#assert_spec_apis [[VG.Spec.Selftest.addApi, VG.Spec.Hmac.sha256I.pbkdf2Api], [],
-  variants.map fun v => v.I.pbkdf2Api]
+#assert_spec_apis [VG.Spec.Selftest.addApi, VG.Spec.Hmac.sha256I.pbkdf2Api] []
+  (variants.map fun v => v.I.pbkdf2Api)
 
 -- A function of `Spec/` of something that is not `Spec/`'s.
 run_cmd do
-  fails (← errorsOf "#assert_spec_apis [[VG.Spec.Selftest.addApi], [VG.Test.Emit.fakeInstance.pbkdf2Api]]")
+  fails (← errorsOf "#assert_spec_apis [VG.Spec.Selftest.addApi] [VG.Test.Emit.fakeInstance.pbkdf2Api]")
     "not ones `Spec/` declares"
 
 -- A function of `Spec/` given a name: that of another parameter set.
 run_cmd do
-  fails (← errorsOf "#assert_spec_apis [[VG.Spec.MlDsa.keyGenApi VG.Spec.MlDsa.mlDsa44 \"mldsa87\" \"ML-DSA-87\"]]")
+  fails (← errorsOf "#assert_spec_apis [VG.Spec.MlDsa.keyGenApi VG.Spec.MlDsa.mlDsa44 \"mldsa87\" \"ML-DSA-87\"]")
     "not ones `Spec/` declares"
 #guard_msgs (drop info) in
-#assert_spec_apis [[VG.Spec.MlDsa.keyGen44Api]]
+#assert_spec_apis [VG.Spec.MlDsa.keyGen44Api]
 
 end VG.Test.Emit
 
