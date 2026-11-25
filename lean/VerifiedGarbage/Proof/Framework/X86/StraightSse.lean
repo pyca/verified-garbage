@@ -163,6 +163,16 @@ def unMoves : Un → Option (List (Nat × BitVec 128))
       (112, 0xffff0000ffff00000000000000000000)]
   | .pshufhw 0xd8 => some [(0, 0xffff00000000ffffffffffffffffffff), (16, 0xffff00000000000000000000),
       (112, 0xffff000000000000000000000000)]
+  | .shift .psrlq 8 => some [(8, 0xffffffffffffff00ffffffffffffff)]
+  | .shift .psrlq 24 => some [(24, 0xffffffffff000000ffffffffff)]
+  | .shift .psllq 8 => some [(120, 0xffffffffffffff00ffffffffffffff00)]
+  | .shift .psllq 24 => some [(104, 0xffffffffff000000ffffffffff000000)]
+  | .shift .psrld 24 => some [(24, 0xff000000ff000000ff000000ff)]
+  | .pshufd 0x39 => some [(32, 0xffffffffffffffffffffffffffffffff)]
+  | .pshufd 0x4e => some [(64, 0xffffffffffffffffffffffffffffffff)]
+  | .pshuflw 0xb4 => some [(0, 0xffffffffffffffff00000000ffffffff), (16, 0xffff00000000), (112, 0xffff000000000000)]
+  | .pshufhw 0xb4 => some [(0, 0xffffffffffffffffffffffff), (16, 0xffff000000000000000000000000),
+      (112, 0xffff0000000000000000000000000000)]
   | _ => none
 
 /-- The moves of the unpackings, of each operand. -/

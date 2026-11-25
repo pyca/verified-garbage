@@ -29,134 +29,118 @@ vg_sm4_crypt_prepared:
 	mov DWORD PTR [edi+28], eax
 	mov eax, DWORD PTR [edi]
 	mov ebx, DWORD PTR [edi+4]
-	mov ecx, eax
-	shr ecx, 1
-	xor ecx, ebx
-	and ecx, 1431655765
-	xor ebx, ecx
-	ror ecx, 31
-	xor eax, ecx
+	mov ecx, DWORD PTR [edi+8]
+	mov edx, DWORD PTR [edi+12]
+	mov ebp, eax
+	shr ebp, 1
+	xor ebp, ebx
+	and ebp, 1431655765
+	xor ebx, ebp
+	ror ebp, 31
+	xor eax, ebp
+	mov ebp, ecx
+	shr ebp, 1
+	xor ebp, edx
+	and ebp, 1431655765
+	xor edx, ebp
+	ror ebp, 31
+	xor ecx, ebp
+	mov ebp, eax
+	shr ebp, 2
+	xor ebp, ecx
+	and ebp, 858993459
+	xor ecx, ebp
+	ror ebp, 30
+	xor eax, ebp
+	mov ebp, ebx
+	shr ebp, 2
+	xor ebp, edx
+	and ebp, 858993459
+	xor edx, ebp
+	ror ebp, 30
+	xor ebx, ebp
 	mov DWORD PTR [edi], eax
 	mov DWORD PTR [edi+4], ebx
-	mov eax, DWORD PTR [edi+8]
-	mov ebx, DWORD PTR [edi+12]
-	mov ecx, eax
-	shr ecx, 1
-	xor ecx, ebx
-	and ecx, 1431655765
-	xor ebx, ecx
-	ror ecx, 31
-	xor eax, ecx
-	mov DWORD PTR [edi+8], eax
-	mov DWORD PTR [edi+12], ebx
+	mov DWORD PTR [edi+8], ecx
+	mov DWORD PTR [edi+12], edx
 	mov eax, DWORD PTR [edi+16]
 	mov ebx, DWORD PTR [edi+20]
-	mov ecx, eax
-	shr ecx, 1
-	xor ecx, ebx
-	and ecx, 1431655765
-	xor ebx, ecx
-	ror ecx, 31
-	xor eax, ecx
+	mov ecx, DWORD PTR [edi+24]
+	mov edx, DWORD PTR [edi+28]
+	mov ebp, eax
+	shr ebp, 1
+	xor ebp, ebx
+	and ebp, 1431655765
+	xor ebx, ebp
+	ror ebp, 31
+	xor eax, ebp
+	mov ebp, ecx
+	shr ebp, 1
+	xor ebp, edx
+	and ebp, 1431655765
+	xor edx, ebp
+	ror ebp, 31
+	xor ecx, ebp
+	mov ebp, eax
+	shr ebp, 2
+	xor ebp, ecx
+	and ebp, 858993459
+	xor ecx, ebp
+	ror ebp, 30
+	xor eax, ebp
+	mov ebp, ebx
+	shr ebp, 2
+	xor ebp, edx
+	and ebp, 858993459
+	xor edx, ebp
+	ror ebp, 30
+	xor ebx, ebp
 	mov DWORD PTR [edi+16], eax
 	mov DWORD PTR [edi+20], ebx
-	mov eax, DWORD PTR [edi+24]
-	mov ebx, DWORD PTR [edi+28]
-	mov ecx, eax
-	shr ecx, 1
-	xor ecx, ebx
-	and ecx, 1431655765
-	xor ebx, ecx
-	ror ecx, 31
-	xor eax, ecx
-	mov DWORD PTR [edi+24], eax
-	mov DWORD PTR [edi+28], ebx
-	mov eax, DWORD PTR [edi]
-	mov ebx, DWORD PTR [edi+8]
-	mov ecx, eax
-	shr ecx, 2
-	xor ecx, ebx
-	and ecx, 858993459
-	xor ebx, ecx
-	ror ecx, 30
-	xor eax, ecx
-	mov DWORD PTR [edi], eax
-	mov DWORD PTR [edi+8], ebx
-	mov eax, DWORD PTR [edi+4]
-	mov ebx, DWORD PTR [edi+12]
-	mov ecx, eax
-	shr ecx, 2
-	xor ecx, ebx
-	and ecx, 858993459
-	xor ebx, ecx
-	ror ecx, 30
-	xor eax, ecx
-	mov DWORD PTR [edi+4], eax
-	mov DWORD PTR [edi+12], ebx
-	mov eax, DWORD PTR [edi+16]
-	mov ebx, DWORD PTR [edi+24]
-	mov ecx, eax
-	shr ecx, 2
-	xor ecx, ebx
-	and ecx, 858993459
-	xor ebx, ecx
-	ror ecx, 30
-	xor eax, ecx
-	mov DWORD PTR [edi+16], eax
-	mov DWORD PTR [edi+24], ebx
-	mov eax, DWORD PTR [edi+20]
-	mov ebx, DWORD PTR [edi+28]
-	mov ecx, eax
-	shr ecx, 2
-	xor ecx, ebx
-	and ecx, 858993459
-	xor ebx, ecx
-	ror ecx, 30
-	xor eax, ecx
-	mov DWORD PTR [edi+20], eax
-	mov DWORD PTR [edi+28], ebx
+	mov DWORD PTR [edi+24], ecx
+	mov DWORD PTR [edi+28], edx
 	mov eax, DWORD PTR [edi]
 	mov ebx, DWORD PTR [edi+16]
-	mov ecx, eax
-	shr ecx, 4
-	xor ecx, ebx
-	and ecx, 252645135
-	xor ebx, ecx
-	ror ecx, 28
-	xor eax, ecx
+	mov ebp, eax
+	shr ebp, 4
+	xor ebp, ebx
+	and ebp, 252645135
+	xor ebx, ebp
+	ror ebp, 28
+	xor eax, ebp
 	mov DWORD PTR [edi], eax
 	mov DWORD PTR [edi+16], ebx
 	mov eax, DWORD PTR [edi+4]
 	mov ebx, DWORD PTR [edi+20]
-	mov ecx, eax
-	shr ecx, 4
-	xor ecx, ebx
-	and ecx, 252645135
-	xor ebx, ecx
-	ror ecx, 28
-	xor eax, ecx
+	mov ebp, eax
+	shr ebp, 4
+	xor ebp, ebx
+	and ebp, 252645135
+	xor ebx, ebp
+	ror ebp, 28
+	xor eax, ebp
 	mov DWORD PTR [edi+4], eax
 	mov DWORD PTR [edi+20], ebx
 	mov eax, DWORD PTR [edi+8]
 	mov ebx, DWORD PTR [edi+24]
-	mov ecx, eax
-	shr ecx, 4
-	xor ecx, ebx
-	and ecx, 252645135
-	xor ebx, ecx
-	ror ecx, 28
-	xor eax, ecx
+	mov ebp, eax
+	shr ebp, 4
+	xor ebp, ebx
+	and ebp, 252645135
+	xor ebx, ebp
+	ror ebp, 28
+	xor eax, ebp
 	mov DWORD PTR [edi+8], eax
 	mov DWORD PTR [edi+24], ebx
 	mov eax, DWORD PTR [edi+12]
 	mov ebx, DWORD PTR [edi+28]
-	mov ecx, eax
-	shr ecx, 4
-	xor ecx, ebx
-	and ecx, 252645135
-	xor ebx, ecx
-	ror ecx, 28
-	xor eax, ecx
+	mov ebp, eax
+	shr ebp, 4
+	xor ebp, ebx
+	and ebp, 252645135
+	xor ebx, ebp
+	ror ebp, 28
+	xor eax, ebp
 	mov DWORD PTR [edi+12], eax
 	mov DWORD PTR [edi+28], ebx
 	mov eax, DWORD PTR [edi]
@@ -193,134 +177,118 @@ vg_sm4_crypt_prepared:
 	mov DWORD PTR [edi+28], eax
 	mov eax, DWORD PTR [edi]
 	mov ebx, DWORD PTR [edi+4]
-	mov ecx, eax
-	shr ecx, 1
-	xor ecx, ebx
-	and ecx, 1431655765
-	xor ebx, ecx
-	ror ecx, 31
-	xor eax, ecx
+	mov ecx, DWORD PTR [edi+8]
+	mov edx, DWORD PTR [edi+12]
+	mov ebp, eax
+	shr ebp, 1
+	xor ebp, ebx
+	and ebp, 1431655765
+	xor ebx, ebp
+	ror ebp, 31
+	xor eax, ebp
+	mov ebp, ecx
+	shr ebp, 1
+	xor ebp, edx
+	and ebp, 1431655765
+	xor edx, ebp
+	ror ebp, 31
+	xor ecx, ebp
+	mov ebp, eax
+	shr ebp, 2
+	xor ebp, ecx
+	and ebp, 858993459
+	xor ecx, ebp
+	ror ebp, 30
+	xor eax, ebp
+	mov ebp, ebx
+	shr ebp, 2
+	xor ebp, edx
+	and ebp, 858993459
+	xor edx, ebp
+	ror ebp, 30
+	xor ebx, ebp
 	mov DWORD PTR [edi], eax
 	mov DWORD PTR [edi+4], ebx
-	mov eax, DWORD PTR [edi+8]
-	mov ebx, DWORD PTR [edi+12]
-	mov ecx, eax
-	shr ecx, 1
-	xor ecx, ebx
-	and ecx, 1431655765
-	xor ebx, ecx
-	ror ecx, 31
-	xor eax, ecx
-	mov DWORD PTR [edi+8], eax
-	mov DWORD PTR [edi+12], ebx
+	mov DWORD PTR [edi+8], ecx
+	mov DWORD PTR [edi+12], edx
 	mov eax, DWORD PTR [edi+16]
 	mov ebx, DWORD PTR [edi+20]
-	mov ecx, eax
-	shr ecx, 1
-	xor ecx, ebx
-	and ecx, 1431655765
-	xor ebx, ecx
-	ror ecx, 31
-	xor eax, ecx
+	mov ecx, DWORD PTR [edi+24]
+	mov edx, DWORD PTR [edi+28]
+	mov ebp, eax
+	shr ebp, 1
+	xor ebp, ebx
+	and ebp, 1431655765
+	xor ebx, ebp
+	ror ebp, 31
+	xor eax, ebp
+	mov ebp, ecx
+	shr ebp, 1
+	xor ebp, edx
+	and ebp, 1431655765
+	xor edx, ebp
+	ror ebp, 31
+	xor ecx, ebp
+	mov ebp, eax
+	shr ebp, 2
+	xor ebp, ecx
+	and ebp, 858993459
+	xor ecx, ebp
+	ror ebp, 30
+	xor eax, ebp
+	mov ebp, ebx
+	shr ebp, 2
+	xor ebp, edx
+	and ebp, 858993459
+	xor edx, ebp
+	ror ebp, 30
+	xor ebx, ebp
 	mov DWORD PTR [edi+16], eax
 	mov DWORD PTR [edi+20], ebx
-	mov eax, DWORD PTR [edi+24]
-	mov ebx, DWORD PTR [edi+28]
-	mov ecx, eax
-	shr ecx, 1
-	xor ecx, ebx
-	and ecx, 1431655765
-	xor ebx, ecx
-	ror ecx, 31
-	xor eax, ecx
-	mov DWORD PTR [edi+24], eax
-	mov DWORD PTR [edi+28], ebx
-	mov eax, DWORD PTR [edi]
-	mov ebx, DWORD PTR [edi+8]
-	mov ecx, eax
-	shr ecx, 2
-	xor ecx, ebx
-	and ecx, 858993459
-	xor ebx, ecx
-	ror ecx, 30
-	xor eax, ecx
-	mov DWORD PTR [edi], eax
-	mov DWORD PTR [edi+8], ebx
-	mov eax, DWORD PTR [edi+4]
-	mov ebx, DWORD PTR [edi+12]
-	mov ecx, eax
-	shr ecx, 2
-	xor ecx, ebx
-	and ecx, 858993459
-	xor ebx, ecx
-	ror ecx, 30
-	xor eax, ecx
-	mov DWORD PTR [edi+4], eax
-	mov DWORD PTR [edi+12], ebx
-	mov eax, DWORD PTR [edi+16]
-	mov ebx, DWORD PTR [edi+24]
-	mov ecx, eax
-	shr ecx, 2
-	xor ecx, ebx
-	and ecx, 858993459
-	xor ebx, ecx
-	ror ecx, 30
-	xor eax, ecx
-	mov DWORD PTR [edi+16], eax
-	mov DWORD PTR [edi+24], ebx
-	mov eax, DWORD PTR [edi+20]
-	mov ebx, DWORD PTR [edi+28]
-	mov ecx, eax
-	shr ecx, 2
-	xor ecx, ebx
-	and ecx, 858993459
-	xor ebx, ecx
-	ror ecx, 30
-	xor eax, ecx
-	mov DWORD PTR [edi+20], eax
-	mov DWORD PTR [edi+28], ebx
+	mov DWORD PTR [edi+24], ecx
+	mov DWORD PTR [edi+28], edx
 	mov eax, DWORD PTR [edi]
 	mov ebx, DWORD PTR [edi+16]
-	mov ecx, eax
-	shr ecx, 4
-	xor ecx, ebx
-	and ecx, 252645135
-	xor ebx, ecx
-	ror ecx, 28
-	xor eax, ecx
+	mov ebp, eax
+	shr ebp, 4
+	xor ebp, ebx
+	and ebp, 252645135
+	xor ebx, ebp
+	ror ebp, 28
+	xor eax, ebp
 	mov DWORD PTR [edi], eax
 	mov DWORD PTR [edi+16], ebx
 	mov eax, DWORD PTR [edi+4]
 	mov ebx, DWORD PTR [edi+20]
-	mov ecx, eax
-	shr ecx, 4
-	xor ecx, ebx
-	and ecx, 252645135
-	xor ebx, ecx
-	ror ecx, 28
-	xor eax, ecx
+	mov ebp, eax
+	shr ebp, 4
+	xor ebp, ebx
+	and ebp, 252645135
+	xor ebx, ebp
+	ror ebp, 28
+	xor eax, ebp
 	mov DWORD PTR [edi+4], eax
 	mov DWORD PTR [edi+20], ebx
 	mov eax, DWORD PTR [edi+8]
 	mov ebx, DWORD PTR [edi+24]
-	mov ecx, eax
-	shr ecx, 4
-	xor ecx, ebx
-	and ecx, 252645135
-	xor ebx, ecx
-	ror ecx, 28
-	xor eax, ecx
+	mov ebp, eax
+	shr ebp, 4
+	xor ebp, ebx
+	and ebp, 252645135
+	xor ebx, ebp
+	ror ebp, 28
+	xor eax, ebp
 	mov DWORD PTR [edi+8], eax
 	mov DWORD PTR [edi+24], ebx
 	mov eax, DWORD PTR [edi+12]
 	mov ebx, DWORD PTR [edi+28]
-	mov ecx, eax
-	shr ecx, 4
-	xor ecx, ebx
-	and ecx, 252645135
-	xor ebx, ecx
-	ror ecx, 28
-	xor eax, ecx
+	mov ebp, eax
+	shr ebp, 4
+	xor ebp, ebx
+	and ebp, 252645135
+	xor ebx, ebp
+	ror ebp, 28
+	xor eax, ebp
 	mov DWORD PTR [edi+12], eax
 	mov DWORD PTR [edi+28], ebx
 	mov eax, DWORD PTR [edi]
@@ -357,134 +325,118 @@ vg_sm4_crypt_prepared:
 	mov DWORD PTR [edi+28], eax
 	mov eax, DWORD PTR [edi]
 	mov ebx, DWORD PTR [edi+4]
-	mov ecx, eax
-	shr ecx, 1
-	xor ecx, ebx
-	and ecx, 1431655765
-	xor ebx, ecx
-	ror ecx, 31
-	xor eax, ecx
+	mov ecx, DWORD PTR [edi+8]
+	mov edx, DWORD PTR [edi+12]
+	mov ebp, eax
+	shr ebp, 1
+	xor ebp, ebx
+	and ebp, 1431655765
+	xor ebx, ebp
+	ror ebp, 31
+	xor eax, ebp
+	mov ebp, ecx
+	shr ebp, 1
+	xor ebp, edx
+	and ebp, 1431655765
+	xor edx, ebp
+	ror ebp, 31
+	xor ecx, ebp
+	mov ebp, eax
+	shr ebp, 2
+	xor ebp, ecx
+	and ebp, 858993459
+	xor ecx, ebp
+	ror ebp, 30
+	xor eax, ebp
+	mov ebp, ebx
+	shr ebp, 2
+	xor ebp, edx
+	and ebp, 858993459
+	xor edx, ebp
+	ror ebp, 30
+	xor ebx, ebp
 	mov DWORD PTR [edi], eax
 	mov DWORD PTR [edi+4], ebx
-	mov eax, DWORD PTR [edi+8]
-	mov ebx, DWORD PTR [edi+12]
-	mov ecx, eax
-	shr ecx, 1
-	xor ecx, ebx
-	and ecx, 1431655765
-	xor ebx, ecx
-	ror ecx, 31
-	xor eax, ecx
-	mov DWORD PTR [edi+8], eax
-	mov DWORD PTR [edi+12], ebx
+	mov DWORD PTR [edi+8], ecx
+	mov DWORD PTR [edi+12], edx
 	mov eax, DWORD PTR [edi+16]
 	mov ebx, DWORD PTR [edi+20]
-	mov ecx, eax
-	shr ecx, 1
-	xor ecx, ebx
-	and ecx, 1431655765
-	xor ebx, ecx
-	ror ecx, 31
-	xor eax, ecx
+	mov ecx, DWORD PTR [edi+24]
+	mov edx, DWORD PTR [edi+28]
+	mov ebp, eax
+	shr ebp, 1
+	xor ebp, ebx
+	and ebp, 1431655765
+	xor ebx, ebp
+	ror ebp, 31
+	xor eax, ebp
+	mov ebp, ecx
+	shr ebp, 1
+	xor ebp, edx
+	and ebp, 1431655765
+	xor edx, ebp
+	ror ebp, 31
+	xor ecx, ebp
+	mov ebp, eax
+	shr ebp, 2
+	xor ebp, ecx
+	and ebp, 858993459
+	xor ecx, ebp
+	ror ebp, 30
+	xor eax, ebp
+	mov ebp, ebx
+	shr ebp, 2
+	xor ebp, edx
+	and ebp, 858993459
+	xor edx, ebp
+	ror ebp, 30
+	xor ebx, ebp
 	mov DWORD PTR [edi+16], eax
 	mov DWORD PTR [edi+20], ebx
-	mov eax, DWORD PTR [edi+24]
-	mov ebx, DWORD PTR [edi+28]
-	mov ecx, eax
-	shr ecx, 1
-	xor ecx, ebx
-	and ecx, 1431655765
-	xor ebx, ecx
-	ror ecx, 31
-	xor eax, ecx
-	mov DWORD PTR [edi+24], eax
-	mov DWORD PTR [edi+28], ebx
-	mov eax, DWORD PTR [edi]
-	mov ebx, DWORD PTR [edi+8]
-	mov ecx, eax
-	shr ecx, 2
-	xor ecx, ebx
-	and ecx, 858993459
-	xor ebx, ecx
-	ror ecx, 30
-	xor eax, ecx
-	mov DWORD PTR [edi], eax
-	mov DWORD PTR [edi+8], ebx
-	mov eax, DWORD PTR [edi+4]
-	mov ebx, DWORD PTR [edi+12]
-	mov ecx, eax
-	shr ecx, 2
-	xor ecx, ebx
-	and ecx, 858993459
-	xor ebx, ecx
-	ror ecx, 30
-	xor eax, ecx
-	mov DWORD PTR [edi+4], eax
-	mov DWORD PTR [edi+12], ebx
-	mov eax, DWORD PTR [edi+16]
-	mov ebx, DWORD PTR [edi+24]
-	mov ecx, eax
-	shr ecx, 2
-	xor ecx, ebx
-	and ecx, 858993459
-	xor ebx, ecx
-	ror ecx, 30
-	xor eax, ecx
-	mov DWORD PTR [edi+16], eax
-	mov DWORD PTR [edi+24], ebx
-	mov eax, DWORD PTR [edi+20]
-	mov ebx, DWORD PTR [edi+28]
-	mov ecx, eax
-	shr ecx, 2
-	xor ecx, ebx
-	and ecx, 858993459
-	xor ebx, ecx
-	ror ecx, 30
-	xor eax, ecx
-	mov DWORD PTR [edi+20], eax
-	mov DWORD PTR [edi+28], ebx
+	mov DWORD PTR [edi+24], ecx
+	mov DWORD PTR [edi+28], edx
 	mov eax, DWORD PTR [edi]
 	mov ebx, DWORD PTR [edi+16]
-	mov ecx, eax
-	shr ecx, 4
-	xor ecx, ebx
-	and ecx, 252645135
-	xor ebx, ecx
-	ror ecx, 28
-	xor eax, ecx
+	mov ebp, eax
+	shr ebp, 4
+	xor ebp, ebx
+	and ebp, 252645135
+	xor ebx, ebp
+	ror ebp, 28
+	xor eax, ebp
 	mov DWORD PTR [edi], eax
 	mov DWORD PTR [edi+16], ebx
 	mov eax, DWORD PTR [edi+4]
 	mov ebx, DWORD PTR [edi+20]
-	mov ecx, eax
-	shr ecx, 4
-	xor ecx, ebx
-	and ecx, 252645135
-	xor ebx, ecx
-	ror ecx, 28
-	xor eax, ecx
+	mov ebp, eax
+	shr ebp, 4
+	xor ebp, ebx
+	and ebp, 252645135
+	xor ebx, ebp
+	ror ebp, 28
+	xor eax, ebp
 	mov DWORD PTR [edi+4], eax
 	mov DWORD PTR [edi+20], ebx
 	mov eax, DWORD PTR [edi+8]
 	mov ebx, DWORD PTR [edi+24]
-	mov ecx, eax
-	shr ecx, 4
-	xor ecx, ebx
-	and ecx, 252645135
-	xor ebx, ecx
-	ror ecx, 28
-	xor eax, ecx
+	mov ebp, eax
+	shr ebp, 4
+	xor ebp, ebx
+	and ebp, 252645135
+	xor ebx, ebp
+	ror ebp, 28
+	xor eax, ebp
 	mov DWORD PTR [edi+8], eax
 	mov DWORD PTR [edi+24], ebx
 	mov eax, DWORD PTR [edi+12]
 	mov ebx, DWORD PTR [edi+28]
-	mov ecx, eax
-	shr ecx, 4
-	xor ecx, ebx
-	and ecx, 252645135
-	xor ebx, ecx
-	ror ecx, 28
-	xor eax, ecx
+	mov ebp, eax
+	shr ebp, 4
+	xor ebp, ebx
+	and ebp, 252645135
+	xor ebx, ebp
+	ror ebp, 28
+	xor eax, ebp
 	mov DWORD PTR [edi+12], eax
 	mov DWORD PTR [edi+28], ebx
 	mov eax, DWORD PTR [edi]
@@ -521,134 +473,118 @@ vg_sm4_crypt_prepared:
 	mov DWORD PTR [edi+28], eax
 	mov eax, DWORD PTR [edi]
 	mov ebx, DWORD PTR [edi+4]
-	mov ecx, eax
-	shr ecx, 1
-	xor ecx, ebx
-	and ecx, 1431655765
-	xor ebx, ecx
-	ror ecx, 31
-	xor eax, ecx
+	mov ecx, DWORD PTR [edi+8]
+	mov edx, DWORD PTR [edi+12]
+	mov ebp, eax
+	shr ebp, 1
+	xor ebp, ebx
+	and ebp, 1431655765
+	xor ebx, ebp
+	ror ebp, 31
+	xor eax, ebp
+	mov ebp, ecx
+	shr ebp, 1
+	xor ebp, edx
+	and ebp, 1431655765
+	xor edx, ebp
+	ror ebp, 31
+	xor ecx, ebp
+	mov ebp, eax
+	shr ebp, 2
+	xor ebp, ecx
+	and ebp, 858993459
+	xor ecx, ebp
+	ror ebp, 30
+	xor eax, ebp
+	mov ebp, ebx
+	shr ebp, 2
+	xor ebp, edx
+	and ebp, 858993459
+	xor edx, ebp
+	ror ebp, 30
+	xor ebx, ebp
 	mov DWORD PTR [edi], eax
 	mov DWORD PTR [edi+4], ebx
-	mov eax, DWORD PTR [edi+8]
-	mov ebx, DWORD PTR [edi+12]
-	mov ecx, eax
-	shr ecx, 1
-	xor ecx, ebx
-	and ecx, 1431655765
-	xor ebx, ecx
-	ror ecx, 31
-	xor eax, ecx
-	mov DWORD PTR [edi+8], eax
-	mov DWORD PTR [edi+12], ebx
+	mov DWORD PTR [edi+8], ecx
+	mov DWORD PTR [edi+12], edx
 	mov eax, DWORD PTR [edi+16]
 	mov ebx, DWORD PTR [edi+20]
-	mov ecx, eax
-	shr ecx, 1
-	xor ecx, ebx
-	and ecx, 1431655765
-	xor ebx, ecx
-	ror ecx, 31
-	xor eax, ecx
+	mov ecx, DWORD PTR [edi+24]
+	mov edx, DWORD PTR [edi+28]
+	mov ebp, eax
+	shr ebp, 1
+	xor ebp, ebx
+	and ebp, 1431655765
+	xor ebx, ebp
+	ror ebp, 31
+	xor eax, ebp
+	mov ebp, ecx
+	shr ebp, 1
+	xor ebp, edx
+	and ebp, 1431655765
+	xor edx, ebp
+	ror ebp, 31
+	xor ecx, ebp
+	mov ebp, eax
+	shr ebp, 2
+	xor ebp, ecx
+	and ebp, 858993459
+	xor ecx, ebp
+	ror ebp, 30
+	xor eax, ebp
+	mov ebp, ebx
+	shr ebp, 2
+	xor ebp, edx
+	and ebp, 858993459
+	xor edx, ebp
+	ror ebp, 30
+	xor ebx, ebp
 	mov DWORD PTR [edi+16], eax
 	mov DWORD PTR [edi+20], ebx
-	mov eax, DWORD PTR [edi+24]
-	mov ebx, DWORD PTR [edi+28]
-	mov ecx, eax
-	shr ecx, 1
-	xor ecx, ebx
-	and ecx, 1431655765
-	xor ebx, ecx
-	ror ecx, 31
-	xor eax, ecx
-	mov DWORD PTR [edi+24], eax
-	mov DWORD PTR [edi+28], ebx
-	mov eax, DWORD PTR [edi]
-	mov ebx, DWORD PTR [edi+8]
-	mov ecx, eax
-	shr ecx, 2
-	xor ecx, ebx
-	and ecx, 858993459
-	xor ebx, ecx
-	ror ecx, 30
-	xor eax, ecx
-	mov DWORD PTR [edi], eax
-	mov DWORD PTR [edi+8], ebx
-	mov eax, DWORD PTR [edi+4]
-	mov ebx, DWORD PTR [edi+12]
-	mov ecx, eax
-	shr ecx, 2
-	xor ecx, ebx
-	and ecx, 858993459
-	xor ebx, ecx
-	ror ecx, 30
-	xor eax, ecx
-	mov DWORD PTR [edi+4], eax
-	mov DWORD PTR [edi+12], ebx
-	mov eax, DWORD PTR [edi+16]
-	mov ebx, DWORD PTR [edi+24]
-	mov ecx, eax
-	shr ecx, 2
-	xor ecx, ebx
-	and ecx, 858993459
-	xor ebx, ecx
-	ror ecx, 30
-	xor eax, ecx
-	mov DWORD PTR [edi+16], eax
-	mov DWORD PTR [edi+24], ebx
-	mov eax, DWORD PTR [edi+20]
-	mov ebx, DWORD PTR [edi+28]
-	mov ecx, eax
-	shr ecx, 2
-	xor ecx, ebx
-	and ecx, 858993459
-	xor ebx, ecx
-	ror ecx, 30
-	xor eax, ecx
-	mov DWORD PTR [edi+20], eax
-	mov DWORD PTR [edi+28], ebx
+	mov DWORD PTR [edi+24], ecx
+	mov DWORD PTR [edi+28], edx
 	mov eax, DWORD PTR [edi]
 	mov ebx, DWORD PTR [edi+16]
-	mov ecx, eax
-	shr ecx, 4
-	xor ecx, ebx
-	and ecx, 252645135
-	xor ebx, ecx
-	ror ecx, 28
-	xor eax, ecx
+	mov ebp, eax
+	shr ebp, 4
+	xor ebp, ebx
+	and ebp, 252645135
+	xor ebx, ebp
+	ror ebp, 28
+	xor eax, ebp
 	mov DWORD PTR [edi], eax
 	mov DWORD PTR [edi+16], ebx
 	mov eax, DWORD PTR [edi+4]
 	mov ebx, DWORD PTR [edi+20]
-	mov ecx, eax
-	shr ecx, 4
-	xor ecx, ebx
-	and ecx, 252645135
-	xor ebx, ecx
-	ror ecx, 28
-	xor eax, ecx
+	mov ebp, eax
+	shr ebp, 4
+	xor ebp, ebx
+	and ebp, 252645135
+	xor ebx, ebp
+	ror ebp, 28
+	xor eax, ebp
 	mov DWORD PTR [edi+4], eax
 	mov DWORD PTR [edi+20], ebx
 	mov eax, DWORD PTR [edi+8]
 	mov ebx, DWORD PTR [edi+24]
-	mov ecx, eax
-	shr ecx, 4
-	xor ecx, ebx
-	and ecx, 252645135
-	xor ebx, ecx
-	ror ecx, 28
-	xor eax, ecx
+	mov ebp, eax
+	shr ebp, 4
+	xor ebp, ebx
+	and ebp, 252645135
+	xor ebx, ebp
+	ror ebp, 28
+	xor eax, ebp
 	mov DWORD PTR [edi+8], eax
 	mov DWORD PTR [edi+24], ebx
 	mov eax, DWORD PTR [edi+12]
 	mov ebx, DWORD PTR [edi+28]
-	mov ecx, eax
-	shr ecx, 4
-	xor ecx, ebx
-	and ecx, 252645135
-	xor ebx, ecx
-	ror ecx, 28
-	xor eax, ecx
+	mov ebp, eax
+	shr ebp, 4
+	xor ebp, ebx
+	and ebp, 252645135
+	xor ebx, ebp
+	ror ebp, 28
+	xor eax, ebp
 	mov DWORD PTR [edi+12], eax
 	mov DWORD PTR [edi+28], ebx
 	mov eax, DWORD PTR [edi]
@@ -2413,134 +2349,118 @@ vg_sm4_crypt_prepared:
 	mov DWORD PTR [edi+28], eax
 	mov eax, DWORD PTR [edi]
 	mov ebx, DWORD PTR [edi+4]
-	mov ecx, eax
-	shr ecx, 1
-	xor ecx, ebx
-	and ecx, 1431655765
-	xor ebx, ecx
-	ror ecx, 31
-	xor eax, ecx
+	mov ecx, DWORD PTR [edi+8]
+	mov edx, DWORD PTR [edi+12]
+	mov ebp, eax
+	shr ebp, 1
+	xor ebp, ebx
+	and ebp, 1431655765
+	xor ebx, ebp
+	ror ebp, 31
+	xor eax, ebp
+	mov ebp, ecx
+	shr ebp, 1
+	xor ebp, edx
+	and ebp, 1431655765
+	xor edx, ebp
+	ror ebp, 31
+	xor ecx, ebp
+	mov ebp, eax
+	shr ebp, 2
+	xor ebp, ecx
+	and ebp, 858993459
+	xor ecx, ebp
+	ror ebp, 30
+	xor eax, ebp
+	mov ebp, ebx
+	shr ebp, 2
+	xor ebp, edx
+	and ebp, 858993459
+	xor edx, ebp
+	ror ebp, 30
+	xor ebx, ebp
 	mov DWORD PTR [edi], eax
 	mov DWORD PTR [edi+4], ebx
-	mov eax, DWORD PTR [edi+8]
-	mov ebx, DWORD PTR [edi+12]
-	mov ecx, eax
-	shr ecx, 1
-	xor ecx, ebx
-	and ecx, 1431655765
-	xor ebx, ecx
-	ror ecx, 31
-	xor eax, ecx
-	mov DWORD PTR [edi+8], eax
-	mov DWORD PTR [edi+12], ebx
+	mov DWORD PTR [edi+8], ecx
+	mov DWORD PTR [edi+12], edx
 	mov eax, DWORD PTR [edi+16]
 	mov ebx, DWORD PTR [edi+20]
-	mov ecx, eax
-	shr ecx, 1
-	xor ecx, ebx
-	and ecx, 1431655765
-	xor ebx, ecx
-	ror ecx, 31
-	xor eax, ecx
+	mov ecx, DWORD PTR [edi+24]
+	mov edx, DWORD PTR [edi+28]
+	mov ebp, eax
+	shr ebp, 1
+	xor ebp, ebx
+	and ebp, 1431655765
+	xor ebx, ebp
+	ror ebp, 31
+	xor eax, ebp
+	mov ebp, ecx
+	shr ebp, 1
+	xor ebp, edx
+	and ebp, 1431655765
+	xor edx, ebp
+	ror ebp, 31
+	xor ecx, ebp
+	mov ebp, eax
+	shr ebp, 2
+	xor ebp, ecx
+	and ebp, 858993459
+	xor ecx, ebp
+	ror ebp, 30
+	xor eax, ebp
+	mov ebp, ebx
+	shr ebp, 2
+	xor ebp, edx
+	and ebp, 858993459
+	xor edx, ebp
+	ror ebp, 30
+	xor ebx, ebp
 	mov DWORD PTR [edi+16], eax
 	mov DWORD PTR [edi+20], ebx
-	mov eax, DWORD PTR [edi+24]
-	mov ebx, DWORD PTR [edi+28]
-	mov ecx, eax
-	shr ecx, 1
-	xor ecx, ebx
-	and ecx, 1431655765
-	xor ebx, ecx
-	ror ecx, 31
-	xor eax, ecx
-	mov DWORD PTR [edi+24], eax
-	mov DWORD PTR [edi+28], ebx
-	mov eax, DWORD PTR [edi]
-	mov ebx, DWORD PTR [edi+8]
-	mov ecx, eax
-	shr ecx, 2
-	xor ecx, ebx
-	and ecx, 858993459
-	xor ebx, ecx
-	ror ecx, 30
-	xor eax, ecx
-	mov DWORD PTR [edi], eax
-	mov DWORD PTR [edi+8], ebx
-	mov eax, DWORD PTR [edi+4]
-	mov ebx, DWORD PTR [edi+12]
-	mov ecx, eax
-	shr ecx, 2
-	xor ecx, ebx
-	and ecx, 858993459
-	xor ebx, ecx
-	ror ecx, 30
-	xor eax, ecx
-	mov DWORD PTR [edi+4], eax
-	mov DWORD PTR [edi+12], ebx
-	mov eax, DWORD PTR [edi+16]
-	mov ebx, DWORD PTR [edi+24]
-	mov ecx, eax
-	shr ecx, 2
-	xor ecx, ebx
-	and ecx, 858993459
-	xor ebx, ecx
-	ror ecx, 30
-	xor eax, ecx
-	mov DWORD PTR [edi+16], eax
-	mov DWORD PTR [edi+24], ebx
-	mov eax, DWORD PTR [edi+20]
-	mov ebx, DWORD PTR [edi+28]
-	mov ecx, eax
-	shr ecx, 2
-	xor ecx, ebx
-	and ecx, 858993459
-	xor ebx, ecx
-	ror ecx, 30
-	xor eax, ecx
-	mov DWORD PTR [edi+20], eax
-	mov DWORD PTR [edi+28], ebx
+	mov DWORD PTR [edi+24], ecx
+	mov DWORD PTR [edi+28], edx
 	mov eax, DWORD PTR [edi]
 	mov ebx, DWORD PTR [edi+16]
-	mov ecx, eax
-	shr ecx, 4
-	xor ecx, ebx
-	and ecx, 252645135
-	xor ebx, ecx
-	ror ecx, 28
-	xor eax, ecx
+	mov ebp, eax
+	shr ebp, 4
+	xor ebp, ebx
+	and ebp, 252645135
+	xor ebx, ebp
+	ror ebp, 28
+	xor eax, ebp
 	mov DWORD PTR [edi], eax
 	mov DWORD PTR [edi+16], ebx
 	mov eax, DWORD PTR [edi+4]
 	mov ebx, DWORD PTR [edi+20]
-	mov ecx, eax
-	shr ecx, 4
-	xor ecx, ebx
-	and ecx, 252645135
-	xor ebx, ecx
-	ror ecx, 28
-	xor eax, ecx
+	mov ebp, eax
+	shr ebp, 4
+	xor ebp, ebx
+	and ebp, 252645135
+	xor ebx, ebp
+	ror ebp, 28
+	xor eax, ebp
 	mov DWORD PTR [edi+4], eax
 	mov DWORD PTR [edi+20], ebx
 	mov eax, DWORD PTR [edi+8]
 	mov ebx, DWORD PTR [edi+24]
-	mov ecx, eax
-	shr ecx, 4
-	xor ecx, ebx
-	and ecx, 252645135
-	xor ebx, ecx
-	ror ecx, 28
-	xor eax, ecx
+	mov ebp, eax
+	shr ebp, 4
+	xor ebp, ebx
+	and ebp, 252645135
+	xor ebx, ebp
+	ror ebp, 28
+	xor eax, ebp
 	mov DWORD PTR [edi+8], eax
 	mov DWORD PTR [edi+24], ebx
 	mov eax, DWORD PTR [edi+12]
 	mov ebx, DWORD PTR [edi+28]
-	mov ecx, eax
-	shr ecx, 4
-	xor ecx, ebx
-	and ecx, 252645135
-	xor ebx, ecx
-	ror ecx, 28
-	xor eax, ecx
+	mov ebp, eax
+	shr ebp, 4
+	xor ebp, ebx
+	and ebp, 252645135
+	xor ebx, ebp
+	ror ebp, 28
+	xor eax, ebp
 	mov DWORD PTR [edi+12], eax
 	mov DWORD PTR [edi+28], ebx
 	mov eax, DWORD PTR [edi]
@@ -2577,134 +2497,118 @@ vg_sm4_crypt_prepared:
 	mov DWORD PTR [edi+28], eax
 	mov eax, DWORD PTR [edi]
 	mov ebx, DWORD PTR [edi+4]
-	mov ecx, eax
-	shr ecx, 1
-	xor ecx, ebx
-	and ecx, 1431655765
-	xor ebx, ecx
-	ror ecx, 31
-	xor eax, ecx
+	mov ecx, DWORD PTR [edi+8]
+	mov edx, DWORD PTR [edi+12]
+	mov ebp, eax
+	shr ebp, 1
+	xor ebp, ebx
+	and ebp, 1431655765
+	xor ebx, ebp
+	ror ebp, 31
+	xor eax, ebp
+	mov ebp, ecx
+	shr ebp, 1
+	xor ebp, edx
+	and ebp, 1431655765
+	xor edx, ebp
+	ror ebp, 31
+	xor ecx, ebp
+	mov ebp, eax
+	shr ebp, 2
+	xor ebp, ecx
+	and ebp, 858993459
+	xor ecx, ebp
+	ror ebp, 30
+	xor eax, ebp
+	mov ebp, ebx
+	shr ebp, 2
+	xor ebp, edx
+	and ebp, 858993459
+	xor edx, ebp
+	ror ebp, 30
+	xor ebx, ebp
 	mov DWORD PTR [edi], eax
 	mov DWORD PTR [edi+4], ebx
-	mov eax, DWORD PTR [edi+8]
-	mov ebx, DWORD PTR [edi+12]
-	mov ecx, eax
-	shr ecx, 1
-	xor ecx, ebx
-	and ecx, 1431655765
-	xor ebx, ecx
-	ror ecx, 31
-	xor eax, ecx
-	mov DWORD PTR [edi+8], eax
-	mov DWORD PTR [edi+12], ebx
+	mov DWORD PTR [edi+8], ecx
+	mov DWORD PTR [edi+12], edx
 	mov eax, DWORD PTR [edi+16]
 	mov ebx, DWORD PTR [edi+20]
-	mov ecx, eax
-	shr ecx, 1
-	xor ecx, ebx
-	and ecx, 1431655765
-	xor ebx, ecx
-	ror ecx, 31
-	xor eax, ecx
+	mov ecx, DWORD PTR [edi+24]
+	mov edx, DWORD PTR [edi+28]
+	mov ebp, eax
+	shr ebp, 1
+	xor ebp, ebx
+	and ebp, 1431655765
+	xor ebx, ebp
+	ror ebp, 31
+	xor eax, ebp
+	mov ebp, ecx
+	shr ebp, 1
+	xor ebp, edx
+	and ebp, 1431655765
+	xor edx, ebp
+	ror ebp, 31
+	xor ecx, ebp
+	mov ebp, eax
+	shr ebp, 2
+	xor ebp, ecx
+	and ebp, 858993459
+	xor ecx, ebp
+	ror ebp, 30
+	xor eax, ebp
+	mov ebp, ebx
+	shr ebp, 2
+	xor ebp, edx
+	and ebp, 858993459
+	xor edx, ebp
+	ror ebp, 30
+	xor ebx, ebp
 	mov DWORD PTR [edi+16], eax
 	mov DWORD PTR [edi+20], ebx
-	mov eax, DWORD PTR [edi+24]
-	mov ebx, DWORD PTR [edi+28]
-	mov ecx, eax
-	shr ecx, 1
-	xor ecx, ebx
-	and ecx, 1431655765
-	xor ebx, ecx
-	ror ecx, 31
-	xor eax, ecx
-	mov DWORD PTR [edi+24], eax
-	mov DWORD PTR [edi+28], ebx
-	mov eax, DWORD PTR [edi]
-	mov ebx, DWORD PTR [edi+8]
-	mov ecx, eax
-	shr ecx, 2
-	xor ecx, ebx
-	and ecx, 858993459
-	xor ebx, ecx
-	ror ecx, 30
-	xor eax, ecx
-	mov DWORD PTR [edi], eax
-	mov DWORD PTR [edi+8], ebx
-	mov eax, DWORD PTR [edi+4]
-	mov ebx, DWORD PTR [edi+12]
-	mov ecx, eax
-	shr ecx, 2
-	xor ecx, ebx
-	and ecx, 858993459
-	xor ebx, ecx
-	ror ecx, 30
-	xor eax, ecx
-	mov DWORD PTR [edi+4], eax
-	mov DWORD PTR [edi+12], ebx
-	mov eax, DWORD PTR [edi+16]
-	mov ebx, DWORD PTR [edi+24]
-	mov ecx, eax
-	shr ecx, 2
-	xor ecx, ebx
-	and ecx, 858993459
-	xor ebx, ecx
-	ror ecx, 30
-	xor eax, ecx
-	mov DWORD PTR [edi+16], eax
-	mov DWORD PTR [edi+24], ebx
-	mov eax, DWORD PTR [edi+20]
-	mov ebx, DWORD PTR [edi+28]
-	mov ecx, eax
-	shr ecx, 2
-	xor ecx, ebx
-	and ecx, 858993459
-	xor ebx, ecx
-	ror ecx, 30
-	xor eax, ecx
-	mov DWORD PTR [edi+20], eax
-	mov DWORD PTR [edi+28], ebx
+	mov DWORD PTR [edi+24], ecx
+	mov DWORD PTR [edi+28], edx
 	mov eax, DWORD PTR [edi]
 	mov ebx, DWORD PTR [edi+16]
-	mov ecx, eax
-	shr ecx, 4
-	xor ecx, ebx
-	and ecx, 252645135
-	xor ebx, ecx
-	ror ecx, 28
-	xor eax, ecx
+	mov ebp, eax
+	shr ebp, 4
+	xor ebp, ebx
+	and ebp, 252645135
+	xor ebx, ebp
+	ror ebp, 28
+	xor eax, ebp
 	mov DWORD PTR [edi], eax
 	mov DWORD PTR [edi+16], ebx
 	mov eax, DWORD PTR [edi+4]
 	mov ebx, DWORD PTR [edi+20]
-	mov ecx, eax
-	shr ecx, 4
-	xor ecx, ebx
-	and ecx, 252645135
-	xor ebx, ecx
-	ror ecx, 28
-	xor eax, ecx
+	mov ebp, eax
+	shr ebp, 4
+	xor ebp, ebx
+	and ebp, 252645135
+	xor ebx, ebp
+	ror ebp, 28
+	xor eax, ebp
 	mov DWORD PTR [edi+4], eax
 	mov DWORD PTR [edi+20], ebx
 	mov eax, DWORD PTR [edi+8]
 	mov ebx, DWORD PTR [edi+24]
-	mov ecx, eax
-	shr ecx, 4
-	xor ecx, ebx
-	and ecx, 252645135
-	xor ebx, ecx
-	ror ecx, 28
-	xor eax, ecx
+	mov ebp, eax
+	shr ebp, 4
+	xor ebp, ebx
+	and ebp, 252645135
+	xor ebx, ebp
+	ror ebp, 28
+	xor eax, ebp
 	mov DWORD PTR [edi+8], eax
 	mov DWORD PTR [edi+24], ebx
 	mov eax, DWORD PTR [edi+12]
 	mov ebx, DWORD PTR [edi+28]
-	mov ecx, eax
-	shr ecx, 4
-	xor ecx, ebx
-	and ecx, 252645135
-	xor ebx, ecx
-	ror ecx, 28
-	xor eax, ecx
+	mov ebp, eax
+	shr ebp, 4
+	xor ebp, ebx
+	and ebp, 252645135
+	xor ebx, ebp
+	ror ebp, 28
+	xor eax, ebp
 	mov DWORD PTR [edi+12], eax
 	mov DWORD PTR [edi+28], ebx
 	mov eax, DWORD PTR [edi]
@@ -2741,134 +2645,118 @@ vg_sm4_crypt_prepared:
 	mov DWORD PTR [edi+28], eax
 	mov eax, DWORD PTR [edi]
 	mov ebx, DWORD PTR [edi+4]
-	mov ecx, eax
-	shr ecx, 1
-	xor ecx, ebx
-	and ecx, 1431655765
-	xor ebx, ecx
-	ror ecx, 31
-	xor eax, ecx
+	mov ecx, DWORD PTR [edi+8]
+	mov edx, DWORD PTR [edi+12]
+	mov ebp, eax
+	shr ebp, 1
+	xor ebp, ebx
+	and ebp, 1431655765
+	xor ebx, ebp
+	ror ebp, 31
+	xor eax, ebp
+	mov ebp, ecx
+	shr ebp, 1
+	xor ebp, edx
+	and ebp, 1431655765
+	xor edx, ebp
+	ror ebp, 31
+	xor ecx, ebp
+	mov ebp, eax
+	shr ebp, 2
+	xor ebp, ecx
+	and ebp, 858993459
+	xor ecx, ebp
+	ror ebp, 30
+	xor eax, ebp
+	mov ebp, ebx
+	shr ebp, 2
+	xor ebp, edx
+	and ebp, 858993459
+	xor edx, ebp
+	ror ebp, 30
+	xor ebx, ebp
 	mov DWORD PTR [edi], eax
 	mov DWORD PTR [edi+4], ebx
-	mov eax, DWORD PTR [edi+8]
-	mov ebx, DWORD PTR [edi+12]
-	mov ecx, eax
-	shr ecx, 1
-	xor ecx, ebx
-	and ecx, 1431655765
-	xor ebx, ecx
-	ror ecx, 31
-	xor eax, ecx
-	mov DWORD PTR [edi+8], eax
-	mov DWORD PTR [edi+12], ebx
+	mov DWORD PTR [edi+8], ecx
+	mov DWORD PTR [edi+12], edx
 	mov eax, DWORD PTR [edi+16]
 	mov ebx, DWORD PTR [edi+20]
-	mov ecx, eax
-	shr ecx, 1
-	xor ecx, ebx
-	and ecx, 1431655765
-	xor ebx, ecx
-	ror ecx, 31
-	xor eax, ecx
+	mov ecx, DWORD PTR [edi+24]
+	mov edx, DWORD PTR [edi+28]
+	mov ebp, eax
+	shr ebp, 1
+	xor ebp, ebx
+	and ebp, 1431655765
+	xor ebx, ebp
+	ror ebp, 31
+	xor eax, ebp
+	mov ebp, ecx
+	shr ebp, 1
+	xor ebp, edx
+	and ebp, 1431655765
+	xor edx, ebp
+	ror ebp, 31
+	xor ecx, ebp
+	mov ebp, eax
+	shr ebp, 2
+	xor ebp, ecx
+	and ebp, 858993459
+	xor ecx, ebp
+	ror ebp, 30
+	xor eax, ebp
+	mov ebp, ebx
+	shr ebp, 2
+	xor ebp, edx
+	and ebp, 858993459
+	xor edx, ebp
+	ror ebp, 30
+	xor ebx, ebp
 	mov DWORD PTR [edi+16], eax
 	mov DWORD PTR [edi+20], ebx
-	mov eax, DWORD PTR [edi+24]
-	mov ebx, DWORD PTR [edi+28]
-	mov ecx, eax
-	shr ecx, 1
-	xor ecx, ebx
-	and ecx, 1431655765
-	xor ebx, ecx
-	ror ecx, 31
-	xor eax, ecx
-	mov DWORD PTR [edi+24], eax
-	mov DWORD PTR [edi+28], ebx
-	mov eax, DWORD PTR [edi]
-	mov ebx, DWORD PTR [edi+8]
-	mov ecx, eax
-	shr ecx, 2
-	xor ecx, ebx
-	and ecx, 858993459
-	xor ebx, ecx
-	ror ecx, 30
-	xor eax, ecx
-	mov DWORD PTR [edi], eax
-	mov DWORD PTR [edi+8], ebx
-	mov eax, DWORD PTR [edi+4]
-	mov ebx, DWORD PTR [edi+12]
-	mov ecx, eax
-	shr ecx, 2
-	xor ecx, ebx
-	and ecx, 858993459
-	xor ebx, ecx
-	ror ecx, 30
-	xor eax, ecx
-	mov DWORD PTR [edi+4], eax
-	mov DWORD PTR [edi+12], ebx
-	mov eax, DWORD PTR [edi+16]
-	mov ebx, DWORD PTR [edi+24]
-	mov ecx, eax
-	shr ecx, 2
-	xor ecx, ebx
-	and ecx, 858993459
-	xor ebx, ecx
-	ror ecx, 30
-	xor eax, ecx
-	mov DWORD PTR [edi+16], eax
-	mov DWORD PTR [edi+24], ebx
-	mov eax, DWORD PTR [edi+20]
-	mov ebx, DWORD PTR [edi+28]
-	mov ecx, eax
-	shr ecx, 2
-	xor ecx, ebx
-	and ecx, 858993459
-	xor ebx, ecx
-	ror ecx, 30
-	xor eax, ecx
-	mov DWORD PTR [edi+20], eax
-	mov DWORD PTR [edi+28], ebx
+	mov DWORD PTR [edi+24], ecx
+	mov DWORD PTR [edi+28], edx
 	mov eax, DWORD PTR [edi]
 	mov ebx, DWORD PTR [edi+16]
-	mov ecx, eax
-	shr ecx, 4
-	xor ecx, ebx
-	and ecx, 252645135
-	xor ebx, ecx
-	ror ecx, 28
-	xor eax, ecx
+	mov ebp, eax
+	shr ebp, 4
+	xor ebp, ebx
+	and ebp, 252645135
+	xor ebx, ebp
+	ror ebp, 28
+	xor eax, ebp
 	mov DWORD PTR [edi], eax
 	mov DWORD PTR [edi+16], ebx
 	mov eax, DWORD PTR [edi+4]
 	mov ebx, DWORD PTR [edi+20]
-	mov ecx, eax
-	shr ecx, 4
-	xor ecx, ebx
-	and ecx, 252645135
-	xor ebx, ecx
-	ror ecx, 28
-	xor eax, ecx
+	mov ebp, eax
+	shr ebp, 4
+	xor ebp, ebx
+	and ebp, 252645135
+	xor ebx, ebp
+	ror ebp, 28
+	xor eax, ebp
 	mov DWORD PTR [edi+4], eax
 	mov DWORD PTR [edi+20], ebx
 	mov eax, DWORD PTR [edi+8]
 	mov ebx, DWORD PTR [edi+24]
-	mov ecx, eax
-	shr ecx, 4
-	xor ecx, ebx
-	and ecx, 252645135
-	xor ebx, ecx
-	ror ecx, 28
-	xor eax, ecx
+	mov ebp, eax
+	shr ebp, 4
+	xor ebp, ebx
+	and ebp, 252645135
+	xor ebx, ebp
+	ror ebp, 28
+	xor eax, ebp
 	mov DWORD PTR [edi+8], eax
 	mov DWORD PTR [edi+24], ebx
 	mov eax, DWORD PTR [edi+12]
 	mov ebx, DWORD PTR [edi+28]
-	mov ecx, eax
-	shr ecx, 4
-	xor ecx, ebx
-	and ecx, 252645135
-	xor ebx, ecx
-	ror ecx, 28
-	xor eax, ecx
+	mov ebp, eax
+	shr ebp, 4
+	xor ebp, ebx
+	and ebp, 252645135
+	xor ebx, ebp
+	ror ebp, 28
+	xor eax, ebp
 	mov DWORD PTR [edi+12], eax
 	mov DWORD PTR [edi+28], ebx
 	mov eax, DWORD PTR [edi]
@@ -2905,134 +2793,118 @@ vg_sm4_crypt_prepared:
 	mov DWORD PTR [edi+28], eax
 	mov eax, DWORD PTR [edi]
 	mov ebx, DWORD PTR [edi+4]
-	mov ecx, eax
-	shr ecx, 1
-	xor ecx, ebx
-	and ecx, 1431655765
-	xor ebx, ecx
-	ror ecx, 31
-	xor eax, ecx
+	mov ecx, DWORD PTR [edi+8]
+	mov edx, DWORD PTR [edi+12]
+	mov ebp, eax
+	shr ebp, 1
+	xor ebp, ebx
+	and ebp, 1431655765
+	xor ebx, ebp
+	ror ebp, 31
+	xor eax, ebp
+	mov ebp, ecx
+	shr ebp, 1
+	xor ebp, edx
+	and ebp, 1431655765
+	xor edx, ebp
+	ror ebp, 31
+	xor ecx, ebp
+	mov ebp, eax
+	shr ebp, 2
+	xor ebp, ecx
+	and ebp, 858993459
+	xor ecx, ebp
+	ror ebp, 30
+	xor eax, ebp
+	mov ebp, ebx
+	shr ebp, 2
+	xor ebp, edx
+	and ebp, 858993459
+	xor edx, ebp
+	ror ebp, 30
+	xor ebx, ebp
 	mov DWORD PTR [edi], eax
 	mov DWORD PTR [edi+4], ebx
-	mov eax, DWORD PTR [edi+8]
-	mov ebx, DWORD PTR [edi+12]
-	mov ecx, eax
-	shr ecx, 1
-	xor ecx, ebx
-	and ecx, 1431655765
-	xor ebx, ecx
-	ror ecx, 31
-	xor eax, ecx
-	mov DWORD PTR [edi+8], eax
-	mov DWORD PTR [edi+12], ebx
+	mov DWORD PTR [edi+8], ecx
+	mov DWORD PTR [edi+12], edx
 	mov eax, DWORD PTR [edi+16]
 	mov ebx, DWORD PTR [edi+20]
-	mov ecx, eax
-	shr ecx, 1
-	xor ecx, ebx
-	and ecx, 1431655765
-	xor ebx, ecx
-	ror ecx, 31
-	xor eax, ecx
+	mov ecx, DWORD PTR [edi+24]
+	mov edx, DWORD PTR [edi+28]
+	mov ebp, eax
+	shr ebp, 1
+	xor ebp, ebx
+	and ebp, 1431655765
+	xor ebx, ebp
+	ror ebp, 31
+	xor eax, ebp
+	mov ebp, ecx
+	shr ebp, 1
+	xor ebp, edx
+	and ebp, 1431655765
+	xor edx, ebp
+	ror ebp, 31
+	xor ecx, ebp
+	mov ebp, eax
+	shr ebp, 2
+	xor ebp, ecx
+	and ebp, 858993459
+	xor ecx, ebp
+	ror ebp, 30
+	xor eax, ebp
+	mov ebp, ebx
+	shr ebp, 2
+	xor ebp, edx
+	and ebp, 858993459
+	xor edx, ebp
+	ror ebp, 30
+	xor ebx, ebp
 	mov DWORD PTR [edi+16], eax
 	mov DWORD PTR [edi+20], ebx
-	mov eax, DWORD PTR [edi+24]
-	mov ebx, DWORD PTR [edi+28]
-	mov ecx, eax
-	shr ecx, 1
-	xor ecx, ebx
-	and ecx, 1431655765
-	xor ebx, ecx
-	ror ecx, 31
-	xor eax, ecx
-	mov DWORD PTR [edi+24], eax
-	mov DWORD PTR [edi+28], ebx
-	mov eax, DWORD PTR [edi]
-	mov ebx, DWORD PTR [edi+8]
-	mov ecx, eax
-	shr ecx, 2
-	xor ecx, ebx
-	and ecx, 858993459
-	xor ebx, ecx
-	ror ecx, 30
-	xor eax, ecx
-	mov DWORD PTR [edi], eax
-	mov DWORD PTR [edi+8], ebx
-	mov eax, DWORD PTR [edi+4]
-	mov ebx, DWORD PTR [edi+12]
-	mov ecx, eax
-	shr ecx, 2
-	xor ecx, ebx
-	and ecx, 858993459
-	xor ebx, ecx
-	ror ecx, 30
-	xor eax, ecx
-	mov DWORD PTR [edi+4], eax
-	mov DWORD PTR [edi+12], ebx
-	mov eax, DWORD PTR [edi+16]
-	mov ebx, DWORD PTR [edi+24]
-	mov ecx, eax
-	shr ecx, 2
-	xor ecx, ebx
-	and ecx, 858993459
-	xor ebx, ecx
-	ror ecx, 30
-	xor eax, ecx
-	mov DWORD PTR [edi+16], eax
-	mov DWORD PTR [edi+24], ebx
-	mov eax, DWORD PTR [edi+20]
-	mov ebx, DWORD PTR [edi+28]
-	mov ecx, eax
-	shr ecx, 2
-	xor ecx, ebx
-	and ecx, 858993459
-	xor ebx, ecx
-	ror ecx, 30
-	xor eax, ecx
-	mov DWORD PTR [edi+20], eax
-	mov DWORD PTR [edi+28], ebx
+	mov DWORD PTR [edi+24], ecx
+	mov DWORD PTR [edi+28], edx
 	mov eax, DWORD PTR [edi]
 	mov ebx, DWORD PTR [edi+16]
-	mov ecx, eax
-	shr ecx, 4
-	xor ecx, ebx
-	and ecx, 252645135
-	xor ebx, ecx
-	ror ecx, 28
-	xor eax, ecx
+	mov ebp, eax
+	shr ebp, 4
+	xor ebp, ebx
+	and ebp, 252645135
+	xor ebx, ebp
+	ror ebp, 28
+	xor eax, ebp
 	mov DWORD PTR [edi], eax
 	mov DWORD PTR [edi+16], ebx
 	mov eax, DWORD PTR [edi+4]
 	mov ebx, DWORD PTR [edi+20]
-	mov ecx, eax
-	shr ecx, 4
-	xor ecx, ebx
-	and ecx, 252645135
-	xor ebx, ecx
-	ror ecx, 28
-	xor eax, ecx
+	mov ebp, eax
+	shr ebp, 4
+	xor ebp, ebx
+	and ebp, 252645135
+	xor ebx, ebp
+	ror ebp, 28
+	xor eax, ebp
 	mov DWORD PTR [edi+4], eax
 	mov DWORD PTR [edi+20], ebx
 	mov eax, DWORD PTR [edi+8]
 	mov ebx, DWORD PTR [edi+24]
-	mov ecx, eax
-	shr ecx, 4
-	xor ecx, ebx
-	and ecx, 252645135
-	xor ebx, ecx
-	ror ecx, 28
-	xor eax, ecx
+	mov ebp, eax
+	shr ebp, 4
+	xor ebp, ebx
+	and ebp, 252645135
+	xor ebx, ebp
+	ror ebp, 28
+	xor eax, ebp
 	mov DWORD PTR [edi+8], eax
 	mov DWORD PTR [edi+24], ebx
 	mov eax, DWORD PTR [edi+12]
 	mov ebx, DWORD PTR [edi+28]
-	mov ecx, eax
-	shr ecx, 4
-	xor ecx, ebx
-	and ecx, 252645135
-	xor ebx, ecx
-	ror ecx, 28
-	xor eax, ecx
+	mov ebp, eax
+	shr ebp, 4
+	xor ebp, ebx
+	and ebp, 252645135
+	xor ebx, ebp
+	ror ebp, 28
+	xor eax, ebp
 	mov DWORD PTR [edi+12], eax
 	mov DWORD PTR [edi+28], ebx
 	mov eax, DWORD PTR [edi]

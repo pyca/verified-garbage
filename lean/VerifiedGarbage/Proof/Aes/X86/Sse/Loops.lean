@@ -279,7 +279,7 @@ theorem xor_loop {s : State} {m : Nat}
         hi.ptr _ (by decide), e16]
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at h2
     rw [u₈.other _ h1, u₇.other _ h2.2.2, u₆.other _ h2.2.1, u₅.other _ h2.1, g₄, hi.other _ h1 (by simp [h2])]
-  · rw [u₈.mem, u₇.mem, u₆.mem, u₅.mem, u₄.mem, u₃.xmm, u₂.xmm, u₂.other (X 0) (by decide), u₁.xmm, u₃.mem, u₂.mem,
+  · rw [u₈.mem, u₇.mem, u₆.mem, u₅.mem, u₄.mem, u₃.xmm, u₂.xmm, u₂.other .xmm0 (by decide), u₁.xmm, u₃.mem, u₂.mem,
       u₁.mem, addr_zero, ptr_lt hD hk]
     conv => lhs; rw [show t.mem.writeW = (patch s.mem ((s.gpr .ebx).setWidth 64) (16 * k) _).writeW from
       congrArg Mem.writeW hi.mem]
@@ -301,7 +301,7 @@ theorem inRel_of_bytes {s : State} {B : BitVec 32} (hb : s.gpr .edi = B) (hfit :
   have e := byte_of_readW s.mem (addr B (16 * b)) hi
   rw [addr_eq (by omega_using [hfit, hb8]), BitVec.add_assoc, ← BitVec.ofNat_add] at e
   rw [← e, BitVec.getLsbD_extractLsb', decide_eq_true hj, Bool.true_and]
-  simp only [Q, StraightX.xAddr]
+  simp only [Q, StraightSse.xAddr]
   rw [show s.gpr sb = B from hb, addr_eq (by omega_using [hfit, hb8])]
 
 theorem bytes_of_inRel {s : State} {B : BitVec 32} (hb : s.gpr .edi = B) (hfit : B.toNat + 2048 ≤ 2 ^ 32)
@@ -315,7 +315,7 @@ theorem bytes_of_inRel {s : State} {B : BitVec 32} (hb : s.gpr .edi = B) (hfit :
   rw [← e]
   refine byte_ext fun j hj => ?_
   have := h (i / 16) hb8 (i % 16) hi16 j hj
-  simp only [Q, StraightX.xAddr] at this
+  simp only [Q, StraightSse.xAddr] at this
   rw [show s.gpr sb = B from hb, addr_eq (by omega_using [hfit, hb8])] at this
   rw [BitVec.getLsbD_extractLsb', decide_eq_true hj, Bool.true_and, this]
 

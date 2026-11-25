@@ -119,14 +119,14 @@ variable {rd wr : List Region} {B S E D : BitVec 32} {R n : Nat} {w : List Byte}
 
 /-- The saved registers' region. -/
 theorem saved_in (hfit : B.toNat + 2048 ≤ 2 ^ 32) :
-    ∀ p ∈ savedRegs, (⟨addr B 272, 16⟩ : Region).Contains (addr B p.2) 4 := fun p hp => by
-  have : 272 ≤ p.2 ∧ p.2 + 4 ≤ 288 := by revert p hp; decide
+    ∀ p ∈ savedRegs, (⟨addr B 304, 16⟩ : Region).Contains (addr B p.2) 4 := fun p hp => by
+  have : 304 ≤ p.2 ∧ p.2 + 4 ≤ 320 := by revert p hp; decide
   exact part_contains hfit (by decide) this.1 this.2 (by decide)
 
 /-- A write of working space but the saved registers. -/
 theorem Kept.scratch (hfit : B.toNat + 2048 ≤ 2 ^ 32) {m m' : Mem} (h : Kept B D n m₀ g m) {rs : List Region}
     (hf : Frame rs m m') (hs : ∀ r ∈ rs, Region.Sub r (reg32 B 2048))
-    (hd : ∀ r ∈ rs, Region.Disjoint ⟨addr B 272, 16⟩ r) : Kept B D n m₀ g m' where
+    (hd : ∀ r ∈ rs, Region.Disjoint ⟨addr B 304, 16⟩ r) : Kept B D n m₀ g m' where
   saved := h.saved.of_frame hf (saved_in hfit) hd
   frame := h.frame.trans (hf.sub fun r hr => ⟨reg32 B 2048, by simp, hs r hr⟩)
 
@@ -140,10 +140,10 @@ theorem Kept.data (hfit : B.toNat + 2048 ≤ 2 ^ 32) (hsep : (reg32 D (16 * n)).
 
 /-- A write of the slots. -/
 theorem Kept.slots (hfit : B.toNat + 2048 ≤ 2 ^ 32) {m m' : Mem} (h : Kept B D n m₀ g m)
-    (hf : Frame [reg32 B 272] m m') : Kept B D n m₀ g m' :=
+    (hf : Frame [reg32 B 288] m m') : Kept B D n m₀ g m' :=
   h.scratch hfit hf slots_sub fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
-    show Region.Disjoint _ ⟨B.setWidth 64, 272⟩
+    show Region.Disjoint _ ⟨B.setWidth 64, 288⟩
     rw [← addr_zero]
     exact part_disj hfit (by decide) (by decide) (.inr (by decide))
 
@@ -166,11 +166,13 @@ theorem Good.data (hd : Data wr B S E D n) (he : Env rd wr B S E R) {s s' : Stat
     rw [← hg.w i hi]
     have := he.hR
     exact hf _ fun r hr hc => hd.sch _ (reg_contains he.fitS (by omega_using [hi, this]) (by decide)) (hs r hr _ hc)
+  len := hg.len
 
 theorem KeysAt.data (hd : Data wr B S E D n) (hfit : B.toNat + 2048 ≤ 2 ^ 32) {m m' : Mem} {k : Nat} (hk : k ≤ 13)
     (h : KeysAt m B w k) {rs : List Region} (hf : Frame rs m m')
     (hs : ∀ r ∈ rs, Region.Sub r (reg32 D (16 * n))) : KeysAt m' B w k :=
-  h.frame hk hfit hf fun r hr => ((hd.sep.sub_right (part_sub_reg hfit (by decide))).symm).sub_right (hs r hr)
+  h.frame hk hfit hf (fun r hr => ((hd.sep.sub_right (part_sub_reg hfit (by decide))).symm).sub_right (hs r hr))
+    fun r hr => ((hd.sep.sub_right (part_sub_reg hfit (by decide))).symm).sub_right (hs r hr)
 
 /-- Part of a buffer, from block `k` on. -/
 theorem part_blocks {A : BitVec 32} {k m : Nat} (hfit : A.toNat + 16 * n ≤ 2 ^ 32) (h : k + m ≤ n) (hm : 0 < m) :
@@ -221,14 +223,14 @@ theorem copyIn_ok (he : Env rd wr B S E R) (hd : Data wr B S E D n) {F : Nat →
     rw [u₃.other r h1, u₂.other r h2, u₁.other r h3]
   have rd₃ : s₃.rd = rd := by rw [u₃.rd, u₂.rd, u₁.rd, hi.good.rd]
   have wr₃ : s₃.wr = wr := by rw [u₃.wr, u₂.wr, u₁.wr, hi.good.wr]
-  have ssub : Region.Sub ⟨B.setWidth 64, 16 * m⟩ (reg32 B 272) := Region.sub_prefix (by omega_using [hm8])
+  have ssub : Region.Sub ⟨B.setWidth 64, 16 * m⟩ (reg32 B 288) := Region.sub_prefix (by omega_using [hm8])
   have ssub' : Region.Sub ⟨B.setWidth 64, 16 * m⟩ (reg32 B 2048) := Region.sub_prefix (by omega_using [hm8])
   refine WP.mono (copy_loop (src := .esi) (dst := .edx) (by decide) (by decide) (by decide) (by omega_using [hm8]) hm0 u₃.gpr
     (by rw [hsi]; exact pfit) (by rw [hdx]; omega_using [fB, hm8])
     (by rw [hsi, rd₃, wr₃]; exact blocksIn_of (List.mem_append_right _ hd.dat) fD (by omega_using [hkm]))
     (by rw [hdx, wr₃]; have := blocksIn_of (a := 0) (m := m) he.scr fB (by omega_using [hm8]); simpa using this)
     (by rw [hsi, hdx]; exact (hd.sep.sub_left psub).sub_right ssub')) fun s₄ h₄ => ?_
-  have hf : Frame [reg32 B 272] s.mem s₄.mem := by
+  have hf : Frame [reg32 B 288] s.mem s₄.mem := by
     rw [h₄.mem, hdx, ← hmem₃]
     exact (patch_frame _ _ _ _).sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, List.mem_singleton_self _, ssub⟩
@@ -236,7 +238,7 @@ theorem copyIn_ok (he : Env rd wr B S E R) (hd : Data wr B S E D n) {F : Nat →
     rw [h₄.other r h1 (by simp [h2, h3]), g₃ r h1 h2 h3]
   refine ⟨⟨hi.hk, hi.good.step he (by rw [h₄.rd, rd₃, hi.good.rd]) (by rw [h₄.wr, wr₃, hi.good.wr])
     (g₄ _ (by decide) (by decide) (by decide)) (g₄ _ (by decide) (by decide) (by decide)) hf slots_sub,
-    hi.keys.frame (by omega_using [hR]) fB hf (keys_slots fB), hi.kept.slots fB hf,
+    hi.keys.frame (by omega_using [hR]) fB hf (keys_slots fB) (last_slots fB), hi.kept.slots fB hf,
     by rw [g₄ _ (by decide) (by decide) (by decide), hi.ebx], by rw [g₄ _ (by decide) (by decide) (by decide), hi.ebp],
     ecbInv_frame hf (fun r hr => hd.sep.sub_right (slots_sub r hr)) (by omega_using [fD]) hi.data⟩, fun i hi' => ?_⟩
   rw [h₄.mem, hdx, patch_at hi' (by omega_using [hm8]), hsi, paddr, hmem₃, BitVec.add_assoc, ← BitVec.ofNat_add,
@@ -274,7 +276,7 @@ theorem copyOut_ok (he : Env rd wr B S E R) (hd : Data wr B S E D n) {F : Nat �
     rw [u₃.other r h3, u₂.other r h1, u₁.other r h2]
   have rd₃ : s₃.rd = rd := by rw [u₃.rd, u₂.rd, u₁.rd, hi.good.rd]
   have wr₃ : s₃.wr = wr := by rw [u₃.wr, u₂.wr, u₁.wr, hi.good.wr]
-  have ssub : Region.Sub ⟨B.setWidth 64, 16 * m⟩ (reg32 B 272) := Region.sub_prefix (by omega_using [hm8])
+  have ssub : Region.Sub ⟨B.setWidth 64, 16 * m⟩ (reg32 B 288) := Region.sub_prefix (by omega_using [hm8])
   have ssub' : Region.Sub ⟨B.setWidth 64, 16 * m⟩ (reg32 B 2048) := Region.sub_prefix (by omega_using [hm8])
   refine WP.seq (WP.mono (copy_loop (src := .edx) (dst := .ebx) (by decide) (by decide) (by decide) (by omega_using [hm8])
     hm0 hcx (by rw [hdx]; omega_using [fB, hm8]) (by rw [hbx]; exact pfit)
@@ -371,7 +373,7 @@ structure Entered (B : BitVec 32) (s₀ s : State) : Prop where
   other : ∀ r, r ≠ .eax → r ≠ .edi → s.gpr r = s₀.gpr r
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
-  frame : Frame [⟨addr B 272, 16⟩] s₀.mem s.mem
+  frame : Frame [⟨addr B 304, 16⟩] s₀.mem s.mem
   saved : Spill.Saved s.mem (addr B) s₀.gpr savedRegs
 
 theorem saveRegs_ok {k : Nat} {s : State} {B : BitVec 32} (hB : s.mem.readW (addr (s.gpr .esp) (4 + 4 * k)) 32 = B)
@@ -394,11 +396,11 @@ theorem saveRegs_ok {k : Nat} {s : State} {B : BitVec 32} (hB : s.mem.readW (add
 theorem restoreRegs_ok {s : State} {B : BitVec 32} {g : Reg → BitVec 32} (hb : s.gpr .edi = B)
     (hfit : B.toNat + 2048 ≤ 2 ^ 32) (hw : reg32 B 2048 ∈ s.wr) (hs : Spill.Saved s.mem (addr B) g savedRegs) :
     WP isa (.block restoreRegs) s fun s' =>
-      Spill.Restored s s' g ([(.ebx, 272), (.esi, 276), (.ebp, 284)] ++ [(.edi, 280)]) := by
-  have hm : ∀ p ∈ ([(.ebx, 272), (.esi, 276), (.ebp, 284)] ++ [(.edi, 280)] : List (Reg × Nat)), p ∈ savedRegs := by
+      Spill.Restored s s' g ([(.ebx, 304), (.esi, 308), (.ebp, 316)] ++ [(.edi, 312)]) := by
+  have hm : ∀ p ∈ ([(.ebx, 304), (.esi, 308), (.ebp, 316)] ++ [(.edi, 312)] : List (Reg × Nat)), p ∈ savedRegs := by
     decide
   subst hb
-  refine Spill.restoreBase_ok (b := .edi) (d := 280) (rest := []) [(.ebx, 272), (.esi, 276), (.ebp, 284)] (by decide)
+  refine Spill.restoreBase_ok (b := .edi) (d := 312) (rest := []) [(.ebx, 304), (.esi, 308), (.ebp, 316)] (by decide)
     (fun p hp => ?_) (hs.sub hm) fun s' r => WP.block_nil r
   exact ⟨_, List.mem_append_right _ hw, saved_reg hfit p (hm p hp)⟩
 
@@ -458,7 +460,7 @@ theorem correct_blocks {crypt8 : Prog isa} {f : Nat → List Byte → Spec.Aes.S
       List.getElem?_range hi, Option.map_some, Option.getD_some]
   unfold blocks
   refine WP.seq (WP.mono (saveRegs_ok (by rw [hB]; rfl) (hE ▸ argIn 4 (by decide)) fB hwB) fun s₁ h₁ => ?_)
-  have sub₁ : ∀ r ∈ [(⟨addr B 272, 16⟩ : Region)], Region.Sub r (reg32 B 2048) := fun r hr => by
+  have sub₁ : ∀ r ∈ [(⟨addr B 304, 16⟩ : Region)], Region.Sub r (reg32 B 2048) := fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact part_sub_reg fB (by decide)
   have good₁ : Good s₀.rd s₀.wr B S E R w s₁ :=
     { rd := h₁.rd
@@ -470,17 +472,21 @@ theorem correct_blocks {crypt8 : Prog isa} {f : Nat → List Byte → Spec.Aes.S
       arg1 := by
         rw [h₁.frame.readW (argC 1 (by decide)) (fun r hr => aB.sub_right (sub₁ r hr)) (by decide), hE, hR,
           BitVec.ofNat_toNat, BitVec.setWidth_eq]; rfl
+      len := by rw [hw]; simp [Spec.Aes.bytesAt]
       w := fun i hi => by
         rw [← hg₀ i hi]
         have := he.hR
         exact h₁.frame _ fun r hr hc => he.sepS _ (reg_contains fS (by omega_using [hi, this]) (by decide)) (sub₁ r hr _ hc) }
   refine WP.seq (WP.mono (keys_ok he good₁) fun s₂ ⟨good₂, f₂, keys₂⟩ => ?_)
-  have sub₂ : ∀ r ∈ [(⟨addr B keysOff, 1664⟩ : Region)], Region.Sub r (reg32 B 2048) := fun r hr => by
-    simp only [List.mem_singleton] at hr; subst hr; exact part_sub_reg fB (by decide)
+  have sub₂ := setup_sub fB
   have kept₂ : Kept B D n s₀.mem s₀.gpr s₂.mem :=
     Kept.scratch fB ⟨h₁.saved, h₁.frame.sub fun r hr => ⟨_, List.mem_cons_self .., sub₁ r hr⟩⟩ f₂ sub₂ fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr
-      exact part_disj fB (by decide) (by decide) (.inl (by decide))
+      simp only [setupRs, List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · show Region.Disjoint _ ⟨B.setWidth 64, 304⟩
+        rw [← addr_zero]
+        exact part_disj fB (by decide) (by decide) (.inr (by decide))
+      · exact part_disj fB (by decide) (by decide) (.inl (by decide))
   have F₂ : Frame [reg32 B 2048] s₀.mem s₂.mem :=
     (h₁.frame.sub fun r hr => ⟨_, List.mem_singleton_self _, sub₁ r hr⟩).trans
       (f₂.sub fun r hr => ⟨_, List.mem_singleton_self _, sub₂ r hr⟩)
