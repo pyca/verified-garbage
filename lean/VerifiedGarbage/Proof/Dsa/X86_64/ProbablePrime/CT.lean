@@ -1,5 +1,8 @@
 module
 
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimePreparation
+import VerifiedGarbage.Proof.Framework.X86_64.CallBody
+
 import VerifiedGarbage.Proof.Framework.X86_64.FrameAlloc
 public meta import VerifiedGarbage.Proof.Dsa.ProbablePrimeContract
 import VerifiedGarbage.Proof.Framework.Sig
@@ -547,9 +550,10 @@ open VG.Proof.Dsa.X86_64.Generation (PrimeParams PrimeArguments primeExtras prim
 open VG.Impl.Bignum.X86_64 (seqs)
 
 /-- The body of the function, inside its frame. -/
-abbrev body (mul : Nat → Nat → Nat → Prog isa) (round : Prog isa) : Prog isa :=
+abbrev body (mul : Nat → Nat → Nat → Prog isa) (round : Prog isa)
+    (prepare : Prog isa := Impl.Dsa.X86_64.Generation.primeSetup mul) : Prog isa :=
   .seq setup
-    (seqs [Impl.Dsa.X86_64.Generation.primeBytes mul round, .block exit, .block restoreRegisters])
+    (seqs [Impl.Dsa.X86_64.Generation.primeBytes mul round prepare, .block exit, .block restoreRegisters])
 
 /-- The memory the test may change. -/
 def changed (bits : Nat) (s : State) : List Region :=
@@ -794,9 +798,9 @@ structure Tested {bits : Nat} (hb : Supported bits) {s : State} (A : PrimeABI bi
   rd : u.rd = s.rd
   wr : u.wr = (allocState 56 s).wr
 
-theorem test_ok (M : Mont) (K : Kernel) {bits : Nat} (hb : Supported bits) {s : State}
+theorem test_ok (M : Mont) (K : Kernel) (S : VG.Proof.Dsa.X86_64.Generation.Preparation M) {bits : Nat} (hb : Supported bits) {s : State}
     (A : PrimeABI bits s) {u4 : State} (R : Ready hb A u4) :
-    WP isa (Impl.Dsa.X86_64.Generation.primeBytes M.mm K.run) u4 (Tested hb A) := by
+    WP isa (Impl.Dsa.X86_64.Generation.primeBytes M.mm K.run S.code) u4 (Tested hb A) := by
   obtain fws : ∀ {d n e k : Nat}, d + n ≤ 56 → e + k ≤ domainCheck →
       Region.Disjoint ⟨off (frameSp s) d, n⟩ ⟨off (s.gpr .rdi) e, k⟩ := fun h h' =>
     (A.stackWs.sub_left (frame_stack_sub s h)).sub_right (ws_sub A h')
@@ -807,7 +811,7 @@ theorem test_ok (M : Mont) (K : Kernel) {bits : Nat} (hb : Supported bits) {s : 
   obtain hw : words bits ≤ 48 := by rcases hb with rfl | rfl | rfl | rfl | rfl <;> decide
   -- The test.
   obtain hlow := ((bitLength_iff_bounds (by have := hb.le; omega_using [this])).mp A.bits).1
-  refine WP.mono (VG.Proof.Dsa.X86_64.Generation.primeBytes_ok M K R.args R.ptr
+  refine WP.mono (VG.Proof.Dsa.X86_64.Generation.primeBytes_ok M K S R.args R.ptr
     (bytesAt_length _ _ _) rfl R.src (Nat.zero_le _) hw
     (by change Bignum.slot (words bits) aTab + 2048 ≤ arithmeticBytes
         rcases hb with rfl | rfl | rfl | rfl | rfl <;> decide)
@@ -936,13 +940,13 @@ theorem finish_ok {bits : Nat} (hb : Supported bits) {s : State}
       exact ⟨_, by simp [changed], fun _ h => h⟩
 
 
-theorem body_ok (M : Mont) (K : Kernel) {bits : Nat} (hb : Supported bits) {s : State}
+theorem body_ok (M : Mont) (K : Kernel) (S : VG.Proof.Dsa.X86_64.Generation.Preparation M) {bits : Nat} (hb : Supported bits) {s : State}
     (A : PrimeABI bits s) :
-    WP isa (body M.mm K.run) (allocState 56 s) fun t =>
+    WP isa (body M.mm K.run S.code) (allocState 56 s) fun t =>
       t.gpr .rsp = (allocState 56 s).gpr .rsp ∧ t.wr = (allocState 56 s).wr ∧ t.rd = s.rd ∧
       BodyPost bits s t :=
   WP.seq (WP.mono (prep_ok hb A) fun _ R =>
-    WP.seq (WP.mono (test_ok M K hb A R) fun _ T => finish_ok hb A T))
+    WP.seq (WP.mono (test_ok M K S hb A R) fun _ T => finish_ok hb A T))
 
 end VG.Proof.Dsa.X86_64.ProbablePrime
 
@@ -1318,6 +1322,47 @@ theorem primeSetup_ct (M : Mont) : RelCT isa (Two PrimeSetupBefore)
   unfold Impl.Dsa.X86_64.Generation.primeSetup
   exact RelCT.seq (two_post (primeR2_ct M) (fun _ _ h => primeR2_ready M h))
     (RelCT.seq (two_post (primeConstants_ct M) (fun _ _ h => primeConstants_exponent M h)) primeExponent_ct)
+
+/-- The public stack pointer makes the return-address accesses public. -/
+def PrimeSetupCallBefore (P : PrimeParams) (s : State) : Prop :=
+  PrimeSetupBefore P s ∧ s.gpr .rsp = P.sp
+
+private theorem setup_callEntry {P : PrimeParams} {s : State}
+    (h : PrimeSetupCallBefore P s) : PrimeSetupBefore P s.callEntry := by
+  obtain ⟨⟨mi, hg⟩, hn, hw⟩ := h.1
+  exact ⟨⟨mi, P.callEntry_good hg h.2⟩, P.callEntry_value hg h.2 hn, hw⟩
+
+/-- A call adds only the public return-address accesses to preparation. -/
+theorem primeSetup_call_ct (name : String) (M : Mont) :
+    RelCT isa (Two PrimeSetupCallBefore)
+      (.call name (Impl.Dsa.X86_64.Generation.primeSetup M.mm)) (fun _ _ => True) := by
+  apply RelCT.callBody (primeSetup_ct M)
+  · rintro s t ⟨P, hs, ht⟩
+    exact ⟨P, setup_callEntry hs, setup_callEntry ht⟩
+  · rintro s t ⟨P, hs, ht⟩
+    exact hs.2.trans ht.2.symm
+
+structure TimedPreparation (M : Mont) extends Preparation M where
+  ct : RelCT isa (Two PrimeSetupCallBefore) code (fun _ _ => True)
+
+def TimedPreparation.inlined (M : Mont) : TimedPreparation M where
+  toPreparation := Preparation.inlined M
+  ct := (primeSetup_ct M).mono
+    (fun _ _ ⟨P, hs, ht⟩ => ⟨P, hs.1, ht.1⟩) (fun _ _ h => h)
+
+def TimedPreparation.called (name : String) (M : Mont) : TimedPreparation M where
+  toPreparation := Preparation.called name M
+  ct := primeSetup_call_ct name M
+
+def TimedPreparation.forRound (v : VG.Proof.MillerRabin.X86_64.RoundImpl) : TimedPreparation v.inlineMont where
+  toPreparation := Preparation.forRound v
+  ct := by
+    by_cases h : v.arithSuffix = ""
+    · simp only [Preparation.forRound, h, ite_true, Preparation.inlined]
+      exact (primeSetup_ct v.inlineMont).mono
+        (fun _ _ ⟨P, hs, ht⟩ => ⟨P, hs.1, ht.1⟩) (fun _ _ h => h)
+    · simpa only [Preparation.forRound, h, ite_false, Preparation.called] using
+        primeSetup_call_ct ("vg_dsa_prime_setup" ++ v.arithSuffix) v.inlineMont
 
 end VG.Proof.Dsa.X86_64.Generation
 
@@ -2126,23 +2171,23 @@ theorem primeCall_setup {len drawBytes : Nat} {p : PrimeCallPublic} {s : State}
   obtain ⟨mi, hs⟩ := h.1
   exact ⟨⟨mi, hs.good⟩, hs.n, p.width⟩
 
-theorem primeCall_ready (M : Mont) {len drawBytes : Nat} {p : PrimeCallPublic} {s : State}
+theorem primeCall_ready (M : Mont) (S : Preparation M) {len drawBytes : Nat} {p : PrimeCallPublic} {s : State}
     (h : PrimeCallBefore len drawBytes p s) :
-    WP isa (Impl.Dsa.X86_64.Generation.primeSetup M.mm) s
+    WP isa S.code s
       (fun t => DrawBefore len drawBytes p.draw t ∧ p.draw.used ≤ p.draw.prime.rand.length) := by
   obtain ⟨mi, hs⟩ := h.1
-  exact WP.mono (primeInputSetup_ok M hs p.width) fun _ ⟨mi', ht, _, _⟩ =>
+  exact WP.mono (S.ok hs p.width) fun _ ⟨mi', ht, _, _⟩ =>
     ⟨⟨⟨mi', ht⟩, h.2.2.2⟩, h.2.2.1⟩
 
-theorem probablePrime_ct (M : Mont) (K : Kernel) (len drawBytes : Nat) :
+theorem probablePrime_ct (M : Mont) (K : Kernel) (S : TimedPreparation M) (len drawBytes : Nat) :
     RelCT isa (Two (PrimeCallBefore len drawBytes))
-      (Impl.Dsa.X86_64.Generation.probablePrime M.mm K.run) (fun _ _ => True) := by
+      (Impl.Dsa.X86_64.Generation.probablePrime M.mm K.run S.code) (fun _ _ => True) := by
   unfold Impl.Dsa.X86_64.Generation.probablePrime
   refine RelCT.seq (two_post (primeTrial_ct len drawBytes) (fun _ _ h => primeTrial_tested h)) ?_
   refine two_ite (fun _ _ _ hs ht => by simp only [eval, hs.2, ht.2]) ?_ ?_
   · refine RelCT.seq (two_post
-      (two_map (fun p : PrimeCallPublic => p.draw.prime) (fun _ _ h => primeCall_setup h.1.1)
-        (primeSetup_ct M)) (fun _ _ h => primeCall_ready M h.1.1)) ?_
+      (two_map (fun p : PrimeCallPublic => p.draw.prime) (fun _ _ h =>
+        ⟨primeCall_setup h.1.1, by obtain ⟨_, hi⟩ := h.1.1.1; exact hi.stack⟩) S.ct) (fun _ _ h => primeCall_ready M S.toPreparation h.1.1)) ?_
     exact two_map PrimeCallPublic.draw (fun _ _ h => h) (millerRabin_ct M K len drawBytes)
   · exact two_taint [.rdi] (by
       intro p s t hs ht r hr
@@ -2197,12 +2242,12 @@ theorem primeBytesLoad_ready {len drawBytes : Nat} {p : PrimeBytesPublic} {s : S
   exact WP.mono (loadPrimeBytes_ok hs h.2.1 p.length p.value h.2.2.1) fun _ ⟨ht, _, hk⟩ =>
     ⟨⟨mi, ht⟩, hk.2.2.trans h.2.2.2.1, h.2.2.2.2⟩
 
-theorem primeBytes_ct (M : Mont) (K : Kernel) (len drawBytes : Nat) :
+theorem primeBytes_ct (M : Mont) (K : Kernel) (S : TimedPreparation M) (len drawBytes : Nat) :
     RelCT isa (Two (PrimeBytesBefore len drawBytes))
-      (Impl.Dsa.X86_64.Generation.primeBytes M.mm K.run) (fun _ _ => True) := by
+      (Impl.Dsa.X86_64.Generation.primeBytes M.mm K.run S.code) (fun _ _ => True) := by
   unfold Impl.Dsa.X86_64.Generation.primeBytes
   exact RelCT.seq (two_post (primeBytesLoad_ct len drawBytes) (fun _ _ h => primeBytesLoad_ready h))
-    (two_map PrimeBytesPublic.call (fun _ _ h => h) (probablePrime_ct M K len drawBytes))
+    (two_map PrimeBytesPublic.call (fun _ _ h => h) (probablePrime_ct M K S len drawBytes))
 
 end VG.Proof.Dsa.X86_64.Generation
 
@@ -2399,15 +2444,15 @@ theorem setup_ct : RelCT isa (Two Entered) setup (Two ReadyAt) := by
   refine two_post (two_taint [.rdi, .rsp, .r9] pins (by taint_decide))
     fun v u ⟨s, hb, A, hv, hu⟩ => hu ▸ WP.mono (prep_ok hb A) fun t R => ⟨s, hb, A, hv, R⟩
 
-theorem test_ct (M : Mont) (K : Kernel) :
-    RelCT isa (Two ReadyAt) (Impl.Dsa.X86_64.Generation.primeBytes M.mm K.run) (Two TestedAt) := by
+theorem test_ct (M : Mont) (K : Kernel) (S : VG.Proof.Dsa.X86_64.Generation.TimedPreparation M) :
+    RelCT isa (Two ReadyAt) (Impl.Dsa.X86_64.Generation.primeBytes M.mm K.run S.code) (Two TestedAt) := by
   rintro u₁ u₂ t₁ t₂ u₁' u₂' ⟨v, ⟨s₁, hb, A₁, hv₁, R₁⟩, ⟨s₂, _, A₂, hv₂, R₂⟩⟩ e₁ e₂
-  have hct := VG.Proof.Dsa.X86_64.Generation.primeBytes_ct M K (len v.r9.toNat) (draw v.r9.toNat)
+  have hct := VG.Proof.Dsa.X86_64.Generation.primeBytes_ct M K S (len v.r9.toNat) (draw v.r9.toNat)
   have hp₂ : PrimeBytesBefore (len v.r9.toNat) (draw v.r9.toNat) (bytesPublic hb A₁) u₂ := by
     rw [bytesPublic_eq hb A₁ A₂ (hv₁.trans hv₂.symm)]; exact before_of_ready hb A₂ R₂
   exact ⟨(hct _ _ _ _ _ _ ⟨_, before_of_ready hb A₁ R₁, hp₂⟩ e₁ e₂).1, v,
-    ⟨s₁, hb, A₁, hv₁, post_of_exec (test_ok M K hb A₁ R₁) e₁⟩,
-    ⟨s₂, hb, A₂, hv₂, post_of_exec (test_ok M K hb A₂ R₂) e₂⟩⟩
+    ⟨s₁, hb, A₁, hv₁, post_of_exec (test_ok M K S.toPreparation hb A₁ R₁) e₁⟩,
+    ⟨s₂, hb, A₂, hv₂, post_of_exec (test_ok M K S.toPreparation hb A₂ R₂) e₂⟩⟩
 
 /-- The exit's loads of the workspace's word and of `used`. -/
 abbrev exitLoad : List Instr :=
@@ -2464,10 +2509,10 @@ theorem finish_ct :
   · exact RelCT.mono (RelCT.taintRegs (τ := Taint.ofRegs [.rsp]) (fun x y h => Taint.agree_ofRegs h) []
       (by taint_decide)) (fun _ _ h => h) fun _ _ _ => trivial
 
-theorem code_ct (M : Mont) (K : Kernel) :
-    ConstantTime isa contract.pre contract.pub (code M.mm K.run) := by
+theorem code_ct (M : Mont) (K : Kernel) (S : VG.Proof.Dsa.X86_64.Generation.TimedPreparation M) :
+    ConstantTime isa contract.pre contract.pub (code M.mm K.run S.code) := by
   refine RelCT.constantTime (Q := fun _ _ => True) (RelCT.alloc (R := fun _ _ => True) ?_)
-  refine RelCT.mono (RelCT.seq setup_ct (RelCT.seq (test_ct M K) finish_ct)) ?_ fun _ _ h => h
+  refine RelCT.mono (RelCT.seq setup_ct (RelCT.seq (test_ct M K S) finish_ct)) ?_ fun _ _ h => h
   rintro a b ⟨s₁, s₂, ⟨h₁, h₂, hp⟩, rfl, rfl⟩
   have hv := view_of_pub hp
   have h9 : s₂.gpr .r9 = s₁.gpr .r9 := by

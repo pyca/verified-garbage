@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimePreparation
+
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.ProbablePrime
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeTrial
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.DrawRound
@@ -108,12 +110,12 @@ def PrimeEnd (P : PrimeParams) (s₀ : State) (res : Option (Bool × List Byte))
       used = P.rand.length - rest.length) ∧
     WorkFrame P.B (primeRanges P.w) (primeExtras P) s₀.mem s.mem ∧ Keep mmRegs s₀ s
 
-theorem probablePrime_ok (M : Mont) (K : Kernel) {P : PrimeParams} {mi : BitVec 64} {used : Nat} {s : State}
+theorem probablePrime_ok (M : Mont) (K : Kernel) (S : Preparation M) {P : PrimeParams} {mi : BitVec 64} {used : Nat} {s : State}
     (h : PrimeInput P mi used s) (hu : used ≤ P.rand.length)
     (hw : P.w ≤ 48) (hz : slot P.w aTab + 2048 ≤ P.Z) (hn : 8161 < P.N)
     (hpolicy : 1024 < Spec.Dsa.bitLength P.N ↔ 16 < P.w)
     (hchecks : P.checks = Spec.Dsa.primeChecks (Spec.Dsa.bitLength P.N)) :
-    WP isa (Impl.Dsa.X86_64.Generation.probablePrime M.mm K.run) s
+    WP isa (Impl.Dsa.X86_64.Generation.probablePrime M.mm K.run S.code) s
       (PrimeEnd P s (Spec.Dsa.probablePrime P.N (P.rand.drop used))) := by
   have hspec := VG.Proof.Dsa.Generation.probablePrime_large (by omega_using [hn] : 3 < P.N) P.odd (P.rand.drop used)
   unfold Impl.Dsa.X86_64.Generation.probablePrime
@@ -127,9 +129,9 @@ theorem probablePrime_ok (M : Mont) (K : Kernel) {P : PrimeParams} {mi : BitVec 
     have hres : Spec.Dsa.probablePrime P.N (P.rand.drop used) = primeRest P 1 0 used := by
       rw [hspec, hnot]
       simp only [Bool.false_eq_true, ite_false, primeRest, hchecks]
-    refine WP.seq (WP.mono (primeInputSetup_ok M hi hw) fun v ⟨mi', hv, fv, kv⟩ => ?_)
+    refine WP.seq (WP.mono (S.ok hi hw) fun v ⟨mi', hv, fv, kv⟩ => ?_)
     have fuv : WorkFrame P.B (primeRanges P.w) (primeExtras P) u.mem v.mem :=
-      fv.work.mono (by intro r hr; simp only [primeRanges, List.mem_append]; exact Or.inl (Or.inl (Or.inr hr)))
+      fv.mono (by intro r hr; simp only [primeRanges, List.mem_append]; exact Or.inl (Or.inl (Or.inr hr)))
     refine WP.mono (millerRabin_ok M K hv hu) fun t ⟨used', ht, hut, he, hr, ft, kt⟩ => ?_
     refine ⟨mi', used', ht.input, hut, ?_, ?_, ?_, ((hk.trans kv).trans kt).mono (by decide)⟩
     · intro hnone; exact he (hres ▸ hnone)

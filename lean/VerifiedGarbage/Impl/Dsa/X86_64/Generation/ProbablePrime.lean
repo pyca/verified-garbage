@@ -13,9 +13,10 @@ open VG.Impl.RsaKeyGen.X86_64.Candidate
 
 /-- The small-prime rejection path consumes no witness bytes. Otherwise
 prepare the candidate and call RSA's blinded Miller–Rabin machinery. -/
-def probablePrime (mul : Nat → Nat → Nat → Prog isa) (round : Prog isa) : Prog isa :=
+def probablePrime (mul : Nat → Nat → Nat → Prog isa) (round : Prog isa)
+    (prepare : Prog isa := primeSetup mul) : Prog isa :=
   .seq (seqs trial) (.ite .e
-    (.seq (primeSetup mul) (millerRabin mul round))
+    (.seq prepare (millerRabin mul round))
     (.block [.mov32 .rax (.imm 3), .store (hdr kStat) .rax]))
 
 end VG.Impl.Dsa.X86_64.Generation
