@@ -226,4 +226,9 @@ theorem copyOut_loop {s₁ : State} {m₀ : Mem} {b D : Addr} {n k t : Nat} {F :
     rwa [show j + 1 = t by omega] at h2
   · exact .inr ⟨by rw [show isa.eval = X86_64.eval from rfl, hz]; simp [hl], _, by omega, j + 1, rfl, by omega, h2⟩
 
+theorem bufR_sub (b : Addr) : Region.Sub (bufR b) ⟨b, 1480⟩ := sub_scratch b (by decide)
+
+theorem low416_sub (b : Addr) : Region.Sub ⟨b, 416⟩ ⟨b, 1480⟩ := fun x hx => by
+  simp only [Region.Contains] at hx ⊢; omega
+
 end VG.Proof.Aes.X86_64.Sse
