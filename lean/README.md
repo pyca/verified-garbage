@@ -177,8 +177,6 @@ implementation it may choose is proven against the same contract.
 * Lean's kernel, and the assembler in `rustc`/LLVM for what is printed as
   text: ARM's code, and the branches, calls, addresses of statics and
   directives of the others.
-* That memory keeps its value until it is written
-  ([even if it never was](#memory-nobody-has-written)).
 
 Everything in `Impl/` and `Proof/` is checked by Lean and need not be read.
 
@@ -215,9 +213,6 @@ proofs hold whatever it contains, so it cannot affect:
 Valgrind may report such reads
 ([#6435](https://github.com/pyca/verified-garbage/issues/6435)). That is a bug
 only if an output really depends on the value.
-
-The proofs assume that this memory reads the same twice, which `MADV_FREE` on a
-stack would break.
 
 ## Building
 
