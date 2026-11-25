@@ -73,6 +73,12 @@ or fewer). -/
 def flagLeak (m : Mem) (p : Addr) : Nat :=
   if 48 ≤ powerCount m p then 2 else if 16 ≤ powerCount m p then 1 else 0
 
+/-- How many bytes of the prepared key context at `p` hold secrets: the key
+context and the powers its count says are present, 48 (1024 bytes in all),
+16 (512) or none (256). -/
+def wipePreparedLen (m : Mem) (p : Addr) : Nat :=
+  if 48 ≤ powerCount m p then 1024 else if 16 ≤ powerCount m p then 512 else 256
+
 /-- A 1032-byte context, whose first 256 bytes are a key context. -/
 def prepareSig : Sig where
   params := [("ctx", .array true .u64 129)]
@@ -81,9 +87,18 @@ def prepareSig : Sig where
 the hash subkey in its bytes 240–255 (`ctxH`): writes 48, 16 or none of its
 prepared powers, and their count. With those bytes a key context
 (`KeyRepr`, as `vg_aes_gcm_init` writes it), the result is the prepared key
-context of the same key (`KeyRepr` and `PreparedRepr`). -/
+context of the same key (`KeyRepr` and `PreparedRepr`).
+
+The count is one of those, whatever the word held (the caller need not
+initialize any of the context but its first 256 bytes), and what
+`vg_aes_gcm_wipe_prepared` will not zero, after the powers the count says are
+present (`wipePreparedLen`), is as it was: so that wipe leaves nothing this
+function wrote but the count. -/
 def preparePost (pb : Nat) : prepareSig.Post pb := fun ctx m m' _ =>
-  Aes.bytesAt m' ctx 256 = Aes.bytesAt m ctx 256 ∧ PreparedRepr m' ctx
+  Aes.bytesAt m' ctx 256 = Aes.bytesAt m ctx 256 ∧ PreparedRepr m' ctx ∧
+    (powerCount m' ctx = 0 ∨ powerCount m' ctx = 16 ∨ powerCount m' ctx = 48) ∧
+    Aes.bytesAt m' (ctx + BitVec.ofNat 64 (wipePreparedLen m' ctx)) (1024 - wipePreparedLen m' ctx) =
+      Aes.bytesAt m (ctx + BitVec.ofNat 64 (wipePreparedLen m' ctx)) (1024 - wipePreparedLen m' ctx)
 
 /-- No precondition: the powers are those of whatever hash subkey the
 context holds. -/
@@ -103,10 +118,11 @@ def prepareApi : Api where
     `preparedPower(H^(2*k+2))` and then `preparedPower(H^(2*k+1))`, as two little-endian \
     128-bit words, `H` being the hash subkey in its bytes 240–255, and stores `n` in the \
     64-bit word at byte 1024, `n` being 48, 16 or 0, as the implementation's other \
-    functions read. Use only the \
+    functions read; it writes nothing else. Use only the \
     `*_prepared` APIs, or APIs that read the first 256 bytes, with this format. \
-    Contract: `VG.Spec.Gcm.prepareContract`: the first 256 bytes are kept and the context \
-    satisfies `PreparedRepr`. Constant time: only the pointer may affect timing, not \
+    Contract: `VG.Spec.Gcm.prepareContract`: the first 256 bytes are kept, the context \
+    satisfies `PreparedRepr`, and the bytes between its powers and their count are unchanged. \
+    Constant time: only the pointer may affect timing, not \
     the hash subkey."
   safety := []
 
@@ -114,15 +130,12 @@ def prepareApi : Api where
 def wipePreparedSig : Sig where
   params := [("ctx", .array true .u64 129)]
 
-/-- How many bytes of the prepared key context at `p` hold secrets: the key
-context and the powers its count says are present, 48 (1024 bytes in all),
-16 (512) or none (256). -/
-def wipePreparedLen (m : Mem) (p : Addr) : Nat :=
-  if 48 ≤ powerCount m p then 1024 else if 16 ≤ powerCount m p then 512 else 256
-
-/-- Zeroes the first `wipePreparedLen` bytes, as the count was on entry. -/
+/-- Zeroes the first `wipePreparedLen` bytes, as the count was on entry, and
+writes none after them. -/
 def wipePreparedPost (pb : Nat) : wipePreparedSig.Post pb := fun ctx m m' _ =>
-  Aes.bytesAt m' ctx (wipePreparedLen m ctx) = List.replicate (wipePreparedLen m ctx) 0
+  Aes.bytesAt m' ctx (wipePreparedLen m ctx) = List.replicate (wipePreparedLen m ctx) 0 ∧
+    Aes.bytesAt m' (ctx + BitVec.ofNat 64 (wipePreparedLen m ctx)) (1032 - wipePreparedLen m ctx) =
+      Aes.bytesAt m (ctx + BitVec.ofNat 64 (wipePreparedLen m ctx)) (1032 - wipePreparedLen m ctx)
 
 /-- What `wipe` may leak: `flagLeak`. -/
 def wipePreparedLeak (pb : Nat) : Curry (wipePreparedSig.words pb) (Mem → List Nat) :=
@@ -143,7 +156,8 @@ def wipePreparedApi : Api where
   summary := "Wipes the 1032-byte `*ctx`, a prepared key context of `vg_aes_gcm_prepare`: \
     sets to zero the key context and the powers its count (the 64-bit word at byte 1024) \
     says are present: its first 1024 bytes if the count is at least 48, 512 if it is at \
-    least 16, and 256 otherwise (the bytes after them were not written). \
+    least 16, and 256 otherwise (`vg_aes_gcm_prepare` did not write the bytes after them, \
+    but the count), and leaves the others unchanged. \
     Contract: `VG.Spec.Gcm.wipePreparedContract`. Constant time: only the pointer and \
     which of those the count is may affect timing, not the bytes wiped."
   safety := []

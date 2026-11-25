@@ -75,4 +75,45 @@ local instance (m : Mem) (p : Addr) : Decidable (PreparedPowersRepr m p) := by
         rawMem (0x1000 + BitVec.ofNat 64 i))
 #guard !decide (PreparedPowersRepr rawMem 0x1000)
 
+/-! ## What `prepare` writes, `wipe` zeroes (#6333)
+
+Of the contracts alone, whatever the implementations. -/
+
+theorem bytesAt_byte {m m' : Mem} {p : Addr} {n : Nat} (h : Spec.Aes.bytesAt m p n = Spec.Aes.bytesAt m' p n)
+    {i : Nat} (hi : i < n) : m (p + BitVec.ofNat 64 i) = m' (p + BitVec.ofNat 64 i) := by
+  have := congrArg (·[i]?) h
+  simpa only [Spec.Aes.bytesAt, List.getElem?_map, List.getElem?_range hi, Option.map_some, Option.some.injEq]
+    using this
+
+/-- After `prepare` (from `m` to `m'`) and `wipe` (to `m''`), each byte of the
+context but its count is zero, or was never written. -/
+theorem prepare_wipe {pb : Nat} {ctx : Addr} {m m' m'' : Mem} {r r'} (hp : preparePost pb ctx m m' r)
+    (hw : wipePreparedPost pb ctx m' m'' r') (i : Nat) (hi : i < 1024) :
+    m'' (ctx + BitVec.ofNat 64 i) = 0 ∨
+      256 ≤ i ∧ m'' (ctx + BitVec.ofNat 64 i) = m (ctx + BitVec.ofNat 64 i) := by
+  obtain ⟨-, -, -, keep⟩ := hp
+  obtain ⟨zero, rest⟩ := hw
+  have hl : 256 ≤ wipePreparedLen m' ctx ∧ wipePreparedLen m' ctx ≤ 1024 := by
+    unfold wipePreparedLen; split
+    · decide
+    · split <;> decide
+  by_cases h : i < wipePreparedLen m' ctx
+  · left
+    have := congrArg (·[i]?) zero
+    simpa only [Spec.Aes.bytesAt, List.getElem?_map, List.getElem?_range h, Option.map_some,
+      List.getElem?_replicate, h, ↓reduceIte, Option.some.injEq] using this
+  · right
+    have e : ctx + BitVec.ofNat 64 i =
+        ctx + BitVec.ofNat 64 (wipePreparedLen m' ctx) + BitVec.ofNat 64 (i - wipePreparedLen m' ctx) := by
+      rw [BitVec.add_assoc, ← BitVec.ofNat_add, show wipePreparedLen m' ctx + (i - wipePreparedLen m' ctx) = i by omega]
+    refine ⟨by omega, ?_⟩
+    rw [e, bytesAt_byte rest (by omega), bytesAt_byte keep (by omega)]
+
+/-- `prepare` may not leave the count as it finds it: the caller need not
+initialize it, and any other value than 0, 16 and 48 breaks the contract. -/
+example {pb : Nat} {ctx : Addr} {m m' : Mem} {r} (stale : powerCount m' ctx = powerCount m ctx)
+    (h0 : powerCount m ctx ≠ 0) (h16 : powerCount m ctx ≠ 16) (h48 : powerCount m ctx ≠ 48) :
+    ¬ preparePost pb ctx m m' r := by
+  rintro ⟨-, -, h | h | h, -⟩ <;> omega
+
 end VG.Test.GcmPrepared
