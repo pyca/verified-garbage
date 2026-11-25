@@ -2,6 +2,9 @@
 
 use criterion::Criterion;
 
+#[cfg(target_arch = "aarch64")]
+#[path = "p384_proto.rs"]
+mod proto;
 pub const USES: &[&str] = &["ecdh_p384", "ec_p384", "ec_p384_validate"];
 
 #[cfg(any(
@@ -27,6 +30,13 @@ pub fn bench(c: &mut Criterion) {
 
     use crate::{AWS_LC, BenchDyn, OPENSSL, VG};
 
+    #[cfg(target_arch = "aarch64")]
+    for (name, f) in proto::PROTOS {
+        let mut buf = [0x1234_5678_9abc_def1u64; 256];
+        let mut g = c.benchmark_group(format!("ecdh_p384_{name}"));
+        g.bench(BenchmarkId::new(VG, 8), |b| b.iter(|| unsafe { f(black_box(buf.as_mut_ptr())) }));
+        g.finish();
+    }
     let d = [0x42; 48];
     let peer = *PrivateKey::<P384>::from_bytes(&[0x24; 48])
         .public_key()
