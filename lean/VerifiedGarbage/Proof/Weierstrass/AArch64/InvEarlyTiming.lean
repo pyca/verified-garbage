@@ -226,8 +226,8 @@ theorem invAllocated_batch_ok {base : Addr} {size m : Nat} (hsize : 8192≤size)
   refine WP.mono (Forward.InvAllocated.refine hsb hsize qb) fun t ⟨u,qu,hu,kt,ut⟩ => ?_
   obtain ⟨iu,u19,ku,uu⟩ := qu
   have heq : ∀ a∈[invAllocatedCfg.sF,invAllocatedCfg.sG,invAllocatedCfg.sA,invAllocatedCfg.sB],
-      ∀ n≤5,wordsVal t.mem base a n=wordsVal u.mem base a n := by
-    intro a ha n hn
+      ∀ n≤5,a+8*n≤2416 → wordsVal t.mem base a n=wordsVal u.mem base a n := by
+    intro a ha n hn hb
     change a∈[2272,2312,2352,2384] at ha
     apply word_values
     intro i hi
@@ -245,10 +245,10 @@ theorem invAllocated_batch_ok {base : Addr} {size m : Nat} (hsize : 8192≤size)
   refine ⟨⟨?_,?_,?_,?_,?_⟩,?_,?_,?_⟩
   · rw [kt.gpr _ hnot1]
     simpa only [Divstep.batch] using bd
-  · rw [heq _ (by simp) _ (by decide)]; exact iu.f
-  · rw [heq _ (by simp) _ (by decide)]; exact iu.g
-  · rw [heq _ (by simp) _ (by decide)]; exact iu.a
-  · rw [heq _ (by simp) _ (by decide)]; exact iu.b
+  · rw [heq _ (by simp) _ (by decide) (by decide)]; exact iu.f
+  · rw [heq _ (by simp) _ (by decide) (by decide)]; exact iu.g
+  · rw [heq _ (by simp) _ (by decide) (by decide)]; exact iu.a
+  · rw [heq _ (by simp) _ (by decide) (by decide)]; exact iu.b
   · rw [kt.gpr _ hnot19]; exact b19
   · exact (bkeep.mono (by decide)).trans (kt.mono fun r hr => List.mem_cons_of_mem _ (invAllocated_update_clob r hr))
   · have h := ut.cover invAllocated_update_writes

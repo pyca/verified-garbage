@@ -51,18 +51,26 @@ def halfShift : List Instr :=
 def half (o a : Nat) : List Instr :=
   zero7 :: loads (low 4) a ++ (halfMask ++ addPrime ++ halfShift) ++ stores (low 4) o
 
-/-- `M / 3` in `864`. -/
-def ops1 : List FOp :=
-  [.mul 800 576 576, .add 832 544 544, .sub 864 512 800, .add 896 512 800, .mul 864 864 896]
-/-- `X'`, `Z'`, `M (S - X')` in `544` and `g²` in `896`. -/
-def ops2 : List FOp :=
-  [.mul 896 832 832, .mul 928 512 896, .mul 576 832 576, .mul 512 864 864,
-   .sub 512 512 928, .sub 512 512 928, .sub 928 928 512, .mul 544 864 928, .mul 896 896 896]
-def ops3 : List FOp := [.sub 544 544 896]
+/-- A step of the doubling. -/
+inductive Step where
+  | field (f : FOp)
+  | triple (o a : Nat)
+  | half (o a : Nat)
 
-def raw : List Instr :=
-  ops1.flatMap VerifySparse.op ++ triple 864 864 ++ ops2.flatMap VerifySparse.op ++
-    half 896 896 ++ ops3.flatMap VerifySparse.op
+def Step.code : Step → List Instr
+  | .field f => VerifySparse.op f
+  | .triple o a => EcdhDouble.triple o a
+  | .half o a => EcdhDouble.half o a
+
+/-- `X`, `Y`, `Z` in `512`, `544`, `576`; temporaries from `800`. -/
+def steps : List Step :=
+  [.field (.mul 800 576 576), .field (.add 832 544 544), .field (.sub 864 512 800), .field (.add 896 512 800),
+   .field (.mul 864 864 896), .triple 864 864,
+   .field (.mul 896 832 832), .field (.mul 928 512 896), .field (.mul 576 832 576), .field (.mul 512 864 864),
+   .field (.sub 512 512 928), .field (.sub 512 512 928), .field (.sub 928 928 512), .field (.mul 544 864 928),
+   .field (.mul 896 896 896), .half 896 896, .field (.sub 544 544 896)]
+
+def raw : List Instr := steps.flatMap Step.code
 
 def code : List Instr := EcdhAllocatedCode.double
 

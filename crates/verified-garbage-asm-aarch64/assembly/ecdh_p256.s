@@ -9303,7 +9303,6 @@ vg_ecdh_p256:
 	sub x9, x16, x9
 	and x4, x12, x9
 	adds x26, x26, x4
-	str x26, [x0, #2416]
 	and x3, x5, x9
 	adcs x3, x2, x3
 	and x13, x27, x9

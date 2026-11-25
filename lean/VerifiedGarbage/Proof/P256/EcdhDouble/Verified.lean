@@ -7,7 +7,6 @@ import VerifiedGarbage.Proof.P256.VerifySparse.Fprog
 import VerifiedGarbage.Proof.Mont.AArch64.Ops
 import VerifiedGarbage.Proof.Mont.AArch64.Csub
 import VerifiedGarbage.Proof.Mont.AArch64.Chain
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ReductionArithmetic
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Lit
@@ -99,6 +98,13 @@ private theorem sub4_ok (s : State) (y0 y1 y2 y3 : Reg) (h1 : y1 ≠ .x8) (h2 : 
   unfold four
   omega_using [v]
 
+/-- The word `k` bits up a pair of words. -/
+private theorem extr_toNat (hi lo : BitVec 64) (k : Nat) :
+    ((hi ++ lo).extractLsb' k 64).toNat = (2 ^ 64 * hi.toNat + lo.toNat) / 2 ^ k % 2 ^ 64 := by
+  have e : (hi ++ lo).toNat = 2 ^ 64 * hi.toNat + lo.toNat := by
+    rw [BitVec.toNat_append, Nat.shiftLeft_eq, Nat.mul_comm, ← Nat.two_pow_add_eq_or_of_lt lo.isLt]
+  rw [BitVec.extractLsb'_toNat, e, Nat.shiftRight_eq_div_pow]
+
 /-! ### The prime under a mask -/
 
 private theorem addPrime_ok (s : State) (b : Bool) (hz : s.gpr .x7 = 0) (hm : s.gpr .x17 = if b then -1 else 0) :
@@ -146,7 +152,7 @@ private theorem tripleSum_ok (s : State) (hz : s.gpr .x7 = 0) :
     refine ⟨?_, fun r hr => ?_, rfl, rfl, rfl, rfl⟩
     · rw [words]
       unfold four
-      rw [shl1, P521Square.extract_toNat, P521Square.extract_toNat, P521Square.extract_toNat,
+      rw [shl1, extr_toNat, extr_toNat, extr_toNat,
         BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]
       have h0 := (s.gpr .x8).isLt
       have h1 := (s.gpr .x9).isLt
@@ -334,7 +340,7 @@ private theorem halfShift_ok (s : State) (hz : s.gpr .x7 = 0) :
     simp only [RegUpd.gpr_write, reduceCtorEq, ite_true, ite_false]
     unfold four
     simp only [BitVec.setWidth_eq]
-    rw [P521Square.extract_toNat, P521Square.extract_toNat, P521Square.extract_toNat, P521Square.extract_toNat]
+    rw [extr_toNat, extr_toNat, extr_toNat, extr_toNat]
     have hc : ((0 : BitVec 64) + 0 + BitVec.ofNat 64 s.c.toNat).toNat = s.c.toNat := by cases s.c <;> rfl
     rw [hc]
     have h0 := (s.gpr .x8).isLt
@@ -407,57 +413,111 @@ def halfE : Fe C := Fin.ofNat C.p halfP
 
 private theorem halfE_two : (2 : Fe C) * halfE = 1 := by decide +kernel
 
-private theorem toM_triple (x : Nat) : toM C.p (2 ^ 256) (3 * x % C.p) = 3 * toM C.p (2 ^ 256) x := by
-  unfold toM
-  rw [ofNat_mod, ofNat_mul', Lean.Grind.Semiring.mul_assoc]; rfl
+/-- The slot a step writes, those it reads, and its effect on field values (`h` for one half). -/
+def out : Step → Nat
+  | .field f => f.out
+  | .triple o _ | .half o _ => o
+def ins : Step → List Nat
+  | .field f => f.ins
+  | .triple _ a | .half _ a => [a]
+def run {F : Type _} [Lean.Grind.CommRing F] (h : F) (E : Nat → F) : Step → Nat → F
+  | .field f => f.run E
+  | .triple o a => Function.update E o (3 * E a)
+  | .half o a => Function.update E o (h * E a)
+def runs {F : Type _} [Lean.Grind.CommRing F] (h : F) (l : List Step) (E : Nat → F) : Nat → F := l.foldl (run h) E
 
-private theorem toM_half {x y : Nat} (h : 2 * y % C.p = x) :
-    toM C.p (2 ^ 256) y = halfE * toM C.p (2 ^ 256) x := by
-  have e : Fin.ofNat C.p x = 2 * Fin.ofNat C.p y := by
-    rw [← h, ofNat_mod, ofNat_mul']; rfl
-  unfold toM
-  rw [e, ← Lean.Grind.Semiring.mul_assoc, ← Lean.Grind.Semiring.mul_assoc,
-    Lean.Grind.CommSemiring.mul_comm halfE, halfE_two, Lean.Grind.Semiring.one_mul]
+/-- The slots that hold field values after the steps, when each reads only such slots. -/
+def defined : List Step → List Nat → Option (List Nat)
+  | [], V => some V
+  | st :: l, V => if (ins st).all (· ∈ V) then defined l (out st :: V) else none
 
-/-- The raw program's effect on the field slots, `hf` for half. -/
-def resultF {F : Type _} [Lean.Grind.CommRing F] (hf : F) (E : Nat → F) : Nat → F :=
-  let e := runOps ops1 E
-  let e := Function.update e 864 (3 * e 864)
-  let e := runOps ops2 e
-  let e := Function.update e 896 (hf * e 896)
-  runOps ops3 e
+private theorem step_ok {M : Mod} (hME : M = Impl.P256.VerifySparse.M) {Sl : Nat → Prop} (hL : Lay M 8192 Sl)
+    (hAl : Aligned M Sl) {base : Addr} {V : List Nat} {E : Nat → Fe C} {s : State} (st : Step)
+    (hS : ∀ x ∈ out st :: ins st, Sl x) (hR : ∀ x ∈ ins st, x ∈ V) (hi : Inv M base 8192 C.p Sl V E s) :
+    WP isa (.block st.code) s fun t => Inv M base 8192 C.p Sl (out st :: V) (run halfE E st) t := by
+  obtain hn : M.n = 4 := hME ▸ rfl
+  have len (x : Nat) (hx : Sl x) : x + 32 ≤ 8192 := by
+    have := hL.le x hx; rw [hn] at this; exact this
+  cases st with
+  | field f =>
+    exact WP.mono (VerifySparse.fop_ok hME (m := C.p) rfl hL hAl (unitMod_pow_two (by decide) _) hi hS hR)
+      fun _ h => h.2
+  | triple o a =>
+    have so := hS o (by simp [out]); have sa := hS a (by simp [ins]); have va := hR a (by simp [ins])
+    have lt := hi.lt a va; rw [hn] at lt
+    refine WP.mono (triple_ok hi.scr (len o so) (len a sa) (hAl.sl o so) (hAl.sl a sa) lt) fun t ⟨k, e⟩ => ?_
+    refine hi.update hL so (hME ▸ k) (by rw [hn, e]; exact Nat.mod_lt _ (by decide)) ?_
+    rw [← hi.val a va, hn, e]
+    unfold toM
+    rw [show (p : Nat) = C.p from rfl, ofNat_mod, ofNat_mul', Lean.Grind.Semiring.mul_assoc]; rfl
+  | half o a =>
+    have so := hS o (by simp [out]); have sa := hS a (by simp [ins]); have va := hR a (by simp [ins])
+    have lt := hi.lt a va; rw [hn] at lt
+    refine WP.mono (half_ok hi.scr (len o so) (len a sa) (hAl.sl o so) (hAl.sl a sa) lt) fun t ⟨k, b, e⟩ => ?_
+    refine hi.update hL so (hME ▸ k) (by rw [hn]; exact b) ?_
+    rw [← hi.val a va, hn, ← e]
+    unfold toM
+    rw [show (p : Nat) = C.p from rfl, ofNat_mod, ofNat_mul', ← Lean.Grind.Semiring.mul_assoc,
+      ← Lean.Grind.Semiring.mul_assoc, Lean.Grind.CommSemiring.mul_comm halfE,
+      show Fin.ofNat C.p 2 * halfE = 1 from halfE_two, Lean.Grind.Semiring.one_mul]
 
-private theorem resultF_R {F : Type _} [Lean.Grind.CommRing F] {hf : F} (h2 : 2 * hf = 1) (E : Nat → F) :
-    (resultF hf E 512, resultF hf E 544, resultF hf E 576) = dblJF (E 512) (E 544) (E 576) := by
-  simp only [resultF, ops1, ops2, ops3, runOps, List.foldl_cons, List.foldl_nil, FOp.run, Function.update_apply,
+private theorem steps_ok {M : Mod} (hME : M = Impl.P256.VerifySparse.M) {Sl : Nat → Prop} (hL : Lay M 8192 Sl)
+    (hAl : Aligned M Sl) {base : Addr} {U : List Nat} : ∀ (l : List Step) {V : List Nat} {E : Nat → Fe C} {s : State},
+    (∀ st ∈ l, ∀ x ∈ out st :: ins st, Sl x) → defined l V = some U → Inv M base 8192 C.p Sl V E s →
+    WP isa (.block (l.flatMap Step.code)) s fun t => Inv M base 8192 C.p Sl U (runs halfE l E) t
+  | [], _, _, _, _, hd, hi => WP.block_nil (by cases hd; exact hi)
+  | st :: l, V, _, _, hS, hd, hi => by
+    by_cases h : (ins st).all (· ∈ V) = true
+    · rw [defined, ite_eq_left h] at hd
+      rw [List.flatMap_cons, WP.block_append_iff]
+      exact WP.mono (step_ok hME hL hAl st (hS st (List.mem_cons_self ..))
+        (by simpa only [List.all_eq_true, decide_eq_true_eq] using h) hi) fun _ i =>
+          steps_ok hME hL hAl l (fun st' h' => hS st' (List.mem_cons_of_mem _ h')) hd i
+    · rw [defined, ite_eq_right h] at hd; cases hd
+
+/-- `defined` reads membership only, so it is the same for any list that has the point. -/
+private theorem defined_append : ∀ (l : List Step) {V U : List Nat} (W : List Nat), defined l V = some U →
+    defined l (V ++ W) = some (U ++ W)
+  | [], _, _, _, h => by cases h; rfl
+  | st :: l, V, U, W, h => by
+    by_cases hc : (ins st).all (· ∈ V) = true
+    · rw [defined, ite_eq_left hc] at h
+      rw [defined, ite_eq_left (by
+        simp only [List.all_eq_true, decide_eq_true_eq] at hc ⊢
+        exact fun x hx => List.mem_append_left _ (hc x hx))]
+      exact defined_append l W h
+    · rw [defined, ite_eq_right hc] at h; cases h
+
+private theorem point_run {F : Type _} [Lean.Grind.CommRing F] {h : F} (h2 : 2 * h = 1) (E : Nat → F) :
+    (runs h steps E 512, runs h steps E 544, runs h steps E 576) = dblJF (E 512) (E 544) (E 576) := by
+  simp only [runs, steps, run, List.foldl_cons, List.foldl_nil, FOp.run, Function.update_apply,
     Nat.reduceEqDiff, ite_true, ite_false, dblJF, Prod.mk.injEq]
   refine ⟨?_, ?_, ?_⟩ <;> grind
 
-/-- The raw program's effect on the field slots. -/
-def result (E : Nat → Fe C) : Nat → Fe C :=
-  resultF halfE E
+private theorem runs_other {h : Fe C} {x : Nat} : ∀ (l : List Step) (E : Nat → Fe C), (∀ st ∈ l, out st ≠ x) →
+    runs h l E x = E x
+  | [], _, _ => rfl
+  | st :: l, E, hx => by
+    have n : x ≠ out st := fun e => hx st (List.mem_cons_self ..) e.symm
+    refine (runs_other l (run h E st) fun st' h' => hx st' (List.mem_cons_of_mem _ h')).trans ?_
+    cases st with
+    | field f =>
+      refine runOps_of_not_out [f] E ?_
+      intro f' hf e
+      rw [List.mem_singleton.mp hf] at e
+      exact n e.symm
+    | triple o a => exact Function.update_of_ne n _ _
+    | half o a => exact Function.update_of_ne n _ _
 
+/-- The slots the steps use. -/
 def slotsUsed : List Nat := [512, 544, 576, 800, 832, 864, 896, 928]
 
-theorem result_R (E : Nat → Fe C) : (result E 512, result E 544, result E 576) = dblJF (E 512) (E 544) (E 576) :=
-  resultF_R halfE_two E
-
-theorem result_other (E : Nat → Fe C) {x : Nat} (hx : x ∉ slotsUsed) : result E x = E x := by
-  have h : ∀ ops, ops ∈ [ops1, ops2, ops3] → ∀ op ∈ ops, op.out ∈ slotsUsed := by decide
-  have n (ops) (ho : ops ∈ [ops1, ops2, ops3]) (op) (hm : op ∈ ops) : op.out ≠ x := fun e => hx (e ▸ h ops ho op hm)
-  have n864 : x ≠ 864 := fun e => hx (e ▸ by decide)
-  have n896 : x ≠ 896 := fun e => hx (e ▸ by decide)
-  unfold result resultF
-  rw [runOps_of_not_out _ _ (n _ (by simp)), Function.update_of_ne n896, runOps_of_not_out _ _ (n _ (by simp)),
-    Function.update_of_ne n864, runOps_of_not_out _ _ (n _ (by simp))]
-
-/-- On live slots the result is the field program's that the callers' statements name. -/
-theorem result_of (E : Nat → Fe C) {live : List Nat}
-    (h : ∀ x ∈ live, x ∈ [512, 544, 576] ∨ x ∉ slotsUsed ∧ ∀ op ∈ operations .doubleRR, op.out ≠ x) :
-    ∀ x ∈ live, result E x = runOps (operations .doubleRR) E x := by
-  intro x hx
-  rcases h x hx with hm | ⟨hn, ho⟩
-  · have e := (result_R E).trans (dblJMul_inplace_run (S := Impl.P256.VerifyDouble.S)
+/-- On the callers' live slots the steps have the effect of the field program their statements name. -/
+private theorem runs_eq (E : Nat → Fe C) {x : Nat}
+    (h : x ∈ [512, 544, 576] ∨ x ∉ slotsUsed ∧ ∀ op ∈ operations .doubleRR, op.out ≠ x) :
+    runs halfE steps E x = runOps (operations .doubleRR) E x := by
+  rcases h with hm | ⟨hn, ho⟩
+  · have e := (point_run halfE_two E).trans (dblJMul_inplace_run (S := Impl.P256.VerifyDouble.S)
       (p := Impl.P256.VerifyDouble.R) (by decide +kernel) E).symm
     simp only [Prod.mk.injEq] at e
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hm
@@ -465,69 +525,8 @@ theorem result_of (E : Nat → Fe C) {live : List Nat}
     · exact e.1
     · exact e.2.1
     · exact e.2.2
-  · rw [result_other E hn, runOps_of_not_out _ _ ho]
-
-theorem raw_ok {M : Mod} (hME : M = Impl.P256.VerifySparse.M) {Sl : Nat → Prop} (hL : Lay M 8192 Sl)
-    (hAl : Aligned M Sl) (hS : ∀ x ∈ slotsUsed, Sl x) {base : Addr} {V : List Nat} {E : Nat → Fe C} {s : State}
-    (hV : ∀ x ∈ [512, 544, 576], x ∈ V) (hi : Inv M base 8192 C.p Sl V E s) :
-    WP isa (.block raw) s fun t => Inv M base 8192 C.p Sl V (result E) t := by
-  obtain hn : M.n = 4 := hME ▸ rfl
-  have hm : UnitMod C.p (2 ^ (64 * M.n)) := unitMod_pow_two (by decide) _
-  have sl (ops : List FOp) (h : ∀ op ∈ ops, ∀ x ∈ op.out :: op.ins, x ∈ slotsUsed) :
-      ∀ op ∈ ops, ∀ x ∈ op.out :: op.ins, Sl x := fun op ho x hx => hS x (h op ho x hx)
-  have len (x : Nat) (hx : Sl x) : x + 32 ≤ 8192 := by
-    have := hL.le x hx; rw [hn] at this; exact this
-  have mono {ops : List FOp} {R V : List Nat} (h : readsOk ops R = true) (hv : ∀ x ∈ R, x ∈ V) :
-      readsOk ops V = true := readsOk_mono h hv
-  rw [raw]
-  simp only [List.append_assoc]
-  rw [WP.block_append_iff]
-  refine WP.mono (VerifySparse.fprog_ok hME (m := C.p) rfl hL hAl hm ops1 hi (sl _ (by decide))
-    (mono (R := [512, 544, 576]) (by decide) hV)) fun s1 ⟨_, i1⟩ => ?_
-  rw [WP.block_append_iff]
-  have v1 : 864 ∈ validAfter ops1 V := (mem_validAfter _ _).mpr (.inr (by decide))
-  have l1 := i1.lt 864 v1
-  have S864 := hS 864 (by decide)
-  have S896 := hS 896 (by decide)
-  rw [hn] at l1
-  refine WP.mono (triple_ok i1.scr (len _ S864) (len _ S864) (hAl.sl _ S864) (hAl.sl _ S864) l1)
-    fun s2 ⟨k2, e2⟩ => ?_
-  rw [← hME] at k2
-  have i2 := i1.update hL S864 k2 (by rw [hn, e2]; exact Nat.mod_lt _ (by decide))
-    (v := 3 * runOps ops1 E 864) (by
-      have v := i1.val 864 v1
-      rw [hn] at v ⊢
-      rw [e2, ← v]; exact toM_triple _)
-  rw [WP.block_append_iff]
-  refine WP.mono (VerifySparse.fprog_ok hME (m := C.p) rfl hL hAl hm ops2 i2 (sl _ (by decide))
-    (mono (R := [512, 544, 576, 864, 800, 832, 896]) (by decide) fun x hx => ?_)) fun s3 ⟨_, i3⟩ => ?_
-  · simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
-    rcases hx with rfl | rfl | rfl | rfl | rfl | rfl | rfl
-    · exact List.mem_cons_of_mem _ ((mem_validAfter _ _).mpr (.inl (hV _ (by decide))))
-    · exact List.mem_cons_of_mem _ ((mem_validAfter _ _).mpr (.inl (hV _ (by decide))))
-    · exact List.mem_cons_of_mem _ ((mem_validAfter _ _).mpr (.inl (hV _ (by decide))))
-    all_goals exact List.mem_cons_of_mem _ ((mem_validAfter _ _).mpr (.inr (by decide)))
-  rw [WP.block_append_iff]
-  have v3 : 896 ∈ validAfter ops2 (864 :: validAfter ops1 V) := (mem_validAfter _ _).mpr (.inr (by decide))
-  have v3' : 544 ∈ validAfter ops2 (864 :: validAfter ops1 V) := (mem_validAfter _ _).mpr (.inr (by decide))
-  have l3 := i3.lt 896 v3
-  rw [hn] at l3
-  refine WP.mono (half_ok i3.scr (len _ S896) (len _ S896) (hAl.sl _ S896) (hAl.sl _ S896) l3)
-    fun s4 ⟨k4, b4, e4⟩ => ?_
-  rw [← hME] at k4
-  have i4 := i3.update hL S896 k4 (by rw [hn]; exact b4)
-    (v := halfE * runOps ops2 (Function.update (runOps ops1 E) 864 (3 * runOps ops1 E 864)) 896) (by
-      have v := i3.val 896 v3
-      rw [hn] at v ⊢
-      rw [← v]; exact toM_half e4)
-  refine WP.mono (VerifySparse.fprog_ok hME (m := C.p) rfl hL hAl hm ops3 i4 (sl _ (by decide))
-    (mono (R := [544, 896]) (by decide) fun x hx => ?_)) fun t ⟨_, i5⟩ => ?_
-  · simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
-    rcases hx with rfl | rfl
-    · exact List.mem_cons_of_mem _ v3'
-    · exact List.mem_cons_self ..
-  · exact i5.sub fun x hx => (mem_validAfter _ _).mpr (.inl (List.mem_cons_of_mem _
-      ((mem_validAfter _ _).mpr (.inl (List.mem_cons_of_mem _ ((mem_validAfter _ _).mpr (.inl hx)))))))
+  · rw [runOps_of_not_out _ _ ho]
+    exact runs_other steps E fun st hs e => hn (e ▸ (by decide : ∀ st ∈ steps, out st ∈ slotsUsed) st hs)
 
 /-- The allocated doubling, for any live slots but its temporaries. -/
 theorem program_ok {M : Mod} (hME : M = Impl.P256.VerifySparse.M) {Sl : Nat → Prop} (hL : Lay M 8192 Sl)
@@ -540,11 +539,19 @@ theorem program_ok {M : Mod} (hME : M = Impl.P256.VerifySparse.M) {Sl : Nat → 
       AllocatedFrame allocatedRegs base VerifyAllocated.work s t ∧
       Inv M base 8192 C.p Sl V (runOps (operations .doubleRR) E) t := by
   obtain hn : M.n = 4 := hME ▸ rfl
-  refine WP.mono (Certificate.refine hi.scr (raw_ok hME hL hAl hS hV hi)) fun t ⟨u, hu, ho, hk⟩ => ⟨hk, ?_⟩
+  obtain ⟨U, hU⟩ : ∃ U, defined steps [512, 544, 576] = some U := ⟨_, rfl⟩
+  have point : Inv M base 8192 C.p Sl ([512, 544, 576] ++ V) E s := hi.sub fun x hx =>
+    (List.mem_append.mp hx).elim (hV x) id
+  have raw : WP isa (.block Impl.P256.EcdhDouble.raw) s fun t =>
+      Inv M base 8192 C.p Sl V (runOps (operations .doubleRR) E) t :=
+    WP.mono (steps_ok hME hL hAl steps (fun st hs x hx => hS x
+      ((by decide : ∀ st ∈ steps, ∀ x ∈ out st :: ins st, x ∈ slotsUsed) st hs x hx)) (defined_append steps V hU) point)
+      fun t it => (it.sub fun x hx => List.mem_append_right _ hx).congr_env fun x hx => runs_eq E (hR x hx)
+  refine WP.mono (Certificate.refine hi.scr raw) fun t ⟨u, hu, ho, hk⟩ => ⟨hk, ?_⟩
   have hs := hk.scr allocatedRegs_x0 hi.scr
   have hm := hi.mod.unch hk.unch
     (show ∀ w ∈ VerifyAllocated.work, M.mo + 8 * M.n ≤ w.1 ∨ w.1 + w.2 ≤ M.mo by subst hME; decide) hi.scr.nowrap
-  apply (hu.congr_env (result_of E hR)).of_observed hs hm
+  apply hu.of_observed hs hm
   intro x hx i him
   rw [hn] at him
   have ha := hAl.sl x (hi.sl x hx)

@@ -314,7 +314,7 @@ theorem verified (hL : Weierstrass.Law Spec.P256.curve)
     Verified AArch64.target Impl.P256.EcdhJac.exchange
       (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P256.inst AArch64.abi) :=
   verified_of_mul hL hI (mulWithInverse_of_window (p256_ok hI)
-    (W:=EcdhInverse.inverseMemory) (by unfold FixedOk; decide +kernel) (by decide +kernel) (by decide +kernel)
+    (W:=EcdhInverse.inverseWrites) (by unfold FixedOk; decide +kernel) (by decide +kernel) (by decide +kernel)
     (fun hs hm hx => EcdhInverse.inverse_ok VG.Proof.P256.p_prime hT
       (invLayP (p256_ok hI)) (by decide) (Weierstrass.unitMod_pow_two (p256_ok hI).p_odd _) hs
       (modOkA_inv (p256_ok hI) hm (.inl rfl) rfl rfl) hx

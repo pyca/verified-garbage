@@ -29,8 +29,8 @@ def original : List Instr := .movz .x .x12 0 0 :: p256.invN.fgUpdate ++ p256.inv
 def optimized := VG.Impl.Ecdsa.Verify.AArch64.P256Allocated.inverseUpdate
 
 /-- The words of `f`, `g`, `a` and `b`; the staging slots are not observed. -/
-def observe (off : Nat) : Prop := 2272≤off ∧ off<2424
-instance (off : Nat) : Decidable (observe off) := inferInstanceAs (Decidable (2272≤off ∧ off<2424))
+def observe (off : Nat) : Prop := 2272≤off ∧ off<2416
+instance (off : Nat) : Decidable (observe off) := inferInstanceAs (Decidable (2272≤off ∧ off<2416))
 
 materialize_value leftCode := original
 materialize_value rightCode := optimized

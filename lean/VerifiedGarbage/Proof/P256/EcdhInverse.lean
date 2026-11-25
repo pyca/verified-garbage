@@ -54,8 +54,8 @@ def original : List Instr := Impl.P256.EcdhInverse.updateRaw
 def optimized : List Instr := Impl.P256.EcdhInverse.update
 
 /-- The words of `f`, `g`, `a` and `b`; the staging slots are not observed. -/
-def observe (off : Nat) : Prop := 2272≤off ∧ off<2424
-instance (off : Nat) : Decidable (observe off) := inferInstanceAs (Decidable (2272≤off ∧ off<2424))
+def observe (off : Nat) : Prop := 2272≤off ∧ off<2416
+instance (off : Nat) : Decidable (observe off) := inferInstanceAs (Decidable (2272≤off ∧ off<2416))
 
 /-- The registers the update writes. -/
 def updateRegs : List Reg :=
@@ -63,8 +63,8 @@ def updateRegs : List Reg :=
    .x21,.x22,.x23,.x24,.x25,.x26,.x27,.x28,.x30]
 def bodyRegs : List Reg := .x1::.x19::updateRegs
 
-def batchMemory : List (Nat × Nat) := batchW cfg ++ [(7104,576)]
-def bodyMemory : List (Nat × Nat) := invW cfg ++ [(7104,576)]
+def batchWrites : List (Nat × Nat) := batchW cfg ++ [(7104,576)]
+def bodyWrites : List (Nat × Nat) := invW cfg ++ [(7104,576)]
 
 materialize_value leftCode := original
 materialize_value rightCode := optimized
@@ -155,7 +155,7 @@ private theorem word_values {m m' : Mem} {base : Addr} {a n : Nat}
   decide +kernel
 
  theorem update_writes : ∀ w∈optimized.flatMap Forward.instrWrites,
-    ∃ w'∈batchMemory,w'.1≤w.1 ∧ w.1+w.2≤w'.1+w'.2 := by
+    ∃ w'∈batchWrites,w'.1≤w.1 ∧ w.1+w.2≤w'.1+w'.2 := by
   rw [rightCode.lit_eq]
   decide +kernel
 
@@ -171,7 +171,7 @@ theorem allocatedBatch_ok {base : Addr} {size m : Nat} (hsize : 8192≤size)
     WP isa Impl.P256.EcdhInverse.batch s fun t =>
       IInv cfg base (Divstep.batch 59 m cfg.M.minv.toNat I) t ∧
       t.gpr .x19=BitVec.ofNat 64 (j-1) ∧
-      KeepRegs bodyRegs s t ∧ Unch base batchMemory s.mem t.mem := by
+      KeepRegs bodyRegs s t ∧ Unch base batchWrites s.mem t.mem := by
   have hb0 := batch_ok hL hs hM hI hd hf1 hf hg ha hb hj hj' h19
   have hw := words_ok hL hs hI hd hf1 hj hj' h19
   rw [InvCfg.batch] at hb0
@@ -183,8 +183,8 @@ theorem allocatedBatch_ok {base : Addr} {size m : Nat} (hsize : 8192≤size)
   refine WP.mono (update_refine hsb hsize qb) fun t ⟨u,qu,hu,kt,ut⟩ => ?_
   obtain ⟨iu,u19,ku,uu⟩ := qu
   have heq : ∀ a∈[cfg.sF,cfg.sG,cfg.sA,cfg.sB],
-      ∀ n≤5,wordsVal t.mem base a n=wordsVal u.mem base a n := by
-    intro a ha n hn
+      ∀ n≤5,a+8*n≤2416 → wordsVal t.mem base a n=wordsVal u.mem base a n := by
+    intro a ha n hn hb
     change a∈[2272,2312,2352,2384] at ha
     apply word_values
     intro i hi
@@ -202,10 +202,10 @@ theorem allocatedBatch_ok {base : Addr} {size m : Nat} (hsize : 8192≤size)
   refine ⟨⟨?_,?_,?_,?_,?_⟩,?_,?_,?_⟩
   · rw [kt.gpr _ hnot1]
     simpa only [Divstep.batch] using bd
-  · rw [heq _ (by simp) _ (by decide)]; exact iu.f
-  · rw [heq _ (by simp) _ (by decide)]; exact iu.g
-  · rw [heq _ (by simp) _ (by decide)]; exact iu.a
-  · rw [heq _ (by simp) _ (by decide)]; exact iu.b
+  · rw [heq _ (by simp) _ (by decide) (by decide)]; exact iu.f
+  · rw [heq _ (by simp) _ (by decide) (by decide)]; exact iu.g
+  · rw [heq _ (by simp) _ (by decide) (by decide)]; exact iu.a
+  · rw [heq _ (by simp) _ (by decide) (by decide)]; exact iu.b
   · rw [kt.gpr _ hnot19]; exact b19
   · exact (bkeep.mono (by decide)).trans (kt.mono fun r hr => List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (update_clob r hr)))
   · have h := ut.cover update_writes
@@ -215,13 +215,13 @@ theorem allocatedBatch_ok {base : Addr} {size m : Nat} (hsize : 8192≤size)
 /-- The inversion modulus lies outside both the arithmetic workspace and allocator spills. -/
 theorem mod {base : Addr} {size m : Nat} {s t : State}
     (hs : Scr s base size) (hM : ModOkA cfg.M size m s.mem base)
-    (hU : Unch base batchMemory s.mem t.mem) : ModOkA cfg.M size m t.mem base := by
+    (hU : Unch base batchWrites s.mem t.mem) : ModOkA cfg.M size m t.mem base := by
   refine ⟨hM.n0,hM.n10,hM.mo,hM.tmp,hM.sep,?_,hM.inv,hM.red, hM.call⟩
   rw [hU.wordsVal (by decide) (by omega_using [hM.mo,hs.nowrap])]
   exact hM.val
 
  theorem batch_frame {base : Addr} {s t : State}
-    (hU : Unch base batchMemory s.mem t.mem) : Unch base bodyMemory s.mem t.mem := by
+    (hU : Unch base batchWrites s.mem t.mem) : Unch base bodyWrites s.mem t.mem := by
   apply hU.cover
   decide
 
@@ -233,12 +233,12 @@ theorem mod {base : Addr} {size m : Nat} {s t : State}
     (h19 : s.gpr .x19=BitVec.ofNat 64 B) :
     WP isa (.loop Impl.P256.EcdhInverse.batch (.nonzero .x .x19)) s fun t =>
       IInv cfg base (Divstep.invRun 59 m cfg.M.minv.toNat X B) t ∧
-      KeepRegs bodyRegs s t ∧ Unch base batchMemory s.mem t.mem := by
+      KeepRegs bodyRegs s t ∧ Unch base batchWrites s.mem t.mem := by
   have hmi : ((m : Int)*(cfg.M.minv.toNat : Int)+1)%2^64=0 := by exact_mod_cast hM.inv
   refine countLoop_ok (n:=B) (by omega_arith)
     (Inv:=fun j t => IInv cfg base (Divstep.invRun 59 m cfg.M.minv.toNat X (B-j)) t ∧
       t.gpr .x19=BitVec.ofNat 64 j ∧ Scr t base size ∧ ModOkA cfg.M size m t.mem base ∧
-      KeepRegs bodyRegs s t ∧ Unch base batchMemory s.mem t.mem)
+      KeepRegs bodyRegs s t ∧ Unch base batchWrites s.mem t.mem)
     (fun j t hj1 hjB ⟨it,xt,st,mt,kt,ut⟩ => ?_)
     (fun t ⟨it,_,_,_,kt,ut⟩ => ⟨by simpa only [Nat.sub_zero] using it,kt,ut⟩)
     hB1 ⟨by rw [Nat.sub_self]; exact hI,h19,hs,hM,⟨fun _ _ => rfl,rfl,rfl,rfl⟩,Unch.refl _ _ _⟩
@@ -260,7 +260,7 @@ theorem body_ok {base : Addr} {m : Nat} [NeZero m] (hpr : m.Prime) (hT : InvToM 
     (hL : InvLay cfg 8192) (hm2 : 2 < m) (hR : UnitMod m (2^256)) {s : State} (hs : Scr s base 8192)
     (hM : ModOkA cfg.M 8192 m s.mem base) (hX : wordsVal s.mem base cfg.base 4<m) (hC : InvOk cfg m) :
     WP isa body s fun t =>
-      KeepRegs bodyRegs s t ∧ Unch base bodyMemory s.mem t.mem ∧
+      KeepRegs bodyRegs s t ∧ Unch base bodyWrites s.mem t.mem ∧
       wordsVal t.mem base cfg.acc 4<m ∧
       toM m (2^256) (wordsVal t.mem base cfg.acc 4)=
         toM m (2^256) (wordsVal s.mem base cfg.base 4) ^ (m-2) := by
@@ -274,7 +274,7 @@ theorem body_ok {base : Addr} {m : Nat} [NeZero m] (hpr : m.Prime) (hT : InvToM 
     omega_using [h]
   rw [Impl.P256.EcdhInverse.body]
   refine WP.seq (WP.mono (init_ok hL hs hM (by decide)) fun a ⟨ia,a19,ka,ua⟩ => ?_)
-  have ua' : Unch base batchMemory s.mem a.mem := ua.cover (by decide)
+  have ua' : Unch base batchWrites s.mem a.mem := ua.cover (by decide)
   have ha := hs.of_keepRegs ka (by decide)
   have ma := mod hs hM ua'
   refine WP.seq (WP.mono (loop_ok (by decide) hL ha ma hX hodd (by omega_using [hm2]) (B:=10) (by decide) (by decide)
@@ -290,9 +290,9 @@ theorem body_ok {base : Addr} {m : Nat} [NeZero m] (hpr : m.Prime) (hT : InvToM 
   refine WP.mono (finish_early_ok hpr hT hL hm2 hR hb (mod ha ma ub) hX ib done hC.C hC.Cpos hC.Cn)
     fun t ⟨kt,ut,lt,et⟩ => ⟨(ka.mono (by decide)).trans (kb.trans (kt.mono (by decide))),?_,lt,et⟩
   intro x hx
-  have cover : ∀ {m m' : Mem},Unch base batchMemory m m' → Unch base bodyMemory m m' :=
+  have cover : ∀ {m m' : Mem},Unch base batchWrites m m' → Unch base bodyWrites m m' :=
     fun h => h.cover (by decide)
-  rw [(ut.cover (by decide) : Unch base bodyMemory _ _) x hx,cover ub x hx,cover ua' x hx]
+  rw [(ut.cover (by decide) : Unch base bodyWrites _ _) x hx,cover ub x hx,cover ua' x hx]
 
 def extraRegs : List Reg := extra.map Prod.fst
 
@@ -336,14 +336,14 @@ theorem restore_ok {s : State} {base : Addr} {g : Reg → BitVec 64}
   obtain ⟨p,hp,rfl⟩ := List.mem_map.mp hr
   exact h.gpr p hp
 
-def inverseMemory : List (Nat × Nat) := bodyMemory ++ [(7800,72)]
+def inverseWrites : List (Nat × Nat) := bodyWrites ++ [(7800,72)]
 
 /-- The inversion, keeping every register but the field operations'. -/
 theorem inverse_ok {base : Addr} {m : Nat} [NeZero m] (hpr : m.Prime) (hT : InvToM m)
     (hL : InvLay cfg 8192) (hm2 : 2 < m) (hR : UnitMod m (2^256)) {s : State} (hs : Scr s base 8192)
     (hM : ModOkA cfg.M 8192 m s.mem base) (hX : wordsVal s.mem base cfg.base 4<m) (hC : InvOk cfg m) :
     WP isa inverse s fun t =>
-      KeepRegs (powClob 4) s t ∧ Unch base inverseMemory s.mem t.mem ∧
+      KeepRegs (powClob 4) s t ∧ Unch base inverseWrites s.mem t.mem ∧
       wordsVal t.mem base cfg.acc 4<m ∧
       toM m (2^256) (wordsVal t.mem base cfg.acc 4)=
         toM m (2^256) (wordsVal s.mem base cfg.base 4) ^ (m-2) := by
@@ -361,7 +361,7 @@ theorem inverse_ok {base : Addr} {m : Nat} [NeZero m] (hpr : m.Prime) (hT : InvT
   have sb : Spill.Saved base s.gpr extra b.mem := by
     intro p hp
     have hbd : ∀ p∈extra,7800≤p.2 ∧ p.2+8≤7872 := by decide
-    have hw : ∀ w∈bodyMemory,w.1+w.2≤7800 ∨ 7872≤w.1 := by decide
+    have hw : ∀ w∈bodyWrites,w.1+w.2≤7800 ∨ 7872≤w.1 := by decide
     change word b.mem base p.2=_
     rw [ub.word (fun w hm => by have := hw w hm; have := hbd p hp; omega_arith)
       (by have := hbd p hp; omega_using [this])]
