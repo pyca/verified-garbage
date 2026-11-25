@@ -34,12 +34,14 @@ def artifacts : List (Artifact PPC64LE.target) := [
     verified := Proof.Dsa.PPC64LE.Scrub.verifyPrevalidated_scrubbed },
   Spec.Dsa.parameterInitApi.artifact PPC64LE.target {
     code := Impl.Dsa.PPC64LE.Generation.init
-    verified := Proof.Dsa.PPC64LE.Scrub.parameterInit_scrubbed }] ++
+    verified := Proof.Dsa.PPC64LE.Scrub.parameterInit_scrubbed
+    publicOutOk := Proof.Dsa.PPC64LE.Scrub.parameterInit_public }] ++
   (VG.Proof.Variants.MillerRabin.PPC64LE.variants.attach.map
     fun (vh : {v // v ∈ VG.Proof.Variants.MillerRabin.PPC64LE.variants}) =>
     Spec.Dsa.parameterSearchApi.artifact PPC64LE.target {
       suffix := vh.1.suffix
       code := Impl.Dsa.PPC64LE.Fn.parameterSearch vh.1.suffix vh.1.code
-      verified := Proof.Dsa.PPC64LE.Scrub.parameterSearch_scrubbed vh.1 vh.2 })
+      verified := Proof.Dsa.PPC64LE.Scrub.parameterSearch_scrubbed vh.1 vh.2
+      publicOutOk := Proof.Dsa.PPC64LE.Scrub.parameterSearch_public vh.1 vh.2 })
 
 end VG.Artifacts.Dsa.PPC64LE

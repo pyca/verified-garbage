@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Dsa.ParameterPublic
 public import VerifiedGarbage.Proof.Dsa.X86.Generation.Instances
 public import VerifiedGarbage.Proof.Dsa.X86.Generation.Correct
 public import VerifiedGarbage.Proof.Dsa.X86.Generation.SearchCT
@@ -314,7 +315,7 @@ theorem map_toNat_inj64 {a b : List (BitVec 64)} (h : a.map (·.toNat) = b.map (
 
 theorem pub_env {s₁ s₂ : State} (h : genContract.pub s₁ s₂) :
     callEnv s₁ = callEnv s₂ ∧ s₁.gpr .esp = s₂.gpr .esp := by
-  sig_pub [genContract, Spec.Dsa.parameterSearchContract, Spec.Dsa.parameterSearchSig,
+  sig_pub [genContract, Proof.Dsa.parameterSearchAskedContract, Spec.Dsa.parameterSearchSig,
     abi, argSlots, argVal, argBytes, Abi.withConsts, VG.Impl.RsaKeyGen.TrialTable32.consts] at h
   obtain ⟨esp, sy, leak, a0, a1, a2, a3, a4, a5, a6, a7⟩ := h
   rw [a3, a4, a7] at leak
@@ -577,7 +578,7 @@ theorem sat_argAddr : argAddr satState 0 = 0x80004#64 := by
 
 theorem satisfiable : ∃ s, genContract.pre s := by
   refine ⟨satState, ?_⟩
-  sig_pre [genContract, Spec.Dsa.parameterSearchContract, Spec.Dsa.parameterSearchSig,
+  sig_pre [genContract, Proof.Dsa.parameterSearchAskedContract, Spec.Dsa.parameterSearchSig,
     abi, argSlots, argVal, argBytes, Abi.withConsts, VG.Impl.RsaKeyGen.TrialTable32.consts, stackBelow]
   simp only [sat_arguments 0 (by decide), sat_arguments 1 (by decide), sat_arguments 2 (by decide),
     sat_arguments 3 (by decide), sat_arguments 4 (by decide), sat_arguments 5 (by decide),

@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.RISCV64.ParameterSearch
-public import VerifiedGarbage.Spec.Dsa.ParameterSearchContract
+public import VerifiedGarbage.Proof.Dsa.ParameterPublic
 public import VerifiedGarbage.Proof.RsaKeyGen.InitWords
 public import VerifiedGarbage.Proof.Framework.RISCV64.Keep
 public import VerifiedGarbage.Proof.Framework.RISCV64.Taint
@@ -13,7 +13,7 @@ import VerifiedGarbage.Proof.Framework.RISCV64.Steps
 import VerifiedGarbage.Proof.Framework.RISCV64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Impl.Dsa.RISCV64.ParameterSearch
-meta import VerifiedGarbage.Spec.Dsa.ParameterSearchContract
+meta import VerifiedGarbage.Proof.Dsa.ParameterPublic
 meta import VerifiedGarbage.Proof.RsaKeyGen.InitWords
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Keep
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Taint
@@ -161,7 +161,7 @@ def initPost (s t : State) : Prop :=
       Spec.Rsa.wordsAt t.mem (s.gpr .a0) 4 = List.replicate 4 0
   | some values => ((t.gpr .a0).setWidth 32).toNat = 1 ∧ ∃ first,
       Spec.Rsa.wordsAt t.mem (s.gpr .a0) 4 = (values ++ [first]).map (BitVec.ofNat 64) ∧
-      Spec.Entropy.RequestValid (Spec.Dsa.parameterEntropy (s.gpr .a1).toNat) 0 first
+      Proof.Dsa.Generation.FirstAsked (s.gpr .a1).toNat first
 
 def initPub (s t : State) : Prop := s.sp = t.sp ∧ s.gpr .a0 = t.gpr .a0 ∧ s.gpr .a1 = t.gpr .a1
 
@@ -183,8 +183,7 @@ private theorem result_post {s t : State} (h : InitPost (s.gpr .a1).toNat s.mem 
     refine ⟨by rw [h.1]; rfl, 512 * (s.gpr .a1).toNat, ?_, ?_⟩
     · rw [h.2, words, written_words]
       rfl
-    · unfold Spec.Entropy.RequestValid Spec.Dsa.parameterEntropy
-      omega
+    · exact Proof.Dsa.Generation.firstAsked hp
   · rename_i hv
     rw [ite_eq_right_of_eq_false _ _ (eq_false hv)]
     exact ⟨by rw [h.1]; rfl, by rw [h.2, written_words]; rfl⟩
@@ -223,11 +222,11 @@ open VG VG.RISCV64 ParameterSearchInit
 
 /-- `vg_dsa_parameter_search_init`. -/
 theorem init_verified :
-    Verified RISCV64.target Impl.Dsa.RISCV64.ParameterSearch.init (Spec.Dsa.parameterInitContract RISCV64.abi) := by
+    Verified RISCV64.target Impl.Dsa.RISCV64.ParameterSearch.init (Proof.Dsa.parameterInitAskedContract RISCV64.abi) := by
   refine Verified.of_correct (k := initContract) init_correct ?_ ?_
   · intro s₁ s₂ tr₁ tr₂ t₁ t₂ _ _ hp h₁ h₂
     exact init_constantTime s₁ s₂ tr₁ tr₂ t₁ t₂ trivial trivial hp h₁ h₂
-  · sig_implies [Spec.Dsa.parameterInitContract, Spec.Dsa.parameterInitSig,
+  · sig_implies [Proof.Dsa.parameterInitAskedContract, Spec.Dsa.parameterInitSig,
       initContract, initPre, initPost, initPub, abi, argRegs] [initSat] using initSat
 
 end VG.Proof.Dsa.RISCV64

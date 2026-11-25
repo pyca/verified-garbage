@@ -4,7 +4,7 @@
 
 /// Start generating an RSA key, as BoringSSL's `RSA_generate_key_ex` (FIPS 186-5 Appendix A.1.3), with a modulus of `bits` bits rounded down to a multiple of 128, and the public exponent `e` (`e_len` octets, most significant first, with any number of leading zeros). Returns 0 if `e` is not odd from 3 to `2^32 - 1`, or 2 if `bits` is above 8192 or, rounded down, below 512, and writes zeros to `state`. Otherwise returns 1 and writes the search's seven public words to `state`: the rejected candidates the first prime's search allows, the primes' length in octets (`nlen / 16`), the entropy budget, the length of the first random tape to give `vg_rsa_generate`, the phase (0), the generations allowed (4), and the exponent's eight octets, most significant first.
 ///
-/// Contract: `VG.Spec.RsaKeyGen.keyInitContract`. Timing may depend on `bits` and `e`.
+/// Contract: `VG.Spec.RsaKeyGen.keyInitContract`. Timing, and the length of the first tape (`VG.Spec.RsaKeyGen.keyInitOut`), may depend on `bits` and `e`.
 ///
 /// It runs `vg_rsa_generate_init`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
 ///

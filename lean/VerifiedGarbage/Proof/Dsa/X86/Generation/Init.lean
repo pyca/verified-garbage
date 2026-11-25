@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.X86.Generation
-public import VerifiedGarbage.Spec.Dsa.ParameterSearchContract
+public import VerifiedGarbage.Proof.Dsa.ParameterPublic
 public import VerifiedGarbage.Proof.Framework.X86.ArgTaint
 public import VerifiedGarbage.Proof.Ffdh.X86.ParamInit
 import VerifiedGarbage.Proof.Ffdh.X86.KeyInit
@@ -17,7 +17,7 @@ meta import VerifiedGarbage.Proof.Dsa.X86.ABIResources
 meta import VerifiedGarbage.Impl.Dsa.X86.Generation
 meta import VerifiedGarbage.Proof.Ffdh.X86.KeyInit
 meta import VerifiedGarbage.Proof.Ffdh.X86.ParamInit
-meta import VerifiedGarbage.Spec.Dsa.ParameterSearchContract
+meta import VerifiedGarbage.Proof.Dsa.ParameterPublic
 meta import VerifiedGarbage.Proof.Framework.X86.Wp
 meta import VerifiedGarbage.Proof.Mont.X86.Instr
 meta import VerifiedGarbage.Proof.Bignum.X86.PublicArgs
@@ -62,8 +62,8 @@ structure ABI (s : State) : Prop where
   retArgs : (⟨(s.gpr .esp).setWidth 64, 4⟩ : Region).Disjoint ⟨argAddr s 0, 8⟩
   outBound : (arg s 0).toNat + 32 ≤ 2 ^ 32
 
-theorem abi_of {s : State} (h : (Spec.Dsa.parameterInitContract abi).pre s) : ABI s := by
-  sig_pre [Spec.Dsa.parameterInitContract, Spec.Dsa.parameterInitSig, abi, argSlots, argVal, argBytes,
+theorem abi_of {s : State} (h : (Proof.Dsa.parameterInitAskedContract abi).pre s) : ABI s := by
+  sig_pre [Proof.Dsa.parameterInitAskedContract, Spec.Dsa.parameterInitSig, abi, argSlots, argVal, argBytes,
     stackBelow] at h
   sig_split h
   constructor <;> with_reducible assumption
@@ -260,14 +260,14 @@ theorem final_frame {s t : State} {v : Prop} [Decidable v]
   · intro p hp; simp only [cleared, List.mem_map, List.mem_range] at hp
     obtain ⟨j, hj, rfl⟩ := hp; exact hj
 
-theorem correct (s : State) (h : (Spec.Dsa.parameterInitContract abi).pre s) :
-    ∃ trace t, Exec isa init s trace t ∧ abiPreserved s t ∧ (Spec.Dsa.parameterInitContract abi).post s t := by
+theorem correct (s : State) (h : (Proof.Dsa.parameterInitAskedContract abi).pre s) :
+    ∃ trace t, Exec isa init s trace t ∧ abiPreserved s t ∧ (Proof.Dsa.parameterInitAskedContract abi).post s t := by
   have A := abi_of h
   obtain ⟨tr, t, E, ha, C⟩ := code_ok A
   refine ⟨tr, t, E, ⟨fun r hr => C.keeps.1 r (by revert r; decide), ?_⟩, ?_⟩
   · exact (final_frame C).readW (Region.contains_self _ _) (fun r hr => by
       obtain rfl := List.mem_singleton.mp hr; exact A.retOut) (by decide)
-  · sig_post [Spec.Dsa.parameterInitContract, Spec.Dsa.parameterInitSig, abi, argSlots, argVal, argBytes]
+  · sig_post [Proof.Dsa.parameterInitAskedContract, Spec.Dsa.parameterInitSig, abi, argSlots, argVal, argBytes]
     rw [BitVec.setWidth_append_eq_right, ha, C.mem]
     by_cases hv : Valid (arg s 1).toNat
     · have hL : (arg s 1).toNat ≤ 384 := by rcases hv with h | h | h <;> omega_using [h]
@@ -277,9 +277,7 @@ theorem correct (s : State) (h : (Spec.Dsa.parameterInitContract abi).pre s) :
           rcases hv with h | h | h <;> simp [Spec.Dsa.generationPLenValid, h]
         simp only [Spec.Dsa.parameterInit, this, ↓reduceIte]
       rw [e, ite_eq_left hv, ite_eq_left hv, initial_words _ _ hL]
-      refine ⟨rfl, 512 * (arg s 1).toNat, rfl, ?_⟩
-      have : 0 < (arg s 1).toNat := by rcases hv with h | h | h <;> omega_using [h]
-      exact ⟨by omega_using [this], by simp only [Spec.Dsa.parameterEntropy]; omega_using []⟩
+      exact ⟨rfl, _, rfl, Proof.Dsa.Generation.firstAsked (by rcases hv with h | h | h <;> omega_using [h])⟩
     · have e : Spec.Dsa.parameterInit (arg s 1).toNat = none := by
         have : Spec.Dsa.generationPLenValid (arg s 1).toNat = false := by
           simp only [Spec.Dsa.generationPLenValid, Bool.or_eq_false_iff, beq_eq_false_iff_ne]
@@ -303,11 +301,11 @@ theorem args_out {s : State} (A : ABI s) : ArgsOut 2 s := by
   · exact A.retOut a (by rw [← he]; exact Offset.contains_base _ (by omega_using [h]) (by omega_using [])) hb
   · exact A.outArgs a hb (by rw [a0, ← he]; exact Offset.contains _ (by omega_using [h]) (by omega_using [hj]) (by decide))
 
-theorem constantTime : ConstantTime isa (Spec.Dsa.parameterInitContract abi).pre
-    (Spec.Dsa.parameterInitContract abi).pub init := by
+theorem constantTime : ConstantTime isa (Proof.Dsa.parameterInitAskedContract abi).pre
+    (Proof.Dsa.parameterInitAskedContract abi).pub init := by
   refine VG.Taint.constantTime (A := VG.X86.taint) (argTaint [] 12) ?_ (by taint_decide)
   intro s t hs ht H
-  sig_pub [Spec.Dsa.parameterInitContract, Spec.Dsa.parameterInitSig, abi, argSlots, argVal, argBytes] at H
+  sig_pub [Proof.Dsa.parameterInitAskedContract, Spec.Dsa.parameterInitSig, abi, argSlots, argVal, argBytes] at H
   obtain ⟨SP, a0, a1⟩ := H
   refine agree_argTaint (k := 2) (fun _ h => nomatch h) SP (args_out (abi_of hs)) (args_out (abi_of ht)) ?_
   intro i hi
@@ -326,14 +324,14 @@ def satState : State where
   rd := [⟨0x4004, 8⟩]
   wr := [⟨0x1000, 32⟩]
 
-theorem satisfiable : ∃ s, (Spec.Dsa.parameterInitContract abi).pre s := by
+theorem satisfiable : ∃ s, (Proof.Dsa.parameterInitAskedContract abi).pre s := by
   have a0 : arg satState 0 = 0x1000 := by decide
   have e : argAddr satState 0 = 0x4004 := by decide
   have esp : satState.gpr .esp = 0x4000 := rfl
-  sig_implies_sat [Spec.Dsa.parameterInitContract, Spec.Dsa.parameterInitSig, abi, argSlots, argVal, argBytes,
+  sig_implies_sat [Proof.Dsa.parameterInitAskedContract, Spec.Dsa.parameterInitSig, abi, argSlots, argVal, argBytes,
     stackBelow] [a0, e, esp, satState] using satState
 
-theorem init_verified : Verified target init (Spec.Dsa.parameterInitContract abi) :=
+theorem init_verified : Verified target init (Proof.Dsa.parameterInitAskedContract abi) :=
   ⟨correct, constantTime, satisfiable⟩
 
 end VG.Proof.Dsa.X86.Generation.Init

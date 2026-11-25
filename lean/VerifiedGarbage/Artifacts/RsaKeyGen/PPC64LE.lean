@@ -15,7 +15,8 @@ namespace VG.Artifacts.RsaKeyGen.PPC64LE
 def direct : List (Artifact PPC64LE.target) := [
   Spec.RsaKeyGen.keyInitApi.artifact PPC64LE.target {
     code := Impl.RsaKeyGen.PPC64LE.Fn.keyInit
-    verified := Proof.RsaKeyGen.PPC64LE.Scrub.keyInit_scrubbed }]
+    verified := Proof.RsaKeyGen.PPC64LE.Scrub.keyInit_scrubbed
+    publicOutOk := Proof.RsaKeyGen.PPC64LE.Scrub.keyInit_public }]
 
 def artifacts : List (Artifact PPC64LE.target) :=
   direct ++

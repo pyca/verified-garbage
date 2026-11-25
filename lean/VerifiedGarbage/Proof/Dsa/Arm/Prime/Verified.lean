@@ -1,4 +1,5 @@
 module
+public import VerifiedGarbage.Proof.Dsa.ParameterPublic
 public import VerifiedGarbage.Proof.Bignum.Arm.CallOp
 public import VerifiedGarbage.Proof.Bignum.Arm.DoubleBackend
 
@@ -95,8 +96,8 @@ private theorem wordsAt_lost {m m' : Mem} {rs : List Region} (frame : Frame rs m
     hd (by decide)
 
 theorem code_ok (K1 : GeoOk g1 128 20) (K2 : GeoOk g2 256 32) (K3 : GeoOk g3 384 32) {s : State}
-    (hs : (Spec.Dsa.parameterSearchContract abi 352).pre s) :
-    WP isa (code g1 g2 g3) s fun t => abiPreserved s t ∧ (Spec.Dsa.parameterSearchContract abi 352).post s t := by
+    (hs : (Proof.Dsa.parameterSearchAskedContract abi 352).pre s) :
+    WP isa (code g1 g2 g3) s fun t => abiPreserved s t ∧ (Proof.Dsa.parameterSearchAskedContract abi 352).post s t := by
   have hpre := cin_of_pre s hs
   have spLo := hpre.spLo
   refine WP.alloc ⟨by decide, by decide, by decide, by decide⟩ (by simp only [F]; omega_using [spLo])
@@ -115,7 +116,7 @@ theorem code_ok (K1 : GeoOk g1 128 20) (K2 : GeoOk g2 256 32) (K3 : GeoOk g3 384
   obtain ⟨v, fo, m, r0⟩ := hu.fo
   have res := hu.res
   have ok := hu.ok
-  sig_post [Spec.Dsa.parameterSearchContract, Spec.Dsa.parameterSearchSig, abi, argRegs, reduceClassify,
+  sig_post [Proof.Dsa.parameterSearchAskedContract, Spec.Dsa.parameterSearchSig, abi, argRegs, reduceClassify,
     Loc.val, stackArgAddr, BitVec.add_zero]
   have hp : 0 < pLenOf s := by
     have := hpre.valid; simp only [Spec.Dsa.generationPLenValid, Bool.or_eq_true, beq_iff_eq] at this; omega_using [this]
@@ -180,7 +181,7 @@ theorem code_ok (K1 : GeoOk g1 128 20) (K2 : GeoOk g2 256 32) (K3 : GeoOk g3 384
       State.addr (stackArg s 3) + BitVec.ofNat 64 16 + BitVec.ofNat 64 4 := by
     rw [BitVec.add_assoc, ← BitVec.ofNat_add]; rfl
   refine ⟨?_, ?_, ?_, VG.Proof.Dsa.Generation.requested (pLenOf s) (cRes (mkG s) o), ?_,
-    by rw [← hO, ← ht]; exact VG.Proof.Dsa.Generation.requested_requests hp _ _⟩
+    by rw [← hO, ← ht]; exact VG.Proof.Dsa.Generation.requested_asked hp _ _⟩
   · have hst : (cRes (mkG s) o).status < 4 := by
       unfold Spec.Entropy.Result.status Spec.Entropy.Outcome.status; split <;> decide
     rw [BitVec.setWidth_append_eq_right]
@@ -219,8 +220,8 @@ theorem map_toNat_inj64 {a b : List (BitVec 64)} (h : a.map (·.toNat) = b.map (
   (List.map_inj_right (fun _ _ h => BitVec.toNat_inj.1 h)).1 h
 
 /-- Two calls with the same public data have the same public parameters. -/
-theorem mkG_eq {s₁ s₂ : State} (h : (Spec.Dsa.parameterSearchContract abi 352).pub s₁ s₂) : mkG s₁ = mkG s₂ := by
-  sig_pub [Spec.Dsa.parameterSearchContract, Spec.Dsa.parameterSearchSig, abi, argRegs, reduceClassify,
+theorem mkG_eq {s₁ s₂ : State} (h : (Proof.Dsa.parameterSearchAskedContract abi 352).pub s₁ s₂) : mkG s₁ = mkG s₂ := by
+  sig_pub [Proof.Dsa.parameterSearchAskedContract, Spec.Dsa.parameterSearchSig, abi, argRegs, reduceClassify,
     Loc.val, stackArgAddr, BitVec.add_zero] at h
   obtain ⟨hsp, hl, r0, r1, r2, r3, a0, a1, a2, a3⟩ := h
   obtain ⟨hW, hR⟩ := List.append_inj hl (by simp [Spec.Rsa.wordsAt])
@@ -246,8 +247,8 @@ theorem alloc_push {s : State} (h : CIn s) : isa.push (.alloc F) s = some (alloc
 
 /-- The code leaks only what its contract makes public. -/
 theorem code_ct (K1 : GeoOk g1 128 20) (K2 : GeoOk g2 256 32) (K3 : GeoOk g3 384 32) :
-    ConstantTime isa (Spec.Dsa.parameterSearchContract abi 352).pre
-      (Spec.Dsa.parameterSearchContract abi 352).pub (code g1 g2 g3) := by
+    ConstantTime isa (Proof.Dsa.parameterSearchAskedContract abi 352).pre
+      (Proof.Dsa.parameterSearchAskedContract abi 352).pub (code g1 g2 g3) := by
   intro s₁ s₂ t₁ t₂ u₁ u₂ h₁ h₂ hp e₁ e₂
   have p₁ := cin_of_pre s₁ h₁
   have p₂ := cin_of_pre s₂ h₂
@@ -278,14 +279,14 @@ def searchSat : State where
   rd := [⟨0x5000, 0⟩, ⟨0x20000, 16⟩]
   wr := [⟨0x1000, 276⟩, ⟨0x2000, 8⟩, ⟨0x30000, 73728⟩, ⟨0x3000, 32⟩]
 
-theorem search_satisfiable : ∃ s, (Spec.Dsa.parameterSearchContract abi 352).pre s := by
-  sig_implies_sat [Spec.Dsa.parameterSearchContract, Spec.Dsa.parameterSearchSig, abi, argRegs,
+theorem search_satisfiable : ∃ s, (Proof.Dsa.parameterSearchAskedContract abi 352).pre s := by
+  sig_implies_sat [Proof.Dsa.parameterSearchAskedContract, Spec.Dsa.parameterSearchSig, abi, argRegs,
     reduceClassify, Loc.val, State.addr, stackArgAddr, BitVec.add_zero]
     [searchSat, stackArg, stackArgAddr, Mem.readW, Mem.read] using searchSat
 
 /-- `vg_dsa_parameter_search` over the three geometries meets its contract. -/
 theorem search_verified (K1 : GeoOk g1 128 20) (K2 : GeoOk g2 256 32) (K3 : GeoOk g3 384 32) :
-    Verified target (code g1 g2 g3) (Spec.Dsa.parameterSearchContract abi 352) :=
+    Verified target (code g1 g2 g3) (Proof.Dsa.parameterSearchAskedContract abi 352) :=
   ⟨fun _ hs => let ⟨t, s', he, hq⟩ := code_ok K1 K2 K3 hs; ⟨t, s', he, hq.1, hq.2⟩, code_ct K1 K2 K3,
     search_satisfiable⟩
 

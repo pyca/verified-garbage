@@ -2,6 +2,7 @@ module
 
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.EntropyRequest
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Start
 public import VerifiedGarbage.Proof.Framework.X86_64.Call
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Context
@@ -68,7 +69,7 @@ def searchPost (s t : State) : Prop :=
       [BitVec.ofNat 64 (searchResult s).remaining, s.gpr .rsi,
         BitVec.ofNat 64 (Spec.Ffdh.parameterEntropy (s.gpr .rcx).toNat),
         BitVec.ofNat 64 requested] ∧
-      (searchResult s).Requests (Spec.Ffdh.parameterEntropy (s.gpr .rcx).toNat) requested
+      Proof.Ffdh.Asked (s.gpr .rcx).toNat (searchResult s) requested
 
 def searchPub (s t : State) : Prop :=
   pcPub s t ∧ stackArg s 3 = stackArg t 3 ∧

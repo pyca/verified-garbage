@@ -47,7 +47,7 @@ theorem wordsAt_congr {m₁ m₂ : Mem} {q : Addr} {k N : Nat} (hk : 8 * k ≤ N
     rw [Offset.add_add]
     exact (h _ (Offset.contains_base _ (by omega_using [hk, ht, this]) (by omega_using [hk, hN, ht, this]))).symm
 
-theorem keyInitOut : PostOut (Spec.RsaKeyGen.keyInitContract abi) (Spec.RsaKeyGen.keyInitSig.retBits 64) :=
+theorem keyInitOut : PostOut (Proof.RsaKeyGen.keyInitAskedContract abi) (Spec.RsaKeyGen.keyInitSig.retBits 64) :=
   postOut_of_local ScrubAbi.plain fun vs m m₁ m₂ r hlen hb h => by
     obtain ⟨a0, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 3) hlen
     replace hlen := Nat.succ.inj hlen
@@ -104,15 +104,25 @@ theorem keySearchOut (cs : List (String × List (BitVec 64))) (stack : Nat) :
 
 /-- `vg_rsa_generate_init` as emitted (`Impl.RsaKeyGen.PPC64LE.Fn.keyInit`) meets
 its contract in constant time and returns without secret residue. -/
-theorem keyInit_scrubbed :
+theorem keyInit_asked :
     VerifiedScrubbed PPC64LE.target Impl.RsaKeyGen.PPC64LE.Fn.keyInit
-      (Spec.RsaKeyGen.keyInitContract PPC64LE.abi) 32 :=
-  verifiedScrubbedAll (api := Spec.RsaKeyGen.keyInitApi) {
+      (Proof.RsaKeyGen.keyInitAskedContract PPC64LE.abi) 32 :=
+  verifiedScrubbedAll (api := Proof.RsaKeyGen.keyInitAskedApi) {
       code := Impl.RsaKeyGen.PPC64LE.KeyInit.init
       verified := Proof.RsaKeyGen.PPC64LE.KeyInit.init_verified }
     0 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, []⟩
     keyInitOut
     (by dsimp only; lit_decide)
+
+theorem keyInit_scrubbed :
+    VerifiedScrubbed PPC64LE.target Impl.RsaKeyGen.PPC64LE.Fn.keyInit
+      (Spec.RsaKeyGen.keyInitContract PPC64LE.abi) 32 :=
+  Proof.RsaKeyGen.keyInit_imp keyInit_asked id
+
+theorem keyInit_public :
+    Spec.RsaKeyGen.keyInitOut.Of PPC64LE.abi Impl.RsaKeyGen.PPC64LE.Fn.keyInit
+      (Spec.RsaKeyGen.keyInitContract PPC64LE.abi) :=
+  Proof.RsaKeyGen.keyInit_public keyInit_asked
 
 /-- What `verifiedScrubbedAll` needs of the search with each Miller–Rabin round:
 evaluated here. -/

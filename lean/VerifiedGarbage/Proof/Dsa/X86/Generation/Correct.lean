@@ -19,7 +19,7 @@ import VerifiedGarbage.Proof.Dsa.X86.ProbablePrime.ABIEntry
 import VerifiedGarbage.Proof.RsaKeyGen.RandMemory
 import VerifiedGarbage.Proof.Framework.X86.Syms
 import VerifiedGarbage.Proof.Rc2.PairMem
-public import VerifiedGarbage.Spec.Dsa.ParameterSearchContract
+public import VerifiedGarbage.Proof.Dsa.ParameterPublic
 public import VerifiedGarbage.Impl.RsaKeyGen.TrialTable32
 public import VerifiedGarbage.Proof.Rsa.X86.DivContext
 public import VerifiedGarbage.Spec.Ffdh
@@ -620,7 +620,7 @@ namespace VG.Proof.Dsa.X86.Generation
 open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86
 
 /-- The contract, as the registration gives it. -/
-abbrev genContract : Contract isa := Spec.Dsa.parameterSearchContract
+abbrev genContract : Contract isa := Proof.Dsa.parameterSearchAskedContract
   (abi.withConsts VG.Impl.RsaKeyGen.TrialTable32.consts) 216
 
 def reservedRegion (s : State) : Region := ⟨(s.gpr .esp).setWidth 64 - 216#64, 216⟩
@@ -686,7 +686,7 @@ structure CallFacts (s : State) : Prop where
   randLen : (arg s 4).toNat ≤ Spec.Dsa.parameterEntropy (pLenOf s)
 
 theorem call_facts {s : State} (h : genContract.pre s) : CallFacts s := by
-  sig_pre [genContract, Spec.Dsa.parameterSearchContract, Spec.Dsa.parameterSearchSig,
+  sig_pre [genContract, Proof.Dsa.parameterSearchAskedContract, Spec.Dsa.parameterSearchSig,
     abi, argSlots, argVal, argBytes, Abi.withConsts, VG.Impl.RsaKeyGen.TrialTable32.consts, stackBelow] at h
   sig_split h
   constructor <;> try with_reducible assumption
@@ -1489,7 +1489,7 @@ def genQ (s : State) (m : Mem) (e : BitVec 32) : Prop :=
         BitVec.ofNat 64 (s.mem.readW (BitVec.setWidth 64 (arg s 7) + 8) 64).toNat,
         BitVec.ofNat 64 (Spec.Dsa.parameterEntropy (s.mem.readW (BitVec.setWidth 64 (arg s 7) + 8) 64).toNat),
         BitVec.ofNat 64 requested] ∧
-      res.Requests (Spec.Dsa.parameterEntropy (s.mem.readW (BitVec.setWidth 64 (arg s 7) + 8) 64).toNat) requested
+      Asked (s.mem.readW (BitVec.setWidth 64 (arg s 7) + 8) 64).toNat res requested
 
 theorem genQ_of {s : State} (F : CallFacts s) {g : Geo} (hp : (callEnv s).pLen = g.pLen)
     (hq : (callEnv s).qLen = g.qLen) {m : Mem} {e : BitVec 32}
@@ -1505,7 +1505,7 @@ theorem genQ_of {s : State} (F : CallFacts s) {g : Geo} (hp : (callEnv s).pLen =
   have pl := F.pLens
   obtain hpos : 0 < pLenOf s := by omega_using [pl]
   obtain lenOut : (arg s 1).toNat = 2 * g.pLen + g.qLen := by rw [F.outLen, ← hp, ← hq]; rfl
-  refine ⟨?_, ?_, ?_, requested (pLenOf s) (sW (callEnv s)), ?_, requested_requests hpos _ _⟩
+  refine ⟨?_, ?_, ?_, requested (pLenOf s) (sW (callEnv s)), ?_, requested_asked hpos _ _⟩
   · rw [eax, BitVec.toNat_ofNat, Nat.mod_eq_of_lt]
     · rfl
     · show (sW (callEnv s)).status < 2 ^ 32
@@ -1629,7 +1629,7 @@ theorem correct {g1 g2 g3 : Geo} (G1 : GeoOk g1) (G2 : GeoOk g2) (G3 : GeoOk g3)
         (fun r hr => by rw [List.mem_singleton.mp hr]; exact F.stackSt.symm)
       exact ⟨q1, by rw [hO]; exact q2, by rw [hU]; exact q3, req, by rw [hS]; exact q4, q5⟩)
   refine ⟨trace, t, run, preserved, ?_⟩
-  sig_post [genContract, Spec.Dsa.parameterSearchContract, Spec.Dsa.parameterSearchSig,
+  sig_post [genContract, Proof.Dsa.parameterSearchAskedContract, Spec.Dsa.parameterSearchSig,
     abi, argSlots, argVal, argBytes, Abi.withConsts, VG.Impl.RsaKeyGen.TrialTable32.consts]
   rw [BitVec.setWidth_append_eq_right]
   exact Q

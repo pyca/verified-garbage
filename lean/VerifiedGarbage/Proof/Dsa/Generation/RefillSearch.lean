@@ -55,8 +55,8 @@ result is the search from `R.drop c`, with those `c` octets consumed before
 it. Each lemma here is one way a step of the controller ends: no seeds left,
 a tape too short for the next seed, or the seed's attempt (`refillAttempt`,
 `RefillSeed.lean`) running out, rejecting the seed or accepting
-parameters. It also states the next tape's length every target's code asks
-for (`parameterRequest`) and why `parameterSearchContract` allows it. -/
+parameters. It also says why `parameterSearchContract` allows the next tape's
+length every target's code asks for (`parameterRequest`). -/
 
 @[expose] public section
 
@@ -95,17 +95,6 @@ theorem consume_consume (r : ParameterSearchResult) (a b : Nat) :
 
 /-! ## The next tape's length -/
 
-/-- The next tape's length the code asks for when `available` octets did not
-hold a whole seed (`Entropy.request`): at first `512 * pLen`, enough for a
-seed, the tests of its `p` candidates and the 128 witnesses of `p`'s, most of
-the time. -/
-def parameterRequest (pLen available : Nat) : Nat :=
-  Entropy.request (256 * pLen) (parameterEntropy pLen) available
-
-/-- The length the code writes after the result `r`. -/
-def requested (pLen : Nat) (r : ParameterSearchResult) : Nat :=
-  Entropy.requested (parameterRequest pLen) r
-
 /-- A search that ran out had fewer octets left than its budget. -/
 theorem parameterSearch_available {pLen : Nat} :
     ∀ (k : Nat) (R : List Byte) {s a : Nat}, (parameterSearch pLen k R).outcome = .entropy s a →
@@ -121,12 +110,11 @@ theorem parameterSearch_available {pLen : Nat} :
     · simp at h
     · exact parameterSearch_available k _ h
 
-/-- The code's request is one `parameterSearchContract` allows. -/
-theorem requested_requests {pLen : Nat} (hp : 0 < pLen) (k : Nat) (R : List Byte) :
-    (parameterSearch pLen k R).Requests (parameterEntropy pLen)
-      (requested pLen (parameterSearch pLen k R)) :=
-  Entropy.requested_requests fun _ _ h =>
-    Entropy.request_valid (by omega_using [hp]) (parameterSearch_available k R h)
+/-- The code's request after any search is `Asked`. -/
+theorem requested_asked {pLen : Nat} (hp : 0 < pLen) (k : Nat) (R : List Byte) :
+    Asked pLen (parameterSearch pLen k R) (requested pLen (parameterSearch pLen k R)) :=
+  ⟨Entropy.requested_requests fun _ _ h =>
+    Entropy.request_valid (by omega_using [hp]) (parameterSearch_available k R h), rfl⟩
 
 /-! ## The search's steps -/
 

@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Dsa.ParameterPublic
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.SLoop
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.PPart
@@ -1445,7 +1446,7 @@ section
 variable {g1 g2 g3 : Geo}
 
 /-- The contract. -/
-abbrev genK : Contract isa := Spec.Dsa.parameterSearchContract (abi.withConsts kT) 176
+abbrev genK : Contract isa := Proof.Dsa.parameterSearchAskedContract (abi.withConsts kT) 176
 
 theorem outBytes_eq (G : GP) (o : COut) :
     outBytes G o = match (cRes G o).outcome with
@@ -1468,7 +1469,7 @@ theorem code_ok (K1 : GeoOk g1 128 20) (K2 : GeoOk g2 256 32) (K3 : GeoOk g3 384
   have res := hu.res
   refine (post_consts (c₀ := (Impl.RsaKeyGen.TrialTable32.symbol, Impl.RsaKeyGen.TrialTable32.packed))
     (cs := [])).mpr ?_
-  sig_post [Spec.Dsa.parameterSearchContract, Spec.Dsa.parameterSearchSig, abi, argRegs]
+  sig_post [Proof.Dsa.parameterSearchAskedContract, Spec.Dsa.parameterSearchSig, abi, argRegs]
   obtain hp : 0 < pLenOf s := by
     have := hpre.valid; simp only [Spec.Dsa.generationPLenValid, Bool.or_eq_true, beq_iff_eq] at this; omega_using [this]
   have ht : Spec.Dsa.parameterSearch (pLenOf s) (s.mem.readW (s.gpr .r10) 64).toNat
@@ -1479,7 +1480,7 @@ theorem code_ok (K1 : GeoOk g1 128 20) (K2 : GeoOk g2 256 32) (K3 : GeoOk g3 384
       BitVec.ofNat 64 (Spec.Dsa.parameterEntropy (pLenOf s)) := hpre.budget
   rw [ht]
   refine ⟨?_, ?_, ?_, VG.Proof.Dsa.Generation.requested (pLenOf s) (cRes (mkG s) (oOf (mkG s))), ?_,
-    by rw [← ht]; exact VG.Proof.Dsa.Generation.requested_requests hp _ _⟩
+    by rw [← ht]; exact VG.Proof.Dsa.Generation.requested_asked hp _ _⟩
   · have hst : (cRes (mkG s) (oOf (mkG s))).status < 4 := by
       unfold Spec.Entropy.Result.status Spec.Entropy.Outcome.status; split <;> decide
     obtain e3 : u.gpr .r3 = BitVec.ofNat 64 (cRes (mkG s) (oOf (mkG s))).status := r3.trans fo.r3
@@ -1501,7 +1502,7 @@ theorem mkG_eq {s₁ s₂ : State} (h : genK.pub s₁ s₂) : mkG s₁ = mkG s�
   obtain ⟨h, hy⟩ := (pub_consts (c₀ := (Impl.RsaKeyGen.TrialTable32.symbol, Impl.RsaKeyGen.TrialTable32.packed))
     (cs := [])).mp h
   obtain ht := hy _ List.mem_cons_self
-  sig_pub [Spec.Dsa.parameterSearchContract, Spec.Dsa.parameterSearchSig, abi, argRegs] at h
+  sig_pub [Proof.Dsa.parameterSearchAskedContract, Spec.Dsa.parameterSearchSig, abi, argRegs] at h
   obtain ⟨hsp, hl, r3, r4, r5, r6, r7, r8, r9, r10⟩ := h
   obtain ⟨hW, hR⟩ := List.append_inj hl (by simp [Spec.Rsa.wordsAt, r10])
   obtain eW := map_toNat_inj64 hW
@@ -1577,7 +1578,7 @@ theorem search_satisfiable : ∃ s, genK.pre s := by
     constRegs_kT searchSat
   refine ⟨searchSat, (pre_consts (c₀ := (Impl.RsaKeyGen.TrialTable32.symbol, Impl.RsaKeyGen.TrialTable32.packed))
     (cs := [])).mpr ⟨?_, ?_, sat_table, ?_, ?_⟩⟩
-  · sig_pre [Spec.Dsa.parameterSearchContract, Spec.Dsa.parameterSearchSig, abi, argRegs, stackBelow, stripConsts]
+  · sig_pre [Proof.Dsa.parameterSearchAskedContract, Spec.Dsa.parameterSearchSig, abi, argRegs, stackBelow, stripConsts]
     sig_and_intros
     all_goals first
       | rfl

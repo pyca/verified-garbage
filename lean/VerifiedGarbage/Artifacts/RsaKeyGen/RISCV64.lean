@@ -20,7 +20,8 @@ namespace VG.Artifacts.RsaKeyGen.RISCV64
 def direct : List (Artifact RISCV64.target) := [
   Spec.RsaKeyGen.keyInitApi.artifact RISCV64.target {
     code := Impl.RsaKeyGen.RISCV64.KeyInit.Fn.init
-    verified := Proof.RsaKeyGen.RISCV64.Fn.init_scrubbed }]
+    verified := Proof.RsaKeyGen.RISCV64.Fn.init_scrubbed
+    publicOutOk := Proof.RsaKeyGen.RISCV64.Fn.init_public }]
 
 def artifacts : List (Artifact RISCV64.target) :=
   direct ++ Proof.Variants.MillerRabin.RISCV64.variants.map fun (v : Proof.MillerRabin.RISCV64.RoundImpl) =>

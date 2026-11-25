@@ -251,7 +251,8 @@ namespace VG.Artifacts.RsaKeyGen.Arm
 def direct : List (Artifact Arm.target) := [
   Spec.RsaKeyGen.keyInitApi.artifact Arm.target {
     code := Impl.RsaKeyGen.Arm.Fn.generateInit
-    verified := Proof.RsaKeyGen.Arm.Fn.generateInit }]
+    verified := Proof.RsaKeyGen.Arm.Fn.generateInit
+    publicOutOk := Proof.RsaKeyGen.Arm.Fn.generateInit_public }]
 
 def artifacts : List (Artifact Arm.target) :=
   direct ++

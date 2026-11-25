@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Impl.Ffdh.AArch64.Generation.Init
 import VerifiedGarbage.Proof.Ffdh.ControlMemory
 public import VerifiedGarbage.Proof.Bignum.AArch64.Run
-public import VerifiedGarbage.Spec.Ffdh.GenerationContract
+public import VerifiedGarbage.Proof.Ffdh.ParameterPublic
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtGPow
 import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Base
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
@@ -16,7 +16,7 @@ import VerifiedGarbage.Proof.EntropyRequest
 meta import VerifiedGarbage.Impl.Ffdh.AArch64.Generation.Init
 meta import VerifiedGarbage.Proof.Ffdh.ControlMemory
 meta import VerifiedGarbage.Proof.Bignum.AArch64.Run
-meta import VerifiedGarbage.Spec.Ffdh.GenerationContract
+meta import VerifiedGarbage.Proof.Ffdh.ParameterPublic
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtGPow
 meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Base
 meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
@@ -161,7 +161,7 @@ def initPost (s t : State) : Prop :=
       Spec.Rsa.wordsAt t.mem (s.gpr .x0) 4 = List.replicate 4 0
   | some values => ((t.gpr .x0).setWidth 32).toNat = 1 ∧ ∃ first,
       Spec.Rsa.wordsAt t.mem (s.gpr .x0) 4 = (values ++ [first]).map (BitVec.ofNat 64) ∧
-      Spec.Entropy.RequestValid (Spec.Ffdh.parameterEntropy (s.gpr .x1).toNat) 0 first
+      Proof.Ffdh.FirstAsked (s.gpr .x1).toNat first
 
 def initPub (s t : State) : Prop :=
   s.sp = t.sp ∧ s.gpr .x0 = t.gpr .x0 ∧ s.gpr .x1 = t.gpr .x1 ∧ (s.gpr .x2).setWidth 32 = (t.gpr .x2).setWidth 32
@@ -199,7 +199,7 @@ theorem init_ok {s : State} (scr : Scr s (s.gpr .x0) 128) :
     refine WP.ite false (by rw [VG.Proof.MlKem.AArch64.eval_zero, h13]; rfl) (fun h => by cases h)
       fun _ => WP.mono (initialize_ok scr' h0 hb hv.2.1) fun t ⟨ht, hmt⟩ => ?_
     simp only [initPost, parameterInit_of hv]
-    refine ⟨by rw [ht]; rfl, _, ?_, Proof.Ffdh.first_valid hv.1⟩
+    refine ⟨by rw [ht]; rfl, _, ?_, Proof.Ffdh.firstAsked hv.1⟩
     rw [hmt, hm, initWritten_words]
     rfl
   · rw [ite_eq_right hv] at h13
@@ -260,11 +260,11 @@ private def initSat : State where
   rd := []
   wr := [⟨0x1000, 128⟩]
 
-theorem init_verified : Verified target init (Spec.Ffdh.parameterInitContract abi) := by
+theorem init_verified : Verified target init (Proof.Ffdh.parameterInitAskedContract abi) := by
   refine Verified.of_correct (k := initContract) init_correct ?_ ?_
   · intro s₁ s₂ tr₁ tr₂ t₁ t₂ _ _ hp h₁ h₂
     exact init_constantTime s₁ s₂ tr₁ tr₂ t₁ t₂ trivial trivial hp h₁ h₂
-  · sig_implies [Spec.Ffdh.parameterInitContract, Spec.Ffdh.parameterInitSig,
+  · sig_implies [Proof.Ffdh.parameterInitAskedContract, Spec.Ffdh.parameterInitSig,
       initContract, initPre, initPost, initPub, abi, argRegs] [initSat] using initSat
 
 /-- `vg_ffdh_parameter_generation_init` returns without secret residue: it reads no memory, so what it

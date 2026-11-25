@@ -22,7 +22,8 @@ namespace VG.Artifacts.Dsa.AArch64
 def direct : List (Artifact AArch64.target) := [
   Spec.Dsa.parameterInitApi.artifact AArch64.target {
     code := Impl.Dsa.AArch64.ParameterSearch.init
-    verified := Proof.Dsa.AArch64.ParameterSearchInit.init_scrubbed }]
+    verified := Proof.Dsa.AArch64.ParameterSearchInit.init_scrubbed
+    publicOutOk := Proof.Dsa.AArch64.ParameterSearchInit.init_public }]
 
 end VG.Artifacts.Dsa.AArch64
 
@@ -62,6 +63,7 @@ def artifacts : List (Artifact AArch64.target) :=
     Spec.Dsa.parameterSearchApi.artifact AArch64.target {
       suffix := qualifiedName "" [("sha1", p.sha1.suffix), ("sha256", p.sha256.suffix), ("mr", v.suffix)]
       code := Impl.Dsa.AArch64.Fn.parameterSearch p.sha1.H p.sha256.H v.suffix v.mont.mm v.roundMont.mm
-      verified := Proof.Dsa.AArch64.Scrub.parameterSearch p v })
+      verified := Proof.Dsa.AArch64.Scrub.parameterSearch p v
+      publicOutOk := Proof.Dsa.AArch64.Scrub.parameterSearch_public p v })
 
 end VG.Artifacts.Dsa.AArch64

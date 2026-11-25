@@ -195,7 +195,8 @@ namespace VG.Artifacts.RsaKeyGen.AArch64
 def direct : List (Artifact AArch64.target) := [
   Spec.RsaKeyGen.keyInitApi.artifact AArch64.target {
     code := Impl.RsaKeyGen.AArch64.KeyInit.Fn.init
-    verified := Proof.RsaKeyGen.AArch64.KeyInit.init_scrubbed }]
+    verified := Proof.RsaKeyGen.AArch64.KeyInit.init_scrubbed
+    publicOutOk := Proof.RsaKeyGen.AArch64.KeyInit.init_public }]
 
 def artifacts : List (Artifact AArch64.target) :=
   direct ++

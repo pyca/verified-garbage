@@ -120,7 +120,8 @@ def direct : List (Artifact Arm.target) :=
       verified := Proof.Ffdh.Arm.Fn.keyInit },
     Spec.Ffdh.parameterInitApi.artifact VG.Arm.target {
       code := Impl.Ffdh.Arm.Fn.parameterInit
-      verified := Proof.Ffdh.Arm.Fn.parameterInit }]
+      verified := Proof.Ffdh.Arm.Fn.parameterInit
+      publicOutOk := Proof.Ffdh.Arm.Fn.parameterInit_public }]
 
 end VG.Artifacts.Ffdh.Arm
 
@@ -142,6 +143,7 @@ def artifacts : List (Artifact Arm.target) :=
       suffix := c.suffix
       code := Impl.Ffdh.Arm.Fn.sievedParameterSearch
         (Impl.Ffdh.Arm.ParameterSearch.code (.call c.candidateName c.candidate))
-      verified := Proof.Ffdh.Arm.Fn.sievedParameterSearch v b }])
+      verified := Proof.Ffdh.Arm.Fn.sievedParameterSearch v b
+      publicOutOk := Proof.Ffdh.Arm.Fn.sievedParameterSearch_public v b }])
 
 end VG.Artifacts.Ffdh.Arm

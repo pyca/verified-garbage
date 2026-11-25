@@ -8,7 +8,7 @@ public import VerifiedGarbage.Spec.Dsa.Prevalidated
 public import VerifiedGarbage.Spec.Dsa.PrevalidatedSign
 public import VerifiedGarbage.Spec.Dsa.Generate
 public import VerifiedGarbage.Spec.Dsa.Derive
-public import VerifiedGarbage.Spec.Dsa.ParameterSearchContract
+public import VerifiedGarbage.Proof.Dsa.ParameterPublic
 public import VerifiedGarbage.Proof.Dsa.X86.CheckingVerified
 public import VerifiedGarbage.Proof.Dsa.X86.DerivingVerified
 public import VerifiedGarbage.Proof.Dsa.X86.Comb.KeyVerified
@@ -27,7 +27,7 @@ meta import VerifiedGarbage.Spec.Dsa.Prevalidated
 meta import VerifiedGarbage.Spec.Dsa.PrevalidatedSign
 meta import VerifiedGarbage.Spec.Dsa.Generate
 meta import VerifiedGarbage.Spec.Dsa.Derive
-meta import VerifiedGarbage.Spec.Dsa.ParameterSearchContract
+meta import VerifiedGarbage.Proof.Dsa.ParameterPublic
 meta import VerifiedGarbage.Proof.Dsa.X86.CheckingVerified
 meta import VerifiedGarbage.Proof.Dsa.X86.DerivingVerified
 meta import VerifiedGarbage.Proof.Dsa.X86.Comb.KeyVerified
@@ -124,7 +124,7 @@ theorem deriveKeyOut (stack : Nat) :
       exact h
 
 theorem parameterSearchOut {A : Abi isa} (hA : ScrubAbi A) (stack : Nat) :
-    PostOut (Spec.Dsa.parameterSearchContract A stack) (Spec.Dsa.parameterSearchSig.retBits A.ptrBits) :=
+    PostOut (Proof.Dsa.parameterSearchAskedContract A stack) (Spec.Dsa.parameterSearchSig.retBits A.ptrBits) :=
   postOut_of_local (leak := some _) hA fun
     | [out, outLen, _, _, _, _, _, _], m, m₁, m₂, r, _, hb, h => by
       simp only [Spec.Dsa.parameterSearchSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
@@ -231,12 +231,22 @@ theorem verifyPrevalidated_spSafe : Impl.Dsa.X86.Fn.verifyPrevalidated.all (fun 
   scrubAll_spSafe verifyPrevalidated_sp
 
 /-- `vg_dsa_parameter_search_init`, with its cleanup, returns without secret residue. -/
-theorem parameterInit_scrubbed :
-    VerifiedScrubbed target Impl.Dsa.X86.Fn.parameterInit (Spec.Dsa.parameterInitContract abi) 32 :=
-  verifiedScrubbed (api := Spec.Dsa.parameterInitApi)
+theorem parameterInit_asked :
+    VerifiedScrubbed target Impl.Dsa.X86.Fn.parameterInit (Proof.Dsa.parameterInitAskedContract abi) 32 :=
+  verifiedScrubbed (api := Proof.Dsa.parameterInitAskedApi)
     { code := Impl.Dsa.X86.Generation.init
       verified := Proof.Dsa.X86.Generation.Init.init_verified
       spSafe := parameterInit_sp }
+
+theorem parameterInit_scrubbed :
+    VerifiedScrubbed target Impl.Dsa.X86.Fn.parameterInit
+      (Spec.Dsa.parameterInitContract abi) 32 :=
+  Proof.Dsa.parameterInit_imp parameterInit_asked id
+
+theorem parameterInit_public :
+    Spec.Dsa.parameterInitOut.Of abi Impl.Dsa.X86.Fn.parameterInit
+      (Spec.Dsa.parameterInitContract abi) :=
+  Proof.Dsa.parameterInit_public parameterInit_asked
 
 theorem parameterInit_spSafe : Impl.Dsa.X86.Fn.parameterInit.all (fun i => !isa.writesSp i) = true :=
   scrub_spSafe parameterInit_sp
@@ -379,16 +389,30 @@ theorem search_scrub (v1 : Proof.Sha1.X86.Variants.Backend) (v256 : Proof.Sha256
 /-- `vg_dsa_parameter_search`, with its cleanup, returns without secret
 residue, whatever the implementations `v1` of SHA-1, `v256` of SHA-256 and
 `v` of the Miller–Rabin round. -/
-theorem parameterSearch_scrubbed (v1 : Proof.Sha1.X86.Variants.Backend)
+theorem parameterSearch_asked (v1 : Proof.Sha1.X86.Variants.Backend)
     (v256 : Proof.Sha256.X86.Variants.Backend) (v : RoundImpl) :
     VerifiedScrubbed target
       (Impl.Dsa.X86.Fn.parameterSearch (geo1 v1 v) (geo256 256 v256 v) (geo256 384 v256 v))
       Proof.Dsa.X86.Generation.genContract 32 :=
-  verifiedScrubbedAll (api := Spec.Dsa.parameterSearchApi)
+  verifiedScrubbedAll (api := Proof.Dsa.parameterSearchAskedApi)
     { code := Impl.Dsa.X86.Generation.code (geo1 v1 v) (geo256 256 v256 v) (geo256 384 v256 v)
       verified := Proof.Dsa.X86.Generation.verified v1 v256 v
       spSafe := Proof.Dsa.X86.Generation.code_all v1 v256 v }
     (parameterSearchOut (ScrubAbi.consts Impl.RsaKeyGen.TrialTable32.consts) 216) (hs := search_scrub v1 v256 v)
+
+theorem parameterSearch_scrubbed (v1 : Proof.Sha1.X86.Variants.Backend)
+    (v256 : Proof.Sha256.X86.Variants.Backend) (v : RoundImpl) :
+    VerifiedScrubbed target
+      (Impl.Dsa.X86.Fn.parameterSearch (geo1 v1 v) (geo256 256 v256 v) (geo256 384 v256 v))
+      (Spec.Dsa.parameterSearchContract (abi.withConsts Impl.RsaKeyGen.TrialTable32.consts) 216) 32 :=
+  Proof.Dsa.parameterSearch_imp (parameterSearch_asked v1 v256 v) id
+
+theorem parameterSearch_public (v1 : Proof.Sha1.X86.Variants.Backend)
+    (v256 : Proof.Sha256.X86.Variants.Backend) (v : RoundImpl) :
+    Spec.Dsa.parameterSearchOut.Of abi
+      (Impl.Dsa.X86.Fn.parameterSearch (geo1 v1 v) (geo256 256 v256 v) (geo256 384 v256 v))
+      (Spec.Dsa.parameterSearchContract (abi.withConsts Impl.RsaKeyGen.TrialTable32.consts) 216) :=
+  Proof.Dsa.parameterSearch_public (parameterSearch_asked v1 v256 v)
 
 /-- `vg_dsa_parameter_search`, with its cleanup, writes `esp` only by its frames. -/
 theorem parameterSearch_spSafe (v1 : Proof.Sha1.X86.Variants.Backend)

@@ -14,7 +14,7 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeCall
 public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.Entry
 public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Variant
-public import VerifiedGarbage.Spec.Dsa.ParameterSearchContract
+public import VerifiedGarbage.Proof.Dsa.ParameterPublic
 public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Variants.MdHash.AArch64
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.QBuild
@@ -1600,9 +1600,9 @@ def satState : State where
   rd := [⟨0x3000, 0⟩]
   wr := [⟨0x1000, 276⟩, ⟨0x2000, 8⟩, ⟨0x10000, 73728⟩, ⟨0x4000, 32⟩]
 
-theorem refill_satisfiable : ∃ s, (Spec.Dsa.parameterSearchContract abi 768).pre s := by
+theorem refill_satisfiable : ∃ s, (Proof.Dsa.parameterSearchAskedContract abi 768).pre s := by
   refine ⟨satState, ?_⟩
-  sig_pre [Spec.Dsa.parameterSearchContract, Spec.Dsa.parameterSearchSig, abi, argRegs]
+  sig_pre [Proof.Dsa.parameterSearchAskedContract, Spec.Dsa.parameterSearchSig, abi, argRegs]
   sig_and_intros
   all_goals first
     | exact Region.disjoint_of_sep (by decide +kernel)
@@ -1612,7 +1612,7 @@ theorem backend_verified (v1 v256 : MdHash) (v : RoundImpl)
     (h1 : v1.mgf.G.rust = "sha1") (h256 : v256.mgf.G.rust = "sha256") :
     Verified target (Impl.Dsa.AArch64.Generation.code v1.H v256.H (Generator.generatorStage v).run
       (ProbablePrime.primeTest v).run)
-      (Spec.Dsa.parameterSearchContract abi 768) :=
+      (Proof.Dsa.parameterSearchAskedContract abi 768) :=
   ⟨refill_correct (generationHashes v1 v256 h1 h256) (Generator.generatorStage v) (ProbablePrime.primeTest v),
     refill_ct (generationHashes v1 v256 h1 h256) (Generator.generatorStage v) (ProbablePrime.primeTest v),
     refill_satisfiable⟩

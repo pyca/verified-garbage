@@ -19,8 +19,8 @@ on attempts and on entropy, and returns one of three outcomes:
   next tape of `requested` octets, any length `RequestValid` allows: more than
   `available`, so the step can go further, and at most the operation's budget.
   How much more is the operation's choice, not part of this protocol, but
-  the host reveals it: an operation on a secret tape says that its length is
-  public (`Api.publicOut`). The host
+  the host reveals it: each operation that chooses a tape's length says that it
+  is public (`Api.publicOut`). The host
   discards the `used` octets, keeps the rest in order and appends fresh,
   independent random octets until the tape has `requested` (`Refill`), and
   calls it again with `state`.

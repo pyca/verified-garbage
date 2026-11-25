@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Ffdh.ParameterPublic
 public import VerifiedGarbage.Impl.Ffdh.X86_64.Fn
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Cached.PrecomputeVerified
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Cached.SearchProof.Verified
@@ -92,12 +93,12 @@ theorem search_stub :
       (Impl.Ffdh.X86_64.ParameterCandidate.prepareCall "prep" stubMM) (Impl.MillerRabin.X86_64.Caller.call "r" (.block []))))
       VecLevel.sse.level searchStack 160 [] = true := by lit_decide
 
-/-- `Spec.Ffdh.sievedParameterSearchApi`'s function as emitted over `v`
+/-- `Proof.Ffdh.sievedParameterSearchAskedApi`'s function as emitted over `v`
 meets its contract in constant time and returns without secret residue. -/
-theorem search_scrubbed (v : RoundImpl) :
+theorem search_asked (v : RoundImpl) :
     VerifiedScrubbed target (Impl.Ffdh.X86_64.Fn.sievedParameterSearch v.level v.mont.mm ("vg_ffdh_prepare_modulus" ++ v.arithSuffix) v.name v.code)
-      (Spec.Ffdh.sievedParameterSearchApi.contract X86_64.abi 160) 32 :=
-  verifiedScrubbedAllFillG (api := Spec.Ffdh.sievedParameterSearchApi)
+      (Proof.Ffdh.sievedParameterSearchAskedApi.contract X86_64.abi 160) 32 :=
+  verifiedScrubbedAllFillG (api := Proof.Ffdh.sievedParameterSearchAskedApi)
     { code := Generation.searchCode v
       verified := Generation.search_verified v
       spSafe := Generation.searchCode_sp v } _
@@ -108,6 +109,16 @@ theorem search_scrubbed (v : RoundImpl) :
       unfold Generation.searchCode ParameterCandidate.candidateCode
       fill_gen)
     (Nat.zero_le _) (Nat.le_refl _) (ha := search_stub)
+
+theorem search_scrubbed (v : RoundImpl) :
+    VerifiedScrubbed target (Impl.Ffdh.X86_64.Fn.sievedParameterSearch v.level v.mont.mm ("vg_ffdh_prepare_modulus" ++ v.arithSuffix) v.name v.code)
+      (Spec.Ffdh.sievedParameterSearchContract X86_64.abi 160) 32 :=
+  Proof.Ffdh.sievedParameterSearch_imp (search_asked v) id
+
+theorem search_public (v : RoundImpl) :
+    Spec.Ffdh.sievedParameterSearchOut.Of X86_64.abi (Impl.Ffdh.X86_64.Fn.sievedParameterSearch v.level v.mont.mm ("vg_ffdh_prepare_modulus" ++ v.arithSuffix) v.name v.code)
+      (Spec.Ffdh.sievedParameterSearchContract X86_64.abi 160) :=
+  Proof.Ffdh.sievedParameterSearch_public (search_asked v)
 
 theorem search_spSafe (v : RoundImpl) :
     (Impl.Ffdh.X86_64.Fn.sievedParameterSearch v.level v.mont.mm ("vg_ffdh_prepare_modulus" ++ v.arithSuffix) v.name v.code).all

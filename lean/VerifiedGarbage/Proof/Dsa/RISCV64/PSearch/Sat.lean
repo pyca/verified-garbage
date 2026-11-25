@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Dsa.ParameterPublic
 public import VerifiedGarbage.Proof.Dsa.RISCV64.PSearch.Base
 public import VerifiedGarbage.Proof.Framework.ConstMem
 import VerifiedGarbage.Proof.Framework.Contract
@@ -79,8 +80,8 @@ theorem sat_w16 : satMem.readW (0x4000 + 16) 64 = BitVec.ofNat 64 (Spec.Dsa.para
 
 private theorem kT_eq' : kT = [(Impl.RsaKeyGen.TrialTable32.symbol, Impl.RsaKeyGen.TrialTable32.packed)] := rfl
 
-theorem sat_base : (Spec.Dsa.parameterSearchContract abi 512).pre (stripConsts kT satState) := by
-  unfold Spec.Dsa.parameterSearchContract
+theorem sat_base : (Proof.Dsa.parameterSearchAskedContract abi 512).pre (stripConsts kT satState) := by
+  unfold Proof.Dsa.parameterSearchAskedContract
   refine Sig.contract_pre_of_check (by decide +kernel) ?_
   sig_reduce [Spec.Dsa.parameterSearchSig, abi, argRegs, List.append_eq]
   sig_and_intros
@@ -115,10 +116,10 @@ theorem sat_consts : ConstsOk kT 512 satState := by
     subst ht
     decide
 
-theorem sat : (Spec.Dsa.parameterSearchContract (abi.withConsts kT) 512).pre satState := by
+theorem sat : (Proof.Dsa.parameterSearchAskedContract (abi.withConsts kT) 512).pre satState := by
   have h₁ := sat_base
   have h₂ := sat_consts
-  unfold Spec.Dsa.parameterSearchContract at h₁ ⊢
+  unfold Proof.Dsa.parameterSearchAskedContract at h₁ ⊢
   rw [kT_eq'] at h₁ h₂ ⊢
   exact pre_consts.mpr ⟨h₁, h₂⟩
 

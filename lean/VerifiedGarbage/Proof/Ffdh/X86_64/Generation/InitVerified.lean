@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.InitGuards
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.InitValues
-public import VerifiedGarbage.Spec.Ffdh.GenerationContract
+public import VerifiedGarbage.Proof.Ffdh.ParameterPublic
 import VerifiedGarbage.Proof.Framework.X86_64.Depth
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
@@ -223,7 +223,7 @@ def initPost (s t : State) : Prop :=
       Spec.Rsa.wordsAt t.mem (s.gpr .rdi) 4 = List.replicate 4 0
   | some values => ((t.gpr .rax).setWidth 32).toNat = 1 ∧ ∃ first,
       Spec.Rsa.wordsAt t.mem (s.gpr .rdi) 4 = (values ++ [first]).map (BitVec.ofNat 64) ∧
-      Spec.Entropy.RequestValid (Spec.Ffdh.parameterEntropy (s.gpr .rsi).toNat) 0 first
+      Proof.Ffdh.FirstAsked (s.gpr .rsi).toNat first
 
 def initContract : Contract isa where
   pre := initPre
@@ -255,7 +255,7 @@ private theorem result_post {s t : State}
   | some values =>
     simp only [he] at h
     obtain ⟨hv, hb⟩ := init_values he
-    refine ⟨?_, _, ?_, Proof.Ffdh.first_valid hb⟩
+    refine ⟨?_, _, ?_, Proof.Ffdh.firstAsked hb⟩
     · rw [h.1]; rfl
     · rw [h.2, hv]
       exact initialized_words _ _ _
@@ -290,11 +290,11 @@ private def initSat : State where
   rd := []
   wr := [⟨0x1000, 128⟩]
 
-theorem init_verified : Verified target init (Spec.Ffdh.parameterInitContract abi) := by
+theorem init_verified : Verified target init (Proof.Ffdh.parameterInitAskedContract abi) := by
   refine Verified.of_correct (k := initContract) init_correct ?_ ?_
   · intro s₁ s₂ tr₁ tr₂ t₁ t₂ _ _ hp h₁ h₂
     exact init_constantTime s₁ s₂ tr₁ tr₂ t₁ t₂ trivial trivial hp h₁ h₂
-  · sig_implies [Spec.Ffdh.parameterInitContract, Spec.Ffdh.parameterInitSig,
+  · sig_implies [Proof.Ffdh.parameterInitAskedContract, Spec.Ffdh.parameterInitSig,
       initContract, initPre, initPost, initPub, abi, argRegs] [initSat] using initSat
 
 end VG.Proof.Ffdh.X86_64.Generation

@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Spec.Ffdh.GenerationContract
+public import VerifiedGarbage.Proof.Ffdh.ParameterPublic
 public import Init.Data.BitVec.BasicAux
 public import VerifiedGarbage.Spec.Ffdh.Generation
 import VerifiedGarbage.Proof.EntropyRequest
@@ -10,7 +10,7 @@ public import VerifiedGarbage.Proof.Ffdh.Arm.KeyInitVerified
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.TCB.Arm.Target
-meta import VerifiedGarbage.Spec.Ffdh.GenerationContract
+meta import VerifiedGarbage.Proof.Ffdh.ParameterPublic
 public import Init.Data.List.Basic
 public import VerifiedGarbage.Impl.Ffdh.Arm.Init
 import VerifiedGarbage.Proof.Ffdh.Arm.Block
@@ -190,7 +190,7 @@ def parameterPost (s t : State) : Prop :=
   | none => (t.gpr .r0).toNat = 0 ∧ Spec.Rsa.wordsAt t.mem (State.addr (s.gpr .r0)) 4 = List.replicate 4 0
   | some values => (t.gpr .r0).toNat = 1 ∧ ∃ first,
       Spec.Rsa.wordsAt t.mem (State.addr (s.gpr .r0)) 4 = (values ++ [first]).map (BitVec.ofNat 64) ∧
-      Spec.Entropy.RequestValid (Spec.Ffdh.parameterEntropy (s.gpr .r1).toNat) 0 first
+      Proof.Ffdh.FirstAsked (s.gpr .r1).toNat first
 
 def parameterPub (s t : State) : Prop :=
   s.sp = t.sp ∧ s.gpr .r0 = t.gpr .r0 ∧ s.gpr .r1 = t.gpr .r1 ∧ s.gpr .r2 = t.gpr .r2
@@ -213,7 +213,7 @@ theorem parameter_correct (s : State) (h : keyPre s) :
     by_cases valid : 512 ≤ (s.gpr .r1).toNat ∧ (s.gpr .r1).toNat ≤ 8192 ∧ (s.gpr .r2 = 2 ∨ s.gpr .r2 = 5)
     · simp only [parameterInitPost, valid] at post
       simp only [valid]
-      exact ⟨by rw [post.1]; rfl, _, post.2, Proof.Ffdh.first_valid valid.1⟩
+      exact ⟨by rw [post.1]; rfl, _, post.2, Proof.Ffdh.firstAsked valid.1⟩
     · simp only [parameterInitPost, valid, ite_false] at post
       simp only [valid, ite_false]
       exact ⟨by rw [post.1]; rfl, post.2⟩
@@ -229,7 +229,7 @@ private def parameterSat : State where
   rd := []
   wr := [⟨0x1000, 128⟩]
 
-theorem parameterInit_verified : Verified target Generation.init (Spec.Ffdh.parameterInitContract abi) := by
+theorem parameterInit_verified : Verified target Generation.init (Proof.Ffdh.parameterInitAskedContract abi) := by
   refine Verified.of_correct (k := parameterContract) parameter_correct ?_ ?_
   · intro s t tr1 tr2 u v _ _ pub e1 e2
     exact (parameterInit_ct s t tr1 tr2 u v (by
@@ -238,15 +238,15 @@ theorem parameterInit_verified : Verified target Generation.init (Spec.Ffdh.para
       rcases hr with rfl | rfl | rfl
       exacts [pub.2.1, pub.2.2.1, pub.2.2.2]) e1 e2).1
   · refine {
-      pre := by sig_implies_pre [Spec.Ffdh.parameterInitContract, Spec.Ffdh.parameterInitSig,
+      pre := by sig_implies_pre [Proof.Ffdh.parameterInitAskedContract, Spec.Ffdh.parameterInitSig,
         parameterContract, keyPre, abi, argRegs, reduceClassify, Loc.val, State.addr]
       post := ?_
-      pub := by sig_implies_pub [Spec.Ffdh.parameterInitContract, Spec.Ffdh.parameterInitSig,
+      pub := by sig_implies_pub [Proof.Ffdh.parameterInitAskedContract, Spec.Ffdh.parameterInitSig,
         parameterContract, parameterPub, abi, argRegs, reduceClassify, Loc.val, State.addr]
-      sat := by sig_implies_sat [Spec.Ffdh.parameterInitContract, Spec.Ffdh.parameterInitSig,
+      sat := by sig_implies_sat [Proof.Ffdh.parameterInitAskedContract, Spec.Ffdh.parameterInitSig,
         abi, argRegs, reduceClassify, Loc.val, State.addr] [parameterSat] using parameterSat }
     intro s t _ post
-    sig_post [Spec.Ffdh.parameterInitContract, Spec.Ffdh.parameterInitSig, abi, argRegs, reduceClassify, Loc.val, State.addr]
+    sig_post [Proof.Ffdh.parameterInitAskedContract, Spec.Ffdh.parameterInitSig, abi, argRegs, reduceClassify, Loc.val, State.addr]
     rw [BitVec.setWidth_append_eq_right]
     exact post
 

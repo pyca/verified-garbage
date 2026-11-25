@@ -87,11 +87,21 @@ open VG VG.Arm VG.Arm.Scrub VG.Proof.Rsa.Arm.Scrub VG.Proof.RsaKeyGen.Arm.Scrub
 open VG.Proof.MillerRabin.Arm (RoundImpl)
 
 /-- `vg_rsa_generate_init`. -/
-theorem generateInit :
-    VerifiedScrubbed target Impl.RsaKeyGen.Arm.Fn.generateInit (Spec.RsaKeyGen.keyInitContract abi) 32 :=
-  verifiedScrubbed (api := Spec.RsaKeyGen.keyInitApi)
+theorem generateInit_asked :
+    VerifiedScrubbed target Impl.RsaKeyGen.Arm.Fn.generateInit (Proof.RsaKeyGen.keyInitAskedContract abi) 32 :=
+  verifiedScrubbed (api := Proof.RsaKeyGen.keyInitAskedApi)
     { code := Impl.RsaKeyGen.Arm.KeyInit.init, verified := Proof.RsaKeyGen.Arm.KeyInit.init_verified }
     generateInit_noFrames
+
+theorem generateInit :
+    VerifiedScrubbed target Impl.RsaKeyGen.Arm.Fn.generateInit
+      (Spec.RsaKeyGen.keyInitContract abi) 32 :=
+  Proof.RsaKeyGen.keyInit_imp generateInit_asked id
+
+theorem generateInit_public :
+    Spec.RsaKeyGen.keyInitOut.Of abi Impl.RsaKeyGen.Arm.Fn.generateInit
+      (Spec.RsaKeyGen.keyInitContract abi) :=
+  Proof.RsaKeyGen.keyInit_public generateInit_asked
 
 /-- `vg_rsa_generate`, calling the prime search over the round `v`. -/
 theorem generate_asked [Proof.Rsa.Arm.Keys.InvLaw] (v : RoundImpl) :

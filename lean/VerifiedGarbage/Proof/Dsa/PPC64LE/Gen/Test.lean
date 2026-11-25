@@ -23,7 +23,7 @@ import VerifiedGarbage.Proof.Framework.PPC64LE.Syms
 public import VerifiedGarbage.Proof.Rsa.KeyArrays
 public import VerifiedGarbage.Impl.Dsa.PPC64LE.Generation
 public import VerifiedGarbage.TCB.PPC64LE.Target
-public import VerifiedGarbage.Spec.Dsa.ParameterSearchContract
+public import VerifiedGarbage.Proof.Dsa.ParameterPublic
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Call
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Consts
@@ -154,10 +154,10 @@ structure CIn0 (STK : Nat) (s : State) : Prop where
   budget : s.mem.readW (s.gpr .r10 + 16) 64 = BitVec.ofNat 64 (Spec.Dsa.parameterEntropy (pLenOf s))
   randLen : (s.gpr .r7).toNat ≤ Spec.Dsa.parameterEntropy (pLenOf s)
 
-theorem cin0_of_pre {n : Nat} (s : State) (h : (Spec.Dsa.parameterSearchContract abi (n + 1)).pre s) :
+theorem cin0_of_pre {n : Nat} (s : State) (h : (Proof.Dsa.parameterSearchAskedContract abi (n + 1)).pre s) :
     CIn0 (n + 1) s := by
-  sig_pre [Spec.Dsa.parameterSearchContract, Spec.Dsa.parameterSearchSig, abi, argRegs, stackBelow] at h
-  sig_pre [Spec.Dsa.parameterSearchContract, Spec.Dsa.parameterSearchSig, abi, argRegs, stackBelow] at h
+  sig_pre [Proof.Dsa.parameterSearchAskedContract, Spec.Dsa.parameterSearchSig, abi, argRegs, stackBelow] at h
+  sig_pre [Proof.Dsa.parameterSearchAskedContract, Spec.Dsa.parameterSearchSig, abi, argRegs, stackBelow] at h
   sig_split h
   constructor
   all_goals try dsimp only [mkG, GP.rOut, GP.rUsed, GP.rWit, GP.rScr, GP.rSt, pLenOf]
@@ -210,7 +210,7 @@ theorem constRegs_kT (s : State) : constRegs kT s = [(mkG s).rTab] := by
   rfl
 
 theorem cin_of_pre {n : Nat} (s : State)
-    (h : (Spec.Dsa.parameterSearchContract (abi.withConsts kT) (n + 1)).pre s) : CIn (n + 1) s := by
+    (h : (Proof.Dsa.parameterSearchAskedContract (abi.withConsts kT) (n + 1)).pre s) : CIn (n + 1) s := by
   obtain ⟨h₀, hk⟩ := (pre_consts (c₀ := (Impl.RsaKeyGen.TrialTable32.symbol, Impl.RsaKeyGen.TrialTable32.packed))
     (cs := []) (sig := Spec.Dsa.parameterSearchSig)).mp h
   have c := cin0_of_pre (stripConsts kT s) h₀

@@ -46,6 +46,7 @@ def direct : List (Artifact X86.target) := [
   Spec.Dsa.parameterInitApi.artifact X86.target {
     code := Impl.Dsa.X86.Fn.parameterInit
     verified := Proof.Dsa.X86.Scrub.parameterInit_scrubbed
+    publicOutOk := Proof.Dsa.X86.Scrub.parameterInit_public
     spSafe := Proof.Dsa.X86.Scrub.parameterInit_spSafe }]
 
 end VG.Artifacts.Dsa.X86
@@ -62,6 +63,7 @@ def artifacts : List (Artifact X86.target) :=
       suffix := qualifiedName "" [("sha1", v1.suffix), ("sha256", v256.suffix), ("mr", v.suffix)]
       code := Impl.Dsa.X86.Fn.parameterSearch (geo1 v1 v) (geo256 256 v256 v) (geo256 384 v256 v)
       verified := Proof.Dsa.X86.Scrub.parameterSearch_scrubbed v1 v256 v
+      publicOutOk := Proof.Dsa.X86.Scrub.parameterSearch_public v1 v256 v
       spSafe := Proof.Dsa.X86.Scrub.parameterSearch_spSafe v1 v256 v })
 
 end VG.Artifacts.Dsa.X86

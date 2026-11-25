@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Dsa.ParameterPublic
 public import VerifiedGarbage.Impl.Dsa.RISCV64.Fn
 public import VerifiedGarbage.Proof.Dsa.RISCV64.DeriveVerified
 public import VerifiedGarbage.Proof.Dsa.RISCV64.RSVerified
@@ -83,11 +84,21 @@ theorem verifyPrevalidated :
     { code := Impl.Dsa.RISCV64.Prevalidated.verify, verified := prevalidated_verified }
     (verifyPrevalidatedOut _ []) (by lit_decide)
 
-theorem parameterInit :
-    VerifiedScrubbed target Impl.Dsa.RISCV64.Fn.parameterInit (Spec.Dsa.parameterInitContract abi) 32 :=
-  verifiedScrubbedAll (api := Spec.Dsa.parameterInitApi) (W := 0)
+theorem parameterInit_asked :
+    VerifiedScrubbed target Impl.Dsa.RISCV64.Fn.parameterInit (Proof.Dsa.parameterInitAskedContract abi) 32 :=
+  verifiedScrubbedAll (api := Proof.Dsa.parameterInitAskedApi) (W := 0)
     { code := Impl.Dsa.RISCV64.ParameterSearch.init, verified := init_verified }
     (parameterInitOut []) (by lit_decide)
+
+theorem parameterInit :
+    VerifiedScrubbed target Impl.Dsa.RISCV64.Fn.parameterInit
+      (Spec.Dsa.parameterInitContract abi) 32 :=
+  Proof.Dsa.parameterInit_imp parameterInit_asked id
+
+theorem parameterInit_public :
+    Spec.Dsa.parameterInitOut.Of abi Impl.Dsa.RISCV64.Fn.parameterInit
+      (Spec.Dsa.parameterInitContract abi) :=
+  Proof.Dsa.parameterInit_public parameterInit_asked
 
 /-- What the cleanup needs of the parameter search, with a stub of 96 bytes
 of stack in the place of the round. -/
@@ -137,15 +148,25 @@ theorem parameterSearch_fill {round : Prog isa} (suffix : String) (h : calleeSid
 
 /-- `vg_dsa_parameter_search` as emitted, with the Miller-Rabin round `v`: it
 meets its contract in constant time and returns without secret residue. -/
-theorem parameterSearch (v : RoundImpl) :
+theorem parameterSearch_asked (v : RoundImpl) :
     VerifiedScrubbed target (Impl.Dsa.RISCV64.Fn.parameterSearch v.suffix v.code)
-      (Spec.Dsa.parameterSearchContract (abi.withConsts PSearch.kT) 512) 32 :=
-  verifiedScrubbedAll (api := Spec.Dsa.parameterSearchApi)
+      (Proof.Dsa.parameterSearchAskedContract (abi.withConsts PSearch.kT) 512) 32 :=
+  verifiedScrubbedAll (api := Proof.Dsa.parameterSearchAskedApi)
     { suffix := v.suffix
       code := Impl.Dsa.RISCV64.Fn.parameterSearchBody v.suffix v.code
       verified := PSearch.params_verified v }
     (parameterSearchOut 512 PSearch.kT)
     (scrubSide_of_fill (parameterSearch_fill v.suffix (calleeSide_of (depth_le_of_sdepth v.stack) v.icalls))
       parameterSearch_stub_side (fun _ h => h) (fun _ h => absurd h List.not_mem_nil))
+
+theorem parameterSearch (v : RoundImpl) :
+    VerifiedScrubbed target (Impl.Dsa.RISCV64.Fn.parameterSearch v.suffix v.code)
+      (Spec.Dsa.parameterSearchContract (abi.withConsts PSearch.kT) 512) 32 :=
+  Proof.Dsa.parameterSearch_imp (parameterSearch_asked v) id
+
+theorem parameterSearch_public (v : RoundImpl) :
+    Spec.Dsa.parameterSearchOut.Of abi (Impl.Dsa.RISCV64.Fn.parameterSearch v.suffix v.code)
+      (Spec.Dsa.parameterSearchContract (abi.withConsts PSearch.kT) 512) :=
+  Proof.Dsa.parameterSearch_public (parameterSearch_asked v)
 
 end VG.Proof.Dsa.RISCV64.Fn

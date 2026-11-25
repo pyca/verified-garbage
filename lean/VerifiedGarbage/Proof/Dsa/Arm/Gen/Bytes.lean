@@ -9,7 +9,7 @@ public import VerifiedGarbage.Proof.Rsa.Arm.KeyArrs
 import VerifiedGarbage.Proof.Dsa.Generation.Memory
 public import VerifiedGarbage.Impl.Dsa.Arm.Generation
 public import VerifiedGarbage.TCB.Arm.Target
-public import VerifiedGarbage.Spec.Dsa.ParameterSearchContract
+public import VerifiedGarbage.Proof.Dsa.ParameterPublic
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.Arm.Spill
 import VerifiedGarbage.Proof.Framework.Sig
@@ -152,8 +152,8 @@ structure CIn (s : State) : Prop where
   budget : s.mem.readW (State.addr (stackArg s 3) + 16#64) 64 = BitVec.ofNat 64 (Spec.Dsa.parameterEntropy (pLenOf s))
   randLen : (stackArg s 0).toNat ≤ Spec.Dsa.parameterEntropy (pLenOf s)
 
-theorem cin_of_pre (s : State) (h : (Spec.Dsa.parameterSearchContract abi 352).pre s) : CIn s := by
-  sig_pre [Spec.Dsa.parameterSearchContract, Spec.Dsa.parameterSearchSig, abi, argRegs, reduceClassify,
+theorem cin_of_pre (s : State) (h : (Proof.Dsa.parameterSearchAskedContract abi 352).pre s) : CIn s := by
+  sig_pre [Proof.Dsa.parameterSearchAskedContract, Spec.Dsa.parameterSearchSig, abi, argRegs, reduceClassify,
     Loc.val] at h
   obtain ⟨spLo, spHi, rd, wr, oU, oW, oC, oS, oA, uW, uC, uS, uA, wC, wS, cS, cA, sA, fO, fU, fW, fC, fS, fA, nO, nU, nW, nC, nS, valid, outLen, scrLen, seeds, budget, randLen⟩ := h
   exact ⟨spLo, spHi, rd, wr, oU, oW, oC, oS, oA, uW, uC, uS, uA, wC, wS, cS, cA, sA, fO, fU, fW, fC, fS, fA, nO, nU, nW, nC, nS, valid, outLen, scrLen, seeds, budget, randLen⟩

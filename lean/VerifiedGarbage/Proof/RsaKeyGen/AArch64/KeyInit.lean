@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.RsaKeyGen.AArch64.KeyInit
-public import VerifiedGarbage.Spec.RsaKeyGen.KeySearchContract
+public import VerifiedGarbage.Proof.RsaKeyGen.KeySearchPublic
 public import VerifiedGarbage.Proof.Bignum.AArch64.Run
 import VerifiedGarbage.Proof.RsaKeyGen.InitWords
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtGPow
@@ -14,7 +14,7 @@ import VerifiedGarbage.Proof.Framework.TaintBatch
 import VerifiedGarbage.Proof.Ffdh.ControlMemory
 import Mathlib.Tactic.SplitIfs
 meta import VerifiedGarbage.Impl.RsaKeyGen.AArch64.KeyInit
-meta import VerifiedGarbage.Spec.RsaKeyGen.KeySearchContract
+meta import VerifiedGarbage.Proof.RsaKeyGen.KeySearchPublic
 meta import VerifiedGarbage.Proof.Bignum.AArch64.Run
 meta import VerifiedGarbage.Proof.RsaKeyGen.InitWords
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtGPow
@@ -387,7 +387,7 @@ def initPost (s t : State) : Prop :=
       Spec.Rsa.wordsAt t.mem (s.gpr .x0) 6 =
         (values ++ [first, 0, Spec.RsaKeyGen.keyGenerations]).map (BitVec.ofNat 64) ∧
       Spec.Rsa.bytesAt t.mem (s.gpr .x0 + 48) 8 = Spec.Rsa.i2osp (Spec.Rsa.os2ip eB) 8 ∧
-      Spec.Entropy.RequestValid (Spec.RsaKeyGen.primeEntropy (values.getD 1 0)) 0 first
+      Proof.RsaKeyGen.FirstAsked (values.getD 1 0) first
 
 theorem plen_eq {bits : Nat} (hb : bits < 2 ^ 64) : plenBV bits = BitVec.ofNat 64 (bits / 128 * 8) := by
   apply BitVec.eq_of_toNat_eq
@@ -447,8 +447,7 @@ theorem result_post {s t : State} {E : Nat}
         simp only [wordValues, List.getD_cons_zero, List.getD_cons_succ, Nat.mod_eq_of_lt hvE.2.2]
         exact rev_bytes E
       · simp only [List.getD_cons_zero, List.getD_cons_succ, hP]
-        unfold Spec.Entropy.RequestValid Spec.RsaKeyGen.primeEntropy
-        omega_using [hn]
+        exact Proof.RsaKeyGen.firstAsked (by omega_using [hn])
   · have hv' : Spec.RsaKeyGen.exponentValid E = false := by simpa using hv
     rw [ite_eq_left (by rw [hv']; rfl)]
     have h0 : initStatus bits E = 0 := by
@@ -532,20 +531,30 @@ private def initSat : State where
   rd := [⟨0x2000, 3⟩]
   wr := [⟨0x1000, 56⟩]
 
-theorem init_verified : Verified target init (Spec.RsaKeyGen.keyInitContract abi) := by
+theorem init_verified : Verified target init (Proof.RsaKeyGen.keyInitAskedContract abi) := by
   refine Verified.of_correct (k := initContract) init_correct ?_ ?_
   · intro s₁ s₂ tr₁ tr₂ t₁ t₂ _ _ hp h₁ h₂
     exact init_constantTime s₁ s₂ tr₁ tr₂ t₁ t₂ trivial trivial hp h₁ h₂
-  · sig_implies [Spec.RsaKeyGen.keyInitContract, Spec.RsaKeyGen.keyInitSig,
+  · sig_implies [Proof.RsaKeyGen.keyInitAskedContract, Spec.RsaKeyGen.keyInitSig,
       initContract, initPre, initPost, initPub, abi, argRegs] [initSat] using initSat
 
 /-- `vg_rsa_key_init` as emitted, cleanup included
 (`Impl.RsaKeyGen.AArch64.KeyInit.Fn.init`): it meets its contract in constant
 time and returns without secret residue. What the cleanup needs of the code
 (`Scrub.scrubSide`) is evaluated here, by the kernel. -/
-theorem init_scrubbed :
-    VerifiedScrubbed target Impl.RsaKeyGen.AArch64.KeyInit.Fn.init (Spec.RsaKeyGen.keyInitContract abi) 32 :=
-  AArch64.Scrub.verifiedScrubbedAll (api := Spec.RsaKeyGen.keyInitApi)
+theorem init_asked :
+    VerifiedScrubbed target Impl.RsaKeyGen.AArch64.KeyInit.Fn.init (Proof.RsaKeyGen.keyInitAskedContract abi) 32 :=
+  AArch64.Scrub.verifiedScrubbedAll (api := Proof.RsaKeyGen.keyInitAskedApi)
     { code := init, verified := init_verified } _ Proof.Rsa.AArch64.Scrub.keyInitOk (by dsimp only; lit_decide)
+
+theorem init_scrubbed :
+    VerifiedScrubbed target Impl.RsaKeyGen.AArch64.KeyInit.Fn.init
+      (Spec.RsaKeyGen.keyInitContract abi) 32 :=
+  Proof.RsaKeyGen.keyInit_imp init_asked id
+
+theorem init_public :
+    Spec.RsaKeyGen.keyInitOut.Of abi Impl.RsaKeyGen.AArch64.KeyInit.Fn.init
+      (Spec.RsaKeyGen.keyInitContract abi) :=
+  Proof.RsaKeyGen.keyInit_public init_asked
 
 end VG.Proof.RsaKeyGen.AArch64.KeyInit

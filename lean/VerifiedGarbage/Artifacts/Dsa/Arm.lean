@@ -25,7 +25,8 @@ open VG Proof.Dsa.Arm.Gen
 def artifacts : List (Artifact Arm.target) :=
   [Spec.Dsa.parameterInitApi.artifact Arm.target {
     code := Impl.Dsa.Arm.Fn.parameterInit
-    verified := Proof.Dsa.Arm.Fn.parameterInit }] ++
+    verified := Proof.Dsa.Arm.Fn.parameterInit
+    publicOutOk := Proof.Dsa.Arm.Fn.parameterInit_public }] ++
   (VG.Proof.Variants.DsaArithmetic.Arm.variants.flatMap fun (v : Proof.Variants.DsaArithmetic.Arm.Variant) => [
     Spec.Dsa.randomSignPrevalidatedApi.artifact Arm.target {
       suffix := v.suffix
@@ -55,6 +56,7 @@ def artifacts : List (Artifact Arm.target) :=
     Spec.Dsa.parameterSearchApi.artifact Arm.target {
       suffix := p.1.suffix
       code := Impl.Dsa.Arm.Fn.parameterSearch p.1.umaal p.2.suffix p.2.code p.2.mont.callOp.op p.2.mont.dbl
-      verified := Proof.Dsa.Arm.Fn.parameterSearch p.1.umaal p.2 })
+      verified := Proof.Dsa.Arm.Fn.parameterSearch p.1.umaal p.2
+      publicOutOk := Proof.Dsa.Arm.Fn.parameterSearch_public p.1.umaal p.2 })
 
 end VG.Artifacts.Dsa.Arm

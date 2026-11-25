@@ -29,7 +29,7 @@ import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ContextFrame
 import VerifiedGarbage.Proof.Dsa.Generation.Memory
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.Omega
-public import VerifiedGarbage.Spec.Dsa.ParameterSearchContract
+public import VerifiedGarbage.Proof.Dsa.ParameterPublic
 public import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Dsa.Generation.Layout
@@ -286,9 +286,9 @@ structure RefillABI (pBytes : Nat) (s : State) : Prop where
   budget : s.mem.readW (s.gpr .x7 + 16) 64 = BitVec.ofNat 64 (Spec.Dsa.parameterEntropy (refillPLen s))
   randLength : (s.gpr .x4).toNat ≤ Spec.Dsa.parameterEntropy (refillPLen s)
 
-theorem refillABI_of {s : State} (h : (Spec.Dsa.parameterSearchContract abi refillStack).pre s) :
+theorem refillABI_of {s : State} (h : (Proof.Dsa.parameterSearchAskedContract abi refillStack).pre s) :
     RefillABI (refillPLen s) s := by
-  sig_pre [Spec.Dsa.parameterSearchContract, Spec.Dsa.parameterSearchSig, abi, argRegs,
+  sig_pre [Proof.Dsa.parameterSearchAskedContract, Spec.Dsa.parameterSearchSig, abi, argRegs,
     inOut, inUsed, inRand, inScr, inState] at h
   sig_split h
   constructor

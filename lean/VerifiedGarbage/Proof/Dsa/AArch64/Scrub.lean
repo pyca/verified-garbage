@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Spec.Dsa.PrevalidatedSign
 public import VerifiedGarbage.Spec.Dsa.Prevalidated
-public import VerifiedGarbage.Spec.Dsa.ParameterSearchContract
+public import VerifiedGarbage.Proof.Dsa.ParameterPublic
 public import VerifiedGarbage.Spec.Dsa.Generate
 public import VerifiedGarbage.Spec.Dsa.Derive
 public import VerifiedGarbage.Proof.Framework.AArch64.ScrubProved
@@ -49,7 +49,7 @@ theorem validatePrivateKeyOk (stack : Nat) :
     | [_, _, _, _, _, _], _, _, _, _, _, _, h => h
 
 theorem parameterSearchOk (stack : Nat) :
-    ScrubAllOk (Spec.Dsa.parameterSearchContract abi stack) stack
+    ScrubAllOk (Proof.Dsa.parameterSearchAskedContract abi stack) stack
       (Spec.Dsa.parameterSearchSig.retBits abi.ptrBits) :=
   scrubAllOk_any (sig := Spec.Dsa.parameterSearchSig) (Nat.le_of_ble_eq_true rfl) fun
     | [out, outLen, _, _, _, _, _, _], m, m₁, m₂, r, _, hb, h => by
@@ -217,10 +217,10 @@ private theorem le17 {d : Nat} (h : 16 * d ≤ 272) : d ≤ 17 := by omega
 
 /-- `vg_dsa_parameter_search` as emitted, with the hash functions `p` and the
 arithmetic of the round's implementation `v`, cleanup included. -/
-theorem parameterSearch (p : Generation.Refill.Hashes) (v : RoundImpl) :
+theorem parameterSearch_asked (p : Generation.Refill.Hashes) (v : RoundImpl) :
     VerifiedScrubbed target
       (Impl.Dsa.AArch64.Fn.parameterSearch p.sha1.H p.sha256.H v.suffix v.mont.mm v.roundMont.mm)
-      (Spec.Dsa.parameterSearchContract abi 768) 32 := by
+      (Proof.Dsa.parameterSearchAskedContract abi 768) 32 := by
   obtain ⟨hs, hd⟩ := side_depth_of_fillN (p := fun i => !i.writesDit)
     (c := Impl.Dsa.AArch64.Generation.code p.sha1.H p.sha256.H (Impl.Dsa.AArch64.Fn.generator v.suffix v.mont.mm)
       (Impl.Dsa.AArch64.Fn.probablePrime v.suffix v.mont.mm v.roundMont.mm))
@@ -250,5 +250,17 @@ theorem parameterSearch (p : Generation.Refill.Hashes) (v : RoundImpl) :
   exact verifiedScrubbedOf (W := 768)
     (Generation.Refill.backend_verified p.sha1 p.sha256 v p.h1 p.h256) (parameterSearchOk 768) (by decide)
     (Nat.le_trans (Nat.mul_le_mul_left 16 hd) (by decide)) hs (.inr (.inl rfl))
+
+theorem parameterSearch (p : Generation.Refill.Hashes) (v : RoundImpl) :
+    VerifiedScrubbed target
+      (Impl.Dsa.AArch64.Fn.parameterSearch p.sha1.H p.sha256.H v.suffix v.mont.mm v.roundMont.mm)
+      (Spec.Dsa.parameterSearchContract abi 768) 32 :=
+  Proof.Dsa.parameterSearch_imp (parameterSearch_asked p v) id
+
+theorem parameterSearch_public (p : Generation.Refill.Hashes) (v : RoundImpl) :
+    Spec.Dsa.parameterSearchOut.Of abi
+      (Impl.Dsa.AArch64.Fn.parameterSearch p.sha1.H p.sha256.H v.suffix v.mont.mm v.roundMont.mm)
+      (Spec.Dsa.parameterSearchContract abi 768) :=
+  Proof.Dsa.parameterSearch_public (parameterSearch_asked p v)
 
 end VG.Proof.Dsa.AArch64.Scrub

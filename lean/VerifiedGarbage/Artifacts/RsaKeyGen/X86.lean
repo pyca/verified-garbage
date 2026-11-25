@@ -19,7 +19,8 @@ namespace VG.Artifacts.RsaKeyGen.X86
 def direct : List (Artifact X86.target) := [
   Spec.RsaKeyGen.keyInitApi.artifact X86.target {
     code := Impl.RsaKeyGen.X86.Fn.generateInit
-    verified := Proof.RsaKeyGen.X86.Scrub.generateInit_scrubbed }]
+    verified := Proof.RsaKeyGen.X86.Scrub.generateInit_scrubbed
+    publicOutOk := Proof.RsaKeyGen.X86.Scrub.generateInit_public }]
 
 end VG.Artifacts.RsaKeyGen.X86
 

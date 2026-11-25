@@ -2,6 +2,7 @@ module
 
 import VerifiedGarbage.Proof.Framework.X86_64.ScrubFillG
 
+public import VerifiedGarbage.Proof.Dsa.ParameterPublic
 public import VerifiedGarbage.Impl.Dsa.X86_64.ParameterSearch
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.RefillContract
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeCall
@@ -1550,7 +1551,7 @@ def searchCode (v1 v256 : MdHash) (v : RoundImpl) : Prog isa :=
 
 theorem searchCode_verified (ct : RefillCTObligation) (v1 v256 : MdHash) (v : RoundImpl)
     (h1 : v1.mgf.G.rust = "sha1") (h256 : v256.mgf.G.rust = "sha256") :
-    Verified target (searchCode v1 v256 v) (Spec.Dsa.parameterSearchContract (abi.withFns (fns v1 v256 v)) 632) :=
+    Verified target (searchCode v1 v256 v) (Proof.Dsa.parameterSearchAskedContract (abi.withFns (fns v1 v256 v)) 632) :=
   RefillWidths.refillWidths_verified 568 (by decide)
     (sha1_verified ct v1 v h1) (sha256_verified ct v256 v h256 256 (.inl rfl))
     (sha256_verified ct v256 v h256 384 (.inr rfl))

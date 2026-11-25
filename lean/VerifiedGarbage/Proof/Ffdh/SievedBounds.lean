@@ -194,13 +194,13 @@ theorem search_available_lt (bits generator : Nat) : ∀ remaining r k a u,
         | exhausted => rw [hs] at h; cases h
       | some p => cases h
 
-/-- The code's request after any search is one the contract allows. -/
-theorem search_requests (bits generator remaining : Nat) (r : Rand) :
-    (sievedParameterSearch bits generator remaining r).Requests (parameterEntropy bits)
+/-- The code's request after any search is `Asked`. -/
+theorem search_asked (bits generator remaining : Nat) (r : Rand) :
+    Proof.Ffdh.Asked bits (sievedParameterSearch bits generator remaining r)
       (Proof.Ffdh.requested bits (sievedParameterSearch bits generator remaining r)) :=
-  Proof.Ffdh.requested_requests fun k a u h => by
+  ⟨Proof.Ffdh.requested_requests fun k a u h => by
     have hlt := search_available_lt bits generator remaining r k a u h
-    exact Entropy.request_valid (by unfold parameterEntropy at hlt; omega_using [hlt]) hlt
+    exact Entropy.request_valid (by unfold parameterEntropy at hlt; omega_using [hlt]) hlt, rfl⟩
 
 theorem candidate_rest {bits generator : Nat} {rand rest : Rand} {value : Option Nat}
     (h : sievedParameterCandidate bits generator rand = some (value, rest)) :

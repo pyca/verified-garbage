@@ -1,15 +1,14 @@
 module
 
-public import VerifiedGarbage.Spec.Ffdh.GenerationContract
 public import VerifiedGarbage.TCB.Arm.Target
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Lit
 import Batteries.Logic
 meta import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Spec.Ffdh.GenerationContract
+meta import VerifiedGarbage.Proof.Ffdh.ParameterPublic
 meta import VerifiedGarbage.TCB.Arm.Target
-public import VerifiedGarbage.Spec.Ffdh.SievedContract
+public import VerifiedGarbage.Proof.Ffdh.ParameterPublic
 
 /-! The unchanged public search contract admits a concrete ARMv7 call. -/
 
@@ -30,8 +29,8 @@ private def searchSat : State where
   rd := [⟨0x2000, 0⟩, ⟨0x8000, 24⟩]
   wr := [⟨0x1000, 64⟩, ⟨0x1100, 8⟩, ⟨0x3000, 8448⟩, ⟨0x6000, 128⟩]
 
-theorem search_sat : ∃ s, (Spec.Ffdh.sievedParameterSearchContract abi 280).pre s := by
-  sig_implies_sat [Spec.Ffdh.sievedParameterSearchContract, Spec.Ffdh.parameterSearchSig,
+theorem search_sat : ∃ s, (Proof.Ffdh.sievedParameterSearchAskedContract abi 280).pre s := by
+  sig_implies_sat [Proof.Ffdh.sievedParameterSearchAskedContract, Spec.Ffdh.parameterSearchSig,
     abi, argRegs, reduceClassify, Loc.val, State.addr]
     [searchSat, stackArg, stackArgAddr, Mem.readW, Mem.read, Spec.Rsa.scratchWords,
       Spec.Ffdh.parameterAttempts, Spec.Ffdh.parameterEntropy] using searchSat

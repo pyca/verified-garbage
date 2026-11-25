@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Dsa.ParameterPublic
 public import VerifiedGarbage.Proof.Dsa.Arm.Prime.Verified
 public import VerifiedGarbage.Proof.Bignum.Arm.DoubleBackend
 public import VerifiedGarbage.Proof.Dsa.Arm.Gen.QPart
@@ -405,7 +406,7 @@ def searchPairs : List (Proof.Variants.DsaArithmetic.Arm.Variant × RoundImpl) :
 
 /-- `vg_dsa_parameter_search` over the round `v` meets its contract. -/
 theorem search_params (v : RoundImpl) :
-    Verified target (code (geo1 umaal v) (geo2 umaal v) (geo3 umaal v)) (Spec.Dsa.parameterSearchContract abi 352) :=
+    Verified target (code (geo1 umaal v) (geo2 umaal v) (geo3 umaal v)) (Proof.Dsa.parameterSearchAskedContract abi 352) :=
   search_verified (geoOk1 umaal v) (geoOk2 umaal v) (geoOk3 umaal v)
 
 end VG.Proof.Dsa.Arm.Gen

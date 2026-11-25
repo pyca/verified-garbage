@@ -18,8 +18,8 @@ def parameterInitSig : Sig where
   ret := some .u32
 
 /-- `parameterInit`: 1, its three words and the first tape's length, any that
-`Entropy.RequestValid` allows with no octets available, or 0 and four
-zeros. -/
+`Entropy.RequestValid` allows with no octets available, which one being public
+(`parameterInitOut`), or 0 and four zeros. -/
 def parameterInitContract {M : ISA} (A : Abi M) : Contract M :=
   parameterInitSig.contract A
     (post := fun state pLen _m m' r =>
@@ -30,18 +30,26 @@ def parameterInitContract {M : ISA} (A : Abi M) : Contract M :=
         Entropy.RequestValid (parameterEntropy pLen.toNat) 0 first)
     (leak := some fun _state _pLen _m => [])
 
+/-- What the function leaves that is public: the first tape's length, which
+the host allocates and fills, in two runs that agree on what its timing may
+depend on (`PublicOut`). -/
+def parameterInitOut : PublicOut parameterInitSig where
+  out _ := fun state _pLen _m m' _r => [(m'.readW (state + 24) 64).toNat]
+
 def parameterInitApi : Api where
   module := "dsa"
   name := "vg_dsa_parameter_search_init"
   sig := parameterInitSig
   contracts := some fun A _ => parameterInitContract A
+  publicOut := some parameterInitOut
   summary := "Start a search for DSA domain parameters with a modulus of `p_len` octets \
     (128, 256 or 384: 1024, 2048 or 3072 bits, with a subgroup of 160, 256 and 256 \
     bits). Returns 1 and writes the search's four public words to `state`: the seeds \
     it may still reject, `p_len`, its entropy budget, and the length of the first \
     random tape to give `vg_dsa_parameter_search`. Returns 0 and writes zeros for any \
     other `p_len`.\n\n\
-    Contract: `VG.Spec.Dsa.parameterInitContract`."
+    Contract: `VG.Spec.Dsa.parameterInitContract`. Timing, and the length of the first tape \
+    (`VG.Spec.Dsa.parameterInitOut`), may depend on `p_len`."
   safety := []
 
 /-! ## `vg_dsa_parameter_search` -/
@@ -59,7 +67,8 @@ def parameterSearchSig : Sig where
 modulus width in `state[1]`: its status (`Entropy.Outcome.status`), the
 parameters `p || q || g` at `out` (zeros otherwise), the octets it consumed at
 `used`, and the state for the next call, whose last word is the next tape's
-length: any that `Entropy.Result.Requests` allows (0 if there is none).
+length: any that `Entropy.Result.Requests` allows (0 if there is none), which
+one being public (`parameterSearchOut`).
 Everything here is public: its timing may depend on all of it, the tape
 included. -/
 def parameterSearchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
@@ -89,12 +98,22 @@ def parameterSearchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract 
     (leak := some fun _out _outLen _used rand randLen _scratch _scratchLen state m =>
       (wordsAt m state 4).map (·.toNat) ++ (bytesAt m rand randLen.toNat).map (·.toNat))
 
+/-- What the function leaves that is public: the next tape's length, which
+the host allocates and fills, in two runs that agree on what its timing may
+depend on (`PublicOut`). The tape is public, but the contract says nothing of
+what else the function may read: its working space, and the caller's
+registers. -/
+def parameterSearchOut : PublicOut parameterSearchSig where
+  out _ := fun _out _outLen _used _rand _randLen _scratch _scratchLen state _m m' _r =>
+    [(m'.readW (state + 24) 64).toNat]
+
 def parameterSearchApi : Api where
   module := "dsa"
   name := "vg_dsa_parameter_search"
   sig := parameterSearchSig
   writeArgs := true
   contracts := some fun A stack => parameterSearchContract A stack
+  publicOut := some parameterSearchOut
   summary := "Search for DSA domain parameters (FIPS 186-4 A.1.1.2 and A.2.1) over the \
     random tape `rand`, for the modulus width in `state`: each seed, its `q`, the `p` \
     candidates from it and the generator's `h` candidates are read from `rand` in turn, \
@@ -107,8 +126,9 @@ def parameterSearchApi : Api where
     budget: keep those octets, in order, and append fresh random octets up to that \
     length. `out` is zeros but for 1. Accepted parameters pass \
     probable-prime tests, not primality certification.\n\n\
-    Contract: `VG.Spec.Dsa.parameterSearchContract`. Timing may depend on everything, \
-    `rand` included: these are public domain parameters."
+    Contract: `VG.Spec.Dsa.parameterSearchContract`. Timing, and the length of the next tape \
+    (`VG.Spec.Dsa.parameterSearchOut`), may depend on everything, \
+    `rand` included: these are public domain parameters. Not on what `scratch` holds."
   safety := ["`state` must come from `vg_dsa_parameter_search_init`, or from the last \
       call of this function that returned 0.",
     "`out_len` must be `2 * state[1]` plus 20 if `state[1]` is 128, else plus 32.",

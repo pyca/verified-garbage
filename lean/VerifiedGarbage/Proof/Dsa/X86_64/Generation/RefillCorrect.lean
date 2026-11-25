@@ -543,7 +543,7 @@ theorem refill_correct (H : GenerationHashes) (M : Mont) (Sq : MontS) (T : Prime
       have := h.lengths; unfold Spec.Dsa.generationLengthsValid at this; omega_using [this]
     rw [hw, ht]
     refine ⟨?_, ?_, used, VG.Proof.Dsa.Generation.requested pBytes (total h), ?_,
-      VG.Proof.Dsa.Generation.requested_requests hp _ _⟩
+      VG.Proof.Dsa.Generation.requested_asked hp _ _⟩
     · have hs : (total h).status < 4 := by
         unfold Spec.Entropy.Result.status Spec.Entropy.Outcome.status; split <;> decide
       rw [rax, BitVec.toNat_setWidth, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hs]), Nat.mod_eq_of_lt (by omega_using [hs])]

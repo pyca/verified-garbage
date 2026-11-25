@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.RefillCTFinish
-public import VerifiedGarbage.Spec.Dsa.ParameterSearchContract
+public import VerifiedGarbage.Proof.Dsa.ParameterPublic
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.EntryAllocated
 import VerifiedGarbage.Proof.Framework.AArch64.RelCT
 import VerifiedGarbage.Proof.Framework.Sig
@@ -10,7 +10,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.OmegaLit
 import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.RefillCTFinish
-meta import VerifiedGarbage.Spec.Dsa.ParameterSearchContract
+meta import VerifiedGarbage.Proof.Dsa.ParameterPublic
 meta import VerifiedGarbage.Proof.Framework.AArch64.RelCT
 meta import VerifiedGarbage.Proof.Framework.Sig
 meta import VerifiedGarbage.Proof.Framework.OmegaLit
@@ -664,9 +664,9 @@ end
 /-! ## Correctness -/
 
 theorem refill_correct (H : GenerationHashes) (G : GeneratorStage) (T : PrimeTest)
-    (s : State) (pre : (Spec.Dsa.parameterSearchContract abi refillStack).pre s) :
+    (s : State) (pre : (Proof.Dsa.parameterSearchAskedContract abi refillStack).pre s) :
     ∃ tr t, Exec isa (Impl.Dsa.AArch64.Generation.code H.sha1 H.sha256 G.run T.run) s tr t ∧
-      abiPreserved s t ∧ (Spec.Dsa.parameterSearchContract abi refillStack).post s t := by
+      abiPreserved s t ∧ (Proof.Dsa.parameterSearchAskedContract abi refillStack).post s t := by
   have h := refillABI_of pre
   obtain ⟨tr, t, he, x0, bytes, used, words, gp, vp, tsp⟩ :
       WP isa (Impl.Dsa.AArch64.Generation.code H.sha1 H.sha256 G.run T.run) s fun t =>
@@ -701,7 +701,7 @@ theorem refill_correct (H : GenerationHashes) (G : GeneratorStage) (T : PrimeTes
     change t.sp + BitVec.ofNat 64 480 = s.sp
     rw [sp]; exact BitVec.sub_add_cancel ..
   refine ⟨tr, t, he, ⟨gp, tsp, vp⟩, ?_⟩
-  sig_post [Spec.Dsa.parameterSearchContract, Spec.Dsa.parameterSearchSig, abi, argRegs]
+  sig_post [Proof.Dsa.parameterSearchAskedContract, Spec.Dsa.parameterSearchSig, abi, argRegs]
   have ht : Spec.Dsa.parameterSearch (refillPLen s) (s.mem.readW (s.gpr .x7) 64).toNat
       (Spec.Rsa.bytesAt s.mem (s.gpr .x3) (s.gpr .x4).toNat) = total h := rfl
   have w8 : s.mem.readW (s.gpr .x7 + BitVec.ofNat 64 8) 64 = BitVec.ofNat 64 (refillPLen s) := by
@@ -717,9 +717,9 @@ theorem refill_correct (H : GenerationHashes) (G : GeneratorStage) (T : PrimeTes
       Spec.Rsa.wordsAt t.mem (s.gpr .x2) 1 = [BitVec.ofNat 64 (total h).used] ∧
       ∃ requested, Spec.Rsa.wordsAt t.mem (s.gpr .x7) 4 = [BitVec.ofNat 64 (total h).remaining,
         BitVec.ofNat 64 (refillPLen s), BitVec.ofNat 64 (Spec.Dsa.parameterEntropy (refillPLen s)),
-        BitVec.ofNat 64 requested] ∧ (total h).Requests (Spec.Dsa.parameterEntropy (refillPLen s)) requested
+        BitVec.ofNat 64 requested] ∧ VG.Proof.Dsa.Generation.Asked (refillPLen s) (total h) requested
   refine ⟨?_, ?_, used, VG.Proof.Dsa.Generation.requested (refillPLen s) (total h), ?_,
-    VG.Proof.Dsa.Generation.requested_requests hp _ _⟩
+    VG.Proof.Dsa.Generation.requested_asked hp _ _⟩
   · have hs : (total h).status < 4 := by
       unfold Spec.Entropy.Result.status Spec.Entropy.Outcome.status; split <;> decide
     rw [x0, BitVec.toNat_setWidth, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hs]), Nat.mod_eq_of_lt (by omega_using [hs])]
@@ -766,9 +766,9 @@ theorem refill_wordsAt_four (m : Mem) (p : Addr) : (Spec.Rsa.wordsAt m p 4).map 
     [(m.readW (p + BitVec.ofNat 64 0) 64).toNat, (m.readW (p + 8) 64).toNat, (m.readW (p + 16) 64).toNat,
       (m.readW (p + 24) 64).toNat] := rfl
 
-theorem refill_agree {s t : State} (h : (Spec.Dsa.parameterSearchContract abi refillStack).pub s t) :
+theorem refill_agree {s t : State} (h : (Proof.Dsa.parameterSearchAskedContract abi refillStack).pub s t) :
     RefillAgree s t := by
-  sig_pub [Spec.Dsa.parameterSearchContract, Spec.Dsa.parameterSearchSig, abi, argRegs] at h
+  sig_pub [Proof.Dsa.parameterSearchAskedContract, Spec.Dsa.parameterSearchSig, abi, argRegs] at h
   obtain ⟨hsp, hl, h0, h1, h2, h3, h4, h5, h6, h7⟩ := h
   rw [refill_wordsAt_four, refill_wordsAt_four] at hl
   have hp := List.append_inj hl (by simp only [List.length_cons, List.length_nil])
@@ -961,8 +961,8 @@ theorem saved_state {s t : State} {tr : List Leak}
   exact hu
 
 theorem body_ct (H : GenerationHashes) (G : GeneratorStage) (T : PrimeTest) {s t u v : State}
-    (hs : (Spec.Dsa.parameterSearchContract abi refillStack).pre s)
-    (ht : (Spec.Dsa.parameterSearchContract abi refillStack).pre t) (agree : RefillAgree s t) {xs ys : List Leak}
+    (hs : (Proof.Dsa.parameterSearchAskedContract abi refillStack).pre s)
+    (ht : (Proof.Dsa.parameterSearchAskedContract abi refillStack).pre t) (agree : RefillAgree s t) {xs ys : List Leak}
     (es : Exec isa (Impl.Dsa.AArch64.Generation.entryBody H.sha1 H.sha256 G.run T.run) (allocState 480 s) xs u)
     (et : Exec isa (Impl.Dsa.AArch64.Generation.entryBody H.sha1 H.sha256 G.run T.run) (allocState 480 t) ys v) :
     xs = ys := by
@@ -984,12 +984,12 @@ theorem body_ct (H : GenerationHashes) (G : GeneratorStage) (T : PrimeTest) {s t
       exact congrArg₂ List.append saves tail
 
 theorem refill_ct (H : GenerationHashes) (G : GeneratorStage) (T : PrimeTest) :
-    ConstantTime isa (Spec.Dsa.parameterSearchContract abi refillStack).pre
-      (Spec.Dsa.parameterSearchContract abi refillStack).pub
+    ConstantTime isa (Proof.Dsa.parameterSearchAskedContract abi refillStack).pre
+      (Proof.Dsa.parameterSearchAskedContract abi refillStack).pub
       (Impl.Dsa.AArch64.Generation.code H.sha1 H.sha256 G.run T.run) := by
   intro s t xs ys u v hs ht hp es et
-  have ct : RelCT isa (fun s t => (Spec.Dsa.parameterSearchContract abi refillStack).pre s ∧
-      (Spec.Dsa.parameterSearchContract abi refillStack).pre t ∧ RefillAgree s t)
+  have ct : RelCT isa (fun s t => (Proof.Dsa.parameterSearchAskedContract abi refillStack).pre s ∧
+      (Proof.Dsa.parameterSearchAskedContract abi refillStack).pre t ∧ RefillAgree s t)
       (Impl.Dsa.AArch64.Generation.code H.sha1 H.sha256 G.run T.run) (fun _ _ => True) := by
     apply RelCT.alloc
     rintro a b xa xb u v ⟨s, t, ⟨hs, ht, hp⟩, rfl, rfl⟩ ea eb

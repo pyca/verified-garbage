@@ -385,7 +385,7 @@ theorem search_body {p : SPub} {s t : State} (c : Cand) (h : SInput p s)
       hd.output⟩, h0', hsp'⟩
 
 theorem SReturned.post {s t : State} (h : SReturned (sOfState s) (searchResult s) t) : searchPost s t :=
-  ⟨h.1, h.2.1, h.2.2.2, _, h.2.2.1, SievedGeneration.search_requests _ _ _ _⟩
+  ⟨h.1, h.2.1, h.2.2.2, _, h.2.2.1, SievedGeneration.search_asked _ _ _ _⟩
 
 theorem search_correct_ok (c : Cand) {s : State} (h : searchPre s) :
     WP isa (code c.call) s fun t => searchPost s t ∧ abiPreserved s t := by

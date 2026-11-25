@@ -110,7 +110,7 @@ def searchPost (s t : State) : Prop :=
     ∃ requested, wordsAt t.mem (stackArg s 1) 4 = [BitVec.ofNat 64 (searchResult s).remaining,
       BitVec.ofNat 64 (genLen s), BitVec.ofNat 64 (parameterEntropy (genBits s)),
       BitVec.ofNat 64 requested] ∧
-      (searchResult s).Requests (parameterEntropy (genBits s)) requested
+      Proof.Ffdh.Asked (genBits s) (searchResult s) requested
 
 /-- What timing may depend on: the arguments, the tape and the controller's
 public words. -/

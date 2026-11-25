@@ -7,7 +7,7 @@ public import VerifiedGarbage.Proof.Framework.PPC64LE.ScrubProved
 public import VerifiedGarbage.Spec.Ffdh.Contract
 public import VerifiedGarbage.Spec.Ffdh.DerivePublicContract
 public import VerifiedGarbage.Spec.Ffdh.CachedKeyGenerationContract
-public import VerifiedGarbage.Spec.Ffdh.SievedContract
+public import VerifiedGarbage.Proof.Ffdh.ParameterPublic
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.CheckPublicVerified
@@ -145,7 +145,7 @@ theorem generationPrecomputeOut (stack : Nat) (cs : List (String × List (BitVec
       exact h
 
 theorem sievedParameterSearchOut (stack : Nat) (cs : List (String × List (BitVec 64)) := []) :
-    PostOut (Spec.Ffdh.sievedParameterSearchContract (abi.withConsts cs) stack)
+    PostOut (Proof.Ffdh.sievedParameterSearchAskedContract (abi.withConsts cs) stack)
       (Spec.Ffdh.parameterSearchSig.retBits 64) :=
   postOut_of_local (leak := some _) (ScrubAbi.consts cs) fun
     | [out, outLen, _, _, _, _, _, _, _, _], m, m₁, m₂, r, _, hb, h => by
@@ -311,12 +311,12 @@ theorem searchSide (v : Proof.MillerRabin.PPC64LE.RoundImpl)
 /-- `vg_ffdh_generate_parameters` as emitted
 (`Impl.Ffdh.PPC64LE.Fn.sievedParameterSearch`), with the Miller–Rabin round
 `v`, meets its contract in constant time and returns without secret residue. -/
-theorem search_scrubbed (v : Proof.MillerRabin.PPC64LE.RoundImpl)
+theorem search_asked (v : Proof.MillerRabin.PPC64LE.RoundImpl)
     (hv : v ∈ Proof.Variants.MillerRabin.PPC64LE.variants) :
     VerifiedScrubbed PPC64LE.target (Impl.Ffdh.PPC64LE.Fn.sievedParameterSearch v.suffix v.code)
-      (Spec.Ffdh.sievedParameterSearchContract (PPC64LE.abi.withConsts Proof.Ffdh.PPC64LE.Generation.tables)
+      (Proof.Ffdh.sievedParameterSearchAskedContract (PPC64LE.abi.withConsts Proof.Ffdh.PPC64LE.Generation.tables)
         Proof.Ffdh.PPC64LE.Generation.stackUse) 32 :=
-  verifiedScrubbedAll (api := Spec.Ffdh.sievedParameterSearchApi) {
+  verifiedScrubbedAll (api := Proof.Ffdh.sievedParameterSearchAskedApi) {
       code := Proof.Ffdh.PPC64LE.Generation.searchCode v
       verified := Proof.Ffdh.PPC64LE.Generation.search_verified v }
     336 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true,
@@ -325,13 +325,37 @@ theorem search_scrubbed (v : Proof.MillerRabin.PPC64LE.RoundImpl)
       Proof.Ffdh.PPC64LE.Generation.tables)
     (searchSide v hv)
 
+theorem search_scrubbed (v : Proof.MillerRabin.PPC64LE.RoundImpl)
+    (hv : v ∈ Proof.Variants.MillerRabin.PPC64LE.variants) :
+    VerifiedScrubbed PPC64LE.target (Impl.Ffdh.PPC64LE.Fn.sievedParameterSearch v.suffix v.code)
+      (Spec.Ffdh.sievedParameterSearchContract (PPC64LE.abi.withConsts Proof.Ffdh.PPC64LE.Generation.tables)
+        Proof.Ffdh.PPC64LE.Generation.stackUse) 32 :=
+  Proof.Ffdh.sievedParameterSearch_imp (search_asked v hv) id
+
+theorem search_public (v : Proof.MillerRabin.PPC64LE.RoundImpl)
+    (hv : v ∈ Proof.Variants.MillerRabin.PPC64LE.variants) :
+    Spec.Ffdh.sievedParameterSearchOut.Of PPC64LE.abi (Impl.Ffdh.PPC64LE.Fn.sievedParameterSearch v.suffix v.code)
+      (Spec.Ffdh.sievedParameterSearchContract (PPC64LE.abi.withConsts Proof.Ffdh.PPC64LE.Generation.tables)
+        Proof.Ffdh.PPC64LE.Generation.stackUse) :=
+  Proof.Ffdh.sievedParameterSearch_public (search_asked v hv)
+
 /-- `vg_ffdh_parameter_init` needs no cleanup: it reads no memory, so what it leaves is a function of its
 arguments. It meets its contract in constant time and returns without secret residue. -/
+theorem parameterInit_asked :
+    VerifiedScrubbed PPC64LE.target Impl.Ffdh.PPC64LE.Generation.init
+      (Proof.Ffdh.parameterInitAskedContract PPC64LE.abi) 32 :=
+  ⟨Proof.Ffdh.PPC64LE.Generation.init_verified, Proof.Ffdh.PPC64LE.Generation.init_noResidue _ _,
+    PPC64LE.Scrub.retAbi_of_endsLi (by decide)⟩
+
 theorem parameterInit_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.Ffdh.PPC64LE.Generation.init
       (Spec.Ffdh.parameterInitContract PPC64LE.abi) 32 :=
-  ⟨Proof.Ffdh.PPC64LE.Generation.init_verified, Proof.Ffdh.PPC64LE.Generation.init_noResidue _ _,
-    PPC64LE.Scrub.retAbi_of_endsLi (by decide)⟩
+  Proof.Ffdh.parameterInit_imp parameterInit_asked id
+
+theorem parameterInit_public :
+    Spec.Ffdh.parameterInitOut.Of PPC64LE.abi Impl.Ffdh.PPC64LE.Generation.init
+      (Spec.Ffdh.parameterInitContract PPC64LE.abi) :=
+  Proof.Ffdh.parameterInit_public parameterInit_asked
 
 /-- `vg_ffdh_key_init` needs no cleanup: it reads no memory, so what it leaves is a function of its
 arguments. It meets its contract in constant time and returns without secret residue. -/
