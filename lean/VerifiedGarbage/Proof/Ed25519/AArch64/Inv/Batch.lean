@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Divstep.BatchBasic
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Inv.Math
 import VerifiedGarbage.Proof.X25519.AArch64.Ops
-import VerifiedGarbage.Proof.X25519.AArch64.Alt.Exec
 import Mathlib.Tactic.Positivity.Finset
 import Mathlib.Algebra.Order.Field.Basic
 import Mathlib.Tactic.NormNum.OfScientific
@@ -46,8 +45,28 @@ section
 namespace VG.Proof.Ed25519.AArch64.Inv
 
 open VG VG.AArch64 VG.Proof.Ed25519.Word64
-open VG.Proof.X25519.AArch64.Alt (exec_mul_x exec_umulh_x exec_adds_x exec_adc_x)
 open VG.Impl.Ed25519.AArch64.Divstep (half)
+
+theorem exec_mul_x (s : State) (d n m : Reg) :
+    exec (.mul .x d n m) s = some (s.write .x d (s.gpr n * s.gpr m)) := by
+  simp only [exec, State.read, BitVec.setWidth_eq, Size.bits]
+
+theorem exec_umulh_x (s : State) (d n m : Reg) :
+    exec (.umulh d n m) s =
+      some (s.write .x d (BitVec.ofNat 64 ((s.gpr n).toNat * (s.gpr m).toNat / 2 ^ 64))) := by
+  simp only [exec]
+
+theorem exec_adds_x (s : State) (d n m : Reg) :
+    exec (.adds .x d n m) s = some (s.addWithCarry .x d (s.gpr n) (s.gpr m) false) := by
+  simp only [exec, State.read, BitVec.setWidth_eq, Size.bits]
+
+theorem exec_adcs_x (s : State) (d n m : Reg) :
+    exec (.adcs .x d n m) s = some (s.addWithCarry .x d (s.gpr n) (s.gpr m) s.c) := by
+  simp only [exec, State.read, BitVec.setWidth_eq, Size.bits]
+
+theorem exec_adc_x (s : State) (d n m : Reg) :
+    exec (.adc .x d n m) s = some (s.write .x d (s.gpr n + s.gpr m + BitVec.ofNat 64 s.c.toNat)) := by
+  simp only [exec, State.read, BitVec.setWidth_eq, Size.bits]
 
 /-- The arithmetic of `half`. -/
 theorem half_arith {W C L H M wo co c e : Nat} (hm : L + 2 ^ 64 * H = M)
@@ -743,7 +762,6 @@ open VG.Proof.Mont.AArch64 (KeepRegs)
 open VG.Impl.Ed25519.AArch64 (ld st)
 open VG.Impl.Ed25519.AArch64.Divstep (shift reduce)
 open VG.Proof.X25519.AArch64 (exec_lsr exec_lsl exec_sub_x exec_add_x exec_and_x)
-open VG.Proof.X25519.AArch64.Alt (exec_mul_x exec_umulh_x exec_adds_x exec_adcs_x exec_adc_x)
 
 variable {large : Bool}
 

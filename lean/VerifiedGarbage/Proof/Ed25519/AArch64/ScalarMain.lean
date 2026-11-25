@@ -1,6 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarLit
+import VerifiedGarbage.Proof.Ed25519.AArch64.FixedBaseLit
 import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarMemory
 import VerifiedGarbage.Proof.Ed25519.AArch64.Codec

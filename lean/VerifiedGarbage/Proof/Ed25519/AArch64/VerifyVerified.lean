@@ -3,7 +3,7 @@ module
 import VerifiedGarbage.Proof.Ed25519.VerifyBytes
 public import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarMemory
 import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseMain
+import VerifiedGarbage.Proof.Ed25519.AArch64.FixedBaseMain
 public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Ed25519.AArch64.MulAddCodec
 public import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyCTBody
@@ -14,7 +14,7 @@ import VerifiedGarbage.Proof.X25519.AArch64.Ladder
 meta import VerifiedGarbage.Proof.Ed25519.VerifyBytes
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarMemory
 meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseMain
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.FixedBaseMain
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.MulAddCodec
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyCTBody

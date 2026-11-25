@@ -28,21 +28,21 @@ meta import VerifiedGarbage.Proof.P384.Ops
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowQuad
 public import VerifiedGarbage.Impl.P384.EcdhSelect
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowEntry
-import VerifiedGarbage.Proof.Ed25519.AArch64.CombEntry
 import VerifiedGarbage.Proof.Mont.AArch64.Blocks
 import VerifiedGarbage.Proof.Mont.AArch64.Chain
 import VerifiedGarbage.Proof.Mont.AArch64.Rounds
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Step
 public import VerifiedGarbage.Proof.Weierstrass.PointOpsContract
 public import VerifiedGarbage.Proof.Weierstrass.CheckPointContract
 public import VerifiedGarbage.Proof.Weierstrass.InverseContract
 meta import VerifiedGarbage.Impl.P384.EcdhSelect
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowEntry
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.CombEntry
 meta import VerifiedGarbage.Proof.Mont.AArch64.Blocks
 meta import VerifiedGarbage.Proof.Mont.AArch64.Chain
 meta import VerifiedGarbage.Proof.Mont.AArch64.Rounds
 meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.Step
 meta import VerifiedGarbage.Proof.Weierstrass.PointOpsContract
 meta import VerifiedGarbage.Proof.Weierstrass.CheckPointContract
 meta import VerifiedGarbage.Proof.Weierstrass.InverseContract
@@ -162,7 +162,7 @@ namespace VG.Proof.P384.EcdhSelect
 open VG VG.AArch64 VG.Impl.Mont VG.Impl.Mont.AArch64 VG.Impl.Weierstrass VG.Impl.Weierstrass.AArch64
 open VG.Impl.P384.EcdhDouble VG.Impl.P384.EcdhSelect
 open VG.Proof.Mont VG.Proof.Mont.AArch64 VG.Proof.Weierstrass VG.Proof.Weierstrass.AArch64
-open VG.Proof.Ed25519.AArch64 (Keeps Keeps.trans Keeps.mono pair_ok cmp_ok read_x)
+open VG.Proof.Ed25519.AArch64 (Keeps Keeps.trans Keeps.mono read_x)
 
 /-- The accumulator of word `q` (`6 c + w`) of the entry. -/
 def wReg (q : Nat) : Reg := accReg (q / 6) (q % 6)
@@ -197,6 +197,38 @@ theorem x9_not_pairRegs : Reg.x9 ∉ Reg.x16 :: Reg.x17 :: wRegs := by
   refine ⟨id, id, ?_⟩
   rintro ⟨q, hq, e⟩
   exact (wReg_ne q hq).2.2.1 e
+
+/-- The two words at `x9 + o` into `a` and `b`, where `Z` is set. -/
+theorem pair_ok {s : State} {a b : Reg} {o : Nat} (hab : a ≠ b) (ha : a ≠ .x16 ∧ a ≠ .x17)
+    (hb : b ≠ .x16 ∧ b ≠ .x17) (ho : o % 8 = 0 ∧ o ≤ 504)
+    (i1 : InRegions (s.rd ++ s.wr) (s.gpr .x9 + BitVec.ofNat 64 o) 8)
+    (i2 : InRegions (s.rd ++ s.wr) (s.gpr .x9 + BitVec.ofNat 64 o + 8) 8) :
+    WP isa (.block [.ldp .x16 .x17 .x9 o, .cselc .x a .x16 a .eq, .cselc .x b .x17 b .eq]) s fun t =>
+      t.gpr a = (if s.zf then s.mem.readW (s.gpr .x9 + BitVec.ofNat 64 o) 64 else s.gpr a) ∧
+      t.gpr b = (if s.zf then s.mem.readW (s.gpr .x9 + BitVec.ofNat 64 o + 8) 64 else s.gpr b) ∧
+      t.zf = s.zf ∧ Keeps [.x16, .x17, a, b] s t := by
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, State.load, i1, i2, read_x, CondCode.holds,
+    RegUpd.gpr_write, RegUpd.zf_write, BitVec.setWidth_eq, ne_eq, reduceCtorEq, not_false_eq_true, ho.1, ho.2, and_self,
+    ite_true, ite_false, hab, hab.symm, ha.1, ha.2, hb.1, hb.2, ha.2.symm,
+    Option.map_some, Option.bind_some, Option.some.injEq, exists_eq_left']
+  refine ⟨rfl, rfl, trivial, ⟨fun r hr => ?_, rfl, rfl, rfl, rfl⟩⟩
+  simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+  simp only [RegUpd.gpr_write, hr.1, hr.2.1, hr.2.2.1, hr.2.2.2, ite_false]
+
+/-- `x2 = a` compared with `m + 1`. -/
+theorem cmp_ok (s : State) {a m : Nat} (ha : a < 9) (hm : m < 8) (h2 : s.gpr .x2 = BitVec.ofNat 64 a) :
+    WP isa (.block [.movz .x .x16 (BitVec.ofNat 16 (m + 1)) 0, .subs .x .x16 .x2 .x16]) s fun t =>
+      t.zf = decide (a = m + 1) ∧ Keeps [.x16] s t := by
+  have hz : ∀ a < 9, ∀ m < 8, (BitVec.ofNat 64 a + ~~~(BitVec.setWidth 64 (BitVec.ofNat 16 (m + 1))) + 1#64 == 0) =
+      decide (a = m + 1) := by decide
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, read_x, RegUpd.gpr_write, Size.bits, Nat.mul_zero,
+    show (0 : Nat) < 64 from by decide, ite_true, ite_false, reduceCtorEq, BitVec.shiftLeft_zero, BitVec.setWidth_eq, h2,
+    Option.some.injEq, exists_eq_left']
+  refine ⟨hz a ha m hm, ⟨fun r hr => ?_, rfl, rfl, rfl, rfl⟩⟩
+  simp only [List.mem_singleton] at hr
+  simp only [RegUpd.gpr_addWithCarry, RegUpd.gpr_write, hr, ite_false]
 
 /-- The pairs `0 … k - 1` of the candidate at `x9 = base + e`, kept where `Z` is set. -/
 theorem pairs_ok {s : State} {base : Addr} {size e : Nat} (hs : Scr s base size)

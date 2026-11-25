@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Spec.Ed25519.Contract
 public import VerifiedGarbage.Spec.Ed25519.ExpandedSign
 public import VerifiedGarbage.Spec.Ed25519.KeyPair
-public import VerifiedGarbage.Impl.Ed25519.AArch64.Comb
+public import VerifiedGarbage.Impl.Ed25519.AArch64.FixedBase
 public import VerifiedGarbage.Impl.Ed25519.AArch64.VerifyWindow
 public import VerifiedGarbage.Proof.Framework.AArch64.ScrubAll
 import VerifiedGarbage.Proof.Ed25519.WholeLocal

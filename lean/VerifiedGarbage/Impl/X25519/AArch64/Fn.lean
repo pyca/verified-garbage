@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Scrub.AArch64
 public import VerifiedGarbage.Impl.Scrub.AArch64.Scrub
-public import VerifiedGarbage.Impl.X25519.AArch64.AltLadder
+public import VerifiedGarbage.Impl.X25519.AArch64.Ladder
 public import VerifiedGarbage.Impl.X25519.AArch64.Base
 public import VerifiedGarbage.Impl.Xdh.AArch64
 public import VerifiedGarbage.TCB.AArch64.Isa
@@ -31,7 +31,7 @@ def x25519Base : Prog isa :=
 def exchangeBase : Prog isa :=
   withRet 32 (withClears [.x3, .x4, .x5, .x6, .x7, .x8, .x10, .x12, .x13, .x14, .x15, .x16, .x17]
     [] (some .x3)
-    (Impl.Xdh.AArch64.exchange "vg_x25519" Impl.X25519.AArch64.AltLadder.x25519 32))
+    (Impl.Xdh.AArch64.exchange "vg_x25519" Impl.X25519.AArch64.Ladder.x25519 32))
 
 /-- `vg_x25519_exchange`. -/
 def exchange : Prog isa := scrubSel 16 [0] exchangeBase

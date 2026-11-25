@@ -5,7 +5,7 @@ import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseVerified
 public import VerifiedGarbage.Proof.Ed25519.AArch64.MulAddVerified
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.HashPre
 public import VerifiedGarbage.Impl.Ed25519.AArch64.SignCached
-public import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseMain
+public import VerifiedGarbage.Proof.Ed25519.AArch64.FixedBaseMain
 public import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarMain
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 import VerifiedGarbage.Proof.Framework.Offset
@@ -17,12 +17,12 @@ import Mathlib.Tactic.NormNum.GCD
 import Mathlib.Data.Sym.Sym2.Init
 import Mathlib.Tactic.ContinuousFunctionalCalculus
 import Mathlib.Tactic.Attr.Core
-import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarLit
+import VerifiedGarbage.Proof.Ed25519.AArch64.FixedBaseLit
 import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.X25519.AArch64.Ladder
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Setup
-public import VerifiedGarbage.Proof.Ed25519.AArch64.CombTbl
+public import VerifiedGarbage.Proof.Ed25519.AArch64.FixedBase
 public import VerifiedGarbage.Spec.Ed25519.Contract
 import VerifiedGarbage.Spec.Weierstrass
 
