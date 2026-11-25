@@ -725,6 +725,55 @@ def fixldp(b):
         else: out.append(l)
     return out
 for k in ('h1','h1b','h2','h3','h4'): B[k] = fixldp(B[k])
+
+# ---- experiment 13 ----
+def consts(body):
+    """19 and 38 in x26 and x27 (as step_src)."""
+    res, c11, c2 = [], None, None
+    for l in body:
+        op, _, r = l.partition(' ')
+        m = re_.match(r'(?:mov|movz) w(11|2), #(38|19)', l)
+        if m:
+            if m[1] == '11': c11 = 'x27' if m[2] == '38' else 'x26'
+            else: c2 = 'x27'
+            continue
+        if re_.match(r'.*[vq]\d', l): res.append(l); continue
+        o = [x.strip() for x in r.split(',')]
+        for c, name in ((c11, 'x11'), (c2, 'x2')):
+            if c:
+                st = 1 if op not in ('str', 'stp') else 0
+                o = [(c if (x == name and q >= st) else x) for q, x in enumerate(o)]
+        if op not in ('str','stp'):
+            defs = o[:2] if op == 'ldp' else o[:1]
+            if 'x11' in defs: c11 = None
+            if 'x2' in defs: c2 = None
+        res.append(op + ' ' + ', '.join(o))
+    return res
+def weave_f(a, b, num, den):
+    """weave with b (the vector block) taken num / den times as fast."""
+    n, m, i, j, out = len(a), len(b), 0, 0, []
+    while i < n and j < m:
+        if i * m * num <= j * n * den: out.append(a[i]); i += 1
+        else: out.append(b[j]); j += 1
+    return out + a[i:] + b[j:]
+def h13(s1, rest, num=1, den=1, kar=False, c=True, mulf=None):
+    Dr = ['x12','x13','x14','x15']
+    ml = mulf or mulA
+    ops = {'DA': lambda: ml(slot(12), slot(8), slot(5)), 'CB': lambda: ml(slot(13), slot(7), slot(6)),
+      'P': lambda: pack(VO1, R1) + stw(slot(9), R1) + pack(VO2, R2) + stw(slot(10), R2), 'E': lambda: sub4(Dr, R1, R2) + stw(slot(11), Dr),
+      'x3': lambda: ldw(slot(12), R1) + ldw(slot(13), R2) + add3(Dr, R1, R2) + sqrR(slot(3), False if kar == 'n' else True),
+      't': lambda: ldw(slot(12), R1) + ldw(slot(13), R2) + sub4(Dr, R1, R2) + sqrR(slot(4), False if kar == 'n' else True),
+      'z3': lambda: ml(slot(4), slot(0), slot(4)), 'x2': lambda: ml(slot(1), slot(9), slot(10)),
+      'z2': lambda: ldw(slot(9), R1) + ldw(slot(11), Dr) + a24 + stw(slot(2), Dr) + ml(slot(2), slot(11), slot(2))}
+    go = lambda t: (consts if c else (lambda x: x))(minflags(sum((ops[k]() for k in t.split()), [])))
+    v = sq2k(VO1, None, VO2, None, split4(slot(5), slot(6), [0,1,2,3,4])) if kar is True else sq2_4(slot(5), slot(6), VO1, VO2)
+    return fixldp((consts(FR) if c else FR) + weave_f(go(s1), v, num, den) + go(rest))
+H1 = H0 + ['mov w26, #19', 'mov w27, #38']
+V13 = {'a': ('DA CB t', 'P E x3 x2 z2 z3'), 'b': ('DA CB t', 'x3 P E x2 z3 z2'), 'c': ('DA CB t', 'x3 P E z3 x2 z2'), 'd': ('DA CB t', 'z3 P E x2 z2 x3'), 'e': ('DA CB t', 'P E x2 x3 z2 z3'),
+       'f': ('DA CB t', 'P E z3 x2 x3 z2'), 'g': ('DA CB x3', 'P E t x2 z2 z3'), 'h': ('DA CB x3', 'P E t x2 z3 z2'), 'i': ('DA CB t', 'P E x2 z2 x3 z3'), 'j': ('DA CB t', 'P E x3 x2 z3 z2')}
+for k, (u, w) in V13.items(): B['t' + k] = H1 + h13(u, w)
+B['ta32'] = H1 + h13(*V13['a'], 3, 2); B['ta43'] = H1 + h13(*V13['a'], 4, 3); B['ta2'] = H1 + h13(*V13['a'], 2, 1); B['tak'] = H1 + h13(*V13['a'], kar=True); B['tan'] = H1 + h13(*V13['a'], kar='n')
+B['tj43'] = H1 + h13(*V13['j'], 4, 3); B['tf43'] = H1 + h13(*V13['f'], 4, 3)
 if __name__ == '__main__':
     for k in ('step','step_min','step_tree','mul','mul_min','mulA','mulT','sqr','sqr_min','sqrR','st_o0','st_o1','m51','s51','st51','sq2','mu2','sn1','src','sq2k','mu2k','sn3','sn4','sn5','sn6','sn7','h1','h3','h4') + tuple(k for k in B if k.startswith('sc_')): print(k, len(B[k]), setters(B[k]))
 ALL = dict(B)
