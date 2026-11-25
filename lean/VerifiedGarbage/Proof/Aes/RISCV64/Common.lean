@@ -1118,8 +1118,8 @@ theorem loadBytes_ok {d : Reg} (hd : d ≠ .a0 ∧ d ≠ t0) {f : Nat → Nat} (
 theorem keySrc_lt (o : Bool) : ∀ m < 16, keySrc o m < 16 := by cases o <;> decide
 
 /-- The byte that `fkLoad` takes for `n`'s place in form 1, or 0, is byte `n`. -/
-theorem keySrc_at : ∀ o : Bool, ∀ n < 16, byteAt 4 false (at_ 4 o n 0) < 16 ∧
-    keySrc o (byteAt 4 false (at_ 4 o n 0)) = n := by decide
+theorem keySrc_at : ∀ o : Bool, ∀ n < 16, byteAt 4 false (posAt 4 o n 0) < 16 ∧
+    keySrc o (byteAt 4 false (posAt 4 o n 0)) = n := by decide
 
 theorem fkLoad_ok {o : Bool} {s : State} {K : Addr} (ha : s.gpr .a0 = K)
     (hin : ∀ k < 16, InRegions (s.rd ++ s.wr) (K + BitVec.ofNat 64 k) 1) :

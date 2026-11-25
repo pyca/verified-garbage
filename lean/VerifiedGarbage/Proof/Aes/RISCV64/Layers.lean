@@ -201,7 +201,7 @@ theorem bs_subBytes {W W' : Nat → BitVec 64} {S : Nat → Spec.Aes.State}
 def toBsT (j p : Nat) : List (Nat × Nat) :=
   [(p % 4 + 4 * (byteAt 4 false p / 8), 8 * (byteAt 4 false p % 8) + j)]
 
-def fromBsT (w t : Nat) : List (Nat × Nat) := [(t % 8, at_ 4 false (8 * (w / 4) + t / 8) (w % 4))]
+def fromBsT (w t : Nat) : List (Nat × Nat) := [(t % 8, posAt 4 false (8 * (w / 4) + t / 8) (w % 4))]
 
 theorem toBs_check :
     check (lanes 64 9) bsCfg (kExt bsKs) toBs (linEnv qIns) (linPost 9 (qOuts (flat toBsT))) = true := by
@@ -224,9 +224,9 @@ theorem fromBs_ok {s : State} (hok : Ok bsCfg s) (hks : MasksAt s.mem (s.gpr sb)
 theorem bs_of_in {W W' : Nat → BitVec 64} {S : Nat → Spec.Aes.State}
     (h : ∀ j < 8, ∀ p < 64, (W' j).getLsbD p = termsXor W (toBsT j p)) (hS : InRel W S) : BsRel W' S :=
   fun j hj n hn k hk => by
-    rw [h j hj _ (at_lt false hn hk)]
-    simp only [toBsT, termsXor, List.foldr_cons, List.foldr_nil, Bool.xor_false, byteAt_at false hn hk,
-      at_mod false n hk]
+    rw [h j hj _ (posAt_lt false hn hk)]
+    simp only [toBsT, termsXor, List.foldr_cons, List.foldr_nil, Bool.xor_false, byteAt_posAt false hn hk,
+      posAt_mod false n hk]
     exact hS k hk n hn j hj
 
 theorem in_of_bs {W W' : Nat → BitVec 64} {S : Nat → Spec.Aes.State}
@@ -244,8 +244,8 @@ theorem in_of_bs {W W' : Nat → BitVec 64} {S : Nat → Spec.Aes.State}
 def srFrom (n : Nat) : Nat := n % 4 + 4 * ((n / 4 + n % 4) % 4)
 def invSrFrom (n : Nat) : Nat := n % 4 + 4 * ((n / 4 + 4 - n % 4) % 4)
 
-def srT (j p : Nat) : List (Nat × Nat) := [(j, at_ 4 false (srFrom (byteAt 4 false p)) (p % 4))]
-def invSrT (j p : Nat) : List (Nat × Nat) := [(j, at_ 4 false (invSrFrom (byteAt 4 false p)) (p % 4))]
+def srT (j p : Nat) : List (Nat × Nat) := [(j, posAt 4 false (srFrom (byteAt 4 false p)) (p % 4))]
+def invSrT (j p : Nat) : List (Nat × Nat) := [(j, posAt 4 false (invSrFrom (byteAt 4 false p)) (p % 4))]
 
 theorem shiftRows_check :
     check (lanes 64 9) srCfg (kExt srKs) shiftRows (linEnv qIns) (linPost 9 (qOuts (flat srT))) = true := by
@@ -270,16 +270,16 @@ theorem srFrom_lt : ∀ n < 16, srFrom n < 16 ∧ invSrFrom n < 16 := by decide
 theorem bs_shiftRows {W W' : Nat → BitVec 64} {S : Nat → Spec.Aes.State}
     (h : ∀ j < 8, ∀ p < 64, (W' j).getLsbD p = termsXor W (srT j p)) (hS : BsRel W S) :
     BsRel W' fun b => Spec.Aes.shiftRows (S b) := fun j hj n hn k hk => by
-  rw [h j hj _ (at_lt false hn hk)]
-  simp only [srT, termsXor, List.foldr_cons, List.foldr_nil, Bool.xor_false, byteAt_at false hn hk, at_mod false n hk]
+  rw [h j hj _ (posAt_lt false hn hk)]
+  simp only [srT, termsXor, List.foldr_cons, List.foldr_nil, Bool.xor_false, byteAt_posAt false hn hk, posAt_mod false n hk]
   rw [hS j hj _ (srFrom_lt n hn).1 k hk, Spec.Aes.shiftRows, getD_ofFn _ hn]
   rfl
 
 theorem bs_invShiftRows {W W' : Nat → BitVec 64} {S : Nat → Spec.Aes.State}
     (h : ∀ j < 8, ∀ p < 64, (W' j).getLsbD p = termsXor W (invSrT j p)) (hS : BsRel W S) :
     BsRel W' fun b => Spec.Aes.invShiftRows (S b) := fun j hj n hn k hk => by
-  rw [h j hj _ (at_lt false hn hk)]
-  simp only [invSrT, termsXor, List.foldr_cons, List.foldr_nil, Bool.xor_false, byteAt_at false hn hk, at_mod false n hk]
+  rw [h j hj _ (posAt_lt false hn hk)]
+  simp only [invSrT, termsXor, List.foldr_cons, List.foldr_nil, Bool.xor_false, byteAt_posAt false hn hk, posAt_mod false n hk]
   rw [hS j hj _ (srFrom_lt n hn).2 k hk, Spec.Aes.invShiftRows, getD_ofFn _ hn]
   rfl
 
@@ -422,7 +422,7 @@ theorem bs_ark63 {f : Bool} {W W' K : Nat → BitVec 64} {S : Nat → Spec.Aes.S
     (h : ∀ j < 8, ∀ p < 64, (W' j).getLsbD p = ((W j).getLsbD p ^^ (K j).getLsbD p))
     (hS : Proof.Aes.BsRel 4 f W S) (hK : Proof.Aes.BsRel 4 f K fun _ => c63 (rkState rk)) :
     Proof.Aes.BsRel 4 f W' fun b => c63 (Spec.Aes.addRoundKey (S b) rk) := fun j hj n hn k hk => by
-  rw [h j hj _ (at_lt f hn hk), hS j hj n hn k hk, hK j hj n hn k hk, getD_c63 _ hn, getD_c63 _ hn,
+  rw [h j hj _ (posAt_lt f hn hk), hS j hj n hn k hk, hK j hj n hn k hk, getD_c63 _ hn, getD_c63 _ hn,
     getD_rkState _ hn, Spec.Aes.addRoundKey, getD_ofFn _ hn, BitVec.xor_assoc]
   simp only [BitVec.getLsbD_xor]
 
@@ -454,13 +454,13 @@ theorem slice1_ok {s : State} (hok : Ok bsCfg s) (hks : MasksAt s.mem (s.gpr sb)
 /-- The bytes of the state that `q 0` and `q 4` hold, at `n`'s place in form `f`. -/
 theorem bs_of_slice1 {f : Bool} {W W' : Nat → BitVec 64} {S : Spec.Aes.State}
     (h : ∀ j < 8, ∀ p < 64, (W' j).getLsbD p = termsXor W (slice1T j p))
-    (hS : ∀ n < 16, ∀ j < 8, (W (4 * (byteAt 4 false (at_ 4 f n 0) / 8))).getLsbD
-      (8 * (byteAt 4 false (at_ 4 f n 0) % 8) + j) = (S.getD n 0).getLsbD j) :
+    (hS : ∀ n < 16, ∀ j < 8, (W (4 * (byteAt 4 false (posAt 4 f n 0) / 8))).getLsbD
+      (8 * (byteAt 4 false (posAt 4 f n 0) % 8) + j) = (S.getD n 0).getLsbD j) :
     Proof.Aes.BsRel 4 f W' fun _ => S := fun j hj n hn k hk => by
-  rw [h j hj _ (at_lt f hn hk)]
+  rw [h j hj _ (posAt_lt f hn hk)]
   simp only [slice1T, termsXor, List.foldr_cons, List.foldr_nil, Bool.xor_false]
-  have e : byteAt 4 false (at_ 4 f n k) = byteAt 4 false (at_ 4 f n 0) := by
-    simp only [byteAt, at_div f n hk, at_div f n (show 0 < 4 by decide)]
+  have e : byteAt 4 false (posAt 4 f n k) = byteAt 4 false (posAt 4 f n 0) := by
+    simp only [byteAt, posAt_div f n hk, posAt_div f n (show 0 < 4 by decide)]
   rw [e]
   exact hS n hn j hj
 

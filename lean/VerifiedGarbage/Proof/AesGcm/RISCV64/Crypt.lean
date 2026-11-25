@@ -189,8 +189,8 @@ theorem keysAt_of_sliced {m : Mem} {bk ctx : Addr} {R : Nat} (hR : R ≤ 14) (h 
   have hl₂ : 16 * j + i < 16 * (R + 1) := by omega_using [hj, hi]
   simp only [bytesAt, List.getD_eq_getElem?_getD, List.getElem?_map, List.getElem?_range, hl₁, hl₂,
     Option.map_some, Option.getD_some] at e ⊢
-  rw [show Proof.Aes.at_ 4 false i b = Spec.Gcm.slicePos b i by
-    simp only [Spec.Gcm.slicePos, Proof.Aes.at_, Bool.false_eq_true, ite_false]; omega_using []]
+  rw [show Proof.Aes.posAt 4 false i b = Spec.Gcm.slicePos b i by
+    simp only [Spec.Gcm.slicePos, Proof.Aes.posAt, Bool.false_eq_true, ite_false]; omega_using []]
   exact e
 
 /-- A frame apart from the buffer and the context keeps the round keys. -/

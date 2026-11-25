@@ -86,8 +86,8 @@ def bitsliceRISCV64 : Contract isa where
 theorem slicedKeyAt_of_keyRel {m : Mem} {p : Addr} {rk : List Byte}
     (h : KeyRel (fun k => m.readW (p + BitVec.ofNat 64 (8 * k)) 64) rk) : SlicedKeyAt m p rk := by
   intro t ht b hb i hi
-  rw [show Spec.Gcm.slicePos b i = Proof.Aes.at_ 4 false i b by
-    simp only [Spec.Gcm.slicePos, Proof.Aes.at_, Bool.false_eq_true, ite_false]; omega_using [],
+  rw [show Spec.Gcm.slicePos b i = Proof.Aes.posAt 4 false i b by
+    simp only [Spec.Gcm.slicePos, Proof.Aes.posAt, Bool.false_eq_true, ite_false]; omega_using [],
     ← Proof.Aes.getD_rkState _ hi]
   exact h t ht i hi b hb
 
