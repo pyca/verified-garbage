@@ -18,9 +18,9 @@ byte at a time, encrypted (`encrypt4`) or decrypted (`decrypt4`), and stored
 back in place.
 
 Decryption runs the inverse cipher (FIPS 197 §5.3) on the round keys of the
-forward cipher, from the last down (`Inv.lean`): `kp` starts at the last
-round key and steps back 64 bytes each round, and the round loop ends when
-it reaches round key 1, at `a0 + 64`.
+forward cipher, from the last down: `kp` starts at the last round key and
+steps back 64 bytes each round, and the loop of pairs of rounds ends when it
+reaches round key 2, at `a0 + 128`.
 
 Only `a0` (the first round key), `a1`, `a2`, `a3` (the data), `a4` (the
 blocks left), `a5` and what is computed from them in `t0` for the branches
@@ -83,25 +83,27 @@ def groups (crypt4 : Prog isa) : Prog isa :=
 /-- The whole function, around `crypt4`. -/
 def blocks (crypt4 : Prog isa) : Prog isa :=
   .seq (.block (blocksSetup ++ roundSb ++ saveRegs ++ maskInit ++ keySetup))
-    (.seq (.loop (.block keyBody) (.nonzero .a1))
+    (.seq (.loop fkBody (.nonzero .a1))
       (.seq (.block keyDone)
         (.seq (.ite (.zero .a4) (.block []) (groups crypt4))
           (.block restoreRegs))))
 
-/-- A middle round of the inverse cipher, with `kp` at the previous round
-key; loops until `kp` is at round key 1. -/
-def invRoundBody : List Instr :=
-  ([.addi kp kp (-64)] : List Instr) ++ invShiftRows ++ invSboxCode ++ addRoundKey ++
-  invMixColumns ++ [.sub t0 kp .a0, .addi t0 t0 (-64)]
+/-- An odd round of the inverse cipher, from form 0 to form 1, and an even
+one, back, with `kp` at the previous round key. -/
+def invRoundA : List Instr :=
+  ([.addi kp kp (-64)] : List Instr) ++ sr2 ++ invSbox0Code ++ addRoundKey ++ invMixColumns1
+def invRoundB : List Instr :=
+  ([.addi kp kp (-64)] : List Instr) ++ invSbox0Code ++ addRoundKey ++ invMixColumns
 
 /-- The last round of the inverse cipher, with round key 0. -/
-def invLastRound : List Instr :=
-  ([.addi kp kp (-64)] : List Instr) ++ invShiftRows ++ invSboxCode ++ addRoundKey
+def invLastFx : List Instr := ([.addi kp kp (-64)] : List Instr) ++ invSbox0Code ++ addRoundKey
 
-/-- Decrypt the four blocks in `q 0 … q 7` (as `toBs` takes them). -/
+/-- Decrypt the four blocks in `q 0 … q 7` (as `toBs` takes them): pairs of
+rounds down to round key 2, and the last two. -/
 def decrypt4 : Prog isa :=
   .seq (.block (toBs ++ [.addi kp sb lastKey] ++ addRoundKey))
-    (.seq (.loop (.block invRoundBody) (.nonzero t0)) (.block (invLastRound ++ fromBs)))
+    (.seq (.loop (.block (invRoundA ++ invRoundB ++ [.sub t0 kp .a0, .addi t0 t0 (-128)])) (.nonzero t0))
+      (.block (invRoundA ++ invLastFx ++ fromBs)))
 
 def encryptBlocks : Prog isa := blocks encrypt4
 def decryptBlocks : Prog isa := blocks decrypt4

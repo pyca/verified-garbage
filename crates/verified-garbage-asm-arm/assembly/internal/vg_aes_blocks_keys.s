@@ -20,68 +20,105 @@ vg_aes_blocks_keys:
 	add r12, r0, r1, lsl #4
 	add lr, r1, #1
 20:
-	ldr r0, [r12, #0]
-	ldr r2, [r12, #4]
-	ldr r4, [r12, #8]
-	ldr r6, [r12, #12]
-	mov r1, r0
-	mov r3, r2
-	mov r5, r4
-	mov r7, r6
-	movw r11, #21845
-	movt r11, #21845
-	eor r10, r1, r0, lsr #1
-	and r10, r10, r11
+	ldr r1, [r12, #0]
+	ldr r3, [r12, #4]
+	ldr r5, [r12, #8]
+	ldr r7, [r12, #12]
+	and r10, lr, #15
+	cmp r10, #1
+	bne 21f
+	b 22f
+21:
+	movw r10, #25443
+	movt r10, #25443
 	eor r1, r1, r10
-	eor r0, r0, r10, ror #31
-	eor r10, r3, r2, lsr #1
-	and r10, r10, r11
 	eor r3, r3, r10
-	eor r2, r2, r10, ror #31
-	eor r10, r5, r4, lsr #1
+	eor r5, r5, r10
+	eor r7, r7, r10
+22:
+	and r10, lr, #1
+	cmp r10, #0
+	beq 23f
+	b 24f
+23:
+	eor r10, r1, r5
+	lsr r10, r10, #16
+	eor r1, r1, r10, ror #16
+	eor r5, r5, r10, ror #16
+	eor r10, r3, r7
+	lsr r10, r10, #16
+	eor r3, r3, r10, ror #16
+	eor r7, r7, r10, ror #16
+	movw r11, #65280
+	movt r11, #65280
+	eor r0, r1, r7
+	and r0, r0, r11
+	eor r10, r7, r5
+	and r10, r10, r11
+	eor r7, r7, r10
+	eor r10, r5, r3
 	and r10, r10, r11
 	eor r5, r5, r10
-	eor r4, r4, r10, ror #31
-	eor r10, r7, r6, lsr #1
-	and r10, r10, r11
-	eor r7, r7, r10
-	eor r6, r6, r10, ror #31
-	movw r11, #13107
-	movt r11, #13107
-	eor r10, r2, r0, lsr #2
-	and r10, r10, r11
-	eor r2, r2, r10
-	eor r0, r0, r10, ror #30
-	eor r10, r3, r1, lsr #2
+	eor r10, r3, r1
 	and r10, r10, r11
 	eor r3, r3, r10
-	eor r1, r1, r10, ror #30
-	eor r10, r6, r4, lsr #2
+	eor r1, r1, r0
+24:
+	sub r10, lr, #1
+	and r10, r10, #2
+	cmp r10, #0
+	bne 25f
+	b 26f
+25:
+	movw r11, #65280
+	movt r11, #65280
+	eor r10, r1, r5
 	and r10, r10, r11
-	eor r6, r6, r10
-	eor r4, r4, r10, ror #30
-	eor r10, r7, r5, lsr #2
+	eor r1, r1, r10
+	eor r5, r5, r10
+	eor r10, r3, r7
 	and r10, r10, r11
+	eor r3, r3, r10
 	eor r7, r7, r10
-	eor r5, r5, r10, ror #30
+26:
 	movw r11, #3855
 	movt r11, #3855
-	eor r10, r4, r0, lsr #4
-	and r10, r10, r11
-	eor r4, r4, r10
-	eor r0, r0, r10, ror #28
 	eor r10, r5, r1, lsr #4
 	and r10, r10, r11
 	eor r5, r5, r10
 	eor r1, r1, r10, ror #28
-	eor r10, r6, r2, lsr #4
-	and r10, r10, r11
-	eor r6, r6, r10
-	eor r2, r2, r10, ror #28
 	eor r10, r7, r3, lsr #4
 	and r10, r10, r11
 	eor r7, r7, r10
 	eor r3, r3, r10, ror #28
+	movw r11, #13107
+	movt r11, #13107
+	eor r10, r3, r1, lsr #2
+	and r10, r10, r11
+	eor r3, r3, r10
+	eor r1, r1, r10, ror #30
+	eor r10, r7, r5, lsr #2
+	and r10, r10, r11
+	eor r7, r7, r10
+	eor r5, r5, r10, ror #30
+	movw r11, #21845
+	movt r11, #21845
+	and r0, r1, r11
+	eor r1, r1, r0
+	eor r0, r0, r0, ror #31
+	eor r1, r1, r1, lsr #1
+	and r2, r3, r11
+	eor r3, r3, r2
+	eor r2, r2, r2, ror #31
+	eor r3, r3, r3, lsr #1
+	and r4, r5, r11
+	eor r5, r5, r4
+	eor r4, r4, r4, ror #31
+	eor r5, r5, r5, lsr #1
+	and r6, r7, r11
+	eor r7, r7, r6
+	eor r6, r6, r6, ror #31
+	eor r7, r7, r7, lsr #1
 	str r0, [r9, #0]
 	str r1, [r9, #4]
 	str r2, [r9, #8]

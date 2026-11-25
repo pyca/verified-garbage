@@ -1,37 +1,35 @@
 module
 
-public import VerifiedGarbage.Impl.Aes.X86_64.Ctr32
-public import VerifiedGarbage.Impl.TripleDes.X86_64.BitsliceAllocX
+public import VerifiedGarbage.Impl.Aes.X86_64.Linear
 
 /-!
-# AES counter mode, eight blocks at a time in SSE2 registers, on x86-64
+# Bitsliced AES on x86-64, eight blocks at a time in SSE2 registers
 
-`vg_aes_ctr32` (`Ctr32.lean`) bitslices four blocks into eight 64-bit
-general-purpose registers. Here the same layout (BearSSL's `aes_ct64`,
-Thomas Pornin, MIT licence) is in each quadword of eight 128-bit registers
-`xmm0 … xmm7`: quadword 0 holds blocks 0–3 of a group of eight, quadword 1
-blocks 4–7. Every layer acts on each quadword as `Ctr32.lean`'s acts on a
-register, with SSE2's bitwise operations and shifts (`StraightX` checks
-them quadword by quadword):
+A register is two quadwords that never mix while the cipher runs, each the
+slices of four blocks: bit `j` of the byte in row `r` and column `c` of
+block `k` is at bit `k + 4 (c + 4 r)` of slice `j` (`toBs`). So rows are
+rotated by rotating quadwords by 16 bits, and columns, of all rows at once,
+by rotating 16-bit words by 4.
 
-* the transposes swap bits within quadwords (`psrlq`, `psllq`), as
-  `toBs` and `fromBs`, with the masks in `xmm8 … xmm13`;
-* ShiftRows rotates each 16-bit row with `psrlw` and `psllw` (rows 1 and 3
-  by 4 bits, then rows 2 and 3 by 8), blending with the masks at
-  `[r11]`, `[r11 + 16]`;
-* MixColumns rotates quadwords by 16 bits with two shifts, and by 32 with
-  `pshufd` (dwords `1 0 3 2`);
-* the S-box is `Circuit.sbox`, allocated to `xmm0 … xmm14` by the DES
-  circuits' allocator (`BitsliceAllocX`), spilling to `[rcx + 16k]`, with
-  all ones in `xmm15`;
-* AddRoundKey loads 16 bytes from the 64-bit bitsliced round key word
-  (`[rsi + 8j]`) and copies its low quadword to both (`punpcklqdq`).
+**ShiftRows is not done.** A round that leaves every byte where it is leaves
+the byte of row `r` and column `c` at column `c + r` (form 1 of the state,
+where form 0 is the plain one), which the next layers allow for: MixColumns
+of form 1 takes the next row's byte one column further, and its round key is
+stored in form 1 (`toForm1`). The round after does ShiftRows twice (`sr2`:
+only the odd rows move, by two columns), which gives form 0 again. The
+numbers of rounds are even, so rounds go in pairs: `roundA` from form 0 to 1
+and `roundB` back. The inverse cipher's pair starts with `sr2`, which from
+form 0 gives InvShiftRows in form 1, and ends with none.
 
-The round keys are bitsliced once, by `Ctr32.lean`'s key loop, and the
-callee-saved registers and the counter block are in its slots. A group of
-eight blocks (`sseGroup`) runs while more than four are left; the last one
-to four, if any, take `Ctr32.lean`'s group of four, which costs half as
-much. Only public values choose branches and addresses, as there.
+**The S-box's constant is in the round keys.** `{63}` in every byte goes
+through ShiftRows and MixColumns unchanged (`2 + 3 + 1 + 1 = 1`), so the
+round keys but the first have it added (`complement`), and `subBytes`
+computes the S-box without it; likewise `invSubBytes` takes its input with
+it added.
+
+The scratch buffer (at `r9`), in 16-byte slots: the S-boxes' spills (0–8);
+masks (9–17); the eight blocks of a batch (18–25); and the round keys
+(26–85), 64 bytes each, a quadword per slice. 1376 bytes in all.
 -/
 
 @[expose] public section
@@ -40,251 +38,434 @@ namespace VG.Impl.Aes.X86_64.Sse
 
 open VG.X86_64
 
-def X : Nat → XReg
-  | 0 => .xmm0 | 1 => .xmm1 | 2 => .xmm2 | 3 => .xmm3 | 4 => .xmm4 | 5 => .xmm5 | 6 => .xmm6
-  | 7 => .xmm7 | 8 => .xmm8 | 9 => .xmm9 | 10 => .xmm10 | 11 => .xmm11 | 12 => .xmm12
-  | 13 => .xmm13 | 14 => .xmm14 | _ => .xmm15
+/-! ## Registers, slots and short forms -/
 
-def bin (op : XBinOp) (d s : XReg) : Instr := .xop (.bin op d s)
-def mova (d s : XReg) : Instr := bin .movdqa d s
-def pxor (d s : XReg) : Instr := bin .pxor d s
-def pand (d s : XReg) : Instr := bin .pand d s
-def por (d s : XReg) : Instr := bin .por d s
-def shx (op : XShiftOp) (d : XReg) (n : Nat) : Instr := .xop (.shift op d (BitVec.ofNat 8 n))
-def ldx (d : XReg) (b : Reg) (o : Nat) : Instr := .movdquLoad d (at_ b o)
-def stx (b : Reg) (o : Nat) (s : XReg) : Instr := .movdquStore (at_ b o) s
+/-- Slice `j`, before SubBytes; after it, it is in `p j`. -/
+def q : Nat → XReg
+  | 0 => .xmm0 | 1 => .xmm1 | 2 => .xmm2 | 3 => .xmm3
+  | 4 => .xmm4 | 5 => .xmm5 | 6 => .xmm6 | _ => .xmm7
 
-/-- Word `j` of the state. -/
-def q (j : Nat) : XReg := X j
-/-- Mask `k` (1 … 6) of the transposes. -/
-def m (k : Nat) : XReg := X (7 + k)
-def t0 : XReg := .xmm14
-def t1 : XReg := .xmm15
+def p : Nat → XReg
+  | 0 => .xmm8 | 1 => .xmm9 | 2 => .xmm10 | 3 => .xmm11
+  | 4 => .xmm12 | 5 => .xmm13 | 6 => .xmm14 | _ => .xmm15
 
-/-- `d := (v, v)`, through `rax`. -/
-def mkMask (d : XReg) (v : BitVec 64) : List Instr :=
-  [.movImm64 .rax v, .xop (.movq d .rax), bin .punpcklqdq d d]
+/-- Slot `k` of the scratch buffer. -/
+def slot (k : Nat) : MemOp := { base := .r9, disp := ((16 * k : Nat) : Int) }
 
-/-! ## Between blocks and the bitsliced state, quadword by quadword -/
+def spillSlot (k : Nat) : Nat := k
+/-- The masks of `toBs`'s exchanges, by the place value of the index bit. -/
+def maskSlot (i : Nat) : Nat := 9 + i
+def sr2Slot : Nat := 15
+def highSlot : Nat := 16
+def oddSlot : Nat := 17
+def bufSlot (b : Nat) : Nat := 18 + b
+/-- Where the round keys start. -/
+def keysOff : Nat := 416
 
-def swapIn (x : XReg) (k s : Nat) : List Instr :=
-  [mova t0 x, shx .psrlq t0 s, pxor t0 x, pand t0 (m k), pxor x t0, shx .psllq t0 s, pxor x t0]
+def mv (d s : XReg) : Instr := .xop (.bin .movdqa d s)
+def px (d s : XReg) : Instr := .xop (.bin .pxor d s)
+def an (d s : XReg) : Instr := .xop (.bin .pand d s)
+def srq (d : XReg) (n : Nat) : Instr := .xop (.shift .psrlq d (BitVec.ofNat 8 n))
+def slq (d : XReg) (n : Nat) : Instr := .xop (.shift .psllq d (BitVec.ofNat 8 n))
+def srw (d : XReg) (n : Nat) : Instr := .xop (.shift .psrlw d (BitVec.ofNat 8 n))
+def slw (d : XReg) (n : Nat) : Instr := .xop (.shift .psllw d (BitVec.ofNat 8 n))
+def ldx (d : XReg) (k : Nat) : Instr := .movdquLoad d (slot k)
+def stx (k : Nat) (s : XReg) : Instr := .movdquStore (slot k) s
+/-- A spill, and its reload. -/
+def sv (k : Nat) (s : XReg) : Instr := stx (spillSlot k) s
+def ld (d : XReg) (k : Nat) : Instr := ldx d (spillSlot k)
 
-def swapBetween (x y : XReg) (k s : Nat) : List Instr :=
-  [mova t0 x, shx .psrlq t0 s, pxor t0 y, pand t0 (m k), pxor y t0, shx .psllq t0 s, pxor x t0]
+/-! ## SubBytes -/
 
-def bsMasks : List Instr := Impl.Aes.X86_64.bsMasks.flatMap fun (k, v) => mkMask (m k) v
-def zip1 : List Instr := (List.range 8).flatMap fun k => swapIn (q k) 1 16
-def zip2 : List Instr := (List.range 8).flatMap fun k => swapIn (q k) 2 8
-def swap8 : List Instr := (List.range 4).flatMap fun b => swapBetween (q b) (q (b + 4)) 3 8
-def ortho : List Instr :=
-  ([(0, 1), (2, 3), (4, 5), (6, 7)].flatMap fun (a, b) => swapBetween (q a) (q b) 4 1) ++
-  ([(0, 2), (1, 3), (4, 6), (5, 7)].flatMap fun (a, b) => swapBetween (q a) (q b) 5 2) ++
-  ([(0, 4), (1, 5), (2, 6), (3, 7)].flatMap fun (a, b) => swapBetween (q a) (q b) 6 4)
+/-- `Circuit.sbox` without its constant, from `q j` to `p j`: the circuit in
+an order that needs few spills, allocated to the sixteen registers. -/
+def subBytes : List Instr := [
+  px .xmm2 .xmm5, mv .xmm8 .xmm2, px .xmm8 .xmm1, mv .xmm9 .xmm8, px .xmm9 .xmm6,
+  px .xmm3 .xmm9, px .xmm3 .xmm7, px .xmm0 .xmm8, mv .xmm10 .xmm3, px .xmm10 .xmm2,
+  mv .xmm11 .xmm10, px .xmm11 .xmm0, px .xmm5 .xmm11, mv .xmm12 .xmm5, px .xmm12 .xmm7,
+  mv .xmm13 .xmm11, px .xmm13 .xmm9, mv .xmm14 .xmm11, px .xmm14 .xmm4, mv .xmm15 .xmm14,
+  an .xmm15 .xmm11, sv 0 .xmm11, mv .xmm11 .xmm14, px .xmm11 .xmm12, sv 1 .xmm5,
+  mv .xmm5 .xmm14, px .xmm5 .xmm3, px .xmm3 .xmm4, sv 2 .xmm14, mv .xmm14 .xmm12,
+  an .xmm14 .xmm9, sv 3 .xmm9, mv .xmm9 .xmm11, an .xmm9 .xmm13, sv 4 .xmm11, mv .xmm11 .xmm12,
+  px .xmm11 .xmm6, px .xmm4 .xmm10, sv 5 .xmm12, mv .xmm12 .xmm4, an .xmm12 .xmm5,
+  px .xmm9 .xmm12, sv 6 .xmm5, mv .xmm5 .xmm7, an .xmm5 .xmm8, px .xmm12 .xmm14,
+  px .xmm5 .xmm15, px .xmm5 .xmm12, mv .xmm14 .xmm0, px .xmm14 .xmm7, px .xmm1 .xmm4,
+  px .xmm5 .xmm11, mv .xmm11 .xmm0, an .xmm11 .xmm3, px .xmm12 .xmm11, sv 7 .xmm0,
+  mv .xmm0 .xmm14, an .xmm0 .xmm1, px .xmm0 .xmm9, px .xmm0 .xmm15, px .xmm0 .xmm2, ld .xmm15 1,
+  mv .xmm2 .xmm15, an .xmm2 .xmm6, sv 8 .xmm6, mv .xmm6 .xmm15, px .xmm6 .xmm8, px .xmm12 .xmm2,
+  px .xmm12 .xmm6, mv .xmm2 .xmm4, px .xmm2 .xmm15, mv .xmm6 .xmm13, px .xmm6 .xmm1,
+  mv .xmm15 .xmm2, an .xmm15 .xmm6, px .xmm9 .xmm15, px .xmm9 .xmm11, mv .xmm15 .xmm5,
+  an .xmm15 .xmm0, px .xmm9 .xmm10, mv .xmm11 .xmm12, px .xmm11 .xmm15, px .xmm15 .xmm9,
+  mv .xmm10 .xmm0, px .xmm10 .xmm9, an .xmm11 .xmm10, px .xmm5 .xmm12, px .xmm11 .xmm9,
+  px .xmm0 .xmm11, mv .xmm10 .xmm15, px .xmm10 .xmm11, an .xmm9 .xmm10, px .xmm0 .xmm9,
+  an .xmm8 .xmm11, px .xmm9 .xmm15, an .xmm15 .xmm5, px .xmm12 .xmm15, an .xmm9 .xmm12,
+  px .xmm9 .xmm5, ld .xmm10 4, an .xmm10 .xmm9, an .xmm7 .xmm11, mv .xmm15 .xmm12,
+  px .xmm15 .xmm9, an .xmm6 .xmm15, an .xmm1 .xmm12, an .xmm14 .xmm12, an .xmm13 .xmm9,
+  px .xmm12 .xmm11, px .xmm6 .xmm13, an .xmm15 .xmm2, px .xmm13 .xmm1, an .xmm3 .xmm12,
+  px .xmm11 .xmm0, px .xmm9 .xmm0, ld .xmm5 7, an .xmm5 .xmm12, ld .xmm2 3, an .xmm2 .xmm0,
+  px .xmm2 .xmm8, px .xmm5 .xmm15, px .xmm3 .xmm6, px .xmm12 .xmm9, ld .xmm1 5, an .xmm0 .xmm1,
+  ld .xmm1 6, an .xmm1 .xmm12, px .xmm15 .xmm7, an .xmm12 .xmm4, px .xmm6 .xmm1, ld .xmm4 2,
+  an .xmm4 .xmm9, px .xmm13 .xmm2, px .xmm12 .xmm10, px .xmm4 .xmm12, px .xmm5 .xmm12,
+  px .xmm5 .xmm13, px .xmm15 .xmm4, px .xmm4 .xmm14, px .xmm14 .xmm5, px .xmm6 .xmm8,
+  ld .xmm12 1, an .xmm12 .xmm11, px .xmm1 .xmm4, px .xmm14 .xmm0, px .xmm13 .xmm4, ld .xmm8 8,
+  an .xmm11 .xmm8, px .xmm14 .xmm10, px .xmm2 .xmm1, px .xmm6 .xmm11, ld .xmm0 0,
+  an .xmm9 .xmm0, px .xmm2 .xmm9, px .xmm14 .xmm7, px .xmm15 .xmm12, px .xmm1 .xmm15,
+  px .xmm6 .xmm9, px .xmm1 .xmm3, mv .xmm8 .xmm5, mv .xmm9 .xmm4, mv .xmm10 .xmm15,
+  mv .xmm11 .xmm6, mv .xmm12 .xmm14, mv .xmm14 .xmm1, mv .xmm15 .xmm2]
 
-def toBs : List Instr := bsMasks ++ zip1 ++ zip2 ++ swap8 ++ ortho
-def fromBs : List Instr := bsMasks ++ ortho ++ swap8 ++ zip2 ++ zip1
+/-- The inverse S-box's circuit, of an input with `{63}` added, from `q j`
+to `p j`. -/
+def invSubBytes : List Instr := [
+  mv .xmm8 .xmm5, px .xmm8 .xmm4, px .xmm1 .xmm8, mv .xmm9 .xmm1, px .xmm9 .xmm6,
+  px .xmm5 .xmm9, px .xmm3 .xmm1, px .xmm6 .xmm7, mv .xmm10 .xmm3, px .xmm10 .xmm5,
+  mv .xmm11 .xmm4, px .xmm11 .xmm2, mv .xmm12 .xmm11, px .xmm12 .xmm0, mv .xmm13 .xmm10,
+  px .xmm13 .xmm7, px .xmm0 .xmm6, mv .xmm14 .xmm9, px .xmm14 .xmm0, mv .xmm15 .xmm5,
+  an .xmm15 .xmm0, sv 0 .xmm5, mv .xmm5 .xmm3, an .xmm5 .xmm9, px .xmm4 .xmm0, sv 1 .xmm0,
+  mv .xmm0 .xmm10, an .xmm0 .xmm14, sv 2 .xmm14, mv .xmm14 .xmm3, px .xmm14 .xmm4, sv 3 .xmm10,
+  mv .xmm10 .xmm1, px .xmm10 .xmm2, sv 4 .xmm3, mv .xmm3 .xmm14, an .xmm3 .xmm13,
+  px .xmm0 .xmm5, px .xmm15 .xmm5, px .xmm3 .xmm0, px .xmm6 .xmm12, px .xmm7 .xmm10,
+  mv .xmm5 .xmm7, px .xmm5 .xmm14, sv 5 .xmm14, mv .xmm14 .xmm5, an .xmm14 .xmm6,
+  px .xmm3 .xmm14, sv 6 .xmm5, mv .xmm5 .xmm13, px .xmm5 .xmm9, px .xmm14 .xmm15, sv 7 .xmm9,
+  mv .xmm9 .xmm13, px .xmm9 .xmm6, sv 8 .xmm6, mv .xmm6 .xmm7, an .xmm6 .xmm9, px .xmm14 .xmm6,
+  mv .xmm6 .xmm5, px .xmm6 .xmm11, px .xmm3 .xmm10, px .xmm10 .xmm13, px .xmm14 .xmm2,
+  mv .xmm2 .xmm10, an .xmm2 .xmm6, px .xmm15 .xmm2, px .xmm1 .xmm9, mv .xmm2 .xmm1,
+  an .xmm2 .xmm11, px .xmm15 .xmm2, px .xmm0 .xmm2, mv .xmm2 .xmm4, an .xmm2 .xmm5,
+  px .xmm0 .xmm2, px .xmm15 .xmm12, px .xmm0 .xmm8, mv .xmm2 .xmm15, an .xmm2 .xmm14,
+  mv .xmm12 .xmm14, px .xmm12 .xmm3, mv .xmm8 .xmm0, px .xmm8 .xmm2, px .xmm15 .xmm0,
+  an .xmm8 .xmm12, px .xmm2 .xmm3, px .xmm8 .xmm3, px .xmm14 .xmm8, mv .xmm12 .xmm2,
+  px .xmm12 .xmm8, an .xmm3 .xmm12, an .xmm1 .xmm8, px .xmm14 .xmm3, mv .xmm12 .xmm14,
+  px .xmm12 .xmm8, px .xmm3 .xmm2, an .xmm5 .xmm14, an .xmm2 .xmm15, an .xmm4 .xmm14,
+  px .xmm0 .xmm2, an .xmm6 .xmm12, an .xmm3 .xmm0, ld .xmm2 8, an .xmm2 .xmm0, px .xmm3 .xmm15,
+  an .xmm11 .xmm8, ld .xmm15 5, an .xmm15 .xmm3, an .xmm12 .xmm10, px .xmm8 .xmm0,
+  px .xmm14 .xmm3, an .xmm13 .xmm3, px .xmm3 .xmm0, an .xmm9 .xmm3, ld .xmm10 6,
+  an .xmm0 .xmm10, an .xmm3 .xmm7, ld .xmm10 0, an .xmm10 .xmm8, px .xmm10 .xmm12,
+  mv .xmm7 .xmm2, px .xmm7 .xmm5, px .xmm12 .xmm4, px .xmm11 .xmm15, px .xmm11 .xmm7,
+  px .xmm12 .xmm3, ld .xmm7 4, an .xmm7 .xmm14, px .xmm10 .xmm7, px .xmm11 .xmm13,
+  px .xmm0 .xmm11, px .xmm10 .xmm1, ld .xmm3 7, an .xmm3 .xmm14, px .xmm14 .xmm8,
+  px .xmm4 .xmm0, px .xmm15 .xmm12, px .xmm4 .xmm1, px .xmm3 .xmm9, ld .xmm1 1, an .xmm8 .xmm1,
+  px .xmm8 .xmm4, ld .xmm1 3, an .xmm1 .xmm14, px .xmm1 .xmm7, ld .xmm7 2, an .xmm14 .xmm7,
+  px .xmm1 .xmm0, px .xmm14 .xmm8, px .xmm6 .xmm10, px .xmm8 .xmm2, px .xmm8 .xmm3,
+  px .xmm5 .xmm14, px .xmm14 .xmm13, px .xmm12 .xmm11, px .xmm15 .xmm8, px .xmm5 .xmm6,
+  px .xmm14 .xmm9, px .xmm8 .xmm5, mv .xmm9 .xmm8, mv .xmm8 .xmm4, mv .xmm11 .xmm10,
+  mv .xmm10 .xmm12, mv .xmm12 .xmm14, mv .xmm13 .xmm1, mv .xmm14 .xmm5]
 
-/-! ## The S-box -/
+/-! ## Bytes to slices -/
 
-open Impl.Aes.Circuit in
-/-- `Circuit.sbox` as the DES allocator's gates: `a ⊕ ¬b` is `t := a ⊕ b`
-then `¬t`, with `t` a fresh variable from `n`. -/
-def gates : List Gate → Nat → List Impl.TripleDes.Bitslice.Gate
-  | [], _ => []
-  | g :: gs, n => match g.op with
-    | .xor => ⟨g.dst, .xor, g.a, g.b⟩ :: gates gs n
-    | .and => ⟨g.dst, .and, g.a, g.b⟩ :: gates gs n
-    | .xnor => ⟨n, .xor, g.a, g.b⟩ :: ⟨g.dst, .not, n, n⟩ :: gates gs (n + 1)
+/-- Exchange the bits of `lo` `n` above those of the mask in `m` with those
+of `hi` at the mask's. -/
+def swapMove (lo hi t m : XReg) (n : Nat) : List Instr :=
+  [mv t lo, srq t n, px t hi, an t m, px hi t, slq t n, px lo t]
 
-/-- The spill slots, `[rcx + 16k]`. -/
-def spills : Nat := 15
+/-- The mask of the positions whose index bit of place value `2 ^ i` is 0. -/
+def idxMask (i : Nat) : BitVec 64 :=
+  match i with
+  | 0 => 0x5555555555555555 | 1 => 0x3333333333333333 | 2 => 0x0F0F0F0F0F0F0F0F
+  | 3 => 0x00FF00FF00FF00FF | 4 => 0x0000FFFF0000FFFF | _ => 0x00000000FFFFFFFF
 
-open Impl.Aes.Circuit in
-/-- The S-box on the state in `q 0 … q 7`, in place (`xᵢ`, `sᵢ` are bit `7 - i`). -/
-def sboxCode : List Instr :=
-  mkMask .xmm15 (BitVec.allOnes 64) ++
-  Impl.TripleDes.X86_64.BitsliceSse.compile (gates sbox 200)
-    ((List.range 8).map fun i => (x i, q (7 - i))) ((List.range 8).map fun i => (s i, q (7 - i)))
-    ((List.range 7).map fun k => X (8 + k)) (List.range spills) .xmm15
+/-- Exchange bit `b` of the register's number with bit `i` of the position. -/
+def exchange (b i : Nat) : List Instr :=
+  ldx .xmm9 (maskSlot i) :: ((List.range 8).filter fun k => k / 2 ^ b % 2 == 0).flatMap fun k =>
+    swapMove (q k) (q (k + 2 ^ b)) .xmm8 .xmm9 (2 ^ i)
 
-/-! ## ShiftRows -/
+/-- From the halves of four blocks (register `k + 4 c`: columns `2 c` and
+`2 c + 1` of block `k`) to slices. -/
+def toBs : List Instr :=
+  exchange 2 3 ++ exchange 2 4 ++ exchange 2 5 ++ exchange 2 2 ++ exchange 1 1 ++ exchange 0 0
 
-/-- The masks of ShiftRows: rows 1 and 3, then rows 2 and 3, at `[r11]` and `[r11 + 16]`. -/
-def srMasks : List (Nat × BitVec 64) := [(0, 0xFFFF0000FFFF0000), (1, 0xFFFFFFFF00000000)]
+def fromBs : List Instr :=
+  exchange 0 0 ++ exchange 1 1 ++ exchange 2 2 ++ exchange 2 5 ++ exchange 2 4 ++ exchange 2 3
 
-/-- Where the masks are, from `r9`. -/
-def srOff : Nat := 464
+/-- The masks' constants into their slots, through `rax` and `xmm0`. -/
+def setMask (k : Nat) (v : BitVec 64) : List Instr :=
+  [.movImm64 .rax v, .xop (.movq .xmm0 .rax), .xop (.bin .punpcklqdq .xmm0 .xmm0), stx k .xmm0]
 
-/-- Store the masks (once, before the groups). -/
-def srSetup : List Instr :=
-  srMasks.flatMap fun (k, v) => mkMask t0 v ++ [.movdquStore (at_ .r9 (srOff + 16 * k)) t0]
+def sr2Mask : BitVec 64 := 0x00FF000000FF0000
 
-/-- Rotate each 16-bit word of `x` right by `n` bits into `t0` (`t1` is clobbered); the
-shifted halves share no bits, so XOR is OR. -/
-def rotW (x : XReg) (n : Nat) : List Instr :=
-  [mova t0 x, shx .psrlw t0 n, mova t1 x, shx .psllw t1 (16 - n), pxor t0 t1]
+/-- Two columns of the rows 2 and 3; the odd rows. -/
+def highMask : BitVec 64 := 0x00FF00FF00000000
+def oddMask : BitVec 64 := 0xFFFF0000FFFF0000
 
-/-- `x := x` with the rows in mask `k` taken from `t0`. -/
-def blend (x : XReg) (k : Nat) : List Instr := [pxor t0 x, pand t0 (m (1 + k)), pxor x t0]
+def setMasks : List Instr :=
+  ((List.range 6).flatMap fun i => setMask (maskSlot i) (idxMask i)) ++ setMask sr2Slot sr2Mask ++
+    setMask highSlot highMask ++ setMask oddSlot oddMask
 
-def srWord (x : XReg) : List Instr := rotW x 4 ++ blend x 0 ++ rotW x 8 ++ blend x 1
+/-! ## Linear layers -/
 
-/-- Load the masks into `m 1`, `m 2`. -/
-def srLoad : List Instr := [ldx (m 1) .r11 0, ldx (m 2) .r11 16]
+/-- `d` := `a` with every row's columns rotated by one (`u` is lost). -/
+def colRot (d a u : XReg) : List Instr := [mv d a, srw d 4, mv u a, slw u 12, px d u]
 
-def srBody : List Instr := (List.range 8).flatMap fun j => srWord (q j)
+/-- `d` := `a` with the rows rotated by one (`u` is lost). -/
+def rowRot (d a u : XReg) : List Instr := [mv d a, srq d 16, mv u a, slq u 48, px d u]
 
-def shiftRows : List Instr := srLoad ++ srBody
+/-- The next row's bytes, in form `f`, of `a` to `d`. -/
+def nextRow (f : Bool) (d a u v : XReg) : List Instr :=
+  if f then colRot v a u ++ [mv d v, srq d 16, slq v 48, px d v] else rowRot d a u
 
-/-! ## MixColumns -/
+/-- The bytes two rows on, in form `f`, of `a` to `d` (`u` is lost). -/
+def row2 (f : Bool) (d a u : XReg) : List Instr :=
+  if f then ([.xop (.pshufd d a 0xb1), mv u d, srw d 8, slw u 8, px d u] : List Instr)
+  else [.xop (.pshufd d a 0xb1)]
 
-def ta : XReg := .xmm8
-def tb : XReg := .xmm9
-def u7 : XReg := .xmm10
+/-- The first half of MixColumns, on slice `j`: `a ⊕ next(a)` in place (`b`),
+and `next(a) ⊕ row2(b)` to `o` (`u`, `v` are lost). -/
+def mcHalf (f : Bool) (a o u v : XReg) : List Instr :=
+  nextRow f o a u v ++ [px a o] ++ row2 f u a v ++ [px o u]
 
-/-- `d := s ⋙ 16` in each quadword (`ta` is clobbered), XOR being OR. -/
-def ror16 (d s : XReg) : List Instr :=
-  [mova d s, shx .psrlq d 16, mova ta s, shx .psllq ta 48, pxor d ta]
+/-- MixColumns in form `f`, from `p j` to `q j`: `b ≔ a ⊕ next(a)`, and the
+result is `2 b ⊕ next(a) ⊕ row2(b)`. Slice 7 first, whose `b` the
+reduction adds to slices 0, 1, 3 and 4. -/
+def mixColumns (f : Bool) : List Instr :=
+  mcHalf f (p 7) (q 7) (q 0) (q 1) ++
+  mcHalf f (p 0) (q 0) (q 1) (q 2) ++ [px (q 0) (p 7)] ++
+  mcHalf f (p 1) (q 1) (q 2) (q 3) ++ [px (q 1) (p 0), px (q 1) (p 7)] ++
+  mcHalf f (p 2) (q 2) (q 3) (q 4) ++ [px (q 2) (p 1)] ++
+  mcHalf f (p 3) (q 3) (q 4) (q 5) ++ [px (q 3) (p 2), px (q 3) (p 7)] ++
+  mcHalf f (p 4) (q 4) (q 5) (q 6) ++ [px (q 4) (p 3), px (q 4) (p 7)] ++
+  mcHalf f (p 5) (q 5) (q 6) (p 0) ++ [px (q 5) (p 4)] ++
+  mcHalf f (p 6) (q 6) (p 0) (p 1) ++ [px (q 6) (p 5), px (q 7) (p 6)]
 
-/-- The register output word `j` is computed in. -/
-def mcOut (j : Nat) : XReg := if j = 0 then t0 else if j = 1 then t1 else q (j - 2)
+/-- ShiftRows twice, on slice `a`: the odd rows rotated by two columns. -/
+def sr2One (a t m : XReg) : List Instr :=
+  [mv t a, srw t 8, px t a, an t m, px a t, slw t 8, px a t]
 
-/-- Output word `j`, as `Ctr32.lean`'s `mcWord`: `q j` is left holding
-`uⱼ = qⱼ ⊕ (qⱼ ⋙ 16)`, and `uⱼ ⋙ 32` is `pshufd` with `1 0 3 2`. -/
-def mcWord (j : Nat) : List Instr :=
-  ror16 (mcOut j) (q j) ++ [pxor (q j) (mcOut j)] ++
-  (if j = 0 then [] else [pxor (mcOut j) (q (j - 1))]) ++
-  (if j = 0 ∨ j = 1 ∨ j = 3 ∨ j = 4 then [pxor (mcOut j) u7] else []) ++
-  [.xop (.pshufd tb (q j) 0xB1), pxor (mcOut j) tb]
+/-- ShiftRows twice, on the slices `r j`. -/
+def sr2 (r : Nat → XReg) (t m : XReg) : List Instr :=
+  ldx m sr2Slot :: (List.range 8).flatMap fun j => sr2One (r j) t m
 
-def mixColumns : List Instr :=
-  ror16 u7 (q 7) ++ [pxor u7 (q 7)] ++ (List.range 8).flatMap mcWord ++
-    ((List.range 8).reverse.map fun j => mova (q j) (mcOut j))
+/-- `y_j ≔ a_j ⊕ row2(a_j)`, of `p j` to `q j` (`u` is lost). -/
+def invPre (f : Bool) (j : Nat) (u : XReg) : List Instr := row2 f (q j) (p j) u ++ [px (q j) (p j)]
 
-/-! ## AddRoundKey -/
+/-- InvMixColumns in form `f`, from `p j` to `q j`: MixColumns of
+`a ⊕ 4 (a ⊕ row2(a))`, since `0b x³ + 0d x² + 09 x + 0e` is
+`(03 x³ + x² + x + 02) (04 x² + 05)` modulo `x⁴ + 1`. -/
+def invMixColumns (f : Bool) : List Instr :=
+  (List.range 7).flatMap (fun j => invPre f j (q 7)) ++
+  [px (p 0) (q 6), px (p 1) (q 6), px (p 2) (q 0), px (p 3) (q 1), px (p 3) (q 6), px (p 4) (q 2),
+   px (p 4) (q 6), px (p 5) (q 3), px (p 6) (q 4)] ++
+  invPre f 7 (q 0) ++
+  [px (p 7) (q 5), px (p 1) (q 7), px (p 2) (q 7), px (p 4) (q 7), px (p 5) (q 7)] ++
+  mixColumns f
 
-def kp : Reg := .rsi
+/-! ## Round keys -/
 
-/-- With the 64-bit bitsliced round key at `kp`, in both quadwords. -/
-def addRoundKey : List Instr :=
-  (List.range 8).flatMap fun j => [ldx ta kp (8 * j), bin .punpcklqdq ta ta, pxor (q j) ta]
+/-- The register of the round key's address. -/
+def kp : Reg := .rax
 
-/-! ## The rounds -/
+def dupLow (d s : XReg) : Instr := .xop (.pshufd d s 0x44)
+def dupHigh (d s : XReg) : Instr := .xop (.pshufd d s 0xee)
+def unpckl (d s : XReg) : Instr := .xop (.bin .punpcklqdq d s)
+def unpckh (d s : XReg) : Instr := .xop (.bin .punpckhqdq d s)
 
-open Impl.Aes.X86_64 (lastKey sb)
+/-- XOR the round key at `kp`, a quadword for each slice, into both quadwords
+of the slices `r j`. -/
+def addRoundKey (r : Nat → XReg) (t u : XReg) : List Instr :=
+  (List.range 4).flatMap fun i =>
+    [.movdquLoad t (at_ kp (16 * i)), dupLow u t, dupHigh t t, px (r (2 * i)) u, px (r (2 * i + 1)) t]
 
-/-- A middle round, with `kp` at the previous round key; loops until `kp`
-is at the last round key but one. -/
-def roundBody : List Instr :=
-  ([.alu .add kp (.imm 64)] : List Instr) ++ sboxCode ++ shiftRows ++ mixColumns ++ addRoundKey ++
-  [.mov .rax (.reg sb), .alu .add .rax (.imm (BitVec.ofNat 32 (lastKey - 64))), .alu .cmp kp (.reg .rax)]
+/-- `ShiftRows⁻¹` of slice `a`: from form 0 to form 1 (`t`, `u` are lost; the
+masks are in `h` and `o`). -/
+def toForm1 (a t u h o : XReg) : List Instr :=
+  [mv t a, srw t 8, px t a, an t h, px a t, slw t 8, px a t,
+   mv t a, slw t 4, mv u a, srw u 12, px t u, px t a, an t o, px a t]
 
-def lastRound : List Instr :=
-  ([.alu .add kp (.imm 64)] : List Instr) ++ sboxCode ++ shiftRows ++ addRoundKey
+/-- The halves of two round keys, at `r10`, in their registers: the first key
+in the low quadwords and the second in the high ones. -/
+def keyLoad2 : List Instr :=
+  [.movdquLoad (q 0) (at_ .r10 0), .movdquLoad (q 1) (at_ .r10 16), mv (q 4) (q 0), unpckl (q 0) (q 1),
+   unpckh (q 4) (q 1)]
 
-/-- Encrypt the eight blocks in `q 0 … q 7`, the round keys from `rdi`. -/
+/-- The last round key's halves. -/
+def keyLoad1 : List Instr :=
+  [.movdquLoad (q 0) (at_ .r10 0), mv (q 4) (q 0), unpckl (q 0) (q 0), unpckh (q 4) (q 4)]
+
+/-- Exchange bit `i` of the position with the bit of the register's number
+that tells `lo` from `hi`. -/
+def exchange1 (lo hi : XReg) (i : Nat) : List Instr :=
+  ldx .xmm9 (maskSlot i) :: swapMove lo hi .xmm8 .xmm9 (2 ^ i)
+
+/-- A round key's halves, in `q 0` and `q 4`, to its bits `j` in the order of
+the slices, with `j % 4` in the place of the block and `j / 4` telling the
+two apart; and in `q 1` and `q 5` the same in form 1. -/
+def keyMid : List Instr :=
+  exchange1 (q 0) (q 4) 3 ++ exchange1 (q 0) (q 4) 4 ++ exchange1 (q 0) (q 4) 5 ++ exchange1 (q 0) (q 4) 2 ++
+  [mv (q 1) (q 0), mv (q 5) (q 4), ldx .xmm10 highSlot, ldx .xmm11 oddSlot] ++
+  toForm1 (q 1) .xmm8 .xmm9 .xmm10 .xmm11 ++ toForm1 (q 5) .xmm8 .xmm9 .xmm10 .xmm11
+
+/-- The second key in form 1. -/
+def keyPick : List Instr := [unpckh (q 1) (q 1), unpckl (q 0) (q 1), unpckh (q 5) (q 5), unpckl (q 4) (q 5)]
+
+/-- To slices, the same for every block. -/
+def keyOut : List Instr :=
+  [mv (q 2) (q 0)] ++ exchange1 (q 0) (q 2) 1 ++ [mv (q 6) (q 4)] ++ swapMove (q 4) (q 6) .xmm8 .xmm9 2 ++
+  [mv (q 1) (q 0), mv (q 3) (q 2), mv (q 5) (q 4), mv (q 7) (q 6)] ++ exchange 0 0
+
+/-- Two round keys' halves to slices, the second key's in form 1. -/
+def keyBs : List Instr := keyMid ++ keyPick ++ keyOut
+
+/-- Store the slices' low quadwords at `kp`. -/
+def storeLow : List Instr :=
+  (List.range 4).flatMap fun i =>
+    [mv .xmm8 (q (2 * i)), unpckl .xmm8 (q (2 * i + 1)), .movdquStore (at_ kp (16 * i)) .xmm8]
+
+/-- Store the slices' high quadwords 64 bytes on. -/
+def storeHigh : List Instr :=
+  (List.range 4).flatMap fun i =>
+    [unpckh (q (2 * i)) (q (2 * i + 1)), .movdquStore (at_ kp (64 + 16 * i)) (q (2 * i))]
+
+/-- Two round keys: the first in form 0, the second in form 1. -/
+def keyBody : List Instr :=
+  keyLoad2 ++ keyBs ++ storeLow ++ storeHigh ++
+    [.alu .add .r10 (.imm 32), .alu .add kp (.imm 128), .alu .sub .rdi (.imm 1)]
+
+/-- Complement the quadword of slice `j` of the round key at `kp`. -/
+def flip (j : Nat) : List Instr :=
+  [.mov .r10 (.mem (at_ kp (8 * j))), .alu .xor .r10 (.imm 0xFFFFFFFF), .store (at_ kp (8 * j)) .r10]
+
+/-- Add `{63}` to the round key at `kp`, on to the next. -/
+def complement : List Instr :=
+  flip 0 ++ flip 1 ++ flip 5 ++ flip 6 ++ [.alu .add kp (.imm 64), .alu .sub .rdi (.imm 1)]
+
+/-- The round keys in slices in the scratch buffer (`r9`), from the schedule
+at `rdi`, of `rsi` rounds (even); `{63}` added to all but the first. -/
+def keys : Prog isa :=
+  .seq (.block (setMasks ++ ([.mov .r10 (.reg .rdi), .mov kp (.reg .r9),
+      .alu .add kp (.imm (BitVec.ofNat 32 keysOff)), .mov .rdi (.reg .rsi), .shift .shr .rdi 1] : List Instr)))
+    (.seq (.loop (.block keyBody) .ne)
+      (.seq (.block (keyLoad1 ++ keyBs ++ storeLow ++
+          ([.mov kp (.reg .r9), .alu .add kp (.imm (BitVec.ofNat 32 (keysOff + 64))),
+            .mov .rdi (.reg .rsi)] : List Instr)))
+        (.loop (.block complement) .ne)))
+
+/-! ## A batch -/
+
+/-- The eight blocks of the buffer, halves in the registers. -/
+def loadBuf : List Instr :=
+  (List.range 4).flatMap fun k =>
+    [ldx (q k) (bufSlot k), ldx .xmm8 (bufSlot (k + 4)), mv (q (k + 4)) (q k), unpckl (q k) .xmm8,
+     unpckh (q (k + 4)) .xmm8]
+
+/-- And back. -/
+def storeBuf : List Instr :=
+  (List.range 4).flatMap fun k =>
+    [mv .xmm8 (q k), unpckl .xmm8 (q (k + 4)), unpckh (q k) (q (k + 4)), stx (bufSlot k) .xmm8,
+     stx (bufSlot (k + 4)) (q k)]
+
+def nextKey : Instr := .alu .add kp (.imm 64)
+def prevKey : Instr := .alu .sub kp (.imm 64)
+
+/-- The round from form 0 to form 1, whose round key is at `kp`. -/
+def roundA : List Instr :=
+  subBytes ++ mixColumns true ++ addRoundKey q .xmm8 .xmm9 ++ [nextKey]
+
+/-- The round from form 1 to form 0. -/
+def roundB : List Instr :=
+  subBytes ++ sr2 p .xmm0 .xmm1 ++ mixColumns false ++ addRoundKey q .xmm8 .xmm9 ++ [nextKey]
+
+/-- The state's registers, after the last SubBytes. -/
+def moveBack : List Instr := (List.range 8).map fun j => mv (q j) (p j)
+
+def lastB : List Instr :=
+  subBytes ++ sr2 p .xmm0 .xmm1 ++ addRoundKey p .xmm0 .xmm1 ++ moveBack
+
+/-- The number of pairs of rounds before the last, to `r10`. -/
+def pairs : List Instr := [.mov .r10 (.reg .rsi), .shift .shr .r10 1, .alu .sub .r10 (.imm 1)]
+
+/-- Encipher the buffer's eight blocks, in place. -/
 def encrypt8 : Prog isa :=
-  .seq (.block (toBs ++ [.mov kp (.reg .rdi)] ++ addRoundKey))
-    (.seq (.loop (.block roundBody) .ne) (.block (lastRound ++ fromBs)))
+  .seq (.block (loadBuf ++ toBs ++ pairs ++ ([.mov kp (.reg .r9), .alu .add kp (.imm (BitVec.ofNat 32 keysOff))] : List Instr) ++
+      addRoundKey q .xmm8 .xmm9 ++ [nextKey]))
+    (.seq (.loop (.block (roundA ++ roundB ++ ([.alu .sub .r10 (.imm 1)] : List Instr))) .ne)
+      (.block (roundA ++ lastB ++ fromBs ++ storeBuf)))
 
-/-! ## The counter blocks -/
+/-- The inverse cipher's round from form 0 to form 1, and from 1 to 0. -/
+def invRoundA : List Instr :=
+  sr2 q .xmm8 .xmm9 ++ invSubBytes ++ addRoundKey p .xmm0 .xmm1 ++ invMixColumns true ++ [prevKey]
 
-open Impl.Aes.X86_64 (cHi cLo cNum slotAt)
+def invRoundB : List Instr :=
+  invSubBytes ++ addRoundKey p .xmm0 .xmm1 ++ invMixColumns false ++ [prevKey]
 
-/-- `r := bytes 8–15 of counter block c + b`. -/
-def ctrWord (r : Reg) (b : Nat) : List Instr :=
-  [.mov32 r (.mem (slotAt sb cNum)), .alu32 .add r (.imm (BitVec.ofNat 32 b)), .bswap32 r,
-   .shift .ror r 32, .alu .xor r (.mem (slotAt sb cHi))]
+def invLastB : List Instr := invSubBytes ++ addRoundKey p .xmm0 .xmm1 ++ moveBack
 
-/-- Block `b` of the group in quadword `b / 4` of `q (b % 4)` (bytes 0–7) and
-`q (b % 4 + 4)` (bytes 8–15); and `c := c + 8`. -/
+/-- Decipher the buffer's eight blocks, in place: the round keys from the last. -/
+def decrypt8 : Prog isa :=
+  .seq (.block (loadBuf ++ toBs ++ pairs ++ ([.mov kp (.reg .rsi), .shift .shl kp 6, .alu .add kp (.reg .r9),
+        .alu .add kp (.imm (BitVec.ofNat 32 keysOff))] : List Instr) ++
+      addRoundKey q .xmm8 .xmm9 ++ [prevKey]))
+    (.seq (.loop (.block (invRoundA ++ invRoundB ++ ([.alu .sub .r10 (.imm 1)] : List Instr))) .ne)
+      (.block (invRoundA ++ invLastB ++ fromBs ++ storeBuf)))
+
+/-! ## Whole blocks
+
+The data are at `rcx`, `r8` blocks; `rdi` is the number of blocks of the
+batch. -/
+
+/-- The blocks of this batch, at most eight, to `rdi` and `r10`; the buffer's
+address to `rax`. -/
+def batchSize : List Instr :=
+  [.mov .rdi (.imm 8), .alu .cmp .r8 (.imm 8), .cmov .b .rdi (.reg .r8), .mov .r10 (.reg .rdi),
+   .mov .rax (.reg .r9), .alu .add .rax (.imm (BitVec.ofNat 32 (16 * bufSlot 0)))]
+
+/-- A block of the data to the buffer. -/
+def copyIn : List Instr :=
+  [.movdquLoad .xmm0 (at_ .r11 0), .movdquStore (at_ .rax 0) .xmm0, .alu .add .r11 (.imm 16),
+   .alu .add .rax (.imm 16), .alu .sub .r10 (.imm 1)]
+
+/-- A block of the buffer to the data. -/
+def copyOut : List Instr :=
+  [.movdquLoad .xmm0 (at_ .rax 0), .movdquStore (at_ .rcx 0) .xmm0, .alu .add .rcx (.imm 16),
+   .alu .add .rax (.imm 16), .alu .sub .r10 (.imm 1)]
+
+/-- Up to eight blocks of the data through `crypt8`, in place. -/
+def blocksBatch (crypt8 : Prog isa) : Prog isa :=
+  .seq (.block (batchSize ++ ([.mov .r11 (.reg .rcx)] : List Instr)))
+    (.seq (.loop (.block copyIn) .ne)
+      (.seq crypt8
+        (.seq (.block batchSize)
+          (.seq (.loop (.block copyOut) .ne) (.block [.alu .sub .r8 (.reg .rdi)])))))
+
+/-- `vg_aes_encrypt_blocks(schedule = rdi, rounds = rsi, data = rdx, n = rcx,
+scratch = r8)`, and `vg_aes_decrypt_blocks`. -/
+def blocks (crypt8 : Prog isa) : Prog isa :=
+  .seq (.block [.mov .r9 (.reg .r8), .mov .r8 (.reg .rcx), .mov .rcx (.reg .rdx), .alu .test .r8 (.reg .r8)])
+    (.ite .e (.block []) (.seq keys (.loop (blocksBatch crypt8) .ne)))
+
+/-! ## Counter mode -/
+
+/-- Counter block `i` of the batch to the buffer: the block in `xmm0` with the
+last word `eax + i`, big-endian. -/
+def ctrBlock (i : Nat) : List Instr :=
+  [stx (bufSlot i) .xmm0, .mov32 .r10 (.reg .rax), .alu32 .add .r10 (.imm (BitVec.ofNat 32 i)), .bswap32 .r10,
+   .store32 (at_ .r9 (16 * bufSlot i + 12)) .r10]
+
+/-- The eight counter blocks, from the counter block at `rdx`. -/
 def ctrBlocks : List Instr :=
-  [.mov .rax (.mem (slotAt sb cLo)), .xop (.movq (q 0) .rax), bin .punpcklqdq (q 0) (q 0),
-   mova (q 1) (q 0), mova (q 2) (q 0), mova (q 3) (q 0)] ++
-  ((List.range 4).flatMap fun b =>
-    ctrWord .rax b ++ ctrWord .r10 (b + 4) ++
-    [.xop (.movq (q (b + 4)) .rax), .xop (.movq ta .r10), bin .punpcklqdq (q (b + 4)) ta]) ++
-  [.mov32 .rax (.mem (slotAt sb cNum)), .alu32 .add .rax (.imm 8), .store32 (slotAt sb cNum) .rax]
+  [.movdquLoad .xmm0 (at_ .rdx 0), .mov32 .rax (.mem (at_ .rdx 12)), .bswap32 .rax] ++
+    (List.range 8).flatMap ctrBlock
 
-/-! ## XOR into the data -/
+/-- A block of the keystream, in the buffer, XORed into one of the data, to `r11`. -/
+def xorBlock : List Instr :=
+  [.movdquLoad .xmm0 (at_ .rax 0), .movdquLoad .xmm1 (at_ .rcx 0), px .xmm0 .xmm1,
+   .movdquStore (at_ .r11 0) .xmm0, .alu .add .rax (.imm 16), .alu .add .rcx (.imm 16), .alu .add .r11 (.imm 16),
+   .alu .sub .r10 (.imm 1)]
 
-/-- Keystream block `b`: quadword `b / 4` of `q (b % 4)` and of `q (b % 4 + 4)`. -/
-def ksBlock (b : Nat) : List Instr :=
-  if b < 4 then [mova ta (q b), bin .punpcklqdq ta (q (b + 4))]
-  else [mova ta (q (b - 4)), bin .punpckhqdq ta (q b)]
+/-- The counter moved on by the batch's blocks. -/
+def ctrNext : List Instr :=
+  [.mov32 .rax (.mem (at_ .rdx 12)), .bswap32 .rax, .alu32 .add .rax (.reg .rdi), .bswap32 .rax,
+   .store32 (at_ .rdx 12) .rax, .alu .sub .r8 (.reg .rdi)]
 
-open Impl.Aes.X86_64 (dstR dstLoad dstAdv dstSave) in
-/-- XOR keystream block `b` into data block `b`, stored at `dstR to`. -/
-def xorBlockG (to : Bool) (b : Nat) : List Instr :=
-  ksBlock b ++ [ldx tb .rdx (16 * b), pxor tb ta, stx (dstR to) (16 * b) tb]
-
-def xorBlock : Nat → List Instr := xorBlockG false
-
-open Impl.Aes.X86_64 (dstR dstLoad dstAdv dstSave) in
-/-- Eight blocks, and on to the next (ZF is set when none are left). -/
-def xorFullG (to : Bool) : List Instr :=
-  (List.range 8).flatMap (xorBlockG to) ++ dstAdv to 128 ++ dstSave to ++
-    ([.alu .add .rdx (.imm 128), .alu .sub .r8 (.imm 8)] : List Instr)
-
-def xorFull : List Instr := xorFullG false
-
-open Impl.Aes.X86_64 (dstR dstLoad dstAdv dstSave) in
-/-- The last five to seven blocks (and ZF set). -/
-def xorTailG (to : Bool) : Prog isa :=
-  .seq (.block ((List.range 5).flatMap (xorBlockG to) ++ ([.alu .cmp .r8 (.imm 6)] : List Instr)))
-    (.seq (.ite .ae (.seq (.block (xorBlockG to 5 ++ ([.alu .cmp .r8 (.imm 7)] : List Instr)))
-        (.ite .ae (.block (xorBlockG to 6)) (.block [])))
-      (.block []))
-    (.block (dstSave to ++ [.alu .sub .r8 (.reg .r8)])))
-
-def xorTail : Prog isa := xorTailG false
-
-/-- The spill slots' base, and the masks' of ShiftRows. -/
-def groupSetup : List Instr :=
-  [.mov .rcx (.reg .r9), .mov .r11 (.reg .r9), .alu .add .r11 (.imm (BitVec.ofNat 32 srOff))]
-
-open Impl.Aes.X86_64 (dstLoad) in
-/-- A group of eight blocks, or the last five to seven. -/
-def sseGroupG (to : Bool) : Prog isa :=
-  .seq (.block (groupSetup ++ ctrBlocks))
+/-- Up to eight blocks in counter mode. -/
+def ctrBatch : Prog isa :=
+  .seq (.block ctrBlocks)
     (.seq encrypt8
-      (.seq (.block (dstLoad to ++ [.alu .cmp .r8 (.imm 8)])) (.ite .ae (.block (xorFullG to)) (xorTailG to))))
+      (.seq (.block batchSize) (.seq (.loop (.block xorBlock) .ne) (.block ctrNext))))
 
-def sseGroup : Prog isa := sseGroupG false
+/-- Counter mode, from the round keys in slices. -/
+def ctrLoop : Prog isa := .loop ctrBatch .ne
 
-/-- A group: of four blocks or fewer if at most four are left, else of eight
-or the last five to seven. -/
-def groupG (to : Bool) : Prog isa :=
-  .seq (.block [.alu .cmp .r8 (.imm 5)]) (.ite .b (Impl.Aes.X86_64.groupG to) (sseGroupG to))
-
-def group : Prog isa := groupG false
+/-- `vg_aes_ctr32(schedule = rdi, rounds = rsi, counter = rdx, data = rcx, n = r8,
+scratch = r9)`, and (`to`) `vg_aes_ctr32_to`, whose output is at `r11`. -/
+def ctr32G (to : Bool) : Prog isa :=
+  .seq (.block ((if to then [] else [.mov .r11 (.reg .rcx)]) ++ ([.alu .test .r8 (.reg .r8)] : List Instr)))
+    (.ite .e (.block []) (.seq keys ctrLoop))
 
 end VG.Impl.Aes.X86_64.Sse
-
-namespace VG.Impl.Aes.X86_64
-
-open VG.X86_64
-
-/-- Out of place, keep the output pointer (`r11`) in `xmm15` through the key
-loop, which writes every general-purpose register but no vector one. -/
-def dstStash (to : Bool) : List Instr := if to then [.xop (.movq .xmm15 .r11)] else []
-
-/-- Out of place, store the output pointer from `xmm15` to its slot. -/
-def dstInit (to : Bool) : List Instr := if to then [.movqR t1 .xmm15, st dSlot t1] else []
-
-/-- `vg_aes_ctr32(schedule = rdi, rounds = rsi, counter = rdx, data = rcx, n = r8, scratch = r9)`,
-or, out of place (`to`), `vg_aes_ctr32_to`, which reads the data at `rcx` and
-writes the result to `r11`. -/
-def ctr32G (to : Bool) : Prog isa :=
-  .seq (.block (dstStash to ++ saveRegs ++ ctrSetup ++ keySetup))
-    (.seq (.loop (.block keyBody) .ae)
-      (.seq (.block (dstInit to ++ Sse.srSetup ++ keyDone ++ ([.alu .test .r8 (.reg .r8)] : List Instr)))
-        (.seq (.ite .e (.block []) (.loop (Sse.groupG to) .ne)) (.block restoreRegs))))
-
-def ctr32 : Prog isa := ctr32G false
-
-/-- `vg_aes_ctr32_to`. -/
-def ctr32To : Prog isa := ctr32G true
-
-end VG.Impl.Aes.X86_64

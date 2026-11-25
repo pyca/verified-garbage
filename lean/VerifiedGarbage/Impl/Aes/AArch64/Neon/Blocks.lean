@@ -2,49 +2,34 @@ module
 
 public import VerifiedGarbage.Impl.Aes.AArch64.Neon.Sbox
 public import VerifiedGarbage.Impl.Aes.AArch64.Blocks
+public import VerifiedGarbage.Impl.Tbl.AArch64
 
 /-!
-# AES encryption and decryption of whole blocks, bitsliced in AdvSIMD registers, on AArch64
+# AES, eight blocks at a time, bitsliced in AdvSIMD registers, on AArch64
 
 `vg_aes_encrypt_blocks_neon(schedule = x0, rounds = x1, data = x2, n = x3, scratch = x4)`
-and `vg_aes_decrypt_blocks_neon` with the same arguments, as
-`vg_aes_encrypt_blocks` and `vg_aes_decrypt_blocks` (`Blocks.lean`): eight
-blocks at a time, bitsliced in eight 128-bit registers.
+and `vg_aes_decrypt_blocks_neon`, for CPUs without the Cryptographic
+Extension.
 
-* The state of eight blocks is eight words, word `j` holding bit `j` of the
-  128 bytes: bit `b` of its byte `i` is bit `j` of byte `i` of block `b`,
-  the bytes as FIPS 197 lays them out (byte `r + 4c` is row `r` of column
-  `c`). `ortho` (BearSSL's `br_aes_ct64_ortho`, Thomas Pornin, MIT licence,
-  on each doubleword) takes the eight blocks, one in each register, to
-  that, and back.
-* SubBytes is the circuit of `Sbox.lean`, from the registers `A j` to
-  `B j`. ShiftRows permutes the bytes of each word, one `tbl` by a constant;
-  MixColumns rotates the columns, which are the 32-bit lanes, by one byte
-  (`tbl`) and by two (`rev32` of the halfwords): with `rⱼ` the word `j`
-  rotated by one byte and `uⱼ = qⱼ ⊕ rⱼ`, the result's word `j` is
-  `uⱼ₋₁ ⊕ [j ∈ {1, 3, 4}] u₇ ⊕ rⱼ ⊕ (uⱼ rotated by two bytes)`, with `u₇`
-  for `u₋₁`, as in BearSSL's `mix_columns`. AddRoundKey XORs the bitsliced
-  round key at `kp`.
-* The round keys are bitsliced once a call, into the scratch buffer from
-  byte 128 on, 128 bytes each: bit `j` of a byte of the round key is every
-  bit of that byte of word `j` (`cmeq` of the byte masked by `2ʲ`, with
-  `2ʲ`). The first 96 bytes of the scratch buffer are the S-boxes' slots.
-* Each group of eight blocks, or the last one to seven: its blocks are
-  loaded (`loadFrom`), encrypted or decrypted, and stored back
-  (`storeFrom`); the words of the blocks that are not there hold whatever
-  the registers did, and are not stored.
-* Decryption runs the inverse cipher (FIPS 197 §5.3) from the last round
-  key down: InvShiftRows, the inverse S-box, AddRoundKey, and InvMixColumns
-  as MixColumns after `invMcPre` (`Inv.lean`).
+Bit `j` of byte `i` of block `b` is bit `b` of byte `i` of slice `j`: each
+column of bytes of the eight blocks is an 8×8 bit matrix, transposed
+(`ortho`). ShiftRows and the rotations of the columns' rows are then `tbl`s
+of the slices, and MixColumns rotates by two rows with `rev32` of halfwords.
 
-Only `x0`, `x3`–`x9`, `v0`–`v7` and `v16`–`v31` are written. `x0`, `x1`,
-`x3`, `x4`, `x5`, `x7`, `kp` and `cnt` hold public values, and no address or
-branch depends on anything else.
+**The S-box's constant is in the round keys.** `{63}` in every byte goes
+through ShiftRows and MixColumns unchanged (`2 + 3 + 1 + 1 = 1`), so the
+round keys but the first have it added, and `subBytes` computes the S-box
+without it; `invSubBytes` takes its input with it added.
 
-`vg_aes_encrypt_blocks_neon` is `encryptBlocks`: one to four blocks are
-encrypted one at a time by vector permutations (`Vperm.lean`), as
-`vg_aes_encrypt_blocks` does it, with nothing bitsliced;
-`vg_aes_decrypt_blocks_neon` (`decryptBlocks`) decrypts one to four blocks so.
+**Round keys.** A slice of a round key has `00` or `ff` in byte `i`, by a bit
+of the key's byte `i`: so slices `j` and `j + 4` are `tbl`s of one table
+(`bitTab j`, whose byte `i` is `ff` if `i` has bit `j`) by the low and the
+high halves of the key's bytes (`keyBody`). They are computed once a call.
+
+The scratch buffer (at `x5`): a spill (0–15), the `tbl` indices (64–127),
+and 128 bytes of slices for each round key, from 128.
+
+Only `x0`, `x3`, `x4`, `x6`–`x10`, `v0`–`v7` and `v16`–`v31` are written.
 -/
 
 @[expose] public section
@@ -52,179 +37,184 @@ encrypted one at a time by vector permutations (`Vperm.lean`), as
 namespace VG.Impl.Aes.AArch64.Neon
 
 open VG.AArch64
-open VG.Impl.Tbl.AArch64 (const64 const128)
+open VG.Impl.Tbl.AArch64 (const128)
 
-/-- A temporary. -/
-def tmp : VReg := .v24
-
-/-- The indices of a `tbl`. -/
-def idxR : VReg := .v25
-
-/-- The register pointing to the bitsliced round key. -/
+/-- The round key's address, and the rounds left. -/
 def kp : Reg := .x8
-
-/-- The rounds, or round keys, left. -/
 def cnt : Reg := .x9
 
-/-! ## Between bytes and the bitsliced state -/
+/-! ## The transposes -/
 
-/-- The registers of the masks of `ortho`. -/
-def mreg : Nat → VReg
-  | 0 => .v29 | 1 => .v30 | _ => .v31
+/-- Exchange the high halves of the bytes of `a` with the low halves of those of `b`. -/
+def swap4 (a b : VReg) : List Instr :=
+  [.vop (.mov .v24 a), .vop (.shift .sli .b16 a b 4), .vop (.shift .sri .b16 b .v24 4)]
 
-/-- The masks of `ortho`, in each doubleword. -/
-def orthoMasks : List (Nat × BitVec 64) :=
-  [(0, 0x5555555555555555), (1, 0x3333333333333333), (2, 0x0F0F0F0F0F0F0F0F)]
+/-- Exchange the bits of `a` at the mask's positions (in `v26`) with those
+of `b` `n` positions below them. -/
+def swapN (n : Nat) (a b : VReg) : List Instr :=
+  [.vop (.shift .ushr .b16 .v24 a n), .vop (.shift .shl .b16 .v25 b n),
+   .vop (.bsel .bit a .v25 .v26), .vop (.bsel .bif b .v24 .v26)]
 
-def setMasks : List Instr :=
-  orthoMasks.flatMap fun (k, v) => const64 .x6 v ++ [.vop (.dup .d2 (mreg k) .x6)]
+def maskV (v : BitVec 16) : List Instr := [.movz .w .x6 v 0, .vop (.dup .b16 .v26 .x6)]
 
-/-- A delta swap between `x` and `y` (BearSSL's `SWAPN`): exchanges the bits
-of `y` in the mask `mreg k` with the bits of `x` `s` places above them. -/
-def swapBetween (x y : VReg) (k s : Nat) : List Instr :=
-  [.vop (.shift .ushr .d2 tmp x s), veor tmp tmp y, vand tmp tmp (mreg k), veor y y tmp,
-   .vop (.shift .shl .d2 tmp tmp s), veor x x tmp]
-
-/-- BearSSL's `br_aes_ct64_ortho` on the words `P 0 … P 7`: transposes the
-8×8 bit matrix in each byte position of the eight words. -/
+/-- The transposes of the 8×8 bit matrices that the bytes `i` of `P 0 … P 7` make. -/
 def ortho (P : Nat → VReg) : List Instr :=
-  ([(0, 1), (2, 3), (4, 5), (6, 7)].flatMap fun (a, b) => swapBetween (P a) (P b) 0 1) ++
-  ([(0, 2), (1, 3), (4, 6), (5, 7)].flatMap fun (a, b) => swapBetween (P a) (P b) 1 2) ++
-  ([(0, 4), (1, 5), (2, 6), (3, 7)].flatMap fun (a, b) => swapBetween (P a) (P b) 2 4)
+  ([0, 1, 2, 3] : List Nat).flatMap (fun k => swap4 (P k) (P (k + 4))) ++
+  maskV 0xCC ++ ([0, 1, 4, 5] : List Nat).flatMap (fun k => swapN 2 (P k) (P (k + 2))) ++
+  maskV 0xAA ++ ([0, 2, 4, 6] : List Nat).flatMap (fun k => swapN 1 (P k) (P (k + 1)))
 
-/-- `ortho` of the words `P 0 … P 7`, with its masks. -/
-def bitslice (P : Nat → VReg) : List Instr := setMasks ++ ortho P
+/-! ## `tbl` indices, in slots of the scratch buffer -/
 
-/-! ## The round transformations -/
+/-- The indices whose byte `i` is `f i`. -/
+def idx (f : Nat → Nat) : BitVec 128 := ofVBytes fun i => BitVec.ofNat 8 (f i)
 
-/-- ShiftRows as the indices of a `tbl`: byte `t` of the result is byte
-`t mod 4 + 4 ((t / 4 + t mod 4) mod 4)`. -/
-def srIdx : BitVec 128 := ofVBytes fun t => BitVec.ofNat 8 (t % 4 + 4 * ((t / 4 + t % 4) % 4))
+/-- The byte, of those of the state, that ShiftRows and InvShiftRows move to byte `i`. -/
+def srSrc (i : Nat) : Nat := i % 4 + 4 * ((i / 4 + i % 4) % 4)
+def isrSrc (i : Nat) : Nat := i % 4 + 4 * ((i / 4 + 4 - i % 4) % 4)
 
-/-- InvShiftRows: byte `t` of the result is byte `t mod 4 + 4 ((t / 4 + 4 - t mod 4) mod 4)`. -/
-def invSrIdx : BitVec 128 :=
-  ofVBytes fun t => BitVec.ofNat 8 (t % 4 + 4 * ((t / 4 + 4 - t % 4) % 4))
+/-- The byte a row further down the column of byte `i`. -/
+def down1 (i : Nat) : Nat := (i % 4 + 1) % 4 + 4 * (i / 4)
 
-/-- The next row of each column: byte `t` of the result is byte `4 ⌊t / 4⌋ + (t + 1) mod 4`. -/
-def rotIdx : BitVec 128 := ofVBytes fun t => BitVec.ofNat 8 (4 * (t / 4) + (t + 1) % 4)
+def srIdx : BitVec 128 := idx srSrc
+def srRotIdx : BitVec 128 := idx fun i => srSrc (down1 i)
+def isrIdx : BitVec 128 := idx isrSrc
+def rotIdx : BitVec 128 := idx down1
 
-/-- A `tbl` of each of the words `P 0 … P 7`, in place, by the indices in `idxR`. -/
-def tbls (P : Nat → VReg) : List Instr := (List.range 8).map fun j => .vop (.tbl (P j) (P j) idxR)
+/-- The indices' offsets. -/
+def srOff : Nat := 64
+def srRotOff : Nat := 80
+def isrOff : Nat := 96
+def rotOff : Nat := 112
 
-/-- The bytes of each of the words `P 0 … P 7` permuted by the indices `c`. -/
-def permBytes (P : Nat → VReg) (c : BitVec 128) : List Instr := const128 idxR c ++ tbls P
+/-! ## The layers -/
 
-/-- Output word `j` of MixColumns, in `A j`, which holds `rⱼ`; `B k` holds `uₖ`. -/
-def mcOut (j : Nat) : List Instr :=
-  [veor (A j) (A j) (B ((j + 7) % 8))] ++
-  (if j = 1 ∨ j = 3 ∨ j = 4 then [veor (A j) (A j) (B 7)] else []) ++
-  [.vop (.rev .rev32h tmp (B j)), veor (A j) (A j) tmp]
+/-- `P j := ` the `tbl` of `P j` by the indices at `off`. -/
+def permute (off : Nat) (P : Nat → VReg) : List Instr :=
+  .ldrq .v24 sb off :: (List.range 8).map fun j => .vop (.tbl (P j) (P j) .v24)
 
-/-- MixColumns, from the state in `B 0 … B 7` to `A 0 … A 7`, with `rotIdx` in `idxR`. -/
+/-- The bytes a row down added to the slices in `B j`, which become `b`, and
+in `A j` those bytes plus `b` two rows down. -/
+def mcHalf (j : Nat) : List Instr :=
+  [veor (B j) (B j) (A j), .vop (.rev .rev32h .v26 (B j)), veor (A j) (A j) .v26]
+
+/-- Twice `b` added to `A j`. -/
+def mcDouble : List Instr :=
+  [veor (A 0) (A 0) (B 7), veor (A 1) (A 1) (B 0), veor (A 1) (A 1) (B 7), veor (A 2) (A 2) (B 1),
+   veor (A 3) (A 3) (B 2), veor (A 3) (A 3) (B 7), veor (A 4) (A 4) (B 3), veor (A 4) (A 4) (B 7),
+   veor (A 5) (A 5) (B 4), veor (A 6) (A 6) (B 5), veor (A 7) (A 7) (B 6)]
+
+/-- ShiftRows and MixColumns, by the indices `srRotIdx` in `v24` and `srIdx` in `v25`. -/
 def mcCore : List Instr :=
-  ((List.range 8).flatMap fun j => [.vop (.tbl (A j) (B j) idxR), veor (B j) (B j) (A j)]) ++
-  (List.range 8).flatMap mcOut
+  (List.range 8).flatMap (fun j =>
+    ([.vop (.tbl (A j) (B j) .v24), .vop (.tbl (B j) (B j) .v25)] : List Instr) ++ mcHalf j) ++
+  mcDouble
 
-/-- MixColumns: from the state in `B 0 … B 7` to `A 0 … A 7`. -/
-def mixColumns : List Instr := const128 idxR rotIdx ++ mcCore
+/-- ShiftRows and MixColumns, from `B j` to `A j`: with `t` the bytes a row
+down and `b = a + t`, the result is `2 b + t` plus `b` two rows down. -/
+def shiftMix : List Instr := [.ldrq .v24 sb srRotOff, .ldrq .v25 sb srOff] ++ mcCore
 
-/-- Each column times `{04}x² + {05}` (`Inv.lean`'s `invMcPre`), in place in
-`B 0 … B 7`: with `uⱼ = qⱼ ⊕ (qⱼ rotated by two bytes)` in `A j`,
-`qⱼ ⊕= ({04} • u)ⱼ`. -/
-def invMcPre : List Instr :=
-  ((List.range 8).flatMap fun j => [.vop (.rev .rev32h (A j) (B j)), veor (A j) (A j) (B j)]) ++
-  ((List.range 8).flatMap fun j => (times4 j).map fun k => veor (B j) (B j) (A k))
+/-- InvMixColumns is MixColumns of `a + 4 (a + a₂)`, where `a₂` is `a` two
+rows down, as `{0e}, {0b}, {0d}, {09}` is `{02}, {03}, {01}, {01}` times
+`{05}, {00}, {04}, {00}`: the latter product. -/
+def imcPre : List Instr :=
+  (List.range 8).flatMap (fun j => ([.vop (.rev .rev32h .v26 (B j)), veor (A j) (B j) .v26] : List Instr)) ++
+  [veor .v26 (A 6) (A 7), veor (B 0) (B 0) (A 6), veor (B 1) (B 1) .v26, veor (B 2) (B 2) (A 0),
+   veor (B 2) (B 2) (A 7), veor (B 3) (B 3) (A 1), veor (B 3) (B 3) (A 6), veor (B 4) (B 4) (A 2),
+   veor (B 4) (B 4) .v26, veor (B 5) (B 5) (A 3), veor (B 5) (B 5) (A 7), veor (B 6) (B 6) (A 4),
+   veor (B 7) (B 7) (A 5)]
 
-/-- InvMixColumns, from the state in `B 0 … B 7` to `A 0 … A 7`: MixColumns after `invMcPre`. -/
-def invMixColumns : List Instr := const128 idxR rotIdx ++ (invMcPre ++ mcCore)
+/-- InvMixColumns, by the indices `rotIdx` in `v24`. -/
+def imcCore : List Instr :=
+  imcPre ++ (List.range 8).flatMap (fun j => (Instr.vop (.tbl (A j) (B j) .v24)) :: mcHalf j) ++ mcDouble
 
-/-- AddRoundKey of the words `P 0 … P 7`, with the bitsliced round key at `kp`. -/
+/-- InvMixColumns, from `B j` to `A j`. -/
+def invMix : List Instr := .ldrq .v24 sb rotOff :: imcCore
+
+/-- AddRoundKey, with the round key at `kp`. -/
 def addRoundKey (P : Nat → VReg) : List Instr :=
-  (List.range 8).flatMap fun j => [.ldrq tmp kp (16 * j), veor (P j) (P j) tmp]
-
-/-! ## Eight blocks -/
-
-/-- Store a public byte permutation as two immediate words. -/
-def storeIndex (off : Nat) (v : BitVec 128) : List Instr :=
-  VG.Impl.Tbl.AArch64.const64 .x6 (v.extractLsb' 0 64) ++
-    VG.Impl.Tbl.AArch64.const64 .x7 (v.extractLsb' 64 64) ++ [.stp .x6 .x7 sb off]
-
-/-- The unused gap between the S-box spills and the expanded round keys holds
-the ShiftRows and MixColumns byte indices for repeated encryption rounds. -/
-def saveRoundIndices : List Instr :=
-  storeIndex 96 srIdx ++ storeIndex 112 rotIdx
-
-def roundIndex (cached : Bool) (offset : Nat) (value : BitVec 128) : List Instr :=
-  if cached then [.ldrq idxR sb offset] else const128 idxR value
-
-/-- A middle round, with `kp` at the previous round key. -/
-def roundBodyUsing (cached : Bool) : List Instr :=
-  ([.addImm .x kp kp 128] : List Instr) ++ sboxCode ++ (roundIndex cached 96 srIdx ++ tbls B) ++ (roundIndex cached 112 rotIdx ++ mcCore) ++
-  addRoundKey A ++ ([.subImm .x cnt cnt 1] : List Instr)
-
-/-- The last round. -/
-def lastRoundUsing (cached : Bool) : List Instr :=
-  ([.addImm .x kp kp 128] : List Instr) ++ sboxCode ++ (roundIndex cached 96 srIdx ++ tbls B) ++ addRoundKey B
-
-/-- Encrypt the eight blocks in `A 0 … A 7`, into `B 0 … B 7`. -/
-def encrypt8Using (cached : Bool) : Prog isa :=
-  .seq (.block (bitslice A ++ ([.addImm .x kp sb 128, .subImm .x cnt .x1 1] : List Instr) ++
-      addRoundKey A))
-    (.seq (.loop (.block (roundBodyUsing cached)) (.nonzero .x cnt)) (.block (lastRoundUsing cached ++ bitslice B)))
-
-abbrev roundBody := roundBodyUsing false
-abbrev lastRound := lastRoundUsing false
-abbrev encrypt8 := encrypt8Using false
-
-/-- A middle round of the inverse cipher, with `kp` at the next round key. -/
-def invRoundBody : List Instr :=
-  ([.subImm .x kp kp 128] : List Instr) ++ permBytes A invSrIdx ++ invSboxCode ++ addRoundKey B ++
-  invMixColumns ++ ([.subImm .x cnt cnt 1] : List Instr)
-
-/-- The last round of the inverse cipher, with round key 0. -/
-def invLastRound : List Instr :=
-  ([.subImm .x kp kp 128] : List Instr) ++ permBytes A invSrIdx ++ invSboxCode ++ addRoundKey B
-
-/-- Decrypt the eight blocks in `A 0 … A 7`, into `B 0 … B 7`. -/
-def decrypt8 : Prog isa :=
-  .seq (.block (bitslice A ++
-      ([.lsl .x kp .x1 7, .add .x kp kp sb, .addImm .x kp kp 128, .subImm .x cnt .x1 1] : List Instr) ++
-      addRoundKey A))
-    (.seq (.loop (.block invRoundBody) (.nonzero .x cnt)) (.block (invLastRound ++ bitslice B)))
+  (List.range 8).flatMap fun j => [.ldrq .v24 kp (16 * j), veor (P j) (P j) .v24]
 
 /-! ## The round keys -/
 
-/-- `2ʲ` in every byte of `B j`. -/
-def keyMask (j : Nat) : List Instr :=
-  [.movz .w .x6 (BitVec.ofNat 16 (2 ^ j)) 0, .vop (.dup .b16 (B j) .x6)]
+/-- The table whose byte `i` is `ff` if bit `j` of `i` is set. -/
+def bitTab (j : Nat) : BitVec 128 := ofVBytes fun i => if i.testBit j then 0xFF else 0
 
-def keyMasks : List Instr := (List.range 8).flatMap keyMask
+def allBytes (b : BitVec 8) : BitVec 128 := ofVBytes fun _ => b
 
-/-- The masks, `x7 := ` where the first bitsliced round key goes, and
-`kp := rounds + 1`, the round keys left. -/
+/-- The vectors `keySetup` makes: the indices to their slots, `keyBody`'s
+tables and constants to `B j`. -/
+def idxSlots : List (Nat × BitVec 128) :=
+  [(srOff, srIdx), (srRotOff, srRotIdx), (isrOff, isrIdx), (rotOff, rotIdx)]
+
+def setIdx : List Instr := idxSlots.flatMap fun (o, v) => const128 .v0 v ++ [.strq .v0 sb o]
+
+/-- `keyBody`'s constants: the tables in `B 0 … B 3`, `0f` in every byte of
+`B 4`, `63` of `B 5`, and what the next round key has added in `B 6`. -/
+def keyConst : Nat → BitVec 128
+  | 0 => bitTab 0 | 1 => bitTab 1 | 2 => bitTab 2 | 3 => bitTab 3
+  | 4 => allBytes 0x0F | 5 => allBytes 0x63 | _ => 0
+
+def setKeyConsts : List Instr := (List.range 7).flatMap fun k => const128 (B k) (keyConst k)
+
+/-- The indices and constants, `x7` where the first round key's slices go,
+and the round keys left. -/
 def keySetup : List Instr :=
-  keyMasks ++ ([.addImm .x .x7 sb 128, .addImm .x kp .x1 1] : List Instr)
+  setIdx ++ (setKeyConsts ++ ([.addImm .x .x7 sb 128, .addImm .x kp .x1 1] : List Instr))
 
-/-- Word `j` of the round key in `v0`, to `[x7, #16j]`. -/
-def sliceWord (j : Nat) : List Instr :=
-  [vand .v1 .v0 (B j), .vop (.cmeq .b16 .v1 .v1 (B j)), .strq .v1 .x7 (16 * j)]
+/-- Slices `j` and `j + 4` of the round key whose bytes' halves are in `v1` and `v0`. -/
+def keySlices (j : Nat) : List Instr :=
+  [.vop (.tbl .v2 (B j) .v1), .strq .v2 .x7 (16 * j), .vop (.tbl .v3 (B j) .v0),
+   .strq .v3 .x7 (16 * (j + 4))]
 
-/-- Bitslice the round key at `x0` to `x7`, and step both on. -/
+/-- The slices of the round key at `x0`, to `x7`, and on to the next. -/
 def keyBody : List Instr :=
-  ([.ldrq .v0 .x0 0] : List Instr) ++ (List.range 8).flatMap sliceWord ++
-  ([.addImm .x .x0 .x0 16, .addImm .x .x7 .x7 128, .subImm .x kp kp 1] : List Instr)
+  ([.ldrq .v0 .x0 0, veor .v0 .v0 (B 6), vand .v1 .v0 (B 4), .vop (.shift .ushr .b16 .v0 .v0 4)] : List Instr) ++
+  ((List.range 4).flatMap keySlices ++
+  ([.vop (.mov (B 6) (B 5)), .addImm .x .x0 .x0 16, .addImm .x .x7 .x7 128, .subImm .x kp kp 1] : List Instr))
 
-/-! ## The blocks -/
+/-- The round keys' slices in the scratch buffer. -/
+def keys : Prog isa := .seq (.block keySetup) (.loop (.block keyBody) (.nonzero .x kp))
 
-/-- Load data blocks `k`, `k + 1`, … while there are blocks left (`x4`),
-`fuel + 1` at most, into `A k`, …. -/
+/-! ## Eight blocks -/
+
+/-- A middle round, the round key before its own at `kp`. -/
+def roundBody : List Instr :=
+  ([.addImm .x kp kp 128] : List Instr) ++ subBytes ++ shiftMix ++ addRoundKey A ++
+    ([.subImm .x cnt cnt 1] : List Instr)
+
+def lastRound : List Instr :=
+  ([.addImm .x kp kp 128] : List Instr) ++ subBytes ++ permute srOff B ++ addRoundKey B
+
+/-- The eight blocks in `A j` enciphered into `B j`. -/
+def encrypt8 : Prog isa :=
+  .seq (.block (ortho A ++ ([.addImm .x kp sb 128, .subImm .x cnt .x1 1] : List Instr) ++ addRoundKey A))
+    (.seq (.loop (.block roundBody) (.nonzero .x cnt)) (.block (lastRound ++ ortho B)))
+
+/-- A middle round of the inverse cipher, the round key after its own at `kp`. -/
+def invRoundBody : List Instr :=
+  ([.subImm .x kp kp 128] : List Instr) ++ permute isrOff A ++ invSubBytes ++ addRoundKey B ++ invMix ++
+    ([.subImm .x cnt cnt 1] : List Instr)
+
+def invLastRound : List Instr :=
+  ([.subImm .x kp kp 128] : List Instr) ++ permute isrOff A ++ invSubBytes ++ addRoundKey B
+
+/-- The eight blocks in `A j` deciphered into `B j`. -/
+def decrypt8 : Prog isa :=
+  .seq (.block (ortho A ++ ([.lsl .x kp .x1 7, .add .x kp kp sb, .addImm .x kp kp 128,
+      .subImm .x cnt .x1 1] : List Instr) ++ addRoundKey A))
+    (.seq (.loop (.block invRoundBody) (.nonzero .x cnt)) (.block (invLastRound ++ ortho B)))
+
+/-! ## Groups of blocks -/
+
+/-- Load the blocks `k`, `k + 1`, … at `x3` while there are blocks left
+(`x4`), `fuel + 1` at most. -/
 def loadFrom : Nat → Nat → Prog isa
   | 0, k => .block [.ldrq (A k) .x3 (16 * k)]
   | fuel + 1, k =>
     .seq (.block [.ldrq (A k) .x3 (16 * k), .subImm .x .x6 .x4 (k + 1)])
       (.ite (.nonzero .x .x6) (loadFrom fuel (k + 1)) (.block []))
 
-/-- Store `B k`, … to the data blocks `k`, `k + 1`, … while there are blocks left. -/
+/-- Store the results `k`, `k + 1`, … the same way. -/
 def storeFrom : Nat → Nat → Prog isa
   | 0, k => .block [.strq (B k) .x3 (16 * k)]
   | fuel + 1, k =>
@@ -237,25 +227,20 @@ def advance : Prog isa :=
     (.ite (.nonzero .x .x6) (.block [.addImm .x .x3 .x3 128, .subImm .x .x4 .x4 8])
       (.block [.movz .x .x4 0 0]))
 
-/-- One group of (up to) eight blocks, through `crypt8`. -/
+/-- One group of (up to) eight blocks. -/
 def group (crypt8 : Prog isa) : Prog isa :=
   .seq (loadFrom 7 0) (.seq crypt8 (.seq (storeFrom 7 0) advance))
 
-/-- The whole function, around `crypt8`: after `blocksSetup` (the scratch
-buffer to `x5`, the number of blocks to `x4`, the data to `x3`). -/
 def blocks (crypt8 : Prog isa) : Prog isa :=
   .seq (.block blocksSetup)
     (.ite (.zero .x .x4) (.block [])
-      (.seq (.block keySetup)
-        (.seq (.loop (.block keyBody) (.nonzero .x kp)) (.loop (group crypt8) (.nonzero .x .x4)))))
+      (.seq keys (.loop (group crypt8) (.nonzero .x .x4))))
 
-/-- `vg_aes_encrypt_blocks_neon`: one to four blocks by vector permutations,
-one at a time, any other number of blocks bitsliced. -/
+/-- One to four blocks one at a time by vector permutations (`few`), any
+other number bitsliced. -/
 def encryptBlocks : Prog isa :=
   .seq (.block isFew) (.ite (.zero .x .x6) (few Vperm.core) (blocks encrypt8))
 
-/-- `vg_aes_decrypt_blocks_neon`: one to four blocks by vector permutations,
-one at a time, any other number of blocks bitsliced. -/
 def decryptBlocks : Prog isa :=
   .seq (.block isFew) (.ite (.zero .x .x6) (few Vperm.Dec.core) (blocks decrypt8))
 

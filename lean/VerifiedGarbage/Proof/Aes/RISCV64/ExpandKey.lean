@@ -21,9 +21,7 @@ public import VerifiedGarbage.TCB.Artifact
 /-!
 # The AES key expansion on RISC-V
 
-As on PPC64LE (`Proof/Aes/PPC64LE/ExpandKey.lean`): `subAll` (`toBs`, the
-S-box, `fromBs`) applies the S-box to every byte of the eight words
-(`subAll_wp`); each word of the schedule is a few scalar instructions around
+`subAll` applies the S-box to the four bytes of a word (`subAll_wp`); each word of the schedule is a few scalar instructions around
 it (`word_ok`), and the loop over the words keeps the schedule's bytes so far
 equal to the specification's (`WInv`). The key is copied a byte at a time
 (`Bytes.copyBytes_ok`), and the words of the schedule are loaded and stored a
@@ -80,50 +78,74 @@ theorem scr512_base (X : Addr) {n : Nat} (h : n + 7 ≤ 512) :
   have := pad_lt X
   exact Offset.sub_base X (by omega_using [h, this])
 
-theorem bsKs_slots : ∀ p ∈ bsKs, 52 ≤ p.1 ∧ p.1 < 58 := by decide
+/-- The mask of SubWord. -/
+def ekKs : List (Nat × BitVec 64) := ksOf bsSlot ekMasks
 
-/-- The masks of the transposes, outside the first 320 bytes. -/
-theorem ctx_bsKs {s₀ s : State} (hm : MasksAt s₀.mem (s₀.gpr sb) bsKs) (hc : Ctx s₀ s) :
-    MasksAt s.mem (s.gpr sb) bsKs := by
+def ekCfg : Cfg := { base := sb, slots := 0, ext := sb, exts := 53 }
+
+theorem ekKs_slots : ∀ p ∈ ekKs, 52 ≤ p.1 ∧ p.1 < 58 := by decide
+
+/-- The mask, outside the first 320 bytes. -/
+theorem ctx_ekKs {s₀ s : State} (hm : MasksAt s₀.mem (s₀.gpr sb) ekKs) (hc : Ctx s₀ s) :
+    MasksAt s.mem (s.gpr sb) ekKs := by
   intro k v hk
-  have := bsKs_slots _ hk
+  have := ekKs_slots _ hk
   rw [hc.base, slot_kept hc.frame (by omega) (by omega)]
   exact hm k v hk
 
 /-! ## The S-box on every byte -/
 
-/-- The four states that the words hold, as `InRel` relates them. -/
-def stOf (Q : Nat → BitVec 64) (b : Nat) : Spec.Aes.State :=
-  Vector.ofFn fun i => (Q (b + 4 * (i.1 / 8))).extractLsb' (8 * (i.1 % 8)) 8
+/-- The word's bits at the positions the S-box is wanted at, slice by slice. -/
+def subInT (j p : Nat) : List (Nat × Nat) := if p + j < 64 then [(0, p + j)] else []
 
-theorem inRel_stOf (Q : Nat → BitVec 64) : InRel Q (stOf Q) := by
-  intro b hb i hi j hj
-  rw [getD_eq _ hi, stOf, Vector.getElem_ofFn, BitVec.getLsbD_extractLsb']
-  simp [hj]
+/-- The result: bit `j` of byte `t` from slice `j`. -/
+def subOutG (p : Nat) : List Nat := if p < 32 then [64 * (p % 8) + 8 * (p / 8)] else []
 
-theorem subAll_wp {s : State} {X : Addr} (hs : Scr s X 512) (hm : MasksAt s.mem (s.gpr sb) bsKs)
+theorem subIn_check :
+    check (lanes 64 9) ekCfg (kExt ekKs) subIn (linEnv qIns) (linPost 9 (qOuts (flat subInT))) = true := by
+  decide +kernel
+
+theorem subOut_check :
+    check (lanes 64 9) ekCfg (kExt ekKs) subOut (linEnv qIns) (linPost 9 [(q 0, subOutG)]) = true := by
+  decide +kernel
+
+theorem subOut_ok {s : State} (hok : Ok ekCfg s) (hm : MasksAt s.mem (s.gpr sb) ekKs) :
+    ∃ s', runBlock isa subOut s = some s' ∧
+      (∀ p < 32, (Q s' 0).getLsbD p = (Q s (p % 8)).getLsbD (8 * (p / 8))) ∧ Rest ekCfg s s' := by
+  obtain ⟨s', hs', hout, hrd, hwr, hsp, hoth, hfr⟩ := linear_ok subOut_check hok (Q s) (fun r i hi => by
+    obtain ⟨j, hj, he⟩ := List.mem_map.mp hi
+    obtain ⟨rfl, rfl⟩ := Prod.mk.injEq .. ▸ he
+    have hj := List.mem_range.mp hj
+    exact ⟨by omega_arith, rfl⟩) (kExt_rel hm)
+  refine ⟨s', hs', fun p hp => ?_, hrd, hwr, hsp,
+    fun r hr => hoth r (keepsRest_ok (by decide +kernel) r hr), hfr⟩
+  rw [hout (q 0) subOutG (List.mem_singleton_self _) p (by omega_arith), subOutG, ite_eq_left hp,
+    xorBits_cons, xorBits_nil, Bool.xor_false, bitOf_word _ _ _ (by omega_arith)]
+
+theorem subAll_wp {s : State} {X : Addr} (hs : Scr s X 512) (hm : MasksAt s.mem (s.gpr sb) ekKs)
     {P : State → Prop}
-    (h : ∀ s', (∀ k < 8, ∀ t < 8, (Q s' k).extractLsb' (8 * t) 8 = sbox ((Q s k).extractLsb' (8 * t) 8)) →
+    (h : ∀ s', (∀ t < 4, (Q s' 0).extractLsb' (8 * t) 8 = sbox ((Q s 0).extractLsb' (8 * t) 8)) →
       Ctx s s' → s'.gpr kp = s.gpr kp → P s') :
     WP isa (.block subAll) s P := by
   simp only [subAll]
   repeat rw [WP.block_append_iff (M := isa)]
-  refine layer_wp (toBs_ok (hs.okExts rfl rfl rfl (by decide) (by decide)) hm) rfl (by decide)
+  refine layer_wp (lin_ok subIn_check (by decide +kernel) (by decide +kernel) (by decide)
+    (hs.okExts rfl rfl rfl (by decide) (by decide)) (Q s) (fun _ _ => rfl) (kExt_rel hm)) rfl (by decide)
     (Ctx.refl s) fun s₁ c₁ h₁ k₁ => ?_
   refine layer_wp (sbox_ok ((c₁.scr hs).okSlots rfl rfl rfl (by decide) (by decide))) rfl
     (by decide) c₁ fun s₂ c₂ h₂ k₂ => ?_
-  refine layer_wp (fromBs_ok ((c₂.scr hs).okExts rfl rfl rfl (by decide) (by decide))
-    (ctx_bsKs hm c₂)) rfl (by decide) c₂ fun s₃ c₃ h₃ k₃ => ?_
-  obtain hin := in_of_bs h₃ (bs_subBytes h₂ (bs_of_in h₁ (inRel_stOf (Q s))))
-  refine h s₃ (fun k hk t ht => ?_) c₃ (k₃.trans (k₂.trans k₁))
-  refine byte_ext fun j hj => ?_
-  have := hin (k % 4) (by omega_arith) (t + 8 * (k / 4)) (by omega_arith) j hj
-  rw [show k % 4 + 4 * ((t + 8 * (k / 4)) / 8) = k by omega_arith,
-    show 8 * ((t + 8 * (k / 4)) % 8) + j = 8 * t + j by omega_arith] at this
-  rw [BitVec.getLsbD_extractLsb', decide_eq_true hj, Bool.true_and, this, getD_eq _ (by omega_arith)]
-  simp only [subBytes, Vector.getElem_map, stOf, Vector.getElem_ofFn]
-  rw [show k % 4 + 4 * ((t + 8 * (k / 4)) / 8) = k by omega_arith,
-    show (t + 8 * (k / 4)) % 8 = t by omega_arith]
+  refine layer_wp (subOut_ok ((c₂.scr hs).okExts rfl rfl rfl (by decide) (by decide))
+    (ctx_ekKs hm c₂)) rfl (by decide) c₂ fun s₃ c₃ h₃ k₃ => ?_
+  refine h s₃ (fun t ht => byte_ext fun j hj => ?_) c₃ (k₃.trans (k₂.trans k₁))
+  rw [BitVec.getLsbD_extractLsb', decide_eq_true hj, Bool.true_and, h₃ _ (by omega_arith),
+    show (8 * t + j) % 8 = j by omega_arith, show (8 * t + j) / 8 = t by omega_arith]
+  rw [h₂ j hj _ (by omega_arith)]
+  congr 2
+  refine byte_ext fun i hi => ?_
+  rw [getLsbD_bsByte _ _ hi, h₁ i hi _ (by omega_arith), BitVec.getLsbD_extractLsb', decide_eq_true hi,
+    Bool.true_and]
+  simp only [subInT, show 8 * t + i < 64 by omega_arith, ite_true, termsXor, List.foldr_cons,
+    List.foldr_nil, Bool.xor_false]
 
 /-! ## Bytes -/
 
@@ -349,7 +371,7 @@ structure WInv (s₀ : State) (S X : Addr) (g : Reg → BitVec 64) (kl : List By
   wr : s.wr = s₀.wr
   sched : ∀ k < 4 * i, s.mem (S + BitVec.ofNat 64 k) = (kw kl nk (k / 4)).getD (k % 4) 0
   rc : s.mem.readW (rcAddr (rb X)) 64 = rcW ((i - 1) / nk)
-  masks : MasksAt s.mem (rb X) bsKs
+  masks : MasksAt s.mem (rb X) ekKs
   saved : Spill.Saved (rb X) g savedOffs s.mem
   frame : Frame [⟨S, 240⟩, ⟨X, 512⟩] s₀.mem s.mem
 
@@ -386,9 +408,9 @@ theorem slot_mid (b : Addr) {k : Nat} (h1 : 40 ≤ k) (h2 : k < 58) :
   · exact Offset.disjoint (d := 8 * k) (e := 8 * 58) b (by omega_using [h2]) (by omega_using [h2]) (by omega_using [])
 
 theorem masks_mid {m m' : Mem} {b : Addr} (hf : Frame [⟨b, 320⟩, ⟨rcAddr b, 8⟩] m m')
-    (h : MasksAt m b bsKs) : MasksAt m' b bsKs := by
+    (h : MasksAt m b ekKs) : MasksAt m' b ekKs := by
   intro k v hk
-  have := bsKs_slots _ hk
+  have := ekKs_slots _ hk
   rw [← h k v hk]
   exact hf.readW (r := ⟨wordAddr b k, 8⟩) (by simp [Region.Contains]) (slot_mid b (by omega) (by omega))
     (by decide)
@@ -415,7 +437,7 @@ theorem rot_wp {s₀ : State} {S X : Addr} {g : Reg → BitVec 64} {kl : List By
   obtain hlen := kw_length hs.len (by omega_arith) (i - 1)
   simp only [rotWordStep]
   rw [WP.block_append_iff (M := isa)]
-  obtain hm₁ : MasksAt s₁.mem (s₁.gpr sb) bsKs := by rw [m₁, hsc.base]; exact hi.masks
+  obtain hm₁ : MasksAt s₁.mem (s₁.gpr sb) ekKs := by rw [m₁, hsc.base]; exact hi.masks
   refine subAll_wp hsc hm₁ fun s₂ h₂ c₂ k₂ => ?_
   refine rotTail_wp (hsc.congr c₂.wr c₂.base) fun s₃ q₃ m₃ o₃ rd₃ wr₃ _ => ?_
   obtain hb₂ : s₂.gpr sb = rb X := c₂.base.trans hsc.base
@@ -427,7 +449,7 @@ theorem rot_wp {s₀ : State} {S X : Addr} {g : Reg → BitVec 64} {kl : List By
   refine ⟨fun t ht => ?_, fun r hr => ?_, rd₃.trans (c₂.rd.trans rd₁), wr₃.trans (c₂.wr.trans wr₁),
     ?_, ?_⟩
   · rw [q₃, rot_byte' _ _ ht, rot_byte _ _ ht, show s₂.gpr (q 0) = Q s₂ 0 from rfl,
-      h₂ 0 (by omega_arith) _ (by omega_arith), show Q s₁ 0 = s₁.gpr (q 0) from rfl,
+      h₂ _ (by omega_arith), show Q s₁ 0 = s₁.gpr (q 0) from rfl,
       hw _ (by omega_arith), rc₂, rcW_byte _ ht]
     simp only [kTemp, h0, ite_true]
     rw [xorWord_getD (by simp [subWord, rotWord_length hlen]) (by rfl) ht,
@@ -496,14 +518,14 @@ theorem temp_wp {s₀ : State} {S X : Addr} {g : Reg → BitVec 64} {kl : List B
       · -- `SUBWORD(temp)`.
         obtain h8 : nk = 8 := by simp at hb₅; omega_arith
         obtain sc₅ : Scr s₅ X 512 := hsc.congr (u₅.wr.trans u₄.wr) (g₅ _ (by decide))
-        obtain hm₅ : MasksAt s₅.mem (s₅.gpr sb) bsKs := by
+        obtain hm₅ : MasksAt s₅.mem (s₅.gpr sb) ekKs := by
           rw [u₅.mem, u₄.mem, m₁, sc₅.base]; exact hi.masks
         refine subAll_wp sc₅ hm₅ fun s₆ h₆ c₆ k₆ => ?_
         obtain f₆ : Frame [⟨rb X, 320⟩] s₅.mem s₆.mem := by have := c₆.frame; rwa [sc₅.base] at this
         rw [u₅.mem, u₄.mem, m₁] at f₆
         refine ⟨fun t ht => ?_, fun r hr => ?_, by rw [c₆.rd, u₅.rd, u₄.rd, rd₁],
           by rw [c₆.wr, u₅.wr, u₄.wr, wr₁], f₆.mono (by simp), ?_⟩
-        · rw [show s₆.gpr (q 0) = Q s₆ 0 from rfl, h₆ 0 (by omega_arith) _ (by omega_arith),
+        · rw [show s₆.gpr (q 0) = Q s₆ 0 from rfl, h₆ _ (by omega_arith),
             show Q s₅ 0 = s₁.gpr (q 0) by simp only [Q]; rw [g₅ _ (by decide)], hw _ ht]
           rw [kTemp, ite_eq_right h0, ite_eq_left (show nk > 6 ∧ i % nk = 4 by omega_arith),
             subWord_getD (by rw [hlen]; exact ht)]
@@ -540,11 +562,11 @@ theorem slot_sched {S X : Addr} (sep : Region.Disjoint ⟨S, 240⟩ ⟨X, 512⟩
 theorem sched_write {S X : Addr} (sep : Region.Disjoint ⟨S, 240⟩ ⟨X, 512⟩) {d n : Nat}
     (hd : d + n ≤ 240) {m m' : Mem} (hf : Frame [⟨S + BitVec.ofNat 64 d, n⟩] m m')
     {g : Reg → BitVec 64} :
-    (MasksAt m (rb X) bsKs → MasksAt m' (rb X) bsKs) ∧
+    (MasksAt m (rb X) ekKs → MasksAt m' (rb X) ekKs) ∧
       (Spill.Saved (rb X) g savedOffs m → Spill.Saved (rb X) g savedOffs m') ∧
       m'.readW (rcAddr (rb X)) 64 = m.readW (rcAddr (rb X)) 64 := by
   refine ⟨fun h k v hk => ?_, fun h => h.frame_in savedOffs_range hf fun r hr => ?_, ?_⟩
-  · have := bsKs_slots _ hk
+  · have := ekKs_slots _ hk
     rw [← h k v hk]
     exact hf.readW (r := ⟨wordAddr (rb X) k, 8⟩) (by simp [Region.Contains]) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
@@ -570,7 +592,7 @@ theorem store_facts {s₀ : State} {S X : Addr} {g : Reg → BitVec 64} {kl : Li
     (hm : Mid (rb X) kl nk i s s₂) :
     (∀ k < 4 * (i + 1), storeMem s₂ S nk i (S + BitVec.ofNat 64 k) = (kw kl nk (k / 4)).getD (k % 4) 0) ∧
     Frame [⟨S, 240⟩, ⟨X, 512⟩] s₀.mem (storeMem s₂ S nk i) ∧
-    Spill.Saved (rb X) g savedOffs (storeMem s₂ S nk i) ∧ MasksAt (storeMem s₂ S nk i) (rb X) bsKs ∧
+    Spill.Saved (rb X) g savedOffs (storeMem s₂ S nk i) ∧ MasksAt (storeMem s₂ S nk i) (rb X) ekKs ∧
     (storeMem s₂ S nk i).readW (rcAddr (rb X)) 64 = rcW (i / nk) := by
   have h3 := hs.nk3
   obtain hnk : 0 < nk := by omega_arith
@@ -770,7 +792,7 @@ structure CInv (s₀ : State) (S X P : Addr) (K : Nat) (g : Reg → BitVec 64) (
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
   copied : ∀ k < 8 * c, s.mem (S + BitVec.ofNat 64 k) = s₀.mem (P + BitVec.ofNat 64 k)
-  masks : MasksAt s.mem (rb X) bsKs
+  masks : MasksAt s.mem (rb X) ekKs
   saved : Spill.Saved (rb X) g savedOffs s.mem
   frame : Frame [⟨S, 240⟩, ⟨X, 512⟩] s₀.mem s.mem
 
@@ -783,7 +805,7 @@ structure CDone (s₀ : State) (S X P : Addr) (K : Nat) (g : Reg → BitVec 64) 
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
   copied : ∀ k < K, s.mem (S + BitVec.ofNat 64 k) = s₀.mem (P + BitVec.ofNat 64 k)
-  masks : MasksAt s.mem (rb X) bsKs
+  masks : MasksAt s.mem (rb X) ekKs
   saved : Spill.Saved (rb X) g savedOffs s.mem
   frame : Frame [⟨S, 240⟩, ⟨X, 512⟩] s₀.mem s.mem
 
@@ -887,7 +909,7 @@ theorem a1_setup {K : Nat} (hK : K = 16 ∨ K = 24 ∨ K = 32) :
 
 /-- What the round constant's store keeps. -/
 theorem rc_write {m m' : Mem} {b : Addr} {g : Reg → BitVec 64} (hf : Frame [⟨rcAddr b, 8⟩] m m') :
-    (MasksAt m b bsKs → MasksAt m' b bsKs) ∧
+    (MasksAt m b ekKs → MasksAt m' b ekKs) ∧
       (Spill.Saved b g savedOffs m → Spill.Saved b g savedOffs m') :=
   have hf' := hf.mono (rs' := [⟨b, 320⟩, ⟨rcAddr b, 8⟩]) (by simp)
   ⟨masks_mid hf', saved_mid hf'⟩
@@ -960,7 +982,7 @@ theorem wordSetup_wp {s₀ : State} {S X P : Addr} {K : Nat} {g : Reg → BitVec
 theorem prologue_wp {s₀ : State} {S X P : Addr} {K : Nat} (hs : CSetup s₀ S X P K)
     (hS : s₀.gpr .a2 = S) (hB : s₀.gpr .a3 = X) (hP : s₀.gpr .a0 = P)
     (hKr : s₀.gpr .a1 = BitVec.ofNat 64 K) :
-    WP isa (.block ([movR sb .a3] ++ roundSb ++ saveRegs ++ storeMasks bsSlot bsMasks ++
+    WP isa (.block ([movR sb .a3] ++ roundSb ++ saveRegs ++ storeMasks bsSlot ekMasks ++
       [movR .a4 .a1])) s₀ fun s =>
       ∃ g, (∀ r ∈ RISCV64.preserved, g r = s₀.gpr r) ∧ CInv s₀ S X P K g 0 s := by
   have hK := hs.hK
@@ -993,11 +1015,11 @@ theorem prologue_wp {s₀ : State} {S X P : Addr} {K : Nat} (hs : CSetup s₀ S 
     rw [u₄.other r h1, g₃ r h2 h3, g₂', o₂ r h4, u₁.other r h4]
   obtain m₀₂ : s₂.mem = s₀.mem := by rw [m₂, u₁.mem]
   -- The frame of the slots written.
-  obtain dK : ∀ r ∈ ksRegions (rb X) (ksOf bsSlot bsMasks), ∃ r' ∈ [(⟨S, 240⟩ : Region), ⟨X, 512⟩],
+  obtain dK : ∀ r ∈ ksRegions (rb X) (ksOf bsSlot ekMasks), ∃ r' ∈ [(⟨S, 240⟩ : Region), ⟨X, 512⟩],
       Region.Sub r r' := fun r hr => by
     simp only [ksRegions, List.mem_map] at hr
     obtain ⟨⟨k, v⟩, hk, rfl⟩ := hr
-    have := bsKs_slots _ hk
+    have := ekKs_slots _ hk
     exact ⟨⟨X, 512⟩, by simp, scr512 X (d := 8 * k) (by simp only at this ⊢; omega_using [this])⟩
   obtain fr : Frame [⟨S, 240⟩, ⟨X, 512⟩] s₀.mem s₄.mem := by
     rw [u₄.mem]
@@ -1022,7 +1044,7 @@ theorem prologue_wp {s₀ : State} {S X P : Addr} {K : Nat} (hs : CSetup s₀ S 
     refine sv₂.frame_in savedOffs_range fm₃ fun r hr => ?_
     simp only [ksRegions, List.mem_map] at hr
     obtain ⟨⟨k, v⟩, hk, rfl⟩ := hr
-    have := bsKs_slots _ hk
+    have := ekKs_slots _ hk
     simp only at this ⊢
     exact Offset.disjoint (e := 8 * k) (rb X) (by omega_using [this]) (by omega_using []) (by omega_using [this])
 

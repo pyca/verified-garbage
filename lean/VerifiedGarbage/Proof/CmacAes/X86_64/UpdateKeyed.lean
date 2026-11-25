@@ -18,7 +18,6 @@ meta import VerifiedGarbage.Proof.CmacAes.X86_64.UpdateCorrect
 meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
 public import VerifiedGarbage.Proof.Aes.X86_64.Ctr32
 public import VerifiedGarbage.Impl.CmacAes.X86_64.Keyed
-import VerifiedGarbage.Proof.Aes.X86_64.Sse.Group
 import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Aes.X86_64.Ctr32
@@ -31,8 +30,7 @@ prologue and key loop, and leaves the bitsliced round keys in the scratch
 buffer (`keysX86_64`, `KeysIn`); `vg_aes_ctr32_keyed`
 (`Impl.CmacAes.X86_64.ctr32K`) is `vg_aes_ctr32` from them, without its key
 loop, and leaves them as they are (`ctr32KX86_64`). Both proofs are
-`vg_aes_ctr32`'s (`Proof/Aes/X86_64/Ctr32.lean`, `core`), split where the key
-loop ends; their contracts are only their caller's: they are internal
+`vg_aes_ctr32`'s, the key setup's (`keys_ok`) and the batches' (`loop_ok`); their contracts are only their caller's: they are internal
 functions.
 
 `updateK` bitslices the keys once and chains the blocks by calls of
@@ -50,11 +48,15 @@ namespace VG.Proof.CmacAes.X86_64
 
 open VG VG.X86_64 VG.X86_64.Straight VG.Impl.Aes.X86_64 VG.Proof.Aes.X86_64 VG.Impl.CmacAes.X86_64
 
-/-- The bitsliced round keys of the `R`-round schedule `w` in the scratch
-buffer `b`, the first at byte `lastKey - 64 R`, where `vg_aes_ctr32`'s key
-loop leaves them. -/
-abbrev KeysIn (m : Mem) (b : Addr) (R : Nat) (w : List Byte) : Prop :=
-  KeysAt m (b + BitVec.ofNat 64 (lastKey - 64 * R)) R w
+/-- The round keys of the `R`-round schedule `w` in slices, and the masks, in
+the scratch buffer `b`, as `Impl.Aes.X86_64.Sse.keys` leaves them. -/
+abbrev KeysIn (m : Mem) (b : Addr) (R : Nat) (w : List Byte) : Prop := Sse.Ready b R w m [] [⟨b, 1480⟩]
+
+theorem keysAt_frame {m m' : Mem} {b : Addr} {R : Nat} {w : List Byte} {rs : List Region} (hf : Frame rs m m')
+    (hd : ∀ r ∈ rs, Region.Disjoint ⟨b + BitVec.ofNat 64 144, 1232⟩ r) (h : KeysIn m b R w) : KeysIn m' b R w :=
+  h.frame hf fun r hr => ⟨(hd r hr).sub_left fun x hx => by
+      simp only [Region.Contains, Impl.Aes.X86_64.Sse.keysOff] at hx ⊢
+      bv_omega, (hd r hr).sub_left (Region.sub_prefix (by decide))⟩
 
 /-- The key schedule at `p` for `R` rounds, as bytes. -/
 abbrev schedAt (m : Mem) (p : Addr) (R : Nat) : List Byte := Spec.Aes.bytesAt m p (16 * (R + 1))
@@ -88,375 +90,45 @@ def ctr32KX86_64 : Contract isa where
 
 /-! ## `vg_aes_ctr32_keys` -/
 
-/-- The keys the loop leaves, at the addresses `KeysIn` names. -/
-theorem keysIn_of_done {s₀ s : State} {b : Addr} {R : Nat} {w : List Byte} (hR : R ≤ 14)
-    (h : KDone s₀ b R w s) : KeysIn s.mem b R w := fun j hj =>
-  keyRel_congr (h.keys j hj) fun k _ => by
-    rw [keyAddr, BitVec.add_assoc, ← BitVec.ofNat_add, show lastKey - 64 * R + 64 * j =
-      lastKey - 64 * (R - j) by simp only [lastKey]; omega_arith]
-
 theorem keys_wp {s₀ : State} (hp : keysX86_64.pre s₀) :
     WP isa keys s₀ fun s' => gprPreserved s₀ s' ∧ keysX86_64.post s₀ s' := by
   obtain ⟨hrd, hwr, dSS, dRS, hR⟩ := hp
-  have hwSm : (⟨s₀.gpr .r9, 1480⟩ : Region) ∈ s₀.wr := by rw [hwr]; simp
-  have hwS : ScrIn (s₀.gpr .r9) s₀.wr := .of_mem hwSm (by decide) (by decide)
-  have hrS : (⟨s₀.gpr .rdi, 240⟩ : Region) ∈ s₀.rd := by rw [hrd]; simp
-  have dSS' := scr_pre dSS (Nat.le_refl _)
-  have dRS' := scr_pre dRS (Nat.le_refl _)
-  obtain hR14 : (s₀.gpr .rsi).toNat ≤ 14 := by omega_arith
-  unfold keys
-  refine WP.seq ?_
-  rw [WP.block_append_iff (M := isa)]
-  obtain ⟨s₁, h₁, sv₁, g₁, rd₁, wr₁, f₁⟩ := save_ok hwSm rfl (by decide)
-  refine WP.of_runBlock ⟨s₁, h₁, ?_⟩
-  obtain ⟨s₃, h₃, r15₃, rdi₃, rsi₃, o₃, m₃, rd₃, wr₃⟩ := keySetup_ok s₁
-  refine WP.of_runBlock ⟨s₃, h₃, ?_⟩
-  obtain hb₃ : s₃.gpr sb = s₀.gpr .r9 := by
-    rw [o₃ _ (by decide) (by decide) (by decide), g₁]; rfl
-  let R := (s₀.gpr .rsi).toNat
-  let w := Spec.Aes.bytesAt s₀.mem (s₀.gpr .rdi) (16 * (R + 1))
-  obtain hk : KSetup s₃ (s₀.gpr .r9) (s₀.gpr .rdi) R w :=
-    { scr := by rw [wr₃, wr₁]; exact hwS
-      base := hb₃
-      sch := List.mem_append_left _ (by rw [rd₃, rd₁]; exact hrS)
-      sep := dSS'
-      rounds := hR14
-      w := fun i hi => by
-        simp only [w, Spec.Aes.bytesAt, List.getD_eq_getElem?_getD, List.getElem?_map,
-          List.getElem?_range hi, Option.map_some, Option.getD_some]
-        rw [m₃]
-        refine (f₁.bytes (R := ⟨s₀.gpr .rdi, 240⟩) (fun r hr => ?_) (by simp) (by simp only; omega_arith)).symm
-        simp only [List.mem_singleton] at hr; subst hr
-        exact dSS'.sub_right (Region.sub_prefix (by decide)) }
-  obtain hi₃ : KInv s₃ (s₀.gpr .r9) (s₀.gpr .rdi) R w R s₃ :=
-    { hj := Nat.le_refl _
-      r15 := by rw [r15₃, g₁]; simp [R]
-      rdi := by rw [rdi₃, g₁]
-      rsi := by rw [rsi₃, g₁]; simp [keyAddr, sb]
-      rd := rfl
-      wr := rfl
-      keep := fun _ _ => rfl
-      frame := Frame.refl _ _
-      done := fun i h1 h2 => absurd h2 (by omega_arith) }
-  refine WP.seq (WP.mono (keyLoop_ok hk hi₃) fun s₄ d₄ => ?_)
-  obtain hb₄ : s₄.gpr sb = s₀.gpr .r9 := by rw [show sb = .r9 from rfl, d₄.keep .r9 (by decide)]; exact hb₃
-  obtain f₄ : Frame [⟨s₀.gpr .r9 + BitVec.ofNat 64 0, 384⟩, ⟨s₀.gpr .r9 + BitVec.ofNat 64 512, 960⟩]
-      s₁.mem s₄.mem := by rw [← m₃]; exact d₄.frame
-  obtain sv : Saved s₀ (s₀.gpr .r9) s₄.mem := by
-    refine saved_frame sv₁ f₄ fun r hr => ?_
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl
-    · exact Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith)
-    · exact Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith)
-  obtain ⟨s₅, h₅, rg₅, o₅, fR⟩ :=
-    restore_ok (by rw [d₄.wr, wr₃, wr₁]; exact hwSm) hb₄ (by decide) sv
-  refine WP.of_runBlock ⟨s₅, h₅, ?_⟩
-  obtain fsub : ∀ {x lx}, x + lx ≤ 1472 → Region.Sub ⟨s₀.gpr .r9 + BitVec.ofNat 64 x, lx⟩ ⟨s₀.gpr .r9, 1472⟩ :=
-    fun h => scr_sub _ h
-  obtain fAll : Frame [⟨s₀.gpr .r9, 1472⟩] s₀.mem s₅.mem := by
-    refine ((f₁.sub fun r hr => ?_).trans (f₄.sub fun r hr => ?_)).trans (fR.sub fun r hr => ?_)
-    · simp only [List.mem_singleton] at hr; subst hr
-      exact ⟨_, List.mem_singleton_self _, Region.sub_prefix (by decide)⟩
-    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl <;> exact ⟨_, List.mem_singleton_self _, fsub (by omega_arith)⟩
-    · simp only [List.mem_singleton] at hr; subst hr
-      exact ⟨_, List.mem_singleton_self _, Region.sub_prefix (by decide)⟩
-  obtain rsp₅ : s₅.gpr .rsp = s₀.gpr .rsp := by
-    rw [o₅ _ (fun i hi => by
-      rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 by omega_arith) with
-        rfl | rfl | rfl | rfl | rfl | rfl <;> decide), d₄.keep .rsp (by decide),
-      o₃ _ (by decide) (by decide) (by decide), g₁]
-  refine ⟨⟨fun r hr => ?_, ?_⟩, ?_⟩
-  · simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
-    · exact rg₅ 0 (by omega_arith)
-    · exact rg₅ 1 (by omega_arith)
-    · exact rsp₅
-    · exact rg₅ 2 (by omega_arith)
-    · exact rg₅ 3 (by omega_arith)
-    · exact rg₅ 4 (by omega_arith)
-    · exact rg₅ 5 (by omega_arith)
-  · exact fAll.readW (Region.contains_self _ _) (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact dRS') (by decide)
-  · refine keysAt_frame hR14 fR (fun r hr => ?_) (keysIn_of_done hR14 d₄)
-    simp only [List.mem_singleton] at hr; subst hr
-    exact Offset.disjoint_base (d := 512) _ (by omega_arith) (by omega_arith)
+  refine WP.mono (Sse.keys_ok (b := s₀.gpr .r9) (sch := s₀.gpr .rdi) (nr := (s₀.gpr .rsi).toNat)
+    ⟨rfl, rfl, by simp, hR, .inr (by rw [hwr]; simp), by rw [hrd]; simp, dSS⟩) fun s' h => ⟨⟨fun r hr => h.gpr r ?_ ?_ ?_, ?_⟩, ?_⟩
+  any_goals
+    simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
+  · exact h.frame.readW (r := ⟨s₀.gpr .rsp, 8⟩) (Region.contains_self _ _) (fun r hr => by
+      rw [List.mem_singleton.mp hr]; exact dRS) (by decide)
+  · exact { h.ready with sc := .inr (by simp) }
 
 /-! ## `vg_aes_ctr32_keyed` -/
-
-theorem keyAt_ok (s : State) {R : Nat} (hR : (s.gpr .rsi).toNat = R) (hR14 : R ≤ 14) :
-    ∃ s', runBlock isa keyAt s = some s' ∧
-      s'.gpr .rdi = s.gpr .r9 + BitVec.ofNat 64 (lastKey - 64 * R) ∧
-      (∀ r, r ≠ .rax → r ≠ .rdi → s'.gpr r = s.gpr r) ∧
-      s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
-  refine ⟨_, by simp only [keyAt, runBlock_cons, runStep_some, exec, execShift, readSrc,
-    Option.map_some]; rfl, ?_⟩
-  simp only [State.setReg, arithFlags, State.setFlags]
-  refine ⟨?_, fun r h1 h2 => by simp [h1, h2], trivial, trivial, trivial⟩
-  have hsh : s.gpr .rsi <<< 6 = BitVec.ofNat 64 (64 * R) := by
-    apply BitVec.eq_of_toNat_eq
-    rw [BitVec.toNat_shiftLeft, Nat.shiftLeft_eq, hR, BitVec.toNat_ofNat]
-    omega_arith
-  simp only [ite_true, show Reg.rdi ≠ Reg.rax by decide, show Reg.rax ≠ Reg.rdi by decide,
-    show Reg.r9 ≠ Reg.rax by decide,
-    ite_false, lastKey, hsh, show BitVec.signExtend 64 (1408#32) = BitVec.ofNat 64 1408 by decide]
-  bv_omega
-
-theorem testR8_ok (s : State) :
-    ∃ s', runBlock isa [.alu .test .r8 (.reg .r8)] s = some s' ∧ s'.zf = some (s.gpr .r8 == 0) ∧
-      s'.gpr = s.gpr ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
-  refine ⟨_, by simp only [runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc,
-    Option.bind_some]; rfl, ?_⟩
-  simp only [arithFlags, State.setFlags]
-  exact ⟨by simp, trivial, trivial, trivial, trivial⟩
 
 theorem ctr32K_wp {s₀ : State} (hp₀ : ctr32KX86_64.pre s₀) :
     WP isa ctr32K s₀ fun s' => gprPreserved s₀ s' ∧ ctr32KX86_64.post s₀ s' := by
   obtain ⟨hpS, hkeys⟩ := hp₀
   have hp : CPre false s₀ := CPre.ofS hpS
-  have hwC := hp.hwC
-  have hwD := hp.hwD
-  have hwS := hp.hwS
-  have dCS := hp.dCS
-  have dCD := hp.dCD
-  have dCX := hp.dCX
-  have dDS := hp.dDS
-  have dXS := hp.dXS
-  have hR := hp.hR
-  have n16 := hp.n16
-  obtain hR14 : (s₀.gpr .rsi).toNat ≤ 14 := by omega_arith
-  obtain ⟨sz, hsz, -, hwSm⟩ := hp.hwS
-  let R := (s₀.gpr .rsi).toNat
-  let w := Spec.Aes.bytesAt s₀.mem (s₀.gpr .rdi) (16 * (R + 1))
-  let b := s₀.gpr .r9
-  -- The prologue.
-  unfold ctr32K
-  refine WP.seq ?_
-  rw [WP.block_append_iff (M := isa), WP.block_append_iff (M := isa)]
-  obtain ⟨s₁, h₁, sv₁, g₁, rd₁, wr₁, f₁⟩ := save_ok hwSm rfl (by omega_arith)
-  refine WP.of_runBlock ⟨s₁, h₁, ?_⟩
-  obtain ⟨s₂, h₂, m₂, rdx₂, o₂, rd₂, wr₂⟩ :=
-    ctrSetup_ok (s := s₁) (b := s₀.gpr .r9) (ctr := s₀.gpr .rdx) (by rw [g₁]; rfl) (by rw [g₁])
-      (wr₁ ▸ hwS) (wr₁ ▸ hwC)
-  refine WP.of_runBlock ⟨s₂, h₂, ?_⟩
-  obtain ⟨s₃, h₃, rdi₃, o₃, m₃, rd₃, wr₃⟩ :=
-    keyAt_ok s₂ (R := R) (by rw [o₂ _ (by decide) (by decide), g₁]) hR14
-  refine WP.of_runBlock ⟨s₃, h₃, ?_⟩
-  obtain g₃ : ∀ r, r ≠ .rax → r ≠ .rdx → r ≠ .rdi → s₃.gpr r = s₀.gpr r :=
-    fun r h1 h2 h3 => by rw [o₃ r h1 h3, o₂ r h1 h2, g₁]
-  obtain hb₃ : s₃.gpr .r9 = s₀.gpr .r9 := g₃ _ (by decide) (by decide) (by decide)
-  obtain fS : Frame [⟨s₀.gpr .r9 + BitVec.ofNat 64 (8 * 54), 20⟩, ⟨s₀.gpr .rdx, 16⟩] s₁.mem s₃.mem := by
-    rw [m₃, m₂, g₁]; exact setup_frame dCS
-  obtain f₀₃ : Frame [⟨s₀.gpr .r9, 1472⟩, ⟨s₀.gpr .rdx, 16⟩] s₀.mem s₃.mem := by
-    refine (f₁.sub fun r hr => ⟨⟨s₀.gpr .r9, 1472⟩, by simp, ?_⟩).trans (fS.sub fun r hr => ?_)
-    · simp only [List.mem_singleton] at hr; subst hr; exact Region.sub_prefix (by omega_arith)
-    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl
-      · exact ⟨⟨s₀.gpr .r9, 1472⟩, by simp, scr_sub _ (by omega_arith)⟩
-      · exact ⟨⟨s₀.gpr .rdx, 16⟩, by simp, sub_refl _⟩
-  obtain hw₃ : ScrIn (s₀.gpr .r9) s₃.wr := by rw [wr₃, wr₂, wr₁]; exact hwS
-  -- ShiftRows' masks and the test.
-  refine WP.seq ?_
-  rw [WP.block_append_iff (M := isa)]
-  obtain ⟨s₄, h₄, mk₄, fm₄, g₄, rd₄, wr₄⟩ := Sse.srSetup_ok (s := s₃) (b := s₀.gpr .r9) hb₃ hw₃
-  refine WP.of_runBlock ⟨s₄, h₄, ?_⟩
-  obtain ⟨s₅, h₅, z₅, g₅, m₅, rd₅, wr₅⟩ := testR8_ok s₄
-  refine WP.of_runBlock ⟨s₅, h₅, ?_⟩
-  obtain g₅' : ∀ r, r ≠ .rax → s₅.gpr r = s₃.gpr r := fun r h => by rw [g₅, g₄ r h]
-  obtain r8₅ : s₅.gpr .r8 = s₀.gpr .r8 := by rw [g₅' _ (by decide), g₃ _ (by decide) (by decide) (by decide)]
-  obtain rsp₅ : s₅.gpr .rsp = s₀.gpr .rsp := by
-    rw [g₅' _ (by decide), g₃ _ (by decide) (by decide) (by decide)]
-  obtain hb₅ : s₅.gpr sb = s₀.gpr .r9 := by rw [show sb = .r9 from rfl, g₅' _ (by decide)]; exact hb₃
-  obtain hK0 : s₅.gpr .rdi = s₀.gpr .r9 + BitVec.ofNat 64 (lastKey - 64 * R) := by
-    rw [g₅' _ (by decide), rdi₃, o₂ _ (by decide) (by decide), g₁]
-  obtain fm : Frame [⟨s₀.gpr .r9 + BitVec.ofNat 64 Sse.srOff, 32⟩] s₃.mem s₅.mem := by rw [m₅]; exact fm₄
-  obtain md : ∀ {x lx}, x + lx ≤ 464 → ∀ r ∈ [(⟨s₀.gpr .r9 + BitVec.ofNat 64 Sse.srOff, 32⟩ : Region)],
-      Region.Disjoint ⟨s₀.gpr .r9 + BitVec.ofNat 64 x, lx⟩ r := by
-    intro x lx h r hr
-    simp only [List.mem_singleton] at hr; subst hr
-    exact Offset.disjoint _ (by simp only [Sse.srOff]; omega_arith) (by omega_arith) (by simp [Sse.srOff])
-  obtain cd : ∀ {x lx}, x + lx ≤ 16 → ∀ r ∈ [(⟨s₀.gpr .r9, 8 * 54⟩ : Region)],
-      Region.Disjoint ⟨s₀.gpr .rdx + BitVec.ofNat 64 x, lx⟩ r := by
-    intro x lx h r hr
-    simp only [List.mem_singleton] at hr; subst hr
-    exact (dCS.sub_right (Region.sub_prefix (by omega_arith))).sub_left (Offset.sub_base _ h)
-  obtain ⟨sl₁, sl₂, sl₃⟩ := setup_slots (m := s₁.mem) (N := s₁.gpr .r8) dCS
-  rw [← m₂, ← m₃] at sl₁ sl₂ sl₃
-  obtain clo₅ : cloW s₅.mem (s₀.gpr .r9) = s₀.mem.readW (s₀.gpr .rdx) 64 := by
-    rw [cloW, fm.readW (Region.contains_self _ _) (md (by omega_arith)) (by decide), ← cloW, sl₁,
-      f₁.readW (Region.contains_self _ _) (cd (by omega_arith)) (by decide)]
-    simp
-  obtain chi₅ : chiW s₅.mem (s₀.gpr .r9) = (s₀.mem.readW (s₀.gpr .rdx + BitVec.ofNat 64 8) 32).setWidth 64 := by
-    rw [chiW, fm.readW (Region.contains_self _ _) (md (by omega_arith)) (by decide), ← chiW, sl₂,
-      f₁.readW (Region.contains_self _ _) (cd (by omega_arith)) (by decide)]
-  obtain num₅ : numW s₅.mem (s₀.gpr .r9) = bswap32 (s₀.mem.readW (s₀.gpr .rdx + BitVec.ofNat 64 12) 32) := by
-    rw [numW, fm.readW (Region.contains_self _ _) (md (by omega_arith)) (by decide), ← numW, sl₃,
-      f₁.readW (Region.contains_self _ _) (cd (by omega_arith)) (by decide)]
-  -- The keys, as on entry.
-  obtain kS : Region.Sub ⟨s₀.gpr .r9 + 512, 960⟩ ⟨s₀.gpr .r9, 1472⟩ := scr_sub (x := 512) _ (by omega_arith)
-  obtain keys₅ : KeysIn s₅.mem (s₀.gpr .r9) R w := by
-    refine keysAt_frame hR14 fm (fun r hr => ?_) (keysAt_frame hR14 fS (fun r hr => ?_)
-      (keysAt_frame hR14 f₁ (fun r hr => ?_) hkeys))
-    · simp only [List.mem_singleton] at hr; subst hr
-      exact Offset.disjoint _ (by simp [Sse.srOff]) (by omega_arith) (by simp [Sse.srOff])
-    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl
-      · exact Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith)
-      · exact (dCS.sub_right kS).symm
-    · simp only [List.mem_singleton] at hr; subst hr
-      exact Offset.disjoint_base (d := 512) _ (by omega_arith) (by omega_arith)
-  let icb := Spec.Gcm.blockAt s₀.mem (s₀.gpr .rdx)
-  let n := (s₀.gpr .r8).toNat
-  obtain hs : GSetup false s₅ (s₀.gpr .r9) (s₀.gpr .rcx) (dOut false s₀) n R w icb :=
-    { scr := by rw [wr₅, wr₄]; exact hw₃
-      dat := by rw [wr₅, wr₄, wr₃, wr₂, wr₁]; exact hwD
-      src := by rw [rd₅, wr₅, rd₄, wr₄, rd₃, wr₃, rd₂, wr₂, rd₁, wr₁]; exact hp.hsrc
-      hn := n16
-      mode := hp.mode
-      sep := dDS
-      ssep := dXS
-      rounds := hR
-      keys := keys₅
-      lo := fun i hi j hj => by
-        rw [clo₅, readW_bit _ _ hi hj, Proof.Aes.blockAt_bit _ _ (by omega_arith) hj]
-      hi := fun i hi j hj => by
-        rw [chi₅, BitVec.getLsbD_setWidth, show 8 * (7 - i) + j = 8 * (15 - (8 + i)) + j by omega_arith,
-          Proof.Aes.blockAt_bit _ _ (by omega_arith) hj, BitVec.ofNat_add, ← BitVec.add_assoc,
-          Mem.readW_byte s₀.mem (s₀.gpr .rdx + BitVec.ofNat 64 8) hi, BitVec.getLsbD_extractLsb']
-        simp [hj, show 8 * i + j < 64 by omega_arith]
-      hi' := fun p hp => by
-        rw [chi₅, BitVec.getLsbD_setWidth]
-        simp [BitVec.getLsbD_of_ge _ _ hp] }
-  -- The data is as on entry.
-  obtain dd : ∀ r ∈ [(⟨s₀.gpr .r9, 1472⟩ : Region), ⟨s₀.gpr .rdx, 16⟩],
-      Region.Disjoint ⟨dOut false s₀, 16 * n⟩ r := by
-    intro r hr
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl
-    · exact dDS
-    · exact dCD.symm
-  obtain ds : ∀ r ∈ [(⟨s₀.gpr .r9, 1472⟩ : Region), ⟨s₀.gpr .rdx, 16⟩],
-      Region.Disjoint ⟨s₀.gpr .rcx, 16 * n⟩ r := by
-    intro r hr
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl
-    · exact dXS
-    · exact dCX.symm
-  obtain mfr : ∀ X : Addr, Region.Disjoint ⟨X, 16 * n⟩ ⟨s₀.gpr .r9, 1472⟩ →
-      ∀ r ∈ [(⟨s₀.gpr .r9 + BitVec.ofNat 64 Sse.srOff, 32⟩ : Region)], Region.Disjoint ⟨X, 16 * n⟩ r := by
-    intro X hX r hr
-    simp only [List.mem_singleton] at hr; subst hr
-    exact hX.sub_right (scr_sub _ (by simp [Sse.srOff]))
-  obtain data₅ : DataInv s₀.mem s₅.mem (s₀.gpr .rcx) (dOut false s₀) n 0 (keyStream R w icb) :=
-    dataInv_frame fm (mfr _ dDS) n16 (dataInv_frame f₀₃ dd n16 fun i hi => by simp)
-  obtain src₅ : SrcInv s₀.mem s₅.mem (s₀.gpr .rcx) n 0 :=
-    srcInv_frame fm (mfr _ dXS) n16 (srcInv_frame f₀₃ ds n16 fun i hi _ => rfl)
-  refine WP.seq (WP.mono (Q := GDone s₀.mem s₅ (s₀.gpr .r9) (s₀.gpr .rcx) (dOut false s₀) n R w icb) ?_
-    fun s₆ gd => ?_)
-  · refine WP.ite (s₀.gpr .r8 == 0) (by simp [X86_64.eval, z₅, g₄ .r8 (by decide), g₃ .r8 (by decide) (by decide)
-      (by decide)]) (fun h0 => ?_) (fun h0 => ?_)
-    · exact WP.block_nil ⟨hb₅, rfl, rfl, rfl, Frame.refl _ _, fun i hi => by
-        simp only [beq_iff_eq] at h0; simp [n, h0] at hi⟩
-    · have hn0 : n ≠ 0 := by
-        simp only [beq_eq_false_iff_ne, ne_eq] at h0
-        intro h; apply h0; exact BitVec.eq_of_toNat_eq (by simpa [n] using h)
-      refine Sse.groups_ok (to := false) hs (by rw [m₅]; exact mk₄)
-        ⟨by omega_arith, ?_, (fun h => by cases h), ?_, hb₅, hK0, rfl, rfl, rfl, Frame.refl _ _, ?_, data₅, src₅⟩
-      · rw [g₅' _ (by decide), o₃ _ (by decide) (by decide), rdx₂, g₁]; simp
-      · rw [r8₅]; simp [n]
-      · rw [num₅, icb_lo]; simp [icb]
-  -- The epilogue.
-  obtain sv : Saved s₀ (s₀.gpr .r9) s₆.mem := by
-    refine saved_frame (saved_frame (saved_frame sv₁ fS ?_) fm ?_) gd.frame ?_
-    · intro r hr
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl
-      · exact Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith)
-      · exact (dCS.sub_right (scr_sub _ (by omega_arith))).symm
-    · exact md (by omega_arith)
-    · intro r hr
-      simp only [gRegions, List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl
-      · exact (scr_disj _ (by omega_arith) (by omega_arith)).symm
-      · exact Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith)
-      · exact Offset.disjoint _ (by simp only [dSlot]; omega_arith) (by omega_arith) (by simp only [dSlot]; omega_arith)
-      · exact (dDS.sub_right (scr_sub _ (by omega_arith))).symm
-  obtain ⟨s₇, h₇, rg₇, o₇, fR⟩ :=
-    restore_ok (by rw [gd.wr, wr₅, wr₄, wr₃, wr₂, wr₁]; exact hwSm) gd.base (by omega_arith) sv
-  refine WP.of_runBlock ⟨s₇, h₇, ?_⟩
-  obtain fsub : ∀ {x lx}, x + lx ≤ 1472 → Region.Sub ⟨s₀.gpr .r9 + BitVec.ofNat 64 x, lx⟩ ⟨s₀.gpr .r9, 1472⟩ :=
-    fun h => scr_sub _ h
-  obtain fG : Frame [⟨s₀.gpr .rdx, 16⟩, ⟨dOut false s₀, 16 * n⟩, ⟨s₀.gpr .r9, 1472⟩] s₀.mem s₇.mem := by
-    refine (((frame_wr f₀₃ ?_).trans (frame_wr fm ?_)).trans (frame_wr gd.frame ?_)).trans (frame_wr fR ?_)
-    · intro r hr
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl
-      · exact .inr (.inr (sub_refl _))
-      · exact .inl (sub_refl _)
-    · intro r hr
-      simp only [List.mem_singleton] at hr; subst hr
-      exact .inr (.inr (fsub (by simp [Sse.srOff])))
-    · intro r hr
-      simp only [gRegions, List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl
-      · exact .inr (.inr (Region.sub_prefix (by omega_arith)))
-      · exact .inr (.inr (fsub (by omega_arith)))
-      · exact .inr (.inr (fsub (by simp only [dSlot]; omega_arith)))
-      · exact .inr (.inl (sub_refl _))
-    · intro r hr
-      simp only [List.mem_singleton] at hr; subst hr
-      exact .inr (.inr (Region.sub_prefix (by omega_arith)))
-  obtain rsp₇ : s₇.gpr .rsp = s₀.gpr .rsp := by
-    rw [o₇ _ (fun i hi => by
-      rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 by omega_arith) with
-        rfl | rfl | rfl | rfl | rfl | rfl <;> decide), gd.rsp, rsp₅]
-  refine ⟨⟨fun r hr => ?_, ?_⟩, ⟨?_, ?_⟩, ?_⟩
-  · simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
-    · exact rg₇ 0 (by omega_arith)
-    · exact rg₇ 1 (by omega_arith)
-    · exact rsp₇
-    · exact rg₇ 2 (by omega_arith)
-    · exact rg₇ 3 (by omega_arith)
-    · exact rg₇ 4 (by omega_arith)
-    · exact rg₇ 5 (by omega_arith)
-  · refine fG.readW (Region.contains_self _ _) (fun r hr => ?_) (by decide)
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl
-    · exact hp.dRC
-    · exact hp.dRD
-    · exact hp.dRS
-  · exact ctr32_of_dataInv (dataInv_frame fR (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr
-      exact dDS.sub_right (Region.sub_prefix (by omega_arith))) n16 gd.data)
-  · refine ctr_after fun k hk => ?_
-    obtain hC : ∀ {m m' : Mem} {rs : List Region}, Frame rs m m' →
-        (∀ r ∈ rs, Region.Disjoint ⟨s₀.gpr .rdx, 16⟩ r) →
-        m' (s₀.gpr .rdx + BitVec.ofNat 64 k) = m (s₀.gpr .rdx + BitVec.ofNat 64 k) :=
-      fun hf hd => hf.bytes hd (by simp) hk
-    rw [hC fR (fun r hr => by
-        simp only [List.mem_singleton] at hr; subst hr
-        exact dCS.sub_right (Region.sub_prefix (by omega_arith))),
-      hC gd.frame (fun r hr => by
-        simp only [gRegions, List.mem_cons, List.not_mem_nil, or_false] at hr
-        rcases hr with rfl | rfl | rfl | rfl
-        · exact dCS.sub_right (Region.sub_prefix (by omega_arith))
-        · exact dCS.sub_right (fsub (by omega_arith))
-        · exact dCS.sub_right (fsub (by simp only [dSlot]; omega_arith))
-        · exact dCD),
-      hC fm (fun r hr => by
-        simp only [List.mem_singleton] at hr; subst hr
-        exact dCS.sub_right (fsub (by simp [Sse.srOff]))),
-      m₃, m₂, setup_ctr dCS hk, g₁,
-      f₁.readW (Region.contains_self _ _) (cd (by omega_arith)) (by decide)]
-    split
-    · exact hC f₁ fun r hr => by
-        simp only [List.mem_singleton] at hr; subst hr
-        exact dCS.sub_right (Region.sub_prefix (by omega_arith))
-    · simp
-  · refine keysAt_frame hR14 fR (fun r hr => ?_) (keysAt_frame hR14 gd.frame hs.keys_disj keys₅)
-    simp only [List.mem_singleton] at hr; subst hr
-    exact Offset.disjoint_base (d := 512) _ (by omega_arith) (by omega_arith)
+  have hlp := hp.lp
+  have hn := hlp.n16
+  refine WP.seq (WP.mono (entry_ok false s₀) fun s1 ⟨r11, g1, m1, rd1, wr1, z1⟩ => ?_)
+  refine WP.ite (s₀.gpr .r8 == 0) (by simp [X86_64.eval, z1]) (fun h0 => ?_) (fun h0 => ?_)
+  · have h0 : (s₀.gpr .r8).toNat = 0 := by rw [eq_of_beq h0]; rfl
+    have := hp.post (s' := s1) (fun x hx => g1 x hx.2.2.2.2.2) (by rw [m1]; exact Frame.refl _ _) (by rw [m1, h0]; rfl)
+      (by rw [m1]; intro i hi; omega)
+    exact WP.block_nil ⟨this.1, this.2, by rw [m1]; exact hkeys⟩
+  have h0 : (s₀.gpr .r8).toNat ≠ 0 := fun h => by
+    rw [beq_eq_false_iff_ne] at h0
+    exact h0 (BitVec.eq_of_toNat_eq h)
+  refine WP.mono (Proof.Aes.X86_64.loop_ok (nr := (s₀.gpr .rsi).toNat) (icb := Spec.Gcm.blockAt s₀.mem (s₀.gpr .rdx)) (w := schedAt s₀.mem (s₀.gpr .rdi) (s₀.gpr .rsi).toNat)
+    hlp h0 (s := s1) ?_) fun s3 h3 => ?_
+  · refine ⟨?_, ?_, ?_, ?_, fun x hx => g1 x hx.2.2.2.2.2, rd1, wr1, by rw [m1]; exact Frame.refl _ _, by rw [m1]; rfl,
+      by rw [m1]; exact Proof.Aes.Memory.Processed.refl _ _ _ _⟩
+    · rw [m1]; exact { hkeys with sc := by rw [wr1]; exact hp.hwS }
+    · rw [g1 _ (by decide)]; simp
+    · rw [r11]; simp
+    · rw [g1 _ (by decide)]; simp
+  · have := hp.post h3.gpr h3.frame h3.ctr h3.done
+    exact ⟨this.1, this.2, { h3.ready with sc := .inr (by simp) }⟩
 
 /-! ## The contracts, and constant time -/
 
@@ -489,7 +161,6 @@ theorem ctr32K_ct : ConstantTime isa ctr32KX86_64.pre ctr32KX86_64.pub ctr32K :=
 
 
 open VG VG.X86_64 VG.Impl.CmacAes.X86_64
-open VG.Proof.Aes.X86_64 (keysAt_frame)
 
 /-! ## The keyed calls -/
 
@@ -508,11 +179,11 @@ theorem ctr32K_depth : ctr32K.depth = 0 := by lit_decide
 
 /-- The bitsliced keys in the scratch buffer through the write of the return
 address of a call. -/
-theorem keysIn_callEntry {s : State} {A : Addr} {R : Nat} {w : List Byte} (hR : R ≤ 14)
+theorem keysIn_callEntry {s : State} {A : Addr} {R : Nat} {w : List Byte}
     (h : (below (s.gpr .rsp) 8).Disjoint ⟨A, 1480⟩) (hk : KeysIn s.mem A R w) : KeysIn s.callEntry.mem A R w :=
-  keysAt_frame hR (callEntry_frame s) (fun r hr => by
+  keysAt_frame (callEntry_frame s) (fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
-    exact (h.sub_right (Offset.sub_base _ (by decide : 512 + 960 ≤ 1480))).symm) hk
+    exact (h.sub_right (Sse.sub_scratch _ (by decide))).symm) hk
 
 /-- The key schedule through the write of the return address of a call. -/
 theorem sched_callEntry {s : State} {W : Addr} {R : Nat} (hR : R = 10 ∨ R = 12 ∨ R = 14)
@@ -534,7 +205,7 @@ theorem ctrK_pre {s : State} {W C D A : Addr} {R : Nat} (h : CallPreS s W C D A 
     State.callEntry_gpr s (by decide : Reg.rdi ≠ .rsp), State.callEntry_gpr s (by decide : Reg.rsi ≠ .rsp),
     State.callEntry_gpr s (by decide : Reg.r9 ≠ .rsp), h.rdi, h.rsi, h9, hR,
     sched_callEntry h.rounds h.stkW]
-  exact keysIn_callEntry hR14 h.stkS hk
+  exact keysIn_callEntry h.stkS hk
 
 /-- A call of `vg_aes_ctr32_keyed` itself, with its 1480 bytes of working
 space at `A`, which hold the bitsliced keys. -/
@@ -617,8 +288,8 @@ def KInv (s₀ : State) (k : Nat) (s : State) : Prop :=
   LInv s₀ (kx s₀) k s ∧ KeysIn s.mem (kb s₀) (R s₀) (ks s₀)
 
 /-- The keys' region, in the working space. -/
-theorem keys_sub (s₀ : State) : Region.Sub ⟨kb s₀ + 512, 960⟩ (kx s₀) :=
-  Offset.sub_base _ (by decide : 512 + 960 ≤ 1480)
+theorem keys_sub (s₀ : State) : Region.Sub ⟨kb s₀ + BitVec.ofNat 64 144, 1232⟩ (kx s₀) :=
+  Sse.sub_scratch _ (by decide)
 
 theorem kx_counter (s₀ : State) : Region.Disjoint (kx s₀) ⟨S s₀ + BitVec.ofNat 64 2048, 16⟩ := by
   rw [show kx s₀ = ⟨S s₀ + BitVec.ofNat 64 512, 1480⟩ from rfl]
@@ -672,7 +343,7 @@ theorem body_okK {k : Nat} (hk : k < N s₀) {s : State} (h : KInv s₀ k s) :
     · exact ⟨stR s₀, by simp, fun _ h => h⟩)
   have hR14 : R s₀ ≤ 14 := by rcases hp.rounds with h | h | h <;> omega_using [h]
   have kd : ∀ r ∈ [(⟨S s₀ + BitVec.ofNat 64 2048, 16⟩ : Region), stR s₀],
-      Region.Disjoint ⟨kb s₀ + 512, 960⟩ r := by
+      Region.Disjoint ⟨kb s₀ + BitVec.ofNat 64 144, 1232⟩ r := by
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
@@ -680,7 +351,7 @@ theorem body_okK {k : Nat} (hk : k < N s₀) {s : State} (h : KInv s₀ k s) :
     · exact (hp.st_scr.sub_right hX).symm.sub_left (keys_sub s₀)
   have k₁ : KeysIn s₁.mem (kb s₀) (R s₀) (schedAt s₁.mem (W s₀) (R s₀)) := by
     rw [show schedAt s₁.mem (W s₀) (R s₀) = ks s₀ from UPre.sched_bytes hp big₁]
-    exact keysAt_frame hR14 f₁ kd kk
+    exact keysAt_frame f₁ kd kk
   refine WP.seq (WP.mono (ctrK_ok hS pre.r9 k₁) fun s₂ ⟨h₂, k₂⟩ => ?_)
   obtain ⟨s₃, run₃, r13₃, r14₃, zf₃, keep₃, mem₃, rd₃, wr₃⟩ := advance_ok s₂
   refine WP.of_runBlock ⟨s₃, run₃, ?_⟩
@@ -893,7 +564,7 @@ theorem bodyMidK_wp {k : Nat} (hk : k < N s₀) {s : State} (h : KInv s₀ k s) 
     · exact ⟨stR s₀, by simp, fun _ h => h⟩)
   have hR14 : R s₀ ≤ 14 := by rcases hp.rounds with h | h | h <;> omega_using [h]
   rw [show schedAt s₁.mem (W s₀) (R s₀) = ks s₀ from UPre.sched_bytes hp big₁]
-  refine keysAt_frame hR14 f₁ (fun r hr => ?_) kk
+  refine keysAt_frame f₁ (fun r hr => ?_) kk
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
   · exact (kx_counter s₀).sub_left (keys_sub s₀)

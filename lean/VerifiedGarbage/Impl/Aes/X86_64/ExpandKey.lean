@@ -1,26 +1,18 @@
 module
 
-public import VerifiedGarbage.Impl.Aes.X86_64.Ctr32
+public import VerifiedGarbage.Impl.Aes.X86_64.Linear
 
 /-!
 # The AES key expansion on x86-64
 
-`vg_aes_expand_key_scratch(key = rdi, key_len = rsi, schedule = rdx, scratch = rcx)`;
-`vg_aes_expand_key` runs it with `scratch` in a frame of its own (`Proof/Aes/X86_64/Frame.lean`).
+`vg_aes_expand_key_scratch(key = rdi, key_len = rsi, schedule = rdx,
+scratch = rcx)` (FIPS 197 §5.2), a word at a time: `rdx` points at `w[i]`,
+`rsi` is `4 Nk`, `r8` is `4 (i mod Nk)` and `rdi` the bytes of the schedule
+left. `SUBWORD` needs four S-boxes, at the bits 0, 8, 16 and 24 of slices:
+slice `j` is the word shifted right by `j`, the other bits are ignored.
 
-FIPS 197 §5.2 (`KEYEXPANSION`), one word at a time, with `SUBWORD` done by
-the bitsliced S-box of `Sbox.lean` on the word in the low 32 bits of `q 0`
-(as BearSSL's `aes_ct64` does in its `sub_word`; Thomas Pornin, MIT
-licence).
-
-* `r9` is the scratch buffer; the callee-saved registers are saved in its
-  slots 48–53, and the round constant is kept in slot 54.
-* The key is copied into the schedule 8 bytes at a time (16, 24 and 32 are
-  multiples of 8).
-* Word `i` (from `Nk` on) is computed with `rdx` at `w[i]`, `rsi = -4 Nk`
-  (so `[rdx + rsi]` is `w[i − Nk]`), `rdi = 4 (i mod Nk) − 4 Nk` and `r8`
-  the words left. Every branch is on these, which depend only on `key_len`;
-  the key's bytes only ever reach `rax`, the S-box's registers and memory.
+The scratch buffer holds the S-box's spills (slots 0–47), the callee-saved
+registers (48–53) and the round constant (54).
 -/
 
 @[expose] public section
@@ -29,59 +21,59 @@ namespace VG.Impl.Aes.X86_64
 
 open VG.X86_64
 
-/-- The slot of the round constant. -/
-def rconSlot : Nat := 54
+/-- The callee-saved registers the code uses, and their slots. -/
+def savedRegs : List (Nat × Reg) :=
+  [(48, .rbx), (49, .rbp), (50, .r12), (51, .r13), (52, .r14), (53, .r15)]
 
-/-- Copy the key (`rsi` bytes at `rdi`, a multiple of 8) to `rdx`. -/
-def copyBody : List Instr :=
-  [.mov .rax (.mem (at_ .rdi 0)), .store (at_ .rdx 0) .rax, .alu .add .rdi (.imm 8),
-   .alu .add .rdx (.imm 8), .alu .sub .rsi (.imm 8)]
+def saveRegs : List Instr := savedRegs.map fun p => st p.1 p.2
+def restoreRegs : List Instr := savedRegs.map fun p => movS p.2 p.1
 
-/-- After the copy (`rsi = 0`, `r8 = 4 Nk`): `rsi := -4 Nk`, `rdi := rsi`,
-`r8 := 4 (Nr + 1) − Nk = 3 Nk + 28` words left, and the round constant 1. -/
-def wordSetup : List Instr :=
-  [.alu .sub .rsi (.reg .r8), movR .rdi .rsi, shrI .r8 2, movR .rax .r8,
-   .alu .add .r8 (.reg .r8), .alu .add .r8 (.reg .rax), .alu .add .r8 (.imm 28),
-   imm .rax 1, st rconSlot .rax]
+/-- The round constant's slot. -/
+def rcSlot : Nat := 54
 
-/-- Transpose each eight-byte column across the eight words. Key expansion
-does not need the four-block byte interleaving used by the round function. -/
-def subOrtho : List Instr := setMasks (bsMasks.drop 3) ++ ortho
+/-- Slice `j` of the word in `rax`. -/
+def spread : List Instr :=
+  (List.range 7).flatMap fun j => [movR (q (j + 1)) .rax, shrI (q (j + 1)) (j + 1)]
 
-/-- The S-box on each byte of `q 0` (and of the other words). The two
-transposes move each byte to the S-box's bit planes and back directly. -/
-def subAll : List Instr := subOrtho ++ sboxCode ++ subOrtho
+/-- The word of the slices' bits 0, 8, 16 and 24, in `rax`. -/
+def gather : List Instr :=
+  [.alu .and .rax (.imm 0x01010101)] ++ (List.range 7).flatMap fun j =>
+    [.alu .and (q (j + 1)) (.imm 0x01010101), rolI (q (j + 1)) (j + 1), xorR .rax (q (j + 1))]
 
-/-- After `subAll`: `rax := ROTWORD(rax) ⊕ Rcon` (on the low 32 bits), and
-the round constant times `x` (without a branch: `{1b}` is XORed in under a
-mask made from bit 7). -/
+/-- `SUBWORD` of `eax`. -/
+def subWord : List Instr := spread ++ sboxCode ++ gather
+
+/-- `ROTWORD`, the round constant, and the next round constant. -/
 def rotTail : List Instr :=
-  [.shift32 .ror .rax 8, .alu .xor .rax (.mem (slotAt sb rconSlot)),
-   movS (q 1) rconSlot, movR (q 2) (q 1), shrI (q 2) 7, imm (q 3) 0, .alu .sub (q 3) (.reg (q 2)),
-   .alu .and (q 3) (.imm 0x1b), .alu .add (q 1) (.reg (q 1)), xorR (q 1) (q 3),
-   .alu .and (q 1) (.imm 0xff), st rconSlot (q 1)]
+  [.shift32 .ror .rax 8, movS .r10 rcSlot, xorR .rax .r10,
+   .shift .shl .r10 1, movR .r11 .r10, shrI .r11 8, .mov32 .r12 (.imm 0), .alu .sub .r12 (.reg .r11),
+   .alu .and .r12 (.imm 0x11b), xorR .r10 .r12, st rcSlot .r10]
 
-/-- `rax := SUBWORD(ROTWORD(rax)) ⊕ Rcon`. -/
-def rotWordStep : List Instr := subAll ++ rotTail
+/-- `temp` of word `i`, in `eax`, from `w[i - 1]`. -/
+def temp : Prog isa :=
+  .seq (.block [.mov32 .rax (.mem { base := .rdx, disp := -4 }), .alu .test .r8 (.reg .r8)])
+    (.ite .e (.block (subWord ++ rotTail))
+      (.seq (.block [movR .r10 .rsi, .alu .add .r10 (.reg .r8), .alu .cmp .r10 (.imm 48)])
+        (.ite .e (.block subWord) (.block []))))
 
-/-- Word `i`: `temp := w[i − 1]`, transformed if `i mod Nk = 0`, or if
-`Nk = 8` and `i mod Nk = 4`; `w[i] := w[i − Nk] ⊕ temp`; and on to `i + 1`
-(ZF is set after the last word). -/
-def wordBody : Prog isa :=
-  .seq (.block [.mov32 .rax (.mem { base := .rdx, disp := -4 }), .alu .cmp .rdi (.reg .rsi)])
-    (.seq (.ite .e (.block rotWordStep)
-        (.seq (.block [.alu .cmp .rdi (.imm (-16))])
-          (.ite .e (.seq (.block [.alu .cmp .rsi (.imm (-32))]) (.ite .e (.block subAll) (.block [])))
-            (.block []))))
-      (.seq (.block [.alu32 .xor .rax (.mem { base := .rdx, index := some .rsi }),
-          .store32 (at_ .rdx 0) .rax, .alu .add .rdx (.imm 4), .alu .add .rdi (.imm 4)])
-        (.seq (.ite .e (.block [movR .rdi .rsi]) (.block []))
-          (.block [.alu .sub .r8 (.imm 1)]))))
+/-- A word of the schedule. -/
+def word : Prog isa :=
+  .seq temp
+    (.seq (.block [movR .r10 .rdx, .alu .sub .r10 (.reg .rsi), .alu32 .xor .rax (.mem (at_ .r10 0)),
+        .store32 (at_ .rdx 0) .rax, .alu .add .rdx (.imm 4), .alu .add .r8 (.imm 4), .alu .cmp .r8 (.reg .rsi)])
+      (.seq (.ite .e (.block [.mov32 .r8 (.imm 0)]) (.block [])) (.block [.alu .sub .rdi (.imm 4)])))
 
+/-- A word of the key. -/
+def keyCopy : List Instr :=
+  [.mov32 .rax (.mem (at_ .rdi 0)), .store32 (at_ .rdx 0) .rax, .alu .add .rdi (.imm 4), .alu .add .rdx (.imm 4),
+   .alu .sub .r8 (.imm 4)]
+
+/-- `vg_aes_expand_key_scratch`. -/
 def expandKey : Prog isa :=
   .seq (.block ([movR .r9 .rcx] ++ saveRegs ++ [movR .r8 .rsi]))
-    (.seq (.loop (.block copyBody) .ne)
-      (.seq (.block wordSetup)
-        (.seq (.loop wordBody .ne) (.block restoreRegs))))
+    (.seq (.loop (.block keyCopy) .ne)
+      (.seq (.block [.mov32 .r10 (.imm 1), st rcSlot .r10, .mov32 .r8 (.imm 0), movR .rdi .rsi, .alu .add .rdi (.reg .rsi),
+          .alu .add .rdi (.reg .rsi), .alu .add .rdi (.imm 112)])
+        (.seq (.loop word .ne) (.block restoreRegs))))
 
 end VG.Impl.Aes.X86_64

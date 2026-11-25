@@ -201,7 +201,7 @@ structure ChSetup (out : Bool) (s₂ : State) (X b D : Addr) (n R : Nat) (w : Li
   hn : 16 * n < 2 ^ 64
   sep : Region.Disjoint ⟨D, 16 * n⟩ ⟨X, 2048⟩
   rounds : R = 10 ∨ R = 12 ∨ R = 14
-  keys : KeysAt s₂.mem (b + BitVec.ofNat 64 (1920 - 64 * R)) R w
+  keys : KeysAtF s₂.mem (b + BitVec.ofNat 64 (1920 - 64 * R)) R w
   a0 : s₂.gpr .a0 = b + BitVec.ofNat 64 (1920 - 64 * R)
 
 /-- The chaining values, as `EcbInv` takes the blocks: block `j` becomes the

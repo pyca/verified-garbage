@@ -1,51 +1,25 @@
 module
 
-public import VerifiedGarbage.Impl.Aes.RISCV64.Inv
+public import VerifiedGarbage.Impl.Aes.RISCV64.Fixed
+public import VerifiedGarbage.Impl.Words.RISCV64
 public import VerifiedGarbage.Impl.Words.RISCV64.Bytes
-public import VerifiedGarbage.Impl.Words64.RISCV64
 
 /-!
-# AES counter mode (GCM's `inc₃₂`), bitsliced, on RISC-V
+# Bitsliced AES encryption and counter mode on RISC-V, four blocks at a time
 
-`vg_aes_ctr32(schedule = a0, rounds = a1, counter = a2, data = a3, n = a4, scratch = a5)`.
+`vg_aes_ctr32(schedule = a0, rounds = a1, counter = a2, data = a3, n = a4,
+scratch = a5)`, and its forms that write elsewhere (`_to`, the source in
+`a6`) and take the round keys bitsliced (`_bs`).
 
-Constant-time AES in the style of BearSSL's `aes_ct64` (Thomas Pornin, MIT
-licence): four blocks at a time, bitsliced in eight 64-bit registers
-(`Linear.lean`, `Sbox.lean`), as on PPC64LE (`Impl/Aes/PPC64LE/Ctr32.lean`).
+The scratch buffer is used from `a5` rounded up to a multiple of 8, in 8-byte
+slots: the S-box's spills (0–39), our caller's
+`s0`–`s11` (40–51), the masks (52–57, 64–75), the counter block's first 8
+bytes, its next 4 and the counter (59–61), our return address (62) and, from
+byte 1024 to byte 1984, the bitsliced round keys, 64 bytes each, the last at
+byte `lastKey`.
 
-* `scratch` is rounded up to a multiple of 8 (`roundSb`), which leaves 255
-  slots of it, so that the slots are accessed aligned. The schedule, the
-  counter block and the data, whose alignment the contract does not state,
-  are accessed a byte at a time.
-* The callee-saved registers `s0`–`s11` are saved in slots 40–51, the masks
-  of the linear layers are built in slots 52–57 and 64–75 (`maskInit`), and
-  the counter block is kept in slots 59–61: bytes 0–7, bytes 8–11 (the high
-  half zero, later each counter block's last four bytes, stored
-  big-endian) and the 32-bit counter as an integer.
-* The final counter `inc₃₂ⁿ(CB₁)` is written first.
-* The round keys are bitsliced once, into slots `128 + 8 (j + 14 - rounds)`
-  for round `j`, so that the last is always at slot 240 (byte 1920). The
-  loop runs from the last round key down, counting `rounds + 1` keys in
-  `a1`, with `a0` at the round key of the schedule and `a2` at its
-  bitsliced form.
-* Each group of four blocks: build the counter blocks, bitslice them,
-  encrypt (the round loop runs `kp` over the round keys until the last but
-  one, the first at `a0`), un-bitslice, and XOR the keystream into the
-  data, four blocks or the remaining one to three.
-* Only `a0`, `a1` (`kp`), `a2`, `a3` (the data), `a4` (the blocks left),
-  `a5` and what is computed from them in `t0` for the branches hold public
-  values; no address and no branch depends on anything else.
-
-One body serves in place and out of place (`ctr32With o`): out of place
-(`o`), `vg_aes_ctr32_to(schedule = a0, rounds = a1, counter = a2, dst = a3,
-n = a4, scratch = a5, src = a6)` reads the data from `src` and writes the
-result to `dst`. The S-box and the linear layers use `a6` as a temporary,
-and every other register is in use, but `ra`, which none of this code
-writes: our return address waits in slot `srcSlot` while `src` is kept in
-`ra` until the round keys are bitsliced, then in `a2` (which the groups do
-not use), advanced with `a3`, and `ra` is loaded back at the end. The
-doublewords are used only if both `src` and `dst` are multiples of 8. In
-place (`ctr32`), the data is read from `a3`, and none of this is emitted.
+The code does not depend on secrets but in what it computes: the addresses
+and branches are on the pointers, the rounds and the number of blocks.
 -/
 
 @[expose] public section
@@ -54,122 +28,139 @@ namespace VG.Impl.Aes.RISCV64
 
 open VG.RISCV64 VG.Impl.Words.RISCV64
 
-/-- `a5 :=` the scratch buffer rounded up to a multiple of 8. -/
-def roundSb : List Instr := [.addi sb sb 7, .logicImm .and sb sb (-8)]
+/-! ## Slots -/
 
-/-- The callee-saved registers, and their slots. -/
-def savedRegs : List (Reg × Nat) :=
-  [(.s0, 40), (.s1, 41), (.s2, 42), (.s3, 43), (.s4, 44), (.s5, 45), (.s6, 46),
-   (.s7, 47), (.s8, 48), (.s9, 49), (.s10, 50), (.s11, 51)]
-
-def saveRegs : List Instr := savedRegs.map fun (r, k) => stS k r
-def restoreRegs : List Instr := savedRegs.map fun (r, k) => ldS r k
-
-/-- Build the masks `ms` in the slots from `base` on, through `t0` and `t1`. -/
-def storeMasks (base : Nat) (ms : List (Nat × BitVec 64)) : List Instr :=
-  ms.flatMap fun (k, v) => Words64.RISCV64.movImm64 t0 t1 v ++ [stS (base + k - 1) t0]
-
-/-- The masks of every linear layer. -/
-def maskInit : List Instr :=
-  storeMasks bsSlot bsMasks ++ storeMasks srSlot srMasks ++ storeMasks invSrSlot invSrMasks
-
-/-- The slots of the counter block. -/
 def cLo : Nat := 59
 def cHi : Nat := 60
 def cNum : Nat := 61
+def srcSlot : Nat := 62
 
-/-- Load the counter block (`a2`) into its slots, and write the final
-counter `(c + n) mod 2³²` back. -/
-def ctrSetup : List Instr :=
-  loadLE64 t0 t1 t2 .a2 0 ++ [stS cLo t0] ++
-  loadLE32 t0 t1 .a2 8 ++ [stS cHi t0] ++
-  loadBE32 t0 t1 .a2 12 ++ [stS cNum t0, .add t0 t0 .a4] ++
-  storeBE 4 t0 t1 .a2 12
-
-/-- The byte offset of the last round key in the scratch buffer. -/
+/-- The byte of the last bitsliced round key. -/
 def lastKey : Nat := 1920
 
-/-- Set up the key loop: `a0 := schedule + 16 rounds`, `a2 := a5 + lastKey`,
-`a1 := rounds + 1`. -/
+/-- The callee-saved registers, and their slots. -/
+def savedRegs : List (Reg × Nat) :=
+  [(.s0, 40), (.s1, 41), (.s2, 42), (.s3, 43), (.s4, 44), (.s5, 45), (.s6, 46), (.s7, 47),
+   (.s8, 48), (.s9, 49), (.s10, 50), (.s11, 51)]
+
+/-! ## The prologue and epilogue -/
+
+/-- `a5` rounded up to a multiple of 8. -/
+def roundSb : List Instr := [.addi sb sb 7, .logicImm .and sb sb (-8)]
+
+def saveRegs : List Instr := savedRegs.map fun p => stS p.2 p.1
+def restoreRegs : List Instr := savedRegs.map fun p => ldS p.1 p.2
+
+def maskInit : List Instr := storeMasks bsSlot idxMasks ++ storeMasks srSlot srMasks ++ storeMasks fxSlot fxMasks
+
+/-! ## Round keys -/
+
+/-- `a0`: the last round key; `a2`: where it goes; `a1`: their number. -/
 def keySetup : List Instr :=
   [shlI t0 .a1 4, .add .a0 .a0 t0, .addi .a2 sb lastKey, .addi .a1 .a1 1]
 
-/-- The round key at `a0`, as four blocks for `toBs`. -/
+/-- The round key at `a0`, as four equal blocks. -/
 def keyLoad : List Instr :=
   loadLE64 (q 0) t0 t1 .a0 0 ++ loadLE64 (q 4) t0 t1 .a0 8 ++
-  [movR (q 1) (q 0), movR (q 2) (q 0), movR (q 3) (q 0),
-   movR (q 5) (q 4), movR (q 6) (q 4), movR (q 7) (q 4)]
+    [movR (q 1) (q 0), movR (q 2) (q 0), movR (q 3) (q 0),
+     movR (q 5) (q 4), movR (q 6) (q 4), movR (q 7) (q 4)]
 
-/-- Store the bitsliced round key at `a2`. -/
 def keyStore : List Instr := (List.range 8).map fun j => .store .d (q j) .a2 (8 * j)
 
-/-- Step `a0` and `a2` back a round key, and count it in `a1`. -/
 def keyStep : List Instr := [.addi .a0 .a0 (-16), .addi .a2 .a2 (-64), .addi .a1 .a1 (-1)]
 
-/-- Bitslice the round key at `a0` to `a2`, and step back. -/
+/-- One round key in form 0, and on to the one before. -/
 def keyBody : List Instr := keyLoad ++ toBs ++ keyStore ++ keyStep
 
-/-- `a0 := ` the first round key. -/
+/-! Those of `encrypt4` and `decrypt4`: odd ones in form 1 (`Fixed.lean`), with
+the bytes loaded where form 1 has them, and all but the first with `{63}` added. -/
+
+/-- The bytes at offsets `f 0`, `f 1`, … of `a0`, as `n` bytes of `d`, the least
+significant first. -/
+def loadBytes (d : Reg) (f : Nat → Nat) : Nat → List Instr
+  | 0 => []
+  | 1 => [.load .b d .a0 (f 0)]
+  | n + 2 => loadBytes d f (n + 1) ++
+      [.load .b t0 .a0 (f (n + 1)), shlI t0 t0 (8 * (n + 1)), .logic .or d d t0]
+
+/-- The byte of the round key that form 0 (form 1, if `o`) has at byte `m`. -/
+def keySrc (o : Bool) (m : Nat) : Nat := if o then m % 4 + 4 * ((m / 4 + 4 - m % 4) % 4) else m
+
+def fkLoad (o : Bool) : List Instr :=
+  loadBytes (q 0) (keySrc o) 8 ++ loadBytes (q 4) (fun k => keySrc o (8 + k)) 8
+
+/-- One round key, round `a1 - 1`'s, and on to the one before. -/
+def fkBody : Prog isa :=
+  .seq (.block [.logicImm .and t0 .a1 1])
+    (.seq (.ite (.nonzero t0) (.block (fkLoad false)) (.block (fkLoad true)))
+      (.seq (.block (slice1 ++ [.addi t0 .a1 (-1)]))
+        (.seq (.ite (.nonzero t0) (.block add63) (.block []))
+          (.block (keyStore ++ keyStep)))))
+
+/-- `a0`: the first bitsliced round key. -/
 def keyDone : List Instr := [.addi .a0 .a2 64]
 
-/-- The counter blocks `c + b` (`b < 4`): bytes 0–7 in `q b`, bytes 8–15 in
-`q (b + 4)`; and `c := c + 4`. The counter is stored big-endian into the
-high half of slot `cHi`, whose low half is bytes 8–11. -/
-def ctrBlock (b : Nat) : List Instr :=
-  [ldS (q b) cLo, ldS t0 cNum, .addi t0 t0 b] ++ storeBE 4 t0 t1 sb (8 * cHi + 4) ++
-  [ldS (q (b + 4)) cHi]
+/-! ## Encryption of four blocks -/
 
-def ctrBlocks : List Instr :=
-  ctrBlock 0 ++ ctrBlock 1 ++ ctrBlock 2 ++ ctrBlock 3 ++
-  ([ldS t0 cNum, .addi t0 t0 4, stS cNum t0] : List Instr)
+/-! With the round keys in form 0 (those of `_bs`), ShiftRows done. -/
 
-/-- The prepared schedule uses paired key loads while writing the MixColumns outputs. -/
-def roundCoreK (kb : Reg) : List Instr :=
-  if kb = .ra then mixAdd else mixColumns ++ addRoundKey
-
-def shiftRowsK (kb : Reg) : List Instr := if kb = .ra then shiftFast else shiftRows
-
-/-- A middle round, with `kp` at the previous round key; loops until `kp`
-is at the last round key but one, which is at byte `lastKey - 64` from `kb`
-(`sb`, or `ra` when the round keys are given bitsliced). -/
+/-- A middle round; the round keys' last is at byte `lastKey` from `kb`. -/
 def roundBodyK (kb : Reg) : List Instr :=
-  ([.addi kp kp 64] : List Instr) ++ sboxCode ++ shiftRowsK kb ++ roundCoreK kb ++
-  [.sub t0 kp kb, .addi t0 t0 (-((lastKey - 64 : Nat) : Int))]
+  ([.addi kp kp 64] : List Instr) ++ sboxCode ++ shiftRows ++ mixColumns ++ addRoundKey ++
+    [.sub t0 kp kb, .addi t0 t0 (-((lastKey - 64 : Nat) : Int))]
 
-def roundBody : List Instr := roundBodyK sb
+def lastRound : List Instr := ([.addi kp kp 64] : List Instr) ++ sboxCode ++ shiftRows ++ addRoundKey
 
-/-- The last round. -/
-def lastRoundK (kb : Reg) : List Instr := ([.addi kp kp 64] : List Instr) ++ sboxCode ++ shiftRowsK kb ++ addRoundKey
-
-def lastRound : List Instr := lastRoundK sb
-
-/-- Encrypt the four blocks in `q 0 … q 7` (as `toBs` takes them), with the
-round keys from `a0` on, the last at byte `lastKey` from `kb`. -/
+/-- The four blocks in `q 0 … q 7` (as `toBs` takes them) encrypted, with the
+round keys at `a0`, the last at byte `lastKey` from `kb`. -/
 def encrypt4K (kb : Reg) : Prog isa :=
   .seq (.block (toBs ++ [movR kp .a0] ++ addRoundKey))
-    (.seq (.loop (.block (roundBodyK kb)) (.nonzero t0)) (.block (lastRoundK kb ++ fromBs)))
+    (.seq (.loop (.block (roundBodyK kb)) (.nonzero t0)) (.block (lastRound ++ fromBs)))
 
-def encrypt4 : Prog isa := encrypt4K sb
+/-- An odd round, from form 0 to form 1, and an even one, back. -/
+def roundA : List Instr := ([.addi kp kp 64] : List Instr) ++ sbox0Code ++ mixColumns1 ++ addRoundKey
+def roundB : List Instr := ([.addi kp kp 64] : List Instr) ++ sbox0Code ++ sr2 ++ mixColumns ++ addRoundKey
 
-/-- Where the data is read from: `a3` in place, `a2` out of place. -/
+def lastFx : List Instr := ([.addi kp kp 64] : List Instr) ++ sbox0Code ++ sr2 ++ addRoundKey
+
+/-- The four blocks in `q 0 … q 7` encrypted with `fkBody`'s round keys, the
+first at `a0` and the last at byte `lastKey`. -/
+def encrypt4 : Prog isa :=
+  .seq (.block (toBs ++ [movR kp .a0] ++ addRoundKey ++ roundA))
+    (.seq (.loop (.block (roundB ++ roundA ++ [.sub t0 kp sb, .addi t0 t0 (-((lastKey - 64 : Nat) : Int))]))
+        (.nonzero t0))
+      (.block (lastFx ++ fromBs)))
+
+/-! ## Counter mode -/
+
+/-- The counter block into its slots, and the final counter stored back. -/
+def ctrSetup : List Instr :=
+  loadLE64 t0 t1 t2 .a2 0 ++ [stS cLo t0] ++ loadLE32 t0 t1 .a2 8 ++ [stS cHi t0] ++
+    loadBE32 t0 t1 .a2 12 ++ [stS cNum t0, .add t0 t0 .a4] ++ storeBE 4 t0 t1 .a2 12
+
+/-- Counter block `c` of the group. -/
+def ctrBlock (c : Nat) : List Instr :=
+  [ldS (q c) cLo, ldS t0 cNum, .addi t0 t0 c] ++ storeBE 4 t0 t1 sb (8 * cHi + 4) ++ [ldS (q (c + 4)) cHi]
+
+/-- Four counter blocks, and the counter on by four. -/
+def ctrBlocks : List Instr :=
+  ctrBlock 0 ++ ctrBlock 1 ++ ctrBlock 2 ++ ctrBlock 3 ++ [ldS t0 cNum, .addi t0 t0 4, stS cNum t0]
+
+/-- The source's register: `a2` if it is apart from the data (`o`). -/
 def srcReg (o : Bool) : Reg := if o then .a2 else .a3
 
-/-- XOR the keystream block `b` into data block `b` of the source, to data
-block `b` of `a3`, by doublewords if `w` (the data aligned), else a byte at a
-time. -/
-def xorBlock (o w : Bool) (b : Nat) : List Instr :=
-  loadLE64W w t0 t1 t2 (srcReg o) (16 * b) ++ [xorR t0 t0 (q b)] ++
-  storeLE64W w t0 t1 t2 .a3 (16 * b) ++
-  loadLE64W w t0 t1 t2 (srcReg o) (16 * b + 8) ++ [xorR t0 t0 (q (b + 4))] ++
-  storeLE64W w t0 t1 t2 .a3 (16 * b + 8)
+/-- Block `c` of the source XORed with the keystream to that of the data, by
+doublewords if `w`. -/
+def xorBlock (o w : Bool) (c : Nat) : List Instr :=
+  loadLE64W w t0 t1 t2 (srcReg o) (16 * c) ++ [xorR t0 t0 (q c)] ++ storeLE64W w t0 t1 t2 .a3 (16 * c) ++
+    loadLE64W w t0 t1 t2 (srcReg o) (16 * c + 8) ++ [xorR t0 t0 (q (c + 4))] ++
+    storeLE64W w t0 t1 t2 .a3 (16 * c + 8)
 
-/-- Out of place, the source on to the next four blocks. -/
 def srcStep (o : Bool) : List Instr := if o then [.addi .a2 .a2 64] else []
 
-/-- Four blocks, and on to the next four. -/
+/-- Four blocks, and on to the next. -/
 def xorFull (o w : Bool) : List Instr :=
-  (List.range 4).flatMap (xorBlock o w) ++ ([.addi .a3 .a3 64, .addi .a4 .a4 (-4)] : List Instr) ++
-    srcStep o
+  (List.range 4).flatMap (xorBlock o w) ++ ([.addi .a3 .a3 64, .addi .a4 .a4 (-4)] ++ srcStep o)
 
 /-- The last one to three blocks (and none left). -/
 def xorTail (o w : Bool) : Prog isa :=
@@ -179,86 +170,74 @@ def xorTail (o w : Bool) : Prog isa :=
       (.block []))
     (.block [.li .a4 0]))
 
-/-- One group of (up to) four blocks, by doublewords if `w`. -/
-def groupK (kb : Reg) (o w : Bool) : Prog isa :=
+/-- One group of (up to) four blocks. -/
+def group (crypt : Prog isa) (o w : Bool) : Prog isa :=
   .seq (.block ctrBlocks)
-    (.seq (encrypt4K kb)
+    (.seq crypt
       (.seq (.block [shrI t0 .a4 2]) (.ite (.nonzero t0) (.block (xorFull o w)) (xorTail o w))))
 
-def group (o w : Bool) : Prog isa := groupK sb o w
-
-/-- `t0 := ` the low three bits of the data's address, or out of place of
-both addresses. -/
+/-- `t0 = 0` if the data (and the source) are at multiples of 8. -/
 def alignTest (o : Bool) : List Instr :=
   if o then [.logic .or t0 .a3 .a2, .logicImm .and t0 t0 7] else [.logicImm .and t0 .a3 7]
 
-/-- The groups: by doublewords if the data's addresses are multiples of 8
-(`t0 = 0`, of public addresses), else a byte at a time. -/
-def ctrGroupsK (kb : Reg) (o : Bool) : Prog isa :=
+def ctrGroups (crypt : Prog isa) (o : Bool) : Prog isa :=
   .seq (.block (alignTest o))
-    (.ite (.zero t0) (.loop (groupK kb o true) (.nonzero .a4)) (.loop (groupK kb o false) (.nonzero .a4)))
+    (.ite (.zero t0) (.loop (group crypt o true) (.nonzero .a4)) (.loop (group crypt o false) (.nonzero .a4)))
 
-def ctrGroups (o : Bool) : Prog isa := ctrGroupsK sb o
-
-/-- The slot that keeps our return address out of place. -/
-def srcSlot : Nat := 62
-
-/-- Out of place, our return address into its slot, and the source (`a6`)
-into `ra`. -/
+/-- Out of place, our return address into its slot and the source into `ra`,
+which the key loop does not write. -/
 def srcSave (o : Bool) : List Instr := if o then [stS srcSlot .ra, movR .ra .a6] else []
-
-/-- Out of place, the source into `a2`. -/
 def srcLoad (o : Bool) : List Instr := if o then [movR .a2 .ra] else []
-
-/-- Out of place, our return address back from its slot. -/
 def srcRestore (o : Bool) : List Instr := if o then [ldS .ra srcSlot] else []
 
-/-- In place (`o` false) or out of place. -/
 def ctr32With (o : Bool) : Prog isa :=
   .seq (.block (roundSb ++ srcSave o ++ saveRegs ++ maskInit ++ ctrSetup ++ keySetup))
-    (.seq (.loop (.block keyBody) (.nonzero .a1))
+    (.seq (.loop fkBody (.nonzero .a1))
       (.seq (.block (keyDone ++ srcLoad o))
-        (.seq (.ite (.zero .a4) (.block []) (ctrGroups o))
+        (.seq (.ite (.zero .a4) (.block []) (ctrGroups encrypt4 o))
           (.block (restoreRegs ++ srcRestore o)))))
 
-/-- `vg_aes_ctr32`, in place. -/
 def ctr32 : Prog isa := ctr32With false
-
-/-- `vg_aes_ctr32_to`, from `src` (`a6`) to `dst` (`a3`). -/
 def ctr32To : Prog isa := ctr32With true
 
-/-! ## With the round keys bitsliced
+/-! ## With the round keys bitsliced (at `a0`) -/
 
-`vg_aes_ctr32_bs(keys = a0, rounds = a1, counter = a2, data = a3, n = a4,
-scratch = a5)`, and out of place `vg_aes_ctr32_bs_to(…, src = a6)`: as
-`vg_aes_ctr32`, but with the round keys already bitsliced, round key `j` the
-64 bytes at `keys + 64 j` (as `vg_aes_gcm_bitslice` leaves them,
-`Spec/Gcm/Bitsliced.lean`), so that there is no key loop and the round keys
-are not written to the scratch buffer. `encrypt4K .ra` reads them from `a0`
-on, and ends its round loop by comparing `kp` with `ra := keys + 64 rounds -
-lastKey`, where `vg_aes_ctr32` compares it with `a5`: our return address waits
-in slot `srcSlot`. Out of place, the source goes from `a6`, which the groups
-write, to `a2`, once the counter block is read. -/
-
-/-- Our return address into its slot. -/
 def bsSave : List Instr := [stS srcSlot .ra]
-
-/-- Out of place, the source (`a6`) into `a2`. -/
 def bsSrc (o : Bool) : List Instr := if o then [movR .a2 .a6] else []
 
-/-- `ra := a0 + 64 rounds - lastKey`. -/
-def bsKb : List Instr := [shlI t0 .a1 6, .add .ra .a0 t0, .addi .ra .ra (-(lastKey : Int))]
+/-- `ra`: the last round key is at byte `lastKey` from it. -/
+def bsKb : List Instr := [shlI t0 .a1 6, .add .ra .a0 t0, .addi .ra .ra (-((lastKey : Nat) : Int))]
 
-/-- In place (`o` false) or out of place. -/
+/-! For eight blocks or more, the round keys are first made those of
+`encrypt4`, in the scratch buffer, from the last: `a0` is the one read, `a2`
+where it goes and `a1` how many are left. The source is in `ra` until then. -/
+
+def bsMove (o : Bool) : List Instr := if o then [movR .ra .a6] else []
+def bsConvSetup : List Instr :=
+  [shlI t0 .a1 6, .add .a0 .a0 t0, .addi .a2 sb lastKey, .addi .a1 .a1 1]
+
+def bsLoad : List Instr := (List.range 8).map fun j => .load .d (q j) .a0 (8 * j)
+def bsStep : List Instr := [.addi .a0 .a0 (-64), .addi .a2 .a2 (-64), .addi .a1 .a1 (-1)]
+
+/-- One round key: the odd ones to form 1, which is where InvShiftRows takes
+the bytes, and `{63}` added to all but the first. -/
+def bsConvBody : Prog isa :=
+  .seq (.block (bsLoad ++ [.logicImm .and t0 .a1 1]))
+    (.seq (.ite (.nonzero t0) (.block []) (.block invShiftRows))
+      (.seq (.block [.addi t0 .a1 (-1)])
+        (.seq (.ite (.nonzero t0) (.block add63) (.block []))
+          (.block (keyStore ++ bsStep)))))
+
 def ctr32BsWith (o : Bool) : Prog isa :=
-  .seq (.block (roundSb ++ bsSave ++ saveRegs ++ maskInit ++ ctrSetup ++ bsSrc o ++ bsKb))
-    (.seq (.ite (.zero .a4) (.block []) (ctrGroupsK .ra o))
-      (.block (restoreRegs ++ [ldS .ra srcSlot])))
+  .seq (.block (roundSb ++ bsSave ++ saveRegs ++ maskInit ++ ctrSetup ++ [shrI t0 .a4 3]))
+    (.seq (.ite (.nonzero t0)
+        (.seq (.block (bsMove o ++ bsConvSetup))
+          (.seq (.loop bsConvBody (.nonzero .a1))
+            (.seq (.block (keyDone ++ srcLoad o)) (ctrGroups encrypt4 o))))
+        (.seq (.block (bsSrc o ++ bsKb)) (.ite (.zero .a4) (.block []) (ctrGroups (encrypt4K .ra) o))))
+      (.block (restoreRegs ++ srcRestore true)))
 
-/-- `vg_aes_ctr32_bs`, in place. -/
 def ctr32Bs : Prog isa := ctr32BsWith false
-
-/-- `vg_aes_ctr32_bs_to`, from `src` (`a6`) to `dst` (`a3`). -/
 def ctr32BsTo : Prog isa := ctr32BsWith true
 
 end VG.Impl.Aes.RISCV64

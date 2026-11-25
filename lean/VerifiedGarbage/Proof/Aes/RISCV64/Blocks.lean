@@ -175,7 +175,7 @@ theorem correct_blocks {crypt4 : Prog isa} {f : Nat → List Byte → Spec.Aes.S
         refine (f₀₃.bytes (R := ⟨sc, 240⟩) (fun r hr => ?_) (by simp) (by simp only; omega_arith)).symm
         simp only [List.mem_singleton] at hr; subst hr
         exact dSS }
-  obtain hi₃ : KInv s₃ b sc R w R s₃ :=
+  obtain hi₃ : FInv s₃ b sc R w R s₃ :=
     { hj := Nat.le_refl _
       a1 := a1₃
       a0 := by
@@ -189,7 +189,7 @@ theorem correct_blocks {crypt4 : Prog isa} {f : Nat → List Byte → Spec.Aes.S
       frame := Frame.refl _ _
       done := fun i h1 h2 => absurd h2 (by omega_arith) }
   -- The key loop.
-  refine WP.seq (WP.mono (keyLoop_ok hk hi₃) fun s₄ d₄ => ?_)
+  refine WP.seq (WP.mono (fkLoop_ok hk hi₃) fun s₄ d₄ => ?_)
   refine WP.seq ?_
   unfold keyDone
   refine wp_addi (imm := 64) (by decide) fun s₅ u₅ => WP.block_nil ?_
@@ -223,7 +223,7 @@ theorem correct_blocks {crypt4 : Prog isa} {f : Nat → List Byte → Spec.Aes.S
       hn := n16
       sep := dDS
       rounds := hR
-      keys := fun j hj => keyRel_congr (d₄.keys j hj) fun k hk => by
+      keys := fun j hj => keyRelF_congr (d₄.keys j hj) fun k hk => by
         rw [u₅.mem, keyAddr, BitVec.add_assoc, ← BitVec.ofNat_add, show 1920 - 64 * R + 64 * j =
           1920 - 64 * (R - j) by omega_arith] }
   obtain dK : ∀ r ∈ kRegions b, Region.Disjoint ⟨D, 16 * n⟩ r := fun r hr => by

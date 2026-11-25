@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Impl.Aes.Arm.Ctr32
-public import VerifiedGarbage.Impl.Aes.Arm.Inv
 
 /-!
 # AES encryption and decryption of whole blocks, bitsliced, on ARMv7
@@ -23,9 +22,7 @@ registers as `ortho` takes them, encrypted (`encrypt2`) or decrypted
 `r12`, stored in slots 45–47 during the transformation.
 
 Decryption runs the inverse cipher (FIPS 197 §5.3) on the round keys of the
-forward cipher, from the last down (`Inv.lean`): `kp` starts at the last
-round key and steps back 32 bytes each round, and the round loop ends when
-it reaches round key 1, 32 bytes after the first round key (in slot
+forward cipher, from the last down to the first (whose address is in slot
 `fkSlot`).
 
 Only the pointers, `rounds`, `n` and what is computed from them (the loop
@@ -56,7 +53,7 @@ def blocksKeyStep : List Instr :=
    .dp .and t0 .lr (.imm 15), .cmp t0 (.imm 0)]
 
 /-- Bitslice the round key at `r12` to `kp`, and step back. -/
-def blocksKeyBody : List Instr := keyLoad ++ ortho ++ keyStore ++ blocksKeyStep
+def blocksKeyBody : Prog isa := .seq keyFront (.block blocksKeyStep)
 
 /-- After the key loop: the first round key to `r12`, the data pointer to
 `r10`, the scratch buffer's base to `sb`, the blocks left (`lr = 16 n`) to `r11`. -/
@@ -89,26 +86,10 @@ def blockGroup (crypt2 : Prog isa) : Prog isa :=
 /-- The whole function, around `crypt2`. -/
 def blocks (crypt2 : Prog isa) : Prog isa :=
   .seq (.block (blocksPrologue ++ blocksKeySetup))
-    (.seq (.loop (.block blocksKeyBody) .ne)
+    (.seq (.loop blocksKeyBody .ne)
       (.seq (.block (blocksKeyDone ++ ([.cmp .r11 (.imm 0)] : List Instr)))
         (.seq (.ite .eq (.block []) (.loop (blockGroup crypt2) .ne))
           (.block (.ldrSp .r12 0 :: restoreRegs .r12)))))
-
-/-- A middle round of the inverse cipher, with `kp` at the previous round
-key; loops until `kp` is at round key 1. -/
-def invRoundBody : List Instr :=
-  ([.dp .sub kp kp (.imm 32)] : List Instr) ++ invShiftRows ++ invSboxCode ++ addRoundKey ++ invMixColumns ++
-  [ldS t0 fkSlot, .dp .sub t0 kp (.reg t0), .cmp t0 (.imm 32)]
-
-/-- The last round of the inverse cipher, with round key 0. -/
-def invLastRound : List Instr :=
-  ([.dp .sub kp kp (.imm 32)] : List Instr) ++ invShiftRows ++ invSboxCode ++ addRoundKey
-
-/-- Decrypt the two blocks in `q 0 … q 7` (as `ortho` takes them), with
-the first round key's address in slot `fkSlot`. -/
-def decrypt2 : Prog isa :=
-  .seq (.block (ortho ++ ([.dp .add kp sb (.imm (BitVec.ofNat 32 lastKey))] : List Instr) ++ addRoundKey))
-    (.seq (.loop (.block invRoundBody) .ne) (.block (invLastRound ++ ortho)))
 
 def encryptBlocks : Prog isa := blocks encrypt2
 def decryptBlocks : Prog isa := blocks decrypt2
@@ -133,7 +114,7 @@ keys of the schedule bitsliced into the scratch buffer, where `blocks` and
 `ctr32Gen` put them, the last at byte `lastKey`. -/
 def blocksKeys : Prog isa :=
   .seq (.block keysSetup)
-    (.seq (.loop (.block keyBody) .ne) (.block (movR .r12 .r8 :: restoreRegs .r12)))
+    (.seq (.loop keyBody .ne) (.block (movR .r12 .r8 :: restoreRegs .r12)))
 
 /-- After `blocksPrologue`, with the round keys in the scratch buffer (at
 `r12`) already: its base to `sb`, the first round key

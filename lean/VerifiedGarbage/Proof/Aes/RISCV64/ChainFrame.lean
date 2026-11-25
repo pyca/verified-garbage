@@ -73,7 +73,7 @@ structure FSetup (wd : Bool) (len : Nat → Nat) (s₀ s₉ : State) (X b : Addr
   scr : Scr s₉ X 2048
   base : s₉.gpr sb = b
   masks : MasksAt s₉.mem b allKs
-  keys : KeysAt s₉.mem (b + BitVec.ofNat 64 (1920 - 64 * (s₀.gpr .a1).toNat)) (s₀.gpr .a1).toNat
+  keys : KeysAtF s₉.mem (b + BitVec.ofNat 64 (1920 - 64 * (s₀.gpr .a1).toNat)) (s₀.gpr .a1).toNat
     (Spec.Aes.bytesAt s₀.mem (s₀.gpr .a0) (16 * ((s₀.gpr .a1).toNat + 1)))
   a0 : s₉.gpr .a0 = b + BitVec.ofNat 64 (1920 - 64 * (s₀.gpr .a1).toNat)
   rounds : (s₀.gpr .a1).toNat = 10 ∨ (s₀.gpr .a1).toNat = 12 ∨ (s₀.gpr .a1).toNat = 14
@@ -255,7 +255,7 @@ theorem frame_wp {body : Prog isa} {pre post : List Instr} {wd : Bool} {len : Na
           List.getElem?_range hi, Option.map_some, Option.getD_some]
         refine (f₀₄.bytes (R := ⟨s₀.gpr .a0, 240⟩) (fun r hr => ?_) (by simp) (by simp only; omega)).symm
         simp only [List.mem_singleton] at hr; subst hr; exact dSS }
-  obtain hi₄ : KInv s₄ b (s₀.gpr .a0) R w R s₄ :=
+  obtain hi₄ : FInv s₄ b (s₀.gpr .a0) R w R s₄ :=
     { hj := Nat.le_refl _
       a1 := a1₄
       a0 := by rw [a0₄, g₃ _ (by decide), k₂ _ (by decide) (by decide) (by decide)]
@@ -267,7 +267,7 @@ theorem frame_wp {body : Prog isa} {pre post : List Instr} {wd : Bool} {len : Na
       frame := Frame.refl _ _
       done := fun i h1 h2 => absurd h2 (by omega_using [h1]) }
   -- The key loop.
-  refine WP.seq (WP.mono (keyLoop_ok hk hi₄) fun s₅ d₅ => ?_)
+  refine WP.seq (WP.mono (fkLoop_ok hk hi₄) fun s₅ d₅ => ?_)
   refine WP.seq ?_
   rw [WP.block_append_iff (M := isa), WP.block_append_iff (M := isa)]
   unfold keyDone
@@ -346,7 +346,7 @@ theorem frame_wp {body : Prog isa} {pre post : List Instr} {wd : Bool} {len : Na
       scr := ⟨by rw [wr₉, wr₈, u₇.wr, hwr₆]; exact hwS, hb₉⟩
       base := hb₉
       masks := by rw [mem₉, u₆.mem]; exact masks_kept d₅.frame hk.masks
-      keys := fun j hj => keyRel_congr (d₅.keys j hj) fun k hk => by
+      keys := fun j hj => keyRelF_congr (d₅.keys j hj) fun k hk => by
         rw [mem₉, u₆.mem, keyAddr, BitVec.add_assoc, ← BitVec.ofNat_add, show 1920 - 64 * R + 64 * j =
           1920 - 64 * (R - j) by omega_using [hR, hj]]
       a0 := by rw [o₉ .a0 (by decide) (by decide) (by decide) (by decide) (by decide)]; exact hK0

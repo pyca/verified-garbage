@@ -228,78 +228,54 @@ vg_seed_expand_key:
 	movk x20, #3855, lsl #16
 	movk x20, #3855, lsl #32
 	movk x20, #3855, lsl #48
-	lsr x21, x6, #1
-	eor x21, x21, x7
-	and x21, x21, x17
-	eor x7, x7, x21
-	ror x21, x21, #63
-	eor x6, x6, x21
-	lsr x21, x8, #1
-	eor x21, x21, x9
-	and x21, x21, x17
-	eor x9, x9, x21
-	ror x21, x21, #63
-	eor x8, x8, x21
-	lsr x21, x10, #1
-	eor x21, x21, x11
-	and x21, x21, x17
-	eor x11, x11, x21
-	ror x21, x21, #63
-	eor x10, x10, x21
-	lsr x21, x12, #1
-	eor x21, x21, x13
-	and x21, x21, x17
-	eor x13, x13, x21
-	ror x21, x21, #63
-	eor x12, x12, x21
-	lsr x21, x6, #2
-	eor x21, x21, x8
-	and x21, x21, x19
-	eor x8, x8, x21
-	ror x21, x21, #62
-	eor x6, x6, x21
-	lsr x21, x7, #2
-	eor x21, x21, x9
-	and x21, x21, x19
-	eor x9, x9, x21
-	ror x21, x21, #62
-	eor x7, x7, x21
-	lsr x21, x10, #2
-	eor x21, x21, x12
-	and x21, x21, x19
-	eor x12, x12, x21
-	ror x21, x21, #62
-	eor x10, x10, x21
-	lsr x21, x11, #2
-	eor x21, x21, x13
-	and x21, x21, x19
-	eor x13, x13, x21
-	ror x21, x21, #62
-	eor x11, x11, x21
-	lsr x21, x6, #4
-	eor x21, x21, x10
+	eor x21, x10, x6, ror #4
 	and x21, x21, x20
 	eor x10, x10, x21
-	ror x21, x21, #60
-	eor x6, x6, x21
-	lsr x21, x7, #4
-	eor x21, x21, x11
+	eor x6, x6, x21, ror #60
+	eor x21, x11, x7, ror #4
 	and x21, x21, x20
 	eor x11, x11, x21
-	ror x21, x21, #60
-	eor x7, x7, x21
-	lsr x21, x8, #4
-	eor x21, x21, x12
+	eor x7, x7, x21, ror #60
+	eor x21, x12, x8, ror #4
 	and x21, x21, x20
 	eor x12, x12, x21
-	ror x21, x21, #60
-	eor x8, x8, x21
-	lsr x21, x9, #4
-	eor x21, x21, x13
+	eor x8, x8, x21, ror #60
+	eor x21, x13, x9, ror #4
 	and x21, x21, x20
 	eor x13, x13, x21
-	ror x21, x21, #60
+	eor x9, x9, x21, ror #60
+	eor x21, x8, x6, ror #2
+	and x21, x21, x19
+	eor x8, x8, x21
+	eor x6, x6, x21, ror #62
+	eor x21, x9, x7, ror #2
+	and x21, x21, x19
 	eor x9, x9, x21
+	eor x7, x7, x21, ror #62
+	eor x21, x12, x10, ror #2
+	and x21, x21, x19
+	eor x12, x12, x21
+	eor x10, x10, x21, ror #62
+	eor x21, x13, x11, ror #2
+	and x21, x21, x19
+	eor x13, x13, x21
+	eor x11, x11, x21, ror #62
+	eor x21, x7, x6, ror #1
+	and x21, x21, x17
+	eor x7, x7, x21
+	eor x6, x6, x21, ror #63
+	eor x21, x9, x8, ror #1
+	and x21, x21, x17
+	eor x9, x9, x21
+	eor x8, x8, x21, ror #63
+	eor x21, x11, x10, ror #1
+	and x21, x21, x17
+	eor x11, x11, x21
+	eor x10, x10, x21, ror #63
+	eor x21, x13, x12, ror #1
+	and x21, x21, x17
+	eor x13, x13, x21
+	eor x12, x12, x21, ror #63
 	add x14, x6, #0
 	add x15, x7, #0
 	add x16, x8, #0
@@ -336,148 +312,138 @@ vg_seed_expand_key:
 	eor x13, x13, x23
 	movz x28, #0, lsl #0
 	sub x28, x28, #1
-	eor x14, x10, x8
-	eor x15, x13, x7
-	eor x16, x13, x10
-	eor x17, x13, x8
-	eor x11, x12, x11
-	eor x19, x11, x6
-	eor x10, x19, x10
-	eor x20, x15, x14
-	eor x21, x19, x13
-	eor x7, x19, x7
-	eor x22, x7, x17
-	eor x9, x9, x20
-	eor x8, x9, x8
-	eor x9, x9, x12
-	eor x12, x8, x6
-	eor x23, x8, x11
-	eor x24, x9, x16
-	eor x25, x6, x24
-	eor x26, x23, x24
-	eor x27, x23, x17
-	eor x11, x11, x24
-	str x27, [x5, #0]
-	eor x27, x15, x11
-	eor x13, x13, x11
-	str x13, [x5, #8]
-	and x13, x20, x8
-	str x20, [x5, #16]
-	and x20, x22, x12
-	eor x20, x20, x13
-	str x22, [x5, #24]
-	and x22, x10, x6
-	eor x22, x22, x13
-	and x13, x15, x11
-	str x15, [x5, #32]
-	and x15, x7, x19
-	eor x15, x15, x13
-	str x7, [x5, #40]
-	and x7, x21, x25
-	eor x7, x7, x13
-	and x13, x16, x24
-	str x16, [x5, #48]
-	and x16, x14, x26
-	eor x16, x16, x13
-	str x14, [x5, #56]
-	and x14, x17, x23
-	eor x14, x14, x13
-	eor x20, x20, x16
-	eor x22, x22, x14
-	eor x15, x15, x16
-	eor x7, x7, x14
-	eor x20, x20, x9
-	ldr x9, [x5, #0]
-	eor x22, x22, x9
-	eor x15, x15, x27
-	ldr x27, [x5, #8]
-	eor x7, x7, x27
-	eor x27, x20, x22
-	and x20, x20, x15
-	eor x9, x7, x20
-	and x14, x27, x9
-	eor x14, x14, x22
-	eor x16, x15, x7
-	eor x22, x22, x20
-	and x22, x22, x16
-	eor x22, x22, x7
-	eor x15, x15, x22
-	eor x16, x9, x22
-	and x7, x7, x16
-	eor x15, x7, x15
-	eor x9, x9, x7
-	and x9, x14, x9
-	eor x27, x27, x9
-	eor x9, x27, x15
-	eor x7, x14, x22
-	eor x16, x14, x27
-	eor x20, x22, x15
-	eor x13, x7, x9
-	and x8, x20, x8
-	and x12, x15, x12
-	and x6, x22, x6
-	and x11, x16, x11
-	and x19, x27, x19
-	and x25, x14, x25
-	and x24, x7, x24
-	and x26, x13, x26
-	and x23, x9, x23
-	str x12, [x5, #8]
-	ldr x12, [x5, #16]
-	and x20, x20, x12
-	ldr x12, [x5, #24]
-	and x15, x15, x12
-	and x22, x22, x10
-	ldr x10, [x5, #32]
-	and x16, x16, x10
-	ldr x10, [x5, #40]
-	and x27, x27, x10
-	and x14, x14, x21
-	ldr x21, [x5, #48]
-	and x7, x7, x21
-	ldr x21, [x5, #56]
-	and x13, x13, x21
-	and x9, x9, x17
-	eor x7, x7, x13
-	eor x22, x15, x22
-	eor x27, x25, x27
-	eor x20, x20, x15
-	eor x15, x6, x16
-	eor x6, x6, x25
-	eor x23, x26, x23
-	eor x8, x8, x11
+	eor x8, x11, x8
+	eor x14, x8, x7
+	eor x15, x14, x12
+	eor x6, x14, x6
+	eor x9, x15, x9
+	eor x9, x9, x13
+	eor x16, x9, x8
+	eor x17, x16, x6
+	eor x11, x17, x11
+	eor x19, x6, x13
+	eor x20, x17, x10
+	eor x21, x17, x15
+	eor x22, x11, x13
+	eor x23, x20, x22
+	and x24, x20, x17
+	eor x25, x16, x10
+	eor x10, x9, x10
+	eor x9, x20, x9
+	and x26, x22, x15
+	and x27, x25, x9
+	eor x7, x25, x7
+	eor x26, x27, x26
+	str x17, [x5, #0]
+	and x17, x23, x21
+	eor x27, x27, x17
+	eor x17, x21, x7
+	str x20, [x5, #8]
+	eor x20, x25, x11
+	str x25, [x5, #16]
+	and x25, x19, x7
+	str x19, [x5, #24]
+	and x19, x20, x17
+	eor x25, x27, x25
+	eor x27, x27, x19
+	and x19, x6, x10
+	str x7, [x5, #32]
+	and x7, x13, x14
+	eor x25, x25, x24
+	eor x27, x27, x19
+	eor x24, x24, x7
+	eor x19, x26, x19
+	eor x7, x22, x12
+	eor x25, x25, x8
 	eor x24, x24, x26
-	eor x13, x13, x9
-	eor x16, x16, x27
-	eor x15, x15, x8
-	eor x9, x19, x7
-	eor x11, x11, x24
-	eor x7, x7, x15
-	eor x14, x14, x15
-	eor x23, x23, x9
-	eor x20, x20, x9
-	eor x19, x19, x11
-	eor x14, x14, x23
-	ldr x9, [x5, #8]
-	eor x9, x9, x20
-	eor x11, x11, x20
-	eor x16, x16, x23
-	eor x16, x16, x28
-	eor x27, x27, x7
-	eor x27, x27, x28
-	eor x7, x19, x14
-	eor x10, x8, x9
-	eor x9, x6, x9
-	eor x8, x22, x14
-	eor x12, x19, x10
+	and x26, x11, x12
+	eor x24, x24, x7
+	eor x19, x19, x26
+	eor x26, x11, x14
+	eor x19, x19, x26
+	eor x27, x27, x16
+	eor x16, x25, x27
+	and x26, x24, x25
+	eor x7, x27, x26
+	eor x26, x19, x26
+	and x26, x26, x16
+	eor x24, x24, x19
+	eor x26, x27, x26
+	eor x25, x25, x26
+	and x13, x26, x13
+	eor x16, x7, x26
+	and x27, x27, x16
+	eor x25, x27, x25
+	and x22, x25, x22
+	eor x27, x7, x27
+	and x7, x24, x7
+	eor x19, x19, x7
+	and x15, x25, x15
+	and x27, x19, x27
+	eor x27, x27, x24
+	eor x24, x19, x27
+	and x20, x24, x20
+	eor x7, x19, x26
+	and x10, x7, x10
+	and x24, x24, x17
+	and x23, x27, x23
+	and x6, x7, x6
+	eor x6, x6, x20
+	and x21, x27, x21
+	eor x27, x27, x25
+	eor x7, x7, x27
+	eor x20, x13, x20
+	eor x25, x26, x25
+	and x26, x26, x14
+	eor x24, x24, x21
+	eor x10, x24, x10
+	and x9, x7, x9
+	eor x24, x24, x9
+	eor x24, x24, x26
+	eor x15, x15, x26
+	and x12, x25, x12
+	and x25, x25, x11
+	eor x24, x24, x12
+	ldr x12, [x5, #16]
+	and x7, x7, x12
+	ldr x12, [x5, #32]
+	and x12, x19, x12
+	eor x7, x7, x23
+	eor x21, x21, x12
+	ldr x12, [x5, #8]
+	and x12, x27, x12
+	ldr x11, [x5, #24]
+	and x19, x19, x11
+	eor x12, x7, x12
+	eor x21, x21, x15
+	eor x20, x20, x12
+	eor x12, x12, x19
 	eor x12, x12, x28
-	eor x13, x13, x7
-	eor x13, x13, x28
-	str x13, [x5, #8]
-	add x13, x11, #0
-	ldr x11, [x5, #8]
-	add x7, x16, #0
-	add x6, x27, #0
+	ldr x11, [x5, #0]
+	and x27, x27, x11
+	eor x8, x20, x25
+	eor x24, x24, x27
+	eor x6, x6, x7
+	eor x6, x6, x21
+	eor x6, x6, x28
+	eor x11, x21, x12
+	eor x9, x12, x9
+	eor x9, x9, x28
+	eor x15, x9, x15
+	eor x9, x9, x8
+	eor x19, x6, x19
+	eor x19, x19, x28
+	eor x19, x19, x22
+	eor x9, x9, x10
+	eor x9, x9, x28
+	eor x15, x15, x27
+	eor x19, x19, x23
+	eor x10, x19, x13
+	add x7, x12, #0
+	str x9, [x5, #0]
+	add x9, x24, #0
+	ldr x12, [x5, #0]
+	add x13, x15, #0
 	add x14, x6, #0
 	add x15, x7, #0
 	add x16, x8, #0
@@ -581,78 +547,54 @@ vg_seed_expand_key:
 	movk x20, #3855, lsl #16
 	movk x20, #3855, lsl #32
 	movk x20, #3855, lsl #48
-	lsr x21, x6, #1
-	eor x21, x21, x7
-	and x21, x21, x17
-	eor x7, x7, x21
-	ror x21, x21, #63
-	eor x6, x6, x21
-	lsr x21, x8, #1
-	eor x21, x21, x9
-	and x21, x21, x17
-	eor x9, x9, x21
-	ror x21, x21, #63
-	eor x8, x8, x21
-	lsr x21, x10, #1
-	eor x21, x21, x11
-	and x21, x21, x17
-	eor x11, x11, x21
-	ror x21, x21, #63
-	eor x10, x10, x21
-	lsr x21, x12, #1
-	eor x21, x21, x13
-	and x21, x21, x17
-	eor x13, x13, x21
-	ror x21, x21, #63
-	eor x12, x12, x21
-	lsr x21, x6, #2
-	eor x21, x21, x8
-	and x21, x21, x19
-	eor x8, x8, x21
-	ror x21, x21, #62
-	eor x6, x6, x21
-	lsr x21, x7, #2
-	eor x21, x21, x9
-	and x21, x21, x19
-	eor x9, x9, x21
-	ror x21, x21, #62
-	eor x7, x7, x21
-	lsr x21, x10, #2
-	eor x21, x21, x12
-	and x21, x21, x19
-	eor x12, x12, x21
-	ror x21, x21, #62
-	eor x10, x10, x21
-	lsr x21, x11, #2
-	eor x21, x21, x13
-	and x21, x21, x19
-	eor x13, x13, x21
-	ror x21, x21, #62
-	eor x11, x11, x21
-	lsr x21, x6, #4
-	eor x21, x21, x10
+	eor x21, x10, x6, ror #4
 	and x21, x21, x20
 	eor x10, x10, x21
-	ror x21, x21, #60
-	eor x6, x6, x21
-	lsr x21, x7, #4
-	eor x21, x21, x11
+	eor x6, x6, x21, ror #60
+	eor x21, x11, x7, ror #4
 	and x21, x21, x20
 	eor x11, x11, x21
-	ror x21, x21, #60
-	eor x7, x7, x21
-	lsr x21, x8, #4
-	eor x21, x21, x12
+	eor x7, x7, x21, ror #60
+	eor x21, x12, x8, ror #4
 	and x21, x21, x20
 	eor x12, x12, x21
-	ror x21, x21, #60
-	eor x8, x8, x21
-	lsr x21, x9, #4
-	eor x21, x21, x13
+	eor x8, x8, x21, ror #60
+	eor x21, x13, x9, ror #4
 	and x21, x21, x20
 	eor x13, x13, x21
-	ror x21, x21, #60
+	eor x9, x9, x21, ror #60
+	eor x21, x8, x6, ror #2
+	and x21, x21, x19
+	eor x8, x8, x21
+	eor x6, x6, x21, ror #62
+	eor x21, x9, x7, ror #2
+	and x21, x21, x19
 	eor x9, x9, x21
+	eor x7, x7, x21, ror #62
+	eor x21, x12, x10, ror #2
+	and x21, x21, x19
+	eor x12, x12, x21
+	eor x10, x10, x21, ror #62
+	eor x21, x13, x11, ror #2
+	and x21, x21, x19
+	eor x13, x13, x21
+	eor x11, x11, x21, ror #62
+	eor x21, x7, x6, ror #1
+	and x21, x21, x17
+	eor x7, x7, x21
+	eor x6, x6, x21, ror #63
+	eor x21, x9, x8, ror #1
+	and x21, x21, x17
+	eor x9, x9, x21
+	eor x8, x8, x21, ror #63
+	eor x21, x11, x10, ror #1
+	and x21, x21, x17
+	eor x11, x11, x21
+	eor x10, x10, x21, ror #63
+	eor x21, x13, x12, ror #1
+	and x21, x21, x17
+	eor x13, x13, x21
+	eor x12, x12, x21, ror #63
 	movz x14, #53244, lsl #0
 	movk x14, #53244, lsl #16
 	movk x14, #53244, lsl #32

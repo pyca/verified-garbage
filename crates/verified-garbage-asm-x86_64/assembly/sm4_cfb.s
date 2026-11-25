@@ -63,33 +63,33 @@ vg_sm4_cfb128_encrypt:
 	mov r12, rax
 	mov r13, rax
 	mov r14, rax
-	shr r14, 1
-	xor r14, rbx
-	and r14, QWORD PTR [r9+32]
-	xor rbx, r14
-	ror r14, 63
-	xor rax, r14
-	mov r14, rcx
-	shr r14, 1
-	xor r14, rbp
-	and r14, QWORD PTR [r9+32]
-	xor rbp, r14
-	ror r14, 63
-	xor rcx, r14
-	mov r14, r10
-	shr r14, 1
-	xor r14, r11
-	and r14, QWORD PTR [r9+32]
-	xor r11, r14
-	ror r14, 63
+	shr r14, 4
+	xor r14, r10
+	and r14, QWORD PTR [r9+48]
 	xor r10, r14
-	mov r14, r12
-	shr r14, 1
-	xor r14, r13
-	and r14, QWORD PTR [r9+32]
-	xor r13, r14
-	ror r14, 63
+	ror r14, 60
+	xor rax, r14
+	mov r14, rbx
+	shr r14, 4
+	xor r14, r11
+	and r14, QWORD PTR [r9+48]
+	xor r11, r14
+	ror r14, 60
+	xor rbx, r14
+	mov r14, rcx
+	shr r14, 4
+	xor r14, r12
+	and r14, QWORD PTR [r9+48]
 	xor r12, r14
+	ror r14, 60
+	xor rcx, r14
+	mov r14, rbp
+	shr r14, 4
+	xor r14, r13
+	and r14, QWORD PTR [r9+48]
+	xor r13, r14
+	ror r14, 60
+	xor rbp, r14
 	mov r14, rax
 	shr r14, 2
 	xor r14, rcx
@@ -119,33 +119,33 @@ vg_sm4_cfb128_encrypt:
 	ror r14, 62
 	xor r11, r14
 	mov r14, rax
-	shr r14, 4
-	xor r14, r10
-	and r14, QWORD PTR [r9+48]
-	xor r10, r14
-	ror r14, 60
-	xor rax, r14
-	mov r14, rbx
-	shr r14, 4
-	xor r14, r11
-	and r14, QWORD PTR [r9+48]
-	xor r11, r14
-	ror r14, 60
+	shr r14, 1
+	xor r14, rbx
+	and r14, QWORD PTR [r9+32]
 	xor rbx, r14
+	ror r14, 63
+	xor rax, r14
 	mov r14, rcx
-	shr r14, 4
-	xor r14, r12
-	and r14, QWORD PTR [r9+48]
-	xor r12, r14
-	ror r14, 60
-	xor rcx, r14
-	mov r14, rbp
-	shr r14, 4
-	xor r14, r13
-	and r14, QWORD PTR [r9+48]
-	xor r13, r14
-	ror r14, 60
+	shr r14, 1
+	xor r14, rbp
+	and r14, QWORD PTR [r9+32]
 	xor rbp, r14
+	ror r14, 63
+	xor rcx, r14
+	mov r14, r10
+	shr r14, 1
+	xor r14, r11
+	and r14, QWORD PTR [r9+32]
+	xor r11, r14
+	ror r14, 63
+	xor r10, r14
+	mov r14, r12
+	shr r14, 1
+	xor r14, r13
+	and r14, QWORD PTR [r9+32]
+	xor r13, r14
+	ror r14, 63
+	xor r12, r14
 	and rax, QWORD PTR [r9+384]
 	mov r14, rax
 	ror r14, 56
@@ -286,33 +286,33 @@ vg_sm4_cfb128_encrypt:
 	mov r12, rax
 	mov r13, rax
 	mov r14, rax
-	shr r14, 1
-	xor r14, rbx
-	and r14, QWORD PTR [r9+32]
-	xor rbx, r14
-	ror r14, 63
-	xor rax, r14
-	mov r14, rcx
-	shr r14, 1
-	xor r14, rbp
-	and r14, QWORD PTR [r9+32]
-	xor rbp, r14
-	ror r14, 63
-	xor rcx, r14
-	mov r14, r10
-	shr r14, 1
-	xor r14, r11
-	and r14, QWORD PTR [r9+32]
-	xor r11, r14
-	ror r14, 63
+	shr r14, 4
+	xor r14, r10
+	and r14, QWORD PTR [r9+48]
 	xor r10, r14
-	mov r14, r12
-	shr r14, 1
-	xor r14, r13
-	and r14, QWORD PTR [r9+32]
-	xor r13, r14
-	ror r14, 63
+	ror r14, 60
+	xor rax, r14
+	mov r14, rbx
+	shr r14, 4
+	xor r14, r11
+	and r14, QWORD PTR [r9+48]
+	xor r11, r14
+	ror r14, 60
+	xor rbx, r14
+	mov r14, rcx
+	shr r14, 4
+	xor r14, r12
+	and r14, QWORD PTR [r9+48]
 	xor r12, r14
+	ror r14, 60
+	xor rcx, r14
+	mov r14, rbp
+	shr r14, 4
+	xor r14, r13
+	and r14, QWORD PTR [r9+48]
+	xor r13, r14
+	ror r14, 60
+	xor rbp, r14
 	mov r14, rax
 	shr r14, 2
 	xor r14, rcx
@@ -342,33 +342,33 @@ vg_sm4_cfb128_encrypt:
 	ror r14, 62
 	xor r11, r14
 	mov r14, rax
-	shr r14, 4
-	xor r14, r10
-	and r14, QWORD PTR [r9+48]
-	xor r10, r14
-	ror r14, 60
-	xor rax, r14
-	mov r14, rbx
-	shr r14, 4
-	xor r14, r11
-	and r14, QWORD PTR [r9+48]
-	xor r11, r14
-	ror r14, 60
+	shr r14, 1
+	xor r14, rbx
+	and r14, QWORD PTR [r9+32]
 	xor rbx, r14
+	ror r14, 63
+	xor rax, r14
 	mov r14, rcx
-	shr r14, 4
-	xor r14, r12
-	and r14, QWORD PTR [r9+48]
-	xor r12, r14
-	ror r14, 60
-	xor rcx, r14
-	mov r14, rbp
-	shr r14, 4
-	xor r14, r13
-	and r14, QWORD PTR [r9+48]
-	xor r13, r14
-	ror r14, 60
+	shr r14, 1
+	xor r14, rbp
+	and r14, QWORD PTR [r9+32]
 	xor rbp, r14
+	ror r14, 63
+	xor rcx, r14
+	mov r14, r10
+	shr r14, 1
+	xor r14, r11
+	and r14, QWORD PTR [r9+32]
+	xor r11, r14
+	ror r14, 63
+	xor r10, r14
+	mov r14, r12
+	shr r14, 1
+	xor r14, r13
+	and r14, QWORD PTR [r9+32]
+	xor r13, r14
+	ror r14, 63
+	xor r12, r14
 	and rax, QWORD PTR [r9+392]
 	mov r14, rax
 	ror r14, 8
@@ -828,33 +828,33 @@ vg_sm4_cfb128_decrypt:
 	mov r12, rax
 	mov r13, rax
 	mov r14, rax
-	shr r14, 1
-	xor r14, rbx
-	and r14, QWORD PTR [r9+32]
-	xor rbx, r14
-	ror r14, 63
-	xor rax, r14
-	mov r14, rcx
-	shr r14, 1
-	xor r14, rbp
-	and r14, QWORD PTR [r9+32]
-	xor rbp, r14
-	ror r14, 63
-	xor rcx, r14
-	mov r14, r10
-	shr r14, 1
-	xor r14, r11
-	and r14, QWORD PTR [r9+32]
-	xor r11, r14
-	ror r14, 63
+	shr r14, 4
+	xor r14, r10
+	and r14, QWORD PTR [r9+48]
 	xor r10, r14
-	mov r14, r12
-	shr r14, 1
-	xor r14, r13
-	and r14, QWORD PTR [r9+32]
-	xor r13, r14
-	ror r14, 63
+	ror r14, 60
+	xor rax, r14
+	mov r14, rbx
+	shr r14, 4
+	xor r14, r11
+	and r14, QWORD PTR [r9+48]
+	xor r11, r14
+	ror r14, 60
+	xor rbx, r14
+	mov r14, rcx
+	shr r14, 4
+	xor r14, r12
+	and r14, QWORD PTR [r9+48]
 	xor r12, r14
+	ror r14, 60
+	xor rcx, r14
+	mov r14, rbp
+	shr r14, 4
+	xor r14, r13
+	and r14, QWORD PTR [r9+48]
+	xor r13, r14
+	ror r14, 60
+	xor rbp, r14
 	mov r14, rax
 	shr r14, 2
 	xor r14, rcx
@@ -884,33 +884,33 @@ vg_sm4_cfb128_decrypt:
 	ror r14, 62
 	xor r11, r14
 	mov r14, rax
-	shr r14, 4
-	xor r14, r10
-	and r14, QWORD PTR [r9+48]
-	xor r10, r14
-	ror r14, 60
-	xor rax, r14
-	mov r14, rbx
-	shr r14, 4
-	xor r14, r11
-	and r14, QWORD PTR [r9+48]
-	xor r11, r14
-	ror r14, 60
+	shr r14, 1
+	xor r14, rbx
+	and r14, QWORD PTR [r9+32]
 	xor rbx, r14
+	ror r14, 63
+	xor rax, r14
 	mov r14, rcx
-	shr r14, 4
-	xor r14, r12
-	and r14, QWORD PTR [r9+48]
-	xor r12, r14
-	ror r14, 60
-	xor rcx, r14
-	mov r14, rbp
-	shr r14, 4
-	xor r14, r13
-	and r14, QWORD PTR [r9+48]
-	xor r13, r14
-	ror r14, 60
+	shr r14, 1
+	xor r14, rbp
+	and r14, QWORD PTR [r9+32]
 	xor rbp, r14
+	ror r14, 63
+	xor rcx, r14
+	mov r14, r10
+	shr r14, 1
+	xor r14, r11
+	and r14, QWORD PTR [r9+32]
+	xor r11, r14
+	ror r14, 63
+	xor r10, r14
+	mov r14, r12
+	shr r14, 1
+	xor r14, r13
+	and r14, QWORD PTR [r9+32]
+	xor r13, r14
+	ror r14, 63
+	xor r12, r14
 	and rax, QWORD PTR [r9+384]
 	mov r14, rax
 	ror r14, 56
@@ -1051,33 +1051,33 @@ vg_sm4_cfb128_decrypt:
 	mov r12, rax
 	mov r13, rax
 	mov r14, rax
-	shr r14, 1
-	xor r14, rbx
-	and r14, QWORD PTR [r9+32]
-	xor rbx, r14
-	ror r14, 63
-	xor rax, r14
-	mov r14, rcx
-	shr r14, 1
-	xor r14, rbp
-	and r14, QWORD PTR [r9+32]
-	xor rbp, r14
-	ror r14, 63
-	xor rcx, r14
-	mov r14, r10
-	shr r14, 1
-	xor r14, r11
-	and r14, QWORD PTR [r9+32]
-	xor r11, r14
-	ror r14, 63
+	shr r14, 4
+	xor r14, r10
+	and r14, QWORD PTR [r9+48]
 	xor r10, r14
-	mov r14, r12
-	shr r14, 1
-	xor r14, r13
-	and r14, QWORD PTR [r9+32]
-	xor r13, r14
-	ror r14, 63
+	ror r14, 60
+	xor rax, r14
+	mov r14, rbx
+	shr r14, 4
+	xor r14, r11
+	and r14, QWORD PTR [r9+48]
+	xor r11, r14
+	ror r14, 60
+	xor rbx, r14
+	mov r14, rcx
+	shr r14, 4
+	xor r14, r12
+	and r14, QWORD PTR [r9+48]
 	xor r12, r14
+	ror r14, 60
+	xor rcx, r14
+	mov r14, rbp
+	shr r14, 4
+	xor r14, r13
+	and r14, QWORD PTR [r9+48]
+	xor r13, r14
+	ror r14, 60
+	xor rbp, r14
 	mov r14, rax
 	shr r14, 2
 	xor r14, rcx
@@ -1107,33 +1107,33 @@ vg_sm4_cfb128_decrypt:
 	ror r14, 62
 	xor r11, r14
 	mov r14, rax
-	shr r14, 4
-	xor r14, r10
-	and r14, QWORD PTR [r9+48]
-	xor r10, r14
-	ror r14, 60
-	xor rax, r14
-	mov r14, rbx
-	shr r14, 4
-	xor r14, r11
-	and r14, QWORD PTR [r9+48]
-	xor r11, r14
-	ror r14, 60
+	shr r14, 1
+	xor r14, rbx
+	and r14, QWORD PTR [r9+32]
 	xor rbx, r14
+	ror r14, 63
+	xor rax, r14
 	mov r14, rcx
-	shr r14, 4
-	xor r14, r12
-	and r14, QWORD PTR [r9+48]
-	xor r12, r14
-	ror r14, 60
-	xor rcx, r14
-	mov r14, rbp
-	shr r14, 4
-	xor r14, r13
-	and r14, QWORD PTR [r9+48]
-	xor r13, r14
-	ror r14, 60
+	shr r14, 1
+	xor r14, rbp
+	and r14, QWORD PTR [r9+32]
 	xor rbp, r14
+	ror r14, 63
+	xor rcx, r14
+	mov r14, r10
+	shr r14, 1
+	xor r14, r11
+	and r14, QWORD PTR [r9+32]
+	xor r11, r14
+	ror r14, 63
+	xor r10, r14
+	mov r14, r12
+	shr r14, 1
+	xor r14, r13
+	and r14, QWORD PTR [r9+32]
+	xor r13, r14
+	ror r14, 63
+	xor r12, r14
 	and rax, QWORD PTR [r9+392]
 	mov r14, rax
 	ror r14, 8
@@ -1611,33 +1611,33 @@ vg_sm4_cfb128_encrypt_final:
 	mov r12, rax
 	mov r13, rax
 	mov r14, rax
-	shr r14, 1
-	xor r14, rbx
-	and r14, QWORD PTR [r9+32]
-	xor rbx, r14
-	ror r14, 63
-	xor rax, r14
-	mov r14, rcx
-	shr r14, 1
-	xor r14, rbp
-	and r14, QWORD PTR [r9+32]
-	xor rbp, r14
-	ror r14, 63
-	xor rcx, r14
-	mov r14, r10
-	shr r14, 1
-	xor r14, r11
-	and r14, QWORD PTR [r9+32]
-	xor r11, r14
-	ror r14, 63
+	shr r14, 4
+	xor r14, r10
+	and r14, QWORD PTR [r9+48]
 	xor r10, r14
-	mov r14, r12
-	shr r14, 1
-	xor r14, r13
-	and r14, QWORD PTR [r9+32]
-	xor r13, r14
-	ror r14, 63
+	ror r14, 60
+	xor rax, r14
+	mov r14, rbx
+	shr r14, 4
+	xor r14, r11
+	and r14, QWORD PTR [r9+48]
+	xor r11, r14
+	ror r14, 60
+	xor rbx, r14
+	mov r14, rcx
+	shr r14, 4
+	xor r14, r12
+	and r14, QWORD PTR [r9+48]
 	xor r12, r14
+	ror r14, 60
+	xor rcx, r14
+	mov r14, rbp
+	shr r14, 4
+	xor r14, r13
+	and r14, QWORD PTR [r9+48]
+	xor r13, r14
+	ror r14, 60
+	xor rbp, r14
 	mov r14, rax
 	shr r14, 2
 	xor r14, rcx
@@ -1667,33 +1667,33 @@ vg_sm4_cfb128_encrypt_final:
 	ror r14, 62
 	xor r11, r14
 	mov r14, rax
-	shr r14, 4
-	xor r14, r10
-	and r14, QWORD PTR [r9+48]
-	xor r10, r14
-	ror r14, 60
-	xor rax, r14
-	mov r14, rbx
-	shr r14, 4
-	xor r14, r11
-	and r14, QWORD PTR [r9+48]
-	xor r11, r14
-	ror r14, 60
+	shr r14, 1
+	xor r14, rbx
+	and r14, QWORD PTR [r9+32]
 	xor rbx, r14
+	ror r14, 63
+	xor rax, r14
 	mov r14, rcx
-	shr r14, 4
-	xor r14, r12
-	and r14, QWORD PTR [r9+48]
-	xor r12, r14
-	ror r14, 60
-	xor rcx, r14
-	mov r14, rbp
-	shr r14, 4
-	xor r14, r13
-	and r14, QWORD PTR [r9+48]
-	xor r13, r14
-	ror r14, 60
+	shr r14, 1
+	xor r14, rbp
+	and r14, QWORD PTR [r9+32]
 	xor rbp, r14
+	ror r14, 63
+	xor rcx, r14
+	mov r14, r10
+	shr r14, 1
+	xor r14, r11
+	and r14, QWORD PTR [r9+32]
+	xor r11, r14
+	ror r14, 63
+	xor r10, r14
+	mov r14, r12
+	shr r14, 1
+	xor r14, r13
+	and r14, QWORD PTR [r9+32]
+	xor r13, r14
+	ror r14, 63
+	xor r12, r14
 	and rax, QWORD PTR [r9+384]
 	mov r14, rax
 	ror r14, 56
@@ -1834,33 +1834,33 @@ vg_sm4_cfb128_encrypt_final:
 	mov r12, rax
 	mov r13, rax
 	mov r14, rax
-	shr r14, 1
-	xor r14, rbx
-	and r14, QWORD PTR [r9+32]
-	xor rbx, r14
-	ror r14, 63
-	xor rax, r14
-	mov r14, rcx
-	shr r14, 1
-	xor r14, rbp
-	and r14, QWORD PTR [r9+32]
-	xor rbp, r14
-	ror r14, 63
-	xor rcx, r14
-	mov r14, r10
-	shr r14, 1
-	xor r14, r11
-	and r14, QWORD PTR [r9+32]
-	xor r11, r14
-	ror r14, 63
+	shr r14, 4
+	xor r14, r10
+	and r14, QWORD PTR [r9+48]
 	xor r10, r14
-	mov r14, r12
-	shr r14, 1
-	xor r14, r13
-	and r14, QWORD PTR [r9+32]
-	xor r13, r14
-	ror r14, 63
+	ror r14, 60
+	xor rax, r14
+	mov r14, rbx
+	shr r14, 4
+	xor r14, r11
+	and r14, QWORD PTR [r9+48]
+	xor r11, r14
+	ror r14, 60
+	xor rbx, r14
+	mov r14, rcx
+	shr r14, 4
+	xor r14, r12
+	and r14, QWORD PTR [r9+48]
 	xor r12, r14
+	ror r14, 60
+	xor rcx, r14
+	mov r14, rbp
+	shr r14, 4
+	xor r14, r13
+	and r14, QWORD PTR [r9+48]
+	xor r13, r14
+	ror r14, 60
+	xor rbp, r14
 	mov r14, rax
 	shr r14, 2
 	xor r14, rcx
@@ -1890,33 +1890,33 @@ vg_sm4_cfb128_encrypt_final:
 	ror r14, 62
 	xor r11, r14
 	mov r14, rax
-	shr r14, 4
-	xor r14, r10
-	and r14, QWORD PTR [r9+48]
-	xor r10, r14
-	ror r14, 60
-	xor rax, r14
-	mov r14, rbx
-	shr r14, 4
-	xor r14, r11
-	and r14, QWORD PTR [r9+48]
-	xor r11, r14
-	ror r14, 60
+	shr r14, 1
+	xor r14, rbx
+	and r14, QWORD PTR [r9+32]
 	xor rbx, r14
+	ror r14, 63
+	xor rax, r14
 	mov r14, rcx
-	shr r14, 4
-	xor r14, r12
-	and r14, QWORD PTR [r9+48]
-	xor r12, r14
-	ror r14, 60
-	xor rcx, r14
-	mov r14, rbp
-	shr r14, 4
-	xor r14, r13
-	and r14, QWORD PTR [r9+48]
-	xor r13, r14
-	ror r14, 60
+	shr r14, 1
+	xor r14, rbp
+	and r14, QWORD PTR [r9+32]
 	xor rbp, r14
+	ror r14, 63
+	xor rcx, r14
+	mov r14, r10
+	shr r14, 1
+	xor r14, r11
+	and r14, QWORD PTR [r9+32]
+	xor r11, r14
+	ror r14, 63
+	xor r10, r14
+	mov r14, r12
+	shr r14, 1
+	xor r14, r13
+	and r14, QWORD PTR [r9+32]
+	xor r13, r14
+	ror r14, 63
+	xor r12, r14
 	and rax, QWORD PTR [r9+392]
 	mov r14, rax
 	ror r14, 8
@@ -2376,33 +2376,33 @@ vg_sm4_cfb128_decrypt_final:
 	mov r12, rax
 	mov r13, rax
 	mov r14, rax
-	shr r14, 1
-	xor r14, rbx
-	and r14, QWORD PTR [r9+32]
-	xor rbx, r14
-	ror r14, 63
-	xor rax, r14
-	mov r14, rcx
-	shr r14, 1
-	xor r14, rbp
-	and r14, QWORD PTR [r9+32]
-	xor rbp, r14
-	ror r14, 63
-	xor rcx, r14
-	mov r14, r10
-	shr r14, 1
-	xor r14, r11
-	and r14, QWORD PTR [r9+32]
-	xor r11, r14
-	ror r14, 63
+	shr r14, 4
+	xor r14, r10
+	and r14, QWORD PTR [r9+48]
 	xor r10, r14
-	mov r14, r12
-	shr r14, 1
-	xor r14, r13
-	and r14, QWORD PTR [r9+32]
-	xor r13, r14
-	ror r14, 63
+	ror r14, 60
+	xor rax, r14
+	mov r14, rbx
+	shr r14, 4
+	xor r14, r11
+	and r14, QWORD PTR [r9+48]
+	xor r11, r14
+	ror r14, 60
+	xor rbx, r14
+	mov r14, rcx
+	shr r14, 4
+	xor r14, r12
+	and r14, QWORD PTR [r9+48]
 	xor r12, r14
+	ror r14, 60
+	xor rcx, r14
+	mov r14, rbp
+	shr r14, 4
+	xor r14, r13
+	and r14, QWORD PTR [r9+48]
+	xor r13, r14
+	ror r14, 60
+	xor rbp, r14
 	mov r14, rax
 	shr r14, 2
 	xor r14, rcx
@@ -2432,33 +2432,33 @@ vg_sm4_cfb128_decrypt_final:
 	ror r14, 62
 	xor r11, r14
 	mov r14, rax
-	shr r14, 4
-	xor r14, r10
-	and r14, QWORD PTR [r9+48]
-	xor r10, r14
-	ror r14, 60
-	xor rax, r14
-	mov r14, rbx
-	shr r14, 4
-	xor r14, r11
-	and r14, QWORD PTR [r9+48]
-	xor r11, r14
-	ror r14, 60
+	shr r14, 1
+	xor r14, rbx
+	and r14, QWORD PTR [r9+32]
 	xor rbx, r14
+	ror r14, 63
+	xor rax, r14
 	mov r14, rcx
-	shr r14, 4
-	xor r14, r12
-	and r14, QWORD PTR [r9+48]
-	xor r12, r14
-	ror r14, 60
-	xor rcx, r14
-	mov r14, rbp
-	shr r14, 4
-	xor r14, r13
-	and r14, QWORD PTR [r9+48]
-	xor r13, r14
-	ror r14, 60
+	shr r14, 1
+	xor r14, rbp
+	and r14, QWORD PTR [r9+32]
 	xor rbp, r14
+	ror r14, 63
+	xor rcx, r14
+	mov r14, r10
+	shr r14, 1
+	xor r14, r11
+	and r14, QWORD PTR [r9+32]
+	xor r11, r14
+	ror r14, 63
+	xor r10, r14
+	mov r14, r12
+	shr r14, 1
+	xor r14, r13
+	and r14, QWORD PTR [r9+32]
+	xor r13, r14
+	ror r14, 63
+	xor r12, r14
 	and rax, QWORD PTR [r9+384]
 	mov r14, rax
 	ror r14, 56
@@ -2599,33 +2599,33 @@ vg_sm4_cfb128_decrypt_final:
 	mov r12, rax
 	mov r13, rax
 	mov r14, rax
-	shr r14, 1
-	xor r14, rbx
-	and r14, QWORD PTR [r9+32]
-	xor rbx, r14
-	ror r14, 63
-	xor rax, r14
-	mov r14, rcx
-	shr r14, 1
-	xor r14, rbp
-	and r14, QWORD PTR [r9+32]
-	xor rbp, r14
-	ror r14, 63
-	xor rcx, r14
-	mov r14, r10
-	shr r14, 1
-	xor r14, r11
-	and r14, QWORD PTR [r9+32]
-	xor r11, r14
-	ror r14, 63
+	shr r14, 4
+	xor r14, r10
+	and r14, QWORD PTR [r9+48]
 	xor r10, r14
-	mov r14, r12
-	shr r14, 1
-	xor r14, r13
-	and r14, QWORD PTR [r9+32]
-	xor r13, r14
-	ror r14, 63
+	ror r14, 60
+	xor rax, r14
+	mov r14, rbx
+	shr r14, 4
+	xor r14, r11
+	and r14, QWORD PTR [r9+48]
+	xor r11, r14
+	ror r14, 60
+	xor rbx, r14
+	mov r14, rcx
+	shr r14, 4
+	xor r14, r12
+	and r14, QWORD PTR [r9+48]
 	xor r12, r14
+	ror r14, 60
+	xor rcx, r14
+	mov r14, rbp
+	shr r14, 4
+	xor r14, r13
+	and r14, QWORD PTR [r9+48]
+	xor r13, r14
+	ror r14, 60
+	xor rbp, r14
 	mov r14, rax
 	shr r14, 2
 	xor r14, rcx
@@ -2655,33 +2655,33 @@ vg_sm4_cfb128_decrypt_final:
 	ror r14, 62
 	xor r11, r14
 	mov r14, rax
-	shr r14, 4
-	xor r14, r10
-	and r14, QWORD PTR [r9+48]
-	xor r10, r14
-	ror r14, 60
-	xor rax, r14
-	mov r14, rbx
-	shr r14, 4
-	xor r14, r11
-	and r14, QWORD PTR [r9+48]
-	xor r11, r14
-	ror r14, 60
+	shr r14, 1
+	xor r14, rbx
+	and r14, QWORD PTR [r9+32]
 	xor rbx, r14
+	ror r14, 63
+	xor rax, r14
 	mov r14, rcx
-	shr r14, 4
-	xor r14, r12
-	and r14, QWORD PTR [r9+48]
-	xor r12, r14
-	ror r14, 60
-	xor rcx, r14
-	mov r14, rbp
-	shr r14, 4
-	xor r14, r13
-	and r14, QWORD PTR [r9+48]
-	xor r13, r14
-	ror r14, 60
+	shr r14, 1
+	xor r14, rbp
+	and r14, QWORD PTR [r9+32]
 	xor rbp, r14
+	ror r14, 63
+	xor rcx, r14
+	mov r14, r10
+	shr r14, 1
+	xor r14, r11
+	and r14, QWORD PTR [r9+32]
+	xor r11, r14
+	ror r14, 63
+	xor r10, r14
+	mov r14, r12
+	shr r14, 1
+	xor r14, r13
+	and r14, QWORD PTR [r9+32]
+	xor r13, r14
+	ror r14, 63
+	xor r12, r14
 	and rax, QWORD PTR [r9+392]
 	mov r14, rax
 	ror r14, 8

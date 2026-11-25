@@ -1,416 +1,377 @@
 module
 
 public import VerifiedGarbage.Impl.Aes.X86.Sse
-public import VerifiedGarbage.Proof.Aes.Bitsliced
-public import VerifiedGarbage.Proof.Aes.SboxSpec
-public import VerifiedGarbage.Proof.Aes.InvSboxSpec
-public import VerifiedGarbage.Proof.Aes.InvRounds
-import VerifiedGarbage.Proof.Aes.Vector
-public import VerifiedGarbage.Proof.Framework.X86.StraightX
-import VerifiedGarbage.Proof.Framework.Lit
-import VerifiedGarbage.Proof.Framework.X86.Lit
-import VerifiedGarbage.Proof.Framework.Omega
-meta import VerifiedGarbage.Impl.Aes.X86.Sse
-meta import VerifiedGarbage.Proof.Aes.Bitsliced
-meta import VerifiedGarbage.Proof.Aes.SboxSpec
-meta import VerifiedGarbage.Proof.Aes.InvSboxSpec
-meta import VerifiedGarbage.Proof.Aes.InvRounds
-meta import VerifiedGarbage.Proof.Framework.X86.StraightX
-meta import VerifiedGarbage.Proof.Framework.Lit
-meta import VerifiedGarbage.Proof.Framework.X86.Lit
-meta import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Aes.Sbox0
+public import VerifiedGarbage.Proof.Framework.X86.StraightSse
+import VerifiedGarbage.Proof.Framework.AddrArith
 
--- separate module: the kernel's checks of the layers, which a change to the proofs of the rounds need not run
--- again
+/-!
+# The layers of bitsliced AES in SSE2 registers on x86 (32-bit), by evaluation
+
+Each piece of straight-line code is evaluated by the kernel: the S-boxes on
+truth tables of 256 rows (`sub_ok`), and what only moves and adds bits on
+words of atoms (`lin_ok`), compared with the pairs (slice, position) whose
+bits each bit of the result adds (`Proof/Aes/Bitsliced.lean`, with `B = 8`).
+Slices are where a function to `Loc` says: in registers and in slots.
+-/
 
 @[expose] public section
 
 namespace VG.Proof.Aes.X86.Sse
 
-open VG VG.X86 VG.X86.StraightX VG.Bitslice VG.Impl.Aes.X86.Sse VG.Proof.Aes
-open VG.Impl.Aes.X86 (sb)
-open VG.Spec.Aes (sbox)
+open VG VG.X86 VG.X86.StraightSse VG.Bitslice VG.Impl.Aes.X86.Sse VG.Proof.Aes
 
-/-! ## The layout -/
+/-! ## The evaluator, without a table of constants -/
 
-/-- The row in dword `d`. -/
-def rowOf (d : Nat) : Nat := d / 2 + 2 * (d % 2)
+/-- `k` slots at `b`, and `n` words at `e`. -/
+def cfgAt (b : Reg) (k : Nat) (e : Reg) (n : Nat) : Cfg :=
+  { base := b, slots := k, ext := e, exts := n, tbl := .ebp, name := "", words := [] }
 
-/-- Byte `r + 4c` of block `b` is at this position. -/
-def pos (b i : Nat) : Nat := 32 * (2 * (i % 4 % 2) + i % 4 / 2) + 8 * (i / 4) + b
+/-- The slots, and `n` words at `eax`. -/
+abbrev cfg (n : Nat) : Cfg := cfgAt .edi 18 .eax n
 
-/-- The byte at position `p`. -/
-def idx (p : Nat) : Nat := rowOf (p / 32) + 4 * (p / 8 % 4)
+def sseOnly (is : List Instr) : Bool :=
+  is.all fun | .xop _ | .movdquLoad .. | .movdquStore .. => true | _ => false
 
-/-- Position `p` moved `k` rows down, and `row` columns right (`ShiftRows`). -/
-def src (p k : Nat) : Nat :=
-  let r := (rowOf (p / 32) + k) % 4
-  32 * (2 * (r % 2) + r / 2) + 8 * ((p / 8 % 4 + r) % 4) + p % 8
+/-- SSE2 instructions do not depend on the addresses of symbols, nor change them. -/
+theorem exec_syms {i : Instr} (h : sseOnly [i] = true) (σ : String → BitVec 32) (s : State) :
+    exec i { s with syms := σ } = (exec i s).map fun t => { t with syms := σ } := by
+  cases i with
+  | xop o => cases o <;> rfl
+  | movdquLoad d m =>
+    show Option.map _ (s.load128 (s.ea m)) = Option.map _ (Option.map _ (s.load128 (s.ea m)))
+    rw [Option.map_map]; rfl
+  | movdquStore m r =>
+    simp only [exec, State.store128]
+    show (if InRegions s.wr (s.ea m) 16 then _ else none) = Option.map _ (if InRegions s.wr (s.ea m) 16 then _ else none)
+    split <;> rfl
+  | _ => cases h
 
-/-! ## The layers, as atoms -/
+theorem runBlock_syms {is : List Instr} (h : sseOnly is = true) (σ : String → BitVec 32) (s : State) :
+    runBlock isa is { s with syms := σ } = (runBlock isa is s).map fun t => { t with syms := σ } := by
+  induction is generalizing s with
+  | nil => rfl
+  | cons i is ih =>
+    simp only [sseOnly, List.all_cons, Bool.and_eq_true] at h ih
+    show (exec i { s with syms := σ }).bind (runBlock isa is) = ((exec i s).bind (runBlock isa is)).map _
+    rw [exec_syms (by simp only [sseOnly, List.all_cons, List.all_nil, Bool.and_true]; exact h.1)]
+    cases exec i s with
+    | none => rfl
+    | some t => exact ih h.2 t
 
-def toBsG (j p : Nat) : List Nat := [128 * (p % 8) + (8 * idx p + j), 128 * 8 + (8 * idx p + j)]
-def fromBsG (b t : Nat) : List Nat := [128 * (t % 8) + src (pos b (t / 8)) 0, 128 * 8 + t]
-def linearG (j p : Nat) : List Nat := (mcWords j).map (fun wk => 128 * wk.1 + src p wk.2) ++ [128 * (8 + j) + p]
-def bsKeyG (j p : Nat) : List Nat := [8 * idx p + j]
+/-- What the machine needs. -/
+structure OkAt (b : Reg) (k : Nat) (e : Reg) (n : Nat) (s : State) : Prop where
+  slotIn : ∀ j < k, InRegions s.wr (xAddr (s.gpr b) j) 16
+  extIn : ∀ j < n, InRegions (s.rd ++ s.wr) (xAddr (s.gpr e) j) 16
+  fit : (s.gpr b).toNat + 16 * k ≤ 2 ^ 32
+  sep : ∀ i < k, ∀ j < n, Mem.Sep (xAddr (s.gpr b) i) 16 (xAddr (s.gpr e) j) 16
 
-/-- The word of `{63}` in each byte. -/
-def c63 : Nat := 0x63636363636363636363636363636363
-/-- Bit `j` of `{63}` at every position. -/
-def n63 (j : Nat) : Nat := if (0x63).testBit j then 2 ^ 128 - 1 else 0
+abbrev Ok (n : Nat) (s : State) : Prop := OkAt .edi 18 .eax n s
 
-/-- The state in slots `0 … 7`, the round keys at `kp`. -/
-def roundCfg : Cfg := { base := sb, slots := slots, ext := kp, exts := 8 }
-/-- The state, the schedule's round key at `ecx`. -/
-def keyCfg : Cfg := { base := sb, slots := slots, ext := .ecx, exts := 1 }
-/-- A bitsliced round key, from the schedule's at `ecx`. -/
-def bsKeyCfg : Cfg := { base := kp, slots := 8, ext := .ecx, exts := 1 }
+theorem run' {α : Type} {D : XDom α} {R : α → BitVec 128 → Prop} (hD : D.Sound R) {b e : Reg} {k n : Nat}
+    {ext : Nat → Option α} {is : List Instr} {v v' : StraightSse.Env α} {s : State} (hs : sseOnly is = true)
+    (hok : OkAt b k e n s) (hrel : Rel R (cfgAt b k e n) ext v s) (h : eval D (cfgAt b k e n) ext is v = some v') :
+    ∃ s', runBlock isa is s = some s' ∧ Post R (cfgAt b k e n) ext v' s s' is := by
+  obtain ⟨t, ht, p⟩ := run hD (s := { s with syms := fun _ => s.gpr .ebp })
+    ⟨hok.slotIn, hok.extIn, hok.fit, hok.sep, rfl⟩ ⟨hrel.reg, hrel.slot, hrel.ext⟩ h
+  rw [runBlock_syms hs] at ht
+  obtain ⟨s', hs', rfl⟩ := Option.map_eq_some_iff.mp ht
+  have hsy : s'.syms = s.syms := by
+    have := runBlock_syms hs s.syms s
+    rw [show ({ s with syms := s.syms } : State) = s from rfl, hs'] at this
+    have h2 : s' = { s' with syms := s.syms } := Option.some.inj this
+    have h3 := congrArg State.syms h2
+    exact h3
+  refine ⟨s', hs', ⟨p.rel.reg, p.rel.slot, p.rel.ext⟩, ?_, p.other, p.kept, p.frame⟩
+  have ho := congrArg (fun x : State => { x with syms := s.syms }) p.only
+  exact (show s' = { s' with syms := s.syms } by rw [← hsy]).trans ho
 
-def qIns (j : Nat) : Option Nat := if j < 8 then some j else none
-def qOuts (cst : Nat → Nat) (g : Nat → Nat → List Nat) : List (Nat × Nat × (Nat → List Nat)) :=
-  (List.range 8).map fun j => (j, cst j, g j)
+/-! ## Where slices are -/
 
-theorem toBs_check : check (lanes 128 11) keyCfg toBs (linEnv slots 1 8 qIns)
-    (linPost slots 11 (qOuts (fun _ => 0) toBsG)) = true := by
-  decide +kernel
+/-- What is at `l`. -/
+def locVal (s : State) : Loc → BitVec 128
+  | .x r => s.xmm r
+  | .m k => s.mem.readW (xAddr (s.gpr .edi) k) 128
 
-theorem fromBs_check : check (lanes 128 11) keyCfg fromBs (linEnv slots 1 8 qIns)
-    (linPost slots 11 (qOuts (fun _ => c63) fromBsG)) = true := by
-  decide +kernel
+def locAt {α : Type} (e : StraightSse.Env α) : Loc → Option α
+  | .x r => e.reg r
+  | .m k => e.slot k
 
-theorem linear_check : check (lanes 128 11) roundCfg linear (linEnv slots 8 8 qIns)
-    (linPost slots 11 (qOuts (fun _ => 0) linearG)) = true := by
-  decide +kernel
+def locOk : Loc → Bool
+  | .x _ => true
+  | .m k => decide (k < 18)
 
-theorem bsKey_check : check (lanes 128 7) bsKeyCfg bsKey (linEnv 8 1 0 (fun _ => none))
-    (linPost 8 7 (qOuts n63 bsKeyG)) = true := by
-  decide +kernel
+def envOf {α : Type} (l : List (Loc × α)) : StraightSse.Env α :=
+  { reg := fun r => (l.find? (·.1 == .x r)).map (·.2)
+    slot := fun k => (l.find? (·.1 == .m k)).map (·.2) }
 
-/-- The place `InvShiftRows` moves to position `p`. -/
-def invSrc (p : Nat) : Nat := 32 * (p / 32) + 8 * ((p / 8 % 4 + 4 - rowOf (p / 32)) % 4) + p % 8
-/-- Position `p`, `k` rows down. -/
-def down (p k : Nat) : Nat :=
-  let r := (rowOf (p / 32) + k) % 4
-  32 * (2 * (r % 2) + r / 2) + p % 32
+theorem rel_envOf {α : Type} {R : α → BitVec 128 → Prop} {n : Nat} {ext : Nat → Option α} {l : List (Loc × α)}
+    {s : State} (hin : ∀ p ∈ l, R p.2 (locVal s p.1))
+    (hext : ∀ k a, k < n → ext k = some a → R a (s.mem.readW (xAddr (s.gpr .eax) k) 128)) :
+    Rel R (cfg n) ext (envOf l) s where
+  reg r a h := by
+    simp only [envOf, Option.map_eq_some_iff] at h
+    obtain ⟨⟨l', b⟩, hf, rfl⟩ := h
+    have hl : l' = .x r := by simpa using List.find?_some hf
+    subst hl
+    exact hin _ (List.mem_of_find?_eq_some hf)
+  slot k a _ h := by
+    simp only [envOf, Option.map_eq_some_iff] at h
+    obtain ⟨⟨l', b⟩, hf, rfl⟩ := h
+    have hl : l' = .m k := by simpa using List.find?_some hf
+    subst hl
+    exact hin _ (List.mem_of_find?_eq_some hf)
+  ext := hext
 
-def invFromBsG (b t : Nat) : List Nat := [128 * (t % 8) + invSrc (pos b (t / 8)), 128 * 8 + t]
-def invLinearG (j p : Nat) : List Nat :=
-  (invMcWords j).map (fun wk => 128 * wk.1 + invSrc (down p wk.2)) ++
-    (invMcWords j).map (fun wk => 128 * (8 + wk.1) + down p wk.2)
+/-- What a layer keeps: it changes only XMM registers and slots. -/
+structure Keep (s s' : State) : Prop where
+  only : s' = { s with xmm := s'.xmm, mem := s'.mem }
+  frame : Frame [⟨(s.gpr .edi).setWidth 64, 288⟩] s.mem s'.mem
 
-theorem invToBs_check : check (lanes 128 11) keyCfg invToBs (linEnv slots 1 8 qIns)
-    (linPost slots 11 (qOuts n63 toBsG)) = true := by
-  decide +kernel
+theorem Keep.gpr {s s' : State} (h : Keep s s') : s'.gpr = s.gpr := by rw [h.only]
+theorem Keep.rd {s s' : State} (h : Keep s s') : s'.rd = s.rd := by rw [h.only]
+theorem Keep.wr {s s' : State} (h : Keep s s') : s'.wr = s.wr := by rw [h.only]
+theorem Keep.zf {s s' : State} (h : Keep s s') : s'.zf = s.zf := by rw [h.only]
 
-theorem invFromBs_check : check (lanes 128 11) keyCfg invFromBs (linEnv slots 1 8 qIns)
-    (linPost slots 11 (qOuts (fun _ => 0) invFromBsG)) = true := by
-  decide +kernel
+theorem post_at {α : Type} {R : α → BitVec 128 → Prop} {n : Nat} {ext : Nat → Option α} {e : StraightSse.Env α} {s s' : State}
+    {is : List Instr} (p : Post R (cfg n) ext e s s' is) {l : Loc} (hl : locOk l = true) {a : α}
+    (h : locAt e l = some a) : R a (locVal s' l) := by
+  cases l with
+  | x r => exact p.rel.reg r a h
+  | m k => exact p.rel.slot k a (of_decide_eq_true hl) h
 
-theorem invLinear_check : check (lanes 128 11) roundCfg invLinear (linEnv slots 8 8 qIns)
-    (linPost slots 11 (qOuts (fun _ => 0) invLinearG)) = true := by
-  decide +kernel
+/-! ## Linear layers -/
 
-def inT (k : Nat) : Nat := tableOf (fun c => c.testBit k) 256
-def inTs : List Nat := (List.range 8).map inT
+/-- The slices at `li`, and masks. -/
+def linIns (li : Nat → Loc) (ms : List (XReg × BitVec 128)) : List (Loc × (Nat × Nat)) :=
+  ((List.range 8).map fun j => (li j, inWordW 128 j)) ++ ms.map fun m => (.x m.1, (m.2.toNat, 0))
 
-def sboxEnv : Env Nat := { slots := (List.range slots).map fun k => if k < 8 then some (inT k) else none }
+/-- Word `j` at `eax`. -/
+def linExt (j : Nat) : Option (Nat × Nat) := some (inWordW 128 (8 + j))
 
-/-- The S-box's tables, without the complements. -/
-def sboxPost (e : Env Nat) : Bool :=
-  (List.range 8).all fun j => e.slot j == some ((sboxT inTs).getD j 0 ^^^ (if (0x63).testBit j then 2 ^ 256 - 1 else 0))
+/-- Pairs as the numbers of atoms. -/
+def atoms (T : Nat → Nat → List (Nat × Nat)) (j p : Nat) : List Nat := (T j p).map fun t => 128 * t.1 + t.2
 
-def sboxCfg : Cfg := { base := sb, slots := slots, ext := sb, exts := 0 }
+def linPost (lo : Nat → Loc) (T : Nat → Nat → List (Nat × Nat)) (e : StraightSse.Env (Nat × Nat)) : Bool :=
+  (List.range 8).all fun j => locOk (lo j) && outOkW 128 11 (locAt e (lo j)) (atoms T j)
 
-theorem sbox_check : check (table 128 256) sboxCfg sboxCode sboxEnv sboxPost = true := by
-  decide +kernel
+def linCheck (n : Nat) (is : List Instr) (li : Nat → Loc) (ms : List (XReg × BitVec 128)) (lo : Nat → Loc)
+    (T : Nat → Nat → List (Nat × Nat)) : Bool :=
+  sseOnly is && check (ofDom (lanes 128 11)) (cfg n) linExt is (envOf (linIns li ms)) (linPost lo T)
 
-/-- The tables of the bits of the input XOR `{63}`. -/
-def inT63 (k : Nat) : Nat := inT k ^^^ (if (0x63).testBit k then 2 ^ 256 - 1 else 0)
-def inTs63 : List Nat := (List.range 8).map inT63
+/-- The words a layer reads: the slices, and those at `eax`. -/
+def words (li : Nat → Loc) (s : State) (j : Nat) : BitVec 128 :=
+  if j < 8 then locVal s (li j) else s.mem.readW (xAddr (s.gpr .eax) (j - 8)) 128
 
-/-- The inverse S-box's tables, of the input XOR `{63}`. -/
-def invSboxPost (e : Env Nat) : Bool :=
-  (List.range 8).all fun j => e.slot j == some ((invSboxT inTs63).getD j 0)
+/-- A linear layer that the evaluator accepts. -/
+theorem lin_ok {n : Nat} {is : List Instr} {li lo : Nat → Loc} {ms : List (XReg × BitVec 128)}
+    {T : Nat → Nat → List (Nat × Nat)} (hchk : linCheck n is li ms lo T = true) (hn : n ≤ 8)
+    (hT : ∀ j < 8, ∀ p < 128, ∀ t ∈ T j p, t.2 < 128) {s : State} (hok : Ok n s)
+    (hm : ∀ m ∈ ms, s.xmm m.1 = m.2) :
+    ∃ s', runBlock isa is s = some s' ∧ Keep s s' ∧
+      ∀ j < 8, ∀ p < 128, (locVal s' (lo j)).getLsbD p = termsXor (words li s) (T j p) := by
+  rw [linCheck, Bool.and_eq_true] at hchk
+  obtain ⟨hsse, hchk⟩ := hchk
+  obtain ⟨e', he, hpost⟩ := of_check _ _ _ hchk
+  have hrel : Rel (LaneRel 11 (assign (words li s) (2 ^ 11))) (cfg n) linExt (envOf (linIns li ms)) s := by
+    refine rel_envOf (fun p hp => ?_) fun k a hk h => ?_
+    · simp only [linIns, List.mem_append, List.mem_map, List.mem_range] at hp
+      rcases hp with ⟨j, hj, rfl⟩ | ⟨m, hmm, rfl⟩
+      · have := inWordW_rel (k := 11) (words li s) (i := j) (by omega)
+        rwa [words, ite_eq_left hj] at this
+      · show LaneRel _ _ _ (s.xmm m.1)
+        rw [hm m hmm]
+        exact lanes_sound.const rfl
+    · simp only [linExt, Option.some.injEq] at h
+      subst h
+      have := inWordW_rel (k := 11) (words li s) (i := 8 + k) (by omega)
+      rwa [words, ite_eq_right (by omega), Nat.add_sub_cancel_left] at this
+  obtain ⟨s', hs', p⟩ := run' (ofDom_sound _ lanes_sound) hsse hok hrel he
+  refine ⟨s', hs', ⟨p.only, p.frame⟩, fun j hj q hq => ?_⟩
+  have h := List.all_eq_true.mp hpost j (List.mem_range.mpr hj)
+  simp only [Bool.and_eq_true] at h
+  obtain ⟨h1, h2⟩ := outOkW_spec h.2
+  have := outWordW_rel_of_lt h2 (post_at p h.1 h1) q hq
+  rw [this]
+  exact xorBits_map (words li s) (T j q) (hT j hj q hq)
 
-theorem invSbox_check : check (table 128 256) sboxCfg invSboxCode sboxEnv invSboxPost = true := by
-  decide +kernel
+/-! ## S-boxes -/
 
-/-! ## The layers, on states -/
+def subIns : List (Loc × Nat) := (List.range 8).map fun j => (mid j, sbIn j)
+def subPost (lo : Nat → Loc) (T : List Nat) (e : StraightSse.Env Nat) : Bool :=
+  (List.range 8).all fun j => locOk (lo j) && locAt e (lo j) == some (T.getD j 0)
 
-/-- The byte at position `p` of eight words: its bit `k` is bit `p` of word `k`. -/
-def bsByte (Q : Nat → BitVec 128) (p : Nat) : Byte := ofBits 8 fun k => (Q k).getLsbD p
+def subCheck (is : List Instr) (lo : Nat → Loc) (T : List Nat) : Bool :=
+  sseOnly is && check (ofDom (table 128 256)) (cfg 0) (fun _ => none) is (envOf subIns) (subPost lo T)
 
-theorem getLsbD_bsByte (Q : Nat → BitVec 128) (p : Nat) {k : Nat} (hk : k < 8) :
-    (bsByte Q p).getLsbD k = (Q k).getLsbD p := by
-  rw [bsByte, getLsbD_ofBits]; simp [hk]
-
-/-- The words `Q` hold the eight states `S`. -/
-def BsRel (Q : Nat → BitVec 128) (S : Nat → Spec.Aes.State) : Prop :=
-  ∀ b < 8, ∀ i < 16, bsByte Q (pos b i) = (S b).getD i 0
-
-/-- The words `K` hold the round key `rk`, XORed with `{63}`, for all eight blocks. -/
-def KeyRel (K : Nat → BitVec 128) (rk : List Byte) : Prop :=
-  ∀ b < 8, ∀ i < 16, bsByte K (pos b i) = rk.getD i 0 ^^^ 0x63
-
-/-- The words `Q` hold the eight blocks `S`, byte by byte. -/
-def InRel (Q : Nat → BitVec 128) (S : Nat → Spec.Aes.State) : Prop :=
-  ∀ b < 8, ∀ i < 16, ∀ j < 8, (Q b).getLsbD (8 * i + j) = ((S b).getD i 0).getLsbD j
-
-/-- The word `w` holds the round key `rk`, byte by byte. -/
-def RkRel (w : BitVec 128) (rk : List Byte) : Prop :=
-  ∀ i < 16, ∀ j < 8, w.getLsbD (8 * i + j) = (rk.getD i 0).getLsbD j
-
-/-- A state XORed with `{63}` in each byte. -/
-def x63 (S : Spec.Aes.State) : Spec.Aes.State := Vector.ofFn fun i => S[i] ^^^ 0x63
-
-theorem getD_x63 (S : Spec.Aes.State) {i : Nat} (hi : i < 16) : (x63 S).getD i 0 = S.getD i 0 ^^^ 0x63 := by
-  rw [getD_eq _ hi, getD_eq _ hi, x63, Vector.getElem_ofFn]; rfl
-
-theorem pos_lt {b i : Nat} (hb : b < 8) (hi : i < 16) : pos b i < 128 := by
-  simp only [pos]; omega_using [hb, hi]
-
-theorem pos_facts : ∀ b < 8, ∀ i < 16, pos b i % 8 = b ∧ idx (pos b i) = i := by decide
-
-theorem src_pos : ∀ b < 8, ∀ i < 16, ∀ k < 4,
-    src (pos b i) k = pos b ((i % 4 + k) % 4 + 4 * ((i / 4 + (i % 4 + k) % 4) % 4)) := by decide
-
-theorem src_lt : ∀ p < 128, ∀ k < 4, src p k < 128 := by decide +kernel
-
-theorem n63_bit {j p : Nat} (hp : p < 128) : (n63 j).testBit p = (0x63#8).getLsbD j := by
-  rw [n63, show (0x63#8).getLsbD j = (0x63).testBit j from rfl]
-  split
-  · rename_i h; rw [Nat.testBit_two_pow_sub_one, decide_eq_true hp, h]
-  · rename_i h; simp only [Nat.zero_testBit]; simpa using h
-
-theorem c63_bits : ∀ i < 16, ∀ j < 8, c63.testBit (8 * i + j) = (0x63#8).getLsbD j := by decide +kernel
-
-theorem xtimes_xor (a b : Byte) : Spec.Aes.xtimes (a ^^^ b) = Spec.Aes.xtimes a ^^^ Spec.Aes.xtimes b :=
-  byte_ext fun j hj => by
-    simp only [BitVec.getLsbD_xor, xtimes_bit _ hj]
-    generalize decide (j = 0 ∨ j = 1 ∨ j = 3 ∨ j = 4) = d
-    split <;> cases a.getLsbD 7 <;> cases b.getLsbD 7 <;> cases d <;> cases a.getLsbD (j - 1) <;>
-      cases b.getLsbD (j - 1) <;> rfl
-
-/-- A byte of `AddRoundKey` after `MixColumns`, `ShiftRows` and the S-box,
-from bytes that leave out the S-box's `{63}` (`A`, at the rows from this one
-down) and a key byte `K` XORed with it. -/
-theorem mc63 (A : Nat → Byte) (K : Byte) :
-    (Spec.Aes.xtimes ((A 0 ^^^ 0x63) ^^^ (A 1 ^^^ 0x63)) ^^^ (A 1 ^^^ 0x63) ^^^ (A 2 ^^^ 0x63) ^^^ (A 3 ^^^ 0x63)) ^^^
-      (K ^^^ 0x63) =
-    Spec.Aes.mul 0x02 (A 0) ^^^ Spec.Aes.mul 0x03 (A 1) ^^^ A 2 ^^^ A 3 ^^^ K := by
-  rw [show (A 0 ^^^ 0x63) ^^^ (A 1 ^^^ 0x63) = A 0 ^^^ A 1 from byte_ext fun j _ => by
-    simp only [BitVec.getLsbD_xor]
-    cases (A 0).getLsbD j <;> cases (A 1).getLsbD j <;> cases (0x63 : BitVec 8).getLsbD j <;> rfl]
-  rw [xtimes_xor, mul2, mul3]
-  generalize Spec.Aes.xtimes (A 0) = x
-  generalize Spec.Aes.xtimes (A 1) = y
-  generalize A 1 = a; generalize A 2 = b; generalize A 3 = c
-  exact byte_ext fun j _ => by
-    simp only [BitVec.getLsbD_xor]
-    cases (0x63 : BitVec 8).getLsbD j <;> cases x.getLsbD j <;> cases y.getLsbD j <;> cases a.getLsbD j <;>
-      cases b.getLsbD j <;> cases c.getLsbD j <;> cases K.getLsbD j <;> rfl
-
-/-- What `linear` does to the bytes: `g p k` is the byte `k` rows down from position `p` after ShiftRows. -/
-theorem linear_byte {W : Nat → BitVec 128} {Q' : Nat → BitVec 128}
-    (h : ∀ j < 8, ∀ p < 128, (Q' j).getLsbD p = xorBits W (linearG j p)) {p : Nat} (hp : p < 128) :
-    bsByte Q' p = Spec.Aes.xtimes (bsByte W (src p 0) ^^^ bsByte W (src p 1)) ^^^ bsByte W (src p 1) ^^^
-      bsByte W (src p 2) ^^^ bsByte W (src p 3) ^^^ bsByte (fun k => W (8 + k)) p := by
-  refine byte_ext fun j hj => ?_
-  have hw : ∀ w k, k < 4 → bitOf W (128 * w + src p k) = (W w).getLsbD (src p k) :=
-    fun w k hk => bitOf_word W w _ (src_lt p hp k hk)
-  have hk : bitOf W (128 * (8 + j) + p) = (W (8 + j)).getLsbD p := bitOf_word W _ _ hp
-  rw [getLsbD_bsByte _ _ hj, h j hj p hp]
-  simp only [BitVec.getLsbD_xor, xtimes_bit _ hj, getLsbD_bsByte _ _ hj, getLsbD_bsByte _ _ (show 7 < 8 by decide),
-    getLsbD_bsByte _ _ (show j - 1 < 8 by omega_using [hj]), linearG, mcWords]
-  revert hk hj
-  match j with
-  | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 => ?_
-  | j + 8 => intro hj; omega
-  all_goals
-    intro _ hk
-    simp (disch := decide) only [↓reduceIte, Nat.reduceEqDiff, Nat.reduceSub, or_self, or_true, or_false,
-      List.map_cons, List.map_nil, List.nil_append, List.cons_append,
-      xorBits_cons, xorBits_nil, hw, hk, decide_true, decide_false, Bool.true_and, Bool.false_and, Bool.false_xor,
-      Bool.xor_false, Bool.xor_assoc]
-
-open VG.Spec.Aes (subBytes shiftRows mixColumns addRoundKey)
-open VG.Proof.Aes.Vector (getD_addRoundKey getD_mixColumns getD_shiftRows getD_subBytes)
-
-theorem bs_sub {Q Q' : Nat → BitVec 128} {S : Nat → Spec.Aes.State}
-    (h : ∀ j < 8, ∀ p < 128, (Q' j).getLsbD p = (sbox (bsByte Q p) ^^^ 0x63).getLsbD j) (hr : BsRel Q S) :
-    BsRel Q' fun b => x63 (subBytes (S b)) := by
-  intro b hb i hi
-  rw [getD_x63 _ hi, getD_subBytes _ hi, ← hr b hb i hi]
-  exact byte_ext fun j hj => by rw [getLsbD_bsByte _ _ hj, h j hj _ (pos_lt hb hi)]
-
-theorem bs_linear {W Q' : Nat → BitVec 128} {T : Nat → Spec.Aes.State} {rk : List Byte}
-    (h : ∀ j < 8, ∀ p < 128, (Q' j).getLsbD p = xorBits W (linearG j p)) (hr : BsRel W fun b => x63 (T b))
-    (hk : KeyRel (fun k => W (8 + k)) rk) :
-    BsRel Q' fun b => addRoundKey (mixColumns (shiftRows (T b))) rk := by
-  intro b hb i hi
-  have hs : ∀ k < 4, (i % 4 + k) % 4 + 4 * ((i / 4 + (i % 4 + k) % 4) % 4) < 16 := fun k _ => by omega_using []
-  have hm : ∀ k, (i % 4 + k) % 4 + 4 * (i / 4) < 16 := fun k => by omega_using [hi]
-  have e : ∀ k, ((i % 4 + k) % 4 + 4 * (i / 4)) % 4 = (i % 4 + k) % 4 := fun k => by omega_using []
-  have e' : ∀ k, ((i % 4 + k) % 4 + 4 * (i / 4)) / 4 = i / 4 := fun k => by omega_using [hi]
-  have hA : ∀ k < 4, bsByte W (src (pos b i) k) =
-      (T b).getD ((i % 4 + k) % 4 + 4 * ((i / 4 + (i % 4 + k) % 4) % 4)) 0 ^^^ 0x63 := fun k hk => by
-    rw [src_pos b hb i hi k hk, hr b hb _ (hs k hk), getD_x63 _ (hs k hk)]
-  rw [linear_byte h (pos_lt hb hi), hA 0 (by decide), hA 1 (by decide), hA 2 (by decide), hA 3 (by decide),
-    hk b hb i hi, getD_addRoundKey _ _ hi, getD_mixColumns _ hi]
-  rw [getD_shiftRows _ (hm 0), getD_shiftRows _ (hm 1), getD_shiftRows _ (hm 2), getD_shiftRows _ (hm 3)]
-  simp only [e, e']
-  exact mc63 (fun k => (T b).getD ((i % 4 + k) % 4 + 4 * ((i / 4 + (i % 4 + k) % 4) % 4)) 0) _
-
-theorem bs_toBs {W Q' : Nat → BitVec 128} {S : Nat → Spec.Aes.State} {rk : List Byte}
-    (h : ∀ j < 8, ∀ p < 128, (Q' j).getLsbD p = xorBits W (toBsG j p)) (hr : InRel W S) (hk : RkRel (W 8) rk) :
-    BsRel Q' fun b => addRoundKey (S b) rk := by
-  intro b hb i hi
-  obtain ⟨h1, h2⟩ := pos_facts b hb i hi
-  rw [getD_addRoundKey _ _ hi]
-  refine byte_ext fun j hj => ?_
-  rw [getLsbD_bsByte _ _ hj, h j hj _ (pos_lt hb hi), toBsG, h1, h2, xorBits_cons, xorBits_cons, xorBits_nil,
-    Bool.xor_false, bitOf_word _ _ _ (by omega_using [hi, hj]), bitOf_word _ _ _ (by omega_using [hi, hj]),
-    hr b hb i hi j hj, hk i hi j hj, BitVec.getLsbD_xor]
-
-theorem bs_fromBs {W Q' : Nat → BitVec 128} {T : Nat → Spec.Aes.State} {rk : List Byte}
-    (h : ∀ b < 8, ∀ t < 128, (Q' b).getLsbD t = (c63.testBit t ^^ xorBits W (fromBsG b t)))
-    (hr : BsRel W fun b => x63 (T b)) (hk : RkRel (W 8) rk) :
-    InRel Q' fun b => addRoundKey (shiftRows (T b)) rk := by
-  intro b hb i hi j hj
-  have hs : i % 4 + 4 * ((i / 4 + i % 4) % 4) < 16 := by omega_using []
-  have hsrc := src_pos b hb i hi 0 (by decide)
-  rw [show (i % 4 + 0) % 4 = i % 4 by omega_using []] at hsrc
-  rw [h b hb _ (by omega_using [hi, hj]), c63_bits i hi j hj, getD_addRoundKey _ _ hi, getD_shiftRows _ hi,
-    fromBsG, show (8 * i + j) % 8 = j by omega_using [hj], show (8 * i + j) / 8 = i by omega_using [hj],
-    xorBits_cons, xorBits_cons, xorBits_nil, Bool.xor_false,
-    bitOf_word _ _ _ (src_lt _ (pos_lt hb hi) 0 (by decide)), bitOf_word _ _ _ (by omega_using [hi, hj]),
-    ← getLsbD_bsByte _ _ hj, hsrc, hr b hb _ hs, getD_x63 _ hs, hk i hi j hj, BitVec.getLsbD_xor,
-    BitVec.getLsbD_xor]
-  rw [show (0x63 : BitVec 8).getLsbD j = (0x63#8).getLsbD j from rfl]
-  cases (0x63#8).getLsbD j <;> cases ((T b).getD (i % 4 + 4 * ((i / 4 + i % 4) % 4)) 0).getLsbD j <;>
-    cases (rk.getD i 0).getLsbD j <;> rfl
-
-theorem bs_key {W K : Nat → BitVec 128} {rk : List Byte}
-    (h : ∀ j < 8, ∀ p < 128, (K j).getLsbD p = ((n63 j).testBit p ^^ xorBits W (bsKeyG j p)))
-    (hk : RkRel (W 0) rk) : KeyRel K rk := by
-  intro b hb i hi
-  obtain ⟨-, h2⟩ := pos_facts b hb i hi
-  refine byte_ext fun j hj => ?_
-  have e : bitOf W (8 * i + j) = (W 0).getLsbD (8 * i + j) := by
-    have := bitOf_word W 0 (8 * i + j) (by omega_using [hi, hj])
-    rwa [Nat.mul_zero, Nat.zero_add] at this
-  rw [getLsbD_bsByte _ _ hj, h j hj _ (pos_lt hb hi), n63_bit (pos_lt hb hi), bsKeyG, h2, xorBits_cons, xorBits_nil,
-    Bool.xor_false, e, hk i hi j hj, BitVec.getLsbD_xor, Bool.xor_comm]
-  rfl
-
-/-! ## The layers, on the machine -/
-
-/-- Slot `j`, of 16 bytes. -/
-abbrev Q (s : State) (j : Nat) : BitVec 128 := s.mem.readW (xAddr (s.gpr sb) j) 128
-
-/-- The region of the slots. -/
-abbrev slotsR (s : State) : Region := ⟨(s.gpr sb).setWidth 64, 16 * slots⟩
-
-theorem row_inTs {c : Nat} (hc : c < 256) : row inTs c = BitVec.ofNat 8 c := by
-  refine row_ext fun j hj => ?_
-  simp only [inTs, List.getD_eq_getElem?_getD, List.getElem?_map, List.getElem?_range hj,
-    Option.map_some, Option.getD_some, inT, testBit_tableOf, hc, decide_true, Bool.true_and,
-    BitVec.getLsbD_ofNat, hj]
-
-theorem sbox_keeps : (sboxCode.all fun i => i.dst == none) = true := by decide +kernel
-theorem linear_keeps : (linear.all fun i => i.dst == none) = true := by decide +kernel
-theorem toBs_keeps : (toBs.all fun i => i.dst == none || i.dst == some .eax) = true := by decide +kernel
-theorem fromBs_keeps : (fromBs.all fun i => i.dst == none || i.dst == some .eax) = true := by decide +kernel
-theorem bsKey_keeps : (bsKey.all fun i => i.dst == none || i.dst == some .eax) = true := by decide +kernel
-
-theorem keep_all {is : List Instr} (h : (is.all fun i => i.dst == none) = true) (r : Reg) :
-    (is.all fun i => i.dst != some r) = true :=
-  List.all_eq_true.mpr fun i hi => by
-    have := List.all_eq_true.mp h i hi
-    rw [beq_iff_eq.mp this]; rfl
-
-theorem keep_eax {is : List Instr} (h : (is.all fun i => i.dst == none || i.dst == some .eax) = true) {r : Reg}
-    (hr : r ≠ .eax) : (is.all fun i => i.dst != some r) = true :=
-  List.all_eq_true.mpr fun i hi => by
-    have := List.all_eq_true.mp h i hi
-    simp only [Bool.or_eq_true, beq_iff_eq] at this
-    rcases this with h | h <;> rw [h]
-    · rfl
-    · exact bne_iff_ne.mpr fun e => hr (Option.some.inj e).symm
-
-/-- The complement of a bit of the S-box, as a table. -/
-theorem compl_bit {j c : Nat} (hc : c < 256) :
-    (if (0x63).testBit j then 2 ^ 256 - 1 else 0).testBit c = (0x63 : BitVec 8).getLsbD j := by
-  rw [show (0x63 : BitVec 8).getLsbD j = (0x63).testBit j from rfl]
-  split
-  · rename_i h; rw [Nat.testBit_two_pow_sub_one, decide_eq_true hc, h]
-  · rename_i h; simp only [Nat.zero_testBit]; simpa using h
-
-/-- The S-box, at every bit position of the words in slots `0 … 7`. -/
-theorem sbox_ok {s : State} (hok : Ok sboxCfg s) :
-    ∃ s', runBlock isa sboxCode s = some s' ∧
-      (∀ j < 8, ∀ p < 128, (Q s' j).getLsbD p = (sbox (bsByte (Q s) p) ^^^ 0x63).getLsbD j) ∧
-      s'.rd = s.rd ∧ s'.wr = s.wr ∧ (∀ r, s'.gpr r = s.gpr r) ∧ Frame [slotsR s] s.mem s'.mem := by
-  obtain ⟨e', he, hpost⟩ := of_check _ _ sbox_check
-  have hout : ∀ j < 8, e'.slot j =
-      some ((sboxT inTs).getD j 0 ^^^ (if (0x63).testBit j then 2 ^ 256 - 1 else 0)) := by
-    intro j hj
-    have := List.all_eq_true.mp hpost j (List.mem_range.mpr hj)
-    exact beq_iff_eq.mp this
-  -- The run at bit position `p`, on the input formed by the bits `p`.
-  have key : ∀ p < 128, ∃ s', runBlock isa sboxCode s = some s' ∧
-      Post (TableRel p (bsByte (Q s) p).toNat) sboxCfg e' s s'
-        (fun r => (sboxCode.all fun i => i.dst != some r) = false) := by
+/-- An S-box that the evaluator accepts, `g` its table's function. -/
+theorem sub_ok {is : List Instr} {lo : Nat → Loc} {T : List Nat} {g : Byte → Byte}
+    (hchk : subCheck is lo T = true)
+    (hT : ∀ c j, c < 256 → j < 8 → (T.getD j 0).testBit c = (g (BitVec.ofNat 8 c)).getLsbD j)
+    {s : State} (hok : Ok 0 s) :
+    ∃ s', runBlock isa is s = some s' ∧ Keep s s' ∧
+      ∀ j < 8, ∀ p < 128, (locVal s' (lo j)).getLsbD p =
+        (g (bsByte (fun j => locVal s (mid j)) p)).getLsbD j := by
+  rw [subCheck, Bool.and_eq_true] at hchk
+  obtain ⟨hsse, hchk⟩ := hchk
+  obtain ⟨e', he, hpost⟩ := of_check _ _ _ hchk
+  have key : ∀ p < 128, ∃ s', runBlock isa is s = some s' ∧
+      Post (TableRel p (bsByte (fun j => locVal s (mid j)) p).toNat) (cfg 0) (fun _ => none) e' s s' is := by
     intro p hp
-    have hc := (bsByte (Q s) p).isLt
-    refine run (table_sound hp hc) hok ⟨fun r a h => ?_, fun k a _ h => ?_, fun j _ hj _ => ?_, fun r v h => ?_⟩ he
-    · revert h; cases r <;> intro h <;> cases h
-    · obtain ⟨-, h'⟩ := getD_map_range h
-      split at h'
-      · rename_i hk8
-        cases h'
-        simp only [TableRel, inT, testBit_tableOf, hc, decide_true, Bool.true_and,
-          BitVec.testBit_toNat, getLsbD_bsByte _ _ hk8, Q, sboxCfg]
-      · cases h'
-    · simp [sboxCfg] at hj
-    · revert h; cases r <;> intro h <;> cases h
-  obtain ⟨s', hs', p₀⟩ := key 0 (by omega_using [])
-  refine ⟨s', hs', fun j hj p hp => ?_, p₀.rd, p₀.wr, fun r => p₀.other r ?_, p₀.frame⟩
-  · obtain ⟨s'', hs'', p₁⟩ := key p hp
-    obtain rfl := run_unique hs'' hs'
-    have hc := (bsByte (Q s) p).isLt
-    have := p₁.rel.slot j _ (by simp [sboxCfg, slots]; omega_using [hj]) (hout j hj)
-    have hb : s''.gpr sb = s.gpr sb := p₁.base
-    simp only [TableRel, sboxCfg, hb] at this
-    rw [Q, hb, ← this, Nat.testBit_xor, compl_bit hc, BitVec.getLsbD_xor, ← getLsbD_row _ _ hj,
-      row_sboxT (by simp [inTs]) hc, row_inTs hc, BitVec.ofNat_toNat, BitVec.setWidth_eq]
-  · rw [keep_all sbox_keeps r]; exact Bool.noConfusion
+    refine run' (ofDom_sound _ (table_sound hp (bsByte _ p).isLt)) hsse hok
+      (rel_envOf (fun q hq => ?_) fun k a hk => absurd hk (Nat.not_lt_zero k)) he
+    simp only [subIns, List.mem_map, List.mem_range] at hq
+    obtain ⟨j, hj, rfl⟩ := hq
+    simp only [TableRel, sbIn, testBit_tableOf, (bsByte _ p).isLt, decide_true, Bool.true_and,
+      BitVec.testBit_toNat, getLsbD_bsByte _ _ hj]
+  obtain ⟨s', hs', p₀⟩ := key 0 (by decide)
+  refine ⟨s', hs', ⟨p₀.only, p₀.frame⟩, fun j hj q hq => ?_⟩
+  obtain ⟨s'', hs'', p⟩ := key q hq
+  obtain rfl : s'' = s' := Option.some.inj (hs''.symm.trans hs')
+  have h := List.all_eq_true.mp hpost j (List.mem_range.mpr hj)
+  simp only [Bool.and_eq_true, beq_iff_eq] at h
+  have h2 := post_at p h.1 h.2
+  simp only [TableRel] at h2
+  rw [← h2, hT _ j (bsByte _ q).isLt hj, BitVec.ofNat_toNat, BitVec.setWidth_eq]
 
-theorem mem_qOuts {cst : Nat → Nat} {g : Nat → Nat → List Nat} {j : Nat} (hj : j < 8) :
-    (j, cst j, g j) ∈ qOuts cst g := List.mem_map.mpr ⟨j, List.mem_range.mpr hj, rfl⟩
+theorem sbox_check : subCheck subBytes subOut sbox0T = true := by decide +kernel
+theorem invSbox_check : subCheck invSubBytes invSubOut invSbox0T = true := by decide +kernel
 
-theorem qIns_some {j i : Nat} (h : qIns j = some i) : j < 8 ∧ i = j := by
-  unfold qIns at h
-  split at h
-  · rename_i hj; cases h; exact ⟨hj, rfl⟩
-  · cases h
+/-! ## The layers' bits -/
 
-/-- What a layer of the round keeps, the registers `t` aside. -/
-theorem round_layer {c : Cfg} (hb : c.base = sb) (hs : c.slots = slots) {is : List Instr} {cst : Nat → Nat}
-    {g : Nat → Nat → List Nat}
-    (hchk : check (lanes 128 11) c is (linEnv c.slots c.exts 8 qIns) (linPost c.slots 11 (qOuts cst g)) = true)
-    {s : State} (hok : Ok c s) (he : c.exts ≤ 8) (W : Nat → BitVec 128) (hW : ∀ j < 8, W j = Q s j)
-    (hK : ∀ j < c.exts, W (8 + j) = s.mem.readW (xAddr (s.gpr c.ext) j) 128)
-    (hkb : (is.all fun i => i.dst != some sb) = true) :
-    ∃ s', runBlock isa is s = some s' ∧
-      (∀ j < 8, ∀ p < 128, (Q s' j).getLsbD p = ((cst j).testBit p ^^ xorBits W (g j p))) ∧
-      s'.rd = s.rd ∧ s'.wr = s.wr ∧
-      (∀ r, (is.all fun i => i.dst != some r) = true → s'.gpr r = s.gpr r) ∧ Frame [slotsR s] s.mem s'.mem := by
-  obtain ⟨s', hs', hout, hrd, hwr, hg, hf⟩ := linear_ok hchk hok W (fun j i h _ => by
-      obtain ⟨hj, rfl⟩ := qIns_some h
-      exact ⟨by omega_using [hj], by rw [hW _ hj, hb]⟩) (fun j hj => ⟨by omega_using [hj, he], hK j hj⟩)
-  refine ⟨s', hs', fun j hj p hp => ?_, hrd, hwr, hg, ?_⟩
-  · rw [Q, hg sb hkb, ← hb]; exact hout j _ _ (mem_qOuts hj) p hp
-  · simp only [slotRegion, hb, hs] at hf; exact hf
+/-- `mulTerms`, as the kernel need not compute it. -/
+def mulT (c j : Nat) : List Nat :=
+  ((match c with
+  | 0x01 => [[0], [1], [2], [3], [4], [5], [6], [7]]
+  | 0x02 => [[7], [0, 7], [1], [2, 7], [3, 7], [4], [5], [6]]
+  | 0x03 => [[0, 7], [0, 1, 7], [1, 2], [2, 3, 7], [3, 4, 7], [4, 5], [5, 6], [6, 7]]
+  | 0x09 => [[0, 5], [1, 5, 6], [2, 6, 7], [0, 3, 5, 7], [1, 4, 5, 6], [2, 5, 6, 7], [3, 6, 7], [4, 7]]
+  | 0x0b => [[0, 5, 7], [0, 1, 5, 6, 7], [1, 2, 6, 7], [0, 2, 3, 5], [1, 3, 4, 5, 6, 7], [2, 4, 5, 6, 7],
+      [3, 5, 6, 7], [4, 6, 7]]
+  | 0x0d => [[0, 5, 6], [1, 5, 7], [0, 2, 6], [0, 1, 3, 5, 6, 7], [1, 2, 4, 5, 7], [2, 3, 5, 6], [3, 4, 6, 7],
+      [4, 5, 7]]
+  | _ => [[5, 6, 7], [0, 5], [0, 1, 6], [0, 1, 2, 5, 6], [1, 2, 3, 5], [2, 3, 4, 6], [3, 4, 5, 7],
+      [4, 5, 6]] : List (List Nat))).getD j []
+
+theorem mulT_eq : ∀ c ∈ [0x02, 0x03, 0x01, 0x0e, 0x0b, 0x0d, 0x09], ∀ j < 8, mulTerms c j = mulT c j := by
+  decide +kernel
+
+/-- `mixT`, with `mulT`. -/
+def mixL (cs : List Nat) (f : Bool) (j p : Nat) : List (Nat × Nat) :=
+  (List.range 4).flatMap fun i =>
+    (mulT (cs.getD i 0) j).map fun b => (b, posAt 8 f (down (byteAt 8 f p) i) (p % 8))
+
+theorem mixL_eq (cs : List Nat) (hc : ∀ i < 4, cs.getD i 0 ∈ [0x02, 0x03, 0x01, 0x0e, 0x0b, 0x0d, 0x09]) (f : Bool)
+    {j : Nat} (hj : j < 8) (p : Nat) : mixL cs f j p = mixT cs 8 f j p := by
+  simp only [mixL, mixT, show List.range 4 = [0, 1, 2, 3] from rfl, List.flatMap_cons, List.flatMap_nil,
+    mulT_eq _ (hc 0 (by decide)) j hj, mulT_eq _ (hc 1 (by decide)) j hj, mulT_eq _ (hc 2 (by decide)) j hj,
+    mulT_eq _ (hc 3 (by decide)) j hj]
+
+/-- MixColumns in form 1, and the round key. -/
+def linAT (j p : Nat) : List (Nat × Nat) := mixL mcCoeffs true j p ++ [(8 + j, p)]
+/-- ShiftRows twice, MixColumns in form 0, and the round key. -/
+def linBT (j p : Nat) : List (Nat × Nat) :=
+  ((mixL mcCoeffs false j p).map fun t => (t.1, sr2Src 8 t.2)) ++ [(8 + j, p)]
+/-- The bits of the slices and the round key. -/
+def withKey (l : List (Nat × Nat)) : List (Nat × Nat) := l.flatMap fun t => [t, (8 + t.1, t.2)]
+/-- The round key, and InvMixColumns in form 1. -/
+def invAT (j p : Nat) : List (Nat × Nat) := withKey (mixL invMcCoeffs true j p)
+/-- The round key, InvMixColumns in form 0, and ShiftRows twice. -/
+def invBT (j p : Nat) : List (Nat × Nat) := withKey (mixL invMcCoeffs false j (sr2Src 8 p))
+
+theorem sr2Src_lt {p : Nat} (hp : p < 128) : sr2Src 8 p < 128 := by
+  unfold sr2Src
+  omega
+
+theorem mixL_lt (cs : List Nat) (f : Bool) {j p : Nat} (hp : p < 128) : ∀ t ∈ mixL cs f j p, t.2 < 128 := by
+  intro t ht
+  simp only [mixL, List.mem_flatMap, List.mem_map, List.mem_range] at ht
+  obtain ⟨i, _, b, _, rfl⟩ := ht
+  have hb : byteAt 8 f p < 16 := by unfold byteAt; split <;> omega
+  exact posAt_lt f (down_lt hb) (Nat.mod_lt _ (by decide))
+
+theorem linAT_lt (j : Nat) {p : Nat} (hp : p < 128) : ∀ t ∈ linAT j p, t.2 < 128 := by
+  intro t ht
+  simp only [linAT, List.mem_append, List.mem_singleton] at ht
+  rcases ht with h | rfl
+  · exact mixL_lt _ _ hp t h
+  · exact hp
+
+theorem linBT_lt (j : Nat) {p : Nat} (hp : p < 128) : ∀ t ∈ linBT j p, t.2 < 128 := by
+  intro t ht
+  simp only [linBT, List.mem_append, List.mem_singleton, List.mem_map] at ht
+  rcases ht with ⟨u, h, rfl⟩ | rfl
+  · exact sr2Src_lt (mixL_lt _ _ hp u h)
+  · exact hp
+
+theorem withKey_lt {l : List (Nat × Nat)} (h : ∀ t ∈ l, t.2 < 128) : ∀ t ∈ withKey l, t.2 < 128 := by
+  intro t ht
+  simp only [withKey, List.mem_flatMap, List.mem_cons, List.not_mem_nil, or_false] at ht
+  obtain ⟨u, hu, rfl | rfl⟩ := ht
+  · exact h _ hu
+  · exact h u hu
+
+theorem invAT_lt (j : Nat) {p : Nat} (hp : p < 128) : ∀ t ∈ invAT j p, t.2 < 128 := withKey_lt (mixL_lt _ _ hp)
+theorem invBT_lt (j : Nat) {p : Nat} (hp : p < 128) : ∀ t ∈ invBT j p, t.2 < 128 :=
+  withKey_lt (mixL_lt _ _ (sr2Src_lt hp))
+
+theorem linA_check : linCheck 8 linA subOut [] mid linAT = true := by decide +kernel
+theorem linB_check : linCheck 8 linB subOut [] mid linBT = true := by decide +kernel
+theorem invLinA_check : linCheck 8 invLinA invSubOut [] mid invAT = true := by decide +kernel
+theorem invLinB_check : linCheck 8 invLinB invSubOut [] mid invBT = true := by decide +kernel
+
+/-! ## Between bytes and slices -/
+
+/-- The masks of the exchanges of bytes, bits and pairs of bits. -/
+def bytesM : BitVec 128 := 0x00FF00FF00FF00FF00FF00FF00FF00FF
+def bitsM : BitVec 128 := 0x55555555555555555555555555555555
+def pairsM : BitVec 128 := 0x33333333333333333333333333333333
+def nibblesM : BitVec 128 := 0x0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F
+
+def groupMs : List (XReg × BitVec 128) := [(.xmm5, bytesM), (.xmm6, bitsM), (.xmm7, pairsM)]
+def pairMs : List (XReg × BitVec 128) := [(.xmm6, nibblesM)]
+
+/-- The state between `toGroups` and `toPairs` has the third bit of the
+numbers of blocks and slices not exchanged yet. -/
+def toGroupT (w p : Nat) : List (Nat × Nat) :=
+  [(p % 4 + 4 * (w / 4), 8 * byteAt 8 false p + (w % 4 + 4 * (p / 4 % 2))), (8, 8 * byteAt 8 false p + (w % 4 + 4 * (p / 4 % 2)))]
+def toPairT (j p : Nat) : List (Nat × Nat) := [(j % 4 + 4 * (p / 4 % 2), p - 4 * (p / 4 % 2) + 4 * (j / 4))]
+def toPairT' (inv : Bool) (j p : Nat) : List (Nat × Nat) := toPairT j (if inv then sr2Src 8 p else p)
+def fromPairT' (enc : Bool) (w p : Nat) : List (Nat × Nat) :=
+  [(w % 4 + 4 * (p / 4 % 2), (if enc then sr2Src 8 else id) (p - 4 * (p / 4 % 2) + 4 * (w / 4)))]
+def fromGroupT (b t : Nat) : List (Nat × Nat) :=
+  [(t % 4 + 4 * (b / 4), b % 4 + 4 * (t / 4 % 2) + 8 * (t / 8 / 4 + 4 * (t / 8 % 4))), (8, t)]
+
+theorem toGroups_check : linCheck 1 toGroups .m groupMs .m toGroupT = true := by decide +kernel
+theorem toPairs_check : ∀ inv, linCheck 0 (toPairs inv) .m pairMs mid (toPairT' inv) = true := by decide +kernel
+theorem toSlots_check : linCheck 0 (toSlots subOut) subOut [] .m (fun j p => [(j, p)]) = true := by decide +kernel
+theorem invToSlots_check : linCheck 0 (toSlots invSubOut) invSubOut [] .m (fun j p => [(j, p)]) = true := by
+  decide +kernel
+theorem fromPairs_check : ∀ enc, linCheck 0 (fromPairs enc) .m pairMs .m (fromPairT' enc) = true := by decide +kernel
+theorem fromGroups_check : linCheck 1 fromGroups .m groupMs .m fromGroupT = true := by decide +kernel
+
+/-! ## The round keys -/
+
+/-- The constants of the key setup, as words. -/
+def keyWords : List (BitVec 128) :=
+  [nibblesM, pairsM, bitsM, 0x00000000FF00FF0000000000FF00FF00, 0xFFFFFFFF00000000FFFFFFFF00000000,
+   0x63636363636363636363636363636363]
+
+def keyExt (j : Nat) : Option (Nat × Nat) := (keyWords[j]?).map fun v => (v.toNat, 0)
+
+/-- Slice `j` of a round key in form `f`: a bit of a byte of it, eight times. -/
+def keyT (f : Bool) (j p : Nat) : List Nat := [8 * byteAt 8 f p + j]
+
+def keyPost (f : Bool) (e : StraightSse.Env (Nat × Nat)) : Bool :=
+  (List.range 8).all fun j => outOkW 128 7 (e.slot j) (keyT f j)
+
+/-- The round key, whose word is `W ⊕ {63…}` with `W` atoms, to slices. -/
+def keyCheck (f : Bool) : Bool :=
+  sseOnly (keyBytes f ++ keySlices) &&
+    check (ofDom (lanes 128 7)) (cfgAt .edx 8 .edi 6) keyExt (keyBytes f ++ keySlices)
+      { reg := fun r => if r = .xmm0 then some (inX 0 0x63636363636363636363636363636363) else none
+        slot := fun _ => none } (keyPost f)
+
+theorem key_check : ∀ f, keyCheck f = true := by decide +kernel
 
 end VG.Proof.Aes.X86.Sse
