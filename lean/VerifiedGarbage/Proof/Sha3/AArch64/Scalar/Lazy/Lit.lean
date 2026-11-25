@@ -14,5 +14,6 @@ namespace VG.Impl.Sha3.AArch64.Scalar.Lazy
 -- once here, and read by both.
 materialize_code permutationCoreCode := (.block permutationCore : Prog VG.AArch64.isa)
 materialize_code permute
+materialize_code bulkInline
 materialize_code bulk
 end VG.Impl.Sha3.AArch64.Scalar.Lazy

@@ -155,8 +155,14 @@ def permute : Prog isa := Boundary.wrap sharedCore
 def residentBody : Prog isa :=
   .seq Resident.xorBlock (.seq (.block permutationCore) (.block Resident.advance))
 
-def bulk : Prog isa :=
+def bulkInline : Prog isa :=
   .seq (.block Resident.setup)
     (.seq (.loop residentBody (.zero .x .x26)) (.block Resident.finish))
+
+/-- All sponge rates share the resident absorber. Its caller's return address
+uses v29, which the call-free kernel never writes. -/
+def bulk : Prog isa :=
+  .seq (.block [.vop (.dup .d2 .v29 .x30)])
+    (.seq (.call "vg_keccak_scalar_absorb_blocks" bulkInline) (.block [.umov .x .x30 .v29 0]))
 
 end VG.Impl.Sha3.AArch64.Scalar.Lazy
