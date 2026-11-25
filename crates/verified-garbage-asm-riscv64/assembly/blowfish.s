@@ -4254,16 +4254,25 @@ vg_blowfish_expand_key:
 	srli t1, t1, 59
 	addi t3, zero, 1
 	sll t1, t3, t1
+	addi t2, zero, 0
+	addi t5, zero, 0
+	addi t6, zero, 0
+	addi t0, zero, 0
+211:
 	slli t3, t1, 63
 	srai t3, t3, 63
-	ld t2, 0(a7)
-	and t2, t2, t3
-	ld t5, 256(a7)
-	and t5, t5, t3
-	ld t6, 512(a7)
-	and t6, t6, t3
-	ld t0, 768(a7)
-	and t0, t0, t3
+	ld t4, 0(a7)
+	and t4, t4, t3
+	or t2, t2, t4
+	ld t4, 256(a7)
+	and t4, t4, t3
+	or t5, t5, t4
+	ld t4, 512(a7)
+	and t4, t4, t3
+	or t6, t6, t4
+	ld t4, 768(a7)
+	and t4, t4, t3
+	or t0, t0, t4
 	slli t3, t1, 62
 	srai t3, t3, 63
 	ld t4, 8(a7)
@@ -4474,230 +4483,12 @@ vg_blowfish_expand_key:
 	ld t4, 888(a7)
 	and t4, t4, t3
 	or t0, t0, t4
-	slli t3, t1, 47
-	srai t3, t3, 63
-	ld t4, 128(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 384(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 640(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 896(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 46
-	srai t3, t3, 63
-	ld t4, 136(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 392(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 648(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 904(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 45
-	srai t3, t3, 63
-	ld t4, 144(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 400(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 656(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 912(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 44
-	srai t3, t3, 63
-	ld t4, 152(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 408(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 664(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 920(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 43
-	srai t3, t3, 63
-	ld t4, 160(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 416(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 672(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 928(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 42
-	srai t3, t3, 63
-	ld t4, 168(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 424(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 680(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 936(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 41
-	srai t3, t3, 63
-	ld t4, 176(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 432(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 688(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 944(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 40
-	srai t3, t3, 63
-	ld t4, 184(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 440(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 696(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 952(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 39
-	srai t3, t3, 63
-	ld t4, 192(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 448(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 704(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 960(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 38
-	srai t3, t3, 63
-	ld t4, 200(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 456(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 712(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 968(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 37
-	srai t3, t3, 63
-	ld t4, 208(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 464(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 720(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 976(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 36
-	srai t3, t3, 63
-	ld t4, 216(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 472(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 728(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 984(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 35
-	srai t3, t3, 63
-	ld t4, 224(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 480(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 736(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 992(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 34
-	srai t3, t3, 63
-	ld t4, 232(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 488(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 744(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 1000(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 33
-	srai t3, t3, 63
-	ld t4, 240(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 496(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 752(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 1008(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 32
-	srai t3, t3, 63
-	ld t4, 248(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 504(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 760(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 1016(a7)
-	and t4, t4, t3
-	or t0, t0, t4
+	addi a7, a7, 128
+	srli t1, t1, 16
+	sub t4, a6, a7
+	andi t4, t4, 128
+	bnez t4, 211b
+	addi a7, a7, -256
 	srli t3, a3, 24
 	andi t3, t3, 7
 	slli t3, t3, 3
@@ -4721,16 +4512,25 @@ vg_blowfish_expand_key:
 	srli t1, t1, 59
 	addi t3, zero, 1
 	sll t1, t3, t1
+	addi t2, zero, 0
+	addi t5, zero, 0
+	addi t6, zero, 0
+	addi t0, zero, 0
+212:
 	slli t3, t1, 63
 	srai t3, t3, 63
-	ld t2, 0(a7)
-	and t2, t2, t3
-	ld t5, 256(a7)
-	and t5, t5, t3
-	ld t6, 512(a7)
-	and t6, t6, t3
-	ld t0, 768(a7)
-	and t0, t0, t3
+	ld t4, 0(a7)
+	and t4, t4, t3
+	or t2, t2, t4
+	ld t4, 256(a7)
+	and t4, t4, t3
+	or t5, t5, t4
+	ld t4, 512(a7)
+	and t4, t4, t3
+	or t6, t6, t4
+	ld t4, 768(a7)
+	and t4, t4, t3
+	or t0, t0, t4
 	slli t3, t1, 62
 	srai t3, t3, 63
 	ld t4, 8(a7)
@@ -4941,230 +4741,12 @@ vg_blowfish_expand_key:
 	ld t4, 888(a7)
 	and t4, t4, t3
 	or t0, t0, t4
-	slli t3, t1, 47
-	srai t3, t3, 63
-	ld t4, 128(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 384(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 640(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 896(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 46
-	srai t3, t3, 63
-	ld t4, 136(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 392(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 648(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 904(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 45
-	srai t3, t3, 63
-	ld t4, 144(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 400(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 656(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 912(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 44
-	srai t3, t3, 63
-	ld t4, 152(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 408(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 664(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 920(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 43
-	srai t3, t3, 63
-	ld t4, 160(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 416(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 672(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 928(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 42
-	srai t3, t3, 63
-	ld t4, 168(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 424(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 680(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 936(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 41
-	srai t3, t3, 63
-	ld t4, 176(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 432(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 688(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 944(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 40
-	srai t3, t3, 63
-	ld t4, 184(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 440(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 696(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 952(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 39
-	srai t3, t3, 63
-	ld t4, 192(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 448(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 704(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 960(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 38
-	srai t3, t3, 63
-	ld t4, 200(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 456(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 712(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 968(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 37
-	srai t3, t3, 63
-	ld t4, 208(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 464(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 720(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 976(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 36
-	srai t3, t3, 63
-	ld t4, 216(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 472(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 728(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 984(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 35
-	srai t3, t3, 63
-	ld t4, 224(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 480(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 736(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 992(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 34
-	srai t3, t3, 63
-	ld t4, 232(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 488(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 744(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 1000(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 33
-	srai t3, t3, 63
-	ld t4, 240(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 496(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 752(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 1008(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 32
-	srai t3, t3, 63
-	ld t4, 248(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 504(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 760(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 1016(a7)
-	and t4, t4, t3
-	or t0, t0, t4
+	addi a7, a7, 128
+	srli t1, t1, 16
+	sub t4, a6, a7
+	andi t4, t4, 128
+	bnez t4, 212b
+	addi a7, a7, -256
 	srli t3, a3, 16
 	andi t3, t3, 7
 	slli t3, t3, 3
@@ -5188,16 +4770,25 @@ vg_blowfish_expand_key:
 	srli t1, t1, 59
 	addi t3, zero, 1
 	sll t1, t3, t1
+	addi t2, zero, 0
+	addi t5, zero, 0
+	addi t6, zero, 0
+	addi t0, zero, 0
+213:
 	slli t3, t1, 63
 	srai t3, t3, 63
-	ld t2, 0(a7)
-	and t2, t2, t3
-	ld t5, 256(a7)
-	and t5, t5, t3
-	ld t6, 512(a7)
-	and t6, t6, t3
-	ld t0, 768(a7)
-	and t0, t0, t3
+	ld t4, 0(a7)
+	and t4, t4, t3
+	or t2, t2, t4
+	ld t4, 256(a7)
+	and t4, t4, t3
+	or t5, t5, t4
+	ld t4, 512(a7)
+	and t4, t4, t3
+	or t6, t6, t4
+	ld t4, 768(a7)
+	and t4, t4, t3
+	or t0, t0, t4
 	slli t3, t1, 62
 	srai t3, t3, 63
 	ld t4, 8(a7)
@@ -5408,230 +4999,12 @@ vg_blowfish_expand_key:
 	ld t4, 888(a7)
 	and t4, t4, t3
 	or t0, t0, t4
-	slli t3, t1, 47
-	srai t3, t3, 63
-	ld t4, 128(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 384(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 640(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 896(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 46
-	srai t3, t3, 63
-	ld t4, 136(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 392(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 648(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 904(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 45
-	srai t3, t3, 63
-	ld t4, 144(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 400(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 656(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 912(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 44
-	srai t3, t3, 63
-	ld t4, 152(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 408(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 664(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 920(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 43
-	srai t3, t3, 63
-	ld t4, 160(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 416(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 672(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 928(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 42
-	srai t3, t3, 63
-	ld t4, 168(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 424(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 680(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 936(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 41
-	srai t3, t3, 63
-	ld t4, 176(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 432(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 688(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 944(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 40
-	srai t3, t3, 63
-	ld t4, 184(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 440(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 696(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 952(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 39
-	srai t3, t3, 63
-	ld t4, 192(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 448(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 704(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 960(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 38
-	srai t3, t3, 63
-	ld t4, 200(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 456(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 712(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 968(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 37
-	srai t3, t3, 63
-	ld t4, 208(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 464(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 720(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 976(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 36
-	srai t3, t3, 63
-	ld t4, 216(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 472(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 728(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 984(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 35
-	srai t3, t3, 63
-	ld t4, 224(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 480(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 736(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 992(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 34
-	srai t3, t3, 63
-	ld t4, 232(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 488(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 744(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 1000(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 33
-	srai t3, t3, 63
-	ld t4, 240(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 496(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 752(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 1008(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 32
-	srai t3, t3, 63
-	ld t4, 248(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 504(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 760(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 1016(a7)
-	and t4, t4, t3
-	or t0, t0, t4
+	addi a7, a7, 128
+	srli t1, t1, 16
+	sub t4, a6, a7
+	andi t4, t4, 128
+	bnez t4, 213b
+	addi a7, a7, -256
 	srli t3, a3, 8
 	andi t3, t3, 7
 	slli t3, t3, 3
@@ -5655,16 +5028,25 @@ vg_blowfish_expand_key:
 	srli t1, t1, 59
 	addi t3, zero, 1
 	sll t1, t3, t1
+	addi t2, zero, 0
+	addi t5, zero, 0
+	addi t6, zero, 0
+	addi t0, zero, 0
+214:
 	slli t3, t1, 63
 	srai t3, t3, 63
-	ld t2, 0(a7)
-	and t2, t2, t3
-	ld t5, 256(a7)
-	and t5, t5, t3
-	ld t6, 512(a7)
-	and t6, t6, t3
-	ld t0, 768(a7)
-	and t0, t0, t3
+	ld t4, 0(a7)
+	and t4, t4, t3
+	or t2, t2, t4
+	ld t4, 256(a7)
+	and t4, t4, t3
+	or t5, t5, t4
+	ld t4, 512(a7)
+	and t4, t4, t3
+	or t6, t6, t4
+	ld t4, 768(a7)
+	and t4, t4, t3
+	or t0, t0, t4
 	slli t3, t1, 62
 	srai t3, t3, 63
 	ld t4, 8(a7)
@@ -5875,230 +5257,12 @@ vg_blowfish_expand_key:
 	ld t4, 888(a7)
 	and t4, t4, t3
 	or t0, t0, t4
-	slli t3, t1, 47
-	srai t3, t3, 63
-	ld t4, 128(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 384(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 640(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 896(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 46
-	srai t3, t3, 63
-	ld t4, 136(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 392(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 648(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 904(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 45
-	srai t3, t3, 63
-	ld t4, 144(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 400(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 656(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 912(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 44
-	srai t3, t3, 63
-	ld t4, 152(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 408(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 664(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 920(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 43
-	srai t3, t3, 63
-	ld t4, 160(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 416(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 672(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 928(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 42
-	srai t3, t3, 63
-	ld t4, 168(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 424(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 680(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 936(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 41
-	srai t3, t3, 63
-	ld t4, 176(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 432(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 688(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 944(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 40
-	srai t3, t3, 63
-	ld t4, 184(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 440(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 696(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 952(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 39
-	srai t3, t3, 63
-	ld t4, 192(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 448(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 704(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 960(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 38
-	srai t3, t3, 63
-	ld t4, 200(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 456(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 712(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 968(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 37
-	srai t3, t3, 63
-	ld t4, 208(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 464(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 720(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 976(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 36
-	srai t3, t3, 63
-	ld t4, 216(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 472(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 728(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 984(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 35
-	srai t3, t3, 63
-	ld t4, 224(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 480(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 736(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 992(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 34
-	srai t3, t3, 63
-	ld t4, 232(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 488(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 744(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 1000(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 33
-	srai t3, t3, 63
-	ld t4, 240(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 496(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 752(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 1008(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 32
-	srai t3, t3, 63
-	ld t4, 248(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 504(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 760(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 1016(a7)
-	and t4, t4, t3
-	or t0, t0, t4
+	addi a7, a7, 128
+	srli t1, t1, 16
+	sub t4, a6, a7
+	andi t4, t4, 128
+	bnez t4, 214b
+	addi a7, a7, -256
 	srli t3, a3, 0
 	andi t3, t3, 7
 	slli t3, t3, 3
@@ -6141,27 +5305,36 @@ vg_blowfish_expand_key:
 	bnez a0, 29b
 	addi a1, a7, 0
 	addi a0, zero, 512
-211:
+215:
 	addi a6, a7, 2047
 	addi a6, a6, 2047
 	addi a6, a6, 2
-212:
+216:
 	lwu t4, 0(a6)
 	xor a3, a3, t4
 	slli t1, a3, 32
 	srli t1, t1, 59
 	addi t3, zero, 1
 	sll t1, t3, t1
+	addi t2, zero, 0
+	addi t5, zero, 0
+	addi t6, zero, 0
+	addi t0, zero, 0
+217:
 	slli t3, t1, 63
 	srai t3, t3, 63
-	ld t2, 0(a7)
-	and t2, t2, t3
-	ld t5, 256(a7)
-	and t5, t5, t3
-	ld t6, 512(a7)
-	and t6, t6, t3
-	ld t0, 768(a7)
-	and t0, t0, t3
+	ld t4, 0(a7)
+	and t4, t4, t3
+	or t2, t2, t4
+	ld t4, 256(a7)
+	and t4, t4, t3
+	or t5, t5, t4
+	ld t4, 512(a7)
+	and t4, t4, t3
+	or t6, t6, t4
+	ld t4, 768(a7)
+	and t4, t4, t3
+	or t0, t0, t4
 	slli t3, t1, 62
 	srai t3, t3, 63
 	ld t4, 8(a7)
@@ -6372,230 +5545,12 @@ vg_blowfish_expand_key:
 	ld t4, 888(a7)
 	and t4, t4, t3
 	or t0, t0, t4
-	slli t3, t1, 47
-	srai t3, t3, 63
-	ld t4, 128(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 384(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 640(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 896(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 46
-	srai t3, t3, 63
-	ld t4, 136(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 392(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 648(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 904(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 45
-	srai t3, t3, 63
-	ld t4, 144(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 400(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 656(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 912(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 44
-	srai t3, t3, 63
-	ld t4, 152(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 408(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 664(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 920(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 43
-	srai t3, t3, 63
-	ld t4, 160(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 416(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 672(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 928(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 42
-	srai t3, t3, 63
-	ld t4, 168(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 424(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 680(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 936(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 41
-	srai t3, t3, 63
-	ld t4, 176(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 432(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 688(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 944(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 40
-	srai t3, t3, 63
-	ld t4, 184(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 440(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 696(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 952(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 39
-	srai t3, t3, 63
-	ld t4, 192(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 448(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 704(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 960(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 38
-	srai t3, t3, 63
-	ld t4, 200(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 456(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 712(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 968(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 37
-	srai t3, t3, 63
-	ld t4, 208(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 464(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 720(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 976(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 36
-	srai t3, t3, 63
-	ld t4, 216(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 472(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 728(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 984(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 35
-	srai t3, t3, 63
-	ld t4, 224(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 480(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 736(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 992(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 34
-	srai t3, t3, 63
-	ld t4, 232(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 488(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 744(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 1000(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 33
-	srai t3, t3, 63
-	ld t4, 240(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 496(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 752(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 1008(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 32
-	srai t3, t3, 63
-	ld t4, 248(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 504(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 760(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 1016(a7)
-	and t4, t4, t3
-	or t0, t0, t4
+	addi a7, a7, 128
+	srli t1, t1, 16
+	sub t4, a6, a7
+	andi t4, t4, 128
+	bnez t4, 217b
+	addi a7, a7, -256
 	srli t3, a3, 24
 	andi t3, t3, 7
 	slli t3, t3, 3
@@ -6619,16 +5574,25 @@ vg_blowfish_expand_key:
 	srli t1, t1, 59
 	addi t3, zero, 1
 	sll t1, t3, t1
+	addi t2, zero, 0
+	addi t5, zero, 0
+	addi t6, zero, 0
+	addi t0, zero, 0
+218:
 	slli t3, t1, 63
 	srai t3, t3, 63
-	ld t2, 0(a7)
-	and t2, t2, t3
-	ld t5, 256(a7)
-	and t5, t5, t3
-	ld t6, 512(a7)
-	and t6, t6, t3
-	ld t0, 768(a7)
-	and t0, t0, t3
+	ld t4, 0(a7)
+	and t4, t4, t3
+	or t2, t2, t4
+	ld t4, 256(a7)
+	and t4, t4, t3
+	or t5, t5, t4
+	ld t4, 512(a7)
+	and t4, t4, t3
+	or t6, t6, t4
+	ld t4, 768(a7)
+	and t4, t4, t3
+	or t0, t0, t4
 	slli t3, t1, 62
 	srai t3, t3, 63
 	ld t4, 8(a7)
@@ -6839,230 +5803,12 @@ vg_blowfish_expand_key:
 	ld t4, 888(a7)
 	and t4, t4, t3
 	or t0, t0, t4
-	slli t3, t1, 47
-	srai t3, t3, 63
-	ld t4, 128(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 384(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 640(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 896(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 46
-	srai t3, t3, 63
-	ld t4, 136(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 392(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 648(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 904(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 45
-	srai t3, t3, 63
-	ld t4, 144(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 400(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 656(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 912(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 44
-	srai t3, t3, 63
-	ld t4, 152(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 408(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 664(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 920(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 43
-	srai t3, t3, 63
-	ld t4, 160(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 416(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 672(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 928(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 42
-	srai t3, t3, 63
-	ld t4, 168(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 424(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 680(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 936(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 41
-	srai t3, t3, 63
-	ld t4, 176(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 432(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 688(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 944(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 40
-	srai t3, t3, 63
-	ld t4, 184(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 440(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 696(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 952(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 39
-	srai t3, t3, 63
-	ld t4, 192(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 448(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 704(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 960(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 38
-	srai t3, t3, 63
-	ld t4, 200(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 456(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 712(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 968(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 37
-	srai t3, t3, 63
-	ld t4, 208(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 464(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 720(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 976(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 36
-	srai t3, t3, 63
-	ld t4, 216(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 472(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 728(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 984(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 35
-	srai t3, t3, 63
-	ld t4, 224(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 480(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 736(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 992(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 34
-	srai t3, t3, 63
-	ld t4, 232(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 488(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 744(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 1000(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 33
-	srai t3, t3, 63
-	ld t4, 240(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 496(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 752(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 1008(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 32
-	srai t3, t3, 63
-	ld t4, 248(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 504(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 760(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 1016(a7)
-	and t4, t4, t3
-	or t0, t0, t4
+	addi a7, a7, 128
+	srli t1, t1, 16
+	sub t4, a6, a7
+	andi t4, t4, 128
+	bnez t4, 218b
+	addi a7, a7, -256
 	srli t3, a3, 16
 	andi t3, t3, 7
 	slli t3, t3, 3
@@ -7086,16 +5832,25 @@ vg_blowfish_expand_key:
 	srli t1, t1, 59
 	addi t3, zero, 1
 	sll t1, t3, t1
+	addi t2, zero, 0
+	addi t5, zero, 0
+	addi t6, zero, 0
+	addi t0, zero, 0
+219:
 	slli t3, t1, 63
 	srai t3, t3, 63
-	ld t2, 0(a7)
-	and t2, t2, t3
-	ld t5, 256(a7)
-	and t5, t5, t3
-	ld t6, 512(a7)
-	and t6, t6, t3
-	ld t0, 768(a7)
-	and t0, t0, t3
+	ld t4, 0(a7)
+	and t4, t4, t3
+	or t2, t2, t4
+	ld t4, 256(a7)
+	and t4, t4, t3
+	or t5, t5, t4
+	ld t4, 512(a7)
+	and t4, t4, t3
+	or t6, t6, t4
+	ld t4, 768(a7)
+	and t4, t4, t3
+	or t0, t0, t4
 	slli t3, t1, 62
 	srai t3, t3, 63
 	ld t4, 8(a7)
@@ -7306,230 +6061,12 @@ vg_blowfish_expand_key:
 	ld t4, 888(a7)
 	and t4, t4, t3
 	or t0, t0, t4
-	slli t3, t1, 47
-	srai t3, t3, 63
-	ld t4, 128(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 384(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 640(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 896(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 46
-	srai t3, t3, 63
-	ld t4, 136(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 392(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 648(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 904(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 45
-	srai t3, t3, 63
-	ld t4, 144(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 400(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 656(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 912(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 44
-	srai t3, t3, 63
-	ld t4, 152(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 408(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 664(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 920(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 43
-	srai t3, t3, 63
-	ld t4, 160(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 416(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 672(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 928(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 42
-	srai t3, t3, 63
-	ld t4, 168(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 424(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 680(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 936(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 41
-	srai t3, t3, 63
-	ld t4, 176(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 432(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 688(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 944(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 40
-	srai t3, t3, 63
-	ld t4, 184(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 440(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 696(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 952(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 39
-	srai t3, t3, 63
-	ld t4, 192(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 448(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 704(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 960(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 38
-	srai t3, t3, 63
-	ld t4, 200(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 456(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 712(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 968(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 37
-	srai t3, t3, 63
-	ld t4, 208(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 464(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 720(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 976(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 36
-	srai t3, t3, 63
-	ld t4, 216(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 472(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 728(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 984(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 35
-	srai t3, t3, 63
-	ld t4, 224(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 480(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 736(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 992(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 34
-	srai t3, t3, 63
-	ld t4, 232(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 488(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 744(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 1000(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 33
-	srai t3, t3, 63
-	ld t4, 240(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 496(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 752(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 1008(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 32
-	srai t3, t3, 63
-	ld t4, 248(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 504(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 760(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 1016(a7)
-	and t4, t4, t3
-	or t0, t0, t4
+	addi a7, a7, 128
+	srli t1, t1, 16
+	sub t4, a6, a7
+	andi t4, t4, 128
+	bnez t4, 219b
+	addi a7, a7, -256
 	srli t3, a3, 8
 	andi t3, t3, 7
 	slli t3, t3, 3
@@ -7553,16 +6090,25 @@ vg_blowfish_expand_key:
 	srli t1, t1, 59
 	addi t3, zero, 1
 	sll t1, t3, t1
+	addi t2, zero, 0
+	addi t5, zero, 0
+	addi t6, zero, 0
+	addi t0, zero, 0
+220:
 	slli t3, t1, 63
 	srai t3, t3, 63
-	ld t2, 0(a7)
-	and t2, t2, t3
-	ld t5, 256(a7)
-	and t5, t5, t3
-	ld t6, 512(a7)
-	and t6, t6, t3
-	ld t0, 768(a7)
-	and t0, t0, t3
+	ld t4, 0(a7)
+	and t4, t4, t3
+	or t2, t2, t4
+	ld t4, 256(a7)
+	and t4, t4, t3
+	or t5, t5, t4
+	ld t4, 512(a7)
+	and t4, t4, t3
+	or t6, t6, t4
+	ld t4, 768(a7)
+	and t4, t4, t3
+	or t0, t0, t4
 	slli t3, t1, 62
 	srai t3, t3, 63
 	ld t4, 8(a7)
@@ -7773,230 +6319,12 @@ vg_blowfish_expand_key:
 	ld t4, 888(a7)
 	and t4, t4, t3
 	or t0, t0, t4
-	slli t3, t1, 47
-	srai t3, t3, 63
-	ld t4, 128(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 384(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 640(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 896(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 46
-	srai t3, t3, 63
-	ld t4, 136(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 392(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 648(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 904(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 45
-	srai t3, t3, 63
-	ld t4, 144(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 400(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 656(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 912(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 44
-	srai t3, t3, 63
-	ld t4, 152(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 408(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 664(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 920(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 43
-	srai t3, t3, 63
-	ld t4, 160(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 416(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 672(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 928(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 42
-	srai t3, t3, 63
-	ld t4, 168(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 424(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 680(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 936(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 41
-	srai t3, t3, 63
-	ld t4, 176(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 432(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 688(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 944(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 40
-	srai t3, t3, 63
-	ld t4, 184(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 440(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 696(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 952(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 39
-	srai t3, t3, 63
-	ld t4, 192(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 448(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 704(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 960(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 38
-	srai t3, t3, 63
-	ld t4, 200(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 456(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 712(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 968(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 37
-	srai t3, t3, 63
-	ld t4, 208(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 464(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 720(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 976(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 36
-	srai t3, t3, 63
-	ld t4, 216(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 472(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 728(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 984(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 35
-	srai t3, t3, 63
-	ld t4, 224(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 480(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 736(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 992(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 34
-	srai t3, t3, 63
-	ld t4, 232(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 488(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 744(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 1000(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 33
-	srai t3, t3, 63
-	ld t4, 240(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 496(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 752(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 1008(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 32
-	srai t3, t3, 63
-	ld t4, 248(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 504(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 760(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 1016(a7)
-	and t4, t4, t3
-	or t0, t0, t4
+	addi a7, a7, 128
+	srli t1, t1, 16
+	sub t4, a6, a7
+	andi t4, t4, 128
+	bnez t4, 220b
+	addi a7, a7, -256
 	srli t3, a3, 0
 	andi t3, t3, 7
 	slli t3, t3, 3
@@ -8026,7 +6354,7 @@ vg_blowfish_expand_key:
 	addi t4, t4, -2047
 	addi t4, t4, -2047
 	addi t4, t4, -66
-	bnez t4, 212b
+	bnez t4, 216b
 	lwu t4, 0(a6)
 	xor t4, a3, t4
 	lwu a3, 4(a6)
@@ -8049,31 +6377,31 @@ vg_blowfish_expand_key:
 	addi a1, a1, 2
 	sub t4, a1, a7
 	slli t4, t4, 56
-	beqz t4, 213f
-	j 214f
-213:
+	beqz t4, 221f
+	j 222f
+221:
 	addi a1, a1, 768
-214:
+222:
 	addi a0, a0, -1
-	bnez a0, 211b
+	bnez a0, 215b
 	addi t0, a7, 0
 	addi t4, zero, 1042
 	slli t4, t4, 2
-215:
+223:
 	lbu t1, 0(t0)
 	sb t1, 0(a2)
 	addi t0, t0, 1
 	addi a2, a2, 1
 	addi t4, t4, -1
-	bnez t4, 215b
+	bnez t4, 223b
 	addi t1, zero, 0
 	addi t0, a7, 0
 	addi t4, zero, 522
-216:
+224:
 	sd t1, 0(t0)
 	addi t0, t0, 8
 	addi t4, t4, -1
-	bnez t4, 216b
+	bnez t4, 224b
 	addi sp, sp, 112
 	addi sp, sp, 2032
 	addi sp, sp, 2032
@@ -8719,22 +7047,39 @@ vg_blowfish_ecb_encrypt:
 	srli s4, s4, 59
 	addi s5, zero, 1
 	sll s4, s5, s4
+	addi t2, zero, 0
+	addi t5, zero, 0
+	addi t6, zero, 0
+	addi t0, zero, 0
+	addi s6, zero, 0
+	addi s7, zero, 0
+	addi s8, zero, 0
+	addi s9, zero, 0
+27:
 	slli t3, t1, 63
 	srai t3, t3, 63
 	slli s5, s4, 63
 	srai s5, s5, 63
 	ld t4, 0(a7)
-	and t2, t4, t3
-	and s6, t4, s5
+	and s10, t4, t3
+	or t2, t2, s10
+	and t4, t4, s5
+	or s6, s6, t4
 	ld t4, 256(a7)
-	and t5, t4, t3
-	and s7, t4, s5
+	and s10, t4, t3
+	or t5, t5, s10
+	and t4, t4, s5
+	or s7, s7, t4
 	ld t4, 512(a7)
-	and t6, t4, t3
-	and s8, t4, s5
+	and s10, t4, t3
+	or t6, t6, s10
+	and t4, t4, s5
+	or s8, s8, t4
 	ld t4, 768(a7)
-	and t0, t4, t3
-	and s9, t4, s5
+	and s10, t4, t3
+	or t0, t0, s10
+	and t4, t4, s5
+	or s9, s9, t4
 	slli t3, t1, 62
 	srai t3, t3, 63
 	slli s5, s4, 62
@@ -9095,390 +7440,13 @@ vg_blowfish_ecb_encrypt:
 	or t0, t0, s10
 	and t4, t4, s5
 	or s9, s9, t4
-	slli t3, t1, 47
-	srai t3, t3, 63
-	slli s5, s4, 47
-	srai s5, s5, 63
-	ld t4, 128(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 384(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 640(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 896(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 46
-	srai t3, t3, 63
-	slli s5, s4, 46
-	srai s5, s5, 63
-	ld t4, 136(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 392(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 648(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 904(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 45
-	srai t3, t3, 63
-	slli s5, s4, 45
-	srai s5, s5, 63
-	ld t4, 144(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 400(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 656(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 912(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 44
-	srai t3, t3, 63
-	slli s5, s4, 44
-	srai s5, s5, 63
-	ld t4, 152(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 408(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 664(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 920(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 43
-	srai t3, t3, 63
-	slli s5, s4, 43
-	srai s5, s5, 63
-	ld t4, 160(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 416(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 672(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 928(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 42
-	srai t3, t3, 63
-	slli s5, s4, 42
-	srai s5, s5, 63
-	ld t4, 168(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 424(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 680(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 936(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 41
-	srai t3, t3, 63
-	slli s5, s4, 41
-	srai s5, s5, 63
-	ld t4, 176(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 432(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 688(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 944(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 40
-	srai t3, t3, 63
-	slli s5, s4, 40
-	srai s5, s5, 63
-	ld t4, 184(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 440(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 696(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 952(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 39
-	srai t3, t3, 63
-	slli s5, s4, 39
-	srai s5, s5, 63
-	ld t4, 192(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 448(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 704(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 960(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 38
-	srai t3, t3, 63
-	slli s5, s4, 38
-	srai s5, s5, 63
-	ld t4, 200(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 456(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 712(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 968(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 37
-	srai t3, t3, 63
-	slli s5, s4, 37
-	srai s5, s5, 63
-	ld t4, 208(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 464(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 720(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 976(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 36
-	srai t3, t3, 63
-	slli s5, s4, 36
-	srai s5, s5, 63
-	ld t4, 216(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 472(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 728(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 984(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 35
-	srai t3, t3, 63
-	slli s5, s4, 35
-	srai s5, s5, 63
-	ld t4, 224(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 480(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 736(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 992(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 34
-	srai t3, t3, 63
-	slli s5, s4, 34
-	srai s5, s5, 63
-	ld t4, 232(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 488(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 744(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 1000(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 33
-	srai t3, t3, 63
-	slli s5, s4, 33
-	srai s5, s5, 63
-	ld t4, 240(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 496(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 752(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 1008(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 32
-	srai t3, t3, 63
-	slli s5, s4, 32
-	srai s5, s5, 63
-	ld t4, 248(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 504(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 760(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 1016(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
+	addi a7, a7, 128
+	srli t1, t1, 16
+	srli s4, s4, 16
+	sub t4, a6, a7
+	andi t4, t4, 128
+	bnez t4, 27b
+	addi a7, a7, -256
 	srli t3, a3, 24
 	andi t3, t3, 7
 	slli t3, t3, 3
@@ -9524,22 +7492,39 @@ vg_blowfish_ecb_encrypt:
 	srli s4, s4, 59
 	addi s5, zero, 1
 	sll s4, s5, s4
+	addi t2, zero, 0
+	addi t5, zero, 0
+	addi t6, zero, 0
+	addi t0, zero, 0
+	addi s6, zero, 0
+	addi s7, zero, 0
+	addi s8, zero, 0
+	addi s9, zero, 0
+28:
 	slli t3, t1, 63
 	srai t3, t3, 63
 	slli s5, s4, 63
 	srai s5, s5, 63
 	ld t4, 0(a7)
-	and t2, t4, t3
-	and s6, t4, s5
+	and s10, t4, t3
+	or t2, t2, s10
+	and t4, t4, s5
+	or s6, s6, t4
 	ld t4, 256(a7)
-	and t5, t4, t3
-	and s7, t4, s5
+	and s10, t4, t3
+	or t5, t5, s10
+	and t4, t4, s5
+	or s7, s7, t4
 	ld t4, 512(a7)
-	and t6, t4, t3
-	and s8, t4, s5
+	and s10, t4, t3
+	or t6, t6, s10
+	and t4, t4, s5
+	or s8, s8, t4
 	ld t4, 768(a7)
-	and t0, t4, t3
-	and s9, t4, s5
+	and s10, t4, t3
+	or t0, t0, s10
+	and t4, t4, s5
+	or s9, s9, t4
 	slli t3, t1, 62
 	srai t3, t3, 63
 	slli s5, s4, 62
@@ -9900,390 +7885,13 @@ vg_blowfish_ecb_encrypt:
 	or t0, t0, s10
 	and t4, t4, s5
 	or s9, s9, t4
-	slli t3, t1, 47
-	srai t3, t3, 63
-	slli s5, s4, 47
-	srai s5, s5, 63
-	ld t4, 128(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 384(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 640(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 896(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 46
-	srai t3, t3, 63
-	slli s5, s4, 46
-	srai s5, s5, 63
-	ld t4, 136(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 392(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 648(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 904(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 45
-	srai t3, t3, 63
-	slli s5, s4, 45
-	srai s5, s5, 63
-	ld t4, 144(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 400(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 656(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 912(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 44
-	srai t3, t3, 63
-	slli s5, s4, 44
-	srai s5, s5, 63
-	ld t4, 152(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 408(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 664(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 920(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 43
-	srai t3, t3, 63
-	slli s5, s4, 43
-	srai s5, s5, 63
-	ld t4, 160(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 416(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 672(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 928(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 42
-	srai t3, t3, 63
-	slli s5, s4, 42
-	srai s5, s5, 63
-	ld t4, 168(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 424(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 680(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 936(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 41
-	srai t3, t3, 63
-	slli s5, s4, 41
-	srai s5, s5, 63
-	ld t4, 176(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 432(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 688(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 944(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 40
-	srai t3, t3, 63
-	slli s5, s4, 40
-	srai s5, s5, 63
-	ld t4, 184(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 440(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 696(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 952(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 39
-	srai t3, t3, 63
-	slli s5, s4, 39
-	srai s5, s5, 63
-	ld t4, 192(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 448(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 704(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 960(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 38
-	srai t3, t3, 63
-	slli s5, s4, 38
-	srai s5, s5, 63
-	ld t4, 200(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 456(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 712(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 968(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 37
-	srai t3, t3, 63
-	slli s5, s4, 37
-	srai s5, s5, 63
-	ld t4, 208(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 464(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 720(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 976(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 36
-	srai t3, t3, 63
-	slli s5, s4, 36
-	srai s5, s5, 63
-	ld t4, 216(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 472(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 728(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 984(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 35
-	srai t3, t3, 63
-	slli s5, s4, 35
-	srai s5, s5, 63
-	ld t4, 224(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 480(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 736(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 992(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 34
-	srai t3, t3, 63
-	slli s5, s4, 34
-	srai s5, s5, 63
-	ld t4, 232(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 488(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 744(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 1000(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 33
-	srai t3, t3, 63
-	slli s5, s4, 33
-	srai s5, s5, 63
-	ld t4, 240(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 496(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 752(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 1008(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 32
-	srai t3, t3, 63
-	slli s5, s4, 32
-	srai s5, s5, 63
-	ld t4, 248(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 504(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 760(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 1016(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
+	addi a7, a7, 128
+	srli t1, t1, 16
+	srli s4, s4, 16
+	sub t4, a6, a7
+	andi t4, t4, 128
+	bnez t4, 28b
+	addi a7, a7, -256
 	srli t3, a3, 16
 	andi t3, t3, 7
 	slli t3, t3, 3
@@ -10329,22 +7937,39 @@ vg_blowfish_ecb_encrypt:
 	srli s4, s4, 59
 	addi s5, zero, 1
 	sll s4, s5, s4
+	addi t2, zero, 0
+	addi t5, zero, 0
+	addi t6, zero, 0
+	addi t0, zero, 0
+	addi s6, zero, 0
+	addi s7, zero, 0
+	addi s8, zero, 0
+	addi s9, zero, 0
+29:
 	slli t3, t1, 63
 	srai t3, t3, 63
 	slli s5, s4, 63
 	srai s5, s5, 63
 	ld t4, 0(a7)
-	and t2, t4, t3
-	and s6, t4, s5
+	and s10, t4, t3
+	or t2, t2, s10
+	and t4, t4, s5
+	or s6, s6, t4
 	ld t4, 256(a7)
-	and t5, t4, t3
-	and s7, t4, s5
+	and s10, t4, t3
+	or t5, t5, s10
+	and t4, t4, s5
+	or s7, s7, t4
 	ld t4, 512(a7)
-	and t6, t4, t3
-	and s8, t4, s5
+	and s10, t4, t3
+	or t6, t6, s10
+	and t4, t4, s5
+	or s8, s8, t4
 	ld t4, 768(a7)
-	and t0, t4, t3
-	and s9, t4, s5
+	and s10, t4, t3
+	or t0, t0, s10
+	and t4, t4, s5
+	or s9, s9, t4
 	slli t3, t1, 62
 	srai t3, t3, 63
 	slli s5, s4, 62
@@ -10705,390 +8330,13 @@ vg_blowfish_ecb_encrypt:
 	or t0, t0, s10
 	and t4, t4, s5
 	or s9, s9, t4
-	slli t3, t1, 47
-	srai t3, t3, 63
-	slli s5, s4, 47
-	srai s5, s5, 63
-	ld t4, 128(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 384(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 640(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 896(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 46
-	srai t3, t3, 63
-	slli s5, s4, 46
-	srai s5, s5, 63
-	ld t4, 136(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 392(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 648(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 904(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 45
-	srai t3, t3, 63
-	slli s5, s4, 45
-	srai s5, s5, 63
-	ld t4, 144(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 400(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 656(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 912(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 44
-	srai t3, t3, 63
-	slli s5, s4, 44
-	srai s5, s5, 63
-	ld t4, 152(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 408(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 664(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 920(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 43
-	srai t3, t3, 63
-	slli s5, s4, 43
-	srai s5, s5, 63
-	ld t4, 160(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 416(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 672(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 928(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 42
-	srai t3, t3, 63
-	slli s5, s4, 42
-	srai s5, s5, 63
-	ld t4, 168(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 424(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 680(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 936(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 41
-	srai t3, t3, 63
-	slli s5, s4, 41
-	srai s5, s5, 63
-	ld t4, 176(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 432(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 688(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 944(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 40
-	srai t3, t3, 63
-	slli s5, s4, 40
-	srai s5, s5, 63
-	ld t4, 184(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 440(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 696(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 952(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 39
-	srai t3, t3, 63
-	slli s5, s4, 39
-	srai s5, s5, 63
-	ld t4, 192(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 448(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 704(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 960(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 38
-	srai t3, t3, 63
-	slli s5, s4, 38
-	srai s5, s5, 63
-	ld t4, 200(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 456(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 712(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 968(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 37
-	srai t3, t3, 63
-	slli s5, s4, 37
-	srai s5, s5, 63
-	ld t4, 208(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 464(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 720(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 976(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 36
-	srai t3, t3, 63
-	slli s5, s4, 36
-	srai s5, s5, 63
-	ld t4, 216(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 472(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 728(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 984(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 35
-	srai t3, t3, 63
-	slli s5, s4, 35
-	srai s5, s5, 63
-	ld t4, 224(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 480(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 736(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 992(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 34
-	srai t3, t3, 63
-	slli s5, s4, 34
-	srai s5, s5, 63
-	ld t4, 232(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 488(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 744(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 1000(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 33
-	srai t3, t3, 63
-	slli s5, s4, 33
-	srai s5, s5, 63
-	ld t4, 240(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 496(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 752(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 1008(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 32
-	srai t3, t3, 63
-	slli s5, s4, 32
-	srai s5, s5, 63
-	ld t4, 248(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 504(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 760(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 1016(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
+	addi a7, a7, 128
+	srli t1, t1, 16
+	srli s4, s4, 16
+	sub t4, a6, a7
+	andi t4, t4, 128
+	bnez t4, 29b
+	addi a7, a7, -256
 	srli t3, a3, 8
 	andi t3, t3, 7
 	slli t3, t3, 3
@@ -11134,22 +8382,39 @@ vg_blowfish_ecb_encrypt:
 	srli s4, s4, 59
 	addi s5, zero, 1
 	sll s4, s5, s4
+	addi t2, zero, 0
+	addi t5, zero, 0
+	addi t6, zero, 0
+	addi t0, zero, 0
+	addi s6, zero, 0
+	addi s7, zero, 0
+	addi s8, zero, 0
+	addi s9, zero, 0
+210:
 	slli t3, t1, 63
 	srai t3, t3, 63
 	slli s5, s4, 63
 	srai s5, s5, 63
 	ld t4, 0(a7)
-	and t2, t4, t3
-	and s6, t4, s5
+	and s10, t4, t3
+	or t2, t2, s10
+	and t4, t4, s5
+	or s6, s6, t4
 	ld t4, 256(a7)
-	and t5, t4, t3
-	and s7, t4, s5
+	and s10, t4, t3
+	or t5, t5, s10
+	and t4, t4, s5
+	or s7, s7, t4
 	ld t4, 512(a7)
-	and t6, t4, t3
-	and s8, t4, s5
+	and s10, t4, t3
+	or t6, t6, s10
+	and t4, t4, s5
+	or s8, s8, t4
 	ld t4, 768(a7)
-	and t0, t4, t3
-	and s9, t4, s5
+	and s10, t4, t3
+	or t0, t0, s10
+	and t4, t4, s5
+	or s9, s9, t4
 	slli t3, t1, 62
 	srai t3, t3, 63
 	slli s5, s4, 62
@@ -11510,390 +8775,13 @@ vg_blowfish_ecb_encrypt:
 	or t0, t0, s10
 	and t4, t4, s5
 	or s9, s9, t4
-	slli t3, t1, 47
-	srai t3, t3, 63
-	slli s5, s4, 47
-	srai s5, s5, 63
-	ld t4, 128(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 384(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 640(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 896(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 46
-	srai t3, t3, 63
-	slli s5, s4, 46
-	srai s5, s5, 63
-	ld t4, 136(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 392(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 648(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 904(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 45
-	srai t3, t3, 63
-	slli s5, s4, 45
-	srai s5, s5, 63
-	ld t4, 144(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 400(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 656(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 912(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 44
-	srai t3, t3, 63
-	slli s5, s4, 44
-	srai s5, s5, 63
-	ld t4, 152(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 408(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 664(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 920(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 43
-	srai t3, t3, 63
-	slli s5, s4, 43
-	srai s5, s5, 63
-	ld t4, 160(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 416(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 672(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 928(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 42
-	srai t3, t3, 63
-	slli s5, s4, 42
-	srai s5, s5, 63
-	ld t4, 168(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 424(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 680(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 936(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 41
-	srai t3, t3, 63
-	slli s5, s4, 41
-	srai s5, s5, 63
-	ld t4, 176(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 432(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 688(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 944(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 40
-	srai t3, t3, 63
-	slli s5, s4, 40
-	srai s5, s5, 63
-	ld t4, 184(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 440(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 696(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 952(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 39
-	srai t3, t3, 63
-	slli s5, s4, 39
-	srai s5, s5, 63
-	ld t4, 192(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 448(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 704(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 960(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 38
-	srai t3, t3, 63
-	slli s5, s4, 38
-	srai s5, s5, 63
-	ld t4, 200(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 456(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 712(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 968(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 37
-	srai t3, t3, 63
-	slli s5, s4, 37
-	srai s5, s5, 63
-	ld t4, 208(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 464(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 720(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 976(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 36
-	srai t3, t3, 63
-	slli s5, s4, 36
-	srai s5, s5, 63
-	ld t4, 216(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 472(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 728(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 984(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 35
-	srai t3, t3, 63
-	slli s5, s4, 35
-	srai s5, s5, 63
-	ld t4, 224(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 480(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 736(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 992(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 34
-	srai t3, t3, 63
-	slli s5, s4, 34
-	srai s5, s5, 63
-	ld t4, 232(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 488(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 744(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 1000(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 33
-	srai t3, t3, 63
-	slli s5, s4, 33
-	srai s5, s5, 63
-	ld t4, 240(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 496(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 752(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 1008(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 32
-	srai t3, t3, 63
-	slli s5, s4, 32
-	srai s5, s5, 63
-	ld t4, 248(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 504(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 760(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 1016(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
+	addi a7, a7, 128
+	srli t1, t1, 16
+	srli s4, s4, 16
+	sub t4, a6, a7
+	andi t4, t4, 128
+	bnez t4, 210b
+	addi a7, a7, -256
 	srli t3, a3, 0
 	andi t3, t3, 7
 	slli t3, t3, 3
@@ -11993,7 +8881,7 @@ vg_blowfish_ecb_encrypt:
 	j 24f
 23:
 24:
-	beqz a2, 27f
+	beqz a2, 211f
 	lbu a3, 0(a1)
 	slli a3, a3, 24
 	lbu t4, 1(a1)
@@ -12017,23 +8905,32 @@ vg_blowfish_ecb_encrypt:
 	addi a6, a7, 2047
 	addi a6, a6, 2047
 	addi a6, a6, 2
-29:
+213:
 	lwu t4, 0(a6)
 	xor a3, a3, t4
 	slli t1, a3, 32
 	srli t1, t1, 59
 	addi t3, zero, 1
 	sll t1, t3, t1
+	addi t2, zero, 0
+	addi t5, zero, 0
+	addi t6, zero, 0
+	addi t0, zero, 0
+214:
 	slli t3, t1, 63
 	srai t3, t3, 63
-	ld t2, 0(a7)
-	and t2, t2, t3
-	ld t5, 256(a7)
-	and t5, t5, t3
-	ld t6, 512(a7)
-	and t6, t6, t3
-	ld t0, 768(a7)
-	and t0, t0, t3
+	ld t4, 0(a7)
+	and t4, t4, t3
+	or t2, t2, t4
+	ld t4, 256(a7)
+	and t4, t4, t3
+	or t5, t5, t4
+	ld t4, 512(a7)
+	and t4, t4, t3
+	or t6, t6, t4
+	ld t4, 768(a7)
+	and t4, t4, t3
+	or t0, t0, t4
 	slli t3, t1, 62
 	srai t3, t3, 63
 	ld t4, 8(a7)
@@ -12244,230 +9141,12 @@ vg_blowfish_ecb_encrypt:
 	ld t4, 888(a7)
 	and t4, t4, t3
 	or t0, t0, t4
-	slli t3, t1, 47
-	srai t3, t3, 63
-	ld t4, 128(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 384(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 640(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 896(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 46
-	srai t3, t3, 63
-	ld t4, 136(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 392(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 648(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 904(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 45
-	srai t3, t3, 63
-	ld t4, 144(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 400(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 656(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 912(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 44
-	srai t3, t3, 63
-	ld t4, 152(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 408(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 664(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 920(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 43
-	srai t3, t3, 63
-	ld t4, 160(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 416(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 672(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 928(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 42
-	srai t3, t3, 63
-	ld t4, 168(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 424(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 680(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 936(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 41
-	srai t3, t3, 63
-	ld t4, 176(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 432(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 688(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 944(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 40
-	srai t3, t3, 63
-	ld t4, 184(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 440(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 696(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 952(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 39
-	srai t3, t3, 63
-	ld t4, 192(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 448(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 704(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 960(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 38
-	srai t3, t3, 63
-	ld t4, 200(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 456(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 712(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 968(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 37
-	srai t3, t3, 63
-	ld t4, 208(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 464(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 720(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 976(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 36
-	srai t3, t3, 63
-	ld t4, 216(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 472(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 728(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 984(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 35
-	srai t3, t3, 63
-	ld t4, 224(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 480(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 736(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 992(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 34
-	srai t3, t3, 63
-	ld t4, 232(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 488(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 744(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 1000(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 33
-	srai t3, t3, 63
-	ld t4, 240(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 496(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 752(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 1008(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 32
-	srai t3, t3, 63
-	ld t4, 248(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 504(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 760(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 1016(a7)
-	and t4, t4, t3
-	or t0, t0, t4
+	addi a7, a7, 128
+	srli t1, t1, 16
+	sub t4, a6, a7
+	andi t4, t4, 128
+	bnez t4, 214b
+	addi a7, a7, -256
 	srli t3, a3, 24
 	andi t3, t3, 7
 	slli t3, t3, 3
@@ -12491,16 +9170,25 @@ vg_blowfish_ecb_encrypt:
 	srli t1, t1, 59
 	addi t3, zero, 1
 	sll t1, t3, t1
+	addi t2, zero, 0
+	addi t5, zero, 0
+	addi t6, zero, 0
+	addi t0, zero, 0
+215:
 	slli t3, t1, 63
 	srai t3, t3, 63
-	ld t2, 0(a7)
-	and t2, t2, t3
-	ld t5, 256(a7)
-	and t5, t5, t3
-	ld t6, 512(a7)
-	and t6, t6, t3
-	ld t0, 768(a7)
-	and t0, t0, t3
+	ld t4, 0(a7)
+	and t4, t4, t3
+	or t2, t2, t4
+	ld t4, 256(a7)
+	and t4, t4, t3
+	or t5, t5, t4
+	ld t4, 512(a7)
+	and t4, t4, t3
+	or t6, t6, t4
+	ld t4, 768(a7)
+	and t4, t4, t3
+	or t0, t0, t4
 	slli t3, t1, 62
 	srai t3, t3, 63
 	ld t4, 8(a7)
@@ -12711,230 +9399,12 @@ vg_blowfish_ecb_encrypt:
 	ld t4, 888(a7)
 	and t4, t4, t3
 	or t0, t0, t4
-	slli t3, t1, 47
-	srai t3, t3, 63
-	ld t4, 128(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 384(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 640(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 896(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 46
-	srai t3, t3, 63
-	ld t4, 136(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 392(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 648(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 904(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 45
-	srai t3, t3, 63
-	ld t4, 144(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 400(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 656(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 912(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 44
-	srai t3, t3, 63
-	ld t4, 152(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 408(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 664(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 920(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 43
-	srai t3, t3, 63
-	ld t4, 160(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 416(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 672(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 928(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 42
-	srai t3, t3, 63
-	ld t4, 168(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 424(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 680(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 936(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 41
-	srai t3, t3, 63
-	ld t4, 176(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 432(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 688(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 944(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 40
-	srai t3, t3, 63
-	ld t4, 184(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 440(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 696(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 952(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 39
-	srai t3, t3, 63
-	ld t4, 192(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 448(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 704(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 960(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 38
-	srai t3, t3, 63
-	ld t4, 200(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 456(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 712(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 968(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 37
-	srai t3, t3, 63
-	ld t4, 208(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 464(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 720(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 976(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 36
-	srai t3, t3, 63
-	ld t4, 216(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 472(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 728(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 984(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 35
-	srai t3, t3, 63
-	ld t4, 224(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 480(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 736(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 992(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 34
-	srai t3, t3, 63
-	ld t4, 232(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 488(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 744(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 1000(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 33
-	srai t3, t3, 63
-	ld t4, 240(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 496(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 752(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 1008(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 32
-	srai t3, t3, 63
-	ld t4, 248(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 504(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 760(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 1016(a7)
-	and t4, t4, t3
-	or t0, t0, t4
+	addi a7, a7, 128
+	srli t1, t1, 16
+	sub t4, a6, a7
+	andi t4, t4, 128
+	bnez t4, 215b
+	addi a7, a7, -256
 	srli t3, a3, 16
 	andi t3, t3, 7
 	slli t3, t3, 3
@@ -12958,16 +9428,25 @@ vg_blowfish_ecb_encrypt:
 	srli t1, t1, 59
 	addi t3, zero, 1
 	sll t1, t3, t1
+	addi t2, zero, 0
+	addi t5, zero, 0
+	addi t6, zero, 0
+	addi t0, zero, 0
+216:
 	slli t3, t1, 63
 	srai t3, t3, 63
-	ld t2, 0(a7)
-	and t2, t2, t3
-	ld t5, 256(a7)
-	and t5, t5, t3
-	ld t6, 512(a7)
-	and t6, t6, t3
-	ld t0, 768(a7)
-	and t0, t0, t3
+	ld t4, 0(a7)
+	and t4, t4, t3
+	or t2, t2, t4
+	ld t4, 256(a7)
+	and t4, t4, t3
+	or t5, t5, t4
+	ld t4, 512(a7)
+	and t4, t4, t3
+	or t6, t6, t4
+	ld t4, 768(a7)
+	and t4, t4, t3
+	or t0, t0, t4
 	slli t3, t1, 62
 	srai t3, t3, 63
 	ld t4, 8(a7)
@@ -13178,230 +9657,12 @@ vg_blowfish_ecb_encrypt:
 	ld t4, 888(a7)
 	and t4, t4, t3
 	or t0, t0, t4
-	slli t3, t1, 47
-	srai t3, t3, 63
-	ld t4, 128(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 384(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 640(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 896(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 46
-	srai t3, t3, 63
-	ld t4, 136(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 392(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 648(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 904(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 45
-	srai t3, t3, 63
-	ld t4, 144(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 400(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 656(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 912(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 44
-	srai t3, t3, 63
-	ld t4, 152(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 408(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 664(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 920(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 43
-	srai t3, t3, 63
-	ld t4, 160(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 416(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 672(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 928(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 42
-	srai t3, t3, 63
-	ld t4, 168(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 424(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 680(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 936(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 41
-	srai t3, t3, 63
-	ld t4, 176(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 432(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 688(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 944(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 40
-	srai t3, t3, 63
-	ld t4, 184(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 440(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 696(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 952(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 39
-	srai t3, t3, 63
-	ld t4, 192(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 448(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 704(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 960(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 38
-	srai t3, t3, 63
-	ld t4, 200(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 456(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 712(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 968(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 37
-	srai t3, t3, 63
-	ld t4, 208(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 464(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 720(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 976(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 36
-	srai t3, t3, 63
-	ld t4, 216(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 472(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 728(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 984(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 35
-	srai t3, t3, 63
-	ld t4, 224(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 480(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 736(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 992(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 34
-	srai t3, t3, 63
-	ld t4, 232(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 488(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 744(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 1000(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 33
-	srai t3, t3, 63
-	ld t4, 240(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 496(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 752(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 1008(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 32
-	srai t3, t3, 63
-	ld t4, 248(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 504(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 760(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 1016(a7)
-	and t4, t4, t3
-	or t0, t0, t4
+	addi a7, a7, 128
+	srli t1, t1, 16
+	sub t4, a6, a7
+	andi t4, t4, 128
+	bnez t4, 216b
+	addi a7, a7, -256
 	srli t3, a3, 8
 	andi t3, t3, 7
 	slli t3, t3, 3
@@ -13425,16 +9686,25 @@ vg_blowfish_ecb_encrypt:
 	srli t1, t1, 59
 	addi t3, zero, 1
 	sll t1, t3, t1
+	addi t2, zero, 0
+	addi t5, zero, 0
+	addi t6, zero, 0
+	addi t0, zero, 0
+217:
 	slli t3, t1, 63
 	srai t3, t3, 63
-	ld t2, 0(a7)
-	and t2, t2, t3
-	ld t5, 256(a7)
-	and t5, t5, t3
-	ld t6, 512(a7)
-	and t6, t6, t3
-	ld t0, 768(a7)
-	and t0, t0, t3
+	ld t4, 0(a7)
+	and t4, t4, t3
+	or t2, t2, t4
+	ld t4, 256(a7)
+	and t4, t4, t3
+	or t5, t5, t4
+	ld t4, 512(a7)
+	and t4, t4, t3
+	or t6, t6, t4
+	ld t4, 768(a7)
+	and t4, t4, t3
+	or t0, t0, t4
 	slli t3, t1, 62
 	srai t3, t3, 63
 	ld t4, 8(a7)
@@ -13645,230 +9915,12 @@ vg_blowfish_ecb_encrypt:
 	ld t4, 888(a7)
 	and t4, t4, t3
 	or t0, t0, t4
-	slli t3, t1, 47
-	srai t3, t3, 63
-	ld t4, 128(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 384(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 640(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 896(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 46
-	srai t3, t3, 63
-	ld t4, 136(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 392(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 648(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 904(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 45
-	srai t3, t3, 63
-	ld t4, 144(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 400(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 656(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 912(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 44
-	srai t3, t3, 63
-	ld t4, 152(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 408(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 664(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 920(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 43
-	srai t3, t3, 63
-	ld t4, 160(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 416(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 672(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 928(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 42
-	srai t3, t3, 63
-	ld t4, 168(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 424(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 680(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 936(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 41
-	srai t3, t3, 63
-	ld t4, 176(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 432(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 688(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 944(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 40
-	srai t3, t3, 63
-	ld t4, 184(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 440(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 696(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 952(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 39
-	srai t3, t3, 63
-	ld t4, 192(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 448(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 704(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 960(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 38
-	srai t3, t3, 63
-	ld t4, 200(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 456(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 712(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 968(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 37
-	srai t3, t3, 63
-	ld t4, 208(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 464(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 720(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 976(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 36
-	srai t3, t3, 63
-	ld t4, 216(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 472(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 728(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 984(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 35
-	srai t3, t3, 63
-	ld t4, 224(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 480(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 736(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 992(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 34
-	srai t3, t3, 63
-	ld t4, 232(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 488(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 744(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 1000(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 33
-	srai t3, t3, 63
-	ld t4, 240(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 496(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 752(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 1008(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 32
-	srai t3, t3, 63
-	ld t4, 248(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 504(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 760(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 1016(a7)
-	and t4, t4, t3
-	or t0, t0, t4
+	addi a7, a7, 128
+	srli t1, t1, 16
+	sub t4, a6, a7
+	andi t4, t4, 128
+	bnez t4, 217b
+	addi a7, a7, -256
 	srli t3, a3, 0
 	andi t3, t3, 7
 	slli t3, t3, 3
@@ -13898,7 +9950,7 @@ vg_blowfish_ecb_encrypt:
 	addi t4, t4, -2047
 	addi t4, t4, -2047
 	addi t4, t4, -66
-	bnez t4, 29b
+	bnez t4, 213b
 	lwu t4, 0(a6)
 	xor t4, a3, t4
 	lwu a3, 4(a6)
@@ -13922,17 +9974,17 @@ vg_blowfish_ecb_encrypt:
 	sb t4, 7(a1)
 	addi a1, a1, 8
 	addi a2, a2, -1
-	j 28f
-27:
-28:
+	j 212f
+211:
+212:
 	addi t1, zero, 0
 	addi t0, a7, 0
 	addi t4, zero, 522
-210:
+218:
 	sd t1, 0(t0)
 	addi t0, t0, 8
 	addi t4, t4, -1
-	bnez t4, 210b
+	bnez t4, 218b
 	addi sp, sp, 112
 	addi sp, sp, 2032
 	addi sp, sp, 2032
@@ -14603,22 +10655,39 @@ vg_blowfish_ecb_decrypt:
 	srli s4, s4, 59
 	addi s5, zero, 1
 	sll s4, s5, s4
+	addi t2, zero, 0
+	addi t5, zero, 0
+	addi t6, zero, 0
+	addi t0, zero, 0
+	addi s6, zero, 0
+	addi s7, zero, 0
+	addi s8, zero, 0
+	addi s9, zero, 0
+27:
 	slli t3, t1, 63
 	srai t3, t3, 63
 	slli s5, s4, 63
 	srai s5, s5, 63
 	ld t4, 0(a7)
-	and t2, t4, t3
-	and s6, t4, s5
+	and s10, t4, t3
+	or t2, t2, s10
+	and t4, t4, s5
+	or s6, s6, t4
 	ld t4, 256(a7)
-	and t5, t4, t3
-	and s7, t4, s5
+	and s10, t4, t3
+	or t5, t5, s10
+	and t4, t4, s5
+	or s7, s7, t4
 	ld t4, 512(a7)
-	and t6, t4, t3
-	and s8, t4, s5
+	and s10, t4, t3
+	or t6, t6, s10
+	and t4, t4, s5
+	or s8, s8, t4
 	ld t4, 768(a7)
-	and t0, t4, t3
-	and s9, t4, s5
+	and s10, t4, t3
+	or t0, t0, s10
+	and t4, t4, s5
+	or s9, s9, t4
 	slli t3, t1, 62
 	srai t3, t3, 63
 	slli s5, s4, 62
@@ -14979,390 +11048,13 @@ vg_blowfish_ecb_decrypt:
 	or t0, t0, s10
 	and t4, t4, s5
 	or s9, s9, t4
-	slli t3, t1, 47
-	srai t3, t3, 63
-	slli s5, s4, 47
-	srai s5, s5, 63
-	ld t4, 128(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 384(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 640(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 896(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 46
-	srai t3, t3, 63
-	slli s5, s4, 46
-	srai s5, s5, 63
-	ld t4, 136(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 392(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 648(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 904(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 45
-	srai t3, t3, 63
-	slli s5, s4, 45
-	srai s5, s5, 63
-	ld t4, 144(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 400(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 656(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 912(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 44
-	srai t3, t3, 63
-	slli s5, s4, 44
-	srai s5, s5, 63
-	ld t4, 152(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 408(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 664(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 920(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 43
-	srai t3, t3, 63
-	slli s5, s4, 43
-	srai s5, s5, 63
-	ld t4, 160(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 416(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 672(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 928(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 42
-	srai t3, t3, 63
-	slli s5, s4, 42
-	srai s5, s5, 63
-	ld t4, 168(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 424(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 680(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 936(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 41
-	srai t3, t3, 63
-	slli s5, s4, 41
-	srai s5, s5, 63
-	ld t4, 176(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 432(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 688(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 944(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 40
-	srai t3, t3, 63
-	slli s5, s4, 40
-	srai s5, s5, 63
-	ld t4, 184(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 440(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 696(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 952(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 39
-	srai t3, t3, 63
-	slli s5, s4, 39
-	srai s5, s5, 63
-	ld t4, 192(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 448(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 704(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 960(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 38
-	srai t3, t3, 63
-	slli s5, s4, 38
-	srai s5, s5, 63
-	ld t4, 200(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 456(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 712(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 968(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 37
-	srai t3, t3, 63
-	slli s5, s4, 37
-	srai s5, s5, 63
-	ld t4, 208(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 464(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 720(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 976(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 36
-	srai t3, t3, 63
-	slli s5, s4, 36
-	srai s5, s5, 63
-	ld t4, 216(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 472(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 728(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 984(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 35
-	srai t3, t3, 63
-	slli s5, s4, 35
-	srai s5, s5, 63
-	ld t4, 224(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 480(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 736(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 992(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 34
-	srai t3, t3, 63
-	slli s5, s4, 34
-	srai s5, s5, 63
-	ld t4, 232(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 488(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 744(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 1000(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 33
-	srai t3, t3, 63
-	slli s5, s4, 33
-	srai s5, s5, 63
-	ld t4, 240(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 496(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 752(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 1008(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 32
-	srai t3, t3, 63
-	slli s5, s4, 32
-	srai s5, s5, 63
-	ld t4, 248(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 504(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 760(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 1016(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
+	addi a7, a7, 128
+	srli t1, t1, 16
+	srli s4, s4, 16
+	sub t4, a6, a7
+	andi t4, t4, 128
+	bnez t4, 27b
+	addi a7, a7, -256
 	srli t3, a3, 24
 	andi t3, t3, 7
 	slli t3, t3, 3
@@ -15408,22 +11100,39 @@ vg_blowfish_ecb_decrypt:
 	srli s4, s4, 59
 	addi s5, zero, 1
 	sll s4, s5, s4
+	addi t2, zero, 0
+	addi t5, zero, 0
+	addi t6, zero, 0
+	addi t0, zero, 0
+	addi s6, zero, 0
+	addi s7, zero, 0
+	addi s8, zero, 0
+	addi s9, zero, 0
+28:
 	slli t3, t1, 63
 	srai t3, t3, 63
 	slli s5, s4, 63
 	srai s5, s5, 63
 	ld t4, 0(a7)
-	and t2, t4, t3
-	and s6, t4, s5
+	and s10, t4, t3
+	or t2, t2, s10
+	and t4, t4, s5
+	or s6, s6, t4
 	ld t4, 256(a7)
-	and t5, t4, t3
-	and s7, t4, s5
+	and s10, t4, t3
+	or t5, t5, s10
+	and t4, t4, s5
+	or s7, s7, t4
 	ld t4, 512(a7)
-	and t6, t4, t3
-	and s8, t4, s5
+	and s10, t4, t3
+	or t6, t6, s10
+	and t4, t4, s5
+	or s8, s8, t4
 	ld t4, 768(a7)
-	and t0, t4, t3
-	and s9, t4, s5
+	and s10, t4, t3
+	or t0, t0, s10
+	and t4, t4, s5
+	or s9, s9, t4
 	slli t3, t1, 62
 	srai t3, t3, 63
 	slli s5, s4, 62
@@ -15784,390 +11493,13 @@ vg_blowfish_ecb_decrypt:
 	or t0, t0, s10
 	and t4, t4, s5
 	or s9, s9, t4
-	slli t3, t1, 47
-	srai t3, t3, 63
-	slli s5, s4, 47
-	srai s5, s5, 63
-	ld t4, 128(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 384(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 640(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 896(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 46
-	srai t3, t3, 63
-	slli s5, s4, 46
-	srai s5, s5, 63
-	ld t4, 136(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 392(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 648(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 904(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 45
-	srai t3, t3, 63
-	slli s5, s4, 45
-	srai s5, s5, 63
-	ld t4, 144(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 400(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 656(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 912(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 44
-	srai t3, t3, 63
-	slli s5, s4, 44
-	srai s5, s5, 63
-	ld t4, 152(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 408(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 664(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 920(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 43
-	srai t3, t3, 63
-	slli s5, s4, 43
-	srai s5, s5, 63
-	ld t4, 160(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 416(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 672(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 928(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 42
-	srai t3, t3, 63
-	slli s5, s4, 42
-	srai s5, s5, 63
-	ld t4, 168(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 424(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 680(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 936(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 41
-	srai t3, t3, 63
-	slli s5, s4, 41
-	srai s5, s5, 63
-	ld t4, 176(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 432(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 688(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 944(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 40
-	srai t3, t3, 63
-	slli s5, s4, 40
-	srai s5, s5, 63
-	ld t4, 184(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 440(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 696(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 952(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 39
-	srai t3, t3, 63
-	slli s5, s4, 39
-	srai s5, s5, 63
-	ld t4, 192(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 448(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 704(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 960(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 38
-	srai t3, t3, 63
-	slli s5, s4, 38
-	srai s5, s5, 63
-	ld t4, 200(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 456(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 712(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 968(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 37
-	srai t3, t3, 63
-	slli s5, s4, 37
-	srai s5, s5, 63
-	ld t4, 208(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 464(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 720(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 976(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 36
-	srai t3, t3, 63
-	slli s5, s4, 36
-	srai s5, s5, 63
-	ld t4, 216(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 472(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 728(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 984(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 35
-	srai t3, t3, 63
-	slli s5, s4, 35
-	srai s5, s5, 63
-	ld t4, 224(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 480(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 736(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 992(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 34
-	srai t3, t3, 63
-	slli s5, s4, 34
-	srai s5, s5, 63
-	ld t4, 232(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 488(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 744(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 1000(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 33
-	srai t3, t3, 63
-	slli s5, s4, 33
-	srai s5, s5, 63
-	ld t4, 240(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 496(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 752(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 1008(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 32
-	srai t3, t3, 63
-	slli s5, s4, 32
-	srai s5, s5, 63
-	ld t4, 248(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 504(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 760(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 1016(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
+	addi a7, a7, 128
+	srli t1, t1, 16
+	srli s4, s4, 16
+	sub t4, a6, a7
+	andi t4, t4, 128
+	bnez t4, 28b
+	addi a7, a7, -256
 	srli t3, a3, 16
 	andi t3, t3, 7
 	slli t3, t3, 3
@@ -16213,22 +11545,39 @@ vg_blowfish_ecb_decrypt:
 	srli s4, s4, 59
 	addi s5, zero, 1
 	sll s4, s5, s4
+	addi t2, zero, 0
+	addi t5, zero, 0
+	addi t6, zero, 0
+	addi t0, zero, 0
+	addi s6, zero, 0
+	addi s7, zero, 0
+	addi s8, zero, 0
+	addi s9, zero, 0
+29:
 	slli t3, t1, 63
 	srai t3, t3, 63
 	slli s5, s4, 63
 	srai s5, s5, 63
 	ld t4, 0(a7)
-	and t2, t4, t3
-	and s6, t4, s5
+	and s10, t4, t3
+	or t2, t2, s10
+	and t4, t4, s5
+	or s6, s6, t4
 	ld t4, 256(a7)
-	and t5, t4, t3
-	and s7, t4, s5
+	and s10, t4, t3
+	or t5, t5, s10
+	and t4, t4, s5
+	or s7, s7, t4
 	ld t4, 512(a7)
-	and t6, t4, t3
-	and s8, t4, s5
+	and s10, t4, t3
+	or t6, t6, s10
+	and t4, t4, s5
+	or s8, s8, t4
 	ld t4, 768(a7)
-	and t0, t4, t3
-	and s9, t4, s5
+	and s10, t4, t3
+	or t0, t0, s10
+	and t4, t4, s5
+	or s9, s9, t4
 	slli t3, t1, 62
 	srai t3, t3, 63
 	slli s5, s4, 62
@@ -16589,390 +11938,13 @@ vg_blowfish_ecb_decrypt:
 	or t0, t0, s10
 	and t4, t4, s5
 	or s9, s9, t4
-	slli t3, t1, 47
-	srai t3, t3, 63
-	slli s5, s4, 47
-	srai s5, s5, 63
-	ld t4, 128(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 384(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 640(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 896(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 46
-	srai t3, t3, 63
-	slli s5, s4, 46
-	srai s5, s5, 63
-	ld t4, 136(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 392(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 648(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 904(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 45
-	srai t3, t3, 63
-	slli s5, s4, 45
-	srai s5, s5, 63
-	ld t4, 144(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 400(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 656(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 912(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 44
-	srai t3, t3, 63
-	slli s5, s4, 44
-	srai s5, s5, 63
-	ld t4, 152(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 408(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 664(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 920(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 43
-	srai t3, t3, 63
-	slli s5, s4, 43
-	srai s5, s5, 63
-	ld t4, 160(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 416(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 672(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 928(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 42
-	srai t3, t3, 63
-	slli s5, s4, 42
-	srai s5, s5, 63
-	ld t4, 168(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 424(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 680(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 936(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 41
-	srai t3, t3, 63
-	slli s5, s4, 41
-	srai s5, s5, 63
-	ld t4, 176(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 432(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 688(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 944(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 40
-	srai t3, t3, 63
-	slli s5, s4, 40
-	srai s5, s5, 63
-	ld t4, 184(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 440(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 696(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 952(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 39
-	srai t3, t3, 63
-	slli s5, s4, 39
-	srai s5, s5, 63
-	ld t4, 192(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 448(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 704(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 960(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 38
-	srai t3, t3, 63
-	slli s5, s4, 38
-	srai s5, s5, 63
-	ld t4, 200(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 456(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 712(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 968(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 37
-	srai t3, t3, 63
-	slli s5, s4, 37
-	srai s5, s5, 63
-	ld t4, 208(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 464(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 720(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 976(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 36
-	srai t3, t3, 63
-	slli s5, s4, 36
-	srai s5, s5, 63
-	ld t4, 216(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 472(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 728(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 984(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 35
-	srai t3, t3, 63
-	slli s5, s4, 35
-	srai s5, s5, 63
-	ld t4, 224(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 480(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 736(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 992(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 34
-	srai t3, t3, 63
-	slli s5, s4, 34
-	srai s5, s5, 63
-	ld t4, 232(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 488(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 744(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 1000(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 33
-	srai t3, t3, 63
-	slli s5, s4, 33
-	srai s5, s5, 63
-	ld t4, 240(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 496(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 752(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 1008(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 32
-	srai t3, t3, 63
-	slli s5, s4, 32
-	srai s5, s5, 63
-	ld t4, 248(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 504(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 760(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 1016(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
+	addi a7, a7, 128
+	srli t1, t1, 16
+	srli s4, s4, 16
+	sub t4, a6, a7
+	andi t4, t4, 128
+	bnez t4, 29b
+	addi a7, a7, -256
 	srli t3, a3, 8
 	andi t3, t3, 7
 	slli t3, t3, 3
@@ -17018,22 +11990,39 @@ vg_blowfish_ecb_decrypt:
 	srli s4, s4, 59
 	addi s5, zero, 1
 	sll s4, s5, s4
+	addi t2, zero, 0
+	addi t5, zero, 0
+	addi t6, zero, 0
+	addi t0, zero, 0
+	addi s6, zero, 0
+	addi s7, zero, 0
+	addi s8, zero, 0
+	addi s9, zero, 0
+210:
 	slli t3, t1, 63
 	srai t3, t3, 63
 	slli s5, s4, 63
 	srai s5, s5, 63
 	ld t4, 0(a7)
-	and t2, t4, t3
-	and s6, t4, s5
+	and s10, t4, t3
+	or t2, t2, s10
+	and t4, t4, s5
+	or s6, s6, t4
 	ld t4, 256(a7)
-	and t5, t4, t3
-	and s7, t4, s5
+	and s10, t4, t3
+	or t5, t5, s10
+	and t4, t4, s5
+	or s7, s7, t4
 	ld t4, 512(a7)
-	and t6, t4, t3
-	and s8, t4, s5
+	and s10, t4, t3
+	or t6, t6, s10
+	and t4, t4, s5
+	or s8, s8, t4
 	ld t4, 768(a7)
-	and t0, t4, t3
-	and s9, t4, s5
+	and s10, t4, t3
+	or t0, t0, s10
+	and t4, t4, s5
+	or s9, s9, t4
 	slli t3, t1, 62
 	srai t3, t3, 63
 	slli s5, s4, 62
@@ -17394,390 +12383,13 @@ vg_blowfish_ecb_decrypt:
 	or t0, t0, s10
 	and t4, t4, s5
 	or s9, s9, t4
-	slli t3, t1, 47
-	srai t3, t3, 63
-	slli s5, s4, 47
-	srai s5, s5, 63
-	ld t4, 128(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 384(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 640(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 896(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 46
-	srai t3, t3, 63
-	slli s5, s4, 46
-	srai s5, s5, 63
-	ld t4, 136(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 392(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 648(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 904(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 45
-	srai t3, t3, 63
-	slli s5, s4, 45
-	srai s5, s5, 63
-	ld t4, 144(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 400(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 656(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 912(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 44
-	srai t3, t3, 63
-	slli s5, s4, 44
-	srai s5, s5, 63
-	ld t4, 152(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 408(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 664(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 920(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 43
-	srai t3, t3, 63
-	slli s5, s4, 43
-	srai s5, s5, 63
-	ld t4, 160(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 416(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 672(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 928(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 42
-	srai t3, t3, 63
-	slli s5, s4, 42
-	srai s5, s5, 63
-	ld t4, 168(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 424(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 680(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 936(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 41
-	srai t3, t3, 63
-	slli s5, s4, 41
-	srai s5, s5, 63
-	ld t4, 176(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 432(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 688(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 944(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 40
-	srai t3, t3, 63
-	slli s5, s4, 40
-	srai s5, s5, 63
-	ld t4, 184(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 440(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 696(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 952(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 39
-	srai t3, t3, 63
-	slli s5, s4, 39
-	srai s5, s5, 63
-	ld t4, 192(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 448(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 704(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 960(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 38
-	srai t3, t3, 63
-	slli s5, s4, 38
-	srai s5, s5, 63
-	ld t4, 200(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 456(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 712(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 968(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 37
-	srai t3, t3, 63
-	slli s5, s4, 37
-	srai s5, s5, 63
-	ld t4, 208(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 464(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 720(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 976(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 36
-	srai t3, t3, 63
-	slli s5, s4, 36
-	srai s5, s5, 63
-	ld t4, 216(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 472(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 728(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 984(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 35
-	srai t3, t3, 63
-	slli s5, s4, 35
-	srai s5, s5, 63
-	ld t4, 224(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 480(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 736(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 992(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 34
-	srai t3, t3, 63
-	slli s5, s4, 34
-	srai s5, s5, 63
-	ld t4, 232(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 488(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 744(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 1000(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 33
-	srai t3, t3, 63
-	slli s5, s4, 33
-	srai s5, s5, 63
-	ld t4, 240(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 496(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 752(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 1008(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
-	slli t3, t1, 32
-	srai t3, t3, 63
-	slli s5, s4, 32
-	srai s5, s5, 63
-	ld t4, 248(a7)
-	and s10, t4, t3
-	or t2, t2, s10
-	and t4, t4, s5
-	or s6, s6, t4
-	ld t4, 504(a7)
-	and s10, t4, t3
-	or t5, t5, s10
-	and t4, t4, s5
-	or s7, s7, t4
-	ld t4, 760(a7)
-	and s10, t4, t3
-	or t6, t6, s10
-	and t4, t4, s5
-	or s8, s8, t4
-	ld t4, 1016(a7)
-	and s10, t4, t3
-	or t0, t0, s10
-	and t4, t4, s5
-	or s9, s9, t4
+	addi a7, a7, 128
+	srli t1, t1, 16
+	srli s4, s4, 16
+	sub t4, a6, a7
+	andi t4, t4, 128
+	bnez t4, 210b
+	addi a7, a7, -256
 	srli t3, a3, 0
 	andi t3, t3, 7
 	slli t3, t3, 3
@@ -17877,7 +12489,7 @@ vg_blowfish_ecb_decrypt:
 	j 24f
 23:
 24:
-	beqz a2, 27f
+	beqz a2, 211f
 	lbu a3, 0(a1)
 	slli a3, a3, 24
 	lbu t4, 1(a1)
@@ -17901,23 +12513,32 @@ vg_blowfish_ecb_decrypt:
 	addi a6, a7, 2047
 	addi a6, a6, 2047
 	addi a6, a6, 66
-29:
+213:
 	lwu t4, 4(a6)
 	xor a3, a3, t4
 	slli t1, a3, 32
 	srli t1, t1, 59
 	addi t3, zero, 1
 	sll t1, t3, t1
+	addi t2, zero, 0
+	addi t5, zero, 0
+	addi t6, zero, 0
+	addi t0, zero, 0
+214:
 	slli t3, t1, 63
 	srai t3, t3, 63
-	ld t2, 0(a7)
-	and t2, t2, t3
-	ld t5, 256(a7)
-	and t5, t5, t3
-	ld t6, 512(a7)
-	and t6, t6, t3
-	ld t0, 768(a7)
-	and t0, t0, t3
+	ld t4, 0(a7)
+	and t4, t4, t3
+	or t2, t2, t4
+	ld t4, 256(a7)
+	and t4, t4, t3
+	or t5, t5, t4
+	ld t4, 512(a7)
+	and t4, t4, t3
+	or t6, t6, t4
+	ld t4, 768(a7)
+	and t4, t4, t3
+	or t0, t0, t4
 	slli t3, t1, 62
 	srai t3, t3, 63
 	ld t4, 8(a7)
@@ -18128,230 +12749,12 @@ vg_blowfish_ecb_decrypt:
 	ld t4, 888(a7)
 	and t4, t4, t3
 	or t0, t0, t4
-	slli t3, t1, 47
-	srai t3, t3, 63
-	ld t4, 128(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 384(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 640(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 896(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 46
-	srai t3, t3, 63
-	ld t4, 136(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 392(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 648(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 904(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 45
-	srai t3, t3, 63
-	ld t4, 144(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 400(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 656(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 912(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 44
-	srai t3, t3, 63
-	ld t4, 152(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 408(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 664(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 920(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 43
-	srai t3, t3, 63
-	ld t4, 160(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 416(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 672(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 928(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 42
-	srai t3, t3, 63
-	ld t4, 168(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 424(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 680(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 936(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 41
-	srai t3, t3, 63
-	ld t4, 176(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 432(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 688(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 944(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 40
-	srai t3, t3, 63
-	ld t4, 184(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 440(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 696(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 952(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 39
-	srai t3, t3, 63
-	ld t4, 192(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 448(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 704(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 960(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 38
-	srai t3, t3, 63
-	ld t4, 200(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 456(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 712(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 968(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 37
-	srai t3, t3, 63
-	ld t4, 208(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 464(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 720(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 976(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 36
-	srai t3, t3, 63
-	ld t4, 216(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 472(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 728(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 984(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 35
-	srai t3, t3, 63
-	ld t4, 224(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 480(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 736(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 992(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 34
-	srai t3, t3, 63
-	ld t4, 232(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 488(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 744(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 1000(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 33
-	srai t3, t3, 63
-	ld t4, 240(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 496(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 752(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 1008(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 32
-	srai t3, t3, 63
-	ld t4, 248(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 504(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 760(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 1016(a7)
-	and t4, t4, t3
-	or t0, t0, t4
+	addi a7, a7, 128
+	srli t1, t1, 16
+	sub t4, a6, a7
+	andi t4, t4, 128
+	bnez t4, 214b
+	addi a7, a7, -256
 	srli t3, a3, 24
 	andi t3, t3, 7
 	slli t3, t3, 3
@@ -18375,16 +12778,25 @@ vg_blowfish_ecb_decrypt:
 	srli t1, t1, 59
 	addi t3, zero, 1
 	sll t1, t3, t1
+	addi t2, zero, 0
+	addi t5, zero, 0
+	addi t6, zero, 0
+	addi t0, zero, 0
+215:
 	slli t3, t1, 63
 	srai t3, t3, 63
-	ld t2, 0(a7)
-	and t2, t2, t3
-	ld t5, 256(a7)
-	and t5, t5, t3
-	ld t6, 512(a7)
-	and t6, t6, t3
-	ld t0, 768(a7)
-	and t0, t0, t3
+	ld t4, 0(a7)
+	and t4, t4, t3
+	or t2, t2, t4
+	ld t4, 256(a7)
+	and t4, t4, t3
+	or t5, t5, t4
+	ld t4, 512(a7)
+	and t4, t4, t3
+	or t6, t6, t4
+	ld t4, 768(a7)
+	and t4, t4, t3
+	or t0, t0, t4
 	slli t3, t1, 62
 	srai t3, t3, 63
 	ld t4, 8(a7)
@@ -18595,230 +13007,12 @@ vg_blowfish_ecb_decrypt:
 	ld t4, 888(a7)
 	and t4, t4, t3
 	or t0, t0, t4
-	slli t3, t1, 47
-	srai t3, t3, 63
-	ld t4, 128(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 384(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 640(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 896(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 46
-	srai t3, t3, 63
-	ld t4, 136(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 392(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 648(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 904(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 45
-	srai t3, t3, 63
-	ld t4, 144(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 400(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 656(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 912(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 44
-	srai t3, t3, 63
-	ld t4, 152(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 408(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 664(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 920(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 43
-	srai t3, t3, 63
-	ld t4, 160(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 416(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 672(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 928(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 42
-	srai t3, t3, 63
-	ld t4, 168(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 424(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 680(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 936(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 41
-	srai t3, t3, 63
-	ld t4, 176(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 432(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 688(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 944(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 40
-	srai t3, t3, 63
-	ld t4, 184(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 440(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 696(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 952(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 39
-	srai t3, t3, 63
-	ld t4, 192(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 448(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 704(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 960(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 38
-	srai t3, t3, 63
-	ld t4, 200(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 456(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 712(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 968(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 37
-	srai t3, t3, 63
-	ld t4, 208(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 464(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 720(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 976(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 36
-	srai t3, t3, 63
-	ld t4, 216(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 472(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 728(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 984(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 35
-	srai t3, t3, 63
-	ld t4, 224(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 480(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 736(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 992(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 34
-	srai t3, t3, 63
-	ld t4, 232(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 488(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 744(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 1000(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 33
-	srai t3, t3, 63
-	ld t4, 240(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 496(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 752(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 1008(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 32
-	srai t3, t3, 63
-	ld t4, 248(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 504(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 760(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 1016(a7)
-	and t4, t4, t3
-	or t0, t0, t4
+	addi a7, a7, 128
+	srli t1, t1, 16
+	sub t4, a6, a7
+	andi t4, t4, 128
+	bnez t4, 215b
+	addi a7, a7, -256
 	srli t3, a3, 16
 	andi t3, t3, 7
 	slli t3, t3, 3
@@ -18842,16 +13036,25 @@ vg_blowfish_ecb_decrypt:
 	srli t1, t1, 59
 	addi t3, zero, 1
 	sll t1, t3, t1
+	addi t2, zero, 0
+	addi t5, zero, 0
+	addi t6, zero, 0
+	addi t0, zero, 0
+216:
 	slli t3, t1, 63
 	srai t3, t3, 63
-	ld t2, 0(a7)
-	and t2, t2, t3
-	ld t5, 256(a7)
-	and t5, t5, t3
-	ld t6, 512(a7)
-	and t6, t6, t3
-	ld t0, 768(a7)
-	and t0, t0, t3
+	ld t4, 0(a7)
+	and t4, t4, t3
+	or t2, t2, t4
+	ld t4, 256(a7)
+	and t4, t4, t3
+	or t5, t5, t4
+	ld t4, 512(a7)
+	and t4, t4, t3
+	or t6, t6, t4
+	ld t4, 768(a7)
+	and t4, t4, t3
+	or t0, t0, t4
 	slli t3, t1, 62
 	srai t3, t3, 63
 	ld t4, 8(a7)
@@ -19062,230 +13265,12 @@ vg_blowfish_ecb_decrypt:
 	ld t4, 888(a7)
 	and t4, t4, t3
 	or t0, t0, t4
-	slli t3, t1, 47
-	srai t3, t3, 63
-	ld t4, 128(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 384(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 640(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 896(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 46
-	srai t3, t3, 63
-	ld t4, 136(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 392(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 648(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 904(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 45
-	srai t3, t3, 63
-	ld t4, 144(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 400(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 656(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 912(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 44
-	srai t3, t3, 63
-	ld t4, 152(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 408(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 664(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 920(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 43
-	srai t3, t3, 63
-	ld t4, 160(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 416(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 672(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 928(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 42
-	srai t3, t3, 63
-	ld t4, 168(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 424(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 680(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 936(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 41
-	srai t3, t3, 63
-	ld t4, 176(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 432(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 688(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 944(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 40
-	srai t3, t3, 63
-	ld t4, 184(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 440(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 696(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 952(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 39
-	srai t3, t3, 63
-	ld t4, 192(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 448(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 704(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 960(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 38
-	srai t3, t3, 63
-	ld t4, 200(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 456(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 712(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 968(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 37
-	srai t3, t3, 63
-	ld t4, 208(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 464(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 720(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 976(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 36
-	srai t3, t3, 63
-	ld t4, 216(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 472(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 728(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 984(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 35
-	srai t3, t3, 63
-	ld t4, 224(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 480(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 736(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 992(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 34
-	srai t3, t3, 63
-	ld t4, 232(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 488(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 744(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 1000(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 33
-	srai t3, t3, 63
-	ld t4, 240(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 496(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 752(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 1008(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 32
-	srai t3, t3, 63
-	ld t4, 248(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 504(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 760(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 1016(a7)
-	and t4, t4, t3
-	or t0, t0, t4
+	addi a7, a7, 128
+	srli t1, t1, 16
+	sub t4, a6, a7
+	andi t4, t4, 128
+	bnez t4, 216b
+	addi a7, a7, -256
 	srli t3, a3, 8
 	andi t3, t3, 7
 	slli t3, t3, 3
@@ -19309,16 +13294,25 @@ vg_blowfish_ecb_decrypt:
 	srli t1, t1, 59
 	addi t3, zero, 1
 	sll t1, t3, t1
+	addi t2, zero, 0
+	addi t5, zero, 0
+	addi t6, zero, 0
+	addi t0, zero, 0
+217:
 	slli t3, t1, 63
 	srai t3, t3, 63
-	ld t2, 0(a7)
-	and t2, t2, t3
-	ld t5, 256(a7)
-	and t5, t5, t3
-	ld t6, 512(a7)
-	and t6, t6, t3
-	ld t0, 768(a7)
-	and t0, t0, t3
+	ld t4, 0(a7)
+	and t4, t4, t3
+	or t2, t2, t4
+	ld t4, 256(a7)
+	and t4, t4, t3
+	or t5, t5, t4
+	ld t4, 512(a7)
+	and t4, t4, t3
+	or t6, t6, t4
+	ld t4, 768(a7)
+	and t4, t4, t3
+	or t0, t0, t4
 	slli t3, t1, 62
 	srai t3, t3, 63
 	ld t4, 8(a7)
@@ -19529,230 +13523,12 @@ vg_blowfish_ecb_decrypt:
 	ld t4, 888(a7)
 	and t4, t4, t3
 	or t0, t0, t4
-	slli t3, t1, 47
-	srai t3, t3, 63
-	ld t4, 128(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 384(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 640(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 896(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 46
-	srai t3, t3, 63
-	ld t4, 136(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 392(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 648(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 904(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 45
-	srai t3, t3, 63
-	ld t4, 144(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 400(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 656(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 912(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 44
-	srai t3, t3, 63
-	ld t4, 152(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 408(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 664(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 920(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 43
-	srai t3, t3, 63
-	ld t4, 160(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 416(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 672(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 928(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 42
-	srai t3, t3, 63
-	ld t4, 168(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 424(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 680(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 936(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 41
-	srai t3, t3, 63
-	ld t4, 176(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 432(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 688(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 944(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 40
-	srai t3, t3, 63
-	ld t4, 184(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 440(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 696(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 952(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 39
-	srai t3, t3, 63
-	ld t4, 192(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 448(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 704(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 960(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 38
-	srai t3, t3, 63
-	ld t4, 200(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 456(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 712(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 968(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 37
-	srai t3, t3, 63
-	ld t4, 208(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 464(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 720(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 976(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 36
-	srai t3, t3, 63
-	ld t4, 216(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 472(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 728(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 984(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 35
-	srai t3, t3, 63
-	ld t4, 224(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 480(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 736(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 992(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 34
-	srai t3, t3, 63
-	ld t4, 232(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 488(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 744(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 1000(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 33
-	srai t3, t3, 63
-	ld t4, 240(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 496(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 752(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 1008(a7)
-	and t4, t4, t3
-	or t0, t0, t4
-	slli t3, t1, 32
-	srai t3, t3, 63
-	ld t4, 248(a7)
-	and t4, t4, t3
-	or t2, t2, t4
-	ld t4, 504(a7)
-	and t4, t4, t3
-	or t5, t5, t4
-	ld t4, 760(a7)
-	and t4, t4, t3
-	or t6, t6, t4
-	ld t4, 1016(a7)
-	and t4, t4, t3
-	or t0, t0, t4
+	addi a7, a7, 128
+	srli t1, t1, 16
+	sub t4, a6, a7
+	andi t4, t4, 128
+	bnez t4, 217b
+	addi a7, a7, -256
 	srli t3, a3, 0
 	andi t3, t3, 7
 	slli t3, t3, 3
@@ -19782,7 +13558,7 @@ vg_blowfish_ecb_decrypt:
 	addi t4, t4, -2047
 	addi t4, t4, -2047
 	addi t4, t4, -2
-	bnez t4, 29b
+	bnez t4, 213b
 	lwu t4, 4(a6)
 	xor t4, a3, t4
 	lwu a3, 0(a6)
@@ -19806,17 +13582,17 @@ vg_blowfish_ecb_decrypt:
 	sb t4, 7(a1)
 	addi a1, a1, 8
 	addi a2, a2, -1
-	j 28f
-27:
-28:
+	j 212f
+211:
+212:
 	addi t1, zero, 0
 	addi t0, a7, 0
 	addi t4, zero, 522
-210:
+218:
 	sd t1, 0(t0)
 	addi t0, t0, 8
 	addi t4, t4, -1
-	bnez t4, 210b
+	bnez t4, 218b
 	addi sp, sp, 112
 	addi sp, sp, 2032
 	addi sp, sp, 2032
